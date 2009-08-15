@@ -528,7 +528,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	sql_table *t = NULL;
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
-	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
+	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
 	char *ns = (null_string)?null_string:"null";
 	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;

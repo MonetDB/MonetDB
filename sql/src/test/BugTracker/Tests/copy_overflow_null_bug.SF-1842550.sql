@@ -4,7 +4,7 @@ CREATE TABLE bulk (
 	PRIMARY KEY (num)
 );
 
-COPY 2 RECORDS INTO bulk FROM stdin USING DELIMITERS '|', '\n';
+COPY 2 RECORDS INTO bulk FROM stdin USING DELIMITERS '|', '\n', '''';
 5536|'5536'
 53605|'53605'
 

@@ -2398,13 +2398,17 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	len = strlen((char*)(*R));
 	GDKstrFromStr(rsep=GDKmalloc(len+1), *R, len); len = 0;
 	len = strlen((char*)(*S));
-	GDKstrFromStr(ssep=GDKmalloc(len+1), *S, len); len = 0;
+	if (*S && strcmp(str_nil,*(char**)S)) {
+		GDKstrFromStr(ssep=GDKmalloc(len+1), *S, len); 
+		len = 0;
+	}
 	len = strlen((char*)(*N));
 	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
 	b = mvc_import_table(cntxt, m, *s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset);
 	GDKfree(tsep);
 	GDKfree(rsep);
-	GDKfree(ssep);
+	if(ssep)
+		GDKfree(ssep);
 	GDKfree(ns);
 	if (!b)
 		throw(SQL, "importTable", "failed to import table");

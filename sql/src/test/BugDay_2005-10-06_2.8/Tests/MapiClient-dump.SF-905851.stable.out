@@ -79,7 +79,7 @@ CREATE TABLE "sys"."allnewtriples" (
 CREATE INDEX "allnewtriples_object_idx" ON "sys"."allnewtriples" ("object");
 CREATE INDEX "allnewtriples_predicate_idx" ON "sys"."allnewtriples" ("predicate");
 CREATE INDEX "allnewtriples_subject_idx" ON "sys"."allnewtriples" ("subject");
-COPY 7 RECORDS INTO "sys"."allnewtriples" FROM stdin USING DELIMITERS '\t';
+COPY 7 RECORDS INTO "sys"."allnewtriples" FROM stdin USING DELIMITERS '\t', '\n', '"';
 1	1	1	1	false
 2	1	1	2	false
 3	1	2	1	false
@@ -93,7 +93,7 @@ CREATE TABLE "sys"."foreign" (
 	"predicate" int NOT NULL,
 	"object" int NOT NULL
 );
-COPY 7 RECORDS INTO "sys"."foreign" FROM stdin USING DELIMITERS '\t';
+COPY 7 RECORDS INTO "sys"."foreign" FROM stdin USING DELIMITERS '\t', '\n', '"';
 1	1	1	1
 2	2	2	2
 3	1	2	2

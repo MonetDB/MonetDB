@@ -6,7 +6,7 @@ CREATE TABLE "sys"."entrants" (
     "course_id" int NOT NULL,
     CONSTRAINT "entrants_id_pkey" PRIMARY KEY ("id")
 );
-COPY 3 RECORDS INTO "entrants" FROM stdin USING DELIMITERS '\t';
+COPY 3 RECORDS INTO "entrants" FROM stdin USING DELIMITERS '\t', '\n', '"';
 3	"Java Lover"	2
 2	"Ruby Guru"	1
 1	"Ruby Developer"	1
@@ -27,7 +27,7 @@ CREATE TABLE "sys"."developers" (
     "updated_at" timestamp(7),
     CONSTRAINT "developers_id_pkey" PRIMARY KEY ("id")
 );
-COPY 11 RECORDS INTO "developers" FROM stdin USING DELIMITERS '\t';
+COPY 11 RECORDS INTO "developers" FROM stdin USING DELIMITERS '\t', '\n', '"';
 5	"fixture_5"	100000	2008-06-10 19:13:40.000000	2008-06-10 19:13:40.000000
 6	"fixture_6"	100000	2008-06-10 19:13:40.000000	2008-06-10 19:13:40.000000
 7	"fixture_7"	100000	2008-06-10 19:13:40.000000	2008-06-10 19:13:40.000000
