@@ -1283,7 +1283,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		GDKfree(ids);
 		if (a_void)
 			GDKfree(base);
-		BATsetcount(bn, (BUN) (((char*) tdst - bn->T->heap.base) / tailsize(bn,1)));
+		BATsetcount(bn, (BUN) (((char*) tdst - bn->T->heap.base) / Tsize(bn)));
 		bn->tsorted = GDK_SORTED;
 	}
 	*res = bn;

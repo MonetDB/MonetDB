@@ -1269,8 +1269,8 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 
 #define bunfastins(b, h, t) do {					\
 		REGISTER BUN _p = BUNlast(b);				\
-		REGISTER unsigned short _hsize = headsize((b),1);	\
-		REGISTER unsigned short _tsize = tailsize((b),1);	\
+		REGISTER unsigned short _hsize = Hsize(b);		\
+		REGISTER unsigned short _tsize = Tsize(b);		\
 		if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {		\
 			GDKerror("bunfastins: bat too large\n");	\
 			goto bunins_failed;				\
@@ -1289,8 +1289,8 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 	}
 
 #define bunfastins_nocheck_inc(b, p, h, t) {                            \
-		hfastins_nocheck(b, p, h, headsize(b,1));			\
-		tfastins_nocheck(b, p, t, tailsize(b,1));			\
+		hfastins_nocheck(b, p, h, Hsize(b));			\
+		tfastins_nocheck(b, p, t, Tsize(b));			\
 		p++;							\
 		(b)->batCount++;					\
 	}

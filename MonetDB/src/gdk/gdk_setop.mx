@@ -75,10 +75,10 @@ The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin
 #define MISSintersect(h,t)
 #define MISSdiff(h,t)           bunfastins(bn,h,t)
 
-#define HITintersect_nocheck(h,t)       bunfastins_nocheck(bn,BUNlast(bn),h,t,headsize(bn,1),tailsize(bn,1))
+#define HITintersect_nocheck(h,t)       bunfastins_nocheck(bn,BUNlast(bn),h,t,Hsize(bn),Tsize(bn))
 #define HITdiff_nocheck(h,t)
 #define MISSintersect_nocheck(h,t)
-#define MISSdiff_nocheck(h,t)           bunfastins_nocheck(bn,BUNlast(bn),h,t,headsize(bn,1),tailsize(bn,1))
+#define MISSdiff_nocheck(h,t)           bunfastins_nocheck(bn,BUNlast(bn),h,t,Hsize(bn),Tsize(bn))
 
 #define DHITintersect(h,t)       bnh[o] = *(h); bnt[o++] = t;
 #define DHITdiff(h,t)

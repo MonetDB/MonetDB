@@ -348,7 +348,7 @@ voidbathash(BAT **res, BAT *b )
 		}
 	} else {
 		char *v = BUNtail(bi,BUNfirst(b)), *e = BUNtail(bi,BUNlast(b));
-		int sz = tailsize(b,1), tpe = b->ttype;
+		int sz = Tsize(b), tpe = b->ttype;
 
 		switch (ATOMstorage(tpe)) {
 		case TYPE_chr: 
