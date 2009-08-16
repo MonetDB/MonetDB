@@ -380,6 +380,8 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r)
 	/* foreign key joins are common */
 	if( l->ttype== TYPE_oid  || r->htype == TYPE_oid || r->htype== TYPE_void)
 		return MAX(lc,rc);
+	if (l->tkey || r->hkey)
+		return MAX(lc,rc);
 	/* if either operand is very small, we should use that one */
 	if (rc < SMALL_OPERAND )
 		return rc;
