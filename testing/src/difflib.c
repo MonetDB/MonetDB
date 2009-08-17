@@ -548,11 +548,11 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 	}
 	old_time = strchr(old, '\t');
 	*old_time++ = '\0';
-	new_time = strchr(new, '\t') + 1;
+	new_time = strchr(new, '\t');
 	*new_time++ = '\0';
-	fprintf(html_fp, "<tr><th colspan='3' align='center' class='colhead'><a href='%s'>%s%s</a>\t%s</th>", filename(old), filename(old_fn), revision, old_time);
+	fprintf(html_fp, "<tr><th colspan='3' align='center' class='colhead'><a href='%s'>%s%s</a> %s</th>", filename(old), filename(old_fn), revision, old_time);
 	fprintf(html_fp, "<th>&nbsp;</th>");
-	fprintf(html_fp, "<th colspan='3' align='center' class='colhead'><a href='%s'>%s</a>\t%s</th></tr>\n", new, new_fn, new_time);
+	fprintf(html_fp, "<th colspan='3' align='center' class='colhead'><a href='%s'>%s</a> %s</th></tr>\n", new, new_fn, new_time);
 	free(old);
 	free(new);
 	while (ok) {
