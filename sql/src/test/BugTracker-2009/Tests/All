@@ -85,6 +85,7 @@ table-leftovers.SF-2779462
 Floating_point_exception.SF-2791356
 Division_by_zero_error.SF-2791361
 copy_into_error_off_by_one.SF-2833696
+group_by_on_values.SF-2837561
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.

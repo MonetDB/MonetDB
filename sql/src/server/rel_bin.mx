@@ -1638,6 +1638,22 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 		}
 	}
 
+	if (sub && sub->type == st_list && sub->op1.lval->h && !((stmt*)sub->op1.lval->h->data)->nrcols) {
+		list *newl = create_stmt_list();
+		node *n;
+
+		for(n=sub->op1.lval->h; n; n = n->next) {
+			char *cname = column_name(n->data);
+			char *tname = table_name(n->data);
+			stmt *s = column(stmt_dup(n->data));
+
+			s = stmt_alias(s, tname, cname );
+			append(newl, s);
+		}
+		stmt_destroy(sub);
+		sub = stmt_list(newl);
+	}
+
 	/* groupby columns */
 	if (rel->r) {
 		list *exps = rel->r; 
