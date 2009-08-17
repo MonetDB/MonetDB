@@ -543,6 +543,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		memset(BATatoms + t, 0, sizeof(atomDesc));
 		strcpy(BATatoms[t].name, id);
 		BATatoms[t].size = sizeof(int);	/* default */
+		assert_shift_width(ATOMelmshift(BATatoms[t].size),BATatoms[t].size);
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;	/* default */
 		BATatoms[t].storage = t;	/* default */
@@ -552,10 +553,12 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		if (val) {
 			assert(val <= SHRT_MAX);
 			BATatoms[t].size = val;
+			assert_shift_width(ATOMelmshift(BATatoms[t].size),BATatoms[t].size);
 			BATatoms[t].varsized = 0;
 			BATatoms[t].align = align(val);
 		} else {
 			BATatoms[t].size = sizeof(var_t);
+			assert_shift_width(ATOMelmshift(BATatoms[t].size),BATatoms[t].size);
 			BATatoms[t].varsized = 1;
 			BATatoms[t].align = sizeof(var_t);
 		}
@@ -584,6 +587,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 
 		if (strcmp("heap", property) == 0) {
 			BATatoms[t].size = sizeof(var_t);
+			assert_shift_width(ATOMelmshift(BATatoms[t].size),BATatoms[t].size);
 			BATatoms[t].varsized = 1;
 			BATatoms[t].align = sizeof(var_t);
 			atomset(BATatoms[t].atomHeap, (void (*)(Heap *, size_t)) arg);

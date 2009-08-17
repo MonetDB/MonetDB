@@ -201,9 +201,9 @@ chr
 ATOMelmshift(int sz)
 {
 	chr sh;
-	int i = sz - 1;
+	int i = sz >> 1;
 
-	for (sh = 0; i > 0; sh++) {
+	for (sh = 0; i != 0; sh++) {
 		i >>= 1;
 	}
 	return sh;
@@ -217,6 +217,8 @@ BATsetdims(BAT *b)
 	b->T->width = ATOMsize(b->ttype);
 	b->H->shift = ATOMelmshift(Hsize(b));
 	b->T->shift = ATOMelmshift(Tsize(b));
+	assert_shift_width(b->H->shift,b->H->width);
+	assert_shift_width(b->T->shift,b->T->width);
 	b->H->varsized = BATatoms[b->htype].varsized;
 	b->T->varsized = BATatoms[b->ttype].varsized;
 }
@@ -249,10 +251,10 @@ BATnewstorage(int ht, int tt, BUN cap)
 		bn->U->capacity = cap;
 
 		/* alloc the main heaps */
-		if (ht && HEAPalloc(&bn->H->heap, cap, headsize(bn,1)) < 0) {
+		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
 			return NULL;
 		}
-		if (tt && HEAPalloc(&bn->T->heap, cap, tailsize(bn,1)) < 0) {
+		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
 			if (ht) HEAPfree(&bn->H->heap);
 			return NULL;
 		}
@@ -453,10 +455,10 @@ malloc.
 
 	b->batCapacity = newcap;
 
-	hheap_size = headsize(b,hheap_size);
+	hheap_size *= Hsize(b);
 	if (b->H->heap.base && HEAPextend(&b->H->heap, hheap_size) < 0)
 		return NULL;
-	theap_size = tailsize(b,theap_size);
+	theap_size *= Tsize(b);
 	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
 		return NULL;
 	HASHdestroy(b);
@@ -880,7 +882,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = BUNfirst(bn);
 			BATiter bi = bat_iterator(b);
-			unsigned short hs = headsize(b,1), ts = tailsize(b,1);
+			unsigned short hs = Hsize(b), ts = Tsize(b);
 
 			BATloop(b, p, q) {
 				ptr h = BUNhead(bi, p);
@@ -912,9 +914,9 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 
 			bn->H->heap.free = bn->T->heap.free = 0;
 			if (ht) 
-				bn->H->heap.free = headsize(bn, bunstocopy);
+				bn->H->heap.free = bunstocopy * Hsize(bn);
 			else 
-				bn->T->heap.free = tailsize(bn, bunstocopy);
+				bn->T->heap.free = bunstocopy * Tsize(bn);
 
 			if (tpe == TYPE_chr || tpe == TYPE_bte) {
 				bte *src = (bte *) cur, *dst = (bte *)d;
@@ -1619,8 +1621,8 @@ last inserted bun (if present) is copied over it.
 				}
 			}
 		}
-		b->H->heap.free -= headsize(b,1);
-		b->T->heap.free -= tailsize(b,1);
+		b->H->heap.free -= Hsize(b);
+		b->T->heap.free -= Tsize(b);
 		p--;
 	}
 	b->batCount--;
@@ -2997,6 +2999,8 @@ check if duplicated properties are equal
 		     ((b->T->shift != bm->H->shift) << 7) |
 		     ((b->H->width != bm->T->width) << 8) |
 		     ((b->T->width != bm->H->width) << 8) |
+		     (((b->H->width != 0 || b->H->shift != 0) && b->H->width != (1<<b->H->shift)) << 9) |
+		     (((b->T->width != 0 || b->T->shift != 0) && b->T->width != (1<<b->T->shift)) << 9) |
 		     ((b->batFirst < b->batDeleted) << 10) |
 		     ((b->batFirst > b->batInserted) << 11) |
 		     ((b->H->heap.size > b->H->heap.maxsize) << 13) |
