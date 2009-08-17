@@ -119,7 +119,7 @@ public class BufferedMCLReader extends BufferedReader {
 	 */
 	void setLineType(String line) {
 		lineType = UNKNOWN;
-		if (line == null)
+		if (line == null || line.length() == 0)
 			return;
 		switch (line.charAt(0)) {
 			case '!':

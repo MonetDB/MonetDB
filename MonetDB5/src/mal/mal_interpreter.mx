@@ -1608,9 +1608,8 @@ to the operators.
 	}
 	/* Provide debugging support */
 #if @1
-	if( GDKdebug & 10 && exceptionVar >= 0) {
+	if( GDKdebug & 10 && exceptionVar < 0) {
 		BAT *b;
-		str oldmsg =0;
 
 		for( i=0; i< pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
@@ -1618,10 +1617,6 @@ to the operators.
 			b= BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 			if( b == NULL)
 				continue;
-			if( cntxt->errbuf && cntxt->errbuf[0]){
-				oldmsg= GDKstrdup(cntxt->errbuf);
-				*cntxt->errbuf= 0;
-			}
 			if( b->batStamp <= stamp){
 				if( GDKdebug & 8)
 					@:batpropcheck(b)@
@@ -1630,15 +1625,7 @@ to the operators.
 					@:batpropcheck(b)@
 			BBPunfix(b->batCacheid);
 			if( cntxt->errbuf && cntxt->errbuf[0]) {
-				if( oldmsg){
-					strcpy(cntxt->errbuf,oldmsg);
-					GDKfree(oldmsg);
-				}
-				throw(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
-			}
-			if( oldmsg){
-				*cntxt->errbuf = *oldmsg;
-				GDKfree(oldmsg);
+				ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
 			}
 		}
 	}

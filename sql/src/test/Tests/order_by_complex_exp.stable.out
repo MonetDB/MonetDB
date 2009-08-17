@@ -36,11 +36,11 @@ Over..
 [ 1	]
 [ 1	]
 
-#project (
-#    group by (
-#        table(sys.test02) [ test02.col1 NOT NULL, test02.%TID% NOT NULL ]
-#    ) [ test02.col1 NOT NULL ] [ test02.col1 NOT NULL, count no nil (test02.col1 NOT NULL) NOT NULL as L4 ]
-#) [ L4 ASC NOT NULL ] [ test02.col1 NOT NULL ]
+project (
+| group by (
+| | table(sys.test02) [ test02.col1 NOT NULL, test02.%TID% NOT NULL ]
+| ) [ test02.col1 NOT NULL ] [ test02.col1 NOT NULL, count no nil (test02.col1 NOT NULL) NOT NULL as L4 ]
+) [ L4 ASC NOT NULL ] [ test02.col1 NOT NULL ]
 % sys.test02 # table_name
 % col1 # name
 % varchar # type

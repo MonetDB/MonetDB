@@ -1652,7 +1652,7 @@ BATordered@3(BAT* b)
 			/* check sortedness tuple-by-tuple */
 			if (b->hheap) {
 				char *base = b->H->vheap->base;
-				char *prv = base + *(((var_t *)b->H->heap.base)+ cur);
+				char *prv = base + (*(((var_t *)b->H->heap.base)+ cur) << GDK_VARSHIFT);
 
 				cur ++;
 				if (b->hkey == 0) {
