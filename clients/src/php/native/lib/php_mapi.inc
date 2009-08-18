@@ -45,6 +45,9 @@
 	
 	define("XQUERY_OUTPUT_SEQ", "output seq");
 	
+	define("MEROVINGIAN", "merovingian");
+	define("MSERVER", "mserver");
+	
 	define('MAX_MEROVINGIAN_ITER', 10); // Maximum number of iterations during proxied auth through merovingian
 
 	define('TIMEZONE', 'Europe/Amsterdam'); // Arbitrarly defined timezone.
@@ -75,7 +78,6 @@
 	*/
 	function &mapi_execute($conn=NULL, $query) {
 		global $connection_pool;
-			
 		/**
 		* Query handle
 		* 
@@ -103,7 +105,7 @@
 			$handle = array("conn" => "", "header" => array(), "query" => "", "record_set" => array(), "operation" => -1, "last_row" => 0);
 			$handle["conn"] = $conn["id"];
 			
-			if ( ($operation = mapi_store($data, $handle, $conn['lang'])) == FALSE) {
+			if ( ($operation = mapi_store($data, $handle)) == FALSE) {
 				return FALSE;
 			}
 		
@@ -140,7 +142,7 @@
 			mapi_write($socket, format_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size));				
 			$data = mapi_read($socket);
 				
-			if ( ($operation = mapi_store($data, $handle, $conn['lang'])) == FALSE ) {
+			if ( ($operation = mapi_store($data, $handle)) == FALSE ) {
 				return FALSE;
 			}
 				
@@ -151,7 +153,7 @@
 		return $handle;		
 	}
 	
-	function mapi_store($data, &$handle, $lang) {	
+	function mapi_store($data, &$handle) {	
 		global $last_error;
 		
 		$data = explode("\n", $data);
@@ -190,7 +192,7 @@
 				$rows = $rows . $row;
 			} else if ($row[0] == MSG_PROMPT) {
 				// receive all the tuples
-				$record_set = php_parse_tuples($rows, $lang);
+				$record_set = php_parse_tuples($rows);
 				$rows = "";
 			} else if ($row[0] == MSG_INFO) {
 				$last_error = $row;
@@ -213,29 +215,24 @@
 	}
 	
 	
-	function php_parse_tuples($rows, $lang) {
+	function php_parse_tuples($rows) {
 		$parsed_rows = "";
 	
 		$rows = rtrim($rows, "\t]");	
 		$rows = split("\t]", $rows);
 		foreach ($rows as &$row) {				
 			
-			$row = ltrim($row, "[");
-			$row = split("\t",  $row);
+			$row = ltrim($row, "[ ");
+			$row = split(",\t",  $row);
 			
 			foreach ($row as &$field) {
 				/* strip left/right \" chars and right ',' */
-				$field = rtrim($field, ",");
-				$field = rtrim($field, "\"");
-				if ($lang == LANG_SQL) {
-					$field = ltrim($field, "\"");
-				} else if (($lang == LANG_XQUERY) && (defined('XQUERY_OUTPUT_SEQ'))) {
-					$field = ltrim($field, " \"");
-				}
+				$field = rtrim($field, '"');
+				$field = ltrim($field, '"');
 			}
 			$parsed_rows[] = $row;
 		}
-	
+			
 		return $parsed_rows;
 	}
 	
@@ -256,7 +253,6 @@
 		$header_array["types"] = explode(",\t", $header[2][0]);
 		
 		return $header_array;
-		
 	}
 
 	/*
@@ -303,7 +299,7 @@
 		
 		// $challenge[0] contains the salt
 		if ($credentials[2] == PROTOCOL_v8 ){
-			// Protocol v8 supported only for legacy/testing reasons
+			// Protocol v8 supported only for legacy reasons
  			mapi_authenticate_v8($socket, $user, $passwd, $hash, $algos, $credentials[0], $dbname, $lang);
 		} else if ($credentials[2] == PROTOCOL_v9) {
 			// $credentials[5] contains pwhash
