@@ -1478,7 +1478,7 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 	sql_subtype *it = sql_bind_localtype("int");
 	sql_subtype *wrd = sql_bind_localtype("wrd");
 	stmt *h = NULL;
-	stmt *bits = stmt_atom_int(1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)));
+	stmt *bits = stmt_atom_int(1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1));
 	sql_exp *e = en->data;
 	sql_exp *l = e->l;
 	stmt *idx = bin_find_column(sub, l->l, i->base.name);
@@ -2052,7 +2052,7 @@ hash_insert(mvc *sql, sql_idx * i, list *inserts)
 {
 	node *m;
 	sql_subtype *it, *wrd;
-	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns));
+	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
 	stmt *h = NULL, *o = NULL;
 
 	if (list_length(i->columns) <= 1)
@@ -2820,7 +2820,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 	/* calculate new value */
 	node *m;
 	sql_subtype *it, *wrd;
-	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns));
+	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
 	stmt *h = NULL, *ts, *o = NULL;
 
 	if (list_length(i->columns) <= 1)
