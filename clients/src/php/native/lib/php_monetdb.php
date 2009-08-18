@@ -30,21 +30,25 @@
 	require 'php_mapi.inc';
 	
 	/**
+	* register a 'monetdb' extension to retain compatibility with wht Cimpl based scripts.
+	*/
+	
+	/**
 	 * Opens a connection to a MonetDB server.  
 	 * 
 	 * @return bool TRUE on success or FALSE on failure 
 	 */
 	
-	function monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb" ) {
+	function monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb", $hashfunc = "" ) {
 	 	$options["host"] = $host;
 		$options["port"] = $port;
 
 		$options["username"] = $username;
 		$options["password"] = $password;
-		$options["hashfunc"] = "sha1";	
+		
 		$options["database"] = $database; 
 		$options["persistent"] = FALSE;
-		
+				
 		return mapi_connect_proxy($options);
 	}
 
@@ -61,15 +65,21 @@
 	 * @return bool TRUE on success or FALSE on failure 
 	 */
 	
-	function monetdb_pconnect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb" ) {
+	function monetdb_pconnect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb", $hashfunc = "", $lang = "sql") {
 	 	$options["host"] = $host;
 		$options["port"] = $port;
 
 		$options["username"] = $username;
 		$options["password"] = $password;
-		$options["hashfunc"] = "sha1";	
 		$options["database"] = $database; 
 		$options["persistent"] = TRUE;
+		
+		if ($hashfunc == "") {
+		    $hashfunc = "sha1";
+	    }
+	    
+	    $options["hashfunc"] = $hashfunc;
+        $options["lang"]     = $lang;
 		
 		return mapi_connect_proxy($options);
 	}
@@ -251,6 +261,24 @@
 		 }
 		
 		return $row_object;
+	}
+	
+	/**
+	* Returns the name of the field at position $field
+	*
+	* @param resource the query handle
+	* @param int field number
+	* @return string the field name, FALSE is an error occured.
+	*/
+	function monetdb_field_name(&$hdl, $field) {
+	    if (is_array($hdl) && $field > 0) {
+            if ($hdl["operation"] == Q_TABLE || $hdl["operation"] == Q_BLOCK ) {
+                if ($hdl["header"]["fields"] != "" ) {
+                    return $hdl["header"]["fields"][$field-1];
+                }
+		    }
+    	}	
+    	return FALSE;
 	}
 	
 	/**

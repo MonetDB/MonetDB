@@ -19,7 +19,7 @@
    *
 **/
 	
-	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 
+	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 	
 	
 	define("REPLY_SIZE", "250"); // Set the initial reply size
 	
@@ -39,6 +39,11 @@
 
 	define("PROTOCOL_v8", 8); // supported protocol(s)	
 	define("PROTOCOL_v9", 9); // supported protocol(s)
+
+	define("LANG_SQL", "sql");
+	define("LANG_XQUERY", "xquery");
+	
+	define("XQUERY_OUTPUT_SEQ", "output seq");
 	
 	define('MAX_MEROVINGIAN_ITER', 10); // Maximum number of iterations during proxied auth through merovingian
 
@@ -46,7 +51,7 @@
 
 	define('PLACEHOLDER', '?'); // Used for string escaping.
 
-//	if (date_default_timezone_get() == "") {
+
 	if (ini_get('date.timezone') == "") {
 		/*
 		* PHP was not able to determine the timezone on the machine. Default to a pre set and warn the user.
@@ -55,7 +60,6 @@
 		trigger_error("PHP was not able to determine the timezone on the machine. The default will be " . TIMEZONE, E_USER_NOTICE);
 	}
 	
-
 	/**
 	* $connection_pool contains a list of the active database connections
 	*/
@@ -65,14 +69,13 @@
 	* Stores the last error reported by the server
 	*/
 	$last_error = "";	
-	
+		
 	/**
-	* Execute a query and return the resulting handle by reference.
+	* Execute an SQL query and return the resulting handle by reference.
 	*/
 	function &mapi_execute($conn=NULL, $query) {
 		global $connection_pool;
 			
-		
 		/**
 		* Query handle
 		* 
@@ -82,7 +85,6 @@
 		* "operation" - query type
 		*
 		*/
-		$handle = array("conn" => "", "header" => array(), "query" => "", "record_set" => array(), "operation" => -1, "last_row" => 0);
 		
 		// if multiple connections are present, require the user to specify which one to use.
 		if ($conn == NULL) {
@@ -90,34 +92,42 @@
 		} else if (($socket = $conn["socket"]) == NULL) {
 			return FALSE;
 		}
-		
-		$handle["conn"] = $conn["id"];		
-		
+				
 		/* Fire the query and read back the response */
-		$buf = mapi_write($socket, format_query($query));
-		
-		
+		$buf = mapi_write($socket, format_query($query, $conn["lang"]));
 		$data = mapi_read($socket);
 		
-		if ( ($operation = mapi_store($data, $handle)) == FALSE) {
-			return FALSE;
-		}
-		
-		/* The query produced a record set */
-		if ($operation == Q_TABLE || $operation == Q_BLOCK) {
-			// fetch the whole result set
-			if ($handle["query"]["index"] < $handle["query"]["rows"]) {
-				mapi_fetch_next($socket, $handle);
-			}
-		}
+		if ( ($conn['lang'] == LANG_SQL) || ( ($conn['lang'] == LANG_XQUERY) && (defined('XQUERY_OUTPUT_SEQ')) ) ) {
+			/* We are using sql or xquery with 'outpu seq' */
 			
-		if ($handle == NULL) {
-			return FALSE;
+			$handle = array("conn" => "", "header" => array(), "query" => "", "record_set" => array(), "operation" => -1, "last_row" => 0);
+			$handle["conn"] = $conn["id"];
+			
+			if ( ($operation = mapi_store($data, $handle, $conn['lang'])) == FALSE) {
+				return FALSE;
+			}
+		
+			/* The query produced a record set */
+			if ($operation == Q_TABLE || $operation == Q_BLOCK) {
+				// fetch the whole result set
+				if ($handle["query"]["index"] < $handle["query"]["rows"]) {
+					mapi_fetch_next($conn, $handle);
+				}
+			}
+			
+			if ($handle == NULL) {
+				return FALSE;
+			}
+			
+			return $handle;
 		}
-		return $handle;
+		else if (($conn['lang'] == LANG_XQUERY) && (!defined('XQUERY_OUTPUT_SEQ'))) {
+			/* We are using xquery without 'output seq'. Return the xml file */
+			return $data;
+		}
 	}
 	
-	function mapi_fetch_next($socket, &$handle){
+	function mapi_fetch_next($conn, &$handle){
 		if ($socket == NULL){
 			return FALSE;
 		}
@@ -130,7 +140,7 @@
 			mapi_write($socket, format_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size));				
 			$data = mapi_read($socket);
 				
-			if ( ($operation = mapi_store($data, $handle)) == FALSE ) {
+			if ( ($operation = mapi_store($data, $handle, $conn['lang'])) == FALSE ) {
 				return FALSE;
 			}
 				
@@ -141,9 +151,9 @@
 		return $handle;		
 	}
 	
-	function mapi_store($data, &$handle) {	
+	function mapi_store($data, &$handle, $lang) {	
 		global $last_error;
-					
+		
 		$data = explode("\n", $data);
 		
 		$record_set = "";
@@ -153,7 +163,6 @@
 		
 		$rows = ""; // stores (partially) retrieved rows
 		foreach ($data as $row) {			
-		//	print $row;
 			if ($row[0] == MSG_QUERY) {
 				if ($row[1] == Q_TABLE) {
 					$operation = Q_TABLE;
@@ -181,7 +190,7 @@
 				$rows = $rows . $row;
 			} else if ($row[0] == MSG_PROMPT) {
 				// receive all the tuples
-				$record_set = php_parse_tuples($rows);
+				$record_set = php_parse_tuples($rows, $lang);
 				$rows = "";
 			} else if ($row[0] == MSG_INFO) {
 				$last_error = $row;
@@ -204,7 +213,7 @@
 	}
 	
 	
-	function php_parse_tuples($rows) {
+	function php_parse_tuples($rows, $lang) {
 		$parsed_rows = "";
 	
 		$rows = rtrim($rows, "\t]");	
@@ -218,7 +227,11 @@
 				/* strip left/right \" chars and right ',' */
 				$field = rtrim($field, ",");
 				$field = rtrim($field, "\"");
-				$field = ltrim($field, "\"");
+				if ($lang == LANG_SQL) {
+					$field = ltrim($field, "\"");
+				} else if (($lang == LANG_XQUERY) && (defined('XQUERY_OUTPUT_SEQ'))) {
+					$field = ltrim($field, " \"");
+				}
 			}
 			$parsed_rows[] = $row;
 		}
@@ -268,7 +281,9 @@
 		$hash 	= $options["hashfunc"];
 		$dbname = $options["database"];
 		
-		# get server challenge
+		$lang 	= $options["lang"];
+		
+		// get server challenge
 		$challenge = mapi_read($socket);				
 
 		/*
@@ -283,12 +298,13 @@
 		
 		*/
 		$credentials = split(":", $challenge);
+		$algos = explode(',', $credentials[3]);
+		
 		
 		// $challenge[0] contains the salt
-		
 		if ($credentials[2] == PROTOCOL_v8 ){
 			// Protocol v8 supported only for legacy/testing reasons
-			mapi_authenticate_v8($socket, $user, $passwd, $hash, $credentials[0], $dbname);
+ 			mapi_authenticate_v8($socket, $user, $passwd, $hash, $algos, $credentials[0], $dbname, $lang);
 		} else if ($credentials[2] == PROTOCOL_v9) {
 			// $credentials[5] contains pwhash
 			mapi_authenticate_v9($socket, $user, $passwd, $hash, $credentials[0], $dbname, $credentials[5]);			
@@ -298,26 +314,33 @@
 		}
 		
 		$response = mapi_read($socket);
-		
+				
 		if ($response != MSG_PROMPT) { 
 		// not ready to authenticate yet
+		
 			if ($response[0] == MSG_REDIRECT) {		
 				if ($credentials[1] == "merovingian") {
 					if ($merovingian_iter < MAX_MEROVINGIAN_ITER) {
 						$merovingian_iter++;
-						mapi_connect($socket, $options, $merovingian_iter);
+						if (mapi_connect($socket, $options, $merovingian_iter) == FALSE) {
+							return FALSE;
+						}
 					} else {
 						$last_error = "Maximum number of merovingian iterations exceeded during authentication\n";
 						return FALSE;
 					}
 				}
 				else if ($credentials[1] == "mserver") {
+					
 					mapi_close($socket);
-					mapi_connect(mapi_open(), $options);
+					if (mapi_connect(mapi_open(), $options) == FALSE) {
+						return FALSE;
+					}
 				}
 				
 			} else if ($response[0] == MSG_INFO) {
 				$last_error = $response;
+				// socket_close($socket); // abort the connection
 				return FALSE;
 			}
 		}
@@ -325,24 +348,38 @@
 		return TRUE;
 	}
 	
-		
-	function mapi_authenticate_v8($socket, $user, $passwd, $hash, $salt, $dbname) {
+	/* 
+	* Protocol 8 is supported to speak to merovingian and m4 which support only 'plain' as and auth method.
+	* Hash methods have to be lowercase.
+	*/
+	function mapi_authenticate_v8($socket, $user, $passwd, $hash, $algos, $salt, $dbname, $lang) {
+		global $last_error;
 		$auth_string = "";
-		
+
+		if ( (is_array($algos) && (! in_array(strtolower($hash), $algos)) )  ) 			 {			
+			// We are connection to m4 or merovingian
+			$hash = 'plain'; // force auth only in plain mode.
+		}
+			
 		if (strtolower($hash) != "plain") {
 			$hashsum = hash(strtolower($hash), $passwd . $salt);
 		} else {
 			$hashsum = $passwd+$salt;
 		}
 		
-		$auth_string = "BIG:" . $user . ":{" . strtoupper($hash) . "}" . $hashsum . ":sql:" . $dbname . ":";
-		
+		$auth_string = "BIG:" . $user . ":{" . strtolower($hash) . "}" . $hashsum . ":" . $lang .":" . $dbname . ":";
+
 		mapi_write($socket, $auth_string);
 	}
 
+	/* Hash function names have to be uppercase */
 	function mapi_authenticate_v9($socket, $user, $passwd, $hash, $salt, $dbname, $pwhash) {
 		$auth_string = "";
-	
+		if ( (is_array($algos) && (! in_array(strtoupper($hash), $algos)) )  ) 			 {			
+			$last_error = "Hash function " . $hash . " not supported";
+			return FALSE;
+		}
+		
 		$pwhashsum = hash(strtolower($pwhash), $passwd);
 		$hashsum   = hash(strtolower($hash), $pwhashsum . $salt);
 		
@@ -421,8 +458,8 @@
 				
 		$query = "SET TIME ZONE INTERVAL " . $tz_offset . " HOUR TO MINUTE";
 	
-		$buf = mapi_write($socket, format_query($query));
-					
+		$buf = mapi_write($socket, format_query($query, LANG_SQL)); // set_timezone is called only when connecting to an sql db
+		
 		$response = mapi_read($socket);
 		
 		if ($response == "") { 
@@ -435,13 +472,14 @@
 	}
 	
 	function format_command($cmd) {
-		return "X" . $cmd . "\nX";
+		return "X" . $cmd;
 	}
 	
 	
 	function mapi_connect_proxy($options) {
 		global $last_error;
 		global $connection_pool;
+		global $pconnect_count;
 		
 		$merovingian_iter = 0;
 		
@@ -454,6 +492,7 @@
 		$dbname = $options["database"];
 		
 		$persistent = $options["persistent"];
+		$lang = $options["lang"];
 		
 		/**
 		  * First, when connecting, the function would first try to find a (persistent) link that's already 
@@ -470,33 +509,47 @@
 			}
 		}
 		
-		
 		$socket	= mapi_open();
 		if (socket_connect($socket, $host, $port) == FALSE) {
 			$last_error = socket_strerror(socket_last_error());
 			return FALSE;
 		}
 		
-		if ( ($connected = mapi_connect($socket, $options, $merovingian_iter)) == TRUE ) {
+
+		if ( mapi_connect($socket, $options, $merovingian_iter) == TRUE ) {
 			/* Connected */
-			set_timezone($socket); // set the timezone according to the system's configuration
 			
-			// export the reply size (max number of tuples returned at query executions)
-			mapi_write($socket, format_command("reply_size " . REPLY_SIZE));		
-			if (strlen($response = mapi_read($socket)) > 0 ) {
-				// something went wrong 
-				$last_error = $response;
+			// Create a new connection instance and insert an entry in the connections table
+			$id = mapi_generate_id();
+			if ($lang == LANG_SQL) {
+				
+				set_timezone($socket); // set the timezone according to the system's configuration
+				
+				// export the reply size (max number of tuples returned at query executions)
+				mapi_write($socket, format_command("reply_size " . REPLY_SIZE));		
+				if (strlen($response = mapi_read($socket)) > 0 ) {
+					// something went wrong 
+					$last_error = $response;
+					return FALSE;
+				}
+			} else if (($lang == LANG_XQUERY) && (defined('XQUERY_OUTPUT_SEQ'))) {
+				$buf = mapi_write($socket, format_command("output seq"));
+				if ( ($response = mapi_read($socket)) != MSG_PROMPT) {
+					$last_error = $response;
+					return FALSE;
+				}
+			} else {
 				return FALSE;
 			}
 		} else {
+			socket_close($socket);			
 			return FALSE;
 		}
+
+		$connection = array("id" => $id, "socket" => $socket, "host" => $options["host"], "port" => $options["port"], "dbname" => $dbname, "username" => $options["username"], "password" => hash("sha1", $options["password"]), "transactions" => array(), "persistent" => $options["persistent"], "lang" => $lang);
 		
-		// Create a new connection instance and insert an entry in the connections table
-		$id = mapi_generate_id();
-		$connection = array("id" => $id, "socket" => $socket, "host" => $options["host"], "port" => $options["port"], "dbname" => $dbname, "username" => $options["username"], "password" => hash("sha1", $options["password"]), "transactions" => array(), "persistent" => $options["persistent"]) ;
 		$connection_pool[] = $connection;
-		
+				
 		return $connection;
 	}
 	
@@ -644,8 +697,15 @@
 	}
 	
 	
-	function format_query($query) {
-		return "s" . $query . ";";
+	function format_query($query, $lang) {
+		if ($lang == LANG_SQL) {
+
+			return "s" . $query . ";";
+		}
+		else if ($lang == LANG_XQUERY) {
+			return "s" . $query;
+		}
+		return FALSE;
 	}
 	
 	/* Write data through a socket; make sure that the buffer is actually flushed */
@@ -658,8 +718,8 @@
 		}
 		
 		while ( ($bytes - $buf) > 0 ) {
-			$buf += socket_write($socket, substr($data, $buf, $bytes), $bytes - $buf);
-			
+			$buf += socket_write($socket, substr($data, $buf, $bytes), $bytes - $buf);			
+
 			if ($buf == FALSE) {
 				return FALSE;
 			}
