@@ -397,7 +397,7 @@ monet_hello(stream *out)
 	if (GDKgetenv_isyes("monet_welcome")) {
 		size_t sz_mem_b = MT_npages() * MT_pagesize();
 		dbl    sz_mem_h = (dbl) sz_mem_b;
-		char  *qc = " KMGTPE";
+		char  *qc = " kMGTPE";
 		int    qi = 0;
 
 		while (sz_mem_h >= 1000.0 && qi < 6) {
@@ -415,7 +415,7 @@ monet_hello(stream *out)
 			      "All rights reserved.\n");
 		stream_printf(out, "# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
 		                   monet_arch, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
-		stream_printf(out, "# Detected %.3f %cB (" SZFMT " bytes) main-memory.\n", 
+		stream_printf(out, "# Detected %.3f %ciB (" SZFMT " bytes) main-memory.\n", 
 		                   sz_mem_h, qc[qi], sz_mem_b);
 		stream_printf(out, "# Visit http://monetdb.cwi.nl/ for further information.\n");
 	}
