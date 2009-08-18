@@ -1615,8 +1615,10 @@ to the operators.
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
 				stk->stk[getArg(pci,i)].val.bval ){
 			b= BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-			if( b == NULL)
+			if( b == NULL){
+				ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
 				continue;
+			}
 			if( b->batStamp <= stamp){
 				if( GDKdebug & 8)
 					@:batpropcheck(b)@
@@ -1624,9 +1626,6 @@ to the operators.
 				if( GDKdebug & 2)
 					@:batpropcheck(b)@
 			BBPunfix(b->batCacheid);
-			if( cntxt->errbuf && cntxt->errbuf[0]) {
-				ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
-			}
 		}
 	}
 #endif
