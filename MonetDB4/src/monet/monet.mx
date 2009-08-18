@@ -396,7 +396,7 @@ monet_hello(stream *out)
 
 	if (GDKgetenv_isyes("monet_welcome")) {
 		size_t sz_mem_b = MT_npages() * MT_pagesize();
-		dbl    sz_mem_h = sz_mem_b;
+		dbl    sz_mem_h = (dbl) sz_mem_b;
 		char  *qc = " KMGTPE";
 		int    qi = 0;
 
