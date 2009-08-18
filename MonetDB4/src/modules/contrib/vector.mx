@@ -22,7 +22,7 @@
 
 @* Introduction
 The module defines some basic operations for a multidimensional vector type
-for int, flt, or dbl and their fixed size counterparts for int_64 and dbl_32. 
+for int, flt, or dbl and their fixed size counterparts for int_63 and dbl_31. 
 
 Variable sized atoms are called:
 \begin{itemize}
@@ -33,8 +33,8 @@ Variable sized atoms are called:
 
 The following fixed size vectors are predefined:
 \begin{itemize}
-\item dbl_vector32, vector of 32 doubles
-\item int_vector64, vector of 64 ints
+\item dbl_vector31, vector of 31 doubles
+\item int_vector63, vector of 63 ints
 \end{itemize}
 More fixed sized types can easily be defined, but are not currently defined
 because we do not need them at this moment...
@@ -295,11 +295,16 @@ drand48(void)
 
 @= varsized_h
 typedef struct {
-    int dimension;
+    union {
+	int dim;
+	@1 dummy;
+    } d;
     @1 data[1];
 } @1s;
 
 @1s* @1screate(int dim);
+@h
+#define dimension d.dim
 @
 
 @= fixedsize_h
@@ -1310,8 +1315,8 @@ dblv.print();
 @:varsized_m(flt)@
 @:varsized_m(dbl)@
 
-@:fixedsize_m(dbl,32,264)@
-@:fixedsize_m(int,64,260)@
+@:fixedsize_m(dbl,31,256)@
+@:fixedsize_m(int,63,256)@
 
 @:varsized_convert_m(int,flt)@
 @:varsized_convert_m(int,dbl)@
@@ -1324,19 +1329,19 @@ dblv.print();
 @:varsized_normalize_m(flt,flt)@
 @:varsized_normalize_m(dbl,dbl)@
 
-@:fixedsize_normalize_m(dbl,dbl,32)@
+@:fixedsize_normalize_m(dbl,dbl,31)@
 
 @:varsized_twonormdiff_m(int,flt)@
 @:varsized_twonormdiff_m(flt,flt)@
 @:varsized_twonormdiff_m(dbl,dbl)@
 
-@:fixedsize_twonormdiff_m(dbl,dbl,32)@
+@:fixedsize_twonormdiff_m(dbl,dbl,31)@
 
 @:varsized_meanvector_m(int,flt)@
 @:varsized_meanvector_m(flt,flt)@
 @:varsized_meanvector_m(dbl,dbl)@
 
-@:fixedsize_meanvector_m(dbl,dbl,32)@
+@:fixedsize_meanvector_m(dbl,dbl,31)@
 
 @:varsized_aggregate_m(int,max)@
 @:varsized_aggregate_m(int,min)@
@@ -1345,17 +1350,17 @@ dblv.print();
 @:varsized_aggregate_m(dbl,max)@
 @:varsized_aggregate_m(dbl,min)@
 
-@:fixedsize_aggregate_m(dbl,32,max)@
-@:fixedsize_aggregate_m(dbl,32,min)@
-@:fixedsize_aggregate_m(int,64,max)@
-@:fixedsize_aggregate_m(int,64,min)@
+@:fixedsize_aggregate_m(dbl,31,max)@
+@:fixedsize_aggregate_m(dbl,31,min)@
+@:fixedsize_aggregate_m(int,63,max)@
+@:fixedsize_aggregate_m(int,63,min)@
 
 @:varsized_operators_m(int)@
 @:varsized_operators_m(flt)@
 @:varsized_operators_m(dbl)@
 
-@:fixedsize_operators_m(dbl,32)@
-@:fixedsize_operators_m(int,64)@
+@:fixedsize_operators_m(dbl,31)@
+@:fixedsize_operators_m(int,63)@
 
 .END vector;
 
@@ -1364,8 +1369,8 @@ dblv.print();
 @:varsized_h(flt)@
 @:varsized_h(dbl)@
 
-@:fixedsize_h(dbl,32)@
-@:fixedsize_h(int,64)@
+@:fixedsize_h(dbl,31)@
+@:fixedsize_h(int,63)@
 
 #endif
 
@@ -1374,8 +1379,8 @@ dblv.print();
 @:varsized_c(flt,get_double,%f,d,8,int)@
 @:varsized_c(dbl,get_double,%f,d,8,lng)@
 
-@:fixedsize_c(dbl,32,264,get_double,%f,d,8,lng)@
-@:fixedsize_c(int,64,260,get_long,%d,m,4,int)@
+@:fixedsize_c(dbl,31,256,get_double,%f,d,8,lng)@
+@:fixedsize_c(int,63,256,get_long,%d,m,4,int)@
 
 @:varsized_convert_c(int,flt,/**/)@
 @:varsized_convert_c(int,dbl,/**/)@
@@ -1388,19 +1393,19 @@ dblv.print();
 @:varsized_normalize_c(flt,flt)@
 @:varsized_normalize_c(dbl,dbl)@
 
-@:fixedsize_normalize_c(dbl,dbl,32)@
+@:fixedsize_normalize_c(dbl,dbl,31)@
 
 @:varsized_twonormdiff_c(int,flt)@
 @:varsized_twonormdiff_c(flt,flt)@
 @:varsized_twonormdiff_c(dbl,dbl)@
 
-@:fixedsize_twonormdiff_c(dbl,dbl,32)@
+@:fixedsize_twonormdiff_c(dbl,dbl,31)@
 
 @:varsized_meanvector_c(int,flt)@
 @:varsized_meanvector_c(flt,flt)@
 @:varsized_meanvector_c(dbl,dbl)@
 
-@:fixedsize_meanvector_c(dbl,dbl,32)@
+@:fixedsize_meanvector_c(dbl,dbl,31)@
 
 @:varsized_aggregate_c(int,max,MAX)@
 @:varsized_aggregate_c(int,min,MIN)@
@@ -1409,17 +1414,17 @@ dblv.print();
 @:varsized_aggregate_c(dbl,max,MAX)@
 @:varsized_aggregate_c(dbl,min,MIN)@
 
-@:fixedsize_aggregate_c(dbl,32,max,MAX)@
-@:fixedsize_aggregate_c(dbl,32,min,MIN)@
-@:fixedsize_aggregate_c(int,64,max,MAX)@
-@:fixedsize_aggregate_c(int,64,min,MIN)@
+@:fixedsize_aggregate_c(dbl,31,max,MAX)@
+@:fixedsize_aggregate_c(dbl,31,min,MIN)@
+@:fixedsize_aggregate_c(int,63,max,MAX)@
+@:fixedsize_aggregate_c(int,63,min,MIN)@
 
 @:varsized_operators_c(int)@
 @:varsized_operators_c(flt)@
 @:varsized_operators_c(dbl)@
 
-@:fixedsize_operators_c(dbl,32)@
-@:fixedsize_operators_c(int,64)@
+@:fixedsize_operators_c(dbl,31)@
+@:fixedsize_operators_c(int,63)@
 
 @mil
 PROC test_vector() : void {   
