@@ -203,7 +203,6 @@ delta_update_bat( sql_delta *bat, BAT *upd, int is_new)
 		}
 		BATkey(b, BOUND2BTRUE);
 		BATins(b, u, TRUE);
-		BATreplace(b, u, TRUE);
 		if (upd != u)
 			bat_destroy(u);
 	} else if (is_new && bat->bid) { 
@@ -248,7 +247,6 @@ delta_update_val( sql_delta *bat, oid rid, void *upd)
 		}
 		BATkey(b, BOUND2BTRUE);
 		BUNins(b, (ptr) &rid, upd, TRUE);
-		BUNreplace(b, (ptr) &rid, upd, TRUE);
 	} else {
 		b = temp_descriptor(bat->ibid);
 		void_inplace(b, rid, upd, TRUE);
