@@ -135,15 +135,14 @@ CMDifThen_@1(int *ret, int *bid, int *tid)
 	BATloop(b, p, q) {
 		if (*t == bit_nil) {
 			BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);
-			bn->T->nonil = 0;
 		} else if (*t) {
 			val = (@1*) BUNtail(tbi,p);
 			BUNfastins(bn, BUNhead(bi,p), val);
 		}
 		t++;
 	}
-	BBPreleaseref(tb->batCacheid);
 	bn->T->nonil = (b->T->nonil && tb->T->nonil);
+	BBPreleaseref(tb->batCacheid);
 	@:wrapup@
 }
 
@@ -358,7 +357,11 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 			BUNfastins(bn, BUNhead(bi,p), (ptr) eid);
 		t++;
 	}
+#if @2
+	bn->T->nonil = (b->T->nonil && strcmp((@1)tid,nilval) != 0 && strcmp((@1)eid,nilval) != 0);
+#else
 	bn->T->nonil = (b->T->nonil && *tid != nilval && *eid != nilval);
+#endif
 	@:wrapup@
 }
 
@@ -440,7 +443,11 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 			BUNfastins(bn, BUNhead(bi,p), BUNtail(ebi, p));
 		t++;
 	}
+#if @2
+	bn->T->nonil = (b->T->nonil && eb->T->nonil && strcmp((@1)val,nilval) != 0);
+#else
 	bn->T->nonil = (b->T->nonil && eb->T->nonil && *val != nilval);
+#endif
 	BBPreleaseref(eb->batCacheid);
 	@:wrapup@
 }
@@ -480,7 +487,11 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 			BUNfastins(bn, BUNhead(bi,p), val);
 		t++;
 	}
+#if @2
+	bn->T->nonil = (b->T->nonil && tb->T->nonil && strcmp((@1)val,nilval) != 0);
+#else
 	bn->T->nonil = (b->T->nonil && tb->T->nonil && *val != nilval);
+#endif
 	BBPreleaseref(tb->batCacheid);
 	@:wrapup@
 }
