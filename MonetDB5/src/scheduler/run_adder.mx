@@ -107,7 +107,7 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int size;
 	int i,pc;
 	InstrPtr q, *old;
-	int oldtop, slimit;
+	int oldtop;
 
 	(void) cntxt;
 	pc = getPC(mb,p);
@@ -117,7 +117,6 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	old = mb->stmt;
 	oldtop= mb->stop;
-	slimit = mb->ssize;
 	size = ((mb->stop+batch) < mb->ssize)? mb->ssize:(mb->stop+batch);
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
 	mb->ssize = size;
