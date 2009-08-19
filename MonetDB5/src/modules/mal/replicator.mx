@@ -19,16 +19,19 @@
 @a Martin Kersten
 @v 1.0
 @+ Database replication
-The replicator module supports distribution of the SQL databases
-over multiple sites using a simple master slave protocol with
-MAL-based update log.
+The replication module supports distribution of updates over SQL databases
+at multiple sites using a simple master-slave protocol with
+a MAL-based update log.
 
-The replicator assumes that both database instances
-have the same catalog information.
+The replicator assumes that both database instances have the same catalog 
+information.
 There is no automatic propagation of CREATE, DROP, nor ALTER statements. 
 
-The operations are executed in the same order as on the mastersite,
-which should lead to the same transactional behavior.
+The operations are executed in the serial order as on the master,
+which should lead to the same optimistic transactional behavior.
+All queries are considered running in auto-commit mode, because
+the SQL frontend does not provide the hook for better transaction
+boundary control.
 
 The lean and mean replication scheme implementation works as follows.
 The query plan is extended by the optimizer to initiate calls to build
@@ -36,71 +39,93 @@ a replicator log file as follows.
 
 @verbatim
 function query():void
-  tag:= replicator.open();
+  tag:= master.open();
   ...
   sql.append("schema","table","col",b:[:oid,:int]);
-  replicator.append("schema","table","col",b,tag);
+  master.append("schema","table","col",b,tag);
   ...
-  replicator.close(tag);
+  master.close(tag);
 end query;
 @end verbatim
 
-At runtime this leads to a file "dbfarm/db/replicas/tag_%d" with the following
+At runtime this leads to buffers filled with the statements
+required at the slave. They are stored in 
+a file "dbfarm/db/master/tag_%d" with the following
 structure:
 @verbatim
-  replicator.open(tag);
-  b := bat.new(:oid,:int);
+function slave.tag0();
+  slave.open(tag,"2009-08-16 18:57:58.000":timestamp);
+  tag0_b := bat.new(:oid,:int);
   ...
-  bat.insert(3:oid,232:int); #example update
+  bat.insert(tag0_b,3:oid,232:int); #example update
   ...
-  replicator.append("schema","table","col",b,tag);
-  replicator.close(tag,closingtag);
+  sql.append("schema","table","col",tag0_b,tag);
+  slave.close(tag,"2009-08-16 18:57:58.000":timestamp);
+  tag0_b:= nil;
+end tag0;
+slave.tag0();
 @end verbatim
 
-The logs are replayed using a separated thread.
-It takes the tagged instructions and runs them in serial mode
-against the server. The commit is ordered by closing tag
-to ensure the same transactional behavior as on the master.
+Each query block is stored in its own buffer and sent at
+the end of the query block. This separates the concurrent 
+actions on the database and leads to a serial
+execution of the replication operations within the slave.
+Moreover, by using functions we isolate possible exceptions.
 
-A replay log is kept with the replicator.close statements
-to monitor which has been re-run. This can be used to
-automatically roll forward any newly arriving replicator file.
+A slave processes all the logs it finds in the dbfarm/<db>/slave
+directory. After it has been rolled forward, it contacts
+the master to sent the logs as of the last tag seen.
+The slave needs to keep the replay tag in a persistent place.
 
 Some work is needed to handle possible errors during replay.
+Remains that we also have to drop the tag() functions
+Moreover, we might postpone text generation to the closing
+statement.
 @mal
-module replicator;
+module master;
 
 command open():int
-address REPopen2
+address MASTERopen
 comment "Create a replication record";
 
-command open(tag:int):int
-address REPopen
-comment "Mark the start of a replication record";
-
 command close(tag:int):void
-address REPclose
-comment "Replication record is finished";
-
-command close(tag:int, ctag:int):void
-address REPclose2
-comment "Replication record period";
-
-command replay():void
-address REPreplay
-comment "Start the replication log replayer thread";
+address MASTERclose
+comment "Close the replication record";
 
 pattern append(s:str, t:str, c:str, :any_1, tag:int):void
-address REPappend
+address MASTERappend
 comment "Dump the scalar on the MAL log");
 
 pattern append(s:str, t:str, c:str, b:bat[:oid,:any_1], tag:int):void
-address REPappend
+address MASTERappend
 comment "Dump the BAT on the MAL log");
 
 pattern delete(s:str, t:str, b:bat[:oid,:any_1], tag:int):void
-address REPbatdelete
+address MASTERdelete
 comment "Dump the BAT with deletions on the MAL log");
+
+command replay(uri:str, usr:str, pw:str, tag:int):void
+address MASTERreplay
+comment "Start the replication log replayer thread feeding
+the client with the necessary log records";
+
+module slave;
+
+command open(tag:int,d:timestamp)
+address SLVopen
+comment "Mark the start of a replication record";
+
+command close(tag:int, d:timestamp)
+address SLVclose
+comment "End of replication record";
+
+command replay(uri:str, user:str, passwd:str,  tag:int):void
+address SLVreplay
+comment "Start the replication log replayer thread";
+
+command drop(tag:str)
+address SLVdrop
+comment "Remove the tag function from the module";
 @-
 @{
 @+ Implementation code 
@@ -112,6 +137,7 @@ comment "Dump the BAT with deletions on the MAL log");
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
+#include "mtime.h"
 
 #define _DEBUG_REPLICATOR_
 
@@ -125,13 +151,18 @@ comment "Dump the BAT with deletions on the MAL log");
 #define replicator_export extern
 #endif
 
-replicator_export str REPopen(int *ret);
-replicator_export str REPopen2(int *ret, int *tag);
-replicator_export str REPclose(int *ret, int *tag);
-replicator_export str REPclose2(int *ret, int *tag, int *ctag);
-replicator_export str REPreplay(int *ret);
-replicator_export str REPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replicator_export str REPdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replicator_export str MASTERopen(int *ret);
+replicator_export str MASTERclose(int *ret, int *tag);
+replicator_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replicator_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replicator_export str MASTERreplay(int *ret, str *uri, str *usr, str *pw, int *tag);
+
+replicator_export str SLVopen(int *ret, int *tag, timestamp *t);
+replicator_export str SLVclose(int *ret, int *tag, timestamp *t);
+replicator_export str SLVappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replicator_export str SLVdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replicator_export str SLVreplay(int *ret, str *uri, str *usr, str *pw, int *tag);
+replicator_export str SLVdrop(int *ret, str *tag);
 #endif /* _REPLICATOR_H */
 @c
 #include "mal_config.h"
@@ -140,58 +171,135 @@ replicator_export str REPdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 @-
 The start of the query is marked with a replica tag.
+It also designates the local buffer to collect the update
+requests before they are shipped to the log.
 The tag is returned for marking all related updates.
 The final code should contain a loop to determine the last replicator tag.
 @c
-#define REPLICAS "replicator"
-#define REPLICA "/tag_%d"
+#define MASTER "master"
+#define SLV "slave"
+#define REPLICA "/log_%d"
 #define GRANULE 1000
 
 static MT_Lock repLck;
 static int repTag;
 static stream *repFile;
-static stream *logFile;
 
-str REPopen(int *ret){
+static struct MASTERRECORD{
+	char *buf;
+	int limit, top;
+	int tag;
+} *master;
+static int mtop = 0 , mlimit = 0;
+
+static int MASTERgetBuffer(int tag){
+	int i;
+
+	for ( i = 0; i < mtop ; i++)
+	if ( master[i].tag == tag)
+		return i;
+	for ( i = 0; i < mlimit ; i++)
+	if ( master[i].tag == 0)
+		break;
+	if ( i == 0){
+		master = GDKzalloc(sizeof(struct MASTERRECORD) * (mlimit +32));
+		mlimit = 32;
+	} else
+	if ( i == mlimit){
+		master = GDKrealloc(master, sizeof(struct MASTERRECORD) * (mlimit +32));
+		mlimit += 32;
+	}
+	mtop = i >= mtop ? i+1: mtop;
+	if ( master[i].buf == 0){
+		master[i].buf = (char*) GDKzalloc(2*1024);
+		master[i].limit = 2*1024;
+		master[i].top = 0;
+	}
+	master[i].tag = tag;
+	return i;
+}
+
+str MASTERopen(int *ret){
 	char buf[BUFSIZ];
+	FILE *fp = 0;
+	timestamp stamp;
+	str val=0;
+	int i,l,len;
 	
 	if ( repTag == 0)
 		MT_lock_init(&repLck,"replicator");
 	mal_set_lock(repLck,"replicator");
 	if ( repFile == NULL){
-		mkdir(REPLICAS,0755); /* ensure existance of the replica pool */
+		mkdir(MASTER,0755); /* ensure existance of the replica pool */
 		if ( repTag == 0){
 			/* find the last one already in the pool, using the GRANULE */
 			do {
-				if (repFile) {
+				if (fp) {
 					repTag += GRANULE;
-					close_stream(repFile);
+					fclose(fp);
 				}
-				snprintf(buf, BUFSIZ, REPLICAS REPLICA, repTag);
-				repFile = open_rastream(buf);
-			} while (repFile);
+				snprintf(buf, BUFSIZ, MASTER REPLICA, repTag);
+				fp = fopen(buf,"r");
+			} while (fp);
 		}
-		snprintf(buf, BUFSIZ, REPLICAS REPLICA, repTag);
+		snprintf(buf, BUFSIZ, MASTER REPLICA, repTag);
 		repFile = open_wastream(buf);
 		if ( repFile == NULL || stream_errnr(repFile) ){
 			mal_unset_lock(repLck,RUNTIME_STREAM_FAILED);
-			throw(MAL,"replicator.start",RUNTIME_STREAM_FAILED);
+			throw(MAL,"master.start",RUNTIME_STREAM_FAILED);
 		}
 	}
-	/* prepare the MAL redo file */
-	stream_printf(repFile,"replicator.open(%d);\n",repTag);
+	/* get a replica buffer */
 	repTag++;
+	i = MASTERgetBuffer(repTag);
+	/* prepare the MAL redo record */
+	MTIMEepoch(&stamp);
+	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
+	len = master[i].limit - master[i].top -1;
+	while ( (l = snprintf(master[i].buf + master[i].top, len ,
+			"function slave.tag_%d();\nslave.open(%d,\"%s\":timestamp);\n",repTag,repTag,val)) == len){
+		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if ( master[i].buf == NULL)
+			throw(MAL,"replicator.open",MAL_MALLOC_FAIL);
+		master[i].limit += 1024;
+		len = master[i].limit - master[i].top -1;
+	}
+	master[i].top += l;
+	master[i].buf[master[i].top] = 0;
 	mal_unset_lock(repLck,RUNTIME_STREAM_FAILED);
 
-	*ret = repTag - 1;
+	*ret = repTag ;
 	return MAL_SUCCEED;
 }
 
-str REPclose(int *ret, int *tag){
+str MASTERclose(int *ret, int *tag){
+	timestamp stamp;
+	str val=0;
+	int i,l,len;
+	char buf[BUFSIZ];
+
 	(void) ret;
+	i = MASTERgetBuffer(*tag);
 	mal_set_lock(repLck,"replicator");
-	stream_printf(repFile,"replicator.close(%d,%d);\n",*tag, repTag);
+	MTIMEepoch(&stamp);
+	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
+	snprintf(buf,BUFSIZ,"tag_%d",*tag);
+	len = master[i].limit - master[i].top -1;
+	while ( (l = snprintf(master[i].buf + master[i].top, len, 
+		"slave.close(%d,\"%s\":timestamp);\nend tag_%d;\nslave.tag_%d();\nslave.drop(\"%s\");\n",
+		*tag,val,*tag,*tag,buf)) == len){
+		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if ( master[i].buf == NULL)
+			throw(MAL,"replicator.close",MAL_MALLOC_FAIL);
+	}
+	master[i].top += l;
+	master[i].buf[master[i].top] = 0;
+	GDKfree(val);
+	stream_printf(repFile,"%s", master[i].buf);
 	stream_flush(repFile);
+	master[i].buf[0]=0;
+	master[i].top = 0;
+	master[i].top = 0;
 	if ( stream_errnr(repFile) ){
 		mal_unset_lock(repLck,"replicator");
 		throw(MAL,"replicator.close",RUNTIME_STREAM_FAILED);
@@ -204,41 +312,72 @@ str REPclose(int *ret, int *tag){
 	return MAL_SUCCEED;
 }
 
-static void
-REPdump( BAT *b, str buf, int type){
+static str
+MASTERdump( BAT *b, str buf, int type, int tag){
 	BATiter bi;
 	BUN p,q;
-	char *headv, *tailv;
+	char *headv = 0, *tailv= 0;
 	str head = getTypeName(getHeadType(type));
 	str tail = getTypeName(getTailType(type));
+	int i, l, len;
 	
+	i = MASTERgetBuffer(tag);
 	bi = bat_iterator(b);
 	BATloop(b,p,q){
 		ATOMformat(getHeadType(type), BUNhead(bi, p), &headv);
 		ATOMformat(getTailType(type), BUNtail(bi, p), &tailv);
+		len = master[i].limit - master[i].top -1;
 		if ( getTailType(type) <=TYPE_str &&
-			getHeadType(type) <= TYPE_str)
-			snprintf(buf, BUFSIZ, "bat.insert(%s, %s:%s, %s:%s);",
-				buf, headv, head, tailv, tail);
-		else
+			getHeadType(type) <= TYPE_str) {
+			while ( (l = snprintf(master[i].buf + master[i].top, len ,"bat.insert(%s, %s:%s, %s:%s);\n",
+						buf, headv, head, tailv, tail)) == len){
+				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+				if ( master[i].buf == NULL)
+					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
+				master[i].limit += 1024;
+				len = master[i].limit - master[i].top -1;
+			}
+		} else
 		if ( getTailType(type) >TYPE_str  &&
-			getHeadType(type) > TYPE_str)
-			snprintf(buf, BUFSIZ, "bat.insert(%s, \"%s\":%s, \"%s\":%s);",
-				buf, headv, head, tailv, tail);
-		else
-		if ( getTailType(type) >TYPE_str )
-			snprintf(buf, BUFSIZ, "bat.insert(%s, %s:%s, \"%s\":%s);",
-				buf, headv, head, tailv, tail);
-		else
-			snprintf(buf, BUFSIZ, "bat.insert(%s, \"%s\":%s, %s:%s);",
-				buf, headv, head, tailv, tail);
+			getHeadType(type) > TYPE_str) {
+			while ( (l = snprintf(master[i].buf + master[i].top, len , "bat.insert(%s, \"%s\":%s, \"%s\":%s);\n",
+						buf, headv, head, tailv, tail)) == len){
+				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+				if ( master[i].buf == NULL)
+					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
+				master[i].limit += 1024;
+				len = master[i].limit - master[i].top -1;
+			}
+		} else
+		if ( getTailType(type) >TYPE_str ) {
+			while ( (l = snprintf(master[i].buf + master[i].top, len , "bat.insert(%s, %s:%s, \"%s\":%s);\n",
+						buf, headv, head, tailv, tail)) == len){
+				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+				if ( master[i].buf == NULL)
+					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
+				master[i].limit += 1024;
+				len = master[i].limit - master[i].top -1;
+			}
+		} else{
+			while ( (l = snprintf(master[i].buf + master[i].top, len , "bat.insert(%s, \"%s\":%s, %s:%s);\n",
+						buf, headv, head, tailv, tail)) == len){
+				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+				if ( master[i].buf == NULL)
+					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
+				master[i].limit += 1024;
+				len = master[i].limit - master[i].top -1;
+			}
+		}
+		master[i].top += l;
+		master[i].buf[master[i].top] = 0;
 	}
 	GDKfree(tail);
 	GDKfree(head);
+	return MAL_SUCCEED;
 }
 
 str
-REPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *schema = (str*) getArgReference(stk,pci,1);
 	str *table = (str*) getArgReference(stk,pci,2);
 	str *col = (str*) getArgReference(stk,pci,3);
@@ -249,10 +388,10 @@ REPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int type = getArgType(mb, pci, 4);
 	str head = getTypeName(getHeadType(type));
 	str tail = getTypeName(getTailType(type));
+	int i, l, len;
+	str msg;
 
 #ifdef _DEBUG_REPLICATOR_
-	stream_printf(cntxt->fdout,"#sync %s.%s.%s\n",*schema, *table, *col);
-#else
 	(void) cntxt;
 #endif
 	if ( repFile == NULL)
@@ -260,33 +399,59 @@ REPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	b = BATdescriptor(*bid);
 	if ( b == NULL)
 		throw(MAL,"replicator.append", RUNTIME_OBJECT_MISSING);
+
+	i = MASTERgetBuffer(tag);
 	/* create the temporary bat */
-	snprintf(buf,BUFSIZ,"tag%d_%s_%s_%s:= bat.new(:%s,:%s);\n", tag, *schema, *table, *col, head, tail);
+	len = master[i].limit - master[i].top -1;
+	while ( (l = snprintf(master[i].buf + master[i].top, len , "tag_%d_%s:=bat.new(:%s,:%s);\n",
+				tag, getArgName(mb,pci,4), head, tail)) == len ){
+		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if ( master[i].buf == NULL)
+			throw(MAL,"replicator.append",MAL_MALLOC_FAIL);
+		master[i].limit += 1024;
+		len = master[i].limit - master[i].top -1;
+	}
+	master[i].top += l;
+	master[i].buf[master[i].top] = 0;
+
 	/* fill it */
-	REPdump(b,buf,type);
+	snprintf(buf,BUFSIZ,"tag_%d_%s", tag, getArgName(mb,pci,4));
+	msg = MASTERdump(b,buf,type, tag);
+	if (msg != MAL_SUCCEED)
+		return msg;
+
 	/* execute the original append */
-	stream_printf(repFile,"replicator.append(\"%s\",\"%s\",\"%s\",%s,%d);\n",
-			*schema, *table, *col, buf, tag);
+	len = master[i].limit - master[i].top -1;
+	while ( (l = snprintf(master[i].buf + master[i].top, len , "sql.append(\"%s\",\"%s\",\"%s\",%s);\ntag_%d_%s := nil;\n",
+		*schema, *table, *col, buf,tag, getArgName(mb,pci,4)) ) == len){
+		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if ( master[i].buf == NULL)
+			throw(MAL,"replicator.append",MAL_MALLOC_FAIL);
+		master[i].limit += 1024;
+		len = master[i].limit - master[i].top -1;
+	}
+	master[i].top += l;
+	master[i].buf[master[i].top] = 0;
 	GDKfree(head);
 	GDKfree(tail);
 	return MAL_SUCCEED;
 }
 
 str
-REPdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *schema = (str*) getArgReference(stk,pci,1);
 	str *table = (str*) getArgReference(stk,pci,2);
 	int *bid = (int*) getArgReference(stk,pci,3);
 	int tag = *(int*) getArgReference(stk,pci,4);
 	BAT *b;
 	char buf[BUFSIZ];
-	int type = getArgType(mb, pci, 4);
+	int type = getArgType(mb, pci, 3);
 	str head = getTypeName(getHeadType(type));
 	str tail = getTypeName(getTailType(type));
+	str msg;
+	int i, l, len;
 
 #ifdef _DEBUG_REPLICATOR_
-	stream_printf(cntxt->fdout,"#sync %s.%s\n",*schema, *table);
-#else
 	(void) cntxt;
 #endif
 	if ( repFile == NULL)
@@ -294,45 +459,118 @@ REPdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	b = BATdescriptor(*bid);
 	if ( b == NULL)
 		throw(MAL,"replicator.delete", RUNTIME_OBJECT_MISSING);
+
+	i = MASTERgetBuffer(tag);
 	/* create the temporary bat */
-	snprintf(buf,BUFSIZ,"tag%d_%s_%s:= bat.new(:%s,:%s);\n", tag, *schema, *table, head, tail);
+	len = master[i].limit - master[i].top -1;
+	while ( (l = snprintf(master[i].buf + master[i].top, len , "tag_%d_%s:=bat.new(:%s,:%s);\n",
+				tag, getArgName(mb,pci,3), head, tail)) == len ){
+		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if ( master[i].buf == NULL)
+			throw(MAL,"replicator.delete",MAL_MALLOC_FAIL);
+		master[i].limit += 1024;
+		len = master[i].limit - master[i].top -1;
+	}
+	master[i].top += l;
+	master[i].buf[master[i].top] = 0;
+
 	/* fill it */
-	REPdump(b,buf,type);
+	snprintf(buf,BUFSIZ,"tag_%d_%s", tag, getArgName(mb,pci,3));
+	msg = MASTERdump(b,buf,type, tag);
+	if (msg != MAL_SUCCEED)
+		return msg;
+
 	/* execute the original append */
-	stream_printf(repFile,"replicator.delete(\"%s\",\"%s\",%s,%d);\n",
-			*schema, *table, buf, tag);
+	len = master[i].limit - master[i].top -1;
+	while ( (l = snprintf(master[i].buf + master[i].top, len , "sql.delete(\"%s\",\"%s\",%s);\ntag_%d_%s := nil;\n",
+			*schema, *table, buf, tag, getArgName(mb,pci,4))) == len){
+		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if ( master[i].buf == NULL)
+			throw(MAL,"replicator.delete",MAL_MALLOC_FAIL);
+		master[i].limit += 1024;
+		len = master[i].limit - master[i].top -1;
+	}
+	master[i].top += l;
+	master[i].buf[master[i].top] = 0;
 	GDKfree(head);
 	GDKfree(tail);
 	return MAL_SUCCEED;
 }
 
-str REPclose2(int *ret, int *tag, int *ctag){
+str MASTERreplay(int *ret, str *uri, str *usr, str *pw, int *tag)
+{
 	(void) ret;
-	(void) tag;
-	(void) ctag;
-	return MAL_SUCCEED;
-}
-
-str REPopen2(int *ret, int *tag){
-	(void) ret;
+	(void) uri;
+	(void) usr;
+	(void) pw;
 	(void) tag;
 	return MAL_SUCCEED;
 }
 
-str REPreplay(int *ret){
-	char buf[BUFSIZ] = REPLICAS"/log";
-
+str SLVopen(int *ret, int *tag, timestamp *t){
 	(void) ret;
-	/* open the replicator log to find the last one  or 
-	   continue from what you remembered*/
-	if ( logFile == NULL){
-		logFile = open_rastream(buf);
-		if ( logFile == NULL)
-			logFile = open_wastream(buf);
-		if ( logFile == NULL)
-			throw(MAL,"replicator.replay",RUNTIME_STREAM_FAILED);
-	}
-	/* scan for the last one */
+	(void) tag;
+	(void) t;
+	return MAL_SUCCEED;
+}
+
+str SLVclose(int *ret, int *tag, timestamp *t){
+	(void) ret;
+	(void) tag;
+	(void) t;
+	return MAL_SUCCEED;
+}
+
+str
+SLVappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *schema = (str*) getArgReference(stk,pci,1);
+	str *table = (str*) getArgReference(stk,pci,2);
+	int *bid = (int*) getArgReference(stk,pci,3);
+	int *col = (int*) getArgReference(stk,pci,4);
+	int tag = *(int*) getArgReference(stk,pci,5);
+
+	(void) mb;
+	(void) cntxt;
+	(void) schema;
+	(void) table;
+	(void) bid;
+	(void) tag;
+	(void) col;
+	return MAL_SUCCEED;
+}
+
+str
+SLVdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *schema = (str*) getArgReference(stk,pci,1);
+	str *table = (str*) getArgReference(stk,pci,2);
+	int *bid = (int*) getArgReference(stk,pci,3);
+	int tag = *(int*) getArgReference(stk,pci,4);
+
+	(void) cntxt;
+	(void) mb;
+	(void) schema;
+	(void) table;
+	(void) bid;
+	(void) tag;
+	return MAL_SUCCEED;
+}
+
+str
+SLVreplay(int *ret, str *uri, str *usr, str *pw, int *tag)
+{
+	(void) ret;
+	(void) uri;
+	(void) usr;
+	(void) pw;
+	(void) tag;
+	return MAL_SUCCEED;
+}
+
+str
+SLVdrop(int *ret, str *tag)
+{
+	(void) ret;
+	(void) tag;
 	return MAL_SUCCEED;
 }
 
