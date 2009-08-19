@@ -66,8 +66,17 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 1; i < limit - 1; i++){
 		p= old[i];
 		pushInstruction(mb, p);
-		if (getModuleId(p)==sqlRef &&  isaBatType(getArgType(mb,p,1)) &&
-			(getFunctionId(p) == appendRef || getFunctionId(p) == deleteRef) ){
+		if (getModuleId(p)==sqlRef &&  
+			getFunctionId(p) == appendRef &&
+			isaBatType(getArgType(mb,p,4)) ){
+			q= copyInstruction(p);
+			setModuleId(q, replicatorRef);
+			pushInstruction(mb,q);
+			pushArgument(mb,q,tag);
+			actions++;
+		} 
+		if (getModuleId(p)==sqlRef &&  
+			getFunctionId(p) == deleteRef) {
 			q= copyInstruction(p);
 			setModuleId(q, replicatorRef);
 			pushInstruction(mb,q);
