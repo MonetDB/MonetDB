@@ -18,7 +18,7 @@ def server_start(dbinit):
     sys.stderr.write('#mserver: "%s"\n' % (srvcmd))
     sys.stderr.flush()
     srv = os.popen(srvcmd, 'w')
-    time.sleep(2)                      # give server time to start
+    time.sleep(5)                      # give server time to start
     return srv
 
 def server_stop(srv):
