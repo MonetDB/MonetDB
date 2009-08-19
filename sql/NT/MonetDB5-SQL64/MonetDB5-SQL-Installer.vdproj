@@ -2257,7 +2257,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_380F5AEC34A748AF9AE41F715472D526"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.32.0\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.33.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_4A91789AB7C84241A62C790D7B406FE0"
@@ -5757,7 +5757,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FED9A32D7B6B46688B21228940144BA6"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.32.0\\dump-restore.txt"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.33.0\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_4A91789AB7C84241A62C790D7B406FE0"
