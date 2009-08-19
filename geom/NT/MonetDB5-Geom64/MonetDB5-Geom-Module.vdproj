@@ -415,8 +415,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5 SQL GIS Module"
-        "ProductCode" = "8:{6CB9C9EE-86A6-4156-8945-F3F1CA951466}"
-        "PackageCode" = "8:{04FADEEA-1E0F-4466-BEA1-587F0858C3CC}"
+        "ProductCode" = "8:{06C18295-91C8-446E-9970-A17A33A3448C}"
+        "PackageCode" = "8:{CA4B890F-9B0A-4342-B4FA-527CA484A690}"
         "UpgradeCode" = "8:{8E6CDFDE-39B9-43D9-97B3-2440C012845C}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
