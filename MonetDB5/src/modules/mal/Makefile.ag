@@ -33,7 +33,7 @@ LIBS = {
 		factories.mx mdb.mx  \
 		urlbox.mx mat.mx \
 		sabaoth.mx remote.mx  txtsim.mx recycle.mx \
-		cluster.mx trader.mx
+		cluster.mx trader.mx replicator.mx
 		#radix.mx 
 
 	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -164,7 +164,7 @@ headers_h = {
 		factories.mx mdb.mx  \
 		urlbox.mx mat.mx \
 		sabaoth.mx remote.mx  batxml.mx  recycle.mx \
-		cluster.mx trader.mx
+		cluster.mx trader.mx replicator.mx
 		#radix.mx 
 
 	HEADERS = h 
@@ -181,7 +181,7 @@ headers_mal = {
 		urlbox.mx statistics.mx transaction.mx \
 		mal_mapi.mx sabaoth.mx remote.mx  \
 		bpm.mx batxml.mx txtsim.mx recycle.mx \
-		cluster.mx trader.mx
+		cluster.mx trader.mx replicator.mx
 	#radix.mx
 }
 

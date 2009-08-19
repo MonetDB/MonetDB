@@ -1,0 +1,339 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@f replicator
+@a Martin Kersten
+@v 1.0
+@+ Database replication
+The replicator module supports distribution of the SQL databases
+over multiple sites using a simple master slave protocol with
+MAL-based update log.
+
+The replicator assumes that both database instances
+have the same catalog information.
+There is no automatic propagation of CREATE, DROP, nor ALTER statements. 
+
+The operations are executed in the same order as on the mastersite,
+which should lead to the same transactional behavior.
+
+The lean and mean replication scheme implementation works as follows.
+The query plan is extended by the optimizer to initiate calls to build
+a replicator log file as follows.
+
+@verbatim
+function query():void
+  tag:= replicator.open();
+  ...
+  sql.append("schema","table","col",b:[:oid,:int]);
+  replicator.append("schema","table","col",b,tag);
+  ...
+  replicator.close(tag);
+end query;
+@end verbatim
+
+At runtime this leads to a file "dbfarm/db/replicas/tag_%d" with the following
+structure:
+@verbatim
+  replicator.open(tag);
+  b := bat.new(:oid,:int);
+  ...
+  bat.insert(3:oid,232:int); #example update
+  ...
+  replicator.append("schema","table","col",b,tag);
+  replicator.close(tag,closingtag);
+@end verbatim
+
+The logs are replayed using a separated thread.
+It takes the tagged instructions and runs them in serial mode
+against the server. The commit is ordered by closing tag
+to ensure the same transactional behavior as on the master.
+
+A replay log is kept with the replicator.close statements
+to monitor which has been re-run. This can be used to
+automatically roll forward any newly arriving replicator file.
+
+Some work is needed to handle possible errors during replay.
+@mal
+module replicator;
+
+command open():int
+address REPopen2
+comment "Create a replication record";
+
+command open(tag:int):int
+address REPopen
+comment "Mark the start of a replication record";
+
+command close(tag:int):void
+address REPclose
+comment "Replication record is finished";
+
+command close(tag:int, ctag:int):void
+address REPclose2
+comment "Replication record period";
+
+command replay():void
+address REPreplay
+comment "Start the replication log replayer thread";
+
+pattern append(s:str, t:str, c:str, :any_1, tag:int):void
+address REPappend
+comment "Dump the scalar on the MAL log");
+
+pattern append(s:str, t:str, c:str, b:bat[:oid,:any_1], tag:int):void
+address REPappend
+comment "Dump the BAT on the MAL log");
+
+pattern delete(s:str, t:str, b:bat[:oid,:any_1], tag:int):void
+address REPbatdelete
+comment "Dump the BAT with deletions on the MAL log");
+@-
+@{
+@+ Implementation code 
+@h
+#ifndef _REPLICATOR_H
+#define _REPLICATOR_H
+
+#include "mal.h"
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
+#include "mal_namespace.h"
+
+#define _DEBUG_REPLICATOR_
+
+#ifdef WIN32
+#ifndef LIBREPLICATOR
+#define replicator_export extern __declspec(dllimport)
+#else
+#define replicator_export extern __declspec(dllexport)
+#endif
+#else
+#define replicator_export extern
+#endif
+
+replicator_export str REPopen(int *ret);
+replicator_export str REPopen2(int *ret, int *tag);
+replicator_export str REPclose(int *ret, int *tag);
+replicator_export str REPclose2(int *ret, int *tag, int *ctag);
+replicator_export str REPreplay(int *ret);
+replicator_export str REPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replicator_export str REPdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#endif /* _REPLICATOR_H */
+@c
+#include "mal_config.h"
+#include "replicator.h"
+#include "mal_client.h"
+
+@-
+The start of the query is marked with a replica tag.
+The tag is returned for marking all related updates.
+The final code should contain a loop to determine the last replicator tag.
+@c
+#define REPLICAS "replicator"
+#define REPLICA "/tag_%d"
+#define GRANULE 1000
+
+static MT_Lock repLck;
+static int repTag;
+static stream *repFile;
+static stream *logFile;
+
+str REPopen(int *ret){
+	char buf[BUFSIZ];
+	
+	if ( repTag == 0)
+		MT_lock_init(&repLck,"replicator");
+	mal_set_lock(repLck,"replicator");
+	if ( repFile == NULL){
+		mkdir(REPLICAS,0755); /* ensure existance of the replica pool */
+		if ( repTag == 0){
+			/* find the last one already in the pool, using the GRANULE */
+			do {
+				if (repFile) {
+					repTag += GRANULE;
+					close_stream(repFile);
+				}
+				snprintf(buf, BUFSIZ, REPLICAS REPLICA, repTag);
+				repFile = open_rastream(buf);
+			} while (repFile);
+		}
+		snprintf(buf, BUFSIZ, REPLICAS REPLICA, repTag);
+		repFile = open_wastream(buf);
+		if ( repFile == NULL || stream_errnr(repFile) ){
+			mal_unset_lock(repLck,RUNTIME_STREAM_FAILED);
+			throw(MAL,"replicator.start",RUNTIME_STREAM_FAILED);
+		}
+	}
+	/* prepare the MAL redo file */
+	stream_printf(repFile,"replicator.open(%d);\n",repTag);
+	repTag++;
+	mal_unset_lock(repLck,RUNTIME_STREAM_FAILED);
+
+	*ret = repTag - 1;
+	return MAL_SUCCEED;
+}
+
+str REPclose(int *ret, int *tag){
+	(void) ret;
+	mal_set_lock(repLck,"replicator");
+	stream_printf(repFile,"replicator.close(%d,%d);\n",*tag, repTag);
+	stream_flush(repFile);
+	if ( stream_errnr(repFile) ){
+		mal_unset_lock(repLck,"replicator");
+		throw(MAL,"replicator.close",RUNTIME_STREAM_FAILED);
+	}
+	if ( repTag % GRANULE  == 0){
+		close_stream(repFile);
+		repFile = NULL;
+	}
+	mal_unset_lock(repLck,"replicator");
+	return MAL_SUCCEED;
+}
+
+static void
+REPdump( BAT *b, str buf, int type){
+	BATiter bi;
+	BUN p,q;
+	char *headv, *tailv;
+	str head = getTypeName(getHeadType(type));
+	str tail = getTypeName(getTailType(type));
+	
+	bi = bat_iterator(b);
+	BATloop(b,p,q){
+		ATOMformat(getHeadType(type), BUNhead(bi, p), &headv);
+		ATOMformat(getTailType(type), BUNtail(bi, p), &tailv);
+		if ( getTailType(type) <=TYPE_str &&
+			getHeadType(type) <= TYPE_str)
+			snprintf(buf, BUFSIZ, "bat.insert(%s, %s:%s, %s:%s);",
+				buf, headv, head, tailv, tail);
+		else
+		if ( getTailType(type) >TYPE_str  &&
+			getHeadType(type) > TYPE_str)
+			snprintf(buf, BUFSIZ, "bat.insert(%s, \"%s\":%s, \"%s\":%s);",
+				buf, headv, head, tailv, tail);
+		else
+		if ( getTailType(type) >TYPE_str )
+			snprintf(buf, BUFSIZ, "bat.insert(%s, %s:%s, \"%s\":%s);",
+				buf, headv, head, tailv, tail);
+		else
+			snprintf(buf, BUFSIZ, "bat.insert(%s, \"%s\":%s, %s:%s);",
+				buf, headv, head, tailv, tail);
+	}
+	GDKfree(tail);
+	GDKfree(head);
+}
+
+str
+REPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *schema = (str*) getArgReference(stk,pci,1);
+	str *table = (str*) getArgReference(stk,pci,2);
+	str *col = (str*) getArgReference(stk,pci,3);
+	int *bid = (int*) getArgReference(stk,pci,4);
+	int tag = *(int*) getArgReference(stk,pci,5);
+	BAT *b;
+	char buf[BUFSIZ];
+	int type = getArgType(mb, pci, 4);
+	str head = getTypeName(getHeadType(type));
+	str tail = getTypeName(getTailType(type));
+
+#ifdef _DEBUG_REPLICATOR_
+	stream_printf(cntxt->fdout,"#sync %s.%s.%s\n",*schema, *table, *col);
+#else
+	(void) cntxt;
+#endif
+	if ( repFile == NULL)
+		throw(MAL,"replicator.append", RUNTIME_FILE_NOT_FOUND);
+	b = BATdescriptor(*bid);
+	if ( b == NULL)
+		throw(MAL,"replicator.append", RUNTIME_OBJECT_MISSING);
+	/* create the temporary bat */
+	snprintf(buf,BUFSIZ,"tag%d_%s_%s_%s:= bat.new(:%s,:%s);\n", tag, *schema, *table, *col, head, tail);
+	/* fill it */
+	REPdump(b,buf,type);
+	/* execute the original append */
+	stream_printf(repFile,"replicator.append(\"%s\",\"%s\",\"%s\",%s,%d);\n",
+			*schema, *table, *col, buf, tag);
+	GDKfree(head);
+	GDKfree(tail);
+	return MAL_SUCCEED;
+}
+
+str
+REPdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *schema = (str*) getArgReference(stk,pci,1);
+	str *table = (str*) getArgReference(stk,pci,2);
+	int *bid = (int*) getArgReference(stk,pci,3);
+	int tag = *(int*) getArgReference(stk,pci,4);
+	BAT *b;
+	char buf[BUFSIZ];
+	int type = getArgType(mb, pci, 4);
+	str head = getTypeName(getHeadType(type));
+	str tail = getTypeName(getTailType(type));
+
+#ifdef _DEBUG_REPLICATOR_
+	stream_printf(cntxt->fdout,"#sync %s.%s\n",*schema, *table);
+#else
+	(void) cntxt;
+#endif
+	if ( repFile == NULL)
+		throw(MAL,"replicator.delete", RUNTIME_FILE_NOT_FOUND);
+	b = BATdescriptor(*bid);
+	if ( b == NULL)
+		throw(MAL,"replicator.delete", RUNTIME_OBJECT_MISSING);
+	/* create the temporary bat */
+	snprintf(buf,BUFSIZ,"tag%d_%s_%s:= bat.new(:%s,:%s);\n", tag, *schema, *table, head, tail);
+	/* fill it */
+	REPdump(b,buf,type);
+	/* execute the original append */
+	stream_printf(repFile,"replicator.delete(\"%s\",\"%s\",%s,%d);\n",
+			*schema, *table, buf, tag);
+	GDKfree(head);
+	GDKfree(tail);
+	return MAL_SUCCEED;
+}
+
+str REPclose2(int *ret, int *tag, int *ctag){
+	(void) ret;
+	(void) tag;
+	(void) ctag;
+	return MAL_SUCCEED;
+}
+
+str REPopen2(int *ret, int *tag){
+	(void) ret;
+	(void) tag;
+	return MAL_SUCCEED;
+}
+
+str REPreplay(int *ret){
+	char buf[BUFSIZ] = REPLICAS"/log";
+
+	(void) ret;
+	/* open the replicator log to find the last one  or 
+	   continue from what you remembered*/
+	if ( logFile == NULL){
+		logFile = open_rastream(buf);
+		if ( logFile == NULL)
+			logFile = open_wastream(buf);
+		if ( logFile == NULL)
+			throw(MAL,"replicator.replay",RUNTIME_STREAM_FAILED);
+	}
+	/* scan for the last one */
+	return MAL_SUCCEED;
+}
+
+@}
