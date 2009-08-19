@@ -566,14 +566,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
-        "ProductCode" = "8:{8F97BADD-AA40-47B8-A4B4-CAE60F75EBEB}"
-        "PackageCode" = "8:{30F78251-D233-43C2-8225-624E2172BE3A}"
+        "ProductCode" = "8:{32741D9A-9F48-449B-B311-B18C1FC1B858}"
+        "PackageCode" = "8:{5878F74F-FE9C-4E46-AB21-6F60BED3C90B}"
         "UpgradeCode" = "8:{C1F69378-3F5C-4120-8224-32F07D3458F3}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:9.5.30"
+        "ProductVersion" = "8:9.8.19"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -1222,3 +1222,4 @@
         }
     }
 }
+C src/odbc/winsetup/MonetDB-ODBC-Installer64/MonetDB-ODBC-Installer.vdproj

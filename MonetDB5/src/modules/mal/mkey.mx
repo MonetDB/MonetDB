@@ -386,6 +386,7 @@ voidbathash(BAT **res, BAT *b )
 	BATkey(BATmirror(dst), 0);
 	dst->tsorted = ATOMvarsized(b->ttype)?0: 
 			(Tsize(b)<=sizeof(wrd)?b->tsorted:0);
+	dst->T->nonil = b->T->nonil;
 
 	*res = dst;
 	return MAL_SUCCEED;
