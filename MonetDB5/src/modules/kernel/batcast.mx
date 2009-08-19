@@ -202,7 +202,11 @@ str CMDconvert_@1_@2(int *ret, int *bid)
 				*o = (@2) *p;
 		else
 			for(; p<q; o++, p++)
-				*o = *p == @1_nil ?  @2_nil: (@2) *p;
+				if (*p == @1_nil) {
+					*o = @2_nil;
+					bn->T->nonil = 0;
+				} else
+					*o = (@2) *p;
 
 	}
 	BATsetcount(bn, BATcount(b));
