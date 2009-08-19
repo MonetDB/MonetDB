@@ -63,8 +63,10 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	p= newStmt(mb, replicatorRef, openRef);
 	tag = getArg(p,0);
 
-	for (i = 1; i < limit - 1; i++){
+	for (i = 1; i < limit ; i++){
 		p= old[i];
+		if ( p->token == ENDsymbol)
+			break;
 		pushInstruction(mb, p);
 		if (getModuleId(p)==sqlRef &&  
 			getFunctionId(p) == appendRef &&
@@ -85,9 +87,12 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		} 
 	}
 
-	q = newStmt(mb, replicatorRef, closeRef);
-	pushArgument(mb,q,tag);
-	pushInstruction(mb, old[i]);
+	if ( actions) {
+		q = newStmt(mb, replicatorRef, closeRef);
+		pushArgument(mb,q,tag);
+	}
+	for (; i < limit ; i++)
+		pushInstruction(mb, old[i]);
 
 	for(; i<slimit; i++)
 		if( old[i])
