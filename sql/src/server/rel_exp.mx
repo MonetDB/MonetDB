@@ -76,6 +76,9 @@ extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
+/* match just the column (cmp equality) expressions */
+extern int exp_match_col_exps( sql_exp *e, list *l);
+extern int exps_match_col_exps( sql_exp *e1, sql_exp *e2);
 extern int exp_is_join(sql_exp *e);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
@@ -514,6 +517,60 @@ exp_match( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
+int
+exp_match_col_exps( sql_exp *e, list *l)
+{
+	node *n;
+
+	for(n=l->h; n; n = n->next) {
+		sql_exp *re = n->data;
+		sql_exp *re_r = re->r;
+	
+		if (re->type == e_cmp && re->flag == cmp_or)
+			return exp_match_col_exps(e, re->l) &&
+			       exp_match_col_exps(e, re->r); 
+
+		if (re->type != e_cmp || /*re->flag != cmp_equal ||*/ !re_r || re_r->card != 1 || !exp_match_exp(e, re->l)) 
+			return 0;
+	} 
+	return 1;
+}
+
+int
+exps_match_col_exps( sql_exp *e1, sql_exp *e2)
+{
+	sql_exp *e1_r = e1->r;
+	sql_exp *e2_r = e2->r;
+
+	if (e1->type != e_cmp || e2->type != e_cmp)
+		return 0;
+
+	if (e1->flag != cmp_or && e1_r && e1_r->card == 1 &&
+	    e2->flag != cmp_or && e2_r && e2_r->card == 1)
+		return exp_match_exp(e1->l, e2->l);
+
+	if (e1->flag != cmp_or && e1_r && e1_r->card == 1 &&
+	    e2->flag == cmp_or)
+ 		return exp_match_col_exps(e1->l, e2->l) &&
+ 		       exp_match_col_exps(e1->l, e2->r); 
+
+	if (e1->flag == cmp_or &&
+	    e2->flag != cmp_or && e2_r && e2_r->card == 1)
+ 		return exp_match_col_exps(e2->l, e1->l) &&
+ 		       exp_match_col_exps(e2->l, e1->r); 
+
+	if (e1->flag == cmp_or && e2->flag == cmp_or) {
+		list *l = e1->l, *r = e1->r;	
+		sql_exp *el = l->h->data;
+		sql_exp *er = r->h->data;
+
+		return list_length(l) == 1 && list_length(r) == 1 &&
+		       exps_match_col_exps(el, e2) &&
+		       exps_match_col_exps(er, e2);
+	}
+	return 0;
+}
+
 int 
 exp_match_list( list *l, list *r)
 {
@@ -560,13 +617,12 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			if (e1->flag == e2->flag && e1->flag != cmp_or &&
 		            exp_match_exp(e1->l, e2->l) && 
 			    exp_match_exp(e1->r, e2->r) && 
-			    ((!e1->f && !e1->f) || exp_match_exp(e1->f, e2->f)))
+			    ((!e1->f && !e2->f) || exp_match_exp(e1->f, e2->f)))
 				return 1;
 			else if (e1->flag == e2->flag && e1->flag == cmp_or &&
 		            exp_match_list(e1->l, e2->l) && 
 			    exp_match_list(e1->r, e2->r))
 				return 1;
-			break;
 			break;
 		case e_convert:
 			if (!subtype_cmp(exp_totype(e1), exp_totype(e2)) &&

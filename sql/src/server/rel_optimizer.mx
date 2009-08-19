@@ -479,6 +479,41 @@ find_basetable( sql_rel *r)
 	}
 }
 
+list *
+order_join_expressions(list *dje, list *rels)
+{
+	list *res = list_create(dje->destroy);
+	node *n = NULL;
+	int i, j, *keys, *pos, cnt = list_length(dje);
+
+	keys = (int*)alloca(cnt*sizeof(int));
+	pos = (int*)alloca(cnt*sizeof(int));
+	for (n = dje->h, i = 0; n; n = n->next, i++) {
+		sql_exp *e = n->data;
+
+		keys[i] = exp_keyvalue(e);
+		/* add some weigth for the selections */
+		if (e->type == e_cmp) {
+			sql_rel *l = find_rel(rels, e->l);
+			sql_rel *r = find_rel(rels, e->r);
+
+			if (l && is_select(l->op))
+				keys[i] += list_length(l->exps)*10;
+			if (r && is_select(r->op))
+				keys[i] += list_length(r->exps)*10;
+		}
+		pos[i] = i;
+	}
+	/* sort descending */
+	GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
+	for(j=0; j<cnt; j++) {
+		for(n = dje->h, i = 0; n && i != pos[j]; n = n->next, i++) 
+			;
+		list_append(res, exp_dup(n->data));
+	}
+	return res;
+}
+
 static list *
 find_fk(list *rels, list *exps) 
 {
@@ -565,7 +600,7 @@ find_fk(list *rels, list *exps)
 	list_destroy(aje);
 
 	/* sort expressions on weighted number of reducing operators */
-	sdje = list_sort(dje, (fkeyvalue)&exp_keyvalue, (fdup)&exp_dup);
+	sdje = order_join_expressions(dje, rels);
 	list_destroy(dje);
 
 	return sdje;
@@ -1400,6 +1435,7 @@ exps_cse( list *oexps, list *l, list *r )
 		append(oexps, exp_or(list_dup(l, (fdup)&exp_dup), 
 				     list_dup(r, (fdup)&exp_dup)));
 	}
+
 	if (l != ol)
 		list_destroy(l);
 	if (r != or)
@@ -1429,6 +1465,143 @@ rel_cse(int *changes, mvc *sql, sql_rel *rel)
 		}
 		list_destroy(rel->exps);
 		rel->exps = nexps;
+	}
+	return rel;
+}
+
+static list *
+exps_merge_rse( list *l, list *r )
+{
+	node *n, *m, *o;
+	list *nexps = NULL, *lexps, *rexps;
+
+ 	lexps = new_exp_list();
+	for (n = l->h; n; n = n->next) {
+		sql_exp *e = n->data;
+	
+		if (e->type == e_cmp && e->flag == cmp_or) {
+			list *nexps = exps_merge_rse(e->l, e->r);
+			if (nexps) {
+				for (o = nexps->h; o; o = o->next) 
+					append(lexps, exp_dup(o->data));
+				list_destroy(nexps);
+				nexps = NULL;
+			}
+		}
+	}
+ 	rexps = new_exp_list();
+	for (n = r->h; n; n = n->next) {
+		sql_exp *e = n->data;
+	
+		if (e->type == e_cmp && e->flag == cmp_or) {
+			list *nexps = exps_merge_rse(e->l, e->r);
+			if (nexps) {
+				for (o = nexps->h; o; o = o->next) 
+					append(rexps, exp_dup(o->data));
+				list_destroy(nexps);
+				nexps = NULL;
+			}
+		}
+	}
+
+	/* merge merged lists first ? */
+ 	nexps = new_exp_list();
+
+	for (n = lexps->h; n; n = n->next) {
+		sql_exp *le = n->data, *re, *fnd = NULL;
+
+		if (le->type != e_cmp || le->flag != cmp_or)
+			continue;
+		for (m = rexps->h; m; m = m->next) {
+			re = m->data;
+			if (exps_match_col_exps(le, re))
+				fnd = re;
+		}
+		for (m = r->h; !fnd && m; m = m->next) {
+			re = m->data;
+			if (exps_match_col_exps(le, re))
+				fnd = re;
+		}
+		if (fnd) {
+			le = exp_dup(le);
+			re = exp_dup(fnd);
+			fnd = exp_or(append(new_exp_list(),le), 
+		       		     append(new_exp_list(),re));
+			append(nexps, fnd);
+		}
+	}
+	for (n = l->h; n; n = n->next) {
+		sql_exp *le = n->data, *re, *fnd = NULL;
+
+		if (le->type != e_cmp /*|| 
+		   (le->flag != cmp_or && le->flag != cmp_equal)*/)
+			continue;
+
+		for (m = lexps->h; !fnd && m; m = m->next) {
+			re = m->data;
+			if (exps_match_col_exps(le, re))
+				fnd = re;
+		}
+		if (fnd)
+			continue;
+		for (m = rexps->h; m; m = m->next) {
+			re = m->data;
+			if (exps_match_col_exps(le, re))
+				fnd = re;
+		}
+		for (m = r->h; !fnd && m; m = m->next) {
+			re = m->data;
+			if (exps_match_col_exps(le, re))
+				fnd = re;
+		}
+		if (fnd) {
+			le = exp_dup(le);
+			re = exp_dup(fnd);
+			fnd = exp_or(append(new_exp_list(),le), 
+		       		     append(new_exp_list(),re));
+			append(nexps, fnd);
+		}
+	}
+	return nexps;
+}
+
+
+/* merge related sub expressions */
+static sql_rel *
+rel_merge_rse(int *changes, mvc *sql, sql_rel *rel) 
+{
+	/* only execute once per select, ie don't return changes */
+
+	(void)sql;
+	*changes = 0;
+	if (rel->op == op_select && !rel_is_ref(rel) && rel->exps) { 
+		node *n, *o;
+		list *nexps = NULL;
+
+		for (n=rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->type == e_cmp && e->flag == cmp_or) {
+				/* possibly merge related expressions */
+				list *lexps = exps_merge_rse(e->l, e->r);
+				if (lexps) {
+					if (!nexps) {
+						nexps = lexps;
+					} else {
+						for (o = lexps->h; o; o = o->next) 
+							append(nexps, exp_dup(o->data));
+						list_destroy(lexps);
+						lexps = NULL;
+					}
+				}
+			}
+		}
+		if (nexps) {
+			for (o = nexps->h; o; o = o->next) 
+				append(rel->exps, exp_dup(o->data));
+			list_destroy(nexps);
+			nexps = NULL;
+		}
 	}
 	return rel;
 }
@@ -2630,13 +2803,18 @@ static list *
 exp_merge_range(list *exps)
 {
 	node *n, *m;
-	for (n=exps->h; n && n->next; n = n->next) {
+	for (n=exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		sql_exp *le = e->l;
 		sql_exp *re = e->r;
 
+		/* handle the and's in the or lists */
+		if (e->type == e_cmp && e->flag == cmp_or) {
+			e->l = exp_merge_range(e->l);
+			e->r = exp_merge_range(e->r);
 		/* only look for gt, gte, lte, lt */
-		if (e->type == e_cmp && e->flag < cmp_equal && 
+		} else if (n->next &&
+		    e->type == e_cmp && e->flag < cmp_equal && 
 		    re->card == CARD_ATOM) {
 			for (m=n->next; m; m = m->next) {
 				sql_exp *f = m->data;
@@ -2672,7 +2850,8 @@ exp_merge_range(list *exps)
 					return exp_merge_range(exps);
 				}
 			}
-		} else if (e->type == e_cmp && e->flag < cmp_equal && 
+		} else if (n->next &&
+			   e->type == e_cmp && e->flag < cmp_equal && 
 		    	   re->card > CARD_ATOM) {
 			for (m=n->next; m; m = m->next) {
 				sql_exp *f = m->data;
@@ -2888,9 +3067,15 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	if (gp.cnt[op_project])
 		rel = rewrite(sql, rel, &rel_merge_projects); 
 
+	if (gp.cnt[op_join] || 
+	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
+	    gp.cnt[op_select]) 
+		rel = rewrite(sql, rel, &rel_find_range);
+
 	if (gp.cnt[op_union]) {
 		rel = rewrite(sql, rel, &rel_merge_union); 
 		rel = rewrite(sql, rel, &rel_cse); 
+		rel = rewrite(sql, rel, &rel_merge_rse); 
 	}
 
 	/* Remove unused expressions */
@@ -2934,11 +3119,6 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	if (gp.cnt[op_select]) 
 		rel = rewrite(sql, rel, &rel_select_order); 
-
-	if (gp.cnt[op_join] || 
-	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
-	    gp.cnt[op_select]) 
-		rel = rewrite(sql, rel, &rel_find_range);
 
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_select_use_index); 
