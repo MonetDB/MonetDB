@@ -60,7 +60,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	newMalBlkStmt(mb, mb->ssize * 1.2); /* a new statement stack */
 
 	pushInstruction(mb, old[0]);
-	p= newStmt(mb, replicatorRef, openRef);
+	p= newStmt(mb, putName("master",6), openRef);
 	tag = getArg(p,0);
 
 	for (i = 1; i < limit ; i++){
@@ -72,7 +72,9 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			getFunctionId(p) == appendRef &&
 			isaBatType(getArgType(mb,p,4)) ){
 			q= copyInstruction(p);
-			setModuleId(q, replicatorRef);
+			clrFunction(q);
+			setModuleId(q, putName("master",6));
+			setFunctionId(q, appendRef);
 			pushInstruction(mb,q);
 			pushArgument(mb,q,tag);
 			actions++;
@@ -80,7 +82,9 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (getModuleId(p)==sqlRef &&  
 			getFunctionId(p) == deleteRef) {
 			q= copyInstruction(p);
-			setModuleId(q, replicatorRef);
+			clrFunction(q);
+			setModuleId(q, putName("master",6));
+			setFunctionId(q, deleteRef);
 			pushInstruction(mb,q);
 			pushArgument(mb,q,tag);
 			actions++;
@@ -88,7 +92,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 
 	if ( actions) {
-		q = newStmt(mb, replicatorRef, closeRef);
+		q = newStmt(mb, putName("master",6), closeRef);
 		pushArgument(mb,q,tag);
 	}
 	for (; i < limit ; i++)

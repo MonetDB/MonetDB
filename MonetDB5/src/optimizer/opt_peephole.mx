@@ -103,7 +103,6 @@ OPTpartitionpack(InstrPtr p, InstrPtr part[], int top)
 			cnt += getArg(p,p->retc+k) == getArg(part[i],k);
 		if ( cnt == p->argc-p->retc ){
 			clrFunction(p);
-			p->token = ASSIGNsymbol;
 			p->argc=2;
 			getArg(p,1) = getArg(part[i],part[i]->retc);
 			return 1;

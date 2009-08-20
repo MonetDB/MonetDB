@@ -226,7 +226,6 @@ be assigned their value before instruction p.
 					printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 #endif
 					clrFunction(p);
-					p->token = ASSIGNsymbol;
 					p->argc = p->retc;
 					for (k = 0; k < q->retc; k++){
 						lastassigned[getArg(p,k)] = lastassigned[getArg(q,k)];
