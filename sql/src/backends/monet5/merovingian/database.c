@@ -36,10 +36,11 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
-char* db_create(char *dbfarm, char* dbname) {
+char* db_create(char* dbname) {
 	sabdb *stats;
 	char* e;
 	size_t c;
+	char* dbfarm;
 	char buf[8096];
 	char path[8096];
 	FILE *f;
@@ -79,14 +80,23 @@ char* db_create(char *dbfarm, char* dbname) {
 		return(strdup(buf));
 	}
 
+	if ((e = SABAOTHgetDBfarm(&dbfarm)) != MAL_SUCCEED) {
+		snprintf(buf, sizeof(buf), "internal error: %s", e);
+		GDKfree(e);
+		return(strdup(buf));
+	}
+
 	/* create the directory */
 	c = snprintf(path, sizeof(path), "%s/%s", dbfarm, dbname);
-	if (c >= sizeof(path))
+	if (c >= sizeof(path)) {
+		GDKfree(dbfarm);
 		return(strdup("path/dbname combination too long, "
 				"path would get truncated"));
+	}
 	if (mkdir(path, 0755) == -1) {
 		snprintf(buf, sizeof(buf), "unable to create %s: %s",
 				dbname, strerror(errno));
+		GDKfree(dbfarm);
 		return(strdup(buf));
 	}
 
@@ -98,6 +108,7 @@ char* db_create(char *dbfarm, char* dbname) {
 		/* try to cleanup */
 		snprintf(path, sizeof(path), "%s/%s", dbfarm, dbname);
 		rmdir(path);
+		GDKfree(dbfarm);
 		return(strdup("path/dbname combination too long, "
 				"filenames inside would get truncated"));
 	}
@@ -116,6 +127,7 @@ char* db_create(char *dbfarm, char* dbname) {
 	if (fwrite("bla:", 1, 4, f) < 4) {
 		snprintf(buf, sizeof(buf), "cannot write lock file: %s",
 				strerror(errno));
+		GDKfree(dbfarm);
 		return(strdup(buf));
 	}
 	fclose(f);
@@ -131,6 +143,7 @@ char* db_create(char *dbfarm, char* dbname) {
 	if (fwrite(buf, 1, 48, f) < 48) {
 		snprintf(buf, sizeof(buf), "cannot write vaultkey: %s",
 				strerror(errno));
+		GDKfree(dbfarm);
 		return(strdup(buf));
 	}
 	fclose(f);
@@ -140,6 +153,7 @@ char* db_create(char *dbfarm, char* dbname) {
 	snprintf(path, sizeof(path), "%s/%s/.uplog", dbfarm, dbname);
 	fclose(fopen(path, "w"));
 
+	GDKfree(dbfarm);
 	return(NULL);
 }
 

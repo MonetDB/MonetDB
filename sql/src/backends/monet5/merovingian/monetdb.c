@@ -217,7 +217,7 @@ command_create(int argc, char *argv[])
 		if (argv[i] == NULL)
 			continue;
 
-		ret = db_create(dbfarm, argv[i]);
+		ret = db_create(argv[i]);
 
 		if (ret == NULL) {
 			printf("successfully created database '%s' "
