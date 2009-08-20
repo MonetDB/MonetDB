@@ -17,10 +17,17 @@
  * All Rights Reserved.
  */
 
+/* NOTE: for this file to work correctly, SABAOTHinit must be called,
+ * and the random number generator must have been seeded (srand) with
+ * something like the current time */
+
 #include "sql_config.h"
 #include "mal_sabaoth.h"
 #include <stdio.h> /* fprintf, rename */
 #include <unistd.h> /* stat, rmdir, unlink, ioctl */
+#include <dirent.h> /* readdir */
+#include <sys/stat.h> /* mkdir, stat, umask */
+#include <sys/types.h> /* mkdir, readdir */
 #include <errno.h>
 
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
@@ -136,3 +143,107 @@ char* db_create(char *dbfarm, char* dbname, char maintenance) {
 
 	return(NULL);
 }
+
+/* recursive helper function to delete a directory */
+static char* deletedir(char *dir) {
+	DIR *d;
+	struct dirent *e;
+	struct stat s;
+	char buf[8096];
+	char path[PATHLENGTH + 1];
+
+	d = opendir(dir);
+	if (d == NULL) {
+		/* silently return if we cannot find the directory; it's
+		 * probably already deleted */
+		if (errno == ENOENT)
+			return(NULL);
+		snprintf(buf, sizeof(buf), "unable to open dir %s: %s",
+				dir, strerror(errno));
+		return(strdup(buf));
+	}
+	while ((e = readdir(d)) != NULL) {
+		snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
+		if (stat(path, &s) == -1) {
+			snprintf(buf, sizeof(buf), "unable to stat file %s: %s",
+					path, strerror(errno));
+			closedir(d);
+			return(strdup(buf));
+		}
+
+		if (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode)) {
+			if (unlink(path) == -1) {
+				snprintf(buf, sizeof(buf), "unable to unlink file %s: %s",
+						path, strerror(errno));
+				closedir(d);
+				return(strdup(buf));
+			}
+		} else if (S_ISDIR(s.st_mode)) {
+			char* er;
+			/* recurse, ignore . and .. */
+			if (strcmp(e->d_name, ".") != 0 &&
+					strcmp(e->d_name, "..") != 0 &&
+					(er = deletedir(path)) != NULL)
+			{
+				closedir(d);
+				return(er);
+			}
+		} else {
+			/* fifos, block, char devices etc, we don't do */
+			snprintf(buf, sizeof(buf), "not a regular file: %s", path);
+			closedir(d);
+			return(strdup(buf));
+		}
+	}
+	closedir(d);
+	if (rmdir(dir) == -1) {
+		snprintf(buf, sizeof(buf), "unable to remove directory %s: %s",
+				dir, strerror(errno));
+		return(strdup(buf));
+	}
+
+	return(NULL);
+}
+
+char* db_destroy(char* dbname) {
+	sabdb* stats;
+	char* e;
+	char buf[8096];
+
+	if (dbname[0] == '\0')
+		return(strdup("database name should not be an empty string"));
+
+	/* the argument is the database to destroy, see what Sabaoth can
+	 * tell us about it */
+	if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
+		snprintf(buf, sizeof(buf), "internal error: %s", e);
+		GDKfree(e);
+		return(strdup(buf));
+	}
+
+	if (stats != NULL) {
+		if (stats->state == SABdbRunning) {
+			snprintf(buf, sizeof(buf), "database '%s' is still running, "
+					"please stop database first", dbname);
+			SABAOTHfreeStatus(&stats);
+			return(strdup(buf));
+		}
+
+		/* annoyingly we have to delete file by file, and
+		 * directories recursively... */
+		if ((e = deletedir(stats->path)) != NULL) {
+			snprintf(buf, sizeof(buf), "failed to destroy '%s': %s",
+					dbname, e);
+			GDKfree(e);
+			SABAOTHfreeStatus(&stats);
+			return(strdup(buf));
+		}
+		SABAOTHfreeStatus(&stats);
+	} else {
+		snprintf(buf, sizeof(buf), "no such database: %s", dbname);
+		return(strdup(buf));
+	}
+
+	return(NULL);
+}
+

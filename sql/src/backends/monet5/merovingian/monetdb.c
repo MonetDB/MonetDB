@@ -203,13 +203,13 @@ command_create(int argc, char *argv[])
 	/* walk through the arguments and hunt for "options" */
 	for (i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--") == 0) {
-			argv[i][0] = '\0';
+			argv[i] = NULL;
 			break;
 		}
 		if (argv[i][0] == '-') {
 			if (argv[i][1] == 'l') {
 				maintenance = 1;
-				argv[i][0] = '\0';
+				argv[i] = NULL;
 			} else {
 				fprintf(stderr, "create: unknown option: %s\n", argv[i]);
 				command_help(argc + 1, &argv[-1]);
@@ -220,7 +220,12 @@ command_create(int argc, char *argv[])
 
 	/* do for each listed database */
 	for (i = 1; i < argc; i++) {
-		char *ret = db_create(dbfarm, argv[i], maintenance);
+		char *ret;
+		
+		if (argv[i] == NULL)
+			continue;
+
+		ret = db_create(dbfarm, argv[i], maintenance);
 
 		if (ret == NULL) {
 			printf("successfully created database '%s'%s\n", argv[i],
@@ -243,7 +248,82 @@ command_create(int argc, char *argv[])
 	exit(state);
 }
 
-#include "monetdb_destroy.c"
+static void
+command_destroy(int argc, char *argv[])
+{
+	int i;
+	int force = 0;    /* ask for confirmation */
+	int state = 0;    /* return status */
+	int hadwork = 0;  /* did we do anything useful? */
+
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(argc + 1, &argv[-1]);
+		exit(1);
+	}
+
+	/* walk through the arguments and hunt for "options" */
+	for (i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i] = NULL;
+			break;
+		}
+		if (argv[i][0] == '-') {
+			if (argv[i][1] == 'f') {
+				force = 1;
+				argv[i] = NULL;
+			} else {
+				fprintf(stderr, "destroy: unknown option: %s\n", argv[i]);
+				command_help(argc + 1, &argv[-1]);
+				exit(1);
+			}
+		}
+	}
+
+	if (force == 0) {
+		char answ;
+		printf("you are about to remove database%s ", argc > 2 ? "s" : "");
+		for (i = 1; i < argc; i++)
+			printf("%s'%s'", i > 1 ? ", " : "", argv[i]);
+		printf("\nALL data in %s will be lost, are you sure? [y/N] ",
+				argc > 2 ? "these databases" : "this database");
+		if (scanf("%c", &answ) >= 1 &&
+				(answ == 'y' || answ == 'Y'))
+		{
+			/* do it! */
+		} else {
+			printf("aborted\n");
+			exit(0);
+		}
+	}
+
+	/* do for each listed database */
+	for (i = 1; i < argc; i++) {
+		char* ret;
+		
+		if (argv[i] == NULL)
+			continue;
+
+		ret = db_destroy(argv[i]);
+
+		if (ret == NULL) {
+			printf("successfully destroyed database '%s'\n", argv[i]);
+		} else {
+			fprintf(stderr, "destroy: %s\n", ret);
+			free(ret);
+			state |= 1;
+		}
+
+		hadwork = 1;
+	}
+
+	if (hadwork == 0) {
+		command_help(2, &argv[-1]);
+		state |= 1;
+	}
+	exit(state);
+}
+
 #include "monetdb_lock.c"
 #include "monetdb_release.c"
 

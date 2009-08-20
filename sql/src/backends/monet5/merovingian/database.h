@@ -21,5 +21,6 @@
 #define _SEEN_DATABASE_H 1
 
 char* db_create(char *dbfarm, char* dbname, char maintenance);
+char* db_destroy(char* dbname);
 
 #endif
