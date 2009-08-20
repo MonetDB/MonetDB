@@ -132,6 +132,36 @@ void SABAOTHinit(str dbfarm, str dbname) {
 }
 
 @h
+mal_export str SABAOTHgetDBfarm(str *ret);
+@c
+/**
+ * Returns the dbfarm as received during SABAOTHinit.  Throws an
+ * exception if not initialised.
+ */
+str SABAOTHgetDBfarm(str *ret) {
+	if (_sabaoth_internal_dbfarm == NULL)
+		throw(MAL, "sabaoth.assert", SABAOTH_NOT_INITIALIZED);
+	*ret = GDKstrdup(_sabaoth_internal_dbfarm);
+	return(MAL_SUCCEED);
+}
+
+@h
+mal_export str SABAOTHgetDBname(str *ret);
+@c
+/**
+ * Returns the dbname as received during SABAOTHinit.  Throws an
+ * exception if not initialised or dbname was set to NULL.
+ */
+str SABAOTHgetDBname(str *ret) {
+	if (_sabaoth_internal_dbfarm == NULL)
+		throw(MAL, "sabaoth.assert", SABAOTH_NOT_INITIALIZED);
+	if (_sabaoth_internal_dbname == NULL)
+		throw(MAL, "sabaoth.assert", SABAOTH_USE_RESTRICTION);
+	*ret = GDKstrdup(_sabaoth_internal_dbname);
+	return(MAL_SUCCEED);
+}
+
+@h
 mal_export str SABAOTHmarchScenario(int *ret, str *lang);
 @c
 #define SCENARIOFILE ".scen"
