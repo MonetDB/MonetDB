@@ -164,6 +164,10 @@ controlRunner(void *d)
 						send(msgsock, buf2, len, 0);
 					}
 					pthread_mutex_unlock(&_mero_topdp_lock);
+				} else if (strcmp(p, "create") == 0) {
+					db_create(q);
+				} else if (strcmp(p, "destroy") == 0) {
+					db_destroy(q);
 				} else if (strncmp(p, "share=", strlen("share=")) == 0) {
 					sabdb *stats;
 					sabdb *topdb;

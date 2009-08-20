@@ -55,6 +55,7 @@
 #include "utils.h"
 #include "properties.h"
 #include "glob.h"
+#include "database.h"
 #include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
