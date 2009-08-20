@@ -1015,6 +1015,7 @@ copyInstruction(InstrPtr p)
 void
 clrFunction(InstrPtr p)
 {
+	p->token = ASSIGNsymbol;
 	p->fcn = 0;
 	p->blk = 0;
 	setModuleId(p, NULL);
