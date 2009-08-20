@@ -1000,7 +1000,6 @@ CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 
-	assert (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ);
 	for( i = 0; i<pci->retc && cnt < end; i++, cnt++) {
 		bat *res = (bat*) getArgReference(stk, pci, i);
 		BAT *v;
