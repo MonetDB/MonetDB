@@ -36,7 +36,7 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
-char* db_create(char *dbfarm, char* dbname, char maintenance) {
+char* db_create(char *dbfarm, char* dbname) {
 	sabdb *stats;
 	char* e;
 	size_t c;
@@ -102,11 +102,10 @@ char* db_create(char *dbfarm, char* dbname, char maintenance) {
 				"filenames inside would get truncated"));
 	}
 
-	/* if we should put this database in maintenance, make sure
-	 * no race condition ever can happen, by putting it into
-	 * maintenance before it even exists for Merovingian */
-	if (maintenance == 1)
-		fclose(fopen(path, "w"));
+	/* put this database under maintenance, make sure no race condition
+	 * ever can happen, by putting it under maintenance before it even
+	 * exists for Merovingian */
+	fclose(fopen(path, "w"));
 
 	/* avoid GDK making fugly complaints */
 	snprintf(path, sizeof(path), "%s/%s/.gdk_lock", dbfarm, dbname);

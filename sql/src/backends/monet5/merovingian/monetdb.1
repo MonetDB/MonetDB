@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "JUNE 2009" Application "MonetDB Applications"
+.TH MONETDB 1 "AUGUST 2009" Application "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
@@ -20,19 +20,14 @@ utility are
 .BR create ", " destroy ", " lock ", " release ", " status ", " start ", " stop ", " kill ", " set ", " get ", " inherit ", " discover ", " help ", " version .
 The commands facilitate adding, removing, maintaining, starting and
 stopping a database inside the MonetDB Database Server.
-.IP "create [\-l] database [database ...]"
+.IP "create database [database ...]"
 Initialises a new database in the MonetDB Database Server.  A database
-created with this command makes it available for use by clients under
-its database name.  The name of the database must match the expression
-[A\-Za\-z0\-9\-_]+.
-.IP "  \-l"
-The
-.I \-l
-(lock) option, puts the database in maintenance mode directly after
-its creation.  A database created like this is guaranteed not to be
-automatically started by
-.BR merovingian (1)
-upon a client request during its creation time.
+created with this command makes it available under its database name,
+but not yet for use by clients, as the database is put into maintenance
+mode.  This allows the database administrator to perform initialisation
+steps before releasing it to users.  See also
+.BR "monetdb lock" .
+The name of the database must match the expression [A\-Za\-z0\-9\-_]+.
 .IP "destroy [\-f] database [database ...]"
 Removes the given database, including all its data and logfiles.  Once
 destroy has completed, all data is lost.  Be careful when using this

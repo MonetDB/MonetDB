@@ -89,12 +89,10 @@ command_help(int argc, char *argv[])
 		printf("    discover, help, version\n");
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "create") == 0) {
-		printf("Usage: monetdb create [-l] database [database ...]\n");
+		printf("Usage: monetdb create database [database ...]\n");
 		printf("  Initialises a new database in the MonetDB Server.  A\n");
 		printf("  database created with this command makes it available\n");
-		printf("  for use.\n");
-		printf("Options:\n");
-		printf("  -l  put the database in maintenance mode after creation\n");
+		printf("  for use, however in maintenance mode (see monetdb lock).\n");
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		printf("Usage: monetdb destroy [-f] database [database ...]\n");
 		printf("  Removes the given database, including all its data and\n");
@@ -190,7 +188,6 @@ static void
 command_create(int argc, char *argv[])
 {
 	int i;
-	int maintenance = 0;  /* create locked database */
 	int state = 0;        /* return status */
 	int hadwork = 0;      /* if we actually did something */
 
@@ -207,14 +204,9 @@ command_create(int argc, char *argv[])
 			break;
 		}
 		if (argv[i][0] == '-') {
-			if (argv[i][1] == 'l') {
-				maintenance = 1;
-				argv[i] = NULL;
-			} else {
-				fprintf(stderr, "create: unknown option: %s\n", argv[i]);
-				command_help(argc + 1, &argv[-1]);
-				exit(1);
-			}
+			fprintf(stderr, "create: unknown option: %s\n", argv[i]);
+			command_help(argc + 1, &argv[-1]);
+			exit(1);
 		}
 	}
 
@@ -225,11 +217,11 @@ command_create(int argc, char *argv[])
 		if (argv[i] == NULL)
 			continue;
 
-		ret = db_create(dbfarm, argv[i], maintenance);
+		ret = db_create(dbfarm, argv[i]);
 
 		if (ret == NULL) {
-			printf("successfully created database '%s'%s\n", argv[i],
-					(maintenance == 1 ? " in maintenance mode" : ""));
+			printf("successfully created database '%s' "
+					"in maintenance mode\n", argv[i]);
 		} else {
 			fprintf(stderr, "create: %s\n", ret);
 			free(ret);
