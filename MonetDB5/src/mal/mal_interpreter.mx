@@ -837,7 +837,7 @@ runDFLOWworker(void *t)
 		fs = (FlowStep)q_dequeue(task->todo);
 		oldpc= fs->pc;
 		while (oldpc > 0 && (fs->error = DFLOWstep(task, fs)) && 
-				(err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
+			(err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
 			/* restore the instruction and wait*/
 			THRprintf(GDKerr, "#Thread %d needs memory:%s\n",task->id,err);
 /*

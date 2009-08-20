@@ -271,26 +271,31 @@ strcasestr (char *haystack, char *needle)
 #endif
 
 static int 
-re_match(str s, RE *pattern, int ignore )
+re_match_ignore(str s, RE *pattern)
 {
 	RE *r;
 
-	if (ignore) {
-		for(r = pattern; r; r = r->n) {
-			if (!*s || 
+	for(r = pattern; r; r = r->n) {
+		if (!*s || 
 			(!r->search && strncasecmp(s, r->k, r->len) != 0) ||
 			(r->search && (s = strcasestr(s, r->k)) == NULL))
 			return 0;
-			s += r->len;
-		}
-	} else {
-		for(r = pattern; r; r = r->n) {
-			if (!*s || 
+		s += r->len;
+	}
+	return 1;
+}
+
+static int 
+re_match_no_ignore(str s, RE *pattern)
+{
+	RE *r;
+
+	for(r = pattern; r; r = r->n) {
+		if (!*s || 
 			(!r->search && strncmp(s, r->k, r->len) != 0) ||
 			(r->search && (s = strstr(s, r->k)) == NULL))
 			return 0;
-			s += r->len;
-		}
+		s += r->len;
 	}
 	return 1;
 }
@@ -351,11 +356,20 @@ re_uselect(RE *pattern, BAT *strs, int ignore)
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
 	
-	BATloop(strs, p, q) {
-		str s = BUNtail(strsi, p);
-
-		if (re_match(s, pattern, ignore)) 
-			BUNfastins(r, BUNhead(strsi, p), NULL);
+	if (ignore) {
+		BATloop(strs, p, q) {
+			str s = BUNtail(strsi, p);
+	
+			if (re_match_ignore(s, pattern)) 
+				BUNfastins(r, BUNhead(strsi, p), NULL);
+		}
+	} else {
+		BATloop(strs, p, q) {
+			str s = BUNtail(strsi, p);
+	
+			if (re_match_no_ignore(s, pattern)) 
+				BUNfastins(r, BUNhead(strsi, p), NULL);
+		}
 	}
 	r->H->nonil = strs->H->nonil;
 	r->hsorted = strs->hsorted;
@@ -379,11 +393,20 @@ re_select(RE *pattern, BAT *strs, int ignore)
 	else
 		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
 	
-	BATloop(strs, p, q) {
-		str s = BUNtail(strsi, p);
+	if (ignore) {
+		BATloop(strs, p, q) {
+			str s = BUNtail(strsi, p);
 
-		if (re_match(s, pattern, ignore)) 
-			BUNins(r, BUNhead(strsi, p), s, FALSE);
+			if (re_match_ignore(s, pattern)) 
+				BUNins(r, BUNhead(strsi, p), s, FALSE);
+		}
+	} else {
+		BATloop(strs, p, q) {
+			str s = BUNtail(strsi, p);
+
+			if (re_match_no_ignore(s, pattern)) 
+				BUNins(r, BUNhead(strsi, p), s, FALSE);
+		}
 	}
 	r->H->nonil = strs->H->nonil;
 	r->hsorted = strs->hsorted;
