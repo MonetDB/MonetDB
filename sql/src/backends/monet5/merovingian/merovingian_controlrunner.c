@@ -165,9 +165,31 @@ controlRunner(void *d)
 					}
 					pthread_mutex_unlock(&_mero_topdp_lock);
 				} else if (strcmp(p, "create") == 0) {
-					db_create(q);
+					err e = db_create(q);
+					if (e != NO_ERR) {
+						Mfprintf(stderr, "failed to create "
+								"database '%s': %s\n", q, getErrMsg(e));
+						len = snprintf(buf2, sizeof(buf2),
+								"create: %s\n", getErrMsg(e));
+						send(msgsock, buf2, len, 0);
+						freeErr(e);
+					} else {
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send(msgsock, buf2, len, 0);
+					}
 				} else if (strcmp(p, "destroy") == 0) {
-					db_destroy(q);
+					err e = db_destroy(q);
+					if (e != NO_ERR) {
+						Mfprintf(stderr, "failed to destroy "
+								"database '%s': %s\n", q, getErrMsg(e));
+						len = snprintf(buf2, sizeof(buf2),
+								"destroy: %s\n", getErrMsg(e));
+						send(msgsock, buf2, len, 0);
+						freeErr(e);
+					} else {
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send(msgsock, buf2, len, 0);
+					}
 				} else if (strncmp(p, "share=", strlen("share=")) == 0) {
 					sabdb *stats;
 					sabdb *topdb;
