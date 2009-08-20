@@ -37,6 +37,7 @@
 #include "utils.h"
 #include "properties.h"
 #include "glob.h"
+#include "database.h"
 #include <stdlib.h> /* exit, getenv */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf, rename */
@@ -184,7 +185,64 @@ command_version()
 #include "monetdb_merocom.c"
 #include "monetdb_set.c"
 #include "monetdb_get.c"
-#include "monetdb_create.c"
+
+static void
+command_create(int argc, char *argv[])
+{
+	int i;
+	int maintenance = 0;  /* create locked database */
+	int state = 0;        /* return status */
+	int hadwork = 0;      /* if we actually did something */
+
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(2, &argv[-1]);
+		exit(1);
+	}
+	
+	/* walk through the arguments and hunt for "options" */
+	for (i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i][0] = '\0';
+			break;
+		}
+		if (argv[i][0] == '-') {
+			if (argv[i][1] == 'l') {
+				maintenance = 1;
+				argv[i][0] = '\0';
+			} else {
+				fprintf(stderr, "create: unknown option: %s\n", argv[i]);
+				command_help(argc + 1, &argv[-1]);
+				exit(1);
+			}
+		}
+	}
+
+	/* do for each listed database */
+	for (i = 1; i < argc; i++) {
+		char *ret = db_create(dbfarm, argv[i], maintenance);
+
+		if (ret == NULL) {
+			printf("successfully created database '%s'%s\n", argv[i],
+					(maintenance == 1 ? " in maintenance mode" : ""));
+		} else {
+			fprintf(stderr, "create: %s\n", ret);
+			free(ret);
+
+			state |= 1;
+		}
+
+		hadwork = 1;
+	}
+
+	if (hadwork == 0) {
+		command_help(2, &argv[-1]);
+		state |= 1;
+	}
+
+	exit(state);
+}
+
 #include "monetdb_destroy.c"
 #include "monetdb_lock.c"
 #include "monetdb_release.c"
