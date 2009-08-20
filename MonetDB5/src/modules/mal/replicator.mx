@@ -104,7 +104,7 @@ pattern delete(s:str, t:str, b:bat[:oid,:any_1], tag:int):void
 address MASTERdelete
 comment "Dump the BAT with deletions on the MAL log");
 
-command replay(uri:str, usr:str, pw:str, tag:int):void
+pattern replay(uri:str, usr:str, pw:str, tag:int):void
 address MASTERreplay
 comment "Start the replication log replayer thread feeding
 the client with the necessary log records";
@@ -137,6 +137,9 @@ comment "Remove the tag function from the module";
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
+#include <mal_sabaoth.h> /* for local "connections" */
+#include <mapilib/Mapi.h>
+#include "remote.h"
 #include "mtime.h"
 
 #define _DEBUG_REPLICATOR_
@@ -155,7 +158,7 @@ replicator_export str MASTERopen(int *ret);
 replicator_export str MASTERclose(int *ret, int *tag);
 replicator_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replicator_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replicator_export str MASTERreplay(int *ret, str *uri, str *usr, str *pw, int *tag);
+replicator_export str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 replicator_export str SLVopen(int *ret, int *tag, timestamp *t);
 replicator_export str SLVclose(int *ret, int *tag, timestamp *t);
@@ -497,45 +500,58 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str MASTERreplay(int *ret, str *uri, str *usr, str *pw, int *tag)
+@-
+Replaying the MAL logs is straightforward. We have to open a
+MAL session with the slave and sent the old logfiles for execution.
+Thereafter, just continue pushing the content of the last log.
+@c
+str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) ret;
-	(void) uri;
-	(void) usr;
-	(void) pw;
-	(void) tag;
+	str *uri= (str*)getArgReference(stk,pci,1);
+	str *usr= (str*)getArgReference(stk,pci,2);
+	str *pw= (str*)getArgReference(stk,pci,3);
+	int *tag= (int*)getArgReference(stk,pci,4), t= *tag;
+	str scen="mal", con;
+	str msg;
+	char buf[BUFSIZ];
+
+	(void) cntxt;
+	(void) mb;
+
+	msg = RMTconnectScen(&con, uri,usr,pw, &scen);
+	if ( msg)
+		return msg;
+	
+	do{
+		snprintf(buf, BUFSIZ, MASTER REPLICA, (t / GRANULE) *GRANULE);
+		/* copy it */
+		t += GRANULE;
+	} while (t < *tag); /* fake exit */
 	return MAL_SUCCEED;
 }
 
+@-
+We should assure that only operations we haven't seen are
+being executed. This is based on the tag assigned to each
+replicator block. The main issue to deal with is that
+blocks may arrive out of order, i.e. reflecting the
+concurrent behavior at the master.
+This calls for a persistent table with all tags.
+
+[for now we assume in order arrival]
+@c
 str SLVopen(int *ret, int *tag, timestamp *t){
 	(void) ret;
-	(void) tag;
 	(void) t;
+	if ( *tag < repTag)
+		throw(MAL,"slave.open","Operation ignored");
 	return MAL_SUCCEED;
 }
 
 str SLVclose(int *ret, int *tag, timestamp *t){
 	(void) ret;
-	(void) tag;
 	(void) t;
-	return MAL_SUCCEED;
-}
-
-str
-SLVappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *schema = (str*) getArgReference(stk,pci,1);
-	str *table = (str*) getArgReference(stk,pci,2);
-	int *bid = (int*) getArgReference(stk,pci,3);
-	int *col = (int*) getArgReference(stk,pci,4);
-	int tag = *(int*) getArgReference(stk,pci,5);
-
-	(void) mb;
-	(void) cntxt;
-	(void) schema;
-	(void) table;
-	(void) bid;
-	(void) tag;
-	(void) col;
+	repTag = *tag;
 	return MAL_SUCCEED;
 }
 
@@ -569,8 +585,14 @@ SLVreplay(int *ret, str *uri, str *usr, str *pw, int *tag)
 str
 SLVdrop(int *ret, str *tag)
 {
+	Symbol prg;
+	Module mod;
+	prg = findSymbol(NULL, getName("slave",5), *tag);
+	mod = findModule(NULL, getName("slave",5));
+	if ( prg == NULL || mod == NULL)
+		throw(MAL,"slave.drop","Symbol not found");
+	deleteSymbol(mod,prg);
 	(void) ret;
-	(void) tag;
 	return MAL_SUCCEED;
 }
 
