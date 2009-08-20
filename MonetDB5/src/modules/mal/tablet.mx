@@ -977,6 +977,7 @@ void_bat_create(int adt, BUN nr)
 		return b;
 	if (BATmirror(b))
 		BATseqbase(b, 0);
+	BATsetaccess(b, BAT_APPEND);
 	if (nr > (BUN) REMAP_PAGE_MAXSIZE)
         	BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	if (nr > BATTINY && adt)
@@ -2375,10 +2376,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		if ( cnt == (BUN) maxrow ) 
 			break;
 	}
-	if (cnt < (BUN) maxrow   && maxrow > 0) {
-		/* providing a precise count is not always easy, instead consider maxrow as an upperbound */
-		stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
-	}
 	
 	/* close down the workers */
 #ifdef _DEBUG_TABLET_
@@ -2389,6 +2386,9 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		MT_up_sema(ptask[j].sema,"SQLworker");
 	}
 	if (GDKdebug & GRPalgorithms) {
+		if (cnt < (BUN) maxrow   && maxrow > 0) 
+			/* providing a precise count is not always easy, instead consider maxrow as an upperbound */
+			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
 		stream_printf(GDKout,"# COPY reader time " LLFMT "\n#",total);
 		for( i=0; i< as->nr_attrs; i++) 
 				stream_printf(GDKout,LLFMT " ", task->time[i]);
