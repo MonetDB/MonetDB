@@ -47,6 +47,7 @@
 	
 	define("MEROVINGIAN", "merovingian");
 	define("MSERVER", "mserver");
+	define("MONETDB", "monetdb");
 	
 	define('MAX_MEROVINGIAN_ITER', 10); // Maximum number of iterations during proxied auth through merovingian
 
@@ -265,7 +266,7 @@
 		hash	 =>
 	
 	*/
-	function mapi_connect($socket, $options, $merovingian_iter) {
+	function mapi_connect(&$socket, &$options, $merovingian_iter=NULL) {
 		global $last_error;
 		global $connection_pool;
 		
@@ -278,7 +279,17 @@
 		$dbname = $options["database"];
 		
 		$lang 	= $options["lang"];
-		
+
+
+		/* No merovingian redirect. Perform an actual connection. */
+		if ($merovingian_iter == NULL) {
+			if (socket_connect($socket, $host, $port) == FALSE) {
+            	$last_error = socket_strerror(socket_last_error());
+              	exit();
+            }	
+		}
+
+
 		// get server challenge
 		$challenge = mapi_read($socket);				
 
@@ -296,26 +307,39 @@
 		$credentials = split(":", $challenge);
 		$algos = explode(',', $credentials[3]);
 		
-		
+				
 		// $challenge[0] contains the salt
 		if ($credentials[2] == PROTOCOL_v8 ){
 			// Protocol v8 supported only for legacy reasons
  			mapi_authenticate_v8($socket, $user, $passwd, $hash, $algos, $credentials[0], $dbname, $lang);
 		} else if ($credentials[2] == PROTOCOL_v9) {
 			// $credentials[5] contains pwhash
-			mapi_authenticate_v9($socket, $user, $passwd, $hash, $credentials[0], $dbname, $credentials[5]);			
+			// $credentials[0] contains the hash
+			mapi_authenticate_v9($socket, $user, $passwd, $hash, $algos, $credentials[0], $dbname, $credentials[5]);			
 		} else {
 			$last_error = "Protocol " . $credentials[2] . " not supported. Aborting.";
 			return FALSE;		
 		}
 		
 		$response = mapi_read($socket);
-				
+
+		/* Follow the first redirect */	
+		
 		if ($response != MSG_PROMPT) { 
 		// not ready to authenticate yet
-		
-			if ($response[0] == MSG_REDIRECT) {		
-				if ($credentials[1] == "merovingian") {
+			if ($response[0] == MSG_REDIRECT) {
+				$redirects = split("\n", $response);
+	                 	/* Follow the first redirect */
+					
+				if ( ($redirects[0] == "") || (substr($redirects[0], 0, 6) != "^mapi:") ) {
+					print "Invalid redirect " . $redirects[0] . "\n";
+					return FALSE;
+				}
+
+				$link = substr($redirects[0], 6, strlen($redirects[0]));
+				$redirect_to = parse_url($link);
+				
+				if ($redirect_to['scheme'] == MEROVINGIAN) {
 					if ($merovingian_iter < MAX_MEROVINGIAN_ITER) {
 						$merovingian_iter++;
 						if (mapi_connect($socket, $options, $merovingian_iter) == FALSE) {
@@ -326,17 +350,25 @@
 						return FALSE;
 					}
 				}
-				else if ($credentials[1] == "mserver") {
+			 	else if($redirect_to['scheme'] == MONETDB ) {
+				
+					$options['host'] = $redirect_to['host'];
+					$options['port']     = $redirect_to['port'];
+					$options['database'] = ltrim($redirect_to['path'], '/');
 					
-					mapi_close($socket);
-					if (mapi_connect(mapi_open(), $options) == FALSE) {
+					socket_close($socket);
+					$socket = mapi_open();
+					if (mapi_connect($socket, $options) == FALSE) {
 						return FALSE;
 					}
+
+			    } else {
+					print $response;
+					return FALSE;
 				}
 				
 			} else if ($response[0] == MSG_INFO) {
 				$last_error = $response;
-				// socket_close($socket); // abort the connection
 				return FALSE;
 			}
 		}
@@ -369,7 +401,7 @@
 	}
 
 	/* Hash function names have to be uppercase */
-	function mapi_authenticate_v9($socket, $user, $passwd, $hash, $salt, $dbname, $pwhash) {
+	function mapi_authenticate_v9($socket, $user, $passwd, $hash, $algos, $salt, $dbname, $pwhash) {
 		$auth_string = "";
 		if ( (is_array($algos) && (! in_array(strtoupper($hash), $algos)) )  ) 			 {			
 			$last_error = "Hash function " . $hash . " not supported";
@@ -387,7 +419,10 @@
 	// decode the header and get the requested amount of data
 	function mapi_read($socket=NULL) {
 		# get the first 2 bytes
-		$header = socket_read($socket, 2);
+		if ( ($header = socket_read($socket, 2)) == FALSE) {
+			$last_error = socket_strerror(socket_last_error());
+			exit(); 
+		}
 		$data = "";
 		$chunk_size = "";
 
@@ -396,10 +431,20 @@
 		
 		
 		while ((ord($header[0]) & 1) == 0 ) {
-			$header = socket_read($socket, 2);
+                	if ( ($header = socket_read($socket, 2)) == FALSE) {
+                        	$last_error = socket_strerror(socket_last_error()); 
+                      		exit();
+                	}
+
 			$chunk_size = ( ((ord($header[1]))  << 7) | (ord($header[0]) >> 1) );
+
+			if ( ($block = socket_read($socket, $chunk_size)) == FALSE) {
+                	        $last_error = socket_strerror(socket_last_error()); 
+        	                exit();
+	                }
 			
-			$data = $data . socket_read($socket, $chunk_size);
+
+			$data = $data . $block;
 		}
 		if (strlen($data) == 0) {
 			return "";
@@ -472,33 +517,23 @@
 	}
 	
 	
-	function mapi_connect_proxy($options) {
+	function mapi_connect_proxy(&$options) {
 		global $last_error;
 		global $connection_pool;
 		global $pconnect_count;
 		
 		$merovingian_iter = 0;
 		
-		$host 	= $options["host"];
-		$port 	= $options["port"];
-
-		$user 	= $options["username"];
-		$passwd = $options["password"];
-		$hash 	= $options["hashfunc"];
-		$dbname = $options["database"];
-		
-		$persistent = $options["persistent"];
-		$lang = $options["lang"];
-		
 		/**
 		  * First, when connecting, the function would first try to find a (persistent) link that's already 
 		  * open with the same host, username and password. If one is found, an identifier for it will be returned 
 		  * instead of opening a new connection. 
+		  * TODO: move this check to mapi_connect() to deal with options arrays rewritten by redirects.
 		*/
-		if ($persistent == TRUE) {
+		if ($options['persistent'] == TRUE) {
 			if (count($connection_pool) > 0) {
 				foreach ($connection_pool as $conn) {
-					if ( ($conn["persistent"] == TRUE) && ($conn["dbname"] == $dbanme) && ($conn['username'] == $user) && ($conn["password"] == hash("sha1", $passwd) && ($conn["host"]) == $host)) {
+					if ( ($conn["persistent"] == TRUE) && ($conn["dbname"] == $options['database']) && ($conn['username'] == $options['username']) && ($conn["password"] == hash($options['hashfunc'], $options['password']) && ($conn['host']) == $options['host']) && ( $conn['port'] == $options['port'] ) ) {
 						return $conn;
 					}	
 				}
@@ -506,18 +541,13 @@
 		}
 		
 		$socket	= mapi_open();
-		if (socket_connect($socket, $host, $port) == FALSE) {
-			$last_error = socket_strerror(socket_last_error());
-			return FALSE;
-		}
-		
 
 		if ( mapi_connect($socket, $options, $merovingian_iter) == TRUE ) {
 			/* Connected */
 			
 			// Create a new connection instance and insert an entry in the connections table
 			$id = mapi_generate_id();
-			if ($lang == LANG_SQL) {
+			if ($options['lang'] == LANG_SQL) {
 				
 				set_timezone($socket); // set the timezone according to the system's configuration
 				
@@ -528,7 +558,7 @@
 					$last_error = $response;
 					return FALSE;
 				}
-			} else if (($lang == LANG_XQUERY) && (defined('XQUERY_OUTPUT_SEQ'))) {
+			} else if (($options['lang'] == LANG_XQUERY) && (defined('XQUERY_OUTPUT_SEQ'))) {
 				$buf = mapi_write($socket, format_command("output seq"));
 				if ( ($response = mapi_read($socket)) != MSG_PROMPT) {
 					$last_error = $response;
@@ -538,11 +568,11 @@
 				return FALSE;
 			}
 		} else {
-			socket_close($socket);			
+			socket_close($socket);	
 			return FALSE;
 		}
 
-		$connection = array("id" => $id, "socket" => $socket, "host" => $options["host"], "port" => $options["port"], "dbname" => $dbname, "username" => $options["username"], "password" => hash("sha1", $options["password"]), "transactions" => array(), "persistent" => $options["persistent"], "lang" => $lang);
+		$connection = array("id" => $id, "socket" => $socket, "host" => $options["host"], "port" => $options["port"], "dbname" => $options['database'], "username" => $options["username"], "password" => hash($options['hashfunc'], $options["password"]), "transactions" => array(), "persistent" => $options["persistent"], "lang" => $options['lang']);
 		
 		$connection_pool[] = $connection;
 				

@@ -39,7 +39,7 @@
 	 * @return bool TRUE on success or FALSE on failure 
 	 */
 	
-	function monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb", $hashfunc = "" ) {
+	function monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb", $hashfunc = "", $lang = "" ) {
 	 	$options["host"] = $host;
 		$options["port"] = $port;
 
@@ -48,6 +48,18 @@
 		
 		$options["database"] = $database; 
 		$options["persistent"] = FALSE;
+	
+	
+	    if ($hashfunc == "") {
+		    $hashfunc = "sha1";
+	    }
+	    
+	    if ($lang == "") {
+	        $lang = "sql";
+	    }
+	    
+	    $options["hashfunc"] = $hashfunc;
+        $options["lang"]     = $lang;
 				
 		return mapi_connect_proxy($options);
 	}
@@ -65,7 +77,7 @@
 	 * @return bool TRUE on success or FALSE on failure 
 	 */
 	
-	function monetdb_pconnect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb", $hashfunc = "", $lang = "sql") {
+	function monetdb_pconnect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb", $hashfunc = "", $lang = "") {
 	 	$options["host"] = $host;
 		$options["port"] = $port;
 
@@ -76,6 +88,10 @@
 		
 		if ($hashfunc == "") {
 		    $hashfunc = "sha1";
+	    }
+	    
+	    if ($lang == "") {
+	        $lang = "sql";
 	    }
 	    
 	    $options["hashfunc"] = $hashfunc;
