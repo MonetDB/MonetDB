@@ -1003,9 +1003,9 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 
 	/* filter on columns of this relation */
 	if ((lrel == rrel && lrel->op != op_join) || rel_is_ref(p)) {
-		if (lrel->op == op_select) {
+		if (lrel->op == op_select && !rel_is_ref(lrel)) {
 			rel_select_add_exp(lrel, e);
-		} else if (p && p->op == op_select) {
+		} else if (p && p->op == op_select && !rel_is_ref(p)) {
 			rel_select_add_exp(p, e);
 		} else {
 			sql_rel *n = rel_select(lrel, e);
@@ -2019,7 +2019,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, int f)
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 	rel = rel_distinct(rel);
 	if (exps_card(l->exps) <= CARD_AGGR &&
-			exps_card(r->exps) <= CARD_AGGR)
+	    exps_card(r->exps) <= CARD_AGGR)
 	{
 		rel->card = exps_card(l->exps);
 		exps_fix_card( rel->exps, rel->card);
