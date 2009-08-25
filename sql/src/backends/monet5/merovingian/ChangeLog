@@ -1,6 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  25 Aug 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c:
+  Properly recognise mero_port option from config file, bug #2844202
+
 *Aug2009
 
   31 Jul 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
