@@ -439,6 +439,7 @@ main(int argc, char *argv[])
 		{"sql_logdir",         NULL},
 		{"mero_msglog",        NULL},
 		{"mero_errlog",        NULL},
+		{"mero_port",          NULL},
 		{"mero_exittimeout",   NULL},
 		{"mero_pidfile",       NULL},
 		{"mero_doproxy",       NULL},
