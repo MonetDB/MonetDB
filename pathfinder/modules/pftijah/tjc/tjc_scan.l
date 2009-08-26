@@ -202,7 +202,7 @@ Char                             {MinimalChar}|[-{}<&'"#)]
 
 AlphaNum			 {AlphaNumChar}+
 
-AlphaNumChar			 {Letter}|{Digit}|{CharRef}
+AlphaNumChar			 {Letter}|{Digit}|{CharRef}|[_]
 
 
 /* whitespace/comments in compound keywords */
