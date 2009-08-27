@@ -38,6 +38,7 @@
 #include "properties.h"
 #include "glob.h"
 #include "database.h"
+#include "control.h"
 #include <stdlib.h> /* exit, getenv */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf, rename */

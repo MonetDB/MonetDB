@@ -23,15 +23,15 @@ typedef enum {
 	KILL,
 	SHARE
 } merocom;
+/*	CREATE,
+	DESTROY */
 
 static void
 command_merocom(int argc, char *argv[], merocom mode)
 {
 	int doall = 0;
 	char path[8096];
-	int sock = -1;
-	struct sockaddr_un server;
-	char buf[256];
+	char *res;
 	int i;
 	err e;
 	sabdb *orig;
@@ -102,20 +102,6 @@ command_merocom(int argc, char *argv[], merocom mode)
 		exit(1);
 	}
 
-	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-		fprintf(stderr, "%s: cannot open connection: %s\n",
-				type, strerror(errno));
-		exit(2);
-	}
-	memset(&server, 0, sizeof(struct sockaddr_un));
-	server.sun_family = AF_UNIX;
-	strncpy(server.sun_path, path, sizeof(server.sun_path) - 1);
-	if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
-		fprintf(stderr, "%s: cannot connect: %s\n",
-				type, strerror(errno));
-		exit(2);
-	}
-
 	if (doall == 1) {
 		/* don't even look at the arguments, because we are instructed
 		 * to list all known databases */
@@ -156,21 +142,14 @@ command_merocom(int argc, char *argv[], merocom mode)
 			if (stats->state == SABdbRunning) {
 				printf("%s%sing database '%s'... ", type, mode == STOP ? "p" : "", stats->dbname);
 				fflush(stdout);
-				len = snprintf(buf, sizeof(buf),
-						"%s %s\n", stats->dbname, type);
-				send(sock, buf, len, 0);
-				if ((len = recv(sock, buf, sizeof(buf), 0)) <= 0) {
-					fprintf(stderr, "\n%s: no response from merovingian\n",
-							type);
-					exit(2);
-				}
-				buf[len] = '\0';
-				if (strcmp(buf, "OK\n") == 0) {
+				control_send(&res, path, 0, stats->dbname, type);
+				if (strcmp(res, "OK\n") == 0) {
 					printf("done\n");
 				} else {
-					printf("FAILED:\n%s", buf);
+					printf("FAILED:\n%s", res);
 					ret = 1;
 				}
+				free(res);
 			} else if (doall != 1) {
 				printf("%s: database is not running: %s\n", type, stats->dbname);
 			}
@@ -178,47 +157,34 @@ command_merocom(int argc, char *argv[], merocom mode)
 			if (stats->state != SABdbRunning) {
 				printf("starting database '%s'... ", stats->dbname);
 				fflush(stdout);
-				len = snprintf(buf, sizeof(buf),
-						"%s %s\n", stats->dbname, type);
-				send(sock, buf, len, 0);
-				if ((len = recv(sock, buf, sizeof(buf), 0)) <= 0) {
-					fprintf(stderr, "\n%s: no response from merovingian\n",
-							type);
-					exit(2);
-				}
-				buf[len] = '\0';
-				if (strcmp(buf, "OK\n") == 0) {
+				control_send(&res, path, 0, stats->dbname, type);
+				if (strcmp(res, "OK\n") == 0) {
 					printf("done\n");
 				} else {
-					printf("FAILED:\n%s", buf);
+					printf("FAILED:\n%s", res);
 					ret = 1;
 				}
+				free(res);
 			} else if (doall != 1 && stats->state == SABdbRunning) {
 				printf("%s: database is already running: %s\n",
 						type, stats->dbname);
 			}
 		} else if (mode == SHARE) {
 			char *value = argv[1];
+			char share[4069];
 
 			/* stay quiet, we're part of monetdb set property=value */
-			len = snprintf(buf, sizeof(buf),
-					"%s share=%s\n", stats->dbname, value);
-			send(sock, buf, len, 0);
-			if ((len = recv(sock, buf, sizeof(buf), 0)) <= 0) {
-				fprintf(stderr, "\n%s: no response from merovingian\n",
-						type);
-				exit(2);
-			}
-			buf[len] = '\0';
-			if (strcmp(buf, "OK\n") != 0) {
-				printf("FAILED:\n%s", buf);
+
+			len = snprintf(share, sizeof(share), "share=%s", value);
+			control_send(&res, path, 0, stats->dbname, share);
+			if (strcmp(res, "OK\n") != 0) {
+				printf("FAILED:\n%s", res);
 				ret = 1;
 			}
+			free(res);
 		}
 		stats = stats->next;
 	}
-
-	close(sock);
 
 	if (orig != NULL)
 		SABAOTHfreeStatus(&orig);
