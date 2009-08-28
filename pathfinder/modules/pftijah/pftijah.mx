@@ -6029,7 +6029,7 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *nid_size, BAT
     /* -------------------------------- main ---------------------------------------- */
     
     /* skip descendant candidates before the next ancestor candidate */
-    while(D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= *(oid*)Tloc(Astart,A_cur))
+    while(D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= *(oid*)BUNtail(Ai,A_cur))
       D_cur++; 
       
     while(D_cur < D_last && A_cur < A_last) {
@@ -6047,7 +6047,7 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *nid_size, BAT
           A_cur++;
 
       /* write to result */ 
-      while (D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= (*(oid*)Tloc(Astart, A_cur) + size[*(oid*)BUNhead(Ai, A_cur)])) {
+      while (D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= (*(oid*)BUNtail(Ai, A_cur) + size[*(oid*)BUNhead(Ai, A_cur)])) {
           *hdst++ = *(oid*)BUNhead(Ai, A_cur);
           *tdst++ = *(oid*)BUNhead(Di, D_cur);
           D_cur++;
@@ -6133,7 +6133,7 @@ int CMDtreemergejoin_unnested_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT 
     /* -------------------------------- main ---------------------------------------- */
     
     /* skip descendant candidates before the next ancestor candidate */
-    while(D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= *(oid*)Tloc(Astart,A_cur))
+    while(D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= *(oid*)BUNtail(Ai,A_cur))
       D_cur++; 
       
     while(D_cur < D_last && A_cur < A_last) {
@@ -6151,7 +6151,7 @@ int CMDtreemergejoin_unnested_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT 
           A_cur++;
 
       /* write to result */ 
-      while (D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= (*(oid*)Tloc(Astart, A_cur) + size[*(oid*)BUNhead(Ai, A_cur)])) {
+      while (D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= (*(oid*)BUNtail(Ai, A_cur) + size[*(oid*)BUNhead(Ai, A_cur)])) {
           *hdst++ = *(oid*)BUNhead(Ai, A_cur);
           *tdst++ = *(oid*)BUNhead(Di, D_cur);
           D_cur++;
