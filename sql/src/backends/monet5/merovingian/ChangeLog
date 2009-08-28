@@ -1,6 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  25 Aug 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c:
+  Properly recognise mero_port option from config file, bug #2844202
+
   20 Aug 2009; Fabian Groffen <fabian@cwi.nl> database.c, database.h,
   monetdb.c, monetdb.1:
   Always put created databases under maintenance, they have to be explicitly
