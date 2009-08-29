@@ -821,7 +821,7 @@ copts.produceHelpMessage()
 					if (rs.next()) {
 						out.println(aff + " affected row" +
 								(aff != 1 ? "s" : "") +
-								", generated key: " + rs.getString(1));
+								", last generated key: " + rs.getString(1));
 					} else {
 						out.println(aff + " affected row" +
 								(aff != 1 ? "s" : ""));
