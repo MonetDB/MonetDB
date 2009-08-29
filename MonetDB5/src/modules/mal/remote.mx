@@ -188,8 +188,6 @@ remote_export str RMTepilogue(int *ret);
 @c
 static connection conns = NULL;
 
-static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
-
 @h
 remote_export str RMTresolve(int *ret, str *pat);
 @c
@@ -462,6 +460,9 @@ code for reconnecting if necessary
 			mal_unset_lock(c->lock, "remote.<findconn>");
 #endif
 
+@h
+remote_export str
+RMTfindconn(connection *ret, str conn);
 /**
  * Helper function to return a connection matching a given string, or an
  * error if it does not exist.  Since this function is internal, it
@@ -469,7 +470,8 @@ code for reconnecting if necessary
  * already.
  * NOTE: this function acquires the mal_remoteLock before accessing conns
  */
-static INLINE str
+@c
+str
 RMTfindconn(connection *ret, str conn) {
 	connection c;
 
@@ -522,6 +524,9 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	return(MAL_SUCCEED);
 }
 
+@h
+remote_export str
+RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 /**
  * Helper function to execute a query over the given connection,
  * returning the result handle.  If communication fails in one way or
@@ -530,7 +535,8 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
  * should have been checked already.
  * NOTE: this function assumes a lock for conn is set
  */
-static INLINE str
+@c
+str
 RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	MapiHdl mhdl;
 

@@ -64,6 +64,7 @@ function slave.tag0();
   tag0_b:= nil;
 end tag0;
 slave.tag0();
+slave.drop("tag0");
 @end verbatim
 
 Each query block is stored in its own buffer and sent at
@@ -104,27 +105,24 @@ pattern delete(s:str, t:str, b:bat[:oid,:any_1], tag:int):void
 address MASTERdelete
 comment "Dump the BAT with deletions on the MAL log");
 
-pattern replay(uri:str, usr:str, pw:str, tag:int):void
+pattern replay(uri:str, usr:str, pw:str, tag:int):str
 address MASTERreplay
 comment "Start the replication log replayer thread feeding
-the client with the necessary log records";
+the slave with the necessary log records. It simply pumps the
+data until running out for log info.";
 
 module slave;
 
 command open(tag:int,d:timestamp)
-address SLVopen
+address SLAVEopen
 comment "Mark the start of a replication record";
 
 command close(tag:int, d:timestamp)
-address SLVclose
+address SLAVEclose
 comment "End of replication record";
 
-command replay(uri:str, user:str, passwd:str,  tag:int):void
-address SLVreplay
-comment "Start the replication log replayer thread";
-
 command drop(tag:str)
-address SLVdrop
+address SLAVEdrop
 comment "Remove the tag function from the module";
 @-
 @{
@@ -137,7 +135,6 @@ comment "Remove the tag function from the module";
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
-#include <mal_sabaoth.h> /* for local "connections" */
 #include <mapilib/Mapi.h>
 #include "remote.h"
 #include "mtime.h"
@@ -160,12 +157,9 @@ replicator_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 replicator_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replicator_export str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-replicator_export str SLVopen(int *ret, int *tag, timestamp *t);
-replicator_export str SLVclose(int *ret, int *tag, timestamp *t);
-replicator_export str SLVappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replicator_export str SLVdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replicator_export str SLVreplay(int *ret, str *uri, str *usr, str *pw, int *tag);
-replicator_export str SLVdrop(int *ret, str *tag);
+replicator_export str SLAVEopen(int *ret, int *tag, timestamp *t);
+replicator_export str SLAVEclose(int *ret, int *tag, timestamp *t);
+replicator_export str SLAVEdrop(int *ret, str *tag);
 #endif /* _REPLICATOR_H */
 @c
 #include "mal_config.h"
@@ -180,7 +174,7 @@ The tag is returned for marking all related updates.
 The final code should contain a loop to determine the last replicator tag.
 @c
 #define MASTER "master"
-#define SLV "slave"
+#define SLAVE "slave"
 #define REPLICA "/log_%d"
 #define GRANULE 1000
 
@@ -501,9 +495,9 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 @-
-Replaying the MAL logs is straightforward. We have to open a
-MAL session with the slave and sent the old logfiles for execution.
-Thereafter, just continue pushing the content of the last log.
+Replaying the MAL logs is straightforward. We perform a remote
+operation execution on the master to initiate a quick dump of the
+missing operations.
 @c
 str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -511,20 +505,37 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *usr= (str*)getArgReference(stk,pci,2);
 	str *pw= (str*)getArgReference(stk,pci,3);
 	int *tag= (int*)getArgReference(stk,pci,4), t= *tag;
-	str scen="mal", con;
-	str msg;
+	str msg, ret, scen="mal";
 	char buf[BUFSIZ];
+	int skip=0;
+	connection c;
+	FILE *fp;
+	MapiHdl hdl;
 
 	(void) cntxt;
 	(void) mb;
 
-	msg = RMTconnectScen(&con, uri,usr,pw, &scen);
-	if ( msg)
-		return msg;
-	
+#define _DEBUG_REPLICATOR_
+#ifdef _DEBUG_REPLICATOR_
+	printf("replay the log to %s as of %d\n",*uri, *tag);
+#endif
+	msg = RMTconnectScen(&ret, uri, usr, pw, &scen);
+	if ( msg )
+		throw(MAL, "master.replay","could not connect to slave");
+	msg = RMTfindconn(&c, *uri);
+	if ( msg )
+		throw(MAL, "master.replay","could not connect to slave");
+
 	do{
 		snprintf(buf, BUFSIZ, MASTER REPLICA, (t / GRANULE) *GRANULE);
 		/* copy it */
+		if ( (fp = fopen(buf,"r")) == NULL)
+			break;
+		do{
+			msg = RMTquery(&hdl,"master.replay", c->mconn, buf+skip);
+		} while (msg == MAL_SUCCEED);
+		mapi_close_handle(hdl);
+
 		t += GRANULE;
 	} while (t < *tag); /* fake exit */
 	return MAL_SUCCEED;
@@ -540,7 +551,7 @@ This calls for a persistent table with all tags.
 
 [for now we assume in order arrival]
 @c
-str SLVopen(int *ret, int *tag, timestamp *t){
+str SLAVEopen(int *ret, int *tag, timestamp *t){
 	(void) ret;
 	(void) t;
 	if ( *tag < repTag)
@@ -548,7 +559,7 @@ str SLVopen(int *ret, int *tag, timestamp *t){
 	return MAL_SUCCEED;
 }
 
-str SLVclose(int *ret, int *tag, timestamp *t){
+str SLAVEclose(int *ret, int *tag, timestamp *t){
 	(void) ret;
 	(void) t;
 	repTag = *tag;
@@ -556,7 +567,7 @@ str SLVclose(int *ret, int *tag, timestamp *t){
 }
 
 str
-SLVdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+SLAVEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *schema = (str*) getArgReference(stk,pci,1);
 	str *table = (str*) getArgReference(stk,pci,2);
 	int *bid = (int*) getArgReference(stk,pci,3);
@@ -572,18 +583,7 @@ SLVdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str
-SLVreplay(int *ret, str *uri, str *usr, str *pw, int *tag)
-{
-	(void) ret;
-	(void) uri;
-	(void) usr;
-	(void) pw;
-	(void) tag;
-	return MAL_SUCCEED;
-}
-
-str
-SLVdrop(int *ret, str *tag)
+SLAVEdrop(int *ret, str *tag)
 {
 	Symbol prg;
 	Module mod;
