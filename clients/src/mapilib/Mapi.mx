@@ -2012,7 +2012,7 @@ mapi_mapiuri(
 		return(mid);
 	}
 
-	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://")) != 0) {
+	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) != 0) {
 		mapi_setError(mid, "url has unsupported scheme, "
 				"expecting mapi:monetdb://...", "mapi_mapiuri", MERROR);
 		return(mid);
