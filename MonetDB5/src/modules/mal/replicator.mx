@@ -505,9 +505,8 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *usr= (str*)getArgReference(stk,pci,2);
 	str *pw= (str*)getArgReference(stk,pci,3);
 	int *tag= (int*)getArgReference(stk,pci,4), t= *tag;
-	str msg, con, scen="mal";
+	str msg, scen="mal";
 	char buf[BUFSIZ+1];
-	connection c;
 	bstream *in;
 	stream *s;
 	MapiHdl hdl;
@@ -521,9 +520,15 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	printf("replay the log to  %s %s %s %d\n", *uri, *usr, *pw, *tag);
 #endif
 	m = mapi_mapiuri(*uri, *usr, *pw, scen);
-	hdl = NULL;
-	(void)c;
-	(void)con;
+	if (mapi_error(m))
+		throw(MAL, "replicator.masterreplay", "unable to connect: %s",
+				mapi_error_str(m));
+
+	if (mapi_reconnect(m) != MOK) {
+		throw(IO, "replicator.masterreplay", OPERATION_FAILED 
+				": an error occurred during connect to '%s': %s",
+				*uri, mapi_error_str(m));
+	}
 
 	buf[BUFSIZ] = 0;
 	do {
@@ -532,20 +537,24 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		in = bstream_create(  (s= open_rstream(buf)), BUFSIZ);
 		if (s == NULL || in == NULL)
 			break;
-		do{
-			if ( bstream_read(in, BUFSIZ) <= 0 )
+		do {
+			if (bstream_read(in, BUFSIZ) <= 0 )
 				break;
 #ifdef _DEBUG_REPLICATOR_
 			printf("sent:%s\n", in->buf);
 #endif
 			/* sent the data to the server */
-/*			msg = RMTquery(&hdl,"master.replay", c->mconn, buf); FIXME*/
+			/* FIXME: just write, don't look at the response */
+			hdl = mapi_query(m, in->buf);
+			if (hdl)
+				mapi_close_handle(hdl);
 		} while (in->eof == 0 || msg == MAL_SUCCEED);
-		if ( hdl)
-			mapi_close_handle(hdl);
 
 		t += GRANULE;
 	} while (t < *tag); /* fake exit */
+
+	mapi_disconnect(m);
+	mapi_destroy(m);
 	return MAL_SUCCEED;
 }
 
