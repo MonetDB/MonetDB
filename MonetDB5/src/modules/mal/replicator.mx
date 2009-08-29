@@ -505,11 +505,11 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *usr= (str*)getArgReference(stk,pci,2);
 	str *pw= (str*)getArgReference(stk,pci,3);
 	int *tag= (int*)getArgReference(stk,pci,4), t= *tag;
-	str msg, ret, scen="mal";
-	char buf[BUFSIZ];
-	int skip=0;
+	str msg, con, scen="mal";
+	char buf[BUFSIZ+1];
 	connection c;
-	FILE *fp;
+	bstream *in;
+	stream *s;
 	MapiHdl hdl;
 
 	(void) cntxt;
@@ -517,24 +517,33 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define _DEBUG_REPLICATOR_
 #ifdef _DEBUG_REPLICATOR_
-	printf("replay the log to %s as of %d\n",*uri, *tag);
+	printf("replay the log to  %s %s %s %d\n", *uri, *usr, *pw, *tag);
 #endif
-	msg = RMTconnectScen(&ret, uri, usr, pw, &scen);
+	msg = RMTconnectScen(&con, uri, usr, pw, &scen);
 	if ( msg )
-		throw(MAL, "master.replay","could not connect to slave");
-	msg = RMTfindconn(&c, *uri);
+		throw(MAL, "master.replay","Could not connect to slave");
+	msg = RMTfindconn(&c, con);
 	if ( msg )
-		throw(MAL, "master.replay","could not connect to slave");
+		throw(MAL, "master.replay","could not find slave");
 
+	buf[BUFSIZ] = 0;
 	do{
 		snprintf(buf, BUFSIZ, MASTER REPLICA, (t / GRANULE) *GRANULE);
 		/* copy it */
-		if ( (fp = fopen(buf,"r")) == NULL)
+		in = bstream_create(  (s= open_rstream(buf)), BUFSIZ);
+		if (s == NULL || in == NULL)
 			break;
 		do{
-			msg = RMTquery(&hdl,"master.replay", c->mconn, buf+skip);
-		} while (msg == MAL_SUCCEED);
-		mapi_close_handle(hdl);
+			if ( bstream_read(in, BUFSIZ) <= 0 )
+				break;
+#ifdef _DEBUG_REPLICATOR_
+			printf("sent:%s\n", in->buf);
+#endif
+			/* sent the data to the server */
+			msg = RMTquery(&hdl,"master.replay", c->mconn, buf);
+		} while (in->eof == 0 || msg == MAL_SUCCEED);
+		if ( hdl)
+			mapi_close_handle(hdl);
 
 		t += GRANULE;
 	} while (t < *tag); /* fake exit */
