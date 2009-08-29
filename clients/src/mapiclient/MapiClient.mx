@@ -1062,12 +1062,18 @@ format_result(MapiHdl hdl)
 				stream_printf(toConsole, "%s", reply);
 			errseen = 1;
 		}
-		if (mapi_get_querytype(hdl) == Q_UPDATE) {
-			if (formatter == RAWformatter)
-				stream_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
-			else
-				stream_printf(toConsole, "Rows affected " LLFMT "\n", mapi_rows_affected(hdl));
-			continue;
+		switch (mapi_get_querytype(hdl)) {
+			case Q_UPDATE:
+				if (formatter == RAWformatter)
+					stream_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
+				else
+					stream_printf(toConsole, "Rows affected " LLFMT "\n", mapi_rows_affected(hdl));
+				continue;
+			case Q_SCHEMA:
+				if (formatter == TABLEformatter)
+					stream_printf(toConsole, "Operation successful\n");
+				continue;
+				/* FIXME: shouldn't default to tabular printing */
 		}
 		if (pagewidth <= 0) {
 			int i, n = mapi_get_field_count(hdl);
