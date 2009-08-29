@@ -5190,28 +5190,24 @@ mapi_rows_affected(MapiHdl hdl)
 char *
 mapi_get_dbname(Mapi mid)
 {
-	mapi_check0(mid, "mapi_get_dbname");
 	return mid->database ? mid->database : "";
 }
 
 char *
 mapi_get_host(Mapi mid)
 {
-	mapi_check0(mid, "mapi_get_host");
 	return mid->hostname;
 }
 
 char *
 mapi_get_user(Mapi mid)
 {
-	mapi_check0(mid, "mapi_get_user");
 	return mid->username;
 }
 
 char *
 mapi_get_lang(Mapi mid)
 {
-	mapi_check0(mid, "mapi_get_lang");
 	return mid->language;
 }
 
