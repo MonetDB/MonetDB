@@ -1042,6 +1042,7 @@ static int
 format_result(MapiHdl hdl)
 {
 	MapiMsg rc;
+	mapi_int64 aff, lid;
 #ifdef HAVE_POPEN
 	stream *saveFD, *saveFD_raw;
 
@@ -1065,9 +1066,20 @@ format_result(MapiHdl hdl)
 		switch (mapi_get_querytype(hdl)) {
 			case Q_UPDATE:
 				if (formatter == RAWformatter)
-					stream_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
-				else
-					stream_printf(toConsole, "Rows affected " LLFMT "\n", mapi_rows_affected(hdl));
+					stream_printf(toConsole, "[ " LLFMT "\t]\n",
+							mapi_rows_affected(hdl));
+				else {
+					aff = mapi_rows_affected(hdl);
+					lid = mapi_get_last_id(hdl);
+					if (lid != -1) {
+						stream_printf(toConsole, LLFMT " affected row%s, "
+								"last generated key: " LLFMT "\n",
+								aff, (aff == 1 ? "" : "s"), lid);
+					} else {
+						stream_printf(toConsole, LLFMT " affected row%s\n",
+								aff, (aff == 1 ? "" : "s"));
+					}
+				}
 				continue;
 			case Q_SCHEMA:
 				if (formatter == TABLEformatter)
