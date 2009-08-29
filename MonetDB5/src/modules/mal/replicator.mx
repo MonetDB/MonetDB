@@ -505,7 +505,7 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *usr= (str*)getArgReference(stk,pci,2);
 	str *pw= (str*)getArgReference(stk,pci,3);
 	int *tag= (int*)getArgReference(stk,pci,4), t= *tag;
-	str msg, scen="mal";
+	str scen="mal";
 	char buf[BUFSIZ+1];
 	bstream *in;
 	stream *s;
@@ -548,7 +548,7 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			hdl = mapi_query(m, in->buf);
 			if (hdl)
 				mapi_close_handle(hdl);
-		} while (in->eof == 0 || msg == MAL_SUCCEED);
+		} while (in->eof == 0);
 
 		t += GRANULE;
 	} while (t < *tag); /* fake exit */
