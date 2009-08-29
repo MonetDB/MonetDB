@@ -511,6 +511,7 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bstream *in;
 	stream *s;
 	MapiHdl hdl;
+	Mapi m;
 
 	(void) cntxt;
 	(void) mb;
@@ -519,15 +520,13 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef _DEBUG_REPLICATOR_
 	printf("replay the log to  %s %s %s %d\n", *uri, *usr, *pw, *tag);
 #endif
-	msg = RMTconnectScen(&con, uri, usr, pw, &scen);
-	if ( msg )
-		throw(MAL, "master.replay","Could not connect to slave");
-	msg = RMTfindconn(&c, con);
-	if ( msg )
-		throw(MAL, "master.replay","could not find slave");
+	m = mapi_mapiuri(*uri, *usr, *pw, scen);
+	hdl = NULL;
+	(void)c;
+	(void)con;
 
 	buf[BUFSIZ] = 0;
-	do{
+	do {
 		snprintf(buf, BUFSIZ, MASTER REPLICA, (t / GRANULE) *GRANULE);
 		/* copy it */
 		in = bstream_create(  (s= open_rstream(buf)), BUFSIZ);
@@ -540,7 +539,7 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			printf("sent:%s\n", in->buf);
 #endif
 			/* sent the data to the server */
-			msg = RMTquery(&hdl,"master.replay", c->mconn, buf);
+/*			msg = RMTquery(&hdl,"master.replay", c->mconn, buf); FIXME*/
 		} while (in->eof == 0 || msg == MAL_SUCCEED);
 		if ( hdl)
 			mapi_close_handle(hdl);

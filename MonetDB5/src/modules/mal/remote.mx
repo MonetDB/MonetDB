@@ -188,6 +188,8 @@ remote_export str RMTepilogue(int *ret);
 @c
 static connection conns = NULL;
 
+static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
+
 @h
 remote_export str RMTresolve(int *ret, str *pat);
 @c
@@ -280,12 +282,7 @@ str RMTconnectScen(
 		str *scen)
 {
 	connection c;
-	char uri[8096];
 	char conn[BUFSIZ];
-	char *host;
-	int port;
-	char *dbname;
-	char *p;
 	char *s;
 	Mapi m;
 
@@ -305,42 +302,23 @@ str RMTconnectScen(
 		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": scenario is "
 				"NULL or nil");
 
-
-	snprintf(uri, 8096, "%s", *ouri + sizeof("mapi:monetdb://") - 1);
-
-	if ((p = strchr(uri, ':')) == NULL)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": URI must contain "
-				"a port number after the hostname: %s", *ouri);
-	*p++ = '\0';
-	host = uri;
-	dbname = p; /* temp misuse */
-	
-	if ((p = strchr(dbname, '/')) == NULL)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": URI must contain "
-				"database name: %s", *ouri);
-	*p++ = '\0';
-	if (*p == '\0')
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": URI must contain "
-				"database name: %s", *ouri);
-	port = atoi(dbname);
-	if (port <= 0)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": port invalid: %s",
-				*ouri);
-	dbname = p;
+	m = mapi_mapiuri(*ouri, *user, *passwd, *scen);
+	if (mapi_error(m))
+		throw(MAL, "remote.connect", "unable to connect: %s",
+				mapi_error_str(m));
 
 	mal_set_lock(mal_remoteLock, "remote.connect");
 
 	/* generate an unique connection name, they are only known
 	 * within one mserver, id is primary key, the rest is super key */
-	snprintf(conn, BUFSIZ, "%s_%s_" SZFMT, dbname, *user, connection_id++);
+	s = mapi_get_dbname(m);
+	snprintf(conn, BUFSIZ, "%s_%s_" SZFMT, s, *user, connection_id++);
 	/* make sure we can construct MAL identifiers using conn */
 	for (s = conn; *s != '\0'; s++) {
 		if (!isalpha((int)*s) && !isdigit((int)*s)) {
 			*s = '_';
 		}
 	}
-
-	m = mapi_mapi(host, port, *user, *passwd, *scen, dbname);
 
 	if (mapi_reconnect(m) != MOK) {
 		mal_unset_lock(mal_remoteLock, "remote.connect");
@@ -460,9 +438,6 @@ code for reconnecting if necessary
 			mal_unset_lock(c->lock, "remote.<findconn>");
 #endif
 
-@h
-remote_export str
-RMTfindconn(connection *ret, str conn);
 /**
  * Helper function to return a connection matching a given string, or an
  * error if it does not exist.  Since this function is internal, it
@@ -470,8 +445,7 @@ RMTfindconn(connection *ret, str conn);
  * already.
  * NOTE: this function acquires the mal_remoteLock before accessing conns
  */
-@c
-str
+static INLINE str
 RMTfindconn(connection *ret, str conn) {
 	connection c;
 
@@ -524,9 +498,6 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	return(MAL_SUCCEED);
 }
 
-@h
-remote_export str
-RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 /**
  * Helper function to execute a query over the given connection,
  * returning the result handle.  If communication fails in one way or
@@ -535,8 +506,7 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
  * should have been checked already.
  * NOTE: this function assumes a lock for conn is set
  */
-@c
-str
+static INLINE str
 RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	MapiHdl mhdl;
 
