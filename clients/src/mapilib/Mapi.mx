@@ -1166,6 +1166,7 @@ typedef struct {		/* used by MAPI_DATETIME */
 
 /* connection-oriented functions */
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
+mapi_export Mapi mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang);
 mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_start_talking(Mapi mid);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
@@ -1968,6 +1969,110 @@ mapi_new(void)
 
 	mid->first = NULL;
 	return mid;
+}
+
+Mapi
+mapi_mapiuri(
+		const char *url,
+		const char *user,
+		const char *pass,
+		const char *lang)
+{
+	char uri[8096];
+	char *host;
+	int port;
+	char *dbname;
+	char *p;
+	Mapi mid;
+
+	if (!mapi_initialized) {
+		mapi_initialized = 1;
+		if (stream_init() < 0)
+			return NULL;
+	}
+
+	mid = mapi_new();
+	if (mid == NULL)
+		return NULL;
+
+	if (url == NULL) {
+		mapi_setError(mid, "url is null", "mapi_mapiuri", MERROR);
+		return(mid);
+	}
+	if (user == NULL) {
+		mapi_setError(mid, "user is null", "mapi_mapiuri", MERROR);
+		return(mid);
+	}
+	if (pass == NULL) {
+		mapi_setError(mid, "pass is null", "mapi_mapiuri", MERROR);
+		return(mid);
+	}
+	if (lang == NULL) {
+		mapi_setError(mid, "lang is null", "mapi_mapiuri", MERROR);
+		return(mid);
+	}
+
+	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://")) != 0) {
+		mapi_setError(mid, "url has unsupported scheme, "
+				"expecting mapi:monetdb://...", "mapi_mapiuri", MERROR);
+		return(mid);
+	}
+
+	/* copy to a writable working buffer */
+	snprintf(uri, 8096, "%s", url + sizeof("mapi:monetdb://") - 1);
+
+	if ((p = strchr(uri, ':')) == NULL) {
+		mapi_setError(mid, "URI must contain a port number after the hostname",
+				"mapi_mapiuri", MERROR);
+		return(mid);
+	}
+	*p++ = '\0';
+	host = uri;
+	dbname = p; /* temp misuse */
+	
+	if ((p = strchr(dbname, '/')) == NULL) {
+		mapi_setError(mid, "URI must contain database name",
+				"mapi_mapiuri", MERROR);
+		return(mid);
+	}
+	*p++ = '\0';
+	if (*p == '\0') {
+		mapi_setError(mid, "URI must contain database name",
+				"mapi_mapiuri", MERROR);
+		return(mid);
+	}
+	port = atoi(dbname);
+	if (port <= 0) {
+		mapi_setError(mid, "URI contains invalid port",
+				"mapi_mapiuri", MERROR);
+		return(mid);
+	}
+	dbname = p;
+
+	free(mid->hostname);
+	mid->hostname = strdup(host);
+	mid->port = port;
+	if (mid->username != NULL)
+		free(mid->username);
+	mid->username = strdup(user);
+	if (mid->password)
+		free(mid->password);
+	mid->password = strdup(pass);
+	free(mid->language);
+	mid->language = strdup(lang);
+	if (strcmp(lang, "mil") == 0)
+		mid->languageId = LANG_MIL;
+	else if (strcmp(lang, "mal") == 0)
+		mid->languageId = LANG_MAL;
+	else if (strcmp(lang, "sql") == 0)
+		mid->languageId = LANG_SQL;
+	else if (strcmp(lang, "xquery") == 0)
+		mid->languageId = LANG_XQUERY;
+	if (mid->database)
+		free(mid->database);
+	mid->database = strdup(dbname);
+
+	return(mid);
 }
 
 /* Allocate a new connection handle and fill in the information needed
