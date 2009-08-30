@@ -1189,6 +1189,7 @@ mapi_export MapiMsg mapi_stream_into(Mapi mid, char *docname, char *colname, FIL
 mapi_export MapiMsg mapi_profile(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export int mapi_get_trace(Mapi mid);
+mapi_export int mapi_get_autocommit(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
 mapi_export MapiMsg mapi_setAlgebra(Mapi mid, int algebra);
@@ -1475,6 +1476,13 @@ mapi_get_trace(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_trace");
 	return mid->trace;
+}
+
+int
+mapi_get_autocommit(Mapi mid)
+{
+	mapi_check0(mid, "mapi_get_autocommit");
+	return mid->auto_commit;
 }
 
 long
