@@ -1579,14 +1579,27 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					} else {
 						/* get all table names in current schema */
 						if ((hdl = mapi_query(mid,
-								      "SELECT \"t\".\"name\" "
+								      "SELECT \"t\".\"name\", \"t\".\"type\", "
+									      "\"s\".\"name\" "
 								      "FROM \"sys\".\"tables\" \"t\", "
 								      "\"sys\".\"schemas\" \"s\" "
 								      "WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
 								      "AND \"s\".\"name\" = \"current_schema\" "
 								      "ORDER BY \"t\".\"name\"")) != NULL &&
 						    mapi_error(mid) == MOK)
-							format_result(mid, hdl);
+						{
+							int fields;
+							char *type, *name, *schema;
+							while ((fields = fetch_row(hdl)) == 3) {
+								name = mapi_fetch_field(hdl, 0);
+								type = mapi_fetch_field(hdl, 1);
+								schema = mapi_fetch_field(hdl, 2);
+								stream_printf(toConsole,
+										"%-6s  %s.%s\n",
+										*type == '1' ? "VIEW" : "TABLE",
+										schema, name);
+							}
+						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
 					}
