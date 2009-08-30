@@ -111,8 +111,7 @@
 		if ($num_args == 0) {
 			$conn = mapi_get_current_conn();
 			mapi_close(NULL);
-		}
-		else {
+		} else {
 			mapi_close($conn);
 		}
 	}
@@ -161,7 +160,6 @@
 		
 		return FALSE;
 	}
-	
 	
 	/**
 	 * Returns the number of rows in the query result.
@@ -303,14 +301,29 @@
 	 * queries.
 	 *
 	 * @param resource the query handle
-	 * @return int the number of affected rows
+	 * @return int the number of affected rows, FALSE if the last executed query did not affect any row.
 	 */	
 	function monetdb_affected_rows($hdl) {
 		if ($hdl["operation"] != Q_UPDATE) {
-			return 0;
+			return FALSE;
 		} 
 		
 		return $hdl["query"]["affected"];
+	}
+	
+	
+	/**
+	* Check if the query handle contains a result set. Note: the result set may be empty.
+	*
+	* @param resource the query handle
+	* @return bool TRUE if the query contains a result set, FALSE otherwise.
+	*/
+	function monetdb_has_result($hdl) {
+	    if (($hdl["operation"] == Q_TABLE) || ($hdl["operation"] == Q_BLOCK)) {
+	        return TRUE;
+	    }
+	    
+	    return FALSE;
 	}
 	
 	/**

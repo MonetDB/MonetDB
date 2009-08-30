@@ -525,7 +525,7 @@
 		$merovingian_iter = 0;
 		
 		/**
-		  * First, when connecting, the function would first try to find a (persistent) link that's already 
+		  * When connecting, the function would first try to find a (persistent) link that's already 
 		  * open with the same host, username and password. If one is found, an identifier for it will be returned 
 		  * instead of opening a new connection. 
 		  * TODO: move this check to mapi_connect() to deal with options arrays rewritten by redirects.
