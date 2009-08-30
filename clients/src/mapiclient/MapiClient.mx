@@ -1039,10 +1039,12 @@ end_pager(stream *saveFD, stream *saveFD_raw)
 #endif
 
 static int
-format_result(MapiHdl hdl)
+format_result(Mapi mid, MapiHdl hdl)
 {
 	MapiMsg rc;
 	mapi_int64 aff, lid;
+	char *reply;
+	int oldpagewidth;
 #ifdef HAVE_POPEN
 	stream *saveFD, *saveFD_raw;
 
@@ -1052,11 +1054,6 @@ format_result(MapiHdl hdl)
 	setWidth();
 
 	do {
-		char *reply;
-		int oldpagewidth;
-
-		oldpagewidth = pagewidth;
-
 		/* handle errors first */
 		if ((reply = mapi_result_error(hdl)) != NULL) {
 			if (formatter == RAWformatter)
@@ -1070,6 +1067,10 @@ format_result(MapiHdl hdl)
 		}
 
 		switch (mapi_get_querytype(hdl)) {
+			case Q_BLOCK:
+			case Q_PARSE:
+				/* should never see these */
+				continue;
 			case Q_UPDATE:
 				if (formatter == RAWformatter)
 					stream_printf(toConsole, "[ " LLFMT "\t]\n",
@@ -1089,10 +1090,21 @@ format_result(MapiHdl hdl)
 				continue;
 			case Q_SCHEMA:
 				if (formatter == TABLEformatter)
-					stream_printf(toConsole, "Operation successful\n");
+					stream_printf(toConsole, "operation successful\n");
 				continue;
-				/* FIXME: shouldn't default to tabular printing */
+			case Q_TRANS:
+				if (formatter == TABLEformatter) {
+					stream_printf(toConsole, "auto commit mode: %s\n",
+							mapi_get_autocommit(mid) ? "on" : "off");
+				}
+				continue;
+			case Q_TABLE:
+			case Q_PREPARE:
+				break;
 		}
+
+		oldpagewidth = pagewidth;
+
 		if (pagewidth <= 0) {
 			int i, n = mapi_get_field_count(hdl);
 
@@ -1169,7 +1181,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 		return 1;
 	}
 
-	format_result(hdl);
+	format_result(mid, hdl);
 
 	if (mapi_get_active(mid) == NULL || !interactive)
 		mapi_close_handle(hdl);
@@ -1308,7 +1320,7 @@ doFile(Mapi mid, const char *file)
 
 		CHECK_RESULT(mid, hdl, buf + skip, continue);
 
-		rc = format_result(hdl);
+		rc = format_result(mid, hdl);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
@@ -1572,7 +1584,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								      "AND \"s\".\"name\" = \"current_schema\" "
 								      "ORDER BY \"t\".\"name\"")) != NULL &&
 						    mapi_error(mid) == MOK)
-							format_result(hdl);
+							format_result(mid, hdl);
 						mapi_close_handle(hdl);
 						hdl = NULL;
 					}
@@ -1782,7 +1794,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		}
 		CHECK_RESULT(mid, hdl, buf, continue);
 
-		rc = format_result(hdl);
+		rc = format_result(mid, hdl);
 
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
