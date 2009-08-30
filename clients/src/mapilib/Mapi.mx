@@ -1374,12 +1374,12 @@ indented_print(const char *msg, const char *prefix, FILE *fd)
 {
 	/* for multiline error messages, indent all subsequent
 	   lines with the space it takes to print "ERROR = " */
-	const char *s, *p, *q;
+	const char *s = prefix, *p = msg, *q;
+	const int len = (int)strlen(s);
+	const char t = s[len - 1];
 
-	s = prefix;
-	p = msg;
 	while (p && *p) {
-		fprintf(fd, "%s", s);
+		fprintf(fd, "%.*s%c", len - 1, s, t);
 		s = "        ";
 		q = strchr(p, '\n');
 		if (q) {
@@ -1411,7 +1411,7 @@ mapi_explain(Mapi mid, FILE *fd)
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
 		if (mid->errorstr)
-			indented_print(mid->errorstr, "ERROR = ", fd);
+			indented_print(mid->errorstr, "ERROR = !", fd);
 	} else if (mid->errorstr) {
 		clean_print(mid->errorstr, mid->noexplain, fd);
 	}
@@ -1435,7 +1435,7 @@ mapi_explain_query(MapiHdl hdl, FILE *fd)
 		if (hdl->query)
 			indented_print(hdl->query, "QUERY = ", fd);
 		if (mid->errorstr)
-			indented_print(mid->errorstr, "ERROR = ", fd);
+			indented_print(mid->errorstr, "ERROR = !", fd);
 	} else if (mid->errorstr) {
 		clean_print(mid->errorstr, mid->noexplain, fd);
 	}
@@ -1462,7 +1462,7 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 			fprintf(fd, "ACTION= %s\n", mid->action);
 		if (hdl->query)
 			indented_print(hdl->query, "QUERY = ", fd);
-		indented_print(hdl->result->errorstr, "ERROR = ", fd);
+		indented_print(hdl->result->errorstr, "ERROR = !", fd);
 	} else {
 		clean_print(hdl->result->errorstr, mid->noexplain, fd);
 	}
@@ -3864,7 +3864,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				result = new_result(hdl);
 				hdl->active = result;
 			}
-			add_error(result, line);
+			add_error(result, line + 1 /* skip ! */);
 			if (!mid->error)
 				mid->error = MSERVER;
 			break;
