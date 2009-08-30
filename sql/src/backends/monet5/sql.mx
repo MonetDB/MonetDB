@@ -703,6 +703,22 @@ comment "return the densely ranked bat";
 command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
 address ALGexist;
 
+function slave.open(tag:int, t:timestamp):bit;
+    X4:bat[:oid,:int]  := sql.bind("sys","replicas","id",0);
+	X5 := bat.reverse(X4);
+	c1 := algebra.exist(X5,tag);
+	sql.assert(c1, "Ignoring replay of transaction");
+    X13:bat[:oid,:int]  := sql.bind("sys","replicas","id",1);
+	X14 := bat.reverse(X13);
+	c1 := algebra.exist(X14,tag);
+	sql.assert(c1, "Ignoring replay of transaction");
+	return open:= true;
+end slave.open;
+
+function slave.close(tag:int, t:timestamp):bit;
+	sql.append("sys","replicas","id",tag);
+end slave.close;
+
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
 	x := algebra.mark_grp(a,g,1:oid);
 	return mark_grp:= batcalc.int(x);
@@ -1312,8 +1328,12 @@ getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b )
 	if (cntxt->state[MAL_SCENARIO_PARSER] == NULL || cntxt->state[MAL_SCENARIO_OPTIMIZE] == NULL)
 		throw(SQL, "mvc","SQL module not initialized");
 	*c = ((mvc *) cntxt ->state[MAL_SCENARIO_OPTIMIZE]); 
+	if (*c == 0)
+		throw(SQL, "mvc","SQL module not initialized, mvc struct missing");
 	if (b)
 		*b = ((backend*) cntxt->state[MAL_SCENARIO_PARSER]);
+	if (b && *b == 0)
+		throw(SQL, "mvc","SQL module not initialized, backend struct missing");
 	return MAL_SUCCEED;
 }
 
@@ -1789,7 +1809,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMextern(tpe)) 
 		ins = *(ptr*)ins;
 	s = mvc_bind_schema(m, sname);
+	if ( s == NULL)
+		throw(MAL,"sql.append","Schema missing");
 	t = mvc_bind_table(m, s, tname);
+	if ( t == NULL)
+		throw(MAL,"sql.append","Table missing");
 	c = mvc_bind_column(m, t, cname);
 	if (c) {
 		store_funcs.append_col(m->session->tr, c, ins, tpe);
@@ -1830,7 +1854,11 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMextern(tpe)) 
 		ins = *(ptr*)ins;
 	s = mvc_bind_schema(m, sname);
+	if ( s == NULL)
+		throw(MAL,"sql.update","Schema missing");
 	t = mvc_bind_table(m, s, tname);
+	if ( t == NULL)
+		throw(MAL,"sql.update","Table missing");
 	c = mvc_bind_column(m, t, cname);
 	if (c) {
 		store_funcs.update_col(m->session->tr, c, ins, tpe, 0);
@@ -1944,7 +1972,11 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
+	if ( s == NULL)
+		throw(MAL,"sql.clear_table","Schema missing");
 	t = mvc_bind_table(m, s, *tname);
+	if ( t == NULL)
+		throw(MAL,"sql.clear_table","Table missing");
 	*res = mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }
@@ -1975,7 +2007,11 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void))
 		throw(SQL, "sql.delete","Cannot access descriptor");
 	s = mvc_bind_schema(m, sname);
+	if ( s == NULL)
+		throw(MAL,"sql.delete","Schema missing");
 	t = mvc_bind_table(m, s, tname);
+	if ( t == NULL)
+		throw(MAL,"sql.delete","Table missing");
 	store_funcs.delete_tab(m->session->tr, t, b, tpe);
 	if (tpe == TYPE_bat)
 		BBPunfix(((BAT*)ins)->batCacheid);
@@ -2154,6 +2190,8 @@ mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
+	if ( s == NULL)
+		throw(MAL,"sql.declared_table","Schema missing");
 	(void)mvc_create_table(m, s, *name, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
 	*res_id = 0;
 	return MAL_SUCCEED;
@@ -2184,7 +2222,11 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	if (!sql_find_subtype(&tpe, *type, *digits, *scale))
                 throw(SQL, "sql.dtColumn", "Cannot find column type");
 	s = mvc_bind_schema(m, dt_schema);
+	if ( s == NULL)
+		throw(MAL,"sql.declared_table_column","Schema missing");
 	t = mvc_bind_table(m, s, *tname);
+	if ( t == NULL)
+		throw(MAL,"sql.declared_table_column","Table missing");
 	(void)mvc_create_column(m, t, *name, &tpe); 
 	*ret = 0;
 	return MAL_SUCCEED;
@@ -2202,7 +2244,11 @@ mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
+	if ( s == NULL)
+		throw(MAL,"sql.drop","Schema missing");
 	t = mvc_bind_table(m, s, *name);
+	if ( t == NULL)
+		throw(MAL,"sql.drop","Table missing");
 	(void)mvc_drop_table(m, s, t, 0);
 	return MAL_SUCCEED;
 }
@@ -2219,6 +2265,8 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
+	if ( s == NULL)
+		throw(MAL,"sql.drop","Schema missing");
 	while(i && s->tables.set->t) {
 		t = s->tables.set->t->data;
 		(void)mvc_drop_table(m, s, t, 0);
@@ -2430,12 +2478,15 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	str sname = *(str *) getArgReference(stk, pci, 1);
 	str tname = *(str *) getArgReference(stk, pci, 2);
 	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_table *t;
 	node *n;
 
 	if (msg)
 		return msg;
 
+	if ( s == NULL)
+		throw(MAL,"sql.drop","Schema missing");
+	t = mvc_bind_table(m, s, tname);
 	if (!t) 
 		throw(SQL,"sql", "table %s not found", tname);
 	if (list_length(t->columns.set) != (pci->argc-3))
@@ -3870,7 +3921,11 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
+	if ( s == NULL)
+		throw(MAL,"sql.rowid","Schema missing");
 	t = mvc_bind_table(m, s, *tname);
+	if ( s == NULL)
+		throw(MAL,"sql.rowid","Table missing");
 	if (!s || !t || !t->columns.set->h)
                 throw(SQL, "calc.rowid", "Cannot find column");
 	c = t->columns.set->h->data;
@@ -4009,7 +4064,11 @@ str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if (msg)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
+	if ( s == NULL)
+		throw(MAL,"sql.cluster","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
+	if ( t == NULL)
+		throw(MAL,"sql.cluster","Table missing");
 	tr = m->session->tr;
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
@@ -4079,7 +4138,11 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
+	if ( s == NULL)
+		throw(MAL,"sql.cluster","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
+	if ( t == NULL)
+		throw(MAL,"sql.cluster","Table missing");
 	tr = m->session->tr;
 
         t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
@@ -4197,6 +4260,8 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	sch = mvc_bind_schema(m, "rdf");
+	if ( sch == NULL)
+		throw(MAL,"sql.rdfSchred","Schema missing");
 	g_tbl = mvc_bind_table(m, sch, "graph");
 	gname = mvc_bind_column(m, g_tbl, "gname");
 	gid = mvc_bind_column(m, g_tbl, "gid");
@@ -4263,4 +4328,5 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt; (void) mb; (void) stk; (void) pci;
 	throw(SQL, "sql.rdfShred", "RDF support is missing from Monet5");
 #endif
+
 }
