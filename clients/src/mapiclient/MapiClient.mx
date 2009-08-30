@@ -1060,8 +1060,11 @@ format_result(MapiHdl hdl)
 			if (formatter == RAWformatter)
 				mapi_explain_result(hdl, stderr);
 			else
-				stream_printf(toConsole, "%s", reply);
+				stream_printf(toConsole, "%s", reply + 1)/* skip proto '!' */;
 			errseen = 1;
+			/* don't need to print something like '0 tuples' if we got
+			 * an error */
+			continue;
 		}
 		switch (mapi_get_querytype(hdl)) {
 			case Q_UPDATE:
