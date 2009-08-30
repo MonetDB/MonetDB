@@ -1093,13 +1093,15 @@ format_result(Mapi mid, MapiHdl hdl)
 					stream_printf(toConsole, "operation successful\n");
 				continue;
 			case Q_TRANS:
-				if (formatter == TABLEformatter) {
+				if (formatter == TABLEformatter)
 					stream_printf(toConsole, "auto commit mode: %s\n",
 							mapi_get_autocommit(mid) ? "on" : "off");
-				}
 				continue;
-			case Q_TABLE:
 			case Q_PREPARE:
+				if (formatter == TABLEformatter)
+					stream_printf(toConsole, "execute prepared statement "
+							"using: EXEC %d(...)\n", mapi_get_tableid(hdl));
+			case Q_TABLE:
 				break;
 		}
 
