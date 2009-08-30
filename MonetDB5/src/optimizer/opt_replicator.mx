@@ -68,6 +68,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if ( p->token == ENDsymbol)
 			break;
 		pushInstruction(mb, p);
+		/* full size BAT append */
 		if (getModuleId(p)==sqlRef &&  
 			getFunctionId(p) == appendRef &&
 			isaBatType(getArgType(mb,p,4)) ){
@@ -78,7 +79,19 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			pushInstruction(mb,q);
 			pushArgument(mb,q,tag);
 			actions++;
+		} else 
+		/* single value insert */
+		if (getModuleId(p)==sqlRef &&  
+			getFunctionId(p) == appendRef  ){
+			q= copyInstruction(p);
+			clrFunction(q);
+			setModuleId(q, putName("master",6));
+			setFunctionId(q, appendRef);
+			pushInstruction(mb,q);
+			pushArgument(mb,q,tag);
+			actions++;
 		} 
+		/* delete stuff */
 		if (getModuleId(p)==sqlRef &&  
 			getFunctionId(p) == deleteRef) {
 			q= copyInstruction(p);

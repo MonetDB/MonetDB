@@ -1,5 +1,7 @@
 include replicator;
 module sql;
+function sql.append(s:str,t:str,c:str,b:any_1);
+end append;
 function sql.append(s:str,t:str,c:str,b:bat[:any_1,:any_2]);
 end append;
 function sql.delete(s:str,t:str,b:bat[:any_1,:any_2]);
@@ -12,6 +14,7 @@ bat.append(b,34);
 bat.append(b,56);
 
 sql.append("sch","tab","col",b);
+sql.append("sch","tab","col",23);
 sql.delete("sch","tab",b);
 end tst;
 
