@@ -94,7 +94,7 @@ address MASTERclose
 comment "Close the replication record";
 
 pattern append(s:str, t:str, c:str, :any_1, tag:int):void
-address MASTERappend
+address MASTERappendValue
 comment "Dump the scalar on the MAL log");
 
 pattern append(s:str, t:str, c:str, b:bat[:oid,:any_1], tag:int):void
@@ -153,6 +153,7 @@ comment "Remove the tag function from the module";
 
 replicator_export str MASTERopen(int *ret);
 replicator_export str MASTERclose(int *ret, int *tag);
+replicator_export str MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replicator_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replicator_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replicator_export str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -327,7 +328,7 @@ MASTERdump( BAT *b, str buf, int type, int tag){
 		if ( getTailType(type) <=TYPE_str &&
 			getHeadType(type) <= TYPE_str) {
 			while ( (l = snprintf(master[i].buf + master[i].top, len ,"bat.insert(%s, %s:%s, %s:%s);\n",
-						buf, headv, head, tailv, tail)) == len){
+						buf, headv, head, tailv, tail)) >= len){
 				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if ( master[i].buf == NULL)
 					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
@@ -338,7 +339,7 @@ MASTERdump( BAT *b, str buf, int type, int tag){
 		if ( getTailType(type) >TYPE_str  &&
 			getHeadType(type) > TYPE_str) {
 			while ( (l = snprintf(master[i].buf + master[i].top, len , "bat.insert(%s, \"%s\":%s, \"%s\":%s);\n",
-						buf, headv, head, tailv, tail)) == len){
+						buf, headv, head, tailv, tail)) >= len){
 				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if ( master[i].buf == NULL)
 					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
@@ -374,6 +375,41 @@ MASTERdump( BAT *b, str buf, int type, int tag){
 }
 
 str
+MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int tag = *(int*) getArgReference(stk,pci,5);
+	InstrPtr q;
+	str val= NULL;
+	int i,l,len;
+
+#ifdef _DEBUG_REPLICATOR_
+	(void) cntxt;
+#endif
+	if ( repFile == NULL)
+		throw(MAL,"replicator.append", RUNTIME_FILE_NOT_FOUND);
+
+	i = MASTERgetBuffer(tag);
+	q= copyInstruction(pci);
+	q->argc--;
+	setModuleId(q,putName("sql",3));
+	
+	val = instruction2str(mb,stk,q,LIST_MAL_CALL);
+	freeInstruction(q);
+
+	len = master[i].limit - master[i].top -1;
+	while ( (l = snprintf(master[i].buf + master[i].top, len , "%s", val) >= len ) ){
+		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if ( master[i].buf == NULL)
+			throw(MAL,"replicator.append",MAL_MALLOC_FAIL);
+		master[i].limit += 1024;
+		len = master[i].limit - master[i].top -1;
+	}
+	master[i].top += strlen(val);
+	master[i].buf[master[i].top] = 0;
+	GDKfree(val);
+	return MAL_SUCCEED;
+}
+
+str
 MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *schema = (str*) getArgReference(stk,pci,1);
 	str *table = (str*) getArgReference(stk,pci,2);
@@ -401,7 +437,7 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* create the temporary bat */
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len , "tag_%d_%s:=bat.new(:%s,:%s);\n",
-				tag, getArgName(mb,pci,4), head, tail)) == len ){
+				tag, getArgName(mb,pci,4), head, tail)) >= len ){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replicator.append",MAL_MALLOC_FAIL);
@@ -420,7 +456,7 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* execute the original append */
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len , "sql.append(\"%s\",\"%s\",\"%s\",%s);\ntag_%d_%s := nil;\n",
-		*schema, *table, *col, buf,tag, getArgName(mb,pci,4)) ) == len){
+		*schema, *table, *col, buf,tag, getArgName(mb,pci,4)) ) >= len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replicator.append",MAL_MALLOC_FAIL);
