@@ -1592,19 +1592,18 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 	php_monetdb_result_handle *monetdb_result_h;
 	int             i, num_fields, monetdb_row, use_row;
 	long            row = -1;
-	char            *element, *field_name;
-	uint            element_len;
+	char            *field_name;
 	zval            *ctor_params = NULL;
 	zend_class_entry *ce = NULL;
 
 	if (into_object) {
-		char *class_name;
+		char *class_name = NULL;
 		int class_name_len;
 
 		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r|z!sz", &result, &zrow, &class_name, &class_name_len, &ctor_params) == FAILURE) {
 			return;
-			}
-		if (ZEND_NUM_ARGS() < 3) {
+		}
+		if (!class_name) {
 			ce = zend_standard_class_def;
 		} else {
 			ce = zend_fetch_class(class_name, class_name_len, ZEND_FETCH_CLASS_AUTO TSRMLS_CC);
@@ -1655,6 +1654,7 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 
 	array_init(return_value);
 	for (i = 0, num_fields = mapi_get_field_count(monetdb_result); i < num_fields; i++) {
+		char *element;
 		/* get the data in the field */
 		if (mapi_seek_row(monetdb_result, monetdb_row, MAPI_SEEK_SET) != MOK) {
 			PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result_h);
@@ -1684,8 +1684,7 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 			char *data;
 			int data_len;
 			int should_copy=0;
-
-			element_len = strlen(element);
+			const uint element_len = strlen(element);
 
 			data = safe_estrndup(element, element_len);
 			data_len = element_len;
@@ -1716,7 +1715,7 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 			fci.function_table = &ce->function_table;
 			fci.function_name = NULL;
 			fci.symbol_table = NULL;
-			fci.object_pp = &return_value;
+			fci.object_ptr = return_value;
 			fci.retval_ptr_ptr = &retval_ptr;
 			if (ctor_params && Z_TYPE_P(ctor_params) != IS_NULL) {
 				if (Z_TYPE_P(ctor_params) == IS_ARRAY) {
@@ -1724,18 +1723,17 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 					Bucket *p;
 	
 					fci.param_count = 0;
-					fci.params = emalloc(sizeof(zval*) * ht->nNumOfElements);
+					fci.params = safe_emalloc(sizeof(zval*), ht->nNumOfElements, 0);
 					p = ht->pListHead;
 					while (p != NULL) {
 						fci.params[fci.param_count++] = (zval**)p->pData;
 						p = p->pListNext;
 					}
 				} else {
-					/* Two problems why we throw exceptions here: PHP is
-					 * typeless and hence passing one argument that's
-					 * not an array could be by mistake and the other
-					 * way round is possible, too. The single value is
-					 * an array. Also we'd have to make that one
+					/* Two problems why we throw exceptions here: PHP is typeless
+					 * and hence passing one argument that's not an array could be
+					 * by mistake and the other way round is possible, too. The 
+					 * single value is an array. Also we'd have to make that one
 					 * argument passed by reference.
 					 */
 					zend_throw_exception(zend_exception_get_default(
@@ -1754,7 +1752,8 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 			fcc.initialized = 1;
 			fcc.function_handler = ce->constructor;
 			fcc.calling_scope = EG(scope);
-			fcc.object_pp = &return_value;
+			fcc.called_scope = Z_OBJCE_P(return_value);
+			fcc.object_ptr = return_value;
 		
 			if (zend_call_function(&fci, &fcc TSRMLS_CC) == FAILURE) {
 				zend_throw_exception_ex(zend_exception_get_default(
