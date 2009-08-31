@@ -20,22 +20,31 @@
 @v 1.0
 @+ Database replication
 The replication module supports distribution of updates over SQL databases
-at multiple sites using a simple master-slave protocol with
+at multiple sites using a simple master-slave protocol using
 a MAL-based update log.
 
-The replicator assumes that both database instances have the same catalog 
-information.
-There is no automatic propagation of CREATE, DROP, nor ALTER statements. 
+A master-slave system is set up as follows. The master database
+is initialized with the catalog and optionally loaded.
+The script src/sql/replicas.sql is executed to prepare it
+for the replication algorithms and define the commands
+to modify the role of the database instance.
 
-The operations are executed in the serial order as on the master,
-which should lead to the same optimistic transactional behavior.
-All queries are considered running in auto-commit mode, because
-the SQL frontend does not provide the hook for better transaction
-boundary control.
+The next step is to clone the database using the monetdb tool. [todo]
+Alternatively, copy the complete dbfarm/<db> directory to
+the machine hosting the slave. 
 
-The lean and mean replication scheme implementation works as follows.
+The replication is based on the assumption that the database catalog
+is shared between all instances. 
+There is no automatic propagation of CREATE, DROP, nor ALTER statements
+issued at the host.
+
 The query plan is extended by the optimizer to initiate calls to build
-a replicator log file as follows.
+a replicator log file (in master mode) or trap update attempts
+on the replicated tables. [todo, how to know which tables are violated?
+or property of sql catalog using readonly tables]
+
+The master node replication optimizer changes the query plans
+by injection of two statements;
 
 @verbatim
 function query():void
@@ -44,44 +53,53 @@ function query():void
   sql.append("schema","table","col",b:[:oid,:int]);
   master.append("schema","table","col",b,tag);
   ...
-  master.close(tag);
+  t := mtime.current_timestamp();
+  master.close();
 end query;
 @end verbatim
 
-At runtime this leads to buffers filled with the statements
-required at the slave. They are stored in 
+At runtime this leads to buffers being filled with the statements
+required for the slaves. They are stored in 
 a file "dbfarm/db/master/tag_%d" with the following
 structure:
 @verbatim
 function slave.tag0();
-  slave.open(tag,"2009-08-16 18:57:58.000":timestamp);
+  slave.open(0,"2009-08-16 18:57:58.000":timestamp);
   tag0_b := bat.new(:oid,:int);
   ...
   bat.insert(tag0_b,3:oid,232:int); #example update
   ...
   sql.append("schema","table","col",tag0_b,tag);
-  slave.close(tag,"2009-08-16 18:57:58.000":timestamp);
+  slave.close(0,"2009-08-16 18:57:58.000":timestamp);
   tag0_b:= nil;
 end tag0;
 slave.tag0();
 slave.drop("tag0");
 @end verbatim
 
+Grouping the operations within temporary functions
+makes it easy to skip its execution when we detect
+that it has been executed before. The slave.open()
+simply checks the replicas administration table
+and issues an assertion if necessary.
+
 Each query block is stored in its own buffer and sent at
 the end of the query block. This separates the concurrent 
-actions on the database and leads to a serial
+actions on the database at the master and leads to a serial
 execution of the replication operations within the slave.
-Moreover, by using functions we isolate possible exceptions.
 
 A slave processes all the logs it finds in the dbfarm/<db>/slave
-directory. After it has been rolled forward, it contacts
-the master to sent the logs as of the last tag seen.
-The slave needs to keep the replay tag in a persistent place.
+directory. 
 
-Some work is needed to handle possible errors during replay.
-Remains that we also have to drop the tag() functions
-Moreover, we might postpone text generation to the closing
-statement.
+The operations are executed in the serial order as on the master,
+which should lead to the same optimistic transactional behavior.
+All queries are considered running in auto-commit mode, because
+the SQL frontend does not provide the hook (yet) for better transaction
+boundary control.
+
+Updates on the replicated tables are forbidden  [to be checked]
+
+@{
 @mal
 module master;
 
@@ -115,17 +133,18 @@ module slave;
 
 command open(tag:int,d:timestamp)
 address SLAVEopen
-comment "Mark the start of a replication record";
+comment "Marks the start of a replication record. It checks the replicas
+table for existence of the tag. If so, it aborts the attempt to reapply.";
 
 command close(tag:int, d:timestamp)
 address SLAVEclose
-comment "End of replication record";
+comment "End of replication record. Add the tag to the replicas table
+using the SQL transaction semantics.";
 
 command drop(tag:str)
 address SLAVEdrop
-comment "Remove the tag function from the module";
+comment "Remove the replica function from the module";
 @-
-@{
 @+ Implementation code 
 @h
 #ifndef _REPLICATOR_H
@@ -177,7 +196,7 @@ The final code should contain a loop to determine the last replicator tag.
 #define MASTER "master"
 #define SLAVE "slave"
 #define REPLICA "/log_%d"
-#define GRANULE 1000
+#define REPLICABLOCK 1000
 
 static MT_Lock repLck;
 static int repTag;
@@ -230,10 +249,10 @@ str MASTERopen(int *ret){
 	if ( repFile == NULL){
 		mkdir(MASTER,0755); /* ensure existance of the replica pool */
 		if ( repTag == 0){
-			/* find the last one already in the pool, using the GRANULE */
+			/* find the last one already in the pool, using the REPLICABLOCK */
 			do {
 				if (fp) {
-					repTag += GRANULE;
+					repTag += REPLICABLOCK;
 					fclose(fp);
 				}
 				snprintf(buf, BUFSIZ, MASTER REPLICA, repTag);
@@ -302,7 +321,7 @@ str MASTERclose(int *ret, int *tag){
 		mal_unset_lock(repLck,"replicator");
 		throw(MAL,"replicator.close",RUNTIME_STREAM_FAILED);
 	}
-	if ( repTag % GRANULE  == 0){
+	if ( repTag % REPLICABLOCK  == 0){
 		close_stream(repFile);
 		repFile = NULL;
 	}
@@ -396,7 +415,7 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	freeInstruction(q);
 
 	len = master[i].limit - master[i].top -1;
-	while ( (l = snprintf(master[i].buf + master[i].top, len , "%s", val) >= len ) ){
+	while ( (l = snprintf(master[i].buf + master[i].top, len , "%s\n", val) >= len ) ){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replicator.append",MAL_MALLOC_FAIL);
@@ -568,7 +587,7 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	buf[BUFSIZ] = 0;
 	do {
-		snprintf(buf, BUFSIZ, MASTER REPLICA, (t / GRANULE) *GRANULE);
+		snprintf(buf, BUFSIZ, MASTER REPLICA, (t / REPLICABLOCK) *REPLICABLOCK);
 		/* copy it */
 		in = bstream_create(  (s= open_rstream(buf)), BUFSIZ);
 		if (s == NULL || in == NULL)
@@ -586,7 +605,7 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mapi_close_handle(hdl);
 		} while (in->eof == 0);
 
-		t += GRANULE;
+		t += REPLICABLOCK;
 	} while (t < *tag); /* fake exit */
 
 	mapi_disconnect(m);
@@ -601,8 +620,6 @@ replicator block. The main issue to deal with is that
 blocks may arrive out of order, i.e. reflecting the
 concurrent behavior at the master.
 This calls for a persistent table with all tags.
-
-[for now we assume in order arrival]
 @c
 str SLAVEopen(int *ret, int *tag, timestamp *t){
 	(void) ret;
