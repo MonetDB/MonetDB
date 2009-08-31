@@ -36,7 +36,7 @@ create procedure newAquarium(nme string,
 	prt int, 
 	usr string, 
 	pw string) external name sql.newAquarium;
-create procedure dropAquarium(nme string) external name sql.dropAquarium;
+--create procedure dropAquarium(nme string) external name sql.dropAquarium;
 
 -- updates on these tables are propagated to the octopus scheduler.
 create trigger acquariumInsert
