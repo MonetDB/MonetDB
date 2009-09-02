@@ -172,7 +172,6 @@ static stream *stderr_stream;
 static FILE *fromConsole = NULL;
 static char *language = NULL;
 static char *logfile = NULL;
-static int start_with_help = 0;
 static char promptbuf[16];
 static int echoquery = 0;
 #ifdef HAVE_ICONV
@@ -2127,10 +2126,6 @@ main(int argc, char **argv)
 			save_history = 1;
 			break;
 		case '?':
-			if (mode != NOLANGUAGE) {
-				start_with_help = 1;
-				break;
-			}
 			/* fall through */
 		default:
 			usage(argv[0]);
@@ -2309,8 +2304,6 @@ main(int argc, char **argv)
 		char *prompt = NULL;
 
 		if (interactive_stdin) {
-			if (start_with_help)
-				showCommands();
 #ifdef HAVE_LIBREADLINE
 			init_readline(mid, language, save_history);
 #else
