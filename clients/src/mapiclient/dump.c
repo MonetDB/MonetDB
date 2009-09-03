@@ -287,11 +287,15 @@ int
 describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int foreign)
 {
 	int cnt;
+	int slen;
 	MapiHdl hdl = NULL;
 	char *query;
 	char *view = NULL;
 	size_t maxquerylen;
 	char *sname = NULL;
+	int cap;
+#define CAP(X) ((cap = (X)) < 0 ? 0 : cap)
+
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -386,6 +390,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		goto bailout;
 	}
 
+	slen = mapi_get_len(hdl, 0);
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		char *c_name = mapi_fetch_field(hdl, 0);
@@ -394,6 +399,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		char *c_type_scale = mapi_fetch_field(hdl, 3);
 		char *c_null = mapi_fetch_field(hdl, 4);
 		char *c_default = mapi_fetch_field(hdl, 5);
+		int space;
 
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
@@ -404,6 +410,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 
 		stream_write(toConsole, "\t", 1, 1);
 		quoted_print(toConsole, c_name);
+		stream_printf(toConsole, "%*s", CAP(slen - strlen(c_name)), "");
 		stream_write(toConsole, " ", 1, 1);
 		/* map wrd type to something legal */
 		if (strcmp(c_type, "wrd") == 0) {
@@ -417,93 +424,98 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		    strcmp(c_type, "smallint") == 0 ||
 		    strcmp(c_type, "tinyint") == 0 ||
 		    strcmp(c_type, "bigint") == 0 ||
-		    strcmp(c_type, "date") == 0) {
-			stream_printf(toConsole, "%s", c_type);
+		    strcmp(c_type, "date") == 1) {
+			space = stream_printf(toConsole, "%s", c_type);
 		} else if (strcmp(c_type, "month_interval") == 0) {
 			if (strcmp(c_type_digits, "1") == 0)
-				stream_printf(toConsole, "INTERVAL YEAR");
+				space = stream_printf(toConsole, "INTERVAL YEAR");
 			else if (strcmp(c_type_digits, "2") == 0)
-				stream_printf(toConsole, "INTERVAL YEAR TO MONTH");
+				space = stream_printf(toConsole, "INTERVAL YEAR TO MONTH");
 			else if (strcmp(c_type_digits, "3") == 0)
-				stream_printf(toConsole, "INTERVAL MONTH");
+				space = stream_printf(toConsole, "INTERVAL MONTH");
 			else
 				fprintf(stderr, "Internal error: unrecognized month interval %s\n", c_type_digits);
 		} else if (strcmp(c_type, "sec_interval") == 0) {
 			if (strcmp(c_type_digits, "4") == 0)
-				stream_printf(toConsole, "INTERVAL DAY");
+				space = stream_printf(toConsole, "INTERVAL DAY");
 			else if (strcmp(c_type_digits, "5") == 0)
-				stream_printf(toConsole, "INTERVAL DAY TO HOUR");
+				space = stream_printf(toConsole, "INTERVAL DAY TO HOUR");
 			else if (strcmp(c_type_digits, "6") == 0)
-				stream_printf(toConsole, "INTERVAL DAY TO MINUTE");
+				space = stream_printf(toConsole, "INTERVAL DAY TO MINUTE");
 			else if (strcmp(c_type_digits, "7") == 0)
-				stream_printf(toConsole, "INTERVAL DAY TO SECOND");
+				space = stream_printf(toConsole, "INTERVAL DAY TO SECOND");
 			else if (strcmp(c_type_digits, "8") == 0)
-				stream_printf(toConsole, "INTERVAL HOUR");
+				space = stream_printf(toConsole, "INTERVAL HOUR");
 			else if (strcmp(c_type_digits, "9") == 0)
-				stream_printf(toConsole, "INTERVAL HOUR TO MINUTE");
+				space = stream_printf(toConsole, "INTERVAL HOUR TO MINUTE");
 			else if (strcmp(c_type_digits, "10") == 0)
-				stream_printf(toConsole, "INTERVAL HOUR TO SECOND");
+				space = stream_printf(toConsole, "INTERVAL HOUR TO SECOND");
 			else if (strcmp(c_type_digits, "11") == 0)
-				stream_printf(toConsole, "INTERVAL MINUTE");
+				space = stream_printf(toConsole, "INTERVAL MINUTE");
 			else if (strcmp(c_type_digits, "12") == 0)
-				stream_printf(toConsole, "INTERVAL MINUTE TO SECOND");
+				space = stream_printf(toConsole, "INTERVAL MINUTE TO SECOND");
 			else if (strcmp(c_type_digits, "13") == 0)
-				stream_printf(toConsole, "INTERVAL SECOND");
+				space = stream_printf(toConsole, "INTERVAL SECOND");
 			else
 				fprintf(stderr, "Internal error: unrecognized second interval %s\n", c_type_digits);
 		} else if (strcmp(c_type, "clob") == 0) {
-			stream_printf(toConsole, "CHARACTER LARGE OBJECT");
+			space = stream_printf(toConsole, "CHARACTER LARGE OBJECT");
 			if (strcmp(c_type_digits, "0") != 0)
-				stream_printf(toConsole, "(%s)", c_type_digits);
+				space += stream_printf(toConsole, "(%s)", c_type_digits);
 		} else if (strcmp(c_type, "blob") == 0) {
-			stream_printf(toConsole, "BINARY LARGE OBJECT");
+			space = stream_printf(toConsole, "BINARY LARGE OBJECT");
 			if (strcmp(c_type_digits, "0") != 0)
-				stream_printf(toConsole, "(%s)", c_type_digits);
+				space += stream_printf(toConsole, "(%s)", c_type_digits);
 		} else if (strcmp(c_type, "timestamp") == 0 ||
 			   strcmp(c_type, "timestamptz") == 0) {
-			stream_printf(toConsole, "TIMESTAMP", c_type);
+			space = stream_printf(toConsole, "TIMESTAMP", c_type);
 			if (strcmp(c_type_digits, "7") != 0)
-				stream_printf(toConsole, "(%d)", atoi(c_type_digits) - 1);
+				space += stream_printf(toConsole, "(%d)", atoi(c_type_digits) - 1);
 			if (strcmp(c_type, "timestamptz") == 0)
-				stream_printf(toConsole, " WITH TIME ZONE");
+				space += stream_printf(toConsole, " WITH TIME ZONE");
 		} else if (strcmp(c_type, "time") == 0 ||
 			   strcmp(c_type, "timetz") == 0) {
-			stream_printf(toConsole, "TIME", c_type);
+			space = stream_printf(toConsole, "TIME", c_type);
 			if (strcmp(c_type_digits, "1") != 0)
-				stream_printf(toConsole, "(%d)", atoi(c_type_digits) - 1);
+				space += stream_printf(toConsole, "(%d)", atoi(c_type_digits) - 1);
 			if (strcmp(c_type, "timetz") == 0)
-				stream_printf(toConsole, " WITH TIME ZONE");
+				space += stream_printf(toConsole, " WITH TIME ZONE");
 		} else if (strcmp(c_type, "real") == 0) {
 			if (strcmp(c_type_digits, "24") == 0 &&
 			    strcmp(c_type_scale, "0") == 0)
-				stream_printf(toConsole, "real");
+				space = stream_printf(toConsole, "real");
 			else if (strcmp(c_type_scale, "0") == 0)
-				stream_printf(toConsole, "float(%s)", c_type_digits);
+				space = stream_printf(toConsole, "float(%s)", c_type_digits);
 			else
-				stream_printf(toConsole, "float(%s,%s)", c_type_digits, c_type_scale);
+				space = stream_printf(toConsole, "float(%s,%s)",
+						c_type_digits, c_type_scale);
 		} else if (strcmp(c_type, "double") == 0) {
 			if (strcmp(c_type_digits, "53") == 0 &&
 			    strcmp(c_type_scale, "0") == 0)
-				stream_printf(toConsole, "double");
+				space = stream_printf(toConsole, "double");
 			else if (strcmp(c_type_scale, "0") == 0)
-				stream_printf(toConsole, "float(%s)", c_type_digits);
+				space = stream_printf(toConsole, "float(%s)", c_type_digits);
 			else
-				stream_printf(toConsole, "float(%s,%s)", c_type_digits, c_type_scale);
+				space = stream_printf(toConsole, "float(%s,%s)",
+						c_type_digits, c_type_scale);
 		} else if (strcmp(c_type, "decimal") == 0 &&
 			   strcmp(c_type_digits, "1") == 0 &&
 			   strcmp(c_type_scale, "0") == 0) {
-			stream_printf(toConsole, "decimal");
+			space = stream_printf(toConsole, "decimal");
 		} else if (strcmp(c_type_digits, "0") == 0) {
-			stream_printf(toConsole, "%s", c_type);
+			space = stream_printf(toConsole, "%s", c_type);
 		} else if (strcmp(c_type_scale, "0") == 0) {
-			stream_printf(toConsole, "%s(%s)", c_type, c_type_digits);
+			space = stream_printf(toConsole, "%s(%s)", c_type, c_type_digits);
 		} else {
-			stream_printf(toConsole, "%s(%s,%s)", c_type, c_type_digits, c_type_scale);
+			space = stream_printf(toConsole, "%s(%s,%s)",
+					c_type, c_type_digits, c_type_scale);
 		}
 		if (strcmp(c_null, "false") == 0)
-			stream_printf(toConsole, " NOT NULL");
+			space += stream_printf(toConsole, "%*s NOT NULL",
+					CAP(13 - space), "");
 		if (c_default != NULL)
-			stream_printf(toConsole, " DEFAULT %s", c_default);
+			space += stream_printf(toConsole, "%*s DEFAULT %s",
+					CAP(13 - space), "", c_default);
 		cnt++;
 		if (stream_errnr(toConsole))
 			goto bailout;
