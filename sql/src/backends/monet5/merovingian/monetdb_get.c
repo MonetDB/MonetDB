@@ -67,7 +67,7 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 			if (strcmp(property, "all") == 0) {
 				/* die hard leak (can't use constant, strtok modifies
 				 * (and hence crashes)) */
-				property = GDKstrdup("name,forward,shared,nthreads");
+				property = GDKstrdup("name,forward,shared,nthreads,master");
 			}
 		} else {
 			doall = 0;
@@ -140,7 +140,7 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 				if (kv->val == NULL) {
 					kv = findConfKey(defprops, p);
 					source = "default";
-					value = kv->val != NULL ? kv->val : "<unknown>";
+					value = kv != NULL && kv->val != NULL ? kv->val : "<unknown>";
 				} else {
 					source = "local";
 					value = kv->val;

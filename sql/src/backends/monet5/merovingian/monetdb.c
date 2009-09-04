@@ -335,6 +335,7 @@ main(int argc, char *argv[])
 		{"sql_logdir",         NULL},
 		{"mero_doproxy",       GDKstrdup("yes")},
 		{"mero_discoveryport", NULL},
+		{"#master",            GDKstrdup("no")},
 		{ NULL,                NULL}
 	};
 	confkeyval *kv;
@@ -448,6 +449,9 @@ main(int argc, char *argv[])
 		}
 		kv = findConfKey(ckv, "gdk_nr_threads");
 		kv->key = "nthreads";
+		/* enable "hidden" option, to avoid override by config-file */
+		kv = findConfKey(ckv, "#master");
+		kv->key++;
 		command_get(argc - 1, &argv[1], ckv);
 	} else if (strcmp(argv[1], "inherit") == 0) {
 		command_set(argc - 1, &argv[1], INHERIT);

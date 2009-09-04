@@ -38,6 +38,7 @@ static confkeyval _internal_prop_keys[] = {
 	{"forward",  NULL},
 	{"shared",   NULL},
 	{"nthreads", NULL},
+	{"master",   NULL},
 	{ NULL,      NULL}
 };
 

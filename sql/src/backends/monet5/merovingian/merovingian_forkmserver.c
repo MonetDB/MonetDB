@@ -35,6 +35,7 @@ forkMserver(str database, sabdb** stats, int force)
 	dpair dp;
 	str vaultkey = NULL;
 	str nthreads = NULL;
+	str master = NULL;
 	char mydoproxy;
 	confkeyval *ckv, *kv;
 	struct stat statbuf;
@@ -219,6 +220,16 @@ forkMserver(str database, sabdb** stats, int force)
 		snprintf(nthreads, 24, "gdk_nr_threads=%s", kv->val);
 	}
 
+	kv = findConfKey(ckv, "master");
+	if (kv->val != NULL && /* can't have master configured by default */
+			(!strcmp(kv->val, "true") ||
+			 !strcmp(kv->val, "yes") ||
+			 !strcmp(kv->val, "1")))
+	{
+		master = alloca(sizeof(char) * 24);
+		snprintf(master, 24, "replication_master=true");
+	}
+
 	freeConfFile(ckv);
 	GDKfree(ckv); /* can make ckv static and reuse it all the time */
 
@@ -240,7 +251,7 @@ forkMserver(str database, sabdb** stats, int force)
 		str conffile = alloca(sizeof(char) * 512);
 		str dbname = alloca(sizeof(char) * 512);
 		str port = alloca(sizeof(char) * 24);
-		str argv[17];	/* for the exec arguments */
+		str argv[19];	/* for the exec arguments */
 		int c = 0;
 
 		/* redirect stdout and stderr to a new pair of fds for
@@ -277,6 +288,9 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = "--set"; argv[c++] = vaultkey;
 		if (nthreads != NULL) {
 			argv[c++] = "--set"; argv[c++] = nthreads;
+		}
+		if (master != NULL) {
+			argv[c++] = "--set"; argv[c++] = master;
 		}
 		argv[c++] = NULL;
 

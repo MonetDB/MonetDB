@@ -1,6 +1,11 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  04 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_forkmserver.c,
+  monetdb.c, monetdb_get.c, properties.c:
+  Add master property of boolean value that translates into
+  replication_master for mserver5 to trigger storing replication logs
+
   20 Aug 2009; Fabian Groffen <fabian@cwi.nl> database.c, database.h,
   monetdb.c, monetdb.1:
   Always put created databases under maintenance, they have to be explicitly
