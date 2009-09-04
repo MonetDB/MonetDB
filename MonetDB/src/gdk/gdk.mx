@@ -2816,7 +2816,7 @@ gdk_export BAT *BATmaterialize(BAT *b);
 gdk_export BAT *BATmaterializeh(BAT *b);
 gdk_export BAT *BATmaterializet(BAT *b);
 gdk_export void VIEWdestroy(BAT *b);
-gdk_export void VIEWbounds(BAT *view, BUN l, BUN h);
+gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 gdk_export void VIEWunlink(BAT *b);
 
 /* low level functions */

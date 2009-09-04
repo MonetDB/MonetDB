@@ -681,49 +681,28 @@ It expects a position range in the underlying BAT and
 compensates for outliers.
 @c
 void
-VIEWbounds(BAT *view, BUN l, BUN h)
+VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 {
-	bat hp, tp;
-	BAT *hb;
-	BAT *tb;
-	BAT *b;
+	BUN cnt;
+	BATiter bi = bat_iterator(b);
 
-	if (view == NULL){
-		GDKerror("VIEWbounds: bat required");
+	if (b== NULL || view == NULL){
+		GDKerror("VIEWbounds: bat argument missing");
 		return;
 	}
-	hp = VIEWhparent(view);
-	tp = VIEWtparent(view);
-	if (hp == 0 && tp == 0) {
-		GDKerror("VIEWbounds: bat required");
-		return;
-	}
-	hb = hp ? BBP_cache(hp) : NULL;
-	tb = tp ? BBP_cache(tp) : NULL;
-	b = hb ? hb : tb;
-	if (l < BUNfirst(b))
-		l = BUNfirst(b);
+	if ( h > BATcount(b))
+		h = BATcount(b);
+	if ( h < l )
+		h = l;
+	l += BUNfirst(b);
 	view->batFirst = view->batDeleted = view->batInserted = 0;
-	if (h > BUNlast(b) - 1)
-		h = BUNlast(b) - 1;
-	BATsetcount(view, h + 1 - l);
-
-	if (hb) {
-		view->H->heap.base = hb->H->heap.base + headsize(hb,l);
-		view->H->heap.maxsize = view->H->heap.size = headsize(hb,h + 1);
-		view->hsorted = BAThordered(hb);
-		BATkey(view, BAThkey(hb));
-		if (BAThdense(hb))
-			BATseqbase(view, hb->hseqbase + l);
-	}
-	if (tb) {
-		view->T->heap.base = tb->H->heap.base + headsize(tb,l);
-		view->T->heap.maxsize = view->T->heap.size = headsize(tb,h + 1);
-		view->tsorted = BAThordered(tb);
-		BATkey(BATmirror(view), BAThkey(tb));
-		if (BAThdense(tb))
-			BATseqbase(BATmirror(view), tb->hseqbase + l);
-	}
+	cnt = h - l;
+	view->H->heap.base = (view->htype)?BUNhloc(bi,l):NULL;
+	view->T->heap.base = (view->ttype)?BUNtloc(bi,l):NULL;
+	view->H->heap.maxsize = view->H->heap.size = headsize(view, cnt);
+	view->T->heap.maxsize = view->T->heap.size = tailsize(view, cnt);
+	BATsetcount(view, cnt);
+	BATsetcapacity(view, cnt);
 }
 
 @-
