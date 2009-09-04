@@ -17,4 +17,13 @@
 
 -- The replicator information is stored in the table 'replicas'
 
-create table sys.replicas( id int, stamp timestamp);
+create table sys.replicas(id int, stamp timestamp);
+
+CREATE TABLE sys.slaves (
+	uri              varchar(100)   NOT NULL,
+	last_connect     timestamp,
+	last_disconnect  timestamp,
+	logfile          varchar(100),
+	tag_delay        bigint,
+	time_delay       timestamp
+);
