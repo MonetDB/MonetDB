@@ -399,7 +399,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		char *c_type_scale = mapi_fetch_field(hdl, 3);
 		char *c_null = mapi_fetch_field(hdl, 4);
 		char *c_default = mapi_fetch_field(hdl, 5);
-		int space;
+		int space = 0;
 
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
@@ -511,10 +511,10 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 					c_type, c_type_digits, c_type_scale);
 		}
 		if (strcmp(c_null, "false") == 0)
-			space += stream_printf(toConsole, "%*s NOT NULL",
+			stream_printf(toConsole, "%*s NOT NULL",
 					CAP(13 - space), "");
 		if (c_default != NULL)
-			space += stream_printf(toConsole, "%*s DEFAULT %s",
+			stream_printf(toConsole, "%*s DEFAULT %s",
 					CAP(13 - space), "", c_default);
 		cnt++;
 		if (stream_errnr(toConsole))
