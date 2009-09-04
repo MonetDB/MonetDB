@@ -15,15 +15,25 @@
 -- All Rights Reserved.
 
 
--- The replicator information is stored in the table 'replicas'
+-- The master contains a builtin table whose content is updated each
+-- time a slave initiates a session, starts processing a logfile
+-- and leaves the scene.
 
-create table sys.replicas(id int, stamp timestamp);
+CREATE FUNCTION slaves()
+RETURNS TABLE (
+	uri              varchar(100),
+	last_connect     timestamp,	
+	last_disconnect  timestamp,	-- null when connected
+	last_tag		 bigint,	-- tag associated with log file finished
+	tag_delay        bigint,	-- replicationTag - logfile tag in processs
+	time_delay       timestamp 
+) EXTERNAL NAME master."slaves";
 
-CREATE TABLE sys.slaves (
-	uri              varchar(100)   NOT NULL,
-	last_connect     timestamp,
-	last_disconnect  timestamp,
-	logfile          varchar(100),
-	tag_delay        bigint,
-	time_delay       timestamp
-);
+-- Each slave contains a table of replication tags successfully executed.
+-- It can synchronise with multiple masters and provides a persistent
+-- store for the master name.
+CREATE TABLE sys.replicas(uri varchar(100) NOT NULL, tag int, stamp timestamp);
+
+-- Controling the synchronisation by the slave
+CREATE PROCEDURE master_start(uri string) EXTERNAL NAME master."start";
+CREATE PROCEDURE master_stop(uri string) EXTERNAL NAME master."stop";
