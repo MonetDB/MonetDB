@@ -27,6 +27,7 @@
 #include "utils.h"
 #include <stdio.h> /* fprintf, fgets */
 #include <string.h> /* memcpy */
+#include <strings.h> /* strcasecmp */
 #include <gdk.h> /* GDKmalloc */
 
 /**
@@ -66,6 +67,7 @@ readConfFile(confkeyval *list, FILE *cnf) {
 	char buf[1024];
 	confkeyval *t;
 	size_t len;
+	char *err;
 
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
@@ -73,9 +75,8 @@ readConfFile(confkeyval *list, FILE *cnf) {
 		for (t = list; t->key != NULL; t++) {
 			len = strlen(t->key);
 			if (*buf && strncmp(buf, t->key, len) == 0 && buf[len] == '=') {
-				if (t->val != NULL)
-					GDKfree(t->val);
-				t->val = GDKstrdup(buf + len + 1);
+				if ((err = setConfVal(t, buf + len + 1)) != NULL)
+					GDKfree(err); /* ignore, just fall back to default */
 			}
 		}
 	}
@@ -106,6 +107,78 @@ findConfKey(confkeyval *list, char *key) {
 			return(list);
 		list++;
 	}
+	return(NULL);
+}
+
+/**
+ * Sets the value in the given confkeyval struct to val ensuring it is
+ * of the desired type.  In case of type BOOL, val is converted to "yes"
+ * or "no", based on val.  If the type does not match, this function
+ * returns a GDKmalloced diagnostic message, or if everything is
+ * successful, NULL.  If val is NULL, this function always returns
+ * successful and unsets the value for the given key.  Upon an error,
+ * the original value for the key is left untouched.
+ */
+inline char *
+setConfVal(confkeyval *ckv, char *val) {
+	/* handle the unset directly */
+	if (val == NULL) {
+		if (ckv->val != NULL) {
+			GDKfree(ckv->val);
+			ckv->val = NULL;
+		}
+		return(NULL);
+	}
+
+	/* check the input */
+	switch (ckv->type) {
+		case INVALID: {
+			char buf[256];
+			snprintf(buf, sizeof(buf),
+					"key '%s' is unitialised (invalid value), internal error",
+					ckv->key);
+			return(GDKstrdup(buf));
+		}; break;
+		case INT: {
+			char *p = val;
+			while (*p >= '0' && *p <= '9')
+				p++;
+			if (*p != '\0') {
+				char buf[256];
+				snprintf(buf, sizeof(buf),
+						"key '%s' requires an integer-type value, got: %s",
+						ckv->key, val);
+				return(GDKstrdup(buf));
+			}
+		}; break;
+		case BOOL: {
+			if (strcasecmp(val, "true") == 0 ||
+					strcasecmp(val, "yes") == 0 ||
+					strcmp(val, "1") == 0)
+			{
+				val = "yes";
+			} else if (strcasecmp(val, "false") == 0 ||
+					strcasecmp(val, "no") == 0 ||
+					strcmp(val, "0") == 0)
+			{
+				val = "no";
+			} else {
+				char buf[256];
+				snprintf(buf, sizeof(buf),
+						"key '%s' requires a boolean-type value, got: %s",
+						ckv->key, val);
+				return(GDKstrdup(buf));
+			}
+		}; break;
+		case STR:
+		case OTHER:
+			/* leave as is, not much to check */
+		break;
+	}
+	if (ckv->val != NULL)
+		GDKfree(ckv->val);
+	ckv->val = GDKstrdup(val);
+
 	return(NULL);
 }
 

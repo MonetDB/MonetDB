@@ -23,15 +23,25 @@
 #include <stdio.h>  /* FILE* */
 #include <sys/types.h>   /* time_t */
 
+enum valtype {
+	INVALID = 0,
+	INT,
+	BOOL,
+	STR,
+	OTHER
+};
+
 typedef struct _confkeyval {
 	char *key;
 	char *val;
+	enum valtype type;
 } confkeyval;
 
 char *replacePrefix(char *s, char *prefix);
 void readConfFile(confkeyval *list, FILE *cnf);
 void freeConfFile(confkeyval *list);
 confkeyval *findConfKey(confkeyval *list, char *key);
+char *setConfVal(confkeyval *ckv, char *val);
 void secondsToString(char *buf, time_t t, int longness);
 void abbreviateString(char *ret, char *in, size_t width);
 
