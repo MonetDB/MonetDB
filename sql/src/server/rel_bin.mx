@@ -511,6 +511,10 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
  			r = exp_bin(sql, e->r, left, NULL, grp, sel);
 			is_select = 1;
 		}
+		if (!r && swapped) {
+ 			r = exp_bin(sql, e->r, right, NULL, grp, sel);
+			is_select = 1;
+		}
 		if (re2)
  			r2 = exp_bin(sql, e->f, left, right, grp, sel);
 		if (!l || !r || (re2 && !r2)) {

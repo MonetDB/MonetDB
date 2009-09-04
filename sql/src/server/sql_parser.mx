@@ -1267,7 +1267,7 @@ opt_alt_seq_params:
  */
 opt_start:
    	/* empty */		{ $$ = 1; }
-  |	START WITH nonzero 	{ $$ = $3; }
+  |	START WITH poslng 	{ $$ = $3; }
   ;
 
 /*
@@ -1276,14 +1276,14 @@ opt_start:
  *   * -1  absent/empty
  *   *  0  no argument (only for RESTART)
  *   *  1  argument is a subquery
- *   *  2  argument is simple int
+ *   *  2  argument is simple lng
  * - symbol: the symbol
  */
 opt_restart:
 	/* empty */	{ $$ = append_int(L(), -1); }
   |	RESTART		{ $$ = append_int(L(), 0); }
   | 	RESTART WITH 
-	nonzero 	{ $$ = append_int(append_int(L(), 2), $3); }
+	poslng 		{ $$ = append_lng(append_int(L(), 2), $3); }
   | 	RESTART WITH	
     	subquery	{ $$ = append_symbol(append_int(L(), 1), $3); }
   ;

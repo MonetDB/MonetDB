@@ -160,7 +160,7 @@ SQLprelude(void)
 	s->parser = "SQLparser";
 	s->engine = "SQLengine";
 	if (GDKembedded)
-		return MAL_SUCCEED;
+		return SQLinit();
 
 	s = getFreeScenario();
 	if (!s)

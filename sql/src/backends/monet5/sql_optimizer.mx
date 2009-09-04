@@ -441,7 +441,7 @@ tested extensively and should provide overall good performance.
 Additional pipelines are defined in the monetdb.conf file.
 @c
 str minimalPlan= "inline,remap,deadcode,multiplex";
-str defaultPlan; 
+str defaultPlan = NULL; 
 
 static str optimizers[256];	/* the optimizer pipeline */
 static str optimizerpipeline;		/* reference to last pipeline string */
@@ -525,7 +525,7 @@ setOptimizers(str optimizer)
 	if (top == 256)
 		showException(SQL,"optimizer","Too many optimizer steps\n");
 	if (SQLvalidatePipeline() ) {
-		if (optimizerpipeline == defaultPlan)
+		if (optimizerpipeline == defaultPlan || !defaultPlan)
 			setOptimizers(minimalPlan);
 		else
 			setOptimizers(defaultPlan);
