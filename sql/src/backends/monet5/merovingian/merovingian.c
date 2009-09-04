@@ -433,19 +433,19 @@ main(int argc, char *argv[])
 	FILE *oerr = NULL;
 	pthread_mutexattr_t mta;
 	confkeyval ckv[] = {
-		{"prefix",             GDKstrdup(MONETDB5_PREFIX)},
-		{"gdk_dbfarm",         NULL},
-		{"gdk_nr_threads",     NULL},
-		{"sql_logdir",         NULL},
-		{"mero_msglog",        NULL},
-		{"mero_errlog",        NULL},
-		{"mero_port",          NULL},
-		{"mero_exittimeout",   NULL},
-		{"mero_pidfile",       NULL},
-		{"mero_doproxy",       NULL},
-		{"mero_discoveryttl",  NULL},
-		{"mero_discoveryport", NULL},
-		{ NULL,                NULL}
+		{"prefix",             GDKstrdup(MONETDB5_PREFIX), STR},
+		{"gdk_dbfarm",         NULL,                       STR},
+		{"gdk_nr_threads",     NULL,                       INT},
+		{"sql_logdir",         NULL,                       STR},
+		{"mero_msglog",        NULL,                       STR},
+		{"mero_errlog",        NULL,                       STR},
+		{"mero_port",          NULL,                       INT},
+		{"mero_exittimeout",   NULL,                       INT},
+		{"mero_pidfile",       NULL,                       STR},
+		{"mero_doproxy",       NULL,                       BOOL},
+		{"mero_discoveryttl",  NULL,                       INT},
+		{"mero_discoveryport", NULL,                       INT},
+		{ NULL,                NULL,                       INVALID}
 	};
 	confkeyval *kv;
 

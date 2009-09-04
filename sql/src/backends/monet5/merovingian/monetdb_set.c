@@ -197,6 +197,7 @@ command_set(int argc, char *argv[], meroset type)
 				state |= 1;
 			}
 		} else {
+			char *err;
 			readProps(props, stats->path);
 			kv = findConfKey(props, property);
 			if (kv == NULL) {
@@ -204,12 +205,11 @@ command_set(int argc, char *argv[], meroset type)
 				state |= 1;
 				continue;
 			}
-			if (kv->val != NULL)
-				GDKfree(kv->val);
-			if (type == SET) {
-				kv->val = GDKstrdup(value);
-			} else /* INHERIT */ {
-				kv->val = NULL;
+			if ((err = setConfVal(kv, type == SET ? value : NULL)) != NULL) {
+				fprintf(stderr, "%s: %s\n", argv[0], err);
+				GDKfree(err);
+				state |= 1;
+				continue;
 			}
 
 			writeProps(props, stats->path);
