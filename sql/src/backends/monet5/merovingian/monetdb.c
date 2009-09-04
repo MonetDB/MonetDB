@@ -335,7 +335,7 @@ main(int argc, char *argv[])
 		{"sql_logdir",         NULL,                       STR},
 		{"mero_doproxy",       GDKstrdup("yes"),           BOOL},
 		{"mero_discoveryport", NULL,                       INT},
-		{"#master",            GDKstrdup("no")},           BOOL},
+		{"#master",            GDKstrdup("no"),            BOOL},
 		{ NULL,                NULL,                       INVALID}
 	};
 	confkeyval *kv;
