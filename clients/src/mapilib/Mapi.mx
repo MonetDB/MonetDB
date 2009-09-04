@@ -2202,8 +2202,10 @@ parse_uri_query(Mapi mid, char *uri)
 
 	uri++; /* skip '?' */
 
-	while ((amp = strchr(uri, '&')) != NULL) {
-		*amp++ = '\0';
+	do {
+		if ((amp = strchr(uri, '&')) != NULL)
+			*amp++ = '\0';
+		
 		if ((val = strchr(uri, '=')) != NULL) {
 			*val++ = '\0';
 			if (strcmp("database", uri) == 0) {
@@ -2221,7 +2223,7 @@ parse_uri_query(Mapi mid, char *uri)
 			} /* can't warn, ignore */
 		} /* else: invalid argument, can't warn, just skip */
 		uri = amp;
-	}
+	} while (uri != NULL);
 }
 
 @- Channel Constructor
