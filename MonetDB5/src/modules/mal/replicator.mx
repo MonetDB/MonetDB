@@ -570,7 +570,6 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-#define _DEBUG_REPLICATOR_
 #ifdef _DEBUG_REPLICATOR_
 	printf("replay the log to  %s %s %s %d\n", *uri, *usr, *pw, *tag);
 #endif
