@@ -332,7 +332,6 @@ main(int argc, char *argv[])
 		{"prefix",             GDKstrdup(MONETDB5_PREFIX), STR},
 		{"gdk_dbfarm",         NULL,                       STR},
 		{"gdk_nr_threads",     NULL,                       INT},
-		{"sql_logdir",         NULL,                       STR},
 		{"mero_doproxy",       GDKstrdup("yes"),           BOOL},
 		{"mero_discoveryport", NULL,                       INT},
 		{"#master",            GDKstrdup("no"),            BOOL},
