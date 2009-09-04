@@ -59,12 +59,11 @@ configuration on the copied slave needs to be changed for it to
 successfully replicate off of the master.
 
 The query plan is extended by the optimizer to initiate calls to build
-a replicator log file (in master mode) or trap update attempts
-on the replicated tables. [todo, how to know which tables are violated?
-or property of sql catalog using readonly tables]
+a replicator log file. For this to take place the environment variable
+replication_master must be set to 'yes'. 
 
 The master node replication optimizer changes the query plans
-by injection of two statements;
+by injection of replication directives;
 
 @verbatim
 function query():void
@@ -79,22 +78,27 @@ end query;
 @end verbatim
 
 At runtime this leads to buffers being filled with the statements
-required for the slaves. They are stored in 
-a file "dbfarm/db/master/tag_%d" with the following
-structure:
+required for the slaves to catch up. 
+Each query block is stored in its own buffer and sent at
+the end of the query block. This separates the concurrent 
+actions on the database at the master and leads to a serial
+execution of the replication operations within the slave.
+
+They are stored in a file "dbfarm/db/master/tag_%d" with the 
+following structure:
 @verbatim
-function slave.tag0();
-  slave.open(0,"2009-08-16 18:57:58.000":timestamp);
-  tag0_b := bat.new(:oid,:int);
+function slave.tag1();
+  slave.open(1,"2009-08-16 18:57:58.000":timestamp);
+  tag1_b := bat.new(:oid,:int);
   ...
-  bat.insert(tag0_b,3:oid,232:int); #example update
+  bat.insert(tag1_b,3:oid,232:int); #example update
   ...
-  sql.append("schema","table","col",tag0_b,tag);
-  slave.close(0,"2009-08-16 18:57:58.000":timestamp);
-  tag0_b:= nil;
-end tag0;
-slave.tag0();
-slave.drop("tag0");
+  sql.append("schema","table","col",tag1_b,tag);
+  slave.close(1,"2009-08-16 18:57:58.000":timestamp);
+  tag1_b:= nil;
+end tag1;
+slave.tag1();
+slave.drop("tag1");
 @end verbatim
 
 Grouping the operations within temporary functions
@@ -103,21 +107,14 @@ that it has been executed before. The slave.open()
 simply checks the replicas administration table
 and issues an assertion if necessary.
 
-Each query block is stored in its own buffer and sent at
-the end of the query block. This separates the concurrent 
-actions on the database at the master and leads to a serial
-execution of the replication operations within the slave.
-
-A slave processes all the logs it finds in the dbfarm/<db>/slave
-directory. 
-
 The operations are executed in the serial order as on the master,
 which should lead to the same optimistic transactional behavior.
 All queries are considered running in auto-commit mode, because
 the SQL frontend does not provide the hook (yet) for better transaction
 boundary control.
 
-Updates on the replicated tables are forbidden  [to be checked]
+Local updates on the replicated tables are forbidden, but it is not
+enforced.
 
 @{
 @mal
@@ -190,6 +187,7 @@ comment "Remove the replica function from the module";
 #define replicator_export extern
 #endif
 
+replicator_export int MASTERroleEnabled();
 replicator_export str MASTERopen(int *ret);
 replicator_export str MASTERclose(int *ret, int *tag);
 replicator_export str MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -219,7 +217,7 @@ The final code should contain a loop to determine the last replicator tag.
 #define REPLICABLOCK 1000
 
 static MT_Lock repLck;
-static int repTag;
+static int replicationTag;
 static stream *repFile;
 
 static struct MASTERRECORD{
@@ -228,6 +226,12 @@ static struct MASTERRECORD{
 	int tag;
 } *master;
 static int mtop = 0 , mlimit = 0;
+
+int
+MASTERroleEnabled()
+{
+	return replicationTag > 0;
+}
 
 static int MASTERgetBuffer(int tag){
 	int i;
@@ -255,7 +259,11 @@ static int MASTERgetBuffer(int tag){
 	master[i].tag = tag;
 	return i;
 }
-
+@-
+For the time being, we assume that all chunks are kept in the
+master directory. A better scheme is to find the last chunk
+by reading the directory itself.
+@c
 str MASTERopen(int *ret){
 	char buf[BUFSIZ];
 	FILE *fp = 0;
@@ -263,23 +271,23 @@ str MASTERopen(int *ret){
 	str val=0;
 	int i,l,len;
 	
-	if ( repTag == 0)
+	if ( replicationTag == 0)
 		MT_lock_init(&repLck,"replicator");
 	mal_set_lock(repLck,"replicator");
 	if ( repFile == NULL){
 		mkdir(MASTER,0755); /* ensure existance of the replica pool */
-		if ( repTag == 0){
+		if ( replicationTag == 0){
 			/* find the last one already in the pool, using the REPLICABLOCK */
 			do {
 				if (fp) {
-					repTag += REPLICABLOCK;
+					replicationTag += REPLICABLOCK;
 					fclose(fp);
 				}
-				snprintf(buf, BUFSIZ, MASTER REPLICA, repTag);
+				snprintf(buf, BUFSIZ, MASTER REPLICA, replicationTag);
 				fp = fopen(buf,"r");
 			} while (fp);
 		}
-		snprintf(buf, BUFSIZ, MASTER REPLICA, repTag);
+		snprintf(buf, BUFSIZ, MASTER REPLICA, replicationTag);
 		repFile = open_wastream(buf);
 		if ( repFile == NULL || stream_errnr(repFile) ){
 			mal_unset_lock(repLck,RUNTIME_STREAM_FAILED);
@@ -287,14 +295,14 @@ str MASTERopen(int *ret){
 		}
 	}
 	/* get a replica buffer */
-	repTag++;
-	i = MASTERgetBuffer(repTag);
+	replicationTag++;
+	i = MASTERgetBuffer(replicationTag);
 	/* prepare the MAL redo record */
 	MTIMEepoch(&stamp);
 	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len ,
-			"function slave.tag_%d();\nslave.open(%d,\"%s\":timestamp);\n",repTag,repTag,val)) == len){
+			"function slave.tag_%d();\nslave.open(%d,\"%s\":timestamp);\n",replicationTag,replicationTag,val)) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replicator.open",MAL_MALLOC_FAIL);
@@ -305,7 +313,7 @@ str MASTERopen(int *ret){
 	master[i].buf[master[i].top] = 0;
 	mal_unset_lock(repLck,RUNTIME_STREAM_FAILED);
 
-	*ret = repTag ;
+	*ret = replicationTag ;
 	return MAL_SUCCEED;
 }
 
@@ -341,7 +349,7 @@ str MASTERclose(int *ret, int *tag){
 		mal_unset_lock(repLck,"replicator");
 		throw(MAL,"replicator.close",RUNTIME_STREAM_FAILED);
 	}
-	if ( repTag % REPLICABLOCK  == 0){
+	if ( replicationTag % REPLICABLOCK  == 0){
 		close_stream(repFile);
 		repFile = NULL;
 	}
@@ -586,6 +594,7 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stream *s;
 	MapiHdl hdl;
 	Mapi m;
+	int chunkcnt = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -599,7 +608,7 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mapi_error_str(m));
 
 	if (mapi_reconnect(m) != MOK) {
-		throw(IO, "replicator.masterreplay", OPERATION_FAILED 
+		throw(IO, "master.replay", OPERATION_FAILED 
 				": an error occurred during connect to '%s': %s",
 				*uri, mapi_error_str(m));
 	}
@@ -609,8 +618,12 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		snprintf(buf, BUFSIZ, MASTER REPLICA, (t / REPLICABLOCK) *REPLICABLOCK);
 		/* copy it */
 		in = bstream_create(  (s= open_rstream(buf)), BUFSIZ);
-		if (s == NULL || in == NULL)
+		if (s == NULL || in == NULL) {
+			if ( chunkcnt == 0)
+				throw(IO,"master.replay","Tag file lost. Rebuild slave.");
 			break;
+		}
+		chunkcnt++;
 		do {
 			if (bstream_read(in, BUFSIZ) <= 0 )
 				break;
@@ -643,7 +656,7 @@ This calls for a persistent table with all tags.
 str SLAVEopen(int *ret, int *tag, timestamp *t){
 	(void) ret;
 	(void) t;
-	if ( *tag < repTag)
+	if ( *tag < replicationTag)
 		throw(MAL,"slave.open","Operation ignored");
 	return MAL_SUCCEED;
 }
@@ -651,7 +664,7 @@ str SLAVEopen(int *ret, int *tag, timestamp *t){
 str SLAVEclose(int *ret, int *tag, timestamp *t){
 	(void) ret;
 	(void) t;
-	repTag = *tag;
+	replicationTag = *tag;
 	return MAL_SUCCEED;
 }
 
