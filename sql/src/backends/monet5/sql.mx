@@ -717,6 +717,7 @@ end slave.open;
 
 function slave.close(tag:int, t:timestamp):bit;
 	sql.append("sys","replicas","id",tag);
+	return close:= true;
 end slave.close;
 
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
@@ -4328,5 +4329,4 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt; (void) mb; (void) stk; (void) pci;
 	throw(SQL, "sql.rdfShred", "RDF support is missing from Monet5");
 #endif
-
 }
