@@ -199,6 +199,8 @@ replicator_export str SLAVEopen(int *ret, int *tag, timestamp *t);
 replicator_export str SLAVEclose(int *ret, int *tag, timestamp *t);
 replicator_export str SLAVEdrop(int *ret, str *tag);
 #endif /* _REPLICATOR_H */
+@-
+The active slaves are administered in a persistent table.
 @c
 #include "mal_config.h"
 #include "replicator.h"
@@ -580,8 +582,16 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @-
 Replaying the MAL logs is straightforward. We perform a remote
 operation execution on the master to initiate a quick dump of the
-missing operations.
+missing operations. The master keeps a [persistent] structure
+with the status of all completed logfiles being sent to slaves.
 @c
+static struct MASTERrecord{
+	str uri;
+	time_t last_connect;
+	time_t last_disconnect;
+	int last_tag;
+} masterstatus[MAL_MAXCLIENTS];
+
 str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *uri= (str*)getArgReference(stk,pci,1);
@@ -595,6 +605,7 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MapiHdl hdl;
 	Mapi m;
 	int chunkcnt = 0;
+	int slave = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -602,6 +613,14 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef _DEBUG_REPLICATOR_
 	printf("replay the log to  %s %s %s %d\n", *uri, *usr, *pw, *tag);
 #endif
+	for( slave= 0; masterstatus[slave].uri; slave++)
+		if ( strcmp(masterstatus[slave].uri,*uri) == 0)
+			break;
+	if ( masterstatus[slave].uri == NULL)
+		masterstatus[slave].uri = GDKstrdup(*uri);
+	masterstatus[slave].last_connect = time(0);
+	masterstatus[slave].last_disconnect = 0;
+	
 	m = mapi_mapiuri(*uri, *usr, *pw, scen);
 	if (mapi_error(m))
 		throw(MAL, "replicator.masterreplay", "unable to connect: %s",
@@ -635,11 +654,16 @@ str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			hdl = mapi_query(m, in->buf);
 			if (hdl)
 				mapi_close_handle(hdl);
+			if ( in->eof)
+				masterstatus[slave].last_tag= t;
 		} while (in->eof == 0);
-
+@-
+Upon succesful transmission we update the log file tag for the slage
+@c
 		t += REPLICABLOCK;
 	} while (t < *tag); /* fake exit */
 
+	masterstatus[slave].last_connect = time(0);
 	mapi_disconnect(m);
 	mapi_destroy(m);
 	return MAL_SUCCEED;
