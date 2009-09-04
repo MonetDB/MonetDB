@@ -19,24 +19,44 @@
 @a Martin Kersten
 @v 1.0
 @+ Database replication
-The replication module supports distribution of updates over SQL databases
-at multiple sites using a simple master-slave protocol using
-a MAL-based update log.
+The replication module supports distribution of updates over SQL
+databases at multiple sites using a simple master-slave protocol using a
+MAL-based update log.  Note that the current replication approach does
+not support replication of schema changes, such as added tables or
+columns.  Setup the full catalog before transitioning a database to a
+replication master.
 
-A master-slave system is set up as follows. The master database
-is initialized with the catalog and optionally loaded.
-The script src/sql/replicas.sql is executed to prepare it
-for the replication algorithms and define the commands
-to modify the role of the database instance.
+To configure a database to become a replication master, set its "master"
+property to true using monetdb(1).  This property is translated by
+merovingian(1) into the replication_master GDK environment setting.
+With this setting, the database will log all update actions in a
+replication logfile, allowing slaves to replicate.
 
-The next step is to clone the database using the monetdb tool. [todo]
-Alternatively, copy the complete dbfarm/<db> directory to
-the machine hosting the slave. 
+The next step is to create a snapshot of the master to be replicated to
+one or more slaves.  For this, the msqldump(1) tool can be used.  A dump
+made on a replication master includes some statements that specify the
+replication log position on the master that corresponds to the dump.
+These statements play an important role when setting up a slave.
 
-The replication is based on the assumption that the database catalog
-is shared between all instances. 
-There is no automatic propagation of CREATE, DROP, nor ALTER statements
-issued at the host.
+To initiate a slave, simply load a master snapshot.  If the master was
+able to properly fully qualify itself, the snapshot dump includes a
+correct value for the MASTER SQL variable, pointing to the replication
+master.  If the master is reachable in another way, this setting may
+have to be adjusted properly for the slave to be able to contact the
+master.  After loading the dump, the slave will not automatically start
+replicating, until restarted or given the START SLAVE SQL command.  Note
+that replication is implemented push-based, that is, the master makes a
+call-back to the requesting slave to deliver its updates.  The network
+needs to allow this bi-directional setting.  A slave can be told to
+temporarily stop accepting updates from the master using the STOP SLAVE
+SQL command.  A freshly initialised slave starts replicating off of the
+master starting from the master tag set by the value for the MASTER_TAG
+SQL variable, included in a master snapshot dump.
+
+The replication scheme allows a slave to be cloned e.g. by copying the
+dbfarm of the slave to another database without problems.  No
+configuration on the copied slave needs to be changed for it to
+successfully replicate off of the master.
 
 The query plan is extended by the optimizer to initiate calls to build
 a replicator log file (in master mode) or trap update attempts
