@@ -1,3 +1,4 @@
+function tst();
 	t:= bat.new(:int, :url);
 	cb_a := url.url("http://www.cwi.nl");
 	db_a := bat.insert(t,1,cb_a);
@@ -25,3 +26,4 @@ barrier (mloop,chunk) := bat.newIterator(t,c);
 	redo (mloop,chunk) := bat.hasMoreElements(t,3:lng);
 exit mloop;
 
+end tst;
