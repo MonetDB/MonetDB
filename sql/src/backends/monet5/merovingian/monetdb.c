@@ -1077,6 +1077,17 @@ command_set(int argc, char *argv[], meroset type)
 				continue;
 			}
 
+			if (strcmp(kv->key, "forward") == 0 && kv->val != NULL) {
+				if (strcmp(kv->val, "proxy") != 0 &&
+						strcmp(kv->val, "redirect") != 0)
+				{
+					fprintf(stderr, "%s: expected 'proxy' or 'redirect' for "
+							"property 'forward', got: %s\n", argv[0], kv->val);
+					state |= 1;
+					continue;
+				}
+			}
+
 			writeProps(props, stats->path);
 			freeConfFile(props);
 		}
