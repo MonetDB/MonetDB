@@ -227,7 +227,7 @@ comment "Remove the replica function from the module";
 #define replicator_export extern
 #endif
 
-replicator_export int MASTERroleEnabled();
+replicator_export int MASTERroleEnabled(void);
 replicator_export str MASTERopen(int *ret);
 replicator_export str MASTERstop(int *ret, str *uri);
 replicator_export str MASTERclose(int *ret, int *tag);
