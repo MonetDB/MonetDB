@@ -93,6 +93,7 @@ execution of the replication operations within the slave.
 They are stored in a file "dbfarm/db/master/tag_%d" with the 
 following structure:
 @verbatim
+slave.init();
 function slave.tag1();
   slave.open(1,"2009-08-16 18:57:58.000":timestamp);
   tag1_b := bat.new(:oid,:int);
@@ -180,7 +181,12 @@ command getName():str
 address MASTERgetName
 comment "Return the name of the server if it is a master, otherwise
 pick the first name from the replicas table";
+
 module slave;
+
+pattern init( uri:str)
+address SLAVEinit
+comment "Determine the master client record for early abort ";
 
 command open(tag:int,d:timestamp)
 address SLAVEopen
@@ -232,6 +238,7 @@ replicator_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 replicator_export str MASTERreplay(int  *ret, str *uri, str *usr, str *pw, int *tag);
 replicator_export str MASTERgetName(str *ret);
 
+replicator_export str SLAVEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replicator_export str SLAVEopen(int *ret, int *tag, timestamp *t);
 replicator_export str SLAVEclose(int *ret, int *tag, timestamp *t);
 replicator_export str SLAVEdrop(int *ret, str *tag);
@@ -342,7 +349,8 @@ str MASTERopen(int *ret){
 	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len ,
-			"function slave.tag_%d();\nslave.open(%d,\"%s\":timestamp);\n",replicationTag,replicationTag,val)) == len){
+			"function slave.tag_%d();\nslave.open(%d,\"%s\":timestamp);\n",
+				replicationTag, replicationTag, val)) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replicator.open",MAL_MALLOC_FAIL);
@@ -622,12 +630,17 @@ Replaying the MAL logs is straightforward. We perform a remote
 operation execution on the master to initiate a quick dump of the
 missing operations. The master keeps a [persistent] structure
 with the status of all completed logfiles being sent to slaves.
+
 The replay should be performed in an independent thread to enable
 the slave to continue processing. Furthermore we assume that
 all log files still exist (but may be zapped)
+The slave is initialized by echoing the master uri.
+This makes it possible to later easily close the connection.
+We might refine it to read local log files too.
 @c
 static struct MASTERrecord{
 	str uri;
+	int idx;	/* for its forced termination */
 	time_t last_connect;
 	time_t last_disconnect;
 	int tag;	/* next one to sent */
@@ -650,6 +663,10 @@ MASTERreplayThread(void *arg)
 	mr->last_connect = time(0);
 	mr->last_disconnect = 0;
 	buf[BUFSIZ] = 0;
+	snprintf(buf, BUFSIZ,"slave.init(\"%s\");\n",mr->uri);
+	hdl = mapi_query(mr->m, buf);
+	if (hdl)
+		mapi_close_handle(hdl);
 	do {
 		snprintf(buf, BUFSIZ, MASTER REPLICA, (mr->tag / REPLICABLOCK) *REPLICABLOCK);
 		s= open_rstream(buf);
@@ -734,9 +751,22 @@ str MASTERstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MASTERreplay(getArgReference(stk,pci,0),uri,&usr,&pw,&tag);
 }
 
+@-
+The master can be stopped by closing its client record.
+Its identity is obtained using the slave routines.
+@c
 str MASTERstop(int *ret, str *uri){
+	struct MASTERrecord *mr;
 	(void) ret;
 	(void) uri;
+	for( mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
+	if ( strcmp(mr->uri, *uri) == 0){
+		if ( mr->idx ){
+			/* soft termination at next MAL instruction */
+			mal_clients[mr->idx].itrace ='x';
+			mal_clients[mr->idx].mode = FINISHING;
+		}
+	}
 	return MAL_SUCCEED;
 }
 
@@ -762,6 +792,20 @@ blocks may arrive out of order, i.e. reflecting the
 concurrent behavior at the master.
 This calls for a persistent table with all tags.
 @c
+str SLAVEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	struct MASTERrecord *mr;
+	str *uri = (str*) getArgReference(stk,pci,1);
+	(void) mb;
+	/* find the corresponding */
+	for( mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
+	if ( strcmp(mr->uri, *uri) == 0){
+		mr->idx= cntxt->idx;
+		break;
+	}
+	return MAL_SUCCEED;
+}
+
 str SLAVEopen(int *ret, int *tag, timestamp *t){
 	(void) ret;
 	(void) t;
