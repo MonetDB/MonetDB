@@ -314,7 +314,7 @@ by reading the directory itself.
 str MASTERopen(int *ret){
 	char buf[BUFSIZ];
 	FILE *fp = 0;
-	timestamp stamp;
+	timestamp stamp = *timestamp_nil;
 	str val=0;
 	int i,l,len;
 	
@@ -366,7 +366,7 @@ str MASTERopen(int *ret){
 }
 
 str MASTERclose(int *ret, int *tag){
-	timestamp stamp;
+	timestamp stamp = *timestamp_nil;
 	str val=0;
 	int i,l,len;
 	char buf[BUFSIZ];
@@ -662,7 +662,7 @@ MASTERreplayThread(void *arg)
 	mr->last_disconnect = 0;
 	buf[BUFSIZ] = 0;
 	SABAOTHgetLocalConnection(&con);
-	snprintf(buf, BUFSIZ,"slave.init(\"%s\");\n",con);
+	snprintf(buf, BUFSIZ,"include sql;sql.init();\nslave.init(\"%s\");\n",con);
 	GDKfree(con);
 	hdl = mapi_query(mr->m, buf);
 	if (hdl)

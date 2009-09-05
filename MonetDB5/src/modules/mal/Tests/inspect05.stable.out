@@ -1168,6 +1168,7 @@ end main;
 [ "start",				  "pattern",	  "master",		  "(uri:str):void ",													  "MASTERstart;"					  ]
 [ "close",				  "command",	  "slave",	  "(tag:int,d:timestamp):void ",													  "SLAVEclose;"						  ]
 [ "drop",				  "command",	  "slave",	  "(tag:str):void ",															  "SLAVEdrop;"						  ]
+[ "init",			  "pattern",	  "slave",	  "(uri:str):void ",															  "SLAVEinit;"						  ]
 [ "open",				  "command",	  "slave",	  "(tag:int,d:timestamp):void ",													  "SLAVEopen;"						  ]
 [ "connect",				  "command",	  "remote",		  "(uri:str,user:str,passwd:str,scen:str):str ",										  "RMTconnectScen;"					  ]
 [ "connect",				  "command",	  "remote",		  "(uri:str,user:str,passwd:str):str ",												  "RMTconnect;"						  ]
