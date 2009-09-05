@@ -2251,7 +2251,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			leftover -= b->size;
 
 		/* fill the buffer as far as possible */
-		prev= b->len - b->pos;
+		prev = (unsigned int)(b->len - b->pos);
 		if( read_more(b, out, b->size - leftover ) == EOF)
 			break;
 #ifdef _DEBUG_TABLET_
