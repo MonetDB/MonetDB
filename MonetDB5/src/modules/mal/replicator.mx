@@ -45,12 +45,15 @@ To initiate a slave, simply load a master snapshot.  If the master was
 able to properly fully qualify itself, the snapshot dump includes a
 a function to retrieve the replication master identity.
 After loading the dump, the slave will not automatically start
-replicating, until restarted with the command CALL 'master_start(master());'.
+replicating, until the database is restarted or the command CALL
+'slave_start(master());' is executed.  A database that has a slave
+configuration will automatically attempt to continue replicating during
+startup.
 Note that replication is implemented push-based, that is, the master makes a
 call-back to the requesting slave to deliver its updates using an independent
 client connection with its own user name and password credentials.
 A master can be told to temporarily stop sending updates using the 
-command 'CALL master_stop(master());'.
+command 'CALL slave_stop(master());'.
 
 A freshly initialised slave starts replicating off of the
 master starting from the tag maintained by the master for each slave.
