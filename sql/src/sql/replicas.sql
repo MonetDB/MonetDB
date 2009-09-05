@@ -34,6 +34,14 @@ RETURNS TABLE (
 -- store for the master name.
 CREATE TABLE sys.replicas(uri varchar(100) NOT NULL, tag int, stamp timestamp);
 
+-- Initialize this table with the location of the current system
+INSERT INTO sys.replicas VALUES( master(), 0, now());
+
+-- If your are the master return its uri. Otherwise locate the first master
+-- value in the replicas table.
+CREATE FUNCTION master() RETURNS string EXTERNAL NAME master.getName;
+
 -- Controling the synchronisation by the slave
 CREATE PROCEDURE master_start(uri string) EXTERNAL NAME master."start";
+CREATE PROCEDURE master_start(uri string, tag bigint) EXTERNAL NAME master."start";
 CREATE PROCEDURE master_stop(uri string) EXTERNAL NAME master."stop";
