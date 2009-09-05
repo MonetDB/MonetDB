@@ -93,7 +93,7 @@ execution of the replication operations within the slave.
 They are stored in a file "dbfarm/db/master/tag_%d" with the 
 following structure:
 @verbatim
-slave.init();
+slave.init("uri");
 function slave.tag1();
   slave.open(1,"2009-08-16 18:57:58.000":timestamp);
   tag1_b := bat.new(:oid,:int);
@@ -349,8 +349,8 @@ str MASTERopen(int *ret){
 	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len ,
-			"function slave.tag_%d();\nslave.open(%d,\"%s\":timestamp);\n",
-				replicationTag, replicationTag, val)) == len){
+			"function slave.tag_%d(tag:int,stamp:timestamp);\nslave.open(tag,\"%s\":timestamp);\n",
+				replicationTag, val)) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replicator.open",MAL_MALLOC_FAIL);
@@ -379,8 +379,8 @@ str MASTERclose(int *ret, int *tag){
 	snprintf(buf,BUFSIZ,"tag_%d",*tag);
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len, 
-		"slave.close(%d,\"%s\":timestamp);\nsql.commit();\nend tag_%d;\nslave.tag_%d();\nslave.drop(\"%s\");\n",
-		*tag,val,*tag,*tag,buf)) == len){
+		"slave.close(tag,stamp);\nsql.commit();\nend tag_%d;\nslave.tag_%d(%d,\"%s\":timestamp);\nslave.drop(\"%s\");\n",
+		*tag,*tag,*tag,val,buf)) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replicator.close",MAL_MALLOC_FAIL);
@@ -787,17 +787,14 @@ str MASTERgetName(str *ret)
 @-
 We should assure that only operations we haven't seen are
 being executed. This is based on the tag assigned to each
-replicator block. The main issue to deal with is that
-blocks may arrive out of order, i.e. reflecting the
-concurrent behavior at the master.
-This calls for a persistent table with all tags.
+replicator block. 
 @c
 str SLAVEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	struct MASTERrecord *mr;
 	str *uri = (str*) getArgReference(stk,pci,1);
 	(void) mb;
-	/* find the corresponding */
+	/* find the corresponding master record */
 	for( mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
 	if ( strcmp(mr->uri, *uri) == 0){
 		mr->idx= cntxt->idx;
