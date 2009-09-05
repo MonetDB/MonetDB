@@ -6,10 +6,10 @@ conn:str := remote.connect(uri, "monetdb", "monetdb");
 # taken as function
 res:str := remote.put(conn,:void);
 res := remote.exec(conn, "io.print", "bla");
-catch MALException:str;
+catch SyntaxException:str;
 	io.print("Received first error from the remote site");
-	io.printf("!%s\n", MALException);
-exit MALException;
+	io.printf("!%s\n", SyntaxException);
+exit SyntaxException;
 
 # now do it with a function that returns something (a BAT in this case)
 bn:= bat.new(:int,:str);

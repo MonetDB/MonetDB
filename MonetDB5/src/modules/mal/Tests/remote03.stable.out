@@ -23,10 +23,10 @@ function user.main():void;
 # taken as function 
     res:str  := remote.put(conn,:void);
     res:str  := remote.exec(conn,"io.print","bla");
-catch MALException:str ;
+catch SyntaxException:str ;
     io.print("Received first error from the remote site");
-    io.printf("!%s\n",MALException);
-exit MALException:str ;
+    io.printf("!%s\n",SyntaxException);
+exit SyntaxException:str ;
 # now do it with a function that returns something (a BAT in this case) 
     bn := bat.new(:int,:str);
     b := remote.put(conn,bn);
@@ -66,8 +66,8 @@ exit MALException:str ;
     remote.disconnect(conn);
 end main;
 [ "Received first error from the remote site" ]
-!MALException:remote.exec:rmt0__8_void := io.print.bla();
-!SyntaxException:parseError:                              ^'(' expected
+!SyntaxException:remote.exec:rmt0__8_void := io.print.bla();
+SyntaxException:parseError:                       ^'(' expected
 
 [ "rmt1_bn_bat_int_str" ]
 [ "rmt1_bn_bat_int_str" ]
