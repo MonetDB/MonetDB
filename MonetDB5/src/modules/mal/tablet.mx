@@ -2247,8 +2247,8 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " leftover=" SZFMT "\n", b->pos, b->len,b->size,leftover);
 #endif
-		if ( b->size - leftover == 0 )
-			leftover = -b->size;
+		if (b->size - leftover == 0)
+			leftover -= b->size;
 
 		/* fill the buffer as far as possible */
 		prev= b->len - b->pos;
