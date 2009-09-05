@@ -859,7 +859,10 @@ then a starting !. They are all stripped here.
 		if (err == NULL)
 			err = "(no additional error message)";
 		f= newerr; 
-		for( e=err+1; *e && l>1; e++)
+		/* I think this code tries to deal with multiple errors, this
+		 * will fail this way if it does, since no ! is in the error
+		 * string, only newlines to separate them */
+		for( e=err; *e && l>1; e++)
 			if( *e== '!' && *(e-1)=='\n'){
 				snprintf(f,l,"MALException:@1:remote error:");
 				l-= strlen(f);
