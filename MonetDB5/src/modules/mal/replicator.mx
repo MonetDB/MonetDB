@@ -44,10 +44,10 @@ directory.
 To initiate a slave, simply load a master snapshot.  If the master was
 able to properly fully qualify itself, the snapshot dump includes a
 a function to retrieve the replication master identity.
-After loading the dump, the slave will not automatically start
-replicating, until the database is restarted or the command CALL
+After loading the dump, the slave can issue being informed
+by pending updates using the command CALL
 'slave_start(master());' is executed.  A database that has a slave
-configuration will automatically attempt to continue replicating during
+configuration will automatically attempt to continue replicating upon
 startup.
 Note that replication is implemented push-based, that is, the master makes a
 call-back to the requesting slave to deliver its updates using an independent
@@ -93,7 +93,7 @@ execution of the replication operations within the slave.
 They are stored in a file "dbfarm/db/master/tag_%d" with the 
 following structure:
 @verbatim
-slave.init("uri");
+slave.init("mapi:monetdb://127.0.0.1:50000/demo");
 function slave.tag1();
   slave.open(1,"2009-08-16 18:57:58.000":timestamp);
   tag1_b := bat.new(:oid,:int);
@@ -186,7 +186,7 @@ module slave;
 
 pattern init( uri:str)
 address SLAVEinit
-comment "Determine the master client record for early abort ";
+comment "The master announces the start of a roll forward of pending updates";
 
 command open(tag:int,d:timestamp)
 address SLAVEopen
@@ -654,19 +654,22 @@ MASTERreplayThread(void *arg)
 	struct MASTERrecord *mr = (struct MASTERrecord *) arg;
 	char buf[BUFSIZ+1];
 	MapiHdl hdl;
+	str con;
 	bstream *in;
 	stream *s;
-#ifdef _DEBUG_REPLICATOR_
-	stream_printf(GDKout,"#replay thread started %s\n",mr->uri);
-#endif
 
 	mr->last_connect = time(0);
 	mr->last_disconnect = 0;
 	buf[BUFSIZ] = 0;
-	snprintf(buf, BUFSIZ,"slave.init(\"%s\");\n",mr->uri);
+	SABAOTHgetLocalConnection(&con);
+	snprintf(buf, BUFSIZ,"slave.init(\"%s\");\n",con);
+	GDKfree(con);
 	hdl = mapi_query(mr->m, buf);
 	if (hdl)
 		mapi_close_handle(hdl);
+#ifdef _DEBUG_REPLICATOR_
+	stream_printf(GDKout,"#replay thread started %s\n#%s",mr->uri,buf);
+#endif
 	do {
 		snprintf(buf, BUFSIZ, MASTER REPLICA, (mr->tag / REPLICABLOCK) *REPLICABLOCK);
 		s= open_rstream(buf);
@@ -752,8 +755,8 @@ str MASTERstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 @-
-The master can be stopped by closing its client record.
-Its identity is obtained using the slave routines.
+The master thread is stopped at the slave side by closing
+its record. For this we need to know the master uri.
 @c
 str MASTERstop(int *ret, str *uri){
 	struct MASTERrecord *mr;
@@ -788,6 +791,8 @@ str MASTERgetName(str *ret)
 We should assure that only operations we haven't seen are
 being executed. This is based on the tag assigned to each
 replicator block. 
+The slave is initialized with the uri of the master
+to locate its index in the client record.
 @c
 str SLAVEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -798,6 +803,9 @@ str SLAVEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for( mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
 	if ( strcmp(mr->uri, *uri) == 0){
 		mr->idx= cntxt->idx;
+#ifdef _DEBUG_REPLICATOR_
+		stream_printf(GDKout,"#replay init %s\n",mr->uri);
+#endif
 		break;
 	}
 	return MAL_SUCCEED;
