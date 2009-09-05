@@ -591,7 +591,10 @@ MALparser(Client c)
 		pushEndInstruction(c->curprg->def);
 		/* caught errors */
 		showErrors(c);
-		@:restoreState@
+		if( c->listing) 
+			printFunction(c->fdout,c->curprg->def, 0, c->listing);
+		MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def,1);
 		/* now the parsing is done we should advance the stream */
 		c->fdin->pos += c->yycur;
 		c->yycur = 0;
@@ -611,14 +614,20 @@ MALparser(Client c)
 
 	p = getInstrPtr(c->curprg->def, 0);
 	if (p->token != FUNCTIONsymbol) {
-		@:restoreState@
-			throw(SYNTAX, "mal.parser", SYNTAX_SIGNATURE);
+		if( c->listing) 
+			printFunction(c->fdout,c->curprg->def, 0, c->listing);
+		MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def,1);
+		throw(SYNTAX, "mal.parser", SYNTAX_SIGNATURE);
 	}
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if (c->curprg->def->errors) {
 		showErrors(c);
-		@:restoreState@
+		if( c->listing) 
+			printFunction(c->fdout,c->curprg->def, 0, c->listing);
+		MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def,1);
 		throw(MAL, "MAL.parser", SEMANTIC_GENERAL);
 	}
 	return MAL_SUCCEED;
@@ -653,7 +662,8 @@ MALengine(Client c)
 		showErrors(c);
 		if (c->listing )
 			printFunction(c->fdout, c->curprg->def, 0, c->listing);
-		@:restoreState@
+		MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def,1);
 		throw(MAL, "mal.engine", PROGRAM_GENERAL);
 	}
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
