@@ -655,8 +655,8 @@ MASTERreplayThread(void *arg)
 	char buf[BUFSIZ+1];
 	MapiHdl hdl;
 	str con;
-	bstream *in;
 	stream *s;
+	size_t len;
 
 	mr->last_connect = time(0);
 	mr->last_disconnect = 0;
@@ -672,21 +672,17 @@ MASTERreplayThread(void *arg)
 #endif
 	do {
 		snprintf(buf, BUFSIZ, MASTER REPLICA, (mr->tag / REPLICABLOCK) *REPLICABLOCK);
-		s= open_rstream(buf);
-		if ( stream_errnr(s) )
+		s = open_rastream(buf);
+		if (stream_errnr(s))
 			break;
-		in = bstream_create(s, BUFSIZ);
-		if (in == NULL ) 
-			break;
-		while ( in && in->eof == 0){
-			if (bstream_read(in, BUFSIZ) <= 0 )
-				break;
+		while ((len = stream_readline(s, buf, sizeof(buf) - 1)) > 0) {
+			buf[len] = '\0';
 #ifdef _DEBUG_REPLICATOR_
-			stream_printf(GDKout,"#sent:%s\n", in->buf);
+			stream_printf(GDKout,"#sent:%s\n", buf);
 #endif
 			/* sent the data to the server */
 			/* FIXME: just write, don't look at the response */
-			hdl = mapi_query(mr->m, in->buf);
+			hdl = mapi_query(mr->m, buf);
 			if (hdl)
 				mapi_close_handle(hdl);
 		} 
