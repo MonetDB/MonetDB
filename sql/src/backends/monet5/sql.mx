@@ -1728,7 +1728,6 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *cname = (str *)getArgReference(stk, pci, 3);
 	int *access = (int *)getArgReference(stk, pci, 4);
 	oid lval,hval=0;
-	char buf[BUFSIZ];
 
 	(void) cntxt;
 	if (msg)
@@ -1747,8 +1746,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	snprintf(buf,BUFSIZ,"Could not find %s.%s(%s)",*sname, *tname, *cname);
-	throw(SQL, "sql.bind", buf);
+	throw(SQL, "sql.bind", "unable to find %s.%s(%s)", *sname, *tname, *cname);
 }
 
 
@@ -1765,7 +1763,6 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *iname = (str *)getArgReference(stk, pci, 3);
 	int *access = (int *)getArgReference(stk, pci, 4);
 	oid lval,hval=0;
-	char buf[BUFSIZ];
 
 	(void) cntxt;
 	if (msg)
@@ -1784,8 +1781,8 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	snprintf(buf,BUFSIZ,"Could not find index %s for %s.%s",*iname,*sname, *tname);
-	throw(SQL, "sql.idxbind", buf);
+	throw(SQL, "sql.idxbind", "unable to find index %s for %s.%s",
+			*iname, *sname, *tname);
 }
 
 str 
@@ -1795,7 +1792,6 @@ mvc_diff_idxbat_wrap(bat *bid, int *clientid, str *s, str *t, str *i, int *acces
 	Client cntxt = mal_clients+*clientid;
 	str msg = getContext(cntxt, NULL, &m, NULL);
 	BAT *b;
-	char buf[BUFSIZ];
 
 	if (msg)
 		return msg;
@@ -1806,8 +1802,7 @@ mvc_diff_idxbat_wrap(bat *bid, int *clientid, str *s, str *t, str *i, int *acces
 		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	snprintf(buf,BUFSIZ,"Could not find index %s for %s.%s",*i,*s, *t);
-	throw(SQL, "sql.idxbind", buf);
+	throw(SQL, "sql.idxbind", "unable to find index %s for %s.%s", *i, *s, *t);
 }
 
 /*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
