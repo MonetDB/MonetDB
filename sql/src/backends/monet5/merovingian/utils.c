@@ -62,7 +62,7 @@ replacePrefix(char *s, char *prefix)
  * Parses the given file stream matching the keys from list.  If a match
  * is found, the value is set in list->value.  Values are GDKmalloced.
  */
-inline void
+void
 readConfFile(confkeyval *list, FILE *cnf) {
 	char buf[1024];
 	confkeyval *t;
@@ -119,7 +119,7 @@ findConfKey(confkeyval *list, char *key) {
  * successful and unsets the value for the given key.  Upon an error,
  * the original value for the key is left untouched.
  */
-inline char *
+char *
 setConfVal(confkeyval *ckv, char *val) {
 	/* handle the unset directly */
 	if (val == NULL) {
