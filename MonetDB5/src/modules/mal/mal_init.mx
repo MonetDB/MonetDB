@@ -163,7 +163,6 @@ include tablet;
 include factories;
 include recycle;
 include remote;
-include replicator; # experimental
 include trader; # experimental
 
 include mat; 	# experimental
@@ -222,7 +221,7 @@ include chopper;
 include cluster;
 include opt_cluster;
 include txtsim;
-include replicator;
+include replication;
 
 library sabaoth;
 

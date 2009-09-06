@@ -25,14 +25,16 @@ MAL-based update log.  Note that the current replication approach does
 not support replication of schema changes, such as addition of tables or
 columns.  Setup the full catalog before transitioning a database to a
 replication master and make a backup.
-Run the script sql/replication.sql to create the tables for managing 
-the slaves and definition of utility functions.
 
 To configure a database to become a replication master, set its "master"
 property to true using monetdb(1).  This property is translated by
 merovingian(1) into the replication_master GDK environment setting.
 With this setting, the database will log all SQL update actions in a
 replication logfile, allowing slaves to replicate them.
+
+After this modification start the master and run 
+the script sql/replication.sql to create the tables for managing 
+the slaves and definition of utility functions.
 
 The next step is to create a snapshot of the master to be replicated to
 one or more slaves.  For this, the msqldump(1) tool can be used.  
