@@ -161,6 +161,7 @@ factory structures.
 #include "sql_scenario.h"
 #include "sql_gencode.h"
 #include "bpm/bpm_storage.h"
+#include "replicator.h"
 
 #define TOSMALL 10
 
@@ -450,7 +451,7 @@ static int pipelineOverruled;
 int
 SQLvalidatePipeline(void){
 	int error= 0;
-	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE;
+	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, replicator= FALSE;
 	int i;
 
 	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ){
@@ -467,6 +468,9 @@ SQLvalidatePipeline(void){
 		else
 		if (strcmp(optimizers[i],"mergetable") == 0)
 			mergetable= TRUE;
+		else
+		if (strcmp(optimizers[i],"replicator") == 0)
+			replicator= TRUE;
 
 #ifdef WIN32
 		else
@@ -488,6 +492,15 @@ SQLvalidatePipeline(void){
 		showException(SQL,"optimizer"," 'deadcode' should be used at least once\n");
 		error++;
 	}
+@-
+For replicated databases we need to ensure that the corresponding optimizer
+is enabled.
+@c
+	if ( MASTERroleEnabled() && replicator == FALSE){
+		showException(SQL,"optimizer"," 'replicator' should be part of the pipeline\n");
+		error++;
+	}
+
 	return error;
 }
 
@@ -506,6 +519,9 @@ setOptimizers(str optimizer)
 
 	for ( i = 0; i < 256; i++)
 		optimizers[i] = NULL;
+	if (strcmp(optimizer,"default")==0)
+		optimizer= GDKstrdup(defaultPlan? defaultPlan:minimalPlan);
+
 	optimizer=  base;
 	while (optimizer && *optimizer ) {
 		nxt = strchr(optimizer,',');
@@ -513,10 +529,7 @@ setOptimizers(str optimizer)
 			*nxt = 0;
 			nxt++;
 		}
-		if (strcmp(optimizer,"default")==0){
-			str base= GDKstrdup(defaultPlan? defaultPlan:minimalPlan);
-			setOptimizers(base);
-		} else if ((nme = putName(optimizer,strlen(optimizer))) == 0)
+		if ((nme = putName(optimizer,strlen(optimizer))) == 0)
 			showException(SQL,"optimizer"," '%s' does not exist\n",optimizer);
 		else if (top<255)
 			optimizers[top++] = nme; 
