@@ -19,7 +19,7 @@
 -- time a slave initiates a session, starts processing a logfile
 -- and leaves the scene.
 
-CREATE FUNCTION slaves()
+CREATE FUNCTION sys.slaves()
 RETURNS TABLE (
 	uri              varchar(100),
 	last_connect     timestamp,	
@@ -29,19 +29,24 @@ RETURNS TABLE (
 	time_delay       timestamp 
 ) EXTERNAL NAME master."slaves";
 
--- Each slave contains a table of replication tags successfully executed.
--- It can synchronise with multiple masters and provides a persistent
--- store for the master name.
-CREATE TABLE sys.replicas(uri varchar(100) NOT NULL, tag int, stamp timestamp);
+-- Each slave contains a table of replication requests successfully executed.
+-- It can serve multiple masters and provides a persistent
+-- store for the master name. A comment can be left behind for a posteriori
+-- error analysis.
+CREATE TABLE sys.replicas(
+	uri varchar(100) NOT NULL, 
+	tag int, 
+	stamp timestamp, 
+	remark string);
 
 -- Initialize this table with the location of the current system
-INSERT INTO sys.replicas VALUES( master(), 0, now());
+INSERT INTO sys.replicas VALUES( master(), 0, now(),"Master created");
 
 -- If your are the master return its uri. Otherwise locate the first master
 -- value in the replicas table.
 CREATE FUNCTION master() RETURNS string EXTERNAL NAME master.getName;
 
 -- Controling the synchronisation by the slave
-CREATE PROCEDURE master_start(uri string) EXTERNAL NAME master."start";
-CREATE PROCEDURE master_start(uri string, tag bigint) EXTERNAL NAME master."start";
-CREATE PROCEDURE master_stop(uri string) EXTERNAL NAME master."stop";
+CREATE PROCEDURE synchronizeWithMaster(uri string) EXTERNAL NAME master."start";
+CREATE PROCEDURE synchronizeWithMaster(uri string, tag bigint) EXTERNAL NAME master."start";
+CREATE PROCEDURE stopSynchronization(uri string) EXTERNAL NAME master."stop";
