@@ -39,12 +39,12 @@ CREATE TABLE sys.replicas(
 	stamp timestamp, 
 	remark string);
 
--- Initialize this table with the location of the current system
-INSERT INTO sys.replicas VALUES( master(), 0, now(),"Master created");
-
 -- If your are the master return its uri. Otherwise locate the first master
 -- value in the replicas table.
 CREATE FUNCTION master() RETURNS string EXTERNAL NAME master.getName;
+
+-- Initialize this table with the location of the current system
+INSERT INTO sys.replicas VALUES( master(), 0, now(),'Master created');
 
 -- Controling the synchronisation by the slave
 CREATE PROCEDURE synchronizeWithMaster(uri string) EXTERNAL NAME master."start";
