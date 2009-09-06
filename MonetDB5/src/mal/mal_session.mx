@@ -530,11 +530,6 @@ Ideally this involves resetting the state of the client
 instruction added should be cleaned. Beware that the instruction
 table may have grown in size.
 
-@= restoreState
-	if( c->listing) 
-		printFunction(c->fdout,c->curprg->def, 0, c->listing);
-	MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
-	resetMalBlk(c->curprg->def,oldstate.stop);
 @c
 str
 MALinitClient(Client c)

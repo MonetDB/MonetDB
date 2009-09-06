@@ -251,8 +251,14 @@ being called.
 		stk->blk= mb;
 		stk->cmd= cntxt->itrace; /* set debug mode */
 		if( env) {
-			stk->stkdepth= stk->stksize + env->stkdepth;
 			/*safeguardStack*/
+			stk->stkdepth= stk->stksize + env->stkdepth;
+			stk->calldepth= env->calldepth + 1;
+			if ( stk->calldepth > 1024 )
+				throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+			if ( (unsigned) stk->stkdepth > THREAD_STACK_SIZE/ sizeof(mb->var[0]) / 4 && THRhighwater())
+				/* we are running low on stack space */
+				throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		}
 	} 
 
@@ -837,7 +843,7 @@ runDFLOWworker(void *t)
 		fs = (FlowStep)q_dequeue(task->todo);
 		oldpc= fs->pc;
 		while (oldpc > 0 && (fs->error = DFLOWstep(task, fs)) && 
-				(err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
+			(err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
 			/* restore the instruction and wait*/
 			THRprintf(GDKerr, "#Thread %d needs memory:%s\n",task->id,err);
 /*
@@ -2217,8 +2223,11 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
 		MT_set_lock(*lock, "timing");
 	stream_printf(cntxt->fdout,"[ ");
-	if( cntxt->flags & timerFlag)
-		stream_printf(cntxt->fdout, LLFMT " usec ",GDKusec()-cntxt->timer);
+	if( cntxt->flags & timerFlag){
+		char buf[BUFSIZ];
+		snprintf(buf,BUFSIZ,LLFMT,GDKusec()-cntxt->timer);
+		stream_printf(cntxt->fdout, "%8s usec ",buf);
+	}
 	if( cntxt->flags & threadFlag)
 		stream_printf(cntxt->fdout,"\@%d ",tid);
 #ifdef HAVE_SYS_RESOURCE_H
@@ -2252,8 +2261,11 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		displayVolume(cntxt,cntxt->bigfoot);
 		stream_printf(cntxt->fdout," ");
 	}
-	if (cntxt->flags & cntFlag)
-		stream_printf(cntxt->fdout,":" BUNFMT " ", cntxt->cnt);
+	if (cntxt->flags & cntFlag){
+		char buf[BUFSIZ];
+		snprintf(buf, BUFSIZ, BUNFMT , cntxt->cnt);
+		stream_printf(cntxt->fdout,":%6s ", buf);
+	}
 	{str line;
 	line= call2str(mb,stk,stkpc,cntxt->flags);
 	stream_printf(cntxt->fdout, " %s ]\n", line);

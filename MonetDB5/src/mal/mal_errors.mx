@@ -74,6 +74,7 @@ use a translation table where needed.
 
 #define MAL_MALLOC_FAIL	"could not allocate space for"
 #define MAL_STACK_FAIL	"Running out of stack space."
+#define MAL_CALLDEPTH_FAIL	"Recursive call limit reached."
 
 #define INVCRED_ACCESS_DENIED "access denied for user"
 #define INVCRED_INVALID_USER "invalid credentials for user"
@@ -117,7 +118,7 @@ use a translation table where needed.
 #define IDENTIFIER_EXPECTED "Identifier expected"
 #define POSITIVE_EXPECTED "Argument must be positive"
 #define ARGUMENT_TOO_LARGE "Argument too large"
-#define TOO_MANY_BITS "To many bits"
+#define TOO_MANY_BITS "Too many bits"
 #define DUPLICATE_DEFINITION "Duplicate definition"
 #define RANGE_ERROR "Range error"
 
