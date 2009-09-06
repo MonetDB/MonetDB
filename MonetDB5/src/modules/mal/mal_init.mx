@@ -85,7 +85,7 @@ library remote;
 
 library profiler;
 library statistics;
-library replicator;
+library replication;
 
 library optimizer;
 

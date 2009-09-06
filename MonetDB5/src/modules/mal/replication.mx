@@ -15,29 +15,31 @@
 @' Copyright August 2008-2009 MonetDB B.V.
 @' All Rights Reserved.
 
-@f replicator
+@f replication
 @a Martin Kersten
 @v 1.0
 @+ Database replication
 The replication module supports distribution of updates over SQL
 databases at multiple sites using a simple master-slave protocol using a
 MAL-based update log.  Note that the current replication approach does
-not support replication of schema changes, such as added tables or
+not support replication of schema changes, such as addition of tables or
 columns.  Setup the full catalog before transitioning a database to a
-replication master. 
-Run the script sql/replication.sql to create the tables for managing the slaves.
+replication master and make a backup.
+Run the script sql/replication.sql to create the tables for managing 
+the slaves and definition of utility functions.
 
 To configure a database to become a replication master, set its "master"
 property to true using monetdb(1).  This property is translated by
 merovingian(1) into the replication_master GDK environment setting.
-With this setting, the database will log all update actions in a
-replication logfile, allowing slaves to replicate.
+With this setting, the database will log all SQL update actions in a
+replication logfile, allowing slaves to replicate them.
 
 The next step is to create a snapshot of the master to be replicated to
 one or more slaves.  For this, the msqldump(1) tool can be used.  
-A dump made on a replication master includes administrative data
-for the slave to contact the master in the form of a pre-initialized 
-table.
+A dump made on a replication master should includes the result of
+running the above mentioned replication initialization script.
+It contains the identity of the master in the form of a pre-initialized 
+replicas table.
 Alternatively, the DBA can make a safe copy from the corresponding dbfarm
 directory.
 
@@ -62,14 +64,13 @@ The master can be optionally forced to start at a particular tag.
 The replication scheme allows a slave to be cloned e.g. by copying the
 dbfarm of the slave to another database without problems.  No
 configuration on the copied slave needs to be changed for it to
-successfully replicate off of the master.
+successfully replicate off from the master.
 
 @- Behind the scene
-Under the replication scheme an optimizer becomes active.
-It looks for updates on the persistent SQL tables and prepares
-for producing the log files.
-For this to take place the environment variable
-replication_master must be set to 'yes'. 
+When the replication_master environment is set to 'yes', an optimizer
+becomes active to look after updates on SQL tables and it prepares
+for producing the log files. The snippet below illustrates the
+additions and modifications to a query plan.
 
 @verbatim
 function query():void
@@ -90,21 +91,20 @@ the end of the query block. This separates the concurrent
 actions on the database at the master and leads to a serial
 execution of the replication operations within the slave.
 
-They are stored in a file "dbfarm/db/master/tag_%d" with the 
+The log records are stored in a file "dbfarm/db/master/tag_%d" with the 
 following structure:
 @verbatim
-slave.init("mapi:monetdb://127.0.0.1:50000/demo");
-function slave.tag1();
-  slave.open(1,"2009-08-16 18:57:58.000":timestamp);
+function slave.tag1(tag:int,stamp:timestamp);
+  slave.open(tag,"2009-08-16 18:57:58.000":timestamp);
   tag1_b := bat.new(:oid,:int);
   ...
   bat.insert(tag1_b,3:oid,232:int); #example update
   ...
   sql.append("schema","table","col",tag1_b,tag);
-  slave.close(1,"2009-08-16 18:57:58.000":timestamp);
-  tag1_b:= nil;
+  slave.close("mapi:monetdb://127.0.0.1:50000/demo",tag,stamp);
+  sql.commit();
 end tag1;
-slave.tag1();
+slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
 slave.drop("tag1");
 @end verbatim
 
@@ -193,10 +193,11 @@ address SLAVEopen
 comment "Marks the start of a replication record. It checks the replicas
 table for existence of the tag. If so, it aborts the attempt to reapply.";
 
-command close(tag:int, d:timestamp)
+command close(uri:str, tag:int, d:timestamp)
 address SLAVEclose
 comment "End of replication record. Add the tag to the replicas table
-using the SQL transaction semantics.";
+using the SQL transaction semantics. To be extended with the reason for
+failures.";
 
 command drop(tag:str)
 address SLAVEdrop
@@ -219,35 +220,35 @@ comment "Remove the replica function from the module";
 
 #ifdef WIN32
 #ifndef LIBREPLICATOR
-#define replicator_export extern __declspec(dllimport)
+#define replication_export extern __declspec(dllimport)
 #else
-#define replicator_export extern __declspec(dllexport)
+#define replication_export extern __declspec(dllexport)
 #endif
 #else
-#define replicator_export extern
+#define replication_export extern
 #endif
 
-replicator_export int MASTERroleEnabled(void);
-replicator_export str MASTERopen(int *ret);
-replicator_export str MASTERstop(int *ret, str *uri);
-replicator_export str MASTERclose(int *ret, int *tag);
-replicator_export str MASTERstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replicator_export str MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replicator_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replicator_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replicator_export str MASTERreplay(int  *ret, str *uri, str *usr, str *pw, int *tag);
-replicator_export str MASTERgetName(str *ret);
+replication_export int MASTERroleEnabled(void);
+replication_export str MASTERopen(int *ret);
+replication_export str MASTERstop(int *ret, str *uri);
+replication_export str MASTERclose(int *ret, int *tag);
+replication_export str MASTERstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replication_export str MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replication_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replication_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replication_export str MASTERreplay(int  *ret, str *uri, str *usr, str *pw, int *tag);
+replication_export str MASTERgetName(str *ret);
 
-replicator_export str SLAVEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replicator_export str SLAVEopen(int *ret, int *tag, timestamp *t);
-replicator_export str SLAVEclose(int *ret, int *tag, timestamp *t);
-replicator_export str SLAVEdrop(int *ret, str *tag);
+replication_export str SLAVEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replication_export str SLAVEopen(int *ret, int *tag, timestamp *t);
+replication_export str SLAVEclose(int *ret, str *str, int *tag, timestamp *t);
+replication_export str SLAVEdrop(int *ret, str *tag);
 #endif /* _REPLICATOR_H */
 @-
 The active slaves are administered in a persistent table.
 @c
 #include "mal_config.h"
-#include "replicator.h"
+#include "replication.h"
 #include "mal_client.h"
 #include <mal_sabaoth.h> 
 
@@ -256,7 +257,7 @@ The start of the query is marked with a replica tag.
 It also designates the local buffer to collect the update
 requests before they are shipped to the log.
 The tag is returned for marking all related updates.
-The final code should contain a loop to determine the last replicator tag.
+The final code should contain a loop to determine the last replication tag.
 @c
 #define MASTER "master"
 #define SLAVE "slave"
@@ -319,8 +320,8 @@ str MASTERopen(int *ret){
 	int i,l,len;
 	
 	if ( replicationTag == 0)
-		MT_lock_init(&repLck,"replicator");
-	mal_set_lock(repLck,"replicator");
+		MT_lock_init(&repLck,"replication");
+	mal_set_lock(repLck,"replication");
 	if ( repFile == NULL){
 		mkdir(MASTER,0755); /* ensure existance of the replica pool */
 		if ( replicationTag == 0){
@@ -354,7 +355,7 @@ str MASTERopen(int *ret){
 				replicationTag, val)) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
-			throw(MAL,"replicator.open",MAL_MALLOC_FAIL);
+			throw(MAL,"replication.open",MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
 		len = master[i].limit - master[i].top -1;
 	}
@@ -368,41 +369,45 @@ str MASTERopen(int *ret){
 
 str MASTERclose(int *ret, int *tag){
 	timestamp stamp = *timestamp_nil;
-	str val=0;
+	str val=0, con= 0;
 	int i,l,len;
 	char buf[BUFSIZ];
 
 	(void) ret;
 	i = MASTERgetBuffer(*tag);
-	mal_set_lock(repLck,"replicator");
+	mal_set_lock(repLck,"replication");
 	MTIMEepoch(&stamp);
 	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
 	snprintf(buf,BUFSIZ,"tag_%d",*tag);
+	SABAOTHgetLocalConnection(&con);
+
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len, 
-		"slave.close(tag,stamp);\nsql.commit();\nend tag_%d;\nslave.tag_%d(%d,\"%s\":timestamp);\nslave.drop(\"%s\");\n",
-		*tag,*tag,*tag,val,buf)) == len){
+		"slave.close(\"%s\",tag,stamp);\nsql.commit();\n"
+		"end tag_%d;\nslave.tag_%d(%d,\"%s\":timestamp);\nslave.drop(\"%s\");\n",
+		con,*tag,*tag,*tag,val,buf)) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
-			throw(MAL,"replicator.close",MAL_MALLOC_FAIL);
+			throw(MAL,"replication.close",MAL_MALLOC_FAIL);
 	}
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
 	GDKfree(val);
+	GDKfree(con);
 	stream_printf(repFile,"%s", master[i].buf);
 	stream_flush(repFile);
 	master[i].buf[0]=0;
 	master[i].top = 0;
 	master[i].top = 0;
 	if ( stream_errnr(repFile) ){
-		mal_unset_lock(repLck,"replicator");
-		throw(MAL,"replicator.close",RUNTIME_STREAM_FAILED);
+		mal_unset_lock(repLck,"replication");
+		throw(MAL,"replication.close",RUNTIME_STREAM_FAILED);
 	}
 	if ( replicationTag % REPLICABLOCK  == 0){
 		close_stream(repFile);
 		repFile = NULL;
 	}
-	mal_unset_lock(repLck,"replicator");
+	mal_unset_lock(repLck,"replication");
 	return MAL_SUCCEED;
 }
 
@@ -427,7 +432,7 @@ MASTERdump( BAT *b, str buf, int type, int tag){
 						buf, headv, head, tailv, tail)) >= len){
 				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if ( master[i].buf == NULL)
-					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
+					throw(MAL,"replication.dump",MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
 				len = master[i].limit - master[i].top -1;
 			}
@@ -438,7 +443,7 @@ MASTERdump( BAT *b, str buf, int type, int tag){
 						buf, headv, head, tailv, tail)) >= len){
 				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if ( master[i].buf == NULL)
-					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
+					throw(MAL,"replication.dump",MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
 				len = master[i].limit - master[i].top -1;
 			}
@@ -448,7 +453,7 @@ MASTERdump( BAT *b, str buf, int type, int tag){
 						buf, headv, head, tailv, tail)) == len){
 				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if ( master[i].buf == NULL)
-					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
+					throw(MAL,"replication.dump",MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
 				len = master[i].limit - master[i].top -1;
 			}
@@ -457,7 +462,7 @@ MASTERdump( BAT *b, str buf, int type, int tag){
 						buf, headv, head, tailv, tail)) == len){
 				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if ( master[i].buf == NULL)
-					throw(MAL,"replicator.dump",MAL_MALLOC_FAIL);
+					throw(MAL,"replication.dump",MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
 				len = master[i].limit - master[i].top -1;
 			}
@@ -481,7 +486,7 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 #endif
 	if ( repFile == NULL)
-		throw(MAL,"replicator.append", RUNTIME_FILE_NOT_FOUND);
+		throw(MAL,"replication.append", RUNTIME_FILE_NOT_FOUND);
 
 	i = MASTERgetBuffer(tag);
 	q= copyInstruction(pci);
@@ -495,7 +500,7 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	while ( (l = snprintf(master[i].buf + master[i].top, len , "%s\n", val) >= len ) ){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
-			throw(MAL,"replicator.append",MAL_MALLOC_FAIL);
+			throw(MAL,"replication.append",MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
 		len = master[i].limit - master[i].top -1;
 	}
@@ -524,10 +529,10 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 #endif
 	if ( repFile == NULL)
-		throw(MAL,"replicator.append", RUNTIME_FILE_NOT_FOUND);
+		throw(MAL,"replication.append", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
 	if ( b == NULL)
-		throw(MAL,"replicator.append", RUNTIME_OBJECT_MISSING);
+		throw(MAL,"replication.append", RUNTIME_OBJECT_MISSING);
 
 	i = MASTERgetBuffer(tag);
 	/* create the temporary bat */
@@ -536,7 +541,7 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				tag, getArgName(mb,pci,4), head, tail)) >= len ){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
-			throw(MAL,"replicator.append",MAL_MALLOC_FAIL);
+			throw(MAL,"replication.append",MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
 		len = master[i].limit - master[i].top -1;
 	}
@@ -555,7 +560,7 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		*schema, *table, *col, buf,tag, getArgName(mb,pci,4)) ) >= len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
-			throw(MAL,"replicator.append",MAL_MALLOC_FAIL);
+			throw(MAL,"replication.append",MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
 		len = master[i].limit - master[i].top -1;
 	}
@@ -584,10 +589,10 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 #endif
 	if ( repFile == NULL)
-		throw(MAL,"replicator.delete", RUNTIME_FILE_NOT_FOUND);
+		throw(MAL,"replication.delete", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
 	if ( b == NULL)
-		throw(MAL,"replicator.delete", RUNTIME_OBJECT_MISSING);
+		throw(MAL,"replication.delete", RUNTIME_OBJECT_MISSING);
 
 	i = MASTERgetBuffer(tag);
 	/* create the temporary bat */
@@ -596,7 +601,7 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				tag, getArgName(mb,pci,3), head, tail)) == len ){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
-			throw(MAL,"replicator.delete",MAL_MALLOC_FAIL);
+			throw(MAL,"replication.delete",MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
 		len = master[i].limit - master[i].top -1;
 	}
@@ -615,7 +620,7 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			*schema, *table, buf, tag, getArgName(mb,pci,4))) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
-			throw(MAL,"replicator.delete",MAL_MALLOC_FAIL);
+			throw(MAL,"replication.delete",MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
 		len = master[i].limit - master[i].top -1;
 	}
@@ -787,7 +792,7 @@ str MASTERgetName(str *ret)
 @-
 We should assure that only operations we haven't seen are
 being executed. This is based on the tag assigned to each
-replicator block. 
+replication block. 
 The slave is initialized with the uri of the master
 to locate its index in the client record.
 @c
@@ -811,16 +816,16 @@ str SLAVEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str SLAVEopen(int *ret, int *tag, timestamp *t){
 	(void) ret;
 	(void) t;
-	if ( *tag < replicationTag)
-		throw(MAL,"slave.open","Operation ignored");
-	return MAL_SUCCEED;
+	(void) tag;
+	throw(MAL,"slave.open","Operation ignored, defined in SQL context");
 }
 
-str SLAVEclose(int *ret, int *tag, timestamp *t){
+str SLAVEclose(int *ret, str *uri,  int *tag, timestamp *t){
 	(void) ret;
+	(void) uri;
+	(void) tag;
 	(void) t;
-	replicationTag = *tag;
-	return MAL_SUCCEED;
+	throw(MAL,"slave.close","Operation ignored, defined in SQL context");
 }
 
 str
