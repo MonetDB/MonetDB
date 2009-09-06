@@ -349,7 +349,8 @@ str MASTERopen(int *ret){
 	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len ,
-			"function slave.tag_%d(tag:int,stamp:timestamp);\nslave.open(tag,\"%s\":timestamp);\n",
+			"function slave.tag_%d(tag:int,stamp:timestamp);\n"
+			"sql.transaction();\nslave.open(tag,\"%s\":timestamp);\n",
 				replicationTag, val)) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
