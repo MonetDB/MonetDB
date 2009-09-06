@@ -161,7 +161,7 @@ factory structures.
 #include "sql_scenario.h"
 #include "sql_gencode.h"
 #include "bpm/bpm_storage.h"
-#include "replicator.h"
+#include "replication.h"
 
 #define TOSMALL 10
 
