@@ -154,21 +154,23 @@ unsorted l with a sorted r; in that case it always uses binary search.
 		((((dbl) (lend-lfirst))*((dbl) (rend-rfirst))) / \
 		 MAX(1,((lcur-lfirst)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst))))
 
-#define bunfastins_limit(b, h, t, limit, percdone) {  		\
-                REGISTER BUN _p = BUNlast(b);                   \
-                REGISTER unsigned short _hsize = Hsize(b);	\
-                REGISTER unsigned short _tsize = Tsize(b);	\
-                if (BUNlast(b) + 1 > BATcapacity(b)) {		\
-                        if (limit) {				\
+#define bunfastins_limit(b, h, t, limit, percdone) {			\
+                REGISTER BUN _p = BUNlast(b);				\
+                REGISTER unsigned short _hsize = Hsize(b);		\
+                REGISTER unsigned short _tsize = Tsize(b);		\
+		if (_p == BUN_MAX) /* reached maximum, can't do more */	\
+			goto bunins_done;				\
+                if (_p + 1 > BATcapacity(b)) {				\
+                        if (limit) {					\
 				*limit = (BUN) (b->batCount * (percdone)); \
-                              goto bunins_done;			\
-			}					\
-                        if (BATextend(b, BATgrows(b)) == NULL)  \
-                                goto bunins_failed;             \
-                }                                               \
-                hfastins_nocheck(b, _p, h, _hsize);             \
-                tfastins_nocheck(b, _p, t, _tsize);             \
-                (b)->batCount++;                                \
+                              goto bunins_done;				\
+			}						\
+                        if (BATextend(b, BATgrows(b)) == NULL)		\
+                                goto bunins_failed;			\
+                }							\
+                hfastins_nocheck(b, _p, h, _hsize);			\
+                tfastins_nocheck(b, _p, t, _tsize);			\
+                (b)->batCount++;					\
         }
 @= mergejoin
 	if (((!BATtvoid(l)) || l->tseqbase != oid_nil) &&
