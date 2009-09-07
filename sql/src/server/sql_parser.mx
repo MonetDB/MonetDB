@@ -3778,7 +3778,7 @@ literal:
 
 		  while (i<len)
 		  {
-			res <<= 5;
+			res <<= 4;
 			if ('0'<= hexa[i] && hexa[i] <= '9')
 				res = res + (hexa[i] - '0');
 			else if ('A' <= hexa[i] && hexa[i] <= 'F')
