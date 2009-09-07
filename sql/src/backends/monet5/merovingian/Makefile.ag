@@ -23,12 +23,32 @@ INCLUDES = \
 	$(MONETDB5_INCS) \
 	$(MONETDB_INCS)
 
+MEROVINGIAN_TMP_SUBS = \
+	merovingian_client.c \
+	merovingian_connections.c \
+	merovingian_controlrunner.c \
+	merovingian_discoveryrunner.c \
+	merovingian_forkmserver.c \
+	merovingian_handlers.c \
+	merovingian_proxy.c
+
+MONETDB_TMP_SUBS = \
+	monetdb_discover.c \
+	monetdb_get.c \
+	monetdb_lock.c \
+	monetdb_merocom.c \
+	monetdb_release.c \
+	monetdb_set.c \
+	monetdb_status.c
+
 EXTRA_DIST = $(man_MANS) \
 	utils.h \
 	properties.h \
 	glob.h \
 	database.h \
-	control.h
+	control.h \
+	$(MEROVINGIAN_TMP_SUBS) \
+	$(MONETDB_TMP_SUBS)
 
 lib_meroutil = {
 	NOINST
