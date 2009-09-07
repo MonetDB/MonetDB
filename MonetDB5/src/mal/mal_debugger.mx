@@ -748,7 +748,7 @@ void
 printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
-	msg = instruction2str(mb, stk, getInstrPtr(mb,pc), LIST_MAL_CALL);
+	msg = instruction2str(mb, stk, getInstrPtr(mb,pc), LIST_MAL_DEBUG);
 	stream_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", msg, 
 		getModuleId(getInstrPtr(mb,0)),
 		getFunctionId(getInstrPtr(mb,0)),pc);
@@ -905,7 +905,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 			if (cntxt != mal_clients) 
 				/* help mclients with fake prompt */
 				stream_printf(out,"mdb>");
-			printTraceCall(out,mb,stk,pc,LIST_MAL_CALL);
+			printTraceCall(out,mb,stk,pc,LIST_MAL_DEBUG);
 		}
 		if (cntxt == mal_clients) {
 			cntxt->prompt = "mdb>";
