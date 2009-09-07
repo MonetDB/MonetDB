@@ -2233,6 +2233,13 @@ if test "x$have_readline" != xno; then
 		:,
 		[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
 	      $READLINE_LIBS)
+	AC_MSG_CHECKING([whether rl_completion_func_t exists])
+	AC_TRY_COMPILE([$ac_includes_default
+#include <readline/readline.h>],[
+rl_completion_func_t *func = NULL;],
+		[AC_MSG_RESULT([yes])],
+		[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?]); else AC_MSG_RESULT([no]); fi; have_readline=no ]
+	)
 fi
 CPPFLAGS="$save_CPPFLAGS"
 LIBS="$save_LIBS"
