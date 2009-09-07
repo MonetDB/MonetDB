@@ -4533,14 +4533,44 @@ PFbui_fn_distinct_values (const PFla_op_t *loop,
 {
     (void) loop; (void) ordering; (void) side_effects;
 
-    return (struct PFla_pair_t) {
-                  .rel = rowid (
-                             distinct (
-                                 project (args[0].rel,
-                                      proj (col_iter, col_iter),
-                                      proj (col_item, col_item))),
-                             col_pos),
-                  .frag = args[0].frag };
+    if (PFprop_type_of (args[0].rel, col_item) & aat_uA &&
+        PFprop_type_of (args[0].rel, col_item) & aat_str) {
+        PFla_op_t *type = type (args[0].rel, col_res, col_item, aat_uA);
+
+        /* select those rows that have type "untypedAtomic" (part1) */
+        PFla_op_t *part1 = project (
+                               cast (
+                                   type_assert_pos (
+                                       select_ (type, col_res),
+                                       col_item, aat_uA),
+                                   col_item2, col_item, aat_str),
+                               proj (col_iter, col_iter),
+                               proj (col_item, col_item2));
+
+        /* select the remaining rows (part2) */
+        PFla_op_t *part2 = project (
+                               type_assert_neg (
+                                   select_ (not (type, col_res1, col_res),
+                                            col_res1),
+                                   col_item, aat_uA),
+                               proj (col_iter, col_iter),
+                               proj (col_item, col_item));
+
+        return (struct PFla_pair_t) {
+                      .rel = rowid (
+                                 distinct (disjunion (part1, part2)),
+                                 col_pos),
+                      .frag = args[0].frag };
+    }
+    else
+        return (struct PFla_pair_t) {
+                      .rel = rowid (
+                                 distinct (
+                                     project (args[0].rel,
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_item))),
+                                 col_pos),
+                      .frag = args[0].frag };
 }
 
 struct PFla_pair_t
