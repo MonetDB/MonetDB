@@ -2941,6 +2941,8 @@ if test "x$have_php" != xno; then
 			;;
 		esac
 		AC_MSG_RESULT($have_php: PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
+	else
+		AC_MSG_RESULT([no])
 	fi
 else	
 	AC_MSG_RESULT($have_php)
