@@ -2908,6 +2908,8 @@ if test "x$have_php" != xno; then
 	if test -z "$php_prefix"; then
 		have_php=no
 	else
+		PHP_VERSION="`$PHP_CONFIG --version`"
+		AC_MSG_RESULT("found: $PHP_VERSION")
 		PHP_INCS=" `$PHP_CONFIG --includes`"
 
 		dnl check for the appropriate php 5 header files
@@ -2922,6 +2924,7 @@ if test "x$have_php" != xno; then
 	fi
 		
 	if test "x$have_php" != xno; then
+		AC_MSG_CHECKING([for PHP includes and libraries])
 		have_php=yes
 		have_php_extensiondir=auto
 		AC_ARG_WITH(php-extensiondir,
@@ -2940,7 +2943,7 @@ if test "x$have_php" != xno; then
 		*)	PHP_EXTENSIONDIR="$have_php_extensiondir";
 			;;
 		esac
-		AC_MSG_RESULT($have_php: PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
+		AC_MSG_RESULT(PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
 	else
 		AC_MSG_RESULT([no])
 	fi
