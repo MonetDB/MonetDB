@@ -239,6 +239,9 @@ BATnewstorage(int ht, int tt, BUN cap)
 	BAT *bn;
 
 	assert(cap <= BUN_MAX);
+	/* and in case we don't have assertions enabled: limit the size */
+	if (cap > BUN_MAX)
+		cap = BUN_MAX;
 	bs = recycled = BBPrecycle(ht, tt, cap);
 	if (!bs)
 		bs = BATcreatedesc(ht, tt, (ht || tt));
@@ -297,6 +300,9 @@ BATnew(int ht, int tt, BUN cap)
 		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
 	if (cap < BATTINY)
 		cap = BATTINY;
+	/* and in case we don't have assertions enabled: limit the size */
+	if (cap > BUN_MAX)
+		cap = BUN_MAX;
 	bs = BATnewstorage(ht, tt, cap);
 	return bs == NULL ? NULL : &bs->B;
 }
