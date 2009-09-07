@@ -14,8 +14,6 @@ stdout of test 'tst804` in directory 'src/mal` itself:
 #function wrong.message():void;
 !SyntaxException:parseError:function wrong.message():void;
 !SyntaxException:parseError:                      ^<module> not defined
-#end message;
-!SyntaxException:wrong.message[0]:RETURN missing
 function wrong.message():any;
     io.print("shouldn't come here");
 end message;

@@ -65,12 +65,6 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 !TypeException:user.foo[10]:'chop.head' undefined in: H:any := chop.head(b:any)
 !TypeException:user.foo[11]:'chop.nextElement' undefined in: v:any := chop.nextElement(b:any)
 !TypeException:user.foo[35]:'batcalc.not' undefined in: FS:any := batcalc.not(FTE:any)
-!TypeException:user.foo[1]:barrier 'H' should be of type bit, str or number
-!TypeException:user.foo[9]:barrier 'L' should be of type bit, str or number
-!TypeException:user.foo[16]:barrier 'M' should be of type bit, str or number
-!TypeException:user.foo[29]:barrier 'FT' should be of type bit, str or number
-!TypeException:user.foo[32]:barrier 'FTE' should be of type bit, str or number
-!TypeException:user.foo[35]:barrier 'FS' should be of type bit, str or number
 !TypeException:user.foo[1]:'batoperatie' may not be used before being initialized
 !TypeException:user.foo[2]:'b' may not be used before being initialized
 !TypeException:user.foo[9]:'b' may not be used before being initialized
