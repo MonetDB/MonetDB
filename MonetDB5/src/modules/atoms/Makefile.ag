@@ -23,13 +23,23 @@ MTSAFE
 LIBS = {
 	DIR = libdir/MonetDB5
 	SEP = _
-	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
+	SOURCES = blob.mx url.mx streams.mx inet.mx color.mx \
 			  identifier.mx
 
 	#SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
+}
+
+lib__mtime = {
+	DIR = libdir/MonetDB5
+	SEP = _
+	SOURCES = mtime.mx
+
+	#SCRIPTS = mal
+	LIBS = $(MONETDB_LIBS) -lbat $(MATH_LIBS) \
+                $(MALLOC_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
 }
 
 lib__str = {
