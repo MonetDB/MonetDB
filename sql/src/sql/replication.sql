@@ -41,7 +41,7 @@ CREATE TABLE sys.replicas(
 
 -- If your are the master return its uri. Otherwise locate the first master
 -- value in the replicas table.
-CREATE FUNCTION master() RETURNS string EXTERNAL NAME master.getName;
+CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getName";
 
 -- Initialize this table with the location of the current system
 INSERT INTO sys.replicas VALUES( master(), 0, now(),'Master created');
