@@ -251,8 +251,14 @@ being called.
 		stk->blk= mb;
 		stk->cmd= cntxt->itrace; /* set debug mode */
 		if( env) {
-			stk->stkdepth= stk->stksize + env->stkdepth;
 			/*safeguardStack*/
+			stk->stkdepth= stk->stksize + env->stkdepth;
+			stk->calldepth= env->calldepth + 1;
+			if ( stk->calldepth > 1024 )
+				throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+			if ( (unsigned) stk->stkdepth > THREAD_STACK_SIZE/ sizeof(mb->var[0]) / 4 && THRhighwater())
+				/* we are running low on stack space */
+				throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		}
 	} 
 

@@ -2617,7 +2617,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		}
 		snprintf(t,(len-(t-base)), "%s ", operatorName(p->barrier));
 		advance(t,base,len);
-	} else if (!functionStart(p) && !functionExit(p)) {
+	} else if (!functionStart(p) && !functionExit(p) && flg!=LIST_MAL_CALL) {
     		for(;tab>0;tab--) 
 			*t++= ' ';
     		*t= 0;

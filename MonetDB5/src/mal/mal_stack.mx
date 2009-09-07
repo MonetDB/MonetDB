@@ -70,7 +70,8 @@ typedef struct MALSTK {
 	int stksize;
 	int stktop;
 	int stkbot;			/* the first variable to be initialized */
-	lng stkdepth;		/* to protect against overflow */
+	int stkdepth;		/* to protect against runtime stack overflow */
+	int calldepth;		/* to protect against runtime stack overflow */
 	short keepAlive;	/* do not garbage collect when set */
 	short garbageCollect; /* stack needs garbage collection */
 	MT_Lock stklock;	/* used for parallel processing */
