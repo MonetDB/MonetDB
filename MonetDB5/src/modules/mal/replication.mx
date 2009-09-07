@@ -482,7 +482,7 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int tag = *(int*) getArgReference(stk,pci,5);
 	InstrPtr q;
 	str val= NULL;
-	int i,l,len;
+	int i, len;
 
 #ifdef _DEBUG_REPLICATOR_
 	(void) cntxt;
@@ -499,7 +499,7 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	freeInstruction(q);
 
 	len = master[i].limit - master[i].top -1;
-	while ( (l = snprintf(master[i].buf + master[i].top, len , "%s\n", val) >= len ) ){
+	while (snprintf(master[i].buf + master[i].top, len, "%s\n", val) >= len) {
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replication.append",MAL_MALLOC_FAIL);
