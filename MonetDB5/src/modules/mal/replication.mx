@@ -506,7 +506,7 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		master[i].limit += 1024;
 		len = master[i].limit - master[i].top -1;
 	}
-	master[i].top += strlen(val)+1;
+	master[i].top += (int)(strlen(val) + 1);
 	master[i].buf[master[i].top] = 0;
 	GDKfree(val);
 	return MAL_SUCCEED;
