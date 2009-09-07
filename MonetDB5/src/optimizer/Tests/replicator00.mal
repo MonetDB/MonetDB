@@ -1,4 +1,3 @@
-include replicator;
 module sql;
 function sql.append(s:str,t:str,c:str,b:any_1);
 end append;
@@ -18,5 +17,5 @@ sql.append("sch","tab","col",23);
 sql.delete("sch","tab",b);
 end tst;
 
-optimizer.replicator("sql","tst");
+optimizer.replication("sql","tst");
 mdb.list("sql","tst");
