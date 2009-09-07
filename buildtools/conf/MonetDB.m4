@@ -2902,8 +2902,8 @@ if test "x$have_php" != xno; then
 		have_php=no
 	fi
 fi
+AC_MSG_CHECKING([for PHP])
 if test "x$have_php" != xno; then
-	AC_MSG_CHECKING([for PHP])
 	php_prefix="`$PHP_CONFIG --prefix`"
 	if test -z "$php_prefix"; then
 		have_php=no
