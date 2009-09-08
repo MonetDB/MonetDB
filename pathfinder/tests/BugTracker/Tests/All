@@ -210,6 +210,7 @@ child-step-empty-node.SF-2815716
 nil-value-in-elem-construct.SF-2815820
 oidInDocMgmt.SF-2686121
 distinct-values-two-sequences.SF-2853441
+child-steps-and-replace.SF-2716723
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
 Zombie_document.SF-2009556
