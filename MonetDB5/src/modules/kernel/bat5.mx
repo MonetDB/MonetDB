@@ -1905,9 +1905,8 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	}
 
 	/* chk is a bit mask to ensure that no page is requested twice */
-	chk = (char*) GDKmalloc(n = 1 + max/8);
+	chk = (char*) GDKzalloc(n = 1 + max/8);
 	if (chk == NULL) return GDK_FAIL;
-	memset(chk, 0, n);
 
 	/* check that the set of requested page-ids is a subset of all existing page-ids */
 	BATloop(map, p, q) {

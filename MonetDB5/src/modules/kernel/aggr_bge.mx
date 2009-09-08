@@ -69,15 +69,12 @@ structure to compute a group of common aggregates.
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_sum3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
 	if (@1 && range > 0) {
 		/* create tmp. sums array */
-		oid i;
-		sums = (@9*) GDKmalloc(range*sizeof(@9));
+		sums = (@9*) GDKzalloc(range*sizeof(@9));
 		if (sums == NULL) {
-			GDKerror("aggrX3_sum3(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9,@[10]): sums = GDKmalloc("OIDFMT"*"SZFMT") failed", range, sizeof(@9));
+			GDKerror("aggrX3_sum3(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9,@[10]): sums = GDKzalloc("OIDFMT"*"SZFMT") failed", range, sizeof(@9));
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		for (i = 0; i < range; i++)
-			sums[i] = zero;
 	}
 	if (@2 && BATprepareHash(bn)) {
 		GDKerror("aggrX3_sum3(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9,@[10]): BATprepareHash(bn) failed");
@@ -87,15 +84,14 @@ structure to compute a group of common aggregates.
 		return GDK_FAIL;
 	}
 	if (slots > 0) {
-		hit = (bit*) GDKmalloc(slots*sizeof(bit));
+		hit = (bit*) GDKzalloc(slots*sizeof(bit));
 		if (hit == NULL) {
-			GDKerror("aggrX3_sum3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
+			GDKerror("aggrX3_sum3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
 			if (@1 && sums)
 				GDKfree(sums);
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		memset(hit, 0, slots*sizeof(bit));
 	}
 	/* scan b & g, and add values to sums in-place or in sums-array */
 	base = BUNfirst(g);
@@ -219,15 +215,14 @@ structure to compute a group of common aggregates.
 		return GDK_FAIL;
 	}
 	if (slots > 0) {
-		hit = (bit*) GDKmalloc(slots*sizeof(bit));
+		hit = (bit*) GDKzalloc(slots*sizeof(bit));
 		if (hit == NULL) {
-			GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
+			GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
 			if (@1 && prods)
 				GDKfree(prods);
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		memset(hit, 0, slots*sizeof(bit));
 	}
 	/* scan b & g, and add values to prods in-place or in prods-array */
 	base = BUNfirst(g);
@@ -329,15 +324,12 @@ structure to compute a group of common aggregates.
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_avg3(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 	if (@1 && range > 0) {
 		/* create tmp. sums array */
-		oid i;
-		sums = (dbl*) GDKmalloc(range*sizeof(dbl));
+		sums = (dbl*) GDKzalloc(range*sizeof(dbl));
 		if (sums == NULL) {
-			GDKerror("aggrX3_avg3(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9): sums = GDKmalloc("OIDFMT"*"SZFMT") failed", range, sizeof(dbl));
+			GDKerror("aggrX3_avg3(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9): sums = GDKzalloc("OIDFMT"*"SZFMT") failed", range, sizeof(dbl));
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		for (i = 0; i < range; i++)
-			sums[i] = zero;
 	}
 	if (@2 && BATprepareHash(bn)) {
 		GDKerror("aggrX3_avg3(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9): BATprepareHash(bn) failed");
@@ -347,15 +339,14 @@ structure to compute a group of common aggregates.
 		return GDK_FAIL;
 	}
 	if (slots > 0) {
-		cnt = (BUN*) GDKmalloc(slots*sizeof(cnt[0]));
+		cnt = (BUN*) GDKzalloc(slots*sizeof(cnt[0]));
 		if (cnt == NULL) {
-			GDKerror("aggrX3_avg3(@1,@2,@3,@4,@5,@6,@7,@8,@9): cnt = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(cnt[0]));
+			GDKerror("aggrX3_avg3(@1,@2,@3,@4,@5,@6,@7,@8,@9): cnt = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(cnt[0]));
 			if (@1 && sums)
 				GDKfree(sums);
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		memset(cnt, 0, slots*sizeof(cnt[0]));
 	}
 	/* scan b & g, adding sums, and incrementing counts */
 	base = BUNfirst(g);
@@ -454,7 +445,7 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e);
 static int
 aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, oid min, oid max)
 {
-	@2 zero = (@2) 0, *sums = NULL;
+	@2 *sums = NULL;
 	bit *hit = NULL;
 	BUN slots = range;
 	BUN p, q, r;
@@ -865,13 +856,12 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	}
 	/* init: create extremes and set all to the zero pointer */
 	if (slots > 0) {
-		extremes = (ptr*) GDKmalloc(slots*sizeof(ptr));
+		extremes = (ptr*) GDKzalloc(slots*sizeof(ptr));
 		if (extremes == NULL) {
-			GDKerror("aggrX3_minmax3_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(ptr));
+			GDKerror("aggrX3_minmax3_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(ptr));
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		memset(extremes, 0, slots*sizeof(ptr));
 	}
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	base = BUNfirst(g);
@@ -962,14 +952,13 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 			return GDK_FAIL;
 		}
 		{ BUN i = 0; for (; i < slots; i++ ) extremes[i] = GDK_oid_@9; }
-		hit = (bit*) GDKmalloc(slots*sizeof(bit));
+		hit = (bit*) GDKzalloc(slots*sizeof(bit));
 		if (hit == NULL) {
-			GDKerror("aggrX3_minmax3_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): hit = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
+			GDKerror("aggrX3_minmax3_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
 			GDKfree(extremes);
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		memset(hit, 0, slots*sizeof(bit));
 	}
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	base = BUNfirst(g);
@@ -1209,13 +1198,12 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_count3(@1,@2,@3,@4,@5,@6);\n");
 	if (@1 && range > 0) {
 		/* create tmp. cnt array */
-		cnt = (wrd*) GDKmalloc(range*sizeof(wrd));
+		cnt = (wrd*) GDKzalloc(range*sizeof(wrd));
 		if (cnt == NULL) {
-			GDKerror("aggrX3_count3(@1,@2,@3,@4,@5,@6,@6): cnt = GDKmalloc("OIDFMT"*"SZFMT") failed", range, sizeof(wrd));
+			GDKerror("aggrX3_count3(@1,@2,@3,@4,@5,@6,@6): cnt = GDKzalloc("OIDFMT"*"SZFMT") failed", range, sizeof(wrd));
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		memset(cnt, 0, range*sizeof(wrd));
 	}
 	if (@2 && BATprepareHash(bn)) {
 		GDKerror("aggrX3_count3(@1,@2,@3,@4,@5,@6,@6): BATprepareHash(bn) failed");
