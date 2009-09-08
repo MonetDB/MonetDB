@@ -343,6 +343,7 @@ scanner_init_keywords(void)
 	keywords_insert("ALWAYS", ALWAYS);
 	keywords_insert("IDENTITY", IDENTITY);
 	keywords_insert("SERIAL", SERIAL);
+	keywords_insert("BIGSERIAL", BIGSERIAL);
 	keywords_insert("AUTO_INCREMENT", AUTO_INCREMENT);
 
 	keywords_insert("TRIGGER", TRIGGER);

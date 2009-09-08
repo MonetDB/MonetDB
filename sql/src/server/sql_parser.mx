@@ -550,48 +550,49 @@ int yydebug=1;
 
 %type <i_val>
 	any_all_some
-	opt_port
-	drop_action
-	ref_action
-	join_type
-	outer_join_type
-	time_precision
-	timestamp_precision
-	non_second_datetime_field
 	datetime_field
-	opt_bounds
-	opt_sign
-	opt_index_type
+	document_or_content
+	document_or_content_or_sequence
+	drop_action
+	grantor
 	intval
+	join_type
+	non_second_datetime_field
 	nonzero
-	posint
-	opt_temp
+	opt_bounds
+	opt_column
+	opt_cycle
 	opt_encrypted
+	opt_for_each
+	opt_from_grantor
+	opt_grantor
+	opt_index_type
 	opt_limit
-	opt_offset
 	opt_match
 	opt_match_type
+	opt_offset
 	opt_on_commit
-	opt_grantor
-	opt_from_grantor
-	opt_column
-	grantor
+	opt_port
+	opt_ref_action
+	opt_sign
+	opt_temp
+	opt_XML_content_option
+	opt_XML_returning_clause
+	outer_join_type
+	posint
+	ref_action
+	ref_on_delete
+	ref_on_update
+	row_or_statement
+	serial_or_bigserial
+	time_precision
+	timestamp_precision
 	transaction_mode
 	transaction_mode_list
 	_transaction_mode_list
-	opt_cycle
-	opt_ref_action
-	ref_on_delete
-        ref_on_update
-	with_or_without_data
 	trigger_action_time
-	opt_for_each
-	row_or_statement
-	opt_XML_content_option
+	with_or_without_data
 	XML_content_option
-	opt_XML_returning_clause
-	document_or_content
-	document_or_content_or_sequence
 	XML_whitespace_option
 
 %type <l_val>
@@ -656,7 +657,7 @@ int yydebug=1;
 %token NOMAXVALUE NOMINVALUE NOCYCLE
 %token NEXT VALUE CACHE
 %token GENERATED ALWAYS IDENTITY
-%token SERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
+%token SERIAL BIGSERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
 
 /* SQL's terminator, the semi-colon */
 %token SCOLON AT
@@ -1468,6 +1469,11 @@ table_element_list:
 add_table_element: column_def | table_constraint ;
 table_element: add_table_element | column_options | like_table ;
 
+serial_or_bigserial:
+	SERIAL       { $$ = 0; }
+ |	BIGSERIAL    { $$ = 1; }
+ ;
+
 column_def:
 	column data_type opt_column_def_opt_list
 		{
@@ -1477,7 +1483,7 @@ column_def:
 			append_list(l, $3);
 			$$ = _symbol_create_list(SQL_COLUMN, l);
 		}
- |  column SERIAL
+ |  column serial_or_bigserial
 		{ /* SERIAL = INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY */
 			/* handle multi-statements by wrapping them in a list */
 			sql_subtype it;
@@ -1498,7 +1504,10 @@ column_def:
 				append_string(seqn1, m->scanner.schema);
 			append_list(l, append_string(seqn1, sn));
 			/* ultra dirty: inline 'integer' type generation */
-			sql_find_subtype(&it, "int", 32, 0);
+			if ($2 == 1)
+				sql_find_subtype(&it, "bigint", 64, 0);
+			else
+				sql_find_subtype(&it, "int", 32, 0);
 			append_type(l, &it);
 			/* finally all the options (no defaults here) */
 			append_lng(o, 1); /* start */
