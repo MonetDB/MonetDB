@@ -39,7 +39,6 @@ command_merocom(int argc, char *argv[], merocom mode)
 	char *type = NULL;
 	char *p;
 	int ret = 0;
-	int len;
 
 	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
 	path[8095] = '\0';
@@ -175,7 +174,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 
 			/* stay quiet, we're part of monetdb set property=value */
 
-			len = snprintf(share, sizeof(share), "share=%s", value);
+			snprintf(share, sizeof(share), "share=%s", value);
 			control_send(&res, path, 0, stats->dbname, share);
 			if (strcmp(res, "OK\n") != 0) {
 				printf("FAILED:\n%s", res);
