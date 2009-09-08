@@ -66,10 +66,13 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 				@3 = _lcount;
 		}
 		if (@3 == BUN_NONE) {
-			BUN _heuristic = 3 * MIN(_lcount, _rcount);
+			BUN _heuristic = MIN(_lcount, _rcount);
 
-			if (_heuristic <= (1 << SAMPLE_TRESHOLD_LOG))
-				@3 = _heuristic;
+			if (_heuristic <= BUN_MAX / 3) {
+				_heuristic *= 3;
+				if (_heuristic <= (1 << SAMPLE_TRESHOLD_LOG))
+					@3 = _heuristic;
+			}
 		}
 		if (@3 == BUN_NONE) {
 			BUN _idx;
@@ -126,10 +129,21 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 				}
 			}
 			/* overestimate always by 5% */
-			@3 = (BUN) ((double) (((lng) _tot) * ((lng) _lcount)) / (0.95 * (double) _sample));
+			{
+				double _d = (double) (((lng) _tot) * ((lng) _lcount)) / (0.95 * (double) _sample);
+				if (_d < (double) BUN_MAX)
+					@3 = (BUN) _d;
+				else
+					@3 = BUN_MAX;
+			}
 			l = _tmp1;
 		} else {
-			@3 = MIN(32*MIN(_lcount,_rcount),MAX(_lcount,_rcount));
+			BUN _m = MIN(_lcount,_rcount);
+			if (_m <= BUN_MAX / 32)
+				_m *= 32;
+			else
+				_m = BUN_MAX;
+			@3 = MIN(_m,MAX(_lcount,_rcount));
 		}
 	}
 @= joinbat
