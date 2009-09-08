@@ -241,27 +241,34 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
 
         case m_catch:
             {
-                PFmil_t  *new_child;
-                PFmil_t  *var = root->child[0];
-                PFmil_t  *body = root->child[1];
+                PFmil_t    *new_child;
+                PFmil_t    *var             = root->child[0];
+                PFmil_t    *body            = root->child[1];
+                PFbitset_t *body_used_vars  = PFbitset_copy (used_vars);
+                PFbitset_t *body_dirty_vars = PFbitset_copy (dirty_vars);
 
                 assert(var->kind == m_var);
+
+                /* try to find dead code in the body */
+                new_child = mil_dce_worker (body,
+                                            body_used_vars,
+                                            body_dirty_vars,
+                                            change);
+                if (change) root->child[1] = new_child;
+
+                /* all used variables stay used before the body */
+                PFbitset_or (used_vars, body_used_vars);
 
                 /* The variable is set to true. */
                 PFbitset_set (used_vars, var->sem.ident, true);
 
 #ifndef NDEBUG
+                /* all used variables stay used before the body */
+                PFbitset_or (dirty_vars, body_dirty_vars);
+
                 /* variable on the left side is clean */
                 PFbitset_set (dirty_vars, var->sem.ident, false);
 #endif
-
-                /* try to find dead code in the body */
-                new_child = mil_dce_worker (body,
-                                            used_vars,
-                                            dirty_vars,
-                                            change);
-                if (change) root->child[1] = new_child;
-
                 return root;
             }
             break;

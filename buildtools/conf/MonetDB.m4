@@ -2233,6 +2233,13 @@ if test "x$have_readline" != xno; then
 		:,
 		[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
 	      $READLINE_LIBS)
+	AC_MSG_CHECKING([whether rl_completion_func_t exists])
+	AC_TRY_COMPILE([$ac_includes_default
+#include <readline/readline.h>],[
+rl_completion_func_t *func = NULL;],
+		[AC_MSG_RESULT([yes])],
+		[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?]); else AC_MSG_RESULT([no]); fi; have_readline=no ]
+	)
 fi
 CPPFLAGS="$save_CPPFLAGS"
 LIBS="$save_LIBS"
@@ -2902,12 +2909,14 @@ if test "x$have_php" != xno; then
 		have_php=no
 	fi
 fi
+AC_MSG_CHECKING([for PHP])
 if test "x$have_php" != xno; then
-	AC_MSG_CHECKING([for PHP])
 	php_prefix="`$PHP_CONFIG --prefix`"
 	if test -z "$php_prefix"; then
 		have_php=no
 	else
+		PHP_VERSION="`$PHP_CONFIG --version`"
+		AC_MSG_RESULT("found: $PHP_VERSION")
 		PHP_INCS=" `$PHP_CONFIG --includes`"
 
 		dnl check for the appropriate php 5 header files
@@ -2922,6 +2931,7 @@ if test "x$have_php" != xno; then
 	fi
 		
 	if test "x$have_php" != xno; then
+		AC_MSG_CHECKING([for PHP includes and libraries])
 		have_php=yes
 		have_php_extensiondir=auto
 		AC_ARG_WITH(php-extensiondir,
@@ -2940,7 +2950,9 @@ if test "x$have_php" != xno; then
 		*)	PHP_EXTENSIONDIR="$have_php_extensiondir";
 			;;
 		esac
-		AC_MSG_RESULT($have_php: PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
+		AC_MSG_RESULT(PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
+	else
+		AC_MSG_RESULT([no])
 	fi
 else	
 	AC_MSG_RESULT($have_php)
