@@ -278,7 +278,7 @@ static struct MASTERRECORD{
 static int mtop = 0 , mlimit = 0;
 
 int
-MASTERroleEnabled()
+MASTERroleEnabled(void)
 {
 	return replicationTag > 0;
 }
@@ -745,7 +745,7 @@ str MASTERreplay(int  *ret, str *uri, str *usr, str *pw, int *tag)
 
 str MASTERstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *uri= (str*) getArgReference(stk,pci,1);
+	str *uri = (str*) getArgReference(stk,pci,1);
 	int tag = -1;
 	str usr = "monetdb";
 	str pw = "monetdb";
