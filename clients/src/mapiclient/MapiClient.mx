@@ -1990,6 +1990,8 @@ main(int argc, char **argv)
 						language = q;
 						if (strcmp(language, "sql") == 0) {
 							mode = SQL;
+						} else if (strcmp(language, "mal") == 0) {
+							mode = MAL;
 						} else if (strcmp(language, "xquery") == 0) {
 							mode = XQUERY;
 						} else {
