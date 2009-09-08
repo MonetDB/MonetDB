@@ -21,34 +21,43 @@ Ready.
 
 Over..
 
-# 12:59:51 >  
-# 12:59:51 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=33577 
-# 12:59:51 >  
+# 10:46:58 >  
+# 10:46:58 >  mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=36889 
+# 10:46:58 >  
 
-% .t # table_name
-% name # name
-% varchar # type
-% 12 # length
-[ "_columns"	]
-[ "_tables"	]
-[ "args"	]
-[ "auths"	]
-[ "columns"	]
-[ "connections"	]
-[ "db_user_info"	]
-[ "dependencies"	]
-[ "functions"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "keys"	]
-[ "privileges"	]
-[ "schemas"	]
-[ "sequences"	]
-[ "tables"	]
-[ "triggers"	]
-[ "types"	]
-[ "user_role"	]
-[ "users"	]
+TABLE   sys._columns
+TABLE   sys._tables
+TABLE   sys.args
+TABLE   sys.auths
+VIEW    sys.columns
+TABLE   sys.connections
+VIEW    sys.databasetest
+TABLE   sys.databasetest1
+TABLE   sys.databasetest2
+TABLE   sys.db_user_info
+TABLE   sys.dependencies
+TABLE   sys.functions
+TABLE   sys.i0
+TABLE   sys.i1
+TABLE   sys.i2
+TABLE   sys.i3
+TABLE   sys.i4
+TABLE   sys.i5
+TABLE   sys.i6
+TABLE   sys.i7
+TABLE   sys.i8
+TABLE   sys.idxs
+TABLE   sys.keycolumns
+TABLE   sys.keys
+TABLE   sys.n8
+TABLE   sys.privileges
+TABLE   sys.schemas
+TABLE   sys.sequences
+VIEW    sys.tables
+TABLE   sys.triggers
+TABLE   sys.types
+TABLE   sys.user_role
+VIEW    sys.users
 CREATE TABLE "sys"."triggers" (
 	"id" int,
 	"name" varchar(1024),
