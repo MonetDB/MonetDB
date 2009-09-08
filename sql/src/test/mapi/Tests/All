@@ -5,7 +5,6 @@ sample3
 sample4
 smack00
 smack01
-mclient-lsql--help
 HAVE_PERL_SWIG?perl_dbi
 HAVE_PYTHON?python_dbapi
 HAVE_PHP?php_monetdb
