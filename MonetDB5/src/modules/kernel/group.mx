@@ -1670,9 +1670,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	}
 @-
 @= small_aggr_sum
-	sums = (@3*) GDKmalloc(range*sizeof(@3));
-	for (i = 0; i < range; i++) 
-		sums[i] = zero;
+	sums = (@3*) GDKzalloc(range*sizeof(@3));
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1740,8 +1738,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	}
         GDKfree(prods);
 @= large_aggr_avg
-	cnt  = (BUN*) GDKmalloc(BATcount(e)*sizeof(BUN));
-	memset(cnt, 0, BATcount(e)*sizeof(BUN));
+	cnt  = (BUN*) GDKzalloc(BATcount(e)*sizeof(BUN));
 	if (BATprepareHash(bn)) {
 		GDKfree(cnt);
 		BBPreclaim(bn);
@@ -1777,11 +1774,8 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	GDKfree(cnt);
 @c
 @= small_aggr_avg
-	sums = (dbl*) GDKmalloc(range*sizeof(dbl));
-	cnt  = (BUN*) GDKmalloc(range*sizeof(BUN));
-	for (i = 0; i < range; i++)
-		sums[i] = zero;
-	memset(cnt, 0, range*sizeof(BUN));
+	sums = (dbl*) GDKzalloc(range*sizeof(dbl));
+	cnt  = (BUN*) GDKzalloc(range*sizeof(BUN));
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -2410,8 +2404,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 	}
 @c
 @= small_aggr_count
-	cnt  = (wrd*) GDKmalloc(range*sizeof(wrd));
-	memset(cnt, 0, range*sizeof(wrd));
+	cnt  = (wrd*) GDKzalloc(range*sizeof(wrd));
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 
