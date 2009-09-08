@@ -33,18 +33,19 @@ RETURNS TABLE (
 -- It can serve multiple masters and provides a persistent
 -- store for the master name. A comment can be left behind for a posteriori
 -- error analysis.
-CREATE TABLE sys.replicas(
+CREATE TABLE sys.replicas (
 	uri varchar(100) NOT NULL, 
 	tag int, 
 	stamp timestamp, 
-	remark string);
+	remark string
+);
 
 -- If your are the master return its uri. Otherwise locate the first master
 -- value in the replicas table.
 CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getName";
 
 -- Initialize this table with the location of the current system
-INSERT INTO sys.replicas VALUES( master(), 0, now(),'Master created');
+INSERT INTO sys.replicas VALUES(master(), 0, now(), 'master created');
 
 -- Controling the synchronisation by the slave
 CREATE PROCEDURE synchronizeWithMaster(uri string) EXTERNAL NAME master."start";
