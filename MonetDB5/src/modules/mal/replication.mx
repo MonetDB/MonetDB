@@ -781,15 +781,13 @@ str MASTERgetName(str *ret)
 {
 	struct MASTERrecord *mr;
 
-	if( GDKgetenv("replication_master") ){
-		SABAOTHgetLocalConnection(ret);
-		return MAL_SUCCEED;
-	}
+	if (GDKgetenv_isyes("replication_master"))
+		return SABAOTHgetLocalConnection(ret);
 		
-	for( mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
+	for (mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
 		*ret = GDKstrdup(mr->uri);
 
-	throw(MAL,"master.getName","No master name found");
+	throw(MAL, "master.getName", "no master name found");
 }
 @-
 We should assure that only operations we haven't seen are
