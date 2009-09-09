@@ -714,7 +714,7 @@ For each of the components, do the following::
  nmake /nologo NEED_MX=1 ... "prefix=%..._PREFIX%" install
 
 Here the first ``...`` needs to be replaced by a list of parameters
-that tell the system which of the optional programs and libraries are
+that tells the system which of the optional programs and libraries are
 available.  The following parameters are possible:
 
 - ``DEBUG=1`` - compile with extra debugging information
