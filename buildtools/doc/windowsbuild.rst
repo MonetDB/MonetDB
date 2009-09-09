@@ -73,8 +73,6 @@ component is still required for the MonetDB XQuery (pathfinder)
 component.  This is the old server which uses MIL (the MonetDB
 Interface Language) as programming interface.  This component is only
 required if you need MIL or if you need the MonetDB XQuery component.
-This component also works with the MonetDB SQL component, but that is
-not officially supported anymore (it does work, however).
 
 MonetDB5
 --------
@@ -88,8 +86,7 @@ sql
 ---
 
 Also known as MonetDB SQL, this component provides an SQL frontend to
-MonetDB4 and MonetDB5 (the former is deprecated).  This component is
-required if you need SQL support.
+MonetDB5.  This component is required if you need SQL support.
 
 pathfinder
 ----------
@@ -304,7 +301,8 @@ libxml2
 
 Libxml2__ is the XML C parser and toolkit of Gnome.
 
-This library is only a prerequisite for the pathfinder component.
+This library is only a prerequisite for the pathfinder component,
+although the MonetDB5 component can also make use of it.
 
 The home of the library is http://xmlsoft.org/.  But Windows binaries
 can be gotten from http://www.zlatkovic.com/libxml.en.html.  Click on
@@ -537,7 +535,7 @@ subfolders.  You will need at least:
 
 Optionally:
 
-- sql (requires MonetDB4 or MonetDB5--MonetDB5 is recommended)
+- sql (requires MonetDB5)
 - pathfinder (requires MonetDB4)
 
 Apart from buildtools, all packages contain a subfolder ``NT`` which
