@@ -244,29 +244,83 @@ char* db_destroy(char* dbname) {
 		return(strdup(buf));
 	}
 
-	if (stats != NULL) {
-		if (stats->state == SABdbRunning) {
-			snprintf(buf, sizeof(buf), "database '%s' is still running, "
-					"please stop database first", dbname);
-			SABAOTHfreeStatus(&stats);
-			return(strdup(buf));
-		}
-
-		/* annoyingly we have to delete file by file, and
-		 * directories recursively... */
-		if ((e = deletedir(stats->path)) != NULL) {
-			snprintf(buf, sizeof(buf), "failed to destroy '%s': %s",
-					dbname, e);
-			GDKfree(e);
-			SABAOTHfreeStatus(&stats);
-			return(strdup(buf));
-		}
-		SABAOTHfreeStatus(&stats);
-	} else {
+	if (stats == NULL) {
 		snprintf(buf, sizeof(buf), "no such database: %s", dbname);
 		return(strdup(buf));
 	}
 
+	if (stats->state == SABdbRunning) {
+		snprintf(buf, sizeof(buf), "database '%s' is still running, "
+				"please stop database first", dbname);
+		SABAOTHfreeStatus(&stats);
+		return(strdup(buf));
+	}
+
+	/* annoyingly we have to delete file by file, and
+	 * directories recursively... */
+	if ((e = deletedir(stats->path)) != NULL) {
+		snprintf(buf, sizeof(buf), "failed to destroy '%s': %s",
+				dbname, e);
+		GDKfree(e);
+		SABAOTHfreeStatus(&stats);
+		return(strdup(buf));
+	}
+	SABAOTHfreeStatus(&stats);
+
 	return(NULL);
 }
 
+char* db_rename(char *olddb, char *newdb) {
+	char new[1024];
+	char buf[8096];
+	char *p;
+	sabdb* stats;
+
+	if (olddb[0] == '\0' || newdb[0] == '\0')
+		return(strdup("database name should not be an empty string"));
+
+	/* check if dbname matches [A-Za-z0-9-_]+ */
+	if ((p = db_validname(newdb)) != NULL)
+		return(p);
+
+	if ((p = SABAOTHgetStatus(&stats, olddb)) != MAL_SUCCEED) {
+		snprintf(buf, sizeof(buf), "internal error: %s", p);
+		GDKfree(p);
+		return(strdup(buf));
+	}
+
+	if (stats == NULL) {
+		snprintf(buf, sizeof(buf), "no such database: %s", olddb);
+		return(strdup(buf));
+	}
+
+	if (stats->state == SABdbRunning) {
+		snprintf(buf, sizeof(buf), "database '%s' is still running, "
+				"please stop database first", olddb);
+		SABAOTHfreeStatus(&stats);
+		return(strdup(buf));
+	}
+
+	/* construct path to new database */
+	snprintf(new, sizeof(new), "%s", stats->path);
+	p = strrchr(new, '/');
+	if (p == NULL) {
+		snprintf(buf, sizeof(buf), "non-absolute database path? '%s'",
+				stats->path);
+		SABAOTHfreeStatus(&stats);
+		return(strdup(buf));
+	}
+	snprintf(p + 1, sizeof(new) - (p + 1 - new), "%s", newdb);
+
+	/* Renaming is as simple as changing the directory name.  Since the
+	 * logdir is below it, we don't need to bother about that either. */
+	if (rename(stats->path, new) != 0) {
+		snprintf(buf, sizeof(buf), "failed to rename database from "
+				"'%s' to '%s': %s\n", stats->path, new, strerror(errno));
+		SABAOTHfreeStatus(&stats);
+		return(strdup(buf));
+	}
+
+	SABAOTHfreeStatus(&stats);
+	return(NULL);
+}

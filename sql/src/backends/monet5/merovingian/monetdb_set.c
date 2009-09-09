@@ -118,8 +118,6 @@ command_set(int argc, char *argv[], meroset type)
 
 	for (stats = orig; stats != NULL; stats = stats->next) {
 		if (strcmp(property, "name") == 0) {
-			char new[512];
-
 			/* special virtual case */
 			if (type == INHERIT) {
 				fprintf(stderr, "inherit: cannot default to a database name\n");
@@ -130,34 +128,11 @@ command_set(int argc, char *argv[], meroset type)
 			if (value[0] == '\0')
 				continue;
 
-			/* check if dbname matches [A-Za-z0-9-_]+ */
-			if ((p = db_validname(value)) != NULL) {
-				fprintf(stderr, "set: %s\n", p);
-				free(p);
-				value[0] = '\0';
-				state |= 1;
-				break;
-			}
-
-			/* construct path to new database */
-			snprintf(new, 512, "%s", stats->path);
-			p = strrchr(new, '/');
-			if (p == NULL) {
-				fprintf(stderr, "set: non-absolute database path? '%s'\n",
-						stats->path);
+			if ((e = db_rename(stats->dbname, value)) != NULL) {
+				fprintf(stderr, "set: %s\n", e);
+				free(e);
 				state |= 1;
 				continue;
-			}
-			snprintf(p + 1, 512 - (p + 1 - new), "%s", value);
-
-			/* Renaming is as simple as changing the directory name.
-			 * Since the logdir is relative to it, we don't need to
-			 * bother about that either. */
-			if (rename(stats->path, new) != 0) {
-				fprintf(stderr, "%s: failed to rename database from "
-						"'%s' to '%s': %s\n", argv[0], stats->path, new,
-						strerror(errno));
-				state |= 1;
 			}
 		} else if (strcmp(property, "shared") == 0) {
 			char share[4069];
