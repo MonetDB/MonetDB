@@ -246,9 +246,9 @@ controlRunner(void *d)
 									*value, (int)(value - p), p);
 							send(msgsock, buf2, len, 0);
 							buf2[len] = '\0';
-							Mfprintf(_mero_ctlerr, "set: %s\n", buf2);
+							Mfprintf(_mero_ctlerr, "set: %s", buf2);
 							value = NULL;
-							continue;
+							break;
 						}
 						value++;
 					}
