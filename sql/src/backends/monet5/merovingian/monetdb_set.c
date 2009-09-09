@@ -84,18 +84,6 @@ command_set(int argc, char *argv[], meroset type)
 		exit(1);
 	}
 
-	if (strcmp(property, "shared") == 0) {
-		/* mess around with first argument (property) to become value
-		 * only, such that can see if it had an argument or not lateron */
-		if (type == INHERIT) {
-			argv[1] = property;
-			property[0] = '\0';
-		} else {
-			argv[1] = value;
-		}
-		return(command_merocom(argc, &argv[0], SHARE));
-	}
-
 	w = NULL;
 	orig = NULL;
 	for (i = 1; i < argc; i++) {
@@ -180,6 +168,22 @@ command_set(int argc, char *argv[], meroset type)
 						strerror(errno));
 				state |= 1;
 			}
+		} else if (strcmp(property, "shared") == 0) {
+			char share[4069];
+			char *res;
+			char *out;
+
+			if (type == INHERIT)
+				value = "";
+
+			snprintf(share, sizeof(share), "share=%s", value);
+			out = control_send(&res, mero_control, 0, stats->dbname, share);
+			if (out != NULL || strcmp(res, "OK") != 0) {
+				res = out == NULL ? res : out;
+				fprintf(stderr, "%s: %s\n", argv[0], res);
+				state |= 1;
+			}
+			free(res);
 		} else {
 			char *err;
 			readProps(props, stats->path);

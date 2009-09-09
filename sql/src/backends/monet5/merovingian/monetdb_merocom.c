@@ -20,8 +20,7 @@
 typedef enum {
 	START = 0,
 	STOP,
-	KILL,
-	SHARE
+	KILL
 } merocom;
 
 static void
@@ -47,9 +46,6 @@ command_merocom(int argc, char *argv[], merocom mode)
 		break;
 		case KILL:
 			type = "kill";
-		break;
-		case SHARE:
-			type = "share";
 		break;
 	}
 
@@ -107,7 +103,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 	} else {
 		sabdb *w = NULL;
 		orig = NULL;
-		for (i = mode == SHARE ? 2 : 1; i < argc; i++) {
+		for (i = 1; i < argc; i++) {
 			if (argv[i] != NULL) {
 				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
 					fprintf(stderr, "%s: internal error: %s\n", type, e);
@@ -165,20 +161,6 @@ command_merocom(int argc, char *argv[], merocom mode)
 				printf("%s: database is already running: %s\n",
 						type, stats->dbname);
 			}
-		} else if (mode == SHARE) {
-			char *value = argv[1];
-			char share[4069];
-
-			/* stay quiet, we're part of monetdb set property=value */
-
-			snprintf(share, sizeof(share), "share=%s", value);
-			out = control_send(&res, mero_control, 0, stats->dbname, share);
-			if (out != NULL || strcmp(res, "OK") != 0) {
-				res = out == NULL ? res : out;
-				printf("FAILED:\n%s", res);
-				ret = 1;
-			}
-			free(res);
 		}
 		stats = stats->next;
 	}
