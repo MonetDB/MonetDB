@@ -118,6 +118,10 @@ command_set(int argc, char *argv[], meroset type)
 
 	for (stats = orig; stats != NULL; stats = stats->next) {
 		if (strcmp(property, "name") == 0) {
+			char name[4069];
+			char *res;
+			char *out;
+
 			/* special virtual case */
 			if (type == INHERIT) {
 				fprintf(stderr, "inherit: cannot default to a database name\n");
@@ -128,11 +132,22 @@ command_set(int argc, char *argv[], meroset type)
 			if (value[0] == '\0')
 				continue;
 
-			if ((e = db_rename(stats->dbname, value)) != NULL) {
-				fprintf(stderr, "set: %s\n", e);
-				free(e);
-				state |= 1;
-				continue;
+			if (mero_running == 0) {
+				if ((e = db_rename(stats->dbname, value)) != NULL) {
+					fprintf(stderr, "set: %s\n", e);
+					free(e);
+					state |= 1;
+					continue;
+				}
+			} else {
+				snprintf(name, sizeof(name), "name=%s", value);
+				out = control_send(&res, mero_control, -1, stats->dbname, name);
+				if (out != NULL || strcmp(res, "OK") != 0) {
+					res = out == NULL ? res : out;
+					fprintf(stderr, "%s: %s\n", argv[0], res);
+					state |= 1;
+				}
+				free(res);
 			}
 		} else if (strcmp(property, "shared") == 0) {
 			char share[4069];

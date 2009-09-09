@@ -328,6 +328,56 @@ controlRunner(void *d)
 					SABAOTHfreeStatus(&topdb);
 					freeConfFile(props);
 					GDKfree(props);
+				} else if (strncmp(p, "name=", strlen("name=")) == 0) {
+					char *e;
+					confkeyval *kv, *props = getDefaultProps();
+
+					p += strlen("name=");
+					e = db_rename(q, p);
+					if (e != NULL) {
+						Mfprintf(_mero_ctlerr, "%s\n", e);
+						len = snprintf(buf2, sizeof(buf2), "%s\n", e);
+						send(msgsock, buf2, len, 0);
+						free(e);
+					} else {
+						if ((e = SABAOTHgetStatus(&stats, p)) != MAL_SUCCEED) {
+							Mfprintf(_mero_ctlerr, "share: SABAOTHgetStatus: "
+									"%s\n", e);
+							freeErr(e);
+							/* should not fail, since the rename was
+							 * already successful */
+						} else {
+							kv = findConfKey(_mero_props, "shared");
+							if (strcmp(kv->val, "no") != 0) {
+								readProps(props, stats->path);
+								kv = findConfKey(props, "shared");
+								if (stats->locked != 1 && 
+										(kv->val == NULL ||
+										 strcmp(kv->val, "no") != 0))
+								{
+									snprintf(buf2, sizeof(buf2),
+											"LEAV %s mapi:monetdb://%s:%hu/",
+											q, _mero_hostname, _mero_port);
+									broadcast(buf2);
+									snprintf(buf2, sizeof(buf2),
+											"ANNC %s%s%s mapi:monetdb://%s:%hu/ %d",
+											stats->dbname,
+											kv->val == NULL ? "" : "/",
+											kv->val == NULL ? "" : kv->val,
+											_mero_hostname,
+											_mero_port,
+											_mero_discoveryttl + 60);
+									broadcast(buf2);
+								}
+								freeConfFile(props);
+							}
+							SABAOTHfreeStatus(&stats);
+						}
+						Mfprintf(_mero_ctlout, "renamed database '%s' "
+								"to '%s'\n", q, p);
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send(msgsock, buf2, len, 0);
+					}
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
 				{

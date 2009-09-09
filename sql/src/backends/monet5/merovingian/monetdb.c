@@ -314,7 +314,6 @@ command_destroy(int argc, char *argv[])
 				ret = out;
 		}
 
-
 		if (ret == NULL) {
 			printf("successfully destroyed database '%s'\n", argv[i]);
 		} else {
