@@ -133,11 +133,11 @@ command_merocom(int argc, char *argv[], merocom mode)
 				printf("%s%sing database '%s'... ", type, mode == STOP ? "p" : "", stats->dbname);
 				fflush(stdout);
 				out = control_send(&res, mero_control, 0, stats->dbname, type);
-				if (out == NULL && strcmp(res, "OK\n") == 0) {
+				if (out == NULL && strcmp(res, "OK") == 0) {
 					printf("done\n");
 				} else {
 					res = out == NULL ? res : out;
-					printf("FAILED:\n%s", res);
+					printf("FAILED:\n%s\n", res);
 					ret = 1;
 				}
 				free(res);
@@ -149,11 +149,11 @@ command_merocom(int argc, char *argv[], merocom mode)
 				printf("starting database '%s'... ", stats->dbname);
 				fflush(stdout);
 				out = control_send(&res, mero_control, 0, stats->dbname, type);
-				if (out == NULL && strcmp(res, "OK\n") == 0) {
+				if (out == NULL && strcmp(res, "OK") == 0) {
 					printf("done\n");
 				} else {
 					res = out == NULL ? res : out;
-					printf("FAILED:\n%s", res);
+					printf("FAILED:\n%s\n", res);
 					ret = 1;
 				}
 				free(res);
