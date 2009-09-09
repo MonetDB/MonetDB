@@ -38,7 +38,6 @@ MONETDB_TMP_SUBS = \
 	monetdb_lock.c \
 	monetdb_merocom.c \
 	monetdb_release.c \
-	monetdb_set.c \
 	monetdb_status.c
 
 EXTRA_DIST = $(man_MANS) \
