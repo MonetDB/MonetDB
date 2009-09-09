@@ -199,6 +199,7 @@ controlRunner(void *d)
 					sabdb *topdb;
 					err e;
 					confkeyval *kv, *props = getDefaultProps();
+					char *value;
 
 					kv = findConfKey(_mero_props, "shared");
 					if (strcmp(kv->val, "no") == 0) {
@@ -222,6 +223,32 @@ controlRunner(void *d)
 						continue;
 					}
 
+					/* check if tag matches [A-Za-z0-9./]+ */
+					p += strlen("share=");
+					value = p;
+					while (*value != '\0') {
+						if (!(
+									(*value >= 'A' && *value <= 'Z') ||
+									(*value >= 'a' && *value <= 'z') ||
+									(*value >= '0' && *value <= '9') ||
+									(*value == '.' || *value == '/')
+							 ))
+						{
+							len = snprintf(buf2, sizeof(buf2),
+									"invalid character '%c' at %d "
+									"in tag name '%s'\n",
+									*value, (int)(value - p), p);
+							send(msgsock, buf2, len, 0);
+							buf2[len] = '\0';
+							Mfprintf(stderr, "set: %s\n", buf2);
+							value = NULL;
+							continue;
+						}
+						value++;
+					}
+					if (value == NULL)
+						continue;
+
 					topdb = stats;
 					while (stats != NULL) {
 						if (strcmp(q, stats->dbname) == 0) {
@@ -234,7 +261,6 @@ controlRunner(void *d)
 										stats->dbname, _mero_hostname, _mero_port);
 								broadcast(buf2);
 							}
-							p += strlen("share=");
 							if (kv->val != NULL) {
 								GDKfree(kv->val);
 								kv->val = NULL;

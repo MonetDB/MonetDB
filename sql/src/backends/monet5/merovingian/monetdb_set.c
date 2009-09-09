@@ -92,22 +92,6 @@ command_set(int argc, char *argv[], meroset type)
 			property[0] = '\0';
 		} else {
 			argv[1] = value;
-			/* check if tag matches [A-Za-z0-9./]+ */
-			while (*value != '\0') {
-				if (!(
-						(*value >= 'A' && *value <= 'Z') ||
-						(*value >= 'a' && *value <= 'z') ||
-						(*value >= '0' && *value <= '9') ||
-						(*value == '.' || *value == '/')
-				   ))
-				{
-					fprintf(stderr, "set: invalid character '%c' at %d "
-							"in tag name '%s'\n",
-							*value, (int)(value - argv[1]), argv[1]);
-					exit(1);
-				}
-				value++;
-			}
 		}
 		return(command_merocom(argc, &argv[0], SHARE));
 	}
