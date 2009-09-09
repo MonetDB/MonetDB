@@ -187,7 +187,10 @@ controlRunner(void *d)
 						send(msgsock, buf2, len, 0);
 						free(e);
 					} else {
-						/* we can leave without tag, will remove all */
+						/* we can leave without tag, will remove all,
+						 * generates an "leave request for unknown
+						 * database" if not shared (e.g. when under
+						 * maintenance) */
 						snprintf(buf2, sizeof(buf2),
 								"LEAV %s mapi:monetdb://%s:%hu/",
 								q, _mero_hostname, _mero_port);
