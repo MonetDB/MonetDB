@@ -170,10 +170,11 @@ controlRunner(void *d)
 						Mfprintf(stderr, "failed to create "
 								"database '%s': %s\n", q, getErrMsg(e));
 						len = snprintf(buf2, sizeof(buf2),
-								"create: %s\n", getErrMsg(e));
+								"%s\n", getErrMsg(e));
 						send(msgsock, buf2, len, 0);
 						freeErr(e);
 					} else {
+						Mfprintf(stdout, "created database '%s'\n", q);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}
@@ -183,10 +184,13 @@ controlRunner(void *d)
 						Mfprintf(stderr, "failed to destroy "
 								"database '%s': %s\n", q, getErrMsg(e));
 						len = snprintf(buf2, sizeof(buf2),
-								"destroy: %s\n", getErrMsg(e));
+								"%s\n", getErrMsg(e));
 						send(msgsock, buf2, len, 0);
 						freeErr(e);
 					} else {
+						/* FIXME: immediately deregister with neighbour
+						 * discovery service */
+						Mfprintf(stdout, "destroyed database '%s'\n", q);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}

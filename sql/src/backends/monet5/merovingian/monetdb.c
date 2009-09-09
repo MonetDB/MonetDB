@@ -76,6 +76,7 @@ typedef char* err;
 
 static str dbfarm = NULL;
 static int mero_running = 0;
+static char mero_control[8096];
 static int TERMWIDTH = 80;  /* default to classic terminal width */
 
 static void
@@ -218,7 +219,14 @@ command_create(int argc, char *argv[])
 		if (argv[i] == NULL)
 			continue;
 
-		ret = db_create(argv[i]);
+		if (mero_running == 0) {
+			ret = db_create(argv[i]);
+		} else {
+			char *out;
+			ret = control_send(&out, mero_control, -1, argv[i], "create");
+			if (ret == NULL && strcmp(out, "OK\n") != 0)
+				ret = out;
+		}
 
 		if (ret == NULL) {
 			printf("successfully created database '%s' "
@@ -297,7 +305,15 @@ command_destroy(int argc, char *argv[])
 		if (argv[i] == NULL)
 			continue;
 
-		ret = db_destroy(argv[i]);
+		if (mero_running == 0) {
+			ret = db_destroy(argv[i]);
+		} else {
+			char *out;
+			ret = control_send(&out, mero_control, -1, argv[i], "destroy");
+			if (ret == NULL && strcmp(out, "OK\n") != 0)
+				ret = out;
+		}
+
 
 		if (ret == NULL) {
 			printf("successfully destroyed database '%s'\n", argv[i]);
@@ -394,6 +410,10 @@ main(int argc, char *argv[])
 		fprintf(stderr, "warning: merovingian is not running\n");
 		mero_running = 0;
 	}
+
+	/* set path to control channel */
+	snprintf(mero_control, sizeof(mero_control),
+			"%s/.merovingian_control", dbfarm);
 
 	/* initialise Sabaoth so it knows where to look */
 	SABAOTHinit(dbfarm, NULL);

@@ -23,15 +23,13 @@ typedef enum {
 	KILL,
 	SHARE
 } merocom;
-/*	CREATE,
-	DESTROY */
 
 static void
 command_merocom(int argc, char *argv[], merocom mode)
 {
 	int doall = 0;
-	char path[8096];
 	char *res;
+	char *out;
 	int i;
 	err e;
 	sabdb *orig;
@@ -39,9 +37,6 @@ command_merocom(int argc, char *argv[], merocom mode)
 	char *type = NULL;
 	char *p;
 	int ret = 0;
-
-	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
-	path[8095] = '\0';
 
 	switch (mode) {
 		case START:
@@ -141,11 +136,11 @@ command_merocom(int argc, char *argv[], merocom mode)
 			if (stats->state == SABdbRunning) {
 				printf("%s%sing database '%s'... ", type, mode == STOP ? "p" : "", stats->dbname);
 				fflush(stdout);
-				control_send(&res, path, 0, stats->dbname, type);
-				if (strcmp(res, "OK\n") == 0) {
+				out = control_send(&res, mero_control, 0, stats->dbname, type);
+				if (out == NULL && strcmp(res, "OK\n") == 0) {
 					printf("done\n");
 				} else {
-					printf("FAILED:\n%s", res);
+					printf("FAILED:\n%s", (out == NULL ? res : out));
 					ret = 1;
 				}
 				free(res);
@@ -156,11 +151,11 @@ command_merocom(int argc, char *argv[], merocom mode)
 			if (stats->state != SABdbRunning) {
 				printf("starting database '%s'... ", stats->dbname);
 				fflush(stdout);
-				control_send(&res, path, 0, stats->dbname, type);
-				if (strcmp(res, "OK\n") == 0) {
+				out = control_send(&res, mero_control, 0, stats->dbname, type);
+				if (out == NULL && strcmp(res, "OK\n") == 0) {
 					printf("done\n");
 				} else {
-					printf("FAILED:\n%s", res);
+					printf("FAILED:\n%s", (out == NULL ? res : out));
 					ret = 1;
 				}
 				free(res);
@@ -175,9 +170,9 @@ command_merocom(int argc, char *argv[], merocom mode)
 			/* stay quiet, we're part of monetdb set property=value */
 
 			snprintf(share, sizeof(share), "share=%s", value);
-			control_send(&res, path, 0, stats->dbname, share);
-			if (strcmp(res, "OK\n") != 0) {
-				printf("FAILED:\n%s", res);
+			out = control_send(&res, mero_control, 0, stats->dbname, share);
+			if (out != NULL || strcmp(res, "OK\n") != 0) {
+				printf("FAILED:\n%s", (out == NULL ? res : out));
 				ret = 1;
 			}
 			free(res);
