@@ -155,6 +155,10 @@ static int _mero_discoveryttl = 600;
 static FILE *_mero_discout = NULL;
 /* stream to the stderr for the neighbour discovery service */
 static FILE *_mero_discerr = NULL;
+/* stream to the stdout for the control runner */
+static FILE *_mero_ctlout = NULL;
+/* stream to the stderr for the control runner */
+static FILE *_mero_ctlerr = NULL;
 /* broadcast socket for announcements */
 static int _mero_broadcastsock;
 /* broadcast address/port */
@@ -744,6 +748,26 @@ main(int argc, char *argv[])
 	_mero_discerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
 	d->dbname = "discovery";
+	d->next = NULL;
+
+	/* separate entry for the control runner */
+	d = d->next = alloca(sizeof(struct _dpair));
+	if (pipe(pfd) == -1) {
+		Mfprintf(stderr, "unable to create pipe: %s\n",
+				strerror(errno));
+		MERO_EXIT(1);
+	}
+	d->out = pfd[0];
+	_mero_ctlout = fdopen(pfd[1], "a");
+	if (pipe(pfd) == -1) {
+		Mfprintf(stderr, "unable to create pipe: %s\n",
+				strerror(errno));
+		MERO_EXIT(1);
+	}
+	d->err = pfd[0];
+	_mero_ctlerr = fdopen(pfd[1], "a");
+	d->pid = getpid();
+	d->dbname = "control";
 	d->next = NULL;
 
 	/* figure out our hostname */

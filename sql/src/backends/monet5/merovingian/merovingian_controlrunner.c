@@ -81,8 +81,8 @@ controlRunner(void *d)
 						continue;
 					}
 					/* hmmm error ... give up */
-					Mfprintf(stderr, "error reading from control channel: %s\n",
-							strerror(errno));
+					Mfprintf(_mero_ctlerr, "error reading from control "
+							"channel: %s\n", strerror(errno));
 					break;
 				} else {
 					buf[pos] = '\0';
@@ -93,8 +93,8 @@ controlRunner(void *d)
 			p = strchr(q, '\n');
 			if (p == NULL) {
 				/* skip, must be garbage */
-				Mfprintf(stderr, "skipping garbage on control channel: %s\n",
-						buf);
+				Mfprintf(_mero_ctlerr, "skipping garbage on control "
+						"channel: %s\n", buf);
 				pos = 0;
 				continue;
 			}
@@ -107,15 +107,14 @@ controlRunner(void *d)
 
 			/* format is simple: database<space>command */
 			if ((p = strchr(q, ' ')) == NULL) {
-				Mfprintf(stderr, "malformed control signal: %s\n", q);
+				Mfprintf(_mero_ctlerr, "malformed control signal: %s\n", q);
 			} else {
 				*p++ = '\0';
 				if (strcmp(p, "start") == 0) {
 					err e;
-					Mfprintf(stdout, "starting database '%s' "
-							"due to control signal\n", q);
+					Mfprintf(_mero_ctlout, "starting database '%s'\n", q);
 					if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
-						Mfprintf(stderr, "failed to fork mserver: %s\n",
+						Mfprintf(_mero_ctlerr, "failed to fork mserver: %s\n",
 								getErrMsg(e));
 						len = snprintf(buf2, sizeof(buf2),
 								"starting '%s' failed: %s\n",
@@ -141,12 +140,12 @@ controlRunner(void *d)
 					while (dp != NULL) {
 						if (strcmp(dp->dbname, q) == 0) {
 							if (strcmp(p, "stop") == 0) {
-								Mfprintf(stdout, "stopping database '%s' "
-										"due to control signal\n", q);
+								Mfprintf(_mero_ctlout, "stopping "
+										"database '%s'\n", q);
 								terminateProcess(dp);
 							} else {
-								Mfprintf(stdout, "killing database '%s' "
-										"due to control signal\n", q);
+								Mfprintf(_mero_ctlout, "killing "
+										"database '%s'\n", q);
 								kill(dp->pid, SIGKILL);
 							}
 							len = snprintf(buf2, sizeof(buf2), "OK\n");
@@ -156,7 +155,7 @@ controlRunner(void *d)
 						dp = dp->next;
 					}
 					if (dp == NULL) {
-						Mfprintf(stderr, "received control stop signal for "
+						Mfprintf(_mero_ctlerr, "received stop signal for "
 								"database not under merovingian control: %s\n",
 								q);
 						len = snprintf(buf2, sizeof(buf2),
@@ -167,30 +166,33 @@ controlRunner(void *d)
 				} else if (strcmp(p, "create") == 0) {
 					err e = db_create(q);
 					if (e != NO_ERR) {
-						Mfprintf(stderr, "failed to create "
+						Mfprintf(_mero_ctlerr, "failed to create "
 								"database '%s': %s\n", q, getErrMsg(e));
 						len = snprintf(buf2, sizeof(buf2),
 								"%s\n", getErrMsg(e));
 						send(msgsock, buf2, len, 0);
-						freeErr(e);
+						free(e);
 					} else {
-						Mfprintf(stdout, "created database '%s'\n", q);
+						Mfprintf(_mero_ctlout, "created database '%s'\n", q);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}
 				} else if (strcmp(p, "destroy") == 0) {
 					err e = db_destroy(q);
 					if (e != NO_ERR) {
-						Mfprintf(stderr, "failed to destroy "
+						Mfprintf(_mero_ctlerr, "failed to destroy "
 								"database '%s': %s\n", q, getErrMsg(e));
 						len = snprintf(buf2, sizeof(buf2),
 								"%s\n", getErrMsg(e));
 						send(msgsock, buf2, len, 0);
-						freeErr(e);
+						free(e);
 					} else {
-						/* FIXME: immediately deregister with neighbour
-						 * discovery service */
-						Mfprintf(stdout, "destroyed database '%s'\n", q);
+						/* we can leave without tag, will remove all */
+						snprintf(buf2, sizeof(buf2),
+								"LEAV %s mapi:monetdb://%s:%hu/",
+								q, _mero_hostname, _mero_port);
+						broadcast(buf2);
+						Mfprintf(_mero_ctlout, "destroyed database '%s'\n", q);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}
@@ -208,8 +210,8 @@ controlRunner(void *d)
 								"discovery service is globally disabled, "
 								"enable it first\n");
 						send(msgsock, buf2, len, 0);
-						Mfprintf(stderr, "share: cannot perform client share "
-								"request: discovery service is globally "
+						Mfprintf(_mero_ctlerr, "share: cannot perform client "
+								"share request: discovery service is globally "
 								"disabled in %s\n", _mero_conffile);
 						continue;
 					}
@@ -218,7 +220,8 @@ controlRunner(void *d)
 						len = snprintf(buf2, sizeof(buf2),
 								"internal error, please review the logs\n");
 						send(msgsock, buf2, len, 0);
-						Mfprintf(stderr, "share: SABAOTHgetStatus: %s\n", e);
+						Mfprintf(_mero_ctlerr, "share: SABAOTHgetStatus: "
+								"%s\n", e);
 						freeErr(e);
 						continue;
 					}
@@ -240,7 +243,7 @@ controlRunner(void *d)
 									*value, (int)(value - p), p);
 							send(msgsock, buf2, len, 0);
 							buf2[len] = '\0';
-							Mfprintf(stderr, "set: %s\n", buf2);
+							Mfprintf(_mero_ctlerr, "set: %s\n", buf2);
 							value = NULL;
 							continue;
 						}
@@ -258,7 +261,8 @@ controlRunner(void *d)
 								/* we can leave without tag, will remove all */
 								snprintf(buf2, sizeof(buf2),
 										"LEAV %s mapi:monetdb://%s:%hu/",
-										stats->dbname, _mero_hostname, _mero_port);
+										stats->dbname, _mero_hostname,
+										_mero_port);
 								broadcast(buf2);
 							}
 							if (kv->val != NULL) {
@@ -297,12 +301,15 @@ controlRunner(void *d)
 									_mero_port, _mero_discoveryttl + 60);
 							broadcast(buf2);
 							writeProps(props, stats->path);
+							Mfprintf(_mero_ctlout, "shared database '%s' "
+									"as '%s%s'\n", stats->dbname,
+									stats->dbname, p);
 							break;
 						}
 						stats = stats->next;
 					}
 					if (stats == NULL) {
-						Mfprintf(stderr, "received control share signal for "
+						Mfprintf(_mero_ctlerr, "received share signal for "
 								"database not under merovingian control: %s\n",
 								q);
 						len = snprintf(buf2, sizeof(buf2),
@@ -335,11 +342,13 @@ controlRunner(void *d)
 
 					pthread_mutex_unlock(&_mero_remotedb_lock);
 
+					Mfprintf(_mero_ctlout, "served neighbour list\n");
+
 					/* because this command is multi line, you can't
 					 * combine it, disconnect the client */
 					break;
 				} else {
-					Mfprintf(stderr, "unknown control command: %s\n", p);
+					Mfprintf(_mero_ctlerr, "unknown control command: %s\n", p);
 					len = snprintf(buf2, sizeof(buf2),
 							"unknown command: %s\n", p);
 					send(msgsock, buf2, len, 0);

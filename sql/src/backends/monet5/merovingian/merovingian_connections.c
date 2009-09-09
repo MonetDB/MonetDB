@@ -92,7 +92,7 @@ openConnectionUDP(int *ret, unsigned short port)
 	char host[512];
 
 	if (port == 0) {
-		Mfprintf(stdout, "neighbour discovery service disabled "
+		Mfprintf(_mero_discout, "neighbour discovery service disabled "
 				"by configuration\n");
 		*ret = -1;
 		return(NO_ERR);
@@ -163,7 +163,7 @@ openConnectionUNIX(int *ret, char *path)
 	/* keep queue of 5 */
 	listen(sock, 5);
 
-	Mfprintf(stdout, "handling commands over UNIX socket %s\n", path);
+	Mfprintf(_mero_ctlout, "handling commands over UNIX socket %s\n", path);
 
 	*ret = sock;
 	return(NO_ERR);
