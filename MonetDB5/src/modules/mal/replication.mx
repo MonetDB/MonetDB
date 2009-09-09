@@ -482,9 +482,7 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str val= NULL;
 	int i, len;
 
-#ifdef _DEBUG_REPLICATOR_
 	(void) cntxt;
-#endif
 	if ( repFile == NULL)
 		throw(MAL,"replication.append", RUNTIME_FILE_NOT_FOUND);
 
@@ -525,9 +523,7 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i, l, len;
 	str msg;
 
-#ifdef _DEBUG_REPLICATOR_
 	(void) cntxt;
-#endif
 	if ( repFile == NULL)
 		throw(MAL,"replication.append", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
@@ -585,9 +581,7 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str msg;
 	int i, l, len;
 
-#ifdef _DEBUG_REPLICATOR_
 	(void) cntxt;
-#endif
 	if ( repFile == NULL)
 		throw(MAL,"replication.delete", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
