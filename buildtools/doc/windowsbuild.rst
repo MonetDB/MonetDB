@@ -286,11 +286,16 @@ OpenSSL
 
 The OpenSSL__ library is used during authentication of a MonetDB
 client program with the MonetDB server.  The OpenSSL library is
-required for the MonetDB5 component.
+required for the MonetDB5 component, and hence implicitly required for
+the clients component when it needs to talk to a MonetDB5 server.
 
 Download the source from http://www.openssl.org/.  We used the latest
 stable version (0.9.8k).  Follow the instructions in the file
 ``INSTALL.W32`` or ``INSTALL.W64``.
+
+Fix the ``OPENSSL`` definitions in ``MonetDB\NT\winrules.msc`` so that
+they refer to the location where you installed the library and call
+``nmake`` with the extra parameter ``HAVE_OPENSSL=1``.
 
 __ http://www.openssl.org/
 
@@ -701,8 +706,8 @@ in the same way.  Do note the order in which the components need to be
 built and installed: MonetDB, clients, MonetDB4/MonetDB5,
 sql/pathfinder.  There is no dependency between MonetDB4 and MonetDB5.
 MonetDB4 is a prerequisite for pathfinder, and pathfinder can use
-MonetDB5 (there is some very preliminary support).  Sql requires one
-or both of MonetDB4 and MonetDB5 (the latter is recommended).
+MonetDB5 (there is some very preliminary support).  Sql requires
+MonetDB5.
 
 For each of the components, do the following::
 
@@ -732,6 +737,7 @@ available.  The following parameters are possible:
   support (i.e., module rdf);
 - ``HAVE_RAPTOR=1`` - the raptor library is available;
 - ``HAVE_NETCDF=1`` - the netcdf library is available;
+- ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
 - ``HAVE_PERL=1`` - Perl is available;
 - ``HAVE_PERL_DEVEL=1`` - Perl development is possible (include files
   and libraries are available--also need ``HAVE_PERL=1``);
