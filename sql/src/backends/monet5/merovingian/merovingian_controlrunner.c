@@ -326,6 +326,52 @@ controlRunner(void *d)
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}
+				} else if (strchr(p, '=') != NULL) {
+					char *val;
+					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+						len = snprintf(buf2, sizeof(buf2),
+								"internal error, please review the logs\n");
+						send(msgsock, buf2, len, 0);
+						Mfprintf(_mero_ctlerr, "share: SABAOTHgetStatus: "
+								"%s\n", e);
+						freeErr(e);
+						continue;
+					}
+					if (stats == NULL) {
+						Mfprintf(_mero_ctlerr, "received property signal for "
+								"unknown database: %s\n", q);
+						len = snprintf(buf2, sizeof(buf2),
+								"unknown database: %s\n", q);
+						send(msgsock, buf2, len, 0);
+						continue;
+					}
+
+					val = strchr(p, '=');
+					*val++ = '\0';
+					if (*val == '\0')
+						val = NULL;
+					if ((e = setProp(stats->path, p, val)) != NULL) {
+						Mfprintf(_mero_ctlerr, "setting property failed: %s\n",
+								e);
+						len = snprintf(buf2, sizeof(buf2),
+								"%s\n", e);
+						send(msgsock, buf2, len, 0);
+						free(e);
+						SABAOTHfreeStatus(&stats);
+						continue;
+					}
+
+					SABAOTHfreeStatus(&stats);
+
+					if (val != NULL) {
+						Mfprintf(_mero_ctlout, "set property '%s' for "
+								"database '%s' to '%s'\n", p, q, val);
+					} else {
+						Mfprintf(_mero_ctlout, "inherited property '%s' for "
+								"database '%s'\n", p, q);
+					}
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send(msgsock, buf2, len, 0);
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
 				{

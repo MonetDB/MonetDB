@@ -76,6 +76,8 @@ command_set(int argc, char *argv[], meroset type)
 				*p++ = '=';
 				value = p;
 				p = argv[i];
+			} else {
+				snprintf(property, sizeof(property), "%s", argv[i]);
 			}
 			argv[i] = NULL;
 		}
@@ -83,7 +85,7 @@ command_set(int argc, char *argv[], meroset type)
 
 	if (property[0] == '\0') {
 		fprintf(stderr, "%s: need a property argument\n", argv[0]);
-		command_help(2, &argv[0]);
+		command_help(2, &argv[-1]);
 		exit(1);
 	}
 
@@ -145,7 +147,6 @@ command_set(int argc, char *argv[], meroset type)
 				fprintf(stderr, "%s: %s\n", argv[0], e);
 				free(e);
 				state |= 1;
-				continue;
 			}
 
 			SABAOTHfreeStatus(&stats);
@@ -153,6 +154,10 @@ command_set(int argc, char *argv[], meroset type)
 			char *res;
 			char *out;
 
+			if (type == INHERIT) {
+				strncat(property, "=", sizeof(property));
+				p = property;
+			}
 			out = control_send(&res, mero_control, 0, argv[i], p);
 			if (out != NULL || strcmp(res, "OK") != 0) {
 				res = out == NULL ? res : out;
