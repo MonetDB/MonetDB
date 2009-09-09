@@ -217,7 +217,7 @@ comment "Remove the replica function from the module";
 #include <mapilib/Mapi.h>
 #include "mtime.h"
 
-#define _DEBUG_REPLICATOR_
+/* #define _DEBUG_REPLICATOR_ */
 
 #ifdef WIN32
 #ifndef LIBREPLICATOR
@@ -245,8 +245,6 @@ replication_export str SLAVEopen(int *ret, int *tag, timestamp *t);
 replication_export str SLAVEclose(int *ret, str *str, int *tag, timestamp *t);
 replication_export str SLAVEdrop(int *ret, str *tag);
 #endif /* _REPLICATOR_H */
-@-
-The active slaves are administered in a persistent table.
 @c
 #include "mal_config.h"
 #include "replication.h"
@@ -260,21 +258,22 @@ requests before they are shipped to the log.
 The tag is returned for marking all related updates.
 The final code should contain a loop to determine the last replication tag.
 @c
-#define MASTER "master"
-#define SLAVE "slave"
+#define MASTER "skipper"
+#define SLAVE "sailor" /* FIXME: not used */
 #define REPLICA "/log_%d"
 #define REPLICABLOCK 1000
 
-static MT_Lock repLck;
-static int replicationTag;
-static stream *repFile;
-
-static struct MASTERRECORD{
+static struct MASTERRECORD {
 	char *buf;
-	int limit, top;
+	int limit;
+	int top;
 	int tag;
 } *master;
-static int mtop = 0 , mlimit = 0;
+static int mtop = 0;
+static int mlimit = 0;
+static MT_Lock repLck;
+static int replicationTag = -1;
+static stream *repFile;
 
 int
 MASTERroleEnabled(void)
