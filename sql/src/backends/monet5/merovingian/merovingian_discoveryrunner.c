@@ -78,7 +78,8 @@ discoveryRunner(void *d)
 				readProps(ckv, stats->path);
 				kv = findConfKey(ckv, "shared");
 				val = kv->val == NULL ? "" : kv->val;
-				if (strcmp(val, "no") != 0) {
+				/* skip databases under maintenance */
+				if (strcmp(val, "no") != 0 && stats->locked != 1) {
 					/* craft ANNC message for this db */
 					if (strcmp(val, "yes") == 0)
 						val = "";

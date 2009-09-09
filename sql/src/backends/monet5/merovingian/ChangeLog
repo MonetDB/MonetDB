@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  09 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_discoveryrunner.c:
+  No longer announce databases that are under maintenance, this allows them to
+  be pulled out of the cluster easily
+
   04 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_forkmserver.c,
   monetdb.c, monetdb_get.c, properties.c:
   Add master property of boolean value that translates into
