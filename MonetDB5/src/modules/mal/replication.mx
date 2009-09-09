@@ -215,7 +215,6 @@ comment "Remove the replica function from the module";
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 #include <mapilib/Mapi.h>
-#include "remote.h"
 #include "mtime.h"
 
 #define _DEBUG_REPLICATOR_
