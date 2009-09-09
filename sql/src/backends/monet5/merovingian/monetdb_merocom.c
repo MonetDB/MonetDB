@@ -173,7 +173,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 
 			snprintf(share, sizeof(share), "share=%s", value);
 			out = control_send(&res, mero_control, 0, stats->dbname, share);
-			if (out != NULL || strcmp(res, "OK\n") != 0) {
+			if (out != NULL || strcmp(res, "OK") != 0) {
 				res = out == NULL ? res : out;
 				printf("FAILED:\n%s", res);
 				ret = 1;

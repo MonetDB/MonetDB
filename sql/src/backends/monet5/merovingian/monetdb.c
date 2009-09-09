@@ -224,7 +224,7 @@ command_create(int argc, char *argv[])
 		} else {
 			char *out;
 			ret = control_send(&out, mero_control, -1, argv[i], "create");
-			if (ret == NULL && strcmp(out, "OK\n") != 0)
+			if (ret == NULL && strcmp(out, "OK") != 0)
 				ret = out;
 		}
 
@@ -310,7 +310,7 @@ command_destroy(int argc, char *argv[])
 		} else {
 			char *out;
 			ret = control_send(&out, mero_control, -1, argv[i], "destroy");
-			if (ret == NULL && strcmp(out, "OK\n") != 0)
+			if (ret == NULL && strcmp(out, "OK") != 0)
 				ret = out;
 		}
 
