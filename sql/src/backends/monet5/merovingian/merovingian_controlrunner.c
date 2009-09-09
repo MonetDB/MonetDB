@@ -18,6 +18,50 @@
  */
 
 static void
+leavedb(char *name)
+{
+	char buf[128];
+	snprintf(buf, sizeof(buf),
+			"LEAV %s mapi:monetdb://%s:%hu/",
+			name, _mero_hostname, _mero_port);
+	broadcast(buf);
+}
+
+static void
+leavedbS(sabdb *stats)
+{
+	confkeyval *kv, *props = getDefaultProps();
+	readProps(props, stats->path);
+	kv = findConfKey(props, "shared");
+	if (stats->locked != 1 && (kv->val == NULL || strcmp(kv->val, "no") != 0))
+		leavedb(stats->dbname);
+	freeConfFile(props);
+	GDKfree(props);
+}
+
+static void
+anncdbS(sabdb *stats)
+{
+	char buf[128];
+	confkeyval *kv, *props = getDefaultProps();
+	readProps(props, stats->path);
+	kv = findConfKey(props, "shared");
+	if (stats->locked != 1 && (kv->val == NULL || strcmp(kv->val, "no") != 0)) {
+		snprintf(buf, sizeof(buf),
+				"ANNC %s%s%s mapi:monetdb://%s:%hu/ %d",
+				stats->dbname,
+				kv->val == NULL ? "" : "/",
+				kv->val == NULL ? "" : kv->val,
+				_mero_hostname,
+				_mero_port,
+				_mero_discoveryttl + 60);
+		broadcast(buf);
+	}
+	freeConfFile(props);
+	GDKfree(props);
+}
+
+static void
 controlRunner(void *d)
 {
 	int sock = *(int *)d;
@@ -191,21 +235,17 @@ controlRunner(void *d)
 						 * generates an "leave request for unknown
 						 * database" if not shared (e.g. when under
 						 * maintenance) */
-						snprintf(buf2, sizeof(buf2),
-								"LEAV %s mapi:monetdb://%s:%hu/",
-								q, _mero_hostname, _mero_port);
-						broadcast(buf2);
+						leavedb(q);
 						Mfprintf(_mero_ctlout, "destroyed database '%s'\n", q);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}
 				} else if (strncmp(p, "share=", strlen("share=")) == 0) {
 					sabdb *stats;
-					sabdb *topdb;
 					err e;
-					confkeyval *kv, *props = getDefaultProps();
-					char *value;
+					confkeyval *kv;
 
+					/* bail out if we don't do discovery at all */
 					kv = findConfKey(_mero_props, "shared");
 					if (strcmp(kv->val, "no") == 0) {
 						/* can't do much */
@@ -219,7 +259,7 @@ controlRunner(void *d)
 						continue;
 					}
 
-					if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
 						len = snprintf(buf2, sizeof(buf2),
 								"internal error, please review the logs\n");
 						send(msgsock, buf2, len, 0);
@@ -228,109 +268,39 @@ controlRunner(void *d)
 						freeErr(e);
 						continue;
 					}
-
-					/* check if tag matches [A-Za-z0-9./]+ */
-					p += strlen("share=");
-					value = p;
-					while (*value != '\0') {
-						if (!(
-									(*value >= 'A' && *value <= 'Z') ||
-									(*value >= 'a' && *value <= 'z') ||
-									(*value >= '0' && *value <= '9') ||
-									(*value == '.' || *value == '/')
-							 ))
-						{
-							len = snprintf(buf2, sizeof(buf2),
-									"invalid character '%c' at %d "
-									"in tag name '%s'\n",
-									*value, (int)(value - p), p);
-							send(msgsock, buf2, len, 0);
-							buf2[len] = '\0';
-							Mfprintf(_mero_ctlerr, "set: %s", buf2);
-							value = NULL;
-							break;
-						}
-						value++;
-					}
-					if (value == NULL)
-						continue;
-
-					topdb = stats;
-					while (stats != NULL) {
-						if (strcmp(q, stats->dbname) == 0) {
-							readProps(props, stats->path);
-							kv = findConfKey(props, "shared");
-							if (stats->locked != 1 && 
-									(kv->val == NULL ||
-									 strcmp(kv->val, "no") != 0))
-							{
-								/* we can leave without tag, will remove all */
-								snprintf(buf2, sizeof(buf2),
-										"LEAV %s mapi:monetdb://%s:%hu/",
-										stats->dbname, _mero_hostname,
-										_mero_port);
-								broadcast(buf2);
-							}
-							if (kv->val != NULL) {
-								GDKfree(kv->val);
-								kv->val = NULL;
-							}
-							/* the prophecy:
-							 * <empty> inherit (bit useless)
-							 * yes     share without tag
-							 * no      don't share
-							 * *       share with * as tag
-							 */
-							if (*p == '\0') {
-								/* empty, inherit (e.g. remove local opt),
-								 * but keep enabled, otherwise we never
-								 * came here */
-							} else if (strcmp(p, "yes") == 0) {
-								/* make this share an empty tag */
-								*p = '\0';
-								kv->val = GDKstrdup("yes");
-							} else if (strcmp(p, "no") == 0) {
-								/* do not share (any more) */
-								kv->val = GDKstrdup("no");
-								writeProps(props, stats->path);
-								break;
-							} else {
-								/* tag, include '/' for easy life
-								 * afterwards */
-								*--p = '/';
-								kv->val = GDKstrdup(p + 1);
-							}
-
-							snprintf(buf2, sizeof(buf2),
-									"ANNC %s%s mapi:monetdb://%s:%hu/ %d",
-									stats->dbname, p, _mero_hostname,
-									_mero_port, _mero_discoveryttl + 60);
-							if (stats->locked != 1)
-								broadcast(buf2);
-							writeProps(props, stats->path);
-							Mfprintf(_mero_ctlout, "shared database '%s' "
-									"as '%s%s'\n", stats->dbname,
-									stats->dbname, p);
-							break;
-						}
-						stats = stats->next;
-					}
 					if (stats == NULL) {
 						Mfprintf(_mero_ctlerr, "received share signal for "
-								"database not under merovingian control: %s\n",
-								q);
+								"unknown database: %s\n", q);
 						len = snprintf(buf2, sizeof(buf2),
-								"'%s' is not controlled by merovingian\n", q);
+								"unknown database: %s\n", q);
+						send(msgsock, buf2, len, 0);
+						continue;
+					}
+
+					p += strlen("share=");
+					if (*p == '\0') {
+						/* empty, inherit (e.g. remove local opt) */
+						p = NULL;
+					}
+
+					leavedbS(stats);
+					if ((e = setProp(stats->path, "shared", p)) != NULL) {
+						/* reannounce again, there was an error */
+						anncdbS(stats);
+						Mfprintf(_mero_ctlerr, "failed to share: %s\n", e);
+						len = snprintf(buf2, sizeof(buf2), "%s\n", e);
+						send(msgsock, buf2, len, 0);
+					} else {
+						anncdbS(stats);
+						Mfprintf(_mero_ctlout, "shared database '%s' "
+								"as '%s%s'\n", stats->dbname,
+								stats->dbname, p);
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}
-					len = snprintf(buf2, sizeof(buf2), "OK\n");
-					send(msgsock, buf2, len, 0);
-					SABAOTHfreeStatus(&topdb);
-					freeConfFile(props);
-					GDKfree(props);
+					SABAOTHfreeStatus(&stats);
 				} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 					char *e;
-					confkeyval *kv, *props = getDefaultProps();
 
 					p += strlen("name=");
 					e = db_rename(q, p);
@@ -347,30 +317,8 @@ controlRunner(void *d)
 							/* should not fail, since the rename was
 							 * already successful */
 						} else {
-							kv = findConfKey(_mero_props, "shared");
-							if (strcmp(kv->val, "no") != 0) {
-								readProps(props, stats->path);
-								kv = findConfKey(props, "shared");
-								if (stats->locked != 1 && 
-										(kv->val == NULL ||
-										 strcmp(kv->val, "no") != 0))
-								{
-									snprintf(buf2, sizeof(buf2),
-											"LEAV %s mapi:monetdb://%s:%hu/",
-											q, _mero_hostname, _mero_port);
-									broadcast(buf2);
-									snprintf(buf2, sizeof(buf2),
-											"ANNC %s%s%s mapi:monetdb://%s:%hu/ %d",
-											stats->dbname,
-											kv->val == NULL ? "" : "/",
-											kv->val == NULL ? "" : kv->val,
-											_mero_hostname,
-											_mero_port,
-											_mero_discoveryttl + 60);
-									broadcast(buf2);
-								}
-								freeConfFile(props);
-							}
+							leavedb(q); /* could be spam, but shouldn't harm */
+							anncdbS(stats);
 							SABAOTHfreeStatus(&stats);
 						}
 						Mfprintf(_mero_ctlout, "renamed database '%s' "

@@ -25,13 +25,13 @@ typedef enum {
 static void
 command_set(int argc, char *argv[], meroset type)
 {
-	char *p;
-	char *property = NULL, *value = NULL;
+	char *p, *value = NULL;
+	char property[24] = "";
 	err e;
 	int i;
 	int state = 0;
-	sabdb *orig, *stats, *w;
-	confkeyval *kv, *props = getDefaultProps();
+	sabdb *stats;
+	confkeyval *props = getDefaultProps();
 
 	if (argc >= 1 && argc <= 2) {
 		/* print help message for this command */
@@ -62,32 +62,72 @@ command_set(int argc, char *argv[], meroset type)
 			/* make this option no longer available, for easy use
 			 * lateron */
 			argv[i] = NULL;
-		} else if (property == NULL) {
+		} else if (property[0] == '\0') {
 			/* first non-option is property, rest is database */
-			property = argv[i];
-			argv[i] = NULL;
+			p = argv[i];
 			if (type == SET) {
-				if ((p = strchr(property, '=')) == NULL) {
+				if ((p = strchr(argv[i], '=')) == NULL) {
 					fprintf(stderr, "set: need property=value\n");
 					command_help(2, &argv[-1]);
 					exit(1);
 				}
-				*p++ = '\0';
+				*p = '\0';
+				snprintf(property, sizeof(property), "%s", argv[i]);
+				*p++ = '=';
 				value = p;
+				p = argv[i];
 			}
+			argv[i] = NULL;
 		}
 	}
 
-	if (property == NULL) {
+	if (property[0] == '\0') {
 		fprintf(stderr, "%s: need a property argument\n", argv[0]);
 		command_help(2, &argv[0]);
 		exit(1);
 	}
 
-	w = NULL;
-	orig = NULL;
+	/* handle rename separately due to single argument constraint */
+	if (strcmp(property, "name") == 0) {
+		if (type == INHERIT) {
+			fprintf(stderr, "inherit: cannot default to a database name\n");
+			exit(1);
+		}
+
+		if (argc > 3) {
+			fprintf(stderr, "%s: cannot rename multiple databases to "
+					"the same name\n", argv[0]);
+			exit(1);
+		}
+
+		if (mero_running == 0) {
+			if ((e = db_rename(stats->dbname, value)) != NULL) {
+				fprintf(stderr, "set: %s\n", e);
+				free(e);
+				exit(1);
+			}
+		} else {
+			char *res;
+			char *out;
+
+			out = control_send(&res, mero_control, -1, argv[2], p);
+			if (out != NULL || strcmp(res, "OK") != 0) {
+				res = out == NULL ? res : out;
+				fprintf(stderr, "%s: %s\n", argv[0], res);
+				state |= 1;
+			}
+			free(res);
+		}
+
+		GDKfree(props);
+		exit(state);
+	}
+
 	for (i = 1; i < argc; i++) {
-		if (argv[i] != NULL) {
+		if (argv[i] == NULL)
+			continue;
+
+		if (mero_running == 0) {
 			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
 				fprintf(stderr, "%s: internal error: %s\n", argv[0], e);
 				GDKfree(e);
@@ -97,108 +137,32 @@ command_set(int argc, char *argv[], meroset type)
 			if (stats == NULL) {
 				fprintf(stderr, "%s: no such database: %s\n",
 						argv[0], argv[i]);
-				argv[i] = NULL;
-			} else {
-				if (stats->state == SABdbRunning) {
-					fprintf(stderr, "%s: database '%s' is still running, "
-							"stop database first\n", argv[0], stats->dbname);
-					SABAOTHfreeStatus(&stats);
-					state |= 1;
-					continue;
-				}
-				if (orig == NULL) {
-					orig = stats;
-					w = stats;
-				} else {
-					w = w->next = stats;
-				}
-			}
-		}
-	}
-
-	for (stats = orig; stats != NULL; stats = stats->next) {
-		if (strcmp(property, "name") == 0) {
-			char name[4069];
-			char *res;
-			char *out;
-
-			/* special virtual case */
-			if (type == INHERIT) {
-				fprintf(stderr, "inherit: cannot default to a database name\n");
 				state |= 1;
 				continue;
 			}
 
-			if (value[0] == '\0')
+			if ((e = setProp(stats->path, property, value)) != NULL) {
+				fprintf(stderr, "%s: %s\n", argv[0], e);
+				free(e);
+				state |= 1;
 				continue;
-
-			if (mero_running == 0) {
-				if ((e = db_rename(stats->dbname, value)) != NULL) {
-					fprintf(stderr, "set: %s\n", e);
-					free(e);
-					state |= 1;
-					continue;
-				}
-			} else {
-				snprintf(name, sizeof(name), "name=%s", value);
-				out = control_send(&res, mero_control, -1, stats->dbname, name);
-				if (out != NULL || strcmp(res, "OK") != 0) {
-					res = out == NULL ? res : out;
-					fprintf(stderr, "%s: %s\n", argv[0], res);
-					state |= 1;
-				}
-				free(res);
 			}
-		} else if (strcmp(property, "shared") == 0) {
-			char share[4069];
+
+			SABAOTHfreeStatus(&stats);
+		} else {
 			char *res;
 			char *out;
 
-			if (type == INHERIT)
-				value = "";
-
-			snprintf(share, sizeof(share), "share=%s", value);
-			out = control_send(&res, mero_control, 0, stats->dbname, share);
+			out = control_send(&res, mero_control, 0, argv[i], p);
 			if (out != NULL || strcmp(res, "OK") != 0) {
 				res = out == NULL ? res : out;
 				fprintf(stderr, "%s: %s\n", argv[0], res);
 				state |= 1;
 			}
 			free(res);
-		} else {
-			char *err;
-			readProps(props, stats->path);
-			kv = findConfKey(props, property);
-			if (kv == NULL) {
-				fprintf(stderr, "%s: no such property: %s\n", argv[0], property);
-				state |= 1;
-				continue;
-			}
-			if ((err = setConfVal(kv, type == SET ? value : NULL)) != NULL) {
-				fprintf(stderr, "%s: %s\n", argv[0], err);
-				GDKfree(err);
-				state |= 1;
-				continue;
-			}
-
-			if (strcmp(kv->key, "forward") == 0 && kv->val != NULL) {
-				if (strcmp(kv->val, "proxy") != 0 &&
-						strcmp(kv->val, "redirect") != 0)
-				{
-					fprintf(stderr, "%s: expected 'proxy' or 'redirect' for "
-							"property 'forward', got: %s\n", argv[0], kv->val);
-					state |= 1;
-					continue;
-				}
-			}
-
-			writeProps(props, stats->path);
-			freeConfFile(props);
 		}
 	}
 
-	if (orig != NULL)
-		SABAOTHfreeStatus(&orig);
 	GDKfree(props);
 	exit(state);
 }

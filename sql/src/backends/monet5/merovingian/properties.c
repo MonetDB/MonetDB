@@ -97,4 +97,66 @@ readProps(confkeyval *ckv, char *path)
 	}
 }
 
+/**
+ * Sets a single property, performing all necessary checks to validate
+ * the key and associated value.
+ */
+char *
+setProp(char *path, char *key, char *val)
+{
+	char *err;
+	char buf[8096];
+	confkeyval *props = getDefaultProps();
+	confkeyval *kv;
+
+	readProps(props, path);
+	kv = findConfKey(props, key);
+	if (kv == NULL) {
+		snprintf(buf, sizeof(buf), "no such property: %s", key);
+		return(strdup(buf));
+	}
+
+	/* first just attempt to set the value (type-check) in memory */
+	if ((err = setConfVal(kv, val)) != NULL)
+		return(err);
+
+	if (val != NULL) {
+		/* handle the semantially enriched types */
+		if (strcmp(key, "forward") == 0) {
+			if (strcmp(val, "proxy") != 0 && strcmp(val, "redirect") != 0) {
+				snprintf(buf, sizeof(buf), "expected 'proxy' or 'redirect' "
+						"for property 'forward', got: %s", val);
+				return(strdup(buf));
+			}
+		} else if (strcmp(key, "shared") == 0) {
+			char *value = val;
+			/* check if tag matches [A-Za-z0-9./]+ */
+			if (*value == '\0')
+				return(strdup("tag to share cannot be empty"));
+			while (*value != '\0') {
+				if (!(
+							(*value >= 'A' && *value <= 'Z') ||
+							(*value >= 'a' && *value <= 'z') ||
+							(*value >= '0' && *value <= '9') ||
+							(*value == '.' || *value == '/')
+					 ))
+				{
+					snprintf(buf, sizeof(buf),
+							"invalid character '%c' at %d "
+							"in tag name '%s'\n",
+							*value, (int)(value - val), val);
+					return(strdup(buf));
+				}
+				value++;
+			}
+		}
+	}
+
+	/* ok, if we've reached this point we can write this stuff out! */
+	writeProps(props, path);
+	freeConfFile(props);
+
+	return(NULL);
+}
+
 /* vim:set ts=4 sw=4 noexpandtab: */
