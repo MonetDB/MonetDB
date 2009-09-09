@@ -66,7 +66,7 @@ char* control_send(
 	send(sock, buf, len, 0);
 	if ((len = recv(sock, buf, sizeof(buf), 0)) <= 0)
 		return(strdup("no response from merovingian\n"));
-	buf[len] = '\0';
+	buf[len == 0 ? 0 : len - 1] = '\0';
 
 	close(sock);
 
