@@ -143,7 +143,7 @@ if test "x$have_php" != xno ; then
 		AC_MSG_RESULT([yes])
 	else
 		AC_MSG_RESULT("no ($PHP_VERSION)")
-		have_pcre=no
+		have_php=no
 	fi
 fi
 
