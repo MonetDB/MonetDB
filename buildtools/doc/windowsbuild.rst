@@ -792,10 +792,10 @@ installation folder::
 In both cases, use the solutions (``.sln`` files) that are
 appropriate.
 
-There is annoying bug in Visual Studio on Windows64 that affects the
-MonetDB5-Geom-Module installer.  The installer contains code to check
-the registry to find out where MonetDB5/SQL is installed.  The bug is
-that the 64 bit installer will check the 32-bit section of the
+There is an annoying bug in Visual Studio on Windows64 that affects
+the MonetDB5-Geom-Module installer.  The installer contains code to
+check the registry to find out where MonetDB5/SQL is installed.  The
+bug is that the 64 bit installer will check the 32-bit section of the
 registry.  The code can be fixed by editing the generated installer
 (``.msi`` file) using e.g. the program ``orca`` from Microsoft.  Open
 the installer in ``orca`` and locate the table ``RegLocator``.  In the
