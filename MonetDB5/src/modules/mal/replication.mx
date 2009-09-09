@@ -220,7 +220,7 @@ comment "Remove the replica function from the module";
 /* #define _DEBUG_REPLICATOR_ */
 
 #ifdef WIN32
-#ifndef LIBREPLICATOR
+#ifndef LIBREPLICATION
 #define replication_export extern __declspec(dllimport)
 #else
 #define replication_export extern __declspec(dllexport)
