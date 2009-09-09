@@ -36,17 +36,11 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
-char* db_create(char* dbname) {
-	sabdb *stats;
-	char* e;
+/* check if dbname matches [A-Za-z0-9-_]+ */
+char* db_validname(char *dbname) {
 	size_t c;
-	char* dbfarm;
 	char buf[8096];
-	char path[8096];
-	FILE *f;
-	unsigned int size;
 
-	/* check if dbname matches [A-Za-z0-9-_]+ */
 	if (dbname[0] == '\0')
 		return(strdup("database name should not be an empty string"));
 	for (c = 0; dbname[c] != '\0'; c++) {
@@ -58,12 +52,28 @@ char* db_create(char* dbname) {
 				!(dbname[c] == '_')
 		   )
 		{
-			snprintf(buf, sizeof(buf), "create: invalid character "
+			snprintf(buf, sizeof(buf), "invalid character "
 					"'%c' at " SZFMT " in database name '%s'",
 					dbname[c], c, dbname);
 			return(strdup(buf));
 		}
 	}
+
+	return(NULL);
+}
+
+char* db_create(char* dbname) {
+	sabdb *stats;
+	size_t c;
+	char* e;
+	char* dbfarm;
+	char buf[8096];
+	char path[8096];
+	FILE *f;
+	unsigned int size;
+
+	if ((e = db_validname(dbname)) != NULL)
+		return(e);
 
 	/* the argument is the database to create, see what Sabaoth can
 	 * tell us about it */

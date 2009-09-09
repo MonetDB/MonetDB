@@ -127,26 +127,17 @@ command_set(int argc, char *argv[], meroset type)
 				continue;
 			}
 
-			/* check if dbname matches [A-Za-z0-9-_]+ */
-			for (i = 0; value[i] != '\0'; i++) {
-				if (
-						!(value[i] >= 'A' && value[i] <= 'Z') &&
-						!(value[i] >= 'a' && value[i] <= 'z') &&
-						!(value[i] >= '0' && value[i] <= '9') &&
-						!(value[i] == '-') &&
-						!(value[i] == '_')
-				   )
-				{
-					fprintf(stderr, "set: invalid character '%c' at %d "
-							"in database name '%s'\n",
-							value[i], i, value);
-					value[0] = '\0';
-					state |= 1;
-					break;
-				}
-			}
 			if (value[0] == '\0')
 				continue;
+
+			/* check if dbname matches [A-Za-z0-9-_]+ */
+			if ((p = db_validname(value)) != NULL) {
+				fprintf(stderr, "set: %s\n", p);
+				free(p);
+				value[0] = '\0';
+				state |= 1;
+				break;
+			}
 
 			/* construct path to new database */
 			snprintf(new, 512, "%s", stats->path);

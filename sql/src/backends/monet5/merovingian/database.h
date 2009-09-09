@@ -20,6 +20,7 @@
 #ifndef _SEEN_DATABASE_H
 #define _SEEN_DATABASE_H 1
 
+char* db_validname(char* dbname);
 char* db_create(char* dbname);
 char* db_destroy(char* dbname);
 
