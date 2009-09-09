@@ -781,11 +781,12 @@ str MASTERgetName(str *ret)
 {
 	struct MASTERrecord *mr;
 
-	if (GDKgetenv_isyes("replication_master"))
+	if (GDKgetenv_isyes("replication_master") ||
+			GDKgetenv_istrue("replication_master"))
 		return SABAOTHgetLocalConnection(ret);
 		
 	for (mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
-		*ret = GDKstrdup(mr->uri);
+		*ret = GDKstrdup(mr->uri); /* FIXME: superleak and useless loop, thanks Stefan */
 
 	throw(MAL, "master.getName", "no master name found");
 }
