@@ -260,7 +260,10 @@ controlRunner(void *d)
 						if (strcmp(q, stats->dbname) == 0) {
 							readProps(props, stats->path);
 							kv = findConfKey(props, "shared");
-							if (kv->val == NULL || strcmp(kv->val, "no") != 0) {
+							if (stats->locked != 1 && 
+									(kv->val == NULL ||
+									 strcmp(kv->val, "no") != 0))
+							{
 								/* we can leave without tag, will remove all */
 								snprintf(buf2, sizeof(buf2),
 										"LEAV %s mapi:monetdb://%s:%hu/",
@@ -302,7 +305,8 @@ controlRunner(void *d)
 									"ANNC %s%s mapi:monetdb://%s:%hu/ %d",
 									stats->dbname, p, _mero_hostname,
 									_mero_port, _mero_discoveryttl + 60);
-							broadcast(buf2);
+							if (stats->locked != 1)
+								broadcast(buf2);
 							writeProps(props, stats->path);
 							Mfprintf(_mero_ctlout, "shared database '%s' "
 									"as '%s%s'\n", stats->dbname,
