@@ -140,7 +140,8 @@ command_merocom(int argc, char *argv[], merocom mode)
 				if (out == NULL && strcmp(res, "OK\n") == 0) {
 					printf("done\n");
 				} else {
-					printf("FAILED:\n%s", (out == NULL ? res : out));
+					res = out == NULL ? res : out;
+					printf("FAILED:\n%s", res);
 					ret = 1;
 				}
 				free(res);
@@ -155,7 +156,8 @@ command_merocom(int argc, char *argv[], merocom mode)
 				if (out == NULL && strcmp(res, "OK\n") == 0) {
 					printf("done\n");
 				} else {
-					printf("FAILED:\n%s", (out == NULL ? res : out));
+					res = out == NULL ? res : out;
+					printf("FAILED:\n%s", res);
 					ret = 1;
 				}
 				free(res);
@@ -172,7 +174,8 @@ command_merocom(int argc, char *argv[], merocom mode)
 			snprintf(share, sizeof(share), "share=%s", value);
 			out = control_send(&res, mero_control, 0, stats->dbname, share);
 			if (out != NULL || strcmp(res, "OK\n") != 0) {
-				printf("FAILED:\n%s", (out == NULL ? res : out));
+				res = out == NULL ? res : out;
+				printf("FAILED:\n%s", res);
 				ret = 1;
 			}
 			free(res);
