@@ -32,46 +32,15 @@ command_release(int argc, char *argv[])
 
 	/* do for each listed database */
 	for (i = 1; i < argc; i++) {
-		sabdb *stats;
-		err e;
-		char *dbname = argv[i];
+		char *e;
 
-		/* the argument is the database to take under maintenance, see
-		 * what Sabaoth can tell us about it */
-		if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
-			fprintf(stderr, "release: internal error: %s\n", e);
-			GDKfree(e);
-			exit(2);
-		}
-
-		if (stats != NULL) {
-			char path[8096];
-
-			if (stats->locked != 1) {
-				fprintf(stderr, "release: database '%s' is not "
-						"under maintenance\n", dbname);
-				SABAOTHfreeStatus(&stats);
-				hadwork = 1;
-				state |= 1;
-				continue;
-			}
-
-			/* put this database in maintenance mode */
-			snprintf(path, 8095, "%s/.maintenance", stats->path);
-			if (unlink(path) != 0) {
-				fprintf(stderr, "failed to take database '%s' out of "
-						" maintenance mode: %s\n", dbname, strerror(errno));
-				SABAOTHfreeStatus(&stats);
-				hadwork = 1;
-				state |= 1;
-				continue;
-			}
-			printf("database '%s' has been taken out of maintenance mode\n",
-					dbname);
-			SABAOTHfreeStatus(&stats);
-		} else {
-			fprintf(stderr, "release: no such database: %s\n", dbname);
+		if ((e = db_release(argv[i])) != NULL) {
+			fprintf(stderr, "release: %s\n", e);
+			free(e);
 			state |= 1;
+		} else {
+			printf("database '%s' has been taken out of maintenance mode\n",
+					argv[i]);
 		}
 		hadwork = 1;
 	}

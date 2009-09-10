@@ -364,3 +364,41 @@ char* db_lock(char *dbname) {
 
 	return(NULL);
 }
+
+char *db_release(char *dbname) {
+	char *e;
+	sabdb *stats;
+	char path[8096];
+	char buf[8096];
+
+	/* the argument is the database to take under maintenance, see
+	 * what Sabaoth can tell us about it */
+	if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
+		snprintf(buf, sizeof(buf), "internal error: %s", e);
+		GDKfree(e);
+		return(strdup(buf));
+	}
+
+	if (stats == NULL) {
+		snprintf(buf, sizeof(buf), "no such database: %s", dbname);
+		return(strdup(buf));
+	}
+
+	if (stats->locked != 1) {
+		SABAOTHfreeStatus(&stats);
+		snprintf(buf, sizeof(buf), "database '%s' is not "
+				"under maintenance", dbname);
+		return(strdup(buf));
+	}
+
+	/* get this database out of maintenance mode */
+	snprintf(path, sizeof(path), "%s/.maintenance", stats->path);
+	SABAOTHfreeStatus(&stats);
+	if (unlink(path) != 0) {
+		snprintf(buf, sizeof(buf), "could not remove '%s' for '%s': %s",
+				path, dbname, strerror(errno));
+		return(strdup(buf));
+	}
+
+	return(NULL);
+}
