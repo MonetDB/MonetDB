@@ -240,6 +240,54 @@ controlRunner(void *d)
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}
+				} else if (strcmp(p, "lock") == 0) {
+					char *e = db_lock(q);
+					if (e != NULL) {
+						Mfprintf(_mero_ctlerr, "failed to lock "
+								"database '%s': %s\n", q, getErrMsg(e));
+						len = snprintf(buf2, sizeof(buf2),
+								"%s\n", getErrMsg(e));
+						send(msgsock, buf2, len, 0);
+						free(e);
+					} else {
+						/* we go under maintenance, unshare it, take
+						 * spam if database happened to be unshared "for
+						 * love" */
+						leavedb(q);
+						Mfprintf(_mero_ctlout, "locked database '%s'\n", q);
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send(msgsock, buf2, len, 0);
+					}
+				} else if (strcmp(p, "release") == 0) {
+					char *e = db_release(q);
+					if (e != NULL) {
+						Mfprintf(_mero_ctlerr, "failed to release "
+								"database '%s': %s\n", q, getErrMsg(e));
+						len = snprintf(buf2, sizeof(buf2),
+								"%s\n", getErrMsg(e));
+						send(msgsock, buf2, len, 0);
+						free(e);
+					} else {
+						/* announce database, but need to do it the
+						 * right way so we don't accidentially announce
+						 * an unshared database */
+						if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+							len = snprintf(buf2, sizeof(buf2),
+									"internal error, please review the logs\n");
+							send(msgsock, buf2, len, 0);
+							Mfprintf(_mero_ctlerr, "release: SABAOTHgetStatus: "
+									"%s\n", e);
+							freeErr(e);
+							/* we need to OK regardless, as releasing
+							 * succeed */
+						} else {
+							anncdbS(stats);
+							SABAOTHfreeStatus(&stats);
+						}
+						Mfprintf(_mero_ctlout, "released database '%s'\n", q);
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send(msgsock, buf2, len, 0);
+					}
 				} else if (strncmp(p, "share=", strlen("share=")) == 0) {
 					sabdb *stats;
 					err e;
