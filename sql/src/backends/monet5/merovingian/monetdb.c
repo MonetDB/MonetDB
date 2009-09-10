@@ -182,7 +182,160 @@ command_version()
 
 #include "monetdb_status.c"
 #include "monetdb_discover.c"
-#include "monetdb_merocom.c"
+
+typedef enum {
+	START = 0,
+	STOP,
+	KILL
+} startstop;
+
+static void
+command_startstop(int argc, char *argv[], startstop mode)
+{
+	int doall = 0;
+	char *res;
+	char *out;
+	int i;
+	err e;
+	sabdb *orig;
+	sabdb *stats;
+	char *type = NULL;
+	char *p;
+	int ret = 0;
+
+	switch (mode) {
+		case START:
+			type = "start";
+		break;
+		case STOP:
+			type = "stop";
+		break;
+		case KILL:
+			type = "kill";
+		break;
+	}
+
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(2, &argv[-1]);
+		exit(1);
+	} else if (argc == 0) {
+		exit(2);
+	}
+
+	/* time to collect some option flags */
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			for (p = argv[i] + 1; *p != '\0'; p++) {
+				switch (*p) {
+					case 'a':
+						doall = 1;
+					break;
+					case '-':
+						if (p[1] == '\0') {
+							if (argc - 1 > i) 
+								doall = 0;
+							i = argc;
+							break;
+						}
+					default:
+						fprintf(stderr, "%s: unknown option: -%c\n", type, *p);
+						command_help(2, &argv[-1]);
+						exit(1);
+					break;
+				}
+			}
+			/* make this option no longer available, for easy use
+			 * lateron */
+			argv[i] = NULL;
+		}
+	}
+
+	/* if Merovingian isn't running, there's not much we can do */
+	if (mero_running == 0) {
+		fprintf(stderr, "%s: cannot perform: MonetDB Database Server "
+				"(merovingian) is not running\n", type);
+		exit(1);
+	}
+
+	if (doall == 1) {
+		/* don't even look at the arguments, because we are instructed
+		 * to list all known databases */
+		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
+			fprintf(stderr, "%s: internal error: %s\n", type, e);
+			GDKfree(e);
+			exit(2);
+		}
+	} else {
+		sabdb *w = NULL;
+		orig = NULL;
+		for (i = 1; i < argc; i++) {
+			if (argv[i] != NULL) {
+				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
+					fprintf(stderr, "%s: internal error: %s\n", type, e);
+					GDKfree(e);
+					exit(2);
+				}
+
+				if (stats == NULL) {
+					fprintf(stderr, "%s: no such database: %s\n", type, argv[i]);
+					argv[i] = NULL;
+				} else {
+					if (orig == NULL) {
+						orig = stats;
+						w = stats;
+					} else {
+						w = w->next = stats;
+					}
+				}
+			}
+		}
+	}
+	
+	stats = orig;
+	while (stats != NULL) {
+		if (mode == STOP || mode == KILL) {
+			if (stats->state == SABdbRunning) {
+				printf("%s%sing database '%s'... ", type, mode == STOP ? "p" : "", stats->dbname);
+				fflush(stdout);
+				out = control_send(&res, mero_control, 0, stats->dbname, type);
+				if (out == NULL && strcmp(res, "OK") == 0) {
+					printf("done\n");
+				} else {
+					res = out == NULL ? res : out;
+					printf("FAILED:\n%s\n", res);
+					ret = 1;
+				}
+				free(res);
+			} else if (doall != 1) {
+				printf("%s: database is not running: %s\n", type, stats->dbname);
+			}
+		} else if (mode == START) {
+			if (stats->state != SABdbRunning) {
+				printf("starting database '%s'... ", stats->dbname);
+				fflush(stdout);
+				out = control_send(&res, mero_control, 0, stats->dbname, type);
+				if (out == NULL && strcmp(res, "OK") == 0) {
+					printf("done\n");
+				} else {
+					res = out == NULL ? res : out;
+					printf("FAILED:\n%s\n", res);
+					ret = 1;
+				}
+				free(res);
+			} else if (doall != 1 && stats->state == SABdbRunning) {
+				printf("%s: database is already running: %s\n",
+						type, stats->dbname);
+			}
+		}
+		stats = stats->next;
+	}
+
+	if (orig != NULL)
+		SABAOTHfreeStatus(&orig);
+
+	exit(ret);
+}
 
 typedef enum {
 	SET = 0,
@@ -685,11 +838,11 @@ main(int argc, char *argv[])
 	} else if (strcmp(argv[1], "status") == 0) {
 		command_status(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "start") == 0) {
-		command_merocom(argc - 1, &argv[1], START);
+		command_startstop(argc - 1, &argv[1], START);
 	} else if (strcmp(argv[1], "stop") == 0) {
-		command_merocom(argc - 1, &argv[1], STOP);
+		command_startstop(argc - 1, &argv[1], STOP);
 	} else if (strcmp(argv[1], "kill") == 0) {
-		command_merocom(argc - 1, &argv[1], KILL);
+		command_startstop(argc - 1, &argv[1], KILL);
 	} else if (strcmp(argv[1], "set") == 0) {
 		command_set(argc - 1, &argv[1], SET);
 	} else if (strcmp(argv[1], "get") == 0) {

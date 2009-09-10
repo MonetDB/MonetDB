@@ -35,7 +35,6 @@ MEROVINGIAN_TMP_SUBS = \
 MONETDB_TMP_SUBS = \
 	monetdb_discover.c \
 	monetdb_get.c \
-	monetdb_merocom.c \
 	monetdb_status.c
 
 EXTRA_DIST = $(man_MANS) \
