@@ -24,5 +24,6 @@ char* db_validname(char* dbname);
 char* db_create(char* dbname);
 char* db_destroy(char* dbname);
 char* db_rename(char *olddb, char *newdb);
+char* db_lock(char *dbname);
 
 #endif

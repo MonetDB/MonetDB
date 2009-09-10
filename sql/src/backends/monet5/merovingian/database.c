@@ -324,3 +324,43 @@ char* db_rename(char *olddb, char *newdb) {
 	SABAOTHfreeStatus(&stats);
 	return(NULL);
 }
+
+char* db_lock(char *dbname) {
+	char *e;
+	sabdb *stats;
+	char path[8096];
+	char buf[8096];
+	FILE *f;
+
+	/* the argument is the database to take under maintenance, see
+	 * what Sabaoth can tell us about it */
+	if ((e = SABAOTHgetStatus(&stats, dbname)) != MAL_SUCCEED) {
+		snprintf(buf, sizeof(buf), "internal error: %s", e);
+		GDKfree(e);
+		return(strdup(buf));
+	}
+
+	if (stats == NULL) {
+		snprintf(buf, sizeof(buf), "no such database: %s", dbname);
+		return(strdup(buf));
+	}
+
+	if (stats->locked == 1) {
+		SABAOTHfreeStatus(&stats);
+		snprintf(buf, sizeof(buf), "database '%s' already is "
+				"under maintenance", dbname);
+		return(strdup(buf));
+	}
+
+	/* put this database in maintenance mode */
+	snprintf(path, sizeof(path), "%s/.maintenance", stats->path);
+	SABAOTHfreeStatus(&stats);
+	if ((f = fopen(path, "w")) == NULL) {
+		snprintf(buf, sizeof(buf), "could not create '%s' for '%s': %s",
+				path, dbname, strerror(errno));
+		return(strdup(buf));
+	}
+	fclose(f); /* no biggie if it fails, file is already there */
+
+	return(NULL);
+}
