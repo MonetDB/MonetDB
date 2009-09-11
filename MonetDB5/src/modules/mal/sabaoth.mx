@@ -17,14 +17,29 @@
 
 @f sabaoth
 @a Fabian Groffen
-@+ Cluster support
-The cluster facilitation currently only deals with (de-)registering of
-services offered by the local server to other servers.
-The name of this module is inspired by the Armada setting of anchient
-times and origanisational structures.  Sabaoth, stands for ``Lord of
-Hosts'' in an army setting as found in the Bible's New Testament.  This
-module allows an army of Mservers to be aware of each other on a local
-machine and redirect to each other when necessary.
+@+ Disk-based local database administration
+"Sophia starts creation, without her male half.  That causes a shade,
+the chaos or the darkness.  The ruler of this darkness is called
+Yaldabaoth.  He thinks he is the only god, which makes Sophia angry.
+She shows herself as reflection in the water.  Later, Yaldabaoth's son,
+Sabaoth, revolts against his father.  Sophia rewards him for that with a
+place in the seventh heaven."
+
+Local servers within a dbfarm go largerly by themselves.  However,
+multiple databases are a common good among the dinosaurs, and prove to
+be useful for us mammals as well.  In particular Merovingian exploits
+the multi-database nature to perform it's services.  The Sabaoth module
+breaks with the tradition that a database goes by itself, alone.  It
+provides means to query which local databases exist and to retrieve
+properties of those.  This includes whether or not a database is
+running, if it accepts connections and where, if it is under maintance,
+etc.
+
+This module is a product of the Armada way of thinking, which nowadays
+is best coined under "cloud".  While this module does not perform any
+actions itself, let alone remote onces, it is a local building block for
+components that do facilitate the cloud, such as Merovingian.
+
 @mal
 module sabaoth;
 
@@ -65,14 +80,10 @@ command wildRetreat()
 address SABwildRetreat
 comment "Unpublishes everything known for this server";
 
+# serialise and deserialise are not available from MAL, but can be made
+# available if there is reasonable need for it (haven't found one to date)
 
 #sabaoth.prelude();
-@-
-TODO
-#command retreatConnection(host:str, port:int)
-#address SABretreatConnection
-#comment "Unpublishes the given host/port as available for connecting to this server";
-
 
 @- Implementation
 
