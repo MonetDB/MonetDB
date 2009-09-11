@@ -424,7 +424,7 @@ command_set(int argc, char *argv[], meroset type)
 		}
 
 		if (mero_running == 0) {
-			if ((e = db_rename(stats->dbname, value)) != NULL) {
+			if ((e = db_rename(argv[2], value)) != NULL) {
 				fprintf(stderr, "set: %s\n", e);
 				free(e);
 				exit(1);
