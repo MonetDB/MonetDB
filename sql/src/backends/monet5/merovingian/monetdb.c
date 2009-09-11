@@ -345,7 +345,8 @@ typedef enum {
 static void
 command_set(int argc, char *argv[], meroset type)
 {
-	char *p, *value = NULL;
+	char *p = NULL;
+	char *value = NULL;
 	char property[24] = "";
 	err e;
 	int i;
