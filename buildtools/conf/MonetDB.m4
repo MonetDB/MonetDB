@@ -2883,18 +2883,6 @@ AC_MSG_RESULT($INSTALL_BACKUP)
 AC_SUBST(INSTALL_BACKUP)
 
 
-have_mapilite=no
-AC_ARG_WITH([mapilite],
-[AS_HELP_STRING([--with-mapilite],
-[enable experimental lightweight mapi library])],
-[have_mapilite=yes],
-[have_mapilite=no])
-
-AS_IF([test "x$have_mapilite" != xno],
-   AC_DEFINE([HAVE_MAPILITE], [1], [Define if you want to use the mapilite library])
-)
-AM_CONDITIONAL(HAVE_MAPILITE, test x$have_mapilite != xno)
-
 AC_SUBST(CFLAGS)
 
 have_problem=no
