@@ -1,0 +1,101 @@
+
+TODO
+	select and join ops should allow for and/or of expressions	
+	ie we should alway only have a single exp which is and-ed and
+	or-ed together.
+
+BASETABLE
+	(card MULTI)
+	-> exps		is list of column expressions (also used for aliases)
+	-> l		(sql_table)
+
+TABLE 	(card MULTI)
+	-> exps		is list of column expressions (also used for aliases)
+	-> l		table function expression
+
+SELECT 	(card MULTI or same ...?) 
+	-> exps		selection expressions (ie all e_cmp)
+	-> l		is relation
+
+LEFT|RIGHT|FULL
+JOIN 	(card MULTI)
+	-> exps		join expressions (ie all e_cmp)
+	-> l		is left relation
+	-> r		is rigth relation
+
+SEMI/ANTI 
+	(card MULTI)
+	-> exps		join expressions (ie all e_cmp)
+	-> l		is left relation
+	-> r		is rigth relation
+
+UNION|EXCEPT|INTERSECT 
+	(card ATOM, AGGR or MULTI (same card as lower relation))
+	-> exps 	is list of projection expressions
+	-> l		is left relation
+	-> r		is rigth relation
+
+PROJECT  (card ATOM, AGGR or MULTI (same card as lower relation))
+	-> exps 	is list of projection expressions
+	-> l		is relation
+	-> r		optional, is list of order by expressions 
+
+GROUPBY  (card ATOM (no group by exps), AGGR)
+	-> exps		is list of (groupby and) aggregate expressions
+	-> l		is relation
+	-> r 		is list of group by expressions
+
+TOPN	(card ATOM, AGGR, or MULTI (same card as lower relation))
+	-> exps 	(list) int limit, [ int offset ]
+	-> l		is relation
+
+INSERT|DELETE|UPDATE 	(card MULTI)
+	-> l 		is table to modify
+	-> r		to be inserted/deleted/updated relation
+only (UPDATE)
+	-> exps		list of columns to update (ugh) !
+
+Expressions
+
+e_atom 	(card ATOM)
+	-> l	literal (-> l = atom)
+	or
+	-> r	parameter ( ->r = varname, ->f = subtype, ->flag = level)
+	or
+	-> 	numbered variable ( ->flag = nr, ->f = subtype)
+
+e_convert
+	-> l	sub expression
+	-> r	list of from and to subtypes
+
+e_cmp
+	-> l	left sub expression
+	-> r	right sub expression
+	-> flag compare type		
+		(       cmp_gt = 0,
+        		cmp_gte = 1,
+        		cmp_lte = 2,
+        		cmp_lt = 3,
+        		cmp_equal = 4,
+        		cmp_notequal = 5,
+        		cmp_notlike = 6,
+        		cmp_like = 7,
+        		cmp_all = 8,		cross product
+        		cmp_or = 9		or handling 
+		)
+
+e_func
+e_aggr
+	-> l 	list of sub expressions (args for the func and aggr)
+	-> r	rank operators the list order by expressions (group by in l)
+	-> f	func / aggr
+for aggr
+	-> flag DISTINCT and NO_NIL could be set
+
+e_column
+	-> name alias for the expression (ie used by higher expressions)
+		l,r names of refered expression
+	-> l 	optional relation name 
+	-> r	expression name
+
+	
