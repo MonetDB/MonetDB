@@ -1146,3 +1146,17 @@ tst400e		 0.227/0.214/0.011	1M incr fcn
 
 tst901a		 0.368/0.314/0.051	[+] call
 tst901b		 0.906/0.856/0.048	[+] call
+======================== 12 Sep 2009 ===================
+Make sure the complete power of the cpu is used (cpuspeed)
+and reduced some cost in the interpreter
+The compilation mode for V5 is --enable-optimize --disable-debug
+command: time mserver5 -c perf.conf TST </dev/null >/dev/null
+base		 0.066/0.043/0.020					
+tst400a		 0.089/0.068/0.020	1M loop			
+tst400bHuge	 0.157/0.120/0.034	100k count (io)	
+tst400cHuge	 0.256/0.226/0.025	100k insert(io) 
+tst400d		 0.533/0.511/0.020	1M insert tuple 
+tst400e		 0.250/0.229/0.011	1M incr fcn	
+
+tst901a		 0.583/0.539/0.038	[+] call
+tst901b		 1.654/1.605/0.033	[+] call
