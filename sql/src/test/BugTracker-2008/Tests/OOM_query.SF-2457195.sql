@@ -1,6 +1,6 @@
 
 create table test (lhs varchar(16), rhs varchar(16));
-COPY 113 RECORDS into test from STDIN using delimiters ',','\n';
+COPY 113 RECORDS into test from STDIN using delimiters ',','\n', '"';
 "S","TOP"
 "PP S@","S"
 "IN NP","PP"
