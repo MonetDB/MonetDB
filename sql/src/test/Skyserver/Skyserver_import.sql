@@ -31,7 +31,7 @@ COPY 1000 RECORDS INTO RecentQueries FROM 'DATA/RecentQueries.dat.bz2' USING DEL
 
 COPY 1000 RECORDS INTO SiteConstants FROM 'DATA/SiteConstants.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
 
-COPY 1000 RECORDS INTO Glossary FROM 'DATA/Glossary1.dat.bz2' USING DELIMITERS '\t', '|', '"';
+COPY 1000 RECORDS INTO Glossary FROM 'DATA/Glossary1.dat.bz2' USING DELIMITERS '\t', '|'; 
 
 COPY 1000 RECORDS INTO Algorithm FROM 'DATA/Algorithm1.dat.bz2' USING DELIMITERS '\t', '$', '"';
 
