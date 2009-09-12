@@ -48,7 +48,7 @@ operators.
 /* initialize bat storage call back functions interface */
 extern int bat_table_init( table_functions *tf );
 
-extern BAT* delta_full_bat( sql_delta *bat, int temp, BAT *d, BAT *s);
+extern BAT* delta_full_bat( sql_column *c, sql_delta *bat, int temp, BAT *d, BAT *s);
 
 #endif /*BAT_TABLE_H*/
 @c
@@ -57,7 +57,7 @@ extern BAT* delta_full_bat( sql_delta *bat, int temp, BAT *d, BAT *s);
 #include "bat_utils.h"
 
 BAT *
-delta_full_bat( sql_delta *bat, int temp, BAT *d, BAT *s)
+delta_full_bat_( sql_column *c, sql_delta *bat, int temp, BAT *d, BAT *s)
 {
 	/* return full normalized column bat
 
@@ -103,13 +103,25 @@ delta_full_bat( sql_delta *bat, int temp, BAT *d, BAT *s)
 	if (d && BATcount(d)) {
 		r = BATkdiff(b,BATmirror(d)); bat_destroy(b); b = r;
 	}
+	if (!bat->cached && !c->base.wtime && !s) 
+		bat->cached = temp_descriptor(b->batCacheid);
 	return b;
+}
+
+BAT *
+delta_full_bat( sql_column *c, sql_delta *bat, int temp, BAT *d, BAT *s)
+{
+	if (bat->cached && s) 
+		return BATsemijoin(bat->cached, s);
+	if (bat->cached) 
+		return temp_descriptor(bat->cached->batCacheid);
+	return delta_full_bat_( c, bat, temp, d, s);
 }
 
 static BAT *
 full_column(sql_column *c, BAT *d, BAT *s )
 {
-	return delta_full_bat(c->data, isTemp(c), d, s);
+	return delta_full_bat(c, c->data, isTemp(c), d, s);
 }
 
 static oid

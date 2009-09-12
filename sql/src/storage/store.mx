@@ -1088,7 +1088,6 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 
 	if (isTable(col->t))
 		store_funcs.create_col(tr, col);
-	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
 	return col;
 }
@@ -1135,7 +1134,6 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 
 	if (isTable(t))
 		store_funcs.create_del(tr, t);
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
 	return t;
 }
@@ -1162,7 +1160,6 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 
 	cs_add(&tr->schemas, s, TR_NEW);
 
-	s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
 	return s;
 }

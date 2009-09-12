@@ -55,7 +55,7 @@ full_column(sql_column *c, BAT *d, BAT *s )
 {
 	sql_bpm *p = c->data;
 
-	return delta_full_bat( &p->parts[0], isTemp(c), d, s);
+	return delta_full_bat( c, &p->parts[0], isTemp(c), d, s);
 }
 
 static oid
