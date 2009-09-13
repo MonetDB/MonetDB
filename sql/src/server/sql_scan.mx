@@ -791,11 +791,12 @@ int scanner_symbol(mvc * c, int cur)
 		lc->started = 1;
 		utf8_putchar(lc, next); 
 		return scanner_token(lc, cur);
+	case '*':
 	case '?':
 	case '%':
 	case '^':
 	case '+':
-	case '*':
+	case '&':
 	case '/':
 	case '(':
 	case ')':
@@ -816,6 +817,8 @@ int scanner_symbol(mvc * c, int cur)
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '>') {
 			return scanner_token( lc, COMPARISON);
+		} else if (cur == '<') {
+			return scanner_token( lc, LEFT_SHIFT);
 		} else {
 			utf8_putchar(lc, cur); 
 			return scanner_token( lc, COMPARISON);
@@ -823,7 +826,9 @@ int scanner_symbol(mvc * c, int cur)
 	case '>':
 		lc->started = 1;
 		cur = scanner_getc(lc);
-		if (cur != '=') {
+		if (cur == '>') {
+			return scanner_token( lc, RIGHT_SHIFT);
+		} else if (cur != '=') {
 			utf8_putchar(lc, cur); 
 			return scanner_token( lc, COMPARISON);
 		} else {
@@ -845,6 +850,9 @@ int scanner_symbol(mvc * c, int cur)
 		cur = scanner_getc(lc);
 		if (cur == '|') {
 			return scanner_token(lc, CONCATSTRING);
+		} else {
+			utf8_putchar(lc, cur); 
+			return scanner_token(lc, '|');
 		}
 	}
 	(void)sql_error( c, 3, "unexpected symbol (%c)", cur);

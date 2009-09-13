@@ -679,8 +679,9 @@ int yydebug=1;
 %left <operation> '(' ')'
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '='
+%left <operation> '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT
 %left <operation> '+' '-'
-%left <operation> '*' '/' '%' '^'
+%left <operation> '*' '/' '%' 
 %left <operation> SUBSTRING CONCATSTRING POSITION
 %right UMINUS
 
@@ -3079,7 +3080,7 @@ not_exp:
 			$$ = _symbol_create_symbol(SQL_NOT, $2); }
  |  pred_exp	{ $$ = $1; }
  ;
-	
+
 opt_order_by_clause:
     /* empty */ 			  { $$ = NULL; }
  |  ORDER BY sort_specification_list
@@ -3307,6 +3308,34 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "power")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp '&' scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "bit_and")));
+	  		  append_symbol(l, $1);
+			  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp '|' scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "bit_or")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp LEFT_SHIFT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "left_shift")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp RIGHT_SHIFT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "right_shift")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
