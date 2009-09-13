@@ -203,12 +203,15 @@ exp_compare2( sql_exp *l, sql_exp *r, sql_exp *h, int cmptype)
 sql_exp *
 exp_or( list *l, list *r)
 {
-	sql_exp *e1 = l->h->data;
+	sql_exp *f = NULL;
 	sql_exp *e = exp_create(e_cmp);
-	e->card = e1->card;
+	
+	f = l->h?l->h->data:r->h?r->h->data:NULL;
+	e->card = l->h?exps_card(l):exps_card(r);
 	e->l = l;
 	e->r = r;
-	e->f = e1->f;
+	assert(f);
+	e->f = f;
 	e->flag = cmp_or;
 	return e;
 }

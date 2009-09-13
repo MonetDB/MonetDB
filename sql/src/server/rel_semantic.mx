@@ -278,8 +278,7 @@ rel_semantic(mvc *sql, symbol *s)
 			}
 			if (!rel_is_ref(rel))
 				stack_set_rel_view(sql, name, nrel);
-			else
-				rel_destroy(nrel);
+			rel_destroy(nrel);
 		}
 		rel = rel_semantic(sql, select);
 		stack_pop_frame(sql);
