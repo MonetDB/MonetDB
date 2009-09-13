@@ -555,13 +555,11 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
 	}
 	if (files) {
-		//list *slist = create_stmt_list();
 		dnode *n = files->h;
 
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
 
-			//list_append(slist, xxx);
 			return rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset);
 		}
 	}

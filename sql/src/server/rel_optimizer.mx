@@ -1316,11 +1316,12 @@ rel_merge_union(int *changes, mvc *sql, sql_rel *rel)
 {
 	sql_rel *l = rel->l;
 	sql_rel *r = rel->r;
+	sql_rel *ref = NULL;
 
 	if (rel->op == op_union && 
 	    l && is_project(l->op) && !project_unsafe(l) &&
 	    r && is_project(r->op) && !project_unsafe(r) &&	
-	    rel_find_ref(l) && rel_find_ref(l) == rel_find_ref(r)) {
+	    (ref = rel_find_ref(l)) != NULL && ref == rel_find_ref(r)) {
 		/* Find selects and try to merge */
 		sql_rel *ls = rel_find_select(l), *nls;
 		sql_rel *rs = rel_find_select(r);
@@ -1338,7 +1339,7 @@ rel_merge_union(int *changes, mvc *sql, sql_rel *rel)
 		if (!rel_match_projections(l,r)) 
 			return rel;
 
-		/* for now only union(project*(select(R),project*(selectR))) */
+		/* for now only union(project*(select(R),project*(select(R))) */
 		if (ls != l->l || rs != r->l || 
 		    ls->l != rs->l || !rel_is_ref(ls->l))
 			return rel;
@@ -1664,9 +1665,14 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		return rel_merge_projects(changes, sql, rel);
 
 	/* push select through join */
-	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
+	if (rel->op == op_select && r && is_join(r->op) && !(rel_is_ref(r))) {
 		sql_rel *jl = r->l;
 		sql_rel *jr = r->r;
+		int left = r->op == op_join || r->op == op_left;
+		int right = r->op == op_join || r->op == op_right;
+
+		if (r->op == op_full)
+			return rel;
 
 		/* introduce selects under the join (if needed) */
 		if (!is_select(jl->op))
@@ -1679,11 +1685,12 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *e = n->data, *ne = NULL;
 			int done = 0;
 	
-			ne = exp_push_down(sql, e, jl, jl);
+			if (left)
+				ne = exp_push_down(sql, e, jl, jl);
 			if (ne && ne != e) {
 				done = 1; 
 				rel_select_add_exp(jl, ne);
-			} else {
+			} else if (right) {
 				ne = exp_push_down(sql, e, jr, jr);
 				if (ne && ne != e) {
 					done = 1; 
