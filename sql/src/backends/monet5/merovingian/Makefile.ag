@@ -33,7 +33,6 @@ MEROVINGIAN_TMP_SUBS = \
 	merovingian_proxy.c
 
 MONETDB_TMP_SUBS = \
-	monetdb_discover.c \
 	monetdb_get.c \
 	monetdb_status.c
 
