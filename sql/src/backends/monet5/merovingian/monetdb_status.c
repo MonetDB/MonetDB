@@ -17,7 +17,6 @@
  * All Rights Reserved.
  */
 
-
 static void
 printStatus(sabdb *stats, int mode, int twidth)
 {
@@ -280,11 +279,45 @@ command_status(int argc, char *argv[])
 		}
 	}
 
-	if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
-		fprintf(stderr, "status: internal error: %s\n", e);
-		GDKfree(e);
-		exit(2);
+	if (mero_running == 0) {
+		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
+			fprintf(stderr, "status: internal error: %s\n", e);
+			GDKfree(e);
+			exit(2);
+		}
+	} else {
+		char *buf;
+		char *p;
+		sabdb *w;
+		char path[8096];
+
+		snprintf(path, sizeof(path), "%s/.merovingian_control", dbfarm);
+		e = control_send(&buf, path, -1, "flyghende", "hollander");
+		if (e != NULL) {
+			fprintf(stderr, "status: internal error: %s\n", e);
+			free(e);
+			exit(2);
+		}
+
+		orig = NULL;
+		if ((p = strtok(buf, "\n")) != NULL) {
+			do {
+				e = SABAOTHdeserialise(&stats, &p);
+				if (e != NULL) {
+					printf("WARNING: failed to parse response from "
+							"merovingian: %s (%s)\n", e, p);
+					GDKfree(e);
+					continue;
+				}
+				if (orig == NULL) {
+					orig = w = stats;
+				} else {
+					w = w->next = stats;
+				}
+			} while ((p = strtok(NULL, "\n")) != NULL);
+		}
 	}
+
 	/* don't even look at the arguments, if we are instructed
 	 * to list all known databases */
 	if (doall != 1) {

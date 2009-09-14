@@ -213,8 +213,7 @@ command_discover(int argc, char *argv[])
 		match = argv[1];
 	}
 
-	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
-	path[8095] = '\0';
+	snprintf(path, sizeof(path), "%s/.merovingian_control", dbfarm);
 
  	/* Send the pass phrase to unlock the information available in
 	 * merovingian.  Anelosimus eximius is a social species of spiders,
