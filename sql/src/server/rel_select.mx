@@ -4154,7 +4154,7 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection, int d
 }
 
 static sql_rel *
-join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op)
+join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, int l_nil, int r_nil)
 {
 	int nr = ++sql->label, found = 0, full = (op != op_join);
 	char name[16], *nme;
@@ -4184,6 +4184,8 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op)
 			append(outexps, exp_dup(le));
 			list_remove_data(r_exps, re);
 		} else {
+			if (l_nil)
+				set_has_nil(le);
 			append(outexps, exp_dup(le));
 		}
 	}
@@ -4194,7 +4196,12 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op)
 		rel_destroy(rel);
 		return NULL;
 	}
-	list_merge(outexps, r_exps, (fdup)&exp_dup);
+	for (n = r_exps->h; n; n = n->next) {
+		sql_exp *re = n->data;
+		if (r_nil)
+			set_has_nil(re);
+		append(outexps, exp_dup(re));
+	}
 	list_destroy(r_exps);
 	rel = rel_project(rel, outexps);
 	set_processed(rel);
@@ -4690,6 +4697,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 {
 	operator_type op = op_join;
 	sql_rel *t1, *t2, *inner;
+	int l_nil = 0, r_nil = 0;
 
 	t1 = table_ref(sql, rel, tab1);
 	t2 = table_ref(sql, rel, tab2);
@@ -4708,10 +4716,14 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 	case jt_inner: op = op_join;
 		break;
 	case jt_left: op = op_left;
+		r_nil = 1;
 		break;
 	case jt_right: op = op_right;
+		l_nil = 1;
 		break;
 	case jt_full: op = op_full;
+		l_nil = 1;
+		r_nil = 1;
 		break;
 	case jt_union:
 		/* fool compiler */
@@ -4728,6 +4740,31 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
 		rel = rel_logical_exp(sql, rel, js, sql_where);
+
+		if (!rel)
+			return rel;
+		if (l_nil || r_nil) { /* add projection for correct NOT NULL */
+			list *outexps = new_exp_list(), *exps;
+			node *m;
+
+			exps = rel_projections(sql, t1, rel_get_name(t1), 1, 1);
+			for (m = exps->h; m; m = m->next) {
+				sql_exp *ls = exp_dup(m->data);
+				if (l_nil)
+					set_has_nil(ls);
+				append(outexps, ls);
+			}
+			list_destroy(exps);
+			exps = rel_projections(sql, t2, rel_get_name(t2), 1, 1);
+			for (m = exps->h; m; m = m->next) {
+				sql_exp *rs = exp_dup(m->data);
+				if (r_nil)
+					set_has_nil(rs);
+				append(outexps, rs);
+			}
+			list_destroy(exps);
+			rel = rel_project(rel, outexps);
+		}
 	} else if (js) {	/* using */
 		char rname[16], *rnme;
 		dnode *n = js->data.lval->h;
@@ -4768,8 +4805,12 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 					break;
 				}
 			}
-			if (!fnd)
-				append(outexps, exp_dup(m->data));
+			if (!fnd) {
+				sql_exp *ls = exp_dup(m->data);
+				if (l_nil)
+					set_has_nil(ls);
+				append(outexps, ls);
+			}
 		}
 		list_destroy(exps);
 		exps = rel_projections(sql, t2, NULL, 1, 1);
@@ -4783,13 +4824,17 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 					break;
 				}
 			}
-			if (!fnd)
-				append(outexps, exp_dup(m->data));
+			if (!fnd) {
+				sql_exp *rs = exp_dup(m->data);
+				if (r_nil)
+					set_has_nil(rs);
+				append(outexps, rs);
+			}
 		}
 		list_destroy(exps);
 		rel = rel_project(rel, outexps);
 	} else {		/* ! js -> natural join */
-		rel = join_on_column_name(sql, rel, t1, t2, op);
+		rel = join_on_column_name(sql, rel, t1, t2, op, l_nil, r_nil);
 	}
 	if (!rel)
 		return NULL;

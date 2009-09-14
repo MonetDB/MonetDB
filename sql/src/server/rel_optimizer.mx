@@ -1664,6 +1664,27 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	    r && r->op == op_project && !(rel_is_ref(r))) 
 		return rel_merge_projects(changes, sql, rel);
 
+	/* merge select and cross product ? */
+	if (rel->op == op_select && r && r->op == op_join && list_empty(r->exps) && !(rel_is_ref(r))) {
+		list *exps = rel->exps;
+
+		if (!r->exps)
+			r->exps = new_exp_list(); 
+		rel->exps = new_exp_list(); 
+		for (n = exps->h; n; n = n->next) { 
+			sql_exp *e = exp_dup(n->data);
+
+			if (exp_is_join_exp(e) == 0) {
+				append(r->exps, e);
+				*changes += 1;
+			} else {
+				append(rel->exps, e);
+			}
+		}
+		list_destroy(exps);
+		return rel;
+	}
+
 	/* push select through join */
 	if (rel->op == op_select && r && is_join(r->op) && !(rel_is_ref(r))) {
 		sql_rel *jl = r->l;
@@ -2029,7 +2050,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			if (!cnt) {
 				list *l = avg->l;
 				sql_subaggr *cf = sql_bind_aggr(sql->session->schema, "count", exp_subtype(l->h->data));
-				sql_exp *e = exp_aggr(list_dup(avg->l, (fdup)&exp_dup), cf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
+				sql_exp *e = exp_aggr(list_dup(avg->l, (fdup)&exp_dup), cf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
 				exp_label(e, ++sql->label);
 				append(nexps, e);
@@ -2038,7 +2059,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			if (!sum) {
 				list *l = avg->l;
 				sql_subaggr *sf = sql_bind_aggr(sql->session->schema, "sum", exp_subtype(l->h->data));
-				sql_exp *e = exp_aggr(list_dup(avg->l, (fdup)&exp_dup), sf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
+				sql_exp *e = exp_aggr(list_dup(avg->l, (fdup)&exp_dup), sf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
 				exp_label(e, ++sql->label);
 				append(nexps, e);

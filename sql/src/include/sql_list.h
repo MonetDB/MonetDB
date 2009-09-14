@@ -42,6 +42,7 @@ extern list *list_create(fdestroy destroy);
 
 extern void list_destroy(list *l);
 extern int list_length(list *l);
+extern int list_empty(list *l);
 
 extern list *list_append(list *l, void *data);
 extern list *list_append_before(list *l, node *n, void *data);

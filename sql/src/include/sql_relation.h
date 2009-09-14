@@ -122,7 +122,7 @@ typedef enum operator_type {
 	(op == op_insert || op == op_update || op == op_delete)
 
 /* NO NIL semantics of aggr operations */
-#define has_no_nil(e) \
+#define need_no_nil(e) \
 	((e->flag&NO_NIL))
 #define set_no_nil(e) \
 	e->flag |= NO_NIL
@@ -132,6 +132,8 @@ typedef enum operator_type {
 	((e->flag&HAS_NO_NIL) == 0)
 #define set_has_no_nil(e) \
 	e->flag |= HAS_NO_NIL
+#define set_has_nil(e) \
+	e->flag &= (~HAS_NO_NIL)
 
 #define is_ascending(e) \
 	((e->flag&ASCENDING))

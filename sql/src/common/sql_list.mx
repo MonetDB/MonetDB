@@ -45,6 +45,14 @@ list_create(fdestroy destroy)
 	return l;
 }
 
+int
+list_empty(list *l)
+{
+	if (l)
+		return list_length(l) == 0;
+	return 1;
+}
+
 static void
 node_destroy(list *l, node *n)
 {

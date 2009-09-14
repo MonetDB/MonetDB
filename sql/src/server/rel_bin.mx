@@ -340,6 +340,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			s = stmt_Nop(stmt_list(l), sql_dup_func(e->f)); 
 	} 	break;
 	case e_aggr: {
+		sql_exp *at = NULL;
 		list *attr = e->l; 
 		stmt *as = NULL;
 		stmt *as2 = NULL;
@@ -348,7 +349,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 
 		assert(sel == NULL);
 		if (attr) { 
-			as = exp_bin(sql, attr->h->data, left, right, NULL, sel);
+			at = attr->h->data;
+			as = exp_bin(sql, at, left, right, NULL, sel);
 			if (list_length(attr) == 2)
 				as2 = exp_bin(sql, attr->h->next->data, left, right, NULL, sel);
 			/* insert single value into a column */
@@ -377,8 +379,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		 *
 		 * so here we need to ignore NULLs
 		 */
-		if (has_no_nil(e) && attr) {
-			sql_subtype *t = exp_subtype(attr->h->data);
+		if (need_no_nil(e) && at && has_nil(at) && attr) {
+			sql_subtype *t = exp_subtype(at);
 			stmt *n = stmt_atom(atom_general(t, NULL, 0));
 			as = stmt_select2(as, n, stmt_dup(n), 0);
 		}
