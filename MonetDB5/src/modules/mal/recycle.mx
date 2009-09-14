@@ -150,6 +150,7 @@ recycle_export str RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 #include "mal_function.h"
 #include "mal_recycle.h"
 #include "recycle.h"
+#include "algebra.h"
 
 str recycleLog = NULL; 
 
@@ -477,6 +478,8 @@ RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
   	if (recycleQPat == NULL)
    		RECYCLEinitQPat(20);
 	cntxt->rcc->curQ = RECYCLEnewQryStat(cntxt,mb);
+	minAggr = ALGminany;
+	maxAggr = ALGmaxany;
 	return MAL_SUCCEED;
 }
 str 
