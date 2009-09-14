@@ -2581,6 +2581,14 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		if (isTable(fc->t)) {
 			store_funcs.destroy_col(NULL, fc);
 			store_funcs.dup_col(tr, pfc, fc);
+
+			fc->null = pfc->null;
+			fc->unique = pfc->unique;
+			if (fc->def) 
+				_DELETE(fc->def);
+			fc->def = NULL;
+			if (pfc->def)
+				fc->def = _strdup(pfc->def);
 		}
 		fc->base.wtime = fc->base.rtime = 0;
 	}
