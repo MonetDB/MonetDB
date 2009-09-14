@@ -809,7 +809,146 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 
 	return(MAL_SUCCEED);
 }
-@}
 
+@h
+/* used in the serialisation to be able to change it in the future */
+#define SABDBVER "1"
+
+mal_export str SABAOTHserialise(str *ret, sabdb *db);
+@c
+/**
+ * Produces a string representation suitable for storage/sending.
+ */
+str SABAOTHserialise(str *ret, sabdb *db) {
+	char buf[8096];
+	char scens[64];
+	char conns[1024];
+	sablist *l;
+	char *p;
+	size_t avail;
+	size_t len;
+
+	scens[0] = '\0';
+	p = scens;
+	avail = sizeof(scens) - 1;
+	for (l = db->scens; l != NULL; l = l->next) {
+		len = strlen(l->val);
+		if (len > avail)
+			break;
+		memcpy(p, l->val, len);
+		p += len + 1;
+		avail -= len + 1;
+		memcpy(p - 1, "'", 2);
+	}
+	if (p != scens)
+		p[-1] = '\0';
+
+	conns[0] = '\0';
+	p = conns;
+	avail = sizeof(conns) - 1;
+	for (l = db->conns; l != NULL; l = l->next) {
+		len = strlen(l->val);
+		if (len > avail)
+			break;
+		memcpy(p, l->val, len);
+		p += len + 1;
+		avail -= len + 1;
+		memcpy(p - 1, "'", 2);
+	}
+	if (p != conns)
+		p[-1] = '\0';
+
+	snprintf(buf, sizeof(buf), "sabdb:" SABDBVER ":%s,%d,%d,%s,%s",
+			db->path,
+			db->locked,
+			(int)(db->state),
+			scens,
+			conns);
+
+	*ret = GDKstrdup(buf);
+	return(MAL_SUCCEED);
+}
+
+@h
+mal_export str SABAOTHdeserialise(sabdb **ret, str *sabdb);
+@c
+/**
+ * Produces a sabdb struct out of a serialised string.
+ */
+str SABAOTHdeserialise(sabdb **ret, str *sdb) {
+	char path[1024];
+	int locked;
+	int state;
+	char scens[64];
+	char conns[64];
+	sabdb *s;
+	sablist *l;
+	char *p;
+	int args;
+
+	args = sscanf(*sdb,
+			"sabdb:" SABDBVER ":%1023[^','],%d,%d,%63[^','],%63[^',']",
+			path,
+			&locked,
+			&state,
+			scens,
+			conns);
+
+	if (args != 6)
+		throw(MAL, "sabaoth.deserialise",
+				"invalid or incompatible input string");
+	if (strrchr(path, '/') == NULL)
+		throw(MAL, "sabaoth.deserialise",
+				"inconsistent input string, '%s' is not a path", path);
+
+	s = GDKmalloc(sizeof(sabdb));
+
+	s->path = GDKstrdup(path);
+	/* SABAOTHfree() actually relies on this trick */
+	s->dbname = strrchr(s->path, '/') + 1;
+	s->locked = locked;
+	s->state = (SABdbState)state;
+	if (strlen(scens) == 0) {
+		s->scens = NULL;
+	} else {
+		l = s->scens = GDKmalloc(sizeof(sablist));
+		p = strtok(scens, "'");
+		if (p == NULL) {
+			l->val = GDKstrdup(scens);
+			l->next = NULL;
+		} else {
+			l->val = GDKstrdup(p);
+			l->next = NULL;
+			while ((p = strtok(NULL, "'")) != NULL) {
+				l = l->next = GDKmalloc(sizeof(sablist));
+				l->val = GDKstrdup(p);
+				l->next = NULL;
+			}
+		}
+	}
+	if (strlen(conns) == 0) {
+		s->conns = NULL;
+	} else {
+		l = s->conns = GDKmalloc(sizeof(sablist));
+		p = strtok(conns, "'");
+		if (p == NULL) {
+			l->val = GDKstrdup(conns);
+			l->next = NULL;
+		} else {
+			l->val = GDKstrdup(p);
+			l->next = NULL;
+			while ((p = strtok(NULL, "'")) != NULL) {
+				l = l->next = GDKmalloc(sizeof(sablist));
+				l->val = GDKstrdup(p);
+				l->next = NULL;
+			}
+		}
+	}
+
+	*ret = s;
+	return(MAL_SUCCEED);
+}
+
+@}
 @h
 #endif
