@@ -876,30 +876,49 @@ mal_export str SABAOTHdeserialise(sabdb **ret, str *sabdb);
  * Produces a sabdb struct out of a serialised string.
  */
 str SABAOTHdeserialise(sabdb **ret, str *sdb) {
-	char path[1024];
+	char *path;
 	int locked;
 	int state;
-	char scens[64];
-	char conns[64];
+	char *scens = "";
+	char *conns = "";
 	sabdb *s;
 	sablist *l;
 	char *p;
-	int args;
+	char *lasts;
 
-	args = sscanf(*sdb,
-			"sabdb:" SABDBVER ":%1023[^','],%d,%d,%63[^','],%63[^',']",
-			path,
-			&locked,
-			&state,
-			scens,
-			conns);
+	if ((p = strtok_r(*sdb, ":", &lasts)) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain a magic: %s", *sdb);
+	if (strcmp(p, "sabdb") != 0)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string is not a sabdb struct: %s", *sdb);
+	if ((p = strtok_r(NULL, ":", &lasts)) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain a version number: %s", lasts);
+	if (strcmp(p, SABDBVER) != 0)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string has unsupported version: %s", p);
+	if ((p = strtok_r(NULL, ",", &lasts)) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain path: %s", lasts);
+	path = p;
+	if ((p = strtok_r(NULL, ",", &lasts)) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain locked state: %s", lasts);
+	locked = atoi(p);
+	if ((p = strtok_r(NULL, ",", &lasts)) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain state: %s", lasts);
+	state = atoi(p);
+	/* strtok skips over multiple separators :( hence when a database is
+	 * not running, strtok reports these to be missing */
+	if ((p = strtok_r(NULL, ",", &lasts)) != NULL)
+		scens = p;
+	if ((p = strtok_r(NULL, ",", &lasts)) != NULL)
+		conns = p;
 
-	if (args != 6)
-		throw(MAL, "sabaoth.deserialise",
-				"invalid or incompatible input string");
 	if (strrchr(path, '/') == NULL)
-		throw(MAL, "sabaoth.deserialise",
-				"inconsistent input string, '%s' is not a path", path);
+		throw(ILLARG, "sabaoth.deserialise", "invalid path: %s", path);
 
 	s = GDKmalloc(sizeof(sabdb));
 
@@ -912,14 +931,14 @@ str SABAOTHdeserialise(sabdb **ret, str *sdb) {
 		s->scens = NULL;
 	} else {
 		l = s->scens = GDKmalloc(sizeof(sablist));
-		p = strtok(scens, "'");
+		p = strtok_r(scens, "'", &lasts);
 		if (p == NULL) {
 			l->val = GDKstrdup(scens);
 			l->next = NULL;
 		} else {
 			l->val = GDKstrdup(p);
 			l->next = NULL;
-			while ((p = strtok(NULL, "'")) != NULL) {
+			while ((p = strtok_r(NULL, "'", &lasts)) != NULL) {
 				l = l->next = GDKmalloc(sizeof(sablist));
 				l->val = GDKstrdup(p);
 				l->next = NULL;
@@ -930,14 +949,14 @@ str SABAOTHdeserialise(sabdb **ret, str *sdb) {
 		s->conns = NULL;
 	} else {
 		l = s->conns = GDKmalloc(sizeof(sablist));
-		p = strtok(conns, "'");
+		p = strtok_r(conns, "'", &lasts);
 		if (p == NULL) {
 			l->val = GDKstrdup(conns);
 			l->next = NULL;
 		} else {
 			l->val = GDKstrdup(p);
 			l->next = NULL;
-			while ((p = strtok(NULL, "'")) != NULL) {
+			while ((p = strtok_r(NULL, "'", &lasts)) != NULL) {
 				l = l->next = GDKmalloc(sizeof(sablist));
 				l->val = GDKstrdup(p);
 				l->next = NULL;
