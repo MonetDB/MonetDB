@@ -40,11 +40,3 @@ headers_common = {
 	          monet_utils.mx monet_options.mx monet_getopt.h \
 	          stream.mx dummy_gdk_utils.mx
 }
-
-headers_py = {
-	COND = HAVE_PYTHON
-	HEADERS = py
-	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDB
-	SOURCES = monet_options.py.in __init__.py
-}
-

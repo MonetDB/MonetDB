@@ -29,10 +29,7 @@ URL: http://monetdb.cwi.nl/
 Source: http://downloads.sourceforge.net/monetdb/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-BuildRequires: python
 BuildRequires: zlib-devel, bzip2-devel, openssl-devel
-
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 %description
 MonetDB is a database management system that is developed from a
@@ -47,7 +44,6 @@ use MonetDB, you will certainly need this package.
 Summary: MonetDB development package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
-Requires: python
 Requires: zlib-devel, bzip2-devel, openssl-devel
 
 %description devel
@@ -57,20 +53,6 @@ automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with MonetDB.
-
-%package python
-Summary: Python support files for MonetDB
-Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
-Requires: python
-
-%description python
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains Python support files.
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -86,11 +68,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-optimize=yes \
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
-	%{?comp_cc:CC="%{comp_cc}"} \
-	%{?_with_php} %{?_without_php} \
-	%{?_with_python} %{?_without_python} \
-	%{?_with_perl} %{?_without_perl} \
-	%{?_with_java} %{?_without_java}
+	%{?comp_cc:CC="%{comp_cc}"}
 
 make
 
@@ -126,10 +104,6 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libmutils.so
 %{_libdir}/libstream.so
 %{_libdir}/libbat.so
-
-%files python
-%dir %{python_sitelib}/MonetDB
-%{python_sitelib}/MonetDB/*
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}

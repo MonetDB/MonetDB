@@ -72,13 +72,13 @@ class BuiltinOptions:
     exec_prefix = '@QXexec_prefix@'
     sysconfdir = '@QXsysconfdir@'
     gdk_dbname = 'tst'
-    gdk_dbfarm = os.path.join('@QXlocalstatedir@','@PACKAGE@')
+    gdk_dbfarm = os.path.join('@QXlocalstatedir@','MonetDB')
     gdk_debug = '8'
     gdk_mem_bigsize = '256K'
     monet_admin = 'adm'
     monet_prompt = '>'
     monet_welcome = 'yes'
-    monet_mod_path = os.path.join('@QXlibdir@','@PACKAGE@') + \
+    monet_mod_path = os.path.join('@QXlibdir@','MonetDB') + \
                      os.pathsep + \
                      os.path.join('@QXlibdir@','bin')
     monet_daemon = 'yes'

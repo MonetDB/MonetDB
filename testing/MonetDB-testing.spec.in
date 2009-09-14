@@ -33,7 +33,7 @@ Requires: MonetDB >= 1.32
 #                    ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-Requires: MonetDB-python
+Obsoletes: MonetDB-python
 Requires: MonetDB-devel, MonetDB-client-devel, MonetDB4-server-devel, MonetDB5-server-devel, MonetDB-SQL-devel, MonetDB4-XQuery-devel, MonetDB-geom-devel
 
 BuildRequires: python
@@ -117,6 +117,7 @@ rm -fr $RPM_BUILD_ROOT
 %exclude %{python_sitelib}/MonetDBtesting/*.pyc
 %exclude %{python_sitelib}/MonetDBtesting/*.pyo
 %{python_sitelib}/MonetDBtesting/__init__.py
+%{python_sitelib}/MonetDBtesting/monet_options.py
 %{python_sitelib}/MonetDBtesting/subprocess26.py
 %{python_sitelib}/MonetDBtesting/trace.py
 

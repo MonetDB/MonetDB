@@ -119,13 +119,6 @@ AC_DEFINE_UNQUOTED(MONETDB_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-m
 AC_DEFINE_UNQUOTED(MONETDB_LIBDIR,"$QXlibdir",[object code libraries])
 AC_DEFINE_UNQUOTED(MONETDB_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 
-QPYTHON="$PYTHON"
-XPYTHON="`$translatepath "$PYTHON"`"
-QXPYTHON="`echo "$XPYTHON" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QPYTHON)
-AC_SUBST(XPYTHON)
-AC_SUBST(QXPYTHON)
-
 
 case "$host_os" in
 mac*)	DIRSEP=':'

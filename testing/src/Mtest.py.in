@@ -165,12 +165,15 @@ def GetMonetConfig(pkg, arg) :
 ### GetMonetConfig(pkg, arg) #
 
 try:
-    from MonetDB import monet_options
+    from MonetDBtesting import monet_options
 except ImportError:
     import distutils.sysconfig
-    p = GetConfig('monetdb-config', '--pythonlibdir')
+    if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
+        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
+    else:
+        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
     sys.path.insert(0, p)
-    from MonetDB import monet_options
+    from MonetDBtesting import monet_options
     if os.environ.has_key('PYTHONPATH'):
         p = p + os.pathsep + os.environ['PYTHONPATH']
     os.environ['PYTHONPATH'] = p
