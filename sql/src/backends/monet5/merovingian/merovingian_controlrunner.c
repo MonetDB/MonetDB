@@ -420,6 +420,44 @@ controlRunner(void *d)
 					}
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send(msgsock, buf2, len, 0);
+				} else if (strcmp(p, "status") == 0 || (
+							strcmp(q, "flyghende") == 0 &&
+							strcmp(p, "hollander") == 0 && (q = NULL) == NULL))
+				{
+					sabdb *stats;
+					sabdb *topdb;
+					char *sdb;
+
+					/* return a list of sabdb structs for our local
+					 * databases */
+					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+						len = snprintf(buf2, sizeof(buf2),
+								"internal error, please review the logs\n");
+						send(msgsock, buf2, len, 0);
+						Mfprintf(_mero_ctlerr, "status: SABAOTHgetStatus: "
+								"%s\n", e);
+						freeErr(e);
+						continue;
+					}
+
+					for (topdb = stats; stats != NULL; stats = stats->next) {
+						/* currently never fails (just crashes) */
+						SABAOTHserialise(&sdb, stats);
+						len = snprintf(buf2, sizeof(buf2),
+								"%s\n", sdb);
+						send(msgsock, buf2, len, 0);
+						GDKfree(sdb);
+					}
+
+					if (q == NULL) {
+						Mfprintf(_mero_ctlout, "served status list\n");
+
+						/* because this command is multi line, you can't
+						 * combine it, disconnect the client */
+						break;
+					} else {
+						Mfprintf(_mero_ctlout, "returned status for '%s'\n", q);
+					}
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
 				{
