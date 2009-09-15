@@ -451,7 +451,7 @@ static int pipelineOverruled;
 int
 SQLvalidatePipeline(void){
 	int error= 0;
-	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, replicator= FALSE;
+	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, replication= FALSE;
 	int i;
 
 	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ){
@@ -469,8 +469,8 @@ SQLvalidatePipeline(void){
 		if (strcmp(optimizers[i],"mergetable") == 0)
 			mergetable= TRUE;
 		else
-		if (strcmp(optimizers[i],"replicator") == 0)
-			replicator= TRUE;
+		if (strcmp(optimizers[i],"replication") == 0)
+			replication= TRUE;
 
 #ifdef WIN32
 		else
@@ -496,8 +496,8 @@ SQLvalidatePipeline(void){
 For replicated databases we need to ensure that the corresponding optimizer
 is enabled.
 @c
-	if ( MASTERroleEnabled() && replicator == FALSE){
-		showException(SQL,"optimizer"," 'replicator' should be part of the pipeline\n");
+	if ( MASTERroleEnabled() && replication == FALSE){
+		showException(SQL,"optimizer"," 'replication' should be part of the pipeline\n");
 		error++;
 	}
 
