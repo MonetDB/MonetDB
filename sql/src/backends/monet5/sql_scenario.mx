@@ -192,13 +192,11 @@ SQLprelude(void)
 	
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql"; 
-	tmp = "sql";
-	tmp = SABAOTHmarchScenario(&res, &tmp);
+	tmp = SABAOTHmarchScenario(&res, &s->name);
 	if (tmp != MAL_SUCCEED)
 		return(tmp);
 	ms->name = "msql";
-	tmp = "msql";
-	return SABAOTHmarchScenario(&res, &tmp);
+	return SABAOTHmarchScenario(&res, &ms->name);
 }
 
 str
