@@ -31,4 +31,5 @@ test_lm_allfeatures
 test_okapi_allfeatures
 test_nllr_manyqueries
 test_lms_manyqueries
+test_bug2836870
 cleanup

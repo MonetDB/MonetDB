@@ -58,6 +58,8 @@ void normalizeq1(TJptree_t *ptree)
     TJpnode_t *nl_del[TJPNODELIST_MAXSIZE];
     TJpnode_t *n_and_par, *n_and, *n_anc0, *n_anc1, *n_about0, *n_about1, *n_qand; 
 
+// in the OR case we cannot combine query parts when they contain phrases or mandatory terms/entities
+/*
     num_del = 0;
     num_and = find_all_par_tree (ptree, p_or, nl_and);
     for (c = 0; c < num_and; c++) {
@@ -107,7 +109,7 @@ void normalizeq1(TJptree_t *ptree)
 	}
     }
     mark_deleted_nodes(nl_del, num_del);
-
+*/
     // now do the same for "AND" nodes
     num_del = 0;
     num_and = find_all_par_tree (ptree, p_and, nl_and);
