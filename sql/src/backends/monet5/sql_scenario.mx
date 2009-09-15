@@ -146,11 +146,11 @@ SQLprelude(void)
 {
 	int res = 0;
 	str tmp;
-	Scenario s = getFreeScenario();
+	Scenario ms, s = getFreeScenario();
 	if (!s)
 		throw(MAL, "sql.start", "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
-	s->name = "sql";
+	s->name = "S_Q_L";
 	s->language = "sql";
 	s->initSystem = NULL;
 	s->exitSystem = "SQLexit";
@@ -159,24 +159,28 @@ SQLprelude(void)
 	s->reader = "SQLreader";
 	s->parser = "SQLparser";
 	s->engine = "SQLengine";
-	if (GDKembedded)
-		return SQLinit();
+	if (GDKembedded) {
+		tmp = SQLinit();
+		if (tmp == MAL_SUCCEED)
+			s->name = "sql";
+		return tmp;
+	}
 
-	s = getFreeScenario();
-	if (!s)
+	ms = getFreeScenario();
+	if (!ms)
 		throw(MAL, "sql.start", "out of scenario slots");
 
-	s->name = "msql";
-	s->language = "msql";
-	s->initSystem = NULL;
-	s->exitSystem = "SQLexit";
-	s->initClient = "SQLinitClient";
-	s->exitClient = "SQLexitClient";
-	s->reader = "MALreader";
-	s->parser = "MALparser";
-	s->optimizer = "MALoptimizer";
-	/* s->tactics = .. */
-	s->engine = "MALengine";
+	ms->name = "M_S_Q_L";
+	ms->language = "msql";
+	ms->initSystem = NULL;
+	ms->exitSystem = "SQLexit";
+	ms->initClient = "SQLinitClient";
+	ms->exitClient = "SQLexitClient";
+	ms->reader = "MALreader";
+	ms->parser = "MALparser";
+	ms->optimizer = "MALoptimizer";
+	/* ms->tactics = .. */
+	ms->engine = "MALengine";
 	tmp = GDKgetenv("monet_welcome");
 	if (tmp != NULL && strcmp(tmp, "yes") == 0) {
 		fprintf(stdout, "# MonetDB/SQL module v" VERSION " loaded\n");
@@ -187,10 +191,12 @@ SQLprelude(void)
 		return(tmp);
 	
 	/* only register availability of scenarios AFTER we are inited! */
+	s->name = "sql"; 
 	tmp = "sql";
 	tmp = SABAOTHmarchScenario(&res, &tmp);
 	if (tmp != MAL_SUCCEED)
 		return(tmp);
+	ms->name = "msql";
 	tmp = "msql";
 	return SABAOTHmarchScenario(&res, &tmp);
 }
