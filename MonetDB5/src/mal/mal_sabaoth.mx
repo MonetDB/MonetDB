@@ -573,6 +573,7 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 			}
 			(void)fclose(f);
 		}
+		sdb->uplog = NULL;
 
 		/* check the state of the server by looking at its gdk lock:
 		 * - if we can lock it, the server has crashed or isn't running
@@ -814,6 +815,7 @@ str SABAOTHserialise(str *ret, sabdb *db) {
 	char scens[64];
 	char conns[1024];
 	sablist *l;
+	sabuplog dbu;
 	char *p;
 	size_t avail;
 	size_t len;
@@ -848,12 +850,20 @@ str SABAOTHserialise(str *ret, sabdb *db) {
 	if (p != conns)
 		p[-1] = '\0';
 
-	snprintf(buf, sizeof(buf), "sabdb:" SABDBVER ":%s,%d,%d,%s,%s",
-			db->path,
-			db->locked,
-			(int)(db->state),
-			scens,
-			conns);
+	rethrow("sabaoth.serialise", p, SABAOTHgetUplogInfo(&dbu, db));
+
+	/* sabdb + sabuplog structs in one */
+	snprintf(buf, sizeof(buf), "sabdb:" SABDBVER ":"
+			"%s,%d,%d,%s,%s" ","
+			"%d,%d,%d,"
+			"%lld,%lld,%lld,"
+			"%lld,%lld,"
+			"%d,%f,%f",
+			db->path, db->locked, (int)(db->state), scens, conns,
+			dbu.startcntr, dbu.stopcntr, dbu.crashcntr,
+			(lng)dbu.avguptime, (lng)dbu.maxuptime, (lng)dbu.minuptime,
+			(lng)dbu.lastcrash, (lng)dbu.laststart,
+			dbu.crashavg1, dbu.crashavg10, dbu.crashavg30);
 
 	*ret = GDKstrdup(buf);
 	return(MAL_SUCCEED);
@@ -872,40 +882,129 @@ str SABAOTHdeserialise(sabdb **ret, str *sdb) {
 	char *scens = "";
 	char *conns = "";
 	sabdb *s;
+	sabuplog *u;
 	sablist *l;
 	char *p;
 	char *lasts;
 
-	if ((p = strtok_r(*sdb, ":", &lasts)) == NULL)
+	lasts = *sdb;
+	if ((p = strchr(lasts, ':')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
-				"string does not contain a magic: %s", *sdb);
-	if (strcmp(p, "sabdb") != 0)
+				"string does not contain a magic: %s", lasts);
+	*p++ = '\0';
+	if (strcmp(lasts, "sabdb") != 0)
 		throw(ILLARG, "sabaoth.deserialise",
-				"string is not a sabdb struct: %s", *sdb);
-	if ((p = strtok_r(NULL, ":", &lasts)) == NULL)
+				"string is not a sabdb struct: %s", lasts);
+	lasts = p;
+	if ((p = strchr(p, ':')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
 				"string does not contain a version number: %s", lasts);
-	if (strcmp(p, SABDBVER) != 0)
+	*p++ = '\0';
+	if (strcmp(lasts, SABDBVER) != 0)
 		throw(ILLARG, "sabaoth.deserialise",
-				"string has unsupported version: %s", p);
-	if ((p = strtok_r(NULL, ",", &lasts)) == NULL)
+				"string has unsupported version: %s", lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
 				"string does not contain path: %s", lasts);
-	path = p;
-	if ((p = strtok_r(NULL, ",", &lasts)) == NULL)
+	*p++ = '\0';
+	path = lasts;
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
 				"string does not contain locked state: %s", lasts);
-	locked = atoi(p);
-	if ((p = strtok_r(NULL, ",", &lasts)) == NULL)
+	*p++ = '\0';
+	locked = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
 				"string does not contain state: %s", lasts);
-	state = atoi(p);
-	/* strtok skips over multiple separators :( hence when a database is
-	 * not running, strtok reports these to be missing */
-	if ((p = strtok_r(NULL, ",", &lasts)) != NULL)
-		scens = p;
-	if ((p = strtok_r(NULL, ",", &lasts)) != NULL)
-		conns = p;
+	*p++ = '\0';
+	state = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain scenarios: %s", lasts);
+	*p++ = '\0';
+	scens = lasts;
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain connections: %s", lasts);
+	*p++ = '\0';
+	conns = lasts;
+	lasts = p;
+
+	/* start parsing sabuplog struct */
+	u = GDKmalloc(sizeof(sabuplog));
+
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain startcounter: %s", lasts);
+	*p++ = '\0';
+	u->startcntr = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain stopcounter: %s", lasts);
+	*p++ = '\0';
+	u->stopcntr = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain crashcounter: %s", lasts);
+	*p++ = '\0';
+	u->crashcntr = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain avguptime: %s", lasts);
+	*p++ = '\0';
+	u->avguptime = (time_t)atoll(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain maxuptime: %s", lasts);
+	*p++ = '\0';
+	u->maxuptime = (time_t)atoll(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain minuptime: %s", lasts);
+	*p++ = '\0';
+	u->minuptime = (time_t)atoll(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain lastcrash: %s", lasts);
+	*p++ = '\0';
+	u->lastcrash = (time_t)atoll(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain laststart: %s", lasts);
+	*p++ = '\0';
+	u->laststart = (time_t)atoll(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain crashavg1: %s", lasts);
+	*p++ = '\0';
+	u->crashavg1 = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does not contain crashavg10: %s", lasts);
+	*p++ = '\0';
+	u->crashavg10 = atof(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) != NULL)
+		throw(ILLARG, "sabaoth.deserialise",
+				"string does contain additional garbage after crashavg30: %s",
+				lasts);
+	u->crashavg30 = atof(lasts);
+
+	/* fill/create sabdb struct */
 
 	if (strrchr(path, '/') == NULL)
 		throw(ILLARG, "sabaoth.deserialise", "invalid path: %s", path);
@@ -913,7 +1012,7 @@ str SABAOTHdeserialise(sabdb **ret, str *sdb) {
 	s = GDKmalloc(sizeof(sabdb));
 
 	s->path = GDKstrdup(path);
-	/* SABAOTHfree() actually relies on this trick */
+	/* SABAOTHfreeStatus() actually relies on this trick */
 	s->dbname = strrchr(s->path, '/') + 1;
 	s->locked = locked;
 	s->state = (SABdbState)state;
@@ -953,6 +1052,7 @@ str SABAOTHdeserialise(sabdb **ret, str *sdb) {
 			}
 		}
 	}
+	s->uplog = u;
 
 	*ret = s;
 	return(MAL_SUCCEED);
