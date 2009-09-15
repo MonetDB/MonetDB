@@ -213,13 +213,11 @@ command_discover(int argc, char *argv[])
 		match = argv[1];
 	}
 
-	snprintf(path, sizeof(path), "%s/.merovingian_control", dbfarm);
-
  	/* Send the pass phrase to unlock the information available in
 	 * merovingian.  Anelosimus eximius is a social species of spiders,
 	 * which help each other, just like merovingians do among each
 	 * other. */
-	p = control_send(&buf, path, -1, "anelosimus", "eximius");
+	p = control_send(&buf, mero_control, -1, "anelosimus", "eximius");
 	if (p != NULL) {
 		printf("FAILED:\n%s\n", p);
 		free(p);

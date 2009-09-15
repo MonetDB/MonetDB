@@ -289,10 +289,8 @@ command_status(int argc, char *argv[])
 		char *buf;
 		char *p;
 		sabdb *w;
-		char path[8096];
 
-		snprintf(path, sizeof(path), "%s/.merovingian_control", dbfarm);
-		e = control_send(&buf, path, -1, "flyghende", "hollander");
+		e = control_send(&buf, mero_control, -1, "flyghende", "hollander");
 		if (e != NULL) {
 			fprintf(stderr, "status: internal error: %s\n", e);
 			free(e);
