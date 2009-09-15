@@ -333,6 +333,8 @@ str SABAOTHgetLocalConnection(str *ret) {
 		*ret = GDKstrdup(data);
 	}
 
+	if (stats != NULL)
+		SABAOTHfreeStatus(&stats);
 	return(MAL_SUCCEED);
 }
 
