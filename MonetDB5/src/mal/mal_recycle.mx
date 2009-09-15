@@ -1591,7 +1591,7 @@ computeMultiSubsume(rngPtr qry, piece  *base, int cnt, lng comp)
 	piece *tmp;
 	range q1;
 	int scnt = 0;
-	int x, j;
+	int x = 0, j;
 	size_t max_x = 0;
 	BAT *b = NULL, *bs;
 
@@ -1653,7 +1653,7 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 	piece *partsol0 = NULL, *partsol1 = NULL;
 	piece sol, *cur, *base;
 	InstrPtr q;
-	int i, j, k, cnt0, cnt1;
+    int i, j, k, cnt0, cnt1 = 0;
 	lng *ovm;			/* overlap matrix */
 	int bid;
 	size_t est;		/* estimate of query size in tuples */
