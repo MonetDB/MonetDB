@@ -699,13 +699,9 @@ mal_export str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db);
  * parsed information.
  */
 str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
-	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
-	str log = alloca(sizeof(char) * (PATHLENGTH + 1));
-	str tmp;
+	char log[PATHLENGTH];
 	char data[24];
 	char *p;
-	DIR *d;
-	struct dirent *e;
 	FILE *f;
 	time_t start, stop, up;
 	int avg10[10];
@@ -720,92 +716,75 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 	ret->minuptime = -1;
 	ret->lastcrash = -1;
 
-	/* scan the parent for directories */
-	rethrow("sabaoth.getStatus", tmp,
-			getFarmPath(&path, PATHLENGTH, NULL));
-	d = opendir(path);
-	if (d == NULL)
-		throw(IO, "sabaoth.getUplogInfo", RUNTIME_DIR_ERROR " %s: %s",
-				path, strerror(errno));
-	while ((e = readdir(d)) != NULL) {
-		if (strcmp(e->d_name, db->dbname) != 0)
-			continue;
-
-		snprintf(log, PATHLENGTH, "%s/%s/%s", path, e->d_name, UPLOGFILE);
-		log[PATHLENGTH] = '\0';
-		if ((f = fopen(log, "r")) != NULL) {
-			int c;
-			start = stop = up = 0;
-			p = data;
-			while ((c = (char)fgetc(f)) != EOF) {
-				*p = (char)c;
-				switch (*p) {
-					case '\t':
-						/* start attempt */
-						ret->startcntr++;
-						if (start != 0)
-							ret->lastcrash = start;
-						memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
-						memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
-						avg10[9] = avg30[29] = ret->crashavg1 = 
-							(start != 0 ? 1 : 0);
-						*p = '\0';
-						ret->laststart = start = (time_t)atol(data);
-						p = data;
-					break;
-					case '\n':
-						/* successful stop */
-						ret->stopcntr++;
-						*p = '\0';
-						stop = (time_t)atol(data);
-						p = data;
-						i = (int) (stop - start);
-						if (i > ret->maxuptime)
-							ret->maxuptime = i;
-						if (ret->minuptime == -1 || ret->minuptime > stop - start)
-							ret->minuptime = stop - start;
-						up += i;
-						start = 0;
-					break;
-					default:
-						/* timestamp */
-						p++;
-					break;
-				}
+	snprintf(log, sizeof(log), "%s/%s", db->path, UPLOGFILE);
+	if ((f = fopen(log, "r")) != NULL) {
+		int c;
+		start = stop = up = 0;
+		p = data;
+		while ((c = (char)fgetc(f)) != EOF) {
+			*p = (char)c;
+			switch (*p) {
+				case '\t':
+					/* start attempt */
+					ret->startcntr++;
+					if (start != 0)
+						ret->lastcrash = start;
+					memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
+					memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
+					avg10[9] = avg30[29] = ret->crashavg1 = 
+						(start != 0 ? 1 : 0);
+					*p = '\0';
+					ret->laststart = start = (time_t)atol(data);
+					p = data;
+				break;
+				case '\n':
+					/* successful stop */
+					ret->stopcntr++;
+					*p = '\0';
+					stop = (time_t)atol(data);
+					p = data;
+					i = (int) (stop - start);
+					if (i > ret->maxuptime)
+						ret->maxuptime = i;
+					if (ret->minuptime == -1 || ret->minuptime > stop - start)
+						ret->minuptime = stop - start;
+					up += i;
+					start = 0;
+				break;
+				default:
+					/* timestamp */
+					p++;
+				break;
 			}
-			if (start != 0 && db->state != SABdbRunning)
-				ret->lastcrash = start;
-			memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
-			memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
-			avg10[9] = avg30[29] = ret->crashavg1 =
-				(start != 0 ? (db->state != SABdbRunning ? 1 : 0) : 0);
-			ret->crashcntr =
-				ret->startcntr - (db->state == SABdbRunning ? 1 : 0) -
-				ret->stopcntr;
-			for (i = 0; i < 10; i++)
-				ret->crashavg10 += avg10[i];
-			ret->crashavg10 = ret->crashavg10 / 10.0;
-			for (i = 0; i < 30; i++)
-				ret->crashavg30 += avg30[i];
-			ret->crashavg30 = ret->crashavg30 / 30.0;
-
-			if (ret->stopcntr > 0) {
-				ret->avguptime = (time_t)(((double)up / (double)ret->stopcntr) + 0.5);
-			} else {
-				ret->avguptime = 0;
-				ret->minuptime = 0;
-				ret->maxuptime = 0;
-			}
-			(void)fclose(f);
-		} else {
-			(void)closedir(d);
-			throw(IO, "sabaoth.getUplogInfo", RUNTIME_FILE_NOT_FOUND " %s: %s",
-					log, strerror(errno));
 		}
+		if (start != 0 && db->state != SABdbRunning)
+			ret->lastcrash = start;
+		memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
+		memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
+		avg10[9] = avg30[29] = ret->crashavg1 =
+			(start != 0 ? (db->state != SABdbRunning ? 1 : 0) : 0);
+		ret->crashcntr =
+			ret->startcntr - (db->state == SABdbRunning ? 1 : 0) -
+			ret->stopcntr;
+		for (i = 0; i < 10; i++)
+			ret->crashavg10 += avg10[i];
+		ret->crashavg10 = ret->crashavg10 / 10.0;
+		for (i = 0; i < 30; i++)
+			ret->crashavg30 += avg30[i];
+		ret->crashavg30 = ret->crashavg30 / 30.0;
 
-		break;
+		if (ret->stopcntr > 0) {
+			ret->avguptime = (time_t)(((double)up / (double)ret->stopcntr) + 0.5);
+		} else {
+			ret->avguptime = 0;
+			ret->minuptime = 0;
+			ret->maxuptime = 0;
+		}
+		(void)fclose(f);
+	} else {
+		throw(IO, "sabaoth.getUplogInfo", RUNTIME_FILE_NOT_FOUND " %s: %s",
+				log, strerror(errno));
 	}
-	(void)closedir(d);
 
 	return(MAL_SUCCEED);
 }
