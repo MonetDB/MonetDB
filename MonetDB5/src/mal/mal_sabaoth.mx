@@ -445,6 +445,7 @@ typedef struct Ssabdb {
 	SABdbState state;        /* current database state */
 	sablist* scens;          /* scenarios available for this database */
 	sablist* conns;          /* connections available for this database */
+	struct Ssabuplog *uplog; /* sabuplog struct for this database */
 	struct Ssabdb* next;     /* next database */
 } sabdb;
 
@@ -646,13 +647,12 @@ str SABAOTHfreeStatus(sabdb** ret) {
 	sabdb *p, *q;
 	sablist *r, *s;
 
-	if (*ret == NULL)
-		return(MAL_SUCCEED);
-
 	p = *ret;
 	while (p != NULL) {
 		if (p->path != NULL)
 			GDKfree(p->path);
+		if (p->uplog != NULL)
+			GDKfree(p->uplog);
 		r = p->scens;
 		while (r != NULL) {
 			if (r->val != NULL)
@@ -708,6 +708,12 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 	int avg30[30];
 	int i=0;
 
+	/* early bailout if cached */
+	if (db->uplog != NULL) {
+		memcpy(ret, db->uplog, sizeof(sabuplog));
+		return(MAL_SUCCEED);
+	}
+		
 	memset(avg10, 0, sizeof(int) * 10);
 	memset(avg30, 0, sizeof(int) * 30);
 
@@ -786,6 +792,11 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 				log, strerror(errno));
 	}
 
+	/* Don't store the sabuplog in the sabdb as there is no good reason
+	 * to retrieve the sabuplog struct more than once for a database
+	 * (without refetching the sabdb struct).  Currently, only a
+	 * serialisation/deserialisation of a sabdb struct will prefill the
+	 * sabuplog struct. */
 	return(MAL_SUCCEED);
 }
 
