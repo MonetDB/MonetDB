@@ -482,6 +482,12 @@ tablet_export int insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN co
 tablet_export int output_file_dense(Tablet * as, stream *fd);
 tablet_export int has_whitespace(char *sep);
 
+#ifdef LIBTABLET
+/* not exported since only used within library */
+extern int tablet_read_more(bstream *in, stream *out, size_t n);
+extern char *tablet_skip_string(char *s, char quote);
+#endif
+
 #endif
 @c
 #include "mal_config.h"
@@ -1437,8 +1443,8 @@ bunins_failed:
 	return -1;
 }
 
-static INLINE char *
-skip_string(char *s, char quote)
+char *
+tablet_skip_string(char *s, char quote)
 {
 	int esc = 0;
 
@@ -1480,7 +1486,7 @@ insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 )
 	             (line == s || *(line - 1) != '\\')) {
 			quote = *line;
 			line++;
-			line = skip_string(line, quote);
+			line = tablet_skip_string(line, quote);
 			if (!line) {
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
 					"in %s at line " BUNFMT "\n", quote, s, BATcount(fmt->c));
@@ -1675,8 +1681,8 @@ output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs,
 	return 0;
 }
 
-static INLINE int
-read_more(bstream *in, stream *out, size_t n)
+int
+tablet_read_more(bstream *in, stream *out, size_t n)
 {
 	if (out) {
 		do {
@@ -1755,7 +1761,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 		char *s, *e, *end;
 
 
-		if (b->pos >= b->len && read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
+		if (b->pos >= b->len && tablet_read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
 			if (nr != BUN_NONE && i < nr) {
 				res = 1; 
 				if (b->len > b->pos) {
@@ -1798,7 +1804,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 
 					if (b->pos == 0 || (b->len - b->pos > b->size >> 1))
 						size <<= 4;
-					if (read_more(b, out, size) == EOF) {
+					if (tablet_read_more(b, out, size) == EOF) {
 						/* some data left? */
 						res = 1; 
 						if (b->len > b->pos &&
@@ -1869,552 +1875,6 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 
 	return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, LLONG_MAX);
 }
-@- Parallel bulk load for SQL
-The COPY INTO command for SQL is heavily CPU bound, which means
-that ideally we would like to exploit the multi-cores to do that
-work in parallel.
-Complicating factors are the initial record offset, the
-possible variable length of the input, and the original sort order
-that should preferrable be maintained.
-
-The code below consists of a file reader, which breaks up the
-file into distinct lines/fields. Then multiple parallel threads 
-can grab them, convert the value and update the underlying tables.
-
-The threads get a reference to a private copy of the READERtask.
-It includes a list of columns they should handle. This is a basis
-to distributed cheap and expensive columns over threads.
-
-A double buffering scheme might improve CPU and IO concurrent work.
-Readers and writers now overlap.
-Also the buffer size of the block stream might be a little small for 
-this task (1MB). It has been increased to 8MB, which indeed improved.
-
-The work divider allocates subtasks to threads based on the
-observed time spending so far.
-@c
-
-typedef struct{
-	int next;
-	int limit;
-	lng *time, wtime;	/* time per col + time per thread */
-	int rounds; 	/* how often did we divide the work */
-	MT_Id tid;
-	MT_Sema sema;	/* threads wait for work , negative next implies exit*/
-	MT_Sema reply;	/* let reader continue */
-	Tablet *as;
-	char *errbuf;
-	char *separator;
-	size_t seplen;
-	char quote;
-	int *cols;	/* columns to handle */
-	char ***fields;
-} READERtask;
-
-@-
-The parsing of the individual values is straightforward. If the value represents
-the null-replacement string then we grab the underlying nil. 
-If the string starts with the quote identified from SQL, we locate the tail
-and interpret the body.
-@c
-static INLINE int
-SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
-{
-	ptr *adt;
-	char buf[BUFSIZ];
-	char *e, *t;
-	int ret = 0;
-
-	/* include testing on the terminating null byte !! */
-	if (fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length+1) == 0){
-#ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
-#endif
-		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
-	} else if ( quote && *s == quote ) {
-		s++;	/* find the last quote */
-		for ( t = e = s; *t ; t++)
-			if ( *t == quote) e = t;
-		*e = 0;
-		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
-	} else {
-		for( e=s; *e; e++)
-			;
-		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
-	}
-
-	if (!adt) {
-		char *val;
-		val = *s ? GDKstrdup(s) : GDKstrdup("");
-		/* watch out for concurrent threads */
-		mal_set_lock(mal_contextLock,"tablet insert value");
-		if ( *err == NULL){
-			snprintf(buf,BUFSIZ, "value '%s' from line " BUNFMT 
-				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c)+1, c+1, fmt->type);
-			*err= GDKstrdup(buf);
-		}
-		mal_unset_lock(mal_contextLock,"tablet insert value");
-		GDKfree(val);
-		/* replace itwith a nil */
-		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
-		ret = -1;
-	}
-	/* key maybe NULL but thats not a problem, as long as we have void */
-	if (fmt->raw){
-		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
-	} else {
-		bunfastins(fmt->c, key, adt);
-	}
-	return ret;
-bunins_failed:
-	snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c)+1, c+1);
-	*err= GDKstrdup(buf);
-	return -1;
-}
-
-static int
-SQLworker_column(READERtask *task, int col)
-{
-	int i;
-	Column *fmt = task->as->format;
-	str err = 0;
-
-	if ( BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next ) {
-		if ( (fmt[col].c =  BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->next)) == NULL){
-			task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full");
-			stream_printf(GDKout,"Failed to extend the BAT, perhaps disk full");
-			return -1;
-		}
-	}
-
-	for ( i = 0; i< task->next ; i++){
-		SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &err, col);
-		if ( err ) {
-			if (!task->as->tryall){
-				task->as->error = err; /* restore for upper layers */
-				return -1;
-			}
-			BUNins(task->as->complaints, NULL, err, TRUE);
-		}
-	}
-	task->as->error = err; /* restore for upper layers */
-	return err ? -1 : 0;
-}
-
-static void
-SQLworker(void *arg)
-{
-	READERtask *task = (READERtask *) arg;
-	unsigned int i, cnt=0;
-	lng t0;
-
-	/* where to leave errors */
-	THRset_errbuf(THRget(THRgettid()), task->errbuf);  
-#ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"SQLworker started\n");
-#endif
-	while(task->next >= 0 ){
-		MT_down_sema(task->sema,"SQLworker");
-		if ( task->next < 0 ){
-#ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"SQLworker terminated\n");
-#endif
-			MT_up_sema(task->reply,"SQLworker");
-			return;
-		}
-
-		for ( i= 0; i < task->as->nr_attrs && task->as->error == NULL; i++)
-		if ( task->cols[i]) {
-			t0 = GDKusec();
-			SQLworker_column(task,task->cols[i]-1);
-			t0 = GDKusec() -t0;
-			task->time[i] += t0;
-			task->wtime += t0;
-		}
-		cnt += task->next;
-
-		MT_up_sema(task->reply,"SQLworker");
-	}
-	MT_up_sema(task->reply,"SQLworker");
-#ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"SQLworker exists\n");
-#endif
-	stream_printf(GDKout,"##SQLworker exists %s\n",task->as->error);
-}
-@-
-The line is broken into pieces directly on their field separators. It assumes that we have
-the record in the cache already, so we can do most work quickly. 
-Furthermore, it assume a uniform (SQL) pattern, without whitespace skipping, but with quote and separator.
-@c
-
-static str
-SQLload_error(READERtask *task, Tablet *as, int idx, str csep, str rsep){
-	str line;
-	size_t sz =0, rseplen=strlen(rsep), cseplen = strlen(csep);
-	unsigned int i;
-	for ( i = 0; i < as->nr_attrs; i++)
-	if (task->fields[i][idx])
-		sz += strlen(task->fields[i][idx]) + cseplen;
-	else sz += cseplen;
-
-	line = (str) GDKzalloc(sz + rseplen + 1);
-	for ( i = 0; i < as->nr_attrs; i++){
-		if (task->fields[i][idx])
-			strcat(line,task->fields[i][idx]);
-		if ( i < as->nr_attrs -1)
-			strcat(line,csep);
-	}
-	strcat(line,rsep);
-	return line;
-}
-
-static int
-SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
-{
-	Column *fmt = as->format;
-	BUN i;
-	char *start;
-	char errmsg[BUFSIZ];
-	char ch = *task->separator;
-
-	for (i = 0; i < as->nr_attrs ; i++) {
-		task->fields[i][task->next] = start = line;
-		/* recognize fields starting with a quote, keep them */
-		if ( task->quote && *line == task->quote ){
-			line = skip_string(line + 1, task->quote);
-			if (!line) {
-				str errline = SQLload_error(task,as,task->next,csep,rsep);
-				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
-					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c) + task->next +1, i);
-				GDKerror(errmsg);
-				as->error = GDKstrdup(errmsg);
-				GDKfree(errline);
-				*start = 0; /* to avoid handling an incomplete quoted field */
-				for ( ; i< as->nr_attrs ; i++)
-					task->fields[i][task->next] = start ;
-				if (!as->tryall)
-					return -1;
-				BUNins(as->complaints, NULL, as->error, TRUE);
-				return -1;
-			} 
-		} 
-
-		/* skip single character separators fast. */
-			if ( task->seplen == 1){
-				for ( ; *line ; line++)
-				if ( *line == ch)  {
-					*line = 0;
-					line ++;
-					goto endoffield;
-				}
-			} else
-			do{
-				for ( ; *line ; line++)
-				if ( *line && (task->seplen == 1 || strncmp(line,task->separator,task->seplen) == 0) ){
-					*line = 0;
-					line += task->seplen;
-					goto endoffield;
-				}
-			} while (*line);
-		if ( i < as->nr_attrs-1)  {
-			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
-				fmt->sep, BATcount(fmt->c) + 1 + task->next, i);
-			GDKerror(errmsg);
-			as->error = GDKstrdup(errmsg);
-			if (!as->tryall)
-				return -1;
-			BUNins(as->complaints, NULL, as->error, TRUE);
-			break;
-		}
-		endoffield:;
-	}
-	return 0;
-}
-static void SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads){
-	int i, j, mi;
-	lng *loc,t;
-
-	/* after a few rounds we stick to the work assignment */
-	if ( task->rounds++ > 8 )
-		return;
-	/* simple round robin the first time */
-	j=0;
-	if ( task->rounds++ == 0){
-		for ( i=0; i < nr_attrs; i++, j++)
-			ptask[ j % threads].cols[i] = task->cols[i];
-		return;
-	}
-	loc = (lng*) GDKzalloc(sizeof(lng) * threads);
-	/* use of load directives */
-	for ( i=0; i < nr_attrs; i++)
-	for ( j=0; j < threads; j++)
-		ptask[j].cols[i] = 0;
-
-	/* sort the attributes based on their total time cost */
-	for ( i=0; i<nr_attrs; i++)
-	for ( j=i+1; j<nr_attrs; j++)
-	if ( task->time[i] < task->time[j])
-	{
-		mi = task->cols[i];
-		t  = task->time[i];
-		task->cols[i] = task->cols[j];
-		task->cols[j] = mi;
-		task->time[i] = task->time[j];
-		task->time[j] = t;
-	}
-
-	/* now allocate the work to the threads */
-	for ( i=0; i < nr_attrs; i++, j++){
-		mi = 0;
-		for ( j=1; j< threads; j++)
-		if ( loc[j] <  loc[mi]) mi = j;
-
-		ptask[mi].cols[i] = task->cols[i];
-		loc[mi] += task->time[i];
-	}
-	GDKfree(loc);
-}
-
-BUN
-SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow)
-{
-	char *s, *e, *end;
-	BUN cnt = 0;
-	int j;
-	size_t leftover;
-	unsigned int i, prev;
-	size_t rseplen;
-	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
-	READERtask ptask[16];
-	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
-	lng t0, total=0;
-	int vmtrim = GDK_vm_trim; 
-	/* trimming process should not be active during this process. */
-	/* on sf10 experiments it should a slowdown of a factor 2 on */
-	/* large tables. Instead rely on madvise */
-	GDK_vm_trim = 0;
-
-	assert(rsep);
-	assert(csep);
-	rseplen = strlen(rsep);
-	task->fields =  (char***) GDKzalloc(as->nr_attrs * sizeof(char*));
-	task->cols =  (int*) GDKzalloc(as->nr_attrs * sizeof(int));
-	task->time =  (lng*) GDKzalloc(as->nr_attrs * sizeof(lng));
-	task->as= as;
-	task->quote = quote;
-	task->separator = csep;
-	task->seplen = strlen(csep);
-	task->errbuf =  cntxt->errbuf;
-
-	as->error = NULL;
-
-	for( i=0; i< as->nr_attrs; i++) {
-		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
-		task->cols[i] = i+1;	/* to distinguish non initialized later with zero */
-		/* advice memory manager on expected use of results */
-		BATmadvise(as->format[i].c, BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL);
-	}
-	task->limit = 10000;
-#ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",threads,csep,rsep,quote);
-#endif
-	for( j= 0; j < threads ; j++){
-		ptask[j]= *task;
-		ptask[j].cols =  (int*) GDKzalloc(as->nr_attrs * sizeof(int));
-		MT_init_sema(ptask[j].sema,0,"sqlworker");
-		MT_init_sema(ptask[j].reply,0,"sqlworker");
-		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j]);
-	}
-
-#ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"parallel bulk load "LLFMT " - " LLFMT"\n",skip, maxrow);
-	stream_printf(GDKout,"csep '%s' rsep '%s'\n",csep,rsep);
-#endif
-
-	while (b->pos < b->len || !b->eof) {
-
-		t0 = GDKusec();
-		leftover = b->len - b->pos;
-		/* shift left-over from previous block to front */
-		if (leftover > 0)
-			memcpy(b->buf, b->buf + b->pos, leftover);
-		b->buf[leftover]=0;
-		b->pos = 0;
-		b->len = leftover;
-
-#ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " leftover=" SZFMT "\n", b->pos, b->len,b->size,leftover);
-#endif
-		if (b->size - leftover == 0)
-			leftover -= b->size;
-
-		/* fill the buffer as far as possible */
-		prev = (unsigned int)(b->len - b->pos);
-		if( read_more(b, out, b->size - leftover ) == EOF)
-			break;
-#ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"read pos=%d len=%d eof=%d \n", b->pos, b->len,b->eof);
-#endif
-		if (b->len - b->pos == prev ||  b->len == 0 || b->buf[0] == '\n')
-			break;	/* nothing to be done, or empty line */
-
-		/* now we fill the copy buffer with pointers to the record */
-		/* skipping tuples as needed */
-		task->next = 0;
-
-		end = b->buf + b->len;
-		s = b->buf ;
-		*end = '\0';	/* this is safe, as the stream ensures an extra byte */
-		/* We use `e' to indicate from where we search for the next
-		   separator.  Records are assumed smaller then b->size. (1M)
-		*/
-		e = s;
-		while (s < end && (cnt < (BUN) maxrow || maxrow < 0) ) {
-			/* alloc space in the task buffer */
-			if ( task->next == task->limit ){
-					for( i=0; i< as->nr_attrs; i++) 
-						task->fields[i] = GDKrealloc(task->fields[i], sizeof(char*) * (task->limit + 10000));
-					task->limit += 10000;
-			}
-			/* tokenize the record completely
-			   the format of the input should comply to the following grammar rule 
-			    [ [[quote][[esc]char]*[quote]csep]*rsep]* 
-				where quote is a single user defined charactor
-				within the quoted fields a character may be escaped with a backslash
-				The user should supply the correct number of fields.
-				The algorithm performance a double scan to simplify rolling back
-				when the record received is incomplete.
-			*/
-			if ( rseplen == 1 && quote == 0 ){
-				for (; *e; e++)
-				if ( *e == *rsep)
-					break;
-
-				if (*e == 0) 
-					e = 0;
-			} else
-			if ( rseplen == 1 ){
-				for (; *e; e++)
-				if ( *e == quote) {
-					for ( e++; *e && *e != quote; e++)
-						if ( *e == '\\' && *(e+1) != 0)
-							e++;
-				} else
-				if ( *e == *rsep)
-					break;
-
-				if (*e == 0) 
-					e = 0;
-			} else
-			if ( quote == 0)
-			do {
-				for ( ; *e ; e++)
-				if ( *e == *rsep && strncmp(e,rsep,rseplen) == 0 )
-					break;
-
-				if (*e ) 
-					break;
-				e = 0;
-			} while (e);
-			else
-			do {
-				for ( ; *e ; e++)
-				if ( *e == quote) {
-					for ( e++; *e && *e != quote; e++)
-						if ( *e == '\\' && *(e+1) != 0)
-							e++;
-				} else
-				if ( *e == *rsep && strncmp(e,rsep,rseplen) == 0 )
-					break;
-
-				if (*e ) 
-					break;
-				e = 0;
-			} while (e);
-
-			if (e ) {
-				if ( --skip < 0 ) {
-					task->fields[0][task->next] = s;
-					*e = '\0';
-					if ( SQLload_file_line(task, as, s, csep,rsep) < 0) {
-#ifdef _DEBUG_TABLET_
-						stream_printf(GDKout,"line failed:\n");
-#endif
-						break;
-					}
-					cnt++;
-					if ( skip < 0)
-						task->next++;
-				}
-				s = e + rseplen;
-				e = s;
-			} else 
-				break;
-		}
-		t0 = GDKusec() - t0;
-		total += t0;
-		b->pos = (s - b->buf);
-#ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"fill the BATs %d  "BUNFMT" cap " BUNFMT"\n", task->next, cnt, BATcapacity(as->format[0].c));
-#endif
-		if ( task->next ){
-			SQLworkdivider(task, ptask, (int) as->nr_attrs, threads);
-			
-			/* activate the workers */
-			for( j= 0; j < threads ; j++) {
-				ptask[j].next= task->next;
-				ptask[j].fields= task->fields;
-				ptask[j].limit = task->limit;
-				MT_up_sema(ptask[j].sema,"SQLworker");
-			}
-			/* await for their completion */
-			for ( j=0; j< threads; j++)
-				MT_down_sema(ptask[j].reply,"sqlreader");
-		}
-		if ( cnt == (BUN) maxrow ) 
-			break;
-	}
-	
-	/* close down the workers */
-#ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"Close the workers\n");
-#endif
-	for( j= 0; j < threads ; j++){
-		ptask[j].next = -1;
-		MT_up_sema(ptask[j].sema,"SQLworker");
-	}
-	if (GDKdebug & GRPalgorithms) {
-		if (cnt < (BUN) maxrow   && maxrow > 0) 
-			/* providing a precise count is not always easy, instead consider maxrow as an upperbound */
-			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
-		stream_printf(GDKout,"# COPY reader time " LLFMT "\n#",total);
-		for( i=0; i< as->nr_attrs; i++) 
-				stream_printf(GDKout,LLFMT " ", task->time[i]);
-		stream_printf(GDKout,"\n");
-		for ( j=0; j< threads; j++)
-			stream_printf(GDKout,"# COPY thread time " LLFMT "\n",ptask[j].wtime);
-	}
-
-	/* wait for their dead */
-	for ( j=0; j< threads; j++)
-		MT_down_sema(ptask[j].reply,"sqlreader");
-#ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"Found " BUNFMT" tuples\n",cnt);
-#endif
-	for( i=0; i< as->nr_attrs; i++) 
-		GDKfree(task->fields[i]);
-	GDKfree(task->fields);
-	GDKfree(task->time);
-	GDKfree(task);
-
-	/* restore system setting */
-	GDK_vm_trim = vmtrim;
-	return cnt;
-}
-
-#undef _DEBUG_TABLET_
 
 static int
 dump_file(Tablet * as, stream *fd)
