@@ -305,7 +305,7 @@ command_status(int argc, char *argv[])
 				e = SABAOTHdeserialise(&stats, &p);
 				if (e != NULL) {
 					printf("WARNING: failed to parse response from "
-							"merovingian: %s (%s)\n", e, p);
+							"merovingian: %s\n", e);
 					GDKfree(e);
 					continue;
 				}
