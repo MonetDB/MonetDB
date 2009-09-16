@@ -31,7 +31,7 @@ LIBS = {
 		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx pqueue.mx mkey.mx \
 		factories.mx mdb.mx  \
-		urlbox.mx mat.mx \
+		urlbox.mx mat.mx histogram.mx \
 		sabaoth.mx remote.mx txtsim.mx recycle.mx \
 		cluster.mx trader.mx
 		#radix.mx 
@@ -173,7 +173,7 @@ headers_h = {
 		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx pqueue.mx mkey.mx \
 		factories.mx mdb.mx  \
-		urlbox.mx mat.mx \
+		urlbox.mx mat.mx histogram.mx \
 		sabaoth.mx remote.mx  batxml.mx  recycle.mx \
 		cluster.mx trader.mx replication.mx
 		#radix.mx 
@@ -188,7 +188,7 @@ headers_mal = {
 		profiler.mx const.mx batExtensions.mx algebraExtensions.mx \
 		inspect.mx manual.mx mal_io.mx pqueue.mx mkey.mx \
 		chopper.mx clients.mx \
-		factories.mx mdb.mx pcre.mx  tablet.mx mat.mx \
+		factories.mx mdb.mx pcre.mx  tablet.mx mat.mx histogram.mx \
 		urlbox.mx statistics.mx transaction.mx \
 		mal_mapi.mx sabaoth.mx remote.mx  \
 		bpm.mx batxml.mx txtsim.mx recycle.mx \
