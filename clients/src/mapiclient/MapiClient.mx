@@ -1853,7 +1853,7 @@ usage(const char *prog)
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
 	fprintf(stderr, " -t          | --time             time commands\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
-	fprintf(stderr, " -u[user]    | --user[=user]      user id (if no user id given, ask for one)\n");
+	fprintf(stderr, " -u user     | --user=user        user id (if flag not given, ask for one)\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
@@ -2015,7 +2015,7 @@ main(int argc, char **argv)
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:P::p:s:tXu::H?", long_options, &option_index)) != -1) {
+				"w:r:P::p:s:tXu:H?", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
 #ifdef HAVE_POPEN
@@ -2068,7 +2068,7 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'u':
-			user = optarg;	/* can be NULL */
+			user = optarg;
 			user_set_as_flag = 1;
 			break;
 		case 'P':
@@ -2169,11 +2169,7 @@ main(int argc, char **argv)
 	}
 #endif	/* HAVE_ICONV */
 
-	/* default to the current user if no -u flag is given */
-	if (user == NULL && !user_set_as_flag) {
-		user = getlogin(); /* getlogin() may return NULL */
-		passwd = NULL; /* force password prompt */
-	} else if (user_set_as_flag && !passwd_set_as_flag) {
+	if (user_set_as_flag && !passwd_set_as_flag) {
 		passwd = NULL; /* when config file would provide a password */
 	}
 	if (user == NULL) {
