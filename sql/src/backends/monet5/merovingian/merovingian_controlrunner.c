@@ -288,6 +288,8 @@ controlRunner(void *d)
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}
+				} else if (strcmp(p, "get") == 0) {
+				
 				} else if (strncmp(p, "share=", strlen("share=")) == 0) {
 					sabdb *stats;
 					err e;
@@ -439,6 +441,8 @@ controlRunner(void *d)
 						freeErr(e);
 						continue;
 					}
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send(msgsock, buf2, len, 0);
 
 					for (topdb = stats; stats != NULL; stats = stats->next) {
 						/* currently never fails (just crashes) */
@@ -465,6 +469,10 @@ controlRunner(void *d)
 					remotedb rdb;
 
 					pthread_mutex_lock(&_mero_remotedb_lock);
+
+					/* this never fails */
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send(msgsock, buf2, len, 0);
 
 					rdb = _mero_remotedbs;
 					while (rdb != NULL) {

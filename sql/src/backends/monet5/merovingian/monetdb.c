@@ -461,7 +461,11 @@ command_status(int argc, char *argv[])
 
 		orig = NULL;
 		if ((p = strtok(buf, "\n")) != NULL) {
-			do {
+			if (strcmp(p, "OK") != 0) {
+				fprintf(stderr, "status: %s\n", p);
+				exit(2);
+			}
+			while ((p = strtok(NULL, "\n")) != NULL) {
 				e = SABAOTHdeserialise(&stats, &p);
 				if (e != NULL) {
 					printf("WARNING: failed to parse response from "
@@ -474,7 +478,7 @@ command_status(int argc, char *argv[])
 				} else {
 					w = w->next = stats;
 				}
-			} while ((p = strtok(NULL, "\n")) != NULL);
+			}
 		}
 	}
 
@@ -621,7 +625,11 @@ command_discover(int argc, char *argv[])
 	}
 
 	if ((p = strtok(buf, "\n")) != NULL) {
-		do {
+		if (strcmp(p, "OK") != 0) {
+			fprintf(stderr, "status: %s\n", p);
+			exit(2);
+		}
+		while ((p = strtok(NULL, "\n")) != NULL) {
 			if ((q = strchr(p, '\t')) == NULL) {
 				/* doesn't look correct */
 				printf("discover: WARNING: discarding incorrect line: %s\n", p);
@@ -642,7 +650,7 @@ command_discover(int argc, char *argv[])
 				if (strlen(location) > loclen)
 					loclen = strlen(location);
 			}
-		} while ((p = strtok(NULL, "\n")) != NULL);
+		}
 	}
 
 	free(buf);
