@@ -424,7 +424,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		    strcmp(c_type, "smallint") == 0 ||
 		    strcmp(c_type, "tinyint") == 0 ||
 		    strcmp(c_type, "bigint") == 0 ||
-		    strcmp(c_type, "date") == 1) {
+		    strcmp(c_type, "date") == 0) {
 			space = stream_printf(toConsole, "%s", c_type);
 		} else if (strcmp(c_type, "month_interval") == 0) {
 			if (strcmp(c_type_digits, "1") == 0)
