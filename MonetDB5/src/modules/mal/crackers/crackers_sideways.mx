@@ -153,6 +153,7 @@ crackers_export str CRKProject_@1_@2(int *res, int *bid, int *pbid, int *pivot, 
 crackers_export str CRKMarkedProject_@1_@2(int *res, int *bid, int *pbid, int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 crackers_export str CRKPositionProject_@1_@2(int *res, int *bid, int *pbid, int *PositionPivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 crackers_export str CRKdProject_@1_@2(int *res, int *bid, int *pbid, int *pivot);
+crackers_export str CRKdPositionProject_@1_@2(int *res, int *bid, int *pbid, int *pivot);
 @
 
 @{
@@ -1012,6 +1013,63 @@ CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
         }
 
         BATsetcount(r, fsize);
+
+	r->hsorted = FALSE;
+        r->tsorted = FALSE;
+        r->hdense = FALSE;
+        r->tdense = FALSE;
+
+        *res = r->batCacheid;
+        BBPkeepref(r->batCacheid);
+        BBPunfix(p->batCacheid);
+        BBPunfix(b->batCacheid);
+
+        return MAL_SUCCEED;
+}
+
+str
+CRKdPositionProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
+        BAT *b, *p, *r, *c;
+        @2 *pairt, *rest;
+	oid *pivott;
+        oid size;
+	int m;
+	oid j;
+
+	/* If the necessary map does not exits, then create it */	
+	m = existsCrackerIndexSideways(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackerMap(@1,@2)@		
+		BBPkeepref(b->batCacheid);
+		BBPkeepref(c->batCacheid);
+	}	
+
+	/* Align the map based on the cracker tape of this set */
+	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
+
+	/* Get the map */
+        if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
+                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+	
+        if ((p = BATdescriptor(*pivot)) == NULL) 
+                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+
+        size = BATcount(p);
+ 	r = BATnew(TYPE_void,b->ttype,size);
+
+        pairt  = (@2 *)Tloc(b, BUNfirst(b));
+        pivott = (oid*)Tloc(p, BUNfirst(p));
+        rest   = (@2 *)Tloc(r, BUNfirst(r));
+
+	for (j = 0; j<size; j++){
+		*rest = *(pairt + *pivott); 
+		rest ++;
+		pivott ++;
+	}
+
+	BATmark(BATmirror(p),0);
+
+        BATsetcount(r, size);
 
 	r->hsorted = FALSE;
         r->tsorted = FALSE;
