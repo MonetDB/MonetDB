@@ -58,6 +58,13 @@ typedef struct {
 histogram_export Histogram HSTnew(int bins, ValPtr minval, ValPtr maxval);
 histogram_export void HSTincrement(Histogram h, ValPtr val);
 histogram_export void HSTprint(stream *s, Histogram h);
+
+histogram_export dbl HSTeuclidian(Histogram h1, Histogram h2);
+histogram_export dbl HSTcityblock(Histogram h1, Histogram h2);
+histogram_export dbl HSTchebechev(Histogram h1, Histogram h2);
+histogram_export dbl HSTeuclidianDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
+histogram_export dbl HSTcityblockDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
+histogram_export dbl HSTchebechevDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 #endif /* _HISTOGRAM_H */
 @- 
 @c
@@ -143,6 +150,35 @@ HSTchebechev(Histogram h1, Histogram h2){
 	for ( i = 1; i < h1->bins; i++)
 		if ( abs(h1->cnt[i] - h2->cnt[i]) > max)
 			max = abs(h1->cnt[i] - h2->cnt[i]);
+	return (dbl) max;
+}
+
+@-
+The next series determine the effect on the distance when a single
+component in the histogram h1 is incremented/ decremented.
+@c
+dbl
+HSTeuclidianDelta(Histogram h1, Histogram h2, dbl distance, int idx, int cnt){
+	lng inc, sum = distance * distance;
+	inc = (h1->cnt[idx] + cnt - h2->cnt[idx]);
+	return sqrt(sum - (h1->cnt[idx]- h2->cnt[idx])+ inc * inc);
+}
+
+dbl
+HSTcityDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt){
+	return d - abs(h1->cnt[idx] - h2->cnt[idx]) + abs(h1->cnt[idx] + cnt - h2->cnt[idx]);
+}
+
+dbl
+HSTchebechevDelta(Histogram h1, Histogram h2, dbl distance, int idx, int cnt){
+	lng max, i;
+
+	(void) distance;
+	assert(h1->bins == h2->bins);
+	max = abs(h1->cnt[0] + (idx == 0? cnt: 0) - h2->cnt[0]);
+	for ( i = 1; i < h1->bins; i++)
+		if ( abs(h1->cnt[i] + (idx == i? cnt: 0) - h2->cnt[i]) > max)
+			max = abs(h1->cnt[i] + (idx == i? cnt: 0) - h2->cnt[i]);
 	return (dbl) max;
 }
 
