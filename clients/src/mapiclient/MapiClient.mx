@@ -1952,13 +1952,15 @@ main(int argc, char **argv)
 	mark2 = NULL;
 
 	/* parse config file first, command line options override */
-	if (stat(".monetdb", &statb) == 0) {
-		config = open_rastream(".monetdb");
-	} else if (getenv("HOME") != NULL) {
-		char buf[1024];
-		snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
-		if (stat(buf, &statb) == 0) {
-			config = open_rastream(buf);
+	if (getenv("MCLIENT_NO_MONETDB_FILE") == NULL) {
+		if (stat(".monetdb", &statb) == 0) {
+			config = open_rastream(".monetdb");
+		} else if (getenv("HOME") != NULL) {
+			char buf[1024];
+			snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
+			if (stat(buf, &statb) == 0) {
+				config = open_rastream(buf);
+			}
 		}
 	}
 

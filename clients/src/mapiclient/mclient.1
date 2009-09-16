@@ -41,6 +41,26 @@ is started without any non-option arguments and without the
 .B \-\-statement
 .RB ( \-s )
 option, it reads queries from standard input.
+.PP
+Before
+.I mclient
+starts parsing command line options, it reads a
+.I .monetdb
+file in the current working directory, and if that doesn't exist, in the
+current user's home directory.  This file can contain defaults for the
+flags
+.BR user ", " password " and " language .
+For example, an entry in a
+.I .monetdb
+file that sets the default language for 
+.I mclient
+to sql looks like this: 
+.IR "language=sql" .
+To disable reading the
+.I monetdb
+file, set the variable
+.B MCLIENT_NO_MONETDB_FILE
+in the environment.
 .SH
 OPTIONS
 .SS
