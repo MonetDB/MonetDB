@@ -450,7 +450,7 @@ command_status(int argc, char *argv[])
 	} else {
 		char *buf;
 		char *p;
-		sabdb *w;
+		sabdb *w = NULL;
 
 		e = control_send(&buf, mero_control, -1, "flyghende", "hollander");
 		if (e != NULL) {
