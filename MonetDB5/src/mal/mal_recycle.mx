@@ -1661,6 +1661,7 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 	lng comp; 		/* component vector */
 	double maxlen = 1e-6;
 	ValRecord clow, chgh; /* column range (may be estimate) */
+	VarPtr pclow, pchgh;
 	BAT *b;
 	size_t lov, hov; 	/* est of overlap and overhead size in tuples */
 	size_t ccnt;	/* column count */
@@ -1697,11 +1698,11 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 	b = BBPquickdesc(bid, FALSE);
 	ccnt = BATcount(b);
 
-	VALcopy(&clow,
-			&varGetProp(recycleBlk, getArg(q,1), tlbProp)->value);
-	VALcopy(&chgh,
-			&varGetProp(recycleBlk, getArg(q,1), tubProp)->value);
-	if ( VALisNil(&clow) || VALisNil(&chgh) ){ /* need to estimate column range */
+	if ( ( pclow = varGetProp(recycleBlk, getArg(q,1), tlbProp)) != NULL )
+		VALcopy(&clow, &pclow->value);
+	if ( ( pchgh = varGetProp(recycleBlk, getArg(q,1), tubProp)) != NULL )
+		VALcopy(&chgh, &pchgh->value);
+	if ( pclow == NULL || pchgh == NULL ){ /* need to estimate column range */
 		double len;
 		for( i = 0; i < cnt; i++ ){
 			len = intLen(&base[i].rng.low, &base[i].rng.hgh);
@@ -1709,9 +1710,9 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 			len = len * ccnt / base[i].cnt;
 			if (len > maxlen) maxlen = len;
 		}
-		if ( ~VALisNil(&clow) )
+		if ( pclow != NULL )
 			VALadd(&chgh, &clow, maxlen);
-		else if ( ~VALisNil(&chgh) )
+		else if ( pchgh != NULL )
 			VALadd(&clow, &chgh, -maxlen); 
 		else {
 			ValRecord zero;
@@ -1790,9 +1791,9 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 					/* check if the combination cur + base[i] already exists */
 					comp = set1(cur->comp,i);
 					if ( comp == sol.comp ) continue;
-					t = partsol1;
-					while (t && (t->comp != comp) ) t++;
-					if (t) continue; 
+					j = 0; 
+					while ( ( j < cnt1 )  && ( partsol1[j].comp != comp ) ) j++;
+					if ( j < cnt1 ) continue; 
 
 					/* compute union of cur and base[i] ranges */
 					if ( lessEq(&base[i].rng.low, base[i].rng.li, &cur->rng.low, cur->rng.li, FALSE) ) {
@@ -1932,7 +1933,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
     InstrPtr q;
     static str selectRef, like_selectRef;
     bit gluse = FALSE;
-	 lng ticks;
+	lng ticks = GDKusec();
 
     if (selectRef == 0)
         selectRef= putName("select",6);
@@ -2099,7 +2100,7 @@ We execute it in place and safe the result upon need.
 #endif
 
     mal_unset_lock(recycleLock,"recycle");
-	 if ( pc >= 0 ) 		/* successful multi-subsumption */
+	if ( pc >= 0 ) 		/* successful multi-subsumption */
 		RECYCLEexit(cntxt,mb,s,p,ticks);
     return pc;
 }
