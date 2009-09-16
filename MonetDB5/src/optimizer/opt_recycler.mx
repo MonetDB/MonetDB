@@ -238,24 +238,26 @@ are marked for re-use.
 		     getFunctionId(p)== antiuselectRef ||
 		     getFunctionId(p)== likeselectRef ||
 		     getFunctionId(p)== putName("like",4) || 
-	             getFunctionId(p)== putName("thetaselect",11) ||
-        	     getFunctionId(p)== putName("thetauselect",12) ) &&
-	      		recycled[getArg(p,1)] ){
+	         getFunctionId(p)== thetaselectRef ) &&
+	      	 recycled[getArg(p,1)] ){
 			p->recycle = REC_MAX_INTEREST;
 			actions ++;
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 		}
-		if( getFunctionId(p)== uselectRef && recycled[getArg(p,1)]) {
+		if( ( getFunctionId(p) == uselectRef || getFunctionId(p) == thetauselectRef)
+			&& recycled[getArg(p,1)]) {
 			if (!ATOMvarsized( getGDKType( getArgType(mb,p,2)))) { 
 				q = copyInstruction(p);
 				getArg(q,0)= newTmpVariable(mb,TYPE_any); 
-				setFunctionId(q, selectRef); 
+				if ( getFunctionId(p) == uselectRef )
+					setFunctionId(q, selectRef); 
+				else setFunctionId(q, thetaselectRef); 
 				q->recycle = REC_MAX_INTEREST;
 				recycled[getArg(q,0)] = 1;
 				pushInstruction(mb,q);
 				getArg(p,1) = getArg(q,0);
-				setFunctionId(p,markTRef);
+				setFunctionId(p,projectRef);
 				p->argc = 2;
 			}
 			p->recycle = REC_MAX_INTEREST;
@@ -280,7 +282,7 @@ are marked for re-use.
 				recycled[getArg(q,0)] = 1;
 				pushInstruction(mb,q);
 				getArg(p,1) = getArg(q,0);
-				setFunctionId(p,markTRef);
+				setFunctionId(p,projectRef);
 				setModuleId(p,algebraRef);
 				p->argc = 2;
 				p->recycle = REC_MAX_INTEREST;
