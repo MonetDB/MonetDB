@@ -22,7 +22,7 @@ among mservers.
 
 trader.makeBid() is used to ask another server to make a bid for a mal function (sub-query) execution.
 
-Currently the bid estimate is made using only the recycle cashe.
+Currently the bid estimate is made using only the recycle cache.
 ToDo: use the info about server load
 FactFinder
 @{

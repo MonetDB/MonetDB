@@ -180,9 +180,9 @@ mal_export bit isBindInstr(InstrPtr p);
 static MT_Lock recycleLock ;
 MalBlkPtr recycleBlk = NULL;
 
-#define set1(x,i) ( x | (1 << i) )
-#define set0(x,i) ( x & ~(1 << i) )
-#define getbit(x,i) ( x & (1 << i) )
+#define set1(x,i) ( x | ((lng)1 << i) )
+#define set0(x,i) ( x & ~((lng)1 << i) )
+#define getbit(x,i) ( x & ((lng)1 << i) )
 
 typedef struct {
 	ValRecord low, hgh; 	/* range */
@@ -963,7 +963,6 @@ setSelectProp(InstrPtr q)
 	ValPtr lb, ub;
 	ValRecord lbval, ubval;
 	int bid;
-	str msg;
     str selectRef = putName("select",6);
     int tlbProp = PropertyIndex("tlb");
     int tubProp = PropertyIndex("tub");
@@ -985,22 +984,24 @@ setSelectProp(InstrPtr q)
 			else {
 				lb = &lbval;
 /*				msg = ALGminany(lb, &bid); */
-				msg = (*minAggr)(lb, &bid);
+				(*minAggr)(lb, &bid);
 				/* first computation - propagate to base relation  */
 				varSetProp(recycleBlk, getArg(q,1), tlbProp, op_gte, lb);
 			}
 		}
 		if ( VALisNil(ub) ){
-			ub = &ubval;
-			/*	msg = ALGmaxany(ub, &bid); */
-			msg = (*maxAggr)(ub, &bid);
-			/* propagate to base relation 
-			if ( varGetProp(recycleBlk, getArg(q,1), tubProp) == NULL )
-					varSetProp(recycleBlk, getArg(q,1), tubProp, op_lte, ub);
-			*/
+			if ( varGetProp(recycleBlk, getArg(q,1), tubProp) != NULL )
+				ub = &varGetProp(recycleBlk, getArg(q,1), tubProp)->value;
+			else {
+				ub = &ubval;
+				/*	msg = ALGmaxany(ub, &bid); */
+				(*maxAggr)(ub, &bid);
+				/* propagate to base relation */
+				varSetProp(recycleBlk, getArg(q,1), tubProp, op_lte, ub);
+			}
 		}
 		varSetProp(recycleBlk, getArg(q,0), tlbProp, op_gte, lb);
-		varSetProp(recycleBlk, getArg(q,0), tubProp, op_lte, ub);
+		varSetProp(recycleBlk, getArg(q,0), tubProp, op_lte, ub); 
 	}
 
 }
