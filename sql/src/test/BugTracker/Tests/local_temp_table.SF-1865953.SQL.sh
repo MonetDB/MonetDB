@@ -11,3 +11,4 @@ export LANG
 Mlog -x "$MTIMEOUT mclient -lsql -h $HOST -p $MAPIPORT -d ${TSTDB} \"$RELSRCDIR/local_temp_table_data.SF-1865953.sql\""
 Mlog -x "$MTIMEOUT mclient -lsql -h $HOST -p $MAPIPORT -d ${TSTDB}"
 
+rm -f .monetdb

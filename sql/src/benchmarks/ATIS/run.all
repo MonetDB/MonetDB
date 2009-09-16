@@ -17,7 +17,7 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
-SQL="mclient -lsql"
+SQL="mclient -umonetdb -Pmonetdb -lsql"
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi

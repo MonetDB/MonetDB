@@ -11,7 +11,7 @@ function query()
 	do
 		sleep $1
 		echo "fire $$.$i:" `date +"%F %T"`
-		mclient -lsql -p50000 <$3
+		mclient -umonetdb -Pmonetdb -lsql -p50000 <$3
 		echo "done $$.$i";
 		i=`expr $i + 1`
 	done
