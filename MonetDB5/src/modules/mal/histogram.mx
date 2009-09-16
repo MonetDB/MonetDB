@@ -61,10 +61,10 @@ histogram_export void HSTprint(stream *s, Histogram h);
 
 histogram_export dbl HSTeuclidian(Histogram h1, Histogram h2);
 histogram_export dbl HSTcityblock(Histogram h1, Histogram h2);
-histogram_export dbl HSTchebechev(Histogram h1, Histogram h2);
+histogram_export dbl HSTchebyshev(Histogram h1, Histogram h2);
 histogram_export dbl HSTeuclidianDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 histogram_export dbl HSTcityblockDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
-histogram_export dbl HSTchebechevDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
+histogram_export dbl HSTchebyshevDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 #endif /* _HISTOGRAM_H */
 @- 
 @c
@@ -143,7 +143,7 @@ HSTcityblock(Histogram h1, Histogram h2){
 }
 
 dbl
-HSTchebechev(Histogram h1, Histogram h2){
+HSTchebyshev(Histogram h1, Histogram h2){
 	lng max, i;
 	assert(h1->bins == h2->bins);
 	max = abs(h1->cnt[0] - h2->cnt[0]);
@@ -165,12 +165,12 @@ HSTeuclidianDelta(Histogram h1, Histogram h2, dbl distance, int idx, int cnt){
 }
 
 dbl
-HSTcityDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt){
+HSTcityblockDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt){
 	return d - abs(h1->cnt[idx] - h2->cnt[idx]) + abs(h1->cnt[idx] + cnt - h2->cnt[idx]);
 }
 
 dbl
-HSTchebechevDelta(Histogram h1, Histogram h2, dbl distance, int idx, int cnt){
+HSTchebyshevDelta(Histogram h1, Histogram h2, dbl distance, int idx, int cnt){
 	lng max, i;
 
 	(void) distance;
