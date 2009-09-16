@@ -82,6 +82,36 @@ writeProps(confkeyval *ckv, char *path)
 }
 
 /**
+ * Writes the given key-value list to a buffer and sets its pointer to
+ * buf.  This function deals with the allocation of the buffer, hence
+ * the caller should free it.
+ */
+inline void
+writePropsBuf(confkeyval *ckv, char **buf)
+{
+	confkeyval *w;
+	size_t len = sizeof(MEROPROPFILEHEADER);
+	char *p;
+
+	w = ckv;
+	while (w->key != NULL) {
+		if (w->val != NULL)
+			len += strlen(w->key) + 1 + strlen(w->val) + 1;
+		w++;
+	}
+
+	p = *buf = malloc(sizeof(char) * len + 1);
+	memcpy(p, MEROPROPFILEHEADER, sizeof(MEROPROPFILEHEADER));
+	p += sizeof(MEROPROPFILEHEADER);
+	w = ckv;
+	while (w->key != NULL) {
+		if (w->val != NULL)
+			p += sprintf(p, "%s=%s\n", w->key, w->val);
+		w++;
+	}
+}
+
+/**
  * Read a property file, filling in the requested key-values.
  */
 inline void
@@ -94,6 +124,30 @@ readProps(confkeyval *ckv, char *path)
 	if ((cnf = fopen(file, "r")) != NULL) {
 		readConfFile(ckv, cnf);
 		fclose(cnf);
+	}
+}
+
+/**
+ * Read properties from buf, filling in the requested key-values.
+ */
+inline void
+readPropsBuf(confkeyval *ckv, char *buf)
+{
+	confkeyval *t;
+	char *p;
+	char *err;
+	char *lasts;
+	size_t len;
+
+	while((p = strtok_r(buf, "\n", &lasts)) != NULL) {
+		buf = NULL; /* strtok */
+		for (t = ckv; t->key != NULL; t++) {
+			len = strlen(t->key);
+			if (strncmp(p, t->key, len) == 0 && p[len] == '=') {
+				if ((err = setConfVal(t, p + len + 1)) != NULL)
+					GDKfree(err); /* ignore, just fall back to default */
+			}
+		}
 	}
 }
 

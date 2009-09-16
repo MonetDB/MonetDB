@@ -26,7 +26,9 @@
 
 confkeyval *getDefaultProps(void);
 void writeProps(confkeyval *ckv, char *path);
+void writePropsBuf(confkeyval *ckv, char **buf);
 void readProps(confkeyval *ckv, char *path);
+void readPropsBuf(confkeyval *ckv, char *buf);
 char *setProp(char *path, char *key, char *val);
 
 #endif
