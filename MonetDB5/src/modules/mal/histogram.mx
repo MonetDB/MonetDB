@@ -30,6 +30,7 @@ module histogram;
 #define _HISTOGRAM_H 
 #include <stdarg.h>
 #include <gdk.h>
+#include <mmath.h>
 
 #ifdef WIN32
 #ifndef LIBMAT
@@ -107,19 +108,42 @@ HSTnew(int bins, ValPtr minval, ValPtr maxval)
 void 
 HSTincrement(Histogram h, ValPtr val){
 	switch( val->vtype){
-		case TYPE_bte:
-			HSTinc_bte(h, val->val.btval); break;
-		case TYPE_sht:
-			HSTinc_sht(h, val->val.shval); break;
-		case TYPE_int:
-			HSTinc_int(h, val->val.ival); break;
-		case TYPE_lng:
-			HSTinc_lng(h, val->val.lval); break;
-		case TYPE_dbl:
-			HSTinc_dbl(h, val->val.dval); break;
-		case TYPE_flt:
-			HSTinc_flt(h, val->val.fval); break;
+		case TYPE_bte: HSTinc_bte(h, val->val.btval); break;
+		case TYPE_sht: HSTinc_sht(h, val->val.shval); break;
+		case TYPE_int: HSTinc_int(h, val->val.ival); break;
+		case TYPE_lng: HSTinc_lng(h, val->val.lval); break;
+		case TYPE_dbl: HSTinc_dbl(h, val->val.dval); break;
+		case TYPE_flt: HSTinc_flt(h, val->val.fval); break;
 	}
+}
+
+dbl
+HSTeuclidian(Histogram h1, Histogram h2){
+	int sum= 0,i;
+	assert(h1->bins == h2->bins);
+	for ( i = 0; i < h1->bins; i++)
+		sum += (h1->cnt[i] - h2->cnt[i]) * (h1->cnt[i] - h2->cnt[i]);
+	return sqrt(sum);
+}
+
+dbl
+HSTcityblock(Histogram h1, Histogram h2){
+	lng sum=0, i;
+	assert(h1->bins == h2->bins);
+	for ( i = 0; i < h1->bins; i++)
+		sum += abs(h1->cnt[i] - h2->cnt[i]);
+	return (dbl) sum;
+}
+
+dbl
+HSTchebechev(Histogram h1, Histogram h2){
+	lng max, i;
+	assert(h1->bins == h2->bins);
+	max = abs(h1->cnt[0] - h2->cnt[0]);
+	for ( i = 1; i < h1->bins; i++)
+		if ( abs(h1->cnt[i] - h2->cnt[i]) > max)
+			max = abs(h1->cnt[i] - h2->cnt[i]);
+	return (dbl) max;
 }
 
 void
