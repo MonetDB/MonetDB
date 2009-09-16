@@ -33,8 +33,7 @@ MEROVINGIAN_TMP_SUBS = \
 	merovingian_proxy.c
 
 MONETDB_TMP_SUBS = \
-	monetdb_get.c \
-	monetdb_status.c
+	monetdb_get.c
 
 EXTRA_DIST = $(man_MANS) \
 	utils.h \
