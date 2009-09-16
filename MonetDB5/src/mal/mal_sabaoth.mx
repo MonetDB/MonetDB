@@ -962,31 +962,31 @@ str SABAOTHdeserialise(sabdb **ret, str *sdb) {
 		throw(ILLARG, "sabaoth.deserialise",
 				"string does not contain avguptime: %s", lasts);
 	*p++ = '\0';
-	u->avguptime = (time_t)atoll(lasts);
+	u->avguptime = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
 				"string does not contain maxuptime: %s", lasts);
 	*p++ = '\0';
-	u->maxuptime = (time_t)atoll(lasts);
+	u->maxuptime = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
 				"string does not contain minuptime: %s", lasts);
 	*p++ = '\0';
-	u->minuptime = (time_t)atoll(lasts);
+	u->minuptime = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
 				"string does not contain lastcrash: %s", lasts);
 	*p++ = '\0';
-	u->lastcrash = (time_t)atoll(lasts);
+	u->lastcrash = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
 				"string does not contain laststart: %s", lasts);
 	*p++ = '\0';
-	u->laststart = (time_t)atoll(lasts);
+	u->laststart = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL)
 		throw(ILLARG, "sabaoth.deserialise",
