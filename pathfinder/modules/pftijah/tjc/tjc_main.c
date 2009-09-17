@@ -256,7 +256,7 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
     	    save2file(tjc_c->parseDotFile, tjc_c->dotBUFF);
 	}
 	// optional parse tree dot output
-	if (tjc_c->parseDotFile) { 
+	if (tjc_c->algDotFile) { 
 	    tjc_c->dotBUFF[0] = '\0';
 	    printTJatree (tjc_c, atree); 
     	    save2file(tjc_c->algDotFile, tjc_c->dotBUFF);

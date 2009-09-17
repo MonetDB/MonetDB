@@ -2412,7 +2412,8 @@ PROC tj_term2tid (bat[str,dbl] term_score) : bat[oid,dbl]
     
     var mark_tid := stemmed.join(bat("tj_" + ftindex + "_termdict").reverse());
     mark_tid := mark_tid.select(firstterm,oid(nil),TRUE,FALSE);
-    return mark_tid.reverse().leftfetchjoin(mark_score);
+    # it is important to keep the order of query terms (phrase queries)
+    return mark_score.reverse().leftjoin(mark_tid).reverse();
 }
 
 # returns the pre-order positions of the term t 
