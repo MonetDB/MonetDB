@@ -45,10 +45,22 @@ observed time spending so far.
 #include "mal_config.h"
 #include "tablet.h"
 #include "algebra.h"
+#include "histogram.h"
 
 #include <string.h>
 #include <ctype.h>
 #include <gdk_posix.h>
+
+/* #define _SLICE_TABLET_ */
+
+/* All the params below should eventually be dynamically defined per column 
+   For simplicity in the initial stages keep them global and fixed */
+#ifdef _SLICE_TABLET_ 
+oid SmallSliceSize  = 2; /* Assume this is known */
+BAT *BigSlice = NULL; 	/*toy BAT to play with the algos without worying for SQL for now*/
+Histogram h1 = NULL;
+Histogram h2 = NULL;
+#endif
 
 typedef struct{
 	int next;
@@ -73,6 +85,64 @@ the null-replacement string then we grab the underlying nil.
 If the string starts with the quote identified from SQL, we locate the tail
 and interpret the body.
 @c
+#ifdef _SLICE_TABLET_ 
+static int
+Slice(Column * fmt, ptr key, ptr *adt, str *err, int c)
+{
+	/*naive : fill big, fill small, then rearrange with every new value */
+	dbl distance;
+	char buf[BUFSIZ];	
+	if (BATcount(fmt->c) < SmallSliceSize){
+		/*
+		if (h1 == NULL)
+			h1 = HSTnew(bins, minValue, maxValue);
+		*/	
+		bunfastins(fmt->c, key, adt);
+		/*Add to histogram*/
+		return 0;
+	}
+
+	if (BigSlice == NULL)
+		BigSlice = BATnew(fmt->c->htype, fmt->c->ttype,2*SmallSliceSize);
+
+	if (BATcount(BigSlice) < SmallSliceSize){
+		/*
+		if (h2 == NULL)
+			h2 = HSTnew(bins, minValue, maxValue);
+		*/
+		bunfastins(BigSlice, key, adt);
+		/*Add to histogram*/
+		BATprint(BigSlice);
+		return 0;
+	}
+
+	distance = HSTeuclidian(h1,h2);
+		
+	/*
+	distance1 = HSTeuclidianWhatIf(h1,h2,adt); 
+	distance2 = HSTeuclidianWhatIf(h2,h1,adt); 
+	
+	if (distance2 < distance){
+		bunfastins(BigSlice, key, adt);
+		return 0;
+	} 
+		
+	Place in small and move one bun from small to big such as distance decreases
+	StatisticalCrack(fmt->c,BigSlice,key,adt,h1,h2,distance);
+	*/
+	
+	
+	return 0;
+
+bunins_failed:
+	if (*err == NULL) {
+		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c)+1, c+1);
+		*err= GDKstrdup(buf);
+	}
+	return -1;
+}
+#endif
+
 static INLINE int
 SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 {
@@ -118,6 +188,10 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 	if (fmt->raw){
 		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
 	} else {
+		#ifdef _SLICE_TABLET_ 
+			return 	Slice(fmt, key, adt, err, c);
+		#endif
+
 		bunfastins(fmt->c, key, adt);
 	}
 	return ret;
