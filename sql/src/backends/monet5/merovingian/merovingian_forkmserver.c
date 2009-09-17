@@ -100,6 +100,7 @@ forkMserver(str database, sabdb** stats, int force)
 				walk->conns->val = GDKstrdup(rdb->conn);
 				walk->conns->next = NULL;
 				walk->next = NULL;
+				walk->uplog = NULL;
 
 				/* cut out first returned entry, put it down the list
 				 * later, as to implement a round-robin DNS-like
