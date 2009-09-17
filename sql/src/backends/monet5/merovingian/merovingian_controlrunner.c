@@ -289,7 +289,41 @@ controlRunner(void *d)
 						send(msgsock, buf2, len, 0);
 					}
 				} else if (strcmp(p, "get") == 0) {
+					confkeyval *props = getDefaultProps();
+					char *pbuf;
+
+					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+						len = snprintf(buf2, sizeof(buf2),
+								"internal error, please review the logs\n");
+						send(msgsock, buf2, len, 0);
+						Mfprintf(_mero_ctlerr, "share: SABAOTHgetStatus: "
+								"%s\n", e);
+						freeErr(e);
+						continue;
+					}
+					if (stats == NULL) {
+						Mfprintf(_mero_ctlerr, "received get signal for "
+								"unknown database: %s\n", q);
+						len = snprintf(buf2, sizeof(buf2),
+								"unknown database: %s\n", q);
+						send(msgsock, buf2, len, 0);
+						continue;
+					}
+
+					/* from here we'll always succeed, even if we don't
+					 * send anything */
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send(msgsock, buf2, len, 0);
 				
+					readProps(props, stats->path);
+					writePropsBuf(props, &pbuf);
+					send(msgsock, pbuf, strlen(pbuf), 0);
+					freeConfFile(props);
+					GDKfree(props);
+					SABAOTHfreeStatus(&stats);
+
+					Mfprintf(_mero_ctlout, "served property list for "
+							"database '%s'\n", q);
 				} else if (strncmp(p, "share=", strlen("share=")) == 0) {
 					sabdb *stats;
 					err e;
@@ -462,6 +496,8 @@ controlRunner(void *d)
 					} else {
 						Mfprintf(_mero_ctlout, "returned status for '%s'\n", q);
 					}
+
+					SABAOTHfreeStatus(&topdb);
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
 				{
