@@ -136,7 +136,7 @@ readPropsBuf(confkeyval *ckv, char *buf)
 	confkeyval *t;
 	char *p;
 	char *err;
-	char *lasts;
+	char *lasts = NULL;
 	size_t len;
 
 	while((p = strtok_r(buf, "\n", &lasts)) != NULL) {
