@@ -1468,7 +1468,7 @@ intLen(ValPtr l, ValPtr h)
     case TYPE_dbl:
         len =  *(dbl *)VALget(h) -  *(dbl *)VALget(l);
     case TYPE_lng:
-        len =  *(lng *)VALget(h) -  *(lng *)VALget(l) + 1;
+			len =  (double) (*(lng *)VALget(h) -  *(lng *)VALget(l) + 1);
     default:
         len = 0;
     }
@@ -1731,7 +1731,7 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 	/* complete init. of query range */
 	if ( VALisNil(&qry->low) ) 	VALcopy(&qry->low, &clow);
 	if ( VALisNil(&qry->hgh) ) 	VALcopy(&qry->hgh, &chgh);
-	est = ccnt * intLen(&qry->low,&qry->hgh) / maxlen; /* selection size estimate*/
+	est = (size_t) (ccnt * intLen(&qry->low,&qry->hgh) / maxlen);   /* selection size estimate*/
 
 	/* estimate overhead of base pieces*/
 	for( i = 0; i < cnt; i++ ){
