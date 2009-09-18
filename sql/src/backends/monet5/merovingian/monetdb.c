@@ -25,9 +25,9 @@
  * A group of MonetDB servers in a dbfarm can be under control of
  * Merovingian, a daemon which by itself does not allow any user
  * interaction.  The monetdb utility is designed to be the interface for
- * the DBA to the dbfarm.  Creating or deleting databases next to
- * retrieving status information about them are the primary goals of
- * this tool.
+ * the DBA to the dbfarm and its vincinity.  Creating or deleting
+ * databases next to retrieving status information about them are the
+ * primary goals of this tool.
  */
 
 #define TOOLKIT_VERSION   "0.6"
@@ -377,6 +377,8 @@ command_status(int argc, char *argv[])
 	int t;
 	int dbwidth = 0;
 	int twidth = TERMWIDTH;
+	char *buf;
+	sabdb *w = NULL;
 
 	if (argc == 0) {
 		exit(2);
@@ -441,51 +443,40 @@ command_status(int argc, char *argv[])
 		}
 	}
 
-	if (mero_running == 0) {
-		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
-			fprintf(stderr, "status: internal error: %s\n", e);
-			GDKfree(e);
+	/* I ran out of creative ideas on this one, so I just injected the
+	 * last(?) sight we might see from van der Decken */
+	e = control_send(&buf, mero_control, -1, "flyghende", "hollander", 1);
+	if (e != NULL) {
+		fprintf(stderr, "status: internal error: %s\n", e);
+		free(e);
+		exit(2);
+	}
+
+	orig = NULL;
+	if ((p = strtok(buf, "\n")) != NULL) {
+		if (strcmp(p, "OK") != 0) {
+			fprintf(stderr, "status: %s\n", p);
 			exit(2);
 		}
-	} else {
-		char *buf;
-		char *p;
-		sabdb *w = NULL;
-
-		e = control_send(&buf, mero_control, -1, "flyghende", "hollander", 1);
-		if (e != NULL) {
-			fprintf(stderr, "status: internal error: %s\n", e);
-			free(e);
-			exit(2);
-		}
-
-		orig = NULL;
-		if ((p = strtok(buf, "\n")) != NULL) {
-			if (strcmp(p, "OK") != 0) {
-				fprintf(stderr, "status: %s\n", p);
-				exit(2);
+		while ((p = strtok(NULL, "\n")) != NULL) {
+			e = SABAOTHdeserialise(&stats, &p);
+			if (e != NULL) {
+				printf("WARNING: failed to parse response from "
+						"merovingian: %s\n", e);
+				GDKfree(e);
+				continue;
 			}
-			while ((p = strtok(NULL, "\n")) != NULL) {
-				e = SABAOTHdeserialise(&stats, &p);
-				if (e != NULL) {
-					printf("WARNING: failed to parse response from "
-							"merovingian: %s\n", e);
-					GDKfree(e);
-					continue;
-				}
-				if (orig == NULL) {
-					orig = w = stats;
-				} else {
-					w = w->next = stats;
-				}
+			if (orig == NULL) {
+				orig = w = stats;
+			} else {
+				w = w->next = stats;
 			}
 		}
 	}
 
-	/* don't even look at the arguments, if we are instructed
-	 * to list all known databases */
+	/* look at the arguments and evaluate them based on a glob (hence we
+	 * listed all databases before) */
 	if (doall != 1) {
-		sabdb *w = NULL;
 		sabdb *top = w;
 		sabdb *prev;
 		for (i = 1; i < argc; i++) {
@@ -596,13 +587,6 @@ command_discover(int argc, char *argv[])
 	size_t loclen = 0;
 	char **locations = malloc(sizeof(char*) * numlocs);
 
-	/* if Merovingian isn't running, there's not much we can do */
-	if (mero_running == 0) {
-		fprintf(stderr, "discover: cannot perform: MonetDB Database Server "
-				"(merovingian) is not running\n");
-		exit(1);
-	}
-
 	if (argc == 0) {
 		exit(2);
 	} else if (argc > 2) {
@@ -619,20 +603,21 @@ command_discover(int argc, char *argv[])
 	 * other. */
 	p = control_send(&buf, mero_control, -1, "anelosimus", "eximius", 1);
 	if (p != NULL) {
-		printf("FAILED:\n%s\n", p);
+		printf("%s: %s\n", argv[0], p);
 		free(p);
-		return;
+		exit(2);
 	}
 
 	if ((p = strtok(buf, "\n")) != NULL) {
 		if (strcmp(p, "OK") != 0) {
-			fprintf(stderr, "status: %s\n", p);
-			exit(2);
+			fprintf(stderr, "%s: %s\n", argv[0], p);
+			exit(1);
 		}
 		while ((p = strtok(NULL, "\n")) != NULL) {
 			if ((q = strchr(p, '\t')) == NULL) {
 				/* doesn't look correct */
-				printf("discover: WARNING: discarding incorrect line: %s\n", p);
+				printf("%s: WARNING: discarding incorrect line: %s\n",
+						argv[0], p);
 				continue;
 			}
 			*q++ = '\0';
@@ -736,13 +721,6 @@ command_startstop(int argc, char *argv[], startstop mode)
 		}
 	}
 
-	/* if Merovingian isn't running, there's not much we can do */
-	if (mero_running == 0) {
-		fprintf(stderr, "%s: cannot perform: MonetDB Database Server "
-				"(merovingian) is not running\n", type);
-		exit(1);
-	}
-
 	if (doall == 1) {
 		/* don't even look at the arguments, because we are instructed
 		 * to list all known databases */
@@ -833,11 +811,11 @@ command_set(int argc, char *argv[], meroset type)
 	char *p = NULL;
 	char *value = NULL;
 	char property[24] = "";
-	err e;
 	int i;
 	int state = 0;
-	sabdb *stats;
 	confkeyval *props = getDefaultProps();
+	char *res;
+	char *out;
 
 	if (argc >= 1 && argc <= 2) {
 		/* print help message for this command */
@@ -908,24 +886,13 @@ command_set(int argc, char *argv[], meroset type)
 			exit(1);
 		}
 
-		if (mero_running == 0) {
-			if ((e = db_rename(argv[2], value)) != NULL) {
-				fprintf(stderr, "set: %s\n", e);
-				free(e);
-				exit(1);
-			}
-		} else {
-			char *res;
-			char *out;
-
-			out = control_send(&res, mero_control, -1, argv[2], p, 0);
-			if (out != NULL || strcmp(res, "OK") != 0) {
-				res = out == NULL ? res : out;
-				fprintf(stderr, "%s: %s\n", argv[0], res);
-				state |= 1;
-			}
-			free(res);
+		out = control_send(&res, mero_control, -1, argv[2], p, 0);
+		if (out != NULL || strcmp(res, "OK") != 0) {
+			res = out == NULL ? res : out;
+			fprintf(stderr, "%s: %s\n", argv[0], res);
+			state |= 1;
 		}
+		free(res);
 
 		GDKfree(props);
 		exit(state);
@@ -935,43 +902,17 @@ command_set(int argc, char *argv[], meroset type)
 		if (argv[i] == NULL)
 			continue;
 
-		if (mero_running == 0) {
-			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
-				fprintf(stderr, "%s: internal error: %s\n", argv[0], e);
-				GDKfree(e);
-				exit(2);
-			}
-
-			if (stats == NULL) {
-				fprintf(stderr, "%s: no such database: %s\n",
-						argv[0], argv[i]);
-				state |= 1;
-				continue;
-			}
-
-			if ((e = setProp(stats->path, property, value)) != NULL) {
-				fprintf(stderr, "%s: %s\n", argv[0], e);
-				free(e);
-				state |= 1;
-			}
-
-			SABAOTHfreeStatus(&stats);
-		} else {
-			char *res;
-			char *out;
-
-			if (type == INHERIT) {
-				strncat(property, "=", sizeof(property));
-				p = property;
-			}
-			out = control_send(&res, mero_control, 0, argv[i], p, 0);
-			if (out != NULL || strcmp(res, "OK") != 0) {
-				res = out == NULL ? res : out;
-				fprintf(stderr, "%s: %s\n", argv[0], res);
-				state |= 1;
-			}
-			free(res);
+		if (type == INHERIT) {
+			strncat(property, "=", sizeof(property));
+			p = property;
 		}
+		out = control_send(&res, mero_control, 0, argv[i], p, 0);
+		if (out != NULL || strcmp(res, "OK") != 0) {
+			res = out == NULL ? res : out;
+			fprintf(stderr, "%s: %s\n", argv[0], res);
+			state |= 1;
+		}
+		free(res);
 	}
 
 	GDKfree(props);
@@ -1091,19 +1032,15 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 				source = "-";
 				value = stats->dbname;
 			} else {
-				if (mero_running == 1) {
-					char *buf;
-					e = control_send(&buf, mero_control, -1, stats->dbname, "get", 1);
-					if (e != NULL) {
-						fprintf(stderr, "get: internal error: %s\n", e);
-						free(e);
-						exit(2);
-					}
-					readPropsBuf(props, buf);
-					free(buf);
-				} else {
-					readProps(props, stats->path);
+				char *buf;
+				e = control_send(&buf, mero_control, -1, stats->dbname, "get", 1);
+				if (e != NULL) {
+					fprintf(stderr, "get: internal error: %s\n", e);
+					free(e);
+					exit(2);
 				}
+				readPropsBuf(props, buf);
+				free(buf);
 				kv = findConfKey(props, p);
 				if (kv == NULL) {
 					fprintf(stderr, "get: no such property: %s\n", p);
@@ -1160,18 +1097,14 @@ command_create(int argc, char *argv[])
 	/* do for each listed database */
 	for (i = 1; i < argc; i++) {
 		char *ret;
+		char *out;
 		
 		if (argv[i] == NULL)
 			continue;
 
-		if (mero_running == 0) {
-			ret = db_create(argv[i]);
-		} else {
-			char *out;
-			ret = control_send(&out, mero_control, -1, argv[i], "create", 0);
-			if (ret == NULL && strcmp(out, "OK") != 0)
-				ret = out;
-		}
+		ret = control_send(&out, mero_control, -1, argv[i], "create", 0);
+		if (ret == NULL && strcmp(out, "OK") != 0)
+			ret = out;
 
 		if (ret == NULL) {
 			printf("successfully created database '%s' "
@@ -1246,18 +1179,14 @@ command_destroy(int argc, char *argv[])
 	/* do for each listed database */
 	for (i = 1; i < argc; i++) {
 		char* ret;
+		char *out;
 		
 		if (argv[i] == NULL)
 			continue;
 
-		if (mero_running == 0) {
-			ret = db_destroy(argv[i]);
-		} else {
-			char *out;
-			ret = control_send(&out, mero_control, -1, argv[i], "destroy", 0);
-			if (ret == NULL && strcmp(out, "OK") != 0)
-				ret = out;
-		}
+		ret = control_send(&out, mero_control, -1, argv[i], "destroy", 0);
+		if (ret == NULL && strcmp(out, "OK") != 0)
+			ret = out;
 
 		if (ret == NULL) {
 			printf("successfully destroyed database '%s'\n", argv[i]);
@@ -1292,30 +1221,19 @@ command_lock(int argc, char *argv[])
 
 	/* do for each listed database */
 	for (i = 1; i < argc; i++) {
+		char *res;
+		char *out;
+
 		hadwork = 1;
-		if (mero_running == 0) {
-			char *e;
-
-			if ((e = db_lock(argv[i])) != NULL) {
-				fprintf(stderr, "%s: %s\n", argv[0], e);
-				free(e);
-				state |= 1;
-				continue;
-			}
-		} else {
-			char *res;
-			char *out;
-
-			out = control_send(&res, mero_control, -1, argv[i], argv[0], 0);
-			if (out != NULL || strcmp(res, "OK") != 0) {
-				res = out == NULL ? res : out;
-				fprintf(stderr, "%s: %s\n", argv[0], res);
-				state |= 1;
-				free(res);
-				continue;
-			}
+		out = control_send(&res, mero_control, -1, argv[i], argv[0], 0);
+		if (out != NULL || strcmp(res, "OK") != 0) {
+			res = out == NULL ? res : out;
+			fprintf(stderr, "%s: %s\n", argv[0], res);
+			state |= 1;
 			free(res);
+			continue;
 		}
+		free(res);
 		printf("database '%s' is now under maintenance\n", argv[i]);
 	}
 
@@ -1341,30 +1259,19 @@ command_release(int argc, char *argv[])
 
 	/* do for each listed database */
 	for (i = 1; i < argc; i++) {
+		char *res;
+		char *out;
+
 		hadwork = 1;
-		if (mero_running == 0) {
-			char *e;
-
-			if ((e = db_release(argv[i])) != NULL) {
-				fprintf(stderr, "%s: %s\n", argv[0], e);
-				free(e);
-				state |= 1;
-				continue;
-			}
-		} else {
-			char *res;
-			char *out;
-
-			out = control_send(&res, mero_control, -1, argv[i], argv[0], 0);
-			if (out != NULL || strcmp(res, "OK") != 0) {
-				res = out == NULL ? res : out;
-				fprintf(stderr, "%s: %s\n", argv[0], res);
-				state |= 1;
-				free(res);
-				continue;
-			}
+		out = control_send(&res, mero_control, -1, argv[i], argv[0], 0);
+		if (out != NULL || strcmp(res, "OK") != 0) {
+			res = out == NULL ? res : out;
+			fprintf(stderr, "%s: %s\n", argv[0], res);
+			state |= 1;
 			free(res);
+			continue;
 		}
+		free(res);
 		printf("database '%s' has been taken out of maintenance mode\n",
 				argv[i]);
 	}
@@ -1375,7 +1282,6 @@ command_release(int argc, char *argv[])
 	}
 	exit(state);
 }
-
 
 
 int
@@ -1460,11 +1366,30 @@ main(int argc, char *argv[])
 	SABAOTHinit(dbfarm, NULL);
 
 	/* Start handling the arguments.
-	 * monetdb command [options] [database [...]]
-	 */
+	 * monetdb command [options] [database [...]] */
 	if (argc <= 1) {
 		command_help(0, NULL);
-	} else if (strcmp(argv[1], "create") == 0) {
+		freeConfFile(ckv);
+		return(1);
+	} else if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0) {
+		command_help(argc - 1, &argv[1]);
+		freeConfFile(ckv);
+		return(0);
+	} else if (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "-v") == 0) {
+		command_version();
+		freeConfFile(ckv);
+		return(0);
+	}
+
+	/* if Merovingian isn't running, there's not much we can do */
+	if (mero_running == 0) {
+		fprintf(stderr, "monetdb: cannot perform: MonetDB Database Server "
+				"(merovingian) is not running\n");
+		freeConfFile(ckv);
+		return(1);
+	}
+
+	if (strcmp(argv[1], "create") == 0) {
 		command_create(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		command_destroy(argc - 1, &argv[1]);
@@ -1516,10 +1441,6 @@ main(int argc, char *argv[])
 		command_set(argc - 1, &argv[1], INHERIT);
 	} else if (strcmp(argv[1], "discover") == 0) {
 		command_discover(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0) {
-		command_help(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "-v") == 0) {
-		command_version();
 	} else {
 		fprintf(stderr, "%s: unknown command: %s\n", argv[0], argv[1]);
 		command_help(0, NULL);
