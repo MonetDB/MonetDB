@@ -25,6 +25,7 @@ char* control_send(
 		char* host,
 		int port,
 		char* database,
-		char* command);
+		char* command,
+		char wait);
 
 #endif

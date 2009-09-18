@@ -452,7 +452,7 @@ command_status(int argc, char *argv[])
 		char *p;
 		sabdb *w = NULL;
 
-		e = control_send(&buf, mero_control, -1, "flyghende", "hollander");
+		e = control_send(&buf, mero_control, -1, "flyghende", "hollander", 1);
 		if (e != NULL) {
 			fprintf(stderr, "status: internal error: %s\n", e);
 			free(e);
@@ -617,7 +617,7 @@ command_discover(int argc, char *argv[])
 	 * merovingian.  Anelosimus eximius is a social species of spiders,
 	 * which help each other, just like merovingians do among each
 	 * other. */
-	p = control_send(&buf, mero_control, -1, "anelosimus", "eximius");
+	p = control_send(&buf, mero_control, -1, "anelosimus", "eximius", 1);
 	if (p != NULL) {
 		printf("FAILED:\n%s\n", p);
 		free(p);
@@ -783,7 +783,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 			if (stats->state == SABdbRunning) {
 				printf("%s%sing database '%s'... ", type, mode == STOP ? "p" : "", stats->dbname);
 				fflush(stdout);
-				out = control_send(&res, mero_control, 0, stats->dbname, type);
+				out = control_send(&res, mero_control, 0, stats->dbname, type, 0);
 				if (out == NULL && strcmp(res, "OK") == 0) {
 					printf("done\n");
 				} else {
@@ -799,7 +799,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 			if (stats->state != SABdbRunning) {
 				printf("starting database '%s'... ", stats->dbname);
 				fflush(stdout);
-				out = control_send(&res, mero_control, 0, stats->dbname, type);
+				out = control_send(&res, mero_control, 0, stats->dbname, type, 0);
 				if (out == NULL && strcmp(res, "OK") == 0) {
 					printf("done\n");
 				} else {
@@ -918,7 +918,7 @@ command_set(int argc, char *argv[], meroset type)
 			char *res;
 			char *out;
 
-			out = control_send(&res, mero_control, -1, argv[2], p);
+			out = control_send(&res, mero_control, -1, argv[2], p, 0);
 			if (out != NULL || strcmp(res, "OK") != 0) {
 				res = out == NULL ? res : out;
 				fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -964,7 +964,7 @@ command_set(int argc, char *argv[], meroset type)
 				strncat(property, "=", sizeof(property));
 				p = property;
 			}
-			out = control_send(&res, mero_control, 0, argv[i], p);
+			out = control_send(&res, mero_control, 0, argv[i], p, 0);
 			if (out != NULL || strcmp(res, "OK") != 0) {
 				res = out == NULL ? res : out;
 				fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1017,7 +1017,7 @@ command_create(int argc, char *argv[])
 			ret = db_create(argv[i]);
 		} else {
 			char *out;
-			ret = control_send(&out, mero_control, -1, argv[i], "create");
+			ret = control_send(&out, mero_control, -1, argv[i], "create", 0);
 			if (ret == NULL && strcmp(out, "OK") != 0)
 				ret = out;
 		}
@@ -1103,7 +1103,7 @@ command_destroy(int argc, char *argv[])
 			ret = db_destroy(argv[i]);
 		} else {
 			char *out;
-			ret = control_send(&out, mero_control, -1, argv[i], "destroy");
+			ret = control_send(&out, mero_control, -1, argv[i], "destroy", 0);
 			if (ret == NULL && strcmp(out, "OK") != 0)
 				ret = out;
 		}
@@ -1155,7 +1155,7 @@ command_lock(int argc, char *argv[])
 			char *res;
 			char *out;
 
-			out = control_send(&res, mero_control, -1, argv[i], argv[0]);
+			out = control_send(&res, mero_control, -1, argv[i], argv[0], 0);
 			if (out != NULL || strcmp(res, "OK") != 0) {
 				res = out == NULL ? res : out;
 				fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1204,7 +1204,7 @@ command_release(int argc, char *argv[])
 			char *res;
 			char *out;
 
-			out = control_send(&res, mero_control, -1, argv[i], argv[0]);
+			out = control_send(&res, mero_control, -1, argv[i], argv[0], 0);
 			if (out != NULL || strcmp(res, "OK") != 0) {
 				res = out == NULL ? res : out;
 				fprintf(stderr, "%s: %s\n", argv[0], res);

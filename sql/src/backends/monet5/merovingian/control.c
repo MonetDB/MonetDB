@@ -19,6 +19,7 @@
 
 #include "sql_config.h"
 #include <stdio.h>
+#include <stdlib.h> /* malloc, realloc */
 #include <unistd.h> /* close */
 #include <string.h> /* strerror */
 #include <sys/socket.h> /* socket */
@@ -32,7 +33,11 @@
 /* Sends command for database to merovingian listening at host and port.
  * If host is a path, and port is 0, a UNIX socket connection for host
  * is opened.  The response of merovingian is returned as a malloced
- * string.
+ * string.  If wait is set to a non-zero value, this function will only
+ * return after it has seen an EOF from the server.  This is useful with
+ * multi-line responses, but can lock up for single line responses where
+ * the server allows pipelining (and hence doesn't close the
+ * connection).
  * TODO: implement TCP connect
  */
 char* control_send(
@@ -40,9 +45,11 @@ char* control_send(
 		char* host,
 		int port,
 		char* database,
-		char* command)
+		char* command,
+		char wait)
 {
-	char buf[8096];
+	char sbuf[8096];
+	char *buf;
 	int sock = -1;
 	struct sockaddr_un server;
 	size_t len;
@@ -50,26 +57,50 @@ char* control_send(
 	(void)port;
 	/* UNIX socket connect */
 	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-		snprintf(buf, sizeof(buf), "cannot open connection: %s\n",
+		snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
 				strerror(errno));
-		return(strdup(buf));
+		return(strdup(sbuf));
 	}
 	memset(&server, 0, sizeof(struct sockaddr_un));
 	server.sun_family = AF_UNIX;
 	strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
 	if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
-		snprintf(buf, sizeof(buf), "cannot connect: %s\n", strerror(errno));
-		return(strdup(buf));
+		snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
+		return(strdup(sbuf));
 	}
 
-	len = snprintf(buf, sizeof(buf), "%s %s\n", database, command);
-	send(sock, buf, len, 0);
-	if ((len = recv(sock, buf, sizeof(buf), 0)) <= 0)
-		return(strdup("no response from merovingian\n"));
-	buf[len == 0 ? 0 : len - 1] = '\0';
+	len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);
+	send(sock, sbuf, len, 0);
+	if (wait != 0) {
+		size_t buflen = sizeof(sbuf);
+		size_t bufpos = 0;
+		char *bufp;
+		bufp = buf = malloc(sizeof(char) * buflen);
+		if (buf == NULL)
+			return(strdup("failed to allocate memory"));
+		while ((len = recv(sock, buf + bufpos, buflen - bufpos, 0)) > 0) {
+			if (len == buflen - bufpos) {
+				bufp = realloc(buf, sizeof(char) * buflen * 2);
+				if (bufp == NULL) {
+					free(buf);
+					return(strdup("failed to allocate more memory"));
+				}
+				buf = bufp;
+			}
+			bufpos += len;
+		}
+		if (bufpos == 0)
+			return(strdup("no response from merovingian"));
+		buf[bufpos - 1] = '\0';
+		*ret = buf;
+	} else {
+		if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)
+			return(strdup("no response from merovingian"));
+		sbuf[len - 1] = '\0';
+		*ret = strdup(sbuf);
+	}
 
 	close(sock);
 
-	*ret = strdup(buf);
 	return(NULL);
 }
