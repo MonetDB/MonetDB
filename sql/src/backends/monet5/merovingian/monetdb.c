@@ -180,6 +180,88 @@ command_version()
 }
 
 static void
+simple_argv_cmd(int argc, char *argv[], char *merocmd,
+		char *successmsg, char *premsg)
+{
+	int i;
+	int state = 0;        /* return status */
+	int hadwork = 0;      /* if we actually did something */
+	char *ret;
+	char *out;
+
+	/* do for each listed database */
+	for (i = 1; i < argc; i++) {
+		if (argv[i] == NULL)
+			continue;
+
+		if (premsg != NULL) {
+			printf("%s '%s'... ", premsg, argv[i]);
+			fflush(stdout);
+		}
+
+		ret = control_send(&out, mero_control, -1, argv[i], merocmd, 0);
+
+		if (ret != NULL) {
+			if (premsg != NULL)
+				printf("FAILED\n");
+			fprintf(stderr, "%s: failed to perform command: %s\n",
+					argv[0], ret);
+			free(ret);
+			exit(2);
+		}
+
+		if (strcmp(out, "OK") == 0) {
+			if (premsg != NULL) {
+				printf("done\n");
+			} else {
+				printf("%s: %s\n", successmsg, argv[i]);
+			}
+		} else {
+			if (premsg != NULL)
+				printf("FAILED\n");
+			fprintf(stderr, "%s: %s\n", argv[0], out);
+			free(out);
+
+			state |= 1;
+		}
+
+		hadwork = 1;
+	}
+
+	if (hadwork == 0) {
+		command_help(2, &argv[-1]);
+		exit(1);
+	}
+}
+
+static void
+simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
+{
+	int i;
+
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(2, &argv[-1]);
+		exit(1);
+	}
+	
+	/* walk through the arguments and hunt for "options" */
+	for (i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i] = NULL;
+			break;
+		}
+		if (argv[i][0] == '-') {
+			fprintf(stderr, "%s: unknown option: %s\n", argv[0], argv[i]);
+			command_help(argc + 1, &argv[-1]);
+			exit(1);
+		}
+	}
+
+	simple_argv_cmd(argc, argv, merocmd, successmsg, NULL);
+}
+
+static void
 printStatus(sabdb *stats, int mode, int twidth)
 {
 	sabuplog uplog;
@@ -670,18 +752,22 @@ command_startstop(int argc, char *argv[], startstop mode)
 	sabdb *orig;
 	sabdb *stats;
 	char *type = NULL;
+	char *action = NULL;
 	char *p;
 	int ret = 0;
 
 	switch (mode) {
 		case START:
 			type = "start";
+			action = "starting database";
 		break;
 		case STOP:
 			type = "stop";
+			action = "stopping database";
 		break;
 		case KILL:
 			type = "kill";
+			action = "killing database";
 		break;
 	}
 
@@ -722,44 +808,25 @@ command_startstop(int argc, char *argv[], startstop mode)
 	}
 
 	if (doall == 1) {
-		/* don't even look at the arguments, because we are instructed
-		 * to list all known databases */
+		/* Don't look at the arguments, because we are instructed to
+		 * start all known databases.  In this mode we should omit
+		 * starting already started databases, so we need to check
+		 * first. */
 		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
 			fprintf(stderr, "%s: internal error: %s\n", type, e);
 			GDKfree(e);
 			exit(2);
 		}
 	} else {
-		sabdb *w = NULL;
-		orig = NULL;
-		for (i = 1; i < argc; i++) {
-			if (argv[i] != NULL) {
-				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
-					fprintf(stderr, "%s: internal error: %s\n", type, e);
-					GDKfree(e);
-					exit(2);
-				}
-
-				if (stats == NULL) {
-					fprintf(stderr, "%s: no such database: %s\n", type, argv[i]);
-					argv[i] = NULL;
-				} else {
-					if (orig == NULL) {
-						orig = stats;
-						w = stats;
-					} else {
-						w = w->next = stats;
-					}
-				}
-			}
-		}
+		simple_argv_cmd(argc, argv, type, NULL, action);
+		return;
 	}
 	
 	stats = orig;
 	while (stats != NULL) {
 		if (mode == STOP || mode == KILL) {
 			if (stats->state == SABdbRunning) {
-				printf("%s%sing database '%s'... ", type, mode == STOP ? "p" : "", stats->dbname);
+				printf("%s '%s'... ", action, stats->dbname);
 				fflush(stdout);
 				out = control_send(&res, mero_control, 0, stats->dbname, type, 0);
 				if (out == NULL && strcmp(res, "OK") == 0) {
@@ -775,7 +842,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 			}
 		} else if (mode == START) {
 			if (stats->state != SABdbRunning) {
-				printf("starting database '%s'... ", stats->dbname);
+				printf("%s '%s'... ", action, stats->dbname);
 				fflush(stdout);
 				out = control_send(&res, mero_control, 0, stats->dbname, type, 0);
 				if (out == NULL && strcmp(res, "OK") == 0) {
@@ -1071,60 +1138,7 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 static void
 command_create(int argc, char *argv[])
 {
-	int i;
-	int state = 0;        /* return status */
-	int hadwork = 0;      /* if we actually did something */
-
-	if (argc == 1) {
-		/* print help message for this command */
-		command_help(2, &argv[-1]);
-		exit(1);
-	}
-	
-	/* walk through the arguments and hunt for "options" */
-	for (i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "--") == 0) {
-			argv[i] = NULL;
-			break;
-		}
-		if (argv[i][0] == '-') {
-			fprintf(stderr, "create: unknown option: %s\n", argv[i]);
-			command_help(argc + 1, &argv[-1]);
-			exit(1);
-		}
-	}
-
-	/* do for each listed database */
-	for (i = 1; i < argc; i++) {
-		char *ret;
-		char *out;
-		
-		if (argv[i] == NULL)
-			continue;
-
-		ret = control_send(&out, mero_control, -1, argv[i], "create", 0);
-		if (ret == NULL && strcmp(out, "OK") != 0)
-			ret = out;
-
-		if (ret == NULL) {
-			printf("successfully created database '%s' "
-					"in maintenance mode\n", argv[i]);
-		} else {
-			fprintf(stderr, "create: %s\n", ret);
-			free(ret);
-
-			state |= 1;
-		}
-
-		hadwork = 1;
-	}
-
-	if (hadwork == 0) {
-		command_help(2, &argv[-1]);
-		state |= 1;
-	}
-
-	exit(state);
+	simple_command(argc, argv, "create", "created database in maintenance mode");
 }
 
 static void
@@ -1132,8 +1146,6 @@ command_destroy(int argc, char *argv[])
 {
 	int i;
 	int force = 0;    /* ask for confirmation */
-	int state = 0;    /* return status */
-	int hadwork = 0;  /* did we do anything useful? */
 
 	if (argc == 1) {
 		/* print help message for this command */
@@ -1176,111 +1188,19 @@ command_destroy(int argc, char *argv[])
 		}
 	}
 
-	/* do for each listed database */
-	for (i = 1; i < argc; i++) {
-		char* ret;
-		char *out;
-		
-		if (argv[i] == NULL)
-			continue;
-
-		ret = control_send(&out, mero_control, -1, argv[i], "destroy", 0);
-		if (ret == NULL && strcmp(out, "OK") != 0)
-			ret = out;
-
-		if (ret == NULL) {
-			printf("successfully destroyed database '%s'\n", argv[i]);
-		} else {
-			fprintf(stderr, "destroy: %s\n", ret);
-			free(ret);
-			state |= 1;
-		}
-
-		hadwork = 1;
-	}
-
-	if (hadwork == 0) {
-		command_help(2, &argv[-1]);
-		state |= 1;
-	}
-	exit(state);
+	simple_argv_cmd(argc, argv, "destroy", "destroyed database", NULL);
 }
 
 static void
 command_lock(int argc, char *argv[])
 {
-	int i;
-	int state = 0;    /* return status */
-	int hadwork = 0;  /* did we do anything useful? */
-
-	if (argc == 1) {
-		/* print help message for this command */
-		command_help(argc + 1, &argv[-1]);
-		exit(1);
-	}
-
-	/* do for each listed database */
-	for (i = 1; i < argc; i++) {
-		char *res;
-		char *out;
-
-		hadwork = 1;
-		out = control_send(&res, mero_control, -1, argv[i], argv[0], 0);
-		if (out != NULL || strcmp(res, "OK") != 0) {
-			res = out == NULL ? res : out;
-			fprintf(stderr, "%s: %s\n", argv[0], res);
-			state |= 1;
-			free(res);
-			continue;
-		}
-		free(res);
-		printf("database '%s' is now under maintenance\n", argv[i]);
-	}
-
-	if (hadwork == 0) {
-		command_help(2, &argv[-1]);
-		state |= 1;
-	}
-	exit(state);
+	simple_command(argc, argv, "lock", "put database under maintenance");
 }
 
 static void
 command_release(int argc, char *argv[])
 {
-	int i;
-	int state = 0;    /* return status */
-	int hadwork = 0;  /* did we do anything useful? */
-
-	if (argc == 1) {
-		/* print help message for this command */
-		command_help(argc + 1, &argv[-1]);
-		exit(1);
-	}
-
-	/* do for each listed database */
-	for (i = 1; i < argc; i++) {
-		char *res;
-		char *out;
-
-		hadwork = 1;
-		out = control_send(&res, mero_control, -1, argv[i], argv[0], 0);
-		if (out != NULL || strcmp(res, "OK") != 0) {
-			res = out == NULL ? res : out;
-			fprintf(stderr, "%s: %s\n", argv[0], res);
-			state |= 1;
-			free(res);
-			continue;
-		}
-		free(res);
-		printf("database '%s' has been taken out of maintenance mode\n",
-				argv[i]);
-	}
-
-	if (hadwork == 0) {
-		command_help(2, &argv[-1]);
-		state |= 1;
-	}
-	exit(state);
+	simple_command(argc, argv, "release", "taken database out of maintenance mode");
 }
 
 
