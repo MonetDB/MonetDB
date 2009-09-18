@@ -231,10 +231,9 @@ controlRunner(void *d)
 					}
 					if (dp == NULL) {
 						Mfprintf(_mero_ctlerr, "received stop signal for "
-								"database not under merovingian control: %s\n",
-								q);
+								"non running database: %s\n", q);
 						len = snprintf(buf2, sizeof(buf2),
-								"'%s' is not controlled by merovingian\n", q);
+								"database is not running: %s\n", q);
 						send(msgsock, buf2, len, 0);
 					}
 					pthread_mutex_unlock(&_mero_topdp_lock);
