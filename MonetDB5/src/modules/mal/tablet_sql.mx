@@ -462,7 +462,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
 	for( i=0; i< as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
-		task->cols[i] = i+1;	/* to distinguish non initialized later with zero */
+		task->cols[i] = (int) (i+1);	/* to distinguish non initialized later with zero */
 		/* advice memory manager on expected use of results */
 		BATmadvise(as->format[i].c, BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL);
 	}
