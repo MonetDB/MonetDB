@@ -130,7 +130,19 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 				source = "-";
 				value = stats->dbname;
 			} else {
-				readProps(props, stats->path);
+				if (mero_running == 1) {
+					char *buf;
+					e = control_send(&buf, mero_control, -1, stats->dbname, "get", 1);
+					if (e != NULL) {
+						fprintf(stderr, "get: internal error: %s\n", e);
+						free(e);
+						exit(2);
+					}
+					readPropsBuf(props, buf);
+					free(buf);
+				} else {
+					readProps(props, stats->path);
+				}
 				kv = findConfKey(props, p);
 				if (kv == NULL) {
 					fprintf(stderr, "get: no such property: %s\n", p);

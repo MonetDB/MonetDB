@@ -324,6 +324,7 @@ controlRunner(void *d)
 
 					Mfprintf(_mero_ctlout, "served property list for "
 							"database '%s'\n", q);
+					break;
 				} else if (strncmp(p, "share=", strlen("share=")) == 0) {
 					sabdb *stats;
 					err e;
