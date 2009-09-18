@@ -156,7 +156,37 @@ controlRunner(void *d)
 				*p++ = '\0';
 				if (strcmp(p, "start") == 0) {
 					err e;
-					Mfprintf(_mero_ctlout, "starting database '%s'\n", q);
+					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+						len = snprintf(buf2, sizeof(buf2),
+								"internal error, please review the logs\n");
+						send(msgsock, buf2, len, 0);
+						Mfprintf(_mero_ctlerr, "start: SABAOTHgetStatus: "
+								"%s\n", e);
+						freeErr(e);
+						continue;
+					} else {
+						if (stats == NULL) {
+							Mfprintf(_mero_ctlerr, "received start signal "
+									"for database not under merovingian "
+									"control: %s\n", q);
+							len = snprintf(buf2, sizeof(buf2),
+									"no such database: %s\n", q);
+							send(msgsock, buf2, len, 0);
+							continue;
+						}
+
+						if (stats->state == SABdbRunning) {
+							Mfprintf(_mero_ctlerr, "received start signal "
+									"for already running database: %s\n", q);
+							len = snprintf(buf2, sizeof(buf2),
+									"database is already running: %s\n", q);
+							send(msgsock, buf2, len, 0);
+							SABAOTHfreeStatus(&stats);
+							continue;
+						}
+
+						SABAOTHfreeStatus(&stats);
+					}
 					if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
 						Mfprintf(_mero_ctlerr, "failed to fork mserver: %s\n",
 								getErrMsg(e));
@@ -169,6 +199,7 @@ controlRunner(void *d)
 					} else {
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
+						Mfprintf(_mero_ctlout, "started database '%s'\n", q);
 					}
 
 					if (stats != NULL)
@@ -184,13 +215,13 @@ controlRunner(void *d)
 					while (dp != NULL) {
 						if (strcmp(dp->dbname, q) == 0) {
 							if (strcmp(p, "stop") == 0) {
-								Mfprintf(_mero_ctlout, "stopping "
-										"database '%s'\n", q);
 								terminateProcess(dp);
-							} else {
-								Mfprintf(_mero_ctlout, "killing "
+								Mfprintf(_mero_ctlout, "stopped "
 										"database '%s'\n", q);
+							} else {
 								kill(dp->pid, SIGKILL);
+								Mfprintf(_mero_ctlout, "killed "
+										"database '%s'\n", q);
 							}
 							len = snprintf(buf2, sizeof(buf2), "OK\n");
 							send(msgsock, buf2, len, 0);
