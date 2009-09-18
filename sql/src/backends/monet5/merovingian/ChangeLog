@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  18 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c, monetdb.1:
+  monetdb now requires merovingian to be running to perform any
+  operation
+
   09 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_discoveryrunner.c:
   No longer announce databases that are under maintenance, this allows them to
   be pulled out of the cluster easily
