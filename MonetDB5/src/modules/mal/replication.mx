@@ -26,38 +26,28 @@ not support replication of schema changes, such as addition of tables or
 columns.  Setup the full catalog before transitioning a database to a
 replication master and make a backup.
 
-To configure a database to become a replication master, set its "master"
+To configure a database to become a replication master, 
+set its "replication_master"
 property to true using monetdb(1).  This property is translated by
 merovingian(1) into the replication_master GDK environment setting.
 With this setting, the database will log all SQL update actions in a
 replication logfile, allowing slaves to replicate them.
 
-After this modification start the master and run 
-the script sql/replication.sql to create the tables for managing 
-the slaves and definition of utility functions.
+After this modification start/stop the master once, which will initialize
+the replication service.
 
 The next step is to create a snapshot of the master to be replicated to
 one or more slaves.  For this, the msqldump(1) tool can be used.  
-A dump made on a replication master should includes the result of
-running the above mentioned replication initialization script.
-It contains the identity of the master in the form of a pre-initialized 
-replicas table.
+A dump made contains the identity of the master in the form of a 
+pre-initialized replicas table.
 Alternatively, the DBA can make a safe copy from the corresponding dbfarm
 directory.
 
-To initiate a slave, simply load a master snapshot.  If the master was
-able to properly fully qualify itself, the snapshot dump includes a
-a function to retrieve the replication master identity.
-After loading the dump, the slave can issue being informed
-by pending updates using the command CALL
-'slave_start(master());' is executed.  A database that has a slave
-configuration will automatically attempt to continue replicating upon
-startup.
-Note that replication is implemented push-based, that is, the master makes a
-call-back to the requesting slave to deliver its updates using an independent
-client connection with its own user name and password credentials.
-A master can be told to temporarily stop sending updates using the 
-command 'CALL slave_stop(master());'.
+To initiate a slave, simply load a master snapshot.
+It will automatically start synchronization with the master.
+The synchronization can be manually controlled with the functions
+CALL 'startSynchronization(master());' and 
+CALL 'stopSynchronization(master());' 
 
 A freshly initialised slave starts replicating off of the
 master starting from the tag maintained by the master for each slave.
@@ -258,8 +248,7 @@ requests before they are shipped to the log.
 The tag is returned for marking all related updates.
 The final code should contain a loop to determine the last replication tag.
 @c
-#define MASTER "skipper"
-#define SLAVE "sailor" /* FIXME: not used */
+#define MASTER "master"
 #define REPLICA "/log_%d"
 #define REPLICABLOCK 1000
 
@@ -272,7 +261,7 @@ static struct MASTERRECORD {
 static int mtop = 0;
 static int mlimit = 0;
 static MT_Lock repLck;
-static int replicationTag = -1;
+static int replicationTag = 0;
 static stream *repFile;
 
 int
