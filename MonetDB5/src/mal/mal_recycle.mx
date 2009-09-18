@@ -1151,11 +1151,11 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 #define boundcheck(flag,a) ((flag)?a<=0:a<0)
 /* check if instruction p at the stack is a subset selection of the RP instruction q */
 
-static int 
+static bit 
 selectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 {
-	int lcomp, rcomp, cover=0;
-	bit li, hi, lip, hip;
+	int lcomp, rcomp;
+	bit li, hi, lip, hip, cover=0;
 
 	lcomp = VALcmp(&getVar(recycleBlk,getArg(q,2))->value,
 			&s->stk[getArg(p,2)]);
@@ -1166,7 +1166,7 @@ selectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 		rcomp = VALcmp( &s->stk[getArg(p,3)], 
 			&getVar(recycleBlk,getArg(q,3))->value);
 	switch (q->argc-1) {
-		case 4:	cover = lcomp <=0 && rcomp <=0;
+		case 4:	cover = ( lcomp <=0 && rcomp <=0 );
 			break;
 		case 6:
 			li = *(bit*)getVarValue(recycleBlk,getArg(q,4));
@@ -1176,14 +1176,15 @@ selectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 			else {
 				lip = *(bit*)VALget(&s->stk[getArg(p,4)]);
 				hip = *(bit*)VALget(&s->stk[getArg(p,5)]);
-				cover = boundcheck(li || ~lip,lcomp) && boundcheck(hi || ~hip,rcomp);
+				cover = ( boundcheck(li || ~lip,lcomp) && boundcheck(hi || ~hip,rcomp) );
 			}
 	}
 
 	return cover;
 }
 
-static int 
+
+static bit 
 likeSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 {
 	str ps, qs, pd, qd, ps0, qs0;
@@ -1423,11 +1424,16 @@ findPieces(rngPtr qry, int bid, int *pcs)
         q = getInstrPtr(recycleBlk,i);
 
 		if ( q->argc-1 < 4 || getFunctionId(q) != selectRef ) continue;
+		/* to do include thetaselects */
 
 		/* check if selection is over the same bat arg */
-		if ( getVarConstant(recycleBlk, getArg(q,1)).val.bval == bid )
+		if ( getVarConstant(recycleBlk, getArg(q,1)).val.bval == bid ){
+			bat qbid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
+			BAT *b = BBPquickdesc(qbid, FALSE);
+			if ( isVIEW(b) ) continue;	/* ignore intermediates - views */
 			if ( partOverlap(qry,q) ) /* add q to the array pcs */
 				pcs[j++] = i; 
+		}
 	}
 	return j;
 }
@@ -1925,13 +1931,43 @@ selectMultiSubsume(InstrPtr p, MalStkPtr s)
 	return 0;
 }
 
+static bit 
+thetaselectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
+{
+	ValPtr pval, qval;
+	str pop, qop;
+	bit pi, qi;
+
+	qval = &getVar(recycleBlk,getArg(q,2))->value;
+	qop = *(str*)getVarValue(recycleBlk,getArg(q,3));
+
+	pval = &s->stk[getArg(p,2)];
+	pop = *(str*)VALget(&s->stk[getArg(p,3)]);
+
+	if ( pop[0] != qop[0] ) return 0;
+	pi = ( pop[1] == '=' );
+	qi = ( qop[1] == '=' );
+
+	if ( qop[0] == '<' ) {
+		if ( lessEq(pval,pi,qval,qi,FALSE) ) 
+			return 1;
+		else return 0;
+	} else 
+	if ( qop[0] == '>' ) {
+		if ( greaterEq(pval,pi,qval,qi,FALSE) ) 
+			return 1;
+		else return 0;
+	}
+	return 0;
+}
+
 static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
     int i, j, ridx, idx, pc = -1, evicted=0;
     bat bid= -1, nbid= -1;
     InstrPtr q;
-    static str selectRef, like_selectRef;
+    static str selectRef, like_selectRef, thetaselectRef;
     bit gluse = FALSE;
 	lng ticks = GDKusec();
 
@@ -1939,6 +1975,8 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
         selectRef= putName("select",6);
 	if (like_selectRef == 0)
         like_selectRef= putName("like_select",11);
+	if (thetaselectRef == 0)
+        thetaselectRef= putName("thetaselect",11);
 
     if( recycleBlk == 0 || reusePolicy == 0)
         return -1;
@@ -1960,16 +1998,20 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
             ridx= getArg(q,1);
             idx= getArg(p,1);
             if (q->argc-1 > 3 && 
-					 (getFunctionId(p) == selectRef  || getFunctionId(p) == like_selectRef) &&
+				( getFunctionId(p) == selectRef ||
+					getFunctionId(p) == like_selectRef ||
+					getFunctionId(p) == thetaselectRef ) &&
                 getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval &&
                 BATatoms[getArgType(recycleBlk,q,2)].linear )
 
-            {	int subsmp = 0;
+            {	bit subsmp = 0;
 					/* Time to check for the inclusion constraint */
-					if (getFunctionId(p) == selectRef)
+					if ( getFunctionId(p) == selectRef )
 						subsmp = selectSubsume(p,q,s);
-					else if (getFunctionId(p) == like_selectRef)
+					else if ( getFunctionId(p) == like_selectRef )
 						subsmp = likeSubsume(p,q,s);
+					else if ( getFunctionId(p) == thetaselectRef )
+						subsmp = thetaselectSubsume(p,q,s);
                
                 if (subsmp){
                     BAT *b1, *b2;
