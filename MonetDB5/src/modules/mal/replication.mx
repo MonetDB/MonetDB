@@ -31,9 +31,10 @@ slave works as follows.
 
 step 1) Turn the database into a replication master by setting
 its "replication_master" property to true using monetdb(1).  
-This property is translated by merovingian(1) into the 
-replication_master GDK environment setting upon system restart.
-Monetdb(1) will restart the database server to initialize its new role.
+This property is translated by merovingian(1) into the database variable
+replication_master being set upon system restart.
+Monetdb(1) will automatically restart the database server to initialize its new role,
+unless it was taken out for maintenance.
 
 step 2) Create a dump of the master database using the msqldump(1) tool.  
 Alternatively, the DBA can make a safe copy from the corresponding dbfarm
@@ -44,21 +45,21 @@ step 3) To initiate a slave, simply load the master snapshot.
 step 4) Turn the database into a slave by setting its
 "replication_slave" property to the uri of the master using monetdb(1).
 This property is translated by merovingian(1) into the 
-replication_slave GDK environment setting upon system restart.
-Monetdb(1) will restart the database server to initialize its new role.
+databasevariable replication_slave setting upon system restart.
+Monetdb(1) will automatically restart the database server to initialize its new role,
+unless it was taken out for maintenance.
 
-The slave continues synchronizing with the master automatically
-upon each session restart.
+The slave starts synchronizing with the master automatically upon each session restart.
 The synchronization can be manually controlled with the SQL functions
-CALL 'startSynchronization(master());' and 
-CALL 'stopSynchronization(master());' .
+CALL 'startSynchronization();' and CALL 'stopSynchronization();' .
 
 The replication scheme allows a slave to be cloned e.g. by copying the
 dbfarm of the slave to another database without problems.  
 In this situation the database carries both a master and slave property.
 
-Turning off the replication_master property leads to removal of all
-left-over log files.
+Beware, turning off the replication_master property leads to removal of all
+left-over log files. Slaves will detect this situation and call for a fresh
+copy and continue processing queries on a possibly stale database.
 
 @- Behind the scene
 When the replication_master environment is set, an optimizer
@@ -85,7 +86,7 @@ the end of the query block. This separates the concurrent
 actions on the database at the master and leads to a serial
 execution of the replication operations within the slave.
 
-The log records are stored in a file "dbfarm/db/master/tag_%d" with the 
+The log records are stored in a file "dbfarm/db/master/log_%d" with the 
 following structure:
 @verbatim
 function slave.tag1(tag:int,stamp:timestamp);
@@ -123,9 +124,9 @@ be (re)moved. This is considered a responsibility for the DBA,
 for it involves making a checkpoint or securely storing the logs
 into an archive. The master keeps a table of chunks sent completely.
 
-The current implementation assumes that all log files are known,
-e.g. they can be zapped to zero length, but may not be completely
-removed.
+Monetdb can inform the master about each slave being added.
+Or the server can request the names of all slaves from Sabaoth.
+This way we can garbage collect log files without DBA interference.
 
 A slave starts replicating off the
 master starting from the tag maintained by the master for each slave.
@@ -154,27 +155,27 @@ pattern delete(s:str, t:str, b:bat[:oid,:any_1], tag:int):void
 address MASTERdelete
 comment "Dump the BAT with deletions on the MAL log");
 
-command replay(uri:str, usr:str, pw:str, tag:int):void
-address MASTERreplay
-comment "Start the replication log replayer thread feeding
-the slave with the necessary log records. It simply pumps the
-data until running out for log info.";
-
 pattern start(uri:str):void
 address MASTERstart
-comment "Restart sending the missing transactions for slave uri";
+comment "Slave calls the master to restart sending the missing transactions";
 pattern start(uri:str, tag:int):void
 address MASTERstart
-comment "Restart sending the missing transactions for slave uri";
+comment "Slave calls the master to restart sending the missing transactions";
 
 command stop(uri:str):void
 address MASTERstart
-comment "Stop sending the missing transactions for slave uri";
+comment "Slave suspends synchronisation with master";
 
 command getName():str
 address MASTERgetName
 comment "Return the name of the server if it is a master, otherwise
 pick the first name from the replicas table";
+
+command replay(uri:str):void
+address MASTERreplayConnection;
+command replay(uri:str, usr:str, pw:str, tag:int):void
+address MASTERreplay
+comment "Master simply pumps the data until running out for log info.";
 
 module slave;
 
@@ -229,6 +230,7 @@ replication_export str MASTERstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 replication_export str MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replication_export str MASTERreplayConnection(int  *ret, str *conn);
 replication_export str MASTERreplay(int  *ret, str *uri, str *usr, str *pw, int *tag);
 replication_export str MASTERgetName(str *ret);
 
@@ -617,17 +619,16 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 @-
-Replaying the MAL logs is straightforward. We perform a remote
-operation execution on the master to initiate a quick dump of the
-missing operations. The master keeps a [persistent] structure
-with the status of all completed logfiles being sent to slaves.
+Replaying the MAL logs is straightforward. The slave upon calling the
+master switches to the role of client, receiving the redo transactions
+upon arrival.
+
+The master keeps a [persistent] structure with the status of all completed 
+log files being sent to slaves.
 
 The replay should be performed in an independent thread to enable
 the slave to continue processing. Furthermore we assume that
 all log files still exist (but may be zapped)
-The slave is initialized by echoing the master uri.
-This makes it possible to later easily close the connection.
-We might refine it to read local log files too.
 @c
 static struct MASTERrecord{
 	str uri;
@@ -692,6 +693,16 @@ Upon succesful transmission we update the log file tag for the slage
 #endif
 }
 
+str MASTERreplayConnection(int  *ret, str *conn)
+{
+	(void) ret;
+	(void) conn;
+	return MAL_SUCCEED;
+}
+
+@-
+The slave keep tracks on the masters it is involved with
+@c
 str MASTERreplay(int  *ret, str *uri, str *usr, str *pw, int *tag)
 {
 	struct MASTERrecord *mr = masterstatus;
@@ -700,7 +711,7 @@ str MASTERreplay(int  *ret, str *uri, str *usr, str *pw, int *tag)
 	(void) ret;
 
 #ifdef _DEBUG_REPLICATOR_
-	printf("#replay the log to  %s %s %s %d\n", *uri, *usr, *pw, *tag);
+	stream_printf(GDKout,"#replay the log from  %s %s %s %d\n", *uri, *usr, *pw, *tag);
 #endif
 	for( mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
 		if ( strcmp(mr->uri,*uri) == 0) {
@@ -729,7 +740,7 @@ str MASTERreplay(int  *ret, str *uri, str *usr, str *pw, int *tag)
 str MASTERstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *uri = (str*) getArgReference(stk,pci,1);
-	int tag = -1;
+	int tag = 0;
 	str usr = "monetdb";
 	str pw = "monetdb";
 
