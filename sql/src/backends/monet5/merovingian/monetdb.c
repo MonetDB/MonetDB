@@ -817,6 +817,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 			GDKfree(e);
 			exit(2);
 		}
+		/* need remote all status retriever factored out in function */
 	} else {
 		simple_argv_cmd(argc, argv, type, NULL, action);
 		return;
@@ -876,7 +877,6 @@ static void
 command_set(int argc, char *argv[], meroset type)
 {
 	char *p = NULL;
-	char *value = NULL;
 	char property[24] = "";
 	int i;
 	int state = 0;
@@ -925,7 +925,6 @@ command_set(int argc, char *argv[], meroset type)
 				*p = '\0';
 				snprintf(property, sizeof(property), "%s", argv[i]);
 				*p++ = '=';
-				value = p;
 				p = argv[i];
 			} else {
 				snprintf(property, sizeof(property), "%s", argv[i]);
