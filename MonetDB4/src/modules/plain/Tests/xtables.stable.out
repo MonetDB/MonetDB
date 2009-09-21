@@ -33,7 +33,7 @@ proc xtable_histo_direct(..any..) : void {
 }
 
 proc xtable_histo_remap(..any..) : void {
-	var map := new(oid,oid).key(true).reverse().insert($2);
+	var map := new(oid,oid,$2.count()).key(true).reverse().insert($2);
 	map.join($2.histogram()).xtable_print($(1..), map.col_name("gid"));
 }
 
