@@ -1055,6 +1055,7 @@ str SABAOTHdeserialise(sabdb **ret, str *sdb) {
 		}
 	}
 	s->uplog = u;
+	s->next = NULL;
 
 	*ret = s;
 	return(MAL_SUCCEED);
