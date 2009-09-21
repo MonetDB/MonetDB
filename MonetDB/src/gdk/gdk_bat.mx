@@ -1858,7 +1858,7 @@ to speed up access. If indexes are lacking then a hash index
 is constructed under the assumption that 1) multiple access to the BAT 
 can be expected and 2) building the hash is only slightly more expensive
 than the full linear scan.
-NULL is returned if no such element could be found.
+BUN_NONE is returned if no such element could be found.
 In those cases where the type is known and a hash index is available,
 one should use the inline functions to speed-up processing.
 @c
