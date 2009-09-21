@@ -89,6 +89,10 @@ group_by_on_values.SF-2837561
 crash_on_complex_join.SF-2847106
 restart_with_large_int.SF-2846238
 addmonths_missing.SF-2854949
+overflow.SF-2853458
+bit_and.SF-2850341
+double_count_limit_bug.SF-2862146
+create_on_ro_db_crash.SF-2830238
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.

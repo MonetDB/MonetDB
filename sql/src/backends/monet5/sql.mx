@@ -675,7 +675,7 @@ comment "cast @1 to a month_interval and check for overflow";
 
 command calc.second_interval( v:@1, ek:int, sk:int ) :lng
 address second_interval_@1
-comment "cast @1 to a month_interval and check for overflow";
+comment "cast @1 to a second_interval and check for overflow";
 @mal
 
 @:mal_interval(str)@
@@ -684,6 +684,7 @@ comment "cast @1 to a month_interval and check for overflow";
 @:mal_interval(int)@
 @:mal_interval(wrd)@
 @:mal_interval(lng)@
+@:mal_interval(daytime)@
 
 command calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
@@ -1074,6 +1075,7 @@ sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
 @:c_interval_export(int)@
 @:c_interval_export(wrd)@
 @:c_interval_export(lng)@
+@:c_interval_export(daytime)@
 @= simpleupcast_export
 sql5_export str @2_2_@1( @1 *res, @2 *v );
 sql5_export str bat@2_2_@1( int *res, int *v );
@@ -1525,7 +1527,7 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.next_value", "error");
 }
 
-/* str mvc_bat_next_value(int *res, int *sid, str *seqname); */
+/* str mvc_bat_next_value(bat *res, int *sid, str *seqname); */
 str
 mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1537,7 +1539,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_sequence *seq = NULL;
 	seqbulk *sb = NULL;
 	BATiter bi;
-	lng *res  = (lng *) getArgReference(stk, pci, 0);
+	bat *res  = (bat *) getArgReference(stk, pci, 0);
 	int *sid  = (int *) getArgReference(stk, pci, 1);
 	str *seqname  = (str *) getArgReference(stk, pci, 2);
 
@@ -2780,7 +2782,7 @@ str
 			lres = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
 			lres = (((*v - rnd)/scales[dff])*scales[dff]);
-		assert((lng) GDK_@1_min <= lres && lres <= (lng) GDK_@1_max);
+		assert((lng) GDK_@1_min < lres && lres <= (lng) GDK_@1_max);
 		*res = (@1) lres;
 	} else if (*r <= 0 && -*r + *s > 0) {
 		int dff = -*r + *s;
@@ -2790,7 +2792,7 @@ str
 			lres = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
 			lres = (((*v - rnd)/scales[dff])*scales[dff]);
-		assert((lng) GDK_@1_min <= lres && lres <= (lng) GDK_@1_max);
+		assert((lng) GDK_@1_min < lres && lres <= (lng) GDK_@1_max);
 		*res = (@1) lres;
 	} else {
 		*res = *v;
@@ -3197,7 +3199,8 @@ str @2_2_@1( @1 *res, @2 *v )
 	}
 	
 	/* see if the number fits in the data type */
-	if (val >= (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
+	if ((@3)(@1)val > (@3) GDK_@1_min && 
+	    val > (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
 		*res = (@1)val;
 		return(MAL_SUCCEED);
 	} else {
@@ -3645,7 +3648,7 @@ str
 	if (scale) 
 		val = (val+h)/scales[scale];
 	/* see if the number fits in the data type */
-	if (val >= GDK_@1_min && val <= GDK_@1_max)	{
+	if (val > GDK_@1_min && val <= GDK_@1_max)	{
 		*res = (@1)val;
 		return MAL_SUCCEED;
 	} else {
@@ -3683,7 +3686,7 @@ str
 		val = (val+h)/scales[s1-s2];
 
 	/* see if the number fits in the data type */
-	if (val >= GDK_@1_min && val <= GDK_@1_max)	{
+	if (val > GDK_@1_min && val <= GDK_@1_max)	{
 		*res = (@1)val;
 		return MAL_SUCCEED;
 	} else {
@@ -3859,6 +3862,33 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 @:c_interval(int)@
 @:c_interval(wrd)@
 @:c_interval(lng)@
+
+str
+second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
+{
+	int k = digits2sk(*d);
+	lng r = *(int*)s;
+
+	(void)sk;
+	switch(k) {
+	case isec:
+		r /= 1000;
+		break;
+	case imin:
+		r /= 60000;
+		break;
+	case ihour:
+		r /= 3600000;
+		break;
+	case iday: 	
+		r /= (24*3600000);
+		break;
+	default:
+		throw(ILLARG, "calc.second_interval","illegal argument");
+	}
+	*res = r;
+	return MAL_SUCCEED;
+}
 
 /* str dump_cache(int *r); */
 str
