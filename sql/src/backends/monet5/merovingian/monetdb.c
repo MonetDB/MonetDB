@@ -179,6 +179,13 @@ command_version()
 	printf("MonetDB Database Server Toolkit v%s\n", TOOLKIT_VERSION);
 }
 
+/**
+ * Helper function to run over argv, skip all values that are NULL,
+ * perform merocmd for the value and reporting status on the performed
+ * command.  Either a message is printed when success, or when premsg is
+ * not NULL, premsg is printed before the action, and "done" printed
+ * afterwards.
+ */
 static void
 simple_argv_cmd(int argc, char *argv[], char *merocmd,
 		char *successmsg, char *premsg)
@@ -234,6 +241,11 @@ simple_argv_cmd(int argc, char *argv[], char *merocmd,
 	}
 }
 
+/**
+ * Helper function for commands in their most general form: no option
+ * flags and just pushing all (database) arguments over to merovingian
+ * for performing merocmd action.
+ */
 static void
 simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
 {
@@ -259,6 +271,59 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
 	}
 
 	simple_argv_cmd(argc, argv, merocmd, successmsg, NULL);
+}
+
+/**
+ * Helper function to perform the equivalent of
+ * SABAOTHgetStatus(&stats, x) but over the network.
+ */
+static char *
+MEROgetStatus(sabdb **ret, char *database)
+{
+	sabdb *orig;
+	sabdb *stats;
+	sabdb *w;
+	char *p;
+	char *buf;
+	char *e;
+	
+	if (database == NULL) {
+		/* I ran out of creative ideas on this one, so I just injected
+		 * the last(?) sight we might see from van der Decken */
+		e = control_send(&buf, mero_control, -1, "flyghende", "hollander", 1);
+	} else {
+		e = control_send(&buf, mero_control, -1, database, "status", 0);
+	}
+	if (e != NULL)
+		return(e);
+
+	orig = NULL;
+	if ((p = strtok(buf, "\n")) != NULL) {
+		if (strcmp(p, "OK") != 0) {
+			p = strdup(p);
+			free(buf);
+			return(p);
+		}
+		while ((p = strtok(NULL, "\n")) != NULL) {
+			e = SABAOTHdeserialise(&stats, &p);
+			if (e != NULL) {
+				printf("WARNING: failed to parse response from "
+						"merovingian: %s\n", e);
+				GDKfree(e);
+				continue;
+			}
+			if (orig == NULL) {
+				orig = w = stats;
+			} else {
+				w = w->next = stats;
+			}
+		}
+	}
+
+	free(buf);
+
+	*ret = orig;
+	return(NULL);
 }
 
 static void
@@ -459,7 +524,6 @@ command_status(int argc, char *argv[])
 	int t;
 	int dbwidth = 0;
 	int twidth = TERMWIDTH;
-	char *buf;
 	sabdb *w = NULL;
 
 	if (argc == 0) {
@@ -525,35 +589,10 @@ command_status(int argc, char *argv[])
 		}
 	}
 
-	/* I ran out of creative ideas on this one, so I just injected the
-	 * last(?) sight we might see from van der Decken */
-	e = control_send(&buf, mero_control, -1, "flyghende", "hollander", 1);
-	if (e != NULL) {
-		fprintf(stderr, "status: internal error: %s\n", e);
+	if ((e = MEROgetStatus(&orig, NULL)) != NO_ERR) {
+		fprintf(stderr, "status: %s\n", e);
 		free(e);
 		exit(2);
-	}
-
-	orig = NULL;
-	if ((p = strtok(buf, "\n")) != NULL) {
-		if (strcmp(p, "OK") != 0) {
-			fprintf(stderr, "status: %s\n", p);
-			exit(2);
-		}
-		while ((p = strtok(NULL, "\n")) != NULL) {
-			e = SABAOTHdeserialise(&stats, &p);
-			if (e != NULL) {
-				printf("WARNING: failed to parse response from "
-						"merovingian: %s\n", e);
-				GDKfree(e);
-				continue;
-			}
-			if (orig == NULL) {
-				orig = w = stats;
-			} else {
-				w = w->next = stats;
-			}
-		}
 	}
 
 	/* look at the arguments and evaluate them based on a glob (hence we
@@ -745,16 +784,13 @@ static void
 command_startstop(int argc, char *argv[], startstop mode)
 {
 	int doall = 0;
-	char *res;
-	char *out;
 	int i;
 	err e;
-	sabdb *orig;
+	sabdb *orig = NULL;
 	sabdb *stats;
 	char *type = NULL;
 	char *action = NULL;
 	char *p;
-	int ret = 0;
 
 	switch (mode) {
 		case START:
@@ -812,60 +848,39 @@ command_startstop(int argc, char *argv[], startstop mode)
 		 * start all known databases.  In this mode we should omit
 		 * starting already started databases, so we need to check
 		 * first. */
-		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
+		if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
 			fprintf(stderr, "%s: internal error: %s\n", type, e);
-			GDKfree(e);
+			free(e);
 			exit(2);
 		}
-		/* need remote all status retriever factored out in function */
-	} else {
-		simple_argv_cmd(argc, argv, type, NULL, action);
-		return;
+
+		argv = alloca(sizeof(char *) * 64);
+		i = 0;
+		argv[i++] = type;
+
+		stats = orig;
+		while (stats != NULL) {
+			if (((mode == STOP || mode == KILL) && stats->state == SABdbRunning)
+					|| (mode == START && stats->state != SABdbRunning))
+			{
+				if (i > 64) {
+					printf("WARNING: too many databases to fit, "
+							"please report a bug\n");
+					break;
+				}
+				argv[i++] = stats->dbname;
+			}
+			stats = stats->next;
+		}
+		argc = i - 1;
 	}
 	
-	stats = orig;
-	while (stats != NULL) {
-		if (mode == STOP || mode == KILL) {
-			if (stats->state == SABdbRunning) {
-				printf("%s '%s'... ", action, stats->dbname);
-				fflush(stdout);
-				out = control_send(&res, mero_control, 0, stats->dbname, type, 0);
-				if (out == NULL && strcmp(res, "OK") == 0) {
-					printf("done\n");
-				} else {
-					res = out == NULL ? res : out;
-					printf("FAILED:\n%s\n", res);
-					ret = 1;
-				}
-				free(res);
-			} else if (doall != 1) {
-				printf("%s: database is not running: %s\n", type, stats->dbname);
-			}
-		} else if (mode == START) {
-			if (stats->state != SABdbRunning) {
-				printf("%s '%s'... ", action, stats->dbname);
-				fflush(stdout);
-				out = control_send(&res, mero_control, 0, stats->dbname, type, 0);
-				if (out == NULL && strcmp(res, "OK") == 0) {
-					printf("done\n");
-				} else {
-					res = out == NULL ? res : out;
-					printf("FAILED:\n%s\n", res);
-					ret = 1;
-				}
-				free(res);
-			} else if (doall != 1 && stats->state == SABdbRunning) {
-				printf("%s: database is already running: %s\n",
-						type, stats->dbname);
-			}
-		}
-		stats = stats->next;
-	}
+	simple_argv_cmd(argc, argv, type, NULL, action);
 
 	if (orig != NULL)
 		SABAOTHfreeStatus(&orig);
 
-	exit(ret);
+	return;
 }
 
 typedef enum {
@@ -1051,9 +1066,9 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 	if (doall == 1) {
 		/* don't even look at the arguments, because we are instructed
 		 * to list all known databases */
-		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
+		if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
 			fprintf(stderr, "get: internal error: %s\n", e);
-			GDKfree(e);
+			free(e);
 			exit(2);
 		}
 	} else {
@@ -1061,9 +1076,9 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 		orig = NULL;
 		for (i = 1; i < argc; i++) {
 			if (argv[i] != NULL) {
-				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
+				if ((e = MEROgetStatus(&stats, argv[i])) != NULL) {
 					fprintf(stderr, "get: internal error: %s\n", e);
-					GDKfree(e);
+					free(e);
 					exit(2);
 				}
 
