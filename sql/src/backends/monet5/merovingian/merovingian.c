@@ -823,8 +823,8 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	Mfprintf(stdout, "starting Merovingian %s for dbfarm %s\n",
-			MERO_VERSION, dbfarm);
+	Mfprintf(stdout, "Merovingian %s starting\n", MERO_VERSION);
+	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	SABAOTHinit(dbfarm, NULL);
 
