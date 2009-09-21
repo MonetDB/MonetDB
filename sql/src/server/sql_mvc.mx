@@ -489,6 +489,10 @@ mvc_rollback(mvc *m, int chain, char *name)
 	assert(m->session->active);	/* only abort an active transaction */
 
 	store_lock();
+	if (m->qc) {
+		qc_destroy(m->qc);
+		m->qc = qc_create(m->clientid);
+	}
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
