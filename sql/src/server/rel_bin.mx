@@ -1761,7 +1761,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 	if (sub->type == st_ordered) {
 		stmt *s = stmt_dup(sub->op2.stval);
-		order = stmt_dup(sub->op1.stval);
+		order = column(stmt_dup(sub->op1.stval));
 		stmt_destroy(sub);
 		sub = s;
 	}
@@ -1780,7 +1780,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 		if (order) {
 		 	limit = stmt_limit(stmt_dup(order), o, l, 0);
 		} else {
-			limit = stmt_limit(stmt_dup(n->data), o, l, 0);
+			limit = stmt_limit(column(stmt_dup(n->data)), o, l, 0);
 			if (lmt >= 0) {
 				n = n->next;
 				list_append(newl, limit);
@@ -1796,7 +1796,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			else
 				p = stmt_semijoin(stmt_dup(p), stmt_dup(limit));
 			for ( ; n; n = n->next) {
-				stmt *s = stmt_dup(n->data);
+				stmt *s = column(stmt_dup(n->data));
 				stmt *prj = find_projection_join(s);
 		
 				/* for all but the order column we can reduce */
@@ -1810,9 +1810,9 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 				stmt *s;
 		
 				if (lmt < 0)
-					s = stmt_diff(stmt_dup(n->data), stmt_dup(limit));
+					s = stmt_diff(column(stmt_dup(n->data)), stmt_dup(limit));
 				else
-					s = stmt_semijoin(stmt_dup(n->data), stmt_dup(limit));
+					s = stmt_semijoin(column(stmt_dup(n->data)), stmt_dup(limit));
 				list_append(newl, s);
 			}
 		}
