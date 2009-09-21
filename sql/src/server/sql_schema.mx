@@ -2007,11 +2007,13 @@ schemas(mvc *sql, symbol *s)
 {
 	stmt *ret = NULL;
 
-	/* TODO everything should be done via the backend language */ 
 	if (!QUERY_MODE(sql->emode))
 		return sql_error(sql, 05, "schema statements are directly executed "
 				"and therefore cannot be debugged, explained, profiled, "
 				"traced or used in a prepared statement");
+
+	if (s->token != SQL_CREATE_TABLE && STORE_READONLY(active_store_type)) 
+		return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:
@@ -2060,6 +2062,8 @@ schemas(mvc *sql, symbol *s)
 
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
+		if (!l->h->data.i_val && STORE_READONLY(active_store_type)) 
+			return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 		ret = sql_create_table(sql, cur_schema(sql), l->h->data.i_val, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
 		sql->type = Q_SCHEMA;
 	}

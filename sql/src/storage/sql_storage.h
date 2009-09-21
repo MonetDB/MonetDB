@@ -42,6 +42,8 @@ typedef enum store_type {
 	store_bpm	/* bat partition manager */
 } store_type;
 
+#define STORE_READONLY(st) (st == store_ro || st == store_suro)
+
 extern sql_trans *gtrans;
 extern int store_nr_active;
 extern store_type active_store_type;
