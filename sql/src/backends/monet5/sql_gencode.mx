@@ -2089,16 +2089,21 @@ backend_create_func(backend *be, sql_func *f)
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
 	/* and only if we see a single return value */
+	/* check the function for side effects and make that explicit */
+	sideeffects =0;
 	for( i= 1; i<curBlk->stop; i++){
 		InstrPtr p = getInstrPtr(curBlk,i);
 		if ( getFunctionId(p)== bindRef || getFunctionId(p)== bindidxRef)
 			break;
+		sideeffects = sideeffects || hasSideEffects(p,FALSE);
 		if ( p->token == RETURNsymbol || p->token == YIELDsymbol ||
 					 p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
             retseen++;
 	}
 	if (i == curBlk->stop && retseen == 1)
 		varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
+	if ( sideeffects)
+		varSetProp(curBlk, getArg(curInstr, 0), unsafeProp, op_eq, NULL);
 	stmt_destroy(s);
 	addQueryToCache(c);
 	if (backup) 
