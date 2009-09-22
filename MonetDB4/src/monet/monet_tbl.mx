@@ -1508,33 +1508,33 @@ TBL_init(void)
 @- Empty the function table.
 Since the BBP will no longer store these tables only creation is needed
 @c
-	@:TBL_create(fcn,fcn,oid,ptr,600,BOUND2BTRUE,TRUE)@
-	@:TBL_create(fcn,imp,oid,ptr,600,BOUND2BTRUE,FALSE)@
-	@:TBL_create(fcn,tpe,oid,int,600,BOUND2BTRUE,FALSE)@
-	@:TBL_create(fcn,mid,oid,oid,600,BOUND2BTRUE,FALSE)@
+	@:TBL_create(fcn,fcn,oid,ptr,1600,BOUND2BTRUE,TRUE)@
+	@:TBL_create(fcn,imp,oid,ptr,3000,BOUND2BTRUE,FALSE)@
+	@:TBL_create(fcn,tpe,oid,int,3000,BOUND2BTRUE,FALSE)@
+	@:TBL_create(fcn,mid,oid,oid,2000,BOUND2BTRUE,FALSE)@
 
 	if (BATprepareHash(TBL_fcn_mid))
 		assert(0);
 	@:TBL_create(fcn,sig,oid,str,100,BOUND2BTRUE,FALSE)@
-	@:TBL_create(fcn,dsc,oid,str,500,BOUND2BTRUE,FALSE)@
-	@:TBL_create(fcn,aut,oid,str,500,BOUND2BTRUE,FALSE)@
-	@:TBL_create(fcn,dat,oid,str,500,BOUND2BTRUE,FALSE)@
-	@:TBL_create(fcn,nme,oid,str,600,BOUND2BTRUE,FALSE)@
-	@:TBL_create(fcn,pro,oid,str,2400,FALSE,FALSE)@
-	@:TBL_create(fcn,cnt,oid,int,600,BOUND2BTRUE,FALSE)@
+	@:TBL_create(fcn,dsc,oid,str,2000,BOUND2BTRUE,FALSE)@
+	@:TBL_create(fcn,aut,oid,str,2000,BOUND2BTRUE,FALSE)@
+	@:TBL_create(fcn,dat,oid,str,2000,BOUND2BTRUE,FALSE)@
+	@:TBL_create(fcn,nme,oid,str,3000,BOUND2BTRUE,FALSE)@
+	@:TBL_create(fcn,pro,oid,str,10000,FALSE,FALSE)@
+	@:TBL_create(fcn,cnt,oid,int,3000,BOUND2BTRUE,FALSE)@
 
 @- Look up the module table.
 @c
-	@:TBL_create(mod,nme,oid,str,40,BOUND2BTRUE,BOUND2BTRUE)@
-	@:TBL_create(mod,cnt,oid,int,40,BOUND2BTRUE,FALSE)@
+	@:TBL_create(mod,nme,oid,str,80,BOUND2BTRUE,BOUND2BTRUE)@
+	@:TBL_create(mod,cnt,oid,int,80,BOUND2BTRUE,FALSE)@
 	@:TBL_create(mod,atm,oid,str,40,FALSE,FALSE)@
 	@:TBL_create(mod,hdl,oid,ptr,40,BOUND2BTRUE,TRUE)@
-	@:TBL_create(mod,dep,oid,str,40,FALSE,FALSE)@
-	@:TBL_create(mod,use,oid,int,40,FALSE,FALSE)@
+	@:TBL_create(mod,dep,oid,str,80,FALSE,FALSE)@
+	@:TBL_create(mod,use,oid,int,600,FALSE,FALSE)@
 	@:TBL_create(mod,load,oid,str,40,BOUND2BTRUE,FALSE)@
 	@:TBL_create(mod,drop,oid,int,40,FALSE,FALSE)@
-	@:TBL_create(mod,proc,str,oid,200,FALSE,FALSE)@
-	@:TBL_create(mod,var,str,ptr,200,FALSE,FALSE)@
+	@:TBL_create(mod,proc,str,oid,800,FALSE,FALSE)@
+	@:TBL_create(mod,var,str,ptr,600,FALSE,FALSE)@
 
 @-
 The function tables have been updated with session specific
@@ -2800,8 +2800,6 @@ later on when the user loads a module.
 Both tables are session and user specific.
 @c
 
-#define TBL_SIZE	750
-
 void
 TBL_initclient(Client client, Client father)
 {
@@ -2829,12 +2827,12 @@ TBL_initclient(Client client, Client father)
 		if (father)
 			TBL_inc_mod_use(client, father);	/* inc mod use counters */
 	} else {
-		client->fcntbl = TBL_create(client, "fcntbl", TBL_SIZE, TYPE_str, TYPE_oid, 0, BOUND2BTRUE);
+		client->fcntbl = TBL_create(client, "fcntbl", 3000, TYPE_str, TYPE_oid, 0, BOUND2BTRUE);
 
 		/* Create the client atom-table, and fill it
 		 * with the standard types.
 		 */
-		client->atomtbl = TBL_create(client, "atomtbl", TBL_SIZE, TYPE_str, TYPE_int, BOUND2BTRUE, 0);
+		client->atomtbl = TBL_create(client, "atomtbl", 100, TYPE_str, TYPE_int, BOUND2BTRUE, 0);
 		i = TYPE_void;
 		if (BUNins(client->atomtbl, "void", &i, FALSE) == NULL)
 			assert(0);

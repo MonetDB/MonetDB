@@ -1,0 +1,11 @@
+START TRANSACTION;
+CREATE TABLE docDict (docID integer, doc VARCHAR(1000), type VARCHAR(100), prob DOUBLE);
+CREATE TABLE doc_string (docID integer, attribute VARCHAR(1000), value VARCHAR(100), prob DOUBLE);
+INSERT INTO docDict VALUES (1, 'aap','a',1.0);
+INSERT INTO docDict VALUES (2, 'beer','a',1.0);
+INSERT INTO docDict VALUES (3, 'noot','a',1.0);
+INSERT INTO doc_string VALUES (1, 'kind', 'A1',1.0);
+INSERT INTO doc_string VALUES (2, 'date', '2000',1.0);
+INSERT INTO doc_string VALUES (2, 'kind', 'A2',1.0);
+INSERT INTO doc_string VALUES (3, 'date', '2001',1.0);
+COMMIT;
