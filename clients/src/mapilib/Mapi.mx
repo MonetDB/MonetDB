@@ -1190,8 +1190,10 @@ mapi_export MapiMsg mapi_output(Mapi mid, char *output);
 mapi_export MapiMsg mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp);
 mapi_export MapiMsg mapi_profile(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
+#ifdef ST_READ			/* if stream.h was included */
 mapi_export stream *mapi_get_from(Mapi mid);
 mapi_export stream *mapi_get_to(Mapi mid);
+#endif
 mapi_export int mapi_get_trace(Mapi mid);
 mapi_export int mapi_get_autocommit(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
