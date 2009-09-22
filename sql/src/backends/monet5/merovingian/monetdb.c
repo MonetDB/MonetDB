@@ -282,7 +282,7 @@ MEROgetStatus(sabdb **ret, char *database)
 {
 	sabdb *orig;
 	sabdb *stats;
-	sabdb *w;
+	sabdb *w = NULL;
 	char *p;
 	char *buf;
 	char *e;
