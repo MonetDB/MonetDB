@@ -813,7 +813,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 		quoted_print(toConsole, schema);
 		stream_printf(toConsole, ".");
 		quoted_print(toConsole, tname);
-		stream_printf(toConsole, " FROM stdin USING DELIMITERS '\\t';\n");
+		stream_printf(toConsole, " FROM stdin USING DELIMITERS '\\t','\\n','\"';\n");
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
@@ -831,7 +831,9 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 	string = malloc(sizeof(int) * cnt);
 	for (i = 0; i < cnt; i++) {
 		string[i] = 0;
-		if (strcmp(mapi_get_type(hdl, i), "char") == 0 || strcmp(mapi_get_type(hdl, i), "varchar") == 0) {
+		if (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
+		    strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
+		    strcmp(mapi_get_type(hdl, i), "clob") == 0) {
 			string[i] = 1;
 		}
 	}
