@@ -42,6 +42,8 @@ extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
 
 /* #define TJ_TRACE 1 */
 
+/* #define USE_INEX_PATH	1 */
+
 /*******************************************
  * serialize_pftijah.c : XML serialization
  *
@@ -202,6 +204,162 @@ dbat_int_debug(char* t, dbat* dbat) {
 }
 #endif
 
+#ifdef USE_INEX_PATH
+
+/*
+ * Start of the implementation of the INEX path generator. During indexing
+ * this structure will keep track of the used tags in the current path. The
+ * number of times a tagname is used as a child of the current parent is
+ * counted and printed in the current path. For every element node the
+ * path is stored in the tj_FTINDEX_path1 bat.
+ *
+ */
+
+
+/*
+ * The main stackframe bat is a union of two possiblilities.
+ * The stack consists of a 'level' frame followed by a number of tags used 
+ * at this level. A typical stack may looks like:
+ * 
+ * tag
+ * tag
+ * tag
+ * level
+ * tag
+ * tag
+ * level
+ * tag
+ * level[bottom]
+ */
+typedef union {
+	struct {
+		int ntags;	/* number of tags at this level */
+		int subpath;	/* index of subpath in printbuffer */
+		int prev_frame;	/* previous level frame, -1 for bottom */
+	} level;
+	struct {
+		str	strVal;	/* string value of the tagname */
+		int	cnt;	/* number of times used at this level */
+	} tag;
+} IpgFrame;
+
+/* The main structure managing the Inex path stack and printbuffer */
+typedef struct InexPathGenBase {
+	BAT*		b_pre_path;	/* [oid,str] bat wher path is stored*/
+	int		top;		/* index of the top of the stack */
+	int		max;		/* maximum possible size of stack */
+	IpgFrame*	stack;		/* the physical stack */
+	char*		pathbuff;	/* the path printing buffer */
+} IpgBase;
+
+#define IPG_INIT_STACKSZ	512
+
+#define IPG_INIT_PATHSZ		8192
+
+
+static IpgBase* ipg_init(BAT* b) {
+
+	IpgBase* res;
+	if ( !(res = (IpgBase*)GDKmalloc( sizeof(IpgBase) )) )
+		return NULL;
+	res->b_pre_path = b;
+	res->top = 0;
+	res->max = IPG_INIT_STACKSZ;
+	res->stack = (IpgFrame*)GDKmalloc( res->max * sizeof(IpgFrame) );
+	if ( !res->stack )
+		return NULL;
+	res->pathbuff = (char*)GDKmalloc( IPG_INIT_PATHSZ );
+	if (0) stream_printf(GDKout,"-IPG[ipg_init() called.]\n");
+	return res;
+}
+
+/* function used for starting a new document */
+static int ipg_startdoc(IpgBase* base, str doc) {
+	if (0) stream_printf(GDKout,"-IPG[start: doc=%s]\n",doc);
+	base->top				= 0;
+	base->stack[base->top].level.ntags	= 0;
+	base->stack[base->top].level.prev_frame	= -1;
+	sprintf(base->pathbuff,"fn:doc(\"%s\")",doc);
+	base->stack[base->top].level.subpath = strlen(base->pathbuff);
+	return 1;
+}
+
+/* allocate one new frame element on top of stack */
+static INLINE int ipg_frame_alloc(IpgBase* base) {
+	int newtop = base->top+base->stack[base->top].level.ntags + 1;
+
+	if ( newtop >= base->max ) {
+		if (1) stream_printf(GDKout,"-IPG[ipg_frame_alloc() extending.]\n");
+		base->max = 2 * base->max;
+		base->stack = (IpgFrame*)GDKrealloc(base->stack, 
+				base->max * sizeof(IpgFrame) );
+		if ( !base->stack )
+			return -1;
+	}
+	return newtop;
+}
+
+static int ipg_pushtag(IpgBase* base, str tag, oid o) {
+	IpgFrame* found = NULL;
+
+	for(int i=0; i< base->stack[base->top].level.ntags && !found; i++) {
+		IpgFrame* f = & base->stack[base->top+i+1];
+
+		if (strcmp(f->tag.strVal,tag) == 0 ) {  
+			found = f;
+		}
+	}
+	if ( !found ) {
+		ipg_frame_alloc(base);
+		base->stack[base->top].level.ntags++;
+		found = & base->stack[base->top+base->stack[base->top].level.ntags];
+		found->tag.strVal = (str)GDKstrdup(tag);
+		found->tag.cnt = 0;
+	}
+	found->tag.cnt++;
+
+	/* now push a new frame on stack */
+	int newtop = ipg_frame_alloc(base);
+	base->stack[newtop].level.ntags = 0;
+	base->stack[newtop].level.prev_frame = base->top;
+
+	sprintf(&base->pathbuff[base->stack[base->top].level.subpath],"/%s[%d]",tag,found->tag.cnt);
+	base->stack[newtop].level.subpath = strlen(base->pathbuff);
+
+	base->top = newtop;
+
+	if ( !BUNins(base->b_pre_path, &o,(str)base->pathbuff, 0)) {
+	        GDKerror("error writing recursive tagbat");
+	        return -1;
+	}
+
+	if (0) stream_printf(GDKout,"-IPG[tijah(" OIDFMT "@0) = %s]\n",o,base->pathbuff);
+
+	return 1;
+}
+
+static int ipg_poptag(IpgBase* base) {
+	/* free tag strings used at the top level */
+	for(int i=0; i< base->stack[base->top].level.ntags; i++) {
+		GDKfree(base->stack[base->top+i+1].tag.strVal);
+	}
+
+	base->top = base->stack[base->top].level.prev_frame;
+
+	if (0) stream_printf(GDKout,"-IPG[pop: path=%s]\n",base->pathbuff);
+	return 1;
+}
+
+static int ipg_destroy(IpgBase* base) {
+	GDKfree(base->stack);
+	GDKfree(base->pathbuff);
+	GDKfree(base);
+	if (0) stream_printf(GDKout,"-IPG[ipg_destroy() called.]\n");
+	return 1;
+}
+
+#endif
+
 /************************************************
  *
  * The Tijah-Pathfinder index creation context
@@ -240,6 +398,8 @@ typedef struct tijahContextStruct {
 	/* INCOMPLETE< SHOULD BE FRAGMENTED */
 	BAT* b_collSize;	/* Tijah PRE-size BAT */
 	dbat dbat_collSize;	/* Direct access struct for b_collSize */
+	/* INCOMPLETE< SHOULD BE FRAGMENTED */
+	BAT* b_collPath;	/* Tijah PRE-INEX-PATH BAT */
 	/* */
 	BAT* b_collPfPre;	/* Tijah PRE-PF BAT for Pathinder link */
 	/* */
@@ -276,6 +436,9 @@ typedef struct tijahContextStruct {
 	tjStemCtx* stemCtx;
 	char	checkStopWords;
 	oid	lastStopWord;
+#ifdef USE_INEX_PATH
+	IpgBase* ipg;
+#endif
 } tjCtx;
 
 #define DOEMIT(TJCTX)	((TJCTX)->emitting)
@@ -689,6 +852,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	if ( !(res->b_docFirstPre = getBAT(tjCtx_BAT,"_doc_firstpre")) ) return NULL;
 	if ( !(res->b_collPre     = getBAT(tjCtx_BAT,"_tid")) ) return NULL;
 	if ( !(res->b_collSize    = getBAT(tjCtx_BAT,"_size")) ) return NULL;
+	if ( !(res->b_collPath    = getBAT(tjCtx_BAT,"_path")) ) return NULL;
 	if ( (res->tijahPre = getPreSize(res)) == oid_nil )
 	     return NULL;;
 	/* check here for new fragmentation */
@@ -812,6 +976,10 @@ loadTijahContext(BAT* tjCtx_BAT) {
 
 	if ( ! (res->hm_globalTerm->H->hash && res->hm_globalTag->H->hash) )
 	   stream_printf(GDKout,"# WARNING: MISSING HASH ON TAG/TERM DICTIONARY\n");
+#ifdef USE_INEX_PATH
+	if ( !(res->ipg = ipg_init(res->b_collPath)) )
+		return NULL;
+#endif
 	return res;
 }
 
@@ -880,6 +1048,10 @@ freeTijahContext(tjCtx* tjctx) {
 	GDKfree(tjctx->tagswitch);
 	if ( tjctx->stemCtx->clear && !tjctx->stemCtx->clear(tjctx->stemCtx) )
 		return GDK_FAIL;
+#ifdef USE_INEX_PATH
+	if ( !ipg_destroy(tjctx->ipg) )
+		return GDK_FAIL;
+#endif
 	GDKfree(tjctx);
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:FINISH: add2collection_handler()\n");
@@ -1062,6 +1234,10 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #endif
         if ( !BUNins(tjctx->b_collPfPre, &tjPre, &pre, FALSE) ) return 0;
+#ifdef USE_INEX_PATH
+	if ( !ipg_pushtag(tjctx->ipg, name, tjPre) )
+		return 0;
+#endif
     }
     return 1;
 }
@@ -1169,6 +1345,10 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
     }
     if (tjctx->dict_handler && !handle_dictionary(tjctx,tjctx->level_pre[tjctx->doc_height]))
 	return 0;
+#ifdef USE_INEX_PATH
+	if ( !ipg_poptag(tjctx->ipg) )
+		return 0;
+#endif
     return 1;
 }
 
@@ -1311,6 +1491,12 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:LOADED CONTEXT\n",tjctx->name);
 #endif
+
+#ifdef USE_INEX_PATH
+	if ( !ipg_startdoc(tjctx->ipg,docName) )
+		return GDK_FAIL;
+#endif
+
 	if ( tijahDocIndex(tjctx,docName) != oid_nil ) {
 	    stream_printf(GDKerr,"add2collection_handler(CTX,%s) already in collection\n",docName);
 	    return GDK_FAIL;
@@ -1406,6 +1592,11 @@ add2collection_bathandler(BAT* tjCtx_BAT, BAT* ws, BAT* docs) {
 	        return GDK_FAIL;
 	    }
 	    oid start_oid = tjctx->tijahPre;
+
+#ifdef USE_INEX_PATH
+		if ( !ipg_startdoc(tjctx->ipg,docName) )
+			return GDK_FAIL;
+#endif
     
 	    if ( !BUNappend(tjctx->b_docName, docName, 0) ||
 	         !BUNappend(tjctx->b_docFirstPre, &start_oid, 0) )

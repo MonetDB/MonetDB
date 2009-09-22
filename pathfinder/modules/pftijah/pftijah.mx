@@ -654,6 +654,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
 	  }
           bat("tj_" + ftiName + "_tid1").delete();
           bat("tj_" + ftiName + "_size1").delete();
+          bat("tj_" + ftiName + "_path1").delete();
           bat("tj_" + ftiName + "_fragments").delete();
           bat("tj_" + ftiName + "_fragments").append(1@0);
           bat("tj_" + ftiName + "_pfpre").delete();
@@ -668,6 +669,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
           
           new(void,oid).seqbase(1@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_tid1");
           new(void,int).seqbase(1@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_size1");
+          new(oid,str).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_path1");
           # bat contains the start oid of every tid/size frag. Head is postfix
           # string to _tid/_size. Normally "", "2", "3"
           new(void,oid).seqbase(1@0).append(1@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_fragments");
@@ -982,6 +984,7 @@ PROC _tj_collection_str(str ftiName) : BAT[void,bat]
         {       
             tjCollBat.append("tj_" + ftiName + "_tid" + str(int($t)));
             tjCollBat.append("tj_" + ftiName + "_size"+ str(int($t)));
+            tjCollBat.append("tj_" + ftiName + "_path"+ str(int($t)));
         }       
         if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count_wrd()))) {
             tjCollBat.append("tj_" + ftiName + "_Terms");
@@ -1025,6 +1028,7 @@ PROC _tj_collection(str ftiName) : BAT[str, bat]
 	var fpfx := str(bat("tj_" + ftiName + "_fragments").count_wrd());
 	tjCollBat.insert("_tid",       bat("tj_" + ftiName + "_tid"+fpfx));
 	tjCollBat.insert("_size",      bat("tj_" + ftiName + "_size"+fpfx));
+	tjCollBat.insert("_path",      bat("tj_" + ftiName + "_path"+fpfx));
 	tjCollBat.insert("_pfpre",     bat("tj_" + ftiName + "_pfpre"));
 	tjCollBat.insert("_conceptdict",      bat("tj_" + ftiName + "_conceptdict"));
 	tjCollBat.insert("_concept_tid",  bat("tj_" + ftiName + "_concept_tid"));
@@ -1101,6 +1105,7 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit shred) : void
       bat("tj_" + ftiName + "_doc_firstpre").access(BAT_APPEND);
       bat("tj_" + ftiName + "_tid1").access(BAT_APPEND);
       bat("tj_" + ftiName + "_size1").access(BAT_APPEND);
+      bat("tj_" + ftiName + "_path1").access(BAT_APPEND);
       bat("tj_" + ftiName + "_fragments").access(BAT_APPEND);
       bat("tj_" + ftiName + "_pfpre").access(BAT_APPEND);
       bat("tj_" + ftiName + "_concept_tid").access(BAT_APPEND);
@@ -1199,6 +1204,7 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
     bat("tj_" + ftiName + "_doc_firstpre").access(BAT_READ);
     bat("tj_" + ftiName + "_tid1").access(BAT_READ);
     bat("tj_" + ftiName + "_size1").access(BAT_READ);
+    bat("tj_" + ftiName + "_path1").access(BAT_READ);
     bat("tj_" + ftiName + "_fragments").access(BAT_READ);
     bat("tj_" + ftiName + "_pfpre").access(BAT_READ);
     bat("tj_" + ftiName + "_concept_tid").access(BAT_READ);
@@ -1310,6 +1316,7 @@ PROC tj_dump_collection(str ftiName) : void
 	bat(_tj_TagBat(ftiName)).print();
 	print(bat("tj_" + ftiName + "_tid1"));
 	print(bat("tj_" + ftiName + "_size1"));
+	print(bat("tj_" + ftiName + "_path1"));
 	print(bat("tj_" + ftiName + "_pfpre"));
 	print(bat("tj_" + ftiName + "_conceptdict"));
 	print(bat("tj_" + ftiName + "_concept_tid"));
@@ -1343,6 +1350,7 @@ PROC tj_size_collection2(str ftiName) : void
     sum :+=  batdsksize(bat("tj_" + ftiName + "_TagIndex"));
     sum :+=  batdsksize(bat("tj_" + ftiName + "_TermIndex"));
     sum :+=  batdsksize(bat("tj_" + ftiName + "_size1"));
+    sum :+=  batdsksize(bat("tj_" + ftiName + "_path1"));
     print(sum);
 }
 
@@ -1907,7 +1915,7 @@ PROC ALG_tj_ftfun_handler(
 	  var orcomb    := "sum";
 	  var returnall := TRUE;
 
-	  var tjPre_score := tj_containing_query_nest_pre_NLLR(iter_tjPre.reverse(), Q);
+	  var tjPre_score := tj_containing_query_nest_pre_term_NLLR(iter_tjPre.reverse(), Q);
 	  var iter_score := iter_tjPre.leftjoin(tjPre_score);
 
 	  result_item_s.append(iter_score);
