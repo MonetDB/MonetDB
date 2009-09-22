@@ -42,7 +42,7 @@ extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
 
 /* #define TJ_TRACE 1 */
 
-#define USE_INEX_PATH 1 
+/* #define USE_INEX_PATH 1 */ 
 
 /*******************************************
  * serialize_pftijah.c : XML serialization
