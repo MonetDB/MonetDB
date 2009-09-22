@@ -2236,12 +2236,20 @@ main(int argc, char **argv)
 
 	c = 0;
 
-	/* we're interactive if explicit or if no files and no -s option */
-	interactive |= (optind == argc && command == NULL);
-
 	/* default formatter depends on whether we're interactive */
-	if (formatter == NOformatter)
-		formatter = interactive && interactive_stdin && mode != XQUERY && mode != MAL ? TABLEformatter : RAWformatter;
+	if (formatter == NOformatter) {
+		if (
+				(interactive || (optind == argc && command == NULL))
+				&& interactive_stdin
+				&& mode != XQUERY
+				&& mode != MAL
+		   )
+		{
+			formatter = TABLEformatter;
+		} else {
+			formatter = RAWformatter;
+		}
+	}
 
 	if (input != NULL && mode == XQUERY) {
 		/* stream xml document into the server */
@@ -2256,8 +2264,11 @@ main(int argc, char **argv)
 		interactive = 0;
 	}
 
-	/* tell the user something useful */
-	if (mode == SQL && interactive && interactive_stdin) {
+	/* give the user a welcome message with some general info */
+	if (mode == SQL
+			&& (interactive || (optind == argc && command == NULL))
+			&& interactive_stdin)
+	{
 		MapiHdl hdl;
 
 		stream_printf(toConsole, "Welcome to mclient, the MonetDB/SQL interactive terminal\n");
@@ -2303,8 +2314,10 @@ main(int argc, char **argv)
 			*to = 0;
 		}
 #endif
-		/* execute from command-line */
-		c = doRequest(mid, command, interactive);
+		/* execute from command-line, need interactive to know whether
+		 * to keep the mapi handle open */
+		c = doRequest(mid, command,
+				(interactive || (optind == argc && command == NULL)));
 	}
 
 	if (optind < argc) {
@@ -2328,17 +2341,17 @@ main(int argc, char **argv)
 			setPrompt();
 			prompt = promptbuf;
 			fromConsole = stdin;
-			/* use default rendering if not overruled at commandline */
-			c = doFileByLines(mid, stdin, prompt);
-		} else {
-			c = doFile(mid, NULL);
 		}
+		/* use default rendering if not overruled at commandline */
+		c = doFileByLines(mid, stdin, prompt);
 
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {
 			deinit_readline();
 		}
 #endif
+	} else if (optind == argc && !interactive_stdin) {
+		c = doFile(mid, NULL);
 	}
 	mapi_destroy(mid);
 	stream_destroy(stdout_stream);
