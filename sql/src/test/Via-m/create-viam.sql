@@ -69,7 +69,7 @@ CREATE TABLE "sys"."annotator" (
 	CONSTRAINT "annotator_annotator_id_pkey" PRIMARY KEY ("annotator_id"),
 	CONSTRAINT "unq_annotator_name" UNIQUE ("annotator_name")
 );
-COPY 1 RECORDS INTO "sys"."annotator" FROM stdin USING DELIMITERS '\t';
+COPY 1 RECORDS INTO "sys"."annotator" FROM stdin USING DELIMITERS '\t','\n','"';
 1	"fabchannel"	"the boss"	true
 CREATE TABLE "sys"."event" (
 	"event_id" int NOT NULL DEFAULT next value for "sys"."seq_event_id",
@@ -105,7 +105,7 @@ CREATE TABLE "sys"."media_description" (
 	CONSTRAINT "media_description_media_description_id_pkey" PRIMARY KEY ("media_description_id"),
 	CONSTRAINT "unq_media_description_description" UNIQUE ("description")
 );
-COPY 1 RECORDS INTO "sys"."media_description" FROM stdin USING DELIMITERS '\t';
+COPY 1 RECORDS INTO "sys"."media_description" FROM stdin USING DELIMITERS '\t','\n','"';
 1	"dummy description"
 CREATE TABLE "sys"."model_sets_name" (
 	"model_sets_name_id" int NOT NULL DEFAULT next value for "sys"."seq_model_sets_name_id",
@@ -132,7 +132,7 @@ CREATE TABLE "sys"."production_type" (
 	CONSTRAINT "production_type_production_type_id_pkey" PRIMARY KEY ("production_type_id"),
 	CONSTRAINT "unq_production_type_steps" UNIQUE ("production_steps")
 );
-COPY 2 RECORDS INTO "sys"."production_type" FROM stdin USING DELIMITERS '\t';
+COPY 2 RECORDS INTO "sys"."production_type" FROM stdin USING DELIMITERS '\t','\n','"';
 1	"full"
 2	"result"
 CREATE TABLE "sys"."media" (
