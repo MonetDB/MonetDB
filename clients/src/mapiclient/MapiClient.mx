@@ -1969,12 +1969,17 @@ main(int argc, char **argv)
 		char *q;
 		struct option *p;
 		ssize_t len;
+		int line = 0;
 		while ((len = stream_readline(config, buf, sizeof(buf) - 1)) > 0) {
-			buf[len] = '\0';
-			if (buf[0] == '#')
+			line++;
+			buf[len - 1] = '\0'; /* drop newline */
+			if (buf[0] == '#' || buf[0] == '\0')
 				continue;
-			if ((q = strchr(buf, '=')) == NULL)
+			if ((q = strchr(buf, '=')) == NULL) {
+				stream_printf(stderr_stream, "%s:%d: syntax error: %s\n",
+						stream_name(config), line, buf);
 				continue;
+			}
 			*q++ = '\0';
 			p = long_options;
 			while (p->name != NULL) {
@@ -1984,27 +1989,39 @@ main(int argc, char **argv)
 				if (strcmp(p->name, buf) == 0) {
 					if (strcmp(buf, "user") == 0) {
 						user = strdup(q); /* leak */
+						q = NULL;
 					} else if (strcmp(buf, "password") == 0 ||
 							strcmp(buf, "passwd") == 0)
 					{
 						passwd = strdup(q); /* leak */
+						q = NULL;
 					} else if (strcmp(buf, "language") == 0) {
 						language = q;
 						if (strcmp(language, "sql") == 0) {
 							mode = SQL;
+							q = NULL;
 						} else if (strcmp(language, "mal") == 0) {
 							mode = MAL;
+							q = NULL;
 						} else if (strcmp(language, "xquery") == 0) {
 							mode = XQUERY;
+							q = NULL;
 						} else {
 							/* make sure we don't set garbage */
+							stream_printf(stderr_stream, "%s:%d: unsupported "
+									"language: %s\n",
+									stream_name(config), line, q);
 							language = NULL;
+							q = NULL;
 						}
 					}
 					break;
 				}
 				p++;
 			}
+			if (q != NULL)
+				stream_printf(stderr_stream, "%s:%d: unknown property: %s\n",
+						stream_name(config), line, buf);
 		}
 		stream_destroy(config);
 	}
@@ -2219,8 +2236,7 @@ main(int argc, char **argv)
 
 	c = 0;
 
-	/* we're interactive if explicit or if no files and no -s option
-	   we're also interactive if no files */
+	/* we're interactive if explicit or if no files and no -s option */
 	interactive |= (optind == argc && command == NULL);
 
 	/* default formatter depends on whether we're interactive */
