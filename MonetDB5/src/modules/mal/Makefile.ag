@@ -134,7 +134,7 @@ lib__bbp = {
 
 lib__tablet = {
 	DIR = libdir/MonetDB5
-	SOURCES = tablet.mx tablet_sql.mx tablet_si.mx tablet_mk.mx histogram.mx
+	SOURCES = tablet.mx tablet_sql.mx histogram.mx
 
 	#SCRIPTS = mal mil ""
 	LIBS = ../../mal/libmonetdb5 ../kernel/lib_algebra \

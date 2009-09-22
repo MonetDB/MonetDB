@@ -45,22 +45,10 @@ observed time spending so far.
 #include "mal_config.h"
 #include "tablet.h"
 #include "algebra.h"
-#include "histogram.h"
 
 #include <string.h>
 #include <ctype.h>
 #include <gdk_posix.h>
-
-/*#define _SLICE_TABLET_ */
-
-/* All the params below should eventually be dynamically defined per column 
-   For simplicity in the initial stages keep them global and fixed */
-#ifdef _SLICE_TABLET_ 
-oid SmallSliceSize  = 2; /* Assume this is known */
-BAT *BigSlice = NULL; 	/*toy BAT to play with the algos without worying for SQL for now*/
-Histogram h1 = NULL;
-Histogram h2 = NULL;
-#endif
 
 typedef struct{
 	int next;
@@ -85,145 +73,6 @@ the null-replacement string then we grab the underlying nil.
 If the string starts with the quote identified from SQL, we locate the tail
 and interpret the body.
 @c
-#ifdef _SLICE_TABLET_ 
-static INLINE ptr*
-get_val(Column * fmt, char *s, char quote, str *err, int c)
-{
-	char buf[BUFSIZ];
-	char *e, *t;
-	ptr *adt;;
-
-	/* include testing on the terminating null byte !! */
-	if (fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length+1) == 0){
-#ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
-#endif
-		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
-	} else if ( quote && *s == quote ) {
-		s++;	/* find the last quote */
-		for ( t = e = s; *t ; t++)
-			if ( *t == quote) e = t;
-		*e = 0;
-		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
-	} else {
-		for( e=s; *e; e++)
-			;
-		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
-	}
-
-	if (!adt) {
-		char *val;
-		val = *s ? GDKstrdup(s) : GDKstrdup("");
-		if ( *err == NULL){
-			snprintf(buf,BUFSIZ, "value '%s' from line " BUNFMT 
-				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c)+1, c+1, fmt->type);
-			*err= GDKstrdup(buf);
-		}
-		GDKfree(val);
-		/* replace it with a nil */
-		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
-	}
-	/* key maybe NULL but thats not a problem, as long as we have void */
-	if (fmt->raw){
-		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
-	} 
-		
-	return adt;
-}
-static int
-Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
-{
-	/*naive : fill big, fill small, then rearrange with every new value */
-	char buf[BUFSIZ];	
-	int i;
-	ptr *adt;
-	BATiter bsi;
-	BAT *sample, *sortedSample;
-	ValPtr vmin, vmax;
-	/*toy values*/
-	int sampleSize=2; 
-	int bins=2;
-	int distance =0;
-	
-	/*sample to get min-max*/
-	sample = BATnew(fmt->c->htype, fmt->c->ttype,sampleSize);
-	for ( i = 0; i< sampleSize ; i++){
-		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
-		bunfastins(sample, key, adt);
-	}
-	sortedSample = BATtsort(sample);
-	bsi = bat_iterator(sortedSample);
-	BATprint(sample);
-	BATprint(sortedSample);
-	vmin= (ValPtr) GDKzalloc(sizeof(ValRecord));
-	vmax= (ValPtr) GDKzalloc(sizeof(ValRecord));
-	VALset(vmin, fmt->c->ttype, BUNtail(bsi,0));
-	VALset(vmax, fmt->c->ttype, BUNtail(bsi,sampleSize-1));	
-	
-	printf("min %d \n", vmin->val.ival);
-	printf("max %d \n", vmax->val.ival);
- 
-	for ( i = 0; i< task->next ; i++){
-		ValPtr newValue = (ValPtr) GDKzalloc(sizeof(ValRecord));
-		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
-		VALset(newValue, fmt->c->ttype, adt);
-
-		/*fill small first*/
-		if (BATcount(fmt->c) < SmallSliceSize){
-			if (h1 == NULL)
-				h1 = HSTnew(bins, vmin, vmax);
-			bunfastins(fmt->c, key, adt);
-			HSTincrement(h1, newValue);
-			continue;
-		}
-
-		/*equally fill big*/
-		if (BigSlice == NULL)
-			BigSlice = BATnew(fmt->c->htype, fmt->c->ttype,2*SmallSliceSize);
-
-		if (BATcount(BigSlice) < SmallSliceSize){
-			if (h2 == NULL)
-				h2 = HSTnew(bins, vmin, vmax);
-			bunfastins(BigSlice, key, adt);
-			HSTincrement(h2, newValue);
-			continue;
-		}
-
-		/*choose target BAT in order to balance the histogram distance*/
-		distance = HSTeuclidianWhatIf(h1,h2,newValue);
-		if (distance==0){
-			printf(" add to big\n");
-			bunfastins(BigSlice, key, adt);
-			HSTincrement(h2, newValue);
-		}else{
-			printf("add to small\n");
-			bunfastins(fmt->c, key, adt);
-			HSTincrement(h1, newValue);
-		}		
-	}	
-
-	BATprint(fmt->c);
-	HSTprintf(h1);
-	BATprint(BigSlice);
-	HSTprintf(h2);
-	
-	/*
-	StatisticalCrack(fmt->c,BigSlice,key,adt,h1,h2,distance);
-	*/
-	
-	return 0;
-
-bunins_failed:
-	if (*err == NULL) {
-		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c)+1, col+1);
-		*err= GDKstrdup(buf);
-	}
-	return -1;
-}
-#endif
-
 static INLINE int
 SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 {
@@ -299,12 +148,6 @@ SQLworker_column(READERtask *task, int col)
 		}
 	}
 
-	#ifdef _SLICE_TABLET_
-		(void) i;
-		Slice(task, &fmt[col], NULL, &err, col);
-	#endif
-
-	#ifndef _SLICE_TABLET_	
 	for ( i = 0; i< task->next ; i++){
 		if (SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &err, col)) {
 			assert(err != NULL);
@@ -319,7 +162,6 @@ SQLworker_column(READERtask *task, int col)
 			BUNins(task->as->complaints, NULL, err, TRUE);
 		}
 	}
-	#endif
 
 	if (err) {
 		/* watch out for concurrent threads */
