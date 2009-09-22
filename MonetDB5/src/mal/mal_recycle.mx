@@ -183,6 +183,7 @@ MalBlkPtr recycleBlk = NULL;
 #define set1(x,i) ( x | ((lng)1 << i) )
 #define set0(x,i) ( x & ~((lng)1 << i) )
 #define getbit(x,i) ( x & ((lng)1 << i) )
+#define neg(x) ( (x)?FALSE:TRUE)
 
 typedef struct {
 	ValRecord low, hgh; 	/* range */
@@ -218,6 +219,7 @@ lng recycleTime = 0;
 lng recycleSearchTime = 0;	/* cache search time in ms*/
 
 aggrFun minAggr = NULL, maxAggr = NULL;
+
 
 /*
 int recycleMiss = 0;
@@ -961,23 +963,55 @@ static void
 setSelectProp(InstrPtr q)
 {
 	ValPtr lb, ub;
-	ValRecord lbval, ubval;
-	int bid;
+	ValRecord lbval, ubval, nilval;
+	int bid, tpe = 0;
+	ptr nilptr;
+	int (*cmp) (ptr, ptr) = NULL;
+
     str selectRef = putName("select",6);
+	str thetaselectRef = putName("thetaselect",11);
     int tlbProp = PropertyIndex("tlb");
     int tubProp = PropertyIndex("tub");
 
-	if ( (getFunctionId(q) == selectRef ) &&
+	if ( ((getFunctionId(q) == selectRef ) || (getFunctionId(q) == thetaselectRef )) &&
 		BATatoms[getArgType(recycleBlk,q,2)].linear ){
 
-		lb = &getVar(recycleBlk,getArg(q,2))->value;
-		if (q->argc-1 == 3)
-			ub = &getVar(recycleBlk,getArg(q,2))->value;
-		else ub = &getVar(recycleBlk,getArg(q,3))->value;
+		if ( getFunctionId(q) == selectRef ) {
+			lb = &getVar(recycleBlk,getArg(q,2))->value;
+			if (q->argc-1 == 3)
+				ub = &getVar(recycleBlk,getArg(q,2))->value;
+			else ub = &getVar(recycleBlk,getArg(q,3))->value;
+			tpe = lb->vtype;
+			nilptr = ATOMnilptr(tpe);
+			cmp = BATatoms[tpe].atomCmp;
+		}
+
+		if ( getFunctionId(q) == thetaselectRef ) {
+			ValPtr qval;
+			str qop;
+
+			qop = (str)getVarValue(recycleBlk,getArg(q,3));
+			qval = &getVar(recycleBlk,getArg(q,2))->value;
+			tpe = qval->vtype;
+			nilptr = ATOMnilptr(tpe);
+ 			cmp = BATatoms[tpe].atomCmp;
+
+			VALset(&nilval, tpe, ATOMnil(tpe)); 
+			lb = &nilval;
+    	    ub = &nilval;
+			if ( qop[0] == '=') {
+				lb = qval;
+				ub = qval;
+			}
+			if ( qop[0] == '<') 
+    	        ub = qval;
+			else if (qop[0] == '>')
+            	lb = qval;
+        }
 
 		bid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
 
-		if ( VALisNil(lb) ) {
+		if ( (*cmp)(VALget(lb), nilptr) == 0 ) {
 			/* try to propagate from base relation */
 			if ( varGetProp(recycleBlk, getArg(q,1), tlbProp) != NULL )
 				lb = &varGetProp(recycleBlk, getArg(q,1), tlbProp)->value;
@@ -985,17 +1019,19 @@ setSelectProp(InstrPtr q)
 				lb = &lbval;
 /*				msg = ALGminany(lb, &bid); */
 				(*minAggr)(lb, &bid);
+				lb->vtype = tpe;
 				/* first computation - propagate to base relation  */
 				varSetProp(recycleBlk, getArg(q,1), tlbProp, op_gte, lb);
 			}
 		}
-		if ( VALisNil(ub) ){
+		if ( (*cmp)(VALget(ub), nilptr) == 0 ){
 			if ( varGetProp(recycleBlk, getArg(q,1), tubProp) != NULL )
 				ub = &varGetProp(recycleBlk, getArg(q,1), tubProp)->value;
 			else {
 				ub = &ubval;
 				/*	msg = ALGmaxany(ub, &bid); */
 				(*maxAggr)(ub, &bid);
+				ub->vtype = tpe;
 				/* propagate to base relation */
 				varSetProp(recycleBlk, getArg(q,1), tubProp, op_lte, ub);
 			}
@@ -1176,7 +1212,7 @@ selectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 			else {
 				lip = *(bit*)VALget(&s->stk[getArg(p,4)]);
 				hip = *(bit*)VALget(&s->stk[getArg(p,5)]);
-				cover = ( boundcheck(li || ~lip,lcomp) && boundcheck(hi || ~hip,rcomp) );
+				cover = ( boundcheck(li || neg(lip),lcomp) && boundcheck(hi || neg(hip),rcomp) );
 			}
 	}
 
@@ -1290,8 +1326,8 @@ lessEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
     c = (*cmp)(pp, pq);
 	 if ( c < 0 ) return 1;
 	 if (c == 0 ) {
-			if ( eq ) return (pi || ~qi); /* less or eq */
-			else return (pi && ~qi);		/* strict less */
+			if ( eq ) return (pi || neg(qi)); /* less or eq */
+			else return (pi && neg(qi));		/* strict less */
 	 }
 	 return 0; 
 }
@@ -1322,8 +1358,8 @@ greaterEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
     c = (*cmp)(pp, pq);
 	 if ( c > 0 ) return 1;
 	 if (c == 0 ){
-			if ( eq ) return (pi || ~qi); /* greater or eq */
-			else return (pi && ~qi);		/* strict greater */
+			if ( eq ) return (pi || neg(qi)); /* greater or eq */
+			else return (pi && neg(qi));		/* strict greater */
 	}
 	return 0; 
 }
@@ -1339,11 +1375,11 @@ noOverlap(rngPtr p, rngPtr q)
 	/* phgh less than qlow? */
 	if ( lessEq(&p->hgh, p->hi, &q->low, q->li,FALSE) ) return 1;
 	/* equal margins, but at least 1 is exclusive -> no overlap */		
-	else if ( marginEq(&p->hgh,&q->low) && (~p->hi || ~q->li) ) return 1;
+	else if ( marginEq(&p->hgh,&q->low) && (neg(p->hi) || neg(q->li)) ) return 1;
 
 	/* similarly: qhgh less than plow?  */
 	if ( lessEq(&q->hgh, q->hi, &p->low, p->li,FALSE) ) return 1;
-	else if ( marginEq(&q->hgh,&p->low) && (~q->hi || ~p->li) ) return 1;
+	else if ( marginEq(&q->hgh,&p->low) && (neg(q->hi) || neg(p->li)) ) return 1;
 	else return 0;
 
 }
@@ -1356,16 +1392,33 @@ partOverlap(rngPtr qry, InstrPtr q)
 {
 	range qrng;
 	int lm, rm;
+	str selectRef = putName("select",6);
+	str thetaselectRef = putName("thetaselect",11);
+	int tlbProp = PropertyIndex("tlb");
+	int tubProp = PropertyIndex("tub");
 
-	VALcopy(&qrng.low, &getVar(recycleBlk,getArg(q,2))->value);
-	VALcopy(&qrng.hgh, &getVar(recycleBlk,getArg(q,3))->value);
-	if (q->argc-1 > 4 ) {
-		qrng.li = *(bit*)getVarValue(recycleBlk,getArg(q,4));
-		qrng.hi = *(bit*)getVarValue(recycleBlk,getArg(q,5));
-	} else {
-		qrng.li = TRUE;
-		qrng.hi = TRUE;
-	}		
+	VALcopy(&qrng.low,
+		&varGetProp(recycleBlk, getArg(q,0), tlbProp)->value);
+	VALcopy(&qrng.hgh,
+		&varGetProp(recycleBlk, getArg(q,0), tubProp)->value);
+	qrng.li = TRUE;
+	qrng.hi = TRUE;
+
+	if ( getFunctionId(q) == selectRef ) {
+		if (q->argc-1 > 4 ) {
+			qrng.li = *(bit*)getVarValue(recycleBlk,getArg(q,4));
+			qrng.hi = *(bit*)getVarValue(recycleBlk,getArg(q,5));
+		} 		
+	}
+	if ( getFunctionId(q) == thetaselectRef ) {
+		str qop = (str)getVarValue(recycleBlk,getArg(q,3));
+		if ( qop[0] == '=') return 0;
+		if ( qop[0] == '<') {
+             qrng.hi = (qop[1] == '=');
+        } else if (qop[0] == '>') {
+             qrng.li = (qop[1] == '=');
+        } 
+	}
 
 	if (noOverlap(qry, &qrng) )
 		return 0;
@@ -1419,12 +1472,13 @@ findPieces(rngPtr qry, int bid, int *pcs)
 	int i, j = 0;
 	InstrPtr q;
     str selectRef = putName("select",6);
+	str thetaselectRef = putName("thetaselect",11);
 
     for (i = 0; i < recycleBlk->stop; i++){
         q = getInstrPtr(recycleBlk,i);
 
-		if ( q->argc-1 < 4 || getFunctionId(q) != selectRef ) continue;
-		/* to do include thetaselects */
+		if ( q->argc-1 < 4 ) continue;
+		if ( getFunctionId(q) != selectRef && getFunctionId(q) != thetaselectRef ) continue;
 
 		/* check if selection is over the same bat arg */
 		if ( getVarConstant(recycleBlk, getArg(q,1)).val.bval == bid ){
@@ -1438,21 +1492,6 @@ findPieces(rngPtr qry, int bid, int *pcs)
 	return j;
 }
 
-/* thetaselect
- bit lin = TRUE, rin = TRUE;
-        ptr low = nilptr, high = nilptr;
-
-        if (op[0] == '=') {
-            low = val;
-            high = NULL;
-        } else if (op[0] == '<') {
-            high = val;
-            rin = (op[1] == '=');
-        } else if (op[0] == '>') {
-            low = val;
-            lin = (op[1] == '=');
-        } 
-*/
 
 double
 intLen(ValPtr l, ValPtr h)
@@ -1462,19 +1501,26 @@ intLen(ValPtr l, ValPtr h)
     switch (ATOMstorage(l->vtype)) {
     case TYPE_chr:
         len =  *(chr *)VALget(h) -  *(chr *)VALget(l) + 1;
+		break;
     case TYPE_bte:
         len =  *(bte *)VALget(h) -  *(bte *)VALget(l) + 1;
+		break;
     case TYPE_sht:
         len =  *(sht *)VALget(h) -  *(sht *)VALget(l) + 1;
+		break;
     case TYPE_void:
     case TYPE_int:
         len =  *(int *)VALget(h) -  *(int *)VALget(l) + 1;
+		break;
     case TYPE_flt:
         len =  *(flt *)VALget(h) -  *(flt *)VALget(l);
+		break;
     case TYPE_dbl:
         len =  *(dbl *)VALget(h) -  *(dbl *)VALget(l);
+		break;
     case TYPE_lng:
-			len =  (double) (*(lng *)VALget(h) -  *(lng *)VALget(l) + 1);
+		len =  (double) (*(lng *)VALget(h) -  *(lng *)VALget(l) + 1);
+		break;
     default:
         len = 0;
     }
@@ -1558,7 +1604,7 @@ computePart(rngPtr qry, piece **sol, int sidx, int eidx, bit left2right, BAT *b)
 			}
 			BBPunfix(bs->batCacheid);
 			VALcopy(&qry->low, ovhgh);
-			qry->li = ~hi;
+			qry->li = neg(hi);
 		}
 	else 
 		for (i = eidx; i >= sidx; i-- ) {
@@ -1583,7 +1629,7 @@ computePart(rngPtr qry, piece **sol, int sidx, int eidx, bit left2right, BAT *b)
 			}
 			BBPunfix(bs->batCacheid);
 			VALcopy(&qry->hgh, ovlow);
-			qry->hi = ~li;
+			qry->hi = neg(li);
 		}
 	
 	return b;
@@ -1629,19 +1675,19 @@ computeMultiSubsume(rngPtr qry, piece  *base, int cnt, lng comp)
 
 	if (max_x){
 		bs = BATdescriptor(sol[x]->bid);
-		b = BATcopy(bs, b->htype, b->ttype,TRUE);
+		b = BATcopy(bs, bs->H->type, bs->T->type,TRUE);
 		BBPunfix(bs->batCacheid);
 
 		if ( x > 0 ){
 			copyRange(&q1,qry);
 			VALcopy(&q1.hgh, &sol[x]->rng.low);
-			q1.hi = ~sol[x]->rng.li;
+			q1.hi = neg(sol[x]->rng.li);
 			b = computePart(&q1,sol,0,x-1,FALSE, b);
 		}
 		if ( x < scnt - 1 ){
 			copyRange(&q1,qry);
 			VALcopy(&q1.low, &sol[x]->rng.hgh);
-			q1.li = ~sol[x]->rng.hi;
+			q1.li = neg(sol[x]->rng.hi);
 			b = computePart(&q1,sol,x+1,scnt-1,TRUE, b);
 		}
 	}
@@ -1723,7 +1769,7 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 		else {
 			ValRecord zero;
 			int z = 0;
-			VALset(&zero, clow.vtype, &z);
+			VALset(&zero, b->T->type, &z);
 			VALadd(&clow, &zero, -maxlen/2);
 			VALadd(&chgh, &zero, maxlen/2);
 		}
@@ -1939,10 +1985,10 @@ thetaselectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 	bit pi, qi;
 
 	qval = &getVar(recycleBlk,getArg(q,2))->value;
-	qop = *(str*)getVarValue(recycleBlk,getArg(q,3));
+	qop = (str)getVarValue(recycleBlk,getArg(q,3));
 
 	pval = &s->stk[getArg(p,2)];
-	pop = *(str*)VALget(&s->stk[getArg(p,3)]);
+	pop = (str)VALget(&s->stk[getArg(p,3)]);
 
 	if ( pop[0] != qop[0] ) return 0;
 	pi = ( pop[1] == '=' );
