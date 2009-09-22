@@ -56,6 +56,7 @@
 #include "properties.h"
 #include "glob.h"
 #include "database.h"
+#include "utils.h"
 #include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
@@ -165,6 +166,8 @@ static int _mero_broadcastsock;
 static struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
 static char _mero_hostname[128];
+/* control channel passphrase */
+static char _mero_controlpass[128];
 /* full path to logfile for stdout messages, or NULL if tty */
 static str _mero_msglogfile = NULL;
 /* full path to logfile for stderr messages, or NULL if tty */
@@ -420,7 +423,6 @@ main(int argc, char *argv[])
 	str p, prefix;
 	FILE *cnf = NULL, *pidfile = NULL;
 	char buf[1024];
-	char lockfile[512];
 	sabdb* stats = NULL;
 	dpair d;
 	int pfd[2];
@@ -433,6 +435,7 @@ main(int argc, char *argv[])
 	int unsock = -1;
 	char doproxy = 1;
 	unsigned short discoveryport;
+	unsigned short controlport;
 	struct stat sb;
 	FILE *oerr = NULL;
 	pthread_mutexattr_t mta;
@@ -448,6 +451,7 @@ main(int argc, char *argv[])
 		{"mero_doproxy",       NULL,                       BOOL},
 		{"mero_discoveryttl",  NULL,                       INT},
 		{"mero_discoveryport", NULL,                       INT},
+		{"mero_controlport",   NULL,                       INT},
 		{ NULL,                NULL,                       INVALID}
 	};
 	confkeyval *kv;
@@ -565,6 +569,16 @@ main(int argc, char *argv[])
 		}
 		discoveryport = (unsigned short)ret;
 	}
+	controlport = 0;
+	kv = findConfKey(ckv, "mero_controlport");
+	if (kv && kv->val != NULL) {
+		ret = atoi(kv->val);
+		if (ret < 0 || ret > 65535) {
+			Mfprintf(stderr, "invalid port number: %s\n", kv->val);
+			MERO_EXIT(1);
+		}
+		controlport = (unsigned short)ret;
+	}
 
 	/* where is the mserver5 binary we fork on demand? */
 	snprintf(buf, 1023, "%s/bin/mserver5", prefix);
@@ -630,15 +644,47 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
+	/* see if we have the passphrase if we do remote control stuff */
+	if (controlport != 0) {
+		struct stat statbuf;
+		FILE *secretf;
+		size_t len;
+
+		if (stat(".merovingian_pass", &statbuf) == -1) {
+			if ((e = generatePassphraseFile(".merovingian_pass")) != NULL) {
+				Mfprintf(stderr, "cannot open .merovingian_pass for "
+						"writing: %s\n", e);
+				free(e);
+				MERO_EXIT(1);
+			}
+		}
+
+		if ((secretf = fopen(".merovingian_pass", "r")) == NULL) {
+			Mfprintf(stderr, "unable to open .merovingian_pass: %s\n",
+					strerror(errno));
+			MERO_EXIT(1);
+		}
+
+		len = fread(_mero_controlpass, 1,
+				sizeof(_mero_controlpass) - 1, secretf);
+		_mero_controlpass[len] = '\0';
+		len = strlen(_mero_controlpass); /* secret can contain null-bytes */
+		if (len == 0) {
+			Mfprintf(stderr, "control passphrase has zero-length\n");
+			fclose(secretf);
+			MERO_EXIT(1);
+		}
+		fclose(secretf);
+	}
+
 	/* we need a pidfile */
 	if (pidfilename == NULL) {
 		Mfprintf(stderr, "cannot find pidfilename via config file\n");
 		MERO_EXIT(1);
 	}
 
-	snprintf(lockfile, 512, "%s/.merovingian_lock", dbfarm);
 	/* lock such that we are alone on this world */
-	if ((ret = MT_lockf(lockfile, F_TLOCK, 4, 1)) == -1) {
+	if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
 		Mfprintf(stderr, "another merovingian is already running\n");
 		MERO_EXIT(1);
@@ -977,7 +1023,7 @@ main(int argc, char *argv[])
 	GDKfree(_mero_errlogfile);
 
 	/* remove files that suggest our existence */
-	unlink(lockfile);
+	unlink(".merovingian_lock");
 	unlink(pidfilename);
 	GDKfree(pidfilename);
 

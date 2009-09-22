@@ -44,6 +44,7 @@ confkeyval *findConfKey(confkeyval *list, char *key);
 char *setConfVal(confkeyval *ckv, char *val);
 void secondsToString(char *buf, time_t t, int longness);
 void abbreviateString(char *ret, char *in, size_t width);
+char *generatePassphraseFile(char *path);
 
 #endif
 

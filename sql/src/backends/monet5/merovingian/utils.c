@@ -256,4 +256,33 @@ abbreviateString(char *ret, char *in, size_t width)
 	}
 }
 
+static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+
+char *
+generatePassphraseFile(char *path)
+{
+	unsigned int c;
+	char buf[48];
+	FILE *f;
+	unsigned int size = (unsigned int)rand();
+	size = (size % (36 - 20)) + 20;
+	for (c = 0; c < size; c++)
+		buf[c] = seedChars[rand() % 62];
+	for ( ; c < 48; c++)
+		buf[c] = '\0';
+	f = fopen(path, "w");
+	if (fwrite(buf, 1, 48, f) < 48) {
+		snprintf(buf, sizeof(buf), "cannot write vaultkey: %s",
+				strerror(errno));
+		fclose(f);
+		return(strdup(buf));
+	}
+	fclose(f);
+	return(NULL);
+}
+
 /* vim:set ts=4 sw=4 noexpandtab: */

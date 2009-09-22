@@ -29,12 +29,7 @@
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
 #include <errno.h>
-
-static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
-	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+#include "utils.h"
 
 /* check if dbname matches [A-Za-z0-9-_]+ */
 char* db_validname(char *dbname) {
@@ -70,7 +65,6 @@ char* db_create(char* dbname) {
 	char buf[8096];
 	char path[8096];
 	FILE *f;
-	unsigned int size;
 
 	if ((e = db_validname(dbname)) != NULL)
 		return(e);
@@ -141,22 +135,13 @@ char* db_create(char* dbname) {
 		return(strdup(buf));
 	}
 	fclose(f);
+
 	/* generate a vault key */
-	size = (unsigned int)rand();
-	size = (size % (36 - 20)) + 20;
-	for (c = 0; c < size; c++)
-		buf[c] = seedChars[rand() % 62];
-	for ( ; c < 48; c++)
-		buf[c] = '\0';
 	snprintf(path, sizeof(path), "%s/%s/.vaultkey", dbfarm, dbname);
-	f = fopen(path, "w");
-	if (fwrite(buf, 1, 48, f) < 48) {
-		snprintf(buf, sizeof(buf), "cannot write vaultkey: %s",
-				strerror(errno));
+	if ((e = generatePassphraseFile(path)) != NULL) {
 		GDKfree(dbfarm);
-		return(strdup(buf));
+		return(e);
 	}
-	fclose(f);
 
 	/* without an .uplog file, Merovingian won't work, this
 	 * needs to be last to avoid race conditions */
