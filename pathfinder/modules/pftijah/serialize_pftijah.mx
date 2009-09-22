@@ -42,7 +42,7 @@ extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
 
 /* #define TJ_TRACE 1 */
 
-/* #define USE_INEX_PATH	1 */
+#define USE_INEX_PATH 1 
 
 /*******************************************
  * serialize_pftijah.c : XML serialization
@@ -211,7 +211,7 @@ dbat_int_debug(char* t, dbat* dbat) {
  * this structure will keep track of the used tags in the current path. The
  * number of times a tagname is used as a child of the current parent is
  * counted and printed in the current path. For every element node the
- * path is stored in the tj_FTINDEX_path1 bat.
+ * path is stored in the tj_FTINDEX_path bat.
  *
  */
 
@@ -737,7 +737,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	 */
 
 	/* set parameter bat first */
-	if ( !(res->b_collParam   = getBAT(tjCtx_BAT,"_param")) ) return NULL;
+	if ( !(res->b_collParam   = getBAT(tjCtx_BAT,"param")) ) return NULL;
 
 	res->preExpansion = 1;
 	str str_preExpansion = readCollParam(res,"preExpansion");
@@ -748,8 +748,8 @@ loadTijahContext(BAT* tjCtx_BAT) {
 		} else
 			res->preExpansion = v;
 	}
-	/* */
 	res->fragmentSize = 0;
+	/* 
 	str str_fragmentSize = readCollParam(res,"fragmentSize");
 	if ( str_fragmentSize != str_nil ) {
 		int v = atoi(str_fragmentSize);
@@ -758,7 +758,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 		} else
 			res->fragmentSize = v;
 	}
-	/* */
+	*/ 
 	str str_name = readCollParam(res,"name");
 	res->name = (char*)str_name;
 
@@ -833,11 +833,11 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	if ( !(res->tdb = tdb_open("termDB")) )
 	    return NULL;
 #endif
-	if ( !(res->b_globalTerm  = getBAT(tjCtx_BAT,"_globalTerms")) ) return NULL;
+	if ( !(res->b_globalTerm  = getBAT(tjCtx_BAT,"termdict")) ) return NULL;
 	res->n_globalTerm = (oid)BATcount(res->b_globalTerm);
-	if ( !(res->b_globalTag   = getBAT(tjCtx_BAT,"_globalTags")) ) return NULL;
+	if ( !(res->b_globalTag   = getBAT(tjCtx_BAT,"tagdict")) ) return NULL;
 	res->n_globalTag = (oid)BATcount(res->b_globalTag);
-	if ( !(res->b_globalRTag   = getBAT(tjCtx_BAT,"_globalRTags")) ) return NULL;
+	if ( !(res->b_globalRTag   = getBAT(tjCtx_BAT,"rtags")) ) return NULL;
 	res->tagswitch_sz = (int)res->n_globalTag;
 	if ( res->tagswitch_sz < 128 )
 		res->tagswitch_sz = 128;
@@ -848,11 +848,11 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	/*
 	 *
 	 */
-	if ( !(res->b_docName     = getBAT(tjCtx_BAT,"_doc_name")) ) return NULL;
-	if ( !(res->b_docFirstPre = getBAT(tjCtx_BAT,"_doc_firstpre")) ) return NULL;
-	if ( !(res->b_collPre     = getBAT(tjCtx_BAT,"_tid")) ) return NULL;
-	if ( !(res->b_collSize    = getBAT(tjCtx_BAT,"_size")) ) return NULL;
-	if ( !(res->b_collPath    = getBAT(tjCtx_BAT,"_path")) ) return NULL;
+	if ( !(res->b_docName     = getBAT(tjCtx_BAT,"doc_name")) ) return NULL;
+	if ( !(res->b_docFirstPre = getBAT(tjCtx_BAT,"doc_firstpre")) ) return NULL;
+	if ( !(res->b_collPre     = getBAT(tjCtx_BAT,"tid")) ) return NULL;
+	if ( !(res->b_collSize    = getBAT(tjCtx_BAT,"size")) ) return NULL;
+	if ( !(res->b_collPath    = getBAT(tjCtx_BAT,"path")) ) return NULL;
 	if ( (res->tijahPre = getPreSize(res)) == oid_nil )
 	     return NULL;;
 	/* check here for new fragmentation */
@@ -862,7 +862,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]: loadTijahContext() [b_collPre|b_collSize] too big(%d), create new fragment\n",res->name,BATcount(res->b_collPre));
 #endif
 		BAT* fragments;
-	        if ( !(fragments = getBAT(tjCtx_BAT,"_fragments")) )
+	        if ( !(fragments = getBAT(tjCtx_BAT,"fragments")) )
 		    return NULL;
 	        int newFragments  = (int)BATcount(fragments) + 1;
 		/* */
@@ -897,12 +897,12 @@ loadTijahContext(BAT* tjCtx_BAT) {
 		return NULL;
 	if ( dbat_init("b_collSize", &res->dbat_collSize, res->b_collSize) < -1 )
 		return NULL;
-	if ( !(res->b_collPfPre  = getBAT(tjCtx_BAT,"_pfpre")) ) return NULL;
+	if ( !(res->b_collPfPre  = getBAT(tjCtx_BAT,"pfpre")) ) return NULL;
 	/* */
-	if ( !(res->b_conceptdict       = getBAT(tjCtx_BAT,"_conceptdict")) )      return NULL;
-	if ( !(res->b_concept_tid   = getBAT(tjCtx_BAT,"_concept_tid")) )  return NULL;
-	if ( !(res->b_concept_elem  = getBAT(tjCtx_BAT,"_concept_elem")) ) return NULL;
-	if ( !(res->b_concept_score = getBAT(tjCtx_BAT,"_concept_score")) )return NULL;
+	if ( !(res->b_conceptdict       = getBAT(tjCtx_BAT,"conceptdict")) )      return NULL;
+	if ( !(res->b_concept_tid   = getBAT(tjCtx_BAT,"concept_tid")) )  return NULL;
+	if ( !(res->b_concept_elem  = getBAT(tjCtx_BAT,"concept_elem")) ) return NULL;
+	if ( !(res->b_concept_score = getBAT(tjCtx_BAT,"concept_score")) )return NULL;
 	/* */
 	res->tagStackPtr = 0;
 
