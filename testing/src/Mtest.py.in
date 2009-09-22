@@ -205,7 +205,7 @@ CONDITIONALS = {
     # remaining conditionals are set dynamically at runtime
 }
 
-def GetCONDITIONALS(pkg) :
+def GetCONDITIONALS(CONDS, pkg) :
     cfg = pkg+'-config'
     cmd = CheckExec(cfg)
     proc = subprocess.Popen([cmd,'--conds'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
@@ -214,8 +214,8 @@ def GetCONDITIONALS(pkg) :
     for l in qOut.split('\n'):
         m = r.match(l.strip())
         if m:
-            CONDITIONALS[m.group(1)] = m.group(2)
-### GetCONDITIONALS(pkg) #
+            CONDS[m.group(1)] = m.group(2)
+### GetCONDITIONALS(CONDS, pkg) #
 
 # a bunch of classes to help with generating (X)HTML files
 class _Encode:
@@ -3107,7 +3107,14 @@ def main(argv) :
     # hence, we set then at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
-    GetCONDITIONALS(par['PACKAGE'])
+    GetCONDITIONALS(CONDITIONALS, par['PACKAGE'])
+    if par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
+        clientsCONDS = {}
+        GetCONDITIONALS(clientsCONDS, 'monetdb-clients')
+        for l in ('RUBYGEM', 'PYTHON', 'PHP', 'PERL_SWIG'):
+            c = 'HAVE_'+l
+            if clientsCONDS.has_key(c):
+                CONDITIONALS[c] = clientsCONDS[c]
     if par['M5']:
         CONDITIONALS['HAVE_MONETDB5'] = '#'
         CONDITIONALS['HAVE_MONETDB4'] = ''
