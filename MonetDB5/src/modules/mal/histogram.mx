@@ -61,6 +61,7 @@ histogram_export void HSTprint(stream *s, Histogram h);
 histogram_export void HSTprintf(Histogram h);
 
 histogram_export dbl HSTeuclidian(Histogram h1, Histogram h2);
+histogram_export int HSTeuclidianWhatIf(Histogram h1, Histogram h2, ValPtr val);
 histogram_export dbl HSTcityblock(Histogram h1, Histogram h2);
 histogram_export dbl HSTchebyshev(Histogram h1, Histogram h2);
 histogram_export dbl HSTeuclidianDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
@@ -137,6 +138,47 @@ HSTeuclidian(Histogram h1, Histogram h2){
 	for ( i = 0; i < h1->bins; i++)
 		sum += (h1->cnt[i] - h2->cnt[i]) * (h1->cnt[i] - h2->cnt[i]);
 	return sqrt((double) sum);
+}
+
+/*get the bin we would increment if we would add this value*/
+int
+HSTincrementWhatIf(Histogram h, ValPtr val){
+	int index;
+	switch( val->vtype){
+		case TYPE_bte: index= (val->val.btval - h->low.val.btval) / h->inc.val.btval;
+		case TYPE_sht: index= (val->val.shval - h->low.val.shval) / h->inc.val.shval; 
+		case TYPE_int: index= (val->val.ival - h->low.val.ival) / h->inc.val.ival; 
+		case TYPE_lng: index= (val->val.lval - h->low.val.lval) / h->inc.val.lval;
+		case TYPE_dbl: index= (val->val.dval - h->low.val.dval) / h->inc.val.dval;
+		case TYPE_flt: index= (val->val.fval - h->low.val.fval) / h->inc.val.fval;
+	}
+	return index;
+}
+
+/* if 1 then adding this value to h2 increase the distance between h1-h2*/
+int
+HSTeuclidianWhatIf(Histogram h1, Histogram h2, ValPtr val){
+	lng sum= 0, sumWhatIf=0, cur;
+	dbl distance, distanceWhatIf;
+	int i, affectedBin;
+	assert(h1->bins == h2->bins);
+
+	affectedBin = HSTincrementWhatIf(h2,val);
+
+	for ( i = 0; i < h1->bins; i++){
+		cur = (h1->cnt[i] - h2->cnt[i]) * (h1->cnt[i] - h2->cnt[i]);
+		sum += cur;
+		if (i==affectedBin)
+			sumWhatIf += (h1->cnt[i] - (h2->cnt[i]+1)) * (h1->cnt[i] - (h2->cnt[i]+1));	
+		else
+			sumWhatIf += cur;
+	}
+
+	distance = sqrt((double) sum);
+	distanceWhatIf = sqrt((double) sumWhatIf);
+	printf("distance %f  new distance %f \n", distance, distanceWhatIf);
+	if (distanceWhatIf > distance) return 1;
+	return 0;
 }
 
 dbl
