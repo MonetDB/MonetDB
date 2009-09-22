@@ -1,9 +1,6 @@
 #contact the master and roll forward the local copy.
 #mimick the master being yourself
 uri := sabaoth.getLocalConnectionURI();
-conn := remote.connect(uri,"monetdb","monetdb","mal");
-u := remote.put(conn, uri);
-m := remote.put(conn, "monetdb");
-t := remote.put(conn, 0:int);
-ret:= remote.put(conn,nil);
-ret:= remote.exec(conn,"master","replay",u,m,m,t);
+master.synchronize(uri);
+
+master.synchronize();
