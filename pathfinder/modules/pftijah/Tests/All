@@ -34,4 +34,5 @@ test_lms_manyqueries
 test_bug2836870
 load_bug2831472
 test_bug2831472
+test_comp_tokenize
 cleanup

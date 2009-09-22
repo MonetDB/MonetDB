@@ -10502,7 +10502,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                          op1->env,
                                          op1->schema.items[0].name /* iter */,
                                          aat_nat);
-		    pin(p_iter,1);
+		    pin(p_iter,p->refctr);
                     env_add (p->env, fc_iter_a, aat_nat, p_iter);
 
                     mvar_t *new_item  = new_var (p->refctr);
@@ -10548,7 +10548,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                          op1->schema.items[1].name /* pos */,
                                          postype);
 		    }
-		    pin(p_pos,1);
+		    pin(p_pos,p->refctr);
                     env_add (p->env, fc_pos_a, aat_nat, p_pos);
 		} else if (strcmp(fcname,PFT_INFO) == 0 ) {
 		    mvar_t *pfop_names;
