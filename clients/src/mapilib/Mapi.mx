@@ -299,6 +299,8 @@ section.
 @item mapi_get_motd()	@tab	Get server welcome message
 @item mapi_get_row_count()	@tab	Number of rows in cache or -1
 @item mapi_get_last_id()	@tab	last inserted id of an auto_increment (or alike) column 
+@item mapi_get_from()	@tab	Get the stream 'from'
+@item mapi_get_to()	@tab	Get the stream 'to'
 @item mapi_get_trace()	@tab	Get trace flag
 @item mapi_get_user()	@tab	Current user name
 @item mapi_log()	@tab Keep log of client/server interaction
@@ -1188,6 +1190,8 @@ mapi_export MapiMsg mapi_output(Mapi mid, char *output);
 mapi_export MapiMsg mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp);
 mapi_export MapiMsg mapi_profile(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
+mapi_export stream *mapi_get_from(Mapi mid);
+mapi_export stream *mapi_get_to(Mapi mid);
 mapi_export int mapi_get_trace(Mapi mid);
 mapi_export int mapi_get_autocommit(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
@@ -1469,6 +1473,20 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 	}
 	fflush(fd);
 	return MOK;
+}
+
+stream *
+mapi_get_to(Mapi mid)
+{
+	mapi_check0(mid, "mapi_get_to");
+	return mid->to;
+}
+
+stream *
+mapi_get_from(Mapi mid)
+{
+	mapi_check0(mid, "mapi_get_to");
+	return mid->from;
 }
 
 int
