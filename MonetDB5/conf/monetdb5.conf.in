@@ -212,8 +212,7 @@ mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
 # able to perform any command.  For this file the same rules hold as for
 # the monet_vault_key file.  If this file is missing, Merovingian will
 # attempt to create it with a random password.  If the file cannot be
-# opened for some reason, Merovingian will not open the TCP port to
-# handle remote control requests.
+# opened for some reason, Merovingian will not start.
 mero_controlport=50001
 
 
