@@ -198,6 +198,23 @@ mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
 # which usually is 50000.  Setting this value to 0 disables the
 # neighbour discovery service entirely.
 #mero_discoveryport=50000
+#
+# Each Merovingian can be controlled by monetdb(1).  By default,
+# Merovingian binds to a local UNIX domain socket which allows a local
+# monetdb(1) to connect based on the UNIX file system permissions.
+# Merovingian can also listen on a TCP socket to serve requests from a
+# monetdb(1) elsewhere.  If mero_controlport is set, Merovingian listens
+# to that port for remote control commands.  This is an all or nothing
+# scenario, hence any remote monetdb(1) can create, destroy, etc.  As a
+# little protective measure, the file
+# @localstatedir@@DIRSEP@MonetDB5@DIRSEP@dbfarm@DIRSEP@.merovingian_pass
+# contains the passphrase that a remote monetdb(1) needs to issue to be
+# able to perform any command.  For this file the same rules hold as for
+# the monet_vault_key file.  If this file is missing, Merovingian will
+# attempt to create it with a random password.  If the file cannot be
+# opened for some reason, Merovingian will not open the TCP port to
+# handle remote control requests.
+mero_controlport=50001
 
 
 # MAL section
