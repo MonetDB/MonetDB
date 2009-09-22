@@ -745,24 +745,25 @@ response2bat(
 
     /* We only speak HTTP/1.1 */
     if( ret < 13 || /* we should have at least "HTTP/1.1 nnn ", 13 chars */
+        /* FIXME: could use strncmp here */
         strstr(respStatus, "HTTP/1.1 ") != respStatus ||
         respStatus[12] != ' ' ||
-        respStatus[ret -1] != '\r' ) { /* the '\n' is not returned by stream_readline() */
+        respStatus[ret -2] != '\r' ) {
         GDKerror("response2bat: invalid response from \"%s:%d\":\n", host, port);
         do{ /* read and print everything we can receive */
-            if(respStatus[ret-1] == '\r')
-                respStatus[ret -1] = '\0'; /* overwrite '\r' */
+            if(respStatus[ret-2] == '\r')
+                respStatus[ret -2] = '\0'; /* overwrite '\r' */
             GDKerror("%s\n", respStatus);
             ret = stream_readline(in, respStatus, 1024);
         } while (ret > 0);
         buffer_destroy(resp);
         return NULL;
     }
-    respStatus[ret -1] = '\0';
+    respStatus[ret -2] = '\0';
 
     do{ /* read the HTTP header and throw it away */
         ret = stream_readline(in, resp->buf, 1024);
-        if(ret == 1 && resp->buf[0] == '\r')
+        if(ret == 2 && resp->buf[0] == '\r')
             ret = 0; /* end-of-HTTP-header found */
     } while (ret > 0);
     if (ret < 0) {
