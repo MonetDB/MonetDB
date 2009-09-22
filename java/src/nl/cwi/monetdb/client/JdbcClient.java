@@ -921,10 +921,12 @@ copts.produceHelpMessage()
 		);
 		out.println();
 
-		e.dumpResultSet(
-			stmt.executeQuery("SELECT * FROM " + table.getFqnameQ())
-		);
-		out.println();
+		if (table.getType().indexOf("TABLE") != -1) {
+			e.dumpResultSet(
+				stmt.executeQuery("SELECT * FROM " + table.getFqnameQ())
+			);
+			out.println();
+		}
 	}
 
 	/**

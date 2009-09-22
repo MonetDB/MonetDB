@@ -56,7 +56,8 @@ public class SQLExporter extends Exporter {
 			String name)
 		throws SQLException
 	{
-		if (useSchema) changeSchema(schema);
+		if (useSchema)
+			changeSchema(schema);
 
 		// handle views directly
 		if (type.indexOf("VIEW") != -1) {
@@ -69,7 +70,7 @@ public class SQLExporter extends Exporter {
 			out.print("CREATE " + type + " " +
 				(!useSchema ? dq(schema) + "." : "") + dq(name));
 			out.print(" AS ");
-		 	out.println(tbl.getString("REMARKS").trim());
+		 	out.println(tbl.getString("REMARKS").replaceFirst("create view [^ ]+ as", "").trim());
 			return;
 		}
 
