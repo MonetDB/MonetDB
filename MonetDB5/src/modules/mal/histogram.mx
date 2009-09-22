@@ -58,6 +58,7 @@ typedef struct {
 histogram_export Histogram HSTnew(int bins, ValPtr minval, ValPtr maxval);
 histogram_export void HSTincrement(Histogram h, ValPtr val);
 histogram_export void HSTprint(stream *s, Histogram h);
+histogram_export void HSTprintf(Histogram h);
 
 histogram_export dbl HSTeuclidian(Histogram h1, Histogram h2);
 histogram_export dbl HSTcityblock(Histogram h1, Histogram h2);
@@ -75,6 +76,7 @@ Histogram
 HSTnew(int bins, ValPtr minval, ValPtr maxval)
 {
 	Histogram h;
+	int i=0;
 
 	assert( minval && maxval);
 	assert( minval->vtype == maxval->vtype);
@@ -83,6 +85,9 @@ HSTnew(int bins, ValPtr minval, ValPtr maxval)
 	h = (Histogram) GDKzalloc(sizeof(*h) + sizeof(long) * bins);
 	h->low = *minval;
 	h->hgh = h->inc = *maxval;
+	h->bins = bins;
+	for ( i = 0; i < h->bins;  i++)
+		h->cnt[i]=0;
 	
 	switch( minval->vtype){
 		case TYPE_bte:
@@ -193,5 +198,14 @@ HSTprint(stream *s, Histogram h){
 	for ( i = 0; i < h->bins;  i++)
 		stream_printf(s, "[%d] " LLFMT "\n", i, h->cnt[i]);
 	stream_printf(s, "\n");
+}
+
+void
+HSTprintf(Histogram h){
+	int i;
+
+	for ( i = 0; i < h->bins;  i++)
+		printf("[%d] " LLFMT "\n", i, h->cnt[i]);
+	printf("\n");
 }
 @}
