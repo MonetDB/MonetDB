@@ -219,7 +219,7 @@ lng recycleTime = 0;
 lng recycleSearchTime = 0;	/* cache search time in ms*/
 
 aggrFun minAggr = NULL, maxAggr = NULL;
-
+bit multiSubsume = TRUE;
 
 /*
 int recycleMiss = 0;
@@ -1928,7 +1928,10 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 	GDKfree(partsol1);
 	GDKfree(ovm);
 
-	b = computeMultiSubsume(qry,base,cnt,sol.comp);
+	if ( sol.comp )
+		b = computeMultiSubsume(qry,base,cnt,sol.comp);
+	else b = NULL;
+
 	GDKfree(base);
 	return b;
 }
@@ -2175,12 +2178,14 @@ We execute it in place and safe the result upon need.
     }
 
 	/* for selections over ordered data types try multi-interval subsumption */
-	if ( (getFunctionId(p) == selectRef) &&
-		BATatoms[s->stk[getArg(p,2)].vtype].linear ){
-		ticks = GDKusec();
-		pc = selectMultiSubsume(p,s);
-		ticks = GDKusec() - ticks;
-	}	
+	if ( multiSubsume ) {
+		if ( (getFunctionId(p) == selectRef) &&
+			BATatoms[s->stk[getArg(p,2)].vtype].linear ){
+			ticks = GDKusec();
+			pc = selectMultiSubsume(p,s);
+			ticks = GDKusec() - ticks;
+		}
+	}
 #ifdef _DEBUG_CACHE_
     if ( evicted ) cntxt->rcc->recycleMiss++;
 #else
