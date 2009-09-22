@@ -2328,9 +2328,11 @@ main(int argc, char **argv)
 			setPrompt();
 			prompt = promptbuf;
 			fromConsole = stdin;
+			/* use default rendering if not overruled at commandline */
+			c = doFileByLines(mid, stdin, prompt);
+		} else {
+			c = doFile(mid, NULL);
 		}
-		/* use default rendering if not overruled at commandline */
-		c = doFileByLines(mid, stdin, prompt);
 
 #ifdef HAVE_LIBREADLINE
 		if (interactive_stdin) {
