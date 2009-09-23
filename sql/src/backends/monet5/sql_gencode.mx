@@ -2025,7 +2025,7 @@ backend_create_func(backend *be, sql_func *f)
 	Client c = be->client;
 	Symbol backup = NULL;
 	stmt *s;
-	int i, retseen =0;
+	int i, retseen =0, sideeffects =0;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || f->sql > 1)

@@ -478,7 +478,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].len = fmt[i].nillen = 
 				ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKmalloc(fmt[i].len);
-			fmt[i].c = NULL;
+			fmt[i].c[0] = NULL;
 			fmt[i].ws = !(has_whitespace(fmt[i].sep));
 			fmt[i].quote = ssep?ssep[0]:0;
 			fmt[i].nullstr = _strdup(ns);
