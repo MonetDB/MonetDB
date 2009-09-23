@@ -2771,6 +2771,7 @@ block_stream(stream *s)
 int
 isa_block_stream(stream *s)
 {
+	assert(s != NULL);
 	return s->read == bs_read || s->write == bs_write;
 }
 
