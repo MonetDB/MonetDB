@@ -64,6 +64,7 @@ pattern optimizer.recycle(mod:str, fcn:str):str
 address OPTrecycle
 comment "Replicator code injection";
 
+@{
 @-
 The number of overloaded instructions is kept to a minimum.
 @h
@@ -329,3 +330,4 @@ with the transaction commits.
 #include "opt_statistics.h"
 @:wrapOptimizer(recycle,OPT_CHECK_TYPES)@
 
+@}
