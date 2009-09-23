@@ -155,7 +155,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	ValPtr vmin, vmax;
 	int sampleSize; 
 	int bins=2;
-	int distance;
+	lng distance;
 
 	SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
 
@@ -219,6 +219,10 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		if (distance==0){
 			bunfastins(BigSlice, key, adt);
 			HSTincrement(h2, newValue);
+		}
+		else if (distance <= HSTbinrelativeWhatIf(h2,h1,newValue)){
+			bunfastins(BigSlice, key, adt);
+			HSTincrement(h2, newValue);
 		}else{
 			int j;
 			bit moved = FALSE;
@@ -260,13 +264,13 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		}		
 	}	
 
+	printf("result state \n");
 	#ifdef _DEBUG_SLICER_
-		printf("result state \n");
 		BATprint(fmt->c[0]);
-		HSTprintf(h1);
 		BATprint(BigSlice);
-		HSTprintf(h2);
 	#endif
+	HSTprintf(h1);
+	HSTprintf(h2);
 	
 	return 0;
 

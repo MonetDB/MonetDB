@@ -74,7 +74,7 @@ histogram_export int HSTeuclidianWhatIfMove(Histogram h1, Histogram h2, ValPtr v
 histogram_export dbl HSTcityblock(Histogram h1, Histogram h2);
 histogram_export dbl HSTchebyshev(Histogram h1, Histogram h2);
 histogram_export dbl HSTbinrelative(Histogram h1, Histogram h2);
-histogram_export int HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val);
+histogram_export lng HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val);
 histogram_export int HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val);
 histogram_export dbl HSTeuclidianDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 histogram_export dbl HSTcityblockDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
@@ -285,7 +285,7 @@ HSTbinrelative(Histogram h1, Histogram h2){
 	return distance;
 }
 
-int
+lng
 HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val){
 	lng i, totalDiff=0, avgDiff, cur, avgDiffWhatIf, totalDiffWhatIf=0, distance=0, distanceWhatIf=0;
 	int affectedBin;
@@ -312,7 +312,7 @@ HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val){
 			distanceWhatIf += ABS(avgDiffWhatIf - ABS(h1->cnt[i] - h2->cnt[i]));
 	}
 	
-	if (distanceWhatIf > distance) return 1;
+	if (distanceWhatIf > distance) return (distanceWhatIf - distance);
 	return 0;
 }
 
