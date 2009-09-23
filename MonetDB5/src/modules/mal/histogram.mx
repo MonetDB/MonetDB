@@ -55,13 +55,22 @@ typedef struct {
 #define HSTinc_flt(H,X) H->cnt[(int)((X - H->low.val.fval) / H->inc.val.fval)]++
 #define HSTinc_dbl(H,X) H->cnt[(int)((X - H->low.val.dval) / H->inc.val.dval)]++
 
+#define HSTdec_sht(H,X) H->cnt[(X - H->low.val.shval) / H->inc.val.shval]--
+#define HSTdec_bte(H,X) H->cnt[(X - H->low.val.btval) / H->inc.val.btval]--
+#define HSTdec_int(H,X) H->cnt[(X - H->low.val.ival) / H->inc.val.ival]--
+#define HSTdec_lng(H,X) H->cnt[(X - H->low.val.lval) / H->inc.val.lval]--
+#define HSTdec_flt(H,X) H->cnt[(int)((X - H->low.val.fval) / H->inc.val.fval)]--
+#define HSTdec_dbl(H,X) H->cnt[(int)((X - H->low.val.dval) / H->inc.val.dval)]--
+
 histogram_export Histogram HSTnew(int bins, ValPtr minval, ValPtr maxval);
 histogram_export void HSTincrement(Histogram h, ValPtr val);
+histogram_export void HSTdecrement(Histogram h, ValPtr val);
 histogram_export void HSTprint(stream *s, Histogram h);
 histogram_export void HSTprintf(Histogram h);
 
 histogram_export dbl HSTeuclidian(Histogram h1, Histogram h2);
 histogram_export int HSTeuclidianWhatIf(Histogram h1, Histogram h2, ValPtr val);
+histogram_export int HSTeuclidianWhatIfMove(Histogram h1, Histogram h2, ValPtr val);
 histogram_export dbl HSTcityblock(Histogram h1, Histogram h2);
 histogram_export dbl HSTchebyshev(Histogram h1, Histogram h2);
 histogram_export dbl HSTeuclidianDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
@@ -130,6 +139,18 @@ HSTincrement(Histogram h, ValPtr val){
 	}
 }
 
+void 
+HSTdecrement(Histogram h, ValPtr val){
+	switch( val->vtype){
+		case TYPE_bte: HSTdec_bte(h, val->val.btval); break;
+		case TYPE_sht: HSTdec_sht(h, val->val.shval); break;
+		case TYPE_int: HSTdec_int(h, val->val.ival); break;
+		case TYPE_lng: HSTdec_lng(h, val->val.lval); break;
+		case TYPE_dbl: HSTdec_dbl(h, val->val.dval); break;
+		case TYPE_flt: HSTdec_flt(h, val->val.fval); break;
+	}
+}
+
 dbl
 HSTeuclidian(Histogram h1, Histogram h2){
 	lng sum= 0;
@@ -142,7 +163,7 @@ HSTeuclidian(Histogram h1, Histogram h2){
 
 /*get the bin we would increment if we would add this value*/
 int
-HSTincrementWhatIf(Histogram h, ValPtr val){
+HSTgetIndex(Histogram h, ValPtr val){
 	int index;
 	switch( val->vtype){
 		case TYPE_bte: index= (val->val.btval - h->low.val.btval) / h->inc.val.btval;
@@ -155,7 +176,7 @@ HSTincrementWhatIf(Histogram h, ValPtr val){
 	return index;
 }
 
-/* if 1 then adding this value to h2 increase the distance between h1-h2*/
+/* if 1 then adding this value to h2 increases the distance between h1-h2*/
 int
 HSTeuclidianWhatIf(Histogram h1, Histogram h2, ValPtr val){
 	lng sum= 0, sumWhatIf=0, cur;
@@ -163,7 +184,7 @@ HSTeuclidianWhatIf(Histogram h1, Histogram h2, ValPtr val){
 	int i, affectedBin;
 	assert(h1->bins == h2->bins);
 
-	affectedBin = HSTincrementWhatIf(h2,val);
+	affectedBin = HSTgetIndex(h2,val);
 
 	for ( i = 0; i < h1->bins; i++){
 		cur = (h1->cnt[i] - h2->cnt[i]) * (h1->cnt[i] - h2->cnt[i]);
@@ -180,6 +201,33 @@ HSTeuclidianWhatIf(Histogram h1, Histogram h2, ValPtr val){
 	if (distanceWhatIf > distance) return 1;
 	return 0;
 }
+
+/* if 1 then moving this value to h2 increases the distance between h1-h2*/
+int
+HSTeuclidianWhatIfMove(Histogram h1, Histogram h2, ValPtr val){
+	lng sum= 0, sumWhatIf=0, cur;
+	dbl distance, distanceWhatIf;
+	int i, affectedBin;
+	assert(h1->bins == h2->bins);
+
+	affectedBin = HSTgetIndex(h1,val);
+
+	for ( i = 0; i < h1->bins; i++){
+		cur = (h1->cnt[i] - h2->cnt[i]) * (h1->cnt[i] - h2->cnt[i]);
+		sum += cur;
+		if (i==affectedBin)
+			sumWhatIf += ((h1->cnt[i]-1) - (h2->cnt[i]+1)) * ((h1->cnt[i]-1) - (h2->cnt[i]+1));	
+		else
+			sumWhatIf += cur;
+	}
+
+	distance = sqrt((double) sum);
+	distanceWhatIf = sqrt((double) sumWhatIf);
+	printf("distance %f  new distance %f \n", distance, distanceWhatIf);
+	if (distanceWhatIf > distance) return 1;
+	return 0;
+}
+
 
 dbl
 HSTcityblock(Histogram h1, Histogram h2){
