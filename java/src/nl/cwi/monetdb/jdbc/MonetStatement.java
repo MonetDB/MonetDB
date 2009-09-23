@@ -825,11 +825,6 @@ public class MonetStatement implements Statement {
 
 	//== end methods of interface Statement
 
-	protected void finalize() throws Throwable {
-		close();
-		super.finalize();
-	}
-
 	/**
 	 * Adds a warning to the pile of warnings this Statement object has. If
 	 * there were no warnings (or clearWarnings was called) this warning will

@@ -1640,12 +1640,6 @@ public class MonetConnection implements Connection {
 		boolean isClosed() {
 			return(closed);
 		}
-
-
-		protected void finalize() throws Throwable {
-			close();
-			super.finalize();
-		}
 	}
 	// }}}
 	
@@ -1960,11 +1954,6 @@ public class MonetConnection implements Connection {
 			for (int i = 0; i < responses.size(); i++) {
 				closeResponse(i);
 			}
-		}
-
-		protected void finalize() throws Throwable {
-			close();
-			super.finalize();
 		}
 
 		/**
