@@ -55,8 +55,8 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
 
-	if (!GDKgetenv_isyes("replication_master") &&
-			!GDKgetenv_istrue("replication_master"))
+	if ( GDKgetenv("replication_master")== NULL || 
+		  !GDKgetenv_istrue("replication_master"))
 		return 0;
 
 	limit= mb->stop;

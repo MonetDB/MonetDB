@@ -70,6 +70,8 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	int i;
 	(void) cntxt;
 
+	if ( p->argc == p->retc )
+		return FALSE;
 	for( i= p->retc; i < p->argc; i++)
 		if( isVarConstant(mb, getArg(p,i)) == FALSE)
 			return FALSE;
