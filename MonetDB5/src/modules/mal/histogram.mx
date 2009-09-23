@@ -130,7 +130,7 @@ HSTnew(int bins, ValPtr minval, ValPtr maxval)
 /*get the bin we would increment if we would add this value*/
 int
 HSTgetIndex(Histogram h, ValPtr val){
-	int index;
+	int index =0;
 	switch( val->vtype){
 		case TYPE_bte:	{ 
 					if (val->val.btval > h->hgh.val.btval) 
