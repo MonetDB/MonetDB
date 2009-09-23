@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MEROVINGIAN 1 "JULY 2009" Application "MonetDB Applications"
+.TH MEROVINGIAN 1 "SEPTEMBER 2009" Application "MonetDB Applications"
 .SH NAME
 merovingian \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -165,6 +165,23 @@ listens to the given port, which defaults to the setting of
 .BR mero_port .
 If the port is set to 0, the neighbour discovery service is disabled and
 hence no announcements will be made, nor received.
+.IP mero_controlport
+Each
+.B merovingian
+can possibly be controlled from a remote site, using
+.BR monetdb (1).
+The port to use can be set via this option.  If unset,
+.B merovingian
+cannot be controlled remotely, but only via the local system by means of
+a UNIX domain socket.  Remote control requests are required to be
+authenticated using a password.  The password for this is stored in
+the .merovingian_pass file in the dbfarm.  If it doesn't exist,
+.B merovingian
+will create one to protect itself in case remote control is enabled.
+One can set a password in this file.  Note that
+.B merovingian
+needs to be restarted in order to pick up changes in
+the .merovingian_pass file.
 .P
 Next to these global settings,
 .B merovingian

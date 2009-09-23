@@ -1,6 +1,13 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  23 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.1, monetdb.c,
+  merovingian.1, merovingian.c, merovingian_controlrunner.c:
+  Implemented Feature Request #2830754. monetdb can now control a remote
+  merovingian using the -h -p and -P global options to monetdb. The password
+  used is stored at the merovingian site in the .merovingian_pass file in the
+  controlled dbfarm.
+
   18 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c, monetdb.1:
   monetdb now requires merovingian to be running to perform any
   operation

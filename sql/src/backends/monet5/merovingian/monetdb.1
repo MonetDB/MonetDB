@@ -1,18 +1,46 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "AUGUST 2009" Application "MonetDB Applications"
+.TH MONETDB 1 "SEPTEMBER 2009" Application "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
 .B monetdb
-command [command_options] [command_args]
+[monetdb_options] command [command_options] [command_args]
 .SH DESCRIPTION
 .B monetdb
 allows an administrator of the MonetDB Database Server to perform
 various operations on the databases in the server.  It relies on
 .BR merovingian (1)
 running in the background for all operations.
+.SH OPTIONS
+.I monetdb_options
+affect all commands and control the general behaviour of
+.BR monetdb .
+.IP "\-q"
+Supresses all standard progress messages, only writing output to stderr
+if an error occurred.
+.IP "\-h hostname"
+Connect to
+.I hostname
+instead of attempting a connection over the local UNIX socket.  This
+allows
+.B monetdb
+to connect to a remote
+.BR merovingian (1).
+The use of this option requires \-P (see below).
+.IP "\-p port"
+Connects to the given portnumber instead of the default (50001).
+Requires \-h to be given as option too.
+.IP "\-P passphrase"
+Specifies the passphrase necessary to login to a remote
+.BR merovingian (1).
+This option requires \-h to be given as well.  A bad passphrase causes
+.B monetdb
+to fail to login, and hence fail to perform any remote action.
+.IP "\-v"
+Show version, equal to
+.IR "monetdb version" .
 .SH COMMANDS
 The commands for the
 .B monetdb
@@ -60,7 +88,7 @@ available again for normal use by any client, and is started on demand.
 Use the
 .B lock
 command to take a database under maintenance.
-.IP "status [\-lc] [\-s<state>...] [expression ...]"
+.IP "status [\-lc] [\-s states] [expression ...]"
 Shows the state of the given database(s) or, when none given, all known
 databases.  The database names can be given as expressions, allowing to
 do wildcard matches.  For details on the syntax, see

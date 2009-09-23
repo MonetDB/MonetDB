@@ -77,18 +77,27 @@ typedef char* err;
 static str dbfarm = NULL;
 static int mero_running = 0;
 static char mero_control[8096];
+static char *mero_host = NULL;
+static int mero_port = -1;
+static char *mero_pass = NULL;
+static char monetdb_quiet = 0;
 static int TERMWIDTH = 80;  /* default to classic terminal width */
 
 static void
 command_help(int argc, char *argv[])
 {
 	if (argc < 2) {
-		printf("Usage: monetdb command [command-options-and-arguments]\n");
+		printf("Usage: monetdb [options] command [command-options-and-arguments]\n");
 		printf("  where command is one of:\n");
 		printf("    create, destroy, lock, release\n");
 		printf("    status, start, stop, kill\n");
 		printf("    set, get, inherit\n");
 		printf("    discover, help, version\n");
+		printf("  options can be:\n");
+		printf("    -q       suppress status output\n");
+		printf("    -h host  hostname to contact (remote merovingian)\n");
+		printf("    -p port  port to contact\n");
+		printf("    -P pass  password to use to login at remote merovingian\n");
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "create") == 0) {
 		printf("Usage: monetdb create database [database ...]\n");
@@ -206,7 +215,8 @@ simple_argv_cmd(int argc, char *argv[], char *merocmd,
 			fflush(stdout);
 		}
 
-		ret = control_send(&out, mero_control, -1, argv[i], merocmd, 0, NULL);
+		ret = control_send(&out, mero_host, mero_port,
+				argv[i], merocmd, 0, mero_pass);
 
 		if (ret != NULL) {
 			if (premsg != NULL)
@@ -290,9 +300,11 @@ MEROgetStatus(sabdb **ret, char *database)
 	if (database == NULL) {
 		/* I ran out of creative ideas on this one, so I just injected
 		 * the last(?) sight we might see from van der Decken */
-		e = control_send(&buf, mero_control, -1, "flyghende", "hollander", 1, NULL);
+		e = control_send(&buf, mero_host, mero_port,
+				"flyghende", "hollander", 1, mero_pass);
 	} else {
-		e = control_send(&buf, mero_control, -1, database, "status", 0, NULL);
+		e = control_send(&buf, mero_host, mero_port,
+				database, "status", 0, mero_pass);
 	}
 	if (e != NULL)
 		return(e);
@@ -722,7 +734,8 @@ command_discover(int argc, char *argv[])
 	 * merovingian.  Anelosimus eximius is a social species of spiders,
 	 * which help each other, just like merovingians do among each
 	 * other. */
-	p = control_send(&buf, mero_control, -1, "anelosimus", "eximius", 1, NULL);
+	p = control_send(&buf, mero_host, mero_port,
+			"anelosimus", "eximius", 1, mero_pass);
 	if (p != NULL) {
 		printf("%s: %s\n", argv[0], p);
 		free(p);
@@ -967,7 +980,8 @@ command_set(int argc, char *argv[], meroset type)
 			exit(1);
 		}
 
-		out = control_send(&res, mero_control, -1, argv[2], p, 0, NULL);
+		out = control_send(&res, mero_host, mero_port,
+				argv[2], p, 0, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -987,7 +1001,8 @@ command_set(int argc, char *argv[], meroset type)
 			strncat(property, "=", sizeof(property));
 			p = property;
 		}
-		out = control_send(&res, mero_control, 0, argv[i], p, 0, NULL);
+		out = control_send(&res, mero_host, mero_port,
+				argv[i], p, 0, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1114,7 +1129,8 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 				value = stats->dbname;
 			} else {
 				char *buf;
-				e = control_send(&buf, mero_control, -1, stats->dbname, "get", 1, NULL);
+				e = control_send(&buf, mero_host, mero_port,
+						stats->dbname, "get", 1, mero_pass);
 				if (e != NULL) {
 					fprintf(stderr, "get: internal error: %s\n", e);
 					free(e);
@@ -1224,6 +1240,7 @@ main(int argc, char *argv[])
 	str p, prefix;
 	FILE *cnf = NULL;
 	char buf[1024];
+	int i;
 	int fd;
 	confkeyval ckv[] = {
 		{"prefix",             GDKstrdup(MONETDB5_PREFIX), STR},
@@ -1300,48 +1317,128 @@ main(int argc, char *argv[])
 	SABAOTHinit(dbfarm, NULL);
 
 	/* Start handling the arguments.
-	 * monetdb command [options] [database [...]] */
+	 * monetdb [monetdb_options] command [options] [database [...]]
+	 * this means we first scout for monetdb_options which stops as soon
+	 * as we find a non-option argument, which then must be command */
+	
+	/* first handle the simple no argument case */
 	if (argc <= 1) {
 		command_help(0, NULL);
 		freeConfFile(ckv);
 		return(1);
-	} else if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0) {
-		command_help(argc - 1, &argv[1]);
+	}
+	
+	/* handle monetdb_options */
+	for (i = 1; argc > i && argv[i][0] == '-'; i++) {
+		switch (argv[i][1]) {
+			case 'v':
+				command_version();
+				freeConfFile(ckv);
+			return(0);
+			case 'q':
+				monetdb_quiet = 1;
+			break;
+			case 'h':
+				if (strlen(&argv[i][2]) > 0) {
+					mero_host = &argv[i][2];
+				} else {
+					if (i + 1 < argc) {
+						mero_host = argv[++i];
+					} else {
+						fprintf(stderr, "monetdb: -h needs an argument\n");
+						return(1);
+					}
+				}
+			break;
+			case 'p':
+				if (strlen(&argv[i][2]) > 0) {
+					mero_port = atoi(&argv[i][2]);
+				} else {
+					if (i + 1 < argc) {
+						mero_port = atoi(argv[++i]);
+					} else {
+						fprintf(stderr, "monetdb: -p needs an argument\n");
+						return(1);
+					}
+				}
+			break;
+			case 'P':
+				/* take care we remove the password from argv so it
+				 * doesn't show up in e.g. ps -ef output */
+				if (strlen(&argv[i][2]) > 0) {
+					mero_pass = strdup(&argv[i][2]);
+					memset(&argv[i][2], 0, strlen(mero_pass));
+				} else {
+					if (i + 1 < argc) {
+						mero_pass = strdup(argv[++i]);
+						memset(argv[i], 0, strlen(mero_pass));
+					} else {
+						fprintf(stderr, "monetdb: -P needs an argument\n");
+						return(1);
+					}
+				}
+			break;
+		}
+	}
+
+	/* check consistency of -h -p and -P args */
+	if (mero_pass != NULL && mero_host == NULL) {
+		fprintf(stderr, "monetdb: -P requires -h to be used\n");
+		exit(1);
+	} else if (mero_port != -1 && mero_host == NULL) {
+		fprintf(stderr, "monetdb: -p requires -h to be used\n");
+		exit(1);
+	} else if (mero_host != NULL && mero_pass == NULL) {
+		fprintf(stderr, "monetdb: -h requires -P to be used\n");
+		exit(1);
+	} else if (mero_host != NULL && mero_port == -1) {
+		mero_port = 50001;
+	}
+
+	/* commands that do not need merovingian to be running */
+	if (strcmp(argv[i], "help") == 0 || strcmp(argv[i], "--help") == 0) {
+		command_help(argc - i, &argv[i]);
 		freeConfFile(ckv);
 		return(0);
-	} else if (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "-v") == 0) {
+	} else if (strcmp(argv[i], "version") == 0) {
 		command_version();
 		freeConfFile(ckv);
 		return(0);
 	}
 
-	/* if Merovingian isn't running, there's not much we can do */
-	if (mero_running == 0) {
+	/* if Merovingian isn't running, there's not much we can do, unless
+	 * we go remote */
+	if (mero_running == 0 && mero_host == NULL) {
 		fprintf(stderr, "monetdb: cannot perform: MonetDB Database Server "
 				"(merovingian) is not running\n");
 		freeConfFile(ckv);
 		return(1);
 	}
 
-	if (strcmp(argv[1], "create") == 0) {
-		command_create(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "destroy") == 0) {
-		command_destroy(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "lock") == 0) {
-		command_lock(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "release") == 0) {
-		command_release(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "status") == 0) {
-		command_status(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "start") == 0) {
-		command_startstop(argc - 1, &argv[1], START);
-	} else if (strcmp(argv[1], "stop") == 0) {
-		command_startstop(argc - 1, &argv[1], STOP);
-	} else if (strcmp(argv[1], "kill") == 0) {
-		command_startstop(argc - 1, &argv[1], KILL);
-	} else if (strcmp(argv[1], "set") == 0) {
-		command_set(argc - 1, &argv[1], SET);
-	} else if (strcmp(argv[1], "get") == 0) {
+	/* use UNIX socket if no hostname given */
+	if (mero_host == NULL)
+		mero_host = mero_control;
+
+	/* handle regular commands */
+	if (strcmp(argv[i], "create") == 0) {
+		command_create(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "destroy") == 0) {
+		command_destroy(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "lock") == 0) {
+		command_lock(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "release") == 0) {
+		command_release(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "status") == 0) {
+		command_status(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "start") == 0) {
+		command_startstop(argc - i, &argv[i], START);
+	} else if (strcmp(argv[i], "stop") == 0) {
+		command_startstop(argc - i, &argv[i], STOP);
+	} else if (strcmp(argv[i], "kill") == 0) {
+		command_startstop(argc - i, &argv[i], KILL);
+	} else if (strcmp(argv[i], "set") == 0) {
+		command_set(argc - i, &argv[i], SET);
+	} else if (strcmp(argv[i], "get") == 0) {
 		/* change the keys to our names */
 		kv = findConfKey(ckv, "mero_doproxy");
 		kv->key = "forward";
@@ -1370,17 +1467,19 @@ main(int argc, char *argv[])
 		/* enable "hidden" option, to avoid override by config-file */
 		kv = findConfKey(ckv, "#master");
 		kv->key++;
-		command_get(argc - 1, &argv[1], ckv);
-	} else if (strcmp(argv[1], "inherit") == 0) {
-		command_set(argc - 1, &argv[1], INHERIT);
-	} else if (strcmp(argv[1], "discover") == 0) {
-		command_discover(argc - 1, &argv[1]);
+		command_get(argc - i, &argv[i], ckv);
+	} else if (strcmp(argv[i], "inherit") == 0) {
+		command_set(argc - i, &argv[i], INHERIT);
+	} else if (strcmp(argv[i], "discover") == 0) {
+		command_discover(argc - i, &argv[i]);
 	} else {
-		fprintf(stderr, "%s: unknown command: %s\n", argv[0], argv[1]);
+		fprintf(stderr, "monetdb: unknown command: %s\n", argv[i]);
 		command_help(0, NULL);
 	}
 
 	freeConfFile(ckv);
+	if (mero_pass != NULL)
+		free(mero_pass);
 
 	return(0);
 }
