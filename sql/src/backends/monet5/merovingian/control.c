@@ -26,6 +26,8 @@
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h> /* sockaddr_un */
 #endif
+#include <netdb.h>
+#include <netinet/in.h>
 #include <errno.h>
 
 #define SOCKPTR struct sockaddr *
@@ -38,7 +40,6 @@
  * multi-line responses, but can lock up for single line responses where
  * the server allows pipelining (and hence doesn't close the
  * connection).
- * TODO: implement TCP connect
  */
 char* control_send(
 		char** ret,
@@ -51,22 +52,47 @@ char* control_send(
 	char sbuf[8096];
 	char *buf;
 	int sock = -1;
-	struct sockaddr_un server;
 	size_t len;
 
-	(void)port;
-	/* UNIX socket connect */
-	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-		snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
-				strerror(errno));
-		return(strdup(sbuf));
-	}
-	memset(&server, 0, sizeof(struct sockaddr_un));
-	server.sun_family = AF_UNIX;
-	strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
-	if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
-		snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
-		return(strdup(sbuf));
+	if (port == -1) {
+		struct sockaddr_un server;
+		/* UNIX socket connect */
+		if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
+			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
+					strerror(errno));
+			return(strdup(sbuf));
+		}
+		memset(&server, 0, sizeof(struct sockaddr_un));
+		server.sun_family = AF_UNIX;
+		strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
+		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
+			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
+			return(strdup(sbuf));
+		}
+	} else {
+		struct sockaddr_in server;
+		struct hostent *hp;
+
+		/* TCP socket connect */
+		if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
+					strerror(errno));
+			return(strdup(sbuf));
+		}
+		hp = gethostbyname(host);
+		if (hp == NULL) {
+			snprintf(sbuf, sizeof(sbuf), "cannot lookup hostname: %s",
+					strerror(errno));
+			return(strdup(sbuf));
+		}
+		memset(&server, 0, sizeof(struct sockaddr_in));
+		server.sin_family = hp->h_addrtype;
+		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
+		server.sin_port = htons((unsigned short) (port & 0xFFFF));
+		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_in)) < 0) {
+			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
+			return(strdup(sbuf));
+		}
 	}
 
 	len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);
