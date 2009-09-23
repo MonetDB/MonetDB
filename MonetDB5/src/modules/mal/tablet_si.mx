@@ -127,15 +127,15 @@ get_val(Column * fmt, char *s, char quote, str *err, int c)
 }
 
 void
-replaceVal(BAT * b, int position, ValPtr val)
+replaceVal(BAT * b, oid position, ValPtr val)
 {
 	switch( val->vtype){
-		case TYPE_bte: *(bte*)Tloc(b,position) = val->val.btval;
-                case TYPE_sht: *(sht*)Tloc(b,position) = val->val.shval;
-                case TYPE_int: *(int*)Tloc(b,position) = val->val.ival;
-                case TYPE_lng: *(lng*)Tloc(b,position) = val->val.lval;
-                case TYPE_dbl: *(dbl*)Tloc(b,position) = val->val.dval;
-                case TYPE_flt: *(flt*)Tloc(b,position) = val->val.fval;
+		case TYPE_bte: *(bte*)Tloc(b,BUNfirst(b)+position) = val->val.btval; break; 
+                case TYPE_sht: *(sht*)Tloc(b,BUNfirst(b)+position) = val->val.shval; break;
+                case TYPE_int: *(int*)Tloc(b,BUNfirst(b)+position) = val->val.ival;  break;
+                case TYPE_lng: *(lng*)Tloc(b,BUNfirst(b)+position) = val->val.lval;  break;
+                case TYPE_dbl: *(dbl*)Tloc(b,BUNfirst(b)+position) = val->val.dval;  break;
+                case TYPE_flt: *(flt*)Tloc(b,BUNfirst(b)+position) = val->val.fval;  break;
 	}	
 }
 
@@ -158,7 +158,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	int distance;
 
 	SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
-	
+
 	/*sample to get min-max*/
 	sampleSize=SmallSliceSize>100?100:SmallSliceSize; /*sample up to 100 values*/	
 	sample = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,sampleSize);
@@ -206,7 +206,16 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		}
 
 		/*choose target BAT in order to balance the histogram distance*/
-		distance = HSTeuclidianWhatIf(h1,h2,newValue);
+
+		#ifdef _DEBUG_SLICER_
+			printf("ready to insert new value %d \n",newValue->val.ival);
+			BATprint(fmt->c[0]);
+			HSTprintf(h1);
+			BATprint(BigSlice);
+			HSTprintf(h2);
+		#endif
+
+		distance = HSTbinrelativeWhatIf(h1,h2,newValue);
 		if (distance==0){
 			bunfastins(BigSlice, key, adt);
 			HSTincrement(h2, newValue);
@@ -224,10 +233,10 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
 			for (j=0; j<sizeSmall; j++){
 				VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,j));
-				distance = HSTeuclidianWhatIfMove(h1,h2,curVal);
+				distance = HSTbinrelativeWhatIfMove(h1,h2,curVal);
 				if (distance==0){
 					#ifdef _DEBUG_SLICER_
-						printf("replace\n");
+						printf("replacei %d\n", j);
 					#endif
 					replaceVal(fmt->c[0], j, newValue);
 					HSTdecrement(h1,curVal);
