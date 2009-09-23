@@ -17,9 +17,7 @@
  * All Rights Reserved.
  */
 
-/* NOTE: for this file to work correctly, SABAOTHinit must be called,
- * and the random number generator must have been seeded (srand) with
- * something like the current time */
+/* NOTE: for this file to work correctly, SABAOTHinit must be called. */
 
 #include "sql_config.h"
 #include "mal_sabaoth.h"

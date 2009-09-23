@@ -104,3 +104,38 @@ char* control_send(
 
 	return(NULL);
 }
+
+/**
+ * Returns a hash for pass and salt, to use when logging in on a remote
+ * merovingian.  The result is a malloced string.
+ */
+char *
+control_hash(char *pass, char *salt) {
+	unsigned int ho;
+	unsigned int h = 0;
+	char buf[32];
+
+	/* use a very simple hash function designed for a single int val
+	 * (hash buckets), we can make this more interesting if necessary in
+	 * the future.
+	 * http://www.cs.hmc.edu/~geoff/classes/hmc.cs070.200101/homework10/hashfuncs.html */
+
+	while (*pass != '\0') {
+		ho = h & 0xf8000000;
+		h <<= 5;
+		h ^= ho >> 27;
+		h ^= (unsigned int)(*pass);
+		pass++;
+	}
+
+	while (*salt != '\0') {
+		ho = h & 0xf8000000;
+		h <<= 5;
+		h ^= ho >> 27;
+		h ^= (unsigned int)(*salt);
+		salt++;
+	}
+
+	snprintf(buf, sizeof(buf), "%u", h);
+	return(strdup(buf));
+}

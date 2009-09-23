@@ -27,5 +27,6 @@ char* control_send(
 		char* database,
 		char* command,
 		char wait);
+char* control_hash(char *pass, char *salt);
 
 #endif

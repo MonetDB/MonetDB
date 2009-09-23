@@ -23,6 +23,9 @@
  * Shared utility functions between merovingian and monetdb
  */
 
+/* NOTE: for this file to work correctly, the random number generator
+ * must have been seeded (srand) with something like the current time */
+
 #include "sql_config.h"
 #include "utils.h"
 #include <stdio.h> /* fprintf, fgets */
@@ -262,21 +265,34 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
+/**
+ * Fills the array pointed to by buf of size len with a random salt.
+ * Padds the remaining bytes in buf with null-bytes.
+ */
+void
+generateSalt(char **buf, unsigned int len)
+{
+	unsigned int c;
+	unsigned int size = (unsigned int)rand();
+	unsigned int fill = len * 0.75;
+	unsigned int min = len * 0.42;
+	size = (size % (fill - min)) + min;
+	for (c = 0; c < size; c++)
+		(*buf)[c] = seedChars[rand() % 62];
+	for ( ; c < len; c++)
+		(*buf)[c] = '\0';
+}
+
 char *
 generatePassphraseFile(char *path)
 {
-	unsigned int c;
-	char buf[48];
 	FILE *f;
-	unsigned int size = (unsigned int)rand();
-	size = (size % (36 - 20)) + 20;
-	for (c = 0; c < size; c++)
-		buf[c] = seedChars[rand() % 62];
-	for ( ; c < 48; c++)
-		buf[c] = '\0';
+	char *buf = alloca(sizeof(char) * 48);
+
+	generateSalt(&buf, 48);
 	f = fopen(path, "w");
 	if (fwrite(buf, 1, 48, f) < 48) {
-		snprintf(buf, sizeof(buf), "cannot write vaultkey: %s",
+		snprintf(buf, sizeof(buf), "cannot write secret: %s",
 				strerror(errno));
 		fclose(f);
 		return(strdup(buf));

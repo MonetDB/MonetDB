@@ -136,7 +136,6 @@ controlRunner(void *d)
 		if (sock == tsock) {
 			struct sockaddr_in saddr;
 			socklen_t saddrlen = sizeof(struct sockaddr_in);
-			/* TODO */
 
 			/* below routine is eligable for a function (reuse in
 			 * merovingian_client.c) */
@@ -168,6 +167,34 @@ controlRunner(void *d)
 					sprintf(origin, "%s:%u",
 							hoste->h_name, (unsigned)(ntohs(saddr.sin_port)));
 				}
+			}
+
+			/* send challenge */
+			p = buf;
+			generateSalt(&p, 32);
+			len = snprintf(buf2, sizeof(buf2),
+					"merovingian:%s:%s:\n", MERO_VERSION, p);
+			send(msgsock, buf2, len, 0);
+			if ((pos = recv(msgsock, buf2, sizeof(buf2), 0)) == 0) {
+				close(msgsock);
+				continue;
+			} else if (pos == -1) {
+				Mfprintf(_mero_ctlerr, "%s: error reading from control "
+						"channel: %s\n", origin, strerror(errno));
+				close(msgsock);
+				continue;
+			}
+			buf2[pos] = '\0';
+			pos = 0;
+			p = control_hash(_mero_controlpass, p);
+			if (strcmp(buf2, p) != 0) {
+				Mfprintf(_mero_ctlout, "%s: permission denied (bad passphrase)",
+						origin);
+				len = snprintf(buf2, sizeof(buf2),
+						"access denied\n");
+				send(msgsock, buf2, len, 0);
+				close(msgsock);
+				continue;
 			}
 		}
 
