@@ -132,6 +132,20 @@ get_val(Column * fmt, char *s, char quote, str *err, int c)
 		
 	return adt;
 }
+
+void
+replaceVal(BAT * b, int position, ValPtr val)
+{
+	switch( val->vtype){
+		case TYPE_bte: *(bte*)Tloc(b,position) = val->val.btval;
+                case TYPE_sht: *(sht*)Tloc(b,position) = val->val.shval;
+                case TYPE_int: *(int*)Tloc(b,position) = val->val.ival;
+                case TYPE_lng: *(lng*)Tloc(b,position) = val->val.lval;
+                case TYPE_dbl: *(dbl*)Tloc(b,position) = val->val.dval;
+                case TYPE_flt: *(flt*)Tloc(b,position) = val->val.fval;
+	}	
+}
+
 static int
 Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 {
@@ -198,20 +212,51 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			bunfastins(BigSlice, key, adt);
 			HSTincrement(h2, newValue);
 		}else{
+			int j;
+			bit moved = FALSE;
+			BATiter bi;
+			ValPtr curVal;
+			int sizeSmall = BATcount(fmt->c); 
 			printf("add to small\n");
-			bunfastins(fmt->c, key, adt);
+			//bunfastins(fmt->c, key, adt);
 			HSTincrement(h1, newValue);
+
+			/* pick a tuple to move to the big one */
+			bi = bat_iterator(fmt->c);
+			curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
+			for (j=0; j<sizeSmall; j++){
+				VALset(curVal, fmt->c->ttype, BUNtail(bi,j));
+				distance = HSTeuclidianWhatIfMove(h1,h2,curVal);
+				if (distance==0){
+					moved = TRUE;
+					printf("found val to replace %d %d with %d\n",j,curVal->val.ival, newValue->val.ival);
+					replaceVal(fmt->c, j, newValue);
+					HSTprintf(h1);
+					HSTdecrement(h1,curVal);
+					HSTprintf(h1);
+					bunfastins(BigSlice, key,&curVal->val.ival);
+					HSTincrement(h2,curVal);
+					BATprint(fmt->c);
+					BATprint(BigSlice);
+					break;
+				}
+			}
+			/*could not find a tuple to move*/
+			if (!moved){
+				printf(" could not find a tuple to move: add to big\n");
+				bunfastins(BigSlice, key, adt);
+				HSTincrement(h2, newValue);
+				HSTdecrement(h1, newValue);
+			}
+			
 		}		
 	}	
 
+	printf("result state \n");
 	BATprint(fmt->c);
 	HSTprintf(h1);
 	BATprint(BigSlice);
 	HSTprintf(h2);
-	
-	/*
-	StatisticalCrack(fmt->c,BigSlice,key,adt,h1,h2,distance);
-	*/
 	
 	return 0;
 
