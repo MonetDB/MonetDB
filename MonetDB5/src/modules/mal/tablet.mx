@@ -1313,7 +1313,7 @@ TABLETcollect_bats(Tablet * as)
 		BATpropcheck(fmt[i].c, BATPROPS_ALL);
 		BATpropcheck(BATmirror(fmt[i].c), BATPROPS_ALL);
 		if (cnt != BATcount(fmt[i].c)) {
-			GDKerror("Error: the counts of column %d differes from first\n",i);
+			GDKerror("Error: the count of column %d differs from that of the first column\n",i);
 			return NULL;
 		}
 	}
