@@ -433,6 +433,7 @@ main(int argc, char *argv[])
 	int sock = -1;
 	int usock = -1;
 	int unsock = -1;
+	int csock = -1;
 	char doproxy = 1;
 	unsigned short discoveryport;
 	unsigned short controlport;
@@ -881,12 +882,15 @@ main(int argc, char *argv[])
 
 	/* open up connections */
 	if (
-			(e = openConnectionTCP(&sock, _mero_port)) == NO_ERR &&
+			(e = openConnectionTCP(&sock, _mero_port, stdout)) == NO_ERR &&
 			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
-			(e = openConnectionUNIX(&unsock, buf)) == NO_ERR)
+			(e = openConnectionUNIX(&unsock, buf)) == NO_ERR &&
+			(controlport == 0 || (e = openConnectionTCP(&csock, controlport, _mero_ctlout)) == NO_ERR)
+	   )
 	{
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
+		int csocks[2];
 
 		_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
 		ret = 1;
@@ -921,8 +925,10 @@ main(int argc, char *argv[])
 		}
 
 		/* handle control commands */
+		csocks[0] = unsock;
+		csocks[1] = csock;
 		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner,
-					(void *)&unsock) < 0)
+					(void *)&csocks) < 0)
 		{
 			Mfprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;

@@ -18,7 +18,7 @@
  */
 
 static err
-openConnectionTCP(int *ret, unsigned short port)
+openConnectionTCP(int *ret, unsigned short port, FILE *log)
 {
 	struct sockaddr_in server;
 	int sock = -1;
@@ -75,7 +75,7 @@ openConnectionTCP(int *ret, unsigned short port)
 	/* keep queue of 5 */
 	listen(sock, 5);
 
-	Mfprintf(stdout, "listening for TCP connections on %s:%hu\n", host, port);
+	Mfprintf(log, "listening for TCP connections on %s:%hu\n", host, port);
 
 	*ret = sock;
 	return(NO_ERR);
