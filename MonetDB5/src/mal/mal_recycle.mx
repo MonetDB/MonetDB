@@ -962,10 +962,10 @@ VALisNil(ValPtr p)
 static void
 setSelectProp(InstrPtr q)
 {
-	ValPtr lb, ub;
+	ValPtr lb = NULL, ub = NULL;
 	ValRecord lbval, ubval, nilval;
 	int bid, tpe = 0;
-	ptr nilptr;
+	ptr nilptr = NULL;
 	int (*cmp) (ptr, ptr) = NULL;
 
     str selectRef = putName("select",6);
