@@ -52,15 +52,8 @@ observed time spending so far.
 #include <gdk_posix.h>
 
 #define _SLICE_TABLET_ 
+#define _DEBUG_SLICER_ 
 
-/* All the params below should eventually be dynamically defined per column 
-   For simplicity in the initial stages keep them global and fixed */
-#ifdef _SLICE_TABLET_ 
-oid SmallSliceSize  = 2; /* Assume this is known */
-BAT *BigSlice = NULL; 	/*toy BAT to play with the algos without worying for SQL for now*/
-Histogram h1 = NULL;
-Histogram h2 = NULL;
-#endif
 
 typedef struct{
 	int next;
@@ -151,34 +144,41 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 {
 	/*naive : fill big, fill small, then rearrange with every new value */
 	char buf[BUFSIZ];	
+	oid SmallSliceSize;
+	BAT *BigSlice = NULL; 	/*toy BAT to play with the algos without worying for SQL for now*/
+	Histogram h1 = NULL;
+	Histogram h2 = NULL;
 	int i;
 	ptr *adt;
 	BATiter bsi;
 	BAT *sample, *sortedSample;
 	ValPtr vmin, vmax;
-	/*toy values*/
-	int sampleSize=2; 
+	int sampleSize; 
 	int bins=2;
-	int distance =0;
+	int distance;
+
+	SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
 	
 	/*sample to get min-max*/
+	sampleSize=SmallSliceSize>100?100:SmallSliceSize; /*sample up to 100 values*/	
 	sample = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,sampleSize);
 	for ( i = 0; i< sampleSize ; i++){
 		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
 		bunfastins(sample, key, adt);
 	}
+	sample->tsorted = FALSE;
 	sortedSample = BATtsort(sample);
 	bsi = bat_iterator(sortedSample);
-	BATprint(sample);
-	BATprint(sortedSample);
 	vmin= (ValPtr) GDKzalloc(sizeof(ValRecord));
 	vmax= (ValPtr) GDKzalloc(sizeof(ValRecord));
 	VALset(vmin, fmt->c[0]->ttype, BUNtail(bsi,0));
 	VALset(vmax, fmt->c[0]->ttype, BUNtail(bsi,sampleSize-1));	
 	
-	printf("min %d \n", vmin->val.ival);
-	printf("max %d \n", vmax->val.ival);
- 
+	#ifdef _DEBUG_SLICER_
+		printf("min %d \n", vmin->val.ival);
+		printf("max %d \n", vmax->val.ival);
+ 	#endif
+
 	for ( i = 0; i< task->next ; i++){
 		ValPtr newValue = (ValPtr) GDKzalloc(sizeof(ValRecord));
 		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
@@ -208,17 +208,15 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		/*choose target BAT in order to balance the histogram distance*/
 		distance = HSTeuclidianWhatIf(h1,h2,newValue);
 		if (distance==0){
-			printf(" add to big\n");
 			bunfastins(BigSlice, key, adt);
 			HSTincrement(h2, newValue);
 		}else{
 			int j;
 			bit moved = FALSE;
 			BATiter bi;
-			ValPtr curVal;
 			int sizeSmall = BATcount(fmt->c[0]); 
-			printf("add to small\n");
-			//bunfastins(fmt->c[0], key, adt);
+			ValPtr curVal;
+
 			HSTincrement(h1, newValue);
 
 			/* pick a tuple to move to the big one */
@@ -228,35 +226,38 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 				VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,j));
 				distance = HSTeuclidianWhatIfMove(h1,h2,curVal);
 				if (distance==0){
-					moved = TRUE;
-					printf("found val to replace %d %d with %d\n",j,curVal->val.ival, newValue->val.ival);
+					#ifdef _DEBUG_SLICER_
+						printf("replace\n");
+					#endif
 					replaceVal(fmt->c[0], j, newValue);
-					HSTprintf(h1);
 					HSTdecrement(h1,curVal);
-					HSTprintf(h1);
 					bunfastins(BigSlice, key,&curVal->val.ival);
 					HSTincrement(h2,curVal);
-					BATprint(fmt->c[0]);
-					BATprint(BigSlice);
+					moved = TRUE;
 					break;
 				}
 			}
 			/*could not find a tuple to move*/
 			if (!moved){
-				printf(" could not find a tuple to move: add to big\n");
+
+				#ifdef _DEBUG_SLICER_
+					printf(" could not find a tuple to move: add to big\n");
+				#endif
+
 				bunfastins(BigSlice, key, adt);
 				HSTincrement(h2, newValue);
 				HSTdecrement(h1, newValue);
 			}
-			
 		}		
 	}	
 
-	printf("result state \n");
-	BATprint(fmt->c[0]);
-	HSTprintf(h1);
-	BATprint(BigSlice);
-	HSTprintf(h2);
+	#ifdef _DEBUG_SLICER_
+		printf("result state \n");
+		BATprint(fmt->c[0]);
+		HSTprintf(h1);
+		BATprint(BigSlice);
+		HSTprintf(h2);
+	#endif
 	
 	return 0;
 
