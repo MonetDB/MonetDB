@@ -188,14 +188,17 @@ controlRunner(void *d)
 			pos = 0;
 			p = control_hash(_mero_controlpass, p);
 			if (strcmp(buf2, p) != 0) {
-				Mfprintf(_mero_ctlout, "%s: permission denied (bad passphrase)",
-						origin);
+				Mfprintf(_mero_ctlout, "%s: permission denied "
+						"(bad passphrase)\n", origin);
 				len = snprintf(buf2, sizeof(buf2),
 						"access denied\n");
 				send(msgsock, buf2, len, 0);
 				close(msgsock);
 				continue;
 			}
+
+			len = snprintf(buf2, sizeof(buf2), "OK\n");
+			send(msgsock, buf2, len, 0);
 		}
 
 		while (_mero_keep_listening) {
