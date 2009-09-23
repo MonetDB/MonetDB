@@ -623,11 +623,13 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
 	  if ( rebuild ) {
 	      # INCOMPLETE, not throwing them away is much faster!!!
               bat(_tj_TermBat(ftiName)).delete();
+              bat("tj_" + ftiName + "_termfreq").delete();
               bat(_tj_TagBat(ftiName)).delete();
               bat(_tj_RTagBat(ftiName)).delete();
 	  } else {
 	      if ( VOID_TTBAT) {
                   new(void,str).seqbase(0@0).persists(true).bbpname(_tj_TermBat(ftiName));
+                  new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_termfreq");
                   new(void,str).seqbase(0@0).persists(true).bbpname(_tj_TagBat(ftiName));
 	      } else {
                   new(oid,str).persists(true).bbpname(_tj_TermBat(ftiName));
@@ -648,7 +650,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
 		var bn := "tj_" + ftiName + "_tid";
 		_tj_safe_remove(bn);
                 extra_del_bat.append(bn);
-		bn := "tj_" + ftiName + "_size" + str(frag_offset);
+		bn := "tj_" + ftiName + "_size";
 		_tj_safe_remove(bn);
                 extra_del_bat.append(bn);
 		frag_offset :+= 1;
@@ -927,6 +929,7 @@ PROC tj_delete_collection(str ftiName, bit doAdmLock) : void
     var err := CATCH({
         if ( not(GLOBAL_TTBAT) ) {
           _tj_safe_remove(_tj_TermBat(ftiName));
+          _tj_safe_remove("tj_" + ftiName + "_termfreq");
           _tj_safe_remove(_tj_TagBat(ftiName));
           _tj_safe_remove(_tj_RTagBat(ftiName));
         }
@@ -965,6 +968,7 @@ PROC _tj_collection_str(str ftiName) : BAT[void,bat]
         var tjCollBat := new(void,str).seqbase(0@0);
 
         tjCollBat.append(_tj_TermBat(ftiName));
+        tjCollBat.append("tj_" + ftiName + "_termdict");
         tjCollBat.append(_tj_TagBat(ftiName));
         tjCollBat.append(_tj_RTagBat(ftiName));
         tjCollBat.append("tj_pfc_fti_dep");
@@ -1015,6 +1019,7 @@ PROC _tj_collection(str ftiName) : BAT[str, bat]
 	     ERROR("_tj_collection():%s: pftijah index structure changed, reindex collection!!",curversion);
 	}
 	tjCollBat.insert("termdict", bat(_tj_TermBat(ftiName)));
+	tjCollBat.insert("termfreq", bat("tj_" + ftiName + "_termfreq"));
 	tjCollBat.insert("tagdict", bat(_tj_TagBat(ftiName)));
 	tjCollBat.insert("rtags", bat(_tj_RTagBat(ftiName)));
 	tjCollBat.insert("doc_name", bat("tj_" + ftiName + "_doc_name"));
@@ -1243,6 +1248,7 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
     _tj_set_parameter(collBat, "_last_finalizedPre", lst_fpre);
     #
     collBat.find("submitBats").append(_tj_TermBat(ftiName));
+    collBat.find("submitBats").append("tj_" + ftiName + "_termfreq");
     collBat.find("submitBats").append(_tj_TagBat(ftiName));
     collBat.find("submitBats").append(_tj_RTagBat(ftiName));
     
@@ -1455,6 +1461,9 @@ PROC _tj_init_collection_base(str ftiName, BAT[str,str] param, BAT[str,bat] comm
           submitBats.append(_tj_RTagBat(ftiName));
           submitBats.append("tj_" + ftiName + "_conceptdict");
       }
+      # create global term frequency table
+      new(void,int).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_termfreq");
+      submitBats.append("tj_" + ftiName + "_termfreq");
 
       # create param BAT
       new(str,str).persists(true).bbpname("tj_" + ftiName + "_param");
@@ -1606,6 +1615,7 @@ PROC _tj_get_collection_frag(str ftiName, BAT[str,bat] commitBats) : void
 	tjCollBat.insert("tagdict", bat(_tj_TagBat(ftiName)));
 	tjCollBat.insert("rtags", bat(_tj_RTagBat(ftiName)));
 	tjCollBat.insert("conceptdict", bat("tj_" + ftiName + "_conceptdict"));
+	tjCollBat.insert("termfreq", bat("tj_" + ftiName + "_termfreq"));
 	tjCollBat.insert("param", parbat);
 
 	# only load the top collection fragment
@@ -1845,6 +1855,7 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
        
     	var replaceBats := commitBats.find("replaceBats");
         var submitBats := commitBats.find("submitBats");
+        collBat.find("termdict").access(BAT_WRITE);
 
 	# incremental index merge
 	if (collBat.exist("_tags")) 
@@ -1874,6 +1885,10 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
                 # handle terms
                 tmp := tids.kdiff(collBat.find("pfpre"));
                 tmp := tmp.reverse().ssort();
+		var tf := collBat.find("termfreq");
+                var termfreq := {count}(tmp, collBat.find("termdict"), false);
+                tf [:+=] termfreq.slice(0,tf.count() - 1);
+		tf.append(termfreq.slice(tf.count(), termfreq.count() - 1));
 		i := mergeindex(tmp, collBat.find("_termIndex"),
                                          collBat.find("_terms"),
                                          collBat.find("termdict").count_wrd() + 1);       
@@ -1885,7 +1900,7 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
                 replaceBats.insert("_Terms", "tj_" + ftindex + "_Terms");
 		submitBats.append("tj_" + ftindex + "_TermIndex");
 		submitBats.append("tj_" + ftindex + "_Terms");
-	        
+		submitBats.append(tf.bbpname());
         }
         else # create new index
         {       
@@ -1910,6 +1925,10 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
 		# handle terms
                 tmp := tids.kdiff(collBat.find("pfpre"));
                 tmp := tmp.reverse().ssort();
+		var tf := collBat.find("termfreq");
+                var termfreq := {count}(tmp, collBat.find("termdict"), false);
+                tf [:+=] termfreq.slice(0,tf.count() - 1);
+		tf.append(termfreq.slice(tf.count(), termfreq.count() - 1));
 	        var termindex := tmp.hmark(0@0).offsetindex(collBat.find("termdict").count_wrd() + 1);
 	        var terms := tmp.tmark(0@0);
 	        tmp := nil;
@@ -1920,6 +1939,7 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
 		terms := nil;
 		submitBats.append("tj_" + ftiName + "_TermIndex");
 		submitBats.append("tj_" + ftiName + "_Terms");
+		submitBats.append(tf.bbpname());
         }
         
         # always create concept table from scratch
@@ -1942,6 +1962,7 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
 	submitBats.append("tj_" + ftiName + "_ConceptIndex");
 	submitBats.append("tj_" + ftiName + "_Concepts");
 	submitBats.append("tj_" + ftiName + "_ConceptScore");
+        collBat.find("termdict").access(BAT_READ);
       if ( verbose ) printf(HASH +"TJ _tj_build_inverted_index_frag() finished.\n");
 }
 
@@ -4945,6 +4966,7 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void
        
     	var replaceBats := collBat.find("replaceBats");
         var submitBats := collBat.find("submitBats");
+        collBat.find("termdict").access(BAT_WRITE);
 
 	# incremental index merge
 	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count_wrd()))) 
@@ -4975,6 +4997,10 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void
                 tmp := tids.kdiff(elements);
                 elements := nil;
                 tmp := tmp.reverse().ssort();
+		var tf := collBat.find("termfreq");
+                var termfreq := {count}(tmp, collBat.find("termdict"), false);
+                tf [:+=] termfreq.slice(0,tf.count() - 1);
+		tf.append(termfreq.slice(tf.count(), termfreq.count() - 1));
 		i := mergeindex(tmp, collBat.find("_termIndex"),
                                          collBat.find("_terms"),
                                          collBat.find("termdict").count_wrd() + 1);       
@@ -4986,7 +5012,7 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void
                 replaceBats.insert("_terms", "tj_" + ftiName + "_Terms");
 		submitBats.append("tj_" + ftiName + "_TermIndex");
 		submitBats.append("tj_" + ftiName + "_Terms");
-	        
+		submitBats.append(tf.bbpname());
         }
         else # create new index
         {       
@@ -5012,6 +5038,10 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void
                 tmp := tids.kdiff(elements);
                 elements := nil;
                 tmp := tmp.reverse().ssort();
+		var tf := collBat.find("termfreq");
+                var termfreq := {count}(tmp, collBat.find("termdict"), false);
+                tf [:+=] termfreq.slice(0,tf.count() - 1);
+		tf.append(termfreq.slice(tf.count(), termfreq.count() - 1));
 	        var termindex := tmp.hmark(0@0).offsetindex(bat(_tj_TermBat(ftiName)).count_wrd() + 1);
 	        var terms := tmp.tmark(0@0);
 	        tmp := nil;
@@ -5022,6 +5052,7 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void
 		terms := nil;
 		submitBats.append("tj_" + ftiName + "_TermIndex");
 		submitBats.append("tj_" + ftiName + "_Terms");
+		submitBats.append(tf.bbpname());
         }
         
         # always create concept table from scratch
@@ -5044,6 +5075,7 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void
 	submitBats.append("tj_" + ftiName + "_ConceptIndex");
 	submitBats.append("tj_" + ftiName + "_Concepts");
 	submitBats.append("tj_" + ftiName + "_ConceptScore");
+        collBat.find("termdict").access(BAT_READ);
     if ( verbose ) printf(HASH +"TJ:_buildIRindex(\"%s\") finished.\n",ftiName);
 }
 
