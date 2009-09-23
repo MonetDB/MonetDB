@@ -184,7 +184,7 @@ controlRunner(void *d)
 				close(msgsock);
 				continue;
 			}
-			buf2[pos] = '\0';
+			buf2[pos - 1] = '\0';
 			pos = 0;
 			p = control_hash(_mero_controlpass, p);
 			if (strcmp(buf2, p) != 0) {
