@@ -78,7 +78,9 @@ files-with-holes on Unixes (on Windows, it actually always performs I/O which is
 nice).  
 @{
 @c
-size_t HEAPmargin(size_t maxsize) {
+size_t
+HEAPmargin(size_t maxsize)
+{
 	size_t ret;
 #if SIZEOF_VOID_P == 8
 	/* in 64-bits systems, try to enforce in-place realloc, but provoke the memcpy on 256MB, then 4GB */
@@ -91,7 +93,8 @@ size_t HEAPmargin(size_t maxsize) {
 }
 
 /* in 64-bits space, use very large margins to accommodate reallocations */
-int HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
+int
+HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
 	char nme[PATHLENGTH], *ext = NULL;
 
@@ -110,8 +113,8 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize && nitems > (h->size / itemsize))
 		return -1;
 
-	/* when using anonymous vm we malloc we need 64K chunks, also we
-	 * 20% extra malloc */
+	/* when using anonymous vm we need 64K chunks, also we
+	   allocate an extra 20% */
 	if (h->size > GDK_mem_bigsize) {
 		h->maxsize = HEAPmargin(h->maxsize);
 	}
@@ -226,7 +229,7 @@ HEAPextend(Heap *h, size_t size)
 				fclose(fp);
 				if (h->storage == STORE_MEM) {
 					int newmode = h->newstorage == STORE_MMAP && existing ? STORE_PRIV : h->newstorage;
-					/* make sure we realy MMAP */
+					/* make sure we really MMAP */
 					if (must_mmap && h->newstorage == STORE_MEM)
 						newmode = STORE_MMAP;
 					h->newstorage = h->storage = newmode;
