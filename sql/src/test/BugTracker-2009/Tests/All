@@ -94,6 +94,11 @@ bit_and.SF-2850341
 double_count_limit_bug.SF-2862146
 create_on_ro_db_crash.SF-2830238
 old_views_incorrectly_reused.SF-2863804
+updating_non-loaded_columns.SF-2864313_OK-0
+updating_non-loaded_columns.SF-2864313_KO-1
+updating_non-loaded_columns.SF-2864313_KO-2
+updating_non-loaded_columns.SF-2864313_KO-3
+updating_non-loaded_columns.SF-2864313_OK-4
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.
