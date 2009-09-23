@@ -659,7 +659,7 @@ MASTERsend(Client cntxt, int tag)
 {
 	char buf[BUFSIZ+1] = "\ninclude sql;\nsql.init();\n";
 	stream *s;
-	size_t len;
+	bstream *bs;
 
 	if ( stream_write(cntxt->fdout, buf, 1, strlen(buf)) != (unsigned) strlen(buf))
 		stream_printf(GDKerr,"!failed to initialize slave session\n");
@@ -668,22 +668,28 @@ MASTERsend(Client cntxt, int tag)
 		MT_lock_init(&repLck,"replication");
 	do {
 		snprintf(buf, BUFSIZ, MASTER REPLICA, (tag / REPLICABLOCK) *REPLICABLOCK);
+		slash_2_dir_sep(buf);
 		s = open_rastream(buf);
-		if (stream_errnr(s))
+		if (stream_errnr(s) == OPEN_ERROR){
+			stream_destroy(s);
 			break;
-#ifdef _DEBUG_REPLICATOR_
-		printf("#replay thread started %s\n",buf);
-#endif
+		}
+
 		mal_set_lock(repLck,"replication");
-		while ( (len = stream_readline(s, buf, sizeof(buf) - 1)) > 0) {
-			buf[len++]= '\n';
-			buf[len] = '\0';
-			if ( (size_t) stream_write(cntxt->fdout, buf, 1, len) != len){
-				stream_printf(GDKerr,"!failed to sent log file\n");
-				break;
-				stream_flush(cntxt->fdout);
-			}
-		} 
+		/* read the complete file [now trimmed to 64KB]*/
+		bs = bstream_create(s, 128 * BLOCK);
+		if ( bstream_next(bs) < 0){
+			bstream_destroy(bs);
+			break;
+		}
+#ifdef _DEBUG_REPLICATOR_
+		printf("#replay thread started %s\n",bs->buf);
+#endif
+		if ( (size_t) stream_write(cntxt->fdout, bs->buf, 1, bs->len) != bs->len){
+			stream_printf(GDKerr,"!failed to sent log file\n");
+			stream_flush(cntxt->fdout);
+			break;
+		}
 		mal_unset_lock(repLck,"replication");
 		close_stream(s);
 #ifdef _DEBUG_REPLICATOR_
@@ -724,25 +730,16 @@ Contact the master and issue the master.start() command remotely.
 Switch to a local client to consume the MAL stream it will sent.
 @c
 static void
-MASTERmasterReceiver( void *x)
+MASTERreceiver( stream *s)
 {
-	Mapi mapi = (Mapi) x;
-	char buf[BUFSIZ+1];
-	MapiHdl hdl;
 	Client c;
 	MT_Id tid;
-	stream *s;
 
 #ifdef _DEBUG_REPLICATOR_
 	stream_printf(GDKout,"#call master to replay\n");
 #endif
-	snprintf(buf,BUFSIZ,"master.replay();");
-	hdl = mapi_query(mapi, buf);
-	if ( mapi_result_error(hdl))
-		return;	/* terminate the synchronization */
 	/* steal the output stream from the master connection */
-	mapi_trace(mapi,1);
-	s = mapi_get_from(mapi);
+	assert(s != NULL);
 	c = MCinitClient(0, 0, 0);
 	if ( c == NULL){
 		stream_printf(GDKerr,"!Out of client slots\n");
@@ -770,7 +767,8 @@ MASTERmasterReceiver( void *x)
 str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag)
 {
 	Mapi  mapi;
-	MT_Id tid;
+	MapiHdl hdl;
+	char buf[BUFSIZ+1];
 
 	(void) ret;
 
@@ -787,8 +785,13 @@ str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag)
 				": an error occurred during connect to '%s': %s",
 				*uri, mapi_error_str(mapi));
 	}
-	/* ready to initialize role change */
-	MT_create_thread(&tid, MASTERmasterReceiver,(void*) mapi);
+	snprintf(buf,BUFSIZ,"master.replay();");
+	hdl = mapi_query(mapi, buf);
+	if ( mapi_result_error(hdl))
+		throw(IO,"master.replay",OPERATION_FAILED);
+
+	/* initialize the client thread to read the results */
+	MASTERreceiver( mapi_get_from(mapi));
 	return MAL_SUCCEED;
 }
 
