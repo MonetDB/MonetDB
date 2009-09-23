@@ -1202,7 +1202,7 @@ TABLETdestroy_format(Tablet * as)
 	Column *fmt = as->format;
 
 	for (p = 0; p < as->nr_attrs; p++) {
-		if (fmt[p].c)
+		if (fmt[p].c[0])
 			BBPunfix(fmt[p].c[0]->batCacheid);
 		GDKfree(fmt[p].sep);
 		if (fmt[p].nullstr)
@@ -1246,7 +1246,7 @@ check_BATs(Tablet * as)
 	BUN cnt;
 	oid base;
 
-	if (fmt[i].c == NULL)
+	if (fmt[i].c[0] == NULL)
 		i++;
 	cnt = BATcount(fmt[i].c[0]);
 	base = fmt[i].c[0]->hseqbase;
@@ -1567,7 +1567,7 @@ dump_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 		int l;
 
 		f = fmt + i;
-		if (f->c) {
+		if (f->c[0]) {
 			p = (char *) bun_tail(f->c[0], id);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
@@ -1592,7 +1592,7 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, ptr id
 	BUN i;
 
 	for (i = 0; i < nr_attrs; i++) {
-		if (fmt[i].c == NULL)
+		if (fmt[i].c[0] == NULL)
 			continue;
 		fmt[i].p = BUNfnd(fmt[i].c[0], id);
 
@@ -1606,7 +1606,7 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, ptr id
 			int l;
 
 			f = fmt + i;
-			if (f->c) {
+			if (f->c[0]) {
 				p = BUNtail(f->ci[0], f->p);
 
 				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
@@ -1634,7 +1634,7 @@ output_line_dense(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs)
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f = fmt + i;
 
-		if (f->c) {
+		if (f->c[0]) {
 			char *p = BUNtail(f->ci[0], f->p);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
@@ -1662,7 +1662,7 @@ output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs,
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f = fmt + i;
 
-		if (f->c) {
+		if (f->c[0]) {
 			char *p = BUNtail(f->ci[0], id + BUNfirst(f->c[0]));
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
