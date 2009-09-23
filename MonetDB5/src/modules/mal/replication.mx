@@ -678,7 +678,7 @@ MASTERsend(Client cntxt, int tag)
 		while ( (len = stream_readline(s, buf, sizeof(buf) - 1)) > 0) {
 			buf[len++]= '\n';
 			buf[len] = '\0';
-			if ( stream_write(cntxt->fdout, buf, 1, len) != (unsigned) len){
+			if ( (size_t) stream_write(cntxt->fdout, buf, 1, len) != len){
 				stream_printf(GDKerr,"!failed to sent log file\n");
 				break;
 				stream_flush(cntxt->fdout);
@@ -738,6 +738,8 @@ MASTERmasterReceiver( void *x)
 #endif
 	snprintf(buf,BUFSIZ,"master.replay();");
 	hdl = mapi_query(mapi, buf);
+	if ( mapi_result_error(hdl))
+		return;	/* terminate the synchronization */
 	/* steal the output stream from the master connection */
 	mapi_trace(mapi,1);
 	s = mapi_get_from(mapi);
