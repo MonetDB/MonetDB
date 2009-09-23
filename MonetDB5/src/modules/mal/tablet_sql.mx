@@ -87,7 +87,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		stream_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
 #endif
 		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
+		fmt->c[0]->T->nonil = 0;
 	} else if ( quote && *s == quote ) {
 		s++;	/* find the last quote */
 		for ( t = e = s; *t ; t++)
@@ -105,25 +105,25 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		val = *s ? GDKstrdup(s) : GDKstrdup("");
 		if ( *err == NULL){
 			snprintf(buf,BUFSIZ, "value '%s' from line " BUNFMT 
-				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c)+1, c+1, fmt->type);
+				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c[0])+1, c+1, fmt->type);
 			*err= GDKstrdup(buf);
 		}
 		GDKfree(val);
 		/* replace it with a nil */
 		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
+		fmt->c[0]->T->nonil = 0;
 		ret = -1;
 	}
 	/* key maybe NULL but thats not a problem, as long as we have void */
 	if (fmt->raw){
 		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
 	} else {
-		bunfastins(fmt->c, key, adt);
+		bunfastins(fmt->c[0], key, adt);
 	}
 	return ret;
 bunins_failed:
 	if (*err == NULL) {
-		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c)+1, c+1);
+		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c[0])+1, c+1);
 		*err= GDKstrdup(buf);
 	}
 	return -1;
@@ -136,8 +136,8 @@ SQLworker_column(READERtask *task, int col)
 	Column *fmt = task->as->format;
 	str err = 0;
 
-	if ( BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next ) {
-		if ( (fmt[col].c =  BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->next)) == NULL){
+	if ( BATcapacity(fmt[col].c[0]) < BATcount(fmt[col].c[0]) + task->next ) {
+		if ( (fmt[col].c[0] =  BATextend(fmt[col].c[0], BATgrows(fmt[col].c[0]) + task->next)) == NULL){
 			/* watch out for concurrent threads */
 			mal_set_lock(mal_contextLock,"tablet insert value");
 			if (task->as->error == NULL)
@@ -258,7 +258,7 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 			if (!line) {
 				str errline = SQLload_error(task,as,task->next,csep,rsep);
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
-					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c) + task->next +1, i);
+					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c[0]) + task->next +1, i);
 				GDKerror(errmsg);
 				as->error = GDKstrdup(errmsg);
 				GDKfree(errline);
@@ -288,7 +288,7 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 				}
 		if ( i < as->nr_attrs-1)  {
 			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
-					 fmt->sep, BATcount(fmt->c) + 1 + task->next, i);
+					 fmt->sep, BATcount(fmt->c[0]) + 1 + task->next, i);
 			GDKerror(errmsg);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
@@ -391,7 +391,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
 		task->cols[i] = (int) (i+1);	/* to distinguish non initialized later with zero */
 		/* advice memory manager on expected use of results */
-		BATmadvise(as->format[i].c, BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL);
+		BATmadvise(as->format[i].c[0], BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL);
 	}
 	task->limit = 10000;
 #ifdef _DEBUG_TABLET_
@@ -536,7 +536,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	if (GDKdebug & GRPalgorithms) {
 		if (cnt < (BUN) maxrow   && maxrow > 0) 
 			/* providing a precise count is not always easy, instead consider maxrow as an upperbound */
-			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
+			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c[0]));
 		stream_printf(GDKout,"# COPY reader time " LLFMT "\n#",total);
 		for( i=0; i< as->nr_attrs; i++) 
 				stream_printf(GDKout,LLFMT " ", task->time[i]);

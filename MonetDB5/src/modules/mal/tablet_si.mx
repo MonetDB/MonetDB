@@ -99,7 +99,7 @@ get_val(Column * fmt, char *s, char quote, str *err, int c)
 		stream_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
 #endif
 		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
+		fmt->c[0]->T->nonil = 0;
 	} else if ( quote && *s == quote ) {
 		s++;	/* find the last quote */
 		for ( t = e = s; *t ; t++)
@@ -117,13 +117,13 @@ get_val(Column * fmt, char *s, char quote, str *err, int c)
 		val = *s ? GDKstrdup(s) : GDKstrdup("");
 		if ( *err == NULL){
 			snprintf(buf,BUFSIZ, "value '%s' from line " BUNFMT 
-				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c)+1, c+1, fmt->type);
+				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c[0])+1, c+1, fmt->type);
 			*err= GDKstrdup(buf);
 		}
 		GDKfree(val);
 		/* replace it with a nil */
 		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
+		fmt->c[0]->T->nonil = 0;
 	}
 	/* key maybe NULL but thats not a problem, as long as we have void */
 	if (fmt->raw){
@@ -162,7 +162,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	int distance =0;
 	
 	/*sample to get min-max*/
-	sample = BATnew(fmt->c->htype, fmt->c->ttype,sampleSize);
+	sample = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,sampleSize);
 	for ( i = 0; i< sampleSize ; i++){
 		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
 		bunfastins(sample, key, adt);
@@ -173,8 +173,8 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	BATprint(sortedSample);
 	vmin= (ValPtr) GDKzalloc(sizeof(ValRecord));
 	vmax= (ValPtr) GDKzalloc(sizeof(ValRecord));
-	VALset(vmin, fmt->c->ttype, BUNtail(bsi,0));
-	VALset(vmax, fmt->c->ttype, BUNtail(bsi,sampleSize-1));	
+	VALset(vmin, fmt->c[0]->ttype, BUNtail(bsi,0));
+	VALset(vmax, fmt->c[0]->ttype, BUNtail(bsi,sampleSize-1));	
 	
 	printf("min %d \n", vmin->val.ival);
 	printf("max %d \n", vmax->val.ival);
@@ -182,20 +182,20 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	for ( i = 0; i< task->next ; i++){
 		ValPtr newValue = (ValPtr) GDKzalloc(sizeof(ValRecord));
 		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
-		VALset(newValue, fmt->c->ttype, adt);
+		VALset(newValue, fmt->c[0]->ttype, adt);
 
 		/*fill small first*/
-		if (BATcount(fmt->c) < SmallSliceSize){
+		if (BATcount(fmt->c[0]) < SmallSliceSize){
 			if (h1 == NULL)
 				h1 = HSTnew(bins, vmin, vmax);
-			bunfastins(fmt->c, key, adt);
+			bunfastins(fmt->c[0], key, adt);
 			HSTincrement(h1, newValue);
 			continue;
 		}
 
 		/*equally fill big*/
 		if (BigSlice == NULL)
-			BigSlice = BATnew(fmt->c->htype, fmt->c->ttype,2*SmallSliceSize);
+			BigSlice = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,2*SmallSliceSize);
 
 		if (BATcount(BigSlice) < SmallSliceSize){
 			if (h2 == NULL)
@@ -216,27 +216,27 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			bit moved = FALSE;
 			BATiter bi;
 			ValPtr curVal;
-			int sizeSmall = BATcount(fmt->c); 
+			int sizeSmall = BATcount(fmt->c[0]); 
 			printf("add to small\n");
-			//bunfastins(fmt->c, key, adt);
+			//bunfastins(fmt->c[0], key, adt);
 			HSTincrement(h1, newValue);
 
 			/* pick a tuple to move to the big one */
-			bi = bat_iterator(fmt->c);
+			bi = bat_iterator(fmt->c[0]);
 			curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
 			for (j=0; j<sizeSmall; j++){
-				VALset(curVal, fmt->c->ttype, BUNtail(bi,j));
+				VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,j));
 				distance = HSTeuclidianWhatIfMove(h1,h2,curVal);
 				if (distance==0){
 					moved = TRUE;
 					printf("found val to replace %d %d with %d\n",j,curVal->val.ival, newValue->val.ival);
-					replaceVal(fmt->c, j, newValue);
+					replaceVal(fmt->c[0], j, newValue);
 					HSTprintf(h1);
 					HSTdecrement(h1,curVal);
 					HSTprintf(h1);
 					bunfastins(BigSlice, key,&curVal->val.ival);
 					HSTincrement(h2,curVal);
-					BATprint(fmt->c);
+					BATprint(fmt->c[0]);
 					BATprint(BigSlice);
 					break;
 				}
@@ -253,7 +253,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	}	
 
 	printf("result state \n");
-	BATprint(fmt->c);
+	BATprint(fmt->c[0]);
 	HSTprintf(h1);
 	BATprint(BigSlice);
 	HSTprintf(h2);
@@ -262,7 +262,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 
 bunins_failed:
 	if (*err == NULL) {
-		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c)+1, col+1);
+		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c[0])+1, col+1);
 		*err= GDKstrdup(buf);
 	}
 	return -1;
@@ -283,7 +283,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		stream_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
 #endif
 		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
+		fmt->c[0]->T->nonil = 0;
 	} else if ( quote && *s == quote ) {
 		s++;	/* find the last quote */
 		for ( t = e = s; *t ; t++)
@@ -301,25 +301,25 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		val = *s ? GDKstrdup(s) : GDKstrdup("");
 		if ( *err == NULL){
 			snprintf(buf,BUFSIZ, "value '%s' from line " BUNFMT 
-				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c)+1, c+1, fmt->type);
+				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c[0])+1, c+1, fmt->type);
 			*err= GDKstrdup(buf);
 		}
 		GDKfree(val);
 		/* replace it with a nil */
 		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
+		fmt->c[0]->T->nonil = 0;
 		ret = -1;
 	}
 	/* key maybe NULL but thats not a problem, as long as we have void */
 	if (fmt->raw){
 		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
 	} else {
-		bunfastins(fmt->c, key, adt);
+		bunfastins(fmt->c[0], key, adt);
 	}
 	return ret;
 bunins_failed:
 	if (*err == NULL) {
-		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c)+1, c+1);
+		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c[0])+1, c+1);
 		*err= GDKstrdup(buf);
 	}
 	return -1;
@@ -332,8 +332,8 @@ SQLworker_column(READERtask *task, int col)
 	Column *fmt = task->as->format;
 	str err = 0;
 
-	if ( BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next ) {
-		if ( (fmt[col].c =  BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->next)) == NULL){
+	if ( BATcapacity(fmt[col].c[0]) < BATcount(fmt[col].c[0]) + task->next ) {
+		if ( (fmt[col].c[0] =  BATextend(fmt[col].c[0], BATgrows(fmt[col].c[0]) + task->next)) == NULL){
 			/* watch out for concurrent threads */
 			mal_set_lock(mal_contextLock,"tablet insert value");
 			if (task->as->error == NULL)
@@ -461,7 +461,7 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 			if (!line) {
 				str errline = SQLload_error(task,as,task->next,csep,rsep);
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
-					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c) + task->next +1, i);
+					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c[0]) + task->next +1, i);
 				GDKerror(errmsg);
 				as->error = GDKstrdup(errmsg);
 				GDKfree(errline);
@@ -491,7 +491,7 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 				}
 		if ( i < as->nr_attrs-1)  {
 			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
-					 fmt->sep, BATcount(fmt->c) + 1 + task->next, i);
+					 fmt->sep, BATcount(fmt->c[0]) + 1 + task->next, i);
 			GDKerror(errmsg);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
@@ -594,7 +594,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
 		task->cols[i] = (int) (i+1);	/* to distinguish non initialized later with zero */
 		/* advice memory manager on expected use of results */
-		BATmadvise(as->format[i].c, BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL);
+		BATmadvise(as->format[i].c[0], BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL);
 	}
 	task->limit = 10000;
 #ifdef _DEBUG_TABLET_
@@ -710,7 +710,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		t0 = GDKusec() - t0;
 		total += t0;
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"fill the BATs %d  "BUNFMT" cap " BUNFMT"\n", task->next, cnt, BATcapacity(as->format[0].c));
+		stream_printf(GDKout,"fill the BATs %d  "BUNFMT" cap " BUNFMT"\n", task->next, cnt, BATcapacity(as->format[0].c[0]));
 #endif
 		if ( task->next ){
 			SQLworkdivider(task, ptask, (int) as->nr_attrs, threads);
@@ -739,7 +739,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	if (GDKdebug & GRPalgorithms) {
 		if (cnt < (BUN) maxrow   && maxrow > 0) 
 			/* providing a precise count is not always easy, instead consider maxrow as an upperbound */
-			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
+			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c[0]));
 		stream_printf(GDKout,"# COPY reader time " LLFMT "\n#",total);
 		for( i=0; i< as->nr_attrs; i++) 
 				stream_printf(GDKout,LLFMT " ", task->time[i]);
