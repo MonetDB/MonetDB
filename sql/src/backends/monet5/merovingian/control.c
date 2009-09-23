@@ -18,6 +18,7 @@
  */
 
 #include "sql_config.h"
+#include "control.h"
 #include <stdio.h>
 #include <stdlib.h> /* malloc, realloc */
 #include <unistd.h> /* close */
@@ -47,7 +48,8 @@ char* control_send(
 		int port,
 		char* database,
 		char* command,
-		char wait)
+		char wait,
+		char* pass)
 {
 	char sbuf[8096];
 	char *buf;
@@ -93,6 +95,32 @@ char* control_send(
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
 			return(strdup(sbuf));
 		}
+		
+		/* perform login ritual */
+		if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0) {
+			snprintf(sbuf, sizeof(sbuf), "no response from merovingian");
+			return(strdup(sbuf));
+		}
+		/* we only understand merovingian:1 */
+		if (strncmp(sbuf, "merovingian:1:", strlen("merovingian:1:")) != 0) {
+			snprintf(sbuf, sizeof(sbuf), "unsupported merovingian server");
+			return(strdup(sbuf));
+		}
+		buf = strchr(sbuf + strlen("merovingian:1:"), ':');
+		if (buf != NULL)
+			*buf = '\0';
+		buf = sbuf + strlen("merovingian:1:");
+
+		buf = control_hash(pass, buf);
+
+		len = snprintf(sbuf, sizeof(sbuf), "%s\n", buf);
+		send(sock, sbuf, len, 0);
+
+		if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)
+			return(strdup("no response from merovingian"));
+		sbuf[len - 1] = '\0';
+		if (strcmp(sbuf, "OK") != 0)
+			return(strdup(sbuf));
 	}
 
 	len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);

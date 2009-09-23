@@ -206,7 +206,7 @@ simple_argv_cmd(int argc, char *argv[], char *merocmd,
 			fflush(stdout);
 		}
 
-		ret = control_send(&out, mero_control, -1, argv[i], merocmd, 0);
+		ret = control_send(&out, mero_control, -1, argv[i], merocmd, 0, NULL);
 
 		if (ret != NULL) {
 			if (premsg != NULL)
@@ -290,9 +290,9 @@ MEROgetStatus(sabdb **ret, char *database)
 	if (database == NULL) {
 		/* I ran out of creative ideas on this one, so I just injected
 		 * the last(?) sight we might see from van der Decken */
-		e = control_send(&buf, mero_control, -1, "flyghende", "hollander", 1);
+		e = control_send(&buf, mero_control, -1, "flyghende", "hollander", 1, NULL);
 	} else {
-		e = control_send(&buf, mero_control, -1, database, "status", 0);
+		e = control_send(&buf, mero_control, -1, database, "status", 0, NULL);
 	}
 	if (e != NULL)
 		return(e);
@@ -722,7 +722,7 @@ command_discover(int argc, char *argv[])
 	 * merovingian.  Anelosimus eximius is a social species of spiders,
 	 * which help each other, just like merovingians do among each
 	 * other. */
-	p = control_send(&buf, mero_control, -1, "anelosimus", "eximius", 1);
+	p = control_send(&buf, mero_control, -1, "anelosimus", "eximius", 1, NULL);
 	if (p != NULL) {
 		printf("%s: %s\n", argv[0], p);
 		free(p);
@@ -967,7 +967,7 @@ command_set(int argc, char *argv[], meroset type)
 			exit(1);
 		}
 
-		out = control_send(&res, mero_control, -1, argv[2], p, 0);
+		out = control_send(&res, mero_control, -1, argv[2], p, 0, NULL);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -987,7 +987,7 @@ command_set(int argc, char *argv[], meroset type)
 			strncat(property, "=", sizeof(property));
 			p = property;
 		}
-		out = control_send(&res, mero_control, 0, argv[i], p, 0);
+		out = control_send(&res, mero_control, 0, argv[i], p, 0, NULL);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1114,7 +1114,7 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 				value = stats->dbname;
 			} else {
 				char *buf;
-				e = control_send(&buf, mero_control, -1, stats->dbname, "get", 1);
+				e = control_send(&buf, mero_control, -1, stats->dbname, "get", 1, NULL);
 				if (e != NULL) {
 					fprintf(stderr, "get: internal error: %s\n", e);
 					free(e);
