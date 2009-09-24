@@ -62,6 +62,7 @@ Over..
 [ "mero_msglog"	]
 [ "mero_errlog"	]
 [ "mero_pidfile"	]
+[ "mero_controlport"	]
 [ "mal_init"	]
 [ "mapi_autosense"	]
 [ "sql_optimizer"	]
