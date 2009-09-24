@@ -131,9 +131,10 @@
 	}
 	
 	function mapi_fetch_next($conn, &$handle){
-		if ($socket == NULL){
+		if ($conn['socket'] == NULL){
 			return FALSE;
 		}
+		$socket = $conn['socket'];
 		
 		while ($handle["query"]["index"] < $handle["query"]["rows"]) {
 			// export a new window
@@ -338,7 +339,7 @@
 
 				$link = substr($redirects[0], 6, strlen($redirects[0]));
 				$redirect_to = parse_url($link);
-				
+				//print_r($redirect_to);
 				if ($redirect_to['scheme'] == MEROVINGIAN) {
 					if ($merovingian_iter < MAX_MEROVINGIAN_ITER) {
 						$merovingian_iter++;
@@ -584,23 +585,31 @@
 		global $connection_pool;
 		
 		if ($conn == NULL) {
-			if (count($connection_pool == 1) && $connection_pool[0]["socket"] != NULL ) {
-				return TRUE;
-			}
-			
+			return FALSE;
 		} else {
-			// Create anonymous callback function to filter results for connection.
-			$function_body = 'return ( $input[\'id\'] == "'.$conn["id"].'" );';
-			$function_name = create_function('$input', $function_body);
-			// Filter the results array using the anonymous callback function.
-			$connection = array_filter($connection_pool, $function_name);
-		
-			
-			if ($connection[0]["socket"] != NULL) {
-				return TRUE;
-			}
+			return mapi_ping($conn);
 		}
 		
+		return FALSE;
+	}
+	
+	function mapi_ping($conn=NULL) {
+		if ($conn != NULL) {
+			switch($conn['lang']) {
+				case LANG_SQL:
+					$res = mapi_execute($conn, "select true;");
+					break;
+
+				case LANG_XQUERY:
+					$res = mapi_execute($conn, "io.print(1);");
+					break;
+			}
+			if ($res != NULL) {
+				if (mapi_free_result($conn['id'], $res['id'])) {
+					return TRUE;
+				}
+			}
+		}
 		return FALSE;
 	}
 	
