@@ -250,7 +250,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3FE349BC355F467887AC63E16F3818BC"
             {
-            "SourcePath" = "8:C:\\iconv-1.11.win64\\bin\\iconv.dll"
+            "SourcePath" = "8:C:\\iconv-1.11.1.win64\\bin\\iconv.dll"
             "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
