@@ -271,7 +271,7 @@ HSTchebyshev(Histogram h1, Histogram h2){
 
 dbl
 HSTbinrelative(Histogram h1, Histogram h2){
-	lng i, totalDiff=0, avgDiff;
+	lng i, totalDiff=0, avgDiff, cur;
 	dbl distance=0;
 	assert(h1->bins == h2->bins);
 
@@ -279,9 +279,10 @@ HSTbinrelative(Histogram h1, Histogram h2){
 		totalDiff += ABS(h1->cnt[i] - h2->cnt[i]);
 	avgDiff = totalDiff/h1->bins;
 
-	for ( i = 0; i < h1->bins; i++)
-		distance += ABS(avgDiff - ABS(h1->cnt[i] - h2->cnt[i]));
-
+	for ( i = 0; i < h1->bins; i++){
+		cur = ABS(avgDiff - ABS(h1->cnt[i] - h2->cnt[i]));
+		distance += cur*cur;
+	}
 	return distance;
 }
 
@@ -305,11 +306,14 @@ HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val){
 	avgDiffWhatIf = totalDiffWhatIf/h1->bins;
 
 	for ( i = 0; i < h1->bins; i++){
-		distance += ABS(avgDiff - ABS(h1->cnt[i] - h2->cnt[i]));
+		cur = ABS(avgDiff - ABS(h1->cnt[i] - h2->cnt[i]));
+		distance += cur*cur;
+
 		if (i==affectedBin)
-			distanceWhatIf += ABS(avgDiffWhatIf - ABS(h1->cnt[i] - (h2->cnt[i]+1)));
+			cur = ABS(avgDiffWhatIf - ABS(h1->cnt[i] - (h2->cnt[i]+1)));
 		else 
-			distanceWhatIf += ABS(avgDiffWhatIf - ABS(h1->cnt[i] - h2->cnt[i]));
+			cur= ABS(avgDiffWhatIf - ABS(h1->cnt[i] - h2->cnt[i]));
+		distanceWhatIf += cur*cur;
 	}
 	
 	if (distanceWhatIf > distance) return (distanceWhatIf - distance);
@@ -336,11 +340,14 @@ HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val){
 	avgDiffWhatIf = totalDiffWhatIf/h1->bins;
 
 	for ( i = 0; i < h1->bins; i++){
-		distance += ABS(avgDiff - ABS(h1->cnt[i] - h2->cnt[i]));
+		cur = ABS(avgDiff - ABS(h1->cnt[i] - h2->cnt[i]));
+		distance += cur*cur;
+
 		if (i==affectedBin)
-			distanceWhatIf += ABS(avgDiffWhatIf - ABS((h1->cnt[i]-1) - (h2->cnt[i]+1)));
+			cur = ABS(avgDiffWhatIf - ABS((h1->cnt[i]-1) - (h2->cnt[i]+1)));
 		else 
-			distanceWhatIf += ABS(avgDiffWhatIf - ABS(h1->cnt[i] - h2->cnt[i]));
+			cur = ABS(avgDiffWhatIf - ABS(h1->cnt[i] - h2->cnt[i]));
+		distanceWhatIf += cur*cur;
 	}
 
 	if (distanceWhatIf > distance) return 1;
