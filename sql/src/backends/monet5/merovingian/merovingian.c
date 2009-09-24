@@ -157,6 +157,8 @@ static int _mero_discoveryttl = 600;
 static FILE *_mero_discout = NULL;
 /* stream to the stderr for the neighbour discovery service */
 static FILE *_mero_discerr = NULL;
+/* the port merovingian listens for TCP control commands */
+static unsigned short _mero_controlport = 0;
 /* stream to the stdout for the control runner */
 static FILE *_mero_ctlout = NULL;
 /* stream to the stderr for the control runner */
@@ -437,7 +439,6 @@ main(int argc, char *argv[])
 	int csock = -1;
 	char doproxy = 1;
 	unsigned short discoveryport;
-	unsigned short controlport;
 	struct stat sb;
 	FILE *oerr = NULL;
 	pthread_mutexattr_t mta;
@@ -571,7 +572,6 @@ main(int argc, char *argv[])
 		}
 		discoveryport = (unsigned short)ret;
 	}
-	controlport = 0;
 	kv = findConfKey(ckv, "mero_controlport");
 	if (kv && kv->val != NULL) {
 		ret = atoi(kv->val);
@@ -579,7 +579,7 @@ main(int argc, char *argv[])
 			Mfprintf(stderr, "invalid port number: %s\n", kv->val);
 			MERO_EXIT(1);
 		}
-		controlport = (unsigned short)ret;
+		_mero_controlport = (unsigned short)ret;
 	}
 
 	/* where is the mserver5 binary we fork on demand? */
@@ -647,7 +647,7 @@ main(int argc, char *argv[])
 	}
 
 	/* see if we have the passphrase if we do remote control stuff */
-	if (controlport != 0) {
+	if (_mero_controlport != 0) {
 		struct stat statbuf;
 		FILE *secretf;
 		size_t len;
@@ -886,7 +886,7 @@ main(int argc, char *argv[])
 			(e = openConnectionTCP(&sock, _mero_port, stdout)) == NO_ERR &&
 			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
 			(e = openConnectionUNIX(&unsock, buf)) == NO_ERR &&
-			(controlport == 0 || (e = openConnectionTCP(&csock, controlport, _mero_ctlout)) == NO_ERR)
+			(_mero_controlport == 0 || (e = openConnectionTCP(&csock, _mero_controlport, _mero_ctlout)) == NO_ERR)
 	   )
 	{
 		pthread_t ctid = 0;

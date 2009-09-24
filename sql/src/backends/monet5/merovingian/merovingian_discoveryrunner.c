@@ -164,7 +164,8 @@ discoveryRunner(void *d)
 
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */
-	snprintf(buf, 512, "HELO %s:%hu", _mero_hostname, _mero_port);
+	snprintf(buf, 512, "HELO %s:%hu", _mero_hostname,
+			_mero_controlport == 0 ? _mero_port :  _mero_controlport);
 	broadcast(buf);
 
 	ckv = getDefaultProps();
@@ -206,9 +207,10 @@ discoveryRunner(void *d)
 
 			if (orig != NULL) {
 				SABAOTHfreeStatus(&orig);
-			} else if (forceannc == 1) {
+			} else if (forceannc == 1 && _mero_controlport != 0) {
 				/* no databases, yet still announce we're here */
-				snprintf(buf, 512, "AVAI %s:%hu", _mero_hostname, _mero_port);
+				snprintf(buf, 512, "AVAI %s:%hu",
+						_mero_hostname, _mero_controlport);
 				broadcast(buf);
 			}
 			forceannc = 0;
@@ -362,8 +364,9 @@ discoveryRunner(void *d)
 		SABAOTHfreeStatus(&orig);
 
 	/* deregister this merovingian, so it doesn't remain a stale entry */
-	if (c == 0) {
-		snprintf(buf, 512, "LEAV * %s:%hu", _mero_hostname, _mero_port);
+	if (c == 0 && _mero_controlport != 0) {
+		snprintf(buf, 512, "LEAV * %s:%hu",
+				_mero_hostname, _mero_controlport);
 		broadcast(buf);
 	}
 
