@@ -66,7 +66,7 @@ AM_MONETDB_XQ_VARS_1()
 
 dnl Check for Monet
 # Check for Monet 
-req_monetdb_ver='1.32.0'
+req_monetdb_ver='1.32.2'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
