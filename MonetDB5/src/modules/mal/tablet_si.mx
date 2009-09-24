@@ -139,6 +139,43 @@ replaceVal(BAT * b, oid position, ValPtr val)
 	}	
 }
 
+void
+suffleVal(BAT *b1, oid pos1, BAT *b2, oid pos2)
+{
+	switch( b1->ttype){
+		case TYPE_bte:{ 
+			bte temp = *(bte*)Tloc(b1,BUNfirst(b1)+pos1);
+			*(bte*)Tloc(b1,BUNfirst(b1)+pos1) = *(bte*)Tloc(b2,BUNfirst(b2)+pos2);	
+			*(bte*)Tloc(b2,BUNfirst(b2)+pos2) = temp;
+			break;}
+                case TYPE_sht:{ 
+			sht temp = *(sht*)Tloc(b1,BUNfirst(b1)+pos1);
+			*(sht*)Tloc(b1,BUNfirst(b1)+pos1) = *(sht*)Tloc(b2,BUNfirst(b2)+pos2);	
+			*(sht*)Tloc(b2,BUNfirst(b2)+pos2) = temp;
+			break;} 
+                case TYPE_int:{ 
+			int temp = *(int*)Tloc(b1,BUNfirst(b1)+pos1);
+			*(int*)Tloc(b1,BUNfirst(b1)+pos1) = *(int*)Tloc(b2,BUNfirst(b2)+pos2);	
+			*(int*)Tloc(b2,BUNfirst(b2)+pos2) = temp;
+			break;} 
+                case TYPE_lng:{ 
+			lng temp = *(lng*)Tloc(b1,BUNfirst(b1)+pos1);
+			*(lng*)Tloc(b1,BUNfirst(b1)+pos1) = *(lng*)Tloc(b2,BUNfirst(b2)+pos2);	
+			*(lng*)Tloc(b2,BUNfirst(b2)+pos2) = temp;
+			break;} 
+                case TYPE_dbl:{ 
+			dbl temp = *(dbl*)Tloc(b1,BUNfirst(b1)+pos1);
+			*(dbl*)Tloc(b1,BUNfirst(b1)+pos1) = *(dbl*)Tloc(b2,BUNfirst(b2)+pos2);	
+			*(dbl*)Tloc(b2,BUNfirst(b2)+pos2) = temp;
+			break;} 
+                case TYPE_flt:{ 
+			flt temp = *(flt*)Tloc(b1,BUNfirst(b1)+pos1);
+			*(flt*)Tloc(b1,BUNfirst(b1)+pos1) = *(flt*)Tloc(b2,BUNfirst(b2)+pos2);	
+			*(flt*)Tloc(b2,BUNfirst(b2)+pos2) = temp;
+			break;} 
+	}	
+}
+
 static int
 Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 {
@@ -160,6 +197,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	int bins=2;
 	lng acceptableDistance = bins;
 	oid SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
+	bit balance = TRUE; /*Try to ballance in the end if needed */
 
 	/*sample to get min-max*/
 	sampleSize=SmallSliceSize>100?100:SmallSliceSize; /*sample up to 100 values*/	
@@ -279,6 +317,54 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		if(curDistance < acceptableDistance && (oid)(task->next-i) > SmallSliceSize)
 			optimistic = optimisticStep;
 	}	
+	printf("prebalance result state \n");
+	#ifdef _DEBUG_SLICER_
+		BATprint(fmt->c[0]);
+		BATprint(BigSlice);
+	#endif
+	HSTprintf(h1);
+	HSTprintf(h2);
+
+	if (!balance) return 0;
+
+	if ((curDistance=HSTbinrelative(h1,h2)) > acceptableDistance){
+		BATiter bi, bb;
+		int j, k=0, sizeSmall = BATcount(fmt->c[0]), sizeBig = BATcount(BigSlice); 
+		ValPtr curVal;
+		bit moved = TRUE;
+
+		/* pick a tuple to move to the big one */
+		bi = bat_iterator(fmt->c[0]);
+		bb = bat_iterator(BigSlice);
+		curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
+		while(curDistance > acceptableDistance && moved==TRUE){
+			for (j=0; j<sizeSmall; j++){
+				VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,j));
+				distance = HSTbinrelativeWhatIfMove(h1,h2,curVal,&curDistance);
+				if (distance==0){
+					HSTdecrement(h1,curVal);
+					HSTincrement(h2,curVal);
+					moved = FALSE;
+					for (k=0; k<sizeBig; k++){
+						VALset(curVal, fmt->c[0]->ttype, BUNtail(bb,j));
+						distance = HSTbinrelativeWhatIfMove(h2,h1,curVal,&curDistance);
+						if (distance==0){
+							suffleVal(fmt->c[0], j, BigSlice, k);
+							moved = TRUE;
+							break;
+						}
+					}
+					if (moved)
+						break;
+					else{
+						HSTdecrement(h2,curVal);
+						HSTincrement(h1,curVal);
+					}
+				}
+			}
+		}
+		
+	}
 
 	printf("result state \n");
 	#ifdef _DEBUG_SLICER_
