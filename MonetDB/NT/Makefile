@@ -35,7 +35,7 @@ install: targetdirs monetdb_winconfig.h monetdb_config.h winrules.msc all
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) website.html "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
-	if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe "s/Program Files/Program Files (x86)/" $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj > "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
+	-if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
 	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
 	if exist "$(prefix)\Debug\$(INSTALLER)$(IBITS).msi" $(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
