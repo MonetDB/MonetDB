@@ -51,7 +51,7 @@ discoveryRunner(void *d)
 
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */
-	snprintf(buf, 512, "HELO %s", _mero_hostname);
+	snprintf(buf, 512, "HELO %s:%hu", _mero_hostname, _mero_port);
 	broadcast(buf);
 
 	ckv = getDefaultProps();
@@ -64,7 +64,6 @@ discoveryRunner(void *d)
 		if (forceannc == 1 || deadline <= now) {
 			/* set new deadline */
 			deadline = now + _mero_discoveryttl;
-			forceannc = 0;
 
 			/* list all known databases */
 			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
@@ -92,8 +91,14 @@ discoveryRunner(void *d)
 				freeConfFile(ckv);
 			}
 
-			if (orig != NULL)
+			if (orig != NULL) {
 				SABAOTHfreeStatus(&orig);
+			} else if (forceannc == 1) {
+				/* no databases, yet still announce we're here */
+				snprintf(buf, 512, "AVAI %s:%hu", _mero_hostname, _mero_port);
+				broadcast(buf);
+			}
+			forceannc = 0;
 		}
 
 		/* do a round to see if we have to cleanup anything (expired
@@ -159,7 +164,7 @@ discoveryRunner(void *d)
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */
-			Mfprintf(_mero_discout, "new neighbour %s\n", host);
+			Mfprintf(_mero_discout, "new neighbour %s (%s)\n", buf + 5, host);
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
 			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
@@ -167,6 +172,9 @@ discoveryRunner(void *d)
 			/* force an announcement round by dropping the deadline */
 			forceannc = 1;
 			continue;
+		} else if (strncmp(buf, "AVAI ", 5) == 0) {
+			/* AVAILABLE message, register merovingian */
+			Mfprintf(_mero_discout, "new neighbour %s (%s)\n", buf + 5, host);
 		} else if (strncmp(buf, "LEAV ", 5) == 0) {
 			/* LEAVE message, unregister database */
 			char *sp = NULL;
