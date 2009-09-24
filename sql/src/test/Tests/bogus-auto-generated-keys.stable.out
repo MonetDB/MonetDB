@@ -46,7 +46,7 @@ UPDATE gen_keys SET "x" = 'bla' WHERE "id" = 12;
 
 -- insert some value, should get a generated key
 INSERT INTO gen_keys ("x") VALUES ('boe');
-1 affected row, generated key: 1
+1 affected row, last generated key: 1
 
 
 -- update again, we expect NO generated key, but we DO get one
