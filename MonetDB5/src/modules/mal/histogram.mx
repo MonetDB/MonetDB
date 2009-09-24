@@ -74,8 +74,8 @@ histogram_export int HSTeuclidianWhatIfMove(Histogram h1, Histogram h2, ValPtr v
 histogram_export dbl HSTcityblock(Histogram h1, Histogram h2);
 histogram_export dbl HSTchebyshev(Histogram h1, Histogram h2);
 histogram_export dbl HSTbinrelative(Histogram h1, Histogram h2);
-histogram_export lng HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val);
-histogram_export int HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val);
+histogram_export lng HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val, lng *whatIfDistance);
+histogram_export int HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val, lng *whatIfDistance);
 histogram_export dbl HSTeuclidianDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 histogram_export dbl HSTcityblockDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 histogram_export dbl HSTchebyshevDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
@@ -287,7 +287,7 @@ HSTbinrelative(Histogram h1, Histogram h2){
 }
 
 lng
-HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val){
+HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val, lng *whatIfDistance){
 	lng i, totalDiff=0, avgDiff, cur, avgDiffWhatIf, totalDiffWhatIf=0, distance=0, distanceWhatIf=0;
 	int affectedBin;
 	assert(h1->bins == h2->bins);
@@ -316,12 +316,13 @@ HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val){
 		distanceWhatIf += cur*cur;
 	}
 	
+	*whatIfDistance = distanceWhatIf;
 	if (distanceWhatIf > distance) return (distanceWhatIf - distance);
 	return 0;
 }
 
 int
-HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val){
+HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val,lng *whatIfDistance){
 	lng i, totalDiff=0, avgDiff, cur, avgDiffWhatIf, totalDiffWhatIf=0, distance=0, distanceWhatIf=0;
 	int affectedBin;
 	assert(h1->bins == h2->bins);
@@ -350,6 +351,7 @@ HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val){
 		distanceWhatIf += cur*cur;
 	}
 
+	*whatIfDistance = distanceWhatIf;
 	if (distanceWhatIf > distance) return 1;
 	return 0;
 }

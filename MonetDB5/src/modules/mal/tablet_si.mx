@@ -144,20 +144,22 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 {
 	/*naive : fill big, fill small, then rearrange with every new value */
 	char buf[BUFSIZ];	
-	oid SmallSliceSize;
 	BAT *BigSlice = NULL; 	/*toy BAT to play with the algos without worying for SQL for now*/
 	Histogram h1 = NULL;
 	Histogram h2 = NULL;
-	int i;
+	int i, optimistic=0;
 	ptr *adt;
 	BATiter bsi;
 	BAT *sample, *sortedSample;
 	ValPtr vmin, vmax;
 	int sampleSize; 
-	int bins=2;
-	lng distance;
+	lng distance, curDistance, tempDistance;
 
-	SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
+	/* Tunable params */
+	int optimisticStep=2;
+	int bins=2;
+	lng acceptableDistance = bins;
+	oid SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
 
 	/*sample to get min-max*/
 	sampleSize=SmallSliceSize>100?100:SmallSliceSize; /*sample up to 100 values*/	
@@ -205,7 +207,16 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			continue;
 		}
 
-		/*choose target BAT in order to balance the histogram distance*/
+		/*be optimistic; throw a few tuples in the big slice*/
+		if (optimistic > 0){
+			#ifdef _DEBUG_SLICER_
+				printf("be optimistic\n");
+			#endif
+			bunfastins(BigSlice, key, adt);
+			HSTincrement(h2, newValue);
+			optimistic--;
+			continue;
+		}
 
 		#ifdef _DEBUG_SLICER_
 			printf("ready to insert new value %d \n",newValue->val.ival);
@@ -215,12 +226,13 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			HSTprintf(h2);
 		#endif
 
-		distance = HSTbinrelativeWhatIf(h1,h2,newValue);
+		/*choose target BAT in order to balance the histogram distance*/
+		distance = HSTbinrelativeWhatIf(h1,h2,newValue,&curDistance);
 		if (distance==0){
 			bunfastins(BigSlice, key, adt);
 			HSTincrement(h2, newValue);
 		}
-		else if (distance <= HSTbinrelativeWhatIf(h2,h1,newValue)){
+		else if (distance <= HSTbinrelativeWhatIf(h2,h1,newValue,&tempDistance)){
 			bunfastins(BigSlice, key, adt);
 			HSTincrement(h2, newValue);
 		}else{
@@ -237,10 +249,10 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
 			for (j=0; j<sizeSmall; j++){
 				VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,j));
-				distance = HSTbinrelativeWhatIfMove(h1,h2,curVal);
+				distance = HSTbinrelativeWhatIfMove(h1,h2,curVal,&curDistance);
 				if (distance==0){
 					#ifdef _DEBUG_SLICER_
-						printf("replacei %d\n", j);
+						printf("replace %d\n", j);
 					#endif
 					replaceVal(fmt->c[0], j, newValue);
 					HSTdecrement(h1,curVal);
@@ -261,7 +273,11 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 				HSTincrement(h2, newValue);
 				HSTdecrement(h1, newValue);
 			}
+			
 		}		
+
+		if(curDistance < acceptableDistance && (oid)(task->next-i) > SmallSliceSize)
+			optimistic = optimisticStep;
 	}	
 
 	printf("result state \n");
@@ -271,7 +287,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	#endif
 	HSTprintf(h1);
 	HSTprintf(h2);
-	
+
 	return 0;
 
 bunins_failed:
@@ -360,7 +376,18 @@ SQLworker_column(READERtask *task, int col)
 
 	#ifdef _SLICE_TABLET_
 		(void) i;
-		Slice(task, &fmt[col], NULL, &err, col);
+		if (Slice(task, &fmt[col], NULL, &err, col)){
+			assert(err != NULL);
+			if (!task->as->tryall){
+				/* watch out for concurrent threads */
+				mal_set_lock(mal_contextLock,"tablet insert value");
+				if (task->as->error == NULL)
+					task->as->error = err;	/* restore for upper layers */
+				mal_unset_lock(mal_contextLock,"tablet insert value");
+				return -1;
+			}
+			BUNins(task->as->complaints, NULL, err, TRUE);
+		}
 	#endif
 
 	#ifndef _SLICE_TABLET_	
