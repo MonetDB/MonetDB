@@ -17,6 +17,119 @@
  * All Rights Reserved.
  */
 
+static int
+removeRemoteDB(char *dbname, char *conn)
+{
+	remotedb rdb;
+	remotedb prv;
+	char hadmatch = 0;
+	/* look for the database, and verify that its "conn"
+	 * (merovingian) is the same */
+
+	/* technically, we could use Diffie-Hellman (without Debian
+	 * modifications) to negotiate a shared secret key, such
+	 * that only the original registrant can unregister a
+	 * database, however... do we really care that much? */
+
+	pthread_mutex_lock(&_mero_remotedb_lock);
+
+	prv = NULL;
+	rdb = _mero_remotedbs;
+	while (rdb != NULL) {
+		if (strcmp(dbname, rdb->dbname) == 0 &&
+				strcmp(conn, rdb->conn) == 0)
+		{
+			/* found, let's remove */
+			if (prv == NULL) {
+				_mero_remotedbs = rdb->next;
+			} else {
+				prv->next = rdb->next;
+			}
+			Mfprintf(_mero_discout,
+					"removed neighbour database %s%s\n",
+					conn, rdb->fullname);
+			free(rdb->dbname);
+			free(rdb->conn);
+			free(rdb->tag);
+			free(rdb->fullname);
+			free(rdb);
+			hadmatch = 1;
+			/* there may be more, keep looking */
+		}
+		prv = rdb;
+		rdb = rdb->next;
+	}
+
+	pthread_mutex_unlock(&_mero_remotedb_lock);
+
+	return(hadmatch);
+}
+
+static int
+addRemoteDB(char *dbname, char *conn, int ttl) {
+	remotedb rdb;
+	remotedb prv;
+	char *tag;
+	char *p;
+
+	pthread_mutex_lock(&_mero_remotedb_lock);
+
+	if (_mero_remotedbs == NULL) {
+		rdb = _mero_remotedbs = malloc(sizeof(struct _remotedb));
+	} else {
+		prv = NULL;
+		rdb = _mero_remotedbs;
+		while (rdb != NULL) {
+			if (strcmp(dbname, rdb->fullname) == 0 &&
+					strcmp(conn, rdb->conn) == 0)
+			{
+				/* refresh ttl */
+				rdb->ttl = (ttl > 0 ? time(NULL) : 0) + ttl;
+				rdb = prv;
+				break;
+			}
+			/* look if we have a merovingian entry for this database, in
+			 * which case we can drop that one (as it is implied by the
+			 * database entry) */
+			if (strcmp("*", rdb->fullname) == 0 &&
+					(p = strstr(conn, rdb->conn)) != NULL &&
+					p > conn && p[-1] == '/' &&
+					p[strlen(rdb->conn)] == '/')
+			{
+				if (prv == NULL) {
+					_mero_remotedbs = rdb->next;
+				} else {
+					prv->next = rdb->next;
+				}
+				free(rdb->dbname);
+				free(rdb->conn);
+				free(rdb->tag);
+				free(rdb->fullname);
+				free(rdb);
+			}
+			prv = rdb;
+			rdb = rdb->next;
+		}
+		if (rdb == prv) {
+			pthread_mutex_unlock(&_mero_remotedb_lock);
+			return(0);
+		}
+		rdb = prv->next = malloc(sizeof(struct _remotedb));
+	}
+	rdb->fullname = strdup(dbname);
+	if ((tag = strchr(dbname, '/')) != NULL)
+		*tag++ = '\0';
+	rdb->dbname = strdup(dbname);
+	rdb->tag = tag != NULL ? strdup(tag) : NULL;
+	rdb->conn = strdup(conn);
+	rdb->ttl = (ttl > 0 ? time(NULL) : 0) + ttl;
+	rdb->next = NULL;
+
+	pthread_mutex_unlock(&_mero_remotedb_lock);
+
+	return(1);
+}
+
 static void
 discoveryRunner(void *d)
 {
@@ -108,7 +221,7 @@ discoveryRunner(void *d)
 		prv = NULL;
 		rdb = _mero_remotedbs;
 		while (rdb != NULL) {
-			if (rdb->ttl <= now) {
+			if (rdb->ttl > 0 && rdb->ttl <= now) {
 				/* expired, let's remove */
 				if (prv == NULL) {
 					_mero_remotedbs = rdb->next;
@@ -174,13 +287,14 @@ discoveryRunner(void *d)
 			continue;
 		} else if (strncmp(buf, "AVAI ", 5) == 0) {
 			/* AVAILABLE message, register merovingian */
-			Mfprintf(_mero_discout, "new neighbour %s (%s)\n", buf + 5, host);
+			if (addRemoteDB("*", buf + 5, 0) == 1)
+				Mfprintf(_mero_discout, "registered neighbour %s (%s)\n",
+						buf + 5, host);
 		} else if (strncmp(buf, "LEAV ", 5) == 0) {
 			/* LEAVE message, unregister database */
 			char *sp = NULL;
 			char *dbname;
 			char *conn;
-			char hadmatch = 0;
 
 			strtok_r(buf, " ", &sp); /* discard the msg type */
 			dbname = strtok_r(NULL, " ", &sp);
@@ -189,53 +303,14 @@ discoveryRunner(void *d)
 			if (dbname == NULL || conn == NULL)
 				continue;
 
-			/* look for the database, and verify that its "conn"
-			 * (merovingian) is the same */
-
-			/* technically, we could use Diffie-Hellman (without Debian
-			 * modifications) to negotiate a shared secret key, such
-			 * that only the original registrant can unregister a
-			 * database, however... do we really care that much? */
-
-			pthread_mutex_lock(&_mero_remotedb_lock);
-
-			prv = NULL;
-			rdb = _mero_remotedbs;
-			while (rdb != NULL) {
-				if (strcmp(dbname, rdb->dbname) == 0 &&
-						strcmp(conn, rdb->conn) == 0)
-				{
-					/* found, let's remove */
-					if (prv == NULL) {
-						_mero_remotedbs = rdb->next;
-					} else {
-						prv->next = rdb->next;
-					}
-					Mfprintf(_mero_discout,
-							"removed neighbour database %s%s\n",
-							conn, rdb->fullname);
-					free(rdb->dbname);
-					free(rdb->conn);
-					free(rdb->tag);
-					free(rdb->fullname);
-					free(rdb);
-					hadmatch = 1;
-					/* there may be more, keep looking */
-				}
-				prv = rdb;
-				rdb = rdb->next;
-			}
-			if (hadmatch == 0)
+			if (removeRemoteDB(dbname, conn) == 0)
 				Mfprintf(_mero_discout,
 						"received leave request for unknown database "
 						"%s%s from %s\n", conn, dbname, host);
-
-			pthread_mutex_unlock(&_mero_remotedb_lock);
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
 			char *sp = NULL;
 			char *dbname;
-			char *tag = NULL;
 			char *conn;
 			char *ttl;
 
@@ -247,45 +322,10 @@ discoveryRunner(void *d)
 			if (dbname == NULL || conn == NULL || ttl == NULL)
 				continue;
 
-			pthread_mutex_lock(&_mero_remotedb_lock);
-
-			if (_mero_remotedbs == NULL) {
-				rdb = _mero_remotedbs = malloc(sizeof(struct _remotedb));
-			} else {
-				prv = NULL;
-				rdb = _mero_remotedbs;
-				while (rdb != NULL) {
-					if (strcmp(dbname, rdb->fullname) == 0 &&
-							strcmp(conn, rdb->conn) == 0)
-					{
-						/* refresh ttl */
-						rdb->ttl = time(NULL) + atoi(ttl);
-						rdb = prv;
-						break;
-					}
-					prv = rdb;
-					rdb = rdb->next;
-				}
-				if (rdb == prv) {
-					pthread_mutex_unlock(&_mero_remotedb_lock);
-					continue;
-				}
-				rdb = prv->next = malloc(sizeof(struct _remotedb));
-			}
-			rdb->fullname = strdup(dbname);
-			if ((tag = strchr(dbname, '/')) != NULL)
-				*tag++ = '\0';
-			rdb->dbname = strdup(dbname);
-			rdb->tag = tag != NULL ? strdup(tag) : NULL;
-			rdb->conn = strdup(conn);
-			rdb->ttl = time(NULL) + atoi(ttl);
-			rdb->next = NULL;
-
-			pthread_mutex_unlock(&_mero_remotedb_lock);
-
-			Mfprintf(_mero_discout, "new database "
-					"%s%s (ttl=%ss)\n",
-					conn, rdb->fullname, ttl);
+			if (addRemoteDB(dbname, conn, atoi(ttl)) == 1)
+				Mfprintf(_mero_discout, "new database "
+						"%s%s (ttl=%ss)\n",
+						conn, dbname, ttl);
 		} else {
 			Mfprintf(_mero_discout, "ignoring unknown message from "
 					"%s:%s: '%s'\n", host, service, buf);
@@ -303,6 +343,7 @@ discoveryRunner(void *d)
 	}
 
 	/* craft LEAV messages for each db */
+	c = 0;
 	orig = stats;
 	while (stats != NULL) {
 		readProps(ckv, stats->path);
@@ -311,6 +352,7 @@ discoveryRunner(void *d)
 			snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/",
 					stats->dbname, _mero_hostname, _mero_port);
 			broadcast(buf);
+			c = 1;
 		}
 		freeConfFile(ckv);
 		stats = stats->next;
@@ -318,6 +360,12 @@ discoveryRunner(void *d)
 
 	if (orig != NULL)
 		SABAOTHfreeStatus(&orig);
+
+	/* deregister this merovingian, so it doesn't remain a stale entry */
+	if (c == 0) {
+		snprintf(buf, 512, "LEAV * %s:%hu", _mero_hostname, _mero_port);
+		broadcast(buf);
+	}
 
 	GDKfree(ckv);
 }
