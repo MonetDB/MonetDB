@@ -3094,16 +3094,6 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	}
 
 	//== end methods interface DatabaseMetaData
-
-	/**
-	 * make sure our related statement is closed upon garbage collect
-	 */
-	protected void finalize() throws Throwable {
-		try {
-			if (stmt != null) stmt.close();
-		} catch (SQLException e) { /* ignore */ }
-		super.finalize();
-	}
 }
 
 /**

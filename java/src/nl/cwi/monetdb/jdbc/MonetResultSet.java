@@ -1171,16 +1171,6 @@ public class MonetResultSet implements ResultSet {
 				colrs[column - 1].beforeFirst();
 				return(colrs[column - 1]);
 			}
-
-			protected void finalize() {
-				for (int i = 0; i < columns.length; i++) {
-					try {
-						if (colrs[i] != null) colrs[i].close();
-					} catch (SQLException e) {
-						// ignore... perhaps already closed by GC
-					}
-				}
-			}
 		});
 	}
 
@@ -2100,11 +2090,6 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	//== end methods of interface ResultSet
-
-	protected void finalize() throws Throwable {
-		close();
-		super.finalize();
-	}
 
 	/**
 	 * Adds a warning to the pile of warnings this ResultSet object has. If
