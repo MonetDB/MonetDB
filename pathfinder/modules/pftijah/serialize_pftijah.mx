@@ -42,7 +42,7 @@ extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
 
 /* #define TJ_TRACE 1 */
 
-/* #define USE_INEX_PATH 1 */ 
+/* #define USE_INEX_PATH */
 
 /*******************************************
  * serialize_pftijah.c : XML serialization
@@ -1315,6 +1315,10 @@ pftijah_complete_startElementEmpty(XqueryCtx* ctx) {
     }
     if (tjctx->dict_handler && !handle_dictionary(tjctx,tjctx->level_pre[tjctx->doc_height]))
 	return 0;
+#ifdef USE_INEX_PATH
+	if ( !ipg_poptag(tjctx->ipg) )
+		return 0;
+#endif
     return 1;
 }
 
