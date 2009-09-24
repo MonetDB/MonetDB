@@ -525,6 +525,7 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		} else {
 			sdb = sdb->next = GDKmalloc(sizeof(sabdb));
 		}
+		sdb->uplog = NULL;
 		sdb->next = NULL;
 
 		/* store the database name */
@@ -575,7 +576,6 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 			}
 			(void)fclose(f);
 		}
-		sdb->uplog = NULL;
 
 		/* check the state of the server by looking at its gdk lock:
 		 * - if we can lock it, the server has crashed or isn't running
