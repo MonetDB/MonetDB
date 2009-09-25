@@ -199,8 +199,8 @@ that a change takes immediate effect in the network.
 Like set, but unsets the database-local value, and reverts to inherit
 from the default again.
 .IP "discover [expression]"
-Returns a list of remote databases URIs for databases that were
-discovered by
+Returns a list of remote merovingians and database URIs
+that were discovered by
 .BR merovingian (1).
 All databases listed can be connected to via the local MonetDB Database
 Server as if it were local databases using their database name.  The
@@ -210,6 +210,15 @@ is given, only those discovered databases are returned for which their
 URI matches the expression.  The expression syntax is described in the
 section
 .IR EXPRESSIONS .
+Next to database URIs the hostnames and ports for merovingians that
+allow to be controlled remotely can be found in the discover list masked
+with an asterisk.  These entries can easily be filtered out using an
+expression (e.g. "mapi:monetdb:*") if desired.  The control entries come
+in handy when one wants to get an overview of available merovingians in
+e.g. a local cluster.  Note that for merovingian to announce its control
+port, the
+.I mero_controlport
+setting for that merovingian must be enabled in the configuration file.
 .IP \-h
 .IP "help [command]"
 Shows general help, or short help for a given command.

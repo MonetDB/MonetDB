@@ -70,7 +70,6 @@ addRemoteDB(char *dbname, char *conn, int ttl) {
 	remotedb rdb;
 	remotedb prv;
 	char *tag;
-	char *p;
 
 	pthread_mutex_lock(&_mero_remotedb_lock);
 
@@ -84,28 +83,9 @@ addRemoteDB(char *dbname, char *conn, int ttl) {
 					strcmp(conn, rdb->conn) == 0)
 			{
 				/* refresh ttl */
-				rdb->ttl = (ttl > 0 ? time(NULL) : 0) + ttl;
+				rdb->ttl = time(NULL) + ttl;
 				rdb = prv;
 				break;
-			}
-			/* look if we have a merovingian entry for this database, in
-			 * which case we can drop that one (as it is implied by the
-			 * database entry) */
-			if (strcmp("*", rdb->fullname) == 0 &&
-					(p = strstr(conn, rdb->conn)) != NULL &&
-					p > conn && p[-1] == '/' &&
-					p[strlen(rdb->conn)] == '/')
-			{
-				if (prv == NULL) {
-					_mero_remotedbs = rdb->next;
-				} else {
-					prv->next = rdb->next;
-				}
-				free(rdb->dbname);
-				free(rdb->conn);
-				free(rdb->tag);
-				free(rdb->fullname);
-				free(rdb);
 			}
 			prv = rdb;
 			rdb = rdb->next;
@@ -122,7 +102,7 @@ addRemoteDB(char *dbname, char *conn, int ttl) {
 	rdb->dbname = strdup(dbname);
 	rdb->tag = tag != NULL ? strdup(tag) : NULL;
 	rdb->conn = strdup(conn);
-	rdb->ttl = (ttl > 0 ? time(NULL) : 0) + ttl;
+	rdb->ttl = time(NULL) + ttl;
 	rdb->next = NULL;
 
 	pthread_mutex_unlock(&_mero_remotedb_lock);
@@ -164,8 +144,7 @@ discoveryRunner(void *d)
 
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */
-	snprintf(buf, 512, "HELO %s:%hu", _mero_hostname,
-			_mero_controlport == 0 ? _mero_port :  _mero_controlport);
+	snprintf(buf, 512, "HELO %s", _mero_hostname);
 	broadcast(buf);
 
 	ckv = getDefaultProps();
@@ -176,6 +155,7 @@ discoveryRunner(void *d)
 		/* do a round of announcements, we're ahead of the ttl because
 		 * when we announce, we add 60 seconds to avoid a "gap" */
 		if (forceannc == 1 || deadline <= now) {
+			forceannc = 0;
 			/* set new deadline */
 			deadline = now + _mero_discoveryttl;
 
@@ -205,15 +185,16 @@ discoveryRunner(void *d)
 				freeConfFile(ckv);
 			}
 
-			if (orig != NULL) {
+			if (orig != NULL)
 				SABAOTHfreeStatus(&orig);
-			} else if (forceannc == 1 && _mero_controlport != 0) {
-				/* no databases, yet still announce we're here */
-				snprintf(buf, 512, "AVAI %s:%hu",
-						_mero_hostname, _mero_controlport);
+			
+			if (_mero_controlport != 0) {
+				/* announce control port */
+				snprintf(buf, 512, "ANNC * %s:%hu %d",
+						_mero_hostname, _mero_controlport,
+						_mero_discoveryttl + 60);
 				broadcast(buf);
 			}
-			forceannc = 0;
 		}
 
 		/* do a round to see if we have to cleanup anything (expired
@@ -287,11 +268,6 @@ discoveryRunner(void *d)
 			/* force an announcement round by dropping the deadline */
 			forceannc = 1;
 			continue;
-		} else if (strncmp(buf, "AVAI ", 5) == 0) {
-			/* AVAILABLE message, register merovingian */
-			if (addRemoteDB("*", buf + 5, 0) == 1)
-				Mfprintf(_mero_discout, "registered neighbour %s (%s)\n",
-						buf + 5, host);
 		} else if (strncmp(buf, "LEAV ", 5) == 0) {
 			/* LEAVE message, unregister database */
 			char *sp = NULL;
@@ -324,10 +300,16 @@ discoveryRunner(void *d)
 			if (dbname == NULL || conn == NULL || ttl == NULL)
 				continue;
 
-			if (addRemoteDB(dbname, conn, atoi(ttl)) == 1)
-				Mfprintf(_mero_discout, "new database "
-						"%s%s (ttl=%ss)\n",
-						conn, dbname, ttl);
+			if (addRemoteDB(dbname, conn, atoi(ttl)) == 1) {
+				if (strcmp(dbname, "*") == 0) {
+					Mfprintf(_mero_discout, "registered neighbour %s\n",
+							conn);
+				} else {
+					Mfprintf(_mero_discout, "new database "
+							"%s%s (ttl=%ss)\n",
+							conn, dbname, ttl);
+				}
+			}
 		} else {
 			Mfprintf(_mero_discout, "ignoring unknown message from "
 					"%s:%s: '%s'\n", host, service, buf);
@@ -364,7 +346,7 @@ discoveryRunner(void *d)
 		SABAOTHfreeStatus(&orig);
 
 	/* deregister this merovingian, so it doesn't remain a stale entry */
-	if (c == 0 && _mero_controlport != 0) {
+	if (_mero_controlport != 0) {
 		snprintf(buf, 512, "LEAV * %s:%hu",
 				_mero_hostname, _mero_controlport);
 		broadcast(buf);

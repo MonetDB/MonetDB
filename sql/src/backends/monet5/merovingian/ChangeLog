@@ -1,6 +1,11 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  25 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_discoveryrunner.c,
+  monetdb.1:
+  Remote controllable merovingians now announce their controlport. These
+  control entries show up in monetdb discover output marked with an asterisk.
+
   23 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.1, monetdb.c,
   merovingian.1, merovingian.c, merovingian_controlrunner.c:
   Implemented Feature Request #2830754. monetdb can now control a remote
