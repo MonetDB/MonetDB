@@ -648,7 +648,7 @@ errno == EADDRINUSE &&
 errno == WSAEADDRINUSE &&
 #endif
 #endif
- 					autosense && port < 60000)
+ 					autosense && port <= 65535)
 				{
 					port++;
 					continue;
