@@ -155,21 +155,21 @@ HSTgetIndex(Histogram h, ValPtr val){
 			break;
 		case TYPE_lng: 	
 			if (val->val.lval > h->hgh.val.lval) 
-				index= (h->hgh.val.lval - h->low.val.lval) / h->inc.val.lval;
+				index= (int) ((h->hgh.val.lval - h->low.val.lval) / h->inc.val.lval);
 			else
-				index= (val->val.lval - h->low.val.lval) / h->inc.val.lval;
+				index= (int) ((val->val.lval - h->low.val.lval) / h->inc.val.lval);
 			break;
 		case TYPE_dbl: 	
 			if (val->val.dval > h->hgh.val.dval) 
-				index= (h->hgh.val.dval - h->low.val.dval) / h->inc.val.dval;
+				index= (int) ((h->hgh.val.dval - h->low.val.dval) / h->inc.val.dval);
 			else
-				index= (val->val.dval - h->low.val.dval) / h->inc.val.dval;
+				index= (int) ((val->val.dval - h->low.val.dval) / h->inc.val.dval);
 			break;
 		case TYPE_flt: 	
 			if (val->val.fval > h->hgh.val.fval) 
-				index= (h->hgh.val.fval - h->low.val.fval) / h->inc.val.fval;
+				index= (int) ((h->hgh.val.fval - h->low.val.fval) / h->inc.val.fval);
 			else
-				index= (val->val.fval - h->low.val.fval) / h->inc.val.fval;
+				index= (int) ((val->val.fval - h->low.val.fval) / h->inc.val.fval);
 			break;
 	}	
 	return index;
