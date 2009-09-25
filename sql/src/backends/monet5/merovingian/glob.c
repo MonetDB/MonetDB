@@ -36,28 +36,50 @@ glob(const char *expr, const char *haystack)
 {
 	const char *haymem = NULL;
 	const char *exprmem = NULL;
+	char escape = 0;
 
 	/* probably need to implement this using libpcre once we get
 	 * advanced users, doing even more advanced things */
 
 	while (*expr != '\0') {
+		if (*expr == '\\') {
+			escape = !escape;
+			if (escape) {
+				expr++;
+				continue; /* skip over escape */
+			}
+		}
 		switch (*expr) {
 			case '*':
-				/* store expression position for retry lateron */
-				exprmem = expr;
-				/* skip over haystack till the next char from expr */
-				expr++;
-				if (*expr == '\0')
-					/* this will always match the rest */
-					return(1);
-				while (*haystack != '\0' && *haystack != *expr)
-					haystack++;
-				/* store match position, for retry lateron */
-				haymem = haystack + 1;
-				if (*haystack == '\0')
-					/* couldn't find it, so no match  */
-					return(0);
-			break;
+				if (!escape) {
+					/* store expression position for retry lateron */
+					exprmem = expr;
+					/* skip over haystack till the next char from expr */
+					do {
+						expr++;
+						if (*expr == '\0') {
+							/* this will always match the rest */
+							return(1);
+						} else if (!escape && *expr == '*') {
+							continue;
+						} else if (*expr == '\\') {
+							escape = !escape;
+							if (!escape)
+								break;
+						} else {
+							break;
+						}
+					} while(1);
+					while (*haystack != '\0' && *haystack != *expr)
+						haystack++;
+					/* store match position, for retry lateron */
+					haymem = haystack + 1;
+					if (*haystack == '\0')
+						/* couldn't find it, so no match  */
+						return(0);
+					break;
+				}
+				/* do asterisk match if escaped */
 			default:
 				if (*expr != *haystack) {
 					if (haymem != NULL) {
@@ -70,6 +92,7 @@ glob(const char *expr, const char *haystack)
 		}
 		expr++;
 		haystack++;
+		escape = 0;
 	}
 	return(*haystack == '\0');
 }

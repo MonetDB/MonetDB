@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  25 Sep 2009; Fabian Groffen <fabian@cwi.nl> glob.c:
+  Improved globbing to support escapes, such that the literal asterisk symbol
+  can be matched using \*
+
   25 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_discoveryrunner.c,
   monetdb.1:
   Remote controllable merovingians now announce their controlport. These
