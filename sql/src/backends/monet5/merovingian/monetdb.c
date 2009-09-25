@@ -210,7 +210,7 @@ simple_argv_cmd(int argc, char *argv[], char *merocmd,
 		if (argv[i] == NULL)
 			continue;
 
-		if (premsg != NULL) {
+		if (premsg != NULL && !monetdb_quiet) {
 			printf("%s '%s'... ", premsg, argv[i]);
 			fflush(stdout);
 		}
@@ -219,7 +219,7 @@ simple_argv_cmd(int argc, char *argv[], char *merocmd,
 				argv[i], merocmd, 0, mero_pass);
 
 		if (ret != NULL) {
-			if (premsg != NULL)
+			if (premsg != NULL && !monetdb_quiet)
 				printf("FAILED\n");
 			fprintf(stderr, "%s: failed to perform command: %s\n",
 					argv[0], ret);
@@ -228,13 +228,15 @@ simple_argv_cmd(int argc, char *argv[], char *merocmd,
 		}
 
 		if (strcmp(out, "OK") == 0) {
-			if (premsg != NULL) {
-				printf("done\n");
-			} else {
-				printf("%s: %s\n", successmsg, argv[i]);
+			if (!monetdb_quiet) {
+				if (premsg != NULL) {
+					printf("done\n");
+				} else {
+					printf("%s: %s\n", successmsg, argv[i]);
+				}
 			}
 		} else {
-			if (premsg != NULL)
+			if (premsg != NULL && !monetdb_quiet)
 				printf("FAILED\n");
 			fprintf(stderr, "%s: %s\n", argv[0], out);
 			free(out);
