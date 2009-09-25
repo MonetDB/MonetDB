@@ -887,10 +887,12 @@ command_startstop(int argc, char *argv[], startstop mode)
 			}
 			stats = stats->next;
 		}
-		argc = i - 1;
+		argc = i;
 	}
 	
-	simple_argv_cmd(argc, argv, type, NULL, action);
+	/* -a can return nothing, avoid help message in that case */
+	if (argc > 1)
+		simple_argv_cmd(argc, argv, type, NULL, action);
 
 	if (orig != NULL)
 		SABAOTHfreeStatus(&orig);
