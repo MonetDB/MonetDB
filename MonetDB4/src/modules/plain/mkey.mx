@@ -219,27 +219,29 @@ proc ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) : BAT[oid
 
 proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid]
 {
-  var res;
-  {
-    var l, r;
+  var res, r := keys.fetch(0), l := reverse(keys).fetch(0);
+
+  if (count(r) = 1) {
+    res := l.uselect(r.fetch(0)).project(reverse(r).fetch(0));
+  } else if (count(l) = 1) {
+    res := reverse(r.uselect(l.fetch(0)).project(reverse(l).fetch(0)));
+  } else {
     # get left and right join relations
     # The sort is added by Peter Boncz, so that for large bats the merge-join algorithms
     # can be used (thus avoiding random access pattern of the hash-join)
-
     if (keys.count() <= 1) {
-      l := keys.reverse().fetch(0).ds_sort(false);
-      r := keys.fetch(0).ds_sort(false);
+      l := l.ds_sort(false);
+      r := r.ds_sort(false);
     } else {
       l := ds_hash(keys).ds_sort(true);
       r := ds_hash(keys.reverse()).ds_sort(true);
     }
-
     # create the link
     res := join(l, r.reverse());
-  }
 
-  # make sure the result is sorted conveniently
-  res := res.reverse().ds_sort(true).reverse();
+    # make sure the result is sorted conveniently
+    res := res.reverse().ds_sort(true).reverse();
+  }
 
   # multi-attribute key joins must be filtered on false hits
   if (keys.count() > 1) {
