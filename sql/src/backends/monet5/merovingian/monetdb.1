@@ -232,7 +232,9 @@ For various options, expressions can be used.  These expressions are
 limited shell-globbing like, where the * in any position is expanded to
 an arbitrary string.  The * can occur multiple times in the expression,
 allowing for more advanced matches.  Note that the empty string also
-matches the *, hence "de*mo" can return "demo" as match.
+matches the *, hence "de*mo" can return "demo" as match.  To match the
+literal '*' character, one has to escape it using a backslash, e.g.
+"\\*".
 .SH "RETURN VALUE"
 The
 .B monetdb
