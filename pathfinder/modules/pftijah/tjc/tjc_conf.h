@@ -44,6 +44,8 @@ typedef struct tjc_config {
 	short debug;
 	char timing;
 	char* ftindex;
+	short maxfrag;
+	short topk;
 	char* irmodel;
 	char* conceptirmodel;
 	char* orcomb;
@@ -57,7 +59,9 @@ typedef struct tjc_config {
 	double okapib;
 	char semantics;
 	char rmoverlap;
+	char inexout;
 	char errBUFF[1024];
+	char milfragBUFF[MAXMILSIZE];
 	char milBUFF[MAXMILSIZE];
 	char dotBUFF[MAXMILSIZE];
 } tjc_config;
@@ -65,6 +69,7 @@ typedef struct tjc_config {
 
 #define TJCPRINTF sprintf
 #define MILOUT    &(tjc_c->milBUFF[strlen(tjc_c->milBUFF)])
+#define MILFRAGOUT    &(tjc_c->milfragBUFF[strlen(tjc_c->milfragBUFF)])
 #define DOTOUT    &(tjc_c->dotBUFF[strlen(tjc_c->dotBUFF)])
 
 extern tjc_config* tjc_c_GLOBAL;

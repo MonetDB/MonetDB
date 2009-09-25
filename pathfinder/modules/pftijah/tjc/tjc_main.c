@@ -55,10 +55,13 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
     tjc_c->algDotFile	= NULL;
     tjc_c->milFile	= NULL;
     tjc_c->milBUFF[0]	= 0;
+    tjc_c->milfragBUFF[0] = 0;
     tjc_c->dotBUFF[0]	= 0;
     tjc_c->debug	= 0;
     tjc_c->timing	= 0;
     tjc_c->ftindex	= "DFLT_FT_INDEX";
+    tjc_c->topk 	= 0;
+    tjc_c->maxfrag	= 0;
     tjc_c->irmodel	= "NLLR";
     tjc_c->conceptirmodel = "LogSum";
     tjc_c->orcomb	= "sum";
@@ -95,6 +98,10 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
 	    tjc_c->parseDotFile = GDKstrdup(optVal);
 	} else if ( strcmp(optName,"algdotfile") == 0 ) {
 	    tjc_c->algDotFile = GDKstrdup(optVal);
+	} else if ( strcmp(optName,"returnNumber") == 0 ) {
+            tjc_c->topk = atoi(optVal);
+	} else if ( strcmp(optName,"maxfrag") == 0 ) {
+            tjc_c->maxfrag = atoi(optVal);
 	} else if ( strcmp(optName,"ft-index") == 0 ) {
             tjc_c->ftindex = GDKstrdup(optVal);
         } else if ( strcmp(optName,"ir-model") == 0 ) {
@@ -173,6 +180,10 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
                 tjc_c->semantics = 0;
             else if ( strcasecmp(optVal,"vague") == 0 ) 
                 tjc_c->semantics = 1;
+        } else if (strcmp(optName, "inexout") == 0) {
+            if (strcasecmp(optVal, "TRUE") == 0) {
+                tjc_c->inexout = 1;
+            }
         } else if (strcmp(optName, "prior") == 0) {
             if (strcasecmp(optVal, "LENGTH_PRIOR") == 0) {
                 tjc_c->prior = "ls";
@@ -180,8 +191,6 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
         }  else if (strcmp(optName, "rmoverlap") == 0) {
            if (strcasecmp(optVal, "TRUE") == 0) 
                 tjc_c->rmoverlap = 1;
-        }  else if (strcmp(optName, "returnNumber") == 0) {
-           /* will be handled in after query execution in pftijah.mx */
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }

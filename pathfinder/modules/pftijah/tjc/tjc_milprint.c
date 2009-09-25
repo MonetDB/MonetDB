@@ -88,7 +88,6 @@ void milprint_end (tjc_config *tjc_c, TJatree_t *tree) {
     TJCPRINTF(MILOUT,"nexi_result := tsort_rev(nexi_result);\n");
     TJCPRINTF(MILOUT,"nexi_score_xfer := nexi_result;\n");
     TJCPRINTF(MILOUT,"nexi_result := nil;\n"); /* IMPORTANT, MEMORY LEAK */
-    if (0) TJCPRINTF(MILOUT,"nexi_result := nexi_result.print();\n");
     if (tjc_c->debug) {
 	TJCPRINTF(MILOUT,"trace := FALSE;\n");
     }
@@ -101,10 +100,66 @@ void milprint_end (tjc_config *tjc_c, TJatree_t *tree) {
     TJCPRINTF(MILOUT,"}\n");
 }
 
+void milprint_end_merge (tjc_config *tjc_c, TJatree_t *tree) {
+    int qid, c;
+    TJCPRINTF(MILOUT,"\n");
+    for (qid = 0; qid < tree->qlength; qid++) {
+         TJCPRINTF(MILOUT,"Q%d := nil;\n", qid);
+    }   
+    TJCPRINTF(MILOUT,"\n");
+    if (tjc_c->maxfrag == 0) {
+        /* no merge, single frag */
+        TJCPRINTF(MILOUT,"nexi_score_xfer := nexi_result0;\n");
+        TJCPRINTF(MILOUT,"nexi_result0 := nil;\n"); /* IMPORTANT, MEMORY LEAK */
+    } else {
+        /* merge case */
+        TJCPRINTF(MILOUT,"var res_frag := new(void,bat).seqbase(0@0);\n");
+        for (c = 0; c <= tjc_c->maxfrag; c++) {     
+            TJCPRINTF(MILOUT,"res_frag.append(nexi_result%d);\n", c);    
+        }
+        TJCPRINTF(MILOUT,"nexi_score_xfer := tj_merge_frag_results(res_frag, %d);\n", tjc_c->topk);
+        for (c = 0; c <= tjc_c->maxfrag; c++) {     
+            TJCPRINTF(MILOUT,"nexi_result%d := nil;\n", c);    
+        }
+        TJCPRINTF(MILOUT,"res_frag := nil;\n");    
+    }
+    if (tjc_c->debug) {
+	TJCPRINTF(MILOUT,"trace := FALSE;\n");
+    }
+    if (tjc_c->timing) {
+	TJCPRINTF(MILOUT,"timing := FALSE;\n");
+    }
+    if (tjc_c->semantics == 1) {
+        TJCPRINTF(MILOUT,"returnAllElements := FALSE;\n");
+    } 
+    TJCPRINTF(MILOUT,"}\n");
+}
+
+void milprint_end_frag (tjc_config *tjc_c, TJatree_t *tree, int frag) {
+    TJCPRINTF(MILOUT,"var nexi_result%d := R" PDFMT ";\n", frag, tree->root - tree->nodes);
+    TJCPRINTF(MILOUT,"R" PDFMT " := nil;\n", tree->root - tree->nodes);
+    if (tree->root->preIDs == 0) TJCPRINTF(MILOUT,"nexi_result%d := tj_nid2pre(nexi_result%d);\n", frag, frag);
+    if (tjc_c->rmoverlap && tree->root->nested) {
+	TJCPRINTF(MILOUT,"nexi_result%d := tj_rm_overlap(nexi_result%d);\n", frag, frag);
+    }
+    if (tjc_c->prior) {
+	TJCPRINTF(MILOUT,"nexi_result%d := tj_prior_%s(nexi_result%d);\n", frag, tjc_c->prior, frag);
+    }
+    TJCPRINTF(MILOUT,"nexi_result%d := tsort_rev(nexi_result%d);\n", frag, frag);
+    if (tjc_c->topk) {
+        TJCPRINTF(MILOUT,"nexi_result%d := nexi_result%d.slice(0, %d);\n", frag, frag, tjc_c->topk - 1);
+    }
+    if (tjc_c->inexout) {
+        TJCPRINTF(MILOUT,"nexi_result%d := tj_pre2inexpath(nexi_result%d);\n", frag, frag);
+    }
+    TJCPRINTF(MILOUT,"\n");
+}
+
 void milprint_qenv (tjc_config *tjc_c) {
-    TJCPRINTF(MILOUT,"var ftindex := \"%s\";\n", tjc_c->ftindex);    
-    TJCPRINTF(MILOUT,"tj_init_termHash(ftindex);\n");    
-    TJCPRINTF(MILOUT,"tj_init_tagHash(ftindex);\n");    
+    TJCPRINTF(MILOUT,"var ftiName := \"%s\";\n", tjc_c->ftindex);    
+    TJCPRINTF(MILOUT,"var ftindex;\n");    
+    TJCPRINTF(MILOUT,"tj_init_termHash(ftiName);\n");    
+    TJCPRINTF(MILOUT,"tj_init_tagHash(ftiName);\n");    
     TJCPRINTF(MILOUT,"var scorebase := dbl(%f);\n", tjc_c->scorebase);    
     TJCPRINTF(MILOUT,"var c_lambda := dbl(%f);\n", tjc_c->lambda);    
     TJCPRINTF(MILOUT,"var okapi_k1 := dbl(%f);\n", tjc_c->okapik1);    
@@ -131,7 +186,7 @@ void milprint_qnode (tjc_config *tjc_c, TJatree_t *tree) {
         if (qn->kind == q_term || qn->kind == q_term_plus || qn->kind == q_term_min || qn->kind == q_phrase) {
             for (c = 0; c < qn->length; c++)
                 TJCPRINTF(MILOUT,"Q%d.insert(\"%s\", dbl(%f));\n", qid, qn->tlist[c], qn->wlist[c]);
-	    TJCPRINTF(MILOUT,"Q%d := tj_term2tid(Q%d);\n", qid, qid);
+	    TJCPRINTF(MILOUT,"Q%d := tj_prepare_query(Q%d);\n", qid, qid);
 	}
         if (qn->kind == q_ent || qn->kind == q_ent_plus || qn->kind == q_ent_min) {
             for (c = 0; c < qn->length; c++)
@@ -164,51 +219,51 @@ void milprint_node (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short *
     switch (node->kind) { 
 	case a_select_element :
 	    if (strcmp (node->op, "select_startnodes") == 0)
-	        TJCPRINTF(MILOUT,"var R%d := tj_%s();\n", nid, node->op);
+	        TJCPRINTF(MILFRAGOUT,"var R%d := tj_%s();\n", nid, node->op);
 	    else if (strcmp (node->op, "select_star") == 0)
-	        TJCPRINTF(MILOUT,"var R%d := tj_%s();\n", nid, node->op);
+	        TJCPRINTF(MILFRAGOUT,"var R%d := tj_%s();\n", nid, node->op);
 	    else
-		TJCPRINTF(MILOUT,"var R%d := tj_%s(\"%s\");\n", nid, node->op, node->tag);
+		TJCPRINTF(MILFRAGOUT,"var R%d := tj_%s(\"%s\");\n", nid, node->op, node->tag);
 	    break;
 	case a_contained_by : 
 	case a_containing :
 	case a_and :
 	case a_or :
-	    TJCPRINTF(MILOUT,"var R%d := tj_%s(R%d, R%d);\n", nid, node->op, child[0], child[1]);
+	    TJCPRINTF(MILFRAGOUT,"var R%d := tj_%s(R%d, R%d);\n", nid, node->op, child[0], child[1]);
 	    break;
 	case a_containing_query :
 	    switch ((tree->qnodes[(short)node->qid])->kind) {
 		case q_term :
-	            TJCPRINTF(MILOUT,"var R%d := tj_%s_%s(R%d, Q%d);\n", nid, node->op, tjc_c->irmodel, child[0], node->qid);
+	            TJCPRINTF(MILFRAGOUT,"var R%d := tj_%s_%s(R%d, Q%d);\n", nid, node->op, tjc_c->irmodel, child[0], node->qid);
 		    break;
 		case q_ent : 
-		    TJCPRINTF(MILOUT,"var R%d := tj_%s_%s(R%d, Q%d);\n", nid, node->op, tjc_c->conceptirmodel, child[0], node->qid);
+		    TJCPRINTF(MILFRAGOUT,"var R%d := tj_%s_%s(R%d, Q%d);\n", nid, node->op, tjc_c->conceptirmodel, child[0], node->qid);
 		    break;
 		case q_phrase :
 		case q_term_plus :
 		case q_term_min :
 		case q_ent_plus :
 		case q_ent_min :
-	            TJCPRINTF(MILOUT,"var R%d := tj_%s(R%d, Q%d);\n", nid, node->op, child[0], node->qid);
+	            TJCPRINTF(MILFRAGOUT,"var R%d := tj_%s(R%d, Q%d);\n", nid, node->op, child[0], node->qid);
 		    break;
 	    }
 	    break;
 	case a_nid2pre :
 	case a_pre2nid :
 	case a_add_pre :
-	    TJCPRINTF(MILOUT,"var R%d := tj_%s(R%d);\n", nid, node->op, child[0]);
+	    TJCPRINTF(MILFRAGOUT,"var R%d := tj_%s(R%d);\n", nid, node->op, child[0]);
 	    break;
     }
     node->visited++;
 
     // debug output
     if (tjc_c->debug > 9)
-	TJCPRINTF(MILOUT,"R%d.print();\n", nid);
+	TJCPRINTF(MILFRAGOUT,"R%d.print();\n", nid);
  
     // free children if their scope ends
     for (c = 0; c < TJPNODE_MAXCHILD; c++) 
         if (child[c] != -1 && node_scope[child[c]] == nid)
-	    TJCPRINTF(MILOUT,"R%d := nil;\n", child[c]);
+	    TJCPRINTF(MILFRAGOUT,"R%d := nil;\n", child[c]);
 
 }
 
@@ -247,7 +302,25 @@ char* milprint (tjc_config *tjc_c, TJatree_t *tree)
     milprint_qnode (tjc_c, tree);
     visited = tree->root->visited;
     milprint_node (tjc_c, tree, tree->root, node_scope, visited);
-    milprint_end (tjc_c, tree);
+   
+    // for old index management 
+    if (tjc_c->maxfrag < 0) {
+        TJCPRINTF(MILOUT,"ftindex := ftiName;\n");    
+        TJCPRINTF(MILOUT,&tjc_c->milfragBUFF[0]);
+    } 
+    for (c = 0; c <= tjc_c->maxfrag; c++) {     
+        TJCPRINTF(MILOUT,"ftindex := ftiName + \"%d\";\n", c);    
+        TJCPRINTF(MILOUT,&tjc_c->milfragBUFF[0]);
+        milprint_end_frag (tjc_c, tree, c);
+    }
+    
+    // for old index management
+    if (tjc_c->maxfrag < 0) { 
+        milprint_end (tjc_c, tree);
+    } else {
+        milprint_end_merge (tjc_c, tree);
+    }
+
 
     return &tjc_c->milBUFF[0];
 }

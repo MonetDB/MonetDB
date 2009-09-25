@@ -42,7 +42,7 @@ extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
 
 /* #define TJ_TRACE 1 */
 
-/* #define USE_INEX_PATH */
+/* #define USE_INEX_PATH 1 */
 
 /*******************************************
  * serialize_pftijah.c : XML serialization
@@ -852,7 +852,9 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	if ( !(res->b_docFirstPre = getBAT(tjCtx_BAT,"doc_firstpre")) ) return NULL;
 	if ( !(res->b_collPre     = getBAT(tjCtx_BAT,"tid")) ) return NULL;
 	if ( !(res->b_collSize    = getBAT(tjCtx_BAT,"size")) ) return NULL;
+#ifdef USE_INEX_PATH
 	if ( !(res->b_collPath    = getBAT(tjCtx_BAT,"path")) ) return NULL;
+#endif
 	if ( (res->tijahPre = getPreSize(res)) == oid_nil )
 	     return NULL;;
 	/* check here for new fragmentation */

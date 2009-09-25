@@ -732,8 +732,9 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
         parambat.insert("tokenizer",tokenizer);
         parambat.insert("stemmer",stemmer);
         parambat.insert("fragmentSize",fragsize);
-        parambat.insert("curFragment","0");
+        parambat.insert("curFragment","-1");
         parambat.insert("preExpansion","4");
+        parambat.insert("collectionSize","0");
         parambat.insert("lastStopWord","0");
         parambat.insert("status","building");
         parambat.insert("_last_tijahPre","1");
@@ -1243,6 +1244,10 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
     
     _buildIRindex(ftiName, collBat);
     #
+    # update collection size
+    var c_size := collBat.find("termfreq").[wrd]().sum();
+    _tj_set_parameter(collBat, "collectionSize", str(c_size));      
+    
     _tj_set_parameter(collBat, "status", "finalized");
     var lst_fpre := str(lng(parambat.find("_last_tijahPre")) - 1);
     _tj_set_parameter(collBat, "_last_finalizedPre", lst_fpre);
@@ -1476,7 +1481,7 @@ PROC _tj_init_collection_base(str ftiName, BAT[str,str] param, BAT[str,bat] comm
       var tagfilter      := "";
       var whitelist      := "";
       var blacklist      := "";
-      var fragsize       := "100000";
+      var fragsize       := "0";
       var delay_finalize := "0";
   
       param@batloop() {
@@ -1510,6 +1515,7 @@ PROC _tj_init_collection_base(str ftiName, BAT[str,str] param, BAT[str,bat] comm
       parambat.insert("curFragment","0");
       parambat.insert("preExpansion","4");
       parambat.insert("lastStopWord","0");
+      parambat.insert("collectionSize","0");
       parambat.insert("status","building");
       parambat.insert("_last_tijahPre","1");
       parambat.insert("_last_finalizedPre","0");
@@ -1604,7 +1610,7 @@ PROC _tj_get_collection_frag(str ftiName, BAT[str,bat] commitBats) : void
 	var cur_frag := int(parbat.find("curFragment"));
 	var frag_size := lng(parbat.find("fragmentSize"));
         var last_pre := lng(parbat.find("_last_tijahPre"));
-        if ( last_pre >= frag_size ) {
+        if (last_pre >= frag_size ) {
              cur_frag :+= 1;
              if ( verbose ) printf(HASH +"tj_get_collection_frag: init new fragment (last_pre: %d, frag_size: %d, cur_frag: %d).\n",int(last_pre), int(frag_size), cur_frag);
              _tj_init_collection_frag(ftiName, cur_frag, commitBats);
@@ -1803,6 +1809,7 @@ PROC _tj_finalize_collection_frag(str ftiName, BAT[str,bat] collBat, BAT[str,bat
       submitBats.append(collBat.find("doc_firstpre").bbpname());
       submitBats.append(collBat.find("tid").bbpname());
       submitBats.append(collBat.find("size").bbpname());
+      if (inex) submitBats.append(collBat.find("path").bbpname());
       submitBats.append(collBat.find("pfpre").bbpname());
       submitBats.append(collBat.find("concept_tid").bbpname());
       submitBats.append(collBat.find("concept_elem").bbpname());
@@ -1811,6 +1818,7 @@ PROC _tj_finalize_collection_frag(str ftiName, BAT[str,bat] collBat, BAT[str,bat
       submitBats.append(collBat.find("tagdict").bbpname());
       submitBats.append(collBat.find("conceptdict").bbpname());
       submitBats.append(collBat.find("rtags").bbpname());
+      submitBats.append(collBat.find("param").bbpname());
     
       if ( not(fforce) ) {
           var delfin   := lng(_tj_get_parameter2(collBat, "delay_finalize"));
@@ -1829,6 +1837,10 @@ PROC _tj_finalize_collection_frag(str ftiName, BAT[str,bat] collBat, BAT[str,bat
       #
       _tj_build_inverted_index_frag(ftiName, collBat, commitBats);
       #
+      # update collection size
+      var c_size := collBat.find("termfreq").[wrd]().sum();
+      _tj_set_parameter2(collBat, "collectionSize", str(c_size));      
+
       _tj_set_parameter2(collBat, "status", "finalized");
       var lst_fpre := str(lng(_tj_get_parameter2(collBat,"_last_tijahPre")) - 1);
       _tj_set_parameter2(collBat, "_last_finalizedPre", lst_fpre);
@@ -1933,12 +1945,12 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
 	        var terms := tmp.tmark(0@0);
 	        tmp := nil;
 	        # create _TermIndex and _Terms here
-	        termindex.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_TermIndex");
-	        terms.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_Terms");
+	        termindex.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftindex + "_TermIndex");
+	        terms.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftindex + "_Terms");
 	        termindex := nil;
 		terms := nil;
-		submitBats.append("tj_" + ftiName + "_TermIndex");
-		submitBats.append("tj_" + ftiName + "_Terms");
+		submitBats.append("tj_" + ftindex + "_TermIndex");
+		submitBats.append("tj_" + ftindex + "_Terms");
 		submitBats.append(tf.bbpname());
         }
         
@@ -1953,15 +1965,15 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
         tmp := nil;
 	var conceptindex := offsetindex(c_cid, collBat.find("conceptdict").count_wrd() + 1);
 	# create _ConceptIndex and _Concepts here
-	conceptindex.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_ConceptIndex");
-	concepts.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_Concepts");
-	conceptscore.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_ConceptScore");
+	conceptindex.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftindex + "_ConceptIndex");
+	concepts.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftindex + "_Concepts");
+	conceptscore.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftindex + "_ConceptScore");
 	conceptindex := nil;
         concepts := nil;
 	conceptscore := nil;
-	submitBats.append("tj_" + ftiName + "_ConceptIndex");
-	submitBats.append("tj_" + ftiName + "_Concepts");
-	submitBats.append("tj_" + ftiName + "_ConceptScore");
+	submitBats.append("tj_" + ftindex + "_ConceptIndex");
+	submitBats.append("tj_" + ftindex + "_Concepts");
+	submitBats.append("tj_" + ftindex + "_ConceptScore");
         collBat.find("termdict").access(BAT_READ);
       if ( verbose ) printf(HASH +"TJ _tj_build_inverted_index_frag() finished.\n");
 }
@@ -2161,12 +2173,33 @@ PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void
         lock_set(nexi_parser_lock);
         var err := CATCH({
 	    nexi_sn_xfer := nodes;
+            opt.insert("maxfrag", parambat.find("curFragment"));
 	    _run_tijah_query(opt,rtagbat,use_startnodes);
 	    res := nexi_score_xfer;
         });
 	nexi_score_xfer := nil;
 	nexi_sn_xfer := nil;
         lock_unset(nexi_parser_lock);
+        if (not(isnil(err))) ERROR(err);
+	return res;
+}
+
+PROC run_nexi_query(str nexi, bat[str,str] opt) : BAT[oid,dbl]
+{
+	var res := nil;
+        var err := CATCH({
+            var ftiName := dflt_ft_index;
+            if (opt.exist("ft-index")) ftiName := opt.find("ft-index"); 
+	    var parambat := bat("tj_" + ftiName + "_param");
+	    var rtagbat  := bat(_tj_RTagBat(ftiName));
+            opt.insert("_query", nexi);
+            opt.insert("maxfrag", parambat.find("curFragment"));
+            if (inex) opt.insert("inexout", "true");
+	    _run_tijah_query(opt,rtagbat,false);
+	    res := nexi_score_xfer;
+        });
+	nexi_score_xfer := nil;
+	nexi_sn_xfer := nil;
         if (not(isnil(err))) ERROR(err);
 	return res;
 }
@@ -2839,10 +2872,11 @@ PROC tj_select_startnodes() : bat[oid,any]
 ##
 PROC tj_select_tag(str name) : bat[oid,any] 
 {
-    var tids := bat("tj_" + ftindex + "_tagdict").select(name);
+    var tids := bat("tj_" + ftiName + "_tagdict").select(name);
     if (tids.count_wrd() = wrd(0)) return new(oid,dbl);
     var tid := wrd(tids.reverse().fetch(0));
     var index := bat("tj_" + ftindex + "_TagIndex");
+    if (wrd(tid) >= index.count_wrd()) return new(oid,dbl);
     var offset1 := wrd(index.fetch(tid));
     var offset2 := wrd(index.fetch(tid + 1)) - 1;
     return bat("tj_" + ftindex + "_Tags").slice(offset1, offset2).set_tailkeysorted();
@@ -3044,9 +3078,20 @@ PROC tj_containing_prop_@1_pre (bat[oid,any] left, bat[oid,dbl] right) : bat[oid
 # Containing_query_term
 #####################################################################
 
+PROC tj_prepare_query (bat[str,dbl] term_score) : bat[void,bat]
+{
+    var oid_weight := tj_term2tid(term_score);
+    oid_weight := {sum}(oid_weight);
+    var oid_cf := oid_weight.mirror().leftfetchjoin(bat("tj_" + ftiName + "_termfreq"));
+    var query := new(void,bat).seqbase(0@0);
+    query.append(oid_weight);
+    query.append(oid_cf);
+    return query; 
+}
+
 PROC tj_term2tid (bat[str,dbl] term_score) : bat[oid,dbl] 
 {
-    var param    := bat("tj_" + ftindex + "_param");
+    var param    := bat("tj_" + ftiName + "_param");
     var stemmer  := param.find("stemmer");
     var firstterm:= oid(param.find("lastStopWord"));
     
@@ -3054,7 +3099,7 @@ PROC tj_term2tid (bat[str,dbl] term_score) : bat[oid,dbl]
     var mark_score := term_score.tmark(0@0);
     var stemmed  := [tj_normalizeTerm]( [toLower](mark_term), stemmer );
     
-    var mark_tid := stemmed.join(bat("tj_" + ftindex + "_termdict").reverse());
+    var mark_tid := stemmed.join(bat("tj_" + ftiName + "_termdict").reverse());
     mark_tid := mark_tid.select(firstterm,oid(nil),TRUE,FALSE);
     # it is important to keep the order of query terms (phrase queries)
     return mark_score.reverse().leftjoin(mark_tid).reverse();
@@ -3064,6 +3109,7 @@ PROC tj_term2tid (bat[str,dbl] term_score) : bat[oid,dbl]
 # in the collection of the documents
 PROC _getTermPositions (oid tid) : bat[void,oid] {
      var index := bat("tj_" + ftindex + "_TermIndex");
+     if (wrd(tid) >= index.count_wrd()) return new(void,oid).seqbase(0@0);
      var offset1 := wrd(index.fetch(int(tid)));
      var offset2 := wrd(index.fetch(int(tid) + 1));
      var res := bat("tj_" + ftindex + "_Terms").slice(offset1, offset2 - 1);
@@ -3195,18 +3241,19 @@ PROC _score_OKAPI(dbl q_tCnt, BAT[oid,int] e_tCnt, BAT[void,int] e_size, wrd cNd
 @:containing_query_term_LM(nest,pre,size)@
 @:containing_query_term_LM(unnest,pre,size)@
 @= containing_query_term_LM
-PROC tj_containing_query_@1_@2_term_LM (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] 
+PROC tj_containing_query_@1_@2_term_LM (bat[oid,any] left, bat[oid,bat] query) : bat[oid,dbl] 
 {
     var t_total := 0;
     t_total :-= time();
     
+    var t_qCnt := query.fetch(0);
+    var t_cCnt := query.fetch(1);
+
     if ( count_wrd(left) = wrd(0) ) return new(oid,dbl);
-    if ( count_wrd(query) = wrd(0) ) return new(oid,dbl);
-    
-    var t_qCnt := {sum}(query);
+    if ( count_wrd(t_qCnt) = wrd(0) ) return new(oid,dbl);
     
     var e_pre := left.chk_order();
-    var cSize := bat("tj_" + ftindex + "_Terms").count_wrd();
+    var cSize := bat("tj_" + ftiName + "_param").find("collectionSize").wrd();
     var e_size := bat("tj_" + ftindex + "_@3");
     var eScores := new(oid,dbl);
     
@@ -3215,7 +3262,7 @@ PROC tj_containing_query_@1_@2_term_LM (bat[oid,any] left, bat[oid,dbl] query) :
     {
         # get collection count of term
         var t_pre := _getTermPositions($h);
-        var c_tCnt := count_wrd(t_pre); 
+        var c_tCnt := wrd(t_cCnt.find($h)); 
         # get element count of term
 	var e_tCnt := _getTermDocCnt_@1_@2(e_pre, e_size, t_pre);
 	# score elements by this term
@@ -3248,18 +3295,19 @@ PROC tj_containing_query_@1_@2_term_LM (bat[oid,any] left, bat[oid,dbl] query) :
 @:containing_query_term_LMs(nest,pre,size)@
 @:containing_query_term_LMs(unnest,pre,size)@
 @= containing_query_term_LMs
-PROC tj_containing_query_@1_@2_term_LMs (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] 
+PROC tj_containing_query_@1_@2_term_LMs (bat[oid,any] left, bat[oid,bat] query) : bat[oid,dbl] 
 {
     var t_total := 0;
     t_total :-= time();
     
-    if ( count_wrd(left) = wrd(0) ) return new(oid,dbl);
-    if ( count_wrd(query) = wrd(0) ) return new(oid,dbl);
+    var t_qCnt := query.fetch(0);
+    var t_cCnt := query.fetch(1);
     
-    var t_qCnt := {sum}(query);
+    if ( count_wrd(left) = wrd(0) ) return new(oid,dbl);
+    if ( count_wrd(t_qCnt) = wrd(0) ) return new(oid,dbl);
     
     var e_pre := left.chk_order();
-    var cSize := bat("tj_" + ftindex + "_Terms").count_wrd();
+    var cSize := bat("tj_" + ftiName + "_param").find("collectionSize").wrd();
     var e_size := bat("tj_" + ftindex + "_@3");
     var eScores := new(oid,dbl);
     var score_base := dbl(1);
@@ -3269,7 +3317,7 @@ PROC tj_containing_query_@1_@2_term_LMs (bat[oid,any] left, bat[oid,dbl] query) 
     {
         # get collection count of term
         var t_pre := _getTermPositions($h);
-        var c_tCnt := count_wrd(t_pre); 
+        var c_tCnt := wrd(t_cCnt.find($h)); 
         # get element count of term
 	var e_tCnt := _getTermDocCnt_@1_@2(e_pre, e_size, t_pre);
 	# score elements by this term
@@ -3304,19 +3352,21 @@ PROC tj_containing_query_@1_@2_term_LMs (bat[oid,any] left, bat[oid,dbl] query) 
 @:containing_query_term_NLLR(nest,pre,size)@
 @:containing_query_term_NLLR(unnest,pre,size)@
 @= containing_query_term_NLLR
-PROC tj_containing_query_@1_@2_term_NLLR (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] 
+PROC tj_containing_query_@1_@2_term_NLLR (bat[oid,any] left, bat[oid,bat] query) : bat[oid,dbl] 
 {
     var t_total := 0;
     t_total :-= time();
     
-    if ( count_wrd(left) = wrd(0) ) return new(oid,dbl);
-    if ( count_wrd(query) = wrd(0) ) return new(oid,dbl);
+    var t_qCnt := query.fetch(0);
+    var t_cCnt := query.fetch(1);
     
-    var qSize := query.sum();
-    var t_qCnt := {sum}(query);
+    if ( count_wrd(left) = wrd(0) ) return new(oid,dbl);
+    if ( count_wrd(t_qCnt) = wrd(0) ) return new(oid,dbl);
+    
+    var qSize := t_qCnt.sum();
     
     var e_pre := left.chk_order();
-    var cSize := bat("tj_" + ftindex + "_Terms").count_wrd();
+    var cSize := bat("tj_" + ftiName + "_param").find("collectionSize").wrd();
     var e_size := bat("tj_" + ftindex + "_@3");
     var eScores := new(oid,dbl);
     
@@ -3325,7 +3375,7 @@ PROC tj_containing_query_@1_@2_term_NLLR (bat[oid,any] left, bat[oid,dbl] query)
     {
         # get collection count of term
         var t_pre := _getTermPositions($h);
-        var c_tCnt := count_wrd(t_pre); 
+        var c_tCnt := wrd(t_cCnt.find($h)); 
         # get element count of term
 	var e_tCnt := _getTermDocCnt_@1_@2(e_pre, e_size, t_pre);
         # score elements by this term
@@ -3357,18 +3407,18 @@ PROC tj_containing_query_@1_@2_term_NLLR (bat[oid,any] left, bat[oid,dbl] query)
 @:containing_query_term_OKAPI(nest,pre,size)@
 @:containing_query_term_OKAPI(unnest,pre,size)@
 @= containing_query_term_OKAPI
-PROC tj_containing_query_@1_@2_term_OKAPI (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] 
+PROC tj_containing_query_@1_@2_term_OKAPI (bat[oid,any] left, bat[oid,bat] query) : bat[oid,dbl] 
 {
     var t_total := 0;
     t_total :-= time();
     
-    if ( count_wrd(left) = wrd(0) ) return new(oid,dbl);
-    if ( count_wrd(query) = wrd(0) ) return new(oid,dbl);
+    var t_qCnt := query.fetch(0);
     
-    var t_qCnt := {sum}(query);
+    if ( count_wrd(left) = wrd(0) ) return new(oid,dbl);
+    if ( count_wrd(t_qCnt) = wrd(0) ) return new(oid,dbl);
     
     var e_pre := left.chk_order();
-    var cSize := bat("tj_" + ftindex + "_Terms").count_wrd();
+    var cSize := bat("tj_" + ftiName + "_param").find("collectionSize").wrd();
     var e_size := bat("tj_" + ftindex + "_@3");
     var eScores := new(oid,dbl);
     var cNdoc := e_pre.count_wrd();
@@ -3432,19 +3482,21 @@ PROC _getTermDoc_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[oid,oid] t
 @:containing_query_term(nest,pre,min,size,kdiff)@
 @:containing_query_term(unnest,pre,min,size,kdiff)@
 @= containing_query_term
-PROC tj_containing_query_@1_@2_term_@3 (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] 
+PROC tj_containing_query_@1_@2_term_@3 (bat[oid,any] left, bat[oid,bat] query) : bat[oid,dbl] 
 {
     var t_total := 0;
     t_total :-= time();
     
+    var t_qCnt := query.fetch(0);
+
     if ( count_wrd(left) = wrd(0) ) return new(oid,dbl);
-    if ( count_wrd(query) = wrd(0) ) return new(oid,dbl);
+    if ( count_wrd(t_qCnt) = wrd(0) ) return new(oid,dbl);
     
     var e_pre := left.chk_order();
     var e_size := bat("tj_" + ftindex + "_@4");
     
     # loop over query terms
-    query@batloop()
+    t_qCnt@batloop()
     {
         # get collection count of term
         var t_pre := _getTermPositions($h);
@@ -3484,17 +3536,19 @@ PROC _selectPhrase(bat[oid,dbl] query) : bat[oid,oid]
 @:containing_query_phrase(nest,pre,size)@
 @:containing_query_phrase(unnest,pre,size)@
 @= containing_query_phrase
-PROC tj_containing_query_@1_@2_phrase (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] 
+PROC tj_containing_query_@1_@2_phrase (bat[oid,any] left, bat[oid,bat] query) : bat[oid,dbl] 
 {
     var t_total := 0;
     t_total :-= time();
     
+    var t_qCnt := query.fetch(0);
+
     if ( count_wrd(left) = wrd(0) ) return new(oid,dbl);
-    if ( count_wrd(query) = wrd(0) ) return new(oid,dbl);
+    if ( count_wrd(t_qCnt) = wrd(0) ) return new(oid,dbl);
     
     var e_pre := left.chk_order();
     var e_size := bat("tj_" + ftindex + "_@3");
-    var t_pre := _selectPhrase(query);
+    var t_pre := _selectPhrase(t_qCnt);
     var res := e_pre.semijoin(_getTermDoc_@1_@2(e_pre, e_size, t_pre));
     
     t_total :+= time();
@@ -3510,7 +3564,7 @@ PROC tj_containing_query_@1_@2_phrase (bat[oid,any] left, bat[oid,dbl] query) : 
 
 PROC tj_ent2tid (bat[str,dbl] concept_score) : bat[oid,dbl] 
 {
-    return bat("tj_" + ftindex + "_conceptdict").join(concept_score);
+    return bat("tj_" + ftiName + "_conceptdict").join(concept_score);
 }
 
 # returns the pre-order positions of the concept c
@@ -3745,6 +3799,38 @@ PROC tj_rm_overlap(BAT[oid,dbl] ctx) : bat
 #"Removes overlapping elements from result list.",
 #"TIJAH");
 
+################################################################################
+# INEX output 
+################################################################################
+
+##
+# Map all pre identifiers to their stored inexpath expressions
+# Returns a bat [pre, any].
+##
+PROC tj_pre2inexpath(bat[oid,any] pre_score) : bat[oid,any] 
+{
+    return pre_score.reverse().leftjoin(bat("tj_" + ftindex + "_path")).reverse();
+}
+
+################################################################################
+# MERGE output 
+################################################################################
+
+##
+# Map all pre identifiers to their stored inexpath expressions
+# Returns a bat [pre, any].
+##
+PROC tj_merge_frag_results(bat[void,bat] res_frag, int topk) : bat[str,dbl] 
+{
+    var res := new(str,dbl);
+    res_frag@batloop(){
+        res.insert($t);
+    }
+    if (topk > 0) {
+        return res.tsort_rev().slice(0, topk - 1);
+    }
+    return res.tsort_rev();
+}
 
 
 #####################################################################
