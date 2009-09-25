@@ -589,16 +589,16 @@ controlRunner(void *d)
 					if (q == NULL) {
 						Mfprintf(_mero_ctlout, "%s: served status list\n",
 								origin);
-
-						/* because this command is multi line, you can't
-						 * combine it, disconnect the client */
-						break;
 					} else {
 						Mfprintf(_mero_ctlout, "%s: returned status for "
 								"'%s'\n", origin, q);
 					}
 
 					SABAOTHfreeStatus(&topdb);
+
+					/* because this command is multi line, you can't
+					 * combine it, disconnect the client */
+					break;
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
 				{

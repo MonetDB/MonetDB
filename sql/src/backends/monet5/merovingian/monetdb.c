@@ -306,7 +306,7 @@ MEROgetStatus(sabdb **ret, char *database)
 				"flyghende", "hollander", 1, mero_pass);
 	} else {
 		e = control_send(&buf, mero_host, mero_port,
-				database, "status", 0, mero_pass);
+				database, "status", 1, mero_pass);
 	}
 	if (e != NULL)
 		return(e);
