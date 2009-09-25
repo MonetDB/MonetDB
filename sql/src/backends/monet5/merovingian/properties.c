@@ -102,7 +102,7 @@ writePropsBuf(confkeyval *ckv, char **buf)
 
 	p = *buf = malloc(sizeof(char) * len + 1);
 	memcpy(p, MEROPROPFILEHEADER, sizeof(MEROPROPFILEHEADER));
-	p += sizeof(MEROPROPFILEHEADER);
+	p += sizeof(MEROPROPFILEHEADER) - 1;
 	w = ckv;
 	while (w->key != NULL) {
 		if (w->val != NULL)
