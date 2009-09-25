@@ -49,6 +49,7 @@ typedef int  (*find_user_fptr) (ptr mvc, char *user);
 typedef void (*create_privileges_fptr) (ptr mvc, sql_schema *s);
 typedef int  (*schema_has_user_fptr) (ptr mvc, sql_schema *s);
 typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, char enc, sqlid schema_id, str oldpasswd);
+typedef int  (*rename_user_fptr) (ptr mvc, str olduser, str newuser);
 typedef void*  (*schema_user_dependencies) (ptr mvc, int schema_id);
 
 /* backing struct for this interface */
@@ -61,6 +62,7 @@ typedef struct _backend_functions {
 	create_privileges_fptr fcrpriv;
 	schema_has_user_fptr fshuser;
 	alter_user_fptr fauser;
+	rename_user_fptr fruser;
 	schema_user_dependencies fschuserdep;
 } backend_functions;
 
@@ -73,6 +75,7 @@ extern int  backend_find_user(ptr mp, char *user);
 extern void backend_create_privileges(ptr mvc, sql_schema *s);
 extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
 extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid schema_id, str oldpasswd);
+extern int	backend_rename_user(ptr mvc, str olduser, str newuser);
 extern void*	backend_schema_user_dependencies(ptr trans, int schema_id);
 
 extern backend_functions be_funcs;
@@ -144,6 +147,14 @@ backend_alter_user(ptr mvc, str user, str passwd, char enc,
 {
 	if (be_funcs.fauser != NULL)
 		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, oldpasswd));
+	return(FALSE);
+}
+
+int
+backend_rename_user(ptr mvc, str olduser, str newuser)
+{
+	if (be_funcs.fruser != NULL)
+		return(be_funcs.fruser(mvc, olduser, newuser));
 	return(FALSE);
 }
 

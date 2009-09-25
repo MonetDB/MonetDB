@@ -60,6 +60,7 @@ typedef enum tokens {
 	SQL_ALTER_TABLE,
 	SQL_ALTER_SEQ,
 	SQL_ALTER_USER,
+	SQL_RENAME_USER,
 	SQL_DROP_COLUMN,
 	SQL_DROP_CONSTRAINT,
 	SQL_DROP_DEFAULT,
@@ -699,7 +700,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
-%token ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
+%token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
@@ -1096,6 +1097,11 @@ alter_statement:
 	  append_string(l, $3);
 	  append_list(l, $4);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
+ | ALTER USER ident RENAME TO ident
+	{ dlist *l = L();
+	  append_string(l, $3);
+	  append_string(l, $6);
+	  $$ = _symbol_create_list( SQL_RENAME_USER, l ); }
  | ALTER USER SET opt_encrypted PASSWORD string USING OLD PASSWORD string
 	{ dlist *l = L();
 	  dlist *p = L();

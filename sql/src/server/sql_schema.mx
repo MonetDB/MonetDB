@@ -996,6 +996,24 @@ alter_user(mvc *sql, char *user, char *passwd, char enc,
 	return stmt_none();
 }
 
+static stmt *
+rename_user(mvc *sql, char *olduser, char *newuser)
+{
+	if (backend_find_user(sql, olduser) < 0)
+		return sql_error(sql, 02, "ALTER USER: no such user '%s'", olduser);
+	if (backend_find_user(sql, newuser) >= 0)
+		return sql_error(sql, 02, "ALTER USER: user '%s' already exists",
+				newuser);
+
+	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN)
+		return sql_error(sql, 02, "ALTER USER: insufficient privileges to "
+				"rename user '%s'", olduser);
+
+	sql_rename_user(sql, olduser, newuser);
+
+	return stmt_none();
+}
+
 
 static stmt *
 create_role(mvc *sql, dlist *qname, int grantor)
@@ -2123,6 +2141,14 @@ schemas(mvc *sql, symbol *s)
 				 l->h->next->data.lval->h->next->data.sval,	/* schema */
 				 l->h->next->data.lval->h->next->next->next->data.sval /* old passwd */
 		    );
+		sql->type = Q_SCHEMA;
+	}
+		break;
+	case SQL_RENAME_USER:
+	{
+		dlist *l = s->data.lval;
+
+		ret = rename_user(sql, l->h->data.sval, l->h->next->data.sval);
 		sql->type = Q_SCHEMA;
 	}
 		break;
