@@ -18,7 +18,7 @@
  */
 
 static int
-removeRemoteDB(char *dbname, char *conn)
+removeRemoteDB(const char *dbname, const char *conn)
 {
 	remotedb rdb;
 	remotedb prv;
@@ -50,7 +50,6 @@ removeRemoteDB(char *dbname, char *conn)
 					conn, rdb->fullname);
 			free(rdb->dbname);
 			free(rdb->conn);
-			free(rdb->tag);
 			free(rdb->fullname);
 			free(rdb);
 			hadmatch = 1;
@@ -66,7 +65,7 @@ removeRemoteDB(char *dbname, char *conn)
 }
 
 static int
-addRemoteDB(char *dbname, char *conn, int ttl) {
+addRemoteDB(const char *dbname, const char *conn, const int ttl) {
 	remotedb rdb;
 	remotedb prv;
 	char *tag;
@@ -97,10 +96,10 @@ addRemoteDB(char *dbname, char *conn, int ttl) {
 		rdb = prv->next = malloc(sizeof(struct _remotedb));
 	}
 	rdb->fullname = strdup(dbname);
-	if ((tag = strchr(dbname, '/')) != NULL)
-		*tag++ = '\0';
 	rdb->dbname = strdup(dbname);
-	rdb->tag = tag != NULL ? strdup(tag) : NULL;
+	if ((tag = strchr(rdb->dbname, '/')) != NULL)
+		*tag++ = '\0';
+	rdb->tag = tag;
 	rdb->conn = strdup(conn);
 	rdb->ttl = time(NULL) + ttl;
 	rdb->next = NULL;
@@ -215,7 +214,6 @@ discoveryRunner(void *d)
 						"has expired\n", rdb->conn, rdb->fullname);
 				free(rdb->dbname);
 				free(rdb->conn);
-				free(rdb->tag);
 				free(rdb->fullname);
 				free(rdb);
 				break;
