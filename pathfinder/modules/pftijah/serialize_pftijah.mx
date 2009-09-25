@@ -206,6 +206,9 @@ dbat_int_debug(char* t, dbat* dbat) {
 
 #ifdef USE_INEX_PATH
 
+/* this def is copied from libxml2/parserInternals.h */
+#define XML_MAX_NAMELEN 100
+
 /*
  * Start of the implementation of the INEX path generator. During indexing
  * this structure will keep track of the used tags in the current path. The
@@ -238,7 +241,7 @@ typedef union {
 		int prev_frame;	/* previous level frame, -1 for bottom */
 	} level;
 	struct {
-		str	strVal;	/* string value of the tagname */
+		char	strVal[XML_MAX_NAMELEN];/* string value of tagname */
 		int	cnt;	/* number of times used at this level */
 	} tag;
 } IpgFrame;
@@ -252,7 +255,7 @@ typedef struct InexPathGenBase {
 	char*		pathbuff;	/* the path printing buffer */
 } IpgBase;
 
-#define IPG_INIT_STACKSZ	512
+#define IPG_INIT_STACKSZ	256
 
 #define IPG_INIT_PATHSZ		8192
 
@@ -279,7 +282,10 @@ static int ipg_startdoc(IpgBase* base, str doc) {
 	base->top				= 0;
 	base->stack[base->top].level.ntags	= 0;
 	base->stack[base->top].level.prev_frame	= -1;
-	sprintf(base->pathbuff,"fn:doc(\"%s\")",doc);
+	if ( 1 /* Henning: use docnames in path */ )
+		sprintf(base->pathbuff,"fn:doc(\"%s\")",doc);
+	else
+		sprintf(base->pathbuff,"%s","");
 	base->stack[base->top].level.subpath = strlen(base->pathbuff);
 	return 1;
 }
@@ -313,7 +319,7 @@ static int ipg_pushtag(IpgBase* base, str tag, oid o) {
 		ipg_frame_alloc(base);
 		base->stack[base->top].level.ntags++;
 		found = & base->stack[base->top+base->stack[base->top].level.ntags];
-		found->tag.strVal = (str)GDKstrdup(tag);
+		strcpy(found->tag.strVal,tag);
 		found->tag.cnt = 0;
 	}
 	found->tag.cnt++;
@@ -338,15 +344,10 @@ static int ipg_pushtag(IpgBase* base, str tag, oid o) {
 	return 1;
 }
 
-static int ipg_poptag(IpgBase* base) {
-	/* free tag strings used at the top level */
-	for(int i=0; i< base->stack[base->top].level.ntags; i++) {
-		GDKfree(base->stack[base->top+i+1].tag.strVal);
-	}
-
+static INLINE int ipg_poptag(IpgBase* base) {
 	base->top = base->stack[base->top].level.prev_frame;
 
-	if (0) stream_printf(GDKout,"-IPG[pop: path=%s]\n",base->pathbuff);
+	/* stream_printf(GDKout,"-IPG[pop: path=%s]\n",base->pathbuff); */
 	return 1;
 }
 
