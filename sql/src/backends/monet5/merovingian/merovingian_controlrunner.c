@@ -450,67 +450,6 @@ controlRunner(void *d)
 					Mfprintf(_mero_ctlout, "%s: served property list for "
 							"database '%s'\n", origin, q);
 					break;
-				} else if (strncmp(p, "share=", strlen("share=")) == 0) {
-					sabdb *stats;
-					err e;
-					confkeyval *kv;
-
-					/* bail out if we don't do discovery at all */
-					kv = findConfKey(_mero_props, "shared");
-					if (strcmp(kv->val, "no") == 0) {
-						/* can't do much */
-						len = snprintf(buf2, sizeof(buf2),
-								"discovery service is globally disabled, "
-								"enable it first\n");
-						send(msgsock, buf2, len, 0);
-						Mfprintf(_mero_ctlerr, "%s: share: cannot perform "
-								"client share request: discovery service "
-								"is globally disabled in %s\n", 
-								origin, _mero_conffile);
-						continue;
-					}
-
-					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
-						len = snprintf(buf2, sizeof(buf2),
-								"internal error, please review the logs\n");
-						send(msgsock, buf2, len, 0);
-						Mfprintf(_mero_ctlerr, "%s: share: SABAOTHgetStatus: "
-								"%s\n", origin, e);
-						freeErr(e);
-						continue;
-					}
-					if (stats == NULL) {
-						Mfprintf(_mero_ctlerr, "%s: received share signal for "
-								"unknown database: %s\n", origin, q);
-						len = snprintf(buf2, sizeof(buf2),
-								"unknown database: %s\n", q);
-						send(msgsock, buf2, len, 0);
-						continue;
-					}
-
-					p += strlen("share=");
-					if (*p == '\0') {
-						/* empty, inherit (e.g. remove local opt) */
-						p = NULL;
-					}
-
-					leavedbS(stats);
-					if ((e = setProp(stats->path, "shared", p)) != NULL) {
-						/* reannounce again, there was an error */
-						anncdbS(stats);
-						Mfprintf(_mero_ctlerr, "%s: failed to share: %s\n",
-								origin, e);
-						len = snprintf(buf2, sizeof(buf2), "%s\n", e);
-						send(msgsock, buf2, len, 0);
-					} else {
-						anncdbS(stats);
-						Mfprintf(_mero_ctlout, "%s: shared database '%s' "
-								"as '%s%s'\n", origin, stats->dbname,
-								stats->dbname, p);
-						len = snprintf(buf2, sizeof(buf2), "OK\n");
-						send(msgsock, buf2, len, 0);
-					}
-					SABAOTHfreeStatus(&stats);
 				} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 					char *e;
 
@@ -540,6 +479,8 @@ controlRunner(void *d)
 					}
 				} else if (strchr(p, '=') != NULL) {
 					char *val;
+					char doshare = 0;
+
 					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
 						len = snprintf(buf2, sizeof(buf2),
 								"internal error, please review the logs\n");
@@ -562,7 +503,34 @@ controlRunner(void *d)
 					*val++ = '\0';
 					if (*val == '\0')
 						val = NULL;
+
+					if ((doshare = !strcmp(p, "shared"))) {
+						confkeyval *kv;
+
+						/* bail out if we don't do discovery at all */
+						kv = findConfKey(_mero_props, "shared");
+						if (strcmp(kv->val, "no") == 0) {
+							/* can't do much */
+							len = snprintf(buf2, sizeof(buf2),
+									"discovery service is globally disabled, "
+									"enable it first\n");
+							send(msgsock, buf2, len, 0);
+							Mfprintf(_mero_ctlerr, "%s: set: cannot perform "
+									"client share request: discovery service "
+									"is globally disabled in %s\n", 
+									origin, _mero_conffile);
+							continue;
+						}
+
+						/* we're going to change the way it is shared,
+						 * so remove it now in its old form */
+						leavedbS(stats);
+					}
+
 					if ((e = setProp(stats->path, p, val)) != NULL) {
+						if (doshare)
+							/* reannounce again, there was an error */
+							anncdbS(stats);
 						Mfprintf(_mero_ctlerr, "%s: setting property failed: "
 								"%s\n", origin, e);
 						len = snprintf(buf2, sizeof(buf2),
@@ -571,6 +539,9 @@ controlRunner(void *d)
 						free(e);
 						SABAOTHfreeStatus(&stats);
 						continue;
+					} else if (doshare) {
+						/* announce in new personality */
+						anncdbS(stats);
 					}
 
 					SABAOTHfreeStatus(&stats);
