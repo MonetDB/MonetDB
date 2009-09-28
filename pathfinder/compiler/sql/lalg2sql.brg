@@ -2498,13 +2498,16 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
 
             /* unfold the sorting criteria of a numbering operator */
             if (orderby->kind == sql_over &&
-                R(orderby)->kind == sql_wnd_clause &&
-                RR(orderby)->kind == sql_order_by) {
+                R(orderby)->kind == sql_wnd_clause) {
                 assert (L(orderby)->kind == sql_row_number ||
                         L(orderby)->kind == sql_dense_rank);
                 assert (!RL(orderby));
                 /* orderby may become an empty list (aka. NULL) */
-                orderby = RRL(orderby);
+                if (RR(orderby) &&
+                    RR(orderby)->kind == sql_order_by)
+                    orderby = RRL(orderby);
+                else
+                    orderby = NULL;
             } 
             else if (IS_LITERAL(orderby))
                 orderby = NULL;
@@ -2518,13 +2521,16 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
 
             /* unfold the sorting criteria of a numbering operator */
             if (orderby->kind == sql_over &&
-                R(orderby)->kind == sql_wnd_clause &&
-                RR(orderby)->kind == sql_order_by) {
+                R(orderby)->kind == sql_wnd_clause) {
                 assert (L(orderby)->kind == sql_row_number ||
                         L(orderby)->kind == sql_dense_rank);
                 assert (!RL(orderby));
                 /* orderby may become an empty list (aka. NULL) */
-                orderby = RRL(orderby);
+                if (RR(orderby) &&
+                    RR(orderby)->kind == sql_order_by)
+                    orderby = RRL(orderby);
+                else
+                    orderby = NULL;
             } 
             else if (IS_LITERAL(orderby))
                 orderby = NULL;
