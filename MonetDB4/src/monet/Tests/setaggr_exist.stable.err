@@ -1,4 +1,0 @@
-stderr of test 'setaggr_exist` in directory 'src/monet` itself:
-
-#> Mtest:	milM setaggr_exist milM
-#> Mtest:	Mserver -yaccsilent -d8 -home /ufs/tim/monet/SunOS5.5.1 -db src_monet setaggr_exist.milM

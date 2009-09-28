@@ -1,4 +1,0 @@
-stderr of test 'evenheight` in directory 'tests/by_Peter` itself:
-
-#> Mtest:	milM evenheight milM
-#> Mtest:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db tests_by_Peter evenheight.milM

@@ -1,4 +1,0 @@
-VAR b := new(oid,oid).roles("A","B");
-b.print();
-VAR c := new(oid,oid).roles("A","C");
-print(b,c);

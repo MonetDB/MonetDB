@@ -1,3 +1,0 @@
-K := :=
-io.print(1);
-io.print(2);

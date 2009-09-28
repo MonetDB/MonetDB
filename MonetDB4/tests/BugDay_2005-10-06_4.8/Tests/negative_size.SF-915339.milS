@@ -1,2 +1,0 @@
-var c:= new(int,int,-5000);
-c.print();

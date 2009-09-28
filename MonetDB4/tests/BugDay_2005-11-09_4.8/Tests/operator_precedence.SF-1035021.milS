@@ -1,7 +1,0 @@
-var i0 := 1;
-var i1 := 1;
-
-print(i0 = 1 and i1 = 1);
-print((i0 = 1) and (i1 = 1));
-
-quit();

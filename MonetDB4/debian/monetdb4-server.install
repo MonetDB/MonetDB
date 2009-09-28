@@ -1,4 +1,0 @@
-debian/tmp/etc/MonetDB.conf etc
-debian/tmp/usr/bin/calibrator usr/bin
-debian/tmp/usr/bin/Mbeddedmil usr/bin
-debian/tmp/usr/bin/Mserver usr/bin
