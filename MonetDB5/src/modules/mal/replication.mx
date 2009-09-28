@@ -265,6 +265,7 @@ The final code should contain a loop to determine the last replication tag.
 #define MASTER "master"
 #define REPLICA "/log_%d"
 #define REPLICABLOCK 1000
+#define REPLICADELAY 5000
 
 static struct MASTERRECORD {
 	char *buf;
@@ -661,7 +662,8 @@ MASTERsend(Client cntxt, int tag)
 	stream *s;
 	bstream *bs;
 
-	if ( stream_write(cntxt->fdout, buf, 1, strlen(buf)) != (unsigned) strlen(buf))
+	/* wait for the request to start pumping */
+	if ( stream_write(cntxt->fdout, cntxt->prompt, 1, strlen(buf)) != (unsigned) strlen(cntxt->prompt))
 		stream_printf(GDKerr,"!failed to initialize slave session\n");
 
 	if ( replicationTag == 0)
@@ -672,7 +674,12 @@ MASTERsend(Client cntxt, int tag)
 		s = open_rastream(buf);
 		if (stream_errnr(s) == OPEN_ERROR){
 			stream_destroy(s);
-			break;
+			/* wait for new file */
+#ifdef _DEBUG_REPLICATOR_
+		printf("#replay waiting\n");
+#endif
+			MT_sleep_ms(REPLICADELAY);
+			continue;
 		}
 
 		mal_set_lock(repLck,"replication");
@@ -690,6 +697,7 @@ MASTERsend(Client cntxt, int tag)
 			stream_flush(cntxt->fdout);
 			break;
 		}
+		stream_flush(cntxt->fdout);
 		mal_unset_lock(repLck,"replication");
 		close_stream(s);
 #ifdef _DEBUG_REPLICATOR_
@@ -699,7 +707,7 @@ MASTERsend(Client cntxt, int tag)
 Upon succesful transmission we update the log file tag for the slave.
 @c
 		tag += REPLICABLOCK;
-	} while (cntxt->mode <= FINISHING); /* stop when out of log files or closed by force */
+	} while (cntxt->mode > FINISHING); /* stop when out of log files or closed by force */
 
 #ifdef _DEBUG_REPLICATOR_
 	printf("#replay thread finished \n");
@@ -730,6 +738,20 @@ Contact the master and issue the master.start() command remotely.
 Switch to a local client to consume the MAL stream it will sent.
 @c
 static void
+MASTERecho(void *arg){
+	stream *s = (stream*) arg;
+	bstream *bs= bstream_create(s, 128 * BUFSIZ);
+
+#ifdef _DEBUG_REPLICATOR_
+		stream_printf(GDKout,"MASTERecho\n");
+#endif
+	while ( bstream_next(bs) > 0)
+		stream_printf(GDKout,"#got:%s\n",bs->buf);
+#ifdef _DEBUG_REPLICATOR_
+		stream_printf(GDKout,"MASTERecho done\n");
+#endif
+}
+static void
 MASTERreceiver( stream *s)
 {
 	Client c;
@@ -740,6 +762,11 @@ MASTERreceiver( stream *s)
 #endif
 	/* steal the output stream from the master connection */
 	assert(s != NULL);
+    if (MT_create_thread(&tid, MASTERecho, (void *) s) < 0) {
+        showException(MAL,"initClient", "can not fork new client");
+        return;
+    }
+	/* alternative */
 	c = MCinitClient(0, 0, 0);
 	if ( c == NULL){
 		stream_printf(GDKerr,"!Out of client slots\n");
@@ -790,7 +817,6 @@ str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag)
 	if ( mapi_result_error(hdl))
 		throw(IO,"master.replay",OPERATION_FAILED);
 
-	/* initialize the client thread to read the results */
 	MASTERreceiver( mapi_get_from(mapi));
 	return MAL_SUCCEED;
 }
