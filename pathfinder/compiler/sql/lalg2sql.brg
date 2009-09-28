@@ -160,8 +160,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
                                 union of fragments */
 %term empty_frag      = 74 /**< representation of an empty fragment */
 
-%term error           = 79 /**< facility to trigger runtime errors */
-%term nil             = 80 /**< end of the list of parameters */
+%term error           = 78 /**< facility to trigger runtime errors */
+%term nil             = 79 /**< end of the list of parameters */
+%term cache           = 80 /**< cache operator */
 %term trace           = 81 /**< debug operator */
 %term trace_items     = 82 /**< debug items operator */
 %term trace_msg       = 83 /**< debug message operator */

@@ -269,7 +269,8 @@ mark_plan (PFpa_op_t *n, PFpa_op_t *dep_op)
         pfIN(n) = true;
 
     if (n == dep_op) {
-        assert (n->kind == pa_dep_cross);
+        assert (n->kind == pa_dep_cross ||
+                n->kind == pa_cache);
 
         mark_plan (L(n), dep_op);
 
@@ -284,7 +285,7 @@ mark_plan (PFpa_op_t *n, PFpa_op_t *dep_op)
  * Worker for introduce_dep_borders.
  */ 
 static void
-introduce_dep_borders_worker (PFpa_op_t *n)
+introduce_borders_worker (PFpa_op_t *n, PFpa_op_kind_t kind)
 {
     /* We mark only the independent operators as SEEN as we stop
        as soon as we reach a boundary to an dependent operator. */
@@ -298,17 +299,19 @@ introduce_dep_borders_worker (PFpa_op_t *n)
             n->child[i]->kind != pa_nil) {
             /* Introduce a border if a boundary is reached
                and stop the traversal. */
-            n->child[i] = PFpa_dep_border (n->child[i]);
+            n->child[i] = (kind == pa_dep_cross)
+                          ?PFpa_dep_border (n->child[i])
+                          :PFpa_cache_border (n->child[i]);
             n->child[i]->prop = L(n->child[i])->prop;
         }
         else
             /* Recursively traverse the plan otherwise. */
-            introduce_dep_borders_worker (n->child[i]);
+            introduce_borders_worker (n->child[i], kind);
 
     /* Rewrite dependent cross products that are nested in
        the right side of another dependent cross into normal
        cross products again. */
-    if (n->kind == pa_dep_cross)
+    if (kind == pa_dep_cross && n->kind == pa_dep_cross)
         /* we can replace the kind as the two cross
            product operators behave exactly the same */
         n->kind = pa_cross;
@@ -319,7 +322,7 @@ introduce_dep_borders_worker (PFpa_op_t *n)
  * introduce dependencies.
  */
 static void
-introduce_dep_borders (PFpa_op_t *n, PFpa_op_t *root)
+introduce_borders (PFpa_op_t *n, PFpa_op_t *root)
 {
     if (SEEN(n))
         return;
@@ -327,9 +330,9 @@ introduce_dep_borders (PFpa_op_t *n, PFpa_op_t *root)
         SEEN(n) = true;
 
     /* Detect borders for this operator. */
-    if (n->kind == pa_dep_cross) {
+    if (n->kind == pa_dep_cross || n->kind == pa_cache) {
         /* Traverse the query plan for the left argument */
-        introduce_dep_borders (L(n), root);
+        introduce_borders (L(n), root);
 
         /* Mark all operators that are reachable from the
            root (except for the right side of n) to detect
@@ -339,18 +342,18 @@ introduce_dep_borders (PFpa_op_t *n, PFpa_op_t *root)
         /* Dependent cross products that have no operators
            that can be evaluated in dependence are rewritten
            into normal cross products again. */
-        if (pfIN(R(n)))
+        if (n->kind == pa_dep_cross && pfIN(R(n)))
             /* we can replace the kind as the two cross
                product operators behave exactly the same */
             n->kind = pa_cross;
         else
             /* Introduce the borders for this operator. */
-            introduce_dep_borders_worker (R(n));
+            introduce_borders_worker (R(n), n->kind);
         in_reset (root);
     }
     else
         for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
-            introduce_dep_borders (n->child[i], root);
+            introduce_borders (n->child[i], root);
 }
 
 /**
@@ -365,8 +368,9 @@ PFpa_intro_borders (PFpa_op_t *n)
     PFpa_dag_reset (n);
 
     /* Introduce border operators
-       for dependency generating operators */
-    introduce_dep_borders (n, n);
+       for dependency generating
+       and caching operators */
+    introduce_borders (n, n);
     PFpa_dag_reset (n);
 
     return n;

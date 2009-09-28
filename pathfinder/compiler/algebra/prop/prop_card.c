@@ -184,6 +184,7 @@ infer_card (PFla_op_t *n)
 
         case la_error:
         case la_nil:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:

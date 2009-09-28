@@ -709,6 +709,7 @@ infer_const (PFla_op_t *n)
 
         case la_error:
         case la_nil:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:
@@ -747,7 +748,8 @@ infer_const (PFla_op_t *n)
                  n->sem.fun_call.kind == alg_fun_call_pf_collections_unsafe ||
                  n->sem.fun_call.kind == alg_fun_call_xrpc ||
                  n->sem.fun_call.kind == alg_fun_call_xrpc_helpers ||
-                 n->sem.fun_call.kind == alg_fun_call_tijah) &&
+                 n->sem.fun_call.kind == alg_fun_call_tijah ||
+                 n->sem.fun_call.kind == alg_fun_call_cache) &&
                 PFprop_const (L(n)->prop, n->sem.fun_call.iter))
                 PFprop_mark_const (
                         n->prop,

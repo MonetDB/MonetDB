@@ -465,6 +465,10 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars,
         case m_serialize:
         case m_trace:
         case m_destroy_ws:
+        case m_end_ws:
+        case m_cache_expr:
+        case m_cache_get:
+        case m_cache_put:
         case m_error:
         case m_print:
         case m_printf:
@@ -674,6 +678,7 @@ PFmil_dce (PFmil_t *root)
     PFbitset_set (used_vars, PF_MIL_VAR_XRPC_HDL, true);
     PFbitset_set (used_vars, PF_MIL_VAR_XRPC_SEQNR, true);
     PFbitset_set (used_vars, PF_MIL_VAR_XRPC_TIMEOUT, true);
+    PFbitset_set (used_vars, PF_MIL_VAR_XRPC_COORD, true);
     PFbitset_set (used_vars, PF_MIL_VAR_XRPC_MODE, true);
     PFbitset_set (used_vars, PF_MIL_VAR_XRPC_MODULE, true);
     PFbitset_set (used_vars, PF_MIL_VAR_XRPC_METHOD, true);

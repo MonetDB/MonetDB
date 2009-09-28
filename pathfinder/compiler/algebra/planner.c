@@ -100,6 +100,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "planner.h"
 
@@ -1063,6 +1064,15 @@ plan_subsequence (const PFla_op_t *n)
 
     order_col = op->sem.type.col;
     op        = L(op);
+
+    if (op->kind == la_project) {
+        for (unsigned int i = 0; i < op->sem.proj.count; i++) {
+            /* check for a non-problematic projection */
+            if (op->sem.proj.items[i].new != op->sem.proj.items[i].new)
+                return ret;
+        }
+        op = L(op);
+    }
 
     /* and finally check for the row numbering operator
        that provides the position information */
@@ -2579,6 +2589,57 @@ plan_error (const PFla_op_t *n)
 }
 
 /**
+ * Check if the position and item column of a given cached query
+ * are identical. In this case we are sure that item order is
+ * maintained as the cached result is always sorted by pos.
+ */
+static bool
+cache_item_ordered (const PFla_op_t *n, char *id)
+{
+    bool item_ordered = false;
+
+    if (n->kind == la_cache &&
+        !strcmp (id, n->sem.cache.id))
+        return n->sem.cache.pos == n->sem.cache.item;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD; i++)
+        if (n->child[i])
+            item_ordered |= cache_item_ordered (n->child[i], id);
+    
+    return item_ordered;
+}
+
+/**
+ * 'cache' operator in the logical algebra just get a 1:1 mapping
+ * into the physical cache operator.
+ */
+static PFplanlist_t *
+plan_cache (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+    PFplanlist_t *sorted_n2 = new_planlist ();
+    PFalg_col_t   pos  = n->sem.cache.pos;
+
+    for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
+        add_plans (sorted_n2,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (R(n)->plans, i),
+                       sortby (pos)));
+
+    /* for each plan, generate a cache operator */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (sorted_n2); j++)
+            add_plan (ret,
+                      cache (
+                          *(plan_t **) PFarray_at (L(n)->plans, i),
+                          *(plan_t **) PFarray_at (sorted_n2, j),
+                          n->sem.cache.id,
+                          n->sem.cache.item));
+
+    return ret;
+}
+
+/**
  * Constructor for a debug operator
  */
 static PFplanlist_t *
@@ -2673,7 +2734,7 @@ plan_trace_map (const PFla_op_t *n)
  * into the physical fun_call operator.
  */
 static PFplanlist_t *
-plan_fun_call (const PFla_op_t *n)
+plan_fun_call (const PFla_op_t *n, const PFla_op_t *root)
 {
     unsigned int i;
     PFplanlist_t *ret = new_planlist ();
@@ -2701,7 +2762,8 @@ plan_fun_call (const PFla_op_t *n)
         return ret;
     else {
         PFplanlist_t  *single_plan   = new_planlist ();
-        plan_t        *cheapest_plan = NULL;
+        plan_t        *cheapest_plan = NULL,
+                      *sorted_plan;
 
         /* find the cheapest plan */
         for (unsigned int i = 0; i < PFarray_last (ret); i++)
@@ -2711,6 +2773,35 @@ plan_fun_call (const PFla_op_t *n)
                 cheapest_plan = *(plan_t **) PFarray_at (ret, i);
 
         add_plan (single_plan, cheapest_plan);
+
+        if (n->sem.fun_call.kind == alg_fun_call_cache) {
+            /* lookup the cache id */
+            char *id;
+            assert (R(n)->kind == la_fun_param &&
+                    RR(n)->kind == la_nil &&
+                    R(n)->schema.count == 3 &&
+                    PFprop_const (R(n)->prop, R(n)->schema.items[2].name));
+            id = (PFprop_const_val (R(n)->prop,
+                                    R(n)->schema.items[2].name)).val.str;
+
+            /* Add more ordering information if the input/output is guaranteed
+               to be sorted on the item column. */
+            if (cache_item_ordered (root, id)) {
+                PFord_set_add (cheapest_plan->orderings,
+                               sortby (n->schema.items[2].name));
+            }
+            /* Add heuristic that says that cached node sequences are
+               often sorted by their preorder. This is exploited
+               by explicitly assigning the sort operation no cost. */
+            else {
+                sorted_plan = std_sort (cheapest_plan, 
+                                        sortby(n->schema.items[2].name));
+                /* make the sort cost as inexpensive as possible */
+                sorted_plan->cost = cheapest_plan->cost + 1;
+                add_plan (single_plan, sorted_plan);
+            }
+        }
+        
         return single_plan;
     }
 }
@@ -3443,9 +3534,10 @@ better_or_equal (const plan_t *a, const plan_t *b)
  * skip planning in that case.
  *
  * @param n subexpression to translate
+ * @param root the root operator
  */
 static void
-plan_subexpression (PFla_op_t *n)
+plan_subexpression (PFla_op_t *n, PFla_op_t *root)
 {
     PFplanlist_t *plans = NULL;
 
@@ -3466,7 +3558,7 @@ plan_subexpression (PFla_op_t *n)
                information is translated after the value part) */
             for (unsigned int i = PFLA_OP_MAXCHILD; i > 0; i--)
                 if (n->child[i - 1])
-                    plan_subexpression (n->child[i - 1]);
+                    plan_subexpression (n->child[i - 1], root);
     }
 
     /* Compute possible plans. */
@@ -3672,6 +3764,7 @@ plan_subexpression (PFla_op_t *n)
             add_plan (plans, nil ());
             break;
 
+        case la_cache:          plans = plan_cache (n);           break;
         case la_trace:          plans = plan_trace (n);           break;
         case la_trace_items:    plans = plan_trace_items (n);     break;
         case la_trace_msg:      plans = plan_trace_msg (n);       break;
@@ -3693,7 +3786,7 @@ plan_subexpression (PFla_op_t *n)
                 assert (cur->kind == la_rec_param &&
                         L(cur)->kind == la_rec_arg);
                 rec_arg = L(cur);
-                plan_subexpression (L(rec_arg));
+                plan_subexpression (L(rec_arg), root);
                 cur = R(cur);
             }
 
@@ -3730,15 +3823,15 @@ plan_subexpression (PFla_op_t *n)
                     assert (cur->kind == la_rec_param &&
                             L(cur)->kind == la_rec_arg);
                     rec_arg = L(cur);
-                    plan_subexpression (R(rec_arg));
+                    plan_subexpression (R(rec_arg), root);
                     cur = R(cur);
                 }
 
                 /* create plans for the side effects */
-                plan_subexpression (LL(n));
+                plan_subexpression (LL(n), root);
 
                 /* create plans for the result relation */
-                plan_subexpression (R(n));
+                plan_subexpression (R(n), root);
 
                 /* put together all ingredients to form a physical
                    representation of the recursion (basically a 1:1
@@ -3776,9 +3869,9 @@ plan_subexpression (PFla_op_t *n)
             PFalg_fun_call_t old_fun_call_kind = fun_call_kind;
             fun_call_kind = n->sem.fun_call.kind;
 
-            plan_subexpression (L(n));
-            plan_subexpression (R(n));
-            plans = plan_fun_call (n);
+            plan_subexpression (L(n), root);
+            plan_subexpression (R(n), root);
+            plans = plan_fun_call (n, root);
 
             fun_call_kind = old_fun_call_kind;
         } break;
@@ -3826,6 +3919,7 @@ plan_subexpression (PFla_op_t *n)
         case la_frag_union:
         case la_empty_frag:
         case la_nil:
+        case la_cache:
         case la_trace:
         case la_trace_msg:
         case la_trace_map:
@@ -3924,7 +4018,7 @@ PFplan (PFla_op_t *root)
     assert (root->kind == la_serialize_seq);
 
     /* compute all interesting plans for root */
-    plan_subexpression (root);
+    plan_subexpression (root, root);
 
     /* Now pick the cheapest one. */
     assert (root->plans);

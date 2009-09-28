@@ -30,6 +30,9 @@
                  | 'printf (' args ')'                      <m_printf>
                  | 'col_name (' expr ',' expr ')'           <m_col_name>
                  | 'destroy_ws (' expression ')'            <m_destroy_ws>
+                 | 'end_ws (' expression ',' expression ')' <m_end_ws>
+                 | 'cache_put (' expression ',' expression ',' expression ')' <m_cache_put>
+                 | 'cache_get (' expression ',' expression ')' <m_cache_get>
 
    expression    : Variable                                 <m_var>
                  | literal                                  <m_lit_*, m_nil>
@@ -65,6 +68,7 @@
                  | expression '.CTrefine_rev (' exp ')'     <m_ctrefine_rev>
                  | expression '.CTderive (' expression ')'  <m_ctderive>
                  | expression '.texist (' expression ')'    <m_texist>
+                 | expression '.find (' expression ')'      <m_find>
                  | expression '.insert (' expression ')'    <m_binsert>
                  | expression '.append (' expression ')'    <m_bappend>
                  | expression '.fetch (' expression ')'     <m_fetch>
@@ -201,6 +205,7 @@
                  | '[day]' (expr);                         <m_mday>
                  | '[hour]' (expr);                        <m_mhour>
                  | '[minutes]' (expr);                     <m_mminutes>
+                 | 'cache_expr (' expression ',' expression ')' <m_cache_expr>
 
    args          : args ',' args                            <m_arg>
                  | expression                               <otherwise>
@@ -314,6 +319,7 @@ static char *ID[] = {
     , [m_ctrefine_rev] = "CTrefine_rev"
     , [m_ctderive]     = "CTderive"
     , [m_texist]       = "texist"
+    , [m_find]         = "find"
 
     , [m_add]          = "+"
     , [m_madd]         = "[+]"
@@ -373,6 +379,10 @@ static char *ID[] = {
     , [m_usec]         = "usec"
     , [m_new_ws]       = "ws_create"
     , [m_destroy_ws]   = "ws_destroy"
+    , [m_end_ws]       = "ws_end"
+    , [m_cache_expr]   = "ws_cache_expr"
+    , [m_cache_get]    = "ws_cache_get"
+    , [m_cache_put]    = "ws_cache_put"
     , [m_mposjoin]     = "mposjoin"
     , [m_mvaljoin]     = "mvaljoin"
     , [m_doc_tbl]      = "doc_tbl"
@@ -626,6 +636,25 @@ print_statement (PFmil_t * n)
             milprintf (")");
             break;
 
+        case m_end_ws:
+            milprintf ("%s (", ID[n->kind]);
+            print_args (n->child[0]);
+            milprintf (",");
+            print_args (n->child[1]);
+            milprintf (")");
+            break;
+
+        case m_cache_put:
+            milprintf ("%s (", ID[n->kind]);
+            print_args (n->child[0]);
+            milprintf (",");
+            print_args (n->child[1]);
+            milprintf (",");
+            print_args (n->child[2]);
+            milprintf (")");
+            break;
+
+
         /* statement: 'print (' expression ')' */
         case m_print:
             milprintf ("print (");
@@ -776,6 +805,8 @@ print_expression (PFmil_t * n)
         case m_ctderive:
         /* expression : expression '.texist (' expression ')' */
         case m_texist:
+        /* expression : expression '.find (' expression ')' */
+        case m_find:
         /* expression : expression '.insert (' expression ')' */
         case m_binsert:
         /* expression : expression '.append (' expression ')' */
@@ -1330,6 +1361,15 @@ print_expression (PFmil_t * n)
             print_expression (n->child[10]);
             milprintf (", ");
             print_expression (n->child[11]);
+            milprintf (")");
+            break;
+
+        case m_cache_expr:
+        case m_cache_get:
+            milprintf ("%s (", ID[n->kind]);
+            print_args (n->child[0]);
+            milprintf (",");
+            print_args (n->child[1]);
             milprintf (")");
             break;
 

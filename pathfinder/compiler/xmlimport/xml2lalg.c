@@ -2031,6 +2031,23 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 /******************************************************************************/
 /******************************************************************************/
 
+    case la_cache                :
+        {
+            newAlgNode = PFla_cache (
+                             CHILDNODE(0),
+                             CHILDNODE(1),
+                             PFxml2la_xpath_getElementValue (
+                                 PFxml2la_xpath_getNthNode(
+                                     XPATH("/content/id"),
+                                     0)),
+                             PFLA_ATT("/content/column[@function='pos']/@name"),
+                             PFLA_ATT("/content/column[@function='item']/@name"));
+        }
+        break;
+
+/******************************************************************************/
+/******************************************************************************/
+
     case la_trace                : 
 
         {

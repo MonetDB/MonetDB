@@ -1597,6 +1597,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
 
     case la_error: /* don't rewrite runtime errors */
     case la_nil:
+    case la_cache: /* don't rewrite side effects */
     case la_trace: /* don't rewrite side effects */
         break;
 

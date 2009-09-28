@@ -124,6 +124,7 @@ infer_lineage (PFla_op_t *n)
         case la_serialize_rel:
         case la_content:
         case la_error:
+        case la_cache:
             add_all (R(n));
             break;
 

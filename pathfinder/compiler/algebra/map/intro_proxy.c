@@ -122,6 +122,7 @@ plan_copy (PFla_op_t *p)
         case la_doc_index_join:
         case la_doc_access:
         case la_error:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:

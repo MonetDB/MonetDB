@@ -112,6 +112,7 @@ static char *a_id[]  = {
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_error]            = "!ERROR"
     , [la_nil]              = "nil"
+    , [la_cache]            = "cache"
     , [la_trace]            = "trace"
     , [la_trace_items]      = "trace_items"
     , [la_trace_msg]        = "trace_msg"
@@ -189,6 +190,7 @@ static char *xml_id[]  = {
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_error]            = "error"
     , [la_nil]              = "nil"
+    , [la_cache]            = "cache"
     , [la_trace]            = "trace"
     , [la_trace_items]      = "trace items"
     , [la_trace_msg]        = "trace msg"
@@ -442,6 +444,7 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
         , [la_empty_frag]      = "#E0E0E0"
         , [la_error]           = "#C0C0C0"
         , [la_nil]             = "#FFFFFF"
+        , [la_cache]           = "#FF5500"
         , [la_trace]           = "#FF5500"
         , [la_trace_items]     = "#FF5500"
         , [la_trace_msg]       = "#FF5500"
@@ -940,6 +943,13 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
                             PFcol_str (n->sem.err.col));
             break;
 
+        case la_cache:
+            PFarray_printf (DOT, "%s %s (%s, %s)", a_id[n->kind],
+                            n->sem.cache.id,
+                            PFcol_str (n->sem.cache.pos),
+                            PFcol_str (n->sem.cache.item));
+            break;
+
         case la_trace_map:
             PFarray_printf (DOT,
                             "%s (%s, %s)",
@@ -1427,6 +1437,7 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
         if (((n->kind == la_serialize_rel ||
               n->kind == la_side_effects ||
               n->kind == la_error ||
+              n->kind == la_cache ||
               n->kind == la_trace) &&
              c == 0 &&
              n->child[c]->kind == la_nil) ||
@@ -1501,6 +1512,7 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
         if (((n->kind == la_serialize_rel ||
               n->kind == la_side_effects ||
               n->kind == la_error ||
+              n->kind == la_cache ||
               n->kind == la_trace) &&
              c == 0 &&
              n->child[c]->kind == la_nil) ||
@@ -2320,6 +2332,18 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
                             "      <column name=\"%s\" new=\"false\"/>\n"
                             "    </content>\n",
                             PFcol_str (n->sem.err.col));
+            break;
+
+        case la_cache:
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <id>%s</id>\n"
+                            "      <column name=\"%s\" function=\"pos\"/>\n"
+                            "      <column name=\"%s\" function=\"item\"/>\n"
+                            "    </content>\n",
+                            n->sem.cache.id,
+                            PFcol_str (n->sem.cache.pos),
+                            PFcol_str (n->sem.cache.item));
             break;
 
         case la_trace_map:

@@ -552,6 +552,7 @@ infer_unq_names (PFla_op_t *n)
             break;
 
         case la_error:
+        case la_cache:
             bulk_add_name_pairs (np_list, R(n));
             break;
 

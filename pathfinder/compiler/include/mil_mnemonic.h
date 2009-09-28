@@ -238,6 +238,8 @@
 /** texist() function */
 #define texist(a,b) PFmil_texist((a),(b))
 
+#define find(a,b) PFmil_find((a),(b))
+
 /** max() operator */
 #ifdef max
 #undef max
@@ -343,6 +345,12 @@
 
 /** Free an existing working set */
 #define destroy_ws(ws) PFmil_destroy_ws (ws)
+#define end_ws(ws, err) PFmil_end_ws (ws, err)
+
+/** Get and put in the subexpr cache */
+#define cache_expr(ws, id) PFmil_cache_expr (ws, id)
+#define cache_get(ws, id) PFmil_cache_get (ws, id)
+#define cache_put(ws, id, val) PFmil_cache_put (ws, id, val)
 
 /** positional multijoin with a working set `mposjoin (a, b, c)' */
 #define mposjoin(a,b,c) PFmil_mposjoin ((a), (b), (c))

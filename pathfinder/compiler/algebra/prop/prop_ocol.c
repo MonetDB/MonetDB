@@ -1019,6 +1019,7 @@ infer_ocol (PFla_op_t *n)
             break;
 
         case la_error:
+        case la_cache:
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)));
             break;
 

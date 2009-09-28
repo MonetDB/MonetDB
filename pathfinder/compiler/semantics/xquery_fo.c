@@ -2351,6 +2351,12 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_xs_boolean () } },
         .alg = PFbui_op_and_bln }
 
+    , /* #pf:query-cache (str, item *) as item* */
+      { .ns = PFns_pf, .loc = "query-cache",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string (), PFty_star (PFty_item ()) },
+            .ret_ty = PFty_star (PFty_item ()) } },
+        .alg = PFbui_pf_query_cache }
     , /* #pf:distinct-doc-order-or-atomic-sequence (item*) as item* */
       { .ns = PFns_pf, .loc = "distinct-doc-order-or-atomic-sequence",
         .arity = 1, .sig_count = 1, .sigs = { {

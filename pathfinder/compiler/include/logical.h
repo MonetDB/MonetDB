@@ -148,8 +148,9 @@ enum PFla_op_kind_t {
                                    union of fragments */
     , la_empty_frag      = 74 /**< representation of an empty fragment */
 
-    , la_error           = 79 /**< facility to trigger runtime errors */
-    , la_nil             = 80 /**< end of the list of parameters */
+    , la_error           = 78 /**< facility to trigger runtime errors */
+    , la_nil             = 79 /**< end of the list of parameters */
+    , la_cache           = 80 /**< cache operator */
     , la_trace           = 81 /**< debug operator */
     , la_trace_items     = 82 /**< debug items operator */
     , la_trace_msg       = 83 /**< debug message operator */
@@ -426,6 +427,13 @@ union PFla_op_sem_t {
         PFalg_col_t     col;      /**< column of error message */
     } err;
 
+    /* semantic content for cache operator */
+    struct {
+        char *          id;       /**< the cache id */
+        PFalg_col_t     pos;      /**< position column */
+        PFalg_col_t     item;     /**< item column */
+    } cache;
+
     /* semantic content for debug relation map operator */
     struct {
         PFalg_col_t     inner;    /**< name of the inner column */
@@ -577,8 +585,9 @@ PFla_op_t * PFla_serialize_rel (const PFla_op_t *side, const PFla_op_t *alg,
  * or below a `rec_fix' operator if the side effects appear in the recursion
  * body.
  * The `side_effects' operator contains a (possibly empty) list of operations
- * that may trigger side effects (operators `error' and `trace') in its left
- * child and the fragment or recursion parameters in the right child.
+ * that may trigger side effects (operators `error', `cache' and `trace')
+ * in its left child and the fragment or recursion parameters in the right
+ * child.
  */
 PFla_op_t * PFla_side_effects (const PFla_op_t *side_effects,
                                const PFla_op_t *params);
@@ -1132,6 +1141,15 @@ PFla_op_t * PFla_error (const PFla_op_t *n1, const PFla_op_t *n2,
  * Constructor for the last item of a parameter list
  */
 PFla_op_t *PFla_nil (void);
+
+/**
+ * Constructor for a caching operator
+ */
+PFla_op_t *PFla_cache (const PFla_op_t *n1,
+                       const PFla_op_t *n2,
+                       char *id,
+                       PFalg_col_t pos,
+                       PFalg_col_t item);
 
 /**
  * Constructor for debug operator

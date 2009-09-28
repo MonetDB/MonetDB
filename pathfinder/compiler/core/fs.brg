@@ -46,6 +46,7 @@
 #include "abssyn.h"
 #include "qname.h"
 #include "mem.h"
+#include "string_utils.h" /* trimming for pragmas */
 
 /* PFcnode_t */
 #include "core.h"
@@ -3214,18 +3215,31 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
 
         /* ExtensionExpr:          ext_expr (Pragmas, Expr) */
         case 211:
+            /* We only understand caching pragmas */
+            if (C(L(p))) {
+                PFfun_t *cache = function (PFqname (PFns_pf, "query-cache"));
+                C(p) = APPLY (cache, C(L(p)), C(R(p)));
+            }
             /* Just ignore the pragma.  We don't understand it anyway. */
-            C(p) = C(R(p));
+            else
+                C(p) = C(R(p));
             break;
 
         /* Pragmas:                nil */
         case 212:
             /* We don't understand pragmas anyway */
+            C(p) = NULL;
             break;
 
         /* Pragmas:                pragmas (pragma, Pragmas) */
         case 213:
-            /* We don't understand pragmas anyway */
+            if (PFqname_eq (L(p)->sem.pragma.qn.qname,
+                            PFqname (PFns_lib, "cache")) == 0)
+                C(p) = str (PFstrUtils_trim_spaces (
+                                PFstrdup (L(p)->sem.pragma.content)));
+            else
+                /* We don't understand pragmas anyway */
+                C(p) = C(R(p));
             break;
 
         /* DeclImport:             RevalidationDecl */
