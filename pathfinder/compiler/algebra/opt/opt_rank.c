@@ -252,6 +252,52 @@ modify_binary_op (PFla_op_t *p,
     return modified;
 }
 
+/**
+ * Worker that merges two adjacent order lists.
+ *
+ * The entry in the upper list (@a sortby) at position @a pos
+ * is replaced by the lower list (@a lsortby).
+ */
+static PFord_ordering_t
+merge_order_lists (PFord_ordering_t sortby,
+                   PFarray_t *lsortby,
+                   unsigned int pos)
+{
+    /* replace result column in the above order list
+       by the list of sort criteria in the below order list */
+    PFord_ordering_t new_sortby = PFordering ();
+    unsigned int     count      = PFord_count (sortby),
+                     lcount     = PFarray_last (lsortby);
+    bool             dir_pos    = PFord_order_dir_at (sortby, pos);
+
+    /* keep the first sort criteria */
+    for (unsigned int i = 0; i < pos; i++)
+        new_sortby = PFord_refine (
+                         new_sortby,
+                         PFord_order_col_at (sortby, i),
+                         PFord_order_dir_at (sortby, i));
+
+    /* replace entry pos by the list of sort criteria
+       it represent */
+    for (unsigned int i = 0; i < lcount; i++)
+        new_sortby = PFord_refine (
+                         new_sortby,
+                         COL_AT (lsortby, i),
+                         /* ensure that we maintain the direction */
+                         dir_pos == DIR_ASC
+                         ? DIR_AT (lsortby, i)
+                         : !DIR_AT (lsortby, i));
+    
+    /* keep the remaining sort criteria */
+    for (unsigned int i = pos+1; i < count; i++)
+        new_sortby = PFord_refine (
+                         new_sortby,
+                         PFord_order_col_at (sortby, i),
+                         PFord_order_dir_at (sortby, i));
+
+    return new_sortby;
+}
+
 /* define the different operation modes
    of opt_rank and intro_internal_rank */
 #define RANK           1
@@ -607,44 +653,20 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                     break;
                 }
                 else {
-                    /* replace result column in the above order list
-                       by the list of sort criteria in the below order list */
-                    PFord_ordering_t sortby     = p->sem.pos_sel.sortby,
-                                     new_sortby = PFordering ();
-                    PFarray_t       *lsortby    = L(p)->sem.rank_opt.sortby;
-                    unsigned int     count      = PFord_count (sortby),
-                                     lcount     = PFarray_last (lsortby);
-
-                    /* keep the first sort criteria */
-                    for (unsigned int j = 0; j < i; j++)
-                        new_sortby = PFord_refine (
-                                         new_sortby,
-                                         PFord_order_col_at (sortby, j),
-                                         PFord_order_dir_at (sortby, j));
-
-                    /* replace entry i by the list of sort criteria
-                       it represent */
-                    for (unsigned int j = 0; j < lcount; j++)
-                        new_sortby = PFord_refine (
-                                         new_sortby,
-                                         COL_AT (lsortby, j),
-                                         DIR_AT (lsortby, j));
-                    
-                    /* keep the remaining sort criteria */
-                    for (unsigned int j = i+1; j < count; j++)
-                        new_sortby = PFord_refine (
-                                         new_sortby,
-                                         PFord_order_col_at (sortby, j),
-                                         PFord_order_dir_at (sortby, j));
-
                     /* push up the internal rank operator */
                     *p = *(rank_opt (
                               pos_select (LL(p),
                                           p->sem.pos_sel.pos,
-                                          new_sortby,
+                                          /* replace result column in the above
+                                             order list by the list of sort
+                                             criteria in the below order list */
+                                          merge_order_lists (
+                                              p->sem.pos_sel.sortby,
+                                              L(p)->sem.rank_opt.sortby,
+                                              i),
                                           p->sem.pos_sel.part),
                               L(p)->sem.rank_opt.res,
-                              lsortby));
+                              L(p)->sem.rank_opt.sortby));
                     modified = true;
                     break;
                 }
@@ -871,46 +893,20 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                     break;
                 }
                 else {
-                    /* replace result column in the above order list
-                       by the list of sort criteria in the below order list */
-                    PFord_ordering_t sortby     = p->sem.sort.sortby,
-                                     new_sortby = PFordering ();
-                    PFarray_t       *lsortby    = L(p)->sem.rank_opt.sortby;
-                    unsigned int     count      = PFord_count (sortby),
-                                     lcount     = PFarray_last (lsortby);
-
-                    lsortby = L(p)->sem.rank_opt.sortby;
-                    
-                    /* keep the first sort criteria */
-                    for (unsigned int j = 0; j < i; j++)
-                        new_sortby = PFord_refine (
-                                         new_sortby,
-                                         PFord_order_col_at (sortby, j),
-                                         PFord_order_dir_at (sortby, j));
-
-                    /* replace entry i by the list of sort criteria
-                       it represent */
-                    for (unsigned int j = 0; j < lcount; j++)
-                        new_sortby = PFord_refine (
-                                         new_sortby,
-                                         COL_AT (lsortby, j),
-                                         DIR_AT (lsortby, j));
-                    
-                    /* keep the remaining sort criteria */
-                    for (unsigned int j = i+1; j < count; j++)
-                        new_sortby = PFord_refine (
-                                         new_sortby,
-                                         PFord_order_col_at (sortby, j),
-                                         PFord_order_dir_at (sortby, j));
-
                     /* push up the internal rank operator */
                     *p = *(rank_opt (
                               rownum (LL(p),
                                       p->sem.sort.res,
-                                      new_sortby,
+                                      /* replace result column in the above
+                                         order list by the list of sort
+                                         criteria in the below order list */
+                                      merge_order_lists (
+                                          p->sem.sort.sortby,
+                                          L(p)->sem.rank_opt.sortby,
+                                          i),
                                       p->sem.sort.part),
                               L(p)->sem.rank_opt.res,
-                              lsortby));
+                              L(p)->sem.rank_opt.sortby));
                     modified = true;
                     break;
                 }
@@ -947,45 +943,19 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                     break;
                 }
                 else {
-                    /* replace result column in the above order list
-                       by the list of sort criteria in the below order list */
-                    PFord_ordering_t sortby     = p->sem.sort.sortby,
-                                     new_sortby = PFordering ();
-                    PFarray_t       *lsortby    = L(p)->sem.rank_opt.sortby;
-                    unsigned int     count      = PFord_count (sortby),
-                                     lcount     = PFarray_last (lsortby);
-
-                    lsortby = L(p)->sem.rank_opt.sortby;
-                    
-                    /* keep the first sort criteria */
-                    for (unsigned int j = 0; j < i; j++)
-                        new_sortby = PFord_refine (
-                                         new_sortby,
-                                         PFord_order_col_at (sortby, j),
-                                         PFord_order_dir_at (sortby, j));
-
-                    /* replace entry i by the list of sort criteria
-                       it represent */
-                    for (unsigned int j = 0; j < lcount; j++)
-                        new_sortby = PFord_refine (
-                                         new_sortby,
-                                         COL_AT (lsortby, j),
-                                         DIR_AT (lsortby, j));
-                    
-                    /* keep the remaining sort criteria */
-                    for (unsigned int j = i+1; j < count; j++)
-                        new_sortby = PFord_refine (
-                                         new_sortby,
-                                         PFord_order_col_at (sortby, j),
-                                         PFord_order_dir_at (sortby, j));
-
                     /* push up the internal rank operator */
                     *p = *(rank_opt (
                               op (LL(p),
                                   p->sem.sort.res,
-                                  new_sortby),
+                                  /* replace result column in the above
+                                     order list by the list of sort
+                                     criteria in the below order list */
+                                  merge_order_lists (
+                                      p->sem.sort.sortby,
+                                      L(p)->sem.rank_opt.sortby,
+                                      i)),
                               L(p)->sem.rank_opt.res,
-                              lsortby));
+                              L(p)->sem.rank_opt.sortby));
                     modified = true;
                     break;
                 }
@@ -1059,6 +1029,7 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                     unsigned int count   = PFarray_last (sortby),
                                  lcount  = PFarray_last (lsortby);
                     PFla_op_t   *lrank;
+                    bool         dir_i   = DIR_AT (sortby, i);
 
                     new_sortby = PFarray (sizeof (sort_struct), count + lcount);
 
@@ -1078,7 +1049,10 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                         *(sort_struct *) PFarray_add (new_sortby) =
                             (sort_struct) {
                                 .col = COL_AT (lsortby, j),
-                                .dir = DIR_AT (lsortby, j),
+                                 /* ensure that we maintain the direction */
+                                .dir = dir_i == DIR_ASC
+                                       ? DIR_AT (lsortby, j)
+                                       : !DIR_AT (lsortby, j),
                                 .vis = PFprop_ocol (p, COL_AT(lsortby, j))
                             };
                         VIS_AT (lsortby, j) = true;
