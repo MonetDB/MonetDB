@@ -134,8 +134,33 @@ var_duplication (PFmil_t *root, PFmil_ident_t *var)
 }
 
 static PFmil_t *
-mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
-                bool change)
+mil_dce_worker_seq (PFmil_t *root, PFbitset_t *used_vars,
+                    PFbitset_t *dirty_vars, bool change)
+{
+    PFrecursion_fence ();
+
+    if (root->kind == m_seq) {
+        /* descend in reverse pre-order, collect the used variables
+         * from the end to beginning of the program. */
+        PFmil_t *new_child;
+
+        for (int i = MIL_MAXCHILD; --i >= 0;)
+            if (root->child[i] != NULL) {
+                new_child = mil_dce_worker_seq (root->child[i],
+                                                used_vars,
+                                                dirty_vars,
+                                                change);
+                if (change) root->child[i] = new_child;
+            }
+        return root;
+    }
+    else
+        return mil_dce_worker (root, used_vars, dirty_vars, change);
+}
+
+static PFmil_t *
+mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars,
+                PFbitset_t *dirty_vars, bool change)
 {
 
 #ifdef NDEBUG
@@ -148,21 +173,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
     switch (root->kind) {
 
         case m_seq:
-            {
-                /* descend in reverse pre-order, collect the used variables
-                 * from the end to beginning of the program. */
-                PFmil_t *new_child;
-
-                for (int i = MIL_MAXCHILD; --i >= 0;)
-                    if (root->child[i] != NULL) {
-                        new_child = mil_dce_worker (root->child[i],
-                                                    used_vars,
-                                                    dirty_vars,
-                                                    change);
-                        if (change) root->child[i] = new_child;
-                    }
-                return root;
-            }
+            return mil_dce_worker_seq (root, used_vars, dirty_vars, change);
 
         case m_assgn:
             {
@@ -250,10 +261,10 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                 assert(var->kind == m_var);
 
                 /* try to find dead code in the body */
-                new_child = mil_dce_worker (body,
-                                            body_used_vars,
-                                            body_dirty_vars,
-                                            change);
+                new_child = mil_dce_worker_seq (body,
+                                                body_used_vars,
+                                                body_dirty_vars,
+                                                change);
                 if (change) root->child[1] = new_child;
 
                 /* all used variables stay used before the body */
@@ -297,17 +308,17 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
 #endif
 
                 /* invoke dce on if part */
-                new_child = mil_dce_worker (root->child[1],
-                                            used_vars,
-                                            dirty_vars,
-                                            change);
+                new_child = mil_dce_worker_seq (root->child[1],
+                                                used_vars,
+                                                dirty_vars,
+                                                change);
                 if (change) root->child[1] = new_child;
 
                 /* invoke dce on else part */
-                new_child = mil_dce_worker (root->child[2],
-                                            else_used_vars,
-                                            else_dirty_vars,
-                                            change);
+                new_child = mil_dce_worker_seq (root->child[2],
+                                                else_used_vars,
+                                                else_dirty_vars,
+                                                change);
                 if (change) root->child[2] = new_child;
 
                 PFbitset_or (used_vars, else_used_vars);
@@ -344,7 +355,10 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
 #endif
 
                 /* ONLY collect the variables required for an iteration */
-                mil_dce_worker (root->child[1], used_vars, dirty_vars, false);
+                mil_dce_worker_seq (root->child[1],
+                                    used_vars,
+                                    dirty_vars,
+                                    false);
 
                 /* the variables of the condition are required
                    for the next iteration */
@@ -353,10 +367,10 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
                 /* invoke dce on the loop body (used_vars now contains the
                    variables in the condition as well as the ones required
                    for another pass through the body */
-                new_child = mil_dce_worker (root->child[1],
-                                            used_vars,
-                                            dirty_vars,
-                                            change);
+                new_child = mil_dce_worker_seq (root->child[1],
+                                                used_vars,
+                                                dirty_vars,
+                                                change);
                 if (change) root->child[1] = new_child;
 
                 /* the variables of the condition are required for the first
