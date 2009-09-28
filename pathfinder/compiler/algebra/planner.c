@@ -2510,12 +2510,9 @@ plan_merge_texts (const PFla_op_t *n)
                   iter_res = n->sem.merge_adjacent.iter_res,
                   pos_res  = n->sem.merge_adjacent.pos_res,
                   item_res = n->sem.merge_adjacent.item_res;
-    PFalg_proj_t *proj     = PFmalloc (3 * sizeof (PFalg_proj_t));
+    unsigned int  count    = 3;
+    PFalg_proj_t *proj     = PFmalloc (count * sizeof (PFalg_proj_t));
 
-    proj[0] = PFalg_proj (iter_res, iter);
-    proj[1] = PFalg_proj (pos_res, pos);
-    proj[2] = PFalg_proj (item_res, item);
-                         
     /* The merge_adjacent_text_node operator requires
        its inputs to be properly sorted. */
     for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
@@ -2530,6 +2527,25 @@ plan_merge_texts (const PFla_op_t *n)
                          cheapest_sorted))
             cheapest_sorted = *(plan_t **) PFarray_at (sorted, i);
 
+    /* ensure that the generated MIL code can cope with our position values */
+    if (PFprop_type_of (n, pos) != aat_nat) {
+        pos = PFcol_new (col_pos);
+        cheapest_sorted = mark_grp (cheapest_sorted,
+                                    pos,
+                                    iter);
+    }
+
+    /* in some situations the position are identical to the item columns */
+    proj[0] = PFalg_proj (iter_res, iter);
+    if (pos_res == item_res) {
+        count = 2;
+        proj[1] = PFalg_proj (item_res, item);
+    }
+    else {
+        proj[1] = PFalg_proj (pos_res, pos);
+        proj[2] = PFalg_proj (item_res, item);
+    }
+                         
     /* generate a merge_adjacent_text_node operator for
        the single remaining plan */
     add_plan (ret,
@@ -2537,7 +2553,7 @@ plan_merge_texts (const PFla_op_t *n)
                   merge_adjacent (
                       cheapest_sorted,
                       iter, pos, item),
-                  3, proj));
+                  count, proj));
     return ret;
 }
 
