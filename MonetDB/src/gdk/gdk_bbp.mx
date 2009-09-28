@@ -928,15 +928,16 @@ BBPexit(void)
 						skipped = 1;
 						continue;
 					}
-					if (isVIEW(b)) {
+					if (b->H->parentid || b->T->parentid) {
 						bat hp = b->H->parentid, tp = b->T->parentid;
-
-						VIEWdestroy(b);
 						if (hp)
 							BBP_cache(hp)->batSharecnt--;
 						if (tp)
 							BBP_cache(tp)->batSharecnt--;
-					} else
+					}
+					if (isVIEW(b))
+						VIEWdestroy(b);
+					else
 						BATfree(b);
 				}
 				BBPuncacheit_(i, TRUE);
