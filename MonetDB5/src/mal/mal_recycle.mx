@@ -103,6 +103,7 @@ mal_export int reusePolicy;
 #define REUSE_NONE	0
 #define REUSE_COVER	1
 #define REUSE_EXACT	2
+#define REUSE_MULTI	3
 
 mal_export int rcachePolicy;
 #define RCACHE_ALL		0
@@ -219,7 +220,6 @@ lng recycleTime = 0;
 lng recycleSearchTime = 0;	/* cache search time in ms*/
 
 aggrFun minAggr = NULL, maxAggr = NULL;
-bit multiSubsume = TRUE;
 
 /*
 int recycleMiss = 0;
@@ -238,7 +238,8 @@ to reduce the amount of scanning.
 int reusePolicy = REUSE_COVER;	/* recycle reuse policy
 			REUSE_NONE: baseline, keeps stat, no retain, no reuse
 			REUSE_COVER: reuse smallest select covering 
-			REUSE_EXACT: exact covering  */
+			REUSE_EXACT: exact covering  
+			REUSE_MULTI: reuse smallest covering select or set of selects */
 
 @-
 The recycler pool behaves as a cache and we may want to
@@ -1667,7 +1668,7 @@ computeMultiSubsume(rngPtr qry, piece  *base, int cnt, lng comp)
 
 	/* check for max-sized contained piece x */
 	for( j = 0;	j < scnt; j++)
-		if ( sol[j]->ovhd == 0 ) /* contained in query*/
+		if ( sol[j]->ovhd == 0 ) // contained in query
 			if ( sol[j]->cnt > max_x ) {
 				max_x = sol[j]->cnt;
 				x = j;
@@ -1691,10 +1692,10 @@ computeMultiSubsume(rngPtr qry, piece  *base, int cnt, lng comp)
 			b = computePart(&q1,sol,x+1,scnt-1,TRUE, b);
 		}
 	}
-	else if (sol[0]->cnt - sol[0]->ovhd > sol[scnt-1]->cnt - sol[scnt-1]->ovhd)
+	else if (sol[0]->cnt - sol[0]->ovhd > sol[scnt-1]->cnt - sol[scnt-1]->ovhd) 
 		b = computePart(qry,sol,0,scnt-1,TRUE, b);
 	else 
-		b = computePart(qry,sol,0,scnt-1,FALSE, b);
+		b = computePart(qry,sol,0,scnt-1,FALSE, b); 
 
 	/* BBPkeepref(b->batCacheid);  ?? */
 	return b;
@@ -2042,6 +2043,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
         case REUSE_NONE:
             /* 0: baseline, no reuse */
             break;
+		case REUSE_MULTI:
         case REUSE_COVER:
             /* 1: reuse smallest range covering */
             ridx= getArg(q,1);
@@ -2178,7 +2180,7 @@ We execute it in place and safe the result upon need.
     }
 
 	/* for selections over ordered data types try multi-interval subsumption */
-	if ( multiSubsume ) {
+	if ( reusePolicy == REUSE_MULTI ) {
 		if ( (getFunctionId(p) == selectRef) &&
 			BATatoms[s->stk[getArg(p,2)].vtype].linear ){
 			ticks = GDKusec();
