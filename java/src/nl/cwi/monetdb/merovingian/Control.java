@@ -106,12 +106,19 @@ public class Control {
 		response = in.readLine();
 		if (!response.startsWith("merovingian:1:"))
 			throw new MerovingianException("unsupported merovingian server");
-		String token = response.substring("merovingian:1:".length());
+		String[] tokens = response.split(":");
+		String token = tokens[2];
 
 		response = controlHash(passphrase, token);
-		out.println(response);
+		out.print(response + "\n");
 
 		response = in.readLine();
+		if (response == null) {
+			in.close();
+			out.close();
+			s.close();
+			throw new MerovingianException("server closed the connection");
+		}
 		if (!response.equals("OK")) {
 			in.close();
 			out.close();
@@ -120,12 +127,18 @@ public class Control {
 		}
 
 		/* send command, form is simple: "<db> <cmd>\n" */
-		out.println(database + " " + command);
+		out.print(database + " " + command + "\n");
 
 		/* Response has the first line either "OK\n" or an error
 		 * message.  In case of a command with output, the data will
 		 * follow the first line */
 		response = in.readLine();
+		if (response == null) {
+			in.close();
+			out.close();
+			s.close();
+			throw new MerovingianException("server closed the connection");
+		}
 		if (!response.equals("OK")) {
 			in.close();
 			out.close();
