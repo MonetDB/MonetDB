@@ -74,17 +74,19 @@ public class Control {
 		 * http://www.cs.hmc.edu/~geoff/classes/hmc.cs070.200101/homework10/hashfuncs.html */
 
 		for (int i = 0; i < pass.length(); i++) {
-			ho = h & 0xf8000000;
+			ho = h & 0xF8000000L;
 			h <<= 5;
-			h ^= ho >> 27;
-			h ^= pass.codePointAt(i);
+			h &= 0xFFFFFFFFL;
+			h ^= ho >>> 27;
+			h ^= (int)(pass.charAt(i));
 		}
 
 		for (int i = 0; i < salt.length(); i++) {
-			ho = h & 0xf8000000;
+			ho = h & 0xF8000000L;
 			h <<= 5;
+			h &= 0xFFFFFFFFL;
 			h ^= ho >> 27;
-			h ^= salt.codePointAt(i);
+			h ^= (int)(salt.charAt(i));
 		}
 
 		return(Long.toString(h));
