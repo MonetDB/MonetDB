@@ -212,6 +212,10 @@ oidInDocMgmt.SF-2686121
 distinct-values-two-sequences.SF-2853441
 child-steps-and-replace.SF-2716723
 update-with-timing.SF-2852928
+compilation_error.SF-2860574_1
+compilation_error.SF-2860574_2
+compilation_error.SF-2860037_1
+compilation_error.SF-2860037_2
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
 Zombie_document.SF-2009556
