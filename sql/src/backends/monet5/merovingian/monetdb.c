@@ -299,15 +299,11 @@ MEROgetStatus(sabdb **ret, char *database)
 	char *buf;
 	char *e;
 	
-	if (database == NULL) {
-		/* I ran out of creative ideas on this one, so I just injected
-		 * the last(?) sight we might see from van der Decken */
-		e = control_send(&buf, mero_host, mero_port,
-				"flyghende", "hollander", 1, mero_pass);
-	} else {
-		e = control_send(&buf, mero_host, mero_port,
-				database, "status", 1, mero_pass);
-	}
+	if (database == NULL)
+		database = "#all";
+
+	e = control_send(&buf, mero_host, mero_port,
+			database, "status", 1, mero_pass);
 	if (e != NULL)
 		return(e);
 
@@ -1020,17 +1016,20 @@ command_set(int argc, char *argv[], meroset type)
 }
 
 static void
-command_get(int argc, char *argv[], confkeyval *defprops)
+command_get(int argc, char *argv[])
 {
 	char doall = 1;
 	char *p;
 	char *property = NULL;
+	char *buf;
 	err e;
 	int i;
 	sabdb *orig, *stats;
 	int twidth = TERMWIDTH;
 	char *source, *value;
-	confkeyval *kv, *props = getDefaultProps();
+	confkeyval *kv;
+	confkeyval *defprops = getDefaultProps();
+	confkeyval *props = getDefaultProps();
 
 	if (argc == 1) {
 		/* print help message for this command */
@@ -1082,6 +1081,20 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 		exit(1);
 	}
 
+	e = control_send(&buf, mero_host, mero_port,
+			"#defaults", "get", 1, mero_pass);
+	if (e != NULL) {
+		fprintf(stderr, "get: internal error: %s\n", e);
+		free(e);
+		exit(2);
+	} else if (strncmp(buf, "OK\n", 3) != 0) {
+		fprintf(stderr, "get: %s\n", buf);
+		free(buf);
+		exit(1);
+	}
+	readPropsBuf(defprops, buf + 3);
+	free(buf);
+
 	if (doall == 1) {
 		/* don't even look at the arguments, because we are instructed
 		 * to list all known databases */
@@ -1132,15 +1145,18 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 				source = "-";
 				value = stats->dbname;
 			} else {
-				char *buf;
 				e = control_send(&buf, mero_host, mero_port,
 						stats->dbname, "get", 1, mero_pass);
 				if (e != NULL) {
 					fprintf(stderr, "get: internal error: %s\n", e);
 					free(e);
 					exit(2);
+				} else if (strncmp(buf, "OK\n", 3) != 0) {
+					fprintf(stderr, "get: %s\n", buf);
+					free(buf);
+					exit(1);
 				}
-				readPropsBuf(props, buf);
+				readPropsBuf(props, buf + 3);
 				free(buf);
 				kv = findConfKey(props, p);
 				if (kv == NULL) {
@@ -1263,14 +1279,6 @@ main(int argc, char *argv[])
 		TERMWIDTH = ws.ws_col;
 #endif
 
-	/* seed the randomiser for when we create a database */
-	srand(time(NULL));
-	
-	/* My preciousssssssssss!  Set umask such that only /us/ can read
-	 * things we created, which is a good idea with the vault rin... eh
-	 * key around here and all. */
-	umask(S_IRWXG | S_IRWXO);
-
 	/* hunt for the config file, and read it, allow the caller to
 	 * specify where to look using the MONETDB5CONF environment variable */
 	p = getenv("MONETDB5CONF");
@@ -1294,6 +1302,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s: cannot find gdk_dbfarm in config file\n", argv[0]);
 		exit(2);
 	}
+	freeConfFile(ckv);
 
 	mero_running = 1;
 	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
@@ -1317,9 +1326,6 @@ main(int argc, char *argv[])
 	snprintf(mero_control, sizeof(mero_control),
 			"%s/.merovingian_control", dbfarm);
 
-	/* initialise Sabaoth so it knows where to look */
-	SABAOTHinit(dbfarm, NULL);
-
 	/* Start handling the arguments.
 	 * monetdb [monetdb_options] command [options] [database [...]]
 	 * this means we first scout for monetdb_options which stops as soon
@@ -1328,7 +1334,6 @@ main(int argc, char *argv[])
 	/* first handle the simple no argument case */
 	if (argc <= 1) {
 		command_help(0, NULL);
-		freeConfFile(ckv);
 		return(1);
 	}
 	
@@ -1337,7 +1342,6 @@ main(int argc, char *argv[])
 		switch (argv[i][1]) {
 			case 'v':
 				command_version();
-				freeConfFile(ckv);
 			return(0);
 			case 'q':
 				monetdb_quiet = 1;
@@ -1402,11 +1406,9 @@ main(int argc, char *argv[])
 	/* commands that do not need merovingian to be running */
 	if (strcmp(argv[i], "help") == 0 || strcmp(argv[i], "--help") == 0) {
 		command_help(argc - i, &argv[i]);
-		freeConfFile(ckv);
 		return(0);
 	} else if (strcmp(argv[i], "version") == 0) {
 		command_version();
-		freeConfFile(ckv);
 		return(0);
 	}
 
@@ -1415,7 +1417,6 @@ main(int argc, char *argv[])
 	if (mero_running == 0 && mero_host == NULL) {
 		fprintf(stderr, "monetdb: cannot perform: MonetDB Database Server "
 				"(merovingian) is not running\n");
-		freeConfFile(ckv);
 		return(1);
 	}
 
@@ -1443,35 +1444,7 @@ main(int argc, char *argv[])
 	} else if (strcmp(argv[i], "set") == 0) {
 		command_set(argc - i, &argv[i], SET);
 	} else if (strcmp(argv[i], "get") == 0) {
-		/* change the keys to our names */
-		kv = findConfKey(ckv, "mero_doproxy");
-		kv->key = "forward";
-		kv->type = OTHER;
-		if (strcmp(kv->val, "yes") == 0) {
-			GDKfree(kv->val);
-			kv->val = GDKstrdup("proxy");
-		} else {
-			GDKfree(kv->val);
-			kv->val = GDKstrdup("redirect");
-		}
-		kv = findConfKey(ckv, "mero_discoveryport");
-		kv->key = "shared";
-		kv->type = STR;
-		if (kv->val == NULL) {
-			kv->val = GDKstrdup("yes");
-		} else if (strcmp(kv->val, "0") == 0) {
-			GDKfree(kv->val);
-			kv->val = GDKstrdup("no");
-		} else {
-			GDKfree(kv->val);
-			kv->val = GDKstrdup("yes");
-		}
-		kv = findConfKey(ckv, "gdk_nr_threads");
-		kv->key = "nthreads";
-		/* enable "hidden" option, to avoid override by config-file */
-		kv = findConfKey(ckv, "#master");
-		kv->key++;
-		command_get(argc - i, &argv[i], ckv);
+		command_get(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "inherit") == 0) {
 		command_set(argc - i, &argv[i], INHERIT);
 	} else if (strcmp(argv[i], "discover") == 0) {
@@ -1481,7 +1454,6 @@ main(int argc, char *argv[])
 		command_help(0, NULL);
 	}
 
-	freeConfFile(ckv);
 	if (mero_pass != NULL)
 		free(mero_pass);
 

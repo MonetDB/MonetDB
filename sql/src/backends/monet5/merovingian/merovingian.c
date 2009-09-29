@@ -607,6 +607,8 @@ main(int argc, char *argv[])
 		snprintf(buf, sizeof(buf), "%d", ret);
 		kv->val = GDKstrdup(buf);
 	}
+	kv = findConfKey(_mero_props, "master");
+	kv->val = GDKstrdup("no");
 
 	/* we no longer need prefix */
 	freeConfFile(ckv);
@@ -645,6 +647,10 @@ main(int argc, char *argv[])
 				dbfarm, strerror(errno));
 		MERO_EXIT(1);
 	}
+
+	/* seed the randomiser for when we create a database, send responses
+	 * to HELO, etc */
+	srand(time(NULL));
 
 	/* see if we have the passphrase if we do remote control stuff */
 	if (_mero_controlport != 0) {
