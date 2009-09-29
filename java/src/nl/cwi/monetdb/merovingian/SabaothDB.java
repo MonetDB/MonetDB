@@ -149,6 +149,10 @@ public class SabaothDB {
 		this.crashAvg30 = Double.parseDouble(parts[15]);
 	}
 
+	public String getName() {
+		return(path.substring(path.lastIndexOf('/') + 1));
+	}
+
 	public String getPath() {
 		return(path);
 	}
