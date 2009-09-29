@@ -413,43 +413,6 @@ controlRunner(void *d)
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
 					}
-				} else if (strcmp(p, "get") == 0) {
-					confkeyval *props = getDefaultProps();
-					char *pbuf;
-
-					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
-						len = snprintf(buf2, sizeof(buf2),
-								"internal error, please review the logs\n");
-						send(msgsock, buf2, len, 0);
-						Mfprintf(_mero_ctlerr, "%s: get: SABAOTHgetStatus: "
-								"%s\n", origin, e);
-						freeErr(e);
-						continue;
-					}
-					if (stats == NULL) {
-						Mfprintf(_mero_ctlerr, "%s: received get signal for "
-								"unknown database: %s\n", origin, q);
-						len = snprintf(buf2, sizeof(buf2),
-								"unknown database: %s\n", q);
-						send(msgsock, buf2, len, 0);
-						continue;
-					}
-
-					/* from here we'll always succeed, even if we don't
-					 * send anything */
-					len = snprintf(buf2, sizeof(buf2), "OK\n");
-					send(msgsock, buf2, len, 0);
-				
-					readProps(props, stats->path);
-					writePropsBuf(props, &pbuf);
-					send(msgsock, pbuf, strlen(pbuf), 0);
-					freeConfFile(props);
-					GDKfree(props);
-					SABAOTHfreeStatus(&stats);
-
-					Mfprintf(_mero_ctlout, "%s: served property list for "
-							"database '%s'\n", origin, q);
-					break;
 				} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 					char *e;
 
@@ -555,6 +518,59 @@ controlRunner(void *d)
 					}
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send(msgsock, buf2, len, 0);
+
+	/* comands below this point are multi line and hence you can't
+	 * combine them, so they disconnect the client afterwards */
+				} else if (strcmp(p, "get") == 0) {
+					confkeyval *props = getDefaultProps();
+					char *pbuf;
+
+					if (strcmp(q, "#defaults") == 0) {
+						/* send defaults to client */
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send(msgsock, buf2, len, 0);
+						writePropsBuf(_mero_props, &pbuf);
+						send(msgsock, pbuf, strlen(pbuf), 0);
+						GDKfree(props);
+
+						Mfprintf(_mero_ctlout, "%s: served default property "
+								"list\n", origin);
+						break;
+					}
+
+					if ((e = SABAOTHgetStatus(&stats, q)) != MAL_SUCCEED) {
+						len = snprintf(buf2, sizeof(buf2),
+								"internal error, please review the logs\n");
+						send(msgsock, buf2, len, 0);
+						Mfprintf(_mero_ctlerr, "%s: get: SABAOTHgetStatus: "
+								"%s\n", origin, e);
+						freeErr(e);
+						break;
+					}
+					if (stats == NULL) {
+						Mfprintf(_mero_ctlerr, "%s: received get signal for "
+								"unknown database: %s\n", origin, q);
+						len = snprintf(buf2, sizeof(buf2),
+								"unknown database: %s\n", q);
+						send(msgsock, buf2, len, 0);
+						break;
+					}
+
+					/* from here we'll always succeed, even if we don't
+					 * send anything */
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send(msgsock, buf2, len, 0);
+				
+					readProps(props, stats->path);
+					writePropsBuf(props, &pbuf);
+					send(msgsock, pbuf, strlen(pbuf), 0);
+					freeConfFile(props);
+					GDKfree(props);
+					SABAOTHfreeStatus(&stats);
+
+					Mfprintf(_mero_ctlout, "%s: served property list for "
+							"database '%s'\n", origin, q);
+					break;
 				} else if (strcmp(p, "status") == 0 || (
 							strcmp(q, "flyghende") == 0 &&
 							strcmp(p, "hollander") == 0 && (q = NULL) == NULL))
@@ -572,7 +588,7 @@ controlRunner(void *d)
 						Mfprintf(_mero_ctlerr, "%s: status: SABAOTHgetStatus: "
 								"%s\n", origin, e);
 						freeErr(e);
-						continue;
+						break;
 					}
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send(msgsock, buf2, len, 0);
@@ -595,9 +611,6 @@ controlRunner(void *d)
 					}
 
 					SABAOTHfreeStatus(&topdb);
-
-					/* because this command is multi line, you can't
-					 * combine it, disconnect the client */
 					break;
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
@@ -626,9 +639,6 @@ controlRunner(void *d)
 
 					Mfprintf(_mero_ctlout, "%s: served neighbour list\n",
 							origin);
-
-					/* because this command is multi line, you can't
-					 * combine it, disconnect the client */
 					break;
 				} else {
 					Mfprintf(_mero_ctlerr, "%s: unknown control command: %s\n",
