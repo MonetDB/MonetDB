@@ -138,9 +138,6 @@ discoveryRunner(void *d)
 	char host[128];
 	char service[8];
 
-	/* seed random number generation for random delay in HELO response */
-	srand(time(NULL));
-
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */
 	snprintf(buf, 512, "HELO %s", _mero_hostname);
