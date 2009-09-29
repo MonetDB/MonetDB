@@ -43,6 +43,7 @@ All Rights Reserved.
   <property name="xrpc-api-package"     value="nl/cwi/monetdb/xquery/xrpc/api" />
   <property name="xrpc-wrapper-package" value="nl/cwi/monetdb/xquery/xrpc/wrapper" />
   <property name="xrpc-client-package"  value="nl/cwi/monetdb/xquery/xrpc/client" />
+  <property name="mero-control-package" value="nl/cwi/monetdb/merovingian" />
 
   <property file="build.local.properties" />
   <property file="build.properties" />
@@ -62,6 +63,9 @@ All Rights Reserved.
     value="${jardir}/xrpcwrapper.jar" />
   <property name="xrpc-client-jar"
     value="${jardir}/xrpcclient.jar" />
+
+  <property name="mero-control-jar"
+    value="${jardir}/merocontrol.jar" />
 
   <!-- full target -->
   <target name="all">
@@ -198,6 +202,18 @@ All Rights Reserved.
     </jar>
   </target>
 
+  <target name="jar_mero_control"
+    depends="compile_mero_control">
+    <jar jarfile="${mero-control-jar}">
+      <fileset dir="${builddir}">
+        <include name="${mero-control-package}/**/*.class" />
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}" />
+      </manifest>
+    </jar>
+  </target>
+
   <!-- compile targets -->
   <target name="compile_jdbc" depends="prepare,driver">
     <echo message="Compiling JDBC driver" />
@@ -318,6 +334,21 @@ All Rights Reserved.
       source="${javac_version}"
       >
       <include name="${xrpc-client-package}/**/*.java" />
+    </javac>
+  </target>
+
+  <target name="compile_mero_control" depends="prepare">
+    <echo message="Compiling Merovingian Control library" />
+    <javac
+      classpath="${srcdir}"
+      srcdir="${srcdir}"
+      destdir="${builddir}"
+      debug="${debug}"
+      optimize="${optimize}"
+      target="1.5"
+      source="1.5"
+      >
+      <include name="${mero-control-package}/**/*.java" />
     </javac>
   </target>
 
