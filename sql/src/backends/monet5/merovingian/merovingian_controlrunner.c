@@ -571,13 +571,14 @@ controlRunner(void *d)
 					Mfprintf(_mero_ctlout, "%s: served property list for "
 							"database '%s'\n", origin, q);
 					break;
-				} else if (strcmp(p, "status") == 0 || (
-							strcmp(q, "flyghende") == 0 &&
-							strcmp(p, "hollander") == 0 && (q = NULL) == NULL))
-				{
+				} else if (strcmp(p, "status") == 0) {
 					sabdb *stats;
 					sabdb *topdb;
 					char *sdb;
+
+					if (strcmp(q, "#all") == 0)
+						/* list all */
+						q = NULL;
 
 					/* return a list of sabdb structs for our local
 					 * databases */

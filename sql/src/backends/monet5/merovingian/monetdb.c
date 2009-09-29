@@ -299,15 +299,11 @@ MEROgetStatus(sabdb **ret, char *database)
 	char *buf;
 	char *e;
 	
-	if (database == NULL) {
-		/* I ran out of creative ideas on this one, so I just injected
-		 * the last(?) sight we might see from van der Decken */
-		e = control_send(&buf, mero_host, mero_port,
-				"flyghende", "hollander", 1, mero_pass);
-	} else {
-		e = control_send(&buf, mero_host, mero_port,
-				database, "status", 1, mero_pass);
-	}
+	if (database == NULL)
+		database = "#all";
+
+	e = control_send(&buf, mero_host, mero_port,
+			database, "status", 1, mero_pass);
 	if (e != NULL)
 		return(e);
 
