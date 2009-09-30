@@ -666,7 +666,7 @@ MASTERsend(Client cntxt, int tag)
 	bstream *bs;
 
 	/* wait for the request to start pumping */
-	if ( stream_write(cntxt->fdout, cntxt->prompt, 1, strlen(buf)) != (unsigned) strlen(cntxt->prompt))
+	if ( (size_t) stream_write(cntxt->fdout, cntxt->prompt, 1, strlen(buf)) != strlen(cntxt->prompt))
 		stream_printf(GDKerr,"!failed to initialize slave session\n");
 
 	if ( replicationTag == 0)
