@@ -145,6 +145,7 @@ class MonetDBConnection
       end
     end
     
+    
     # If the server protocol version is not 8: abort and notify the user.
     if @@SUPPORTED_PROTOCOLS.include?(@protocol) == false
       raise MonetDBProtocolError, "Protocol not supported. The current implementation of ruby-monetdb works with MAPI protocols #{@@SUPPORTED_PROTOCOLS} only."
@@ -232,7 +233,6 @@ class MonetDBConnection
       end
     end
   end
-
   def savepoint
     @transactions.savepoint
   end
