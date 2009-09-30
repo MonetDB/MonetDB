@@ -63,10 +63,11 @@ typedef struct {
 #define HSTdec_dbl(H,X) H->cnt[(int)((X - H->low.val.dval) / H->inc.val.dval)]--
 
 histogram_export Histogram HSTnew(int bins, ValPtr minval, ValPtr maxval);
-histogram_export void HSTincrement(Histogram h, ValPtr val);
+histogram_export int  HSTincrement(Histogram h, ValPtr val);
 histogram_export void HSTdecrement(Histogram h, ValPtr val);
 histogram_export void HSTprint(stream *s, Histogram h);
 histogram_export void HSTprintf(Histogram h);
+histogram_export int HSTgetIndex(Histogram h, ValPtr val);
 
 histogram_export dbl HSTeuclidian(Histogram h1, Histogram h2);
 histogram_export int HSTeuclidianWhatIf(Histogram h1, Histogram h2, ValPtr val);
@@ -79,6 +80,7 @@ histogram_export int HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr
 histogram_export dbl HSTeuclidianDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 histogram_export dbl HSTcityblockDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 histogram_export dbl HSTchebyshevDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
+histogram_export int HSTwhichbin(Histogram h1, Histogram h2);
 #endif /* _HISTOGRAM_H */
 @- 
 @c
@@ -175,9 +177,11 @@ HSTgetIndex(Histogram h, ValPtr val){
 	return index;
 }
 
-void 
+int 
 HSTincrement(Histogram h, ValPtr val){
-	h->cnt[HSTgetIndex(h,val)]++;
+	int index = HSTgetIndex(h,val);
+	h->cnt[index]++;
+	return index;
 }
 
 void 
@@ -354,6 +358,30 @@ HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val,lng *whatIfDista
 	*whatIfDistance = distanceWhatIf;
 	if (distanceWhatIf > distance) return 1;
 	return 0;
+}
+
+int
+HSTwhichbin(Histogram h1, Histogram h2){
+	lng i, totalDiff=0, avgDiff, cur, max=0, curbinDiff, whichbin=-1;
+	assert(h1->bins == h2->bins);
+
+	
+	for ( i = 0; i < h1->bins; i++)
+		totalDiff += ABS(h1->cnt[i] - h2->cnt[i]);
+	avgDiff = totalDiff/h1->bins;
+
+	for ( i = 0; i < h1->bins; i++){
+	 	curbinDiff = h1->cnt[i] - h2->cnt[i];
+		if (curbinDiff < 0)
+			continue;	
+		cur = ABS(avgDiff - curbinDiff);
+		if (cur > max){
+			max=cur;
+			whichbin = i;
+		}
+	}
+	
+	return whichbin;
 }
 
 @-
