@@ -228,6 +228,7 @@
 			$row = split(",\t",  $row);
 			
 			foreach ($row as &$field) {
+				$field = stripslashes($field);
 				/* strip left/right \" chars and right ',' */
 				$field = rtrim($field, '"');
 				$field = ltrim($field, '"');
