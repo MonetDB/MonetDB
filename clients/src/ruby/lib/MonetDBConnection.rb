@@ -23,6 +23,7 @@ require 'time'
 require 'hasher'
 require 'MonetDBExceptions'
 require 'iconv' # utf-8 support
+require 'uri'
 
 Q_TABLE               = "1" # SELECT operation
 Q_UPDATE              = "2" # INSERT/UPDATE operations
@@ -99,9 +100,12 @@ class MonetDBConnection
     @database = db_name
     @auth_type = auth_type
     
-    @socket = TCPSocket.new(@host, @port)  
-    
-    real_connect
+    @socket = TCPSocket.new(@host, @port.to_i)  
+    if real_connect
+      set_timezone
+      true
+    end
+    false
   end
   
 
@@ -109,7 +113,6 @@ class MonetDBConnection
   def real_connect
     
     server_challenge = retrieve_server_challenge()
-    
     if server_challenge != nil
       salt = server_challenge.split(':')[0]
       @server_name = server_challenge.split(':')[1]
@@ -131,6 +134,7 @@ class MonetDBConnection
       end
     end
     
+    
     # If the server protocol version is not 8: abort and notify the user.
     if @@SUPPORTED_PROTOCOLS.include?(@protocol) == false
       raise MonetDBProtocolError, "Protocol not supported. The current implementation of ruby-monetdb works with MAPI protocols #{@@SUPPORTED_PROTOCOLS} only."
@@ -145,33 +149,72 @@ class MonetDBConnection
       @connection_established = true
 
       send(reply)
-      
       monetdb_auth = receive
       
-      if monetdb_auth == ""
-        # auth succedeed, now set the timezone and proceed
-        
-        set_timezone
-        
+      if monetdb_auth.length == 0
+        # auth succedeed
+        true
       else
-        if monetdb_auth == MSG_PROMPT
-          true
-        elsif monetdb_auth[0].chr == MSG_REDIRECT
+        if monetdb_auth[0].chr == MSG_REDIRECT
         #redirection
-          if merovingian?
+          
+          redirects = [] # store a list of possible redirects
+          monetdb_auth.each do |m|
+            # strip the trailing ^mapi:
+            # if the redirect string start with something != "^mapi:" or is empty, the redirect is invalid and shall not be included.
+            
+            if m[0..5] == "^mapi:"
+              redir = m[6..m.length]
+              # url parse redir
+              redirects.push(redir)  
+            end        
+          end
+          if redirects.size == 0  
+            raise MonetDBConnectionError, "Invalid redirect"
+          else
+            begin 
+              uri = URI.split(redirects[0])
+              # Splits the string on following parts and returns array with result:
+              #
+              #  * Scheme
+              #  * Userinfo
+              #  * Host
+              #  * Port
+              #  * Registry
+              #  * Path
+              #  * Opaque
+              #  * Query
+              #  * Fragment
+              server_name = uri[0]
+              host   = uri[2]
+              port   = uri[3]
+              database   = uri[5].gsub(/^\//, '') if uri[5] != nil
+            rescue URI::InvalidURIError
+              raise MonetDBConnectionError, "Invalid redirect: #{redirects[0]}"
+            end
+          end
+          
+          if server_name == "merovingian"
             if @auth_iteration <= 10
               @auth_iteration += 1
               real_connect
             else
               raise MonetDBConnectionError, "Merovingian: too many iterations while proxying."
             end
-          elsif mserver?
-          # reinitialize a connection
-            @socket.close
-            connect(@database, @auth_type)
+          elsif server_name == "monetdb"
+            begin
+              @socket.close
+            rescue
+              raise MonetDBConnectionError, "I/O error while closing connection to #{@socket}"
+            end
+            # reinitialize a connection
+            @host = host
+	          @port = port
+            
+            connect(database, @auth_type)
           else
             @connection_established = false
-            raise MonetDBQueryError, monetdb_auth
+            raise MonetDBConnectionError, monetdb_auth
           end
         elsif monetdb_auth[0].chr == MSG_INFO
           raise MonetDBConnectionError, monetdb_auth
@@ -179,7 +222,6 @@ class MonetDBConnection
       end
     end
   end
-
   def savepoint
     @transactions.savepoint
   end
@@ -225,6 +267,10 @@ class MonetDBConnection
     is_final, chunk_size = recv_decode_hdr
     
     data = @socket.recv(chunk_size)
+    
+    if chunk_size == 0
+	    return "" # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
+    end
     
     if is_final == false 
       while is_final == false
