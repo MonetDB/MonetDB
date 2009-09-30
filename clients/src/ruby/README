@@ -26,7 +26,6 @@ Then install with the command:
 
 $ gem install ruby-monetdb-sql-0.1.gem
 
-
 == Usage ==
 To use the standalone driver import the 'MonetDB' class and 'rubygems' (in case you installed it using gems).
 
@@ -37,6 +36,8 @@ A result set object  has methods for fetching rows, moving around in the result 
 Use a row fetching method such as fetch_row or an iterator such as each to access the rows of the result set.
 If you want a count of the number of rows in the result set: invoke 'num_rows' method.
 Invoke 'free' to release the result set. 
+
+== Example ==
 
 require 'MonetDB'
 
