@@ -23,6 +23,7 @@ require 'time'
 require 'hasher'
 require 'MonetDBExceptions'
 require 'iconv' # utf-8 support
+require 'uri'   # parse merovingian redirects
 
 Q_TABLE               = "1" # SELECT operation
 Q_UPDATE              = "2" # INSERT/UPDATE operations
@@ -38,12 +39,17 @@ MSG_INFO              = '!' # info response from mserver
 MSG_TUPLE             = '['
 MSG_PROMPT            =  nil
 
-
 REPLY_SIZE            = '250'
 
 MAX_AUTH_ITERATION    = 10  # maximum number of atuh iterations (thorough merovingian) allowed
  
 MONET_ERROR           = -1
+
+LANG_SQL = "sql"
+
+# Xquery support
+LANG_XQUERY = "xquery"
+XQUERY_OUTPUT_SEQ = true # use monetdb xquery's output seq
 
 class MonetDBConnection
  
@@ -65,7 +71,7 @@ class MonetDBConnection
   # MAPI protocols supported by the driver
   @@SUPPORTED_PROTOCOLS = [ 8, 9 ]
   
-  attr_reader :socket, :auto_commit, :transactions
+  attr_reader :socket, :auto_commit, :transactions, :lang
   
   # Instantiates a new MonetDBConnection object
   # * user: username (default is monetdb)
@@ -99,9 +105,18 @@ class MonetDBConnection
     @database = db_name
     @auth_type = auth_type
     
-    @socket = TCPSocket.new(@host, @port)  
-    
-    real_connect
+    @socket = TCPSocket.new(@host, @port.to_i)  
+    if real_connect
+      if @lang == LANG_SQL
+        set_timezone 
+        set_reply_size
+      elsif (@lang == LANG_XQUERY) and XQUERY_OUTPUT_SEQ
+        # require xquery output to be in seq format
+        send(format_command("output seq"))
+      end
+      true
+    end
+    false
   end
   
 
@@ -109,7 +124,6 @@ class MonetDBConnection
   def real_connect
     
     server_challenge = retrieve_server_challenge()
-    
     if server_challenge != nil
       salt = server_challenge.split(':')[0]
       @server_name = server_challenge.split(':')[1]
@@ -145,33 +159,72 @@ class MonetDBConnection
       @connection_established = true
 
       send(reply)
-      
       monetdb_auth = receive
       
-      if monetdb_auth == ""
-        # auth succedeed, now set the timezone and proceed
-        
-        set_timezone
-        
+      if monetdb_auth.length == 0
+        # auth succedeed
+        true
       else
-        if monetdb_auth == MSG_PROMPT
-          true
-        elsif monetdb_auth[0].chr == MSG_REDIRECT
+        if monetdb_auth[0].chr == MSG_REDIRECT
         #redirection
-          if merovingian?
+          
+          redirects = [] # store a list of possible redirects
+          monetdb_auth.each do |m|
+            # strip the trailing ^mapi:
+            # if the redirect string start with something != "^mapi:" or is empty, the redirect is invalid and shall not be included.
+            
+            if m[0..5] == "^mapi:"
+              redir = m[6..m.length]
+              # url parse redir
+              redirects.push(redir)  
+            end        
+          end
+          if redirects.size == 0  
+            raise MonetDBConnectionError, "Invalid redirect"
+          else
+            begin 
+              uri = URI.split(redirects[0])
+              # Splits the string on following parts and returns array with result:
+              #
+              #  * Scheme
+              #  * Userinfo
+              #  * Host
+              #  * Port
+              #  * Registry
+              #  * Path
+              #  * Opaque
+              #  * Query
+              #  * Fragment
+              server_name = uri[0]
+              host   = uri[2]
+              port   = uri[3]
+              database   = uri[5].gsub(/^\//, '') if uri[5] != nil
+            rescue URI::InvalidURIError
+              raise MonetDBConnectionError, "Invalid redirect: #{redirects[0]}"
+            end
+          end
+          
+          if server_name == "merovingian"
             if @auth_iteration <= 10
               @auth_iteration += 1
               real_connect
             else
               raise MonetDBConnectionError, "Merovingian: too many iterations while proxying."
             end
-          elsif mserver?
-          # reinitialize a connection
-            @socket.close
-            connect(@database, @auth_type)
+          elsif server_name == "monetdb"
+            begin
+              @socket.close
+            rescue
+              raise MonetDBConnectionError, "I/O error while closing connection to #{@socket}"
+            end
+            # reinitialize a connection
+            @host = host
+	          @port = port
+            
+            connect(database, @auth_type)
           else
             @connection_established = false
-            raise MonetDBQueryError, monetdb_auth
+            raise MonetDBConnectionError, monetdb_auth
           end
         elsif monetdb_auth[0].chr == MSG_INFO
           raise MonetDBConnectionError, monetdb_auth
@@ -186,7 +239,7 @@ class MonetDBConnection
 
   # Formats a <i>command</i> string so that it can be parsed by the server
   def format_command(x)
-    return "X" + x + "\nX"
+      return "X" + x + "\n"
   end
   
 
@@ -198,6 +251,10 @@ class MonetDBConnection
   # send a 'reply_size' command to the server
   def set_reply_size
     send(format_command(("reply_size " + REPLY_SIZE)))
+  end
+
+  def set_output_seq
+    send(format_command("output seq"))
   end
 
   # Disconnect from server
@@ -223,9 +280,12 @@ class MonetDBConnection
   # receive data from a monetdb5 server instance
   def receive
     is_final, chunk_size = recv_decode_hdr
-    
+
+    if chunk_size == 0
+	    return "" # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
+    end    
+
     data = @socket.recv(chunk_size)
-    
     if is_final == false 
       while is_final == false
         is_final, chunk_size = recv_decode_hdr
@@ -367,7 +427,6 @@ class MonetDBConnection
   # reads and decodes the header of a server message
   def recv_decode_hdr()
     if @socket != nil
-      
       fb = @socket.recv(1)
       sb = @socket.recv(1)
       
@@ -392,7 +451,6 @@ class MonetDBConnection
         is_final = true
         
       end
-
       # return the size of the chunk (in bytes)
       return is_final, chunk_size  
     else  
@@ -436,7 +494,7 @@ class MonetDBConnection
       @auto_commit = flag
     elsif response[0] == MSG_INFO
       raise MonetDBCommandError, response
-      return
+      return 
     end
     
   end

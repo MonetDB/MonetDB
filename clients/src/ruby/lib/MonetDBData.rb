@@ -30,9 +30,8 @@ class MonetDBData
  
   def initialize(connection)
     @connection = connection
-    
-    @lang = 'sql'
-    
+    @lang = @connection.lang
+
     # Structure containing the header+results set for a fired Q_TABLE query     
     @header = []
     @query  = {}
@@ -52,8 +51,9 @@ class MonetDBData
   # Fire a query and return the server response
   def execute(q)
    # Before firing a query, set the max reply length to one record. TODO: move this to MonetDBConnection
-    @connection.set_reply_size
+   #  @connection.set_reply_size
 
+   
     # server response to command
     response = @connection.receive
     if response == MSG_PROMPT
@@ -69,24 +69,28 @@ class MonetDBData
     data = @connection.receive
     
     return if data == nil
-      
-    rows = receive_record_set(data)
-    # the fired query is a SELECT; store and return the whole record set
-    if @action == Q_TABLE
-      @header = parse_header_table(@header)
-      @header.freeze
-      
-      if @row_index.to_i < @row_count.to_i
-        block_rows = ""
-        while next_block
-          data = @connection.receive
-          block_rows += receive_record_set(data)
-        end
-        rows += block_rows
-      end
     
-      @record_set = parse_tuples(rows)
-      @record_set.freeze  
+    if (@lang == LANG_SQL) or (@lang == LANG_XQUERY and XQUERY_OUTPUT_SEQ)
+      rows = receive_record_set(data)
+      # the fired query is a SELECT; store and return the whole record set
+      if @action == Q_TABLE
+        @header = parse_header_table(@header)
+        @header.freeze
+      
+        if @row_index.to_i < @row_count.to_i
+          block_rows = ""
+          while next_block
+            data = @connection.receive
+            block_rows += receive_record_set(data)
+          end
+          rows += block_rows
+        end
+    
+        @record_set = parse_tuples(rows)
+        @record_set.freeze  
+      end
+    elsif (@lang == XQUERY and ! XQUERY_OUTPUT_SEQ)
+      return data # return an xml file
     end
   end
   
@@ -259,8 +263,10 @@ class MonetDBData
   
   # Formats a query <i>string</i> so that it can be parsed by the server
   def format_query(q)
-    if @lang.downcase == 'sql'
-        return "s" + q + ";\n"
+    if @lang.downcase == LANG_SQL
+        return "s" + q + ";"
+    elsif @lang.downcase == LANG_XQUERY
+        return "s" + q
     else
       raise LanguageNotSupported, @lang
     end
@@ -300,8 +306,7 @@ class MonetDBData
 
           end
         end
-      
-        processed_row << field.gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
+        processed_row << field.gsub(/\\/, '').gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
         position += 1
       end
       processed_record_set << processed_row
