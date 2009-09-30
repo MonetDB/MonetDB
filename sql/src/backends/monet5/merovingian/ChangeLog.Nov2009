@@ -1,0 +1,47 @@
+# ChangeLog file for sql/src/backends/monet5/merovingian
+# This file is updated with mchangelog
+
+*Nov2009
+
+  30 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c,
+  merovingian_forkmserver.c, monetdb.c, properties.c, utils.c, utils.h:
+  Add slave property for databases
+
+  25 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
+  Implemented global -q option to monetdb to suppress status messages when
+  performing commands
+
+  25 Sep 2009; Fabian Groffen <fabian@cwi.nl> glob.c:
+  Improved globbing to support escapes, such that the literal asterisk symbol
+  can be matched using \*
+
+  25 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_discoveryrunner.c,
+  monetdb.1:
+  Remote controllable merovingians now announce their controlport. These
+  control entries show up in monetdb discover output marked with an asterisk.
+
+  23 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.1, monetdb.c,
+  merovingian.1, merovingian.c, merovingian_controlrunner.c:
+  Implemented Feature Request #2830754. monetdb can now control a remote
+  merovingian using the -h -p and -P global options to monetdb. The password
+  used is stored at the merovingian site in the .merovingian_pass file in the
+  controlled dbfarm.
+
+  18 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c, monetdb.1:
+  monetdb now requires merovingian to be running to perform any
+  operation
+
+  09 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_discoveryrunner.c:
+  No longer announce databases that are under maintenance, this allows them to
+  be pulled out of the cluster easily
+
+  04 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_forkmserver.c,
+  monetdb.c, monetdb_get.c, properties.c:
+  Add master property of boolean value that translates into
+  replication_master for mserver5 to trigger storing replication logs
+
+  20 Aug 2009; Fabian Groffen <fabian@cwi.nl> database.c, database.h,
+  monetdb.c, monetdb.1:
+  Always put created databases under maintenance, they have to be explicitly
+  released after creating and performing the initialisation steps by the DBA
+
