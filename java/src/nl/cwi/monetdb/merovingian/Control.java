@@ -290,8 +290,16 @@ public class Control {
 		String[] response = sendCommand("anelosimus", "eximius", true);
 		try {
 			for (int i = 0; i < response.length; i++) {
-				if (response[i].endsWith("*"))
-					response[i] = response[i].substring(0, response.length - 1);
+				// format is <db>\t<uri>
+				String[] parts = response[i].split("\t", 2);
+				if (parts.length != 2)
+					throw new MerovingianException("invalid entry: " +
+							response[i]);
+				if (parts[0].equals("*")) {
+					response[i] = parts[1];
+				} else {
+					response[i] = parts[1] + parts[0];
+				}
 				l.add(new URI(response[i]));
 			}
 		} catch (URISyntaxException e) {
