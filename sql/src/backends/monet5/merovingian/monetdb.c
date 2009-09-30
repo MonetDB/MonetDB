@@ -1318,7 +1318,6 @@ main(int argc, char *argv[])
 			}
 		}
 		/* locking succeed or locking was impossible */
-		fprintf(stderr, "warning: merovingian is not running\n");
 		mero_running = 0;
 	}
 
