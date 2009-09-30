@@ -28,6 +28,7 @@ enum valtype {
 	INT,
 	BOOL,
 	STR,
+	MURI,
 	OTHER
 };
 

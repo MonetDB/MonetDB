@@ -34,10 +34,6 @@ forkMserver(str database, sabdb** stats, int force)
 	int pfde[2];
 	dpair dp;
 	str vaultkey = NULL;
-	str nthreads = NULL;
-	str master = NULL;
-	char mydoproxy;
-	confkeyval *ckv, *kv;
 	struct stat statbuf;
 	char upmin[8];
 	char upavg[8];
@@ -205,35 +201,6 @@ forkMserver(str database, sabdb** stats, int force)
 					database, database));
 	}
 
-	ckv = getDefaultProps();
-	readProps(ckv, (*stats)->path);
-
-	kv = findConfKey(ckv, "forward");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_props, "forward");
-	mydoproxy = strcmp(kv->val, "proxy") == 0;
-
-	kv = findConfKey(ckv, "nthreads");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_props, "nthreads");
-	if (kv->val != NULL) {
-		nthreads = alloca(sizeof(char) * 24);
-		snprintf(nthreads, 24, "gdk_nr_threads=%s", kv->val);
-	}
-
-	kv = findConfKey(ckv, "master");
-	if (kv->val != NULL && /* can't have master configured by default */
-			(!strcmp(kv->val, "true") ||
-			 !strcmp(kv->val, "yes") ||
-			 !strcmp(kv->val, "1")))
-	{
-		master = alloca(sizeof(char) * 24);
-		snprintf(master, 24, "replication_master=true");
-	}
-
-	freeConfFile(ckv);
-	GDKfree(ckv); /* can make ckv static and reuse it all the time */
-
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
@@ -252,8 +219,47 @@ forkMserver(str database, sabdb** stats, int force)
 		str conffile = alloca(sizeof(char) * 512);
 		str dbname = alloca(sizeof(char) * 512);
 		str port = alloca(sizeof(char) * 24);
-		str argv[19];	/* for the exec arguments */
+		char mydoproxy;
+		str nthreads = NULL;
+		str master = NULL;
+		str slave = NULL;
+		str argv[21];	/* for the exec arguments */
+		confkeyval *ckv, *kv;
 		int c = 0;
+
+		ckv = getDefaultProps();
+		readProps(ckv, (*stats)->path);
+
+		kv = findConfKey(ckv, "forward");
+		if (kv->val == NULL)
+			kv = findConfKey(_mero_props, "forward");
+		mydoproxy = strcmp(kv->val, "proxy") == 0;
+
+		kv = findConfKey(ckv, "nthreads");
+		if (kv->val == NULL)
+			kv = findConfKey(_mero_props, "nthreads");
+		if (kv->val != NULL) {
+			nthreads = alloca(sizeof(char) * 24);
+			snprintf(nthreads, 24, "gdk_nr_threads=%s", kv->val);
+		}
+
+		kv = findConfKey(ckv, "master");
+		/* can't have master configured by default */
+		if (kv->val != NULL && strcmp(kv->val, "yes")) {
+			master = alloca(sizeof(char) * 24);
+			snprintf(master, 24, "replication_master=true");
+		}
+
+		kv = findConfKey(ckv, "slave");
+		/* can't have slave configured by default */
+		if (kv->val != NULL) {
+			size_t len = 24 + strlen(kv->val);
+			slave = alloca(sizeof(char) * len);
+			snprintf(slave, len, "replication_slave=%s", kv->val);
+		}
+
+		freeConfFile(ckv);
+		GDKfree(ckv); /* can make ckv static and reuse it all the time */
 
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
@@ -292,6 +298,9 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 		if (master != NULL) {
 			argv[c++] = "--set"; argv[c++] = master;
+		}
+		if (slave != NULL) {
+			argv[c++] = "--set"; argv[c++] = slave;
 		}
 		argv[c++] = NULL;
 

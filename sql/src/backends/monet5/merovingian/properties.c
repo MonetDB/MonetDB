@@ -39,6 +39,7 @@ static confkeyval _internal_prop_keys[] = {
 	{"shared",   NULL, STR},
 	{"nthreads", NULL, INT},
 	{"master",   NULL, BOOL},
+	{"slave",    NULL, MURI},
 	{ NULL,      NULL, INVALID}
 };
 
