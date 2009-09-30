@@ -357,13 +357,17 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		if ( recycleBlk->profiler[i].counter >1) 
 			recmem += recycleBlk->profiler[i].obytes;
 
-	stream_printf(s,"%d\t %d\t %d\t %d\t %8.2f\t",++q, mb->stop, potrec,
+	stream_printf(s,"%d\t %3d\t %3d\t %3d\t %7.2f\t",++q, mb->stop, potrec,
 		cntxt->rcc->recycled0,(GDKusec()-cntxt->rcc->time0)/1000.0);
-	stream_printf(s,"%d\t %d\t %d\t",cntxt->rcc->recycled,cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
+	stream_printf(s,"%3d\t %4d\t %4d\t ",cntxt->rcc->recycled,cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
 #ifdef _DEBUG_CACHE_
 	stream_printf(s,"%d\t %d\t ",cntxt->rcc->recycleRem,cntxt->rcc->recycleMiss);
 #endif
-	stream_printf(s, LLFMT "\t" LLFMT "\t %d\n", recyclerUsedMemory, recmem, instr);
+	stream_printf(s, LLFMT "\t" LLFMT "\t %d", recyclerUsedMemory, recmem, instr);
+
+	if ( reusePolicy == REUSE_MULTI )
+		stream_printf(s, " \t%5.2f \t%5.2f\n", msFindTime/1000.0, msComputeTime/1000.0);
+	else stream_printf(s,"\n");
 	if( s !=cntxt->fdout)
 		close_stream(s);
 	return MAL_SUCCEED;
@@ -376,9 +380,9 @@ RECYCLEsetRetain(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) mb;
 	retainPolicy = * (int*) getArgReference(stk, p,1);
-	if( p->argc > 2)
+/*	if( p->argc > 2)
 	if (retainPolicy == RETAIN_ADAPT)
-		recycleTime = * (int*) getArgReference(stk, p,2);
+		recycleTime = * (int*) getArgReference(stk, p,2); */
 	
 	return MAL_SUCCEED;
 }
@@ -455,13 +459,14 @@ RECYCLElog(int *ret, str *nm)
 	(void) ret;
 	recycleLog = GDKstrdup(*nm);
 	s = open_wastream(recycleLog);
-        if (s){
+    if (s){
 #ifdef _DEBUG_CACHE_
 		stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ(ms)\tRecTot\tInstrTot\tRPTot\tRPRem\tRPMiss\tMem(KB)\tReusedMem\tInstrNoGBC\n");
 #else
-	       	stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ(ms)\tRecTot\tInstrTot\tRPTot\tMem(KB)\tReusedMem\tInstrNoGBC\n");
+		stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ\t  Rec\tInstr\tRPTot\tMem \tReused\tInstr\tmsFind\tmsComp\n");
+		stream_printf(s,"#  \t       \t             \t (ms)\t  Tot\t Tot \tRPTot\t(KB)\tMem \tNoGBC\t(ms)\t(ms)\n");
 #endif
-                close_stream(s);
+		close_stream(s);
 	}
 
 	return MAL_SUCCEED;
@@ -480,6 +485,8 @@ RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	cntxt->rcc->curQ = RECYCLEnewQryStat(cntxt,mb);
 	minAggr = ALGminany;
 	maxAggr = ALGmaxany;
+	msFindTime = 0;			/* multi-subsume measurements */
+	msComputeTime = 0;
 	return MAL_SUCCEED;
 }
 str 

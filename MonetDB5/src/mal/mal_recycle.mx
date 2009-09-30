@@ -97,6 +97,8 @@ mal_export int retainPolicy;
 
 mal_export lng recycleTime;		
 mal_export lng recycleSearchTime;
+mal_export lng msFindTime;		
+mal_export lng msComputeTime;
 /*mal_export lng recycleVolume; */
 
 mal_export int reusePolicy;
@@ -207,17 +209,18 @@ the hard resource limits are reached.
 RETAIN_CAT, uses semantics of query category to decide about retainment.
 If a query has been already executed several times (>3) and none of its
 instructions have been reused, it is not kept in the cache.
-RETAIN_ADAPT is an adaptive scheme, which monitors the cost
-of scanning the recycler pool to derive the time high-water mark.
+RETAIN_ADAPT is an adaptive scheme, which collects usage statistics and increases the number of credits for globally reused query templates.
 @c
 int retainPolicy = RETAIN_ALL;  /* recycle retainment policy
 			RETAIN_NONE: baseline, keeps stat, no retain, no reuse
 			RETAIN_ALL: infinite case, retain all
             RETAIN_CAT: uses query category 
 			RETAIN_INTEREST: uses credits 
-			RETAIN_ADAPT: adaptive temporal */
+			RETAIN_ADAPT: adaptive credits for globally reused templates */
 lng recycleTime = 0;
 lng recycleSearchTime = 0;	/* cache search time in ms*/
+lng msFindTime = 0;			/* multi-subsume measurements */
+lng msComputeTime = 0;
 
 aggrFun minAggr = NULL, maxAggr = NULL;
 
@@ -379,10 +382,20 @@ int RECYCLEnewQryStat(Client cntxt, MalBlkPtr mb)
 	if ( totrec == REC_NO_INTEREST )
 		return -1;
 
+    /* the pattern exists */
 	if ((idx = findQryStat(cntxt,nm)) >= 0){
-		recycleQPat->ptrn[idx]->calls++;
+        qstat = recycleQPat->ptrn[idx];
+		qstat->calls++;
+        if ( qstat->calls > 3 ){
+            if ( qstat->greuse  && retainPolicy == RETAIN_ADAPT )
+                for (i = 0; i < qstat->stop; i++)
+                   if ( qstat->crd[i] >= REC_MIN_INTEREST &&
+                        qstat->crd[i] < REC_MAX_INTEREST)
+                       qstat->crd[i]++;
+        }
 		return idx;
 	}
+    /* add new query pattern */       
 	qstat = (QryStatPtr) GDKzalloc(sizeof(QryStat));
 	qstat->name = GDKstrdup(nm);
 	qstat->cidx = cntxt->idx;
@@ -1718,7 +1731,7 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 	BAT *b;
 	size_t lov, hov; 	/* est of overlap and overhead size in tuples */
 	size_t ccnt;	/* column count */
-
+	lng clk = GDKusec();
     int tlbProp = PropertyIndex("tlb");
     int tubProp = PropertyIndex("tub");
 
@@ -1928,10 +1941,13 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 	
 	GDKfree(partsol1);
 	GDKfree(ovm);
+	msFindTime += GDKusec() - clk;
 
+	clk = GDKusec();
 	if ( sol.comp )
 		b = computeMultiSubsume(qry,base,cnt,sol.comp);
 	else b = NULL;
+	msComputeTime += GDKusec() - clk;
 
 	GDKfree(base);
 	return b;
@@ -1946,7 +1962,8 @@ selectMultiSubsume(InstrPtr p, MalStkPtr s)
 	int cnt, bid;
 	range qry;
 	BAT *b;
-	
+	lng clk = GDKusec();
+
 	/* init query range */
 	VALcopy(&qry.low, &s->stk[getArg(p,2)]);
 	VALcopy(&qry.hgh, &s->stk[getArg(p,3)]);
@@ -1968,6 +1985,8 @@ selectMultiSubsume(InstrPtr p, MalStkPtr s)
 		return -1;
 	}
 	
+	msFindTime += GDKusec() - clk;
+
 	b = findSolution(&qry,pcs,cnt);
 
 	GDKfree(pcs);
@@ -2270,22 +2289,23 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 		if (RECYCLEgetQryCat(cntxt->rcc->curQ)<3 && RECYCLEfind(cntxt,mb,stk,p)< 0)
 			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 		break;
+    case RETAIN_ADAPT:        
 	case RETAIN_INTEREST:
 		/* RETAIN_INTEREST: refinement per instruction, retain if evidences for previous reuse */
 		if (RECYCLEfind(cntxt,mb,stk,p)< 0){
-			/*			if (p->recycle > REC_MIN_INTEREST) */
 			if (InstrCrd(mb,p) > REC_MIN_INTEREST)
 				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 			else cntxt->rcc->crdInstr++;
 		}
 		break;
-	case RETAIN_ADAPT:
-		/* RETAIN_ADAPT: searching the cache may take too long? */
+/*	case RETAIN_ADAPT:
+//		 RETAIN_ADAPT: searching the cache may take too long? 
 		if ( RECYCLEfind(cntxt,mb,stk,p)< 0){
 			if (recycleSearchTime > recycleTime)
 				RECYCLEcleanCache(cntxt, wr);
-			RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
-		}
+			RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks); 
+        }
+        */
 	}
 }
 
