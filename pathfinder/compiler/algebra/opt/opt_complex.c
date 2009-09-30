@@ -2092,7 +2092,11 @@ opt_complex (PFla_op_t *p)
                     if (p->sem.aggr.aggr[i].col &&
                         PFprop_fd (L(p)->prop,
                                    p->sem.aggr.part,
-                                   p->sem.aggr.aggr[i].col))
+                                   p->sem.aggr.aggr[i].col) &&
+                        (p->sem.aggr.aggr[i].kind == alg_aggr_min ||
+                         p->sem.aggr.aggr[i].kind == alg_aggr_max ||
+                         p->sem.aggr.aggr[i].kind == alg_aggr_avg ||
+                         p->sem.aggr.aggr[i].kind == alg_aggr_all))
                         p->sem.aggr.aggr[i].kind = alg_aggr_dist;
             /* A further rewrite in opt_general.brg will introduce distinct
                operators if no other aggregates exist. */
