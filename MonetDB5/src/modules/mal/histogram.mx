@@ -362,8 +362,8 @@ HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val,lng *whatIfDista
 
 int
 HSTwhichbin(Histogram h1, Histogram h2){
-	lng totalDiff=0, avgDiff, cur, max=0, curbinDiff, whichbin=-1;
-	int i;
+	lng totalDiff=0, avgDiff, cur, max=0, curbinDiff;
+	int i, whichbin =-1;
 	assert(h1->bins == h2->bins);
 
 	
