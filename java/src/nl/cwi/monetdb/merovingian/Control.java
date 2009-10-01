@@ -155,6 +155,9 @@ public class Control {
 			ret = (String[])(l.toArray(new String[l.size()]));
 		}
 
+		in.close();
+		out.close();
+		s.close();
 		return(ret);
 	}
 
