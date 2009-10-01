@@ -245,7 +245,7 @@ forkMserver(str database, sabdb** stats, int force)
 
 		kv = findConfKey(ckv, "master");
 		/* can't have master configured by default */
-		if (kv->val != NULL && strcmp(kv->val, "yes")) {
+		if (kv->val != NULL && strcmp(kv->val, "yes") == 0) {
 			master = alloca(sizeof(char) * 24);
 			snprintf(master, 24, "replication_master=true");
 		}
