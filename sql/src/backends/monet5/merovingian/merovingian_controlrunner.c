@@ -488,6 +488,15 @@ controlRunner(void *d)
 						/* we're going to change the way it is shared,
 						 * so remove it now in its old form */
 						leavedbS(stats);
+					} else if (stats->state == SABdbRunning) {
+						Mfprintf(_mero_ctlerr, "%s: cannot set property '%s' "
+								"on running database\n", origin, p);
+						len = snprintf(buf2, sizeof(buf2),
+								"cannot set property '%s' on running "
+								"database\n", p);
+						send(msgsock, buf2, len, 0);
+						SABAOTHfreeStatus(&stats);
+						continue;
 					}
 
 					if ((e = setProp(stats->path, p, val)) != NULL) {

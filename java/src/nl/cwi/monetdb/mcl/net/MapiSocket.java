@@ -358,8 +358,6 @@ public final class MapiSocket {
 					w = connect(u.getHost(), p == -1 ? port : p,
 							user, pass, true);
 					warns.add("Redirect by " + host + ":" + port + " to " + suri);
-					if (w != null)
-						warns.addAll(w);
 				} else if (u.getScheme().equals("merovingian")) {
 					// reuse this connection to inline connect to the
 					// right database that Merovingian proxies for us
@@ -367,6 +365,8 @@ public final class MapiSocket {
 				} else {
 					throw new MCLException("unsupported scheme in redirect: " + suri);
 				}
+				if (w != null)
+					warns.addAll(w);
 			} else {
 				String msg = "The server sent a redirect for this connection:";
 				for (Iterator it = redirects.iterator(); it.hasNext(); ) {
