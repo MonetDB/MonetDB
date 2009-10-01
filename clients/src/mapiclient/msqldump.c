@@ -152,7 +152,7 @@ main(int argc, char **argv)
 		char *motd = mapi_get_motd(mid);
 
 		if (motd)
-			printf("%s", motd);
+			fprintf(stderr, "%s", motd);
 	}
 	mapi_trace(mid, trace);
 	mapi_cache_limit(mid, 10000);
