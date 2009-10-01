@@ -48,6 +48,7 @@ running database.
 The slave starts synchronizing with the master automatically upon each
 restart.  The synchronization can be manually controlled with the SQL
 functions "CALL 'startSynchronization();'" and "CALL 'stopSynchronization();'".
+FIXME: this doesn't work at all, as the functions don't exist
 
 The replication scheme allows a slave to be cloned e.g. by copying the
 dbfarm of the slave to another database without problems.  Important
@@ -93,13 +94,13 @@ The log records are stored in a file "dbfarm/db/master/log_%d" with the
 following structure:
 @verbatim
 function slave.tag1(tag:int,stamp:timestamp);
-  slave.open(tag,"2009-08-16 18:57:58.000":timestamp);
+  slave.open(tag,stamp);
   tag1_b := bat.new(:oid,:int);
   ...
   bat.insert(tag1_b,3:oid,232:int); #example update
   ...
   sql.append("schema","table","col",tag1_b,tag);
-  slave.close("mapi:monetdb://127.0.0.1:50000/demo",tag,stamp);
+  slave.close(tag,stamp);
   sql.commit();
 end tag1;
 slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
@@ -322,8 +323,6 @@ by reading the directory itself.
 str MASTERopen(int *ret){
 	char buf[BUFSIZ];
 	FILE *fp = 0;
-	timestamp stamp = *timestamp_nil;
-	str val=0;
 	int i,l,len;
 	
 	if ( replicationTag == 0)
@@ -353,13 +352,11 @@ str MASTERopen(int *ret){
 	replicationTag++;
 	i = MASTERgetBuffer(replicationTag);
 	/* prepare the MAL redo record */
-	MTIMEepoch(&stamp);
-	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len ,
 			"function slave.tag_%d(tag:int,stamp:timestamp);\n"
-			"sql.transaction();\nslave.open(tag,\"%s\":timestamp);\n",
-				replicationTag, val)) == len){
+			"sql.transaction();\nslave.open(tag,stamp);\n",
+				replicationTag)) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replication.open",MAL_MALLOC_FAIL);
@@ -376,7 +373,7 @@ str MASTERopen(int *ret){
 
 str MASTERclose(int *ret, int *tag){
 	timestamp stamp = *timestamp_nil;
-	str val=0, con= 0;
+	str val = NULL;
 	int i,l,len;
 	char buf[BUFSIZ];
 
@@ -386,13 +383,12 @@ str MASTERclose(int *ret, int *tag){
 	MTIMEepoch(&stamp);
 	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
 	snprintf(buf,BUFSIZ,"tag_%d",*tag);
-	SABAOTHgetLocalConnection(&con);
 
 	len = master[i].limit - master[i].top -1;
 	while ( (l = snprintf(master[i].buf + master[i].top, len, 
-		"slave.close(\"%s\",tag,stamp);\nsql.commit();\n"
+		"slave.close(tag,stamp);\nsql.commit();\n"
 		"end tag_%d;\nslave.tag_%d(%d,\"%s\":timestamp);\nslave.drop(\"%s\");\n",
-		con,*tag,*tag,*tag,val,buf)) == len){
+		*tag,*tag,*tag,val,buf)) == len){
 		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if ( master[i].buf == NULL)
 			throw(MAL,"replication.close",MAL_MALLOC_FAIL);
@@ -400,7 +396,6 @@ str MASTERclose(int *ret, int *tag){
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
 	GDKfree(val);
-	GDKfree(con);
 	stream_printf(repFile,"%s", master[i].buf);
 	stream_flush(repFile);
 	master[i].buf[0]=0;
