@@ -256,7 +256,7 @@ replication_export str SLAVEdrop(int *ret, str *tag);
 #include "mal_config.h"
 #include "replication.h"
 #include "mal_client.h"
-#include <mal_sabaoth.h> 
+#include <mal_sabaoth.h>
 #include <mapilib/Mapi.h>
 
 @-
@@ -289,27 +289,28 @@ MASTERroleEnabled(void)
 	return replicationTag > 0;
 }
 
-static int MASTERgetBuffer(int tag){
+static int MASTERgetBuffer(int tag)
+{
 	int i;
 
-	for ( i = 0; i < mtop ; i++)
-	if ( master[i].tag == tag)
-		return i;
-	for ( i = 0; i < mlimit ; i++)
-	if ( master[i].tag == 0)
-		break;
-	if ( i == 0){
-		master = GDKzalloc(sizeof(struct MASTERRECORD) * (mlimit +32));
+	for (i = 0; i < mtop; i++)
+		if (master[i].tag == tag)
+			return i;
+	for (i = 0; i < mlimit; i++)
+		if (master[i].tag == 0)
+			break;
+	if (i == 0) {
+		master = GDKzalloc(sizeof(struct MASTERRECORD) * (mlimit + 32));
 		mlimit = 32;
 	} else
-	if ( i == mlimit){
-		master = GDKrealloc(master, sizeof(struct MASTERRECORD) * (mlimit +32));
+	if (i == mlimit) {
+		master = GDKrealloc(master, sizeof(struct MASTERRECORD) * (mlimit + 32));
 		mlimit += 32;
 	}
-	mtop = i >= mtop ? i+1: mtop;
-	if ( master[i].buf == 0){
-		master[i].buf = (char*) GDKzalloc(2*1024);
-		master[i].limit = 2*1024;
+	mtop = i >= mtop ? i + 1 : mtop;
+	if (master[i].buf == 0) {
+		master[i].buf = (char*)GDKzalloc(2 * 1024);
+		master[i].limit = 2 * 1024;
 		master[i].top = 0;
 	}
 	master[i].tag = tag;
@@ -320,17 +321,18 @@ For the time being, we assume that all chunks are kept in the
 master directory. A better scheme is to find the last chunk
 by reading the directory itself.
 @c
-str MASTERopen(int *ret){
+str MASTERopen(int *ret)
+{
 	char buf[BUFSIZ];
 	FILE *fp = 0;
-	int i,l,len;
-	
-	if ( replicationTag == 0)
-		MT_lock_init(&repLck,"replication");
-	mal_set_lock(repLck,"replication");
-	if ( repFile == NULL){
-		mkdir(MASTER,0755); /* ensure existance of the replica pool */
-		if ( replicationTag == 0){
+	int i, l, len;
+
+	if (replicationTag == 0)
+		MT_lock_init(&repLck, "replication");
+	mal_set_lock(repLck, "replication");
+	if (repFile == NULL) {
+		mkdir(MASTER, 0755); /* ensure existance of the replica pool */
+		if (replicationTag == 0) {
 			/* find the last one already in the pool, using the REPLICABLOCK */
 			do {
 				if (fp) {
@@ -338,135 +340,142 @@ str MASTERopen(int *ret){
 					fclose(fp);
 				}
 				snprintf(buf, BUFSIZ, MASTER REPLICA, replicationTag);
-				fp = fopen(buf,"r");
+				fp = fopen(buf, "r");
 			} while (fp);
 		}
 		snprintf(buf, BUFSIZ, MASTER REPLICA, replicationTag);
 		repFile = open_wastream(buf);
-		if ( repFile == NULL || stream_errnr(repFile) ){
-			mal_unset_lock(repLck,RUNTIME_STREAM_FAILED);
-			throw(MAL,"master.start",RUNTIME_STREAM_FAILED);
+		if (repFile == NULL || stream_errnr(repFile)) {
+			mal_unset_lock(repLck, RUNTIME_STREAM_FAILED);
+			throw(MAL, "master.start", RUNTIME_STREAM_FAILED);
 		}
 	}
 	/* get a replica buffer */
 	replicationTag++;
 	i = MASTERgetBuffer(replicationTag);
 	/* prepare the MAL redo record */
-	len = master[i].limit - master[i].top -1;
-	while ( (l = snprintf(master[i].buf + master[i].top, len ,
-			"function slave.tag_%d(tag:int,stamp:timestamp);\n"
-			"sql.transaction();\nslave.open(tag,stamp);\n",
-				replicationTag)) == len){
-		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if ( master[i].buf == NULL)
-			throw(MAL,"replication.open",MAL_MALLOC_FAIL);
+	len = master[i].limit - master[i].top - 1;
+	while ((l = snprintf(master[i].buf + master[i].top, len,
+			     "function slave.tag_%d(tag:int,stamp:timestamp);\n"
+			     "sql.transaction();\n"
+			     "slave.open(tag,stamp);\n",
+			     replicationTag)) == len) {
+		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if (master[i].buf == NULL)
+			throw(MAL, "replication.open", MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
-		len = master[i].limit - master[i].top -1;
+		len = master[i].limit - master[i].top - 1;
 	}
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
-	mal_unset_lock(repLck,RUNTIME_STREAM_FAILED);
+	mal_unset_lock(repLck, RUNTIME_STREAM_FAILED);
 
-	*ret = replicationTag ;
+	*ret = replicationTag;
 	return MAL_SUCCEED;
 }
 
-str MASTERclose(int *ret, int *tag){
+str MASTERclose(int *ret, int *tag)
+{
 	timestamp stamp = *timestamp_nil;
 	str val = NULL;
-	int i,l,len;
+	int i, l, len;
 	char buf[BUFSIZ];
 
-	(void) ret;
+	(void)ret;
 	i = MASTERgetBuffer(*tag);
-	mal_set_lock(repLck,"replication");
+	mal_set_lock(repLck, "replication");
 	MTIMEepoch(&stamp);
-	ATOMformat(TYPE_timestamp, (ptr) &stamp, &val);
-	snprintf(buf,BUFSIZ,"tag_%d",*tag);
+	ATOMformat(TYPE_timestamp, (ptr) & stamp, &val);
+	snprintf(buf, BUFSIZ, "tag_%d", *tag);
 
-	len = master[i].limit - master[i].top -1;
-	while ( (l = snprintf(master[i].buf + master[i].top, len, 
-		"slave.close(tag,stamp);\nsql.commit();\n"
-		"end tag_%d;\nslave.tag_%d(%d,\"%s\":timestamp);\nslave.drop(\"%s\");\n",
-		*tag,*tag,*tag,val,buf)) == len){
-		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if ( master[i].buf == NULL)
-			throw(MAL,"replication.close",MAL_MALLOC_FAIL);
+	len = master[i].limit - master[i].top - 1;
+	while ((l = snprintf(master[i].buf + master[i].top, len,
+			     "slave.close(tag,stamp);\n"
+			     "sql.commit();\n"
+			     "end tag_%d;\n"
+			     "slave.tag_%d(%d,\"%s\":timestamp);\n"
+			     "slave.drop(\"%s\");\n",
+			     *tag, *tag, *tag, val, buf)) == len) {
+		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if (master[i].buf == NULL)
+			throw(MAL, "replication.close", MAL_MALLOC_FAIL);
 	}
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
 	GDKfree(val);
-	stream_printf(repFile,"%s", master[i].buf);
+	stream_printf(repFile, "%s", master[i].buf);
 	stream_flush(repFile);
-	master[i].buf[0]=0;
+	master[i].buf[0] = 0;
 	master[i].top = 0;
 	master[i].top = 0;
-	if ( stream_errnr(repFile) ){
-		mal_unset_lock(repLck,"replication");
-		throw(MAL,"replication.close",RUNTIME_STREAM_FAILED);
+	if (stream_errnr(repFile)) {
+		mal_unset_lock(repLck, "replication");
+		throw(MAL, "replication.close", RUNTIME_STREAM_FAILED);
 	}
-	if ( replicationTag % REPLICABLOCK  == 0){
+	if (replicationTag % REPLICABLOCK == 0) {
 		close_stream(repFile);
 		repFile = NULL;
 	}
-	mal_unset_lock(repLck,"replication");
+	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
 
 static str
-MASTERdump( BAT *b, str buf, int type, int tag){
+MASTERdump(BAT *b, str buf, int type, int tag)
+{
 	BATiter bi;
-	BUN p,q;
-	char *headv = 0, *tailv= 0;
+	BUN p, q;
+	char *headv = 0, *tailv = 0;
 	str head = getTypeName(getHeadType(type));
 	str tail = getTypeName(getTailType(type));
 	int i, l, len;
-	
+
 	i = MASTERgetBuffer(tag);
 	bi = bat_iterator(b);
-	BATloop(b,p,q){
+	BATloop(b, p, q)
+	{
 		ATOMformat(getHeadType(type), BUNhead(bi, p), &headv);
 		ATOMformat(getTailType(type), BUNtail(bi, p), &tailv);
-		len = master[i].limit - master[i].top -1;
-		if ( getTailType(type) <=TYPE_str &&
-			getHeadType(type) <= TYPE_str) {
-			while ( (l = snprintf(master[i].buf + master[i].top, len ,"bat.insert(%s, %s:%s, %s:%s);\n",
-						buf, headv, head, tailv, tail)) >= len){
-				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-				if ( master[i].buf == NULL)
-					throw(MAL,"replication.dump",MAL_MALLOC_FAIL);
+		len = master[i].limit - master[i].top - 1;
+		if (getTailType(type) <= TYPE_str &&
+		    getHeadType(type) <= TYPE_str) {
+			while ((l = snprintf(master[i].buf + master[i].top, len, "bat.insert(%s, %s:%s, %s:%s);\n",
+					     buf, headv, head, tailv, tail)) >= len) {
+				master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+				if (master[i].buf == NULL)
+					throw(MAL, "replication.dump", MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
-				len = master[i].limit - master[i].top -1;
+				len = master[i].limit - master[i].top - 1;
 			}
 		} else
-		if ( getTailType(type) >TYPE_str  &&
-			getHeadType(type) > TYPE_str) {
-			while ( (l = snprintf(master[i].buf + master[i].top, len , "bat.insert(%s, \"%s\":%s, \"%s\":%s);\n",
-						buf, headv, head, tailv, tail)) >= len){
-				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-				if ( master[i].buf == NULL)
-					throw(MAL,"replication.dump",MAL_MALLOC_FAIL);
+		if (getTailType(type) > TYPE_str &&
+		    getHeadType(type) > TYPE_str) {
+			while ((l = snprintf(master[i].buf + master[i].top, len, "bat.insert(%s, \"%s\":%s, \"%s\":%s);\n",
+					     buf, headv, head, tailv, tail)) >= len) {
+				master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+				if (master[i].buf == NULL)
+					throw(MAL, "replication.dump", MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
-				len = master[i].limit - master[i].top -1;
+				len = master[i].limit - master[i].top - 1;
 			}
 		} else
-		if ( getTailType(type) >TYPE_str ) {
-			while ( (l = snprintf(master[i].buf + master[i].top, len , "bat.insert(%s, %s:%s, \"%s\":%s);\n",
-						buf, headv, head, tailv, tail)) == len){
-				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-				if ( master[i].buf == NULL)
-					throw(MAL,"replication.dump",MAL_MALLOC_FAIL);
+		if (getTailType(type) > TYPE_str) {
+			while ((l = snprintf(master[i].buf + master[i].top, len, "bat.insert(%s, %s:%s, \"%s\":%s);\n",
+					     buf, headv, head, tailv, tail)) == len) {
+				master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+				if (master[i].buf == NULL)
+					throw(MAL, "replication.dump", MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
-				len = master[i].limit - master[i].top -1;
+				len = master[i].limit - master[i].top - 1;
 			}
 		} else{
-			while ( (l = snprintf(master[i].buf + master[i].top, len , "bat.insert(%s, \"%s\":%s, %s:%s);\n",
-						buf, headv, head, tailv, tail)) == len){
-				master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-				if ( master[i].buf == NULL)
-					throw(MAL,"replication.dump",MAL_MALLOC_FAIL);
+			while ((l = snprintf(master[i].buf + master[i].top, len, "bat.insert(%s, \"%s\":%s, %s:%s);\n",
+					     buf, headv, head, tailv, tail)) == len) {
+				master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+				if (master[i].buf == NULL)
+					throw(MAL, "replication.dump", MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
-				len = master[i].limit - master[i].top -1;
+				len = master[i].limit - master[i].top - 1;
 			}
 		}
 		master[i].top += l;
@@ -478,31 +487,32 @@ MASTERdump( BAT *b, str buf, int type, int tag){
 }
 
 str
-MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int tag = *(int*) getArgReference(stk,pci,5);
+MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int tag = *(int*)getArgReference(stk, pci, 5);
 	InstrPtr q;
-	str val= NULL;
+	str val = NULL;
 	int i, len;
 
-	(void) cntxt;
-	if ( repFile == NULL)
-		throw(MAL,"replication.append", RUNTIME_FILE_NOT_FOUND);
+	(void)cntxt;
+	if (repFile == NULL)
+		throw(MAL, "replication.append", RUNTIME_FILE_NOT_FOUND);
 
 	i = MASTERgetBuffer(tag);
-	q= copyInstruction(pci);
+	q = copyInstruction(pci);
 	q->argc--;
-	setModuleId(q,putName("sql",3));
-	
-	val = instruction2str(mb,stk,q,LIST_MAL_CALL);
+	setModuleId(q, putName("sql", 3));
+
+	val = instruction2str(mb, stk, q, LIST_MAL_CALL);
 	freeInstruction(q);
 
-	len = master[i].limit - master[i].top -1;
+	len = master[i].limit - master[i].top - 1;
 	while (snprintf(master[i].buf + master[i].top, len, "%s\n", val) >= len) {
-		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if ( master[i].buf == NULL)
-			throw(MAL,"replication.append",MAL_MALLOC_FAIL);
+		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if (master[i].buf == NULL)
+			throw(MAL, "replication.append", MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
-		len = master[i].limit - master[i].top -1;
+		len = master[i].limit - master[i].top - 1;
 	}
 	master[i].top += (int)(strlen(val) + 1);
 	master[i].buf[master[i].top] = 0;
@@ -511,12 +521,13 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str
-MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *schema = (str*) getArgReference(stk,pci,1);
-	str *table = (str*) getArgReference(stk,pci,2);
-	str *col = (str*) getArgReference(stk,pci,3);
-	int *bid = (int*) getArgReference(stk,pci,4);
-	int tag = *(int*) getArgReference(stk,pci,5);
+MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *schema = (str*)getArgReference(stk, pci, 1);
+	str *table = (str*)getArgReference(stk, pci, 2);
+	str *col = (str*)getArgReference(stk, pci, 3);
+	int *bid = (int*)getArgReference(stk, pci, 4);
+	int tag = *(int*)getArgReference(stk, pci, 5);
 	BAT *b;
 	char buf[BUFSIZ];
 	int type = getArgType(mb, pci, 4);
@@ -525,42 +536,42 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i, l, len;
 	str msg;
 
-	(void) cntxt;
-	if ( repFile == NULL)
-		throw(MAL,"replication.append", RUNTIME_FILE_NOT_FOUND);
+	(void)cntxt;
+	if (repFile == NULL)
+		throw(MAL, "replication.append", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
-	if ( b == NULL)
-		throw(MAL,"replication.append", RUNTIME_OBJECT_MISSING);
+	if (b == NULL)
+		throw(MAL, "replication.append", RUNTIME_OBJECT_MISSING);
 
 	i = MASTERgetBuffer(tag);
 	/* create the temporary bat */
-	len = master[i].limit - master[i].top -1;
-	while ( (l = snprintf(master[i].buf + master[i].top, len , "tag_%d_%s:=bat.new(:%s,:%s);\n",
-				tag, getArgName(mb,pci,4), head, tail)) >= len ){
-		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if ( master[i].buf == NULL)
-			throw(MAL,"replication.append",MAL_MALLOC_FAIL);
+	len = master[i].limit - master[i].top - 1;
+	while ((l = snprintf(master[i].buf + master[i].top, len, "tag_%d_%s:=bat.new(:%s,:%s);\n",
+			     tag, getArgName(mb, pci, 4), head, tail)) >= len) {
+		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if (master[i].buf == NULL)
+			throw(MAL, "replication.append", MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
-		len = master[i].limit - master[i].top -1;
+		len = master[i].limit - master[i].top - 1;
 	}
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
 
 	/* fill it */
-	snprintf(buf,BUFSIZ,"tag_%d_%s", tag, getArgName(mb,pci,4));
-	msg = MASTERdump(b,buf,type, tag);
+	snprintf(buf, BUFSIZ, "tag_%d_%s", tag, getArgName(mb, pci, 4));
+	msg = MASTERdump(b, buf, type, tag);
 	if (msg != MAL_SUCCEED)
 		return msg;
 
 	/* execute the original append */
-	len = master[i].limit - master[i].top -1;
-	while ( (l = snprintf(master[i].buf + master[i].top, len , "sql.append(\"%s\",\"%s\",\"%s\",%s);\ntag_%d_%s := nil;\n",
-		*schema, *table, *col, buf,tag, getArgName(mb,pci,4)) ) >= len){
-		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if ( master[i].buf == NULL)
-			throw(MAL,"replication.append",MAL_MALLOC_FAIL);
+	len = master[i].limit - master[i].top - 1;
+	while ((l = snprintf(master[i].buf + master[i].top, len, "sql.append(\"%s\",\"%s\",\"%s\",%s);\ntag_%d_%s := nil;\n",
+			     *schema, *table, *col, buf, tag, getArgName(mb, pci, 4))) >= len) {
+		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if (master[i].buf == NULL)
+			throw(MAL, "replication.append", MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
-		len = master[i].limit - master[i].top -1;
+		len = master[i].limit - master[i].top - 1;
 	}
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
@@ -570,11 +581,12 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str
-MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *schema = (str*) getArgReference(stk,pci,1);
-	str *table = (str*) getArgReference(stk,pci,2);
-	int *bid = (int*) getArgReference(stk,pci,3);
-	int tag = *(int*) getArgReference(stk,pci,4);
+MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *schema = (str*)getArgReference(stk, pci, 1);
+	str *table = (str*)getArgReference(stk, pci, 2);
+	int *bid = (int*)getArgReference(stk, pci, 3);
+	int tag = *(int*)getArgReference(stk, pci, 4);
 	BAT *b;
 	char buf[BUFSIZ];
 	int type = getArgType(mb, pci, 3);
@@ -583,42 +595,42 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str msg;
 	int i, l, len;
 
-	(void) cntxt;
-	if ( repFile == NULL)
-		throw(MAL,"replication.delete", RUNTIME_FILE_NOT_FOUND);
+	(void)cntxt;
+	if (repFile == NULL)
+		throw(MAL, "replication.delete", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
-	if ( b == NULL)
-		throw(MAL,"replication.delete", RUNTIME_OBJECT_MISSING);
+	if (b == NULL)
+		throw(MAL, "replication.delete", RUNTIME_OBJECT_MISSING);
 
 	i = MASTERgetBuffer(tag);
 	/* create the temporary bat */
-	len = master[i].limit - master[i].top -1;
-	while ( (l = snprintf(master[i].buf + master[i].top, len , "tag_%d_%s:=bat.new(:%s,:%s);\n",
-				tag, getArgName(mb,pci,3), head, tail)) == len ){
-		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if ( master[i].buf == NULL)
-			throw(MAL,"replication.delete",MAL_MALLOC_FAIL);
+	len = master[i].limit - master[i].top - 1;
+	while ((l = snprintf(master[i].buf + master[i].top, len, "tag_%d_%s:=bat.new(:%s,:%s);\n",
+			     tag, getArgName(mb, pci, 3), head, tail)) == len) {
+		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if (master[i].buf == NULL)
+			throw(MAL, "replication.delete", MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
-		len = master[i].limit - master[i].top -1;
+		len = master[i].limit - master[i].top - 1;
 	}
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
 
 	/* fill it */
-	snprintf(buf,BUFSIZ,"tag_%d_%s", tag, getArgName(mb,pci,3));
-	msg = MASTERdump(b,buf,type, tag);
+	snprintf(buf, BUFSIZ, "tag_%d_%s", tag, getArgName(mb, pci, 3));
+	msg = MASTERdump(b, buf, type, tag);
 	if (msg != MAL_SUCCEED)
 		return msg;
 
 	/* execute the original append */
-	len = master[i].limit - master[i].top -1;
-	while ( (l = snprintf(master[i].buf + master[i].top, len , "sql.delete(\"%s\",\"%s\",%s);\ntag_%d_%s := nil;\n",
-			*schema, *table, buf, tag, getArgName(mb,pci,4))) == len){
-		master[i].buf = (char*) GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if ( master[i].buf == NULL)
-			throw(MAL,"replication.delete",MAL_MALLOC_FAIL);
+	len = master[i].limit - master[i].top - 1;
+	while ((l = snprintf(master[i].buf + master[i].top, len, "sql.delete(\"%s\",\"%s\",%s);\ntag_%d_%s := nil;\n",
+			     *schema, *table, buf, tag, getArgName(mb, pci, 4))) == len) {
+		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
+		if (master[i].buf == NULL)
+			throw(MAL, "replication.delete", MAL_MALLOC_FAIL);
 		master[i].limit += 1024;
-		len = master[i].limit - master[i].top -1;
+		len = master[i].limit - master[i].top - 1;
 	}
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
@@ -643,12 +655,12 @@ To ensure  we only sent completed log records the replication lock
 is acquired. Currently for each file, but it is only needed for the
 one still being extended.
 @c
-static struct MASTERrecord{
+static struct MASTERrecord {
 	str uri;
-	int idx;	/* for its forced termination */
+	int idx;        /* for its forced termination */
 	time_t last_connect;
 	time_t last_disconnect;
-	int tag;	/* next one to sent */
+	int tag;        /* next one to sent */
 	Mapi m;
 } masterstatus[MAL_MAXCLIENTS];
 
@@ -656,47 +668,47 @@ static struct MASTERrecord{
 static void
 MASTERsend(Client cntxt, int tag)
 {
-	char buf[BUFSIZ+1] = "\ninclude sql;\nsql.init();\n";
+	char buf[BUFSIZ + 1] = "\ninclude sql;\nsql.init();\n";
 	stream *s;
 	bstream *bs;
 
 	/* wait for the request to start pumping */
-	if ( (size_t) stream_write(cntxt->fdout, cntxt->prompt, 1, strlen(buf)) != strlen(cntxt->prompt))
-		stream_printf(GDKerr,"!failed to initialize slave session\n");
+	if ((size_t)stream_write(cntxt->fdout, cntxt->prompt, 1, strlen(buf)) != strlen(cntxt->prompt))
+		stream_printf(GDKerr, "!failed to initialize slave session\n");
 
-	if ( replicationTag == 0)
-		MT_lock_init(&repLck,"replication");
+	if (replicationTag == 0)
+		MT_lock_init(&repLck, "replication");
 	do {
-		snprintf(buf, BUFSIZ, MASTER REPLICA, (tag / REPLICABLOCK) *REPLICABLOCK);
+		snprintf(buf, BUFSIZ, MASTER REPLICA, (tag / REPLICABLOCK) * REPLICABLOCK);
 		slash_2_dir_sep(buf);
 		s = open_rastream(buf);
-		if (stream_errnr(s) == OPEN_ERROR){
+		if (stream_errnr(s) == OPEN_ERROR) {
 			stream_destroy(s);
 			/* wait for new file */
 #ifdef _DEBUG_REPLICATOR_
-		printf("#replay waiting\n");
+			printf("#replay waiting\n");
 #endif
 			MT_sleep_ms(REPLICADELAY);
 			continue;
 		}
 
-		mal_set_lock(repLck,"replication");
+		mal_set_lock(repLck, "replication");
 		/* read the complete file [now trimmed to 64KB]*/
 		bs = bstream_create(s, 128 * BLOCK);
-		if ( bstream_next(bs) < 0){
+		if (bstream_next(bs) < 0) {
 			bstream_destroy(bs);
 			break;
 		}
 #ifdef _DEBUG_REPLICATOR_
-		printf("#replay thread started %s\n",bs->buf);
+		printf("#replay thread started %s\n", bs->buf);
 #endif
-		if ( (size_t) stream_write(cntxt->fdout, bs->buf, 1, bs->len) != bs->len){
-			stream_printf(GDKerr,"!failed to sent log file\n");
+		if ((size_t)stream_write(cntxt->fdout, bs->buf, 1, bs->len) != bs->len) {
+			stream_printf(GDKerr, "!failed to sent log file\n");
 			stream_flush(cntxt->fdout);
 			break;
 		}
 		stream_flush(cntxt->fdout);
-		mal_unset_lock(repLck,"replication");
+		mal_unset_lock(repLck, "replication");
 		close_stream(s);
 #ifdef _DEBUG_REPLICATOR_
 		printf("#next file\n");
@@ -716,8 +728,8 @@ Upon succesful transmission we update the log file tag for the slave.
 str
 MASTERreplayTag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) mb;
-	MASTERsend(cntxt, *(int*) getArgReference(stk,pci,1));
+	(void)mb;
+	MASTERsend(cntxt, *(int*)getArgReference(stk, pci, 1));
 	return MAL_SUCCEED;
 }
 
@@ -725,9 +737,9 @@ str
 MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tag = 0;
-	(void) stk;
-	(void) mb;
-	(void) pci;
+	(void)stk;
+	(void)mb;
+	(void)pci;
 	MASTERsend(cntxt, tag);
 	return MAL_SUCCEED;
 }
@@ -736,86 +748,87 @@ Contact the master and issue the master.start() command remotely.
 Switch to a local client to consume the MAL stream it will sent.
 @c
 static void
-MASTERecho(void *arg){
-	stream *s = (stream*) arg;
-	bstream *bs= bstream_create(s, 128 * BUFSIZ);
+MASTERecho(void *arg)
+{
+	stream *s = (stream*)arg;
+	bstream *bs = bstream_create(s, 128 * BUFSIZ);
 
 #ifdef _DEBUG_REPLICATOR_
-		stream_printf(GDKout,"MASTERecho\n");
+	stream_printf(GDKout, "MASTERecho\n");
 #endif
-	while ( bstream_next(bs) > 0)
-		stream_printf(GDKout,"#got:%s\n",bs->buf);
+	while (bstream_next(bs) > 0)
+		stream_printf(GDKout, "#got:%s\n", bs->buf);
 #ifdef _DEBUG_REPLICATOR_
-		stream_printf(GDKout,"MASTERecho done\n");
+	stream_printf(GDKout, "MASTERecho done\n");
 #endif
 }
 static void
-MASTERreceiver( stream *s)
+MASTERreceiver(stream *s)
 {
 	Client c;
 	MT_Id tid;
 
 #ifdef _DEBUG_REPLICATOR_
-	stream_printf(GDKout,"#call master to replay\n");
+	stream_printf(GDKout, "#call master to replay\n");
 #endif
 	/* steal the output stream from the master connection */
 	assert(s != NULL);
-    if (MT_create_thread(&tid, MASTERecho, (void *) s) < 0) {
-        showException(MAL,"initClient", "can not fork new client");
-        return;
-    }
-	/* alternative */
-	c = MCinitClient(0, 0, 0);
-	if ( c == NULL){
-		stream_printf(GDKerr,"!Out of client slots\n");
+	if (MT_create_thread(&tid, MASTERecho, (void *)s) < 0) {
+		showException(MAL, "initClient", "can not fork new client");
 		return;
 	}
-	if ( c->nspace == 0){
-		c->nspace = newModule(NULL, putName("user",4));
+	/* alternative */
+	c = MCinitClient(0, 0, 0);
+	if (c == NULL) {
+		stream_printf(GDKerr, "!Out of client slots\n");
+		return;
+	}
+	if (c->nspace == 0) {
+		c->nspace = newModule(NULL, putName("user", 4));
 		c->nspace->outer = mal_clients[0].nspace->outer;
 	}
-	(void) setScenario(c,"mal");
+	(void)setScenario(c, "mal");
 #ifdef _DEBUG_REPLICATOR_
 	c->listing = LIST_MAL_ALL;
 #endif
-	MSinitClientPrg(c,"user","main");
+	MSinitClientPrg(c, "user", "main");
 	c->fdin = bstream_create(s, 0);
-    if (MT_create_thread(&tid, MSserveClient, (void *) c) < 0) {
-        showException(MAL,"initClient", "can not fork new client");
-        return;
-    }
+	if (MT_create_thread(&tid, MSserveClient, (void *)c) < 0) {
+		showException(MAL, "initClient", "can not fork new client");
+		return;
+	}
 #ifdef _DEBUG_REPLICATOR_
-	stream_printf(GDKout,"#slave started receiving \n");
+	stream_printf(GDKout, "#slave started receiving \n");
 #endif
 }
 
 str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag)
 {
-	Mapi  mapi;
+	Mapi mapi;
 	MapiHdl hdl;
-	char buf[BUFSIZ+1];
+	char buf[BUFSIZ + 1];
 
-	(void) ret;
+	(void)ret;
 
 #ifdef _DEBUG_REPLICATOR_
-	stream_printf(GDKout,"#replay the log from  %s %s %s %d\n", *uri, *usr, *pw, *tag);
+	stream_printf(GDKout, "#replay the log from  %s %s %s %d\n", *uri, *usr, *pw, *tag);
 #endif
-	
+
 	mapi = mapi_mapiuri(*uri, *usr, *pw, "mal");
 	if (mapi_error(mapi))
 		throw(MAL, "master.replay", "unable to connect: %s", mapi_error_str(mapi));
 
 	if (mapi_reconnect(mapi) != MOK) {
-		throw(IO, "master.replay", OPERATION_FAILED 
-				": an error occurred during connect to '%s': %s",
-				*uri, mapi_error_str(mapi));
+		throw(IO, "master.replay", OPERATION_FAILED
+		      ": an error occurred during connect to '%s': %s",
+		      *uri, mapi_error_str(mapi));
 	}
-	snprintf(buf,BUFSIZ,"master.replay();");
+	snprintf(buf, BUFSIZ, "master.replay();");
 	hdl = mapi_query(mapi, buf);
-	if ( mapi_result_error(hdl))
-		throw(IO,"master.replay",OPERATION_FAILED);
+	if (mapi_result_error(hdl))
+		throw(IO, "master.replay", OPERATION_FAILED);
 
-	MASTERreceiver( mapi_get_from(mapi));
+	MASTERreceiver(mapi_get_from(mapi));
 	return MAL_SUCCEED;
 }
 
@@ -824,8 +837,8 @@ str MASTERsynchronizeURI(int  *ret, str *uri)
 	int tag = 0;
 	str usr = "monetdb";
 	str pw = "monetdb";
-	(void) ret;
-	return MASTERsynchronize(ret,uri,&usr,&pw,&tag);
+	(void)ret;
+	return MASTERsynchronize(ret, uri, &usr, &pw, &tag);
 }
 
 str MASTERsynchronizeDefault(int *ret)
@@ -833,16 +846,17 @@ str MASTERsynchronizeDefault(int *ret)
 	str uri;
 	uri = GDKgetenv("replication_slave");
 	if (uri == NULL)
-		throw(MAL,"master.synchronize","Slave property not set");
-	return MASTERsynchronizeURI(ret,&uri);
+		throw(MAL, "master.synchronize", "Slave property not set");
+	return MASTERsynchronizeURI(ret, &uri);
 }
 
 @-
 The master thread is stopped at the slave side by closing
 its client record. 
 @c
-str MASTERstop(int *ret){
-	(void) ret;
+str MASTERstop(int *ret)
+{
+	(void)ret;
 	return MAL_SUCCEED;
 }
 
@@ -851,10 +865,10 @@ str MASTERgetName(str *ret)
 	struct MASTERrecord *mr;
 
 	if (GDKgetenv_isyes("replication_master") ||
-			GDKgetenv_istrue("replication_master"))
+	    GDKgetenv_istrue("replication_master"))
 		return SABAOTHgetLocalConnection(ret);
-		
-	for (mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
+
+	for (mr = masterstatus; mr->uri && mr < masterstatus + MAL_MAXCLIENTS - 1; mr++)
 		*ret = GDKstrdup(mr->uri); /* FIXME: superleak and useless loop, thanks Stefan */
 
 	throw(MAL, "master.getName", "no master name found");
@@ -869,48 +883,51 @@ to locate its index in the client record.
 str SLAVEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	struct MASTERrecord *mr;
-	str *uri = (str*) getArgReference(stk,pci,1);
-	(void) mb;
+	str *uri = (str*)getArgReference(stk, pci, 1);
+	(void)mb;
 	/* find the corresponding master record */
-	for( mr= masterstatus; mr->uri && mr < masterstatus+ MAL_MAXCLIENTS-1; mr++)
-	if ( strcmp(mr->uri, *uri) == 0){
-		mr->idx= cntxt->idx;
+	for (mr = masterstatus; mr->uri && mr < masterstatus + MAL_MAXCLIENTS - 1; mr++)
+		if (strcmp(mr->uri, *uri) == 0) {
+			mr->idx = cntxt->idx;
 #ifdef _DEBUG_REPLICATOR_
-		stream_printf(GDKout,"#replay init %s\n",mr->uri);
+			stream_printf(GDKout, "#replay init %s\n", mr->uri);
 #endif
-		break;
-	}
+			break;
+		}
 	return MAL_SUCCEED;
 }
 
-str SLAVEopen(int *ret, int *tag, timestamp *t){
-	(void) ret;
-	(void) t;
-	(void) tag;
-	throw(MAL,"slave.open","Operation ignored, defined in SQL context");
+str SLAVEopen(int *ret, int *tag, timestamp *t)
+{
+	(void)ret;
+	(void)t;
+	(void)tag;
+	throw(MAL, "slave.open", "Operation ignored, defined in SQL context");
 }
 
-str SLAVEclose(int *ret, str *uri,  int *tag, timestamp *t){
-	(void) ret;
-	(void) uri;
-	(void) tag;
-	(void) t;
-	throw(MAL,"slave.close","Operation ignored, defined in SQL context");
+str SLAVEclose(int *ret, str *uri, int *tag, timestamp *t)
+{
+	(void)ret;
+	(void)uri;
+	(void)tag;
+	(void)t;
+	throw(MAL, "slave.close", "Operation ignored, defined in SQL context");
 }
 
 str
-SLAVEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *schema = (str*) getArgReference(stk,pci,1);
-	str *table = (str*) getArgReference(stk,pci,2);
-	int *bid = (int*) getArgReference(stk,pci,3);
-	int tag = *(int*) getArgReference(stk,pci,4);
+SLAVEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *schema = (str*)getArgReference(stk, pci, 1);
+	str *table = (str*)getArgReference(stk, pci, 2);
+	int *bid = (int*)getArgReference(stk, pci, 3);
+	int tag = *(int*)getArgReference(stk, pci, 4);
 
-	(void) cntxt;
-	(void) mb;
-	(void) schema;
-	(void) table;
-	(void) bid;
-	(void) tag;
+	(void)cntxt;
+	(void)mb;
+	(void)schema;
+	(void)table;
+	(void)bid;
+	(void)tag;
 	return MAL_SUCCEED;
 }
 
@@ -919,12 +936,12 @@ SLAVEdrop(int *ret, str *tag)
 {
 	Symbol prg;
 	Module mod;
-	prg = findSymbol(NULL, getName("slave",5), *tag);
-	mod = findModule(NULL, getName("slave",5));
-	if ( prg == NULL || mod == NULL)
-		throw(MAL,"slave.drop","Symbol not found");
-	deleteSymbol(mod,prg);
-	(void) ret;
+	prg = findSymbol(NULL, getName("slave", 5), *tag);
+	mod = findModule(NULL, getName("slave", 5));
+	if (prg == NULL || mod == NULL)
+		throw(MAL, "slave.drop", "Symbol not found");
+	deleteSymbol(mod, prg);
+	(void)ret;
 	return MAL_SUCCEED;
 }
 
