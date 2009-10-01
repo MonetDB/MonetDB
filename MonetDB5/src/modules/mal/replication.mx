@@ -127,7 +127,7 @@ be (re)moved. This is considered a responsibility for the DBA,
 for it involves making a checkpoint or securely storing the logs
 into an archive. The master keeps a table of chunks sent completely.
 
-Monetdb can inform the master about each slave being added.
+MonetDB can inform the master about each slave being added.
 Or the server can request the names of all slaves from Sabaoth.
 This way we can garbage collect log files without DBA interference.
 
