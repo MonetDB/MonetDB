@@ -1,6 +1,10 @@
 # ChangeLog file for java
 # This file is updated with mchangelog
 
+  01 Oct 2009; Fabian Groffen <fabian@cwi.nl> release.txt, NT/rules.msc,
+  Makefile.ag, build.properties:
+  Bump JDBC version to 1.14 for fix.
+
   01 Oct 2009; Fabian Groffen <fabian@cwi.nl>
   src/nl/cwi/monetdb/mcl/net/MapiSocket.java:
   Fix warning messages to disappear when a connection to merovingian is
