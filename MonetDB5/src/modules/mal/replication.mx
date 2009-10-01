@@ -745,7 +745,7 @@ Switch to a local client to consume the MAL stream it will sent.
 static void
 MASTERecho(void *arg)
 {
-	Mapi mapi = (mapi)arg;
+	Mapi mapi = (Mapi)arg;
 	bstream *bs = bstream_create(mapi_get_from(mapi), 128 * BUFSIZ);
 
 #ifdef _DEBUG_REPLICATOR_
@@ -795,7 +795,7 @@ MASTERreceiver(Mapi mapi)
 #endif
 
 	MSinitClientPrg(c, "user", "main");
-	c->fdin = bstream_create(s, 0);
+	c->fdin = bstream_create(mapi_get_from(mapi), 0);
 	if (MT_create_thread(&tid, MSserveClient, (void *)c) < 0) {
 		showException(MAL, "master.receiver", "cannot fork new client");
 		return;
