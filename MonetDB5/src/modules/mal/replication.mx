@@ -32,7 +32,7 @@ slave works as follows.
 step 1) Turn the database into a replication master by setting its
 "master" property to true using monetdb(1).  This property is translated
 by merovingian(1) into the database variable "replication_master" and is
-set upon system restart.  Note that this setting can not be added to a
+set upon database (re)start.  Note that this setting can not be added to a
 running database.
 
 step 2) Create a dump of the master database using the msqldump(1) tool.  
@@ -42,7 +42,7 @@ step 3) To initiate a slave, simply load the master snapshot.
 step 4) Turn the database into a slave by setting its "slave" property
 to the uri of the master using monetdb(1).  This property is translated
 by merovingian(1) into the database variable "replication_slave" and is
-set upon system restart.  Note that this setting can not be added to a
+set upon database (re)start.  Note that this setting can not be added to a
 running database.
 
 The slave starts synchronizing with the master automatically upon each
