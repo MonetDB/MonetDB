@@ -173,6 +173,18 @@ setConfVal(confkeyval *ckv, char *val) {
 				return(GDKstrdup(buf));
 			}
 		}; break;
+		case MURI: {
+			if (strncmp(val, "mapi:monetdb://",
+						sizeof("mapi:monetdb://") -1) != 0)
+			{
+				char buf[256];
+				snprintf(buf, sizeof(buf),
+						"key '%s' requires a mapi:monetdb:// URI value, got: %s",
+						ckv->key, val);
+				return(GDKstrdup(buf));
+			}
+			/* TODO: check full URL? */
+		}; break;
 		case STR:
 		case OTHER:
 			/* leave as is, not much to check */

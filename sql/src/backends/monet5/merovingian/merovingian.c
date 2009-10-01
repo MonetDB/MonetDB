@@ -609,6 +609,8 @@ main(int argc, char *argv[])
 	}
 	kv = findConfKey(_mero_props, "master");
 	kv->val = GDKstrdup("no");
+	kv = findConfKey(_mero_props, "slave");
+	kv->val = NULL; /* MURI */
 
 	/* we no longer need prefix */
 	freeConfFile(ckv);

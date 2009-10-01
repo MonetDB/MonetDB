@@ -1068,7 +1068,8 @@ command_get(int argc, char *argv[])
 			if (strcmp(property, "all") == 0) {
 				/* die hard leak (can't use constant, strtok modifies
 				 * (and hence crashes)) */
-				property = GDKstrdup("name,forward,shared,nthreads,master");
+				/* FIXME: make this read keys from defaultprops */
+				property = GDKstrdup("name,forward,shared,nthreads,master,slave");
 			}
 		} else {
 			doall = 0;
