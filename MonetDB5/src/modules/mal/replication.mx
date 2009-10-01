@@ -171,11 +171,6 @@ command stop(uri:str):void
 address MASTERstop
 comment "Slave suspends synchronisation with master";
 
-command getName():str
-address MASTERgetName
-comment "Return the name of the server if it is a master, otherwise
-pick the first name from the replicas table";
-
 command synchronize():void
 address MASTERsynchronizeDefault
 comment "Login to master with environment credentials to initiate submission of the log records";
@@ -860,19 +855,6 @@ str MASTERstop(int *ret)
 	return MAL_SUCCEED;
 }
 
-str MASTERgetName(str *ret)
-{
-	struct MASTERrecord *mr;
-
-	if (GDKgetenv_isyes("replication_master") ||
-	    GDKgetenv_istrue("replication_master"))
-		return SABAOTHgetLocalConnection(ret);
-
-	for (mr = masterstatus; mr->uri && mr < masterstatus + MAL_MAXCLIENTS - 1; mr++)
-		*ret = GDKstrdup(mr->uri); /* FIXME: superleak and useless loop, thanks Stefan */
-
-	throw(MAL, "master.getName", "no master name found");
-}
 @-
 We should assure that only operations we haven't seen are
 being executed. This is based on the tag assigned to each

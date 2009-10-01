@@ -1160,7 +1160,6 @@ end main;
 [ "append",				  "pattern",	  "master",	  "(s:str,t:str,c:str,_4:any_1,tag:int):void ",												  "MASTERappendValue;"					  ]
 [ "close",				  "command",	  "master",	  "(tag:int):void ",															  "MASTERclose;"					  ]
 [ "delete",				  "pattern",	  "master",	  "(s:str,t:str,b:bat[:oid,:any_1],tag:int):void ",											  "MASTERdelete;"					  ]
-[ "getName",				  "command",	  "master",		  "():str ",														  "MASTERgetName;"					  ]
 [ "open",				  "command",	  "master",	  "():int ",																  "MASTERopen;"						  ]
 [ "replay",				  "command",	  "master",		  "(uri:str,usr:str,pw:str,tag:int):void ",										  "MASTERreplay;"					  ]
 [ "stop",				  "command",	  "master",		  "(uri:str):void ",													  "MASTERstart;"					  ]
