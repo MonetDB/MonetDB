@@ -811,13 +811,13 @@ str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag)
 
 	mapi = mapi_mapiuri(*uri, *usr, *pw, "mal");
 	if (mapi_error(mapi))
-		throw(MAL, "master.replay", "unable to connect: %s", mapi_error_str(mapi));
+		throw(MAL, "master.replay", "unable to connect to '%s': %s",
+				*uri, mapi_error_str(mapi));
 
-	if (mapi_reconnect(mapi) != MOK) {
-		throw(IO, "master.replay", OPERATION_FAILED
-		      ": an error occurred during connect to '%s': %s",
-		      *uri, mapi_error_str(mapi));
-	}
+	if (mapi_reconnect(mapi) != MOK)
+		throw(IO, "master.replay", "failed to connect to '%s': %s",
+				*uri, mapi_error_str(mapi));
+
 	snprintf(buf, BUFSIZ, "master.replay();");
 	hdl = mapi_query(mapi, buf);
 	if (mapi_result_error(hdl))
@@ -899,17 +899,23 @@ str SLAVEclose(int *ret, str *uri, int *tag, timestamp *t)
 str
 SLAVEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	/*
 	str *schema = (str*)getArgReference(stk, pci, 1);
 	str *table = (str*)getArgReference(stk, pci, 2);
 	int *bid = (int*)getArgReference(stk, pci, 3);
 	int tag = *(int*)getArgReference(stk, pci, 4);
+	*/
 
 	(void)cntxt;
 	(void)mb;
+	(void)stk;
+	(void)pci;
+	/*
 	(void)schema;
 	(void)table;
 	(void)bid;
 	(void)tag;
+	*/
 	return MAL_SUCCEED;
 }
 
