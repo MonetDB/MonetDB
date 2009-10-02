@@ -205,8 +205,16 @@ The remainder is a wrapper around the V4 code base.
 @c
 #include "mal.h"
 #include "mal_exception.h"
-#include "aggr_be.h"
-#include "aggr_bge.h"
+#include "aggr_be_sum.h"
+#include "aggr_be_prod.h"
+#include "aggr_be_avg.h"
+#include "aggr_be_minmax.h"
+#include "aggr_be_count.h"
+#include "aggr_bge_sum.h"
+#include "aggr_bge_prod.h"
+#include "aggr_bge_avg.h"
+#include "aggr_bge_minmax.h"
+#include "aggr_bge_count.h"
 
 #ifdef WIN32
 #ifndef LIBAGGR

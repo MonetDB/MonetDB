@@ -83,7 +83,9 @@ LIBS = {
 lib__aggrX3 = {
 	DIR = libdir/MonetDB4
 	SEP = _
-	SOURCES = aggrX3.mx aggrX3_be.mx aggrX3_bge.mx
+	SOURCES = aggrX3.mx \
+		aggrX3_be_sum.mx aggrX3_be_prod.mx aggrX3_be_avg.mx aggrX3_be_minmax.mx aggrX3_be_count.mx \
+		aggrX3_bge_sum.mx aggrX3_bge_prod.mx aggrX3_bge_avg.mx aggrX3_bge_minmax.mx aggrX3_bge_count.mx
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet
