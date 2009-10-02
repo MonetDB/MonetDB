@@ -1,3 +1,9 @@
+# These three tests should be run first to prevent them from being corrupted
+# by remains of other tests in case those don't work / clean-up properly.
+alter_table_drop_constraint.SF-2803477
+mclient-lsql-D
+alter_table_drop_constraint.SF-2803477_cleanup
+#
 binop.SF.2499537
 incomplete.SF.2536893
 subquery_returns_table_crash.SF-2513620
@@ -62,8 +68,6 @@ having_min_crash.SF-2795951
 insert_type_exception.SF-2789976
 primekeyconstraint.SF-2783425
 random.SF-2737889
-alter_table_drop_constraint.SF-2803477
-mclient-lsql-D
 view-except-limit.SF-2798333
 utf8_bug.SF-2822855
 reorder.SF-2770608
