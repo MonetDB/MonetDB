@@ -390,7 +390,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
 		task->cols[i] = (int) (i+1);	/* to distinguish non initialized later with zero */
 		/* advice memory manager on expected use of results */
-		BATmadvise(as->format[i].c[0], BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL);
+		BATmadvise(as->format[i].c[0], BUF_SEQUENTIAL,BUF_SEQUENTIAL,0,0);
 	}
 	task->limit = 10000;
 #ifdef _DEBUG_TABLET_
