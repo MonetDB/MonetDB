@@ -745,20 +745,24 @@ Switch to a local client to consume the MAL stream it will sent.
 static void
 MASTERecho(void *arg)
 {
-	stream *s = (stream*)arg;
-	bstream *bs = bstream_create(s, 128 * BUFSIZ);
+	Mapi mapi = (Mapi)arg;
+	bstream *bs = bstream_create(mapi_get_from(mapi), 128 * BUFSIZ);
 
 #ifdef _DEBUG_REPLICATOR_
 	stream_printf(GDKout, "MASTERecho\n");
 #endif
+
 	while (bstream_next(bs) > 0)
 		stream_printf(GDKout, "#got:%s\n", bs->buf);
+
+	mapi_disconnect(mapi);
+
 #ifdef _DEBUG_REPLICATOR_
 	stream_printf(GDKout, "MASTERecho done\n");
 #endif
 }
 static void
-MASTERreceiver(stream *s)
+MASTERreceiver(Mapi mapi)
 {
 	Client c;
 	MT_Id tid;
@@ -766,38 +770,43 @@ MASTERreceiver(stream *s)
 #ifdef _DEBUG_REPLICATOR_
 	stream_printf(GDKout, "#call master to replay\n");
 #endif
-	/* steal the output stream from the master connection */
-	assert(s != NULL);
-	if (MT_create_thread(&tid, MASTERecho, (void *)s) < 0) {
-		showException(MAL, "initClient", "can not fork new client");
+
+	if (MT_create_thread(&tid, MASTERecho, (void *)mapi) < 0) {
+		showException(MAL, "master.receiver", "cannot fork new client");
 		return;
 	}
-	/* alternative */
+
+	/* alternative (of what?) */
 	c = MCinitClient(0, 0, 0);
 	if (c == NULL) {
-		stream_printf(GDKerr, "!Out of client slots\n");
+		stream_printf(GDKerr, "!MASTERreceiver: out of client slots\n");
+		showException(MAL, "master.receiver", "out of client slots");
 		return;
 	}
+
 	if (c->nspace == 0) {
 		c->nspace = newModule(NULL, putName("user", 4));
 		c->nspace->outer = mal_clients[0].nspace->outer;
 	}
 	(void)setScenario(c, "mal");
+
 #ifdef _DEBUG_REPLICATOR_
 	c->listing = LIST_MAL_ALL;
 #endif
+
 	MSinitClientPrg(c, "user", "main");
-	c->fdin = bstream_create(s, 0);
+	c->fdin = bstream_create(mapi_get_from(mapi), 0);
 	if (MT_create_thread(&tid, MSserveClient, (void *)c) < 0) {
-		showException(MAL, "initClient", "can not fork new client");
+		showException(MAL, "master.receiver", "cannot fork new client");
 		return;
 	}
+
 #ifdef _DEBUG_REPLICATOR_
-	stream_printf(GDKout, "#slave started receiving \n");
+	stream_printf(GDKout, "#slave started receiving\n");
 #endif
 }
 
-str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag)
+str MASTERsynchronize(int *ret, str *uri, str *usr, str *pw, int *tag)
 {
 	Mapi mapi;
 	MapiHdl hdl;
@@ -806,7 +815,8 @@ str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag)
 	(void)ret;
 
 #ifdef _DEBUG_REPLICATOR_
-	stream_printf(GDKout, "#replay the log from  %s %s %s %d\n", *uri, *usr, *pw, *tag);
+	stream_printf(GDKout, "#replay the log from  %s %s %s %d\n",
+			*uri, *usr, *pw, *tag);
 #endif
 
 	mapi = mapi_mapiuri(*uri, *usr, *pw, "mal");
@@ -823,11 +833,11 @@ str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag)
 	if (mapi_result_error(hdl))
 		throw(IO, "master.replay", OPERATION_FAILED);
 
-	MASTERreceiver(mapi_get_from(mapi));
+	MASTERreceiver(mapi);
 	return MAL_SUCCEED;
 }
 
-str MASTERsynchronizeURI(int  *ret, str *uri)
+str MASTERsynchronizeURI(int *ret, str *uri)
 {
 	int tag = 0;
 	str usr = "monetdb";

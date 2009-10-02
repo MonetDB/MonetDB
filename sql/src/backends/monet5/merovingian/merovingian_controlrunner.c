@@ -61,6 +61,28 @@ anncdbS(sabdb *stats)
 	GDKfree(props);
 }
 
+inline static int
+recvWithTimeout(int msgsock, char *buf, size_t buflen)
+{
+	fd_set fds;
+	struct timeval tv;
+	int retval;
+
+	FD_ZERO(&fds);
+	FD_SET(msgsock, &fds);
+
+	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
+	retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
+	if (retval == 0) {
+		/* nothing interesting has happened */
+		return(-2);
+	}
+
+	return(recv(msgsock, buf, buflen, 0));
+}
+
 static void
 controlRunner(void *d)
 {
@@ -175,12 +197,17 @@ controlRunner(void *d)
 			len = snprintf(buf2, sizeof(buf2),
 					"merovingian:1:%s:\n", p);
 			send(msgsock, buf2, len, 0);
-			if ((pos = recv(msgsock, buf2, sizeof(buf2), 0)) == 0) {
+			if ((pos = recvWithTimeout(msgsock, buf2, sizeof(buf2))) == 0) {
 				close(msgsock);
 				continue;
 			} else if (pos == -1) {
 				Mfprintf(_mero_ctlerr, "%s: error reading from control "
 						"channel: %s\n", origin, strerror(errno));
+				close(msgsock);
+				continue;
+			} else if (pos == -2) {
+				Mfprintf(_mero_ctlerr, "%s: time-out reading from control "
+						"channel, disconnecting client\n", origin);
 				close(msgsock);
 				continue;
 			}
@@ -203,7 +230,7 @@ controlRunner(void *d)
 
 		while (_mero_keep_listening) {
 			if (pos == 0) {
-				if ((pos = recv(msgsock, buf, sizeof(buf), 0)) == 0) {
+				if ((pos = recvWithTimeout(msgsock, buf, sizeof(buf))) == 0) {
 					/* EOF */
 					break;
 				} else if (pos == -1) {
@@ -215,6 +242,11 @@ controlRunner(void *d)
 					/* hmmm error ... give up */
 					Mfprintf(_mero_ctlerr, "%s: error reading from control "
 							"channel: %s\n", origin, strerror(errno));
+					break;
+				} else if (pos == -2) {
+					Mfprintf(_mero_ctlerr, "%s: time-out reading from "
+							"control channel, disconnecting client\n", origin);
+					close(msgsock);
 					break;
 				} else {
 					buf[pos] = '\0';
