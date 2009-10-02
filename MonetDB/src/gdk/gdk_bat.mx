@@ -2458,8 +2458,9 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
 @- BATmadvise
 @= madvise
 	if (@1 >= 0 && (@2) && (@2)->base && ((@2)->storage != STORE_MEM) &&
-	    MT_madvise((@2)->base, (@2)->free, @1)) {
-		GDKsyserror("madvise on @2 @1 failed.\n");
+			MT_madvise((@2)->base, (@2)->free, @1)) {
+		GDKsyserror("madvise(%x, " SZFMT ", %d) on @2 @1 failed\n",
+				(@2)->base, (@2)->free, @1);
 		return -1;
 	}
 @= pin
