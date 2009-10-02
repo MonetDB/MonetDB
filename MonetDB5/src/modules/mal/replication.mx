@@ -63,7 +63,10 @@ at this point replication from multiple masters to e.g. combine a full
 set from a set of partitioned masters is not yet possible.
 
 Beware, turning off the "master" property leads to removal of all
-left-over log files.  This renders the master database unusable for replication.  To restore replication in such case, both master and slaves have to be reinitialised using the afore described steps.
+left-over log files.  This renders the master database unusable for
+replication.  To restore replication in such case, both master and
+slaves have to be reinitialised using the afore described steps.
+FIXME: implement this, logs are currently NOT removed
 
 @- Behind the scene
 When the replication_master environment is set, an optimizer
