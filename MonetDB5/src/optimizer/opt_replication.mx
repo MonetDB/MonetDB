@@ -45,78 +45,80 @@ comment "Replication optimizer";
 #include "opt_prelude.h"
 #include "opt_replication.h"
 
-static int 
+static int
 OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, tag, limit, slimit, actions= 0;
-	InstrPtr q, p=0, *old= mb->stmt;
+	int i, tag, limit, slimit, actions = 0;
+	InstrPtr q, p = 0, *old = mb->stmt;
 
-	(void) pci;
-	(void) stk;		/* to fool compilers */
-	(void) cntxt;
+	(void)pci;
+	(void)stk;              /* to fool compilers */
+	(void)cntxt;
 
-	if ( GDKgetenv("replication_master")== NULL || 
-		  !GDKgetenv_istrue("replication_master"))
+	if (!GDKgetenv_istrue("replication_master"))
 		return 0;
 
-	limit= mb->stop;
+	limit = mb->stop;
 	slimit = mb->ssize;
 	newMalBlkStmt(mb, (int)(mb->ssize * 1.2)); /* a new statement stack */
 
 	pushInstruction(mb, old[0]);
-	p= newStmt(mb, putName("master",6), openRef);
-	tag = getArg(p,0);
+	p = newStmt(mb, putName("master", 6), openRef);
+	tag = getArg(p, 0);
 
-	for (i = 1; i < limit ; i++){
-		p= old[i];
-		if ( p->token == ENDsymbol)
+	for (i = 1; i < limit; i++) {
+		p = old[i];
+		if (p->token == ENDsymbol)
 			break;
 		pushInstruction(mb, p);
-		/* full size BAT append */
-		if (getModuleId(p)==sqlRef &&  
-			getFunctionId(p) == appendRef &&
-			isaBatType(getArgType(mb,p,4)) ){
-			q= copyInstruction(p);
+		if (getModuleId(p) == sqlRef &&
+				getFunctionId(p) == appendRef &&
+				isaBatType(getArgType(mb, p, 4)))
+		{
+			/* full size BAT append */
+			q = copyInstruction(p);
 			clrFunction(q);
-			setModuleId(q, putName("master",6));
+			setModuleId(q, putName("master", 6));
 			setFunctionId(q, appendRef);
-			pushInstruction(mb,q);
-			pushArgument(mb,q,tag);
+			pushInstruction(mb, q);
+			pushArgument(mb, q, tag);
 			actions++;
-		} else 
-		/* single value insert */
-		if (getModuleId(p)==sqlRef &&  
-			getFunctionId(p) == appendRef  ){
-			q= copyInstruction(p);
+		} else if (getModuleId(p) == sqlRef &&
+				getFunctionId(p) == appendRef)
+		{
+			/* single value insert */
+			q = copyInstruction(p);
 			clrFunction(q);
-			setModuleId(q, putName("master",6));
+			setModuleId(q, putName("master", 6));
 			setFunctionId(q, appendRef);
-			pushInstruction(mb,q);
-			pushArgument(mb,q,tag);
+			pushInstruction(mb, q);
+			pushArgument(mb, q, tag);
 			actions++;
-		} 
-		/* delete stuff */
-		if (getModuleId(p)==sqlRef &&  
-			getFunctionId(p) == deleteRef) {
-			q= copyInstruction(p);
+		}
+
+		if (getModuleId(p) == sqlRef &&
+				getFunctionId(p) == deleteRef)
+		{
+			/* delete stuff */
+			q = copyInstruction(p);
 			clrFunction(q);
-			setModuleId(q, putName("master",6));
+			setModuleId(q, putName("master", 6));
 			setFunctionId(q, deleteRef);
-			pushInstruction(mb,q);
-			pushArgument(mb,q,tag);
+			pushInstruction(mb, q);
+			pushArgument(mb, q, tag);
 			actions++;
-		} 
+		}
 	}
 
-	if ( actions) {
-		q = newStmt(mb, putName("master",6), closeRef);
-		pushArgument(mb,q,tag);
+	if (actions) {
+		q = newStmt(mb, putName("master", 6), closeRef);
+		pushArgument(mb, q, tag);
 	}
-	for (; i < limit ; i++)
+	for (; i < limit; i++)
 		pushInstruction(mb, old[i]);
 
-	for(; i<slimit; i++)
-		if( old[i])
+	for (; i < slimit; i++)
+		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
 	return actions;

@@ -176,42 +176,41 @@ SQLworker_column(READERtask *task, int col)
 static void
 SQLworker(void *arg)
 {
-	READERtask *task = (READERtask *) arg;
-	unsigned int i, cnt=0;
+	READERtask *task = (READERtask *)arg;
+	unsigned int i, cnt = 0;
 	lng t0;
 
 	/* where to leave errors */
-	THRset_errbuf(THRget(THRgettid()), task->errbuf);  
+	THRset_errbuf(THRget(THRgettid()), task->errbuf);
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"SQLworker started\n");
+	stream_printf(GDKout, "SQLworker started\n");
 #endif
-	while(task->next >= 0 ){
-		MT_down_sema(task->sema,"SQLworker");
-		if ( task->next < 0 ){
+	while (task->next >= 0) {
+		MT_down_sema(task->sema, "SQLworker");
+		if (task->next < 0) {
 #ifdef _DEBUG_TABLET_
-			stream_printf(GDKout,"SQLworker terminated\n");
+			stream_printf(GDKout, "SQLworker terminated\n");
 #endif
-			MT_up_sema(task->reply,"SQLworker");
+			MT_up_sema(task->reply, "SQLworker");
 			return;
 		}
 
-		for ( i= 0; i < task->as->nr_attrs && task->as->error == NULL; i++)
-			if ( task->cols[i]) {
+		for (i = 0; i < task->as->nr_attrs && task->as->error == NULL; i++)
+			if (task->cols[i]) {
 				t0 = GDKusec();
-				SQLworker_column(task,task->cols[i]-1);
-				t0 = GDKusec() -t0;
+				SQLworker_column(task, task->cols[i] - 1);
+				t0 = GDKusec() - t0;
 				task->time[i] += t0;
 				task->wtime += t0;
 			}
 		cnt += task->next;
 
-		MT_up_sema(task->reply,"SQLworker");
+		MT_up_sema(task->reply, "SQLworker");
 	}
-	MT_up_sema(task->reply,"SQLworker");
+	MT_up_sema(task->reply, "SQLworker");
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"SQLworker exits\n");
+	stream_printf(GDKout, "SQLworker exits\n");
 #endif
-	stream_printf(GDKout,"##SQLworker exits %s\n",task->as->error);
 }
 @-
 The line is broken into pieces directly on their field separators. It assumes that we have
