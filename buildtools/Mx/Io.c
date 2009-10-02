@@ -311,6 +311,11 @@ UpdateFiles(void)
 	ofile = NULL;
 
 	for (f = files; f < files + nfile; f++) {
+		if (mx_err) {
+			/* in case of error, don't produce/change output */
+			unlink(f->f_tmp);
+			continue;
+		}
 		status = CompareFiles(f->f_tmp, f->f_name);
 		switch (status) {
 		case 0:	/* identical files, remove temporary file */
