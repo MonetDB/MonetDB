@@ -2457,10 +2457,11 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
 
 @- BATmadvise
 @= madvise
-	if (@1 >= 0 && (@2) && (@2)->base && ((@2)->storage != STORE_MEM) &&
-			MT_madvise((@2)->base, (@2)->free, @1)) {
+	if (@1 >= 0 && (@2) && @3 > 0 && (@2)->base &&
+			((@2)->storage != STORE_MEM) && MT_madvise((@2)->base, @3, @1))
+	{
 		GDKsyserror("madvise(%x, " SZFMT ", %d) on @2 @1 failed\n",
-				(@2)->base, (@2)->free, @1);
+				(@2)->base, @3, @1);
 		return -1;
 	}
 @= pin
@@ -2472,10 +2473,32 @@ int
 BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
 {
 	BATcheck(b, "BATmadvise");
-	@:madvise(hb,(&b->H->heap))@
-	@:madvise(tb,(&b->T->heap))@
-	@:madvise(hhp,b->H->vheap)@
-	@:madvise(thp,b->T->vheap)@
+
+	/* A varsized string heap never has sequential access, setting it is
+	 * no good. */
+	assert(!(ATOMstorage(b->htype) == TYPE_str && b->H->vheap &&
+				hhp == BUF_SEQUENTIAL));
+	assert(!(ATOMstorage(b->ttype) == TYPE_str && b->T->vheap &&
+				thp == BUF_SEQUENTIAL));
+
+	/* If the BAT is read-only, set the madvice for the actually used
+	 * part of the BAT (e.g. till the free offset), else, apply the
+	 * advice to the entire BAT (the size), since writing may extend to
+	 * there */
+	if (BAThrestricted(b) == BAT_READ) {
+		@:madvise(hb,(&b->H->heap),(&b->H->heap)->free)@
+		@:madvise(hhp,b->H->vheap,b->H->vheap->free)@
+	} else {
+		@:madvise(hb,(&b->H->heap),(&b->H->heap)->size)@
+		@:madvise(hhp,b->H->vheap,b->H->vheap->size)@
+	}
+	if (BATtrestricted(b) == BAT_READ) {
+		@:madvise(tb,(&b->T->heap),(&b->T->heap)->free)@
+		@:madvise(thp,b->T->vheap,b->T->vheap->free)@
+	} else {
+		@:madvise(tb,(&b->T->heap),(&b->T->heap)->size)@
+		@:madvise(thp,b->T->vheap,b->T->vheap->size)@
+	}
 	return 0;
 }
 
