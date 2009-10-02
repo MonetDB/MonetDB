@@ -2013,9 +2013,6 @@ MT_vmalloc(size_t size, size_t * maxsize)
 	} else {
 		q = (char *) mmap(r, size, PROT_READ | PROT_WRITE, MMAP_FLAGS(MAP_PRIVATE | MAP_FIXED), MMAP_FD, 0);
 	}
-	if (q != (char *) -1L) {
-		(void) MT_mmap_new("anonymous vm", q, *maxsize, -1, 1);
-	}
 	MMAP_CLOSE_DEV_ZERO;
 	return (void *) ((q == (char *) -1L) ? NULL : q);
 }
@@ -2023,7 +2020,6 @@ MT_vmalloc(size_t size, size_t * maxsize)
 void
 MT_vmfree(void *p, size_t size)
 {
-	MT_mmap_del(p, size);
 	size = MT_PAGESIZE(size);
 	munmap(p, size);
 }

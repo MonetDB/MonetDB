@@ -40,7 +40,9 @@ LIBS = {
 lib__aggr = {
 	DIR = libdir/MonetDB5
 	SEP = _
-	SOURCES = aggr.mx aggr_be.mx aggr_bge.mx
+	SOURCES = aggr.mx \
+		aggr_be_sum.mx aggr_be_prod.mx aggr_be_avg.mx aggr_be_minmax.mx aggr_be_count.mx \
+		aggr_bge_sum.mx aggr_bge_prod.mx aggr_bge_avg.mx aggr_bge_minmax.mx aggr_bge_count.mx
 	#SCRIPTS = mal mil ""
 	LIBS = $(MONETDB_LIBS) -lbat -lstream ../../mal/libmonetdb5
 }
@@ -114,7 +116,9 @@ headers_h = {
 		calc.mx bat5.mx algebra.mx status.mx unix.mx \
 		mmath.mx lock.mx sema.mx alarm.mx  batifthen.mx \
 		batcast.mx batcalc.mx batmmath.mx \
-		aggr.mx aggr_be.mx aggr_bge.mx \
+		aggr.mx \
+		aggr_be_sum.mx aggr_be_prod.mx aggr_be_avg.mx aggr_be_minmax.mx aggr_be_count.mx \
+		aggr_bge_sum.mx aggr_bge_prod.mx aggr_bge_avg.mx aggr_bge_minmax.mx aggr_bge_count.mx
 		counters.mx microbenchmark.mx \
 		batstr.mx batmtime.mx batcolor.mx group.mx array.mx logger.mx
 	HEADERS = h 
