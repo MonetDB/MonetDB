@@ -745,6 +745,7 @@ MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 Contact the master and issue the master.start() command remotely.
 Switch to a local client to consume the MAL stream it will sent.
 @c
+#if 0
 static void
 MASTERecho(void *arg)
 {
@@ -764,6 +765,7 @@ MASTERecho(void *arg)
 	stream_printf(GDKout, "MASTERecho done\n");
 #endif
 }
+#endif
 static void
 MASTERreceiver(Mapi mapi)
 {
