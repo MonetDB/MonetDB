@@ -71,10 +71,11 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		if (p->token == ENDsymbol)
 			break;
 		pushInstruction(mb, p);
-		/* full size BAT append */
 		if (getModuleId(p) == sqlRef &&
-		    getFunctionId(p) == appendRef &&
-		    isaBatType(getArgType(mb, p, 4))) {
+				getFunctionId(p) == appendRef &&
+				isaBatType(getArgType(mb, p, 4)))
+		{
+			/* full size BAT append */
 			q = copyInstruction(p);
 			clrFunction(q);
 			setModuleId(q, putName("master", 6));
@@ -82,10 +83,10 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			pushInstruction(mb, q);
 			pushArgument(mb, q, tag);
 			actions++;
-		} else
-		/* single value insert */
-		if (getModuleId(p) == sqlRef &&
-		    getFunctionId(p) == appendRef) {
+		} else if (getModuleId(p) == sqlRef &&
+				getFunctionId(p) == appendRef)
+		{
+			/* single value insert */
 			q = copyInstruction(p);
 			clrFunction(q);
 			setModuleId(q, putName("master", 6));
@@ -94,9 +95,11 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			pushArgument(mb, q, tag);
 			actions++;
 		}
-		/* delete stuff */
+
 		if (getModuleId(p) == sqlRef &&
-		    getFunctionId(p) == deleteRef) {
+				getFunctionId(p) == deleteRef)
+		{
+			/* delete stuff */
 			q = copyInstruction(p);
 			clrFunction(q);
 			setModuleId(q, putName("master", 6));
