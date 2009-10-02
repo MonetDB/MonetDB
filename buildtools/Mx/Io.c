@@ -248,21 +248,23 @@ IoWriteFile(char *s, CmdCode m)
 int
 CompareFiles(char *nm1, char *nm2)
 {
-	FILE *fp1 = fopen(nm1, "r");
-	FILE *fp2 = fopen(nm2, "r");
+	FILE *fp1, *fp2;
 	int ret = 2;
 
-	if (fp2 == NULL)
-		goto done;
+	if ((fp2 = fopen(nm2, "r")) == NULL)
+		return ret;
+	if ((fp1 = fopen(nm1, "r")) == NULL)
+		Fatal("CompareFiles",
+		      "Internal error: cannot open temporary file");
 
-	while (!(feof(fp1) || feof(fp2))) {
-		if (fgetc(fp1) != fgetc(fp2)) {
+	while (!feof(fp1) && !feof(fp2)) {
+		if (getc(fp1) != getc(fp2)) {
 			break;
 		}
 	}
-	ret = (feof(fp1) && feof(fp2)) ? 0 : 1;
+	ret = !feof(fp1) || !feof(fp2);
 	fclose(fp2);
-      done:fclose(fp1);
+	fclose(fp1);
 	return ret;
 }
 
