@@ -1836,6 +1836,10 @@ usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s --language=(sql|xquery|mal|mil) [ options ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
+	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
+	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
+	fprintf(stderr, " -u user     | --user=user        user id (if flag not given, ask for one)\n");
+	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 
 	fprintf(stderr, " -e          | --echo             echo the query\n");
@@ -1844,20 +1848,16 @@ usage(const char *prog)
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {xml,typed,dm} for XQuery, or {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
-	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
 	fprintf(stderr, " -i          | --interactive      read stdin after command line args\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,xquery,mal,mil}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
-	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)\n");
-	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
 	fprintf(stderr, " -t          | --time             time commands\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
-	fprintf(stderr, " -u user     | --user=user        user id (if flag not given, ask for one)\n");
-	fprintf(stderr, " -?          | --help             show this usage message\n");
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
+	fprintf(stderr, " -?          | --help             show this usage message\n");
 
 	fprintf(stderr, "\nSQL specific opions \n");
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
