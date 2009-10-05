@@ -2824,7 +2824,7 @@ split_rowid_for_side_effects_worker (PFla_op_t *p)
     /* We have found a rowid operator
        that is used at most once by a given
        side effect (see the reference counter
-       in cases: la_error and la_trace). */
+       in cases: la_error, la_cache and la_trace). */
     if (L(p) &&
         SEEN(L(p)) &&
         L(p)->kind == la_rowid &&
@@ -2925,6 +2925,7 @@ split_rowid_for_side_effects_worker (PFla_op_t *p)
             break;
 
         case la_error:
+        case la_cache:
         case la_trace:
             split_rowid_for_side_effects_worker (L(p));
             PFprop_infer_refctr (R(p));

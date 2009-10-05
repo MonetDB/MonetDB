@@ -97,6 +97,7 @@ check_op (PFla_op_t *n, bool op_used)
         case la_empty_frag:
         case la_fun_frag_param:
         case la_error:
+        case la_cache:
             /* do not propagate or introduce any column information */
             break;
 

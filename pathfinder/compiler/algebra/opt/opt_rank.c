@@ -1254,6 +1254,7 @@ opt_rank (PFla_op_t *p, unsigned char mode)
 
         case la_error: /* don't rewrite runtime errors */
         case la_nil:
+        case la_cache: /* don't rewrite side effects */
         case la_trace: /* don't rewrite side effects */
             break;
 

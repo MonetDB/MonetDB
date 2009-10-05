@@ -90,6 +90,7 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_serialize_seq:
         case la_serialize_rel:
         case la_side_effects:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:
@@ -340,6 +341,7 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
         case la_frag_union:
         case la_empty_frag:
         case la_nil:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:

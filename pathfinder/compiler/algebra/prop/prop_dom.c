@@ -1151,6 +1151,7 @@ infer_dom (PFla_op_t *n)
             break;
 
         case la_error:
+        case la_cache:
             bulk_add_dom (R(n));
             break;
 

@@ -573,6 +573,7 @@ find_join_worker (PFla_op_t       *n,
             break;
 
         case la_error:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:

@@ -828,6 +828,7 @@ infer_ckey (PFla_op_t *n)
             break;
 
         case la_error:
+        case la_cache:
             copy (CKEYS, RCKEYS);
             break;
 

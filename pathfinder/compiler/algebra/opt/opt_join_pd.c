@@ -1153,6 +1153,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
             case la_error:
             case la_nil:
+            case la_cache:
             case la_trace:
                 break;
 
@@ -1245,6 +1246,7 @@ map_name (PFla_op_t *p, PFalg_col_t col)
         case la_string_join:
         case la_error:
         case la_nil:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:

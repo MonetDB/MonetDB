@@ -195,8 +195,10 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term content        = 130
 %term slim_content   = 131
 %term merge_adjacent = 132
-%term error          = 139
-%term nil            = 140
+%term error          = 137
+%term nil            = 138
+%term cache          = 139
+%term cache_border   = 140
 %term trace          = 141
 %term trace_items    = 142
 %term trace_msg      = 143
@@ -287,6 +289,8 @@ Rel:      merge_adjacent (Rel)                                     = 117 (10);
 
 Side:     error (Side, Rel)                                        = 129 (10);
 Side:     nil                                                      = 130 (10);
+Side:     cache (Side, Rel)                                        = 131 (10);
+Rel:      cache_border (Rel)                                       = 132 (10);
 Side:     trace (Side, trace_items (Rel, trace_msg (Rel, Map)))    = 135 (10);
 Side:     trace (Side, trace_items (Rel, trace_msg (Rel, nil)))    = 136 (10);
 Map:      trace_map (Rel, Map)                                     = 137 (10);
@@ -1536,35 +1540,29 @@ fn_node_name (PFpa_op_t *p, PFalg_col_t col, mvar_t *id, mvar_t *cont, bool set)
        duplicates are removed based on strings */
     if (set &&
         /* avoid rewrite if we are not done afterwards */
-        names_only &&
-        /* test for a constant fragment */
-        origin &&
-        origin->kind == la_step_join &&
-        origin->sem.step.item_res == PFprop_lineage_col (p->prop, col) &&
-        L(origin)->kind == la_frag_union &&
-        LL(origin)->kind == la_empty_frag &&
-        LR(origin)->kind == la_fragment &&
-        LRL(origin)->kind == la_doc_tbl &&
-        PFprop_const (LRL(origin)->prop,
-                      LRL(origin)->sem.doc_tbl.col)) {
+        names_only) {
         /* we assign new head values here -- as we are sure that
            this logical column (BATs id & cont) is the only column
            that is used lateron */
-        mvar_t *min = new_var (1);
+        mvar_t *unq = new_var (1);
         execute (
-            assgn (var (min->name),
-                   PFmil_gmin (reverse (var (id->name)))),
-            /* make sure that the output is sorted
-               in the input order again */
-            assgn (var (min->name),
-                   reverse (sort (reverse (var (min->name)), DIR_ASC))),
-            assgn (var (id->name),
-                   hmark (var (min->name), lit_oid (0))),
-            assgn (var (cont->name),
-                   tmark (
-                       leftfetchjoin (var (min->name), var (cont->name)),
-                       lit_oid (0))));
-        unpin (min, 1);
+            if_ (eq (count (tunique (var (cont->name))),
+                     lit_int (1)),
+                 seq (assgn (var (unq->name),
+                             reverse (kunique (reverse (var (id->name))))),
+                 seq (/* make sure that the output is sorted
+                         in the input order again */
+                      assgn (var (unq->name),
+                             reverse (sort (var (unq->name), DIR_ASC))),
+                 seq (assgn (var (id->name),
+                             hmark (var (unq->name), lit_oid (0))),
+                 seq (assgn (var (cont->name),
+                             tmark (
+                                 leftfetchjoin (var (unq->name),
+                                                var (cont->name)),
+                                 lit_oid (0))))))),
+                 nop ()));
+        unpin (unq, 1);
     }
 
     return names_only;
@@ -2099,7 +2097,7 @@ pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
  * to the recursion before the recursion body is translated.
  */
 static void
-reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
+reduce_rec_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
 { /* fold( */
     int           rule;           /* rule number that matches for this node */
     short        *nts;            /* target non-terminals for the leaf nodes of
@@ -2132,21 +2130,21 @@ reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
         /* Rel:      rec_fix (side_effects (Side, Rec), Rel) */
         case 140:
             /* only follow the parameters */
-            reduce_border (kids[1], nts[1], border_vars);
+            reduce_rec_border (kids[1], nts[1], border_vars);
             break;
 
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
         case 141:
             /* only follow the seeds */
-            reduce_border (kids[0], nts[0], border_vars);
+            reduce_rec_border (kids[0], nts[0], border_vars);
             /* and the rest of the parameter list */
-            reduce_border (kids[2], nts[2], border_vars);
+            reduce_rec_border (kids[2], nts[2], border_vars);
             break;
 
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
         case 142:
             /* follow the rest of the parameter list */
-            reduce_border (kids[1], nts[1], border_vars);
+            reduce_rec_border (kids[1], nts[1], border_vars);
             break;
 
         /* Rec:      nil */
@@ -2173,7 +2171,7 @@ reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
 
         default:
             for (unsigned short i = 0; nts[i]; i++)
-                reduce_border (kids[i], nts[i], border_vars);
+                reduce_rec_border (kids[i], nts[i], border_vars);
     }
 } /* fold) */
 
@@ -2262,7 +2260,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
 
             /* translate all expressions that are invariant to
                the recursion body */
-            reduce_border (kids[1], nts[1], border_vars);
+            reduce_rec_border (kids[1], nts[1], border_vars);
             break;
 
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
@@ -2310,7 +2308,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
 
             /* translate all expressions that are invariant to
                the recursion body */
-            reduce_border (kids[0], nts[0], border_vars);
+            reduce_rec_border (kids[0], nts[0], border_vars);
         }   break;
 
         /* Rec:      nil */
@@ -2545,13 +2543,13 @@ reduce3 (PFpa_op_t * p, int goalnt)
 } /* fold) */
 /* fold) */
 
-/* fold( reduce_dep_border() function implementing the dep_border operator */
+/* fold( reduce_border() function implementing the dep_border operator */
 /*
  * Alternative reducer function. Introduces code that is also used
  * outside the branch before the conditional part is translated.
  */
 static void
-reduce_dep_border (PFpa_op_t * p, int goalnt)
+reduce_border (PFpa_op_t * p, int goalnt, int border_rule)
 { /* fold( */
     int           rule;           /* rule number that matches for this node */
     short        *nts;            /* target non-terminals for the leaf nodes of
@@ -2581,20 +2579,14 @@ reduce_dep_border (PFpa_op_t * p, int goalnt)
     PFmilgen_kids (p, rule, kids);
 
     /* skip the compilation for all operators until we reach
-       the dep_border operator */
-    switch (rule) {
-        /* Rel:      dep_border (Rel) */
-        case 13:
-            if (!p->env) {
-                /* translate sub-DAG starting at the border */
-                reduce (p, goalnt);
-                assert (p->env);
-            }
-            break;
-
-        default:
-            for (unsigned short i = 0; nts[i]; i++)
-                reduce_dep_border (kids[i], nts[i]);
+       the dep_border or cache_border operator */
+    if (rule != border_rule)
+        for (unsigned short i = 0; nts[i]; i++)
+            reduce_border (kids[i], nts[i], border_rule);
+    else if (!p->env) {
+        /* translate sub-DAG starting at the border */
+        reduce (p, goalnt);
+        assert (p->env);
     }
 } /* fold) */
 /* fold) */
@@ -2657,12 +2649,29 @@ reduce (PFpa_op_t * p, int goalnt)
         case 108:
         /* Twig:     element (Rel, Fcns) */
         case 110:
+        /* Side:     cache (Side, Rel) */
+        case 131:
         /* Rel:      rec_fix (side_effects (Side, Rec), Rel) */
         case 140:
         /* FunRel:   fun_call (Rel, Param) */
         case 151:
         /* Param:    fun_param (Rel, Param) */
         case 152:
+            topdown = true;
+            break;
+
+        /* Side:     error (Side, Rel) */
+        case 129:
+        /* Side:     trace (Side, trace_items (Rel, trace_msg (Rel, Map))) */
+        case 135:
+        /* Side:     trace (Side, trace_items (Rel, trace_msg (Rel, nil))) */
+        case 136:
+            /* traverse the side effects in pre-order as otherwise
+               a cached query might be used before it is defined */
+            for (unsigned short i=0; i < MAX_KIDS; i++)
+                if (kids[i])
+                    reduce (kids[i], nts[i]);
+            /* avoid traversing the plan a second time */
             topdown = true;
             break;
 
@@ -2736,7 +2745,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     comment ("volatile variable environment"),
                     assgn (var (PF_MIL_VAR_WS), new_ws (lit_int (create))));
             }
-
+                       
             reduce (kids[0], nts[0]);
             reduce (kids[1], nts[1]);
 
@@ -4026,7 +4035,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                       nop()),
                                  catch_ (var (err->name), bodymilprog),
                                  if_ (not (isnil (var (PF_MIL_VAR_WS))),
-                                      destroy_ws (var (PF_MIL_VAR_WS)),
+                                      end_ws (var (PF_MIL_VAR_WS),
+                                              var (err->name)),
                                       nop ()))),
                     if_ (not (isnil (var (err->name))),
                          error (var (err->name)),
@@ -4037,7 +4047,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 execute (
                     catch_ (var (err->name), bodymilprog),
                     if_ (not (isnil (var (PF_MIL_VAR_WS))),
-                         destroy_ws (var (PF_MIL_VAR_WS)),
+                         end_ws (var (PF_MIL_VAR_WS), var(err->name)),
                          nop ()),
                     if_ (not (isnil (var (err->name))),
                          error (var (err->name)),
@@ -4148,7 +4158,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             execute (
                 catch_ (var (err->name), bodymilprog),
                 if_ (not (isnil (var (PF_MIL_VAR_WS))),
-                     destroy_ws (var (PF_MIL_VAR_WS)),
+                     end_ws (var (PF_MIL_VAR_WS), var(err->name)),
                      nop ()),
                 if_ (not (isnil (var (err->name))),
                      error (var (err->name)),
@@ -4253,7 +4263,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             execute (comment ("Evaluate the portion of the right side of "
                               "dep_cross that is referenced multiple times."));
-            reduce_dep_border (kids[1], nts[1]);
+            reduce_border (kids[1], nts[1], 13 /* dep_border rule */);
 
             /* save the current mil program */
             oldmilprog = milprog;
@@ -9802,9 +9812,87 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             break; /* fold) */
 
         /* Side:     nil */
-        case 130:
+        case 130: /* fold( */
             /* end of parameter list */
-            break;
+            break; /* fold) */
+
+        /* Side:     cache (Side, Rel) */
+        case 131: /* fold( */
+        {
+            char       *id   = p->sem.cache.id;
+            PFalg_col_t item = p->sem.cache.item;
+            mvar_t     *res_bat,
+                       *item_bat;
+            PFmil_t    *oldmilprog,
+                       *then_milprog;
+
+            /* Generate code for left side (and the operators of the right
+               side that are also referenced outside the branch. */
+            reduce (kids[0], nts[0]);
+
+            execute (comment ("Evaluate the portion of the to-be-cached query "
+                              "that is referenced multiple times."));
+            reduce_border (kids[1], nts[1], 132 /* cache_border rule */);
+
+            /* save the current mil program */
+            oldmilprog = milprog;
+
+            /* create a new empty milprog for the then-branch */
+            milprog = nop ();
+
+            /* translate the independent body expression */
+            execute (comment ("Evaluate the independent portion"
+                              " of the right side of the cache operator."));
+            reduce (kids[1], nts[1]);
+
+            /* store the result in FIXME */
+            res_bat = new_var (1);
+            execute (
+                comment (" "),
+                comment ("Storing the query result under id '%s'.", id),
+                assgn (
+                    var (res_bat->name),
+                    seqbase (new (type (mty_void), type(mty_bat)),
+                             lit_oid (0))));
+
+            /* Add all item columns in the same order as rule 151
+               ('fun_call (Rel, Param)'; case alg_fun_call_cache)
+               retrieves them from the container. */
+            for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                if (t & TYPE_MASK(type_of (p, item))) {
+                    item_bat = env_mvar (R(p)->env, item, t);
+                    execute (
+                        append (
+                            var (res_bat->name),
+                            var (item_bat->name)));
+                }
+
+            /* Add the cache id and the item container BAT
+               to the query cache. */
+            execute (
+                cache_put (var (PF_MIL_VAR_WS), lit_str (id), var (res_bat->name)));
+            unpin (res_bat, 1);
+
+            /* store the code for the then-branch */
+            then_milprog = milprog;
+
+            /* make the old mil program the active one again */
+            milprog = oldmilprog;
+
+            /* Apply the check that tests if the query is already cached. */
+            execute (
+                comment ("Caching Query %s...", id),
+                if_ (cache_expr(var (PF_MIL_VAR_WS), lit_str (id)),
+                     then_milprog,
+                     nop ()));
+
+        }   break; /* fold) */
+
+        /* Rel:      cache_border (Rel) */
+        case 132: /* fold( */
+            /* copy the complete environment of the argument */
+            env_copy (p, L(p)->env);
+            break; /* fold) */
 
         /* Side:     trace (Side, trace_items (Rel, trace_msg (Rel, Map))) */
         case 135:
@@ -9915,7 +10003,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                a rec_border operator) and pin the variables holding the
                results once more such they are not released in the recursion
                body (references stored in border_vars). */
-            reduce_border(kids[0], nts[0], border_vars);
+            reduce_rec_border(kids[0], nts[0], border_vars);
             reduce1(kids[1], nts[1], border_vars);
 
             old_count = new_var (1);
@@ -10584,6 +10672,111 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 	    }
 #endif /* PFTIJAH */
                 }   break; /* fold) */
+
+                /* Query caching */
+                case alg_fun_call_cache:
+                {
+                    mvar_t     *res_bat  = new_var (1);
+                    mvar_t     *res_iter = new_var (p->refctr);
+                    mvar_t     *res_pos  = new_var (p->refctr);
+	            PFalg_col_t iter     = p->schema.items[0].name;
+	            PFalg_col_t pos      = p->schema.items[1].name;
+	            PFalg_col_t item     = p->schema.items[2].name;
+
+                    mvar_t     *loop = env_mvar (L(p)->env,
+                                                 p->sem.fun_call.iter,
+                                                 aat_nat);
+
+                    PFpa_op_t  *param    = *(PFpa_op_t **)
+                                               PFarray_at (fun_params, 0);
+                    PFalg_col_t id_col   = param->schema.items[2].name;
+                    char       *id;
+
+                    /* use the function call argument to extract the cache id */
+                    assert (PFprop_const (param->prop, id_col));
+                    id = PFprop_const_val (param->prop, id_col).val.str;
+
+                    /* find the BAT that corresponds to a cache id */
+                    execute (
+                        assgn (var (res_bat->name),
+                        cache_get(var (PF_MIL_VAR_WS),
+                              lit_str (id))));
+
+                    /* Lookup all item columns in the same order as
+                       rule 131 ('cache (Side, Rel)') puts them into
+                       the container. */
+                    int counter = 0;
+                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                        if (t & TYPE_MASK(type_of (p, item))) {
+                            mvar_t *tmp = new_var (p->refctr);
+                            execute (
+                                assgn (
+                                    var (tmp->name),
+                                    fetch (var (res_bat->name),
+                                           lit_int (counter++))));
+                            env_add (p->env, item, t, tmp);
+                        }
+                    unpin(res_bat, 1);
+
+                    /* Cope with a singleton loop relation
+                       and fill in the iter and position
+                       information. */
+                    if (PFprop_card (L(p)->prop) == 1) {
+                        execute (
+                            assgn (
+                                var (res_iter->name),
+                                project (
+                                    ANY_VAR(p->env),
+                                    fetch (var (loop->name),
+                                           lit_int(0)))),
+                            assgn (
+                                var (res_pos->name),
+                                mark (
+                                    ANY_VAR(p->env),
+                                    lit_oid (0))));
+                    }
+                    /* Allow the loop lifting of the cached query
+                       by multiplying the output with the cardinality
+                       of the loop relation. */
+                    else {
+                        mvar_t *map = new_var (1);
+                        /* map the result to the current loop cardinality */
+                        execute (
+                            assgn (
+                                var (map->name),
+                                cross (ANY_VAR(p->env),
+                                       var (loop->name))),
+                            assgn (
+                                var (res_iter->name),
+                                tmark (var (map->name), lit_oid (0))),
+                            /* Use old head values of the item sequence
+                               to get a partitioned position column. */
+                            assgn (
+                                var (res_pos->name),
+                                hmark (var (map->name), lit_oid (0))),
+                            assgn (
+                                var (map->name),
+                                hmark (var (map->name), lit_oid (0))));
+
+                        /* Update all item columns in the environment.
+                           (Columns pos and iter are only added after
+                           the mapping.) */
+                        for (unsigned int i = 0; i < env_count (p->env); i++)
+                            execute (
+                                assgn (
+                                    var (env_at (p->env, i).mvar->name),
+                                    leftfetchjoin (
+                                        var (map->name),
+                                        var (env_at (p->env, i).mvar->name))));
+                        unpin(map, 1);
+                    }
+
+                    /* add the iter and pos columns to ensure that
+                       the output matches the schema */
+                    env_add (p->env, iter, aat_nat, res_iter);
+                    env_add (p->env, pos, aat_nat, res_pos);
+
+                }   break;
             } /* fold) */
 
             /* Unpin all MIL variables that represent the function parameters.
@@ -10831,7 +11024,7 @@ label (PFpa_op_t *p)
 
 /** @brief Compile physical algebra tree into a MIL program. */
 PFmil_t *
-PFmilgen (PFpa_op_t *n, char *genType)
+PFmilgen (PFpa_op_t *n, char *genType, char* qid, char *mode, long long timeout)
 {
     PFmil_t *bodymilprog;
 
@@ -10951,15 +11144,18 @@ PFmilgen (PFpa_op_t *n, char *genType)
                    declare (var (PF_MIL_VAR_XRPC_MODE)),
                    declare (var (PF_MIL_VAR_XRPC_MODULE)),
                    declare (var (PF_MIL_VAR_XRPC_METHOD)),
+                   declare (var (PF_MIL_VAR_XRPC_COORD)),
 
-                   assgn (var (PF_MIL_VAR_XRPC_QID), lit_str("")),
+                   assgn (var (PF_MIL_VAR_XRPC_QID), lit_str(qid?qid:"")),
                    assgn (var (PF_MIL_VAR_XRPC_CALLER), lit_str("")),
                    assgn (var (PF_MIL_VAR_XRPC_HDL), lit_int(0)),
                    assgn (var (PF_MIL_VAR_XRPC_SEQNR), lit_lng(0)),
-                   assgn (var (PF_MIL_VAR_XRPC_TIMEOUT), lit_lng(30000)),
-                   assgn (var (PF_MIL_VAR_XRPC_MODE), lit_str("none")),
+                   assgn (var (PF_MIL_VAR_XRPC_TIMEOUT), lit_lng(timeout)),
+                   assgn (var (PF_MIL_VAR_XRPC_MODE), 
+                          lit_str (mode?mode:"none")),
                    assgn (var (PF_MIL_VAR_XRPC_MODULE), lit_str("")),
                    assgn (var (PF_MIL_VAR_XRPC_METHOD), lit_str("")),
+                   assgn (var (PF_MIL_VAR_XRPC_COORD), lit_str("")),
 
                    /* add timing information */
                    declare (var (PF_MIL_VAR_TIME_LOAD)),
@@ -10967,8 +11163,9 @@ PFmilgen (PFpa_op_t *n, char *genType)
                    declare (var (PF_MIL_VAR_TIME_PRINT)),
                    assgn (var (PF_MIL_VAR_TIME_LOAD), lit_int (0)),
                    assgn (var (PF_MIL_VAR_TIME_PRINT), lit_int (0)),
-                   assgn (var (PF_MIL_VAR_TIME_QUERY), usec ()));
-
+                   assgn (var (PF_MIL_VAR_TIME_QUERY), usec ()),
+                 );
+                   
     /* prepend variable declarations before the actual program */
     for (unsigned int i = 0; i < PFarray_last (mvars); i++)
         milprog = seq (milprog,

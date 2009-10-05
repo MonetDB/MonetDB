@@ -143,6 +143,7 @@ infer_level (PFla_op_t *n)
         case la_doc_index_join:
         case la_doc_access:
         case la_error:
+        case la_cache:
             /* level stays the same */
             copy_level_info (n, R(n));
             break;

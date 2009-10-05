@@ -134,6 +134,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_type_assert:
         case la_roots:
         case la_error:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:

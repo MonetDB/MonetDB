@@ -996,6 +996,11 @@ struct PFla_pair_t PFbui_op_and_bln (const PFla_op_t *loop,
                                      PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_pf_query_cache (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_distinct_doc_order (const PFla_op_t *loop,
                                                 bool ordering,
                                                 PFla_op_t **side_effects,

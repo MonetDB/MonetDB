@@ -541,6 +541,12 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
             break;
 
+        case la_cache:
+            return (a->sem.cache.id == b->sem.cache.id &&
+                    a->sem.cache.pos == b->sem.cache.pos &&
+                    a->sem.cache.item == b->sem.cache.item);
+            break;
+
         case la_trace:
         case la_trace_items:
         case la_trace_msg:

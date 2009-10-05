@@ -202,6 +202,9 @@
 /* duplicates a node with its given children */
 #define duplicate(n, l, r)  PFla_op_duplicate ((n), (l), (r))
 
+/* Constructor for cache operator */
+#define cache(a,b,c,d,e) PFla_cache ((a),(b),(c),(d),(e))
+
 /* Constructor for debug operator */
 #define trace(a,b)        PFla_trace ((a),(b))
 

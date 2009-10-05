@@ -123,6 +123,7 @@ PFxml2la_conv_2PFLA_OpKind (const char* s)
     mapto (la_empty_frag,      "EMPTY_FRAG")
     mapto (la_error,           "error")
     mapto (la_nil,             "nil")
+    mapto (la_cache,           "cache")
     mapto (la_trace,           "trace")
     mapto (la_trace_items,     "trace items")
     mapto (la_trace_msg,       "trace msg")
@@ -471,6 +472,7 @@ PFxml2la_conv_2PFLA_fun_callkind(char* s)
     mapto_fun_call_kind (alg_fun_call_xrpc)
     mapto_fun_call_kind (alg_fun_call_xrpc_helpers)
     mapto_fun_call_kind (alg_fun_call_tijah)
+    mapto_fun_call_kind (alg_fun_call_cache)
 
     PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
     /* pacify picky compilers */

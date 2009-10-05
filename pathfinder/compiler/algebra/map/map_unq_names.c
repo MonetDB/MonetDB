@@ -713,6 +713,13 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                               UNAME(R(p), p->sem.err.col));
             break;
 
+        case la_cache:
+            res = PFla_cache (U(L(p)), U(R(p)),
+                              p->sem.cache.id,
+                              UNAME(R(p), p->sem.cache.pos),
+                              UNAME(R(p), p->sem.cache.item));
+            break;
+
         case la_trace:
             res = trace (U(L(p)), U(R(p)));
             break;

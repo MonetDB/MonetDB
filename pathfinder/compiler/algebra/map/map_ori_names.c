@@ -829,6 +829,17 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
             res = nil ();
             break;
 
+        case la_cache:
+            res = PFla_cache (O(L(p)), O(R(p)),
+                              p->sem.cache.id,
+                              PFprop_ori_name_right (
+                                  p->prop,
+                                  p->sem.cache.pos),
+                              PFprop_ori_name_right (
+                                  p->prop,
+                                  p->sem.cache.item));
+            break;
+
         case la_trace:
             res = trace (O(L(p)), O(R(p)));
             break;
