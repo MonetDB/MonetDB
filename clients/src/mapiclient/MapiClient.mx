@@ -2328,7 +2328,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (interactive || (optind == argc && interactive_stdin)) {
+	if (interactive || (optind == argc && interactive_stdin && command == NULL)) {
 		char *prompt = NULL;
 
 		if (interactive_stdin) {
