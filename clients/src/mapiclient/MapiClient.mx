@@ -2316,8 +2316,10 @@ main(int argc, char **argv)
 #endif
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
+		timerStart();
 		c = doRequest(mid, command,
 				(interactive || (optind == argc && command == NULL)));
+		timerEnd();
 	}
 
 	if (optind < argc) {
