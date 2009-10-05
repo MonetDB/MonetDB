@@ -2469,6 +2469,14 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
 		MT_mmap_@1((@2)->base, (@2)->maxsize);
 	}
 @c
+
+static int BUF_TO_MMAP[] = {
+	/* BUF_NORMAL     */ MMAP_NORMAL,
+	/* BUF_RANDOM     */ MMAP_RANDOM,
+	/* BUF_SEQUENTIAL */ MMAP_SEQUENTIAL,
+	/* BUF_WILLNEED   */ MMAP_WILLNEED,
+	/* BUF_DONTNEED   */ MMAP_DONTNEED
+};
 int
 BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
 {
@@ -2486,18 +2494,18 @@ BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
 	 * advice to the entire BAT (the size), since writing may extend to
 	 * there */
 	if (BAThrestricted(b) == BAT_READ) {
-		@:madvise(hb,(&b->H->heap),(&b->H->heap)->free)@
-		@:madvise(hhp,b->H->vheap,b->H->vheap->free)@
+		@:madvise(BUF_TO_MMAP[hb],(&b->H->heap),(&b->H->heap)->free)@
+		@:madvise(BUF_TO_MMAP[hhp],b->H->vheap,b->H->vheap->free)@
 	} else {
-		@:madvise(hb,(&b->H->heap),(&b->H->heap)->size)@
-		@:madvise(hhp,b->H->vheap,b->H->vheap->size)@
+		@:madvise(BUF_TO_MMAP[hb],(&b->H->heap),(&b->H->heap)->size)@
+		@:madvise(BUF_TO_MMAP[hhp],b->H->vheap,b->H->vheap->size)@
 	}
 	if (BATtrestricted(b) == BAT_READ) {
-		@:madvise(tb,(&b->T->heap),(&b->T->heap)->free)@
-		@:madvise(thp,b->T->vheap,b->T->vheap->free)@
+		@:madvise(BUF_TO_MMAP[tb],(&b->T->heap),(&b->T->heap)->free)@
+		@:madvise(BUF_TO_MMAP[thp],b->T->vheap,b->T->vheap->free)@
 	} else {
-		@:madvise(tb,(&b->T->heap),(&b->T->heap)->size)@
-		@:madvise(thp,b->T->vheap,b->T->vheap->size)@
+		@:madvise(BUF_TO_MMAP[tb],(&b->T->heap),(&b->T->heap)->size)@
+		@:madvise(BUF_TO_MMAP[thp],b->T->vheap,b->T->vheap->size)@
 	}
 	return 0;
 }
