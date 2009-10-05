@@ -55,6 +55,12 @@ HIDE=1
 	$(LOCKFILE) waiting
 	$(YACC) $(YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
+	# make sure that "$(CONFIG_H)" is included first, also with bison-generated files.
+	# This is crucial to prevent inconsistent (re-)definitions of macros.
+	$(MV) $*.tab.cc $*.tab.cc.tmp
+	echo '#include <'"$(CONFIG_H)"'>' > $*.tab.cc
+	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.tab.cc.tmp >> $*.tab.cc
+	$(RM) $*.tab.cc.tmp
 	$(RM) waiting
 
 %.tab.h: %.yy
@@ -67,6 +73,12 @@ HIDE=1
 	$(LOCKFILE) waiting
 	$(YACC) $(YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
+	# make sure that "$(CONFIG_H)" is included first, also with bison-generated files.
+	# This is crucial to prevent inconsistent (re-)definitions of macros.
+	$(MV) $*.tab.c $*.tab.c.tmp
+	echo '#include <'"$(CONFIG_H)"'>' > $*.tab.c
+	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.tab.c.tmp >> $*.tab.c
+	$(RM) $*.tab.c.tmp
 	$(RM) waiting
 
 %.tab.h: %.y
