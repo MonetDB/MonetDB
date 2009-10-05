@@ -811,6 +811,9 @@ psm(mvc *sql, symbol *s)
 		int is_func = (s->token == SQL_CREATE_FUNC);
 		int is_aggr = (s->token == SQL_CREATE_AGGR);
 
+		if (STORE_READONLY(active_store_type)) 
+			return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
+			
 		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, is_func, is_aggr);
 		sql->type = Q_SCHEMA;
 	} 	break;
@@ -820,6 +823,9 @@ psm(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		int is_func = (s->token == SQL_DROP_FUNC);
 
+		if (STORE_READONLY(active_store_type)) 
+			return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
+			
 		assert(l->h->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		if (l->h->next->data.i_val) /*?l_val?*/
