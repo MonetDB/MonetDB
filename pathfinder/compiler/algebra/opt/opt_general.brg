@@ -1045,7 +1045,11 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    aggr (Rel) */
         case 45:
         {
-            unsigned int i = 0;
+            unsigned int  i,
+                          count;
+            bool          rewrite = false;
+            PFalg_proj_t *proj;
+
             for (i = 0; i < p->sem.aggr.count; i++)
                 if (p->sem.aggr.aggr[i].kind != alg_aggr_dist)
                     break;
@@ -1067,6 +1071,56 @@ reduce (PFla_op_t *p, int goalnt)
                 relabel (p, kids);
                 break;
             }
+
+            /* Get rid of superfluos aggregates that operate on the grouping
+               column. Add the missing columns by a projection on top of the
+               aggregate. */
+            proj  = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+            count = 0;
+            i     = 0;
+            
+            /* get rid of superfluous aggregates */
+            while (i < p->sem.aggr.count) {
+                if ((p->sem.aggr.aggr[i].kind == alg_aggr_dist ||
+                     p->sem.aggr.aggr[i].kind == alg_aggr_min ||
+                     p->sem.aggr.aggr[i].kind == alg_aggr_max) &&
+                    p->sem.aggr.aggr[i].col == p->sem.aggr.part) {
+                    proj[count++] = PFalg_proj (p->sem.aggr.aggr[i].res,
+                                                p->sem.aggr.part);
+                    p->sem.aggr.count--;
+                    p->sem.aggr.aggr[i] = p->sem.aggr.aggr[p->sem.aggr.count];
+                    rewrite = true;
+                }
+                else {
+                    proj[count++] = PFalg_proj (p->sem.aggr.aggr[i].res,
+                                                p->sem.aggr.aggr[i].res);
+                    i++;
+                }
+            }
+            /* complete projection list by adding grouping column */
+            proj[count++] = PFalg_proj (p->sem.aggr.part, p->sem.aggr.part);
+
+            if (rewrite) {
+                *p = *PFla_project_ (
+                          p->sem.aggr.count
+                          ? PFla_aggr (
+                                L(p),
+                                p->sem.aggr.part,
+                                p->sem.aggr.count,
+                                p->sem.aggr.aggr)
+                          /* skip aggregate if only the grouping
+                             column is needed */
+                          : PFla_distinct (
+                                PFla_project (
+                                    L(p), 
+                                    PFalg_proj (p->sem.aggr.part,
+                                                p->sem.aggr.part))),
+                          count,
+                          proj);
+                SEEN(p) = false;
+                relabel (p, kids);
+            }
+
         }   break;
 
         /* Rel:    rownum (Rel) */
