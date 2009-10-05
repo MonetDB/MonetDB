@@ -18,7 +18,7 @@ CREATE TABLE "sys"."concernrelaties" (
 	"ouderkvk" int
 );
 
-explain select * from kvk,concernrelaties where upper(bedrijfsnaam) like
+select * from kvk,concernrelaties where upper(bedrijfsnaam) like
 'VANAD%' and (kvk.kvk=concernrelaties.kvk or kvk.kvk=ouderkvk) limit 10;
 
 drop table kvk;
