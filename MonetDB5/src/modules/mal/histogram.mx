@@ -428,9 +428,14 @@ HSTprint(stream *s, Histogram h){
 void
 HSTprintf(Histogram h){
 	int i;
+	lng totaltuples=0;
 
 	for ( i = 0; i < h->bins;  i++)
-		printf("[%d] " LLFMT "\n", i, h->cnt[i]);
+		totaltuples += h->cnt[i];
+
+	printf("Total count: " LLFMT "\n",totaltuples);
+	for ( i = 0; i < h->bins;  i++)
+		printf("[%d] " LLFMT " ~ %f \n", i, h->cnt[i],(flt)h->cnt[i]/(flt)totaltuples);
 	printf("\n");
 }
 @}

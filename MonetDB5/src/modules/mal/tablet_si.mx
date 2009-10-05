@@ -52,9 +52,12 @@ observed time spending so far.
 #include <gdk_posix.h>
 
 #define _SLICE_TABLET_ 
-#define _DEBUG_SLICER_ 
+/*#define _DEBUG_SLICER_ */
 #define _SLICER_ 2
 
+#ifdef _SLICE_TABLET_ 
+bit firstLoad=TRUE;
+#endif
 
 typedef struct{
 	int next;
@@ -194,11 +197,11 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	lng distance, curDistance, tempDistance;
 
 	/* Tunable params */
-	int optimisticStep=2;
-	int bins=2;
+	int optimisticStep=0;
+	int bins=10;
 	lng acceptableDistance = bins;
 	oid SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
-	bit balance = TRUE; /*Try to ballance in the end if needed */
+	bit balance = FALSE; /*Try to ballance in the end if needed */
 
 	/*sample to get min-max*/
 	sampleSize=SmallSliceSize>100?100:SmallSliceSize; /*sample up to 100 values*/	
@@ -393,9 +396,6 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 {
 	/*naive : fill big, fill small, then rearrange with every new value */
 	char buf[BUFSIZ];	
-	BAT *BigSlice = NULL; 	/*toy BAT to play with the algos without worying for SQL for now*/
-	Histogram h1 = NULL;
-	Histogram h2 = NULL;
 	int i, j, optimistic=0;
 	ptr *adt;
 	BATiter bsi;
@@ -407,15 +407,10 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 
 	/* Tunable params */
 	int optimisticStep=0;
-	int bins=2;
+	int bins=10;
 	lng acceptableDistance = bins;
 	oid SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
 	bit balance = FALSE; /*Try to ballance in the end if needed */
-
-	BAT *binColumns[bins];
-
-	for(i=0; i<bins; i++)
-		binColumns[i] = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,SmallSliceSize);
 
 	/*sample to get min-max*/
 	sampleSize=SmallSliceSize>100?100:SmallSliceSize; /*sample up to 100 values*/	
@@ -437,6 +432,17 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		printf("max %d \n", vmax->val.ival);
  	#endif
 
+
+	if (firstLoad){
+		fmt->c[1] = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,4*SmallSliceSize); 
+		for(i=0; i<bins; i++)
+			fmt->bin[i] = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,SmallSliceSize);
+		for(i=0; i<2; i++)
+			fmt->histogram[i] = HSTnew(bins, vmin, vmax);
+		
+		firstLoad=FALSE;
+	}
+
 	for ( i = 0; i< task->next ; i++){
 		ValPtr newValue = (ValPtr) GDKzalloc(sizeof(ValRecord));
 		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
@@ -445,23 +451,16 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		/*fill small first*/
 		if (curSmallSize < SmallSliceSize){
 			int index=0;
-			if (h1 == NULL)
-				h1 = HSTnew(bins, vmin, vmax);
-			index = HSTincrement(h1, newValue);
-			bunfastins(binColumns[index], key, adt);
+			index = HSTincrement(fmt->histogram[0], newValue);
+			bunfastins(fmt->bin[index], key, adt);
 			curSmallSize++;
 			continue;
 		}
 
 		/*equally fill big*/
-		if (BigSlice == NULL)
-			BigSlice = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,2*SmallSliceSize);
-
-		if (BATcount(BigSlice) < SmallSliceSize){
-			if (h2 == NULL)
-				h2 = HSTnew(bins, vmin, vmax);
-			bunfastins(BigSlice, key, adt);
-			HSTincrement(h2, newValue);
+		if (BATcount(fmt->c[1]) < SmallSliceSize){
+			bunfastins(fmt->c[1], key, adt);
+			HSTincrement(fmt->histogram[1], newValue);
 			continue;
 		}
 
@@ -470,8 +469,8 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			#ifdef _DEBUG_SLICER_
 				printf("be optimistic\n");
 			#endif
-			bunfastins(BigSlice, key, adt);
-			HSTincrement(h2, newValue);
+			bunfastins(fmt->c[1], key, adt);
+			HSTincrement(fmt->histogram[0], newValue);
 			optimistic--;
 			continue;
 		}
@@ -480,51 +479,51 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			printf("ready to insert new value %d \n",newValue->val.ival);
 			for (j=0;j<bins;j++){
 				printf("bin %d\n",j);
-				BATprint(binColumns[j]);
+				BATprint(fmt->bin[j]);
 			}
-			HSTprintf(h1);
-			BATprint(BigSlice);
-			HSTprintf(h2);
+			HSTprintf(fmt->histogram[0]);
+			BATprint(fmt->c[1]);
+			HSTprintf(fmt->histogram[1]);
 		#endif
 
 		/*choose target BAT in order to balance the histogram distance*/
-		distance = HSTbinrelativeWhatIf(h1,h2,newValue,&curDistance);
+		distance = HSTbinrelativeWhatIf(fmt->histogram[0],fmt->histogram[1],newValue,&curDistance);
 		if (distance==0){
-			bunfastins(BigSlice, key, adt);
-			HSTincrement(h2, newValue);
+			bunfastins(fmt->c[1], key, adt);
+			HSTincrement(fmt->histogram[1], newValue);
 		}
-		else if (distance <= HSTbinrelativeWhatIf(h2,h1,newValue,&tempDistance)){
-			bunfastins(BigSlice, key, adt);
-			HSTincrement(h2, newValue);
+		else if (distance <= HSTbinrelativeWhatIf(fmt->histogram[1],fmt->histogram[0],newValue,&tempDistance)){
+			bunfastins(fmt->c[1], key, adt);
+			HSTincrement(fmt->histogram[1], newValue);
 		}else{
 			int smallindex, moveindex;
 			BATiter bi;
 			ValPtr curVal;
 
-			smallindex = HSTincrement(h1, newValue);
+			smallindex = HSTincrement(fmt->histogram[0], newValue);
 
-			moveindex = HSTwhichbin(h1,h2);
+			moveindex = HSTwhichbin(fmt->histogram[0],fmt->histogram[1]);
 
 			if (moveindex == smallindex || moveindex==-1){
 				#ifdef _DEBUG_SLICER_
 					printf(" could not find a tuple to move: add to big\n");
 				#endif
 
-				bunfastins(BigSlice, key, adt);
-				HSTincrement(h2, newValue);
-				HSTdecrement(h1, newValue);
+				bunfastins(fmt->c[1], key, adt);
+				HSTincrement(fmt->histogram[1], newValue);
+				HSTdecrement(fmt->histogram[0], newValue);
 			}else{
-				bi = bat_iterator(binColumns[moveindex]);
+				bi = bat_iterator(fmt->bin[moveindex]);
 				curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
-				VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,BATcount(binColumns[moveindex])-1));
+				VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,BATcount(fmt->bin[moveindex])-1));
 				#ifdef _DEBUG_SLICER_
 					printf("move first tuple from bin %d\n", moveindex);
 				#endif
-				BATsetcount(binColumns[moveindex], BUNlast(binColumns[moveindex])-1);
-				bunfastins(binColumns[smallindex], key,&newValue->val.ival);
-				HSTdecrement(h1,curVal);
-				bunfastins(BigSlice, key,&curVal->val.ival);
-				HSTincrement(h2,curVal);
+				BATsetcount(fmt->bin[moveindex], BUNlast(fmt->bin[moveindex])-1);
+				bunfastins(fmt->bin[smallindex], key,&newValue->val.ival);
+				HSTdecrement(fmt->histogram[0],curVal);
+				bunfastins(fmt->c[1], key,&curVal->val.ival);
+				HSTincrement(fmt->histogram[1],curVal);
 			}
 		}		
 
@@ -535,70 +534,70 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	#ifdef _DEBUG_SLICER_
 		for (j=0;j<bins;j++){
 			printf("bin %d\n",j);
-			BATprint(binColumns[j]);
+			BATprint(fmt->bin[j]);
 		}
-		BATprint(BigSlice);
+		BATprint(fmt->c[1]);
 	#endif
-	HSTprintf(h1);
-	HSTprintf(h2);
+	HSTprintf(fmt->histogram[0]);
+	HSTprintf(fmt->histogram[1]);
 
 	if (!balance){
 		for(j=0;j<bins;j++)
-			BATappend(fmt->c[0],binColumns[j],TRUE);
+			BATappend(fmt->c[0],fmt->bin[j],TRUE);
 		return 0;
 	}
 	
-	if ((curDistance=HSTbinrelative(h1,h2)) > acceptableDistance){
+	if ((curDistance=HSTbinrelative(fmt->histogram[0],fmt->histogram[1])) > acceptableDistance){
 		BATiter bi, bb;
-		int k=0, moveindex, sizeBig = BATcount(BigSlice); 
+		int k=0, moveindex, sizeBig = BATcount(fmt->c[1]); 
 		ValPtr curVal, newValue;
 		bit moved = TRUE;
 
 		/* pick a tuple to move to the big one */
-		bb = bat_iterator(BigSlice);
+		bb = bat_iterator(fmt->c[1]);
 		curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
 		newValue= (ValPtr) GDKzalloc(sizeof(ValRecord));
 		while(curDistance > acceptableDistance && moved==TRUE){
-			moveindex = HSTwhichbin(h1,h2);
-			bi = bat_iterator(binColumns[moveindex]);
-			VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,BATcount(binColumns[moveindex])-1));
-			HSTdecrement(h1,curVal);
-			HSTincrement(h2,curVal);
+			moveindex = HSTwhichbin(fmt->histogram[0],fmt->histogram[1]);
+			bi = bat_iterator(fmt->bin[moveindex]);
+			VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,BATcount(fmt->bin[moveindex])-1));
+			HSTdecrement(fmt->histogram[0],curVal);
+			HSTincrement(fmt->histogram[1],curVal);
 			moved = FALSE;
 			for (k=0; k<sizeBig; k++){
 				VALset(newValue, fmt->c[0]->ttype, BUNtail(bb,k));
-				distance = HSTbinrelativeWhatIfMove(h2,h1,newValue,&curDistance);
+				distance = HSTbinrelativeWhatIfMove(fmt->histogram[1],fmt->histogram[0],newValue,&curDistance);
 				if (distance==0){
-					BATsetcount(binColumns[moveindex], BUNlast(binColumns[moveindex])-1);
-					bunfastins(binColumns[HSTgetIndex(h1,newValue)], key,&newValue->val.ival);
-					bunfastins(BigSlice, key,&curVal->val.ival);
-					HSTdecrement(h2,newValue);
-					HSTincrement(h1,newValue);
+					BATsetcount(fmt->bin[moveindex], BUNlast(fmt->bin[moveindex])-1);
+					bunfastins(fmt->bin[HSTgetIndex(fmt->histogram[0],newValue)], key,&newValue->val.ival);
+					bunfastins(fmt->c[1], key,&curVal->val.ival);
+					HSTdecrement(fmt->histogram[1],newValue);
+					HSTincrement(fmt->histogram[0],newValue);
 					moved = TRUE;
 					break;
 				}
 			}
 			if(!moved){
-				HSTdecrement(h2,curVal);
-				HSTincrement(h1,curVal);
+				HSTdecrement(fmt->histogram[1],curVal);
+				HSTincrement(fmt->histogram[0],curVal);
 				break;
 			}
 		}
 	}
 
 	for(j=0;j<bins;j++)
-		BATappend(fmt->c[0],binColumns[j],TRUE);
+		BATappend(fmt->c[0],fmt->bin[j],TRUE);
 
 	printf("result state \n");
 	#ifdef _DEBUG_SLICER_
 		for (j=0;j<bins;j++){
 			printf("bin %d\n",j);
-			BATprint(binColumns[j]);
+			BATprint(fmt->bin[j]);
 		}
-		BATprint(BigSlice);
+		BATprint(fmt->c[1]);
 	#endif
-	HSTprintf(h1);
-	HSTprintf(h2);
+	HSTprintf(fmt->histogram[0]);
+	HSTprintf(fmt->histogram[1]);
 
 	return 0;
 

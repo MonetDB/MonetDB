@@ -376,6 +376,7 @@ pre presented on the screen directly.
 #include <mal_exception.h>
 #include <mal_client.h>
 #include <mal_interpreter.h>
+#include "histogram.h"
 
 #ifdef WIN32
 #ifndef LIBTABLET
@@ -389,6 +390,7 @@ pre presented on the screen directly.
 
 #define SIZE 1*1024*1024
 #define SLICES 2
+#define BINS 100
 
 struct Column_t;
 typedef ptr *(*frStr) (struct Column_t *fmt, int type, char *s, char *e, char quote);
@@ -404,6 +406,8 @@ typedef struct Column_t {
 	int adt;		/* type index */
 	BAT *c[SLICES];			/* set to NULL when scalar is meant */
 	BATiter ci[SLICES];
+	Histogram histogram[SLICES];
+	BAT *bin[BINS];
 	BUN p;
 	unsigned int tabs;	/* field size in tab positions */
 	str lbrk, rbrk;		/* column brackets */
@@ -2263,13 +2267,19 @@ The routines to manage the table descriptor
 static void
 clearColumn(Column * c)
 {
+	int i;
 	CLEAR(c->batname);
 	CLEAR(c->name);
 	CLEAR(c->type);
 	CLEAR(c->sep);
 	c->width = 0;
 	c->tabs = 0;
-	c->c[0] = NULL;
+	for(i=0;i<SLICES;i++)
+		c->c[i] = NULL;
+	for(i=0;i<SLICES;i++)
+		c->histogram[i] = NULL;
+	for(i=0;i<BINS;i++)
+		c->bin[i] = NULL;
 	c->p = 0;
 	/* keep nullstr and brackets */
 }
