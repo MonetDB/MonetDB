@@ -29,6 +29,7 @@
 #include "mapilib/Mapi.h"
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <string.h>
 #include "stream.h"
 #include "msqldump.h"
@@ -50,11 +51,11 @@ static void
 usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s [ options ]\n", prog);
-	fprintf(stderr, "Options are:\n");
-	fprintf(stderr, " -h hostname | --host=hostname  host to connect to\n");
-	fprintf(stderr, " -p portnr   | --port=portnr    port to connect to\n");
-	fprintf(stderr, " -u user     | --user=user      user id\n");
-	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password\n");
+	fprintf(stderr, "\nOptions are:\n");
+	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
+	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
+	fprintf(stderr, " -u user     | --user=user        user id (if flag not given, ask for one)\n");
+	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 	fprintf(stderr, " -f          | --functions      dump functions\n");
 	fprintf(stderr, " -D          | --describe       describe database\n");
@@ -76,13 +77,16 @@ main(int argc, char **argv)
 	char *host = NULL;
 	char *dbname = NULL;
 	int trace = 0;
-	int guest = 1;
 	int describe = 0;
 	int functions = 0;
 	int c;
 	Mapi mid;
 	int quiet = 0;
 	stream *out;
+	struct stat statb;
+	stream *config = NULL;
+	char user_set_as_flag = 0;
+	char passwd_set_as_flag = 0;
 	static struct option long_options[] = {
 		{"host", 1, 0, 'h'},
 		{"passwd", 2, 0, 'P'},
@@ -97,15 +101,66 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
+	if (getenv("MCLIENT_NO_MONETDB_FILE") == NULL) {
+		if (stat(".monetdb", &statb) == 0) {
+			config = open_rastream(".monetdb");
+		} else if (getenv("HOME") != NULL) {
+			char buf[1024];
+			snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
+			if (stat(buf, &statb) == 0) {
+				config = open_rastream(buf);
+			}
+		}
+	}
+
+	if (config != NULL) {
+		char buf[1024];
+		char *q;
+		ssize_t len;
+		int line = 0;
+		while ((len = stream_readline(config, buf, sizeof(buf) - 1)) > 0) {
+			line++;
+			buf[len - 1] = '\0'; /* drop newline */
+			if (buf[0] == '#' || buf[0] == '\0')
+				continue;
+			if ((q = strchr(buf, '=')) == NULL) {
+				fprintf(stderr, "%s:%d: syntax error: %s\n",
+						stream_name(config), line, buf);
+				continue;
+			}
+			*q++ = '\0';
+			/* this basically sucks big time, as I can't easily set
+			 * a default, hence I only do things I think are useful
+			 * for now, needs a better solution */
+			if (strcmp(buf, "user") == 0) {
+				user = strdup(q); /* leak */
+				q = NULL;
+			} else if (strcmp(buf, "password") == 0 ||
+					strcmp(buf, "passwd") == 0)
+			{
+				passwd = strdup(q); /* leak */
+				q = NULL;
+			} else if (strcmp(buf, "language") == 0) {
+				/* make sure we don't barf about this as unknown
+				 * property, it's supported by mclient */
+				q = NULL;
+			}
+			if (q != NULL)
+				fprintf(stderr, "%s:%d: unknown property: %s\n",
+						stream_name(config), line, buf);
+		}
+		stream_destroy(config);
+	}
+
 	while ((c = getopt_long(argc, argv, "u::p:P::d:Dfqh:t::?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
-			guest = 0;
-			user = optarg; /* can be NULL */
+			user = optarg;
+			user_set_as_flag = 1;
 			break;
 		case 'P':
-			guest = 0;
-			passwd = optarg; /* can be NULL */
+			passwd = optarg;	/* can be NULL */
+			passwd_set_as_flag = 1;
 			break;
 		case 'h':
 			host = optarg;
@@ -135,16 +190,15 @@ main(int argc, char **argv)
 		}
 	}
 
-	/* default to administrator account (eeks) when being called without
-	 * any arguments, default to the current user if -u flag is given */
-	if (guest) {
-		user = "monetdb";
-		passwd = "monetdb";
-	} else {
-		if (user == NULL)
-			user = simple_prompt("User ", BUFSIZ, 1, getlogin());
-		if (passwd == NULL)
-			passwd = simple_prompt("Password", BUFSIZ, 0, NULL);
+	if (user_set_as_flag && !passwd_set_as_flag) {
+		passwd = NULL; /* when config file would provide a password */
+	}
+	if (user == NULL) {
+		user = simple_prompt("user", BUFSIZ, 1, getlogin());
+		passwd = NULL; /* force password prompt */
+	}
+	if (passwd == NULL) {
+		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
 	}
 
 	mid = mapi_connect(host, port, user, passwd, "sql", dbname);
