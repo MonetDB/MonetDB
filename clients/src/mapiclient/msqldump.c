@@ -51,16 +51,16 @@ usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s [ options ]\n", prog);
 	fprintf(stderr, "Options are:\n");
-	fprintf(stderr, " -h hostname | --host=hostname  /* host to connect to */\n");
-	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
-	fprintf(stderr, " -u user     | --user=user      /* user id */\n");
-	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
-	fprintf(stderr, " -d database | --database=database /* database to connect to */\n");
-	fprintf(stderr, " -f          | --functions      /* dump functions */\n");
-	fprintf(stderr, " -D          | --describe       /* describe database */\n");
-	fprintf(stderr, " -q          | --quiet          /* don't print welcome message */\n");
-	fprintf(stderr, " -t          | --trace          /* trace mapi network interaction */\n");
-	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
+	fprintf(stderr, " -h hostname | --host=hostname  host to connect to\n");
+	fprintf(stderr, " -p portnr   | --port=portnr    port to connect to\n");
+	fprintf(stderr, " -u user     | --user=user      user id\n");
+	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password\n");
+	fprintf(stderr, " -d database | --database=database  database to connect to\n");
+	fprintf(stderr, " -f          | --functions      dump functions\n");
+	fprintf(stderr, " -D          | --describe       describe database\n");
+	fprintf(stderr, " -q          | --quiet          don't print welcome message\n");
+	fprintf(stderr, " -t          | --trace          trace mapi network interaction\n");
+	fprintf(stderr, " -?          | --help           show this usage message\n");
 	exit(-1);
 }
 
