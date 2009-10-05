@@ -103,6 +103,7 @@ updating_non-loaded_columns.SF-2864313_KO-1
 updating_non-loaded_columns.SF-2864313_KO-2
 updating_non-loaded_columns.SF-2864313_KO-3
 updating_non-loaded_columns.SF-2864313_OK-4
+semijoin_bug.SF-2869818.sql
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.
