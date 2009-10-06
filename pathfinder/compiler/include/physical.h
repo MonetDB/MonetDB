@@ -389,6 +389,7 @@ union PFpa_op_sem_t {
         PFalg_col_t     item;     /**< column to look up the context nodes */
         PFalg_col_t     item_doc; /**< column to store the fragment info */
         PFalg_col_t     item_res; /**< column to store the resulting nodes */
+        const char *ns1, *loc1, *ns2, *loc2;
     } vx_lookup;
 };
 
@@ -935,7 +936,11 @@ PFpa_vx_lookup (const PFpa_op_t *n,
                 PFalg_col_t item,
                 PFalg_col_t item_res,
                 PFalg_col_t item_doc,
-                bool id);
+                bool id,
+                const char* ns1,
+                const char* loc1,
+                const char* ns2,
+                const char* loc2);
 
 #endif  /* PHYSICAL_H */
 

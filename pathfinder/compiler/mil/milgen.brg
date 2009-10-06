@@ -10915,14 +10915,16 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                            var (PF_MIL_VAR_WS),
                            VAR (L(p)->env, p->sem.vx_lookup.iter, aat_nat),
                            pre,
-                           set_kind (pre_cont, var (PF_MIL_VAR_ELEM)),
+                           p->sem.vx_lookup.id == la_dj_text ? 
+                                set_kind (pre_cont, var (PF_MIL_VAR_ELEM)):
+                                set_kind (pre_cont, var (PF_MIL_VAR_ATTR)),
                            VAR (L(p)->env, p->sem.vx_lookup.item, aat_str),
-                           lit_str("*"),
-                           lit_str("*"),
-                           lit_str("*"),
-                           lit_str("*"),
-                           p->sem.vx_lookup.id == la_dj_text ? lit_bit (true) :
-                                                             lit_bit (false))));
+                           lit_str(p->sem.vx_lookup.ns1),
+                           lit_str(p->sem.vx_lookup.loc1),
+                           lit_str(p->sem.vx_lookup.ns2),
+                           lit_str(p->sem.vx_lookup.loc2),
+                           p->sem.vx_lookup.id == la_dj_text ? lit_bit (false) :
+                                                             lit_bit (true))));
 
             execute (
                 assgn (var (iter->name),

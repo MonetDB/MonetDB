@@ -2978,7 +2978,8 @@ PFla_op_t *
 PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
                      PFla_doc_join_kind_t kind,
                      PFalg_col_t item,
-                     PFalg_col_t item_res, PFalg_col_t item_doc)
+                     PFalg_col_t item_res, PFalg_col_t item_doc,
+                     const char* ns1, const char* loc1, const char* ns2, const char* loc2)
 {
     PFla_op_t    *ret;
     unsigned int  i;
@@ -2993,6 +2994,10 @@ PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
     ret->sem.doc_join.item     = item;
     ret->sem.doc_join.item_res = item_res;
     ret->sem.doc_join.item_doc = item_doc;
+    ret->sem.doc_join.ns1      = ns1;
+    ret->sem.doc_join.loc1     = loc1;
+    ret->sem.doc_join.ns2      = ns2;
+    ret->sem.doc_join.loc2     = loc2;
 
 #ifndef NDEBUG
     if (PFprop_ocol (n, item_res))
@@ -4396,7 +4401,11 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                         n->sem.doc_join.kind,
                                         n->sem.doc_join.item,
                                         n->sem.doc_join.item_res,
-                                        n->sem.doc_join.item_doc);
+                                        n->sem.doc_join.item_doc,
+                                        n->sem.doc_join.ns1,
+                                        n->sem.doc_join.loc1,
+                                        n->sem.doc_join.ns2,
+                                        n->sem.doc_join.loc2);
 
         case la_doc_tbl:
             return PFla_doc_tbl (left,

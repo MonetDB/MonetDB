@@ -139,8 +139,8 @@
         PFla_guide_step_join ((a),(b),(c),(d),(e),(f),(g),(h))
 
 /* doc index join */
-#define doc_index_join(a,b,c,d,e,f) \
-        PFla_doc_index_join ((a),(b),(c),(d),(e),(f))
+#define doc_index_join(a,b,c,d,e,f,g,h,i,j) \
+        PFla_doc_index_join ((a),(b),(c),(d),(e),(f),(g),(h),(i),(j))
 
 /* document table */
 #define doc_tbl(a,b,c,d)    PFla_doc_tbl((a),(b),(c),(d))

@@ -1478,7 +1478,11 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                                         p->sem.doc_join.kind,
                                         p->sem.doc_join.item,
                                         p->sem.doc_join.item_res,
-                                        p->sem.doc_join.item_doc),
+                                        p->sem.doc_join.item_doc,
+                                        p->sem.doc_join.ns1,
+                                        p->sem.doc_join.loc1,
+                                        p->sem.doc_join.ns2,
+                                        p->sem.doc_join.loc2),
                                   RR(p)));
                 modified = true;
             }
@@ -1490,7 +1494,11 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                                         p->sem.doc_join.kind,
                                         p->sem.doc_join.item,
                                         p->sem.doc_join.item_res,
-                                        p->sem.doc_join.item_doc)));
+                                        p->sem.doc_join.item_doc,
+                                        p->sem.doc_join.ns1,
+                                        p->sem.doc_join.loc1,
+                                        p->sem.doc_join.ns2,
+                                        p->sem.doc_join.loc2))),
                 modified = true;
             }
         }
