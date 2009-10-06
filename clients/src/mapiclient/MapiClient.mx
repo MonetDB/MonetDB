@@ -144,18 +144,6 @@ In the SQL mode, a few more convenient commands are available.
 #define strdup _strdup
 #endif
 
-#ifndef HAVE_GETLOGIN
-#define getlogin() "win32"
-#endif
-
-/* from Solaris' getlogin manpage:
- *  The correct procedure for determining the login name is to call
- *  cuserid(3C), or to call getlogin() and if  it fails to call
- *  getpwuid(3C). */
-#if defined(HAVE_GETLOGIN) && defined(__sun__)
-#define getlogin() cuserid(NULL)
-#endif
-
 enum modes {
 	NOLANGUAGE,
 	MAL,
@@ -1836,6 +1824,10 @@ usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s --language=(sql|xquery|mal|mil) [ options ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
+	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
+	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
+	fprintf(stderr, " -u user     | --user=user        user id (if flag not given, ask for one)\n");
+	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 
 	fprintf(stderr, " -e          | --echo             echo the query\n");
@@ -1844,20 +1836,16 @@ usage(const char *prog)
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {xml,typed,dm} for XQuery, or {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
-	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
 	fprintf(stderr, " -i          | --interactive      read stdin after command line args\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,xquery,mal,mil}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
-	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)\n");
-	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
 	fprintf(stderr, " -t          | --time             time commands\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
-	fprintf(stderr, " -u user     | --user=user        user id (if flag not given, ask for one)\n");
-	fprintf(stderr, " -?          | --help             show this usage message\n");
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
+	fprintf(stderr, " -?          | --help             show this usage message\n");
 
 	fprintf(stderr, "\nSQL specific opions \n");
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
@@ -1952,7 +1940,7 @@ main(int argc, char **argv)
 	mark2 = NULL;
 
 	/* parse config file first, command line options override */
-	if (getenv("MCLIENT_NO_MONETDB_FILE") == NULL) {
+	if (getenv("DOTMONETDBFILE") == NULL) {
 		if (stat(".monetdb", &statb) == 0) {
 			config = open_rastream(".monetdb");
 		} else if (getenv("HOME") != NULL) {
@@ -1960,6 +1948,16 @@ main(int argc, char **argv)
 			snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
 			if (stat(buf, &statb) == 0) {
 				config = open_rastream(buf);
+			}
+		}
+	} else {
+		char *cfile = getenv("DOTMONETDBFILE");
+		if (strcmp(cfile, "") != 0) {
+			if (stat(cfile, &statb) == 0) {
+				config = open_rastream(cfile);
+			} else {
+				stream_printf(stderr_stream, "failed to open file '%s': %s\n",
+						cfile, strerror(errno));
 			}
 		}
 	}
@@ -2188,12 +2186,15 @@ main(int argc, char **argv)
 	}
 #endif	/* HAVE_ICONV */
 
+	/* when config file would provide defaults */
 	if (user_set_as_flag && !passwd_set_as_flag) {
-		passwd = NULL; /* when config file would provide a password */
+		passwd = NULL;
+	} else if (passwd_set_as_flag && !user_set_as_flag) {
+		user = NULL;
 	}
+
 	if (user == NULL) {
-		user = simple_prompt("user", BUFSIZ, 1, getlogin());
-		passwd = NULL; /* force password prompt */
+		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
 	}
 	if (passwd == NULL) {
 		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
@@ -2316,8 +2317,10 @@ main(int argc, char **argv)
 #endif
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
+		timerStart();
 		c = doRequest(mid, command,
 				(interactive || (optind == argc && command == NULL)));
+		timerEnd();
 	}
 
 	if (optind < argc) {
@@ -2328,7 +2331,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (interactive || (optind == argc && interactive_stdin)) {
+	if (interactive || (optind == argc && interactive_stdin && command == NULL)) {
 		char *prompt = NULL;
 
 		if (interactive_stdin) {
