@@ -396,19 +396,19 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 {
 	/*naive : fill big, fill small, then rearrange with every new value */
 	char buf[BUFSIZ];	
-	int i, j, optimistic=0;
+	int i, optimistic=0;
 	ptr *adt;
 	BATiter bsi;
 	BAT *sample, *sortedSample;
 	ValPtr vmin, vmax;
 	int sampleSize; 
-	lng distance, curDistance, tempDistance;
+	dbl distance, curDistance, tempDistance;
 	oid curSmallSize=0;
 
 	/* Tunable params */
-	int optimisticStep=0;
+	int optimisticStep=100000;
 	int bins=10;
-	lng acceptableDistance = bins;
+	dbl acceptableDistance = bins;
 	oid SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
 	bit balance = FALSE; /*Try to ballance in the end if needed */
 
@@ -470,7 +470,7 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 				printf("be optimistic\n");
 			#endif
 			bunfastins(fmt->c[1], key, adt);
-			HSTincrement(fmt->histogram[0], newValue);
+			HSTincrement(fmt->histogram[1], newValue);
 			optimistic--;
 			continue;
 		}
@@ -487,12 +487,12 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		#endif
 
 		/*choose target BAT in order to balance the histogram distance*/
-		distance = HSTbinrelativeWhatIf(fmt->histogram[0],fmt->histogram[1],newValue,&curDistance);
+		distance = HSTeuclidianNormWhatIf(fmt->histogram[0],fmt->histogram[1],newValue,&curDistance);
 		if (distance==0){
 			bunfastins(fmt->c[1], key, adt);
 			HSTincrement(fmt->histogram[1], newValue);
 		}
-		else if (distance <= HSTbinrelativeWhatIf(fmt->histogram[1],fmt->histogram[0],newValue,&tempDistance)){
+		else if (distance <= HSTeuclidianNormWhatIf(fmt->histogram[1],fmt->histogram[0],newValue,&tempDistance)){
 			bunfastins(fmt->c[1], key, adt);
 			HSTincrement(fmt->histogram[1], newValue);
 		}else{
@@ -538,16 +538,20 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		}
 		BATprint(fmt->c[1]);
 	#endif
+	printf("Distance: %f \n",HSTeuclidianNorm(fmt->histogram[0],fmt->histogram[1]));
 	HSTprintf(fmt->histogram[0]);
 	HSTprintf(fmt->histogram[1]);
 
 	if (!balance){
+		/*
 		for(j=0;j<bins;j++)
 			BATappend(fmt->c[0],fmt->bin[j],TRUE);
+		printf(" %d  %d \n",(int)BATcount(fmt->c[0]),(int)BATcount(fmt->c[1]));
+		*/
 		return 0;
 	}
 	
-	if ((curDistance=HSTbinrelative(fmt->histogram[0],fmt->histogram[1])) > acceptableDistance){
+	if ((curDistance=HSTeuclidianNorm(fmt->histogram[0],fmt->histogram[1])) > acceptableDistance){
 		BATiter bi, bb;
 		int k=0, moveindex, sizeBig = BATcount(fmt->c[1]); 
 		ValPtr curVal, newValue;
@@ -566,7 +570,7 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			moved = FALSE;
 			for (k=0; k<sizeBig; k++){
 				VALset(newValue, fmt->c[0]->ttype, BUNtail(bb,k));
-				distance = HSTbinrelativeWhatIfMove(fmt->histogram[1],fmt->histogram[0],newValue,&curDistance);
+				distance = HSTeuclidianNormWhatIfMove(fmt->histogram[1],fmt->histogram[0],newValue,&curDistance);
 				if (distance==0){
 					BATsetcount(fmt->bin[moveindex], BUNlast(fmt->bin[moveindex])-1);
 					bunfastins(fmt->bin[HSTgetIndex(fmt->histogram[0],newValue)], key,&newValue->val.ival);
@@ -585,9 +589,11 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		}
 	}
 
+	/*
 	for(j=0;j<bins;j++)
 		BATappend(fmt->c[0],fmt->bin[j],TRUE);
-
+	*/
+	
 	printf("result state \n");
 	#ifdef _DEBUG_SLICER_
 		for (j=0;j<bins;j++){
@@ -932,13 +938,14 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[16];
 	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
-	lng t0, total=0;
+	lng t0, total=0, startTime=GDKusec();
 	int askmore = 0;
 	int vmtrim = GDK_vm_trim; 
 	/* trimming process should not be active during this process. */
 	/* on sf10 experiments it should a slowdown of a factor 2 on */
 	/* large tables. Instead rely on madvise */
 	GDK_vm_trim = 0;
+
 
 	assert(rsep);
 	assert(csep);
@@ -1131,6 +1138,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
 	/* restore system setting */
 	GDK_vm_trim = vmtrim;
+	printf("Total Load Time: %lld \n",GDKusec()-startTime);
 	return res < 0 ? BUN_NONE : cnt;
 }
 
