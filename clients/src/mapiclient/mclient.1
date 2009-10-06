@@ -46,6 +46,12 @@ Before
 .I mclient
 starts parsing command line options, it reads a
 .I .monetdb
+file.  If the environment variable
+.B DOTMONETDBFILE
+is set, it reads the file pointed to by that variable.  When unset,
+.I mclient
+searches for a
+.I .monetdb
 file in the current working directory, and if that doesn't exist, in the
 current user's home directory.  This file can contain defaults for the
 flags
@@ -57,10 +63,10 @@ file that sets the default language for
 to sql looks like this: 
 .IR "language=sql" .
 To disable reading the
-.I monetdb
+.I .monetdb
 file, set the variable
-.B MCLIENT_NO_MONETDB_FILE
-in the environment.
+.B DOTMONETDBFILE
+to the empty string in the environment.
 .SH
 OPTIONS
 .SS

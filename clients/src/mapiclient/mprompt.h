@@ -17,4 +17,5 @@
  * All Rights Reserved.
  */
 
+extern char *prompt_getlogin(void);
 extern char *simple_prompt(const char *prompt, int maxlen, int echo, const char *def);
