@@ -93,7 +93,7 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
-	if (getenv("MCLIENT_NO_MONETDB_FILE") == NULL) {
+	if (getenv("DOTMONETDBFILE") == NULL) {
 		if (stat(".monetdb", &statb) == 0) {
 			config = open_rastream(".monetdb");
 		} else if (getenv("HOME") != NULL) {
@@ -101,6 +101,16 @@ main(int argc, char **argv)
 			snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
 			if (stat(buf, &statb) == 0) {
 				config = open_rastream(buf);
+			}
+		}
+	} else {
+		char *cfile = getenv("DOTMONETDBFILE");
+		if (strcmp(cfile, "") != 0) {
+			if (stat(cfile, &statb) == 0) {
+				config = open_rastream(cfile);
+			} else {
+				fprintf(stderr, "failed to open file '%s': %s\n",
+						cfile, strerror(errno));
 			}
 		}
 	}
