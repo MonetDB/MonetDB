@@ -35,6 +35,10 @@
 #include "msqldump.h"
 #include "mprompt.h"
 
+#ifdef NATIVE_WIN32
+#define strdup _strdup
+#endif
+
 #ifndef HAVE_GETLOGIN
 #define getlogin() "win32"
 #endif
