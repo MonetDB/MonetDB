@@ -182,12 +182,15 @@ main(int argc, char **argv)
 		}
 	}
 
+	/* when config file would provide defaults */
 	if (user_set_as_flag && !passwd_set_as_flag) {
-		passwd = NULL; /* when config file would provide a password */
+		passwd = NULL;
+	} else if (passwd_set_as_flag && !user_set_as_flag) {
+		user = NULL;
 	}
+
 	if (user == NULL) {
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-		passwd = NULL; /* force password prompt */
 	}
 	if (passwd == NULL) {
 		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
