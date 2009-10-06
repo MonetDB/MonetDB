@@ -33,6 +33,29 @@
 #define fileno _fileno
 #endif
 
+#ifndef HAVE_GETLOGIN
+/* we assume this must be windows */
+static char *defaultlogin = "win32";
+#endif
+
+char *
+prompt_getlogin()
+{
+#ifdef HAVE_GETLOGIN
+# ifdef __sun__
+	/* from Solaris' getlogin manpage:
+	 *  The correct procedure for determining the login name is to call
+	 *  cuserid(3C), or to call getlogin() and if  it fails to call
+	 *  getpwuid(3C). */
+	return(cuserid(NULL));
+# else
+	return(getlogin());
+# endif
+#else
+	return(defaultlogin);
+#endif
+}
+
 char *
 simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 {

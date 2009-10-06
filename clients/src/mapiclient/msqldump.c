@@ -39,18 +39,6 @@
 #define strdup _strdup
 #endif
 
-#ifndef HAVE_GETLOGIN
-#define getlogin() "win32"
-#endif
-
-/* from Solaris' getlogin manpage:
- *  The correct procedure for determining the login name is to call
- *  cuserid(3C), or to call getlogin() and if  it fails to call
- *  getpwuid(3C). */
-#if defined(HAVE_GETLOGIN) && defined(__sun__)
-#define getlogin() cuserid(NULL)
-#endif
-
 static void
 usage(const char *prog)
 {
@@ -198,7 +186,7 @@ main(int argc, char **argv)
 		passwd = NULL; /* when config file would provide a password */
 	}
 	if (user == NULL) {
-		user = simple_prompt("user", BUFSIZ, 1, getlogin());
+		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
 		passwd = NULL; /* force password prompt */
 	}
 	if (passwd == NULL) {
