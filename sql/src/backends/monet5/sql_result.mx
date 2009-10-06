@@ -381,8 +381,17 @@ _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 	}
 	 
 	len = (*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
-	if (len == 0 || len != e-s)
+	if (len == 0 || len != e-s){
+		/* decimals can be converted to integers when *.000 */
+		if ( s[len++] == '.')
+		switch( type ){
+		case TYPE_bte: case TYPE_int: case TYPE_lng: case TYPE_sht:
+			while (s[len]=='0') len++;
+			if ( s[len] == 0)
+				return c->data;
+		}
 		return NULL;
+	}
 	return c->data;
 }
 
