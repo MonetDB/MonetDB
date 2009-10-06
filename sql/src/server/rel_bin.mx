@@ -174,9 +174,9 @@ static int
 are_equality_exps( list *exps ) 
 {
 	if (list_length(exps) == 1) {
-		sql_exp *e = exps->h->data;
+		sql_exp *e = exps->h->data, *re = e->r;
 
-		if (e->type == e_cmp && e->flag == cmp_equal)
+		if (e->type == e_cmp && e->flag == cmp_equal && re->card == CARD_ATOM)
 			return 1;
 		if (e->type == e_cmp && e->flag == cmp_or)
 			return (are_equality_exps(e->l) && 
@@ -188,9 +188,9 @@ are_equality_exps( list *exps )
 static void 
 get_exps( list *n, list *l )
 {
-	sql_exp *e = l->h->data;
+	sql_exp *e = l->h->data, *re = e->r;
 
-	if (e->type == e_cmp && e->flag == cmp_equal)
+	if (e->type == e_cmp && e->flag == cmp_equal && re->card == CARD_ATOM)
 		list_append(n, exp_dup(e));
 	if (e->type == e_cmp && e->flag == cmp_or) {
 		get_exps(n, e->l);
