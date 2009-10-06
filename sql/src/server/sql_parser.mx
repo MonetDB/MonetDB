@@ -237,9 +237,12 @@ extern int sqlparse(void *);
 #undef yyerror
 #endif
 #define yyerror(s) parse_error(YYLEX_PARAM, s)
+#define sqlerror(s) parse_error(YYLEX_PARAM, s)	/* needed for bison++ 1.21.11-3 */
 
 #define YYMALLOC malloc
 #define YYFREE free
+
+#define YY_parse_LSP_NEEDED	/* needed for bison++ 1.21.11-3 */
 
 #define FALSE 0
 #define TRUE 1
