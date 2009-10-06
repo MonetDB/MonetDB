@@ -85,6 +85,7 @@ histogram_export dbl HSTeuclidianDelta(Histogram h1, Histogram h2, dbl d, int id
 histogram_export dbl HSTcityblockDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 histogram_export dbl HSTchebyshevDelta(Histogram h1, Histogram h2, dbl d, int idx, int cnt);
 histogram_export int HSTwhichbin(Histogram h1, Histogram h2);
+histogram_export int HSTwhichbinNorm(Histogram h1, Histogram h2);
 #endif /* _HISTOGRAM_H */
 @- 
 @c
@@ -432,12 +433,30 @@ HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val,lng *whatIfDista
 }
 
 int
-HSTwhichbin(Histogram h1, Histogram h2){
-	lng totalDiff=0, avgDiff, cur, max=0, curbinDiff;
+HSTwhichbinNorm(Histogram h1, Histogram h2){
+	dbl cur, max=0;
 	int i, whichbin =-1;
 	assert(h1->bins == h2->bins);
 
+	for ( i = h1->bins; i < 2*h1->bins; i++){
+	 	cur = h1->cnt[i] - h2->cnt[i];
+		if (cur <= 0)
+			continue;	
+		if (cur > max){
+			max=cur;
+			whichbin = i;
+		}
+	}
 	
+	return whichbin-h1->bins;
+}
+
+int
+HSTwhichbin(Histogram h1, Histogram h2){
+	dbl totalDiff=0, avgDiff, cur, max=0, curbinDiff;
+	int i, whichbin =-1;
+	assert(h1->bins == h2->bins);
+
 	for ( i = 0; i < h1->bins; i++)
 		totalDiff += ABS(h1->cnt[i] - h2->cnt[i]);
 	avgDiff = totalDiff/h1->bins;

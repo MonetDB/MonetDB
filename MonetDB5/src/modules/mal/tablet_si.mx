@@ -404,11 +404,13 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	int sampleSize; 
 	dbl distance, curDistance, tempDistance;
 	oid curSmallSize=0;
+	ValPtr newValue = (ValPtr) GDKzalloc(sizeof(ValRecord));
+	ValPtr curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
 
 	/* Tunable params */
-	int optimisticStep=100000;
+	int optimisticStep=500000;
 	int bins=10;
-	dbl acceptableDistance = bins;
+	dbl acceptableDistance = 0.1;
 	oid SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
 	bit balance = FALSE; /*Try to ballance in the end if needed */
 
@@ -444,7 +446,6 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	}
 
 	for ( i = 0; i< task->next ; i++){
-		ValPtr newValue = (ValPtr) GDKzalloc(sizeof(ValRecord));
 		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
 		VALset(newValue, fmt->c[0]->ttype, adt);
 
@@ -498,11 +499,10 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		}else{
 			int smallindex, moveindex;
 			BATiter bi;
-			ValPtr curVal;
 
 			smallindex = HSTincrement(fmt->histogram[0], newValue);
 
-			moveindex = HSTwhichbin(fmt->histogram[0],fmt->histogram[1]);
+			moveindex = HSTwhichbinNorm(fmt->histogram[0],fmt->histogram[1]);
 
 			if (moveindex == smallindex || moveindex==-1){
 				#ifdef _DEBUG_SLICER_
@@ -514,7 +514,6 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 				HSTdecrement(fmt->histogram[0], newValue);
 			}else{
 				bi = bat_iterator(fmt->bin[moveindex]);
-				curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
 				VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,BATcount(fmt->bin[moveindex])-1));
 				#ifdef _DEBUG_SLICER_
 					printf("move first tuple from bin %d\n", moveindex);
@@ -556,18 +555,21 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		int k=0, moveindex, sizeBig = BATcount(fmt->c[1]); 
 		ValPtr curVal, newValue;
 		bit moved = TRUE;
+		dbl oldDistance = curDistance+1;
 
 		/* pick a tuple to move to the big one */
 		bb = bat_iterator(fmt->c[1]);
 		curVal= (ValPtr) GDKzalloc(sizeof(ValRecord));
 		newValue= (ValPtr) GDKzalloc(sizeof(ValRecord));
-		while(curDistance > acceptableDistance && moved==TRUE){
-			moveindex = HSTwhichbin(fmt->histogram[0],fmt->histogram[1]);
+		while(curDistance > acceptableDistance && moved==TRUE && oldDistance>curDistance){
+			oldDistance=curDistance;
+			moved = FALSE;
+			if ((moveindex = HSTwhichbinNorm(fmt->histogram[0],fmt->histogram[1]))==-1)
+				break;
 			bi = bat_iterator(fmt->bin[moveindex]);
 			VALset(curVal, fmt->c[0]->ttype, BUNtail(bi,BATcount(fmt->bin[moveindex])-1));
 			HSTdecrement(fmt->histogram[0],curVal);
 			HSTincrement(fmt->histogram[1],curVal);
-			moved = FALSE;
 			for (k=0; k<sizeBig; k++){
 				VALset(newValue, fmt->c[0]->ttype, BUNtail(bb,k));
 				distance = HSTeuclidianNormWhatIfMove(fmt->histogram[1],fmt->histogram[0],newValue,&curDistance);
@@ -594,7 +596,7 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		BATappend(fmt->c[0],fmt->bin[j],TRUE);
 	*/
 	
-	printf("result state \n");
+	printf("\nresult state \n");
 	#ifdef _DEBUG_SLICER_
 		for (j=0;j<bins;j++){
 			printf("bin %d\n",j);
@@ -602,6 +604,7 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		}
 		BATprint(fmt->c[1]);
 	#endif
+	printf("Distance: %f \n",HSTeuclidianNorm(fmt->histogram[0],fmt->histogram[1]));
 	HSTprintf(fmt->histogram[0]);
 	HSTprintf(fmt->histogram[1]);
 
