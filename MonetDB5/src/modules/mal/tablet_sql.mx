@@ -88,12 +88,21 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 #endif
 		adt = fmt->nildata;
 		fmt->c[0]->T->nonil = 0;
-	} else if ( quote && *s == quote ) {
-		s++;	/* find the last quote */
+	} else
+	if ( quote && *s == quote ) {
+		/* strip the quotes when present */
+		s++;	
 		for ( t = e = s; *t ; t++)
 			if ( *t == quote) e = t;
 		*e = 0;
 		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
+		/* The user might have specified a null string escape
+		  e.g. NULL as '', which should be tested */
+		if (adt == NULL && s == e && fmt->nullstr && 
+			strncasecmp(s, fmt->nullstr, fmt->null_length+1) == 0){
+			adt = fmt->nildata;
+			fmt->c[0]->T->nonil = 0;
+		}
 	} else {
 		for( e=s; *e; e++)
 			;
