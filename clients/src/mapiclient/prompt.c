@@ -39,7 +39,7 @@ static char *defaultlogin = "win32";
 #endif
 
 char *
-prompt_getlogin()
+prompt_getlogin(void)
 {
 #ifdef HAVE_GETLOGIN
 # ifdef __sun__
