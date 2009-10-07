@@ -530,6 +530,13 @@ var xrpc_lock     := pflock_get(6); # master XRPC lock, to protect above xrpc_* 
 var xrpc_hostport := my_hostname() + ":" + str(get_xrpc_port());
 var xrpc_querynr  := (lng(get_xrpc_port()) * 100000LL) - 1LL;
 
+# dummy variables to make MIL test scripts work
+# (otherwise always overridden by a declaration in the pf-generated MIL plan)
+var xrpc_mode := "";
+var xrpc_qid := "";
+var xrpc_method := "";
+var xrpc_timeout := 30000LL;
+
 # abort a 2PC transaction, keeping the record (note ws should have been destroyed already)
 PROC _ws_xrpc_abort(oid idx, str status) : void
 {
@@ -2300,7 +2307,8 @@ PROC __runtime_index(oid coll_oid,
         vxt := [xquery_hash](tmp.leftfetchjoin(attr_prp).leftfetchjoin(prp_val)).access(BAT_WRITE);
         vxt := [:rotate_xor_hash=](vxt, 13, vxp);
         vxp := tmp.leftfetchjoin(attr_own); tmp := nil;
-        tmp := vx_reduce(vxt, vxp);
+        #tmp := vx_reduce(vxt, vxp);
+        tmp := reverse(vxt).leftfetchjoin(vxp); 
         vxp := nil; vxt := nil;
 
     if (updatable or (coll_oid < DOCID_MIN)) { # hash-index, created here each time document is first used
@@ -2581,9 +2589,11 @@ PROC vx_lookup(BAT[void,bat] ws, oid cont, BAT[void,int] iter_val, BAT[oid,int] 
     var vx_hsh_nid_del := ws.fetch(VX_HSH_NID_DEL).fetch(cont);
     var map_pid        := ws.fetch(MAP_PID).fetch(cont);
     var iter_cand;
- 
+
     if (count(qns) = 0) return empty_bat; # qn not present in the document, so there cannot be any matches
-    if (cont = WS)      return iter_val.project(1@0); # give up, temporary doc container has no index
+    if (cont = WS) {
+        return cross(iter_val, reverse(ws.fetch(PRE_KIND).fetch(WS).uselect(getattr.ifthenelse(ELEMENT,TEXT))));
+    }
 
     # for each iter, create a hash number (for each tuple in qns -- usually one of course)
     var iter_hsh  := cross(iter_val, qns);
@@ -2615,13 +2625,8 @@ PROC vx_lookup(bat[void,bat] ws,
                bat[void,str] iter_val,
                str elt_uri, str elt_loc, str attr_uri, str attr_loc, bit getattr) : BAT[oid,oid]
 {
-    # if the average context XML tree is small index access should be avoided
-    var id_cont     := get_container(id_kind);
-    var avg_size := avg(mposjoin(id_item.tmark(0@0), id_cont, ws.fetch(PRE_SIZE)));
-    if (isnil(avg_size) or (avg_size < dbl(IDX_MAGICAL_CONST)) or (count(iter_val) > IDX_MAGICAL_CONST)) 
-        return id_iter.project(1@0);
- 
     # hash the strings, loop over the containers, and perform the lookups.
+    var id_cont := get_container(id_kind);
     var qns     := bat(oid,int).insert(0@0,0);
     var id_pre  := bat(oid,oid,count(iter_val));
        iter_val := [xquery_hash](iter_val);
@@ -2632,9 +2637,6 @@ PROC vx_lookup(bat[void,bat] ws,
         var key_id  := id_val.hmark(0@0);
         var key_val := id_val.tmark(0@0);
         var key_nid := vx_lookup(ws, $h, key_val, qns, getattr);
-        if ((count(id_pre) + count(key_nid)) > (10*count(iter_val))) {
-            id_pre := id_iter.project(1@0); break;
-        }
         var key_pre := ws_docfilter(ws, key_nid, $h, true).ssort(); # sort on [iter,pre]
         id_pre.insert(reverse(reverse(key_pre).leftfetchjoin(key_id)));
     }
@@ -2658,9 +2660,12 @@ PROC ws_docfilter(bat[void,bat] ws,
     # first, ensure sorted PREs
     if (swizzle) 
         swizzle := (ttype(map_pid) = oid);
+    if (cont = WS) 
+        swizzle := false;
     if (not(swizzle)) {
         any_pre := any_pre.tsort(); # no-op for read-only nsloc element index
         if (frag_root.exist(TEMP_DOC)) return any_pre; # temporary document (collections) can never have been deleted
+        if (cont = WS) return any_pre; 
     } else if (any_pre.htype() = void) {
         any_pre := any_pre.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
     } else {

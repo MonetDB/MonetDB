@@ -1111,8 +1111,11 @@ match (PFla_op_t *a, PFla_op_t *b)
                  ACTCOL (R(b), b->sem.doc_join.item)) &&
                 (ACTCOL (R(a), a->sem.doc_join.item_doc) ==
                  ACTCOL (R(b), b->sem.doc_join.item_doc)) &&
-                (a->sem.doc_join.kind ==
-                 b->sem.doc_join.kind))
+                (a->sem.doc_join.kind == b->sem.doc_join.kind) &&
+                strcmp(a->sem.doc_join.ns1, b->sem.doc_join.ns1) == 0 &&
+                strcmp(a->sem.doc_join.loc1, b->sem.doc_join.loc1) == 0 &&
+                strcmp(a->sem.doc_join.ns2, b->sem.doc_join.ns2) == 0 &&
+                strcmp(a->sem.doc_join.loc2, b->sem.doc_join.loc2) == 0)
                 return true;
 
             return false;
@@ -1847,7 +1850,11 @@ new_operator (PFla_op_t *n)
                                             CSE(R(n))->schema,
                                             n->sem.doc_join.item_res),
                                         ACTCOL (R(n),
-                                                n->sem.doc_join.item_doc));
+                                                n->sem.doc_join.item_doc),
+                                        n->sem.doc_join.ns1,
+                                        n->sem.doc_join.loc1,
+                                        n->sem.doc_join.ns2,
+                                        n->sem.doc_join.loc2);
 
         case la_doc_tbl:
             return PFla_doc_tbl (CSE(L(n)),

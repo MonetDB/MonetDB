@@ -450,7 +450,11 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return (a->sem.doc_join.kind == b->sem.doc_join.kind
                     && a->sem.doc_join.item == b->sem.doc_join.item
                     && a->sem.doc_join.item_res == b->sem.doc_join.item_res
-                    && a->sem.doc_join.item_doc == b->sem.doc_join.item_doc);
+                    && a->sem.doc_join.item_doc == b->sem.doc_join.item_doc
+                    && strcmp(a->sem.doc_join.ns1, b->sem.doc_join.ns1) == 0
+                    && strcmp(a->sem.doc_join.loc1, b->sem.doc_join.loc1) == 0
+                    && strcmp(a->sem.doc_join.ns2, b->sem.doc_join.ns2) == 0
+                    && strcmp(a->sem.doc_join.loc2, b->sem.doc_join.loc2) == 0);
             break;
 
         case la_doc_access:

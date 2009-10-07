@@ -365,6 +365,7 @@ union PFla_op_sem_t {
         PFalg_col_t     item_res; /**< column to store the resulting nodes */
         PFalg_col_t     item;     /**< column to look up the context nodes */
         PFalg_col_t     item_doc; /**< column to store the fragment info */
+        const char      *ns1, *loc1, *ns2, *loc2;
     } doc_join;
 
     /* store the column names necessary for document or collection lookup */
@@ -946,7 +947,9 @@ PFla_op_t * PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
 PFla_op_t * PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
                                  PFla_doc_join_kind_t kind,
                                  PFalg_col_t item,
-                                 PFalg_col_t item_res, PFalg_col_t item_doc);
+                                 PFalg_col_t item_res, PFalg_col_t item_doc,
+                                 const char *ns1, const char *loc1,
+                                 const char *ns2, const char *loc2);
 
 /*********** node construction functionality *************/
 

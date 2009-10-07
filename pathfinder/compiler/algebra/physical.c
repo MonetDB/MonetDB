@@ -4021,7 +4021,11 @@ PFpa_vx_lookup (const PFpa_op_t *n,
                 PFalg_col_t item,
                 PFalg_col_t item_doc,
                 PFalg_col_t item_res,
-                bool id)
+                bool id,
+                const char* ns1,
+                const char* loc1,
+                const char* ns2,
+                const char* loc2)
 {
     PFpa_op_t *ret = wire1 (pa_vx_lookup, n);
 
@@ -4030,6 +4034,10 @@ PFpa_vx_lookup (const PFpa_op_t *n,
     ret->sem.vx_lookup.item = item;
     ret->sem.vx_lookup.item_doc = item_doc;
     ret->sem.vx_lookup.item_res = item_res;
+    ret->sem.vx_lookup.ns1 = ns1;
+    ret->sem.vx_lookup.loc1 = loc1;
+    ret->sem.vx_lookup.ns2 = ns2;
+    ret->sem.vx_lookup.loc2 = loc2;
 
     /* allocate memory for the result schema */
     ret->schema.count = 2;

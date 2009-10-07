@@ -685,7 +685,11 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
                                   p->sem.doc_join.kind,
                                   ONAME(p, p->sem.doc_join.item),
                                   ONAME(p, p->sem.doc_join.item_res),
-                                  ONAME(p, p->sem.doc_join.item_doc));
+                                  ONAME(p, p->sem.doc_join.item_doc),
+                                  p->sem.doc_join.ns1,
+                                  p->sem.doc_join.loc1,
+                                  p->sem.doc_join.ns2,
+                                  p->sem.doc_join.loc2);
             break;
 
         case la_doc_tbl:

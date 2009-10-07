@@ -3124,6 +3124,10 @@ plan_vx_join (PFla_op_t *n)
                   item_doc  = n->sem.doc_join.item_doc,
                   iter,
                   iter2;
+    const char   *ns1       = n->sem.doc_join.ns1,
+                 *loc1      = n->sem.doc_join.loc1,
+                 *ns2       = n->sem.doc_join.ns2,
+                 *loc2      = n->sem.doc_join.loc2;
     unsigned int  count     = n->schema.count + 1,
                   count_in  = 2;
     PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
@@ -3166,7 +3170,8 @@ plan_vx_join (PFla_op_t *n)
                                          item,
                                          item_doc,
                                          item_res,
-                                         n->sem.doc_join.kind == la_dj_text),
+                                         n->sem.doc_join.kind == la_dj_text,
+                                         ns1, loc1, ns2, loc2),
                                count_in,
                                proj_in)),
                       count,

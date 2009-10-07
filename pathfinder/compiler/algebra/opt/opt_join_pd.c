@@ -1092,7 +1092,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                lp->sem.doc_join.kind,
                                map_col (lp->sem.doc_join.item),
                                map_col (lp->sem.doc_join.item_res),
-                               map_col (lp->sem.doc_join.item_doc)));
+                               map_col (lp->sem.doc_join.item_doc),
+                               lp->sem.doc_join.ns1,
+                               lp->sem.doc_join.loc1,
+                               lp->sem.doc_join.ns2,
+                               lp->sem.doc_join.loc2));
                     next_join = R(p);
                 }
                 break;
