@@ -414,6 +414,7 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_XRPC_HDL:    return "xrpc_hdl";
         case PF_MIL_VAR_XRPC_SEQNR:  return "xrpc_seqnr";
         case PF_MIL_VAR_XRPC_TIMEOUT:return "xrpc_timeout";
+        case PF_MIL_VAR_XRPC_COORD:  return "xrpc_coord";
         case PF_MIL_VAR_XRPC_MODE:   return "xrpc_mode";
         case PF_MIL_VAR_XRPC_MODULE: return "xrpc_module";
         case PF_MIL_VAR_XRPC_METHOD: return "xrpc_method";
@@ -1026,6 +1027,15 @@ PFmil_t *
 PFmil_texist (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_texist, a, b);
+}
+
+/**
+ * Monet find function.
+ */
+PFmil_t *
+PFmil_find (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_find, a, b);
 }
 
 /**
@@ -1673,6 +1683,42 @@ PFmil_destroy_ws (const PFmil_t *ws)
 {
     return wire1 (m_destroy_ws, ws);
 }
+
+/**
+ * Free an existing working set
+ */
+PFmil_t *
+PFmil_end_ws (const PFmil_t *ws, const PFmil_t *err)
+{
+    return wire2 (m_end_ws, ws, err);
+}
+
+/**
+ * subexpression cache lookup
+ */
+PFmil_t *
+PFmil_cache_expr (const PFmil_t *ws, const PFmil_t *id)
+{
+    return wire2 (m_cache_expr, ws, id);
+}
+/**
+ * subexpression cache lookup
+ */
+PFmil_t *
+PFmil_cache_get (const PFmil_t *ws, const PFmil_t *id)
+{
+    return wire2 (m_cache_get, ws, id);
+}
+
+/**
+ * subexpression cache store
+ */
+PFmil_t *
+PFmil_cache_put (const PFmil_t *ws, const PFmil_t *id, const PFmil_t *val)
+{
+    return wire3 (m_cache_put, ws, id, val);
+}
+
 
 /**
  * Positional multijoin with a working set

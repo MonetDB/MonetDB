@@ -2351,6 +2351,12 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_xs_boolean () } },
         .alg = PFbui_op_and_bln }
 
+    , /* #pf:query-cache (str, item *) as item* */
+      { .ns = PFns_pf, .loc = "query-cache",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string (), PFty_star (PFty_item ()) },
+            .ret_ty = PFty_star (PFty_item ()) } },
+        .alg = PFbui_pf_query_cache }
     , /* #pf:distinct-doc-order-or-atomic-sequence (item*) as item* */
       { .ns = PFns_pf, .loc = "distinct-doc-order-or-atomic-sequence",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -2551,13 +2557,6 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()) },
             .ret_ty = PFty_star (PFty_xs_anyNode ()) } },
         .alg = PFbui_pf_fragment }
-    ,  /* pf:attribute (node()*, string) as node()* */
-      { .ns = PFns_lib, .loc = "attribute",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
-                                   PFty_xs_string () },
-            .ret_ty = PFty_star( PFty_xs_anyNode ()) } },
-        .alg = PFbui_pf_attribute }
     ,  /* pf:attribute (node()*, string, string, string, string, string) as node()* */
       { .ns = PFns_lib, .loc = "attribute",
         .arity = 6, .sig_count = 1, .sigs = { {

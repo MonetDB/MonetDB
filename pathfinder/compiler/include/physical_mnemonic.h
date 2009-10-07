@@ -152,6 +152,8 @@
 
 #define error(a,b,c)         PFpa_error ((a), (b), (c))
 #define nil()                PFpa_nil ()
+#define cache(a,b,c,d)       PFpa_cache ((a),(b),(c),(d))
+#define cache_border(a)      PFpa_cache_border (a)
 #define trace(a,b)           PFpa_trace ((a),(b))
 #define trace_items(a,b,c,d) PFpa_trace_items ((a),(b),(c),(d))
 #define trace_msg(a,b,c,d)   PFpa_trace_msg ((a), (b), (c), (d))
@@ -176,7 +178,7 @@
 #define findnodes(a,b,c,d,e,f) PFpa_findnodes ((a),(b),(c),(d),(e),(f))
 
 /* pf:text/attribute operator */
-#define vx_lookup(a,b,c,d,e,f) PFpa_vx_lookup ((a),(b),(c),(d),(e),(f))
+#define vx_lookup(a,b,c,d,e,f,h,i,j,k) PFpa_vx_lookup ((a),(b),(c),(d),(e),(f),(h),(i),(j),(k))
 
 
 /* vim:set shiftwidth=4 expandtab: */

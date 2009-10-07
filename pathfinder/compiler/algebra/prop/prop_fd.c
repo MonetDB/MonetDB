@@ -157,6 +157,7 @@ infer_functional_dependencies (PFla_op_t *n)
         case la_empty_frag:
         case la_error:
         case la_nil:
+        case la_cache:
         case la_trace:
         case la_rec_fix:
         case la_rec_param:

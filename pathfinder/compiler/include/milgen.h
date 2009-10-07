@@ -40,7 +40,7 @@
 #include "mil.h"
 
 /** Generate MIL tree from algebra expression tree */
-PFmil_t *PFmilgen (PFpa_op_t *, char *genType);
+PFmil_t *PFmilgen (PFpa_op_t *, char *genType, char* qid, char* mode, long long timeout);
 
 #endif  /* MILGEN_H */
 

@@ -1052,6 +1052,16 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
             prop_infer_reqvals (R(n), rmap);
         }   return; /* only infer once */
 
+        case la_cache:
+        {
+            PFarray_t *rmap = PFarray (sizeof (req_val_t), 2);
+            adjust_order_ (rmap, n->sem.cache.pos);
+            adjust_value_ (rmap, n->sem.cache.item);
+
+            prop_infer_reqvals_empty (L(n)); /* side effects */
+            prop_infer_reqvals (R(n), rmap);
+        }   return; /* only infer once */
+
         case la_trace:
             prop_infer_reqvals_empty (L(n)); /* side effects */
             prop_infer_reqvals_empty (R(n)); /* traces */

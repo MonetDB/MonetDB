@@ -265,8 +265,9 @@ PFla_serialize_rel (const PFla_op_t *side, const PFla_op_t *alg,
  * or below a `rec_fix' operator if the side effects appear in the recursion
  * body.
  * The `side_effects' operator contains a (possibly empty) list of operations
- * that may trigger side effects (operators `error' and `trace') in its left
- * child and the fragment or recursion parameters in the right child.
+ * that may trigger side effects (operators `error', `cache' and `trace')
+ * in its left child and the fragment or recursion parameters in the right
+ * child.
  */
 PFla_op_t *
 PFla_side_effects (const PFla_op_t *side_effects, const PFla_op_t *params)
@@ -275,6 +276,7 @@ PFla_side_effects (const PFla_op_t *side_effects, const PFla_op_t *params)
 
     assert (side_effects);
     assert (side_effects->kind == la_error ||
+            side_effects->kind == la_cache ||
             side_effects->kind == la_trace ||
             side_effects->kind == la_nil);
     assert (params);
@@ -2976,7 +2978,8 @@ PFla_op_t *
 PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
                      PFla_doc_join_kind_t kind,
                      PFalg_col_t item,
-                     PFalg_col_t item_res, PFalg_col_t item_doc)
+                     PFalg_col_t item_res, PFalg_col_t item_doc,
+                     const char* ns1, const char* loc1, const char* ns2, const char* loc2)
 {
     PFla_op_t    *ret;
     unsigned int  i;
@@ -2991,6 +2994,10 @@ PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
     ret->sem.doc_join.item     = item;
     ret->sem.doc_join.item_res = item_res;
     ret->sem.doc_join.item_doc = item_doc;
+    ret->sem.doc_join.ns1      = ns1;
+    ret->sem.doc_join.loc1     = loc1;
+    ret->sem.doc_join.ns2      = ns2;
+    ret->sem.doc_join.loc2     = loc2;
 
 #ifndef NDEBUG
     if (PFprop_ocol (n, item_res))
@@ -3610,6 +3617,40 @@ PFla_error (const PFla_op_t *n1, const PFla_op_t *n2, PFalg_col_t col)
     }
 
     ret->sem.err.col = col;
+
+    return ret;
+}
+
+
+/**
+ * Constructor for a caching operator.
+ *
+ * This operator puts a query to the query cache (with the key in @a id).
+ */
+PFla_op_t *
+PFla_cache (const PFla_op_t *n1, const PFla_op_t *n2, char *id,
+            PFalg_col_t pos, PFalg_col_t item)
+{
+    PFla_op_t   *ret;
+    unsigned int i;
+
+    assert(n1);
+
+    ret = la_op_wire2 (la_cache, n1, n2);
+
+    /* allocate memory for the result schema; it's the same schema as n's */
+    ret->schema.count = n2->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from argument 'n' */
+    for (i = 0; i < n2->schema.count; i++) {
+        ret->schema.items[i] = n2->schema.items[i];
+    }
+
+    ret->sem.cache.id   = id;
+    ret->sem.cache.pos  = pos;
+    ret->sem.cache.item = item;
 
     return ret;
 }
@@ -4360,7 +4401,11 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                         n->sem.doc_join.kind,
                                         n->sem.doc_join.item,
                                         n->sem.doc_join.item_res,
-                                        n->sem.doc_join.item_doc);
+                                        n->sem.doc_join.item_doc,
+                                        n->sem.doc_join.ns1,
+                                        n->sem.doc_join.loc1,
+                                        n->sem.doc_join.ns2,
+                                        n->sem.doc_join.loc2);
 
         case la_doc_tbl:
             return PFla_doc_tbl (left,
@@ -4451,6 +4496,13 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_nil:
             return PFla_nil ();
+
+        case la_cache:
+            return PFla_cache (left,
+                               right,
+                               n->sem.cache.id,
+                               n->sem.cache.pos,
+                               n->sem.cache.item);
 
         case la_trace:
             return PFla_trace (left, right);

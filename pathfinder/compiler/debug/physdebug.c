@@ -115,6 +115,8 @@ static char *a_id[]  = {
     , [pa_merge_adjacent]  = "#pf:merge-adjacent-text-nodes"
     , [pa_error]           = "!ERROR"
     , [pa_nil]             = "nil"
+    , [pa_cache]           = "cache"
+    , [pa_cache_border]    = "cache border"
     , [pa_trace]           = "trace"
     , [pa_trace_items]     = "trace_items"
     , [pa_trace_msg]       = "trace_msg"
@@ -259,6 +261,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         , [pa_merge_adjacent]  = "\"#00D000\""
         , [pa_error]           = "\"#C0C0C0\""
         , [pa_nil]             = "\"#FFFFFF\""
+        , [pa_cache]           = "\"#FF5500\""
+        , [pa_cache_border]    = "\"#FF5500\""
         , [pa_trace]           = "\"#FF5500\""
         , [pa_trace_items]     = "\"#FF5500\""
         , [pa_trace_msg]       = "\"#FF5500\""
@@ -607,6 +611,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             PFcol_str (n->sem.err.col));
             break;
 
+        case pa_cache:
+            PFarray_printf (dot, "%s %s (%s)", a_id[n->kind],
+                            n->sem.cache.id,
+                            PFcol_str (n->sem.cache.item));
+            break;
+
         case pa_trace_map:
             PFarray_printf (dot,
                             "%s (%s, %s)",
@@ -660,6 +670,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_rec_arg:
         case pa_rec_base:
         case pa_rec_border:
+        case pa_cache_border:
         case pa_trace:
         case pa_string_join:
         case pa_findnodes:

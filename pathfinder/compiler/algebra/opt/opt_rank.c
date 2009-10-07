@@ -1184,7 +1184,11 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                                            p->sem.doc_join.kind,
                                            p->sem.doc_join.item,
                                            p->sem.doc_join.item_res,
-                                           p->sem.doc_join.item_doc),
+                                           p->sem.doc_join.item_doc,
+                                           p->sem.doc_join.ns1,
+                                           p->sem.doc_join.loc1,
+                                           p->sem.doc_join.ns2,
+                                           p->sem.doc_join.loc2),
                            R(p)->sem.rank_opt.res,
                            R(p)->sem.rank_opt.sortby));
                 modified = true;
@@ -1254,6 +1258,7 @@ opt_rank (PFla_op_t *p, unsigned char mode)
 
         case la_error: /* don't rewrite runtime errors */
         case la_nil:
+        case la_cache: /* don't rewrite side effects */
         case la_trace: /* don't rewrite side effects */
             break;
 

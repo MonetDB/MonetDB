@@ -842,6 +842,7 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
         case la_empty_frag:
         case la_error:
         case la_nil:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:

@@ -139,8 +139,8 @@
         PFla_guide_step_join ((a),(b),(c),(d),(e),(f),(g),(h))
 
 /* doc index join */
-#define doc_index_join(a,b,c,d,e,f) \
-        PFla_doc_index_join ((a),(b),(c),(d),(e),(f))
+#define doc_index_join(a,b,c,d,e,f,g,h,i,j) \
+        PFla_doc_index_join ((a),(b),(c),(d),(e),(f),(g),(h),(i),(j))
 
 /* document table */
 #define doc_tbl(a,b,c,d)    PFla_doc_tbl((a),(b),(c),(d))
@@ -201,6 +201,9 @@
 
 /* duplicates a node with its given children */
 #define duplicate(n, l, r)  PFla_op_duplicate ((n), (l), (r))
+
+/* Constructor for cache operator */
+#define cache(a,b,c,d,e) PFla_cache ((a),(b),(c),(d),(e))
 
 /* Constructor for debug operator */
 #define trace(a,b)        PFla_trace ((a),(b))

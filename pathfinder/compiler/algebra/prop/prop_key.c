@@ -747,6 +747,7 @@ infer_key (PFla_op_t *n, bool with_guide_info, bool with_fd_info)
             break;
 
         case la_error:
+        case la_cache:
             copy (n->prop->keys, R(n)->prop->keys);
             break;
 

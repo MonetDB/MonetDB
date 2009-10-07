@@ -451,16 +451,14 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     /* Heuristic path-reversal rewrites to start evaluation
        with indexable expressions. */
-    if (status->output_format == PFoutput_format_milprint_summer) {
-        /* NOTE: algebra MIL/MAL generation could/should also use it.. */
-        tm = PFtimer_start ();
+    tm = PFtimer_start ();
+    if (status->output_format == PFoutput_format_mil ||
+        status->output_format == PFoutput_format_milprint_summer) {
         proot = PFheuristic_index (proot);
         tm = PFtimer_stop (tm);
         if (status->timing)
             PFlog ("path heuristics:\t\t\t %s", PFtimer_str (tm));
-
     }
-
     STOP_POINT(3);
 
     /* Initialize data structures in the Namespace department */
@@ -786,7 +784,7 @@ AFTER_CORE2ALG:
 
     /* Map physical algebra to MIL */
     tm = PFtimer_start ();
-    mroot = PFmilgen (paroot, status->genType);
+    mroot = PFmilgen (paroot, status->genType, NULL, NULL, 30000);
     tm = PFtimer_stop (tm);
 
     if (status->timing)
@@ -948,7 +946,7 @@ AFTER_CORE2ALG:
 char*
 PFcompile_MonetDB (char *xquery, char* url,
                    char** prologue, char** query, char** epilogue,
-                   int options, char *genType)
+                   int options, char *genType, char *qid, char *mode, long long timeout)
 {
         PFstate_t PFstate;
         PFpnode_t  *proot  = NULL;
@@ -1022,8 +1020,9 @@ PFcompile_MonetDB (char *xquery, char* url,
         module_base = PFparse_modules (proot, &PFquery,
                                        PFstate.standoff_axis_steps);
         proot = PFnormalize_abssyn (proot);
-        if (PFstate.output_format == PFoutput_format_milprint_summer) {
-            /* algebra MIL/MAL generation could/should also use it.. */
+
+        if (PFstate.output_format == PFoutput_format_mil ||
+            PFstate.output_format == PFoutput_format_milprint_summer) {
             proot = PFheuristic_index (proot);
         }
         PFns_init ();
@@ -1068,7 +1067,7 @@ PFcompile_MonetDB (char *xquery, char* url,
         paroot = PFpa_intro_borders (paroot);
 
         /* generate internal MIL representation */
-        mroot = PFmilgen (paroot, genType);
+        mroot = PFmilgen (paroot, genType, qid, mode, timeout);
 
         if (!strncmp ("timing", genType, 6))
             /* make sure the timing variables are retained */

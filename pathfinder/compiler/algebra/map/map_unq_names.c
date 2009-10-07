@@ -603,7 +603,11 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                                   p->sem.doc_join.kind,
                                   UNAME(p, p->sem.doc_join.item),
                                   UNAME(p, p->sem.doc_join.item_res),
-                                  UNAME(p, p->sem.doc_join.item_doc));
+                                  UNAME(p, p->sem.doc_join.item_doc),
+                                  p->sem.doc_join.ns1,
+                                  p->sem.doc_join.loc1,
+                                  p->sem.doc_join.ns2,
+                                  p->sem.doc_join.loc2);
             break;
 
         case la_doc_tbl:
@@ -711,6 +715,13 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_error:
             res = PFla_error (U(L(p)), U(R(p)),
                               UNAME(R(p), p->sem.err.col));
+            break;
+
+        case la_cache:
+            res = PFla_cache (U(L(p)), U(R(p)),
+                              p->sem.cache.id,
+                              UNAME(R(p), p->sem.cache.pos),
+                              UNAME(R(p), p->sem.cache.item));
             break;
 
         case la_trace:

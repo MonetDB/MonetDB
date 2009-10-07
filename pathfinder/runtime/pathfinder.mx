@@ -154,7 +154,7 @@ if (monet_environment.exist("standoff"))
 # - rid_size           BAT[void,int]               RID / #descendants,
 # - rid_level          BAT[void,chr]               RID / distance from root,
 # - rid_prop           BAT[void,oid]               RID / property-ID,
-# - rid_kind           BAT[void,chr]               RID / node kind (determins prop_* column)
+# - rid_kind           BAT[void,chr]               RID / node kind (determines prop_* column)
 # - rid_nid            BAT[void,oid]               RID / stable NID 
 # - frag_root          BAT[oid,oid]        document-ID / root NID
 #                              
@@ -274,6 +274,12 @@ if (monet_environment.exist("standoff"))
 # re-checked in ATTR_OWN to filter out deleted attributes.
 #
 # ATTR_OWN_SHARED is stored as a runtime index structure in RT_ATTR_OWN.
+#
+# cache bats used for caching node sequences:
+# - CACHE_ID[void,str]    name
+# - CACHE_VAL[void,bat]   bat-of-bats (iter,pos,..)
+# - CACHE_LRU[void,lng]   last time used (usec)
+# - CACHE_SIZE[void,lng]  size in bytes of VAL
 
 @- ws definition
 
@@ -345,28 +351,33 @@ concurrent updates.
 @:ws_@1(CONT_LOCKED,       43, void, lock,void, void, oid_nil)@
 @:ws_@1(XRPC_PARTICIPANTS, 44, void, str, void, void, oid_nil)@
 
-@:ws_@1(_MAP_PID,          45, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_SIZE,         46, void, bat, void,  int, PRE_BASE)@
-@:ws_@1(_RID_LEVEL,        47, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_PROP,         48, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_KIND,         49, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_NID,          50, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_NID_RID,          51, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_FRAG_ROOT,        52, void, bat,  oid,  oid, oid_nil)@
-@:ws_@1(_QN_HISTOGRAM,     53, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX_URI_LOC,54, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI_LOC,       55, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX,        56, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI,           57, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_LOC,           58, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TEXT,        59, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_COM,         60, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_INS,         61, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TGT,         62, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_VAL,         63, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_ATTR_OWN,         64, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_QN,          65, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_PROP,        66, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(CACHE_ID,          45, void, str, void, void, oid_nil)@
+@:ws_@1(CACHE_VAL,         46, void, bat, void, void, oid_nil)@
+@:ws_@1(CACHE_LRU,         47, void, lng, void, void, oid_nil)@
+@:ws_@1(CACHE_SIZE,        48, void, lng, void, void, oid_nil)@
+
+@:ws_@1(_MAP_PID,          49, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_SIZE,         50, void, bat, void,  int, PRE_BASE)@
+@:ws_@1(_RID_LEVEL,        51, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_PROP,         52, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_KIND,         53, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_NID,          54, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_NID_RID,          55, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_FRAG_ROOT,        56, void, bat,  oid,  oid, oid_nil)@
+@:ws_@1(_QN_HISTOGRAM,     57, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX_URI_LOC,58, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI_LOC,       59, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX,        60, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI,           61, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_LOC,           62, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TEXT,        63, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_COM,         64, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_INS,         65, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TGT,         66, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_VAL,         67, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_ATTR_OWN,         68, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_QN,          69, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_PROP,        70, void, bat, void,  oid, PRE_BASE)@
 @-
 The bottom segment are the master copies of the top segment.
 The middle segment is private to the query.
@@ -376,7 +387,7 @@ BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 BEWARE: the logger version number below needs to be incremented whenever the working set schema is changed.
 
 @= ws_decl
-@:ws_@1_decl(WS_SIZE, 67)@
+@:ws_@1_decl(WS_SIZE, 71)@
 @:ws_@1_decl(QNAME,    2)@
 @:ws_@1_decl(BOOL,     3)@
 @:ws_@1_decl(INT,      4)@
@@ -519,6 +530,13 @@ var xrpc_lock     := pflock_get(6); # master XRPC lock, to protect above xrpc_* 
 var xrpc_hostport := my_hostname() + ":" + str(get_xrpc_port());
 var xrpc_querynr  := (lng(get_xrpc_port()) * 100000LL) - 1LL;
 
+# dummy variables to make MIL test scripts work
+# (otherwise always overridden by a declaration in the pf-generated MIL plan)
+var xrpc_mode := "";
+var xrpc_qid := "";
+var xrpc_method := "";
+var xrpc_timeout := 30000LL;
+
 # abort a 2PC transaction, keeping the record (note ws should have been destroyed already)
 PROC _ws_xrpc_abort(oid idx, str status) : void
 {
@@ -528,6 +546,7 @@ PROC _ws_xrpc_abort(oid idx, str status) : void
     xrpc_statuses.inplace(idx, status);
     xrpc_wsbats.inplace(idx, xrpc_statuses); # use xrpc_statuses as a dummy bat, replacing the ws (that gets freed)
     xrpc_locks.inplace(idx, lock_nil);
+    if (xrpc_qids.find(idx).search(":") < 0) xrpc_qids.inplace(idx, "");
     lock_destroy(wslock);
 }
 
@@ -537,10 +556,10 @@ PROC _ws_xrpc_end(str xrpc_qid, str errmsg) : void
     var idx := reverse(xrpc_qids).find(xrpc_qid);
     if (isnil(errmsg)) { 
         xrpc_statuses.inplace(idx, "wait");
-        lock_unset(xrpc_locks.find(idx));
     } else {
-        _ws_xrpc_abort(idx, "abort");
+        xrpc_statuses.inplace(idx, "abort");
     }
+    lock_unset(xrpc_locks.find(idx));
 }
 
 # background check to time-out waiting 2PC transactions, and prune them fully after an hour
@@ -1442,6 +1461,43 @@ PROC ws_new(oid id,
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
+PROC ws_cache_expr(bat ws, str id) : bit {
+    return not(ws.fetch(CACHE_ID).texist(id));
+}
+
+PROC ws_cache_get(bat ws, str id) : bit {
+    var idx := reverse(ws.fetch(CACHE_ID)).find(id);
+    inplace(ws.fetch(CACHE_LRU), idx, usec(), true);
+    return ws.fetch(CACHE_VAL).fetch(idx);
+}
+
+PROC ws_cache_put(bat ws, str id, bat val) : void {
+    ws.fetch(CACHE_ID).append(id);
+    ws.fetch(CACHE_VAL).append(val);
+    ws.fetch(CACHE_SIZE).append(sum([batsize](val)));
+    ws.fetch(CACHE_LRU).append(0LL);
+#print(ws.fetch(CACHE_ID), ws.fetch(CACHE_VAL), ws.fetch(CACHE_SIZE), ws.fetch(CACHE_LRU));
+}
+
+PROC ws_cache_end(bat ws) : void {
+    if (count(ws.fetch(CACHE_SIZE)) = 0) return; 
+    var totsize, now := usec(), prune := false;
+    while ((totsize := sum(ws.fetch(CACHE_SIZE))) > xquery_cache_lim) {
+        var lru := min(ws.fetch(CACHE_LRU));
+        var idx := reverse(ws.fetch(CACHE_LRU)).find(lru);
+        ws.fetch(CACHE_LRU).inplace(idx,LNG_MAX, true);
+        ws.fetch(CACHE_SIZE).inplace(idx,0LL, true);
+        prune := true;
+    }
+    if (prune) {
+        var pivot := ws.fetch(CACHE_SIZE).uselect(1LL,lng_nil).hmark(0@0);
+        ws.inplace(oid(CACHE_ID), pivot.leftfetchjoin(ws.fetch(CACHE_ID)).access(BAT_APPEND), true);
+        ws.inplace(oid(CACHE_VAL), pivot.leftfetchjoin(ws.fetch(CACHE_VAL)).access(BAT_APPEND), true);
+        ws.inplace(oid(CACHE_LRU), pivot.leftfetchjoin(ws.fetch(CACHE_LRU)).access(BAT_APPEND), true);
+        ws.inplace(oid(CACHE_SIZE), pivot.leftfetchjoin(ws.fetch(CACHE_SIZE)).access(BAT_APPEND), true);
+    }
+#print(ws.fetch(CACHE_ID), ws.fetch(CACHE_VAL), ws.fetch(CACHE_SIZE), ws.fetch(CACHE_LRU));
+}
 
 
 # check the working-set cache for multi-request XRPC queries (repeatable reads)
@@ -1451,7 +1507,6 @@ PROC ws_new(oid id,
 # <0 = create new ws and cache it at idx
 PROC _ws_xrpcget() : int
 {
-return 0;
     var xrpc := 0;
     xrpc_seqnr := (xrpc_querynr :+= 1LL);
     xrpc_coord := false;
@@ -1473,21 +1528,31 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
     var ws;
     if (xrpc > 0) {
         ws := xrpc_wsbats.find(idx);
-        xrpc_statuses.inplace(idx,"exec");
+        if (xrpc_mode.search("cache") >= 0) { # extend lifetime of session
+            var timeout := 0LL; 
+            if (bit(xrpc_timeout)) timeout := usec() + *(1000LL, xrpc_timeout);
+            xrpc_timeouts.inplace(idx, timeout);
+        }
+        if (xrpc_mode != "use-cache-repeatable") {
+            xrpc_statuses.inplace(idx, "exec");
+            return ws;
+        }
+        ws := [access]([copy](ws),BAT_WRITE); # use a copy, no locking required
     } else {
-        var id := and(lng(newoid(1)), 2147483647LL);
         ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
-        wsid := <<(id, 32) + (lng(update) << 30) + lng(ws);
-        ws.access(BAT_READ).rename(str(wsid));
         if (xrpc < 0) {
-            var wslock := lock_create();
+            var wslock := lock_create(); 
             xrpc_qids.append(xrpc_qid);
             xrpc_timeouts.append(usec() + *(1000LL, xrpc_timeout));
             xrpc_wsbats.append(ws);
             xrpc_locks.append(wslock);
             xrpc_statuses.append("exec");
+            xrpc_mode := "cache-repeatable";
         }
     }
+    var id := and(lng(newoid(1)), 2147483647LL);
+    var wsid := <<(id, 32) + (lng(update) << 30) + lng(ws);
+    ws.access(BAT_READ).rename(str(wsid));
     return ws;
 }
 
@@ -1495,9 +1560,10 @@ PROC ws_end(BAT[void,bat] ws, str err) : int
 {
     ws_log_wsid := ws_id(ws);
     if (not(isnil(err))) ws_log(ws, err);
-    if (xrpc_qid = "") {
+    if ((xrpc_qid = "") or (xrpc_mode = "use-cache-repeatable")) {
         ws_destroy(ws);
     } else {
+        ws_cache_end(ws);
         lock_set(xrpc_lock);
         CATCH(_ws_xrpc_end(xrpc_qid, err));
         lock_unset(xrpc_lock);
@@ -1509,14 +1575,22 @@ PROC ws_end(BAT[void,bat] ws, str err) : int
 
 PROC ws_create(int update) : BAT[void,bat]
 {
+    if (bit(and(update,2)) and (xrpc_mode.search("cache") >= 0)) {
+        ERROR("ws_create: update queries should not be done in a cached session");
+    }
+
     # NOTE: use pre-query MIL variables xrpc_qid/xrpc_timeout to possibly re-use an existing ws
     lock_set(xrpc_lock);
-    var ws, wsid, xrpc, idx, err := CATCH(ws := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update), wsid := ws_id(ws));
+    var wslock := lock_nil, ws, xrpc, idx, err := CATCH(ws := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update));
+    if (xrpc != 0) wslock := xrpc_locks.find(idx);
     lock_unset(xrpc_lock);
     if (not(isnil(err))) ERROR(err);
 
-    # each xrpc request must lock its ws
-    if (xrpc != 0) lock_set(xrpc_locks.find(idx));
+    # each xrpc request must lock its ws; read-only use directly unlocks again
+    if (not(isnil(wslock))) {
+        lock_set(wslock);
+        if (xrpc_mode = "use-cache-repeatable") lock_unset(wslock);
+    }
     if (xrpc > 0) return ws;
 
     # only instantiates the default views of the ws-bats (not the master bats)
@@ -1552,6 +1626,7 @@ PROC ws_create(int update) : BAT[void,bat]
     mirror(ws_rid).leftfetchjoin(ws).[insert](0@0, [fetch](ws_rid.leftfetchjoin(ws), 0));
     mirror(ws_mem).leftfetchjoin(ws).[insert](0@0, [fetch](ws_mem.leftfetchjoin(ws), 0));
 
+    var wsid := ws_id(ws);
     pflock_begin(wsid);
 
     if (bit(and(update,2))) {
@@ -2213,7 +2288,8 @@ PROC __runtime_index(oid coll_oid,
     var vxt := vxm.leftfetchjoin(prp); vxm := nil;
         vxt := vxt.leftfetchjoin(prp_txt);
         vxt := [xquery_hash](vxt);
-        vxm := vx_reduce(vxt, vxp);
+        #vxm := vx_reduce(vxt, vxp); for explicit usage, a full index is more useful
+        vxm := reverse(vxt).leftfetchjoin(vxp); 
         vxp := nil; vxt := nil;
 
     # add the newly shredded attributes. The new attributes are >att and have an attr_own > pre
@@ -2231,7 +2307,8 @@ PROC __runtime_index(oid coll_oid,
         vxt := [xquery_hash](tmp.leftfetchjoin(attr_prp).leftfetchjoin(prp_val)).access(BAT_WRITE);
         vxt := [:rotate_xor_hash=](vxt, 13, vxp);
         vxp := tmp.leftfetchjoin(attr_own); tmp := nil;
-        tmp := vx_reduce(vxt, vxp);
+        #tmp := vx_reduce(vxt, vxp);
+        tmp := reverse(vxt).leftfetchjoin(vxp); 
         vxp := nil; vxt := nil;
 
     if (updatable or (coll_oid < DOCID_MIN)) { # hash-index, created here each time document is first used
@@ -2512,9 +2589,11 @@ PROC vx_lookup(BAT[void,bat] ws, oid cont, BAT[void,int] iter_val, BAT[oid,int] 
     var vx_hsh_nid_del := ws.fetch(VX_HSH_NID_DEL).fetch(cont);
     var map_pid        := ws.fetch(MAP_PID).fetch(cont);
     var iter_cand;
- 
+
     if (count(qns) = 0) return empty_bat; # qn not present in the document, so there cannot be any matches
-    if (cont = WS)      return iter_val.project(1@0); # give up, temporary doc container has no index
+    if (cont = WS) {
+        return cross(iter_val, reverse(ws.fetch(PRE_KIND).fetch(WS).uselect(getattr.ifthenelse(ELEMENT,TEXT))));
+    }
 
     # for each iter, create a hash number (for each tuple in qns -- usually one of course)
     var iter_hsh  := cross(iter_val, qns);
@@ -2546,13 +2625,8 @@ PROC vx_lookup(bat[void,bat] ws,
                bat[void,str] iter_val,
                str elt_uri, str elt_loc, str attr_uri, str attr_loc, bit getattr) : BAT[oid,oid]
 {
-    # if the average context XML tree is small index access should be avoided
-    var id_cont     := get_container(id_kind);
-    var avg_size := avg(mposjoin(id_item.tmark(0@0), id_cont, ws.fetch(PRE_SIZE)));
-    if (isnil(avg_size) or (avg_size < dbl(IDX_MAGICAL_CONST)) or (count(iter_val) > IDX_MAGICAL_CONST)) 
-        return id_iter.project(1@0);
- 
     # hash the strings, loop over the containers, and perform the lookups.
+    var id_cont := get_container(id_kind);
     var qns     := bat(oid,int).insert(0@0,0);
     var id_pre  := bat(oid,oid,count(iter_val));
        iter_val := [xquery_hash](iter_val);
@@ -2563,9 +2637,6 @@ PROC vx_lookup(bat[void,bat] ws,
         var key_id  := id_val.hmark(0@0);
         var key_val := id_val.tmark(0@0);
         var key_nid := vx_lookup(ws, $h, key_val, qns, getattr);
-        if ((count(id_pre) + count(key_nid)) > (10*count(iter_val))) {
-            id_pre := id_iter.project(1@0); break;
-        }
         var key_pre := ws_docfilter(ws, key_nid, $h, true).ssort(); # sort on [iter,pre]
         id_pre.insert(reverse(reverse(key_pre).leftfetchjoin(key_id)));
     }
@@ -2589,9 +2660,12 @@ PROC ws_docfilter(bat[void,bat] ws,
     # first, ensure sorted PREs
     if (swizzle) 
         swizzle := (ttype(map_pid) = oid);
+    if (cont = WS) 
+        swizzle := false;
     if (not(swizzle)) {
         any_pre := any_pre.tsort(); # no-op for read-only nsloc element index
         if (frag_root.exist(TEMP_DOC)) return any_pre; # temporary document (collections) can never have been deleted
+        if (cont = WS) return any_pre; 
     } else if (any_pre.htype() = void) {
         any_pre := any_pre.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
     } else {
@@ -4188,7 +4262,8 @@ if (isnil(CATCH(bat("doc_name").count()))) {
   uri_lifetime.insert(reverse(b.[string](0,[-](i,1))).leftfetchjoin([lng](b.[string]([+](i,1))))); }
 
 # start the query cache 
-xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
+const xquery_cache_lim := lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL;
+xquery_start_query_cache(xquery_cache_lim);
 
 cleantmpdir(msec() / 1000LL);              # delete tmp files in DBFARM/DBNAME/tmp
 collection_cleanup(_collection_cleanup()); # silently clean up the repository
@@ -4665,8 +4740,9 @@ xquery_compile_exec(xquery_client *ctx,
             PFerrbuf = ctx->errbuf;
             PFerrbuf[0] = 0;
             err = PFcompile_MonetDB(xquery, url, prologue, &del, epilogue, options,
-                                    *(ctx->genType) /* Using the content of the MIL variable genType
-                                                       defined in the prologue is yet another hack
+                                    *(ctx->genType), *(ctx->xrpc_qid), *(ctx->xrpc_mode), *(ctx->xrpc_timeout)
+                                                    /* Using the content of the MIL variables genType and 
+                                                       xrpc_* defined in the prologue is yet another hack
                                                        to make the serialization information visible
                                                        to the algebra backend that does not use prologue
                                                        and epilogue structures. */);
@@ -5860,7 +5936,7 @@ xquery_prepare(xquery_client *ctx,
     int nsbuf = 0, loaded_modules = 0, len;
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *q, *p = query;
     char val[1024], url1[1024], url2[1024];
-    char *err = NULL;
+    char *err = NULL, *mode = NULL, *sid = NULL;
 
     if (ctx->mode&XQ_DEBUG) {
         /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
@@ -5889,7 +5965,7 @@ xquery_prepare(xquery_client *ctx,
             }
         }
     }
-   
+
     /* parse one ore more import module statements */  
     while(*p && err == NULL) {
         p = xquery_parse_space(p);
@@ -5948,6 +6024,41 @@ xquery_prepare(xquery_client *ctx,
             }
         }
     }
+
+    /* detect pf:session pragma enclosing the entire query */
+    if (p[0] == '(' && p[1] == '#') {
+        str off, lim;
+        p = xquery_parse_space(p+2);
+        if (strncmp(p, "pf:session", 10) == 0) {
+            p += 10;
+            mode = "use-cache-repeatable";
+            if (strncmp(p, "-use", 4) == 0) {
+                p += 4; 
+            } else {
+                mode += 4;
+            }
+            off = xquery_parse_space(p);
+            p = lim = xquery_parse_ident(off);
+            if (*lim == ':') {
+                *(ctx->xrpc_timeout) = strtol(lim+1,&p,10);
+            } 
+            p = xquery_parse_space(p);
+            if (p[0] == '#' && p[1] == ')') {
+                p = xquery_parse_space(p+2);
+                if (p[0] == '{') {
+                    str q, end = NULL;
+                    for(q=p=xquery_parse_space(p+1); *q; q++) if (*q == '}') end = q;
+                    if (end) {
+                        /* cut off the enclosing pragma, record the session id */
+                        sid = off; query = p; 
+                        *lim = *end = 0;
+                    }
+                }
+            }
+        }
+    }
+    @:setvar(xrpc_qid, sid?sid:"")@
+    @:setvar(xrpc_mode, (sid && mode)?mode:"none")@
 
     if (loaded_modules == 0) {
         err = xquery_too_complex; /* must at least load one module to be able to just execute a function */
@@ -6089,7 +6200,7 @@ xquery_prepare(xquery_client *ctx,
     }
 }
 @= setvar
-    if (@2 && strcmp(*(ctx->@1), @2)) { 
+    if ((@2) != NULL && strcmp(*(ctx->@1), @2)) { 
         char* newval = GDKstrdup(@2);
         if (newval == NULL) return "setvar(@1): malloc failure";
         GDKfree(*(ctx->@1));

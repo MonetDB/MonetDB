@@ -365,6 +365,7 @@ enum PFalg_fun_call_t {
     , alg_fun_call_xrpc                    /**< XRPC function call         */
     , alg_fun_call_xrpc_helpers            /**< func call for XRPC helpers */
     , alg_fun_call_tijah                   /**< Tijah function call        */
+    , alg_fun_call_cache                   /**< caching function call      */
 };
 typedef enum PFalg_fun_call_t PFalg_fun_call_t;
 

@@ -891,6 +891,19 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             prop_infer_req_node_vals (R(n), NULL); /* trace */
             return; /* only infer once */
 
+        case la_cache:
+            if (type_of (n, n->sem.cache.pos) & aat_node)
+                add_order_map (n, n->sem.cache.pos);
+            if (type_of (n, n->sem.cache.item) & aat_node)
+                add_map_ (n, n->sem.cache.item,
+                          true, true, true,
+                          true, true, true,
+                          true, true, true);
+
+            prop_infer_req_node_vals (L(n), NULL); /* side effects */
+            prop_infer_req_node_vals (R(n), MAP_LIST(n));
+            return; /* only infer once */
+
         case la_trace_items:
             assert ((type_of (n, n->sem.iter_pos_item.iter) & aat_node) == 0);
             if (type_of (n, n->sem.iter_pos_item.item) & aat_node)

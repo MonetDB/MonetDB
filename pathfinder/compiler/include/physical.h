@@ -110,8 +110,10 @@ enum PFpa_op_kind_t {
     , pa_content        = 130 /**< constructor content operator (elem|doc) */
     , pa_slim_content   = 131 /**< shallow constructor content operator */
     , pa_merge_adjacent = 132
-    , pa_error          = 139 /**< error operator */
-    , pa_nil            = 140 /**< end of the list of parameters */
+    , pa_error          = 137 /**< error operator */
+    , pa_nil            = 138 /**< end of the list of parameters */
+    , pa_cache          = 139 /**< cache operator */
+    , pa_cache_border   = 140 /**< cache border operator */
     , pa_trace          = 141 /**< debug operator */
     , pa_trace_items    = 142 /**< debug operator */
     , pa_trace_msg      = 143 /**< debug message operator */
@@ -333,6 +335,12 @@ union PFpa_op_sem_t {
         PFalg_col_t     col;      /**< error: column of error message */
     } err;
 
+    /* semantic content for cache operator */
+    struct {
+        char *          id;       /**< the cache id */
+        PFalg_col_t     item;     /**< item column */
+    } cache;
+
     /* semantic content for debug relation map operator */
     struct {
         PFalg_col_t      inner;    /**< name of the inner column */
@@ -381,6 +389,7 @@ union PFpa_op_sem_t {
         PFalg_col_t     item;     /**< column to look up the context nodes */
         PFalg_col_t     item_doc; /**< column to store the fragment info */
         PFalg_col_t     item_res; /**< column to store the resulting nodes */
+        const char *ns1, *loc1, *ns2, *loc2;
     } vx_lookup;
 };
 
@@ -795,6 +804,17 @@ PFpa_op_t * PFpa_error (const PFpa_op_t *side_effects,
 PFpa_op_t *PFpa_nil (void);
 
 /**
+ * Constructor for cache operator
+ */
+PFpa_op_t * PFpa_cache (const PFpa_op_t *n1, const PFpa_op_t *n2,
+                        char *id, PFalg_col_t item);
+
+/**
+ * Constructor for cache border operator
+ */
+PFpa_op_t * PFpa_cache_border (const PFpa_op_t *n);
+
+/**
  * Constructor for debug operator
  */
 PFpa_op_t * PFpa_trace (const PFpa_op_t *n1, const PFpa_op_t *n2);
@@ -916,7 +936,11 @@ PFpa_vx_lookup (const PFpa_op_t *n,
                 PFalg_col_t item,
                 PFalg_col_t item_res,
                 PFalg_col_t item_doc,
-                bool id);
+                bool id,
+                const char* ns1,
+                const char* loc1,
+                const char* ns2,
+                const char* loc2);
 
 #endif  /* PHYSICAL_H */
 

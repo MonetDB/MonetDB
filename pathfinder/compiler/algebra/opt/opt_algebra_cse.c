@@ -119,6 +119,7 @@ static char *ID[] = {
     , [la_frag_union]      = "la_frag_union"
     , [la_error]           = "la_error"
     , [la_nil]             = "la_nil"
+    , [la_cache]           = "la_cache"
     , [la_trace]           = "la_trace"
     , [la_trace_items]     = "la_trace_items"
     , [la_trace_msg]       = "la_trace_msg"
@@ -1110,8 +1111,11 @@ match (PFla_op_t *a, PFla_op_t *b)
                  ACTCOL (R(b), b->sem.doc_join.item)) &&
                 (ACTCOL (R(a), a->sem.doc_join.item_doc) ==
                  ACTCOL (R(b), b->sem.doc_join.item_doc)) &&
-                (a->sem.doc_join.kind ==
-                 b->sem.doc_join.kind))
+                (a->sem.doc_join.kind == b->sem.doc_join.kind) &&
+                strcmp(a->sem.doc_join.ns1, b->sem.doc_join.ns1) == 0 &&
+                strcmp(a->sem.doc_join.loc1, b->sem.doc_join.loc1) == 0 &&
+                strcmp(a->sem.doc_join.ns2, b->sem.doc_join.ns2) == 0 &&
+                strcmp(a->sem.doc_join.loc2, b->sem.doc_join.loc2) == 0)
                 return true;
 
             return false;
@@ -1172,6 +1176,17 @@ match (PFla_op_t *a, PFla_op_t *b)
 
         case la_nil:
             return true;
+
+        case la_cache:
+            if (a->sem.cache.id == b->sem.cache.id &&
+                ACTCOL (L(a), a->sem.cache.pos) ==
+                ACTCOL (L(b), b->sem.cache.pos) &&
+                ACTCOL (L(a), a->sem.cache.item) ==
+                ACTCOL (L(b), b->sem.cache.item))
+                return true;
+
+            return false;
+
 
         case la_trace:
         case la_trace_items:
@@ -1835,7 +1850,11 @@ new_operator (PFla_op_t *n)
                                             CSE(R(n))->schema,
                                             n->sem.doc_join.item_res),
                                         ACTCOL (R(n),
-                                                n->sem.doc_join.item_doc));
+                                                n->sem.doc_join.item_doc),
+                                        n->sem.doc_join.ns1,
+                                        n->sem.doc_join.loc1,
+                                        n->sem.doc_join.ns2,
+                                        n->sem.doc_join.loc2);
 
         case la_doc_tbl:
             return PFla_doc_tbl (CSE(L(n)),
@@ -1925,6 +1944,13 @@ new_operator (PFla_op_t *n)
 
         case la_nil:
             return PFla_nil ();
+
+        case la_cache:
+            return PFla_cache (CSE(L(n)),
+                               CSE(R(n)),
+                               n->sem.cache.id,
+                               ACTCOL (R(n), n->sem.cache.pos),
+                               ACTCOL (R(n), n->sem.cache.item));
 
         case la_trace:
             return PFla_trace (CSE(L(n)), CSE(R(n)));
@@ -2457,7 +2483,8 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             break;
 
         case la_error:
-            actmap = actcol_map_copy (ACT(L(ori)));
+        case la_cache:
+            actmap = actcol_map_copy (ACT(R(ori)));
             break;
 
         case la_nil:

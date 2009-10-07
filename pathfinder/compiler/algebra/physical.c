@@ -3360,6 +3360,50 @@ PFpa_nil (void)
 }
 
 /**
+ * Constructor for a query cache
+ */
+PFpa_op_t *
+PFpa_cache (const PFpa_op_t *side_effects, const PFpa_op_t *n,
+            char *id, PFalg_col_t item)
+{
+    PFpa_op_t *ret = wire2 (pa_cache, side_effects, n);
+
+    assert (n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n  */
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+        ret->schema.items[i] = n->schema.items[i];
+    }
+
+    ret->sem.cache.id = id;
+    ret->sem.cache.item = item;
+
+    /* costs */
+    ret->cost = DEFAULT_COST + side_effects->cost + n->cost;
+
+    return ret;
+}
+
+/**
+ * Border for cache operator describing which operators
+ * lie in-/outside.
+ */
+PFpa_op_t *
+PFpa_cache_border (const PFpa_op_t *n)
+{
+    /* the operator behaves like a recursion border */
+    PFpa_op_t *ret = PFpa_rec_border (n);
+    ret->kind = pa_cache_border;
+
+    return ret;
+}
+
+/**
  * Constructor for a debug operator 
  */
 PFpa_op_t *
@@ -3843,6 +3887,16 @@ PFpa_fun_call (const PFpa_op_t *loop, const PFpa_op_t *param_list,
         PFord_set_add (ret->orderings, sortby (schema.items[0].name,
                                                schema.items[1].name));
 
+    /* Caching information is returned in iter|pos order */
+    if (kind == alg_fun_call_cache) {
+        /* if the loop relation is constant everything is sorted by pos */
+        if (PFprop_const (loop->prop, iter))
+            PFord_set_add (ret->orderings, sortby (schema.items[1].name));
+        /* the result is ordered by iter|pos */
+        PFord_set_add (ret->orderings, sortby (schema.items[0].name,
+                                               schema.items[1].name));
+    }
+
     /* costs */
     ret->cost = loop->cost + param_list->cost + DEFAULT_COST;
 
@@ -3967,7 +4021,11 @@ PFpa_vx_lookup (const PFpa_op_t *n,
                 PFalg_col_t item,
                 PFalg_col_t item_doc,
                 PFalg_col_t item_res,
-                bool id)
+                bool id,
+                const char* ns1,
+                const char* loc1,
+                const char* ns2,
+                const char* loc2)
 {
     PFpa_op_t *ret = wire1 (pa_vx_lookup, n);
 
@@ -3976,6 +4034,10 @@ PFpa_vx_lookup (const PFpa_op_t *n,
     ret->sem.vx_lookup.item = item;
     ret->sem.vx_lookup.item_doc = item_doc;
     ret->sem.vx_lookup.item_res = item_res;
+    ret->sem.vx_lookup.ns1 = ns1;
+    ret->sem.vx_lookup.loc1 = loc1;
+    ret->sem.vx_lookup.ns2 = ns2;
+    ret->sem.vx_lookup.loc2 = loc2;
 
     /* allocate memory for the result schema */
     ret->schema.count = 2;

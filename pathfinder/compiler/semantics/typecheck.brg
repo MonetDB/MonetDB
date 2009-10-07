@@ -1587,6 +1587,10 @@ specific (PFfun_t *fn, PFcnode_t *args)
                          (PFty_prime (PFty_defn (TY(L(args)))))));
     }
 
+    if (! PFqname_eq (fn->qname, PFqname (PFns_pf, "query-cache"))) {
+        return TY(R(args));
+    }
+
     if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "zero-or-one"))) {
         return *PFty_simplify (PFty_opt (PFty_prime (PFty_defn (TY(L(args))))));
     }

@@ -727,6 +727,14 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
         case la_nil:
             break;
 
+        case la_cache:
+            /* infer empty list for other side effects */
+            n->prop->l_icols = NULL;
+            /* infer columns that are needed for caching */
+            union_ (n->prop->r_icols, n->sem.cache.pos);
+            union_ (n->prop->r_icols, n->sem.cache.item);
+            break;
+
         case la_trace:
             /* infer empty list for other side effects */
             n->prop->l_icols = NULL;

@@ -1092,7 +1092,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                lp->sem.doc_join.kind,
                                map_col (lp->sem.doc_join.item),
                                map_col (lp->sem.doc_join.item_res),
-                               map_col (lp->sem.doc_join.item_doc)));
+                               map_col (lp->sem.doc_join.item_doc),
+                               lp->sem.doc_join.ns1,
+                               lp->sem.doc_join.loc1,
+                               lp->sem.doc_join.ns2,
+                               lp->sem.doc_join.loc2));
                     next_join = R(p);
                 }
                 break;
@@ -1153,6 +1157,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
             case la_error:
             case la_nil:
+            case la_cache:
             case la_trace:
                 break;
 
@@ -1245,6 +1250,7 @@ map_name (PFla_op_t *p, PFalg_col_t col)
         case la_string_join:
         case la_error:
         case la_nil:
+        case la_cache:
         case la_trace:
         case la_trace_items:
         case la_trace_msg:

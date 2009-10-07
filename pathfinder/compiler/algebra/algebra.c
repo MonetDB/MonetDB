@@ -1164,6 +1164,7 @@ PFalg_fun_call_kind_str (PFalg_fun_call_t kind)
         case alg_fun_call_xrpc:                  return "XRPC";
         case alg_fun_call_xrpc_helpers:          return "XRPC helper";
         case alg_fun_call_tijah:                 return "Tijah";
+        case alg_fun_call_cache:                 return "Query Cache";
     }
     return NULL;
 }

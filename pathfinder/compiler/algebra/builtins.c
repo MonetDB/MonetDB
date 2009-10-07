@@ -5552,7 +5552,7 @@ fn_id (const PFla_op_t *loop,
     op = project (
              doc_index_join (doc, in,
                              id ? la_dj_id : la_dj_idref,
-                             col_item, col_res, col_item1),
+                             col_item, col_res, col_item1, "*", "*", "*", "*"),
              proj (col_iter, col_iter),
              proj (col_item, col_res));
 
@@ -5791,6 +5791,62 @@ PFbui_op_and_bln (const PFla_op_t *loop,
                              args[1].rel);
 
     return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for pragma pf:cache.
+ */
+struct PFla_pair_t
+PFbui_pf_query_cache (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    /* We do forbidden side effects here --- They however don't harm us. */
+    PFprop_infer_card ((PFla_op_t *) loop);
+
+    /* If we are inside an iteration discard caching. */
+    if (PFprop_card(loop->prop) != 1)
+        return args[1];
+
+    /* Otherwise introduce a side effect for the caching and replace
+       the query by a cache lookup. */
+    else {
+        PFalg_simple_type_t ty = PFprop_type_of (args[1].rel, col_item);
+        char *id;
+        /* extract the id information */
+        PFprop_infer_const (args[0].rel);
+        assert (PFprop_const (args[0].rel->prop, col_item));
+        id = (PFprop_const_val (args[0].rel->prop, col_item)).val.str;
+
+        /* Provide a (possibly) new cache as side effect. */
+        *side_effects = cache (
+                            *side_effects,
+                            args[1].rel,
+                            id,
+                            col_pos,
+                            col_item);
+
+        /* Use a cache lookup as the replacement. */
+        PFla_op_t *res = fun_call (loop,                   /* loop relation  */
+                                   fun_param (args[0].rel, /* query cache id */
+                                              nil(),
+                                              ipi_schema(aat_str)),
+                                   ipi_schema(ty),         /* i|p|i schema   */
+                                   alg_fun_call_cache,     /* function kind  */
+                                   PFqname (PFns_wild, NULL), /* qname       */
+                                   NULL,                   /* ctx            */
+                                   col_iter,               /* iter           */
+                                   alg_occ_unknown); /* occurrence indicator */
+
+        return (struct PFla_pair_t) {
+            .rel = res,
+            .frag = (ty & aat_node) 
+                  ? PFla_set (frag_extract (res, 2))
+                  : PFla_empty_set () };
+    }
 }
 
 /**
@@ -6460,8 +6516,7 @@ PFbui_pf_documents (const PFla_op_t *loop,
         .rel = rank (res,
                      col_pos,
                      sortby (col_item)),
-        /* FIXME: if uncomment the next line there is a seqmentation fault */
-        .frag = PFla_empty_set() }; /* PFla_set (frag_extract (res, 2)) }; */
+        .frag = PFla_set (frag_extract (res, 1)) };
 }
 
 /**
@@ -6488,8 +6543,7 @@ PFbui_pf_documents_unsafe (const PFla_op_t *loop,
         .rel = rank (res,
                      col_pos,
                      sortby (col_item)),
-        /* FIXME: if uncomment the next line, a seqmentation fault appears */
-        .frag = PFla_empty_set() }; /* PFla_set (frag_extract (res, 2)) }; */
+        .frag = PFla_set (frag_extract (res, 1)) };
 }
 
 /**
@@ -6688,15 +6742,19 @@ PFbui_pf_attribute (const PFla_op_t *loop,
                                eqjoin (project (args[0].rel,
                                                 proj (col_iter, col_iter),
                                                 proj (col_item, col_item)),
-                                       project (args[1].rel,
+                                       project (args[5].rel,
                                                 proj (col_iter1, col_iter),
                                                 proj (col_item1, col_item)),
                                        col_iter,
-                                       col_iter1),
+                                       col_iter1), 
                                 la_dj_attr,
                                 col_item1,
                                 col_res,
-                                col_item),
+                                col_item,
+                                ((struct PFla_op_t*) args[1].rel)->sem.attach.value.val.str,
+                                ((struct PFla_op_t*) args[2].rel)->sem.attach.value.val.str,
+                                ((struct PFla_op_t*) args[3].rel)->sem.attach.value.val.str,
+                                ((struct PFla_op_t*) args[4].rel)->sem.attach.value.val.str),
                             proj (col_iter, col_iter),
                             proj (col_item, col_res))),
                    col_pos,
@@ -6732,7 +6790,7 @@ PFbui_pf_text (const PFla_op_t *loop,
                                 la_dj_text,
                                 col_item1,
                                 col_res,
-                                col_item),
+                                col_item, "*", "*", "*", "*"),
                             proj (col_iter, col_iter),
                             proj (col_item, col_res))),
                    col_pos,

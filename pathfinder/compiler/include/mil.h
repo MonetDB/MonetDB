@@ -141,9 +141,10 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_XRPC_HDL     87
 #define PF_MIL_VAR_XRPC_SEQNR   88
 #define PF_MIL_VAR_XRPC_TIMEOUT 89
-#define PF_MIL_VAR_XRPC_MODE    90
-#define PF_MIL_VAR_XRPC_MODULE  91
-#define PF_MIL_VAR_XRPC_METHOD  92
+#define PF_MIL_VAR_XRPC_COORD   90 
+#define PF_MIL_VAR_XRPC_MODE    91
+#define PF_MIL_VAR_XRPC_MODULE  92
+#define PF_MIL_VAR_XRPC_METHOD  93
 
 #define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_XRPC_METHOD + 1)
 
@@ -238,6 +239,7 @@ enum PFmil_kind_t {
     , m_ctrefine_rev /**< MIL CTrefine_rev function */
     , m_ctderive     /**< MIL CTderive function */
     , m_texist       /**< MIL texist function */
+    , m_find         /**< MIL find function */
 
     , m_cast         /**< typecast */
     , m_mcast        /**< multiplexed typecast */
@@ -304,6 +306,10 @@ enum PFmil_kind_t {
     , m_usec         /**< Get the current time */
     , m_new_ws       /**< Create a new (empty) working set */
     , m_destroy_ws   /**< Free an existing working set */
+    , m_end_ws       /**< Free an existing working set */
+    , m_cache_expr   /**< check if a subexpr is already cached */
+    , m_cache_get    /**< get cached subexpr */
+    , m_cache_put    /**< store a new subexpr */
     , m_mposjoin     /**< Positional multijoin with a working set */
     , m_mvaljoin     /**< Multijoin with a working set */
     , m_bat          /**< MonetDB bat() function */
@@ -725,6 +731,9 @@ PFmil_t * PFmil_ctderive (const PFmil_t *, const PFmil_t *);
 /** MIL texist function */
 PFmil_t * PFmil_texist (const PFmil_t *, const PFmil_t *);
 
+/** MIL find function */
+PFmil_t * PFmil_find (const PFmil_t *, const PFmil_t *);
+
 /** enumerate operator, return sequence of integers */
 PFmil_t * PFmil_enumerate (const PFmil_t *, const PFmil_t *);
     
@@ -943,6 +952,11 @@ PFmil_t * PFmil_mpcre_replace (const PFmil_t *, const PFmil_t *,
 PFmil_t * PFmil_usec (void);
 PFmil_t * PFmil_new_ws (const PFmil_t *);
 PFmil_t * PFmil_destroy_ws (const PFmil_t *ws);
+PFmil_t * PFmil_end_ws (const PFmil_t *ws, const PFmil_t *err);
+PFmil_t * PFmil_cache_fnd (const PFmil_t *ws, const PFmil_t *id);
+PFmil_t * PFmil_cache_expr (const PFmil_t *ws, const PFmil_t *id);
+PFmil_t * PFmil_cache_get (const PFmil_t *ws, const PFmil_t *id);
+PFmil_t * PFmil_cache_put (const PFmil_t *ws, const PFmil_t *id, const PFmil_t *val);
 PFmil_t * PFmil_mposjoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_mvaljoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 

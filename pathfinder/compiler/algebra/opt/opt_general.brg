@@ -139,8 +139,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  frag_extract    =  72
 %term  frag_union      =  73
 %term  empty_frag      =  74
-%term  error           =  79
-%term  nil             =  80
+%term  error           =  78
+%term  nil             =  79
+%term  cache           =  80
 %term  trace           =  81
 %term  trace_items     =  82
 %term  trace_msg       =  83
@@ -246,17 +247,18 @@ Fcns:   nil                                       =  90 (10);
 
 Side:   error (Side, Rel)                         =  91 (10);
 Side:   nil                                       =  92 (10);
-Side:   trace (Side, Trc)                         =  93 (10);
-Trc:    trace_items (Rel, Msg)                    =  94 (10);
-Msg:    trace_msg (Rel, Map)                      =  95 (10);
-Map:    trace_map (Rel, Map)                      =  96 (10);
-Map:    nil                                       =  97 (10);
+Side:   cache (Side, Rel)                         =  93 (10);
+Side:   trace (Side, Trc)                         =  94 (10);
+Trc:    trace_items (Rel, Msg)                    =  95 (10);
+Msg:    trace_msg (Rel, Map)                      =  96 (10);
+Map:    trace_map (Rel, Map)                      =  97 (10);
+Map:    nil                                       =  98 (10);
 
-Rel:    rec_fix (side_effects (Side, Rec), Rel)   =  98 (10);
-Rel:    rec_base                                  =  99 (10);
-Rec:    rec_param (Arg, Rec)                      = 100 (10);
-Rec:    nil                                       = 101 (10);
-Arg:    rec_arg (Rel, Rel)                        = 102 (10);
+Rel:    rec_fix (side_effects (Side, Rec), Rel)   =  99 (10);
+Rel:    rec_base                                  = 100 (10);
+Rec:    rec_param (Arg, Rec)                      = 101 (10);
+Rec:    nil                                       = 102 (10);
+Arg:    rec_arg (Rel, Rel)                        = 103 (10);
 
 Rel:    fun_call (Rel, Param)                     = 105 (10);
 Param:  fun_param (Rel, Param)                    = 106 (10);
