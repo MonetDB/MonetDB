@@ -1413,7 +1413,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		GDKfree(val);
 		return -1;
 	}
-	/* key maybe NULL but thats not a problem, as long as we have void */
+	/* key may be NULL but that's not a problem, as long as we have void */
 	if (fmt->raw){
 		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
 	} else {
