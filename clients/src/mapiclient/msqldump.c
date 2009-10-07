@@ -46,14 +46,13 @@ usage(const char *prog)
 	fprintf(stderr, "\nOptions are:\n");
 	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
-	fprintf(stderr, " -u user     | --user=user        user id (if flag not given, ask for one)\n");
-	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)\n");
+	fprintf(stderr, " -u user     | --user=user        user id\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
-	fprintf(stderr, " -f          | --functions      dump functions\n");
-	fprintf(stderr, " -D          | --describe       describe database\n");
-	fprintf(stderr, " -q          | --quiet          don't print welcome message\n");
-	fprintf(stderr, " -t          | --trace          trace mapi network interaction\n");
-	fprintf(stderr, " -?          | --help           show this usage message\n");
+	fprintf(stderr, " -f          | --functions        dump functions\n");
+	fprintf(stderr, " -D          | --describe         describe database\n");
+	fprintf(stderr, " -q          | --quiet            don't print welcome message\n");
+	fprintf(stderr, " -t          | --trace            trace mapi network interaction\n");
+	fprintf(stderr, " -?          | --help             show this usage message\n");
 	exit(-1);
 }
 
@@ -78,16 +77,14 @@ main(int argc, char **argv)
 	struct stat statb;
 	stream *config = NULL;
 	char user_set_as_flag = 0;
-	char passwd_set_as_flag = 0;
 	static struct option long_options[] = {
 		{"host", 1, 0, 'h'},
-		{"passwd", 2, 0, 'P'},
 		{"port", 1, 0, 'p'},
 		{"database", 1, 0, 'd'},
 		{"describe", 0, 0, 'D'},
 		{"functions", 0, 0, 'f'},
 		{"trace", 2, 0, 't'},
-		{"user", 2, 0, 'u'},
+		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
@@ -154,15 +151,11 @@ main(int argc, char **argv)
 		stream_destroy(config);
 	}
 
-	while ((c = getopt_long(argc, argv, "u::p:P::d:Dfqh:t::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "u:p:d:Dfqh:t::?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			user = optarg;
 			user_set_as_flag = 1;
-			break;
-		case 'P':
-			passwd = optarg;	/* can be NULL */
-			passwd_set_as_flag = 1;
 			break;
 		case 'h':
 			host = optarg;
@@ -193,18 +186,13 @@ main(int argc, char **argv)
 	}
 
 	/* when config file would provide defaults */
-	if (user_set_as_flag && !passwd_set_as_flag) {
+	if (user_set_as_flag)
 		passwd = NULL;
-	} else if (passwd_set_as_flag && !user_set_as_flag) {
-		user = NULL;
-	}
 
-	if (user == NULL) {
+	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	}
-	if (passwd == NULL) {
+	if (passwd == NULL)
 		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
-	}
 
 	mid = mapi_connect(host, port, user, passwd, "sql", dbname);
 	if (mid == NULL) {

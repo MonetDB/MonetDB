@@ -1826,8 +1826,7 @@ usage(const char *prog)
 	fprintf(stderr, "\nOptions are:\n");
 	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
-	fprintf(stderr, " -u user     | --user=user        user id (if flag not given, ask for one)\n");
-	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)\n");
+	fprintf(stderr, " -u user     | --user=user        user id\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 
 	fprintf(stderr, " -e          | --echo             echo the query\n");
@@ -1885,7 +1884,6 @@ main(int argc, char **argv)
 	struct stat statb;
 	stream *config = NULL;
 	char user_set_as_flag = 0;
-	char passwd_set_as_flag = 0;
 	static struct option long_options[] = {
 		{"algebra", 0, 0, 'G'},
 		{"no-algebra", 0, 0, 'g'},
@@ -1907,13 +1905,11 @@ main(int argc, char **argv)
 #ifdef HAVE_POPEN
 		{"pager", 1, 0, '|'},
 #endif
-		{"passwd", 2, 0, 'P'},
-		{"password", 2, 0, 'P'}, /* for .monetdb file parsing */
 		{"port", 1, 0, 'p'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
 		{"time", 0, 0, 't'},
-		{"user", 2, 0, 'u'},
+		{"user", 1, 0, 'u'},
 		{"width", 1, 0, 'w'},
 		{"Xdebug", 0, 0, 'X'},
 		{0, 0, 0, 0}
@@ -1965,7 +1961,6 @@ main(int argc, char **argv)
 	if (config != NULL) {
 		char buf[1024];
 		char *q;
-		struct option *p;
 		ssize_t len;
 		int line = 0;
 		while ((len = stream_readline(config, buf, sizeof(buf) - 1)) > 0) {
@@ -1979,43 +1974,36 @@ main(int argc, char **argv)
 				continue;
 			}
 			*q++ = '\0';
-			p = long_options;
-			while (p->name != NULL) {
-				/* this basically sucks big time, as I can't easily set
-				 * a default, hence I only do things I think are useful
-				 * for now, needs a better solution */
-				if (strcmp(p->name, buf) == 0) {
-					if (strcmp(buf, "user") == 0) {
-						user = strdup(q); /* leak */
-						q = NULL;
-					} else if (strcmp(buf, "password") == 0 ||
-							strcmp(buf, "passwd") == 0)
-					{
-						passwd = strdup(q); /* leak */
-						q = NULL;
-					} else if (strcmp(buf, "language") == 0) {
-						language = q;
-						if (strcmp(language, "sql") == 0) {
-							mode = SQL;
-							q = NULL;
-						} else if (strcmp(language, "mal") == 0) {
-							mode = MAL;
-							q = NULL;
-						} else if (strcmp(language, "xquery") == 0) {
-							mode = XQUERY;
-							q = NULL;
-						} else {
-							/* make sure we don't set garbage */
-							stream_printf(stderr_stream, "%s:%d: unsupported "
-									"language: %s\n",
-									stream_name(config), line, q);
-							language = NULL;
-							q = NULL;
-						}
-					}
-					break;
+			/* this basically sucks big time, as I can't easily set
+			 * a default, hence I only do things I think are useful
+			 * for now, needs a better solution */
+			if (strcmp(buf, "user") == 0) {
+				user = strdup(q); /* leak */
+				q = NULL;
+			} else if (strcmp(buf, "password") == 0 ||
+					strcmp(buf, "passwd") == 0)
+			{
+				passwd = strdup(q); /* leak */
+				q = NULL;
+			} else if (strcmp(buf, "language") == 0) {
+				language = q;
+				if (strcmp(language, "sql") == 0) {
+					mode = SQL;
+					q = NULL;
+				} else if (strcmp(language, "mal") == 0) {
+					mode = MAL;
+					q = NULL;
+				} else if (strcmp(language, "xquery") == 0) {
+					mode = XQUERY;
+					q = NULL;
+				} else {
+					/* make sure we don't set garbage */
+					stream_printf(stderr_stream, "%s:%d: unsupported "
+							"language: %s\n",
+							stream_name(config), line, q);
+					language = NULL;
+					q = NULL;
 				}
-				p++;
 			}
 			if (q != NULL)
 				stream_printf(stderr_stream, "%s:%d: unknown property: %s\n",
@@ -2032,7 +2020,7 @@ main(int argc, char **argv)
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:P::p:s:tXu:H?", long_options, &option_index)) != -1) {
+				"w:r:p:s:tXu:H?", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
 #ifdef HAVE_POPEN
@@ -2087,10 +2075,6 @@ main(int argc, char **argv)
 		case 'u':
 			user = optarg;
 			user_set_as_flag = 1;
-			break;
-		case 'P':
-			passwd = optarg;	/* can be NULL */
-			passwd_set_as_flag = 1;
 			break;
 		case 'f':
 			output = strdup(optarg); /* output format */
@@ -2187,18 +2171,13 @@ main(int argc, char **argv)
 #endif	/* HAVE_ICONV */
 
 	/* when config file would provide defaults */
-	if (user_set_as_flag && !passwd_set_as_flag) {
+	if (user_set_as_flag)
 		passwd = NULL;
-	} else if (passwd_set_as_flag && !user_set_as_flag) {
-		user = NULL;
-	}
 
-	if (user == NULL) {
+	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	}
-	if (passwd == NULL) {
+	if (passwd == NULL)
 		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
-	}
 
 	mid = mapi_connect(host, port, user, passwd, language, dbname);
 
@@ -2208,10 +2187,10 @@ main(int argc, char **argv)
 	}
 
 	if (mapi_error(mid)) {
-		if( trace)
+		if (trace)
 			mapi_explain(mid, stderr);
 		else
-			fprintf(stderr,"%s\n",mapi_error_str(mid));
+			fprintf(stderr, "%s\n", mapi_error_str(mid));
 		exit(2);
 	}
 	mapi_cache_limit(mid, -1);
