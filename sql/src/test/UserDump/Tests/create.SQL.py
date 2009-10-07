@@ -27,7 +27,7 @@ alter user voc set schema voc;
 """)
     vocenv = copy.deepcopy(os.environ)
     vocenv['DOTMONETDBFILE'] = '.vocuser'
-    f = open(vocenv['DOTMONETDBFILE'], 'wb')
+    f = open(vocenv['DOTMONETDBFILE'], 'w')
     f.write('user=voc\npassword=voc\n')
     f.close()
     client(sql_client, """\
@@ -50,7 +50,7 @@ alter user test set schema test;
 """)
     testenv = copy.deepcopy(os.environ)
     testenv['DOTMONETDBFILE'] = '.testuser'
-    f = open(testenv['DOTMONETDBFILE'], 'wb')
+    f = open(testenv['DOTMONETDBFILE'], 'w')
     f.write('user=test\npassword=test\n')
     f.close()
     client(sql_client, '''\

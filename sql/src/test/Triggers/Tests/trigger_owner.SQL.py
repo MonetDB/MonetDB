@@ -20,7 +20,7 @@ def main():
 
     env_monet_test = copy.deepcopy(os.environ)
     env_monet_test['DOTMONETDBFILE'] = '.monet_test'
-    f = open(env_monet_test['DOTMONETDBFILE'], 'wb')
+    f = open(env_monet_test['DOTMONETDBFILE'], 'w')
     f.write('user=user_test\npassword=pass\n')
     f.close()
 

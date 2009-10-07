@@ -19,7 +19,7 @@ def client(cmd, env = os.environ):
 def main():
     testenv = copy.deepcopy(os.environ)
     testenv['DOTMONETDBFILE'] = '.testuser'
-    f = open(testenv['DOTMONETDBFILE'], 'wb')
+    f = open(testenv['DOTMONETDBFILE'], 'w')
     f.write('user=my_user\npassword=p1\n')
     f.close()
     clcmd = str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/../role.sql' % os.getenv('RELSRCDIR'))

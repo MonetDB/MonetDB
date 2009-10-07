@@ -19,7 +19,7 @@ def main():
     clcmd = str(os.getenv('SQL_CLIENT'))
     skyenv = copy.deepcopy(os.environ)
     skyenv['DOTMONETDBFILE'] = '.skyserver'
-    f = open(skyenv['DOTMONETDBFILE'], 'wb')
+    f = open(skyenv['DOTMONETDBFILE'], 'w')
     f.write('user=skyserver\npassword=skyserver\n')
     f.close()
     sys.stdout.write('Create User\n')
