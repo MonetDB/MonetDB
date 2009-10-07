@@ -237,7 +237,7 @@
 #define apply(x,y,a)      apply_(p->loc, x, y, a)
 #define node_ty(x,y)      node_ty_(p->loc, x, y) 
 #define var(x)            var_(p->loc, x) 
-#define lit_str(x)        lit_str_(p->loc, x?x:"") 
+#define lit_str(x)        lit_str_(p->loc, (x)?(x):"") 
 #define step(a,b)         step_(p->loc, a, b) 
 #define seq_ty(a)         seq_ty_(p->loc, a) 
 
