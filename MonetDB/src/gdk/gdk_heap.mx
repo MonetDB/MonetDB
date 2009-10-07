@@ -113,11 +113,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize && nitems > (h->size / itemsize))
 		return -1;
 
-	/* when using anonymous vm we need 64K chunks, also we
-	   allocate an extra 20% */
-	if (h->size > GDK_mem_bigsize) {
-		h->maxsize = HEAPmargin(h->maxsize);
-	}
 	if (h->filename == NULL || (h->size < GDK_mmap_minsize)) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->maxsize, 0);
@@ -173,6 +168,7 @@ HEAPextend(Heap *h, size_t size)
 		return 0;
 
 	if (h->storage != STORE_MEM) {
+		EXTENDDEBUG fprintf(stderr,"#HEAPextend: extending %s mmapped heap\n",h->storage==STORE_MMAP?"shared":"privately");
 		/* memory mapped files extend: save and remap */
 		if (HEAPsave_intern(h, nme, ext, ".tmp") < 0)
 			return -1;
@@ -187,7 +183,9 @@ HEAPextend(Heap *h, size_t size)
                 int exceeds_swap = size > (tot+tot - MIN(tot+tot, cur));
 		int can_mmap = h->filename && (size >= GDK_mem_bigsize || h->newstorage != STORE_MEM);
 		int small_cpy = (h->size*4 < size) && (size >= GDK_mmap_minsize);
-		int must_mmap = can_mmap && (small_cpy || exceeds_swap || h->newstorage != STORE_MEM);
+		/* the commented condition is to use explicit MMAP
+		   instead of anonymous MMAP in GDKmalloc */
+		int must_mmap = can_mmap && (small_cpy || exceeds_swap || h->newstorage != STORE_MEM /* || size >= GDK_mem_bigsize */);
 
 		h->size = size;
 
@@ -202,6 +200,7 @@ HEAPextend(Heap *h, size_t size)
 		if (!must_mmap) {
 			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
+			EXTENDDEBUG fprintf(stderr,"#HEAPextend: extending malloced heap\n");
 			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
 			ALLOCDEBUG fprintf(stderr, "#HEAPextend " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->maxsize, PTRFMTCAST p, PTRFMTCAST h->base);
 			if (h->base)
@@ -235,6 +234,7 @@ HEAPextend(Heap *h, size_t size)
 					h->newstorage = h->storage = newmode;
 				}
 				h->base = NULL;
+				EXTENDDEBUG fprintf(stderr,"#HEAPextend: converting malloced to %s mmapped heap\n",h->newstorage==STORE_MMAP?"shared":"privately");
 				/* try to allocate a memory-mapped based heap */
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
 					/* copy data to heap and free old memory */
@@ -771,6 +771,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		   // Double the size of the heap.
 		   // TUNE: increase heap by diffent amount.
 		 */
+		EXTENDDEBUG fprintf(stderr, "#HEAPextend in HEAP_malloc %s "SZFMT" "SZFMT"\n",heap->filename,heap->size,newsize);
 		if (HEAPextend(heap, newsize) < 0)
 			return 0;
 		heap->free = newsize;

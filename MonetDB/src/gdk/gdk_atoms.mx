@@ -1983,17 +1983,12 @@ strPut(Heap *h, var_t *dst, str v)
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
 	if (h->free + pad + len >= h->size) {
-		/* Something really strange happens here, In a special case
-		   (Pentium II Klamath, gcc version 2.96 20000731,
-		   GNU assembler version 2.10.90 using BFD version 2.10.0.18)
-		   the fldl instruction to load BATMARGIN goes SOMETIMES
-		   (but reproducibly) wrong (the register is filled with
-		   -NaN iso 1.5 (BATMARGIN)). So replaced this code:
-		   size_t newsize = len + h->size * BATMARGIN;
-		 */
-		float batmargin = (float) BATMARGIN;
-		float hnewsize = h->size * batmargin;
-		size_t newsize = pad + len + (size_t) hnewsize;
+		size_t newsize = MAX(h->size, 4096);
+
+		/* double the heap size until we have enough space */
+		do {
+			newsize <<= 1;
+		} while (newsize <= h->free + pad + len);
 
 		assert(newsize);
 
@@ -2005,6 +2000,7 @@ strPut(Heap *h, var_t *dst, str v)
 			/* if there is reserved space, first use the reserved space */
 			newsize = MIN(newsize, h->maxsize);
 		}
+		EXTENDDEBUG fprintf(stderr, "#HEAPextend in strPut %s "SZFMT" "SZFMT"\n",h->filename,h->size,newsize);
 		if (HEAPextend(h, newsize) < 0) {
 			return 0;
 		}
@@ -2012,7 +2008,7 @@ strPut(Heap *h, var_t *dst, str v)
 		memset(h->base + h->free, 0, h->size - h->free);
 
 		/* make bucket point into the enw heap */
-		bucket = ((stridx_t *) h->base) + off; 
+		bucket = ((stridx_t *) h->base) + off;
 	}
 
 	/* insert string */

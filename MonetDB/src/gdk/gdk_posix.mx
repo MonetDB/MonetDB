@@ -1979,7 +1979,7 @@ win_errno(void)
 
 #ifndef WIN32
 
-#define MT_PAGESIZE(s)		((((s-1)/MT_pagesize())+1)*MT_pagesize())
+#define MT_PAGESIZE(s)		((((s)-1)/MT_pagesize()+1)*MT_pagesize())
 
 #if defined(MAP_ANON)
 #define MMAP_FLAGS(f)		f|MAP_ANON
