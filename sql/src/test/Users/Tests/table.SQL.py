@@ -1,4 +1,5 @@
 import os, sys
+import copy
 try:
     import subprocess
 except ImportError:
@@ -6,8 +7,8 @@ except ImportError:
     import MonetDBtesting.subprocess26 as subprocess
 
 
-def client(cmd):
-    clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def client(cmd, env = os.environ):
+    clt = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     sys.stdout.write(clt.stdout.read())
     clt.stdout.close()
     sys.stderr.write(clt.stderr.read())
@@ -16,7 +17,13 @@ def client(cmd):
 
 
 def main():
-    clcmd = str(os.getenv('SQL_CLIENT')) + " -umy_user -Pp1 < %s" % ('%s/../table.sql' % os.getenv('RELSRCDIR'))
+    testenv = copy.deepcopy(os.environ)
+    testenv['DOTMONETDBFILE'] = '.testuser'
+    f = open(testenv['DOTMONETDBFILE'], 'wb')
+    f.write('user=my_user\npassword=p1\n')
+    f.close()
+    clcmd = str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/../table.sql' % os.getenv('RELSRCDIR'))
     client(clcmd)
+    os.unlink(testenv['DOTMONETDBFILE'])
 
 main()

@@ -10,7 +10,7 @@ def main():
     SQLCLIENT = os.environ['SQLCLIENT']
     MAPIPORT = os.environ['MAPIPORT']
 
-    cmd = str('%s -umonetdb -Pmonetdb -p %s' % (SQLCLIENT, MAPIPORT))
+    cmd = str('%s -p %s' % (SQLCLIENT, MAPIPORT))
     f = open(os.path.join(TSTTRGDIR, 'dumpoutput.sql'), 'r')
     clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
     clt.stdin.write(f.read())
