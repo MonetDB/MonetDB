@@ -532,10 +532,7 @@ var xrpc_querynr  := (lng(get_xrpc_port()) * 100000LL) - 1LL;
 
 # dummy variables to make MIL test scripts work
 # (otherwise always overridden by a declaration in the pf-generated MIL plan)
-var xrpc_mode := "";
-var xrpc_qid := "";
-var xrpc_method := "";
-var xrpc_timeout := 30000LL;
+var xrpc_seqnr, xrpc_coord, xrpc_mode := "", xrpc_qid := "", xrpc_method := "", xrpc_timeout := 30000LL;
 
 # abort a 2PC transaction, keeping the record (note ws should have been destroyed already)
 PROC _ws_xrpc_abort(oid idx, str status) : void
@@ -1581,7 +1578,8 @@ PROC ws_create(int update) : BAT[void,bat]
 
     # NOTE: use pre-query MIL variables xrpc_qid/xrpc_timeout to possibly re-use an existing ws
     lock_set(xrpc_lock);
-    var wslock := lock_nil, ws, xrpc, idx, err := CATCH(ws := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update));
+    var wslock := lock_nil, ws, xrpc := 0, idx, err := CATCH(ws := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update));
+print(err);
     if (xrpc != 0) wslock := xrpc_locks.find(idx);
     lock_unset(xrpc_lock);
     if (not(isnil(err))) ERROR(err);
