@@ -3466,7 +3466,7 @@ def main(argv) :
 
         # write .monetdb file for mclient to do authentication with
         dotmonetdbfile = os.path.join(env['TSTTRGBASE'], ".monetdb")
-        dotmonetdb = open(dotmonetdbfile, 'wb')
+        dotmonetdb = open(dotmonetdbfile, 'w')
         dotmonetdb.write('user=monetdb\n')
         dotmonetdb.write('password=monetdb\n')
         dotmonetdb.close()
