@@ -42,7 +42,6 @@ public class SQLRestore {
 			_is = is;
 		}
 		
-		@Override
 		public void run() {
 			try {
 				while (true) {
@@ -132,7 +131,7 @@ public class SQLRestore {
 				try {
 					responseReaderThread.join();
 				} catch (InterruptedException e) {
-					throw new IOException(e);
+					throw new IOException(e.getMessage());
 				}
 				
 				// if the server signalled an error, we should respect it... 
@@ -141,9 +140,9 @@ public class SQLRestore {
 				}
 			}
 		} catch (MCLException e) {
-			throw new IOException(e);
+			throw new IOException(e.getMessage());
 		} catch (MCLParseException e) {
-			throw new IOException(e);
+			throw new IOException(e.getMessage());
 		} finally {
 			ms.close();
 		}
