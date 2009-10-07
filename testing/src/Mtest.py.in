@@ -3328,11 +3328,11 @@ def main(argv) :
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
-        exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -i -umonetdb -Pmonetdb --host=%s --port=%s' % (env['MILCLIENT'], HOST, env['MAPIPORT'])
-        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -umonetdb -Pmonetdb --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
-        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
-        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['MAPIPORT'])
+        exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -i --host=%s --port=%s' % (env['MILCLIENT'], HOST, env['MAPIPORT'])
+        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
+        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
+        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['MAPIPORT'])
         if par['ALGEBRA']:
             exe['SQL_Client']    = exe['SQL_Client'][0]   , exe['SQL_Client'][1]   +' -G'
             exe['XQuery_Client'] = exe['XQuery_Client'][0], exe['XQuery_Client'][1]+' -G'
@@ -3463,6 +3463,16 @@ def main(argv) :
             ErrXit("Failed to create %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
 
         os.makedirs(os.path.join(env['TSTTRGBASE'],TSTPREF))
+
+        # write .monetdb file for mclient to do authentication with
+        dotmonetdbfile = os.path.join(env['TSTTRGBASE'], ".monetdb")
+        dotmonetdb = open(dotmonetdbfile, 'wb')
+        dotmonetdb.write('user=monetdb\n')
+        dotmonetdb.write('password=monetdb\n')
+        dotmonetdb.close()
+        # and make mclient find it
+        env['DOTMONETDBFILE'] = dotmonetdbfile;
+
         if par['M5']:
             QUIT = 'clients.quit();\n'
         else:
