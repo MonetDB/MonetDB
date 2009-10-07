@@ -1579,7 +1579,6 @@ PROC ws_create(int update) : BAT[void,bat]
     # NOTE: use pre-query MIL variables xrpc_qid/xrpc_timeout to possibly re-use an existing ws
     lock_set(xrpc_lock);
     var wslock := lock_nil, ws, xrpc := 0, idx, err := CATCH(ws := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update));
-print(err);
     if (xrpc != 0) wslock := xrpc_locks.find(idx);
     lock_unset(xrpc_lock);
     if (not(isnil(err))) ERROR(err);
