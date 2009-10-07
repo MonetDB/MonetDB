@@ -245,6 +245,31 @@ opt_monetxq (PFla_op_t *p)
                 RL(p) = RLL(p);
             break;
 
+        case la_attach:
+            /* If the attach column is the only result it might
+               be benefitial to return only a single row
+               (the attach column without duplicates). */
+            if (PFprop_set (p->prop) &&
+                PFprop_icols_count (p->prop) == 1 &&
+                PFprop_icol (p->prop, p->sem.attach.res)) {
+                PFalg_col_t   col  = p->sem.attach.res;
+                PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                               sizeof (PFalg_proj_t));
+
+                /* fill the projection list of the upper projection (proj) */
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    proj[i] = PFalg_proj (p->schema.items[i].name, col);
+
+                *p = *PFla_project_ (
+                          PFla_distinct (
+                              PFla_project (
+                                  PFla_attach (L(p), col, p->sem.attach.value),
+                                  PFalg_proj (col, col))),
+                          p->schema.count,
+                          proj);
+            }
+            break;
+
         default:
             break;
     }
