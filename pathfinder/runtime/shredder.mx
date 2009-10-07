@@ -296,7 +296,7 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
  { QN_HISTOGRAM, "_qn_prefix",        TYPE_void, TYPE_str,  0.0, 0}, 
  { QN_HISTOGRAM, "_qn_uri",           TYPE_void, TYPE_str,  0.0, 0}, 
  { QN_HISTOGRAM, "_qn_loc",           TYPE_void, TYPE_str,  0.0, 0}, 
- { PROP_TEXT,    "_prop_text",        TYPE_void, TYPE_str,  0.3, 1}, 
+ { PROP_TEXT,    "_prop_text",        TYPE_void, TYPE_str,  0.3, 0}, 
  { PROP_COM,     "_prop_com",         TYPE_void, TYPE_str,  0.0, 1}, 
  { PROP_INS,     "_prop_ins",         TYPE_void, TYPE_str,  0.0, 0}, 
  { PROP_TGT,     "_prop_tgt",         TYPE_void, TYPE_str,  0.0, 0}, 
