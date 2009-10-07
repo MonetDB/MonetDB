@@ -107,8 +107,6 @@ All Rights Reserved.
       <fileset dir="${builddir}">
         <include name="${jdbc-package}/**/*.class" />
         <include name="${mcl-package}/**/*.class" />
-        <include name="${docdir}/${jdbc-package}/**" />
-        <include name="${docdir}/${mcl-package}/**" />
       </fileset>
     </jar>
   </target>
