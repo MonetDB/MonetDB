@@ -1057,6 +1057,8 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
 		size_t newmax = MAX(*maxsize, newsize);
 
+		/* round up to multiple of 64k */
+		newmax = ((newmax + 0xffff) >> 16) << 16;
 		s = (ssize_t *) GDKvmalloc(newsize, &newmax, emergency);
 		if (s == 0)
 			return s;
