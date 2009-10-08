@@ -446,6 +446,7 @@ main(int argc, char *argv[])
 		{"prefix",             GDKstrdup(MONETDB5_PREFIX), STR},
 		{"gdk_dbfarm",         NULL,                       STR},
 		{"gdk_nr_threads",     NULL,                       INT},
+		{"sql_optimizer",      NULL,                       STR},
 		{"mero_msglog",        NULL,                       STR},
 		{"mero_errlog",        NULL,                       STR},
 		{"mero_port",          NULL,                       INT},
@@ -611,6 +612,12 @@ main(int argc, char *argv[])
 	kv->val = GDKstrdup("no");
 	kv = findConfKey(_mero_props, "slave");
 	kv->val = NULL; /* MURI */
+	kv = findConfKey(ckv, "sql_optimizer");
+	p = kv->val;
+	if (p != NULL) {
+		kv = findConfKey(_mero_props, "optpipe");
+		kv->val = GDKstrdup(p);
+	}
 
 	/* we no longer need prefix */
 	freeConfFile(ckv);
