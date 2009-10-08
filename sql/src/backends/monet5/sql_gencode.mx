@@ -2068,12 +2068,12 @@ backend_create_func(backend *be, sql_func *f)
 	if (f->ops) {
 		int argc = 0;
 		node *n;
-		char *buf = GDKmalloc(SMALLBUFSIZ);
 
 		for (n = f->ops->h; n; n = n->next, argc++) {
 			sql_arg *a = n->data;
 			int type = a->type.type->localtype;
 			int varid = 0;
+			char *buf = GDKmalloc(SMALLBUFSIZ);
 
 			if (a->name) 
 				(void) snprintf(buf, SMALLBUFSIZ, "A%s", a->name);
