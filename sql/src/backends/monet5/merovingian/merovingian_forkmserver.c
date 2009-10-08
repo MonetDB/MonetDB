@@ -224,7 +224,8 @@ forkMserver(str database, sabdb** stats, int force)
 		str nthreads = NULL;
 		str master = NULL;
 		str slave = NULL;
-		str argv[23];	/* for the exec arguments */
+		str pipeline = NULL;
+		str argv[25];	/* for the exec arguments */
 		confkeyval *ckv, *kv;
 		int c = 0;
 
@@ -242,6 +243,14 @@ forkMserver(str database, sabdb** stats, int force)
 		if (kv->val != NULL) {
 			nthreads = alloca(sizeof(char) * 24);
 			snprintf(nthreads, 24, "gdk_nr_threads=%s", kv->val);
+		}
+
+		kv = findConfKey(ckv, "optpipe");
+		if (kv->val == NULL)
+			kv = findConfKey(_mero_props, "optpipe");
+		if (kv->val != NULL) {
+			nthreads = alloca(sizeof(char) * 512);
+			snprintf(nthreads, 512, "sql_optimizer=%s", kv->val);
 		}
 
 		kv = findConfKey(ckv, "master");
@@ -299,6 +308,9 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = "--set"; argv[c++] = vaultkey;
 		if (nthreads != NULL) {
 			argv[c++] = "--set"; argv[c++] = nthreads;
+		}
+		if (pipeline != NULL) {
+			argv[c++] = "--set"; argv[c++] = pipeline;
 		}
 		if (master != NULL) {
 			argv[c++] = "--set"; argv[c++] = master;

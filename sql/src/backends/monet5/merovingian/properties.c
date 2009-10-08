@@ -38,6 +38,7 @@ static confkeyval _internal_prop_keys[] = {
 	{"forward",  NULL, OTHER},
 	{"shared",   NULL, STR},
 	{"nthreads", NULL, INT},
+	{"optpipe",  NULL, STR},
 	{"master",   NULL, BOOL},
 	{"slave",    NULL, MURI},
 	{ NULL,      NULL, INVALID}

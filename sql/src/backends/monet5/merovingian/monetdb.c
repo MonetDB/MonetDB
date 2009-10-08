@@ -1066,10 +1066,16 @@ command_get(int argc, char *argv[])
 			property = argv[i];
 			argv[i] = NULL;
 			if (strcmp(property, "all") == 0) {
+				size_t off = 0;
 				/* die hard leak (can't use constant, strtok modifies
 				 * (and hence crashes)) */
-				/* FIXME: make this read keys from defaultprops */
-				property = GDKstrdup("name,forward,shared,nthreads,master,slave");
+				property = GDKmalloc(sizeof(char) * 512);
+				kv = defprops;
+				off += snprintf(property, 512, "name");
+				while (kv->key != NULL) {
+					off += snprintf(property + off, 512 - off, ",%s", kv->key);
+					kv++;
+				}
 			}
 		} else {
 			doall = 0;
@@ -1133,9 +1139,10 @@ command_get(int argc, char *argv[])
 	/* name = 15 */
 	/* prop = 8 */
 	/* source = 7 */
-	twidth -= 15 - 2 - 8 - 2 - 7 - 2;
+	twidth -= 15 + 2 + 8 + 2 + 7 + 2;
 	if (twidth < 6)
 		twidth = 6;
+	value = alloca(sizeof(char) * twidth + 1);
 	printf("     name          prop     source           value\n");
 	while ((p = strtok(property, ",")) != NULL) {
 		property = NULL;
@@ -1144,7 +1151,7 @@ command_get(int argc, char *argv[])
 			/* special virtual case */
 			if (strcmp(p, "name") == 0) {
 				source = "-";
-				value = stats->dbname;
+				abbreviateString(value, stats->dbname, twidth);
 			} else {
 				e = control_send(&buf, mero_host, mero_port,
 						stats->dbname, "get", 1, mero_pass);
@@ -1168,10 +1175,11 @@ command_get(int argc, char *argv[])
 				if (kv->val == NULL) {
 					kv = findConfKey(defprops, p);
 					source = "default";
-					value = kv != NULL && kv->val != NULL ? kv->val : "<unknown>";
+					abbreviateString(value,
+							kv != NULL && kv->val != NULL ? kv->val : "<unknown>", twidth);
 				} else {
 					source = "local";
-					value = kv->val;
+					abbreviateString(value, kv->val, twidth);
 				}
 			}
 			printf("%-15s  %-8s  %-7s  %s\n",
