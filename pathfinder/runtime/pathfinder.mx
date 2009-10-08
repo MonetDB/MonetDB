@@ -1530,6 +1530,7 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
             if (bit(xrpc_timeout)) timeout := usec() + *(1000LL, xrpc_timeout);
             xrpc_timeouts.inplace(idx, timeout);
             xrpc_statuses.inplace(idx, "reserved");
+            if (xrpc_mode.search("use") < 0) return ws;
         }
         ws := [access]([copy](ws),BAT_WRITE); # use a copy, no locking required
     } else {
@@ -1588,9 +1589,11 @@ PROC ws_create(int update) : BAT[void,bat]
 
         lock_set(xrpc_lock);
         var aborted := (xrpc_statuses.find(idx) = "abort");
-        if ((xrpc_mode = "use-cache-repeatable") or aborted) {
+        if (aborted) {
             lock_unset(wslock);
-            if (not(aborted)) xrpc_statuses.inplace(idx, "wait");
+        } else if (xrpc_mode = "use-cache-repeatable") {
+            lock_unset(wslock);
+            xrpc_statuses.inplace(idx, "wait");
         } else {
             xrpc_statuses.inplace(idx, "exec");
         }
