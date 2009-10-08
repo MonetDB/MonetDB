@@ -1403,6 +1403,12 @@ main(int argc, char *argv[])
 		mero_port = 50001;
 	}
 
+	/* see if we still have arguments at this stage */
+	if (i >= argc) {
+		command_help(0, NULL);
+		return(1);
+	}
+	
 	/* commands that do not need merovingian to be running */
 	if (strcmp(argv[i], "help") == 0 || strcmp(argv[i], "--help") == 0) {
 		command_help(argc - i, &argv[i]);
