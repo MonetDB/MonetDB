@@ -52,7 +52,7 @@ observed time spending so far.
 #include <gdk_posix.h>
 
 #define _SLICE_TABLET_ 
-#define _DEBUG_SLICER_ 
+/*#define _DEBUG_SLICER_*/ 
 #define _SLICER_ 2
 
 #ifdef _SLICE_TABLET_ 
@@ -221,7 +221,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	sampleSize=SmallSliceSize>100?100:SmallSliceSize; /*sample up to 100 values*/	
 	sample = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,sampleSize);
 	for ( i = 0; i< sampleSize ; i++){
-		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
+		adt=get_val(fmt, task->fields[col][i], task->quote, err, col);
 		bunfastins(sample, key, adt);
 	}
 	sample->tsorted = FALSE;
@@ -239,7 +239,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 
 	for ( i = 0; i< task->next ; i++){
 		ValPtr newValue = (ValPtr) GDKzalloc(sizeof(ValRecord));
-		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
+		adt=get_val(fmt, task->fields[col][i], task->quote, err, col);
 		VALset(newValue, fmt->c[0]->ttype, adt);
 
 		/*fill small first*/
@@ -440,7 +440,7 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		sampleSize=SmallSliceSize>100?100:SmallSliceSize; /*sample up to 100 values*/	
 		sample = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,sampleSize);
 		for ( i = 0; i< sampleSize ; i++){
-			adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
+			adt=get_val(fmt, task->fields[col][i], task->quote, err, col);
 			bunfastins(sample, key, adt);
 		}
 		sample->tsorted = FALSE;
@@ -463,7 +463,7 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	}
 
 	for ( i = 0; i< task->next ; i++){
-		adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
+		adt=get_val(fmt, task->fields[col][i], task->quote, err, col);
 		VALset(newValue, fmt->c[0]->ttype, adt);
 
 		/*fill small first*/
@@ -640,17 +640,17 @@ Slice3(READERtask *task)
 {
 	char buf[BUFSIZ];	
 	int i, j, optimistic=0;
-	ptr *adt;
 	BATiter bsi;
 	BAT *sample, *sortedSample;
 	ValPtr vmin, vmax;
 	int sampleSize; 
 	dbl distance, distance2,curDistance, tempDistance, totalDistance;
 	oid curSmallSize=0,curBigSize=0;
-	str *err=NULL;
+	str *err=0;
 	ptr key=NULL;
 	int a, attributes =task->as->nr_attrs;
 	ValPtr newValue[attributes]; 
+	ptr *adt[attributes];
 	ValPtr curVal;
 	bit needToMove;
 
@@ -672,32 +672,20 @@ Slice3(READERtask *task)
 			int col;
 			if (!(task->cols[a])) continue;
 
-			printf("initialize attr %d\n",a);
-
-			fmt = &task->as->format[task->cols[a]-1];
 			col = task->cols[a]-1;
+			fmt = &task->as->format[col];
 			fmt->c[1] = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,4*SmallSliceSize); 
-
-
-			printf("made big one %d \n",col);
 
 			for(i=0; i<bins; i++)
 				fmt->bin[i] = BATnew(TYPE_oid, fmt->c[0]->ttype,SmallSliceSize);
 
-			printf("made bins \n");
-
 			/*sample to get min-max*/
 			sampleSize=SmallSliceSize>100?100:SmallSliceSize; /*sample up to 100 values*/	
 			sample = BATnew(fmt->c[0]->htype, fmt->c[0]->ttype,sampleSize);
-			printf("made sample bat \n");
 			for ( i = 0; i< sampleSize ; i++){
-				printf("trying to get one val \n");
-				adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
-				printf("got one val \n");
-				bunfastins(sample, key, adt);
+				adt[0]=get_val(fmt, task->fields[col][i], task->quote, err, col);
+				bunfastins(sample, key, adt[0]);
 			}
-
-			printf("got sample \n");
 
 			sample->tsorted = FALSE;
 			sortedSample = BATtsort(sample);
@@ -721,6 +709,7 @@ Slice3(READERtask *task)
 
 	keys++;
 
+
 	for ( i = 0; i< task->next ; i++){
 		needToMove=FALSE;
 		for(a=0;a<attributes;a++){
@@ -730,9 +719,10 @@ Slice3(READERtask *task)
 			col = task->cols[a]-1;
                         fmt = &task->as->format[task->cols[a]-1];
 
-			adt=get_val(&fmt[col], task->fields[col][i], task->quote, err, col);
-			VALset(newValue[a], fmt->c[0]->ttype, adt);
+			adt[a]=get_val(fmt, task->fields[col][i], task->quote, err, col);
+			VALset(newValue[a], fmt->c[0]->ttype, adt[a]);
 		}	
+
 
 		/*fill small first*/
 		if (curSmallSize < SmallSliceSize){
@@ -743,7 +733,7 @@ Slice3(READERtask *task)
 				fmt = &task->as->format[task->cols[a]-1];
 
 				index = HSTincrement(fmt->histogram[0], newValue[a]);
-				bunfastins(fmt->bin[index], keys, adt);
+				bunfastins(fmt->bin[index], &keys, adt[a]);
 			}
 			curSmallSize++;
 			continue;
@@ -755,7 +745,7 @@ Slice3(READERtask *task)
 				Column *fmt;
 				if (!(task->cols[a])) continue;
 				fmt = &task->as->format[task->cols[a]-1];
-				bunfastins(fmt->c[1], key, adt);
+				bunfastins(fmt->c[1], key, adt[a]);
 				HSTincrement(fmt->histogram[1], newValue[a]);
 			}
 			curBigSize++;
@@ -771,7 +761,7 @@ Slice3(READERtask *task)
 				Column *fmt;
 				if (!(task->cols[a])) continue;
 				fmt = &task->as->format[task->cols[a]-1];
-				bunfastins(fmt->c[1], key, adt);
+				bunfastins(fmt->c[1], key, adt[a]);
 				HSTincrement(fmt->histogram[1], newValue[a]);
 			}
 			optimistic--;
@@ -812,7 +802,7 @@ Slice3(READERtask *task)
 				if (!(task->cols[a])) continue;
 				fmt = &task->as->format[task->cols[a]-1];
 
-				bunfastins(fmt->c[1], key, adt);
+				bunfastins(fmt->c[1], key, adt[a]);
 				HSTincrement(fmt->histogram[1], newValue[a]);
 			}
 		}
@@ -833,7 +823,7 @@ Slice3(READERtask *task)
 					if (!(task->cols[a])) continue;
 					fmt = &task->as->format[task->cols[a]-1];
 
-					bunfastins(fmt->c[1], key, adt);
+					bunfastins(fmt->c[1], key, adt[a]);
 					HSTincrement(fmt->histogram[1], newValue[a]);
 				}
 			}
@@ -897,7 +887,7 @@ Slice3(READERtask *task)
 					if (!(task->cols[a])) continue;
 					fmt = &task->as->format[task->cols[a]-1];
 
-					bunfastins(fmt->c[1], key, adt);
+					bunfastins(fmt->c[1], key, adt[a]);
 					HSTincrement(fmt->histogram[1], newValue[a]);
 					HSTdecrement(fmt->histogram[0], newValue[a]);
 				}
@@ -927,7 +917,7 @@ Slice3(READERtask *task)
 					
 					replaceWithNull(fmt->bin[moveindex[a]],*pos[a]);
 
-					bunfastins(fmt->bin[smallindex[a]], keys,&newValue[a]->val.ival);
+					bunfastins(fmt->bin[smallindex[a]], &keys,&newValue[a]->val.ival);
 					keys++;
 					HSTdecrement(fmt->histogram[0],curVal);
 					bunfastins(fmt->c[1], key,&curVal->val.ival);
