@@ -1529,6 +1529,7 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
             var timeout := 0LL; 
             if (bit(xrpc_timeout)) timeout := usec() + *(1000LL, xrpc_timeout);
             xrpc_timeouts.inplace(idx, timeout);
+            xrpc_statuses.inplace(idx, "reserved");
         }
         ws := [access]([copy](ws),BAT_WRITE); # use a copy, no locking required
     } else {
@@ -1539,7 +1540,7 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
             xrpc_timeouts.append(usec() + *(1000LL, xrpc_timeout));
             xrpc_wsbats.append(ws);
             xrpc_locks.append(wslock);
-            xrpc_statuses.append("exec");
+            xrpc_statuses.append("reserved");
             xrpc_mode := "cache-repeatable";
         }
     }
