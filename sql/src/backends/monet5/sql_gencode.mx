@@ -448,37 +448,34 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarType(mb, getArg(q, 0), tt);
 					setVarUDFtype(mb,getArg(q,0));
 				} else if ((s->flag & VAR_DECLARE) == 0) {
-					char *buf;
+					char *buf = GDKmalloc(SMALLBUFSIZ);
 
-					buf = alloca(SMALLBUFSIZ);
 					(void) snprintf(buf, SMALLBUFSIZ, "A%s", s->op1.sval);
 					q = newAssignment(mb);
-					q = pushArgumentId(mb, q, _strdup(buf));
+					q = pushArgumentId(mb, q, buf);
 				} else {
 					int tt = tail_type(s)->type->localtype;
-					char *buf;
+					char *buf = GDKmalloc(SMALLBUFSIZ);
 
 					if (tt == TYPE_bat) {
 						/* declared table */
 						s->nr = dump_table(mb, tail_type(s)->comp_type);
 						break;
 					}
-					buf = alloca(SMALLBUFSIZ);
 					(void) snprintf(buf, SMALLBUFSIZ, "A%s", s->op1.sval);
 					q = newInstruction(mb,ASSIGNsymbol);
 					q->argc = q->retc = 0;
-					q = pushArgumentId(mb, q, _strdup(buf));
+					q = pushArgumentId(mb, q, buf);
 					q = pushNil(mb, q, tt);
 					pushInstruction(mb, q);
 					q->retc++;
 				}
 			} else {
-				char *buf;
+				char *buf = GDKmalloc(SMALLBUFSIZ);
 
-				buf = alloca(SMALLBUFSIZ);
 				(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
 				q = newAssignment(mb);
-				q = pushArgumentId(mb, q, _strdup(buf));
+				q = pushArgumentId(mb, q, buf);
 			}
 			s->nr = getDestVar(q);
 		} break;
@@ -1057,14 +1054,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		}
 		case st_group:{
-			char *nme;
+			char *nme = GDKmalloc(SMALLBUFSIZ);
 			int ext, grp, o1 = _dumpstmt(sql, mb, s->op1.stval);
 
-			nme = alloca(SMALLBUFSIZ);
 			q = newStmt2(mb, groupRef, newRef);
 			ext = getDestVar(q);
-			snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
-        		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
+			snprintf(nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
+			q = pushReturn(mb, q, newVariable(mb, nme, TYPE_any));
 			grp = getArg(q, 1);
 			q = pushArgument(mb, q, o1);
 
@@ -1072,16 +1068,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, grp);
 			s->nr = getDestVar(q);
 			
-			snprintf( nme, SMALLBUFSIZ, "ext%d", s->nr);
-			renameVariable(mb, ext, _strdup(nme));
+			nme = GDKmalloc(SMALLBUFSIZ);
+			snprintf(nme, SMALLBUFSIZ, "ext%d", s->nr);
+			renameVariable(mb, ext, nme);
 
 		} 	break;
 		case st_group_ext:{
-			char *ext;
+			char ext[SMALLBUFSIZ];
 			int e = -1, g = _dumpstmt(sql, mb, s->op1.stval);
 
-			ext = alloca(SMALLBUFSIZ);
-			snprintf( ext, SMALLBUFSIZ, "ext%d", g);
+			snprintf(ext, SMALLBUFSIZ, "ext%d", g);
 			e = findVariable(mb, ext);
 			assert(e >= 0);
 
@@ -1090,20 +1086,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 		} break;
 		case st_derive:{
-			char *nme, *buf;
+			char *nme = GDKmalloc(SMALLBUFSIZ);
+			char *buf = GDKmalloc(SMALLBUFSIZ);
 			int ext, grp;
 			int g = _dumpstmt(sql, mb, s->op1.stval);
 			int l = _dumpstmt(sql, mb, s->op2.stval);
 
-			nme = alloca(SMALLBUFSIZ);
-			buf = alloca(SMALLBUFSIZ);
 			q = newStmt2(mb, groupRef, deriveRef);
 			ext = getDestVar(q);
-			snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
-        		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
+			snprintf(nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
+			q = pushReturn(mb, q, newVariable(mb, nme, TYPE_any));
 			grp = getArg(q, 1);
 			(void) snprintf(buf, SMALLBUFSIZ, "ext%d", g);
-			q = pushArgumentId(mb, q, _strdup(buf));
+			q = pushArgumentId(mb, q, buf);
 			q = pushArgument(mb, q, g);
 			q = pushArgument(mb, q, l);
 
@@ -1111,26 +1106,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, grp);
 			s->nr = getDestVar(q);
 
-			snprintf( nme, SMALLBUFSIZ, "ext%d", s->nr);
-			renameVariable(mb, ext, _strdup(nme));
+			nme = GDKmalloc(SMALLBUFSIZ);
+			snprintf(nme, SMALLBUFSIZ, "ext%d", s->nr);
+			renameVariable(mb, ext, nme);
 
 		} 	break;
 		case st_unique:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 
 			if (s->op2.stval) {
-				char *nme, *buf;
+				char *nme = GDKmalloc(SMALLBUFSIZ);
+				char *buf = GDKmalloc(SMALLBUFSIZ);
 				int e, g = _dumpstmt(sql, mb, s->op2.stval);
-
-				nme = alloca(SMALLBUFSIZ);
-				buf = alloca(SMALLBUFSIZ);
 
 				q = newStmt2(mb, groupRef, deriveRef);
 				e = getDestVar(q);
-				snprintf( nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
-        			q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
+				snprintf(nme, SMALLBUFSIZ, "grp%d", getDestVar(q));
+				q = pushReturn(mb, q, newVariable(mb, nme, TYPE_any));
 				(void) snprintf(buf, SMALLBUFSIZ, "ext%d", g);
-				q = pushArgumentId(mb, q, _strdup(buf));
+				q = pushArgumentId(mb, q, buf);
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, l);
 
@@ -1757,7 +1751,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->op2.stval)
 				r = _dumpstmt(sql,mb, s->op2.stval);
 			if (!VAR_GLOBAL(s->flag)) { /* globals */
-				char *buf, *vn = atom2string(s->op1.stval->op1.aval);
+				char *buf = GDKmalloc(SMALLBUFSIZ);
+				char *vn = atom2string(s->op1.stval->op1.aval);
 
 				if (!s->op2.stval) {
 					/* drop declared table */
@@ -1765,11 +1760,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					_DELETE(vn);
 					break;
 				}
-				buf = alloca(SMALLBUFSIZ);
 				(void) snprintf(buf, SMALLBUFSIZ, "A%s", vn);
 				q = newInstruction(mb,ASSIGNsymbol);
 				q->argc = q->retc = 0;
-				q = pushArgumentId(mb, q, _strdup(buf));
+				q = pushArgumentId(mb, q, buf);
 				_DELETE(vn);
 				pushInstruction(mb, q);
 				q->retc++;
@@ -2064,7 +2058,7 @@ backend_create_func(backend *be, sql_func *f)
 	if (f->ops) {
 		int argc = 0;
 		node *n;
-		char *buf = alloca(SMALLBUFSIZ);
+		char *buf = GDKmalloc(SMALLBUFSIZ);
 
 		for (n = f->ops->h; n; n = n->next, argc++) {
 			sql_arg *a = n->data;
@@ -2075,7 +2069,7 @@ backend_create_func(backend *be, sql_func *f)
 				(void) snprintf(buf, SMALLBUFSIZ, "A%s", a->name);
 			else
 				(void) snprintf(buf, SMALLBUFSIZ, "A%d", argc);
-			varid = newVariable(curBlk, _strdup(buf), type);
+			varid = newVariable(curBlk, buf, type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk,varid);
