@@ -249,8 +249,8 @@ forkMserver(str database, sabdb** stats, int force)
 		if (kv->val == NULL)
 			kv = findConfKey(_mero_props, "optpipe");
 		if (kv->val != NULL) {
-			nthreads = alloca(sizeof(char) * 512);
-			snprintf(nthreads, 512, "sql_optimizer=%s", kv->val);
+			pipeline = alloca(sizeof(char) * 512);
+			snprintf(pipeline, 512, "sql_optimizer=%s", kv->val);
 		}
 
 		kv = findConfKey(ckv, "master");
