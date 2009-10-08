@@ -946,7 +946,7 @@ insert_schemas(sql_trans *tr)
 	for (n = tr->schemas.set->h; n; n = n->next) {
 		sql_schema *s = n->data;
 
-		if (strcmp(s->base.name, dt_schema) == 0) 
+		if (isDeclaredSchema(s))
 			continue;
 		table_funcs.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner);
 		for (m = s->tables.set->h; m; m = m->next) {
