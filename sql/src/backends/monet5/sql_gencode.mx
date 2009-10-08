@@ -423,6 +423,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 	InstrPtr q = NULL;
 	node *n;
 
+ 	if (THRhighwater()) {
+		/* FIXME: this needs a proper solution, but at least this avoids
+		 * crashing, which is just a wee bit better */
+		showException(SQL, "sql", "too many nested operators");
+		return(0);
+	}
+
 	if (s) {
 		if (s->nr > 0)
 			return s->nr;	/* stmt already handled */
