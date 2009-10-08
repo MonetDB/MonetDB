@@ -711,7 +711,7 @@ PFheuristic_index (PFpnode_t *root)
         PFpnode_t *push = stack[depth]->child[next_child];
         if (next_child < 2 && push) { /* PUSH child left-deep-first */
             int i, looplifted = 0;
-            if (push->kind == p_where || push->kind == p_ord_ret || push->kind == p_let) {
+            if (push->kind == p_ord_ret || push->kind == p_let) {
                 for(i=0; i <= depth; i++) {
                     if (stack[i]->kind == p_flwr) {
                         PFpnode_t *binds = stack[i];
