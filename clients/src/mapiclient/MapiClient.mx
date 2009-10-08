@@ -1881,6 +1881,7 @@ main(int argc, char **argv)
 	Mapi mid;
 	int save_history = 0;
 	int interactive = 0;
+	int has_fileargs = 0;
 	int option_index = 0;
 	struct stat statb;
 	stream *config = NULL;
@@ -2236,11 +2237,12 @@ main(int argc, char **argv)
 		setFormatter(mid, output);
 
 	c = 0;
+	has_fileargs = optind != argc;
 
 	/* default formatter depends on whether we're interactive */
 	if (formatter == NOformatter) {
 		if (
-				(interactive || (optind == argc && command == NULL))
+				(interactive || (!has_fileargs && command == NULL))
 				&& interactive_stdin
 				&& mode != XQUERY
 				&& mode != MAL
@@ -2266,7 +2268,7 @@ main(int argc, char **argv)
 	}
 
 	/* give the user a welcome message with some general info */
-	if ((interactive || (optind == argc && command == NULL)) && interactive_stdin) {
+	if ((interactive || (!has_fileargs && command == NULL)) && interactive_stdin) {
 		MapiHdl hdl;
 		char *lang;
 
@@ -2326,7 +2328,7 @@ main(int argc, char **argv)
 		 * to keep the mapi handle open */
 		timerStart();
 		c = doRequest(mid, command,
-				(interactive || (optind == argc && command == NULL)));
+				(interactive || (!has_fileargs && command == NULL)));
 		timerEnd();
 	}
 
@@ -2338,7 +2340,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (interactive || (optind == argc && interactive_stdin && command == NULL)) {
+	if (interactive || (!has_fileargs && interactive_stdin && command == NULL)) {
 		char *prompt = NULL;
 
 		if (interactive_stdin) {
@@ -2360,7 +2362,7 @@ main(int argc, char **argv)
 			deinit_readline();
 		}
 #endif
-	} else if (optind == argc && !interactive_stdin) {
+	} else if (!has_fileargs && !interactive_stdin) {
 		c = doFile(mid, NULL);
 	}
 	mapi_destroy(mid);
