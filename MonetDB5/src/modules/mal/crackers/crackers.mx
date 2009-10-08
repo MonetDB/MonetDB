@@ -200,22 +200,22 @@ address CRKselectBounds_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@2],l:@2,h:@2):bat[:any_1,:oid]
+command uselect(b:bat[:any_1,:@2],l:@2,h:@2):bat[:any_1,:void]
 address CRKuselect_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@2],l:@2):bat[:any_1,:oid]
+command uselect(b:bat[:any_1,:@2],l:@2):bat[:any_1,:void]
 address CRKuselectValue_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:any_1,:oid]
+command uselect(b:bat[:any_1,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:any_1,:void]
 address CRKuselectBounds_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command thetauselect(b:bat[:any_1,:@2],v:@2,op:str):bat[:any_1,:oid]
+command thetauselect(b:bat[:any_1,:@2],v:@2,op:str):bat[:any_1,:void]
 address CRKthetauselect_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
@@ -233,13 +233,13 @@ comment "Similar to select but always make sure that we do not create a large pi
 @
 
 @= JoinSelect
-command joinuselect( right:bat[:oid,:@2], l:@2, h:@2, li:bit, hi:bit, left:bat[:oid,:oid] ):bat[:oid,:oid]
+command joinuselect( right:bat[:oid,:@2], l:@2, h:@2, li:bit, hi:bit, left:bat[:oid,:void] ):bat[:oid,:void]
 address CRKjoinSelectDefault_@2
 comment "Join left and right on head-OIDs.
 	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
 	The result is a new [:oid,:void] BAT.";
 
-command joinuselect( right:bat[:oid,:@2], l:@2, h:@2, li:bit, hi:bit, left:bat[:oid,:oid], inPlace:bit , isForeignKey:bit):bat[:oid,:oid]
+command joinuselect( right:bat[:oid,:@2], l:@2, h:@2, li:bit, hi:bit, left:bat[:oid,:void], inPlace:bit , isForeignKey:bit):bat[:oid,:void]
 address CRKjoinSelectBounds_@2
 comment "Join left and right on head-OIDs.
 	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
@@ -249,7 +249,7 @@ comment "Join left and right on head-OIDs.
 	and hence skip the respective check.
 	(NOTE: This may lead to CRASHES, if isForeignKey is incorrectly passed as TRUE!)";
 
-command jointhetauselect( right:bat[:oid,:@2],v:@2,op:str, left:bat[:oid,:oid], inPlace:bit , isForeignKey:bit):bat[:oid,:oid]
+command jointhetauselect( right:bat[:oid,:@2],v:@2,op:str, left:bat[:oid,:void], inPlace:bit , isForeignKey:bit):bat[:oid,:void]
 address CRKjointhetauselect_@2
 comment "Join left and right on head-OIDs.
 	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
