@@ -12,18 +12,18 @@ stderr of test 'msqldump--help` in directory 'src/mapiclient` itself:
 
 Usage: msqldump [ options ]
 Options are:
- -h hostname | --host=hostname  /* host to connect to */
- -P passwd   | --passwd=passwd  /* password */
- -p portnr   | --port=portnr    /* port to connect to */
- -d database | --database=database /* database to connect to */
- -f          | --functions      /* dump functions */
- -D          | --describe       /* describe database */
- -q          | --quiet          /* don't print welcome message */
- -t          | --trace          /* trace mapi network interaction */
- -u user     | --user=user      /* user id */
- -?          | --help           /* show this usage message */
+ -h hostname | --host=hostname    host to connect to
+ -p portnr   | --port=portnr      port to connect to
+ -u user     | --user=user        user id (if flag not given, ask for one)
+ -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)
+ -d database | --database=database  database to connect to
+ -f          | --functions      dump functions
+ -D          | --describe       describe database
+ -q          | --quiet          don't print welcome message
+ -t          | --trace          trace mapi network interaction
+ -?          | --help           show this usage message
 
-# 15:14:07 >  
-# 15:14:07 >  Done.
-# 15:14:07 >  
+# 20:47:38 >  
+# 20:47:38 >  Done.
+# 20:47:38 >  
 

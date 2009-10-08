@@ -10,26 +10,26 @@ stderr of test 'mclient--help` in directory 'src/mapiclient` itself:
 # 13:46:19 >  Mtimeout -timeout 60 mclient --help
 # 13:46:19 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/virgin-stable/clients/x86_64-unknown-linux-gnu/src/mapiclient/.libs/lt-mclient --language=(sql|xquery|mal|mil) [ options ]
+Usage: mclient --language=(sql|xquery|mal|mil) [ options ]
 
 Options are:
+ -h hostname | --host=hostname    host to connect to
+ -p portnr   | --port=portnr      port to connect to
+ -u user     | --user=user        user id (if flag not given, ask for one)
+ -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)
  -d database | --database=database  database to connect to
  -e          | --echo            echo the query
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
  -f kind     | --format=kind      specify output format {xml,typed,dm} for XQuery, or {csv,tab,raw,sql,xml}
  -H          | --history         load/save cmdline history (default off)
- -h hostname | --host=hostname   host to connect to
  -i          | --interactive     read stdin after command line args
  -l language | --language=lang   {sql,xquery,mal,mil}
  -L logfile  | --log=logfile     save client/server interaction
- -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)
- -p portnr   | --port=portnr     port to connect to
  -s stmt     | --statement=stmt  run single statement
  -t          | --time            time commands
  -X          | --Xdebug          trace mapi network interaction
- -u[user]    | --user[=user]      user id (if no user id given, ask for one)
- -?          | --help            show this usage message
  -| cmd      | --pager=cmd        for pagination
+ -?          | --help             show this usage message
 
 SQL specific opions 
  -r nr       | --rows=nr          for pagination

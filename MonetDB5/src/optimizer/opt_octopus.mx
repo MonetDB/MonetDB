@@ -189,11 +189,13 @@ OCTinitcode(Client cntxt, MalBlkPtr mb){
 	(void) cntxt;
 
 	p = newStmt(mb, remoteRef,connectRef);
-	SABAOTHgetLocalConnection(&s);
-    p= pushStr(mb,p, s);
-    p= pushStr(mb,p,"monetdb");
-    p= pushStr(mb,p,"monetdb");
-    p= pushStr(mb,p,"msql");
+	s = GDKgetenv("merovingian_uri");
+	if (s == NULL) /* aparently not under Merovingian control, fall back to local only */
+		SABAOTHgetLocalConnection(&s);
+	p= pushStr(mb,p, s);
+	p= pushStr(mb,p,"monetdb");
+	p= pushStr(mb,p,"monetdb");
+	p= pushStr(mb,p,"msql");
 	GDKfree(s);
 	return getArg(p,0);
 }
