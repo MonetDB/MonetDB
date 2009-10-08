@@ -1590,6 +1590,7 @@ PROC ws_create(int update) : BAT[void,bat]
         var aborted := (xrpc_statuses.find(idx) = "abort");
         if ((xrpc_mode = "use-cache-repeatable") or aborted) {
             lock_unset(wslock);
+            if (not(aborted)) xrpc_statuses.inplace(idx, "wait");
         } else {
             xrpc_statuses.inplace(idx, "exec");
         }
