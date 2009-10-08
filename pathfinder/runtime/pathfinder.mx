@@ -551,7 +551,7 @@ PROC _ws_xrpc_abort(oid idx, str status) : void
 PROC _ws_xrpc_end(str xrpc_qid, str errmsg) : void
 {
     var idx := reverse(xrpc_qids).find(xrpc_qid);
-    if (isnil(errmsg)) { 
+    if (isnil(errmsg) and (xrpc_timeout > 0LL)) { 
         xrpc_statuses.inplace(idx, "wait");
     } else {
         xrpc_statuses.inplace(idx, "abort");
@@ -1529,10 +1529,7 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
             var timeout := 0LL; 
             if (bit(xrpc_timeout)) timeout := usec() + *(1000LL, xrpc_timeout);
             xrpc_timeouts.inplace(idx, timeout);
-        }
-        if (xrpc_mode != "use-cache-repeatable") {
-            xrpc_statuses.inplace(idx, "exec");
-            return ws;
+            xrpc_statuses.inplace(idx, "reserved");
         }
         ws := [access]([copy](ws),BAT_WRITE); # use a copy, no locking required
     } else {
@@ -1543,7 +1540,7 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
             xrpc_timeouts.append(usec() + *(1000LL, xrpc_timeout));
             xrpc_wsbats.append(ws);
             xrpc_locks.append(wslock);
-            xrpc_statuses.append("exec");
+            xrpc_statuses.append("reserved");
             xrpc_mode := "cache-repeatable";
         }
     }
@@ -1573,7 +1570,9 @@ PROC ws_end(BAT[void,bat] ws, str err) : int
 PROC ws_create(int update) : BAT[void,bat]
 {
     if (bit(and(update,2)) and (xrpc_mode.search("cache") >= 0)) {
-        ERROR("ws_create: update queries should not be done in a cached session");
+        # updates in a session terminate the session
+        xrpc_timeout := 0;
+        xrpc_mode := "cache-repeatable";
     }
 
     # NOTE: use pre-query MIL variables xrpc_qid/xrpc_timeout to possibly re-use an existing ws
@@ -1586,7 +1585,17 @@ PROC ws_create(int update) : BAT[void,bat]
     # each xrpc request must lock its ws; read-only use directly unlocks again
     if (not(isnil(wslock))) {
         lock_set(wslock);
-        if (xrpc_mode = "use-cache-repeatable") lock_unset(wslock);
+
+        lock_set(xrpc_lock);
+        var aborted := (xrpc_statuses.find(idx) = "abort");
+        if ((xrpc_mode = "use-cache-repeatable") or aborted) {
+            lock_unset(wslock);
+            if (not(aborted)) xrpc_statuses.inplace(idx, "wait");
+        } else {
+            xrpc_statuses.inplace(idx, "exec");
+        }
+        lock_unset(xrpc_lock);
+        if (aborted) ERROR("ws_create: session was aborted by a previous query"); 
     }
     if (xrpc > 0) return ws;
 
