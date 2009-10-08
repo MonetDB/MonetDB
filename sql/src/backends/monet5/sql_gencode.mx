@@ -1785,8 +1785,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 
 		}
+
+		return s->nr;
 	}
-	return s->nr;
+
+	return(0);
 }
 @-
 The kernel uses two calls to procedures defined in SQL.
