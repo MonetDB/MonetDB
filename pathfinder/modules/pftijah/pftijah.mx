@@ -161,6 +161,15 @@ DESCRIPTION:
 the join algorithm comes down to a repeated slice and insert operation.
 "
 
+.COMMAND splitbat( BAT[void,oid] pre_tid, BAT[oid,any] pre_split)
+		: BAT[void,bat] = CMDsplitbat;
+"PARAMETERS:
+BAT[void,oid] - pre_tid: original BAT that should get split according to
+BAT[oid,any] - pre_split: OIDs in split bat
+DESCRIPTION:
+the operation does a kdiff and semijoin at the same time returning the kdiff as result 0 and the semijoin as result 1.
+"
+
 .COMMAND set_tailkeysorted(BAT[any,any]) : BAT[any,any] = CMDsettailkeysorted; 
 "set bat properties of the tail to key and sorted"
 
@@ -209,9 +218,12 @@ PROC count_wrd(BAT b) : wrd {
 }
 ###################################################################
 
+const DEBUG     := false;
+var trace       := false;
+var timing      := false;
+var verbose     := false;
+var inex        := false;
 
-
-const DEBUG := false;
 
 # locks
 var tj_adm_lock     := lock_create(); # tijah top administration lock
@@ -236,9 +248,6 @@ const ENTITY_NUM := 10000;
 
 #var collHeight := 10;
 #var retNum := 100;
-
-var trace := false;
-var timing := false;
 
 const HASH := str(chr(35));
 
@@ -371,9 +380,6 @@ PROC ws_ft_index_info_base(BAT[void,BAT] ws, BAT[any,str] ftiNames, bit all) : B
 # Start of the new implementation of the interfaces                 #
 #                                                                   #
 #####################################################################
-
-var verbose      := false;
-var inex         := false;
 
 const dflt_ft_index   := "DFLT_FT_INDEX";
 const dflt_bg_index   := "DFLT_FT_INDEX";
@@ -1408,7 +1414,7 @@ PROC tj_init_collection_base(str ftiName, BAT[str,str] param) : void
      
       var commitBats := _tj_create_commitBats();
       _tj_init_collection_base(ftiName, param, commitBats);
-      _tj_commit_frag(commitBats);       
+      _tj_commit_frag(new(str,bat), commitBats);       
 
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
@@ -1552,6 +1558,7 @@ PROC _tj_init_collection_frag(str ftiName, int cur_frag, BAT[str,bat] commitBats
      new(void,int).seqbase(1@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_size");
      new(oid,oid).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_pfpre");
      if (inex) new(oid,str).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_path");
+     if (inex) new(oid,str).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_pathno");
      new(void,oid).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_concept_tid");
      new(void,oid).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_concept_elem");
      new(void,dbl).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_concept_score");
@@ -1569,6 +1576,7 @@ PROC _tj_init_collection_frag(str ftiName, int cur_frag, BAT[str,bat] commitBats
      submitBats.append("tj_" + ftindex + "_size");
      submitBats.append("tj_" + ftindex + "_pfpre");
      if (inex) submitBats.append("tj_" + ftindex + "_path");
+     if (inex) submitBats.append("tj_" + ftindex + "_pathno");
      submitBats.append("tj_" + ftindex + "_concept_tid");
      submitBats.append("tj_" + ftindex + "_concept_elem");
      submitBats.append("tj_" + ftindex + "_concept_score");
@@ -1630,6 +1638,7 @@ PROC _tj_get_collection_frag(str ftiName, BAT[str,bat] commitBats) : void
 	tjCollBat.insert("size", bat("tj_" + ftindex + "_size"));
 	tjCollBat.insert("pfpre", bat("tj_" + ftindex + "_pfpre"));
         if (inex) tjCollBat.insert("path", bat("tj_" + ftindex + "_path"));
+        if (inex) tjCollBat.insert("pathno", bat("tj_" + ftindex + "_pathno"));
 	tjCollBat.insert("concept_tid", bat("tj_" + ftindex + "_concept_tid"));
 	tjCollBat.insert("concept_elem", bat("tj_" + ftindex + "_concept_elem"));
 	tjCollBat.insert("concept_score",bat("tj_" + ftindex + "_concept_score"));
@@ -1665,6 +1674,7 @@ PROC _tj_set_forwardindex_access(BAT[str,bat] collBat, int ac) : void
       collBat.find("size").access(ac);
       collBat.find("pfpre").access(ac);
       if (inex) collBat.find("path").access(ac);
+      if (inex) collBat.find("pathno").access(ac);
       collBat.find("concept_tid").access(ac);
       collBat.find("concept_elem").access(ac);
       collBat.find("concept_score").access(ac);
@@ -1728,7 +1738,7 @@ PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
          }
       }
       _tj_finalize_collection_frag(ftiName, collBat, commitBats, false);
-      _tj_commit_frag(commitBats); 
+      _tj_commit_frag(collBat, commitBats); 
 
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
@@ -1810,6 +1820,7 @@ PROC _tj_finalize_collection_frag(str ftiName, BAT[str,bat] collBat, BAT[str,bat
       submitBats.append(collBat.find("tid").bbpname());
       submitBats.append(collBat.find("size").bbpname());
       if (inex) submitBats.append(collBat.find("path").bbpname());
+      if (inex) submitBats.append(collBat.find("pathno").bbpname());
       submitBats.append(collBat.find("pfpre").bbpname());
       submitBats.append(collBat.find("concept_tid").bbpname());
       submitBats.append(collBat.find("concept_elem").bbpname());
@@ -1869,12 +1880,17 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
         var submitBats := commitBats.find("submitBats");
         collBat.find("termdict").access(BAT_WRITE);
 
+        var split := splitbat(tids, collBat.find("pfpre"));
+        var elems := split.fetch(1);
+        var terms := split.fetch(0);
+        split := nil;
+
 	# incremental index merge
 	if (collBat.exist("_tags")) 
         {
 		# handle elements 
-	        var tmp := tids.semijoin(collBat.find("pfpre"));
-                tmp := tmp.reverse().ssort();
+                var tmp := elems.reverse().ssort();
+                elems := nil;
                 var tmpsize := tmp.leftfetchjoin(sizes);
                 var i := mergeindex2(tmp, tmpsize,
 		                 collBat.find("_tagIndex"),
@@ -1887,16 +1903,16 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
 	        i := nil;
 		tmp := nil;
 		tmpsize := nil;
-		replaceBats.insert("_tagIndex", "tj_" + ftindex + "_TagIndex");
-                replaceBats.insert("_tags", "tj_" + ftindex + "_Tags");
-                replaceBats.insert("_tagSize", "tj_" + ftindex + "_TagSize");
+		replaceBats.insert(collBat.find("_tagIndex").bbpname(), "tj_" + ftindex + "_TagIndex");
+                replaceBats.insert(collBat.find("_tags").bbpname(), "tj_" + ftindex + "_Tags");
+                replaceBats.insert(collBat.find("_tagSize").bbpname(), "tj_" + ftindex + "_TagSize");
 		submitBats.append("tj_" + ftindex + "_TagIndex");
 		submitBats.append("tj_" + ftindex + "_Tags");
 		submitBats.append("tj_" + ftindex + "_TagSize");
 		
                 # handle terms
-                tmp := tids.kdiff(collBat.find("pfpre"));
-                tmp := tmp.reverse().ssort();
+                tmp := terms.reverse().ssort();
+                terms := nil;
 		var tf := collBat.find("termfreq");
                 var termfreq := {count}(tmp, collBat.find("termdict"), false);
                 tf [:+=] termfreq.slice(0,tf.count() - 1);
@@ -1908,8 +1924,8 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
                 collBat.replace("_terms", i.fetch(1).access(BAT_READ).mmap(1));
 	        i := nil;
 		tmp := nil;
-		replaceBats.insert("_TermIndex", "tj_" + ftindex + "_TermIndex");
-                replaceBats.insert("_Terms", "tj_" + ftindex + "_Terms");
+		replaceBats.insert(collBat.find("_termIndex").bbpname(), "tj_" + ftindex + "_TermIndex");
+                replaceBats.insert(collBat.find("_terms").bbpname(), "tj_" + ftindex + "_Terms");
 		submitBats.append("tj_" + ftindex + "_TermIndex");
 		submitBats.append("tj_" + ftindex + "_Terms");
 		submitBats.append(tf.bbpname());
@@ -1917,8 +1933,8 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
         else # create new index
         {       
 		# handle elements 
-	        var tmp := tids.semijoin(collBat.find("pfpre"));
-                tmp := tmp.reverse().ssort();
+                var tmp := elems.reverse().ssort();
+                elems := nil;
 	        var tagindex := tmp.hmark(1@0).offsetindex(collBat.find("tagdict").count_wrd() + 1);
 	        var tags := tmp.tmark(1@0);
 	        tmp := nil;
@@ -1935,8 +1951,8 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
 		submitBats.append("tj_" + ftindex + "_TagSize");
 
 		# handle terms
-                tmp := tids.kdiff(collBat.find("pfpre"));
-                tmp := tmp.reverse().ssort();
+                tmp := terms.reverse().ssort();
+                terms := nil;
 		var tf := collBat.find("termfreq");
                 var termfreq := {count}(tmp, collBat.find("termdict"), false);
                 tf [:+=] termfreq.slice(0,tf.count() - 1);
@@ -1978,19 +1994,26 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
       if ( verbose ) printf(HASH +"TJ _tj_build_inverted_index_frag() finished.\n");
 }
 
-PROC _tj_commit_frag(BAT[str,bat] collBat) : void
+PROC _tj_commit_frag(BAT[str,bat] collBat, BAT[str,bat] commitBats) : void
 {
       if ( verbose ) printf(HASH +"TJ _tj_commit_frag() called.\n");
-      var replaceBats := collBat.find("replaceBats");
+      var replaceBats := commitBats.find("replaceBats");
       replaceBats@batloop() {
       	 bat($t).persists(false).rename("del_" + $t);
-	 collBat.find($h).persists(true).bbpname($t);
+	 bat($h).persists(true).bbpname($t);
       }
     
-      var submitBats := collBat.find("submitBats");
+      var submitBats := commitBats.find("submitBats");
       submitBats.append([+](const "del_", replaceBats.tmark(0@0)));
       subcommit(submitBats);
       if ( verbose ) printf(HASH +"TJ _tj_commit_frag() finished.\n");
+}
+
+PROC tj_collection_delete(str ftiName) : void
+{
+      var tj_bats := view_bbp_name().like("tj_" + ftiName).tmark();
+      [persists]([bat](tj_bats), const false);
+      subcommit(tj_bats);
 }
 
 PROC tj_global_delete() : void
@@ -3807,9 +3830,25 @@ PROC tj_rm_overlap(BAT[oid,dbl] ctx) : bat
 # Map all pre identifiers to their stored inexpath expressions
 # Returns a bat [pre, any].
 ##
-PROC tj_pre2inexpath(bat[oid,any] pre_score) : bat[oid,any] 
+PROC tj_pre2inexpath(bat[oid,dbl] pre_score) : bat[str,dbl] 
 {
-    return pre_score.reverse().leftjoin(bat("tj_" + ftindex + "_path")).reverse();
+    var t_total := 0 - time();
+
+    if (pre_score.count_wrd() = wrd(0)) return new(str,dbl);
+    var pres := pre_score.hmark(0@0);
+    var scores := pre_score.tmark(0@0);
+    var docpre := bat("tj_" + ftindex + "_doc_firstpre");
+    var mark_did := [find_lower](const docpre.reverse(), pres);
+    var mark_docname := mark_did.leftjoin(bat("tj_" + ftindex + "_doc_name"));
+    var mark_path := pres.leftjoin(bat("tj_" + ftindex + "_path"));
+    var mark_pathno := pres.leftjoin(bat("tj_" + ftindex + "_pathno"));
+    var mark_docname_path := [+](mark_docname, mark_path);
+    mark_docname_path := [+](mark_docname_path, mark_pathno);
+    var res := mark_docname_path.reverse().leftfetchjoin(scores);    
+
+    t_total :+= time();
+    if (timing) printf(HASH +" add inexpath timing: total: %d\n", t_total);
+    return res;
 }
 
 ################################################################################
@@ -6220,6 +6259,133 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	*result = res;
 	return GDK_SUCCEED;
 }
+
+
+int CMDsplitbat ( BAT** result, BAT* origbat, BAT* splitbat )
+{
+	char *name = "TJsplitbat";
+	BAT *res = NULL;
+	BAT *diffbat = NULL;
+	BAT *joinbat = NULL;
+	BUN ressize = 0;
+        BUN lst_split, cur_split, s_diff, lst_diff, s_join, lst_join, lst_res;
+        oid cur_orig, lst_orig, split_oid;
+        oid *tid;
+	
+	/* --------------------------- checks ---------------------------------- */
+	
+	BATcheck(origbat, name);
+	BATcheck(splitbat, name);
+ 
+        if (origbat->htype != TYPE_void) {
+            GDKerror("%s: head (oid) of original BAT must NOT be materialized.\n", name);
+            return(GDK_FAIL);
+        }
+        if (origbat->ttype != TYPE_oid) {
+            GDKerror("%s: tail of original BAT must be of type OID.\n", name);
+            return(GDK_FAIL);
+        }
+        if (splitbat->htype != TYPE_oid) {
+            GDKerror("%s: head of split BAT must be of type OID.\n", name);
+            return(GDK_FAIL);
+        }
+        if (!(BAThordered(splitbat)&1)) { 
+            GDKerror("%s: head of split BAT must be sorted.\n",name); 
+            return(GDK_FAIL);
+        }
+
+	/* ---------------------------- inits ---------------------------------- */
+
+	ressize = 2;
+	res = BATnew(TYPE_void, TYPE_bat, ressize);
+        if (res == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "BUNFMT".\n", name, ressize);
+            	return(GDK_FAIL);
+        }
+        
+	ressize = BATcount(origbat);
+	diffbat = BATnew(TYPE_oid, TYPE_oid, ressize);
+        if (diffbat == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[oid,oid] of size "BUNFMT".\n", name, ressize);
+            	BATfree(res);
+                return(GDK_FAIL);
+        }
+	
+	ressize = BATcount(splitbat);
+	joinbat = BATnew(TYPE_oid, TYPE_oid, ressize);
+        if (joinbat == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[oid,oid] of size "BUNFMT".\n", name, ressize);
+            	BATfree(res);
+            	BATfree(diffbat);
+            	return(GDK_FAIL);
+        }
+	
+	lst_split = BUNlast(splitbat);
+	s_diff = lst_diff = BUNlast(diffbat);
+	s_join = lst_join = BUNlast(joinbat);
+	lst_res = BUNlast(res);
+	cur_split = BUNfirst(splitbat);
+        cur_orig = origbat->hseqbase;
+        lst_orig = cur_orig + BATcount(origbat);
+	
+	/* ----------------------------- main ---------------------------------- */
+
+        while (cur_split < lst_split && *(oid*)Hloc(splitbat, cur_split) < cur_orig) cur_split++;
+        split_oid = *(oid*)Hloc(splitbat, cur_split);
+
+        for (;cur_orig < lst_orig; cur_orig++) {
+            tid = ((oid*)Tloc(origbat, cur_orig)) - origbat->hseqbase;
+            if (cur_orig == split_oid) { 
+                BUNfastins(joinbat, &cur_orig, tid);
+                if (cur_split < lst_split) {
+                    cur_split++;
+                    split_oid = *(oid*)Hloc(splitbat, cur_split);
+                }
+            } else {
+                BUNfastins(diffbat, &cur_orig, tid);
+            }
+        }
+
+	/* ---------------------------- tidy up --------------------------------- */
+
+    	diffbat->batDirty = TRUE;
+        diffbat->hsorted = GDK_SORTED;
+        diffbat->tsorted = FALSE;
+        BATkey(diffbat, TRUE);
+
+    	joinbat->batDirty = TRUE;
+        joinbat->hsorted = GDK_SORTED;
+        joinbat->tsorted = FALSE;
+        BATkey(joinbat, TRUE);
+	
+        /* insert bats in result */		
+	BATseqbase(res, (oid)0);
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, (void*)&diffbat->batCacheid);
+	BBPunfix(diffbat->batCacheid);	
+	lst_res++;
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, (void*)&joinbat->batCacheid); 
+	BBPunfix(joinbat->batCacheid);	
+	lst_res++;
+	
+	BATsetcount(res, 2);
+	res->batDirty = TRUE;
+	BATkey(res, TRUE);
+	BATkey(BATmirror(res), TRUE);
+        res->hsorted = GDK_SORTED;
+        res->tsorted = FALSE;
+        res->H->nonil = 1;
+        res->T->nonil = 0;
+	
+	*result = res;
+	return GDK_SUCCEED;
+}
+
+
+
+
 
 @= init_result
 {
