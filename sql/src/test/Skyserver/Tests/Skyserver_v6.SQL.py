@@ -1,5 +1,4 @@
 import os, sys
-import copy
 try:
     import subprocess
 except ImportError:
@@ -7,12 +6,10 @@ except ImportError:
     import MonetDBtesting.subprocess26 as subprocess
 
 def client(cmd, env=os.environ):
-    clt = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    sys.stdout.write(clt.stdout.read())
-    clt.stdout.close()
-    sys.stderr.write(clt.stderr.read())
-    clt.stderr.close()
-
+    clt = subprocess.Popen(cmd, env=env, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = clt.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 def main():
     dir = os.getenv('TSTSRCDIR')
@@ -23,29 +20,31 @@ def main():
     f.write('user=skyserver\npassword=skyserver\n')
     f.close()
     sys.stdout.write('Create User\n')
-    client(clcmd + "<%s" % ('%s/../create_user.sql' % dir))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','create_user.sql'))
     sys.stdout.write('tables\n')
-    client(clcmd + "<%s" % ('%s/../../../sql/math.sql' % dir), skyenv)
-    client(clcmd + "<%s" % ('%s/../../../sql/cache.sql' % dir), skyenv)
-    client(clcmd + "<%s" % ('%s/../../../sql/skyserver.sql' % dir), skyenv)
-    client(clcmd + "<%s" % ('%s/../Skyserver_tables_v6.sql' % dir), skyenv)
-    client("cat %s/../Skyserver_import_v6.sql | sed -e \"s|DATA|%s/../microsky|g\" | %s " % (dir, dir, clcmd), skyenv)
-    client(clcmd + "<%s" % ('%s/../Skyserver_constraints_v6.sql' % dir), skyenv)
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','..','..','sql','math.sql'))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','..','..','sql','cache.sql'))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','..','..','sql','skyserver.sql'))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_tables_v6.sql'))
+    clt1 = subprocess.Popen(clcmd, shell = True, universal_newlines = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+    sql = open(os.path.join(dir, '..', 'Skyserver_import_v6.sql')).read().replace('DATA',os.path.join(dir,'..','microsky').replace('\\','\\\\'))
+    out,err = clt1.communicate(sql)
+    sys.stdout.write(out)
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_constraints_v6.sql'))
     sys.stdout.write('views\n')
-    client(clcmd + "<%s" % ('%s/../Skyserver_views_v6.sql' % dir), skyenv)
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_views_v6.sql'))
     sys.stdout.write('functions\n')
-    client(clcmd + "<%s" % ('%s/../Skyserver_functions_v6.sql' % dir), skyenv)
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_functions_v6.sql'))
     sys.stdout.write('Cleanup\n')
-    client(clcmd + "<%s" % ('%s/../Skyserver_dropFunctions_v6.sql' % dir), skyenv)
-    client(clcmd + "<%s" % ('%s/../Skyserver_dropMs_functions.sql' % dir), skyenv)
-    client(clcmd + "<%s" % ('%s/../Skyserver_dropMath.sql' % dir), skyenv)
-    client(clcmd + "<%s" % ('%s/../Skyserver_dropCache.sql' % dir), skyenv)
-    client(clcmd + "<%s" % ('%s/../Skyserver_dropViews.sql' % dir), skyenv)
-    client(clcmd + "<%s" % ('%s/../Skyserver_dropConstraints_v6.sql' % dir), skyenv)
-    client(clcmd + "<%s" % ('%s/../Skyserver_dropTables_v6.sql' % dir), skyenv)
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_dropFunctions_v6.sql'))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_dropMs_functions.sql'))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_dropMath.sql'))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_dropCache.sql'))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_dropViews.sql'))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_dropConstraints_v6.sql'))
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','Skyserver_dropTables_v6.sql'))
     sys.stdout.write('Remove User\n')
-    client(clcmd + "<%s" % ('%s/../drop_user.sql' % dir))
-
+    client(clcmd + ' "%s"' % os.path.join(dir, '..','drop_user.sql'))
     os.unlink(skyenv['DOTMONETDBFILE'])
 
 main()

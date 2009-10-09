@@ -26,6 +26,8 @@ Over..
 # 17:29:07 >  /usr/bin/python Skyserver_v6.SQL.py Skyserver_v6 
 # 17:29:07 >  
 
+Create User
+tables
 [ 88	]
 [ 111	]
 [ 339	]
@@ -87,8 +89,6 @@ Over..
 [ 8	]
 [ 53	]
 [ 91	]
-Create User
-tables
 views
 functions
 Cleanup

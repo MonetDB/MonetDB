@@ -44,7 +44,7 @@ void freeConfFile(confkeyval *list);
 confkeyval *findConfKey(confkeyval *list, char *key);
 char *setConfVal(confkeyval *ckv, char *val);
 void secondsToString(char *buf, time_t t, int longness);
-void abbreviateString(char *ret, char *in, size_t width);
+void abbreviateString(char *ret, const char *in, size_t width);
 void generateSalt(char *buf[], unsigned int len);
 char *generatePassphraseFile(char *path);
 

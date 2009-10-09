@@ -1,4 +1,9 @@
 import os, time, sys
+try:
+    import subprocess
+except ImportError:
+    # use private copy for old Python versions
+    import MonetDBtesting.subprocess26 as subprocess
 
 def clean_ports(cmd,mapiport,xrpcport):
     cmd = cmd.replace('--port=%s' % mapiport,'--port=<mapi_port>')
@@ -17,7 +22,7 @@ def remote_server_start(x,s,dbinit):
     sys.stderr.write('#remote mserver: "%s"\n' % (srvcmd))
     sys.stdout.flush()
     sys.stderr.flush()
-    srv = os.popen(srvcmd, 'w')
+    srv = subprocess.Popen(srvcmd, shell = True, stdin = subprocess.PIPE)
     time.sleep(5)                      # give server time to start
     return srv
 
@@ -31,19 +36,19 @@ def server_start(x,s,dbinit):
     sys.stderr.write('#mserver: "%s"\n' % (srvcmd))
     sys.stdout.flush()
     sys.stderr.flush()
-    srv = os.popen(srvcmd, 'w')
+    srv = subprocess.Popen(srvcmd, shell = True, stdin = subprocess.PIPE)
     time.sleep(5)                      # give server time to start
     return srv
 
 def server_stop(srv):
-    srv.close()
+    srv.communicate()
 
 def client_load_file(clt, port, file):
     f = open(file, 'r')
     for line in f:
-        line = line.replace('port_num', str(port+1))
         line = line.replace('port_num5', str(port+2))
-        clt.write(line)
+        line = line.replace('port_num', str(port+1))
+        clt.stdin.write(line)
     f.close()
 
 
@@ -57,10 +62,10 @@ def client(x,s, c, dbinit, lang, file):
     sys.stderr.write('#client%d: "%s"\n' % (x,cltcmd))
     sys.stdout.flush()
     sys.stderr.flush()
-    clt = os.popen(cltcmd, 'w')
+    clt = subprocess.Popen(cltcmd, shell = True, stdin = subprocess.PIPE)
     port = int(os.getenv('MAPIPORT'))
     client_load_file(clt, port, file)
-    clt.close()
+    clt.communicate()
     return '%s ' % (lang)
 
 
@@ -69,9 +74,9 @@ def clients(x,dbinit):
     s += 1; srv = server_start(x,s,dbinit)
     s += 1; remote_srv = remote_server_start(x,s,dbinit)
     c = 0 ; h = ''
-    c += 1; h = client(x,s,c,dbinit,'SQL' , '%s/../connections_syntax.sql' % os.getenv('RELSRCDIR'))
-    c += 1; h = client(x,s,c,dbinit,'SQL' , '%s/../connections_semantic.sql' % os.getenv('RELSRCDIR'))
-    c += 1; h = client(x,s,c,dbinit,'SQL', '%s/../connections_default_values.sql' % os.getenv('RELSRCDIR'))
+    c += 1; h = client(x,s,c,dbinit,'SQL' , os.path.join(os.getenv('RELSRCDIR'),'..','connections_syntax.sql'))
+    c += 1; h = client(x,s,c,dbinit,'SQL' , os.path.join(os.getenv('RELSRCDIR'),'..','connections_semantic.sql'))
+    c += 1; h = client(x,s,c,dbinit,'SQL', os.path.join(os.getenv('RELSRCDIR'),'..','connections_default_values.sql'))
     server_stop(srv)
     server_stop(remote_srv)
 
