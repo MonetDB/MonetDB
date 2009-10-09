@@ -57,8 +57,16 @@ address PQtopn_@1@2
 comment "Return the topn elements of the bat t using a @2-pqueue";
 
 command topn_@2(t:bat[:void,:@1],n:int) :bat[:oid,:@1] 
-address PQtopn_void@1@2
+address PQtopn_@1@2
 comment "Return the topn elements of the bat t using a @2-pqueue";
+
+command utopn_@2(t:bat[:oid,:@1], n:int) :bat[:oid,:@1] 
+address PQutopn_@1@2
+comment "Return the unique topn elements of the bat t using a @2-pqueue";
+
+command utopn_@2(t:bat[:void,:@1],n:int) :bat[:oid,:@1] 
+address PQutopn_@1@2
+comment "Return the unique topn elements of the bat t using a @2-pqueue";
 
 @= mel_minmax_any
 pattern topreplace_@1(h:bat[:oid,:any_1], id:oid, value:any_1) 
@@ -78,8 +86,16 @@ address PQtopn_any@1
 comment "Return the topn elements of the bat t using a @1-pqueue";
 
 command topn_@1(t:bat[:void,:any_1], n:int) :bat[:oid,:any_1] 
-address PQtopn_voidany@1
+address PQtopn_any@1
 comment "Return the topn elements of the bat t using a @1-pqueue";
+
+command utopn_@1(t:bat[:oid,:any_1], n:int) :bat[:oid,:any_1] 
+address PQutopn_any@1
+comment "Return the unique topn elements of the bat t using a @1-pqueue";
+
+command utopn_@1(t:bat[:void,:any_1], n:int) :bat[:oid,:any_1] 
+address PQutopn_any@1
+comment "Return the unique topn elements of the bat t using a @1-pqueue";
 
 @= mel_pqueue_any
   @:mel_minmax_any(min)@
@@ -330,6 +346,95 @@ int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
   }
   return GDK_SUCCEED;
 }
+
+/* TopN (unique values), based on @2-pqueue */
+
+int pqueue_utopn_void@1@2(BAT **H, BAT *t, int *N)
+{
+  BAT *duplicates = NULL, *b;
+  BATiter ti = bat_iterator(t);
+  @1 *v;
+  BUN i, j, n, cnt = BATcount(t), p;
+  oid idx = t->hseqbase;
+
+  n = (BUN) *N;
+  do_pqueue_init(H,t,n);
+  duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+  v = (@1*)BUNtail(ti,BUNfirst(t));
+
+  for(i=0, j=0; j < cnt && i<n; j++, idx++, v++) {
+	if ((p = BUNfnd(BATmirror(*H), v)) == BUN_NONE) {
+		pqueue_enqueue_@1@2(*H, &idx, v); 
+	        HASHdestroy(*H);
+		BUNins(duplicates, &idx, &idx, FALSE);
+		i++;
+	} else {
+		BUNins(duplicates, Hloc(*H, p), &idx, FALSE);
+	}
+  }
+  for(; j<cnt; j++, idx++, v++) {
+        if (*(@3 *)Tloc(*H,BUNfirst(*H)) @4= *v) {
+		if ((p = BUNfnd(BATmirror(*H), v)) == BUN_NONE) {
+			oid o_idx = *(oid*)Hloc(*H, BUNfirst(*H));
+			BUNdelHead(duplicates, &o_idx, TRUE);
+			pqueue_topreplace_@1@2(*H, &idx, v); 
+	        	HASHdestroy(*H);
+			BUNins(duplicates, &idx, &idx, FALSE);
+		} else {
+			BUNins(duplicates, Hloc(*H, p), &idx, FALSE);
+		}
+	}
+  }
+  b = BATjoin(BATmirror(duplicates), *H, BATcount(duplicates));
+  BBPunfix((*H)->batCacheid);
+  BBPunfix(duplicates->batCacheid);
+  *H = b;
+  return GDK_SUCCEED;
+}
+
+int pqueue_utopn_@1@2(BAT **H, BAT *t, int *N)
+{
+  BAT *duplicates = NULL, *b;
+  BATiter ti = bat_iterator(t);
+  @1 *v;
+  BUN i, j, n, cnt = BATcount(t), p;
+  oid *idx;
+
+  n = (BUN) *N;
+  do_pqueue_init(H,t,n);
+  duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+  v = (@1*)BUNtail(ti,BUNfirst(t));
+  idx = (oid*)BUNhead(ti,BUNfirst(t));
+
+  for(i=0, j=0; j < cnt && i<n; j++, idx++, v++) {
+	if ((p = BUNfnd(BATmirror(*H), v)) == BUN_NONE) {
+		pqueue_enqueue_@1@2(*H, idx, v); 
+	        HASHdestroy(*H);
+		BUNins(duplicates, idx, idx, FALSE);
+		i++;
+	} else {
+		BUNins(duplicates, Hloc(*H, p), idx, FALSE);
+	}
+  }
+  for(; j<cnt; j++, idx++, v++) {
+        if (*(@3 *)Tloc(*H,BUNfirst(*H)) @4= *v) {
+		if ((p = BUNfnd(BATmirror(*H), v)) == BUN_NONE) {
+			oid o_idx = *(oid*)Hloc(*H, BUNfirst(*H));
+			BUNdelHead(duplicates, &o_idx, TRUE);
+			pqueue_topreplace_@1@2(*H, idx, v); 
+	        	HASHdestroy(*H);
+			BUNins(duplicates, idx, idx, FALSE);
+		} else {
+			BUNins(duplicates, Hloc(*H, p), idx, FALSE);
+		}
+	}
+  }
+  b = BATjoin(BATmirror(duplicates), *H, BATcount(duplicates));
+  BBPunfix((*H)->batCacheid);
+  BBPunfix(duplicates->batCacheid);
+  *H = b;
+  return GDK_SUCCEED;
+}
 @c
 @= pqueueimpl
   @:pqueueimpl_minmax(@1,min,@1,<)@
@@ -511,6 +616,101 @@ int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
   return GDK_SUCCEED;
 }
 
+int pqueue_utopn_voidany@1(BAT **H, BAT *t, int *N)
+{
+  BAT *duplicates = NULL, *b;
+  BATiter hi, ti = bat_iterator(t);
+  BUN i, j, n, cnt = BATcount(t), p;
+  BUN q = BUNfirst(t);
+  ptr v;
+  oid idx = t->hseqbase;
+  int tpe = BATttype(t);
+
+  n = (BUN) *N;
+  do_pqueue_init(H,t,n);
+  duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+  hi = bat_iterator(*H);
+
+  for(i=0, j=0; j < cnt && i<n; j++, idx++, q++) {
+	v = BUNtail(ti,q);
+	if ((p = BUNfnd(BATmirror(*H), v)) == BUN_NONE) {
+		pqueue_enqueue_any@1(*H, &idx, v, tpe); 
+	        HASHdestroy(*H);
+		BUNins(duplicates, &idx, &idx, FALSE);
+		i++;
+	} else {
+		BUNins(duplicates, Hloc(*H, p), &idx, FALSE);
+	}
+  }
+  for(; j<cnt; j++, idx++, q++) {
+	v = BUNtail(ti,q);
+	if (atom_CMP(BUNtail(hi,BUNfirst(*H)), v, tpe) @2= 0) {
+		if ((p = BUNfnd(BATmirror(*H), v)) == BUN_NONE) {
+			oid o_idx = *(oid*)Hloc(*H, BUNfirst(*H));
+			BUNdelHead(duplicates, &o_idx, TRUE);
+			pqueue_topreplace_any@1(*H, &idx, v, tpe); 
+	        	HASHdestroy(*H);
+			BUNins(duplicates, &idx, &idx, FALSE);
+		} else {
+			BUNins(duplicates, Hloc(*H, p), &idx, FALSE);
+		}
+	}
+  }
+  b = BATjoin(BATmirror(duplicates), *H, BATcount(duplicates));
+  BBPunfix((*H)->batCacheid);
+  BBPunfix(duplicates->batCacheid);
+  *H = b;
+  return GDK_SUCCEED;
+}
+
+int pqueue_utopn_any@1(BAT **H, BAT *t, int *N)
+{
+  BAT *duplicates = NULL, *b;
+  BATiter hi, ti = bat_iterator(t);
+  BUN i, j, n, cnt = BATcount(t), p;
+  BUN q = BUNfirst(t);
+  oid *idx;
+  ptr v;
+  int tpe = BATttype(t);
+
+  n = (BUN) *N;
+  do_pqueue_init(H,t,n);
+  duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+  hi = bat_iterator(*H);
+
+  idx = (oid*)BUNhead(ti,BUNfirst(t));
+  for(i=0, j=0; j < cnt && i<n; j++, idx++, q++) {
+	v = BUNtail(ti,q);
+	if ((p = BUNfnd(BATmirror(*H), v)) == BUN_NONE) {
+		pqueue_enqueue_any@1(*H, idx, v, tpe); 
+	        HASHdestroy(*H);
+		BUNins(duplicates, idx, idx, FALSE);
+		i++;
+	} else {
+		BUNins(duplicates, Hloc(*H, p), idx, FALSE);
+	}
+  }
+  for(; j<cnt; j++, idx++, q++) {
+	v = BUNtail(ti,q);
+	if (atom_CMP(BUNtail(hi,BUNfirst(*H)), v, tpe) @2= 0) {
+		if ((p = BUNfnd(BATmirror(*H), v)) == BUN_NONE) {
+			oid o_idx = *(oid*)Hloc(*H, BUNfirst(*H));
+			BUNdelHead(duplicates, &o_idx, TRUE);
+			pqueue_topreplace_any@1(*H, idx, v, tpe); 
+	        	HASHdestroy(*H);
+			BUNins(duplicates, idx, idx, FALSE);
+		} else {
+			BUNins(duplicates, Hloc(*H, p), idx, FALSE);
+		}
+	}
+  }
+  b = BATjoin(BATmirror(duplicates), *H, BATcount(duplicates));
+  BBPunfix((*H)->batCacheid);
+  BBPunfix(duplicates->batCacheid);
+  *H = b;
+  return GDK_SUCCEED;
+}
+
 @c
 @:pqueueimpl_any(min,<)@
 @:pqueueimpl_any(max,>)@
@@ -672,12 +872,12 @@ PQdequeue_@1@2(int *ret, int *bid){
 	return MAL_SUCCEED;
 }
 
-pqueue_export str PQtopn_void@1@2(int *ret, int *bid, int *N);
+pqueue_export str PQtopn_@1@2(int *ret, int *bid, int *N);
 str
-PQtopn_void@1@2(int *ret, int *bid, int *N){
-	BAT *b,*bn;
+PQtopn_@1@2(int *ret, int *bid, int *N){
+	BAT *b,*bn = NULL;
 	if( (b= BATdescriptor(*bid)) == NULL)
-		throw(MAL, "pqueue.topN",RUNTIME_OBJECT_MISSING);
+		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);
 	if (b->htype == TYPE_void)
 		pqueue_topn_void@1@2(&bn,b,N);
 	else
@@ -691,16 +891,16 @@ PQtopn_void@1@2(int *ret, int *bid, int *N){
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "pqueue.topN", MAL_MALLOC_FAIL);
 }
-pqueue_export str PQtopn_@1@2(int *ret, int *bid, int *N);
+pqueue_export str PQutopn_@1@2(int *ret, int *bid, int *N);
 str
-PQtopn_@1@2(int *ret, int *bid, int *N){
-	BAT *b,*bn;
+PQutopn_@1@2(int *ret, int *bid, int *N){
+	BAT *b,*bn = NULL;
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);
 	if (b->htype == TYPE_void)
-		pqueue_topn_void@1@2(&bn,b,N);
+		pqueue_utopn_void@1@2(&bn,b,N);
 	else
-		pqueue_topn_@1@2(&bn,b,N);
+		pqueue_utopn_@1@2(&bn,b,N);
 	if( bn){
 		*ret= bn->batCacheid;
 		BBPkeepref(*ret);

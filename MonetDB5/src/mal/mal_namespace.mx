@@ -48,6 +48,8 @@ mal_export str getName(str nme, size_t len);
 mal_export void delName(str nme, size_t len);
 mal_export void dumpNamespaceStatistics(stream *f, int details);
 
+#define MAXIDENTLEN    1024
+
 #endif /* _MAL_NAMESPACE_H */
 @+ Code bodies
 The Namespace block is organized using a simple hashstructure over the first
@@ -210,7 +212,7 @@ void delName(str nme, size_t len){
 str putName(str nme, size_t len)
 {
 	size_t l,top;
-	char buf[1024];
+	char buf[MAXIDENTLEN];
 
 	if( nme == NULL)
 		return NULL;
@@ -253,7 +255,7 @@ str putName(str nme, size_t len)
 
 	/* protect this, as it will be updated by multiple threads */
 	mal_set_lock(mal_contextLock,"putName");
-	if(len>=1024) GDKfatal("Identifier too long");
+	if(len>=MAXIDENTLEN) GDKfatal("Identifier too long");
 	memcpy(buf, nme, len); 
 	buf[len]=0;
 

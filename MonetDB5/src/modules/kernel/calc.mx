@@ -1261,10 +1261,13 @@ Coercions generally do not check on information loss
 calc_export str CALC@22@1(@1 *res, @2 *a);
 str CALC@22@1(@1 *res, @2 *a)
 {
-	if (*a == @2_nil @3)
+	if (*a == @2_nil @3) {
 		*res= @1_nil;
-	else
+		if (*a != @2_nil)
+			throw(MAL, "calc.@1", ARGUMENT_TOO_LARGE);
+	} else {
 		*res= @4;
+	}
 	return MAL_SUCCEED;
 }
 @-
@@ -1289,7 +1292,7 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(lng,wrd,, (lng) *a)@
 @:mal_coercion_impl(lng,lng,,       *a)@
 @:mal_coercion_impl(lng,flt, || *a < (flt) GDK_lng_min || *a > (flt) GDK_lng_max, (lng) *a)@
-@:mal_coercion_impl(lng,dbl, || *a < (flt) GDK_lng_min || *a > (flt) GDK_lng_max, (lng) *a)@
+@:mal_coercion_impl(lng,dbl, || *a < (dbl) GDK_lng_min || *a > (dbl) GDK_lng_max, (lng) *a)@
 
 @:mal_coercion_impl(sht,oid, || *a > GDK_sht_max, (sht) *a)@
 @:mal_coercion_impl(sht,bit, , (sht) *a)@
