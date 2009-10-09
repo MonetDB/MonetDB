@@ -53,7 +53,7 @@ esac
 
 have_java_jdbc=no
 if test "x$enable_jdbc" != xno; then
-	req_java_ver_min=1.4 # >= $req_java_ver_min required
+	req_java_ver_min=1.5 # >= $req_java_ver_min required
 	req_java_ver_max=1.6 # <  $req_java_ver_max required
 	AM_MONETDB_ANT_JAVA($req_java_ver_min, $req_java_ver_max)
 	if test "x$have_java" = xno; then

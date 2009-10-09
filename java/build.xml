@@ -345,8 +345,8 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
-      target="1.5"
-      source="1.5"
+      target="${javac_version}"
+      source="${javac_version}"
       >
       <include name="${mero-control-package}/**/*.java" />
     </javac>
