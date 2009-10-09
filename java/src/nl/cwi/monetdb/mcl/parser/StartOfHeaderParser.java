@@ -143,6 +143,10 @@ public class StartOfHeaderParser {
 		}
 
 		soh.reset();
-		return(soh.subSequence(0, cnt).toString());
+
+		/* FIXME: slice() is only here to provide a workaround for a Sun-1.6 bug
+		   see: http://bugs.sun.com/view_bug.do?bug_id=6795561
+		   As soon as this bug is fixed, the slice should be removed again. */
+		return(soh.slice().subSequence(0, cnt).toString());
 	}
 }
