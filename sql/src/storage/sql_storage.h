@@ -24,15 +24,15 @@
 
 #define COLSIZE	1024
 
-#define isNew(x)  (x->base.flag == TR_NEW)
-#define isTemp(x) (isNew(x->t)||x->t->persistence!=SQL_PERSIST)
-#define isTempTable(x)   (x->persistence!=SQL_PERSIST)
-#define isGlobalTable(x) (x->persistence!=SQL_LOCAL_TEMP && \
-			  x->persistence!=SQL_DECLARED_TABLE)
-#define isGlobalTemp(x)  (x->persistence==SQL_GLOBAL_TEMP)
-#define isTempSchema(x)  (strcmp(x->base.name, "tmp") == 0 || \
-			  strcmp(x->base.name, dt_schema) == 0)
-#define isDeclaredTable(x)  (x->persistence==SQL_DECLARED_TABLE)
+#define isNew(x)  ((x)->base.flag == TR_NEW)
+#define isTemp(x) (isNew((x)->t)||(x)->t->persistence!=SQL_PERSIST)
+#define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
+#define isGlobalTable(x) ((x)->persistence!=SQL_LOCAL_TEMP && \
+			  (x)->persistence!=SQL_DECLARED_TABLE)
+#define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
+#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0 || \
+			  strcmp((x)->base.name, dt_schema) == 0)
+#define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
 
 typedef enum store_type {
 	store_bat,	/* delta bats, ie multi user read/write */
@@ -42,7 +42,7 @@ typedef enum store_type {
 	store_bpm	/* bat partition manager */
 } store_type;
 
-#define STORE_READONLY(st) (st == store_ro || st == store_suro)
+#define STORE_READONLY(st) ((st) == store_ro || (st) == store_suro)
 
 extern sql_trans *gtrans;
 extern int store_nr_active;
