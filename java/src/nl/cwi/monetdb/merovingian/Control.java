@@ -43,11 +43,11 @@ import java.util.*;
  */
 public class Control {
 	/** The host to connect to */
-	private String host = null;
+	private final String host;
 	/** The port to connect to */
-	private int port = -1;
+	private final int port;
 	/** The passphrase to use when connecting */
-	private String passphrase = null;
+	private final String passphrase;
 
 
 	/**
@@ -91,6 +91,8 @@ public class Control {
 
 		return(Long.toString(h));
 	}
+	
+	final static private String RESPONSE_OK = "OK";
 
 	private String[] sendCommand(
 			String database, String command, boolean hasOutput)
@@ -119,7 +121,7 @@ public class Control {
 			s.close();
 			throw new MerovingianException("server closed the connection");
 		}
-		if (!response.equals("OK")) {
+		if (!response.equals(RESPONSE_OK)) {
 			in.close();
 			out.close();
 			s.close();
@@ -139,7 +141,7 @@ public class Control {
 			s.close();
 			throw new MerovingianException("server closed the connection");
 		}
-		if (!response.equals("OK")) {
+		if (!response.equals(RESPONSE_OK)) {
 			in.close();
 			out.close();
 			s.close();
@@ -269,6 +271,26 @@ public class Control {
 	{
 		String[] response = sendCommand(database, "status", true);
 		return(new SabaothDB(response[0]));
+	}
+	
+	/**
+	 * Test whether a specific database exists. 
+	 * 
+	 * @param database
+	 * @return true, iff database already exists.
+	 * @throws MerovingianException
+	 * @throws IOException
+	 */
+	public boolean exists(String database)
+		throws MerovingianException, IOException
+	{
+		SabaothDB[] all = getAllStatuses();
+		for (SabaothDB db : all) {
+			if (db.getName().equals(database)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public SabaothDB[] getAllStatuses()
