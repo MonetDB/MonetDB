@@ -632,6 +632,17 @@ controlRunner(void *d)
 						freeErr(e);
 						break;
 					}
+
+					if (stats == NULL && q != NULL) {
+						Mfprintf(_mero_ctlerr, "%s: received status signal for "
+								"unknown database: %s\n", origin, q);
+						len = snprintf(buf2, sizeof(buf2),
+								"unknown database: %s\n", q);
+						len = snprintf(buf2, sizeof(buf2), "no such database '%s'\n", q);
+						send(msgsock, buf2, len, 0);
+						break;
+					}
+
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send(msgsock, buf2, len, 0);
 

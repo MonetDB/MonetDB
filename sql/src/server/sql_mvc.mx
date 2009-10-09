@@ -858,7 +858,7 @@ mvc_bind_column(mvc *m, sql_table *t, char *cname)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_column %s.%s\n", t->base.name, cname);
 
-	if (!isTempSchema(c->t->s) && !isDeclaredSchema(c->t->s))
+	if (c->t->s && !isTempSchema(c->t->s) && !isDeclaredSchema(c->t->s))
 		m->last = c;
 	return c;
 }
