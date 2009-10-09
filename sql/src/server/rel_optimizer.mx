@@ -26,6 +26,8 @@
 #include "rel_semantic.h"
 
 extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel);
+extern sql_rel * rel_groupby(sql_rel *l, list *groupbyexps );
+extern sql_exp * rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 
 #endif /*_REL_OPTIMIZER_H_*/
 @c
@@ -45,6 +47,8 @@ typedef struct global_props {
 
 typedef sql_rel *(*rewrite_fptr)(int *changes, mvc *sql, sql_rel *rel);
 typedef int (*find_prop_fptr)(mvc *sql, sql_rel *rel);
+
+static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
 
 /* The important task of the relational optimizer is to optimize the
    join order. 
@@ -1113,6 +1117,92 @@ project_unsafe(sql_rel *rel)
 			return 1;
 	}
 	return 0;
+}
+
+
+/*
+ * Push Count inside crossjoin down, and multiply the results
+ * 
+ *     project (                                project(
+ *          group by (                               crossproduct (
+ *		crossproduct(                             project (
+ *		     L,			 =>                    group by (
+ *		     R                                              L
+ *		) [ ] [ count NOT NULL ]                       ) [ ] [ count NOT NULL ]
+ *          )                                             ),
+ *     ) [ NOT NULL ]                                     project (
+ *                                                              group by (
+ *                                                                  R
+ *                                                              ) [ ] [ count NOT NULL ]
+ *                                                        )
+ *                                                   ) [ sql_mul(.., .. NOT NULL) ]
+ *                                              )
+ */
+
+
+
+static sql_rel *
+rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
+{
+	sql_rel *r = rel->l;
+
+	if (is_groupby(rel->op) &&
+            r && !r->exps && r->op == op_join && !(rel_is_ref(r)) &&
+            ((sql_exp *) rel->exps->h->data)->type == e_aggr &&
+            strcmp(((sql_subaggr *) ((sql_exp *) rel->exps->h->data)->f)->aggr->base.name, "count") == 0) {
+/* TODO check for count(*) */
+	    	sql_exp *nce, *oce;
+		sql_rel *gbl, *gbr;		/* Group By */
+		sql_rel *cp;			/* Cross Product */
+		sql_subfunc *mult;
+		list *args;
+		char *rname = NULL, *name = NULL;
+		sql_rel *srel;
+
+		oce = rel->exps->h->data;
+		if (oce->l) /* we only handle COUNT(*) */ 
+			return rel;
+		rname = oce->rname;
+		name  = oce->name;
+
+ 		args = new_exp_list();
+		srel = r->l;
+		{
+			sql_subaggr *cf = sql_bind_aggr(sql->session->schema, "count", NULL);
+			sql_exp *cnt, *e = exp_aggr(NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
+
+			exp_label(e, ++sql->label);
+			cnt = exp_column(NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			gbl = rel_groupby(rel_dup(srel), NULL);
+			rel_groupby_add_aggr(sql, gbl, e);
+			append(args, cnt);
+		}
+
+		srel = r->r;
+		{
+			sql_subaggr *cf = sql_bind_aggr(sql->session->schema, "count", NULL);
+			sql_exp *cnt, *e = exp_aggr(NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
+
+			exp_label(e, ++sql->label);
+			cnt = exp_column(NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			gbr = rel_groupby(rel_dup(srel), NULL);
+			rel_groupby_add_aggr(sql, gbr, e);
+			append(args, cnt);
+		}
+
+		mult = find_func(sql, "sql_mul", args);
+		cp = rel_crossproduct(gbl, gbr, op_join);
+
+		nce = exp_op(args, mult);
+		exp_setname(nce, rname, name );
+
+		rel_destroy(rel);
+		rel = rel_project(cp, append(new_exp_list(), nce));
+
+		(*changes)++;
+	}
+	
+	return rel;
 }
 
 /*
@@ -3135,9 +3225,13 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	/* TODO push select up. Sounds bad, but isn't. In case of an join-idx we want the selection on
 	   the 'unique/primary (right hand side)' done before the (fake)-join and the selections on the foreign 
 	   part done after. */
+	
 
-	if (gp.cnt[op_join] && gp.cnt[op_groupby])
+
+	if (gp.cnt[op_join] && gp.cnt[op_groupby]) {
+		rel = rewrite(sql, rel, &rel_push_count_down);
 		rel = rewrite(sql, rel, &rel_push_join_down); 
+	}
 
 	if (gp.cnt[op_groupby])
 		rel = rewrite(sql, rel, &rel_avg2sum_count); 
