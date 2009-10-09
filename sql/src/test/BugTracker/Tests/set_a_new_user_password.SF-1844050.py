@@ -1,4 +1,9 @@
 import os, time, sys
+try:
+    import subprocess
+except ImportError:
+    # use private copy for old Python versions
+    import MonetDBtesting.subprocess26 as subprocess
 
 def clean_ports(cmd,mapiport,xrpcport):
     cmd = cmd.replace('--port=%s' % mapiport,'--port=<mapi_port>')
@@ -17,18 +22,18 @@ def server_start(dbinit):
     srvcmd_ = clean_ports(srvcmd,str(port),os.getenv('XRPCPORT'))
     sys.stderr.write('#mserver: "%s"\n' % (srvcmd))
     sys.stderr.flush()
-    srv = os.popen(srvcmd, 'w')
+    srv = subprocess.Popen(srvcmd, shell = True, stdin = subprocess.PIPE)
     time.sleep(5)                      # give server time to start
     return srv
 
 def server_stop(srv):
-    srv.close()
+    srv.communicate()
     time.sleep(2)                      # give server time to stop
 
 def client_load_file(clt, port, file):
     f = open(file, 'r')
     for line in f:
-        clt.write(line)
+        clt.stdin.write(line)
     f.close()
 
 
@@ -39,10 +44,10 @@ def client(lang, file, user, passwd):
     sys.stderr.flush()
     sys.stderr.write('#client: "%s"\n' % (cltcmd_))
     sys.stderr.flush()
-    clt = os.popen(cltcmd, 'w')
+    clt = subprocess.Popen(cltcmd, shell = True, stdin = subprocess.PIPE)
     port = int(os.getenv('MAPIPORT'))
     client_load_file(clt, port, file)
-    clt.close()
+    clt.communicate()
     return '%s ' % (lang)
 
 

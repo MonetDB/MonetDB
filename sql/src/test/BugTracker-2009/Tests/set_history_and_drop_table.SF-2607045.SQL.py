@@ -1,17 +1,24 @@
 import os, sys
-
+try:
+    import subprocess
+except ImportError:
+    # use private copy for old Python versions
+    import MonetDBtesting.subprocess26 as subprocess
 
 def main():
     dir = os.getenv('TSTSRCDIR')
     clcmd = str(os.getenv('SQL_CLIENT'))
     sys.stdout.write('Load history\n')
-    clt1 = os.popen(clcmd + "<%s" % ('%s/../../../sql/history.sql' % dir), 'w')
-    clt1.close()
+    clt1 = subprocess.Popen(clcmd + ' "%s"' % os.path.join(dir,'..', '..','..','sql','history.sql'), shell = True, universal_newlines = True, stdout = subprocess.PIPE)
+    out, err = clt1.communicate()
+    sys.stdout.write(out)
     sys.stdout.write('Run test\n')
-    clt1 = os.popen(clcmd + "<%s" % ('%s/../set_history_and_drop_table.SF-2607045.sql' % dir), 'w')
-    clt1.close()
+    clt1 = subprocess.Popen(clcmd + ' "%s"' % os.path.join(dir,'..','set_history_and_drop_table.SF-2607045.sql'), shell = True, universal_newlines = True, stdout = subprocess.PIPE)
+    out, err = clt1.communicate()
+    sys.stdout.write(out)
     sys.stdout.write('Drop history\n')
-    clt1 = os.popen(clcmd + "<%s" % ('%s/../drop_history.sql' % dir), 'w')
-    clt1.close()
+    clt1 = subprocess.Popen(clcmd + ' "%s"' % os.path.join(dir,'..','drop_history.sql'), shell = True, universal_newlines = True, stdout = subprocess.PIPE)
+    out, err = clt1.communicate()
+    sys.stdout.write(out)
 
 main()
