@@ -33,8 +33,8 @@ Over..
 % .bbp # table_name
 % L1 # name
 % wrd # type
-% 2 # length
-[ 78	]
+% 3 # length
+[ 118	]
 % . # table_name
 % single_value # name
 % tinyint # type
@@ -43,8 +43,8 @@ Over..
 % .bbp # table_name
 % L1 # name
 % wrd # type
-% 2 # length
-[ 78	]
+% 3 # length
+[ 118	]
 
 # 22:03:05 >  
 # 22:03:05 >  Done.
