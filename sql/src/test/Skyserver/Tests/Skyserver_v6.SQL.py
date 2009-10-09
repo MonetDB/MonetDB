@@ -27,7 +27,7 @@ def main():
     out,err = clt1.communicate()
     sys.stdout.write(out)
     clt1 = subprocess.Popen(clcmd1, shell = True, universal_newlines = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-    sql = open(os.path.join(dir, '..', 'Skyserver_import_v6.sql')).read().replace('DATA',os.path.join(dir,'..','microsky_v6').replace('\\','\\\\'))
+    sql = open(os.path.join(dir, '..', 'Skyserver_import_v6.sql')).read().replace('DATA_DIR',os.path.join(dir,'..','microsky_v6').replace('\\','\\\\'))
     out,err = clt1.communicate(sql)
     sys.stdout.write(out)
     clt1 = subprocess.Popen(clcmd1 + ' "%s"' % os.path.join(dir, '..','Skyserver_constraints_v6.sql'), shell = True, universal_newlines = True, stdout = subprocess.PIPE)

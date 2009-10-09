@@ -21,6 +21,8 @@ Over..
 # 14:14:17 >  /usr/bin/python Skyserver.SQL.py Skyserver 
 # 14:14:17 >  
 
+Create User
+tables
 [ 0	]
 [ 2042	]
 [ 0	]
@@ -119,8 +121,6 @@ Over..
 % char # type
 % 14 # length
 [ "ALL DONE"	]
-Create User
-tables
 views
 functions
 Cleanup
