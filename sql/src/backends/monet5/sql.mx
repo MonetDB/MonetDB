@@ -1369,12 +1369,11 @@ SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
+	int *ret  = (int *) getArgReference(stk, pci, 0);
 
-	(void) cntxt;
-	(void) stk;
-	(void) pci;
 	if (msg)
 		return msg;
+	*ret = 0;
 	mvc_commit(m, 0, NULL); /* keep the changes */
 	return MAL_SUCCEED;
 }
@@ -1383,12 +1382,11 @@ SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m=NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
+	int *ret  = (int *) getArgReference(stk, pci, 0);
 
-	(void) cntxt;
-	(void) stk;
-	(void) pci;
 	if (msg)
 		return msg;
+	*ret = 0;
 	mvc_rollback(m, 0, NULL); /* keep the changes */
 	return MAL_SUCCEED;
 }

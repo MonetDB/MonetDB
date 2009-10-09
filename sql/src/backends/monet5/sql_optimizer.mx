@@ -131,7 +131,7 @@ Organized by module:
 #define _SQL_OPTIMIZER_H_
 #include "sql.h"
 
-/* #define _SQL_OPTIMIZER_DEBUG */
+//#define _SQL_OPTIMIZER_DEBUG 
 
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
@@ -573,7 +573,7 @@ addQueryToCache(Client c)
 	mb = c->curprg->def;
 	chkProgram(c->nspace, mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
-	printf("ADD QUERY TO CACHE\n");
+	stream_printf(GDKout, "ADD QUERY TO CACHE\n");
 	printFunction(GDKout,mb,0,LIST_MAL_ALL);
 #endif
 @-
@@ -635,6 +635,10 @@ care of.
 		SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
 		optimizeMALBlock(c,mb);
 	}
+#ifdef _SQL_OPTIMIZER_DEBUG
+	stream_printf(GDKout, "ADD optimized QUERY TO CACHE\n");
+	printFunction(GDKout,mb,0,LIST_MAL_ALL);
+#endif
 }
 
 @-

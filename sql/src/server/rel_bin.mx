@@ -1401,12 +1401,49 @@ sql_reorder(stmt *order, stmt *s)
 	return stmt_list(l);
 }
 
-static stmt *
-rel2bin_project( mvc *sql, sql_rel *rel, list *refs)
+static int
+topn_limit( sql_rel *rel )
 {
-	list *l; 
-	node *en;
+	if (rel->exps) {
+		sql_exp *limit = rel->exps->h->data;
+		atom *a = limit->l;
+
+		return a->data.val.ival;
+	}
+	return -1;
+}
+
+static int
+topn_offset( sql_rel *rel )
+{
+	int o = 0;
+
+	if (rel->exps && list_length(rel->exps) > 1) {
+		sql_exp *offset = rel->exps->h->next->data;
+		atom *a = offset->l;
+
+		o = a->data.val.ival;
+		if (o <= 0)
+			o = 0;
+	}
+	return o;
+}
+
+static stmt *
+rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
+{
+	list *pl; 
+	node *en, *n;
 	stmt *sub = NULL, *psub = NULL;
+	int l = -1, o = 0, lmt = -1;
+
+	if (topn) {
+		lmt = l = topn_limit(topn);
+		o = topn_offset(topn);
+		if (l < 0) /* for now only handle topn 
+				including limit, ie not just offset */
+			topn = NULL;
+	}
 
 	if (!rel->exps) 
 		return stmt_none();
@@ -1424,7 +1461,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs)
 		}
 	}
 
-	l = create_stmt_list();
+	pl = create_stmt_list();
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
@@ -1432,16 +1469,40 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs)
 		if (!s) {
 			assert(0);
 			cond_stmt_destroy(sub);
-			list_destroy(l);
+			list_destroy(pl);
 			return NULL;
 		}
 		if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(bin_first_column(sub), s);
 			
 		s = stmt_rename(rel, exp, s);
-		list_append(l, s);
+		list_append(pl, s);
 	}
-	psub = stmt_list(l);
+	psub = stmt_list(pl);
+	/* In case of an topn 
+		if both order by and distinct: then get first order by col early
+			do topn on it. Project all again! Then rest
+         */
+	if (topn && rel->r) {
+		list *oexps = rel->r, *npl = create_stmt_list();
+		sql_exp *orderbycole = oexps->h->data; 
+
+		stmt *limit, *orderbycols = exp_bin(sql, orderbycole, sub, psub, NULL, NULL); 
+
+		if (!orderbycols) {
+			assert(0);
+			stmt_destroy(sub);
+			return NULL;
+		}
+		limit = stmt_limit(orderbycols, o, l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, 1));
+		for ( n=pl->h ; n; n = n->next) {
+			list_append(npl, 
+			 	stmt_semijoin(column(stmt_dup(n->data)), 
+					stmt_dup(limit)));
+		}
+		stmt_destroy(psub);
+		psub = stmt_list(npl);
+	}
 	if (need_distinct(rel))
 		psub = rel2bin_distinct(psub);
 	if (rel->r) {
@@ -1737,27 +1798,22 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *order = NULL;
 	node *n;
 
-	if (rel->l) /* first construct the sub relation */
-		sub = subrel_bin(sql, rel->l, refs);
+	if (rel->l) { /* first construct the sub relation */
+		sql_rel *rl = rel->l;
+
+		if (rl->op == op_project) {
+			sub = rel2bin_project(sql, rl, refs, rel);
+		} else {
+			sub = subrel_bin(sql, rl, refs);
+		}
+	}
 	if (!sub) { 
 		assert(0);
 		return NULL;	
 	}
 
-	if (rel->exps) {
-		sql_exp *limit = rel->exps->h->data;
-		atom *a = limit->l;
-
-		l = a->data.val.ival;
-		if (list_length(rel->exps) > 1) {
-			sql_exp *offset = rel->exps->h->next->data;
-
-			a = offset->l;
-			o = a->data.val.ival;
-			if (o <= 0)
-				o = 0;
-		}
-	}
+	l = topn_limit(rel);
+	o = topn_offset(rel);
 
 	if (sub->type == st_ordered) {
 		stmt *s = stmt_dup(sub->op2.stval);
@@ -3413,7 +3469,7 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 		sql->type = Q_TABLE;
 		break;
 	case op_project:
-		s = rel2bin_project(sql, rel, refs);
+		s = rel2bin_project(sql, rel, refs, NULL);
 		sql->type = Q_TABLE;
 		break;
 	case op_select: 
