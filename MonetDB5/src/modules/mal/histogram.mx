@@ -278,7 +278,7 @@ HSTeuclidianNormWhatIf(Histogram h1, Histogram h2, ValPtr val, dbl *whatIfDistan
 	int i, affectedBin;
 	assert(h1->bins == h2->bins);
 
-	affectedBin = HSTgetIndex(h2,val);
+	affectedBin = HSTgetIndex(h2,val)+h2->bins;
 
 	for ( i = h1->bins; i < 2*h1->bins; i++){
 		cur = (h1->cnt[i] - h2->cnt[i]) * (h1->cnt[i] - h2->cnt[i]);
@@ -304,7 +304,7 @@ HSTeuclidianNormWhatIfMove(Histogram h1, Histogram h2, ValPtr val, dbl *whatIfDi
 	int i, affectedBin;
 	assert(h1->bins == h2->bins);
 
-	affectedBin = HSTgetIndex(h1,val);
+	affectedBin = HSTgetIndex(h1,val)+h2->bins;
 
 	for ( i = h1->bins; i < 2*h1->bins; i++){
 		cur = (h1->cnt[i] - h2->cnt[i]) * (h1->cnt[i] - h2->cnt[i]);
@@ -439,6 +439,7 @@ HSTwhichbinNorm(Histogram h1, Histogram h2){
 	assert(h1->bins == h2->bins);
 
 	for ( i = h1->bins; i < 2*h1->bins; i++){
+		if (h1->cnt[i-h1->bins]==0) continue;
 	 	cur = h1->cnt[i] - h2->cnt[i];
 		if (cur <= 0)
 			continue;	
@@ -448,7 +449,7 @@ HSTwhichbinNorm(Histogram h1, Histogram h2){
 		}
 	}
 	
-	return whichbin-h1->bins;
+	return whichbin==-1?-1:whichbin-h1->bins;
 }
 
 int
