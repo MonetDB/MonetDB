@@ -280,9 +280,6 @@ if (monet_environment.exist("standoff"))
 # - CACHE_VAL[void,bat]   bat-of-bats (iter,pos,..)
 # - CACHE_LRU[void,lng]   last time used (usec)
 # - CACHE_SIZE[void,lng]  size in bytes of VAL
-# - _CACHE_ID[void,str]   name in writable ws
-# - _CACHE_VAL[void,bat]  val in writable ws
-# - _CACHE_LRU[void,lng]  last time used (usec) in writable ws
 
 @- ws definition
 
@@ -340,11 +337,11 @@ concurrent updates.
 @:ws_@1(PRE_CONT,          29, void, void,void,  oid, PRE_BASE)@
 @:ws_@1(ATTR_CONT,         30, void, void,void,  oid, PRE_BASE)@
 @:ws_@1(PID_MAP,           31, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(ATTR_OWN_PRIVATE,  32, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(ATTR_OWN_SHARED,   33, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(REGION_PRE,        34, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(REGION_START,      35, void, bat, void,  lng, PRE_BASE)@
-@:ws_@1(REGION_END,        36, void, bat, void,  lng, PRE_BASE)@
+@:ws_@1(REGION_PRE,        32, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(REGION_START,      33, void, bat, void,  lng, PRE_BASE)@
+@:ws_@1(REGION_END,        34, void, bat, void,  lng, PRE_BASE)@
+@:ws_@1(ATTR_OWN_SHARED,   35, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(ATTR_OWN_PRIVATE,  36, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(OPEN_NAME,         37, void, str, void, void, oid_nil)@
 @:ws_@1(OPEN_DOCID,        38, void, oid, void, void, oid_nil)@
 @:ws_@1(OPEN_CONT,         39, void, oid, void, void, oid_nil)@
@@ -358,32 +355,29 @@ concurrent updates.
 @:ws_@1(CACHE_VAL,         46, void, bat, void, void, oid_nil)@
 @:ws_@1(CACHE_LRU,         47, void, lng, void, void, oid_nil)@
 @:ws_@1(CACHE_SIZE,        48, void, lng, void, void, oid_nil)@
-@:ws_@1(_CACHE_ID,         49, void, str, void, void, oid_nil)@
-@:ws_@1(_CACHE_VAL,        50, void, bat, void, void, oid_nil)@
-@:ws_@1(_CACHE_LRU,        51, void, lng, void, void, oid_nil)@
 
-@:ws_@1(_MAP_PID,          52, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_SIZE,         53, void, bat, void,  int, PRE_BASE)@
-@:ws_@1(_RID_LEVEL,        54, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_PROP,         55, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_KIND,         56, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_NID,          57, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_NID_RID,          58, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_FRAG_ROOT,        59, void, bat,  oid,  oid, oid_nil)@
-@:ws_@1(_QN_HISTOGRAM,     60, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX_URI_LOC,61, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI_LOC,       62, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX,        63, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI,           64, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_LOC,           65, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TEXT,        66, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_COM,         67, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_INS,         68, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TGT,         69, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_VAL,         70, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_ATTR_OWN,         71, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_QN,          72, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_PROP,        73, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_MAP_PID,          49, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_SIZE,         50, void, bat, void,  int, PRE_BASE)@
+@:ws_@1(_RID_LEVEL,        51, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_PROP,         52, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_KIND,         53, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_NID,          54, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_NID_RID,          55, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_FRAG_ROOT,        56, void, bat,  oid,  oid, oid_nil)@
+@:ws_@1(_QN_HISTOGRAM,     57, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX_URI_LOC,58, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI_LOC,       59, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX,        60, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI,           61, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_LOC,           62, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TEXT,        63, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_COM,         64, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_INS,         65, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TGT,         66, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_VAL,         67, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_ATTR_OWN,         68, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_QN,          69, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_PROP,        70, void, bat, void,  oid, PRE_BASE)@
 @-
 The bottom segment are the master copies of the top segment.
 The middle segment is private to the query.
@@ -393,7 +387,7 @@ BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 BEWARE: the logger version number below needs to be incremented whenever the working set schema is changed.
 
 @= ws_decl
-@:ws_@1_decl(WS_SIZE, 74)@
+@:ws_@1_decl(WS_SIZE, 71)@
 @:ws_@1_decl(QNAME,    2)@
 @:ws_@1_decl(BOOL,     3)@
 @:ws_@1_decl(INT,      4)@
@@ -535,7 +529,6 @@ var xrpc_statuses := bat("xrpc_statuses");  # bat[void,str] 2PC status of this q
 var xrpc_lock     := pflock_get(6); # master XRPC lock, to protect above xrpc_* BATs
 var xrpc_hostport := my_hostname() + ":" + str(get_xrpc_port());
 var xrpc_querynr  := (lng(get_xrpc_port()) * 100000LL) - 1LL;
-var xrpc_cache    := bat(sema,str);         # [sema,qid:id] for letting pf:session-use wait for pf:session to produce results
 
 # dummy variables to make MIL test scripts work
 # (otherwise always overridden by a declaration in the pf-generated MIL plan)
@@ -564,7 +557,6 @@ PROC _ws_xrpc_end(str xrpc_qid, str errmsg) : void
         xrpc_statuses.inplace(idx, "abort");
     }
     lock_unset(xrpc_locks.find(idx));
-    _ws_cache_wakeup(xrpc_qid + ":", xrpc_qid + ";");
 }
 
 # background check to time-out waiting 2PC transactions, and prune them fully after an hour
@@ -890,7 +882,7 @@ var ws_mem := [oid]([int](mirror(ws_dsk)).[-](_RID_SIZE - PRE_SIZE)).access(BAT_
 var ws_rid := ws_mem.slice(PRE_SIZE, PRE_NID).rename("ws_rid");
               # of those, all master rid_* bats, and their (remapped) pre_* views
     ws_mem := ws_mem.slice(NID_RID, count(ws_mem)).rename("ws_mem");
-var ws_new_map := [oid](mirror(ws_nme)).inplace(ws_nme.slice(CACHE_ID,_CACHE_LRU).project(oid(_CACHE_ID)), true);
+
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
 PROC _collection_cleanup() : BAT[str,str]
@@ -1462,80 +1454,26 @@ PROC ws_new(oid id,
         var b := bat(htp,ttp,10000);
         if (not(isnil(seq))) b.seqbase(seq); 
         return bat(void,bat).seqbase(PRE_BASE).append(b);
-    }
+    } 
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
-PROC _ws_cache_expr(bat ws, str id, bit use) : bit {
-    var res := false;
-    if (use) # check master first
-        res := ws.fetch(_CACHE_ID).texist(id);
-    if (not(res))
-        res := ws.fetch(CACHE_ID).texist(id);
-    if (not(res)) { 
-        id := xrpc_qid + ":" + id;
-        if (not(use)) {
-            xrpc_cache.insert(sem, id);
-        } else if (xrpc_cache.texist(id)) {
-            sem := sema_create(0);
-            xrpc_cache.insert(sem, id);
-        }
-    }
-    return res;
-}
-
 PROC ws_cache_expr(bat ws, str id) : bit {
-    var sem := sema_nil, use := (xrpc_mode.search("use") >= 0); 
-    lock_set(xrpc_lock);
-    var res, err := CATCH(res := _ws_cache_expr(ws, id, use));
-    lock_unset(xrpc_lock);
-    if (not(isnil(err))) ERROR(err);
-    if (res) return false;
-    if (not(isnil(sem))) {
-         sema_down(sem);
-         sema_destroy(sem);
-    }
-    return true;
-}
-
-PROC _ws_cache_get(bat ws, str id) : bit {
-    var delta := 0; # get from master, else from private cache
-    if (texist(ws.fetch(_CACHE_ID), id)) delta := 4; 
-    var idx := reverse(ws.fetch(delta+CACHE_ID)).find(id);
-    inplace(ws.fetch(delta+CACHE_LRU), idx, usec(), true);
-    return ws.fetch(delta+CACHE_VAL).fetch(idx);
+    return not(ws.fetch(CACHE_ID).texist(id));
 }
 
 PROC ws_cache_get(bat ws, str id) : bit {
-    lock_set(xrpc_lock);
-    var res, err := CATCH(res := _ws_cache_get(ws, id));
-    lock_unset(xrpc_lock);
-    if (not(isnil(err))) ERROR(err);
-    return res;
+    var idx := reverse(ws.fetch(CACHE_ID)).find(id);
+    inplace(ws.fetch(CACHE_LRU), idx, usec(), true);
+    return ws.fetch(CACHE_VAL).fetch(idx);
 }
 
-PROC _ws_cache_wakeup(str lo, str hi) : void {
-    var wakeup := xrpc_cache.ord_select(lo, hi);
-    [sema_up](wakeup.hmark(0@0).ord_select(sema_nil,sema_nil));
-    xrpc_cache.delete(wakeup);
-}
-
-PROC _ws_cache_put(bat ws, str id, bat val) : void {
+PROC ws_cache_put(bat ws, str id, bat val) : void {
     ws.fetch(CACHE_ID).append(id);
     ws.fetch(CACHE_VAL).append(val);
     ws.fetch(CACHE_SIZE).append(sum([batsize](val)));
     ws.fetch(CACHE_LRU).append(0LL);
-    var cache_id := xrpc_qid + ":" + id;
-    _ws_cache_wakeup(cache_id, cache_id);
-}
-
-PROC ws_cache_put(bat ws, str id, bat val) : void {
-    lock_set(xrpc_lock);
-    var err := CATCH(_ws_cache_put(ws, id, val));
-    lock_unset(xrpc_lock);
-    if (not(isnil(err))) ERROR(err);
-print(ws.fetch(CACHE_ID), ws.fetch(CACHE_VAL), ws.fetch(CACHE_SIZE), ws.fetch(CACHE_LRU));
-print(ws.fetch(_CACHE_ID), ws.fetch(_CACHE_VAL), ws.fetch(_CACHE_LRU));
+#print(ws.fetch(CACHE_ID), ws.fetch(CACHE_VAL), ws.fetch(CACHE_SIZE), ws.fetch(CACHE_LRU));
 }
 
 PROC ws_cache_end(bat ws) : void {
@@ -1555,8 +1493,7 @@ PROC ws_cache_end(bat ws) : void {
         ws.inplace(oid(CACHE_LRU), pivot.leftfetchjoin(ws.fetch(CACHE_LRU)).access(BAT_APPEND), true);
         ws.inplace(oid(CACHE_SIZE), pivot.leftfetchjoin(ws.fetch(CACHE_SIZE)).access(BAT_APPEND), true);
     }
-print(ws.fetch(CACHE_ID), ws.fetch(CACHE_VAL), ws.fetch(CACHE_SIZE), ws.fetch(CACHE_LRU));
-print(ws.fetch(_CACHE_ID), ws.fetch(_CACHE_VAL), ws.fetch(_CACHE_LRU));
+#print(ws.fetch(CACHE_ID), ws.fetch(CACHE_VAL), ws.fetch(CACHE_SIZE), ws.fetch(CACHE_LRU));
 }
 
 
@@ -1595,27 +1532,16 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
             xrpc_statuses.inplace(idx, "reserved");
             if (xrpc_mode.search("use") < 0) return ws;
         }
-        # use a copy of the ws so it is not affected by concurrent queries; give it a private cache 
-        var cache_id  := ws.fetch(CACHE_ID);
-        var cache_val := ws.fetch(CACHE_VAL);
-        var cache_lru := ws.fetch(CACHE_LRU);
-        ws := [access]([copy](ws_new_map.leftfetchjoin(ws)), BAT_WRITE);
-        ws.inplace(oid(CACHE_ID), bat(void,str).seqbase(0@0), true);
-        ws.inplace(oid(CACHE_VAL), bat(void,bat).seqbase(0@0), true);
-        ws.inplace(oid(CACHE_LRU), bat(void,lng).seqbase(0@0), true);
-        ws.inplace(oid(CACHE_SIZE), bat(void,lng).seqbase(0@0), true);
-        ws.inplace(oid(_CACHE_ID), cache_id, true);
-        ws.inplace(oid(_CACHE_VAL), cache_val, true);
-        ws.inplace(oid(_CACHE_LRU), cache_lru, true);
+        # use a copy of the ws so it is not affected by concurrent queries; give it a private cache
+        ws := [access]([copy](ws), BAT_WRITE);
 
         # the tempdoc container must be deep copied, as read-only queries change it
-        #var temp_doc_cont := [access]([copy]([fetch](ws.slice(0,ATTR_PROP), WS)), BAT_WRITE);
-        #temp_doc_cont.hmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
-        #temp_doc_cont.hmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
-        #temp_doc_cont := [access]([copy]([fetch](ws.slice(QN_NID,QN_NID_UNQ), WS)), BAT_WRITE);
-        #temp_doc_cont.hmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
-        #temp_doc_cont := [access]([copy]([fetch](ws.slice(PRE_CONT,ATTR_CONT), WS)), BAT_WRITE);
-        #temp_doc_cont.hmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
+        var temp_doc_cont := [access]([copy]([fetch](ws.slice(0,ATTR_PROP), WS)), BAT_WRITE);
+        temp_doc_cont.mark(oid(MAP_PID)).tmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
+        temp_doc_cont.mark(oid(_MAP_PID)).tmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
+        temp_doc_cont := [access]([copy]([fetch](ws.slice(QN_NID,ATTR_OWN_SHARED), WS)), BAT_WRITE);
+        temp_doc_cont.mark(oid(QN_NID)).tmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
+        ws.fetch(ATTR_OWN_PRIVATE).inplace(WS, ws.fetch(ATTR_OWN).fetch(WS));
     } else {
         ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
         if (xrpc < 0) {
@@ -1631,8 +1557,6 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
     var id := and(lng(newoid(1)), 2147483647LL);
     var wsid := <<(id, 32) + (lng(update) << 30) + lng(ws);
     ws.access(BAT_READ).rename(str(wsid));
-print(ws.fetch(CACHE_ID), ws.fetch(CACHE_VAL), ws.fetch(CACHE_SIZE), ws.fetch(CACHE_LRU));
-print(ws.fetch(_CACHE_ID), ws.fetch(_CACHE_VAL), ws.fetch(_CACHE_LRU));
     return ws;
 }
 
@@ -1689,6 +1613,16 @@ PROC ws_create(int update) : BAT[void,bat]
         lock_unset(xrpc_lock);
         if (aborted) ERROR("ws_create: session was aborted by a previous query"); 
     }
+
+    if (bit(and(update,2))) {
+        # for update queries, create additional bats that will hold the deltas
+        var tpe := ws_update.hmark(oid(WS_SIZE));
+        var upd := [new](oid,tpe);
+        var unq := [=](tpe,bat);
+        [set](mirror(unq.uselect(false)).leftfetchjoin(upd), true);
+        [key](mirror(unq.uselect(true)).leftfetchjoin(upd), true);
+        ws := ws.access(BAT_WRITE).insert(upd).access(BAT_READ);
+    }
     if (xrpc > 0) return ws;
 
     # only instantiates the default views of the ws-bats (not the master bats)
@@ -1727,15 +1661,6 @@ PROC ws_create(int update) : BAT[void,bat]
     var wsid := ws_id(ws);
     pflock_begin(wsid);
 
-    if (bit(and(update,2))) {
-        # for update queries, create additional bats that will hold the deltas
-        var tpe := ws_update.hmark(oid(WS_SIZE));
-        var upd := [new](oid,tpe);
-        var unq := [=](tpe,bat);
-        [set](mirror(unq.uselect(false)).leftfetchjoin(upd), true);
-        [key](mirror(unq.uselect(true)).leftfetchjoin(upd), true);
-        ws := ws.access(BAT_WRITE).insert(upd).access(BAT_READ);
-    }
     if (ws_log_active)
         ws_log(ws, "===================== START TRANSACTION update-" + str(update));
     return ws;
