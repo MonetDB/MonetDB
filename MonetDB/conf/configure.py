@@ -20,6 +20,7 @@
 import sys
 import fileinput
 import os
+import subprocess
 
 subs = [("@exec_prefix@", r'%prefix%'),
         ("@bindir@", r'%exec_prefix%\bin'),
@@ -66,12 +67,14 @@ while len(sys.argv) > 2 and '=' in sys.argv[1]:
     if arg[i-7:i] == '_PREFIX' and packages.has_key(arg[:i-7]):
         config = os.path.join(arg[i+1:], 'bin', packages[arg[:i-7]])
         try:
-            p = os.popen('"%s-config.bat" --version' % config, 'r')
-            val = p.read().strip()
+            p = subprocess.Popen(['%s-config.bat' % config, '--version'],
+                                 universal_newlines = True,
+                                 stdout = subprocess.PIPE)
+            out, err = p.communicate()
+            val = out.strip()
             if val:
                 key = '@%s_VERSION@' % arg[:i-7]
                 subs.append((key, val))
-            p.close()
         except:
             pass
 
