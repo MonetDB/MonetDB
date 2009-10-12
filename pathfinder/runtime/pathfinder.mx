@@ -337,11 +337,11 @@ concurrent updates.
 @:ws_@1(PRE_CONT,          29, void, void,void,  oid, PRE_BASE)@
 @:ws_@1(ATTR_CONT,         30, void, void,void,  oid, PRE_BASE)@
 @:ws_@1(PID_MAP,           31, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(ATTR_OWN_PRIVATE,  32, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(ATTR_OWN_SHARED,   33, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(REGION_PRE,        34, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(REGION_START,      35, void, bat, void,  lng, PRE_BASE)@
-@:ws_@1(REGION_END,        36, void, bat, void,  lng, PRE_BASE)@
+@:ws_@1(REGION_PRE,        32, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(REGION_START,      33, void, bat, void,  lng, PRE_BASE)@
+@:ws_@1(REGION_END,        34, void, bat, void,  lng, PRE_BASE)@
+@:ws_@1(ATTR_OWN_SHARED,   35, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(ATTR_OWN_PRIVATE,  36, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(OPEN_NAME,         37, void, str, void, void, oid_nil)@
 @:ws_@1(OPEN_DOCID,        38, void, oid, void, void, oid_nil)@
 @:ws_@1(OPEN_CONT,         39, void, oid, void, void, oid_nil)@
@@ -1532,7 +1532,16 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
             xrpc_statuses.inplace(idx, "reserved");
             if (xrpc_mode.search("use") < 0) return ws;
         }
-        ws := [access]([copy](ws),BAT_WRITE); # use a copy, no locking required
+        # use a copy of the ws so it is not affected by concurrent queries; give it a private cache
+        ws := [access]([copy](ws), BAT_WRITE);
+
+        # the tempdoc container must be deep copied, as read-only queries change it
+        var temp_doc_cont := [access]([copy]([fetch](ws.slice(0,ATTR_PROP), WS)), BAT_WRITE);
+        temp_doc_cont.mark(oid(MAP_PID)).tmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
+        temp_doc_cont.mark(oid(_MAP_PID)).tmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
+        temp_doc_cont := [access]([copy]([fetch](ws.slice(QN_NID,ATTR_OWN_SHARED), WS)), BAT_WRITE);
+        temp_doc_cont.mark(oid(QN_NID)).tmark(0@0).leftfetchjoin(ws).[inplace](WS, temp_doc_cont.tmark(0@0));
+        ws.fetch(ATTR_OWN_PRIVATE).inplace(WS, ws.fetch(ATTR_OWN).fetch(WS));
     } else {
         ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
         if (xrpc < 0) {
@@ -1558,10 +1567,15 @@ PROC ws_end(BAT[void,bat] ws, str err) : int
     if ((xrpc_qid = "") or (xrpc_mode = "use-cache-repeatable")) {
         ws_destroy(ws);
     } else {
-        ws_cache_end(ws);
+        if (count(ws.fetch(PRE_SIZE).fetch(WS)) > 1000000) { # limit max tempdoc copy time to ~100ms
+            xrpc_timeout := 0LL; # if tempdoc container gets too big, we have to kill the ws
+        } else {
+            ws_cache_end(ws); # apply LRU to the cached subsequences
+        }
         lock_set(xrpc_lock);
-        CATCH(_ws_xrpc_end(xrpc_qid, err));
+        err := CATCH(_ws_xrpc_end(xrpc_qid, err));
         lock_unset(xrpc_lock);
+        if (not(isnil(err))) ERROR(err);
     }
     # do not auto-restart XRPC updates (deadlock danger)
     if (xrpc_method != "") return 2;
@@ -1571,9 +1585,8 @@ PROC ws_end(BAT[void,bat] ws, str err) : int
 PROC ws_create(int update) : BAT[void,bat]
 {
     if (bit(and(update,2)) and (xrpc_mode.search("cache") >= 0)) {
-        # updates in a session terminate the session
-        xrpc_timeout := 0;
-        xrpc_mode := "cache-repeatable";
+        if (xrpc_mode.search("use") >= 0) ERROR("ws_create(): cannot update in a pf:session-use session");
+        xrpc_timeout := 0; # updates in a session terminate the session
     }
 
     # NOTE: use pre-query MIL variables xrpc_qid/xrpc_timeout to possibly re-use an existing ws
@@ -1599,6 +1612,16 @@ PROC ws_create(int update) : BAT[void,bat]
         }
         lock_unset(xrpc_lock);
         if (aborted) ERROR("ws_create: session was aborted by a previous query"); 
+    }
+
+    if (bit(and(update,2))) {
+        # for update queries, create additional bats that will hold the deltas
+        var tpe := ws_update.hmark(oid(WS_SIZE));
+        var upd := [new](oid,tpe);
+        var unq := [=](tpe,bat);
+        [set](mirror(unq.uselect(false)).leftfetchjoin(upd), true);
+        [key](mirror(unq.uselect(true)).leftfetchjoin(upd), true);
+        ws := ws.access(BAT_WRITE).insert(upd).access(BAT_READ);
     }
     if (xrpc > 0) return ws;
 
@@ -1638,15 +1661,6 @@ PROC ws_create(int update) : BAT[void,bat]
     var wsid := ws_id(ws);
     pflock_begin(wsid);
 
-    if (bit(and(update,2))) {
-        # for update queries, create additional bats that will hold the deltas
-        var tpe := ws_update.hmark(oid(WS_SIZE));
-        var upd := [new](oid,tpe);
-        var unq := [=](tpe,bat);
-        [set](mirror(unq.uselect(false)).leftfetchjoin(upd), true);
-        [key](mirror(unq.uselect(true)).leftfetchjoin(upd), true);
-        ws := ws.access(BAT_WRITE).insert(upd).access(BAT_READ);
-    }
     if (ws_log_active)
         ws_log(ws, "===================== START TRANSACTION update-" + str(update));
     return ws;
