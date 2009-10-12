@@ -252,8 +252,14 @@ Also retain these modes until after you have received the answer. */
 #  include <time.h>
 # endif
 #endif
+#ifdef HAVE_STROPTS_H
+#include <stropts.h> /* ioctl */
+#endif
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
+#ifdef HAVE_TERMIOS_H
+#include <termios.h> /* TIOCGWINSZ/TIOCSWINSZ */
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -816,12 +822,13 @@ SQLtraceRenderer(MapiHdl hdl)
 static void
 SQLrenderer(MapiHdl hdl)
 {
-	int i, total, fields, oldfields = 0, max = 1;
+	int i, total, vartotal, fields, oldfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
 	char nullstring[5] = "null";
 	int ps = rowsperpage, silent = 0;
+	int mypagewidth = pagewidth;
 	mapi_int64 rows = 0;
 
 	if (mark2)
@@ -883,8 +890,11 @@ SQLrenderer(MapiHdl hdl)
 							   strcmp(s, "double") == 0 ||
 							   strcmp(s, "float") == 0);
 			}
-			/* punish the column headers first until you cannot squeeze  */
-			while (((fields * 3) - 1) + 2 + total > pagewidth) {
+			/* what we waste on space on the display is the column
+			 * separators ' | ', but the edges lack the edgespace of course */
+			graphwaste = ((fields * 3) - 1) + 2;
+			/* punish the column headers first until you cannot squeeze */
+			while (graphwaste + total > pagewidth) {
 				for (i = 0; i < fields; i++) {
 					if (hdr[i] > len[i]) {
 						hdr[i]--;
@@ -894,21 +904,45 @@ SQLrenderer(MapiHdl hdl)
 				}
 				break;
 			}
-			/* punish the long value fields, first the multi-lines */
 			total = 0;
+			vartotal = 0;
+			/* punish fields that are longer than the terminal width,
+			 * can't display them as a whole anyway */
 			for (i = 0; i < fields; i++) {
-				if (hdr[i] >= pagewidth - (((fields * 3) - 1) + 2))
-					hdr[i] = pagewidth - (((fields * 3) - 1) + 2);
+				if (!numeric[i]) {
+					/* 4 = left and right borders */
+					if (hdr[i] >= pagewidth - 4)
+						hdr[i] = pagewidth - 4;
+					vartotal += hdr[i];
+				}
 				total += hdr[i];
 			}
+			/* Punishing the value fields is done based on how much
+			 * squeezing will result in.  The objective is to have at
+			 * most a single break, but this is impossible to achieve in
+			 * case of a very long string, of course.  However, in case
+			 * of many columns it may be more useful to write 2x as many
+			 * columns as the terminal width, then to condense the
+			 * columns into 3-char width tall fields that are
+			 * unreadable.  Basically, the only fields that we want to
+			 * break are non-numerical fields. */
+			if (graphwaste + total > mypagewidth) {
+				while (total > mypagewidth || (vartotal + 1) / 2 < total - mypagewidth) {
+					/* double terminal size to avoid breaking a line multiple times */
+					mypagewidth += pagewidth;
+				}
+			}
 			/* finetune the long value fields */
-			while ((((fields * 3) - 1) + 2) + total > pagewidth) {
-				max = 0;
+			while (graphwaste + total > mypagewidth) {
+				max = -1;
 				for (i = 0; i < fields; i++) {
-					if (hdr[i] > hdr[max])
+					if (!numeric[i] && (max == -1 || hdr[i] > hdr[max]))
 						max = i;
 				}
-				
+
+				/* no varsized fields that we can squeeze */
+				if (max == -1)
+					break;
 				/* penalty for largest field */
 				hdr[max]--;
 				total--;
