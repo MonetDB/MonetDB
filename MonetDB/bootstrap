@@ -22,15 +22,6 @@
 # ! MonetDB, MonetDB4, MonetDB5, clients, java, template, sql, geom, pathfinder, etc. !
 #
 
-# this hack is necessary for our BuildBot, since it cannot modify the
-# path to do the right thing :(
-if [[ $1 == "--prefix="* ]] ; then
-	prefix=${1#--prefix=}
-	export PATH="${prefix}/bin:$PATH"
-	export PYTHONPATH="${prefix}$(python -c 'import glob, os, sys; print os.path.split(glob.__file__)[0][len(sys.prefix):]')/site-packages"
-fi
-
-
 if [ ! "`type -p Mbootstrap`" ] ; then
 	cat <<- EOF >&2
 
