@@ -1,4 +1,9 @@
 import os, time, sys
+try:
+    import subprocess
+except ImportError:
+    # user private copy for old Python versions
+    import MonetDBtesting.subprocess26 as subprocess
 
 def server_start(x,s,dbinit):
     srvcmd = '%s --dbname "%s" --dbinit "%s"' % (os.getenv('MSERVER'),os.getenv('TSTDB'),dbinit)
@@ -6,12 +11,12 @@ def server_start(x,s,dbinit):
     sys.stderr.write('\nserver %d%d : "%s"\n' % (x,s,dbinit))
     sys.stdout.flush()
     sys.stderr.flush()
-    srv = os.popen(srvcmd, 'w')
+    srv = subprocess.Popen(srvcmd, shell = True, stdin = subprocess.PIPE)
     time.sleep(5)                      # give server time to start
     return srv
 
 def server_stop(srv):
-    srv.close()
+    srv.communicate()
 
 def client(x,s, c, dbinit, lang, cmd, h):
     cltcmd = os.getenv('%s_CLIENT' % lang)
@@ -19,9 +24,8 @@ def client(x,s, c, dbinit, lang, cmd, h):
     sys.stderr.write('\nserver %d%d : "%s", client %d: %s%s\n' % (x,s,dbinit,c,h,lang))
     sys.stdout.flush()
     sys.stderr.flush()
-    clt = os.popen(cltcmd, 'w')
-    clt.write(cmd)
-    clt.close()
+    clt = subprocess.Popen(cltcmd, shell = True, stdin = subprocess.PIPE)
+    clt.communicate(cmd)
     return '%s(%s) ' % (h,lang)
 
 def clients(x,dbinit):
