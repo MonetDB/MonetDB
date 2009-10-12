@@ -1,9 +1,5 @@
 import os, time
-try:
-    import subprocess
-except ImportError:
-    # user private copy for old Python versions
-    import MonetDBtesting.subprocess26 as subprocess
+import subprocess
 
 def main():
     srvcmd = '%s --set mapi_port=%s --dbinit "module(pathfinder);module(sql_server);mil_start();"' % (os.getenv('MSERVER'),os.getenv('MAPIPORT'))

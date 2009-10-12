@@ -47,7 +47,7 @@ scripts_py = {
 headers_python = {
 	HEADERS = py
 	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDBtesting
-	SOURCES = trace.py subprocess26.py monet_options.py.in __init__.py
+	SOURCES = trace.py monet_options.py.in __init__.py
 }
 
 scripts_sh = {

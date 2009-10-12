@@ -1,9 +1,5 @@
 import os, time, sys
-try:
-    import subprocess
-except ImportError:
-    # use private copy for old Python versions
-    import MonetDBtesting.subprocess26 as subprocess
+import subprocess
 
 def remote_server_start(x,s,dbinit):
     port = os.getenv('MAPIPORT')

@@ -1,9 +1,5 @@
 import os, time, sys
-try:
-    import subprocess
-except ImportError:
-    # use private copy for old Python versions
-    import MonetDBtesting.subprocess26 as subprocess
+import subprocess
 
 def clean_ports(cmd,mapiport,xrpcport):
     cmd = cmd.replace('--port=%s' % mapiport,'--port=<mapi_port>')

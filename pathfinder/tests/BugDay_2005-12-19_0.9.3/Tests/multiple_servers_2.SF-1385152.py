@@ -1,9 +1,5 @@
 import os, time, sys
-try:
-    import subprocess
-except ImportError:
-    # user private copy for old Python versions
-    import MonetDBtesting.subprocess26 as subprocess
+import subprocess
 
 def server_start(x,s,dbinit):
     srvcmd = '%s --dbname "%s" --dbinit "%s"' % (os.getenv('MSERVER'),os.getenv('TSTDB'),dbinit)
