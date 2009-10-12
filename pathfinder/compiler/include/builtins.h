@@ -1070,6 +1070,11 @@ struct PFla_pair_t PFbui_pf_string_value (const PFla_op_t *loop,
                                           bool ordering,
                                           PFla_op_t **side_effects,
                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_number (const PFla_op_t *loop,
+                                    bool ordering,
+                                    PFla_op_t **side_effects,
+                                    struct PFla_pair_t *args);
+
 
 /* #2. PATHFINDER SPECIFIC DOCUMENT MANAGEMENT FUNCTIONS */
 

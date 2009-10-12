@@ -2732,6 +2732,12 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_double ()) },
             .ret_ty = PFty_xs_double () } },
         .alg = PFbui_fn_prod_dbl }
+    , /* pf:number (atomic?) as double? */
+      { .ns = PFns_pf, .loc = "number",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_atomic ()) },
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_pf_number }
 
 /* #3. UPDATE FUNCTIONS */
     /* Below are the function declarations for the UpdateX functions */

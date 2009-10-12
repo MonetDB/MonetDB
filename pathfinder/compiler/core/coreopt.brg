@@ -287,7 +287,7 @@ CoreExpr:           proof (subty (CoreExpr, SequenceType),
                            CoreExpr)                            =   48(10);
                                                                      
 CoreExpr:           if_ (CoreExpr,
-                         then_else (CoreExpr, CoreExpr))        =   49(10);
+                         then_else (CoreExpr, CoreExpr))        =  35 (10);
                                                                      
 CoreExpr:           if_ (CoreExpr,
                          then_else (CoreExpr, empty))           =  31 (10);
@@ -828,6 +828,34 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                  * we have to restore them.
                  */
                 PFcoreopt_label (p);
+            }
+            /* fall through */
+
+        /* CoreExpr:           if_ (CoreExpr,
+                                    then_else (CoreExpr, CoreExpr)) */
+        case 35:
+            if (L(p)->kind == c_apply &&
+                (!PFqname_eq (L(p)->sem.fun->qname, PFqname (PFns_op, "eq")) ||
+                 !PFqname_eq (L(p)->sem.fun->qname, PFqname (PFns_op, "lt")) ||
+                 !PFqname_eq (L(p)->sem.fun->qname, PFqname (PFns_op, "gt")))) {
+                if (LLL(p)->kind == c_apply &&
+                    !PFqname_eq (LLL(p)->sem.fun->qname,
+                                 PFqname (PFns_fn, "number"))) {
+                    LLL(p)->sem.fun
+                        = PFcore_function (PFqname (PFns_pf, "number"));
+                    /* don't need to re-label here,
+                     * change does not affect structure */
+                    rewritten = true;
+                }
+                if (LLRL(p)->kind == c_apply &&
+                    !PFqname_eq (LLRL(p)->sem.fun->qname,
+                                 PFqname (PFns_fn, "number"))) {
+                    LLRL(p)->sem.fun
+                        = PFcore_function (PFqname (PFns_pf, "number"));
+                    /* don't need to re-label here,
+                     * change does not affect structure */
+                    rewritten = true;
+                }
             }
             break;
 

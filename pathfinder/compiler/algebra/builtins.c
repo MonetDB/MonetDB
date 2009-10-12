@@ -4114,6 +4114,32 @@ PFbui_fn_number (const PFla_op_t *loop,
                  .frag = args[0].frag };
 }
 
+struct PFla_pair_t
+PFbui_pf_number (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
+                 struct PFla_pair_t *args)
+{
+    (void) loop;
+    (void) ordering;
+    (void) side_effects;
+
+    /* This variant of number ignores NaN values alltogether
+       as it can be used in selections only. */
+
+    return (struct  PFla_pair_t) {
+                 .rel = project (
+                            fun_1to1 (
+                                args[0].rel,
+                                alg_fun_fn_number_lax,
+                                col_res,
+                                collist (col_item)),
+                            proj (col_iter, col_iter),
+                            proj (col_pos, col_pos),
+                            proj (col_item, col_res)),
+                 .frag = args[0].frag };
+}
+
 /* --------------------- */
 /* 14.6. op:is-same-node */
 /* --------------------- */
