@@ -1,6 +1,14 @@
 # ChangeLog file for java
 # This file is updated with mchangelog
 
+  12 Oct 2009; Wouter Alink <w.alink@cwi.nl>  release.txt, NT/rules.msc,
+  Makefile.ag, build.properties:
+  Bump MCL version to 1.6 for fix.
+
+  09 Oct 2009; Wouter Alink <w.alink@cwi.nl> 
+  src/nl/cwi/monetdb/mcl/parser/StartOfHeaderParser.java:
+  applied workaround for bug in Sun JRE 1.6.
+  
   01 Oct 2009; Fabian Groffen <fabian@cwi.nl> release.txt, NT/rules.msc,
   Makefile.ag, build.properties:
   Bump JDBC version to 1.14 for fix.
