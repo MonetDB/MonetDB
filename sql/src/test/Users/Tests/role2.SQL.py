@@ -1,10 +1,6 @@
 import os, sys
 import copy
-try:
-    import subprocess
-except ImportError:
-    # use private copy for old Python versions
-    import MonetDBtesting.subprocess26 as subprocess
+import subprocess
 
 def client(cmd, env = os.environ):
     clt = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

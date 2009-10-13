@@ -1,11 +1,7 @@
 import sys
 import os
 import time
-try:
-    import subprocess
-except ImportError:
-    # use private copy for old Python versions
-    import MonetDBtesting.subprocess26 as subprocess
+import subprocess
 
 def server():
     s = subprocess.Popen("%s --dbinit='include sql;' --set gdk_readonly=yes" % os.getenv('MSERVER'),
