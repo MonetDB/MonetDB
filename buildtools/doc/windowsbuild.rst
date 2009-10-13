@@ -523,10 +523,6 @@ clients component with the additional ``nmake`` flags ``HAVE_PERL=1
 HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if SWIG_
 is also installed).
 
-Fix the ``LIBBZ2`` definitions in ``MonetDB\NT\winrules.msc`` so
-that they refer to the location where you installed the library and
-call ``nmake`` with the extra parameter ``HAVE_LIBBZ2=1``.
-
 __ http://www.perl.org/
 __ http://www.activestate.com/
 __ http://www.activestate.com/Products/activeperl/
