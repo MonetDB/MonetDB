@@ -433,6 +433,10 @@ directory, and copy the file
 ``projects\visualc6\win32_dll_release\zlib1.dll`` to the new ``bin``
 directory.
 
+Fix the ``LIBZ`` definitions in ``MonetDB\NT\winrules.msc`` so that
+they refer to the location where you installed the library and call
+``nmake`` with the extra parameter ``HAVE_LIBZ=1``.
+
 __ http://www.zlib.net/
 __ http://www.zlib.net/
 
