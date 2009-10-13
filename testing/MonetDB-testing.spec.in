@@ -118,7 +118,6 @@ rm -fr $RPM_BUILD_ROOT
 %exclude %{python_sitelib}/MonetDBtesting/*.pyo
 %{python_sitelib}/MonetDBtesting/__init__.py
 %{python_sitelib}/MonetDBtesting/monet_options.py
-%{python_sitelib}/MonetDBtesting/subprocess26.py
 %{python_sitelib}/MonetDBtesting/trace.py
 
 %changelog
