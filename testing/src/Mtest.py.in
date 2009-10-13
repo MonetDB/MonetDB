@@ -3115,6 +3115,13 @@ def main(argv) :
             c = 'HAVE_'+l
             if clientsCONDS.has_key(c):
                 CONDITIONALS[c] = clientsCONDS[c]
+    if par['PACKAGE'] not in ('monetdb', 'monetdb-java'):
+        monetdbCONDS = {}
+        GetCONDITIONALS(monetdbCONDS, 'monetdb')
+        for l in ('LIBZ', 'LIBBZ2'):
+            c = 'HAVE_'+l
+            if monetdbCONDS.has_key(c):
+                CONDITIONALS[c] = monetdbCONDS[c]
     if par['M5']:
         CONDITIONALS['HAVE_MONETDB5'] = '#'
         CONDITIONALS['HAVE_MONETDB4'] = ''
