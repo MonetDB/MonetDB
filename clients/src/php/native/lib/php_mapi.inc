@@ -73,12 +73,14 @@
 	* Stores the last error reported by the server
 	*/
 	$last_error = "";	
-		
+	
+	
 	/**
 	* Execute an SQL query and return the resulting handle by reference.
 	*/
 	function &mapi_execute($conn=NULL, $query) {
 		global $connection_pool;
+		global $rows;
 		/**
 		* Query handle
 		* 
@@ -121,7 +123,7 @@
 			if ($handle == NULL) {
 				return FALSE;
 			}
-			
+		
 			return $handle;
 		}
 		else if (($conn['lang'] == LANG_XQUERY) && (!defined('XQUERY_OUTPUT_SEQ'))) {
@@ -136,11 +138,13 @@
 		}
 		$socket = $conn['socket'];
 		
+		$offset = 10;
 		while ($handle["query"]["index"] < $handle["query"]["rows"]) {
 			// export a new window
 			$left_rows = $handle["query"]["rows"] - $handle["query"]["index"];
 				
-			$exp_size = min(10, $left_rows);
+			$exp_size = min($offset, $left_rows);
+			$offset += 100;
 			mapi_write($socket, format_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size));				
 			$data = mapi_read($socket);
 				
@@ -157,12 +161,11 @@
 	
 	function mapi_store($data, &$handle) {	
 		global $last_error;
+		// global $rows;
 		
 		$data = explode("\n", $data);
-		
-		$record_set = "";
-		$operation = "";
-				
+
+		$operation = "";				
 		$header = ""; // store temporary header informations;
 		
 		$rows = ""; // stores (partially) retrieved rows
@@ -191,20 +194,20 @@
 				$header = $header . $row . "\n";
 			} else if ($row[0] == MSG_TUPLE) {
 				// process tuples
-				$rows = $rows . $row;
+				$rows .= $row;
 			} else if ($row[0] == MSG_PROMPT) {
-				// receive all the tuples
-				$record_set = php_parse_tuples($rows);
-				$rows = "";
+				fast_array_merge($handle["record_set"], php_parse_tuples($rows));
+//				print_r($handle['record_set']);
 			} else if ($row[0] == MSG_INFO) {
 				$last_error = $row;
 				return FALSE;
 			}
 		}
-		
+		/*
 		if ($record_set != "") {
-			$handle["record_set"] = array_merge($handle["record_set"], $record_set);
-		}
+			//$handle["record_set"] = array_merge($handle["record_set"], $record_set);
+			$handle["record_set"] = $handle["record_set"] . $record_set;
+		}*/
 		
 		if ($header != "") {
 			
@@ -216,12 +219,20 @@
 		return $operation;
 	}
 	
+	/* Concatenates two arrays in place */
+	function fast_array_merge(&$a1, $a2) {
+		foreach ($a2 as $row) {
+			$a1[] = $row;
+		}
+	}
 	
 	function php_parse_tuples($rows) {
-		$parsed_rows = "";
-	
+		//$parsed_rows = "";
+		
 		$rows = rtrim($rows, "\t]");	
-		$rows = split("\t]", $rows);
+		return split("\t]", $rows);
+//		print_r($parsed_rows);		
+		/*
 		foreach ($rows as &$row) {				
 			
 			$row = ltrim($row, "[ ");
@@ -229,15 +240,34 @@
 			
 			foreach ($row as &$field) {
 				$field = stripslashes($field);
-				/* strip left/right \" chars and right ',' */
+				// strip left/right \" chars and right ',' 
 				$field = rtrim($field, '"');
 				$field = ltrim($field, '"');
 			}
 			$parsed_rows[] = $row;
 		}
-			
-		return $parsed_rows;
+		*/	
+	//	return $parsed_rows;
 	}
+	
+	function php_parse_row($row) {
+		$row = ltrim($row, "[ ");
+		$row = split(",\t",  $row);
+		foreach ($row as &$field) {
+			if ($field == "NULL") {
+				$field = NULL;
+			}
+			else {
+			
+				$field = stripslashes($field);
+				// strip left/right \" chars and right ',' 
+				$field = rtrim($field, '"');
+				$field = ltrim($field, '"');
+			}
+		}
+		return $row;
+	}
+	
 	
 	function php_parse_header($header) {
 		$header = explode("\n", $header);
@@ -458,6 +488,7 @@
 
 	// encode data and send it to the server. Returns the number of bytes sent.
 	function mapi_write($socket=NULL, $msg) {
+		// print "Msg_len: " . strlen($msg) . "\n";
 		global $last_error;
 		
 		$fb = 0;
@@ -470,9 +501,9 @@
 		
 		$is_final = FALSE;
 		while (! $is_final) {						
-			$data  = substr($msg, $pos, min(MAX_PACKET_SIZE, strlen($msg) - $pos)  );
+			$data  = substr($msg, $pos, min(MAX_PACKET_SIZE, (strlen($msg) - $pos))  );
 			$pos += strlen($data);
-								
+			
 			$end = 0; // more packets will follow
 			if ( (strlen($msg) - $pos) == 0) {
 				$is_final = TRUE;
@@ -485,11 +516,13 @@
 			  * socket_write() does not guarantee all data to be transmitted. 
 			  * Make sure that the buffer is flushed.
 			*/
+			
 			if ( ($buf = socket_flush($socket, pack("v", $fb) . $data)) == FALSE) {
 				$last_error = socket_strerror(socket_last_error());			
 				return -1;
 			}
 			
+			// print strlen($data)+2 . "-" . $buf . "\n";
 		}
 		return $buf;
 	}
@@ -755,7 +788,8 @@
 		
 		while ( ($bytes - $buf) > 0 ) {
 			$buf += socket_write($socket, substr($data, $buf, $bytes), $bytes - $buf);			
-
+			//print "Buf: " . $buf . "\n";
+			
 			if ($buf == FALSE) {
 				return FALSE;
 			}

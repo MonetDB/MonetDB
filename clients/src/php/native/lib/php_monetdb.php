@@ -168,7 +168,7 @@
 	 * @return int the number of rows in the result
 	 */
 	function monetdb_num_rows($hdl) {
-		if ($hdl["operation"] == Q_TABLE && $hdl["operation"] == Q_BLOCK ) {
+		if ($hdl["operation"] == Q_TABLE || $hdl["operation"] == Q_BLOCK ) {
 			return $hdl["query"]["rows"];
 		} else {
 			print "Last query did not produce a result set\n";
@@ -188,16 +188,21 @@
 	 */
 	function monetdb_fetch_row(&$hdl, $row=-1) {	
 		global $last_error;
+		
 		if ($hdl["operation"] != Q_TABLE && $hdl["operation"] != Q_BLOCK ) {
 			return FALSE;
 		}
 	
 		if ($row == -1){
+		  // Parse the tuple and present it to the user
 			$entry = current($hdl["record_set"]);
+			
 			//advance the array of one position
 			next($hdl["record_set"]);
+
 		} else {
 			if ($row < $hdl["query"]["rows"]) {
+			  /* Parse the tuple and present it to the user*/
 				$entry = $hdl["record_set"][$row-1];
 			}
 			else {
@@ -205,8 +210,12 @@
 				return FALSE;
 			}
 		}	
-
-		return $entry;
+		
+    if ($entry) {
+		  return php_parse_row($entry);
+	  }
+	  
+	  return $entry;
 	}
 
 	
