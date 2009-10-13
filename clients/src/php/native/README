@@ -16,3 +16,8 @@ NOTE: this interface is still under heavy development and hence it is not ready 
 
  - TODO: list of pending tasks.
 
+== Benchmark ==
+
+A comparison between cimpl and native can be found at: http://www.ins.cwi.nl/~gm/bench/
+
+php_test.tar.bz2 - contains an utility to measure the performance of the two php APIS.	
