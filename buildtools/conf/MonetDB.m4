@@ -2486,6 +2486,7 @@ fi
 AC_MSG_RESULT($have_z)
 AC_SUBST(Z_CFLAGS)
 AC_SUBST(Z_LIBS)
+AM_CONDITIONAL(HAVE_LIBZ,test x$have_z != xno)
 
 dnl check for bz2 (de)compression library (default /usr and /usr/local)
 have_bz2=auto
@@ -2526,6 +2527,7 @@ fi
 AC_MSG_RESULT($have_bz2)
 AC_SUBST(BZ_CFLAGS)
 AC_SUBST(BZ_LIBS)
+AM_CONDITIONAL(HAVE_LIBBZ2,test x$have_bz2 != xno)
 
 dnl check for getopt in standard library
 AC_CHECK_FUNCS(getopt_long , need_getopt=, need_getopt=getopt; need_getopt=getopt1)
