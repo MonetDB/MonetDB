@@ -2,8 +2,8 @@
 
 call monetdb-clients-config --internal
 
-# must be aligned with the installation directory chosen in
-# clients/src/python/test/Makefile.ag
+rem must be aligned with the installation directory chosen in
+rem clients/src/python/test/Makefile.ag
 set testpath=%pkglibdir%\Tests
 set PYTHONPATH=%testpath%;%PYTHONPATH%
 
