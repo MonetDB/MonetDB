@@ -433,8 +433,83 @@ directory, and copy the file
 ``projects\visualc6\win32_dll_release\zlib1.dll`` to the new ``bin``
 directory.
 
+Fix the ``LIBZ`` definitions in ``MonetDB\NT\winrules.msc`` so that
+they refer to the location where you installed the library and call
+``nmake`` with the extra parameter ``HAVE_LIBZ=1``.
+
 __ http://www.zlib.net/
 __ http://www.zlib.net/
+
+bzip2
+-----
+
+Bzip2__ is compression library which is optionally used by MonetDB.
+The home of bzip2 is http://www.bzip.org/.  The executable which is
+referenced on the download page is an executable of the command-line
+program, but since we need the library, you will have to build it
+yourself.
+
+Get the source tar ball and extract it somewhere.  The sources
+contains a file ``makefile.msc`` which can be used to build the
+executable, but it needs some tweaking in order to build a DLL.  Apply
+the following patches to the files ``makefile.msc`` and ``bzlib.h``
+(lines starting with ``-`` should be replaced with lines starting with
+``+``)::
+
+ --- makefile.msc.orig   2007-01-03 03:00:55.000000000 +0100
+ +++ makefile.msc        2009-10-13 13:15:49.343022600 +0200
+ @@ -17,11 +17,11 @@
+  all: lib bzip2 test
+ 
+  bzip2: lib
+ -       $(CC) $(CFLAGS) -o bzip2 bzip2.c libbz2.lib setargv.obj
+ -       $(CC) $(CFLAGS) -o bzip2recover bzip2recover.c
+ +       $(CC) $(CFLAGS) /Febzip2.exe bzip2.c libbz2.lib setargv.obj
+ +       $(CC) $(CFLAGS) /Febzip2recover.exe bzip2recover.c
+ 
+  lib: $(OBJS)
+ -       lib /out:libbz2.lib $(OBJS)
+ +       $(CC) /MD /LD /Felibbz2.dll $(OBJS) /link
+ 
+  test: bzip2
+	 type words1
+ @@ -59,5 +59,5 @@
+	 del sample3.tst
+ 
+  .c.obj: 
+ -       $(CC) $(CFLAGS) -c $*.c -o $*.obj
+ +       $(CC) $(CFLAGS) -c $*.c /Fe$*.obj
+ 
+ --- bzlib.h.orig        2007-12-09 13:34:39.000000000 +0100
+ +++ bzlib.h     2009-10-13 13:54:15.013743800 +0200
+ @@ -82,12 +82,12 @@
+  #      undef small
+  #   endif
+  #   ifdef BZ_EXPORT
+ -#   define BZ_API(func) WINAPI func
+ -#   define BZ_EXTERN extern
+ +#   define BZ_API(func) func
+ +#   define BZ_EXTERN extern __declspec(dllexport)
+  #   else
+     /* import windows dll dynamically */
+ -#   define BZ_API(func) (WINAPI * func)
+ -#   define BZ_EXTERN
+ +#   define BZ_API(func) func
+ +#   define BZ_EXTERN extern __declspec(dllimport)
+  #   endif
+  #else
+  #   define BZ_API(func) func
+
+After this, compile using ``nmake -f makefile.msc`` and copy the files
+``bzlib.h``, ``libbz2.dll``, and ``libbz2.lib`` to a location where
+the MonetDB build process can find them,
+e.g. ``C:\bzip2-1.0.5.win32``.
+
+Fix the ``LIBBZ2`` definitions in ``MonetDB\NT\winrules.msc`` so that
+they refer to the location where you installed the library and call
+``nmake`` with the extra parameter ``HAVE_LIBBZ2=1``.
+
+__ http://www.bzip.org/
 
 Perl
 ----
