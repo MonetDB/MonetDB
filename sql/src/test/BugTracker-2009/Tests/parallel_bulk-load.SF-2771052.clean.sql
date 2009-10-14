@@ -1,0 +1,9 @@
+drop table i0;
+drop table i1;
+drop table i2;
+drop table i3;
+drop table i4;
+drop table i5;
+drop table i6;
+drop table i7;
+drop table i8;
