@@ -8,14 +8,12 @@ def main():
 
     cmd = str('%s -p %s' % (SQLCLIENT, MAPIPORT))
     f = open(os.path.join(TSTTRGDIR, 'dumpoutput.sql'), 'r')
-    clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-    clt.stdin.write(f.read())
-    clt.stdin.close()
+    clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                           stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = clt.communicate(f.read())
     f.close()
-    sys.stdout.write(clt.stdout.read())
-    clt.stdout.close()
-    sys.stderr.write(clt.stderr.read())
-    clt.stderr.close()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 
 main()
