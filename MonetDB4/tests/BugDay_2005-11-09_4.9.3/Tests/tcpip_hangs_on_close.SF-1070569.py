@@ -1,24 +1,17 @@
-
 import os, time, sys
-
-class Popen:
-    def __init__(self, cmd):
-        if os.name == 'nt':
-            bufsize = -1
-        else:
-            bufsize = 0
-        self.stdin,self.stdout = os.popen2(cmd, 't', bufsize)
-
+import subprocess
 
 def server_start(x,dbname):
+    if os.name == 'nt':
+        bufsize = -1
+    else:
+        bufsize = 0
     srvcmd = '%s --dbname "%s"' % (os.getenv('MSERVER'),dbname)
-    return Popen(srvcmd)
+    return subprocess.Popen(srvcmd, bufsize=bufsize, shell=True, universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 def server_stop(srv):
-    r = srv.stdout.read()
-    sys.stdout.write(r)
-    srv.stdout.close()
-    srv.stdin.close()
+    out, err = srv.communicate()
+    sys.stdout.write(out)
 
 prelude_1 = '''
 module(tcpip);
