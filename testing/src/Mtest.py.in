@@ -3465,7 +3465,7 @@ def main(argv) :
         dotmonetdb.write('password=monetdb\n')
         dotmonetdb.close()
         # and make mclient find it
-        env['DOTMONETDBFILE'] = dotmonetdbfile;
+        os.environ['DOTMONETDBFILE'] = dotmonetdbfile;
 
         if par['M5']:
             QUIT = 'clients.quit();\n'

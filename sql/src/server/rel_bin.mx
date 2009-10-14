@@ -1435,10 +1435,10 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	list *pl; 
 	node *en, *n;
 	stmt *sub = NULL, *psub = NULL;
-	int l = -1, o = 0, lmt = -1;
+	int l = -1, o = 0;
 
 	if (topn) {
-		lmt = l = topn_limit(topn);
+		l = topn_limit(topn);
 		o = topn_offset(topn);
 		if (l < 0) /* for now only handle topn 
 				including limit, ie not just offset */
