@@ -4,7 +4,7 @@ import time
 import subprocess
 
 def server():
-    s = subprocess.Popen("%s --dbinit='include sql;' --set gdk_readonly=yes" % os.getenv('MSERVER'),
+    s = subprocess.Popen('%s "--dbinit=include sql;" --set gdk_readonly=yes' % os.getenv('MSERVER'),
                          shell = True,
                          stdin = subprocess.PIPE,
                          stdout = subprocess.PIPE,
