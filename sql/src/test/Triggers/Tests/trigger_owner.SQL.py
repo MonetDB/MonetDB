@@ -5,23 +5,23 @@ except ImportError:
     # use private copy for old Python versions
     import MonetDBtesting.subprocess26 as subprocess
 
-def client(cmd):
-    clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    sys.stdout.write(clt.stdout.read())
-    clt.stdout.close()
-    sys.stderr.write(clt.stderr.read())
-    clt.stderr.close()
+def client(cmd, infile):
+    clt = subprocess.Popen(cmd, shell=True, universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = clt.communicate(open(infile).read())
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 
 
 def main():
-    clcmd = str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/../trigger_owner_create.sql' % os.getenv('RELSRCDIR'))
-    clcmd1 = str(os.getenv('SQL_CLIENT')) + " -uuser_test -Ppass < %s" % ('%s/../trigger_owner.sql' % os.getenv('RELSRCDIR'))
-    clcmd2 = str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/../trigger_owner_drop.sql' % os.getenv('RELSRCDIR'))
+    clcmd = os.getenv('SQL_CLIENT')
+    clcmd1 = os.getenv('SQL_CLIENT') + " -uuser_test -Ppass"
+    clcmd2 = os.getenv('SQL_CLIENT')
+    relsrcdir = os.getenv('RELSRCDIR')
     sys.stdout.write('trigger owner\n')
-    client(clcmd)
-    client(clcmd1)
-    client(clcmd2)
+    client(clcmd, os.path.join(relsrcdir, '..', 'trigger_owner_create.sql'))
+    client(clcmd1, os.path.join(relsrcdir, '..', 'trigger_owner.sql'))
+    client(clcmd2, os.path.join(relsrcdir, '..', 'trigger_owner_drop.sql'))
     sys.stdout.write('done\n')
 
 main()
