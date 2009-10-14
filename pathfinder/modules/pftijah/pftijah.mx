@@ -6582,7 +6582,7 @@ int CMDsplitbat ( BAT** result, BAT* origbat, BAT* splitbat )
 	BAT *diffbat = NULL;
 	BAT *joinbat = NULL;
 	BUN ressize = 0;
-        BUN lst_split, cur_split, s_diff, lst_diff, s_join, lst_join, lst_res;
+        BUN lst_split, cur_split, lst_res;
         oid cur_orig, lst_orig, split_oid;
         oid *tid;
 	
@@ -6638,8 +6638,6 @@ int CMDsplitbat ( BAT** result, BAT* origbat, BAT* splitbat )
         }
 	
 	lst_split = BUNlast(splitbat);
-	s_diff = lst_diff = BUNlast(diffbat);
-	s_join = lst_join = BUNlast(joinbat);
 	lst_res = BUNlast(res);
 	cur_split = BUNfirst(splitbat);
         cur_orig = origbat->hseqbase;
