@@ -8,7 +8,7 @@ except ImportError:
     import MonetDBtesting.subprocess26 as subprocess
 
 def server():
-    s = subprocess.Popen("%s --dbinit='include sql;' --set gdk_readonly=yes" % os.getenv('MSERVER'),
+    s = subprocess.Popen('%s "--dbinit=include sql;" --set gdk_readonly=yes' % os.getenv('MSERVER'),
                          shell = True,
                          stdin = subprocess.PIPE,
                          stdout = subprocess.PIPE,
