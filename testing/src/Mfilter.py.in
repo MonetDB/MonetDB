@@ -459,7 +459,7 @@ def mFilter (FILE, IGNORE) :
                 if pref:
                     ln = ln[:-1].replace('\n', '\n' + pref) + '\n'
             try:
-                fout.write(ln)
+                fout.write(ln.expandtabs())
             except IOError, (IOerrNo, IOerrStr):
                 warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
                 if IOerrNo == 28:
@@ -473,7 +473,7 @@ def mFilter (FILE, IGNORE) :
                     except:
                         pass
                     try:
-                        fout.write(ln)
+                        fout.write(ln.expandtabs())
                     except IOError, (IOerrNo, IOerrStr):
                         warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
         fout.flush()
