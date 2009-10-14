@@ -2,18 +2,17 @@ import os, sys
 import subprocess
 
 
-def client(cmd):
-    clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    sys.stdout.write(clt.stdout.read())
-    clt.stdout.close()
-    sys.stderr.write(clt.stderr.read())
-    clt.stderr.close()
+def client(cmd, infile):
+    clt = subprocess.Popen(cmd, shell=True, universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = clt.communicate(open(infile).read())
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 
 def main():
-    clcmd = str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/../views_restrictions.sql' % os.getenv('RELSRCDIR'))
+    clcmd = os.getenv('SQL_CLIENT')
     sys.stdout.write('Views Restrictions\n')
-    client(clcmd)
+    client(clcmd, os.path.join(os.getenv('RELSRCDIR'), '..', 'views_restrictions.sql'))
     sys.stdout.write('step 1\n')
     sys.stdout.write('Cleanup\n')
     sys.stdout.write('step2\n')

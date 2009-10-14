@@ -2,17 +2,16 @@ import os, sys
 import copy
 import subprocess
 
-def client(cmd, env=os.environ):
-    clt = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    sys.stdout.write(clt.stdout.read())
-    clt.stdout.close()
-    sys.stderr.write(clt.stderr.read())
-    clt.stderr.close()
+def client(cmd, infile, env=os.environ):
+    clt = subprocess.Popen(cmd, env=env, shell=True, universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = clt.communicate(open(infile).read())
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 
 
 def main():
-    clcmd = str(os.getenv('SQL_CLIENT'))
+    clcmd = os.getenv('SQL_CLIENT')
 
     env_monet_test = copy.deepcopy(os.environ)
     env_monet_test['DOTMONETDBFILE'] = '.monet_test'
@@ -20,10 +19,11 @@ def main():
     f.write('user=user_test\npassword=pass\n')
     f.close()
 
+    relsrcdir = os.getenv('RELSRCDIR')
     sys.stdout.write('trigger owner\n')
-    client(clcmd + "< %s" % ('%s/../trigger_owner_create.sql' % os.getenv('RELSRCDIR')))
-    client(clcmd + "< %s" % ('%s/../trigger_owner.sql' % os.getenv('RELSRCDIR')), env_monet_test)
-    client(clcmd + "< %s" % ('%s/../trigger_owner_drop.sql' % os.getenv('RELSRCDIR')))
+    client(clcmd, os.path.join(relsrcdir, '..', 'trigger_owner_create.sql'))
+    client(clcmd, os.path.join(relsrcdir, '..', 'trigger_owner.sql'), env_monet_test)
+    client(clcmd, os.path.join(relsrcdir, '..', 'trigger_owner_drop.sql'))
     sys.stdout.write('done\n')
 
     os.unlink(env_monet_test['DOTMONETDBFILE'])
