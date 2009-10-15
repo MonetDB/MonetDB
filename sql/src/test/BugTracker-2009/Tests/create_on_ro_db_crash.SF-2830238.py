@@ -10,6 +10,7 @@ except ImportError:
 def server():
     s = subprocess.Popen('%s "--dbinit=include sql;" --set gdk_readonly=yes' % os.getenv('MSERVER'),
                          shell = True,
+                         universal_newlines = True,
                          stdin = subprocess.PIPE,
                          stdout = subprocess.PIPE,
                          stderr = subprocess.PIPE)
@@ -28,6 +29,7 @@ def server():
 def client():
     c = subprocess.Popen("%s" % os.getenv('SQL_CLIENT'),
                          shell = True,
+                         universal_newlines = True,
                          stdin = subprocess.PIPE,
                          stdout = subprocess.PIPE,
                          stderr = subprocess.PIPE)
