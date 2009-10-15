@@ -6233,13 +6233,13 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 
 	/* check arguments */
 	for (t=0; t<ntabs && BATcount(b[t][0]) <= 1; t++);
-        if (t<ntabs && !(BATtordered(b[t][0])&1) && !(reverse = (BATtordered(b[t][0]) == GDK_SORTED_REV))) {
+        if (t<ntabs && !(BATtordered(b[t][0])&1) && !(reverse = (BATtordered(b[t][0]) == (bit) GDK_SORTED_REV))) {
                 GDKerror("merged_union: tail of first BAT/column of table %d must be (reverse-)sorted.\n", t+1);
                 return GDK_FAIL;
         }
         if (reverse) {
                 for (; t<ntabs; t++) {
-                        if (BATcount(b[t][0])>1 && !(BATtordered(b[t][0]) == GDK_SORTED_REV)) {
+                        if (BATcount(b[t][0])>1 && !(BATtordered(b[t][0]) == (bit) GDK_SORTED_REV)) {
                                 GDKerror("merged_union: tail of first BAT/column of table %d must be reverse-sorted.\n", t+1);
                                 return GDK_FAIL;
                         }
@@ -6390,7 +6390,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	concat01 = (cnt[0]==0 || cnt[1]==0);
 	concat10 = FALSE;
 	if (reverse) {
-                if ((BATtordered(src[0]) == GDK_SORTED_REV && BATtordered(src[1]) == GDK_SORTED_REV) || (BATtordered(src[0]) == GDK_SORTED_REV && cnt[1]==1) || (cnt[0]==1 && BATtordered(src[1]) == GDK_SORTED_REV) ) {
+                if ((BATtordered(src[0]) == (bit) GDK_SORTED_REV && BATtordered(src[1]) == (bit) GDK_SORTED_REV) || (BATtordered(src[0]) == (bit) GDK_SORTED_REV && cnt[1]==1) || (cnt[0]==1 && BATtordered(src[1]) == (bit) GDK_SORTED_REV) ) {
                         if (!concat01) {
                                 concat01 = @4_GE(BUN@2(srci[0],BUNlast(src[0])-1),BUN@3(srci[1],BUNfirst(src[1])),@1);
                         }
@@ -6494,7 +6494,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 		BATsetcount(tgt, (dst[0] - BUNfirst(tgt)));
 		if (!tgt->batDirty) tgt->batDirty = TRUE;
 		BATkey(BATmirror(tgt),FALSE);
-		tgt->tsorted = (reverse ? GDK_SORTED_REV : GDK_SORTED);
+		tgt->tsorted = (reverse ? (bit) GDK_SORTED_REV : GDK_SORTED);
 		tgt->tdense = FALSE;
 		if (void_fix) {
 			BBPunfix(src[0]->batCacheid);
@@ -6608,7 +6608,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 		BATkey(BATmirror(bn[c]),(res_count < 2));
 		bn[c]->hsorted = GDK_SORTED;
 		if (c == 0) {
-			bn[c]->tsorted = (reverse ? GDK_SORTED_REV : GDK_SORTED);
+			bn[c]->tsorted = (reverse ? (bit) GDK_SORTED_REV : GDK_SORTED);
 		} else
 		  if (res_count < 2) {
 			bn[c]->tsorted = GDK_SORTED;
