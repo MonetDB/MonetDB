@@ -1,14 +1,11 @@
 import os, time
-import subprocess
+from MonetDBtesting import process
 
 def main():
-    srvcmd = '%s --dbname "%s" --dbinit "include sql;"' % (os.getenv('MSERVER'),os.getenv('TSTDB'))
-    srv = subprocess.Popen(srvcmd, shell = True, stdin = subprocess.PIPE)
+    srv = process.server('sql', stdin = process.PIPE)
     time.sleep(10)                      # give server time to start
-    cltcmd = os.getenv('SQL_CLIENT')
-    clt = subprocess.Popen(cltcmd, shell = True, stdin = subprocess.PIPE)
-    clt.stdin.write('select 1;\n')
-    clt.communicate()
+    clt = process.client('sql', stdin = process.PIPE)
+    clt.communicate('select 1;\n')
     srv.communicate()
 
 main()

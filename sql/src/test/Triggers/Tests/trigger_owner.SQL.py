@@ -1,23 +1,22 @@
 import os, sys
-import subprocess
+from MonetDBtesting import process
 
-def client(cmd, infile):
-    clt = subprocess.Popen(cmd, shell=True, universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = clt.communicate(open(infile).read())
+def client(infile, user = None, passwd = None):
+    clt = process.client('sql', user=user, passwd=passwd, stdin=open(infile),
+                         stdout=process.PIPE, stderr=process.PIPE)
+    out, err = clt.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
 
 
 
 def main():
-    clcmd = os.getenv('SQL_CLIENT')
-    clcmd1 = os.getenv('SQL_CLIENT') + " -uuser_test -Ppass"
-    clcmd2 = os.getenv('SQL_CLIENT')
     relsrcdir = os.getenv('RELSRCDIR')
     sys.stdout.write('trigger owner\n')
-    client(clcmd, os.path.join(relsrcdir, '..', 'trigger_owner_create.sql'))
-    client(clcmd1, os.path.join(relsrcdir, '..', 'trigger_owner.sql'))
-    client(clcmd2, os.path.join(relsrcdir, '..', 'trigger_owner_drop.sql'))
+    client(os.path.join(relsrcdir, '..', 'trigger_owner_create.sql'))
+    client(os.path.join(relsrcdir, '..', 'trigger_owner.sql'),
+           user='user_test', passwd='pass')
+    client(os.path.join(relsrcdir, '..', 'trigger_owner_drop.sql'))
     sys.stdout.write('done\n')
 
 main()

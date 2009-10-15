@@ -1,18 +1,12 @@
 import os, sys
-import subprocess
-
-
-def client(cmd):
-    clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    sys.stdout.write(clt.stdout.read())
-    clt.stdout.close()
-    sys.stderr.write(clt.stderr.read())
-    clt.stderr.close()
-
-
+from MonetDBtesting import process
 
 def main():
-    clcmd = str(os.getenv('SQL_CLIENT')) + " -umy_user -Pp1 < %s" % ('%s/../table.sql' % os.getenv('RELSRCDIR'))
-    client(clcmd)
+    clt = process.client('sql', user = 'my_user', passwd = 'p1',
+                         stdin = open(os.path.join(os.getenv('RELSRCDIR'), '..', 'table.sql')),
+                         stdout = process.PIPE, stderr = process.PIPE)
+    out, err = clt.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 main()

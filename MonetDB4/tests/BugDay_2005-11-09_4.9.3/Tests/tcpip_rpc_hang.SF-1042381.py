@@ -1,16 +1,17 @@
 import os, time, sys
-import subprocess
+from MonetDBtesting import process
 
-def server_start(x,dbname):
+def server_start(dbname):
     if os.name == 'nt':
         bufsize = -1
     else:
         bufsize = 0
-    srvcmd = '%s --dbname "%s"' % (os.getenv('MSERVER'),dbname)
-    return subprocess.Popen(srvcmd, bufsize=bufsize, shell=True, universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    return process.server('mil', dbname = dbname,
+                          stdin = process.PIPE, stdout = process.PIPE,
+                          bufsize = bufsize)
 
 def server_stop(srv):
-    out, err = srv.communicate()
+    out, err = srv.communicate("quit();\n")
     sys.stdout.write(out)
 
 prelude_1 = '''
@@ -45,8 +46,8 @@ sleep(2);
 
 def main():
     x = 0
-    x += 1; srv1 = server_start(x, "db" + str(x))
-    x += 1; srv2 = server_start(x, "db" + str(x))
+    x += 1; srv1 = server_start("db" + str(x))
+    x += 1; srv2 = server_start("db" + str(x))
 
     srv1.stdin.write(prelude_1)
     time.sleep(1)                      # give server 1 time to start
@@ -54,9 +55,6 @@ def main():
 
     srv2.stdin.write(script_2)
     srv1.stdin.write(script_1)
-
-    srv1.stdin.write("quit();\n")
-    srv2.stdin.write("quit();\n")
 
     server_stop(srv1)
     server_stop(srv2)

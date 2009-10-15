@@ -1,15 +1,13 @@
 import sys
 import os
 import time
-import subprocess
+from MonetDBtesting import process
 
 def server():
-    s = subprocess.Popen('%s "--dbinit=include sql;" --set gdk_readonly=yes' % os.getenv('MSERVER'),
-                         shell = True,
-                         universal_newlines = True,
-                         stdin = subprocess.PIPE,
-                         stdout = subprocess.PIPE,
-                         stderr = subprocess.PIPE)
+    s = process.server('sql', args = ["--set", "gdk_readonly=yes"],
+                       stdin = process.PIPE,
+                       stdout = process.PIPE,
+                       stderr = process.PIPE)
     s.stdin.write('\nio.printf("\\nReady.\\n");\n')
     s.stdin.flush()
     while True:
@@ -22,14 +20,19 @@ def server():
             break
     return s
 
-def client():
-    c = subprocess.Popen("%s" % os.getenv('SQL_CLIENT'),
-                         shell = True,
-                         universal_newlines = True,
-                         stdin = subprocess.PIPE,
-                         stdout = subprocess.PIPE,
-                         stderr = subprocess.PIPE)
-    return c
+def server_stop(s):
+    out, err = s.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+
+def client(input):
+    c = process.client('sql',
+                         stdin = process.PIPE,
+                         stdout = process.PIPE,
+                         stderr = process.PIPE)
+    out, err = c.communicate(input)
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 script1 = '''\
 create table t2 (a int);
@@ -37,13 +40,8 @@ create table t2 (a int);
 
 def main():
     s = server()
-    c = client()
-    o, e = c.communicate(script1)
-    sys.stdout.write(o)
-    sys.stderr.write(e)
-    o, e = s.communicate()
-    sys.stdout.write(o)
-    sys.stderr.write(e)
+    client(script1)
+    server_stop(s)
 
 if __name__ == '__main__':
     main()

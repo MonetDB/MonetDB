@@ -1,5 +1,5 @@
 import os, sys, time
-import subprocess
+from MonetDBtesting import process
 
 
 def client(cmd, infile = None):
@@ -10,19 +10,19 @@ def client(cmd, infile = None):
     Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), cmd)
     sys.stdout.write(Mlog)
     sys.stderr.write(Mlog)
-    clt = subprocess.Popen(cmd, shell=True, stdin = f)
+    clt = process.client(cmd, stdin = f)
     if f is not None:
         f.close()
     clt.wait()
 
 
 def main():
-    client(os.getenv('SQL_CLIENT'),
+    client('sql',
            os.path.join(os.getenv('TSTSRCDIR'),
                         'JdbcClient_create_tables.sql'))
-    client(os.getenv('SQL_CLIENT'),
+    client('sql',
            os.path.join(os.getenv('TSTSRCDIR'),
                         'JdbcClient_inserts_selects.sql'))
-    client(os.getenv('SQL_DUMP'))
+    client('sqldump')
 
 main()

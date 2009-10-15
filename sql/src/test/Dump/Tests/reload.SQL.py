@@ -1,19 +1,13 @@
 import os, sys
-import subprocess
+from MonetDBtesting import process
 
 def main():
-    TSTTRGDIR = os.environ['TSTTRGDIR']
-    SQLCLIENT = os.environ['SQLCLIENT']
-    MAPIPORT = os.environ['MAPIPORT']
-
-    cmd = str('%s -umonetdb -Pmonetdb -p %s' % (SQLCLIENT, MAPIPORT))
-    f = open(os.path.join(TSTTRGDIR, 'dumpoutput.sql'), 'r')
-    clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                           stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = clt.communicate(f.read())
-    f.close()
+    clt = process.client('sql', user = 'monetdb', passwd = 'monetdb',
+                         stdin = open(os.path.join(os.environ['TSTTRGDIR'],
+                                                   'dumpoutput.sql'), 'r'),
+                         stdout = process.PIPE, stderr = process.PIPE)
+    out, err = clt.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
-
 
 main()
