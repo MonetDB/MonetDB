@@ -784,7 +784,7 @@ AFTER_CORE2ALG:
 
     /* Map physical algebra to MIL */
     tm = PFtimer_start ();
-    mroot = PFmilgen (paroot, status->genType, NULL, NULL, 30000);
+    mroot = PFmilgen (paroot, status->genType);
     tm = PFtimer_stop (tm);
 
     if (status->timing)
@@ -946,7 +946,7 @@ AFTER_CORE2ALG:
 char*
 PFcompile_MonetDB (char *xquery, char* url,
                    char** prologue, char** query, char** epilogue,
-                   int options, char *genType, char *qid, char *mode, long long timeout)
+                   int options, char *genType)
 {
         PFstate_t PFstate;
         PFpnode_t  *proot  = NULL;
@@ -1067,7 +1067,7 @@ PFcompile_MonetDB (char *xquery, char* url,
         paroot = PFpa_intro_borders (paroot);
 
         /* generate internal MIL representation */
-        mroot = PFmilgen (paroot, genType, qid, mode, timeout);
+        mroot = PFmilgen (paroot, genType);
 
         if (!strncmp ("timing", genType, 6))
             /* make sure the timing variables are retained */

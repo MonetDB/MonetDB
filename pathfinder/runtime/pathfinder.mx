@@ -4763,9 +4763,8 @@ xquery_compile_exec(xquery_client *ctx,
             PFerrbuf = ctx->errbuf;
             PFerrbuf[0] = 0;
             err = PFcompile_MonetDB(xquery, url, prologue, &del, epilogue, options,
-                                    *(ctx->genType), *(ctx->xrpc_qid), *(ctx->xrpc_mode), *(ctx->xrpc_timeout)
-                                                    /* Using the content of the MIL variables genType and 
-                                                       xrpc_* defined in the prologue is yet another hack
+                                    *(ctx->genType) /* Using the content of the MIL variable genType
+                                                       defined in the prologue is yet another hack
                                                        to make the serialization information visible
                                                        to the algebra backend that does not use prologue
                                                        and epilogue structures. */);
@@ -5959,7 +5958,7 @@ xquery_prepare(xquery_client *ctx,
     int nsbuf = 0, loaded_modules = 0, len;
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *q, *p = query;
     char val[1024], url1[1024], url2[1024];
-    char *err = NULL, *mode = NULL, *sid = NULL;
+    char *err = NULL;
 
     if (ctx->mode&XQ_DEBUG) {
         /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
@@ -5988,7 +5987,7 @@ xquery_prepare(xquery_client *ctx,
             }
         }
     }
-
+   
     /* parse one ore more import module statements */  
     while(*p && err == NULL) {
         p = xquery_parse_space(p);
@@ -6047,41 +6046,6 @@ xquery_prepare(xquery_client *ctx,
             }
         }
     }
-
-    /* detect pf:session pragma enclosing the entire query */
-    if (p[0] == '(' && p[1] == '#') {
-        str off, lim;
-        p = xquery_parse_space(p+2);
-        if (strncmp(p, "pf:session", 10) == 0) {
-            p += 10;
-            mode = "use-cache-repeatable";
-            if (strncmp(p, "-use", 4) == 0) {
-                p += 4; 
-            } else {
-                mode += 4;
-            }
-            off = xquery_parse_space(p);
-            p = lim = xquery_parse_ident(off);
-            if (*lim == ':') {
-                *(ctx->xrpc_timeout) = strtol(lim+1,&p,10);
-            } 
-            p = xquery_parse_space(p);
-            if (p[0] == '#' && p[1] == ')') {
-                p = xquery_parse_space(p+2);
-                if (p[0] == '{') {
-                    str q, end = NULL;
-                    for(q=p=xquery_parse_space(p+1); *q; q++) if (*q == '}') end = q;
-                    if (end) {
-                        /* cut off the enclosing pragma, record the session id */
-                        sid = off; query = p; 
-                        *lim = *end = 0;
-                    }
-                }
-            }
-        }
-    }
-    @:setvar(xrpc_qid, sid?sid:"")@
-    @:setvar(xrpc_mode, (sid && mode)?mode:"none")@
 
     if (loaded_modules == 0) {
         err = xquery_too_complex; /* must at least load one module to be able to just execute a function */

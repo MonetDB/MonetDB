@@ -99,6 +99,8 @@
 #include "mil.h"
 /* XRPC function call context */
 #include "core.h"
+/* use global options to lookup session information */
+#include "options.h"
 
 /* abbreviate MIL constructor calls */
 #include "mil_mnemonic.h"
@@ -11025,9 +11027,37 @@ label (PFpa_op_t *p)
 
 /** @brief Compile physical algebra tree into a MIL program. */
 PFmil_t *
-PFmilgen (PFpa_op_t *n, char *genType, char* qid, char *mode, long long timeout)
+PFmilgen (PFpa_op_t *n, char *genType)
 {
-    PFmil_t *bodymilprog;
+    PFmil_t   *bodymilprog;
+    PFarray_t *opt;
+    long long  timeout = 0;
+    char      *qid     = "",
+              *mode    = "none";
+
+    /* Retrieve session information from the global option list. */
+    opt = PFenv_lookup (PFoptions, PFqname(PFns_lib, "session-id"));
+    if (opt) {
+        qid = *((char **) PFarray_at (opt, 0));
+        if (PFarray_last(opt) > 1)
+            PFlog ("Multiple session IDs -- Choosing \"%s\".", qid);
+    }
+    opt = PFenv_lookup (PFoptions, PFqname(PFns_lib, "session-timeout"));
+    if (opt) {
+        timeout = strtoll (*((char **) PFarray_at (opt, 0)), NULL, 10);
+        if (timeout <= 0)
+            PFoops (OOPS_FATAL, "Invalid session timeout: \"%s\".",
+                    *((char **) PFarray_at (opt, 0)));
+        if (PFarray_last(opt) > 1)
+            PFlog ("Multiple session timeouts -- Choosing \"%s\".",
+                   *((char **) PFarray_at (opt, 0)));
+    }
+    opt = PFenv_lookup (PFoptions, PFqname(PFns_lib, "session-mode"));
+    if (opt) {
+        mode = *((char **) PFarray_at (opt, 0));
+        if (PFarray_last(opt) > 1)
+            PFlog ("Multiple session modes -- Choosing \"%s\".", mode);
+    }
 
     assert (n);
 
@@ -11147,13 +11177,12 @@ PFmilgen (PFpa_op_t *n, char *genType, char* qid, char *mode, long long timeout)
                    declare (var (PF_MIL_VAR_XRPC_METHOD)),
                    declare (var (PF_MIL_VAR_XRPC_COORD)),
 
-                   assgn (var (PF_MIL_VAR_XRPC_QID), lit_str(qid?qid:"")),
+                   assgn (var (PF_MIL_VAR_XRPC_QID), lit_str(qid)),
                    assgn (var (PF_MIL_VAR_XRPC_CALLER), lit_str("")),
                    assgn (var (PF_MIL_VAR_XRPC_HDL), lit_int(0)),
                    assgn (var (PF_MIL_VAR_XRPC_SEQNR), lit_lng(0)),
                    assgn (var (PF_MIL_VAR_XRPC_TIMEOUT), lit_lng(timeout)),
-                   assgn (var (PF_MIL_VAR_XRPC_MODE), 
-                          lit_str (mode?mode:"none")),
+                   assgn (var (PF_MIL_VAR_XRPC_MODE), lit_str (mode)),
                    assgn (var (PF_MIL_VAR_XRPC_MODULE), lit_str("")),
                    assgn (var (PF_MIL_VAR_XRPC_METHOD), lit_str("")),
                    assgn (var (PF_MIL_VAR_XRPC_COORD), lit_str("")),
