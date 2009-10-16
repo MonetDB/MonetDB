@@ -1,32 +1,23 @@
 import os, sys
-import copy
-import subprocess
+from MonetDBtesting import process
 
-def client(cmd, input = None, env = os.environ):
-    clt = subprocess.Popen(cmd,
-                           env = env,
-                           shell = True,
-                           stdin = subprocess.PIPE,
-                           stdout = subprocess.PIPE,
-                           stderr = subprocess.PIPE,
-                           universal_newlines = True)
+def client(lang, user = None, passwd = None, input = None):
+    clt = process.client(lang, user = user, passwd = passwd,
+                         stdin = process.PIPE,
+                         stdout = process.PIPE,
+                         stderr = process.PIPE)
     out, err = clt.communicate(input)
     sys.stdout.write(out)
     sys.stderr.write(err)
 
 def main():
     sql_client = os.getenv('SQL_CLIENT')
-    client(sql_client, """\
+    client('sql', input = """\
 create user voc with password 'voc' name 'VOC Explorer' schema sys;
 create schema voc authorization voc;
 alter user voc set schema voc;
 """)
-    vocenv = copy.deepcopy(os.environ)
-    vocenv['DOTMONETDBFILE'] = '.vocuser'
-    f = open(vocenv['DOTMONETDBFILE'], 'w')
-    f.write('user=voc\npassword=voc\n')
-    f.close()
-    client(sql_client, """\
+    client('sql', user = 'voc', passwd = 'voc', input = """\
 create table foo (
         id int,
         v int,
@@ -38,18 +29,13 @@ create table a (
         id int
 );
 create trigger a after insert on foo insert into a values (1);
-""", vocenv)
-    client(sql_client, """\
+""")
+    client('sql', input = """\
 create user test with password 'test' name 'Test User' schema sys;
 create schema test authorization test;
 alter user test set schema test;
 """)
-    testenv = copy.deepcopy(os.environ)
-    testenv['DOTMONETDBFILE'] = '.testuser'
-    f = open(testenv['DOTMONETDBFILE'], 'w')
-    f.write('user=test\npassword=test\n')
-    f.close()
-    client(sql_client, '''\
+    client('sql', user = 'test', passwd = 'test', input = '''\
 create table foo (
         id int,
         v int,
@@ -63,11 +49,9 @@ create table a (
 create trigger a after insert on foo insert into a values (1);
 create trigger test.x after insert on foo insert into a values (1);
 create trigger "test"."z" after insert on "foo" insert into a values (1);
-''', testenv)
-    client(os.getenv('SQLDUMP'))
-    client(os.getenv('SQLDUMP'), env = vocenv)
-    client(os.getenv('SQLDUMP'), env = testenv)
-    os.unlink(vocenv['DOTMONETDBFILE'])
-    os.unlink(testenv['DOTMONETDBFILE'])
+''')
+    client('sqldump')
+    client('sqldump', user = 'voc', passwd = 'voc')
+    client('sqldump', user = 'test', passwd = 'test')
 
 main()

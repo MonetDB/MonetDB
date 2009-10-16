@@ -1,30 +1,28 @@
 import os, time, sys
-import subprocess
+from MonetDBtesting import process
 
-def remote_server_start(x,s,dbinit):
-    port = os.getenv('MAPIPORT')
-    srvcmd = '%s --dbfarm "%s" --dbname "%s_test1" --dbinit="%s"' % (os.getenv('MSERVER'),os.getenv('GDK_DBFARM'), os.getenv('TSTDB'),dbinit)
-    srvcmd = srvcmd.replace(port,str(int(port)+1))
-    sys.stdout.write('\nserver %d%d : "%s"\n' % (x,s, dbinit))
-    sys.stderr.write('\nserver %d%d : "%s"\n' % (x,s, dbinit))
+def remote_server_start(x,s):
+    sys.stdout.write('\nserver %d%d\n' % (x,s))
+    sys.stderr.write('\nserver %d%d\n' % (x,s))
     sys.stderr.flush()
-    sys.stderr.write('#remote mserver: "%s"\n' % (srvcmd))
+    sys.stderr.write('#remote mserver\n')
     sys.stdout.flush()
     sys.stderr.flush()
-    srv = subprocess.Popen(srvcmd, shell = True, stdin = subprocess.PIPE)
+    port = os.getenv('MAPIPORT', '50000')
+    srv = process.server('sql', mapiport = int(port) + 1,
+                         dbname = '%s_test1' % os.getenv('TSTDB'),
+                         stdin = process.PIPE)
     time.sleep(5)                      # give server time to start
     return srv
 
-def server_start(x,s,dbinit):
-    port = int(os.getenv('MAPIPORT'))
-    srvcmd = '%s --dbfarm "%s" --dbname "%s" --dbinit="%s"' % (os.getenv('MSERVER'),os.getenv('GDK_DBFARM'), os.getenv('TSTDB'),dbinit)
-    sys.stdout.write('\nserver %d%d : "%s"\n' % (x,s, dbinit))
-    sys.stderr.write('\nserver %d%d : "%s"\n' % (x,s, dbinit))
+def server_start(x,s):
+    sys.stdout.write('\nserver %d%d\n' % (x,s))
+    sys.stderr.write('\nserver %d%d\n' % (x,s))
     sys.stderr.flush()
-    sys.stderr.write('#mserver: "%s"\n' % (srvcmd))
+    sys.stderr.write('#mserver\n')
     sys.stdout.flush()
     sys.stderr.flush()
-    srv = subprocess.Popen(srvcmd, shell = True, stdin = subprocess.PIPE)
+    srv = process.server('sql', stdin = process.PIPE)
     time.sleep(5)                      # give server time to start
     return srv
 
@@ -40,34 +38,32 @@ def client_load_file(clt, port, file):
     f.close()
 
 
-def client(x,s, c, dbinit, lang, file):
-    cltcmd = '%s' % os.getenv('%s_CLIENT' % lang)
-    sys.stdout.write('\nserver %d%d : "%s", client %d: %s\n' % (x,s,dbinit,c,lang))
-    sys.stderr.write('\nserver %d%d : "%s", client %d: %s\n' % (x,s,dbinit,c,lang))
+def client(x,s, c, file):
+    sys.stdout.write('\nserver %d%d, client %d\n' % (x,s,c))
+    sys.stderr.write('\nserver %d%d, client %d\n' % (x,s,c))
     sys.stderr.flush()
-    sys.stderr.write('#client%d: "%s"\n' % (x,cltcmd))
+    sys.stderr.write('#client%d\n' % x)
     sys.stdout.flush()
     sys.stderr.flush()
-    clt = subprocess.Popen(cltcmd, shell = True, stdin = subprocess.PIPE)
-    port = int(os.getenv('MAPIPORT'))
+    clt = process.client('sql', stdin = process.PIPE)
+    port = int(os.getenv('MAPIPORT', '50000'))
     client_load_file(clt, port, file)
     clt.communicate()
-    return '%s ' % (lang)
 
 
-def clients(x,dbinit):
+def clients(x):
     s = 0
-    s += 1; srv = server_start(x,s,dbinit)
-    s += 1; remote_srv = remote_server_start(x,s,dbinit)
-    c = 0 ; h = ''
-    c += 1; h = client(x,s,c,dbinit,'SQL' , os.path.join(os.getenv('RELSRCDIR'),'..','connections_syntax.sql'))
-    c += 1; h = client(x,s,c,dbinit,'SQL' , os.path.join(os.getenv('RELSRCDIR'),'..','connections_semantic.sql'))
-    c += 1; h = client(x,s,c,dbinit,'SQL', os.path.join(os.getenv('RELSRCDIR'),'..','connections_default_values.sql'))
+    s += 1; srv = server_start(x,s)
+    s += 1; remote_srv = remote_server_start(x,s)
+    c = 0
+    c += 1; client(x, s, c, os.path.join(os.getenv('RELSRCDIR'), '..', 'connections_syntax.sql'))
+    c += 1; client(x, s, c, os.path.join(os.getenv('RELSRCDIR'), '..', 'connections_semantic.sql'))
+    c += 1; client(x, s, c, os.path.join(os.getenv('RELSRCDIR'), '..', 'connections_default_values.sql'))
     server_stop(remote_srv)
     server_stop(srv)
 
 def main():
     x = 0
-    x += 1; clients(x,'include sql;')
+    x += 1; clients(x)
 
 main()

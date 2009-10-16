@@ -1,17 +1,10 @@
 import os, sys
-import subprocess
+from MonetDBtesting import process
 
-TSTTRGDIR = os.environ['TSTTRGDIR']
-SQLDUMP = os.environ['SQLDUMP']
-MAPIPORT = os.environ['MAPIPORT']
-
-p = subprocess.Popen('%s -p %s' % (SQLDUMP, MAPIPORT),
-                     shell = True,
-                     universal_newlines = True,
-                     stdout = subprocess.PIPE)
+p = process.client('sqldump', stdout = process.PIPE)
 dump, err = p.communicate()
 
-f = open(os.path.join(TSTTRGDIR, 'dumpoutput.sql'), 'w')
+f = open(os.path.join(os.environ['TSTTRGDIR'], 'dumpoutput.sql'), 'w')
 f.write(dump)
 f.close()
 

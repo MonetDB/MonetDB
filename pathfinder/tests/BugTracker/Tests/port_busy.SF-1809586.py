@@ -1,14 +1,12 @@
 import os, sys, socket
-import subprocess
+from MonetDBtesting import process
 
-def prog(cmd, input = None):
-    clt = subprocess.Popen(cmd,
-                           stdin = subprocess.PIPE,
-                           stdout = subprocess.PIPE,
-                           stderr = subprocess.PIPE,
-                           universal_newlines = True,
-                           shell = type(cmd) == type(''))
-    out, err = clt.communicate(input)
+def prog(dbinit, input):
+    srv = process.server('mil', dbinit = dbinit,
+                        stdin = process.PIPE,
+                        stdout = process.PIPE,
+                        stderr = process.PIPE)
+    out, err = srv.communicate(input)
     sys.stdout.write(out)
     sys.stderr.write(err)
 
@@ -16,27 +14,19 @@ def main():
     mserver = os.getenv('MSERVER')
 
     # test mapi and pathfinder modules with MAPIPORT busy
-    port = os.getenv('MAPIPORT')
-    if port:
-        port = int(port)
-    else:
-        port = 50001
+    port = int(os.getenv('MAPIPORT', '50000'))
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(('', port))
-    prog(mserver + ' "--dbinit=module(mapi);"', 'print(1);\n')
-    prog(mserver + ' "--dbinit=module(pathfinder);"', 'print(1);\n')
+    prog('module(mapi);', 'print(1);\n')
+    prog('module(pathfinder);', 'print(1);\n')
     s.close()
 
     # test mapi and pathfinder modules with XRPCPORT busy
-    port = os.getenv('XRPCPORT')
-    if port:
-        port = int(port)
-    else:
-        port = 50001
+    port = int(os.getenv('XRPCPORT', '50001'))
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(('', port))
-    prog(mserver + ' "--dbinit=module(mapi);"', 'print(1);\n')
-    prog(mserver + ' "--dbinit=module(pathfinder);"', 'print(1);\n')
+    prog('module(mapi);', 'print(1);\n')
+    prog('module(pathfinder);', 'print(1);\n')
     s.close()
 
 main()

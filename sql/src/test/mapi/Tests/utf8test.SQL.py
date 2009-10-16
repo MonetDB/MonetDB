@@ -1,24 +1,23 @@
 import os, sys
-import subprocess
+from MonetDBtesting import process
 
-def client(cmd):
-    clt = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    sys.stdout.write(clt.stdout.read())
-    clt.stdout.close()
-    sys.stderr.write(clt.stderr.read())
-    clt.stderr.close()
+def client(args):
+    clt = process.client('sql', args = args,
+                         stdout = process.PIPE, stderr = process.PIPE)
+    out, err = clt.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 def main():
-    mclient = os.getenv('SQL_CLIENT')
-    client('%s -s "create table utf8test (s varchar(50))"' % mclient)
-    client('%s -s "insert into utf8test values (\'value without special characters\')"' % mclient)
-    client('%s -s "insert into utf8test values (\'funny characters: \303\240\303\241\303\242\303\243\303\244\303\245\')"' % mclient)
-    client('%s -fraw -s "select * from utf8test"' % mclient)
-    client('%s -fsql -s "select * from utf8test"' % mclient)
-    client('%s -fraw -Eiso-8859-1 -s "select * from utf8test"' % mclient)
-    client('%s -fsql -Eiso-8859-1 -s "select * from utf8test"' % mclient)
-    client('%s -fraw -Eus-ascii -s "select * from utf8test"' % mclient)
-    client('%s -fsql -Eus-ascii -s "select * from utf8test"' % mclient)
-    client('%s -s "drop table utf8test"' % mclient)
+    client(['-s', 'create table utf8test (s varchar(50))'])
+    client(['-s', "insert into utf8test values ('value without special characters')"])
+    client(['-s', "insert into utf8test values ('funny characters: \303\240\303\241\303\242\303\243\303\244\303\245')"])
+    client(['-fraw', '-s', 'select * from utf8test'])
+    client(['-fsql', '-s', 'select * from utf8test'])
+    client(['-fraw', '-Eiso-8859-1', '-s', 'select * from utf8test'])
+    client(['-fsql', '-Eiso-8859-1', '-s', 'select * from utf8test'])
+    client(['-fraw', '-Eus-ascii', '-s', 'select * from utf8test'])
+    client(['-fsql', '-Eus-ascii', '-s', 'select * from utf8test'])
+    client(['-s', 'drop table utf8test'])
 
 main()

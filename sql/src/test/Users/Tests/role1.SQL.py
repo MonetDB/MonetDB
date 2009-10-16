@@ -1,25 +1,12 @@
 import os, sys
-import copy
-import subprocess
-
-
-def client(cmd, env = os.environ):
-    clt = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    sys.stdout.write(clt.stdout.read())
-    clt.stdout.close()
-    sys.stderr.write(clt.stderr.read())
-    clt.stderr.close()
-
-
+from MonetDBtesting import process
 
 def main():
-    testenv = copy.deepcopy(os.environ)
-    testenv['DOTMONETDBFILE'] = '.testuser'
-    f = open(testenv['DOTMONETDBFILE'], 'w')
-    f.write('user=my_user\npassword=p1\n')
-    f.close()
-    clcmd = str(os.getenv('SQL_CLIENT')) + "< %s" % ('%s/../role.sql' % os.getenv('RELSRCDIR'))
-    client(clcmd, testenv)
-    os.unlink(testenv['DOTMONETDBFILE'])
+    clt = process.client('sql', user = 'my_user', passwd = 'p1',
+                         stdin = open(os.path.join(os.getenv('RELSRCDIR'), '..', 'role.sql')),
+                         stdout = process.PIPE, stderr = process.PIPE)
+    out, err = clt.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 main()

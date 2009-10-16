@@ -1,25 +1,24 @@
 import os, sys
-import subprocess
+from MonetDBtesting import process
 
-def client(cmd, input = None):
-    clt = subprocess.Popen(cmd,
-                           stdin = subprocess.PIPE,
-                           stdout = subprocess.PIPE,
-                           stderr = subprocess.PIPE,
-                           universal_newlines = True)
+def client(lang, args, input = None):
+    clt = process.client(lang, args = args,
+                         stdin = process.PIPE,
+                         stdout = process.PIPE,
+                         stderr = process.PIPE)
     out, err = clt.communicate(input)
     sys.stdout.write(out)
     sys.stderr.write(err)
 
 def main():
-    xq_client = os.getenv('XQUERY_CLIENT').split()
     # HACK ALERT: create updatable document by appending ,10 to collection name
-    client(xq_client + ['--input=doc1911209.xml', '--collection=doc1911209.xml,10'],
+    client('xquery',
+           ['--input=doc1911209.xml', '--collection=doc1911209.xml,10'],
            '<aap/>')
-    client(xq_client + ['-s', 'do insert <beer/> into doc("doc1911209.xml")/aap'])
+    client('xquery', ['-s', 'do insert <beer/> into doc("doc1911209.xml")/aap'])
     for i in range(1000):
-        client(xq_client + ['-s', 'pf:documents()'])
-        client(xq_client + ['-s', 'doc("does_not_exist.xml")'])
-    client(xq_client + ['-s', 'pf:del-doc("doc1911209.xml")'])
+        client('xquery', ['-s', 'pf:documents()'])
+        client('xquery', ['-s', 'doc("does_not_exist.xml")'])
+    client('xquery', ['-s', 'pf:del-doc("doc1911209.xml")'])
 
 main()

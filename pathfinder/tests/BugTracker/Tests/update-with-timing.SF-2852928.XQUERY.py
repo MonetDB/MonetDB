@@ -1,12 +1,11 @@
 import os, sys
-import subprocess
+from MonetDBtesting import process
 
-def client(cmd, input = None):
-    clt = subprocess.Popen(cmd,
-                           stdin = subprocess.PIPE,
-                           stdout = subprocess.PIPE,
-                           stderr = subprocess.PIPE,
-                           universal_newlines = True)
+def client(lang, args, input = None):
+    clt = process.client(lang, args,
+                         stdin = process.PIPE,
+                         stdout = process.PIPE,
+                         stderr = process.PIPE)
     out, err = clt.communicate(input)
     sys.stdout.write(out)
     sys.stderr.write(err)
@@ -22,14 +21,17 @@ hellodoc = r'''
 '''
 
 def main():
-    xq_client = os.getenv('XQUERY_CLIENT').split()
     # HACK ALERT: create updatable document by appending ,10 to collection name
-    client(xq_client + ['--input=hello-SF.2852928.xml', '--collection=hello-SF.2852928.xml,10'],
+    client('xquery',
+           ['--input=hello-SF.2852928.xml',
+            '--collection=hello-SF.2852928.xml,10'],
            hellodoc)
     sys.stdout.write('#~BeginVariableOutput~#\n')
-    client(xq_client + ['-t', '-s', 'do insert <a/> into doc("hello-SF.2852928.xml")/hello'])
+    client('xquery',
+           ['-t',
+            '-s', 'do insert <a/> into doc("hello-SF.2852928.xml")/hello'])
     sys.stdout.write('#~EndVariableOutput~#\n')
-    client(xq_client + ['-s', 'doc("hello-SF.2852928.xml")'])
-    client(xq_client + ['-s', 'pf:del-doc("hello-SF.2852928.xml")'])
+    client('xquery', ['-s', 'doc("hello-SF.2852928.xml")'])
+    client('xquery', ['-s', 'pf:del-doc("hello-SF.2852928.xml")'])
 
 main()

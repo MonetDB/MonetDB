@@ -1,9 +1,9 @@
 import os
-import subprocess
+from MonetDBtesting import process
 
 def main():
     fn = os.path.join(os.getenv('TSTSRCDIR'), 'test1377006.xml')
-    p = subprocess.Popen(os.getenv('XQUERY_CLIENT'), shell = True, stdin = subprocess.PIPE)
+    p = process.client('xquery', stdin = process.PIPE)
     p.communicate('doc("%s")/x' % fn)
 
 main()

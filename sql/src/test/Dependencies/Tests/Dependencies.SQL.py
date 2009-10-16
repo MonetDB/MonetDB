@@ -1,48 +1,32 @@
 import os, sys
-import copy
-import subprocess
+from MonetDBtesting import process
 
-def client(cmd, env=os.environ):
-    clt = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    sys.stdout.write(clt.stdout.read())
-    clt.stdout.close()
-    sys.stderr.write(clt.stderr.read())
-    clt.stderr.close()
-
-
+def client(cmd, infile, user = None, passwd = None):
+    clt = process.client(cmd, user = user, passwd = passwd,
+                         stdin = open(infile), stdout = process.PIPE,
+                         stderr = process.PIPE)
+    out, err = clt.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 def main():
-    clcmd = str(os.getenv('SQL_CLIENT'))
-
-    env_monet_test = copy.deepcopy(os.environ)
-    env_monet_test['DOTMONETDBFILE'] = '.monet_test'
-    f = open(env_monet_test['DOTMONETDBFILE'], 'wb')
-    f.write('user=monet_test\npassword=pass_test\n')
-    f.close()
-
     sys.stdout.write('Dependencies between User and Schema\n')
-    sys.stdout.flush()
-    client(clcmd + "<%s" % ('%s/../dependency_owner_schema_1.sql' % os.getenv('RELSRCDIR')))
+    client('sql', os.path.join(os.getenv('RELSRCDIR'), '..', 'dependency_owner_schema_1.sql'))
     sys.stdout.write('done\n')
 
-    client(clcmd + "<%s" % ('%s/../dependency_owner_schema_2.sql' % os.getenv('RELSRCDIR')), env_monet_test)
+    client('sql', os.path.join(os.getenv('RELSRCDIR'), '..', 'dependency_owner_schema_2.sql'), user = 'monet_test', passwd = 'pass_test')
     sys.stdout.write('done\n')
 
     sys.stdout.write('Dependencies between database objects\n')
-    sys.stdout.flush()
-    client(clcmd + "<%s" % ('%s/../dependency_DBobjects.sql' % os.getenv('RELSRCDIR')))
+    client('sql', os.path.join(os.getenv('RELSRCDIR'), '..', 'dependency_DBobjects.sql'))
     sys.stdout.write('done\n')
 
     sys.stdout.write('Dependencies between functions with same name\n')
-    sys.stdout.flush()
-    client(clcmd + "<%s" % ('%s/../dependency_functions.sql' % os.getenv('RELSRCDIR')))
+    client('sql', os.path.join(os.getenv('RELSRCDIR'), '..', 'dependency_functions.sql'))
     sys.stdout.write('done\n')
 
     sys.stdout.write('Cleanup\n')
-    sys.stdout.flush()
-    client(clcmd + "<%s" % ('%s/../dependency_owner_schema_3.sql' % os.getenv('RELSRCDIR')))
+    client('sql', os.path.join(os.getenv('RELSRCDIR'), '..', 'dependency_owner_schema_3.sql'))
     sys.stdout.write('done\n')
-
-    os.unlink(env_monet_test['DOTMONETDBFILE'])
 
 main()

@@ -1,18 +1,16 @@
 import os, sys
-import subprocess
+from MonetDBtesting import process
 
-
-def client(cmd, infile):
-    clt = subprocess.Popen(cmd, shell=True, universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = clt.communicate(open(infile).read())
+def client(lang, infile):
+    clt = process.client(lang, stdin=open(infile), stdout=process.PIPE, stderr=process.PIPE)
+    out, err = clt.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
 
-
 def main():
-    clcmd = os.getenv('SQL_CLIENT')
     sys.stdout.write('Views Restrictions\n')
-    client(clcmd, os.path.join(os.getenv('RELSRCDIR'), '..', 'views_restrictions.sql'))
+    client('sql', os.path.join(os.getenv('RELSRCDIR'), '..',
+                               'views_restrictions.sql'))
     sys.stdout.write('step 1\n')
     sys.stdout.write('Cleanup\n')
     sys.stdout.write('step2\n')

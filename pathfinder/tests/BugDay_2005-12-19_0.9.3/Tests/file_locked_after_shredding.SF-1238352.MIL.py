@@ -1,5 +1,5 @@
 import os
-import subprocess
+from MonetDBtesting import process
 
 def main():
     # create a temporary document
@@ -8,7 +8,7 @@ def main():
     f.write('<testdoc><content/></testdoc>\n')
     f.close()
     # shred it
-    p = subprocess.Popen(os.getenv('MIL_CLIENT'), shell = True, stdin = subprocess.PIPE)
+    p = process.client('mil', stdin = process.PIPE)
     p.stdin.write('module("pathfinder");\n')
     p.stdin.write('shred_doc("%s", "testdoc.xml");\n' % fn.replace('\\', r'\\'))
     p.communicate()
