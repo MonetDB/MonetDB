@@ -3263,8 +3263,8 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
                             PFqname (PFns_lib, "session-timeout"),
                             PFstrUtils_skipUntilSubString (content, ":"));
                 PFenv_bind (PFoptions,
-                            PFqname (PFns_lib, "session-mode"),
-                            PFstrdup ("use-cache-repeatable"));
+                            PFqname (PFns_lib, "session-immutable"),
+                            PFstrdup ("true"));
             }
             else
                 /* We don't understand pragmas anyway */
