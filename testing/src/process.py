@@ -2,6 +2,9 @@ import subprocess
 import os
 import sys
 import string
+import tempfile
+import copy
+import atexit
 
 from subprocess import PIPE
 
