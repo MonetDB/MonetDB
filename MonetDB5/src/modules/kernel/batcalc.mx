@@ -73,11 +73,11 @@ provided it is a temporary BAT and not a view.
 	address CMDbataccum@2_@3_@4_@5
 	comment "Binary BAT calculator function which may re-use store of arguments ";
 
-	command @1{target=1}(cst:@4, b:bat[:oid,:@5], bflag:bit):bat[:oid,:@4]
+	command @1{target=1}(cst:@4, b:bat[:oid,:@5], cflag:bit, bflag:bit):bat[:oid,:@4]
 	address CMDbataccum@2cst2_@3_@4_@5
 	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
 
-	command @1{target=1}(b:bat[:oid,:@4], cst:@5, bflag:bit) :bat[:oid,:@4]
+	command @1{target=1}(b:bat[:oid,:@4], cst:@5, bflag:bit, cflag:bit) :bat[:oid,:@4]
 	address CMDbataccum@2cst_@3_@4_@5
 	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
 
@@ -583,12 +583,13 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag);
-str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag)
+batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag);
+str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag)
 {	
 	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
+	(void) rflag;
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	if( *lflag && b->batPersistence == TRANSIENT && b->batRestricted != BAT_READ && BBP_lrefs(*l) == 1)
 		bn = b;
@@ -635,12 +636,13 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *rflag);
-str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *rflag)
+batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag);
+str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag)
 {	
 	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
+	(void) lflag;
 	@:getBATdescriptor(r,b,"batcalc.@1")@
 	if( *rflag && b->batPersistence == TRANSIENT && b->batRestricted != BAT_READ && BBP_lrefs(*r) == 1)
 		bn = b;

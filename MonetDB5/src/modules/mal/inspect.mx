@@ -541,7 +541,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str ps;
 
 		for (i = 0; i < s->def->stop; i++) {
-			ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), 0);
+			ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), LIST_MAL_STMT);
 			if( strlen(ps) >= lim-len){
 				/* expand the buffer */
 				char *bn;
@@ -551,8 +551,8 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				buf=bn;
 				lim+= BUFSIZ;
 			}
-			strcat(buf+len,ps+1);
-			len+= strlen(ps)-1;
+			strcat(buf+len,ps);
+			len+= strlen(ps);
 			buf[len++]='\n';
 			buf[len]=0;
 			GDKfree(ps);
