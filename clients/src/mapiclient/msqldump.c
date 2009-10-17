@@ -90,6 +90,8 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
+	bla; /* error test */
+
 	if (getenv("DOTMONETDBFILE") == NULL) {
 		if (stat(".monetdb", &statb) == 0) {
 			config = open_rastream(".monetdb");

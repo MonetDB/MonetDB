@@ -34,11 +34,14 @@ except ImportError:
     sys.path.append(parent)
     import monetdb.sql
 
-for i in (10, 100, 1000, 10000):
+for i in ([250]):
     t = time.time()
-    x = monetdb.sql.connect(database="demo")
+    x = monetdb.sql.connect(database="three")
     c = x.cursor()
     c.arraysize=i
     c.execute('select * from tables, tables, tables')
     results = c.fetchall()
+    for line in results:
+        print line[0]
+
     print i, time.time() - t
