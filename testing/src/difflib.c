@@ -788,7 +788,11 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 			fprintf(html_fp, "<td>");
 			while (ln[strlen(ln) - 1] != '\n') {
 				fprintf(html_fp, "%s", ln);
-				fgets(ln, sizeof(ln), clmn_fp[0]);
+				if (!fgets(ln, sizeof(ln), clmn_fp[0])) {
+					ln[0] = '\n';
+					ln[1] = 0;
+					break;
+				}
 			}
 			ln[strlen(ln) - 1] = 0;
 			fprintf(html_fp, "%s</td>\n", ln);
@@ -800,7 +804,11 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 			fprintf(html_fp, "<td>");
 			while (ln[strlen(ln) - 1] != '\n') {
 				fprintf(html_fp, "%s", ln);
-				fgets(ln, sizeof(ln), clmn_fp[4]);
+				if (!fgets(ln, sizeof(ln), clmn_fp[4])) {
+					ln[0] = '\n';
+					ln[1] = 0;
+					break;
+				}
 			}
 			ln[strlen(ln) - 1] = 0;
 			fprintf(html_fp, "%s</td>\n", ln);
