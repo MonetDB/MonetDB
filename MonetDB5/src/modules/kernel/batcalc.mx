@@ -65,21 +65,21 @@ binary operators +,/,-,*, and %. Both on (BAT,BAT) and (BAT,CST)
 operands. We also support the type enlargement and auto coercions,
 because they avoid expensive BAT copying.
 
-The accumulator versions modifies the first argument. 
-This is captured by a property to ease detection in dataflow.
+The accumulator versions modifies the first argument,
+provided it is a temporary BAT and not a view.
 @= calcGrp
 
-	command @1{target=1}(a:bat[:oid,:@4], b:bat[:oid,:@5], c:bat[:oid,:@3]):bat[:oid,:@4]
+	command @1{target=1}(b:bat[:oid,:@5], c:bat[:oid,:@3], aflag:bit, bflag:bit):bat[:oid,:@4]
 	address CMDbataccum@2_@3_@4_@5
-	comment "Binary BAT calculator function with accumulator BAT result";
+	comment "Binary BAT calculator function which may re-use store of arguments ";
 
-	command @1{target=1}(a:bat[:oid,:@4], cst:@4, b:bat[:oid,:@5]):bat[:oid,:@4]
+	command @1{target=1}(cst:@4, b:bat[:oid,:@5], bflag:bit):bat[:oid,:@4]
 	address CMDbataccum@2cst2_@3_@4_@5
-	comment "(BAT,Constant) calculator function with accumulator BAT result";
+	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
 
-	command @1{target=1}(a:bat[:oid,:@4], b:bat[:oid,:@4], cst:@5) :bat[:oid,:@4]
+	command @1{target=1}(b:bat[:oid,:@4], cst:@5, bflag:bit) :bat[:oid,:@4]
 	address CMDbataccum@2cst_@3_@4_@5
-	comment "(BAT,Constant) calculator function with accumulator BAT result";
+	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
 
 	command @1(b:bat[:oid,:@4], cst:@5) :bat[:oid,:@3] 
 	address CMDbat@2cst_@3_@4_@5;
@@ -542,15 +542,32 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r);
-str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
+/*
+The accumulator variants may re-use the storage of an argument only when it is not shared,
+nor being a persistent BAT
+*/
+batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag);
+str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 {	
 	BAT *bn, *b, *right;
 	char *res = MAL_SUCCEED;
 
-	@:getBATdescriptor(d,bn,"batcalc.@1")@
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:getBATdescriptor(r,right,"batcalc.@1")@
+
+	if( *lflag && b->batPersistence == TRANSIENT && b->batRestricted != BAT_READ && BBP_lrefs(*l) == 1)
+		bn = b;
+	else
+	if( *rflag && right->batPersistence == TRANSIENT && right->batRestricted != BAT_READ && BBP_lrefs(*r) == 1)
+		bn = b;
+	else {
+		bn = BATnew(b->htype,b->ttype,BATcount(b));
+		BATsetcount(bn,BATcount(b));
+		bn->tsorted = FALSE;
+		BATkey(bn,FALSE);
+		/* head is void */
+		BATseqbase(bn, b->hseqbase);
+	}
 
 	@:chkSize(bn,b,CMDbataccum@2)@
 	@:chkSize(bn,right,CMDbataccum@2)@
@@ -566,14 +583,24 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
-str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
+batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag);
+str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag)
 {	
 	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
-	@:getBATdescriptor(r,bn,"batcalc.@1")@
 	@:getBATdescriptor(l,b,"batcalc.@1")@
+	if( *lflag && b->batPersistence == TRANSIENT && b->batRestricted != BAT_READ && BBP_lrefs(*l) == 1)
+		bn = b;
+	else {
+		bn = BATnew(b->htype,b->ttype,BATcount(b));
+		BATsetcount(bn,BATcount(b));
+		bn->tsorted = FALSE;
+		BATkey(bn,FALSE);
+		/* head is void */
+		BATseqbase(bn, b->hseqbase);
+	}
+
 	@:chkSize(bn,b,CMDbataccum@2)@
 
 #if CMD_@2 == CMD_DIV
@@ -585,12 +612,12 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 #else
 	@:accumCst(@3,@1,@4,@5)@ 
 #endif
-	if (@6 & 1) {
+	if (@6 & 1)
 		bn->tsorted = BATtordered(b);
-	} else
-	if (@6 & 4) {
+	else
+	if (@6 & 4)
 		bn->tsorted = REVERT_SORTED(BATtordered(b));
-	} else
+	else
 	if (@6 & 16) { 
 #if @7 /* skip this for TYPE_oid */
 		if (*(@5*)cst < 0)
@@ -608,14 +635,23 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r);
-str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r)
+batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *rflag);
+str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *rflag)
 {	
 	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
-	@:getBATdescriptor(l,bn,"batcalc.@1")@
 	@:getBATdescriptor(r,b,"batcalc.@1")@
+	if( *rflag && b->batPersistence == TRANSIENT && b->batRestricted != BAT_READ && BBP_lrefs(*r) == 1)
+		bn = b;
+	else {
+            bn = BATnew(b->htype,b->ttype,BATcount(b));
+            BATsetcount(bn,BATcount(b));
+            bn->tsorted = FALSE;
+            BATkey(bn,FALSE);
+            /* head is void */
+            BATseqbase(bn, b->hseqbase);
+        }
 	@:chkSize(bn,b,CMDbataccum@2)@
 
 #if CMD_@2 == CMD_DIV
