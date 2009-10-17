@@ -21,7 +21,7 @@ mdb.setDebug(dbgmsk_restore);
 
 c:= algebra.copy(b);
 t2:= alarm.usec();
-x:= batcalc.+(b,b,c);
+x:= batcalc.+(b,c,true,false);
 t3:= alarm.usec();
 d1:= t1-t0;
 d2:= t3-t2;
