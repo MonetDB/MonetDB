@@ -159,18 +159,21 @@ class MonetDBConnection
         #redirection
           
           redirects = [] # store a list of possible redirects
-          monetdb_auth.each do |m|
+          
+          monetdb_auth.split('\n').each do |m|
             # strip the trailing ^mapi:
             # if the redirect string start with something != "^mapi:" or is empty, the redirect is invalid and shall not be included.
-            
             if m[0..5] == "^mapi:"
               redir = m[6..m.length]
               # url parse redir
               redirects.push(redir)  
-            end        
+            else
+              $stderr.print "Warning: Invalid Redirect #{m}"
+            end          
           end
+          
           if redirects.size == 0  
-            raise MonetDBConnectionError, "Invalid redirect"
+            raise MonetDBConnectionError, "No valid redirect received"
           else
             begin 
               uri = URI.split(redirects[0])
@@ -349,10 +352,11 @@ class MonetDBConnection
 
   # builds a message to be sent to the server
   def encode_message(query = "")
+    #return encode_message_new(query)
+    
     message = Array.new
    
-    if @client_endianness == @@CLIENT_ENDIANNESS
-      
+    if @client_endianness == @@CLIENT_ENDIANNESS      
       message_size = query.length    
       data_delimiter_begin = 0
       if message_size <= @@MAX_MESSAGE_SIZE
@@ -403,6 +407,37 @@ class MonetDBConnection
     end
     
     return message.freeze
+  end
+  
+  def encode_message_new(msg = "")
+    def min (x, y)
+      x <= y ? x : y
+    end
+    
+    hdr = 0 # package header
+
+    message = Array.new
+
+    pos = 0
+    data = ""
+    
+    is_final = false # last package in the stream
+    while (! is_final)
+      data = msg[pos..min(@@MAX_MESSAGE_SIZE, msg.length - pos)]
+      pos += data.length
+      
+      if (msg.length - pos) == 0
+        last_bit = 1
+        is_final = true
+      else
+        last_bit = 0
+      end
+      
+      hdr = (data.length << 1) | last_bit
+      message << hdr.to_s.unpack('v').to_s + data.to_s # Short Little Endian Encoding  
+      p message
+    end
+    message.freeze # freeze and return the encode message
   end
 
   # Used as the first step in the authentication phase; retrives a challenge string from the server.
