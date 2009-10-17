@@ -2267,7 +2267,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		stream_printf(cntxt->fdout,":%6s ", buf);
 	}
 	{str line;
-	line= call2str(mb,stk,stkpc,cntxt->flags);
+	line= instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
 	stream_printf(cntxt->fdout, " %s ]\n", line);
 	GDKfree(line);
 	}

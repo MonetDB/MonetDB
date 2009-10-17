@@ -731,19 +731,6 @@ The instruction call stack is the most common command.
 Prepare a string for an instruction call. 
 We rely on the buffersize of instruction2str.
 @c
-str
-call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
-{
-	str msg;
-	InstrPtr p;
-
-	(void) stk;
-	(void) flags;
-	p= getInstrPtr(mb,pc);
-	msg = instruction2str(mb, stk, p, LIST_MAL_VALUE);
-	return msg;
-}
-
 void
 printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
