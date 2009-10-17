@@ -690,8 +690,11 @@ setLifespan(MalBlkPtr mb)
 		}
 @-
 At a block exit we can finalize all variables defined within that block.
+This does not hold for dataflow blocks. They merely direct the execution
+thread, not the syntactic scope.
 @c
-		if( blockExit(p)){
+		if( blockExit(p) &&
+			varGetProp(mb, getArg(p,0), PropertyIndex("transparent")) == NULL){
 			for (k = 0; k < mb->vtop; k++)
 			if ( span[k].endLifespan == 0 && blk[k]==depth)
 				span[k].endLifespan = pc;
