@@ -233,8 +233,17 @@ def calculate_diff(entry, contextlines):
             difftype = "-C " + str(contextlines)
         else:
             difftype = "-u"
-        diffcmd = "/usr/bin/cvs -f update -kk -r %s %s; /usr/bin/cvs -f diff -kk %s --minimal -r %s -r %s %s" \
-                  % (newrev, filestr, difftype, oldrev, newrev, filestr)
+		# revision 1.16
+		# date: 2008/03/25 21:35:57;  author: sjoerd;  state: Exp; lines: +2 -2
+		# HACK to work around a premature unlink of checked in files.
+		# revision 1.17
+		# date: 2009/10/17; mr-meltdown
+		# undo hack, as it breaks buildbot, hopefully the sourceforge
+		# infrastructure has fixed this issue nowadays
+        #diffcmd = "/usr/bin/cvs -f update -kk -r %s %s; /usr/bin/cvs -f diff -kk %s --minimal -r %s -r %s %s" \
+        #          % (newrev, filestr, difftype, oldrev, newrev, filestr)
+        diffcmd = "cvs -f diff -kk %s --minimal -r %s -r %s %s" \
+                  % (difftype, oldrev, newrev, filestr)
         fp = os.popen(diffcmd)
         lines = fp.readlines()
         # ignore the error code, it always seems to be 1 :(
