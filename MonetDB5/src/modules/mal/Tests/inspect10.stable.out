@@ -32,7 +32,7 @@ end main;
 #-------------------------------------------------#
 [ 0,	  "function user.dummy(i:int):void;"	  ]
 [ 1,	  "    io.print(i);"			  ]
-[ 2,	  "    b := mdb.getDefinition();"	  ]
+[ 2,	  "     := mdb.getDefinition();"	  ]
 [ 3,	  "    io.print(b);"			  ]
 [ 4,	  "    mdb.list();"			  ]
 [ 5,	  "end dummy;"				  ]

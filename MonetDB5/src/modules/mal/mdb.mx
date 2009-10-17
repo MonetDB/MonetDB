@@ -643,7 +643,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	size_t len,l;
 
 	(void) cntxt;
-	msg = call2str(s->blk, s, pc=getPC(m, p),cntxt->flags);
+	msg = instruction2str(s->blk, s, p, LIST_MAL_DEBUG);
 	len = strlen(msg);
 	buf = (char*) GDKmalloc(len +1024);
 	snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
@@ -653,7 +653,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	GDKfree(msg);
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
-		msg = call2str(s->blk, s, s->pcup,cntxt->flags);
+		msg = instruction2str(s->blk, s, getInstrPtr(s->blk,s->pcup),LIST_MAL_DEBUG);
 		l = strlen(msg);
 		if (l>len){
 			GDKfree(buf);

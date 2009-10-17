@@ -2349,7 +2349,7 @@ isScalarVector(Tablet * t)
 	unsigned int i;
 
 	for (i = 0; i < t->nr_attrs; i++)
-		if (t->columns[i].c)
+		if (t->columns[i].c[0])
 			return 0;
 	return 1;
 }
@@ -2400,7 +2400,7 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 		c->c[0] = b;
 		c->ci[0] = bat_iterator(b);
 		/* the first column should take care of leader text size */
-		if (c->c)
+		if (c->c[0])
 			setTabwidth(c);
 	} else if (val) {
 		if (ATOMstorage(tpe) == TYPE_str || ATOMstorage(tpe) > TYPE_str)
@@ -2462,7 +2462,7 @@ TABshowHeader(Tablet * t)
 				prop = c->name;
 			else if (strcmp(p, "type") == 0)
 				prop = c->type;
-			else if (!isScalar(c) && c->c) {
+			else if (!isScalar(c) && c->c[0]) {
 				if (strcmp(p, "bat") == 0) {
 					prop = BBPname(c->c[0]->batCacheid);
 				}
