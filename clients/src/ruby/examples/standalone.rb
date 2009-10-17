@@ -19,10 +19,9 @@ require 'MonetDB'
 
 db = MonetDB.new
 
-db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "three", auth_type = "SHA1")
+db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
 
 # set type_cast=true to enable MonetDB to Ruby type mapping
-res = db.query("select * from tables, tables, tables;");
 res = db.query("select * from tables");
 
 puts "Number of rows returned: " + res.num_rows.to_s
