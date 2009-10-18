@@ -15,6 +15,7 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
+require 'rubygems'
 require 'active_record'
 
 ActiveRecord::Base.logger = Logger.new(STDERR)
@@ -23,7 +24,7 @@ ActiveRecord::Base.colorize_logging = true
 ActiveRecord::Base.establish_connection(
         :adapter  => "monetdb",
         :host     => "localhost",
-        :database => "demo"
+        :database => "test"
 )
 
 # Create a new table
@@ -68,6 +69,9 @@ AddAge.up
 row = Test.find(:first)
 printf "SELECT * from tests LIMIT 1:\n"
 printf "Name: %s, Surname: %s, Age: %s\n", row.name, row.surname, row.age
+
+# revert the added column
+AddAge.down
 
 # Drop the table
 AddTests.down

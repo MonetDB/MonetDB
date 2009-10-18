@@ -477,7 +477,7 @@ class MonetDBConnection
       # return the size of the chunk (in bytes)
       return is_final, chunk_size  
     else  
-        raise MonetDBSocketError
+        raise MonetDBSocketError, "Error while receiving data\n"
     end 
   end
   
