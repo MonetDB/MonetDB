@@ -2222,7 +2222,7 @@ It simply skips the barrier block upon return.
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
 		MT_set_lock(*lock, "timing");
-	stream_printf(cntxt->fdout,"# ");
+	stream_printf(cntxt->fdout,"= ");	/* single column rendering */
 	if( cntxt->flags & timerFlag){
 		char buf[BUFSIZ];
 		snprintf(buf,BUFSIZ,LLFMT,GDKusec()-cntxt->timer);
