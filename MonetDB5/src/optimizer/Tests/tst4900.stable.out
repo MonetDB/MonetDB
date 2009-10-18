@@ -136,7 +136,7 @@ factory user.f1(s:str):void;            #  0 f1:void := user.f1(s:str) {G}
     t21 := batcalc.+(t18,t20,true,true);# 28 t21:bat[:oid,:int] := CMDbataccumADD_int_int_int(t18:bat[:oid,:int], t20:bat[:oid,:int], _118:bit, _118:bit) {G}
     t18 := nil:BAT;                     # 29 t18:bat[:oid,:int] := _121:BAT {G}
     t20 := nil:BAT;                     # 30 t20:bat[:oid,:int] := _121:BAT {G}
-    t22 := batcalc.*(14,t21,false,false);# 31 t22:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_33:int, t21:bat[:oid,:int], _119:bit, _119:bit) {G}
+    t22 := batcalc.*(14,t21);           # 31 t22:bat[:oid,:int] := CMDcstMULbat_int_int_int(_33:int, t21:bat[:oid,:int]) {G}
     t23 := batcalc.+(t17,t22,true,true);# 32 t23:bat[:oid,:int] := CMDbataccumADD_int_int_int(t17:bat[:oid,:int], t22:bat[:oid,:int], _118:bit, _118:bit) {G}
     t17 := nil:BAT;                     # 33 t17:bat[:oid,:int] := _121:BAT {G}
     t22 := nil:BAT;                     # 34 t22:bat[:oid,:int] := _121:BAT {G}

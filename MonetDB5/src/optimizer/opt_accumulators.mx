@@ -103,10 +103,16 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		}
 
 		if (p->retc==1  && p->argc == 3 && isaBatType(getArgType(mb,p,0))) {
+			int b1 =getEndLifespan(span,getArg(p,1))<=i && getArgType(mb,p,1) == getArgType(mb,p,0);
+			int b2 =getEndLifespan(span,getArg(p,2))<=i && getArgType(mb,p,2) == getArgType(mb,p,0) ;
+			if ( b1 == 0 && b2 == 0){
+				pushInstruction(mb,p);
+				continue;
+			}
 			/* binary/unary operation, check arguments for being candidates */
 			q= copyInstruction(p);
-			p= pushBit(mb,p, getEndLifespan(span,getArg(p,1))<=i && getArgType(mb,p,1) == getArgType(mb,p,0) );
-			p= pushBit(mb,p, getEndLifespan(span,getArg(p,2))<=i && getArgType(mb,p,2) == getArgType(mb,p,0) );
+			p= pushBit(mb,p, b1);
+			p= pushBit(mb,p, b2);
 
 			typeChecker(scope, mb, p, TRUE);
 			if (mb->errors || p->typechk == TYPE_UNKNOWN) {

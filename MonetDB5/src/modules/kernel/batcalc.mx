@@ -555,19 +555,13 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:getBATdescriptor(r,right,"batcalc.@1")@
 
-	if( *lflag && b->batPersistence == TRANSIENT && b->batRestricted != BAT_READ && BBP_lrefs(*l) == 1)
+	if( *lflag && BBP_lrefs(*l) == 1)
 		bn = b;
 	else
-	if( *rflag && right->batPersistence == TRANSIENT && right->batRestricted != BAT_READ && BBP_lrefs(*r) == 1)
+	if( *rflag && BBP_lrefs(*r) == 1)
 		bn = b;
-	else {
-		bn = BATnew(b->htype,b->ttype,BATcount(b));
-		BATsetcount(bn,BATcount(b));
-		bn->tsorted = FALSE;
-		BATkey(bn,FALSE);
-		/* head is void */
-		BATseqbase(bn, b->hseqbase);
-	}
+	else
+		return CMDbat@2_@3_@4_@5(ret,l,r);
 
 	@:chkSize(bn,b,CMDbataccum@2)@
 	@:chkSize(bn,right,CMDbataccum@2)@
@@ -591,16 +585,10 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 
 	(void) rflag;
 	@:getBATdescriptor(l,b,"batcalc.@1")@
-	if( *lflag && b->batPersistence == TRANSIENT && b->batRestricted != BAT_READ && BBP_lrefs(*l) == 1)
+	if( *lflag && BBP_lrefs(*l) == 1)
 		bn = b;
-	else {
-		bn = BATnew(b->htype,b->ttype,BATcount(b));
-		BATsetcount(bn,BATcount(b));
-		bn->tsorted = FALSE;
-		BATkey(bn,FALSE);
-		/* head is void */
-		BATseqbase(bn, b->hseqbase);
-	}
+	else
+		return CMDbat@2_@3_@4_@5(ret,l,cst);
 
 	@:chkSize(bn,b,CMDbataccum@2)@
 
@@ -644,16 +632,11 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 
 	(void) lflag;
 	@:getBATdescriptor(r,b,"batcalc.@1")@
-	if( *rflag && b->batPersistence == TRANSIENT && b->batRestricted != BAT_READ && BBP_lrefs(*r) == 1)
+	if( *rflag && BBP_lrefs(*r) == 1)
 		bn = b;
-	else {
-            bn = BATnew(b->htype,b->ttype,BATcount(b));
-            BATsetcount(bn,BATcount(b));
-            bn->tsorted = FALSE;
-            BATkey(bn,FALSE);
-            /* head is void */
-            BATseqbase(bn, b->hseqbase);
-        }
+	else
+		return CMDbat@2_@3_@4_@5(ret,cst,r);
+
 	@:chkSize(bn,b,CMDbataccum@2)@
 
 #if CMD_@2 == CMD_DIV
