@@ -2222,7 +2222,7 @@ It simply skips the barrier block upon return.
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
 		MT_set_lock(*lock, "timing");
-	stream_printf(cntxt->fdout,"[ ");
+	stream_printf(cntxt->fdout,"# ");
 	if( cntxt->flags & timerFlag){
 		char buf[BUFSIZ];
 		snprintf(buf,BUFSIZ,LLFMT,GDKusec()-cntxt->timer);
@@ -2268,7 +2268,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	}
 	{str line;
 	line= instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
-	stream_printf(cntxt->fdout, " %s ]\n", line);
+	stream_printf(cntxt->fdout, " %s\n", line);
 	GDKfree(line);
 	}
 	if( cntxt->flags & timerFlag)
