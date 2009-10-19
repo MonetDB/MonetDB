@@ -3238,21 +3238,10 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
                             PFqname (PFns_lib, "cache")) == 0)
                 C(p) = str (PFstrUtils_trim_spaces (
                                 PFstrdup (L(p)->sem.pragma.content)));
+            /* transform session pragma into global session options */
             else if (PFqname_eq (L(p)->sem.pragma.qn.qname,
-                                 PFqname (PFns_lib, "session")) == 0) {
-                char *content = PFstrUtils_trim_spaces (
-                                    PFstrdup (L(p)->sem.pragma.content));
-                PFenv_bind (PFoptions,
-                            PFqname (PFns_lib, "session-id"),
-                            PFstrUtils_dupUntil (content, ':'));
-                PFenv_bind (PFoptions,
-                            PFqname (PFns_lib, "session-timeout"),
-                            PFstrUtils_skipUntilSubString (content, ":"));
-                PFenv_bind (PFoptions,
-                            PFqname (PFns_lib, "session-mode"),
-                            PFstrdup ("cache-repeatable"));
-            }
-            else if (PFqname_eq (L(p)->sem.pragma.qn.qname,
+                                 PFqname (PFns_lib, "session")) == 0 ||
+                     PFqname_eq (L(p)->sem.pragma.qn.qname,
                                  PFqname (PFns_lib, "session-use")) == 0) {
                 char *content = PFstrUtils_trim_spaces (
                                     PFstrdup (L(p)->sem.pragma.content));
@@ -3262,9 +3251,13 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
                 PFenv_bind (PFoptions,
                             PFqname (PFns_lib, "session-timeout"),
                             PFstrUtils_skipUntilSubString (content, ":"));
-                PFenv_bind (PFoptions,
-                            PFqname (PFns_lib, "session-immutable"),
-                            PFstrdup ("true"));
+
+                /* mark as ready-only caching session */
+                if (PFqname_eq (L(p)->sem.pragma.qn.qname,
+                                PFqname (PFns_lib, "session-use")) == 0)
+                    PFenv_bind (PFoptions,
+                                PFqname (PFns_lib, "session-nocache"),
+                                PFstrdup ("true"));
             }
             else
                 /* We don't understand pragmas anyway */
