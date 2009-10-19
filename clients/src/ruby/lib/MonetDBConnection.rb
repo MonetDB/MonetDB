@@ -61,9 +61,7 @@ class MonetDBConnection
   @@HOUR                = 3600
 
   # maximum size (in bytes) for a monetdb message to be sent
-  @@MAX_FB_SIZE         = 100
-  @@MAX_SB_SIZE         = 0
-  @@MAX_MESSAGE_SIZE    = @@MAX_FB_SIZE + @@MAX_SB_SIZE
+  @@MAX_MESSAGE_SIZE    = 32766
   
   # endianness of a message sent to the server
   @@CLIENT_ENDIANNESS   = "BIG"
@@ -363,82 +361,18 @@ class MonetDBConnection
     reply = @client_endianness + ":" + @user + ":{" + auth_type + "}" + hashsum + ":" + @lang + ":" + db_name + ":"
   end
 
-
   # builds a message to be sent to the server
-  def encode_message(query = "")
-    #return encode_message_new(query)
-    
+  def encode_message(msg = "")    
     message = Array.new
-   
-    if @client_endianness == @@CLIENT_ENDIANNESS      
-      message_size = query.length    
-      data_delimiter_begin = 0
-      if message_size <= @@MAX_MESSAGE_SIZE
-        data_delimiter_end = message_size
-      else
-        data_delimiter_end = @@MAX_MESSAGE_SIZE
-      end
-      
-      is_final = false
-      
-      if @@DEBUG
-      
-      end
-      i = 0
-      while is_final != true
-        if message_size <= @@MAX_MESSAGE_SIZE 
-        # the query fits one packet
-          if message_size < @@MAX_FB_SIZE
-            fb =  message_size
-            sb = 0
-          else
-            fb = @@MAX_FB_SIZE
-            sb = message_size - fb   
-          end
-          fb = fb << 1
-          fb = fb | 00000001
-         
-          data_delimiter_end = data_delimiter_begin + message_size
-          message << fb.chr + sb.chr + query[data_delimiter_begin...data_delimiter_end]
-        
-      
-          is_final = true
-        else
-          
-          fb = @@MAX_FB_SIZE
-          sb = @@MAX_SB_SIZE
-          
-          fb = (fb << 1) | 00000000
-          
-          message << fb.chr + sb.chr + query[data_delimiter_begin...data_delimiter_end]
-          data_delimiter_begin = data_delimiter_end
-          data_delimiter_end = data_delimiter_begin + @@MAX_MESSAGE_SIZE
-         
-          message_size -= @@MAX_MESSAGE_SIZE 
-        end  
-        i += 1
-      end
-    end
-    
-    return message.freeze
-  end
-  
-  def encode_message_new(msg = "")
-    def min (x, y)
-      x <= y ? x : y
-    end
-    
-    hdr = 0 # package header
-
-    message = Array.new
-
-    pos = 0
     data = ""
-    
+        
+    hdr = 0 # package header
+    pos = 0
     is_final = false # last package in the stream
+    
     while (! is_final)
-      data = msg[pos..min(@@MAX_MESSAGE_SIZE, msg.length - pos)]
-      pos += data.length
+      data = msg[pos..pos+[@@MAX_MESSAGE_SIZE.to_i, (msg.length - pos).to_i].min]
+      pos += data.length 
       
       if (msg.length - pos) == 0
         last_bit = 1
@@ -447,10 +381,11 @@ class MonetDBConnection
         last_bit = 0
       end
       
-      hdr = (data.length << 1) | last_bit
-      message << hdr.to_s.unpack('v').to_s + data.to_s # Short Little Endian Encoding  
-      p message
+      hdr = [(data.length << 1) | last_bit].pack('v')
+      
+      message << hdr + data.to_s # Short Little Endian Encoding  
     end
+    
     message.freeze # freeze and return the encode message
   end
 

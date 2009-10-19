@@ -320,29 +320,28 @@ class TC_MonetDBCapabilities < Test::Unit::TestCase
    end
    
   def test_blob
-    # dd from /dev/random
-    #blob = "ez<E1><C8>.uo <B0><B5>.xG=<A2>n|"
-    #blob_hex = blob.unpack('U'*blob.length).collect { |x| x.to_s 16}.join
-    
-    #table = "monetdb_test_blob"
+    blob = '0000000a146f777bb46b8fbd46ad503a54629c5' * 1000
+        
+    table = "monetdb_test_blob"
      
-    #test_drop_table(table)
+    test_create_table(table)
      
-    #@db.query("CREATE TABLE " + table + " (blob_field BLOB) ")
-    #@db.query("INSERT INTO " + table  + " VALUES (BLOB '" + blob_hex  +"') ")
+    @db.query("CREATE TABLE " + table + " (blob_field BLOB) ")
+    @db.query("INSERT INTO " + table  + " VALUES ('#{blob}') ")
      
-    #res = @db.query("SELECT blob_field FROM " + table + " where blob_field = '" + blob_hex +"'")
+    res = @db.query("SELECT blob_field FROM " + table + " where blob_field = '#{blob}'")
 
-    #stored_string = res.fetch_hash
+    stored_string = res.fetch_hash
      
-    #test_drop_table(table) 
+    test_drop_table(table) 
     
-    #assert_equal(blob_hex, stored_string['blob_field'].getBlob)
+    assert_equal(blob_hex, stored_string['blob_field'].getBlob)
   end 
    
   def test_utf8
     # insert an utf8 string, retrieve it and check for consistancy
-    string = '€¿®µ¶¹€¿®µ¶¹€¿®µ¶¹' * 10
+#    string = "€¿®µ¶¹€¿®µ¶¹€¿®µ¶¹" * 1000
+    string = ""
     table  = "test_monetdb_utf8"
     coldefs = ["utf8_field varchar(100000)"] 
     
@@ -351,10 +350,10 @@ class TC_MonetDBCapabilities < Test::Unit::TestCase
     @db.query("INSERT INTO " + table  + " VALUES ( '" + string  +"' ) ")
         
     res = @db.query("SELECT utf8_field FROM " + table + " where utf8_field = '" + string + "' ")
-    stored_string = res.fetch_all
+    stored_string = res.fetch_hash
   
     test_drop_table(table)
   
-    assert_equal(string, stored_string[0].to_s)
+    assert_equal(string, stored_string['utf8_field'])
   end   
 end
