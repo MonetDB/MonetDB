@@ -370,7 +370,6 @@ class MonetDBConnection
       hdr = [(data.length << 1) | last_bit].pack('v')
       
       message << hdr + data.to_s # Short Little Endian Encoding  
-      p message
     end
     
     message.freeze # freeze and return the encode message
