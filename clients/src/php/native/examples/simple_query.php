@@ -13,7 +13,7 @@
 	require '../lib/php_monetdb.php';
 	if ( isset($_POST['query']) )
 	{
-		$db = monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "php_demo" , $username = "monetdb", $password = "monetdb" )
+		$db = monetdb_connect($lang = "sql", $host = "127.0.0.1", $port = "50000" , $username = "monetdb", $password = "monetdb", $database = "php_demo" )
 		or die(monetdb_last_error());
 		
 		$sql = monetdb_escape_string($_POST['query']);

@@ -19,7 +19,7 @@
    *
 **/
 	
-	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 	
+	define("MAX_PACKET_SIZE", 32766); // Maximum packet size 	
 	
 	define("REPLY_SIZE", "250"); // Set the initial reply size
 	
