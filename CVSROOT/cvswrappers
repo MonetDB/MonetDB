@@ -24,10 +24,22 @@
 *.gif -k 'b
 *.jpg -k 'b'
 *.png -k 'b'
+*.bmp -k 'b'
+*.ico -k 'b'
 # Microsoft Visual Studio .NET project files
 *.ncb -k 'b'
 *.sln -k 'o'
 *.suo -k 'b'
 *.vcproj -k 'o'
-# Other binary files
+# Compression/container files
 *.zip -k 'b'
+*.gz -k 'b'
+*.bz2 -k 'b'
+*.gem -k 'b'
+# Other binary files
+*.pyc -k 'b'
+*.pdf -k 'b'
+*.dll -k 'b'
+*.lib -k 'b'
+*.chm -k 'b'
+*.class -k 'b'
