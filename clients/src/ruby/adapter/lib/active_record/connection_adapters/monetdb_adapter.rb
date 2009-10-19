@@ -28,11 +28,6 @@ module ActiveRecord
   class Base
     # Establishes a connection to the database that's used by all Active Record objects
     def self.monetdb_connection(config) 
-    
-      # include Mapi library
-      #unless defined?(::MonetDB)
-      #  require 'monetdb'
-      #end	
       require_library_or_gem('MonetDB')
       
       # extract connection parameters
@@ -97,14 +92,13 @@ module ActiveRecord
   end #end of MonetDBColumn class
 
   class TableDefinition
-  
     # Override so that we handle the fact that MonetDB 
     # doesn't support "limit" on integer column.
     # Otherwise same implementation
     def column(name, type, options = {})
       column = self[name] || ColumnDefinition.new(@base, name, type)
         
-      if(type.to_sym != :integer)
+      if(type.to_sym != :integer and type.to_sym != :primary_key)
         column.limit = options[:limit] || native[type.to_sym][:limit] if options[:limit] or native[type.to_sym]
       end
 
@@ -138,11 +132,11 @@ module ActiveRecord
     
     # testing savepoints in progress
     def supports_savepoints? #:nodoc:
-      false
+      true
     end
     
     def support_transaction? #:nodoc:
-      true
+      false
     end
     
     def supports_ddl_transactions?
@@ -194,7 +188,7 @@ module ActiveRecord
     end
 
     def disconnect!
-     @connection.auto_commit(flag=true)
+     #@connection.auto_commit(flag=true)
      @connection.close
     end
 
@@ -245,6 +239,7 @@ module ActiveRecord
       else
         sql << quote(default)
       end
+      p "SQL: " + sql + '\n'
       hdl = execute(sql) 
     end
 
@@ -435,10 +430,7 @@ module ActiveRecord
 
     # Begins the transaction.
     def begin_db_transaction
-      #
       hdl = execute("START TRANSACTION")
-      # Turn off auto commit mode      
-      @connection.auto_commit(flag=false)
     end
 
     # Commits the transaction (ends TRANSACTIOM). 
@@ -458,7 +450,6 @@ module ActiveRecord
     
     # Create a new savepoint
     def create_savepoint
-     # @connection.auto_commit(flag=false)
      @connection.save
      execute("SAVEPOINT #{current_savepoint_name}")
     end
@@ -470,7 +461,6 @@ module ActiveRecord
 
     # release current savepoint
     def release_savepoint
-      $stdr.print @connection.savepoint
       execute("RELEASE SAVEPOINT #{current_savepoint_name}")
     end
     
@@ -529,7 +519,6 @@ module ActiveRecord
 	    # comment out for production code(?)
 	      # table_name = extract_table_name_from_insertion_query(sql)
 	      # make_sure_pk_works(table_name,name)	
-	      puts sql
         hdl = execute(sql, name)
         # last_auto_generated_id = hdl.get_last_auto_generated_id
       end
@@ -580,7 +569,6 @@ module ActiveRecord
     private
       def connect
         @connection.connect(user = @connection_options[2], passwd =  @connection_options[3], lang = @connection_options[5], host =  @connection_options[0], port =  @connection_options[1], db_name =  @connection_options[4], auth_type = "SHA1")  if @connection
-        # @connection.auto_commit(flag=false) # if @connection.auto_commit 
       end 
   end
 end

@@ -28,11 +28,7 @@ module ActiveRecord
   class Base
     # Establishes a connection to the database that's used by all Active Record objects
     def self.monetdb_connection(config) 
-    
-      # include Mapi library
-      #unless defined?(::MonetDB)
-      #  require 'monetdb'
-      #end	
+    	puts "ACTIVERECORD\n"
       require_library_or_gem('MonetDB')
       
       # extract connection parameters
@@ -48,6 +44,8 @@ module ActiveRecord
       
       # use empty string as database name if none is specified
       database = config[:database] || ""
+      
+      p "DB:" + database
       
       dbh = MonetDB.new
       ConnectionAdapters::MonetDBAdapter.new(dbh, logger, [host, port, username, password, database, lang], config)
@@ -103,11 +101,12 @@ module ActiveRecord
     # Otherwise same implementation
     def column(name, type, options = {})
       column = self[name] || ColumnDefinition.new(@base, name, type)
-        
+      
+      puts column
+      
       if(type.to_sym != :integer)
         column.limit = options[:limit] || native[type.to_sym][:limit] if options[:limit] or native[type.to_sym]
       end
-
       column.precision = options[:precision]
       column.scale = options[:scale]
       column.default = options[:default]
@@ -176,8 +175,7 @@ module ActiveRecord
     # Close this connection and open a new one in its place.
     def reconnect!
       if @connection != nil
-        #@connection.reconnect
-        false
+        @connection.reconnect
       end
     end
 
@@ -543,9 +541,13 @@ module ActiveRecord
 
     private
       def connect
+        puts "ACTIVERECORD\n"
         if(@connection)
           #@connection.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "ruby", auth_type = "SHA1")
-          @connection.connect(user = @connection_options[2], passwd =  @connection_options[3], lang = @connection_options[5], host =  @connection_options[0], port =  @connection_options[1], db_name =  @connection_options[4], auth_type = "SHA1")
+          #@connection.connect(user = @connection_options[2], passwd =  @connection_options[3], lang = @connection_options[5], host =  @connection_options[0], port =  @connection_options[1], db_name =  @connection_options[4], auth_type = "SHA1")
+          @connection.connect(db_name =  @connection_options[4], auth_type = "SHA1")
+          p @connection_options
+          @connection_options[4]
         end
       end 
   end

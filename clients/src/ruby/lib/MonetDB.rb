@@ -198,7 +198,7 @@
     #                * port: server port (default is 50000)
     #                * db_name: name of the database to connect to
     #                * auth_type: hashing function to use during authentication (default is SHA1)
-    def connect(username = "monetdb", password = "monetdb", lang = "sql", host="127.0.0.1", port = "50000", db_name = "demo", auth_type = "SHA1")
+    def connect(username = "monetdb", password = "monetdb", lang = "sql", host="127.0.0.1", port = "50000", db_name = "test", auth_type = "SHA1")
       # TODO: handle pools of connections
       @username = username
       @password = password
@@ -236,7 +236,7 @@
         self.close
         
         @connection = MonetDBConnection.new(user = @username, passwd = @password, lang = @lang, host = @host, port = @port)
-        @connection.real_connect(@db_name, @auth_type)
+        @connection.connect(db_name = @db_name, auth_type = @auth_type)
       end
     end
     
