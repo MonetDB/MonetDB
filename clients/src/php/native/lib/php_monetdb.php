@@ -36,10 +36,17 @@
 	/**
 	 * Opens a connection to a MonetDB server.  
 	 * 
+	 * @param string language to be used (sql or xquery)
+	 * @param string hostname to connect to (default is localhost)
+	 * @param int    port to use (default is 50000)
+	 * @param string username (default is monetdb)
+	 * @param string password (default is monetdb)
+	 * @param string database to use (default is demo)
+	 * @param string hash function to use during authentication (defaults to SHA1) 
 	 * @return bool TRUE on success or FALSE on failure 
 	 */
 	
-	function monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb", $hashfunc = "", $lang = "" ) {
+	function monetdb_connect($lang = "sql", $host = "127.0.0.1", $port = 50000, $username = "monetdb", $password = "monetdb", $database = "demo", $hashfunc = "") {
 	 	$options["host"] = $host;
 		$options["port"] = $port;
 
@@ -74,10 +81,18 @@
 	 *
 	 * This type of link is therefore called 'persistent'. 
 	 *
+	 * @param string language to be used (sql or xquery)
+	 * @param string hostname to connect to (default is localhost)
+	 * @param int    port to use (default is 50000)
+	 * @param string username (default is monetdb)
+	 * @param string password (default is monetdb)
+	 * @param string database to use (default is demo)
+	 * @param string hash function to use during authentication (defaults to SHA1)
 	 * @return bool TRUE on success or FALSE on failure 
 	 */
 	
-	function monetdb_pconnect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb", $hashfunc = "", $lang = "") {
+  function monetdb_pconnect($lang = "sql", $host = "127.0.0.1", $port = 500000, $username = "monetdb", $password = "monetdb", $database = "demo", $hashfunc = "") {
+
 	 	$options["host"] = $host;
 		$options["port"] = $port;
 
