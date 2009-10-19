@@ -15,11 +15,12 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
+require 'rubygems'
 require 'MonetDB'
 
 db = MonetDB.new
 
-db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
+db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "test", auth_type = "SHA1")
 
 # set type_cast=true to enable MonetDB to Ruby type mapping
 res = db.query("select * from tables");

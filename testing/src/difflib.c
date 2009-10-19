@@ -477,7 +477,7 @@ body { background-color: white; color: black; }\n\
 a:link { color: green; }\n\
 a:visited { color: darkgreen; }\n\
 a:active { color: lime; }\n\
-td { color: black; font-size: xx-small; font-family: monospace; white-space: pre-wrap; }\n\
+td { color: black; font-size: xx-small; font-family: monospace; white-space: pre-wrap; vertical-align: baseline; }\n\
 ";
 
 int
@@ -499,7 +499,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 /*
       fprintf(html_fp,"Content-type: text/html\n\n");
 */
-		fprintf(html_fp, "%s<html>\n<head>\n<style>\n%s</style>\n</head>\n<body>\n<center>\n<table align='abscenter' border='1' cellspacing='0' cellpadding='1'>\n", doctype, stylesheet);
+		fprintf(html_fp, "%s<html>\n<head>\n<style>\n%s</style>\n</head>\n<body>\n<table align='center' border='1' cellspacing='0' cellpadding='1'>\n", doctype, stylesheet);
 		if (*caption)
 			fprintf(html_fp, "<caption>%s</caption>\n", caption);
 		fprintf(html_fp, "<tr>");
@@ -511,7 +511,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 			fprintf(html_fp, "<th class='colhead'><a href='%s'>%s</a></th>", new_fn, new_fn);
 		fprintf(html_fp, "</tr>\n");
 		fprintf(html_fp, "<tr><th colspan='3' align='center'>No differences.</th></tr>\n");
-		fprintf(html_fp, "</table></center>\n");
+		fprintf(html_fp, "</table>\n");
 		fprintf(html_fp, "<hr/>\n");
 		fprintf(html_fp, "</body>\n</html>\n");
 		fprintf(html_fp, "<!--NoDiffs-->\n");
@@ -531,7 +531,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
   fprintf(html_fp,"Content-type: text/html\n\n");
 */
 	fprintf(html_fp, "%s<html>\n<head>\n<style>\n%s</style>\n</head>\n<body>\n", doctype, stylesheet);
-	fprintf(html_fp, "<center>\n<table align='abscenter' border='1' cellspacing='0' cellpadding='1' rules='groups'>\n");
+	fprintf(html_fp, "<table align='center' border='1' cellspacing='0' cellpadding='1' rules='groups'>\n");
 	if (*caption)
 		fprintf(html_fp, "<caption>%s</caption>\n", caption);
 
@@ -822,7 +822,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		TRACE(for (i = 0; i < 5; i++) clmn_fn[i][strlen(clmn_fn[i]) - 1]++) ;
 	}
 
-	fprintf(html_fp, "</table></center>\n");
+	fprintf(html_fp, "</table>\n");
 	fprintf(html_fp, "<hr/>\n");
 	fprintf(html_fp, "</body>\n</html>\n");
 	fprintf(html_fp, "<!--%sDiffs-->\n", Major ? "Major" : (Minor ? "Minor" : "No"));
