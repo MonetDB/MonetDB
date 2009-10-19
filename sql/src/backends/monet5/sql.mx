@@ -4093,7 +4093,7 @@ str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	(void) cntxt;
 	ret= (str *) getArgReference(stk,pci,0);
-	*ret = call2str(mb,stk,0,LIST_MAL_VALUE);
+	*ret = instruction2str(mb,stk,getInstrPtr(mb,0),LIST_MAL_VALUE);
 	return MAL_SUCCEED;
 }
 
