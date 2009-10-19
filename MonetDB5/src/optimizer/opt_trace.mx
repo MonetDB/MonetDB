@@ -98,7 +98,7 @@ OPTtraceCall(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	for(i=getPC(mb,pci)-1; i>0; i--){
 		pci= getInstrPtr(mb,i);
 		if( getArg(pci,0) == v){
-			msg= call2str(mb,stk,i,LIST_MAL_ALL);
+			msg= instruction2str(mb,stk,pci,LIST_MAL_DEBUG);
 			fprintf(trace,"%s\n",msg);
 			GDKfree(msg);
 			break;

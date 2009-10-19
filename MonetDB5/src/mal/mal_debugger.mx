@@ -726,25 +726,9 @@ mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag){
     }
 	return 0;
 }
-@-
-The instruction call stack is the most common command.
-Prepare a string for an instruction call. 
-We rely on the buffersize of instruction2str.
-@c
-str
-call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
-{
-	str msg;
-	InstrPtr p;
 
-	(void) stk;
-	(void) flags;
-	p= getInstrPtr(mb,pc);
-	msg = instruction2str(mb, stk, p, LIST_MAL_VALUE);
-	return msg;
-}
-
-void
+/* utility to display an instruction being called and its stack position */
+static void
 printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
@@ -755,18 +739,19 @@ printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	GDKfree(msg);
 }
 
-@-
-Beware, the printTraceCall is a rather expensive routine and obscures
-the actual timing. We therefore compensate the global timing maintained
-@c
+/* utility to display instruction and dispose of structure */
 void
 printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 {
 	str msg;
-	msg= call2str(mb,stk,pc,flags);
+	InstrPtr p;
+
+	p= getInstrPtr(mb,pc);
+	msg = instruction2str(mb, stk, p, flags);
 	stream_printf(out, "#%s\n", msg);
 	GDKfree(msg);
 }
+
 static void
 mdbBacktrace(Client cntxt, MalStkPtr stk, int pci){
 	for (; stk != NULL; stk = stk->up) {
@@ -1402,7 +1387,7 @@ signatures satisfying the pattern.
 			Symbol fs;
 			int i, lstng;
 
-			lstng= LIST_MAL_STMT | LIST_MAL_UDF;
+			lstng= LIST_MAL_DEBUG | LIST_MAL_UDF;
 			if ( *b=='L') lstng |= LIST_MAL_PROPS | LIST_MAL_DETAIL;
 			skipWord(cntxt, b);
 			if (*b != 0) {
@@ -1534,7 +1519,7 @@ str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
 	p= getInstrPtr(mb,pc);
 	stream_printf(mal_clients[0].fdout,"#trapped %s.%s[%d]\n",
 		getModuleId(mb->stmt[0]), getFunctionId(mb->stmt[0]), pc);
-	printInstruction(mal_clients[0].fdout,mb,stk,p, LIST_MAL_STMT);
+	printInstruction(mal_clients[0].fdout,mb,stk,p, LIST_MAL_DEBUG);
 	cntxt->itrace='W';
 	mal_set_lock(mal_contextLock,"trapped procedure");
 	if( trapped_mb){

@@ -2,8 +2,8 @@
 # it illustrates weakness of the kintersect routine.
 
 t0:= alarm.usec();
-l:= 0:sht;
-large:= bat.new(:oid,:sht);
+l:= 0:int;
+large:= bat.new(:oid,:int);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();
@@ -14,25 +14,25 @@ mdb.setDebug(dbgmsk_set);
 
 barrier (go,i):= language.newRange(0:lng);
 	k:= mmath.rand();
-	l:= calc.sht(k);
+	l:= calc.int(k);
 	bat.append(large,l);
 	redo (go,i):= language.nextElement(1:lng,1000000:lng);
 exit (go,i);
 
 mdb.setDebug(dbgmsk_restore);
 
-small:= bat.new(:oid,:sht);
+small:= bat.new(:oid,:int);
 #m:= aggr.min(b);
 m:= mmath.rand();
-l:= calc.sht(m);
+l:= calc.int(m);
 bat.insert(small,1@0,l);
 #m:= aggr.max(b);
 m:= mmath.rand();
-l:= calc.sht(m);
+l:= calc.int(m);
 bat.insert(small,4@0,l);
 #disturb order
 m:= mmath.rand();
-l:= calc.sht(m);
+l:= calc.int(m);
 bat.insert(small,3@0,l);
 
 largeR:= bat.reverse(large);

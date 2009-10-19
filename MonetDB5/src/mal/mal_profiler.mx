@@ -594,7 +594,7 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
 		str stmtq;
-		stmt = call2str(mb, stk, getPC(mb, pci),1);
+		stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
 		c = stmt;
 
 		while (c && *c && isspace((int) *c))
@@ -1144,7 +1144,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
-		stmt = call2str(mb, stk, getPC(mb, pci),1);
+		stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
 		c = stmt;
 
 		while (c && *c && (isspace((int) *c) || *c == '!'))

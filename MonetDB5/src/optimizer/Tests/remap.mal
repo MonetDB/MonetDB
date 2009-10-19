@@ -1,3 +1,4 @@
+function tst();
 	b:= bat.new(:oid,:int);
 # a correct call
 	z:bat[:oid,:int]:= mal.multiplex("calc","+",b,1);
@@ -8,7 +9,8 @@
 	a:bat[:oid,:bit]:= mal.multiplex("calc","isnil",d);
 # demonstrate an error
 	y:bat[:int,:int]:= mal.multiplex("calc","+",b,1);
-	optimizer.remap();
+end tst;
+	optimizer.remap("user","tst");
 # it will be ignored by the optimizer
-	optimizer.multiplex();
-	mdb.List();
+	optimizer.multiplex("user","tst");
+	mdb.List("user","tst");

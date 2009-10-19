@@ -254,7 +254,7 @@ being called.
 			/*safeguardStack*/
 			stk->stkdepth= stk->stksize + env->stkdepth;
 			stk->calldepth= env->calldepth + 1;
-			if ( stk->calldepth > 1024 )
+			if ( stk->calldepth > 256 )
 				throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
 			if ( (unsigned) stk->stkdepth > THREAD_STACK_SIZE/ sizeof(mb->var[0]) / 4 && THRhighwater())
 				/* we are running low on stack space */
@@ -2222,7 +2222,7 @@ It simply skips the barrier block upon return.
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
 		MT_set_lock(*lock, "timing");
-	stream_printf(cntxt->fdout,"[ ");
+	stream_printf(cntxt->fdout,"= ");	/* single column rendering */
 	if( cntxt->flags & timerFlag){
 		char buf[BUFSIZ];
 		snprintf(buf,BUFSIZ,LLFMT,GDKusec()-cntxt->timer);
@@ -2267,8 +2267,8 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		stream_printf(cntxt->fdout,":%6s ", buf);
 	}
 	{str line;
-	line= call2str(mb,stk,stkpc,cntxt->flags);
-	stream_printf(cntxt->fdout, " %s ]\n", line);
+	line= instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
+	stream_printf(cntxt->fdout, " %s\n", line);
 	GDKfree(line);
 	}
 	if( cntxt->flags & timerFlag)

@@ -36,10 +36,10 @@ end main;
 function user.tst():void;
 barrier b := true;
     io.print("always executed");
-exit b := true;
+exit b;
 barrier c := true;
     io.print("always executed");
-exit c := true;
+exit c;
 end tst;
 [ "always executed" ]
 [ "always executed" ]

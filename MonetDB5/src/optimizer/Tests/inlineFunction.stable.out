@@ -45,12 +45,12 @@ end main;
 #result of inline
 function user.tst():void;
 barrier _1 := true;
-exit _1 := true;
+exit _1;
 end tst;
 #result of all optimizers
 function user.tst():void;
 barrier _1 := true;
-exit _1 := true;
+exit _1;
 end tst;
 
 # 01:05:28 >  
