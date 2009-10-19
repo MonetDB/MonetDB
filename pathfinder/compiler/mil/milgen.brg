@@ -11031,7 +11031,7 @@ PFmilgen (PFpa_op_t *n, char *genType)
 {
     PFmil_t   *bodymilprog;
     PFarray_t *opt;
-    bool       nocache = 0;
+    bool       nocache = false;
     long long  timeout = 0;
     char      *qid     = "";
 
@@ -11040,7 +11040,9 @@ PFmilgen (PFpa_op_t *n, char *genType)
     if (opt) {
         qid = *((char **) PFarray_at (opt, 0));
         if (PFarray_last(opt) > 1)
-            PFlog ("Multiple session IDs -- Choosing \"%s\".", qid);
+            PFlog ("Multiple session IDs -- "
+                   "Choosing pf:session-id \"%s\".",
+                   qid);
     }
     opt = PFenv_lookup (PFoptions, PFqname(PFns_lib, "session-timeout"));
     if (opt) {
@@ -11049,14 +11051,16 @@ PFmilgen (PFpa_op_t *n, char *genType)
             PFoops (OOPS_FATAL, "Invalid session timeout: \"%s\".",
                     *((char **) PFarray_at (opt, 0)));
         if (PFarray_last(opt) > 1)
-            PFlog ("Multiple session timeouts -- Choosing \"%s\".",
+            PFlog ("Multiple session timeouts -- "
+                   "Choosing pf:session-timeout \"%s\".",
                    *((char **) PFarray_at (opt, 0)));
     }
     opt = PFenv_lookup (PFoptions, PFqname(PFns_lib, "session-nocache"));
     if (opt) {
         char *mode = *((char **) PFarray_at (opt, 0));
         if (PFarray_last(opt) > 1)
-            PFlog ("Multiple session modes -- Choosing \"%s\".", mode);
+            PFlog ("Multiple session modes -- "
+                   "Choosing pf:session-nocache \"%s\".", mode);
         nocache = strcmp(mode, "true") == 0 || strcmp(mode, "yes") == 0;
     }
 
@@ -11183,7 +11187,11 @@ PFmilgen (PFpa_op_t *n, char *genType)
                    assgn (var (PF_MIL_VAR_XRPC_HDL), lit_int(0)),
                    assgn (var (PF_MIL_VAR_XRPC_SEQNR), lit_lng(0)),
                    assgn (var (PF_MIL_VAR_XRPC_TIMEOUT), lit_lng(timeout)),
-                   assgn (var (PF_MIL_VAR_XRPC_MODE), lit_str (qid?nocache?"use-cache-repeatable":"cache-repeatable":"none")),
+                   assgn (var (PF_MIL_VAR_XRPC_MODE),
+                          lit_str (qid ? nocache
+                                         ? "use-cache-repeatable"
+                                         : "cache-repeatable"
+                                       : "none")),
                    assgn (var (PF_MIL_VAR_XRPC_MODULE), lit_str("")),
                    assgn (var (PF_MIL_VAR_XRPC_METHOD), lit_str("")),
                    assgn (var (PF_MIL_VAR_XRPC_COORD), lit_str("")),
