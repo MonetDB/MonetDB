@@ -1,4 +1,4 @@
-# this file should be ran after a M2m compile
+# this file should be run after a M2m compile
 echo "patch test_40"
 echo "reason: ascii_io  -> io"
 ex - test_40.mal <<!EOF
