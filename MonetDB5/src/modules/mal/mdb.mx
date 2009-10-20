@@ -639,7 +639,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	str msg;
 	char *buf;
 	int *ret = (int *) getArgReference(s, p, 0);
-	int k = 0,pc;
+	int k = 0;
 	size_t len,l;
 
 	(void) cntxt;
@@ -648,7 +648,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	buf = (char*) GDKmalloc(len +1024);
 	snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 		getModuleId(getInstrPtr(m,0)),
-		getFunctionId(getInstrPtr(m,0)), pc);
+		getFunctionId(getInstrPtr(m,0)), getPC(m, p));
 	BUNins(b, &k, buf, FALSE);
 	GDKfree(msg);
 
