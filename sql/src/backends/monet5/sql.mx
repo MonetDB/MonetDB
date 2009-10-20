@@ -2718,7 +2718,7 @@ not_unique_oids(bat *ret, bat* bid)
 }
 
 lng scales[20] = {
-	LL_CONSTANT(0),
+	LL_CONSTANT(1),
 	LL_CONSTANT(10),
 	LL_CONSTANT(100),
 	LL_CONSTANT(1000),
@@ -3234,8 +3234,9 @@ str bat@2_2_@1( int *res, int *bid )
 	BBPunfix(b->batCacheid);
 	return msg;
 }
-@c
-
+@-
+The simple cast up operations in some cases
+could re-use the storage space as well.
 @= numcastup
 @:simpleupcast(@1,@2)@
 
@@ -3304,26 +3305,37 @@ str
 
 str bat@2_dec2_@1( int *res, int *s1, int *bid )
 {
-	BAT *b, *dst;
+	BAT *b, *bn;
 	BATiter bi;
-	BUN p,q;
+	@2 *p,*q;
 	char *msg = NULL;
+	int scale = *s1;
+	@1 *o;
 
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	BATseqbase(dst, b->hseqbase);
-	BATloop(b,p,q) {
-		@2 *v = (@2*)BUNtail(bi,p);
-		@1 r;
-		msg = @2_dec2_@1( &r, s1, v );
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	bn = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(bn, b->hseqbase);
+	o = (@1*) Tloc(bn,BUNfirst(bn));
+	p = (@2*) Tloc(b, BUNfirst(b));
+	q = (@2*) Tloc(b, BUNlast(b));
+	if ( b->T->nonil){
+		for (; p<q; p++)
+			*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
+	} else{
+		if (*p == @2_nil) 
+			*o = @1_nil;
+		else
+			*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
 	}
-	BBPkeepref( *res = dst->batCacheid);
+	BATsetcount(bn, BATcount(b));
+    bn->tsorted = 0;
+    BATkey(BATmirror(bn),FALSE);
+    if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+
+	BBPkeepref( *res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
 }
