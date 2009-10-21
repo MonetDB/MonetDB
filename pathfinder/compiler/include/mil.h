@@ -146,6 +146,10 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_XRPC_MODULE  92
 #define PF_MIL_VAR_XRPC_METHOD  93
 
+#ifdef HAVE_PFTIJAH
+#define PF_MIL_TIJAH_FTINAME    94
+#endif
+
 #define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_XRPC_METHOD + 1)
 
 /** Node kinds for MIL tree representation */

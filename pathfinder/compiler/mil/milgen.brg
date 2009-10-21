@@ -4169,7 +4169,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             unpin (err, 1);
 #ifdef HAVE_PFTIJAH
 	    execute(
-                assgn (var (PF_MIL_TIJAH_SCORE_DB), unused() )
+                assgn (var (PF_MIL_TIJAH_SCORE_DB), unused() ),
+                assgn (var (PF_MIL_TIJAH_FTINAME), unused() )
 	    );
 #endif
         } break; /* fold) */
@@ -11146,6 +11147,7 @@ PFmilgen (PFpa_op_t *n, char *genType)
 #ifdef HAVE_PFTIJAH
 		   /* create pftijah score db */
     		   declare (var (PF_MIL_TIJAH_SCORE_DB)),
+    		   declare (var (PF_MIL_TIJAH_FTINAME)),
                    assgn (var (PF_MIL_TIJAH_SCORE_DB), 
                           seqbase (new (type (mty_void), type(mty_bat) ),
                                             lit_oid (0))),

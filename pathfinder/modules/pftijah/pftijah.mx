@@ -2734,6 +2734,13 @@ PROC ALG_tj_ftfun_handler(
 
      if ( verbose ) printf(HASH +" ALG_tj_ftfun_handler: START.\n");
 
+     # The next assigment is done to make pftijah work like it is used
+     # by the tijah compiler. A variable ftiName is expected to exist
+     # in the caller env. To make this work for direct calls without the
+     # compiler we generate an unused ftiName var in the generated pathfinder
+     # mil script and assign it with this assigment.
+     ftiName := dflt_ft_index;
+
      result_item_s := new(oid,dbl);
 
      var has_sn      := (pfop_sn.count_wrd() > wrd(0));
@@ -2769,8 +2776,8 @@ PROC ALG_tj_ftfun_handler(
           iter_tjPre := pf2tijah_node(true,xdoc_name,xdoc_firstpre,xpfpre,sn_item,[int](sn_kind),doc_loaded);
 	  
 	  # now tokenize the term string and add a default weight
-	  var Q := tijah_tokenize2bat(ftc_term).reverse().project(dbl(1.0));
-	  Q := tj_term2tid(Q);
+	  var T := tijah_tokenize2bat(ftc_term).reverse().project(dbl(1.0));
+	  var Q := tj_prepare_query(T);
 
 	  # tj_init_termHash(ftiName);
 	  # tj_init_tagHash(ftiName);

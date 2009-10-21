@@ -381,6 +381,7 @@ char * PFmil_var_str (PFmil_ident_t name) {
 #ifdef HAVE_PFTIJAH
         case PF_MIL_TIJAH_DUMMYPOS:  return "tijah_dummyPOS";
         case PF_MIL_TIJAH_SCORE_DB:  return "tijah_scoreDB";
+        case PF_MIL_TIJAH_FTINAME:   return "ftiName";
         case PF_MIL_TIJAH_FTI_TAPE:  return "tijah_ftiTape";
 #endif
 
