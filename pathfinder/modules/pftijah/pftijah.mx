@@ -2712,6 +2712,9 @@ PROC ALG_tj_query_handler(
      return res;
 }
 
+#
+var ftindex;
+
 # temporary algebra query handler
 PROC ALG_tj_ftfun_handler(
         bit par_storeScore,
@@ -2740,6 +2743,7 @@ PROC ALG_tj_ftfun_handler(
      # compiler we generate an unused ftiName var in the generated pathfinder
      # mil script and assign it with this assigment.
      ftiName := dflt_ft_index;
+     ftindex := ftiName + "0";
 
      result_item_s := new(oid,dbl);
 
@@ -2754,6 +2758,7 @@ PROC ALG_tj_ftfun_handler(
      if ( has_ign )
      	GDKerror("ALG_tj_ftfun_handler: ignores not implemented yet");
 
+    if ( verbose ) printf(HASH +" tjq: phase 01.\n");
      par_loop@batloop() {
         var iter_tjPre;
         var ftc_term := pfop_query.fetch(1@0).fetch(int($h));
@@ -2794,6 +2799,7 @@ PROC ALG_tj_ftfun_handler(
 	  var tjPre_score := tj_containing_query_nest_pre_term_NLLR(iter_tjPre.reverse(), Q);
 	  var iter_score := iter_tjPre.leftjoin(tjPre_score);
 
+
 	  result_item_s.append(iter_score);
         });
         lock_unset(tijah_lock);
@@ -2802,6 +2808,11 @@ PROC ALG_tj_ftfun_handler(
      var result_item_b;
      result_iter   := pfop_sn.fetch(0@0);
      result_item_b := [>](result_item_s,dbl(0.0));
+     if ( verbose ) {
+     	result_iter.print();
+     	result_item_b.print();
+     	result_item_s.print();
+     }
      result_ipik   := result_item_b;
      result_kind   := pfop_sn.fetch(2@0).set_kind(BOOL);
      var result_pos:= pfop_sn.fetch(3@0);

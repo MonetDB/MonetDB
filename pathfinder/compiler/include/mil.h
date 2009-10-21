@@ -136,6 +136,10 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_TIME_QUERY  81
 #define PF_MIL_VAR_TIME_PRINT  82
 
+#ifdef HAVE_PFTIJAH
+#define PF_MIL_TIJAH_FTINAME    83
+#endif
+
 #define PF_MIL_VAR_XRPC_QID     85
 #define PF_MIL_VAR_XRPC_CALLER  86
 #define PF_MIL_VAR_XRPC_HDL     87
@@ -145,10 +149,6 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_XRPC_MODE    91
 #define PF_MIL_VAR_XRPC_MODULE  92
 #define PF_MIL_VAR_XRPC_METHOD  93
-
-#ifdef HAVE_PFTIJAH
-#define PF_MIL_TIJAH_FTINAME    94
-#endif
 
 #define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_XRPC_METHOD + 1)
 
