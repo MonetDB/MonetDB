@@ -1,4 +1,4 @@
-# this file should be ran after a M2m compile
+# this file should be run after a M2m compile
 echo "patch no.037.mal"
 echo "mil.line(\"mem.print();\");"
 echo "mem:= mil.take(\"mem\");"
