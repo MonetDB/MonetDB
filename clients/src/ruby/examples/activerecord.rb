@@ -24,7 +24,11 @@ ActiveRecord::Base.colorize_logging = true
 ActiveRecord::Base.establish_connection(
         :adapter  => "monetdb",
         :host     => "localhost",
-        :database => "test"
+        :database => "test",
+        :username => "monetdb",
+        :password => "monetdb",
+        :hostname => "localhost",
+        :port     => 50000
 )
 
 # Create a new table
