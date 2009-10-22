@@ -256,7 +256,7 @@ mapi_open=false       # should be set to 'true' to allow for
 
 # The default pipeline
 sql_optimizer=default_pipe
-default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,garbageCollector,dataflow,history,multiplex
 
 #The default + replication
 replication_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
@@ -268,8 +268,6 @@ recycler_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcod
 # The Cracking pipeline(s)
 cracker_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 #
-#The accumulator pipeline
-accumulator_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,garbageCollector,dataflow,history,replication,multiplex
 # The datacell pipeline
 datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 #
