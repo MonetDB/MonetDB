@@ -23,9 +23,6 @@ library:
 * The SQL module is now named monetdb.sql
 * Small changes in argument names for functions
 * Type conversion is working (for example a monetdb int becomes a python int)
-* If you want to use the mapi module with python3.* you should use the
-  mapi3.py module (import monetdb.mapi3 as mapi). This is done automatically
-  for the sql module
 * Dropped support for the dictionary based cursor
 
 
@@ -103,12 +100,7 @@ line example of the SQL API::
 If you would like to communicate with the database at a lower level you can use
 the MAPI library::
 
- > # If you use python 2.6, python 3.0 or higher:
  > from monetdb import mapi
- >
- > # If you use python2.5
- > from monetdb import mapi25 as mapi
- >
  > server = mapi.Server()
  > server.connect(hostname="localhost", port=50000, username="monetdb", password="monetdb", database="demo", language="sql")
  > server.cmd("sSELECT * FROM tables;")
