@@ -661,7 +661,7 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 		bn = b;
 	else
 	if( *rflag && !isVIEW(right) && BBP_refs(*r) == 1 &&  BBP_lrefs(*r) == 1)
-		bn = b;
+		bn = right;
 	else{
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(right->batCacheid);
