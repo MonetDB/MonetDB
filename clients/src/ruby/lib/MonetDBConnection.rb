@@ -101,6 +101,7 @@ class MonetDBConnection
     @socket = TCPSocket.new(@host, @port.to_i)  
     if real_connect
       set_timezone
+      set_reply_size
       true
     end
     false
@@ -252,7 +253,7 @@ class MonetDBConnection
         $stderr.print e
       end
     else
-      $stderr.print "No connection established."
+      raise MonetDBConnectionError, "No connection established."
     end
   end
   
@@ -270,7 +271,7 @@ class MonetDBConnection
     data = @socket.recv(chunk_size)
     
     if chunk_size == 0
-	    return "" # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
+	    return ""  # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
     end
     
     if is_final == false 
@@ -279,11 +280,7 @@ class MonetDBConnection
         data +=  @socket.recv(chunk_size)
       end
     end
-    
-    if data.length == 0      
-      data = MSG_PROMPT
-    end
-    
+  
     return data
   end
     
