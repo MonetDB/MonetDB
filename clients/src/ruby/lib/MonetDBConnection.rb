@@ -37,10 +37,10 @@ MSG_QUERY             = '&'
 MSG_SCHEMA_HEADER     = '%'
 MSG_INFO              = '!' # info response from mserver
 MSG_TUPLE             = '['
-MSG_PROMPT            =  nil
+MSG_PROMPT            =  ""
 
 
-REPLY_SIZE            = '250'
+REPLY_SIZE            = '-1'
 
 MAX_AUTH_ITERATION    = 10  # maximum number of atuh iterations (thorough merovingian) allowed
  
@@ -242,6 +242,15 @@ class MonetDBConnection
   # send a 'reply_size' command to the server
   def set_reply_size
     send(format_command(("reply_size " + REPLY_SIZE)))
+    
+    response = receive
+  
+    if response == MSG_PROMPT
+      true
+    elsif response[0] == MSG_INFO
+      raise MonetDBCommandError, "Unable to set reply_size: #{response}"
+    end
+    
   end
 
   # Disconnect from server
@@ -428,8 +437,10 @@ class MonetDBConnection
     # Perform the query directly within the method
     send(query_tz)
     response = receive
-  
-    if response[0] == MSG_INFO
+    
+    if response == MSG_PROMPT
+      true
+    elsif response[0].chr == MSG_INFO
       raise MonetDBQueryError, response
     end
   end
@@ -447,7 +458,7 @@ class MonetDBConnection
     response = receive
     if response == MSG_PROMPT
       @auto_commit = flag
-    elsif response[0] == MSG_INFO
+    elsif response[0].chr == MSG_INFO
       raise MonetDBCommandError, response
       return
     end
