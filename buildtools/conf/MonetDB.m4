@@ -945,6 +945,19 @@ yes-*-*)
 	    GCC_SWIG_CFLAGS="$GCC_SWIG_CFLAGS -Wno-extra"
 	    ;;
 	esac
+
+	dnl  GNU's gcc version 4.4 has very strict aliasing rules
+	dnl  which we fall foul of.  The problem has to do with thing
+	dnl  like
+	dnl  oid v; * (lng *) &v = whatever
+	dnl  which we do *a lot*.
+	dnl  So, switch off this possible optimization until we fixed
+	dnl  our code.
+	case "$gcc_ver" in
+	4.4.*)
+		CFLAGS="$CFLAGS -fno-strict-aliasing"
+		;;
+	esac
 	
 
 	NO_INLINE_CFLAGS="-fno-inline -fno-inline-functions"
