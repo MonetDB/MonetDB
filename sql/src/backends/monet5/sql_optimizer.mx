@@ -510,10 +510,14 @@ setOptimizers(str optimizer)
 	/* the optimizer control is a semicolon separated list of names */
 	/* the predefined 'default' injects the default plan upon need */
 	int top=0,i;
-	char *base,  *nxt, *nme;
+	char *base,  *nxt, *nme, *pipe;
 	
 	if (optimizerpipeline == optimizer || pipelineOverruled)
 		return;
+	pipe= GDKgetenv(optimizer);
+	if ( pipe != NULL)
+		optimizer= pipe;
+
 	optimizerpipeline= optimizer;
 	base= GDKstrdup(optimizer);
 
