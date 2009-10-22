@@ -117,6 +117,10 @@ sql_update_var(mvc *m, char *name)
 		    !sql_find_func(sys, "keepcall", NR_KEEPCALL_ARGS))
 			return sql_message( "Cannot activate history because the keepQuery and keepCall procedures are not available\n" ); 
 		m->history = (int) (sgn)?1:0;
+	} else if (strcmp(name, "optimizer") == 0) {
+		str pipe=GDKgetenv(stack_get_string(m,"optimizer"));
+		if ( pipe == NULL)
+			return sql_message( "Optimizer pipeline not known\n");
 	}
 	return NULL;
 }
