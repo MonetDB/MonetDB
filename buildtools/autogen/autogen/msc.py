@@ -224,6 +224,7 @@ def msc_find_hdrs(target, deps, hdrs):
             pf = f
     return pf
 
+libno = 0
 def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
     deps = pref+sep+name+ext+": "
     if type == "BIN":
@@ -232,20 +233,26 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
         add = pref+sep+name.replace('-','_')+"_LIBS ="
     else:
         add = name.replace('-','_') + " ="
+    cond = ''
     for l in list:
+        if '?' in l:
+            c, l = l.split('?', 1)
+        else:
+            c = None
+        d = None
         if l == "@LIBOBJS@":
-            add = add + " $(LIBOBJS)"
+            l = "$(LIBOBJS)"
         # special case (hack) for system libraries
         elif l in ('-lodbc32', '-lodbccp32', '-lversion', '-lshlwapi', '-luser32'):
-            add = add + ' ' + l[2:] + '.lib'
+            l = l[2:] + '.lib'
         elif l[:2] == "-l":
-            add = add + " lib"+l[2:]+".lib"
+            l = "lib"+l[2:]+".lib"
         elif l[:2] == "-L":
-            add = add + ' "/LIBPATH:%s"' % l[2:].replace('/', '\\')
+            l = '"/LIBPATH:%s"' % l[2:].replace('/', '\\')
         elif l[0] == "-":
-            add = add + ' "%s"' % l
+            l = '"%s"' % l
         elif l[0] == '$':
-            add = add + ' %s' % l
+            pass
         elif l[0] != "@":
             lib = msc_translate_dir(l, msc) + '.lib'
             # add quotes if space in name
@@ -254,8 +261,19 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
             # lib_algebra.lib.
             if ' ' in lib:
                 lib = '"%s"' % lib
-            add = add + ' %s' % lib
-            deps = deps + ' %s' % lib
+            l = lib
+            d = lib
+        if c:
+            global libno
+            v = 'LIB%d' % libno
+            libno = libno + 1
+            cond += '!IF %s\n%s = %s\n!ELSE\n%s =\n!ENDIF\n' % (c, v, l, v)
+            l = '$(%s)' % v
+            if d:
+                deps = '%s %s' % (deps, l)
+        elif d:
+            deps = '%s %s' % (deps, d)
+        add = add + ' ' + l
     # this can probably be removed...
     for l in dlibs:
         if l == "@LIBOBJS@":
@@ -267,6 +285,8 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
         elif l[0] not in  ("@"):
             add = add + " " + msc_translate_dir(l, msc) + ".lib"
             deps = deps + ' "' + msc_translate_dir(l, msc) + '.lib"'
+    if cond:
+        fd.write(cond)
     if type != "MOD":
         fd.write(deps + "\n")
     fd.write(add + "\n")

@@ -208,6 +208,7 @@ def am_additional_flags(name, sep, type, list, am, pref = 'lib'):
         add = add + " " + l
     return add + "\n"
 
+libno = 0
 def am_additional_libs(name, sep, type, list, am, pref = 'lib'):
     if type == "BIN":
         add = am_normalize(name)+"_LDADD ="
@@ -218,10 +219,19 @@ def am_additional_libs(name, sep, type, list, am, pref = 'lib'):
     for l in list:
 ##        if 'lib_' in l or l.startswith('-l_'):
 ##            continue
-        if l[0] in ("-", "$", "@"):
-            add = add + " " + l
+        if '?' in l:
+            c, l = l.split('?', 1)
         else:
-            add = add + " " + am_translate_dir(l, am) + ".la"
+            c = None
+        if l[0] not in ("-", "$", "@"):
+            l = am_translate_dir(l, am) + ".la"
+        if c:
+            global libno
+            v = 'LIB%d' % libno
+            libno = libno + 1
+            add = 'if %s\n%s = %s\nelse\n%s =\nendif\n%s' % (c, v, l, v, add)
+            l = '$(%s)' % v
+        add = add + " " + l
     return add + "\n"
 
 def am_additional_deps(name, sep, type, list, am, pref = 'lib'):
@@ -238,12 +248,23 @@ def am_additional_deps(name, sep, type, list, am, pref = 'lib'):
 def am_additional_install_libs(name, sep, list, am):
     add = "$(do)install-" + name + "LTLIBRARIES : "
     for l in list:
+        if '?' in l:
+            c, l = l.split('?', 1)
+        else:
+            c = None
         if l[0] not in ("-", "$", "@", "." ):
             if l[3] == '_':
                 l = l[4:]
             else:
                 l = l[3:]
-            add = add + " install-" + l + "LTLIBRARIES"
+            l = 'install-%sLTLIBRARIES' % l
+            if c:
+                global libno
+                v = 'LIB%d' % libno
+                libno = libno + 1
+                add = 'if %s\n%s = %s\nelse\n%s =\nendif\n%s' % (c, v, l, v, add)
+                l = '$(%s)' % v
+            add = add + " " + l
     return add + "\n"
 
 def needbuildtool(deplist):
