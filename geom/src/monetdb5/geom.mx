@@ -1069,8 +1069,8 @@ wkbcreatepoint_bat(int *out, int *ix,int *iy)
 	bo->batDirty = TRUE;
 	bo->tdense = FALSE;
 	bo->tsorted = FALSE;
-	bo->T->nonil = FALSE;
-	BATkey(BATmirror(bo), FALSE);
+	bo->T->nonil = (bx->T->nonil && by->T->nonil);
+	BATkey(BATmirror(bo), (bx->tkey && by->tkey));
 
 	BBPreleaseref(bx->batCacheid);
 	BBPreleaseref(by->batCacheid);
