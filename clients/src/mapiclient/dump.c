@@ -342,9 +342,10 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 
 	if (cnt != 1) {
 		if (cnt == 0)
-			fprintf(stderr, "Table %s.%s does not exist.\n", schema, tname);
+			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
 		else
-			fprintf(stderr, "Table %s.%s not unique.\n", schema, tname);
+			fprintf(stderr, "table %s.%s is not unique, corrupt catalog?\n",
+					schema, tname);
 		goto bailout;
 	}
 
