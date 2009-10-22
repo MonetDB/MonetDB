@@ -267,7 +267,7 @@ class MonetDBConnection
         $stderr.print e
       end
     else
-      $stderr.print "No connection established."
+      raise MonetDBConnectionError, "No connection established."
     end
   end
   
@@ -283,21 +283,16 @@ class MonetDBConnection
     is_final, chunk_size = recv_decode_hdr
 
     if chunk_size == 0
-	    return "" # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
-    end    
-
-    data = @socket.recv(chunk_size)
+	    return ""  # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
+    end
+    
     if is_final == false 
       while is_final == false
         is_final, chunk_size = recv_decode_hdr
         data +=  @socket.recv(chunk_size)
       end
     end
-    
-    if data.length == 0      
-      data = MSG_PROMPT
-    end
-    
+  
     return data
   end
     
