@@ -759,7 +759,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
         subcommit(extra_del_bat);
     }
     #subcommit(_tj_collection_str(ftiName));
-   lock_unset(coll_lock);
+    lock_unset(coll_lock);
     #
     if (not(isnil(err))) ERROR(err);
     #
@@ -1732,8 +1732,10 @@ PROC _tj_add2collection_frag(str ftiName, BAT[str,bat] collBat, str uri_loc, str
 	}
     }
     var	i_start := usec();
+    # tj_trace("/tmp/ws_create0_err",HASH +" _tj_add2collection_frag: calling ws_create");
 
-    var ws_opt := ws_create(0);
+    var ws_opt := ws_create(0); # ERROR: INFINITE IDLE WAIT!!!
+    # tj_trace("/tmp/ws_create0_err",HASH +" _tj_add2collection_frag: returning from ws_create");
     ws_opendoc(ws_opt, bat(void,str,1).append(uri_name));
     _tj_throw2collection(collBat,ws_opt,uri_name);
     ws_destroy(ws_opt);
@@ -2758,7 +2760,6 @@ PROC ALG_tj_ftfun_handler(
      if ( has_ign )
      	GDKerror("ALG_tj_ftfun_handler: ignores not implemented yet");
 
-    if ( verbose ) printf(HASH +" tjq: phase 01.\n");
      par_loop@batloop() {
         var iter_tjPre;
         var ftc_term := pfop_query.fetch(1@0).fetch(int($h));
@@ -2833,7 +2834,7 @@ PROC ALG_tj_add_fti_tape(
 	BAT[str,bat]  tape
 	) : BAT[str,bat] 
 {
-        if ( verbose ) printf(HASH +" ALG_tj_add_fti_tape: START.\n");
+        if ( verbose ) printf(HASH +" ALG_tj_add_fti_tape: START xxx.\n");
         var has_coll := (pfop_coll.count_wrd() > wrd(0));
         var has_opt  := (pfop_opt.count_wrd() > wrd(0));
         par_loop@batloop() {
@@ -2911,6 +2912,7 @@ PROC ALG_tj_docmgmt_tape2(BAT[str,bat] tape,
 	# INCOMPLETE, CHECK IF THIS REALLY STILL WORKS
 	#
         if (isnil(CATCH(bat("tj_collName").count_wrd()))) {
+            if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: pftijah is active.\n");
 	    # pftijah is active
             if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: running document management.\n");
             var del_doc    := percentages.ord_uselect(-1LL).hmark(0@0); 
@@ -2945,31 +2947,32 @@ PROC ALG_tj_docmgmt_tape2(BAT[str,bat] tape,
                 if ( verbose ) { printf(HASH +"TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); $t.print(); }
                 tj_add2collection($h,$t,false);
             }
+
+            if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: running collection management.\n");
+            tape@batloop() {
+	        var op       := $h;
+	        var collbat  := $t.fetch(0@0);
+	        var optbat   := $t.fetch(1@0);
+	        var fti_name := tj_get_ft_index(optbat,(op!="create"));
+
+	        if ( op = "create" ) {
+                    if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_init_collection(%s).\n",fti_name);
+	            tj_init_collection(fti_name,optbat,collbat);
+	        } else if ( op = "extend" ) {
+                    if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_extend_collection(%s).\n",fti_name);
+	            tj_extend_collection(fti_name,collbat);
+	        } else if ( op = "remove" ) {
+                    if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_delete_collection(%s).\n",fti_name);
+	            tj_delete_collection(fti_name);
+	        } else {
+	    	    ERROR("ALG_tj_docmgmt_tape: unknown op");
+	        }
+	    }
 	} else {
 	    # pftijah is not active
 	    if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: skipping doc managemnt.\n");
 	}
 
-        if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: running collection management.\n");
-        tape@batloop() {
-	    var op       := $h;
-	    var collbat  := $t.fetch(0@0);
-	    var optbat   := $t.fetch(1@0);
-	    var fti_name := tj_get_ft_index(optbat,(op!="create"));
-
-	    if ( op = "create" ) {
-                if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_init_collection(%s).\n",fti_name);
-	        tj_init_collection(fti_name,optbat,collbat);
-	    } else if ( op = "extend" ) {
-                if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_extend_collection(%s).\n",fti_name);
-	        tj_extend_collection(fti_name,collbat);
-	    } else if ( op = "remove" ) {
-                if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_delete_collection(%s).\n",fti_name);
-	        tj_delete_collection(fti_name);
-	    } else {
-	    	ERROR("ALG_tj_docmgmt_tape: unknown op");
-	    }
-	}
         if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: FINISH.\n");
 	return true;
 }
@@ -2999,15 +3002,15 @@ PROC ALG_tj_docmgmt_tape(BAT[str,bat] tape,
               doclist := new(str,str);
               fti_cluster.insert(ftiName, doclist);
             }
-
-	    if ( op = "create" ) {
+   
+     	    if ( op = "create" ) {
                 if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: init_collection(%s).\n",ftiName);
-	        tj_init_collection_base(ftiName, optbat);
-                modify_pfc_fti(ftiName, collbat);
-                if ( collbat.uselect("*").count_wrd() > wrd(0) ) {
-                   var tmp := bat("doc_name");
-                   doclist.insert(tmp.reverse().project(str(nil)).reverse());
-                } else {
+            tj_init_collection_base(ftiName, optbat);
+            modify_pfc_fti(ftiName, collbat);
+            if ( collbat.uselect("*").count_wrd() > wrd(0) ) {
+               var tmp := bat("doc_name");
+               doclist.insert(tmp.reverse().project(str(nil)).reverse());
+            } else {
                    var tmp := bat("doc_name").semijoin(bat("doc_collection").join(bat("collection_name").join(collbat.reverse())));
                    doclist.insert(tmp.reverse().project(str(nil)).reverse());
                 }
@@ -3025,48 +3028,56 @@ PROC ALG_tj_docmgmt_tape(BAT[str,bat] tape,
                 if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_delete_collection(%s).\n",ftiName);
 	        tj_collection_delete(ftiName);
 	    } else {
-	    	ERROR("ALG_tj_docmgmt_tape: unknown op");
+	        ERROR("ALG_tj_docmgmt_tape: unknown op");
 	    }
 	}
+    
 
         # commit dependency bats, since they might be changed
         var submit_bats := new(void,str).seqbase(0@0);
         submit_bats.append("tj_pfc_fti_dep");
         submit_bats.append("tj_pfc_fti_dep_star");
         subcommit(submit_bats);
+    
 
-	# determine which documents added to pathfinder have to get indexed by pf/tijah due to dependencies
-        # add those documents to the doclist for each ft-index (fti_cluster) 
-        var pfc_name   := docnames.reverse().leftfetchjoin(colnames);
-        var pfdep      := bat("tj_pfc_fti_dep");
-        var pfdep_star := bat("tj_pfc_fti_dep_star");
-        
-        var fti_dname  := pfdep.join(pfc_name.reverse());
-        if ( pfdep_star.count_wrd() > wrd(0) ) {
-            fti_dname.insert(pfdep_star.cross(pfc_name.reverse()));
-        }
-
-        fti_dname@batloop() {
-            var cb;
-            if ( fti_cluster.exist($h) ) {
-              cb := fti_cluster.find($h);
-            } else {
-              cb := new(str,str);
-              fti_cluster.insert($h,cb);
+        if (isnil(CATCH(bat("tj_collName").count_wrd()))) {
+            if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: pftijah is active.\n");
+	    # determine which documents added to pathfinder have to get indexed by pf/tijah due to dependencies
+            # add those documents to the doclist for each ft-index (fti_cluster) 
+            var pfc_name   := docnames.reverse().leftfetchjoin(colnames);
+            var pfdep      := bat("tj_pfc_fti_dep");
+            var pfdep_star := bat("tj_pfc_fti_dep_star");
+            
+            var fti_dname  := pfdep.join(pfc_name.reverse());
+            if ( pfdep_star.count_wrd() > wrd(0) ) {
+                fti_dname.insert(pfdep_star.cross(pfc_name.reverse()));
             }
-            cb.insert(str(nil),$t);
-        }
-        fti_cluster@batloop() {
-            if ( verbose ) { printf(HASH +"TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); $t.print(); }
-            tj_add2collection_frag($h,$t,false);
-        }
-
+    
+            fti_dname@batloop() {
+                var cb;
+                if ( fti_cluster.exist($h) ) {
+                  cb := fti_cluster.find($h);
+                } else {
+                  cb := new(str,str);
+                  fti_cluster.insert($h,cb);
+                }
+                cb.insert(str(nil),$t);
+            }
+            fti_cluster@batloop() {
+                if ( verbose ) { printf(HASH +"TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); $t.print(); }
+                tj_add2collection_frag($h,$t,false);
+            }
+    
+	} else {
+            if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: pftijah not active.\n");
+	}
         if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: FINISH.\n");
 	return true;
 }
 
 var tracefile_handle := nil;
-PROC tj_trace( str s ) : void  
+
+PROC tj_trace(str tracefile, str s) : void  
 {
     if ( not( tracefile = "" ) ) {
         if ( isnil( tracefile_handle ) )
