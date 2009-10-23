@@ -416,8 +416,10 @@ BAThash(BAT *b, BUN masksize)
 			    hp->filename == NULL ||
 			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), mask)) == NULL) {
 				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
-				GDKfree(hp->filename);
-				GDKfree(hp);
+				if (hp != NULL) {
+					GDKfree(hp->filename);
+					GDKfree(hp);
+				}
 				return NULL;
 			}
 			if (hp->storage != STORE_MEM)
