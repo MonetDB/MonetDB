@@ -79,7 +79,7 @@ comment "Deactivate the counter";
 
 pattern openStream():void 
 address CMDopenProfilerStream
-comment "Sent the events to output stream";
+comment "Send the events to output stream";
 pattern openStream(fnme:str):void
 address CMDsetProfilerFile
 comment "Send the log events to a file, stdout or console";

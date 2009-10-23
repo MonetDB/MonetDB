@@ -122,15 +122,15 @@ comment "Test availability of an Mserver.";
 
 command query(mid:int, qry:str):int
 address SERVERquery
-comment "Sent the query for execution";
+comment "Send the query for execution";
 
 command query_handle(mid:int, qry:str):int
 address SERVERquery_handle
-comment "Sent the query for execution.";
+comment "Send the query for execution.";
 
 pattern query_array(mid:int, qry:str, arg:str...):int
 address SERVERquery_array
-comment "Sent the query for execution replacing '?' by arguments.";
+comment "Send the query for execution replacing '?' by arguments.";
 
 command prepare(mid:int, qry:str):int
 address SERVERprepare
@@ -226,14 +226,14 @@ comment "Prepare sending a value to a remote site.";
 
 pattern rpc(key:int,qry:str...):any
 address SERVERmapi_rpc_single_row
-comment "Sent a simple query for execution and fetch result.";
+comment "Send a simple query for execution and fetch result.";
 
 pattern rpc(key:int,qry:str):bat[:any_1,:any_2]
 address SERVERmapi_rpc_bat;
 
 command rpc(key:int,qry:str):void
 address SERVERquery
-comment "Sent a simple query for execution.";
+comment "Send a simple query for execution.";
 
 pattern bind(key:int,rschema:str,rtable:str,rcolumn:str,i:int):bat[:any_1,:any_2]
 address SERVERbindBAT
@@ -1545,7 +1545,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	key= * (int*) getArgReference(stk,pci,pci->retc);
 	@:accessTest(key,rpc)@
 #ifdef MAPI_TEST
-	stream_printf(cntxt->fdout,"about to sent: %s\n",qry);
+	stream_printf(cntxt->fdout,"about to send: %s\n",qry);
 #endif
 	/* glue all strings together */
 	for(i= pci->retc+1; i<pci->argc; i++){
@@ -1687,7 +1687,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if( b== NULL){
 			throw(MAL,"mapi.put","Can not access BAT");
 		}
-		/* first sent the tuples
+		/* first send the tuples
 		BATmultiprintf(SERVERsessions[i]->fdin,2, &b, TRUE, 0, TRUE);
 		*/
 
