@@ -3319,13 +3319,15 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
+	bn->T->nonil= TRUE;
 	if ( b->T->nonil){
 		for (; p<q; p++)
 			*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
 	} else{
-		if (*p == @2_nil) 
+		if (*p == @2_nil) {
 			*o = @1_nil;
-		else
+			bn->T->nonil= FALSE;
+		} else
 			*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
 	}
 	BATsetcount(bn, BATcount(b));
