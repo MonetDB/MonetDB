@@ -1348,6 +1348,16 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	} else if (bn == NULL) {
 		@:joinbat(JOIN_EQ,BATouterjoin(l,r,BUN_NONE),estimate)@
 	}
+
+	/* Just to silence compilers (Intel's icc) that otherwise might
+	 * complain about "declared but never referenced" labels
+	 * (condition should never be true).
+	 * (A "dead" goto between the return and the label makes (other)
+	 * compilers (Sun) complain about never reached code...)
+	 */
+	if (!bn)
+		goto bunins_failed;
+
 	BATmmap_pin(r);
 	if (BAThdense(r)) {
 		/* positional algorithm: hash on void column would give error and is stupid */
@@ -1423,15 +1433,6 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	bn->H->nonil = l->H->nonil;
 	bn->T->nonil = FALSE;
 	ESTIDEBUG THRprintf(GDKout, "#BATouterjoin: actual resultsize: " BUNFMT "\n", BATcount(bn));
-
-	/* Just to silence compilers (Intel's icc) that otherwise might
-	 * complain about "declared but never referenced" labels
-	 * (condition should never be true).
-	 * (A "dead" goto between the return and the label makes (other)
-	 * compilers (Sun) complain about never reached code...)
-	 */
-	if (!bn)
-		goto bunins_failed;
 
 	/* invest in property check, since we cannot easily derive the result properties,
 	 * but later operations might benefit from / depend on them
@@ -2193,11 +2194,21 @@ antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
-	BATiter bni = bat_iterator(bn);
+	BATiter bni;
 	BUN l_cur, l_end, r_cur, r_end, dst;
 	int (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
 	ptr nil = ATOMnilptr(l->ttype);
 
+	/* Just to silence compilers (Intel's icc) that otherwise might
+	 * complain about "declared but never referenced" labels
+	 * (condition should never be true).
+	 * (A "dead" goto between the return and the label makes (other)
+	 * compilers (Sun) complain about never reached code...)
+	 */
+	if (!bn)
+		goto bunins_failed;
+
+	bni = bat_iterator(bn);
 	dst = BUNfirst(bn);
 	ALGODEBUG THRprintf(GDKout, "#BATantijoin: antijoin_@1_@2();\n");
 	BATloop(l, l_cur, l_end) {
@@ -2213,14 +2224,6 @@ antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	}
 	BATsetcount(bn, dst);
 
-	/* Just to silence compilers (Intel's icc) that otherwise might
-	 * complain about "declared but never referenced" labels
-	 * (condition should never be true).
-	 * (A "dead" goto between the return and the label makes (other)
-	 * compilers (Sun) complain about never reached code...)
-	 */
-	if (!bn)
-		goto bunins_failed;
 	return bn;
 
 bunins_failed:
