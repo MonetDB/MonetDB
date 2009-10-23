@@ -48,18 +48,8 @@ class MonetDBData
   
   # Fire a query and return the server response
   def execute(q)
-    # server response to command
-    response = @connection.receive
-    if response == MSG_PROMPT
-      #@connection.monetdb_ready = true # reply size successfully set
-    elsif response[0] == MSG_INFO
-      raise MonetDBCommandError, response
-      return
-    end
-   # fire a query and get ready to receive the data
-      
+   # fire a query and get ready to receive the data      
     @connection.send(format_query(q))
-    
     data = @connection.receive
     
     return if data == nil
@@ -206,7 +196,6 @@ class MonetDBData
     response.each_line do |row|   
       if row[0].chr == MSG_QUERY      
         if row[1].chr == Q_TABLE
-          
           @action = Q_TABLE
           @query = parse_header_query(row)
           @query.freeze
