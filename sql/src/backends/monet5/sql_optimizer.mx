@@ -440,7 +440,7 @@ The optimizers applied are taken from a list managed with
 the SQL set optimizer statement. The default list has been
 tested extensively and should provide overall good performance.
 Additional pipelines are defined in the monetdb.conf file.
-The plan 'none' sets the optimizer pipeline to the minimal possible.
+The plan 'off' sets the optimizer pipeline to the minimal possible.
 @c
 str minimalPlan= "inline,remap,deadcode,multiplex";
 str defaultPlan = NULL; 
@@ -508,11 +508,11 @@ str
 setOptimizers(str optimizer)
 {
 	/* the optimizer control is a semicolon separated list of names */
-	/* the predefined 'none' injects the default minimal plan upon need */
+	/* the predefined 'off' injects the default minimal plan upon need */
 	int top=0,i;
 	char *base,  *nxt, *nme, *pipe;
 	
-	if (strcmp(optimizer,"none")==0)
+	if (optimizer == NULL || *optimizer == 0 || strcmp(optimizer,"off")==0)
 		optimizer= GDKstrdup(minimalPlan);
 	if (optimizerpipe == optimizer )
 		return optimizerpipe;
@@ -543,15 +543,15 @@ setOptimizers(str optimizer)
 	} 
 	if (top == 1  && pipe == NULL){
 		showException(SQL,"optimizer","Optimizer %s does not exist, use minimal one\n",optimizers[0]);
-		setOptimizers("none");
+		setOptimizers("off");
 	}else
 	if (top == 256){
 		showException(SQL,"optimizer","Too many optimizer steps, use minimal one\n");
-		setOptimizers("none");
+		setOptimizers("off");
 	} else
 	if (SQLvalidatePipeline() ) {
 		showException(SQL,"optimizer"," Pipeline reset to '%s'",optimizerpipe);
-		setOptimizers("none");
+		setOptimizers("off");
 	}
 	return optimizerpipe;
 }
