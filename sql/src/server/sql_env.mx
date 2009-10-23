@@ -120,7 +120,9 @@ sql_update_var(mvc *m, char *name)
 	} else if (strcmp(name, "optimizer") == 0) {
 		str optimizer =stack_get_string(m,"optimizer");
 		str pipe=GDKgetenv(optimizer);
-		if ( pipe == NULL && strcmp(optimizer,"none"))
+		if ( optimizer == NULL || *optimizer == 0)
+			return NULL;
+		if ( pipe == NULL && strcmp(optimizer,"off"))
 			return sql_message( "Optimizer pipeline not known\n");
 	}
 	return NULL;
