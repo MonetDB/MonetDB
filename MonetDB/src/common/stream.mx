@@ -2651,8 +2651,6 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 				printf("\"\n");
 			}
 #endif
-			if (m == 0 && !isa_block_stream(s->s))
-				break;
 			buf = (void *) ((char *) buf + m);
 			cnt += m;
 			n -= m;
@@ -2844,8 +2842,10 @@ attach_teestream(stream *orig, stream *log)
 	printf("tee_stream %s %s\n", orig->name ? orig->name : "<unnamed>", 
                                      log->name ? log->name : "<unnamed>");
 #endif
-	if ((ns = create_stream(orig->name)) == NULL)
+	if ((ns = create_stream(orig->name)) == NULL) {
+		free(ts);
 		return NULL;
+	}
 	/* blocksizes have a fixed little endian byteorder */ 
 #ifdef WORDS_BIGENDIAN
 	ns->byteorder = 3412; /* simply != 1234 */

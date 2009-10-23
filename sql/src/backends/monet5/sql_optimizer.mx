@@ -137,7 +137,7 @@ sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
 sql5_export int SQLvalidatePipeline(void);
-sql5_export void setOptimizers(str optimizer);
+sql5_export str setOptimizers(str optimizer);
 sql5_export str defaultPlan;
 
 #endif /* _SQL_OPTIMIZER_H_ */
@@ -440,13 +440,13 @@ The optimizers applied are taken from a list managed with
 the SQL set optimizer statement. The default list has been
 tested extensively and should provide overall good performance.
 Additional pipelines are defined in the monetdb.conf file.
+The plan 'off' sets the optimizer pipeline to the minimal possible.
 @c
 str minimalPlan= "inline,remap,deadcode,multiplex";
 str defaultPlan = NULL; 
 
 static str optimizers[256];	/* the optimizer pipeline */
-static str optimizerpipeline;		/* reference to last pipeline string */
-static int pipelineOverruled;
+static str optimizerpipe;		/* reference to last pipeline string */
 	
 int
 SQLvalidatePipeline(void){
@@ -504,27 +504,29 @@ is enabled.
 	return error;
 }
 
-void
+str
 setOptimizers(str optimizer)
 {
 	/* the optimizer control is a semicolon separated list of names */
-	/* the predefined 'default' injects the default plan upon need */
+	/* the predefined 'off' injects the default minimal plan upon need */
 	int top=0,i;
 	char *base,  *nxt, *nme, *pipe;
 	
-	if (optimizerpipeline == optimizer || pipelineOverruled)
-		return;
+	if (optimizer == NULL || *optimizer == 0 || strcmp(optimizer,"off")==0)
+		optimizer= GDKstrdup(minimalPlan);
+	if (optimizerpipe == optimizer )
+		return optimizerpipe;
 	pipe= GDKgetenv(optimizer);
-	if ( pipe != NULL)
+	if ( pipe != NULL){
 		optimizer= pipe;
+		GDKsetenv("sql_optimizer",pipe);
+	}
 
-	optimizerpipeline= optimizer;
+	optimizerpipe= optimizer;
 	base= GDKstrdup(optimizer);
 
 	for ( i = 0; i < 256; i++)
 		optimizers[i] = NULL;
-	if (strcmp(optimizer,"default")==0)
-		optimizer= GDKstrdup(defaultPlan? defaultPlan:minimalPlan);
 
 	optimizer=  base;
 	while (optimizer && *optimizer ) {
@@ -539,16 +541,19 @@ setOptimizers(str optimizer)
 			optimizers[top++] = nme; 
 		optimizer = nxt;
 	} 
-	if (top == 256)
-		showException(SQL,"optimizer","Too many optimizer steps\n");
+	if (top == 1  && pipe == NULL){
+		showException(SQL,"optimizer","Optimizer %s does not exist, use minimal one\n",optimizers[0]);
+		setOptimizers("off");
+	}else
+	if (top == 256){
+		showException(SQL,"optimizer","Too many optimizer steps, use minimal one\n");
+		setOptimizers("off");
+	} else
 	if (SQLvalidatePipeline() ) {
-		if (optimizerpipeline == defaultPlan || !defaultPlan)
-			setOptimizers(minimalPlan);
-		else
-			setOptimizers(defaultPlan);
-		pipelineOverruled= TRUE;
-		showException(SQL,"optimizer"," pipeline set to '%s'",optimizerpipeline);
+		showException(SQL,"optimizer"," Pipeline reset to '%s'",optimizerpipe);
+		setOptimizers("off");
 	}
+	return optimizerpipe;
 }
 
 static void

@@ -2672,7 +2672,7 @@ main ideas:
 - only recycle BATTINY bats. Increase BATTINY to make more BATnews use the cache.
   BATTINY=256 leading to bunheaps ~1K-2K (in balance with ~500byte BAT record)
 
-and then benchmark the d*mn thing (also missing in the previous exercise) :
+and then benchmark it (missing in the previous exercise) :
 
  module(alarm);
  bbp_batcache_minsize(wrd(256));
@@ -2977,6 +2977,7 @@ BBPaddtobin(BAT *b)
 		if (tp)
 			GDKunshare(tp);
 		b->H->parentid = b->T->parentid = 0;
+		b->batPersistence = TRANSIENT;
 
 		/* take care of mirror views */
 		bs->B.H = &bs->H;

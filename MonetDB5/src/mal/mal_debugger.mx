@@ -1161,7 +1161,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 		}
 		case 'b':
 			if (strncmp(b, "bbp",3) == 0) {
-				int i,limit;
+				int i,limit, inuse = 0;
 
 				skipWord(cntxt, b);
 				/* bbp change tracing enabling */
@@ -1182,14 +1182,20 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 					i=1;
 				}
 				/* the 'dense' qualification only shows entries with a hard ref */
+				/* watchout, you don't want to wait for locks by others */
+				stream_printf(out,"BBP contains %d entries\n",limit);
 				for (; i < limit; i++)
-					if (BBP_logical(i) && BBP_cache(i) ) {
-						BAT *bd= BATdescriptor(i);
-						stream_printf(out,"#");
-						printBATproperties(out,bd);
-						if( *b=='d' && BBP_refs(i)==0) continue;
-						BBPunfix(i);
-						stream_printf(out, " dirty=%d", BATdirty(BBP_cache(i)));
+					if ( ( BBP[i].lrefs || BBP[i].refs) && BBP[i].b[0]){
+						stream_printf(out,"#[%d] %-15s",i,BBP[i].nme[0]);
+						if ( BBP[i].b[0])
+							printBATproperties(out,BBP[i].b[0]);
+						if( (*b=='d' && BBP_refs(i)==0)  || BBP_cache(i) == 0){
+							stream_printf(out,"\n");
+							continue;
+						}
+						inuse++;
+						if (BATdirty(BBP_cache(i)) )
+							stream_printf(out, " dirty");
 						if( *BBP_logical(i) =='.')
 							stream_printf(out, " zombie ");
 						if( BBPstatus(i) & BBPLOADED)
@@ -1208,6 +1214,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 							stream_printf(out, " persistent ");
 						stream_printf(out, "\n");
 					}
+				stream_printf(out,"Entries displayed %d\n",inuse);
 				continue;
 			}
 			if (strncmp(b, "breakpoints",11) == 0) {

@@ -191,7 +191,9 @@
 /* #undef HAVE_ICONV */		/* defined in winrules.msc */
 
 /* Define to 1 if you have the <iconv.h> header file. */
+#ifdef HAVE_ICONV
 #define HAVE_ICONV_H 1
+#endif
 
 /* Define to 1 if you have the <ieeefp.h> header file. */
 /* #undef HAVE_IEEEFP_H */

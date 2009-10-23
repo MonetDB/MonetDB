@@ -3304,7 +3304,6 @@ str
 str bat@2_dec2_@1( int *res, int *s1, int *bid )
 {
 	BAT *b, *bn;
-	BATiter bi;
 	@2 *p,*q;
 	char *msg = NULL;
 	int scale = *s1;
@@ -3313,19 +3312,20 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
 	}
-	bi = bat_iterator(b);
 	bn = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
+	bn->T->nonil= b->T->nonil;
 	if ( b->T->nonil){
 		for (; p<q; p++)
 			*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
 	} else{
-		if (*p == @2_nil) 
+		if (*p == @2_nil) {
 			*o = @1_nil;
-		else
+			bn->T->nonil= FALSE;
+		} else
 			*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
 	}
 	BATsetcount(bn, BATcount(b));
