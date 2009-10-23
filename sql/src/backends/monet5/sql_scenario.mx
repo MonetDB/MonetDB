@@ -293,7 +293,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
-	str optimizer, pipe= NULL;
+	str optimizer;
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -305,18 +305,9 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("current_user", user);
 	SQLglobal("current_role", user);
 	optimizer= GDKgetenv("sql_optimizer");
-	/* the sql_optimizer may point to a specific pipeline */
 	if (optimizer == NULL)
-		optimizer= defaultPlan;
-	else {
-		/* the sql_optimizer may point to a specific pipeline */
-		pipe= GDKgetenv(optimizer);
-		if ( pipe != NULL)
-			optimizer= pipe;
-		defaultPlan= optimizer;
-	}
-	setOptimizers(optimizer);
-	SQLglobal("optimizer", optimizer);
+		optimizer= "none";
+	SQLglobal("optimizer", setOptimizers(optimizer));
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, 0, 0);
