@@ -2371,9 +2371,19 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 {
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
-	BATiter bni = bat_iterator(bn);
+	BATiter bni;
 	BUN l_cur, l_end, r_cur, r_end, dst;
 
+	/* Just to silence compilers (Intel's icc) that otherwise might
+	 * complain about "declared but never referenced" labels
+	 * (condition should never be true).
+	 * (A "dead" goto between the return and the label makes (other)
+	 * compilers (Sun) complain about never reached code...)
+	 */
+	if (!bn)
+		goto bunins_failed;
+
+	bni = bat_iterator(bn);
 	dst = BUNfirst(bn);
 	ALGODEBUG THRprintf(GDKout, "#BATcross: cross_@1_@2();\n");
 	BATloop(l, l_cur, l_end) {
@@ -2384,14 +2394,6 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 	}
 	BATsetcount(bn, dst);
 
-	/* Just to silence compilers (Intel's icc) that otherwise might
-	 * complain about "declared but never referenced" labels
-	 * (condition should never be true).
-	 * (A "dead" goto between the return and the label makes (other)
-	 * compilers (Sun) complain about never reached code...)
-	 */
-	if (!bn)
-		goto bunins_failed;
 	return bn;
  	     
 bunins_failed:
