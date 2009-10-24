@@ -225,10 +225,12 @@ fn_round
 fn_sum
 fn_number
 fn_true_false
-fun1
+# recursive function
+NOT_ALGEBRA?fun1
 fun2
 fun3
-fun4
+# recursive function
+NOT_ALGEBRA?fun4
 fun5
 fun6
 fun7
