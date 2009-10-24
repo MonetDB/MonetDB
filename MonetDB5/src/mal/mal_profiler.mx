@@ -62,14 +62,13 @@ a posteriori analysis.
 #profiler.activate("event");
 #profiler.activate("pc");
 #profiler.activate("operation");
-profiler.activate("time");
-profiler.activate("ticks");
+profiler.activate("time,ticks");
+profiler.activate("statement");
 #profiler.activate("cpu");
 #profiler.activate("memory");
 #profiler.activate("io");
 #profiler.activate("bytes");
 #profiler.activate("diskspace");
-profiler.activate("statement");
 profiler.setFilter("*","insert");
 profiler.setFilter("*","print");
 
@@ -229,6 +228,7 @@ mal_export int malProfileMode;
 
 mal_export void clearTrace(void);
 mal_export BAT *getTrace(str ev);
+mal_export int getTraceType(str nme);
 
 mal_export lng getDiskSpace(void);
 mal_export lng getDiskReads(void);
@@ -1061,6 +1061,31 @@ getTrace(str nme)
 	if (strcmp(nme, "diskspace") == 0)
 		return TRACE_id_diskspace;
 	return NULL;
+}
+
+int
+getTraceType(str nme)
+{
+	initTrace();
+	if (strcmp(nme, "time") == 0)
+		return newBatType(TYPE_int,TYPE_str);
+	if (strcmp(nme, "ticks") == 0)
+		return newBatType(TYPE_int,TYPE_lng);
+	if (strcmp(nme, "pc") == 0)
+		return newBatType(TYPE_int,TYPE_str);
+	if (strcmp(nme, "thread") == 0)
+		return newBatType(TYPE_int,TYPE_int);
+	if (strcmp(nme, "modfcn") == 0)
+		return newBatType(TYPE_int,TYPE_str);
+	if (strcmp(nme, "statement") == 0)
+		return newBatType(TYPE_int,TYPE_str);
+	if (strcmp(nme, "ibytes") == 0)
+		return newBatType(TYPE_int,TYPE_lng);
+	if (strcmp(nme, "obytes") == 0)
+		return newBatType(TYPE_int,TYPE_lng);
+	if (strcmp(nme, "diskspace") == 0)
+		return newBatType(TYPE_int,TYPE_lng);
+	return TYPE_any;
 }
 
 #ifdef MALprofiler

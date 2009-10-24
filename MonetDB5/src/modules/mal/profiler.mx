@@ -69,13 +69,13 @@ emptied explicitly upon need.
 @mal
 module profiler;
 
-command activate(name:str):void
+pattern activate(name:str...):void
 address CMDactivateProfiler
-comment "Make the specified counter active.";
+comment "A list of counters to be activated.";
 
-command deactivate(name:str):void
+pattern deactivate(name:str...):void
 address CMDdeactivateProfiler
-comment "Deactivate the counter";
+comment "A list of counters to be deactivated.";
 
 pattern openStream():void 
 address CMDopenProfilerStream
@@ -211,8 +211,8 @@ Using the Monet Performance Profiler is constrained by the mal_profiler.
 #define profiler_export extern
 #endif
 
-profiler_export str CMDactivateProfiler(int *res, str *name);
-profiler_export str CMDdeactivateProfiler(int *res, str *name);
+profiler_export str CMDactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDdeactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetAllProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 profiler_export str CMDsetFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
@@ -248,20 +248,28 @@ profiler_export str CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 
 
 str
-CMDactivateProfiler(int *res, str *name)
+CMDactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
+	int i;
+
+	(void) cntxt;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	checkProfiler("activate");
-	activateCounter(*name);
+	for ( i= pci->retc; i < pci->argc; i++)
+			activateCounter(*(str*) getArgReference(stk,pci,i));
 	return MAL_SUCCEED;
 }
 
 str
-CMDdeactivateProfiler(int *res, str *name)
+CMDdeactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
+	int i;
+
+	(void) cntxt;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	checkProfiler("deactivate");
-	deactivateCounter(*name);
+	for ( i= pci->retc; i < pci->argc; i++)
+			deactivateCounter(*(str*) getArgReference(stk,pci,i));
 	return MAL_SUCCEED;
 }
 
@@ -434,7 +442,7 @@ str
 CMDclearTrace(int *res)
 {
 	(void) res;		/* fool compiler */
-	checkProfiler("stop");
+	checkProfiler("clearTrace");
 	clearTrace();
 	return MAL_SUCCEED;
 }
@@ -453,13 +461,13 @@ CMDgetTrace(int *res, str *ev)
 	BAT *bn;
 
 	(void) res;		/* fool compiler */
-	checkProfiler("dump");
+	checkProfiler("getTrace");
 	bn = getTrace(*ev);
 	if (bn) {
 		BBPincref(*res = bn->batCacheid, TRUE);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "getTrace", RUNTIME_FILE_NOT_FOUND ":dump");
+	throw(MAL, "getTrace", RUNTIME_OBJECT_MISSING  "%s",*ev);
 }
 
 str
