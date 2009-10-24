@@ -10,6 +10,16 @@ stderr of test 'setoptimizer` in directory 'src/test` itself:
 # 00:41:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=33505 
 # 00:41:14 >  
 
+MAPI  = monetdb@eir:32743
+QUERY = select optimizer;
+ERROR = !SQLException:optimizer: 'inline' should be the first
+        !SQLException:optimizer: 'multiplex' should be the last
+        !SQLException:optimizer: 'deadcode' should be used at least once
+        !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
+MAPI  = monetdb@eir:32743
+QUERY = select optimizer;
+ERROR = !SQLException:optimizer:Optimizer 'myfamous_pipe' does not exist, use default pipe instead
+
 
 # 00:41:15 >  
 # 00:41:15 >  Done.
