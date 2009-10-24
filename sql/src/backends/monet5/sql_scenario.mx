@@ -857,22 +857,61 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	}
 }
 
+@-
+The trace operation collects the events in the BATs
+and creates a secondary result set upon termination
+of the query. This feature is extended with
+a SQL variable to identify which trace flags are needed.
+@c
 void
-SQLsetTrace(Client c, bit onoff)
+SQLsetTrace(backend *be, Client c, bit onoff)
 {
-	InstrPtr q;
+	InstrPtr q,r;
+	MalBlkPtr mb = c->curprg->def;
+	str traceFlag, t,s, def= GDKstrdup("ticks,statement");
 
-	c->itrace='c';
-	q = newStmt(c->curprg->def,"mdb","setTimer");
-	pushBit(c->curprg->def,q,onoff);
-	if( GDKnr_threads > 1){
-		q = newStmt(c->curprg->def,"mdb","setThread");
-		pushBit(c->curprg->def,q,onoff);
+	traceFlag = stack_get_string(be->mvc, "trace");
+	if ( traceFlag && *traceFlag){
+		GDKfree(def);
+		def= GDKstrdup(traceFlag);
 	}
-/*
-	q = newStmt(c->curprg->def,"mdb","setCount");
-	pushBit(c->curprg->def,q,onoff);
-*/
+	t= def;
+
+	if (onoff){
+		q = newStmt(mb,"profiler","reset");
+		q = newStmt(mb,"profiler","activate");
+
+		do {
+			s= t;
+			t= strchr(t+1,',');
+			if ( t )
+				*t = 0;
+			q = pushStr(mb, q, s);
+		} while (t++);
+
+		q = newStmt(mb,"profiler","setFilter");
+		q = pushStr(mb,q, "*");
+		q = pushStr(mb,q, "*");
+		q = newStmt(mb,"profiler","start");
+	} else {
+		r= newInstruction(mb,ASSIGNsymbol);
+		setModuleId(r,putName("io",2));
+		setFunctionId(r,putName("table",5));
+		getArg(r,0)= newTmpVariable(mb,TYPE_void);
+
+		q = newStmt(mb,"profiler","stop");
+		do {
+			s= t;
+			t= strchr(t+1,',');
+			if ( t )
+				*t = 0;
+			q = newStmt(mb,"profiler","getTrace");
+			q = pushStr(mb, q, s);
+			r= pushArgument(mb,r, getArg(q,0));
+		} while (t++);
+		pushInstruction(mb,r);
+	}
+	GDKfree(def);
 }
 
 void
@@ -1019,7 +1058,7 @@ produce code.
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
 		if (m->emod & mod_trace)
-			SQLsetTrace(c, TRUE);
+			SQLsetTrace(be, c, TRUE);
 		if (m->emode != m_explain && !(m->emod & (mod_debug|mod_trace)))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
@@ -1039,7 +1078,7 @@ produce code.
 		if (m->emode == m_explain)
 			SQLshowPlan(c);
 		if (m->emod & mod_trace)
-			SQLsetTrace(c, TRUE);
+			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
 		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none) {
@@ -1084,7 +1123,7 @@ produce code.
 In the final phase we add any debugging control
 @c
 	if (m->emod & mod_trace)
-		SQLsetTrace(c, FALSE);
+		SQLsetTrace(be, c, FALSE);
 	if (m->emod & mod_debug) 
 		SQLsetDebugger(c, m, FALSE);
 
