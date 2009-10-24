@@ -255,7 +255,7 @@ mapi_open=false       # should be set to 'true' to allow for
 #sql_optimizer=inline,remap,deadcode,multiplex
 
 # The default pipeline
-sql_optimizer=default_pipe
+sql_optimizer=accumulator_pipe
 default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 
 accumulator_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,garbageCollector,dataflow,history,multiplex
