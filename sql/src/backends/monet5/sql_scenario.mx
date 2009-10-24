@@ -306,7 +306,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("current_role", user);
 	optimizer= GDKgetenv("sql_optimizer");
 	if (optimizer == NULL)
-		optimizer= "none";
+		optimizer= "default_pipe";
 	SQLglobal("optimizer", setOptimizers(optimizer));
 
 	typename = "sec_interval";
