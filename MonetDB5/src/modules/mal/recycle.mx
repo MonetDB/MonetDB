@@ -254,8 +254,8 @@ RECYCLEdump(stream *s)
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,
-			recycleBlk->profiler[i].ibytes,
-			recycleBlk->profiler[i].obytes,
+			recycleBlk->profiler[i].rbytes,
+			recycleBlk->profiler[i].wbytes,
 			instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),TRUE));
 	}
 	
@@ -355,7 +355,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		if ( getInstrPtr(recycleBlk,i)->token != NOOPsymbol ) 
 #endif
 		if ( recycleBlk->profiler[i].counter >1) 
-			recmem += recycleBlk->profiler[i].obytes;
+			recmem += recycleBlk->profiler[i].wbytes;
 
 	stream_printf(s,"%d\t %d\t %d\t %d\t %8.2f\t",++q, mb->stop, potrec,
 		cntxt->rcc->recycled0,(GDKusec()-cntxt->rcc->time0)/1000.0);

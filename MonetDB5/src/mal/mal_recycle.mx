@@ -266,7 +266,7 @@ lng recycleMemory=0;	/* Units of memory permitted */
 The profiler record is re-used to store recycler information.
 The clk is used by the LRU scheme, counter is the number of
 times this pattern was used, ticks is the clock ticks
-used to produce the result. ibytes+obytes depict the storage
+used to produce the result. rbytes+wbytes depict the storage
 size of operands and result arguments.
 
 The cost function is a weighted balance between cpu and
@@ -274,7 +274,7 @@ storage cost. Often there is a direct relationship,
 @c
 double recycleAlpha = 0.5;
 
-#define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks/10.0 + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)/1000.0
+#define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks/10.0 + (1-recycleAlpha)* (recycleBlk->profiler[X].rbytes+recycleBlk->profiler[X].wbytes)/1000.0
 #define recycleW(X)  ((recycleBlk->profiler[X].counter + 2) * (0.05 + (sht)recycleBlk->profiler[X].trace) / 3.0)
 #define recycleCrd(X) (recycleCost(X)) * (recycleW(X))
 #define recycleCrdCPU(X) (recycleBlk->profiler[X].ticks) * (recycleW(X))
@@ -549,7 +549,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 	wcrd = (dbl *)alloca(sizeof(dbl)*ltop);
 	memset(wcrd,0, sizeof(dbl)*ltop);
 	for (l = 0; l < ltop; l++){
-		w = recycleBlk->profiler[lvs[l]].obytes;
+		w = recycleBlk->profiler[lvs[l]].wbytes;
 		wcrd[l] = w? recycleCrdCPU(lvs[l]) / w :0;
 		totmem +=w; 
 	} 
@@ -565,7 +565,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 	for(newtop =ltop; newtop>0; newtop--){
 		maxwc = 0; mpos = newtop-1;
 		for(l = 0; l<newtop; l++){
-			if ((lng) recycleBlk->profiler[lvs[l]].obytes > targmem - smem)
+			if ((lng) recycleBlk->profiler[lvs[l]].wbytes > targmem - smem)
 				wcrd[l] = -1;
 			if (maxwc <= wcrd[l]){
 				maxwc = wcrd[l];
@@ -573,7 +573,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 			}
 		}
 		if ( maxwc ){
-			smem += recycleBlk->profiler[lvs[mpos]].obytes;
+			smem += recycleBlk->profiler[lvs[mpos]].wbytes;
 			tmpl = lvs[mpos];
 			lvs[mpos] = lvs[newtop-1];
 			lvs[newtop-1] = tmpl;
@@ -589,7 +589,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 	}
 	ci_crd = 0;             /* find the critical item */
         for (l = 0; l < ltop; l++)
-                if (recycleBlk->profiler[lvs[l]].obytes <= targmem &&
+                if (recycleBlk->profiler[lvs[l]].wbytes <= targmem &&
                         recycleCrdCPU(lvs[l]) > ci_crd){
                         ci = l;
                         ci_crd = recycleCrdCPU(lvs[l]);
@@ -719,8 +719,8 @@ newpass:
         	stream_printf(cntxt->fdout,"%3d "LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t%4.2f\t%5.3f\n",
                 	lvs[l],recycleBlk->profiler[lvs[l]].clk,
 	                recycleBlk->profiler[lvs[l]].ticks,
-        	        recycleBlk->profiler[lvs[l]].ibytes,
-                	recycleBlk->profiler[lvs[l]].obytes,
+        	        recycleBlk->profiler[lvs[l]].rbytes,
+                	recycleBlk->profiler[lvs[l]].wbytes,
 	                recycleBlk->profiler[lvs[l]].counter,
         	        recycleW(lvs[l]),
                 	recycleCrd(lvs[l]));
@@ -774,7 +774,7 @@ newpass:
 			case RCACHE_ALL:
 			case RCACHE_LRU:
 				vm[vtop++] = lvs[idx];
-				wr -= recycleBlk->profiler[lvs[idx]].obytes;
+				wr -= recycleBlk->profiler[lvs[idx]].wbytes;
 				lvs[idx] = lvs[--ltop];
 				while( ltop>0 && recyclerUsedMemory + wr > memLimit){
 					idx = 0;
@@ -787,7 +787,7 @@ newpass:
 						}
 					}
 					vm[vtop++] = lvs[idx];
-					wr -= recycleBlk->profiler[lvs[idx]].obytes;
+					wr -= recycleBlk->profiler[lvs[idx]].wbytes;
 					lvs[idx] = lvs[--ltop];
 				}
 				break;
@@ -799,7 +799,7 @@ newpass:
 						l++;
 					if ( l<ltop ) {
 						vm[vtop++] = lvs[l];
-						wr -= recycleBlk->profiler[lvs[l]].obytes;
+						wr -= recycleBlk->profiler[lvs[l]].wbytes;
 						l++;
 					}
 				}
@@ -815,7 +815,7 @@ newpass:
 				vtop = chooseVictims(cntxt,lvs, ltop, recyclerUsedMemory + wr - memLimit);
 				for (v = 0; v < vtop; v++){
 					vm[v] = lvs[v];
-					wr -= recycleBlk->profiler[lvs[v]].obytes;
+					wr -= recycleBlk->profiler[lvs[v]].wbytes;
 				}
 				break;
 		}
@@ -847,7 +847,7 @@ newpass:
 	for (i = 0; i < recycleBlk->stop ; i++){
 		p = getInstrPtr(recycleBlk,i);
 		if( dmask[i] ) {
-			recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
+			recyclerUsedMemory -= recycleBlk->profiler[i].wbytes;
          p->token = NOOPsymbol;
 			cntxt->rcc->recycleRem ++;
 			cntxt->rcc->ccInstr++;
@@ -866,7 +866,7 @@ newpass:
 		p = old[i];
 		if( dmask[i] ) {
 			RECYCLEgarbagecollect(recycleBlk,p,used);
-			recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
+			recyclerUsedMemory -= recycleBlk->profiler[i].wbytes;
 			if ( recycleBlk->profiler[i].counter >1) 
 				returnCrd(p);
 			freeInstruction(p);
@@ -1107,8 +1107,8 @@ compare by value.
 	recycleBlk->profiler[i].counter =1;
 /*	recycleBlk->profiler[i].ticks = GDKusec()-s->clk; */
 	recycleBlk->profiler[i].ticks = ticks;
-	recycleBlk->profiler[i].ibytes = rd;
-	recycleBlk->profiler[i].obytes = wr;
+	recycleBlk->profiler[i].rbytes = rd;
+	recycleBlk->profiler[i].wbytes = wr;
 	recyclerUsedMemory += wr;
 	if (monitorRecycler == 1 ) 
 		fprintf(stderr, 
@@ -2397,7 +2397,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 					dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
 #ifdef _DEBUG_CACHE_
 		        /* instructions are marked with NOOPsymbol in debug mode */
-                        	recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
+                        	recyclerUsedMemory -= recycleBlk->profiler[i].wbytes;
 	                        p->token = NOOPsymbol;
 				cntxt->rcc->recycleRem ++;
 				if ( recycleBlk->profiler[i].counter >1) {
@@ -2409,7 +2409,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 
 #else
 				RECYCLEgarbagecollect(recycleBlk, p, used);
-				recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
+				recyclerUsedMemory -= recycleBlk->profiler[i].wbytes;
 				if ( recycleBlk->profiler[i].counter >1) {
 				/*	getIPtr(p,r,j,pc);
 					if (r && r->recycle <REC_MAX_INTEREST)

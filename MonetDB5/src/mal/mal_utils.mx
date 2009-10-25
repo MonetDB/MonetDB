@@ -28,6 +28,7 @@ require marshalling.
 
 mal_export str mal_quote(const char *msg, size_t size);
 mal_export void mal_unquote(char *msg);
+mal_export void formatVolume(str buf, int len, lng vol);
 
 #endif /* MAL_UTILS_H */
 @-
@@ -122,6 +123,19 @@ mal_quote(const char *msg, size_t size)
 	}
 	*t = 0;
 	return s;
+}
+
+void formatVolume(str buf, int len, lng vol){
+	if( vol <1024)
+		snprintf(buf,len,LLFMT,vol);
+	else
+	if( vol <1024*1024)
+		snprintf(buf,len,LLFMT "K",vol/1024);
+	else
+	if( vol <1024* 1024*1024)
+		snprintf(buf,len, LLFMT "M",vol/1024/1024);
+	else
+		snprintf(buf,len, LLFMT "G",vol/1024/1024/1024);
 }
 
 @}

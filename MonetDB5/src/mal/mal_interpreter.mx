@@ -75,7 +75,6 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
 static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-static void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd);
 static void displayVolume(Client cntxt, lng vol);
 
 @-
@@ -2200,15 +2199,15 @@ It simply skips the barrier block upon return.
 	if( malProfileMode == 0)
 		/* mostly true */;
 	else
-	if(ppc>= 0 && mb->profiler != NULL && mb->profiler[ppc].trace && stk)
+	if(ppc>= 0 && mb->profiler != NULL && mb->profiler[ppc].trace && stk )
 	{
 		newclk= GDKusec();
 		mb->profiler[ppc].counter++;
 		mb->profiler[ppc].ticks = newclk - @1->clk;
 		mb->profiler[ppc].clk += mb->profiler[ppc].clk;
 		if( pci){
-			mb->profiler[ppc].ibytes= getVolume(stk,pci,0);
-			mb->profiler[ppc].obytes= getVolume(stk,pci,1);
+			mb->profiler[ppc].rbytes= getVolume(stk,pci,0);
+			mb->profiler[ppc].wbytes= getVolume(stk,pci,1);
 		}
 		profilerEvent(cntxt->nspace,mb,stk,ppc);
 		ppc= -1;
@@ -2249,11 +2248,10 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	}
 	if( cntxt->flags & flowFlag){
 		/* calculate the read/write byte flow */
-		showVolume(cntxt,stk,pci,0);
+		displayVolume(cntxt, getVolume(stk,pci,0));
 		stream_printf(cntxt->fdout,"/");
-		showVolume(cntxt,stk,pci,1);
+		displayVolume(cntxt, getVolume(stk,pci,1));
 		stream_printf(cntxt->fdout," ");
-		/* showVolume(cntxt,stk,pci,2);*/
 	}
 	if( cntxt->flags & bigfootFlag){
 		displayVolume(cntxt,cntxt->vmfoot);
@@ -2318,19 +2316,9 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 }
 
 void displayVolume(Client cntxt, lng vol){
-	if( vol <1024)
-		stream_printf(cntxt->fdout,LLFMT,vol);
-	else
-	if( vol <1024*1024)
-		stream_printf(cntxt->fdout,LLFMT "K",vol/1024);
-	else
-	if( vol <1024* 1024*1024)
-		stream_printf(cntxt->fdout, LLFMT "M",vol/1024/1024);
-	else
-		stream_printf(cntxt->fdout, LLFMT "G",vol/1024/1024/1024);
-}
-void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd){
-	displayVolume(cntxt, getVolume(stk,pci,rd));
+	char buf[BUFSIZ];
+	formatVolume(buf,BUFSIZ,vol);
+	stream_printf(cntxt->fdout,"%s",buf);
 }
 @h
 #endif /*  _MAL_INTERPRET_H*/

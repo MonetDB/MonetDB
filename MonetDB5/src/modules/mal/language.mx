@@ -432,7 +432,7 @@ CMDsetTimerTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cntxt->flags |= timerFlag;
         MCdefault |= timerFlag;
     } else {
-		cntxt->flags &= timerFlag;
+		cntxt->flags &= ~timerFlag;
         MCdefault &= ~timerFlag;
 	}
     return MAL_SUCCEED;

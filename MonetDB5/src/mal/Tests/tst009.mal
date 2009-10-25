@@ -1,3 +1,8 @@
 language.call("io.print(1);");
 language.call("io.print(\"hello\");");
 language.call("s:=\"goodbye\";io.print(s);");
+language.call("language.call(\"io.print(\\"hello\\");\");");
+
+# next one should fail
+language.call("io.print(\\\"hello\\\");");
+io.print(\"hello\");

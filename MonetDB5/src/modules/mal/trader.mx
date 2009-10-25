@@ -153,8 +153,8 @@ static lng estimateSavings(MalBlkPtr mb)
 						&getVarConstant(recycleBlk,getArg(q,j)) );
 				}
 				savedTicks += recycleBlk->profiler[i].ticks;	
-				savedIBytes += recycleBlk->profiler[i].ibytes;
-				savedOBytes += recycleBlk->profiler[i].obytes;
+				savedIBytes += recycleBlk->profiler[i].rbytes;
+				savedOBytes += recycleBlk->profiler[i].wbytes;
 				goto nextinstr;
 
 				nomatch: 
@@ -163,8 +163,8 @@ static lng estimateSavings(MalBlkPtr mb)
 		} /* end loop over RP */
 		if ( pc >= 0 ){ /* instruction is subsumed */
 			savedTicks += recycleBlk->profiler[pc].ticks/2;	
-			savedIBytes += recycleBlk->profiler[pc].ibytes/2;
-			savedOBytes += recycleBlk->profiler[pc].obytes/2;
+			savedIBytes += recycleBlk->profiler[pc].rbytes/2;
+			savedOBytes += recycleBlk->profiler[pc].wbytes/2;
 		}
 		nextinstr:
 			continue;
