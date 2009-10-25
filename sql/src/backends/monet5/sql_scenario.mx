@@ -308,7 +308,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	if (optimizer == NULL)
 		optimizer= "default_pipe";
 	SQLglobal("optimizer", setOptimizers(optimizer));
-	SQLglobal("trace","ticks,statement");
+	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -874,7 +874,7 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 	int i = 0;
 	InstrPtr q,r;
 	MalBlkPtr mb = c->curprg->def;
-	str traceFlag, t,s, def= GDKstrdup("ticks,statement");
+	str traceFlag, t,s, def= GDKstrdup("show,ticks,stmt");
 
 	traceFlag = stack_get_string(be->mvc, "trace");
 	if ( traceFlag && *traceFlag){
@@ -886,22 +886,12 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 	if (onoff){
 		if ( strstr(def,"keep") == 0)
 			q = newStmt(mb,"profiler","reset");
-		q = newStmt(mb,"profiler","activate");
-
-		do {
-			s= t;
-			t= strchr(t+1,',');
-			if ( t )
-				*t = 0;
-			if ( strcmp("keep",s) )
-				q = pushStr(mb, q, s);
-		} while (t++);
-
 		q = newStmt(mb,"profiler","setFilter");
 		q = pushStr(mb,q, "*");
 		q = pushStr(mb,q, "*");
 		q = newStmt(mb,"profiler","start");
-	} else {
+	} else 
+	if ( def && strstr(def,"show") ) {
 		r= newInstruction(mb,ASSIGNsymbol);
 		setModuleId(r,putName("io",2));
 		getArg(r,0)= newTmpVariable(mb,TYPE_void);
@@ -912,7 +902,7 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 			t= strchr(t+1,',');
 			if ( t )
 				*t = 0;
-			if ( strcmp("keep",s) ) {
+			if ( strcmp("keep",s) && strcmp("show",s) ) {
 				q = newStmt(mb,"profiler","getTrace");
 				q = pushStr(mb, q, s);
 				r= pushArgument(mb,r, getArg(q,0));

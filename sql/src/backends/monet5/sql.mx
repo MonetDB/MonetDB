@@ -448,6 +448,10 @@ pattern dump_opt_stats() :bat[:str,:bat]
 address dump_opt_stats
 comment "dump the optimizer rewrite statistics";
 
+pattern dump_trace() :bat[:str,:bat]
+address dump_trace
+comment "dump the trace statistics";
+
 @- SQL function aliases
 The code generate should identify the precise module
 target for all functions. This creates quite some
@@ -3965,6 +3969,23 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BBPunfix(rewrite->batCacheid);
 	BBPunfix(count->batCacheid);
+	*r = t->batCacheid;
+	BBPkeepref(*r);
+	return MAL_SUCCEED;
+}
+
+/* str dump_opt_stats(int *r); */
+str
+dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	BAT *t;
+	int *r = (int *) getArgReference(stk, pci, 0);
+
+	if (msg)
+		return msg;
+	t= TRACEtable();
 	*r = t->batCacheid;
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
