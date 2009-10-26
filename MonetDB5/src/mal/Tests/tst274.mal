@@ -12,7 +12,8 @@ exit (go,i);
 
 profiler.activate("ticks");
 profiler.activate("statement");
-profiler.activate("bytes");
+profiler.activate("rbytes");
+profiler.activate("wbytes");
 profiler.activate("disk");
 profiler.setAll();
 
@@ -29,9 +30,9 @@ profiler.stop();
 #io.print(stmt);
 ticks:= profiler.getTrace("ticks");
 #io.print(ticks);
-rdbytes:= profiler.getTrace("ibytes");
+rdbytes:= profiler.getTrace("rbytes");
 #io.print(rdbytes);
-wrbytes:= profiler.getTrace("obytes");
+wrbytes:= profiler.getTrace("wbytes");
 #io.print(wrbytes);
 diskspace:= profiler.getTrace("diskspace");
 #io.print(diskspace);

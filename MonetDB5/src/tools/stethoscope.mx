@@ -52,7 +52,8 @@ Event selector:
     t =ticks
     c =cpu statistics
     m =memory resources
-    i =io resources
+    r =block reads
+    w =block writes
     b =bytes read/written
     d =diskspace needed
     s =statement
@@ -116,11 +117,11 @@ static struct {
     /*  6  */  {'m', "memory", "hblks", 0},
     /*  7  */  {'m', "memory", "fsmblks", 0},
     /*  8  */  {'m', "memory", "uordblks", 0},
-    /*  9  */  {'i', "io","blk reads", 0},
-    /*  0  */  {'i', "io","blk writes", 0},
-    /*  1  */  {'b', "bytes", "rdbytes", 0},
-    /*  2  */  {'b', "bytes", "wrbytes", 0},
-    /*  3  */  {'d', "disk", "diskspace", 0},
+    /*  9  */  {'r', "reads","blk reads", 0},
+    /*  0  */  {'w', "writes","blk writes", 0},
+    /*  1  */  {'b', "bytes", "rbytes", 0},
+    /*  2  */  {'b', "bytes", "wbytes", 0},
+    /*  3  */  {'d', "diskspace", "diskspace", 0},
     /*  4  */  {'s', "statement", "statement", 2},
     /*  5  */  {'p', "process","pg reclaim", 0},
     /*  6  */  {'p', "process","pg faults", 0},
@@ -161,7 +162,8 @@ usage(){
 	fprintf(stderr,"    t =ticks\n");
 	fprintf(stderr,"    c =cpu statistics\n");
 	fprintf(stderr,"    m =memory resources\n");
-	fprintf(stderr,"    i =io resources\n");
+	fprintf(stderr,"    r =block reads\n");
+	fprintf(stderr,"    w =block writes\n");
 	fprintf(stderr,"    b =bytes read/written\n");
 	fprintf(stderr,"    d =diskspace needed\n");
 	fprintf(stderr,"    s =statement\n");
