@@ -46,7 +46,7 @@
 @= grid_hdefs
 #define new_@1_bat(b,s,f) do {						\
 		if (((b) = BATnew(TYPE_void,TYPE_@1,(BUN) (s))) == NULL) { \
-			GDKerror("%s: cannot create the bat ("BUNFMT" BUNs)\n", f, (*BUN) (s)); \
+			GDKerror("%s: cannot create the bat ("BUNFMT" BUNs)\n", f, (BUN) (s)); \
 			return GDK_FAIL;				\
 		}							\
 		BATseqbase((b),0);					\
