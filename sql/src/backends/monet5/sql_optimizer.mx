@@ -138,7 +138,6 @@ sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
 sql5_export int SQLvalidatePipeline(void);
 sql5_export str setOptimizers(str optimizer);
-sql5_export str defaultPlan;
 
 #endif /* _SQL_OPTIMIZER_H_ */
 
@@ -440,13 +439,14 @@ The optimizers applied are taken from a list managed with
 the SQL set optimizer statement. The default list has been
 tested extensively and should provide overall good performance.
 Additional pipelines are defined in the monetdb.conf file.
-The plan 'off' sets the optimizer pipeline to the minimal possible.
+The optimizers can be turned on/off, leaving the minimal plan
+active.
 @c
 str minimalPlan= "inline,remap,deadcode,multiplex";
-str defaultPlan = NULL; 
 
 static str optimizers[256];	/* the optimizer pipeline */
 static str optimizerpipe;		/* reference to last pipeline string */
+static char *previouspipe = 0;
 	
 int
 SQLvalidatePipeline(void){
@@ -504,31 +504,51 @@ is enabled.
 	return error;
 }
 
+@-
+A few optimizations are always needed. First, the multiplex
+code should be turned into a proper MAL blocks before
+other optimizations take place.
+And before we actually execute the program, we should
+expand the macros (unless this has already been taken
+care of.
+@c
 str
 setOptimizers(str optimizer)
 {
-	/* the optimizer control is a semicolon separated list of names */
-	/* the predefined 'off' injects the default minimal plan upon need */
-	int top=0,i;
-	char *base,  *nxt, *nme, *pipe;
+	int top=0;
+	char *base, *nxt, *nme, *pipe="notdefined";
 	
-	if (optimizer == NULL || *optimizer == 0 || strcmp(optimizer,"off")==0)
-		optimizer= GDKstrdup(minimalPlan);
-	if (optimizerpipe == optimizer )
+	/* do nothing if the pipe line is already set */
+	if ( optimizerpipe && optimizer && strcmp(optimizerpipe,optimizer) == 0 )
 		return optimizerpipe;
-	pipe= GDKgetenv(optimizer);
-	if ( pipe != NULL){
-		optimizer= pipe;
-		GDKsetenv("sql_optimizer",pipe);
+
+	/* catch  minimal pipes */
+	if (optimizer == NULL || *optimizer == 0 )
+		optimizer= GDKstrdup(minimalPlan);
+	else
+	/* optimizers can be temporarily turned on/off */
+	if(strcmp(optimizer,"off")==0){
+		if( previouspipe == NULL)
+			previouspipe = optimizerpipe;
+		else return GDKstrdup(optimizerpipe);
+		optimizer= GDKstrdup(minimalPlan);
+	} else
+	if (strcmp(optimizer,"on")==0){
+		if (previouspipe)
+			optimizer= previouspipe;
+		else return GDKstrdup(optimizerpipe);
+		previouspipe = 0;
+	} else {
+		/* the optimizer may be an environment alias */
+		pipe = GDKgetenv(optimizer);
+		if ( pipe )
+			optimizer = pipe;
 	}
 
 	optimizerpipe= optimizer;
-	base= GDKstrdup(optimizer);
+	base = optimizer = GDKstrdup(optimizer);
 
-	for ( i = 0; i < 256; i++)
-		optimizers[i] = NULL;
-
-	optimizer=  base;
+	/* An optimizer pipe is a semicolon separated list of names */
 	while (optimizer && *optimizer ) {
 		nxt = strchr(optimizer,',');
 		if (nxt){
@@ -541,19 +561,21 @@ setOptimizers(str optimizer)
 			optimizers[top++] = nme; 
 		optimizer = nxt;
 	} 
+	optimizers[top] = 0;
+	GDKfree(base);
 	if (top == 1  && pipe == NULL){
-		showException(SQL,"optimizer","Optimizer %s does not exist, use minimal one\n",optimizers[0]);
-		setOptimizers("off");
+		showException(SQL,"optimizer","Optimizer '%s' does not exist, use default pipe instead\n", optimizerpipe?optimizerpipe:"undefined");
+		setOptimizers("default_pipe");
 	}else
 	if (top == 256){
-		showException(SQL,"optimizer","Too many optimizer steps, use minimal one\n");
-		setOptimizers("off");
+		showException(SQL,"optimizer","Too many optimizer steps, use default pipe instead\n");
+		setOptimizers("default_pipe");
 	} else
 	if (SQLvalidatePipeline() ) {
-		showException(SQL,"optimizer"," Pipeline reset to '%s'",optimizerpipe);
-		setOptimizers("off");
+		showException(SQL,"optimizer"," Invalid pipeline,  use default_pipe instead\n");
+		setOptimizers("default_pipe");
 	}
-	return optimizerpipe;
+	return GDKstrdup(optimizerpipe);
 }
 
 static void
@@ -602,48 +624,15 @@ to allow inspection.
 		return;
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
-	if (optimizer == 0) 
-		optimizer = defaultPlan? defaultPlan:minimalPlan;
-#ifdef _SQL_OPTIMIZER_DEBUG
-	if( optimizer)
-	stream_printf(c->fdout,"optimizer:%s:\n",optimizer?optimizer:"unknown");
-#endif
-@-
-A few optimizations are always needed. First, the multiplex
-code should be turned into a proper MAL blocks before
-other optimizations take place.
-And before we actually execute the program, we should
-expand the macros (unless this has already been taken
-care of.
-@c
-	if( strcmp(optimizer,"on")==0 || strcmp(optimizer,"default")==0 ){ 
-		str base = GDKstrdup(defaultPlan? defaultPlan:minimalPlan);
+	stack_set_var(be->mvc, "optimizer", VALset(&src, TYPE_str, setOptimizers(optimizer)));
+	addOptimizers(c,mb);
+	optimizeMALBlock(c,mb);
 
-		stack_set_var(be->mvc, "optimizer", 
-			VALset(&src, TYPE_str, defaultPlan? defaultPlan:minimalPlan));
-		setOptimizers(base);
-		addOptimizers(c,mb);
-		optimizeMALBlock(c,mb);
-	} else
-	if( strcmp(optimizer,"off")==0 ){ 
-		str base = GDKstrdup(minimalPlan);
-
-		stack_set_var(be->mvc, "optimizer", 
-			VALset(&src, TYPE_str, minimalPlan));
-		/* no real optimization needed */
-		setOptimizers(base);
-		addOptimizers(c,mb);
-		optimizeMALBlock(c,mb);
-	} else {
-		setOptimizers(optimizer);
-		addOptimizers(c,mb);
-
-		/* time to execute the optimizers */
-		if( c->debug)
-			optimizerCheck(c,mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-		SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
-		optimizeMALBlock(c,mb);
-	}
+	/* time to execute the optimizers */
+	if( c->debug)
+		optimizerCheck(c,mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
+	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
+	optimizeMALBlock(c,mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "ADD optimized QUERY TO CACHE\n");
 	printFunction(GDKout,mb,0,LIST_MAL_ALL);
