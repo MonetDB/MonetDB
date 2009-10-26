@@ -626,13 +626,12 @@ to allow inspection.
 	optimizer = stack_get_string(be->mvc, "optimizer");
 	stack_set_var(be->mvc, "optimizer", VALset(&src, TYPE_str, setOptimizers(optimizer)));
 	addOptimizers(c,mb);
+	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
 	optimizeMALBlock(c,mb);
 
 	/* time to execute the optimizers */
 	if( c->debug)
 		optimizerCheck(c,mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
-	optimizeMALBlock(c,mb);
 }
 
 @-
