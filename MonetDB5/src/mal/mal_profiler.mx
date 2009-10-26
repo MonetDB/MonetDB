@@ -971,6 +971,7 @@ static BAT *TRACE_id_time=0;
 static BAT *TRACE_id_ticks=0;
 static BAT *TRACE_id_pc=0;
 static BAT *TRACE_id_stmt=0;
+static BAT *TRACE_id_type=0;
 static BAT *TRACE_id_rbytes=0;
 static BAT *TRACE_id_wbytes=0;
 static BAT *TRACE_id_reads=0;
@@ -992,6 +993,7 @@ TRACEtable(){
 	BUNins(t,"writes", &TRACE_id_writes->batCacheid, FALSE);
 	BUNins(t,"rbytes", &TRACE_id_rbytes->batCacheid, FALSE);
 	BUNins(t,"wbytes", &TRACE_id_wbytes->batCacheid, FALSE);
+	BUNins(t,"type", &TRACE_id_type->batCacheid, FALSE);
 	BUNins(t,"stmt", &TRACE_id_stmt->batCacheid, FALSE);
 	return t;
 }
@@ -1029,6 +1031,7 @@ initTrace(void)
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_int, TYPE_lng);
 	TRACE_id_pc = TRACEcreate("id", "pc", TYPE_int, TYPE_str);
 	TRACE_id_stmt = TRACEcreate("id", "stmt", TYPE_int, TYPE_str);
+	TRACE_id_type = TRACEcreate("id", "stmt", TYPE_int, TYPE_str);
 	TRACE_id_rbytes = TRACEcreate("id", "rbytes", TYPE_int, TYPE_lng);
 	TRACE_id_wbytes = TRACEcreate("id", "wbytes", TYPE_int, TYPE_lng);
 	TRACE_id_reads = TRACEcreate("id", "read", TYPE_int, TYPE_lng);
@@ -1046,6 +1049,7 @@ cleanupProfiler(){
 	CLEANUPprofile( TRACE_id_time );
 	CLEANUPprofile( TRACE_id_pc );
 	CLEANUPprofile( TRACE_id_stmt );
+	CLEANUPprofile( TRACE_id_type );
 	CLEANUPprofile( TRACE_id_rbytes );
 	CLEANUPprofile( TRACE_id_wbytes );
 	CLEANUPprofile( TRACE_id_reads );
@@ -1066,6 +1070,7 @@ clearTrace(void)
 	BATclear(TRACE_id_ticks);
 	BATclear(TRACE_id_pc);
 	BATclear(TRACE_id_stmt);
+	BATclear(TRACE_id_type);
 	BATclear(TRACE_id_thread);
 	BATclear(TRACE_id_reads);
 	BATclear(TRACE_id_writes);
@@ -1087,6 +1092,8 @@ getTrace(str nme)
 		return TRACE_id_thread;
 	if (strcmp(nme, "stmt") == 0)
 		return TRACE_id_stmt;
+	if (strcmp(nme, "type") == 0)
+		return TRACE_id_type;
 	if (strcmp(nme, "rbytes") == 0)
 		return TRACE_id_rbytes;
 	if (strcmp(nme, "wbytes") == 0)
@@ -1196,6 +1203,19 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	while (c && *c && (isspace((int) *c) || *c == '!'))
 		c++;
 	BUNins(TRACE_id_stmt, &evnt, c, FALSE);
+
+	{	char buf[BUFSIZ], *tpe;
+		int i, j;
+		buf[0]=0;
+		for ( i= 0; i< pci->retc; i++)
+		if( getArgType(mb,pci,i) != TYPE_void ){
+			j = (int) strlen(buf);
+			tpe= getTypeName(getArgType(mb,pci,i));
+			snprintf(buf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
+			GDKfree(tpe);
+		}
+		BUNins(TRACE_id_type, &evnt, &buf, FALSE);
+	}
 	GDKfree(stmt);
 	
 /* The remainder requires their own BATs
