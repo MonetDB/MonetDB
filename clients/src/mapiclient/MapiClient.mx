@@ -235,7 +235,10 @@ static enum modifiers specials = NOmodifier;
 /* set when we see EXPLAIN,DEBUG, or TRACE (only if mode == SQL).
 Also retain these modes until after you have received the answer. */
 
-#define MINCOLSIZE 5
+/* keep these aligned, the MINCOLSIZE should ensure you can always write
+ * the NULLSTRING */
+#define MINCOLSIZE 4
+#define NULLSTRING "null"
 
 /* stolen piece */
 #ifdef HAVE_FTIME
@@ -826,7 +829,6 @@ SQLrenderer(MapiHdl hdl)
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
-	char nullstring[5] = "null";
 	int ps = rowsperpage, silent = 0;
 	int mypagewidth = pagewidth;
 	mapi_int64 rows = 0;
@@ -895,14 +897,19 @@ SQLrenderer(MapiHdl hdl)
 			graphwaste = ((fields * 3) - 1) + 2;
 			/* punish the column headers first until you cannot squeeze */
 			while (graphwaste + total > pagewidth) {
+				/* pick the column where the header is most long
+				 * compared to its content */
+				max = -1;
 				for (i = 0; i < fields; i++) {
 					if (hdr[i] > len[i]) {
-						hdr[i]--;
-						total--;
-						continue;
+						if (max == -1 || hdr[max] - len[max] < hdr[i] - len[i])
+							max = i;
 					}
 				}
-				break;
+				if (max == -1)
+					break;
+				hdr[max]--;
+				total--;
 			}
 			total = 0;
 			vartotal = 0;
@@ -958,7 +965,7 @@ SQLrenderer(MapiHdl hdl)
 		for (i = 0; i < fields; i++) {
 			rest[i] = mapi_fetch_field(hdl, i);
 			if (rest[i] == NULL)
-				rest[i] = nullstring;
+				rest[i] = NULLSTRING;
 		}
 
 		if (ps > 0 && rows >= ps && fromConsole != NULL) {
