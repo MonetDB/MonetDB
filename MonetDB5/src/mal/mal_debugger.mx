@@ -814,7 +814,7 @@ printBATproperties(stream *f, BAT *b){
 	stream_printf(f, " count=" BUNFMT " lrefs=%d ", 
 		BATcount(b), BBP_lrefs(ABS(b->batCacheid)));
 	if(  BBP_refs(ABS(b->batCacheid)) - 1)
-		stream_printf(f, " refs=%d ", BBP_refs(ABS(b->batCacheid)) - 1);
+		stream_printf(f, " refs=%d ", BBP_refs(ABS(b->batCacheid)) );
 	if( b->batSharecnt)
 		stream_printf(f, " views=%d", b->batSharecnt);
 	if (b->H->parentid)

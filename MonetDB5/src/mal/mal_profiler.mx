@@ -61,15 +61,14 @@ a posteriori analysis.
 @example
 #profiler.activate("event");
 #profiler.activate("pc");
-#profiler.activate("operation");
-profiler.activate("time");
-profiler.activate("ticks");
+profiler.activate("time,ticks");
+profiler.activate("stmt");
 #profiler.activate("cpu");
 #profiler.activate("memory");
-#profiler.activate("io");
-#profiler.activate("bytes");
-#profiler.activate("diskspace");
-profiler.activate("statement");
+#profiler.activate("reads");
+#profiler.activate("writes");
+#profiler.activate("obytes");
+#profiler.activate("wbytes");
 profiler.setFilter("*","insert");
 profiler.setFilter("*","print");
 
@@ -114,7 +113,7 @@ even obscure performance measurements obtained through e.g. valgrind.
 The separate event caches can be accessed using the 
 operator @sc{profiler.getTrace}(@emph{name}).
 The current implementation only supports 
-access to @sc{time},@sc{ticks},@sc{pc},@sc{statement}.
+access to @sc{time},@sc{ticks},@sc{pc},@sc{stmt}.
 The event cache can be cleared with @sc{profiler.clearTrace()}.
 
 Consider the following MAL program snippet:
@@ -125,7 +124,7 @@ b:= bbp.new(:int,:int);
 bat.insert(b,1,15);
 io.print(b);
 profiler.stop();
-s:= profiler.getTrace("statement");
+s:= profiler.getTrace("stmt");
 t:= profiler.getTrace("ticks");
 io.print(s,t);
 @end example
@@ -229,6 +228,8 @@ mal_export int malProfileMode;
 
 mal_export void clearTrace(void);
 mal_export BAT *getTrace(str ev);
+mal_export int getTraceType(str nme);
+mal_export BAT * TRACEtable();
 
 mal_export lng getDiskSpace(void);
 mal_export lng getDiskReads(void);
@@ -300,13 +301,15 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 #define PROFticks   4
 #define PROFcpu     5
 #define PROFmemory  6
-#define PROFio      7
-#define PROFbytes   8
-#define PROFdisk    9	
-#define PROFstmt   10
-#define PROFaggr   11
-#define PROFprocess 12
-#define PROFthread 13
+#define PROFreads   7
+#define PROFwrites  8
+#define PROFrbytes  9
+#define PROFwbytes 10
+#define PROFdisk   11	
+#define PROFstmt   12
+#define PROFaggr   13
+#define PROFprocess 14
+#define PROFthread 15
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -319,14 +322,15 @@ static struct {
 	/*  4 */  { "ticks", 0},
 	/*  5 */  { "cpu", 0},
 	/*  6 */  { "memory", 0},
-	/*  7 */  { "io", 0},
-	/*  8 */  { "bytes", 0},
-	/*  9 */  { "disk", 0},
-	/*  10 */  { "statement", 0},
-	/*  11 */  { "aggregate", 0},
-	/*  12 */  { "process", 0},
-	/*  13 */  { "thread", 0},
-	/*  14 */  { 0, 0}
+	/*  7 */  { "reads", 0},
+	/*  8 */  { "writes", 0},
+	/*  9 */  { "rbytes", 0},
+	/*  10 */  { "wbytes", 0},
+	/*  11 */  { "stmt", 0},
+	/*  12 */  { "aggregate", 0},
+	/*  13 */  { "process", 0},
+	/*  14 */  { "thread", 0},
+	/*  15 */  { 0, 0}
 };
 
 @-
@@ -440,10 +444,10 @@ offlineProfilerHeader(void)
 		log0("fsmblks,\t");
 		log0("uordblks,\t");
 	}
-	if (profileCounter[PROFio].status) {
+	if (profileCounter[PROFreads].status) 
 		log0("blk reads,\t");
+	if (profileCounter[PROFwrites].status)
 		log0("blk writes,\t");
-	}
 	if (profileCounter[PROFprocess].status) {
 		log0("pg reclaim,\t");
 		log0("pg faults,\t");
@@ -451,10 +455,10 @@ offlineProfilerHeader(void)
 		log0("ctxt switch,\t");
 		log0("inv switch,\t");
 	}
-	if (profileCounter[PROFbytes].status)
-		log0("ibytes,\t obytes,\t");
-	if (profileCounter[PROFdisk].status)
-		log0("diskspace,\t");
+	if (profileCounter[PROFrbytes].status)
+		log0("rbytes,\t");
+	if (profileCounter[PROFwbytes].status)
+		log0("wbytes,\t");
 	if (profileCounter[PROFaggr].status)
 		log0("count,\t clkticks,\t");
 	if (profileCounter[PROFstmt].status) {
@@ -567,7 +571,8 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		prevMalloc = infoMalloc;
 	}
 #ifdef HAVE_SYS_RESOURCE_H
-	if (profileCounter[PROFio].status && delayswitch<0) {
+	if ( (profileCounter[PROFreads].status ||
+		  profileCounter[PROFwrites].status) && delayswitch<0) {
 		log("%d,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
 		log("%d,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		prevUsage = infoUsage;
@@ -581,10 +586,11 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		prevUsage = infoUsage;
 	}
 #endif
-	if (profileCounter[PROFbytes].status) {
-		log(LLFMT",\t", mb->profiler[pc].ibytes);
-		log(LLFMT",\t", mb->profiler[pc].obytes);
-	}
+	if (profileCounter[PROFrbytes].status) 
+		log(LLFMT",\t", mb->profiler[pc].rbytes);
+	if (profileCounter[PROFwbytes].status) 
+		log(LLFMT",\t", mb->profiler[pc].wbytes);
+
 	if (profileCounter[PROFdisk].status) {
 		log(LLFMT",\t", getDiskSpace());
 	}
@@ -950,22 +956,45 @@ clrFilterVariable(MalBlkPtr mb, int arg){
 	}
 }
 
-@+ Tracing
+@+ Offline tracing
 The events being captured are stored in separate BATs.
 They are made persistent to accumate information over
 multiple sessions. This means it has to be explicitly reset
-to avoid disc overflow.
+to avoid disc overflow using profiler.reset().
+
+All properties identified below are maintained, because this allows
+for easy integration with SQL.
 @c
 static int TRACE_init=0;
+static BAT *TRACE_id_event=0;
 static BAT *TRACE_id_time=0;
 static BAT *TRACE_id_ticks=0;
 static BAT *TRACE_id_pc=0;
-static BAT *TRACE_id_modfcn=0;
 static BAT *TRACE_id_stmt=0;
-static BAT *TRACE_id_ibytes=0;
-static BAT *TRACE_id_obytes=0;
-static BAT *TRACE_id_diskspace=0;
-static BAT *TRACE_id_thrd=0;
+static BAT *TRACE_id_rbytes=0;
+static BAT *TRACE_id_wbytes=0;
+static BAT *TRACE_id_reads=0;
+static BAT *TRACE_id_writes=0;
+static BAT *TRACE_id_thread=0;
+
+BAT *
+TRACEtable(){
+	BAT *t;
+
+	initTrace();
+	t= BATnew(TYPE_str,TYPE_bat,9);
+	BUNins(t,"event", &TRACE_id_event->batCacheid, FALSE);
+	BUNins(t,"clk", &TRACE_id_time->batCacheid, FALSE);
+	BUNins(t,"pc", &TRACE_id_pc->batCacheid, FALSE);
+	BUNins(t,"thread", &TRACE_id_thread->batCacheid, FALSE);
+	BUNins(t,"ticks", &TRACE_id_ticks->batCacheid, FALSE);
+	BUNins(t,"reads", &TRACE_id_reads->batCacheid, FALSE);
+	BUNins(t,"writes", &TRACE_id_writes->batCacheid, FALSE);
+	BUNins(t,"rbytes", &TRACE_id_rbytes->batCacheid, FALSE);
+	BUNins(t,"wbytes", &TRACE_id_wbytes->batCacheid, FALSE);
+	BUNins(t,"stmt", &TRACE_id_stmt->batCacheid, FALSE);
+	return t;
+}
 
 static BAT *
 TRACEcreate(str hnme, str tnme, int ht, int tt)
@@ -995,15 +1024,16 @@ initTrace(void)
 	if (TRACE_init)
 		return;		/* already initialized */
 	mal_set_lock(mal_contextLock, "trace");
+	TRACE_id_event = TRACEcreate("id", "event", TYPE_int, TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_int, TYPE_str);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_int, TYPE_lng);
 	TRACE_id_pc = TRACEcreate("id", "pc", TYPE_int, TYPE_str);
-	TRACE_id_modfcn = TRACEcreate("id", "modfcn", TYPE_int, TYPE_str);
-	TRACE_id_stmt = TRACEcreate("id", "statement", TYPE_int, TYPE_str);
-	TRACE_id_ibytes = TRACEcreate("id", "ibytes", TYPE_int, TYPE_lng);
-	TRACE_id_obytes = TRACEcreate("id", "obytes", TYPE_int, TYPE_lng);
-	TRACE_id_diskspace = TRACEcreate("id", "diskspace", TYPE_int, TYPE_lng);
-	TRACE_id_thrd = TRACEcreate("id", "thread", TYPE_int, TYPE_int);
+	TRACE_id_stmt = TRACEcreate("id", "stmt", TYPE_int, TYPE_str);
+	TRACE_id_rbytes = TRACEcreate("id", "rbytes", TYPE_int, TYPE_lng);
+	TRACE_id_wbytes = TRACEcreate("id", "wbytes", TYPE_int, TYPE_lng);
+	TRACE_id_reads = TRACEcreate("id", "read", TYPE_int, TYPE_lng);
+	TRACE_id_writes = TRACEcreate("id", "write", TYPE_int, TYPE_lng);
+	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int, TYPE_int);
 	TRACE_init = 1;
 	mal_unset_lock(mal_contextLock, "trace");
 }
@@ -1012,14 +1042,15 @@ initTrace(void)
 str
 cleanupProfiler(){
 	mal_set_lock(mal_contextLock, "cleanup");
+	CLEANUPprofile( TRACE_id_event );
 	CLEANUPprofile( TRACE_id_time );
 	CLEANUPprofile( TRACE_id_pc );
-	CLEANUPprofile( TRACE_id_modfcn );
 	CLEANUPprofile( TRACE_id_stmt );
-	CLEANUPprofile( TRACE_id_ibytes );
-	CLEANUPprofile( TRACE_id_obytes );
-	CLEANUPprofile( TRACE_id_diskspace );
-	CLEANUPprofile( TRACE_id_thrd );
+	CLEANUPprofile( TRACE_id_rbytes );
+	CLEANUPprofile( TRACE_id_wbytes );
+	CLEANUPprofile( TRACE_id_reads );
+	CLEANUPprofile( TRACE_id_writes );
+	CLEANUPprofile( TRACE_id_thread );
 	TRACE_init = 0;
 	mal_unset_lock(mal_contextLock, "cleanup");
 	return MAL_SUCCEED;
@@ -1030,18 +1061,22 @@ clearTrace(void)
 {
 	initTrace();
 	/* drop all trace tables */
+	BATclear(TRACE_id_event);
 	BATclear(TRACE_id_time);
 	BATclear(TRACE_id_ticks);
 	BATclear(TRACE_id_pc);
-	BATclear(TRACE_id_modfcn);
 	BATclear(TRACE_id_stmt);
-	BATclear(TRACE_id_thrd);
+	BATclear(TRACE_id_thread);
+	BATclear(TRACE_id_reads);
+	BATclear(TRACE_id_writes);
 }
 
 BAT *
 getTrace(str nme)
 {
 	initTrace();
+	if (strcmp(nme, "event") == 0)
+		return TRACE_id_event;
 	if (strcmp(nme, "time") == 0)
 		return TRACE_id_time;
 	if (strcmp(nme, "ticks") == 0)
@@ -1049,18 +1084,41 @@ getTrace(str nme)
 	if (strcmp(nme, "pc") == 0)
 		return TRACE_id_pc;
 	if (strcmp(nme, "thread") == 0)
-		return TRACE_id_thrd;
-	if (strcmp(nme, "modfcn") == 0)
-		return TRACE_id_modfcn;
-	if (strcmp(nme, "statement") == 0)
+		return TRACE_id_thread;
+	if (strcmp(nme, "stmt") == 0)
 		return TRACE_id_stmt;
-	if (strcmp(nme, "ibytes") == 0)
-		return TRACE_id_ibytes;
-	if (strcmp(nme, "obytes") == 0)
-		return TRACE_id_obytes;
-	if (strcmp(nme, "diskspace") == 0)
-		return TRACE_id_diskspace;
+	if (strcmp(nme, "rbytes") == 0)
+		return TRACE_id_rbytes;
+	if (strcmp(nme, "wbytes") == 0)
+		return TRACE_id_wbytes;
+	if (strcmp(nme, "reads") == 0)
+		return TRACE_id_reads;
+	if (strcmp(nme, "writes") == 0)
+		return TRACE_id_writes;
 	return NULL;
+}
+
+int
+getTraceType(str nme)
+{
+	initTrace();
+	if (strcmp(nme, "time") == 0)
+		return newBatType(TYPE_int,TYPE_str);
+	if (strcmp(nme, "ticks") == 0)
+		return newBatType(TYPE_int,TYPE_lng);
+	if (strcmp(nme, "pc") == 0)
+		return newBatType(TYPE_int,TYPE_str);
+	if (strcmp(nme, "thread") == 0)
+		return newBatType(TYPE_int,TYPE_int);
+	if (strcmp(nme, "stmt") == 0)
+		return newBatType(TYPE_int,TYPE_str);
+	if (strcmp(nme, "rbytes") == 0)
+		return newBatType(TYPE_int,TYPE_lng);
+	if (strcmp(nme, "wbytes") == 0)
+		return newBatType(TYPE_int,TYPE_lng);
+	if (strcmp(nme, "reads") == 0 || strcmp(nme,"writes")== 0)
+		return newBatType(TYPE_int,TYPE_lng);
+	return TYPE_any;
 }
 
 #ifdef MALprofiler
@@ -1068,8 +1126,11 @@ void
 cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	/* static struct Mallinfo prevMalloc; */
-	/* static struct rusage   prevUsage; */
 	static int eventcounter;
+	char buf[1024];
+	int tid= (int) THRgettid();
+	lng v = 0;
+
 #ifdef HAVE_TIMES
 	struct tms newTms;
 #endif
@@ -1077,6 +1138,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	/* struct Mallinfo infoMalloc; */
 #ifdef HAVE_SYS_RESOURCE_H
 	struct rusage infoUsage;
+	static struct rusage   prevUsage; 
 #endif
 	str stmt, c;
 	int evnt;
@@ -1107,51 +1169,35 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	evnt = TRACE_init++;
 
 	/* update the Trace tables */
-	if (profileCounter[PROFpc].status) {
-		char buf[1024];
+	snprintf(buf, 1024, "%s.%s[%d]", 
+		getModuleId(getInstrPtr(mb, 0)), 
+		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
+	BUNins(TRACE_id_pc, &evnt, buf, FALSE);
+	
+	BUNins(TRACE_id_thread, &evnt, &tid, FALSE);
+	
+	BUNins(TRACE_id_event, &evnt, &evnt, FALSE);
 
-		snprintf(buf, 1024, "%s.%s[%d]", 
-			getModuleId(getInstrPtr(mb, 0)), 
-			getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
-		BUNins(TRACE_id_pc, &evnt, buf, FALSE);
-		if (getModuleId(pci) && getFunctionId(pci)) {
-			snprintf(buf, 1024, "%s.%s", 
-				getModuleId(pci), 
-				getFunctionId(pci));
-		} else {
-			snprintf(buf, 1024, "%s", operatorName(pci->token));
-		}
-		BUNins(TRACE_id_modfcn, &evnt, buf, FALSE);
-	}
-	if (profileCounter[PROFthread].status) {
-		int tid= (int) THRgettid();
-		BUNins(TRACE_id_thrd, &evnt, &tid, FALSE);
-	}
-	if (profileCounter[PROFtime].status) {
-		char *tbuf, *c;
+	{	char *tbuf, *c;
 
 		tbuf= ctime(&mb->profiler[pc].clock);
 		c = strchr(tbuf, '\n');
-		if (c) {
-			c[-5] = '"';
-			c[-4] = 0;
-		}
-		tbuf[10] = '"';
-		BUNins(TRACE_id_time, &evnt, tbuf + 10, FALSE);
+		if (c) 
+			c[-5] = 0;
+		BUNins(TRACE_id_time, &evnt, tbuf, FALSE);
 	}
-	if (profileCounter[PROFticks].status) {
-		BUNins(TRACE_id_ticks, &evnt, &mb->profiler[pc].ticks, FALSE);
-	}
-	if (profileCounter[PROFstmt].status) {
-		/* generate actual call statement */
-		stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
-		c = stmt;
 
-		while (c && *c && (isspace((int) *c) || *c == '!'))
-			c++;
-		BUNins(TRACE_id_stmt, &evnt, c, FALSE);
-		GDKfree(stmt);
-	}
+	BUNins(TRACE_id_ticks, &evnt, &mb->profiler[pc].ticks, FALSE);
+
+	/* generate actual call statement */
+	stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
+	c = stmt;
+
+	while (c && *c && (isspace((int) *c) || *c == '!'))
+		c++;
+	BUNins(TRACE_id_stmt, &evnt, c, FALSE);
+	GDKfree(stmt);
+	
 /* The remainder requires their own BATs
 #ifdef HAVE_TIMES
 	if( profileCounter[PROFcpu].status ){
@@ -1175,12 +1221,19 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	    log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
 	    prevMalloc = infoMalloc;
 	}
+*/
 #ifdef HAVE_SYS_RESOURCE_H
-	if( profileCounter[PROFio].status ){
-	    log("%d,\t", infoUsage.ru_inblock- prevUsage.ru_inblock);
-	    log("%d,\t", infoUsage.ru_oublock- prevUsage.ru_oublock);
-	    prevUsage = infoUsage;
-	}
+	v = infoUsage.ru_inblock- prevUsage.ru_inblock;
+	BUNins(TRACE_id_reads, &evnt, &v, FALSE);
+	v = infoUsage.ru_oublock- prevUsage.ru_oublock;
+	BUNins(TRACE_id_writes, &evnt, &v, FALSE);
+	prevUsage = infoUsage;
+#else
+	BUNins(TRACE_id_reads, &evnt, &v, FALSE);
+	BUNins(TRACE_id_writes, &evnt, &v, FALSE);
+#endif
+
+/*
 	if( profileCounter[PROFprocess].status ){
 	    log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
 	    log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
@@ -1191,14 +1244,9 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #endif
 */
-	if (profileCounter[PROFbytes].status) {
-		BUNins(TRACE_id_ibytes, &evnt, &mb->profiler[pc].ibytes, FALSE);
-		BUNins(TRACE_id_obytes, &evnt, &mb->profiler[pc].obytes, FALSE);
-	}
-	if (profileCounter[PROFdisk].status) {
-		lng disk= getDiskSpace();
-		BUNins(TRACE_id_diskspace, &evnt, &disk, FALSE);
-	}
+	BUNins(TRACE_id_rbytes, &evnt, &mb->profiler[pc].rbytes, FALSE);
+	BUNins(TRACE_id_wbytes, &evnt, &mb->profiler[pc].wbytes, FALSE);
+
 	eventcounter++;
 	flushLog();
 	mal_unset_lock(profileLock, "profileLock");
