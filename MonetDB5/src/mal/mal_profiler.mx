@@ -1031,7 +1031,7 @@ initTrace(void)
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_int, TYPE_lng);
 	TRACE_id_pc = TRACEcreate("id", "pc", TYPE_int, TYPE_str);
 	TRACE_id_stmt = TRACEcreate("id", "stmt", TYPE_int, TYPE_str);
-	TRACE_id_type = TRACEcreate("id", "stmt", TYPE_int, TYPE_str);
+	TRACE_id_type = TRACEcreate("id", "type", TYPE_int, TYPE_str);
 	TRACE_id_rbytes = TRACEcreate("id", "rbytes", TYPE_int, TYPE_lng);
 	TRACE_id_wbytes = TRACEcreate("id", "wbytes", TYPE_int, TYPE_lng);
 	TRACE_id_reads = TRACEcreate("id", "read", TYPE_int, TYPE_lng);
@@ -1204,17 +1204,17 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		c++;
 	BUNins(TRACE_id_stmt, &evnt, c, FALSE);
 
-	{	char buf[BUFSIZ], *tpe;
+	{	char abuf[BUFSIZ], *tpe;
 		int i, j;
-		buf[0]=0;
+		abuf[0]=0;
 		for ( i= 0; i< pci->retc; i++)
 		if( getArgType(mb,pci,i) != TYPE_void ){
-			j = (int) strlen(buf);
+			j = (int) strlen(abuf);
 			tpe= getTypeName(getArgType(mb,pci,i));
-			snprintf(buf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
+			snprintf(abuf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
 			GDKfree(tpe);
 		}
-		BUNins(TRACE_id_type, &evnt, &buf, FALSE);
+		BUNins(TRACE_id_type, &evnt, &abuf, FALSE);
 	}
 	GDKfree(stmt);
 	
