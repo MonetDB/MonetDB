@@ -123,6 +123,7 @@ class MonetDBConnection
   def real_connect
     
     server_challenge = retrieve_server_challenge()
+    print "CHALLENGE: " + server_challenge.to_s
     if server_challenge != nil
       salt = server_challenge.split(':')[0]
       @server_name = server_challenge.split(':')[1]
@@ -295,6 +296,8 @@ class MonetDBConnection
     if chunk_size == 0
 	    return ""  # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
     end
+    
+    data = @socket.recv(chunk_size)
     
     if is_final == false 
       while is_final == false

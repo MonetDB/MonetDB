@@ -43,7 +43,6 @@ class MonetDBData
     @row_count = 0
     @row_offset = 10
     @row_index = Integer(REPLY_SIZE)
-
   end
   
   # Fire a query and return the server response
