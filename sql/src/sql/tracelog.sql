@@ -26,7 +26,8 @@ create function tracelog()
 		writes integer, 	-- number of blocks written
 		rbytes integer,		-- amount of bytes touched
 		wbytes integer,		-- amount of bytes written
-		stmt string	-- actual statement executed
+		type string,		-- return types
+		stmt string			-- actual statement executed
 	)
 	external name sql.dump_trace;
 
