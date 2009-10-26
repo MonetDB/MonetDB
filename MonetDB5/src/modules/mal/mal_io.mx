@@ -612,7 +612,7 @@ str
 IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *fmt = (str*) getArgReference(stk,pci,1);
-	str fmt2;
+	str fmt2 = NULL;
 	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
