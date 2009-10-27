@@ -2173,9 +2173,9 @@ mvc_result_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(SQL, "sql.rsColumn", "Cannot access descriptor");
+		throw(SQL, "sql.rsColumn", "cannot access BAT descriptor");
 	if (mvc_result_column(m, *tn, *name, *type, *digits, *scale, b)) 
-		res = createException(SQL, "sql.rsColumn", "failed");
+		res = createException(SQL, "sql.rsColumn", "mvc_result_column failed");
 	*ret = 0;
 	BBPunfix(b->batCacheid);
 	return res;
