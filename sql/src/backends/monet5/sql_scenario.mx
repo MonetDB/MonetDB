@@ -980,6 +980,7 @@ void
 SQLshowPlan(Client c)
 {
 	/* we should determine rendering requirements first */
+	/* FIXME: unify this with direct printFunction() calls as used below */
 	newStmt(c->curprg->def, "mdb", "listMapi");
 }
 
