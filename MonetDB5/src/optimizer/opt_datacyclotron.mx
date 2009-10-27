@@ -48,11 +48,9 @@ The number of overloaded instructions is kept to a minimum.
 #ifndef _OPT_DATACYCLOTRON_
 #define _OPT_DATACYCLOTRON_
 
-#include "mal_config.h"
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
-#include "mal_instruction.h"
 
 /* #define DEBUG_DATACYCLOTRON_OPT */
 /* #define BIND_DATACYCLOTRON_OPT */
@@ -77,7 +75,9 @@ DCYcatalog *catalog;
 
 @-
 @c
+#include "mal_config.h"
 #include "opt_datacyclotron.h"
+#include "mal_instruction.h"
 
 DCYcatalog*
 findRegist( str sch, str tab, str col, int acc) {
