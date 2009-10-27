@@ -766,11 +766,12 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	
 	assert(m>=0 || n>=0);
 	if (m >= 0 && mat[m].mm) {
+		InstrPtr q;
+
 		if (mat[m].type != mat_ext)
 			return -1;
 		if (n<0) {
-			InstrPtr q = copyInstruction(p);
-
+			q = copyInstruction(p);
 			getArg(q,0) = newTmpVariable(mb, tpe);
 			getArg(q,1) = getArg(mat[m].mm,0);
 			assert(getArg(q,0) < mb->vtop);
@@ -781,21 +782,36 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 			/* add result to mat */
 			r = pushArgument(mb,r,getArg(q,0));
 		} else {
+			InstrPtr pck = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(pck,matRef);
+			setFunctionId(pck,packRef);
+			getArg(pck,0) = newTmpVariable(mb, tpe);
+
 			for (j=1; j<mat[n].mi->argc; j++) {
 				InstrPtr q = copyInstruction(p);
 
 				getArg(q,0) = newTmpVariable(mb, tpe);
-				getArg(q,1) = getArg(mat[m].mm,0);
+				getArg(q,1) = getArg(mat[m].mi,0);
 				getArg(q,2) = getArg(mat[n].mi,j);
 				assert(getArg(q,0) < mb->vtop);
 				assert(getArg(q,1) < mb->vtop);
 				assert(getArg(q,2) < mb->vtop);
 				pushInstruction(mb,q);
-				//propagateBinProp(mb, q, getArg(mat[m].mm, 0), getArg(mat[n].mi, k));
 
-				/* add result to mat */
-				r = pushArgument(mb,r,getArg(q,0));
+				/* pack result */
+				pck = pushArgument(mb,pck,getArg(q,0));
 			}
+			pushInstruction(mb,pck);
+
+			q = copyInstruction(p);
+			getArg(q,0) = getArg(p,0);
+			getArg(q,1) = getArg(mat[m].mm,0);
+			getArg(q,2) = getArg(pck,0);
+			assert(getArg(q,0) < mb->vtop);
+			assert(getArg(q,1) < mb->vtop);
+			assert(getArg(q,2) < mb->vtop);
+			pushInstruction(mb,q);
+			return mtop;
 		}
 	} else {
 		if (m >= 0 && n >= 0) {
