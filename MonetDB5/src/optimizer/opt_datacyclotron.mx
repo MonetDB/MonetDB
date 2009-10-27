@@ -27,16 +27,18 @@ pattern optimizer.datacyclotron(mod:str, fcn:str):str
 address OPTdatacyclotron
 comment "Datacyclotron code injection";
 
-command copy(schema:str, tab:str, col:str, kind:int):bat[:any_1,:any_2]
+command copy(schema:str, tab:str, col:str, kind:int, part:int, fbun:int, lbun:int):bat[:any_1,:any_2]
 address DCcopy
 comment "Inform the DataCyclotron about the intended access";
 
 command bind(schema:str, tab:str, col:str, kind:int):bat[:any_1,:any_2]
 address DCbind
 comment "Inform the DataCyclotron about the intended access";
+
 command pin(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address DCpin
 comment "Inform the DataCyclotron about a pin request";
+
 command unpin(b:bat[:any_1,:any_2])
 address DCunpin
 comment "Inform the DataCyclotron about a pin request";
@@ -45,22 +47,61 @@ The number of overloaded instructions is kept to a minimum.
 @h
 #ifndef _OPT_DATACYCLOTRON_
 #define _OPT_DATACYCLOTRON_
+
+#include "mal_config.h"
 #include "opt_prelude.h"
 #include "opt_support.h"
-#include "mal_recycle.h"
+#include "mal_interpreter.h"
+#include "mal_instruction.h"
 
 /* #define DEBUG_DATACYCLOTRON_OPT */
 /* #define BIND_DATACYCLOTRON_OPT */
+
+#define SCHEMA_LENG     32 
+#define TABLE_LENG      32 
+#define COLUMN_LENG     32 
+
+typedef struct DCYCATALOG {
+	char    schema[SCHEMA_LENG],
+                table[TABLE_LENG],
+                column[COLUMN_LENG];
+	int 	access;
+	int 	partitions;
+	int 	f_bun[200];
+	int 	l_bun[200];
+	
+	struct DCYCATALOG *next;
+}DCYcatalog;
+
+DCYcatalog *catalog;
+
 @-
 @c
-#include "mal_config.h"
 #include "opt_datacyclotron.h"
-#include "mal_instruction.h"
+
+DCYcatalog*
+findRegist( str sch, str tab, str col, int acc) {
+	DCYcatalog *reg = NULL;
+
+	reg = catalog;
+	
+	while(reg && !(
+                (strcmp(reg->schema, sch) == 0) &&
+                (strcmp(reg->table, tab) == 0) &&
+                (strcmp(reg->column, col) == 0) &&
+                reg->access == acc
+        )) {
+                reg = reg->next;
+        }
+
+	return reg;		
+}
 
 static int
 OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, actions=0;
+	int i, actions=0, k = 0;
+	DCYcatalog *reg;
 	InstrPtr *old;
 	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
 	int limit;
@@ -70,7 +111,6 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #endif
 
 	(void) cntxt;
-	(void) stk;
 	if ( used == NULL)
 		return 0;
 	limit= mb->stop;
@@ -81,32 +121,48 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		if (getModuleId(p)== sqlRef && 
-			(getFunctionId(p) == bindRef || 
-			 getFunctionId(p) == putName("bind_idxbat",11) ||
-			 getFunctionId(p) == binddbatRef) ) {
-				setModuleId(p,putName("datacyclotron",13));
+				(getFunctionId(p) == bindRef || 
+				 getFunctionId(p) == putName("bind_idxbat",11) ||
+				 getFunctionId(p) == binddbatRef) ) {
+
+			/*Check if the BAT is a datacyclotron BAT*/
+			str *sch      = (str*) getArgReference(stk,p,1);
+		        str *tab      = (str*) getArgReference(stk,p,2);
+		        str *col      = (str*) getArgReference(stk,p,3);
+		        int *acc      = (int*) getArgReference(stk,p,4);
+
+			reg = findRegist(*sch, *tab, *col, *acc);
+
+			setModuleId(p,putName("datacyclotron",13));
+			for (k = 0; k < reg->partitions; k++ ) {
 #ifdef BIND_DATAFLOW_OPT
-				setFunctionId(p, putName("bind",4));
+			setFunctionId(p, putName("bind",4));
 #else
-				setFunctionId(p, putName("copy",4));
+			setFunctionId(p, putName("copy",4));
 #endif
-				used[getArg(p,0)] = 1;
-				actions++;
+			p = pushInt(mb,p,reg->partitions);
+			p = pushInt(mb,p,reg->f_bun[k]);
+			p = pushInt(mb,p,reg->l_bun[k]);
+
 			}
+			used[getArg(p,0)] = 1;
+			actions++;
+		}
 #ifdef BIND_DATAFLOW_OPT
 		for (j = p->retc; j<p->argc; j++)
-		if ( used[getArg(p,j)] == 1 ){
-			used[getArg(p,j)] = 2;
-			q= newStmt(mb,"datacyclotron","pin");
-			pushArgument(mb,q,getArg(p,j));
-			getArg(p,j)= getArg(q,0);
-		}
+			if ( used[getArg(p,j)] == 1 ){
+				used[getArg(p,j)] = 2;
+				q= newStmt(mb,"datacyclotron","pin");
+				pushArgument(mb,q,getArg(p,j));
+				getArg(p,j)= getArg(q,0);
+			}
+
 		if (functionExit(p))
-		for (j = 0; j< mb->vtop; j++)
-		if ( used[j] == 2){
-			q= newStmt(mb,"datacyclotron","unpin");
-			pushArgument(mb,q,j);
-		}
+			for (j = 0; j< mb->vtop; j++)
+				if ( used[j] == 2){
+					q= newStmt(mb,"datacyclotron","unpin");
+					pushArgument(mb,q,j);
+				}
 #endif
 		pushInstruction(mb,p);
 	}
@@ -155,15 +211,18 @@ DCunpin(int *ret, int *bid){
 }
 
 @h
-opt_export str DCcopy(int *ret, str *sch, str *tab, str *col, int *kind);
+opt_export str DCcopy(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
 @c
 str
-DCcopy(int *ret, str *sch, str *tab, str *col, int *kind){
+DCcopy(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
 	(void) ret;
 	(void) sch;
 	(void) tab;
 	(void) col;
 	(void) kind;
+	(void) part;
+	(void) fbun;
+	(void) lbun;
 	throw(MAL,"datacyclotron.copy",PROGRAM_NYI);
 }
 
