@@ -82,6 +82,7 @@ we update its context descriptor to denote an SQL scenario.
 #include <mtime.h>
 #include "optimizer.h"
 #include "opt_statistics.h"
+#include "opt_prelude.h"
 #include <unistd.h>
 
 static int SQLinitialized = 0;
@@ -871,8 +872,13 @@ SQL itself. (Script needed to bind the BATs to a SQL table.)
 void
 SQLsetTrace(backend *be, Client c, bit onoff)
 {
-	int i = 0;
-	InstrPtr q,r;
+	int i = 0, j = 0;
+	InstrPtr q;
+	int n, r;
+#define MAXCOLS 24
+	int rs[MAXCOLS];
+	str colname[MAXCOLS];
+	int coltype[MAXCOLS];
 	MalBlkPtr mb = c->curprg->def;
 	str traceFlag, t,s, def= GDKstrdup("show,ticks,stmt");
 
@@ -890,30 +896,82 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 		q = pushStr(mb,q, "*");
 		q = pushStr(mb,q, "*");
 		q = newStmt(mb,"profiler","start");
-	} else 
-	if ( def && strstr(def,"show") ) {
-		r= newInstruction(mb,ASSIGNsymbol);
-		setModuleId(r,putName("io",2));
-		getArg(r,0)= newTmpVariable(mb,TYPE_void);
+	} else if (def && strstr(def, "show")) {
+		q = newStmt(mb, "profiler", "stop");
 
-		q = newStmt(mb,"profiler","stop");
 		do {
-			s= t;
-			t= strchr(t+1,',');
-			if ( t )
+			s = t;
+			t = strchr(t + 1, ',');
+			if (t)
 				*t = 0;
-			if ( strcmp("keep",s) && strcmp("show",s) ) {
-				q = newStmt(mb,"profiler","getTrace");
+			if (strcmp("keep", s) && strcmp("show", s)) {
+				q = newStmt(mb, profilerRef, "getTrace");
 				q = pushStr(mb, q, s);
-				r= pushArgument(mb,r, getArg(q,0));
+				n = getDestVar(q);
+				q = newStmt(mb, algebraRef, "markH");
+				q = pushArgument(mb, q, n);
+				rs[i] = getDestVar(q);
+				colname[i] = s;
+				/* FIXME: type for name should come from
+				 * mal_profiler.mx, second FIXME: check the user
+				 * supplied values */
+				if (
+						strcmp(s, "time") == 0 ||
+						strcmp(s, "pc") == 0 ||
+						strcmp(s, "stmt") == 0
+				) {
+					coltype[i] = TYPE_str;
+				} else if (
+						strcmp(s, "ticks") == 0 ||
+						strcmp(s, "rbytes") == 0 ||
+						strcmp(s, "wbytes") == 0 ||
+						strcmp(s, "reads") == 0 ||
+						strcmp(s, "writes") == 0
+				) {
+					coltype[i] = TYPE_lng;
+				} else if (
+						strcmp(s, "thread") == 0
+				) {
+					coltype[i] = TYPE_int;
+				}
 				i++;
+				if (i == MAXCOLS) /* just ignore the rest */
+					break;
 			}
 		} while (t++);
-		if ( i > 1)
-			setFunctionId(r,putName("table",5));
-		else
-			setFunctionId(r,putName("print",5));
-		pushInstruction(mb,r);
+
+		if (i > 0) {
+			q = newStmt(mb, sqlRef, "resultSet");
+			q = pushInt(mb, q, i);
+			q = pushInt(mb, q, 1);
+			q = pushArgument(mb, q, rs[0]);
+			r = getDestVar(q);
+
+			for (j = 0; j < i; j++) {
+				q = newStmt(mb, sqlRef, "rsColumn");
+				q = pushArgument(mb, q, r);
+				q = pushStr(mb, q, ".trace");
+				q = pushStr(mb, q, colname[j]);
+				if (coltype[j] == TYPE_str) {
+					q = pushStr(mb, q, "varchar");
+					q = pushInt(mb, q, 1024);
+				} else if (coltype[j] == TYPE_lng) {
+					q = pushStr(mb, q, "bigint");
+					q = pushInt(mb, q, 64);
+				} else if (coltype[j] == TYPE_int) {
+					q = pushStr(mb, q, "int");
+					q = pushInt(mb, q, 32);
+				}
+				q = pushInt(mb, q, 0);
+				q = pushArgument(mb, q, rs[j]);
+			}
+
+			q = newStmt(mb, ioRef, "stdout");
+			n = getDestVar(q);
+			q = newStmt(mb, sqlRef, "exportResult");
+			q = pushArgument(mb, q, n);
+			q = pushArgument(mb, q, r);
+		}
 	}
 	GDKfree(def);
 }
