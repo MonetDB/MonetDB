@@ -685,8 +685,6 @@ decimal_fromstr(str buf, int *len, decimal **ret)
 			scale = -scale;
 	}
 	if (!started && cur > base) {
-		if (precision > 0)
-			precision = 0;	/* force zero */
 		cpy[0] = '0';
 	}
 #if 0
