@@ -2172,9 +2172,8 @@ mvc_result_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (msg)
 		return msg;
-        if( (b = BATdescriptor(*bid)) == NULL ){
-                throw(SQL, "sql.rsColumn", "Cannot access descriptor");
-        }
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(SQL, "sql.rsColumn", "Cannot access descriptor");
 	if (mvc_result_column(m, *tn, *name, *type, *digits, *scale, b)) 
 		res = createException(SQL, "sql.rsColumn", "failed");
 	*ret = 0;
