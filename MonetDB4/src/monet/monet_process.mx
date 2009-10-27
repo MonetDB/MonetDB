@@ -134,6 +134,7 @@ monetSetChannel(Thread t, stream *in, stream *out)
 {
 	if (t == 0) {
 		GDKerror("monetSetChannel: unknown thread\n");
+		return EOF;
 	}
 	if (t->data[0] == 0 || t->data[1] == 0) {
 		return EOF;
