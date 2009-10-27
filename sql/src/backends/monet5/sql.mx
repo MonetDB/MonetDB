@@ -208,7 +208,7 @@ comment "Add the value to the row query result";
 
 pattern rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any_1] ) :void
 address mvc_result_column_wrap
-comment "Add the colunm to the table query result";
+comment "Add the column to the table query result";
 
 pattern declaredTable{unsafe}( name:str ) :int 
 address mvc_declared_table_wrap
