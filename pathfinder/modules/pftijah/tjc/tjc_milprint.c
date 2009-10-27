@@ -306,11 +306,11 @@ char* milprint (tjc_config *tjc_c, TJatree_t *tree)
     // for old index management 
     if (tjc_c->maxfrag < 0) {
         TJCPRINTF(MILOUT,"ftindex := ftiName;\n");    
-        TJCPRINTF(MILOUT,&tjc_c->milfragBUFF[0]);
+        TJCPRINTF(MILOUT,"%s", &tjc_c->milfragBUFF[0]);
     } 
     for (c = 0; c <= tjc_c->maxfrag; c++) {     
         TJCPRINTF(MILOUT,"ftindex := ftiName + \"%d\";\n", c);    
-        TJCPRINTF(MILOUT,&tjc_c->milfragBUFF[0]);
+        TJCPRINTF(MILOUT,"%s", &tjc_c->milfragBUFF[0]);
         milprint_end_frag (tjc_c, tree, c);
     }
     
