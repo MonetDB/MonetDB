@@ -3319,7 +3319,10 @@ ALGtmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 	oid base = 0;
 	
 	assert(*part_nr < *nr_parts);
-        while((nr >>= 1) > 0) bits--;
+        while(nr > 0) {
+		nr >>= 1;
+		bits--;
+	}
 	base = (*part_nr)<<bits;
 	return ALGtmark(result, bid, &base);
 }
@@ -3365,7 +3368,10 @@ ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 	oid base = 0;
 	
 	assert(*part_nr < *nr_parts);
-        while((nr >>= 1) > 0) bits--;
+        while(nr > 0) {
+		nr >>= 1;
+		bits--;
+	}
 	base = (*part_nr)<<bits;
 	return ALGmarkHead(result, bid, &base);
 }
