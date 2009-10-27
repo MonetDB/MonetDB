@@ -1607,10 +1607,6 @@ strSubString(str *res, str s, wrd *offset, wrd *length)
 	}
 	s = UTF8_strtail(s, MAX(0, off));
 	len = (wrd) (UTF8_strtail(s, l) - s);
-	if (off < 0) {
-		len += off;
-		off = 0;
-	}
 	*res = (char *) GDKmalloc(len + 1);
 	strncpy(*res, s, len);
 	(*res)[len] = 0;
