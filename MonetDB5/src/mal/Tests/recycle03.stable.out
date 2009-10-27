@@ -80,7 +80,7 @@ end qry;
 function user.main():void;
 #test the basics of the recycler 
 # re-use joins size constrainted 
-    recycle.setRetainPolicy(3,1);
+    recycle.setAdmPolicy(3,1);
     recycle.setReusePolicy(1);
     io.print("start");
     user.qry(1,10);

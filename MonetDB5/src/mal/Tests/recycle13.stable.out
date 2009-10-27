@@ -114,7 +114,7 @@ function user.main():void;
 #test the basics of the recycler 
 # testing toll-based retention 
 #inter-query commonality 
-    recycle.setRetainPolicy(3);
+    recycle.setAdmPolicy(3);
     recycle.setReusePolicy(1);
     recycle.setCachePolicy(1,5);
     user.qry1(2);

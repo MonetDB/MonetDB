@@ -72,7 +72,7 @@ end qry;
 function user.main():void;
 #test the basics of the recycler 
 # reusing select results 
-    recycle.setRetainPolicy(1);
+    recycle.setAdmPolicy(1);
     recycle.setReusePolicy(1);
     io.print("start");
     user.qry(1,10);

@@ -92,7 +92,7 @@ end qry;
 function user.main():void;
 #test the basics of the recycler 
 # testing reuse-cover with different selection instructions 
-    recycle.setRetainPolicy(1);
+    recycle.setAdmPolicy(1);
     recycle.setReusePolicy(1);
     user.qry(1,9);
     recycle.dump();

@@ -60,7 +60,7 @@ end qry;
 #
 function user.main():void;
 # Test of LRU cache policy in limited memory (12 RU) 
-    recycle.setRetainPolicy(1);
+    recycle.setAdmPolicy(1);
     recycle.setReusePolicy(1);
     recycle.setCachePolicy(1,10,12);
     io.print("start");

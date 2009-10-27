@@ -36,7 +36,7 @@ end qry;
 #
 function user.main():void;
 #test the basics of the replicator 
-    recycle.setRetainPolicy(1);
+    recycle.setAdmPolicy(1);
     io.print("start");
     user.qry();
     io.print("next");
