@@ -127,21 +127,21 @@ int
 trans_alpha(BAT **retval, BAT *b)
 {
 	*retval = BATalpha(b);
-	return retval ? GDK_SUCCEED : GDK_FAIL;
+	return *retval ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 trans_delta(BAT **retval, BAT *b)
 {
 	*retval = BATdelta(b);
-	return retval ? GDK_SUCCEED : GDK_FAIL;
+	return *retval ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 trans_prev(BAT **retval, BAT *b)
 {
 	*retval = BATprev(b);
-	return retval ? GDK_SUCCEED : GDK_FAIL;
+	return *retval ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
