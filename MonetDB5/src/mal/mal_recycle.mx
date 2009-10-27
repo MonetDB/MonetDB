@@ -83,12 +83,12 @@ spaces.
 #define HARDLIMIT_STMT 20000		/* roughly 5/line needed */
 #define HARDLIMIT_MEM 8 * (GIGA/RU)     /* avoid memory overflow */
 
-mal_export int retainPolicy;
-#define RETAIN_NONE	0
-#define RETAIN_ALL 	1
-#define RETAIN_CAT	2
-#define RETAIN_INTEREST	3
-#define RETAIN_ADAPT	4
+mal_export int admissionPolicy;
+#define ADM_NONE	0
+#define ADM_ALL 	1
+#define ADM_CAT	2
+#define ADM_INTEREST	3
+#define ADM_ADAPT	4
 
 #define NO_RECYCLING -1
 #define REC_NO_INTEREST 0
@@ -118,21 +118,8 @@ mal_export lng recycleMemory;	/* Units of memory permitted */
 mal_export lng recyclerUsedMemory;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
-
-/*mal_export lng time0; start time of query */
-/*mal_export int ccCalls;	 Number of calls to cleanCache */
-/*mal_export lng ccTime;    Time spent  */
-/*mal_export lng ccInstr;  Number of instructions cleaned */
-/*mal_export lng crdInstr;  Number of instructions not admited in RP by CRD */
-
-/*mal_export int statements;	total number of statements executed */
-/*mal_export int recycled;	total number of statements recycled */
-/*mal_export int retained;	 total number of statements retained */
+mal_export int recycleMaxInterest;
 mal_export int monitorRecycler;
-/*mal_export int recycleRecent;
-mal_export int recycleMiss;
-mal_export int recycleRem;
-*/
 
 @- Statistics about query patterns
 @h
@@ -204,23 +191,24 @@ typedef struct {
 static void RECYCLEexitImpl(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks);
 @-
 The retention policies currently implemented are:
-RETAIN_ALL, where all results are in retained until
+ADM_ALL, where all results are in admitted until
 the hard resource limits are reached.
-RETAIN_CAT, uses semantics of query category to decide about retainment.
+ADM_CAT, uses semantics of query category to decide about admission.
 If a query has been already executed several times (>3) and none of its
 instructions have been reused, it is not kept in the cache.
-RETAIN_ADAPT is an adaptive scheme, which collects usage statistics and increases the number of credits for globally reused query templates.
+ADM_ADAPT is an adaptive scheme, which collects usage statistics and increases the number of credits for globally reused query templates.
 @c
-int retainPolicy = RETAIN_ALL;  /* recycle retainment policy
-			RETAIN_NONE: baseline, keeps stat, no retain, no reuse
-			RETAIN_ALL: infinite case, retain all
-            RETAIN_CAT: uses query category 
-			RETAIN_INTEREST: uses credits 
-			RETAIN_ADAPT: adaptive credits for globally reused templates */
+int admissionPolicy = ADM_ALL;  /* recycle admission policy
+			ADM_NONE: baseline, keeps stat, no admission, no reuse
+			ADM_ALL: infinite case, admission all
+            ADM_CAT: uses query category 
+			ADM_INTEREST: uses credits 
+			ADM_ADAPT: adaptive credits for globally reused templates */
 lng recycleTime = 0;
 lng recycleSearchTime = 0;	/* cache search time in ms*/
 lng msFindTime = 0;			/* multi-subsume measurements */
 lng msComputeTime = 0;
+int recycleMaxInterest = REC_MAX_INTEREST;
 
 aggrFun minAggr = NULL, maxAggr = NULL;
 
@@ -239,7 +227,7 @@ REUSE_COVER exploits potentional overlap in range selects
 to reduce the amount of scanning.
 @c
 int reusePolicy = REUSE_COVER;	/* recycle reuse policy
-			REUSE_NONE: baseline, keeps stat, no retain, no reuse
+			REUSE_NONE: baseline, keeps stat, no admission, no reuse
 			REUSE_COVER: reuse smallest select covering 
 			REUSE_EXACT: exact covering  
 			REUSE_MULTI: reuse smallest covering select or set of selects */
@@ -310,16 +298,10 @@ double recycleAlpha = 0.5;
 @- Monitoring the Recycler
 @c
 lng recyclerUsedMemory = 0;
-/*
-int statements = 0;	 total number of statements executed */
-/*int recycled = 0;	 total number of statements recycled */
-/*int retained = 0;	 total number of statements retained */
 int monitorRecycler = 0; /* 1: print cache stat after each RECYCLEnew call */
 			 /* 2: print cache stat at the end of query */
 
-
 QryPatPtr recycleQPat = NULL;
-/*int recycleCurQ = -1;    */
 
 void RECYCLEinitQPat(int sz)
 {
@@ -387,10 +369,10 @@ int RECYCLEnewQryStat(Client cntxt, MalBlkPtr mb)
         qstat = recycleQPat->ptrn[idx];
 		qstat->calls++;
         if ( qstat->calls > 3 ){
-            if ( qstat->greuse  && retainPolicy == RETAIN_ADAPT )
+            if ( qstat->greuse  && admissionPolicy == ADM_ADAPT )
                 for (i = 0; i < qstat->stop; i++)
                    if ( qstat->crd[i] >= REC_MIN_INTEREST &&
-                        qstat->crd[i] < REC_MAX_INTEREST)
+                        qstat->crd[i] < recycleMaxInterest)
                        qstat->crd[i]++;
         }
 		return idx;
@@ -452,7 +434,7 @@ static void returnCrd(InstrPtr q)
 	if ((q->recycle >= 0) && (q->recycle <recycleQPat->cnt)){ 
 		qs = recycleQPat->ptrn[q->recycle];
 		if (pc < qs->stop)
-			if ( qs->crd[pc] < REC_MAX_INTEREST)
+			if ( qs->crd[pc] < recycleMaxInterest )
 				qs->crd[pc]++;
 	}
 }
@@ -1129,7 +1111,6 @@ compare by value.
 			"#memory="LLFMT", stop=%d, recycled=%d, executed=%d \n",
 			recyclerUsedMemory, recycleBlk->stop,
 			cntxt->rcc->recycled0, cntxt->rcc->statements);
-/*	retained++;*/
 	cntxt->rcc->recent = i;
 	setSelectProp(q);
 
@@ -2140,13 +2121,10 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
                         gluse = recycleBlk->profiler[i].trace = TRUE;
             else { /*local use - return the credit */
 			    returnCrd(q);
-/*                                getIPtr(q,r,j,pc);
-                                if (r && r->recycle <REC_MAX_INTEREST)
-                                        r->recycle++; */
             }
             recycleBlk->profiler[i].clk = GDKusec();
             if (!isBindInstr(q)){
-                cntxt->rcc->recycled++;
+                cntxt->rcc->recycled0++;
                 updateQryStat(q->recycle,gluse);
             }
             cntxt->rcc->recent = i;
@@ -2187,7 +2165,7 @@ We execute it in place and safe the result upon need.
         s->keepAlive= j;
         s->stk[getArg(p,1)].val.bval = nbid;
         BBPdecref(bid, TRUE);
-        cntxt->rcc->recycled++;
+        cntxt->rcc->recycled0++;
         recycleBlk->profiler[pc].counter++;
         if ( recycleBlk->profiler[pc].clk < cntxt->rcc->time0 )
                 gluse = recycleBlk->profiler[pc].trace = TRUE;
@@ -2275,31 +2253,31 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 			RECYCLEcleanCache(cntxt, wr);
 	}
 	if ( RECYCLEinterest(p))
-	switch(retainPolicy) {
-	case RETAIN_NONE:
-		/* RETAIN_NONE: baseline, keeps stat, no retain, no reuse */
+	switch(admissionPolicy) {
+	case ADM_NONE:
+		/* ADM_NONE: baseline, keeps stat, no admission, no reuse */
 		break;
-	case RETAIN_ALL:
-		/* RETAIN_ALL: infinite case, retain all new instructions */
+	case ADM_ALL:
+		/* ADM_ALL: infinite case, admit all new instructions */
 		if (RECYCLEfind(cntxt,mb,stk,p)<0 )
 			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 		break;
-	case RETAIN_CAT:
-		/* RETAIN_CAT: query-category-based semantics, retain if evidences for reuse inside the same query*/
+	case ADM_CAT:
+		/* ADM_CAT: query-category-based semantics, admit if evidences for reuse inside the same query*/
 		if (RECYCLEgetQryCat(cntxt->rcc->curQ)<3 && RECYCLEfind(cntxt,mb,stk,p)< 0)
 			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 		break;
-    case RETAIN_ADAPT:        
-	case RETAIN_INTEREST:
-		/* RETAIN_INTEREST: refinement per instruction, retain if evidences for previous reuse */
+    case ADM_ADAPT:        
+	case ADM_INTEREST:
+		/* ADM_INTEREST: refinement per instruction, retain if evidences for previous reuse */
 		if (RECYCLEfind(cntxt,mb,stk,p)< 0){
 			if (InstrCrd(mb,p) > REC_MIN_INTEREST)
 				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 			else cntxt->rcc->crdInstr++;
 		}
 		break;
-/*	case RETAIN_ADAPT:
-//		 RETAIN_ADAPT: searching the cache may take too long? 
+/*	case ADM_ADAPT:
+//		 ADM_ADAPT: searching the cache may take too long? 
 		if ( RECYCLEfind(cntxt,mb,stk,p)< 0){
 			if (recycleSearchTime > recycleTime)
 				RECYCLEcleanCache(cntxt, wr);
@@ -2423,19 +2401,13 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 	                        p->token = NOOPsymbol;
 				cntxt->rcc->recycleRem ++;
 				if ( recycleBlk->profiler[i].counter >1) {
-                          /*              getIPtr(p,r,j,pc);
-                                        if (r && r->recycle <REC_MAX_INTEREST)
-                                                r->recycle++; */
-					returnCrd(p);
-                                }
+                	returnCrd(p);
+				}
 
 #else
 				RECYCLEgarbagecollect(recycleBlk, p, used);
 				recyclerUsedMemory -= recycleBlk->profiler[i].wbytes;
 				if ( recycleBlk->profiler[i].counter >1) {
-				/*	getIPtr(p,r,j,pc);
-					if (r && r->recycle <REC_MAX_INTEREST)
-						r->recycle++;*/
 					returnCrd(p);
 				}
 				removeInstruction(recycleBlk, p);

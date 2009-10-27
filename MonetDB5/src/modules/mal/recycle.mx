@@ -46,16 +46,17 @@ pattern dumpQPat():void
 address RECYCLEdumpQPatWrap
 comment "Dump statistics of query patterns";
 
-pattern setRetainPolicy(p:int...):void
-address RECYCLEsetRetain
-comment "Set recycler retainment policy:
-0- RETAIN_NONE: baseline, keeps stat, no retain, no reuse
-1- RETAIN_ALL: infinite case, retain all
-2- RETAIN_CAT: time-based semantics, retain if beneficial
-3- RETAIN_ADAPT: adaptive temporal";
+pattern setAdmPolicy(p:int...):void
+address RECYCLEsetAdmission
+comment "Set recycler admission policy:
+0- ADM_NONE: baseline, keeps stat, no admission, no reuse
+1- ADM_ALL: infinite case, admit all
+2- ADM_CAT: use query category 
+3- ADM_INTEREST: use credits
+4- ADM_ADAPT: adaptive credits for globally reused templates";
 
-command getRetainPolicy():int
-address RECYCLEgetRetain;
+command getAdmPolicy():int
+address RECYCLEgetAdmission;
 
 pattern setReusePolicy(p:int...):void
 address RECYCLEsetReuse
@@ -94,7 +95,7 @@ comment "Clear the recycle cache";
 
 command monitor(f:int):void
 address RECYCLEmonitor
-comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements retained)";
+comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements admitted)";
 
 command log(nm:str):void
 address RECYCLElog
@@ -128,11 +129,11 @@ comment "Called at the start of a recycle controlled function";
 recycle_export str RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-recycle_export str RECYCLEsetRetain(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEsetAdmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEsetReuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEresetCMD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-recycle_export str RECYCLEgetRetain(int *p);
+recycle_export str RECYCLEgetAdmission(int *p);
 recycle_export str RECYCLEgetReuse(int *p);
 recycle_export str RECYCLEgetCache(int *p);
 recycle_export str RECYCLEshutdownWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -201,8 +202,8 @@ RECYCLEdump(stream *s)
     lng ccCalls=0, ccInstr=0, crdInstr=0;
     
 	stream_printf(s,"#Recycler  catalog\n");
-        stream_printf(s,"#retain= %d time =%d alpha= %4.3f\n",
-                retainPolicy, recycleTime, recycleAlpha);
+        stream_printf(s,"#admission= %d time =%d alpha= %4.3f\n",
+                admissionPolicy, recycleTime, recycleAlpha);
         stream_printf(s,"#reuse= %d\n", reusePolicy);
         stream_printf(s,"#rcache= %d limit= %d memlimit="LLFMT"\n", rcachePolicy, recycleCacheLimit, recycleMemory);
         stream_printf(s,"#hard stmt = %d hard var = %d hard mem="LLFMT"\n",
@@ -375,15 +376,18 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 
 
 str
-RECYCLEsetRetain(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RECYCLEsetAdmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	int crd;
 	(void) cntxt;
 	(void) mb;
-	retainPolicy = * (int*) getArgReference(stk, p,1);
-/*	if( p->argc > 2)
-	if (retainPolicy == RETAIN_ADAPT)
-		recycleTime = * (int*) getArgReference(stk, p,2); */
-	
+
+	admissionPolicy = * (int*) getArgReference(stk,p,1);
+	if( p->argc > 2 && admissionPolicy >= ADM_INTEREST ){
+		crd = * (int*) getArgReference(stk,p,2); 
+		if ( crd > 0 )
+			recycleMaxInterest = crd + REC_MIN_INTEREST;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -412,9 +416,9 @@ RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str 
-RECYCLEgetRetain(int *p)
+RECYCLEgetAdmission(int *p)
 {
-	*p = retainPolicy;
+	*p = admissionPolicy;
 	return MAL_SUCCEED;
 }
 

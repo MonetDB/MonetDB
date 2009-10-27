@@ -217,7 +217,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			printInstruction(cntxt->fdout,mb, 0, p,LIST_MAL_ALL);
 #endif
 			actions ++;
-			p->recycle = REC_MAX_INTEREST; /* this instruction is to be monitored */
+			p->recycle = recycleMaxInterest; /* this instruction is to be monitored */
 			for (j= 0; j < p->retc; j++)
 				if (getLastUpdate(span, getArg(p,j)) == i)
 					recycled[getArg(p,j)] = 1;
@@ -241,7 +241,7 @@ are marked for re-use.
 		     getFunctionId(p)== putName("like",4) || 
 	         getFunctionId(p)== thetaselectRef ) &&
 	      	 recycled[getArg(p,1)] ){
-			p->recycle = REC_MAX_INTEREST;
+			p->recycle = recycleMaxInterest;
 			actions ++;
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
@@ -254,14 +254,14 @@ are marked for re-use.
 				if ( getFunctionId(p) == uselectRef )
 					setFunctionId(q, selectRef); 
 				else setFunctionId(q, thetaselectRef); 
-				q->recycle = REC_MAX_INTEREST;
+				q->recycle = recycleMaxInterest;
 				recycled[getArg(q,0)] = 1;
 				pushInstruction(mb,q);
 				getArg(p,1) = getArg(q,0);
 				setFunctionId(p,projectRef);
 				p->argc = 2;
 			}
-			p->recycle = REC_MAX_INTEREST;
+			p->recycle = recycleMaxInterest;
 			actions ++; 
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
@@ -270,7 +270,7 @@ are marked for re-use.
 		if(getModuleId(p) == pcreRef) {
 			if (( getFunctionId(p)== selectRef && recycled[getArg(p,2)]) ||  
 			    ( getFunctionId(p)== uselectRef && recycled[getArg(p,2)])){
-				p->recycle = REC_MAX_INTEREST;
+				p->recycle = recycleMaxInterest;
 				actions ++;
 				if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
@@ -279,14 +279,14 @@ are marked for re-use.
 				q = copyInstruction(p);
 				getArg(q,0)= newTmpVariable(mb,TYPE_any); 
 				setFunctionId(q, likeselectRef);
-				q->recycle = REC_MAX_INTEREST;
+				q->recycle = recycleMaxInterest;
 				recycled[getArg(q,0)] = 1;
 				pushInstruction(mb,q);
 				getArg(p,1) = getArg(q,0);
 				setFunctionId(p,projectRef);
 				setModuleId(p,algebraRef);
 				p->argc = 2;
-				p->recycle = REC_MAX_INTEREST;
+				p->recycle = recycleMaxInterest;
 				actions ++; 
 				if (getLastUpdate(span, getArg(p,0)) == i)
 					recycled[getArg(p,0)] = 1;
@@ -311,7 +311,7 @@ with the transaction commits.
 		if (getModuleId(p) == octopusRef && 
 			 getFunctionId(p) == bindRef ) {
 				recycled[getArg(p,0)] = 1;
-				p->recycle = REC_MAX_INTEREST; 
+				p->recycle = recycleMaxInterest; 
 		}
 
 		pushInstruction(mb,p);
