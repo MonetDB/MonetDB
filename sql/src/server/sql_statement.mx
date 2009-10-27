@@ -173,7 +173,6 @@ typedef struct group {
 
 	stmt *grp;
 	stmt *ext;
-	list *cols;		/* list of group by columns */
 } group;
 
 extern const char *st_type2string(st_type type);
@@ -305,7 +304,7 @@ extern stmt *stmt_dup(stmt *s);
 /*Dependency control*/
 extern list* stmt_list_dependencies(stmt *s, int depend_type);
 
-extern group *grp_create(stmt *s, group *og, stmt *col);
+extern group *grp_create(stmt *s, group *og);
 extern void grp_destroy(group *g);
 extern group *grp_dup(group *g);
 
@@ -551,8 +550,6 @@ grp_destroy(group *g)
 	if (sql_ref_dec(&g->ref) == 0) {
 		stmt_destroy(g->grp);
 		stmt_destroy(g->ext);
-		if (g->cols)
-			list_destroy(g->cols);
 		_DELETE(g);
 	}
 }
@@ -566,25 +563,16 @@ grp_dup(group *g)
 }
 
 group *
-grp_create(stmt *s, group *og, stmt *col)
+grp_create(stmt *s, group *og)
 {
 	group *g = NEW(group);
 
 	sql_ref_init(&g->ref);
-	g->cols = NULL;
 	if (og) {
 		g->grp = stmt_derive(stmt_dup(og->grp), s);
-		g->cols = og->cols;
-		og->cols = NULL;
 		grp_destroy(og);
 	} else {
 		g->grp = stmt_group(s);
-		if (col)
-			g->cols = list_create(NULL);
-	}
-	if (col) {
-		assert(g->cols);
-		list_append(g->cols, col);
 	}
 	g->ext = stmt_ext(stmt_dup(g->grp));
 	return g;

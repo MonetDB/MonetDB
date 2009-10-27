@@ -305,7 +305,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 						list_destroy(l);
 						return NULL;
 					}
-					g = grp_create(es, g, NULL);
+					g = grp_create(es, g);
 				}
 			}
 			/* order on the group first */
@@ -1023,14 +1023,14 @@ rel2bin_distinct(stmt *s)
 		for (n = tids->h; n; n = n->next) {
 			stmt *t = n->data;
 
-			grp = grp_create(column(t), grp, NULL);
+			grp = grp_create(column(t), grp);
 		}
 		list_destroy(tids);
 	} else {
 		for (n = s->op1.lval->h; n; n = n->next) {
 			stmt *t = n->data;
 
-			grp = grp_create(column(t), grp, NULL);
+			grp = grp_create(column(t), grp);
 		}
 	}
 
@@ -1152,9 +1152,9 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	 * columns before the group by.
 	 */
 	for (n = left->op1.lval->h; n; n = n->next) 
-		lgrp = grp_create(column(n->data), lgrp, NULL);
+		lgrp = grp_create(column(n->data), lgrp);
 	for (n = right->op1.lval->h; n; n = n->next) 
-		rgrp = grp_create(column(n->data), rgrp, NULL);
+		rgrp = grp_create(column(n->data), rgrp);
 
  	a = sql_bind_aggr(sql->session->schema, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
@@ -1290,9 +1290,9 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	 * columns before the group by.
 	 */
 	for (n = left->op1.lval->h; n; n = n->next) 
-		lgrp = grp_create(column(n->data), lgrp, NULL);
+		lgrp = grp_create(column(n->data), lgrp);
 	for (n = right->op1.lval->h; n; n = n->next) 
-		rgrp = grp_create(column(n->data), rgrp, NULL);
+		rgrp = grp_create(column(n->data), rgrp);
 
  	a = sql_bind_aggr(sql->session->schema, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
@@ -1736,7 +1736,7 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 					grp_destroy(groupby);
 				return NULL;
 			}
-			groupby = grp_create(gbcol, groupby, NULL);
+			groupby = grp_create(gbcol, groupby);
 		}
 	}
 	/* now aggregate */
@@ -2038,7 +2038,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			stmt *ssum;
 
 			stmt *ins = stmt_dup(nth(inserts, c->c->colnr)->op2.stval);
-			group *g = grp_create(ins, NULL, NULL);
+			group *g = grp_create(ins, NULL);
 			stmt *ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt), 1);
 
 			/* (count(ss) <> sum(ss)) */
@@ -2532,7 +2532,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			/* also take the hopefully unique hash keys, to reduce
 			   (re)group costs */
 			if (k->idx && hash_index(k->idx->type))
-				g = grp_create(stmt_dup(idx_updates), g, NULL);
+				g = grp_create(stmt_dup(idx_updates), g);
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *upd;
@@ -2550,7 +2550,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 					upd = stmt_select2(upd, n, stmt_dup(n), 0);
 				}
 
-				g = grp_create(upd, g, NULL);
+				g = grp_create(upd, g);
 			}
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt), 1);
 			grp_destroy(g);
@@ -2603,7 +2603,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 				upd = stmt_select2(upd, n, stmt_dup(n), 0);
 			}
 
-			g = grp_create(upd, NULL, NULL);
+			g = grp_create(upd, NULL);
 			ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt), 1);
 
 			/* (count(ss) <> sum(ss)) */
