@@ -746,6 +746,10 @@ sqlstmt:
 		  	  m->sym = $$ = $3; YYACCEPT; 
 			}
  | SQL_PLAN 		{ mvc *m = (mvc*)parm;
+			  if (m->scanner.mode == LINE_1) {
+				yyerror("PLAN is only available in mclient due to protocol restrictions");
+				YYABORT;
+			  }
 		  	  m->emode = m_plan;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
