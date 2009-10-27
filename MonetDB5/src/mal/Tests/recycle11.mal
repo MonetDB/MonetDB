@@ -36,7 +36,7 @@ function qry(low:int, hgh:int);
 end qry;
 
 
-recycle.setRetainPolicy(1);
+recycle.setAdmPolicy(1);
 recycle.setReusePolicy(1);
 optimizer.recycle("user","qry");
 

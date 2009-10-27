@@ -33,7 +33,7 @@ function qry1(val:int);
     io.print(s1);
 end qry1;
 
-recycle.setRetainPolicy(3);
+recycle.setAdmPolicy(3);
 recycle.setReusePolicy(1);
 recycle.setCachePolicy(1,5);
 optimizer.recycle("user","qry");

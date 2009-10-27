@@ -33,7 +33,7 @@ function qry1(val:int);
     s1:= algebra.select(b,val);
 end qry1;
 
-recycle.setRetainPolicy(1);
+recycle.setAdmPolicy(1);
 recycle.setReusePolicy(1);
 recycle.setCachePolicy(3);
 optimizer.recycle("user","qry");

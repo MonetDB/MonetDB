@@ -23,7 +23,7 @@ function qry(low:int, hgh:int);
 	s1:= algebra.select(b,low,hgh);
 end qry;
 
-recycle.setRetainPolicy(1);
+recycle.setAdmPolicy(1);
 recycle.setReusePolicy(1);
 optimizer.recycle("user","qry");
 io.print("start");

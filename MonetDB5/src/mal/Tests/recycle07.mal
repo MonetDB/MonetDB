@@ -16,7 +16,7 @@ function qry(low:int, hgh:int);
 	m0:= algebra.markT(s1, 0@0);
 end qry;
 
-recycle.setRetainPolicy(1);
+recycle.setAdmPolicy(1);
 recycle.setReusePolicy(1);
 recycle.setCachePolicy(2,6);
 optimizer.recycle("user","qry");

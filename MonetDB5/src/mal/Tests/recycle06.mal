@@ -16,7 +16,7 @@ function qry(low:int, hgh:int);
 	mr:= bat.reverse(m0);
 end qry;
 
-recycle.setRetainPolicy(1);
+recycle.setAdmPolicy(1);
 recycle.setReusePolicy(1);
 recycle.setCachePolicy(1,9);
 optimizer.recycle("user","qry");
