@@ -967,13 +967,16 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	BUN r, p, q;
 	BAT *bn = BATnew(TYPE_oid, TYPE_int, size);
 	BAT *lnk = BATnew(TYPE_oid, TYPE_void, size);
-	int *hcnt = (int*)Tloc(bn, BUNfirst(bn));
-	oid *hcur = (oid*)Hloc(bn, BUNfirst(bn));
+	int *hcnt;
+	oid *hcur;
 	oid *link = (oid*)Hloc(lnk, BUNfirst(lnk));
 	oid *hdom = (oid*)Hloc(dom, 0);
 
 	if (bn == NULL)
 		return GDK_FAIL;
+
+	hcnt = (int*)Tloc(bn, BUNfirst(bn));
+	hcur = (oid*)Hloc(bn, BUNfirst(bn));
 
 	/* we know the domain; go for perfect hashing */
 	for (mask = 1; mask < size; mask <<= 1)
