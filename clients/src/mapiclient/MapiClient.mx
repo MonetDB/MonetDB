@@ -228,8 +228,7 @@ static int interactive_stdin = 0;
 enum modifiers {
 	NOmodifier,
 	EXPLAINmodifier,
-	DEBUGmodifier,
-	TRACEmodifier
+	DEBUGmodifier
 };
 static enum modifiers specials = NOmodifier; 
 /* set when we see EXPLAIN,DEBUG, or TRACE (only if mode == SQL).
@@ -378,8 +377,7 @@ fetch_row(MapiHdl hdl)
 static void
 SQLsetSpecial(const char *command)
 {
-	if (mode == SQL && command && 
-		( specials==NOmodifier || specials == TRACEmodifier)) {
+	if (mode == SQL && command && specials == NOmodifier) {
 		/* catch the specials for better rendering */
 		while (*command == ' ' || *command == '\t')
 			command++;
@@ -387,8 +385,6 @@ SQLsetSpecial(const char *command)
 			specials = EXPLAINmodifier;
 		else if (strncmp(command, "debug", 5) == 0)
 			specials = DEBUGmodifier;
-		else if (strncmp(command, "trace", 5) == 0)
-			specials = TRACEmodifier;
 		else
 			specials = NOmodifier;
 	}
@@ -761,68 +757,6 @@ SQLexplainRendering(MapiHdl hdl)
 }
 
 static void
-SQLtraceRenderer(MapiHdl hdl)
-{
-	int ps = rowsperpage, rows = 0, silent = 0;
-	char *fields[2];
-	char *s;
-	int len[2];
-	int cols = 1;
-	int numeric[2];
-
-	SQLqueryEcho(hdl);
-	len[0] = pagewidth - 4;	/* remove borders */
-	numeric[0] = 0;
-	numeric[1] = 0;
-
-	while ((fields[0] = fetch_line(hdl)) != NULL) {
-		if (silent)
-			continue;
-		if (*fields[0] == '%')
-			continue;
-
-		/* simple render */
-		fields[0] = fields[0] + 1;
-		s = strrchr(fields[0], ']');
-		if (s)
-			*s = 0;
-
-
-		if ((s = strchr(fields[0], '#')) != NULL) {
-			*s = 0;
-			fields[1] = s + 1;
-			if (cols == 1) {
-				size_t l = strlen(fields[0]);
-				assert(l <= INT_MAX);
-				len[1] = len[0] - (int) l;
-				len[0] = (int) l - 2;	/* border */
-				SQLseparator(len, 2, '-');
-				cols = 2;
-			}
-		} else {
-			int olen[1];
-			char *t;
-
-			olen[0] = pagewidth - 4;
-			for (t = fields[0]; *t; t++)
-				if (*t == '\t')
-					*t = ' ';
-			SQLrow(olen, numeric, fields, 1, 0);
-			continue;	/* output should be rendered differently */
-		}
-
-		if (ps > 0 && rows >= ps && fromConsole != NULL) {
-			SQLpagemove(len, cols, &ps, &silent);
-			rows = 0;
-			if (silent)
-				continue;
-		}
-		rows += SQLrow(len, numeric, fields, cols, 0);
-	}
-	SQLseparator(len, cols, '-');
-}
-
-static void
 SQLrenderer(MapiHdl hdl)
 {
 	int i, total, vartotal, fields, oldfields = 0, max = 1, graphwaste = 0;
@@ -1173,9 +1107,6 @@ format_result(Mapi mid, MapiHdl hdl)
 					break;
 				case EXPLAINmodifier:
 					SQLexplainRendering(hdl);
-					break;
-				case TRACEmodifier:
-					SQLtraceRenderer(hdl);
 					break;
 				default:
 					SQLrenderer(hdl);
