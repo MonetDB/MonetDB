@@ -1935,7 +1935,7 @@ strSubstitute(str *res, str s, str src, str dst, bit *g)
 	buf = *res = (str) GDKmalloc(n);
 	end = buf + l;
 	fnd = buf;
-	strcpy(buf, s);
+	strcpy(buf, s?s:"");
 	if (!lsrc)
 		return GDK_SUCCEED;
 	do {
