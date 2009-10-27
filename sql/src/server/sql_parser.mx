@@ -772,10 +772,6 @@ sqlstmt:
 			}
    sqlstmt		{ $$ = $3; YYACCEPT; }
  | SQL_TRACE 		{ mvc *m = (mvc*)parm;
-			  if (m->scanner.mode == LINE_1) {
-				yyerror("We do not support tracing SQL in interactive mode");
-				YYABORT;
-			  }
 		  	  m->emod |= mod_trace;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
