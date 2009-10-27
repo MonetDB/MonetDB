@@ -402,7 +402,7 @@ typedef struct {
 		}							\
 	}								\
 	entry.cnt = 1;							\
-	mapsize = BUNlast(map);
+	mapsize = map ? BUNlast(map) : 0;
 @c
 #if 0
 static void
