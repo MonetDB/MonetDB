@@ -73,11 +73,106 @@ typedef struct DCYCATALOG {
 
 DCYcatalog *catalog;
 
+opt_export DCYcatalog* addRegist( str sch, str tab, str col, int acc, int f_bun, int l_bun );
+opt_export DCYcatalog* findRegist( str sch, str tab, str col, int acc);
+opt_export DCYcatalog* removePartRegist( str sch, str tab, str col, int acc, int part);
+opt_export int dropRegist( str sch, str tab, str col, int acc );
+opt_export str printRegists(void);
+
 @-
 @c
 #include "mal_config.h"
 #include "opt_datacyclotron.h"
 #include "mal_instruction.h"
+
+str
+printRegists(void) {
+	DCYcatalog *reg = NULL;
+	int chunks = 0, parts = 0;
+	char *res = NULL;
+
+	reg = catalog;
+	
+	while(reg) {
+		chunks++;
+		parts += reg->partitions;
+                reg = reg->next;
+        }
+
+	sprintf(res, "The catalog for the datacyclotron optimizer contains %d chunks and %d partitions.\n", chunks, parts);	
+
+#ifdef DEBUG_DATACYCLOTRON_OPT
+	printf("%s\n", res);
+#endif
+
+	return res;		
+}
+
+DCYcatalog*
+addRegist( str sch, str tab, str col, int acc, int f_bun, int l_bun ) {
+	DCYcatalog *reg = NULL;
+
+	if (!(reg = findRegist(sch, tab, col, acc))) {
+		reg = GDKmalloc(sizeof(DCYcatalog));
+		strcpy(reg->schema, sch);
+		strcpy(reg->table, tab);
+		strcpy(reg->column, col);
+		reg->access = acc;
+		reg->partitions = 0;
+		reg->next = catalog;
+		catalog = reg;
+	}
+
+	reg->f_bun[reg->partitions] = f_bun;
+	reg->l_bun[reg->partitions] = l_bun;
+	reg->partitions++;
+
+	return reg;		
+}
+
+DCYcatalog*
+removePartRegist( str sch, str tab, str col, int acc, int part) {
+	int i = 0;
+	DCYcatalog *reg = NULL;
+
+	if (!(reg = findRegist(sch, tab, col, acc))) 
+		return NULL;
+
+	for (i = part; i < (reg->partitions-1); i++) {
+		reg->f_bun[i] = reg->f_bun[i+1];
+		reg->l_bun[i] = reg->l_bun[i+1];
+	}
+
+	reg->partitions--;
+
+	return reg;		
+}
+
+int
+dropRegist( str sch, str tab, str col, int acc ) {
+	DCYcatalog *reg = NULL, *prev_reg = NULL;
+
+	reg = catalog;
+	
+	while(reg && !(
+                (strcmp(reg->schema, sch) == 0) &&
+                (strcmp(reg->table, tab) == 0) &&
+                (strcmp(reg->column, col) == 0) &&
+                reg->access == acc
+        )) {
+		prev_reg = reg;
+                reg = reg->next;
+        }
+
+	if (prev_reg)
+		prev_reg->next = reg->next;
+	else
+		catalog = reg->next;
+
+	GDKfree(reg);
+
+	return 1;		
+}
 
 DCYcatalog*
 findRegist( str sch, str tab, str col, int acc) {
