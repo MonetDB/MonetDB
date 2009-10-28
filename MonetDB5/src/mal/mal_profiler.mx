@@ -229,7 +229,7 @@ mal_export int malProfileMode;
 mal_export void clearTrace(void);
 mal_export BAT *getTrace(str ev);
 mal_export int getTraceType(str nme);
-mal_export BAT * TRACEtable();
+mal_export BAT * TRACEtable(void);
 
 mal_export lng getDiskSpace(void);
 mal_export lng getDiskReads(void);
@@ -979,7 +979,7 @@ static BAT *TRACE_id_writes=0;
 static BAT *TRACE_id_thread=0;
 
 BAT *
-TRACEtable(){
+TRACEtable(void){
 	BAT *t;
 
 	initTrace();
