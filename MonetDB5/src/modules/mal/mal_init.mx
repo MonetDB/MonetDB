@@ -163,6 +163,7 @@ include mal_io;
 include tablet;
 include factories;
 include recycle;
+include datacyclotron;
 include remote;
 include trader; # experimental
 
@@ -214,6 +215,7 @@ include opt_reduce;
 include opt_remap;
 include opt_replication;
 include opt_recycler;
+include opt_datacyclotron;
 include opt_singleton;
 include opt_strengthReduction;
 include opt_statistics;
