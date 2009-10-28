@@ -197,13 +197,14 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 {
 	int i, actions=0, k = 0;
 	DCYcatalog *reg;
-	InstrPtr *old;
+	InstrPtr *old, new;
 	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
 	int limit;
 #ifdef BIND_DATAFLOW_OPT
 	InstrPtr q;
 	int j;
 #endif
+	(void) stk;
 
 	(void) cntxt;
 	if ( used == NULL)
@@ -215,51 +216,55 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 	for (i = 1; i<limit; i++) {
 		p = old[i];
-		if (getModuleId(p)== sqlRef && 
-				(getFunctionId(p) == bindRef || 
-				 getFunctionId(p) == putName("bind_idxbat",11) ||
-				 getFunctionId(p) == binddbatRef) ) {
+		if (getModuleId(p)== sqlRef && (getFunctionId(p) == bindRef) ) {
 
 			/*Check if the BAT is a datacyclotron BAT*/
-			str *sch      = (str*) getArgReference(stk,p,1);
-		        str *tab      = (str*) getArgReference(stk,p,2);
-		        str *col      = (str*) getArgReference(stk,p,3);
-		        int *acc      = (int*) getArgReference(stk,p,4);
+			str sch      = getVarConstant(mb, getArg(p,1)).val.sval;
+			str tab      = getVarConstant(mb, getArg(p,2)).val.sval;
+			str col      = getVarConstant(mb, getArg(p,3)).val.sval;
+			int acc      = getVarConstant(mb, getArg(p,4)).val.ival;
 
-			reg = findRegist(*sch, *tab, *col, *acc);
+			reg = findRegist(sch, tab, col, acc);
 
-			setModuleId(p,putName("datacyclotron",13));
-			for (k = 0; k < reg->partitions; k++ ) {
+			if (reg) {
+				for (k = 0; k < reg->partitions; k++ ) {
 #ifdef BIND_DATAFLOW_OPT
-			setFunctionId(p, putName("bind",4));
+					new = newStmt(mb,"datacyclotron","bind");
 #else
-			setFunctionId(p, putName("copy",4));
+					new = newStmt(mb,"datacyclotron","copy");
 #endif
-			p = pushInt(mb,p,reg->partitions);
-			p = pushInt(mb,p,reg->f_bun[k]);
-			p = pushInt(mb,p,reg->l_bun[k]);
-
-			}
-			used[getArg(p,0)] = 1;
-			actions++;
-		}
-#ifdef BIND_DATAFLOW_OPT
-		for (j = p->retc; j<p->argc; j++)
-			if ( used[getArg(p,j)] == 1 ){
-				used[getArg(p,j)] = 2;
-				q= newStmt(mb,"datacyclotron","pin");
-				pushArgument(mb,q,getArg(p,j));
-				getArg(p,j)= getArg(q,0);
-			}
-
-		if (functionExit(p))
-			for (j = 0; j< mb->vtop; j++)
-				if ( used[j] == 2){
-					q= newStmt(mb,"datacyclotron","unpin");
-					pushArgument(mb,q,j);
+					//new = pushReturn(mb, new, TYPE_any);
+					new = pushStr(mb,new,reg->schema);
+					new = pushStr(mb,new,reg->table);
+					new = pushStr(mb,new,reg->column);
+					new = pushInt(mb,new,reg->access);
+					new = pushInt(mb,new,k);
+					new = pushInt(mb,new,reg->f_bun[k]);
+					new = pushInt(mb,new,reg->l_bun[k]);
+					pushInstruction(mb,new);
 				}
+				used[getArg(p,0)] = 1;
+			}
+			actions++;
+		} else { 
+#ifdef BIND_DATAFLOW_OPT
+			for (j = p->retc; j<p->argc; j++)
+				if ( used[getArg(p,j)] == 1 ){
+					used[getArg(p,j)] = 2;
+					q= newStmt(mb,"datacyclotron","pin");
+					pushArgument(mb,q,getArg(p,j));
+					getArg(p,j)= getArg(q,0);
+				}
+
+			if (functionExit(p))
+				for (j = 0; j< mb->vtop; j++)
+					if ( used[j] == 2){
+						q= newStmt(mb,"datacyclotron","unpin");
+						pushArgument(mb,q,j);
+					}
 #endif
-		pushInstruction(mb,p);
+			pushInstruction(mb,p);
+		}
 	}
 	GDKfree(old);
 	return actions;
