@@ -279,21 +279,14 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 			} 
 		} 
 
-		/* skip single character separators fast. */
-		if ( task->seplen == 1){
-			for ( ; *line ; line++)
-				if ( *line == ch)  {
-					*line = 0;
-					line ++;
-					goto endoffield;
-				}
-		} else
-			for ( ; *line ; line++)
-				if ( *line == ch && (task->seplen == 1 || strncmp(line,task->separator,task->seplen) == 0) ){
-					*line = 0;
-					line += task->seplen;
-					goto endoffield;
-				}
+		for ( ; *line ; line++)
+			if (*line == ch &&
+				(task->seplen == 1 ||
+				 strncmp(line, task->separator, task->seplen) == 0)) {
+				*line = 0;
+				line += task->seplen;
+				goto endoffield;
+			}
 		if ( i < as->nr_attrs-1)  {
 			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
 					 fmt->sep, BATcount(fmt->c[0]) + 1 + task->next, i);
