@@ -685,15 +685,17 @@ saveBox(Box box, int flag)
 		v = &box->val->stk[i];
 		if (v->vtype == TYPE_bat) {
 			BAT *b = (BAT *) BATdescriptor(v->val.bval);
-			if (b && b->batPersistence == PERSISTENT){
-				stream_printf(f, "%s:bat[:%s,:%s]:= %s.bind(%d);\n", 
-					getVarName(box->sym, i),  
-					getTypeName(getHeadType(getVarType(box->sym,i))),
-					getTypeName(getTailType(getVarType(box->sym,i))),
-					box->name, b->batCacheid);
-				BATsave(b);
-			} 
-			BBPreleaseref(b->batCacheid);
+			if (b) {
+				if (b->batPersistence == PERSISTENT){
+					stream_printf(f, "%s:bat[:%s,:%s]:= %s.bind(%d);\n", 
+						getVarName(box->sym, i),  
+						getTypeName(getHeadType(getVarType(box->sym,i))),
+						getTypeName(getTailType(getVarType(box->sym,i))),
+						box->name, b->batCacheid);
+					BATsave(b);
+				} 
+				BBPreleaseref(b->batCacheid);
+			}
 		} else {
 			tnme = getTypeName(getVarType(box->sym,i));
 			stream_printf(f, "%s := ", getVarName(box->sym, i));
