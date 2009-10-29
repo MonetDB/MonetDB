@@ -197,7 +197,7 @@ malInclude(Client c, str name, int listing)
 
 	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
-	c->promptlength = (int)strlen(c->prompt);
+	c->promptlength = 0;
 	c->listing = listing;
 	c->bak = NULL;
 
@@ -239,7 +239,7 @@ evalFile(Client c, str fname, int listing){
 
 	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
-	c->promptlength = (int)strlen(c->prompt);
+	c->promptlength = 0;
 	c->listing = listing;
 	c->bak = NULL;
 
