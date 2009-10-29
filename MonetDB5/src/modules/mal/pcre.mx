@@ -1186,8 +1186,13 @@ PCRElike4(bit *ret, str *s, str *pat, str *esc, bit *isens)
 	if (!r) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			*ret = FALSE;
-			if (strcmp(*s, *pat) == 0)
-				*ret = TRUE;
+			if (*isens) {
+				if (strcasecmp(*s, *pat) == 0)
+					*ret = TRUE;
+			} else {
+				if (strcmp(*s, *pat) == 0)
+					*ret = TRUE;
+			}
 		} else {
 			if (*isens) {
 				r = PCREimatch(ret, s, &ppat);
