@@ -1746,9 +1746,10 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 
 			if (bs == NULL)
 				stream_printf(f, "Failed to take chunk\n");
-			else
+			else {
 				BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
-			BBPunfix(bs->batCacheid);
+				BBPunfix(bs->batCacheid);
+			}
 		}
 
 		BBPunfix(b->batCacheid);
