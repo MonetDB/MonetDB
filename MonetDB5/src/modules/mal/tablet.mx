@@ -1447,17 +1447,18 @@ bunins_failed:
 char *
 tablet_skip_string(char *s, char quote)
 {
-	int esc = 0;
-
 	while (*s) {
-		if (*s == '\\' && !esc)
-			esc = 1;
-		else if (*s == quote && !esc)
-			break;
-		else
-			esc = 0;
+		if (*s == '\\' && s[1] != '\0')
+			s++;
+		else if (*s == quote) {
+			if (s[1] == quote)
+				*s++ = '\\';	/* sneakily replace "" with \" */
+			else
+				break;
+		}
 		s++;
 	}
+	assert(*s == quote || *s == '\0');
 	if (*s)
 		s++;
 	else
