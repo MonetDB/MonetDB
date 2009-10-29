@@ -587,6 +587,57 @@ typedef struct {
 } *FlowStep, FlowStepRec;
 
 @-
+Running all eligible instructions in parallel creates
+resource contention. This means we should implement
+an admission control scheme where thread are temporarily
+postponed if the claim for memory exceeds a threshold
+In general such contentions will be hard to predict,
+because they depend on the algorithm, the input sizes,
+and the output produced.
+The pessimistic claim is:  getVolume(stk,pci,0)
+@c
+lng memorypool;		/* memory claimed by concurrent threads */
+int memoryclaims;	/* number of threads active */
+
+int
+DFLOWclaim(lng claim)
+{
+	/* optimistically set memory */
+	if ( claim == 0)
+		return 0;
+
+    mal_set_lock(mal_contextLock, "DFLOWdelay");
+	if ( memorypool == 0 && memoryclaims == 0)
+		memorypool = MT_npages() * MT_pagesize();
+	
+	if ( claim > 0 ) {
+		if ( memoryclaims == 0 || memorypool >claim){
+			memorypool -= claim;
+			memoryclaims ++;
+#ifdef DEBUG_FLOW
+			stream_printf(GDKout,"DFLOWclaim %d " LLFMT " " LLFMT"\n",
+				memoryclaims, memorypool, claim);
+#endif
+			mal_unset_lock(mal_contextLock, "DFLOWdelay");
+			return 0;
+		} 
+#ifdef DEBUG_FLOW
+		stream_printf(GDKout,"DFLOWclaim REFUSE" LLFMT " " LLFMT"\n",
+			memoryclaims, memorypool, claim);
+#endif
+		mal_unset_lock(mal_contextLock, "DFLOWdelay");
+		return memoryclaims;
+	} 
+	memorypool += -claim;
+	memoryclaims --;
+#ifdef DEBUG_FLOW
+	stream_printf(GDKout,"DFLOWrelease %d " LLFMT " " LLFMT"\n",
+		memoryclaims, memorypool, claim);
+#endif
+    mal_unset_lock(mal_contextLock, "DFLOWdelay");
+	return memoryclaims;
+}
+@-
 The cost of a flow step depends on availability of its
 arguments and the total size of the BATs being accessed.
 All references to variables outside the block are considered
@@ -738,6 +789,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	MT_Lock *lock = &flow->done->l;
 	int prevpc = 0;
 	int tid = t->id;
+	lng claim;
     
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -775,6 +827,17 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		}
 	}
 
+@-
+Possibly delay processing when we run out of memory.
+@c
+    claim = getVolume(stk,pci,0);
+	if ( claim < 64 * 1024 * 1024)
+		claim = 0;
+    while (claim > 0 &&  (i = DFLOWclaim(claim) ) ){
+        MT_sleep_ms(i * 20);
+        claim -= 64 * 1024 * 1024 ; /* reduce claim with a MB */
+    }
+
 	@:beginProfile(t)@
 	ret = MAL_SUCCEED;
 @-
@@ -785,11 +848,11 @@ We don't allow sequential flow control here.
 	@:MALrecycleStart(t)@ {
         lng tcs = 0;
         switch (pci->token){
-		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; return ret,t)@ break;
-		case PATcall: @:patterncall(SLOW,fs->pc = -1; return ret,t)@ break;
-		case CMDcall: @:commandcall(SLOW,fs->pc = -1; return ret,t)@ break;
-		case FACcall: @:factorycall(SLOW,fs->pc = -1; return ret,t)@ break;
-		case FCNcall: @:functioncall(SLOW,fs->pc = -1; return ret,t)@ break;
+		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
+		case PATcall: @:patterncall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
+		case CMDcall: @:commandcall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
+		case FACcall: @:factorycall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
+		case FCNcall: @:functioncall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
 		case NOOPsymbol:
 		case REMsymbol:
 			break;
@@ -804,6 +867,7 @@ We don't allow sequential flow control here.
 		@:MALrecycleExit(t)@
 	}
 	/* update the list of eligable instructions */
+    DFLOWclaim(-claim);
 	@:endProfile(t)@
 	if (ret)
 		fs->pc = -1;

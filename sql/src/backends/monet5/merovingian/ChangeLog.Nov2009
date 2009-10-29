@@ -3,6 +3,10 @@
 
 *Nov2009
 
+  26 Oct 2009; Fabian Groffen <fabian@cwi.nl> utils.c
+  Fix bug that caused monetdb status to list an incorrect uptime in
+  cases where the uptime was longer than 7 days.
+
   08 Oct 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c,
   merovingian_forkmserver.c, monetdb.c, properties.c:
   Add optpipe setting to control the SQL optimiser pipeline, useful for

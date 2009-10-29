@@ -210,7 +210,7 @@ secondsToString(char *buf, time_t t, int longness)
 
 	p = 1 * 60 * 60 * 24 * 7;
 	if (t > p) {
-		i += sprintf(buf, "%dw", (int)(t / p));
+		i += sprintf(buf + i, "%dw", (int)(t / p));
 		t -= (t / p) * p;
 		if (--longness == 0)
 			return;
@@ -218,7 +218,7 @@ secondsToString(char *buf, time_t t, int longness)
 	}
 	p /= 7;
 	if (t > p) {
-		i += sprintf(buf, "%dd", (int)(t / p));
+		i += sprintf(buf + i, "%dd", (int)(t / p));
 		t -= (t / p) * p;
 		if (--longness == 0)
 			return;
