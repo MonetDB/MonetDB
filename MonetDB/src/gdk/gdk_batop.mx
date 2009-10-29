@@ -1369,7 +1369,8 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 
 		return bn;
 	}
-	mark = (BUN *) GDKmalloc((unsigned) s * sizeof(BUN));
+	if ((mark = (BUN *) GDKmalloc((unsigned) s * sizeof(BUN))) == NULL)
+		goto bunins_failed;
 	m = mark;
 	i = mark;
 	switch (ATOMstorage(t = b->htype)) {
@@ -1995,10 +1996,10 @@ BAT *
 BATrangesplit(BAT *b, BUN n, int unary)
 {
 	BAT *metabat, *slice, *histo, *bf = NULL, *bn, *m;
-	int target, tpe, *sizes;
+	int target, tpe, *sizes = NULL;
 	int zz = 0;
 	BUN yy = 0;
-	ptr *seps, nilval;
+	ptr *seps = NULL, nilval;
 	BUN r, s;
 	BATiter histoi, bi = bat_iterator(b);
 	dbl scale;
@@ -2033,8 +2034,10 @@ If necessary though, we deliver less than n buckets.
 	target = (int) (BATcount(b) / n);	/* see assert above */
 	scale = ((dbl) BATcount(b)) / ((dbl) BATcount(slice));
 	BBPreclaim(slice);
-	sizes = (int *) GDKmalloc(2 * n * sizeof(int));
-	seps = (ptr *) GDKmalloc(2 * n * sizeof(ptr));
+	if ((sizes = (int *) GDKmalloc(2 * n * sizeof(int))) == NULL)
+		goto bunins_failed;
+	if ((seps = (ptr *) GDKmalloc(2 * n * sizeof(ptr))) == NULL)
+		goto bunins_failed;
 @-
 Use the histogram to determine good split boundaries on b.
 @c
@@ -2148,6 +2151,8 @@ that this routine also works efficiently on many buckets.
 	} else {
 		BAT **bats = (BAT **) GDKmalloc(n * sizeof(BAT *));
 
+		if (bats == NULL)
+			goto bunins_failed;
 		for (yy = 0; yy < n; yy++) {
 			bats[yy] = part_bat(bn, BAThtype(bn), bn->ttype, sizes[yy], TRUE);
 			if (bats[yy] == NULL) {
@@ -2213,6 +2218,8 @@ that this routine also works efficiently on many buckets.
 	return metabat;
 
       bunins_failed:
+	GDKfree(seps);
+	GDKfree(sizes);
 	BBPreclaim(metabat);
 	return NULL;
 }
@@ -2876,13 +2883,12 @@ by bulk copying the heap as well
 			char *nme = BBP_physical(bn->batCacheid);
 
 			bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			if (bn->H->vheap->filename == NULL)
+			   	goto bunins_failed;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
 		}
-		if (HEAPcopy(bn->hheap, b->theap) < 0) {
-		      bunins_failed:
-			BBPreclaim(bn);
-			return NULL;
-		}
+		if (HEAPcopy(bn->hheap, b->theap) < 0)
+		      	goto bunins_failed;
 		bn->htype = b->ttype;
 		bn->hvarsized = 1;
 	}
@@ -2903,6 +2909,9 @@ by bulk copying the heap as well
 	}
 	BATsetprop_wrd(b, GDK_AGGR_CARD, (wrd) BATcount(bn));
 	return bn;
+    bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 @-

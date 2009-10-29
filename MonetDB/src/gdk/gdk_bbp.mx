@@ -363,6 +363,8 @@ BBPinithash(void)
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
 	BBP_hash = (bat *) GDKmalloc(BBP_mask * sizeof(bat));
+	if (BBP_hash == NULL)
+		GDKfatal("BBPinithash: cannot allocate memory\n");
 	memset(BBP_hash, 0, BBP_mask * sizeof(bat));
 	BBP_mask--;
 
