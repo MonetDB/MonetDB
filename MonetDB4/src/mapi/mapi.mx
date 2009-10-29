@@ -232,7 +232,7 @@ exit_client_cache(void)
 	int i;
 
 	MT_set_lock(mapi_cache_lock, "exit_client_cache");
-	for(i=0; i<=MAXCLIENTS; i++) { 
+	for(i=0; i<MAXCLIENTS; i++) { 
 		if (mapi_clients[i].frontend != MAX_FRONTENDS) { 
 			/* no active client killing jet */
 			mapi_client *fc = mapi_clients+i;

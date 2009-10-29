@@ -1130,7 +1130,7 @@ CMDcall(Cntxt stk, YYSTREE lt, ValPtr res)
 	b = BATdescriptor(bid);
 	bi = bat_iterator(b);
 	if (b == NULL) {
-		GDKerror("CMDcall: wrong BAT parameter %s.\n", BATgetId(b));
+		GDKerror("CMDcall: wrong BAT parameter %s.\n", BBPname(bid));
 		BBPunfix(bid);
 		return -1;
 	}

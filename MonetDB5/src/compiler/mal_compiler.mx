@@ -315,7 +315,6 @@ mccVariables(stream *f, MalBlkPtr mb)
 {
 	int i,j;
 	str tpe, v;
-	int usedstr=0;
 	int seenbat=0;
 	InstrPtr p;
 
@@ -354,11 +353,8 @@ mccVariables(stream *f, MalBlkPtr mb)
 	/* if( isTmpVar(mb,i) ) GDKfree(v); */
 	stream_printf(f, "\tstr Xmsg = MAL_SUCCEED;\n");
 	/* reserve space for backups */
-	if(seenbat || usedstr)
-    stream_printf(f,"\tBID *backup= (BID*) alloca(%d * sizeof(BID));\n",mb->maxarg);
-	if(usedstr)
-    stream_printf(f,"\tchar **sbackup= (char **) alloca(%d * sizeof(char *));\n",mb->maxarg);
-
+	if(seenbat)
+		stream_printf(f,"\tBID *backup= (BID*) alloca(%d * sizeof(BID));\n",mb->maxarg);
 }
 
 void

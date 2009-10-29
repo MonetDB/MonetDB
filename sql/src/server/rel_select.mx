@@ -2068,7 +2068,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		/* currently we don't handle the (universial and existential) 
 		   quantifiers (all and any/some) */
 
-		sql_exp *rs, *ls = rel_value_exp(sql, rel, lo, f, ek);
+		sql_exp *rs = NULL, *ls = rel_value_exp(sql, rel, lo, f, ek);
 
 		if (!ls)
 			return NULL;

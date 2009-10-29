@@ -335,7 +335,7 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 	BATiter bi = bat_iterator(b);
 	BAT *bn = BATnew(b->htype, BATttype(b), BATcount(b));	
 	BUN p, q;
-	oid cur;
+	oid cur = oid_nil;
 	@1 sum = 0;
 
 	bn->hsorted = b->hsorted;
