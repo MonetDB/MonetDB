@@ -27,21 +27,6 @@ pattern optimizer.datacyclotron(mod:str, fcn:str):str
 address OPTdatacyclotron
 comment "Datacyclotron code injection";
 
-command copy(schema:str, tab:str, col:str, kind:int, part:int, fbun:int, lbun:int):bat[:any_1,:any_2]
-address DCcopy
-comment "Inform the DataCyclotron about the intended access";
-
-command bind(schema:str, tab:str, col:str, kind:int):bat[:any_1,:any_2]
-address DCbind
-comment "Inform the DataCyclotron about the intended access";
-
-command pin(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address DCpin
-comment "Inform the DataCyclotron about a pin request";
-
-command unpin(b:bat[:any_1,:any_2])
-address DCunpin
-comment "Inform the DataCyclotron about a pin request";
 @-
 The number of overloaded instructions is kept to a minimum.
 @h
@@ -294,62 +279,11 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	GDKfree(old);
 	return actions;
 }
-
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(datacyclotron)@
+#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(datacyclotron,OPT_CHECK_ALL)@
-@- The DataCyclotron Wrapper
-@h
-opt_export str DCrequest(int *ret, str *sch, str *tab, str *col, int *kind);
-@c
-str
-DCbind(int *ret, str *sch, str *tab, str *col, int *kind){
-	(void) ret;
-	(void) sch;
-	(void) tab;
-	(void) col;
-	(void) kind;
-	throw(MAL,"datacyclotron.bind",PROGRAM_NYI);
-}
-
-@h
-opt_export str DCpin(int *ret, int *bid);
-@c
-str
-DCpin(int *ret, int *bid){
-	(void) ret;
-	(void) bid;
-	throw(MAL,"datacyclotron.pin",PROGRAM_NYI);
-}
-
-@h
-opt_export str DCunpin(int *ret, int *bid);
-@c
-str
-DCunpin(int *ret, int *bid){
-	(void) ret;
-	(void) bid;
-	throw(MAL,"datacyclotron.unpin",PROGRAM_NYI);
-}
-
-@h
-opt_export str DCcopy(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
-@c
-str
-DCcopy(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
-	(void) ret;
-	(void) sch;
-	(void) tab;
-	(void) col;
-	(void) kind;
-	(void) part;
-	(void) fbun;
-	(void) lbun;
-	throw(MAL,"datacyclotron.copy",PROGRAM_NYI);
-}
-
-@h
-#endif
+@}
