@@ -404,7 +404,7 @@ utf8strlen(const char *s)
 	return len;
 }
 
-/* skip the specified number of UTF-8 characters */
+/* skip the specified number of UTF-8 characters, but stop at a newline */
 static char *
 utf8skip(char *s, size_t i)
 {
@@ -413,7 +413,9 @@ utf8skip(char *s, size_t i)
 			s++;
 			while ((*s & 0xC0) == 0x80)
 				s++;
-		} else
+		} else if (*s == '\n')
+			return s + 1;
+		else
 			s++;
 		i--;
 	}
@@ -451,7 +453,8 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 				/* break the string into pieces and
 				 * left-adjust them in the column */
 				ulen = utf8strlen(rest[i]);
-				if (ulen > (size_t) len[i]) {
+				t = strchr(rest[i], '\n');
+				if (ulen > (size_t) len[i] || t) {
 					t = utf8skip(rest[i], len[i]);
 					while (t > rest[i] && !isspace((int) *t))
 						while ((*--t & 0xC0) == 0x80)
