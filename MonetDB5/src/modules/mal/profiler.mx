@@ -405,12 +405,12 @@ CMDendPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 
 	checkProfiler("stop");
-	stream_printf(cntxt->fdout, "# Performance profiling stopped\n");
 	stopProfiling();
 	return MAL_SUCCEED;
 }
@@ -418,12 +418,12 @@ CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 
 	checkProfiler("start");
-	stream_printf(cntxt->fdout, "# Start performance profiling\n");
 	startProfiling();
 	return MAL_SUCCEED;
 }
