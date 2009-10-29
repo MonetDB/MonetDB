@@ -430,7 +430,8 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 	/* trim the text if needed */
 	if (trim) {
 		for (i = 0; i < fields; i++) {
-			if ((t = rest[i]) != NULL && utf8strlen(t) > (size_t) len[i]) {
+			if ((t = rest[i]) != NULL &&
+			    utf8strlen(t) > (size_t) len[i]) {
 				while (*t != 0 && isspace((int) *t))
 					t++;
 				rest[i] = t;
@@ -443,10 +444,14 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 		for (i = 0; i < fields; i++) {
 			if (rest[i] == NULL || *rest[i] == 0) 
 				stream_printf(toConsole, "%c %*s ",
-						first ? '|' : ':', len[i], "");
+					      first ? '|' : ':', len[i], "");
 			else {
-				/* break the string into pieces and left-adjust them in the column */
-				if (utf8strlen(rest[i]) > (size_t) len[i]) {
+				size_t ulen;
+
+				/* break the string into pieces and
+				 * left-adjust them in the column */
+				ulen = utf8strlen(rest[i]);
+				if (ulen > (size_t) len[i]) {
 					t = utf8skip(rest[i], len[i]);
 					while (t > rest[i] && !isspace((int) *t))
 						while ((*--t & 0xC0) == 0x80)
@@ -455,10 +460,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 						t = utf8skip(rest[i], len[i]);
 					stream_printf(toConsole, "%c", first ? '|' : ':');
 					if (numeric[i])
-						stream_printf(toConsole, "%*s", (int) (len[i] - (utf8strlen(rest[i]) - utf8strlen(t))), "");
+						stream_printf(toConsole, "%*s", (int) (len[i] - (ulen - utf8strlen(t))), "");
 					stream_printf(toConsole, " %.*s ", (int) (t - rest[i]), rest[i]);
 					if (!numeric[i])
-						stream_printf(toConsole, "%*s", (int) (len[i] - (utf8strlen(rest[i]) - utf8strlen(t))), "");
+						stream_printf(toConsole, "%*s", (int) (len[i] - (ulen - utf8strlen(t))), "");
 					while (isspace((int) *t))
 						t++;
 					rest[i] = *t ? t : 0;
@@ -467,10 +472,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 				} else {
 					stream_printf(toConsole, "%c", first ? '|' : ':');
 					if (numeric[i])
-						stream_printf(toConsole, "%*s", (int) (len[i] - utf8strlen(rest[i])), "");
+						stream_printf(toConsole, "%*s", (int) (len[i] - ulen), "");
 					stream_printf(toConsole, " %s ", rest[i]);
 					if (!numeric[i])
-						stream_printf(toConsole, "%*s", (int) (len[i] - utf8strlen(rest[i])), "");
+						stream_printf(toConsole, "%*s", (int) (len[i] - ulen), "");
 					rest[i] = 0;
 				}
 			}
@@ -765,9 +770,11 @@ SQLrenderer(MapiHdl hdl)
 
 				len[i] = mapi_get_len(hdl, i);
 				if (len[i] == 0) {
-					/* no table width known, give a fair share
-					   of the available space (+1 so we always fully
-					   fill the terminal) */
+					/* no table width known, give
+					   a fair share of the
+					   available space (+1 so we
+					   always fully fill the
+					   terminal) */
 					len[i] = 1 + (pagewidth - 2 - ((fields * 3) - 1)) / fields;
 				}
 				if (len[i] < MINCOLSIZE)
@@ -784,25 +791,29 @@ SQLrenderer(MapiHdl hdl)
 					hdr[i] = len[i];
 				total += hdr[i];
 				s = mapi_get_type(hdl, i);
-				numeric[i] = s != NULL && (strcmp(s, "int") == 0 ||
-							   strcmp(s, "tinyint") == 0 ||
-							   strcmp(s, "bigint") == 0 ||
-							   strcmp(s, "wrd") == 0 ||
-							   strcmp(s, "smallint") == 0 ||
-							   strcmp(s, "double") == 0 ||
-							   strcmp(s, "float") == 0);
+				numeric[i] = s != NULL &&
+					(strcmp(s, "int") == 0 ||
+					 strcmp(s, "tinyint") == 0 ||
+					 strcmp(s, "bigint") == 0 ||
+					 strcmp(s, "wrd") == 0 ||
+					 strcmp(s, "smallint") == 0 ||
+					 strcmp(s, "double") == 0 ||
+					 strcmp(s, "float") == 0);
 			}
-			/* what we waste on space on the display is the column
-			 * separators ' | ', but the edges lack the edgespace of course */
+			/* what we waste on space on the display is
+			 * the column separators ' | ', but the edges
+			 * lack the edgespace of course */
 			graphwaste = ((fields * 3) - 1) + 2;
-			/* punish the column headers first until you cannot squeeze */
+			/* punish the column headers first until you
+			 * cannot squeeze */
 			while (graphwaste + total > pagewidth) {
-				/* pick the column where the header is most long
-				 * compared to its content */
+				/* pick the column where the header is
+				 * longest compared to its content */
 				max = -1;
 				for (i = 0; i < fields; i++) {
 					if (hdr[i] > len[i]) {
-						if (max == -1 || hdr[max] - len[max] < hdr[i] - len[i])
+						if (max == -1 ||
+						    hdr[max] - len[max] < hdr[i] - len[i])
 							max = i;
 					}
 				}
@@ -813,8 +824,9 @@ SQLrenderer(MapiHdl hdl)
 			}
 			total = 0;
 			vartotal = 0;
-			/* punish fields that are longer than the terminal width,
-			 * can't display them as a whole anyway */
+			/* punish fields that are longer than the
+			 * terminal width, can't display them as a
+			 * whole anyway */
 			for (i = 0; i < fields; i++) {
 				if (!numeric[i]) {
 					/* 4 = left and right borders */
@@ -824,18 +836,24 @@ SQLrenderer(MapiHdl hdl)
 				}
 				total += hdr[i];
 			}
-			/* Punishing the value fields is done based on how much
-			 * squeezing will result in.  The objective is to have at
-			 * most a single break, but this is impossible to achieve in
-			 * case of a very long string, of course.  However, in case
-			 * of many columns it may be more useful to write 2x as many
-			 * columns as the terminal width, then to condense the
-			 * columns into 3-char width tall fields that are
-			 * unreadable.  Basically, the only fields that we want to
-			 * break are non-numerical fields. */
+			/* Punishing the value fields is done based on
+			 * how much squeezing will result in.  The
+			 * objective is to have at most a single
+			 * break, but this is impossible to achieve in
+			 * case of a very long string, of course.
+			 * However, in case of many columns it may be
+			 * more useful to write 2x as many columns as
+			 * the terminal width, then to condense the
+			 * columns into 3-char wide tall fields that
+			 * are unreadable.  Basically, the only fields
+			 * that we want to break are non-numerical
+			 * fields. */
 			if (graphwaste + total > mypagewidth) {
-				while (total > mypagewidth || (vartotal + 1) / 2 < total - mypagewidth) {
-					/* double terminal size to avoid breaking a line multiple times */
+				while (total > mypagewidth ||
+				       (vartotal + 1) / 2 < total - mypagewidth) {
+					/* double terminal size to
+					 * avoid breaking a line
+					 * multiple times */
 					mypagewidth += pagewidth;
 				}
 			}
@@ -866,6 +884,27 @@ SQLrenderer(MapiHdl hdl)
 			rest[i] = mapi_fetch_field(hdl, i);
 			if (rest[i] == NULL)
 				rest[i] = NULLSTRING;
+			else {
+				char *p = rest[i];
+
+				while ((p = strchr(p, '\r')) != 0) {
+					switch (p[1]) {
+					case '\0':
+						/* end of string: remove CR */
+						*p = 0;
+						break;
+					case '\n':
+						/* followed by LF: remove CR */
+						/* note: copy including NUL */
+						memmove(p, p + 1, strlen(p));
+						break;
+					default:
+						 /* replace with ' ' */
+						*p = ' ';
+						break;
+					}
+				}
+			}
 		}
 
 		if (ps > 0 && rows >= ps && fromConsole != NULL) {
