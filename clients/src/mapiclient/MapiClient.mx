@@ -227,15 +227,16 @@ static int interactive_stdin = 0;
 
 enum modifiers {
 	NOmodifier,
-	EXPLAINmodifier,
-	DEBUGmodifier,
-	TRACEmodifier
+	DEBUGmodifier
 };
 static enum modifiers specials = NOmodifier; 
-/* set when we see EXPLAIN,DEBUG, or TRACE (only if mode == SQL).
+/* set when we see DEBUG (only if mode == SQL).
 Also retain these modes until after you have received the answer. */
 
-#define MINCOLSIZE 5
+/* keep these aligned, the MINCOLSIZE should ensure you can always write
+ * the NULLSTRING */
+#define MINCOLSIZE 4
+#define NULLSTRING "null"
 
 /* stolen piece */
 #ifdef HAVE_FTIME
@@ -375,17 +376,12 @@ fetch_row(MapiHdl hdl)
 static void
 SQLsetSpecial(const char *command)
 {
-	if (mode == SQL && command && 
-		( specials==NOmodifier || specials == TRACEmodifier)) {
+	if (mode == SQL && command && specials == NOmodifier) {
 		/* catch the specials for better rendering */
 		while (*command == ' ' || *command == '\t')
 			command++;
-		if (strncmp(command, "explain", 7) == 0)
-			specials = EXPLAINmodifier;
-		else if (strncmp(command, "debug", 5) == 0)
+		if (strncmp(command, "debug", 5) == 0)
 			specials = DEBUGmodifier;
-		else if (strncmp(command, "trace", 5) == 0)
-			specials = TRACEmodifier;
 		else
 			specials = NOmodifier;
 	}
@@ -727,106 +723,12 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 }
 
 static void
-SQLexplainRendering(MapiHdl hdl)
-{
-	int ps = rowsperpage, rows = 0, silent = 0;
-	char *fields[1];
-	int len[1], numeric[1];
-
-	SQLqueryEcho(hdl);
-
-	len[0] = pagewidth - 4;	/* remove borders */
-	numeric[0] = 0;
-	SQLseparator(len, 1, '-');
-	while ((fields[0] = fetch_line(hdl)) != NULL) {
-		if (silent)
-			continue;
-		if (*fields[0] == '%')
-			continue;
-
-		if (ps > 0 && rows >= ps && fromConsole != NULL) {
-			SQLpagemove(len, 1, &ps, &silent);
-			rows = 0;
-			if (silent)
-				continue;
-		}
-
-		rows += SQLrow(len, numeric, fields, 1, 0);
-	}
-	SQLseparator(len, 1, '-');
-	specials = NOmodifier;
-}
-
-static void
-SQLtraceRenderer(MapiHdl hdl)
-{
-	int ps = rowsperpage, rows = 0, silent = 0;
-	char *fields[2];
-	char *s;
-	int len[2];
-	int cols = 1;
-	int numeric[2];
-
-	SQLqueryEcho(hdl);
-	len[0] = pagewidth - 4;	/* remove borders */
-	numeric[0] = 0;
-	numeric[1] = 0;
-
-	while ((fields[0] = fetch_line(hdl)) != NULL) {
-		if (silent)
-			continue;
-		if (*fields[0] == '%')
-			continue;
-
-		/* simple render */
-		fields[0] = fields[0] + 1;
-		s = strrchr(fields[0], ']');
-		if (s)
-			*s = 0;
-
-
-		if ((s = strchr(fields[0], '#')) != NULL) {
-			*s = 0;
-			fields[1] = s + 1;
-			if (cols == 1) {
-				size_t l = strlen(fields[0]);
-				assert(l <= INT_MAX);
-				len[1] = len[0] - (int) l;
-				len[0] = (int) l - 2;	/* border */
-				SQLseparator(len, 2, '-');
-				cols = 2;
-			}
-		} else {
-			int olen[1];
-			char *t;
-
-			olen[0] = pagewidth - 4;
-			for (t = fields[0]; *t; t++)
-				if (*t == '\t')
-					*t = ' ';
-			SQLrow(olen, numeric, fields, 1, 0);
-			continue;	/* output should be rendered differently */
-		}
-
-		if (ps > 0 && rows >= ps && fromConsole != NULL) {
-			SQLpagemove(len, cols, &ps, &silent);
-			rows = 0;
-			if (silent)
-				continue;
-		}
-		rows += SQLrow(len, numeric, fields, cols, 0);
-	}
-	SQLseparator(len, cols, '-');
-}
-
-static void
 SQLrenderer(MapiHdl hdl)
 {
 	int i, total, vartotal, fields, oldfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
-	char nullstring[5] = "null";
 	int ps = rowsperpage, silent = 0;
 	int mypagewidth = pagewidth;
 	mapi_int64 rows = 0;
@@ -895,14 +797,19 @@ SQLrenderer(MapiHdl hdl)
 			graphwaste = ((fields * 3) - 1) + 2;
 			/* punish the column headers first until you cannot squeeze */
 			while (graphwaste + total > pagewidth) {
+				/* pick the column where the header is most long
+				 * compared to its content */
+				max = -1;
 				for (i = 0; i < fields; i++) {
 					if (hdr[i] > len[i]) {
-						hdr[i]--;
-						total--;
-						continue;
+						if (max == -1 || hdr[max] - len[max] < hdr[i] - len[i])
+							max = i;
 					}
 				}
-				break;
+				if (max == -1)
+					break;
+				hdr[max]--;
+				total--;
 			}
 			total = 0;
 			vartotal = 0;
@@ -958,7 +865,7 @@ SQLrenderer(MapiHdl hdl)
 		for (i = 0; i < fields; i++) {
 			rest[i] = mapi_fetch_field(hdl, i);
 			if (rest[i] == NULL)
-				rest[i] = nullstring;
+				rest[i] = NULLSTRING;
 		}
 
 		if (ps > 0 && rows >= ps && fromConsole != NULL) {
@@ -1163,12 +1070,6 @@ format_result(Mapi mid, MapiHdl hdl)
 				switch (specials) {
 				case DEBUGmodifier:
 					SQLdebugRendering(hdl);
-					break;
-				case EXPLAINmodifier:
-					SQLexplainRendering(hdl);
-					break;
-				case TRACEmodifier:
-					SQLtraceRenderer(hdl);
 					break;
 				default:
 					SQLrenderer(hdl);
@@ -2094,6 +1995,11 @@ main(int argc, char **argv)
 				   strcmp(optarg, "ma") == 0) {
 				language = "mal";
 				mode = MAL;
+#ifdef CAN_I_HAS_MSQL_LANGUAGE
+			} else if (strcmp(optarg, "msql") == 0) {
+				language = "msql";
+				mode = MAL;
+#endif
 			} else if (strcmp(optarg, "xquery") == 0 ||
 				   strcmp(optarg, "xquer") == 0 ||
 				   strcmp(optarg, "xque") == 0 ||
