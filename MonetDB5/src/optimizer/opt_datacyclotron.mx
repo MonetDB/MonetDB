@@ -195,9 +195,10 @@ findRegist( str sch, str tab, str col, int acc) {
 static int
 OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, actions=0, k = 0;
+	int i, actions=0, k = 0, z= 0;
 	DCYcatalog *reg;
-	InstrPtr *old, new;
+	VarRecord low,hgh;
+	InstrPtr *old, new, matq;
 	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
 	int limit;
 #ifdef BIND_DATAFLOW_OPT
@@ -227,13 +228,24 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			reg = findRegist(sch, tab, col, acc);
 
 			if (reg) {
+				int tpe = getArgType(mb,p,0);
+
+				matq= newInstruction(NULL,ASSIGNsymbol);
+				setModuleId(matq,matRef);
+				setFunctionId(matq,newRef);
+				getArg(matq,0)= getArg(p,0);
+				hgh.value.vtype= low.value.vtype= TYPE_oid;
+
 				for (k = 0; k < reg->partitions; k++ ) {
+					new = newInstruction(NULL,ASSIGNsymbol);
+					setModuleId(new,datacyclotronRef);
 #ifdef BIND_DATAFLOW_OPT
-					new = newStmt(mb,"datacyclotron","bind");
+					setFunctionId(new,bindRef);
 #else
-					new = newStmt(mb,"datacyclotron","copy");
+					setFunctionId(new,copyRef);
 #endif
-					//new = pushReturn(mb, new, TYPE_any);
+					getArg(new,0) = newTmpVariable(mb, tpe);
+
 					new = pushStr(mb,new,reg->schema);
 					new = pushStr(mb,new,reg->table);
 					new = pushStr(mb,new,reg->column);
@@ -242,9 +254,21 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					new = pushInt(mb,new,reg->f_bun[k]);
 					new = pushInt(mb,new,reg->l_bun[k]);
 					pushInstruction(mb,new);
+
+
+					low.value.val.oval= reg->f_bun[k];
+					hgh.value.val.oval= reg->l_bun[k];
+					z = getArg(new, 0);
+
+					varSetProp(mb, z, PropertyIndex("hlb"), op_gte, (ptr) &low.value);
+					varSetProp(mb, z, PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
+					matq= pushArgument(mb,matq,z);
 				}
+				pushInstruction(mb,matq);
 				used[getArg(p,0)] = 1;
-			}
+			} else 
+					pushInstruction(mb,p);
+				
 			actions++;
 		} else { 
 #ifdef BIND_DATAFLOW_OPT
@@ -265,6 +289,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #endif
 			pushInstruction(mb,p);
 		}
+		
 	}
 	GDKfree(old);
 	return actions;
