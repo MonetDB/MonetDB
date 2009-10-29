@@ -167,13 +167,14 @@ url_getBasename(str *retval, url t)
 	else
 		s = (str)str_nil;
 	d = GDKmalloc(strlen(s) + 1);
-	if (d)
+	if (d) {
 		strcpy(d, s);
-	s = strchr(d, '.');
-	if (s)
-		*s = 0;
+		s = strchr(d, '.');
+		if (s)
+			*s = 0;
+	}
 	*retval = d;
-	return GDK_SUCCEED;
+	return d ? GDK_SUCCEED : GDK_FAIL;
 }
 
 /* COMMAND "getContent": Retrieve the file referenced
