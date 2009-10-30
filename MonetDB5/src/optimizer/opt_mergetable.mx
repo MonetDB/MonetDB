@@ -1508,16 +1508,22 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 #else
 	(void) cntxt;
 #endif
+	/* the number of MATs is limited to the variable stack*/
+	mat = (mat_t*) GDKzalloc(mb->vtop * sizeof(mat_t));
+	if ( mat == NULL)
+		return 0;
+
 	old = mb->stmt;
 	oldtop= mb->stop;
 	slimit = mb->ssize;
 	size = (mb->stop * 1.2 < mb->ssize)? mb->ssize:(int)(mb->stop * 1.2);
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
+	if ( mb->stmt == NULL){
+		mb->stmt = old;
+		return 0;
+	}
 	mb->ssize = size;
 	mb->stop = 0;
-
-	/* the number of MATs is limited to the variable stack*/
-	mat = (mat_t*) GDKzalloc(mb->vtop * sizeof(mat_t));
 
 	for( i=0; i<oldtop; i++){
 		int n = -1, o = -1;

@@ -123,7 +123,7 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 	int i, j = 0, k, se= FALSE;
 	InstrPtr p;
 	int bk, ik, blk, blkbegin, blkexit, actions = 0;
-	InstrPtr *before, *within;
+	InstrPtr *before, *within, *old = mb->stmt;
 	Lifespan span;
 
 	(void) cntxt;
@@ -248,6 +248,13 @@ after the loop, because then you may not simple move an expression.
 	before[bk++] = getInstrPtr(mb, i);
 	GDKfree(mb->stmt);
 	mb->stmt = (InstrPtr *) GDKzalloc((mb->ssize) * sizeof(InstrPtr));
+	if ( mb->stmt == NULL){
+		GDKfree(span);
+		GDKfree(before);
+		GDKfree(within);
+		mb->stmt = old;
+		return 0;
+	}
 	mb->stop = 0;
 
 #ifdef DEBUG_OPT_STRENGTHREDUCTION

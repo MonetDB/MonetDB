@@ -246,11 +246,16 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	p = getInstrPtr(mb, pc);
 	q = getInstrPtr(mc, 0);
 	ns = GDKzalloc((l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
-	np = (int*) GDKmalloc(mc->ptop * sizeof(int));
-	if (np == 0)
+	if (ns == NULL)
 		return -1;
+	np = (int*) GDKmalloc(mc->ptop * sizeof(int));
+	if (np == 0){
+		GDKfree(ns);
+		return -1;
+	}
 	nv = (int*) GDKmalloc(mc->vtop * sizeof(int));
 	if (nv == 0){
+		GDKfree(ns);
 		GDKfree(np);
 		return -1;
 	}

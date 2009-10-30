@@ -90,6 +90,13 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 	for ( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		list[i]= (Node) GDKzalloc(sizeof(NodeRecord)+sizeof(int)*p->maxarg);
+		if (list[i] == NULL){
+			for (i--; i>=0; i--)
+				GDKfree(list[i]);
+			GDKfree(list);
+			GDKfree(var);
+			return 0;
+		}
 		list[i]->cnt= p->argc;
 		for( j=p->retc; j<p->argc; j++)
 			list[i]->stmt[j]= var[getArg(p,j)];

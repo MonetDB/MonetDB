@@ -218,9 +218,16 @@ all variables not declared within the basket expression should
 be passed as arguments to the factory.
 Furthermore, we need to keep track of the aliases as they 
 denote variables in the factory.
+[NEED more defensive work]
 @c
 		declared = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+		if ( declared == NULL)
+			return 0;
 		locks = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->stop);
+		if ( locks == NULL){
+			GDKfree(declared);
+			return 0;
+		}
 		ltop = 0;
 @-
 Keep a list of bind operations, because they trigger unlocks.
