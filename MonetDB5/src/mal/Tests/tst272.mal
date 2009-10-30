@@ -2,7 +2,7 @@
 
 profiler.activate("ticks");
 #profiler.activate("pc");
-profiler.activate("statement");
+profiler.activate("stmt");
 profiler.setFilter("*","insert");
 
 o:= calc.oid(20000000);
@@ -31,7 +31,7 @@ profiler.stop();
 io.printf("#~BeginVariableOutput~#\n");
 t:= profiler.getTrace("ticks");
 #io.print(t);
-s:= profiler.getTrace("statement");
+s:= profiler.getTrace("stmt");
 #io.print(s);
 #io.print(t,s);
 io.printf("#~EndVariableOutput~#\n");
