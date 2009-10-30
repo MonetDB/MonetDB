@@ -138,7 +138,8 @@ spread evenly over the threads and the common type.
 
 	old = mb->stmt;
 	limit= mb->stop;
-	newMalBlkStmt(mb,mb->ssize + 2* estimate);
+	if ( newMalBlkStmt(mb,mb->ssize + 2* estimate) < 0 )
+		return 0;
 	estimate=0;
 
 	schema = getVarConstant(mb, getArg(target,1)).val.sval;

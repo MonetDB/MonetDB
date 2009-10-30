@@ -489,7 +489,7 @@ mal_export int getGDKType(int tpe);
 
 mal_export MalBlkPtr newMalBlk(int maxvars, int maxstmts);
 mal_export void resetMalBlk(MalBlkPtr mb, int stop);
-mal_export void newMalBlkStmt(MalBlkPtr mb, int maxstmts);
+mal_export int newMalBlkStmt(MalBlkPtr mb, int maxstmts);
 mal_export void prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
@@ -592,11 +592,13 @@ newSymbol(str nme, int kind)
 	Symbol cur;
 
 	if (nme == NULL) {
-		GDKfatal("@1:unexpected name (=null)\n");
+		GDKerror("@1:unexpected name (=null)\n");
+		return NULL;
 	}
 	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
 	if (cur == NULL) {
-		GDKfatal("@1: cannot initialize scope\n");
+		GDKerror("@1:"MAL_MALLOC_FAIL);
+		return NULL;
 	}
 	cur->name = putName(nme,strlen(nme));
 	cur->kind = kind;
@@ -630,18 +632,20 @@ freeSymbolList(Symbol s)
 	}
 }
 
-void
+int
 newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 {
 	InstrPtr *p;
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
-	if (p == NULL)
-		GDKfatal("newMalBlk:could not get instruction storage\n");
+	if (p == NULL){
+		GDKerror("newMalBlk:"MAL_MALLOC_FAIL);
+		return -1;	
+	}
 	mb->stmt = p;
-
 	mb->stop = 0;
 	mb->ssize = maxstmts;
+	return 0;
 }
 
 MalBlkPtr
@@ -651,12 +655,17 @@ newMalBlk(int maxvars, int maxstmts)
 	VarPtr *v;
 
 	v = (VarPtr *) GDKzalloc(sizeof(VarPtr) * maxvars);
-	if (v == NULL)
-		GDKfatal("newMalBlk:could not get variable storage\n");
+	if (v == NULL){
+		GDKerror("newMalBlk:"MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
-	if (mb == NULL)
-		GDKfatal("newMalBlk:could not get storage\n");
-	newMalBlkStmt(mb, maxstmts);
+	if (mb == NULL){
+		GDKerror("newMalBlk:"MAL_MALLOC_FAIL);
+		return NULL;
+	}
+	if ( newMalBlkStmt(mb, maxstmts) < 0)
+		return NULL;
 
 	mb->var = v;
 
@@ -745,16 +754,21 @@ copyMalBlk(MalBlkPtr old)
 	int i;
 
 	mb = (MalBlkPtr) GDKzalloc(sizeof(MalBlkRecord));
-	if (mb == NULL)
-		GDKfatal("newMalBlk:could not get storage\n");
+	if (mb == NULL) {
+		GDKerror("newMalBlk:"MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	mb->alternative = old->alternative;
 	mb->history = NULL;
 	mb->keephistory= old->keephistory;
 	mb->marker = 0;
 	mb->var = (VarPtr *) GDKzalloc(sizeof(VarPtr) * old->vsize);
 
-	if (mb->var == NULL)
-		GDKfatal("newMalBlk:could not get variable storage\n");
+	if (mb->var == NULL){
+		GDKfree(mb);
+		GDKerror("newMalBlk:"MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	mb->vsize = old->vsize;
 	memcpy((char *) mb->var, old->var, sizeof(VarPtr) * old->vtop);
 
@@ -766,8 +780,12 @@ copyMalBlk(MalBlkPtr old)
 
 	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
 
-	if (mb->stmt == NULL)
-		GDKfatal("newMalBlk:could not get instruction storage\n");
+	if (mb->stmt == NULL){
+		GDKfree(mb->var);
+		GDKfree(mb);
+		GDKerror("newMalBlk:"MAL_MALLOC_FAIL);
+		return NULL;
+	}
 
 	mb->stop = old->stop;
 	mb->ssize = old->ssize;
@@ -803,6 +821,8 @@ addtoMalBlkHistory(MalBlkPtr mb, str marker){
 	MalBlkPtr cpy,h;
 	if( mb->keephistory){
 		cpy= copyMalBlk(mb);
+		if ( cpy == NULL)
+			return ; /* ignore history */
 		cpy->history= NULL;
 		mb->marker= GDKstrdup(marker);
 		if( mb->history== NULL)
@@ -814,6 +834,7 @@ addtoMalBlkHistory(MalBlkPtr mb, str marker){
 		}
 	}
 }
+
 MalBlkPtr
 getMalBlkHistory(MalBlkPtr mb, int idx){
 	MalBlkPtr h=mb;
@@ -871,7 +892,11 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 	len = sizeof(ValPtr) * (mb->vtop + varsize);
 	v = (VarRecord **) GDKzalloc(len);
 	if (v == NULL)
-		GDKfatal("newMalBlk:could not get variable storage\n");
+		return;
+	len = sizeof(InstrPtr) * (mb->ssize + stmtsize);
+	stmt = (InstrPtr *) GDKzalloc(len);
+	if ( stmt == NULL)
+		return;
 
 	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * mb->vtop);
 
@@ -881,14 +906,8 @@ trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
 	if (mb->var)
 		GDKfree(mb->var);
 	mb->var = v;
-
 	mb->vsize = mb->vtop + varsize;
 
-	len = sizeof(InstrPtr) * (mb->ssize + stmtsize);
-	stmt = (InstrPtr *) GDKzalloc(len);
-
-	if (stmt == NULL)
-		GDKfatal("newMalBlk:could not get instruction storage\n");
 	memcpy((str) stmt, (str) mb->stmt, sizeof(InstrPtr) * mb->stop);
 	for (i=mb->stop; i< mb->ssize; i++) {
 		if (mb->stmt[i])
@@ -1008,7 +1027,9 @@ copyInstruction(InstrPtr p)
 {
 	InstrPtr new;
 	new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + p->maxarg * sizeof(p->maxarg));
-	oldmoveInstruction(new, p);
+	assert(new);
+	if (new)
+		oldmoveInstruction(new, p);
 	return new;
 }
 
@@ -1375,27 +1396,26 @@ cheap to perform a linear search to a variable or constant.
 		VarPtr *new;
 		int s= mb->vtop + MAXVARS;
 
-		if (mb->vtop >mb->vsize)
-			GDKfatal("newVariable:variable administration\n");
-
-        	new= (VarPtr *) GDKzalloc(s * sizeof(VarPtr));
-        	/*printf("generate new variable block %d\n",s);*/
-        	if( new== NULL ){
-            		mb->errors++;
-            		showScriptException(mb,0,MAL,"newMalBlk:no storage left\n");
-            		return mb->vtop;
-        	}
-        	memcpy((char*)new, (char*)mb->var, sizeof(VarPtr) * mb->vtop);
-        	GDKfree((str)mb->var);
-        	mb->vsize= s;
-        	mb->var= new;
-    	}
+		new= (VarPtr *) GDKzalloc(s * sizeof(VarPtr));
+		/*printf("generate new variable block %d\n",s);*/
+		if( new== NULL ){
+				mb->errors++;
+				showScriptException(mb,0,MAL,"newMalBlk:no storage left\n");
+				return mb->vtop;
+		}
+		memcpy((char*)new, (char*)mb->var, sizeof(VarPtr) * mb->vtop);
+		GDKfree((str)mb->var);
+		mb->vsize= s;
+		mb->var= new;
+	}
 @c
 int
 newVariable(MalBlkPtr mb, str name, malType type)
 {
 	int n;
 
+	if (name == NULL)
+		return -1;
 	@:makeVarSpace@
 	if (isTmpName(name)) {
 		int i = atol(name + 1);
@@ -2005,12 +2025,18 @@ Failure to obey should mark the instruction as type-error.
 InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
-	p->argv[p->argc++] = varid;
-	if (p->argc == p->maxarg) {
+	if (p->argc + 1 == p->maxarg) {
 		InstrPtr pn;
 		int pc = 0,pclimit;
 		int space = p->maxarg * sizeof(p->argv[0]) + sizeof(InstrRecord);
 		pn = GDKmalloc(space + MAXARG * sizeof(p->maxarg));
+		if (pn == NULL){
+			/* this is almost deadly, we abort by not extending
+			   the instruction, which leads to detection of errors
+			   later in the pipeline. 
+			*/
+			return p;
+		}
 		memcpy((char *) pn, (char *) p, space);
 		pn->maxarg += MAXARG;
 		/* instructions are either created in isolation or
@@ -2039,6 +2065,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		GDKfree(p);
 		p = pn;
 	}
+	p->argv[p->argc++] = varid;
 	return p;
 }
 
@@ -2574,6 +2601,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	str cv = NULL;
 
 	base = s = GDKmalloc(len);
+	if ( s == NULL)
+		return s;
 	if (flg) {
 		if( p->token<0){
 			s[0] = '#';
@@ -2802,6 +2831,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			t = hiddenInstructionArgs(mb, p, t,s, flg,base,len);
 		}
 	}
+	/* we may accidentally overwrite */
 	if (t > s + len)
 		GDKfatal("instruction2str:");
 	return s;
@@ -2817,11 +2847,13 @@ function2str(MalBlkPtr mb, int flg)
 	len = GDKmalloc(sizeof(int) * mb->stop);
 	for (i = 0; i < mb->stop; i++) {
 		txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), flg);
-		totlen += len[i] = (int)strlen(txt[i]);
+		if ( txt[i])
+			totlen += len[i] = (int)strlen(txt[i]);
 	}
 	ps = GDKmalloc(totlen + mb->stop + 1);
 	totlen = 0;
-	for (i = 0; i < mb->stop; i++) {
+	for (i = 0; i < mb->stop; i++) 
+	if( txt[i]){
 		strncpy(ps + totlen, txt[i], len[i]);
 		ps[totlen + len[i]] = '\n';
 		ps[totlen + len[i] + 1] = 0;
@@ -2839,11 +2871,13 @@ promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	str ps;
 
 	if (fd == 0)
-		GDKfatal("printInstruction:no file\n");
+		return;
 	ps = instruction2str(mb, stk, p, flg);
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
-	stream_printf(fd, "%s%s", (flg & LIST_MAPI ? "=" : ""), ps);
-	GDKfree(ps);
+	if ( ps ){
+		stream_printf(fd, "%s%s", (flg & LIST_MAPI ? "=" : ""), ps);
+		GDKfree(ps);
+	}
 }
 
 void
@@ -2883,18 +2917,22 @@ void showMalBlkHistory(MalBlkPtr mb)
 		p= getInstrPtr(m,m->stop-1);
 		if( p->token == REMsymbol){
 			msg= instruction2str(m, 0, p, FALSE);
-			stream_printf(GDKout,"%s.%s[%2d] %s\n", 
-				getModuleId(sig), getFunctionId(sig),j++,msg+3);
-			GDKfree(msg);
+			if (msg ) {
+				stream_printf(GDKout,"%s.%s[%2d] %s\n", 
+					getModuleId(sig), getFunctionId(sig),j++,msg+3);
+				GDKfree(msg);
+			}
 		} 
 		m= m->history;
 	}
 	p=getInstrPtr(mb,mb->stop-1);
 	if( p->token == REMsymbol){
 		msg= instruction2str(mb, 0, p, FALSE);
-		stream_printf(GDKout,"%s.%s[%2d] %s\n", 
-			getModuleId(sig), getFunctionId(sig),j++,msg+3);
-			GDKfree(msg);
+		if (msg) {
+			stream_printf(GDKout,"%s.%s[%2d] %s\n", 
+				getModuleId(sig), getFunctionId(sig),j++,msg+3);
+				GDKfree(msg);
+		}
 		} 
 }
 

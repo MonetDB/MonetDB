@@ -606,8 +606,10 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		while (c && *c && isspace((int) *c))
 			c++;
 		stmtq= mal_quote(c,strlen(c));
-		log(" \"%s\"", stmtq);
-		GDKfree(stmtq);
+		if (stmtq != NULL){
+			log(" \"%s\"", stmtq);
+			GDKfree(stmtq);
+		}
 		GDKfree(stmt);
 	}
 	if (profileCounter[PROFthread].status) {
@@ -1011,7 +1013,7 @@ TRACEcreate(str hnme, str tnme, int ht, int tt)
 
 	b = BATnew(ht, tt, 256);
 	if (b == NULL)
-		GDKfatal("STAT_create: could not allocate.");
+		return NULL;
 
 	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
@@ -1037,7 +1039,22 @@ initTrace(void)
 	TRACE_id_reads = TRACEcreate("id", "read", TYPE_int, TYPE_lng);
 	TRACE_id_writes = TRACEcreate("id", "write", TYPE_int, TYPE_lng);
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int, TYPE_int);
-	TRACE_init = 1;
+	if (TRACE_id_event == NULL ||
+		TRACE_id_time == NULL ||
+		TRACE_id_ticks == NULL ||
+		TRACE_id_pc == NULL ||
+		TRACE_id_stmt == NULL ||
+		TRACE_id_type == NULL ||
+		TRACE_id_rbytes == NULL ||
+		TRACE_id_wbytes == NULL ||
+		TRACE_id_reads == NULL ||
+		TRACE_id_writes == NULL ||
+		TRACE_id_thread == NULL 
+	) {
+		mal_unset_lock(mal_contextLock, "trace");
+		cleanupProfiler();
+	 } else
+		TRACE_init = 1;
 	mal_unset_lock(mal_contextLock, "trace");
 }
 

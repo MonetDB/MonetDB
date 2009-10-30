@@ -169,7 +169,7 @@ It should be reset before continuing.
 		/* error occurred  and ignored */
 		GDKfree(msg); msg=MAL_SUCCEED;
 		@:@2()@
-		return;
+		return 0;
 	}
 @-
 The include operation parses the file indentified and 
@@ -264,7 +264,8 @@ str mal_cmdline( char *s, int *len)
 {
 	if (s[*len - 1] != '\n') {
 		char *n = GDKmalloc(*len + 1 + 1);
-
+		if (n == NULL)
+			return s;
 		strncpy(n, s, *len);
 		n[*len] = '\n';
 		n[*len + 1] = 0;
@@ -294,8 +295,12 @@ compileString(Symbol *fcn, Client c, str s)
 	if (old != s)
 		GDKfree(s);
 	b = (buffer *) GDKmalloc(sizeof(buffer));
+	if ( b == NULL) 
+		return MAL_MALLOC_FAIL; 
+	
 	buffer_init(b, qry, len);
-	MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
+	if ( MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "") < 0)
+		return MAL_MALLOC_FAIL;
 	c->curprg= 0;
 	MSinitClientPrg(c,"user", "main");	/* create new context */
 	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_READER] && 
@@ -319,9 +324,9 @@ compileString(Symbol *fcn, Client c, str s)
 }
 
 @h
-mal_export void callString(Client c, str s, int listing);
+mal_export int callString(Client c, str s, int listing);
 @c
-void
+int
 callString(Client c, str s, int listing)
 {
 	@:restoreState3@
@@ -337,8 +342,11 @@ callString(Client c, str s, int listing)
 	if (old != s)
 		GDKfree(s);
 	b = (buffer *) GDKmalloc(sizeof(buffer));
+	if ( b == NULL)
+		return -1;
 	buffer_init(b, qry, len);
-	MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");
+	if( MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "") < 0)
+		return -1;
 	c->curprg= 0;
 	MSinitClientPrg(c,"user", "main");	/* create new context */
 	@:runPhase(MAL_SCENARIO_READER,restoreClient3)@
@@ -351,6 +359,7 @@ callString(Client c, str s, int listing)
 	@:restoreClient2()@
 	GDKfree(qry);
 	GDKfree(b);
+	return 0;
 }
 
 @h

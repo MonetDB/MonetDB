@@ -62,8 +62,6 @@ mal_export void debugParser(int i);
 mal_export str parseError(Client cntxt, str msg);
 mal_export int idLength(Client cntxt);
 mal_export int stringLength(Client cntxt);
-mal_export str idCopy(Client cntxt, int len);
-mal_export str strCopy(Client cntxt, int len);
 mal_export int cstToken(Client cntxt, ValPtr val);
 mal_export int charCst(Client cntxt, ValPtr val);
 mal_export int operatorLength(Client cntxt);
@@ -93,6 +91,9 @@ request and each time we encounter EOL.
 
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')
+
+static str idCopy(Client cntxt, int len);
+static str strCopy(Client cntxt, int len);
 
 
 void echoInput(Client cntxt)
@@ -214,8 +215,11 @@ typeidLength(Client cntxt)
 	idCharacter[TMPMARKER]=1;
 	return l;
 }
+
 str idCopy(Client cntxt, int length){
 	str s= GDKmalloc(length+1);
+	if ( s == NULL)
+		return NULL;
 	memcpy(s, CURRENT(cntxt),(size_t) length);
 	s[length]=0;
 	/* avoid a clash with old temporaries */
@@ -339,7 +343,7 @@ str strCopy(Client cntxt, int length){
 	i = length<4 ? 4: length;
 	s = GDKzalloc(i);
 	if (s == 0) 
-		GDKfatal("FATAL:strCopy:");
+		return NULL;
 	memcpy(s, CURRENT(cntxt) + 1, (size_t) (length - 2) );
 	mal_unquote(s);
 	return s;
@@ -427,7 +431,9 @@ int cstToken(Client cntxt, ValPtr cst)
 		cst->vtype= TYPE_str;
 		i= stringLength(cntxt);
 		cst->val.sval = strCopy(cntxt, i);
-		cst->len = (int) strlen(cst->val.sval);
+		if ( cst->val.sval )
+			cst->len = (int) strlen(cst->val.sval);
+		else cst->len = 0;
 		return i;
 	case '\'':
 		return charCst(cntxt,cst);
@@ -998,7 +1004,7 @@ the function definition in a particular module instead of the current one.
 
 	/* temporary suspend capturing statements in main block */
 	if( cntxt->backup && curBlk && curBlk->errors==0) 
-		GDKfatal("mal_parser: unexpected recursion\n");
+		return (MalBlkPtr) parseError(cntxt,"mal_parser: unexpected recursion\n");
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction(putName("user",4), fnme, kind);
 	curPrg = cntxt->curprg;	
@@ -1082,6 +1088,8 @@ during the final phase reshuffle the return values to the beginning (?)
 		/* re-arrange the parameters, results first*/
 		max= curInstr->maxarg;
 		newarg= (short*)GDKmalloc(max*sizeof(curInstr->argv[0]));
+		if ( newarg == NULL)
+			return (MalBlkPtr) parseError(cntxt, MAL_MALLOC_FAIL);
 		for(i1= retc; i1<curInstr->argc; i1++)
 			newarg[i2++]= curInstr->argv[i1];
 		curInstr->retc= curInstr->argc-retc;
@@ -1221,7 +1229,8 @@ help information.
 	if( MALkeyword(cntxt,"comment",7)){
 		if( (l= stringLength(cntxt))){
 			@1 = strCopy(cntxt,l);
-			advance(cntxt,l-1);
+			if (@1 )
+				advance(cntxt,l-1);
 		} else {
 			parseError(cntxt,"<string> expected\n");
 		}

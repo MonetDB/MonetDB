@@ -113,7 +113,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	limit= mb->stop;
 	old = mb->stmt;
-	newMalBlkStmt(mb, mb->ssize+20); /* some marge */
+	if ( newMalBlkStmt(mb, mb->ssize+20) <0 ){
+		GDKfree(span);
+		return 0;
+	}
 	pushInstruction(mb,old[0]);
 
 	initProfiler(mb);

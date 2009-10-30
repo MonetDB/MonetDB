@@ -276,7 +276,8 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
-	newMalBlkStmt(mb, mb->ssize);
+	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
+		return 0;
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];

@@ -75,7 +75,7 @@ malBootstrap()
 	c->nspace = newModule(NULL, putName("user", 4));
 	initLibraries();
 	if (defaultScenario(c)) {
-		GDKfatal("Failed to initialise default scenario");
+		GDKerror("Failed to initialise default scenario");
 		return 0;
 	}
 	bf = GDKgetenv("mal_bootstrap");

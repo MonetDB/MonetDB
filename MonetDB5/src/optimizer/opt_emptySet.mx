@@ -140,7 +140,8 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 	if (varGetProp(mb, getArg(old[0], 0), inlineProp) != NULL)
 		return 0;
 
-	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
+	if ( newMalBlkStmt(mb, mb->ssize) < 0)
+		return 0;
 	constraints= (InstrPtr *) GDKmalloc(sizeof(InstrPtr)*slimit);
 	if ( constraints == NULL)
 		return 0;

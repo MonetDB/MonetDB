@@ -206,7 +206,8 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		limit = mb->stop;
 		old = mb->stmt;
-		newMalBlkStmt(mb,mb->ssize);
+		if ( newMalBlkStmt(mb,mb->ssize) < 0)
+			return 0;
 		/* copy the first part without modification */
 		for (i = 0; i < first-1; i++) 
 			pushInstruction(mb,old[i]);

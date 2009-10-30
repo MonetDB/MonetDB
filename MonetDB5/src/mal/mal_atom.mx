@@ -133,7 +133,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 	int tpe = getTypeIndex(getModuleId(pci), (int) strlen(getModuleId(pci)), TYPE_any);
 	(void) mb; /* fool compilers */
 	if( tpe<0 || tpe>= GDKatomcnt)
-		GDKfatal("malAtomProperty:illegal type name:%s",name);
+		return 0;
 	switch(name[0]){
 	case 'd': 
 		if( idcmp("del",name)==0 && pci->argc==1){
