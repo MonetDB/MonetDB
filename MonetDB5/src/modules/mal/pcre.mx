@@ -307,11 +307,12 @@ re_create( char *pat, int nr)
 	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
 	char *p = x, *q = x;
 
-	if ( x == NULL)
+	if (x == NULL || r == NULL) {
+		if (x != NULL)
+			GDKfree(x);
+		if (r != NULL)
+			GDKfree(r);
 		return NULL;
-	if ( r == NULL){
-		GDKfree(x);
-		return r;
 	}
 	r->n = NULL;
 	r->search = 0;
@@ -331,7 +332,8 @@ re_create( char *pat, int nr)
 			n = n->n = (RE*)GDKmalloc(sizeof(RE));
 			if ( n == NULL){
 				GDKfree(x);
-				return r;
+				GDKfree(r);
+				return NULL;
 			}
 			n->search = 1;
 			n->skip = 0;

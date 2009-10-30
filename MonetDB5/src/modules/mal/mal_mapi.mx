@@ -1563,8 +1563,10 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			qry= GDKstrdup(fld);
 		else {	
 			s= (char*) GDKmalloc(strlen(qry)+strlen(fld)+1);
-			if ( s == NULL)
+			if ( s == NULL) {
+				GDKfree(qry);
 				throw(MAL, "mapi.rpc",MAL_MALLOC_FAIL);
+			}
 			strcpy(s,qry);
 			strcat(s,fld);
 			GDKfree(qry);
