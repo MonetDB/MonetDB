@@ -218,7 +218,13 @@ QEPbuilt(MalBlkPtr mb){
 	int i, j, k, *status;
 
 	vq= (QEP*) GDKmalloc( mb->vtop * sizeof(QEP));
+	if (vq == NULL)
+		return NULL;
 	status= (int*) GDKmalloc( mb->vtop * sizeof(int));
+	if (status == NULL){
+		GDKfree(vq);
+		return NULL;
+	}
 	for(i=0; i<mb->vtop; i++) {
 		status[i]= 0;
 		vq[i] = 0;

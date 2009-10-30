@@ -116,6 +116,7 @@ static int
 OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k,  v, noop = 0, se;
+	InstrPtr *mbnew;
 	InstrPtr p,sig;
 	int fk = 0, sk = 0, blk = 0, blkstart = 0;
 	int *varused, returnseen = 0, retvar=0;
@@ -215,8 +216,11 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	first[0]->token = FACTORYsymbol;
 
+	mbnew = (InstrPtr *) GDKmalloc((mb->stop + 4) * sizeof(InstrPtr));
+	if ( mb->stmt == NULL)
+		return 0;
 	GDKfree(mb->stmt);
-	mb->stmt = (InstrPtr *) GDKmalloc((mb->stop + 4) * sizeof(InstrPtr));
+	mb->stmt = mbnew;
 
 	mb->stop = mb->stop + 4;
 

@@ -381,6 +381,8 @@ IOprintf_(str *res, str format, ...)
 	}
 	va_start(ap,format);
 	buf = dst = (str) GDKmalloc(size = 80);
+	if ( buf == NULL)
+		throw(MAL,"io.printf",MAL_MALLOC_FAIL);
 	*res = NULL;
 
 	for (cur = format; *cur; cur++) {
@@ -825,9 +827,11 @@ IOimport(int *ret, int *bid, str *fnme)
 	int lh = 0, lt = 0;
 	FILE *fp = fopen(*fnme, "r");
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ( buf == NULL)
+		throw(MAL,"io.import",MAL_MALLOC_FAIL);
+	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "io.import", RUNTIME_OBJECT_MISSING);
-	}
+
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
 @-

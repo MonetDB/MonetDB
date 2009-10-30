@@ -407,6 +407,10 @@ doChallenge(str cmd, stream *in, stream *out) {
 		bstream *bs;
 		int len = 0;
 
+		if ( buf == NULL){
+			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+			return;
+		}
 		if (!fdin || !fdout) {
 			GDKsyserror("SERVERlisten:fdin or fdout problems");
 			return;
@@ -697,6 +701,8 @@ errno == WSAEADDRINUSE &&
 	Sock = GDKmalloc(sizeof(SOCKET));
 	*Sock = sock;
 
+	if (Sock == NULL)
+		throw(MAL,"mal_mapi.listen", MAL_MALLOC_FAIL);
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
 		GDKfree(Sock);
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED " Starting thread failed");
@@ -1557,6 +1563,8 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			qry= GDKstrdup(fld);
 		else {	
 			s= (char*) GDKmalloc(strlen(qry)+strlen(fld)+1);
+			if ( s == NULL)
+				throw(MAL, "mapi.rpc",MAL_MALLOC_FAIL);
 			strcpy(s,qry);
 			strcat(s,fld);
 			GDKfree(qry);

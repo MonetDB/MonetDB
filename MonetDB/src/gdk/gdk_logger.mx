@@ -270,6 +270,8 @@ log_read_string(logger *l)
 	if (len == 0)
 		return NULL;
 	buf = (char *) GDKmalloc(len);
+	if (buf == NULL)
+		return NULL;
 
 	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t) len) {
 		buf[len - 1] = 0;

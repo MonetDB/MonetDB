@@ -219,6 +219,8 @@ AUTHinitTables() {
 		BAT *s;
 
 		b = BATdescriptor(bid);
+		if (b == NULL)
+			throw(MAL, "initTables.passwd", INTERNAL_BAT_ACCESS);
 		fprintf(stderr,
 				"#warning: converting old password store to new format\n");
 		fflush(stderr);

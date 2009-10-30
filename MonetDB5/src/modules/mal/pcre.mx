@@ -307,6 +307,12 @@ re_create( char *pat, int nr)
 	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
 	char *p = x, *q = x;
 
+	if ( x == NULL)
+		return NULL;
+	if ( r == NULL){
+		GDKfree(x);
+		return r;
+	}
 	r->n = NULL;
 	r->search = 0;
 	r->skip = 0;
@@ -323,6 +329,10 @@ re_create( char *pat, int nr)
 		n->n = NULL;
 		if ((--nr) > 0) {
 			n = n->n = (RE*)GDKmalloc(sizeof(RE));
+			if ( n == NULL){
+				GDKfree(x);
+				return r;
+			}
 			n->search = 1;
 			n->skip = 0;
 		}
@@ -426,6 +436,8 @@ my_pcre_malloc(size_t s)
 {
 	size_t *sz = (size_t *) GDKmalloc(s + sizeof(size_t));
 
+	if ( sz == NULL)
+		return NULL;
 	*sz = s + sizeof(size_t);
 	return (void *) (sz + 1);
 }
@@ -953,6 +965,8 @@ sql2pcre(str *r, str pat, str esc_str)
 	int esc = esc_str[0]; /* should change to utf8_convert() */
 	int specials = 0;
 
+	if ( ppat == NULL)
+		return GDK_FAIL; 
 	*r = ppat;
 	/* The escape character can be a char which is special in a PCRE
 	 * expression.  If the user used the "+" char as escape and has "++"
@@ -1023,6 +1037,8 @@ pat2pcre(str *r, str pat)
 	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);
 	int start = 0;
 
+	if ( ppat == NULL)
+		return GDK_FAIL; 
 	*r = ppat;
 	while (*pat) {
 		int c = *pat++;
@@ -1209,8 +1225,13 @@ PCRElike4(bit *ret, str *s, str *pat, str *esc, bit *isens)
 	if (!r) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			*ret = FALSE;
-			if (strcmp(*s, *pat) == 0)
-				*ret = TRUE;
+			if (*isens) {
+				if (strcasecmp(*s, *pat) == 0)
+					*ret = TRUE;
+			} else {
+				if (strcmp(*s, *pat) == 0)
+					*ret = TRUE;
+			}
 		} else {
 			if (*isens) {
 				r = PCREimatch(ret, s, &ppat);
@@ -1507,6 +1528,9 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 			if (ignore) {
 				GDKfree(ppat);
 				ppat = GDKmalloc(sizeof(char) * (strlen(*pat) + 3));
+				if ( ppat == NULL)
+					throw(MAL,"pcre.like",MAL_MALLOC_FAIL);
+				
 				sprintf(ppat, "^%s$", *pat);
 				if (us)
 					r = PCREuselect(ret, &ppat, b, &ignore);

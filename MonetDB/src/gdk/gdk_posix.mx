@@ -339,6 +339,8 @@ setenv(const char *name, const char *value, int overwrite)
 	if (overwrite || getenv(name) == NULL) {
 		char *p = (char *) GDKmalloc(2 + strlen(name) + strlen(value));
 
+		if (p == NULL)
+			return -1;
 		strcpy(p, name);
 		strcat(p, "=");
 		strcat(p, value);

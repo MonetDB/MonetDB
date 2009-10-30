@@ -646,6 +646,10 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	msg = instruction2str(s->blk, s, p, LIST_MAL_DEBUG);
 	len = strlen(msg);
 	buf = (char*) GDKmalloc(len +1024);
+	if ( buf == NULL){
+		GDKfree(msg);
+		throw(MAL,"mdb.setTrace",MAL_MALLOC_FAIL);
+	}
 	snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 		getModuleId(getInstrPtr(m,0)),
 		getFunctionId(getInstrPtr(m,0)), getPC(m, p));
@@ -659,6 +663,10 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			GDKfree(buf);
 			len=l;
 			buf = (char*) GDKmalloc(len +1024);
+			if ( buf == NULL){
+				GDKfree(msg);
+				throw(MAL,"mdb.setTrace",MAL_MALLOC_FAIL);
+			}
 		}
 		snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 			getModuleId(getInstrPtr(s->blk,0)),
@@ -954,6 +962,10 @@ TBL_getdir(void)
 				l = strlen(mod_path);
 			}
 			cur_dir = GDKmalloc(l + 1);
+			if ( cur_dir == NULL){
+				GDKsyserror("mdb.modules"MAL_MALLOC_FAIL);
+				return b;
+			}
 			strncpy(cur_dir, mod_path, l);
 			cur_dir[l] = 0;
 			if ((mod_path = p) != NULL) {
