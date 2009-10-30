@@ -425,9 +425,17 @@ print_array(BAT *val, ...)
 #endif
 
 	minvector = GDKmalloc(sizeof(ptr) * dims);
+	if ( minvector == NULL) 
+		goto exit_err_full;
 	idxvector = GDKmalloc(sizeof(int) * dims);
+	if ( idxvector == NULL) 
+		goto exit_err_full;
 	maxvector = GDKmalloc(sizeof(ptr) * dims);
+	if ( maxvector == NULL) 
+		goto exit_err_full;
 	lenvector = GDKmalloc(sizeof(ptr) * dims);
+	if ( lenvector == NULL) 
+		goto exit_err_full;
 
 	c = 1;
 	j = BATcount(val);
@@ -455,6 +463,8 @@ print_array(BAT *val, ...)
 		goto exit_err_part;
 	}
 	arrayindex = GDKmalloc(sizeof(oid) * c);
+	if ( arrayindex == NULL)
+		goto exit_err_full;
 
 	/* Iterate over the first index BAT.              */
 	/* And fetch additional indices (for a given oid) */
@@ -556,12 +566,17 @@ print_array(BAT *val, ...)
 	return GDK_SUCCEED;
 
 exit_err_full:
-	GDKfree(arrayindex);
+	if (arrayindex)
+		GDKfree(arrayindex);
 exit_err_part:
-	GDKfree(maxvector);
-	GDKfree(idxvector);
-	GDKfree(minvector);
-	GDKfree(lenvector);
+	if ( maxvector)
+		GDKfree(maxvector);
+	if (idxvector)
+		GDKfree(idxvector);
+	if (minvector)
+		GDKfree(minvector);
+	if (lenvector)
+		GDKfree(lenvector);
 exit_err_none:
 	return GDK_FAIL;
 }

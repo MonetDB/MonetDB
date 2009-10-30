@@ -74,6 +74,8 @@ unix_setenv(bit *res, str varname, str valname)
 	size_t len = strlen(varname) + strlen(valname) + 2;
 	char *envval = GDKmalloc(len);
 
+	if ( envval == NULL)
+		return GDK_FAIL;
 	strcpy(envval, varname);
 	strcat(envval, "=");
 	strcat(envval, valname);
