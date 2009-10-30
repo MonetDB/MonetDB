@@ -739,7 +739,10 @@ number(mvc * c, int cur)
 				token = APPROXNUM;
 		}
 	}
-	
+
+	if (cur == EOF && lc->rs->buf == NULL) /* malloc failure */
+		return EOF;
+
 	if (token) {
 		if (cur != EOF)
 			utf8_putchar(lc, cur);
@@ -925,6 +928,9 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	mvc *c = (mvc*)parm;
 	struct scanner *lc = &c->scanner;
 	int token = 0;
+
+	if (lc->rs->buf == NULL) /* malloc failure */
+		return EOF;
 
 	if (lc->yynext) {
 		int next = lc->yynext;

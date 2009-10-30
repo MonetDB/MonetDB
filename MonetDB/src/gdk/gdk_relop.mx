@@ -2819,6 +2819,9 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 			}
 			n->hitsize = 20;
 			n->hit = (BUN *) GDKmalloc(n->hitsize * sizeof(BUN));
+			if (n->hit == NULL) {
+				return 0;
+			}
 		}
 	}
 

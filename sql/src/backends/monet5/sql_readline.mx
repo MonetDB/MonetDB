@@ -181,7 +181,13 @@ SQLreadConsole(Client cntxt){
 		size_t len = strlen(buf);
 		if( len >= cntxt->fdin->size) {
 			/* extremly dirty inplace buffer overwriting */
+			assert(cntxt->fdin->buf);
 			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
+			if (cntxt->fdin->buf == NULL) {
+				cntxt->fdin->len = 0;
+				cntxt->fdin->size = 0;
+				return -1;
+			}
 			cntxt->fdin->len = len;
 			cntxt->fdin->size = len;
 		} 
