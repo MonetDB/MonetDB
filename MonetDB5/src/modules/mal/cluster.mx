@@ -920,7 +920,8 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 		throw(MAL, "cluster.map", OPERATION_FAILED " Counts of operands do not match");
 	}
 
-	if ((rb = BATnew(TYPE_void, ATOMtype(b->ttype), BATcount(b))) == NULL) {
+	psumcp = (wrd*)GDKmalloc(BATcount(psum) * sizeof(wrd));
+	if ( psumcp == NULL || (rb = BATnew(TYPE_void, ATOMtype(b->ttype), BATcount(b))) == NULL) {
 		BBPunfix(*PSUM);
 		BBPunfix(*CMAP);
 		BBPunfix(b->batCacheid);
@@ -934,7 +935,6 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 	rb->T->nonil = b->T->nonil;
 	*RB = rb->batCacheid;
 
-	psumcp = (wrd*)GDKmalloc(BATcount(psum) * sizeof(wrd));
 	memcpy(psumcp, Tloc(psum,BUNfirst(psum)), BATcount(psum) * sizeof(wrd));
 	BBPunfix(*PSUM);
 

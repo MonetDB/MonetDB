@@ -245,7 +245,7 @@ BATXMLxmltext(int *ret, int *bid)
 	str buf = NULL;
 	xmlDocPtr doc = NULL;
 	xmlNodePtr elem;
-	str content = NULL;
+	str content = NULL, err = OPERATION_FAILED;
 
 	prepareOperand(b, bid, "text");
 	prepareResult(bn, b, TYPE_str, "text");
@@ -281,6 +281,10 @@ BATXMLxmltext(int *ret, int *bid)
 				if (buf != NULL)
 					GDKfree(buf);
 				buf = GDKmalloc(size);
+				if ( buf == 0) {
+					err= MAL_MALLOC_FAIL;
+					goto bunins_failed;
+				}
 			}
 			s = buf;
 			t++;
@@ -295,7 +299,7 @@ BATXMLxmltext(int *ret, int *bid)
 			*s = 0;
 		}
 		bunfastins(bn, h, content != NULL ? content : buf);
-		if (content)
+		if (content != NULL)
 			GDKfree(content);
 		content = NULL;
 	}
@@ -314,11 +318,11 @@ BATXMLxmltext(int *ret, int *bid)
 		xmlFreeDoc(doc);
 	if (content != NULL)
 		GDKfree(content);
-	throw(MAL, "xml.text", OPERATION_FAILED " During bulk text coercion");
+	throw(MAL, "xml.text", err );
 #else
 	(void) ret;
 	(void) bid;
-	throw(MAL, "xml.content", XML_MISSING);
+	throw(MAL, "xml.text", err);
 #endif
 }
 
@@ -340,9 +344,12 @@ BATXMLstr2xml(int *ret, int *bid)
 	BAT *b, *bn;
 	BUN p, q;
 	size_t size = BUFSIZ;
-	str buf = GDKmalloc(size);
+	str buf, err= OPERATION_FAILED;
 	BATiter bi;
 
+	buf = GDKmalloc(size);
+	if ( buf == NULL)
+		throw(MAL,"xml.str2xml",MAL_MALLOC_FAIL);
 	prepareOperand(b, bid, "xml");
 	prepareResult(bn, b, TYPE_xml, "xml");
 	bi = bat_iterator(b);
@@ -362,6 +369,10 @@ BATXMLstr2xml(int *ret, int *bid)
 			size = len + 128;
 			GDKfree(buf);
 			buf = GDKmalloc(size);
+			if ( buf == NULL){
+				err= MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		buf[0] = 'C';
 		XMLquotestring(t, buf + 1, size - 1);
@@ -373,8 +384,9 @@ BATXMLstr2xml(int *ret, int *bid)
   bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
-	throw(MAL, "xml.xml", OPERATION_FAILED "During bulk xml coercion");
+	if ( buf != NULL )
+		GDKfree(buf);
+	throw(MAL, "xml.xml", err);
 }
 
 str
@@ -386,7 +398,10 @@ BATXMLdocument(int *ret, int *bid)
 	BATiter bi;
 	size_t size = BUFSIZ;
 	str buf = GDKmalloc(size);
+	str err = OPERATION_FAILED;
 
+	if ( buf == NULL)
+		throw(MAL,"xml.document",MAL_MALLOC_FAIL);
 	prepareOperand(b, bid, "document");
 	prepareResult(bn, b, TYPE_xml, "document");
 	bi = bat_iterator(b);
@@ -415,6 +430,10 @@ BATXMLdocument(int *ret, int *bid)
 			GDKfree(buf);
 			size = (size_t) len + 128;
 			buf = GDKmalloc(size);
+			if ( buf == NULL){
+				err= MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		buf[0] = 'D';
 		strcpy(buf + 1, (char *) s);
@@ -427,7 +446,7 @@ BATXMLdocument(int *ret, int *bid)
 	GDKfree(buf);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "xml.document", OPERATION_FAILED "During bulk processing");
+	throw(MAL, "xml.document",err);
 #else
 	(void) ret;
 	(void) bid;
@@ -446,8 +465,11 @@ BATXMLcontent(int *ret, int *bid)
 	xmlNodePtr root;
 	size_t size = BUFSIZ;
 	str buf = GDKmalloc(size);
+	str err = OPERATION_FAILED;
 	xmlBufferPtr xbuf;
 
+	if ( buf == NULL)
+		throw(MAL,"xml.content",MAL_MALLOC_FAIL);
 	doc = xmlParseMemory("<doc/>", 6);
 	root = xmlDocGetRootElement(doc);
 	prepareOperand(b, bid, "content");
@@ -483,6 +505,13 @@ BATXMLcontent(int *ret, int *bid)
 			GDKfree(buf);
 			size = len + 128;
 			buf = GDKmalloc(size);
+			if ( buf == NULL){
+				xmlBufferFree(xbuf);
+				xmlFreeDoc(doc);
+				BBPreleaseref(b->batCacheid);
+				BBPunfix(bn->batCacheid);
+				throw(MAL, "xml.document", MAL_MALLOC_FAIL);
+			}
 		}
 		buf[0] = 'C';
 		strcpy(buf + 1, (const char *) s);
@@ -498,10 +527,11 @@ BATXMLcontent(int *ret, int *bid)
   bunins_failed:
 	xmlBufferFree(xbuf);
 	xmlFreeDoc(doc);
-	GDKfree(buf);
+	if ( buf != NULL )
+		GDKfree(buf);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "xml.document", OPERATION_FAILED " During bulk processing");
+	throw(MAL, "xml.document", err);
 #else
 	(void) ret;
 	(void) bid;
@@ -575,6 +605,11 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 	int size = BUFSIZ, len = (int) strlen(*name);
 	BATiter bi;
 
+	if ( val == NULL || buf == NULL){
+		if (val != NULL) GDKfree(val);
+		if (buf != NULL) GDKfree(buf);
+		throw(MAL, "xml.options", MAL_MALLOC_FAIL);
+	}
 	prepareOperand(b, bid, "options");
 	prepareResult(bn, b, TYPE_xml, "options");
 
@@ -613,7 +648,8 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
+	if ( buf != NULL)
+		GDKfree(buf);
 	throw(MAL, "batxml.options", OPERATION_FAILED " During bulk options analysis");
 }
 
@@ -625,7 +661,10 @@ BATXMLcomment(int *ret, int *bid)
 	size_t size = BUFSIZ;
 	str buf = GDKmalloc(size);
 	BATiter bi;
+	str err= OPERATION_FAILED;
 
+	if (buf == NULL)
+		throw(MAL, "xml.comment", MAL_MALLOC_FAIL);
 	prepareOperand(b, bid, "comment");
 	prepareResult(bn, b, TYPE_xml, "comment");
 	bi = bat_iterator(b);
@@ -651,6 +690,10 @@ BATXMLcomment(int *ret, int *bid)
 			/* free/malloc so we don't copy */
 			GDKfree(buf);
 			buf = GDKmalloc(size);
+			if ( buf == NULL){
+				err= MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		snprintf(buf, size, "C<!--%s-->", t);
 		bunfastins(bn, h, buf);
@@ -661,8 +704,9 @@ BATXMLcomment(int *ret, int *bid)
   bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
-	throw(MAL, "xml.comment", OPERATION_FAILED " During bulk comment processing");
+	if ( buf != NULL)
+		GDKfree(buf);
+	throw(MAL, "xml.comment", err);
 }
 
 str
@@ -685,7 +729,10 @@ BATXMLpi(int *ret, str *target, int *bid)
 	str buf = GDKmalloc(size);
 	BATiter bi;
 	size_t tgtlen;
+	str err = OPERATION_FAILED;
 
+	if ( buf == NULL)
+		throw(MAL, "xml.pi", MAL_MALLOC_FAIL);
 	if (strNil(*target))
 		throw(MAL, "xml.pi", XML_PI_ERROR);
 
@@ -707,6 +754,10 @@ BATXMLpi(int *ret, str *target, int *bid)
 			/* free/malloc so we don't copy */
 			GDKfree(buf);
 			buf = GDKmalloc(size);
+			if ( buf == NULL){
+				err = MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		if (strNil(t))
 			snprintf(buf, size, "C<?%s?>", *target);
@@ -723,8 +774,9 @@ BATXMLpi(int *ret, str *target, int *bid)
   bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
-	throw(MAL, "xml.pi", OPERATION_FAILED " During bulk processing");
+	if ( buf != NULL )
+		GDKfree(buf);
+	throw(MAL, "xml.pi", err);
 }
 
 str
@@ -736,7 +788,10 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 	str buf = GDKmalloc(size);
 	BATiter bi;
 	size_t hdrlen;
+	str err = OPERATION_FAILED;
 
+	if ( buf == NULL)
+		throw(MAL, "xml.root", MAL_MALLOC_FAIL);
 	hdrlen = 8;
 	if (!strNil(*version) && **version) {
 		if (strcmp(*version, "1.0") != 0 && strcmp(*version, "1.1") != 0)
@@ -766,6 +821,10 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 			/* free/malloc so we don't copy */
 			GDKfree(buf);
 			buf = GDKmalloc(size);
+			if ( buf == NULL){
+				err = MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		if (strNil(t)) {
 			strcpy(buf, str_nil);
@@ -782,10 +841,8 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 			XMLisdocument(&isdoc, &buf); /* check well-formedness */
 			buf--;
 			if (!isdoc) {
-				BBPreleaseref(b->batCacheid);
-				BBPunfix(bn->batCacheid);
-				GDKfree(buf);
-				throw(MAL, "xml.root", XML_NOT_WELL_FORMED);
+				err = XML_NOT_WELL_FORMED;
+				goto bunins_failed;
 			}
 		}
 		bunfastins(bn, h, buf);
@@ -796,8 +853,9 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
   bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
-	throw(MAL, "xml.root", OPERATION_FAILED " During bulk processing");
+	if ( buf != NULL )
+		GDKfree(buf);
+	throw(MAL, "xml.root", err);
 }
 
 str
@@ -809,7 +867,10 @@ BATXMLattribute(int *ret, str *name, int *bid)
 	str buf = GDKmalloc(size);
 	BATiter bi;
 	size_t attrlen;
+	str err = OPERATION_FAILED;
 
+	if ( buf == NULL)
+		throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
 	if (strNil(*name))
 		throw(MAL, "xml.attribute", XML_ATTRIBUTE_ERROR);
 
@@ -835,6 +896,10 @@ BATXMLattribute(int *ret, str *name, int *bid)
 			/* free/malloc so we don't copy */
 			GDKfree(buf);
 			buf = GDKmalloc(size);
+			if ( buf == NULL){
+				err = MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		if (strNil(t)) {
 			strcpy(buf, str_nil);
@@ -852,7 +917,8 @@ BATXMLattribute(int *ret, str *name, int *bid)
   bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
+	if ( buf != NULL )
+		GDKfree(buf);
 	throw(MAL, "xml.attribute", OPERATION_FAILED " During bulk processing");
 }
 
@@ -865,7 +931,10 @@ BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
 	str buf = GDKmalloc(size);
 	BATiter bi;
 	size_t elemlen, namelen;
+	str err = OPERATION_FAILED;
 
+	if ( buf == NULL)
+		throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
 	if (strNil(*name))
 		throw(MAL, "xml.element", XML_NO_ELEMENT);
 #ifdef HAVE_LIBXML2
@@ -910,6 +979,10 @@ BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
 			/* free/malloc so we don't copy */
 			GDKfree(buf);
 			buf = GDKmalloc(size);
+			if ( buf == NULL){
+				err = MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		if (strNil(t)) {
 			strcpy(buf, str_nil);
@@ -933,8 +1006,9 @@ BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
   bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
-	throw(MAL, "xml.element", OPERATION_FAILED " During bulk processing");
+	if ( buf != NULL )
+		GDKfree(buf);
+	throw(MAL, "xml.element", err);
 }
 
 str
@@ -953,10 +1027,13 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str buf = GDKmalloc(BUFSIZ);
 	int i;
 	size_t offset, len, size = BUFSIZ;
-	str err = "bunins failed";	/* default error message */
+	str err = OPERATION_FAILED;
 
 	(void) mb;
 	(void) cntxt;
+	if ( buf == NULL)
+		throw(MAL, "xml.forest", MAL_MALLOC_FAIL);
+	
 	bi = alloca(sizeof(BATiter) * pci->argc);
 	p = alloca(sizeof(BUN) * pci->argc);
 	q = alloca(sizeof(BUN) * pci->argc);
@@ -996,6 +1073,10 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if ((len = strlen(t)) >= size - offset) {
 				size += len + 128;
 				buf = GDKrealloc(buf, size);
+				if ( buf == NULL) {
+					err = MAL_MALLOC_FAIL;
+					goto bunins_failed;
+				}
 			}
 			if (offset == 0)
 				n = snprintf(buf, size, "%s", t);
@@ -1028,7 +1109,8 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (bi[i].b)
 			BBPreleaseref(bi[i].b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
+	if ( buf != NULL )
+		GDKfree(buf);
 	throw(MAL, "xml.forest", err);
 }
 
@@ -1040,7 +1122,10 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 	size_t len, size = BUFSIZ;
 	str buf = GDKmalloc(size);
 	BATiter bi, ri;
-	str err = "bunins failed";	/* default error message */
+	str err = OPERATION_FAILED;
+
+	if ( buf == NULL)
+		throw(MAL, "xml.concat", MAL_MALLOC_FAIL);
 
 	if (*rid && (r = BATdescriptor(*rid))) {
 		rp = BUNfirst(r);
@@ -1074,6 +1159,10 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 			GDKfree(buf);
 			size = len + 128;
 			buf = GDKmalloc(size);
+			if ( buf == NULL){
+				err= MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		if (strNil(t)) {
 			if (strNil(v)) {
@@ -1107,7 +1196,8 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 	BBPreleaseref(r->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
+	if ( buf != NULL)
+		GDKfree(buf);
 	throw(MAL, "xml.concat", err);
 }
 
@@ -1124,6 +1214,8 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 	BATiter ri;
 	str err = "bunins failed";	/* default error message */
 
+	if ( buf == NULL)
+		throw(MAL,"xml.agg", MAL_MALLOC_FAIL);
 	@:getBATdescriptor(ext,e,"xml.agg")@
 	@:getBATdescriptor(grp,g,"xml.agg",BBPunfix(e->batCacheid))@
 	@:getBATdescriptor(bid,b,"xml.agg",BBPunfix(e->batCacheid);BBPunfix(g->batCacheid))@
@@ -1175,6 +1267,10 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 		if (len >= size - offset) {
 			size += len + 128;
 			buf = GDKrealloc(buf, size);
+			if ( buf == NULL){
+				err= MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		if (offset == 0)
 			n = snprintf(buf, size, "%s", t);
@@ -1207,7 +1303,8 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
   bunins_failed:
 	BBPunfix(r->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
+	if ( buf != NULL)
+		GDKfree(buf);
 	throw(MAL, "xml.agg", err);
 }
 
@@ -1224,6 +1321,8 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	BATiter ri;
 	str err = "bunins failed";	/* default error message */
 
+	if ( buf == NULL)
+		throw(MAL,"xml.agg",MAL_MALLOC_FAIL);
 	@:getBATdescriptor(grp,g,"xml.agg")@
 	@:getBATdescriptor(bid,b,"xml.agg",BBPunfix(g->batCacheid))@
 
@@ -1270,6 +1369,10 @@ BATXMLagg(int *ret, int *bid, int *grp)
 		if (len >= size - offset) {
 			size += len + 128;
 			buf = GDKrealloc(buf, size);
+			if ( buf == NULL ){
+				err = MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		}
 		if (offset == 0)
 			n = snprintf(buf, size, "%s", t);
@@ -1302,7 +1405,8 @@ BATXMLagg(int *ret, int *bid, int *grp)
   bunins_failed:
 	BBPunfix(bn->batCacheid);
 	BBPunfix(r->batCacheid);
-	GDKfree(buf);
+	if ( buf != NULL)
+		GDKfree(buf);
 	throw(MAL, "xml.agg", err);
 }
 
@@ -1317,6 +1421,8 @@ BATXMLgroup(xml *ret, int *bid)
 	BATiter bi;
 	str err = NULL;
 
+	if ( buf == NULL)
+		throw( MAL, "xml.group",MAL_MALLOC_FAIL);
 	@:getBATdescriptor(bid,b,"xml.agg")@
 
 	strcpy(buf, str_nil);
@@ -1333,6 +1439,10 @@ BATXMLgroup(xml *ret, int *bid)
 		if (len >= size - offset) {
 			size += len + 128;
 			buf = GDKrealloc(buf, size);
+			if ( buf == NULL){
+				err= MAL_MALLOC_FAIL;
+				goto failed;
+			}
 		}
 		if (offset == 0)
 			n = snprintf(buf, size, "%s", t);
@@ -1354,7 +1464,8 @@ BATXMLgroup(xml *ret, int *bid)
 	return MAL_SUCCEED;
   failed:
 	BBPreleaseref(b->batCacheid);
-	GDKfree(buf);
+	if ( buf != NULL)
+		GDKfree(buf);
 	throw(MAL, "xml.agg", err);
 }
 

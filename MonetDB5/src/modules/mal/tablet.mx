@@ -1010,6 +1010,8 @@ sep_dup(char *sep)
 	char *res = GDKmalloc(len*2 + 1), *result = res;
 	char *end = sep + len;
 
+	if ( res == NULL)
+		return NULL;
 	while (sep < end) {
 		if (*sep == '\\') {
 			++sep;
@@ -1116,6 +1118,8 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 	BUN nr_attrs = BATcount(names);
 	Column *fmt = as->format = (Column *) GDKmalloc(sizeof(Column) * (nr_attrs + 1));
 
+	if (fmt == NULL)
+		return 0;
 	as->offset = 0;
 	as->nr_attrs = nr_attrs;
 	as->tryall= 0;
@@ -1162,6 +1166,8 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 	BUN nr_attrs = BATcount(bats);
 	Column *fmt = as->format = (Column *) GDKmalloc(sizeof(Column) * (nr_attrs + 1));
 
+	if (fmt == NULL)
+		return 0;
 	as->offset = 0;
 	as->nr_attrs = nr_attrs;
 	as->tryall= 0;
@@ -1885,6 +1891,8 @@ dump_file(Tablet * as, stream *fd)
 	int len = BUFSIZ;
 	char *buf = GDKmalloc(len);
 
+	if ( buf == NULL)
+		return -1;
 	for (i = 0; i < as->nr; i++) {
 		if (dump_line(&buf, &len, as->format, fd, as->nr_attrs, i) < 0) {
 			GDKfree(buf);
@@ -1909,6 +1917,8 @@ output_file_default(Tablet * as, BAT *order, stream *fd)
 	BUN offset = BUNfirst(order) + as->offset;
 	BATiter orderi = bat_iterator(order);
 
+	if ( buf == NULL)
+		return -1;
 	for (q = offset + as->nr, p = offset; p < q; p++) {
 		ptr h = BUNhead(orderi, p);
 
@@ -1933,6 +1943,8 @@ output_file_dense(Tablet * as, stream *fd)
 	char *buf = GDKmalloc(len);
 	BUN i = 0;
 
+	if ( buf == NULL)
+		return -1;
 	for (i = 0; i < as->nr; i++) {
 		if ((res = output_line_dense(&buf, &len, as->format, fd, as->nr_attrs)) < 0) {
 			GDKfree(buf);
@@ -1957,6 +1969,8 @@ output_file_ordered(Tablet * as, BAT *order, stream *fd, oid base)
 	BUN offset = BUNfirst(order) + as->offset;
 	BATiter orderi = bat_iterator(order);
 
+	if ( buf == NULL)
+		return -1;
 	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
 		BUN h = (BUN) (*(oid *) BUNhead(orderi, p) - base);
 
@@ -2564,6 +2578,8 @@ TABshowRow(Tablet * t)
 
 	buf = (char *) GDKmalloc(m = t->rowwidth);
 
+	if ( buf == NULL)
+		return ;
 	if (t->rlbrk)
 		stream_printf(t->fd, "%s", t->rlbrk);
 	for (i = 0; i < t->nr_attrs; i++) {
@@ -2672,7 +2688,8 @@ print_nil(char **dst, int *len, ptr dummy)
 			GDKfree(*dst);
 		*dst = (char *) GDKmalloc(*len = 40);
 	}
-	strcpy(*dst, "nil");
+	if ( *dst) 
+		strcpy(*dst, "nil");
 	return 3;
 }
 
@@ -2689,7 +2706,8 @@ setTabwidth(Column * c)
 
 	if (strcmp(c->c[0]->tident, "t") == 0) {
 		title = GDKmalloc(strlen(BATgetId(c->c[0])) + 7);
-		snprintf(title, 20, "%s", BATgetId(c->c[0]));
+		if (title )
+			snprintf(title, 20, "%s", BATgetId(c->c[0]));
 	}
 	CLEAR(c->type);
 	c->type = GDKstrdup(ATOMname(c->c[0]->ttype));

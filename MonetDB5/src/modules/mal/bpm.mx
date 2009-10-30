@@ -3004,6 +3004,8 @@ BPMsaveCatalog(int *r)
 				return msg; 
 			bt=bpmcat[i]->bid;
 			nm = GDKmalloc(12);
+			if ( nm == NULL)
+				throw(MAL, "bpm.saveCatalog", MAL_MALLOC_FAIL);
 			snprintf(nm, 12, "bpm_%d", i);
 #ifdef _DEBUG_BPM_
 			printf("#Name %s\n",nm);
