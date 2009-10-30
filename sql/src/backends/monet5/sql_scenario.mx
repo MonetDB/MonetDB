@@ -794,7 +794,10 @@ The former comes with readline functionality.
 			}
 			in->eof = 0;
 		}
-		if (go && (rd = bstream_next(in)) <= 0) {
+		if (in->buf == NULL) {
+			more = FALSE;
+			go = FALSE;
+		} else if (go && (rd = bstream_next(in)) <= 0) {
 #ifdef _SQL_READER_DEBUG
 			stream_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
