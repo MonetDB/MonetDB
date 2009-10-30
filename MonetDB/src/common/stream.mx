@@ -2239,6 +2239,10 @@ ic_open(iconv_t cd, stream *ss, const char *name)
 	s->close = ic_close;
 	s->flush = ic_flush;
 	s->stream_data.p = malloc(sizeof(struct icstream));
+	if (s->stream_data.p == NULL) {
+		stream_destroy(s);
+		return NULL;
+	}
 	ic = (struct icstream *) s->stream_data.p;
 	ic->cd = cd;
 	ic->s = ss;
@@ -2302,7 +2306,11 @@ buffer_create(size_t size)
 		return NULL;
 	b->pos = 0;
 	b->buf = malloc(size);
-	b->len = b->buf ? size : 0;
+	if (b->buf == NULL) {
+		free(b);
+		return NULL;
+	}
+	b->len = size;
 	return b;
 }
 
@@ -3013,7 +3021,6 @@ stream_printf(stream *s, const char *format, ...)
 		if (bf != buf)
 			free(bf);
 		bf = malloc(bfsz);
-		assert(bf != NULL);
 		if (bf == NULL) {
 			s->errnr = WRITE_ERROR;
 			return -1;
@@ -3041,7 +3048,11 @@ bstream_create(stream *s, size_t size)
 		size = BUFSIZ;
 	b->s = s;
 	b->buf = malloc(size + 1 + 1);
-	b->size = b->buf ? size : 0;
+	if (b->buf == NULL) {
+		free(b);
+		return NULL;
+	}
+	b->size = size;
 	b->pos = 0;
 	b->len = 0;
 	b->eof = 0;
