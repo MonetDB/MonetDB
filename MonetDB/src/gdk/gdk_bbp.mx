@@ -1854,7 +1854,7 @@ decref(bat i, int logical, int releaseShare)
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 
 		b = BBPquickdesc(i, TRUE);
-		if (destroy) {
+		if (b && destroy) {
 			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
 		} else if (b) {
 			BBP_unload_inc(i, "BBPdecref");
