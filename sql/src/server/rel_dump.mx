@@ -38,7 +38,7 @@ extern const char *op2string(operator_type op);
 #include "rel_dump.h"
 
 static void
-print_indent( mvc *sql, stream *fout, int depth)
+print_indent(mvc *sql, stream *fout, int depth)
 {
 	char buf[LINESIZE+1];
 	int i;
@@ -47,8 +47,8 @@ print_indent( mvc *sql, stream *fout, int depth)
 	depth *= TABSTOP;
 	if (depth > LINESIZE)
 		depth = LINESIZE;
-	for(i=0; i<depth; i++){
-		if ((i%TABSTOP) == 0)	
+	for (i = 0; i < depth; i++){
+		if ((i % TABSTOP) == 0)	
 			buf[i] = '|';
 		else
 			buf[i] = ' ';
@@ -195,7 +195,7 @@ exps_print(mvc *sql, stream *fout, list *exps, int depth, int alias, int bracket
 		stream_printf(fout, "(");
 	else
 		stream_printf(fout, " [ ");
-	for( en = exps->h; en; en = en->next ) 
+	for (en = exps->h; en; en = en->next) 
 		exp_print(sql, fout, en->data, depth+1, (en->next!=NULL), alias);
 	if (brackets)
 		stream_printf(fout, ")");
@@ -462,8 +462,49 @@ void
 rel_print(mvc *sql, sql_rel *rel, int depth) 
 {
 	list *refs = list_create(NULL);
-	rel_print_refs(sql, sql->scanner.ws, rel, depth, refs);
-	rel_print_(sql, sql->scanner.ws, rel, depth, refs);
-	stream_printf(sql->scanner.ws, "\n");
+	size_t pos;
+	size_t nl = 0;
+	size_t len = 0, lastpos = 0;
+	stream *fd = sql->scanner.ws;
+	stream *s;
+	buffer *b = buffer_create(16364); /* hopefully enough */
+	if (!b)
+		return; /* signal somehow? */
+	s = buffer_wastream(b, "SQL Plan");
+	if (!s) {
+		buffer_destroy(b);
+		return; /* signal somehow? */
+	}
+
+	rel_print_refs(sql, s, rel, depth, refs);
+	rel_print_(sql, s, rel, depth, refs);
+	stream_printf(s, "\n");
+
+	/* count the number of lines in the output, skip the leading \n */
+	for (pos = 1; pos < b->pos; pos++) {
+		if (b->buf[pos] == '\n') {
+			nl++;
+			if (len < pos - lastpos)
+				len = pos - lastpos;
+			lastpos = pos + 1;
+		}
+	}
+	b->buf[b->pos - 1] = '\0';  /* should always end with a \n, can overwrite */
+
+	/* craft a semi-professional header */
+	stream_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
+			nl, nl);
+	stream_printf(fd, "%% .plan # table_name\n");
+	stream_printf(fd, "%% rel # name\n");
+	stream_printf(fd, "%% clob # type\n");
+	stream_printf(fd, "%% " SZFMT " # length\n", len - 2 /* remove = and \n */);
+
+	/* output the data */
+	stream_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
+
+	stream_close(s);
+	stream_destroy(s);
+	buffer_destroy(b);
+
 	list_destroy(refs);
 }
