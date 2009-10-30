@@ -1272,7 +1272,8 @@ GDKstrdup(const char *s)
 	int l = strLen(s);
 	char *n = (char *) GDKmalloc(l);
 
-	memcpy(n, s, l);
+	if (n)
+		memcpy(n, s, l);
 	return n;
 }
 

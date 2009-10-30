@@ -363,6 +363,8 @@ BBPinithash(void)
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
 	BBP_hash = (bat *) GDKmalloc(BBP_mask * sizeof(bat));
+	if (BBP_hash == NULL)
+		GDKfatal("BBPinithash: cannot allocate memory\n");
 	memset(BBP_hash, 0, BBP_mask * sizeof(bat));
 	BBP_mask--;
 
@@ -1852,7 +1854,7 @@ decref(bat i, int logical, int releaseShare)
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 
 		b = BBPquickdesc(i, TRUE);
-		if (destroy) {
+		if (b && destroy) {
 			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
 		} else if (b) {
 			BBP_unload_inc(i, "BBPdecref");

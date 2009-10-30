@@ -346,6 +346,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 	ValRecord cst;
 
 	if( !isaBatType(tpe) && tpe != TYPE_bat ) {
+		assert(tpe < MAXATOMS);	/* in particular, tpe!=TYPE_any */
 		if (!tpe) {
 			cst.vtype=TYPE_void;
 			cst.val.oval= oid_nil;

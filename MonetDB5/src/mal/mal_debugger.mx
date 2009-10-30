@@ -1738,9 +1738,10 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 
 			if (bs == NULL)
 				stream_printf(f, "Failed to take chunk\n");
-			else
+			else {
 				BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
-			BBPunfix(bs->batCacheid);
+				BBPunfix(bs->batCacheid);
+			}
 		}
 
 		BBPunfix(b->batCacheid);
@@ -1925,7 +1926,7 @@ More then 9 elements makes it full.
 	stream_printf(out,"start %ld lim %ld\n",start,lim);
 
 @c
-str
+static str
 memProfileVector(stream *out, int cells)
 {
 	str v = GDKmalloc(cells + 1);
@@ -1942,7 +1943,7 @@ memProfileVector(stream *out, int cells)
 	}
 	v = GDKmalloc(cells + 1);
 	if (v == 0)
-		GDKfatal("memProfileVector:malloc failure\n");
+		return NULL;
 
 	for (i = 0; i < cells; i++)
 		v[i] = '.';
@@ -1988,8 +1989,10 @@ printBBPinfo(stream *out)
 	stream_printf(out, "#BBP memory layout\n");
 	stream_printf(out, "#heap maximum =" SZFMT "/M\n", GDKmem_heapsize() / (1024 * 1024));
 	v = memProfileVector(out,32);
-	stream_printf(out, "#%s\n", v);
-	GDKfree(v);
+	if (v) {
+		stream_printf(out, "#%s\n", v);
+		GDKfree(v);
+	}
 #ifdef GDK_VM_KEEPHISTO
 	stream_printf(out, "#BBP VM history available\n");
 #else

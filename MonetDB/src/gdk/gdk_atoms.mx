@@ -797,7 +797,8 @@ ATOMnil(int t)
 	int len = ATOMlen(ATOMtype(t), src);
 	ptr dst = GDKmalloc(len);
 
-	memcpy(dst, src, len);
+	if (dst)
+		memcpy(dst, src, len);
 	return dst;
 }
 
@@ -1068,7 +1069,8 @@ ATOMdup(int t, ptr p)
 	int len = ATOMlen(t, p);
 	ptr n = GDKmalloc(len);
 
-	memcpy(n, p, len);
+	if (n)
+		memcpy(n, p, len);
 	return n;
 }
 
@@ -2221,7 +2223,8 @@ strFromStr(char *src, int *len, char **dst)
 		p = NULL;
 	}
 	if (p == NULL || (char *) p == str_nil)
-		p = GDKmalloc(*len = l);
+		if ((p = GDKmalloc(*len = l)) == NULL)
+			goto error;
 	*dst = (char *) p;
 
 	assert(cur - start <= INT_MAX);	/* 64bit */

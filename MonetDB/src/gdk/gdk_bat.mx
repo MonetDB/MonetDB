@@ -713,7 +713,8 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src, int *remap)
 	if (src->filename && src->newstorage != STORE_MEM) {
 		str nme = BBP_physical(bn->batCacheid);
 
-		dst->filename = (str) GDKmalloc(strlen(nme) + 12);
+		if ((dst->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
+			return -1;
 		GDKfilepath(dst->filename, NULL, nme, ext);
 	}
 	return HEAPcopy(dst, src);
@@ -1031,7 +1032,7 @@ around and adapt search accelerator structures.
 		HASHmove(b->T->hash, @3, @4, BUNtail(bi, @1), @1 < last); 
 	}
 
-	/* move first to tmp); */
+	/* move first to tmp */
 	@:un_move(Hloc(b,@1),htmp,hs)@
 	@:un_move(Tloc(b,@1),ttmp,ts)@
 	/* move delete to first */

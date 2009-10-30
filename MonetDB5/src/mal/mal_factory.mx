@@ -585,7 +585,8 @@ shutdownFactory(MalBlkPtr mb, bit force)
 			/* freeStack(pl->stk); there may be a reference?*/
 			/* we are inside the body of the factory and about to return */
 			pl->factory = 0;
-			pl->stk->keepAlive = FALSE;
+			if (pl->stk)
+				pl->stk->keepAlive = FALSE;
 			if ( force && pl->stk)
 				GDKfree(pl->stk);
 			pl->stk=0;
