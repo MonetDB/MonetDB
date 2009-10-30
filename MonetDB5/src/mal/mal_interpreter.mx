@@ -691,10 +691,16 @@ q_create( int sz )
 {
 	queue *q = (queue*)GDKmalloc(sizeof(queue));
 
+	if ( q == NULL)
+		return NULL;
 	q->size = ((sz<<1)>>1); /* we want a multiple of 2 */
 	q->first = -1;
 	q->last = 0;
 	q->data = (void*)GDKmalloc(sizeof(void*)*sz);
+	if ( q->data == NULL){
+		GDKfree(q);
+		return NULL;
+	}
 	
 	MT_init_lock(q->l, "q_create");
 	MT_init_sema(q->s, 0, "q_create");
@@ -1230,6 +1236,10 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		/* seems enough for the time being */
 		flow->done = q_create(256);
 		flow->todo = q_create(256); 
+
+		/* queues are available? */
+		if ( flow->done == NULL || flow->todo == NULL)
+			return MAL_SUCCEED;
 
 		flow->worker = NULL;
 		flow->nway = GDKnr_threads;
@@ -2001,15 +2011,20 @@ str catchKernelException(Client cntxt, str ret){
 	if(cntxt->errbuf && cntxt->errbuf[0] ) {
 		if (ret != MAL_SUCCEED){
 			z= (char*) GDKmalloc( strlen(ret)+strlen(cntxt->errbuf)+2);
-			strcpy(z,ret);
-			if (z[strlen(z)-1] != '\n') strcat(z,"\n");
-			strcat(z,cntxt->errbuf);
+			if( z ){
+				strcpy(z,ret);
+				if (z[strlen(z)-1] != '\n') strcat(z,"\n");
+				strcat(z,cntxt->errbuf);
+			} 
 		} else {
 			/* trap hidden (GDK) exception */
 			z= (char*) GDKmalloc( strlen("GDKerror:")+strlen(cntxt->errbuf)+2);
-			sprintf(z,"GDKerror:%s\n",cntxt->errbuf);
+			if ( z )
+				sprintf(z,"GDKerror:%s\n",cntxt->errbuf);
 		}
-		cntxt->errbuf[0] = '\0';
+		/* did we eat the error away of not */
+		if (z )
+			cntxt->errbuf[0] = '\0';
 	} else z = ret;
 	return z;
 }
@@ -2330,8 +2345,10 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	}
 	{str line;
 	line= instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
-	stream_printf(cntxt->fdout, " %s\n", line);
-	GDKfree(line);
+	if ( line) {
+		stream_printf(cntxt->fdout, " %s\n", line);
+		GDKfree(line);
+	}
 	}
 	if( cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();

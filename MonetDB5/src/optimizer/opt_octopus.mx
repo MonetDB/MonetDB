@@ -438,10 +438,14 @@ when scheduled correctly, would not lead to duplicate work.
 		}
 	}
 	/* we do not  support yet update operations in the octopus */
-	if ( target == -1 || update || autocommit==0 )
+	if ( target == -1 || update || autocommit==0 ) {
+		GDKfree(tentacle);
 		return 0;
+	}
 
-	newMalBlkStmt(mb, mb->ssize);
+	if ( newMalBlkStmt(mb, mb->ssize) < 0)
+		GDKfree(tentacle);
+		return 0;
 	pushInstruction(mb, old[0]);
 
 	sig= old[0];

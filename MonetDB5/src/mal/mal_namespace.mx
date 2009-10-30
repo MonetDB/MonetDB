@@ -86,9 +86,14 @@ static void expandNamespace(int incr){
 
 	newsize= namespace.size+incr;
 	nme= (str *) GDKmalloc(sizeof(str *) * newsize);
+	assert(nme != NULL); /* we cannot continue */
 	link= (int *) GDKmalloc(sizeof(int) * newsize);
+	assert(link != NULL); /* we cannot continue */
 	hit = (int *) GDKmalloc(sizeof(int) * newsize);
+	assert(hit != NULL); /* we cannot continue */
 	length = (size_t *) GDKmalloc(sizeof(size_t) * newsize);
+	assert(length != NULL); /* we cannot continue */
+
 	memcpy(nme, namespace.nme, sizeof(str *) * namespace.nmetop);
 	memcpy(link, namespace.link, sizeof(int) * namespace.nmetop);
 	memcpy(hit, namespace.hit, sizeof(int) * namespace.nmetop);
@@ -255,7 +260,8 @@ str putName(str nme, size_t len)
 
 	/* protect this, as it will be updated by multiple threads */
 	mal_set_lock(mal_contextLock,"putName");
-	if(len>=MAXIDENTLEN) GDKfatal("Identifier too long");
+	if(len>=MAXIDENTLEN) 
+		len = MAXIDENTLEN - 1;
 	memcpy(buf, nme, len); 
 	buf[len]=0;
 

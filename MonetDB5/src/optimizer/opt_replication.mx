@@ -60,7 +60,8 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 	limit = mb->stop;
 	slimit = mb->ssize;
-	newMalBlkStmt(mb, (int)(mb->ssize * 1.2)); /* a new statement stack */
+	if ( newMalBlkStmt(mb, (int)(mb->ssize * 1.2)) < 0 )
+		return 0;
 
 	pushInstruction(mb, old[0]);
 	p = newStmt(mb, putName("master", 6), openRef);

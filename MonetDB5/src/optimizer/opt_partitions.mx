@@ -232,7 +232,10 @@ OPTnaiveIterations(MalBlkPtr mb){
 
 	limit= mb->stop;
 	old = mb->stmt;
-	newMalBlkStmt(mb,limit);
+	if ( newMalBlkStmt(mb,limit) < 0 ){
+		GDKfree(alias);
+		return 0;
+	}
 	pushInstruction(mb,old[0]); /* signature */
 	for(i=1;i< limit; i++){
 		p= old[i];

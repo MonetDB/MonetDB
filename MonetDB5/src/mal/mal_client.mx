@@ -266,7 +266,7 @@ mal_export void    MCexitPending(void);
 mal_export void    MCtraceAllClients(int flag);
 mal_export void    MCtraceClient(oid which, int flag);
 
-mal_export void    MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
+mal_export int    MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 mal_export void    MCpopClientInput(Client c);
 
 #endif /* _MAL_CLIENT_H_ */
@@ -315,9 +315,11 @@ ClientRec   mal_clients[MAL_MAXCLIENTS+1];
 /*int MCdefault= threadFlag | bigfootFlag;*/
 int MCdefault= 0;
 
-void MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
+int MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 {
 	ClientInput *x = (ClientInput*)GDKmalloc(sizeof(ClientInput));
+	if ( x == 0 )
+		return -1;
 	x->fdin = c->fdin;
 	x->yycur = c->yycur;
 	x->listing = c->listing;
@@ -329,6 +331,7 @@ void MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 	c->prompt = prompt? GDKstrdup(prompt):GDKstrdup("");
 	c->promptlength = strlen(c->prompt);
 	c->yycur = 0;
+	return 0;
 }
 
 void MCpopClientInput(Client c)

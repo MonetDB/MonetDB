@@ -366,6 +366,8 @@ locate_file(const char *basename, const char *ext)
 		return NULL;
 	fullnamelen = 512;
 	fullname = GDKmalloc(fullnamelen);
+	if (fullname == NULL)
+		return NULL;
 	while (*mod_path) {
 		size_t i;
 		char *p;
@@ -379,6 +381,8 @@ locate_file(const char *basename, const char *ext)
 		while (i + filelen + 2 > fullnamelen) {
 			fullnamelen += 512;
 			fullname = GDKrealloc(fullname, fullnamelen);
+			if (fullname == NULL)
+				return NULL;
 		}
 		/* we are now sure the directory name, file
 		   base name, extension, and separator fit

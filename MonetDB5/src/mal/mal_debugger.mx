@@ -1929,7 +1929,7 @@ More then 9 elements makes it full.
 static str
 memProfileVector(stream *out, int cells)
 {
-	str v = GDKmalloc(cells + 1);
+	str v;
 	int i;
 #ifdef HAVE_SBRK
 	long max = (long) sbrk(0);

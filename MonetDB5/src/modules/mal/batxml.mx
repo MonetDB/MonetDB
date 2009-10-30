@@ -604,11 +604,12 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 	str val = GDKmalloc(BUFSIZ);
 	int size = BUFSIZ, len = (int) strlen(*name);
 	BATiter bi;
+	str err = OPERATION_FAILED " During bulk options analysis";
 
 	if ( val == NULL || buf == NULL){
 		if (val != NULL) GDKfree(val);
 		if (buf != NULL) GDKfree(buf);
-		throw(MAL, "xml.options", MAL_MALLOC_FAIL);
+		throw(MAL, "batxml.options", MAL_MALLOC_FAIL);
 	}
 	prepareOperand(b, bid, "options");
 	prepareResult(bn, b, TYPE_xml, "options");
@@ -623,7 +624,7 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 		snprintf(buf, size, "nil");
 	else
 		/*if( strcmp(*options,"niloncontent")==0) */
-		throw(MAL, "xml.options", PROGRAM_NYI);
+		throw(MAL, "batxml.options", PROGRAM_NYI);
 
 	snprintf(val, size, "<%s>", *name);
 	bi = bat_iterator(b);
@@ -637,11 +638,16 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 			if ((int) strlen(t) > size - 2 * len - 6) {
 				size += (int) strlen(t);
 				val = (char *) GDKrealloc(val, size + strlen(t));
+				if (val == NULL) {
+					err = MAL_MALLOC_FAIL;
+					goto bunins_failed;
+				}
 			}
 			snprintf(val + len + 2, size - len, "%s</%s>", t, *name);
 			bunfastins(bn, h, val);
 		}
 	}
+	GDKfree(val);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
@@ -650,7 +656,9 @@ bunins_failed:
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL)
 		GDKfree(buf);
-	throw(MAL, "batxml.options", OPERATION_FAILED " During bulk options analysis");
+	if ( val != NULL)
+		GDKfree(val);
+	throw(MAL, "batxml.options", err);
 }
 
 str
@@ -919,7 +927,7 @@ BATXMLattribute(int *ret, str *name, int *bid)
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL )
 		GDKfree(buf);
-	throw(MAL, "xml.attribute", OPERATION_FAILED " During bulk processing");
+	throw(MAL, "xml.attribute", err);
 }
 
 str

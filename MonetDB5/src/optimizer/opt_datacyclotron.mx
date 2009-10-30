@@ -197,7 +197,10 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		return 0;
 	limit= mb->stop;
 	old = mb->stmt;
-	newMalBlkStmt(mb, mb->ssize);
+	if ( newMalBlkStmt(mb, mb->ssize) < 0){
+		GDKfree(used);
+		return 0;
+	}
 	pushInstruction(mb,old[0]);
 
 	for (i = 1; i<limit; i++) {

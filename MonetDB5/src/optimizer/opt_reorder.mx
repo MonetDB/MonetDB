@@ -159,7 +159,9 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	dep = OPTdependencies(cntxt,mb);
 	limit= mb->stop;
 	old = mb->stmt;
-	newMalBlkStmt(mb, mb->ssize); /* some marge */
+	if ( newMalBlkStmt(mb, mb->ssize) < 0)
+		return 0;
+	
 	pushInstruction(mb,old[0]);
 	old[0]=0;
 

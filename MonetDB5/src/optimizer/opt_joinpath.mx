@@ -177,7 +177,10 @@ OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
 	/* now replace the joinpaths that have a common head */
 	old= mb->stmt;
 	limit= mb->stop;
-	newMalBlkStmt(mb,mb->ssize);
+	if ( newMalBlkStmt(mb,mb->ssize) < 0){
+		GDKfree(paths);
+		return 0;
+	}
 
 	for (i = 0; i<limit; i++){
 		p= old[i];

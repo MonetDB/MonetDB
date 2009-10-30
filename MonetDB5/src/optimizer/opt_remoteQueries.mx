@@ -272,7 +272,12 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	dbalias= (DBalias*) GDKzalloc(128 * sizeof(DBalias));
 	dbtop= 0;
 
-	newMalBlkStmt(mb, mb->ssize);
+	if ( newMalBlkStmt(mb, mb->ssize) < 0){
+		GDKfree(dbalias);
+		GDKfree(location);
+		return 0;
+	}
+
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 

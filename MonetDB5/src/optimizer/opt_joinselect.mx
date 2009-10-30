@@ -81,7 +81,13 @@ OPTjoinselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	newMalBlkStmt(mb, mb->ssize);
+	if ( newMalBlkStmt(mb, mb->ssize) < 0){
+		GDKfree(ps);
+		GDKfree(pi);
+		GDKfree(pu);
+		GDKfree(pd);
+		return 0;
+	}
 	
 	/* The first loop identifies all the select calls and keeps a reference 
 		to the operations.

@@ -922,6 +922,9 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 
 	psumcp = (wrd*)GDKmalloc(BATcount(psum) * sizeof(wrd));
 	if ( psumcp == NULL || (rb = BATnew(TYPE_void, ATOMtype(b->ttype), BATcount(b))) == NULL) {
+		if (psumcp != NULL) {
+			GDKfree(psumcp);
+		}
 		BBPunfix(*PSUM);
 		BBPunfix(*CMAP);
 		BBPunfix(b->batCacheid);

@@ -167,7 +167,8 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	limit= mb->stop;
 	slimit= mb->ssize;
-	newMalBlkStmt(mb, 2 * mb->ssize); /* a new statement stack */
+	if ( newMalBlkStmt(mb, 2 * mb->ssize) < 0)
+		return 0; 
 
 	pushInstruction(mb, old[0]);
 	/* run the keepQuery operation once only */
