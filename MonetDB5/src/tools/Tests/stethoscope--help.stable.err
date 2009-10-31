@@ -26,7 +26,8 @@ The trace options:
     t =ticks
     c =cpu statistics
     m =memory resources
-    i =io resources
+    r =block reads
+    w =block writes
     b =bytes read/written
     d =diskspace needed
     s =statement

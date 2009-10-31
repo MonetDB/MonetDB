@@ -1189,7 +1189,7 @@ str
 PCREpatindex(int *ret, str *pat, str *val)
 {
 	pcre *re = NULL;
-	char *ppat, *msg;
+	char *ppat = NULL, *msg;
 	
 	if (pat2pcre(&ppat, *pat) <0)
 		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);

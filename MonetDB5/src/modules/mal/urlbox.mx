@@ -509,7 +509,8 @@ URLBOXnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(iterator)@
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
-	nextBoxElement(box, cursor, v);
+	if ( nextBoxElement(box, cursor, v) < 0)
+		throw(MAL, "urlbox.iterator", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -525,7 +526,8 @@ URLBOXhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(iterator)@
 	cursor=  (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
-	nextBoxElement(box, cursor, v);
+	if ( nextBoxElement(box, cursor, v) < 0)
+		throw(MAL, "urlbox.iterator", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 

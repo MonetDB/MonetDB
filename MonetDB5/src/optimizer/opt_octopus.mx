@@ -606,10 +606,8 @@ The tentacle code should be optimized by the remaining optimizers too.
 		clrDeclarations(tentacle[i]);
 		chkProgram(cntxt->nspace,tentacle[i]);
 		optimizeMALBlock(cntxt,tentacle[i]);
-		if ( tentacle[i]->errors ) {
-			showException(MAL,"optimizer.octopus","failed to compile");
+		if ( tentacle[i]->errors ) 
 			mb->errors++;
-		}
 	}
 #ifdef DEBUG_OPT_OCTOPUS
 	if (actions) {
