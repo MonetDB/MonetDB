@@ -56,6 +56,7 @@ sql5_export str SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 sql5_export str SQLtrace(int *ret);
 sql5_export str SQLCacheRemove(Client c, str nme);
 
+sql5_export MT_Lock sql_contextLock;
 #endif /* _SQL_SCENARIO_H_ */
 
 @+ Scenario routines
@@ -88,6 +89,7 @@ we update its context descriptor to denote an SQL scenario.
 static int SQLinitialized = 0;
 static int SQLdebug = 0;
 static char *sqlinit = NULL;
+MT_Lock sql_contextLock;
 
 static void
 monet5_freestack(int clientid, backend_stack stk)
@@ -235,6 +237,8 @@ SQLinit(void)
 #endif
 	if (SQLinitialized)
 		return MAL_SUCCEED;
+
+	MT_lock_init( &sql_contextLock, "sql_contextLock");
 
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack		= &monet5_freestack;
