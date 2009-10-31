@@ -263,7 +263,7 @@ URLBOXinsert(char *tuple)
 
 			b = BATnew(TYPE_int, TYPE_str, 1024);
 			if (b == NULL)
-				GDKfatal("urlbox.create: could not allocate.");
+				throw(MAL, "urlbox.deposit", MAL_MALLOC_FAIL);
 
 			BATkey(b,TRUE);
 			BBPrename(b->batCacheid, buf);

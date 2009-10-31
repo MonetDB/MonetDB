@@ -256,7 +256,7 @@ STAT_create(str hnme, str tnme, int ht, int tt)
 
 	b = BATnew(ht, tt, 256);
 	if (b == NULL)
-		GDKfatal("STAT_create: could not allocate.");
+		return NULL;
 
 	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
@@ -300,7 +300,45 @@ STATinit()
 	STAT_id_min_lng = STAT_create("id", "min_lng", TYPE_int, TYPE_lng);
 	STAT_id_max_lng = STAT_create("id", "max_lng", TYPE_int, TYPE_lng);
 	STAT_id_histogram = STAT_create("id", "histogram", TYPE_int, TYPE_str);
-	STATcommit();
+	if (STAT_id_inuse == NULL ||
+		STAT_id_nme == NULL ||
+		STAT_id_expire == NULL ||
+		STAT_id_stamp == NULL ||
+		STAT_id_count == NULL ||
+		STAT_id_size == NULL ||
+		STAT_id_min_lng == NULL ||
+		STAT_id_max_lng == NULL ||
+		STAT_id_histogram == NULL
+	) {
+		if ( STAT_id_inuse != NULL )
+			BBPclear(STAT_id_inuse->batCacheid);
+			STAT_id_inuse = NULL;
+		if ( STAT_id_nme != NULL )
+			BBPclear(STAT_id_nme->batCacheid);
+			STAT_id_nme = NULL;
+		if ( STAT_id_expire != NULL )
+			BBPclear(STAT_id_expire->batCacheid);
+			STAT_id_expire = NULL;
+		if ( STAT_id_stamp != NULL )
+			BBPclear(STAT_id_stamp->batCacheid);
+			STAT_id_stamp = NULL;
+		if ( STAT_id_count != NULL )
+			BBPclear(STAT_id_count->batCacheid);
+			STAT_id_count = NULL;
+		if ( STAT_id_size != NULL )
+			BBPclear(STAT_id_size->batCacheid);
+			STAT_id_size = NULL;
+		if ( STAT_id_min_lng != NULL )
+			BBPclear(STAT_id_min_lng->batCacheid);
+			STAT_id_min_lng = NULL;
+		if ( STAT_id_max_lng != NULL )
+			BBPclear(STAT_id_max_lng->batCacheid);
+			STAT_id_max_lng = NULL;
+		if ( STAT_id_histogram != NULL )
+			BBPclear(STAT_id_histogram->batCacheid);
+			STAT_id_histogram = NULL;
+	} else
+		STATcommit();
 	mal_unset_lock(mal_contextLock, "statistics");
 }
 
