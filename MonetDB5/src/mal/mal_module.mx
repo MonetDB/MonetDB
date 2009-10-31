@@ -104,19 +104,18 @@ does not contain any symbol definitions. It merely functions as an anchor
 point for the modules to be added later.
 
 @= newscope
-	if( nme == NULL){
-		GDKfatal("@1:unexpected name (=null)\n");
-	}
+	assert(nme != NULL);
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if( cur == NULL){
-		GDKfatal("@1: cannot initialize scope\n");
+		GDKerror("@1:"MAL_MALLOC_FAIL);
+	} else {
+		cur->name = nme;
+		cur->outer = NULL;
+		cur->sibling = NULL;
+		cur->inheritance = TRUE;
+		cur->subscope = NULL; 
+		cur->isAtomModule = FALSE;
 	}
-	cur->name = nme;
-	cur->outer = NULL;
-	cur->sibling = NULL;
-	cur->inheritance = TRUE;
-	cur->subscope = NULL; 
-	cur->isAtomModule = FALSE;
 
 @c
 #include "mal_config.h"
@@ -154,6 +153,8 @@ Module newModule(Module scope, str nme){
 	Module cur;
 	nme = putName(nme,strlen(nme));
 	@:newscope(newModule)@
+	if ( cur == NULL)
+		return scope;
 	newSubScope(cur);
 	if( scope != NULL){
 		cur->outer = scope->outer;
@@ -169,6 +170,8 @@ Module cpyModule(Module scope){
 	if( scope->outer) nxt= cpyModule(scope->outer);
 	nme= GDKstrdup(scope->name);
 	@:newscope(newModule)@
+	if ( cur == NULL)
+		return scope;
 	newSubScope(cur);
 	cur->outer = nxt;
 	return cur;
