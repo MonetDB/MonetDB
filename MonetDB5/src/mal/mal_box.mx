@@ -250,6 +250,8 @@ only.
 	obj->name= GDKstrdup(name);
 	obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 	obj->val = newGlobalStack(MAXVARS);
+	if ( obj->val == NULL)
+		showException(MAL,"box.new", MAL_MALLOC_FAIL);
 	MT_lock_init(&obj->lock,"M5_box_lock");
 @-
 @c
@@ -304,7 +306,7 @@ newBox(str name)
 
 static void
 freeBox(Client cntxt, int i){
-		if (box[i]) {
+		if (box[i] && box[i]->val) {
 			garbageCollector(cntxt, box[i]->sym, box[i]->val,TRUE);
 			GDKfree(box[i]->name);
 			freeMalBlk(box[i]->sym);
@@ -382,7 +384,8 @@ destroyBox(str name)
 		if (idcmp(box[j]->name, name) == 0) {
 			free(box[i]->name);
 			freeMalBlk(box[i]->sym);
-			freeStack(box[i]->val);
+			if ( box[i]->val)
+				freeStack(box[i]->val);
 			boxfile = boxFileName(box[i], 0);
 			unlink(boxfile);
 			GDKfree(boxfile);
@@ -405,6 +408,10 @@ depositBox(Box box, str name, int type, ValPtr val)
 	ValPtr v;
 
 	i = findVariable(box->sym, name);
+	if ( box->val == NULL){
+		showException(MAL,"box.deposit","No box storage");
+		return 0;
+	}
 	if (i < 0) {
 		i = newVariable(box->sym, GDKstrdup(name), type);
 		chkStack(box->val, i);
@@ -441,6 +448,10 @@ takeBox(Box box, str name, ValPtr val, int tpe)
 	ValPtr v;
 
 	i = findVariable(box->sym, name);
+	if ( box->val == NULL){
+		showException(MAL,"box.take","No box storage");
+		return 0;
+	}
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "takeBox: found '%s' at %d\n", name, i);
 #endif
@@ -477,6 +488,10 @@ bindBAT(Box box, str name, str location)
 	ValPtr v;
 
 	i = findVariable(box->sym, name);
+	if ( box->val == NULL){
+		showException(MAL,"box.bind","No box storage");
+		return 0;
+	}
 	if (i < 0)
 		i = newVariable(box->sym, GDKstrdup(name), TYPE_any);
 	v = &box->val->stk[i];
@@ -527,6 +542,10 @@ discardBox(Box box, str name)
 	i = findVariable(box->sym, name);
 	if (i < 0)
 		return i;
+	if ( box->val == NULL){
+		showException(MAL,"box.discard","No box storage");
+		return 0;
+	}
 	garbageElement(NULL, &box->val->stk[i]);
 	for (j = i; j < box->sym->vtop - 2; j++) {
 		box->sym->var[j] = box->sym->var[j + 1];
@@ -548,6 +567,10 @@ nextBoxElement(Box box, lng *cursor, ValPtr v)
 {
 	if (*cursor >= box->sym->vtop) {
 		*cursor = -1;
+		return 0;
+	}
+	if ( box->val == NULL){
+		showException(MAL,"box.next","No box storage");
 		return 0;
 	}
 	v->vtype = TYPE_str;
@@ -674,6 +697,10 @@ saveBox(Box box, int flag)
 
 	if( box->dirty== FALSE)
 		return 0;
+	if ( box->val == NULL){
+		showException(MAL,"box.save","No box storage");
+		return 0;
+	}
 	f = prepareSaveBox(box, &boxfile, &boxfilebak);
 	if (f == NULL)
 		return 1;
@@ -749,7 +776,8 @@ spaces.
 void
 printBox(stream *fd, Box obj)
 {
-	printStack(fd, obj->sym, obj->val);
+	if ( obj->val )
+		printStack(fd, obj->sym, obj->val);
 }
 
 void
