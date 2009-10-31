@@ -228,7 +228,8 @@ absolute_path(str s)
 	if (!MT_path_absolute(s)) {
 		str ret = (str) GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
 
-		sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
+		if ( ret )
+			sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
 		return ret;
 	}
 	return GDKstrdup(s);
@@ -492,12 +493,14 @@ faster system start.
 	}
 
 	monet_script = (str *) GDKmalloc(sizeof(str) * (argc + 1));
-	monet_script[idx] = NULL;
-	while (optind < argc) {
-		monet_script[idx] = absolute_path(av[optind]);
-		monet_script[idx + 1] = NULL;
-		optind++;
-		idx++;
+	if ( monet_script ){
+		monet_script[idx] = NULL;
+		while (optind < argc) {
+			monet_script[idx] = absolute_path(av[optind]);
+			monet_script[idx + 1] = NULL;
+			optind++;
+			idx++;
+		}
 	}
 
 	if (monet_init(set, setlen) == 0 ) {
@@ -619,6 +622,7 @@ the configuration file.
 		sscanf(GDKgetenv("mal_listing"), "%d", &listing);
 
 	emergencyBreakpoint();
+	if ( monet_script)
 	for (i = 0; monet_script[i]; i++) {
 		str msg=evalFile(mal_clients, monet_script[i], listing);
 		/* check for internal exception message to terminate */
@@ -628,7 +632,8 @@ the configuration file.
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
-	GDKfree(monet_script);
+	if ( monet_script)
+		GDKfree(monet_script);
 	if (monet_daemon) {
 		while(1) 
 			MT_sleep_ms(5000);
