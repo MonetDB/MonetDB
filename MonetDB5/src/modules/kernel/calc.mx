@@ -695,6 +695,8 @@ CALCstrConcat(str *ret, str *l, str *r)
 		return MAL_SUCCEED;
 	}
 	s = GDKmalloc(strlen(*l) +  strlen(*r) + 1);
+	if ( s == NULL)
+		throw(MAL, "strConcat", MAL_MALLOC_FAIL);
 	*s = 0;
 	strcpy(s, *l);
 	strcat(s, *r);
@@ -715,6 +717,8 @@ CALCstrConcatInt(str *ret, str *l, int *r)
 	}
 	len = (int) (*l?strlen(*l):0) + 32;
 	s = GDKmalloc(len);
+	if ( s == NULL)
+		throw(MAL, "strConcatInt", MAL_MALLOC_FAIL);
 	snprintf(s, len, "%s%d", (*l?*l:""), *r);
 	*ret = s;
 	return MAL_SUCCEED;
@@ -850,6 +854,8 @@ str CALCbinary@1any(ptr ret, ptr v1, int t, ptr v2){
 	if (ATOMextern(t)) {
 		int s = ATOMlen(t, src);
 		str buf = *(str*) ret = (char*) GDKmalloc(s);
+		if ( buf == NULL)
+			throw(MAL, "CALCbinary@1any", MAL_MALLOC_FAIL);
 		memcpy(buf, src, s);
 	} else {
 		memcpy(ret, src, ATOMsize(t));
@@ -872,6 +878,8 @@ str CALCbinary@1_no_nilany(ptr ret, ptr v1, int t, ptr v2){
 	if (ATOMextern(t)) {
 		int s = ATOMlen(t, src);
 		str buf = *(str*) ret = (char*) GDKmalloc(s);
+		if ( buf == NULL)
+			throw(MAL, "CALCbinary@1_no_nilany", MAL_MALLOC_FAIL);
 		memcpy(buf, src, s);
 	} else {
 		memcpy(ret, src, ATOMsize(t));

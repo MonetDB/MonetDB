@@ -192,6 +192,8 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #endif
 	(void) stk;
 
+	if ( used == NULL)
+		return 0;
 	(void) cntxt;
 	if ( used == NULL)
 		return 0;

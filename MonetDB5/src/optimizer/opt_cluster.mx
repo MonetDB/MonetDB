@@ -179,6 +179,10 @@ _cluster_orderby(MalBlkPtr mb, int *ord, int ol, int *prj, int pl)
 			offset = 19;
 
 		mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
+		if (mb->stmt == NULL){
+			mb->stmt = old;
+			return 0;
+		}
 		mb->ssize = size;
 		mb->stop = 0;
 
@@ -391,6 +395,10 @@ _cluster_join(MalBlkPtr mb, int *join, int jl, int *prj, int pjl)
 			return 0;
 
 		mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
+		if ( mb->stmt == NULL){
+			mb->stmt = old;
+			return 0;
+		}
 		mb->ssize = size;
 		mb->stop = 0;
 
