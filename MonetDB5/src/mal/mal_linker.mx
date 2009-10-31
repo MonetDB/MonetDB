@@ -97,7 +97,7 @@ the consistency of this counter.
 #endif
 
 static int noDlopen;
-#define MAXMODULES 256
+#define MAXMODULES 512
 
 typedef struct{
 	str filename;
@@ -105,8 +105,8 @@ typedef struct{
 	void **handle;
 } FileRecord;
 
-static FileRecord *filesLoaded;
-static int maxfiles = 0;
+static FileRecord filesLoaded[MAXMODULES];
+static int maxfiles = MAXMODULES;
 static int lastfile = 0;
 
 @-
@@ -183,33 +183,7 @@ already loaded.
 static void
 initM5Loader()
 {
-	FileRecord *newFilesLoaded;
-	int i, newsize = maxfiles + MAXMODULES;
-
-	/* assume a safe call environment */
-	if (filesLoaded == NULL) {
-		mal_set_lock(mal_contextLock, "loadFiles");
-		if (filesLoaded == NULL) {
-			maxfiles = MAXMODULES;
-			filesLoaded = (FileRecord *) GDKzalloc(maxfiles * sizeof(FileRecord));
-			lastfile = 0;
-		}
-		mal_unset_lock(mal_contextLock, "loadFiles");
-	} else if (lastfile + 2 == maxfiles) {
-		/* guarantee at least one free slot */
-		mal_set_lock(mal_contextLock, "loadFiles");
-		newFilesLoaded = (FileRecord *)GDKzalloc(newsize * sizeof(FileRecord));
-		memcpy((char *) newFilesLoaded, (char *) filesLoaded, maxfiles * sizeof(FileRecord));
-		GDKfree(filesLoaded);
-		filesLoaded = newFilesLoaded;
-		for (i = maxfiles; i < newsize; i++) {
-			filesLoaded[i].filename = NULL;
-			filesLoaded[i].fullname = NULL;
-			filesLoaded[i].handle = NULL;
-		}
-		maxfiles = newsize;
-		mal_unset_lock(mal_contextLock, "loadFiles");
-	}
+	memset((char*) filesLoaded, 0, sizeof(FileRecord) * MAXMODULES);
 }
 
 int
@@ -301,8 +275,6 @@ unloadLibraries()
 			GDKfree(filesLoaded[i].fullname);
 		}
 	lastfile = 0;
-	GDKfree(filesLoaded);
-	filesLoaded=0;
 	mal_unset_lock(mal_contextLock, "unloadModule");
 }
 @- 
