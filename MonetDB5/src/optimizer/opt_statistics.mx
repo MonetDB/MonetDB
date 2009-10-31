@@ -78,7 +78,7 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 
 	b = BATnew(ht, tt, 256);
 	if (b == NULL)
-		GDKfatal("QOT_create: could not allocate.");
+		return NULL;
 
 	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
@@ -87,6 +87,7 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 }
 static void QOTstatisticsInit(){
 	oid o=0;
+	int i;
 
 	if (qotStat[QOTnames]) return;
 	qotStat[QOTnames]= QOT_create("opt","names",TYPE_void,TYPE_str);
@@ -98,6 +99,16 @@ static void QOTstatisticsInit(){
 	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_void,TYPE_lng);
 	BATseqbase(qotStat[QOTtimings],o);
 
+	/* recover from errors */
+	for ( i=0; i<4; i++)
+	if ( qotStat[i] == NULL){
+		for (i= 0; i<4; i++){
+			if (qotStat[i] )
+				BBPclear(qotStat[i]->batCacheid);
+				qotStat[i] = NULL;
+		}
+		return;
+	}
 	/* save them at least once */
 	QOTstatisticsExit();
 }
