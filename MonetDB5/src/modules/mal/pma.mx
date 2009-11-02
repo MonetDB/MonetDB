@@ -876,17 +876,19 @@ pma_export str
 PMAtestins_@1(void *dummy, bat *bid, int *num) {
 	BAT *b;
 	oid lo, hi, lo_res, hi_res, pos_res;
-	int val, i;
+	int i;
 	(void)dummy;
 	b = BATdescriptor(*bid);
 	if (b == NULL) return "PMAfnd: illegal bat parameter";
 	for (i = 0; i < *num; i++) {
+		int ival = rand();
+		@1 val = (@1) ival;
 		lo = 0;
 		hi = BATcount(b) - 1;
-		val = rand();
-		printf("loop %d: %d\n", i, val);
-		PMAfnd_@1(&lo_res, &hi_res, bid, &lo, &hi, (@1*)&val);
-		PMAins_@1(&pos_res, bid, &hi_res, (@1*)&val);
+		val = (@1) rand();
+		printf("loop %d: %d\n", i, ival);
+		PMAfnd_@1(&lo_res, &hi_res, bid, &lo, &hi, &val);
+		PMAins_@1(&pos_res, bid, &hi_res, &val);
 	}
 	return MAL_SUCCEED;
 }
