@@ -308,7 +308,7 @@ static stream *repFile;
 /* The replication log file contains a number of log functions.
  * When the limit is reached, we switch to a new file
 */
-static void
+static int
 MASTERincrement()
 {
 	char buf[PATHLENGTH];
@@ -322,20 +322,21 @@ MASTERincrement()
 	if ( endTag - startTag >= REPLICABLOCK){
 		if ( repFile) 
 			stream_close(repFile);
-		repFile = open_wastream(logFile);
-		if (repFile == NULL)
-			showException(MAL,"master.increment",OPERATION_FAILED);
 	}
+	if ( repFile == NULL)
+		repFile = open_wastream(logFile);
+	return repFile == NULL;
 }
 
 str
 MASTERprelude(int *ret){
-	int master, tag = -1, etag = -1;
+	int master, tag, etag;
 	DIR *dirp;
 	struct dirent *dent;
 
 	(void) ret;
-	master = GDKgetenv_istrue("replication_master");
+	master = GDKgetenv_istrue("replication_master") &&
+			 GDKgetenv("replication_slave") == NULL;
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout,"#Initialize the master role?%s\n", master?"yes":"no");
 #endif
@@ -351,8 +352,7 @@ MASTERprelude(int *ret){
 	}
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
 	
-	/* find the last replication log file */
-	startTag = endTag = -1;
+	/* find the bounds for the last replication log file */
 	dirp= opendir(MASTER);
 	if (dirp == NULL)
 		return MAL_SUCCEED;
@@ -363,19 +363,8 @@ MASTERprelude(int *ret){
 		}
     }
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#log file log%05d-%05d\n", startTag,endTag);
+	stream_printf(GDKout,"#last log file log%05d-%05d\n", startTag,endTag);
 #endif
-
-	snprintf(logFile, PATHLENGTH, MASTER REPLICA, startTag, endTag);
-	slash_2_dir_sep(logFile);
-	if ( startTag + endTag >= 0 )
-		MASTERincrement();
-
-	repFile = open_wastream(logFile);
-	if (repFile == NULL || stream_errnr(repFile)) {
-		mal_unset_lock(repLck, RUNTIME_STREAM_FAILED);
-		throw(MAL, "master.start", RUNTIME_STREAM_FAILED);
-	}
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
@@ -464,7 +453,11 @@ str MASTERopen(int *ret)
 
 	mal_set_lock(repLck, "replication");
 	/* get a replica buffer */
-	MASTERincrement();
+	if (repFile == NULL && MASTERincrement() ){
+		mal_unset_lock(repLck, "replication");
+		throw(MAL, "replication.open", RUNTIME_FILE_NOT_FOUND);
+	}
+
 	i = MASTERgetBuffer(endTag);
 	/* prepare the MAL redo record */
 	len = master[i].limit - master[i].top - 1;
@@ -608,7 +601,7 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, len;
 
 	(void)cntxt;
-	if (repFile == NULL)
+	if (repFile == NULL )
 		throw(MAL, "replication.append", RUNTIME_FILE_NOT_FOUND);
 
 	i = MASTERgetBuffer(tag);
@@ -650,7 +643,7 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 
 	(void)cntxt;
-	if (repFile == NULL)
+	if (repFile == NULL )
 		throw(MAL, "replication.append", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
 	if (b == NULL)
@@ -709,7 +702,7 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, l, len;
 
 	(void)cntxt;
-	if (repFile == NULL)
+	if (repFile == NULL )
 		throw(MAL, "replication.delete", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
 	if (b == NULL)
