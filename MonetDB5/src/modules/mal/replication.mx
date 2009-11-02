@@ -364,7 +364,9 @@ MASTERprelude(int *ret){
 
 	snprintf(logFile, PATHLENGTH, MASTER REPLICA, startTag, endTag);
 	slash_2_dir_sep(logFile);
-	MASTERincrement();
+	if ( startTag + endTag )
+		MASTERincrement();
+
 	repFile = open_wastream(logFile);
 	if (repFile == NULL || stream_errnr(repFile)) {
 		mal_unset_lock(repLck, RUNTIME_STREAM_FAILED);
@@ -799,9 +801,6 @@ MASTERsend(void *arg)
 			bstream_destroy(bs);
 			break;
 		}
-#ifdef _DEBUG_REPLICATION_
-		printf("#replay thread started %s\n", bs->buf);
-#endif
 		hdl = mapi_query(masterstatus[idx].m, bs->buf);
 		mal_unset_lock(repLck, "replication");
 		close_stream(s);
@@ -892,7 +891,6 @@ str SLAVEsynchronize(int *ret, str *uri, str *usr, str *pw, int *tag)
 			*uri, *usr, *pw, *tag);
 #endif
 
-	/* master makes a connection with the slave */
 	mapi = mapi_mapiuri(*uri, *usr, *pw, "mal");
 	if (mapi_error(mapi))
 		throw(MAL, "master.synchronize", "unable to connect to '%s': %s",
