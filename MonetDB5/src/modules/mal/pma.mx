@@ -392,7 +392,7 @@ PMAdel_@1(void *dummy, bat *bid, oid *pos) {
 	bat ret;
 	BAT *b, *bn;
 	@1 *base, *basen;
-	dummy = NULL;
+	(void)dummy;
 	b = BATdescriptor(*bid);
 	if (b == NULL) return "PMAdel: illegal bat parameter";
 	psz = BATcount(b);
@@ -494,7 +494,6 @@ PMAbulkdel_@1(void *dummy, bat *bid, oid *lo, oid *hi) {
 	bat ret;
 	BAT *b, *bn;
 	@1 *base, *basen;
-	dummy = NULL;
 	b = BATdescriptor(*bid);
 	psz = BATcount(b);
 	if (b == NULL) return "PMAdel: illegal bat parameter";
@@ -853,11 +852,9 @@ PMAtestins_@1(void *dummy, bat *bid, int *num) {
 	BAT *b;
 	oid lo, hi, lo_res, hi_res, pos_res;
 	int val, i;
-	@1 *base;
+	(void)dummy;
 	b = BATdescriptor(*bid);
 	if (b == NULL) return "PMAfnd: illegal bat parameter";
-	base = (@1*) Tloc(b, BUNfirst(b));
-	dummy = NULL;
 	for (i = 0; i < *num; i++) {
 		lo = 0;
 		hi = BATcount(b) - 1;
