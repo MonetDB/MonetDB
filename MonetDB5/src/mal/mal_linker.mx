@@ -180,12 +180,6 @@ already loaded.
 @{
 @c
 
-static void
-initM5Loader()
-{
-	memset((char*) filesLoaded, 0, sizeof(FileRecord) * MAXMODULES);
-}
-
 int
 isLoaded(str modulename)
 {
@@ -211,7 +205,6 @@ loadLibrary(str filename, int flag)
 	int idx;
 	const char *errmsg;
 
-	initM5Loader();
 	for (idx = 0; filesLoaded[idx].filename && idx < lastfile; idx++)
 		if (strcmp(filesLoaded[idx].filename, filename) == 0)
 			/* already loaded */
