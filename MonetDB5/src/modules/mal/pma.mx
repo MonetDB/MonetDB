@@ -73,7 +73,10 @@ comment "test the function of deletion"
 @:pma_mal(lng)@
 @:pma_mal(flt)@
 @:pma_mal(dbl)@
+@(
+StM: disabled as the code clearly cannot handle type str (yet?)
 @:pma_mal(str)@
+@)
 
 @+ PMA API
 @h
@@ -108,7 +111,10 @@ pma_export str PMAtestdel_@1(void *dummy, bat *b);
 @:pma_decl(lng)@
 @:pma_decl(flt)@
 @:pma_decl(dbl)@
+@(
+StM: disabled as the code clearly cannot handle type str (yet?)
 @:pma_decl(str)@
+@)
 #endif	/* _PMA_H_ */
 
 @+ PMA implementation
@@ -141,7 +147,10 @@ PMAnew(bat *res, int *tpe, int *sz) {
 	for (cnt = PMA_SEG; cnt < *sz; cnt <<= 1);	/* figure out the size */
 	b = BATnew(TYPE_void, *tpe, cnt);
 	if (b) {
+@(
+StM: disabled as the code clearly cannot handle other than fixed-size linear types (yet?)
 		var_t nil_off;
+@)
 		switch(ATOMstorage(*tpe)) {
 		case TYPE_chr: @:fillnill(chr, chr_nil)@
 		case TYPE_sht: @:fillnill(sht, sht_nil)@
@@ -149,9 +158,15 @@ PMAnew(bat *res, int *tpe, int *sz) {
 		case TYPE_lng: @:fillnill(lng, lng_nil)@
 		case TYPE_flt: @:fillnill(flt, flt_nil)@
 		case TYPE_dbl: @:fillnill(dbl, dbl_nil)@
-		default:       BUNins(b, NULL, (ptr)str_nil, FALSE);
-                       nil_off = *(var_t*) Tloc(b, BUNfirst(b));
+		default:	
+			BBPunfix(b->batCacheid);
+			return "PMAnew: type not supported (yet?)";
+@(
+StM: disabled as the code clearly cannot handle other than fixed-size linear types (yet?)
+			       BUNins(b, NULL, (ptr)str_nil, FALSE);
+                	       nil_off = *(var_t*) Tloc(b, BUNfirst(b));
 		               @:fillnill(wrd, nil_off)@
+@)
 		}
 		BATsetcount(b, cnt);
 		b->tsorted = 0;
@@ -887,4 +902,7 @@ PMAtestdel_@1(void *dummy, bat *bid) {
 @:pma_impl(lng)@
 @:pma_impl(flt)@
 @:pma_impl(dbl)@
+@(
+StM: disabled as the code clearly cannot handle type str (yet?)
 @:pma_impl(str)@
+@)
