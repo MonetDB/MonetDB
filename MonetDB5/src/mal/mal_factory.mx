@@ -496,11 +496,13 @@ Plant
 newPlant(MalBlkPtr mb)
 {
 	Plant p, plim;
+	MalStkPtr stk;
 
 	plim = plants + lastPlant;
 	for (p = plants; p < plim && p->factory; p++)
 		;
-	if (lastPlant == MAXPLANTS)
+	stk = newGlobalStack(mb->vsize);
+	if (lastPlant == MAXPLANTS || stk == NULL)
 		return 0;
 	if (p == plim)
 		lastPlant++;
@@ -508,7 +510,7 @@ newPlant(MalBlkPtr mb)
 	p->id = plantId++;
 
 	p->pc = 1;		/* where we start */
-	p->stk = newGlobalStack(mb->vsize);
+	p->stk = stk;
 	p->stk->blk = mb;
 	p->stk->keepAlive = TRUE;
 	return p;

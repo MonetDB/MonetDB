@@ -216,12 +216,10 @@ typedef struct BOX {
 	int dirty;		/* don't save if it hasn't been changed */
 } *Box, BoxRecord;
 
-mal_export Box newBox(str name);
 mal_export Box findBox(str name);
 mal_export Box openBox(str name);
 mal_export int closeBox(str name, int flag);
 mal_export void destroyBox(str name);
-mal_export str boxFileName(Box box, str extension);
 mal_export int saveBox(Box box, int flag);
 mal_export void loadBox(str nme);
 mal_export int releaseAllBox(Box box);
@@ -237,9 +235,6 @@ mal_export str getBoxNames(int *bid);
 mal_export str toString(Box box, lng i);
 mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
 
-mal_export stream *prepareSaveBox(Box box, str *boxfile, str *boxfilebak);
-mal_export void printSomeBox(stream *fd, int k);
-mal_export void printBox(stream *fd, Box obj);
 #endif /* _MAL_BOX_H */
 @-
 The hierarchy of object spaces ends at the root of the tree.
@@ -250,6 +245,8 @@ only.
 	obj->name= GDKstrdup(name);
 	obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 	obj->val = newGlobalStack(MAXVARS);
+	if ( obj->val == NULL)
+		showException(MAL,"box.new", MAL_MALLOC_FAIL);
 	MT_lock_init(&obj->lock,"M5_box_lock");
 @-
 @c
@@ -257,8 +254,6 @@ only.
 #include "mal_box.h"
 #include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
 #include "mal_client.h"
-#include "mal_debugger.h"	/* for printStack() */
-#include "mal_import.h"		/* for malInclude() */
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define access _access
@@ -268,7 +263,9 @@ only.
 #define MAXSPACES 64		/* >MAXCLIENTS+ max modules !! */
 Box box[MAXSPACES];
 
-Box
+static str boxFileName(Box box, str extension);
+
+static Box
 newBox(str name)
 {
 	Box obj = 0;
@@ -293,8 +290,8 @@ newBox(str name)
 			break;
 		}
 	mal_unset_lock(mal_contextLock, "newBox");
-	if (i == MAXSPACES)
-		showException(MAL,"box.new", "too many boxes");
+	if (i == MAXSPACES) 
+		return NULL;
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "succeeded at %d\n", i);
 #endif
@@ -304,7 +301,7 @@ newBox(str name)
 
 static void
 freeBox(Client cntxt, int i){
-		if (box[i]) {
+		if (box[i] && box[i]->val) {
 			garbageCollector(cntxt, box[i]->sym, box[i]->val,TRUE);
 			GDKfree(box[i]->name);
 			freeMalBlk(box[i]->sym);
@@ -353,8 +350,10 @@ openBox(str name)
 	if (box)
 		return box;
 	box = newBox(name);
-	loadBox(name);
-	box->dirty= FALSE;
+	if ( box){
+		loadBox(name);
+		box->dirty= FALSE;
+	}
 	return box;
 }
 
@@ -382,7 +381,8 @@ destroyBox(str name)
 		if (idcmp(box[j]->name, name) == 0) {
 			free(box[i]->name);
 			freeMalBlk(box[i]->sym);
-			freeStack(box[i]->val);
+			if ( box[i]->val)
+				freeStack(box[i]->val);
 			boxfile = boxFileName(box[i], 0);
 			unlink(boxfile);
 			GDKfree(boxfile);
@@ -405,6 +405,8 @@ depositBox(Box box, str name, int type, ValPtr val)
 	ValPtr v;
 
 	i = findVariable(box->sym, name);
+	if ( box->val == NULL)
+		return 0;
 	if (i < 0) {
 		i = newVariable(box->sym, GDKstrdup(name), type);
 		chkStack(box->val, i);
@@ -441,6 +443,9 @@ takeBox(Box box, str name, ValPtr val, int tpe)
 	ValPtr v;
 
 	i = findVariable(box->sym, name);
+	if ( box->val == NULL)
+		return 0;
+	
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "takeBox: found '%s' at %d\n", name, i);
 #endif
@@ -451,7 +456,7 @@ takeBox(Box box, str name, ValPtr val, int tpe)
 #ifdef DEBUG_MAL_BOX
 		stream_printf(GDKout, "takeBox:type error %d,%d\n", val->vtype, box->val->stk[i].vtype);
 #endif
-		return -1;
+		return 0;
 	}
 	VALcopy(val, &box->val->stk[i]);
 	if (val->vtype == TYPE_bat)
@@ -477,6 +482,8 @@ bindBAT(Box box, str name, str location)
 	ValPtr v;
 
 	i = findVariable(box->sym, name);
+	if ( box->val == NULL)
+		return 0;
 	if (i < 0)
 		i = newVariable(box->sym, GDKstrdup(name), TYPE_any);
 	v = &box->val->stk[i];
@@ -527,6 +534,9 @@ discardBox(Box box, str name)
 	i = findVariable(box->sym, name);
 	if (i < 0)
 		return i;
+	if ( box->val == NULL)
+		return 0;
+	
 	garbageElement(NULL, &box->val->stk[i]);
 	for (j = i; j < box->sym->vtop - 2; j++) {
 		box->sym->var[j] = box->sym->var[j + 1];
@@ -550,6 +560,8 @@ nextBoxElement(Box box, lng *cursor, ValPtr v)
 		*cursor = -1;
 		return 0;
 	}
+	if ( box->val == NULL)
+		return -1;
 	v->vtype = TYPE_str;
 	v->val.sval = getBoxName(box, *cursor);
 	*cursor = *cursor + 1;
@@ -623,7 +635,7 @@ boxFileName(Box box, str backup)
 #ifndef R_OK
 #define R_OK 4
 #endif
-stream *
+static stream *
 prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 {
 	stream *f;
@@ -631,10 +643,8 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	*boxfile = boxFileName(box, 0);
 	*boxfilebak = boxFileName(box, "backup");
 
-	if (*boxfile == 0) {
-		showException(MAL, "box.saveBox", "can not determine box file");
+	if (*boxfile == 0) 
 		return 0;
-	}
 	if (access(*boxfile,R_OK)==0 &&
 		(unlink(*boxfilebak), rename(*boxfile, *boxfilebak) < 0)) {
 #ifdef DEBUG_MAL_BOX
@@ -674,6 +684,10 @@ saveBox(Box box, int flag)
 
 	if( box->dirty== FALSE)
 		return 0;
+	if ( box->val == NULL){
+		showException(MAL,"box.save","No box storage");
+		return 0;
+	}
 	f = prepareSaveBox(box, &boxfile, &boxfilebak);
 	if (f == NULL)
 		return 1;
@@ -745,20 +759,12 @@ loadBox(str name)
 @- Utilities
 Utilities for the debugger permit dumping of all the object
 spaces.
-@c
+
 void
 printBox(stream *fd, Box obj)
 {
-	printStack(fd, obj->sym, obj->val);
-}
-
-void
-printSomeBox(stream *fd, int k)
-{
-	if (box[k] == 0) {
-		showException(MAL,"box.printSomeBox", "illegal space id: %d", k);
-	} else
-		printBox(fd, box[k]);
+	if ( obj &&  obj->val )
+		printStack(fd, obj->sym, obj->val);
 }
 
 @}

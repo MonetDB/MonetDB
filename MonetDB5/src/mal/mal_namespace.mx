@@ -59,6 +59,7 @@ too expensive. An alternative would be to use a BAT to handle the collection.
 #include "mal_config.h"
 #include "mal_type.h"
 #include "mal_namespace.h"
+#include "mal_exception.h"
 #define MAXIDENTIFIERS 2048
 
 typedef struct NAMESPACE{
@@ -130,6 +131,14 @@ void initNamespace() {
 	namespace.link= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
 	namespace.hit= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
 	namespace.length= (size_t *) GDKzalloc(sizeof(size_t) * MAXIDENTIFIERS);
+	if ( namespace.nme == NULL ||
+		 namespace.link == NULL ||
+		 namespace.hit == NULL ||
+		 namespace.length == NULL) {
+		/* absolute an error we can not recover from */
+		showException(MAL,"initNamespace",MAL_MALLOC_FAIL);
+		mal_exit();
+	}
 	namespace.size = MAXIDENTIFIERS;
 	namespace.nmetop= 256; /* hash overflow */
 
@@ -137,6 +146,15 @@ void initNamespace() {
 	backup.nme= (str *) GDKzalloc(sizeof(str *) * MAXIDENTIFIERS);
 	backup.link= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
 	backup.hit= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
+	backup.length= (size_t *) GDKzalloc(sizeof(size_t) * MAXIDENTIFIERS);
+	if ( backup.nme == NULL ||
+		 backup.link == NULL ||
+		 backup.hit == NULL ||
+		 backup.length == NULL) {
+		/* absolute an error we can not recover from */
+		showException(MAL,"initNamespace",MAL_MALLOC_FAIL);
+		mal_exit();
+	}
 	backup.size = MAXIDENTIFIERS;
 	backup.nmetop= 256; /* hash overflow */
 #endif

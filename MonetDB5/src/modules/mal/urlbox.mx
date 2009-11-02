@@ -263,7 +263,7 @@ URLBOXinsert(char *tuple)
 
 			b = BATnew(TYPE_int, TYPE_str, 1024);
 			if (b == NULL)
-				GDKfatal("urlbox.create: could not allocate.");
+				throw(MAL, "urlbox.deposit", MAL_MALLOC_FAIL);
 
 			BATkey(b,TRUE);
 			BBPrename(b->batCacheid, buf);
@@ -509,7 +509,8 @@ URLBOXnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(iterator)@
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
-	nextBoxElement(box, cursor, v);
+	if ( nextBoxElement(box, cursor, v) < 0)
+		throw(MAL, "urlbox.iterator", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -525,7 +526,8 @@ URLBOXhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(iterator)@
 	cursor=  (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
-	nextBoxElement(box, cursor, v);
+	if ( nextBoxElement(box, cursor, v) < 0)
+		throw(MAL, "urlbox.iterator", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 

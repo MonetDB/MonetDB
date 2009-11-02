@@ -454,6 +454,7 @@ SQLvalidatePipeline(void){
 	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, replication= FALSE;
 	int i;
 
+	mal_set_lock(sql_contextLock,"SQL optimizer");
 	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ){
 		showException(SQL,"optimizer"," 'inline' should be the first\n");
 		error++;
@@ -501,6 +502,7 @@ is enabled.
 		error++;
 	}
 
+	mal_unset_lock(sql_contextLock,"SQL optimizer");
 	return error;
 }
 
