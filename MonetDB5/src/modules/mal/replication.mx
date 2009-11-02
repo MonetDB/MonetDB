@@ -785,7 +785,7 @@ MASTERsend(void *arg)
 		stream_printf(GDKout,"#sent log file log%05d-%05d\n", btag,etag);
 #endif
 
-		s = open_rstream(logFile);
+		s = open_rastream(logFile);
 		if (stream_errnr(s) == OPEN_ERROR) {
 			stream_destroy(s);
 			MT_sleep_ms(REPLICADELAY);
@@ -813,9 +813,6 @@ Upon succesful transmission we wait for new stuff
 		if ( tag == startTag) {
 			/* we have the last file */
 			while( et == endTag ) 
-#ifdef _DEBUG_REPLICATION_
-				printf("#replay waiting for new records\n");
-#endif
 				MT_sleep_ms(REPLICADELAY);
 			resent++;
 			if ( resent > REPLICABLOCK){
