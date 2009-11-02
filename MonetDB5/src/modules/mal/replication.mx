@@ -43,9 +43,9 @@ step 2) Create a dump of the master database using the msqldump(1) tool.
 
 step 3) To initiate a slave, simply load the master snapshot.
 
-step 4) Run monetdb(1) to turn the database into a slave by setting its "slave" property
-to the URI of the master. The URI can be obtained using the MAL command
-master.getURI() issued at the master node.
+step 4) Run monetdb(1) to turn the database into a slave by setting its "slave" property to the URI of the master. 
+The precise URI can be obtained issuing the command
+'mclient -lmal -d master -s "master.getURI();"' .
 The slave property is translated by merovingian(1) into the database variable "replication_slave" 
 and is set upon database (re)start.  Note that this setting can not be added to a
 running database.
@@ -188,9 +188,9 @@ command synchronize(uri:str, usr:str, pw:str, tag:int):void
 address MASTERsynchronize
 comment "Login to slave with credentials to initiate submission of the log records";
 
-command getURI():str
+pattern getURI():str
 address MASTERgetURI
-comment "obtain the URI from a master";
+comment "Display the URI for the master";
 
 command prelude():void
 address MASTERprelude
@@ -265,7 +265,7 @@ replication_export str SLAVEsynchronize(int  *ret, str *uri, str *usr, str *pw, 
 replication_export str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag);
 replication_export str MASTERgetName(str *ret);
 replication_export str MASTERprelude(int *ret);
-replication_export str MASTERgetURI(str *ret);
+replication_export str MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 replication_export str SLAVEopen(int *ret, int *tag, timestamp *t);
 replication_export str SLAVEclose(int *ret, str *str, int *tag, timestamp *t);
@@ -330,7 +330,7 @@ MASTERincrement()
 
 str
 MASTERprelude(int *ret){
-	int master, tag, etag;
+	int master, tag = -1, etag = -1;
 	DIR *dirp;
 	struct dirent *dent;
 
@@ -342,13 +342,17 @@ MASTERprelude(int *ret){
 	MT_lock_init(&repLck, "replication");
 	/* drop all remaining log files */
 	mal_set_lock(repLck, "replication");
-	if( !master &&  rmdir(MASTER) < 0){
+	if( !master ){
+#ifdef _DEBUG_REPLICATION_
+		stream_printf(GDKout,"#Clear old log files\n");
+#endif
 		GDKremovedir(MASTER);
 		return MAL_SUCCEED;
 	}
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
 	
 	/* find the last replication log file */
+	startTag = endTag = -1;
 	dirp= opendir(MASTER);
 	if (dirp == NULL)
 		return MAL_SUCCEED;
@@ -359,12 +363,12 @@ MASTERprelude(int *ret){
 		}
     }
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#log file log%05d-%05d\n", tag,etag);
+	stream_printf(GDKout,"#log file log%05d-%05d\n", startTag,endTag);
 #endif
 
 	snprintf(logFile, PATHLENGTH, MASTER REPLICA, startTag, endTag);
 	slash_2_dir_sep(logFile);
-	if ( startTag + endTag )
+	if ( startTag + endTag >= 0 )
 		MASTERincrement();
 
 	repFile = open_wastream(logFile);
@@ -403,12 +407,17 @@ MASTERfindLogFile(int t){
 */
 
 str
-MASTERgetURI(str *ret){
-	int master;
-	master = GDKgetenv_istrue("replication_master");
-	if ( ! master)
-		throw(MAL,"master.getURI","Database is not a master node");
-	return SABgetLocalConnectionURI(ret);
+MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str mero;
+
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	mero = GDKgetenv("merovingian_uri");
+	if ( ! mero)
+		throw(MAL,"master.getURI","Database is not reachable");
+	stream_printf(cntxt->fdout,"%s\n",mero);
+	return MAL_SUCCEED;
 }
 
 int
@@ -455,15 +464,15 @@ str MASTERopen(int *ret)
 
 	mal_set_lock(repLck, "replication");
 	/* get a replica buffer */
-	startTag++;
-	i = MASTERgetBuffer(startTag);
+	MASTERincrement();
+	i = MASTERgetBuffer(endTag);
 	/* prepare the MAL redo record */
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
 			     "function slave.tag_%d(tag:int,stamp:timestamp);\n"
 			     "sql.transaction();\n"
 			     "slave.open(tag,stamp);\n",
-			     startTag)) == len) {
+			     endTag)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL)
 			throw(MAL, "replication.open", MAL_MALLOC_FAIL);
@@ -474,7 +483,7 @@ str MASTERopen(int *ret)
 	master[i].buf[master[i].top] = 0;
 	mal_unset_lock(repLck, RUNTIME_STREAM_FAILED);
 
-	*ret = startTag;
+	*ret = endTag;
 	return MAL_SUCCEED;
 }
 
@@ -511,12 +520,12 @@ str MASTERclose(int *ret, int *tag)
 	stream_flush(repFile);
 	master[i].buf[0] = 0;
 	master[i].top = 0;
-	master[i].top = 0;
+	master[i].tag = 0;
 	if (stream_errnr(repFile)) {
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "replication.close", RUNTIME_STREAM_FAILED);
 	}
-	if (startTag % REPLICABLOCK == 0) {
+	if (endTag % REPLICABLOCK == 0) {
 		close_stream(repFile);
 		repFile = NULL;
 	}
