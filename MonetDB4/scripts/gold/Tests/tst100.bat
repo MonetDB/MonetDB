@@ -4,8 +4,6 @@
 @set NAME=%1
 @set PRELUDE=%2 %3
 
-@cd %TSTTRGDIR%
-
 @copy /y "%TSTSRCDIR%\..\README"     README     > nul
 @copy /y "%TSTSRCDIR%\..\awkscript"  awkscript  > nul
 @copy /y "%TSTSRCDIR%\..\column"     column     > nul

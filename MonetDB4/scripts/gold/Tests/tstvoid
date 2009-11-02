@@ -3,8 +3,6 @@
 NAME="$1"
 PRELUDE="$2 $3"
 
-cd $TSTTRGDIR
-
 for i in README awkscript column format gcol summary test100k init.mil void.mil tstvoid.mil load.mil; do
     if [ ! -f $i ]; then
         /bin/rm -f $i
