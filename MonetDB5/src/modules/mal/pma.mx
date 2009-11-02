@@ -144,6 +144,10 @@ pma_export str
 PMAnew(bat *res, int *tpe, int *sz) {
 	BAT *b;
 	wrd cnt, i;
+	if (*tpe < 0)
+		return "PMAnew: illegal type";
+	if (ATOMstorage(*tpe) == TYPE_void || ATOMstorage(*tpe) > TYPE_lng)
+		return "PMAnew: type not supported (yet?)";
 	for (cnt = PMA_SEG; cnt < *sz; cnt <<= 1);	/* figure out the size */
 	b = BATnew(TYPE_void, *tpe, cnt);
 	if (b) {
@@ -153,11 +157,13 @@ StM: disabled as the code clearly cannot handle other than fixed-size linear typ
 @)
 		switch(ATOMstorage(*tpe)) {
 		case TYPE_chr: @:fillnill(chr, chr_nil)@
+		case TYPE_bte: @:fillnill(bte, bte_nil)@
 		case TYPE_sht: @:fillnill(sht, sht_nil)@
 		case TYPE_int: @:fillnill(int, int_nil)@
 		case TYPE_lng: @:fillnill(lng, lng_nil)@
 		case TYPE_flt: @:fillnill(flt, flt_nil)@
 		case TYPE_dbl: @:fillnill(dbl, dbl_nil)@
+		case TYPE_ptr: @:fillnill(ptr, ptr_nil)@
 		default:	
 			BBPunfix(b->batCacheid);
 			return "PMAnew: type not supported (yet?)";
