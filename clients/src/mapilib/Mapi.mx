@@ -2391,6 +2391,11 @@ mapi_start_talking(Mapi mid)
 		 * in the form of a comma separated list and in the variable
 		 * rest.  We try to use the strongest algorithm.
 		 */
+		if (rest == NULL) {
+			/* protocol violation, not enough fields */
+			mapi_setError(mid, "Not enough fields in challenge string", "mapi_start_talking", MERROR);
+			return mid->error;
+		}
 		hashes = rest;
 		hash = strchr(hashes, ':');	/* temp misuse hash */
 		if (hash) {
