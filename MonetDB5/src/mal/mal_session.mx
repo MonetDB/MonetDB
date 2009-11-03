@@ -657,6 +657,8 @@ MALengine(Client c)
 	prg = c->curprg;
 	if (prg == NULL)
 		throw(SYNTAX, "mal.engine", SYNTAX_SIGNATURE);
+	if (prg->def == NULL)
+		throw(SYNTAX, "mal.engine", SYNTAX_SIGNATURE);
 
 	if (prg->def->errors > 0) {
 		showErrors(c);
