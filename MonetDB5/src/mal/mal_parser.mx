@@ -1212,7 +1212,10 @@ optimizers to make decisions. (See the section on properties).
 				advance(cntxt,i);
 				if( currChar(cntxt)==':') {
 					csttpe = simpleTypeId(cntxt);
-					convertConstant(csttpe,&cst);
+					if ( csttpe >= 0)
+						convertConstant(csttpe,&cst);
+					else
+						parseError(cntxt,"simple type expected\n");
 				} 
 				varSetProperty(curBlk,@1, pname, opname, &cst);
 			} else {

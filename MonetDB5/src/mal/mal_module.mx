@@ -533,7 +533,7 @@ int cmpFcnName(InstrPtr f, InstrPtr l){
 void dumpManual(stream *f, Module s, int recursive){
 	int j;
 	Symbol t;
-	str ps, lnk, hlp=0, op=0, endtag=0;
+	str ps, lnk, op=0, endtag=0;
 	InstrPtr sig;
 	Module list[256]; int k, top=0;
 
@@ -582,7 +582,6 @@ void dumpManual(stream *f, Module s, int recursive){
 			stream_printf(f,"    <implementation>%s</implementation>\n",xmlChr(lnk+1));
 			GDKfree(ps);
 			if(t->def->help){
-			    if(strcmp(hlp,t->def->help))
 			    stream_printf(f,"    <comment>%s</comment>\n",
 			        xmlChr(t->def->help));
 			}
