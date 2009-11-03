@@ -55,7 +55,7 @@ lib_replication = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = replication.mx
-	LIBS = ../../mal/libmonetdb5 ../atoms/lib_mtime ../kernel/lib_bat5 \
+	LIBS = lib_sabaoth ../../mal/libmonetdb5 ../atoms/lib_mtime ../kernel/lib_bat5 \
 		   ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
