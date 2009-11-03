@@ -490,15 +490,22 @@ int cstToken(Client cntxt, ValPtr cst)
 		int len= i;
 		float *pval= 0;
 		fltFromStr(CURRENT(cntxt), &len, &pval);
-		cst->val.fval= *pval;
-		if( pval) GDKfree(pval);
+		if( pval ){
+			cst->val.fval= *pval;
+			GDKfree(pval);
+		} else
+			cst->val.fval= 0;
 	}
 	if( cst->vtype == TYPE_dbl){
 		int len= i;
 		double *pval= 0;
 		dblFromStr(CURRENT(cntxt), &len, &pval);
-		cst->val.dval= *pval;
-		if( pval) GDKfree(pval);
+		if( pval){
+			cst->val.dval= *pval;
+			GDKfree(pval);
+		} else
+			cst->val.dval= 0;
+
 		if( cst->val.dval> FLT_MIN && cst->val.dval<= FLT_MAX ){
 			cst->vtype= TYPE_flt;
 			cst->val.fval = (flt) cst->val.dval;
@@ -540,14 +547,20 @@ int cstToken(Client cntxt, ValPtr cst)
 			int len= i;
 			double *pval= 0;
 			dblFromStr(CURRENT(cntxt), &len, &pval);
-			cst->val.dval= *pval;
-			if( pval) GDKfree(pval);
+			if( pval) {
+				cst->val.dval= *pval;
+				GDKfree(pval);
+			} else
+				cst->val.dval= 0;
 		} else {
 			int len= i;
 			lng *pval= 0;
 			lngFromStr(CURRENT(cntxt), &len, &pval);
-			cst->val.lval= *pval;
-			if( pval) GDKfree(pval);
+			if( pval) {
+				cst->val.lval= *pval;
+				GDKfree(pval);
+			} else
+				cst->val.lval= 0;
 		}
 		return i;
 	}
