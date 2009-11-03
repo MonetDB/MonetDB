@@ -157,10 +157,6 @@ usage(char *prog)
 	exit(0);
 }
 
-@-
-A welcoming message is displayed to inform the user about recent
-changes. 
-@c
 void
 monet_hello(opt *set, int setlen)
 {
