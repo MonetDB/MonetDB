@@ -1996,6 +1996,13 @@ mapi_new(void)
 	mid->blk.lim = BLOCK;
 
 	mid->first = NULL;
+
+	if (mid->hostname == NULL || mid->language == NULL) {
+		/* strdup failed, give up */
+		mapi_destroy(mid);
+		return NULL;
+	}
+
 	return mid;
 }
 
@@ -2077,7 +2084,8 @@ mapi_mapiuri(
 	}
 	dbname = p;
 
-	free(mid->hostname);
+	if (mid->hostname)
+		free(mid->hostname);
 	mid->hostname = strdup(host);
 	mid->port = port;
 	if (mid->username != NULL)
@@ -2121,7 +2129,8 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 		return NULL;
 
 	if (host) {
-		free(mid->hostname);
+		if (mid->hostname)
+			free(mid->hostname);
 		mid->hostname = strdup(host);
 	}
 	if (port == 0) {
@@ -2284,8 +2293,8 @@ connect_to_server(Mapi mid)
 	{
 		struct hostent *hp;
 
-		hp = gethostbyname(mid->hostname);
-		if (hp == NULL) {
+		if (mid->hostname == NULL ||
+		    (hp = gethostbyname(mid->hostname)) == NULL) {
 			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s",
 					strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
