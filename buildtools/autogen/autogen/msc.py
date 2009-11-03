@@ -263,7 +263,9 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
                 lib = '"%s"' % lib
             l = lib
             d = lib
-        if c:
+        else:
+            l = None
+        if c and l:
             global libno
             v = 'LIB%d' % libno
             libno = libno + 1
@@ -273,7 +275,8 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
                 deps = '%s %s' % (deps, l)
         elif d:
             deps = '%s %s' % (deps, d)
-        add = add + ' ' + l
+        if l:
+            add = add + ' ' + l
     # this can probably be removed...
     for l in dlibs:
         if l == "@LIBOBJS@":
