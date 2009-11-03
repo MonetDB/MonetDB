@@ -582,7 +582,7 @@ void dumpManual(stream *f, Module s, int recursive){
 			stream_printf(f,"    <implementation>%s</implementation>\n",xmlChr(lnk+1));
 			GDKfree(ps);
 			if(t->def->help){
-			    if(hlp && strcmp(hlp,t->def->help))
+			    if(strcmp(hlp,t->def->help))
 			    stream_printf(f,"    <comment>%s</comment>\n",
 			        xmlChr(t->def->help));
 			}
@@ -913,10 +913,7 @@ char **getHelp(Module m, str inputpat, int completion)
 
 	if( fcnnme && *fcnnme){
 		len2 = strlen(fcnnme);
-	} else {
-		GDKfree(pat);
-		return msg;
-	}
+	} 
 
 	len1 = (int)strlen(modnme);
 

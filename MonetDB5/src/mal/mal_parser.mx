@@ -1016,7 +1016,7 @@ the function definition in a particular module instead of the current one.
 	} 
 
 	/* temporary suspend capturing statements in main block */
-	if( cntxt->backup && curBlk && curBlk->errors==0) 
+	if( cntxt->backup )
 		return (MalBlkPtr) parseError(cntxt,"mal_parser: unexpected recursion\n");
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction(putName("user",4), fnme, kind);
