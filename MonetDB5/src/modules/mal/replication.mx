@@ -223,7 +223,12 @@ command drop(tag:str)
 address SLAVEdrop
 comment "Remove the replica function from the module";
 
+command prelude():void
+address SLAVEprelude
+comment "Prepare the server for the slave role.";
+
 master.prelude();
+slave.prelude();
 @-
 @+ Implementation code 
 @h
@@ -270,6 +275,7 @@ replication_export str MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 replication_export str SLAVEopen(int *ret, int *tag, timestamp *t);
 replication_export str SLAVEclose(int *ret, str *str, int *tag, timestamp *t);
 replication_export str SLAVEdrop(int *ret, str *tag);
+replication_export str SLAVEprelude(int *ret);
 #endif /* _REPLICATOR_H */
 @c
 #include "mal_config.h"
@@ -286,8 +292,8 @@ requests before they are shipped to the log.
 The tag is returned for marking all related updates.
 The final code should contain a loop to determine the last replication tag.
 @c
-#define MASTER "./master"
-#define REPLICA "/log%05d-%05d"
+#define MASTER "./master/"
+#define REPLICA "log%05d-%05d"
 #define REPLICABLOCK 100
 #define REPLICADELAY 5000
 
@@ -302,8 +308,36 @@ static int mlimit = 0;
 static MT_Lock repLck;
 static int startTag = 0;
 static int endTag = 0;
-static char logFile[PATHLENGTH];
+static char logFile[PATHLENGTH]; 
 static stream *repFile;
+
+/*
+static int 
+MASTERfindLogFile(int t){
+	int btag, etag;
+	DIR *dirp;
+	struct dirent *dent;
+
+#ifdef _DEBUG_REPLICATION_
+	stream_printf(GDKout,"#find the log file containing %d\n", t);
+#endif
+	if (repFile)
+		stream_close(repFile);
+	dirp= opendir(MASTER);
+	if (dirp == NULL)
+		return 0 ;
+	while ((dent = readdir(dirp)) != NULL) 
+		if ( sscanf(dent->d_name,"log%d-%d",&btag,&etag) == 2 && btag <= t && t<etag  ){
+			strcpy(logFile,dent->d_name);
+			repFile = open_rstream(dent->d_name);
+#ifdef _DEBUG_REPLICATION_
+			stream_printf(GDKout,"#log file log%05d-%05d\n", btag,etag);
+#endif
+			break;
+		}
+	return repFile != NULL;
+}
+*/
 
 /* The replication log file contains a number of log functions.
  * When the limit is reached, we switch to a new file
@@ -315,7 +349,7 @@ MASTERincrement()
 
 	endTag++;
 	snprintf(buf, PATHLENGTH, MASTER REPLICA, startTag, endTag);
-	slash_2_dir_sep(logFile);
+	slash_2_dir_sep(buf);
 	if (strcmp(logFile,buf) )
 		rename(logFile,buf);
 	strcpy(logFile,buf);
@@ -324,7 +358,7 @@ MASTERincrement()
 			stream_close(repFile);
 	}
 	if ( repFile == NULL)
-		repFile = open_wastream(logFile);
+		repFile = open_wastream(buf);
 	return repFile == NULL;
 }
 
@@ -353,13 +387,15 @@ MASTERprelude(int *ret){
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
 	
 	/* find the bounds for the last replication log file */
+	/* assume directory is sorted */
 	dirp= opendir(MASTER);
 	if (dirp == NULL)
 		return MAL_SUCCEED;
 	while ((dent = readdir(dirp)) != NULL) {
-		if ( sscanf(dent->d_name,"log%d-%d",&tag,&etag) == 2 && tag > startTag){
+		if ( sscanf(dent->d_name,"log%d-%d",&tag,&etag) == 2 && tag >= startTag && etag<= endTag){
 			startTag= tag;
 			endTag= etag;
+			strcpy(logFile,dent->d_name);
 		}
     }
 #ifdef _DEBUG_REPLICATION_
@@ -369,31 +405,6 @@ MASTERprelude(int *ret){
 	return MAL_SUCCEED;
 }
 	
-/*
-static stream 
-MASTERfindLogFile(int t){
-	int tag, etag;
-	DIR *dirp;
-	struct dirent *dent;
-	stream *fp;
-
-#ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#find the log file containing %d\n", t);
-#endif
-	dirp= opendir(MASTER);
-	if (dirp == NULL)
-		return ;
-	while ((dent = readdir(dirp)) != NULL) 
-		if ( sscanf(dent->d_name,"log%d-%d",&tag,&etag) == 2 && tag <= t && t<etag  )
-			break;
-    
-#ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#log file log%05d-%05d\n", tag,etag);
-#endif
-
-	fp = open_rstream(logFile);
-}
-*/
 
 str
 MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -780,8 +791,10 @@ MASTERsend(void *arg)
 	if (dirp == NULL)
 		return ;
 
+	/* initialize the sql environment */
+	hdl = mapi_query(masterstatus[idx].m, "include sql;sql.init();");
 	while ((dent = readdir(dirp)) != NULL) {
-		if ( sscanf(dent->d_name,"log%d-%d",&btag,&etag) == 2 && tag < btag )
+		if ( sscanf(dent->d_name,"log%d-%d",&btag,&etag) != 2 || tag < btag )
 			continue;
 		et= endTag;
     
@@ -789,10 +802,15 @@ MASTERsend(void *arg)
 		stream_printf(GDKout,"#sent log file log%05d-%05d\n", btag,etag);
 #endif
 
+		snprintf(logFile, PATHLENGTH, "%s%s",MASTER , dent->d_name);
+		slash_2_dir_sep(logFile);
 		s = open_rastream(logFile);
-		if (stream_errnr(s) == OPEN_ERROR) {
-			stream_destroy(s);
-			MT_sleep_ms(REPLICADELAY);
+		if (s == NULL || stream_errnr(s) ) {
+			if (s )
+				stream_destroy(s);
+#ifdef _DEBUG_REPLICATION_
+			stream_printf(GDKout,"#could not open log file %s\n",logFile);
+#endif
 			continue;
 		}
 
@@ -806,22 +824,25 @@ MASTERsend(void *arg)
 		hdl = mapi_query(masterstatus[idx].m, bs->buf);
 		mal_unset_lock(repLck, "replication");
 		close_stream(s);
-		if ( hdl == NULL)
+		if (hdl == NULL || mapi_error(masterstatus[idx].m) != MOK) 
+			break;
+		if ( hdl )
 			continue;
+	} 
 @-
 Upon succesful transmission we wait for new stuff
 @c
-		if ( tag == startTag) {
-			/* we have the last file */
-			while( et == endTag ) 
-				MT_sleep_ms(REPLICADELAY);
-			resent++;
-			if ( resent > REPLICABLOCK){
-			}
-			tag= et;
-		} else 
-			tag= etag;
-	} 
+	if ( tag == startTag) {
+		/* we have the last file */
+		while( et == endTag ) 
+			MT_sleep_ms(REPLICADELAY);
+		resent++;
+		if ( resent > REPLICABLOCK){
+		}
+		tag= et;
+	} else 
+		tag= etag;
+	/* and resent it */
 
 #ifdef _DEBUG_REPLICATION_
 	printf("#replay thread finished \n");
@@ -1015,4 +1036,11 @@ SLAVEdrop(int *ret, str *tag)
 	return MAL_SUCCEED;
 }
 
+str
+SLAVEprelude(int *ret)
+{
+	/*nothing yet */
+	(void)ret;
+	return MAL_SUCCEED;
+}
 @}
