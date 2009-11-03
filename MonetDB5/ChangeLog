@@ -1,0 +1,8 @@
+# ChangeLog for MonetDB5
+# Copyright
+# $Header$
+
+  03 Nov 2009; Fabian Groffen <fabian@cwi.nl>
+  src/tools/monet_version.c.in:
+  Report detected amount of main memory and cpu cores in output of
+  `mserver5 --version`.
