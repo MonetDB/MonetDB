@@ -305,11 +305,10 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 #define PROFwrites  8
 #define PROFrbytes  9
 #define PROFwbytes 10
-#define PROFdisk   11	
-#define PROFstmt   12
-#define PROFaggr   13
-#define PROFprocess 14
-#define PROFthread 15
+#define PROFstmt   11
+#define PROFaggr   12
+#define PROFprocess 13
+#define PROFthread 14
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -591,9 +590,6 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (profileCounter[PROFwbytes].status) 
 		log(LLFMT",\t", mb->profiler[pc].wbytes);
 
-	if (profileCounter[PROFdisk].status) {
-		log(LLFMT",\t", getDiskSpace());
-	}
 	if (profileCounter[PROFaggr].status) 
 		log2("%d,\t%d,\t", mb->profiler[pc].counter, mb->profiler[pc].clk);
 	
@@ -840,8 +836,13 @@ setFilter(Module cntxt, str mod, str fcn)
 	int j;
 	Module s = cntxt;
 	Symbol t;
+	str matchall = "*";
 
 	(void) cntxt;
+	if ( mod == NULL)
+		mod = matchall;
+	if ( fcn == NULL)
+		fcn = matchall;
 	profileAll = strcmp(mod, "*") == 0 && strcmp(fcn, "*") == 0;
 
 	if( ! profileLockInitialized) {
