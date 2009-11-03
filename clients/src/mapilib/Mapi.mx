@@ -2667,23 +2667,23 @@ mapi_start_talking(Mapi mid)
 
 	/* consume the welcome message from the server */
 	hdl = mapi_new_handle(mid);
+	if (hdl == NULL)
+		return MERROR;
 	mid->active = hdl;
 	read_into_cache(hdl, 0);
 	if (mid->error) {
-		if (hdl) {
-			/* propagate error from result to mid
-			   mapi_close_handle clears the errors, so
-			   save them first */
-			char *errorstr = hdl->result ? hdl->result->errorstr : mid->errorstr;
-			MapiMsg error = mid->error;
+		/* propagate error from result to mid
+		   mapi_close_handle clears the errors, so
+		   save them first */
+		char *errorstr = hdl->result ? hdl->result->errorstr : mid->errorstr;
+		MapiMsg error = mid->error;
 
-			if (hdl->result)
-				hdl->result->errorstr = NULL;	/* clear these so errorstr doesn't get freed */
-			mid->errorstr = NULL;
-			mapi_close_handle(hdl);
-			mapi_setError(mid, errorstr, "mapi_start_talking", error);
-			free(errorstr);	/* now free it after a copy has been made */
-		}
+		if (hdl->result)
+			hdl->result->errorstr = NULL;	/* clear these so errorstr doesn't get freed */
+		mid->errorstr = NULL;
+		mapi_close_handle(hdl);
+		mapi_setError(mid, errorstr, "mapi_start_talking", error);
+		free(errorstr);	/* now free it after a copy has been made */
 		return mid->error;
 	}
 	if (hdl->result && hdl->result->cache.line) {
@@ -3151,6 +3151,8 @@ mapi_Xcommand(Mapi mid, char *cmdname, char *cmdvalue)
 		stream_flush(mid->tracelog);
 	}
 	hdl = prepareQuery(mapi_new_handle(mid), "Xcommand");
+	if (hdl == NULL)
+		return MERROR;
 	mid->active = hdl;
 	read_into_cache(hdl, 0);
 	mapi_close_handle(hdl);	/* reads away any output */
@@ -3183,6 +3185,8 @@ mapi_prepare(Mapi mid, const char *cmd)
 
 	mapi_check0(mid, "mapi_prepare");
 	hdl = mapi_new_handle(mid);
+	if (hdl == NULL)
+		return NULL;
 	mapi_prepare_handle(hdl, cmd);
 	return hdl;
 }
@@ -3212,6 +3216,8 @@ mapi_prepare_array(Mapi mid, const char *cmd, char **val)
 
 	mapi_check0(mid, "mapi_prepare_array");
 	hdl = mapi_new_handle(mid);
+	if (hdl == NULL)
+		return NULL;
 	mapi_prepare_handle(hdl, cmd);
 	mapi_prepare_array_internal(hdl, val);
 	return hdl;
@@ -3515,6 +3521,8 @@ mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp)
 	stream_flush(mid->to);
 	check_stream(mid, mid->to, "write error on stream", "mapi_stream_into", mid->error);
 	hdl = mapi_new_handle(mid);
+	if (hdl == NULL)
+		return MERROR;
 	mid->active = hdl;
 	rc = read_into_cache(hdl, 0);
 	if ((err = mapi_result_error(hdl)) != NULL)
@@ -4156,6 +4164,8 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 
 	mapi_check0(mid, "mapi_query_array");
 	hdl = mapi_prepare(mid, cmd);
+	if (hdl == NULL)
+		return NULL;
 	ret = hdl->mid->error;
 	if (ret == MOK)
 		ret = mapi_prepare_array_internal(hdl, val);
@@ -4250,6 +4260,8 @@ mapi_quick_query(Mapi mid, const char *cmd, FILE *fd)
 
 	mapi_check0(mid, "mapi_quick_query");
 	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	if (hdl == NULL)
+		return NULL;
 	ret = hdl->mid->error;
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
@@ -4268,6 +4280,8 @@ mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd)
 
 	mapi_check0(mid, "mapi_quick_query_array");
 	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	if (hdl == NULL)
+		return NULL;
 	ret = hdl->mid->error;
 	if (ret == MOK)
 		ret = mapi_prepare_array_internal(hdl, val);
@@ -4339,6 +4353,8 @@ mapi_cache_limit(Mapi mid, int limit)
 			return MERROR;
 		}
 		hdl = prepareQuery(mapi_new_handle(mid), "reply_size");
+		if (hdl == NULL)
+			return MERROR;
 		mid->active = hdl;
 		read_into_cache(hdl, 0);
 		mapi_close_handle(hdl);	/* reads away any output */
