@@ -1050,11 +1050,10 @@ char **getHelpMatch(char *pat){
 				for(s= m->subscope[j]; s; s= s->peer)
 				if( strstr(m->name,pat) || strstr(s->name,pat) ||
 					(s->def->help && strstr(s->def->help,pat))) {
+					char *v,*w;
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
 					buf[0]=' ';
-					if( s->def->help) {
-						char *v,*w;
-						v= strchr(buf,0);
+					if( s->def->help && (v= strchr(buf,0)) ) {
 						*v++ = '\\';
 						*v++ = 'n';
 						*v++ = '#';
