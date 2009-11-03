@@ -2886,7 +2886,8 @@ mapi_embedded_init(Mapi *midp, char *lang)
 	if (mid == NULL)
 		return NULL;
 	streams = malloc(2 * sizeof(*streams));
-	if (rendezvous_streams(&streams[0], &mid->to, "to server") == 0 ||
+	if (streams == NULL ||
+	    rendezvous_streams(&streams[0], &mid->to, "to server") == 0 ||
 	    rendezvous_streams(&mid->from, &streams[1], "from server") == 0) {
 		mapi_destroy(mid);
 		return NULL;
