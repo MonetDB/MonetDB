@@ -189,7 +189,7 @@ monet_hello(opt *set, int setlen)
 	s += strlen(s);
 	snprintf(s,size,"# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
-			GDKnr_threads, (GDKnr_threads > 1) ? "s" : "");
+			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
 	size -= strlen(s);
 	s += strlen(s);
 	snprintf(s,size,"# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n",
