@@ -394,15 +394,13 @@ AUTHcheckCredentials(
 	/* now see if the scenario is permitted (if restrictions for that
 	 * apply)
 	 */
+	if (scenario == NULL || *scenario == NULL || strNil(*scenario)) 
+		/* of course we DO NOT tell the exact reason here again */
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'",*username);
+
 	b = BATselect(scen, id, id);
 	if (b && BATcount(b) > 0) {
 		BATiter bi = bat_iterator(b);
-
-		if (*scenario == NULL || strNil(*scenario)) {
-			BBPunfix(b->batCacheid);
-			/* of course we DO NOT tell the exact reason here again */
-			throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'",*username);
-		}
 
 		/* ok, there are some tuples that we have to consider */
 		BATloop(b, p, q) {
