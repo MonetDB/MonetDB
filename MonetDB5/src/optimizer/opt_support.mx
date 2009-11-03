@@ -652,7 +652,7 @@ str
 optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr p;
-	int pc, qot = 0;
+	int pc;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
 
@@ -662,7 +662,6 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 		/* any errors should abort the optimizer */
 		if (mb->errors)
 			break;
-		qot = 0;
 		for (pc = 0; pc < mb->stop ; pc++) {
 			p = getInstrPtr(mb, pc);
 			if (getModuleId(p) == optimizerRef && p->fcn) {
@@ -678,7 +677,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				pc= -1;
 			}
 		}
-	} while (qot && cnt++ < mb->stop);
+	} while (cnt++ < mb->stop);
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return 0;
