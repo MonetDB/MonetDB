@@ -476,7 +476,7 @@ SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
 	char *cmd = threadcommand;
-	SOCKET sock = *Sock;
+	SOCKET sock = Sock? *Sock : INVALID_SOCKET;
 
 	if ( Sock) GDKfree(Sock);
 	if( lastlistener < 8 )
