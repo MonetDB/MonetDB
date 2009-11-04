@@ -111,15 +111,18 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
 extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR * s, SQLINTEGER length, char **errmsg);
 extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER buflen, SQLSMALLINT *buflenout);
 
-#define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)	\
-	do {						\
-		char *e;				\
-		(s) = (t *) ODBCwchar2utf8((ws), (wsl), &e); \
-		if (e) {				\
-			/* General error */		\
-			errfunc((hdl), "HY000", e, 0);	\
-			exit;				\
-		}					\
+#define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)			\
+	do {								\
+		char *e;						\
+		(s) = (t *) ODBCwchar2utf8((ws), (wsl), &e);		\
+		if (e) {						\
+			/* General error */				\
+			assert((s) == NULL);				\
+			errfunc((hdl),					\
+				strcmp(e, "Memory allocation error") == 0 ? \
+					"HY001" : "HY000", e, 0);	\
+			exit;						\
+		}							\
 	} while (0)
 #define fixWcharOut(r, s, sl, ws, wsl, wslp, cw, errfunc, hdl)		\
 	do {								\
