@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  30 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c,
+  merovingian_forkmserver.c, monetdb.c, properties.c, utils.c, utils.h:
+  Add slave property for databases
+
   25 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Implemented global -q option to monetdb to suppress status messages when
   performing commands
@@ -39,6 +43,7 @@
   Always put created databases under maintenance, they have to be explicitly
   released after creating and performing the initialisation steps by the DBA
 
+*Aug2009-SP2
 *Aug2009-SP1
 
   25 Aug 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c:
