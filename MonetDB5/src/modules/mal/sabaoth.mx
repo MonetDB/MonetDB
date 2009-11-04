@@ -162,6 +162,7 @@ str SABgetLocalConnectionHost(str *ret) {
 	rethrow("sabaoth.getLocalConnectionHost", tmp,
 			SABAOTHgetLocalConnection(&con));
 
+	/* this happens if no connection is available */
 	if (strcmp(con, (str)str_nil) == 0) {
 		*ret = con;
 		return(MAL_SUCCEED);
@@ -170,12 +171,27 @@ str SABgetLocalConnectionHost(str *ret) {
 	/* con looks like mapi:monetdb://hostname:port */
 	/* do some poor man's parsing */
 	tmp = con;
-	p = strchr(con, ':') + 1;
-	con = strchr(p, ':') + 3;
-	p = strchr(con, ':');
+	if ((p = strchr(con, ':')) == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost",
+				"invalid local connection string: %s", tmp);
+		GDKfree(tmp);
+		return(p);
+	}
+	if ((con = strchr(p + 1, ':')) == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost",
+				"invalid local connection string: %s", tmp);
+		GDKfree(tmp);
+		return(p);
+	}
+	if ((p = strchr(con + 3, ':')) == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost",
+				"invalid local connection string: %s", tmp);
+		GDKfree(tmp);
+		return(p);
+	}
 	*p = '\0';
 
-	*ret = GDKstrdup(con);
+	*ret = GDKstrdup(con + 3);
 	GDKfree(tmp);
 	return(MAL_SUCCEED);
 }
@@ -186,6 +202,7 @@ str SABgetLocalConnectionPort(int *ret) {
 	rethrow("sabaoth.getLocalConnectionHost", tmp,
 			SABAOTHgetLocalConnection(&con));
 
+	/* this happens if no connection is available */
 	if (strcmp(con, (str)str_nil) == 0) {
 		*ret = 0;
 		GDKfree(con);
@@ -195,13 +212,33 @@ str SABgetLocalConnectionPort(int *ret) {
 	/* con looks like mapi:monetdb://hostname:port */
 	/* do some poor man's parsing */
 	tmp = con;
-	p = strchr(con, ':') + 1;
-	p = strchr(p, ':') + 1;
-	con = strchr(p, ':') + 1;
-	p = strchr(con, '/');
+	if ((p = strchr(con, ':')) == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost",
+				"invalid local connection string: %s", tmp);
+		GDKfree(tmp);
+		return(p);
+	}
+	if ((p = strchr(p + 1, ':')) == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost",
+				"invalid local connection string: %s", tmp);
+		GDKfree(tmp);
+		return(p);
+	}
+	if ((con = strchr(p + 1, ':')) == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost",
+				"invalid local connection string: %s", tmp);
+		GDKfree(tmp);
+		return(p);
+	}
+	if ((p = strchr(con + 1, '/')) == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost",
+				"invalid local connection string: %s", tmp);
+		GDKfree(tmp);
+		return(p);
+	}
 	*p = '\0';
 
-	*ret = atoi(con);
+	*ret = atoi(con + 1);
 	GDKfree(tmp);
 	return(MAL_SUCCEED);
 }

@@ -282,6 +282,7 @@ nxtRequest(Request p)
 
 	if (p == 0 || p->ev_next != 0 || p->ev_prev != 0) {
 		GDKerror("nxtRequest: single request expected\n");
+		return;
 	}
 	QMenqueueStat(p);
 
@@ -527,7 +528,8 @@ handleRequest(Thread t, Request q, ValPtr res)
 This was needed to ensure proper delivery of output;
 A kill request is handled directly.
 @c
-	if (lt == NULL && stk == 0) {
+	if (lt == NULL) {
+		assert(stk == 0);
 		PARDEBUG {
 			THRprintf(GDKerr, "handleRequest(dies)\n");
 		}

@@ -1175,7 +1175,7 @@ ODBCFetch(ODBCStmt *stmt,
 
 		default:
 		case SQL_CHAR:
-			copyString(data, ptr, buflen, lenp, SQLINTEGER, addStmtError, stmt);
+			copyString(data, ptr, buflen, lenp, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
 			break;
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
@@ -2338,7 +2338,7 @@ ODBCStore(ODBCStmt *stmt,
 	case SQL_C_BINARY:
 		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
 		sval = (char *) ptr;
-		fixODBCstring(sval, slen, SQLINTEGER, addStmtError, stmt);
+		fixODBCstring(sval, slen, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
 		break;
 #ifdef WITH_WCHAR
 	case SQL_C_WCHAR:

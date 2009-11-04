@@ -141,7 +141,7 @@ SQLExecDirect_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
-	fixODBCstring(szSqlStr, nSqlStr, SQLINTEGER, addStmtError, stmt);
+	fixODBCstring(szSqlStr, nSqlStr, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
 	for (i = 0; i < nSqlStr; i++)
 		if (szSqlStr[i] == '?') {
 			/* query may have parameters, take the long route */

@@ -842,17 +842,27 @@ bunins_failed:
 static int
 derive(grp *g, grp *ct, BAT *b, int tt, map_T *m)
 {
-	BAT *ct_map = BATdescriptor(ct->map); 
-	BAT *ct_histo = BATdescriptor(ct->histo); 
+	BAT *ct_map = BATdescriptor(ct->map);
+	BAT *ct_histo = BATdescriptor(ct->histo);
 	BAT *histo = NULL, *bn = NULL;
 	int synced = ALIGNsynced(ct_map, b);
 
 	/* create the result bat 'bn' */
 	int ht = (synced && BAThdense(b)) ? TYPE_void : TYPE_oid;
 
+	if (ct_map == NULL || ct_histo == NULL) {
+		if (ct_map)
+			BBPunfix(ct_map->batCacheid);
+		if (ct_histo)
+			BBPunfix(ct_histo->batCacheid);
+		return GDK_FAIL;
+	}
+
 	if (!ct_map->tkey) { /* cannot derive more groups */
 		bn = BATnew(ht, TYPE_oid, BATcount(b));
 		if (bn == NULL) {
+			BBPunfix(ct_map->batCacheid);
+			BBPunfix(ct_histo->batCacheid);
 			return GDK_FAIL;
 		}
 

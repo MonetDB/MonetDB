@@ -150,7 +150,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
 	buf = (SQLCHAR *) malloc(l);
 	if (buf == NULL) {
 		if (errmsg)
-			*errmsg = "Memory allocation failure";
+			*errmsg = "Memory allocation error";
 		return NULL;
 	}
 	for (s1 = s, p = buf; s1 < e; s1++) {

@@ -176,7 +176,9 @@ ODBCInitResult(ODBCStmt *stmt)
 		}
 
 		s = mapi_get_type(hdl, i);
-		rec->sql_desc_type_name = (SQLCHAR *) strdup(s ? s : "");
+		if (s == NULL)	/* shouldn't happen */
+			s = "";
+		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
 		concise_type = ODBCConciseType(s);
 		for (tp = ODBC_sql_types; tp->concise_type; tp++)
 			if (concise_type == tp->concise_type)

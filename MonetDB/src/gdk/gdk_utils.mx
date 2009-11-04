@@ -1674,6 +1674,7 @@ int GDKnr_threads = 0;
 gdk_export void GDKexit(int status);
 
 @c
+/* coverity[+kill] */
 void
 GDKexit(int status)
 {
@@ -2071,6 +2072,7 @@ GDKclrerr(void)
 		*buf = 0;
 }
 
+/* coverity[+kill] */
  /*VARARGS*/ int
 GDKfatal(const char *format, ...)
 {

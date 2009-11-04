@@ -128,7 +128,7 @@ SQLDriverConnect_(ODBCDbc *dbc,
 	}
 	assert(!dbc->Connected);
 
-	fixODBCstring(szConnStrIn, nConnStrIn, SQLSMALLINT, addDbcError, dbc);
+	fixODBCstring(szConnStrIn, nConnStrIn, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" %hu\n", nConnStrIn, (char*)szConnStrIn, nDriverCompletion);

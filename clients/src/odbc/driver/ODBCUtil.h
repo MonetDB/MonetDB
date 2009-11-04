@@ -61,7 +61,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
  * accordingly.  If str == NULL, set len to 0.
  * We can still make a distinction between str = "", len = 0 and str = NULL.
  */
-#define fixODBCstring(str, len, lent, errfunc, hdl)				\
+#define fixODBCstring(str, len, lent, errfunc, hdl, ret)		\
 	do {								\
 		if (str == NULL)					\
 			len = 0;					\
@@ -73,7 +73,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 		} else if (len < 0) {					\
 			/* Invalid string or buffer length */		\
 			errfunc(hdl, "HY090", NULL, 0);			\
-			return SQL_ERROR;				\
+			ret;						\
 		}							\
 	} while (0)
 
@@ -89,13 +89,13 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
    API there are generally three arguments involved: the pointer to a
    buffer, the length of that buffer, and a pointer to where the
    actual string length is to be stored. */
-#define copyString(str, buf, len, lenp, lent, errfunc, hdl)		\
+#define copyString(str, buf, len, lenp, lent, errfunc, hdl, ret)	\
 	do {								\
 		lent _l;						\
 		if ((len) < 0) {					\
 			/* Invalid string or buffer length */		\
 			errfunc((hdl), "HY090", NULL, 0);		\
-			return SQL_ERROR;				\
+			ret;						\
 		}							\
 		_l = (str) ? (lent) strlen((char *) (str)) : 0;		\
 		if (buf)						\
@@ -111,15 +111,18 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
 extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR * s, SQLINTEGER length, char **errmsg);
 extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER buflen, SQLSMALLINT *buflenout);
 
-#define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)	\
-	do {						\
-		char *e;				\
-		(s) = (t *) ODBCwchar2utf8((ws), (wsl), &e); \
-		if (e) {				\
-			/* General error */		\
-			errfunc((hdl), "HY000", e, 0);	\
-			exit;				\
-		}					\
+#define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)			\
+	do {								\
+		char *e;						\
+		(s) = (t *) ODBCwchar2utf8((ws), (wsl), &e);		\
+		if (e) {						\
+			/* General error */				\
+			assert((s) == NULL);				\
+			errfunc((hdl),					\
+				strcmp(e, "Memory allocation error") == 0 ? \
+					"HY001" : "HY000", e, 0);	\
+			exit;						\
+		}							\
 	} while (0)
 #define fixWcharOut(r, s, sl, ws, wsl, wslp, cw, errfunc, hdl)		\
 	do {								\

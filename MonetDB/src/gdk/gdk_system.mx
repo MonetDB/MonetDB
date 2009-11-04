@@ -416,6 +416,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg)
 	return ret;
 }
 
+/* coverity[+kill] */
 void
 MT_global_exit(int s)
 {
