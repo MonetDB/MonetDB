@@ -17,10 +17,6 @@
   merovingian_uri GDKenvironment setting. This can be used by applications
   inside the database that need to give a pointer back to themselves.
 
-  30 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c,
-  merovingian_forkmserver.c, monetdb.c, properties.c, utils.c, utils.h:
-  Add slave property for databases
-
   25 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Implemented global -q option to monetdb to suppress status messages when
   performing commands
@@ -48,11 +44,6 @@
   09 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_discoveryrunner.c:
   No longer announce databases that are under maintenance, this allows them to
   be pulled out of the cluster easily
-
-  04 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian_forkmserver.c,
-  monetdb.c, monetdb_get.c, properties.c:
-  Add master property of boolean value that translates into
-  replication_master for mserver5 to trigger storing replication logs
 
   20 Aug 2009; Fabian Groffen <fabian@cwi.nl> database.c, database.h,
   monetdb.c, monetdb.1:

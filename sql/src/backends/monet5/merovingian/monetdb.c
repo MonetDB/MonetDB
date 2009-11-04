@@ -1277,7 +1277,6 @@ main(int argc, char *argv[])
 		{"gdk_nr_threads",     NULL,                       INT},
 		{"mero_doproxy",       GDKstrdup("yes"),           BOOL},
 		{"mero_discoveryport", NULL,                       INT},
-		{"#master",            GDKstrdup("no"),            BOOL},
 		{ NULL,                NULL,                       INVALID}
 	};
 	confkeyval *kv;
