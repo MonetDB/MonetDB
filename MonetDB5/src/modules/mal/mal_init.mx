@@ -86,7 +86,6 @@ library remote;
 
 library profiler;
 library statistics;
-library replication;
 
 library optimizer;
 
@@ -94,6 +93,7 @@ library chopper;
 library txtsim;
 
 library sabaoth;
+library replication;
 @-
 library logger;
 @mal

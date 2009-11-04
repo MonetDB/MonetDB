@@ -20,15 +20,20 @@
 @v 1.0
 @+ Database replication
 MonetDB supports a simple database replication scheme using a master-slave
-protocol. Upon explicit request from a slave, the master establishes
-a MAL-client connection to the slave and starts pumping the tail of a
-MAL-based update log.
-It is the slave's responsibility to sent for the correct resynchronisation point
-and to be resilient against duplicate transmission of the MAL-update log.
+protocol. A master node keeps a log of all SQL updates for replay.
+Upon explicit request from a slave, the master establishes
+a MAL-client connection to the slave and starts pumping the tail of this
+MAL-based update log. The master does not take any control over
+the integrity of a slave. It may, however, decide to suspend
+forwarding updates to prepare for e.g. administration or shutdown.
+
+It is the slave's responsibility to be resilient against duplicate 
+transmission of the MAL-update log. A transaction id
+can be given to catch up from transactions already replayed.
 
 The replication scheme does not support SQL scheme modifications.
 Instead, the slaves should be initialized with a complete copy
-of the master schema.
+of the master schema and the database.
 
 Turning an existing database into a master and creation of a single
 slave works as follows.
@@ -47,13 +52,17 @@ step 4) Run monetdb(1) to turn the database into a slave by setting its "slave" 
 The precise URI can be obtained issuing the command
 'mclient -lmal -d master -s "master.getURI();"' .
 The slave property is translated by merovingian(1) into the database variable "replication_slave" 
-and is set upon database (re)start.  Note that this setting can not be added to a
-running database.
+and is set upon database (re)start.  Note that this setting can not be added to a running database. 
 
 The slave starts synchronizing with the master automatically upon each restart.
-The synchronization start and stop can be manually controlled with the SQL
-functions "CALL 'startSynchronization();'" and "CALL 'stopSynchronization();'".
-[tobeimplemented]
+It can be manually controlled using the functions:
+@verbatim
+CREATE PROCEDURE startSync() EXTERNAL NAME slave."sync";
+CREATE PROCEDURE startSync(tag bigint) EXTERNAL NAME slave."sync";
+CREATE PROCEDURE stopSync(uri string) EXTERNAL NAME slave."stop";
+
+CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getURI";
+@end verbatim
 
 The replication scheme allows a slave to be cloned e.g. by copying the
 dbfarm of the slave to another database without problems.  Important
@@ -72,6 +81,9 @@ left-over log files.  This renders the master database unusable for
 replication.  To restore replication in such case, both master and
 slaves have to be reinitialised using the afore described steps.
 
+A slave property can be set to a list of masters, which turns the
+the slave into a serving multiple sources. [tobedone]
+
 @- Behind the scene
 When the replication_master environment is set, an optimizer
 becomes active to look after updates on SQL tables and to prepare
@@ -80,6 +92,7 @@ modifications made to a query plan.
 
 @verbatim
 function query():void
+  master:= "mapi:monetdb://gio.ins.cwi.nl:50000/dbmaster";
   fcnid:= master.open();
   ...
   sql.append("schema","table","col",b:[:oid,:int]);
@@ -101,19 +114,21 @@ The log records are stored in a file "dbfarm/db/master/log%05d-%05d" with the
 following structure:
 @verbatim
 function slave.tag1(transactionid:int,stamp:timestamp);
-  slave.open(transactionid,stamp);
+  maste:r= "mapi:monetdb://gio.ins.cwi.nl:50000/dbmaster";
+  slave.open(transactionid);
   tag1_b := bat.new(:oid,:int);
   ...
   bat.insert(tag1_b,3:oid,232:int); #example update
   ...
   sql.append("schema","table","col",tag1_b,tag);
-  slave.close(transactionid,stamp);
+  slave.close(transactionid);
   sql.commit();
 end tag1;
 slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
 slave.drop("tag1");
 @end verbatim
 
+The master identity is passed along to differentiate masters later.
 The slave.open() simply checks the replica log administration table
 and issues an assertion if necessary.
 
@@ -144,11 +159,10 @@ is set up to be idempotent.
 The log files will ultimately pollute your database and have to
 be (re)moved. This is considered a responsibility for the DBA,
 for it involves making a checkpoint or securely storing the logs
-into an archive. The master keeps a table of chunks sent completely.
+into an archive.
 
-MonetDB can inform the master about each slave being added.
-Or the server can request the names of all slaves from Sabaoth.
-This way we can garbage collect log files without DBA interference.
+Archiving requires inspection of the slaves and the status
+of their replay log table.
 
 A slave starts replicating off the
 master starting from the tag maintained by the master for each slave.
@@ -182,12 +196,8 @@ address MASTERreplay
 comment "Slave calls the master to restart sending the missing transactions
 from a certain point as a named user.";
 
-command stop(uri:str):void
-address MASTERstop
-comment "Slave suspends synchronisation with master";
-
-command synchronize(uri:str, usr:str, pw:str, tag:int):void
-address MASTERsynchronize
+command sync(uri:str, usr:str, pw:str, tag:int):void
+address MASTERsync
 comment "Login to slave with credentials to initiate submission of the log records";
 
 pattern getURI():str
@@ -200,28 +210,31 @@ comment "Prepare the server for the master role. Or remove any leftover log file
 
 module slave;
 
-command synchronize():void
-address SLAVEsynchronizeDefault
+command sync():void
+address SLAVEsyncDefault
 comment "Login to master with environment credentials to initiate submission of the log records";
-command synchronize(uri:str):void
-address SLAVEsynchronizeURI
+command sync(uri:str):void
+address SLAVEsyncURI
 comment "Login to master with admin credentials to initiate submission of the log records";
-command synchronize(uri:str, usr:str, pw:str, tag:int):void
-address SLAVEsynchronize
+command sync(uri:str, usr:str, pw:str, tag:int):void
+address SLAVEsync
 comment "Login to master uri with admin credentials to initiate submission of the log records";
 
-command open(tag:int,d:timestamp)
+command stop(uri:str):void
+address SLAVEstop
+comment "Slave suspends synchronisation with master";
+
+command open(tag:oid)
 address SLAVEopen
-comment "Marks the start of a replication record. It checks the replicas
+comment "Marks the start of a replication record. It checks the slave log
 table for existence of the tag. If so, it aborts the attempt to reapply.";
 
-command close(tag:int, d:timestamp)
+command close(tag:oid)
 address SLAVEclose
-comment "End of replication record. Add the tag to the replicas table
-using the SQL transaction semantics. To be extended with the reason for
-failures.";
+comment "End of replication record. Add the time stamp op completion
+to the slave log.";
 
-command drop(tag:str)
+command drop(fcnname:str)
 address SLAVEdrop
 comment "Remove the replica function from the module";
 
@@ -244,7 +257,7 @@ slave.prelude();
 #include <mapilib/Mapi.h>
 #include "mtime.h"
 
-#define _DEBUG_REPLICATION_ 
+/* #define _DEBUG_REPLICATION_ */
 
 #ifdef WIN32
 #ifndef LIBREPLICATION
@@ -258,7 +271,6 @@ slave.prelude();
 
 replication_export int MASTERroleEnabled(void);
 replication_export str MASTERopen(int *ret);
-replication_export str MASTERstop(int *ret);
 replication_export str MASTERclose(int *ret, int *tag);
 replication_export str MASTERstart(int *ret);
 replication_export str MASTERstartTag(int *ret, int *tag);
@@ -266,16 +278,16 @@ replication_export str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 replication_export str MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-replication_export str SLAVEsynchronizeDefault(int  *ret);
-replication_export str SLAVEsynchronizeURI(int  *ret, str *conn);
-replication_export str SLAVEsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag);
-replication_export str MASTERsynchronize(int  *ret, str *uri, str *usr, str *pw, int *tag);
-replication_export str MASTERgetName(str *ret);
+replication_export str SLAVEsyncDefault(int  *ret);
+replication_export str SLAVEsyncURI(int  *ret, str *conn);
+replication_export str SLAVEsync(int  *ret, str *uri, str *usr, str *pw, int *tag);
+replication_export str MASTERsync(int  *ret, str *uri, str *usr, str *pw, int *tag);
+replication_export str SLAVEstop(int *ret);
 replication_export str MASTERprelude(int *ret);
 replication_export str MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-replication_export str SLAVEopen(int *ret, int *tag, timestamp *t);
-replication_export str SLAVEclose(int *ret, int *tag, timestamp *t);
+replication_export str SLAVEopen(int *ret, oid *tag);
+replication_export str SLAVEclose(int *ret, oid *tag);
 replication_export str SLAVEdrop(int *ret, str *tag);
 replication_export str SLAVEprelude(int *ret);
 #endif /* _REPLICATOR_H */
@@ -286,6 +298,7 @@ replication_export str SLAVEprelude(int *ret);
 #include "mal_client.h"
 #include <mal_sabaoth.h>
 #include <mapilib/Mapi.h>
+#include <mtime.h>
 
 @-
 The start of the query is marked with a replica tag.
@@ -372,18 +385,15 @@ MASTERprelude(int *ret){
 	struct dirent *dent;
 
 	(void) ret;
+	MT_lock_init(&repLck, "replication");	/* we always need this */
 	master = GDKgetenv_istrue("replication_master") &&
 			 GDKgetenv("replication_slave") == NULL;
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout,"#Initialize the master role?%s\n", master?"yes":"no");
 #endif
-	MT_lock_init(&repLck, "replication");
 	/* drop all remaining log files */
 	mal_set_lock(repLck, "replication");
 	if( !master ){
-#ifdef _DEBUG_REPLICATION_
-		stream_printf(GDKout,"#Clear old log files\n");
-#endif
 		GDKremovedir(MASTER);
 		mal_unset_lock(repLck, "replication");
 		return MAL_SUCCEED;
@@ -475,9 +485,9 @@ str MASTERopen(int *ret)
 	/* prepare the MAL redo record */
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
-			     "function slave.tag_%d(tag:int,stamp:timestamp);\n"
+			     "function slave.tag_%d(tag:oid,stamp:timestamp);\n"
 			     "sql.transaction();\n"
-			     "slave.open(tag,stamp);\n",
+			     "slave.open(tag);\n",
 			     fcnTag)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL)
@@ -513,10 +523,10 @@ str MASTERclose(int *ret, int *tag)
 
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
-			     "slave.close(tag,stamp);\n"
+			     "slave.close(tag);\n"
 			     "sql.commit();\n"
 			     "end tag_%d;\n"
-			     "slave.tag_%d(%d,\"%s\":timestamp);\n"
+			     "slave.tag_%d(%d:oid,\"%s\":timestamp);\n"
 			     "slave.drop(\"%s\");\n",
 			     endTag, *tag, *tag, val, buf)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
@@ -530,6 +540,8 @@ str MASTERclose(int *ret, int *tag)
 	GDKfree(val);
 
 	MASTERincrement();
+	if (repFile == NULL )
+		throw(MAL, "master.close", RUNTIME_FILE_NOT_FOUND);
 	stream_printf(repFile, "%s", master[i].buf);
 	stream_flush(repFile);
 	master[i].buf[0] = 0;
@@ -618,9 +630,6 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, len;
 
 	(void)cntxt;
-	if (repFile == NULL )
-		throw(MAL, "replication.append", RUNTIME_FILE_NOT_FOUND);
-
 	i = MASTERgetBuffer(tag);
 	q = copyInstruction(pci);
 	q->argc--;
@@ -660,8 +669,6 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 
 	(void)cntxt;
-	if (repFile == NULL )
-		throw(MAL, "replication.append", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
 	if (b == NULL)
 		throw(MAL, "replication.append", RUNTIME_OBJECT_MISSING);
@@ -719,8 +726,6 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, l, len;
 
 	(void)cntxt;
-	if (repFile == NULL )
-		throw(MAL, "replication.delete", RUNTIME_FILE_NOT_FOUND);
 	b = BATdescriptor(*bid);
 	if (b == NULL)
 		throw(MAL, "replication.delete", RUNTIME_OBJECT_MISSING);
@@ -855,10 +860,10 @@ Upon succesful transmission we wait for new stuff
 	masterstatus[idx].tag= 0;
 }
 @-
-The slave process sents a remote master.synchronize request with all
+The slave process sents a remote master.sync request with all
 the information needed for the master to set up and start a log forwarding thread.
 @c
-str MASTERsynchronize(int *ret, str *uri, str *usr, str *pw, int *tag)
+str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 {
 	Mapi mapi;
 	MT_Id tid;
@@ -874,24 +879,24 @@ str MASTERsynchronize(int *ret, str *uri, str *usr, str *pw, int *tag)
 	/* master makes a connection with the slave */
 	mapi = mapi_mapiuri(*uri, *usr, *pw, "mal");
 	if (mapi_error(mapi))
-		throw(MAL, "master.synchronize", "unable to connect to '%s': %s",
+		throw(MAL, "master.sync", "unable to connect to '%s': %s",
 				*uri, mapi_error_str(mapi));
 
 	if (mapi_reconnect(mapi) != MOK)
-		throw(IO, "master.synchronize", "failed to connect to '%s': %s",
+		throw(IO, "master.sync", "failed to connect to '%s': %s",
 				*uri, mapi_error_str(mapi));
 
 	for ( i = 0; i < MAL_MAXCLIENTS; i++)
 		if ( masterstatus[i].uri == NULL)
 			break;
 	if ( i == MAL_MAXCLIENTS)
-		throw(MAL,"master.synchronize","Too many slave connections");
+		throw(MAL,"master.sync","Too many slave connections");
 
 	masterstatus[i].uri= GDKstrdup(*uri);
 	masterstatus[i].tag= *tag;
 	masterstatus[i].m= mapi;
 	if (MT_create_thread(&tid, MASTERsend, (void *) &i) < 0) 
-		throw(MAL, "master.synchronize", "cannot fork new client");
+		throw(MAL, "master.sync", "cannot fork new client");
 	
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout, "#awaiting replay of the log \n");
@@ -902,7 +907,7 @@ str MASTERsynchronize(int *ret, str *uri, str *usr, str *pw, int *tag)
 @-
 Prepare the remote call to the master
 @c
-str SLAVEsynchronize(int *ret, str *uri, str *usr, str *pw, int *tag)
+str SLAVEsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 {
 	Mapi mapi;
 	MapiHdl hdl;
@@ -918,31 +923,31 @@ str SLAVEsynchronize(int *ret, str *uri, str *usr, str *pw, int *tag)
 
 	mapi = mapi_mapiuri(*uri, *usr, *pw, "mal");
 	if (mapi_error(mapi))
-		throw(MAL, "slave.synchronize", "unable to connect to '%s': %s",
+		throw(MAL, "slave.sync", "unable to connect to '%s': %s",
 				*uri, mapi_error_str(mapi));
 
 	if (mapi_reconnect(mapi) != MOK)
-		throw(IO, "slave.synchronize", "failed to connect to '%s': %s",
+		throw(IO, "slave.sync", "failed to connect to '%s': %s",
 				*uri, mapi_error_str(mapi));
 
 	SABgetLocalConnectionURI(&luri);
 	if (luri == NULL)
-		throw(MAL, "slave.synchronize", OPERATION_FAILED ": URI not found");
+		throw(MAL, "slave.sync", OPERATION_FAILED ": URI not found");
 
-	snprintf(buf,BUFSIZ,"master.synchronize(\"%s\",\"%s\",\"%s\",%d);", luri, *usr, *pw, *tag);
+	snprintf(buf,BUFSIZ,"master.sync(\"%s\",\"%s\",\"%s\",%d);", luri, *usr, *pw, *tag);
 	GDKfree(luri);
 	hdl = mapi_query(mapi,buf);
 	if (hdl == NULL){
 		if (mapi_error(mapi) != MOK) 
-            throw(IO, "slave.synchronize", OPERATION_FAILED ": an error occurred on connection: %s",
+            throw(IO, "slave.sync", OPERATION_FAILED ": an error occurred on connection: %s",
                     mapi_error_str(mapi));
         else 
-            throw(MAL, "slave.synchronize", OPERATION_FAILED ": remote function invocation didn't return a result");
+            throw(MAL, "slave.sync", OPERATION_FAILED ": remote function invocation didn't return a result");
 	}
 	if ( mapi_result_error(hdl) ){
 		str err = createException(
                     getExceptionType(mapi_result_error(hdl)),
-                    "slave.synchronize",
+                    "slave.sync",
                     "%s", getExceptionMessage(mapi_result_error(hdl)));
 		mapi_close_handle(hdl);
 		return err;
@@ -954,50 +959,106 @@ str SLAVEsynchronize(int *ret, str *uri, str *usr, str *pw, int *tag)
 	return MAL_SUCCEED;
 }
 
-str SLAVEsynchronizeURI(int *ret, str *uri)
+str SLAVEsyncURI(int *ret, str *uri)
 {
 	int tag = 0;
 	str usr = "monetdb";
 	str pw = "monetdb";
 	(void)ret;
 	if ( GDKgetenv("replication_slave") == NULL)
-		throw(MAL, "master.synchronize", "Slave property not set");
-	return SLAVEsynchronize(ret, uri, &usr, &pw, &tag);
+		throw(MAL, "master.sync", "Slave property not set");
+	return SLAVEsync(ret, uri, &usr, &pw, &tag);
 }
 
-str SLAVEsynchronizeDefault(int *ret)
+str SLAVEsyncDefault(int *ret)
 {
 	str uri;
 	uri = GDKgetenv("replication_slave");
 	if (uri == NULL)
-		throw(MAL, "master.synchronize", "Slave property not set");
-	return SLAVEsynchronizeURI(ret, &uri);
+		throw(MAL, "master.sync", "Slave property not set");
+	return SLAVEsyncURI(ret, &uri);
 }
 
 @-
 The master thread is stopped at the slave side by closing
 its client record. 
 @c
-str MASTERstop(int *ret)
+str SLAVEstop(int *ret)
+{
+	str uri;
+	(void)ret;
+	uri = GDKgetenv("replication_slave");
+	if (uri == NULL)
+		throw(MAL, "slave.stop", "Slave property not set");
+	/* find the master client record and close it */
+	/* TODO */
+	return MAL_SUCCEED;
+}
+@-
+To keep track of the transactions being replayed
+we use a single BAT with timestamps of their completion.
+A null indicates a failure to replay and indicates a
+incorrect database state.
+The transaction identifier is used as an oid into this table.
+@c
+static BAT *slavelog;
+
+static void
+SLAVEinitLog(){
+    slavelog = BATdescriptor(BBPindex("slavelog"));
+    if (slavelog == NULL){
+		slavelog = BATnew(TYPE_void, TYPE_timestamp, 256);
+		if (slavelog == NULL)
+			return ;
+
+		BATseqbase(slavelog,0); /* essential */
+		BBPrename(slavelog->batCacheid, "slavelog");
+		BATmode(slavelog, PERSISTENT);
+#ifdef _DEBUG_REPLICATION_
+		printf("#created slavelog\n");
+#endif
+	}
+}
+
+str SLAVEopen(int *ret, oid *tag)
 {
 	(void)ret;
+	(void)tag;
+	mal_set_lock(repLck, "replication");
+	if ( slavelog == NULL)
+		SLAVEinitLog();
+	if ( slavelog == NULL){
+		mal_unset_lock(repLck, "replication");
+		throw(MAL, "slave.open", OPERATION_FAILED);
+	}
+	/* cheap check if we have seen it before */
+	if ( BATcount(slavelog) < (BUN) *tag) {
+		mal_unset_lock(repLck, "replication");
+		throw(MAL, "slave.open", OPERATION_FAILED);
+	}
 	return MAL_SUCCEED;
 }
 
-str SLAVEopen(int *ret, int *tag, timestamp *t)
+str SLAVEclose(int *ret, oid *tag)
 {
+	timestamp stamp;
 	(void)ret;
-	(void)t;
-	(void)tag;
-	throw(MAL, "slave.open", "Operation ignored, defined in SQL context");
-}
-
-str SLAVEclose(int *ret, int *tag, timestamp *t)
-{
-	(void)ret;
-	(void)tag;
-	(void)t;
-	throw(MAL, "slave.close", "Operation ignored, defined in SQL context");
+	mal_set_lock(repLck, "replication");
+	if ( slavelog == NULL)
+		SLAVEinitLog();
+	if ( slavelog == NULL){
+		/* abort the transaction */
+		mal_unset_lock(repLck, "replication");
+		throw(MAL, "slave.clase", OPERATION_FAILED);
+	}
+	if ( BATcount(slavelog) != (BUN) *tag) {
+		mal_unset_lock(repLck, "replication");
+		throw(MAL, "slave.close", "Out of order execution");
+	}
+	MTIMEepoch(&stamp);
+	BUNappend(slavelog, &stamp, FALSE);
+	mal_unset_lock(repLck, "replication");
+	return MAL_SUCCEED;
 }
 
 str
@@ -1020,6 +1081,10 @@ SLAVEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)bid;
 	(void)tag;
 	*/
+	mal_set_lock(repLck, "replication");
+	if ( slavelog == NULL)
+		SLAVEinitLog();
+	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
 
@@ -1040,10 +1105,16 @@ SLAVEdrop(int *ret, str *tag)
 str
 SLAVEprelude(int *ret)
 {
-	/*nothing yet */
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout, "#initialize slave\n");
 #endif
+	/* to be called after MASTERprelude */
+	if ( GDKgetenv("replication_slave") != NULL) {
+		mal_set_lock(repLck, "replication");
+		SLAVEinitLog();
+		mal_unset_lock(repLck, "replication");
+		SLAVEsyncDefault(ret);
+	}
 	(void)ret;
 	return MAL_SUCCEED;
 }
