@@ -202,21 +202,17 @@ static char *mark, *mark2;
 #define UTF8BOM		"\xEF\xBB\xBF"  /* UTF-8 encoding of Unicode BOM */
 #define UTF8BOMLENGTH	3	/* length of above */
 
-@-
-Pagination and simple ASCII-based rendering is
-provided for SQL sessions.
-The result set size is limited by the cache size
-of the Mapi Library. It is sufficiently large to
-accommodate most result to be browsed manually.
+/* Pagination and simple ASCII-based rendering is provided for SQL
+ * sessions. The result set size is limited by the cache size of the
+ * Mapi Library. It is sufficiently large to accommodate most result
+ * to be browsed manually.
+ *
+ * The pagewidth determines the maximum space allocated for a single
+ * row. If the total space required is larger, then a heuristic
+ * routine is called to distribute the available space. Attribute
+ * values may then span multiple lines. Setting the pagewidth to 0
+ * turns off row size control. */
 
-The pagewidth determines the maximum space
-allocated for a single row. If the total space
-required is larger, then a heuristic routine is
-called to distribute the available space.
-Attribute values may then span multiple lines.
-Setting the pagewidth to 0 turns off row size
-control.
-@c
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
 #endif
@@ -230,11 +226,11 @@ enum modifiers {
 	DEBUGmodifier
 };
 static enum modifiers specials = NOmodifier; 
-/* set when we see DEBUG (only if mode == SQL).
-Also retain these modes until after you have received the answer. */
+/* set when we see DEBUG (only if mode == SQL).  Also retain these
+ * modes until after you have received the answer. */
 
-/* keep these aligned, the MINCOLSIZE should ensure you can always write
- * the NULLSTRING */
+/* keep these aligned, the MINCOLSIZE should ensure you can always
+ * write the NULLSTRING */
 #define MINCOLSIZE 4
 #define NULLSTRING "null"
 
@@ -271,7 +267,7 @@ static timertype
 gettime(void)
 {
 	/* Return the time in milliseconds since an epoch.  The epoch
-	  is roughly the time this program started. */
+	   is roughly the time this program started. */
 #ifdef HAVE_QUERYPERFORMANCECOUNTER
 	static LARGE_INTEGER freq, start; /* automatically initialized to 0 */
 	LARGE_INTEGER ctr;
@@ -340,11 +336,9 @@ timerEnd(void)
 	}
 }
 
-@-
-The Mapi library eats away the comment lines, which
-we need to detect end of debugging. We overload
-the routine to our liking.
-@c
+/* The Mapi library eats away the comment lines, which we need to
+ * detect end of debugging. We overload the routine to our liking. */
+
 static char *
 fetch_line(MapiHdl hdl)
 {
@@ -1314,10 +1308,9 @@ doFile(Mapi mid, const char *file)
 	return errseen;
 }
 
-@-
-The options available for controlling input and rendering depends
-on the language mode.
-@c
+/* The options available for controlling input and rendering depends
+ * on the language mode. */
+
 static void
 showCommands(void)
 {
