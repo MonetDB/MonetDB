@@ -1043,6 +1043,7 @@ str SLAVEopen(int *ret, oid *tag)
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "slave.open", OPERATION_FAILED);
 	}
+	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
 
