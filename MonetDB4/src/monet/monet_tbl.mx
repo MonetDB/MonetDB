@@ -1153,7 +1153,7 @@ SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
 While MIL procs are typically introduced by MIL modules, they can be typed in at anytime
 in a MIL session (not belonging to any specific module). They are represented as parsed
 MIL trees, with their root in TBL\_fcn\_imp and shared in all client fcntbl-s. As a consequence,
-we must do indiviual refcounting for them (i.e. they cannot use the module refcnt mechanism).
+we must do individual refcounting for them (i.e. they cannot use the module refcnt mechanism).
 
 The following rules apply:
 \begin{itemize}
@@ -1487,7 +1487,7 @@ TBL_fathercopy(Client client, Client father, str nme)
 The TBL initialization creates a set of function tables.
 Subsequently the starting address of all built-in functions is stored,
 (and documentary information) [Should be removed or used as a view]
-Since all code will move to modules this function will be come obsolute.
+Since all code will move to modules this function will become obsolete.
 @= TBL_create
 	TBL_@1_@2 = TBL_create(monet_clients,"@1_@2",@5,TYPE_@3,TYPE_@4,@6,@7);
 @c
@@ -2448,7 +2448,7 @@ For the [A?B:C] multiplex operators, certain restrictions exist on the type
 		RETURN(tok);
 	}
 @-
-constraints for assigment-multiplexing: first must be identically typed BAT
+constraints for assignment-multiplexing: first must be identically typed BAT
 @c
 	if (sig->assignop) {
 		if (assignbat == NULL) {
@@ -2466,7 +2466,7 @@ then reconstructs the original atomic values from its (argc,argv)
 parameters.
 
 We pick collection of interesting cases to optimize, and leave the
-(argc,argv) way as a generic implementation for all non-optimizwed cases.
+(argc,argv) way as a generic implementation for all non-optimized cases.
 These cases are:
 \begin{itemize}
 \item unary, binary or 3-ary operators,
@@ -2477,8 +2477,8 @@ These cases are:
 \end{itemize}
 The last condition can only be checked at run-time. It actually splits the
 optimizations in two classes: namely array-lookup or merge-lookup.
-Both have differnt run-time constraints. we compute now whether
-our other criteria allow for execution of thexe optimizations,
+Both have different run-time constraints. we compute now whether
+our other criteria allow for execution of these optimizations,
 and store the results in resp. sig->array\_opt and sig->merge\_opt.
 @c
 	if (sig->special) {
@@ -2692,7 +2692,7 @@ TBL_formatsig(str s, oid fid)
 
 
 @- TBL_iterator
-Like TBL_search, but intened to do lookup for iterators.
+Like TBL_search, but intended to do lookup for iterators.
 @c
 void *
 TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv)
@@ -2791,7 +2791,7 @@ TBL_procreturn(int argc, ValPtr argv, ValPtr res, YYSTREE t)
 }
 
 
-@+ Client Managament
+@+ Client Management
 @-
 Each user gets a private function and atom table. They are
 initialized with the built-in functions and atomary types. They are extended
