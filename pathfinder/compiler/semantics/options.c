@@ -102,8 +102,6 @@ PFextract_options (PFpnode_t *root)
 {
     assert (root);
 
-    PFoptions = PFenv_ (400);
-
     recurse (root);
 
     return;
@@ -113,7 +111,7 @@ PFextract_options (PFpnode_t *root)
 void
 PFoptions_init (void)
 {
-    PFoptions = NULL;
+    PFoptions = PFenv_ (400);
 }
 
 /* vim:set shiftwidth=4 expandtab: */
