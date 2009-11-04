@@ -2271,7 +2271,7 @@ However, with the command-hint passed, we guess it is a command.
 @c
 	if (ret == NULL && guess_if_notfound && no_command == 0 && next_is_ident == 0) {
 		ret = s;
-		*t = next_is_ident ? TOK_OPERATOR : TOK_COMMAND;
+		*t = TOK_COMMAND;
 	}
 	return ret;
 }
