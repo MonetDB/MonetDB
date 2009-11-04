@@ -539,12 +539,15 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 static str
 ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 {
-	MalBlkPtr mc = t->def;
+	MalBlkPtr mc;
 	int i;
 	str msg = MAL_SUCCEED;
 
-	if (t == NULL || mc->stop < 3)
-		return msg;
+	if (t == NULL )
+		return msg;	/* ignore the call */
+	mc = t->def;
+	if ( mc->stop < 3)
+		return msg;	/* ignore small call */
 #ifdef DEBUG_OPT_MACRO
 	printf("calling the ORCAM processor for %s\n", t->name);
 #endif

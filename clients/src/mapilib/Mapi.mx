@@ -1996,6 +1996,13 @@ mapi_new(void)
 	mid->blk.lim = BLOCK;
 
 	mid->first = NULL;
+
+	if (mid->hostname == NULL || mid->language == NULL) {
+		/* strdup failed, give up */
+		mapi_destroy(mid);
+		return NULL;
+	}
+
 	return mid;
 }
 
@@ -2077,7 +2084,8 @@ mapi_mapiuri(
 	}
 	dbname = p;
 
-	free(mid->hostname);
+	if (mid->hostname)
+		free(mid->hostname);
 	mid->hostname = strdup(host);
 	mid->port = port;
 	if (mid->username != NULL)
@@ -2121,7 +2129,8 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 		return NULL;
 
 	if (host) {
-		free(mid->hostname);
+		if (mid->hostname)
+			free(mid->hostname);
 		mid->hostname = strdup(host);
 	}
 	if (port == 0) {
@@ -2284,8 +2293,8 @@ connect_to_server(Mapi mid)
 	{
 		struct hostent *hp;
 
-		hp = gethostbyname(mid->hostname);
-		if (hp == NULL) {
+		if (mid->hostname == NULL ||
+		    (hp = gethostbyname(mid->hostname)) == NULL) {
 			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s",
 					strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
@@ -2391,6 +2400,11 @@ mapi_start_talking(Mapi mid)
 		 * in the form of a comma separated list and in the variable
 		 * rest.  We try to use the strongest algorithm.
 		 */
+		if (rest == NULL) {
+			/* protocol violation, not enough fields */
+			mapi_setError(mid, "Not enough fields in challenge string", "mapi_start_talking", MERROR);
+			return mid->error;
+		}
 		hashes = rest;
 		hash = strchr(hashes, ':');	/* temp misuse hash */
 		if (hash) {
@@ -2667,23 +2681,23 @@ mapi_start_talking(Mapi mid)
 
 	/* consume the welcome message from the server */
 	hdl = mapi_new_handle(mid);
+	if (hdl == NULL)
+		return MERROR;
 	mid->active = hdl;
 	read_into_cache(hdl, 0);
 	if (mid->error) {
-		if (hdl) {
-			/* propagate error from result to mid
-			   mapi_close_handle clears the errors, so
-			   save them first */
-			char *errorstr = hdl->result ? hdl->result->errorstr : mid->errorstr;
-			MapiMsg error = mid->error;
+		/* propagate error from result to mid
+		   mapi_close_handle clears the errors, so
+		   save them first */
+		char *errorstr = hdl->result ? hdl->result->errorstr : mid->errorstr;
+		MapiMsg error = mid->error;
 
-			if (hdl->result)
-				hdl->result->errorstr = NULL;	/* clear these so errorstr doesn't get freed */
-			mid->errorstr = NULL;
-			mapi_close_handle(hdl);
-			mapi_setError(mid, errorstr, "mapi_start_talking", error);
-			free(errorstr);	/* now free it after a copy has been made */
-		}
+		if (hdl->result)
+			hdl->result->errorstr = NULL;	/* clear these so errorstr doesn't get freed */
+		mid->errorstr = NULL;
+		mapi_close_handle(hdl);
+		mapi_setError(mid, errorstr, "mapi_start_talking", error);
+		free(errorstr);	/* now free it after a copy has been made */
 		return mid->error;
 	}
 	if (hdl->result && hdl->result->cache.line) {
@@ -2886,7 +2900,8 @@ mapi_embedded_init(Mapi *midp, char *lang)
 	if (mid == NULL)
 		return NULL;
 	streams = malloc(2 * sizeof(*streams));
-	if (rendezvous_streams(&streams[0], &mid->to, "to server") == 0 ||
+	if (streams == NULL ||
+	    rendezvous_streams(&streams[0], &mid->to, "to server") == 0 ||
 	    rendezvous_streams(&mid->from, &streams[1], "from server") == 0) {
 		mapi_destroy(mid);
 		return NULL;
@@ -3151,6 +3166,8 @@ mapi_Xcommand(Mapi mid, char *cmdname, char *cmdvalue)
 		stream_flush(mid->tracelog);
 	}
 	hdl = prepareQuery(mapi_new_handle(mid), "Xcommand");
+	if (hdl == NULL)
+		return MERROR;
 	mid->active = hdl;
 	read_into_cache(hdl, 0);
 	mapi_close_handle(hdl);	/* reads away any output */
@@ -3183,6 +3200,8 @@ mapi_prepare(Mapi mid, const char *cmd)
 
 	mapi_check0(mid, "mapi_prepare");
 	hdl = mapi_new_handle(mid);
+	if (hdl == NULL)
+		return NULL;
 	mapi_prepare_handle(hdl, cmd);
 	return hdl;
 }
@@ -3212,6 +3231,8 @@ mapi_prepare_array(Mapi mid, const char *cmd, char **val)
 
 	mapi_check0(mid, "mapi_prepare_array");
 	hdl = mapi_new_handle(mid);
+	if (hdl == NULL)
+		return NULL;
 	mapi_prepare_handle(hdl, cmd);
 	mapi_prepare_array_internal(hdl, val);
 	return hdl;
@@ -3515,6 +3536,8 @@ mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp)
 	stream_flush(mid->to);
 	check_stream(mid, mid->to, "write error on stream", "mapi_stream_into", mid->error);
 	hdl = mapi_new_handle(mid);
+	if (hdl == NULL)
+		return MERROR;
 	mid->active = hdl;
 	rc = read_into_cache(hdl, 0);
 	if ((err = mapi_result_error(hdl)) != NULL)
@@ -4156,6 +4179,8 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 
 	mapi_check0(mid, "mapi_query_array");
 	hdl = mapi_prepare(mid, cmd);
+	if (hdl == NULL)
+		return NULL;
 	ret = hdl->mid->error;
 	if (ret == MOK)
 		ret = mapi_prepare_array_internal(hdl, val);
@@ -4250,6 +4275,8 @@ mapi_quick_query(Mapi mid, const char *cmd, FILE *fd)
 
 	mapi_check0(mid, "mapi_quick_query");
 	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	if (hdl == NULL)
+		return NULL;
 	ret = hdl->mid->error;
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
@@ -4268,6 +4295,8 @@ mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd)
 
 	mapi_check0(mid, "mapi_quick_query_array");
 	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	if (hdl == NULL)
+		return NULL;
 	ret = hdl->mid->error;
 	if (ret == MOK)
 		ret = mapi_prepare_array_internal(hdl, val);
@@ -4339,6 +4368,8 @@ mapi_cache_limit(Mapi mid, int limit)
 			return MERROR;
 		}
 		hdl = prepareQuery(mapi_new_handle(mid), "reply_size");
+		if (hdl == NULL)
+			return MERROR;
 		mid->active = hdl;
 		read_into_cache(hdl, 0);
 		mapi_close_handle(hdl);	/* reads away any output */

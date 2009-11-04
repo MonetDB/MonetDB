@@ -407,7 +407,7 @@ doChallenge(str cmd, stream *in, stream *out) {
 		bstream *bs;
 		int len = 0;
 
-		if ( buf == NULL){
+		if (buf == NULL){
 			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 			return;
 		}
@@ -476,7 +476,7 @@ SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
 	char *cmd = threadcommand;
-	SOCKET sock = *Sock;
+	SOCKET sock = Sock? *Sock : INVALID_SOCKET;
 
 	if ( Sock) GDKfree(Sock);
 	if( lastlistener < 8 )
@@ -859,11 +859,13 @@ then a starting !. They are all stripped here.
 		if( hdl && mapi_result_error(hdl))
 			err= mapi_result_error(hdl);
 		else err= mapi_result_error(SERVERsessions[i].hdl);
-		l= 2*strlen(err)+8192;
-		newerr= (str) alloca(l);
 
 		if (err == NULL)
 			err = "(no additional error message)";
+		
+		l= 2*strlen(err)+8192;
+		newerr= (str) alloca(l);
+		
 		f= newerr; 
 		/* I think this code tries to deal with multiple errors, this
 		 * will fail this way if it does, since no ! is in the error
@@ -922,6 +924,7 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 		if (err[0] == '!')
 			err = err + 1;
 		SERVERsessions[i].c = NULL;
+		mapi_destroy(mid);
 		throw(IO, "mapi.connect", "Could not connect: %s", err);
 	}
 

@@ -24,7 +24,7 @@ that ideally we would like to exploit the multi-cores to do that
 work in parallel.
 Complicating factors are the initial record offset, the
 possible variable length of the input, and the original sort order
-that should preferrable be maintained.
+that should preferable be maintained.
 
 The code below consists of a file reader, which breaks up the
 file into distinct lines/fields. Then multiple parallel threads 
@@ -123,7 +123,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		fmt->c[0]->T->nonil = 0;
 		ret = -1;
 	}
-	/* key maybe NULL but thats not a problem, as long as we have void */
+	/* key may be NULL but that's not a problem, as long as we have void */
 	if (fmt->raw){
 		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
 	} else {
@@ -429,17 +429,19 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		end = b->buf + b->len;
 		s = b->buf + b->pos;
 		*end = '\0';	/* this is safe, as the stream ensures an extra byte */
-		/* Note that we rescan from the start of a record (the last
-		   partial buffer from the previous iteration), even if in the
-		   previous iteration we have already established that there
-		   is no record separator in the first, perhaps significant,
-		   part of the buffer.  This is because if the record
-		   separator is longer than one byte, it is too complex
-		   (i.e. would require more state) to be sure what the state
-		   of the quote status is when we back off a few bytes from
-		   where the last scan ended (we need to back off some since
-		   we could be in the middle of the record separator).  If
-		   this is too costly, we have to rethink the matter. */
+		/* Note that we rescan from the start of a record (the
+		   last partial buffer from the previous iteration),
+		   even if in the previous iteration we have already
+		   established that there is no record separator in
+		   the first, perhaps significant, part of the buffer.
+		   This is because if the record separator is longer
+		   than one byte, it is too complex (i.e. would
+		   require more state) to be sure what the state of
+		   the quote status is when we back off a few bytes
+		   from where the last scan ended (we need to back off
+		   some since we could be in the middle of the record
+		   separator).  If this is too costly, we have to
+		   rethink the matter. */
 		e = s;
 		q = 0;
 		while (s < end && (maxrow < 0 || cnt < (BUN) maxrow) ) {
@@ -450,13 +452,16 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				task->limit += 10000;
 			}
 			/* tokenize the record completely
-			   the format of the input should comply to the following grammar rule 
-			    [ [[quote][[esc]char]*[quote]csep]*rsep]* 
-				where quote is a single user defined character
-				within the quoted fields a character may be escaped with a backslash
-				The user should supply the correct number of fields.
-				The algorithm performance a double scan to simplify rolling back
-				when the record received is incomplete.
+			   the format of the input should comply to
+			   the following grammar rule
+			    [ [[quote][[esc]char]*[quote]csep]*rsep]*
+			   where quote is a single user defined
+			   character within the quoted fields a
+			   character may be escaped with a backslash
+			   The user should supply the correct number
+			   of fields.  The algorithm performs a double
+			   scan to simplify rolling back when the
+			   record received is incomplete.
 			*/
 			if ( quote == 0) {
 				for ( ; *e ; e++)
@@ -536,7 +541,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	}
 	if (GDKdebug & GRPalgorithms) {
 		if (cnt < (BUN) maxrow   && maxrow > 0) 
-			/* providing a precise count is not always easy, instead consider maxrow as an upperbound */
+			/* providing a precise count is not always easy, instead consider maxrow as an upper bound */
 			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c[0]));
 		stream_printf(GDKout,"# COPY reader time " LLFMT "\n#",total);
 		for( i=0; i< as->nr_attrs; i++) 
@@ -564,3 +569,4 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 }
 
 #undef _DEBUG_TABLET_
+@

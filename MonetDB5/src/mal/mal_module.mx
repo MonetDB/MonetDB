@@ -533,7 +533,7 @@ int cmpFcnName(InstrPtr f, InstrPtr l){
 void dumpManual(stream *f, Module s, int recursive){
 	int j;
 	Symbol t;
-	str ps, lnk, hlp=0, op=0, endtag=0;
+	str ps, lnk, op=0, endtag=0;
 	InstrPtr sig;
 	Module list[256]; int k, top=0;
 
@@ -582,7 +582,6 @@ void dumpManual(stream *f, Module s, int recursive){
 			stream_printf(f,"    <implementation>%s</implementation>\n",xmlChr(lnk+1));
 			GDKfree(ps);
 			if(t->def->help){
-			    if(hlp && strcmp(hlp,t->def->help))
 			    stream_printf(f,"    <comment>%s</comment>\n",
 			        xmlChr(t->def->help));
 			}
@@ -913,10 +912,7 @@ char **getHelp(Module m, str inputpat, int completion)
 
 	if( fcnnme && *fcnnme){
 		len2 = strlen(fcnnme);
-	} else {
-		GDKfree(pat);
-		return msg;
-	}
+	} 
 
 	len1 = (int)strlen(modnme);
 
@@ -1054,11 +1050,10 @@ char **getHelpMatch(char *pat){
 				for(s= m->subscope[j]; s; s= s->peer)
 				if( strstr(m->name,pat) || strstr(s->name,pat) ||
 					(s->def->help && strstr(s->def->help,pat))) {
+					char *v,*w;
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
 					buf[0]=' ';
-					if( s->def->help) {
-						char *v,*w;
-						v= strchr(buf,0);
+					if( s->def->help && (v= strchr(buf,0)) ) {
 						*v++ = '\\';
 						*v++ = 'n';
 						*v++ = '#';

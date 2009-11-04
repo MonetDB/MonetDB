@@ -334,7 +334,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	str ret;
-	int keepAlive = stk->keepAlive;
+	int keepAlive = stk? stk->keepAlive: 0;
 
 	if(env && stk && stk->cmd!='f') stk->cmd = env->cmd ;
 
@@ -484,7 +484,8 @@ We rely on optimizing compilers to remove the redundant code.
 workslow:
 		if( cntxt->itrace || mb->trap  ) {
 			lng t=0;
-			if( stk->cmd== 0) stk->cmd= cntxt->itrace;
+			if( stk->cmd== 0)
+				stk->cmd= cntxt->itrace;
 			if( oldtimer)
 				t= GDKusec();
 			BBPTraceCall(cntxt,mb,stk,prevpc);

@@ -55,7 +55,6 @@ Event selector:
     r =block reads
     w =block writes
     b =bytes read/written
-    d =diskspace needed
     s =statement
 	p =pgfaults,cntxtswitches
 @end verbatim
@@ -119,16 +118,15 @@ static struct {
     /*  8  */  {'m', "memory", "uordblks", 0},
     /*  9  */  {'r', "reads","blk reads", 0},
     /*  0  */  {'w', "writes","blk writes", 0},
-    /*  1  */  {'b', "bytes", "rbytes", 0},
-    /*  2  */  {'b', "bytes", "wbytes", 0},
-    /*  3  */  {'d', "diskspace", "diskspace", 0},
-    /*  4  */  {'s', "statement", "statement", 2},
-    /*  5  */  {'p', "process","pg reclaim", 0},
-    /*  6  */  {'p', "process","pg faults", 0},
-    /*  7  */  {'p', "process","swaps", 0},
-    /*  8  */  {'p', "process","ctxt switch", 0},
-    /*  9  */  {'p', "process","inv switch", 0},
-    /*  0  */  {0, 0,  0, 0}
+    /*  1  */  {'b', "rbytes", "rbytes", 0},
+    /*  2  */  {'b', "wbytes", "wbytes", 0},
+    /*  3  */  {'s', "stmt", "stmt", 2},
+    /*  4  */  {'p', "process","pg reclaim", 0},
+    /*  5  */  {'p', "process","pg faults", 0},
+    /*  6  */  {'p', "process","swaps", 0},
+    /*  7  */  {'p', "process","ctxt switch", 0},
+    /*  8  */  {'p', "process","inv switch", 0},
+    /*  9  */  {0, 0,  0, 0}
 };
 
 static Mapi dbh;
@@ -165,7 +163,6 @@ usage(){
 	fprintf(stderr,"    r =block reads\n");
 	fprintf(stderr,"    w =block writes\n");
 	fprintf(stderr,"    b =bytes read/written\n");
-	fprintf(stderr,"    d =diskspace needed\n");
 	fprintf(stderr,"    s =statement\n");
 	fprintf(stderr,"    p =pg faults, cntxt switches\n");
 }

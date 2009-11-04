@@ -652,7 +652,8 @@ str
 optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr p;
-	int pc, qot = 0;
+	int pc;
+	int qot;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
 
@@ -668,6 +669,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			if (getModuleId(p) == optimizerRef && p->fcn) {
 				/* all optimizers should behave like patterns */
 				/* However, we don;t have a stack now */
+				qot++;
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
