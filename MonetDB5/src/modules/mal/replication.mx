@@ -114,7 +114,7 @@ The log records are stored in a file "dbfarm/db/master/log%05d-%05d" with the
 following structure:
 @verbatim
 function slave.tag1(transactionid:int,stamp:timestamp);
-  maste:r= "mapi:monetdb://gio.ins.cwi.nl:50000/dbmaster";
+  master:= "mapi:monetdb://gio.ins.cwi.nl:50000/dbmaster";
   slave.open(transactionid);
   tag1_b := bat.new(:oid,:int);
   ...
