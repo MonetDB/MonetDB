@@ -2362,7 +2362,7 @@ to discover if all the input BAT parameters are sorted or in sync. This
 may enable the use optimizations. Constants passed into the multiplex
 operator are a special case.
 @c
-#define RETURN(x)	tok=x; goto ready;
+#define RETURN(x)	do { tok=x; goto ready; } while (0)
 
 int
 TBL_multiplex_resolve(str name, int argc, ValPtr argv, monet_sig_t *sig, Cntxt stk)
