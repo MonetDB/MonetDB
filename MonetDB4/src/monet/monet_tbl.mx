@@ -2385,8 +2385,11 @@ TBL_multiplex_resolve(str name, int argc, ValPtr argv, monet_sig_t *sig, Cntxt s
 		if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
 			BAT *b = BATdescriptor(argv[i].val.bval);
 			int z = 0;
-			ptr p = ATOMnilptr(b->ttype);
+			ptr p;
 
+			if (b == NULL) /* shouldn't happen */
+				RETURN(TBL_RESOLVE_NOBAT);
+			p = ATOMnilptr(b->ttype);
 			if (b->ttype == TYPE_void) {
 				optimize_true = FALSE;
 			}
