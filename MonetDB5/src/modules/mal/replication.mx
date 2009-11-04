@@ -113,7 +113,7 @@ execution of the replication operations within the slave.
 The log records are stored in a file "dbfarm/db/master/log%05d-%05d" with the 
 following structure:
 @verbatim
-function slave.tag1(transactionid:int,stamp:timestamp);
+function slave.tag1(transactionid:int,stamp:timestamp):str;
   master:= "mapi:monetdb://gio.ins.cwi.nl:50000/dbmaster";
   slave.open(transactionid);
   tag1_b := bat.new(:oid,:int);
@@ -123,9 +123,10 @@ function slave.tag1(transactionid:int,stamp:timestamp);
   sql.append("schema","table","col",tag1_b,tag);
   slave.close(transactionid);
   sql.commit();
+  return tag1:= "tag1";
 end tag1;
-slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
-slave.drop("tag1");
+fcn:= slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
+slave.drop(fcn);
 @end verbatim
 
 The master identity is passed along to differentiate masters later.
@@ -399,6 +400,7 @@ MASTERprelude(int *ret){
 		return MAL_SUCCEED;
 	}
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
+	stream_printf(GDKout,"#Replication mode enabled\n");
 	
 	/* find the bounds for the last replication log file */
 	/* assume directory is sorted */
@@ -485,7 +487,7 @@ str MASTERopen(int *ret)
 	/* prepare the MAL redo record */
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
-			     "function slave.tag_%d(tag:oid,stamp:timestamp);\n"
+			     "function slave.tag_%d(tag:oid,stamp:timestamp):str;\n"
 			     "sql.transaction();\n"
 			     "slave.open(tag);\n",
 			     fcnTag)) == len) {
@@ -519,16 +521,21 @@ str MASTERclose(int *ret, int *tag)
 	mal_set_lock(repLck, "replication");
 	MTIMEepoch(&stamp);
 	ATOMformat(TYPE_timestamp, (ptr) & stamp, &val);
-	snprintf(buf, BUFSIZ, "tag_%d", *tag);
+	snprintf(buf,BUFSIZ,"tag_%d", *tag);
 
+	/* the function name is returned by the slave to built
+	   a flow dependency. Otherwise the function could be
+	   destroyed while execution it.
+	*/
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
 			     "slave.close(tag);\n"
 			     "sql.commit();\n"
+				 "return %s :=\"%s\";\n"
 			     "end tag_%d;\n"
-			     "slave.tag_%d(%d:oid,\"%s\":timestamp);\n"
-			     "slave.drop(\"%s\");\n",
-			     endTag, *tag, *tag, val, buf)) == len) {
+			     "fcn:=slave.tag_%d(%d:oid,\"%s\":timestamp);\n"
+			     "slave.drop(fcn);\n",
+			      buf,buf, endTag, *tag, *tag, val)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL){
 			mal_unset_lock(repLck, "replication");
@@ -1108,13 +1115,14 @@ SLAVEprelude(int *ret)
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout, "#initialize slave\n");
 #endif
-	/* to be called after MASTERprelude */
+	/* to be called after MASTERprelude 
 	if ( GDKgetenv("replication_slave") != NULL) {
 		mal_set_lock(repLck, "replication");
 		SLAVEinitLog();
 		mal_unset_lock(repLck, "replication");
 		SLAVEsyncDefault(ret);
 	}
+*/
 	(void)ret;
 	return MAL_SUCCEED;
 }
