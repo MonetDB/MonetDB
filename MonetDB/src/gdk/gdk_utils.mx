@@ -2072,6 +2072,7 @@ GDKclrerr(void)
 		*buf = 0;
 }
 
+/* coverity[+kill] */
  /*VARARGS*/ int
 GDKfatal(const char *format, ...)
 {
