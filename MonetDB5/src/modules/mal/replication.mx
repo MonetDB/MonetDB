@@ -80,13 +80,13 @@ modifications made to a query plan.
 
 @verbatim
 function query():void
-  tag:= master.open();
+  fcnid:= master.open();
   ...
   sql.append("schema","table","col",b:[:oid,:int]);
   master.append("schema","table","col",b,tag);
   ...
   t := mtime.current_timestamp();
-  master.close();
+  master.close(fcnid,t);
 end query;
 @end verbatim
 
@@ -97,17 +97,17 @@ the end of the query block. This separates the concurrent
 actions on the database at the master and leads to a serial
 execution of the replication operations within the slave.
 
-The log records are stored in a file "dbfarm/db/master/log_%d" with the 
+The log records are stored in a file "dbfarm/db/master/log%05d-%05d" with the 
 following structure:
 @verbatim
-function slave.tag1(tag:int,stamp:timestamp);
-  slave.open(tag,stamp);
+function slave.tag1(transactionid:int,stamp:timestamp);
+  slave.open(transactionid,stamp);
   tag1_b := bat.new(:oid,:int);
   ...
   bat.insert(tag1_b,3:oid,232:int); #example update
   ...
   sql.append("schema","table","col",tag1_b,tag);
-  slave.close(tag,stamp);
+  slave.close(transactionid,stamp);
   sql.commit();
 end tag1;
 slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
@@ -122,6 +122,8 @@ which should lead to the same optimistic transactional behavior.
 All queries are considered running in auto-commit mode, because
 the SQL frontend does not provide the hook (yet) for better transaction
 boundary control.
+The transaction identifier is part of the call to the function
+with the transaction update details.
 
 @- Interaction protocol
 The master node simply waits for a slave to request the
@@ -213,7 +215,7 @@ address SLAVEopen
 comment "Marks the start of a replication record. It checks the replicas
 table for existence of the tag. If so, it aborts the attempt to reapply.";
 
-command close(uri:str, tag:int, d:timestamp)
+command close(tag:int, d:timestamp)
 address SLAVEclose
 comment "End of replication record. Add the tag to the replicas table
 using the SQL transaction semantics. To be extended with the reason for
@@ -273,7 +275,7 @@ replication_export str MASTERprelude(int *ret);
 replication_export str MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 replication_export str SLAVEopen(int *ret, int *tag, timestamp *t);
-replication_export str SLAVEclose(int *ret, str *str, int *tag, timestamp *t);
+replication_export str SLAVEclose(int *ret, int *tag, timestamp *t);
 replication_export str SLAVEdrop(int *ret, str *tag);
 replication_export str SLAVEprelude(int *ret);
 #endif /* _REPLICATOR_H */
@@ -305,39 +307,38 @@ static struct MASTERRECORD {
 } *master;
 static int mtop = 0;
 static int mlimit = 0;
-static MT_Lock repLck;
-static int startTag = 0;
-static int endTag = 0;
+
+static MT_Lock repLck;	
+
+/* Master log file properties */
+static int startTag = 0;	/* current transaction file bounds */
+static int endTag = 0;		/* last transaction identifier given */
+static int fcnTag = 0;		/* unique labeling of the functions */
 static char logFile[PATHLENGTH]; 
 static stream *repFile;
 
-/*
 static int 
-MASTERfindLogFile(int t){
+MASTERfindLogFile(char logFile[PATHLENGTH], int transactionid){
 	int btag, etag;
 	DIR *dirp;
 	struct dirent *dent;
 
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#find the log file containing %d\n", t);
+	stream_printf(GDKout,"#find the log file containing %d\n", transactionid);
 #endif
 	if (repFile)
 		stream_close(repFile);
 	dirp= opendir(MASTER);
 	if (dirp == NULL)
-		return 0 ;
+		return  -1 ;
 	while ((dent = readdir(dirp)) != NULL) 
-		if ( sscanf(dent->d_name,"log%d-%d",&btag,&etag) == 2 && btag <= t && t<etag  ){
-			strcpy(logFile,dent->d_name);
-			repFile = open_rstream(dent->d_name);
-#ifdef _DEBUG_REPLICATION_
-			stream_printf(GDKout,"#log file log%05d-%05d\n", btag,etag);
-#endif
-			break;
+		if ( sscanf(dent->d_name,"log%d-%d",&btag,&etag) == 2 && btag <= transactionid && transactionid<etag  ){
+			snprintf(logFile, PATHLENGTH,"%s%s",MASTER, dent->d_name);
+			slash_2_dir_sep(logFile);
+			return etag;
 		}
-	return repFile != NULL;
+	return -1;
 }
-*/
 
 /* The replication log file contains a number of log functions.
  * When the limit is reached, we switch to a new file
@@ -347,15 +348,17 @@ MASTERincrement()
 {
 	char buf[PATHLENGTH];
 
-	endTag++;
+	endTag++;	/* assign a new transaction identifier */
 	snprintf(buf, PATHLENGTH, MASTER REPLICA, startTag, endTag);
 	slash_2_dir_sep(buf);
 	if (strcmp(logFile,buf) )
 		rename(logFile,buf);
 	strcpy(logFile,buf);
+	/* once in a while we take a new log file */
 	if ( endTag - startTag >= REPLICABLOCK){
 		if ( repFile) 
 			stream_close(repFile);
+		repFile = NULL;
 	}
 	if ( repFile == NULL)
 		repFile = open_wastream(buf);
@@ -382,6 +385,7 @@ MASTERprelude(int *ret){
 		stream_printf(GDKout,"#Clear old log files\n");
 #endif
 		GDKremovedir(MASTER);
+		mal_unset_lock(repLck, "replication");
 		return MAL_SUCCEED;
 	}
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
@@ -389,8 +393,10 @@ MASTERprelude(int *ret){
 	/* find the bounds for the last replication log file */
 	/* assume directory is sorted */
 	dirp= opendir(MASTER);
-	if (dirp == NULL)
+	if (dirp == NULL) {
+		mal_unset_lock(repLck, "replication");
 		return MAL_SUCCEED;
+	}
 	while ((dent = readdir(dirp)) != NULL) {
 		if ( sscanf(dent->d_name,"log%d-%d",&tag,&etag) == 2 && tag >= startTag && etag<= endTag){
 			startTag= tag;
@@ -464,19 +470,15 @@ str MASTERopen(int *ret)
 
 	mal_set_lock(repLck, "replication");
 	/* get a replica buffer */
-	if (repFile == NULL && MASTERincrement() ){
-		mal_unset_lock(repLck, "replication");
-		throw(MAL, "replication.open", RUNTIME_FILE_NOT_FOUND);
-	}
 
-	i = MASTERgetBuffer(endTag);
+	i = MASTERgetBuffer(fcnTag);
 	/* prepare the MAL redo record */
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
 			     "function slave.tag_%d(tag:int,stamp:timestamp);\n"
 			     "sql.transaction();\n"
 			     "slave.open(tag,stamp);\n",
-			     endTag)) == len) {
+			     fcnTag)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL)
 			throw(MAL, "replication.open", MAL_MALLOC_FAIL);
@@ -487,10 +489,14 @@ str MASTERopen(int *ret)
 	master[i].buf[master[i].top] = 0;
 	mal_unset_lock(repLck, RUNTIME_STREAM_FAILED);
 
-	*ret = endTag;
+	*ret = fcnTag++;
 	return MAL_SUCCEED;
 }
 
+/*
+ * Upon closure of the transaction, we assign the transaction identifier
+ * and reflect it in the log file name as well.
+*/
 str MASTERclose(int *ret, int *tag)
 {
 	timestamp stamp = *timestamp_nil;
@@ -512,14 +518,18 @@ str MASTERclose(int *ret, int *tag)
 			     "end tag_%d;\n"
 			     "slave.tag_%d(%d,\"%s\":timestamp);\n"
 			     "slave.drop(\"%s\");\n",
-			     *tag, *tag, *tag, val, buf)) == len) {
+			     endTag, *tag, *tag, val, buf)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if (master[i].buf == NULL)
+		if (master[i].buf == NULL){
+			mal_unset_lock(repLck, "replication");
 			throw(MAL, "replication.close", MAL_MALLOC_FAIL);
+		}
 	}
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
 	GDKfree(val);
+
+	MASTERincrement();
 	stream_printf(repFile, "%s", master[i].buf);
 	stream_flush(repFile);
 	master[i].buf[0] = 0;
@@ -528,10 +538,6 @@ str MASTERclose(int *ret, int *tag)
 	if (stream_errnr(repFile)) {
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "replication.close", RUNTIME_STREAM_FAILED);
-	}
-	if (endTag % REPLICABLOCK == 0) {
-		close_stream(repFile);
-		repFile = NULL;
 	}
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
@@ -776,34 +782,32 @@ MASTERsend(void *arg)
 {
 	int idx = * (int*) arg;
 	int tag = masterstatus[idx].tag;
-	int btag, etag, et, resent=0;
-	DIR *dirp;
-	struct dirent *dent;
+	int nxt, master;
+	int etag, et, resent=0;
 	stream *s;
 	bstream *bs;
 	MapiHdl hdl;
+	char logFile[PATHLENGTH];
 
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#send the log file starting at %d\n", tag);
+	stream_printf(GDKout,"#send the log file starting at transaction id %d\n", tag);
 #endif
 	/* find the last replication log file */
-	dirp= opendir(MASTER);
-	if (dirp == NULL)
-		return ;
+	master = GDKgetenv_istrue("replication_master") &&
+			 GDKgetenv("replication_slave") == NULL;
+	if ( !master)
+		return;
 
-	/* initialize the sql environment */
+	/* re-initialize the sql environment */
 	hdl = mapi_query(masterstatus[idx].m, "include sql;sql.init();");
-	while ((dent = readdir(dirp)) != NULL) {
-		if ( sscanf(dent->d_name,"log%d-%d",&btag,&etag) != 2 || tag < btag )
-			continue;
-		et= endTag;
-    
+	if ( hdl == NULL)
+		return;
+
+	while ( (nxt = MASTERfindLogFile(logFile,tag)) >= 0){
 #ifdef _DEBUG_REPLICATION_
-		stream_printf(GDKout,"#sent log file log%05d-%05d\n", btag,etag);
+		stream_printf(GDKout,"#sent log file %s\n",logFile);
 #endif
 
-		snprintf(logFile, PATHLENGTH, "%s%s",MASTER , dent->d_name);
-		slash_2_dir_sep(logFile);
 		s = open_rastream(logFile);
 		if (s == NULL || stream_errnr(s) ) {
 			if (s )
@@ -826,23 +830,21 @@ MASTERsend(void *arg)
 		close_stream(s);
 		if (hdl == NULL || mapi_error(masterstatus[idx].m) != MOK) 
 			break;
-		if ( hdl )
-			continue;
-	} 
+		tag = nxt;
 @-
 Upon succesful transmission we wait for new stuff
 @c
-	if ( tag == startTag) {
-		/* we have the last file */
-		while( et == endTag ) 
-			MT_sleep_ms(REPLICADELAY);
-		resent++;
-		if ( resent > REPLICABLOCK){
-		}
-		tag= et;
-	} else 
-		tag= etag;
-	/* and resent it */
+		if ( tag == startTag) {
+			/* we have the last file */
+			while( et == endTag ) 
+				MT_sleep_ms(REPLICADELAY);
+			resent++;
+			if ( resent > REPLICABLOCK){
+			}
+			tag= et;
+		} else 
+			tag= etag;
+	} 
 
 #ifdef _DEBUG_REPLICATION_
 	printf("#replay thread finished \n");
@@ -990,10 +992,9 @@ str SLAVEopen(int *ret, int *tag, timestamp *t)
 	throw(MAL, "slave.open", "Operation ignored, defined in SQL context");
 }
 
-str SLAVEclose(int *ret, str *uri, int *tag, timestamp *t)
+str SLAVEclose(int *ret, int *tag, timestamp *t)
 {
 	(void)ret;
-	(void)uri;
 	(void)tag;
 	(void)t;
 	throw(MAL, "slave.close", "Operation ignored, defined in SQL context");
@@ -1040,6 +1041,9 @@ str
 SLAVEprelude(int *ret)
 {
 	/*nothing yet */
+#ifdef _DEBUG_REPLICATION_
+	stream_printf(GDKout, "#initialize slave\n");
+#endif
 	(void)ret;
 	return MAL_SUCCEED;
 }
