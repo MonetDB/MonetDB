@@ -713,26 +713,6 @@ comment "return the densely ranked bat";
 command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
 address ALGexist;
 
-function slave.open(tag:int, t:timestamp):bit;
-    X4:bat[:oid,:int]  := sql.bind("sys","replicas","tag",0);
-	X5 := bat.reverse(X4);
-	c1 := algebra.exist(X5,tag);
-	sql.assert(c1, "Ignoring replay of transaction");
-    X13:bat[:oid,:int]  := sql.bind("sys","replicas","tag",1);
-	X14 := bat.reverse(X13);
-	c1 := algebra.exist(X14,tag);
-	sql.assert(c1, "Ignoring replay of transaction");
-	return open:= true;
-end slave.open;
-
-function slave.close(uri:str, tag:int, t:timestamp):bit;
-    sql.append("sys","replicas","uri",uri);
-    sql.append("sys","replicas","tag",tag);
-    sql.append("sys","replicas","stamp",t);
-    sql.append("sys","replicas","remark",nil);
-	return close:= true;
-end slave.close;
-
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
 	x := algebra.mark_grp(a,g,1:oid);
 	return mark_grp:= batcalc.int(x);
