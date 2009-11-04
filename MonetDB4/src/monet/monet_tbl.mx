@@ -2206,46 +2206,44 @@ TBL_search(str s, int *t, int guess_if_notfound, int cur_is_ident, int no_comman
 	char *assignop = NULL, *name = s, *ret = 0;
 	Client c = ll_client;
 	BUN p;
+	BATiter cfi;
 
+	assert(name != NULL);
 	TBL_set_readlock();
-	if (name != NULL) {
-		p = BUNfnd(c->atomtbl, name);
-		if (p != BUN_NONE) {
-			BATiter atomtbli = bat_iterator(c->atomtbl);
-			int tpe = *((int *) BUNtail(atomtbli, p));
-			str atm = BATatoms[tpe].name;
+	p = BUNfnd(c->atomtbl, name);
+	if (p != BUN_NONE) {
+		BATiter atomtbli = bat_iterator(c->atomtbl);
+		int tpe = *((int *) BUNtail(atomtbli, p));
+		str atm = BATatoms[tpe].name;
 
-			strcpy(s, atm);
-			*t = TOK_ATOM;
-			TBL_unset_readlock();
-			return atm;
-		}
-#ifdef MKMODS
-		p = TEMsearch(t);
-		if (p != BUN_NONE) {
-			*t = TOK_TRG;
-			TBL_unset_readlock();
-			return s;
-		}
-#endif
+		strcpy(s, atm);
+		*t = TOK_ATOM;
+		TBL_unset_readlock();
+		return atm;
 	}
+#ifdef MKMODS
+	p = TEMsearch(t);
+	if (p != BUN_NONE) {
+		*t = TOK_TRG;
+		TBL_unset_readlock();
+		return s;
+	}
+#endif
 
       again:
-	if (name != NULL) {
-		BATiter cfi = bat_iterator(c->fcntbl);
+	cfi = bat_iterator(c->fcntbl);
 
-		p = BUNfnd(c->fcntbl, name);
-		if (p != BUN_NONE) {
-			oid fid = *((oid *) BUNtail(cfi, p));
-			*t = *(int*)BUNtailfnd(TBL_fcn_tpe, &fid);
+	p = BUNfnd(c->fcntbl, name);
+	if (p != BUN_NONE) {
+		oid fid = *((oid *) BUNtail(cfi, p));
+		*t = *(int*)BUNtailfnd(TBL_fcn_tpe, &fid);
 
-			if (*t == TOK_BUILTIN) {
-				ret = (char *) *(ptr*)BUNtailfnd(TBL_fcn_imp, &fid);
-			} else if (no_command == 0 && (cur_is_ident == 0 || (next_is_ident == 0 || *t == TOK_OPERATOR0 || *t == TOK_OPERATOR || *t == TOK_OPERATOR1))) {
-				/* we refuse only if we know the following cannot be a command
-				   or if we see a command followed by an identifier */
-				ret = BUNhvar(cfi, p);
-			}
+		if (*t == TOK_BUILTIN) {
+			ret = (char *) *(ptr*)BUNtailfnd(TBL_fcn_imp, &fid);
+		} else if (no_command == 0 && (cur_is_ident == 0 || (next_is_ident == 0 || *t == TOK_OPERATOR0 || *t == TOK_OPERATOR || *t == TOK_OPERATOR1))) {
+			/* we refuse only if we know the following cannot be a command
+			   or if we see a command followed by an identifier */
+			ret = BUNhvar(cfi, p);
 		}
 	}
 @-
@@ -2260,6 +2258,8 @@ We recognize '+=' (and similar for other operators than +) as an TOK_ASSIGNOP.
 		}
 	} else if (ret == NULL && name[strlen(name) - 1] == '=') {
 		name = assignop = GDKstrdup(*name == ':' ? name + 1 : name);
+		if (assignop == NULL)
+			return NULL;
 		name[strlen(name) - 1] = 0;
 		goto again;
 	}
