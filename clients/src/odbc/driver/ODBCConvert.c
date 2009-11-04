@@ -1175,7 +1175,7 @@ ODBCFetch(ODBCStmt *stmt,
 
 		default:
 		case SQL_CHAR:
-			copyString(data, ptr, buflen, lenp, SQLINTEGER, addStmtError, stmt);
+			copyString(data, ptr, buflen, lenp, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
 			break;
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
