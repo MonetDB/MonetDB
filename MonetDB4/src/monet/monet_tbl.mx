@@ -2492,7 +2492,12 @@ and store the results in resp. sig->array\_opt and sig->merge\_opt.
 @c
 	if (sig->special) {
 		optimize = optimize_true;
-	} else if (tok != TOK_PROC && sig->fast_fcn && argc <= 3 && (BATatoms[sig->ret_tpe].atomFix == NULL) && sig->ret_tpe > TYPE_void && ATOMvarsized(sig->ret_tpe) == 0) {
+	} else if (tok != TOK_PROC &&
+		   sig->fast_fcn &&
+		   argc <= 3 &&
+		   sig->ret_tpe > TYPE_void &&
+		   BATatoms[sig->ret_tpe].atomFix == NULL &&
+		   ATOMvarsized(sig->ret_tpe) == 0) {
 		str t_argv[1 + MAXPARAMS];
 		int t_argc = TBL_getparams((ptr) sig->pack_fcn, t_argv);
 
