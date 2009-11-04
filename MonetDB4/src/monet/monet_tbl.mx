@@ -1469,12 +1469,18 @@ TBL_fathercopy(Client client, Client father, str nme)
 		Variable n = VARnew(client->stk, v->name);
 		BAT *o = BATdescriptor(v->binding.val.bval);
 
+		if (o == NULL) {
+			GDKerror("TBL_fathercopy: BAT %d not found\n", v->binding.val.bval);
+			return NULL;
+		}
 		n->constant = TRUE;
 		n->frozen = TRUE;
 		n->binding.vtype = TYPE_bat;
 		b = BATcopy(o, o->htype, o->ttype, TRUE);
-		BBPincref(b->batCacheid, TRUE);
 		BBPdecref(o->batCacheid, FALSE);
+		if (b == NULL)
+			return NULL;
+		BBPincref(b->batCacheid, TRUE);
 		n->binding.val.bval = b->batCacheid;
                 tbl_rename(client, b, nme);
 	} else {
