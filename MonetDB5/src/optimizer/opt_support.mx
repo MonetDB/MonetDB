@@ -653,7 +653,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr p;
 	int pc;
-	int qot;
+	int qot = 0;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
 
