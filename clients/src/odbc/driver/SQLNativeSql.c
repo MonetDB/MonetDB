@@ -50,7 +50,7 @@ SQLNativeSql_(ODBCStmt *stmt,
 {
 	char *query;
 
-	fixODBCstring(szSqlStrIn, cbSqlStrIn, SQLINTEGER, addStmtError, stmt);
+	fixODBCstring(szSqlStrIn, cbSqlStrIn, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
 
 	if (szSqlStrIn == NULL) {
 		/* Invalid use of null pointer */

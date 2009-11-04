@@ -57,9 +57,9 @@ SQLProcedures_(ODBCStmt *stmt,
 	char *query_end;
 
 	/* convert input string parameters to normal null terminated C strings */
-	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
-	fixODBCstring(szProcName, nProcNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(szProcName, nProcNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",

@@ -55,10 +55,10 @@ SQLProcedureColumns_(ODBCStmt *stmt,
 		     SQLCHAR *szColumnName,
 		     SQLSMALLINT nColumnNameLength)
 {
-	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
-	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
-	fixODBCstring(szProcName, nProcNameLength, SQLSMALLINT, addStmtError, stmt);
-	fixODBCstring(szColumnName, nColumnNameLength, SQLSMALLINT, addStmtError, stmt);
+	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(szProcName, nProcNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+	fixODBCstring(szColumnName, nColumnNameLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, (char*)szCatalogName, nSchemaNameLength, (char*)szSchemaName, nProcNameLength, (char*)szProcName, nColumnNameLength, (char*)szColumnName);

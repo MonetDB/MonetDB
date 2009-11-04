@@ -61,7 +61,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
  * accordingly.  If str == NULL, set len to 0.
  * We can still make a distinction between str = "", len = 0 and str = NULL.
  */
-#define fixODBCstring(str, len, lent, errfunc, hdl)				\
+#define fixODBCstring(str, len, lent, errfunc, hdl, ret)		\
 	do {								\
 		if (str == NULL)					\
 			len = 0;					\
@@ -73,7 +73,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 		} else if (len < 0) {					\
 			/* Invalid string or buffer length */		\
 			errfunc(hdl, "HY090", NULL, 0);			\
-			return SQL_ERROR;				\
+			ret;						\
 		}							\
 	} while (0)
 

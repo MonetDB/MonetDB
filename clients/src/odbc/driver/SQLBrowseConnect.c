@@ -70,7 +70,7 @@ SQLBrowseConnect_(ODBCDbc *dbc,
 	int allocated = 0;
 	SQLRETURN rc;
 
-	fixODBCstring(szConnStrIn, cbConnStrIn, SQLSMALLINT, addDbcError, dbc);
+	fixODBCstring(szConnStrIn, cbConnStrIn, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG(" \"%.*s\"\n", (int) cbConnStrIn, (char*) szConnStrIn);

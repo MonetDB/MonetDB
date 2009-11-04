@@ -66,17 +66,17 @@ SQLForeignKeys_(ODBCStmt *stmt,
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
 	fixODBCstring(szPKCatalogName, nPKCatalogNameLength, SQLSMALLINT,
-		      addStmtError, stmt);
+		      addStmtError, stmt, return SQL_ERROR);
 	fixODBCstring(szPKSchemaName, nPKSchemaNameLength, SQLSMALLINT,
-		      addStmtError, stmt);
+		      addStmtError, stmt, return SQL_ERROR);
 	fixODBCstring(szPKTableName, nPKTableNameLength, SQLSMALLINT,
-		      addStmtError, stmt);
+		      addStmtError, stmt, return SQL_ERROR);
 	fixODBCstring(szFKCatalogName, nFKCatalogNameLength, SQLSMALLINT,
-		      addStmtError, stmt);
+		      addStmtError, stmt, return SQL_ERROR);
 	fixODBCstring(szFKSchemaName, nFKSchemaNameLength, SQLSMALLINT,
-		      addStmtError, stmt);
+		      addStmtError, stmt, return SQL_ERROR);
 	fixODBCstring(szFKTableName, nFKTableNameLength, SQLSMALLINT,
-		      addStmtError, stmt);
+		      addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODCBDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",

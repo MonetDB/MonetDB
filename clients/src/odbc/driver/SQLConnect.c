@@ -83,7 +83,7 @@ SQLConnect_(ODBCDbc *dbc,
 	}
 
 	/* convert input string parameters to normal null terminated C strings */
-	fixODBCstring(szDataSource, nDataSourceLength, SQLSMALLINT, addDbcError, dbc);
+	fixODBCstring(szDataSource, nDataSourceLength, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 	if (nDataSourceLength > 0)
 		dsn = dupODBCstring(szDataSource, (size_t) nDataSourceLength);
 
@@ -91,7 +91,7 @@ SQLConnect_(ODBCDbc *dbc,
 		n = SQLGetPrivateProfileString(dsn, "uid", "monetdb", uid, sizeof(uid), "odbc.ini");
 	else
 		n = 0;
-	fixODBCstring(szUID, nUIDLength, SQLSMALLINT, addDbcError, dbc);
+	fixODBCstring(szUID, nUIDLength, SQLSMALLINT, addDbcError, dbc, if (dsn) free(dsn); return SQL_ERROR);
 	if (n == 0 && nUIDLength == 0) {
 		if (dsn)
 			free(dsn);
@@ -109,7 +109,7 @@ SQLConnect_(ODBCDbc *dbc,
 		n = SQLGetPrivateProfileString(dsn, "pwd", "monetdb", pwd, sizeof(pwd), "odbc.ini");
 	else
 		n = 0;
-	fixODBCstring(szPWD, nPWDLength, SQLSMALLINT, addDbcError, dbc);
+	fixODBCstring(szPWD, nPWDLength, SQLSMALLINT, addDbcError, dbc, if (dsn) free(dsn); return SQL_ERROR);
 	if (n == 0 && nPWDLength == 0) {
 		if (dsn)
 			free(dsn);
