@@ -2189,7 +2189,7 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 		char *name = lt->yyval.val.sval;
 
 		/* Try all iterators by that name.  */
-		if (!(cmd = (int (*)(int, ValRecord *)) TBL_iterator(stk, name, argc + 1, argv))) {
+		if (name == NULL || (cmd = (int (*)(int, ValRecord *)) TBL_iterator(stk, name, argc + 1, argv)) == NULL) {
 			char *signatures = (char *) alloca(8192);
 
 			if (name)
