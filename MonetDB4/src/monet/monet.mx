@@ -425,6 +425,7 @@ monet_hello(stream *out)
 The client threads are already killed upon closing their input file.
 The server process interpreter is directly killed.
 @c
+/* coverity[+kill] */
 void
 monet_exit(int status)
 {
