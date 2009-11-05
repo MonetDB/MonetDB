@@ -452,6 +452,9 @@ pattern dump_trace() :bat[:str,:bat]
 address dump_trace
 comment "dump the trace statistics";
 
+pattern dump_slave() :bat[:str,:bat]
+address dump_slave
+comment "Dump the status of the slave synchronization";
 @- SQL function aliases
 The code generate should identify the precise module
 target for all functions. This creates quite some
@@ -1165,6 +1168,7 @@ First introduce the routines to be called by the front-end.
 #include <rel_bin.h>
 #include <math.h>
 #include <cluster.h>
+#include <replication.h>
 #ifdef HAVE_MONETDB5_RDF
 	#include <rdf/rdf.h>
 #endif
@@ -3963,6 +3967,23 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 	t= TRACEtable();
+	*r = t->batCacheid;
+	BBPkeepref(*r);
+	return MAL_SUCCEED;
+}
+
+/* str slave(int *r); */
+str
+dump_slave(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	BAT *t;
+	int *r = (int *) getArgReference(stk, pci, 0);
+
+	if (msg)
+		return msg;
+	t= SLAVEtable();
 	*r = t->batCacheid;
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
