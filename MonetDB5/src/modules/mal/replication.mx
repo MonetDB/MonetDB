@@ -235,7 +235,7 @@ address SLAVEclose
 comment "End of replication record. Add the time stamp op completion
 to the slave log.";
 
-command drop(fcnname:str)
+command drop{unsafe}(fcnname:str)
 address SLAVEdrop
 comment "Remove the replica function from the module";
 
@@ -491,10 +491,9 @@ str MASTERopen(int *ret)
 	len = master[i].limit - master[i].top - 1;
 	master[i].fcn = fcnTag;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
-			     "function slave.tag_%d(tag:oid,stamp:timestamp):str;\n"
+			     "function slave.tag_%d{unsafe}(tag:oid,stamp:timestamp);\n"
 			     "sql.transaction();\n"
-			     "slave.open(tag);\n",
-			     fcnTag)) == len) {
+			     "slave.open(tag);\n",fcnTag)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL)
 			throw(MAL, "replication.open", MAL_MALLOC_FAIL);
@@ -535,11 +534,10 @@ str MASTERclose(int *ret, int *tag)
 	while ((l = snprintf(master[i].buf + master[i].top, len,
 			     "sql.commit();\n"
 			     "slave.close(tag,stamp);\n"
-				 "return %s :=\"%s\";\n"
-			     "end tag_%d;\n"
-			     "fcn:=slave.tag_%d(%d:oid,\"%s\":timestamp);\n"
-			     "slave.drop(fcn);\n",
-			      buf,buf, master[i].fcn, master[i].fcn, endTag, val)) == len) {
+			     "end %s;\n"
+			     "slave.%s(%d:oid,\"%s\":timestamp);\n"
+			     "slave.drop(\"%s\");\n",
+			      buf,buf, endTag, val,buf)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL){
 			mal_unset_lock(repLck, "replication");
@@ -1103,6 +1101,12 @@ BAT *
 SLAVEtable(void){
 	BAT *t;
 	t = BATnew(TYPE_str,TYPE_bat,4);
+	if ( t == NULL)
+		return NULL;
+	if ( slavecommit == NULL ||
+		 slavevalid == NULL ||
+		 slaveerror == NULL)
+		return t;
 	BUNins(t,"commit",&slavecommit->batCacheid,FALSE);
 	BUNins(t,"valid",&slavevalid->batCacheid,FALSE);
 	BUNins(t,"error",&slaveerror->batCacheid,FALSE);

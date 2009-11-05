@@ -20,6 +20,7 @@ mclient -lsql -d dbmaster -s "select * from tmp;"
 
 # may be some delay in the propagation
 # because master need to flush the file again.
+sleep 10
 mclient -lsql -d dbslave -s "select * from tmp;"
 mclient -lsql -d dbslave -s "select * from slavelog();"
 
