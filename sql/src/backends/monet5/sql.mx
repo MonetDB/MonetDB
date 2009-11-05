@@ -3984,6 +3984,9 @@ dump_slave(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 	t= SLAVEtable();
+	if ( t == NULL || BATcount(t) == 0)
+		throw(ILLARG, "sql.slavelog","tables not initialized");
+
 	*r = t->batCacheid;
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
