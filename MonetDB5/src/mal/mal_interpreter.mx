@@ -334,8 +334,11 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	str ret;
-	int keepAlive = stk? stk->keepAlive: 0;
+	int keepAlive;
 
+	if (stk == NULL)
+		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
+	keepAlive = stk->keepAlive;
 	if(env && stk && stk->cmd!='f') stk->cmd = env->cmd ;
 
 	ret = runMALsequence(cntxt, mb, startpc,  stoppc, stk, env, pcicaller);
@@ -439,6 +442,8 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 #endif
 	@:performanceVariables@
 
+	if (stk == NULL)
+		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	if( cntxt->flags & timerFlag)
 		oldtimer= cntxt->timer= GDKusec();
 	oldMemory.arena= 0;
@@ -484,6 +489,7 @@ We rely on optimizing compilers to remove the redundant code.
 workslow:
 		if( cntxt->itrace || mb->trap  ) {
 			lng t=0;
+
 			if( stk->cmd== 0)
 				stk->cmd= cntxt->itrace;
 			if( oldtimer)
@@ -805,6 +811,9 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #endif
 	@:performanceVariables@
 
+	if (stk == NULL)
+		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
+		
 	pci = getInstrPtr(flow->mb, stkpc);
 #ifdef DEBUG_FLOW
 	printf("#EXECUTE THREAD %d \n", tid);
@@ -1294,6 +1303,9 @@ typedef struct {
 	int start,stop;
 }Ptask;
 
+/* runMALdetached is typically called as part of
+ * starting a separate interpreter thread.
+*/
 static void
 runMALdetached(void *t){
 	Ptask *p = (Ptask *) t;
@@ -1306,6 +1318,10 @@ runMALdetached(void *t){
 #ifdef DEBUG_DETACHED
 	stream_printf(cntxt->fdout,"start thread in background\n");
 #endif
+	if (stk == NULL){
+		GDKerror(MAL, "mal.interpreter", MAL_STACK_FAIL);
+		return;
+	}
 	sve= stk->keepAlive;
 	stk->keepAlive= TRUE;
 	msg= reenterMAL(cntxt, mb, p->start, p->stop, stk, 0, 0);
