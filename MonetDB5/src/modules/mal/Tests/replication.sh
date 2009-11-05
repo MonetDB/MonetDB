@@ -18,9 +18,11 @@ mclient -lsql -d dbslave -s 'create function slavelog ()
 mclient -lsql -d dbmaster -s "insert into tmp values(1);"
 mclient -lsql -d dbmaster -s "select * from tmp;"
 
+# may be some delay in the propagation
+# because master need to flush the file again.
 mclient -lsql -d dbslave -s "select * from tmp;"
 mclient -lsql -d dbslave -s "select * from slavelog();"
 
 #remove all stuff
-monetdb stop -a
+monetdb stop dbmastet dbslave
 monetdb destroy -f dbmaster dbslave
