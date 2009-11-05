@@ -2,7 +2,7 @@
 
 /**
  * @file
- * 
+ *
  * Debugging: dump XQuery abstract syntax tree in
  * AY&T dot format or human readable
  *
@@ -79,95 +79,95 @@ char *p_id[]  = {
         , [p_ordered]           = "ordered"
         , [p_unordered]         = "unordered"
 
-        , [p_plus]              = "plus"                                       
-        , [p_minus]             = "minus"                                      
-        , [p_mult]              = "mult"                                       
-        , [p_div]               = "div"                                        
-        , [p_idiv]              = "idiv"                                        
-        , [p_mod]               = "mod"                                        
-        , [p_and]               = "and"                                        
-        , [p_or]                = "or"                                         
-        , [p_lt]                = "lt"                                         
-        , [p_le]                = "le"                                         
-        , [p_gt]                = "gt"                                         
-        , [p_ge]                = "ge"                                         
-        , [p_eq]                = "eq"                                         
-        , [p_ne]                = "ne"                                         
-        , [p_val_lt]            = "val_lt"                                     
-        , [p_val_le]            = "val_le"                                     
-        , [p_val_gt]            = "val_gt"                                     
-        , [p_val_ge]            = "val_ge"                                     
-        , [p_val_eq]            = "val_eq"                                     
-        , [p_val_ne]            = "val_ne"                                     
-        , [p_uplus]             = "uplus"                                      
-        , [p_uminus]            = "uminus"                                     
+        , [p_plus]              = "plus"
+        , [p_minus]             = "minus"
+        , [p_mult]              = "mult"
+        , [p_div]               = "div"
+        , [p_idiv]              = "idiv"
+        , [p_mod]               = "mod"
+        , [p_and]               = "and"
+        , [p_or]                = "or"
+        , [p_lt]                = "lt"
+        , [p_le]                = "le"
+        , [p_gt]                = "gt"
+        , [p_ge]                = "ge"
+        , [p_eq]                = "eq"
+        , [p_ne]                = "ne"
+        , [p_val_lt]            = "val_lt"
+        , [p_val_le]            = "val_le"
+        , [p_val_gt]            = "val_gt"
+        , [p_val_ge]            = "val_ge"
+        , [p_val_eq]            = "val_eq"
+        , [p_val_ne]            = "val_ne"
+        , [p_uplus]             = "uplus"
+        , [p_uminus]            = "uminus"
         , [p_lit_int]           = "lit_int"
         , [p_lit_dec]           = "lit_dec"
         , [p_lit_dbl]           = "lit_dbl"
         , [p_lit_str]           = "lit_str"
-        , [p_is]                = "is"                                         
+        , [p_is]                = "is"
         , [p_step]              = "step"
-        , [p_varref]            = "varref" 
+        , [p_varref]            = "varref"
         , [p_var]               = "var"
-        , [p_locpath]           = "locpath"                                    
-        , [p_root]              = "root"                                       
-        , [p_dot]               = "dot"                                        
-        , [p_ltlt]              = "ltlt"                                       
-        , [p_gtgt]              = "gtgt"                                       
-        , [p_flwr]              = "flwr"                                       
-        , [p_binds]             = "binds"                                      
-        , [p_nil]               = "nil"                                        
-        , [p_empty_seq]         = "empty-seq"                                        
-        , [p_bind]              = "bind"                                       
-        , [p_let]               = "let"                                        
-        , [p_exprseq]           = "exprseq"                                    
-        , [p_range]             = "range"                                      
-        , [p_union]             = "union"                                      
-        , [p_intersect]         = "intersect"                                  
-        , [p_except]            = "except"                                     
-        , [p_pred]              = "pred"                                       
-        , [p_if]                = "if"                                         
-        , [p_some]              = "some"                                       
-        , [p_every]             = "every"                                      
-        , [p_instof]            = "instof"                                     
+        , [p_locpath]           = "locpath"
+        , [p_root]              = "root"
+        , [p_dot]               = "dot"
+        , [p_ltlt]              = "ltlt"
+        , [p_gtgt]              = "gtgt"
+        , [p_flwr]              = "flwr"
+        , [p_binds]             = "binds"
+        , [p_nil]               = "nil"
+        , [p_empty_seq]         = "empty-seq"
+        , [p_bind]              = "bind"
+        , [p_let]               = "let"
+        , [p_exprseq]           = "exprseq"
+        , [p_range]             = "range"
+        , [p_union]             = "union"
+        , [p_intersect]         = "intersect"
+        , [p_except]            = "except"
+        , [p_pred]              = "pred"
+        , [p_if]                = "if"
+        , [p_some]              = "some"
+        , [p_every]             = "every"
+        , [p_instof]            = "instof"
         , [p_seq_ty]            = "seq_ty"
-        , [p_empty_ty]          = "empty_ty"                                   
+        , [p_empty_ty]          = "empty_ty"
         , [p_node_ty]           = "node_ty"
-        , [p_item_ty]           = "item_ty"                                     
+        , [p_item_ty]           = "item_ty"
         , [p_atom_ty]           = "atom_ty"
         , [p_named_ty]          = "named_ty"
-        , [p_req_ty]            = "req_ty"                                     
+        , [p_req_ty]            = "req_ty"
         , [p_req_name]          = "req_name"
-        , [p_typeswitch]        = "typeswitch"                                 
-        , [p_cases]             = "cases"                                      
-        , [p_case]              = "case"           
+        , [p_typeswitch]        = "typeswitch"
+        , [p_cases]             = "cases"
+        , [p_case]              = "case"
         , [p_castable]          = "castable"
-        , [p_cast]              = "cast"                                       
-        , [p_treat]             = "treat"                                      
+        , [p_cast]              = "cast"
+        , [p_treat]             = "treat"
         , [p_validate]          = "validate"
-        , [p_apply]             = "apply"                                   
+        , [p_apply]             = "apply"
         , [p_fun_ref]           = "fun_ref"
-        , [p_args]              = "args"                                       
-        , [p_doc]               = "doc"                                       
+        , [p_args]              = "args"
+        , [p_doc]               = "doc"
         , [p_elem]              = "elem"
         , [p_attr]              = "attr"
         , [p_text]              = "text"
         , [p_tag]               = "tag"
         , [p_pi]                = "pi"
-        , [p_comment]           = "comment"                                    
+        , [p_comment]           = "comment"
         , [p_contseq]           = "contseq"
-        , [p_decl_imps]         = "decl_imps"                                  
+        , [p_decl_imps]         = "decl_imps"
         , [p_boundspc_decl]     = "boundspc_decl"
         , [p_coll_decl]         = "coll_decl"
         , [p_ns_decl]           = "ns_decl"
         , [p_option]            = "option"
         , [p_fun_decl]          = "fun_decl"
         , [p_fun]               = "fun"
-        , [p_ens_decl]          = "ens_decl"                                   
-        , [p_fns_decl]          = "fns_decl"                                   
-        , [p_schm_imp]          = "schm_imp"                                   
-        , [p_params]            = "params"                                     
-        , [p_param]             = "param"    
+        , [p_ens_decl]          = "ens_decl"
+        , [p_fns_decl]          = "fns_decl"
+        , [p_schm_imp]          = "schm_imp"
+        , [p_params]            = "params"
+        , [p_param]             = "param"
         , [p_ext_expr]          = "ext_expr"
         , [p_pragma]            = "pragma"
         , [p_pragmas]           = "pragmas"
@@ -184,12 +184,21 @@ char *p_id[]  = {
         /* Pathfinder extension: recursion */
         , [p_recursion]         = "recursion"
         , [p_seed]              = "seed"
-        
+
         /* Pathfinder extension: XRPC */
         , [p_xrpc]              = "xrpc"
 
         /* docmgmt type (for user-defined doc mgmt functions) */
         , [p_docmgmt_ty]        = "docmgmt_ty"
+
+        /* Pathfinder extension: full-text search (ftcontains) */
+        , [p_ftcontains]        = "ftcontains"
+        , [p_ftfilter]          = "ftfilter"
+        , [p_ftignore]          = "ftignore"
+        , [p_ftor]              = "ftor"
+        , [p_ftand]             = "ftand"
+        , [p_ftmildnot]         = "ftmildnot"
+        , [p_ftnot]             = "ftnot"
 };
 
 /** Names of XPath axes */
@@ -282,7 +291,7 @@ static char      label[DOT_LABELS];
  * @param n The current node to print (function is recursive)
  * @param node Name of the parent node.
  */
-static void 
+static void
 abssyn_dot (FILE *f, PFpnode_t *n, char *node, bool qnames_resolved)
 {
         int c;
@@ -394,7 +403,7 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node, bool qnames_resolved)
 
         fprintf (f, "%s [label=\"%s\"];\n", node, label);
 
-        for (c = 0; c < PFPNODE_MAXCHILD && n->child[c] != 0; c++) {   
+        for (c = 0; c < PFPNODE_MAXCHILD && n->child[c] != 0; c++) {
             /* Temporary variable to allocate mem for node names */
             char *child = (char *) PFmalloc (sizeof ("node4294967296"));
 
@@ -498,7 +507,7 @@ abssyn_pretty (PFpnode_t *n, bool qnames_resolved)
                 break;
             case p_pi:
                 PFprettyprintf ("%s", n->sem.str);
-                break;    
+                break;
             case p_boundspc_decl:
                 PFprettyprintf ("%s", n->sem.tru ? "preserve" : "strip");
                 break;
@@ -506,7 +515,7 @@ abssyn_pretty (PFpnode_t *n, bool qnames_resolved)
                 PFprettyprintf ("%s", n->sem.str);
                 break;
             case p_fun_decl:
-                PFprettyprintf ("%s", qnames_resolved 
+                PFprettyprintf ("%s", qnames_resolved
                                       ? PFqname_str (n->sem.qname)
                                       : PFqname_raw_str (n->sem.qname_raw));
                 break;

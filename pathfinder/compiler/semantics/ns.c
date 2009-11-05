@@ -6,12 +6,12 @@
  * Resolve XML namespaces (NS) in the abstract syntax tree (this is
  * mainly based on W3C XQuery, 4.1 and W3C XML Namespaces).
  *
- * Walk the abstract syntax tree to 
+ * Walk the abstract syntax tree to
  *
  * (1) test if qualified names (QNames) refer to NS being actually in scope,
  *     and
  * (2) attach URIs associated with used NS prefixes.
- * 
+ *
  * During the tree walk, we detect and handle the following NS-relevant
  * XQuery constructs:
  *
@@ -104,27 +104,27 @@ static enum { element, attribute } principal;
  * prior declaration) in XQuery, see W3C XQuery, 4.12
  */
 /** Predefined namespace `xml' for any query */
-PFns_t PFns_xml = 
-    { .prefix = "xml", 
+PFns_t PFns_xml =
+    { .prefix = "xml",
       .uri    = "http://www.w3.org/XML/1998/namespace" };
 /** Predefined namespace `xs' (XML Schema) for any query */
-PFns_t PFns_xs  = 
-    { .prefix = "xs",  
+PFns_t PFns_xs  =
+    { .prefix = "xs",
       .uri    = "http://www.w3.org/2001/XMLSchema" };
 /** Predefined namespace `xsi' (XML Schema Instance) for any query */
-PFns_t PFns_xsi = 
-    { .prefix = "xsi", 
+PFns_t PFns_xsi =
+    { .prefix = "xsi",
       .uri    = "http://www.w3.org/2001/XMLSchema-instance" };
 /** XQuery default function namespace (fn:...). */
 PFns_t PFns_fn  =
-    { .prefix = "fn",  
+    { .prefix = "fn",
       .uri    = "http://www.w3.org/2005/xpath-functions" };
 /** Predefined namespace `xdt' (XPath Data Types) for any query */
-PFns_t PFns_xdt = 
+PFns_t PFns_xdt =
     { .prefix = "xdt",
       .uri    = "http://www.w3.org/2003/11/xpath-datatypes" };
 /** Predefined namespace `local' (XQuery Local Functions) for any query */
-PFns_t PFns_local = 
+PFns_t PFns_local =
     { .prefix = "local",
       .uri    = "http://www.w3.org/2005/xquery-local-functions" };
 /**
@@ -141,29 +141,38 @@ PFns_t PFns_upd =
  * XQuery operator namespace (op:...)
  * (see W3C XQuery 1.0 and XPath 2.0 Function and Operators, 1.5).
  *
- * This namespace is not accessible for the user 
+ * This namespace is not accessible for the user
  * (see W3C XQuery F&O, 1.5).
  */
-PFns_t PFns_op  = { .prefix = "op",  
+PFns_t PFns_op  = { .prefix = "op",
                     .uri    = "http://www.w3.org/2002/08/xquery-operators" };
 
 
-/** 
+#ifdef HAVE_PFTIJAH
+/**
+ * XQuery full-text search operator namespace (fts:...)
+ */
+PFns_t PFns_fts  = { .prefix = "fts",
+                     .uri    = "http://www.w3.org/TR/xpath-full-text-10/" };
+#endif
+
+
+/**
  * Pathfinder's namespace for additional non-'fn' functions.
- */ 
-PFns_t PFns_lib = { .prefix = "pf",  
+ */
+PFns_t PFns_lib = { .prefix = "pf",
                     .uri    = "http://www.pathfinder-xquery.org/" };
 
-/** 
+/**
  * Pathfinder's namespace for additional tijah functions.
- */ 
-PFns_t PFns_tijah = { .prefix = "tijah",  
+ */
+PFns_t PFns_tijah = { .prefix = "tijah",
                       .uri    = "http://dbappl.cs.utwente.nl/pftijah/" };
 
-/** 
+/**
  * Pathfinder's namespace for XRPC extension.
- */ 
-PFns_t PFns_xrpc = { .prefix = "xrpc",  
+ */
+PFns_t PFns_xrpc = { .prefix = "xrpc",
                       .uri    = "http://monetdb.cwi.nl/XQuery" };
 
 #ifdef HAVE_GEOXML
@@ -182,14 +191,16 @@ PFns_t PFns_pxmlsup = { .prefix = "pxmlsup",
                         .uri    = "http://dbappl.cs.utwente.nl/pxmlsup/" };
 #endif
 
-/** 
+
+
+/**
  * Pathfinder's own internal NS (pf:...).
  * Note that the prefix contains a character that cannot be entered in
- * a query. 
+ * a query.
  *
  * This namespace is not accessible for the user.
- */ 
-PFns_t PFns_pf  = { .prefix = "#pf",  
+ */
+PFns_t PFns_pf  = { .prefix = "#pf",
                     .uri    = "http://www.pathfinder-xquery.org/internal/" };
 
 /**
@@ -314,7 +325,7 @@ copy_ns_env (const PFns_map_t *src)
 }
 
 
-/** 
+/**
  * NS equality (URI-based, then prefix-based):
  * two NS with different prefixes are considered equal if they are bound
  * to the same URI (see, W3C XQuery, 4.1).
@@ -328,7 +339,7 @@ int
 PFns_eq (PFns_t ns1, PFns_t ns2)
 {
     /* NS equality is principally based on URI equality, so this is what
-     * we test for first: 
+     * we test for first:
      */
     if (ns1.uri) {
         if (ns2.uri)
@@ -340,7 +351,7 @@ PFns_eq (PFns_t ns1, PFns_t ns2)
         if (ns2.uri)
             return 1;
 
-    /* two unbound (URI-less) NS are deliberately assumed to be equal 
+    /* two unbound (URI-less) NS are deliberately assumed to be equal
      * if their prefixes coincide:
      */
     if (ns1.prefix) {
@@ -355,17 +366,17 @@ PFns_eq (PFns_t ns1, PFns_t ns2)
         else
             return 0;
     }
-    
+
 }
 
 /**
- * Collect and apply namespace declaration attributes 
+ * Collect and apply namespace declaration attributes
  * (W3C Namespaces):
  *
  * (1) xmlns:loc=ns        locally (for the owning element) define
  *                         NS prefix `loc:...' |-> ns
  *                         (ns is required to be a literal string)
- * 
+ *
  * (2) xmlns=ns            locally (for the owning element) re-define
  *                         the default element NS
  *                         (ns is required to be a literal string,
@@ -383,7 +394,7 @@ collect_xmlns (PFpnode_t *c)
     PFpnode_t *next = R(c);
 
     assert (c);
-  
+
     switch (c->kind) {
 
         case p_contseq:
@@ -392,7 +403,7 @@ collect_xmlns (PFpnode_t *c)
             if (L(c)->kind == p_attr) {
                 /* abstract syntax tree layout:
                  *
-                 *           attr 
+                 *           attr
                  *           /  \
                  *  tag-ns:loc   v
                  */
@@ -418,8 +429,8 @@ collect_xmlns (PFpnode_t *c)
                          *  "xmlns":loc     exprseq
                          *                 /       \
                          *             lit_str     empty_seq
-                         *          
-                         */     
+                         *
+                         */
                         if ((R(a)->kind == p_exprseq
                              || R(a)->kind == p_contseq) &&
                             RL(a)->kind == p_lit_str &&
@@ -431,7 +442,7 @@ collect_xmlns (PFpnode_t *c)
 
                             /* finally remove this NS declaration attribute */
                             *c = *R(c);
-                            
+
                             /*
                              * visit the "same" node again in the next
                              * iteration (we have just overwritten it)
@@ -458,17 +469,17 @@ collect_xmlns (PFpnode_t *c)
                              * Namespaces, 5.2), W3C XQuery, 4.1
                              *
                              * abstract syntax tree layout:
-                             *          
+                             *
                              *           attr (a)
                              *          /        \
                              *     "xmlns"      exprseq
                              *                 /       \
                              *              lit_str   empty_seq
                              *
-                             *           content                
+                             *           content
                              *             / \          or        nil
-                             *  "ns"-lit_str  nil           
-                             */     
+                             *  "ns"-lit_str  nil
+                             */
                             switch (R(a)->kind) {
                                 case p_empty_seq:
                                     /*
@@ -523,7 +534,7 @@ collect_xmlns (PFpnode_t *c)
 }
 
 /**
- * Recursively walk abstract syntax tree to resolve NS usage. 
+ * Recursively walk abstract syntax tree to resolve NS usage.
  *
  * @param n current abstract syntax tree node
  */
@@ -583,6 +594,9 @@ ns_resolve (PFpnode_t *n)
 #ifdef HAVE_PROBXML
             ns_add (PFns_pxmlsup);
 #endif
+#ifdef HAVE_PFTIJAH
+            ns_add (PFns_fts);
+#endif
             ns_add (PFns_fn);
 
             fns = PFns_fn;
@@ -609,7 +623,7 @@ ns_resolve (PFpnode_t *n)
 
         case p_fns_decl:
             /*
-             * default function namespace = "foo" 
+             * default function namespace = "foo"
              *
              * abstract syntax tree layout:
              *
@@ -623,7 +637,7 @@ ns_resolve (PFpnode_t *n)
 
         case p_ens_decl:
             /*
-             * default element namespace = "foo" 
+             * default element namespace = "foo"
              *
              * abstract syntax tree layout:
              *
@@ -637,7 +651,7 @@ ns_resolve (PFpnode_t *n)
 
         case p_ns_decl:
             /*
-             * declare namespace ns = "foo" 
+             * declare namespace ns = "foo"
              * import schema namespace ns = "foo" [at "url"]
              *
              * abstract syntax tree layout:
@@ -680,7 +694,7 @@ ns_resolve (PFpnode_t *n)
 
                 if (! new_ns.uri)
                     PFoops_loc (OOPS_BADNS, n->loc,
-                            "unknown namespace in qualified function name %s", 
+                            "unknown namespace in qualified function name %s",
                             PFqname_raw_str (n->sem.qname_raw));
 
                 n->sem.qname = PFqname (new_ns, n->sem.qname_raw.loc);
@@ -755,8 +769,8 @@ ns_resolve (PFpnode_t *n)
 
         case p_req_name:
             /*
-             * This is the QName specification in an XPath location step. 
-             * 
+             * This is the QName specification in an XPath location step.
+             *
              * The spec says: ``An unprefixed QName, when used as a name
              * test on an axis whose principal node kind is element, has
              * the namespace URI of the default element/type namespace in
@@ -863,7 +877,7 @@ ns_resolve (PFpnode_t *n)
 
                 if (! new_ns.uri)
                     PFoops_loc (OOPS_BADNS, n->loc,
-                            "unknown namespace in qualified function name %s", 
+                            "unknown namespace in qualified function name %s",
                             PFqname_raw_str (n->sem.qname_raw));
 
                 n->sem.qname = PFqname (new_ns, n->sem.qname_raw.loc);
@@ -932,7 +946,7 @@ ns_resolve (PFpnode_t *n)
 
             /*
              * if element comes with a literal tag name resolve NS usage,
-             * for computed tags skip ahead 
+             * for computed tags skip ahead
              */
             assert (L(n));
             if (L(n)->kind == p_tag) {
@@ -946,7 +960,7 @@ ns_resolve (PFpnode_t *n)
 
                 L(n)->sem.qname = PFqname (new_ns, L(n)->sem.qname_raw.loc);
             }
-            else 
+            else
                 ns_resolve (L(n));
 
             /* NS resolution in element content c */
@@ -965,7 +979,7 @@ ns_resolve (PFpnode_t *n)
              *
              *           attr
              *           /  \
-             * tag-ns:loc    v 
+             * tag-ns:loc    v
              */
 
             /*
@@ -1058,12 +1072,15 @@ PFns_init (void)
 #ifdef HAVE_PROBXML
     ns_add (PFns_pxmlsup);
 #endif
+#ifdef HAVE_PFTIJAH
+    ns_add (PFns_fts);
+#endif
 
     /* bring the function and operator NS into scope
      * and make fn:... the default function NS
      */
     ns_add (PFns_fn);
-  
+
     fns = PFns_fn;
 
     /* ``undefine'' the default element NS */
@@ -1083,7 +1100,7 @@ void
 PFns_resolve (PFpnode_t *root)
 {
     /* initiate the actual NS resolution */
-    ns_resolve (root); 
+    ns_resolve (root);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

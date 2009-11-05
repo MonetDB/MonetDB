@@ -646,7 +646,7 @@ prop_infer (PFla_op_t *n);
 
 /* Helper function that walks through a recursion paramter list
    and only calls the property inference for the seed expressions. */
-static void 
+static void
 prop_infer_rec_seed (PFla_op_t *n)
 {
     switch (n->kind)

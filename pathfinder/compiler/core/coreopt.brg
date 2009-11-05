@@ -222,6 +222,9 @@ static PFarray_t *used_var_env;
   /* Pathfinder extension: XRPC */
 %term xrpc               = 76 /**< XRPC calls: "execute at" */
 
+  /* Associated For variable holders */
+%term vars               = 77 /**< variable pair (position. var + score. var) of a for */
+
 %%
 
 /* all rules starting from rule 40 are never used
@@ -244,7 +247,7 @@ CoreExpr:           flwr (let (letbind (var, CoreExpr),
 OptBindExpr:        for_ (forbind (forvars (var, OptVar),            
                                    CoreExpr),                        
                           OptBindExpr)                          =   5 (10);
-                                                                     
+
 OptVar:             nil                                         =   42(10);
 OptVar:             var                                         =   43(10);
                                                                      
@@ -382,6 +385,19 @@ CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  115(10);
 
 /* Pathfinder extension: XRPC */
 CoreExpr:           xrpc (CoreExpr, FunExpr)                    =  116(10);
+
+/* Pathfinder full-text score var */
+CoreExpr:           flwr (for_ (forbind (forvars (var, 
+										 vars (nil, nil)),
+                                         CoreExpr),
+                                nil), var)                      =  117 (10);
+
+OptBindExpr:        for_ (forbind (forvars (var, 
+                                            vars (OptVar, 
+                                                  OptVar)
+                                            ),            
+                                   CoreExpr),                        
+                          OptBindExpr)                          =  118 (10);
 
 %%
 
@@ -1141,7 +1157,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                     *p = *LL(p);
                     TY(p) = ty;
                     rewritten = true;
-                    break;
+                    break;                    
                 }
             }
             
@@ -1543,6 +1559,56 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                 break;
             }
             break;
+        
+        /* CoreExpr:           flwr (for_ (forbind (forvars (var, 
+										 vars (nil, nil)),
+                                         CoreExpr),
+                                nil), var) */
+        case 117:
+            /* replace for loops of the form
+               'for $a in ... return $a' by its input '...' */
+            if (LLLL(p)->sem.var == R(p)->sem.var) {
+                *p = *LLR(p);
+                relabel (p, kids);
+                rewritten = true;
+            }
+            break;
+        
+        /* OptBindExpr:        for_ (forbind (forvars (var, 
+                                                       vars (OptVar,
+                                                             OptVar)
+                                                       ),
+                                              CoreExpr),
+                                     OptBindExpr) */
+        case 118:
+            /*
+             * If we iterate over a sequence that we know (from static
+             * typing) to always have length 1, replace the `for' by
+             * a corresponding `let'.
+             */
+            if (PFty_subtype (TY(LR(p)), PFty_xs_anyItem ())) {
+
+                PFcnode_t *c = R(p);
+
+                if (LLRL(p)->kind != c_nil )
+                    c = let (letbind (LLRL(p), num (1)), c);
+
+                *p = *let (letbind (LLL(p), LR(p)), c);
+
+                /* type-check what we just created */
+                PFty_check (flwr (p, num(1)));
+
+                rewritten = true;
+
+                /*
+                 * Re-label entire subtree. Type-checking may have
+                 * modified all the state labels in the subtree, so
+                 * we have to restore them.
+                 */
+                PFcoreopt_label (p);
+                break;
+            }
+            break;
 
         default:
             break;
@@ -1662,8 +1728,32 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
             
             /* a for loop increases the nesting depth */
             base++;
-
-            if (LLR(c)->kind == c_var) {
+            
+            if (LLR(c)->kind == c_vars) {
+            if (LLRL(c)->kind == c_var) {
+                /* add variable to the environment */
+                *((bind_t *) PFarray_add (unused_var_env))
+                    = (bind_t) { .var = LLRL(c)->sem.var,
+                                 .atom = parent,
+                                 .child = child };
+                /* reset reference counter */
+                LLRL(c)->sem.var->used = 0;
+                /* record the current scope */
+                LLRL(c)->sem.var->base = base;
+            }
+            
+            if (LLRR(c)->kind == c_var) {
+                /* add variable to the environment */
+                *((bind_t *) PFarray_add (unused_var_env))
+                    = (bind_t) { .var = LLRR(c)->sem.var,
+                                 .atom = parent,
+                                 .child = child };
+                /* reset reference counter */
+                LLRR(c)->sem.var->used = 0;
+                /* record the current scope */
+                LLRR(c)->sem.var->base = base;
+            }
+            } else if (LLR(c)-> kind == c_var) {
                 /* add variable to the environment */
                 *((bind_t *) PFarray_add (unused_var_env))
                     = (bind_t) { .var = LLR(c)->sem.var,
@@ -1791,7 +1881,18 @@ PFcoreopt (PFcnode_t *r)
 
                     unused_var = true;
                 } else if (n->kind == c_for) {
-                    LLR(n) = nil ();
+                    if(LLR(n)->kind == c_var)
+                    LLR(n) = nil();
+                    else {
+                      if(LLRL(n)->sem.var == var)
+                      LLRL(n) = nil ();
+                      else
+                      LLRR(n) = nil ();
+                      if(LLRL(n)->kind == c_nil && LLRR(n)->kind == c_nil)
+                      LLR(n) = nil(); 
+                      else if(LLRR(n)->kind == c_nil)
+                      LLR(n) = LLRL(n);                   
+                    }
                     unused_var = true;
                 }
             } else if (var->used == 1 && n->kind == c_let)

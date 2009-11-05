@@ -132,7 +132,7 @@ aggregate_pattern (PFla_op_t *p)
     if (!PFprop_key (p->prop, p->sem.eqjoin.col1) &&
         !PFprop_set (p->prop))
         return NULL;
-    
+
     /* checks for the left join side */
 
     lp   = L(p);
@@ -386,7 +386,7 @@ replace_thetajoin (PFla_op_t *p, bool replace_left)
             PFprop_card (lp->prop) &&
             (lp->kind == la_lit_tbl ||
              (lp->kind == la_project && L(lp)->kind == la_lit_tbl)));
-        
+
     /* attach all columns of the to-be-replaced side
        to the other side */
     for (unsigned int i = 0; i < lp->schema.count; i++) {
@@ -551,7 +551,7 @@ zip_alignment (PFla_op_t *p)
 
     lop = L(op);
     rop = R(op);
-    
+
     /* ACTION: split up column name mapping into
                a left and a right mapping */
     lproj = PFmalloc (lop->schema.count * sizeof (PFalg_proj_t));
@@ -598,7 +598,7 @@ zip_alignment (PFla_op_t *p)
         PFord_order_dir_at (lop->sem.sort.sortby, 0) != DIR_ASC ||
         PFord_order_dir_at (rop->sem.sort.sortby, 0) != DIR_ASC)
         return false;
-   
+
     sort1 = PFord_order_col_at (lop->sem.sort.sortby, 0);
     sort2 = PFord_order_col_at (rop->sem.sort.sortby, 0);
 
@@ -1049,7 +1049,7 @@ check_order (PFla_op_t *p, PFalg_col_t desc_col, PFalg_col_t origin_col)
         /* adjust the column name to the next operator */
         desc_col = PFprop_lineage_col (desc->prop, desc_col);
         desc     = new_desc;
-    } 
+    }
 
     /* we ensured that (desc == origin) and now
        check that they stem from the same column */
@@ -1060,7 +1060,7 @@ check_order (PFla_op_t *p, PFalg_col_t desc_col, PFalg_col_t origin_col)
  * For operators with order criteria we try to
  * remove columns from the order list if they are
  * functionally dependent and the correct order is
- * ensured by the next order criterion in the order list. 
+ * ensured by the next order criterion in the order list.
  */
 static bool
 shrink_order_list (PFla_op_t *p)
@@ -1088,7 +1088,7 @@ shrink_order_list (PFla_op_t *p)
     /* compare adjacent order criteria */
     for (unsigned int i = 1; i < PFord_count (sortby); i++) {
         cur      = PFord_order_col_at (sortby, i-1);
-        next_cur = PFord_order_col_at (sortby, i); 
+        next_cur = PFord_order_col_at (sortby, i);
 
         /* and skip the former criterion if it is
            functionally dependent from the current
@@ -1419,13 +1419,13 @@ opt_complex (PFla_op_t *p)
                         break;
                     }
 
-                if (PFprop_disjdom (p->prop, 
+                if (PFprop_disjdom (p->prop,
                                     PFprop_dom_left (RL(p)->prop, col2),
                                     PFprop_dom_left (p->prop, col1))) {
                     R(p) = PFla_project_ (RLR(p), count, proj);
                     modified = true;
                 }
-                else if (PFprop_disjdom (p->prop, 
+                else if (PFprop_disjdom (p->prop,
                                          PFprop_dom_right (RL(p)->prop, col2),
                                          PFprop_dom_left (p->prop, col1))) {
                     R(p) = PFla_project_ (RLL(p), count, proj);
@@ -1450,13 +1450,13 @@ opt_complex (PFla_op_t *p)
                         break;
                     }
 
-                if (PFprop_disjdom (p->prop, 
+                if (PFprop_disjdom (p->prop,
                                     PFprop_dom_left (LL(p)->prop, col1),
                                     PFprop_dom_right (p->prop, col2))) {
                     L(p) = PFla_project_ (LLR(p), count, proj);
                     modified = true;
                 }
-                else if (PFprop_disjdom (p->prop, 
+                else if (PFprop_disjdom (p->prop,
                                          PFprop_dom_right (LL(p)->prop, col1),
                                          PFprop_dom_right (p->prop, col2))) {
                     L(p) = PFla_project_ (LLL(p), count, proj);
@@ -1849,7 +1849,7 @@ opt_complex (PFla_op_t *p)
                                 /* replace dependent column by icols column */
                                 proj2[i].old = p->schema.items[j].name;
                                 /* throw away column */
-                                break; 
+                                break;
                             }
                         if (j == p->schema.count)
                             /* keep column */
@@ -2116,7 +2116,7 @@ opt_complex (PFla_op_t *p)
                 schema.items = PFmalloc (schema.count *
                                          sizeof (PFalg_schema_t));
                 for (unsigned int i = 0; i < schema.count; i++)
-                    schema.items[i].name = 
+                    schema.items[i].name =
                         PFord_order_col_at (p->sem.sort.sortby, i);
                  if (PFprop_ckey (p->prop, schema)) {
                      *p = *PFla_rowrank (
@@ -2641,7 +2641,7 @@ opt_complex (PFla_op_t *p)
                 *p = *PFla_step_join_simple (
                           L(p),
                           PFla_project_ (RR(p), R(p)->schema.count, proj),
-                          spec, 
+                          spec,
                           R(p)->sem.step.item,
                           p->sem.step.item_res);
                 modified = true;

@@ -165,6 +165,9 @@ enum PFctype_t {
 
   /* Pathfinder extension: XRPC */
   , c_xrpc               = 76 /**< XRPC calls: "execute at" */
+
+  /* Associated For variable holders */
+  , c_vars               = 77 /**< variable pair (position. var + score. var) of a for */
 };
 
 /** Core tree node type indicators */
@@ -186,7 +189,7 @@ union PFcsem_t {
 
     /* semantic content for flwr subexpressions (let/for) */
     struct {
-        PFty_t (*quantifier) (PFty_t); 
+        PFty_t (*quantifier) (PFty_t);
                            /**< quantifier for flwor return expression */
         int    fid;        /**< for loop id (used in milprint_summer.c) */
     } flwr;
@@ -230,13 +233,13 @@ struct PFcnode_t {
 /* initialize global variables */
 void PFcore_init (void);
 
-/** 
+/**
  * Core constructor functions below.
  */
 PFcnode_t *PFcore_leaf (PFctype_t);
-PFcnode_t *PFcore_wire1 (PFctype_t, 
+PFcnode_t *PFcore_wire1 (PFctype_t,
                          const PFcnode_t *);
-PFcnode_t *PFcore_wire2 (PFctype_t, 
+PFcnode_t *PFcore_wire2 (PFctype_t,
                          const PFcnode_t *, const PFcnode_t *);
 
 PFcnode_t *PFcore_nil (void);
@@ -269,6 +272,7 @@ PFcnode_t *PFcore_flwr (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_for (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_forbind (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_forvars (const PFcnode_t *, const PFcnode_t *);
+PFcnode_t *PFcore_forvars2 (const PFcnode_t *, const PFcnode_t *, const PFcnode_t *);
 
 PFcnode_t *PFcore_let (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_letbind (const PFcnode_t *, const PFcnode_t *);
@@ -318,6 +322,11 @@ PFcnode_t *PFcore_fn_data (const PFcnode_t *);
 PFcnode_t *PFcore_fs_convert_op_by_type (const PFcnode_t *, PFty_t);
 PFcnode_t *PFcore_fs_convert_op_by_expr (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_some (const PFcnode_t *, const PFcnode_t *, const PFcnode_t *);
+
+/**
+ * Full-text score variable
+ */
+/*PFcnode_t *PFcore_forscore (const PFcnode_t *, const PFcnode_t *);*/
 
 /**
  * Wrapper for #apply_.

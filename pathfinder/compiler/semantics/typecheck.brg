@@ -176,6 +176,9 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
   /* Pathfinder extension: XRPC */
 %term xrpc               = 76 /**< XRPC calls: "execute at" */
 
+  /* Associated For variable holders */
+%term vars               = 77 /**< variable pair (position. var + score. var) of a for */
+
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -301,6 +304,25 @@ CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  87 (10);
 
 /* Pathfinder extension: XRPC */
 CoreExpr:           xrpc (CoreExpr, CoreExpr)                   =  88 (10);
+
+/*full-text support*/
+OptBindExpr:        for_ (forbind (forvars (var, 
+											vars (nil, nil)),
+                                   CoreExpr),
+                          OptBindExpr)                          =  89 (10);
+OptBindExpr:        for_ (forbind (forvars (var, 
+											vars (var, nil)),
+                                   CoreExpr),
+                          OptBindExpr)                          =  90 (10);
+                        
+OptBindExpr:        for_ (forbind (forvars (var, 
+											vars (nil, var)),
+                                   CoreExpr),
+                          OptBindExpr)                          =  91 (10);
+OptBindExpr:        for_ (forbind (forvars (var, 
+											vars (var, var)),
+                                   CoreExpr),
+                          OptBindExpr)                          =  92 (10);
 
 %%
 
@@ -449,7 +471,7 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
         case 5:
             TY(p) = *PFty_simplify (L(p)->sem.flwr.quantifier (TY(R(p))));
             break;
-
+        
         /* OptBindExpr:        for_ (forbind (forvars (var, nil),
                                               CoreExpr),
                                      OptBindExpr) */
@@ -1282,6 +1304,289 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
             TY(p) = TY(R(p));
             break;
 
+        
+        /* OptBindExpr:        for_ (forbind (forvars (var, 
+											vars (nil, nil)),
+                                   CoreExpr),
+                          OptBindExpr) */
+        case 89:
+        {   /* TOPDOWN */
+
+            /* W3C XQuery, 5.8.2
+             *
+             *   E |- CoreExpr : t1   E[Var : prime (t1)] |- CoreExpr : t2
+             * -------------------------------------------------------------
+             * for_ (Var, nil, nil, CoreExpr, OptBindExpr) : t2 . quantifier (t1)
+             */
+            PFty_t t1;
+
+            /* nil : none */
+            TY(LLRL(p)) = PFty_none ();
+            TY(LLRR(p)) = PFty_none ();
+
+            /* E |- CoreExpr : t1 */
+            reduce (kids[0], nts[0]);
+            t1 = TY(LR(p));
+
+            /*
+             * The specs prohibit the (statically typed) empty sequence
+             * in many places.  (see XQuery FS, beginning of Section 4)
+             */
+            if (PFty_subtype (t1, PFty_empty ()))
+                PFoops (OOPS_TYPECHECK,
+                        "binding sequence in a for clause has static "
+                        "type `empty'");
+
+            /*
+             * XQuery Update Facility disallows updates in the `for'
+             * part.
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (t1))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: binding sequence may not contain "
+                        "an updating expression (has type `%s')",
+                        PFty_str (t1));
+
+            /* sanity check */
+            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
+                PFoops (OOPS_TYPECHECK,
+                        "illegal binding in for clause, cannot iterate over "
+                        "type `%s'",
+                        PFty_str (t1));
+
+            /* Var : prime (t1) */
+            TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
+
+            /* Var1 should now have a sensible type (not `none') */
+            assert (PFty_subtype (TY(LLL(p)), PFty_star (PFty_item ())));
+
+            /* E[Var : prime (t1)] |- CoreExpr : t2 */
+            assert (LLL(p)->sem.var);
+            TY( LLL(p)->sem.var ) = TY(LLL(p));
+            reduce (kids[1], nts[1]);
+
+            p->sem.flwr.quantifier = PFty_quantifier 
+                                     (R(p)->sem.flwr.quantifier (
+                                          PFty_defn (t1)));
+
+        } break;
+
+        /* OptBindExpr:        for_ (forbind (forvars (var, 
+											vars (var, nil)),
+                                   CoreExpr),
+                          OptBindExpr) */
+        case 90:
+        {   /* TOPDOWN */
+
+            /* W3C XQuery, 5.8.2
+             *
+             *                    E |- CoreExpr : t1
+             *  E[Var1:prime (t1), Var2:xs:integer] |- OptBindExpr : t2
+             * --------------------------------------------------------------
+             *  for_ (Var1, Var2, nil, CoreExpr, CoreExpr) : t2 . quantifier (t1)
+             */
+            PFty_t t1;
+
+            /* E |- CoreExpr : t1 */
+            reduce (kids[0], nts[0]);
+            t1 = TY(LR(p));
+
+            /*
+             * The specs prohibit the (statically typed) empty sequence
+             * in many places.  (see XQuery FS, beginning of Section 4)
+             */
+            if (PFty_subtype (t1, PFty_empty ()))
+                PFoops (OOPS_TYPECHECK,
+                        "binding sequence in a for clause has static "
+                        "type `empty'");
+
+            /*
+             * XQuery Update Facility disallows updates in the `for'
+             * part.
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (t1))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: binding sequence may not contain "
+                        "an updating expression (has type `%s')",
+                        PFty_str (t1));
+
+            /* sanity check */
+            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
+                PFoops (OOPS_TYPECHECK,
+                        "illegal binding in for clause, cannot iterate over "
+                        "type `%s'",
+                        PFty_str (t1));
+
+            /* Var2 : xs:integer */
+            TY(LLRL(p)) = PFty_xs_integer ();
+            assert (LLRL(p)->sem.var);
+            TY( LLRL(p)->sem.var ) = TY(LLRL(p));
+            
+            /* Var3 : nil */
+            TY(LLRR(p)) = PFty_none ();;
+
+            /* Var1 : prime (t1) */
+            TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
+
+            /* Var1 should now have a sensible type (not `none') */
+            assert (PFty_subtype (TY(LLL(p)), PFty_star (PFty_item ())));
+
+            /* E[Var1 : prime (t1), Var2 : xs:integer] |- CoreExpr : t2 */
+            assert (LLL(p)->sem.var);
+            TY( LLL(p)->sem.var ) = TY(LLL(p));
+            reduce (kids[1], nts[1]);
+
+            p->sem.flwr.quantifier = PFty_quantifier 
+                               (R(p)->sem.flwr.quantifier (PFty_defn (t1)));
+
+        } break;
+        
+        /* OptBindExpr:        for_ (forbind (forvars (var, 
+											vars (nil, var)),
+                                   CoreExpr),
+                          OptBindExpr)                     */
+        case 91:
+        { /* TOPDOWN */
+
+            /* W3C XQuery, 5.8.2
+             *
+             *   E |- CoreExpr : t1   E[Var : prime (t1)] |- CoreExpr : t2
+             * -------------------------------------------------------------
+             * for_ (Var, nil, Var3, CoreExpr, OptBindExpr) : t2 . quantifier (t1)
+             */
+            PFty_t t1;
+
+            /* nil : none */
+            TY(LLRL(p)) = PFty_none ();
+            
+            /* E |- CoreExpr : t1 */
+            reduce (kids[0], nts[0]);
+            t1 = TY(LR(p));
+
+            /*
+             * The specs prohibit the (statically typed) empty sequence
+             * in many places.  (see XQuery FS, beginning of Section 4)
+             */
+            if (PFty_subtype (t1, PFty_empty ()))
+                PFoops (OOPS_TYPECHECK,
+                        "binding sequence in a for clause has static "
+                        "type `empty'");
+
+            /*
+             * XQuery Update Facility disallows updates in the `for'
+             * part.
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (t1))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: binding sequence may not contain "
+                        "an updating expression (has type `%s')",
+                        PFty_str (t1));
+
+            /* sanity check */
+            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
+                PFoops (OOPS_TYPECHECK,
+                        "illegal binding in for clause, cannot iterate over "
+                        "type `%s'",
+                        PFty_str (t1));
+            
+            /* Var3 : xs:double */            
+            TY(LLRR(p)) = PFty_xs_double ();
+            assert (LLRR(p)->sem.var);
+            TY( LLRR(p)->sem.var ) = TY(LLRR(p));
+
+            /* Var : prime (t1) */
+            TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
+
+            /* Var1 should now have a sensible type (not `none') */
+            assert (PFty_subtype (TY(LLL(p)), PFty_star (PFty_item ())));
+
+            /* E[Var : prime (t1)] |- CoreExpr : t2 */
+            assert (LLL(p)->sem.var);
+            TY( LLL(p)->sem.var ) = TY(LLL(p));
+            reduce (kids[1], nts[1]);
+
+            p->sem.flwr.quantifier = PFty_quantifier 
+                                     (R(p)->sem.flwr.quantifier (
+                                          PFty_defn (t1)));
+
+        } break;
+
+        /* OptBindExpr:        for_ (forbind (forvars (var, 
+											vars (var, var)),
+                                   CoreExpr),
+                          OptBindExpr)                     */
+        case 92: 
+        {   /* TOPDOWN */
+
+            /* W3C XQuery, 5.8.2
+             *
+             *                    E |- CoreExpr : t1
+             *  E[Var1:prime (t1), Var2:xs:integer] |- OptBindExpr : t2
+             * --------------------------------------------------------------
+             *  for_ (Var1, Var2, Var3, CoreExpr, CoreExpr) : t2 . quantifier (t1)
+             */
+            PFty_t t1;
+
+            /* E |- CoreExpr : t1 */
+            reduce (kids[0], nts[0]);
+            t1 = TY(LR(p));
+
+            /*
+             * The specs prohibit the (statically typed) empty sequence
+             * in many places.  (see XQuery FS, beginning of Section 4)
+             */
+            if (PFty_subtype (t1, PFty_empty ()))
+                PFoops (OOPS_TYPECHECK,
+                        "binding sequence in a for clause has static "
+                        "type `empty'");
+
+            /*
+             * XQuery Update Facility disallows updates in the `for'
+             * part.
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (t1))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: binding sequence may not contain "
+                        "an updating expression (has type `%s')",
+                        PFty_str (t1));
+
+            /* sanity check */
+            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
+                PFoops (OOPS_TYPECHECK,
+                        "illegal binding in for clause, cannot iterate over "
+                        "type `%s'",
+                        PFty_str (t1));
+
+            /* Var2 : xs:integer */
+            TY(LLRL(p)) = PFty_xs_integer ();
+            assert (LLRL(p)->sem.var);
+            TY( LLRL(p)->sem.var ) = TY(LLRL(p));
+            
+            /* Var3 : xs:double */
+            TY(LLRR(p)) = PFty_xs_double ();
+            assert (LLRR(p)->sem.var);
+            TY( LLRR(p)->sem.var ) = TY(LLRR(p));
+
+            /* Var1 : prime (t1) */
+            TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
+
+            /* Var1 should now have a sensible type (not `none') */
+            assert (PFty_subtype (TY(LLL(p)), PFty_star (PFty_item ())));
+
+            /* E[Var1 : prime (t1), Var2 : xs:integer] |- CoreExpr : t2 */
+            assert (LLL(p)->sem.var);
+            TY( LLL(p)->sem.var ) = TY(LLL(p));
+            reduce (kids[1], nts[1]);
+
+            p->sem.flwr.quantifier = PFty_quantifier 
+                               (R(p)->sem.flwr.quantifier (PFty_defn (t1)));
+
+        } break;
+        
         default:
             PFoops (OOPS_FATAL, "untranslated expression '%s'",
                     PFtypecheck_string[rule]);

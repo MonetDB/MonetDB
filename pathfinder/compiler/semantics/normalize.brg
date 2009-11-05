@@ -208,6 +208,13 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    seed           = 128
 %term    xrpc           = 129
 %term    docmgmt_ty     = 130
+%term    ftcontains     = 131
+%term    ftfilter       = 132
+%term    ftignore       = 133
+%term    ftor           = 134
+%term    ftand          = 135
+%term    ftmildnot      = 136
+%term    ftnot          = 137
 
 %%
 
@@ -417,22 +424,22 @@ OrExpr:                 or (AndExpr, OrExpr)                        = 117 (10);
 AndExpr:                ComparisonExpr                              = 118 (10);
 AndExpr:                and (ComparisonExpr, AndExpr)               = 119 (10);
 
-ComparisonExpr:         RangeExpr                                   = 120 (10);
-ComparisonExpr:         eq (RangeExpr, RangeExpr)                   = 121 (10);
-ComparisonExpr:         ne (RangeExpr, RangeExpr)                   = 122 (10);
-ComparisonExpr:         lt (RangeExpr, RangeExpr)                   = 123 (10);
-ComparisonExpr:         le (RangeExpr, RangeExpr)                   = 124 (10);
-ComparisonExpr:         gt (RangeExpr, RangeExpr)                   = 125 (10);
-ComparisonExpr:         ge (RangeExpr, RangeExpr)                   = 126 (10);
-ComparisonExpr:         val_eq (RangeExpr, RangeExpr)               = 127 (10);
-ComparisonExpr:         val_ne (RangeExpr, RangeExpr)               = 128 (10);
-ComparisonExpr:         val_lt (RangeExpr, RangeExpr)               = 129 (10);
-ComparisonExpr:         val_le (RangeExpr, RangeExpr)               = 130 (10);
-ComparisonExpr:         val_gt (RangeExpr, RangeExpr)               = 131 (10);
-ComparisonExpr:         val_ge (RangeExpr, RangeExpr)               = 132 (10);
-ComparisonExpr:         is (RangeExpr, RangeExpr)                   = 133 (10);
-ComparisonExpr:         ltlt (RangeExpr, RangeExpr)                 = 135 (10);
-ComparisonExpr:         gtgt (RangeExpr, RangeExpr)                 = 136 (10);
+ComparisonExpr:         FTContainsExpr                              = 120 (10);
+ComparisonExpr:         eq (FTContainsExpr, FTContainsExpr)         = 121 (10);
+ComparisonExpr:         ne (FTContainsExpr, FTContainsExpr)         = 122 (10);
+ComparisonExpr:         lt (FTContainsExpr, FTContainsExpr)         = 123 (10);
+ComparisonExpr:         le (FTContainsExpr, FTContainsExpr)         = 124 (10);
+ComparisonExpr:         gt (FTContainsExpr, FTContainsExpr)         = 125 (10);
+ComparisonExpr:         ge (FTContainsExpr, FTContainsExpr)         = 126 (10);
+ComparisonExpr:         val_eq (FTContainsExpr, FTContainsExpr)     = 127 (10);
+ComparisonExpr:         val_ne (FTContainsExpr, FTContainsExpr)     = 128 (10);
+ComparisonExpr:         val_lt (FTContainsExpr, FTContainsExpr)     = 129 (10);
+ComparisonExpr:         val_le (FTContainsExpr, FTContainsExpr)     = 130 (10);
+ComparisonExpr:         val_gt (FTContainsExpr, FTContainsExpr)     = 131 (10);
+ComparisonExpr:         val_ge (FTContainsExpr, FTContainsExpr)     = 132 (10);
+ComparisonExpr:         is (FTContainsExpr, FTContainsExpr)         = 133 (10);
+ComparisonExpr:         ltlt (FTContainsExpr, FTContainsExpr)       = 135 (10);
+ComparisonExpr:         gtgt (FTContainsExpr, FTContainsExpr)       = 136 (10);
 
 RangeExpr:              AdditiveExpr                                = 137 (10);
 RangeExpr:              range (RangeExpr, RangeExpr)                = 138 (10);
@@ -617,7 +624,53 @@ XRPCCall:               xrpc (Expr, FunctionCall)                   = 248 (10);
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            seq_ty (docmgmt_ty (nil))),
                                   OptExpr)                          = 249 (10);
+                                  
+/* Pathfinder full-text support */
+FTContainsExpr:         RangeExpr                                   = 250 (10);
+FTContainsExpr:         ftcontains (RangeExpr, FTSelectionExpr)     = 251 (10);
+FTContainsExpr:         ftcontains (RangeExpr, FTFilterExpr)        = 252 (10);
 
+VarPosBinding:          bind (vars (vars (var_type 
+                                           (varref,
+                                            OptTypeDeclaration_),
+                                          OptPositionalVar_),
+                                    OptFTScoreVar_),
+                              OptExpr)                              = 253 (10);
+
+
+OptFTScoreVar_:         nil                                         = 254 (10);
+OptFTScoreVar_:         FTScoreVar                                  = 255 (10);
+
+FTScoreVar:             varref                                      = 256 (10);
+
+FTFilterExpr:           ftfilter (FTSelectionExpr, 
+                                   FTIgnoreOption)                  = 257 (10);
+FTIgnoreOption:         ftignore (UnionExpr)                        = 258 (10);
+
+FTSelectionExpr:        FTOrExpr                                    = 259 (10);
+
+FTOrExpr:               FTAndExpr                                   = 260 (10);
+FTOrExpr:               ftor (FTOrExpr, FTAndExpr)                  = 261 (10);
+
+FTAndExpr:              FTMildNot                                   = 262 (10);
+FTAndExpr:              ftand (FTAndExpr, FTMildNot)                = 263 (10);
+
+FTMildNot:              FTUnaryNot                                  = 264 (10);
+FTMildNot:              ftmildnot (FTMildNot, FTUnaryNot)           = 265 (10);
+
+FTUnaryNot:             FTPrimaryWithOptions                        = 266 (10);
+FTUnaryNot:             ftnot (FTPrimaryWithOptions)                = 267 (10);
+
+FTPrimaryWithOptions:   FTPrimaryExpr                               = 268 (10);
+
+FTPrimaryExpr:          FTWordsExpr                                 = 269 (10);
+FTPrimaryExpr:          FTSelectionExpr                             = 270 (10);
+
+FTWordsExpr:            FTWordsValueExpr                            = 271 (10);
+
+FTWordsValueExpr:       Literal                                     = 272 (10);
+
+LetBinding_:            let (varref, OptExpr)                       = 273 (10);
 
 %%
 

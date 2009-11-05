@@ -2868,7 +2868,7 @@ PFfun_xquery_fo (void)
     ,  /* tijah:create-ft-index() as docmgmt */
       { .ns = PFns_tijah, .loc = "create-ft-index",
         .arity = 0, .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_docmgmt () } }, 
+            .ret_ty = PFty_docmgmt () } },
         .alg = PFbui_manage_fti_c_xx }
     ,  /* tijah:create-ft-index(string*) as docmgmt */
       { .ns = PFns_tijah, .loc = "create-ft-index",
@@ -3085,6 +3085,42 @@ PFfun_xquery_fo (void)
            .par_ty = (PFty_t[]) { PFty_xs_integer () },
            .ret_ty = PFty_xs_integer () } } }
 #endif
+
+#ifdef HAVE_PFTIJAH
+
+	 /* . Full-text functions */
+	 , /* fts:ftcontains (node, string) as boolean */
+	   { .ns = PFns_fts, .loc = "ftcontains",
+	     .arity = 2, .sig_count = 1, .sigs = { {
+	        .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
+	                               PFty_xs_string () },
+	        .ret_ty = PFty_xs_boolean () } },
+	     .alg = PFbui_tijah_ftfun_b_sxx }
+	 , /* fts:ftcontains (node?, string?) as boolean? */
+	   { .ns = PFns_fts, .loc = "ftcontains",
+	     .arity = 2, .sig_count = 1, .sigs = { {
+	        .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_anyNode ()),
+	                               PFty_opt (PFty_xs_string ()) },
+	        .ret_ty = PFty_opt (PFty_xs_boolean ()) } },
+	     .alg = PFbui_tijah_ftfun_b_sxx }
+	    
+	    
+	  , /* fts:score (boolean) as dbl */
+	    { .ns = PFns_fts, .loc = "score",
+	           .arity = 1, .sig_count = 1, .sigs = { {
+	               .par_ty = (PFty_t[]) { PFty_item () },
+	            		   .ret_ty = PFty_xs_double () } },
+	           .alg = PFbui_tijah_ftfun_score }
+	 , /* fts:score (boolean?) as dbl? */
+	   { .ns = PFns_fts, .loc = "score",
+	          .arity = 1, .sig_count = 1, .sigs = { {
+	              .par_ty = (PFty_t[]) { PFty_opt (PFty_item ()) },
+	           		   .ret_ty = PFty_opt (PFty_xs_double ()) } },
+	          .alg = PFbui_tijah_ftfun_score }
+
+#endif
+
+
     , { .loc = 0 }
     };
 

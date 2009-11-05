@@ -172,6 +172,9 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
   /* Pathfinder extension: XRPC */
 %term xrpc               = 76 /**< XRPC calls: "execute at" */
 
+ /* Associated For variable holders */
+%term vars               = 77 /**< variable pair (position. var + score. var) of a for */
+
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -196,6 +199,14 @@ CoreExpr:           flwr (OptBindExpr, OrdWhereExpr)            =   5 (10);
 OptBindExpr:        for_ (forbind (forvars (var, OptVar),
                                    CoreExpr),
                           OptBindExpr)                          =   6 (10);
+
+/* Pathfinder full-text score var */
+OptBindExpr:        for_ (forbind (forvars (var, 
+                                            vars (OptVar, 
+                                                  OptVar)
+                                            ),
+                                   CoreExpr),
+                          OptBindExpr)                          = 109 (10);
 
 OptVar:             var                                         = 200 (10);
 OptVar:             nil                                         = 201 (10);
@@ -512,6 +523,12 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                               CoreExpr),
                                      CoreExpr) */
         case 6:
+        
+        /* OptBindExpr:        for_ (forbind (forvars (var, 
+                                              vars (OptVar, OptVar)),
+                                         CoreExpr),
+                                      OptBindExpr)   */
+        case 109:
 
         /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
         case 7:
@@ -943,7 +960,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     }
 
                     A(p) = (struct PFla_pair_t) {
-                            .rel = project (rank (eqjoin (A(R(p)).rel,
+                            .rel = project (rank (eqjoin (attach_score(
+                            							  A(R(p)).rel),
                                                           MAP,
                                                           col_iter,
                                                           col_inner),
@@ -951,7 +969,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                                   sortby),
                                             proj (col_iter, col_outer),
                                             proj (col_pos, col_pos1),
-                                            proj (col_item, col_item)),
+                                            proj (col_item, col_item),
+                                     		proj (col_score1, col_score1)),
                             .frag = A(R(p)).frag };
                 }
             } else
@@ -965,7 +984,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             ENV = old_env;
 
         }   break;
-
+        
         /* OptBindExpr:        for_ (forbind (forvars (var, OptVar),
                                               CoreExpr),
                                      OptBindExpr) */
@@ -1151,6 +1170,236 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              * environment, loop(v))
              */
             reduce (ctx, kids[2], nts[2]);
+
+            /* compute result using old env and old loop. */
+            /* backmapping is now done in flwr
+            A(p) = (struct PFla_pair_t) {
+                     .rel = project (rownum (eqjoin(attach_score(
+                     								A(R(p)).rel),
+                                                    var_map,
+                                                    col_iter,
+                                                    col_inner),
+                                             col_pos1,
+                                             sortby (col_sort, col_pos),
+                                             col_outer),
+                                     proj (col_iter, col_outer),
+                                     proj (col_pos, col_pos1),
+                                     proj (col_item, col_item),
+                                     proj (col_score1, col_score1)),
+                     .frag = A(R(p)).frag };
+            */
+        } break;
+
+        /* OptBindExpr:        for_ (forbind (forvars (var, vars (OptVar, 
+                                                              OptVar)),
+                                              CoreExpr),
+                                     OptBindExpr)                       */
+        case 109:
+        {   /* TOPDOWN */
+
+            /*
+             * for $v in e1 return e2                    OR
+             * for $v at $p in e1 return e2
+             *
+             * Given the current environment (which may or may not contain
+             * bindings), the current loop relation and delta with e1
+             * already compiled:
+             * - declare variable $v by loop lifting the result of q1,
+             *(- declare variable $p if present)
+             * - create a new loop relation and
+             * - a new var_map relation,
+             * - as the for expression opens up a scope, update all existing
+             *   bindings to the new scope and add the binding of $v
+             * Given the updated environment and the new loop relation
+             * compile e2. Return the (possibly intermediate) result.
+             *
+             * env,loop: e1 => q1,delta1
+             *
+             *        pos
+             * q(v) = --- X proj_iter:inner,item(row_inner:<iter,pos> q1)
+             *         1
+             *
+             * loop(v) = proj_iter(q(v))
+             *
+             * var_map = proj_outer:iter,inner(row_inner:<iter,pos> q1)
+             *
+             * updated_env,(v->q(v)) e updated_env,loop(v): e2 => (q2,delta2)
+             * -----------------------------------------------------------------
+             * env,loop: for &v in e1 return e2 =>
+             * (proj_iter:outer, pos:pos1,item
+             *   (row_pos1:<iter,pos>/outer (q2 |X| (iter = inner) var_map)),
+             *  delta2)
+             */
+            PFla_op_t   *var;
+            PFla_op_t   *opt_var;
+            PFla_op_t   *opt_var1;
+            PFla_op_t   *var_map;
+            PFla_op_t   *rowid;
+            unsigned int  i;
+            PFla_env_t   e;
+            PFla_op_t   *new_map;
+            /* save old environment */
+            PFarray_t  *old_env = ENV;
+
+            /* initiate translation of e1 */
+            reduce (ctx, kids[2], nts[2]);
+
+            /*
+             * Add 'real' positions and the new iter values.
+             * (Note: We add the positions outside as some proxy rewrites
+             *        expect that no rownum can escape its 'scope'. The
+             *        result of the rownum operator is discarded in the
+             *        first icols optimization if no positional variable
+             *        exists.)
+             */
+            rowid = rowid (rownum (A(LR(p)).rel,
+                                   col_pos1,
+                                   sortby (col_pos),
+                                   col_iter),
+                           col_inner);
+
+            /* translate $v */
+            var = attach (project (rowid,
+                                   proj (col_iter, col_inner),
+                                   proj (col_item, col_item)),
+                          col_pos, lit_nat (1));
+
+            /* create new environment */
+            ENV = PFarray (sizeof (PFla_env_t), 50);
+
+            /* insert $v and "its document" into NEW environment */
+            *((PFla_env_t *) PFarray_add (ENV))
+                = enventry (LLL(p)->sem.var, var, NULL, A(LR(p)).frag);
+
+            /* create new loop operator */
+            LOOP = project (var, proj (col_iter, col_iter));
+
+            /* create var_map relation. */
+            var_map = project (rowid,
+                               proj (col_outer, col_iter),
+                               proj (col_sort, col_pos),
+                               proj (col_inner, col_inner));
+
+            /*
+             * Handle optional variable ($p).
+             * (Note: The rownum () routine was used to create
+             *        the 'item' column of $p's operator. Since this
+             *        column must be of type integer instead of nat, we
+             *        cast it accordingly.)
+             */
+            if (LLRL(p)->kind == c_var) {
+                assert (LLRL(p)->sem.var);
+                opt_var = attach (project (cast (rowid,
+                                                 col_cast,
+                                                 col_pos1,
+                                                 aat_int),
+                                           proj (col_iter, col_inner),
+                                           proj (col_item, col_cast)),
+                                  col_pos, lit_nat (1));
+
+                /* insert $p into NEW environment */
+                *((PFla_env_t *) PFarray_add (ENV)) =
+                    enventry (LLRL(p)->sem.var,
+                              opt_var,
+                              NULL,
+                              PFla_empty_set ());
+            }
+            
+            /*
+             * Handle optional variable ($s).
+             * (Note: The rownum () routine was used to create
+             *        the 'item' column of $p's operator. Since this
+             *        column must be of type integer instead of nat, we
+             *        cast it accordingly.)
+             */
+            if (LLRR(p)->kind == c_var) {
+                assert (LLRR(p)->sem.var);
+                opt_var1 =  project (A(LR(p)).rel,
+                				   proj (col_pos, col_pos),
+                                   proj (col_iter, col_iter),
+                                   proj (col_item, col_score1),
+                                   proj (col_score1, col_score1));
+
+                /* insert $p into NEW environment */
+                *((PFla_env_t *) PFarray_add (ENV)) =
+                    enventry (LLRR(p)->sem.var,
+                              opt_var1,
+                              NULL,
+                              PFla_empty_set ());
+            }
+                        
+            /* update all variable bindings in old environment and put
+             * them into new environment */
+            for (i = 0; i < PFarray_last (old_env); i++) {
+                e = *((PFla_env_t *) PFarray_at (old_env, i));
+
+                if (!e.map)
+                    new_map = project (var_map,
+                                       proj (col_outer, col_outer),
+                                       proj (col_inner, col_inner));
+                else
+                    new_map = project (
+                                  eqjoin (
+                                      project (
+                                          e.map,
+                                          proj (col_iter, col_inner),
+                                          proj (col_outer, col_outer)),
+                                      project (
+                                          var_map,
+                                          proj (col_iter2, col_outer),
+                                          proj (col_inner, col_inner)),
+                                      col_iter,
+                                      col_iter2),
+                                  proj (col_outer, col_outer),
+                                  proj (col_inner, col_inner));
+
+                *((PFla_env_t *) PFarray_add (ENV)) =
+                    enventry (e.var, e.rel, new_map, e.frag);
+            }
+
+            if (!MAP) {
+                /* create a first backmapping relation */
+                MAP = var_map;
+                MAP_COUNT = 3;
+            } else {
+                /* extend the backmapping relation map with
+                 * (a) position information of the for-loop input sequence and
+                 * (b) the current iteration values */
+
+                MAP_COUNT++;
+                PFalg_proj_t *cols = PFmalloc (MAP_COUNT *
+                                               sizeof (PFalg_proj_t));
+                /* column outer remains the same */
+                cols[0].new = col_outer;
+                cols[0].old = col_outer;
+                /* column iter1 becomes the new inner column */
+                cols[1].new = col_inner;
+                cols[1].old = col_iter1;
+                /* copy all old sort columns */
+                for (unsigned i = 2; i < MAP_COUNT - 1; i++)
+                    cols[i].new =
+                    cols[i].old = col_sort << (i - 2);
+                /* we now have on additional sort column generated
+                   from column pos */
+                /* the first sort criterion is column sort itself */
+                cols[MAP_COUNT -1].new = col_sort << (MAP_COUNT - 3);
+                cols[MAP_COUNT -1].old = col_pos;
+
+                MAP = PFla_project_ (
+                          eqjoin (MAP,
+                                  project (rowid,
+                                           proj (col_iter1, col_inner),
+                                           proj (col_iter, col_iter),
+                                           proj (col_pos, col_pos)),
+                                  col_inner,
+                                  col_iter),
+                          MAP_COUNT, cols);
+            }
+
+            /* translate e2 under the specified conditions (updated
+             * environment, loop(v))
+             */
+            reduce (ctx, kids[3], nts[3]);
 
             /* compute result using old env and old loop. */
             /* backmapping is now done in flwr
@@ -1663,7 +1912,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                       *else_res;
 
             /* initiate translation of e1 */
-            reduce (ctx, kids[0], nts[0]);
+            reduce (ctx, kids[0], nts[0]);          
 
             /* save old loop operator */
             old_loop = LOOP;
@@ -1674,9 +1923,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             /* create new loop operator */
             LOOP     = project (rowid, proj (col_iter, col_inner));
             /* create var_map relation. */
-            var_map  = project (rowid,
+            var_map  = project (attach_score(rowid),
                                 proj (col_outer, col_iter),
-                                proj (col_inner, col_inner));
+                                proj (col_inner, col_inner),
+                                proj (col_score1, col_score1));
             /* store the variable map to retrieve the old iter values */
             then_map = var_map;
             
@@ -1725,9 +1975,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             /* create new loop operator */
             LOOP     = project (rowid, proj (col_iter, col_inner));
             /* create var_map relation. */
-            var_map  = project (rowid,
+            var_map  = project (attach_score(rowid),
                                 proj (col_outer, col_iter),
-                                proj (col_inner, col_inner));
+                                proj (col_inner, col_inner),
+                                proj (col_score1, col_score1));
             /* store the variable map to retrieve the old iter values */
             else_map = var_map;
             
@@ -1772,17 +2023,29 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             /* merge back the old iter values */
             then_res = project (
-                           eqjoin (A(RL(p)).rel, then_map, col_iter, col_inner),
+                           eqjoin (
+                               project (A(RL(p)).rel, 
+                                        proj (col_iter, col_iter),
+                                        proj (col_pos, col_pos),
+                                        proj (col_item, col_item)),
+                               then_map, col_iter, col_inner),
                            proj (col_iter, col_outer),
                            proj (col_pos, col_pos),
-                           proj (col_item, col_item));
+                           proj (col_item, col_item),
+                           proj (col_score1, col_score1));
 
             /* merge back the old iter values */
             else_res = project (
-                           eqjoin (A(RR(p)).rel, else_map, col_iter, col_inner),
+                           eqjoin (
+                               project (A(RR(p)).rel, 
+                                        proj (col_iter, col_iter),
+                                        proj (col_pos, col_pos),
+                                        proj (col_item, col_item)),
+                               else_map, col_iter, col_inner),
                            proj (col_iter, col_outer),
                            proj (col_pos, col_pos),
-                           proj (col_item, col_item));
+                           proj (col_item, col_item),
+                           proj (col_score1, col_score1));
 
             A(p) = (struct  PFla_pair_t) {
                      .rel  = disjunion (then_res, else_res),
@@ -2537,6 +2800,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 /**
                  * Translation of fn:trace ()
                  */
+                /* if (! PFqname_eq (p->sem.fun->qname,
+                                  PFqname (PFns_fn, "boolean")))
+                 PFoops (OOPS_FATAL,
+    	                "Function Name: %s", PFqname_str (p->sem.fun->qname));*/
                 if (! PFqname_eq (p->sem.fun->qname,
                                   PFqname (PFns_fn, "trace"))) {
                     /* For fn:trace we need to introduce for each map relation
@@ -3119,6 +3386,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         /* OptBindExpr:        for_ (forbind (forvars (var, nil),
                                               CoreExpr), CoreExpr) */
         case 6:
+        /* OptBindExpr:        for_ (forbind (forvars (var, 
+                                              vars (OptVar, OptVar)),
+                                         CoreExpr),
+                                      OptBindExpr)   */
+        case 109:
         /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
         case 7:
         /* OptBindExpr:        nil */

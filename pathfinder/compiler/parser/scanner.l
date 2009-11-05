@@ -531,7 +531,8 @@ _                                {S}
 
 
 "for"{_}"$"                        { gotoState (VARNAME); pf_yield (for_dollar); }
-"let"{_}"$"                        { gotoState (VARNAME); pf_yield (let_dollar); }
+"let"                        	   { pf_yield (let); }
+"score"{_}"$"					   { gotoState (VARNAME); pf_yield (score_dollar);}
 "some"{_}"$"                       { gotoState (VARNAME); pf_yield (some_dollar); }
 "every"{_}"$"                      { gotoState (VARNAME); pf_yield (every_dollar);}
 
@@ -568,6 +569,7 @@ _                                {S}
 ".."                               { gotoState (OPERATOR); pf_yield (dot_dot); }
 "."                                { gotoState (OPERATOR); pf_yield (dot); }
 "*"                                { gotoState (OPERATOR); pf_yield (star); }
+"ftnot"                            { pf_yield (ftnot); }
 {NCName}":*"                       { pflval.qname_raw
                                          = PFqname_raw (PFstrndup (yytext,
                                                                    yyleng));
@@ -707,7 +709,7 @@ _                                {S}
 
 "at"{_}"$"                         { gotoState (VARNAME); pf_yield (at_dollar); }
 "for"{_}"$"                        { gotoState (VARNAME); pf_yield (for_dollar); }
-"let"{_}"$"                        { gotoState (VARNAME); pf_yield (let_dollar); }
+"let"                        	   { pf_yield (let); }
 "in"                               { gotoState (DEFAULT); pf_yield (in_); }
 
 "seeded"{_}"by"                    { /* Pathfinder extension: recursion */
@@ -791,6 +793,12 @@ _                                {S}
 "before"                           { gotoState (DEFAULT); pf_yield (before);}
 "with"                             { gotoState (DEFAULT); pf_yield (with);}
 "modify"                           { gotoState (DEFAULT); pf_yield (modify);}
+"ftcontains"			   		   { gotoState (DEFAULT); pf_yield (ftcontains);}
+"score"{_}"$"					   { gotoState (VARNAME); pf_yield (score_dollar);}
+"without"{_}"content"			   { gotoState (DEFAULT); pf_yield (without_content);}
+"ftor"                             { gotoState (DEFAULT); pf_yield (ftor);}
+"ftand"                            { gotoState (DEFAULT); pf_yield (ftand);}
+"not"{_}"in"                       { gotoState (DEFAULT); pf_yield (ftmildnot);}
 {_}                                ;
 .                                  { pf_yield (invalid_character); }
 }
