@@ -799,7 +799,7 @@ MASTERsend(void *arg)
 	int idx = * (int*) arg;
 	int tag = masterstatus[idx].tag;
 	int nxt, master;
-	int etag, et, resent=0;
+	int etag = 0, et = 0, resent = 0;
 	stream *s;
 	bstream *bs;
 	MapiHdl hdl;
