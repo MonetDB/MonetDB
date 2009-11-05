@@ -1191,6 +1191,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_E900615017D44D7D9F3AA3A20E9F82CE"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_E96EFF5D946B4FCC98A15B5A9D102A88"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -5301,6 +5307,26 @@
             "TargetName" = "8:lib_aggr.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E900615017D44D7D9F3AA3A20E9F82CE"
+            {
+            "SourcePath" = "8:C:\\bzip2-1.0.5.win64\\bin\\libbz2.dll"
+            "TargetName" = "8:libbz2.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
