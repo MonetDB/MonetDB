@@ -121,7 +121,7 @@ function slave.tag1(transactionid:int,stamp:timestamp):str;
   bat.insert(tag1_b,3:oid,232:int); #example update
   ...
   sql.append("schema","table","col",tag1_b,tag);
-  slave.close(transactionid);
+  slave.close(transactionid,stamp);
   sql.commit();
   return tag1:= "tag1";
 end tag1;
@@ -230,7 +230,7 @@ address SLAVEopen
 comment "Marks the start of a replication record. It checks the slave log
 table for existence of the tag. If so, it aborts the attempt to reapply.";
 
-command close(tag:oid)
+command close(tag:oid,stamp:timestamp)
 address SLAVEclose
 comment "End of replication record. Add the time stamp op completion
 to the slave log.";
@@ -288,9 +288,10 @@ replication_export str MASTERprelude(int *ret);
 replication_export str MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 replication_export str SLAVEopen(int *ret, oid *tag);
-replication_export str SLAVEclose(int *ret, oid *tag);
+replication_export str SLAVEclose(int *ret, oid *tag, timestamp *stamp);
 replication_export str SLAVEdrop(int *ret, str *tag);
 replication_export str SLAVEprelude(int *ret);
+replication_export BAT *SLAVEtable(void);
 #endif /* _REPLICATOR_H */
 @c
 #include "mal_config.h"
@@ -308,16 +309,17 @@ requests before they are shipped to the log.
 The tag is returned for marking all related updates.
 The final code should contain a loop to determine the last replication tag.
 @c
-#define MASTER "./master/"
+#define MASTER "master/"
 #define REPLICA "log%05d-%05d"
 #define REPLICABLOCK 100
 #define REPLICADELAY 5000
 
 static struct MASTERRECORD {
-	char *buf;
+	char *buf;	/* assembled update function */
 	int limit;
 	int top;
-	int tag;
+	int tag;	/* transaction identifier */
+	int fcn;	/* identifier to differentiate function */
 } *master;
 static int mtop = 0;
 static int mlimit = 0;
@@ -392,9 +394,9 @@ MASTERprelude(int *ret){
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout,"#Initialize the master role?%s\n", master?"yes":"no");
 #endif
-	/* drop all remaining log files */
 	mal_set_lock(repLck, "replication");
 	if( !master ){
+		/* drop all remaining log files if master mode is switched off */
 		GDKremovedir(MASTER);
 		mal_unset_lock(repLck, "replication");
 		return MAL_SUCCEED;
@@ -410,7 +412,7 @@ MASTERprelude(int *ret){
 		return MAL_SUCCEED;
 	}
 	while ((dent = readdir(dirp)) != NULL) {
-		if ( sscanf(dent->d_name,"log%d-%d",&tag,&etag) == 2 && tag >= startTag && etag<= endTag){
+		if ( sscanf(dent->d_name,"log%d-%d",&tag,&etag) == 2 && tag >= startTag ){
 			startTag= tag;
 			endTag= etag;
 			strcpy(logFile,dent->d_name);
@@ -419,6 +421,7 @@ MASTERprelude(int *ret){
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout,"#last log file log%05d-%05d\n", startTag,endTag);
 #endif
+	startTag = endTag;
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
@@ -486,6 +489,7 @@ str MASTERopen(int *ret)
 	i = MASTERgetBuffer(fcnTag);
 	/* prepare the MAL redo record */
 	len = master[i].limit - master[i].top - 1;
+	master[i].fcn = fcnTag;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
 			     "function slave.tag_%d(tag:oid,stamp:timestamp):str;\n"
 			     "sql.transaction();\n"
@@ -529,13 +533,13 @@ str MASTERclose(int *ret, int *tag)
 	*/
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
-			     "slave.close(tag);\n"
 			     "sql.commit();\n"
+			     "slave.close(tag,stamp);\n"
 				 "return %s :=\"%s\";\n"
 			     "end tag_%d;\n"
 			     "fcn:=slave.tag_%d(%d:oid,\"%s\":timestamp);\n"
 			     "slave.drop(fcn);\n",
-			      buf,buf, endTag, *tag, *tag, val)) == len) {
+			      buf,buf, master[i].fcn, master[i].fcn, endTag, val)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL){
 			mal_unset_lock(repLck, "replication");
@@ -547,8 +551,10 @@ str MASTERclose(int *ret, int *tag)
 	GDKfree(val);
 
 	MASTERincrement();
-	if (repFile == NULL )
+	if (repFile == NULL ){
+		mal_unset_lock(repLck, "replication");
 		throw(MAL, "master.close", RUNTIME_FILE_NOT_FOUND);
+	}
 	stream_printf(repFile, "%s", master[i].buf);
 	stream_flush(repFile);
 	master[i].buf[0] = 0;
@@ -1003,28 +1009,39 @@ str SLAVEstop(int *ret)
 }
 @-
 To keep track of the transactions being replayed
-we use a single BAT with timestamps of their completion.
+we use two BATs with timestamps of their completion
+in the master and the slave.
 A null indicates a failure to replay and indicates a
 incorrect database state.
+The error BAT can be used to keep messages for offline
+inspection.
 The transaction identifier is used as an oid into this table.
 @c
-static BAT *slavelog;
+static BAT *slavecommit;
+static BAT *slavevalid;
+static BAT *slaveerror;
+
+@= createBAT
+    @1 = BATdescriptor(BBPindex("@1"));
+    if (@1 == NULL){
+		@1 = BATnew(TYPE_void, @2, 1024);
+		if (@1 == NULL)
+			return ;
+
+		BATseqbase(@1,0); /* essential */
+		BBPrename(@1->batCacheid, "@1");
+		BATmode(@1, PERSISTENT);
+#ifdef _DEBUG_REPLICATION_
+		printf("#created @1\n");
+#endif
+	}
+@c
 
 static void
 SLAVEinitLog(){
-    slavelog = BATdescriptor(BBPindex("slavelog"));
-    if (slavelog == NULL){
-		slavelog = BATnew(TYPE_void, TYPE_timestamp, 256);
-		if (slavelog == NULL)
-			return ;
-
-		BATseqbase(slavelog,0); /* essential */
-		BBPrename(slavelog->batCacheid, "slavelog");
-		BATmode(slavelog, PERSISTENT);
-#ifdef _DEBUG_REPLICATION_
-		printf("#created slavelog\n");
-#endif
-	}
+	@:createBAT(slavecommit,TYPE_timestamp)@
+	@:createBAT(slavevalid,TYPE_timestamp)@
+	@:createBAT(slaveerror,TYPE_str)@
 }
 
 str SLAVEopen(int *ret, oid *tag)
@@ -1032,14 +1049,14 @@ str SLAVEopen(int *ret, oid *tag)
 	(void)ret;
 	(void)tag;
 	mal_set_lock(repLck, "replication");
-	if ( slavelog == NULL)
+	if ( slavecommit == NULL)
 		SLAVEinitLog();
-	if ( slavelog == NULL){
+	if ( slavecommit == NULL){
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "slave.open", OPERATION_FAILED);
 	}
 	/* cheap check if we have seen it before */
-	if ( BATcount(slavelog) < (BUN) *tag) {
+	if ( BATcount(slavecommit) < (BUN) *tag) {
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "slave.open", OPERATION_FAILED);
 	}
@@ -1047,26 +1064,49 @@ str SLAVEopen(int *ret, oid *tag)
 	return MAL_SUCCEED;
 }
 
-str SLAVEclose(int *ret, oid *tag)
+str SLAVEclose(int *ret, oid *tag, timestamp *valid)
 {
 	timestamp stamp;
+	str err="";
+
 	(void)ret;
 	mal_set_lock(repLck, "replication");
-	if ( slavelog == NULL)
+	if ( slavecommit == NULL)
 		SLAVEinitLog();
-	if ( slavelog == NULL){
+	if ( slavecommit == NULL){
 		/* abort the transaction */
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "slave.clase", OPERATION_FAILED);
 	}
-	if ( BATcount(slavelog) != (BUN) *tag) {
+	if ( BATcount(slavecommit) != (BUN) *tag) {
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "slave.close", "Out of order execution");
 	}
 	MTIMEepoch(&stamp);
-	BUNappend(slavelog, &stamp, FALSE);
+	BUNappend(slavecommit, &stamp, FALSE);
+	BUNappend(slavevalid, valid, FALSE);
+	BUNappend(slaveerror, &err, FALSE);
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
+}
+@-
+The slave status can be made visible through an SQL
+table producing function.
+@verbatim
+create function slavelog () 
+	returns table ("commit" timestamp, "valid" timestamp, "error" string)
+	external name sql.dump_slave;
+@end verbatim
+
+@c
+BAT *
+SLAVEtable(void){
+	BAT *t;
+	t = BATnew(TYPE_str,TYPE_bat,4);
+	BUNins(t,"commit",&slavecommit->batCacheid,FALSE);
+	BUNins(t,"valid",&slavevalid->batCacheid,FALSE);
+	BUNins(t,"error",&slaveerror->batCacheid,FALSE);
+	return t;
 }
 
 str
@@ -1090,7 +1130,7 @@ SLAVEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)tag;
 	*/
 	mal_set_lock(repLck, "replication");
-	if ( slavelog == NULL)
+	if ( slavecommit == NULL)
 		SLAVEinitLog();
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
