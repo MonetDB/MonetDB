@@ -258,7 +258,7 @@ slave.prelude();
 #include <mapilib/Mapi.h>
 #include "mtime.h"
 
-/* #define _DEBUG_REPLICATION_ */
+/*#define _DEBUG_REPLICATION_  */
 
 #ifdef WIN32
 #ifndef LIBREPLICATION
@@ -311,8 +311,8 @@ The final code should contain a loop to determine the last replication tag.
 @c
 #define MASTER "master/"
 #define REPLICA "log%05d-%05d"
-#define REPLICABLOCK 100
-#define REPLICADELAY 5000
+#define REPLICABLOCK 20
+#define REPLICADELAY 1000
 
 static struct MASTERRECORD {
 	char *buf;	/* assembled update function */
@@ -799,7 +799,6 @@ MASTERsend(void *arg)
 	int idx = * (int*) arg;
 	int tag = masterstatus[idx].tag;
 	int nxt, master;
-	int etag = 0, et = 0, resent = 0;
 	stream *s;
 	bstream *bs;
 	MapiHdl hdl;
@@ -814,16 +813,10 @@ MASTERsend(void *arg)
 	if ( !master)
 		return;
 
-	/* re-initialize the sql environment */
-	hdl = mapi_query(masterstatus[idx].m, "include sql;sql.init();");
-	if ( hdl == NULL)
-		return;
-
 	while ( (nxt = MASTERfindLogFile(logFile,tag)) >= 0){
 #ifdef _DEBUG_REPLICATION_
 		stream_printf(GDKout,"#sent log file %s\n",logFile);
 #endif
-
 		s = open_rastream(logFile);
 		if (s == NULL || stream_errnr(s) ) {
 			if (s )
@@ -835,6 +828,7 @@ MASTERsend(void *arg)
 		}
 
 		mal_set_lock(repLck, "replication");
+		nxt = endTag;	/* make sure we have the last tag */
 		/* read the complete file [now trimmed to 64KB]*/
 		bs = bstream_create(s, 128 * BLOCK);
 		if (bstream_next(bs) < 0) {
@@ -842,24 +836,19 @@ MASTERsend(void *arg)
 			break;
 		}
 		hdl = mapi_query(masterstatus[idx].m, bs->buf);
+		tag = nxt;
 		mal_unset_lock(repLck, "replication");
 		close_stream(s);
 		if (hdl == NULL || mapi_error(masterstatus[idx].m) != MOK) 
 			break;
-		tag = nxt;
 @-
-Upon succesful transmission we wait for new stuff
+Upon succesful transmission we wait for new stuff, this is
+recognized checking the tags. It leads to re-sending the
+last log file. To avoid ever larger files to be resent,
+we should switch to a new log file once in a while.
 @c
-		if ( tag == startTag) {
-			/* we have the last file */
-			while( et == endTag ) 
-				MT_sleep_ms(REPLICADELAY);
-			resent++;
-			if ( resent > REPLICABLOCK){
-			}
-			tag= et;
-		} else 
-			tag= etag;
+		while( nxt == endTag ) 
+			MT_sleep_ms(REPLICADELAY);
 	} 
 
 #ifdef _DEBUG_REPLICATION_
@@ -965,7 +954,7 @@ str SLAVEsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 	}
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout, "#slave awaiting replay of the log \n");
-	stream_printf(GDKout,"%s\n",buf);
+	stream_printf(GDKout,"#%s\n",buf);
 #endif
 	return MAL_SUCCEED;
 }
@@ -1029,6 +1018,7 @@ static BAT *slaveerror;
 		BATseqbase(@1,0); /* essential */
 		BBPrename(@1->batCacheid, "@1");
 		BATmode(@1, PERSISTENT);
+		BBPkeepref(@1->batCacheid);
 #ifdef _DEBUG_REPLICATION_
 		printf("#created @1\n");
 #endif
@@ -1157,17 +1147,16 @@ SLAVEdrop(int *ret, str *tag)
 str
 SLAVEprelude(int *ret)
 {
-#ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout, "#initialize slave\n");
-#endif
-	/* to be called after MASTERprelude 
+	/* to be called after MASTERprelude  */
 	if ( GDKgetenv("replication_slave") != NULL) {
+#ifdef _DEBUG_REPLICATION_
+		stream_printf(GDKout, "#initialize slave\n");
+#endif
 		mal_set_lock(repLck, "replication");
 		SLAVEinitLog();
 		mal_unset_lock(repLck, "replication");
 		SLAVEsyncDefault(ret);
 	}
-*/
 	(void)ret;
 	return MAL_SUCCEED;
 }
