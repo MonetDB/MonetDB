@@ -28,6 +28,8 @@ def splitcommand(cmd):
             w.append(c)
     if w:
         command.append(''.join(w))
+    if len(command) > 1 and command[0] == 'call':
+        del command[0]
     return command
 
 _mil_client = splitcommand(os.getenv('MIL_CLIENT', 'mclient -lmil -i'))
