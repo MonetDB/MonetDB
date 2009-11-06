@@ -402,8 +402,8 @@ doChallenge(str cmd, stream *in, stream *out) {
 		char *buf = (char *) GDKmalloc(BLOCK + 1);
 		char *challenge;
 		char *algos;
-		stream *fdin;
-		stream *fdout;
+		stream *fdin = block_stream(in);
+		stream *fdout = block_stream(out);
 		bstream *bs;
 		int len = 0;
 
@@ -411,12 +411,10 @@ doChallenge(str cmd, stream *in, stream *out) {
 			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 			return;
 		}
-		fdin = block_stream(in);
 		if (!fdin || !fdout) {
 			GDKsyserror("SERVERlisten:fdin or fdout problems");
 			return;
 		}
-		fdout = block_stream(out);
 
 		assert(buf);
 
