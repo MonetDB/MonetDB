@@ -1765,7 +1765,7 @@ nil value is set.
  * in the vr struct.
  */
 str
-convertConstant(malType type, ValPtr vr)
+convertConstant(int type, ValPtr vr)
 {
 	if( vr->vtype == type)
 		return MAL_SUCCEED;
