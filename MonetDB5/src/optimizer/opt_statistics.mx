@@ -64,6 +64,7 @@ They provide the basis for dynamic optimization and offline analysis
 #define QOTtimings	3
 
 static BAT *qotStat[4] = { NULL };
+static MT_Lock qotlock;
 
 static BAT *
 QOT_create(str hnme, str tnme, int ht, int tt)
@@ -85,11 +86,15 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 	BATmode(b, PERSISTENT);
 	return b;
 }
+
 static void QOTstatisticsInit(){
 	oid o=0;
 	int i;
 
 	if (qotStat[QOTnames]) return;
+	MT_lock_init(&qotlock,"QOT statistics");
+
+	mal_set_lock(qotlock,"QOT statistics");
 	qotStat[QOTnames]= QOT_create("opt","names",TYPE_void,TYPE_str);
 	BATseqbase(qotStat[QOTnames],o);
 	qotStat[QOTcalls]= QOT_create("opt","calls",TYPE_void,TYPE_int);
@@ -107,8 +112,10 @@ static void QOTstatisticsInit(){
 				BBPclear(qotStat[i]->batCacheid);
 				qotStat[i] = NULL;
 		}
+		mal_unset_lock(qotlock,"QOT statistics");
 		return;
 	}
+	mal_unset_lock(qotlock,"QOT statistics");
 	/* save them at least once */
 	QOTstatisticsExit();
 }
@@ -123,6 +130,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	lng lval=0, *lp= &lval;
 
 	QOTstatisticsInit();
+	mal_set_lock(qotlock,"QOT statistics");
 	p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 	if (p == BUN_NONE) {
 		BUNappend(qotStat[QOTnames], nme, FALSE);
@@ -131,6 +139,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 		BUNappend(qotStat[QOTtimings], &lval, FALSE);
 		p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 		if (p == BUN_NONE){
+			mal_unset_lock(qotlock,"QOT statistics");
 			return;
 		}
 	} 
@@ -142,6 +151,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 #ifdef _Q_STATISTICS_DEBUG
 		stream_printf(GDKout,"#Could not access 'calls'\n");
 #endif
+		mal_unset_lock(qotlock,"QOT statistics");
 		return;
 	}
 	bi = bat_iterator(qotStat[QOTcalls]);
@@ -153,6 +163,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 #ifdef _Q_STATISTICS_DEBUG
 		stream_printf(GDKout,"#Could not access 'actions'\n");
 #endif
+		mal_unset_lock(qotlock,"QOT statistics");
 		return;
 	}
 	bi = bat_iterator(qotStat[QOTactions]);
@@ -164,11 +175,13 @@ QOTupdateStatistics(str nme, int actions, lng val)
 #ifdef _Q_STATISTICS_DEBUG
 		stream_printf(GDKout, "#Could not access 'timings'\n");
 #endif
+		mal_unset_lock(qotlock,"QOT statistics");
 		return ;
 	}
 	bi = bat_iterator(qotStat[QOTtimings]);
 	lp = (lng*) BUNtail(bi,p);
 	*lp = *lp+ val;
+	mal_unset_lock(qotlock,"QOT statistics");
 }
 
 void
@@ -176,7 +189,11 @@ QOTstatisticsExit()
 {
 	BAT *names = BATnew(TYPE_void,TYPE_str, 4);
 
-	if( qotStat[QOTnames] == NULL) return;
+	if ( names == NULL)
+		return;
+	if( qotStat[QOTnames] == NULL) 
+		return;
+	mal_set_lock(qotlock,"QOT statistics");
 	BUNappend(names, BBPname(qotStat[QOTnames]->batCacheid), FALSE);
 	BUNappend(names, BBPname(qotStat[QOTcalls]->batCacheid), FALSE);
 	BUNappend(names, BBPname(qotStat[QOTactions]->batCacheid), FALSE);
@@ -184,6 +201,7 @@ QOTstatisticsExit()
 
 	TMsubcommit(names);
 	BBPreclaim(names);
+	mal_unset_lock(qotlock,"QOT statistics");
 }
 
 static int 
@@ -201,7 +219,10 @@ str
 QOTgetStatistics(int *ret, str *nme)
 {
 	int idx;
+
 	QOTstatisticsInit();
+	if( qotStat[QOTnames] == NULL) 
+		throw(ILLARG,"optimizer.getStatistics",RUNTIME_OBJECT_MISSING);
 	idx= QOTindex(*nme);
 	if( idx <  0 || qotStat[idx] == 0 )
 		throw(ILLARG,"optimizer.getStatistics",RUNTIME_OBJECT_MISSING);
