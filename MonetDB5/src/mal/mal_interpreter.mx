@@ -2274,42 +2274,45 @@ It simply skips the barrier block upon return.
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	if ( stk)
+	if ( stk) {
 		time(&stk->clock);
-	if( mb->profiler != NULL && stk){
-		@1->clk= GDKusec();
-		if( mb->profiler[stkpc].trace)
-		{
-			ppc= stkpc;
-			mb->profiler[ppc].clk= @1->clk;
-			mb->profiler[ppc].clock= stk->clock;
+		if( mb->profiler != NULL ){
+			@1->clk= GDKusec();
+			if( mb->profiler[stkpc].trace)
+			{
+				ppc= stkpc;
+				mb->profiler[ppc].clk= @1->clk;
+				mb->profiler[ppc].clock= stk->clock;
 #ifdef HAVE_TIMES
-			times(&stk->timer);
-			mb->profiler[ppc].timer= stk->timer;
+				times(&stk->timer);
+				mb->profiler[ppc].timer= stk->timer;
 #endif
+			}
 		}
 	}
 #endif
 @= endProfile
 #ifdef MALprofiler
-	if( malProfileMode == 0)
-		/* mostly true */;
-	else
-	if(ppc>= 0 && mb->profiler != NULL && mb->profiler[ppc].trace && stk )
-	{
-		newclk= GDKusec();
-		mb->profiler[ppc].counter++;
-		mb->profiler[ppc].ticks = newclk - @1->clk;
-		mb->profiler[ppc].clk += mb->profiler[ppc].clk;
-		if( pci){
-			mb->profiler[ppc].rbytes= getVolume(stk,pci,0);
-			mb->profiler[ppc].wbytes= getVolume(stk,pci,1);
+	if ( stk != NULL) {
+		if( malProfileMode == 0)
+			/* mostly true */;
+		else
+		if(@1 != NULL && ppc>= 0 && mb->profiler != NULL && mb->profiler[ppc].trace )
+		{
+			newclk= GDKusec();
+			mb->profiler[ppc].counter++;
+			mb->profiler[ppc].ticks = newclk - @1->clk;
+			mb->profiler[ppc].clk += mb->profiler[ppc].clk;
+			if( pci){
+				mb->profiler[ppc].rbytes= getVolume(stk,pci,0);
+				mb->profiler[ppc].wbytes= getVolume(stk,pci,1);
+			}
+			profilerEvent(cntxt->nspace,mb,stk,ppc);
+			ppc= -1;
 		}
-		profilerEvent(cntxt->nspace,mb,stk,ppc);
-		ppc= -1;
-	}
-	if ( cntxt->qtimeout &&  time(NULL) - stk->clock > cntxt->qtimeout)
+		if ( cntxt->qtimeout &&  time(NULL) - stk->clock > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+	}
 #endif
 
 @= timingHndlr
