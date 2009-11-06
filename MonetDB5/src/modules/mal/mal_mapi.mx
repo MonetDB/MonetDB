@@ -407,16 +407,20 @@ doChallenge(str cmd, stream *in, stream *out) {
 		bstream *bs;
 		int len = 0;
 
-		if (buf == NULL){
+		if (buf == NULL || fdin == NULL || fdout == NULL){
+			if (fdin) {
+				stream_close(fdin);
+				stream_destroy(fdin);
+			}
+			if (fdout) {
+				stream_close(fdout);
+				stream_destroy(fdout);
+			}
+			if (buf)
+				GDKfree(buf);
 			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 			return;
 		}
-		if (!fdin || !fdout) {
-			GDKsyserror("SERVERlisten:fdin or fdout problems");
-			return;
-		}
-
-		assert(buf);
 
 		/* generate the challenge string */
 		challenge = alloca(sizeof(char) * (12 + 1));
@@ -444,6 +448,7 @@ doChallenge(str cmd, stream *in, stream *out) {
 			stream_destroy(fdin);
 			stream_close(fdout);
 			stream_destroy(fdout);
+			GDKfree(buf);
 			return;
 		}
 		buf[len] = 0;
