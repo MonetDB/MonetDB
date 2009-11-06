@@ -270,17 +270,6 @@ make install DESTDIR=$RPM_BUILD_ROOT
 # cleanup stuff we don't want to install
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
-%if %{?_with_rubygem:1}%{!?_with_rubygem:0}
-cd src/ruby
-mkdir -p $RPM_BUILD_ROOT/%{gemdir}
-gem install --local --install-dir %{buildroot}%{gemdir} \
-            --force --rdoc ruby-monetdb-sql-0.1.gem
-cd adapter
-gem install --local --install-dir %{buildroot}%{gemdir} \
-            --force --rdoc activerecord-monetdb-adapter-0.1.gem
-cd ../../..
-%endif
-
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
