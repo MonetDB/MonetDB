@@ -1319,7 +1319,7 @@ runMALdetached(void *t){
 	stream_printf(cntxt->fdout,"start thread in background\n");
 #endif
 	if (stk == NULL){
-		GDKerror(MAL, "mal.interpreter:" MAL_STACK_FAIL);
+		GDKerror("mal.interpreter: " MAL_STACK_FAIL);
 		return;
 	}
 	sve= stk->keepAlive;
