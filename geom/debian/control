@@ -29,7 +29,7 @@ Description: database system for high-performance applications, xquery frontend
  .
  This package contains the files needed to develop with monetdb-geom.
 
-#Package: libmonetdb4-geom0
+#Package: libmonetdb4-server-geom0
 #Section: libs
 #Architecture: any
 #Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb4-server
@@ -42,7 +42,7 @@ Description: database system for high-performance applications, xquery frontend
 # This package contains the GIS (Geographic Information System)
 # extensions for MonetDB-SQL-server4.
 
-Package: libmonetdb5-geom0
+Package: libmonetdb5-server-geom0
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb5-server
