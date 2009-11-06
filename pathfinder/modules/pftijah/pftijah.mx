@@ -1732,10 +1732,8 @@ PROC _tj_add2collection_frag(str ftiName, BAT[str,bat] collBat, str uri_loc, str
 	}
     }
     var	i_start := usec();
-    tj_trace("/tmp/ws_create0_err",HASH +" _tj_add2collection_frag: calling ws_create");
     var xrpc_mode := "";
-    var ws_opt := ws_create(0); # ERROR: INFINITE IDLE WAIT!!!
-    tj_trace("/tmp/ws_create0_err",HASH +" _tj_add2collection_frag: returning from ws_create");
+    var ws_opt := ws_create(0); 
     ws_opendoc(ws_opt, bat(void,str,1).append(uri_name));
     _tj_throw2collection(collBat,ws_opt,uri_name);
     ws_destroy(ws_opt);
