@@ -32,6 +32,10 @@ INCLUDES = -I../.. $(MONETDB_INCS) $(PERL_INCS)
 #  Hence, we have to disable (override) our X_CFLAGS completely:
 X_CFLAGS = -D_GNU_SOURCE
 
+#  Likewise, we need to disable W_CFLAGS=-WX (i.e., treating warnings as errors)
+#  for swig-generated code on Windows
+W_CFLAGS =
+
 lib_MapiLib = {
 	PREFIX =
 	NAME = MapiLib
