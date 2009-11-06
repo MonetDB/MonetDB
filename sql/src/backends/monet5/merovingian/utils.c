@@ -33,7 +33,7 @@
 #include <strings.h> /* strcasecmp */
 #include <gdk.h> /* GDKmalloc */
 
-foo!
+foo!bar
 
 /**
  * Returns a GDKmalloced copy of s, with the first occurrence of
