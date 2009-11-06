@@ -1,0 +1,14 @@
+[monetdb]
+name=MonetDB $releasever - $basearch
+baseurl=http://monetdb.cwi.nl/downloads/Fedora/$releasever/$basearch/
+enabled=1
+
+[monetdb-debuginfo]
+name=MonetDB Debug $releasever - $basearch
+baseurl=http://monetdb.cwi.nl/downloads/Fedora/debug/$releasever/$basearch/
+enabled=0
+
+[monetdb-source]
+name=MonetDB Source $releasever - $basearch
+baseurl=http://monetdb.cwi.nl/downloads/Fedora/source/
+enabled=0
