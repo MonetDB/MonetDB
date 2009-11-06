@@ -29,7 +29,6 @@ The trace options:
     r =block reads
     w =block writes
     b =bytes read/written
-    d =diskspace needed
     s =statement
     p =pg faults, cntxt switches
 
