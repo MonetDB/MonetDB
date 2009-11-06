@@ -293,7 +293,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	char *view = NULL;
 	size_t maxquerylen;
 	char *sname = NULL;
-	int cap;
+	ssize_t cap;
 #define CAP(X) ((cap = (X)) < 0 ? 0 : cap)
 
 
