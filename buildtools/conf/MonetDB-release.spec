@@ -1,13 +1,12 @@
 Name:		MonetDB-release
 Version:	1.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	MonetDB YUM Repository
 
 Group:		Applications/Databases
 License:	MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL:		http://monetdb.cwi.nl/
 Source0:	http://monetdb.cwi.nl/downloads/sources/%{name}-%{version}.tar.gz
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 
 Vendor:		MonetDB B.V.
@@ -40,13 +39,6 @@ This package provides the necessary files to use the MonetDB repository.
 rm -rf $RPM_BUILD_ROOT
 
 
-%post
-# Import homerepo.net gpg key if needed
-rpm -q gpg-pubkey-0583366f-491d42fe >/dev/null 2>&1 || \
-    rpm --import %{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-MonetDB
-# We don't want a possible error to leave the previous package installed
-exit 0
-
 %files
 %defattr(-,root,root,-)
 %doc
@@ -56,6 +48,10 @@ exit 0
 
 
 %changelog
+* Fri Nov  6 2009 Sjoerd Mullender <sjoerd@acm.org> - 1.0-2
+- Don't import key when installing MonetDB-release RPM, but when the
+  first package asks for it.
+
 * Tue Nov 18 2008 Sjoerd Mullender <sjoerd@acm.org> - 1.0-1
 - Initial version.
 
