@@ -33,8 +33,6 @@
 #include <strings.h> /* strcasecmp */
 #include <gdk.h> /* GDKmalloc */
 
-foo!bar
-
 /**
  * Returns a GDKmalloced copy of s, with the first occurrence of
  * "${prefix}" replaced by prefix.  If s is NULL, this function returns
