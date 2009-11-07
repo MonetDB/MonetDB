@@ -533,7 +533,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var, int reuse)
 				r = pushArgument(mb,r,getArg(q,0));
 			used = 1;
 		}
-		if (!used && 
+		if (r && !used && 
 		   (getFunctionId(p) == kdifferenceRef ||
 		    getFunctionId(p) == kunionRef)) 
 			r = pushArgument(mb, r, getArg(mi, k));

@@ -948,6 +948,8 @@ STATgetHistogram(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (i == 0)
 		throw(MAL, "statistics.getHistogram", RUNTIME_OBJECT_MISSING);
 	h = BATdescriptor(i);
+	if ( h == NULL)
+		throw(MAL, "statistics.getHistogram", RUNTIME_OBJECT_MISSING);
 	BBPincref(*ret = h->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }

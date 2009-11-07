@@ -323,6 +323,8 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	msg = (str) BKCnewBAT(res, &ht, &tt, &cap);
 	if (msg == MAL_SUCCEED && ht == TYPE_void) {
 		b = BATdescriptor(*res);
+		if ( b == NULL )
+			throw(MAL, "bat.new", RUNTIME_OBJECT_MISSING);
 		BATseqbase(b, o);
 		BBPunfix(b->batCacheid);
 	}
