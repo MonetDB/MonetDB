@@ -21,10 +21,14 @@ Ready.
 
 Over..
 
-# 23:02:29 >  
-# 23:02:29 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=33742 
-# 23:02:29 >  
+# 15:46:08 >  
+# 15:46:08 >  mclient -lsql -i -umonetdb -Pmonetdb --host=rig --port=35464 
+# 15:46:08 >  
 
+% .explain # table_name
+% mal # name
+% clob # type
+% 0 # length
 function user.s0_1{autoCommit=true}():void;
 barrier _47 := language.dataflow();
     _2:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",0);
@@ -53,8 +57,12 @@ exit _47;
     _24 := io.stdout();
     sql.exportResult(_24,_18);
 end s0_1;
+% .explain # table_name
+% mal # name
+% clob # type
+% 0 # length
 function user.s1_1{autoCommit=true}():void;
-barrier _46 := language.dataflow();
+barrier _47 := language.dataflow();
     _2:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",0);
     _7:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",2);
     _9 := algebra.kdifference(_2,_7);
@@ -72,9 +80,9 @@ barrier _46 := language.dataflow();
     _16 := algebra.kdifference(_13,_15);
     _13 := nil:BAT;
     _15 := nil:BAT;
-    _17:bat[:oid,:dbl]  := batcalc.*(_16,_16);
+    _17:bat[:oid,:dbl]  := batcalc.*(_16,_16,true,true);
     _16 := nil:BAT;
-exit _46;
+exit _47;
     _18 := sql.resultSet(1,1,_17);
     sql.rsColumn(_18,"sys.","sql_mul_x","double",53,0,_17);
     _17:bat[:oid,:dbl]  := nil:BAT;
