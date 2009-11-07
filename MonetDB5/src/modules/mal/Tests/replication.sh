@@ -25,5 +25,5 @@ mclient -lsql -d dbslave -s "select * from tmp;"
 mclient -lsql -d dbslave -s "select * from slavelog();"
 
 #remove all stuff
-monetdb stop dbmastet dbslave
+monetdb stop dbmaster dbslave
 monetdb destroy -f dbmaster dbslave

@@ -1155,7 +1155,10 @@ SLAVEprelude(int *ret)
 		mal_set_lock(repLck, "replication");
 		SLAVEinitLog();
 		mal_unset_lock(repLck, "replication");
-		SLAVEsyncDefault(ret);
+	/*	SLAVEsyncDefault(ret);   
+	   can not work, because we are still in MAL initialization
+	   and this would require a running SQL environment.
+	   The reply must be started at the end of the SQL init */
 	}
 	(void)ret;
 	return MAL_SUCCEED;
