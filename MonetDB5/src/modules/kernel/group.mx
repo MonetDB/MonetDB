@@ -413,6 +413,11 @@ map2histo(BAT *map)
 	}
 	sz = BATcount(map);
 	bn = BATnew(TYPE_oid,TYPE_wrd,sz);
+	if ( bn == NULL){
+		if (map)
+			BBPreclaim(map);
+		return NULL;
+	}
 	BATloop(map, p, q) {
 		bunfastins(bn, 
 			&((mapentry_t*)Hloc(map, p))->use.gid, 
@@ -621,6 +626,7 @@ bits(BUN i)
 		if (bn == NULL) {
 			return GDK_FAIL;
 		}
+
 		/* Poor man's clustered test: sorted & !keyed => clustered  */
 		if ( ((b->tsorted)&1) && !(b->tkey) ) {
 			@:choosegroup@1(tailtype(b,TRUE),bn,NULL,clustered,histo)@
@@ -844,8 +850,13 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 	bit ordered = 1;
 	str msg = NULL;
 
-	if (bn == NULL || histo == NULL) 
+	if (bn == NULL || histo == NULL) {
+		if (histo)
+			BBPreclaim(histo);
+		if (bn)
+			BBPreclaim(bn);
 		return -1;
+	}
 
 	bn->hseqbase = b->hseqbase;
 	for(;t < e; t++) {
@@ -921,9 +932,9 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt, map_T *m)
 			return ret?GDK_FAIL:GDK_SUCCEED;
 		}
 		bn = BATnew(ht, TYPE_oid, BATcount(b));
-		if (bn == NULL) {
+		if (bn == NULL) 
 			return GDK_FAIL;
-		}
+	
 
 		/* CTderive with correct lookup method (hash,synced) and type */
 		if (synced) {
@@ -997,9 +1008,9 @@ CThistosum(
 	oid *ot, *oh;
 
 	(void) c;
-	if (res == NULL) {
+	if (res == NULL)
 		return GDK_FAIL;
-	}
+
 	resi = bat_iterator(res);
 	BATloop(b, p, q) {
 		oh = (oid *) BUNhloc(bi, p);
@@ -1034,15 +1045,21 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	BUN size = BATcount(dom);
 	BUN yy, mask, *hash = NULL;
 	BUN r, p, q;
-	BAT *bn = BATnew(TYPE_oid, TYPE_wrd, size);
-	BAT *lnk = BATnew(TYPE_oid, TYPE_void, size);
-	wrd *hcnt = (wrd*)Tloc(bn, BUNfirst(bn));
-	oid *hcur = (oid*)Hloc(bn, BUNfirst(bn));
-	oid *link = (oid*)Hloc(lnk, BUNfirst(lnk));
-	oid *hdom = (oid*)Hloc(dom, 0);
+	BAT *bn, *lnk;
+	wrd *hcnt;
+	oid *hcur, *link, *hdom;
 
+	bn = BATnew(TYPE_oid, TYPE_wrd, size);
 	if (bn == NULL)
 		return GDK_FAIL;
+	lnk = BATnew(TYPE_oid, TYPE_void, size);
+	if (lnk == NULL)
+		return GDK_FAIL;
+	
+	hcnt = (wrd*)Tloc(bn, BUNfirst(bn));
+	hcur = (oid*)Hloc(bn, BUNfirst(bn));
+	link = (oid*)Hloc(lnk, BUNfirst(lnk));
+	hdom = (oid*)Hloc(dom, 0);
 
 	/* we know the domain; go for perfect hashing */
 	for (mask = 1; mask < size; mask <<= 1)
@@ -1052,6 +1069,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	hash = (BUN *) GDKmalloc(sizeof(BUN) * mask);
 	if (hash == NULL) {
 		BBPreclaim(bn);
+		BBPreclaim(lnk);
 		return GDK_FAIL;
 	}
 	for (yy = 0; yy < mask; yy++) {
@@ -1351,14 +1369,24 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 BAT *
 CTgroup_@1_ordered(BAT *b, BAT **res) 
 {
-	BAT *bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
-	BAT *histo = BATnew(TYPE_oid, TYPE_wrd, 1024); 
-	@1 *t = (@1*)Tloc(b, BUNfirst(b)), *e = t + BATcount(b), cur;
+	BAT *bn;
+	BAT *histo;
+	@1 *t, *e, cur;
 	wrd cnt = 0;
-	oid *rt = (oid*)Tloc(bn, BUNfirst(bn)), curid;
+	oid *rt, curid;
 
-	if (bn == NULL || histo == NULL) 
+	bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+	if (bn == NULL) 
 		return NULL;
+	histo = BATnew(TYPE_oid, TYPE_wrd, 1024); 
+	if (histo == NULL) {
+		BBPreclaim(bn);
+		return NULL;
+	}
+
+	t = (@1*)Tloc(b, BUNfirst(b));
+	e = t + BATcount(b);
+	rt = (oid*)Tloc(bn, BUNfirst(bn));
 
 	bn->hseqbase = b->hseqbase;
 	cur = *t;
@@ -1821,11 +1849,13 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 
 	(void) ignore_nils; /* fool compiler */
 	if( (b= BATdescriptor(*bid)) == NULL ){
+		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
 
 	@:chkHeader(b,GRPsum_@1_@3)@
 	if( (e= BATdescriptor(*eid)) == NULL ){
+		BBPreleaseref(bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
@@ -1887,9 +1917,8 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 	oid i, range, min, max;
 
 	(void) ignore_nils; /* fool compiler */
-	if( (b= BATdescriptor(*bid)) == NULL ){
+	if( (b= BATdescriptor(*bid)) == NULL )
 		throw(MAL, "group.prod", RUNTIME_OBJECT_MISSING);
-	}
 
 	@:chkHeader(b,GRPprod_@1_@3)@
 	if( (e= BATdescriptor(*eid)) == NULL ){
@@ -1897,8 +1926,11 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 		throw(MAL, "group.prod", RUNTIME_OBJECT_MISSING);
 	}
  	bn = BATnew(e->htype, TYPE_@3, BATcount(e));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(e->batCacheid);
 		throw(MAL, "group.prod", MAL_MALLOC_FAIL);
+	}
 
 	@:chkHeader(e,GRPprod_@1_@3)@
 	/* init: set all prods to one */
@@ -1991,8 +2023,11 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 	}
 	@:chkHeader(e,GRPavg_@1)@
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(e->batCacheid);
 		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
+	}
 
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
@@ -2078,8 +2113,11 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	}
 	@:chkHeader(e,GRPavg_@1)@
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(e->batCacheid);
 		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
+	}
 	nElements = BATcount(e);
 
 	off = BUNfirst(e);
@@ -2344,6 +2382,10 @@ str GRP@1_oid_@2(int *retval, int *bid)
 	@:chkHeader(b,GRP@1_oid_@2)@
 
 	bn = BATnew(BAThtype(b), BATttype(b), BATcount(b));
+	if ( bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "group", PROGRAM_NYI);
+	}
 
 	bi = bat_iterator(b);
 	bni = bat_iterator(bn);
@@ -2451,8 +2493,11 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 	@:chkHeader(e,GRPaggr_count)@
 
 	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(e->batCacheid);
 		throw(MAL, "group.count", MAL_MALLOC_FAIL);
+	}
 	btt = b->ttype;
 	bt_nil = ATOMnilptr(b->ttype);
 
@@ -2537,8 +2582,11 @@ GRPsize(int *retval, int *bid, int *eid)
 	@:chkHeader(e,GRPsize)@
 
 	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
-	if (bn == NULL)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(e->batCacheid);
 		throw(MAL, "group.size", MAL_MALLOC_FAIL);
+	}
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	bn->T->nonil = 1;
@@ -2599,6 +2647,10 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 
 	/* init: set all sums to zero */
 	bn= BATnew( TYPE_void, TYPE_@2, BATcount(b)/ *size +1);
+	if ( bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
+	}
 	bn->tsorted = bn->hsorted = 0;
 	BATseqbase(bn,0);
 
