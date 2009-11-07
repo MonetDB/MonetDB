@@ -21,17 +21,101 @@ Ready.
 
 Over..
 
-# 13:44:44 >  
-# 13:44:44 >  ./jdbc_no_debug.SF-1739356.SQL.sh jdbc_no_debug.SF-1739356 
-# 13:44:44 >  
+# 15:15:37 >  
+# 15:15:37 >  ./jdbc_no_debug.SF-1739356.SQL.sh jdbc_no_debug.SF-1739356 
+# 15:15:37 >  
 
 
-# 13:44:44 >  
-# 13:44:44 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h alf -p 36629 -d mTests_src_test_BugTracker -f "../../../../../../../../scratch1/niels/rc/sql/src/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
-# 13:44:44 >  
+# 15:15:37 >  
+# 15:15:37 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h rig -p 33159 -d mTests_src_test_BugTracker -f "../../../../../source/sql/src/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
+# 15:15:37 >  
+
++--------+
+| L1     |
++========+
+|     27 |
++--------+
+1 row
+
++--------+-----------------------------------------------------------------------------------------------------------------+
+| ticks  | stmt                                                                                                            |
++========+=================================================================================================================+
+|     50 | _7:bat[:oid,:oid] <tmp_1410>[0] := sql.bind_dbat("tmp","_tables",1);                                            |
+|     41 | _2:bat[:oid,:sht] <tmp_1631>[0] := sql.bind("tmp","_tables","type",0);                                          |
+|     16 | _16:bat[:oid,:int] <tmp_1625>[0] := sql.bind("tmp","_tables","id",0);                                           |
+|      5 | _23:bat[:oid,:sht] <tmp_1401>[0] := sql.bind("sys","_tables","type",2);                                         |
+|      8 | _35:bat[:oid,:int] <tmp_1135>[108] := sql.bind("sys","_tables","id",0);                                         |
+|     19 | _29:bat[:oid,:oid] <tmp_1620>[77] := sql.bind_dbat("sys","_tables",1);                                          |
+|      5 | _27:bat[:oid,:sht] <tmp_1402>[0] := sql.bind("sys","_tables","type",1);                                         |
+|     93 | _21:bat[:oid,:sht] <tmp_1137>[108] := sql.bind("sys","_tables","type",0);                                       |
+|     22 | _9<tmpr_1410>[0] := bat.reverse(_7=<tmp_1410>:bat[:oid,:oid][0]);                                               |
+|     42 | _25<tmp_1706>[108] := algebra.kdifference(_21=<tmp_1137>:bat[:oid,:sht][108],_23=<tmp_1401>:bat[:oid,:sht][0]); |
+|     21 | _30<tmpr_1620>[77] := bat.reverse(_29=<tmp_1620>:bat[:oid,:oid][77]);                                           |
+|      4 | _36:bat[:oid,:int] <tmp_1405>[0] := sql.bind("sys","_tables","id",2);                                           |
+|      9 | _39:bat[:oid,:int] <tmp_1406>[0] := sql.bind("sys","_tables","id",1);                                           |
+|     13 | _18<tmp_1710>[0] := algebra.kdifference(_16=<tmp_1625>:bat[:oid,:int][0],_9=<tmpr_1410>[0]);                    |
+|      9 | _10<tmp_1707>[0] := algebra.kdifference(_2=<tmp_1631>:bat[:oid,:sht][0],_9=<tmpr_1410>[0]);                     |
+|      2 | _7:bat[:oid,:oid]  := nil:BAT;                                                                                  |
+|     38 | _26<tmp_1711>[108] := algebra.kunion(_25=<tmp_1706>[108],_23=<tmp_1401>:bat[:oid,:sht][0]);                     |
+|      4 | _21:bat[:oid,:sht]  := nil:BAT;                                                                                 |
+|      2 | _29:bat[:oid,:oid]  := nil:BAT;                                                                                 |
+|      2 | _9 := nil:BAT;                                                                                                  |
+|     14 | _25 := nil:BAT;                                                                                                 |
+|      2 | _16:bat[:oid,:int]  := nil:BAT;                                                                                 |
+|      2 | _23:bat[:oid,:sht]  := nil:BAT;                                                                                 |
+|     49 | _28<tmp_1706>[108] := algebra.kunion(_26=<tmp_1711>[108],_27=<tmp_1402>:bat[:oid,:sht][0]);                     |
+|     13 | _37<tmp_1712>[108] := algebra.kdifference(_35=<tmp_1135>:bat[:oid,:int][108],_36=<tmp_1405>:bat[:oid,:int][0]); |
+|      1 | _2:bat[:oid,:sht]  := nil:BAT;                                                                                  |
+|    261 | _11<tmp_1714>[0] := algebra.thetauselect(_10=<tmp_1707>[0],2:sht,"<");                                          |
+|      1 | _27:bat[:oid,:sht]  := nil:BAT;                                                                                 |
+|     20 | _38<tmp_1713>[108] := algebra.kunion(_37=<tmp_1712>[108],_36=<tmp_1405>:bat[:oid,:int][0]);                     |
+|      2 | _35:bat[:oid,:int]  := nil:BAT;                                                                                 |
+|     22 | _40<tmp_1715>[108] := algebra.kunion(_38=<tmp_1713>[108],_39=<tmp_1406>:bat[:oid,:int][0]);                     |
+|      2 | _36:bat[:oid,:int]  := nil:BAT;                                                                                 |
+|     26 | _41<tmp_1577>[31] := algebra.kdifference(_40=<tmp_1715>[108],_30=<tmpr_1620>[77]);                              |
+|      2 | _39:bat[:oid,:int]  := nil:BAT;                                                                                 |
+|      6 | _40 := nil:BAT;                                                                                                 |
+|      5 | _38 := nil:BAT;                                                                                                 |
+|      5 | _37 := nil:BAT;                                                                                                 |
+|      6 | _26 := nil:BAT;                                                                                                 |
+|     61 | _31<tmp_1711>[31] := algebra.kdifference(_28=<tmp_1706>[108],_30=<tmpr_1620>[77]);                              |
+|     21 | _14<tmp_1712>[0] := algebra.markT(_11=<tmp_1714>[0],0@0);                                                       |
+|     42 | _32<tmp_1713>[27] := algebra.thetauselect(_31=<tmp_1711>[31],2:sht,"<");                                        |
+|      2 | _30 := nil:BAT;                                                                                                 |
+|     11 | _33<tmp_1714>[27] := algebra.markT(_32=<tmp_1713>[27],0@0);                                                     |
+|      4 | _31 := nil:BAT;                                                                                                 |
+|      8 | _34<tmpr_1714>[27] := bat.reverse(_33=<tmp_1714>[27]);                                                          |
+|      2 | _32 := nil:BAT;                                                                                                 |
+|     40 | _42<tmp_1611>[27] := algebra.leftjoin(_34=<tmpr_1714>[27],_41=<tmp_1577>[31],nil:lng);                          |
+|      2 | _33 := nil:BAT;                                                                                                 |
+|      3 | _41 := nil:BAT;                                                                                                 |
+|      6 | _34 := nil:BAT;                                                                                                 |
+|      4 | _15<tmpr_1712>[0] := bat.reverse(_14=<tmp_1712>[0]);                                                            |
+|      7 | _28 := nil:BAT;                                                                                                 |
+|      5 | _10 := nil:BAT;                                                                                                 |
+|      4 | _11 := nil:BAT;                                                                                                 |
+|      9 | _19<tmp_1550>[0] := algebra.leftjoin(_15=<tmpr_1712>[0],_18=<tmp_1710>[0],nil:lng);                             |
+|      2 | _14 := nil:BAT;                                                                                                 |
+|      6 | _18 := nil:BAT;                                                                                                 |
+|      4 | _15 := nil:BAT;                                                                                                 |
+|   4713 | barrier _103 := language.dataflow();                                                                            |
+|     20 | _43:bat[:oid,:int] <tmp_1710>[0] := bat.new(nil:oid,nil:int);                                                   |
+|     24 | _46<tmp_1710>[27] := bat.append(_43=<tmp_1710>:bat[:oid,:int][27],_42=<tmp_1611>[27],true);                     |
+|      6 | _43:bat[:oid,:int]  := nil:BAT;                                                                                 |
+|      4 | _42 := nil:BAT;                                                                                                 |
+|      5 | _47<tmp_1710>[27] := bat.append(_46=<tmp_1710>[27],_19=<tmp_1550>[0],true);                                     |
+|      2 | _46 := nil:BAT;                                                                                                 |
+|      3 | _19 := nil:BAT;                                                                                                 |
+|      3 | _48 := aggr.count(_47=<tmp_1710>[27]);                                                                          |
+|      3 | _47 := nil:BAT;                                                                                                 |
+|     15 | sql.exportValue(1,".tables","L1","wrd",64,0,6,_48=27:wrd,"");                                                   |
+|      7 | end s0_1;                                                                                                       |
+|   5310 | user.s0_1();                                                                                                    |
++--------+-----------------------------------------------------------------------------------------------------------------+
+71 rows
 
 
-# 13:44:44 >  
-# 13:44:44 >  Done.
-# 13:44:44 >  
+# 15:15:38 >  
+# 15:15:38 >  Done.
+# 15:15:38 >  
 

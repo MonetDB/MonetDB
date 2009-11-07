@@ -17,8 +17,6 @@ stderr of test 'jdbc_no_debug.SF-1739356` in directory 'src/test/BugTracker` its
 
 Error on line 1: We only support debugging SQL in interactive mode in: "debug"
 current transaction is aborted (please ROLLBACK)
-Error on line 2: We do not support tracing SQL in interactive mode in: "trace"
-current transaction is aborted (please ROLLBACK)
 
 # 09:34:53 >  
 # 09:34:53 >  Done.
