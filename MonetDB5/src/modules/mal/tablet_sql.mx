@@ -280,6 +280,10 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 		} 
 
 		for ( ; *line ; line++)
+			if ( *line == '\\'){
+				if (line[1] )
+					line++;
+			} else
 			if (*line == ch &&
 				(task->seplen == 1 ||
 				 strncmp(line, task->separator, task->seplen) == 0)) {
@@ -465,6 +469,11 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			*/
 			if ( quote == 0) {
 				for ( ; *e ; e++)
+					if ( *e == '\\') {
+						/* skip escaped characters */ 
+						if (e[1])
+							e++;
+					} else
 					if ( *e == *rsep && (rseplen == 1 || strncmp(e,rsep,rseplen) == 0) )
 						break;
 			} else {
