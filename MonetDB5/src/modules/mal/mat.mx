@@ -155,20 +155,24 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 	if( b == NULL)
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 	bn = BATcopy(b, b->htype, b->ttype, TRUE);
+	BBPunfix(b->batCacheid);
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-	BBPunfix(b->batCacheid);
 
 	for(i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if( b == NULL)
+			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		cap += BATcount(b);
 		BBPunfix(b->batCacheid);
 	}
 	bn = BATextend(bn, cap);
 	for( i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
-		if( b == NULL)
+		if( b == NULL){
+			BBPreleaseref(bn->batCacheid);
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		}
 		/* use the right oid ranges, don't change the input */
 		BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
@@ -189,20 +193,26 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 	if( b == NULL)
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 	bn = BATcopy(b, b->htype, b->ttype, TRUE);
+	BBPunfix(b->batCacheid);
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-	BBPunfix(b->batCacheid);
 
 	for(i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if( b == NULL){
+			BBPreleaseref(bn->batCacheid);
+			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		}
 		cap += BATcount(b);
 		BBPunfix(b->batCacheid);
 	}
 	bn = BATextend(bn, cap);
 	for( i = 2; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
-		if( b == NULL)
+		if( b == NULL){
+			BBPreleaseref(bn->batCacheid);
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		}
 		BATappend(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}

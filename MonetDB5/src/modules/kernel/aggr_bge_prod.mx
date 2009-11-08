@@ -86,15 +86,13 @@ structure to compute a group of common aggregates.
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	if (slots > 0) {
-		hit = (bit*) GDKzalloc(slots*sizeof(bit));
-		if (hit == NULL) {
-			GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
-			if (@1 && prods)
-				GDKfree(prods);
-			BBPreclaim(bn);
-			return GDK_FAIL;
-		}
+	hit = (bit*) GDKzalloc(slots*sizeof(bit));
+	if (hit == NULL) {
+		GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
+		if (@1 && prods)
+			GDKfree(prods);
+		BBPreclaim(bn);
+		return GDK_FAIL;
 	}
 	/* scan b & g, and add values to prods in-place or in prods-array */
 	base = BUNfirst(g);
@@ -248,6 +246,11 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 
 	/* scan b & g, and calculate prods */
 	slots = BATcount(e);
+	if (slots == 0) {
+		/* empty extend => empty result */
+		*ret = bn;
+		return GDK_SUCCEED;
+	}
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {

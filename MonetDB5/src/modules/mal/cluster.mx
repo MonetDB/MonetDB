@@ -996,12 +996,24 @@ CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	bat *bid = (bat *) getArgReference(stk, pci, pci->retc);
 	bat *psum = (bat *) getArgReference(stk, pci, pci->retc+1);
-	BAT *b = BATdescriptor(*bid), *pb = BATdescriptor(*psum);
-	wrd *cnt = (wrd*)Tloc(pb, BUNfirst(pb)), *end = cnt + BATcount(pb);
+	BAT *b, *pb;
+	wrd *cnt, *end;
 	BUN l = 0, h = l;
 
 	(void)cntxt;
 	(void)mb;
+
+	b = BATdescriptor(*bid);
+	if ( b == NULL)
+		throw(MAL,"cluster.split", RUNTIME_OBJECT_MISSING);
+
+	pb = BATdescriptor(*psum);
+	if ( pb == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL,"cluster.split", RUNTIME_OBJECT_MISSING);
+	}
+	cnt = (wrd*)Tloc(pb, BUNfirst(pb));
+	end = cnt + BATcount(pb);
 
 	for( i = 0; i<pci->retc && cnt < end; i++, cnt++) {
 		bat *res = (bat*) getArgReference(stk, pci, i);

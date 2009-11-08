@@ -120,6 +120,7 @@ rm -fr $RPM_BUILD_ROOT
 %{python_sitelib}/MonetDBtesting/monet_options.py
 %{python_sitelib}/MonetDBtesting/process.py
 %{python_sitelib}/MonetDBtesting/trace.py
+%{python_sitelib}/MonetDBtesting/subprocess26.py
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}

@@ -316,8 +316,12 @@ URLBOXdepositFile(int *r, str *fnme){
 		snprintf(buf,PATHLENGTH,"%s/%s", monet_cwd, *fnme);
 	/* later, handle directory separator */
 	fs= open_rastream(buf);
-	if( fs == NULL || stream_errnr(fs) ) 
+	if( fs == NULL )
 		throw(MAL, "urlbox.deposit", RUNTIME_FILE_NOT_FOUND "%s",buf);
+	if( stream_errnr(fs) ) {
+		close_stream(fs);
+		throw(MAL, "urlbox.deposit", RUNTIME_FILE_NOT_FOUND "%s",buf);
+	}
 	bs= bstream_create(fs,SIZE);
 	if( bs == NULL) 
 		throw(MAL, "urlbox.deposit", MAL_MALLOC_FAIL);

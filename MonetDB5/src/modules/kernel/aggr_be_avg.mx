@@ -78,15 +78,13 @@ structure to compute a group of common aggregates.
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	if (slots > 0) {
-		cnt = (BUN*) GDKzalloc(slots*sizeof(cnt[0]));
-		if (cnt == NULL) {
-			GDKerror("aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9): cnt = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(cnt[0]));
-			if (@1 && sums)
-				GDKfree(sums);
-			BBPreclaim(bn);
-			return GDK_FAIL;
-		}
+	cnt = (BUN*) GDKzalloc(slots*sizeof(cnt[0]));
+	if (cnt == NULL) {
+		GDKerror("aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9): cnt = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(cnt[0]));
+		if (@1 && sums)
+			GDKfree(sums);
+		BBPreclaim(bn);
+		return GDK_FAIL;
 	}
 	/* scan b, adding sums, and incrementing counts */
 	bhsb = b->hseqbase - 1;
@@ -191,6 +189,11 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 
 	/* scan b, calculate sums & counts, derive averages */
 	slots = BATcount(e);
+	if (slots == 0) {
+		/* empty extend => empty result */
+		*ret = bn;
+		return GDK_SUCCEED;
+	}
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
