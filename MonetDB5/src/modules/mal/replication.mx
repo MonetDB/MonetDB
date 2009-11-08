@@ -312,13 +312,13 @@ The final code should contain a loop to determine the last replication tag.
 #define MASTER "master/"
 #define REPLICA "log%05d-%05d"
 #define REPLICABLOCK 20
-#define REPLICADELAY 1000
+#define REPLICADELAY 5000
 
 static struct MASTERRECORD {
 	char *buf;	/* assembled update function */
 	int limit;
 	int top;
-	int tag;	/* transaction identifier */
+	int tag;	/* transaction identifier of next needed */
 	int fcn;	/* identifier to differentiate function */
 } *master;
 static int mtop = 0;
@@ -344,6 +344,7 @@ MASTERfindLogFile(char logFile[PATHLENGTH], int transactionid){
 #endif
 	if (repFile)
 		stream_close(repFile);
+	repFile = NULL;
 	dirp= opendir(MASTER);
 	if (dirp == NULL)
 		return  -1 ;
@@ -783,6 +784,9 @@ Replaying the MAL logs is straightforward.  Each slave is represented
 by a thread in the master, which looks for the pending updates and 
 issues it as a MAL program.
 The last log file may be sent multiple times.
+
+The master has to assume that the slave has initialized its SQL environment properly.
+
 [todo:force a new file when it happens too often.]
 @c
 static struct MASTERrecord {
@@ -797,7 +801,6 @@ static void
 MASTERsend(void *arg)
 {
 	int idx = * (int*) arg;
-	int tag = masterstatus[idx].tag;
 	int nxt, master;
 	stream *s;
 	bstream *bs;
@@ -813,7 +816,21 @@ MASTERsend(void *arg)
 	if ( !master)
 		return;
 
-	while ( (nxt = MASTERfindLogFile(logFile,tag)) >= 0){
+@-
+Upon succesful transmission we wait for new stuff, this is
+recognized checking the tags. It leads to re-sending the
+last log file. To avoid ever larger files to be resent,
+we should switch to a new log file once in a while.
+@c
+	for( ;; ){
+		nxt = MASTERfindLogFile(logFile,masterstatus[idx].tag);
+		if (nxt < 0){
+			/* wait for log file to become available */
+			MT_sleep_ms(REPLICADELAY);
+			if ( mapi_ping(masterstatus[idx].m) != MOK)
+				break; /* slave is gone */
+			continue;
+		}
 #ifdef _DEBUG_REPLICATION_
 		stream_printf(GDKout,"#sent log file %s\n",logFile);
 #endif
@@ -828,27 +845,25 @@ MASTERsend(void *arg)
 		}
 
 		mal_set_lock(repLck, "replication");
-		nxt = endTag;	/* make sure we have the last tag */
 		/* read the complete file [now trimmed to 64KB]*/
 		bs = bstream_create(s, 128 * BLOCK);
 		if (bstream_next(bs) < 0) {
+			mal_unset_lock(repLck, "replication");
 			bstream_destroy(bs);
+			showException( MAL, "master.send", RUNTIME_STREAM_WRITE);
 			break;
 		}
 		hdl = mapi_query(masterstatus[idx].m, bs->buf);
-		tag = nxt;
+		masterstatus[idx].tag = nxt;
 		mal_unset_lock(repLck, "replication");
 		close_stream(s);
-		if (hdl == NULL || mapi_error(masterstatus[idx].m) != MOK) 
-			break;
-@-
-Upon succesful transmission we wait for new stuff, this is
-recognized checking the tags. It leads to re-sending the
-last log file. To avoid ever larger files to be resent,
-we should switch to a new log file once in a while.
-@c
-		while( nxt == endTag ) 
-			MT_sleep_ms(REPLICADELAY);
+		if ( mapi_result_error(hdl) ){
+			showException( getExceptionType(mapi_result_error(hdl)),
+						"master.send",
+						"%s", getExceptionMessage(mapi_result_error(hdl)));
+		}
+		if (hdl )
+			mapi_close_handle(hdl);
 	} 
 
 #ifdef _DEBUG_REPLICATION_
@@ -890,7 +905,7 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 		if ( masterstatus[i].uri == NULL)
 			break;
 	if ( i == MAL_MAXCLIENTS)
-		throw(MAL,"master.sync","Too many slave connections");
+		throw(MAL,"master.sync","Too many concurrent actions");
 
 	masterstatus[i].uri= GDKstrdup(*uri);
 	masterstatus[i].tag= *tag;
@@ -1158,7 +1173,7 @@ SLAVEprelude(int *ret)
 	/*	SLAVEsyncDefault(ret);   
 	   can not work, because we are still in MAL initialization
 	   and this would require a running SQL environment.
-	   The reply must be started at the end of the SQL init */
+	   The replay must be started at the end of the SQL init */
 	}
 	(void)ret;
 	return MAL_SUCCEED;
