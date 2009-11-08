@@ -880,7 +880,7 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 {
 	Mapi mapi;
 	MT_Id tid;
-	int i;
+	int i, free=MAL_MAXCLIENTS, fnd=0;
 
 	(void)ret;
 
@@ -900,14 +900,19 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 				*uri, mapi_error_str(mapi));
 
 	for ( i = 0; i < MAL_MAXCLIENTS; i++)
-		if ( masterstatus[i].uri == NULL)
-			break;
-	if ( i == MAL_MAXCLIENTS)
+		if ( masterstatus[i].uri == NULL && free == MAL_MAXCLIENTS)
+			free = i;
+		else
+			fnd |= strcmp(masterstatus[i].uri,*uri)== 0;
+
+	if ( fnd)
+		return MAL_SUCCEED; /* slave already known */
+	if ( free == MAL_MAXCLIENTS)
 		throw(MAL,"master.sync","Too many concurrent actions");
 
-	masterstatus[i].uri= GDKstrdup(*uri);
-	masterstatus[i].tag= *tag;
-	masterstatus[i].m= mapi;
+	masterstatus[free].uri= GDKstrdup(*uri);
+	masterstatus[free].tag= *tag;
+	masterstatus[free].m= mapi;
 	if (MT_create_thread(&tid, MASTERsend, (void *) &i) < 0) 
 		throw(MAL, "master.sync", "cannot fork new client");
 	
