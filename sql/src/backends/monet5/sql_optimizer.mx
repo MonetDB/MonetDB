@@ -343,7 +343,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			}
 
 
-			if (s && f == bindidxRef) {
+			if (s && f == bindidxRef && cname) {
 				size_t cnt;
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 

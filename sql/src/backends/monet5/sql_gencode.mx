@@ -872,7 +872,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					showException(SQL,"sql","SQL2MAL: error impossible\n");
 				}
 			}
-			s->nr = getDestVar(q);
+			if ( q )
+				s->nr = getDestVar(q);
+			else s->nr = newTmpVariable(mb, TYPE_any);
 		}
 			break;
 		case st_uselect2:
