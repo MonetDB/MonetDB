@@ -223,7 +223,9 @@ aggrX3_@1_@3_@4_@5(BAT **ret, BAT *b, BAT *e)
 	ptr nil;
 	BUN off;
 	@5 *extremes = NULL;
+#if TYPE_@5 == TYPE_oid
 	bit *hit = NULL;
+#endif
 	BUN p, q, r;
 	BUN slots;
 	oid range;
@@ -284,8 +286,10 @@ aggrX3_@1_@3_@4_@5(BAT **ret, BAT *b, BAT *e)
 bunins_failed:
 	if (extremes)
 		GDKfree(extremes);
+#if TYPE_@5 == TYPE_oid
 	if (hit)
 		GDKfree(hit);
+#endif
 	return *ret?GDK_SUCCEED:GDK_FAIL;
 }
 @c
