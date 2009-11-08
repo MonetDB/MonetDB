@@ -990,7 +990,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 @+ BAT Unit Manipulation
 Binary units (tuples) are the elements stored in BATs. We
 discuss here BUN insert, replace and delete.
-Below are help macro's that actually move the BUNs
+Below are help macros that actually move the BUNs
 around and adapt search accelerator structures.
  
 @h
@@ -3295,7 +3295,7 @@ existing consistent hash tables). On this VIEW we can do a HASHfnd
 
 The code was modified to limit memory consumption in the hash-table.
 Basically, unless we really need to determine that a bat is key,
-we say that it isn't if we cannot determine easily. Easily here means
+we say that it is not if we cannot determine easily. Easily here means
 'with a small hash table'. In the case of a sanity check,
 we also do full key derivation (with whatever it takes).
 
