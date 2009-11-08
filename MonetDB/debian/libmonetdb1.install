@@ -1,3 +1,0 @@
-debian/tmp/usr/lib/libbat.so.* usr/lib
-debian/tmp/usr/lib/libmutils.so.* usr/lib
-debian/tmp/usr/lib/libstream.so.* usr/lib

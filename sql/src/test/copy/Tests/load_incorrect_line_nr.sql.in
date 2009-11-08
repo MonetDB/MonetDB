@@ -1,8 +1,0 @@
-CREATE TABLE "sys"."number" (
-        "isanumber" int
-);
-
-COPY 2 RECORDS INTO "number" FROM '$TSTSRCDIR/load_incorrect_line_nr.dat' USING DELIMITERS ';', '\n';
-
-select * from "number";
-drop table "number";

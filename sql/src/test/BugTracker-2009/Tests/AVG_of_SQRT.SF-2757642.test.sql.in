@@ -1,6 +1,0 @@
-create table n8 (a numeric(14,2));
-copy 100000000 records into n8 from '$QTSTTRGDIR/AVG_of_SQRT.SF-2757642.csv';
-select 'count(n8) == 100000000', count(*), 'avg(n8) == 1.21', avg(a), 'avg(sqrt(n8)) == 1.1', avg(sqrt(a)) from n8;
-select 'avg(sqrt(n8)) == 1.1', avg(sqrt(a)) from n8;
--- clean up in separate test so that when this one times out other
--- tests don't suffer

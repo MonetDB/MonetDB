@@ -1,6 +1,0 @@
-# test definiton of a function in a unknown module
-function wrong.message():void;
-	io.print("shouldn't come here");
-end message;
-wrong.message();
-wrongTo.message();

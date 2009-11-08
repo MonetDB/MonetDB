@@ -1,4 +1,0 @@
-stderr of test '04_Modules_odmgTest` in directory 'tests/Availability` itself:
-
-#> Mtest:	milS 04_Modules_odmgTest milS
-#> Mtest:	Mserver -yaccsilent -home /hosts/dbfarm/Monet/Current/monet/IRIX6.2 -db tests_Availability -single 04_Modules_odmgTest.milS

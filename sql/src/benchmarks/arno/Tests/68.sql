@@ -1,1 +1,0 @@
-SELECT MODEL264.is_mutagen, count(distinct MODEL264.model_id ) FROM MODEL MODEL264, BOND T1008290434330  WHERE MODEL264.model_id=T1008290434330.model_id AND MODEL264.logp='4' group by MODEL264.is_mutagen;
