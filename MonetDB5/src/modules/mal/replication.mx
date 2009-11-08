@@ -835,12 +835,10 @@ we should switch to a new log file once in a while.
 		stream_printf(GDKout,"#sent log file %s\n",logFile);
 #endif
 		s = open_rastream(logFile);
-		if (s == NULL || stream_errnr(s) ) {
-			if (s )
-				stream_destroy(s);
-#ifdef _DEBUG_REPLICATION_
-			stream_printf(GDKout,"#could not open log file %s\n",logFile);
-#endif
+		if (s == NULL )
+			continue;
+		if (stream_errnr(s) ) {
+			stream_destroy(s);
 			continue;
 		}
 
@@ -892,7 +890,7 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 #endif
 
 	/* master makes a connection with the slave */
-	mapi = mapi_mapiuri(*uri, *usr, *pw, "mal");
+	mapi = mapi_mapiuri(*uri, *usr, *pw, "msql");
 	if (mapi_error(mapi))
 		throw(MAL, "master.sync", "unable to connect to '%s': %s",
 				*uri, mapi_error_str(mapi));

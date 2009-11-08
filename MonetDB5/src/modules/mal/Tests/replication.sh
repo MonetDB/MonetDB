@@ -15,7 +15,7 @@ mclient -lsql -d dbslave -s 'create function slavelog ()
     returns table ("commit" timestamp, "valid" timestamp, "error" string)
     external name sql.dump_slave;'
 
-mclient -lsql -d dbmaster -s "insert into tmp values(1);"
+mclient -lsql -d dbmaster -s "insert into tmp values(2);"
 mclient -lsql -d dbmaster -s "select * from tmp;"
 
 # may be some delay in the propagation
