@@ -71,11 +71,11 @@ stderr of test 'temp_table_fail_leaves_data.SF-2793286` in directory 'src/test/B
 # 15:05:11 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36217 
 # 15:05:11 >  
 
-MAPI  = monetdb@alf:36217
+MAPI  = monetdb@alf:37416
 QUERY = create temporary table testpk (hello int, primary key(hello));
 ERROR = !CONSTRAINT: constraints on temporary tables are not supported
-Table sys.testpk does not exist.
-MAPI  = monetdb@alf:36217
+table sys.testpk does not exist
+MAPI  = monetdb@alf:37416
 QUERY = create temporary table testpk (hello int, primary key(hello));
 ERROR = !CONSTRAINT: constraints on temporary tables are not supported
 

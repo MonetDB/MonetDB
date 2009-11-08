@@ -106,7 +106,7 @@ updating_non-loaded_columns.SF-2864313_KO-2
 updating_non-loaded_columns.SF-2864313_KO-3
 updating_non-loaded_columns.SF-2864313_OK-4
 function_call_not_handled.SF-2864179
-semijoin_bug.SF-2869818.sql
+semijoin_bug.SF-2869818
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.
