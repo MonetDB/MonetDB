@@ -33,10 +33,10 @@ Start a simple Monet MIL interaction
 data sources: dbi:monetdb:
 field[0]: 2, last index: 0
 field[0]: 3, last index: 0
-ERROR REPORTED: DBD::monetdb::st execute failed: !ERROR: "( xyz 1);"
-!                 ^
-! new MIL syntax (>=4.4) requires parentheses for all operators.
-!.
+ERROR REPORTED: DBD::monetdb::st execute failed: ERROR: "( xyz 1);"
+                 ^
+ new MIL syntax (>=4.4) requires parentheses for all operators.
+.
 bun: 3, three
 bun: 7, seven
 rows: 2, fields: 2
