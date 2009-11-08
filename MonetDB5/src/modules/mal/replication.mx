@@ -142,10 +142,34 @@ The transaction identifier is part of the call to the function
 with the transaction update details.
 
 @- Interaction protocol
-The master node simply waits for a slave to request the
-transmission of the missing log files.
-The request includes the URI of the slave and the user
-credentials needed to establish a connection.
+The interaction protocol is tricky, because there are several states
+where a system is still in SQL initialization mode.
+
+Order of start: master, slave
+If the slave starts after the master then the following actions occur:
+@verbatim
+master.prelude -- ignored, we are a slave
+slave.prelude -- initializes the module
+   SLAVEinitLog -- create the slave log table
+sql.init -- initializes the SQL context
+  SLAVEsyncDefault -- calls the master to start catchup
+      slave waits for possitive response of master
+      ...
+@master, 
+   MASTERsync -- try to reach slave if you don't know it already
+     make a mapiconnection using the 'msql' protocol
+       @slave initialize a client,but still in sql.init phase.
+         attempt to re-execute sql.init
+   MASTERsend -- sent the pending logs.
+@end verbatim
+  
+
+Order of start: slave, triggering master,
+
+Order of start: slave, master dormant, master awake, slava synchronizes.
+
+The master node simply waits for a slave to request the transmission of the missing log files.
+The request includes the URI of the slave and the user credentials needed to establish a connection.
 The last property is the restart tag.
 The master forks a thread to start flushing the log files.
 
@@ -913,7 +937,7 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 	masterstatus[free].uri= GDKstrdup(*uri);
 	masterstatus[free].tag= *tag;
 	masterstatus[free].m= mapi;
-	if (MT_create_thread(&tid, MASTERsend, (void *) &i) < 0) 
+	if (MT_create_thread(&tid, MASTERsend, (void *) &free) < 0) 
 		throw(MAL, "master.sync", "cannot fork new client");
 	
 #ifdef _DEBUG_REPLICATION_
