@@ -60,13 +60,12 @@ structure to compute a group of common aggregates.
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_count(@1,@2,@3,@4,@5,@6);\n");
 	if (@1 && range > 0) {
 		/* create tmp. cnt array */
-		cnt = (int*) GDKmalloc(range*sizeof(int));
+		cnt = (int*) GDKzalloc(range*sizeof(int));
 		if (cnt == NULL) {
 			GDKerror("aggrX3_count(@1,@2,@3,@4,@5,@6): cnt = GDKmalloc("OIDFMT"*"SZFMT") failed", range, sizeof(int));
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		memset(cnt, 0, range*sizeof(int));
 	}
 	if (@2 && BATprepareHash(bn)) {
 		GDKerror("aggrX3_count(@1,@2,@3,@4,@5,@6): BATprepareHash(bn) failed");

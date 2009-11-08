@@ -66,15 +66,12 @@ structure to compute a group of common aggregates.
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 	if (@1 && range > 0) {
 		/* create tmp. sums array */
-		oid i;
-		sums = (dbl*) GDKmalloc(range*sizeof(dbl));
+		sums = (dbl*) GDKzalloc(range*sizeof(dbl));
 		if (sums == NULL) {
-			GDKerror("aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9): sums = GDKmalloc("OIDFMT"*"SZFMT") failed", range, sizeof(dbl));
+			GDKerror("aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9): sums = GDKzalloc("OIDFMT"*"SZFMT") failed", range, sizeof(dbl));
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		for (i = 0; i < range; i++)
-			sums[i] = zero;
 	}
 	if (@2 && BATprepareHash(bn)) {
 		GDKerror("aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9): BATprepareHash(bn) failed");
@@ -84,15 +81,14 @@ structure to compute a group of common aggregates.
 		return GDK_FAIL;
 	}
 	if (slots > 0) {
-		cnt = (BUN*) GDKmalloc(slots*sizeof(cnt[0]));
+		cnt = (BUN*) GDKzalloc(slots*sizeof(cnt[0]));
 		if (cnt == NULL) {
-			GDKerror("aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9): cnt = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(cnt[0]));
+			GDKerror("aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9): cnt = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(cnt[0]));
 			if (@1 && sums)
 				GDKfree(sums);
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		memset(cnt, 0, slots*sizeof(cnt[0]));
 	}
 	/* scan b, adding sums, and incrementing counts */
 	bhsb = b->hseqbase - 1;

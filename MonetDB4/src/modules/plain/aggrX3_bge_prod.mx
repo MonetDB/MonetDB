@@ -88,15 +88,14 @@ structure to compute a group of common aggregates.
 		return GDK_FAIL;
 	}
 	if (slots > 0) {
-		hit = (bit*) GDKmalloc(slots*sizeof(bit));
+		hit = (bit*) GDKzalloc(slots*sizeof(bit));
 		if (hit == NULL) {
-			GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
+			GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
 			if (@1 && prods)
 				GDKfree(prods);
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
-		memset(hit, 0, slots*sizeof(bit));
 	}
 	/* scan b & g, and add values to prods in-place or in prods-array */
 	base = BUNfirst(g);
