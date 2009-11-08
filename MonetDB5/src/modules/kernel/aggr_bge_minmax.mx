@@ -67,13 +67,11 @@ structure to compute a group of common aggregates.
 		return GDK_FAIL;
 	}
 	/* init: create extremes and set all to the zero pointer */
-	if (slots > 0) {
-		extremes = (ptr*) GDKzalloc(slots*sizeof(ptr));
-		if (extremes == NULL) {
-			GDKerror("aggrX3_minmax3_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(ptr));
-			BBPreclaim(bn);
-			return GDK_FAIL;
-		}
+	extremes = (ptr*) GDKzalloc(slots*sizeof(ptr));
+	if (extremes == NULL) {
+		GDKerror("aggrX3_minmax3_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(ptr));
+		BBPreclaim(bn);
+		return GDK_FAIL;
 	}
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	base = BUNfirst(g);
@@ -156,21 +154,19 @@ structure to compute a group of common aggregates.
 		return GDK_FAIL;
 	}
 	/* init: create extremes and set all to the zero pointer */
-	if (slots > 0) {
-		extremes = (oid*) GDKmalloc(slots*sizeof(oid));
-		if (extremes == NULL) {
-			GDKerror("aggrX3_minmax3_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(oid));
-			BBPreclaim(bn);
-			return GDK_FAIL;
-		}
-		{ BUN i = 0; for (; i < slots; i++ ) extremes[i] = GDK_oid_@9; }
-		hit = (bit*) GDKzalloc(slots*sizeof(bit));
-		if (hit == NULL) {
-			GDKerror("aggrX3_minmax3_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
-			GDKfree(extremes);
-			BBPreclaim(bn);
-			return GDK_FAIL;
-		}
+	extremes = (oid*) GDKmalloc(slots*sizeof(oid));
+	if (extremes == NULL) {
+		GDKerror("aggrX3_minmax3_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(oid));
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	{ BUN i = 0; for (; i < slots; i++ ) extremes[i] = GDK_oid_@9; }
+	hit = (bit*) GDKzalloc(slots*sizeof(bit));
+	if (hit == NULL) {
+		GDKerror("aggrX3_minmax3_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
+		GDKfree(extremes);
+		BBPreclaim(bn);
+		return GDK_FAIL;
 	}
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	base = BUNfirst(g);
@@ -290,6 +286,11 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	slots = BATcount(e);
+	if (slots == 0) {
+		/* empty extend => empty result */
+		*ret = bn;
+		return GDK_SUCCEED;
+	}
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
