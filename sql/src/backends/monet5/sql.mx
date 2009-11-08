@@ -274,7 +274,9 @@ function copy_from(
 	f  := str.iconv(fname, "UTF-8", cs);
 	s  := streams.openRead(f);
 	#bs := bstream.create(s, 1048576);
-	bs := bstream.create(s, 8388608);
+	#bs := bstream.create(s, 8388608);
+	bs := bstream.create(s, 33554432);
+	#bs := bstream.create(s, 67108864);
 
 	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset);
 	bstream.destroy(bs);
@@ -4220,7 +4222,7 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getContext(cntxt,mb, &m, NULL);
 	int first=1;
 	bat mid, hid, bid;
-	BAT *map= NULL, *b;
+	BAT *b;
 	node *o;
 
 	if (msg)
@@ -4276,10 +4278,6 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* bat was cleared */
 	t->cleared = 1;
-	if (map) {
-		BBPreleaseref(map->batCacheid);
-		BBPdecref(mid, TRUE);
-	}
 	return MAL_SUCCEED;
 }
 
@@ -4393,6 +4391,11 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	g = (bat *) Tloc(graph, BUNfirst(graph));
 
 	s =  BATdescriptor(g[MAP_LEX]);
+	if ( s == NULL){
+		BBPreleaseref(graph->batCacheid);
+		throw(SQL, "sql.rdfShred", "map_lex is missing");
+	}
+
 	store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, map_tbl, "lexical"), s, TYPE_bat);
 	store_funcs.append_col(m->session->tr,

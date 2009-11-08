@@ -335,6 +335,9 @@ error(stream *out, char *str)
 	if (!out)
 		out = GDKerr;
 
+	if ( str == NULL)
+		return 0;
+
 	if (stream_errnr(out))
 		return -1;
 	while ((p = strchr(str, '\n')) != NULL) {
@@ -441,6 +444,8 @@ SQLexitClient(Client c)
 		throw(SQL, "SQLexitClient", "Catalogue not available");
 	if (c->state[MAL_SCENARIO_PARSER] && c->state[MAL_SCENARIO_OPTIMIZE]) {
 		mvc *m = (mvc *) c->state[MAL_SCENARIO_OPTIMIZE];
+		if ( m == NULL)
+			throw(SQL, "SQLexitClient", "MVC catalogue not available");
 
 		if (m->session->auto_commit && m->session->active) {
 			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0) 

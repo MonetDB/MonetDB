@@ -417,9 +417,9 @@ print_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "mat.send_part", 
 			sql_message("column %s unknown", *cname));
 	 
-	VALinit(val, newBatType(TYPE_oid, TYPE_any), NULL);
 	get_part(c, *part,  &val);
 	if (val) {
+		VALinit(val, newBatType(TYPE_oid, TYPE_any), NULL);
 		/*BATprint(b);*/
 		return MAL_SUCCEED;
 	}
