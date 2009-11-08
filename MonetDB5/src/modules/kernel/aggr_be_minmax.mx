@@ -66,14 +66,14 @@ structure to compute a group of common aggregates.
 		return GDK_FAIL;
 	}
 	/* init: create extremes and set all to the zero pointer */
-	/* make at least one entry to avoid dereference through null errors */
-	extremes = (ptr*) GDKzalloc((slots+1)*sizeof(ptr));
-	if (extremes == NULL) {
-		GDKerror("aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(ptr));
-		BBPreclaim(bn);
-		return GDK_FAIL;
+	if (slots > 0) {
+		extremes = (ptr*) GDKzalloc(slots*sizeof(ptr));
+		if (extremes == NULL) {
+			GDKerror("aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(ptr));
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 	}
-	
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
 	bhsb = b->hseqbase - 1;
 	if (b->T->nonil) {
@@ -143,13 +143,13 @@ structure to compute a group of common aggregates.
 		return GDK_FAIL;
 	}
 	/* init: create extremes and set all to the zero pointer */
-	extremes = (oid*) GDKmalloc((slots+1)*sizeof(oid));
-	if (extremes == NULL) {
-		GDKerror("aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(oid));
-		BBPreclaim(bn);
-		return GDK_FAIL;
-	}
 	if (slots > 0) {
+		extremes = (oid*) GDKmalloc(slots*sizeof(oid));
+		if (extremes == NULL) {
+			GDKerror("aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): extremes = GDKmalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(oid));
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 		{ BUN i = 0; for (; i < slots; i++ ) extremes[i] = GDK_oid_@9; }
 		hit = (bit*) GDKzalloc(slots*sizeof(bit));
 		if (hit == NULL) {
