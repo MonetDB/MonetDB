@@ -912,15 +912,26 @@ str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 	return msg;
 }
 
-batcalc_export str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r);
-str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
+batcalc_export str CMDbataccum@1_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag);
+str CMDbataccum@1_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 {	
 	BAT *bn, *b, *right;
 	str msg;
 
-	@:getBATdescriptor(d,bn,"batcalc.@1")@
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:getBATdescriptor(r,right,"batcalc.@1")@
+
+	if( *lflag && !isVIEW(b) && BBP_refs(*l) == 1 && BBP_lrefs(*l) == 1)
+		bn = b;
+	else
+	if( *rflag && !isVIEW(right) && BBP_refs(*r) == 1 &&  BBP_lrefs(*r) == 1)
+		bn = right;
+	else{
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(right->batCacheid);
+		return CMDbat@1_@3_@4_@5(ret,l,r);
+	}
+
 	@:chkSize(bn,b,CMDbataccum@1)@
 	@:chkSize(bn,right,CMDbataccum@1)@
 
@@ -930,56 +941,6 @@ str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	return msg;
-}
-batcalc_export str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
-str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
-{	
-	BAT *bn, *b;
-
-	@:getBATdescriptor(r,bn,"batcalc.@1")@
-	@:getBATdescriptor(l,b,"batcalc.@1")@
-	@:chkSize(bn,b,CMDbataccum@1)@
-
-	switch(BATttype(b)){
-	case TYPE_oid: @:accumCst(oid,@2,oid,oid)@ break;
-	case TYPE_bte: @:accumCst(bte,@2,bte,bte)@ break;
-	case TYPE_sht: @:accumCst(sht,@2,sht,sht)@ break;
-	case TYPE_int: @:accumCst(int,@2,int,int)@ break;
-	case TYPE_wrd: @:accumCst(wrd,@2,wrd,wrd)@ break;
-	case TYPE_lng: @:accumCst(lng,@2,lng,lng)@ break;
-	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT " Expected {oid,bte,sht,int,wrd,lng}");
-	}
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
-
-	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-batcalc_export str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
-str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
-{	
-	BAT *bn, *b;
-
-	@:getBATdescriptor(r,bn,"batcalc.@1")@
-	@:getBATdescriptor(l,b,"batcalc.@1")@
-	@:chkSize(bn,b,CMDbataccum@1)@
-
-	switch(BATttype(b)){
-	case TYPE_oid: @:accumCstLeft(oid,@2,oid,oid)@ break;
-	case TYPE_bte: @:accumCstLeft(bte,@2,bte,bte)@ break;
-	case TYPE_sht: @:accumCstLeft(sht,@2,sht,sht)@ break;
-	case TYPE_int: @:accumCstLeft(int,@2,int,int)@ break;
-	case TYPE_wrd: @:accumCstLeft(wrd,@2,wrd,wrd)@ break;
-	case TYPE_lng: @:accumCstLeft(lng,@2,lng,lng)@ break;
-	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT " Expected {oid,bte,sht,int,wrd,lng}");
-	}
-
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
-
-	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
 }
 
 batcalc_export str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst);
@@ -1009,6 +970,38 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 	return res;
 }
 
+batcalc_export str CMDbataccum@1cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag);
+str CMDbataccum@1cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag)
+{	
+	BAT *bn, *b;
+
+	(void) rflag;
+	@:getBATdescriptor(l,b,"batcalc.@1")@
+	if( *lflag && !isVIEW(b) && BBP_refs(*l) && BBP_lrefs(*l) == 1)
+		bn = b;
+	else{
+		BBPreleaseref(b->batCacheid);
+		return CMDbat@1cst_@3_@4_@5(ret,l,cst);
+	}
+
+	@:chkSize(bn,b,CMDbataccum@1)@
+
+	switch(BATttype(b)){
+	case TYPE_oid: @:accumCst(oid,@2,oid,oid)@ break;
+	case TYPE_bte: @:accumCst(bte,@2,bte,bte)@ break;
+	case TYPE_sht: @:accumCst(sht,@2,sht,sht)@ break;
+	case TYPE_int: @:accumCst(int,@2,int,int)@ break;
+	case TYPE_wrd: @:accumCst(wrd,@2,wrd,wrd)@ break;
+	case TYPE_lng: @:accumCst(lng,@2,lng,lng)@ break;
+	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT " Expected {oid,bte,sht,int,wrd,lng}");
+	}
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
 batcalc_export str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l);
 str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 {	
@@ -1034,6 +1027,39 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return res;
+}
+
+batcalc_export str CMDbataccum@1cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag);
+str CMDbataccum@1cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag)
+{	
+	BAT *bn, *b;
+
+	(void) lflag;
+	@:getBATdescriptor(r,b,"batcalc.@1")@
+	if( *rflag && !isVIEW(b) && BBP_refs(*r) && BBP_lrefs(*r) == 1)
+		bn = b;
+	else{
+		BBPreleaseref(b->batCacheid);
+		return CMDcst@1bat_@3_@4_@5(ret,cst,r);
+	}
+
+	@:chkSize(bn,b,CMDbataccum@1)@
+
+	switch(BATttype(b)){
+	case TYPE_oid: @:accumCstLeft(oid,@2,oid,oid)@ break;
+	case TYPE_bte: @:accumCstLeft(bte,@2,bte,bte)@ break;
+	case TYPE_sht: @:accumCstLeft(sht,@2,sht,sht)@ break;
+	case TYPE_int: @:accumCstLeft(int,@2,int,int)@ break;
+	case TYPE_wrd: @:accumCstLeft(wrd,@2,wrd,wrd)@ break;
+	case TYPE_lng: @:accumCstLeft(lng,@2,lng,lng)@ break;
+	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT " Expected {oid,bte,sht,int,wrd,lng}");
+	}
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
 }
 @c
 @:numeric_funcs(MOD,%,oid,oid,oid)@
