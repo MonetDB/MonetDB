@@ -1838,27 +1838,30 @@ group_export str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils
 str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 {
 	BAT *b = NULL, *e = NULL;
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
+	BAT *bn;
 	BATiter ei, bi, bni;
 	@3 zero = (@3) 0, *sums;
 	BUN p, q, r;
 	oid i, range, min, max;
 
-	if (bn == NULL)
-		throw(MAL, "group.sum", MAL_MALLOC_FAIL);
 
 	(void) ignore_nils; /* fool compiler */
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
 
 	@:chkHeader(b,GRPsum_@1_@3)@
 	if( (e= BATdescriptor(*eid)) == NULL ){
-		BBPreleaseref(bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
+	bn = BATnew(e->htype, BATttype(b), BATcount(e));
+	if (bn == NULL){
+		BBPreleaseref(e->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "group.sum", MAL_MALLOC_FAIL);
+	}
+
 	@:chkHeader(e,GRPsum_@1_@3)@
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
@@ -2398,8 +2401,10 @@ str GRP@1_oid_@2(int *retval, int *bid)
 			BUNins(bn, &h, &t, FALSE);
 			grp= h;
 			val = (@2*) BUNtail(bni,BUNlast(bn)-1);
-		} else if( t @3 *val )
-			*val = t;
+		} else if( val ){
+			if ( t @3 *val )
+				*val = t;
+		}
 	}
 	bn->hsorted = b->hsorted ;
 	bn->tsorted = b->tsorted ;
