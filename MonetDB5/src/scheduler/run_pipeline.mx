@@ -311,7 +311,7 @@ RUNsqlbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i;
 	str msg = MAL_SUCCEED;
 	Symbol sqlbind = findSymbol(cntxt ->nspace, getName("sql",3), getName("bind",4));
-	MALfcn f;
+	MALfcn f = NULL;
 
 	if (sqlbind )
 		f = getSignature(sqlbind)->fcn;
