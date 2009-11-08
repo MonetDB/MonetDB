@@ -815,6 +815,8 @@ materializePartition(Partition p){
 		return MAL_SUCCEED;
 	assureSpace();
 	b= BATdescriptor(p->bid);
+	if ( b == NULL)
+		throw(MAL,"bpm.materialize", INTERNAL_OBJ_CREATE);
 	bn= BATselect_(b, VALptr(&p->tlow),VALptr(&p->thgh), TRUE, FALSE);
 	BBPunfix(b->batCacheid);
 	if( bn== NULL)
@@ -1337,9 +1339,13 @@ BPMcountInternal(bat bid)
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		materializePartition(bpmcat[i]);
 		b= BATdescriptor(bpmcat[i]->bid);
+		if ( b == NULL)
+			GDKsyserror("wrong count administration\n");
+		else {
 		if( BATcount(b) != bpmcat[i]->cnt)
-			printf("wrong count administration\n");
-		BBPunfix(b->batCacheid);
+			GDKsyserror("wrong count administration\n");
+			BBPunfix(b->batCacheid);
+		}
 		ret += bpmcat[i]->cnt;
 	}
 #ifdef _DEBUG_BPM_
@@ -1451,8 +1457,12 @@ getAcceptor(bat ba, BUN maxcnt){
 	BAT *b,*bn;
 
 	p = getAlias(ba);
+	if ( p == NULL)
+		return 0;
 	if( emptyRing(p)){
 		b= BATdescriptor(p->bid);
+		if ( b == NULL)
+			return 0;
 		bn= BATnew(b->htype, b->ttype, maxcnt);
 		newPartition(bn->batCacheid);
 		p->type = newBatType(bn->htype,bn->ttype);

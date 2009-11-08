@@ -639,8 +639,9 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int actions = 0;
 
 	optimizerInit();
-	if( p )
-		removeInstruction(mb, p);
+	if( p ==NULL )
+		return 0;
+	removeInstruction(mb, p);
 	if( p->argc == 3){
 		mod= getArgDefault(mb,p,1);
 		fcn= getArgDefault(mb,p,2);

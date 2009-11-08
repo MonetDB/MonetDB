@@ -805,13 +805,18 @@ str SYSgetDatabases(int *ret)
 		if( db != NULL) {
 			snprintf(buf,PATHLENGTH,"..%c%s%c.gdk_lock",DIR_SEP,e->d_name,DIR_SEP);
 			f= fopen(buf,"r");
-			if( f  && fgets(buf,PATHLENGTH,f) != NULL){
+			if ( f == NULL)
+				snprintf(buf,PATHLENGTH,"..%c%s%c.mguardian.pid",DIR_SEP,e->d_name,DIR_SEP);
+			else
+			if( fgets(buf,PATHLENGTH,f) != NULL){
 				sscanf(buf,"USR=%d PID=%d %s", &uid,&pid,buf);
 				/* w00t! for platform independence! (NOT!) */
 				snprintf(buf,PATHLENGTH,"/proc/%d",pid);
 				fclose(f);
-			} else
+			} else {
+				fclose(f);
 				snprintf(buf,PATHLENGTH,"..%c%s%c.mguardian.pid",DIR_SEP,e->d_name,DIR_SEP);
+			}
 			/* not water-proof, PID can exist, and be alive, but not an
 			   mserver, need to check process name */
 			BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"), FALSE);
@@ -846,10 +851,16 @@ str SYSgetPorts(int *ret, str *lang)
 		if( db != NULL) {
 			snprintf(buf,PATHLENGTH,"..%c%s%c.%s.port",DIR_SEP,e->d_name,DIR_SEP,llang);
 			f= fopen(buf,"r");
-			if( f  && fgets(buf,PATHLENGTH,f) != NULL){
+			if ( f == NULL)
+				port = 0;
+			else
+			if( fgets(buf,PATHLENGTH,f) != NULL){
 				port= (int) strtol(buf,NULL,10);
 				fclose(f);
-			} else port = 0;
+			} else {
+				fclose(f);
+				port = 0;
+			}
 			BUNins(b, e->d_name, (ptr)(port==0? &int_nil: &port), FALSE);
 			closedir(db);
 		} 
