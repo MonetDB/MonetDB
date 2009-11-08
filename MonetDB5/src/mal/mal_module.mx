@@ -1053,7 +1053,9 @@ char **getHelpMatch(char *pat){
 					char *v,*w;
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
 					buf[0]=' ';
-					if( s->def->help && (v= strchr(buf,0)) ) {
+					if( s->def->help ){
+						v= strchr(buf,0);
+						assert (v != NULL); /* fool Coverity */
 						*v++ = '\\';
 						*v++ = 'n';
 						*v++ = '#';
