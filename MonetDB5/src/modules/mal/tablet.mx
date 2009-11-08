@@ -2024,19 +2024,24 @@ TABLETload(Tablet *as, char *datafile)
 	bstream *b = NULL;
 	BUN est = as->nr;
 
-	if (s == NULL || stream_errnr(s)) {
+	if (s == NULL ){
 		GDKerror("could not open file %s\n", datafile);
-		if (s) 
-			stream_destroy(s);
+		return NULL;
+	}
+	if (stream_errnr(s)) {
+		GDKerror("could not open file %s\n", datafile);
+		stream_destroy(s);
 		return NULL;
 	}
 	if (as->nr == BUN_NONE)
 		est = estimator(datafile);
 
-	if ( TABLETcreate_bats(as, est) == 0 &&
-		 TABLETload_file(as, b = bstream_create(s, SIZE), NULL) != BUN_NONE)
-		res = TABLETcollect_bats(as);
-	bstream_destroy(b);
+	b = bstream_create(s, SIZE);
+	if ( b ) {
+		if ( TABLETcreate_bats(as, est) == 0 && TABLETload_file(as, b, NULL) != BUN_NONE)
+				res = TABLETcollect_bats(as);
+		bstream_destroy(b);
+	}
 	stream_close(s);
 	stream_destroy(s);
 	TABLETdestroy_format(as);
@@ -2225,10 +2230,14 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 	as.input = NULL;
 	as.output = NULL;
 
-	if (create_loadformat(&as, names, seps, types) != BUN_NONE && 
-		TABLETcreate_bats(&as, (BUN) 0) == 0  &&
-		TABLETload_file(&as, bs = bstream_create(*(stream **) s,SIZE), NULL) != BUN_NONE)
-			bn = TABLETcollect_bats(&as);
+	bs = bstream_create(*(stream **) s,SIZE);
+	if ( bs ){
+		if (create_loadformat(&as, names, seps, types) != BUN_NONE && 
+			TABLETcreate_bats(&as, (BUN) 0) == 0  &&
+			TABLETload_file(&as, bs, NULL) != BUN_NONE)
+				bn = TABLETcollect_bats(&as);
+		bstream_destroy(bs);
+	}
 	TABLETdestroy_format(&as);
 
 	if (bn == NULL) {
@@ -2237,7 +2246,6 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 		BBPunfix(types->batCacheid);
 		throw(MAL, "tablet.load", OPERATION_FAILED);
 	}
-	bstream_destroy(bs);
 	BBPincref(*ret, TRUE);
 	*ret = bn->batCacheid;
 	BBPunfix(names->batCacheid);
