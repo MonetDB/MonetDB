@@ -4,19 +4,20 @@ Dumping the SQL database.
 Start the SQL Server and SQL Client as usual.
 
 In the SQL Client, type the following three commands.  Type them
-without any extra white space:
+at the start of the line::
 
-	>.../dump.sql
+	\>.../dump.sql
 	\D
-	>
+	\>
 
-That is, first a line consisting of a greater than symbol followed by
-the absolute (!) path name of the file in which you want to store the
-dump.  This will redirect future output to the file mentioned.  Then a
-line consisting of just backslash-capital D.  This command does the
-actual dump which is, because of the previous line, stored in the dump
-file.  And finally a line with just a greater than symbol.  This
-closes the file and redirects the output again to the screen.
+That is, first a line consisting of a backslash and greater than
+symbol followed by the path name of the file in which you want to
+store the dump.  This will redirect future output to the file
+mentioned.  Then a line consisting of just backslash-capital D.  This
+command does the actual dump which is, because of the previous line,
+stored in the dump file.  And finally a line with a backslash and
+greater than symbol.  This closes the file and redirects the output
+back to the screen.
 
 [Note: if you don't use the absolute path name of a file, the file
 will be created in the directory where the SQL Client was started.  On
@@ -24,9 +25,11 @@ Windows this is at the location where the program was installed, and
 therefore using an absolute path name is highly recommended.]
 
 It is also possible to dump from the command line.  Start a SQL
-Server, and then issue the command
+Server, and then issue the command::
 
-	msqldump -umonetdb -Pmonetdb > dump.sql
+	msqldump -umonetdb > dump.sql
+
+You will need to provide the password (monetdb).
 
 This command will connect to the SQL Server and dump the database into
 the file dump.sql in the current directory.
@@ -39,14 +42,17 @@ possible to restore the database using the following commands.
 
 Start the SQL Server and SQL Client as usual.
 
-In the SQL Client, type the following command.
+In the SQL Client, type the following command::
 
-	<.../dump.sql
+	\<.../dump.sql
 
-That is, a less than symbol followed by the absolute (!) path name of
-the dump file that was produced using the dump instructions.
+That is, a backslash and less than symbol followed by the path name of
+the dump file that was produced using the dump instructions.  Again,
+unless you use an absolute path name, the file name is relative to
+where the SQL client was started, which on Windows may not be where
+you expect.
 
 It is also possible to restore from the command line.  Start a SQL
-Server, and then issue the command
+Server, and then issue the command::
 
 	mclient -lsql -umonetdb -Pmonetdb < dump.sql
