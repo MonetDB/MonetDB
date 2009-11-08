@@ -273,8 +273,12 @@ RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc >1){
 		fname = * (str*) getArgReference(stk, pci,1);
 		s = open_wastream(fname);
-		if (s == NULL || stream_errnr(s))
-			throw(MAL,"recycle", RUNTIME_FILE_NOT_FOUND "%s", fname);
+		if (s == NULL )
+			throw(MAL,"recycle.dump", RUNTIME_FILE_NOT_FOUND "%s", fname);
+		if (stream_errnr(s)) {
+			stream_close(s);
+			throw(MAL,"recycle.dump", RUNTIME_FILE_NOT_FOUND "%s", fname);
+		}
 	}
 	RECYCLEdump(s);
 	if( s != cntxt->fdout)
@@ -314,8 +318,12 @@ RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc >1){
 		fname = * (str*) getArgReference(stk, pci,1);
 		s = open_wastream(fname);
-		if (s == NULL || stream_errnr(s))
-			throw(MAL,"recycle", RUNTIME_FILE_NOT_FOUND" %s", fname);
+		if (s == NULL )
+			throw(MAL,"recycle.dumpQ", RUNTIME_FILE_NOT_FOUND" %s", fname);
+		if (stream_errnr(s)){
+			stream_close(s);
+			throw(MAL,"recycle.dumpQ", RUNTIME_FILE_NOT_FOUND" %s", fname);
+		}
 	}
 	RECYCLEdumpQPat(s);
 	if( s != cntxt->fdout)

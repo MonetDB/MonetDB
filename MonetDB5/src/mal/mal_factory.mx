@@ -367,8 +367,7 @@ Let's call it as a synchronous action, without concern on parallelism.
 	pl->inuse = 1;
 	/* inherit debugging */
 	cmd = stk->cmd;
-	if( pl->stk)
-		pl->stk->cmd= cmd;
+	assert(pl->stk != NULL); /* we should have a stack to run against */
 
 	/* copy the calling arguments onto the stack 
 	   of the factory */

@@ -779,8 +779,12 @@ presented.
 str
 IOdatafile(str *ret, str *fnme){
 	stream *s = open_rstream(*fnme);
-	if (s == NULL || stream_errnr(s)) {
-		*ret = 0;
+	*ret = 0;
+	if (s == NULL )
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
+	
+	if (stream_errnr(s)) {
+		stream_close(s);
 		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
 	}
 	*ret= GDKstrdup(*fnme);
@@ -793,13 +797,20 @@ str
 IOexport(bit *ret, int *bid, str *fnme)
 {
 	BAT *b;
-	stream *s = open_wastream(*fnme);
+	stream *s;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	*ret = FALSE;
+	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "io.export", RUNTIME_OBJECT_MISSING);
+	
+	s = open_wastream(*fnme);
+	if (s == NULL ){
+		BBPunfix(b->batCacheid);
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
 	}
-	if (s == NULL || stream_errnr(s)) {
-		*ret = FALSE;
+	if (stream_errnr(s)) {
+		stream_close(s);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
 	}
 	BATprintf(s, b);
@@ -822,13 +833,11 @@ IOimport(int *ret, int *bid, str *fnme)
 	int (*hconvert) (str, int *, ptr *), (*tconvert) (str, int *, ptr *);
 	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
 	char *base, *cur, *end;
-	char *buf = (char *) GDKmalloc(bufsize);
+	char *buf;
 	ptr h = 0, t = 0;
 	int lh = 0, lt = 0;
 	FILE *fp = fopen(*fnme, "r");
 
-	if ( buf == NULL)
-		throw(MAL,"io.import",MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "io.import", RUNTIME_OBJECT_MISSING);
 
@@ -843,6 +852,12 @@ Open the file. Memory map it to minimize buffering problems.
 	} else {
 		int fn;
 		struct stat st;
+
+		buf = (char *) GDKmalloc(bufsize);
+		if ( buf == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL,"io.import",MAL_MALLOC_FAIL);
+		}
 
 		if ((fn = fileno(fp)) <= 0) {
 			BBPunfix(b->batCacheid);

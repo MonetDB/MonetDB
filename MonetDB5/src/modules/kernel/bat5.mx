@@ -2585,7 +2585,13 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 	}
 	CMDsetaccess(&b,i,&param);
 	bn=BATreplace(b, s, 0);
-	if(bn && bn->batCacheid != b->batCacheid){
+	if (bn == NULL){
+		BBPreleaseref(i->batCacheid);
+		BBPreleaseref(s->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "bat.replace", OPERATION_FAILED);
+	}
+	if(bn->batCacheid != b->batCacheid){
 		BBPreleaseref(i->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		BBPreleaseref(b->batCacheid);
@@ -2612,7 +2618,11 @@ BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 	@:derefStr(b,t,t)@
 	bn= BUNreplace(b, h, t, *force);
 	BBPreleaseref(b->batCacheid);
-	if(bn && bn->batCacheid != b->batCacheid)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "bat.replace", OPERATION_FAILED);
+	}
+	if(bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.replace", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	return MAL_SUCCEED;
@@ -2632,8 +2642,12 @@ BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force)
 	}
 	bn= BATreplace(b, s, *force);
 	BBPreleaseref(s->batCacheid);
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "bat.replace_bat", OPERATION_FAILED);
+	}
 	BBPreleaseref(b->batCacheid);
-	if(bn && bn->batCacheid != b->batCacheid)
+	if(bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.replace_bat", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	return MAL_SUCCEED;
@@ -2650,7 +2664,11 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	bn= BUNdel(b, h, t,FALSE);
-	if(bn && bn->batCacheid != b->batCacheid)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "bat.delete_bun", OPERATION_FAILED);
+	}
+	if(bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.delete_bun", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -2667,7 +2685,9 @@ BKCdelete(int *r, int *bid, ptr h)
 	}
 	@:derefStr(b,h,h)@
 	bn= BUNdelHead(b, h,FALSE);
-	if(bn && bn->batCacheid != b->batCacheid)
+	if (bn == NULL)
+		throw(MAL, "bat.delete", OPERATION_FAILED);
+	if (bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.delete", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -2683,7 +2703,11 @@ BKCdelete_all(int *r, int *bid)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 	bn=BATclear(b);
-	if(bn && bn->batCacheid != b->batCacheid){
+	if (bn == NULL){
+		BBPreleaseref(bn->batCacheid);
+		throw(MAL, "bat.delete_all", OPERATION_FAILED);
+	}
+	if(bn->batCacheid != b->batCacheid){
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.delete_all", OPERATION_FAILED "Different BAT returned");
 	}
@@ -2708,7 +2732,11 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 
 	bn=BATdel(b, s,FALSE);
 	BBPreleaseref(s->batCacheid);
-	if(bn && bn->batCacheid != b->batCacheid)
+	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "bat.delete_bat_bun", OPERATION_FAILED);
+	}
+	if(bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.delete_bat_buns", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
