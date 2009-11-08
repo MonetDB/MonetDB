@@ -1,0 +1,118 @@
+stdout of test 'explain.SF-1739353` in directory 'src/test/BugTracker` itself:
+
+
+# 15:15:36 >  
+# 15:15:36 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33159 --set xrpc_port=45591 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 15:15:36 >  
+
+# MonetDB server v5.16.0, based on kernel v1.34.0
+# Serving database 'mTests_src_test_BugTracker', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Detected 7.753 GiB (8324386816 bytes) main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33159/
+# MonetDB/SQL module v2.34.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 15:15:36 >  
+# 15:15:36 >  ./explain.SF-1739353.SQL.sh explain.SF-1739353 
+# 15:15:36 >  
+
+
+# 15:15:36 >  
+# 15:15:36 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h rig -p 33159 -d mTests_src_test_BugTracker -f "../../../../../source/sql/src/test/BugTracker/Tests/explain.SF-1739353-data.sql"
+# 15:15:36 >  
+
++--------+
+| mal    |
++========+
+| function user.s1_1{autoCommit=true}():void; |
+| barrier _102 := language.dataflow(); |
+|     _2:bat[:oid,:sht]  := sql.bind("tmp","_tables","type",0); |
+|     _7:bat[:oid,:oid]  := sql.bind_dbat("tmp","_tables",1); |
+|     _9 := bat.reverse(_7); |
+|     _7:bat[:oid,:oid]  := nil:BAT; |
+|     _10 := algebra.kdifference(_2,_9); |
+|     _2:bat[:oid,:sht]  := nil:BAT; |
+|     _11 := algebra.thetauselect(_10,2:sht,"<"); |
+|     _10 := nil:BAT; |
+|     _14 := algebra.markT(_11,0@0); |
+|     _11 := nil:BAT; |
+|     _15 := bat.reverse(_14); |
+|     _14 := nil:BAT; |
+|     _16:bat[:oid,:str]  := sql.bind("tmp","_tables","name",0); |
+|     _18 := algebra.kdifference(_16,_9); |
+|     _16:bat[:oid,:str]  := nil:BAT; |
+|     _9 := nil:BAT; |
+|     _19 := algebra.leftjoin(_15,_18,nil:lng); |
+|     _15 := nil:BAT; |
+|     _18 := nil:BAT; |
+|     _21:bat[:oid,:sht]  := sql.bind("sys","_tables","type",0); |
+|     _23:bat[:oid,:sht]  := sql.bind("sys","_tables","type",2); |
+|     _25 := algebra.kdifference(_21,_23); |
+|     _21:bat[:oid,:sht]  := nil:BAT; |
+|     _26 := algebra.kunion(_25,_23); |
+|     _25 := nil:BAT; |
+|     _23:bat[:oid,:sht]  := nil:BAT; |
+|     _27:bat[:oid,:sht]  := sql.bind("sys","_tables","type",1); |
+|     _28 := algebra.kunion(_26,_27); |
+|     _26 := nil:BAT; |
+|     _27:bat[:oid,:sht]  := nil:BAT; |
+|     _29:bat[:oid,:oid]  := sql.bind_dbat("sys","_tables",1); |
+|     _30 := bat.reverse(_29); |
+|     _29:bat[:oid,:oid]  := nil:BAT; |
+|     _31 := algebra.kdifference(_28,_30); |
+|     _28 := nil:BAT; |
+|     _32 := algebra.thetauselect(_31,2:sht,"<"); |
+|     _31 := nil:BAT; |
+|     _33 := algebra.markT(_32,0@0); |
+|     _32 := nil:BAT; |
+|     _34 := bat.reverse(_33); |
+|     _33 := nil:BAT; |
+|     _35:bat[:oid,:str]  := sql.bind("sys","_tables","name",0); |
+|     _36:bat[:oid,:str]  := sql.bind("sys","_tables","name",2); |
+|     _37 := algebra.kdifference(_35,_36); |
+|     _35:bat[:oid,:str]  := nil:BAT; |
+|     _38 := algebra.kunion(_37,_36); |
+|     _37 := nil:BAT; |
+|     _36:bat[:oid,:str]  := nil:BAT; |
+|     _39:bat[:oid,:str]  := sql.bind("sys","_tables","name",1); |
+|     _40 := algebra.kunion(_38,_39); |
+|     _38 := nil:BAT; |
+|     _39:bat[:oid,:str]  := nil:BAT; |
+|     _41 := algebra.kdifference(_40,_30); |
+|     _40 := nil:BAT; |
+|     _30 := nil:BAT; |
+|     _42 := algebra.leftjoin(_34,_41,nil:lng); |
+|     _34 := nil:BAT; |
+|     _41 := nil:BAT; |
+| exit _102; |
+|     _43:bat[:oid,:str]  := bat.new(nil:oid,nil:str); |
+|     _46 := bat.append(_43,_42,true); |
+|     _43:bat[:oid,:str]  := nil:BAT; |
+|     _42 := nil:BAT; |
+|     _47 := bat.append(_46,_19,true); |
+|     _46 := nil:BAT; |
+|     _19 := nil:BAT; |
+|     _48 := sql.resultSet(1,1,_47); |
+|     sql.rsColumn(_48,".tables","name","varchar",1024,0,_47); |
+|     _47 := nil:BAT; |
+|     _53 := io.stdout(); |
+|     sql.exportResult(_53,_48); |
+| end s1_1; |
++--------+
+74 rows
+
+
+# 15:15:37 >  
+# 15:15:37 >  Done.
+# 15:15:37 >  
+
