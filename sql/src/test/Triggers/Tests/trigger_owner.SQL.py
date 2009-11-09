@@ -1,7 +1,7 @@
 import os, sys
 from MonetDBtesting import process
 
-def client(infile, user = None, passwd = None):
+def client(infile, user = 'monetdb', passwd = 'monetdb'):
     clt = process.client('sql', user=user, passwd=passwd, stdin=open(infile),
                          stdout=process.PIPE, stderr=process.PIPE)
     out, err = clt.communicate()
