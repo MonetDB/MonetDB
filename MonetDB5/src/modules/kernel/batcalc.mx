@@ -659,10 +659,9 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 
 	if( *lflag && !isVIEW(b) && BBP_refs(*l) == 1 && BBP_lrefs(*l) == 1)
 		bn = b;
-	else
-	if( *rflag && !isVIEW(right) && BBP_refs(*r) == 1 &&  BBP_lrefs(*r) == 1)
+	else if( *rflag && !isVIEW(right) && BBP_refs(*r) == 1 &&  BBP_lrefs(*r) == 1)
 		bn = right;
-	else{
+	else {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(right->batCacheid);
 		return CMDbat@2_@3_@4_@5(ret,l,r);
@@ -697,7 +696,7 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 
 	(void) rflag;
 	@:getBATdescriptor(l,b,"batcalc.@1")@
-	if( *lflag && !isVIEW(b) && BBP_refs(*l) && BBP_lrefs(*l) == 1)
+	if( *lflag && !isVIEW(b) && BBP_refs(*l) == 1 && BBP_lrefs(*l) == 1)
 		bn = b;
 	else{
 		BBPreleaseref(b->batCacheid);
@@ -752,9 +751,9 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 
 	(void) lflag;
 	@:getBATdescriptor(r,b,"batcalc.@1")@
-	if( *rflag && !isVIEW(b) && BBP_refs(*r) && BBP_lrefs(*r) == 1)
+	if( *rflag && !isVIEW(b) && BBP_refs(*r) == 1 && BBP_lrefs(*r) == 1)
 		bn = b;
-	else{
+	else {
 		BBPreleaseref(b->batCacheid);
 		return CMDcst@2bat_@3_@4_@5(ret,cst,r);
 	}
@@ -923,8 +922,7 @@ str CMDbataccum@1_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 
 	if( *lflag && !isVIEW(b) && BBP_refs(*l) == 1 && BBP_lrefs(*l) == 1)
 		bn = b;
-	else
-	if( *rflag && !isVIEW(right) && BBP_refs(*r) == 1 &&  BBP_lrefs(*r) == 1)
+	else if( *rflag && !isVIEW(right) && BBP_refs(*r) == 1 &&  BBP_lrefs(*r) == 1)
 		bn = right;
 	else{
 		BBPreleaseref(b->batCacheid);
@@ -977,9 +975,9 @@ str CMDbataccum@1cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 
 	(void) rflag;
 	@:getBATdescriptor(l,b,"batcalc.@1")@
-	if( *lflag && !isVIEW(b) && BBP_refs(*l) && BBP_lrefs(*l) == 1)
+	if( *lflag && !isVIEW(b) && BBP_refs(*l) == 1 && BBP_lrefs(*l) == 1)
 		bn = b;
-	else{
+	else {
 		BBPreleaseref(b->batCacheid);
 		return CMDbat@1cst_@3_@4_@5(ret,l,cst);
 	}
@@ -1036,9 +1034,9 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 
 	(void) lflag;
 	@:getBATdescriptor(r,b,"batcalc.@1")@
-	if( *rflag && !isVIEW(b) && BBP_refs(*r) && BBP_lrefs(*r) == 1)
+	if( *rflag && !isVIEW(b) && BBP_refs(*r) == 1 && BBP_lrefs(*r) == 1)
 		bn = b;
-	else{
+	else {
 		BBPreleaseref(b->batCacheid);
 		return CMDcst@1bat_@3_@4_@5(ret,cst,r);
 	}
