@@ -12,67 +12,67 @@ stderr of test 'optimizers` in directory 'src/backends/monet5` itself:
 # 08:05:50 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=gio --port=35043 
 # 08:05:50 >  
 
-MAPI  = monetdb@rig:33436
-QUERY = set optimizer='costModel,coercions,emptySet,accessmode,aliases,commonTerms,accumulators,joinPath,deadcode,reduce,garbageCollector,';
-ERROR = !SQLException:optimizer: 'inline' should be the first
-        !SQLException:optimizer: 'multiplex' should be the last
-        !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='coercions,emptySet,accessmode,aliases,commonTerms,accumulators,joinPath,deadcode,reduce,garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='emptySet,accessmode,aliases,commonTerms,accumulators,joinPath,deadcode,reduce,garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='accessmode,aliases,commonTerms,accumulators,joinPath,deadcode,reduce,garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='aliases,commonTerms,accumulators,joinPath,deadcode,reduce,garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='commonTerms,accumulators,joinPath,deadcode,reduce,garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='accumulators,joinPath,deadcode,reduce,garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='joinPath,deadcode,reduce,garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='deadcode,reduce,garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='reduce,garbageCollector,';
+ERROR = !SQLException:optimizer: 'inline' should be the first
+        !SQLException:optimizer: 'multiplex' should be the last
+        !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
+MAPI  = monetdb@eir:38510
+QUERY = set optimizer='garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: 'deadcode' should be used at least once
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
-QUERY = set optimizer='garbageCollector,';
-ERROR = !SQLException:optimizer:Optimizer 'garbageCollector' does not exist, use default pipe instead
-MAPI  = monetdb@rig:33436
+MAPI  = monetdb@eir:38510
 QUERY = set optimizer='costModel,coercions,emptySet,accessmode,commonTerms,accumulators,joinPath,deadcode,reduce,garbageCollector,';
+ERROR = !SQLException:optimizer:Optimizer 'garbageCollector,' does not exist, use default pipe instead
+MAPI  = monetdb@eir:38510
+QUERY = set optimizer='costModel,coercions,emptySet,accessmode,commonTerms,accumulators,joinPath,deadcode,garbageCollector,';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
-MAPI  = monetdb@rig:33436
-QUERY = set optimizer='costModel,coercions,emptySet,accessmode,commonTerms,accumulators,joinPath,deadcode,garbageCollector,';
+MAPI  = monetdb@eir:38510
+QUERY = select 'done';
 ERROR = !SQLException:optimizer: 'inline' should be the first
         !SQLException:optimizer: 'multiplex' should be the last
         !SQLException:optimizer: Invalid pipeline,  use default_pipe instead
