@@ -8,7 +8,7 @@ def server_start(lang):
     time.sleep(5)                      # give server time to start
     return srv
 
-def client(lang, file, user = None, passwd = None):
+def client(lang, file, user = 'monetdb', passwd = 'monetdb'):
     sys.stderr.write('#client\n')
     sys.stderr.flush()
     clt = process.client(lang, user = user, passwd = passwd, stdin = open(file))
