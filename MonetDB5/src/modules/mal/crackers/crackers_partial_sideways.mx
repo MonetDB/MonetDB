@@ -1721,7 +1721,10 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 		localNodeHgh1 = getNextNonLocalNode(findNextPiece(localNodeLow1));
 		nodeLow1      = curCBatNodeLast;
 		nodeHgh1      = findNextPiece(nodeLow1);
-	
+
+		if (localNodeLow1==NULL)
+			throw(MAL, "partial sideways cracking", "Unexpected error while traversing cracker map. Low node is NULL.");	
+			
 		if (localNodeHgh1==NULL){
 			if (nodeHgh1 == NULL){
                                 nodeLow1->first = TRUE;
