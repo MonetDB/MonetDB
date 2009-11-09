@@ -187,8 +187,12 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
 	cur = AVLIndex[indexPos].Tree;
 	first = BUNfirst(b);
 
-	while( @2_LT(Tloc(b,first+cur->position),low,@3@1) && cur != NULL )		
-		cur = cur->right;
+	while( cur != NULL ){		
+		if (@2_LT(Tloc(b,first+cur->position),low,@3@1))
+			cur = cur->right;
+		else
+			break;
+	}
 
 	resSize = 0;
 	/*if NULL then result is empty */
@@ -204,19 +208,27 @@ CRKAVLIndexSelectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveL
 	resh = (oid*)Hloc(result, BUNfirst(result));
 	rest = (@1 *)Tloc(result, BUNfirst(result));
 	if (@2_EQ(low,Tloc(b,first+cur->position),@3@1) && *inclusiveLow == TRUE){
-		while (@2_EQ(low,Tloc(b,first+cur->position),@3@1) && cur != NULL){
-			if (cur->deleted == FALSE){
-				*(oid*)resh = (oid)cur->position;
-				*(@1 *)rest = *(@1 *)Tloc(b,first+cur->position);
-				resh++; rest++;
-				resSize++;
+		while (cur != NULL){
+			if (@2_EQ(low,Tloc(b,first+cur->position),@3@1) ){
+				if (cur->deleted == FALSE){
+					*(oid*)resh = (oid)cur->position;
+					*(@1 *)rest = *(@1 *)Tloc(b,first+cur->position);
+					resh++; rest++;
+					resSize++;
+				}
+				cur = cur->right;
 			}
-			cur = cur->right;
+			else	
+				break;
 		}
 	} else
 	if (@2_EQ(low,Tloc(b,first+cur->position),@3@1) && *inclusiveLow == FALSE){
-		while(@2_EQ(low,Tloc(b,first+cur->position),@3@1) && cur != NULL)
-			cur = cur->right;
+		while( cur != NULL){
+			if (@2_EQ(low,Tloc(b,first+cur->position),@3@1))
+				cur = cur->right;
+			else
+				break;
+		}
 	} 
 
 	if (cur != NULL)       
