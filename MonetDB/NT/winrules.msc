@@ -124,7 +124,7 @@ ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
 !ENDIF
 
 !IFDEF HAVE_LIBZ
-# This is the location of the BZIP2 library
+# This is the location of the ZLIB library
 !IFNDEF LIBZLIB
 LIBZLIB = C:\zlib-1.2.3.win$(bits)
 !ENDIF
@@ -132,11 +132,14 @@ Z_LIBS = "$(LIBZLIB)\lib\zlib1$(DEBUGLIB).lib"
 Z_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
 !ENDIF
 
-!IFNDEF HAVE_LIBBZ2
+!IFDEF HAVE_LIBBZ2
+# This is the location of the BZIP2 library
+!IFNDEF LIBBZIP2
 LIBBZIP2 = C:\bzip2-1.0.5.win$(bits)
 !ENDIF
 BZ_LIBS = "$(LIBBZIP2)\lib\libbz2.lib"
 BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
+!ENDIF
 
 !IFDEF HAVE_LIBXML2
 # This is the location of the libxml2 library
