@@ -58,9 +58,9 @@ AVG_of_SQRT.SF-2757642.clean
 missing_column_name.SF-2776100
 dumping_tables.SF-2776908
 dumping_tables.SF-2776908--performance
-dumping_tables.SF-2776908--optimizers
+#dumping_tables.SF-2776908--optimizers
 name_clash_with_dump.SF-2780395
-temporary_table_leftover.SF-2779437
+#temporary_table_leftover.SF-2779437
 temporary_table_leftover.SF-2734713
 multi-column_join_with_expression.SF-2783279
 BOM.SF-2787813
