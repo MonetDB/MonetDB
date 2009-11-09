@@ -85,7 +85,7 @@ bin_find_column( stmt *sub, char *rname, char *name )
 		for (n = sub->op1.lval->h; n; n = n->next) {
 			char *nme = column_name(n->data);
 
-			if (strcmp(nme, name) == 0) {
+			if (nme && strcmp(nme, name) == 0) {
 				res = n->data;
 				_DELETE(nme);
 				break;
@@ -324,8 +324,13 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				else
 					orderby = stmt_order(orderbycols, is_ascending(orderbycole));
 			}
-			if (!orderby)
+			if (!orderby && left)
 				orderby = stmt_mirror(bin_first_column(left));
+			if (!orderby) {
+				list_destroy(l);
+				grp_destroy(g);
+				return NULL;
+			}
 			list_append(l, orderby);
 			if (g) {
 				list_append(l, stmt_dup(g->grp));
@@ -417,7 +422,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			print_stmtlist(left);
 			print_stmtlist(right);
 		}
-		if (sel)
+		if (s && sel)
 			s = stmt_semijoin(s, stmt_dup(sel));
 	 }	break;
 	case e_cmp: {
@@ -746,8 +751,6 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 		}
 		if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(bin_first_column(sub), s);
-		else if (!sub)
-			s = column(s);
 		rnme = (rnme)?_strdup(rnme):NULL;
 		s = stmt_alias(s, rnme, _strdup(exp->name));
 		list_append(l, s);
@@ -1156,6 +1159,12 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	for (n = right->op1.lval->h; n; n = n->next) 
 		rgrp = grp_create(column(n->data), rgrp);
 
+	if (!lgrp || !rgrp) {
+		grp_destroy(lgrp);
+		grp_destroy(rgrp);
+		return NULL;
+	}
+
  	a = sql_bind_aggr(sql->session->schema, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
 	a = sql_dup_aggr(a);
@@ -1293,6 +1302,12 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		lgrp = grp_create(column(n->data), lgrp);
 	for (n = right->op1.lval->h; n; n = n->next) 
 		rgrp = grp_create(column(n->data), rgrp);
+
+	if (!lgrp || !rgrp) {
+		grp_destroy(lgrp);
+		grp_destroy(rgrp);
+		return NULL;
+	}
 
  	a = sql_bind_aggr(sql->session->schema, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
@@ -1558,6 +1573,11 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 		assert(e->type == e_cmp && e->flag == cmp_equal);
 		s = exp_bin(sql, e->r, NULL, NULL, NULL, NULL);
 
+		if (!s) {
+			stmt_destroy(h);
+			stmt_destroy(bits);
+			return NULL;
+		}
 		if (h) {
 			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
 
@@ -1605,7 +1625,7 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 	}
 	/* handle possible index lookups */
 	/* expressions are in index order ! */
-	if ( (en = rel->exps->h) != NULL) { 
+	if (sub && (en = rel->exps->h) != NULL) { 
 		sql_exp *e = en->data;
 		prop *p;
 
@@ -3198,13 +3218,11 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 	int len;
 	node *n, *m;
 
-	if (rel->r) { /* first construct the update relation */
+	if (rel->r) /* first construct the update relation */
 		update = subrel_bin(sql, rel->r, refs);
-
-		if (!update) { 
-			assert(0);
-			return NULL;	
-		}
+	if (!update) { 
+		assert(0);
+		return NULL;	
 	}
 	updates = table_update_array(t, &len);
 	tid = update->op1.lval->h->data;
