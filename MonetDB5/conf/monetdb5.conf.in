@@ -242,42 +242,46 @@ mapi_open=false       # should be set to 'true' to allow for
 # The SQL debug level (should be disabled for normal use)
 # sql_debug=0
 
-# The default SQL optimizer pipeline is set per server. 
-# During SQL initialization, the optimizer pipeline is checked
-# against the dependency information maintained in the optimizer
-# library to ensure there are no conflicts and at least
-# the pre-requisite optimizers are used. 
+# The default SQL optimizer pipeline can be set per server.  See the
+# optpipe setting in monetdb(1) when using merovingian.  During SQL
+# initialization, the optimizer pipeline is checked against the
+# dependency information maintained in the optimizer library to ensure
+# there are no conflicts and at least the pre-requisite optimizers are
+# used.  The setting of sql_optimizer can be either the list of
+# optimizers to run, or one or more variables containing the optimizer
+# pipeline to run.  The latter is provided for readability purposes
+# only.
 #
-# The minimal pipeline
+# The minimal pipeline necessary by the server to operate correctly:
 # sql_optimizer=inline,remap,deadcode,multiplex
 
-#the minimal plan
-#sql_optimizer=inline,remap,deadcode,multiplex
-
-# The default pipeline
-sql_optimizer=accumulator_pipe
+# Set and define the default pipeline
+sql_optimizer=default_pipe
 default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 
+# experimental pipelines stressing various components
+
+# Replication
+replication_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
+
+# Accumulator
 accumulator_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,garbageCollector,dataflow,history,multiplex
 
-#The default + replication
-#The default + replication
-replication_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
-#
-#experimental pipelines stressing various components
 # The Recycle pipeline for Skyserver
 recycler_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,garbageCollector,dataflow,history,multiplex
-#
+
 # The Cracking pipeline(s)
 cracker_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
-#
+
 # The datacell pipeline
 datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,garbageCollector,dataflow,history,multiplex
-#
-# The Octopus pipeline for distributed processing (Linux only)
+
+# The Octopus pipeline for distributed processing (Merovingian enabled
+# platforms only)
 octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 
-# The Mitosis-mergetable-reorder pipeline, aimed at better variable access locality.
+# The Mitosis-mergetable-reorder pipeline, aimed at better variable
+# access locality
 mitosis_pipe=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 #
 #The default + datacyclotron

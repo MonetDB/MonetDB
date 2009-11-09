@@ -41,6 +41,10 @@ The key decision is to determine whether we may overwrite
 any of the arguments. This is hard to detect at compile
 time, e.g. the argument may be the result of a binding operation
 or represent a view over a persistent BAT.
+
+[NOTE the accumulator optimizer is known to produce
+problems due to concurrent access to BATs.
+It has been disabled]
 @{
 @mal
 pattern optimizer.accumulators():str
