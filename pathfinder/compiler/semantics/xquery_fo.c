@@ -2868,7 +2868,7 @@ PFfun_xquery_fo (void)
     ,  /* tijah:create-ft-index() as docmgmt */
       { .ns = PFns_tijah, .loc = "create-ft-index",
         .arity = 0, .sig_count = 1, .sigs = { {
-            .ret_ty = PFty_docmgmt () } }, 
+            .ret_ty = PFty_docmgmt () } },
         .alg = PFbui_manage_fti_c_xx }
     ,  /* tijah:create-ft-index(string*) as docmgmt */
       { .ns = PFns_tijah, .loc = "create-ft-index",

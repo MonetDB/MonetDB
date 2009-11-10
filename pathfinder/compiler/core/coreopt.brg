@@ -33,7 +33,7 @@
  *
  *
  * $Id$
- */ 
+ */
 
 
 #include "pf_config.h"
@@ -58,7 +58,7 @@
 typedef struct PFcnode_t *NODEPTR_TYPE;
 
 /* accessor to the node kind */
-#define OP_LABEL(p)    ((p)->kind) 
+#define OP_LABEL(p)    ((p)->kind)
 
 /* accessors to left and right child node */
 #define LEFT_CHILD(p)  ((p)->child[0])
@@ -225,46 +225,46 @@ static PFarray_t *used_var_env;
 %%
 
 /* all rules starting from rule 40 are never used
-   for optimization (-- see also different formatting) */ 
+   for optimization (-- see also different formatting) */
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
-                                                                     
+
 CoreExpr:           Atom                                        =   40(10);
 CoreExpr:           SequenceTypeCast                            =   41(10);
-                                                                     
+
 CoreExpr:           flwr (OptBindExpr, WhereExpr)               =   2 (10);
 
 CoreExpr:           flwr (for_ (forbind (forvars (var, nil),
                                          CoreExpr),
                                 nil), var)                      =   3 (10);
 
-CoreExpr:           flwr (let (letbind (var, CoreExpr),       
+CoreExpr:           flwr (let (letbind (var, CoreExpr),
                                nil), var)                       =   4 (10);
 
-OptBindExpr:        for_ (forbind (forvars (var, OptVar),            
-                                   CoreExpr),                        
+OptBindExpr:        for_ (forbind (forvars (var, OptVar),
+                                   CoreExpr),
                           OptBindExpr)                          =   5 (10);
-                                                                     
+
 OptVar:             nil                                         =   42(10);
 OptVar:             var                                         =   43(10);
-                                                                     
+
 OptBindExpr:        let (letbind (var, Atom), OptBindExpr)      =  10 (10);
-OptBindExpr:        let (letbind (var,                               
-                                  flwr (let (letbind (var,           
-                                                      CoreExpr),     
-                                             nil),                   
-                                        WhereExpr)),                 
+OptBindExpr:        let (letbind (var,
+                                  flwr (let (letbind (var,
+                                                      CoreExpr),
+                                             nil),
+                                        WhereExpr)),
                          OptBindExpr)                           =  11 (10);
-OptBindExpr:        let (letbind (var,                               
-                                  flwr (let (letbind (var,           
-                                                      CoreExpr),     
-                                             OptBindExpr),           
-                                        WhereExpr)),                 
+OptBindExpr:        let (letbind (var,
+                                  flwr (let (letbind (var,
+                                                      CoreExpr),
+                                             OptBindExpr),
+                                        WhereExpr)),
                          OptBindExpr)                           =  12 (10);
 OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   44(10);
 OptBindExpr:        nil                                         =   45(10);
-                                                                     
-                                                                     
+
+
 WhereExpr:          where (true_, WhereExpr)                    =  33 (10);
 WhereExpr:          where (CoreExpr, WhereExpr)                 =  34 (10);
 WhereExpr:          orderby (OrderSpecs, CoreExpr)              =   92(10);
@@ -272,34 +272,34 @@ WhereExpr:          CoreExpr                                    =   93(10);
 
 OrderSpecs:         orderspecs (CoreExpr, nil)                  =   94(10);
 OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =   95(10);
-                                                                     
-CoreExpr:           typesw (CoreExpr,                                
-                            cases (case_ (SequenceType,              
-                                          CoreExpr),                 
+
+CoreExpr:           typesw (CoreExpr,
+                            cases (case_ (SequenceType,
+                                          CoreExpr),
                                    default_ (CoreExpr)))        =  13 (10);
-                                                                     
+
 SequenceType:       seqtype                                     =   46(10);
 SequenceType:       stattype (CoreExpr)                         =   47(10);
-                                                                     
+
 SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  24 (10);
-                                                                     
-CoreExpr:           proof (subty (CoreExpr, SequenceType),           
+
+CoreExpr:           proof (subty (CoreExpr, SequenceType),
                            CoreExpr)                            =   48(10);
-                                                                     
+
 CoreExpr:           if_ (CoreExpr,
                          then_else (CoreExpr, CoreExpr))        =  35 (10);
-                                                                     
+
 CoreExpr:           if_ (CoreExpr,
                          then_else (CoreExpr, empty))           =  31 (10);
-                                                                     
+
 CoreExpr:           seq (seq (CoreExpr, CoreExpr), CoreExpr)    =  15 (10);
 CoreExpr:           seq (CoreExpr, CoreExpr)                    =   50(10);
 CoreExpr:           seq (empty, CoreExpr)                       =  16 (10);
 CoreExpr:           seq (CoreExpr, empty)                       =  17 (10);
-                                                                     
+
 CoreExpr:           twig_seq (CoreExpr, seq (CoreExpr,
                                              CoreExpr))         =  18 (10);
-CoreExpr:           twig_seq (seq (CoreExpr, CoreExpr), 
+CoreExpr:           twig_seq (seq (CoreExpr, CoreExpr),
                               CoreExpr)                         =  19 (10);
 CoreExpr:           twig_seq (CoreExpr, CoreExpr)               =   51(10);
 CoreExpr:           twig_seq (empty, CoreExpr)                  =  20 (10);
@@ -307,7 +307,7 @@ CoreExpr:           twig_seq (CoreExpr, empty)                  =  21 (10);
 
 CoreExpr:           LocationSteps                               =  29 (10);
 CoreExpr:           LocationStep                                =   56(10);
-                                                                     
+
 LocationStep:       ancestor (SequenceType)                     =   57(10);
 LocationStep:       ancestor_or_self (SequenceType)             =   58(10);
 LocationStep:       attribute (SequenceType)                    =   59(10);
@@ -324,10 +324,10 @@ LocationStep:       self (SequenceType)                         =   68(10);
 LocationStep:       select_narrow (SequenceType)                =   69(10);
 LocationStep:       select_wide (SequenceType)                  =   70(10);
 /* [/STANDOFF] */
-                                                                     
+
 LocationSteps:      locsteps (LocationStep, LocationSteps)      =   75(10);
 LocationSteps:      locsteps (LocationStep, CoreExpr)           =  32 (10);
-                                                                     
+
 CoreExpr:           elem (TagName, CoreExpr)                    =  30 (10);
 CoreExpr:           elem (TagName, seq (CoreExpr, CoreExpr))    =  22 (10);
 CoreExpr:           attr (TagName, CoreExpr)                    =   78(10);
@@ -336,10 +336,10 @@ CoreExpr:           doc (CoreExpr)                              =   80(10);
 CoreExpr:           doc (seq (CoreExpr, CoreExpr))              =  23 (10);
 CoreExpr:           comment (CoreExpr)                          =   81(10);
 CoreExpr:           pi (CoreExpr, CoreExpr)                     =   82(10);
-                                                                     
+
 TagName:            tag                                         =   83(10);
 TagName:            CoreExpr                                    =   84(10);
-                                                                     
+
 CoreExpr:           FunExpr                                     =   85(10);
 FunExpr:            apply (FunctionArgs)                        =   86(10);
 FunExpr:            apply (arg (CoreExpr, nil))                 =  25 (10);
@@ -348,33 +348,33 @@ FunExpr:            apply (arg (CoreExpr, arg (CoreExpr, nil))) =  26 (10);
 FunctionArgs:       arg (CoreExpr, FunctionArgs)                =   87(10);
 FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =   88(10);
 FunctionArgs:       nil                                         =   89(10);
-                                                                     
+
 CoreExpr:           ordered (CoreExpr)                          =   90(10);
 CoreExpr:           unordered (CoreExpr)                        =   91(10);
-                                                                     
+
 CoreExpr:           cast (SequenceType, CoreExpr)               =  27 (10);
-                                                                     
+
 Atom:               var                                         =  28 (10);
 Atom:               empty                                       =   96(10);
 Atom:               LiteralValue                                =   97(10);
-                                                                     
+
 LiteralValue:       lit_str                                     =  100(10);
 LiteralValue:       lit_int                                     =  101(10);
 LiteralValue:       lit_dec                                     =  102(10);
 LiteralValue:       lit_dbl                                     =  103(10);
 LiteralValue:       true_                                       =  104(10);
 LiteralValue:       false_                                      =  105(10);
-                                                                     
+
 FunctionDecls:      nil                                         =  106(10);
 FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  107(10);
-                                                                     
+
 FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  110(10);
-                                                                     
+
 ParamList:          nil                                         =  111(10);
 ParamList:          params (FunParam, ParamList)                =  112(10);
-                                                                     
+
 FunctionBody:       CoreExpr                                    =  113(10);
-                                                                     
+
 FunParam:           param (SequenceType, var)                   =  114(10);
 
 /* Pathfinder extension: recursion */
@@ -587,11 +587,11 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                 rewritten = true;
             }
             break;
-            
-        /* CoreExpr:           flwr (let (letbind (var, CoreExpr),       
+
+        /* CoreExpr:           flwr (let (letbind (var, CoreExpr),
                                           nil), var) */
         case 4:
-            /* replace unnecessary let binding 
+            /* replace unnecessary let binding
                'let $a := ... return $a' by its input '...' */
             if (LLL(p)->sem.var == R(p)->sem.var &&
                 !R(p)->sem.var->global) {
@@ -600,7 +600,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                 rewritten = true;
             }
             break;
-            
+
         /* OptBindExpr:        for_ (forbind (forvars (var, OptVar),
                                               CoreExpr),
                                      OptBindExpr) */
@@ -635,7 +635,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
             break;
 
         /* OptBindExpr:        let (letbind (var,
-                                             flwr (let (letbind (var, 
+                                             flwr (let (letbind (var,
                                                                  CoreExpr),
                                                         nil),
                                                    WhereExpr)),
@@ -643,7 +643,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
         case 11:
             /*
              * Remove a nested let block:
-             * 
+             *
              *     let $v1 := let $v2 := e return e' return e''
              *  -->
              *     let $v2 := e return
@@ -671,7 +671,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
             break;
 
         /* OptBindExpr:        let (letbind (var,
-                                             flwr (let (letbind (var, 
+                                             flwr (let (letbind (var,
                                                                  CoreExpr),
                                                         OptBindExpr)),
                                                    WhereExpr),
@@ -679,7 +679,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
         case 12:
             /*
              * Remove a nested let block:
-             * 
+             *
              *     let $v1 := let $v2 := e return e' return e''
              *  -->
              *     let $v2 := e return
@@ -724,16 +724,16 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                 kids[0] = fst_and_arg;
                 kids[1] = snd_and_arg;
                 kids[2] = RL(p);
-                
+
                 assert (PFty_subtype (TY(fst_and_arg), PFty_xs_boolean()));
                 assert (PFty_subtype (TY(snd_and_arg), PFty_xs_boolean()));
-                
+
                 L(p)  = fst_and_arg;
                 /* move the second condition into a separate where block
                    checking for the second argument of op:and */
                 R(p) = where (snd_and_arg, R(p));
                 TY(R(p)) = TY(p);
-                    
+
                 relabel (p, kids);
                 rewritten = true;
             }
@@ -808,15 +808,15 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                 !PFqname_eq (L(p)->sem.fun->qname, PFqname (PFns_op, "and"))) {
                 PFcnode_t *fst_and_arg = LLL(p),
                           *snd_and_arg = LLRL(p);
-                
+
                 assert (PFty_subtype (TY(fst_and_arg), PFty_xs_boolean()));
                 assert (PFty_subtype (TY(snd_and_arg), PFty_xs_boolean()));
-                
+
                 L(p)  = fst_and_arg;
                 /* replace then branch input by a nested if-then-else
                    checking for the second argument of op:and */
                 RL(p) = if_ (snd_and_arg, then_else (RL(p), empty ()));
-                    
+
                 /* type-check what we just created */
                 PFty_check (p);
 
@@ -864,7 +864,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
         /* CoreExpr:           twig_seq (seq (CoreExpr, CoreExpr), CoreExpr) */
         case 19:
             *p = *seq (LL(p), seq (LR(p), R(p)));
-            
+
             /* type-check what we just created */
             PFty_check (p);
 
@@ -877,7 +877,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
              */
             PFcoreopt_label (p);
             break;
-                
+
         /* CoreExpr:           seq (empty, CoreExpr) */
         case 16:
         /* CoreExpr:           twig_seq (empty, CoreExpr) */
@@ -952,7 +952,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                     PFfun_t *fn_tv
                         = function (PFqname (PFns_pf, "typed-value"));
 
-                    *p = *flwr (for_ (forbind (forvars (var (v), nil ()), 
+                    *p = *flwr (for_ (forbind (forvars (var (v), nil ()),
                                                LL(p)), nil ()),
                                 apply (fn_tv, arg (var (v), nil ())));
 
@@ -1006,7 +1006,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                 c->sem.fun = function (PFqname (PFns_pf, "string-value"));
 
                 *p = *flwr (let (letbind (var (v), c), nil ()),
-                            cast (seqtype (PFty_untypedAtomic ()), 
+                            cast (seqtype (PFty_untypedAtomic ()),
                                   var (v)));
 
                 /* type-check what we just created */
@@ -1031,10 +1031,10 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
              */
             if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (
-                                  PFns_pf, 
+                                  PFns_pf,
                                   "distinct-doc-order-or-atomic-sequence"))) {
                 if (PFty_subtype (TY(p), PFty_star (PFty_node ()))) {
-                    p->sem.fun = 
+                    p->sem.fun =
                         function (
                             PFqname (
                                 PFns_pf,
@@ -1052,7 +1052,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                             "typechecking is incomplete for function "
                             "#pf:distinct-doc-order-or-atomic-sequence.");
             }
-            
+
             /*
              * #pf:distinct-doc-order() or fn:reverse() underneath a call
              * of the function #pf:distinct-doc-order can be removed.
@@ -1067,12 +1067,12 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                     assert (LLL(p)->kind == c_arg);
 
                     LL(p) = LL(LL(p));
-                     
+
                     /* replace kids vector by the real kid... */
                     kids[0] = LL(p);
                     /* ... and relabel the pattern */
                     relabel (p, kids);
-                        
+
                     rewritten = true;
                     break;
                 }
@@ -1081,12 +1081,12 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                     ! PFqname_eq (LLR(p)->sem.fun->qname,
                                   PFqname (PFns_pf, "distinct-doc-order"))) {
                     LLR(p) = LL(LLR(p));
-                     
+
                     /* replace kids vector by the real kid... */
                     kids[0] = LLR(p);
                     /* ... and relabel the pattern */
                     relabel (p, kids);
-                        
+
                     rewritten = true;
                     break;
                 }
@@ -1109,14 +1109,14 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                  *                flwr
                  *                /  \
                  *              for   if_________
-                 *              /      \         \ 
+                 *              /      \         \
                  *           forbind   apply(eq) then_else
                  *            /          \         \      \
                  *         forvars       arg      var(a)  empty
                  *          /   \       /   \
                  *       var(a) var(p)      arg
                  *                         /   \
-                 *                      var(p)   
+                 *                      var(p)
                  */
                 else if (LL(p)->kind == c_flwr &&
                          L(LL(p))->kind == c_for &&
@@ -1144,7 +1144,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                     break;
                 }
             }
-            
+
             /*
              * fn:exactly-one() applied to something that is of
              * type empty returns an error.
@@ -1157,7 +1157,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                             "sequence containing zero or more than one item.");
                 break;
             }
-            
+
             /*
              * fn:boolean() applied to something that is already of
              * type xs:boolean returns the argument itself.
@@ -1172,7 +1172,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
             }
 
             /*
-             * fn:ceiling(), fn:floor(), and fn:round() applied 
+             * fn:ceiling(), fn:floor(), and fn:round() applied
              * to something that is of type integer returns
              * the argument itself.
              */
@@ -1207,15 +1207,15 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                 else if (PFty_subtype (TY(LL(p)), PFty_atomic ())) {
                     PFcnode_t *c = PFmalloc (sizeof (PFcnode_t));
                     PFvar_t   *v = new_var (NULL);
-                    
+
                     c = flwr (let (letbind (var (v), LL(p)), nil ()),
                               cast (seqtype (PFty_xs_string ()), var (v)));
 
                     *p = *c;
-                    
+
                     /* type-check what we just created */
                     PFty_check (p);
-                    
+
                     rewritten = true;
                     /*
                      * Re-label entire subtree. Type-checking may have
@@ -1256,7 +1256,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
             if (! PFqname_eq (p->sem.fun->qname,
                               PFqname (PFns_pf,
                                        "item-sequence-to-untypedAtomic"))) {
-                
+
                 /* cope with empty sequences */
                 if (PFty_subtype (TY(LL(p)), PFty_empty ())) {
                     *p = *cast (seqtype (PFty_untypedAtomic ()),
@@ -1325,7 +1325,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
             }
 
             /*
-             * The application of pf:merge-adjacent-text-nodes () 
+             * The application of pf:merge-adjacent-text-nodes ()
              * to something that contains at most one text node
              * can be discarded.
              */
@@ -1367,7 +1367,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                                   PFqname (
                                       PFns_pf,
                                       "merge-adjacent-text-nodes"));
-                        
+
                         /* push #pf:matn into right sequence constructor input */
                         *p = *seq (LLL(p), APPLY (pf_matn, LLR(p)));
                         PFty_check (p);
@@ -1387,7 +1387,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                                   PFqname (
                                       PFns_pf,
                                       "merge-adjacent-text-nodes"));
-                        
+
                         /* push #pf:matn into left sequence constructor input */
                         *p = *seq (APPLY (pf_matn, LLL(p)), LLR(p));
                         PFty_check (p);
@@ -1454,17 +1454,17 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
             } else if (PFty_subtype (TY(L(p)),
                                      PFty_opt (PFty_xs_string ())) &&
                        (R(p)->kind == c_seqcast || R(p)->kind == c_cast) &&
-                       PFty_subtype (TY(RL(p)), 
+                       PFty_subtype (TY(RL(p)),
                                      PFty_opt (PFty_untypedAtomic ())) &&
                        PFty_subtype (TY(RR(p)), PFty_xs_string ())) {
                 /* remove two adjacent cast operators that cast from string
                    to untypedAtomic and back to string */
                 *p = *RR(p);
                 rewritten = true;
-                break;                    
-            } 
+                break;
+            }
             break;
-            
+
         /* Atom:                var */
         case 28:
             {
@@ -1494,7 +1494,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
             /* This rewrite ignores side effects and throws e.g. errors away.
                We thus disable this rewrite. */
             break;
-            
+
 #if 0 /* comment out code that is unreachable after / due to above "break;" */
             /* remove bogus steps starting from attribute nodes */
             assert (p->kind == c_locsteps);
@@ -1557,7 +1557,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
  * Start with node @a p and relabel the subtree below. However, stop
  * if @a p is one of the pattern leaves, passed as the argument @a kids.
  */
-static void 
+static void
 relabel (PFcnode_t *p,  PFcnode_t **kids)
 {
     unsigned int i;
@@ -1614,8 +1614,8 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
                     if (base != c->sem.var->base)
                         c->sem.var->used = -1;
                     else if (c->sem.var->used >= 0)
-                        c->sem.var->used++; 
-                    
+                        c->sem.var->used++;
+
                     if (c->sem.var->used == 1)
                         /* add variable to the variable reference environment */
                         *((bind_t *) PFarray_add (used_var_env))
@@ -1625,7 +1625,7 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
                     break;
                 }
             break;
-        
+
         case c_flwr:
         {
             char old_base = base;
@@ -1634,12 +1634,12 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
             /* reset all new scopes introduced by a for loop */
             base = old_base;
         } break;
-        
+
         case c_let:
             assert (L(c)->kind == c_letbind);
-            
+
             base = collect_var_usage (LR(c), base, L(c), 1);
-            
+
             /* add variable to the environment */
             *((bind_t *) PFarray_add (unused_var_env))
                 = (bind_t) { .var = LL(c)->sem.var,
@@ -1652,14 +1652,14 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
 
             base = collect_var_usage (R(c), base, c, 1);
             break;
-            
+
         case c_for:
             assert (L(c)->kind == c_forbind &&
                     LL(c)->kind == c_forvars &&
                     LLL(c)->kind == c_var);
-            
+
             base = collect_var_usage (LR(c), base, L(c), 1);
-            
+
             /* a for loop increases the nesting depth */
             base++;
 
@@ -1674,17 +1674,17 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
                 /* record the current scope */
                 LLR(c)->sem.var->base = base;
             }
-            
+
             base = collect_var_usage (R(c), base, c, 1);
             break;
-            
+
         case c_main:
             /* first collect global variables before
                analyzing user-defined functions */
             base = collect_var_usage (R(c), base, c, 1);
             base = collect_var_usage (L(c), base, c, 0);
             break;
-            
+
         case c_recursion:
             /* ignore recursion variable */
             base = collect_var_usage (R(c), base, c, 1);
@@ -1701,12 +1701,12 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
             /* reset all new scopes introduced by a for loop */
             base = old_base;
         }   break;
-            
-        case c_param: 
+
+        case c_param:
             /* ignore used-defined function variables */
             base = collect_var_usage (L(c), base, c, 0);
             break;
-            
+
         default:
             for (unsigned int i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
                 base = collect_var_usage (c->child[i], base, c, i);
@@ -1754,22 +1754,22 @@ PFcoreopt (PFcnode_t *r)
         PFvar_t *var;
         PFcnode_t *p, *n, *up;
         int c, uc;
-        
+
         /* clean up variable environment */
         for (unsigned short i = 0; i < HASH_BUCKETS; i++)
             PFarray_last (var_env[i]) = 0;
-        
+
         /* clean up unused and single variable environment */
         PFarray_last (unused_var_env) = 0;
         PFarray_last (used_var_env) = 0;
-    
+
         /* make sure that we stop if we do not remove unused variables */
         unused_var = false;
-        
-        /* collect the variable usage information */ 
+
+        /* collect the variable usage information */
         collect_var_usage (r, 0, NULL, -1);
 
-        /* remove all unused variables and expand variables 
+        /* remove all unused variables and expand variables
            that are referenced only once in the same nesting depth */
         for (unsigned int i = PFarray_last (unused_var_env); i > 0; i--) {
             var = ((bind_t *) PFarray_at (unused_var_env, i-1))->var;
@@ -1779,12 +1779,12 @@ PFcoreopt (PFcnode_t *r)
             /* make sure that we only remove bindings if they
                are still referenced */
             if (!p->child[c]) continue;
-            
+
             n = p->child[c];
             if (!var->used) {
                 if (n->kind == c_let) {
                     p->child[c] = R(n);
-                    
+
                     /* mark n as inaccessable */
                     L(n) = NULL;
                     R(n) = NULL;
@@ -1808,7 +1808,7 @@ PFcoreopt (PFcnode_t *r)
 
                             /* ... and remove the variable binding */
                             p->child[c] = R(n);
-                            
+
                             /* mark L(n) as inaccessable */
                             LL(n) = NULL;
                             LR(n) = NULL;
@@ -1828,7 +1828,7 @@ PFcoreopt (PFcnode_t *r)
                         break;
                     }
         }
-        
+
         if (unused_var)
             /* label the Core tree bottom up */
             PFcoreopt_label (r);

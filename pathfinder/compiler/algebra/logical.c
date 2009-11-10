@@ -605,7 +605,7 @@ PFla_cross_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2)
 
     /* indicate what kind of internal operator we are working on */
     ret->sem.eqjoin_opt.kind   = la_cross;
-    
+
     /* copy schema from argument 2, check for duplicate column names
        and discard if present */
     for (j = 0; j < n2->schema.count; j++) {
@@ -800,7 +800,7 @@ PFla_eqjoin_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2,
             i--;
         }
     }
-    
+
     /* copy schema from projection list 'rproj' */
     /* discard join columns - they are already added */
     for (i = 1; i < PFarray_last (rproj); i++) {

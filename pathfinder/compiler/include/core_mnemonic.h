@@ -44,48 +44,48 @@
 
 #include "core.h"
 
-#undef nil        
-#undef new_var    
-#undef var        
-#undef num        
-#undef dec        
-#undef dbl        
-#undef str        
-#undef seqtype    
-#undef seqcast    
-#undef proof      
-#undef subty      
-#undef typeswitch 
-#undef case_      
-#undef cases      
-#undef ifthenelse 
-#undef flwr       
-#undef for_       
-#undef let        
+#undef nil
+#undef new_var
+#undef var
+#undef num
+#undef dec
+#undef dbl
+#undef str
+#undef seqtype
+#undef seqcast
+#undef proof
+#undef subty
+#undef typeswitch
+#undef case_
+#undef cases
+#undef ifthenelse
+#undef flwr
+#undef for_
+#undef let
 #undef letbind
-#undef seq        
-#undef twig_seq        
-#undef empty      
-#undef true_      
-#undef false_     
+#undef seq
+#undef twig_seq
+#undef empty
+#undef true_
+#undef false_
 #undef _root
 #undef constr_elem
 #undef constr_attr
 #undef constr
 #undef constr_tag
-#undef locsteps   
-#undef step       
-#undef kindt      
-#undef namet      
-#undef function   
-#undef apply      
-#undef ebv        
-#undef error      
-#undef error_loc  
+#undef locsteps
+#undef step
+#undef kindt
+#undef namet
+#undef function
+#undef apply
+#undef ebv
+#undef error
+#undef error_loc
 #undef fs_convert_op
 #undef fn_data
 #undef some
-#undef cast    
+#undef cast
 
 #define nil()                 PFcore_nil ()
 #define new_var(v)            PFcore_new_var (v)
@@ -140,13 +140,13 @@
 #define arg(e1,e2)            PFcore_arg((e1), (e2))
 #define apply(fn,e)           PFcore_apply ((fn), (e))
 #define ebv(e)                PFcore_ebv (e)
-                              
+
 #define fs_convert_op_by_type(e,t)    PFcore_fs_convert_op_by_type ((e), (t))
 #define fs_convert_op_by_expr(e1,e2)  PFcore_fs_convert_op_by_expr ((e1), (e2))
 
 #define fn_data(e1)           PFcore_fn_data (e1)
 #define some(v,e1,e2)         PFcore_some(v,e1,e2)
-       
-#endif 
+
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

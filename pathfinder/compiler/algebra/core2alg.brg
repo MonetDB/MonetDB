@@ -1272,7 +1272,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             var_map  = project (rowid,
                                 proj (col_outer, col_iter),
                                 proj (col_inner, col_inner));
-            
+
             /* save old environment */
             old_env = ENV;
 
@@ -1679,7 +1679,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                 proj (col_inner, col_inner));
             /* store the variable map to retrieve the old iter values */
             then_map = var_map;
-            
+
             /* save old environment */
             old_env = ENV;
 
@@ -1730,7 +1730,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                 proj (col_inner, col_inner));
             /* store the variable map to retrieve the old iter values */
             else_map = var_map;
-            
+
             /* update the environment for translation of e3 */
             ENV = PFarray (sizeof (PFla_env_t), 50);
 
@@ -3616,7 +3616,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
         /* use this key as inner loop relation */
         in_loop = project (number, proj (col_iter1, col_inner));
         /* evaluate for all nodes a self step that filters the correct
-           kind and name */ 
+           kind and name */
         filter  = project (
                       step_join (
                           PFla_set_to_la (e.frag),

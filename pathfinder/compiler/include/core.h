@@ -186,7 +186,7 @@ union PFcsem_t {
 
     /* semantic content for flwr subexpressions (let/for) */
     struct {
-        PFty_t (*quantifier) (PFty_t); 
+        PFty_t (*quantifier) (PFty_t);
                            /**< quantifier for flwor return expression */
         int    fid;        /**< for loop id (used in milprint_summer.c) */
     } flwr;
@@ -230,13 +230,13 @@ struct PFcnode_t {
 /* initialize global variables */
 void PFcore_init (void);
 
-/** 
+/**
  * Core constructor functions below.
  */
 PFcnode_t *PFcore_leaf (PFctype_t);
-PFcnode_t *PFcore_wire1 (PFctype_t, 
+PFcnode_t *PFcore_wire1 (PFctype_t,
                          const PFcnode_t *);
-PFcnode_t *PFcore_wire2 (PFctype_t, 
+PFcnode_t *PFcore_wire2 (PFctype_t,
                          const PFcnode_t *, const PFcnode_t *);
 
 PFcnode_t *PFcore_nil (void);
