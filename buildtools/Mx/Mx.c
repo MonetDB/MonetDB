@@ -110,7 +110,7 @@ char **argv;
 		case 'D':{
 			Def *d;
 
-			d = NwDef(Mxmacro, 0, 0, 0);
+			d = NwDef(Mxmacro, 0, 0, 0, mx_file);
 			d->d_cmd = StrDup(optarg);
 			d->d_blk = NULL;
 			break;

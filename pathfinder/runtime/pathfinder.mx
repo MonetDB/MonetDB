@@ -1586,7 +1586,7 @@ PROC ws_create(int update) : BAT[void,bat]
 {
     if (bit(and(update,2)) and (xrpc_mode.search("cache") >= 0)) {
         if (xrpc_mode.search("use") >= 0) ERROR("ws_create(): cannot update in a pf:session-use session");
-        xrpc_timeout := 0; # updates in a session terminate the session
+        xrpc_timeout := 0LL; # updates in a session terminate the session
     }
 
     # NOTE: use pre-query MIL variables xrpc_qid/xrpc_timeout to possibly re-use an existing ws

@@ -58,7 +58,7 @@ extern CmdCode DefDir(void);
 extern char *DefCmd(void);
 extern char *DefBlk(void);
 extern void DefNl(void);
-extern Def *NwDef(CmdCode, int, int, int);
+extern Def *NwDef(CmdCode, int, int, int, char *);
 extern Def *GetDef(char *);
 extern void DbDef(Def *);
 extern char *dir2str(CmdCode);
