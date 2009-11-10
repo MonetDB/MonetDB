@@ -1,1 +1,1 @@
-cast_select
+HAVE_JDBCCLIENT_JAR?cast_select
