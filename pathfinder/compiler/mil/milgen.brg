@@ -11033,7 +11033,7 @@ PFmilgen (PFpa_op_t *n, char *genType)
     PFarray_t *opt;
     bool       nocache = false;
     long long  timeout = 0;
-    char      *qid     = "";
+    char      *qid     = NULL;
 
     /* Retrieve session information from the global option list. */
     opt = PFenv_lookup (PFoptions, PFqname(PFns_lib, "session-id"));
@@ -11182,7 +11182,7 @@ PFmilgen (PFpa_op_t *n, char *genType)
                    declare (var (PF_MIL_VAR_XRPC_METHOD)),
                    declare (var (PF_MIL_VAR_XRPC_COORD)),
 
-                   assgn (var (PF_MIL_VAR_XRPC_QID), lit_str(qid)),
+                   assgn (var (PF_MIL_VAR_XRPC_QID), lit_str(qid?qid:"")),
                    assgn (var (PF_MIL_VAR_XRPC_CALLER), lit_str("")),
                    assgn (var (PF_MIL_VAR_XRPC_HDL), lit_int(0)),
                    assgn (var (PF_MIL_VAR_XRPC_SEQNR), lit_lng(0)),
