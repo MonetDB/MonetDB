@@ -1,0 +1,574 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@f tokenizer
+@a Lefteris Sidirourgos
+@v 0.1
+@* Tokenizer
+This module implements a vertical fragmented tokenizer for strings. It is based
+on the ideas of the urlbox module.
+
+The input string is tokenized according to a separator character (e.g., '/').
+Each token is inserted to the next BAT with the same order of appearance in
+the string. We currently support 255 tokens in each string as this module is
+intended for use with short and similar strings such as URLs. In addition
+we maintain a 2-dimensional index that points to the depth and height of the
+last token of each string.
+
+The operations supported is insert a string (with duplicate elimination),
+retrieve a string given its oid in the 2-dimensional index, and finally retrieve
+the oid of a given string or oid_nil if it does not exist.
+
+@- Current status
+In the current experimental state of the tokenizer, the storage is a static
+array of BATs and the separator is '/'.
+
+@mal
+module tokenizer
+comment "The tokenizer provides fast access to a large collection of strings
+based on a vertical fragmented representation.";
+
+pattern new():void
+address TKNZRnew
+comment "create a new tokenizer store";
+
+pattern open():void
+address TKNZRopen
+comment "open an existing tokenizer store";
+
+pattern take(i:oid):str
+address TKNZRtakeOid
+comment "take the i-th string";
+
+pattern locate(s:str):oid
+address TKNZRlocate
+comment "if the given string is in the store returns its oid, otherwise oid_nil";
+
+pattern tokenize(u:str):oid
+address TKNZRdeposit
+comment "tokenize a new string, if it is a duplicate entry the oid of the first entry is used";
+
+command depositFile(fnme:str):void
+address TKNZRdepositFile
+comment "batch insertion of strings to tokenize, each string is seperated by a new line";
+
+pattern toString(i:oid):str
+address TKNZRtakeOid
+comment "get the string representation of an element (same as take)";
+
+command getLevel(i:int):bat[:int,:str]
+address TKNZRgetLevel
+comment "administrative function that returns the bat on level i";
+
+command getDepth():bat[:void,:bte]
+address TKNZRgetDepth
+comment "administrative function that returns the depth bat";
+
+command getHeight():bat[:void,:oid]
+address TKNZRgetHeight
+comment "administrative function that returns the height bat";
+
+command getCount():bat[:int,:lng]
+address TKNZRgetCount
+comment "debuging function that returns the size of the bats at each level";
+
+command getCardinality():bat[:int,:lng]
+address TKNZRgetCardinality
+comment "debuging function that returns the unique tokens at each level";
+
+@{
+@-
+@+ Implementation
+@h
+#ifndef _TKNZR_BOX_H
+#define _TKNZR_BOX_H
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+
+#ifdef WIN32
+#ifndef LIBTKNZRBOX
+#define tokenizer_export extern __declspec(dllimport)
+#else
+#define tokenizer_export extern __declspec(dllexport)
+#endif
+#else
+#define tokenizer_export extern
+#endif
+
+@= params
+(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+@h
+tokenizer_export str TKNZRnew              @:params@
+tokenizer_export str TKNZRopen             @:params@
+tokenizer_export str TKNZRdeposit          @:params@
+tokenizer_export str TKNZRtake             @:params@
+tokenizer_export str TKNZRlocate           @:params@
+tokenizer_export str TKNZRtakeOid          @:params@
+tokenizer_export str TKNZRdepositFile      (int *r, str *fnme);
+tokenizer_export str TKNZRgetLevel         (int *r, int *level);
+tokenizer_export str TKNZRgetDepth         (int *r);
+tokenizer_export str TKNZRgetHeight        (int *r);
+tokenizer_export str TKNZRgetCount         (int *r);
+tokenizer_export str TKNZRgetCardinality   (int *r);
+
+#endif /* _TKNZR_BOX_H */
+
+@c
+#include "mal_config.h"
+#include "tokenizer.h"
+#include "mal_linker.h"
+
+#define MAX_TKNZR_DEPTH 256
+#define DEPTH MAX_TKNZR_DEPTH
+#define HEIGHT MAX_TKNZR_DEPTH+1
+static int tokenDepth = 0;
+static BAT *tokenBAT[MAX_TKNZR_DEPTH+2];
+
+str
+TKNZRnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int depth;
+	BAT *b;
+
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+	for (depth = 0; depth < MAX_TKNZR_DEPTH; depth++) {
+		tokenBAT[depth] = 0;
+	}
+	tokenDepth = 0;
+
+	b = BATnew(TYPE_void, TYPE_chr, 1024);
+	if (b == NULL)
+		throw(MAL, "tokenizer.new", MAL_MALLOC_FAIL "height bat");
+
+	BATkey(b, FALSE);
+	BATseqbase(b,0);
+	BBPrename(b->batCacheid, "depth");
+	BATmode(b, PERSISTENT);
+	BATcommit(b);
+
+	tokenBAT[DEPTH] = b;
+
+	b = BATnew(TYPE_void, TYPE_oid, 1024);
+	if (b == NULL)
+		throw(MAL, "tokenizer.new", MAL_MALLOC_FAIL "depth bat");
+
+	BATkey(b, FALSE);
+	BATseqbase(b,0);
+	BBPrename(b->batCacheid, "height");
+	BATmode(b, PERSISTENT);
+	BATcommit(b);
+	tokenBAT[HEIGHT] = b;
+
+	return MAL_SUCCEED;
+}
+
+str
+TKNZRopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+	return MAL_SUCCEED;
+}
+
+@- the actual tokenize code
+@c
+
+int
+TKNZRtokenize(str url, str *parts, char tkn) {
+	char *s, *t;
+	int depth = 0;
+
+	s = url;
+	while (*s && *s != '\n') {
+		t = s;
+		while (*t && *t != '\n' && *t != tkn) t++;
+		parts[depth++] = s;
+		if (*t) {
+			*t = 0;
+			s = t+1;
+		} else {
+			s = t;
+		}
+		if (depth > MAX_TKNZR_DEPTH)
+			return depth;
+	}
+	return depth;
+}
+
+str
+TKNZRfindOid(oid *pos, char d, oid h) {
+	BAT *b, *c;
+
+	b = BATuselect(tokenBAT[HEIGHT], (ptr) &h, NULL);
+	c = VIEWcombine(b); BBPunfix(b->batCacheid);
+	b = BATfetchjoin(c, tokenBAT[DEPTH], BATcount(b)); BBPunfix(c->batCacheid);
+	c = BATuselect(b, (ptr) &d, NULL); BBPunfix(b->batCacheid);
+
+	if (BATcount(c) == 0)
+		*pos = BUN_NONE;
+	else if (BATcount(c) == 1) {
+		BATiter ci = bat_iterator(c);
+		*pos = *(oid *) BUNhead(ci, BUNfirst(c));
+	} else {
+		BBPunfix(c->batCacheid);
+		throw(MAL, "tokenizer.findOID",
+				OPERATION_FAILED "tokenizer storage looks corrupted");
+	}
+
+	BBPunfix(c->batCacheid);
+	return MAL_SUCCEED;
+}
+
+@= insert
+	str parts[MAX_TKNZR_DEPTH];
+	int i = 0, depth;
+	BAT *b;
+	BUN p;
+	BUN idx = 0;
+	oid prv = 0;
+	char buf[128];
+
+	depth = TKNZRtokenize(tuple, parts, '/');
+
+	if (depth == 0) return MAL_SUCCEED;
+	if (depth > MAX_TKNZR_DEPTH)
+		throw(MAL, "tokenizer",
+				ILLEGAL_ARGUMENT " strings breaks to too many parts");
+	if (depth > tokenDepth || tokenBAT[0] == NULL) {
+		for (i = 0; i < depth; i++){
+
+			/* search if bat exist */
+			snprintf(buf, 128, "urlbox_%d", i);
+			b = BATdescriptor(BBPindex(buf));
+			if (b) {
+				tokenBAT[i] = b;
+				continue;
+			}
+
+			/* make new bat */
+			b = BATnew(TYPE_oid, TYPE_str, 1024);
+			if (b == NULL)
+				throw(MAL, "tokenizer.insert", MAL_MALLOC_FAIL);
+
+			BATkey(b, FALSE);
+			BBPrename(b->batCacheid, buf);
+			BATmode(b, PERSISTENT);
+			BATcommit(b);
+			tokenBAT[i] = b;
+		}
+		tokenDepth = depth;
+	}
+
+@-
+Find the common prefix first
+@= findcommon
+	p = BUNfnd(BATmirror(tokenBAT[0]), parts[0]);
+	if (p != BUN_NONE) {
+		prv = (oid) p;
+		for (i = 1; i < depth; i++) {
+			p = BUNlocate(tokenBAT[i],(ptr) &prv, parts[i]);
+			if (p == BUN_NONE)
+				break;
+			prv = (oid) p;
+		}
+	} else {
+		i = 0;
+	}
+
+@-
+Insert the remainder as a new url string
+@= insremainder
+	for(; i < depth; i++){
+		idx = BATcount(tokenBAT[i]);
+		BUNins(tokenBAT[i], (ptr) &prv, parts[i], FALSE);
+		prv = (oid) idx;
+	}
+
+@c
+str
+TKNZRinsert(oid *pos, str tuple)
+{
+	@:insert@
+	@:findcommon@
+
+	if (i == depth) {
+		TKNZRfindOid(pos, depth, prv);
+		if (*pos != BUN_NONE)
+			/* the string is already there */
+			return MAL_SUCCEED;
+	}
+
+	@:insremainder@
+
+	*pos = (oid) BATcount(tokenBAT[HEIGHT]);
+	BUNappend(tokenBAT[DEPTH], (ptr) &depth, TRUE);
+	BUNappend(tokenBAT[HEIGHT], (ptr) &prv, TRUE);
+
+	return MAL_SUCCEED;
+}
+
+#define SIZE 1*1024*1024
+str
+TKNZRdepositFile(int *r, str *fnme)
+{
+
+	stream *fs;
+	bstream *bs;
+	char *s,*t;
+	int len=0;
+	char buf[PATHLENGTH];
+	oid pos;
+
+	(void) r;
+	if( **fnme == '/')
+		snprintf(buf,PATHLENGTH,"%s", *fnme);
+	else
+		snprintf(buf,PATHLENGTH,"%s/%s", monet_cwd, *fnme);
+	/* later, handle directory separator */
+	fs= open_rastream(buf);
+	if (fs == NULL)
+		throw(MAL, "tokenizer.depositFile", RUNTIME_FILE_NOT_FOUND "%s",buf);
+	if (stream_errnr(fs)) {
+		close_stream(fs);
+		throw(MAL, "tokenizer.depositFile", RUNTIME_FILE_NOT_FOUND "%s",buf);
+	}
+	bs = bstream_create(fs,SIZE);
+	if (bs == NULL)
+		throw(MAL, "tokenizer.depositFile", MAL_MALLOC_FAIL);
+	while (bstream_read(bs,bs->size-(bs->len-bs->pos)) != 0 &&
+		!stream_errnr(bs->s)) {
+		s= bs->buf;
+		for (t=s; *t;) {
+			while (t < bs->buf+bs->len && *t && *t != '\n') t++;
+			if (t== bs->buf+bs->len || *t != '\n') {
+				/* read next block if possible after shift  */
+				assert(t-s <= INT_MAX);
+				len = (int) (t-s);
+				memcpy(bs->buf, s, len);
+				bs->len = len;
+				bs->pos = 0;
+				break;
+			}
+			/* found a string to be processed */
+			*t = 0;
+			TKNZRinsert(&pos, s);
+			*t= '\n';
+			s= t+1;
+			t= s;
+		}
+	}
+
+	bstream_destroy(bs);
+	stream_close(fs);
+	stream_destroy(fs);
+	return MAL_SUCCEED;
+}
+
+@c
+str
+TKNZRdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	oid pos;
+	str url;
+	char tuple[2048];
+
+	(void) cntxt;
+	(void) mb;
+	url = *(str*) getArgReference(stk, pci, 1);
+	if (strlen(url)<2048)
+		strcpy(tuple,url);
+	else throw(MAL, "tokenizer.deposit", ILLEGAL_ARGUMENT "string too long");
+
+	TKNZRinsert(&pos, url);
+	VALset(getArgReference(stk,pci,0), TYPE_oid, &pos);
+	return MAL_SUCCEED;
+}
+
+str
+TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	oid pos;
+	str url;
+	str parts[MAX_TKNZR_DEPTH];
+	char tuple[2048];
+	int i = 0, depth;
+	BUN p;
+	oid prv = 0;
+	(void) cntxt;
+	(void) mb;
+
+	url = *(str*) getArgReference(stk, pci, 1);
+	if (strlen(url)<2048)
+		strcpy(tuple,url);
+	else throw(MAL, "tokenizer.locate", ILLEGAL_ARGUMENT "string too long");
+
+	depth = TKNZRtokenize(tuple, parts, '/');
+
+	if (depth == 0) {
+		pos = oid_nil;
+	} else if (depth > MAX_TKNZR_DEPTH) {
+		throw(MAL, "tokenizer.locate",
+				ILLEGAL_ARGUMENT " strings breaks to too many parts");
+	} else if (depth > tokenDepth) {
+		pos = oid_nil;
+	} else {
+		p = BUNfnd(BATmirror(tokenBAT[0]), parts[0]);
+		if (p != BUN_NONE) {
+			prv = (oid) p;
+			for (i = 1; i < depth; i++) {
+				p = BUNlocate(tokenBAT[i],(ptr) &prv, parts[i]);
+				if (p == BUN_NONE) {
+					prv = oid_nil;
+					break;
+				}
+				prv = (oid) p;
+			}
+			if (prv == oid_nil) 
+				pos = oid_nil;
+			else 
+				TKNZRfindOid(&pos, depth, prv);
+		} else {
+			pos = oid_nil;
+		}
+	}
+
+	VALset(getArgReference(stk,pci,0), TYPE_oid, &pos);
+	return MAL_SUCCEED;
+}
+
+
+str
+TKNZRtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) stk;
+	(void) pci;
+	(void) cntxt;
+	(void) mb;        /* fool compiler */
+
+	return MAL_SUCCEED;
+}
+
+str
+TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	oid id;
+	int depth;
+	str parts[MAX_TKNZR_DEPTH];
+	int i, lngth = 0;
+	str ret, s;
+
+	(void) cntxt;
+	(void) mb;
+
+	id = *(oid*) getArgReference(stk, pci, 1);
+	if (id >= BATcount(tokenBAT[DEPTH])) {
+		throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " illegal oid");
+	}
+	depth = *(chr *) Tloc(tokenBAT[DEPTH], id);
+	id = *(oid *) Tloc(tokenBAT[HEIGHT], id);
+
+	for (i = depth-1; i >= 0; i--) {
+		BATiter bi = bat_iterator(tokenBAT[i]);
+		parts[i] = (str) BUNtail(bi, id);
+		id = *(oid *) BUNhead(bi, id);
+		lngth += strlen(parts[i]);
+	}
+
+	ret = (str) GDKmalloc(lngth+depth+1);
+	s = ret;
+	for (i = 0; i < depth; i++) {
+		strcpy(s, parts[i]);
+		s += strlen(parts[i]);
+		*s++ = '/';
+	}
+	*s = '\0';
+
+	VALset(getArgReference(stk,pci,0), TYPE_str, ret);
+	return MAL_SUCCEED;
+}
+
+str
+TKNZRgetLevel (int *r, int *level) {
+	if( *level < 0 || *level >= tokenDepth)
+		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
+	*r = tokenBAT[*level]->batCacheid;
+	BBPincref(*r, TRUE);
+	return MAL_SUCCEED;
+}
+
+str
+TKNZRgetDepth (int *r) {
+	*r = tokenBAT[DEPTH]->batCacheid;
+	BBPincref(*r, TRUE);
+	return MAL_SUCCEED;
+}
+
+str
+TKNZRgetHeight (int *r) {
+	*r = tokenBAT[HEIGHT]->batCacheid;
+	BBPincref(*r, TRUE);
+	return MAL_SUCCEED;
+}
+
+str
+TKNZRgetCount(int *r) {
+	BAT *b;
+	int i;
+	lng cnt;
+
+	b= BATnew(TYPE_int,TYPE_lng, tokenDepth+1);
+	if( b== NULL)
+		throw(MAL, "tokenizer.getCount", MAL_MALLOC_FAIL);
+	for(i=0; i < tokenDepth; i++){
+		cnt = (lng) BATcount(tokenBAT[i]);
+		BUNins(b,&i, &cnt, FALSE);
+	}
+	*r = b->batCacheid;
+	BBPkeepref(*r);
+	return MAL_SUCCEED;
+}
+
+str
+TKNZRgetCardinality(int *r) {
+	BAT *b, *bn;
+	int i;
+	lng cnt;
+
+	b= BATnew(TYPE_int,TYPE_lng, tokenDepth+1);
+	if( b== NULL)
+		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
+	for(i=0; i<tokenDepth; i++){
+		bn = (BAT *) BATkunique(BATmirror(tokenBAT[i]));
+		cnt = (lng) BATcount(bn);
+		BBPunfix(bn->batCacheid);
+		BUNins(b,&i, &cnt, FALSE);
+	}
+	*r = b->batCacheid;
+	BBPkeepref(*r);
+	return MAL_SUCCEED;
+}
+
+@}
