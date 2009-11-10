@@ -54,9 +54,12 @@
 File files[M_FILES];
 int nfile = 0;
 
-#define ifile (*fptop)
-FILE *fpstack[16] = { 0 };
-FILE **fptop = fpstack;
+static struct {
+	FILE *fp;
+	char *name;
+	int line;
+} fpstack[16], *fptop = fpstack;
+#define ifile (fptop->fp)
 FILE *ofile = 0;
 FILE *ofile_body = 0;
 
@@ -367,6 +370,7 @@ IoReadFile(char *name)
 	       )
 		;
 	p[1] = 0;
+	fptop->name = name;
 	mx_file = name;
 	mx_line = 1;
 }
@@ -391,6 +395,8 @@ EofFile(void)
 			return 1;
 		fclose(ifile);
 		fptop--;
+		mx_file = fptop->name;
+		mx_line = fptop->line;
 		return EofFile();
 	}
 	return 0;
@@ -404,9 +410,7 @@ static char linebuf[MAXLINE];
 char *
 NextLine(void)
 {
-	if (fptop == fpstack) {
-		mx_line++;
-	}
+	mx_line++;
 	if (fullbuf) {
 		fullbuf = 0;
 		return linebuf;
@@ -433,13 +437,16 @@ NextLine(void)
 				snprintf(path, sizeof(path), "%s%c", inputdir, DIR_SEP);
 			}
 			strncat(path, s, sizeof(path) - strlen(path) - 1);
-			fptop[1] = fopen(path, "r");
-			if (fptop[1] == NULL) {
+			fptop[1].fp = fopen(path, "r");
+			if (fptop[1].fp == NULL) {
 				fprintf(stderr, "Mx: failed to include '%s'.\n", s);
 			} else {
+				fptop->line = mx_line;
 				fptop++;
+				fptop->name = strdup(path);
+				mx_file = fptop->name;
+				mx_line = 1;
 			}
-			mx_line++;
 			return NextLine();
 		}
 		if (s) {
@@ -458,8 +465,6 @@ NextLine(void)
 void
 PrevLine(void)
 {
-	if (fptop == fpstack) {
-		mx_line--;
-	}
+	mx_line--;
 	fullbuf = 1;
 }

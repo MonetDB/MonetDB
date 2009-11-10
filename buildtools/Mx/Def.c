@@ -63,7 +63,7 @@ allTrue(void)
 
 
 Def *
-NwDef(CmdCode dir, int mod, int sec, int lino)
+NwDef(CmdCode dir, int mod, int sec, int lino, char *file)
 {
 	Def *d;
 
@@ -76,7 +76,7 @@ NwDef(CmdCode dir, int mod, int sec, int lino)
 	d->d_blk = 0;
 	d->d_mod = mod;
 	d->d_sec = sec;
-	d->d_file = mx_file;
+	d->d_file = file;
 	d->d_line = lino;
 	DbDef(d);
 	return d;
@@ -102,13 +102,13 @@ MakeDefs(char *name)
 {
 	Def *d;
 	CmdCode dir;
-	char *line, *cmd, *blk;
+	char *line, *cmd, *blk, *file;
 	extern int pr_hide;
 	int mod = 0, sec = 0, lino = 0;
 	CmdCode lastdir = Continue;
 
 	IoReadFile(name);
-	d = NwDef(Bfile, mod, sec, 0);
+	d = NwDef(Bfile, mod, sec, 0, mx_file);
 	d->d_cmd = name;
 
 	while ((line = NextLine()) && *line != '@') ;
@@ -116,6 +116,7 @@ MakeDefs(char *name)
 	while (!EofFile()) {
 		dir = DefDir();
 		lino = mx_line;
+		file = mx_file;
 		cmd = DefCmd();
 		blk = DefBlk();
 
@@ -128,11 +129,11 @@ MakeDefs(char *name)
 		case Ifdef:
 			pushCond(GetDef(cmd) != NULL, cmd);
 			if (allTrue()) {
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				d->d_blk = NULL;
 				if (allTrue()) {
-					d = NwDef(lastdir, mod, sec, lino);
+					d = NwDef(lastdir, mod, sec, lino, file);
 					d->d_cmd = NULL;
 					d->d_blk = blk;
 				}
@@ -142,10 +143,10 @@ MakeDefs(char *name)
 		case Ifndef:
 			toggle();
 			if (allTrue()) {
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = topMacro();
 				d->d_blk = NULL;
-				d = NwDef(lastdir, mod, sec, lino);
+				d = NwDef(lastdir, mod, sec, lino, file);
 				d->d_cmd = NULL;
 				d->d_blk = blk;
 			}
@@ -155,13 +156,13 @@ MakeDefs(char *name)
 				toggle();
 
 			if (allTrue()) {
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = topMacro();
 				d->d_blk = NULL;
 			}
 			popCond();
 			if (allTrue()) {
-				d = NwDef(lastdir, mod, sec, lino);
+				d = NwDef(lastdir, mod, sec, lino, file);
 				d->d_cmd = NULL;
 				d->d_blk = blk;
 			}
@@ -181,7 +182,7 @@ MakeDefs(char *name)
 		case Index8:
 		case Index9:
 			if (allTrue()) {
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				d->d_blk = blk;
 				lastdir = Continue;
@@ -194,7 +195,7 @@ MakeDefs(char *name)
 		case Title:
 			if (allTrue()) {
 				mx_title = cmd;
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				lastdir = Continue;
 
@@ -203,7 +204,7 @@ MakeDefs(char *name)
 		case Version:
 			if (allTrue()) {
 				mx_version = cmd;
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				lastdir = Continue;
 			}
@@ -211,7 +212,7 @@ MakeDefs(char *name)
 		case Author:
 			if (allTrue()) {
 				mx_author = cmd;
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				lastdir = Continue;
 			}
@@ -219,7 +220,7 @@ MakeDefs(char *name)
 		case Date:
 			if (allTrue()) {
 				mx_date = cmd;
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				lastdir = Continue;
 			}
@@ -235,7 +236,7 @@ MakeDefs(char *name)
 					mod++;
 					sec = 0;
 				}
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				d->d_blk = blk;
 				lastdir = Continue;
@@ -245,7 +246,7 @@ MakeDefs(char *name)
 			if (allTrue()) {
 				if (!Hide())
 					sec++;
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				d->d_blk = blk;
 				lastdir = Continue;
@@ -254,7 +255,7 @@ MakeDefs(char *name)
 		case Subsection:
 		case Paragraph:
 			if (allTrue()) {
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_blk = blk;
 				d->d_cmd = cmd;
 				lastdir = Continue;
@@ -263,7 +264,7 @@ MakeDefs(char *name)
 		case Qcode:
 		case Continue:
 			if (allTrue()) {
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_blk = blk;
 				lastdir = Continue;
 			}
@@ -278,7 +279,7 @@ MakeDefs(char *name)
 			 */
 		case Ofile:
 			if (allTrue()) {
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				/* specially for Windows: replace all /'s with DIR_SEP's */
 				if (DIR_SEP != '/') {
 					char *tmp = cmd;
@@ -321,7 +322,7 @@ MakeDefs(char *name)
 		case CCyacc:
 		case CClex:
 			if (allTrue()) {
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				d->d_blk = blk;
 				lastdir = dir;
@@ -333,7 +334,7 @@ MakeDefs(char *name)
  */
 		case Mxmacro:
 			if (allTrue()) {
-				d = NwDef(dir, mod, sec, lino);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = cmd;
 				d->d_blk = blk;
 				/*add information */
@@ -341,13 +342,13 @@ MakeDefs(char *name)
 			}
 			break;
 		case InHide:
-			d = NwDef(dir, mod, sec, lino);
+			d = NwDef(dir, mod, sec, lino, file);
 			d->d_cmd = cmd;
 			d->d_blk = blk;
 			HideOn();
 			break;
 		case OutHide:
-			d = NwDef(dir, mod, sec, lino);
+			d = NwDef(dir, mod, sec, lino, file);
 			d->d_cmd = cmd;
 			d->d_blk = blk;
 			HideOff();
@@ -358,7 +359,7 @@ MakeDefs(char *name)
 			 */
 		case Comment:
 			if (allTrue()) {
-				d = NwDef(lastdir, mod, sec, lino);
+				d = NwDef(lastdir, mod, sec, lino, file);
 				d->d_cmd = NULL;
 				d->d_blk = blk;
 			}
@@ -368,7 +369,7 @@ MakeDefs(char *name)
 			break;
 		}
 	}
-	d = NwDef(Efile, mod, sec, lino);
+	d = NwDef(Efile, mod, sec, mx_line, mx_file);
 	CloseFile();
 	pr_hide = 0;
 }
