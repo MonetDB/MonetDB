@@ -202,7 +202,7 @@ HSTdecrement(Histogram h, ValPtr val){
 
 dbl
 HSTeuclidian(Histogram h1, Histogram h2){
-	lng sum= 0;
+	dbl sum= 0;
 	int i;
 	assert(h1->bins == h2->bins);
 	for ( i = 0; i < h1->bins; i++)
@@ -214,7 +214,7 @@ HSTeuclidian(Histogram h1, Histogram h2){
 /* if 1 then adding this value to h2 increases the distance between h1-h2*/
 int
 HSTeuclidianWhatIf(Histogram h1, Histogram h2, ValPtr val){
-	lng sum= 0, sumWhatIf=0, cur;
+	dbl sum= 0, sumWhatIf=0, cur;
 	dbl distance, distanceWhatIf;
 	int i, affectedBin;
 	assert(h1->bins == h2->bins);
@@ -239,7 +239,7 @@ HSTeuclidianWhatIf(Histogram h1, Histogram h2, ValPtr val){
 /* if 1 then moving this value to h2 increases the distance between h1-h2*/
 int
 HSTeuclidianWhatIfMove(Histogram h1, Histogram h2, ValPtr val){
-	lng sum= 0, sumWhatIf=0, cur;
+	dbl sum= 0, sumWhatIf=0, cur;
 	dbl distance, distanceWhatIf;
 	int i, affectedBin;
 	assert(h1->bins == h2->bins);
@@ -325,7 +325,7 @@ HSTeuclidianNormWhatIfMove(Histogram h1, Histogram h2, ValPtr val, dbl *whatIfDi
 
 dbl
 HSTcityblock(Histogram h1, Histogram h2){
-	lng sum=0;
+	dbl sum=0;
 	int i;
 	assert(h1->bins == h2->bins);
 	for ( i = 0; i < h1->bins; i++)
@@ -335,7 +335,8 @@ HSTcityblock(Histogram h1, Histogram h2){
 
 dbl
 HSTchebyshev(Histogram h1, Histogram h2){
-	lng max, i;
+	dbl max;
+	lng i;
 	assert(h1->bins == h2->bins);
 	max = ABS(h1->cnt[0] - h2->cnt[0]);
 	for ( i = 0; i < h1->bins; i++)
@@ -347,7 +348,8 @@ HSTchebyshev(Histogram h1, Histogram h2){
 
 dbl
 HSTbinrelative(Histogram h1, Histogram h2){
-	lng i, totalDiff=0, avgDiff, cur;
+	lng i;
+	dbl totalDiff=0, avgDiff, cur;
 	dbl distance=0;
 	assert(h1->bins == h2->bins);
 
@@ -364,7 +366,8 @@ HSTbinrelative(Histogram h1, Histogram h2){
 
 lng
 HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val, lng *whatIfDistance){
-	lng i, totalDiff=0, avgDiff, cur, avgDiffWhatIf, totalDiffWhatIf=0, distance=0, distanceWhatIf=0;
+	lng i;
+	dbl totalDiff=0, avgDiff, cur, avgDiffWhatIf, totalDiffWhatIf=0, distance=0, distanceWhatIf=0;
 	int affectedBin;
 	assert(h1->bins == h2->bins);
 
@@ -399,7 +402,8 @@ HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val, lng *whatIfDistance
 
 int
 HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val,lng *whatIfDistance){
-	lng i, totalDiff=0, avgDiff, cur, avgDiffWhatIf, totalDiffWhatIf=0, distance=0, distanceWhatIf=0;
+	lng i;
+	dbl totalDiff=0, avgDiff, cur, avgDiffWhatIf, totalDiffWhatIf=0, distance=0, distanceWhatIf=0;
 	int affectedBin;
 	assert(h1->bins == h2->bins);
 
@@ -482,7 +486,7 @@ component in the histogram h1 is incremented/ decremented.
 @c
 dbl
 HSTeuclidianDelta(Histogram h1, Histogram h2, dbl distance, int idx, int cnt){
-	lng inc;
+	dbl inc;
 	dbl sum = distance * distance;
 	inc = (h1->cnt[idx] + cnt - h2->cnt[idx]);
 	return sqrt(sum - (h1->cnt[idx]- h2->cnt[idx])+ inc * inc);
