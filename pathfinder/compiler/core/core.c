@@ -614,7 +614,6 @@ PFcore_forbind (const PFcnode_t *vars, const PFcnode_t *expr)
  * @param bindvar  variable bound in the for clause
  * @param pos      positional variable
  */
-
 PFcnode_t *
 PFcore_forvars (const PFcnode_t *bindvar, const PFcnode_t *pos)
 {
@@ -622,23 +621,6 @@ PFcore_forvars (const PFcnode_t *bindvar, const PFcnode_t *pos)
     assert (pos); assert (pos->kind == c_var || pos->kind == c_nil);
 
     return PFcore_wire2 (c_forvars, bindvar, pos);
-}
-
-/**
- * Variables bound in a for clause with score variable
- *
- * @param bindvar  variable bound in the for clause
- * @param pos      positional variable
- * @param score    full-text score variable
- */
-PFcnode_t *
-PFcore_forvars2 (const PFcnode_t *bindvar, const PFcnode_t *pos, const PFcnode_t *score)
-{
-    assert (bindvar); assert (bindvar->kind == c_var);
-    assert (pos); assert (pos->kind == c_var || pos->kind == c_nil);
-    assert (score); assert (score->kind == c_var || score->kind == c_nil);
-
-    return PFcore_wire2 (c_forvars, bindvar, PFcore_wire2(c_vars, pos, score));
 }
 
 /**
@@ -1687,26 +1669,20 @@ PFcore_fn_data (const PFcnode_t *n)
 PFcnode_t *
 PFcore_some (const PFcnode_t *v, const PFcnode_t *expr, const PFcnode_t *qExpr)
 {
+    PFfun_t *fn_exists = PFcore_function (PFqname (PFns_fn, "exists"));
 
-    PFfun_t *fn_not   = PFcore_function (PFqname (PFns_fn, "not"));
-    PFfun_t *fn_empty = PFcore_function (PFqname (PFns_fn, "empty"));
-
-    return APPLY (fn_not,
-                  APPLY (fn_empty,
-                         PFcore_flwr (
-                             PFcore_for (
-                                 PFcore_forbind (
-                                     PFcore_forvars (
-                                         v,
-                                         PFcore_nil ()),
-                                     expr),
-                                 PFcore_nil ()),
-                                 PFcore_if
-                                    (PFcore_ebv (qExpr),
-                                     PFcore_then_else (
-                                         PFcore_num (1),
-                                         PFcore_empty ())))));
-
+    return APPLY (fn_exists,
+                  PFcore_flwr (
+                      PFcore_for (
+                          PFcore_forbind (
+                              PFcore_forvars (
+                                  v,
+                                  PFcore_nil ()),
+                              expr),
+                          PFcore_nil ()),
+                      PFcore_where (
+                          PFcore_ebv (qExpr),
+                          PFcore_num (1))));
 }
 
 /**

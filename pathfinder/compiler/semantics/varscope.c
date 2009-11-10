@@ -9,8 +9,8 @@
  * a stack-type environment, variable scoping is checked. On any occurence of
  *
  *  - a @c flwr, @c some or @c every node, or a function declaration
- *    node, the current variable environment is saved and restored
- *    after the node has been processed.  The variables are bound only within
+ *    node, the current variable environment is saved and restored 
+ *    after the node has been processed.  The variables are bound only within 
  *    the rightmost subtree of the node.
  *
  *  - a @c typeswitch node, the leftmost child is processed (which may
@@ -27,8 +27,8 @@
  *    @c struct is pushed onto the variabel environment stack.
  *    If we find a variable of the same name on the stack (i.e., in
  *    scope), issue a warning about variable reuse.  Note that
- *    a @c bind node may bring into scope up to two variables
- *    (positional variables in @c for).
+ *    a @c bind node may bring into scope up to two variables 
+ *    (positional variables in @c for).  
  *
  *  - a variable usage, the stack is scanned top down for the first
  *    occurence of a variable with the same name. If the variable is
@@ -115,7 +115,7 @@ static void scope_var_decls (PFpnode_t *n);
 /**
  * Push a new variable onto the variable environment stack.
  *
- * @param n variable to push onto the stack.
+ * @param n variable to push onto the stack. 
  * @return Status code as described in pathfinder/oops.c
  */
 static void
@@ -131,12 +131,12 @@ push (PFpnode_t *n)
     assert (varname);
 
     if (! (var = PFnew_var (*varname)))
-        PFoops (OOPS_OUTOFMEM,
+        PFoops (OOPS_OUTOFMEM, 
                 "allocation of new variable failed");
 
     /* If we find a variable of the same name on the stack (i.e., in scope),
-     * issue a warning (the user might mistake an XQuery clause like
-     * `let $x := $x + 1' for an imperative variable update).
+     * issue a warning (the user might mistake an XQuery clause like 
+     * `let $x := $x + 1' for an imperative variable update). 
      */
     if (PFscope_lookup (var_env, *varname))
         PFinfo_loc (OOPS_WARN_VARREUSE, n->loc, "$%s", PFqname_str (*varname));
@@ -191,70 +191,70 @@ scope (PFpnode_t *n)
          * to report them all to the user.
          */
         var = find_var (n->sem.qname);
-
+        
         if (!var) {
             PFinfo_loc (OOPS_UNKNOWNVAR, n->loc,
                         "$%s", PFqname_str (n->sem.qname));
             scoping_failed = true;
         }
-
+        
         n->sem.var = var;
         n->kind = p_var;
-
+        
         break;
-
-    case p_flwr:
+        
+    case p_flwr:     
         /*                       flwr
          *                      / | | \
          *                 binds  o p  e
          *
-         * (1) save current variable environment
-         * (2) process variable bindings
+         * (1) save current variable environment 
+         * (2) process variable bindings 
          * (3) process o `order by', p `where', and e `return' clauses
          * (4) restore variable environment
          */
-
+        
         /* (1) */
         PFscope_open (var_env);
-
+        
         /* (2) */
         scope (n->child[0]);
-
+        
         /* (3) */
         scope (n->child[1]);
-
+        
         /* (4) */
         PFscope_close (var_env);
-
+        
         break;
-
-    case p_some:
-    case p_every:
+        
+    case p_some:      
+    case p_every:     
         /*                       some/every
          *                         /   \
          *                     binds    e
          *
-         * (1) save current variable environment
-         * (2) process variable bindings
+         * (1) save current variable environment 
+         * (2) process variable bindings 
          * (3) process quantifier body e `satifies' clause
          * (4) restore variable environment
          */
-
+        
         /* (1) */
         PFscope_open (var_env);
-
+        
         /* (2) */
         scope (n->child[0]);
-
+        
         /* (3) */
         scope (n->child[1]);
-
+        
         /* (4) */
         PFscope_close (var_env);
-
+        
         break;
-
-    case p_fun_decl:
+        
+    case p_fun_decl:  
         /*                      fun_decl
          *                     /        \
          *                 fun_sig       e
@@ -262,28 +262,28 @@ scope (PFpnode_t *n)
          *             params      t
          *
          *
-         * (1) save current variable environment
+         * (1) save current variable environment 
          * (2) process function parameters
          * (3) process function body e
          * (4) restore variable environment
          */
-
+        
         /* (1) */
         PFscope_open (var_env);
-
+        
         /* (2) */
         scope (n->child[0]);
-
+        
         /* (3) */
         scope (n->child[1]);
-
+        
         /* (4) */
         PFscope_close (var_env);
-
+        
         break;
-
-    case p_bind: if(n->child[0]->child[0]->child[0]->kind == p_varref){
-         /*                 bind
+        
+    case p_bind:     
+        /*                 bind
          *                /    \
          *             vars     e        for $v as t at $i in e
          *            /    \             some $v as t satisfies e
@@ -297,7 +297,7 @@ scope (PFpnode_t *n)
          * (2) bring v into scope
          * (3) bring i into scope (if present)
          */
-
+      
         /*
          * Raise an error if positional variable and bound
          * variable have the same name, e.g.
@@ -316,7 +316,7 @@ scope (PFpnode_t *n)
                             PFqname_str (n->child[0]->child[1]->sem.qname));
             }
         }
-
+      
         /* (1) */
         scope (n->child[1]);
 
@@ -326,141 +326,41 @@ scope (PFpnode_t *n)
                 && n->child[0]->child[0]->child[0]->kind == p_varref);
 
         push (n->child[0]->child[0]->child[0]);
-
+        
         /* (3) */
         assert (n->child[0] && n->child[0]->child[1]);
 
         if (n->child[0]->child[1]->kind == p_varref)
             push (n->child[0]->child[1]);
-        } else {
-        /*                 bind
-         *                /    \
-         *             vars     e        for $v as t at $i score $s in e
-         *            /    \             some $v as t satisfies e
-         *         vars     s
-         *        /    \
-         *   var_type   i
-         *    /    \
-         *   v      t
-         *
-         * (i and s may be nil: no positional or score vars for some/every)
-         *
-         * (1) process e (v, i, s not yet visible in e)
-         * (2) bring v into scope
-         * (3) bring i into scope (if present)
-         * (4) bring s into scope (if present)
-         */
-
-        /*
-         * Raise an error if positional variable and bound
-         * variable have the same name, e.g.
-         *
-         *   for $x at $x in e return e'
-         */
-        if (n->child[0]->child[0]->child[1]->kind == p_varref) {
-            if (!PFqname_eq (n->child[0]->child[0]->child[0]->child[0]->sem.qname,
-                             n->child[0]->child[0]->child[1]->sem.qname)) {
-                PFoops_loc (OOPS_VARREDEFINED, n->loc,
-                            "it is illegal to use the same name for "
-                            "positional and binding variable (`for $%s "
-                            "at $%s ...')",
-                            PFqname_str (n->child[0]->child[0]->child[0]->child[0]
-                                                              ->sem.qname),
-                            PFqname_str (n->child[0]->child[0]->child[1]->sem.qname));
-            }
-        }
-
-        /*
-         * Raise an error if score variable and bound
-         * variable have the same name, e.g.
-         *
-         *   for $x score $x in e return e'
-         */
-        if (n->child[0]->child[1]->kind == p_varref) {
-            if (!PFqname_eq (n->child[0]->child[0]->child[0]->child[0]->sem.qname,
-                             n->child[0]->child[1]->sem.qname)) {
-                PFoops_loc (OOPS_VARREDEFINED, n->loc,
-                            "it is illegal to use the same name for "
-                            "positional and binding variable (`for $%s "
-                            "at $%s ...')",
-                            PFqname_str (n->child[0]->child[0]->child[0]->child[0]
-                                                              ->sem.qname),
-                            PFqname_str (n->child[0]->child[1]->sem.qname));
-            }
-        }
-
-
-        /* (1) */
-        scope (n->child[1]);
-
-        /* (2) */
-        assert (n->child[0] && n->child[0]->child[0]
-                && n->child[0]->child[0]->child[0]
-                && n->child[0]->child[0]->child[0]->child[0]
-                && n->child[0]->child[0]->child[0]->child[0]->kind == p_varref);
-
-        push (n->child[0]->child[0]->child[0]->child[0]);
-
-        /* (3) */
-        assert (n->child[0] && n->child[0]->child[0]
-                && n->child[0]->child[0]->child[1]);
-
-        if (n->child[0]->child[0]->child[1]->kind == p_varref)
-            push (n->child[0]->child[0]->child[1]);
-
-        /* (4) */
-        assert (n->child[0] && n->child[0]->child[1]);
-
-        if (n->child[0]->child[1]->kind == p_varref)
-                    push (n->child[0]->child[1]);
-        }
 
         break;
 
-    case p_let: if (n->child[0]->kind == p_varref){
-
+    case p_let:  
         /*                 let
          *                /   \
-         *         		 v     e       let score $v := e
-         *
-         * (1) process e (score variable v not yet visible in e)
-         * (2) bring v into scope
-         */
-
-        /* (1) */
-        scope (n->child[1]);
-
-        /* (2) */
-        assert (n->child[0] && n->child[0]->kind == p_varref);
-
-        push (n->child[0]);
-    	
-        } else {
-        /*                 let
-         *                /   \
-         *         var_type    e       let $v as t := e
+         *         var_type    e       let $v as t := e 
          *          /    \
          *         v      t
          *
          * (1) process e (v not yet visible in e)
          * (2) bring v into scope
          */
-
+      
         /* (1) */
         scope (n->child[1]);
-
+      
         /* (2) */
         assert (n->child[0] && n->child[0]->child[0]
                 && n->child[0]->child[0]->kind == p_varref);
 
         push (n->child[0]->child[0]);
-        }
+
         break;
 
     case p_param:    /* function parameter */
         /* Abstract syntax tree layout:
          *
-         *                param
+         *                param                
          *                 / \        declare function ... (..., t v, ...)
          *                t   v
          */
@@ -480,7 +380,7 @@ scope (PFpnode_t *n)
          *         v         t
          *
          */
-
+      
         /* occurrence of a branch variable is optional */
         assert (n->child[0] && n->child[0]->child[0]);
 
@@ -492,7 +392,7 @@ scope (PFpnode_t *n)
 
         /* visit the case branch e itself */
         assert (n->child[1]);
-
+        
         scope (n->child[1]);
 
         PFscope_close (var_env);
@@ -655,7 +555,7 @@ scope_lib_mod (PFpnode_t *n)
     switch (n->kind) {
 
         case p_lib_mod:
-        {
+        {  
             /* back up variable environment */
             PFscope_t *old_var_env = var_env;
 

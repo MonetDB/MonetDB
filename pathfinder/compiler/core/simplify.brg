@@ -221,9 +221,6 @@ static PFarray_t *var_env[HASH_BUCKETS];
   /* Pathfinder extension: XRPC */
 %term xrpc               = 76 /**< XRPC calls: "execute at" */
 
-  /* Associated For variable holders */
-%term vars               = 77 /**< variable pair (position. var + score. var) of a for */
-
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
@@ -233,7 +230,7 @@ CoreExpr:           SequenceTypeCast                            =  31 (10);
                                                                      
 CoreExpr:           flwr (OptBindExpr, WhereExpr)               =  32 (10);
 CoreExpr:           flwr (OptBindExpr, OrdWhereExpr)            =  33 (10);
-
+                                                                     
 OptBindExpr:        for_ (forbind (forvars (var, nil),               
                                    LiteralValue),                    
                           OptBindExpr)                          =   2 (10);
@@ -380,20 +377,6 @@ CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  = 123 (10);
 
 /* Pathfinder extension: XRPC */
 CoreExpr:           xrpc (CoreExpr, FunExpr)                    = 124 (10);
-
-/* full-text score variable extension */
-OptBindExpr:        for_ (forbind (forvars (var, 
-                                            vars (nil, OptVar)),               
-                                   LiteralValue),                    
-                          OptBindExpr)                          = 125 (10);
-OptBindExpr:        for_ (forbind (forvars (var, 
-                                            vars (var, OptVar)),               
-                                   LiteralValue),                    
-                          OptBindExpr)                          = 126 (10);
-OptBindExpr:        for_ (forbind (forvars (var, vars(
-                                            OptVar, OptVar)),            
-                                   CoreExpr),                            
-                          OptBindExpr)                          = 127 (10);
 
 %%
 
@@ -735,27 +718,6 @@ reduce (PFcnode_t *p, int goalnt)
                  * changed. Fix it in the corresponding PFfun_t struct.
                  */
                 p->sem.fun->core = R(p);
-                break;
-           
-            /* OptBindExpr:        for_ (forbind (forvars (var, 
-                                                           vars (nil, var)),
-                                                  LiteralValue),
-                                         OptBindExpr) */
-            case 125:
-                *p = *let (letbind (LLL(p), LR(p)), R(p));
-                relabel (p, kids);
-                rewrite_again = true;
-                break;
-            
-            /* OptBindExpr:        for_ (forbind (forvars (var, vars(
-                                                           var, var)),
-                                                  LiteralValue),
-                                         OptBindExpr) */
-            case 126:
-                *p = *let (letbind (LLL(p), LR(p)),
-                           let (letbind (LLRL(p), num (1)), R(p)));
-                relabel (p, kids);
-                rewrite_again = true;
                 break;
 
             default:

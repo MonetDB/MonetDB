@@ -370,9 +370,9 @@ simple_aggr (const PFla_op_t *n,
 /* 2.1. fn:node-name */
 /* ----------------- */
 
-/* The fn:node-name function returns an expanded for
+/* The fn:node-name function returns an expanded for 
  * node kinds that can have names.
- * Among them obviously elements and attributes.
+ * Among them obviously elements and attributes. 
  */
 
 static struct PFla_pair_t
@@ -430,15 +430,15 @@ fn_bui_node_name_attr_filter (const PFla_op_t* loop,
                               struct PFla_pair_t *args)
 {
     (void) loop; (void) ordering; (void) side_effects;
-
+    
     PFla_op_t *attributes = NULL;
     PFalg_step_spec_t self_attr_spec;
     self_attr_spec.axis = alg_self;
     self_attr_spec.kind = node_kind_attr;
-
+    
     /* just find every attribute  */
-    self_attr_spec.qname = PFqname (PFns_wild, NULL);
-
+    self_attr_spec.qname = PFqname (PFns_wild, NULL); 
+    
     attributes = attach (
                      project (
                          PFla_step_join_simple (
@@ -466,27 +466,28 @@ fn_bui_node_name_element_filter (const PFla_op_t* loop,
                                  struct PFla_pair_t *args)
 {
     (void) loop; (void) ordering; (void) side_effects;
-
+    
     PFla_op_t *elements = NULL;
     PFalg_step_spec_t self_elem_spec;
     self_elem_spec.axis = alg_self;
-    self_elem_spec.kind = node_kind_elem;
-
+    self_elem_spec.kind = node_kind_elem; 
+    
     /* just find every element */
     self_elem_spec.qname = PFqname (PFns_wild, NULL);
-
+    
     elements = attach (
-
-                    PFla_step_simple (
-                        PFla_set_to_la (args[0].frag),
-                        project (args[0].rel,
-                                 proj (col_iter, col_iter),
-                                 proj (col_item, col_item)),
-                        self_elem_spec,
-                        col_iter, col_item, col_item),
-                        col_pos, lit_int(1));
-
-
+                   project (
+                       PFla_step_join_simple (
+                           PFla_set_to_la (args[0].frag),
+                           project (args[0].rel,
+                                    proj (col_iter, col_iter),
+                                    proj (col_item, col_item)),
+                           self_elem_spec,
+                           col_item, col_res),
+                       proj (col_iter, col_iter),
+                       proj (col_item, col_res)),
+                   col_pos, lit_int(1));
+                                
     return (struct PFla_pair_t) {
                     .rel = elements,
                     .frag = args[0].frag
@@ -508,7 +509,7 @@ fn_bui_node_name_node_ (const PFla_op_t *loop,
                                                              ordering,
                                                              side_effects,
                                                              args).rel);
-
+                                                    
     return (struct PFla_pair_t) {
                 .rel  = union_,
                 .frag = args[0].frag
@@ -527,7 +528,7 @@ PFfn_bui_node_name_attr (const PFla_op_t *loop,
 }
 
 /* node-name for elements */
-struct PFla_pair_t
+struct PFla_pair_t 
 PFfn_bui_node_name_elem (const PFla_op_t *loop,
                          bool ordering,
                          PFla_op_t **side_effects,
@@ -2386,7 +2387,7 @@ PFbui_geoxml_relate (const PFla_op_t *loop,
 /**
  * Algebra implementation for
  * geoxml:intersection(xs:string, xs:string) : xs:string </code>
- * stolen from fn:concat
+ * stolen from fn:concat 
  */
 struct PFla_pair_t
 PFbui_geoxml_intersection (const PFla_op_t *loop,
@@ -4255,12 +4256,12 @@ PFbui_fn_root (const PFla_op_t *loop,
     PFla_op_t        *node_scj,
                      *sel;
     PFalg_step_spec_t anc_node_spec;
-
+    
     anc_node_spec.axis = alg_anc_s;
     anc_node_spec.kind = node_kind_node;
     /* missing QName */
     anc_node_spec.qname = PFqname (PFns_wild, NULL);
-
+    
     /* do an ancestor-or-self::node() step
        with exact position values */
     node_scj = rownum (
@@ -4276,7 +4277,7 @@ PFbui_fn_root (const PFla_op_t *loop,
                            proj (col_iter, col_iter),
                            proj (col_item, col_res))),
                    col_pos, sortby (col_item), col_iter);
-
+    
     /* select the first ancestor */
     sel = project (
               select_ (
@@ -4289,7 +4290,7 @@ PFbui_fn_root (const PFla_op_t *loop,
                   col_res),
               proj (col_iter, col_iter),
               proj (col_item, col_item));
-
+    
     /* add the position values */
     return (struct PFla_pair_t) {
         .rel = attach (sel, col_pos, lit_nat (1)),
@@ -4348,19 +4349,9 @@ PFbui_fn_boolean_optbln (const PFla_op_t *loop,
 {
     if (PFprop_type_of (args[0].rel, col_item) != aat_bln)
         return PFbui_fn_boolean_item (loop, ordering, side_effects, args);
-    else{
-
-    	unsigned int i = 0;
-    	int scoreFlag = 0;
-    	for(i=0; i< args[0].rel->schema.count; i++)
-    	    		if(args[0].rel->schema.items[i].name == col_score1 ||
-    	    				args[0].rel->schema.items[i].name == col_score2){
-    	    			scoreFlag = 1;
-    	    			break;
-    	    		}
-        if(scoreFlag == 0)
-        	return (struct PFla_pair_t) {
-				.rel = disjunion (
+    else
+        return (struct PFla_pair_t) {
+            .rel = disjunion (
                        args[0].rel,
                        attach (
                            attach (
@@ -4371,24 +4362,7 @@ PFbui_fn_boolean_optbln (const PFla_op_t *loop,
                                        proj (col_iter, col_iter))),
                                            col_pos, lit_nat (1)),
                            col_item, lit_bln (false))),
-                 .frag = PFla_empty_set () };
-    	else
-    		return (struct PFla_pair_t) {
-    						.rel = disjunion (
-    		                       args[0].rel,
-    		                       attach(
-    		                    	attach (
-    		                           attach (
-    		                               difference (
-    		                                   loop,
-    		                                   project (
-    		                                       args[0].rel,
-    		                                       proj (col_iter, col_iter))),
-    		                                           col_pos, lit_nat (1)),
-    		                           col_item, lit_bln (false)),
-    		                         args[0].rel->schema.items[i].name, lit_nat(0))),
-    		                 .frag = PFla_empty_set () };
-    }
+            .frag = PFla_empty_set () };
 }
 
 /**
@@ -5912,11 +5886,9 @@ PFbui_pf_distinct_doc_order (const PFla_op_t *loop,
                              struct PFla_pair_t *args)
 {
     PFla_op_t *distinct = distinct (
-                              project ( attach_score(
-										  args[0].rel),
+                              project (args[0].rel,
                                    proj (col_iter, col_iter),
-                                   proj (col_item, col_item),
-                                   proj (col_score1, col_score1)));
+                                   proj (col_item, col_item)));
 
     (void) loop; (void) side_effects;
 
@@ -6533,7 +6505,7 @@ PFbui_pf_string_value (const PFla_op_t *loop,
 /**
  * Build in function fn:put(node, xs:string) as empty-sequence()
  */
-struct PFla_pair_t
+struct PFla_pair_t 
 PFbui_fn_put (const PFla_op_t *loop,
               bool ordering,
               PFla_op_t **side_effects,
@@ -6549,7 +6521,7 @@ PFbui_fn_put (const PFla_op_t *loop,
 /**
  *  Build in function pf:documents() as element()*
  */
-struct PFla_pair_t
+struct PFla_pair_t 
 PFbui_pf_documents (const PFla_op_t *loop,
                     bool ordering,
                     PFla_op_t **side_effects,
@@ -6895,7 +6867,7 @@ pft_query_param1 (struct PFla_pair_t *p1,PFalg_simple_type_t itemType)
         .rel  = fun_param(
                         p1->rel,
                         nil(),
-                        ipi_schema(itemType)),
+                        ipi_schema(itemType)), 
         .frag = PFla_empty_set () };
 }
 
@@ -6909,8 +6881,8 @@ pft_query_param2 (struct PFla_pair_t *p1, PFalg_simple_type_t itemType1,
                         fun_param(
                                 p2->rel,
                                 nil(),
-                                ipi_schema(itemType2)),
-                        ipi_schema(itemType1)),
+                                ipi_schema(itemType2)), 
+                        ipi_schema(itemType1)), 
         .frag = PFla_empty_set () };
 }
 
@@ -6927,9 +6899,9 @@ pft_query_param3 (struct PFla_pair_t *p1, PFalg_simple_type_t itemType1,
                                 fun_param(
                                         p3->rel,
                                         nil(),
-                                        ipi_schema(itemType3)),
-                                ipi_schema(itemType2)),
-                        ipi_schema(itemType1)),
+                                        ipi_schema(itemType3)), 
+                                ipi_schema(itemType2)), 
+                        ipi_schema(itemType1)), 
         .frag = PFla_empty_set () };
 }
 
@@ -6951,7 +6923,7 @@ PFbui_tijah_query_HANDLER (const PFla_op_t *loop,
         .rel =  fun_call(
                     loop,
                     p_fun_param.rel,
-		    ((PFT_FUN_FTFUN(query_name)) ?
+		    ((PFT_FUN_FTFUN(query_name)) ? 
 		    	ipis_schema(funcall_t) : ipi_schema(funcall_t) ),
                     alg_fun_call_tijah,
                     PFqname (PFns_wild, query_name),
@@ -7955,35 +7927,5 @@ PFbui_upd_replace_node (const PFla_op_t *loop,
                    proj (col_item, col_res)),
         .frag = args[0].frag };
 }
-
-
-#ifdef HAVE_PFTIJAH
-
-struct PFla_pair_t PFbui_op_fts_str (const PFla_op_t *loop,
-                                    bool ordering,
-                                    PFla_op_t **side_effects,
-                                    struct PFla_pair_t *args)
-{
-	return bin_comp (aat_str, PFla_eq, loop, ordering, side_effects, args);
-}
-
-struct PFla_pair_t PFbui_tijah_ftfun_score(const PFla_op_t *loop,
-                                           bool ordering,
-                                           PFla_op_t **side_effects,
-                                           struct PFla_pair_t *args){
-
-	(void) loop; (void) ordering; (void) side_effects;
-	
-	return (struct PFla_pair_t) {
-        .rel = project (attach_score(args[0].rel),
-				   proj (col_pos, col_pos),
-				   proj (col_iter, col_iter),
-				   proj (col_item, col_score1),
-				   proj (col_score1, col_score1)),
-        .frag = PFla_empty_set () };
-
-}
-
-#endif
 
 /* vim:set shiftwidth=4 expandtab: */

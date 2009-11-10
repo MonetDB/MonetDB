@@ -172,7 +172,7 @@ enum PFla_op_kind_t {
     , la_internal_op     = 99 /**< operator used inside optimizations */
     /* builtin support for XQuery functions */
     , la_string_join     =102 /**< fn:string-join */
-
+    
     , la_dummy           =120 /**< dummy operator that does nothing */
 
 };
@@ -834,9 +834,6 @@ PFla_op_t * PFla_rowrank (const PFla_op_t *n, PFalg_col_t a,
 /** Constructor for the ranking operator. */
 PFla_op_t * PFla_rank (const PFla_op_t *n, PFalg_col_t a,
                        PFord_ordering_t s);
-
-/** Constructor for attaching score column. */
-PFla_op_t * attach_score (PFla_op_t *n);
 
 /**
  * Constructor for the row ranking operator.

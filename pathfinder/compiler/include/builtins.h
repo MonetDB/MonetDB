@@ -1298,11 +1298,6 @@ struct PFla_pair_t PFbui_tijah_ftfun_b_sxx(const PFla_op_t *loop,
                                            PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_tijah_ftfun_score(const PFla_op_t *loop,
-                                           bool ordering,
-                                           PFla_op_t **side_effects,
-                                           struct PFla_pair_t *args);
-
 /*
  * The main query functions
  */
@@ -1362,17 +1357,6 @@ struct PFla_pair_t PFbui_tijah_resultsize (const PFla_op_t *loop,
                                            bool ordering,
                                            PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
-#endif
-
-
-
-#ifdef HAVE_PFTIJAH
-
-struct PFla_pair_t PFbui_op_fts_str (const PFla_op_t *loop,
-                                    bool ordering,
-                                    PFla_op_t **side_effects,
-                                    struct PFla_pair_t *args);
-
 #endif
 
 #endif   /* BUITLINS_H */

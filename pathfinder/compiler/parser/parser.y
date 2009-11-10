@@ -373,11 +373,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token following_colon_colon           "following::"
 %token following_sibling_colon_colon   "following-sibling::"
 %token for_dollar                      "for $"
-%token ftand                           "ftand"
-%token ftcontains		               "ftcontains"
-%token ftmildnot                       "not in"
-%token ftnot                           "ftnot"
-%token ftor                            "ftor"
 %token ge                              "ge"
 %token greater_than                    ">"
 %token greater_than_equal              ">="
@@ -400,7 +395,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token le                              "le"
 %token less_than                       "<"
 %token less_than_equal                 "<="
-%token let                      	   "let"
+%token let_dollar                      "let $"
 %token lparen                          "("
 %token lt                              "lt"
 %token lt_lt                           "<<"
@@ -438,7 +433,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token satisfies                       "satisfies"
 %token schema_attribute_lparen         "schema-attribute ("
 %token schema_element_lparen           "schema-element ("
-%token score_dollar	                   "score $"
 /* Pathfinder extension: recursion */
 %token seeded_by                       "seeded by"
 /* StandOff */
@@ -469,7 +463,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token with                            "with"
 /* Pathfinder extension: recursion */
 %token with_dollar                     "with $"
-%token without_content                 "without content"
 %token xml_comment_end                 "-->"
 %token xml_comment_start               "<!--"
 %token xquery_version                  "xquery version"
@@ -566,7 +559,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 
 %type <ptype>  
                DivOp_
-               FTOp_
                GeneralComp
                NodeComp
                SomeEvery_
@@ -634,18 +626,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                FilterExpr
                FLWORExpr
                ForwardStep
-               FTAndExpr
-               FTContainsExpr
-               FTIgnoreOption
-               FTMildNot
-               FTOrExpr
-               FTPrimaryExpr
-               FTPrimaryWithOptions
-               FTScoreVar
-               FTSelectionExpr
-               FTUnaryNot
-               FTWordsExpr
-               FTWordsValueExpr
                FuncArgList_
                FunctionCall
                FunctionDecl
@@ -1461,47 +1441,10 @@ VarPosBindings_           : VarName OptTypeDeclaration_ OptPositionalVar_
                                     $5),
                                   $8.root);
                             }
-                          | /* full-text support */
-                            VarName OptTypeDeclaration_ OptPositionalVar_ FTScoreVar
-                              "in" ExprSingle
-                            { $$.root = $$.hole = 
-                                wire2 (p_binds, @$,
-                                  wire2 (p_bind, @$,
-                                    wire2 (p_vars, loc_rng (@1, @4),
-                                      wire2 (p_vars, loc_rng (@1, @3),
-                                        wire2 (p_var_type, loc_rng (@1, @2),
-                                               $1,
-                                               $2),
-                                        $3),
-                                      $4),  
-                                    $6),
-                                  nil (@$));
-                            }
-                          | /* full-text support */
-                            VarName OptTypeDeclaration_ OptPositionalVar_ FTScoreVar
-                              "in" ExprSingle "," "$" VarPosBindings_
-                            { $$.hole = $9.hole;
-                              $$.root = 
-                                wire2 (p_binds, @$,
-                                  wire2 (p_bind, @$,
-                                    wire2 (p_vars, loc_rng (@1, @4),
-                                      wire2 (p_vars, loc_rng (@1, @3),
-                                        wire2 (p_var_type, loc_rng (@1, @2),
-                                               $1,
-                                               $2),
-                                        $3),
-                                      $4),
-                                    $6),
-                                  $9.root);
-                            }
                           ;
 
 OptPositionalVar_         : /* empty */     { $$ = nil (@$); }
                           | PositionalVar   { $$ = $1; }
-                          ;
-
-/* Full-text support */                          
-FTScoreVar                : "score $" VarName { $$ = $2; }
                           ;
 
 /* [35] */
@@ -1509,43 +1452,28 @@ PositionalVar             : "at $" VarName  { $$ = $2; }
                           ;
 
 /* [36] */
-LetClause                 : "let" LetBindings_ { $$ = $2; }
+LetClause                 : "let $" LetBindings_ { $$ = $2; }
                           ;
 
-LetBindings_              : "$" VarName OptTypeDeclaration_ ":=" ExprSingle
+LetBindings_              : VarName OptTypeDeclaration_ ":=" ExprSingle
                             { $$.root = $$.hole = 
                                 wire2 (p_binds, @$,
                                   wire2 (p_let, @$,
-                                    wire2 (p_var_type, loc_rng (@2, @3),
-                                      $2, $3),
-                                    $5),
+                                    wire2 (p_var_type, loc_rng (@1, @2),
+                                      $1, $2),
+                                    $4),
                                   nil (@$));
                             }
-                          | "$" VarName OptTypeDeclaration_ ":=" ExprSingle
-                              "," LetBindings_
+                          | VarName OptTypeDeclaration_ ":=" ExprSingle
+                              "," "$" LetBindings_
                             { $$.hole = $7.hole;
                               $$.root = 
                                 wire2 (p_binds, @$,
                                   wire2 (p_let, @$,
-                                    wire2 (p_var_type, loc_rng (@2, @3),
-                                      $2, $3),
-                                    $5),
+                                    wire2 (p_var_type, loc_rng (@1, @2),
+                                      $1, $2),
+                                    $4),
                                   $7.root);
-                            }
-                          | FTScoreVar ":=" ExprSingle
-                            { $$.root = $$.hole =
-                                wire2 (p_binds, @$,
-                                  wire2 (p_let, @$, $1, $3),
-                                    nil (@$));
-                            }
-                          | FTScoreVar ":=" ExprSingle
-                              "," LetBindings_
-                            {
-                              $$.hole = $5.hole;
-                              $$.root = 
-                                wire2 (p_binds, @$,
-                                  wire2 (p_let, @$, $1, $3),
-                                    $5.root);
                             }
                           ;
 
@@ -1685,78 +1613,14 @@ AndExpr                   : ComparisonExpr { $$ = $1; }
                           ;
 
 /* [48] */
-/*ComparisonExpr            : RangeExpr { $$ = $1; }
+ComparisonExpr            : RangeExpr { $$ = $1; }
                           | RangeExpr ValueComp RangeExpr
                             { $$ = wire2 ($2, @$, $1, $3); }
                           | RangeExpr GeneralComp RangeExpr
                             { $$ = wire2 ($2, @$, $1, $3); }
                           | RangeExpr NodeComp RangeExpr
                             { $$ = wire2 ($2, @$, $1, $3); }
-                          ;*/
-
-/* Full-text */
-ComparisonExpr            : FTContainsExpr { $$ = $1; }
-                          | FTContainsExpr ValueComp FTContainsExpr
-                            { $$ = wire2 ($2, @$, $1, $3); }
-                          | FTContainsExpr GeneralComp 	FTContainsExpr
-                            { $$ = wire2 ($2, @$, $1, $3); }
-                          | FTContainsExpr NodeComp FTContainsExpr
-                            { $$ = wire2 ($2, @$, $1, $3); }
                           ;
-
-FTContainsExpr            : RangeExpr { $$ = $1; }
-                          | RangeExpr FTOp_ FTSelectionExpr
-                            { $$ = wire2 ($2, @$, $1, $3); }
-                          | RangeExpr FTOp_ FTSelectionExpr FTIgnoreOption
-                            { $$ = wire2 ($2, @$, $1, 
-                                           wire2 (p_ftfilter, loc_rng (@3, @4), $3, $4)); }
-                          ;
-
-FTOp_                     : "ftcontains" { $$ = p_ftcontains; }
-                          ;
-                          
-FTSelectionExpr           : FTOrExpr { $$ = $1; }
-                          ;
-
-FTIgnoreOption            : "without content" UnionExpr
-                            { $$ = wire1 (p_ftignore, @$, $2); }
-                          ;
-                         
-FTOrExpr                  : FTAndExpr { $$ = $1; }
-						  | FTOrExpr "ftor" FTAndExpr
-						    { $$ = wire2 (p_ftor, @$, $1, $3); }
-						  ;
-						  
-FTAndExpr                 : FTMildNot { $$ = $1; }
-						  | FTAndExpr "ftand" FTMildNot
-						    { $$ = wire2 (p_ftand, @$, $1, $3); }
-						  ;
-
-FTMildNot                 : FTUnaryNot { $$ = $1; }
-                          | FTMildNot "not in" FTUnaryNot
-                            { $$ = wire2 (p_ftmildnot, @$, $1, $3); }
-                          ;
-
-FTUnaryNot                : FTPrimaryWithOptions { $$ = $1; }
-                          | "ftnot" FTPrimaryWithOptions
-                            { $$ = wire1 (p_ftnot, @$, $2); }
-                          ;
-                          
-                            
-FTPrimaryWithOptions      : FTPrimaryExpr { $$ = $1; }
-                          ;
-
-FTPrimaryExpr             : FTWordsExpr { $$ = $1; }
-                          | "(" FTSelectionExpr ")"
-                            { $$ = $2; }
-                          ;
-
-FTWordsExpr               : FTWordsValueExpr { $$ = $1; }
-                          ;
-
-FTWordsValueExpr          : Literal { $$ = $1; }
-                          ;
-
 
 /* [49] */
 RangeExpr                 : AdditiveExpr { $$ = $1; }

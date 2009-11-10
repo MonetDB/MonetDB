@@ -46,7 +46,6 @@
 #include "abssyn.h"
 #include "qname.h"
 #include "mem.h"
-
 #include "options.h"      /* extract option declarations from parse tree */
 #include "string_utils.h" /* trimming for pragmas */
 
@@ -221,13 +220,6 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    seed           = 128
 %term    xrpc           = 129
 %term    docmgmt_ty     = 130
-%term    ftcontains     = 131
-%term    ftfilter       = 132
-%term    ftignore       = 133
-%term    ftor           = 134
-%term    ftand          = 135
-%term    ftmildnot      = 136
-%term    ftnot          = 137
 
 %%
 
@@ -363,7 +355,7 @@ OptBindExpr:            binds (bind (vars (var_type (Var,
                                            OptPosVar),
                                      OptExpr),
                                OptBindExpr)                         =  66 (10);
- 
+
 OptPosVar:              nil                                         =  68 (10);
 OptPosVar:              Var                                         =  69 (10);
 
@@ -447,22 +439,22 @@ OrExpr:                 or (AndExpr, OrExpr)                        = 103 (10);
 AndExpr:                ComparisonExpr                              = 104 (10);
 AndExpr:                and (ComparisonExpr, AndExpr)               = 105 (10);
 
-ComparisonExpr:         FTContainsExpr                              = 106 (10);
-ComparisonExpr:         eq (FTContainsExpr, FTContainsExpr)         = 107 (10);
-ComparisonExpr:         ne (FTContainsExpr, FTContainsExpr)         = 108 (10);
-ComparisonExpr:         lt (FTContainsExpr, FTContainsExpr)         = 109 (10);
-ComparisonExpr:         le (FTContainsExpr, FTContainsExpr)         = 110 (10);
-ComparisonExpr:         gt (FTContainsExpr, FTContainsExpr)         = 111 (10);
-ComparisonExpr:         ge (FTContainsExpr, FTContainsExpr)         = 112 (10);
-ComparisonExpr:         val_eq (FTContainsExpr, FTContainsExpr)     = 113 (10);
-ComparisonExpr:         val_ne (FTContainsExpr, FTContainsExpr)     = 114 (10);
-ComparisonExpr:         val_lt (FTContainsExpr, FTContainsExpr)     = 115 (10);
-ComparisonExpr:         val_le (FTContainsExpr, FTContainsExpr)     = 116 (10);
-ComparisonExpr:         val_gt (FTContainsExpr, FTContainsExpr)     = 117 (10);
-ComparisonExpr:         val_ge (FTContainsExpr, FTContainsExpr)     = 118 (10);
-ComparisonExpr:         is (FTContainsExpr, FTContainsExpr)         = 119 (10);
-ComparisonExpr:         ltlt (FTContainsExpr, FTContainsExpr)       = 121 (10);
-ComparisonExpr:         gtgt (FTContainsExpr, FTContainsExpr)       = 122 (10);
+ComparisonExpr:         RangeExpr                                   = 106 (10);
+ComparisonExpr:         eq (RangeExpr, RangeExpr)                   = 107 (10);
+ComparisonExpr:         ne (RangeExpr, RangeExpr)                   = 108 (10);
+ComparisonExpr:         lt (RangeExpr, RangeExpr)                   = 109 (10);
+ComparisonExpr:         le (RangeExpr, RangeExpr)                   = 110 (10);
+ComparisonExpr:         gt (RangeExpr, RangeExpr)                   = 111 (10);
+ComparisonExpr:         ge (RangeExpr, RangeExpr)                   = 112 (10);
+ComparisonExpr:         val_eq (RangeExpr, RangeExpr)               = 113 (10);
+ComparisonExpr:         val_ne (RangeExpr, RangeExpr)               = 114 (10);
+ComparisonExpr:         val_lt (RangeExpr, RangeExpr)               = 115 (10);
+ComparisonExpr:         val_le (RangeExpr, RangeExpr)               = 116 (10);
+ComparisonExpr:         val_gt (RangeExpr, RangeExpr)               = 117 (10);
+ComparisonExpr:         val_ge (RangeExpr, RangeExpr)               = 118 (10);
+ComparisonExpr:         is (RangeExpr, RangeExpr)                   = 119 (10);
+ComparisonExpr:         ltlt (RangeExpr, RangeExpr)                 = 121 (10);
+ComparisonExpr:         gtgt (RangeExpr, RangeExpr)                 = 122 (10);
 
 RangeExpr:              AdditiveExpr                                = 123 (10);
 RangeExpr:              range (RangeExpr, RangeExpr)                = 124 (10);
@@ -641,58 +633,6 @@ XRPCCall:               xrpc (Expr, FunctionCall)                   = 237 (10);
 
 /* Pathfinder extension: statement type for document management functions */
 SequenceType:           seq_ty (docmgmt_ty (nil))                   = 238 (10);
-
-/* Pathfinder full-text support */
-FTContainsExpr:         RangeExpr                                   = 239 (10);
-FTContainsExpr:         ftcontains (RangeExpr, FTSelectionExpr)     = 240 (10);
-FTContainsExpr:         ftcontains (RangeExpr, FTFilterExpr)        = 241 (10);
-
-OptBindExpr:            binds (bind (vars (vars (var_type (Var,
-                                                               nil),
-                                                     OptPosVar),
-                                           OptFTScoreVar),
-                                     OptExpr),
-                               OptBindExpr)                         = 242 (10);
-OptBindExpr:            binds (bind (vars (vars (var_type 
-                                                  (Var,
-                                                   TypeDeclaration),
-                                                  OptPosVar),
-                                           OptFTScoreVar),
-                                     OptExpr),
-                               OptBindExpr)                         = 243 (10);
-
-OptFTScoreVar:          nil                                         = 244 (10);
-OptFTScoreVar:          Var                                         = 245 (10);
-
-FTFilterExpr:           ftfilter (FTSelectionExpr, 
-                                   FTIgnoreOption)                  = 246 (10);
-FTIgnoreOption:         ftignore (UnionExpr)                        = 247 (10);
-
-FTSelectionExpr:        FTOrExpr                                    = 248 (10);
-
-FTOrExpr:               FTAndExpr                                   = 249 (10);
-FTOrExpr:               ftor (FTOrExpr, FTAndExpr)                  = 250 (10);
-
-FTAndExpr:              FTMildNot                                   = 251 (10);
-FTAndExpr:              ftand (FTAndExpr, FTMildNot)                = 252 (10);
-
-FTMildNot:              FTUnaryNot                                  = 253 (10);
-FTMildNot:              ftmildnot (FTMildNot, FTUnaryNot)           = 254 (10);
-
-FTUnaryNot:             FTPrimaryWithOptions                        = 255 (10);
-FTUnaryNot:             ftnot (FTPrimaryWithOptions)                = 256 (10);
-
-FTPrimaryWithOptions:   FTPrimaryExpr                               = 257 (10);
-
-FTPrimaryExpr:          FTWordsExpr                                 = 258 (10);
-FTPrimaryExpr:          FTSelectionExpr                             = 259 (10);
-
-FTWordsExpr:            FTWordsValueExpr                            = 260 (10);
-
-FTWordsValueExpr:       Literal                                     = 261 (10);
-
-OptBindExpr:            binds (let (Var, OptExpr),
-                               OptBindExpr)                         = 262 (10);
 
 %%
 
@@ -1506,7 +1446,7 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
                              C(R(p))));
                         
         } break;
-        
+
         /* OptBindExpr:            binds (bind (vars (var_type (Var,
                                                                 nil),
                                                       OptPosVar),
@@ -3966,156 +3906,6 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
             C(p) = seqtype (PFty_star (PFty_docmgmt ()));
             break;
 
-        /* FTContainsExpr:         RangeExpr */
-        case 239: 
-            break;
-
-        /* FTContainsExpr:         ftcontains (RangeExpr, FTSelectionExpr)   */
-        case 240: 
-         {
-            PFfun_t *op_ftcontains = function (PFqname (PFns_fts, "ftcontains"));
-            two_arg_fun_worker (p, op_ftcontains);
-            
-        } break;
-        
-        /* FTContainsExpr:         ftcontains (RangeExpr, FTFilterExpr)  */
-        case 241:
-            break;
-            
-        /* OptBindExpr:            binds (bind (vars (vars (var_type (Var,
-                                                                          nil),
-                                                                OptPosVar),
-                                                      OptFTScoreVar),
-                                                OptExpr),
-                                          OptBindExpr) */
-        case 242:
-            C(p) = for_ (forbind (forvars2 (C(LLLLL(p)), C(LLLR(p)), C(LLR(p))),
-                                  C(LR(p))),
-                         C(R(p)));
-            break;
-
-        /* OptBindExpr:            binds (bind (vars (vars (var_type (
-                                                                    Var,
-                                                                    TypeDeclaration),
-                                                                OptPosVar),
-                                                      OptFTScoreVar),
-                                                OptExpr),
-                                          OptBindExpr) */
-        case 243:
-        {
-            PFvar_t *v = new_var (NULL);
-
-            C(p) = for_ (forbind (forvars2 (var (v), C(LLLR(p)), C(LLR(p))),
-                                  C(LR(p))),
-                         let (letbind (C(LLLLL(p)),
-                                       proof (subty (var (v),
-                                                     C(LLLLR(p))),
-                                              seqcast (C(LLLLR(p)),
-                                                       var (v)))),
-                              C(R(p))));
-        } break;
-        
-        /* OptFTScoreVar:          nil */
-        case 244:
-            C(p) = nil ();
-            break;
-
-        /* OptFTScoreVar:          Var */
-        case 245:
-            break;
-            
-        /*FTFilterExpr:           ftfilter (FTSelectionExpr, 
-                                   OptFTIgnoreOption)        */      
-        case 246:
-            break;
-            
-        /*FTIgnoreOption:         ftignore (UnionExpr)     */
-        case 247:
-            PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
-                        "Full text ignore options not yet implemented");
-            break;
-        
-        /*FTSelectionExpr:        FTOrExpr           */
-        case 248:
-            break;
-            
-        /*FTOrExpr:               FTAndExpr          */
-        case 249:
-            break;
-            
-        /*FTOrExpr:               ftor (FTAndExpr, FTAndExpr)      */
-        case 250:
-            PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
-                        "Full text Or operator not yet supported");
-            break;
-        
-        /*FTAndExpr:              FTMildNot                        */
-        case 251:
-            break;            
-        
-        /*FTAndExpr:              ftand (FTMildNot, FTMildNot)     */
-        case 252:
-            PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
-                        "Full text And operator not yet supported");
-            break;
-        
-        /*FTMildNot:              FTUnaryNot                       */
-        case 253:
-            break;
-        
-        /*FTMildNot:              ftmildnot ( FTUnaryNot, FTUnaryNot)    */
-        case 254:
-            PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
-                        "Full text mild-not not yet supported");
-            break;
-        
-        /*FTUnaryNot:             FTPrimaryWithOptions             */
-        case 255:
-            break;
-        
-        /*FTUnaryNot:             ftnot (FTPrimaryWithOptions)     */
-        case 256:
-            PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
-                        "Full text Not operator not yet supported");
-            break;
-        
-        /*FTPrimaryWithOptions:   FTPrimaryExpr                    */
-        case 257:
-            break;
-        
-        /*FTPrimaryExpr:          FTWordsExpr                      */
-        case 258:
-            break;
-        
-        /*FTPrimaryExpr:          FTSelectionExpr                  */
-        case 259:
-            assert (C(p));
-            break;
-        
-        /*FTWordsExpr:            FTWordsValueExpr                 */
-        case 260:
-            break;
-        
-        /*FTWordsValueExpr:       Literal                          */
-        case 261:
-            assert (C(p));
-            break;
-            
-        /* OptBindExpr:            binds (let (Var, OptExpr),
-                                          OptBindExpr) */
-        case 262:
-        {
-            PFfun_t *op_score = function (PFqname (PFns_fts, "score"));
-
-            /*C(p) = APPLY (op_plus,
-                          num (0), 
-                          fs_convert_op_by_type (
-                              fn_data (C(L(p))),
-                              PFty_xs_double ()));*/
-            C(p) = let (letbind (C(LL(p)), APPLY (op_score, C(LR(p)))), C(R(p)));
-
-        } break;
-        
         default:
             PFoops_loc (OOPS_FATAL, p->loc, "untranslated expression");
             break;

@@ -605,7 +605,7 @@ PFla_cross_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2)
 
     /* indicate what kind of internal operator we are working on */
     ret->sem.eqjoin_opt.kind   = la_cross;
-
+    
     /* copy schema from argument 2, check for duplicate column names
        and discard if present */
     for (j = 0; j < n2->schema.count; j++) {
@@ -800,7 +800,7 @@ PFla_eqjoin_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2,
             i--;
         }
     }
-
+    
     /* copy schema from projection list 'rproj' */
     /* discard join columns - they are already added */
     for (i = 1; i < PFarray_last (rproj); i++) {
@@ -1241,34 +1241,17 @@ set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
             kind == la_difference);
 
     /* see if both operands have same number of columns */
-    if (n1->schema.count != n2->schema.count){
-    	if(n1->schema.count > n2->schema.count)
-    	for(i=0; i< n1->schema.count; i++){
-    		if(n1->schema.items[i].name == col_score1){
-    			return set_operator (kind, n1, attach(n2, col_score1, lit_dbl(1)));
-    		}
-    	} else 
-    		for(i=0; i< n2->schema.count; i++){
-    			if(n2->schema.items[i].name == col_score1){
-    		    	return set_operator (kind, attach(n1, col_score1, lit_dbl(1)), n2);
-    			}
-    		}
-
-    	if (n1->schema.count != n2->schema.count)
-    	PFoops (OOPS_FATAL,
-    	                "Schema of two arguments of set operation (%s) "
-    	                "do not match. (%i #cols != %i #cols)",
-    	                kind == la_disjunion
-    	                ? "union"
-    	                : kind == la_intersect
-    	                  ? "intersect"
-    	                  : "difference",
-    	                n1->schema.count,
-    	                n2->schema.count);
-
-    }
-
-
+    if (n1->schema.count != n2->schema.count)
+        PFoops (OOPS_FATAL,
+                "Schema of two arguments of set operation (%s) "
+                "do not match. (%i #cols != %i #cols)",
+                kind == la_disjunion
+                ? "union"
+                : kind == la_intersect
+                  ? "intersect"
+                  : "difference",
+                n1->schema.count,
+                n2->schema.count);
 
     /* allocate memory for the result schema */
     ret->schema.count = n1->schema.count;
@@ -4587,29 +4570,6 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
     assert (!"this should never be reached (duplicate nodes)");
 
     return n; /* satisfy picky compilers */
-}
-
-/** Check if score colomn exists if not then
- *  add score coloumn
- */
-PFla_op_t *
-attach_score (PFla_op_t *n){
-
-
-	unsigned int i;
-
-	for (i = 0; i < n->schema.count; i++) {
-		/* check if there's a coloumn named col_score1 */
-	    if (n->schema.items[i].name == col_score1)
-	    	break;
-	}
-
-	if(i >= n->schema.count){
-		return attach(n, col_score1, lit_dbl(1));
-	} else {
-		return n;
-	}
-
 }
 
 /* vim:set shiftwidth=4 expandtab: */

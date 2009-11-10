@@ -37,19 +37,19 @@
 #define ABSSYN_H
 
 /* PFqname_t */
-#include "qname.h"
+#include "qname.h"    
 
 /* PFns_map_t */
 #include "ns.h"
 
 /* PFvar_t */
-#include "variable.h"
+#include "variable.h"    
 
 /* PFsort_t */
 #include "pf_xq.h"
 
 /** no type of parse tree node will need more than
- *  this many child nodes
+ *  this many child nodes 
  */
 #define PFPNODE_MAXCHILD 2
 
@@ -120,7 +120,7 @@ enum PFptype_t {
     , p_mod_imp          =  62  /**< Module import */
     , p_mod_ns           =  63  /**< module namespace */
     , p_mult             =  64  /**< * (multiplication) */
-    , p_named_ty         =  65  /**< named type */
+    , p_named_ty         =  65  /**< named type */ 
     , p_ne               =  66  /**< != (inequality) */
     , p_nil              =  67  /**< end-of-sequence marker */
     , p_node_ty          =  68  /**< node type */
@@ -192,15 +192,6 @@ enum PFptype_t {
 
     /* Pathfinder extension: document management (ret type for docmgmt func.) */
     , p_docmgmt_ty       = 130  /**< "item" type `docmgmt' (funct. decls.) */
-
-    /* Pathfinder extension: full-text search (ftcontains) */
-    , p_ftcontains       = 131  /**< keyword ftcontains for full-text search */
-    , p_ftfilter         = 132  /**< filters ftcontains full-text search */
-    , p_ftignore         = 133  /**< ignore nodes from full-text search */
-    , p_ftor             = 134  /**< full-text or expression */
-    , p_ftand            = 135  /**< full-text and expression */
-    , p_ftmildnot        = 136  /**< full-text Mild not experession */
-    , p_ftnot            = 137  /**< full-text not expression */
 };
 
 typedef enum PFptype_t PFptype_t;
@@ -300,10 +291,10 @@ union PFpsem_t {
                                       (XQ Update Facility) */
     PFinsertmod_t    insert;     /**< insertion target for "do insert"
                                       (XQ Update Facility) */
-};
+}; 
 
 
-/* interfaces to parse construction routines
+/* interfaces to parse construction routines 
  */
 PFpnode_t *
 p_leaf  (PFptype_t type, PFloc_t loc);

@@ -50,14 +50,14 @@ typedef struct PFns_t PFns_t;
  *             either via an XQuery namespace declaration, e.g.
  *
  *                           declare namespace foo = "http://bar"
- *
+ *                
  *             or a namespace declaration (xmlns) attribute, e.g.,
  *
  *                           <a xmlns:foo="http://bar"> ... </a>
  *
  *             or by definition, see the W3C standard documents, e.g.
  *             W3C XQuery, 4.1 (Namespace Declarations):
- *
+ *                          
  *                    "xs" |-> "http://www.w3.org/2001/XMLSchema"
  */
 struct PFns_t {
@@ -72,7 +72,7 @@ struct PFns_t {
 /** Predefined namespace `xml' for any query */
 extern PFns_t PFns_xml;
 /** Predefined namespace `xs' (XML Schema) for any query */
-extern PFns_t PFns_xs;
+extern PFns_t PFns_xs; 
 /** Predefined namespace `xsi' (XML Schema Instance) for any query */
 extern PFns_t PFns_xsi;
 /** Predefined namespace `xdt' (XPath Data Types) for any query */
@@ -83,7 +83,7 @@ extern PFns_t PFns_local;
 extern PFns_t PFns_upd;
 
 /**
- * XQuery default function namespace (fn:..., this may be overridden
+ * XQuery default function namespace (fn:..., this may be overridden 
  * via `default function namespace = "..."')
  * (see W3C XQuery 1.0 and XPath 2.0 Function and Operators, 1.5).
  */
@@ -95,26 +95,19 @@ extern PFns_t PFns_fn;
  */
 extern PFns_t PFns_op;
 
-#ifdef HAVE_PFTIJAH
-/**
- * XQuery full-text search operator namespace (fts:...)
- */
-extern PFns_t PFns_fts;
-#endif
-
 /**
  * Pathfinder's namespace for additional non-'fn' functions.
- */
+ */ 
 extern PFns_t PFns_lib;
 
 /**
  * Pathfinder's namespace for additional tijah functions.
- */
+ */ 
 extern PFns_t PFns_tijah;
 
 /**
  * Pathfinder's namespace for XRPC extension.
- */
+ */ 
 extern PFns_t PFns_xrpc;
 
 #ifdef HAVE_GEOXML
@@ -131,9 +124,9 @@ extern PFns_t PFns_geoxml;
 extern PFns_t PFns_pxmlsup;
 #endif
 
-/**
+/** 
  * Pathfinder's own internal NS (pf:...).
- */
+ */ 
 extern PFns_t PFns_pf;
 
 /**
@@ -144,7 +137,7 @@ extern PFns_t PFns_wild;
 /** A prefix -> URI mapping table (implemented as PFarray_t */
 typedef PFarray_t PFns_map_t;
 
-/**
+/** 
  * NS equality (URI-based, then prefix-based)
  */
 int PFns_eq (PFns_t, PFns_t);

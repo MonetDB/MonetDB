@@ -8379,7 +8379,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
           add_empty_strings (f, STR, cur_level);
           saveResult_ (f, ++counter, STR);
 	  str_counter = counter;
-	}
+	} 
 	/* PARAMETER COMPUTATION */
 	milprintf(f,
 		"var pfop_query := tj_pfop(iter%03u.materialize(ipik%03u),item%s%03u.materialize(ipik%03u),kind%03u.materialize(ipik%03u),pos%03u.materialize(ipik%03u));\n"
@@ -8448,7 +8448,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	        "    pos.append(tmp.mark(1@0));\n"
 	        "} # end of query batloop \n"
 	        , cur_level, item_int, cur_level);
-
+        
 	milprintf(f,
                 "kind := set_kind(frag, ELEM);\n"
                 "ipik := iter;\n"
@@ -8472,9 +8472,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         /* get node */
         rc = translate2MIL (f, code, cur_level, counter, RL(args));
-
+        
 	/* get scores */
-        milprintf(f,
+        milprintf(f, 
 		"var score := new(oid,dbl);\n"
 		"var tmp := [<<]([lng](tijah_scoreDB.fetch(1@0)), const 32);\n"
 		"var tijah_fragpre := [+](tmp, [lng](tijah_scoreDB.fetch(2@0)));\n"
@@ -8499,7 +8499,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"xitem := nil;\n"
 		"score := score.sort().tmark(0@0);\n"
 		, item_int, counter, item_int, counter);
-
+	
 	/* return score */
         item_ext = (code)?kind_str(DBL):"";
         if (code)
@@ -11434,7 +11434,7 @@ const char* PFinitMIL(void) {
         "var xrpc_qid := \"\";         # qid remains empty for non-2pc queries\n"
         "var xrpc_caller := \"\";      # qid is caller-id of the root of the XRPC tree\n"
         "var xrpc_hdl := ptr(0);       # handle to link Prepare messages with Commit messages.\n"
-        "var xrpc_seqnr := 0LL;        # if this query is an XRPC request, a session-unique nr\n"
+        "var xrpc_seqnr := 0LL;        # if this query is an XRPC request, a session-unique nr\n" 
         "var xrpc_timeout := 30000LL;  # configurable usec timeout\n"
         "var xrpc_mode := \"none\";    # format: (none|repeatable)[-iterative][-trace]\n"
         "var xrpc_coord := false;      # this query should act as XRPC coordinator?\n"

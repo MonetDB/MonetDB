@@ -143,9 +143,6 @@ char *c_id[]  = {
   /* Pathfinder extension: XRPC */
   , [c_xrpc]               = "xrpc"
 
-  /* Associated For variable holders */
-  , [c_vars]               = "vars"
-
 };
 
 /** Current node id */
