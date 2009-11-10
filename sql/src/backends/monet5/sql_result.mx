@@ -445,7 +445,13 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 		m->type = -1;
 		return NULL;
 	}
-	if (!bs ||stream_errnr(bs->s)) {
+	if (!bs) {
+		showException(IO,"sql", "no stream (pointer) provided");
+
+		m->type = -1;
+		return NULL;
+	}
+	if (stream_errnr(bs->s)) {
 		showException(IO,"sql", "stream not open %d", stream_errnr(bs->s));
 
 		m->type = -1;
