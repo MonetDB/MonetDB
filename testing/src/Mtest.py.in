@@ -1165,13 +1165,14 @@ def ApproveOutput (env, TST) :
 ### ApproveOutput (env, TST) #
 
 # this function is a slightly modified copy of the posixpath version
-# the difference is the doubling of \'s in the replacement value under
-# a very specific condition: when the variable name starts with a Q
-# and the variable name (with Q prefix) does not occur in the
+# the differences are the doubling of \'s in the replacement value
+# under a very specific condition: when the variable name starts with
+# a Q and the variable name (with Q prefix) does not occur in the
 # environment and the variable name minus the Q prefix does occur in
-# the environment.
+# the environment; and the addition of an extra parameter with default
+# so that the environment which is used to expand can be replace.
 _varprog = None
-def expandvars(path):
+def expandvars(path, environ = os.environ):
     """Expand shell variables of form $var and ${var}.  Unknown variables
     are left unchanged."""
     global _varprog
@@ -1189,15 +1190,15 @@ def expandvars(path):
         name = m.group(1)
         if name.startswith('{') and name.endswith('}'):
             name = name[1:-1]
-        if name in os.environ:
+        if name in environ:
             tail = path[j:]
-            val = os.environ[name]
+            val = environ[name]
             path = path[:i] + val
             i = len(path)
             path += tail
-        elif name[:1] == 'Q' and name[1:] in os.environ:
+        elif name[:1] == 'Q' and name[1:] in environ:
             tail = path[j:]
-            val = os.environ[name[1:]].replace('\\', '\\\\')
+            val = environ[name[1:]].replace('\\', '\\\\')
             path = path[:i] + val
             i = len(path)
             path += tail
@@ -1619,7 +1620,7 @@ def RunTest(env, TST, BusyPorts, COND) :
 
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
             f = open(TST+EXT+".src","r")
-            TSTSRC = expandvars(path(f.readline().strip()))
+            TSTSRC = expandvars(path(f.readline().strip()), env)
             f.close()
             if os.path.isfile(TSTSRC):
                 SymlinkOrCopy(TSTSRC,TST+EXT)
@@ -1635,7 +1636,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         for ff in os.listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
                 f = open(ff,"r")
-                TSTSRC = expandvars(path(f.readline().strip()))
+                TSTSRC = expandvars(path(f.readline().strip()), env)
                 f.close()
                 if os.path.isfile(TSTSRC):
                     SymlinkOrCopy(TSTSRC,ff[:-4])
@@ -1647,7 +1648,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             if test.match(ff) and not os.path.isfile(fff):
                 f = open(fff,"w")
                 for l in open(ff):
-                    f.write(expandvars(l))
+                    f.write(expandvars(l, env))
                 f.close()
 
         ACCURACYout = par['ACCURACY']
