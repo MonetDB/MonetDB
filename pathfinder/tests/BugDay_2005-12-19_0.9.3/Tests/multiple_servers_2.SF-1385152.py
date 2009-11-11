@@ -20,50 +20,51 @@ def client(x,s, c, dbinit, lang, cmd, h):
     sys.stderr.flush()
     clt = process.client(lang, stdin = process.PIPE)
     clt.communicate(cmd)
+    return '%s(%s) ' % (h,lang)
 
 def clients(x,dbinit):
     s = 0
     s += 1; srv = server_start(x,s,dbinit)
-    c = 0 ;
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c = 0 ; h = ''
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
     server_stop(srv)
     s += 1; srv = server_start(x,s,dbinit)
-    c = 0 ;
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c = 0 ; h = ''
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
     server_stop(srv)
     s += 1; srv = server_start(x,s,dbinit)
-    c = 0 ;
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c = 0 ; h = ''
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
     server_stop(srv)
     s += 1; srv = server_start(x,s,dbinit)
-    c = 0 ;
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c = 0 ; h = ''
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
     server_stop(srv)
     s += 1; srv = server_start(x,s,dbinit)
-    c = 0 ;
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c = 0 ; h = ''
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
     server_stop(srv)
     s += 1; srv = server_start(x,s,dbinit)
-    c = 0 ;
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
-    c += 1; client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c = 0 ; h = ''
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'mil'   ,'print(%d%d%d);\n' % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
+    c += 1; h = client(x,s,c,dbinit,'xquery',      '%d%d%d\n'   % (x,s,c),h)
     server_stop(srv)
 
 def main():
