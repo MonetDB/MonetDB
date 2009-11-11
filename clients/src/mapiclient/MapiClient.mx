@@ -215,6 +215,7 @@ static char *mark, *mark2;
 
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
+#include <signal.h>		/* to block SIGPIPE */
 #endif
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* use raw mode for file input, tabular format in stdin */
@@ -545,7 +546,7 @@ XMLrenderer(MapiHdl hdl)
 	if (name != NULL && *name != 0)
 		XMLprattr("name", name);
 	stream_printf(toConsole_raw, ">\n");
-	while ((fields = fetch_row(hdl)) != 0) {
+	while (!stream_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		stream_printf(toConsole_raw, "<row>");
 		for (i = 0; i < fields; i++) {
 			char *data = mapi_fetch_field(hdl, i);
@@ -573,7 +574,7 @@ CSVrenderer(MapiHdl hdl)
 	char *sep = formatter == CSVformatter ? "," : "\t";
 	int i;
 
-	while ((fields = fetch_row(hdl)) != 0) {
+	while (!stream_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
@@ -738,7 +739,7 @@ SQLrenderer(MapiHdl hdl)
 	if (mark2)
 		free(mark2);
 	mark2 = NULL;
-	while ((fields = fetch_row(hdl)) != 0) {
+	while (!stream_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		if (silent)
 			continue;
 		if (len == 0 || fields != oldfields) {
@@ -977,6 +978,13 @@ start_pager(stream **saveFD, stream **saveFD_raw)
 
 	if (pager) {
 		FILE *p;
+		struct sigaction act;
+
+		/* ignore SIGPIPE so that we get an error instead of signal */
+		act.sa_handler = SIG_IGN;
+		sigemptyset(&act.sa_mask);
+		act.sa_flags = 0;
+		sigaction(SIGPIPE, &act, NULL);
 
 		p = popen(pager, "w");
 		if (p == NULL)
@@ -1118,7 +1126,7 @@ format_result(Mapi mid, MapiHdl hdl)
 			}
 		}
 		pagewidth = oldpagewidth;
-	} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
+	} while (!stream_errnr(toConsole) && (rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
 	if (stream_errnr(toConsole)) {
 		stream_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
