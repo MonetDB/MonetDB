@@ -1258,6 +1258,126 @@ rel_merge_projects(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_subfunc *
+find_func( mvc *sql, char *name, list *exps )
+{
+	list * l = list_create(NULL); 
+	node *n;
+
+	for(n = exps->h; n; n = n->next)
+		append(l, exp_subtype(n->data)); 
+	return sql_bind_func_(sql->session->schema, name, l);
+}
+
+static sql_exp *
+exp_case_fixup( mvc *sql, sql_exp *e )
+{
+	/* only functions need fix up */
+	if (e->type == e_func && e->l && !is_rank_op(e) ) {
+		list *l = new_exp_list(), *args = e->l;
+		node *n;
+		sql_exp *ne;
+		sql_subfunc *f = sql_dup_func(e->f);
+
+		/* first fixup arguments */
+		for (n=args->h; n; n=n->next) {
+			sql_exp *a = exp_case_fixup(sql, n->data);
+			list_append(l, a);
+		}
+		ne = exp_op(l, f);
+		exp_setname( ne, e->rname, e->name );
+
+		/* ifthenelse with one of the sides an 'sql_div' */
+		args = ne->l;
+		if (!f->func->s && !strcmp(f->func->base.name,"ifthenelse")) { 
+			sql_exp *cond = exp_dup(args->h->data), *nne; 
+			sql_exp *a1 = args->h->next->data; 
+			sql_exp *a2 = args->h->next->next->data; 
+			sql_subfunc *a1f = a1->f;
+			sql_subfunc *a2f = a2->f;
+			sql_subfunc *ifthen;
+
+			/* TODO we should find the div recursively ! */
+
+			/* rewrite right hands of div */
+			if (a1->type == e_func && !a1f->func->s && 
+			     !strcmp(a1f->func->base.name, "sql_div")) {
+				list *args = a1->l;
+				sql_exp *le = exp_dup(args->h->next->data), *o;
+				sql_exp *re = exp_dup(args->h->next->data);
+
+				/* if (cond) then val else const */
+				args = new_exp_list();
+				append(args, exp_dup(cond));
+				append(args, re);
+				o = exp_atom_wrd(1);
+				append(args, exp_convert(o, exp_subtype(o), exp_subtype(re)));
+				ifthen = find_func(sql, "ifthenelse", args);
+				assert(ifthen);
+				re = exp_op(args, ifthen);
+
+				a1 = exp_binop(le, re, sql_dup_func(a1->f));
+			} else {
+				a1 = exp_dup(a1);
+			}
+			if  (a2->type == e_func && !a2f->func->s && 
+			     !strcmp(a2f->func->base.name, "sql_div")) { 
+				list *args = a2->l;
+				sql_exp *le = exp_dup(args->h->next->data), *o;
+				sql_exp *re = exp_dup(args->h->next->data);
+
+				/* if (cond) then const else val */
+				args = new_exp_list();
+				append(args, exp_dup(cond));
+				o = exp_atom_wrd(1);
+				append(args, exp_convert(o, exp_subtype(o), exp_subtype(re)));
+				append(args, re);
+				ifthen = find_func(sql, "ifthenelse", args);
+				assert(ifthen);
+				re = exp_op(args, ifthen);
+
+				a2 = exp_binop(le, re, sql_dup_func(a2->f));
+			} else {
+				a2 = exp_dup(a2);
+			}
+			nne = exp_op3(cond, a1, a2, sql_dup_func(ne->f));
+			exp_setname( nne, ne->rname, ne->name );
+			exp_destroy(ne);
+			ne = nne;
+		}
+		return ne;
+	}
+	if (e->type == e_convert) {
+		sql_exp *e1 = exp_case_fixup(sql, e->l);
+		sql_exp *ne = exp_convert(e1, exp_fromtype(e), exp_totype(e));
+		exp_setname(ne, e->rname, e->name);
+		return ne;
+	} 
+	return exp_dup(e);
+}
+
+static sql_rel *
+rel_case_fixup(int *changes, mvc *sql, sql_rel *rel) 
+{
+	
+	(void)sql;
+	(void)changes; /* only go through it once, ie don't mark for changes */
+	if (rel->op == op_project && rel->exps) {
+		list *exps = rel->exps;
+		node *n;
+
+		rel->exps = new_exp_list(); 
+		for (n = exps->h; n; n = n->next) { 
+			sql_exp *e = exp_case_fixup( sql, n->data );
+		
+			if (!e) 
+				return NULL;
+			list_append(rel->exps, e);
+		}
+	} 
+	return rel;
+}
+
 static sql_rel *
 rel_find_ref( sql_rel *r)
 {
@@ -1993,17 +2113,6 @@ rel_find_aggr_exp( sql_rel *rel, list *exps, sql_exp *e, char *name)
 		}
 	}
 	return NULL;
-}
-
-static sql_subfunc *
-find_func( mvc *sql, char *name, list *exps )
-{
-	list * l = list_create(NULL); 
-	node *n;
-
-	for(n = exps->h; n; n = n->next)
-		append(l, exp_subtype(n->data)); 
-	return sql_bind_func_(sql->session->schema, name, l);
 }
 
 /* rewrite avg into sum/count */
@@ -3092,8 +3201,10 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	/* make parts conditional (via debug flag) */
 
 	/* simple merging of projects */
-	if (gp.cnt[op_project])
-		rel = rewrite(sql, rel, &rel_merge_projects); 
+	if (gp.cnt[op_project]) {
+		rel = rewrite(sql, rel, &rel_merge_projects);
+		rel = rewrite(sql, rel, &rel_case_fixup);
+	}
 
 	if (gp.cnt[op_join] || 
 	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
