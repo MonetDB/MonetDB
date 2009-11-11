@@ -161,6 +161,15 @@ DESCRIPTION:
 the join algorithm comes down to a repeated slice and insert operation.
 "
 
+.COMMAND splitbat( BAT[void,oid] pre_tid, BAT[oid,any] pre_split)
+		: BAT[void,bat] = CMDsplitbat;
+"PARAMETERS:
+BAT[void,oid] - pre_tid: original BAT that should get split according to
+BAT[oid,any] - pre_split: OIDs in split bat
+DESCRIPTION:
+the operation does a kdiff and semijoin at the same time returning the kdiff as result 0 and the semijoin as result 1.
+"
+
 .COMMAND set_tailkeysorted(BAT[any,any]) : BAT[any,any] = CMDsettailkeysorted; 
 "set bat properties of the tail to key and sorted"
 
@@ -209,9 +218,12 @@ PROC count_wrd(BAT b) : wrd {
 }
 ###################################################################
 
+const DEBUG     := false;
+var trace       := false;
+var timing      := false;
+var verbose     := false;
+var inex        := false;
 
-
-const DEBUG := false;
 
 # locks
 var tj_adm_lock     := lock_create(); # tijah top administration lock
@@ -236,9 +248,6 @@ const ENTITY_NUM := 10000;
 
 #var collHeight := 10;
 #var retNum := 100;
-
-var trace := false;
-var timing := false;
 
 const HASH := str(chr(35));
 
@@ -372,30 +381,9 @@ PROC ws_ft_index_info_base(BAT[void,BAT] ws, BAT[any,str] ftiNames, bit all) : B
 #                                                                   #
 #####################################################################
 
-var verbose      := false;
-var inex         := false;
-
 const dflt_ft_index   := "DFLT_FT_INDEX";
 const dflt_bg_index   := "DFLT_FT_INDEX";
 const dflt_score_base := "0";
-
-PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str 
-{
-    var res := dflt_ft_index;
-    if ( tj_options.exist("ft-index") ) {
-        res := tj_options.find("ft-index");
-    }
-    if ( chk_exists ) {
-      if ( not(view_bbp_name().reverse().exist("tj_" + res + "_size")) ) {
-        ERROR("tj_get_ft_index, ft-index \"%s\" does not exist. create full text index using tijah:create-ft-index()\n",res);
-      }
-      if ( not(view_bbp_name().reverse().exist("tj_" + res + "_TagSize")) ) {
-        ERROR("tj_get_ft_index, ft-index \"%s\" does not exist. create full text index using tijah:create-ft-index()\n",res);
-      }
-    }
-    if ( verbose ) printf(HASH +"TJ:tj_get_ft_index() = %s.\n",res);
-    return res;
-}
 
 ADDHELP("tj_init_global", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
@@ -771,7 +759,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
         subcommit(extra_del_bat);
     }
     #subcommit(_tj_collection_str(ftiName));
-   lock_unset(coll_lock);
+    lock_unset(coll_lock);
     #
     if (not(isnil(err))) ERROR(err);
     #
@@ -821,67 +809,6 @@ PROC tj_extend_collection(str ftiName, BAT[void,str] v_pfc) : void
     if ( verbose ) printf(HASH +"TJ:tj_extend_collection(\"%s\") finished.\n",ftiName);
 }
 
-
-#
-# Start of ft-index / pf-collection dependency module
-#
-
-PROC modify_pfc_fti(str fti_name, BAT[void,str]  v_pfc) : BAT[str,str] 
-{
-    var result;
-
-    lock_set(tj_dep_lock);
-    var err := CATCH({
-	var glb_fti_pfc     := bat("tj_pfc_fti_dep");
-	var fti_dep := glb_fti_pfc.reverse().select(fti_name).reverse();
-	if ( fti_dep.select("*").count_wrd() > wrd(0) ) {
-	    ERROR(HASH + " pfc_fti_dep: unable to extend ft-index when created with *\n");
-	}
-	var new_fti_pfc := v_pfc.tunique().project(fti_name).reverse().sunique().tdiff(fti_dep);
-	if ( verbose ) {
-	    printf(HASH +"TJ:modify_pfc_fti: ***** added dep ***\n");
-	    new_fti_pfc.print();
-	}
-	var sz := new_fti_pfc.count_wrd();
-	if ( sz > wrd(0) ) {
-	    if ( sz = wrd(1) ) {
-		glb_fti_pfc.insert(new_fti_pfc);
-		if ( new_fti_pfc.uselect("*").count_wrd() > wrd(0) ) {
-		    bat("tj_pfc_fti_dep_star").insert(new_fti_pfc);
-	        }
-	    } else {
-	    	if ( new_fti_pfc.uselect("*").count_wrd() > wrd(0) ) {
-		    ERROR(HASH + " pfc_fti_dep: when using * it must be the only collection dependency.\n");
-		}
-		glb_fti_pfc.insert(new_fti_pfc);
-	    }
-	}
-	result := new_fti_pfc;
-    });
-    if ( verbose ) {
-    	printf("\n" + HASH + " LOG modify_pfc_fti(\"%s\") START, v_pfc =\n", fti_name);
-	v_pfc.print();
-    	printf(HASH +" Dependence BATs are [STAR|ALL]:\n");
-	bat("tj_pfc_fti_dep_star").print();
-	bat("tj_pfc_fti_dep").print();
-    	printf(HASH +" LOG modify_pfc_fti(\"%s\") END.\n", fti_name);
-    }
-    lock_unset(tj_dep_lock);
-    if (not(isnil(err))) ERROR(err);
-    #
-    return result;
-}
-
-PROC delete_pfc_fti(str fti_name) :void 
-{
-    lock_set(tj_dep_lock);
-    var err := CATCH({
-	bat("tj_pfc_fti_dep").delete(fti_name);
-	bat("tj_pfc_fti_dep_star").delete(fti_name);
-    });
-    lock_unset(tj_dep_lock);
-    if (not(isnil(err))) ERROR(err);
-}
 
 #
 # End of ft-index / pf-collection dependency module
@@ -1363,6 +1290,24 @@ PROC tj_size_collection2(str ftiName) : void
 #                                                                   #
 #####################################################################
 
+PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str 
+{
+    var res := dflt_ft_index;
+    if ( tj_options.exist("ft-index") ) {
+        res := tj_options.find("ft-index");
+    }
+    if ( chk_exists ) {
+      if ( not(view_bbp_name().reverse().exist("tj_" + res + "_param")) ) {
+        ERROR("tj_get_ft_index, ft-index \"%s\" does not exist. create full text index using tijah:create-ft-index()\n",res);
+      }
+      if ( not(view_bbp_name().reverse().exist("tj_" + res + "_termdict")) ) {
+        ERROR("tj_get_ft_index, ft-index \"%s\" does not exist. create full text index using tijah:create-ft-index()\n",res);
+      }
+    }
+    if ( verbose ) printf(HASH + " TJ:tj_get_ft_index() = %s.\n",res);
+    return res;
+}
+
 # set a collection parameter
 PROC _tj_set_parameter2(BAT[str,bat] collBat, str par, str val) : void
 {
@@ -1408,7 +1353,7 @@ PROC tj_init_collection_base(str ftiName, BAT[str,str] param) : void
      
       var commitBats := _tj_create_commitBats();
       _tj_init_collection_base(ftiName, param, commitBats);
-      _tj_commit_frag(commitBats);       
+      _tj_commit_frag(new(str,bat), commitBats);       
 
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
@@ -1481,7 +1426,7 @@ PROC _tj_init_collection_base(str ftiName, BAT[str,str] param, BAT[str,bat] comm
       var tagfilter      := "";
       var whitelist      := "";
       var blacklist      := "";
-      var fragsize       := "0";
+      var fragsize       := str(INT_MAX / 2);
       var delay_finalize := "0";
   
       param@batloop() {
@@ -1552,6 +1497,7 @@ PROC _tj_init_collection_frag(str ftiName, int cur_frag, BAT[str,bat] commitBats
      new(void,int).seqbase(1@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_size");
      new(oid,oid).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_pfpre");
      if (inex) new(oid,str).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_path");
+     if (inex) new(oid,str).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_pathno");
      new(void,oid).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_concept_tid");
      new(void,oid).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_concept_elem");
      new(void,dbl).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftindex + "_concept_score");
@@ -1569,6 +1515,7 @@ PROC _tj_init_collection_frag(str ftiName, int cur_frag, BAT[str,bat] commitBats
      submitBats.append("tj_" + ftindex + "_size");
      submitBats.append("tj_" + ftindex + "_pfpre");
      if (inex) submitBats.append("tj_" + ftindex + "_path");
+     if (inex) submitBats.append("tj_" + ftindex + "_pathno");
      submitBats.append("tj_" + ftindex + "_concept_tid");
      submitBats.append("tj_" + ftindex + "_concept_elem");
      submitBats.append("tj_" + ftindex + "_concept_score");
@@ -1630,6 +1577,7 @@ PROC _tj_get_collection_frag(str ftiName, BAT[str,bat] commitBats) : void
 	tjCollBat.insert("size", bat("tj_" + ftindex + "_size"));
 	tjCollBat.insert("pfpre", bat("tj_" + ftindex + "_pfpre"));
         if (inex) tjCollBat.insert("path", bat("tj_" + ftindex + "_path"));
+        if (inex) tjCollBat.insert("pathno", bat("tj_" + ftindex + "_pathno"));
 	tjCollBat.insert("concept_tid", bat("tj_" + ftindex + "_concept_tid"));
 	tjCollBat.insert("concept_elem", bat("tj_" + ftindex + "_concept_elem"));
 	tjCollBat.insert("concept_score",bat("tj_" + ftindex + "_concept_score"));
@@ -1665,6 +1613,7 @@ PROC _tj_set_forwardindex_access(BAT[str,bat] collBat, int ac) : void
       collBat.find("size").access(ac);
       collBat.find("pfpre").access(ac);
       if (inex) collBat.find("path").access(ac);
+      if (inex) collBat.find("pathno").access(ac);
       collBat.find("concept_tid").access(ac);
       collBat.find("concept_elem").access(ac);
       collBat.find("concept_score").access(ac);
@@ -1686,6 +1635,15 @@ PROC _tj_create_commitBats() : BAT[str,bat]
       commitBats.insert("replaceBats", new(str,str));
       return commitBats;
 }    
+
+#
+# convenience function
+#
+PROC tj_add2collection_frag(str ftiName, str uri, str filename, bit shred) : void
+{
+      var uris := new(str,str).insert(uri, filename);
+      return tj_add2collection_frag(ftiName, uris, shred);
+}
 
 ADDHELP("tj_add2collection_frag", "flokstra & rode", "Sept 2009",
 "PARAMETERS:\n\
@@ -1728,7 +1686,7 @@ PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
          }
       }
       _tj_finalize_collection_frag(ftiName, collBat, commitBats, false);
-      _tj_commit_frag(commitBats); 
+      _tj_commit_frag(collBat, commitBats); 
 
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
@@ -1774,8 +1732,8 @@ PROC _tj_add2collection_frag(str ftiName, BAT[str,bat] collBat, str uri_loc, str
 	}
     }
     var	i_start := usec();
-
-    var ws_opt := ws_create(0);
+    var xrpc_mode := "";
+    var ws_opt := ws_create(0); 
     ws_opendoc(ws_opt, bat(void,str,1).append(uri_name));
     _tj_throw2collection(collBat,ws_opt,uri_name);
     ws_destroy(ws_opt);
@@ -1810,6 +1768,7 @@ PROC _tj_finalize_collection_frag(str ftiName, BAT[str,bat] collBat, BAT[str,bat
       submitBats.append(collBat.find("tid").bbpname());
       submitBats.append(collBat.find("size").bbpname());
       if (inex) submitBats.append(collBat.find("path").bbpname());
+      if (inex) submitBats.append(collBat.find("pathno").bbpname());
       submitBats.append(collBat.find("pfpre").bbpname());
       submitBats.append(collBat.find("concept_tid").bbpname());
       submitBats.append(collBat.find("concept_elem").bbpname());
@@ -1869,12 +1828,17 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
         var submitBats := commitBats.find("submitBats");
         collBat.find("termdict").access(BAT_WRITE);
 
+        var split := splitbat(tids, collBat.find("pfpre"));
+        var elems := split.fetch(1);
+        var terms := split.fetch(0);
+        split := nil;
+
 	# incremental index merge
 	if (collBat.exist("_tags")) 
         {
 		# handle elements 
-	        var tmp := tids.semijoin(collBat.find("pfpre"));
-                tmp := tmp.reverse().ssort();
+                var tmp := elems.reverse().ssort();
+                elems := nil;
                 var tmpsize := tmp.leftfetchjoin(sizes);
                 var i := mergeindex2(tmp, tmpsize,
 		                 collBat.find("_tagIndex"),
@@ -1895,8 +1859,8 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
 		submitBats.append("tj_" + ftindex + "_TagSize");
 		
                 # handle terms
-                tmp := tids.kdiff(collBat.find("pfpre"));
-                tmp := tmp.reverse().ssort();
+                tmp := terms.reverse().ssort();
+                terms := nil;
 		var tf := collBat.find("termfreq");
                 var termfreq := {count}(tmp, collBat.find("termdict"), false);
                 tf [:+=] termfreq.slice(0,tf.count() - 1);
@@ -1908,8 +1872,8 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
                 collBat.replace("_terms", i.fetch(1).access(BAT_READ).mmap(1));
 	        i := nil;
 		tmp := nil;
-		replaceBats.insert("_TermIndex", "tj_" + ftindex + "_TermIndex");
-                replaceBats.insert("_Terms", "tj_" + ftindex + "_Terms");
+		replaceBats.insert("_termIndex", "tj_" + ftindex + "_TermIndex");
+                replaceBats.insert("_terms", "tj_" + ftindex + "_Terms");
 		submitBats.append("tj_" + ftindex + "_TermIndex");
 		submitBats.append("tj_" + ftindex + "_Terms");
 		submitBats.append(tf.bbpname());
@@ -1917,8 +1881,8 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
         else # create new index
         {       
 		# handle elements 
-	        var tmp := tids.semijoin(collBat.find("pfpre"));
-                tmp := tmp.reverse().ssort();
+                var tmp := elems.reverse().ssort();
+                elems := nil;
 	        var tagindex := tmp.hmark(1@0).offsetindex(collBat.find("tagdict").count_wrd() + 1);
 	        var tags := tmp.tmark(1@0);
 	        tmp := nil;
@@ -1930,13 +1894,16 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
 		tags := nil;
 	        tagsize.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftindex + "_TagSize");
 		tagsize := nil;
+                collBat.insert("_tagIndex", bat("tj_" + ftindex + "_TagIndex"));
+                collBat.insert("_tags", bat("tj_" + ftindex + "_Tags"));
+                collBat.insert("_tagSize", bat("tj_" + ftindex + "_TagSize"));
 		submitBats.append("tj_" + ftindex + "_TagIndex");
 		submitBats.append("tj_" + ftindex + "_Tags");
 		submitBats.append("tj_" + ftindex + "_TagSize");
 
 		# handle terms
-                tmp := tids.kdiff(collBat.find("pfpre"));
-                tmp := tmp.reverse().ssort();
+                tmp := terms.reverse().ssort();
+                terms := nil;
 		var tf := collBat.find("termfreq");
                 var termfreq := {count}(tmp, collBat.find("termdict"), false);
                 tf [:+=] termfreq.slice(0,tf.count() - 1);
@@ -1949,6 +1916,8 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
 	        terms.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftindex + "_Terms");
 	        termindex := nil;
 		terms := nil;
+                collBat.insert("_termIndex", bat("tj_" + ftindex + "_TermIndex"));
+                collBat.insert("_terms", bat("tj_" + ftindex + "_Terms"));
 		submitBats.append("tj_" + ftindex + "_TermIndex");
 		submitBats.append("tj_" + ftindex + "_Terms");
 		submitBats.append(tf.bbpname());
@@ -1978,19 +1947,27 @@ PROC _tj_build_inverted_index_frag(str ftiName, BAT[str,bat] collBat, BAT[str,ba
       if ( verbose ) printf(HASH +"TJ _tj_build_inverted_index_frag() finished.\n");
 }
 
-PROC _tj_commit_frag(BAT[str,bat] collBat) : void
+PROC _tj_commit_frag(BAT[str,bat] collBat, BAT[str,bat] commitBats) : void
 {
       if ( verbose ) printf(HASH +"TJ _tj_commit_frag() called.\n");
-      var replaceBats := collBat.find("replaceBats");
+      var replaceBats := commitBats.find("replaceBats");
       replaceBats@batloop() {
       	 bat($t).persists(false).rename("del_" + $t);
 	 collBat.find($h).persists(true).bbpname($t);
       }
     
-      var submitBats := collBat.find("submitBats");
+      var submitBats := commitBats.find("submitBats");
       submitBats.append([+](const "del_", replaceBats.tmark(0@0)));
       subcommit(submitBats);
       if ( verbose ) printf(HASH +"TJ _tj_commit_frag() finished.\n");
+}
+
+PROC tj_collection_delete(str ftiName) : void
+{
+      delete_pfc_fti(ftiName);
+      var tj_bats := view_bbp_name().like("tj_" + ftiName).tmark();
+      [persists]([bat](tj_bats), const false);
+      subcommit(tj_bats);
 }
 
 PROC tj_global_delete() : void
@@ -1998,6 +1975,67 @@ PROC tj_global_delete() : void
       var tj_bats := view_bbp_name().like("tj_").tmark();
       [persists]([bat](tj_bats), const false);
       subcommit(tj_bats);
+}
+
+#
+# Start of ft-index / pf-collection dependency module
+#
+
+PROC modify_pfc_fti(str fti_name, BAT[void,str]  v_pfc) : BAT[str,str] 
+{
+    var result;
+
+    lock_set(tj_dep_lock);
+    var err := CATCH({
+	var glb_fti_pfc     := bat("tj_pfc_fti_dep");
+	var fti_dep := glb_fti_pfc.reverse().select(fti_name).reverse();
+	if ( fti_dep.select("*").count_wrd() > wrd(0) ) {
+	    ERROR(HASH + " pfc_fti_dep: unable to extend ft-index when created with *\n");
+	}
+	var new_fti_pfc := v_pfc.tunique().project(fti_name).reverse().sunique().tdiff(fti_dep);
+	if ( verbose ) {
+	    printf(HASH +"TJ:modify_pfc_fti: ***** added dep ***\n");
+	    new_fti_pfc.print();
+	}
+	var sz := new_fti_pfc.count_wrd();
+	if ( sz > wrd(0) ) {
+	    if ( sz = wrd(1) ) {
+		glb_fti_pfc.insert(new_fti_pfc);
+		if ( new_fti_pfc.uselect("*").count_wrd() > wrd(0) ) {
+		    bat("tj_pfc_fti_dep_star").insert(new_fti_pfc);
+	        }
+	    } else {
+	    	if ( new_fti_pfc.uselect("*").count_wrd() > wrd(0) ) {
+		    ERROR(HASH + " pfc_fti_dep: when using * it must be the only collection dependency.\n");
+		}
+		glb_fti_pfc.insert(new_fti_pfc);
+	    }
+	}
+	result := new_fti_pfc;
+    });
+    if ( verbose ) {
+    	printf("\n" + HASH + " LOG modify_pfc_fti(\"%s\") START, v_pfc =\n", fti_name);
+	v_pfc.print();
+    	printf(HASH +" Dependence BATs are [STAR|ALL]:\n");
+	bat("tj_pfc_fti_dep_star").print();
+	bat("tj_pfc_fti_dep").print();
+    	printf(HASH +" LOG modify_pfc_fti(\"%s\") END.\n", fti_name);
+    }
+    lock_unset(tj_dep_lock);
+    if (not(isnil(err))) ERROR(err);
+    #
+    return result;
+}
+
+PROC delete_pfc_fti(str fti_name) :void 
+{
+    lock_set(tj_dep_lock);
+    var err := CATCH({
+	bat("tj_pfc_fti_dep").delete(fti_name);
+	bat("tj_pfc_fti_dep_star").delete(fti_name);
+    });
+    lock_unset(tj_dep_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 
 
@@ -2354,7 +2392,7 @@ PROC ALG_tj_query_score(
 }
 
 # temporary algebra query handler
-PROC ALG_tj_query_handler(
+PROC ALG_tj_query_handler2(
         bit par_storeScore,
         BAT[oid,bat] pfop_sn,
         BAT[oid,bat] pfop_query,
@@ -2402,8 +2440,8 @@ PROC ALG_tj_query_handler(
        optbat := new(str,str,32);
       }
       if ( verbose ) printf(HASH +" ALG_tj_query_handler: handle startNodes.\n");
-      var ftindex := tj_get_ft_index(optbat,true);
-      var tijah_lock := tj_get_collection_lock(ftindex);
+      var ftiName := tj_get_ft_index(optbat,true);
+      var tijah_lock := tj_get_collection_lock(ftiName);
       lock_set(tijah_lock);
       var err := CATCH({
         var startNodes;
@@ -2416,9 +2454,9 @@ PROC ALG_tj_query_handler(
          sn_item := sn_item.tmark(0@0);
          sn_kind := sn_kind.tmark(0@0);
 
-         var xdoc_name := bat("tj_" + ftindex + "_doc_name");
-         var xdoc_firstpre := bat("tj_" + ftindex + "_doc_firstpre");
-         var xpfpre := bat("tj_" + ftindex + "_pfpre");
+         var xdoc_name := bat("tj_" + ftiName + "0_doc_name");
+         var xdoc_firstpre := bat("tj_" + ftiName + "0_doc_firstpre");
+         var xpfpre := bat("tj_" + ftiName + "0_pfpre");
          var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
          if ( verbose ) printf(HASH +" ALG_tj_query_handler: compute startnodes\n");
          startNodes := pf2tijah_node(false,xdoc_name,xdoc_firstpre,xpfpre,sn_item,[int](sn_kind),doc_loaded);
@@ -2428,7 +2466,7 @@ PROC ALG_tj_query_handler(
         optbat.access(BAT_WRITE);
         optbat.insert("_query",pfop_query.fetch(1@0).fetch(int($h)));
         if ( verbose ) printf(HASH +" ALG_tj_query_handler: run tijah query.\n");
-        var nexi_allscores := run_tijah_query(ftindex,optbat,has_sn,startNodes);
+        var nexi_allscores := run_tijah_query(ftiName,optbat,has_sn,startNodes);
         var nexi_score;
         if ( verbose ) printf(HASH +" ALG_tj_query_handler: handling scores.\n");
         if ( optbat.exist("returnNumber") ) {
@@ -2437,12 +2475,12 @@ PROC ALG_tj_query_handler(
         } else {
          nexi_score := nexi_allscores;
         }
-        var docpre := bat("tj_" + ftindex + "_doc_firstpre").[oid]();
-        var pfpre  :=  bat("tj_" + ftindex + "_pfpre");
+        var docpre := bat("tj_" + ftiName + "0_doc_firstpre").[oid]();
+        var pfpre  :=  bat("tj_" + ftiName + "0_pfpre");
         var item   := nexi_score.hmark(0@0);
         var frag := [find_lower](const docpre.reverse().mark(0@0), item);
         item := item.join(pfpre).sort().tmark();
-        var needed_docs := bat("tj_" + ftindex + "_doc_name").semijoin(frag.tunique());
+        var needed_docs := bat("tj_" + ftiName + "0_doc_name").semijoin(frag.tunique());
         var loaded_docs := par_ws.fetch(OPEN_NAME).reverse();
         var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);
         ws_opendoc(par_ws, docs_to_load);
@@ -2513,6 +2551,171 @@ PROC ALG_tj_query_handler(
 }
 
 # temporary algebra query handler
+PROC ALG_tj_query_handler(
+        bit par_storeScore,
+        BAT[oid,bat] pfop_sn,
+        BAT[oid,bat] pfop_query,
+        BAT[oid,bat] pfop_opt,
+        BAT[void,any] par_loop,
+        BAT[oid,bat] par_ws,
+        BAT[oid,bat] par_scoreDB
+        ) : BAT[void,bat] 
+{
+     var result_id;
+     var result_iter;
+     var result_item;
+     var result_pos;
+     var result_frag;
+
+    if ( verbose ) printf(HASH +" ALG_tj_query_handler: START.\n");
+     if ( par_storeScore ) {
+      if ( verbose ) printf(HASH +" ALG_tj_query_handler: storeScore=TRUE.\n");
+      result_id   := new(void,lng).seqbase(0@0);
+     } else {
+      if ( verbose ) printf(HASH +" ALG_tj_query_handler: storeScore=FALSE.\n");
+      result_iter := new(void,oid).seqbase(0@0);
+      result_item := new(void,oid).seqbase(0@0);
+      result_pos  := new(void,oid).seqbase(0@0);
+      result_frag := new(void,oid).seqbase(0@0);
+     }
+
+     var has_sn      := (pfop_sn.count_wrd() > wrd(0));
+     var has_options := (pfop_opt.count_wrd() > wrd(0));
+
+     par_loop@batloop() {
+      var optbat;
+      if ( verbose ) printf(HASH +" ALG_tj_query_handler: loop start, id=%d.\n",$t);
+      if ( has_options ) {
+       if ( verbose ) printf(HASH +" ALG_tj_query_handler: running option handler.\n");
+       var opt_iter := pfop_opt.fetch(0@0).select($t);
+       var opt_item := pfop_opt.fetch(1@0).semijoin(opt_iter);
+       var opt_kind := pfop_opt.fetch(2@0).semijoin(opt_iter);
+       opt_iter := opt_iter.tmark(0@0);
+       opt_item := opt_item.tmark(0@0);
+       opt_kind := opt_kind.tmark(0@0);
+       optbat := serialize_tijah_opt(par_ws,1,opt_iter,opt_iter,opt_item,set_kind(opt_kind,ELEM),new(void,lng),new(void,dbl),new(void,str));
+       if ( verbose ) optbat.print();
+      } else {
+       optbat := new(str,str,32);
+      }
+      if ( verbose ) printf(HASH +" ALG_tj_query_handler: handle startNodes.\n");
+      var ftiName := tj_get_ft_index(optbat,true);
+      var tijah_lock := tj_get_collection_lock(ftiName);
+      lock_set(tijah_lock);
+      var err := CATCH({
+        var startNodes;
+        if ( has_sn ) {
+         var sn_iter := pfop_sn.fetch(0@0);
+         var sn_iteration := pfop_query.fetch(0@0).fetch(int($h));
+         sn_iter := sn_iter.select(sn_iteration);
+         var sn_item := pfop_sn.fetch(1@0).semijoin(sn_iter);
+         var sn_kind := pfop_sn.fetch(2@0).semijoin(sn_iter);
+         sn_item := sn_item.tmark(0@0);
+         sn_kind := sn_kind.tmark(0@0);
+
+         var xdoc_name := bat("tj_" + ftiName + "0_doc_name");
+         var xdoc_firstpre := bat("tj_" + ftiName + "0_doc_firstpre");
+         var xpfpre := bat("tj_" + ftiName + "0_pfpre");
+         var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
+         if ( verbose ) printf(HASH +" ALG_tj_query_handler: compute startnodes\n");
+         startNodes := pf2tijah_node(false,xdoc_name,xdoc_firstpre,xpfpre,sn_item,[int](sn_kind),doc_loaded);
+        } else {
+         startNodes := new(void,oid);
+        }
+        optbat.access(BAT_WRITE);
+        optbat.insert("_query",pfop_query.fetch(1@0).fetch(int($h)));
+        if ( verbose ) printf(HASH +" ALG_tj_query_handler: run tijah query.\n");
+        var nexi_allscores := run_tijah_query(ftiName,optbat,has_sn,startNodes);
+        var nexi_score;
+        if ( verbose ) printf(HASH +" ALG_tj_query_handler: handling scores.\n");
+        if ( optbat.exist("returnNumber") ) {
+         var retNum := int(optbat.find("returnNumber"));
+         nexi_score := nexi_allscores.slice(0, retNum - 1);
+        } else {
+         nexi_score := nexi_allscores;
+        }
+
+        var docpre := bat("tj_" + ftiName + "0_doc_firstpre").[oid]();
+        var pfpre  :=  bat("tj_" + ftiName + "0_pfpre");
+        var item   := nexi_score.hmark(0@0);
+        var frag := [find_lower](const docpre.reverse().mark(0@0), item);
+        item := item.join(pfpre).sort().tmark();
+        var needed_docs := bat("tj_" + ftiName + "0_doc_name").semijoin(frag.tunique());
+
+
+        var loaded_docs := par_ws.fetch(OPEN_NAME).reverse();
+        var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);
+        ws_opendoc(par_ws, docs_to_load);
+        var doc_loaded := reverse(par_ws.fetch(OPEN_CONT)).leftfetchjoin(par_ws.fetch(OPEN_NAME));
+	# On the forced document loading size we keep using the old interface
+	# until ws.fetch(OPEN_CONT|OPEN_DOC) disappears. This interface is
+	# much cheaper for us and works also correct when the OPEN_CONT|DOC
+	# bats are not complete.
+	# var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
+        var fid_pffid := needed_docs.join(doc_loaded.reverse());
+        frag := frag.join(fid_pffid).sort().tmark();
+        if ( verbose ) printf(HASH +" ALG_tj_query_handler: handled new frags/documents.\n");
+        if ( par_storeScore ) {
+         var tID := oid(par_scoreDB.fetch(0@0).count_wrd() + 8888);
+         par_scoreDB.fetch(4@0).insert(lng(tID),lng(nexi_allscores.count_wrd()));
+         par_scoreDB.fetch(0@0).append(item.project(tID));
+         par_scoreDB.fetch(1@0).append(frag);
+         par_scoreDB.fetch(2@0).append(item);
+         par_scoreDB.fetch(3@0).append(nexi_score.tmark());
+         result_id.append(lng(tID));
+         if ( verbose ) printf(HASH +" ALG_tj_query_handler: stored loop score.\n");
+        } else {
+         result_iter.append(item.project($t));
+         result_pos.append(item.mark(1@0));
+         result_frag.append(frag);
+         result_item.append(item);
+        }
+      });
+      lock_unset(tijah_lock);
+      if ( verbose ) printf(HASH +" ALG_tj_query_handler: released lock.\n");
+      if (not(isnil(err))) ERROR(err);
+       if ( verbose ) printf(HASH +" ALG_tj_query_handler: stored loop nodes in result.\n");
+      if ( verbose ) printf(HASH +" ALG_tj_query_handler: loop finish, id=%d.\n",$t);
+     } # end batloop over queries
+     if ( verbose ) printf(HASH +" ALG_tj_query_handler: batloop finished.\n");
+     var iter;
+     var item;
+     var ipik;
+     var kind;
+     var pos;
+     if ( par_storeScore ) {
+      if ( verbose ) printf(HASH +" ALG_tj_query_handler: create int return.\n");
+      item := result_id;
+      iter := par_loop.tmark(oid(0));
+      ipik := iter;
+      pos  := oid(1);
+      kind := new(oid,oid);
+     } else {
+      if ( verbose ) printf(HASH +" ALG_tj_query_handler: create node return.\n");
+      iter := result_iter;
+      pos  := result_pos;
+      kind := result_frag;
+      item := result_item;
+      ipik := iter;
+     }
+      if ( verbose ) {
+         printf(HASH +" ALG_tj_query_handler: iter/item/kind/pos result start\n");
+         iter.print();
+         item.print();
+         kind.print();
+         pos.print();
+         printf(HASH +" ALG_tj_query_handler: iter/item/kind/pos result finish\n");
+      }
+     var res := ALG_tj_pfop(iter,item,kind,pos.materialize(ipik));
+     #
+     if ( verbose ) printf(HASH +" ALG_tj_query_handler: FINISH.\n");
+     return res;
+}
+
+#
+var ftindex;
+
+# temporary algebra query handler
 PROC ALG_tj_ftfun_handler(
         bit par_storeScore,
         BAT[oid,bat] pfop_sn,
@@ -2534,6 +2737,14 @@ PROC ALG_tj_ftfun_handler(
 
      if ( verbose ) printf(HASH +" ALG_tj_ftfun_handler: START.\n");
 
+     # The next assigment is done to make pftijah work like it is used
+     # by the tijah compiler. A variable ftiName is expected to exist
+     # in the caller env. To make this work for direct calls without the
+     # compiler we generate an unused ftiName var in the generated pathfinder
+     # mil script and assign it with this assigment.
+     ftiName := dflt_ft_index;
+     ftindex := ftiName + "0";
+
      result_item_s := new(oid,dbl);
 
      var has_sn      := (pfop_sn.count_wrd() > wrd(0));
@@ -2551,8 +2762,8 @@ PROC ALG_tj_ftfun_handler(
         var iter_tjPre;
         var ftc_term := pfop_query.fetch(1@0).fetch(int($h));
 
-        var ftindex := dflt_ft_index; # incomplete
-        var tijah_lock := tj_get_collection_lock(ftindex);
+        var ftiName := dflt_ft_index; # incomplete
+        var tijah_lock := tj_get_collection_lock(ftiName);
         lock_set(tijah_lock);
         var err := CATCH({
           var sn_iter := pfop_sn.fetch(0@0);
@@ -2561,19 +2772,19 @@ PROC ALG_tj_ftfun_handler(
           var sn_item := pfop_sn.fetch(1@0).semijoin(sn_iter);
           var sn_kind := pfop_sn.fetch(2@0).semijoin(sn_iter);
   
-          var xdoc_name := bat("tj_" + ftindex + "_doc_name");
-          var xdoc_firstpre := bat("tj_" + ftindex + "_doc_firstpre");
-          var xpfpre := bat("tj_" + ftindex + "_pfpre");
+          var xdoc_name := bat("tj_" + ftiName + "0_doc_name");
+          var xdoc_firstpre := bat("tj_" + ftiName + "0_doc_firstpre");
+          var xpfpre := bat("tj_" + ftiName + "0_pfpre");
           var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
           if ( verbose ) printf(HASH +" ALG_tj_ftfun_handler: compute startnodes\n");
           iter_tjPre := pf2tijah_node(true,xdoc_name,xdoc_firstpre,xpfpre,sn_item,[int](sn_kind),doc_loaded);
 	  
 	  # now tokenize the term string and add a default weight
-	  var Q := tijah_tokenize2bat(ftc_term).reverse().project(dbl(1.0));
-	  Q := tj_term2tid(Q);
+	  var T := tijah_tokenize2bat(ftc_term).reverse().project(dbl(1.0));
+	  var Q := tj_prepare_query(T);
 
-	  # tj_init_termHash(ftindex);
-	  # tj_init_tagHash(ftindex);
+	  # tj_init_termHash(ftiName);
+	  # tj_init_tagHash(ftiName);
 	  var scorebase := dbl(0.000000);
 	  var c_lambda  := dbl(0.800000);
 	  var okapi_k1  := dbl(1.200000);
@@ -2587,6 +2798,7 @@ PROC ALG_tj_ftfun_handler(
 	  var tjPre_score := tj_containing_query_nest_pre_term_NLLR(iter_tjPre.reverse(), Q);
 	  var iter_score := iter_tjPre.leftjoin(tjPre_score);
 
+
 	  result_item_s.append(iter_score);
         });
         lock_unset(tijah_lock);
@@ -2595,6 +2807,11 @@ PROC ALG_tj_ftfun_handler(
      var result_item_b;
      result_iter   := pfop_sn.fetch(0@0);
      result_item_b := [>](result_item_s,dbl(0.0));
+     if ( verbose ) {
+     	result_iter.print();
+     	result_item_b.print();
+     	result_item_s.print();
+     }
      result_ipik   := result_item_b;
      result_kind   := pfop_sn.fetch(2@0).set_kind(BOOL);
      var result_pos:= pfop_sn.fetch(3@0);
@@ -2615,7 +2832,7 @@ PROC ALG_tj_add_fti_tape(
 	BAT[str,bat]  tape
 	) : BAT[str,bat] 
 {
-        if ( verbose ) printf(HASH +" ALG_tj_add_fti_tape: START.\n");
+        if ( verbose ) printf(HASH +" ALG_tj_add_fti_tape: START xxx.\n");
         var has_coll := (pfop_coll.count_wrd() > wrd(0));
         var has_opt  := (pfop_opt.count_wrd() > wrd(0));
         par_loop@batloop() {
@@ -2681,7 +2898,7 @@ PROC ALG_tj_add_fti_tape(
 #                   stream_nil, ws_id(ws));
 #}
 
-PROC ALG_tj_docmgmt_tape(BAT[str,bat] tape,
+PROC ALG_tj_docmgmt_tape2(BAT[str,bat] tape,
 		      	 BAT[void,BAT] ws,
                 	 BAT[void,str] location,
                 	 BAT[void,str] docnames,
@@ -2693,6 +2910,7 @@ PROC ALG_tj_docmgmt_tape(BAT[str,bat] tape,
 	# INCOMPLETE, CHECK IF THIS REALLY STILL WORKS
 	#
         if (isnil(CATCH(bat("tj_collName").count_wrd()))) {
+            if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: pftijah is active.\n");
 	    # pftijah is active
             if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: running document management.\n");
             var del_doc    := percentages.ord_uselect(-1LL).hmark(0@0); 
@@ -2727,37 +2945,137 @@ PROC ALG_tj_docmgmt_tape(BAT[str,bat] tape,
                 if ( verbose ) { printf(HASH +"TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); $t.print(); }
                 tj_add2collection($h,$t,false);
             }
+
+            if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: running collection management.\n");
+            tape@batloop() {
+	        var op       := $h;
+	        var collbat  := $t.fetch(0@0);
+	        var optbat   := $t.fetch(1@0);
+	        var fti_name := tj_get_ft_index(optbat,(op!="create"));
+
+	        if ( op = "create" ) {
+                    if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_init_collection(%s).\n",fti_name);
+	            tj_init_collection(fti_name,optbat,collbat);
+	        } else if ( op = "extend" ) {
+                    if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_extend_collection(%s).\n",fti_name);
+	            tj_extend_collection(fti_name,collbat);
+	        } else if ( op = "remove" ) {
+                    if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_delete_collection(%s).\n",fti_name);
+	            tj_delete_collection(fti_name);
+	        } else {
+	    	    ERROR("ALG_tj_docmgmt_tape: unknown op");
+	        }
+	    }
 	} else {
 	    # pftijah is not active
 	    if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: skipping doc managemnt.\n");
 	}
 
-        if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: running collection management.\n");
+        if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: FINISH.\n");
+	return true;
+}
+
+PROC ALG_tj_docmgmt_tape(BAT[str,bat] tape,
+		      	 BAT[void,BAT] ws,
+                	 BAT[void,str] location,
+                	 BAT[void,str] docnames,
+                	 BAT[void,str] colnames,
+                	 BAT[void,lng] percentages) : bit 
+{
+        if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: START.\n");
+
+	# analyse doctape, create new collection dependencies, and
+        # add documents to the doclist for each ft-index (fti_cluster) 
+
+        var fti_cluster := new(str,bat);
         tape@batloop() {
 	    var op       := $h;
 	    var collbat  := $t.fetch(0@0);
 	    var optbat   := $t.fetch(1@0);
-	    var fti_name := tj_get_ft_index(optbat,(op!="create"));
-
-	    if ( op = "create" ) {
-                if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_init_collection(%s).\n",fti_name);
-	        tj_init_collection(fti_name,optbat,collbat);
+	    var ftiName  := tj_get_ft_index(optbat,(op!="create"));
+            var doclist;       
+            if ( fti_cluster.exist(ftiName) ) {
+              doclist := fti_cluster.find(ftiName);
+            } else {
+              doclist := new(str,str);
+              fti_cluster.insert(ftiName, doclist);
+            }
+   
+     	    if ( op = "create" ) {
+                if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: init_collection(%s).\n",ftiName);
+            tj_init_collection_base(ftiName, optbat);
+            modify_pfc_fti(ftiName, collbat);
+            if ( collbat.uselect("*").count_wrd() > wrd(0) ) {
+               var tmp := bat("doc_name");
+               doclist.insert(tmp.reverse().project(str(nil)).reverse());
+            } else {
+                   var tmp := bat("doc_name").semijoin(bat("doc_collection").join(bat("collection_name").join(collbat.reverse())));
+                   doclist.insert(tmp.reverse().project(str(nil)).reverse());
+                }
 	    } else if ( op = "extend" ) {
-                if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_extend_collection(%s).\n",fti_name);
-	        tj_extend_collection(fti_name,collbat);
+                if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: extend_collection(%s).\n",ftiName);
+                modify_pfc_fti(ftiName, collbat);
+                if ( collbat.uselect("*").count_wrd() > wrd(0) ) {
+                   var tmp := bat("doc_name");
+                   doclist.insert(tmp.reverse().project(str(nil)).reverse());
+                } else {
+                   var tmp := bat("doc_name").semijoin(bat("doc_collection").join(bat("collection_name").join(collbat.reverse())));
+                   doclist.insert(tmp.reverse().project(str(nil)).reverse());
+                }
 	    } else if ( op = "remove" ) {
-                if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_delete_collection(%s).\n",fti_name);
-	        tj_delete_collection(fti_name);
+                if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: tj_delete_collection(%s).\n",ftiName);
+	        tj_collection_delete(ftiName);
 	    } else {
-	    	ERROR("ALG_tj_docmgmt_tape: unknown op");
+	        ERROR("ALG_tj_docmgmt_tape: unknown op");
 	    }
+	}
+    
+
+        # commit dependency bats, since they might be changed
+        var submit_bats := new(void,str).seqbase(0@0);
+        submit_bats.append("tj_pfc_fti_dep");
+        submit_bats.append("tj_pfc_fti_dep_star");
+        subcommit(submit_bats);
+    
+
+        if (isnil(CATCH(bat("tj_collName").count_wrd()))) {
+            if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: pftijah is active.\n");
+	    # determine which documents added to pathfinder have to get indexed by pf/tijah due to dependencies
+            # add those documents to the doclist for each ft-index (fti_cluster) 
+            var pfc_name   := docnames.reverse().leftfetchjoin(colnames);
+            var pfdep      := bat("tj_pfc_fti_dep");
+            var pfdep_star := bat("tj_pfc_fti_dep_star");
+            
+            var fti_dname  := pfdep.join(pfc_name.reverse());
+            if ( pfdep_star.count_wrd() > wrd(0) ) {
+                fti_dname.insert(pfdep_star.cross(pfc_name.reverse()));
+            }
+    
+            fti_dname@batloop() {
+                var cb;
+                if ( fti_cluster.exist($h) ) {
+                  cb := fti_cluster.find($h);
+                } else {
+                  cb := new(str,str);
+                  fti_cluster.insert($h,cb);
+                }
+                cb.insert(str(nil),$t);
+            }
+            fti_cluster@batloop() {
+                if ( verbose ) { printf(HASH +"TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); $t.print(); }
+                tj_add2collection_frag($h,$t,false);
+            }
+    
+	} else {
+            if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: pftijah not active.\n");
 	}
         if ( verbose ) printf(HASH +" ALG_tj_docmgmt_tape: FINISH.\n");
 	return true;
 }
 
 var tracefile_handle := nil;
-PROC tj_trace( str s ) : void  
+
+PROC tj_trace(str tracefile, str s) : void  
 {
     if ( not( tracefile = "" ) ) {
         if ( isnil( tracefile_handle ) )
@@ -3800,6 +4118,36 @@ PROC tj_rm_overlap(BAT[oid,dbl] ctx) : bat
 #"TIJAH");
 
 ################################################################################
+# Pathfinder PRE output 
+################################################################################
+
+##
+# Map all pre identifiers to their corresponding pathfinder pre IDs / documents
+# Returns a bat [void, bat]: bat1 (rank,pfpre), bat2 (rank,score), bat3 (rank,docname)
+##
+PROC tj_pre2pfpre(bat[oid,dbl] pre_score) : bat[void,bat] 
+{
+    var t_total := 0 - time();
+
+    if (pre_score.count_wrd() = wrd(0)) return new(str,dbl);
+    var pres := pre_score.hmark(0@0);
+    var scores := pre_score.tmark(0@0);
+    var pfpres := pres.leftjoin(bat("tj_" + ftindex + "_pfpre")).tmark(0@0);
+    var docpre := bat("tj_" + ftindex + "_doc_firstpre");
+    var mark_did := [find_lower](const docpre.reverse(), pres);
+    var mark_docname := mark_did.leftjoin(bat("tj_" + ftindex + "_doc_name")).tmark(0@0);
+
+    var res := new(void,bat).seqbase(0@0);
+    res.append(pfpres);
+    res.append(scores);
+    res.append(mark_docname);
+
+    t_total :+= time();
+    if (timing) printf(HASH +" add inexpath timing: total: %d\n", t_total);
+    return res;
+}
+
+################################################################################
 # INEX output 
 ################################################################################
 
@@ -3807,9 +4155,25 @@ PROC tj_rm_overlap(BAT[oid,dbl] ctx) : bat
 # Map all pre identifiers to their stored inexpath expressions
 # Returns a bat [pre, any].
 ##
-PROC tj_pre2inexpath(bat[oid,any] pre_score) : bat[oid,any] 
+PROC tj_pre2inexpath(bat[oid,dbl] pre_score) : bat[str,dbl] 
 {
-    return pre_score.reverse().leftjoin(bat("tj_" + ftindex + "_path")).reverse();
+    var t_total := 0 - time();
+
+    if (pre_score.count_wrd() = wrd(0)) return new(str,dbl);
+    var pres := pre_score.hmark(0@0);
+    var scores := pre_score.tmark(0@0);
+    var docpre := bat("tj_" + ftindex + "_doc_firstpre");
+    var mark_did := [find_lower](const docpre.reverse(), pres);
+    var mark_docname := mark_did.leftjoin(bat("tj_" + ftindex + "_doc_name"));
+    var mark_path := pres.leftjoin(bat("tj_" + ftindex + "_path"));
+    var mark_pathno := pres.leftjoin(bat("tj_" + ftindex + "_pathno"));
+    var mark_docname_path := [+](mark_docname, mark_path);
+    mark_docname_path := [+](mark_docname_path, mark_pathno);
+    var res := mark_docname_path.reverse().leftfetchjoin(scores);    
+
+    t_total :+= time();
+    if (timing) printf(HASH +" add inexpath timing: total: %d\n", t_total);
+    return res;
 }
 
 ################################################################################
@@ -3817,10 +4181,26 @@ PROC tj_pre2inexpath(bat[oid,any] pre_score) : bat[oid,any]
 ################################################################################
 
 ##
-# Map all pre identifiers to their stored inexpath expressions
-# Returns a bat [pre, any].
+# Merge the results of all index fragments.
+# Returns a bat [void, bat]: bat1 (rank,pfpre), bat2 (rank,score), bat3 (rank,docname)
 ##
 PROC tj_merge_frag_results(bat[void,bat] res_frag, int topk) : bat[str,dbl] 
+{
+    var res := new(str,dbl);
+    res_frag@batloop(){
+        res.insert($t);
+    }
+    if (topk > 0) {
+        return res.tsort_rev().slice(0, topk - 1);
+    }
+    return res.tsort_rev();
+}
+
+##
+# Merge the results of all index fragments.
+# Returns a bat [pre, any].
+##
+PROC tj_merge_frag_results_inex(bat[void,bat] res_frag, int topk) : bat[str,dbl] 
 {
     var res := new(str,dbl);
     res_frag@batloop(){
@@ -6220,6 +6600,131 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	*result = res;
 	return GDK_SUCCEED;
 }
+
+
+int CMDsplitbat ( BAT** result, BAT* origbat, BAT* splitbat )
+{
+	char *name = "TJsplitbat";
+	BAT *res = NULL;
+	BAT *diffbat = NULL;
+	BAT *joinbat = NULL;
+	BUN ressize = 0;
+        BUN lst_split, cur_split, lst_res;
+        oid cur_orig, lst_orig, split_oid;
+        oid *tid;
+	
+	/* --------------------------- checks ---------------------------------- */
+	
+	BATcheck(origbat, name);
+	BATcheck(splitbat, name);
+ 
+        if (origbat->htype != TYPE_void) {
+            GDKerror("%s: head (oid) of original BAT must NOT be materialized.\n", name);
+            return(GDK_FAIL);
+        }
+        if (origbat->ttype != TYPE_oid) {
+            GDKerror("%s: tail of original BAT must be of type OID.\n", name);
+            return(GDK_FAIL);
+        }
+        if (splitbat->htype != TYPE_oid) {
+            GDKerror("%s: head of split BAT must be of type OID.\n", name);
+            return(GDK_FAIL);
+        }
+        if (!(BAThordered(splitbat)&1)) { 
+            GDKerror("%s: head of split BAT must be sorted.\n",name); 
+            return(GDK_FAIL);
+        }
+
+	/* ---------------------------- inits ---------------------------------- */
+
+	ressize = 2;
+	res = BATnew(TYPE_void, TYPE_bat, ressize);
+        if (res == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "BUNFMT".\n", name, ressize);
+            	return(GDK_FAIL);
+        }
+        
+	ressize = BATcount(origbat);
+	diffbat = BATnew(TYPE_oid, TYPE_oid, ressize);
+        if (diffbat == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[oid,oid] of size "BUNFMT".\n", name, ressize);
+            	BATfree(res);
+                return(GDK_FAIL);
+        }
+	
+	ressize = BATcount(splitbat);
+	joinbat = BATnew(TYPE_oid, TYPE_oid, ressize);
+        if (joinbat == NULL) 
+        { 
+            	GDKerror("%s: could not allocate a result BAT[oid,oid] of size "BUNFMT".\n", name, ressize);
+            	BATfree(res);
+            	BATfree(diffbat);
+            	return(GDK_FAIL);
+        }
+	
+	lst_split = BUNlast(splitbat);
+	lst_res = BUNlast(res);
+	cur_split = BUNfirst(splitbat);
+        cur_orig = origbat->hseqbase;
+        lst_orig = cur_orig + BATcount(origbat);
+	
+	/* ----------------------------- main ---------------------------------- */
+
+        while (cur_split < lst_split && *(oid*)Hloc(splitbat, cur_split) < cur_orig) cur_split++;
+        split_oid = *(oid*)Hloc(splitbat, cur_split);
+
+        for (;cur_orig < lst_orig; cur_orig++) {
+            tid = ((oid*)Tloc(origbat, cur_orig)) - origbat->hseqbase;
+            if (cur_orig == split_oid) { 
+                BUNfastins(joinbat, &cur_orig, tid);
+                if (cur_split < lst_split) {
+                    cur_split++;
+                    split_oid = *(oid*)Hloc(splitbat, cur_split);
+                }
+            } else {
+                BUNfastins(diffbat, &cur_orig, tid);
+            }
+        }
+
+	/* ---------------------------- tidy up --------------------------------- */
+
+    	diffbat->batDirty = TRUE;
+        diffbat->hsorted = GDK_SORTED;
+        diffbat->tsorted = FALSE;
+        BATkey(diffbat, TRUE);
+
+    	joinbat->batDirty = TRUE;
+        joinbat->hsorted = GDK_SORTED;
+        joinbat->tsorted = FALSE;
+        BATkey(joinbat, TRUE);
+	
+        /* insert bats in result */		
+	BATseqbase(res, (oid)0);
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, (void*)&diffbat->batCacheid);
+	BBPunfix(diffbat->batCacheid);	
+	lst_res++;
+	voidfix_bunfastins_nocheck_noinc(res, lst_res, 0, (void*)&joinbat->batCacheid); 
+	BBPunfix(joinbat->batCacheid);	
+	lst_res++;
+	
+	BATsetcount(res, 2);
+	res->batDirty = TRUE;
+	BATkey(res, TRUE);
+	BATkey(BATmirror(res), TRUE);
+        res->hsorted = GDK_SORTED;
+        res->tsorted = FALSE;
+        res->H->nonil = 1;
+        res->T->nonil = 0;
+	
+	*result = res;
+	return GDK_SUCCEED;
+}
+
+
+
+
 
 @= init_result
 {

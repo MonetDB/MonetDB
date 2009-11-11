@@ -16,10 +16,10 @@ module(unix);
 var path:=getenv("TSTSRCDIR");
 
 # index thesis collection
-tj_init_collection("thesis", new(str,str).insert("stemmer","snowball-english"));
-tj_add2collection("thesis",path+"/xml-docs/thesis.xml","thesis.xml",true);
-# Elapsed time = 765us [010us/node]
-# Shredded 1 XML document (thesis.xml), total time after commit=0.007s
+tj_init_collection_base("thesis", new(str,str).insert("stemmer","snowball-english"));
+tj_add2collection_frag("thesis",path+"/xml-docs/thesis.xml","thesis.xml",true);
+# Elapsed time = 544us [007us/node]
+# Shredded 1 XML document (thesis.xml), total time after commit=0.014s
 quit();
 
 # 11:32:35 >  

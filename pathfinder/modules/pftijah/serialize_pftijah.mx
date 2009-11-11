@@ -238,6 +238,7 @@ typedef union {
 	struct {
 		int ntags;	/* number of tags at this level */
 		int subpath;	/* index of subpath in printbuffer */
+		int subpathno;	/* index of subpath in printbuffer */
 		int prev_frame;	/* previous level frame, -1 for bottom */
 	} level;
 	struct {
@@ -248,11 +249,13 @@ typedef union {
 
 /* The main structure managing the Inex path stack and printbuffer */
 typedef struct InexPathGenBase {
-	BAT*		b_pre_path;	/* [oid,str] bat wher path is stored*/
+	BAT*		b_pre_path;	/* [oid,str] bat where path is stored*/
+	BAT*		b_pre_pathno;	/* [oid,str] bat where path sibling numbers are stored*/
 	int		top;		/* index of the top of the stack */
 	int		max;		/* maximum possible size of stack */
 	IpgFrame*	stack;		/* the physical stack */
 	char*		pathbuff;	/* the path printing buffer */
+	char*		pathnobuff;	/* the path printing buffer */
 } IpgBase;
 
 #define IPG_INIT_STACKSZ	256
@@ -260,18 +263,20 @@ typedef struct InexPathGenBase {
 #define IPG_INIT_PATHSZ		8192
 
 
-static IpgBase* ipg_init(BAT* b) {
+static IpgBase* ipg_init(BAT* b_path, BAT* b_no) {
 
 	IpgBase* res;
 	if ( !(res = (IpgBase*)GDKmalloc( sizeof(IpgBase) )) )
 		return NULL;
-	res->b_pre_path = b;
+	res->b_pre_path = b_path;
+	res->b_pre_pathno = b_no;
 	res->top = 0;
 	res->max = IPG_INIT_STACKSZ;
 	res->stack = (IpgFrame*)GDKmalloc( res->max * sizeof(IpgFrame) );
 	if ( !res->stack )
 		return NULL;
 	res->pathbuff = (char*)GDKmalloc( IPG_INIT_PATHSZ );
+	res->pathnobuff = (char*)GDKmalloc( IPG_INIT_PATHSZ );
 	if (0) stream_printf(GDKout,"-IPG[ipg_init() called.]\n");
 	return res;
 }
@@ -283,10 +288,12 @@ static int ipg_startdoc(IpgBase* base, str doc) {
 	base->stack[base->top].level.ntags	= 0;
 	base->stack[base->top].level.prev_frame	= -1;
 	if ( 1 /* Henning: use docnames in path */ )
-		sprintf(base->pathbuff,"fn:doc(\"%s\")",doc);
-	else
 		sprintf(base->pathbuff,"%s","");
+	else
+		sprintf(base->pathbuff,"fn:doc(\"%s\")",doc);
+	sprintf(base->pathnobuff,"%s","");
 	base->stack[base->top].level.subpath = strlen(base->pathbuff);
+	base->stack[base->top].level.subpathno = strlen(base->pathnobuff);
 	return 1;
 }
 
@@ -328,13 +335,28 @@ static int ipg_pushtag(IpgBase* base, str tag, oid o) {
 	int newtop = ipg_frame_alloc(base);
 	base->stack[newtop].level.ntags = 0;
 	base->stack[newtop].level.prev_frame = base->top;
+        
+	/* Henning */
+	if (1) {
+	        if (strcmp(tag,"collection") != 0 && strcmp(tag,"docs") != 0) {
+	                sprintf(&base->pathbuff[base->stack[base->top].level.subpath],"/%s",tag);
+	                sprintf(&base->pathnobuff[base->stack[base->top].level.subpathno],".%d",found->tag.cnt);
+                }
+	} else {
+	        sprintf(&base->pathbuff[base->stack[base->top].level.subpath],"/%s",tag);
+	        sprintf(&base->pathnobuff[base->stack[base->top].level.subpathno],".%d",found->tag.cnt);
+	}
 
-	sprintf(&base->pathbuff[base->stack[base->top].level.subpath],"/%s[%d]",tag,found->tag.cnt);
 	base->stack[newtop].level.subpath = strlen(base->pathbuff);
+	base->stack[newtop].level.subpathno = strlen(base->pathnobuff);
 
 	base->top = newtop;
 
 	if ( !BUNins(base->b_pre_path, &o,(str)base->pathbuff, 0)) {
+	        GDKerror("error writing recursive tagbat");
+	        return -1;
+	} 
+	if ( !BUNins(base->b_pre_pathno, &o,(str)base->pathnobuff, 0)) {
 	        GDKerror("error writing recursive tagbat");
 	        return -1;
 	}
@@ -354,6 +376,7 @@ static INLINE int ipg_poptag(IpgBase* base) {
 static int ipg_destroy(IpgBase* base) {
 	GDKfree(base->stack);
 	GDKfree(base->pathbuff);
+	GDKfree(base->pathnobuff);
 	GDKfree(base);
 	if (0) stream_printf(GDKout,"-IPG[ipg_destroy() called.]\n");
 	return 1;
@@ -400,7 +423,10 @@ typedef struct tijahContextStruct {
 	BAT* b_collSize;	/* Tijah PRE-size BAT */
 	dbat dbat_collSize;	/* Direct access struct for b_collSize */
 	/* INCOMPLETE< SHOULD BE FRAGMENTED */
+#ifdef USE_INEX_PATH
 	BAT* b_collPath;	/* Tijah PRE-INEX-PATH BAT */
+	BAT* b_collPathNo;	/* Tijah PRE-INEX-PATH (sibling numbers in path) BAT */
+#endif
 	/* */
 	BAT* b_collPfPre;	/* Tijah PRE-PF BAT for Pathinder link */
 	/* */
@@ -855,6 +881,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	if ( !(res->b_collSize    = getBAT(tjCtx_BAT,"size")) ) return NULL;
 #ifdef USE_INEX_PATH
 	if ( !(res->b_collPath    = getBAT(tjCtx_BAT,"path")) ) return NULL;
+	if ( !(res->b_collPathNo    = getBAT(tjCtx_BAT,"pathno")) ) return NULL;
 #endif
 	if ( (res->tijahPre = getPreSize(res)) == oid_nil )
 	     return NULL;;
@@ -980,7 +1007,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	if ( ! (res->hm_globalTerm->H->hash && res->hm_globalTag->H->hash) )
 	   stream_printf(GDKout,"# WARNING: MISSING HASH ON TAG/TERM DICTIONARY\n");
 #ifdef USE_INEX_PATH
-	if ( !(res->ipg = ipg_init(res->b_collPath)) )
+	if ( !(res->ipg = ipg_init(res->b_collPath, res->b_collPathNo)) )
 		return NULL;
 #endif
 	return res;

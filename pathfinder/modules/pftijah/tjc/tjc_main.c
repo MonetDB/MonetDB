@@ -75,6 +75,7 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
     tjc_c->okapib	= 0.75;
     tjc_c->semantics	= 0;
     tjc_c->rmoverlap	= 0;
+    tjc_c->inexout      = 0;
 
     /*
      * end of initialization
