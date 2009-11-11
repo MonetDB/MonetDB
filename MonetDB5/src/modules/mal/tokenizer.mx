@@ -94,14 +94,14 @@ comment "debuging function that returns the unique tokens at each level";
 @-
 @+ Implementation
 @h
-#ifndef _TKNZR_BOX_H
-#define _TKNZR_BOX_H
+#ifndef _TKNZR_H
+#define _TKNZR_H
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBTKNZRBOX
+#ifndef LIBTOKENIZER
 #define tokenizer_export extern __declspec(dllimport)
 #else
 #define tokenizer_export extern __declspec(dllexport)
@@ -117,6 +117,7 @@ comment "debuging function that returns the unique tokens at each level";
 tokenizer_export str TKNZRnew              @:params@
 tokenizer_export str TKNZRopen             @:params@
 tokenizer_export str TKNZRdeposit          @:params@
+tokenizer_export str TKNZRinsert           (oid *pos, str tuple);
 tokenizer_export str TKNZRtake             @:params@
 tokenizer_export str TKNZRlocate           @:params@
 tokenizer_export str TKNZRtakeOid          @:params@
@@ -127,7 +128,7 @@ tokenizer_export str TKNZRgetHeight        (int *r);
 tokenizer_export str TKNZRgetCount         (int *r);
 tokenizer_export str TKNZRgetCardinality   (int *r);
 
-#endif /* _TKNZR_BOX_H */
+#endif /* _TKNZR_H */
 
 @c
 #include "mal_config.h"
@@ -261,7 +262,7 @@ TKNZRfindOid(oid *pos, char d, oid h) {
 		for (i = 0; i < depth; i++){
 
 			/* search if bat exist */
-			snprintf(buf, 128, "urlbox_%d", i);
+			snprintf(buf, 128, "tokenizer_%d", i);
 			b = BATdescriptor(BBPindex(buf));
 			if (b) {
 				tokenBAT[i] = b;
