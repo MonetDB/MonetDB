@@ -18,12 +18,14 @@ quit();
 
 Over..
 
-# 11:07:15 >  
-# 11:07:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=asbjorn --port=30251 colltest2.xq
-# 11:07:15 >  
+# 16:55:52 >  
+# 16:55:52 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=asbjorn --port=33336 colltest2.xq
+# 16:55:52 >  
 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><bubble>Speed is the key to success.</bubble><bubble>Snelheid is de sleutel tot succes.</bubble></XQueryResult>
 
-# 11:07:15 >  
-# 11:07:15 >  Done.
-# 11:07:15 >  
+# 16:55:52 >  
+# 16:55:52 >  Done.
+# 16:55:52 >  
 
