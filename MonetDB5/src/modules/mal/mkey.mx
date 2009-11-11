@@ -31,6 +31,7 @@ comment "left-rotate an int by nbits";
 pattern hash(v:any):wrd 
 address MKEYhash 
 comment "compute a hash int number from any value";
+
 command hash(v:bit):wrd 
 address MKEYhash_bit; 
 command hash(v:chr):wrd 
@@ -668,14 +669,18 @@ MKEYrotate(wrd *res, wrd *val, int *n){
 }
 
 str
-MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	wrd *ret;
 	ptr val;
+	int tpe = getArgType(mb,p,1);
 
 	(void) cntxt;
 	ret= (wrd*) getArgReference(stk,p,0);
 	val= (ptr) getArgReference(stk,p,1);
-	CMDhash(ret, val, getArgType(mb,p,1));
+	if (ATOMextern(tpe)) 
+		val = *(ptr*)val;
+	CMDhash(ret, val, tpe);
 	return MAL_SUCCEED;
 }
 
