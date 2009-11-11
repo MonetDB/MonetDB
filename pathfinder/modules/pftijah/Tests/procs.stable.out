@@ -771,7 +771,7 @@ procs();
 [ "tj_size_collection(str) : void"															  ]
 [ "tj_size_collection2(str) : void"															  ]
 [ "tj_term2tid(BAT[str,dbl]) : BAT[oid,dbl]"																	  ]
-[ "tj_trace(str) : void"																									  ]
+[ "tj_trace(str, str) : void"																										  ]
 [ "tmark_grp_unique(BAT[any,any], BAT[oid,any]) : BAT[oid,oid]"												  ]
 [ "tmark_grp_unique(any, BAT[oid,any]) : BAT[oid,oid]"													  ]
 [ "tmark_unique(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]"												  ]
