@@ -398,10 +398,9 @@ fixed-sized types.
 	else 
 	if (b->T->nonil)
 		for (; p<q; o++, p++){
-			if ( *p == 0) {
-				*o = @1_nil;
-				bn->T->nonil = 0;
-			} else
+			if ( *p == 0)
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
+			else
 				*o = c @2 *p;
 		}
 	else
@@ -409,13 +408,10 @@ fixed-sized types.
 			if (*p == @4_nil) {
 				*o = @1_nil;
 				bn->T->nonil = 0;
-			} else {
-				if ( *p == 0) {
-					*o = @1_nil;
-					bn->T->nonil = 0;
-				} else
-					*o = c @2 *p;
-			}
+			} else if (*p == 0)
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
+			else
+				*o = c @2 *p;
 		}
 }
 @-
@@ -445,37 +441,42 @@ The similar code base is produced for dealing with a constant argument.
 	if (b->T->nonil && right->T->nonil) {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++)
-			if (*r == 0) {
-				*o = @3_nil;
-				bn->T->nonil = 0;
-			} else
+			if (*r == 0)
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
+			else
 				*o = (@3)(*p / *r);
 	} else if (b->T->nonil ) {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*r == @5_nil || *r == 0) {
+			if (*r == @5_nil) {
 				*o = @3_nil;
 				bn->T->nonil = 0;
-			} else 
+			} else if (*r == 0)
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
+			else 
 				*o = (@3)(*p / *r);
 		}
 	} else if (right->T->nonil ) {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++) 
 			/* this code is better as x?nil:y  */
-			if (*p == @4_nil || *r == 0) {
+			if (*p == @4_nil) {
 				*o = @3_nil;
 				bn->T->nonil = 0;
-			} else
+			} else if (*r == 0)
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
+			else
 				*o = (@3)(*p / *r);
 	} else {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++) 
 			/* this code is better as x?nil:y  */
-			if (*p == @4_nil || *r == @5_nil || *r == 0) {
+			if (*p == @4_nil || *r == @5_nil) {
 				*o = @3_nil;
 				bn->T->nonil = 0;
+			} else if (*r == 0) {
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			} else
 				*o = (@3)(*p / *r);
 	}

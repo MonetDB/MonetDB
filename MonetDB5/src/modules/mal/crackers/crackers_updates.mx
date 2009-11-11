@@ -1365,7 +1365,7 @@ appendDeletions(int *del, int position){
 	/* merge for the last piece only */
 	if ( remainingIns > 0) {
 		/* get the last piece */
-		lng prevholes=0;
+		oid prevholes=0;
 		IndexNode = findNodeL_@1(*hgh, inclusive, CrackerIndex[position].Tree, c, idxFirst, NULL);
 		@:mergeLoop(@1,@2,@3,@4)@
 	}
@@ -1375,7 +1375,7 @@ appendDeletions(int *del, int position){
 	/* Here the actual merging happens. Starting from the piece where next belongs we continuously 
 	   insert and shift until there are no more insertions or pieces */
 	while ( remainingIns > 0) {
-		lng prevholes=0;
+		oid prevholes=0;
 		IndexNode = findPreviousPieceWalkingBack(prevNode);
 		@:mergeLoop(@1,@2,@3,@4)@
 	}

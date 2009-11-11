@@ -46,6 +46,11 @@ Over..
 % lat,	long,	lat,	long,	isnull_>_sql_sub_lat # name
 % double,	double,	double,	double,	double # type
 % 22,	22,	22,	22,	22 # length
+% . # table_name
+% test # name
+% tinyint # type
+% 1 # length
+[ 0	]
 
 # 12:08:56 >  
 # 12:08:56 >  Done.

@@ -924,13 +924,15 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 
 	if (mapi_error(mid)) {
 		str err = mapi_error_str(mid);
+		str ex;
 		if (err == NULL)
 			err = "(no reason given)";
 		if (err[0] == '!')
 			err = err + 1;
 		SERVERsessions[i].c = NULL;
+		ex = createException(IO, "mapi.connect", "Could not connect: %s", err);
 		mapi_destroy(mid);
-		throw(IO, "mapi.connect", "Could not connect: %s", err);
+		return(ex);
 	}
 
 #ifdef MAPI_TEST

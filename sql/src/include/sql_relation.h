@@ -92,6 +92,8 @@ typedef enum operator_type {
 
 #define is_column(et) \
 	(et != e_cmp)
+#define is_rank_op(e) \
+	(e->type == e_func && e->r)
 #define is_base(op) \
 	(op == op_basetable || op == op_table)
 #define is_outerjoin(op) \
