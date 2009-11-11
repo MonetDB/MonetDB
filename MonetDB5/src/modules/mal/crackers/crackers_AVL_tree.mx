@@ -803,7 +803,7 @@ InsertTree_@1(int m, oid indexPosition, @1 value, bit inclusive, oid crackPositi
 	if (current == NULL){
         	current = (struct Node *)GDKmalloc(sizeof(struct Node));
 		if (current == NULL)
-			printf("\n GDK malloc failed !! new node is not created \n");
+			return NULL;
                 current->position = indexPosition;
                 current->inclusive = inclusive;
 		current->height = 0;
@@ -999,7 +999,7 @@ InsertTreeSimple_@1(struct NodeSimple ** head, oid position, @1 value, struct No
 	if (*head == NULL){
         	(*head) = (struct NodeSimple *)GDKmalloc(sizeof(struct NodeSimple));
 		if ((*head) == NULL)
-			printf("\n GDK malloc failed !! new node is not created \n");
+			return NULL;
                 (*head)->position = position;
 		(*head)->height = 0;
                 (*head)->left = NULL;
@@ -1018,7 +1018,7 @@ InsertTreeSimple_@1(struct NodeSimple ** head, oid position, @1 value, struct No
 	if (current == NULL){
         	current = (struct NodeSimple *)GDKmalloc(sizeof(struct NodeSimple));
 		if (current == NULL)
-			printf("\n GDK malloc failed !! new node is not created \n");
+			return NULL;
                 current->position = position;
 		current->height = 0;
                 current->left = NULL;
