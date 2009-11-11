@@ -1018,7 +1018,7 @@ end_pager(stream *saveFD, stream *saveFD_raw)
 static int
 format_result(Mapi mid, MapiHdl hdl)
 {
-	MapiMsg rc;
+	MapiMsg rc = MERROR;
 	mapi_int64 aff, lid;
 	char *reply;
 	int oldpagewidth;
