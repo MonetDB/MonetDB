@@ -23,4 +23,9 @@ Over..
 # 01:36:04 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><result><list><a pos="1">x</a><arest>y</arest><b pos="1">p</b><brest>q</brest></list><list><a pos="1">x</a><arest>y</arest><b pos="2">q</b><brest/></list><list><a pos="2">y</a><arest/><b pos="1">p</b><brest>q</brest></list><list><a pos="2">y</a><arest/><b pos="2">q</b><brest/></list></result></XQueryResult> 
+<XQueryResult><result><list><a pos="1">x</a><arest>y</arest><b pos="1">p</b><brest>q</brest></list><list><a pos="1">x</a><arest>y</arest><b pos="2">q</b><brest/></list><list><a pos="2">y</a><arest/><b pos="1">p</b><brest>q</brest></list><list><a pos="2">y</a><arest/><b pos="2">q</b><brest/></list></result></XQueryResult>
+
+# 01:36:04 >  
+# 01:36:04 >  Done.
+# 01:36:04 >  
+
