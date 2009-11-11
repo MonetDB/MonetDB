@@ -1067,6 +1067,8 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 	if (only_header) {
 		if (t->order) {
 			order = BATdescriptor(t->order);
+			if (!order)
+				return -1;
 
 			count = BATcount(order);
 		} else
@@ -1155,6 +1157,8 @@ mvc_export_file(mvc *m, stream *s, res_table *t)
 		res = mvc_export_row(m, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
 	} else {
 		order = BATdescriptor(t->order);
+		if (!order)
+			return -1;
 		count = BATcount(order);
 
 		res = mvc_export_table(m, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
@@ -1185,6 +1189,8 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	if (!t->order)
 		return mvc_export_row(m, s, t, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	order = BATdescriptor(t->order);
+	if (!order)
+		return -1;
 
 	count = m->reply_size;
 	if (count == 0 || count >= BATcount(order)) {
@@ -1228,6 +1234,8 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr)
 		return export_error(order);
 
 	order = BATdescriptor(t->order);
+	if (!order)
+		return -1;
 	cnt = nr;
 	if (cnt == 0) 
 		cnt = BATcount(order);

@@ -35,7 +35,7 @@ Over..
 | mal    |
 +========+
 | function user.s1_1{autoCommit=true}():void; |
-| barrier _102 := language.dataflow(); |
+| barrier _101 := language.dataflow(); |
 |     _2:bat[:oid,:sht]  := sql.bind("tmp","_tables","type",0); |
 |     _7:bat[:oid,:oid]  := sql.bind_dbat("tmp","_tables",1); |
 |     _9 := bat.reverse(_7); |
@@ -94,7 +94,7 @@ Over..
 |     _42 := algebra.leftjoin(_34,_41,nil:lng); |
 |     _34 := nil:BAT; |
 |     _41 := nil:BAT; |
-| exit _102; |
+| exit _101; |
 |     _43:bat[:oid,:str]  := bat.new(nil:oid,nil:str); |
 |     _46 := bat.append(_43,_42,true); |
 |     _43:bat[:oid,:str]  := nil:BAT; |
