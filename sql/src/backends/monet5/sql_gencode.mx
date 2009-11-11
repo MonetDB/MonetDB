@@ -2108,11 +2108,11 @@ backend_create_func(backend *be, sql_func *f)
 	for( i= 1; i<curBlk->stop; i++){
 		InstrPtr p = getInstrPtr(curBlk,i);
 		if ( getFunctionId(p)== bindRef || getFunctionId(p)== bindidxRef)
-			break;
+			continue;
 		sideeffects = sideeffects || hasSideEffects(p,FALSE);
 		if ( p->token == RETURNsymbol || p->token == YIELDsymbol ||
-					 p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
-            retseen++;
+		     p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
+			retseen++;
 	}
 	if (i == curBlk->stop && retseen == 1)
 		varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);

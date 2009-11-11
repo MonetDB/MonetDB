@@ -747,7 +747,7 @@ begin
                           width, 
                           height);
 
-    return 0;
+    return fileid;
 end;
 create function
 i_add_video_file_event(setname varchar(128), eventname varchar(256),
@@ -795,7 +795,7 @@ begin
                           width, 
                           height);
 
-    return 0;
+    return fileid;
 end;
 create function
 i_add_video_set(ident integer, setname varchar(128))
