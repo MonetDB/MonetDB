@@ -18,3 +18,5 @@
 MTSAFE
 
 SUBDIRS = Cimpl
+
+EXTRA_DIST_DIR = native phpdoc
