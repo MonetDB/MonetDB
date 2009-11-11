@@ -968,8 +968,16 @@ printCrackerDeletions(int bid){
 	int i = existsCrackerIndex(bid);
 	if (i == -1)
 		fprintf(stderr, " the crack index does not exist \n");
-	if (CrackerIndex[i].did > 0)
-		BATprint(BATdescriptor(CrackerIndex[i].did));
+	if (CrackerIndex[i].did > 0){
+		BAT *b;
+		b=BATdescriptor(CrackerIndex[i].did);
+		if (b == NULL){
+                	stream_printf(GDKout,"\n crack print deletions", "Failed to access deletions.");
+			return;
+		}
+		BATprint(b);
+		BBPunfix(b->batCacheid);
+	}	
 }
 
 static void
@@ -977,8 +985,16 @@ printCrackerInsertions(int bid){
 	int i = existsCrackerIndex(bid);
 	if (i == -1)
 		fprintf(stderr, " the crack index does not exist \n");
-	if (CrackerIndex[i].iid > 0)
-		BATprint(BATdescriptor(CrackerIndex[i].iid));
+	if (CrackerIndex[i].iid > 0){
+		BAT *b;
+		b=BATdescriptor(CrackerIndex[i].iid);
+		if (b == NULL){
+                	stream_printf(GDKout,"\n crack print insertions", "Failed to access insertions.");
+			return;
+		}
+		BATprint(b);
+		BBPunfix(b->batCacheid);
+	}
 }
 
 static void
@@ -990,6 +1006,10 @@ sizeCrackerDeletions(int bid){
                 fprintf(stderr, " the crack index does not exist \n");
         if (CrackerIndex[i].did > 0){
                 u = BATdescriptor(CrackerIndex[i].did);
+		if (u == NULL){
+                	stream_printf(GDKout,"\n crack print deletions", "Failed to access deletions.");
+			return;
+		}
                 printf("\n pending deletions size: "BUNFMT"\n",BATcount(u));
                 BBPunfix(u->batCacheid);
         }
@@ -1006,6 +1026,10 @@ sizeCrackerInsertions(int bid){
 		fprintf(stderr, " the crack index does not exist \n");
 	if (CrackerIndex[i].iid > 0){
 		u = BATdescriptor(CrackerIndex[i].iid);
+		if (u == NULL){
+                	stream_printf(GDKout,"\n crack print insertions", "Failed to access insertions.");
+			return;
+		}
 		printf("\n pending insertions size: "BUNFMT" \n",BATcount(u));
 		BBPunfix(u->batCacheid);
 	}
@@ -1027,10 +1051,8 @@ removeCrackerIndex(int *bid){
 	/*if (position == -1) return; Trying to erase an index that does not exist*/
 
 	/* Destroy index BAT */
-        if ((c = BATdescriptor(CrackerIndex[position].cid)) == NULL) {
-                fprintf(stderr,"crackers.AddIndex: Cannot access crack index");
-		return "FAILED";
-        }
+        if ((c = BATdescriptor(CrackerIndex[position].cid)) == NULL) 
+                	throw(MAL, "crack remove index", "Failed to access index.");
 
 	BBPunfix(c->batCacheid);
 	BBPreclaim(c);
