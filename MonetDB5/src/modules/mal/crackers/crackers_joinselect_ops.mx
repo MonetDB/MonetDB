@@ -160,7 +160,6 @@ CRKjointhetauselect_@1(int *vid, int *bid, @1 *val, str *OP, int *left, bit *inp
 
 	if (op[0] == '=') {
 		low = val; 
-		high = NULL;
 	} else if (op[0] == '<') {
 		high = val;
 		rin = (op[1] == '=');

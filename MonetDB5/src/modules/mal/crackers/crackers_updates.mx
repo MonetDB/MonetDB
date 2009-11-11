@@ -307,11 +307,10 @@ str
 CRKmergeInsertionsB_Force_@1_@4(int *k, int *bid, int *new){
 	oid startPosition = 0;
 	oid endPosition;
-	int endPositionStatus   = -1;
 	@1 *hgh;
 	bit inclusive = TRUE;
 
-	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3,@4)@
+	@:mergeInsertionsFromTheEndBodyIb(@1,@2,@3,@4)@
 
 	(void)k;
 	next = BUNlast(b) - (oid)1;
@@ -366,7 +365,6 @@ str
 mergeInsertionsB_@1_@4(int *bid, int *new, oid startPosition, oid endPosition){
 	@1 *hgh;
 	bit inclusive = TRUE;
-	int endPositionStatus   = 0;
 	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3,@4)@
 
 	next = BUNlast(b) - 1;
@@ -388,7 +386,6 @@ mergeInsertionsBGradually_@1_@4(int *bid, int *new, oid startPosition, oid endPo
 	/* First merge then shrink the insertions column */
 	@1 *hgh;
 	bit inclusive = TRUE;
-	int endPositionStatus   = 0;
 	@:mergeInsertionsFromTheEndBodyI(@1,@2,@3,@4)@
 
 	next = BUNlast(b) - 1;
@@ -442,10 +439,6 @@ mergeInsertionsBRipple_@1_@4(BAT *b, BAT *u, oid startPosition, oid endPosition,
 		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker index");
 	}
 
-	/*if (endPositionStatus == -1){
-		endPosition = BATcount(u) - 1;
-		endPositionStatus = 0;
-	}*/
 	insertions = endPosition - startPosition + 1;
 
 	/* sort in place the insertions bat */
@@ -532,7 +525,7 @@ mergeInsertionsBRipple_@1_@4(BAT *b, BAT *u, oid startPosition, oid endPosition,
 		/* move values out. If we get into the next piece then we simply delete it */
 		for (i=0; i<toRippleBuns; i++){
 		
-			if (i == buns && crkt < crkLast){
+			if (i == buns && crkt < crkLast && NextNode!=NULL){
 				NextNode->deleted = TRUE;
 				if  ((NextNode =findNextPiece(NextNode)) == NULL)
 					buns = values = BATcount(b) - prevPos - 1;
@@ -760,10 +753,6 @@ mergeDeletionsGraduallyRipple_@1_@4(int *bid, int *del, oid startPosition, oid e
 		throw(MAL, "crackers.mergeDeletions_@1", "Cannot access cracker BAT");
 	}
 
-	/*if (endPositionStatus == -1){
-		endPosition = BATcount(u) - 1;
-		endPositionStatus = 0;
-	}*/
 	deletions = endPosition - startPosition + 1;
 
 	remainingDel = deletions;
@@ -1156,10 +1145,84 @@ appendDeletions(int *del, int position){
 		BBPunfix(c->batCacheid);
 		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker BAT");
 	}
-	if (endPositionStatus == -1){
-		endPosition = BATcount(u) - 1;
-		endPositionStatus = 0;
+
+	insertions = endPosition - startPosition + 1;
+
+	/* sort in place the insertions bat */
+	if (u->tsorted == FALSE){
+		u->batRestricted = BAT_WRITE;
+		BATmirror(BATorder(BATmirror(u)));
 	}
+
+	remainingIns = insertions;
+	prevcrsize = BATcount(b);
+	insFirst = BUNfirst(u);	
+
+	/* make room for the new tuples */
+	if ( insertions > BATcapacity(b) - BATcount(b) ){
+		BUN ncap;
+		BUN grows;
+		needed = insertions - (BATcapacity(b) - BATcount(b));
+                ncap = BATcapacity(b) + needed;
+                grows = BATgrows(b);
+                if (ncap > grows)
+                        grows = ncap;
+
+                if (BATextend(b, grows) == NULL)
+                        throw(MAL, "crackers.mergeInsertions_@1", "Failed to make room for the new values");
+        }
+	
+	insh 	 = (@4*)Hloc(u, insFirst + endPosition);
+	inst 	 = (@1*)Tloc(u, insFirst + endPosition);
+	idxFirst = BUNfirst(c);
+	crkFirst = BUNfirst(b);
+	prevPos = prevcrsize - 1;
+@
+
+@= mergeInsertionsFromTheEndBodyIb
+/*same as above only diffrence is -> endPosition = BATcount(u) - 1*/
+        BAT *c, *u, *b;
+	BUN idxFirst, cur, crkFirst, insFirst, next, write;
+	oid *curPos;
+	@4 *insh, *crkh;
+	@1  *inst, *crkt, *curVal;
+	int position = -1;
+	struct Node *IndexNode = NULL;
+	oid prevPos, prevcrsize, insertions, remainingIns, buns, needed;
+	struct Node *prevNode =NULL;
+	@4 *startH, *endH;
+	@1 *startT, *endT;
+
+	{
+		int i;
+		for (i = 0; i < maxCrackMap; i++)
+			if (CrackerIndex[i].bid == *bid){
+				position = i;
+				break;	
+			}
+	}
+
+        if ((u = BATdescriptor(*new)) == NULL)
+                throw(MAL, "crackers.mergeInsertions_@1", "Cannot access insertions BAT");
+
+	/* abort if there are no insertions to merge */	
+	if (BATcount(u) == 0) {
+		BBPunfix(u->batCacheid);
+		return MAL_SUCCEED;
+	}
+
+	if ((c = BATdescriptor(CrackerIndex[position].cid)) == NULL){
+		BBPunfix(u->batCacheid);
+		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker index");
+	}
+	if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL){
+		BBPunfix(u->batCacheid);
+		BBPunfix(c->batCacheid);
+		throw(MAL, "crackers.mergeInsertions_@1", "Cannot access cracker BAT");
+	}
+
+	endPosition = BATcount(u) - 1;
+
 	insertions = endPosition - startPosition + 1;
 
 	/* sort in place the insertions bat */
@@ -1200,13 +1263,14 @@ appendDeletions(int *del, int position){
 	/* First position after the last value of this piece. 
            Here we will start moving values we shift from the begginning of the piece */
 		
-	write  = next + 1 - (prevNode==NULL?0:prevNode->hols);
+	prevholes = prevNode==NULL?0:prevNode->hols;
+	write  = next + 1 - prevholes;
 
 	cur    = idxFirst + (IndexNode->position);
         curPos = (oid*)Hloc(c, cur);
 	curVal = (@1 *)Tloc(c, cur);
 
-	buns   = prevPos - (*curPos) - (prevNode==NULL?0:prevNode->hols); /* find out how many values this piece has */
+	buns   = prevPos - (*curPos) - prevholes; /* find out how many values this piece has */
 
 	/* prevPos takes the correct value for the next iteration */
 	prevPos = *curPos;
@@ -1301,6 +1365,7 @@ appendDeletions(int *del, int position){
 	/* merge for the last piece only */
 	if ( remainingIns > 0) {
 		/* get the last piece */
+		lng prevholes=0;
 		IndexNode = findNodeL_@1(*hgh, inclusive, CrackerIndex[position].Tree, c, idxFirst, NULL);
 		@:mergeLoop(@1,@2,@3,@4)@
 	}
@@ -1310,6 +1375,7 @@ appendDeletions(int *del, int position){
 	/* Here the actual merging happens. Starting from the piece where next belongs we continuously 
 	   insert and shift until there are no more insertions or pieces */
 	while ( remainingIns > 0) {
+		lng prevholes=0;
 		IndexNode = findPreviousPieceWalkingBack(prevNode);
 		@:mergeLoop(@1,@2,@3,@4)@
 	}

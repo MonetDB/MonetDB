@@ -356,7 +356,6 @@ CRKjointhetaSelectSideways_@2(int *vid, int *bid, @2 *val, str *OP){
 
 	if (op[0] == '=') {
 		low = val; 
-		high = NULL;
 	} else if (op[0] == '<') {
 		high = val;
 		rin = (op[1] == '=');
@@ -446,7 +445,6 @@ CRKjointhetaSelectSideways_P_@1_@2(int *vid, int *bid, int *pbid, int *pivot, @1
 
 	if (op[0] == '=') {
 		low = val; 
-		high = NULL;
 	} else if (op[0] == '<') {
 		high = val;
 		rin = (op[1] == '=');

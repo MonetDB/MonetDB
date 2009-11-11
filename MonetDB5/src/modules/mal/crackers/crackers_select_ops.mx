@@ -172,7 +172,6 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 
 	if (op[0] == '=') {
 		low = val; 
-		high = NULL;
 	} else if (op[0] == '<') {
 		high = val;
 		rin = (op[1] == '=');
