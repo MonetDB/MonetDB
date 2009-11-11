@@ -660,7 +660,7 @@ disconnect_catalog(mvc *sql, dlist *qname)
 	}
 }
 
-static void
+static char *
 as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 {
 	if (column_spec) {
@@ -672,6 +672,8 @@ as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 			stmt *st = m->data;
 			sql_subtype *tp = tail_type(st);
 
+			if (mvc_bind_column(sql, t, cname))
+				return cname;
 			mvc_create_column(sql, t, cname, tp);
 		}
 	} else {
@@ -682,103 +684,14 @@ as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 			char *cname = column_name(st);
 			sql_subtype *tp = tail_type(st);
 
+			if (mvc_bind_column(sql, t, cname))
+				return cname;
 			mvc_create_column(sql, t, cname, tp);
 			_DELETE(cname);
 		}
 	}
-}
-
-#if 0
-static stmt *
-view_rename_columns( mvc *sql, char *name, stmt *sq, dlist *column_spec)
-{
-	dnode *n = column_spec->h;
-	node *m = sq->op1.lval->h;
-	list *l = create_stmt_list();
-
-	for (; n && m; n = n->next, m = m->next) {
-		char *cname = n->data.sval;
-		stmt *st = stmt_dup(m->data);
-
-		st = stmt_alias(st, _strdup(name), _strdup(cname));
-		list_append(l, st);
-	}
-	stmt_destroy(sq);
-	if (n || m) {
-		list_destroy(l);
-		return sql_error(sql, 02, "Column lists do not match");
-	}
-	return stmt_list(l);
-}
-
-static stmt *
-create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent)
-{
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	int instantiate = (sql->emode == m_instantiate || !persistent);
-	int create = (!instantiate && sql->emode != m_deps);
-
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
-
-	if (s == NULL)
-		s = ss;
-
-	(void) check;		/* Stefan: unused!? */
-
-	if (create && (t = mvc_bind_table(sql, s, name)) != NULL) {
-		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use", name);
-	} else if (create && !schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
-	} else if (query) {
-		char emode = sql->emode;
-		exp_kind ek = {type_value, card_relation, TRUE};
-		stmt *sq = NULL;
-		char *q = QUERY(sql->scanner);
-
-		if (query->token == SQL_SELECT) {
-			SelectNode *sn = (SelectNode *) query;
-
-			if (sn->limit >= 0)
-				return sql_error(sql, 01, "CREATE VIEW: LIMIT not supported");
-			if (sn->orderby)
-				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
-		}
-
-		if (create) /* for subtable we only need direct dependencies */
-			sql->emode = m_deps;
-		sq = scope_subtable(sql, NULL, query, ek );
-		sql->emode = emode;
-		if (!sq)
-			return NULL;
-
-		if (create) {
-			t = mvc_create_view(sql, s, name, q, 0);
-			as_subquery( sql, t, sq, column_spec );
-		}
-		if (!persistent && column_spec) 
-			sq = view_rename_columns( sql, name, sq, column_spec);
-		if (create && sq && persistent) {
-			list *view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
-			list *id_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
-			list *func_id_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
-			mvc_create_dependencies(sql, id_l, t->base.id, VIEW_DEPENDENCY);
-			mvc_create_dependencies(sql, view_id_l, t->base.id, VIEW_DEPENDENCY);
-			mvc_create_dependencies(sql, func_id_l, t->base.id, VIEW_DEPENDENCY);
-			list_destroy(id_l);
-			list_destroy(view_id_l);
-			list_destroy(func_id_l);
-			stmt_destroy(sq);
-			return stmt_none();
-		}
-		return sq;
-	}
 	return NULL;
 }
-#endif
 
 static stmt *
 drop_view(mvc *sql, dlist *qname, int drop_action)
@@ -1808,6 +1721,8 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		}
 		return list2stmt(new_columns);
 	} else { /* [col name list] as subquery with or without data */
+
+		char *n;
 		stmt *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
 		dlist *column_spec = as_sq->h->data.lval;
@@ -1822,7 +1737,11 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 
 		/* create table */
 		t = mvc_create_table(sql, s, name, 0, temp, commit_action, -1);
-		as_subquery(sql, t, sq, column_spec);
+		if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
+			sql_error(sql, 01, "CREATE TABLE: duplicate column name %s", n);
+			stmt_destroy(sq);
+			return NULL;
+		}
 
 		/* insert query result into this table */
 		if (with_data) {

@@ -1874,9 +1874,10 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				} else 
 					err = 1;
 
-				if (err)
+				if (err) {
 					list_append(rel->exps, exp_dup(e));
-				else
+					res = rel;
+				} else
 					(*changes)++;
 			} else {
 				list_append(rel->exps, exp_dup(e));

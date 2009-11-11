@@ -110,6 +110,7 @@ semijoin_bug.SF-2869818
 case_evaluates_all_branches.SF-2893484
 segv_for_unknown_identifier_in_subquery.SF-2874045
 create_table_dup_name.SF-2879005
+union_where_combined.SF-2887282
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.
