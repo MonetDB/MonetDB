@@ -1,5 +1,4 @@
-import os, sys
+from MonetDBtesting import process
 
-cltcmd = "%s -uthis_user_does_not_exist -Pthis_password_does_not_exist" % (os.getenv('SQL_CLIENT'))
-
-os.system(cltcmd);
+clt = process.client('sql', user = 'this_user_does_not_exist', passwd = 'this_password_does_not_exist')
+clt.wait()
