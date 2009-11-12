@@ -940,13 +940,15 @@ push_semijoin( stmt *select, stmt *s )
 	return NULL;
 }
 
-stmt *
-push_select_stmt( list *l, stmt *sel )
+static stmt *
+push_select_stmt( mvc *c, list *l, stmt *sel )
 {
 	node *n;
 
 	for (n = l->h; n; n = n->next) {
-		sel = push_semijoin(stmt_dup(n->data), sel);
+		stmt *s = rel2bin(c, n->data);
+
+		sel = push_semijoin(s, sel);
 	}
 	return sel;
 }
@@ -1111,7 +1113,7 @@ rel2bin(mvc *c, stmt *s)
 			sel = stmt_dup(n->data); 
 			list_remove_node(l, n);
 
-			sel = push_select_stmt(l, sel);
+			sel = push_select_stmt(c, l, sel);
 			res = rel2bin(c, sel);
 			stmt_destroy(sel);
 		}
