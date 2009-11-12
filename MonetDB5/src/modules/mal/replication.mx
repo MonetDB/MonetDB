@@ -520,14 +520,16 @@ str MASTERopen(int *ret)
 			     "sql.transaction();\n"
 			     "slave.open(tag);\n",fcnTag)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if (master[i].buf == NULL)
+		if (master[i].buf == NULL){
+			mal_unset_lock(repLck, "replication");
 			throw(MAL, "replication.open", MAL_MALLOC_FAIL);
+		}
 		master[i].limit += 1024;
 		len = master[i].limit - master[i].top - 1;
 	}
 	master[i].top += l;
 	master[i].buf[master[i].top] = 0;
-	mal_unset_lock(repLck, RUNTIME_STREAM_FAILED);
+	mal_unset_lock(repLck, "replication");
 
 	*ret = fcnTag++;
 	return MAL_SUCCEED;
@@ -583,11 +585,9 @@ str MASTERclose(int *ret, int *tag)
 	master[i].buf[0] = 0;
 	master[i].top = 0;
 	master[i].tag = 0;
-	if (stream_errnr(repFile)) {
-		mal_unset_lock(repLck, "replication");
-		throw(MAL, "replication.close", RUNTIME_STREAM_FAILED);
-	}
 	mal_unset_lock(repLck, "replication");
+	if (stream_errnr(repFile)) 
+		throw(MAL, "replication.close", RUNTIME_STREAM_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -866,11 +866,11 @@ we should switch to a new log file once in a while.
 			continue;
 		}
 
+		/* avoid concurrent addition of log records */
 		mal_set_lock(repLck, "replication");
 		/* read the complete file [now trimmed to 64KB]*/
 		bs = bstream_create(s, 128 * BLOCK);
 		if (bstream_next(bs) < 0) {
-			mal_unset_lock(repLck, "replication");
 			bstream_destroy(bs);
 			showException( MAL, "master.send", RUNTIME_STREAM_WRITE);
 			break;
@@ -888,6 +888,7 @@ we should switch to a new log file once in a while.
 			mapi_close_handle(hdl);
 	} 
 
+	mal_unset_lock(repLck, "replication");
 #ifdef _DEBUG_REPLICATION_
 	printf("#replay thread finished \n");
 #endif
@@ -913,6 +914,18 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 			*uri, *usr, *pw, *tag);
 #endif
 
+	for ( i = 0; i < MAL_MAXCLIENTS; i++)
+		if ( masterstatus[i].uri == NULL){
+				if (free == MAL_MAXCLIENTS)
+					free = i;
+		} else
+			fnd |= strcmp(masterstatus[i].uri,*uri)== 0;
+
+	if ( fnd)
+		return MAL_SUCCEED; /* slave already known */
+	if ( free == MAL_MAXCLIENTS)
+		throw(MAL,"master.sync","Too many concurrent actions");
+
 	/* master makes a connection with the slave */
 	mapi = mapi_mapiuri(*uri, *usr, *pw, "msql");
 	if (mapi_error(mapi))
@@ -922,17 +935,6 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 	if (mapi_reconnect(mapi) != MOK)
 		throw(IO, "master.sync", "failed to connect to '%s': %s",
 				*uri, mapi_error_str(mapi));
-
-	for ( i = 0; i < MAL_MAXCLIENTS; i++)
-		if ( masterstatus[i].uri == NULL && free == MAL_MAXCLIENTS)
-			free = i;
-		else
-			fnd |= strcmp(masterstatus[i].uri,*uri)== 0;
-
-	if ( fnd)
-		return MAL_SUCCEED; /* slave already known */
-	if ( free == MAL_MAXCLIENTS)
-		throw(MAL,"master.sync","Too many concurrent actions");
 
 	masterstatus[free].uri= GDKstrdup(*uri);
 	masterstatus[free].tag= *tag;
@@ -1132,7 +1134,7 @@ create function slavelog ()
 BAT *
 SLAVEtable(void){
 	BAT *t;
-	t = BATnew(TYPE_str,TYPE_bat,4);
+	t = BATnew(TYPE_str,TYPE_bat,3);
 	if ( t == NULL)
 		return NULL;
 	if ( slavecommit == NULL ||
@@ -1177,11 +1179,14 @@ SLAVEdrop(int *ret, str *tag)
 {
 	Symbol prg;
 	Module mod;
+
+	mal_set_lock(repLck, "replication");
 	prg = findSymbol(NULL, getName("slave", 5), *tag);
 	mod = findModule(NULL, getName("slave", 5));
 	if (prg == NULL || mod == NULL)
 		throw(MAL, "slave.drop", "Symbol not found");
 	deleteSymbol(mod, prg);
+	mal_unset_lock(repLck, "replication");
 	(void)ret;
 	return MAL_SUCCEED;
 }
