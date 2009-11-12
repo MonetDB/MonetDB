@@ -198,6 +198,8 @@ CRKsizePendingInsertions(int *k, int *bid, int *pbid){
                 fprintf(stderr, " the crack index does not exist \n");
         if (CrackerIndex[i].iid > 0){
                 u = BATdescriptor(CrackerIndex[i].iid);
+		if (u == NULL)
+                	throw(MAL, "crack insertions", "Failed to access pending insertions.");
                 printf("\n pending insertions size: "BUNFMT" \n",BATcount(u));
                 BBPunfix(u->batCacheid);
         }
