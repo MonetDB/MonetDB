@@ -63,6 +63,7 @@ typedef struct{
 	char *separator;
 	size_t seplen;
 	char quote;
+	char *input;	/* area for tokenizer */
 	int *cols;	/* columns to handle */
 	char ***fields;
 } READERtask;
@@ -388,6 +389,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	task->separator = csep;
 	task->seplen = strlen(csep);
 	task->errbuf =  cntxt->errbuf;
+	task->input = GDKzalloc(b->size);
 
 	as->error = NULL;
 
@@ -578,6 +580,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		GDKfree(task->fields[i]);
 	GDKfree(task->fields);
 	GDKfree(task->time);
+	GDKfree(task->input);
 	GDKfree(task);
 
 	/* restore system setting */

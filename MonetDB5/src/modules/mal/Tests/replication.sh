@@ -22,12 +22,20 @@ mclient -lsql -d dbmaster -s "insert into tmp values(123);"
 mclient -lsql -d dbmaster -s "select * from tmp;"
 
 #log records are flushed with a small delay
-sleep 10
+sleep 7
 mclient -lsql -d dbslave -s "select * from tmp;"
 mclient -lsql -d dbslave -s "select * from slavelog();"
 
 # initiate the next propagation on the same log file
 mclient -lsql -d dbmaster -s "insert into tmp values(234);"
+mclient -lsql -d dbmaster -s "insert into tmp values(345);"
+sleep 7
+mclient -lsql -d dbslave -s "select * from tmp;"
+mclient -lsql -d dbslave -s "select * from slavelog();"
+
+# initiate the next propagation on the same log file
+mclient -lsql -d dbmaster -s "delete from tmp where i = 234;"
+sleep 7
 mclient -lsql -d dbslave -s "select * from tmp;"
 mclient -lsql -d dbslave -s "select * from slavelog();"
 
