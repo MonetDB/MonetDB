@@ -711,7 +711,7 @@ PFheuristic_index (PFpnode_t *root)
         PFpnode_t *push = stack[depth]->child[next_child];
         if (next_child < 2 && push) { /* PUSH child left-deep-first */
             int i, looplifted = 0;
-            if (push->kind == p_ord_ret || push->kind == p_let) {
+            if (push->kind == p_ord_ret || push->kind == p_let || push->kind == p_where) {
                 for(i=0; i <= depth; i++) {
                     if (stack[i]->kind == p_flwr) {
                         PFpnode_t *binds = stack[i];
@@ -720,14 +720,15 @@ PFheuristic_index (PFpnode_t *root)
                             if (next && next->kind == p_let) next = R(binds);
                             if (next && next->kind == p_bind) {
                                 PFpnode_t *var = L(next);
-                                if (var && var->kind == p_vars) looplifted = 1;
+                                if (var && var->kind == p_vars) looplifted++;
+                                next = R(binds);
                             }
                             binds = next;
                         } while(binds && binds->kind == p_binds);
                     }
                 }
             } 
-            if (looplifted) {
+            if (looplifted > (push->kind == p_where)) {
                 depth--; /* POP: do not rewrite below a flower block */
             } else {
                 stack[depth+1] = stack[depth]->child[next_child]; 
