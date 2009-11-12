@@ -63,9 +63,6 @@ Requires: MonetDB-devel >= 1.32
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 Requires: readline-devel, openssl-devel
-%if %{?_with_php:1}%{!?_with_php:0}
-Requires: php, php-devel
-%endif
 %if %{?_with_perl:1}%{!?_with_perl:0}
 Requires: perl, swig
 %if 0%{?fedora} >= 7
@@ -96,10 +93,6 @@ Summary: MonetDB php interface
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
 Requires: php
-%define php_extensiondir %(php-config --extension-dir)
-%if !%{?buildsystem}
-BuildRequires: php, php-devel
-%endif
 %endif
 
 %if %{?_with_perl:1}%{!?_with_perl:0}
@@ -306,9 +299,8 @@ rm -fr $RPM_BUILD_ROOT
 %if %{?_with_php:1}%{!?_with_php:0}
 %files php
 %defattr(-,root,root)
-%{php_extensiondir}/*
-%dir %{_datadir}/MonetDB/php
-%{_datadir}/MonetDB/php/*
+%dir %{_datadir}/php/monetdb
+%{_datadir}/php/monetdb/*
 %endif
 
 %if %{?_with_perl:1}%{!?_with_perl:0}

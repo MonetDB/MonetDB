@@ -31,13 +31,14 @@ Over..
 # 00:41:15 >  php -n -d extension_dir=/home/wouter/opt/MonetDB-Aug2009/lib64/php/modules -f /home/wouter/opt/MonetDB-Aug2009/lib/MonetDB/Tests/xquerysample.php 37056
 # 00:41:15 >  
 
+
 1
 2
 3
 4
-"aap"
-1.0
-attribute { "aap" } { "beer" }
+aap
+1.000000
+attribute aap { "beer" }
 <aap/>
 
 # 00:41:15 >  
