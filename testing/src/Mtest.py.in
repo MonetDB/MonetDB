@@ -3115,10 +3115,14 @@ def main(argv) :
     if par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
         clientsCONDS = {}
         GetCONDITIONALS(clientsCONDS, 'monetdb-clients')
-        for l in ('RUBYGEM', 'PYTHON', 'PHP', 'PERL_SWIG'):
+        for l in ('RUBYGEM', 'PYTHON', 'PERL_SWIG'):
             c = 'HAVE_'+l
             if clientsCONDS.has_key(c):
                 CONDITIONALS[c] = clientsCONDS[c]
+    if CheckExec('php'):
+        CONDITIONALS['HAVE_PHP'] = '#'
+#     else:
+#         CONDITIONALS['HAVE_PHP'] = ''
     if par['PACKAGE'] not in ('monetdb', 'monetdb-java'):
         monetdbCONDS = {}
         GetCONDITIONALS(monetdbCONDS, 'monetdb')

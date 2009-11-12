@@ -17,6 +17,8 @@
 
 MTSAFE
 
-SUBDIRS = native
-
-EXTRA_DIST_DIR = Cimpl phpdoc
+headers_php = {
+	DIR = datadir/php/monetdb
+	HEADERS = php inc
+	SOURCES = php_mapi.inc php_monetdb.php
+}

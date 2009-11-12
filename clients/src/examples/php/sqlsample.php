@@ -1,12 +1,7 @@
 #!/usr/bin/php 
 <?php
-if (!extension_loaded('monetdb')) {
-	$prefix = (PHP_SHLIB_SUFFIX == 'dll') ? 'php_' : '';
-	// note: PHP5 says it deprecates this, but I can't find
-	//       how to make PHP5 happy...
-	dl($prefix.'monetdb.'.PHP_SHLIB_SUFFIX) or
-		die("Unable to load monetdb module!");
-}
+require 'monetdb/php_monetdb.php';
+
 $db = monetdb_connect("sql", "localhost", $argv[1], "monetdb", "monetdb");
 $tables = monetdb_query('SELECT name FROM tables');
 

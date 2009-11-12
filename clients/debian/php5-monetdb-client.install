@@ -1,2 +1,1 @@
-debian/tmp/usr/share/MonetDB/php/*
-debian/tmp/usr/lib/php5/20060613*/monetdb.so*
+debian/tmp/usr/share/php/monetdb/*
