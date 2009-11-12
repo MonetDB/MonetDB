@@ -939,8 +939,8 @@ byvalue_request(
                 updCall?"true":"false");
     } else {
         ret = stream_printf(bs, XRPC_REQ_BODY, rpc_module, rpc_uri,
-                rpc_method, arity, iterc, xrpc_hostport,
-                seqnr, updCall?"true":"false");
+                rpc_method, arity, iterc, updCall?"true":"false",
+                xrpc_hostport, seqnr);
     }
     if (ret < 0) 
         return clean_up(bs, argcnt, iterc);

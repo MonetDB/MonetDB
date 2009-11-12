@@ -282,25 +282,25 @@ typedef struct shredBATdef {
 
 /* values of the static properties of a result BAT */
 static shredBATdef shredbatdef[SHRED_BATS] = {
- { MAP_PID,      "_map_pid",          TYPE_void, TYPE_void, 1.0/65336, 0}, 
+ { MAP_PID,      "_map_pid",          TYPE_void, TYPE_void, 1.0/65336, 2}, 
  { PRE_SIZE,     "_rid_size",         TYPE_void, TYPE_int,  1.0, 0}, 
  { PRE_SIZE,     "_rid_level",        TYPE_void, TYPE_chr,  1.0, 0}, 
  { PRE_SIZE,     "_rid_prop",         TYPE_void, TYPE_oid,  1.0, 0}, 
  { PRE_SIZE,     "_rid_kind",         TYPE_void, TYPE_chr,  1.0, 0}, 
- { PRE_SIZE,     "_rid_nid",          TYPE_void, TYPE_void, 1.0, 0}, 
- { NID_RID,      "_nid_rid",          TYPE_void, TYPE_void, 1.0, 0}, 
- { FRAG_ROOT,    "_frag_root",        TYPE_oid,  TYPE_oid,  0.0, 0}, 
- { QN_HISTOGRAM, "_qn_histogram",     TYPE_void, TYPE_lng,  0.0, 1}, 
+ { PRE_SIZE,     "_rid_nid",          TYPE_void, TYPE_void, 1.0, 2}, 
+ { NID_RID,      "_nid_rid",          TYPE_void, TYPE_void, 1.0, 2}, 
+ { FRAG_ROOT,    "_frag_root",        TYPE_oid,  TYPE_oid,  0.0, 2}, 
+ { QN_HISTOGRAM, "_qn_histogram",     TYPE_void, TYPE_lng,  0.0, 0}, 
  { QN_HISTOGRAM, "_qn_prefix_uri_loc",TYPE_void, TYPE_str,  0.0, 1}, 
  { QN_HISTOGRAM, "_qn_uri_loc",       TYPE_void, TYPE_str,  0.0, 0},
  { QN_HISTOGRAM, "_qn_prefix",        TYPE_void, TYPE_str,  0.0, 0}, 
  { QN_HISTOGRAM, "_qn_uri",           TYPE_void, TYPE_str,  0.0, 0}, 
  { QN_HISTOGRAM, "_qn_loc",           TYPE_void, TYPE_str,  0.0, 0}, 
  { PROP_TEXT,    "_prop_text",        TYPE_void, TYPE_str,  0.3, 0}, 
- { PROP_COM,     "_prop_com",         TYPE_void, TYPE_str,  0.0, 1}, 
+ { PROP_COM,     "_prop_com",         TYPE_void, TYPE_str,  0.0, 0}, 
  { PROP_INS,     "_prop_ins",         TYPE_void, TYPE_str,  0.0, 0}, 
  { PROP_TGT,     "_prop_tgt",         TYPE_void, TYPE_str,  0.0, 0}, 
- { PROP_VAL,     "_prop_val",         TYPE_void, TYPE_str,  0.1, 1}, 
+ { PROP_VAL,     "_prop_val",         TYPE_void, TYPE_str,  0.1, 0}, 
  { ATTR_OWN,     "_attr_own",         TYPE_void, TYPE_oid,  0.3, 0}, 
  { ATTR_OWN,     "_attr_qn",          TYPE_void, TYPE_oid,  0.3, 0}, 
  { ATTR_OWN,     "_attr_prop",        TYPE_void, TYPE_oid,  0.3, 0}
@@ -1707,7 +1707,7 @@ shredder_create(char *location,
                     shredCtx->dstBAT[sb->def->table].bat->batCacheid);
                 return shredder_free(shredCtx, 0);
             }
-            if (!sb->def->compress) {
+            if (sb->def->compress != 1) {
                 HASHremove(sb->bat); /* we don't maintain accelerators other than those explicity needed for compress */
             }
             sb->size = BUNlast(sb->bat);
@@ -1869,7 +1869,7 @@ shredder_stats(shredCtxStruct *shredCtx)
 
         stream_printf(GDKout, "# [%9s, ", sb->def->name);
         stream_printf(GDKout, "cnt=%d", cnt);
-        if (sb->def->compress) {
+        if (sb->def->compress == 1) {
             stream_printf(GDKout, ", dupl=%d(=%.f%%) ", sb->dupl,((sb->dupl+cnt)?100.0*(float)(cnt)/(float)(sb->dupl+cnt):100.0));
         }
         if (i == PRE_SIZE)
@@ -1932,20 +1932,13 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
          * in the size & kind BATs, we omit an expensive check to find out
          * whether it might still hold...)
          */
-        if (shredCtx->dstBAT[PRE_SIZE].bat->tkey == TRUE) {
-            shredCtx->dstBAT[PRE_SIZE].bat->tsorted = 0;
-            shredCtx->dstBAT[PRE_SIZE].bat->tdense = 0;
-            shredCtx->dstBAT[PRE_SIZE].bat->T->nonil = 0;
-            BATkey(BATmirror(shredCtx->dstBAT[PRE_SIZE].bat), FALSE);
-        }
-        if (shredCtx->dstBAT[PRE_KIND].bat->tkey == TRUE) {
-            shredCtx->dstBAT[PRE_KIND].bat->tsorted = 0;
-            shredCtx->dstBAT[PRE_KIND].bat->tdense = 0;
-            shredCtx->dstBAT[PRE_KIND].bat->T->nonil = 0;
-            BATkey(BATmirror(shredCtx->dstBAT[PRE_KIND].bat), FALSE);
-        }
-        if (shredCtx->dstBAT[ATTR_PROP].bat->tkey == TRUE) {
-            BATkey(BATmirror(shredCtx->dstBAT[ATTR_PROP].bat), FALSE);
+        for(i=0; i<SHRED_BATS; i++) {
+            if (shredbatdef[i].compress == 0 && shredCtx->dstBAT[i].bat->tkey == TRUE) {
+                shredCtx->dstBAT[i].bat->tsorted = 0;
+                shredCtx->dstBAT[i].bat->tdense = 0;
+                shredCtx->dstBAT[i].bat->T->nonil = 0;
+                BATkey(BATmirror(shredCtx->dstBAT[i].bat), FALSE);
+            }
         }
     }
     assert((shredCtx->updatable && shredCtx->nnode_nid <= newsize) || (!shredCtx->updatable && shredCtx->nnode_nid == newsize));

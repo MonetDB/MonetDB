@@ -246,6 +246,7 @@ SQLinit(void)
 
 	MT_lock_init( &sql_contextLock, "sql_contextLock");
 
+	mal_set_lock(sql_contextLock,"SQL init");
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack		= &monet5_freestack;
 	be_funcs.fcode		= &monet5_freecode;
@@ -267,8 +268,10 @@ SQLinit(void)
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
 	if (!GDKembedded && MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL) < 0) {
+		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
+	mal_unset_lock(sql_contextLock,"SQL init");
 	return MAL_SUCCEED;
 }
 
