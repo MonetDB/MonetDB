@@ -1393,7 +1393,7 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 			if (a1->type == e_func && !a1f->func->s && 
 			     !strcmp(a1f->func->base.name, "sql_div")) {
 				list *args = a1->l;
-				sql_exp *le = exp_dup(args->h->next->data), *o;
+				sql_exp *le = exp_dup(args->h->data), *o;
 				sql_exp *re = exp_dup(args->h->next->data);
 
 				/* if (cond) then val else const */
@@ -1413,7 +1413,7 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 			if  (a2->type == e_func && !a2f->func->s && 
 			     !strcmp(a2f->func->base.name, "sql_div")) { 
 				list *args = a2->l;
-				sql_exp *le = exp_dup(args->h->next->data), *o;
+				sql_exp *le = exp_dup(args->h->data), *o;
 				sql_exp *re = exp_dup(args->h->next->data);
 
 				/* if (cond) then const else val */
@@ -1964,9 +1964,10 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				} else 
 					err = 1;
 
-				if (err)
+				if (err) {
 					list_append(rel->exps, exp_dup(e));
-				else
+					res = rel;
+				} else
 					(*changes)++;
 			} else {
 				list_append(rel->exps, exp_dup(e));

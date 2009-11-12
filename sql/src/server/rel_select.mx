@@ -5019,8 +5019,6 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 	int create = (!instantiate && !deps);
 
 	(void) check;		/* Stefan: unused!? */
-	(void)column_spec;
-
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
 	if (s == NULL)

@@ -12,18 +12,18 @@ server 11 : "module(pathfinder); mil_start();"
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 11 : "module(pathfinder); mil_start();", client 1: XQUERY
+server 11 : "module(pathfinder); mil_start();", client 1: xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>111</XQueryResult>
 
-server 11 : "module(pathfinder); mil_start();", client 2: (XQUERY) XQUERY
+server 11 : "module(pathfinder); mil_start();", client 2: (xquery) xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>112</XQueryResult>
 
-server 11 : "module(pathfinder); mil_start();", client 3: (XQUERY) (XQUERY) MIL
+server 11 : "module(pathfinder); mil_start();", client 3: (xquery) (xquery) mil
 [ 113 ]
 
-server 11 : "module(pathfinder); mil_start();", client 4: (XQUERY) (XQUERY) (MIL) MIL
+server 11 : "module(pathfinder); mil_start();", client 4: (xquery) (xquery) (mil) mil
 [ 114 ]
 quit();
 
@@ -33,18 +33,18 @@ server 12 : "module(pathfinder); mil_start();"
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 12 : "module(pathfinder); mil_start();", client 1: XQUERY
+server 12 : "module(pathfinder); mil_start();", client 1: xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>121</XQueryResult>
 
-server 12 : "module(pathfinder); mil_start();", client 2: (XQUERY) MIL
+server 12 : "module(pathfinder); mil_start();", client 2: (xquery) mil
 [ 122 ]
 
-server 12 : "module(pathfinder); mil_start();", client 3: (XQUERY) (MIL) XQUERY
+server 12 : "module(pathfinder); mil_start();", client 3: (xquery) (mil) xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>123</XQueryResult>
 
-server 12 : "module(pathfinder); mil_start();", client 4: (XQUERY) (MIL) (XQUERY) MIL
+server 12 : "module(pathfinder); mil_start();", client 4: (xquery) (mil) (xquery) mil
 [ 124 ]
 quit();
 
@@ -54,18 +54,18 @@ server 13 : "module(pathfinder); mil_start();"
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 13 : "module(pathfinder); mil_start();", client 1: MIL
+server 13 : "module(pathfinder); mil_start();", client 1: mil
 [ 131 ]
 
-server 13 : "module(pathfinder); mil_start();", client 2: (MIL) XQUERY
+server 13 : "module(pathfinder); mil_start();", client 2: (mil) xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>132</XQueryResult>
 
-server 13 : "module(pathfinder); mil_start();", client 3: (MIL) (XQUERY) XQUERY
+server 13 : "module(pathfinder); mil_start();", client 3: (mil) (xquery) xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>133</XQueryResult>
 
-server 13 : "module(pathfinder); mil_start();", client 4: (MIL) (XQUERY) (XQUERY) MIL
+server 13 : "module(pathfinder); mil_start();", client 4: (mil) (xquery) (xquery) mil
 [ 134 ]
 quit();
 
@@ -75,17 +75,17 @@ server 14 : "module(pathfinder); mil_start();"
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 14 : "module(pathfinder); mil_start();", client 1: XQUERY
+server 14 : "module(pathfinder); mil_start();", client 1: xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>141</XQueryResult>
 
-server 14 : "module(pathfinder); mil_start();", client 2: (XQUERY) MIL
+server 14 : "module(pathfinder); mil_start();", client 2: (xquery) mil
 [ 142 ]
 
-server 14 : "module(pathfinder); mil_start();", client 3: (XQUERY) (MIL) MIL
+server 14 : "module(pathfinder); mil_start();", client 3: (xquery) (mil) mil
 [ 143 ]
 
-server 14 : "module(pathfinder); mil_start();", client 4: (XQUERY) (MIL) (MIL) XQUERY
+server 14 : "module(pathfinder); mil_start();", client 4: (xquery) (mil) (mil) xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>144</XQueryResult>
 quit();
@@ -96,17 +96,17 @@ server 15 : "module(pathfinder); mil_start();"
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 15 : "module(pathfinder); mil_start();", client 1: MIL
+server 15 : "module(pathfinder); mil_start();", client 1: mil
 [ 151 ]
 
-server 15 : "module(pathfinder); mil_start();", client 2: (MIL) XQUERY
+server 15 : "module(pathfinder); mil_start();", client 2: (mil) xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>152</XQueryResult>
 
-server 15 : "module(pathfinder); mil_start();", client 3: (MIL) (XQUERY) MIL
+server 15 : "module(pathfinder); mil_start();", client 3: (mil) (xquery) mil
 [ 153 ]
 
-server 15 : "module(pathfinder); mil_start();", client 4: (MIL) (XQUERY) (MIL) XQUERY
+server 15 : "module(pathfinder); mil_start();", client 4: (mil) (xquery) (mil) xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>154</XQueryResult>
 quit();
@@ -117,17 +117,17 @@ server 16 : "module(pathfinder); mil_start();"
 # Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 16 : "module(pathfinder); mil_start();", client 1: MIL
+server 16 : "module(pathfinder); mil_start();", client 1: mil
 [ 161 ]
 
-server 16 : "module(pathfinder); mil_start();", client 2: (MIL) MIL
+server 16 : "module(pathfinder); mil_start();", client 2: (mil) mil
 [ 162 ]
 
-server 16 : "module(pathfinder); mil_start();", client 3: (MIL) (MIL) XQUERY
+server 16 : "module(pathfinder); mil_start();", client 3: (mil) (mil) xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>163</XQueryResult>
 
-server 16 : "module(pathfinder); mil_start();", client 4: (MIL) (MIL) (XQUERY) XQUERY
+server 16 : "module(pathfinder); mil_start();", client 4: (mil) (mil) (xquery) xquery
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>164</XQueryResult>
 quit();

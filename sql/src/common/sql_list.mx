@@ -279,15 +279,14 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 list *
 list_select(list *l, void *key, fcmp cmp, fdup dup)
 {
-	list *res = list_create(l->destroy);
+	list *res = NULL;
 	node *n = NULL;
 
-	if (key) {
-		for (n = l->h; n; n = n->next) {
-			if (cmp(n->data, key) == 0) {
+	if (key && l) {
+		res = list_create(l->destroy);
+		for (n = l->h; n; n = n->next) 
+			if (cmp(n->data, key) == 0) 
 				list_append(res, dup(n->data));
-			}
-		}
 	}
 	return res;
 }
