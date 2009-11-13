@@ -37,11 +37,11 @@ function user.main():void;
 end main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  2 _4:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
-    bat.append(b,2);                    #  3 _6:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) {G}
-    bat.append(b,3);                    #  4 _8:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _9:int) {G}
-    bat.append(b,4);                    #  5 _10:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _11:int) {G}
-    bat.append(b,5);                    #  6 _12:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _13:int) {G}
+    bat.append(b,1);                    #  2 _4:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
+    bat.append(b,2);                    #  3 _6:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) {G}
+    bat.append(b,3);                    #  4 _8:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _9:int) {G}
+    bat.append(b,4);                    #  5 _10:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _11:int) {G}
+    bat.append(b,5);                    #  6 _12:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _13:int) {G}
     c := bat.partition(b,2,0);          #  7 c:bat[:oid,:int] := CMDbatpartition2(b:bat[:oid,:int], _7:int, _15:int) {G}
     io.print(c);                        #  8 _16:void := IOprint_val(c:bat[:oid,:int]) 
     d := bat.partition(b,2,1);          #  9 d:bat[:oid,:int] := CMDbatpartition2(b:bat[:oid,:int], _7:int, _5:int) {G}
