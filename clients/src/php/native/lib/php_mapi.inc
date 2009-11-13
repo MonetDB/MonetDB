@@ -523,7 +523,6 @@
 				return -1;
 			}
 			
-			// print strlen($data)+2 . "-" . $buf . "\n";
 		}
 		return $buf;
 	}
