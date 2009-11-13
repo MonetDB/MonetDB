@@ -47,6 +47,9 @@ running database.
 step 2) Create a dump of the master database using the msqldump(1) tool.  
 
 step 3) To initiate a slave, simply load the master snapshot.
+[TODO Alternatively, the catalog is shipped to the slave, whereafter the
+infrastructure for Octopus could be used to pull the data from the master.
+Even better, the slave performs both pulling the catalog and data.]
 
 step 4) Run monetdb(1) to turn the database into a slave by setting its "slave" property to the URI of the master. 
 The precise URI can be obtained issuing the command
@@ -169,6 +172,10 @@ of their replay log table.
 A slave starts replicating off the
 master starting from the tag maintained by the master for each slave.
 The master can be optionally forced to start at a particular tag.
+
+COPY INTO commands cause the master to invalidate the images of
+all slaves. Capturing the input file and forwarding it to
+the slaves seems overly complicated.
 @{
 @mal
 module master;
@@ -180,6 +187,18 @@ comment "Create a replication record";
 command close(tag:int):void
 address MASTERclose
 comment "Close the replication record";
+
+command start():void
+address MASTERstart
+comment "Restart synchronisation with the slaves";
+
+command stop():void
+address MASTERstop
+comment "Stop synchronisation of the slaves";
+
+command invalidate():void
+address MASTERinvalidate
+comment "Invalidate all copies maintained at slaves";
 
 pattern append(s:str, t:str, c:str, :any_1, tag:int):void
 address MASTERappendValue
@@ -195,7 +214,7 @@ comment "Dump the BAT with deletions on the MAL log");
 
 pattern copy(sname:str, tname:str, tsep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, tag:int):void
 address MASTERcopy
-comment "Forward the content of a copy command";
+comment "A copy command leads to invalidation of the slave's image. A dump restore will be required.";
 
 pattern replay(uri:str, usr:str, pw:str, tag:int):void
 address MASTERreplay
@@ -279,7 +298,8 @@ replication_export int MASTERroleEnabled(void);
 replication_export str MASTERopen(int *ret);
 replication_export str MASTERclose(int *ret, int *tag);
 replication_export str MASTERstart(int *ret);
-replication_export str MASTERstartTag(int *ret, int *tag);
+replication_export str MASTERstop(int *ret);
+replication_export str MASTERinvalidate(int *ret);
 replication_export str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -338,6 +358,7 @@ static int endTag = 0;		/* last transaction identifier given */
 static int fcnTag = 0;		/* unique labeling of the functions */
 static char logFile[PATHLENGTH]; 
 static stream *repFile;
+static int sendLogs;		/* permit forwarding of log records */
 
 /* slave synchronisation status */
 static BAT *slavecommit;
@@ -444,6 +465,7 @@ MASTERprelude(int *ret){
 	stream_printf(GDKout,"#last log file log%05d-%05d\n", startTag,endTag);
 #endif
 	startTag = endTag;
+	sendLogs = TRUE;
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
@@ -799,7 +821,12 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(tail);
 	return MAL_SUCCEED;
 }
-
+@-
+The input to the copy command comes from a stream, e.g. stdin. This makes
+forwarding the updates to the slave cumbersome at this point.
+Therefore, we simply freeze the version retained at the slave,
+requesting it to resynchronize from start.
+@c
 str
 MASTERcopy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -843,7 +870,7 @@ MASTERsend(void *arg)
 	/* find the last replication log file */
 	master = GDKgetenv_istrue("replication_master") &&
 			 GDKgetenv("replication_slave") == NULL;
-	if ( !master)
+	if ( !master || sendLogs == 0)
 		return;
 
 @-
@@ -857,10 +884,14 @@ we should switch to a new log file once in a while.
 		if (nxt < 0){
 			/* wait for log file to become available */
 			MT_sleep_ms(REPLICADELAY);
+			if ( sendLogs == 0)	/* stop sending */
+				break; 
 			if ( mapi_ping(masterstatus[idx].m) != MOK)
 				break; /* slave is gone */
 			continue;
 		}
+		if ( sendLogs == 0)	/* stop sending */
+			break; 
 #ifdef _DEBUG_REPLICATION_
 		stream_printf(GDKout,"#sent log file %s\n",logFile);
 #endif
@@ -902,6 +933,42 @@ we should switch to a new log file once in a while.
 	masterstatus[idx].uri= NULL;
 	masterstatus[idx].m = NULL;
 	masterstatus[idx].tag= 0;
+}
+@-
+Stopping all slave synchronisation is needed before you perform
+administrative updates.
+@c
+str
+MASTERstop(int *ret)
+{
+	(void) ret;
+	sendLogs = 0;
+	return MAL_SUCCEED;
+}
+str
+MASTERstart(int *ret)
+{
+	(void) ret;
+	sendLogs = TRUE;
+	return MAL_SUCCEED;
+}
+@-
+The master may decide that all images held by the slaves have become invalid.
+This should cause a rebuilt from scratch when a slave attempts to synchronize.
+Invalidation of the snapshot has the side-effect of cleaning up the master
+log directory. This means, we can not simply inject an invalidation message
+in the log stream. Instead, we have to a snapshot marker somewhere, which
+is returned by the slave upon re-connection.
+@c
+str
+MASTERinvalidate(int *ret)
+{
+	(void) ret;
+	sendLogs = 0;
+	GDKremovedir(MASTER);
+
+	/* what to do next? */
+	throw(MAL,"master.invalidate","Not yet implemented");
 }
 @-
 The slave process sents a remote master.sync request with all
