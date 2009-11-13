@@ -967,6 +967,7 @@ MASTERinvalidate(int *ret)
 	(void) ret;
 	sendLogs = 0;
 	GDKremovedir(MASTER);
+	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
 
 	/* what to do next? */
 	throw(MAL,"master.invalidate","Not yet implemented");
