@@ -113,6 +113,7 @@ create_table_dup_name.SF-2879005
 union_where_combined.SF-2887282
 unique_constraint_on_char.SF-2873564
 and_and_or_type_exception.SF-2896012
+orderby_with_row_number.SF-2895791
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.
