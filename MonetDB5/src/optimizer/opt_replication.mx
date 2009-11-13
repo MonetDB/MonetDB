@@ -64,6 +64,9 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		return 0;
 
 	pushInstruction(mb, old[0]);
+	p = newAssignment(mb);
+	p = pushStr(mb,p, GDKgetenv("merovingian_uri"));
+	getArg(p,0)= newVariable(mb,GDKstrdup("master"),TYPE_str);
 	p = newStmt(mb, putName("master", 6), openRef);
 	tag = getArg(p, 0);
 
@@ -105,6 +108,19 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			clrFunction(q);
 			setModuleId(q, putName("master", 6));
 			setFunctionId(q, deleteRef);
+			pushInstruction(mb, q);
+			pushArgument(mb, q, tag);
+			actions++;
+		}
+
+		if (getModuleId(p) == sqlRef &&
+				strcmp(getFunctionId(p) ,"copy_from") == 0)
+		{
+			/* copy into stuff */
+			q = copyInstruction(p);
+			clrFunction(q);
+			setModuleId(q, putName("master", 6));
+			setFunctionId(q, copyRef);
 			pushInstruction(mb, q);
 			pushArgument(mb, q, tag);
 			actions++;
