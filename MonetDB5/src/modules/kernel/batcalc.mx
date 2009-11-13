@@ -1256,26 +1256,77 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 	} else if (b->T->nonil) {
 		for (;p<q; p++, t++, o++) {
 			if (*t == @3_nil) {
-				*o = bit_nil;
-				bn->T->nonil = 0;
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*p)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (!*p)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
 			} else 
 				*o = (*p @2 *t);
 		}
 	} else if (right->T->nonil)
 		for (;p<q; p++, t++, o++) {
 			if (*p == @3_nil) {
-				*o = bit_nil;
-				bn->T->nonil = 0;
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*t)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (!*t)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
 			} else 
 				*o = (*p @2 *t);
 		}
 	else
 		for (;p<q; p++, t++, o++) {
-			if (*p == @3_nil || *t == @3_nil) {
-				*o = bit_nil;
-				bn->T->nonil = 0;
-			} else 
-				*o = (*p @2 *t);
+			if (*p == @3_nil) {
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*t != @3_nil && *t)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (*t != @3_nil && !*t)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
+			} else if (*t == @3_nil) {
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*p)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (!*p)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
+			} else
+				*o = *p @2 *t;
 		}
 
 	BATsetcount(bn, BATcount(b));
@@ -1320,24 +1371,75 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 	} else if (b->T->nonil) {
 		for (;p<q; p++, t++, o++) {
 			if (*t == @3_nil) {
-				*o = bit_nil;
-				bn->T->nonil = 0;
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*p)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (!*p)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
 			} else 
 				*o = (*p @2 *t);
 		}
 	} else if (right->T->nonil)
 		for (;p<q; p++, t++, o++) {
-			if (*p == @3_nil ) {
-				*o = bit_nil;
-				bn->T->nonil = 0;
+			if (*p == @3_nil) {
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*t)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (!*t)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
 			} else 
 				*o = (*p @2 *t);
 		}
 	else
 		for (;p<q; p++, t++, o++) {
-			if (*p == @3_nil || *t == @3_nil) {
-				*o = bit_nil;
-				bn->T->nonil = 0;
+			if (*p == @3_nil) {
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*t != @3_nil && *t)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (*t != @3_nil && !*t)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
+			} else if (*t == @3_nil) {
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*p)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (!*p)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
 			} else 
 				*o = (*p @2 *t);
 		}
@@ -1367,17 +1469,49 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 	q = (@3*)Tloc(b,BUNlast(b));
 		
 	if (*cst == @3_nil) {
+#if OPERATOR_@1 == OPERATOR_OR
+		for (;p<q; p++, o++)
+			if (*p != @3_nil && *p)
+				*o = 1;
+			else {
+				*o = bit_nil;
+				bn->T->nonil = 0;
+			}
+#else
+#if OPERATOR_@1 == OPERATOR_AND
+		for (;p<q; p++, o++)
+			if (*p != @3_nil && !*p)
+				*o = 0;
+			else {
+				*o = bit_nil;
+				bn->T->nonil = 0;
+			}
+#else
 		bn->T->nonil = 0;
 		for (;p<q; p++, o++) 
 			*o = bit_nil;
+#endif
+#endif
 	} else if (b->T->nonil )
 		for (;p<q; p++, o++)
 			*o = (*p @2 *cst);
 	else
 		for (;p<q; p++, o++) {
 			if( *p == @3_nil ) {
-				*o = bit_nil;
-				bn->T->nonil = 0;
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*cst)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (!*cst)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
 			} else 
 				*o = (*p @2 *cst);
 		}
@@ -1420,17 +1554,51 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 	q = (@3*)Tloc(b,BUNlast(b));
 		
 	if (*cst == @3_nil) {
-		bn->T->nonil = 0;
+#if OPERATOR_@1 == OPERATOR_OR
+		bn->T->nonil = 1;
 		for (;p<q; p++, o++)
+			if (*p != @3_nil && *p)
+				*o = 1;
+			else {
+				*o = bit_nil;
+				bn->T->nonil = 0;
+			}
+#else
+#if OPERATOR_@1 == OPERATOR_AND
+		bn->T->nonil = 1;
+		for (;p<q; p++, o++)
+			if (*p != @3_nil && !*p)
+				*o = 0;
+			else {
+				*o = bit_nil;
+				bn->T->nonil = 0;
+			}
+#else
+		bn->T->nonil = 0;
+		for (;p<q; p++, o++) 
 			*o = bit_nil;
-	} else if (b->T->nonil)
+#endif
+#endif
+	} else if (b->T->nonil )
 		for (;p<q; p++, o++)
 			*o = (*p @2 *cst);
 	else
 		for (;p<q; p++, o++) {
-			if (*p == @3_nil ) {
-				*o = bit_nil;
-				bn->T->nonil = 0;
+			if( *p == @3_nil ) {
+#if OPERATOR_@1 == OPERATOR_OR
+				if (*cst)
+					*o = 1;
+				else
+#endif
+#if OPERATOR_@1 == OPERATOR_AND
+				if (!*cst)
+					*o = 0;
+				else
+#endif
+				{
+					*o = bit_nil;
+					bn->T->nonil = 0;
+				}
 			} else 
 				*o = (*p @2 *cst);
 		}
@@ -1470,14 +1638,24 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 	@:baselineCstCode(@1,@2,flt,@3)@
 	@:baselineCstCode(@1,@2,dbl,@3)@
 @c
+/* these 8 macros are there to be able to do prepossessor-time conditionals */
+#define OPERATOR_GE 0
+#define OPERATOR_LE 1
+#define OPERATOR_GT 2
+#define OPERATOR_LT 3
+#define OPERATOR_EQ 4
+#define OPERATOR_NEQ 5
+#define OPERATOR_AND 6
+#define OPERATOR_OR 7
+
 @:operatorImpl(GE,>=)@
 @:operatorImpl(LE,<=)@
 @:operatorImpl(GT,>)@
 @:operatorImpl(LT,<)@
 @:operatorImpl(EQ,==)@
 @:operatorImpl(NEQ,!=)@
-@:operatorImpl(AND,&&)@
-@:operatorImpl(OR,||)@
+@:baselineCode(AND,&&,bit)@
+@:baselineCode(OR,||,bit)@
 
 @:operatorCstImpl(GE,>=,LT)@
 @:operatorCstImpl(LT,<,GE)@
@@ -1485,8 +1663,8 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 @:operatorCstImpl(LE,<=,GT)@
 @:operatorCstImpl(EQ,==,NEQ)@
 @:operatorCstImpl(NEQ,!=,EQ)@
-@:operatorCstImpl(AND,&&,AND)@
-@:operatorCstImpl(OR,||,OR)@
+@:baselineCstCode(AND,&&,bit,AND)@
+@:baselineCstCode(OR,||,bit,OR)@
 
 batcalc_export str CMDbitbataccumNOT(int *ret, int *d, int *l);
 str

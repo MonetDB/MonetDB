@@ -2,7 +2,7 @@
 <?php
 require 'monetdb/php_monetdb.php';
 
-$db = monetdb_connect("sql", "localhost", $argv[1], "monetdb", "monetdb");
+$db = monetdb_connect("sql", "localhost", $argv[1], "monetdb", "monetdb", $argv[2]);
 $tables = monetdb_query('SELECT name FROM tables');
 
 for ($i = 0; $line = @monetdb_fetch_assoc($tables); $i++) {

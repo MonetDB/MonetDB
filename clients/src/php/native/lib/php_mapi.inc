@@ -51,19 +51,8 @@
 	
 	define('MAX_MEROVINGIAN_ITER', 10); // Maximum number of iterations during proxied auth through merovingian
 
-	define('TIMEZONE', 'Europe/Amsterdam'); // Arbitrarly defined timezone.
-
 	define('PLACEHOLDER', '?'); // Used for string escaping.
 
-
-	if (ini_get('date.timezone') == "") {
-		/*
-		* PHP was not able to determine the timezone on the machine. Default to a pre set and warn the user.
-		*/
-		date_default_timezone_set(TIMEZONE); /* Set the default timezone. */
-		trigger_error("PHP was not able to determine the timezone on the machine. The default will be " . TIMEZONE, E_USER_NOTICE);
-	}
-	
 	/**
 	* $connection_pool contains a list of the active database connections
 	*/
@@ -170,7 +159,16 @@
 		
 		$rows = ""; // stores (partially) retrieved rows
 		foreach ($data as $row) {			
-			if ($row[0] == MSG_QUERY) {
+			/* 
+			 	PHP5.2 complains when $row[0] is accessed with: 
+				
+				Notice: Uninitialized string offset: 0
+				
+				In order to avoid the E_NOTICE error substr($row, 0, 1) is used 
+				to access the first character of a string
+				
+			*/
+			if (substr($row, 0, 1) == MSG_QUERY) {
 				if ($row[1] == Q_TABLE) {
 					$operation = Q_TABLE;
 					// save info about the query
@@ -189,16 +187,15 @@
 					// add Q_BLOCK to the record set
 					$operation = Q_BLOCK;
 				}
-			} else if ($row[0] == MSG_SCHEMA_HEADER){
+			} else if (substr($row, 0, 1) == MSG_SCHEMA_HEADER){
 				// process the table header
 				$header = $header . $row . "\n";
-			} else if ($row[0] == MSG_TUPLE) {
+			} else if (substr($row, 0, 1) == MSG_TUPLE) {
 				// process tuples
 				$rows .= $row;
-			} else if ($row[0] == MSG_PROMPT) {
+			} else if (substr($row, 0, 1) == MSG_PROMPT) {
 				fast_array_merge($handle["record_set"], php_parse_tuples($rows));
-//				print_r($handle['record_set']);
-			} else if ($row[0] == MSG_INFO) {
+			} else if (substr($row, 0, 1) == MSG_INFO) {
 				$last_error = $row;
 				return FALSE;
 			}
@@ -212,6 +209,10 @@
 		if ($header != "") {
 			
 			$handle["header"] = php_parse_header($header);
+			/* Store the number of fields returned by the dataset */
+		   	if ($operation == Q_TABLE || $operation == Q_BLOCK ) {
+				$handle["query"]["fields"] = count($handle["header"]["fields"]);
+			}
 		}
 		
 		$handle["operation"] = $operation;
@@ -276,12 +277,12 @@
 		$header_array = array();
 		
 		/* Field names */
-		$header[1] = ltrim($header[1], "%");
+		$header[1] = ltrim($header[1], "% ");
 		$header[1] = split("#", $header[1]);
 		$header_array["fields"] = explode(",\t", $header[1][0]);
 
 		/* Field types */
-		$header[2] = ltrim($header[2], "%");
+		$header[2] = ltrim($header[2], "% ");
 		$header[2] = split("#", $header[2]);
 		$header_array["types"] = explode(",\t", $header[2][0]);
 		
@@ -522,7 +523,6 @@
 				return -1;
 			}
 			
-			// print strlen($data)+2 . "-" . $buf . "\n";
 		}
 		return $buf;
 	}
@@ -531,7 +531,7 @@
 		global $last_error;
 
 		$tz_offset = "'" . date('P') . "'"; /* Difference to Greenwich time (GMT) with colon between hours and minutes */
-				
+		
 		$query = "SET TIME ZONE INTERVAL " . $tz_offset . " HOUR TO MINUTE";
 	
 		$buf = mapi_write($socket, format_query($query, LANG_SQL)); // set_timezone is called only when connecting to an sql db
@@ -584,7 +584,19 @@
 			$id = mapi_generate_id();
 			if ($options['lang'] == LANG_SQL) {
 				
-				set_timezone($socket); // set the timezone according to the system's configuration
+				
+				/*
+					PHP requires a timezone to be specified in the configuration environment; if not specified
+					either in php.ini or via date_default_timezone_set(), a default is set 'Europe/Berlin'.
+					
+					PHP complains in case we query the OS to get system's timezone (E_STRICT error).
+					
+					To avoid unexpected behaviours and warnings at execution time we set a timezone on mserver
+					only if PHP interpreter is aware of it (php.ini contains a date.timezone entry).
+				*/
+				if (ini_get("date.timezone")) {
+					set_timezone($socket); // set the timezone according to the system's configuration
+				}
 				
 				// export the reply size (max number of tuples returned at query executions)
 				mapi_write($socket, format_command("reply_size " . REPLY_SIZE));		
@@ -648,7 +660,7 @@
 	}
 	
 	/* Returns a pointer to the current (last initialized) connection */
-	function &mapi_get_current_conn() {
+	function mapi_get_current_conn() {
 		global $connection_pool;
 		
 		if (count($connection_pool) > 0) {

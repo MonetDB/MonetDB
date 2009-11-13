@@ -316,15 +316,15 @@ command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2], force:bit ) :bat[:an
 address BKCappend_force_wrap
 comment "append the content of u to i";
 
-command append(i:bat[:oid,:any_1], u:any_1):bat[:any_1,:any_2]
+command append(i:bat[:oid,:any_1], u:any_1):bat[:oid,:any_1]
 address BKCappend_val_wrap
 comment "append the value u to i";
 
-command append(i:bat[:void,:any_1], u:any_1):bat[:any_1,:any_2]
+command append(i:bat[:void,:any_1], u:any_1):bat[:void,:any_1]
 address BKCappend_val_wrap
 comment "append the value u to i";
 
-command append(i:bat[:any_1,:void], u:any_1):bat[:any_1,:any_2]
+command append(i:bat[:any_1,:void], u:any_1):bat[:any_1,:void]
 address BKCappend_reverse_val_wrap
 comment "append the value u to i";
 

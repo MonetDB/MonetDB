@@ -1,9 +1,6 @@
 = Native PHP implementation of the MonetDB interface. =
 
 The php API aims at being compatible with the one provided by the C implementation.
-For details see: http://monetdb.cwi.nl/SQL/Documentation/The-PHP-Library.html
-
-NOTE: this interface is still under heavy development and hence it is not ready for release or production use yet.
 
 == Directory structure ==
  - lib/
