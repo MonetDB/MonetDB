@@ -322,10 +322,10 @@
 	* @return string the field name, FALSE is an error occured.
 	*/
 	function monetdb_field_name(&$hdl, $field) {
-	    if (is_array($hdl) && $field > 0) {
+	    if (is_array($hdl) && $field >= 0) {
             if ($hdl["operation"] == Q_TABLE || $hdl["operation"] == Q_BLOCK ) {
                 if ($hdl["header"]["fields"] != "" ) {
-                    return $hdl["header"]["fields"][$field-1];
+                    return $hdl["header"]["fields"][$field];
                 }
 		    }
     	}	
