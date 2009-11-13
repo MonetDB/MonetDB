@@ -870,7 +870,7 @@ MASTERsend(void *arg)
 	/* find the last replication log file */
 	master = GDKgetenv_istrue("replication_master") &&
 			 GDKgetenv("replication_slave") == NULL;
-	if ( !master || sendLogs == 0)
+	if ( !master )
 		return;
 
 @-
@@ -884,14 +884,15 @@ we should switch to a new log file once in a while.
 		if (nxt < 0){
 			/* wait for log file to become available */
 			MT_sleep_ms(REPLICADELAY);
-			if ( sendLogs == 0)	/* stop sending */
-				break; 
 			if ( mapi_ping(masterstatus[idx].m) != MOK)
 				break; /* slave is gone */
 			continue;
 		}
-		if ( sendLogs == 0)	/* stop sending */
-			break; 
+		if ( sendLogs == 0){
+			/* suspend sending */
+			MT_sleep_ms(REPLICADELAY);
+			continue; 
+		}
 #ifdef _DEBUG_REPLICATION_
 		stream_printf(GDKout,"#sent log file %s\n",logFile);
 #endif
