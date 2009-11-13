@@ -279,12 +279,12 @@
 		$header_array = array();
 		
 		/* Field names */
-		$header[1] = ltrim($header[1], "%");
+		$header[1] = ltrim($header[1], "% ");
 		$header[1] = split("#", $header[1]);
 		$header_array["fields"] = explode(",\t", $header[1][0]);
 
 		/* Field types */
-		$header[2] = ltrim($header[2], "%");
+		$header[2] = ltrim($header[2], "% ");
 		$header[2] = split("#", $header[2]);
 		$header_array["types"] = explode(",\t", $header[2][0]);
 		
