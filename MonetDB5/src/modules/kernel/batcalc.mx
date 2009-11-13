@@ -235,8 +235,10 @@ The command signatures are similar to those above, producing a bit result.
 	:bat[:any_1,:bit]
 	address CMDaccum_@3_@2;
 
-	command @1(b:bat[:any_1,:@2],cst:@2) :bat[:any_1,:bit]
+	command @1(b:bat[:any_1,:@2], cst:@2) :bat[:any_1,:bit]
 	address CMD_@3_@2_cst;
+	command @1(cst:@2, b:bat[:any_1,:@2]) :bat[:any_1,:bit]
+	address CMD_@3_cst_@2;
 
 	command @1(a:bat[:any_1,:bit], b:bat[:any_1,:@2],cst:@2) :bat[:any_1,:bit]
 	address CMDaccum_@3_@2_cst;
