@@ -1476,8 +1476,8 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 @:operatorImpl(LT,<)@
 @:operatorImpl(EQ,==)@
 @:operatorImpl(NEQ,!=)@
-@:operatorImpl(AND,&&)@
-@:operatorImpl(OR,||)@
+@:baselineCode(AND,&&,bit)@
+@:baselineCode(OR,||,bit)@
 
 @:operatorCstImpl(GE,>=,LT)@
 @:operatorCstImpl(LT,<,GE)@
@@ -1485,8 +1485,8 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 @:operatorCstImpl(LE,<=,GT)@
 @:operatorCstImpl(EQ,==,NEQ)@
 @:operatorCstImpl(NEQ,!=,EQ)@
-@:operatorCstImpl(AND,&&,AND)@
-@:operatorCstImpl(OR,||,OR)@
+@:baselineCstCode(AND,&&,bit,AND)@
+@:baselineCstCode(OR,||,bit,OR)@
 
 batcalc_export str CMDbitbataccumNOT(int *ret, int *d, int *l);
 str
