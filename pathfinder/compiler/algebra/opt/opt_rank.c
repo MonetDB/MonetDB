@@ -298,6 +298,56 @@ merge_order_lists (PFord_ordering_t sortby,
     return new_sortby;
 }
 
+/* Rename 'invisible' rank columns. */
+static PFla_op_t *
+avoid_conflict (PFla_op_t *p)
+{
+    PFalg_proj_t *proj;
+    PFarray_t    *sortby;
+
+    assert (p->kind == la_internal_op);
+
+    sortby = PFarray_copy (p->sem.rank_opt.sortby);
+    /* create projection list */
+    proj = PFmalloc (L(p)->schema.count * sizeof (PFalg_proj_t));
+    /* fill projection list */
+    for (unsigned int i = 0; i < L(p)->schema.count; i++)
+        proj[i] = PFalg_proj (L(p)->schema.items[i].name,
+                              L(p)->schema.items[i].name);
+
+    /* rename 'invisible' rank columns */
+    for (unsigned int i = 0; i < PFarray_last (sortby); i++)
+        if (!VIS_AT(sortby, i)) 
+            for (unsigned int j = 0; j < L(p)->schema.count; j++)
+                if (COL_AT(sortby, i) == proj[j].old) {
+                    PFalg_col_t new = PFcol_new (COL_AT(sortby, i));
+                    COL_AT(sortby, i) = new;
+                    proj[j].new = new;
+                    break;
+                }
+    
+    /* return a modified rank operator */
+    return rank_opt (
+               PFla_project_ (
+                   L(p),
+                   L(p)->schema.count,
+                   proj),
+               p->sem.rank_opt.res,
+               sortby);
+}
+
+/* Check if an 'invisible' rank column appears in a schema of @a p. */
+static bool
+name_conflict (PFla_op_t *p, PFarray_t *sortby)
+{
+    for (unsigned int i = 0; i < PFarray_last (sortby); i++)
+        if (!VIS_AT(sortby, i))
+            for (unsigned int j = 0; j < p->schema.count; j++)
+                if (COL_AT(sortby, i) == p->schema.items[j].name)
+                    return true;
+    return false;
+}
+
 /* define the different operation modes
    of opt_rank and intro_internal_rank */
 #define RANK           1
@@ -429,6 +479,13 @@ opt_rank (PFla_op_t *p, unsigned char mode)
 
         case la_cross:
             if (is_rr (L(p))) {
+                /* Add check and rewrite that avoids name conflicts
+                   for 'invisible' rank columns.
+                   This situation may arise if the same rank was already
+                   pushed through on the other side. */
+                if (name_conflict (R(p), L(p)->sem.rank_opt.sortby))
+                    L(p) = avoid_conflict (L(p));
+
                 *p = *(rank_opt (cross (LL(p), R(p)),
                                  L(p)->sem.rank_opt.res,
                                  L(p)->sem.rank_opt.sortby));
@@ -436,6 +493,13 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                 break;
             }
             else if (is_rr (R(p))) {
+                /* Add check and rewrite that avoids name conflicts
+                   for 'invisible' rank columns.
+                   This situation may arise if the same rank was already
+                   pushed through on the other side. */
+                if (name_conflict (L(p), R(p)->sem.rank_opt.sortby))
+                    R(p) = avoid_conflict (R(p));
+
                 *p = *(rank_opt (cross (L(p), RL(p)),
                                  R(p)->sem.rank_opt.res,
                                  R(p)->sem.rank_opt.sortby));
@@ -447,6 +511,13 @@ opt_rank (PFla_op_t *p, unsigned char mode)
         case la_eqjoin:
             if (is_rr (L(p)) &&
                 p->sem.eqjoin.col1 != L(p)->sem.rank_opt.res) {
+                /* Add check and rewrite that avoids name conflicts
+                   for 'invisible' rank columns.
+                   This situation may arise if the same rank was already
+                   pushed through on the other side. */
+                if (name_conflict (R(p), L(p)->sem.rank_opt.sortby))
+                    L(p) = avoid_conflict (L(p));
+
                 *p = *(rank_opt (eqjoin (LL(p),
                                          R(p),
                                          p->sem.eqjoin.col1,
@@ -459,6 +530,13 @@ opt_rank (PFla_op_t *p, unsigned char mode)
             }
             if (is_rr (R(p)) &&
                 p->sem.eqjoin.col2 != R(p)->sem.rank_opt.res) {
+                /* Add check and rewrite that avoids name conflicts
+                   for 'invisible' rank columns.
+                   This situation may arise if the same rank was already
+                   pushed through on the other side. */
+                if (name_conflict (L(p), R(p)->sem.rank_opt.sortby))
+                    R(p) = avoid_conflict (R(p));
+
                 *p = *(rank_opt (eqjoin (L(p),
                                          RL(p),
                                          p->sem.eqjoin.col1,
@@ -496,6 +574,13 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                     }
 
                 if (!res_used) {
+                    /* Add check and rewrite that avoids name conflicts
+                       for 'invisible' rank columns.
+                       This situation may arise if the same rank was already
+                       pushed through on the other side. */
+                    if (name_conflict (R(p), L(p)->sem.rank_opt.sortby))
+                        L(p) = avoid_conflict (L(p));
+
                     *p = *(rank_opt (thetajoin (LL(p),
                                                 R(p),
                                                 p->sem.thetajoin.count,
@@ -517,6 +602,13 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                     }
 
                 if (!res_used) {
+                    /* Add check and rewrite that avoids name conflicts
+                       for 'invisible' rank columns.
+                       This situation may arise if the same rank was already
+                       pushed through on the other side. */
+                    if (name_conflict (L(p), R(p)->sem.rank_opt.sortby))
+                        R(p) = avoid_conflict (R(p));
+
                     *p = *(rank_opt (thetajoin (L(p),
                                                 RL(p),
                                                 p->sem.thetajoin.count,
