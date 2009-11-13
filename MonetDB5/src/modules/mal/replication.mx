@@ -21,7 +21,7 @@
 @+ Database replication
 MonetDB supports a simple database replication scheme using a master-slave
 protocol. A master node keeps a log of all SQL updates for replay.
-Upon explicit request from a slave, the master establishes
+Once a slave starts or on explicit request from a slave, the master establishes
 a MAL-client connection to the slave and starts pumping the tail of this
 MAL-based update log. The master does not take any control over
 the integrity of a slave. It may, however, decide to suspend
@@ -193,6 +193,10 @@ pattern delete(s:str, t:str, b:bat[:oid,:any_1], tag:int):void
 address MASTERdelete
 comment "Dump the BAT with deletions on the MAL log");
 
+pattern copy(sname:str, tname:str, tsep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, tag:int):void
+address MASTERcopy
+comment "Forward the content of a copy command";
+
 pattern replay(uri:str, usr:str, pw:str, tag:int):void
 address MASTERreplay
 comment "Slave calls the master to restart sending the missing transactions
@@ -226,7 +230,7 @@ command stop(uri:str):void
 address SLAVEstop
 comment "Slave suspends synchronisation with master";
 
-command open(tag:oid)
+pattern open(tag:oid)
 address SLAVEopen
 comment "Marks the start of a replication record. It checks the slave log
 table for existence of the tag. If so, it aborts the attempt to reapply.";
@@ -280,6 +284,7 @@ replication_export str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 replication_export str MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replication_export str MASTERcopy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str SLAVEsyncDefault(int  *ret);
 replication_export str SLAVEsyncURI(int  *ret, str *conn);
 replication_export str SLAVEsync(int  *ret, str *uri, str *usr, str *pw, int *tag);
@@ -288,7 +293,7 @@ replication_export str SLAVEstop(int *ret);
 replication_export str MASTERprelude(int *ret);
 replication_export str MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-replication_export str SLAVEopen(int *ret, oid *tag);
+replication_export str SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str SLAVEclose(int *ret, oid *tag, timestamp *stamp);
 replication_export str SLAVEdrop(int *ret, str *tag);
 replication_export str SLAVEprelude(int *ret);
@@ -338,6 +343,7 @@ static stream *repFile;
 static BAT *slavecommit;
 static BAT *slavevalid;
 static BAT *slaveerror;
+static int acceptLogs;
 
 static void
 SLAVEinitLog(){
@@ -794,6 +800,15 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+str
+MASTERcopy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw(MAL,"master.copy","Not yet implemented");
+}
 @-
 Replaying the MAL logs is straightforward.  Each slave is represented 
 by a thread in the master, which looks for the pending updates and 
@@ -987,6 +1002,7 @@ str SLAVEsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 		mapi_close_handle(hdl);
 		return err;
 	}
+	acceptLogs= TRUE;
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout, "#slave awaiting replay of the log \n");
 	stream_printf(GDKout,"#%s\n",buf);
@@ -1036,8 +1052,9 @@ str SLAVEstop(int *ret)
 	uri = GDKgetenv("replication_slave");
 	if (uri == NULL)
 		throw(MAL, "slave.stop", "Slave property not set");
-	/* find the master client record and close it */
-	/* TODO */
+	if ( acceptLogs == 0 )
+		throw(MAL, "slave.stop", "Synchronisation not active");
+	acceptLogs = 0;
 	return MAL_SUCCEED;
 }
 @-
@@ -1068,13 +1085,19 @@ The transaction identifier is used as an oid into this table.
 	}
 @c
 
-str SLAVEopen(int *ret, oid *tag)
+str SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)ret;
-	(void)tag;
+	oid *tag = (oid*) getArgReference(stk,pci,1);
+	
+	(void) mb;
 	SLAVEinitLog();
 	if ( slavecommit == NULL)
 		throw(MAL, "slave.open", OPERATION_FAILED);
+	if ( acceptLogs == 0){
+		/* close this connection, synchronize later */
+		mal_clients[ cntxt->idx].mode = FINISHING;
+		throw(MAL, "slave.open", "No synchronisation allowed");
+	}
 	/* cheap check if we have seen it before */
 	if ( BATcount(slavecommit) < (BUN) *tag) 
 		throw(MAL, "slave.open", OPERATION_FAILED);
@@ -1178,6 +1201,7 @@ SLAVEprelude(int *ret)
 #endif
 		mal_set_lock(repLck, "replication");
 		SLAVEinitLog();
+		acceptLogs = TRUE;
 		mal_unset_lock(repLck, "replication");
 	/*	SLAVEsyncDefault(ret);   
 	   can not work, because we are still in MAL initialization
