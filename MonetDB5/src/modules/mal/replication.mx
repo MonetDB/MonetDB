@@ -334,6 +334,20 @@ static int fcnTag = 0;		/* unique labeling of the functions */
 static char logFile[PATHLENGTH]; 
 static stream *repFile;
 
+/* slave synchronisation status */
+static BAT *slavecommit;
+static BAT *slavevalid;
+static BAT *slaveerror;
+
+static void
+SLAVEinitLog(){
+	if ( slavecommit == NULL){
+		@:createBAT(slavecommit,TYPE_timestamp)@
+		@:createBAT(slavevalid,TYPE_timestamp)@
+		@:createBAT(slaveerror,TYPE_str)@
+	}
+}
+
 static int 
 MASTERfindLogFile(char logFile[PATHLENGTH], int transactionid){
 	int btag, etag;
@@ -404,7 +418,7 @@ MASTERprelude(int *ret){
 		return MAL_SUCCEED;
 	}
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
-	stream_printf(GDKout,"#Replication mode enabled\n");
+	stream_printf(GDKout,"# Replication mode enabled\n");
 	
 	/* find the bounds for the last replication log file */
 	/* assume directory is sorted */
@@ -985,9 +999,20 @@ str SLAVEsyncURI(int *ret, str *uri)
 	int tag = 0;
 	str usr = "monetdb";
 	str pw = "monetdb";
+
 	(void)ret;
 	if ( GDKgetenv("replication_slave") == NULL)
 		throw(MAL, "master.sync", "Slave property not set");
+
+	/* get identity of next tag expected */
+	mal_set_lock(repLck, "replication");
+	SLAVEinitLog();
+	if ( slavecommit == NULL){
+		mal_unset_lock(repLck, "replication");
+		throw(MAL, "slave.sync", OPERATION_FAILED);
+	}
+	tag = (int) BATcount(slavecommit);
+	mal_unset_lock(repLck, "replication");
 	return SLAVEsync(ret, uri, &usr, &pw, &tag);
 }
 
@@ -1025,9 +1050,6 @@ The error BAT can be used to keep messages for offline
 inspection.
 The transaction identifier is used as an oid into this table.
 @c
-static BAT *slavecommit;
-static BAT *slavevalid;
-static BAT *slaveerror;
 
 @= createBAT
     @1 = BATdescriptor(BBPindex("@1"));
@@ -1046,30 +1068,16 @@ static BAT *slaveerror;
 	}
 @c
 
-static void
-SLAVEinitLog(){
-	@:createBAT(slavecommit,TYPE_timestamp)@
-	@:createBAT(slavevalid,TYPE_timestamp)@
-	@:createBAT(slaveerror,TYPE_str)@
-}
-
 str SLAVEopen(int *ret, oid *tag)
 {
 	(void)ret;
 	(void)tag;
-	mal_set_lock(repLck, "replication");
+	SLAVEinitLog();
 	if ( slavecommit == NULL)
-		SLAVEinitLog();
-	if ( slavecommit == NULL){
-		mal_unset_lock(repLck, "replication");
 		throw(MAL, "slave.open", OPERATION_FAILED);
-	}
 	/* cheap check if we have seen it before */
-	if ( BATcount(slavecommit) < (BUN) *tag) {
-		mal_unset_lock(repLck, "replication");
+	if ( BATcount(slavecommit) < (BUN) *tag) 
 		throw(MAL, "slave.open", OPERATION_FAILED);
-	}
-	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
 
@@ -1079,18 +1087,15 @@ str SLAVEclose(int *ret, oid *tag, timestamp *valid)
 	str err="";
 
 	(void)ret;
-	mal_set_lock(repLck, "replication");
+	SLAVEinitLog();
 	if ( slavecommit == NULL)
-		SLAVEinitLog();
-	if ( slavecommit == NULL){
 		/* abort the transaction */
-		mal_unset_lock(repLck, "replication");
 		throw(MAL, "slave.clase", OPERATION_FAILED);
-	}
-	if ( BATcount(slavecommit) != (BUN) *tag) {
-		mal_unset_lock(repLck, "replication");
+	
+	if ( BATcount(slavecommit) != (BUN) *tag) 
 		throw(MAL, "slave.close", "Out of order execution");
-	}
+	
+	mal_set_lock(repLck, "replication");
 	MTIMEepoch(&stamp);
 	BUNappend(slavecommit, &stamp, FALSE);
 	BUNappend(slavevalid, valid, FALSE);
@@ -1144,10 +1149,7 @@ SLAVEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)bid;
 	(void)tag;
 	*/
-	mal_set_lock(repLck, "replication");
-	if ( slavecommit == NULL)
-		SLAVEinitLog();
-	mal_unset_lock(repLck, "replication");
+	SLAVEinitLog();
 	return MAL_SUCCEED;
 }
 
@@ -1157,13 +1159,11 @@ SLAVEdrop(int *ret, str *tag)
 	Symbol prg;
 	Module mod;
 
-	mal_set_lock(repLck, "replication");
 	prg = findSymbol(NULL, getName("slave", 5), *tag);
 	mod = findModule(NULL, getName("slave", 5));
 	if (prg == NULL || mod == NULL)
 		throw(MAL, "slave.drop", "Symbol not found");
 	deleteSymbol(mod, prg);
-	mal_unset_lock(repLck, "replication");
 	(void)ret;
 	return MAL_SUCCEED;
 }

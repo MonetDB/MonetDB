@@ -1,7 +1,7 @@
-# this script requires merovingian to run
+# this script requires merovingian 
 
-# the minimal sequence to get a single record from master to slave
-#instantiate merovingian if it wasn't already
+# the minimal sequence to push updates from master to slave
+# instantiate merovingian if it wasn't already
 merovingian
 mero=$!
 
@@ -14,6 +14,8 @@ monetdb release dbslave
 # make two identical databases
 mclient -lsql -d dbmaster -s "create table tmp(i integer);"
 mclient -lsql -d dbslave -s "create table tmp(i integer);"
+
+# register utility function
 mclient -lsql -d dbslave -s 'create function slavelog ()
     returns table ("commit" timestamp, "valid" timestamp, "error" string)
     external name sql.dump_slave;'
