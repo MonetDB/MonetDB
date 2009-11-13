@@ -21,15 +21,19 @@
 @+ Database replication
 MonetDB supports a simple database replication scheme using a master-slave
 protocol. A master node keeps a log of all SQL updates for replay.
-Once a slave starts or on explicit request from a slave, the master establishes
-a MAL-client connection to the slave and starts pumping the tail of this
-MAL-based update log. The master does not take any control over
-the integrity of a slave. It may, however, decide to suspend
+Once a slave starts, or on explicit request, the master establishes
+a MAL-client connection to the slave and starts pumping the backlog
+of committed transactions.
+The master does not take any responsibility over the integrity of a slave.
+The master may, however, decide to suspend
 forwarding updates to prepare for e.g. administration or shutdown.
 
 It is the slave's responsibility to be resilient against duplicate 
-transmission of the MAL-update log. A transaction id
+transmission of the MAL-update backlog. A transaction id
 can be given to catch up from transactions already replayed.
+Transaction ideas before the minimum available in the log
+directory leads to freezing the slave. Then rebuilding from
+scratch is required.
 
 The replication scheme does not support SQL scheme modifications.
 Instead, the slaves should be initialized with a complete copy
@@ -57,11 +61,11 @@ The precise URI can be obtained issuing the command
 The slave property is translated by merovingian(1) into the database variable "replication_slave" 
 and is set upon database (re)start.  Note that this setting can not be added to a running database. 
 
-The slave starts synchronizing with the master automatically upon each restart.
-It can be manually controlled using the functions:
+The slave starts synchronizing with the master automatically upon each session restart.
+A few SQL wrapper procedures and functions can be used to control it manually.
 @verbatim
 CREATE PROCEDURE startSync() EXTERNAL NAME slave."sync";
-CREATE PROCEDURE startSync(tag bigint) EXTERNAL NAME slave."sync";
+CREATE PROCEDURE startSync(tag integer) EXTERNAL NAME slave."sync";
 CREATE PROCEDURE stopSync(uri string) EXTERNAL NAME slave."stop";
 CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."isSynchronizing";
 
@@ -69,11 +73,6 @@ CREATE PROCEDURE resetSlaves(uri string) EXTERNAL NAME master."invalidate";
 CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getURI";
 CREATE FUNCTION cutOffTag() RETURNS string EXTERNAL NAME master."getCutOffTag";
 @end verbatim
-
-The replication scheme allows a slave to be cloned e.g. by copying the
-dbfarm of the slave to another database without problems.  Important
-here is that the new slave is also initialised as slave of the correct
-master, by setting the "slave" property using monetdb(1).
 
 It is possible to make a slave database also a master for descendants.
 In such situation the database carries both a master and slave property.
@@ -83,12 +82,13 @@ at this point replication from multiple masters to e.g. combine a full
 set from a set of partitioned masters is not yet possible.
 
 Beware, turning off the "master" property leads to automatic removal of all
-left-over log files.  This renders the master database unusable for
-replication.  To restore replication in such case, both master and
-slaves have to be reinitialised using the afore described steps.
+left-over log files.  This renders the master database unusable for replication.
+The state of the slaves becomes frozen.
+To restore replication in such case, both master and
+slaves have to be reinitialised using the aforementioned steps.
 
-A slave property can be set to a list of masters, which turns the
-the slave into a serving multiple sources. [tobedone]
+[TODO, A slave property can be set to a list of masters, which turns the
+the slave into a serving multiple sources. ]
 
 @- Behind the scene
 When the replication_master environment is set, an optimizer
@@ -154,27 +154,25 @@ where a system is still in SQL initialization mode.
 The master node simply waits for a slave to request the transmission of the missing log files.
 The request includes the URI of the slave and the user credentials needed to establish a connection.
 The last property is the restart tag.
-The master forks a thread to start flushing the log files.
+The master forks a thread to start flushing the blacklog files.
 
 Grouping the operations within temporary functions
 makes it easy to skip its execution when we detect
 that it has been executed before. 
 
 @- Log file management
-The log records are grouped into chunks, each represented by a file. 
-Those files are the units for re-submission and the scheme
-is set up to be idempotent. 
-The log files will ultimately pollute your database and have to
+The log records are grouped into separate files. 
+They are the units for re-submission and the scheme is set up to be idempotent. 
+The log files ultimately pollute your database and have to
 be (re)moved. This is considered a responsibility for the DBA,
 for it involves making a checkpoint or securely storing the logs
 into an archive.
 
 Archiving requires inspection of the slaves and the status
-of their replay log table. Otherwise, they their attempt
+of their replay log table. Otherwise, their attempt
 to synchronize may fail.
 
-A slave starts replicating off the
-master starting from the tag maintained by the master for each slave.
+A slave starts replicating using the last tag stored in the slave log.
 The master can be optionally forced to start at a particular tag.
 
 COPY INTO commands cause the master to invalidate the images of
@@ -941,11 +939,12 @@ we should switch to a new log file once in a while.
 
 		/* avoid concurrent addition of log records */
 		mal_set_lock(repLck, "replication");
+
 		/* read the complete file [now trimmed to 64KB]*/
 		bs = bstream_create(s, 128 * BLOCK);
 		if (bstream_next(bs) < 0) {
 			bstream_destroy(bs);
-			showException( MAL, "master.send", RUNTIME_STREAM_WRITE);
+			showException( MAL, "master.send", "read error");
 			break;
 		}
 		hdl = mapi_query(masterstatus[idx].m, bs->buf);
@@ -1014,7 +1013,7 @@ MASTERinvalidate(int *ret)
 	sendLogs = 0;
 	GDKremovedir(MASTER);
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
-	cutoffTag = startTag =  endTag;
+	cutoffTag = startTag = --endTag; /* the next one to expect */
 	MASTERincrement();
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
