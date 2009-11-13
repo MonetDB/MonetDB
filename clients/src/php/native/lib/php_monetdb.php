@@ -180,15 +180,28 @@
 	 * Returns the number of rows in the query result.
 	 *
 	 * @param resouce the query resource
-	 * @return int the number of rows in the result
+	 * @return int the number of rows in the result; FALSE if the query did not return any result set
 	 */
 	function monetdb_num_rows($hdl) {
 		if ($hdl["operation"] == Q_TABLE || $hdl["operation"] == Q_BLOCK ) {
 			return $hdl["query"]["rows"];
 		} else {
-			print "Last query did not produce a result set\n";
-			return -1;
+			return FALSE;
 		}
+	}
+
+	/**
+	 * Returns the number of fields in the query result.
+	 *
+	 * @param resouce the query resource
+	 * @return int the number of fields in the result; FALSE if the query did not return any result set
+	 */	
+	function monetdb_num_fields($hdl) {
+    	if ($hdl["operation"] == Q_TABLE || $hdl["operation"] == Q_BLOCK ) {
+  			return $hdl["query"]["fields"];
+  		} else {
+  			return FALSE;
+  		}
 	}
 	
 	/**

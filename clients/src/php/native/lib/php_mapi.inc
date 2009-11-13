@@ -197,7 +197,6 @@
 				$rows .= $row;
 			} else if ($row[0] == MSG_PROMPT) {
 				fast_array_merge($handle["record_set"], php_parse_tuples($rows));
-//				print_r($handle['record_set']);
 			} else if ($row[0] == MSG_INFO) {
 				$last_error = $row;
 				return FALSE;
@@ -212,6 +211,10 @@
 		if ($header != "") {
 			
 			$handle["header"] = php_parse_header($header);
+			/* Store the number of fields returned by the dataset */
+		   	if ($operation == Q_TABLE || $operation == Q_BLOCK ) {
+				$handle["query"]["fields"] = count($handle["header"]["fields"]);
+			}
 		}
 		
 		$handle["operation"] = $operation;
