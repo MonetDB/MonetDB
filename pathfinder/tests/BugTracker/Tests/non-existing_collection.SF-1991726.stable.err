@@ -10,6 +10,12 @@ stderr of test 'non-existing_collection.SF-1991726` in directory 'tests/BugTrack
 # 19:26:50 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=36543 non-existing_collection.SF-1991726.xq
 # 19:26:50 >  
 
+MAPI  = monetdb@rig:36094
+QUERY = pf:collection("aap")
+ERROR = !ERROR: err:FODC0004: collection 'aap' unknown (1 missing in total)
+MAPI  = monetdb@rig:36094
+QUERY = pf:collection("aap")//*
+ERROR = !ERROR: err:FODC0004: collection 'aap' unknown (1 missing in total)
 
 # 19:26:50 >  
 # 19:26:50 >  Done.

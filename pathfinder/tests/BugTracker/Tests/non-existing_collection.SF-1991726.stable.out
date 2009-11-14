@@ -21,16 +21,12 @@ quit();
 
 Over..
 
-# 22:13:28 >  
-# 22:13:28 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=39395 non-existing_collection.SF-1991726.xq
-# 22:13:28 >  
+# 23:49:53 >  
+# 23:49:53 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=36094 non-existing_collection.SF-1991726.xq
+# 23:49:53 >  
 
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult></XQueryResult>
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult></XQueryResult>
 
-# 22:13:28 >  
-# 22:13:28 >  Done.
-# 22:13:28 >  
+# 23:49:53 >  
+# 23:49:53 >  Done.
+# 23:49:53 >  
 
