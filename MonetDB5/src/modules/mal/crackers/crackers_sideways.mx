@@ -550,87 +550,6 @@ CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *incl
 }
 
 str
-CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
-        BAT *b, *p, *r, *c, *pair;
-        @1 *pairh, *rest;
-	bit *pivott; 
-        oid size, fsize;
-        oid skip;
-	int m;
-	oid cl1=0,cl2=0,ch1=0,ch2=0;
-	oid j;
-
-	m = existsCrackerIndexSideways(*bid, *pbid);
-	if (m==-1){	
-		@:CreateCrackerMap(@1,@2)@		
-		BBPkeepref(b->batCacheid);
-	}else
-        	CrackerIndex[m].accesses += 1;
-
-	selectMergeInsertionsPart_@1_@2_Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
-	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
-
-        if ((pair = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
-                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
-
-	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-                throw(MAL, "crackers.crackRange", "Cannot access crack index");
-
-	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1)) 
-		cl1=0;
-	else
-        	GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(pair)-(oid)1);
-                
-	if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1)) 
-		ch2=BATcount(pair)-1;
-	else
-        	GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(pair)-(oid)1);
-
-	if (cl1 != 0) cl1++;
-
-        b = BATslice(pair, cl1, ch2+1);
-	
-        if ((p = BATdescriptor(*pivot)) == NULL) {
-                throw(MAL, "crackers.crackJoinSelectSideways", "Cannot access descriptor");
-        }
-
-        size = BATcount(p);
- 	r = BATnew(TYPE_void,b->htype,size);
-
-        pairh  = (@1 *)Hloc(b, BUNfirst(b));
-        pivott = (bit*)Tloc(p, BUNfirst(p));
-        rest   = (@1 *)Tloc(r, BUNfirst(r));
-        skip = 0;
-	fsize = 0;
-        for (j = 0; j<size; j++){
-                if (*pivott == TRUE){
-                        pairh += skip;
-			*rest = *pairh; 
-			rest ++;
-                        skip = 0;
-			fsize++;
-                }
-                pivott ++;
-                skip++;
-        }
-
-        BATsetcount(r, fsize);
-
-	r->hsorted = FALSE;
-        r->tsorted = FALSE;
-        r->hdense = FALSE;
-        r->tdense = FALSE;
-
-        BBPkeepref(r->batCacheid);
-        BBPunfix(p->batCacheid);
-        BBPunfix(b->batCacheid);
-        BBPunfix(pair->batCacheid);
-        *res = r->batCacheid;
-
-        return MAL_SUCCEED;
-}
-
-str
 CRKPositionProject_@1_@2(int *res, int *bid, int *pbid,int *PositionPivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
         BAT *b, *p, *r, *c;
         @2 *pairt, *rest;
@@ -835,6 +754,104 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
 }
 
 str
+CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
+        BAT *b, *p, *r, *c, *slice;
+        @1 *pairt, *rest;
+	bit *pivott;
+        oid size, fsize;
+        oid skip;
+	int m;
+	oid cl1=0,cl2=0,ch1=0,ch2=0;
+	oid j;
+	bit newMap = TRUE;
+
+	/* If the necessary map does not exits, then create it */	
+	m = existsCrackerIndexSideways(*bid, *pbid);
+	if (m==-1){	
+		@:CreateCrackerMap(@1,@2)@		
+		newMap = TRUE;
+	}else{	
+		/* Get the map */
+        	if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
+                	throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+
+		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+        	        throw(MAL, "crackers.CRKProject", "Cannot access crack index");
+        	CrackerIndex[m].accesses += 1;
+	}
+
+	/* Align the map based on the cracker tape of this set */
+	selectMergeInsertionsPart_@1_@2_Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
+
+
+	/* Get the result area on the map
+           Note. We know that this search leads to an exact match sice a project call always 
+           follows a select call with the same restriction in the same query. 
+           Then this restriction is on the cracker tape. */
+	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1)) 
+		cl1=0;
+	else
+        	GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
+                
+	if (@3_EQ(hgh,ATOMnilptr(TYPE_@1),@4@1)) 
+		ch2=BATcount(b)-1;
+	else
+        	GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
+
+	if (cl1 != 0) cl1++;
+
+        slice = BATslice(b, cl1, ch2+1);
+	
+        if ((p = BATdescriptor(*pivot)) == NULL) 
+                throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+
+        size = BATcount(p);
+ 	r = BATnew(TYPE_void,slice->htype,size);
+
+        pairt  = (@1 *)Hloc(slice, BUNfirst(slice));
+        pivott = (bit*)Tloc(p, BUNfirst(p));
+        rest   = (@1 *)Tloc(r, BUNfirst(r));
+        skip = 0;
+	fsize = 0;
+        for (j = 0; j<size; j++){
+                if (*pivott == TRUE){
+                        pairt += skip;
+			*rest = *pairt; 
+			rest ++;
+                        skip = 0;
+			fsize++;
+                }
+                pivott ++;
+                skip++;
+        }
+
+        BATsetcount(r, fsize);
+
+	r->hsorted = FALSE;
+        r->tsorted = FALSE;
+        r->hdense = FALSE;
+        r->tdense = FALSE;
+
+        *res = r->batCacheid;
+        BBPkeepref(r->batCacheid);
+
+        BBPunfix(p->batCacheid);
+        BBPunfix(slice->batCacheid);
+	
+	if (newMap){
+                BBPkeepref(b->batCacheid);
+                BBPkeepref(c->batCacheid);
+        }else{
+                BBPunfix(b->batCacheid);
+                BBPunfix(c->batCacheid);
+        }
+
+
+        return MAL_SUCCEED;
+}
+
+str
 CRKMarkedProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
         BAT *b, *p, *r, *c, *slice;
         @2 *pairt, *rest;
@@ -887,7 +904,7 @@ CRKMarkedProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hg
         if ((p = BATdescriptor(*pivot)) == NULL) 
                 throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
 
-	/*If all is true then we cna simply return a slice*/
+	/*If all is true then we can simply return a slice*/
 	if (p->tdense==TRUE){		
 		BAT *view=BATmirror(BATmark(BATmirror(slice),cl1));
         	*res = view->batCacheid;
@@ -991,6 +1008,7 @@ CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
 	
         if ((p = BATdescriptor(*pivot)) == NULL) 
                 throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
+
 
         size = BATcount(p);
  	r = BATnew(TYPE_void,b->ttype,size);
