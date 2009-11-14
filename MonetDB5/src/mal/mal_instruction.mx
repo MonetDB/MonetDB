@@ -2721,8 +2721,11 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	case FUNCTIONsymbol:
 	case FACTORYsymbol:
 	case PATTERNsymbol:
-		if (flg & LIST_MAL_VALUE)
+		if (flg & LIST_MAL_VALUE) {
+			snprintf(t,(len-(t-base)), "%s ", operatorName(p->token));
+			advance(t,base,len);
 			break;
+		}
 		return fcnDefinition(mb, p, s, flg, base, len);
 	case REMsymbol:
 		if(getVar(mb, getArg(p, 0))->value.val.sval) 
