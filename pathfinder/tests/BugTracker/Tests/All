@@ -201,7 +201,7 @@ copybug.SF-2642003
 parent_wrong_properties.SF-2668437
 ancestor-or-self.SF-2636285.unpack_doc
 ancestor-or-self.SF-2636285.test
-fn-root_fn-id_on_attribute_nodes.SF-1975028
+ID_1975028?fn-root_fn-id_on_attribute_nodes.SF-1975028
 fn-collection_DOES-NOT-EXIST.SF-2664405
 unuseable_doc-available.SF-2791704
 stream-document.SF-2804823
