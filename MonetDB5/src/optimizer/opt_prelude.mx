@@ -178,6 +178,7 @@ opt_export int canBeJoinselectProp;	/* binary */
 opt_export int sidewaysSelectProp;	/* int */
 opt_export int headProp;		/* int */
 opt_export int pivotProp;		/* int */
+opt_export int pivotDisjunctiveProp;	/* int */
 opt_export int removeProp;		/* int */
 opt_export int tableProp;	        /* str */
 
@@ -357,6 +358,7 @@ int canBeJoinselectProp;
 int sidewaysSelectProp;
 int headProp;
 int pivotProp;
+int pivotDisjunctiveProp;
 int removeProp;
 int tableProp;
 
@@ -532,6 +534,7 @@ void optimizerInit(){
 		sidewaysSelectProp = PropertyIndex("sidewaysSelect");
 		headProp = PropertyIndex("head");
 		pivotProp = PropertyIndex("pivot");
+		pivotDisjunctiveProp = PropertyIndex("pivotDisjunctive");
 		removeProp = PropertyIndex("remove");
 		tableProp = PropertyIndex("table");
 

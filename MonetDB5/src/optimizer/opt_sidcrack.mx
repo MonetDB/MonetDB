@@ -141,10 +141,14 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		    match2(p, algebraRef, thetauselectRef)){ 
 
 			if (varGetProp(mb, getArg(p,1), canBeCrackedProp) != NULL){
+				ValRecord v1, *vp1;
 				bit alreadyCracked = FALSE;
 
 				InstrPtr bind = old[varGetProp(mb, getArg(p,1), canBeCrackedProp)->value.val.ival];
 				str tablename = getVar(mb,getArg(bind,2))->value.val.sval; 
+
+				vp1 = VALset(&v1, TYPE_int,&i);
+				varSetProp(mb, getArg(p, 0), canBeCrackedProp, op_eq, vp1);
 				
 				/* see if we have already used a crackers select for this table */
 				for(j=0;j<crackedTables;j++)
@@ -264,7 +268,7 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		
 		if (match2(p, algebraRef, markTRef) || match2(p, batRef, reverseRef)){
 			if (varGetProp(mb, getArg(p,1), pivotProp) != NULL){
-				ValRecord v, *vp, v1, *vp1, v2, *vp2;
+				ValRecord v, *vp, v1, *vp1, v2, *vp2, v3, *vp3;
 
 				vp = VALset(&v, TYPE_int,&varGetProp(mb, getArg(p,1), pivotProp)->value.val.ival);
 				varSetProp(mb, getArg(p, 0), pivotProp, op_eq, vp);
@@ -274,7 +278,95 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 				vp2 = VALset(&v2, TYPE_int,&varGetProp(mb, getArg(p,1), headProp)->value.val.ival);
 				varSetProp(mb, getArg(p, 0), headProp, op_eq, vp2);
+
+				if (varGetProp(mb, getArg(p,1), pivotDisjunctiveProp)!=NULL){
+					vp3 = VALset(&v3, TYPE_int,&varGetProp(mb, getArg(p,1), pivotDisjunctiveProp)->value.val.ival);
+					varSetProp(mb, getArg(p, 0), pivotDisjunctiveProp, op_eq, vp3);
+				}
 			}
+			continue;
+		}
+	
+		/* disjunctive queries */
+		if (match2(p, algebraRef,kunionRef)){
+			InstrPtr select1, select2, newdselect,head;
+			ValRecord v, *vp, v1, *vp1, v2, *vp2;
+
+			printf("found a union\n");
+			/*not a valid case*/
+			if (varGetProp(mb, getArg(p,1), canBeCrackedProp) == NULL && 
+			    varGetProp(mb, getArg(p,2), canBeCrackedProp) == NULL)
+				continue;
+			printf("analyzing union\n");
+	
+			/*a union in a multi disjunctions query >2*/
+			if (varGetProp(mb, getArg(p,2), pivotProp) != NULL && 
+			    varGetProp(mb, getArg(p,2), pivotDisjunctiveProp) != NULL){
+
+			printf("multi union\n");
+				select1 = old[varGetProp(mb, getArg(p,1), canBeCrackedProp)->value.val.ival];
+				head = old[varGetProp(mb, getArg(p,2), headProp)->value.val.ival];
+
+				newdselect = newInstruction(mb,ASSIGNsymbol);
+				getArg(newdselect,0) = getArg(p,0);
+				setVarType(mb,getArg(newdselect,0), newBatType( TYPE_oid, TYPE_bit));
+				setModuleId(newdselect, putName("crackers", 8));
+				setFunctionId(newdselect, putName("djoinselect", 11));
+				newdselect= pushArgument(mb, newdselect, getArg(head, 1));
+				newdselect= pushArgument(mb, newdselect, getArg(select1, 1));
+				newdselect= pushArgument(mb, newdselect, getArg(p, 2));
+				for(j=2; j< select1->argc; j++)
+					newdselect= pushArgument(mb, newdselect, getArg(select1, j));
+
+				vp = VALset(&v, TYPE_int, &varGetProp(mb, getArg(p,2), headProp)->value.val.ival);
+				varSetProp(mb, getArg(newdselect, 0), headProp, op_eq, vp);
+
+				freeInstruction(p);
+				old[i]=newdselect;
+				removeInstruction(mb, select1);
+				i--;
+
+				vp1 = VALset(&v1, TYPE_int, &i); 
+				varSetProp(mb, getArg(newdselect, 0), pivotProp, op_eq, vp1);
+				vp2 = VALset(&v2, TYPE_int, &i); 
+				varSetProp(mb, getArg(newdselect, 0), pivotDisjunctiveProp, op_eq, vp2);
+
+				actions++;
+				continue;
+			
+			}
+
+			/*otherwise this is the first union call on the first pair of disjunctions*/	
+			select1 = old[varGetProp(mb, getArg(p,1), canBeCrackedProp)->value.val.ival];
+			select2 = old[varGetProp(mb, getArg(p,2), canBeCrackedProp)->value.val.ival];
+			
+			newdselect = newInstruction(mb,ASSIGNsymbol);
+			getArg(newdselect,0) = getArg(p,0);
+			setVarType(mb,getArg(newdselect,0), newBatType( TYPE_oid, TYPE_bit));
+			setModuleId(newdselect, putName("crackers", 8));
+			setFunctionId(newdselect, putName("dselect", 7));
+			newdselect= pushArgument(mb, newdselect, getArg(select1, 1));
+			newdselect= pushArgument(mb, newdselect, getArg(select2, 1));
+			for(j=2; j< select1->argc; j++)
+				newdselect= pushArgument(mb, newdselect, getArg(select1, j));
+			for(j=2; j< select2->argc; j++)
+				newdselect= pushArgument(mb, newdselect, getArg(select2, j));
+
+			freeInstruction(p);
+			old[i]=newdselect;
+			removeInstruction(mb, select1);
+			i--;
+			removeInstruction(mb, select2);
+			i--;
+
+			vp = VALset(&v, TYPE_int, &i);
+			varSetProp(mb, getArg(newdselect, 0), headProp, op_eq, vp);
+			vp1 = VALset(&v1, TYPE_int, &i); 
+			varSetProp(mb, getArg(newdselect, 0), pivotProp, op_eq, vp1);
+			vp2 = VALset(&v2, TYPE_int, &i); 
+			varSetProp(mb, getArg(newdselect, 0), pivotDisjunctiveProp, op_eq, vp2);
+
+			actions++;
 			continue;
 		}
 		
@@ -294,18 +386,34 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			newProject = newInstruction(mb,ASSIGNsymbol);
 			getArg(newProject,0) = getArg(p,0);
 			setModuleId(newProject, putName("crackers", 8));
-			if (getArg(head, 1)==getArg(p, 2))
-				setFunctionId(newProject, putName("projectH", 8));
-			else
-				setFunctionId(newProject, putName("project", 7));
-			newProject= pushArgument(mb, newProject, getArg(head, 1));
-			if (getArg(head, 1)==getArg(p, 2))
-				newProject= pushArgument(mb, newProject, getArg(head, 2));
-			else
-				newProject= pushArgument(mb, newProject, getArg(p, 2));
-			newProject= pushArgument(mb, newProject, getArg(pivot, 0));
-			for(j=3; j< head->argc; j++)
-				newProject= pushArgument(mb, newProject, getArg(head, j));
+			if (varGetProp(mb, getArg(p,1), pivotDisjunctiveProp) == NULL){
+				if (getArg(head, 1)==getArg(p, 2))
+					setFunctionId(newProject, putName("projectH", 8));
+				else
+					setFunctionId(newProject, putName("project", 7));
+				newProject= pushArgument(mb, newProject, getArg(head, 1));
+				if (getArg(head, 1)==getArg(p, 2))
+					newProject= pushArgument(mb, newProject, getArg(head, 2));
+				else
+					newProject= pushArgument(mb, newProject, getArg(p, 2));
+				newProject= pushArgument(mb, newProject, getArg(pivot, 0));
+				for(j=3; j< head->argc; j++)
+					newProject= pushArgument(mb, newProject, getArg(head, j));
+			}else{
+				if (getArg(head, 1)==getArg(p, 2))
+					setFunctionId(newProject, putName("dprojectH", 9));
+				else
+					setFunctionId(newProject, putName("dproject", 8));
+				newProject= pushArgument(mb, newProject, getArg(head, 1));
+				if (getArg(head, 1)==getArg(p, 2))
+					newProject= pushArgument(mb, newProject, getArg(head, 2));
+				else
+					newProject= pushArgument(mb, newProject, getArg(p, 2));
+				newProject= pushArgument(mb, newProject, getArg(pivot, 0));
+			}
+			
+
+
 			#ifdef DEBUG_OPT_SIDCRACK
 			printInstruction(cntxt->fdout,mb, 0, newProject,0); 
 			#endif
