@@ -56,7 +56,7 @@ shredding-remap-error.SF-1487156.cache_doc
 # recursive function
 NOT_ALGEBRA?recursion_type_error.SF-1579524
 #NOT_WIN32?
-xs_untypedAtomic.SF-1509806.mps
+ID_1509806?xs_untypedAtomic.SF-1509806.mps
 polymorphic_sequences.SF-1497419.mps
 boolean_string_cast.SF-1525175
 NOT_WIN32?bogus_text_step.SF-1537500.mps
