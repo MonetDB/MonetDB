@@ -486,11 +486,15 @@ comment "Use the pivot. For each tuple in pivot with a 0, check if the respectiv
 
 command project( b:bat[:oid,:@1],bp:bat[:oid,:@2], l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
 address CRKProjectCrack_@1_@2
-comment "Sync and project the tail of the cpair";
+comment "Sync map and project the tail";
 
 command project( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
 address CRKProject_@1_@2
-comment "Sync the cracking pair and project the tail";
+comment "Sync map and project tail based on pivot";
+
+command projectH( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
+address CRKProjectH_@1_@2
+comment "Sync map and project head based on pivot";
 
 command positionproject( b:bat[:oid,:@1],bp:bat[:oid,:@2],PositionPivot:bat[:oid,:oid],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@2]
 address CRKPositionProject_@1_@2
@@ -507,10 +511,6 @@ comment "Sync the cracking pair and project the tail. Use for disjunctive querie
 command positionproject( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:oid]):bat[:oid,:@2]
 address CRKdPositionProject_@1_@2
 comment "Sync the cracking pair and project the tail. Use position based pivot";
-
-command projectH( b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
-address CRKProjectH_@1_@2
-comment "Sync the cracking pair and project the head";
 
 command pmselect(b:bat[:oid,:@1],bp:bat[:oid,:@2],l:@1,h:@1,li:bit,hi:bit,l2:@2,h2:@2,li2:bit,hi2:bit):bat[:oid,:bit]
 address CRKselectBoundsIncrementalSideways_@1_@2
