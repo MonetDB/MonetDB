@@ -508,6 +508,10 @@ command dproject( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit]):bat[:oi
 address CRKdProject_@1_@2
 comment "Sync the cracking pair and project the tail. Use for disjunctive queries that require a larger bit vector";
 
+command dprojectH( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:bit]):bat[:oid,:@1]
+address CRKdProjectH_@1_@2
+comment "Sync the cracking pair and project the head. Use for disjunctive queries that require a larger bit vector";
+
 command positionproject( b:bat[:oid,:@1],bp:bat[:oid,:@2],pivot:bat[:oid,:oid]):bat[:oid,:@2]
 address CRKdPositionProject_@1_@2
 comment "Sync the cracking pair and project the tail. Use position based pivot";
