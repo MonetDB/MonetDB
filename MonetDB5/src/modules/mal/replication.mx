@@ -66,7 +66,7 @@ A few SQL wrapper procedures and functions can be used to control it manually.
 @verbatim
 CREATE PROCEDURE startSync() EXTERNAL NAME slave."sync";
 CREATE PROCEDURE startSync(tag integer) EXTERNAL NAME slave."sync";
-CREATE PROCEDURE stopSync(uri string) EXTERNAL NAME slave."stop";
+CREATE PROCEDURE stopSync() EXTERNAL NAME slave."stop";
 CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."issynchronizing";
 
 CREATE PROCEDURE resetSlaves(uri string) EXTERNAL NAME master."invalidate";
@@ -258,7 +258,7 @@ command sync(uri:str, usr:str, pw:str, tag:oid):void
 address SLAVEsync
 comment "Login to master uri with admin credentials to initiate submission of the log records";
 
-command stop(uri:str):void
+command stop():void
 address SLAVEstop
 comment "Slave suspends synchronisation with master";
 
