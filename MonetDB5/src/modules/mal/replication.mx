@@ -1,4 +1,4 @@
-@' The contents of this file are subject to the MonetDB Public License
+oimaste The contents of this file are subject to the MonetDB Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
@@ -187,11 +187,11 @@ are flagged as errors.
 @mal
 module master;
 
-command open():int
+command open():oid
 address MASTERopen
 comment "Create a replication record";
 
-command close(tag:int):void
+command close(tag:oid):void
 address MASTERclose
 comment "Close the replication record";
 
@@ -207,28 +207,28 @@ command invalidate():void
 address MASTERinvalidate
 comment "Invalidate all copies maintained at slaves";
 
-pattern append(s:str, t:str, c:str, :any_1, tag:int):void
+pattern append(s:str, t:str, c:str, :any_1, tag:oid):void
 address MASTERappendValue
 comment "Dump the scalar on the MAL log");
 
-pattern append(s:str, t:str, c:str, b:bat[:oid,:any_1], tag:int):void
+pattern append(s:str, t:str, c:str, b:bat[:oid,:any_1], tag:oid):void
 address MASTERappend
 comment "Dump the BAT on the MAL log");
 
-pattern delete(s:str, t:str, b:bat[:oid,:any_1], tag:int):void
+pattern delete(s:str, t:str, b:bat[:oid,:any_1], tag:oid):void
 address MASTERdelete
 comment "Dump the BAT with deletions on the MAL log");
 
-pattern copy(sname:str, tname:str, tsep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, tag:int):void
+pattern copy(sname:str, tname:str, tsep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, tag:oid):void
 address MASTERcopy
 comment "A copy command leads to invalidation of the slave's image. A dump restore will be required.";
 
-pattern replay(uri:str, usr:str, pw:str, tag:int):void
+pattern replay(uri:str, usr:str, pw:str, tag:oid):void
 address MASTERreplay
 comment "Slave calls the master to restart sending the missing transactions
 from a certain point as a named user.";
 
-command sync(uri:str, usr:str, pw:str, tag:int):void
+command sync(uri:str, usr:str, pw:str, tag:oid):void
 address MASTERsync
 comment "Login to slave with credentials to initiate submission of the log records";
 
@@ -236,7 +236,7 @@ pattern getURI():str
 address MASTERgetURI
 comment "Display the URI for the master";
 
-command getCutOffTag():int
+command getCutOffTag():oid
 address MASTERgetCutOffTag
 comment "Return the cutoff tag for transaction synchronization";
 
@@ -252,7 +252,7 @@ comment "Login to master with environment credentials to initiate submission of 
 command sync(uri:str):void
 address SLAVEsyncURI
 comment "Login to master with admin credentials to initiate submission of the log records";
-command sync(uri:str, usr:str, pw:str, tag:int):void
+command sync(uri:str, usr:str, pw:str, tag:oid):void
 address SLAVEsync
 comment "Login to master uri with admin credentials to initiate submission of the log records";
 
@@ -310,8 +310,8 @@ slave.prelude();
 #endif
 
 replication_export int MASTERroleEnabled(void);
-replication_export str MASTERopen(int *ret);
-replication_export str MASTERclose(int *ret, int *tag);
+replication_export str MASTERopen(oid *ret);
+replication_export str MASTERclose(int *ret, oid *tag);
 replication_export str MASTERstart(int *ret);
 replication_export str MASTERstop(int *ret);
 replication_export str MASTERinvalidate(int *ret);
@@ -322,8 +322,8 @@ replication_export str MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 replication_export str MASTERcopy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str SLAVEsyncDefault(int  *ret);
 replication_export str SLAVEsyncURI(int  *ret, str *conn);
-replication_export str SLAVEsync(int  *ret, str *uri, str *usr, str *pw, int *tag);
-replication_export str MASTERsync(int  *ret, str *uri, str *usr, str *pw, int *tag);
+replication_export str SLAVEsync(int  *ret, str *uri, str *usr, str *pw, oid *tag);
+replication_export str MASTERsync(int  *ret, str *uri, str *usr, str *pw, oid *tag);
 replication_export str SLAVEstop(int *ret);
 replication_export str MASTERprelude(int *ret);
 replication_export str MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -344,6 +344,7 @@ replication_export BAT *SLAVEtable(void);
 #include <mal_sabaoth.h>
 #include <mapilib/Mapi.h>
 #include <mtime.h>
+#include "algebra.h"
 
 @-
 The start of the query is marked with a replica tag.
@@ -353,7 +354,7 @@ The tag is returned for marking all related updates.
 The final code should contain a loop to determine the last replication tag.
 @c
 #define MASTER "master/"
-#define REPLICA "log%05d-%05d"
+#define REPLICA "log"OIDFMT"-"OIDFMT
 #define REPLICABLOCK 20
 #define REPLICADELAY 5000
 
@@ -361,7 +362,7 @@ static struct MASTERRECORD {
 	char *buf;	/* assembled update function */
 	int limit;
 	int top;
-	int tag;	/* transaction identifier of next needed */
+	oid tag;	/* transaction identifier of next needed */
 	int fcn;	/* identifier to differentiate function */
 } *master;
 static int mtop = 0;
@@ -370,15 +371,16 @@ static int mlimit = 0;
 static MT_Lock repLck;	
 
 /* Master log file properties */
-static int startTag = 0;	/* current transaction file bounds */
-static int endTag = 0;		/* last transaction identifier given */
+static oid startTag = 0;	/* current transaction file bounds */
+static oid endTag = 0;		/* last transaction identifier given */
 static int fcnTag = 0;		/* unique labeling of the functions */
-static int cutoffTag = 0;	/* to signal out of date slaves */
+static oid cutoffTag = 0;	/* to signal out of date slaves */
 static char logFile[PATHLENGTH]; 
 static stream *repFile;
 static int sendLogs;		/* permit forwarding of log records */
 
 /* slave synchronisation status */
+static BAT *slavetid;
 static BAT *slavecommit;
 static BAT *slavevalid;
 static BAT *slaveerror;
@@ -387,6 +389,7 @@ static int acceptLogs;
 static void
 SLAVEinitLog(){
 	if ( slavecommit == NULL){
+		@:createBAT(slavetid,TYPE_oid)@
 		@:createBAT(slavecommit,TYPE_timestamp)@
 		@:createBAT(slavevalid,TYPE_timestamp)@
 		@:createBAT(slaveerror,TYPE_str)@
@@ -394,8 +397,8 @@ SLAVEinitLog(){
 }
 
 static int 
-MASTERfindLogFile(char logFile[PATHLENGTH], int transactionid){
-	int btag, etag;
+MASTERfindLogFile(char logFile[PATHLENGTH], oid transactionid){
+	oid btag, etag;
 	DIR *dirp;
 	struct dirent *dent;
 
@@ -409,7 +412,7 @@ MASTERfindLogFile(char logFile[PATHLENGTH], int transactionid){
 	if (dirp == NULL)
 		return  -1 ;
 	while ((dent = readdir(dirp)) != NULL) 
-		if ( sscanf(dent->d_name,"log%d-%d",&btag,&etag) == 2 && btag <= transactionid && transactionid<etag  ){
+		if ( sscanf(dent->d_name,"log" OIDFMT"-" OIDFMT,&btag,&etag) == 2 && btag <= transactionid && transactionid<etag  ){
 			snprintf(logFile, PATHLENGTH,"%s%s",MASTER, dent->d_name);
 			slash_2_dir_sep(logFile);
 			return etag;
@@ -444,7 +447,8 @@ MASTERincrement()
 
 str
 MASTERprelude(int *ret){
-	int master, tag, etag;
+	int master;
+	oid tag, etag;
 	DIR *dirp;
 	struct dirent *dent;
 
@@ -474,7 +478,7 @@ MASTERprelude(int *ret){
 	}
 	cutoffTag = INT_MAX;
 	while ((dent = readdir(dirp)) != NULL) {
-		if ( sscanf(dent->d_name,"log%d-%d",&tag,&etag) == 2 ){
+		if ( sscanf(dent->d_name,"log"OIDFMT"-"OIDFMT,&tag,&etag) == 2 ){
 			if ( tag < cutoffTag)
 				cutoffTag = tag;
 			if ( tag >= startTag){
@@ -522,7 +526,7 @@ MASTERroleEnabled(void)
 	return startTag > 0;
 }
 
-static int MASTERgetBuffer(int tag)
+static int MASTERgetBuffer(oid tag)
 {
 	int i;
 
@@ -554,7 +558,7 @@ For the time being, we assume that all chunks are kept in the
 master directory. A better scheme is to find the last chunk
 by reading the directory itself.
 @c
-str MASTERopen(int *ret)
+str MASTERopen(oid *ret)
 {
 	int i, l, len;
 
@@ -589,7 +593,7 @@ str MASTERopen(int *ret)
  * Upon closure of the transaction, we assign the transaction identifier
  * and reflect it in the log file name as well.
 */
-str MASTERclose(int *ret, int *tag)
+str MASTERclose(int *ret, oid *tag)
 {
 	timestamp stamp = *timestamp_nil;
 	str val = NULL;
@@ -601,7 +605,7 @@ str MASTERclose(int *ret, int *tag)
 	mal_set_lock(repLck, "replication");
 	MTIMEepoch(&stamp);
 	ATOMformat(TYPE_timestamp, (ptr) & stamp, &val);
-	snprintf(buf,BUFSIZ,"tag_%d", *tag);
+	snprintf(buf,BUFSIZ,"tag_"OIDFMT, *tag);
 
 	/* the function name is returned by the slave to built
 	   a flow dependency. Otherwise the function could be
@@ -612,7 +616,7 @@ str MASTERclose(int *ret, int *tag)
 			     "sql.commit();\n"
 			     "slave.close(tag,stamp);\n"
 			     "end %s;\n"
-			     "slave.%s(%d:oid,\"%s\":timestamp);\n"
+			     "slave.%s("OIDFMT":oid,\"%s\":timestamp);\n"
 			     "slave.drop(\"%s\");\n",
 			      buf,buf, endTag, val,buf)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
@@ -879,7 +883,7 @@ The master has to assume that the slave has initialized its SQL environment prop
 @c
 static struct MASTERrecord {
 	str uri;
-	int tag;        /* next one to sent */
+	oid tag;        /* next one to sent */
 	Mapi m;
 	time_t last_connect;
 	time_t last_disconnect;
@@ -903,9 +907,16 @@ MASTERsend(void *arg)
 			 GDKgetenv("replication_slave") == NULL;
 	if ( !master )
 		return;
-	if ( masterstatus[idx].tag < cutoffTag)
+	if ( masterstatus[idx].tag < (oid)  cutoffTag)
 		return;
-
+@-
+If the slave starts from scratch, it will sent the 0 -tag.
+This can simply be replaced by the lowest number known.
+But, then the slave should use the BATmax option instead
+of the BATcount to determine the tag.
+@c
+	if ( masterstatus[idx].tag == 0)
+		masterstatus[idx].tag =  (oid) cutoffTag;
 @-
 Upon succesful transmission we wait for new stuff, this is
 recognized checking the tags. It leads to re-sending the
@@ -1013,7 +1024,7 @@ MASTERinvalidate(int *ret)
 	sendLogs = 0;
 	GDKremovedir(MASTER);
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
-	cutoffTag = startTag = --endTag; /* the next one to expect */
+	cutoffTag = startTag = endTag; /* the next one to expect */
 	MASTERincrement();
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
@@ -1022,11 +1033,12 @@ MASTERinvalidate(int *ret)
 The slave process sents a remote master.sync request with all
 the information needed for the master to set up and start a log forwarding thread.
 @c
-str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
+str MASTERsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 {
 	Mapi mapi;
 	MT_Id tid;
 	int i, free=MAL_MAXCLIENTS, fnd=0;
+	oid t = *tag;
 
 	(void)ret;
 
@@ -1034,7 +1046,10 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 	stream_printf(GDKout, "#replay the log from  %s %s %s %d\n",
 			*uri, *usr, *pw, *tag);
 #endif
-	if ( *tag < cutoffTag)
+	if ( t == 0)
+		t = cutoffTag;
+	else
+	if ( t < (oid) cutoffTag)
 		throw(MAL,"master.sync","Slave out of date");
 
 	for ( i = 0; i < MAL_MAXCLIENTS; i++)
@@ -1060,7 +1075,7 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 				*uri, mapi_error_str(mapi));
 
 	masterstatus[free].uri= GDKstrdup(*uri);
-	masterstatus[free].tag= *tag;
+	masterstatus[free].tag= t;
 	masterstatus[free].m= mapi;
 	if (MT_create_thread(&tid, MASTERsend, (void *) &free) < 0) 
 		throw(MAL, "master.sync", "cannot fork new client");
@@ -1074,7 +1089,7 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 @-
 Prepare the remote call to the master
 @c
-str SLAVEsync(int *ret, str *uri, str *usr, str *pw, int *tag)
+str SLAVEsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 {
 	Mapi mapi;
 	MapiHdl hdl;
@@ -1101,7 +1116,7 @@ str SLAVEsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 	if (luri == NULL)
 		throw(MAL, "slave.sync", OPERATION_FAILED ": URI not found");
 
-	snprintf(buf,BUFSIZ,"master.sync(\"%s\",\"%s\",\"%s\",%d);", luri, *usr, *pw, *tag);
+	snprintf(buf,BUFSIZ,"master.sync(\"%s\",\"%s\",\"%s\","OIDFMT":oid);", luri, *usr, *pw, *tag);
 	GDKfree(luri);
 	hdl = mapi_query(mapi,buf);
 	if (hdl == NULL){
@@ -1129,7 +1144,7 @@ str SLAVEsync(int *ret, str *uri, str *usr, str *pw, int *tag)
 
 str SLAVEsyncURI(int *ret, str *uri)
 {
-	int tag = 0;
+	oid tag = 0;
 	str usr = "monetdb";
 	str pw = "monetdb";
 
@@ -1144,7 +1159,8 @@ str SLAVEsyncURI(int *ret, str *uri)
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "slave.sync", OPERATION_FAILED);
 	}
-	tag = (int) BATcount(slavecommit);
+	if ( BATcount(slavetid) )
+		BATmax(slavetid,&tag);
 	mal_unset_lock(repLck, "replication");
 	return SLAVEsync(ret, uri, &usr, &pw, &tag);
 }
@@ -1215,8 +1231,8 @@ str SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mal_clients[ cntxt->idx].mode = FINISHING;
 		throw(MAL, "slave.open", "No synchronisation allowed");
 	}
-	/* cheap check if we have seen it before */
-	if ( BATcount(slavecommit) < (BUN) *tag) 
+	/* check if we have seen it before */
+	if (BUNfnd(BATmirror(slavetid),tag) != BUN_NONE )
 		throw(MAL, "slave.open", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -1232,11 +1248,12 @@ str SLAVEclose(int *ret, oid *tag, timestamp *valid)
 		/* abort the transaction */
 		throw(MAL, "slave.clase", OPERATION_FAILED);
 	
-	if ( BATcount(slavecommit) != (BUN) *tag) 
+	if (BUNfnd(BATmirror(slavetid),tag) != BUN_NONE )
 		throw(MAL, "slave.close", "Out of order execution");
 	
 	mal_set_lock(repLck, "replication");
 	MTIMEepoch(&stamp);
+	BUNappend(slavetid, tag, FALSE);
 	BUNappend(slavecommit, &stamp, FALSE);
 	BUNappend(slavevalid, valid, FALSE);
 	BUNappend(slaveerror, err, FALSE);
@@ -1248,7 +1265,7 @@ The slave status can be made visible through an SQL
 table producing function.
 @verbatim
 create function slavelog () 
-	returns table ("commit" timestamp, "valid" timestamp, "error" string)
+	returns table ("tid" int, "commit" timestamp, "valid" timestamp, "error" string)
 	external name sql.dump_slave;
 @end verbatim
 
@@ -1263,6 +1280,7 @@ SLAVEtable(void){
 		 slavevalid == NULL ||
 		 slaveerror == NULL)
 		return t;
+	BUNins(t,"tid",&slavetid->batCacheid,FALSE);
 	BUNins(t,"commit",&slavecommit->batCacheid,FALSE);
 	BUNins(t,"valid",&slavevalid->batCacheid,FALSE);
 	BUNins(t,"error",&slaveerror->batCacheid,FALSE);
