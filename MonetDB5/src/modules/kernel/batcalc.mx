@@ -1663,8 +1663,8 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 @:operatorCstImpl(LT,<,GE)@
 @:operatorCstImpl(GT,>,LE)@
 @:operatorCstImpl(LE,<=,GT)@
-@:operatorCstImpl(EQ,==,NEQ)@
-@:operatorCstImpl(NEQ,!=,EQ)@
+@:operatorCstImpl(EQ,==,EQ)@
+@:operatorCstImpl(NEQ,!=,NEQ)@
 @:baselineCstCode(AND,&&,bit,AND)@
 @:baselineCstCode(OR,||,bit,OR)@
 
