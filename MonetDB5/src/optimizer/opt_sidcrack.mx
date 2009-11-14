@@ -266,7 +266,6 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (varGetProp(mb, getArg(p,1), pivotProp) != NULL){
 				ValRecord v, *vp, v1, *vp1, v2, *vp2;
 
-				printf("forward pivot \n");
 				vp = VALset(&v, TYPE_int,&varGetProp(mb, getArg(p,1), pivotProp)->value.val.ival);
 				varSetProp(mb, getArg(p, 0), pivotProp, op_eq, vp);
 
@@ -280,7 +279,7 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 		
 		/* replace tuple reconstruction operators */
-		if (match2(p, algebraRef, joinRef)){
+		if (match2(p, algebraRef, joinRef)||match2(p, algebraRef, leftjoinRef)){
 			InstrPtr newProject, pivot, head;
 
 			if (!(varGetProp(mb, getArg(p,1), pivotProp) != NULL && 
@@ -289,14 +288,21 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 			pivot = old[varGetProp(mb, getArg(p,1), pivotProp)->value.val.ival];
 			head  = old[varGetProp(mb, getArg(p,1), headProp )->value.val.ival];
+				
 		
 			/* create the new operator call */	
 			newProject = newInstruction(mb,ASSIGNsymbol);
 			getArg(newProject,0) = getArg(p,0);
 			setModuleId(newProject, putName("crackers", 8));
-			setFunctionId(newProject, putName("project", 7));
+			if (getArg(head, 1)==getArg(p, 2))
+				setFunctionId(newProject, putName("projectH", 8));
+			else
+				setFunctionId(newProject, putName("project", 7));
 			newProject= pushArgument(mb, newProject, getArg(head, 1));
-			newProject= pushArgument(mb, newProject, getArg(p, 2));
+			if (getArg(head, 1)==getArg(p, 2))
+				newProject= pushArgument(mb, newProject, getArg(head, 2));
+			else
+				newProject= pushArgument(mb, newProject, getArg(p, 2));
 			newProject= pushArgument(mb, newProject, getArg(pivot, 0));
 			for(j=3; j< head->argc; j++)
 				newProject= pushArgument(mb, newProject, getArg(head, j));
