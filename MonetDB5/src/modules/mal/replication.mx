@@ -67,7 +67,7 @@ A few SQL wrapper procedures and functions can be used to control it manually.
 CREATE PROCEDURE startSync() EXTERNAL NAME slave."sync";
 CREATE PROCEDURE startSync(tag integer) EXTERNAL NAME slave."sync";
 CREATE PROCEDURE stopSync(uri string) EXTERNAL NAME slave."stop";
-CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."isSynchronizing";
+CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."issynchronizing";
 
 CREATE PROCEDURE resetSlaves(uri string) EXTERNAL NAME master."invalidate";
 CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getURI";
@@ -172,7 +172,9 @@ Archiving requires inspection of the slaves and the status
 of their replay log table. Otherwise, their attempt
 to synchronize may fail.
 
-A slave starts replicating using the last tag stored in the slave log.
+Any error recognized during the replay should put the slave into freezing mode.
+
+A slave starts replicating using the maximal tag stored in the slave log.
 The master can be optionally forced to start at a particular tag.
 
 COPY INTO commands cause the master to invalidate the images of
@@ -263,7 +265,8 @@ comment "Slave suspends synchronisation with master";
 pattern open(tag:oid)
 address SLAVEopen
 comment "Marks the start of a replication record. It checks the slave log
-table for existence of the tag. If so, it aborts the attempt to reapply.";
+table for existence of the tag. If so, or upon an error,
+it kills the log channel.";
 
 command close(tag:oid,stamp:timestamp)
 address SLAVEclose
@@ -274,7 +277,7 @@ command drop{unsafe}(fcnname:str)
 address SLAVEdrop
 comment "Remove the replica function from the module";
 
-command isSynchronizing():int
+command issynchronizing():int
 address SLAVEisSynchronizing
 comment "Are we actively synchronizing with the master";
 
@@ -905,10 +908,6 @@ MASTERsend(void *arg)
 	/* find the last replication log file */
 	master = GDKgetenv_istrue("replication_master") &&
 			 GDKgetenv("replication_slave") == NULL;
-	if ( !master )
-		return;
-	if ( masterstatus[idx].tag < (oid)  cutoffTag)
-		return;
 @-
 If the slave starts from scratch, it will sent the 0 -tag.
 This can simply be replaced by the lowest number known.
@@ -917,6 +916,13 @@ of the BATcount to determine the tag.
 @c
 	if ( masterstatus[idx].tag == 0)
 		masterstatus[idx].tag =  (oid) cutoffTag;
+	if (master == 0 || masterstatus[idx].tag < (oid)  cutoffTag) {
+		GDKfree(masterstatus[idx].uri);
+		masterstatus[idx].uri= NULL;
+		masterstatus[idx].tag= 0;
+		masterstatus[idx].m= 0;
+		return;
+	}
 @-
 Upon succesful transmission we wait for new stuff, this is
 recognized checking the tags. It leads to re-sending the
@@ -928,10 +934,10 @@ we should switch to a new log file once in a while.
 		if (nxt < 0){
 			/* wait for log file to become available */
 			MT_sleep_ms(REPLICADELAY);
-			if ( mapi_ping(masterstatus[idx].m) != MOK)
-				break; /* slave is gone */
 			continue;
 		}
+		if ( mapi_ping(masterstatus[idx].m) != MOK)
+			break; /* slave is gone */
 		if ( sendLogs == 0){
 			/* suspend sending */
 			MT_sleep_ms(REPLICADELAY);
@@ -966,6 +972,7 @@ we should switch to a new log file once in a while.
 			showException( getExceptionType(mapi_result_error(hdl)),
 						"master.send",
 						"%s", getExceptionMessage(mapi_result_error(hdl)));
+			break; /* all errors are fatal */
 		}
 		if (hdl )
 			mapi_close_handle(hdl);
@@ -1059,8 +1066,10 @@ str MASTERsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 		} else
 			fnd |= strcmp(masterstatus[i].uri,*uri)== 0;
 
-	if ( fnd)
+	if ( fnd){
+		sendLogs = TRUE;	/* restart sending */
 		return MAL_SUCCEED; /* slave already known */
+	}
 	if ( free == MAL_MAXCLIENTS)
 		throw(MAL,"master.sync","Too many concurrent actions");
 

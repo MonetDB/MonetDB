@@ -18,29 +18,37 @@ mclient -lsql -d dbslave -s "create table tmp(i integer);"
 mclient -lsql -d dbmaster -s "insert into tmp values(127);"
 
 sleep 7
-# the master invalidates the snapshot
+# the master invalidates the snapshot at dbslave
 mclient -lmal -d dbmaster -s "master.invalidate();"
 
 # add more records to its state
 mclient -lsql -d dbmaster -s "insert into tmp values(274);"
 mclient -lsql -d dbmaster -s "insert into tmp values(745);"
 
-# create a new slave, suspend master to avoid early forward pushing of logs
-monetdb lock dbmaster  
+# from here dbslave is frozen, does not accept these updates
+sleep 7
+echo " slave should only have 127"
+mclient -lsql -d dbslave -s "select * from tmp;"
+
+# create a new slave
 monetdb create dbslave2
 monetdb set slave=`mclient -lmal -d dbmaster -s"master.getURI();"` dbslave2
 monetdb release dbslave2
-mclient -lsql -d dbslave2 -s "create table tmp(i integer);"
-#prepare for re-synchronization
-monetdb stop dbslave2
-monetdb release dbmaster
-monetdb start dbslave2
 
+# the master log stream has been stopped by invalidate()
+sleep 7
+mclient -lsql -d dbslave2 -s 'CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."issynchronizing";'
+mclient -lsql -d dbslave2 -s "select isSynchronizing();"
+
+# create the table and initiate the synchronisation
+mclient -lsql -d dbslave2 -s "create table tmp(i integer);"
+mclient -lsql -d dbslave2 -s 'CREATE PROCEDURE startSync() EXTERNAL NAME slave."sync";'
+mclient -lsql -d dbslave2 -s "call startSync();"
+
+#wait for the stuff
 sleep 7
 echo " master has all records"
 mclient -lsql -d dbmaster -s "select * from tmp;"
-echo " slave should only have received 127"
-mclient -lsql -d dbslave -s "select * from tmp;"
 echo " slave should only have received 274, 745"
 mclient -lsql -d dbslave2 -s "select * from tmp;"
 
