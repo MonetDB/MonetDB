@@ -2,6 +2,13 @@
 # Copyright
 # $Header$
 
+  15 Nov 2009; Fabian Groffen <fabian@cwi.nl> configure.ag,
+  src/tools/mserver5.mx:
+  Added --enable-console configure argument, defaulting to 'yes' for
+  now.  Disabling the server console increases security by avoiding
+  local access exploits.  This is not the default since our Testing
+  setup cannot deal with a console-less server yet.
+
   03 Nov 2009; Fabian Groffen <fabian@cwi.nl>
   src/tools/monet_version.c.in:
   Report detected amount of main memory and cpu cores in output of

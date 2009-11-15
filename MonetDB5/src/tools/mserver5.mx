@@ -244,6 +244,7 @@ monet_init(opt *set, int setlen)
 	if (!GDKinit(set, setlen))
 		return 0;
 
+#ifdef HAVE_CONSOLE
 	monet_daemon = GDKembedded;
 	if (GDKgetenv_isyes("monet_daemon")) {
 		monet_daemon = 1;
@@ -251,6 +252,7 @@ monet_init(opt *set, int setlen)
 		setsid();
 #endif
 	}
+#endif
 	monet_hello(set, setlen);
 	return 1;
 }
@@ -381,10 +383,12 @@ faster system start.
 					dbinit = optarg;
 				break;
 			}
+#ifdef HAVE_CONSOLE
 			if (strcmp(long_options[option_index].name, "daemon") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "monet_daemon", optarg);
 				break;
 			}
+#endif
 			if (strcmp(long_options[option_index].name, "single-user") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_single_user", "yes");
 				break;
@@ -628,13 +632,15 @@ the configuration file.
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
-	if ( monet_script)
+	if (monet_script)
 		GDKfree(monet_script);
-	if (monet_daemon) {
-		while(1) 
-			MT_sleep_ms(5000);
-	} else
+#ifdef HAVE_CONSOLE
+	if (!monet_daemon) {
 		MSserveClient(mal_clients);
+	} else
+#endif
+		while (1) 
+			MT_sleep_ms(5000);
 
 	/* mal_exit calls MT_global_exit, so statements after this call will
 	 * never get reached */
