@@ -136,7 +136,7 @@ Organized by module:
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
-sql5_export int SQLvalidatePipeline(void);
+sql5_export str SQLvalidatePipeline(void);
 sql5_export str setOptimizers(str optimizer);
 
 #endif /* _SQL_OPTIMIZER_H_ */
@@ -441,6 +441,7 @@ tested extensively and should provide overall good performance.
 Additional pipelines are defined in the monetdb.conf file.
 The optimizers can be turned on/off, leaving the minimal plan
 active.
+The first error in the optimizer string is shown.
 @c
 str minimalPlan= "inline,remap,deadcode,multiplex";
 
@@ -448,17 +449,17 @@ static str optimizers[256];	/* the optimizer pipeline */
 static str optimizerpipe;		/* reference to last pipeline string */
 static char *previouspipe = 0;
 	
-int
+str
 SQLvalidatePipeline(void){
-	int error= 0;
 	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, replication= FALSE;
 	int i;
 
 	mal_set_lock(sql_contextLock,"SQL optimizer");
-	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ){
-		showException(SQL,"optimizer"," 'inline' should be the first\n");
-		error++;
+	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ) {
+		mal_unset_lock(sql_contextLock,"SQL optimizer");
+		throw(SQL,"optimizer"," 'inline' should be the first\n");
 	}
+	
 	/* deadcode should be used */
 	for ( i=0; optimizers[i]; i++)
 		if (strcmp(optimizers[i],"deadcode") == 0)
@@ -476,34 +477,34 @@ SQLvalidatePipeline(void){
 #ifdef WIN32
 		else
 		if (strcmp(optimizers[i],"octopus") == 0){
-			showException(SQL,"optimizer"," 'octopus' needs Linux\n");
-			error++;
+			mal_unset_lock(sql_contextLock,"SQL optimizer");
+			throw(SQL,"optimizer"," 'octopus' needs Linux\n");
 		}
 #endif
 	if (optimizers[0] && mitosis == TRUE && mergetable == FALSE) {
-		showException(SQL,"optimizer"," 'mitosis' needs 'mergetable'\n");
-		error++;
+		mal_unset_lock(sql_contextLock,"SQL optimizer");
+		throw(SQL,"optimizer"," 'mitosis' needs 'mergetable'\n");
 	}
 
 	if ( --i >= 0 && optimizers[i] && strcmp(optimizers[i],"multiplex") ){
-		showException(SQL,"optimizer"," 'multiplex' should be the last\n");
-		error++;
+		mal_unset_lock(sql_contextLock,"SQL optimizer");
+		throw(SQL,"optimizer"," 'multiplex' should be the last\n");
 	}
 	if (optimizers[0] && deadcode == FALSE ){
-		showException(SQL,"optimizer"," 'deadcode' should be used at least once\n");
-		error++;
+		mal_unset_lock(sql_contextLock,"SQL optimizer");
+		throw(SQL,"optimizer"," 'deadcode' should be used at least once\n");
 	}
 @-
 For replicated databases we need to ensure that the corresponding optimizer
 is enabled.
 @c
 	if ( MASTERroleEnabled() && replication == FALSE){
-		showException(SQL,"optimizer"," 'replication' should be part of the pipeline\n");
-		error++;
+		mal_unset_lock(sql_contextLock,"SQL optimizer");
+		throw(SQL,"optimizer"," 'replication' should be part of the pipeline\n");
 	}
 
 	mal_unset_lock(sql_contextLock,"SQL optimizer");
-	return error;
+	return MAL_SUCCEED;
 }
 
 @-
@@ -558,25 +559,23 @@ setOptimizers(str optimizer)
 			nxt++;
 		}
 		if ((nme = putName(optimizer,strlen(optimizer))) == 0)
-			showException(SQL,"optimizer"," '%s' does not exist\n",optimizer);
+			showException(SQL,"optimizer"," '%s' pipeline does not exist\n",optimizer);
 		else if (top<255)
 			optimizers[top++] = nme; 
 		optimizer = nxt;
 	} 
 	optimizers[top] = 0;
 	GDKfree(base);
-	if (top == 1  && pipe == NULL){
-		showException(SQL,"optimizer","Optimizer '%s' does not exist, use default pipe instead\n", optimizerpipe?optimizerpipe:"undefined");
+	if (top <= 1  && pipe == NULL){
+		showException(SQL,"optimizer","Optimizer '%s' pipeline does not exist, use default pipe instead\n", optimizerpipe?optimizerpipe:"undefined");
 		setOptimizers("default_pipe");
+		return GDKstrdup("default_pipe");
 	}else
 	if (top == 256){
 		showException(SQL,"optimizer","Too many optimizer steps, use default pipe instead\n");
 		setOptimizers("default_pipe");
-	} else
-	if (SQLvalidatePipeline() ) {
-		showException(SQL,"optimizer"," Invalid pipeline,  use default_pipe instead\n");
-		setOptimizers("default_pipe");
-	}
+		return GDKstrdup("default_pipe");
+	} 
 	return GDKstrdup(optimizerpipe);
 }
 

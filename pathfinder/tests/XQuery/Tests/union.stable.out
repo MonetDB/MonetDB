@@ -17,14 +17,14 @@ quit();
 
 Over..
 
-# 18:02:55 >  
-# 18:02:55 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=59075 q01.xq
-# 18:02:55 >  
+# 17:11:59 >  
+# 17:11:59 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=37785 union.xq
+# 17:11:59 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><author><last>Stevens</last><first>W.</first></author><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><f/><c foo2="bar"/></XQueryResult>
+<XQueryResult><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><f/><c foo2="bar"/><author><last>Stevens</last><first>W.</first></author></XQueryResult>
 
-# 01:50:33 >  
-# 01:50:33 >  Done.
-# 01:50:33 >  
+# 17:11:59 >  
+# 17:11:59 >  Done.
+# 17:11:59 >  
 

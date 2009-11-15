@@ -32,8 +32,8 @@ Over..
  3  
  4 <b>textnode</b>
  5 <c foo2="bar"/>
- 6 <a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a> 
- 7 <b>textnode</b> 
+ 6 <a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a>
+ 7 <b>textnode</b>
  8 <c foo2="bar"/>
  9  
 10  
@@ -43,7 +43,7 @@ Over..
 14  
 15  
 16  
-17 
+17  
 18  
 19  
 20  

@@ -17,14 +17,21 @@ quit();
 
 Over..
 
-# 18:02:55 >  
-# 18:02:55 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=59075 q01.xq
-# 18:02:55 >  
+# 17:11:58 >  
+# 17:11:58 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=37785 is-before4.xq
+# 17:11:58 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>false false false false<e/><f/><c foo2="bar"/>false</XQueryResult>
+<XQueryResult>false false false false<e/><f/><c foo2="bar"/><book year="2000">
+        <title>Data on the Web</title>
+        <author><last>Abiteboul</last><first>Serge</first></author>
+        <author><last>Buneman</last><first>Peter</first></author>
+        <author><last>Suciu</last><first>Dan</first></author>
+        <publisher>Morgan Kaufmann Publishers</publisher>
+        <price>39.95</price>
+    </book></XQueryResult>
 
-# 16:16:19 >  
-# 16:16:19 >  Done.
-# 16:16:19 >  
+# 17:11:58 >  
+# 17:11:58 >  Done.
+# 17:11:58 >  
 
