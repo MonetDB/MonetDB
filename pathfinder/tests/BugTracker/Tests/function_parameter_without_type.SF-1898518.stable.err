@@ -10,6 +10,13 @@ stderr of test 'function_parameter_without_type.SF-1898518` in directory 'tests/
 # 13:37:34 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=35022 function_parameter_without_type.SF-1898518.xq
 # 13:37:34 >  
 
+MAPI  = monetdb@rig:37641
+QUERY = declare function getData1($d) { $d//data[@num="1"] };
+ERROR = !type error: no variant of function pf:attribute accepts the given argument type(s): item*; string; string; string; string; string
+        !type error: maybe you meant:
+        !type error:   pf:attribute (node*, string, string, string, string, string) as node*
+        !type error: illegal arguments for function pf:attribute
+        !# halted in /ufs/manegold/_/scratch0/Monet/Testing/Candidate/source/pathfinder/compiler/semantics/typecheck.brg (fun_not_found), line 1342
 
 # 13:37:34 >  
 # 13:37:34 >  Done.

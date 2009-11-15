@@ -54,7 +54,7 @@ shredding-remap-error.SF-1487156.shred_doc
 shredding-remap-error.SF-1487156.cache_doc
 recursion_type_error.SF-1579524
 #NOT_WIN32?
-xs_untypedAtomic.SF-1509806.mps
+ID_1509806?xs_untypedAtomic.SF-1509806.mps
 polymorphic_sequences.SF-1497419.mps
 boolean_string_cast.SF-1525175
 NOT_WIN32?bogus_text_step.SF-1537500.mps
@@ -118,6 +118,7 @@ insert_large_doc.SF-1726954
 32_docs.SF-1730617
 HAVE_JDBCCLIENT_JAR?JDBC_250_results.SF-1730556
 HAVE_JDBCCLIENT_JAR?JDBC_0_results.SF-1886326
+HAVE_JDBCCLIENT_JAR?JDBC_5_results.SF-1959269
 crash_on_concatenated_query.SF-1730547
 error_in_preceeding_axis.SF-1731850
 attribute_serialization.SF-1743442
@@ -182,7 +183,8 @@ multi_merged_union.SF-2276427
 non-existing_collection.SF-1991726
 root-node_of_constructed_element.SF-2456324
 ebv.SF-2474519
-side-effects.SF-2124300
+ID_2124300?side-effects.SF-2124300.KO
+side-effects.SF-2124300.OK
 query_compilation_item3.SF-2130051
 Parse_error_with_pf_collection.SF-2020631
 XML_document_cache_broken.SF-1414720
@@ -191,7 +193,7 @@ copybug.SF-2642003
 parent_wrong_properties.SF-2668437
 ancestor-or-self.SF-2636285.unpack_doc
 ancestor-or-self.SF-2636285.test
-fn-root_fn-id_on_attribute_nodes.SF-1975028
+ID_1975028?fn-root_fn-id_on_attribute_nodes.SF-1975028
 fn-collection_DOES-NOT-EXIST.SF-2664405
 unuseable_doc-available.SF-2791704
 stream-document.SF-2804823
