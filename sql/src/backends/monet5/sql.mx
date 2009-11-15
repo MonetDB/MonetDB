@@ -736,8 +736,17 @@ function slave.close(uri:str, tag:int, t:timestamp):bit;
 end slave.close;
 
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
-	x := algebra.mark_grp(a,g,1:oid);
-	return mark_grp:= batcalc.int(x);
+	# order based on b
+	bm := algebra.markT(b,0:oid);
+	mb := bat.reverse(bm);
+	ma := algebra.leftfetchjoin(mb, a);
+	aa := bat.mirror(a);
+	maa := algebra.leftfetchjoin(mb, aa);
+	x := algebra.mark_grp(ma,g,1:oid);
+	mg := batcalc.int(x);
+	# restore the order based on a 
+	aam := bat.reverse(maa);
+	return mark_grp := algebra.leftfetchjoin(aam, mg);
 end batcalc.mark_grp;
 
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1] ) :bat[:oid,:int]; 
