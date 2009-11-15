@@ -264,38 +264,10 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	if (!GDKembedded && database != NULL && database[0] != '\0' &&
 	    strcmp(database, GDKgetenv("gdk_dbname")) != 0)
 	{
-		sabdb *stats;
-		str err;
-
-		err = SABAOTHgetStatus(&stats, database);
-		if (err != MAL_SUCCEED) {
-			/* this is kind of awful, but we need to get rid of this
-			 * message */
-			fprintf(stderr, "!SABAOTHgetStatus: %s\n", err);
-			GDKfree(err);
-			GDKfree(command);
-			return;
-		}
-
-		if (stats != NULL) {
-			if (stats->conns != NULL &&
-					stats->conns->val != NULL &&
-					stats->state == SABdbRunning)
-			{
-				stream_printf(fout, "^%s%s\n",
-						stats->conns->val, stats->dbname);
-				stream_flush(fout);
-			} else {
-				stream_printf(fout, "!database %s currently "
-						"not available\n", stats->dbname);
-				stream_flush(fout);
-			}
-			SABAOTHfreeStatus(&stats);
-			GDKfree(command);
-			return;
-		}
-
-		stream_printf(fout, "!database '%s' does not exist\n", database);
+		stream_printf(fout, "!request for database '%s', "
+				"but this is database '%s', "
+				"did you mean to connect to merovingian instead?\n",
+				database, GDKgetenv("gdk_dbname"));
 		/* flush the error to the client, and abort further execution */
 		stream_flush(fout);
 		GDKfree(command);

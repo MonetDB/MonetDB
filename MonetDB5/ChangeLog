@@ -2,6 +2,11 @@
 # Copyright
 # $Header$
 
+  15 Nov 2009; Fabian Groffen <fabian@cwi.nl> src/mal/mal_session.mx:
+  Removed the ability to redirect to other running databases in the same
+  dbfarm.  This functionality has been taken over completely by
+  merovingian, and only results in confusement these days, bug #2891191.
+
   15 Nov 2009; Fabian Groffen <fabian@cwi.nl> configure.ag,
   src/tools/mserver5.mx:
   Added --enable-console configure argument, defaulting to 'yes' for
