@@ -2874,6 +2874,7 @@ def main(argv) :
 
     #par = {}
     # get current environment
+    env['HOST'] = os.environ['HOST']
     for v in vars:
         if os.environ.has_key(v):
             env[v] = os.environ[v]
