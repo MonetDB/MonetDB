@@ -125,6 +125,7 @@ insert_large_doc.SF-1726954
 32_docs.SF-1730617
 HAVE_JDBCCLIENT_JAR?JDBC_250_results.SF-1730556
 HAVE_JDBCCLIENT_JAR?JDBC_0_results.SF-1886326
+HAVE_JDBCCLIENT_JAR?JDBC_5_results.SF-1959269
 crash_on_concatenated_query.SF-1730547
 error_in_preceeding_axis.SF-1731850
 attribute_serialization.SF-1743442
