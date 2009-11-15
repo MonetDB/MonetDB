@@ -1418,7 +1418,9 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", "failed");
 	if ( strcmp("optimizer",  varname)== 0) {
-		setOptimizers(*(str *) getArgReference(stk,pci,2));
+		msg = setOptimizers(*(str *) getArgReference(stk,pci,2));
+		if ( msg != NULL &&  strcmp(msg,"default_pipe") == 0 && strcmp(msg,varname))
+			return MAL_SUCCEED;
 		msg = SQLvalidatePipeline();
 		if ( msg ){
 			setOptimizers("default_pipe");

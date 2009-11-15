@@ -569,10 +569,12 @@ setOptimizers(str optimizer)
 	if (top <= 1  && pipe == NULL){
 		showException(SQL,"optimizer","Optimizer '%s' pipeline does not exist, use default pipe instead\n", optimizerpipe?optimizerpipe:"undefined");
 		setOptimizers("default_pipe");
+		return GDKstrdup("default_pipe");
 	}else
 	if (top == 256){
 		showException(SQL,"optimizer","Too many optimizer steps, use default pipe instead\n");
 		setOptimizers("default_pipe");
+		return GDKstrdup("default_pipe");
 	} 
 	return GDKstrdup(optimizerpipe);
 }
