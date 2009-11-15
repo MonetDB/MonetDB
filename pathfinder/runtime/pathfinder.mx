@@ -5917,7 +5917,6 @@ xquery_parse_string(char *src,
     return p+1;
 }
 
-#ifdef XQUERY_PREPARE 
 /* 
  * parse an XML datamodel numeric, and determine its minimal type (xs:integer, xs:decimal or xs:double) 
  */
@@ -5950,7 +5949,6 @@ xquery_parse_numeric(char* p,
  * from a cached MIL tree. Otherwise use pathfinder to compile. Returns error string (NULL if ok).
  */
 static char xquery_too_complex[80] = "xquery_prepare: xquery is too complex for cached execution.\n";
-#endif
 #define xquery_nondescriptive_error ((char*) -1)
 
 static char*
@@ -5959,11 +5957,24 @@ xquery_prepare(xquery_client *ctx,
                char* query) 
 {
     char *err = NULL;
-#ifdef XQUERY_PREPARE 
     int nsbuf = 0, loaded_modules = 0, len;
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *q, *p = query;
     char val[1024], url1[1024], url2[1024];
 
+    /* Setting the Algebra flag; server setting overules compile-time default; client choice overrules server setting */
+    int options = 0;
+#if MILPRINT_SUMMER_IS_DEFAULT
+         if (((ctx->mode & XQ_ALGEBRA) != 0) || \
+            (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
+              (GDKgetenv("xquery_backend") != NULL) && (strcmp(GDKgetenv("xquery_backend"),"algebra") == 0)))
+            options = COMPILE_OPTION_ALGEBRA;
+#else /* ALGEBRA_IS_DEFAULT */
+        if (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
+            (((ctx->mode & XQ_ALGEBRA) != 0) || \
+             (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
+            options = COMPILE_OPTION_ALGEBRA;
+#endif
+if (options != COMPILE_OPTION_ALGEBRA) {
     if (ctx->mode&XQ_DEBUG) {
         /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
         char *prologue = (char*) PFinitMIL();
@@ -6145,29 +6156,13 @@ xquery_prepare(xquery_client *ctx,
      */
     if (err == xquery_function_error) /* MIL execution failed, do not generate error in PF compiler */
        return xquery_nondescriptive_error;
-    if (err) 
-#else
-    (void) usec;
-#endif
-    {
+}
+    if (err) {
         char *sec1 = NULL;
         char *sec2 = NULL;
         char *sec3 = NULL;
-        int options = 0;
         /* compile and execute the query (minus module imports) */
         err = xquery_nondescriptive_error;
-    /* Setting the Algebra flag; server setting overules compile-time default; client choice overrules server setting */
-#if MILPRINT_SUMMER_IS_DEFAULT
-         if (((ctx->mode & XQ_ALGEBRA) != 0) || \
-            (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
-              (GDKgetenv("xquery_backend") != NULL) && (strcmp(GDKgetenv("xquery_backend"),"algebra") == 0)))
-            options = COMPILE_OPTION_ALGEBRA;
-#else /* ALGEBRA_IS_DEFAULT */
-        if (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
-            (((ctx->mode & XQ_ALGEBRA) != 0) || \
-             (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
-            options = COMPILE_OPTION_ALGEBRA;
-#endif
         if (xquery_compile_exec(ctx, options, query, 0, &sec1, &sec2, &sec3, NULL)) 
                 err = NULL;
         if (sec1) free(sec1);
