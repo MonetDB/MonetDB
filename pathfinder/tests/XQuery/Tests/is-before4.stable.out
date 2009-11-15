@@ -17,12 +17,21 @@ quit();
 
 Over..
 
-# 15:50:59 >  
-# 15:50:59 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=32470 is-before4.xq
-# 15:50:59 >  
+# 17:11:58 >  
+# 17:11:58 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=37785 is-before4.xq
+# 17:11:58 >  
 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>false false false false<e/><f/><c foo2="bar"/><book year="2000">
+        <title>Data on the Web</title>
+        <author><last>Abiteboul</last><first>Serge</first></author>
+        <author><last>Buneman</last><first>Peter</first></author>
+        <author><last>Suciu</last><first>Dan</first></author>
+        <publisher>Morgan Kaufmann Publishers</publisher>
+        <price>39.95</price>
+    </book></XQueryResult>
 
-# 15:50:59 >  
-# 15:50:59 >  Done.
-# 15:50:59 >  
+# 17:11:58 >  
+# 17:11:58 >  Done.
+# 17:11:58 >  
 

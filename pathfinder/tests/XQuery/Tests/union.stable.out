@@ -17,12 +17,14 @@ quit();
 
 Over..
 
-# 15:51:00 >  
-# 15:51:00 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=32470 union.xq
-# 15:51:00 >  
+# 17:11:59 >  
+# 17:11:59 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=37785 union.xq
+# 17:11:59 >  
 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><d><e/><f/></d><e/><f/><c foo2="bar"/><author><last>Stevens</last><first>W.</first></author></XQueryResult>
 
-# 15:51:00 >  
-# 15:51:00 >  Done.
-# 15:51:00 >  
+# 17:11:59 >  
+# 17:11:59 >  Done.
+# 17:11:59 >  
 
