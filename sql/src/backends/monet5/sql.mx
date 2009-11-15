@@ -1180,6 +1180,7 @@ First introduce the routines to be called by the front-end.
 #include <sql_storage.h>
 #include <sql_scenario.h>
 #include <store_sequence.h>
+#include <sql_optimizer.h>
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
 #include <rel_select.h>
@@ -1416,6 +1417,14 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", "failed");
+	if ( strcmp("optimizer",  varname)== 0) {
+		setOptimizers(*(str *) getArgReference(stk,pci,2));
+		msg = SQLvalidatePipeline();
+		if ( msg ){
+			setOptimizers("default_pipe");
+			return msg;
+		}
+	}
 	src = &stk->stk[getArg(pci, 2)];
 	if (stack_find_var(m, varname)) {
 		stack_set_var(m, varname, src);
