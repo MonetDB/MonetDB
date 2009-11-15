@@ -28,7 +28,7 @@ mclient -lsql -d dbslave -s "select * from tmp;"
 mclient -lsql -d dbslave -s "select * from slavelog();"
 
 # the master stops the slaves
-mclient -lmal -d dbmaster -s "master.invalidate();"
+mclient -lmal -d dbmaster -s "master.freeze();"
 
 # extend the log record file
 mclient -lsql -d dbmaster -s "insert into tmp values(274);"
@@ -44,7 +44,7 @@ monetdb stop dbslave
 mclient -lsql -d dbslave -s "select * from tmp;"
 
 mclient -lmal -d dbmaster -s "c:= master.getCutOffTag(); io.print(c);"
-mclient -lmal -d dbslave -s "c:= slave.isSynchronizing(); io.print(c);"
+mclient -lmal -d dbslave -s "c:= slave.issynchronizing(); io.print(c);"
 #remove all stuff
 monetdb stop dbmaster dbslave
 monetdb destroy -f dbmaster dbslave

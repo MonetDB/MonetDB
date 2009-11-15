@@ -18,8 +18,8 @@ mclient -lsql -d dbslave -s "create table tmp(i integer);"
 mclient -lsql -d dbmaster -s "insert into tmp values(127);"
 
 sleep 7
-# the master invalidates the snapshot at dbslave
-mclient -lmal -d dbmaster -s "master.invalidate();"
+# the master freeze the snapshot at dbslave
+mclient -lmal -d dbmaster -s "master.freeze();"
 
 # add more records to its state
 mclient -lsql -d dbmaster -s "insert into tmp values(274);"
@@ -35,7 +35,7 @@ monetdb create dbslave2
 monetdb set slave=`mclient -lmal -d dbmaster -s"master.getURI();"` dbslave2
 monetdb release dbslave2
 
-# the master log stream has been stopped by invalidate()
+# the master log stream has been stopped by freeze()
 sleep 7
 mclient -lsql -d dbslave2 -s 'CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."issynchronizing";'
 mclient -lsql -d dbslave2 -s "select isSynchronizing();"

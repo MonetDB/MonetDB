@@ -60,13 +60,21 @@ and is set upon database (re)start.  Note that this setting can not be added to 
 
 The slave starts synchronizing with the master automatically upon each session restart.
 A few SQL wrapper procedures and functions can be used to control it manually.
+For example, the slave can temporarily suspend receiving log replays using stopSync()
+and reactive it afterwards with startSync().
+A startSync() is also needed if you create a relation already known by the master,
+for it could have sent updates already. Due to unavailability of the target
+table it closed the log stream.
+
+The function freezeSlaves() removes the log files and makes sure that all
+existing slaves won't be able to catch up other then by re-initializing the
+database using e.g. a checkpoint.
 @verbatim
-CREATE PROCEDURE startSync() EXTERNAL NAME slave."sync";
-CREATE PROCEDURE startSync(tag integer) EXTERNAL NAME slave."sync";
 CREATE PROCEDURE stopSync() EXTERNAL NAME slave."stop";
+CREATE PROCEDURE startSync() EXTERNAL NAME slave."sync";
 CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."issynchronizing";
 
-CREATE PROCEDURE resetSlaves(uri string) EXTERNAL NAME master."invalidate";
+CREATE PROCEDURE freezeSlaves() EXTERNAL NAME master."freeze";
 CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getURI";
 CREATE FUNCTION cutOffTag() RETURNS string EXTERNAL NAME master."getCutOffTag";
 @end verbatim
@@ -110,12 +118,11 @@ the end of the query block. This separates the concurrent
 actions on the database at the master and leads to a serial
 execution of the replication operations within the slave.
 
-The log records are stored in a file "dbfarm/db/master/log%05d-%05d" with the 
+The log records are stored in a file "dbfarm/db/master/log%d-%d" with the 
 following structure:
 @verbatim
-function slave.tag1(transactionid:int,stamp:timestamp):str;
-  master:= "mapi:monetdb://gio.ins.cwi.nl:50000/dbmaster";
-  slave.open(transactionid);
+function slave.tag1(transactionid:int,stamp:timestamp);
+  barrier doit:= slave.open(transactionid);
   tag1_b := bat.new(:oid,:int);
   ...
   bat.insert(tag1_b,3:oid,232:int); #example update
@@ -123,15 +130,14 @@ function slave.tag1(transactionid:int,stamp:timestamp):str;
   sql.append("schema","table","col",tag1_b,tag);
   slave.close(transactionid,stamp);
   sql.commit();
-  return tag1:= "tag1";
+  exit doit;
 end tag1;
-fcn:= slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
-slave.drop(fcn);
+slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
+slave.drop("tag1");
 @end verbatim
 
-The master identity is passed along to differentiate masters later.
 The slave.open() simply checks the replica log administration table
-and issues an assertion if necessary.
+and ignores duplicate attempts to roll the database forward.
 
 The operations are executed in the serial order as on the master,
 which should lead to the same optimistic transactional behavior.
@@ -142,15 +148,12 @@ The transaction identifier is part of the call to the function
 with the transaction update details.
 
 @- Interaction protocol
-The interaction protocol is tricky, because there are several states
-where a system is still in SQL initialization mode.
-
 The master node simply waits for a slave to request the transmission of the missing log files.
 The request includes the URI of the slave and the user credentials needed to establish a connection.
-The last property is the restart tag.
+The last parameter is the last known transaction id successfully re-executed.
 The master forks a thread to start flushing the blacklog files.
 
-Grouping the operations within temporary functions
+Grouping the operations in temporary MAL functions
 makes it easy to skip its execution when we detect
 that it has been executed before. 
 
@@ -169,10 +172,9 @@ to synchronize may fail.
 Any error recognized during the replay should put the slave into freezing mode,
 because the synchronization integrity might become compromised.
 
-A slave starts replicating using the maximal tag stored in the slave log.
-The master can be optionally forced to start at a particular tag.
+A slave always starts synchronizing using the maximal tag stored in the slave log.
 
-COPY INTO commands cause the master to invalidate the images of
+COPY INTO commands cause the master to freeze the images of
 all slaves. Capturing the input file and forwarding it to
 the slaves seems overly complicated.
 
@@ -190,8 +192,8 @@ A slave property can be set to a list of masters, which turns the
 the slave into a serving multiple sources. Calls for splitting
 the slavelog.
 
-Ignore failing replay functions can be used to filter the stream.
-Now it stops the stream.
+The tables at the slave shoulde be set read-only, otherwise we
+have to double check integrity and bail out replication on violation.
 @{
 @mal
 module master;
@@ -212,8 +214,8 @@ command stop():void
 address MASTERstop
 comment "Stop synchronisation of the slaves";
 
-command invalidate():void
-address MASTERinvalidate
+command freeze():void
+address MASTERfreeze
 comment "Invalidate all copies maintained at slaves";
 
 pattern append(s:str, t:str, c:str, :any_1, tag:oid):void
@@ -269,7 +271,7 @@ command stop():void
 address SLAVEstop
 comment "Slave suspends synchronisation with master";
 
-pattern open(tag:oid)
+pattern open(tag:oid):int
 address SLAVEopen
 comment "Marks the start of a replication record. It checks the slave log
 table for existence of the tag. If so, or upon an error,
@@ -324,7 +326,7 @@ replication_export str MASTERopen(oid *ret);
 replication_export str MASTERclose(int *ret, oid *tag);
 replication_export str MASTERstart(int *ret);
 replication_export str MASTERstop(int *ret);
-replication_export str MASTERinvalidate(int *ret);
+replication_export str MASTERfreeze(int *ret);
 replication_export str MASTERreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -582,7 +584,7 @@ str MASTERopen(oid *ret)
 	while ((l = snprintf(master[i].buf + master[i].top, len,
 			     "function slave.tag_%d{unsafe}(tag:oid,stamp:timestamp);\n"
 			     "sql.transaction();\n"
-			     "slave.open(tag);\n",fcnTag)) == len) {
+			     "barrier doit:= slave.open(tag);\n",fcnTag)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL){
 			mal_unset_lock(repLck, "replication");
@@ -625,6 +627,7 @@ str MASTERclose(int *ret, oid *tag)
 	while ((l = snprintf(master[i].buf + master[i].top, len,
 			     "sql.commit();\n"
 			     "slave.close(tag,stamp);\n"
+				 "exit doit;\n"
 			     "end %s;\n"
 			     "slave.%s("OIDFMT":oid,\"%s\":timestamp);\n"
 			     "slave.drop(\"%s\");\n",
@@ -962,9 +965,16 @@ we should switch to a new log file once in a while.
 		}
 
 		/* avoid concurrent addition of log records */
-		mal_set_lock(repLck, "replication");
-
+		/* but only on the last file */
+		if ( nxt == (int) endTag)
+			mal_set_lock(repLck, "replication");
+@-
+The tricky part of the block wise read is to ensure
+we sent proper newline terminated commands.
+Moreover, we would not like to block due to sending for old files.
+@c
 		/* read the complete file [now trimmed to 64KB]*/
+		/* need better sequence to deal with larger files */
 		bs = bstream_create(s, 128 * BLOCK);
 		if (bstream_next(bs) < 0) {
 			bstream_destroy(bs);
@@ -973,7 +983,8 @@ we should switch to a new log file once in a while.
 		}
 		hdl = mapi_query(masterstatus[idx].m, bs->buf);
 		masterstatus[idx].tag = nxt;
-		mal_unset_lock(repLck, "replication");
+		if ( nxt == (int) endTag)
+			mal_unset_lock(repLck, "replication");
 		close_stream(s);
 		if ( mapi_result_error(hdl) ){
 			showException( getExceptionType(mapi_result_error(hdl)),
@@ -1021,7 +1032,7 @@ in the log stream. Instead, we have to a snapshot marker somewhere, which
 is returned by the slave upon re-connection.
 @c
 str
-MASTERinvalidate(int *ret)
+MASTERfreeze(int *ret)
 {
 	int i;
 
@@ -1236,6 +1247,7 @@ The transaction identifier is used as an oid into this table.
 
 str SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int*) getArgReference(stk,pci,0);
 	oid *tag = (oid*) getArgReference(stk,pci,1);
 	
 	(void) mb;
@@ -1248,8 +1260,7 @@ str SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "slave.open", "No synchronisation allowed");
 	}
 	/* check if we have seen it before */
-	if (BUNfnd(BATmirror(slavetid),tag) != BUN_NONE )
-		throw(MAL, "slave.open", OPERATION_FAILED);
+	*ret= BUNfnd(BATmirror(slavetid),tag) == BUN_NONE;
 	return MAL_SUCCEED;
 }
 
