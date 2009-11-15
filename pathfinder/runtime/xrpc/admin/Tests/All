@@ -1,11 +1,11 @@
 add_del_doc_noxrpc
-NOT_ALGEBRA?add_del_doc
+add_del_doc
 # fn:put()
 NOT_ALGEBRA?backup_restore_noxrpc
-NOT_ALGEBRA?backup_restore
+backup_restore
 # pf:mil()
 NOT_ALGEBRA?db_stats_noxrpc
-NOT_ALGEBRA?db_stats
+db_stats
 # pf:mil()
 NOT_ALGEBRA?db_env_noxrpc
-NOT_ALGEBRA?db_env
+db_env
