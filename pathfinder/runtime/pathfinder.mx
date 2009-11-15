@@ -6156,6 +6156,8 @@ if (options != COMPILE_OPTION_ALGEBRA) {
      */
     if (err == xquery_function_error) /* MIL execution failed, do not generate error in PF compiler */
        return xquery_nondescriptive_error;
+} else {
+    err = xquery_nondescriptive_error;
 }
     if (err) {
         char *sec1 = NULL;
