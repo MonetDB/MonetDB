@@ -1,29 +1,43 @@
-monetdb create dbmaster
+# this script requires merovingian 
+
+# test resilience against synchronization violation
+merovingian
+mero=$!
+
+monetdb create dbmaster dbslave 
 monetdb set master=true dbmaster
 monetdb release dbmaster
-mclient -lsql -d dbmaster -s "create table tmp(i integer);"
+monetdb set slave=`mclient -lmal -d dbmaster -s"master.getURI();"` dbslave 
+monetdb release dbslave 
 
-monetdb create dbslave
-monetdb set slave=`mclient -lmal -d dbmaster -s"master.getURI();"` dbslave
-monetdb release dbslave
-mclient -lsql -d dbslave -s "create table tmp(i integer);"
+# make identical databases
+mclient -lsql -d dbmaster -s "create table tmp(i integer primary key);"
+mclient -lsql -d dbslave -s "create table tmp(i integer primary key);"
 
-mclient -lsql -d dbslave -s 'CREATE PROCEDURE startSync() EXTERNAL NAME slave."sync";'
-mclient -lsql -d dbslave -s 'CREATE PROCEDURE startSync(tag integer) EXTERNAL NAME slave."sync";'
-mclient -lsql -d dbslave -s 'CREATE PROCEDURE stopSync() EXTERNAL NAME slave."stop";'
-mclient -lsql -d dbslave -s 'CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."issynchronizing";'
+mclient -lsql -d dbmaster -s "insert into tmp values(127);"
 
-mclient -lsql -d dbslave -s 'call startSync();'
-mclient -lsql -d dbslave -s 'select isSynchronizing();'
-mclient -lsql -d dbslave -s 'call stopSync();'
-mclient -lsql -d dbslave -s 'select isSynchronizing();'
+sleep 7
+# the slave deviates from the snapshot 
+mclient -lsql -d dbslave -s "insert into tmp values(127);"
+mclient -lsql -d dbslave -s "insert into tmp values(128);"
 
-mclient -lsql -d dbslave -s 'CREATE PROCEDURE resetSlaves(uri string) EXTERNAL NAME master."invalidate";'
-mclient -lsql -d dbslave -s 'CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getURI";'
-mclient -lsql -d dbslave -s 'CREATE FUNCTION cutOffTag() RETURNS string EXTERNAL NAME master."getCutOffTag";'
-mclient -lsql -d dbslave -s 'select cutOffTag();'
-mclient -lsql -d dbslave -s 'select master();'
+echo " slave should have 127, 128"
+mclient -lsql -d dbslave -s "select * from tmp;"
 
-monetdb stop dbmaster dbslave
-monetdb destroy -f dbmaster dbslave
+# master follows
+mclient -lsql -d dbmaster -s "insert into tmp values(128);"
+mclient -lsql -d dbmaster -s "insert into tmp values(129);"
 
+sleep 7
+# slave has broken the dependency and is frozen
+echo " master should have 127, 128,129"
+mclient -lsql -d dbmaster -s "select * from tmp;"
+echo " slave should have 127, 128"
+mclient -lsql -d dbslave -s "select * from tmp;"
+
+#remove all stuff
+monetdb stop dbmaster dbslave 
+monetdb destroy -f dbmaster dbslave 
+
+#remove local merovingian instance
+kill $mero

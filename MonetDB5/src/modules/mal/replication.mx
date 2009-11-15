@@ -51,9 +51,6 @@ running database.
 step 2) Create a dump of the master database using the msqldump(1) tool.  
 
 step 3) To initiate a slave, simply load the master snapshot.
-[TODO Alternatively, the catalog is shipped to the slave, whereafter the
-infrastructure for Octopus could be used to pull the data from the master.
-Even better, the slave performs both pulling the catalog and data.]
 
 step 4) Run monetdb(1) to turn the database into a slave by setting its "slave" property to the URI of the master. 
 The precise URI can be obtained issuing the command
@@ -87,9 +84,6 @@ The state of the slaves becomes frozen.
 To restore replication in such case, both master and
 slaves have to be reinitialised using the aforementioned steps.
 
-[TODO, A slave property can be set to a list of masters, which turns the
-the slave into a serving multiple sources. ]
-
 @- Behind the scene
 When the replication_master environment is set, an optimizer
 becomes active to look after updates on SQL tables and to prepare
@@ -102,7 +96,7 @@ function query():void
   fcnid:= master.open();
   ...
   sql.append("schema","table","col",b:[:oid,:int]);
-  master.append("schema","table","col",b,tag);
+  master.append("schema","table","col",b,fcnid);
   ...
   t := mtime.current_timestamp();
   master.close(fcnid,t);
@@ -172,7 +166,8 @@ Archiving requires inspection of the slaves and the status
 of their replay log table. Otherwise, their attempt
 to synchronize may fail.
 
-Any error recognized during the replay should put the slave into freezing mode.
+Any error recognized during the replay should put the slave into freezing mode,
+because the synchronization integrity might become compromised.
 
 A slave starts replicating using the maximal tag stored in the slave log.
 The master can be optionally forced to start at a particular tag.
@@ -185,6 +180,18 @@ The slave invalidation scheme is rather crude. The log directory
 is emptied and a new log file is created. Subsequent attempts
 by the slaves to access transactions ideas before the invalidation
 are flagged as errors.
+
+@- Wishlist
+After setting the slave property, it could initiate full synchronization
+using the infrastructure for Octopus to pull the data from the master.
+For this we need msqldump functionality in the SQL code base.
+
+A slave property can be set to a list of masters, which turns the
+the slave into a serving multiple sources. Calls for splitting
+the slavelog.
+
+Ignore failing replay functions can be used to filter the stream.
+Now it stops the stream.
 @{
 @mal
 module master;
