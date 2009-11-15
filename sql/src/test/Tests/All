@@ -95,3 +95,5 @@ antiselect
 median_stdev
 
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
+
+mclient-t-s
