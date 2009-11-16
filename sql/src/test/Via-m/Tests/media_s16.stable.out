@@ -28,8 +28,8 @@ Over..
 % . # table_name
 % single_value # name
 % int # type
-% 10 # length
-[ -606348325	]
+% 11 # length
+[ -1234567890	]
 
 # 16:30:12 >  
 # 16:30:12 >  Done.

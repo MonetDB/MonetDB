@@ -1,5 +1,7 @@
 declare id_file1 integer;
+set id_file1 = -1234567890;
 declare id_media1 integer;
+set id_media1 = -1234567890;
 
 set id_media1 = (select media_id
                  from   media
