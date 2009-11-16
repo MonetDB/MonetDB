@@ -37,8 +37,8 @@ monetdb release dbslave2
 
 # the master log stream has been stopped by freeze()
 sleep 7
-mclient -lsql -d dbslave2 -s 'CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."issynchronizing";'
-mclient -lsql -d dbslave2 -s "select isSynchronizing();"
+mclient -lsql -d dbslave2 -s 'CREATE FUNCTION synchronizing() RETURNS boolean EXTERNAL NAME slave."synchronizing";'
+mclient -lsql -d dbslave2 -s "select synchronizing();"
 
 # create the table and initiate the synchronisation
 mclient -lsql -d dbslave2 -s "create table tmp(i integer);"

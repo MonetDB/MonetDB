@@ -44,7 +44,7 @@ monetdb stop dbslave
 mclient -lsql -d dbslave -s "select * from tmp;"
 
 mclient -lmal -d dbmaster -s "c:= master.getCutOffTag(); io.print(c);"
-mclient -lmal -d dbslave -s "c:= slave.issynchronizing(); io.print(c);"
+mclient -lmal -d dbslave -s "c:= slave.synchronizing(); io.print(c);"
 #remove all stuff
 monetdb stop dbmaster dbslave
 monetdb destroy -f dbmaster dbslave

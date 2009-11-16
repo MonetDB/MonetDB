@@ -60,9 +60,9 @@ and is set upon database (re)start.  Note that this setting can not be added to 
 
 The slave starts synchronizing with the master automatically upon each session restart.
 A few SQL wrapper procedures and functions can be used to control it manually.
-For example, the slave can temporarily suspend receiving log replays using stopSync()
-and reactive it afterwards with startSync().
-A startSync() is also needed if you create a relation already known by the master,
+For example, the slave can temporarily suspend receiving log replays using suspendSync()
+and reactive it afterwards with resumeSync().
+A resumeSync() is also needed if you create a relation already known by the master,
 for it could have sent updates already. Due to unavailability of the target
 table it closed the log stream.
 
@@ -70,11 +70,13 @@ The function freezeSlaves() removes the log files and makes sure that all
 existing slaves won't be able to catch up other then by re-initializing the
 database using e.g. a checkpoint.
 @verbatim
-CREATE PROCEDURE stopSync() EXTERNAL NAME slave."stop";
-CREATE PROCEDURE startSync() EXTERNAL NAME slave."sync";
-CREATE FUNCTION isSynchronizing() RETURNS boolean EXTERNAL NAME slave."issynchronizing";
+CREATE PROCEDURE suspendSync() EXTERNAL NAME slave."stop";
+CREATE PROCEDURE resumeSync() EXTERNAL NAME slave."sync";
+CREATE FUNCTION synchronizing() RETURNS boolean EXTERNAL NAME slave."synchronizing";
 
 CREATE PROCEDURE freezeSlaves() EXTERNAL NAME master."freeze";
+CREATE PROCEDURE suspendSlaves() EXTERNAL NAME master."stop";
+CREATE PROCEDURE resumeSlaves() EXTERNAL NAME master."start";
 CREATE FUNCTION master() RETURNS string EXTERNAL NAME master."getURI";
 CREATE FUNCTION cutOffTag() RETURNS string EXTERNAL NAME master."getCutOffTag";
 @end verbatim
@@ -123,13 +125,14 @@ following structure:
 @verbatim
 function slave.tag1(transactionid:int,stamp:timestamp);
   barrier doit:= slave.open(transactionid);
-  tag1_b := bat.new(:oid,:int);
-  ...
-  bat.insert(tag1_b,3:oid,232:int); #example update
-  ...
-  sql.append("schema","table","col",tag1_b,tag);
-  slave.close(transactionid,stamp);
-  sql.commit();
+    sql.transaction();
+    tag1_b := bat.new(:oid,:int);
+    ...
+    bat.insert(tag1_b,3:oid,232:int); #example update
+    ...
+    sql.append("schema","table","col",tag1_b,tag);
+    slave.close(transactionid,stamp);
+    sql.commit();
   exit doit;
 end tag1;
 slave.tag_1(1,"2009-09-03 15:49:45.000":timestamp);
@@ -286,8 +289,16 @@ command drop{unsafe}(fcnname:str)
 address SLAVEdrop
 comment "Remove the replica function from the module";
 
-command issynchronizing():int
-address SLAVEisSynchronizing
+command protect(schema:str, table:str)
+address SLAVEprotect
+comment "Mark a table for readonly";
+
+command isprotected(schema:str, table:str):bit
+address SLAVEisprotected
+comment "Check protection state";
+
+command synchronizing():int
+address SLAVEsynchronizing
 comment "Are we actively synchronizing with the master";
 
 command prelude():void
@@ -344,8 +355,11 @@ replication_export str MASTERgetCutOffTag(int *ret);
 replication_export str SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 replication_export str SLAVEclose(int *ret, oid *tag, timestamp *stamp);
 replication_export str SLAVEdrop(int *ret, str *tag);
+replication_export str SLAVEprotect(int *ret, str *schema, str *table);
+replication_export str SLAVEisprotected(int *ret, str *schema, str *table);
+replication_export int SLAVEisprotectedInternal(str schema, str table);
 replication_export str SLAVEprelude(int *ret);
-replication_export str SLAVEisSynchronizing(int *ret);
+replication_export str SLAVEsynchronizing(int *ret);
 replication_export BAT *SLAVEtable(void);
 #endif /* _REPLICATOR_H */
 @c
@@ -583,8 +597,9 @@ str MASTERopen(oid *ret)
 	master[i].fcn = fcnTag;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
 			     "function slave.tag_%d{unsafe}(tag:oid,stamp:timestamp);\n"
-			     "sql.transaction();\n"
-			     "barrier doit:= slave.open(tag);\n",fcnTag)) == len) {
+			     "barrier doit:= slave.open(tag);\n"
+			     "sql.transaction();\n",
+				fcnTag)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL){
 			mal_unset_lock(repLck, "replication");
@@ -935,7 +950,7 @@ of the BATcount to determine the tag.
 	}
 @-
 Upon succesful transmission we wait for new stuff, this is
-recognized checking the tags. It leads to re-sending the
+recognized by checking the tags. It leads to re-sending the
 last log file. To avoid ever larger files to be resent,
 we should switch to a new log file once in a while.
 @c
@@ -968,6 +983,8 @@ we should switch to a new log file once in a while.
 		/* but only on the last file */
 		if ( nxt == (int) endTag)
 			mal_set_lock(repLck, "replication");
+		if (repFile)
+			stream_flush(repFile);
 @-
 The tricky part of the block wise read is to ensure
 we sent proper newline terminated commands.
@@ -1352,6 +1369,54 @@ SLAVEdrop(int *ret, str *tag)
 	(void)ret;
 	return MAL_SUCCEED;
 }
+@-
+We keep a list of all tables updated by the replication scheme.
+They become re-only accessible.
+@c
+static str *schemes;
+static str *tables; 
+static int top, limit;
+
+str SLAVEprotect(int *ret, str *schema, str *table)
+{
+	(void) ret;
+	if ( schemes == NULL ){
+		limit = 1024;
+		top = 0;
+		schemes = GDKzalloc(limit * sizeof(str));
+		if (schemes == NULL)
+			throw(MAL,"slave.protect", MAL_MALLOC_FAIL);
+		tables = GDKzalloc(limit * sizeof(str));
+		if (tables == NULL)
+			throw(MAL,"slave.protect", MAL_MALLOC_FAIL);
+	}
+	if ( top == limit )
+			throw(MAL,"slave.protect", "Out of table slots");
+	schemes[top] = GDKstrdup(*schema);
+	tables[top] = GDKstrdup(*table);
+	top ++;
+	return MAL_SUCCEED;
+}
+
+int
+SLAVEisprotectedInternal(str schema, str table)
+{
+	int i;
+
+	if ( schemes == NULL || tables == NULL)
+		return FALSE;
+	for ( i = 0; i < top ; i++)
+	if ( schemes[i] && strcmp(schemes[i], schema) == 0 &&
+		 tables[i] && strcmp( tables[i], table) == 0 )
+		return TRUE;
+	return FALSE;
+}
+
+str SLAVEisprotected(int *ret, str *schema, str *table)
+{
+	*ret = SLAVEisprotectedInternal(*schema, *table);
+	return MAL_SUCCEED;
+}
 
 str
 SLAVEprelude(int *ret)
@@ -1374,7 +1439,7 @@ SLAVEprelude(int *ret)
 	return MAL_SUCCEED;
 }
 
-str SLAVEisSynchronizing(int *ret)
+str SLAVEsynchronizing(int *ret)
 {
 	*ret = acceptLogs != 0;
 	return MAL_SUCCEED;
