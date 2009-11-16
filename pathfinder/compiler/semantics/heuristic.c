@@ -291,14 +291,12 @@ apply_(PFloc_t loc, char *ns, char* fcn, PFpnode_t *a)
     return r;
 }
 
-/*
 static PFpnode_t* 
 seq_ty_(PFloc_t loc, PFpnode_t *a) { 
     PFpnode_t *r = p_wire1(p_seq_ty, loc, a);  
     if (r) r->sem.kind = p_kind_node;
     return r; 
 }
-*/
 
 #define cpy(cur)            cpy_subst(cur,NULL,NULL,NULL)
 #define subst(cur,src,dst)  cpy_subst(cur,src,dst,NULL)
@@ -642,18 +640,15 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
            let(var_type(cpy(VAR2)),
                flwr(binds(bind(vars(cpy(VAR3)),EXPR1), nil),
                where(nil, ord_ret(nil,
-                     apply("fn", "string", args(cpy(VAR3), nil)))))),
-/*
                      if_then(instof(cpy(VAR3), seq_ty(node_ty(p_kind_node, nil))),
                      then_else(apply("fn", "data", args(cpy(VAR3), nil)),
-                               cpy(VAR3)))
-*/
+                               cpy(VAR3))))))),
           binds(
            let(var_type(cpy(VAR4)),
                flwr(binds(bind(vars(cpy(VAR5)), cpy(VAR2)), nil),
                where(nil, ord_ret(nil,
                      apply("pf",(tst == TST_ATTR)?"attribute":"text", 
-                           args(cpy(VAR5), arg)))))), nil)));
+                           args(apply("fn", "string", args(cpy(VAR5), nil)), arg)))))), nil)));
 
         /* pattern(2): put in VBIND any remaining variable bindings after $x */
         if (VBIND) { 
