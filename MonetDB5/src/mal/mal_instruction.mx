@@ -3057,6 +3057,8 @@ varGetProp( MalBlkPtr mb, int var, int prop )
 	VarPtr v = getVar(mb, var);
 	int i;
 
+	if ( mb->prps == NULL)
+		return NULL;
 	for(i=0; i<v->propc; i++){
 		MalProp *p = mb->prps+v->prps[i];
 
