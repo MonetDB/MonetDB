@@ -174,7 +174,7 @@ dir("b_");
 [ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_10", "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]
 [ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
