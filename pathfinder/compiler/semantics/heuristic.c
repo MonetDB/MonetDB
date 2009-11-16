@@ -400,6 +400,7 @@ static rev_axis_t rev_axis[] = {
     {  0, p_attribute },
     {  0, p_attribute }
 };
+#define REV_AXIS(x) rev_axis[((x) <= 15)?(x):15]
 
 #define skip_over_emptyseq(p) skip(p,0)
 #define skip_to_locpath(p)    skip(p,1)
@@ -430,7 +431,7 @@ revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds)
         }
         if (p->kind != p_locpath || L(p)->kind != p_step) break;
 
-        rev_axis_t a = rev_axis[L(p)->sem.kind];
+        rev_axis_t a = REV_AXIS(L(p)->sem.kind);
         if (a.id == p_attribute) return NULL;
 
         /* protect (a bit) against reverted locpaths that are 
@@ -538,7 +539,7 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
 
     /* check txt/attr predicate and ensure it is the left child of eq */
     PFpnode_t *req_name = nil;
-    int tst = check_predicate(L(p), &req_name);
+    int i,j,tst = check_predicate(L(p), &req_name);
     if (!tst) {
         tst = check_predicate(R(p), &req_name);
         if (tst) {
@@ -548,6 +549,11 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
         } else {
            return 0;
         }
+    }
+    /* prohibition on a loop-lifted function application on lookup result, as it forces looplifted index evaluation */
+    for(i=j=0; i<depth; i++) {
+        if (stack[i]->kind == p_flwr) j = 1;
+        if (j && stack[i]->kind == p_fun_ref) return 0;
     }
 
     /* I do support conjunctions in PRED, EXPR1 */
