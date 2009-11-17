@@ -63,8 +63,13 @@ struct referencesNode{
 	oid 		cursor;
 	struct referencesNode *next;
 };
-
 typedef struct referencesNode refNode; 
+
+struct sortMergeNode{
+	int 		batId;
+	struct sortMergeNode *next;
+};
+
 
 /* This node is used for the AVL trees built withing the core cracking algorithms 
    It is  a more lightweight one than struct Node */
@@ -169,6 +174,9 @@ typedef struct {
 	lng 		accesses;
 	lng		dropped;
 	oid 		tuples;
+
+	/* for sort merge techniques */
+	struct sortMergeNode *smNode;
 
 } CrackerIndexNode;
 
@@ -394,6 +402,7 @@ newCrackerIndex_@1(int bid, int cbid){
 	CrackerIndex[i].references = NULL;
 	CrackerIndex[i].deleteNodes = FALSE;
 	CrackerIndex[i].mergeDeletions = -1;
+	CrackerIndex[i].smNode = NULL;
 	return i;
 }
 
