@@ -41,22 +41,22 @@ while(i < 4) {
 #-------------------------------------------------#
 # t			tmp_32			  # name
 # str			str			  # type
-#-------------------------------------------------#
-[ "theap.storage",	  "memory mapped"	  ]
+#-----------------------------------------#
+[ "theap.storage",	  "malloced"	  ]
 [ 60000 ]
 #-----------------------------------------#
 # t			h		  # name
 # str			str		  # type
-#-------------------------------------------------#
-[ "theap.storage",	  "memory mapped"	  ]
+#-----------------------------------------#
+[ "theap.storage",	  "malloced"	  ]
 [ 80000 ]
 
 bat("aa").info().reverse().select("theap.storage").reverse().print();
 #-----------------------------------------#
 # t			h		  # name
 # str			str		  # type
-#-------------------------------------------------#
-[ "theap.storage",	  "memory mapped"	  ]
+#-----------------------------------------#
+[ "theap.storage",	  "malloced"	  ]
 bat("aa").persists(false);
 commit();
 

@@ -1,8 +1,11 @@
 declare id_event1 integer;
+set id_event1 = -1234567890;
 
 declare id_media1 integer;
+set id_media1 = -1234567890;
 
 declare id_media_description1 integer;
+set id_media_description1 = -1234567890;
 
 set id_event1 = (select max(event_id) from event);
 

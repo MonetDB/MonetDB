@@ -5,6 +5,7 @@ declare id_media1 integer;
 set id_media1 = -1;
 
 declare id_media_description1 integer;
+set id_media_description1 = -1234567890;
 
 set id_event1 = (select event_id from event where event_name = 'event 1');
 

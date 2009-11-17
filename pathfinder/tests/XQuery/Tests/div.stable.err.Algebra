@@ -10,9 +10,10 @@ stderr of test 'div` in directory 'tests/XQuery` itself:
 # 19:02:02 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=54624 div.xq
 # 19:02:02 >  
 
-MAPI  = monetdb@rig:35132
+MAPI  = monetdb@rig:39650
 QUERY = 10 div 0
-ERROR = !ERROR: err:FOAR0001: division by 0 is forbidden.
+ERROR = !ERROR: [/] (batbat_dbl_div): Division by Zero!
+        !ERROR: batbat_dbl_div: operation failed.
 
 # 19:02:02 >  
 # 19:02:02 >  Done.

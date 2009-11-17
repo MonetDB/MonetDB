@@ -2575,12 +2575,6 @@ PFfun_xquery_fo (void)
                                    PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyNode()) } },
         .alg = PFbui_pf_text }
-    ,  /* pf:supernode (node()*) as node()* */
-      { .ns = PFns_lib, .loc = "supernode",
-        .arity = 1, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()) },
-            .ret_ty = PFty_star( PFty_xs_anyNode ()) } },
-        .alg = PFbui_pf_supernode }
     ,  /* pf:add-doc (string, string) as docmgmt */
       { .ns = PFns_lib, .loc = "add-doc",
         .arity = 2, .sig_count = 1, .sigs = { {

@@ -291,14 +291,12 @@ apply_(PFloc_t loc, char *ns, char* fcn, PFpnode_t *a)
     return r;
 }
 
-/*
 static PFpnode_t* 
 seq_ty_(PFloc_t loc, PFpnode_t *a) { 
     PFpnode_t *r = p_wire1(p_seq_ty, loc, a);  
     if (r) r->sem.kind = p_kind_node;
     return r; 
 }
-*/
 
 #define cpy(cur)            cpy_subst(cur,NULL,NULL,NULL)
 #define subst(cur,src,dst)  cpy_subst(cur,src,dst,NULL)
@@ -400,6 +398,7 @@ static rev_axis_t rev_axis[] = {
     {  0, p_attribute },
     {  0, p_attribute }
 };
+#define REV_AXIS(x) rev_axis[((x) <= 15)?(x):15]
 
 #define skip_over_emptyseq(p) skip(p,0)
 #define skip_to_locpath(p)    skip(p,1)
@@ -430,7 +429,7 @@ revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds)
         }
         if (p->kind != p_locpath || L(p)->kind != p_step) break;
 
-        rev_axis_t a = rev_axis[L(p)->sem.kind];
+        rev_axis_t a = REV_AXIS(L(p)->sem.kind);
         if (a.id == p_attribute) return NULL;
 
         /* protect (a bit) against reverted locpaths that are 
@@ -538,7 +537,7 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
 
     /* check txt/attr predicate and ensure it is the left child of eq */
     PFpnode_t *req_name = nil;
-    int tst = check_predicate(L(p), &req_name);
+    int i,j,tst = check_predicate(L(p), &req_name);
     if (!tst) {
         tst = check_predicate(R(p), &req_name);
         if (tst) {
@@ -548,6 +547,11 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
         } else {
            return 0;
         }
+    }
+    /* prohibition on a loop-lifted function application on lookup result, as it forces looplifted index evaluation */
+    for(i=j=0; i<depth; i++) {
+        if (stack[i]->kind == p_flwr) j = 1;
+        if (j && stack[i]->kind == p_fun_ref) return 0;
     }
 
     /* I do support conjunctions in PRED, EXPR1 */
@@ -636,18 +640,15 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
            let(var_type(cpy(VAR2)),
                flwr(binds(bind(vars(cpy(VAR3)),EXPR1), nil),
                where(nil, ord_ret(nil,
-                     apply("fn", "string", args(cpy(VAR3), nil)))))),
-/*
                      if_then(instof(cpy(VAR3), seq_ty(node_ty(p_kind_node, nil))),
                      then_else(apply("fn", "data", args(cpy(VAR3), nil)),
-                               cpy(VAR3)))
-*/
+                               cpy(VAR3))))))),
           binds(
            let(var_type(cpy(VAR4)),
                flwr(binds(bind(vars(cpy(VAR5)), cpy(VAR2)), nil),
                where(nil, ord_ret(nil,
                      apply("pf",(tst == TST_ATTR)?"attribute":"text", 
-                           args(cpy(VAR5), arg)))))), nil)));
+                           args(apply("fn", "string", args(cpy(VAR5), nil)), arg)))))), nil)));
 
         /* pattern(2): put in VBIND any remaining variable bindings after $x */
         if (VBIND) { 
