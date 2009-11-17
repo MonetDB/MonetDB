@@ -1,8 +1,12 @@
 # tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 
-# first test loads default XMark document from benchmarks/XMark/Tests/auctionG.xml
-# used by other tests in this directory
+# Test "Zombie_document.SF-2009556" should be the very first, as it assumes
+# an empty DB.
+Zombie_document.SF-2009556
+
+# Test "auctionG_xml" should be second, as loads default XMark document from
+# benchmarks/XMark/Tests/auctionG.xml used by other tests in this directory
 auctionG_xml
 
 corrupt-attributelist.SF-1483706.create_doc
@@ -218,8 +222,3 @@ compilation_error.SF-2860574_1
 compilation_error.SF-2860574_2
 compilation_error.SF-2860037_1
 compilation_error.SF-2860037_2
-#
-# Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
-delete_all_docs
-Zombie_document.SF-2009556
-# Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list!
