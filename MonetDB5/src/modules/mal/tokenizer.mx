@@ -222,24 +222,23 @@ TKNZRtokenize(str url, str *parts, char tkn) {
 str
 TKNZRfindOid(oid *pos, char d, oid h) {
 	BAT *b, *c;
+	BUN p, q;
+	BATiter bi;
 
 	b = BATuselect(tokenBAT[HEIGHT], (ptr) &h, NULL);
 	c = VIEWcombine(b); BBPunfix(b->batCacheid);
-	b = BATfetchjoin(c, tokenBAT[DEPTH], BATcount(b)); BBPunfix(c->batCacheid);
-	c = BATuselect(b, (ptr) &d, NULL); BBPunfix(b->batCacheid);
+	b = BATfetchjoin(c, tokenBAT[DEPTH], BATcount(c)); BBPunfix(c->batCacheid);
 
-	if (BATcount(c) == 0)
-		*pos = BUN_NONE;
-	else if (BATcount(c) == 1) {
-		BATiter ci = bat_iterator(c);
-		*pos = *(oid *) BUNhead(ci, BUNfirst(c));
-	} else {
-		BBPunfix(c->batCacheid);
-		throw(MAL, "tokenizer.findOID",
-				OPERATION_FAILED "tokenizer storage looks corrupted");
+	*pos = BUN_NONE;
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		if (*((char *) BUNtail(bi, p)) == d) {
+			*pos = *(oid *) BUNhead(bi, p);
+			p = q;
+		}
 	}
 
-	BBPunfix(c->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -247,7 +246,7 @@ TKNZRfindOid(oid *pos, char d, oid h) {
 	str parts[MAX_TKNZR_DEPTH];
 	int i = 0, depth;
 	BAT *b;
-	BUN p;
+	BUN p,q;
 	BUN idx = 0;
 	oid prv = 0;
 	char buf[128];
@@ -290,10 +289,23 @@ Find the common prefix first
 	if (p != BUN_NONE) {
 		prv = (oid) p;
 		for (i = 1; i < depth; i++) {
-			p = BUNlocate(tokenBAT[i],(ptr) &prv, parts[i]);
-			if (p == BUN_NONE)
+			BAT *temp;
+			BATiter ti;
+			int fnd = 0;
+
+			temp = BATuselect(tokenBAT[i], parts[i], NULL);
+			ti = bat_iterator(temp);
+			BATloop(temp,p,q) {
+				if (*((oid *)BUNhead(ti,p)) == prv) {
+					prv = (oid) p;
+					p = q;
+					fnd = 1;
+				}
+			}
+
+			BBPunfix(temp->batCacheid);
+			if (!fnd)
 				break;
-			prv = (oid) p;
 		}
 	} else {
 		i = 0;
@@ -304,7 +316,15 @@ Insert the remainder as a new url string
 @= insremainder
 	for(; i < depth; i++){
 		idx = BATcount(tokenBAT[i]);
-		BUNins(tokenBAT[i], (ptr) &prv, parts[i], FALSE);
+		if (tokenBAT[i]->T->hash == NULL ||
+			BATcount(tokenBAT[i]) > 4 * tokenBAT[i]->T->hash->mask) {
+			HASHdestroy(tokenBAT[i]);
+			BAThash(BATmirror(tokenBAT[i]), 2*BATcount(tokenBAT[i]));
+		}
+		if (BUNins(tokenBAT[i], (ptr) &prv, parts[i], FALSE) == NULL) {
+			throw(MAL, "tokenizer.insert",
+					OPERATION_FAILED " could not insert");
+		}
 		prv = (oid) idx;
 	}
 
@@ -325,6 +345,11 @@ TKNZRinsert(oid *pos, str tuple)
 	@:insremainder@
 
 	*pos = (oid) BATcount(tokenBAT[HEIGHT]);
+	if (tokenBAT[HEIGHT]->T->hash == NULL ||
+			BATcount(tokenBAT[HEIGHT]) > 4 * tokenBAT[HEIGHT]->T->hash->mask) {
+		HASHdestroy(tokenBAT[HEIGHT]);
+		BAThash(BATmirror(tokenBAT[HEIGHT]), 2*BATcount(tokenBAT[HEIGHT]));
+	}
 	BUNappend(tokenBAT[DEPTH], (ptr) &depth, TRUE);
 	BUNappend(tokenBAT[HEIGHT], (ptr) &prv, TRUE);
 
