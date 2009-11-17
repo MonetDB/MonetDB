@@ -58,7 +58,7 @@ pattern locate(s:str):oid
 address TKNZRlocate
 comment "if the given string is in the store returns its oid, otherwise oid_nil";
 
-pattern tokenize(u:str):oid
+command tokenize(u:str):oid
 address TKNZRdeposit
 comment "tokenize a new string, if it is a duplicate entry the oid of the first entry is used";
 
@@ -116,8 +116,7 @@ comment "debuging function that returns the unique tokens at each level";
 @h
 tokenizer_export str TKNZRnew              @:params@
 tokenizer_export str TKNZRopen             @:params@
-tokenizer_export str TKNZRdeposit          @:params@
-tokenizer_export str TKNZRinsert           (oid *pos, str tuple);
+tokenizer_export str TKNZRdeposit          (oid *pos, str tuple);
 tokenizer_export str TKNZRtake             @:params@
 tokenizer_export str TKNZRlocate           @:params@
 tokenizer_export str TKNZRtakeOid          @:params@
@@ -163,9 +162,6 @@ TKNZRnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BATkey(b, FALSE);
 	BATseqbase(b,0);
-	BBPrename(b->batCacheid, "depth");
-	BATmode(b, PERSISTENT);
-	BATcommit(b);
 
 	tokenBAT[DEPTH] = b;
 
@@ -175,9 +171,6 @@ TKNZRnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BATkey(b, FALSE);
 	BATseqbase(b,0);
-	BBPrename(b->batCacheid, "height");
-	BATmode(b, PERSISTENT);
-	BATcommit(b);
 	tokenBAT[HEIGHT] = b;
 
 	return MAL_SUCCEED;
@@ -246,18 +239,21 @@ TKNZRfindOid(oid *pos, char d, oid h) {
 	str parts[MAX_TKNZR_DEPTH];
 	int i = 0, depth;
 	BAT *b;
-	BUN p,q;
+	BUN p;
 	BUN idx = 0;
 	oid prv = 0;
 	char buf[128];
+	int new ;
 
 	depth = TKNZRtokenize(tuple, parts, '/');
+	new = depth;
 
 	if (depth == 0) return MAL_SUCCEED;
 	if (depth > MAX_TKNZR_DEPTH)
 		throw(MAL, "tokenizer",
 				ILLEGAL_ARGUMENT " strings breaks to too many parts");
 	if (depth > tokenDepth || tokenBAT[0] == NULL) {
+		new = tokenDepth;
 		for (i = 0; i < depth; i++){
 
 			/* search if bat exist */
@@ -274,9 +270,6 @@ TKNZRfindOid(oid *pos, char d, oid h) {
 				throw(MAL, "tokenizer.insert", MAL_MALLOC_FAIL);
 
 			BATkey(b, FALSE);
-			BBPrename(b->batCacheid, buf);
-			BATmode(b, PERSISTENT);
-			BATcommit(b);
 			tokenBAT[i] = b;
 		}
 		tokenDepth = depth;
@@ -288,24 +281,19 @@ Find the common prefix first
 	p = BUNfnd(BATmirror(tokenBAT[0]), parts[0]);
 	if (p != BUN_NONE) {
 		prv = (oid) p;
-		for (i = 1; i < depth; i++) {
-			BAT *temp;
-			BATiter ti;
+		for (i = 1; i < new; i++) {
+			BAT *m = BATmirror(tokenBAT[i]);
+			BATiter mi = bat_iterator(m);
 			int fnd = 0;
 
-			temp = BATuselect(tokenBAT[i], parts[i], NULL);
-			ti = bat_iterator(temp);
-			BATloop(temp,p,q) {
-				if (*((oid *)BUNhead(ti,p)) == prv) {
+			HASHloop_str(mi, m->H->hash, p, parts[i]) {
+				if (*((oid *)BUNtail(mi,p)) == prv) {
 					prv = (oid) p;
-					p = q;
 					fnd = 1;
+					break;
 				}
 			}
-
-			BBPunfix(temp->batCacheid);
-			if (!fnd)
-				break;
+			if (!fnd) break;
 		}
 	} else {
 		i = 0;
@@ -316,14 +304,15 @@ Insert the remainder as a new url string
 @= insremainder
 	for(; i < depth; i++){
 		idx = BATcount(tokenBAT[i]);
+		tokenBAT[i] = BUNins(tokenBAT[i], (ptr) &prv, parts[i], FALSE);
+		if (tokenBAT[i] == NULL) {
+			throw(MAL, "tokenizer.insert",
+					OPERATION_FAILED " could not insert");
+		}
 		if (tokenBAT[i]->T->hash == NULL ||
 			BATcount(tokenBAT[i]) > 4 * tokenBAT[i]->T->hash->mask) {
 			HASHdestroy(tokenBAT[i]);
 			BAThash(BATmirror(tokenBAT[i]), 2*BATcount(tokenBAT[i]));
-		}
-		if (BUNins(tokenBAT[i], (ptr) &prv, parts[i], FALSE) == NULL) {
-			throw(MAL, "tokenizer.insert",
-					OPERATION_FAILED " could not insert");
 		}
 		prv = (oid) idx;
 	}
@@ -345,13 +334,13 @@ TKNZRinsert(oid *pos, str tuple)
 	@:insremainder@
 
 	*pos = (oid) BATcount(tokenBAT[HEIGHT]);
+	BUNappend(tokenBAT[DEPTH], (ptr) &depth, TRUE);
+	BUNappend(tokenBAT[HEIGHT], (ptr) &prv, TRUE);
 	if (tokenBAT[HEIGHT]->T->hash == NULL ||
 			BATcount(tokenBAT[HEIGHT]) > 4 * tokenBAT[HEIGHT]->T->hash->mask) {
 		HASHdestroy(tokenBAT[HEIGHT]);
 		BAThash(BATmirror(tokenBAT[HEIGHT]), 2*BATcount(tokenBAT[HEIGHT]));
 	}
-	BUNappend(tokenBAT[DEPTH], (ptr) &depth, TRUE);
-	BUNappend(tokenBAT[HEIGHT], (ptr) &prv, TRUE);
 
 	return MAL_SUCCEED;
 }
@@ -415,21 +404,16 @@ TKNZRdepositFile(int *r, str *fnme)
 
 @c
 str
-TKNZRdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TKNZRdeposit(oid *pos, str s)
 {
-	oid pos;
-	str url;
 	char tuple[2048];
 
-	(void) cntxt;
-	(void) mb;
-	url = *(str*) getArgReference(stk, pci, 1);
-	if (strlen(url)<2048)
-		strcpy(tuple,url);
+	if (strlen(s)<2048)
+		strcpy(tuple,s);
 	else throw(MAL, "tokenizer.deposit", ILLEGAL_ARGUMENT "string too long");
 
-	TKNZRinsert(&pos, url);
-	VALset(getArgReference(stk,pci,0), TYPE_oid, &pos);
+	TKNZRinsert(pos, tuple);
+
 	return MAL_SUCCEED;
 }
 
