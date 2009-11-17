@@ -210,5 +210,6 @@ compilation_error.SF-2860037_1
 compilation_error.SF-2860037_2
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
+delete_all_docs
 Zombie_document.SF-2009556
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list!

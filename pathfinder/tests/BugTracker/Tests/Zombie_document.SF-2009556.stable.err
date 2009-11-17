@@ -10,6 +10,18 @@ stderr of test 'Zombie_document.SF-2009556` in directory 'tests/BugTracker` itse
 # 12:37:01 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=31848 Zombie_document.SF-2009556.xq
 # 12:37:01 >  
 
+MAPI  = monetdb@tscan:32256
+QUERY = pf:collection("MyCol")
+ERROR = !ERROR: err:FODC0004: collection 'MyCol' unknown (1 missing in total)
+MAPI  = monetdb@tscan:32256
+QUERY = pf:collection("MyCol")
+ERROR = !ERROR: xquery_print_result_main: operation failed.
+MAPI  = monetdb@tscan:32256
+QUERY = pf:collection("MyCol")
+ERROR = !ERROR: xquery_print_result_main: operation failed.
+MAPI  = monetdb@tscan:32256
+QUERY = pf:collection("MyCol")
+ERROR = !ERROR: err:FODC0004: collection 'MyCol' unknown (1 missing in total)
 
 # 12:37:01 >  
 # 12:37:01 >  Done.

@@ -34,33 +34,27 @@ Over..
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult></XQueryResult>
-<?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>1</XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><collection updatable="false" size="103 KiB" numDocs="2">MyCol</collection></XQueryResult>
+<XQueryResult><collection updatable="false" size="95 KiB" numDocs="2">MyCol</collection></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><aap id="1"/><aap>
-Hello World
-</aap></XQueryResult>
+<XQueryResult>!ERROR: serialize.mx: cannot print the special collection node.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><document updatable="false" url="/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/collection_management.SF-1726599.xml" collection="MyCol">MyDoc1</document><document updatable="false" url="/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/inserting_multiple_elements.SF-1590583.xml" collection="MyCol">MyDoc2</document></XQueryResult>
+<XQueryResult><document updatable="false" url="http://monetdb.cwi.nl/XQuery/files/bib.xml" collection="MyCol">MyDoc1</document><document updatable="false" url="http://monetdb.cwi.nl/XQuery/files/book.xml" collection="MyCol">MyDoc2</document></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><document updatable="false" url="/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/collection_management.SF-1726599.xml" collection="MyCol">MyDoc1</document><document updatable="false" url="/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/inserting_multiple_elements.SF-1590583.xml" collection="MyCol">MyDoc2</document></XQueryResult>
+<XQueryResult><document updatable="false" url="http://monetdb.cwi.nl/XQuery/files/bib.xml" collection="MyCol">MyDoc1</document><document updatable="false" url="http://monetdb.cwi.nl/XQuery/files/book.xml" collection="MyCol">MyDoc2</document></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>2</XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><collection updatable="false" size="103 KiB" numDocs="1">MyCol</collection></XQueryResult>
+<XQueryResult><collection updatable="false" size="95 KiB" numDocs="1">MyCol</collection></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><aap id="1"/></XQueryResult>
+<XQueryResult>!ERROR: serialize.mx: cannot print the special collection node.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><document updatable="false" url="/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/collection_management.SF-1726599.xml" collection="MyCol">MyDoc1</document></XQueryResult>
+<XQueryResult><document updatable="false" url="http://monetdb.cwi.nl/XQuery/files/bib.xml" collection="MyCol">MyDoc1</document></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><document updatable="false" url="/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/collection_management.SF-1726599.xml" collection="MyCol">MyDoc1</document></XQueryResult>
+<XQueryResult><document updatable="false" url="http://monetdb.cwi.nl/XQuery/files/bib.xml" collection="MyCol">MyDoc1</document></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>3</XQueryResult>
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
