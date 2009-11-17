@@ -1,1 +1,2 @@
+delete_all_docs(TRUE);
 delete_all_docs(FALSE);
