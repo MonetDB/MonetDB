@@ -3976,8 +3976,11 @@ plan_subexpression (PFla_op_t *n, PFla_op_t *root)
                    if we have only a small number of input orders.
                    (Choose 1000 as otherwise prune_plans() will have
                     to compare more than 1.000.000 orderings for each
-                    plan combination.) */
-                if (PFord_set_count (p->orderings) < 1000)
+                    plan combination.)
+                    Furthermore ensure that we do not increase the plan space
+                    if we already have a large number of possible plans. */
+                if (PFord_set_count (p->orderings) < 1000 &&
+                    PFarray_last (plans) < 5000)
                     for (i = 0; i < PFord_set_count (orderings); i++) {
                         ord = PFord_set_at (orderings, i);
                         add_plans (plans, ensure_ordering (p, ord));
