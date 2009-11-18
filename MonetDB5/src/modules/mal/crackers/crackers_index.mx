@@ -66,8 +66,14 @@ struct referencesNode{
 typedef struct referencesNode refNode; 
 
 struct sortMergeNode{
-	int 		batId;
+	int 		batId; /*id of the slice*/
+	int		index; /*position on the index */
 	struct sortMergeNode *next;
+
+	/*Temp variables*/
+	BAT		*slice;/*the slice*/
+	oid		tuples;/*qualifying tuples*/
+	oid		start;/*first qualifying tuple*/
 };
 
 

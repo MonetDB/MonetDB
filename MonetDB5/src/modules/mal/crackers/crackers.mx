@@ -233,6 +233,10 @@ comment "Similar to select but always make sure that we do not create a large pi
 command selectsm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:oid,:@2]
 address CRKselectSortMerge_@2
 comment "Slice and sort for the first query. Incrementally merge slices for the next ones.";
+
+command selectcm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:oid,:@2]
+address CRKselectCrackMerge_@2
+comment "Slice and crack for the first query. Incrementally crack+merge slices for the next ones.";
 @
 
 @= JoinSelect
@@ -671,6 +675,7 @@ comment "Materialize the head of BAT b";
 #include "crackers_AVL_index.h"
 #include "crackers_joins.h"
 #include "crackers_sortmerge.h"
+#include "crackers_crackmerge.h"
 
 #ifdef LIBCRACKERS 
 extern int maxCrackMap;

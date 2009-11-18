@@ -1,0 +1,278 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@f crackers_crackmerge
+@a Martin Kersten, Stratos Idreos, Stefan Manegold
+@d March 2006 - July 2007
+@* Select Operators for Incrmental crack merge
+
+
+@+ Interface
+
+
+@- Type expansion
+
+@= TypeSwitch
+@:@1(chr,simple,,chr)@
+@:@1(sht,simple,,sht)@
+@:@1(int,simple,,int)@
+@:@1(lng,simple,,lng)@
+@:@1(flt,simple,,flt)@
+@:@1(dbl,simple,,dbl)@
+@:@1(date,atom,TYPE_,loc)@
+@
+
+
+@- Header file
+
+@h
+#ifndef _CRACKERS_CRACKMERGE_H_
+#define _CRACKERS_CRACKMERGE_H_
+
+/* Exported signatures */
+@:TypeSwitch(SelectFunctions_decl)@
+
+#endif /* _CRACKERS_CRACKMERGE_H */
+@
+
+
+@- Exported signatures
+
+@= SelectFunctions_decl
+crackers_export str CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+@
+
+
+@{
+@+ Implementation
+
+
+@- C file
+
+@c
+#include "mal_config.h"
+#include "crackers.h"
+
+/* Local support functions and macros */
+@:TypeSwitch(CrackMergeOperations)@
+
+/* Exported functions */
+@:TypeSwitch(SelectFunctions_impl)@
+@
+
+
+@- Exported functions
+
+@= SelectFunctions_impl
+str
+CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){		
+	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
+		throw(MAL,"selectcm","only double bounded selectsare currently supported");
+	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
+		throw(MAL,"selectcm","only double bounded selectsare currently supported");
+	else
+		return SelectCrackMergeBounds_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh);
+}
+@
+
+
+@- Local support functions and macros
+
+@= crkThreeTree
+        /*printf("crack in three pieces\n");*/
+	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
+		CRKcrackUnorderedThree_LE_RE_@1(@4,*low,*hgh, @2, @3, &vl, &vh);
+	if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE)
+		CRKcrackUnorderedThree_LE_RO_@1(@4,*low,*hgh, @2, @3, &vl, &vh);
+	if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE)
+		CRKcrackUnorderedThree_LO_RE_@1(@4,*low,*hgh, @2, @3, &vl, &vh);
+	if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
+		CRKcrackUnorderedThree_LO_RO_@1(@4,*low,*hgh, @2, @3, &vl, &vh);
+				
+	/*if (vl != -1 && vh != -1){*/
+		if (vl>0) _vl=vl-1; else _vl=vl;		
+		addCrackerIndex_@1(@6,low,*inclusiveLow,_vl,@5);
+		addCrackerIndex_@1(@6,hgh,HBound,vh,@5);
+	
+@
+
+@= crkTwoLTree
+	/*CRACK in two pieces cl1-ch1 using >incLow bound*/
+	if (*inclusiveLow == TRUE)
+		CRKcrackUnorderedZero@2_RE_@1(@3,*low, cl1, ch1,&vl);
+	else
+		CRKcrackUnorderedZero@2_LE_@1(@3,*low, cl1, ch1,&vl);
+	if (vl < cl1){
+		/*then the left piece is empty*/
+		gapL = -1;
+	}
+	if (vl > ch1){
+		/*then the right piece is empty*/
+		vl--;
+		gapL = -1;
+	}
+	vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
+		Instead we want the first bun of the right piece*/
+@
+
+@= crkTwoRTree
+	/*CRACK in two pieces cl2-ch2 using <incHgh bound*/
+	if (*inclusiveHgh == TRUE)
+		CRKcrackUnorderedZero@2_LE_@1(@3,*hgh, cl2, ch2,&vh);
+	else
+		CRKcrackUnorderedZero@2_RE_@1(@3,*hgh, cl2, ch2,&vh);
+
+	/*check for gaps*/
+	if (vh < cl2)
+		/*then the left piece is empty*/
+		gapH = -1;
+	if (vh > ch2){
+		/*then the right piece is empty*/
+		gapH = -1;
+		vh--;
+	}
+@
+
+@= CreateResult
+createView:
+	view = BATslice(b, vl, vh+1);
+
+	if (!tail)
+		view = BATslice(VIEWhead_(b, BAT_READ), vl, vh+1);
+	
+	*vid = view->batCacheid;
+	BBPkeepref(*vid);
+
+	BBPunfix(b->batCacheid);
+	BBPunfix(c->batCacheid);
+@
+
+@= RangeSelectBody
+	BAT *b,*bo;
+	int  m;
+	oid vl=0, vh=0, posl, posh,_vl;
+	oid sliceSize;
+	struct sortMergeNode *current;
+	bit HBound;
+	
+	(void) vid;
+
+	if (*inclusiveHgh == TRUE) HBound = FALSE;
+	else	HBound = TRUE; 				
+	
+	if (@2_GT(low,hgh,@3@1))
+		throw(MAL, "crackers.sortmerge", "illegal range");
+	
+	m = existsCrackerIndex(*bid);
+
+	/* if this is the first time we select something from this bat,
+	   we have to create the crack column, slice it and sort the slices. 
+           We also create the result column where the result values are merged */
+	if (m == -1){
+		oid endSlice,startSlice;
+		if ((bo = BATdescriptor(*bid)) == NULL)
+			throw(MAL, "crackers.crackmerge", "Cannot access descriptor");
+
+		m = newCrackerIndex_@1(*bid,*bid);
+
+		/*slicing*/
+		/*This is assuming 4 byte ints + 8 byte oids per value and a cache of 4MB*/
+		sliceSize=300000;
+
+		/*sort the slices*/
+		current=NULL;
+		startSlice=0;
+		endSlice=sliceSize>BATcount(bo)?BATcount(bo):sliceSize;
+		while (1){
+			int mslice;
+			BAT *c;
+			struct sortMergeNode *smNode;
+			BAT *slice=BATslice(bo, startSlice, endSlice);
+			b = BATcopy(slice, bo->htype, bo->ttype, TRUE);
+			if ( bo->htype == TYPE_void)
+				b = BATmaterializeh(b);
+			b->hsorted = FALSE;
+			b->tsorted = FALSE;
+			b->hdense = FALSE;
+			b->tdense = FALSE;
+			BATkey(BATmirror(b),FALSE);
+			BATmode(b,PERSISTENT);
+			b->batRestricted= BAT_WRITE;
+
+			mslice = newCrackerIndex_@1(b->batCacheid,b->batCacheid);
+
+			if ((c = BATdescriptor(CrackerIndex[mslice].cid)) == NULL)
+				throw(MAL, "crackers.crackmerge", "Cannot access crack index");
+
+			posl = BUNfirst(b);
+			posh = BUNlast(b)-1;
+			@:crkThreeTree(@1,posl,posh,b,c,mslice)@
+
+			smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
+			smNode->batId=b->batCacheid;
+			smNode->index=mslice;
+			smNode->next=NULL;
+			
+			if (CrackerIndex[m].smNode==NULL){
+				CrackerIndex[m].smNode=smNode;
+				current=CrackerIndex[m].smNode;
+			}
+			else{	
+				current->next = smNode;
+				current=smNode;
+			}
+			
+			BBPunfix(slice->batCacheid);
+			BBPunfix(c->batCacheid);
+			BBPkeepref(b->batCacheid);
+
+			if (endSlice==BATcount(bo))
+				break;
+			startSlice=endSlice;
+			endSlice=endSlice+sliceSize>BATcount(bo)?BATcount(bo):endSlice+sliceSize;
+		}
+		
+	/*	current=CrackerIndex[m].smNode;
+		while(current!=NULL){
+			BAT *slice=BATdescriptor(current->batId);
+			if (slice==NULL)
+				throw(MAL, "crackers.sortmerge", "Cannot access slice");
+
+			BATprint(slice);
+			BBPunfix(slice->batCacheid);
+			current=current->next;
+		}
+	*/	
+		BBPunfix(bo->batCacheid);
+		return MAL_SUCCEED;
+	}
+		printf("already sliced and sorted\n");
+	
+	return MAL_SUCCEED;
+@
+
+@= CrackMergeOperations
+static str
+SelectCrackMergeBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){	
+	@:RangeSelectBody(@1,@2,@3,@4,)@
+}
+
+@
+
+@}
+
+
