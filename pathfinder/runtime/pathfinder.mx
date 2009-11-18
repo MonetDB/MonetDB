@@ -4279,6 +4279,25 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     pf_checkpoint(bat(str,void).key(true).reverse().append("uri_lifetime"), true);
 }
 
+# check whether this is an older version of the database that needs some conversion
+{
+    var xqprops;
+    if (not(isnil(CATCH(count(xqprops := bat("xquery_props")))))) {
+        xqprops := bat(str,str).rename("xquery_props").insert("version","Nov2009").persists(true);
+        var b := view_bbp_name().reverse().mirror();
+        var d := bat(void,str);
+        d.append(reverse([endsWith](b, "vx_hsh_nid").uselect(true)));
+        d.append(reverse([endsWith](b, "qn_nid").uselect(true)));
+        if (bit(count(d))) {
+            printf("# Databases created with a version older than Nov2009 detected:\n");
+            printf("# destroying old value-indices..\n"); 
+            printf("# (for optimal performance, re-shred all your documents)\n"); 
+            [persists]([bat](d), false);
+        }  
+        subcommit(d.append("xquery_props"));
+    }
+}
+
 # initialize uri_lifetime
 { var b := split(monet_environment.find("xquery_cacherules"),";").seqbase(0@0);
   var i := [r_search](b,"=").select(2,int_nil);
@@ -4292,11 +4311,12 @@ cleantmpdir(msec() / 1000LL);              # delete tmp files in DBFARM/DBNAME/t
 collection_cleanup(_collection_cleanup()); # silently clean up the repository
 
 mapi_register(xquery_frontend()); # open up mapi client access
-if (monet_environment.find("monet_welcome") = "yes") 
+if (monet_environment.find("monet_welcome") = "yes") {
     printf("%c MonetDB/XQuery module v0.28.3 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
     #                                 ^^^^^^
     # Maintained via vertoo. Please don't modify by hand!
     # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+}
 rpcd_start();                     # open up xrpc access
 fork(pf_logmanager());            # start checkpointing thread
 
