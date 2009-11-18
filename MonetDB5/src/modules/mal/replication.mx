@@ -21,7 +21,7 @@ oimaste The contents of this file are subject to the MonetDB Public License
 @+ Database replication
 MonetDB supports a simple database replication scheme using a master-slave
 protocol. A master node keeps a log of all SQL updates for replay.
-Once a slave starts, or on explicit request, the master establishes
+Once a slave starts the master establishes
 a MAL-client connection to the slave and starts pumping the backlog
 of committed transactions.
 The master does not take any responsibility over the integrity of a slave.
@@ -149,7 +149,6 @@ the SQL frontend does not provide the hook (yet) for better transaction
 boundary control.
 The transaction identifier is part of the call to the function
 with the transaction update details.
-
 @- Interaction protocol
 The master node simply waits for a slave to request the transmission of the missing log files.
 The request includes the URI of the slave and the user credentials needed to establish a connection.
@@ -163,40 +162,56 @@ that it has been executed before.
 @- Log file management
 The log records are grouped into separate files. 
 They are the units for re-submission and the scheme is set up to be idempotent. 
+A slave always starts synchronizing using the maximal tag stored in the slave log.
+
 The log files ultimately pollute your database and have to
 be (re)moved. This is considered a responsibility for the DBA,
 for it involves making a checkpoint or securely storing the logs
-into an archive.
+into an archive. It can be automated by asking all slaves
+for their last transaction id and purge all obsolete files.
 
-Archiving requires inspection of the slaves and the status
-of their replay log table. Otherwise, their attempt
-to synchronize may fail.
-
-Any error recognized during the replay should put the slave into freezing mode,
+Any error recognized during the replay should freeze the slave,
 because the synchronization integrity might become compromised.
 
-A slave always starts synchronizing using the maximal tag stored in the slave log.
+Aside  from being limited to autocommit transactions, the current
+implementation scheme has a hole. The log record is written just
+before transaction commit, including the activation call.
+The call and the flush of the commit record to the SQL
+log should be one atomic action, which amounts to a commit
+sequence of two 'databases'. It can only be handled when
+the SQL commit becomes visible at the MAL layer.
+[ Or, inject the transaction approval record into the log file
+when the next query starts, checking for any transaction
+errors first.]
 
 COPY INTO commands cause the master to freeze the images of
-all slaves. Capturing the input file and forwarding it to
+all slaves. For capturing the input file and forwarding it to
 the slaves seems overly complicated.
 
-The slave invalidation scheme is rather crude. The log directory
+The slaves invalidation scheme is rather crude. The log directory
 is emptied and a new log file is created. Subsequent attempts
-by the slaves to access transactions ideas before the invalidation
+by the slaves to access transactions ID before the invalidation
 are flagged as errors.
 
 @- Wishlist
 After setting the slave property, it could initiate full synchronization
-using the infrastructure for Octopus to pull the data from the master.
-For this we need msqldump functionality in the SQL code base.
+by asking for a catalog dump and replaying the logs. Provided, they
+have been kept around since the start.
+Alternatively, we can use the infrastructure for Octopus to pull the data from the master.
+For both we need msqldump functionality in the SQL code base.
 
 A slave property can be set to a list of masters, which turns the
-the slave into a serving multiple sources. Calls for splitting
+the slave into a serving multiple sources. It calls for splitting
 the slavelog.
 
-The tables at the slave shoulde be set read-only, otherwise we
+The tables in the slave should be set read-only, otherwise we
 have to double check integrity and bail out replication on violation.
+One solution is to store the replicated database in its own
+schema and grant read access to all users.
+[show example how to set up ]
+
+A validation script (or database diff) might be helpful to
+asses the database content for possible integrity violations.
 @{
 @mal
 module master;
