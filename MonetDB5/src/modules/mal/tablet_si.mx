@@ -209,12 +209,12 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 	BAT *sample, *sortedSample;
 	ValPtr vmin, vmax;
 	int sampleSize; 
-	lng distance, curDistance, tempDistance;
+	dbl distance, curDistance, tempDistance;
 
 	/* Tunable params */
 	int optimisticStep=0;
 	int bins=10;
-	lng acceptableDistance = bins;
+	dbl acceptableDistance = (dbl)bins;
 	oid SmallSliceSize  = task->next/5; /* Use a 20-80 percent for now */
 	bit balance = FALSE; /*Try to ballance in the end if needed */
 

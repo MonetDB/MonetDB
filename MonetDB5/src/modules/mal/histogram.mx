@@ -76,8 +76,8 @@ histogram_export int HSTeuclidianWhatIfMove(Histogram h1, Histogram h2, ValPtr v
 histogram_export dbl HSTcityblock(Histogram h1, Histogram h2);
 histogram_export dbl HSTchebyshev(Histogram h1, Histogram h2);
 histogram_export dbl HSTbinrelative(Histogram h1, Histogram h2);
-histogram_export lng HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val, lng *whatIfDistance);
-histogram_export int HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val, lng *whatIfDistance);
+histogram_export dbl HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val, dbl *whatIfDistance);
+histogram_export int HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val, dbl *whatIfDistance);
 histogram_export dbl HSTeuclidianNorm(Histogram h1, Histogram h2);
 histogram_export dbl HSTeuclidianNormWhatIf(Histogram h1, Histogram h2, ValPtr val, dbl *whatIfDistance);
 histogram_export int HSTeuclidianNormWhatIfMove(Histogram h1, Histogram h2, ValPtr val, dbl *whatIfDistance);
@@ -364,8 +364,8 @@ HSTbinrelative(Histogram h1, Histogram h2){
 	return distance;
 }
 
-lng
-HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val, lng *whatIfDistance){
+dbl
+HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val, dbl *whatIfDistance){
 	lng i;
 	dbl totalDiff=0, avgDiff, cur, avgDiffWhatIf, totalDiffWhatIf=0, distance=0, distanceWhatIf=0;
 	int affectedBin;
@@ -401,7 +401,7 @@ HSTbinrelativeWhatIf(Histogram h1, Histogram h2, ValPtr val, lng *whatIfDistance
 }
 
 int
-HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val,lng *whatIfDistance){
+HSTbinrelativeWhatIfMove(Histogram h1, Histogram h2, ValPtr val,dbl *whatIfDistance){
 	lng i;
 	dbl totalDiff=0, avgDiff, cur, avgDiffWhatIf, totalDiffWhatIf=0, distance=0, distanceWhatIf=0;
 	int affectedBin;
