@@ -124,6 +124,8 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
+#define MAGIC_BOUNDARY 5000
+
 /**
  * A ``plan'' is actually a physical algebra operator tree.
  */
@@ -1372,6 +1374,19 @@ plan_difference (const PFla_op_t *n)
 }
 
 /**
+ * Check if a column functionally depends on any other column
+ * in the schema. */
+static bool
+dependent_col (const PFla_op_t *n, PFalg_col_t dependent)
+{
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        if (n->schema.items[i].name != dependent &&
+            PFprop_fd (n->prop, n->schema.items[i].name, dependent))
+            return true;
+    return false;
+}
+
+/**
  * Create physical plan for Distinct operator (duplicate elimination).
  *
  * AFAIK, MonetDB only can do SortDistinct, i.e., sort its input, then
@@ -1389,7 +1404,8 @@ plan_distinct (const PFla_op_t *n)
     PFplanlist_t      *sorted;
 
     for (unsigned int i = 0; i < n->schema.count; i++)
-        if (!PFprop_const (n->prop, n->schema.items[i].name))
+        if (!PFprop_const (n->prop, n->schema.items[i].name) &&
+            !dependent_col (n, n->schema.items[i].name))
             ord = PFord_refine (ord,
                                 n->schema.items[i].name,
                                 DIR_ASC /* will be ignored anyway */);
@@ -1418,6 +1434,8 @@ plan_distinct (const PFla_op_t *n)
             add_plan (ret,
                       sort_distinct (*(plan_t **) PFarray_at (sorted, i),
                                      PFord_set_at (perms, p)));
+        if (PFarray_last (ret) > MAGIC_BOUNDARY)
+            break;
     }
 
     return ret;
@@ -3976,8 +3994,11 @@ plan_subexpression (PFla_op_t *n, PFla_op_t *root)
                    if we have only a small number of input orders.
                    (Choose 1000 as otherwise prune_plans() will have
                     to compare more than 1.000.000 orderings for each
-                    plan combination.) */
-                if (PFord_set_count (p->orderings) < 1000)
+                    plan combination.)
+                    Furthermore ensure that we do not increase the plan space
+                    if we already have a large number of possible plans. */
+                if (PFord_set_count (p->orderings) < 1000 &&
+                    PFarray_last (plans) < MAGIC_BOUNDARY)
                     for (i = 0; i < PFord_set_count (orderings); i++) {
                         ord = PFord_set_at (orderings, i);
                         add_plans (plans, ensure_ordering (p, ord));
