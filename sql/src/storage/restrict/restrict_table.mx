@@ -44,17 +44,32 @@ extern int suro_table_init( table_functions *tf );
 #include "restrict_storage.h"
 
 static BAT *
-full_column(sql_column *c, BAT *d, BAT *s )
+full_column_(sql_column *c, BAT *d, BAT *s )
 {
 	sql_bat *bat = c->data;
 	BAT *r, *b = temp_descriptor(bat->bid);
+
 	if (s) {
 		BAT *t = BATsemijoin(b,s); bat_destroy(b); b = t;
 	}
 	if (d && BATcount(d)) {
 		r = BATkdiff(b,BATmirror(d)); bat_destroy(b); b = r;
 	}
+	if (!bat->cached && !c->base.wtime && !s) 
+		bat->cached = temp_descriptor(b->batCacheid);
 	return b;
+}
+
+static BAT *
+full_column(sql_column *c, BAT *d, BAT *s )
+{
+	sql_bat *bat = c->data;
+
+	if (bat->cached && s) 
+		return BATsemijoin(bat->cached, s);
+	if (bat->cached)
+		return temp_descriptor(bat->cached->batCacheid);
+	return full_column_( c, d, s);
 }
 
 static oid

@@ -29,6 +29,7 @@ typedef struct sql_bat {
 	int bid;
 	int ubid;	/* bat with old updated values (su only) */
 	size_t cnt;		/* number of tuples (excluding the deletes) */
+	BAT *cached;		/* cached copy, used for schema bats only */
 } sql_bat;
 
 #define bat_set_access(b,access) b->P->restricted = access
@@ -103,8 +104,13 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 static void
 update_bat( sql_bat *bat, BAT *upd, int isnew) 
 {
-	BAT *b = temp_descriptor(bat->bid);
+	BAT *b;
 
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
+ 	b = temp_descriptor(bat->bid);
 	if (!isnew) {
 		BAT *u = NULL;
 		BAT *old = BATkdiff(b, upd), *r;
@@ -131,6 +137,10 @@ update_val( sql_bat *bat, oid rid, void *upd, int isnew)
 	BAT *b;
 
 	assert(rid != oid_nil);
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 	b = temp_descriptor(bat->bid);
 	if (!isnew) {
 		BAT *u = NULL;
@@ -192,6 +202,10 @@ append_bat( sql_bat *bat, BAT *i )
 {
 	BAT *b = temp_descriptor(bat->bid);
 
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
 	bat->cnt += BATcount(i);
 	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
 		temp_destroy(bat->bid);
@@ -206,8 +220,13 @@ append_bat( sql_bat *bat, BAT *i )
 static void
 append_val( sql_bat *bat, void *i ) 
 {
-	BAT *b = temp_descriptor(bat->bid);
+	BAT *b;
 
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
+ 	b = temp_descriptor(bat->bid);
 	BUNappend(b, i, TRUE);
 	bat->cnt ++;
 	bat_destroy(b);
@@ -265,7 +284,31 @@ delete_val( sql_bat *bat, ptr i )
 static void
 delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 {
+	node *n;
 	sql_bat *bat = t->data;
+
+	/* delete all cached copies */
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		sql_bat *bat = c->data;
+
+		if (bat->cached) {
+			bat_destroy(bat->cached);
+			bat->cached = NULL;
+		}
+	}
+	if (t->idxs.set) {
+		for (n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *i = n->data;
+			sql_bat *bat = i->data;
+
+			if (bat->cached) {
+				bat_destroy(bat->cached);
+				bat->cached = NULL;
+			}
+		}
+	}
+
 
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = t->s->base.rtime = tr->rtime = tr->stime;
@@ -609,8 +652,11 @@ destroy_bat(sql_trans *tr, sql_bat *b, int rollback)
 		temp_destroy(b->bid);
 	if (b->ubid) 
 		temp_destroy(b->ubid);
+	if (b->cached)
+		temp_destroy(b->cached->batCacheid);
 	b->bid = b->ubid = 0;
 	b->name = NULL;
+	b->cached = NULL;
 	_DELETE(b);
 	return ok;
 }
