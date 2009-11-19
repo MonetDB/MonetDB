@@ -1031,9 +1031,10 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             os.makedirs(TSTTRGDIR)
 
         body = []
+        oktests = []
         for TST,COND in testlist:
             os.environ['TST'] = TST
-            tt, FtOut, FtErr, bodyline = RunTest(env, TST, BusyPorts, COND)
+            tt, FtOut, FtErr, bodyline = RunTest(env, TST, BusyPorts, COND, oktests)
             if tt:
                 t = "%7.3f" % tt
             else:
@@ -1044,6 +1045,8 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             FdErr = max(FdErr,FtErr)
             if bodyline is not None:
                 body.append(bodyline)
+            if FtOut == F_OK and FtErr == F_OK:
+                oktests.append(TST)
         TIMES.append([TSTDIR,'',"%7.3f" % td,td,FdOut,FdErr])
 
         if THISFILE == "Mtest.py":
@@ -1396,6 +1399,21 @@ def CheckBATs(env, TST, TSTDB) :
     return missing
 ### CheckBATs(env, TST, TSTDB) #
 
+def CheckTests(env, TST, oktests):
+    missing = []
+    if not os.path.isfile(TST+'.reqtests'):
+        # no required tests, so none missing
+        return missing
+
+    for test in open(TST+'.reqtests'):
+        test = test.strip()
+        if not test or test[:1] == '#':
+            continue
+        if not test in oktests:
+            missing.append(test)
+    return missing
+### CheckTests(env, TST, oktests) #
+
 def StartAt(cmd) :
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
     qOut, qErr = proc.communicate()
@@ -1452,7 +1470,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     return STABLEout, STABLEerr
 ### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
 
-def RunTest(env, TST, BusyPorts, COND) :
+def RunTest(env, TST, BusyPorts, COND, oktests) :
     Failed = F_SKIP
     FailedOut = F_SKIP
     FailedErr = F_SKIP
@@ -1536,7 +1554,7 @@ def RunTest(env, TST, BusyPorts, COND) :
     else:
         i = TST.rfind('.')
         if i > 0:
-            return RunTest(env, TST[:i], BusyPorts, COND)
+            return RunTest(env, TST[:i], BusyPorts, COND, oktests)
         EXT = CALL = SERVER = ""
         if   COND and not CONDITIONALS.has_key(COND):
             elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND)
@@ -1556,6 +1574,7 @@ def RunTest(env, TST, BusyPorts, COND) :
     else:
         MissingMods = []
         MissingBATs = []
+    MissingTests = CheckTests(env, TST, oktests)
 
     os.chdir(TSTTRGDIR)
 
@@ -1563,6 +1582,8 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND)
     elif COND and not CONDITIONALS[COND]:
         elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
+    elif MissingTests:
+        elem = SkipTest(env, TST, EXT, "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests)))
     elif ( EXT[:4] == ".mil" or SERVER == "MIL" ) and par['M5']:
         elem = SkipTest(env, TST, EXT, "as MonetDB v5 does not support MIL.")
     elif ( EXT[:4] == ".mal" or SERVER == "MAL" ) and par['M4']:
@@ -1962,7 +1983,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, killed))
 
     return TX,FailedOut,FailedErr,elem
-### RunTest(env, TST, BusyPorts) #
+### RunTest(env, TST, BusyPorts, COND, oktests) #
 
 def CheckPort(port) :
     # Since 'localhost' and $HOST (i.e., `hostname`) are usually different interfaces,

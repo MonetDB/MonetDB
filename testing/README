@@ -107,6 +107,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   + a file that contains a list of BATs (one per line)
      (created by previous tests within the same directory)
      required by the test  (optional; MonetDB4, only)       (TST.BATs)     (^,`)
+  + a file that contains a list of tests (one per line) that must
+     have run successfully prior to the test (optional)     (TST.reqtests)
   + a set of files used by the arbitrary executable
      (optinal)                                              (TST.*)        (^,`)
   + stable (i.e. correct) versions of stdout and stderr
