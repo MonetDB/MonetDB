@@ -168,6 +168,7 @@ createView:
 	oid sliceSize;
 	struct sortMergeNode *current;
 	bit HBound;
+	lng crackTime=0,prepTime=0,indexTime=0;
 	
 	(void) vid;
 
@@ -187,7 +188,7 @@ createView:
 		if ((bo = BATdescriptor(*bid)) == NULL)
 			throw(MAL, "crackers.crackmerge", "Cannot access descriptor");
 
-		m = newCrackerIndex_@1(*bid,*bid);
+		m = newCrackerIndexSlice_@1(*bid,*bid,0);
 
 		/*slicing*/
 		/*This is assuming 4 byte ints + 8 byte oids per value and a cache of 4MB*/
@@ -198,13 +199,17 @@ createView:
 		startSlice=0;
 		endSlice=sliceSize>BATcount(bo)?BATcount(bo):sliceSize;
 		while (1){
+			lng t1;
 			int mslice;
 			BAT *c;
 			struct sortMergeNode *smNode;
-			BAT *slice=BATslice(bo, startSlice, endSlice);
+			BAT *slice;
+			t1=GDKusec();
+			slice=BATslice(bo, startSlice, endSlice);
 			b = BATcopy(slice, bo->htype, bo->ttype, TRUE);
 			if ( bo->htype == TYPE_void)
 				b = BATmaterializeh(b);
+			prepTime+=GDKusec()-t1;
 			b->hsorted = FALSE;
 			b->tsorted = FALSE;
 			b->hdense = FALSE;
@@ -213,14 +218,18 @@ createView:
 			BATmode(b,PERSISTENT);
 			b->batRestricted= BAT_WRITE;
 
-			mslice = newCrackerIndex_@1(b->batCacheid,b->batCacheid);
+			t1=GDKusec();
+			mslice = newCrackerIndexSlice_@1(b->batCacheid,b->batCacheid,1000);
+			indexTime+=GDKusec()-t1;
 
 			if ((c = BATdescriptor(CrackerIndex[mslice].cid)) == NULL)
 				throw(MAL, "crackers.crackmerge", "Cannot access crack index");
 
 			posl = BUNfirst(b);
 			posh = BUNlast(b)-1;
+			t1=GDKusec();
 			@:crkThreeTree(@1,posl,posh,b,c,mslice)@
+			crackTime+=GDKusec()-t1;
 
 			smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
 			smNode->batId=b->batCacheid;
@@ -246,21 +255,12 @@ createView:
 			endSlice=endSlice+sliceSize>BATcount(bo)?BATcount(bo):endSlice+sliceSize;
 		}
 		
-	/*	current=CrackerIndex[m].smNode;
-		while(current!=NULL){
-			BAT *slice=BATdescriptor(current->batId);
-			if (slice==NULL)
-				throw(MAL, "crackers.sortmerge", "Cannot access slice");
-
-			BATprint(slice);
-			BBPunfix(slice->batCacheid);
-			current=current->next;
-		}
-	*/	
 		BBPunfix(bo->batCacheid);
-		return MAL_SUCCEED;
 	}
-		printf("already sliced and sorted\n");
+		printf("prep  time %lld \n",prepTime);
+		printf("index time %lld \n",indexTime);
+		printf("crack time %lld \n",crackTime);
+		printf("already sliced\n");
 	
 	return MAL_SUCCEED;
 @

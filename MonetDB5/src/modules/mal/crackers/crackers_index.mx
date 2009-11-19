@@ -245,6 +245,7 @@ int existsCrackerIndex(int bid);
 @= IndexSharedFunctions_decl_1
 /* CreateNewIndex */
 int newCrackerIndex_@1(int bid, int cbid);
+int newCrackerIndexSlice_@1(int bid, int cbid,int IndexSize);
 void reCreateMap_@1(int position);
 
 /* InsertIndexElements */
@@ -398,6 +399,62 @@ newCrackerIndex_@1(int bid, int cbid){
 	CrackerIndex[i].bid = bid;
 	CrackerIndex[i].cbid = cbid;
 	b = BATnew(TYPE_oid, TYPE_@1, IndexEntries);	/* TODO: size */
+	BBPkeepref(b->batCacheid);
+	CrackerIndex[i].cid = b->batCacheid;
+	CrackerIndex[i].iid = -1;
+	CrackerIndex[i].did = -1;
+	CrackerIndex[i].mergeInsertions = -1;
+	CrackerIndex[i].reCreate = 0;
+	CrackerIndex[i].Tree = NULL;
+	CrackerIndex[i].references = NULL;
+	CrackerIndex[i].deleteNodes = FALSE;
+	CrackerIndex[i].mergeDeletions = -1;
+	CrackerIndex[i].smNode = NULL;
+	return i;
+}
+
+/*for sliced cracking*/
+int
+newCrackerIndexSlice_@1(int bid, int cbid, int IndexSize){
+	int i, j, freemap = -1, units = 500;
+        BAT *b;
+
+        for (i = 0; i < maxCrackMap; i++){
+                if (CrackerIndex[i].bid == -1){
+                        freemap = i;
+                        break;
+                }
+        }
+
+        if (freemap == -1){
+                if (i == maxCrackMap) {
+                        CrackerIndexNode *x;
+
+                        if (maxCrackMap > 0)
+                                units = (int) (1.2 * maxCrackMap);
+                        x = (CrackerIndexNode *) GDKmalloc(sizeof(CrackerIndexNode) * units);
+                        //memset(x, 0, sizeof(CrackerIndexNode) * units);
+                        if (CrackerIndex) {
+                                fprintf(stderr, "reallocate index \n");
+                                memcpy(x, CrackerIndex, sizeof(CrackerIndexNode) * i);
+                                GDKfree(CrackerIndex);
+                        }
+                        CrackerIndex = x;
+
+                        /* mark the new slots as empty */
+                        for(j=maxCrackMap; j<units;j++){
+                                CrackerIndex[j].bid = -1;
+                        }
+                        maxCrackMap = units;
+                }
+        }
+
+	CrackerIndex[i].chid = -1;
+	CrackerIndex[i].hiid = -1;
+	CrackerIndex[i].pbid = -1;
+	CrackerIndex[i].bid = bid;
+	CrackerIndex[i].cbid = cbid;
+	b = BATnew(TYPE_oid, TYPE_@1, IndexSize);
 	BBPkeepref(b->batCacheid);
 	CrackerIndex[i].cid = b->batCacheid;
 	CrackerIndex[i].iid = -1;

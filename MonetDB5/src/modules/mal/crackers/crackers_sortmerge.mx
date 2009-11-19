@@ -54,6 +54,7 @@
 
 @= SelectFunctions_decl
 crackers_export str CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKExternalSort_@1(int *vid, int *bid);
 @
 
 
@@ -91,6 +92,46 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 
 
 @- Local support functions and macros
+
+@= NwayMergeSort
+	current=head;
+	while(current!=NULL){
+		current->start=0;
+		current->tuples=BATcount(current->slice);
+		current=current->next;
+	}
+
+	/*N-way merge*/
+	rh = (oid*)Hloc(br,BUNfirst(br));
+	rt = (@1 *)Tloc(br,BUNfirst(br));
+	for(i=0;i<BATcount(bo);i++){
+		merge=NULL;	
+	
+		current=head;
+		while(current!=NULL){
+			if (current->tuples>0){
+				tt=(@1 *)Tloc(current->slice,BUNfirst(current->slice)+current->start);			
+				if (merge==NULL)
+					merge=current;
+				else{
+					@1 *small=(@1 *)Tloc(merge->slice,BUNfirst(merge->slice)+merge->start);
+					if (@2_LT(tt,small,@3@1))
+						merge=current;
+				}
+			}
+			current=current->next;
+		}
+
+		if (merge==NULL)
+			throw(MAL,"crackers sort merge","Unexpected error while merging");
+
+		*rh=*(oid *)Hloc(merge->slice,BUNfirst(merge->slice)+merge->start);
+		*rt=*(@1  *)Tloc(merge->slice,BUNfirst(merge->slice)+merge->start);
+		rh++;rt++;
+		merge->start++;
+		merge->tuples--;
+	}
+@
 
 @= NwayMerge
 	current=CrackerIndex[m].smNode;
@@ -297,7 +338,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	printf("found "SZFMT" tuples, all tuples : "SZFMT" \n",totalTuples, totalLowerTuples+totalHigherTuples+totalTuples);
 
 	view = BATslice(br, totalLowerTuples, totalLowerTuples+totalTuples);
-	printf("result size is "SZFMT" \n",BATcount(view));
+	printf("result size is %ld \n",BATcount(view));
 
 	*vid = view->batCacheid;
 	BBPkeepref(*vid);
@@ -313,10 +354,97 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	return MAL_SUCCEED;
 @
 
+@= SortBody
+	BAT *b,*bo,*br;
+	oid sliceSize,i;
+	struct sortMergeNode *current,*merge,*head=NULL;
+	@1  *rt,*tt;
+	oid *rh;
+	oid endSlice,startSlice;
+	
+	
+	if ((bo = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "crackers.sortmerge", "Cannot access descriptor");
+
+	br=BATnew(TYPE_oid, bo->ttype,BATcount(bo));
+	BATsetcount(br,BATcount(bo));
+
+	/*slicing*/
+	/*This is assuming 4 byte ints + 8 byte oids per value and a cache of 4MB*/
+	sliceSize=300000;
+
+	/*sort the slices*/
+	current=NULL;
+	startSlice=0;
+	endSlice=sliceSize>BATcount(bo)?BATcount(bo):sliceSize;
+	while (1){
+		struct sortMergeNode *smNode;
+		BAT *slice=BATslice(bo, startSlice, endSlice);
+		b = BATcopy(slice, bo->htype, bo->ttype, TRUE);
+		if ( bo->htype == TYPE_void)
+			b = BATmaterializeh(b);
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE;
+		b->tdense = FALSE;
+		BATkey(BATmirror(b),FALSE);
+		BATmode(b,PERSISTENT);
+		b->batRestricted= BAT_WRITE;
+		BATmirror(BATorder(BATmirror(b)));
+
+		smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
+		smNode->batId=b->batCacheid;
+		smNode->slice=b;
+		smNode->next=NULL;
+		
+		if (head==NULL){
+			head=smNode;
+			current=head;
+		}
+		else{	
+			current->next = smNode;
+			current=smNode;
+		}
+		
+		BBPunfix(slice->batCacheid);
+
+		if (endSlice==BATcount(bo))
+			break;
+		startSlice=endSlice;
+		endSlice=endSlice+sliceSize>BATcount(bo)?BATcount(bo):endSlice+sliceSize;
+	}
+	
+	@:NwayMergeSort(@1,@2,@3,@4)@
+
+	br->hsorted = FALSE;
+	br->tsorted = TRUE;
+	br->hdense =  TRUE;
+	br->tdense =  TRUE;
+	BATkey(BATmirror(br),FALSE);
+	BATmode(br,PERSISTENT);
+	br->batRestricted= BAT_READ;
+	*vid = br->batCacheid;
+	BBPkeepref(*vid);
+
+	/*unfix all slices*/
+	current=head;
+	while(current!=NULL){
+		BBPunfix(current->slice->batCacheid);
+		current=current->next;
+	}
+	BBPunfix(bo->batCacheid);
+	return MAL_SUCCEED;
+@
+
 @= SortMergeOperations
 static str
 SelectSortMergeBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){	
 	@:RangeSelectBody(@1,@2,@3,@4,)@
+}
+
+str
+CRKExternalSort_@1(int *vid, int *bid){	
+	@:SortBody(@1,@2,@3,@4,)@
 }
 
 @

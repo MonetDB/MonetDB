@@ -237,6 +237,10 @@ comment "Slice and sort for the first query. Incrementally merge slices for the 
 command selectcm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:oid,:@2]
 address CRKselectCrackMerge_@2
 comment "Slice and crack for the first query. Incrementally crack+merge slices for the next ones.";
+
+command extsort(b:bat[:oid,:@2]):bat[:oid,:@2]
+address CRKExternalSort_@2
+comment "Slice and sort";
 @
 
 @= JoinSelect
@@ -704,7 +708,7 @@ CrackerIndexNode *CrackerIndex;
 
 struct storageManagement *StorageInfo = NULL;
 
-int IndexEntries = 50000000; /* Initial size used for the bat that stores index values */
+int IndexEntries = 20000000; /* Initial size used for the bat that stores index values */
 
 /* Temp variables used to test the effect of stop updating the index, they operate only on one cracker bat */
 int IndexSize = 0;
