@@ -46,7 +46,7 @@ main(int argc, char **argv)
 {
 	Mapi dbh;
 	MapiHdl hdl = NULL;
-	int i, port;
+	int i, port, n = 20000;
 	char buf[40];
 	int lang = 0;
 	char *l = "mil";
@@ -66,6 +66,7 @@ main(int argc, char **argv)
 		else if (strcmp(argv[2], "mal") == 0)
 			lang = 3;
 	}
+  	if (lang == 2) n /= 40; /* xquery is so slow..*/
 
 	port = atol(argv[1]);
 	dbh = mapi_connect("localhost", port, "monetdb", "monetdb", l, NULL);
@@ -76,7 +77,7 @@ main(int argc, char **argv)
 	if (lang==1 && (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh)))
 		die(dbh,NULL);
 
-	for (i = 0; i < 20000; i++) {
+	for (i = 0; i < n; i++) {
 		if (lang==2)
 			snprintf(buf, 40, "%d", i);
 		else if (lang==1)
