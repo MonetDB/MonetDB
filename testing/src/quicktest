@@ -310,13 +310,17 @@ run_client() {
 	echo "stderr of test '${tstn}"'`'" in directory '${odir}"'`'" itself:" > "${c}"/stderr
 	echo >> "${c}"/stderr
 
+	touch "${c}"/start
 	DOTMONETDBFILE="${p}"/mclient.creds mclient \
 		-i \
 		-l${lang} \
 		-p$(< ${MDIR}/server/${lang}/${dir}/port) \
 		< "${tst}" \
 		1>> "${c}"/stdout \
-		2>> "${c}"/stderr
+		2>> "${c}"/stderr &
+	# do this just to get a pid which we can kill
+	echo $! > "${c}"/pid
+	wait $(< "${c}"/pid)
 	
 	# Append server output (if any) to the output, Mtest.py has this on
 	# top actually, but we can't do that easily.  Since the server
@@ -481,12 +485,25 @@ get_load_avg() {
 }
 
 get_active_servers() {
-	local cnt=0
+	local ret=
 	local s
 	for s in "${MDIR}"/server/*/*/pid ; do
-		[[ -f "${s}" ]] && cnt=$((cnt + 1))
+		[[ -f "${s}" ]] && ret="${ret},$(< "${s}")"
 	done
-	echo ${cnt}
+	[[ -n ${ret} ]] && echo " servers: {${ret#,}}"
+}
+
+get_active_clients() {
+	local ret=
+	local start now
+	local s
+	for s in "${MDIR}"/client/*/*/pid ; do
+		now=$(date +%s)
+		[[ -f "${s%/pid}"/start ]] || continue
+		start=$(date -r "${s%/pid}"/start +%s)
+		[[ -f "${s}" ]] && ret="${ret},$(< "${s}"):$((now - start))s"
+	done
+	[[ -n ${ret} ]] && echo " clients: {${ret#,}}"
 }
 
 get_result_queue_len() {
@@ -522,10 +539,11 @@ statusbar() {
 	while true ; do
 		local testok=$(get_test_ok)
 		local testfail=$(get_test_fail)
-		printf "%sload: %1.2f servers: %d resq: %d compl(suc/fail): %d(%d/%d)" \
+		printf "%sload: %1.2f%s%s resq: %d compl(suc/fail): %d(%d/%d)" \
 			"${CLEARLINE}" \
 			"$(get_load_avg)" \
 			"$(get_active_servers)" \
+			"$(get_active_clients)" \
 			"$(get_result_queue_len)" \
 			"$((testok + testfail))" \
 			"${testok}" \
