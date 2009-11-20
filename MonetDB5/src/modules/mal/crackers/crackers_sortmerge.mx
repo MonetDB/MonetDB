@@ -338,7 +338,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	printf("found "SZFMT" tuples, all tuples : "SZFMT" \n",totalTuples, totalLowerTuples+totalHigherTuples+totalTuples);
 
 	view = BATslice(br, totalLowerTuples, totalLowerTuples+totalTuples);
-	printf("result size is %ld \n",(long)BATcount(view));
+	printf("result size is " BUNFMT "\n", BATcount(view));
 
 	*vid = view->batCacheid;
 	BBPkeepref(*vid);
