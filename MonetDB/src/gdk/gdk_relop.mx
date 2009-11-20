@@ -1278,9 +1278,8 @@ BATleftjoin(BAT *l, BAT *r, BUN estimate)
 	 */
 	JOINPROPCHK {
 		if (b)
-			BATpropcheck(b, BATPROPS_QUICK);
+			BATpropcheck(BATmirror(b), BATPROPS_QUICK);
 	}
-
 	return b;
 }
 
