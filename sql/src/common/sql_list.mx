@@ -80,7 +80,9 @@ list_destroy(list *l)
 int
 list_length(list *l)
 {
-	return l->cnt;
+	if (l)
+		return l->cnt;
+	return 0;
 }
 
 list *
@@ -251,6 +253,27 @@ list_match(list *l1, list *l2, fcmp cmp)
 			return -1;
 	}
 	return 0;
+}
+
+list *
+list_keysort(list *l, int *keys, fdup dup)
+{
+	list *res = list_create(l->destroy);
+	node *n = NULL;
+	int i, j, *pos, cnt = list_length(l);
+
+	pos = (int*)alloca(cnt*sizeof(int));
+	for (n = l->h, i = 0; n; n = n->next, i++) {
+		pos[i] = i;
+	}
+	/* sort descending */
+	GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
+	for(j=0; j<cnt; j++) {
+		for(n = l->h, i = 0; n && i != pos[j]; n = n->next, i++) 
+			;
+		list_append(res, dup(n->data));
+	}
+	return res;
 }
 
 list *

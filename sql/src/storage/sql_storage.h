@@ -322,6 +322,7 @@ extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, char *na
 extern void sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action);
 extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
+extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 
 extern sql_key *sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, key_type kt);
 extern sql_key * sql_trans_key_done(sql_trans *tr, sql_key *k);

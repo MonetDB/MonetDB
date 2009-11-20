@@ -18,8 +18,8 @@
 # All Rights Reserved.
 
 PWD=`pwd`
-SQL='mclient -lsql -umonetdb -Pmonetdb'
-SQL1='mclient -lsql -uskyserver -Pskyserver'
+SQL='mclient -lsql'
+SQL1='mclient -lsql'
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi
@@ -28,8 +28,8 @@ fi
 
 #Bulk-Load into SQL server...
 
-echo Create User
-$SQL < create_user.sql
+#echo Create User
+#$SQL < create_user.sql
 
 echo tables
 $SQL1 < Skyserver_tables.sql
