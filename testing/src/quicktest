@@ -421,7 +421,7 @@ result_queue_runner() {
 						mv "${t%.todo}".std*.diff "${OUTDIR}"/
 						printf "%s\n\t%s\n\t%s\n" \
 							"${CLEARLINE}${tst} has differences in stdout and stderr" \
-							"see ${OUTDIR}/${rtst}.stdout.diff"
+							"see ${OUTDIR}/${rtst}.stdout.diff" \
 							"see ${OUTDIR}/${rtst}.stderr.diff"
 					;;
 				esac
