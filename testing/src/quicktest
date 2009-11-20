@@ -386,6 +386,7 @@ result_queue_runner() {
 	# be compared, and runs diff_result_test and output generation for
 	# them if necessary
 	local tst
+	local rtst
 	local ds
 	local t
 	while true ; do
@@ -399,15 +400,40 @@ result_queue_runner() {
 			rm -f "${t}"
 			diff_result_test "${t%.todo}" "${tst}"
 			ds=$?
+			rtst=${t%.todo}
+			rtst=${rtst##*/}
 			if [[ ${ds} != 0 ]] ; then
-				#FIXME
 				echo "${tst}" > "${t%.todo}".fail
-#				echo "${tst} has differences (${ds})"
-#				cat "${t%.todo}".std*.diff
+				case ${ds} in
+					1)
+						mv "${t%.todo}".stdout.diff "${OUTDIR}"/
+						printf "%s\n\t%s\n" \
+							"${CLEARLINE}${tst} has differences in stdout" \
+							"see ${OUTDIR}/${rtst}.stdout.diff"
+					;;
+					2)
+						mv "${t%.todo}".stderr.diff "${OUTDIR}"/
+						printf "%s\n\t%s\n" \
+							"${CLEARLINE}${tst} has differences in stderr" \
+							"see ${OUTDIR}/${rtst}.stderr.diff"
+					;;
+					3)
+						mv "${t%.todo}".std*.diff "${OUTDIR}"/
+						printf "%s\n\t%s\n\t%s\n" \
+							"${CLEARLINE}${tst} has differences in stdout and stderr" \
+							"see ${OUTDIR}/${rtst}.stdout.diff"
+							"see ${OUTDIR}/${rtst}.stderr.diff"
+					;;
+				esac
 			else
 				echo "${tst}" > "${t%.todo}".ok
-#				echo "${tst} is OK"
 			fi
+
+			# basically, we don't have to save the logs (nothing
+			# wrong here, right?) but let's just do it for
+			# post-inspection
+			mv "${t%.todo}".stdout ${OUTDIR}/${rtst}.stdout
+			mv "${t%.todo}".stderr ${OUTDIR}/${rtst}.stderr
 		done
 		# don't spinlock
 		sleep 1
@@ -463,15 +489,6 @@ get_active_servers() {
 	echo ${cnt}
 }
 
-get_active_clients() {
-	local cnt=0
-	local s
-	for s in "${MDIR}"/client/*/*/pid ; do
-		[[ -f "${s}" ]] && cnt=$((cnt + 1))
-	done
-	echo ${cnt}
-}
-
 get_result_queue_len() {
 	local cnt=0
 	local s
@@ -501,17 +518,14 @@ get_test_fail() {
 
 statusbar() {
 	# plots a single line with status info every second
-	local clearline='[2K'
-	local leftmost='[1`'
 
 	while true ; do
 		local testok=$(get_test_ok)
 		local testfail=$(get_test_fail)
-		printf "%sl: %1.2f s: %d c: %d q: %d t: %d (%d/%d)" \
-			"${clearline}${leftmost}" \
+		printf "%sload: %1.2f servers: %d resq: %d compl(suc/fail): %d(%d/%d)" \
+			"${CLEARLINE}" \
 			"$(get_load_avg)" \
 			"$(get_active_servers)" \
-			"$(get_active_clients)" \
 			"$(get_result_queue_len)" \
 			"$((testok + testfail))" \
 			"${testok}" \
@@ -542,13 +556,22 @@ usage() {
 	echo "this script to run"
 }
 
+# "global" stuff we use
+CLEARLINE='[2K[1`'
+
 # tmpdir that we store our temp stuff in for the running of this script,
 # needed in misc functions around here
 MDIR=$(mktemp -d)
 
+# we can use this to automagically parallelise our work to the most
+# efficient amount
 NCPUS=$(get_number_processors)
-
 echo "found ${NCPUS} processors"
+
+# stuff that actually becomes useful should get into a persistent place
+OUTDIR=${PWD}/quicktestrun-$(date +%s)
+mkdir -p "${OUTDIR}"
+echo "storing output in ${OUTDIR}"
 
 # we need the absolute path, so just chdir there
 # FIXME: need to support individual tests and multiple args in the
