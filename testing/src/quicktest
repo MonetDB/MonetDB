@@ -19,7 +19,7 @@
 # because of the ideology that a server should be able to cope with
 # running many tests in sequence.  If it gets messed up, we want to
 # know, be informed about that until the issue gets resolved.  We need
-# to stop de server after all tests in a directory have been performed
+# to stop the server after all tests in a directory have been performed
 # due to the semantics that Mtest.py defines, upon which tests rely.
 #
 # QuickTest tries to exploit parallelism where possible.  Unfortunately,
@@ -447,6 +447,8 @@ shutdown_result_queue() {
 usage() {
 	echo "usage: ${0##*/} obj"
 	echo "  where obj is either a directory or a test name"
+	echo "the mserver5 and mclient binaries must exist in your path for"
+	echo "this script to run"
 }
 
 # tmpdir that we store our temp stuff in for the running of this script,
