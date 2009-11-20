@@ -401,10 +401,12 @@ result_queue_runner() {
 			ds=$?
 			if [[ ${ds} != 0 ]] ; then
 				#FIXME
-				echo "${tst} has differences (${ds})"
+				echo "${tst}" > "${t%.todo}".fail
+#				echo "${tst} has differences (${ds})"
 #				cat "${t%.todo}".std*.diff
 			else
-				echo "${tst} is OK"
+				echo "${tst}" > "${t%.todo}".ok
+#				echo "${tst} is OK"
 			fi
 		done
 		# don't spinlock
@@ -442,6 +444,95 @@ shutdown_result_queue() {
 	# shut down the process
 	kill $(< "${MDIR}"/resultqueue/pid)
 	wait $(< "${MDIR}"/resultqueue/pid)
+}
+
+get_load_avg() {
+	local avg=$(uptime)
+	avg=${avg##*:}
+	avg=${avg%%,*}
+	# no quotes to get whitespace removal for free!
+	echo ${avg}
+}
+
+get_active_servers() {
+	local cnt=0
+	local s
+	for s in "${MDIR}"/server/*/*/pid ; do
+		[[ -f "${s}" ]] && cnt=$((cnt + 1))
+	done
+	echo ${cnt}
+}
+
+get_active_clients() {
+	local cnt=0
+	local s
+	for s in "${MDIR}"/client/*/*/pid ; do
+		[[ -f "${s}" ]] && cnt=$((cnt + 1))
+	done
+	echo ${cnt}
+}
+
+get_result_queue_len() {
+	local cnt=0
+	local s
+	for s in "${MDIR}"/resultqueue/*.todo ; do
+		[[ -f "${s}" ]] && cnt=$((cnt + 1))
+	done
+	echo ${cnt}
+}
+
+get_test_ok() {
+	local cnt=0
+	local s
+	for s in "${MDIR}"/resultqueue/*.ok ; do
+		cnt=$((cnt + 1))
+	done
+	echo ${cnt}
+}
+
+get_test_fail() {
+	local cnt=0
+	local s
+	for s in "${MDIR}"/resultqueue/*.fail ; do
+		cnt=$((cnt + 1))
+	done
+	echo ${cnt}
+}
+
+statusbar() {
+	# plots a single line with status info every second
+	local clearline='[2K'
+	local leftmost='[1`'
+
+	while true ; do
+		local testok=$(get_test_ok)
+		local testfail=$(get_test_fail)
+		printf "%sl: %1.2f s: %d c: %d q: %d t: %d (%d/%d)" \
+			"${clearline}${leftmost}" \
+			"$(get_load_avg)" \
+			"$(get_active_servers)" \
+			"$(get_active_clients)" \
+			"$(get_result_queue_len)" \
+			"$((testok + testfail))" \
+			"${testok}" \
+			"${testfail}"
+		sleep 1
+	done
+}
+
+start_statusbar() {
+	# start the self updating statusbar in the background
+	statusbar &
+	echo "$!" > "${MDIR}"/statusbar.pid
+	disown $(< "${MDIR}"/statusbar.pid)
+}
+
+shutdown_statusbar() {
+	# stop statusbar from updating and print final status overview
+	kill $(< "${MDIR}"/statusbar.pid)
+	printf "\ntesting finished with %d successful and %d failing tests\n" \
+		"$(get_test_ok)" \
+		"$(get_test_fail)"
 }
 
 usage() {
@@ -483,6 +574,16 @@ echo
 
 # start the result queue, which becomes a separate process
 start_result_queue
+# get a statusbar which tells what's going on
+start_statusbar
+
+terminator() {
+	shutdown_result_queue
+	shutdown_statusbar
+	rm -Rf "${MDIR}"
+}
+
+trap terminator EXIT
 
 while read testdir ; do
 	find_tests_in_dir ${testdir} | while read test ; do
@@ -492,6 +593,3 @@ while read testdir ; do
 	done
 	stop_servers ${testdir}
 done < ${MDIR}/testdirs
-
-shutdown_result_queue
-rm -Rf "${MDIR}"
