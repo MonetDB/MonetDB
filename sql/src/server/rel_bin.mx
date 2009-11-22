@@ -1450,14 +1450,15 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	list *pl; 
 	node *en, *n;
 	stmt *sub = NULL, *psub = NULL;
-	int l = -1, o = 0;
+	int l = -1;
 
 	if (topn) {
+		int o = topn_offset(topn);
 		l = topn_limit(topn);
-		o = topn_offset(topn);
 		if (l < 0) /* for now only handle topn 
 				including limit, ie not just offset */
 			topn = NULL;
+		l += o;
 	}
 
 	if (!rel->exps) 
@@ -1509,7 +1510,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			stmt_destroy(sub);
 			return NULL;
 		}
-		limit = stmt_limit(orderbycols, o, l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, 1));
+		limit = stmt_limit(orderbycols, 0, l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, 1));
 		for ( n=pl->h ; n; n = n->next) {
 			list_append(npl, 
 			 	stmt_semijoin(column(stmt_dup(n->data)), 
