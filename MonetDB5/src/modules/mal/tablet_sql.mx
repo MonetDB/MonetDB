@@ -28,14 +28,16 @@ that should preferable be maintained.
 
 The code below consists of a file reader, which breaks up the
 file into distinct lines/fields. Then multiple parallel threads 
-can grab them, convert the value and update the underlying tables.
+can grab them, and break the on the field boundaries.
+This is done chunkwise.
+After all fields are identified, the columns are converted
+and stored in the BATs.
 
 The threads get a reference to a private copy of the READERtask.
 It includes a list of columns they should handle. This is a basis
 to distributed cheap and expensive columns over threads.
 
-A double buffering scheme might improve CPU and IO concurrent work.
-Readers and writers now overlap.
+The readers overlaps reading with updates of the BAT.
 Also the buffer size of the block stream might be a little small for 
 this task (1MB). It has been increased to 8MB, which indeed improved.
 
