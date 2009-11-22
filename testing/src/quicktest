@@ -94,8 +94,14 @@ get_test_type() {
 	# FIXME: add more to support
 	if [[ -f ${dir}/${tst}.mal ]] ; then
 		echo mal:${dir}/${tst}.mal
+	elif [[ -f ${dir}/${tst}.sql ]] ; then
+		echo sql:${dir}/${tst}.sql
+	elif [[ -f ${dir}/${tst}.sql.src ]] ; then
+		local t=$(< "${dir}"/${tst}.sql.src)
+		# this is too optimistic, I'm affraid
+		echo sql:${dir}/${t#\$RELSRCDIR/}
 	else
-		echo "unsupported type, found: " ${dir}/${tst}.*
+		printf "${CLEARLINE}unsupported type for test ${tst}\n" > /dev/stderr
 		return 1
 	fi
 }
@@ -207,16 +213,26 @@ start_server() {
 	else
 		# FIXME: assume only M5 here for now
 		local mserver=mserver5
+		local l
 		# because this is per directory, there should be no race conditions
 		mkdir -p "${p}"
 		local port=$(find_free_port)
-		${mserver} \
-			--dbfarm="${p}"/dbfarm \
-			--dbname="mTests_${dir}" \
-			--set mapi_port=${port} \
-			--set monet_daemon=yes \
-			1> "${p}"/stdout \
-			2> "${p}"/stderr \
+		local args=(
+			${mserver}
+			--dbfarm="${p}"/dbfarm
+			--dbname="mTests_${dir}"
+			--set mapi_port=${port}
+			--set monet_daemon=yes
+		)
+		[[ ${lang} == sql ]] && args=(
+			${args[@]}
+			--dbinit="include sql;"
+		)
+		echo "#" "${args[@]}" > "${p}"/stdout
+		echo "#" "${args[@]}" > "${p}"/stderr
+		"${args[@]}" \
+			1>> "${p}"/stdout \
+			2>> "${p}"/stderr \
 			0<&- &
 		echo $! > "${p}"/pid
 		echo ${port} > "${p}"/port
@@ -227,7 +243,11 @@ start_server() {
 		while true ; do
 			sleep 0.5
 			if [[ -f ${p}/dbfarm/mTests_${dir}/.conn && ${p}/dbfarm/mTests_${dir}/.scen ]] ; then
-				[[ $(< ${p}/dbfarm/mTests_${dir}/.scen) == *${lang}* ]] && break
+				l=
+				for l in $(< ${p}/dbfarm/mTests_${dir}/.scen) ; do
+					[[ ${l} == ${lang} ]] && break
+				done
+				[[ -n ${l} ]] && break
 			fi
 			if [[ -z $(ps -p $(< "${p}"/pid) | sed -e1d) ]] ; then
 				echo "failed to start ${mserver}" > /dev/stderr
@@ -237,6 +257,11 @@ start_server() {
 			fi
 			# FIXME: indefinite wait
 		done
+
+		# save for repetition in test output
+		cat "${p}"/stdout > "${p}"/init.stdout
+		cat "${p}"/stderr > "${p}"/init.stderr
+
 		cat > "${p}"/mclient.creds <<- _EOF
 			user=monetdb
 			password=monetdb
@@ -254,7 +279,6 @@ stop_servers() {
 		[[ -d ${d} ]] || continue
 		# no need to be nice, we're going to destroy the dbfarm anyway
 		kill -KILL $(< "${d}"/pid) &> /dev/null
-		# FIXME: save stdout and stderr?
 		rm -Rf "${d}"
 	done
 }
@@ -291,7 +315,7 @@ run_client() {
 	local p=${MDIR}/server/${lang}/${dir}
 
 	tstn=${tst##*/}
-	tstn=${tstn%%.*} # extension(s)
+	tstn=${tstn%.${lang}*} # extension(s)
 
 	if [[ ! -f ${p}/mclient.creds ]] ; then
 		echo "server for ${lang} in ${dir} doesn't exist" > /dev/stderr
@@ -299,22 +323,38 @@ run_client() {
 	fi
 
 	# clean server output
-	echo > "${p}"/stdout
-	echo > "${p}"/stderr
+	echo -n "" > "${p}"/stdout
+	echo -n "" > "${p}"/stderr
 
 	local c=${MDIR}/client/${lang}/${dir}
 	mkdir -p "${c}"
-	# Mtest.py output emulation
-	echo "stdout of test '${tstn}"'`'" in directory '${odir}"'`'" itself:" > "${c}"/stdout
-	echo >> "${c}"/stdout
-	echo "stderr of test '${tstn}"'`'" in directory '${odir}"'`'" itself:" > "${c}"/stderr
-	echo >> "${c}"/stderr
+
+	local args=(
+		mclient
+		-i
+		-l${lang}
+		-p$(< "${MDIR}"/server/${lang}/${dir}/port)
+	)
+
+	{
+		# Mtest.py output header emulation
+		echo "stdout of test '${tstn}"'`'" in directory '${odir}"'`'" itself:" > "${c}"/stdout
+		echo
+		cat "${p}"/init.stdout
+		echo
+		echo "# ${args[@]} < ${tst}"
+	} >> "${c}"/stdout
+	{
+		# Mtest.py output header emulation
+		echo "stderr of test '${tstn}"'`'" in directory '${odir}"'`'" itself:" > "${c}"/stderr
+		echo
+		cat "${p}"/init.stderr
+		echo
+		echo "# ${args[@]} < ${tst}"
+	} >> "${c}"/stderr
 
 	touch "${c}"/start
-	DOTMONETDBFILE="${p}"/mclient.creds mclient \
-		-i \
-		-l${lang} \
-		-p$(< ${MDIR}/server/${lang}/${dir}/port) \
+	DOTMONETDBFILE="${p}"/mclient.creds "${args[@]}" \
 		< "${tst}" \
 		1>> "${c}"/stdout \
 		2>> "${c}"/stderr &
@@ -326,18 +366,16 @@ run_client() {
 	# top actually, but we can't do that easily.  Since the server
 	# should say nothing actually, this is just to ensure we see
 	# something when it barfs about something.
-
 	{
 		echo
-		echo "# server output (if any) follows"
-		echo
+		echo "# additional server output (if any) follows"
 		cat "${p}"/stdout
 		echo
 		echo "# EOT ${tst}"
 	} >> "${c}"/stdout
 	{
 		echo
-		echo "# server output (if any) follows"
+		echo "# additional server output (if any) follows"
 		echo
 		cat "${p}"/stderr
 		echo
@@ -359,7 +397,7 @@ diff_result_test() {
 	local tstn=${tstspath##*/}
 	local ret=0
 
-	diff -u -a -b -B -I '^#' \
+	diff -u -a -b -B -I '^#' -I '^\(Ready\.\|Over\.\.\)$' \
 		"${tstspath}".stable.out "${tstrpath}".stdout \
 		> "${tstrpath}".stdout.diff
 	if [[ $? != 0 ]] ; then
@@ -370,7 +408,7 @@ diff_result_test() {
 			"${tstrpath}".stdout.diff
 		ret=$((ret + 1))
 	fi
-	diff -u -a -b -B -I '^#' \
+	diff -u -a -b -B -I '^#' -I '^MAPI  =' \
 		"${tstspath}".stable.err "${tstrpath}".stderr \
 		> "${tstrpath}".stderr.diff
 	if [[ $? != 0 ]] ; then
@@ -490,7 +528,7 @@ get_active_servers() {
 	for s in "${MDIR}"/server/*/*/pid ; do
 		[[ -f "${s}" ]] && ret="${ret},$(< "${s}")"
 	done
-	[[ -n ${ret} ]] && echo " servers: {${ret#,}}"
+	[[ -n ${ret} ]] && echo " servers: {${ret#,}},"
 }
 
 get_active_clients() {
@@ -503,7 +541,7 @@ get_active_clients() {
 		start=$(date -r "${s%/pid}"/start +%s)
 		[[ -f "${s}" ]] && ret="${ret},$(< "${s}"):$((now - start))s"
 	done
-	[[ -n ${ret} ]] && echo " clients: {${ret#,}}"
+	[[ -n ${ret} ]] && echo " clients: {${ret#,}},"
 }
 
 get_result_queue_len() {
@@ -519,7 +557,7 @@ get_test_ok() {
 	local cnt=0
 	local s
 	for s in "${MDIR}"/resultqueue/*.ok ; do
-		cnt=$((cnt + 1))
+		[[ -f ${s} ]] && cnt=$((cnt + 1))
 	done
 	echo ${cnt}
 }
@@ -528,7 +566,7 @@ get_test_fail() {
 	local cnt=0
 	local s
 	for s in "${MDIR}"/resultqueue/*.fail ; do
-		cnt=$((cnt + 1))
+		[[ -f ${s} ]] && cnt=$((cnt + 1))
 	done
 	echo ${cnt}
 }
@@ -539,7 +577,7 @@ statusbar() {
 	while true ; do
 		local testok=$(get_test_ok)
 		local testfail=$(get_test_fail)
-		printf "%sload: %1.2f%s%s resq: %d compl(suc/fail): %d(%d/%d)" \
+		printf "%sload: %1.2f,%s%s diffq: %d, compl(suc/fail): %d(%d/%d)" \
 			"${CLEARLINE}" \
 			"$(get_load_avg)" \
 			"$(get_active_servers)" \
@@ -629,6 +667,7 @@ trap terminator EXIT
 while read testdir ; do
 	find_tests_in_dir ${testdir} | while read test ; do
 		ttpe=$(get_test_type ${testdir}/${test})
+		[[ -z ${ttpe} ]] && continue
 		start_server ${ttpe%%:*} ${testdir}
 		run_client ${ttpe%%:*} ${testdir} ${ttpe#*:}
 	done
