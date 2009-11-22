@@ -338,20 +338,20 @@ run_client() {
 
 	{
 		# Mtest.py output header emulation
-		echo "stdout of test '${tstn}"'`'" in directory '${odir}"'`'" itself:" > "${c}"/stdout
+		echo "stdout of test '${tstn}"'`'" in directory '${odir}"'`'" itself:"
 		echo
 		cat "${p}"/init.stdout
 		echo
 		echo "# ${args[@]} < ${tst}"
-	} >> "${c}"/stdout
+	} > "${c}"/stdout
 	{
 		# Mtest.py output header emulation
-		echo "stderr of test '${tstn}"'`'" in directory '${odir}"'`'" itself:" > "${c}"/stderr
+		echo "stderr of test '${tstn}"'`'" in directory '${odir}"'`'" itself:"
 		echo
 		cat "${p}"/init.stderr
 		echo
 		echo "# ${args[@]} < ${tst}"
-	} >> "${c}"/stderr
+	} > "${c}"/stderr
 
 	touch "${c}"/start
 	DOTMONETDBFILE="${p}"/mclient.creds "${args[@]}" \
