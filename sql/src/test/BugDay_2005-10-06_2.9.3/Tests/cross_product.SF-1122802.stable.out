@@ -36,7 +36,7 @@ Over..
 % wrd # type
 % 2 # length
 [ 20	]
-% sys.t1 # table_name
+% . # table_name
 % L53 # name
 % wrd # type
 % 3 # length
