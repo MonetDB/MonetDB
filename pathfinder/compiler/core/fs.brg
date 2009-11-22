@@ -727,6 +727,9 @@ process_fun_sigs (PFpnode_t *p, int goalnt)
                                      the current rule */
     PFpnode_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
 
+    /* guard against too dep recursion */
+    PFrecursion_fence();
+
     /* determine rule that matches for this non-terminal */
     rule = PFfs_rule (STATE_LABEL (p), goalnt);
 
@@ -922,6 +925,9 @@ static void
 reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
 {
     PFcnode_t    *c;              /* temporary helper variable */
+
+    /* guard against too dep recursion */
+    PFrecursion_fence();
 
     /*
     PFinfo (OOPS_NOTICE, "processing rule %i", rule);
