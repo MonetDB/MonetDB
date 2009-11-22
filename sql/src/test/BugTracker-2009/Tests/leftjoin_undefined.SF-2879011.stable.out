@@ -28,8 +28,7 @@ Over..
 
 [ 2	]
 [ 2	]
-
-% sys.tmp,        sys.tmp # table_name
+% sys.a,	sys.b # table_name
 % x,    y # name
 % varchar,      varchar # type
 % 1,    1 # length
