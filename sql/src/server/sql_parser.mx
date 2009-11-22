@@ -4075,11 +4075,23 @@ interval_expression:
 				r=sql_find_subtype(&t, "sec_interval", d, 0);
 			}
 	  	}
-	  	if (!r || (tpe = parse_interval( m, $2, $3, sk, ek, &i)) < 0 ){
+	  	if (!r || (tpe = parse_interval( m, $2, $3, sk, ek, &i)) < 0) { 
 			yyerror("incorrect interval");
 			$$ = NULL;
 			YYABORT;
 	  	} else {
+			/* count the number of digits in the input */
+			lng cpyval = i, inlen = 1;
+
+			cpyval /= qualifier2multiplier(ek);
+			while (cpyval /= 10)
+				inlen++;
+		    	if (inlen > t.digits) {
+				char *msg = sql_message("incorrect interval (%d > %d)", inlen, t.digits);
+				yyerror(msg);
+				$$ = NULL;
+				YYABORT;
+			}
 	  		$$ = _newAtomNode( atom_int(&t, i));
 	  	}
 	}
