@@ -104,7 +104,7 @@ parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek)
 lng 
 qualifier2multiplier( int sk )
 {
-	lng mul;
+	lng mul = 1;
 
 	switch (sk) {
 	case iyear:
