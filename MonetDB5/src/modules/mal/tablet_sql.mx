@@ -27,17 +27,16 @@ possible variable length of the input, and the original sort order
 that should preferable be maintained.
 
 The code below consists of a file reader, which breaks up the
-file into distinct lines/fields. Then multiple parallel threads 
-can grab them, and break the on the field boundaries.
-This is done chunkwise.
-After all fields are identified, the columns are converted
+file into chunks of distinct lines. Then multiple parallel threads 
+grab them, and break them on the field boundaries.
+After all fields are identified this way, the columns are converted
 and stored in the BATs.
 
 The threads get a reference to a private copy of the READERtask.
 It includes a list of columns they should handle. This is a basis
 to distributed cheap and expensive columns over threads.
 
-The readers overlaps reading with updates of the BAT.
+The file reader overlaps IO with updates of the BAT.
 Also the buffer size of the block stream might be a little small for 
 this task (1MB). It has been increased to 8MB, which indeed improved.
 
@@ -470,7 +469,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
 	tio = GDKusec();
 	ateof = tablet_read_more(b, out, b->size - (b->len - b->pos)) == EOF;
-	tio = t1 - tio;
+	tio = GDKusec() - tio;
 	while (!ateof && (b->pos < b->len || !b->eof) && cnt != (BUN) maxrow && res == 0) {
 
 		memcpy(task->input, b->buf, b->size);
