@@ -956,7 +956,13 @@ check_version(logger *lg, FILE *fp)
 {
 	int version = 0;
 
-	if (fscanf(fp, "%6d", &version) != 1 || version != lg->version) {
+	if (fscanf(fp, "%6d", &version) != 1) {
+		GDKerror("Could not read the version number from the file '%s/log'.\n",
+			 lg->dir);
+
+		return -1;
+	}
+	if (version != lg->version) {
 		GDKerror("Incompatible database version %06d, "
 			 "this server supports version %06d\n"
 			 "Please move away %s and its corresponding dbfarm.",
