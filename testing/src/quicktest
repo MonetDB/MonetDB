@@ -602,7 +602,7 @@ shutdown_statusbar() {
 	printf "\ntesting finished with %d successful and %d failing tests\n" \
 		"$(get_test_ok)" \
 		"$(get_test_fail)"
-	echo "The results can be found at: ${OUTDIR}/index.html"
+	echo "the results can be found at: ${OUTDIR}/index.html"
 }
 
 generate_html() {
@@ -621,14 +621,14 @@ generate_html() {
 			echo "<ul>"
 			find_tests_in_dir ${dir} | while read test ; do
 				local t
-				local style
+				local style=
 				local msg=
 				t=${dir//\//_}_${test}
 				for p in "${OUTDIR}"/${t}.std{out,err}.diff ; do
 					[[ -f ${p} ]] || continue
 					[[ -z ${style} ]] \
 						&& style="style='color: red;'" \
-						|| style="${style%\'} font-style:bold;'"
+						|| style="${style%\'} font-weight: bold;'"
 					[[ ${p} == *".stdout.diff" ]] \
 						&& msg="${msg}<br /><a href='${p##*/}' target='viewer'>diff stdout</a>" \
 						|| msg="${msg}<br /><a href='${p##*/}' target='viewer'>diff stderr</a>"
