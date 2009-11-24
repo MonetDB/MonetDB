@@ -298,24 +298,21 @@ submit_result_test() {
 		return 1
 	fi
 
-	mv "${stdout}" "${MDIR}"/resultqueue/${tst//\//_}.stdout
-	mv "${stderr}" "${MDIR}"/resultqueue/${tst//\//_}.stderr
+	mv "${stdout}" "${MDIR}"/resultqueue/${ntst}.stdout
+	mv "${stderr}" "${MDIR}"/resultqueue/${ntst}.stderr
 
-	echo "${tst%/*}/${ntst}" >> "${MDIR}"/resultqueue/${tst//\//_}.todo
+	echo "${tst}" >> "${MDIR}"/resultqueue/${ntst}.todo
 }
 
 run_client() {
 	# starts a client connecting to the responsible server for the
 	# requested language, running the given test
-	local lang=$1
-	local odir=$2
-	local dir=${2//\//_}
-	local tst=$3
-	local tstn=
+	local tstn=$1
+	local lang=$2
+	local odir=$3
+	local dir=${3//\//_}
+	local tst=$4
 	local p=${MDIR}/server/${lang}/${dir}
-
-	tstn=${tst##*/}
-	tstn=${tstn%.${lang}*} # extension(s)
 
 	if [[ ! -f ${p}/mclient.creds ]] ; then
 		echo "server for ${lang} in ${dir} doesn't exist" > /dev/stderr
@@ -382,7 +379,8 @@ run_client() {
 		echo "# EOT ${tst}"
 	} >> "${c}"/stderr
 
-	submit_result_test "${tst}" "${tstn}" "${c}"/stdout "${c}"/stderr
+	submit_result_test "${odir}/${tstn}" "${dir}_${tstn}" \
+		"${c}"/stdout "${c}"/stderr
 
 	rm -Rf "${c}"
 }
@@ -392,9 +390,9 @@ diff_result_test() {
 	# stable versions, and returns 0 no differences encountered, or 1 if
 	# differences existed in stdout, 2 if differences existed in stderr,
 	# and 3 if differences existed in both stdout and stderr
-	local tstrpath=$1
-	local tstspath=$2
-	local tstn=${tstspath##*/}
+	local tstn=${1##*/}
+	local tstspath=${1%/*}/Tests/${tstn}
+	local tstrpath=$2
 	local ret=0
 
 	diff -u -a -b -B -I '^#' -I '^\(Ready\.\|Over\.\.\)$' \
@@ -438,44 +436,42 @@ result_queue_runner() {
 			# another thread has already taken this job, it doesn't
 			# exist either
 			[[ -f ${t} ]] || continue
-			tst=$(< "${t}")
-			rm -f "${t}"
-			diff_result_test "${t%.todo}" "${tst}"
-			ds=$?
+			mv "${t}" "${t%.todo}."
 			rtst=${t%.todo}
-			rtst=${rtst##*/}
+			tst="$(< "${rtst}.")"
+			diff_result_test "${tst}" "${rtst}"
+			ds=$?
 			if [[ ${ds} != 0 ]] ; then
-				echo "${tst}" > "${t%.todo}".fail
+				mv "${rtst}." "${rtst}.fail"
 				case ${ds} in
 					1)
-						mv "${t%.todo}".stdout.diff "${OUTDIR}"/
+						mv "${rtst}".stdout.diff "${OUTDIR}"/
 						printf "%s\n\t%s\n" \
 							"${CLEARLINE}${tst} has differences in stdout" \
-							"see ${OUTDIR}/${rtst}.stdout.diff"
+							"see ${OUTDIR}/${rtst##*/}.stdout.diff"
 					;;
 					2)
-						mv "${t%.todo}".stderr.diff "${OUTDIR}"/
+						mv "${rtst}".stderr.diff "${OUTDIR}"/
 						printf "%s\n\t%s\n" \
 							"${CLEARLINE}${tst} has differences in stderr" \
-							"see ${OUTDIR}/${rtst}.stderr.diff"
+							"see ${OUTDIR}/${rtst##*/}.stderr.diff"
 					;;
 					3)
-						mv "${t%.todo}".std*.diff "${OUTDIR}"/
+						mv "${rtst}".std*.diff "${OUTDIR}"/
 						printf "%s\n\t%s\n\t%s\n" \
 							"${CLEARLINE}${tst} has differences in stdout and stderr" \
-							"see ${OUTDIR}/${rtst}.stdout.diff" \
-							"see ${OUTDIR}/${rtst}.stderr.diff"
+							"see ${OUTDIR}/${rtst##*/}.stdout.diff" \
+							"see ${OUTDIR}/${rtst##*/}.stderr.diff"
 					;;
 				esac
 			else
-				echo "${tst}" > "${t%.todo}".ok
+				mv "${rtst}." "${rtst}.ok"
 			fi
 
 			# basically, we don't have to save the logs (nothing
 			# wrong here, right?) but let's just do it for
 			# post-inspection
-			mv "${t%.todo}".stdout ${OUTDIR}/${rtst}.stdout
-			mv "${t%.todo}".stderr ${OUTDIR}/${rtst}.stderr
+			mv "${rtst}".std{out,err} "${OUTDIR}"/
 		done
 		# don't spinlock
 		sleep 1
@@ -498,6 +494,8 @@ shutdown_result_queue() {
 	local t
 	local s
 
+	[[ -f "${MDIR}"/resultqueue/pid ]] || return
+
 	# check if there is still work to do
 	while true ; do
 		for t in "${MDIR}"/resultqueue/*.todo ; do
@@ -512,6 +510,7 @@ shutdown_result_queue() {
 	# shut down the process
 	kill $(< "${MDIR}"/resultqueue/pid)
 	wait $(< "${MDIR}"/resultqueue/pid)
+	rm -f "${MDIR}"/resultqueue/pid
 }
 
 get_load_avg() {
@@ -603,6 +602,62 @@ shutdown_statusbar() {
 	printf "\ntesting finished with %d successful and %d failing tests\n" \
 		"$(get_test_ok)" \
 		"$(get_test_fail)"
+	echo "The results can be found at: ${OUTDIR}/index.html"
+}
+
+generate_html() {
+	# generates the view that eases browser use with a left column to
+	# address tests, and a viewer pane on the right to examine the files
+	# that are plain and have no HTML markup
+	local dir
+	local test
+	local p
+
+	{
+		echo "<html>"
+		echo "<ul>"
+		while read dir ; do
+			echo "<li>${dir}"
+			echo "<ul>"
+			find_tests_in_dir ${dir} | while read test ; do
+				local t
+				local style
+				local msg=
+				t=${dir//\//_}_${test}
+				for p in "${OUTDIR}"/${t}.std{out,err}.diff ; do
+					[[ -f ${p} ]] || continue
+					[[ -z ${style} ]] \
+						&& style="style='color: red;'" \
+						|| style="${style%\'} font-style:bold;'"
+					[[ ${p} == *".stdout.diff" ]] \
+						&& msg="${msg}<br /><a href='${p##*/}' target='viewer'>diff stdout</a>" \
+						|| msg="${msg}<br /><a href='${p##*/}' target='viewer'>diff stderr</a>"
+				done
+				echo -n "<li ${style}>${test} ("
+				echo -n "<a href='${t}.stdout' target='viewer'>stdout</a>, "
+				echo -n "<a href='${t}.stderr' target='viewer'>stderr</a>)"
+				echo -n "${msg}"
+				echo "</li>"
+			done
+			echo "</ul>"
+			echo "</li>"
+		done < "${MDIR}"/testdirs
+		echo "</ul>"
+		echo "</html>"
+	} > "${OUTDIR}"/tests.html
+
+	# finally make it available in the grand picture
+	cat > "${OUTDIR}"/index.html <<- _EOF
+		<html>
+		<head>
+			<title>Testing results for ${TROOT}</title>
+		</head>
+		<frameset cols="25%,*">
+			<frame name="index" src="tests.html" />
+			<frame name="viewer" />
+		</frameset>
+		</html>
+	_EOF
 }
 
 usage() {
@@ -669,7 +724,11 @@ while read testdir ; do
 		ttpe=$(get_test_type ${testdir}/${test})
 		[[ -z ${ttpe} ]] && continue
 		start_server ${ttpe%%:*} ${testdir}
-		run_client ${ttpe%%:*} ${testdir} ${ttpe#*:}
+		run_client ${test} ${ttpe%%:*} ${testdir} ${ttpe#*:}
 	done
 	stop_servers ${testdir}
 done < ${MDIR}/testdirs
+
+# make sure everything is diffed, and then produce HTML
+shutdown_result_queue
+generate_html
