@@ -615,6 +615,12 @@ generate_html() {
 
 	{
 		echo "<html>"
+		echo "<head>"
+		echo "<style type='text/css'>"
+		echo "  ul { margin-left: 0px; padding-left: 15px; }"
+		echo "  li { font-size: small; }"
+		echo "</style>"
+		echo "</head>"
 		echo "<ul>"
 		while read dir ; do
 			echo "<li>${dir}"
