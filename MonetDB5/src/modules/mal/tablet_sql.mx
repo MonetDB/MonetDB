@@ -468,7 +468,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 #endif
 
 	tio = GDKusec();
-	ateof = tablet_read_more(b, out, b->size - (b->len - b->pos)) == EOF;
+	tablet_read_more(b, out, b->size - (b->len - b->pos));
 	tio = GDKusec() - tio;
 	while (!ateof && (b->pos < b->len || !b->eof) && cnt != (BUN) maxrow && res == 0) {
 
@@ -554,10 +554,11 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			}
 
 			/* found a complete record, do we need to skip it? */
-			if ( --skip < 0 ) 
+			if ( --skip < 0 ) {
 				task->fields[0][task->next++] = s;
+				cnt++;
+			}
 			*e = '\0';
-			cnt++;
 			s = e + rseplen;
 			e = s;
 			b->pos = s - task->input;
