@@ -248,7 +248,8 @@ bbp_dir = re.compile('^(-?[0-9]+) (-?[0-9]+) ([^ ]+) ([^ ]+) ([^ ]+) (-?[0-9]+) 
         # element of "norm_out", unless the latter is "None" (then, the
         # respective match is kept as-is).
 norm_in  = re.compile('(?:'+')|(?:'.join([
-    r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',                         # 01: 5
+#   r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',                         # 01: 5
+    r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(?:unexpected .* on line |unexpected .* in: )?(?:.*)\n',                     # 01: 3
     r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\..*)\n',                                                       # 02: 3
     r'^( *!ERROR: shred: cannot stat .*: )(No such file or directory|Error 0)\n',                                                               # 03a: 2
     r'^(ERROR =|       )( !ERROR: | !SQLException:assert:| !SQLException:sql: | !SQLException:| !MALException:)([^:]+)(: *)([^ ].*)\n',         # 03b: 5
@@ -257,17 +258,17 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt\(")(.*)("\) failed.*)\n',                                                             # 06: 3
     r'^(ERROR: err:FORG0001: could not cast value)( from )?(.*)( to )(.*)(\..*)\n',                                                             # 07: 6
     r"^(type error: can't cast type ')(.*)(' to type ')(.*)('.*)\n",                                                                            # 08: 5
-    r'^(type error: no variant of function )(.*)( accepts the given argument type\(s\): )(.*)\n',                                               # 09: 4
-    r'^(type error: illegal arguments for function )(.*)\n',                                                                                    # 10: 2
+    r'^(type error: no variant of function )(.*)( accepts the given argument type\(s\): )(?:.*)\n',                                             # 09: 3
+    r'^(type error: illegal arguments for function )(?:.*)\n',                                                                                  # 10: 1
     r"^(ERROR: pcre_replace: .flags. contains invalid character ')(.*)('.*)\n",                                                                 # 11: 3
     r"^(ERROR: err:XPTY0004: illegal qname ')(.*)('.*)\n",                                                                                      # 12: 3
-    r'^(ERROR: err:XQDY0025: attribute names are not unique )(in constructed element )?(.*)\n',                                                 # 13: 3
+    r'^(ERROR: err:XQDY0025: attribute names are not unique )(in constructed element )?(?:.*)\n',                                               # 13: 2
     r"^(error in function application: at )(.*)(: wrong number of arguments for function `)(.*)(' \(expected )(.*)(, got )(.*)(\).*)\n",        # 14: 9
-    r'^(error in function application: at )(.*)(: )(.*)( expects at least .* arguments? \(got .*\).*)\n',                                       # 15: 5
-    r'^(ERROR: err:FOER0000)(.*)\n',                                                                                                            # 16: 2
+    r'^(error in function application: at )(.*)(?:: )(?:.*)(?: expects at least .* arguments? \(got .*\).*)\n',                                 # 15: 2
+    r'^(ERROR: err:FOER0000)(?:.*)\n',                                                                                                          # 16: 1
     r"^(illegal reference to context node: at )(.*)(: )(``.'' is unbound|position information not available)(.*)\n",                            # 17: 5
-    r'^(variable\(s\) out of scope or unknown: at )(.*)\n',                                                                                     # 18: 2
-    r'^(bad usage of XML namespaces: at )(.*)\n',                                                                                               # 19: 2
+    r'^(variable\(s\) out of scope or unknown: at )(?:.*)\n',                                                                                   # 18: 1
+    r'^(bad usage of XML namespaces: at )(?:.*)\n',                                                                                             # 19: 1
     r'^(QUERY = import rpc-module namespace xrpc = "http://www.monetdb.nl/basicfunctions" at ")(/.*)(/tests/XRpc/basic_queries/Tests/basicfunctions.xq";)\n', # 20: 3
     r"^(QUERY = connect)( to|)( ')(localhost)(' port )([0-9]+)( .*)\n",                                                                         # 21: 7
     r"^([Uu]sage: )(/.*/|)(lt-|)([A-Za-z0-9_]+)([ \t].*)\n",                                                                                    # 22: 5
@@ -278,7 +279,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
 #   None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,                                    # 01: 5
-    None, 'syntax/parse', None, '', '',                                                                 # 01: 5
+    None, 'syntax/parse', None,                                                                         # 01: 3
     None, '...', None,                                                                                  # 02: 3
     None, 'No such file or directory',                                                                  # 03a: 2
     None, ' !ERROR', '', ': ', None,                                                                    # 03b: 5
@@ -287,17 +288,17 @@ norm_out = (
     None, '...', None,                                                                                  # 06: 3
     None, None, '...', None, '...', None,                                                               # 07: 6
     None, '...', None, '...', None,                                                                     # 08: 5
-    None, '...', None, '...',                                                                           # 09: 4
-    None, '...',                                                                                        # 10: 2
+    None, '...', None,                                                                                  # 09: 3
+    None,                                                                                               # 10: 1
     None, '...', None,                                                                                  # 11: 3
     None, '...', None,                                                                                  # 12: 3
-    None, None, '...',                                                                                  # 13: 3
+    None, None,                                                                                         # 13: 2
     None, '...', None, '...', None, '...', None, '...', None,                                           # 14: 9
-    None, "...: wrong number of arguments for function `...' (expected ..., got ...)", '', '', '',      # 15: 5
-    None, ': ...',                                                                                      # 16: 2
+    None, "...: wrong number of arguments for function `...' (expected ..., got ...)",                  # 15: 2
+    None,                                                                                               # 16: 1
     None, '...', None, '...', None,                                                                     # 17: 5
-    None, '...',                                                                                        # 18: 2
-    None, '...',                                                                                        # 19: 2
+    None,                                                                                               # 18: 1
+    None,                                                                                               # 19: 1
     None, '$TSTSRCBASE', None,                                                                          # 20: 3
     None, None, None, '<HOST>', None, '<MAPIPORT>', None,                                               # 21: 7
     None, '', '', None, None,                                                                           # 22: 5
