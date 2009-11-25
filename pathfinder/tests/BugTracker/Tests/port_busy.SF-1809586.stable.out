@@ -1,1 +1,60 @@
-Correct output to be provided.
+stdout of test 'port_busy.SF-1809586` in directory 'tests/BugTracker` itself:
+
+
+# 10:46:36 >  
+# 10:46:36 >  /usr/bin/python port_busy.SF-1809586.py port_busy.SF-1809586 
+# 10:46:36 >  
+
+MAPIPORT
+module(mapi);
+# MonetDB Server v4.34.0
+# based on GDK   v1.34.0
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-2009, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Detected 7.753 GiB (8324386816 bytes) main-memory.
+# Visit http://monetdb.cwi.nl/ for further information.
+!ERROR: MAPIlisten:binding to stream socket (32202) failed
+!OS: Address already in use
+print(1);
+[ 1 ]
+quit();
+module(pathfinder);
+# MonetDB Server v4.34.0
+# based on GDK   v1.34.0
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-2009, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Detected 7.753 GiB (8324386816 bytes) main-memory.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.13.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+!ERROR: MAPIlisten:binding to stream socket (32202) failed
+!OS: Address already in use
+XRPCPORT
+module(mapi);
+# MonetDB Server v4.34.0
+# based on GDK   v1.34.0
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-2009, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Detected 7.753 GiB (8324386816 bytes) main-memory.
+# Visit http://monetdb.cwi.nl/ for further information.
+print(1);
+[ 1 ]
+quit();
+module(pathfinder);
+# MonetDB Server v4.34.0
+# based on GDK   v1.34.0
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-2009, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Detected 7.753 GiB (8324386816 bytes) main-memory.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.13.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.28.3 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:43396/admin
+
+# 10:46:37 >  
+# 10:46:37 >  Done.
+# 10:46:37 >  
+

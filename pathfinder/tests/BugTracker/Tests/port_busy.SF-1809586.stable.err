@@ -1,1 +1,19 @@
-Correct output to be provided.
+stderr of test 'port_busy.SF-1809586` in directory 'tests/BugTracker` itself:
+
+
+# 10:46:36 >  
+# 10:46:36 >  /usr/bin/python port_busy.SF-1809586.py port_busy.SF-1809586 
+# 10:46:36 >  
+
+MAPIPORT
+module(mapi);
+module(pathfinder);
+XRPCPORT
+module(mapi);
+module(pathfinder);
+01/Jan/1970 01:00:00 shttpd_open_port: bind(43396): Address already in use
+
+# 10:46:37 >  
+# 10:46:37 >  Done.
+# 10:46:37 >  
+

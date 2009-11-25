@@ -273,6 +273,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r"^(QUERY = connect)( to|)( ')(localhost)(' port )([0-9]+)( .*)\n",                                                                         # 21: 7
     r"^([Uu]sage: )(/.*/|)(lt-|)([A-Za-z0-9_]+)([ \t].*)\n",                                                                                    # 22: 5
     r'^(.*: )(illegal|invalid)( option -- .*)\n',                                                                                               # 23: 3
+    r'^(01/Jan/1970 01:00:00 shttpd_open_port: bind\(|!ERROR: MAPIlisten:binding to stream socket \()([0-9]+)(\): Address already in use|\) failed)\n', # 24: 3
     r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*)\n',                                                                                    # 90: 3
     r'^(fatal error|ERROR)(: err:FORG0005, fn:exactly-one called with a sequence containing zero or more than one item..*)()\n',                # 99: 3
 ])+')',  re.MULTILINE)
@@ -303,6 +304,7 @@ norm_out = (
     None, None, None, '<HOST>', None, '<MAPIPORT>', None,                                               # 21: 7
     None, '', '', None, None,                                                                           # 22: 5
     None, 'invalid', None,                                                                              # 23: 3
+    None, '...', None,                                                                                  # 24: 3
     None, '...', None,                                                                                  # 90: 3
     '=ERROR', None, '\n#',                                                                              # 99: 3
 ##    '=ERROR', None, '''
