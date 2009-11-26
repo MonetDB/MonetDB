@@ -66,6 +66,11 @@ typedef struct{
 	lng *time, wtime;	/* time per col + time per thread */
 	int rounds; 	/* how often did we divide the work */
 	MT_Id tid;
+	MT_Sema producer;	/* reader waits for call */
+	MT_Sema consumer;	/* data available */
+	int ateof;		/* io control */
+	bstream *b;
+	stream *out;
 	MT_Sema sema;	/* threads wait for work , negative next implies exit*/
 	MT_Sema reply;	/* let reader continue */
 	Tablet *as;
@@ -396,12 +401,32 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 		task->time[i] = 0;
 	GDKfree(loc);
 }
+@-
+Reading is handled by a separate task as a preparation for
+mode parallelism
+@c
+static void
+SQLloader(void *p){
+	READERtask *task = (READERtask *)p;
+
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKout,"SQLloader started\n");
+#endif
+	while( task->ateof == 0) 
+	{
+		MT_down_sema(task->producer, "tablet loader");
+#ifdef _DEBUG_TABLET_
+		stream_printf(GDKout,"SQL loader got buffer \n");
+#endif
+		task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
+		MT_up_sema(task->consumer, "tablet loader");
+	}
+}
 
 BUN
 SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow)
 {
 	char *s, *e, *end;
-	int ateof = 0;
 	char q = 0;					/* remember quote status */
 	BUN cnt = 0;
 	int res = 0;				/* < 0: error, > 0: success, == 0: continue processing */
@@ -411,7 +436,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[16];
 	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
-	lng tio, t1, total=0, iototal=0;
+	lng lio =0,  tio, t1, total=0, iototal=0;
 	int askmore = 0;
 	int vmtrim = GDK_vm_trim; 
 	/* trimming process should not be active during this process. */
@@ -419,6 +444,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	/* large tables. Instead rely on madvise */
 	GDK_vm_trim = 0;
 
+	(void) out;
 	assert(rsep);
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
@@ -436,6 +462,12 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	task->base = GDKzalloc(b->size+2);	
 	task->input = task->base + 1; /* wrap the buffer with null bytes */
 	task->base[b->size+1]= 0;
+
+	MT_init_sema(task->consumer,0,"tablet load");
+	MT_init_sema(task->producer,0,"tablet load");
+	task->ateof =0;
+	task->b = b;
+	task->out = out;
 
 	as->error = NULL;
 
@@ -463,27 +495,30 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j]);
 	}
 
+	MT_create_thread(&task->tid, SQLloader, (void*) task);
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"parallel bulk load "LLFMT " - " LLFMT"\n",skip, maxrow);
 #endif
 
 	tio = GDKusec();
-	tablet_read_more(b, out, b->size - (b->len - b->pos));
+	MT_up_sema(task->producer,"tablet load");
+	MT_down_sema(task->consumer, "tablet loader");
 	tio = GDKusec() - tio;
-	while ( (b->pos < b->len || !b->eof) && cnt < (BUN) maxrow && res == 0) {
+	while ( (task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
 
-		memcpy(task->input, b->buf, b->size);
+		memcpy(task->input, task->b->buf, task->b->size);
 
 #ifdef _DEBUG_TABLET_
-	   	stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " eof=%d \n", b->pos, b->len, b->size, b->eof);
+	   	stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " eof=%d \n", 
+			task->b->pos, task->b->len, task->b->size, task->b->eof);
 #endif
 
 		/* now we fill the copy buffer with pointers to the record */
 		/* skipping tuples as needed */
 		task->next = 0;
 
-		end = task->input +  b->len;
-		s = task->input + b->pos;
+		end = task->input +  task->b->len;
+		s = task->input + task->b->pos;
 		*end = '\0';	/* this is safe, as the stream ensures an extra byte */
 		/* Note that we rescan from the start of a record (the
 		   last partial buffer from the previous iteration),
@@ -546,7 +581,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			}
 
 			/* check for incomplete line and end of buffer condition*/
-			if ( (e  && *e != 0) || ateof){
+			if ( (e  && *e != 0) || task->ateof){
 				/* found a complete record, do we need to skip it? */
 				if ( --skip < 0 ) {
 					task->fields[0][task->next++] = s;
@@ -555,19 +590,22 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				}
 				s = e + rseplen;
 				e = s;
-				b->pos = (size_t) (s - task->input);
+				task->b->pos = (size_t) (s - task->input);
 			} else {
 				/* no (unquoted) record separator found, read more data */
 				askmore = 1;
 				break;
 			}
 		}
+		/* start feeding new data */
+		MT_up_sema(task->producer,"tablet load");
 		t1 = GDKusec() - t1;
 		total += t1;
 		iototal += tio;
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"fill the BATs %d  "BUNFMT" cap " BUNFMT"\n", task->next, cnt, BATcapacity(as->format[0].c[0]));
 #endif
+		t1 = GDKusec();
 		if ( task->next ){
 			/* activate the workers to break lines */
 			for( j= 0; j < threads ; j++) {
@@ -579,14 +617,17 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				ptask[j].limit = task->limit;
 				MT_up_sema(ptask[j].sema,"SQLworker");
 			}
-
+		}
+		if ( task->next ){
 			/* await completion of line break phase */
 			for ( j=0; j< threads; j++){
 				MT_down_sema(ptask[j].reply,"sqlreader");
 				if ( ptask[j].error )
 					res = -1;
 			}
-
+		}
+		lio += GDKusec() -t1;	/* line bread done */
+		if ( task->next ){
 			if ( res == 0){
 				SQLworkdivider(task, ptask, (int) as->nr_attrs, threads);
 				
@@ -604,8 +645,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		stream_printf(GDKout,"shuffle %d:%s\n",(int) strlen(s), s);
 #endif
 		tio = GDKusec();
-		if ( b->pos >= b->len || askmore)
-			ateof = tablet_read_more(b, out, b->size - (b->len- b->pos) ) == EOF;
 		askmore = 0;
 		tio = t1 - tio;
 
@@ -614,7 +653,8 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			for ( j=0; j< threads; j++)
 				MT_down_sema(ptask[j].reply,"sqlreader");
 		}
-		if ( ateof)
+		MT_down_sema(task->consumer, "tablet loader");
+		if ( task->ateof)
 			break;
 	}
 
@@ -630,7 +670,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		if (cnt < (BUN) maxrow   && maxrow > 0) 
 			/* providing a precise count is not always easy, instead consider maxrow as an upper bound */
 			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c[0]));
-		stream_printf(GDKout,"# COPY reader time "LLFMT " io " LLFMT "\n", total, iototal);
+		stream_printf(GDKout,"# COPY reader time "LLFMT " line break " LLFMT " io " LLFMT "\n", total, lio, iototal);
 #ifdef _DEBUG_TABLET_
 		for( i=0; i< as->nr_attrs; i++) 
 				stream_printf(GDKout,LLFMT " ", task->time[i]);
