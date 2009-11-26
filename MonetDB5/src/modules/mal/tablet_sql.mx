@@ -114,7 +114,7 @@ If the string starts with the quote identified from SQL, we locate the tail
 and interpret the body.
 @c
 static INLINE int
-SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
+SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int col)
 {
 	ptr *adt;
 	char buf[BUFSIZ];
@@ -153,8 +153,8 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		char *val;
 		val = *s ? GDKstrdup(s) : GDKstrdup("");
 		if ( *err == NULL){
-			snprintf(buf,BUFSIZ, "value '%s' from line " BUNFMT 
-				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c[0])+1, c+1, fmt->type);
+			snprintf(buf,BUFSIZ, "value '%s' from line "  BUNFMT
+				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c[0])+1, col, fmt->type);
 			*err= GDKstrdup(buf);
 		}
 		GDKfree(val);
@@ -172,7 +172,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 	return ret;
 bunins_failed:
 	if (*err == NULL) {
-		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c[0])+1, c+1);
+		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c[0])+1, col);
 		*err= GDKstrdup(buf);
 	}
 	return -1;
@@ -199,7 +199,7 @@ SQLworker_column(READERtask *task, int col)
 
 	for ( i = 0; i< task->next ; i++)
 	if ( task->fields[col][i] ) { /* no errors */
-		if (SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &err, col)) {
+		if (SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &err, col+1)) {
 			assert(err != NULL);
 			if (!task->as->tryall){
 				/* watch out for concurrent threads */
@@ -207,9 +207,8 @@ SQLworker_column(READERtask *task, int col)
 				if (task->as->error == NULL)
 					task->as->error = err;	/* restore for upper layers */
 				mal_unset_lock(mal_contextLock,"tablet insert value");
-				return -1;
-			}
-			BUNins(task->as->complaints, NULL, err, TRUE);
+			} else
+				BUNins(task->as->complaints, NULL, err, TRUE);
 		}
 	}
 
@@ -231,7 +230,6 @@ static int
 SQLload_file_line(READERtask *task, int idx)
 {
 	BUN i;
-	char *start;
 	char errmsg[BUFSIZ];
 	char ch = *task->csep;
 	char *line = task->fields[0][idx];
@@ -243,7 +241,7 @@ SQLload_file_line(READERtask *task, int idx)
 #endif
 
 	for (i = 0; i < as->nr_attrs ; i++) {
-		task->fields[i][idx] = start = line;
+		task->fields[i][idx] = line;
 		/* recognize fields starting with a quote, keep them */
 		if ( task->quote && *line == task->quote ){
 			line = tablet_skip_string(line + 1, task->quote);
@@ -251,14 +249,9 @@ SQLload_file_line(READERtask *task, int idx)
 				str errline = SQLload_error(task,task->next);
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
 					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c[0]) + task->next +1, i);
-				GDKerror(errmsg);
-				as->error = GDKstrdup(errmsg);
 				GDKfree(errline);
-				for (i = 0; i < as->nr_attrs ; i++) 
-					task->fields[i][idx] = NULL ;
-				if (as->tryall)
-					BUNins(as->complaints, NULL, as->error, TRUE);
-				return -1;
+				GDKerror(errmsg);
+				goto errors;
 			} 
 		} 
 
@@ -280,19 +273,26 @@ SQLload_file_line(READERtask *task, int idx)
 			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
 					 fmt->sep, BATcount(fmt->c[0]) + 1 + task->next, i);
 			GDKerror(errmsg);
+		errors:
+			/* we save all errors detected */
+			mal_set_lock(mal_contextLock,"tablet line break");
+			if (as->tryall)
+				BUNins(as->complaints, NULL, errmsg, TRUE);
+			if ( as->error){
+				str s = GDKstrdup(errmsg);
+				snprintf(errmsg,BUFSIZ,"%s%s", as->error,s);
+				GDKfree(s);
+			}
 			as->error = GDKstrdup(errmsg);
+			mal_unset_lock(mal_contextLock,"tablet line break");
 			for (i = 0; i < as->nr_attrs ; i++) 
 				task->fields[i][idx] = NULL ;
-			if (!as->tryall)
-				return -1;
-			BUNins(as->complaints, NULL, as->error, TRUE);
 			break;
 		}
 	  endoffield:;
 	}
-	return 0;
+	return as->error? -1 : 0;
 }
-
 static void
 SQLworker(void *arg)
 {
@@ -332,7 +332,7 @@ SQLworker(void *arg)
 		} else
 		if ( task->state == UPDATEBAT)
 		/* stage two, updating the BATs */
-		for (i = 0; i < task->as->nr_attrs && task->as->error == NULL; i++)
+		for (i = 0; i < task->as->nr_attrs ; i++)
 			if (task->cols[i]) {
 				t0 = GDKusec();
 				SQLworker_column(task, task->cols[i] - 1);
@@ -470,18 +470,16 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	tio = GDKusec();
 	tablet_read_more(b, out, b->size - (b->len - b->pos));
 	tio = GDKusec() - tio;
-	while (!ateof && (b->pos < b->len || !b->eof) && cnt != (BUN) maxrow && res == 0) {
+	while ( (b->pos < b->len || !b->eof) && cnt < (BUN) maxrow && res == 0) {
 
 		memcpy(task->input, b->buf, b->size);
 
-		t1 = GDKusec();
 #ifdef _DEBUG_TABLET_
 	   	stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " eof=%d \n", b->pos, b->len, b->size, b->eof);
 #endif
 
 		/* now we fill the copy buffer with pointers to the record */
 		/* skipping tuples as needed */
-		memset((char*) task->fields[0], 0, sizeof(char*) * task->next);
 		task->next = 0;
 
 		end = task->input +  b->len;
@@ -521,14 +519,11 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			   In the first phase we simply break the lines
 				at the record boundary.
 			*/
-			askmore++;
 			if ( quote == 0) {
 				for ( ; *e ; e++)
 					if (*e == *rsep && (rseplen == 1 || strncmp(e, rsep, rseplen) == 0)) {
-						if ( e[-1] != '\\' ){
-							askmore = 0;
+						if ( e[-1] != '\\' )
 							break;
-						}
 					}
 			} else {
 				for ( ; *e ; e++) {
@@ -537,31 +532,35 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 							do {
 								for (e++ ; *e && *e != quote ; e++) 
 									;
-							} while ( e[-1] == '\\' );
+							} while ( *e && e[-1] == '\\' );
+							if ( *e == 0) {
+								e = 0;	/* nontermindated quoted field, we need more */
+								break;
+							}
 						}
 					} else if (*e == *rsep && (rseplen == 1 || strncmp(e, rsep, rseplen) == 0)) {
-						if ( e[-1] != '\\' ){
-							askmore = 0;
+						if ( e[-1] != '\\' )
 							break;
-						}
 					}
 				}
 			}
 
 			/* check for incomplete line and end of buffer condition*/
-			if ( askmore) {
+			if ( (e  && *e != 0) || ateof){
+				/* found a complete record, do we need to skip it? */
+				if ( --skip < 0 ) {
+					task->fields[0][task->next++] = s;
+					*e = '\0';
+					cnt++;
+				}
+				s = e + rseplen;
+				e = s;
+				b->pos = (size_t) (s - task->input);
+			} else {
+				/* no (unquoted) record separator found, read more data */
+				askmore = 1;
 				break;
 			}
-
-			/* found a complete record, do we need to skip it? */
-			if ( --skip < 0 ) {
-				task->fields[0][task->next++] = s;
-				cnt++;
-			}
-			*e = '\0';
-			s = e + rseplen;
-			e = s;
-			b->pos = s - task->input;
 		}
 		t1 = GDKusec() - t1;
 		total += t1;
@@ -588,13 +587,15 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 					res = -1;
 			}
 
-			SQLworkdivider(task, ptask, (int) as->nr_attrs, threads);
-			
-			/* activate the workers to update the BATs */
-			for( j= 0; j < threads ; j++) {
-				/* stage two, update the BATs */
-				ptask[j].state= UPDATEBAT;
-				MT_up_sema(ptask[j].sema,"SQLworker");
+			if ( res == 0){
+				SQLworkdivider(task, ptask, (int) as->nr_attrs, threads);
+				
+				/* activate the workers to update the BATs */
+				for( j= 0; j < threads ; j++) {
+					/* stage two, update the BATs */
+					ptask[j].state= UPDATEBAT;
+					MT_up_sema(ptask[j].sema,"SQLworker");
+				}
 			}
 		}
 
@@ -603,16 +604,18 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		stream_printf(GDKout,"shuffle %d:%s\n",(int) strlen(s), s);
 #endif
 		tio = GDKusec();
-		if ( askmore)
+		if ( b->pos >= b->len || askmore)
 			ateof = tablet_read_more(b, out, b->size - (b->len- b->pos) ) == EOF;
-		else ateof = 1;
+		askmore = 0;
 		tio = t1 - tio;
 
-		if ( task->next ){
+		if ( res == 0  && task->next ){
 			/* await completion of the BAT updates */
 			for ( j=0; j< threads; j++)
 				MT_down_sema(ptask[j].reply,"sqlreader");
 		}
+		if ( ateof)
+			break;
 	}
 
 	/* close down the workers */
