@@ -302,10 +302,11 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 
 @= CreateResult
 createView:
-	view = BATslice(b, vl, vh+1);
 
 	if (!tail)
 		view = BATslice(VIEWhead_(b, BAT_READ), vl, vh+1);
+	else
+		view = BATslice(b, vl, vh+1);
 	
 	*vid = view->batCacheid;
 	BBPkeepref(*vid);
@@ -343,7 +344,7 @@ createView:
 	m = existsCrackerIndex(*bid);
 
 	/* if this is the first time we select something from this bat,
-		we have to create the crack indx for it and
+		we have to create the crack index for it and
 	   if necessary materialize the head of the bat */
 	if (m == -1){
 		if ((bo = BATdescriptor(*bid)) == NULL)

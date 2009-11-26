@@ -92,6 +92,18 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 
 @- Local support functions and macros
 
+
+@= printVarTypes
+{
+/* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
+	str MyBuf = NULL;
+	int MyBufLen = 0;
+	(void)(*BATatoms[TYPE_@1].atomToStr) (&MyBuf, &MyBufLen, (ptr)(&@2));
+	printf("%s @3 \n", MyBuf);
+	GDKfree(MyBuf);
+}
+@
+
 @= crkThreeTree
         /*printf("crack in three pieces\n");*/
 	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
@@ -162,54 +174,54 @@ createView:
 @
 
 @= RangeSelectBody
-	BAT *b,*bo;
+	BAT *b,*bo,*br;
 	int  m;
 	oid vl=0, vh=0, posl, posh,_vl;
 	oid sliceSize;
 	struct sortMergeNode *current;
 	bit HBound;
-	lng crackTime=0,prepTime=0,indexTime=0;
 	
 	(void) vid;
 
+	if (@2_GT(low,hgh,@3@1))
+		throw(MAL, "crackers.crackmerge", "illegal range");
+	
 	if (*inclusiveHgh == TRUE) HBound = FALSE;
 	else	HBound = TRUE; 				
-	
-	if (@2_GT(low,hgh,@3@1))
-		throw(MAL, "crackers.sortmerge", "illegal range");
-	
+
 	m = existsCrackerIndex(*bid);
 
 	/* if this is the first time we select something from this bat,
-	   we have to create the crack column, slice it and sort the slices. 
+	   we have to create the crack column, slice it and crack the slices. 
            We also create the result column where the result values are merged */
 	if (m == -1){
 		oid endSlice,startSlice;
 		if ((bo = BATdescriptor(*bid)) == NULL)
 			throw(MAL, "crackers.crackmerge", "Cannot access descriptor");
+	
+		br=BATnew(TYPE_oid, bo->ttype,BATcount(bo));
+		BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+		BATsetcount(br,BATcount(bo));
 
-		m = newCrackerIndexSlice_@1(*bid,*bid,0);
+		m = newCrackerIndex_@1(*bid,br->batCacheid);
 
 		/*slicing*/
 		/*This is assuming 4 byte ints + 8 byte oids per value and a cache of 4MB*/
 		sliceSize=300000;
+		sliceSize=10;
 
-		/*sort the slices*/
 		current=NULL;
 		startSlice=0;
 		endSlice=sliceSize>BATcount(bo)?BATcount(bo):sliceSize;
 		while (1){
-			lng t1;
 			int mslice;
 			BAT *c;
 			struct sortMergeNode *smNode;
 			BAT *slice;
-			t1=GDKusec();
 			slice=BATslice(bo, startSlice, endSlice);
 			b = BATcopy(slice, bo->htype, bo->ttype, TRUE);
 			if ( bo->htype == TYPE_void)
 				b = BATmaterializeh(b);
-			prepTime+=GDKusec()-t1;
 			b->hsorted = FALSE;
 			b->tsorted = FALSE;
 			b->hdense = FALSE;
@@ -217,19 +229,16 @@ createView:
 			BATkey(BATmirror(b),FALSE);
 			BATmode(b,PERSISTENT);
 			b->batRestricted= BAT_WRITE;
+			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 
-			t1=GDKusec();
 			mslice = newCrackerIndexSlice_@1(b->batCacheid,b->batCacheid,1000);
-			indexTime+=GDKusec()-t1;
 
 			if ((c = BATdescriptor(CrackerIndex[mslice].cid)) == NULL)
 				throw(MAL, "crackers.crackmerge", "Cannot access crack index");
 
 			posl = BUNfirst(b);
 			posh = BUNlast(b)-1;
-			t1=GDKusec();
 			@:crkThreeTree(@1,posl,posh,b,c,mslice)@
-			crackTime+=GDKusec()-t1;
 
 			smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
 			smNode->batId=b->batCacheid;
@@ -255,13 +264,9 @@ createView:
 			endSlice=endSlice+sliceSize>BATcount(bo)?BATcount(bo):endSlice+sliceSize;
 		}
 		
+		BBPincref(br->batCacheid,TRUE);
 		BBPunfix(bo->batCacheid);
 	}
-		printf("prep  time %lld \n",prepTime);
-		printf("index time %lld \n",indexTime);
-		printf("crack time %lld \n",crackTime);
-		printf("already sliced\n");
-	
 	return MAL_SUCCEED;
 @
 

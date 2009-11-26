@@ -72,8 +72,10 @@ struct sortMergeNode{
 
 	/*Temp variables*/
 	BAT		*slice;/*the slice*/
+	BAT		*tree; /*the slice*/
 	oid		tuples;/*qualifying tuples*/
 	oid		start;/*first qualifying tuple*/
+	oid		merged;
 };
 
 
@@ -134,6 +136,10 @@ struct Node{
 
 	/* For joins */
 	BAT *partition;				/*Storing partitions we are about to join. Used when joining an intemediate result*/
+
+	/*for merging techniques*/
+	oid sliceSize;		
+	oid contiguousArea;
 };
 
 typedef struct {
