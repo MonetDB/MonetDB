@@ -2248,8 +2248,13 @@ score_gbe( mvc *sql, sql_rel *rel, sql_exp *e)
 	}
 
 	/* is the column selective */
-	if (t->digits)
+
+	/* prefer the shorter var types over the longer onces */
+	if (!EC_FIXED(t->type->eclass) && t->digits)
 		res -= t->digits;
+	/* smallest type first */
+	if (EC_FIXED(t->type->eclass))
+		res -= t->type->eclass; 
 	return res;
 }
 
