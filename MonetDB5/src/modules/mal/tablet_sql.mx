@@ -653,9 +653,9 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			for ( j=0; j< threads; j++)
 				MT_down_sema(ptask[j].reply,"sqlreader");
 		}
-		MT_down_sema(task->consumer, "tablet loader");
 		if ( task->ateof)
 			break;
+		MT_down_sema(task->consumer, "tablet loader");
 	}
 
 	/* close down the workers */
