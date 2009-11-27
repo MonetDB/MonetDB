@@ -2307,7 +2307,7 @@ It simply skips the barrier block upon return.
 				mb->profiler[ppc].rbytes= getVolume(stk,pci,0);
 				mb->profiler[ppc].wbytes= getVolume(stk,pci,1);
 			}
-			profilerEvent(cntxt->nspace,mb,stk,ppc);
+			profilerEvent(cntxt->idx,mb,stk,ppc);
 			ppc= -1;
 		}
 		if ( cntxt->qtimeout &&  time(NULL) - stk->clock > cntxt->qtimeout)

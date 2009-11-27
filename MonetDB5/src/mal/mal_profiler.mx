@@ -69,6 +69,7 @@ profiler.activate("stmt");
 #profiler.activate("writes");
 #profiler.activate("obytes");
 #profiler.activate("wbytes");
+#profiler.activate("user");
 profiler.setFilter("*","insert");
 profiler.setFilter("*","print");
 
@@ -154,6 +155,17 @@ b:= algebra.select(a,0 1000); # some expensive operation
 ...
 profiler.stop();
 @end example
+
+@+ Security
+Profiling the system is a security leak. Cached plans
+are currently marked for profiling and not yet made private
+for the user session. Furthermore, all events are assembled
+in a global performance trace table. This means that concurrent
+users can tap what is going on in the system.
+
+Dealing with it is major effort affecting both the kernel
+and the upper layers. For the time being, access to the
+data is considered priority over the leak.
 @{
 The profiler is activated by defining MALprofiler in the source tree.
 This leads to securing space for the counters and for code
@@ -204,7 +216,7 @@ mal_export str openProfilerStream(stream *fd);
 mal_export str closeProfilerStream(void);
 
 mal_export void initProfiler(MalBlkPtr mb);
-mal_export void profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export str setLogFile(stream *fd, Module cntxt, str fname);
 mal_export str setLogStream(Module cntxt, str host, int port);
 mal_export str setStartPoint(Module cntxt, str mod, str fcn);
@@ -277,8 +289,8 @@ profilerAvailable(void)
 {
 	return 1;
 }
-static void offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
-static void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
+static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
+static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 #else
 int
 profilerAvailable(void)
@@ -287,7 +299,7 @@ profilerAvailable(void)
 }
 
 #endif
-static void initTrace(void);
+static int initTrace(void);
 
 int malProfileMode = 0;		/* global flag to indicate profiling mode */
 static int profileAll = 0;	/* all instructions should be profiled */
@@ -309,6 +321,7 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 #define PROFaggr   12
 #define PROFprocess 13
 #define PROFthread 14
+#define PROFuser 15
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -329,7 +342,8 @@ static struct {
 	/*  12 */  { "aggregate", 0},
 	/*  13 */  { "process", 0},
 	/*  14 */  { "thread", 0},
-	/*  15 */  { 0, 0}
+	/*  15 */  { "user", 0},
+	/*  16 */  { 0, 0}
 };
 
 @-
@@ -387,7 +401,7 @@ The profiler strategy is encapsulated here
 Note that the profiler itself should lead to event generations.
 @c
 void
-profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 #ifdef MALprofiler
 	if( mb->profiler == NULL) return;
@@ -396,9 +410,9 @@ profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if( getModuleId(getInstrPtr(mb,pc)) == myname)
 		return;
 	if (offlineProfiling)
-		offlineProfilerEvent(cntxt, mb, stk, pc);
+		offlineProfilerEvent(idx, mb, stk, pc);
 	if (cachedProfiling)
-		cachedProfilerEvent(cntxt, mb, stk, pc);
+		cachedProfilerEvent(idx, mb, stk, pc);
 #else
 	(void) cntxt;
 	(void) mb;
@@ -466,13 +480,16 @@ offlineProfilerHeader(void)
 	if (profileCounter[PROFthread].status) {
 		log0("thread,\t");
 	}
+	if (profileCounter[PROFuser].status) {
+		log0("user,\t");
+	}
 	log0("# name\n");
 	flushLog();
 	mal_unset_lock(profileLock, "profileLock");
 }
 
 void
-offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	static struct Mallinfo prevMalloc;
 	InstrPtr pci = getInstrPtr(mb,pc);
@@ -487,8 +504,6 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 #endif
 	struct Mallinfo infoMalloc;
 	str stmt, c;
-
-	(void) cntxt;
 
 	if (delayswitch > 0) {
 		/* first call to profiled */
@@ -610,6 +625,9 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 	if (profileCounter[PROFthread].status) {
 		log(" %d", THRgettid());
+	}
+	if (profileCounter[PROFuser].status) {
+		log(" %d", idx);
 	}
 	log0(" ]\n");
 	eventcounter++;
@@ -980,17 +998,22 @@ static BAT *TRACE_id_wbytes=0;
 static BAT *TRACE_id_reads=0;
 static BAT *TRACE_id_writes=0;
 static BAT *TRACE_id_thread=0;
+static BAT *TRACE_id_user=0;
 
 BAT *
 TRACEtable(void){
 	BAT *t;
 
-	initTrace();
+	if(initTrace() )
+		return NULL;
 	t= BATnew(TYPE_str,TYPE_bat,9);
+	if ( t == NULL)
+		return NULL;
 	BUNins(t,"event", &TRACE_id_event->batCacheid, FALSE);
 	BUNins(t,"clk", &TRACE_id_time->batCacheid, FALSE);
 	BUNins(t,"pc", &TRACE_id_pc->batCacheid, FALSE);
 	BUNins(t,"thread", &TRACE_id_thread->batCacheid, FALSE);
+	BUNins(t,"client", &TRACE_id_user->batCacheid, FALSE);
 	BUNins(t,"ticks", &TRACE_id_ticks->batCacheid, FALSE);
 	BUNins(t,"reads", &TRACE_id_reads->batCacheid, FALSE);
 	BUNins(t,"writes", &TRACE_id_writes->batCacheid, FALSE);
@@ -1020,14 +1043,15 @@ TRACEcreate(str hnme, str tnme, int ht, int tt)
 	BBPrename(b->batCacheid, buf);
 	BATmode(b, PERSISTENT);
 	BATcommit(b);
+	BBPkeepref(b->batCacheid);
 	return b;
 }
 
-void
+int
 initTrace(void)
 {
 	if (TRACE_init)
-		return;		/* already initialized */
+		return 0;		/* already initialized */
 	mal_set_lock(mal_contextLock, "trace");
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int, TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_int, TYPE_str);
@@ -1040,6 +1064,7 @@ initTrace(void)
 	TRACE_id_reads = TRACEcreate("id", "read", TYPE_int, TYPE_lng);
 	TRACE_id_writes = TRACEcreate("id", "write", TYPE_int, TYPE_lng);
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int, TYPE_int);
+	TRACE_id_user = TRACEcreate("id", "thread", TYPE_int, TYPE_int);
 	if (TRACE_id_event == NULL ||
 		TRACE_id_time == NULL ||
 		TRACE_id_ticks == NULL ||
@@ -1050,13 +1075,15 @@ initTrace(void)
 		TRACE_id_wbytes == NULL ||
 		TRACE_id_reads == NULL ||
 		TRACE_id_writes == NULL ||
-		TRACE_id_thread == NULL 
+		TRACE_id_thread == NULL ||
+		TRACE_id_user == NULL 
 	) {
 		mal_unset_lock(mal_contextLock, "trace");
 		cleanupProfiler();
 	 } else
 		TRACE_init = 1;
 	mal_unset_lock(mal_contextLock, "trace");
+	return TRACE_init ? 0: -1;
 }
 
 #define CLEANUPprofile(X)  if(X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence= TRANSIENT; } (X)= NULL;
@@ -1073,6 +1100,7 @@ cleanupProfiler(){
 	CLEANUPprofile( TRACE_id_reads );
 	CLEANUPprofile( TRACE_id_writes );
 	CLEANUPprofile( TRACE_id_thread );
+	CLEANUPprofile( TRACE_id_user );
 	TRACE_init = 0;
 	mal_unset_lock(mal_contextLock, "cleanup");
 	return MAL_SUCCEED;
@@ -1081,7 +1109,8 @@ cleanupProfiler(){
 void
 clearTrace(void)
 {
-	initTrace();
+	if (initTrace() )
+		return;
 	/* drop all trace tables */
 	BATclear(TRACE_id_event);
 	BATclear(TRACE_id_time);
@@ -1090,6 +1119,7 @@ clearTrace(void)
 	BATclear(TRACE_id_stmt);
 	BATclear(TRACE_id_type);
 	BATclear(TRACE_id_thread);
+	BATclear(TRACE_id_user);
 	BATclear(TRACE_id_reads);
 	BATclear(TRACE_id_writes);
 }
@@ -1097,7 +1127,8 @@ clearTrace(void)
 BAT *
 getTrace(str nme)
 {
-	initTrace();
+	if (initTrace() )
+		return NULL;
 	if (strcmp(nme, "event") == 0)
 		return TRACE_id_event;
 	if (strcmp(nme, "time") == 0)
@@ -1108,6 +1139,8 @@ getTrace(str nme)
 		return TRACE_id_pc;
 	if (strcmp(nme, "thread") == 0)
 		return TRACE_id_thread;
+	if (strcmp(nme, "user") == 0)
+		return TRACE_id_user;
 	if (strcmp(nme, "stmt") == 0)
 		return TRACE_id_stmt;
 	if (strcmp(nme, "type") == 0)
@@ -1126,7 +1159,8 @@ getTrace(str nme)
 int
 getTraceType(str nme)
 {
-	initTrace();
+	if (initTrace() )
+		return TYPE_any;
 	if (strcmp(nme, "time") == 0)
 		return newBatType(TYPE_int,TYPE_str);
 	if (strcmp(nme, "ticks") == 0)
@@ -1148,7 +1182,7 @@ getTraceType(str nme)
 
 #ifdef MALprofiler
 void
-cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	/* static struct Mallinfo prevMalloc; */
 	static int eventcounter;
@@ -1168,8 +1202,6 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	str stmt, c;
 	int evnt;
 	InstrPtr pci= getInstrPtr(mb,pc);
-
-	(void) cntxt;
 
 	if (TRACE_init == 0)
 		return;
@@ -1200,6 +1232,8 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	BUNins(TRACE_id_pc, &evnt, buf, FALSE);
 	
 	BUNins(TRACE_id_thread, &evnt, &tid, FALSE);
+
+	BUNins(TRACE_id_user, &evnt, &idx, FALSE);
 	
 	BUNins(TRACE_id_event, &evnt, &evnt, FALSE);
 
