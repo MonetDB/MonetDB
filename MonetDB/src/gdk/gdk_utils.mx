@@ -1752,7 +1752,9 @@ Go there and obtain the global database lock.
 	snprintf(GDKdirStr, PATHLENGTH, "%s%c%s%c", GDKdbfarmStr, DIR_SEP, GDKdbnameStr, DIR_SEP);
 
 	if (chdir(GDKdirStr) < 0) {
-		if (!GDKcreatedir(GDKdirStr) || chdir(GDKdirStr) < 0)
+		if (!GDKcreatedir(GDKdirStr))
+			GDKfatal("GDKlockHome: could not create %s\n", GDKdirStr);
+		if (chdir(GDKdirStr) < 0)
 			GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
 		IODEBUG THRprintf(GDKout,"#GDKlockHome: created directory %s\n", GDKdirStr);
 	}
