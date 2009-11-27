@@ -436,7 +436,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[16];
 	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
-	lng lio =0,  tio, t1, total=0, iototal=0;
+	lng lio =0,  tio, t1 = 0, total=0, iototal=0;
 	int askmore = 0;
 	int vmtrim = GDK_vm_trim; 
 	/* trimming process should not be active during this process. */
@@ -504,6 +504,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	MT_up_sema(task->producer,"tablet load");
 	MT_down_sema(task->consumer, "tablet loader");
 	tio = GDKusec() - tio;
+	t1 = GDKusec();
 	while ( (task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
 
 		memcpy(task->input, task->b->buf, task->b->size);
