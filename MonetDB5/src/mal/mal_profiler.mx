@@ -155,6 +155,27 @@ b:= algebra.select(a,0 1000); # some expensive operation
 ...
 profiler.stop();
 @end example
+@+ SQL table wrapper
+The SQL frontend can access the profiler.
+@verbatim
+create function tracelog() 
+	returns table (
+		event integer,		-- event counter
+		clk varchar(20), 	-- wallclock, no mtime in kernel
+		pc varchar(50), 	-- module.function[nr]
+		thread int, 		-- thread identifier
+		"user" int, 			-- client identifier
+		ticks integer, 		-- time in microseconds
+		reads integer, 		-- number of blocks read
+		writes integer, 	-- number of blocks written
+		rbytes integer,		-- amount of bytes touched
+		wbytes integer,		-- amount of bytes written
+		type string,		-- return types
+		stmt string			-- actual statement executed
+	)
+	external name sql.dump_trace;
+@end verbatim
+@-
 
 @+ Security
 Profiling the system is a security leak. Cached plans
@@ -1013,7 +1034,7 @@ TRACEtable(void){
 	BUNins(t,"clk", &TRACE_id_time->batCacheid, FALSE);
 	BUNins(t,"pc", &TRACE_id_pc->batCacheid, FALSE);
 	BUNins(t,"thread", &TRACE_id_thread->batCacheid, FALSE);
-	BUNins(t,"client", &TRACE_id_user->batCacheid, FALSE);
+	BUNins(t,"user", &TRACE_id_user->batCacheid, FALSE);
 	BUNins(t,"ticks", &TRACE_id_ticks->batCacheid, FALSE);
 	BUNins(t,"reads", &TRACE_id_reads->batCacheid, FALSE);
 	BUNins(t,"writes", &TRACE_id_writes->batCacheid, FALSE);
