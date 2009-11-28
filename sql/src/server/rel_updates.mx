@@ -523,13 +523,13 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 		append(exps, exp_column(t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	res = rel_table_func( import, exps);
-	res = rel_insert_cluster(sql, t, res);
 	return res;
 }
 
 static sql_rel *
 copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string)
 {
+	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
@@ -569,11 +569,22 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
+			sql_rel *nrel = rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset);
 
-			return rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset);
+			if (!rel)
+				rel = nrel;
+			else
+				rel = rel_setop(rel, nrel, op_union);
+			if (!rel)
+				return rel;
 		}
+	} else {
+		rel = rel_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset);
 	}
-	return rel_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset);
+	if (!rel)
+		return rel;
+	rel = rel_insert_cluster(sql, t, rel);
+	return rel; 
 }
 
 static sql_rel *
