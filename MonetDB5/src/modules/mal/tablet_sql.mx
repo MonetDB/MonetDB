@@ -241,6 +241,7 @@ SQLload_file_line(READERtask *task, int idx)
 	Tablet *as = task->as;
 	Column *fmt = as->format;
 
+	errmsg[0] = 0;
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout, "SQL break line id %d  state %d\n%s", task->id, idx, task->fields[0][idx]);
 #endif
@@ -255,7 +256,6 @@ SQLload_file_line(READERtask *task, int idx)
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
 					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c[0]) + task->next +1, i);
 				GDKfree(errline);
-				GDKerror(errmsg);
 				goto errors;
 			} 
 		} 
@@ -277,7 +277,6 @@ SQLload_file_line(READERtask *task, int idx)
 		if ( i < as->nr_attrs-1)  {
 			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
 					 fmt->sep, BATcount(fmt->c[0]) + 1 + task->next, i);
-			GDKerror(errmsg);
 		errors:
 			/* we save all errors detected */
 			mal_set_lock(mal_contextLock,"tablet line break");
@@ -586,11 +585,14 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				/* found a complete record, do we need to skip it? */
 				if ( --skip < 0 ) {
 					task->fields[0][task->next++] = s;
-					*e = '\0';
+					if (e)
+						*e = '\0';
 					cnt++;
 				}
-				s = e + rseplen;
-				e = s;
+				if (e) {
+					s = e + rseplen;
+					e = s;
+				}
 				task->b->pos = (size_t) (s - task->input);
 			} else {
 				/* no (unquoted) record separator found, read more data */
