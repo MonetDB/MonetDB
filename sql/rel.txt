@@ -13,6 +13,10 @@ TABLE 	(card MULTI)
 	-> exps		is list of column expressions (also used for aliases)
 	-> l		table function expression
 
+OUTPUT (card 0!, top of the tree always)
+	-> exps		is list of output options
+	-> l		relation to output
+
 SELECT 	(card MULTI or same ...?) 
 	-> exps		selection expressions (ie all e_cmp)
 	-> l		is relation
