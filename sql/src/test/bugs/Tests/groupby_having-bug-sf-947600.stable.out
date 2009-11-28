@@ -19,7 +19,7 @@ Over..
 # 11:55:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < groupby_having-bug-sf-947600.sql
 # 11:55:31 >  
 
-% .a,	.b,	.b # table_name
+% .a,	.b,	.a # table_name
 % name,	name,	L23 # name
 % varchar,	varchar,	wrd # type
 % 10,	10,	2 # length

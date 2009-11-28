@@ -3617,6 +3617,14 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 	return col;
 }
 
+int
+sql_trans_is_sorted( sql_trans *tr, sql_column *col )
+{
+	if (col && store_funcs.sorted_col(tr, col))
+		return 1;
+	return 0;
+}
+
 sql_key *
 sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, key_type kt)
 {

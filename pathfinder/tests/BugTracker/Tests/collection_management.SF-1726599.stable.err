@@ -1,41 +1,42 @@
 stderr of test 'collection_management.SF-1726599` in directory 'tests/BugTracker` itself:
 
 
-# 12:45:56 >  
-# 12:45:56 >  Mtimeout -timeout 300 Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize/var/xquery_logs" --set mapi_port=39582 --set xrpc_port=49459 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" ; echo ; echo Over..
-# 12:45:56 >  
+# 10:21:41 >  
+# 10:21:41 >   Mserver "--config=/home/users/boncz/monet/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/home/users/boncz/monet/lib/MonetDB4:/home/users/boncz/monet/lib/MonetDB4/lib:/home/users/boncz/monet/lib/MonetDB4/bin" --set "gdk_dbfarm=/home/users/boncz/monet/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36105 --set xrpc_port=49287 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 10:21:41 >  
 
 
-# 12:45:56 >  
-# 12:45:56 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39582 collection_management.SF-1726599_s00.xq
-# 12:45:56 >  
+# 10:22:13 >  
+# 10:22:13 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=tscan --port=36105 collection_management.SF-1726599_s00.xq
+# 10:22:13 >  
 
+MAPI  = monetdb@tscan:36105
+QUERY = pf:collection("collection_management.SF-1726599.xml")
+ERROR = !ERROR: xquery_print_result_main: operation failed.
 
-# 12:45:56 >  
-# 12:45:56 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39582 collection_management.SF-1726599_s01.xq
-# 12:45:56 >  
+# 10:22:15 >  
+# 10:22:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=tscan --port=36105 collection_management.SF-1726599_s01.xq
+# 10:22:15 >  
 
-MAPI  = monetdb@localhost:33151
+MAPI  = monetdb@tscan:36105
+QUERY = pf:collection("collection_management.SF-1726599.xml")
+ERROR = !ERROR: err:FODC0004: collection 'collection_management.SF-1726599.xml' unknown (1 missing in total)
+MAPI  = monetdb@tscan:36105
 QUERY = doc("collection_management.SF-1726599.xml")
-ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
-        !ERROR: [shred_url]: first error was:
-        !ERROR: shred: cannot stat `collection_management.SF-1726599.xml': No such file or directory
-        !ERROR: CMDshred_url: operation failed.
-        !ERROR: interpret_params: leftfetchjoin(param 2): evaluation error.
-MAPI  = monetdb@localhost:33151
+ERROR = !ERROR: err:FODC0002, Error retrieving resource (no such document "collection_management.SF-1726599.xml").
+MAPI  = monetdb@tscan:36105
 QUERY = doc("collection_management.SF-1726599.xml")/aap
-ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
-        !ERROR: [shred_url]: first error was:
-        !ERROR: shred: cannot stat `collection_management.SF-1726599.xml': No such file or directory
-        !ERROR: CMDshred_url: operation failed.
-        !ERROR: interpret_params: leftfetchjoin(param 2): evaluation error.
+ERROR = !ERROR: err:FODC0002, Error retrieving resource (no such document "collection_management.SF-1726599.xml").
 
-# 12:45:56 >  
-# 12:45:56 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=39582 collection_management.SF-1726599_s02.xq
-# 12:45:56 >  
+# 10:22:15 >  
+# 10:22:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=tscan --port=36105 collection_management.SF-1726599_s02.xq
+# 10:22:15 >  
 
+MAPI  = monetdb@tscan:36105
+QUERY = pf:collection("collection_management.SF-1726599.xml")
+ERROR = !ERROR: xquery_print_result_main: operation failed.
 
-# 12:45:56 >  
-# 12:45:56 >  Done.
-# 12:45:56 >  
+# 10:22:26 >  
+# 10:22:26 >  Done.
+# 10:22:26 >  
 

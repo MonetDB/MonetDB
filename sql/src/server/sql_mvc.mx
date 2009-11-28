@@ -192,6 +192,7 @@ extern sql_column *mvc_create_column_(mvc *c, sql_table *t, char *name, char *ty
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
+extern int mvc_is_sorted(mvc *c, sql_column *col);
 
 extern sql_key *mvc_create_ukey(mvc *m, sql_table *t, char *kname, key_type kt);
 extern sql_key *mvc_create_ukey_done(mvc *m, sql_key *k);
@@ -1413,6 +1414,15 @@ mvc_drop_default(mvc *m, sql_column *col)
 
 	m->type = Q_SCHEMA;
 	return sql_trans_alter_default(m->session->tr, col, NULL);
+}
+
+int 
+mvc_is_sorted(mvc *m, sql_column *col)
+{
+	if (mvc_debug)
+		fprintf(stderr, "mvc_is_sorted %s\n", col->base.name);
+
+	return sql_trans_is_sorted(m->session->tr, col);
 }
 
 /* variable management */

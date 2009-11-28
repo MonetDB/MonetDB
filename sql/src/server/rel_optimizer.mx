@@ -2323,6 +2323,52 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* Compute the efficiency of using this expression early in a group by list */
+static int
+score_gbe( mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	int res = 10;
+	sql_subtype *t = exp_subtype(e);
+	sql_column *c = NULL;
+
+	/* can we find out if the underlying table is sorted */
+	if ( (c = exp_find_column(rel, e)) != NULL) {
+		if (mvc_is_sorted (sql, c)) 
+			res += 500;
+	}
+
+	/* is the column selective */
+
+	/* prefer the shorter var types over the longer onces */
+	if (!EC_FIXED(t->type->eclass) && t->digits)
+		res -= t->digits;
+	/* smallest type first */
+	if (EC_FIXED(t->type->eclass))
+		res -= t->type->eclass; 
+	return res;
+}
+
+/* reorder group by expressions */
+static sql_rel *
+rel_groupby_order(int *changes, mvc *sql, sql_rel *rel) 
+{
+	list *gbe = rel->r;
+
+	*changes = 0;
+	if (is_groupby(rel->op) && list_length(gbe) > 1 && list_length(gbe)<9) {
+		node *n;
+		int i, *scores = alloca(sizeof(int) * list_length(gbe));
+
+		memset(scores, 0, sizeof(int)*list_length(gbe));
+		for (i = 0, n = gbe->h; n; i++, n = n->next) {
+			scores[i] = score_gbe(sql, rel, n->data);
+		}
+		rel->r = list_keysort(gbe, scores, (fdup)exp_dup);
+		list_destroy(gbe);
+	}
+	return rel;
+}
+
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier. 
  */
@@ -3345,8 +3391,10 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 		rel = rewrite(sql, rel, &rel_push_join_down); 
 	}
 
-	if (gp.cnt[op_groupby])
+	if (gp.cnt[op_groupby]) {
 		rel = rewrite(sql, rel, &rel_avg2sum_count); 
+		rel = rewrite(sql, rel, &rel_groupby_order); 
+	}
 
 	if (gp.cnt[op_join] || gp.cnt[op_left])
 		rel = rewrite(sql, rel, &rel_join_order); 
