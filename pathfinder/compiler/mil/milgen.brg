@@ -2709,6 +2709,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 {
     mvar_t *v;
 
+    /* guard against too deep recursion */
+    PFrecursion_fence();
+
     switch (rule) {
         /* Query:   serialize (Side, Rel) */
         case 1: /* fold( */

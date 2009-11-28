@@ -41,6 +41,9 @@ int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek);
  * 	   in both cases sk/ek contain the start and end qualifiers 
  *         <0 for errors */
 
+lng qualifier2multiplier( int sk );
+/* returns the multiplier for the given interval qualifier */
+
 int parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i);
 /* returns 0 for month intervals and value in val, 
  *         1 for sec intervals and value in val, 
@@ -96,6 +99,31 @@ parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek)
 	if (*sk == iyear || *sk == imonth)
 		return 0;
 	return 1;
+}
+
+lng 
+qualifier2multiplier( int sk )
+{
+	lng mul = 1;
+
+	switch (sk) {
+	case iyear:
+		mul *= 12;
+	case imonth:
+		break;
+
+	case iday:
+		mul *= 24;
+	case ihour:
+		mul *= 60;
+	case imin:
+		mul *= 60;
+	case isec:
+		break;
+	default:
+		return -1;
+	}
+	return mul;
 }
 
 int

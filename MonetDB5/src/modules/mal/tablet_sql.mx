@@ -682,14 +682,17 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	}
 
 	/* wait for their death */
-	for ( j=0; j< threads; j++)
+	for ( j=0; j< threads; j++) {
 		MT_down_sema(ptask[j].reply,"sqlreader");
+		GDKfree(ptask[j].cols);
+	}
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"Found " BUNFMT" tuples\n",cnt);
 #endif
 	for( i=0; i< as->nr_attrs; i++) 
 		GDKfree(task->fields[i]);
 	GDKfree(task->fields);
+	GDKfree(task->cols);
 	GDKfree(task->time);
 	GDKfree(task->base);
 	GDKfree(task);

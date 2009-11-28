@@ -567,6 +567,18 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				}
 				return lstmt;
 			}
+                        if (left && right && re->card > CARD_ATOM && !is_select) {
+                                /* create l and r, gen operator func */
+                                char *like = (e->flag == cmp_like || e->flag == cmp_notlike)?"like":"ilike";
+                                int anti = (e->flag == cmp_notlike || e->flag == cmp_notilike);
+                                sql_subtype *s = sql_bind_localtype("str");
+                                sql_subfunc *f = sql_bind_func3(sql->session->schema, like, s, s, s);
+
+                                stmt *j = stmt_joinN(stmt_list(append(create_stmt_list(),l)), stmt_list(append(append(create_stmt_list(),r),r2)), f);
+                                if (is_anti(e) || anti)
+                                        j->flag |= ANTI;
+                                return j;
+                        }
 			return stmt_likeselect(l, r, r2, (comp_type)e->flag);
 		}
 		if (left && right && re->card > CARD_ATOM && !is_select) {

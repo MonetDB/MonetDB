@@ -390,6 +390,9 @@ reduce (PFcnode_t * p, int goalnt)
 static void
 do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
 {
+    /* guard against too dep recursion */
+    PFrecursion_fence();
+
     switch (rule) {
 
         /* Query:              main (FunctionDecls, CoreExpr) */

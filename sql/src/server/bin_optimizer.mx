@@ -218,6 +218,7 @@ is_reduced( stmt *s )
 	case st_limit:
 	case st_releqjoin:
 	case st_join2:
+	case st_joinN:
 		return 1;
 
 	case st_join:
@@ -410,7 +411,8 @@ bin_optimizer(mvc *c, stmt *s)
 	}
 
 	case st_join:
-	case st_join2:{
+	case st_join2:
+	case st_joinN:{
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;

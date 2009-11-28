@@ -77,14 +77,17 @@ typedef enum stmt_type {
 	st_atom,
 	st_select,
 	st_select2,
+	st_selectN,
 	st_uselect,
 	st_uselect2,
+	st_uselectN,
 	st_semijoin,
 	st_relselect,
 
 	st_releqjoin,
 	st_join,
 	st_join2,
+	st_joinN,
 	st_outerjoin,
 	st_diff,
 	st_union,
@@ -220,9 +223,7 @@ extern stmt *stmt_atom_wrd(wrd i);
 extern stmt *stmt_atom_lng(lng l);
 extern stmt *stmt_bool(int b);
 extern stmt *stmt_select(stmt *op1, stmt *op2, comp_type cmptype);
-extern stmt *stmt_likeselect(stmt *op1, stmt *op2, stmt *op3, comp_type cmptype);
 extern stmt *stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype);
-
 /* cmp
        0 ==   l <  x <  h
        1 ==   l <  x <= h
@@ -231,6 +232,10 @@ extern stmt *stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype);
        */
 extern stmt *stmt_select2(stmt *op1, stmt *op2, stmt *op3, int cmp);
 extern stmt *stmt_uselect2(stmt *op1, stmt *op2, stmt *op3, int cmp);
+extern stmt *stmt_selectN(stmt *l, stmt *r, sql_subfunc *op);
+extern stmt *stmt_uselectN(stmt *l, stmt *r, sql_subfunc *op);
+extern stmt *stmt_likeselect(stmt *op1, stmt *op2, stmt *op3, comp_type cmptype);
+
 extern stmt *stmt_semijoin(stmt *op1, stmt *op2);
 
 extern stmt *stmt_relselect_init(void);
@@ -241,6 +246,10 @@ extern void stmt_releqjoin_fill(stmt *releqjoin, stmt *lc, stmt *rc);
 extern stmt *stmt_releqjoin1(list *joins);
 extern stmt *stmt_releqjoin2(list *l1, list *l2);
 extern stmt *stmt_join(stmt *op1, stmt *op2, comp_type cmptype);
+
+/* generic join operator, with a left and right statement list */
+extern stmt *stmt_joinN(stmt *l, stmt *r, sql_subfunc *op);
+
 extern stmt *stmt_join2(stmt *l, stmt *ra, stmt *rb, int cmp);
 extern stmt *stmt_project(stmt *op1, stmt *op2);
 extern stmt *stmt_outerjoin(stmt *op1, stmt *op2, comp_type cmptype);
@@ -360,13 +369,16 @@ st_type2string(st_type type)
 		ST(select);
 		ST(select2);
 		ST(uselect);
+		ST(selectN);
 		ST(uselect2);
+		ST(uselectN);
 		ST(semijoin);
 		ST(relselect);
 
 		ST(releqjoin);
 		ST(join);
 		ST(join2);
+		ST(joinN);
 		ST(outerjoin);
 		ST(diff);
 		ST(union);
@@ -610,6 +622,7 @@ stmt_destroy(stmt *s)
 		case st_union:
 		case st_join:
 		case st_join2:
+		case st_joinN:
 		case st_outerjoin:
 		case st_derive:
 		case st_unique:
@@ -736,8 +749,10 @@ stmt_destroy(stmt *s)
 
 		case st_select:
 		case st_select2:
+		case st_selectN:
 		case st_uselect:
 		case st_uselect2:
+		case st_uselectN:
 		case st_semijoin:
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
@@ -745,7 +760,7 @@ stmt_destroy(stmt *s)
 				stmt_destroy(s->op2.stval);
 			if (s->op3.stval)
 				stmt_destroy(s->op3.stval);
-			if (s->op4.stval)
+			if (s->type != st_selectN && s->type != st_uselectN && s->op4.stval)
 				stmt_destroy(s->op4.stval);
 			break;
 		default:
@@ -850,6 +865,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_union:
 		case st_join:
 		case st_join2:
+		case st_joinN:
 		case st_outerjoin:
 		case st_derive:
 		case st_unique:
@@ -964,8 +980,10 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 
 		case st_select:
 		case st_select2:
+		case st_selectN:
 		case st_uselect:
 		case st_uselect2:
+		case st_uselectN:
 		case st_semijoin:
 		case st_connection:
 			if (s->op1.stval)
@@ -974,7 +992,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 				push(s->op2.stval);
 			if (s->op3.stval)
 				push(s->op3.stval);
-			if (s->op4.stval)
+			if (s->type != st_selectN && s->type != st_uselectN && s->op4.stval)
 				push(s->op4.stval);
 			break;
 		}
@@ -1536,6 +1554,20 @@ stmt_select2(stmt *op1, stmt *op2, stmt *op3, int cmp)
 }
 
 stmt *
+stmt_selectN(stmt *op1, stmt *op2, sql_subfunc *op)
+{
+	stmt *s = stmt_create(st_selectN);
+
+	s->op1.stval = op1;
+	s->op2.stval = op2;
+	s->op4.funcval = op;
+        s->nrcols = (op1->nrcols==2)?2:1;
+	s->h = stmt_dup(s->op1.stval->h);
+	s->t = stmt_dup(s->op1.stval->t);
+	return s;
+}
+
+stmt *
 stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype)
 {
 	stmt *s = stmt_create(st_uselect);
@@ -1559,6 +1591,19 @@ stmt_uselect2(stmt *op1, stmt *op2, stmt *op3, int cmp)
 	s->op2.stval = op2;
 	s->op3.stval = op3;
 	s->flag = cmp;
+        s->nrcols = (op1->nrcols==2)?2:1;
+	s->h = stmt_dup(s->op1.stval->h);
+	return s;
+}
+
+stmt *
+stmt_uselectN(stmt *op1, stmt *op2, sql_subfunc *op)
+{
+	stmt *s = stmt_create(st_uselectN);
+
+	s->op1.stval = op1;
+	s->op2.stval = op2;
+	s->op4.funcval = op;
         s->nrcols = (op1->nrcols==2)?2:1;
 	s->h = stmt_dup(s->op1.stval->h);
 	return s;
@@ -1709,6 +1754,19 @@ stmt_join2(stmt *l, stmt *ra, stmt *rb, int cmp)
 	return s;
 }
 
+stmt *
+stmt_joinN(stmt *l, stmt *r, sql_subfunc *op)
+{
+	stmt *s = stmt_create(st_joinN);
+
+	s->op1.stval = l;
+	s->op2.stval = r;
+	s->op4.funcval = op;
+	s->nrcols = 2;
+	s->h = stmt_dup(l->h);
+	s->t = stmt_dup(r->h);
+	return s;
+}
 
 stmt *
 stmt_outerjoin(stmt *op1, stmt *op2, comp_type cmptype)
@@ -2062,7 +2120,6 @@ stmt_dup(stmt *s)
 	return s;
 }
 
-
 sql_subtype *
 tail_type(stmt *st)
 {
@@ -2072,6 +2129,7 @@ tail_type(stmt *st)
 	case st_outerjoin:
 		return tail_type(st->op2.stval);
 	case st_join2:
+	case st_joinN:
 		/* The tail type of a join2 is the head of the second operant!,
 		   ie should be 'oid' */
 		return head_type(st->op2.stval);
@@ -2088,8 +2146,10 @@ tail_type(stmt *st)
 	case st_diff:
 	case st_select:
 	case st_select2:
+	case st_selectN:
 	case st_uselect:
 	case st_uselect2:
+	case st_uselectN:
 	case st_limit:
 	case st_semijoin:
 	case st_unique:
@@ -2167,13 +2227,16 @@ head_type(stmt *st)
 	case st_diff:
 	case st_join:
 	case st_join2:
+	case st_joinN:
 	case st_outerjoin:
 	case st_semijoin:
 	case st_mirror:
 	case st_select:
 	case st_select2:
+	case st_selectN:
 	case st_uselect:
 	case st_uselect2:
+	case st_uselectN:
 	case st_column:
 	case st_append:
 	case st_gen_group:
@@ -2224,8 +2287,10 @@ stmt_has_null( stmt *s )
 	case st_Nop:
 	case st_select:
 	case st_select2:
+	case st_selectN:
 	case st_uselect:
 	case st_uselect2:
+	case st_uselectN:
 	case st_atom:
 		return 0;
 	case st_unop:
@@ -2283,6 +2348,7 @@ column_name(stmt *st)
 	case st_const:
 	case st_join:
 	case st_join2:
+	case st_joinN:
 	case st_outerjoin:
 	case st_derive:
 	case st_rs_column:
@@ -2298,8 +2364,10 @@ column_name(stmt *st)
 	case st_gen_group:
 	case st_select:
 	case st_select2:
+	case st_selectN:
 	case st_uselect:
 	case st_uselect2:
+	case st_uselectN:
 	case st_limit:
 	case st_semijoin:
 	case st_diff:
@@ -2358,6 +2426,7 @@ table_name(stmt *st)
 	case st_const:
 	case st_join:
 	case st_join2:
+	case st_joinN:
 	case st_outerjoin:
 	case st_derive:
 		return table_name(st->op2.stval);
@@ -2371,8 +2440,10 @@ table_name(stmt *st)
 	case st_gen_group:
 	case st_select:
 	case st_select2:
+	case st_selectN:
 	case st_uselect:
 	case st_uselect2:
+	case st_uselectN:
 	case st_limit:
 	case st_semijoin:
 	case st_diff:
@@ -2416,6 +2487,7 @@ schema_name(stmt *st)
 	case st_const:
 	case st_join:
 	case st_join2:
+	case st_joinN:
 	case st_outerjoin:
 	case st_derive:
 		return schema_name(st->op2.stval);
@@ -2428,8 +2500,10 @@ schema_name(stmt *st)
 	case st_gen_group:
 	case st_select:
 	case st_select2:
+	case st_selectN:
 	case st_uselect:
 	case st_uselect2:
+	case st_uselectN:
 	case st_limit:
 	case st_semijoin:
 	case st_diff:
@@ -2626,7 +2700,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_aggr:
 		case st_unop: case st_binop: case st_Nop:
 		case st_diff: case st_union:
-		case st_join: case st_join2: case st_outerjoin:
+		case st_join: case st_join2: case st_joinN: case st_outerjoin:
 		case st_derive:
 		case st_unique:
 		case st_alias:
@@ -2641,8 +2715,8 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 
 		case st_group: case st_group_ext:
 
-		case st_select: case st_select2:
-		case st_uselect: case st_uselect2:
+		case st_select: case st_select2: case st_selectN:
+		case st_uselect: case st_uselect2: case st_uselectN:
 		case st_semijoin:
 
 		case st_export:
@@ -2790,6 +2864,9 @@ print_stmt(stmt *s, int *nr)
 	case st_select2:
 	case st_uselect2:
 			dump3(s, "select", nr); break;
+	case st_selectN:
+	case st_uselectN:
+			dump2(s, "selectN", nr); break;
 	case st_semijoin: dump2(s, "semijoin", nr); break;
 	case st_diff:	dump2(s, "diff", nr); break;
 	case st_union:	dump2(s, "union", nr); break;
@@ -2802,6 +2879,8 @@ print_stmt(stmt *s, int *nr)
 			break;
 	case st_join2:	
 			dump3(s, "join", nr); break;
+	case st_joinN:	
+			dump2(s, "joinN", nr); break;
 	case st_group:	dump1(s, "group", nr); break;
 	case st_group_ext:	dump1(s, "extent", nr); break;
 	case st_derive:	dump2(s, "derive", nr); break;

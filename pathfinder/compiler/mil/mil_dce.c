@@ -88,6 +88,8 @@ reduce_expressions (PFmil_t *root,
     /* new node, replacing this expression node. */
     PFmil_t *new_op = PFmil_nop();
 
+    PFrecursion_fence ();
+
     for (unsigned int i = 0; i < MIL_MAXCHILD && root->child[i] != NULL; i++) {
 
         PFmil_t *param_op

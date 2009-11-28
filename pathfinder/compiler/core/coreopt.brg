@@ -574,6 +574,9 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
 {
     bool          rewritten = false;
 
+    /* guard against too dep recursion */
+    PFrecursion_fence();
+
     switch (rule) {
         /* CoreExpr:           flwr (for_ (forbind (forvars (var, nil),
                                                     CoreExpr),
