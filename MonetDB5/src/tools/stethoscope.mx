@@ -126,7 +126,8 @@ static struct {
     /*  6  */  {'p', "process","swaps", 0},
     /*  7  */  {'p', "process","ctxt switch", 0},
     /*  8  */  {'p', "process","inv switch", 0},
-    /*  9  */  {0, 0,  0, 0}
+    /*  9  */  {'u', "user","user", 0},
+    /*  0  */  {0, 0,  0, 0}
 };
 
 static Mapi dbh;
@@ -165,6 +166,7 @@ usage(){
 	fprintf(stderr,"    b =bytes read/written\n");
 	fprintf(stderr,"    s =statement\n");
 	fprintf(stderr,"    p =pg faults, cntxt switches\n");
+	fprintf(stderr,"    u =user\n");
 }
 @-
 Any signal should be captured and turned into a graceful
