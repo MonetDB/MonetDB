@@ -4768,7 +4768,7 @@ xquery_compile_exec(xquery_client *ctx,
                local var to conservatively estimate bottom of stack
                and to have some slack after last test, then subtract
                stack size to find top */
-            PFmaxstack = ((char*) &xquery) + sizeof(size_t)*2048 - THREAD_STACK_SIZE;
+            PFmaxstack = ((char*) &xquery) + sizeof(size_t)*8192 - THREAD_STACK_SIZE;
 #if defined(_MSC_VER) && SIZEOF_SIZE_T == 8
             /* On Windows, the application stack (i.e. the stack of
                the main thread) is 1 MB.  On 64 bit Windows, our
@@ -4778,7 +4778,7 @@ xquery_compile_exec(xquery_client *ctx,
                again for a 1 MB stack.
                Did somebody say HACK? */
             if (PFmaxstack > (char*) &xquery)
-                    PFmaxstack = ((char*) &xquery) + sizeof(size_t)*2048 - 1024*1024;
+                    PFmaxstack = ((char*) &xquery) + sizeof(size_t)*8192 - 1024*1024;
 #endif
             PFerrbuf = ctx->errbuf;
             PFerrbuf[0] = 0;
