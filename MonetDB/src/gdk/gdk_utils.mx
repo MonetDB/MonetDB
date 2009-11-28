@@ -2322,7 +2322,7 @@ THRhighwater(void)
 		return 0;
 	c = THRsp();
 	diff = (c < s->sp) ? s->sp - c : c - s->sp;
-	if (diff > (THREAD_STACK_SIZE - sizeof(size_t)*2048)) {
+	if (diff > (THREAD_STACK_SIZE - 16*1024)) {
 		return 1;
 	}
 	return 0;
