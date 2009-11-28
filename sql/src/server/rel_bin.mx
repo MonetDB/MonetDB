@@ -3527,6 +3527,9 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 		s = rel2bin_delete(sql, rel, refs);
 		sql->type = Q_UPDATE;
 		break;
+	case op_output:
+		assert(0);
+		break;
 	}
 	if (s && rel_is_ref(rel)) {
 		list_append(refs, rel);
@@ -3555,13 +3558,44 @@ rel_bin(mvc *sql, sql_rel *rel)
 	return s;
 }
 
+#define E_ATOM_STRING(e) ((atom*)((sql_exp*)e)->l)->data.val.sval
+
 stmt *
 output_rel_bin(mvc *sql, sql_rel *rel ) 
 {
+	sql_rel *p = rel;
 	list *refs = list_create(NULL);
-	stmt *s = subrel_bin( sql, rel, refs);
-	if (s && s->type != st_none && sql->type == Q_TABLE) 
+	stmt *s = NULL;
+
+	if (is_output(p->op)) 
+		rel = p->l;
+	s = subrel_bin( sql, rel, refs);
+
+	if (p != rel) {
+		node *n = p->exps->h;
+		char *tsep = _strdup(E_ATOM_STRING(n->data));
+		char *rsep = _strdup(E_ATOM_STRING(n->next->data));
+		char *ssep = _strdup(E_ATOM_STRING(n->next->next->data));
+		char *ns   = _strdup(E_ATOM_STRING(n->next->next->next->data));
+		char *fn   = NULL;
+		stmt *fns = NULL;
+		list *slist = create_stmt_list();
+
+		if (n->next->next->next->next) {
+			fn = E_ATOM_STRING(n->next->next->next->next->data);
+			fns = stmt_atom_string(_strdup(fn));
+		}
+		list_append(slist, stmt_export(s, tsep, rsep, ssep, ns, fns));
+		if (s->type == st_list && ((stmt*)s->op1.lval->h->data)->nrcols != 0) {
+			stmt *cnt = stmt_aggr(stmt_dup(s->op1.lval->h->data), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1);
+			list_append(slist, stmt_affected_rows(cnt));
+		} else {
+			list_append(slist, stmt_affected_rows(stmt_atom_wrd(1)));
+		}
+		s = stmt_list(slist);
+	} else if (s && s->type != st_none && sql->type == Q_TABLE) {
 		s = stmt_output(s);
+	}
 	list_destroy(refs);
 	return s;
 }

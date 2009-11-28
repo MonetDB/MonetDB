@@ -37,7 +37,6 @@ extern stmt * sequential_block (mvc *sql, sql_subtype *res, dlist *blk, char *op
 #include "sql_config.h"
 #include "sql_psm.h"
 #include "sql_schema.h"
-#include "sql_updates.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 #include "sql_env.h"

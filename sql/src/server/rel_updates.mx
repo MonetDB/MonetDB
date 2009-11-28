@@ -653,6 +653,29 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 }
 
 
+static sql_rel *
+copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
+{
+	char *tsep = seps->h->data.sval;
+	char *rsep = seps->h->next->data.sval;
+	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
+	char *ns = (null_string)?null_string:"null";
+	sql_exp *tsep_e, *rsep_e, *ssep_e, *ns_e, *fname_e;
+	exp_kind ek = {type_value, card_relation, TRUE};
+	sql_rel *r = rel_subquery(sql, NULL, sq, ek);
+
+	if (!r) 
+		return NULL;
+
+	tsep_e = exp_atom_clob(tsep);
+	rsep_e = exp_atom_clob(rsep);
+	ssep_e = exp_atom_clob(ssep);
+	ns_e = exp_atom_clob(ns);
+	fname_e = filename?exp_atom_clob(filename):NULL;
+	return rel_output(r, tsep_e, rsep_e, ssep_e, ns_e, fname_e);
+}
+
+
 sql_rel *
 rel_updates(mvc *sql, symbol *s)
 {
@@ -675,7 +698,6 @@ rel_updates(mvc *sql, symbol *s)
 		sql->type = Q_UPDATE;
 	}
 		break;
-/*
 	case SQL_COPYTO:
 	{
 		dlist *l = s->data.lval;
@@ -684,7 +706,6 @@ rel_updates(mvc *sql, symbol *s)
 		sql->type = Q_UPDATE;
 	}
 		break;
-*/
 	case SQL_INSERT:
 	{
 		dlist *l = s->data.lval;

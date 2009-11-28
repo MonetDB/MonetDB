@@ -44,6 +44,7 @@ extern sql_rel *rel_select_copy(sql_rel *l, list *exps);
 extern sql_rel *rel_basetable(sql_table *t, char *tname);
 extern sql_rel *rel_recursive_func(list *exps);
 extern sql_rel *rel_table_func(sql_exp *f, list *exps);
+extern sql_rel *rel_output(sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file);
 
 extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f );
 extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f );
@@ -351,6 +352,8 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 	case op_update:
 	case op_delete:
 		break;
+	case op_output:
+		break;
 	}
 	if (found)
 		list_prepend(path, rel);
@@ -517,6 +520,28 @@ rel_table_func(sql_exp *f, list *exps)
 	rel->nrcols = list_length(exps);
 	return rel;
 }
+
+sql_rel *
+rel_output(sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file) 
+{
+	sql_rel *rel = rel_create();
+	list *exps = new_exp_list();
+
+	append(exps, sep);
+	append(exps, rsep);
+	append(exps, ssep);
+	append(exps, null_string);
+	if (file)
+		append(exps, file);
+	rel->l = l;
+	rel->r = NULL;
+	rel->op = op_output;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
 
 sql_rel *
 rel_recursive_func(list *exps) 

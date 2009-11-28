@@ -50,7 +50,6 @@ extern sql_exp * rel_parse_val(mvc *m, char *query, char emode);
 #include "rel_optimizer.h"
 #include "rel_bin.h"
 #include "sql_env.h"
-#include "sql_updates.h"
 
 stmt *
 sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)

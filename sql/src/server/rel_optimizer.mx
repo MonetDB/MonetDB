@@ -106,6 +106,7 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 	case op_inter: 
 	case op_except: 
 	case op_topn: 
+	case op_output:
 		return name_find_column( rel->l, rname, name);
 	case op_project:
 	case op_groupby: 
@@ -188,6 +189,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
+	case op_output:
 		if (rel->l) 
 			rel_properties(sql, gp, rel->l);
 		break;
@@ -228,6 +230,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_output:
 		break;
 	}
 }
@@ -2660,6 +2663,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_output:
 		break;
 
 	case op_select: 
@@ -2780,6 +2784,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_full: 
 	case op_semi: 
 	case op_anti: 
+	case op_output:
 		return rel;
 	}
 	return rel;
@@ -2807,6 +2812,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_output:
 
 		return rel;
 
@@ -3300,6 +3306,7 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
+	case op_output: 
 		rel->l = rewrite(sql, rel->l, rewriter);
 		break;
 	case op_insert:

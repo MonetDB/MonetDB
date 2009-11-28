@@ -63,7 +63,6 @@ extern int sql_create_env(mvc *sql, sql_schema *s);
 @c
 #include "sql_config.h"
 #include "sql_env.h"
-#include "sql_updates.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 

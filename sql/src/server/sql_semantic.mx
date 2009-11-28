@@ -116,7 +116,6 @@ extern char * toUpperCopy(char *dest, const char *src);
 #include "sql_semantic.h"
 #include "sql_trans.h"
 #include "sql_schema.h"
-#include "sql_updates.h"
 #include "sql_env.h"
 #include "sql_sequence.h"
 #include "sql_privileges.h"
@@ -1038,16 +1037,6 @@ semantic(mvc *sql, symbol *s)
 	case SQL_DROP_SEQ:
 	{
 		res = sequences(sql, s);
-		break;
-	}
-	case SQL_COPYFROM:
-	case SQL_BINCOPYFROM:
-	case SQL_COPYTO:
-	case SQL_INSERT:
-	case SQL_UPDATE:
-	case SQL_DELETE:
-	{
-		res = updates(sql, s);
 		break;
 	}
 	case SQL_CREATE_FUNC:

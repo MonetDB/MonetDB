@@ -214,8 +214,6 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_ALTER_SEQ:
 	case SQL_DROP_SEQ:
 
-	case SQL_COPYTO:
-
 	case SQL_CREATE_FUNC:
 	case SQL_CREATE_PROC:
 	case SQL_CREATE_AGGR:
@@ -231,6 +229,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DELETE:
 	case SQL_COPYFROM:
 	case SQL_BINCOPYFROM:
+	case SQL_COPYTO:
 		return rel_updates(sql, s);
 
 	case SQL_WITH:
