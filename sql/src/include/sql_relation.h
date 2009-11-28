@@ -72,6 +72,7 @@ typedef struct expression {
 typedef enum operator_type {
 	op_basetable = 0,
 	op_table,
+	op_output,
 	op_project,
 	op_select,	/* includes order by */
 	op_join,
@@ -96,6 +97,8 @@ typedef enum operator_type {
 	(e->type == e_func && e->r)
 #define is_base(op) \
 	(op == op_basetable || op == op_table)
+#define is_output(op) \
+	(op == op_output)
 #define is_outerjoin(op) \
 	(op == op_left || op == op_right || op == op_full)
 #define is_join(op) \
