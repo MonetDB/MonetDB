@@ -117,6 +117,7 @@ orderby_with_row_number.SF-2895791
 leftjoin_undefined.SF-2879011
 like_bug.SF-2878994
 use_order_column_first.SF-2686008
+copy_multiple_files.SF-2902320
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.
