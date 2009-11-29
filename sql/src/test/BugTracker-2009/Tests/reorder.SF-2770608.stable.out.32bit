@@ -1,0 +1,62 @@
+stdout of test 'reorder.SF-2770608` in directory 'src/test/BugTracker-2009` itself:
+
+
+# 22:07:50 >  
+# 22:07:50 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=31814 --set xrpc_port=47766 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 22:07:50 >  
+
+# MonetDB server v5.14.0, based on kernel v1.32.0
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31814/
+# MonetDB/SQL module v2.32.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 22:07:50 >  
+# 22:07:50 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=31814 
+# 22:07:50 >  
+
+% sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2 # table_name
+% id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
+% int,	varchar,	varchar,	int,	int,	int,	int,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
+% 2,	9,	14,	2,	1,	2,	2,	1,	2,	9,	14,	2,	1,	2,	2,	1 # length
+[ 0,	"any",	"any",	0,	0,	0,	0,	0,	0,	"any",	"any",	0,	0,	0,	0,	0	]
+[ 1,	"bat",	"table",	0,	0,	0,	1,	0,	1,	"bat",	"table",	0,	0,	0,	1,	0	]
+[ 2,	"bit",	"boolean",	1,	0,	2,	2,	0,	2,	"bit",	"boolean",	1,	0,	2,	2,	0	]
+[ 3,	"str",	"char",	0,	0,	0,	3,	0,	3,	"str",	"char",	0,	0,	0,	3,	0	]
+[ 4,	"str",	"varchar",	0,	0,	0,	4,	0,	4,	"str",	"varchar",	0,	0,	0,	4,	0	]
+[ 5,	"str",	"clob",	0,	0,	0,	4,	0,	5,	"str",	"clob",	0,	0,	0,	4,	0	]
+[ 6,	"bte",	"tinyint",	8,	1,	2,	6,	0,	6,	"bte",	"tinyint",	8,	1,	2,	6,	0	]
+[ 7,	"sht",	"smallint",	16,	1,	2,	6,	0,	7,	"sht",	"smallint",	16,	1,	2,	6,	0	]
+[ 8,	"oid",	"oid",	31,	0,	2,	6,	0,	8,	"oid",	"oid",	31,	0,	2,	6,	0	]
+[ 9,	"int",	"int",	32,	1,	2,	6,	0,	9,	"int",	"int",	32,	1,	2,	6,	0	]
+[ 10,	"wrd",	"wrd",	32,	1,	2,	6,	0,	10,	"wrd",	"wrd",	32,	1,	2,	6,	0	]
+[ 11,	"lng",	"bigint",	64,	1,	2,	6,	0,	11,	"lng",	"bigint",	64,	1,	2,	6,	0	]
+[ 12,	"bte",	"decimal",	2,	1,	10,	8,	0,	12,	"bte",	"decimal",	2,	1,	10,	8,	0	]
+[ 13,	"sht",	"decimal",	4,	1,	10,	8,	0,	13,	"sht",	"decimal",	4,	1,	10,	8,	0	]
+[ 14,	"int",	"decimal",	9,	1,	10,	8,	0,	14,	"int",	"decimal",	9,	1,	10,	8,	0	]
+[ 15,	"lng",	"decimal",	19,	1,	10,	8,	0,	15,	"lng",	"decimal",	19,	1,	10,	8,	0	]
+[ 16,	"flt",	"real",	24,	2,	2,	9,	0,	16,	"flt",	"real",	24,	2,	2,	9,	0	]
+[ 17,	"dbl",	"double",	53,	2,	2,	9,	0,	17,	"dbl",	"double",	53,	2,	2,	9,	0	]
+[ 18,	"int",	"month_interval",	32,	0,	2,	7,	0,	18,	"int",	"month_interval",	32,	0,	2,	7,	0	]
+[ 19,	"lng",	"sec_interval",	19,	1,	10,	7,	0,	19,	"lng",	"sec_interval",	19,	1,	10,	7,	0	]
+[ 20,	"daytime",	"time",	7,	0,	0,	10,	0,	20,	"daytime",	"time",	7,	0,	0,	10,	0	]
+[ 21,	"daytime",	"timetz",	7,	1,	0,	10,	0,	21,	"daytime",	"timetz",	7,	1,	0,	10,	0	]
+[ 22,	"date",	"date",	0,	0,	0,	11,	0,	22,	"date",	"date",	0,	0,	0,	11,	0	]
+[ 23,	"timestamp",	"timestamp",	7,	0,	0,	12,	0,	23,	"timestamp",	"timestamp",	7,	0,	0,	12,	0	]
+[ 24,	"timestamp",	"timestamptz",	7,	1,	0,	12,	0,	24,	"timestamp",	"timestamptz",	7,	1,	0,	12,	0	]
+[ 25,	"sqlblob",	"blob",	0,	0,	0,	5,	0,	25,	"sqlblob",	"blob",	0,	0,	0,	5,	0	]
+
+# 22:07:50 >  
+# 22:07:50 >  Done.
+# 22:07:50 >  
+
