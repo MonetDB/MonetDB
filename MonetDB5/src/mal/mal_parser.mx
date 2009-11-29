@@ -1763,6 +1763,7 @@ parseTuple(Client cntxt) {
 			nextChar(cntxt);
 		} while( (c=currChar(cntxt)) != '\n' && c);
 		if (f && c && fputc(c, f)  == EOF){
+			(void)fclose(f);
 			if (unlink(buf) < 0)
 				showException(SYNTAX, "out of temp file space and unable to unlink", "");
 			showException(SYNTAX, "out of temp file space", "");
@@ -1778,7 +1779,8 @@ parseTuple(Client cntxt) {
 	c = newVariable(curBlk,GDKstrdup("tuples"),TYPE_any);
 	getArg(curInstr,0)= c;
 	pushStr(curBlk,curInstr,buf);
-	(void) fclose(f);
+	if (f != NULL)
+		(void)fclose(f);
 }
 
 #define BRKONERR if( curPrg->def->errors>=MAXERRORS) return curPrg->def->errors;
