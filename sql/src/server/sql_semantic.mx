@@ -993,17 +993,14 @@ semantic(mvc *sql, symbol *s)
 		return NULL;
 
 	switch (s->token) {
-
 	case TR_COMMIT:
 	case TR_SAVEPOINT:
 	case TR_RELEASE:
 	case TR_ROLLBACK:
 	case TR_START:
 	case TR_MODE:
-	{
 		res = transactions(sql, s);
 		break;
-	}
 	case SQL_CREATE_SCHEMA:
 	case SQL_DROP_SCHEMA:
 	case SQL_CREATE_TABLE:
@@ -1028,17 +1025,13 @@ semantic(mvc *sql, symbol *s)
 	case SQL_DROP_TRIGGER:
 	case SQL_CONNECT:
 	case SQL_DISCONNECT:
-	{
 		res = schemas(sql, s);
 		break;
-	}
 	case SQL_CREATE_SEQ:
 	case SQL_ALTER_SEQ:
 	case SQL_DROP_SEQ:
-	{
 		res = sequences(sql, s);
 		break;
-	}
 	case SQL_CREATE_FUNC:
 	case SQL_CREATE_PROC:
 	case SQL_CREATE_AGGR:
@@ -1047,33 +1040,8 @@ semantic(mvc *sql, symbol *s)
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:
-	{
 		res = psm(sql, s);
 		break;
-	}
-
-	case SQL_MULSTMT:
-	case SQL_PREP:
-		assert(0);
-
-	{
-		dnode *d;
-		list *l = create_stmt_list();
-
-		for (d = s->data.lval->h; d; d = d->next) {
-			symbol *sym = d->data.sym;
-			stmt *st = semantic(sql, sym);
-
-			if (!st) {
-				list_destroy(l);
-				return NULL;
-			}
-			list_append(l, st);
-		}
-		res = stmt_list(l);
-		break;
-	}
-
 	default:
 		res = sql_error(sql, 01, "sql_stmt symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
