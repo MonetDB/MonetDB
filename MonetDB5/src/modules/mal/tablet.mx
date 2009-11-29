@@ -1334,7 +1334,7 @@ TABLETcollect_bats(Tablet * as)
 		BATpropcheck(BATmirror(fmt[i].c[0]), BATPROPS_ALL);
 		if (cnt != BATcount(fmt[i].c[0])) {
 			if ( as->error == 0) /* a new error */
-				GDKerror("Error: the count of column %d differs from that of the first column\n",i);
+				GDKerror("Error: column %d  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(fmt[i].c[0]),cnt);
 			BBPunfix(bats->batCacheid);
 			return NULL;
 		}

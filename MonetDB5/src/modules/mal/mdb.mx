@@ -624,10 +624,15 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int n, *ret = (int *) getArgReference(s, p, 0);
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+	
+	if ( b== NULL)
+		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
 
 	n = *(int *) getArgReference(s, p, 1);
-	if (n < 0 || n >= getStkDepth(s))
+	if (n < 0 || n >= getStkDepth(s)){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mdb.getStackFrame", ILLEGAL_ARGUMENT " Illegal depth.");
+	}
 	@:Pseudo(view,stk,frame)@
 	return MDBgetFrame(b, cntxt, m, s, n);
 }
@@ -635,13 +640,16 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 str
 MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+	BAT *b;
 	str msg;
 	char *buf;
 	int *ret = (int *) getArgReference(s, p, 0);
 	int k = 0;
 	size_t len,l;
 
+	b = BATnew(TYPE_int, TYPE_str, 256);
+	if ( b== NULL)
+		throw(MAL, "mdb.getStackTrace", MAL_MALLOC_FAIL);
 	(void) cntxt;
 	msg = instruction2str(s->blk, s, p, LIST_MAL_DEBUG);
 	len = strlen(msg);
@@ -665,6 +673,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			buf = (char*) GDKmalloc(len +1024);
 			if ( buf == NULL){
 				GDKfree(msg);
+				BBPreleaseref(b->batCacheid);
 				throw(MAL,"mdb.setTrace",MAL_MALLOC_FAIL);
 			}
 		}

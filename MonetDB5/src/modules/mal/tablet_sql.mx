@@ -441,6 +441,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	lng lio =0,  tio, t1 = 0, total=0, iototal=0;
 	int askmore = 0;
 	int vmtrim = GDK_vm_trim; 
+
 	/* trimming process should not be active during this process. */
 	/* on sf10 experiments it showed a slowdown of a factor 2 on */
 	/* large tables. Instead rely on madvise */
@@ -458,7 +459,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	task->quote = quote;
 	task->csep = csep;
 	task->seplen = strlen(csep);
-	task->rsep = csep;
+	task->rsep = rsep;
 	task->rseplen = strlen(rsep);
 	task->errbuf =  cntxt->errbuf;
 	task->base = GDKzalloc(b->size+2);	
@@ -558,11 +559,41 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				at the record boundary.
 			*/
 			if ( quote == 0) {
+				if (rseplen == 1)
+					for ( ; *e ; e++)
+					{
+						if (*e == *rsep ) {
+							if ( e[-1] != '\\' )
+								break;
+						}
+					}
+				else
 				for ( ; *e ; e++)
-					if (*e == *rsep && (rseplen == 1 || strncmp(e, rsep, rseplen) == 0)) {
+					{
+						if (*e == *rsep && strncmp(e, rsep, rseplen) == 0) {
+							if ( e[-1] != '\\' )
+								break;
+						}
+					}
+			} else
+			if ( rseplen == 1 ) {
+				for ( ; *e ; e++) {
+					if (*e == quote) {
+						if ( e[-1] != '\\' ) {	/* true start of string */
+							do {
+								for (e++ ; *e && *e != quote ; e++) 
+									;
+							} while ( e[-1] == '\\'  && *e);
+							if ( *e == 0) {
+								e = 0;	/* nontermindated quoted field, we need more */
+								break;
+							}
+						}
+					} else if (*e == *rsep ) {
 						if ( e[-1] != '\\' )
 							break;
 					}
+				}
 			} else {
 				for ( ; *e ; e++) {
 					if (*e == quote) {
@@ -570,13 +601,13 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 							do {
 								for (e++ ; *e && *e != quote ; e++) 
 									;
-							} while ( *e && e[-1] == '\\' );
+							} while ( e[-1] == '\\'  && *e);
 							if ( *e == 0) {
-								e = 0;	/* nontermindated quoted field, we need more */
+								e = 0;	/* nonterminated quoted field, we need more */
 								break;
 							}
 						}
-					} else if (*e == *rsep && (rseplen == 1 || strncmp(e, rsep, rseplen) == 0)) {
+					} else if (*e == *rsep && strncmp(e, rsep, rseplen) == 0) {
 						if ( e[-1] != '\\' )
 							break;
 					}
