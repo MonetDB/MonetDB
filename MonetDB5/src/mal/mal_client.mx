@@ -165,8 +165,8 @@ Future releases may support a re-connect facility.  [TODO]
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
 	unsigned int  delay;	/* not yet used */
-	int 		qtimeout;	/* query abort after x seconds */
-	int			stimeout;	/* session abort after x seconds */
+	int 	    qtimeout;	/* query abort after x seconds */
+	int	    stimeout;	/* session abort after x seconds */
 @-
 Communication channels for the interconnect are stored here.
 It is perfectly legal to have a client without input stream.
@@ -247,7 +247,6 @@ the next one.
 	struct tms	workload;
 #endif
 	jmp_buf*	exception_buf;	
-	/* TODO add callback for cleanup !*/
 } *Client, ClientRec;
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];

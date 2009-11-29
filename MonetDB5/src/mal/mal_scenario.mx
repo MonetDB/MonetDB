@@ -619,10 +619,8 @@ runScenarioBody(Client c)
 
 	if (!c->exception_buf)
 		c->exception_buf = (void*)GDKzalloc(sizeof(jmp_buf));
-	if (setjmp( *c->exception_buf) < 0) {
-		throw(PARSE, "MALparser", "failed");
-		/* c->cleanup() */
-	}
+	if (setjmp( *c->exception_buf) < 0) 
+		c->mode = FINISHING;
 	while (c->mode > FINISHING || msg != MAL_SUCCEED) {
 		if (msg != MAL_SUCCEED){
 /* we should actually show it [postponed]
@@ -669,6 +667,7 @@ runScenarioBody(Client c)
 		(*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
 	return msg;
 }
+
 str
 runScenario(Client c)
 {
