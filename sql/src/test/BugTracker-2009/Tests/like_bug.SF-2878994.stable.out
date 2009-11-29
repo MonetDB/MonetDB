@@ -35,8 +35,16 @@ Over..
 % varchar # type
 % 3 # length
 [ "aaa"	]
+[ 2	]
+[ 2	]
+% sys.a,	sys.b # table_name
+% x,	y # name
+% varchar,	varchar # type
+% 1,	1 # length
+[ "a",	"a"	]
+[ "b",	"b"	]
 
-# 00:03:57 >  
-# 00:03:57 >  Done.
-# 00:03:57 >  
+# 10:12:48 >  
+# 10:12:48 >  Done.
+# 10:12:48 >  
 
