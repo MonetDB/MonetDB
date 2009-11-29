@@ -206,14 +206,14 @@ SQLworker_column(READERtask *task, int col)
 	if ( task->fields[col][i] ) { /* no errors */
 		if (SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &err, col+1)) {
 			assert(err != NULL);
+			mal_set_lock(mal_contextLock,"tablet insert value");
 			if (!task->as->tryall){
 				/* watch out for concurrent threads */
-				mal_set_lock(mal_contextLock,"tablet insert value");
 				if (task->as->error == NULL)
 					task->as->error = err;	/* restore for upper layers */
-				mal_unset_lock(mal_contextLock,"tablet insert value");
 			} else
 				BUNins(task->as->complaints, NULL, err, TRUE);
+			mal_unset_lock(mal_contextLock,"tablet insert value");
 		}
 	}
 

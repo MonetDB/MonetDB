@@ -616,6 +616,13 @@ runScenarioBody(Client c)
 	struct tms t0,t1;
 #endif
 
+
+	if (!c->exception_buf)
+		c->exception_buf = (void*)GDKzalloc(sizeof(jmp_buf));
+	if (setjmp( *c->exception_buf) < 0) {
+		throw(PARSE, "MALparser", "failed");
+		/* c->cleanup() */
+	}
 	while (c->mode > FINISHING || msg != MAL_SUCCEED) {
 		if (msg != MAL_SUCCEED){
 /* we should actually show it [postponed]

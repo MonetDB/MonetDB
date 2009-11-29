@@ -93,6 +93,7 @@ are located in mal_startup.
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
 #endif
+#include <setjmp.h>
 
 @-
 The prompt structure is designed to simplify recognition
@@ -245,7 +246,8 @@ the next one.
 #ifdef HAVE_TIMES
 	struct tms	workload;
 #endif
-
+	jmp_buf*	exception_buf;	
+	/* TODO add callback for cleanup !*/
 } *Client, ClientRec;
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
@@ -535,6 +537,7 @@ Client MCinitClient(oid user, bstream *fin, stream *fout)
 	c->totaltime= 0;
 	c->rcc = (RecPtr) GDKzalloc(sizeof(RecStat));
 	c->rcc->curQ = -1;
+	c->exception_buf = NULL;
 	MT_init_sema(c->s, 0, "MCinitClient");
 	return c;
 }
