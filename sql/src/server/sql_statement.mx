@@ -273,7 +273,7 @@ extern stmt *stmt_reverse(stmt *s);
 extern stmt *stmt_mirror(stmt *s);
 
 #define LIMIT_DIRECTION(dir,order,before_project) \
-		(order)?((before_project)?dir+3:dir+1):dir
+		(dir<<2)+(before_project<<1)+(order)
 extern stmt *stmt_limit(stmt *s, int offset, int limit, int direction);
 extern stmt *stmt_order(stmt *s, int direction);
 extern stmt *stmt_reorder(stmt *s, stmt *t, int direction);

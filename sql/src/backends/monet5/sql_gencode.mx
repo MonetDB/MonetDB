@@ -712,14 +712,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				l = k;
 			}
 			if (s->flag) {
-				int topn = 0, flag = s->flag, utopn = 0;
+				int topn = 0, flag = s->flag, utopn = flag&2;
 				char *name = "utopn_min";
 
-				if (flag >= 3) {
-					utopn = 1;
-					flag -= 2;
-				}
-				if ((flag-1) > 0)
+				flag >>= 2;
+				if (flag)
 					name = "utopn_max"; 
 
 				if (!utopn)

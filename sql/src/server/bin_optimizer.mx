@@ -279,7 +279,6 @@ bin_optimizer(mvc *c, stmt *s)
 		j = s->op1.stval;
 
 		/* push through the projection joins */
-		/* TODO put limit under (and keep above) cross products */
 		if (s->flag == 0 &&
 		    j->type == st_join && j->flag == cmp_equal && 
 		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) {
@@ -326,7 +325,7 @@ bin_optimizer(mvc *c, stmt *s)
 			s = stmt_order(stmt_limit(stmt_dup(j->op1.stval),
 				s->op2.stval->op1.aval->data.val.ival,
 				s->op3.stval->op1.aval->data.val.ival,
-				j->flag+1), j->flag);
+				LIMIT_DIRECTION(j->flag,1,0)), j->flag);
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
 			assert(os->rewritten==NULL);
@@ -351,7 +350,7 @@ bin_optimizer(mvc *c, stmt *s)
 		if (!s->op2.stval->op1.aval->data.val.ival && j->type == st_mark) {
 			s = stmt_mark_tail(stmt_limit(stmt_dup(j->op1.stval),
 				s->op2.stval->op1.aval->data.val.ival,
-				s->op3.stval->op1.aval->data.val.ival, j->flag),
+				s->op3.stval->op1.aval->data.val.ival, s->flag),
 				j->op2.stval->op1.aval->data.val.ival);
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
