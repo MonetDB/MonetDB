@@ -527,6 +527,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 static str
 SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 {
+	int pstatus = 0;
 	int err = 0;
 	mvc *o, *m;
 	int ac, sizevars, topvars;
@@ -551,6 +552,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	m = sql->mvc;
  	ac = m->session->auto_commit;
 	SQLtrans(m);
+	pstatus = m->session->status;
 	if (!m->sa)
 		m->sa = sa_create();
 
@@ -613,12 +615,8 @@ We don;t search the cache for a previous incarnation yet.
 
 		MSinitClientPrg(c,"user",nme); 
 		if (!s && (err = mvc_status(m))) {
-			stream_printf(c->fdout, "%s\n", m->errstr);
-			if( m->errstr)
-				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			else 
-				msg = createException(PARSE, "SQLparser", "Semantic errors");
-			*m->errstr = 0;
+			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
 			/* restore the state */
 			freeSymbol(c->curprg);
