@@ -297,6 +297,7 @@ SQLload_file_line(READERtask *task, int idx)
 	}
 	return as->error? -1 : 0;
 }
+
 static void
 SQLworker(void *arg)
 {
@@ -330,8 +331,10 @@ SQLworker(void *arg)
 #endif
 			for ( j = piece * task->id; j< task->next && j < piece * (task->id + 1) ; j++)
 				if ( task->fields[0][j])
-					if ( SQLload_file_line(task,j) < 0)
+					if ( SQLload_file_line(task,j) < 0) {
 						task->error++;
+						break;
+					}
 			task->wtime = GDKusec() - t0;
 		} else
 		if ( task->state == UPDATEBAT)
