@@ -226,6 +226,26 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	int j;
 	oid mergeTuples;
 
+	/* We use the value "as is" as PQ_Key for PQ_push();
+	 * PQ_Key is defined as unsigned int;
+	 * hence, we can (for now) only allow <= 4 byte integer types, here.
+	 *
+	 * TODO:
+	 * Either fix the implementation to indeed (correctly) support all types,
+	 * or omit the PQMerge inplementation for all non-supported types.
+	 */
+#if SIZEOF_WRD == SIZEOF_INT
+#define MAX_4_BYTE_INT_TYPE TYPE_wrd
+#else
+#if SIZEOF_OID == SIZEOF_INT
+#define MAX_4_BYTE_INT_TYPE TYPE_oid
+#else
+#define MAX_4_BYTE_INT_TYPE TYPE_int
+#endif
+#endif
+	if (TYPE_@1 <= TYPE_void || TYPE_@1 > MAX_4_BYTE_INT_TYPE)
+		throw(MAL, "crackers.sortmerge", "Type not supported by PQMerge");
+
 	PQ_PriorityQueue (& pq, "merge", space, size, heapsize, range, 0, 0, NULL, NULL);
 	
 	/*QNodes is an array of pointers to a simple struct 
@@ -234,7 +254,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	/*put all first values in the queue*/
 	for(j=0;j<QNodesSize;j++){
 		st=(@1  *)Tloc(QNodes[j]->slice,BUNfirst(QNodes[j]->slice)+QNodes[j]->start); 
-		PQ_push (& pq, j, *st, 0, NULL);
+		PQ_push (& pq, j, (PQ_Key)*st, 0, NULL);
 	}
 
 	/*pop the smallest and push the next one from the same slice*/
@@ -252,7 +272,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		
 		if (QNodes[resIndex]->tuples>0){
 			st++;	
-			PQ_push (& pq, resIndex, *st, 0, NULL);
+			PQ_push (& pq, resIndex, (PQ_Key)*st, 0, NULL);
 		}else {
 			i--;
 			QNodesSize--;
