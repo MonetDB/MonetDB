@@ -28,9 +28,6 @@
 #ifndef _CRACKERS_PQ_H_
 #define _CRACKERS_PQ_H_
 
-#pragma once
-
-
 #ifdef _DEBUG
 #	define PriQue_DEBUG
 #endif
@@ -39,8 +36,6 @@
 #undef PriQue_STATS
 
 unsigned int Random (unsigned int const range);
-
-typedef unsigned long ulong; /* instead of size_t */
 
 typedef unsigned int PQ_Index;
 typedef unsigned int PQ_Key;
