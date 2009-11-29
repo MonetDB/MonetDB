@@ -92,7 +92,7 @@ typedef struct
 #endif
 } PQ_state;
 
-ulong PQ_RequiredSpace (
+size_t PQ_RequiredSpace (
 		PQ_Index const capacity,
 		int const save_data);
 
@@ -100,7 +100,7 @@ void PQ_PriorityQueue (
 		PQ_state * const m,
 		char const * const name,
 		void * const space,
-		ulong const size,
+		size_t const size,
 		PQ_Index const capacity,
 		PQ_Key const normkey_range,
 		int const find_runs,
@@ -156,7 +156,7 @@ static PQ_Shift PQ_loss (PQ_state const * const m) { return m->loss; }
 void PQ_selftest (
 		int const progress,
 		PQ_Index const heapsize,
-		ulong const ops,
+		size_t const ops,
 		PQ_Key const range,
 		int test);
 #endif
@@ -310,7 +310,7 @@ static int PQ_compare (PQ_state * const m,
 	return result;
 }
 
-ulong PQ_RequiredSpace (PQ_Index const capacity, int const save_data)
+size_t PQ_RequiredSpace (PQ_Index const capacity, int const save_data)
 {
 	PQ_Index const nodes = capacity + (capacity & 01);
 	return nodes * sizeof (PQ_Entry) +
@@ -321,7 +321,7 @@ void PQ_PriorityQueue (
 		PQ_state * const m,
 		char const * const name,
 		void * const space,
-		ulong const size,
+		size_t const size,
 		PQ_Index const capacity,
 		PQ_Key const normkey_range,
 		int const find_runs,
@@ -921,7 +921,7 @@ void PQ_AssertConsistency (
 			address = (m->data + (m->capacity + 1));
 		}
 
-		DebugAssert ((ulong) address - (ulong) m->heap ==
+		DebugAssert ((size_t) address - (size_t) m->heap ==
 				PQ_RequiredSpace (m->capacity, m->data != NULL));
 	}
 
@@ -1094,11 +1094,11 @@ void PQ_AssertConsistency (
 
 #ifdef PriQue_STATS
 
-static ulong aligned (void const * const ptr)
+static size_t aligned (void const * const ptr)
 {
-	ulong const a = (ulong) ptr;
-	ulong const b = a & (a - 1);
-	ulong const c = (a ^ b);
+	size_t const a = (size_t) ptr;
+	size_t const b = a & (a - 1);
+	size_t const c = (a ^ b);
 	return c;
 }
 
@@ -1131,7 +1131,7 @@ void PQ_sizes (PQ_state const * const m)
 	printf ("pointers to %ld bytes\n", (long) (aligned (m->heap)));
 }
 
-static int IsPowerOf2 (ulong const x)
+static int IsPowerOf2 (size_t const x)
 {
 	return x > 0 && (x & (x - 1)) == 0;
 }

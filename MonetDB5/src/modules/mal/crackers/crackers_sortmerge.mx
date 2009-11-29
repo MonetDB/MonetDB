@@ -217,7 +217,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	PQ_state pq;
 	PQ_Index heapsize = QNodesSize;
 	PQ_Key const range = 1<<26;
-	ulong size = PQ_RequiredSpace (heapsize, 0);
+	size_t size = PQ_RequiredSpace (heapsize, 0);
 	char * space = malloc (size);
 	int resIndex;
 	int deferred;
