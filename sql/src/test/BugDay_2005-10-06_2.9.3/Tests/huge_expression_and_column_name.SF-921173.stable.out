@@ -1,33 +1,33 @@
 stdout of test 'huge_expression_and_column_name.SF-921173` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
 
 
-# 12:37:36 >  
-# 12:37:36 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 12:37:36 >  
+# 16:51:09 >  
+# 16:51:09 >   mserver5 "--config=/home/niels/scratch/monetdb/Linux-i686/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/home/niels/scratch/monetdb/Linux-i686/lib/MonetDB5:/home/niels/scratch/monetdb/Linux-i686/lib/MonetDB5/lib:/home/niels/scratch/monetdb/Linux-i686/lib/MonetDB5/bin" --set "gdk_dbfarm=/home/niels/scratch/monetdb/Linux-i686/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30596 --set xrpc_port=46487 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 16:51:09 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.17.0, based on kernel v1.35.0
+# Serving database 'mTests_src_test_BugDay_2005-10-06_2.9.3', using 4 threads
+# Compiled for i686-pc-linux-gnu/32bit with 32bit OIDs dynamically linked
+# Detected 993.930 MiB (1042210816 bytes) main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:30596/
+# MonetDB/SQL module v2.35.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
-# 22:44:57 >  
-# 22:44:57 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=35094 
-# 22:44:57 >  
+# 16:51:10 >  
+# 16:51:10 >  mclient -lsql -i --host=localhost --port=30596 
+# 16:51:10 >  
 
-% . # table_name
-% sql_add_single_value # name
-% smallint # type
-% 4 # length
-[ 2001	]
 
-# 22:44:58 >  
-# 22:44:58 >  Done.
-# 22:44:58 >  
+# 16:51:10 >  
+# 16:51:10 >  Done.
+# 16:51:10 >  
 
