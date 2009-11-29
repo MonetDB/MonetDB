@@ -209,18 +209,20 @@ isExceptionVariable(str nme){
 static str
 createExceptionInternal(enum malexception type, str fcn, str format, va_list ap)
 {
-	char message[GDKMAXERRLEN];
+	char *message;
 	int len;
 
 #ifdef _DEBUG_EXCEPTION_
 	printf("exception:%s:%s\n",fcn,format);
 #endif
+	message = GDKmalloc(GDKMAXERRLEN);
+	if (!message)
+		return NULL;
 	len = snprintf(message, GDKMAXERRLEN - 1, "%s:%s:",
 			exceptionNames[type], fcn);
 	len += vsnprintf(message + len, GDKMAXERRLEN - 1 - len, format, ap);
 	message[len] = '\0';
-
-	return(GDKstrdup(message));
+	return(message);
 }
 
 /**
