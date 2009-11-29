@@ -802,7 +802,6 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
-		assert(0);
 		if (left) stmt_destroy(left);
 		if (right) stmt_destroy(right);
 		return NULL;	
@@ -939,7 +938,6 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
-		assert(0);
 		if (left) stmt_destroy(left);
 		if (right) stmt_destroy(right);
 		return NULL;	
@@ -1074,7 +1072,6 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
-		assert(0);
 		if (left) stmt_destroy(left);
 		if (right) stmt_destroy(right);
 		return NULL;	
@@ -1147,7 +1144,6 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
-		assert(0);
 		if (left) stmt_destroy(left);
 		if (right) stmt_destroy(right);
 		return NULL;	
@@ -1291,7 +1287,6 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
-		assert(0);
 		if (left) stmt_destroy(left);
 		if (right) stmt_destroy(right);
 		return NULL;	
@@ -1478,10 +1473,8 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(sql, rel->l, refs);
-		if (!sub) { 
-			assert(0);
+		if (!sub) 
 			return NULL;	
-		}
 		if (sub->type == st_ordered) {
 			stmt *n = sql_reorder(stmt_dup(sub->op1.stval), stmt_dup(sub->op2.stval));
 			stmt_destroy(sub);
@@ -1623,10 +1616,8 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(sql, rel->l, refs);
-		if (!sub) { 
-			assert(0);
+		if (!sub) 
 			return NULL;	
-		}
 		sub = row2cols(sub);
 	} else {
 		predicate = rel2bin_predicate();
@@ -1732,10 +1723,8 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(sql, rel->l, refs);
-		if (!sub) { 
-			assert(0);
+		if (!sub)
 			return NULL;	
-		}
 	}
 
 	if (sub && sub->type == st_list && sub->op1.lval->h && !((stmt*)sub->op1.lval->h->data)->nrcols) {
@@ -1840,10 +1829,8 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			sub = subrel_bin(sql, rl, refs);
 		}
 	}
-	if (!sub) { 
-		assert(0);
+	if (!sub) 
 		return NULL;	
-	}
 
 	l = topn_limit(rel);
 	o = topn_offset(rel);
@@ -2411,10 +2398,8 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the inserts relation */
 		inserts = subrel_bin(sql, rel->r, refs);
 
-	if (!inserts) { 
-		assert(0);
+	if (!inserts)  
 		return NULL;	
-	}
 
 	if (inserts->type == st_ordered) {
 		stmt *n = sql_reorder(stmt_dup(inserts->op1.stval), stmt_dup(inserts->op2.stval));
@@ -3233,10 +3218,8 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 
 	if (rel->r) /* first construct the update relation */
 		update = subrel_bin(sql, rel->r, refs);
-	if (!update) { 
-		assert(0);
+	if (!update)
 		return NULL;	
-	}
 	updates = table_update_array(t, &len);
 	tid = update->op1.lval->h->data;
 	for (n = update->op1.lval->h->next, m = rel->exps->h; 
@@ -3419,11 +3402,8 @@ rel2bin_delete( mvc *sql, sql_rel *rel, list *refs)
 
 	if (rel->r) { /* first construct the deletes relation */
 		delete = subrel_bin(sql, rel->r, refs);
-
-		if (!delete) { 
-			assert(0);
+		if (!delete) 
 			return NULL;	
-		}
 	}
 	if (delete && delete->type == st_list) {
 		stmt *s = delete;
@@ -3457,6 +3437,9 @@ static stmt *
 subrel_bin(mvc *sql, sql_rel *rel, list *refs) 
 {
 	stmt *s = NULL;
+
+	if (THRhighwater())
+		return NULL;
 
 	if (!rel)
 		return s;

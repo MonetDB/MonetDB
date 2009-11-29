@@ -1,13 +1,13 @@
-stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005-11-09_2.9.3` itself:
+stderr of test 'copy_multiple_files.SF-2902320` in directory 'src/test/BugTracker-2009` itself:
 
 
-# 23:26:36 >  
-# 23:26:36 >   mserver5 "--config=/ufs/mk/candidate//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/candidate//Linux/lib/MonetDB5:/ufs/mk/candidate//Linux/lib/MonetDB5/lib:/ufs/mk/candidate//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/candidate//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38510 --set xrpc_port=45958 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 23:26:36 >  
+# 08:59:53 >  
+# 08:59:53 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36694 --set xrpc_port=47294 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 08:59:53 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
 # builtin opt 	gdk_version = 1.34.0
-# builtin opt 	prefix = /ufs/mk/candidate//Linux
+# builtin opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -28,9 +28,9 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 # builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
 # builtin opt 	standoff_start = start
 # builtin opt 	standoff_end = end
-# config opt 	prefix = /ufs/mk/candidate//Linux
+# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # config opt 	config = ${prefix}/etc/monetdb5.conf
-# config opt 	prefix = /ufs/mk/candidate//Linux
+# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
 # config opt 	gdk_dbname = demo
@@ -49,59 +49,35 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 # config opt 	mapi_port = 50000
 # config opt 	mapi_autosense = false
 # config opt 	mapi_open = false
-# config opt 	sql_optimizer = accumulator_pipe
+# config opt 	sql_optimizer = default_pipe
 # config opt 	default_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
-# config opt 	accumulator_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,garbageCollector,dataflow,history,multiplex
 # config opt 	replication_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
+# config opt 	accumulator_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,garbageCollector,dataflow,history,multiplex
 # config opt 	recycler_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	cracker_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	datacell_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	octopus_pipe = inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 # config opt 	mitosis_pipe = inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
-# cmdline opt 	config = /ufs/mk/candidate//Linux/etc/monetdb5.conf
+# cmdline opt 	config = /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf
 # cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	monet_mod_path = /ufs/mk/candidate//Linux/lib/MonetDB5:/ufs/mk/candidate//Linux/lib/MonetDB5/lib:/ufs/mk/candidate//Linux/lib/MonetDB5/bin
-# cmdline opt 	gdk_dbfarm = /ufs/mk/candidate//Linux/var/MonetDB5/dbfarm
+# cmdline opt 	monet_mod_path = /ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm
 # cmdline opt 	mapi_open = true
 # cmdline opt 	xrpc_open = true
-# cmdline opt 	mapi_port = 38510
-# cmdline opt 	xrpc_port = 45958
+# cmdline opt 	mapi_port = 36694
+# cmdline opt 	xrpc_port = 47294
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_test_BugDay_2005-11-09_2.9.3
+# cmdline opt 	gdk_dbname = mTests_src_test_BugTracker-2009
 # cmdline opt 	mal_listing = 0
 #warning: please don't forget to set your vault key!
-#(see /ufs/mk/candidate//Linux/etc/monetdb5.conf)
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
 
-# 23:26:36 >  
-# 23:26:36 >  mclient -lsql -i --host=eir --port=38510 
-# 23:26:36 >  
+# 08:59:53 >  
+# 08:59:53 >  mclient -lsql -i --host=alf --port=36694 
+# 08:59:53 >  
 
-MAPI  = monetdb@alf:39359
-QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
-ERROR = !SQLException:sql:End of string (') missing in "1	'dwerg.net word volwassen, er is eindelijk content
-        !en het voicemail archief begint al aardig vol te lopen.
-        !De commentaar en rating code voor de voicemails is ook
-        !al vrij aardig aan het vorderen. Dus dat beloofd nog
-        !wat.r
-        !<br /><br />r
-        !Mja, het is dat ik veel te veel
-        !tijd heb en het helemaal verkeerd indeel dat het
-        !allemaal nogal lang duurt, maar in principe is het nog
-        !maar een uurtje of 6 werk om het goed te krijgen. Zoals
-        !je kan zien heb ik bij de voicemails al wat leuke
-        !knopjes gezet, en het aantal voicemails dat je in 1
-        !keer ziet verhoogd naar 15. Poepoe.r
-        !<br /><br
-        !/>r
-        !Het is me allemaal wat...r
-        !<br /><br
-        !/>r
-        !Muziek: Air	1	2002-02-22 00:21:00.000
-        !		
-        !" at line 1 field 1
-        !SQLException:importTable:failed to import table
 
-# 23:26:36 >  
-# 23:26:36 >  Done.
-# 23:26:36 >  
+# 08:59:53 >  
+# 08:59:53 >  Done.
+# 08:59:53 >  
 
