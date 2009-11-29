@@ -3554,7 +3554,7 @@ output_rel_bin(mvc *sql, sql_rel *rel )
 		rel = p->l;
 	s = subrel_bin( sql, rel, refs);
 
-	if (p != rel) {
+	if (s && p != rel) {
 		node *n = p->exps->h;
 		char *tsep = _strdup(E_ATOM_STRING(n->data));
 		char *rsep = _strdup(E_ATOM_STRING(n->next->data));
