@@ -267,7 +267,6 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 				str errline = SQLload_error(task,as,task->next,csep,rsep);
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
 					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c[0]) + task->next +1, i);
-				GDKerror(errmsg);
 				as->error = GDKstrdup(errmsg);
 				GDKfree(errline);
 				*start = 0; /* to avoid handling an incomplete quoted field */
@@ -294,7 +293,6 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 		if ( i < as->nr_attrs-1)  {
 			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
 					 fmt->sep, BATcount(fmt->c[0]) + 1 + task->next, i);
-			GDKerror(errmsg);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
 				return -1;
