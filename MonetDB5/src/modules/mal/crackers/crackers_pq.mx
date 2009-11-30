@@ -225,12 +225,12 @@ static int PQ_is_sentinel (
 	return (normkey < m->nodes  ||  normkey > PQ_maxKey () - m->nodes);
 }
 
-static void PQ_parent (PQ_Index * entry)
+static inline void PQ_parent (PQ_Index * entry)
 {
 	(*entry) >>= 1;
 }
 
-static PQ_Index PQ_leaf (
+static inline PQ_Index PQ_leaf (
 		PQ_state const * const m,
 		PQ_Index const index)
 {
@@ -242,7 +242,7 @@ static PQ_Index PQ_leaf (
 	return entry;
 }
 
-static PQ_Index PQ_root ()
+static inline PQ_Index PQ_root ()
 {
 	return (PQ_Index) 0;
 }
@@ -288,7 +288,7 @@ static int PQ_data_compare (PQ_state * const m,
 	return result;
 }
 
-static int PQ_compare (PQ_state * const m,
+static inline int PQ_compare (PQ_state * const m,
 		PQ_Entry const * const left, PQ_Entry const * const right)
 {
 #ifdef PriQue_STATS

@@ -27,13 +27,7 @@
 @- Type expansion
 
 @= TypeSwitch
-@:@1(chr,simple,,chr)@
-@:@1(sht,simple,,sht)@
 @:@1(int,simple,,int)@
-@:@1(lng,simple,,lng)@
-@:@1(flt,simple,,flt)@
-@:@1(dbl,simple,,dbl)@
-@:@1(date,atom,TYPE_,loc)@
 @
 
 
@@ -53,8 +47,8 @@
 @- Exported signatures
 
 @= SelectFunctions_decl
-crackers_export str CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
-crackers_export str CRKParitionedSort_@1(int *vid, int *bid);
+crackers_export str CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *mode, bit *rounding);
+crackers_export str CRKPartitionedSort_@1(int *vid, int *bid, int *mode);
 @
 
 
@@ -66,6 +60,7 @@ crackers_export str CRKParitionedSort_@1(int *vid, int *bid);
 
 @c
 #include "mal_config.h"
+#include "algebra.h"
 #include "crackers.h"
 
 /* Local support functions and macros */
@@ -80,13 +75,13 @@ crackers_export str CRKParitionedSort_@1(int *vid, int *bid);
 
 @= SelectFunctions_impl
 str
-CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){		
+CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *mode, bit *rounding){		
 	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
 		throw(MAL,"selectsm","only double bounded selectsare currently supported");
 	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
 		throw(MAL,"selectsm","only double bounded selectsare currently supported");
 	else
-		return SelectSortMergeBounds_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh);
+		return SelectSortMergeBounds_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, mode,rounding);
 }
 @
 
@@ -106,13 +101,10 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	/*N-way merge*/
 	rh = (oid*)Hloc(br,BUNfirst(br));
 	rt = (@1 *)Tloc(br,BUNfirst(br));
-	if (mode==1){
+	if (*mode==1){
 		@:LoopMerge(@1,@2,@3,head)@	
 	}else
-	if (mode==2){
-		@:CopyMerge(@1)@
-	}else
-	if (mode==3){
+	if (*mode==3){
 		@:PQMerge(@1)@
 	}
 @
@@ -131,7 +123,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		gotSlices=TRUE;
 	}
 	current=CrackerIndex[m].smNode;
-	totalTuples=totalLowerTuples=totalHigherTuples=0;
+	totalTuples=totalLowerTuples=0;
 	QNodesSize=0;
 	while(current!=NULL){
 		/* binary search to find the position of the lowest requested value in the current slice */
@@ -163,35 +155,13 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		if ( @2_GT(lt,@6,@3@1) || (@2_EQ(lt,@6,@3@1) && @8==FALSE) ){
 			current->tuples=0;
 			totalLowerTuples+=(oid) (lt-t0);
-			totalHigherTuples+=BATcount(current->slice)-((oid) (lt-t0));
 			current=current->next;
 			continue;
 		}
 
 		current->start= (oid) (lt-t0);	
-		
-		/* binary search to find the position of the highest requested value */
-		l = SORTfndfirst_@4(current->slice, @6);
-		lt = (@1*)Tloc(current->slice,l);
-		if (lt < lastValue){
-			if (@2_EQ(lt,@6,@3@1) && @8 == TRUE){	
-				while (lt < lastValue && @2_EQ(lt,@6,@3@1))
-					lt ++;
-				lt--;
-			} else
-			if (@2_EQ(lt,@6,@3@1) && @8 == FALSE)
-				lt --;
-			else
-			if ( @2_GT(lt,@6,@3@1) )
-				lt --;
-		}
-
-		if (lt == lastValue) lt--;
-		current->tuples = (((oid) (lt-t0))-current->start)+1;
-		current->merged +=current->tuples;
-		totalTuples+=current->tuples;
+	
 		totalLowerTuples+=current->start;
-		totalHigherTuples+=BATcount(current->slice)-(current->start+current->tuples);
 		QNodes[QNodesSize++]=current;
 		current=current->next;
 	}
@@ -199,17 +169,80 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	/*N-way merge*/
 	rh = (oid*)Hloc(br,BUNfirst(br)+totalLowerTuples);
 	rt = (@1 *)Tloc(br,BUNfirst(br)+totalLowerTuples);
-	if (mode==1){
-		head=CrackerIndex[m].smNode;
-		@:LoopMerge(@1,@2,@3,head)@	
+	if (*mode==2){
+		@:CopyMerge(@1,@2,@3,@4,@5,@6,@7,@8)@
 	}else
-	if (mode==2){
-		head=CrackerIndex[m].smNode;
-		@:CopyMerge(@1)@
-	}else
-	if (mode==3){
-		@:PQMerge(@1)@
+	if (*mode==3){
+		@:PQMergeAM(@1,@2,@3,@4,@5,@6,@7,@8)@
 	}
+@
+
+@= PQMergeAM
+{
+	PQ_state pq;
+	PQ_Index heapsize = QNodesSize;
+	PQ_Key const range = 1<<26;
+	size_t size = PQ_RequiredSpace (heapsize, 0);
+	char * space = malloc (size);
+	int resIndex;
+	int deferred;
+	oid *sh;
+	@1 *st;
+	oid mergeTuples=0;
+
+	/* We use the value "as is" as PQ_Key for PQ_push();
+	 * PQ_Key is defined as unsigned int;
+	 * hence, we can (for now) only allow <= 4 byte integer types, here.
+	 *
+	 * TODO:
+	 * Either fix the implementation to indeed (correctly) support all types,
+	 * or omit the PQMerge inplementation for all non-supported types.
+	 */
+#if SIZEOF_WRD == SIZEOF_INT
+#define MAX_4_BYTE_INT_TYPE TYPE_wrd
+#else
+#if SIZEOF_OID == SIZEOF_INT
+#define MAX_4_BYTE_INT_TYPE TYPE_oid
+#else
+#define MAX_4_BYTE_INT_TYPE TYPE_int
+#endif
+#endif
+	if (TYPE_@1 <= TYPE_void || TYPE_@1 > MAX_4_BYTE_INT_TYPE)
+		throw(MAL, "crackers.sortmerge", "Type not supported by PQMerge");
+
+	PQ_PriorityQueue (& pq, "merge", space, size, heapsize, range, 0, 0, NULL, NULL);
+	
+	/*QNodes is an array of pointers to a simple struct 
+	that contains info on the slices with qualifying values*/
+
+	/*put all first values in the queue*/
+	for(j=0;j<QNodesSize;j++){
+		st=(@1  *)Tloc(QNodes[j]->slice,BUNfirst(QNodes[j]->slice)+QNodes[j]->start); 
+		PQ_push (& pq, j, (PQ_Key)*st, 0, NULL);
+	}
+
+	/*pop the smallest and push the next one from the same slice*/
+	while(QNodesSize>0){
+		resIndex = PQ_pop (& pq, & deferred, NULL);
+		sh=(oid *)Hloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
+		st=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
+		lastValue = (@1*)Tloc(QNodes[resIndex]->slice, BUNlast(QNodes[resIndex]->slice));
+		
+		*rh=*sh;
+		*rt=*st;
+		rh++;rt++;
+		QNodes[resIndex]->start++;
+		QNodes[resIndex]->merged++;
+		mergeTuples++;
+		
+		st++;	
+		if(st < lastValue && (@2_LT(st,@6,@3@1) || (@2_EQ(st,@6,@3@1) && @8==TRUE)))
+			PQ_push (& pq, resIndex, (PQ_Key)*st, 0, NULL);
+		else 
+			QNodesSize--;
+	}
+	totalTuples+=mergeTuples;
+}
 @
 
 @= PQMerge
@@ -223,7 +256,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	int deferred;
 	oid *sh;
 	@1 *st;
-	int j;
 	oid mergeTuples;
 
 	/* We use the value "as is" as PQ_Key for PQ_push();
@@ -295,20 +327,26 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 @
 
 @= CopyMerge
-	current=head;
-	while(current!=NULL){
-		if (current->tuples>0){
-			oid *sh=(oid *)Hloc(current->slice,BUNfirst(current->slice)+current->start);
-			@1  *st=(@1  *)Tloc(current->slice,BUNfirst(current->slice)+current->start); 
-			while(current->tuples>0){
-				*rh=*sh;
-				*rt=*st;
-				rh++;rt++;	
-				sh++;st++;
-				current->tuples--;
-			}
+	for(j=0;j<QNodesSize;j++){
+		oid tup=0,k=0;
+		current=QNodes[j];
+		sh=(oid *)Hloc(current->slice,BUNfirst(current->slice)+current->start);
+		st=(@1  *)Tloc(current->slice,BUNfirst(current->slice)+current->start); 
+		lastValue = (@1*)Tloc(current->slice, BUNlast(current->slice));
+		
+		while(st < lastValue && (@2_LT(st,@6,@3@1) || (@2_EQ(st,@6,@3@1) && @8==TRUE))){
+			*rt=*st;
+			rt++;	
+			st++;
+			tup++;
 		}
-		current=current->next;
+		for(;k<tup;k++){
+			*rh=*sh;
+			rh++;
+			sh++;
+		}
+		current->merged +=tup;
+		totalTuples+=tup;
 	}
 	br=BATmirror(br);
         GDKqsort(Hloc(br,BUNfirst(br)+totalLowerTuples), Tloc(br,BUNfirst(br)+totalLowerTuples), (br->hheap)?br->H->vheap->base:NULL, totalTuples, Hsize(br), Tsize(br), br->htype);
@@ -499,11 +537,22 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	totalmergedTuples+=totalTuples;
 	if (vl>0) _vl=vl-1; else _vl=vl;		
 	lowResultNode=addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
-	lowResultNode->sliceSize=vh-_vl;
-	lowResultNode->contiguousArea=0;
+	if (lowResultNode==NULL)
+		if (curNode!=NULL)
+			lowResultNode=curNode;
+	if(lowResultNode!=NULL){
+		lowResultNode->sliceSize=vh-_vl;
+		lowResultNode->contiguousArea=0;
+	}
 	hghResultNode=addCrackerIndex_@1(m,hgh,HBound,vh,c);
-	hghResultNode->sliceSize=0;
-	hghResultNode->contiguousArea=0;
+	if (hghResultNode==NULL){
+		if (nexNode!=NULL)
+			hghResultNode=nexNode;
+	}
+	else{
+		hghResultNode->sliceSize=0;
+		hghResultNode->contiguousArea=0;
+	}
 	resStart=totalLowerTuples;
 	resEnd=resStart+totalTuples;
 @
@@ -520,8 +569,14 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	curNode->sliceSize=totalTuples;
 	totalmergedTuples+=totalTuples;
 	hghResultNode=addCrackerIndex_@1(m,hgh,HBound,curPos+totalTuples-1,c);
-	hghResultNode->sliceSize=0;
-	hghResultNode->contiguousArea=0;
+	if (hghResultNode==NULL){
+		if (nexNode!=NULL)
+			hghResultNode=nexNode;
+	}
+	else{
+		hghResultNode->sliceSize=0;
+		hghResultNode->contiguousArea=0;
+	}
 @
 
 @= MergeLow1
@@ -531,9 +586,14 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	vl=totalLowerTuples-1;
 	if (vl>0) _vl=vl-1; else _vl=vl;		
 	lowResultNode=addCrackerIndex_@1(m,low,*inclusiveLow,vl,c);
-	lowResultNode->sliceSize=totalTuples;
-	lowResultNode->contiguousArea=0;
-	curNode=lowResultNode;/*need to initialize for nextpiece macro*/
+	if (lowResultNode==NULL)
+		if (curNode!=NULL)
+			lowResultNode=curNode;
+	if(lowResultNode!=NULL){
+		lowResultNode->sliceSize=totalTuples;
+		lowResultNode->contiguousArea=0;
+		curNode=lowResultNode;/*need to initialize for nextpiece macro*/
+	}
 @
 @= MergeLow2
 	nexNodeInclusive=nexNode->inclusive?FALSE:TRUE;
@@ -586,27 +646,70 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 @
 
 @= RangeSelectBody
+	/*MODE: 1=Nway merge.2=copy+inplace sort.3=priority queue*/
 	BAT *b,*bo,*br,*c,*view,*slice;
 	int  m;
 	oid sliceSize,i;
-	struct sortMergeNode *current,*merge,*head,*previous,*tmp;
+	struct sortMergeNode *current,*previous,*tmp;
 	bit HBound;
 	oid vl=0, vh=0,_vl=0;
 	@1 *lt, *lastValue, *t0;
 	BUN l;
-	oid totalTuples,totalLowerTuples,totalHigherTuples;
-	@1  *rt,*tt;
+	oid totalTuples,totalLowerTuples;
+	@1  *rt;
 	oid *rh;
-	int mode=2; /*1=Nway merge.2=copy+inplace sort.3=priority queue*/
+	oid *sh;
+	@1  *st;
 	struct sortMergeNode *QNodes[500];
 	int QNodesSize=0;
-	struct Node *curNode,*nexNode,*lowResultNode=NULL,*hghResultNode=NULL;
+	struct Node *curNode=NULL,*nexNode=NULL,*lowResultNode=NULL,*hghResultNode=NULL;
 	BUN curTuple,nexTuple,base;
 	oid curPos,nexPos;
 	bit notFound,nexNodeInclusive,gotSlices=FALSE;
 	oid start,end, resStart,resEnd;
 	@1 *curValue, *nexValue;
 	oid totalmergedTuples=0;
+	int j;
+
+	int tlow,thgh;
+	@1 *low,*hgh;
+
+	low=GDKmalloc(sizeof(@1));
+	hgh=GDKmalloc(sizeof(@1));
+	*low=0;
+	*hgh=0;
+
+	if(*rounding){
+		unsigned int i,j;
+		j=(sizeof(@1) * 8 - 1);
+		i = 1<<(sizeof(@1) * 8 - 1);
+		while (i > 0) {
+			if (*plow & i)
+				break;
+			i >>= 1;
+			j--;
+		}
+		tlow = 1 << j;
+		j=(sizeof(@1) * 8 - 1);
+		i = 1<<(sizeof(@1) * 8 - 1);
+		while (i > 0) {
+			if (*phgh & i)
+				break;
+			i >>= 1;
+			j--;
+		}
+		thgh = 1 << (j+1);
+		*low=tlow;
+		*hgh=thgh;
+		printf("Rounding:\n");
+		@:printVarTypes(@1,*plow,plow)@
+		@:printVarTypes(@1,*low,low)@
+		@:printVarTypes(@1,*phgh,phgh)@
+		@:printVarTypes(@1,*hgh,hgh)@
+	}else{
+		*low=*plow;
+		*hgh=*phgh;
+	}	
 
 	if (@2_GT(low,hgh,@3@1))
 		throw(MAL, "crackers.sortmerge", "illegal range");
@@ -632,7 +735,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		BATkey(BATmirror(br),FALSE);
 		br->batRestricted= BAT_READ;
 		BATmode(br,PERSISTENT);
-		BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 		BATsetcount(br,BATcount(bo));
 
 		m = newCrackerIndex_@1(*bid,br->batCacheid);
@@ -660,7 +762,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 			BATmode(b,PERSISTENT);
 			b->batRestricted= BAT_WRITE;
 			BATmirror(BATorder(BATmirror(b)));
-			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 
 			smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
 			smNode->batId=b->batCacheid;
@@ -687,29 +788,41 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		
 		BBPincref(br->batCacheid,TRUE);
 		BBPunfix(bo->batCacheid);
+		/* Take the tree of the result bat */
+		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+			throw(MAL, "crackers.sortmerge", "Cannot access tree");
+		base      = BUNfirst(c);
+		@:FullMerge(@1,@2,@3,@4)@
+		goto done;
 	}
 
 	/* Take the tree of the result bat */
 	if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
 		throw(MAL, "crackers.sortmerge", "Cannot access tree");
+
 	base      = BUNfirst(c);
 
 	/* Take the result bat */
 	if ((br = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
 		throw(MAL, "crackers.sortmerge", "Cannot access merge column");
 
-	/*First query merge*/
+
+	/*Empty merge column*/
 	if (CrackerIndex[m].Tree==NULL){
 		@:FullMerge(@1,@2,@3,@4)@
 	}
 	/*otherwise merge only the missing parts*/
 	else{
 		struct Node *nodeLow1=NULL,*nodeHgh1=NULL, *nodeLow2=NULL,*nodeHgh2=NULL;
+
+
 		GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow1, &nodeHgh1, NULL, NULL);
 		GetHghNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &nodeLow2, &nodeHgh2, NULL, NULL);
 
 		/*If the range falls outside existing areas we need a full merge*/
 		if ((nodeLow1==NULL && nodeLow2==NULL) || (nodeHgh1==NULL && nodeHgh2==NULL)){
+			if (nodeLow1!=NULL) curNode=nodeLow1;
+			if (nodeHgh2!=NULL) nexNode=nodeHgh2;
 			@:FullMerge(@1,@2,@3,@4)@
 			goto done;
 		}
@@ -810,16 +923,36 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	}
 
 	done:;
-	curPos=*(oid*)Hloc(c, base + hghResultNode->position);
-	if (lowResultNode->contiguousArea < curPos)
-		lowResultNode->contiguousArea = curPos;
+	if (lowResultNode!=NULL && hghResultNode!=NULL){
+		curPos=*(oid*)Hloc(c, base + hghResultNode->position);
+		if (lowResultNode->contiguousArea < curPos)
+			lowResultNode->contiguousArea = curPos;
+	}else
+		printf("\n Missed case! \n");
 
 	printf("Merged "OIDFMT" tuples \n",totalmergedTuples);	
-	view = BATslice(VIEWhead_(br, BAT_READ), resStart, resEnd);
-	printf("result size is " BUNFMT "\n", BATcount(view));
+	//view = BATslice(VIEWhead_(br, BAT_READ), resStart, resEnd);
+	if (*rounding){
+		BAT *temp=BATslice(br,resStart, resEnd);
+		temp->hsorted = FALSE;
+		temp->tsorted = TRUE;
+		BATkey(BATmirror(temp),FALSE);
+		temp->batRestricted= BAT_READ;
+		
+		ALGuselectInclusive(vid,&temp->batCacheid,plow,phgh,inclusiveLow,inclusiveHgh);
+		if ((view = BATdescriptor(*vid)) == NULL)
+			throw(MAL, "crackers.sortmerge", "Cannot access merge column");
+		BBPunfix(temp->batCacheid);
+		printf("result size is " BUNFMT " with rounding \n", BATcount(view));
+		BBPunfix(view->batCacheid);
+	}else{
+		view = BATslice(br,resStart, resEnd);
+		printf("result size is " BUNFMT "\n", BATcount(view));
+		*vid = view->batCacheid;
+		BBPkeepref(*vid);
+	}
 
-	*vid = view->batCacheid;
-	BBPkeepref(*vid);
+
 
 	/*unfix all slices and drop those that have no more unmerged tuples*/
 	i=0;
@@ -828,7 +961,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		previous=NULL;
 		while(current!=NULL){
 			BBPunfix(current->batId);
-			printf(""OIDFMT" size "BUNFMT"  merged "OIDFMT" \n",i,BATcount(current->slice),current->merged);
 			if (current->merged==BATcount(current->slice)){
 				BBPdecref(current->batId,TRUE);	
 				tmp=current;
@@ -851,16 +983,17 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 @
 
 @= SortBody
+	/*MODE  1=Nway merge.2=copy+inplace sort.3=priority queue.4=one step copy+sort*/
 	BAT *b,*bo,*br;
 	oid sliceSize,i;
 	struct sortMergeNode *current,*merge,*head=NULL;
 	@1  *rt,*tt;
 	oid *rh;
 	oid endSlice,startSlice;
-	oid totalTuples,totalLowerTuples=0;
-	int mode=4; /*1=Nway merge.2=copy+inplace sort.3=priority queue,one step copy+sort*/
+	oid totalTuples;
 	struct sortMergeNode *QNodes[500];
 	int QNodesSize=0;
+	int j;
 	
 	
 	if ((bo = BATdescriptor(*bid)) == NULL)
@@ -879,22 +1012,22 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	endSlice=sliceSize>BATcount(bo)?BATcount(bo):sliceSize;
 
 	/*for copy+inplace sort*/
-	if (mode==4){
+	if (*mode==4){
 		rh = (oid*)Hloc(br,BUNfirst(br));
 		rt = (@1 *)Tloc(br,BUNfirst(br));
 		while (1){
 			BAT *slice=BATslice(bo, startSlice, endSlice);
 			@1  *st=(@1*)Tloc(slice,BUNfirst(slice)); 
+			oid curTuples=endSlice-startSlice;
 			
-			for(i=startSlice;i<endSlice;i++){
-				*rt=*st;
-				rt++;	
-				st++;
-			}
+			memcpy(rt,st,curTuples*sizeof(@1));
+			rt+=curTuples;
+
 			for(i=startSlice;i<endSlice;i++){
 				*rh=i;
 				rh++;
 			}
+
 			br=BATmirror(br);
 			GDKqsort(Hloc(br,BUNfirst(br)+startSlice), Tloc(br,BUNfirst(br)+startSlice), (br->hheap)?br->H->vheap->base:NULL, endSlice-startSlice, Hsize(br), Tsize(br), br->htype);
 			br=BATmirror(br);
@@ -979,12 +1112,12 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 
 @= SortMergeOperations
 static str
-SelectSortMergeBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){	
+SelectSortMergeBounds_@1(int *vid, int *bid, @1 *plow, @1 *phgh, bit *inclusiveLow, bit *inclusiveHgh, int *mode, bit *rounding){	
 	@:RangeSelectBody(@1,@2,@3,@4,)@
 }
 
 str
-CRKPartitionedSort_@1(int *vid, int *bid){	
+CRKPartitionedSort_@1(int *vid, int *bid, int *mode){	
 	@:SortBody(@1,@2,@3,@4,)@
 }
 

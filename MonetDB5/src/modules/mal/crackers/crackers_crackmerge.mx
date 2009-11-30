@@ -104,6 +104,24 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 }
 @
 
+@= crkThreeTreeCopy
+        /*printf("crack in three pieces\n");*/
+	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
+		CRKcrackUnorderedThreeCopy_LE_RE_@1(slice,*low,*hgh, @2, @3, &vl, &vh,b);
+	if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE)
+		CRKcrackUnorderedThreeCopy_LE_RO_@1(slice,*low,*hgh, @2, @3, &vl, &vh,b);
+	if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE)
+		CRKcrackUnorderedThreeCopy_LO_RE_@1(slice,*low,*hgh, @2, @3, &vl, &vh,b);
+	if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
+		CRKcrackUnorderedThreeCopy_LO_RO_@1(slice,*low,*hgh, @2, @3, &vl, &vh,b);
+				
+	/*if (vl != -1 && vh != -1){*/
+		if (vl>0) _vl=vl-1; else _vl=vl;		
+		addCrackerIndex_@1(mslice,low,*inclusiveLow,_vl,c);
+		addCrackerIndex_@1(mslice,hgh,HBound,vh,c);
+	
+@
+
 @= crkThreeTree
         /*printf("crack in three pieces\n");*/
 	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
@@ -202,13 +220,13 @@ createView:
 		br=BATnew(TYPE_oid, bo->ttype,BATcount(bo));
 		BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 		BATsetcount(br,BATcount(bo));
+		br->batRestricted= BAT_READ;
 
 		m = newCrackerIndex_@1(*bid,br->batCacheid);
 
 		/*slicing*/
 		/*This is assuming 4 byte ints + 8 byte oids per value and a cache of 4MB*/
 		sliceSize=300000;
-		sliceSize=10;
 
 		current=NULL;
 		startSlice=0;
@@ -219,17 +237,14 @@ createView:
 			struct sortMergeNode *smNode;
 			BAT *slice;
 			slice=BATslice(bo, startSlice, endSlice);
-			b = BATcopy(slice, bo->htype, bo->ttype, TRUE);
-			if ( bo->htype == TYPE_void)
-				b = BATmaterializeh(b);
+			b = BATnew(TYPE_oid, bo->ttype,BATcount(slice));
 			b->hsorted = FALSE;
 			b->tsorted = FALSE;
 			b->hdense = FALSE;
 			b->tdense = FALSE;
 			BATkey(BATmirror(b),FALSE);
 			BATmode(b,PERSISTENT);
-			b->batRestricted= BAT_WRITE;
-			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+			b->batRestricted= BAT_READ;
 
 			mslice = newCrackerIndexSlice_@1(b->batCacheid,b->batCacheid,1000);
 
@@ -238,7 +253,7 @@ createView:
 
 			posl = BUNfirst(b);
 			posh = BUNlast(b)-1;
-			@:crkThreeTree(@1,posl,posh,b,c,mslice)@
+			@:crkThreeTreeCopy(@1,posl,posh)@
 
 			smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
 			smNode->batId=b->batCacheid;

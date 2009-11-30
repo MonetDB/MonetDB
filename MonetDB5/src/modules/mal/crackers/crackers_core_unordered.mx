@@ -115,6 +115,7 @@ str CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, oid first, oid last, oid *pos
 @= crackInThreeUnorderedPieces_decl
 str CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh);
 str CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh);
+str CRKcrackUnorderedThreeCopy_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh, BAT *bc);
 @
 
 @= operationsSideways
@@ -570,6 +571,144 @@ CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, o
 
 	return MAL_SUCCEED;
 }
+
+str
+CRKcrackUnorderedThreeCopy_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh, BAT *bc){
+
+        @1  *ft, *lt, *tmax, *t0;
+	oid fh, lh, hmax; /*hold actual  oid values in this version*/
+	BUN firstBUN;
+
+        @1  *ft2, *lt2, *tmax2; 
+	oid *fh2, *lh2, *hmax2;
+	BUN firstBUN2;
+
+        oid hdummy;
+        @1 tdummy;
+	
+
+        /* set bounds for the iterator */
+	firstBUN = BUNfirst(b);
+        t0   = (@1*)Tloc(b, firstBUN);
+        ft   = (@1*)Tloc(b, firstBUN + first);
+        tmax = (@1 *)Tloc(b, firstBUN + last);
+        fh   = first;
+        hmax = last;
+
+	firstBUN2 = BUNfirst(bc);
+        ft2   = (@1*)Tloc(bc, firstBUN2 + first);
+        tmax2 = (@1 *)Tloc(bc, firstBUN2 + last);
+        fh2   = (oid*)Hloc(bc, firstBUN2 + first);
+        hmax2 = (oid*)Hloc(bc, firstBUN2 + last);
+	
+        while( @8_@7(tmax, &hgh,@9@1) && tmax>ft){
+		*tmax2=*tmax;
+		*hmax2=hmax;
+                tmax--;hmax--;
+                tmax2--;hmax2--;
+	}
+
+	if (tmax == ft){
+		if (@8_@7(tmax, &hgh,@9@1)){ /*left and middle are empty*/
+			*posl =  1;
+			*posh = -1;
+		}
+		else if (@8_@5(tmax, &low,@9@1))  /*result is one bun*/
+			*posl = *posh = (oid) (tmax-t0);
+		else{
+			*posl = (oid) (tmax-t0) - 1; 
+			*posh = (oid) (tmax-t0); 
+		}
+		return MAL_SUCCEED;
+	}
+
+        lt  = tmax;  lh  = hmax;
+        lt2 = tmax2; lh2 = hmax2;
+        while( @8_@5(lt, &low,@9@1) && lt>ft){
+                /* move all high values into their final place */
+                if( @8_@7(lt, &hgh,@9@1)){
+                        @:shuffle2(@1,lt,tmax,lh,hmax,lt2,tmax2,lh2,hmax2)@
+                        tmax--;hmax--;
+                        tmax2--;hmax2--;
+                }else{
+			*lt2=*lt;
+			*lh2=lh;
+		}	
+                lt--; lh--;
+                lt2--;lh2--;
+        }
+	if (lt == ft){/*left piece is empty*/
+		if (@8_@7(lt, &hgh,@9@1)){
+			@:shuffle2(@1,lt,tmax,lh,hmax,lt2,tmax2,lh2,hmax2)@
+			*posl = (oid) (lt-t0);
+		}
+		else if (@8_@5(lt, &low,@9@1))
+			*posl = (oid) (lt-t0);
+		else
+			*posl = (oid) (lt-t0) + 1;
+		*posh = (oid) (tmax-t0);
+		return MAL_SUCCEED;
+	}
+        /* lt point to the first <=low, all values >hg are beyond tmax */
+
+        /* perform Zero crack first */
+	*ft2=*ft;
+	*fh2=fh;
+        while(ft<=lt) {
+                if (@8_@4(ft2, &low,@9@1)){
+                        ft++; fh++;
+                        ft2++;fh2++;
+			if(ft<=lt){
+				*ft2=*ft;
+				*fh2=fh;
+			}
+		}
+                else {
+			*lt2=*ft2;
+			*lh2=*fh2;
+			*ft2=*lt;
+			*fh2=lh;
+                        if(@8_@5(lt2, &low,@9@1) && lt>ft){
+                                if(@8_@7(lt2, &hgh,@9@1) ){
+					@:shuffle(@1,lt2,tmax2,lh2,hmax2)@
+                                        tmax--; hmax--;
+                                        tmax2--;hmax2--;
+                                }
+                                lt--; lh--;
+                                lt2--;lh2--;
+                        }
+                        while( @8_@5(lt, &low,@9@1) && lt>ft){
+                                if(@8_@7(lt, &hgh,@9@1) ){
+					*lt2=*tmax2;
+					*lh2=*hmax2;
+					*tmax2=*lt;
+					*hmax2=lh;
+                                        tmax--; hmax--;
+                                        tmax2--;hmax2--;
+                                }else{
+					*lt2=*lt;
+					*lh2=lh;
+				}
+                                lt--; lh--;
+                                lt2--;lh2--;
+                        }
+                }
+        }
+	if (ft ==  (@1*)Tloc(bc, firstBUN +last+1)){ /*right and middle are empty*/
+		*posl = -1;
+		*posh = -1;
+		return MAL_SUCCEED;
+	}	
+	if (tmax == lt){ /*then middle piece is empty*/
+		*posl = (oid) (lt - t0) + 1;
+		*posh = (oid) (tmax - t0);
+		return MAL_SUCCEED;
+	}
+	*posl = (oid) (ft - t0);
+	*posh = (oid) (tmax - t0);
+
+	return MAL_SUCCEED;
+}
 @
 
 
@@ -583,6 +722,14 @@ CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, o
         hdummy = *@4;
         *@4 = *@5;
         *@5 = hdummy;
+@
+
+@= shuffle2
+        *@7 = *@2;
+        *@6 = *@3;
+
+        *@9 = @4;
+        *@8 = @5;
 @
 
 @= shuffleSideways

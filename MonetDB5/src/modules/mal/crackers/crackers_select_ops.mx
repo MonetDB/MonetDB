@@ -263,6 +263,24 @@ CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
 	
 @
 
+@= crkThreeTreeCopy
+        /*printf("crack in three pieces\n");*/
+	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
+		CRKcrackUnorderedThreeCopy_LE_RE_@1(bo,*low,*hgh, @2, @3, &vl, &vh,b);
+	if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE)
+		CRKcrackUnorderedThreeCopy_LE_RO_@1(bo,*low,*hgh, @2, @3, &vl, &vh,b);
+	if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE)
+		CRKcrackUnorderedThreeCopy_LO_RE_@1(bo,*low,*hgh, @2, @3, &vl, &vh,b);
+	if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
+		CRKcrackUnorderedThreeCopy_LO_RO_@1(bo,*low,*hgh, @2, @3, &vl, &vh,b);
+				
+	/*if (vl != -1 && vh != -1){*/
+		if (vl>0) _vl=vl-1; else _vl=vl;		
+		addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
+		addCrackerIndex_@1(m,hgh,HBound,vh,c);
+	
+@
+
 @= crkTwoLTree
 	/*CRACK in two pieces cl1-ch1 using >incLow bound*/
 	if (*inclusiveLow == TRUE)
@@ -334,6 +352,7 @@ createView:
 	bit rippledDeletions = FALSE;
 	struct Node *lowNode=NULL, *hghNode=NULL, *lowNodeNext=NULL, *temp;
 	BUN idxFirst;
+	bit copy=TRUE;
 	
 	if (@2_GT(low,hgh,@3@1))
 		throw(MAL, "crackers.crack", "illegal range");
@@ -347,37 +366,71 @@ createView:
 		we have to create the crack index for it and
 	   if necessary materialize the head of the bat */
 	if (m == -1){
-		if ((bo = BATdescriptor(*bid)) == NULL)
-			throw(MAL, "crackers.crackRange", "Cannot access descriptor");
-		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
-		if ( bo->htype == TYPE_void)
-			b = BATmaterializeh(b);
-		b->hsorted = FALSE;
-		b->tsorted = FALSE;
-		b->hdense = FALSE;
-		b->tdense = FALSE;
-		/*BATkey(b,TRUE);*/
-		BATkey(BATmirror(b),FALSE);
-		b->batRestricted= BAT_READ;
-		BATmode(b,PERSISTENT);
-		bo->batRestricted= BAT_READ;
+		if (copy){
+			if ((bo = BATdescriptor(*bid)) == NULL)
+				throw(MAL, "crackers.crackRange", "Cannot access descriptor");
+			b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
+			if ( bo->htype == TYPE_void)
+				b = BATmaterializeh(b);
+			b->hsorted = FALSE;
+			b->tsorted = FALSE;
+			b->hdense = FALSE;
+			b->tdense = FALSE;
+			/*BATkey(b,TRUE);*/
+			BATkey(BATmirror(b),FALSE);
+			b->batRestricted= BAT_READ;
+			BATmode(b,PERSISTENT);
+			bo->batRestricted= BAT_READ;
 
-		m = newCrackerIndex_@1(*bid,b->batCacheid);
+			m = newCrackerIndex_@1(*bid,b->batCacheid);
 
-		if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
-			throw(MAL, "crackers.crackRange", "Cannot access crack index");
+			if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+				throw(MAL, "crackers.crackRange", "Cannot access crack index");
 
-		/* Since the index is empty we know we have to crack
-		   anyway so crack in three pieces cl-ch */
-		posl = BUNfirst(b);
-		posh = BUNlast(b)-1;
+			/* Since the index is empty we know we have to crack
+			   anyway so crack in three pieces cl-ch */
+			posl = BUNfirst(b);
+			posh = BUNlast(b)-1;
 
-		/*printf(" "LLFMT" \n ",posh-posl);*/
-		@:crkThreeTree@5(@1,posl,posh,@5)@
-		
-		BBPincref(b->batCacheid,TRUE);
-		BBPunfix(bo->batCacheid);
-		goto createView;
+			/*printf(" "LLFMT" \n ",posh-posl);*/
+			@:crkThreeTree@5(@1,posl,posh,@5)@
+			
+			BBPincref(b->batCacheid,TRUE);
+			BBPunfix(bo->batCacheid);
+			goto createView;
+		}
+		else{
+			if ((bo = BATdescriptor(*bid)) == NULL)
+				throw(MAL, "crackers.crackRange", "Cannot access descriptor");
+
+			b=BATnew(TYPE_oid, bo->ttype,BATcount(bo));
+			b->hsorted = FALSE;
+			b->tsorted = FALSE;
+			b->hdense = FALSE;
+			b->tdense = FALSE;
+			BATkey(BATmirror(b),FALSE);
+			b->batRestricted= BAT_READ;
+			BATmode(b,PERSISTENT);
+			BATsetcount(b,BATcount(bo));
+			bo->batRestricted= BAT_READ;
+
+			m = newCrackerIndex_@1(*bid,b->batCacheid);
+
+			if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+				throw(MAL, "crackers.crackRange", "Cannot access crack index");
+
+			/* Since the index is empty we know we have to crack
+			   anyway so crack in three pieces cl-ch */
+			posl = BUNfirst(b);
+			posh = BUNlast(b)-1;
+
+			/*printf(" "LLFMT" \n ",posh-posl);*/
+			@:crkThreeTreeCopy(@1,posl,posh,@5)@
+			
+			BBPincref(b->batCacheid,TRUE);
+			BBPunfix(bo->batCacheid);
+			goto createView;
+		}
 	}
 	
 	/* If an index exists for this bat (so it has been cracked before)

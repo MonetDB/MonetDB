@@ -230,7 +230,7 @@ address CRKselectBounds2_@2
 comment "Similar to select but always make sure that we do not create a large piece 
 	 i.e., bigger than half the size of the cracked piece";
 
-command selectsm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:oid,:@2]
+command selectsm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit, mode:int, rounding:bit):bat[:oid,:@2]
 address CRKselectSortMerge_@2
 comment "Slice and sort for the first query. Incrementally merge slices for the next ones.";
 
@@ -238,7 +238,7 @@ command selectcm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:oid,:@2]
 address CRKselectCrackMerge_@2
 comment "Slice and crack for the first query. Incrementally crack+merge slices for the next ones.";
 
-command extsort(b:bat[:oid,:@2]):bat[:oid,:@2]
+command extsort(b:bat[:oid,:@2], mode:int):bat[:oid,:@2]
 address CRKPartitionedSort_@2
 comment "Slice and sort";
 @
