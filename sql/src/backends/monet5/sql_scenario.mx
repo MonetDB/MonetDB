@@ -614,7 +614,7 @@ We don;t search the cache for a previous incarnation yet.
 		stmt *s = sql_symbol2stmt(m, m->sym);
 
 		MSinitClientPrg(c,"user",nme); 
-		if (!s && (err = mvc_status(m))) {
+		if (s==0 || (err = mvc_status(m))) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);

@@ -19,7 +19,7 @@
 
   25 Sep 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Implemented global -q option to monetdb to suppress status messages when
-  performing commands
+  performing commands, Feature Request #2855846.
 
   25 Sep 2009; Fabian Groffen <fabian@cwi.nl> glob.c:
   Improved globbing to support escapes, such that the literal asterisk symbol
