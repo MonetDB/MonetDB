@@ -429,7 +429,6 @@ BUN
 SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow)
 {
 	char *s, *e, *end;
-	char q = 0;					/* remember quote status */
 	BUN cnt = 0;
 	int res = 0;				/* < 0: error, > 0: success, == 0: continue processing */
 	int j;
@@ -439,7 +438,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	READERtask ptask[16];
 	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
 	lng lio =0,  tio, t1 = 0, total=0, iototal=0;
-	int askmore = 0;
 	int vmtrim = GDK_vm_trim; 
 
 	/* trimming process should not be active during this process. */
@@ -538,7 +536,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		   separator).  If this is too costly, we have to
 		   rethink the matter. */
 		e = s;
-		q = 0;
 		while (s < end && (maxrow < 0 || cnt < (BUN) maxrow) ) {
 			/* alloc more space in the task buffer */
 			if ( task->next == task->limit ){
@@ -630,7 +627,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				task->b->pos = (size_t) (s - task->input);
 			} else {
 				/* no (unquoted) record separator found, read more data */
-				askmore = 1;
 				break;
 			}
 		}
@@ -682,7 +678,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		stream_printf(GDKout,"shuffle %d:%s\n",(int) strlen(s), s);
 #endif
 		tio = GDKusec();
-		askmore = 0;
 		tio = t1 - tio;
 
 		if ( res == 0  && task->next ){
