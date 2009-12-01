@@ -100,8 +100,7 @@ use a translation table where needed.
 #define BOX_CLOSED "Box is not open"
 
 #define SABAOTH_NOT_INITIALIZED "Sabaoth not initialized"
-#define SABAOTH_USE_RESTRICTION "Cannot use it when no database is active"
-#define SABAOTH_SEARCH_FAILED "Could not find a database for "
+#define SABAOTH_USE_RESTRICTION "Sabaoth was not initialized as active database"
 
 #define SCENARIO_NOT_FOUND "Scenario not initialized"
 
