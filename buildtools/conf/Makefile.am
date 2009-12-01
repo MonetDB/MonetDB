@@ -18,7 +18,7 @@
 ## Please run automake on this file to produce a Makefile.in
 
 dist_pkgdata_DATA = rules.mk MonetDB.m4
-dist_bin_SCRIPTS = Mdebootstrap Mbootstrap buildtools-config
+dist_bin_SCRIPTS = Mdebootstrap Mbootstrap buildtools-config mchangelog
 
 MonetDB-release-1.0.tar.gz: MonetDB-release.spec MonetDB-release-1.0/monetdb.repo MonetDB-release-1.0/MonetDB-GPG-KEY
 	tar czf MonetDB-release-1.0.tar.gz -C $(srcdir) MonetDB-release.spec MonetDB-release-1.0/monetdb.repo MonetDB-release-1.0/MonetDB-GPG-KEY

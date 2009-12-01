@@ -1,0 +1,213 @@
+#!/usr/bin/env perl
+#
+# shameless echangelog rip from Gentoo with modifications for MonetDB
+#
+# echangelog: Update the ChangeLog for an ebuild.  For example:
+#
+#   $ echangelog 'Add ~alpha to KEYWORDS'
+#   4a5,7
+#   >   10 Feb 2003; Aron Griffis <agriffis@gentoo.org> oaf-0.6.8-r1.ebuild :
+#   >   Add ~alpha to KEYWORDS
+#   >
+
+use strict;
+use POSIX qw(strftime getcwd setlocale);
+
+# Fix bug 21022 by restricting to C locale
+setlocale(&POSIX::LC_ALL, "C");
+
+use Text::Wrap;
+$Text::Wrap::columns = 77;
+$Text::Wrap::unexpand = 0;
+
+# Global variables
+my (@files, @ebuilds, @conflicts, @trivial, @unknown, %actions);
+my ($input, $editor, $entry, $user, $date, $text, $version, $year);
+
+my $ChangeLog = 'ChangeLog';
+if (-f 'CVS/Tag') {
+    open I, '<CVS/Tag' or die "Can't open CVS/Tag for input: $!\n";
+    { local $/ = undef; $text = <I>; }
+    close I;
+    $text =~ s/^T//;
+    $text =~ s/\s+$//;
+    $ChangeLog .= '.'.$text;
+}
+# Read the current ChangeLog
+if (-f $ChangeLog) {
+    open I, '<'.$ChangeLog or die "Can't open $ChangeLog for input: $!\n";
+    { local $/ = undef; $text = <I>; }
+    close I;
+} else {
+    die "please copy a $ChangeLog skeleton file\n";
+}
+
+# Figure out what has changed around here
+if (-d 'CVS') {
+    open C, 'cvs -fn up 2>&1 |' or die "Can't run cvs -fn up: $!\n";
+    while (<C>) {
+        if (/^C (\S+)/) {
+            push @conflicts, $1; 
+            next;
+        } elsif (/^\? (\S+)/) {
+            push @unknown, $1;
+            $actions{$1} = '+';
+            next;
+        } elsif (/^([ARM]) (\S+)/) {
+            push @files, $2;
+            ($actions{$2} = $1) =~ tr/ARM/+-/d;
+        }
+    }
+} elsif (-d '.svn') {
+    open C, 'svn status 2>&1 |' or die "Can't run svn status: $!\n";
+    while (<C>) {
+        if (/^ ?C +(\S+)/) {
+            push @conflicts, $1; 
+            next;
+        } elsif (/^\? +(\S+)/) {
+            push @unknown, $1;
+            $actions{$1} = '+';
+            next;
+        } elsif (/^([ADRM])[ \+]+(\S+)/) {
+            push @files, $2;
+            ($actions{$2} = $1) =~ tr/ADRM/+-/d;
+        }
+    }
+}
+
+# Separate out the trivial files for now
+@files = grep { 
+    !/files.digest|Manifest|ChangeLog.*/ or do { push @trivial, $_; 0; }
+} @files;
+@unknown = grep { 
+    !/files.digest|Manifest|ChangeLog.*/ or do { push @trivial, $_; 0; }
+} @unknown;
+
+# Don't allow any conflicts
+if (@conflicts) {
+    print STDERR <<EOT;
+Cvs reports the following conflicts.  Please resolve them before
+running echangelog.
+EOT
+    print STDERR map "C $_\n", @conflicts;
+    exit 1;
+}
+
+# Don't allow unknown files (other than the trivial files that were separated
+# out above)
+if (@unknown) {
+    print STDERR <<EOT;
+cvs/svn reports the following unknown files.  Please review and use
+"cvs/svn add" when these files should be committed before running
+mchangelog.
+EOT
+    print STDERR map "? $_\n", @unknown;
+}
+
+close C;
+
+# Check if we have any files left, otherwise re-insert ebuild list
+# (of course, both might be empty anyway)
+@files = @ebuilds unless (@files);
+
+# Allow ChangeLog entries with no changed files, but give a fat warning
+unless (@files) {
+    print STDERR "**\n";
+    print STDERR "** NOTE: No non-trivial changed files found.  Normally mchangelog\n";
+    print STDERR "** should be run after all affected files have been added and/or\n";
+    print STDERR "** modified.  Did you forget to cvs/svn add?\n";
+    print STDERR "**\n";
+    @files = sort sortfunc @trivial;
+    @files = qw/ChangeLog.*/ unless @files;  # last resort to put something in the list
+}
+
+# Get the input from the cmdline, editor or stdin
+if ($ARGV[0]) {
+    $input = "@ARGV";
+} else {
+    # Testing for defined() allows ECHANGELOG_EDITOR='' to cancel EDITOR
+    $editor = defined($ENV{'ECHANGELOG_EDITOR'}) ? $ENV{'ECHANGELOG_EDITOR'} :
+        $ENV{'EDITOR'} || undef;
+    if ($editor) {
+        system("$editor ChangeLog.new");
+        if ($? != 0) {
+            # This usually happens when the editor got forcefully killed; and
+            # the terminal is probably messed up: so we reset things.
+            system('/usr/bin/stty sane');
+            print STDERR "Editor died!  Reverting to stdin method.\n";
+            undef $editor;
+        } else {
+            if (open I, "<ChangeLog.new") {
+                local $/ = undef;
+                $input = <I>;
+                close I;
+            } else {
+                print STDERR "Error opening ChangeLog.new: $!\n";
+                print STDERR "Reverting to stdin method.\n";
+                undef $editor;
+            }
+            unlink 'ChangeLog.new';
+        }
+    }
+    unless ($editor) {
+        print "Please type the log entry: use Ctrl-d to finish, Ctrl-c to abort...\n";
+        local $/ = undef;
+        $input = <>;
+    }
+}
+die "Empty entry; aborting\n" unless $input =~ /\S/;
+
+# If there are any long lines, then wrap the input at $columns chars
+# (leaving 2 chars on left, one char on right, after adding indentation below).
+$input =~ s/^\s*(.*?)\s*\z/$1/s;  # trim whitespace
+$input = Text::Wrap::fill('', '', $input) if ($input =~ /^.{80}/m);
+$input =~ s/^/  /gm;        # add indentation
+
+# Prepend the user info to the input
+unless ($user = $ENV{'MCHANGELOG_USER'}) {
+    my ($fullname, $username) = (getpwuid($<))[6,0];
+    $fullname =~ s/,.*//;       # remove GECOS, bug 80011
+    $user = sprintf "%s <%s\@cwi.nl>", $fullname, $username;
+}
+# Make sure that we didn't get "root"
+die "Please set MCHANGELOG_USER or run as non-root\n" if $user =~ /<root@/;
+$date = strftime("%d %b %Y", gmtime);
+$entry = "$date; $user ";
+$entry .= join ', ', map "$actions{$_}$_", @files;
+$entry .= ':';
+$entry = Text::Wrap::fill('  ', '  ', $entry);  # does not append a \n
+$entry .= "\n$input";                           # append user input
+
+# Each one of these regular expressions will eat the whitespace
+# leading up to the next entry (except the two-space leader on the
+# front of a dated entry), so it needs to be replaced with a
+# double carriage-return.  This helps to normalize the spacing in
+# the ChangeLogs.
+$text =~ s/^( .*? )               # grab header
+           \s*\n(?=\ \ \d|\*|\z)  # suck up trailing whitespace
+/$1\n\n$entry\n\n/sx
+    or die "Failed to insert new entry (3)\n";
+
+# Write the new ChangeLog
+open O, '>ChangeLog.new' or die "Can't open ChangeLog.new for output: $!\n";
+print O $text            or die "Can't write ChangeLog.new: $!\n";
+close O                  or die "Can't close ChangeLog.new: $!\n";
+
+# Move things around and show the ChangeLog diff
+system 'diff -Nu '.$ChangeLog.' ChangeLog.new';
+rename 'ChangeLog.new', $ChangeLog or die "Can't rename ChangeLog.new: $!\n";
+
+# Okay, now we have a starter ChangeLog to work with.
+# The text will be added just like with any other ChangeLog below.  
+# Add the new ChangeLog to cvs/svn before continuing.
+if (-d 'CVS') {
+    if (open F, "CVS/Entries") {
+        system("cvs -f add $ChangeLog") unless (scalar grep /^\/$ChangeLog\//, <F>);
+    }
+} elsif (-d '.svn') {
+    if (open F, ".svn/entries") {
+        system("svn add $ChangeLog") unless (scalar grep /^$ChangeLog$/, <F>);
+    }
+}
+
+# vim:sw=4 ts=8 expandtab

@@ -152,7 +152,7 @@ Strndup(const char *src, size_t n)
 Tok *
 solveCond(Tok * t)
 {
-	char *arg[2];
+	char *arg[2] = {0, 0};
 	int inside = 0;
 	int ok = 1;
 	int cmp = 0;
