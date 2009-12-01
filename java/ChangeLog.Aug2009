@@ -1,6 +1,8 @@
 # ChangeLog file for java
 # This file is updated with mchangelog
 
+*Aug2009-SP2
+
   12 Oct 2009; Wouter Alink <w.alink@cwi.nl>  release.txt, NT/rules.msc,
   Makefile.ag, build.properties:
   Bump MCL version to 1.6 for fix.
