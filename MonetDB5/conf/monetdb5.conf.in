@@ -286,5 +286,5 @@ octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,
 mitosis_pipe=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 #
 #The default + datacyclotron
-datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
+datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
 #
