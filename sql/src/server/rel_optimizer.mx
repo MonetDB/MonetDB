@@ -2037,11 +2037,11 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 					if (je->card >= CARD_ATOM && je->type == e_cmp && je->flag != cmp_or) {
 						/* expect right expression to match */
 						sql_exp *r = je->r;
-						if (r->type != e_column)
+						if (r == 0 || r->type != e_column)
 							continue;
-						if (r && r->l && rname && strcmp(r->l, rname) == 0 && strcmp(r->r,gbe->name)==0) {
+						if (r->l && rname && strcmp(r->l, rname) == 0 && strcmp(r->r,gbe->name)==0) {
 							fnd = 1;
-						} else if (r && !r->l && !rname  && strcmp(r->r,gbe->name)==0) {
+						} else if (!r->l && !rname  && strcmp(r->r,gbe->name)==0) {
 							fnd = 1;
 						}
 						if (fnd) {
