@@ -37,9 +37,6 @@ calls to these functions.
 	(void) tl;
 	(void) th;
 	(void) oid_ctr;
-@= seqscanEpilogue
-	if (!bn->batDirty)
-		bn->batDirty = TRUE;
 	
 	/* Just to silence compilers (Intel's icc) that otherwise might
 	 * complain about "declared but never referenced" labels
@@ -49,6 +46,9 @@ calls to these functions.
 	 */
 	if (!bn)
 		goto bunins_failed;
+@= seqscanEpilogue
+	if (!bn->batDirty)
+		bn->batDirty = TRUE;
 	return bn;
 
 bunins_failed:
