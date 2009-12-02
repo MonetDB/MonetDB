@@ -479,9 +479,7 @@ create_type(mvc *sql, dlist *qname, char *impl)
 	char *tname = qname_table(qname);
 
 	if (!mvc_create_type(sql, sql->session->schema, tname, 0, 0, 0, impl)) {
-		if (impl)
-			return sql_error(sql, 02, "CREATE TYPE: unknown external type '%s'", impl);
-		return NULL;
+		return sql_error(sql, 02, "CREATE TYPE: unknown external type '%s'", impl);
 	}
 	return stmt_none();
 }
