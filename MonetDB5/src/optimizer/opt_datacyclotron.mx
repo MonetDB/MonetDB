@@ -191,6 +191,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
 	char newArg[mb->vtop][1000];
 	char *oldArg= (char*) GDKzalloc(mb->vtop *sizeof(char));
+	int *tpes= (int*) GDKzalloc(mb->vtop *sizeof(int));
 
 	if ( (used == NULL) && (newArg == NULL))
 		return 0;
@@ -218,6 +219,8 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			if (regs[getArg(p,0)]) {
 				int tpe = TYPE_int;
 				reg = regs[getArg(p,0)];
+				tpes[getArg(p,0)] = getArgType(mb,p,0);
+
 #ifndef BIND_DATACYCLOTRON_OPT
 				tpe = getArgType(mb,p,0);
 
@@ -270,7 +273,6 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			actions++;
 		} else { 
 #ifdef BIND_DATACYCLOTRON_OPT
-			int tpe = 0;
 			for (j = p->retc; j<p->argc; j++) 
 				if ( used[j] == 1 ) {
 					used[j] = 2;
@@ -286,8 +288,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 						setModuleId(new,datacyclotronRef);
 						setFunctionId(new,pinRef);
 
-						tpe = getArgType(mb,p,j);
-						getArg(new,0) = newTmpVariable(mb, tpe);
+						getArg(new,0) = newTmpVariable(mb, tpes[j]);
 
 						pushArgument(mb,new,newArg[j][k]);
 						pushInstruction(mb,new);
