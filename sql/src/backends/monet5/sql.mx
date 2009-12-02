@@ -2498,8 +2498,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKstrFromStr(tsep=GDKmalloc(len+1), *T, len); len = 0;
 	len = strlen((char*)(*R));
 	GDKstrFromStr(rsep=GDKmalloc(len+1), *R, len); len = 0;
-	len = strlen((char*)(*S));
 	if (*S && strcmp(str_nil,*(char**)S)) {
+		len = strlen((char*)(*S));
 		GDKstrFromStr(ssep=GDKmalloc(len+1), *S, len); 
 		len = 0;
 	}
