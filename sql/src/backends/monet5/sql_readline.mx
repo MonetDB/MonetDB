@@ -193,6 +193,7 @@ SQLreadConsole(Client cntxt){
 		} 
 		strcpy(cntxt->fdin->buf, buf);
 		cntxt->fdin->pos = 0;
+		free(buf);
 		return 1;
 	} else {
 		cntxt->fdin->eof = 1;
