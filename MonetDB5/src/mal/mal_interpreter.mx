@@ -371,7 +371,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	stream_printf(cntxt->fdout,"callMAL\n");
 	printInstruction(cntxt->fdout,mb,pci,LIST_MAL_ALL);
 #endif
-	@:beginProfile(stk)@
 	switch( pci->token){
 	case FUNCTIONsymbol:
 	case FCNcall:
