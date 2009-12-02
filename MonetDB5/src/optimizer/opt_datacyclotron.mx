@@ -28,6 +28,7 @@ address OPTdatacyclotron
 comment "Datacyclotron code injection";
 
 @-
+
 The number of overloaded instructions is kept to a minimum.
 @h
 #ifndef _OPT_DATACYCLOTRON_
@@ -38,7 +39,7 @@ The number of overloaded instructions is kept to a minimum.
 #include "mal_interpreter.h"
 
 /* #define DEBUG_DATACYCLOTRON_OPT */
-/* #define BIND_DATACYCLOTRON_OPT */
+#define BIND_DATACYCLOTRON_OPT 
 
 #define SCHEMA_LENG     32 
 #define TABLE_LENG      32 
@@ -181,28 +182,25 @@ static int
 OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, actions=0, k = 0, z= 0;
-	DCYcatalog *reg;
+	DCYcatalog *regs[mb->vtop], *reg = NULL;
 	VarRecord low,hgh;
 	InstrPtr *old, new, matq;
-	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
 	int limit;
-#ifdef BIND_DATAFLOW_OPT
-	InstrPtr q;
+#ifdef BIND_DATACYCLOTRON_OPT
 	int j;
+	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
+	char newArg[mb->vtop][1000];
+	char *oldArg= (char*) GDKzalloc(mb->vtop *sizeof(char));
+
+	if ( (used == NULL) && (newArg == NULL))
+		return 0;
 #endif
 	(void) stk;
-
-	if ( used == NULL)
-		return 0;
 	(void) cntxt;
-	if ( used == NULL)
-		return 0;
+
 	limit= mb->stop;
 	old = mb->stmt;
-	if ( newMalBlkStmt(mb, mb->ssize) < 0){
-		GDKfree(used);
-		return 0;
-	}
+	newMalBlkStmt(mb, mb->ssize);
 	pushInstruction(mb,old[0]);
 
 	for (i = 1; i<limit; i++) {
@@ -215,21 +213,25 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			str col      = getVarConstant(mb, getArg(p,3)).val.sval;
 			int acc      = getVarConstant(mb, getArg(p,4)).val.ival;
 
-			reg = findRegist(sch, tab, col, acc);
+			regs[getArg(p,0)] = findRegist(sch, tab, col, acc);
 
-			if (reg) {
-				int tpe = getArgType(mb,p,0);
+			if (regs[getArg(p,0)]) {
+				int tpe = TYPE_int;
+				reg = regs[getArg(p,0)];
+#ifndef BIND_DATACYCLOTRON_OPT
+				tpe = getArgType(mb,p,0);
 
 				matq= newInstruction(NULL,ASSIGNsymbol);
 				setModuleId(matq,matRef);
 				setFunctionId(matq,newRef);
 				getArg(matq,0)= getArg(p,0);
 				hgh.value.vtype= low.value.vtype= TYPE_oid;
+#endif
 
 				for (k = 0; k < reg->partitions; k++ ) {
 					new = newInstruction(NULL,ASSIGNsymbol);
 					setModuleId(new,datacyclotronRef);
-#ifdef BIND_DATAFLOW_OPT
+#ifdef BIND_DATACYCLOTRON_OPT
 					setFunctionId(new,bindRef);
 #else
 					setFunctionId(new,copyRef);
@@ -244,7 +246,13 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					new = pushInt(mb,new,reg->f_bun[k]);
 					new = pushInt(mb,new,reg->l_bun[k]);
 					pushInstruction(mb,new);
+#ifdef BIND_DATACYCLOTRON_OPT
+					used[getArg(p,0)] = 1;
+					newArg[getArg(p,0)][k] = getArg(new,0);
+					oldArg[getArg(p,0)] = getArg(p,0);
 
+				}
+#else
 
 					low.value.val.oval= reg->f_bun[k];
 					hgh.value.val.oval= reg->l_bun[k];
@@ -255,26 +263,58 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					matq= pushArgument(mb,matq,z);
 				}
 				pushInstruction(mb,matq);
-				used[getArg(p,0)] = 1;
+#endif
 			} else 
 					pushInstruction(mb,p);
 				
 			actions++;
 		} else { 
-#ifdef BIND_DATAFLOW_OPT
-			for (j = p->retc; j<p->argc; j++)
-				if ( used[getArg(p,j)] == 1 ){
-					used[getArg(p,j)] = 2;
-					q= newStmt(mb,"datacyclotron","pin");
-					pushArgument(mb,q,getArg(p,j));
-					getArg(p,j)= getArg(q,0);
+#ifdef BIND_DATACYCLOTRON_OPT
+			int tpe = 0;
+			for (j = p->retc; j<p->argc; j++) 
+				if ( used[j] == 1 ) {
+					used[j] = 2;
+					reg = regs[j];
+					matq= newInstruction(NULL,ASSIGNsymbol);
+					setModuleId(matq,matRef);
+					setFunctionId(matq,newRef);
+					getArg(matq,0)= oldArg[j];
+					hgh.value.vtype= low.value.vtype= TYPE_oid;
+
+					for (k = 0; k < reg->partitions; k++ ) {
+						new = newInstruction(NULL,ASSIGNsymbol);
+						setModuleId(new,datacyclotronRef);
+						setFunctionId(new,pinRef);
+
+						tpe = getArgType(mb,p,j);
+						getArg(new,0) = newTmpVariable(mb, tpe);
+
+						pushArgument(mb,new,newArg[j][k]);
+						pushInstruction(mb,new);
+						low.value.val.oval= reg->f_bun[k];
+						hgh.value.val.oval= reg->l_bun[k];
+						z = getArg(new, 0);
+
+						varSetProp(mb, z, PropertyIndex("hlb"), op_gte, (ptr) &low.value);
+						varSetProp(mb, z, PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
+						matq= pushArgument(mb,matq,z);
+					}
+					pushInstruction(mb,matq);
 				}
 
 			if (functionExit(p))
-				for (j = 0; j< mb->vtop; j++)
-					if ( used[j] == 2){
-						q= newStmt(mb,"datacyclotron","unpin");
-						pushArgument(mb,q,j);
+				for (j = 0; j< mb->vtop; j++) 
+					if ( used[j] == 2) {
+						reg = regs[j];
+						for (k = 0; k < reg->partitions; k++ ) {
+							new = newInstruction(NULL,ASSIGNsymbol);
+							setModuleId(new,datacyclotronRef);
+							setFunctionId(new,unpinRef);
+
+							getArg(new,0) = newTmpVariable(mb, TYPE_int);
+							pushArgument(mb,new,newArg[j][k]);
+							pushInstruction(mb,new);
+						}
 					}
 #endif
 			pushInstruction(mb,p);
@@ -284,11 +324,65 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	GDKfree(old);
 	return actions;
 }
+
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(datacyclotron)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(datacyclotron,OPT_CHECK_ALL)@
-@}
+@- The DataCyclotron Wrapper
+@h
+opt_export str DCbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
+@c
+str
+DCbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
+	(void) ret;
+	(void) sch;
+	(void) tab;
+	(void) col;
+	(void) kind;
+	(void) part;
+	(void) fbun;
+	(void) lbun;
+	throw(MAL,"datacyclotron.bind",PROGRAM_NYI);
+}
+
+@h
+opt_export str DCpin(int *ret, int *bid);
+@c
+str
+DCpin(int *ret, int *bid){
+	(void) ret;
+	(void) bid;
+	throw(MAL,"datacyclotron.pin",PROGRAM_NYI);
+}
+
+@h
+opt_export str DCunpin(int *ret, int *bid);
+@c
+str
+DCunpin(int *ret, int *bid){
+	(void) ret;
+	(void) bid;
+	throw(MAL,"datacyclotron.unpin",PROGRAM_NYI);
+}
+
+@h
+opt_export str DCcopy(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
+@c
+str
+DCcopy(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
+	(void) ret;
+	(void) sch;
+	(void) tab;
+	(void) col;
+	(void) kind;
+	(void) part;
+	(void) fbun;
+	(void) lbun;
+	throw(MAL,"datacyclotron.copy",PROGRAM_NYI);
+}
+
+@h
+#endif
