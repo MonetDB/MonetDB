@@ -124,10 +124,8 @@ mal_export int monitorRecycler;
 @- Statistics about query patterns
 @h
 typedef struct QRYSTAT {
-	int cidx;
-	time_t clogin;
-	str name;
-	int calls; /* number of calls */
+	lng recid;	/* unique id given by the recycle optimizer */
+	int calls; 	/* number of calls */
 	int greuse; /* number of global reuse */
 	int lreuse; /* number of local reuse in current execution only */
 	int *crd;   /* instructions credits */
@@ -154,7 +152,7 @@ mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 mal_export void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(Client cntxt);
 mal_export int RECYCLEinterest(InstrPtr p);
-mal_export int RECYCLEnewQryStat(Client cntxt, MalBlkPtr mb);
+mal_export int RECYCLEnewQryStat(MalBlkPtr mb);
 mal_export void RECYCLEinitQPat(int sz);
 mal_export bte RECYCLEgetQryCat(int qidx);
 mal_export bit isBindInstr(InstrPtr p);
@@ -332,40 +330,30 @@ static void extendQPat()
 	GDKfree(old);
 }
 
-static int findQryStat(Client c, str nm)
+static int findQryStat(MalBlkPtr mb)
 {
 	int i;
-	QryStatPtr qs;
 
 	if (recycleQPat == NULL)
 		return -1;		
-	for(i = 0; i< recycleQPat->cnt; i++){
-		qs = recycleQPat->ptrn[i]; 
-		if ((qs->cidx != c->idx) || (qs->clogin != c->login))
-			continue;
-		if (strcmp(recycleQPat->ptrn[i]->name, nm) == 0)
+	for(i = 0; i< recycleQPat->cnt; i++)
+		if ( recycleQPat->ptrn[i]->recid == mb->recid)
 			return i;
-	}
 	return -1;
 }
 
-int RECYCLEnewQryStat(Client cntxt, MalBlkPtr mb)
+int RECYCLEnewQryStat(MalBlkPtr mb)
 {
 	int idx, i;
 	QryStatPtr qstat;
-	str nm = getFunctionId(mb->stmt[0]);
-	int totrec = 0;
 
-	/* DML statements are not recycled,
-	 hence no need to keep query statistics for them */
-	for (i=0; i< mb->stop; i++){
-		totrec += mb->stmt[i]->recycle;
-	}
-	if ( totrec == REC_NO_INTEREST )
+	/* no need to keep statistics for statements without instructions 
+	marked for recycling, for instance DML */
+	if ( !mb->recycle )
 		return -1;
 
     /* the pattern exists */
-	if ((idx = findQryStat(cntxt,nm)) >= 0){
+	if ((idx = findQryStat(mb)) >= 0){
         qstat = recycleQPat->ptrn[idx];
 		qstat->calls++;
         if ( qstat->calls > 3 ){
@@ -379,9 +367,7 @@ int RECYCLEnewQryStat(Client cntxt, MalBlkPtr mb)
 	}
     /* add new query pattern */       
 	qstat = (QryStatPtr) GDKzalloc(sizeof(QryStat));
-	qstat->name = GDKstrdup(nm);
-	qstat->cidx = cntxt->idx;
-	qstat->clogin = cntxt->login;
+	qstat->recid = mb->recid;
 	qstat->calls = 1;
 	qstat->stop = mb->stop;
 	qstat->crd = (int *) GDKzalloc(sizeof(int)* qstat->stop);
@@ -415,7 +401,6 @@ static void freeQPat(QryPatPtr q)
 
     for( i = 0; i < q->cnt; i++){
         qstat = q->ptrn[i];
-        GDKfree(qstat->name);
         GDKfree(qstat->crd);
         GDKfree(qstat);
     }    
@@ -891,7 +876,7 @@ Likewise, we avoid all simple constant assigments.
 @c
 int
 RECYCLEinterest(InstrPtr p){
-	if (p->recycle == REC_NO_INTEREST || p->token== ASSIGNsymbol ) 
+	if (p->recycle <= REC_NO_INTEREST || p->token== ASSIGNsymbol ) 
 		return 0;
 	return getFunctionId(p) != NULL;
 }
@@ -1090,10 +1075,18 @@ compare by value.
 	stream_printf(cntxt->fdout,"RECYCLE kept ");
 	printInstruction( cntxt->fdout,recycleBlk, 0, q,LIST_MAL_ALL);
 #endif
-	/*if (p->recycle > REC_MIN_INTEREST)
-		p->recycle--; */
-	InstrCrd(mb,p)--;
+
+/*	InstrCrd(mb,p)--; */
+
 	i = getPC(mb,p);
+	if ( cntxt->rcc->curQ >=0 ) {
+		QryStatPtr qsp = recycleQPat->ptrn[cntxt->rcc->curQ];
+		if (i < qsp->stop ) 
+			qsp->crd[i]--;
+		else stream_printf(cntxt->fdout,"Mismatch of credit array\n");
+	}
+	else stream_printf(cntxt->fdout,"Attempt to use credits of missing query pattern\n");
+
 	setIPtr(q,i,cst,c);
 	q->recycle = cntxt->rcc->curQ; 
 		/* use the field to refer to the query-owner index in the query pattern table */
@@ -2386,7 +2379,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 #ifdef _DEBUG_CACHE_
                         if ( p->token == NOOPsymbol ) continue;                    
 #endif
-			for (j=p->retc; j<p->argc; j++)
+			for (j=0; j<p->argc; j++)
 				if(getArgType(recycleBlk,p,j)==TYPE_bat || 
 					isaBatType(getArgType(recycleBlk, p,j)) ){
 					int nbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
@@ -2396,11 +2389,14 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 							break;
 					if (k < top) break;
 			}
-			if (j<p->argc){  /* delete instruction dependent on updated bat */
-				for (j=0;j<p->retc; j++)  /* mark result bats as dropped */
-				if(getArgType(recycleBlk,p,j)==TYPE_bat || 
-					isaBatType(getArgType(recycleBlk, p,j)) )
-					dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
+			if ( j < p->argc ){  /* instruction argument or result is updated bat */
+				if ( j >= p->retc ){ 			/* if some argument bat is updated */
+					for (j=0;j<p->retc; j++)	/* mark result bats as dropped */
+					if(getArgType(recycleBlk,p,j)==TYPE_bat || 
+						isaBatType(getArgType(recycleBlk, p,j)) )
+						dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
+				}
+
 #ifdef _DEBUG_CACHE_
 		        /* instructions are marked with NOOPsymbol in debug mode */
                         	recyclerUsedMemory -= recycleBlk->profiler[i].wbytes;

@@ -104,10 +104,12 @@ are monitored and also trigger cleaning the cache.
 #include "opt_recycler.h"
 #include "mal_instruction.h"
 
+static lng recycleSeq = 0;
+
 static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, cnt, actions = 0;
+	int i, j, cnt, actions = 0, marks = 0;
 	Lifespan span;
 	InstrPtr *old, q;
 	int limit, updstmt = 0;
@@ -143,6 +145,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return 0;
 	}
 	pushInstruction(mb,old[0]);
+	mb->recid = recycleSeq++;
 
 	/* create a handle for recycler */
 	q= newFcnCall(mb,"recycle","prelude");
@@ -219,7 +222,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			stream_printf(cntxt->fdout,"recycle instruction\n");
 			printInstruction(cntxt->fdout,mb, 0, p,LIST_MAL_ALL);
 #endif
-			actions ++;
+			marks++;
 			p->recycle = recycleMaxInterest; /* this instruction is to be monitored */
 			for (j= 0; j < p->retc; j++)
 				if (getLastUpdate(span, getArg(p,j)) == i)
@@ -245,7 +248,7 @@ are marked for re-use.
 	         getFunctionId(p)== thetaselectRef ) &&
 	      	 recycled[getArg(p,1)] ){
 			p->recycle = recycleMaxInterest;
-			actions ++;
+			marks ++;
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 		}
@@ -258,6 +261,7 @@ are marked for re-use.
 					setFunctionId(q, selectRef); 
 				else setFunctionId(q, thetaselectRef); 
 				q->recycle = recycleMaxInterest;
+				marks++;
 				recycled[getArg(q,0)] = 1;
 				pushInstruction(mb,q);
 				getArg(p,1) = getArg(q,0);
@@ -265,7 +269,7 @@ are marked for re-use.
 				p->argc = 2;
 			}
 			p->recycle = recycleMaxInterest;
-			actions ++; 
+			marks ++; 
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 		}
@@ -274,7 +278,7 @@ are marked for re-use.
 			if (( getFunctionId(p)== selectRef && recycled[getArg(p,2)]) ||  
 			    ( getFunctionId(p)== uselectRef && recycled[getArg(p,2)])){
 				p->recycle = recycleMaxInterest;
-				actions ++;
+				marks ++;
 				if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 			} 
@@ -290,7 +294,7 @@ are marked for re-use.
 				setModuleId(p,algebraRef);
 				p->argc = 2;
 				p->recycle = recycleMaxInterest;
-				actions ++; 
+				marks += 2; 
 				if (getLastUpdate(span, getArg(p,0)) == i)
 					recycled[getArg(p,0)] = 1;
 			} 
@@ -315,6 +319,7 @@ with the transaction commits.
 			 getFunctionId(p) == bindRef ) {
 				recycled[getArg(p,0)] = 1;
 				p->recycle = recycleMaxInterest; 
+				marks++;
 		}
 
 		pushInstruction(mb,p);
@@ -322,8 +327,8 @@ with the transaction commits.
 	GDKfree(span);
 	GDKfree(old);
 	GDKfree(recycled);
-	mb->recycle = actions > 0;
-	return actions;
+	mb->recycle = marks > 0;
+	return actions + marks;
 }
 @include optimizerWrapper.mx
 @h

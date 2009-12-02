@@ -417,6 +417,7 @@ typedef struct MALBLK {
 	int maxarg;			/* keep track on the maximal arguments used */
 	ptr replica;		/* for the replicator tests */
 	sht recycle;		/* execution subject to recycler control */
+	int recid;			/* ID given by recycler optimizer */
 	sht trap;			/* call debugger when called */
 } *MalBlkPtr, MalBlkRecord;
 
@@ -685,6 +686,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->prps = NULL;
 	mb->replica = NULL;
 	mb->recycle = 0;
+	mb->recid = 0;
 	mb->trap = 0;
 	return mb;
 }
@@ -799,6 +801,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->typefixed = old->typefixed;
 	mb->flowfixed = old->flowfixed;
 	mb->recycle = old->recycle;
+	mb->recid = old->recid;
 	mb->trap = old->trap;
 	mb->replica = old->replica;
 	mb->maxarg= old->maxarg;

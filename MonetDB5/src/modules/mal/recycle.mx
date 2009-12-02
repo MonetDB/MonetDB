@@ -291,7 +291,6 @@ RECYCLEdumpQPat(stream *s)
 {
 	int i;
 	QryStatPtr qs;
-	struct tm * t;
 
 	if (!recycleQPat) {
 		stream_printf(s,"#No query patterns\n");
@@ -302,9 +301,8 @@ RECYCLEdumpQPat(stream *s)
 	stream_printf(s,"#Client\tLogin\t\tName\tcalls\tglobRec\tlocRec\n");
 	for(i=0; i< recycleQPat->cnt; i++){
 		qs = recycleQPat->ptrn[i];
-		t = localtime(&qs->clogin);
 		stream_printf(s,"#%d\t%2d:%2d:%2d\t%s\t%d\t%d\t%d\n",
-			qs->cidx, t->tm_hour, t->tm_min, t->tm_sec,qs->name, qs->calls, qs->greuse, qs->lreuse);
+			qs->recid, qs->calls, qs->greuse, qs->lreuse);
 	}
 }
 
@@ -494,7 +492,7 @@ RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	cntxt->rcc->time0 = GDKusec();
   	if (recycleQPat == NULL)
    		RECYCLEinitQPat(20);
-	cntxt->rcc->curQ = RECYCLEnewQryStat(cntxt,mb);
+	cntxt->rcc->curQ = RECYCLEnewQryStat(mb);
 	minAggr = ALGminany;
 	maxAggr = ALGmaxany;
 	msFindTime = 0;			/* multi-subsume measurements */
