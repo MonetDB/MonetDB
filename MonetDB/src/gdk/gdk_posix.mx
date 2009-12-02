@@ -789,12 +789,14 @@ MT_mmap_trim(size_t target, void *fp)
 	if (err) {
 		stream_printf(err, "#MT_mmap_trim(%u MB): rss = %u MB\n", (unsigned int) ((target) >> 20), (unsigned int) (rss >> 20));
 	}
+	assert((MT_mmap_cur == -1) == (MT_mmap_first == -1)); /* either both or neither is -1 */
 	/* try to selectively unload pages from the writable regions */
 	if (rss > target) {
 		size_t delta = ((rss - target) + 4 * MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE - 1);
 
 		/* try to unload the previously saved writable heap tiles */
 		for (i = MT_mmap_next(MT_mmap_cur); delta && i != MT_mmap_cur; i = MT_mmap_next(i)) {
+			assert(i >= 0);
 			if (MT_mmap_tab[i].fd >= 0 && MT_mmap_tab[i].writable) {
 				size_t lim = (MT_mmap_tab[i].wrap_tile == 1)?
 						MT_mmap_tab[i].save_tile:MT_mmap_tab[i].len;
@@ -821,6 +823,7 @@ MT_mmap_trim(size_t target, void *fp)
 
 		/* in case of real despair, hit all read-only maps */
 		for (i = MT_mmap_next(MT_mmap_cur); delta && i != MT_mmap_cur; i = MT_mmap_next(i)) {
+			assert(i >= 0);
 			if (MT_mmap_tab[i].fd >= 0 && !MT_mmap_tab[i].writable) {
 				if (MT_mmap_tab[i].unload_tile >= MT_mmap_tab[i].len)
 					MT_mmap_tab[i].unload_tile = 0;
@@ -839,6 +842,7 @@ MT_mmap_trim(size_t target, void *fp)
 done:	if (worry > 1) {
 		/* schedule background saves of tiles */
 		for (i = MT_mmap_next(MT_mmap_cur); i != MT_mmap_cur; i = MT_mmap_next(i)) {
+			assert(i >= 0);
 			if (MT_mmap_tab[i].fd >= 0 &&
 			    MT_mmap_tab[i].writable &&
 		 	    MT_mmap_tab[i].last_tile <= 1 && 
