@@ -704,10 +704,10 @@ errno == WSAEADDRINUSE &&
 #endif
 	threadcommand = cmd;
 	Sock = GDKmalloc(sizeof(SOCKET));
-	*Sock = sock;
 
 	if (Sock == NULL)
 		throw(MAL,"mal_mapi.listen", MAL_MALLOC_FAIL);
+	*Sock = sock;
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
 		GDKfree(Sock);
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED " Starting thread failed");
