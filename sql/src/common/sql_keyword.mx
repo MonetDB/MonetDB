@@ -34,7 +34,6 @@ keyword_key(char *k, int *l)
 {
 	char *s = k;
 	int h = 1;
-	int foo = 0;
 
 	while (*k) {
 		h <<= 5;
