@@ -72,7 +72,7 @@ res_col *
 res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale, int mtype, void *val)
 {
 	res_col *c = t->cols + t->cur_col;
-	
+
 	if (!sql_find_subtype(&c->type, typename, digits, scale)) 
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, NULL, typename), digits, scale);
 	c->tn = _strdup(tn);
