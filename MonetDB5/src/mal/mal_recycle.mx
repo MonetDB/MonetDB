@@ -1032,6 +1032,7 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, 
 	InstrPtr q;
 	lng memLimit;
 	lng cacheLimit;
+	QryStatPtr qsp = recycleQPat->ptrn[cntxt->rcc->curQ];
 	
 	RECYCLEspace();
 	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
@@ -1076,16 +1077,10 @@ compare by value.
 	printInstruction( cntxt->fdout,recycleBlk, 0, q,LIST_MAL_ALL);
 #endif
 
-/*	InstrCrd(mb,p)--; */
-
 	i = getPC(mb,p);
-	if ( cntxt->rcc->curQ >=0 ) {
-		QryStatPtr qsp = recycleQPat->ptrn[cntxt->rcc->curQ];
-		if (i < qsp->stop ) 
-			qsp->crd[i]--;
-		else stream_printf(cntxt->fdout,"Mismatch of credit array\n");
-	}
-	else stream_printf(cntxt->fdout,"Attempt to use credits of missing query pattern\n");
+	if (i < qsp->stop ) 
+		qsp->crd[i]--;
+	else stream_printf(cntxt->fdout,"Mismatch of credit array\n");
 
 	setIPtr(q,i,cst,c);
 	q->recycle = cntxt->rcc->curQ; 
@@ -2251,6 +2246,17 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 	    		recycleSize >= cacheLimit )
 			RECYCLEcleanCache(cntxt, wr);
 	}
+
+	/* ensure the right mal block is pointed in the context */
+	if ( cntxt->rcc->curQ < 0 ||
+		(cntxt->rcc->curQ >=0 && recycleQPat->ptrn[cntxt->rcc->curQ]->recid != mb->recid ) )
+		cntxt->rcc->curQ = findQryStat(mb);
+
+	if ( cntxt->rcc->curQ < 0 ) {
+		stream_printf(cntxt->fdout,"The query pattern should exist before adding its instruction to the cache\n");
+		return;
+	}
+
 	if ( RECYCLEinterest(p))
 	switch(admissionPolicy) {
 	case ADM_NONE:

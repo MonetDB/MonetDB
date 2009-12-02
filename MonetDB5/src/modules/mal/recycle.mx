@@ -298,10 +298,10 @@ RECYCLEdumpQPat(stream *s)
 	}
 
 	stream_printf(s,"#Query patterns %d\n",	recycleQPat->cnt);
-	stream_printf(s,"#Client\tLogin\t\tName\tcalls\tglobRec\tlocRec\n");
+	stream_printf(s,"#RecID\tcalls\tglobRec\tlocRec\n");
 	for(i=0; i< recycleQPat->cnt; i++){
 		qs = recycleQPat->ptrn[i];
-		stream_printf(s,"#%d\t%2d:%2d:%2d\t%s\t%d\t%d\t%d\n",
+		stream_printf(s,"# "LLFMT"\t%2d\t%2d\t%2d\n",
 			qs->recid, qs->calls, qs->greuse, qs->lreuse);
 	}
 }
