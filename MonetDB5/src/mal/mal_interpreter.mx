@@ -220,7 +220,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 		if (cntxt->itrace == 0) /* permit debugger analysis */
 			return createScriptException(mb, 0, MAL, NULL, "Syntax error in script");
 	}
-	@:beginProfile(stk)@
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
 the minimum amount of stack space needed, some slack resources
