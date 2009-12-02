@@ -493,7 +493,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				}
 			}
 
-			if ((e != NULL && *e != 0) || ateof) {
+			if (*e != 0 || ateof) {
 				/* found a complete record, or an incomplete one at the end of the file */
 				if ( --skip < 0 ) {
 					task->fields[0][task->next] = s;
