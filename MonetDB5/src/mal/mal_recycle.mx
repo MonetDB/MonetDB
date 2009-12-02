@@ -1675,6 +1675,8 @@ computeMultiSubsume(rngPtr qry, piece  *base, int cnt, lng comp)
 
 	if (max_x){
 		bs = BATdescriptor(sol[x]->bid);
+		if (bs == NULL)
+			return NULL;
 		b = BATcopy(bs, bs->H->type, bs->T->type,TRUE);
 		BBPunfix(bs->batCacheid);
 
