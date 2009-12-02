@@ -212,7 +212,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	ValPtr lhs,rhs;
 	InstrPtr pci=getInstrPtr(mb,0);
 	str ret;
-	int stkpc = 0;
 	@:performanceVariables@
 
 	if (mb->errors) {
@@ -363,7 +362,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	int i;
 	ValPtr lhs,rhs;
 	InstrPtr pci= getInstrPtr(mb,0);
-	int stkpc = 0;
 	@:performanceVariables@
 
 #ifdef DEBUG_CALLMAL
