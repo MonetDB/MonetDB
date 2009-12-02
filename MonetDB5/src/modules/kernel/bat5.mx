@@ -2704,7 +2704,6 @@ BKCdelete_all(int *r, int *bid)
 	}
 	bn=BATclear(b);
 	if (bn == NULL){
-		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.delete_all", OPERATION_FAILED);
 	}
 	if(bn->batCacheid != b->batCacheid){
