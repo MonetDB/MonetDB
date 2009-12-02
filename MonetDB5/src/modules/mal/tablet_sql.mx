@@ -612,7 +612,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			}
 
 			/* check for incomplete line and end of buffer condition*/
-			if ( (e  && *e != 0) || task->ateof){
+			if (*e != 0 || task->ateof){
 				/* found a complete record, do we need to skip it? */
 				if ( --skip < 0 ) {
 					task->fields[0][task->next++] = s;

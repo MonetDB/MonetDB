@@ -1589,6 +1589,8 @@ computePart(rngPtr qry, piece **sol, int sidx, int eidx, bit left2right, BAT *b)
 				hi = qry->hi;
 			}	
 			bs = BATdescriptor(sol[i]->bid);
+			if (bs == NULL)
+				return NULL;
 			bn = BATselect_(bs, &qry->low, ovhgh, qry->li, hi);
 			if (b == NULL) {
 				b = bn;
@@ -1614,6 +1616,8 @@ computePart(rngPtr qry, piece **sol, int sidx, int eidx, bit left2right, BAT *b)
 			}
 			
 			bs = BATdescriptor(sol[i]->bid);
+			if (bs == NULL)
+				return NULL;
 			bn = BATselect_(bs, ovlow, &qry->hgh, li, qry->hi);
 			if (b == NULL) {
 				b = bn;
@@ -1670,6 +1674,8 @@ computeMultiSubsume(rngPtr qry, piece  *base, int cnt, lng comp)
 
 	if (max_x){
 		bs = BATdescriptor(sol[x]->bid);
+		if (bs == NULL)
+			return NULL;
 		b = BATcopy(bs, bs->H->type, bs->T->type,TRUE);
 		BBPunfix(bs->batCacheid);
 

@@ -114,6 +114,7 @@ char* control_send(
 		buf = control_hash(pass, buf);
 
 		len = snprintf(sbuf, sizeof(sbuf), "%s\n", buf);
+		free(buf);
 		send(sock, sbuf, len, 0);
 
 		if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)

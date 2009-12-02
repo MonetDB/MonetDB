@@ -111,10 +111,12 @@ epilogue(int cnt, bat *subcommit)
 			BAT *b = BBPquickdesc(bid, TRUE);
 
 			/* the unloaded ones are deleted without loading deleted disk images */
-			BATdelete(b);
-			if (BBP_cache(bid)) {
-				/* those that quickdesc decides to load => free memory */
-				BATfree(b);
+			if (b) {
+				BATdelete(b);
+				if (BBP_cache(bid)) {
+					/* those that quickdesc decides to load => free memory */
+					BATfree(b);
+				}
 			}
 			BBPclear(bid);	/* clear with locking */
 		}

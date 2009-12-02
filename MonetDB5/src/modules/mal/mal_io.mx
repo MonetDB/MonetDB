@@ -838,8 +838,11 @@ IOimport(int *ret, int *bid, str *fnme)
 	int lh = 0, lt = 0;
 	FILE *fp = fopen(*fnme, "r");
 
-	if ((b = BATdescriptor(*bid)) == NULL) 
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		if (fp)
+			fclose(fp);
 		throw(MAL, "io.import", RUNTIME_OBJECT_MISSING);
+	}
 
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
@@ -861,10 +864,12 @@ Open the file. Memory map it to minimize buffering problems.
 
 		if ((fn = fileno(fp)) <= 0) {
 			BBPunfix(b->batCacheid);
+			fclose(fp);
 			throw(MAL, "io.import", OPERATION_FAILED " fileno()");
 		}
 		if (fstat(fn, &st) != 0) {
 			BBPunfix(b->batCacheid);
+			fclose(fp);
 			throw(MAL, "io.imports", OPERATION_FAILED "fstat()");
 		}
 
