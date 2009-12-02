@@ -507,7 +507,7 @@ order_join_expressions(list *dje, list *rels)
 	/* sort descending */
 	GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
 	for(j=0; j<cnt; j++) {
-		for(n = dje->h, i = 0; n && i != pos[j]; n = n->next, i++) 
+		for(n = dje->h, i = 0; i != pos[j]; n = n->next, i++) 
 			;
 		list_append(res, exp_dup(n->data));
 	}
