@@ -1594,6 +1594,8 @@ computePart(rngPtr qry, piece **sol, int sidx, int eidx, bit left2right, BAT *b)
 				hi = qry->hi;
 			}	
 			bs = BATdescriptor(sol[i]->bid);
+			if (bs == NULL)
+				return NULL;
 			bn = BATselect_(bs, &qry->low, ovhgh, qry->li, hi);
 			if (b == NULL) {
 				b = bn;
@@ -1619,6 +1621,8 @@ computePart(rngPtr qry, piece **sol, int sidx, int eidx, bit left2right, BAT *b)
 			}
 			
 			bs = BATdescriptor(sol[i]->bid);
+			if (bs == NULL)
+				return NULL;
 			bn = BATselect_(bs, ovlow, &qry->hgh, li, qry->hi);
 			if (b == NULL) {
 				b = bn;
