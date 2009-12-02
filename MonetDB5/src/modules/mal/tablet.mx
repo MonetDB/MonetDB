@@ -2713,9 +2713,7 @@ setTabwidth(Column * c)
 	char *title = c->c[0]->tident;
 
 	if (strcmp(c->c[0]->tident, "t") == 0) {
-		title = GDKmalloc(strlen(BATgetId(c->c[0])) + 7);
-		if (title )
-			snprintf(title, 20, "%s", BATgetId(c->c[0]));
+		title = BATgetId(c->c[0]);
 	}
 	CLEAR(c->type);
 	c->type = GDKstrdup(ATOMname(c->c[0]->ttype));
