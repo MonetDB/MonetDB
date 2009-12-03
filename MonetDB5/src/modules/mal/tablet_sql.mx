@@ -420,6 +420,8 @@ SQLloader(void *p){
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"SQL loader got buffer \n");
 #endif
+		if ( task->ateof )	/* forced exit received*/
+			break;
 		task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
 		MT_up_sema(task->consumer, "tablet loader");
 	}
@@ -433,6 +435,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	int res = 0;				/* < 0: error, > 0: success, == 0: continue processing */
 	int j;
 	BUN i;
+	char q=0;
 	size_t rseplen;
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[16];
@@ -559,71 +562,68 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				if (rseplen == 1)
 					for ( ; *e ; e++)
 					{
-						if (*e == *rsep ) {
-							if ( e[-1] != '\\' )
-								break;
+						if ( *e == '\\' ){
+							e++;
+							continue;
 						}
+						if (*e == *rsep ) 
+								break;
 					}
 				else
 				for ( ; *e ; e++)
 					{
-						if (*e == *rsep && strncmp(e, rsep, rseplen) == 0) {
-							if ( e[-1] != '\\' )
-								break;
+						if ( *e == '\\' ) {
+							e++;
+							continue;
 						}
+						if (*e == *rsep && strncmp(e, rsep, rseplen) == 0)
+								break;
 					}
+				if ( *e == 0) 
+					e = 0;	/* nonterminated record, we need more */
 			} else
 			if ( rseplen == 1 ) {
-				for ( ; *e ; e++) {
-					if (*e == quote) {
-						if ( e[-1] != '\\' ) {	/* true start of string */
-							do {
-								for (e++ ; *e && *e != quote ; e++) 
-									;
-							} while ( e[-1] == '\\'  && *e);
-							if ( *e == 0) {
-								e = 0;	/* nontermindated quoted field, we need more */
-								break;
-							}
-						}
-					} else if (*e == *rsep ) {
-						if ( e[-1] != '\\' )
+				for ( ; *e ; e++) 
+				{
+					if (*e == q)
+                        q = 0;
+                    else if (*e == quote)
+                        q = *e;
+                    else if (*e == '\\') {
+                        if (e[1])
+                            e++;
+					} else if (*e == *rsep )
 							break;
-					}
 				}
+				if ( *e == 0) 
+					e = 0;	/* nonterminated record, we need more */
 			} else {
-				for ( ; *e ; e++) {
-					if (*e == quote) {
-						if ( e[-1] != '\\' ) {	/* true start of string */
-							do {
-								for (e++ ; *e && *e != quote ; e++) 
-									;
-							} while ( e[-1] == '\\'  && *e);
-							if ( *e == 0) {
-								e = 0;	/* nonterminated quoted field, we need more */
-								break;
-							}
-						}
-					} else if (*e == *rsep && strncmp(e, rsep, rseplen) == 0) {
-						if ( e[-1] != '\\' )
+				for ( ; *e ; e++) 
+				{
+					if (*e == q)
+                        q = 0;
+                    else if (*e == quote)
+                        q = *e;
+                    else if (*e == '\\') {
+                        if (e[1])
+                            e++;
+					} else if (*e == *rsep && strncmp(e, rsep, rseplen) == 0 ) 
 							break;
-					}
 				}
+				if (*e == 0 )
+					e = 0;	/* nonterminated record, we need more */
 			}
 
 			/* check for incomplete line and end of buffer condition*/
-			if (*e != 0 || task->ateof){
+			if (e ){
 				/* found a complete record, do we need to skip it? */
 				if ( --skip < 0 ) {
 					task->fields[0][task->next++] = s;
-					if (e)
-						*e = '\0';
+					*e = '\0';
 					cnt++;
 				}
-				if (e) {
-					s = e + rseplen;
-					e = s;
-				}
+				s = e + rseplen;
+				e = s;
 				task->b->pos = (size_t) (s - task->input);
 			} else {
 				/* no (unquoted) record separator found, read more data */
@@ -690,14 +690,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		MT_down_sema(task->consumer, "tablet loader");
 	}
 
-	/* close down the workers */
-#ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"Close the workers\n");
-#endif
-	for( j= 0; j < threads ; j++){
-		ptask[j].next = -1;
-		MT_up_sema(ptask[j].sema,"SQLworker");
-	}
 	if (GDKdebug & GRPalgorithms) {
 		if (cnt < (BUN) maxrow   && maxrow > 0) 
 			/* providing a precise count is not always easy, instead consider maxrow as an upper bound */
@@ -712,11 +704,24 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			stream_printf(GDKout,"# COPY thread time " LLFMT "\n",ptask[j].wtime);
 	}
 
+	task->ateof = 1;
+	MT_up_sema(task->producer,"tablet load");
+	for( j= 0; j < threads ; j++){
+		ptask[j].next = -1;
+		MT_up_sema(ptask[j].sema,"SQLworker");
+	}
 	/* wait for their death */
-	for ( j=0; j< threads; j++) {
+	for ( j=0; j< threads; j++)
 		MT_down_sema(ptask[j].reply,"sqlreader");
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKout,"Kill the workers\n");
+#endif
+	for ( j=0; j< threads; j++) {
+		MT_kill_thread(ptask[j].tid);
 		GDKfree(ptask[j].cols);
 	}
+	MT_kill_thread(task->tid);
+
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"Found " BUNFMT" tuples\n",cnt);
 #endif
