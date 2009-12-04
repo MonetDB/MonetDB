@@ -1226,6 +1226,7 @@ PCRElike4(bit *ret, str *s, str *pat, str *esc, bit *isens)
 	str r = PCREsql2pcre(&ppat, pat, esc);
 
 	if (!r) {
+		assert(ppat);
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			*ret = FALSE;
 			if (*isens) {
