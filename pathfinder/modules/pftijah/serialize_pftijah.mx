@@ -1434,22 +1434,20 @@ int CMDtj_normalizeTerm(char** res, char *term, char *stemmer) {
             *res = NULL;
         } else {
             //if (*res) GDKfree(*res);
-            *res = GDKmalloc( strlen(stemmed)+1 );
-	    if ( !res ) {
+            *res = GDKstrdup( stemmed );
+	    if ( !*res ) {
 	        stream_printf(GDKout,"CMDtj_normalizeTerm: GDKmalloc() failed.\n");
 		return GDK_FAIL;
 	    }
-            strcpy( *res, stemmed );
         }
         //if ( stemCtx->clear ) stemCtx->clear( stemCtx );
     } else {
         //if (*res) GDKfree(*res);
-        *res = GDKmalloc( strlen(term)+1 );
-	if ( !res ) {
+        *res = GDKstrdup( term );
+	if ( !*res ) {
 	    stream_printf(GDKout,"CMDtj_normalizeTerm: GDKmalloc() failed.\n");
 	    return GDK_FAIL;
 	}
-        strcpy( *res, term );
     }
     return GDK_SUCCEED;
 }
