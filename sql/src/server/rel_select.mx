@@ -3281,7 +3281,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return NULL;
 	}
 
-	if (f == sql_where && !groupby) 
+	if (f == sql_where) 
 		return sql_error(sql, 02, "%s: not allowed in WHERE clause",
 				toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
 	
