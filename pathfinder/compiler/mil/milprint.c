@@ -453,7 +453,10 @@ static char *ID[] = {
     , [m_tj_query_handler] = "ALG_tj_query_handler"
     , [m_tj_ftfun_handler] = "ALG_tj_ftfun_handler"
     , [m_tj_add_fti_tape]  = "ALG_tj_add_fti_tape"
-    , [m_tj_docmgmt_tape ] = "ALG_tj_docmgmt_tape"
+    , [m_tj_terms ]        = "ALG_tj_terms"
+    , [m_tj_tfall ]        = "ALG_tj_tfall"
+    , [m_tj_tf ]           = "ALG_tj_tf"
+    , [m_tj_fbterms ]      = "ALG_tj_fbterms"
 #endif
 
 };
@@ -1470,7 +1473,32 @@ print_expression (PFmil_t * n)
             print_expression (n->child[5]);
             milprintf (")");
             break;
-
+        case m_tj_terms:
+        case m_tj_tfall:
+        case m_tj_fbterms:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (")");
+            break;
+        case m_tj_tf:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (")");
+            break;
 #endif
         default:
             debug_output;     /* Print MIL code so far when in debug mode. */

@@ -508,6 +508,14 @@
 
 #define tj_ft_index_info(a,b,c) PFmil_tj_ft_index_info ((a),(b),(c))
 
+#define tj_terms(a,b,c,d)   PFmil_tj_terms ((a), (b), (c), (d))
+
+#define tj_tfall(a,b,c,d)   PFmil_tj_tfall ((a), (b), (c), (d))
+
+#define tj_tf(a,b,c,d,e)    PFmil_tj_tf ((a), (b), (c), (d), (e))
+
+#define tj_fbterms(a,b,c,d) PFmil_tj_fbterms ((a), (b), (c), (d))
+
 #endif
 
 #ifdef HAVE_GEOXML

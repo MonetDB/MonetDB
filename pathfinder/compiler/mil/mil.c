@@ -2140,6 +2140,30 @@ PFmil_tj_docmgmt_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, con
     return wire6 (m_tj_docmgmt_tape, a, b, c, d, e, f);
 }
 
+PFmil_t *
+PFmil_tj_terms (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d)
+{
+    return wire4 (m_tj_terms, a, b, c, d);
+}
+
+PFmil_t *
+PFmil_tj_tfall (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d)
+{
+    return wire4 (m_tj_tfall, a, b, c, d);
+}
+
+PFmil_t *
+PFmil_tj_tf (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e)
+{
+    return wire5 (m_tj_tf, a, b, c, d, e);
+}
+
+PFmil_t *
+PFmil_tj_fbterms (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d)
+{
+    return wire4 (m_tj_fbterms, a, b, c, d);
+}
+
 #endif
 
 /* vim:set shiftwidth=4 expandtab: */

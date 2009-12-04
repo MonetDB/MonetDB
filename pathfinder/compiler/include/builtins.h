@@ -1357,6 +1357,42 @@ struct PFla_pair_t PFbui_tijah_resultsize (const PFla_op_t *loop,
                                            bool ordering,
                                            PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
+
+/* the new term functions */
+
+struct PFla_pair_t PFbui_tijah_terms (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_terms_o (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_tfall (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_tfall_o (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_tf (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_tf_o (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_fbterms (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_fbterms_o (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+
 #endif
 
 #endif   /* BUITLINS_H */

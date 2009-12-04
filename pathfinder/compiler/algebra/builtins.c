@@ -7389,6 +7389,140 @@ PFbui_tijah_resultsize (const PFla_op_t *loop,
                 );
 }
 
+/* the new term functions */
+
+struct PFla_pair_t PFbui_tijah_terms (const PFla_op_t *loop,
+                                      bool ordering,
+                                      PFla_op_t **side_effects,
+                                      struct PFla_pair_t *args) {
+    return PFbui_tijah_query_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_TERMS,
+                aat_str,
+                pft_query_param1(&args[0],
+                                 PFTIJAH_NODEKIND)
+                );
+}
+
+struct PFla_pair_t PFbui_tijah_terms_o (const PFla_op_t *loop,
+                                        bool ordering,
+                                        PFla_op_t **side_effects,
+                                        struct PFla_pair_t *args) {
+    return PFbui_tijah_query_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_TERMS_O,
+                aat_str,
+                pft_query_param2(&args[0],
+                                 PFTIJAH_NODEKIND,
+				 &args[1],
+				 PFTIJAH_NODEKIND)
+                );
+}
+
+struct PFla_pair_t PFbui_tijah_tfall (const PFla_op_t *loop,
+                                      bool ordering,
+                                      PFla_op_t **side_effects,
+                                      struct PFla_pair_t *args) {
+    return PFbui_tijah_query_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_TFALL,
+                aat_int,
+                pft_query_param1(&args[0],
+                                 aat_str)
+                );
+}
+
+struct PFla_pair_t PFbui_tijah_tfall_o (const PFla_op_t *loop,
+                                        bool ordering,
+                                        PFla_op_t **side_effects,
+                                        struct PFla_pair_t *args) {
+    return PFbui_tijah_query_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_TFALL_O,
+                aat_int,
+                pft_query_param2(&args[0],
+                                 aat_str,
+				 &args[1],
+				 PFTIJAH_NODEKIND)
+                );
+}
+
+struct PFla_pair_t PFbui_tijah_tf (const PFla_op_t *loop,
+                                   bool ordering,
+                                   PFla_op_t **side_effects,
+                                   struct PFla_pair_t *args) {
+    return PFbui_tijah_query_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_TF,
+                aat_int,
+                pft_query_param2(&args[0],
+                                 PFTIJAH_NODEKIND,
+                                 &args[1],
+                                 aat_str)
+                );
+}
+
+struct PFla_pair_t PFbui_tijah_tf_o (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
+                                     struct PFla_pair_t *args) {
+    return PFbui_tijah_query_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_TF_O,
+                aat_int,
+                pft_query_param3(&args[0],
+                                 PFTIJAH_NODEKIND,
+                                 &args[1],
+                                 aat_str,
+				 &args[2],
+				 PFTIJAH_NODEKIND)
+                );
+}
+
+struct PFla_pair_t PFbui_tijah_fbterms (const PFla_op_t *loop,
+                                        bool ordering,
+                                        PFla_op_t **side_effects,
+                                        struct PFla_pair_t *args) {
+    return PFbui_tijah_query_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_FBTERMS,
+                aat_str,
+                pft_query_param1(&args[0],
+                                 PFTIJAH_NODEKIND)
+                );
+}
+
+struct PFla_pair_t PFbui_tijah_fbterms_o (const PFla_op_t *loop,
+                                          bool ordering,
+                                          PFla_op_t **side_effects,
+                                          struct PFla_pair_t *args) {
+    return PFbui_tijah_query_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_FBTERMS_O,
+                aat_str,
+                pft_query_param2(&args[0],
+                                 PFTIJAH_NODEKIND,
+				 &args[1],
+				 PFTIJAH_NODEKIND)
+                );
+}
+
 #endif /* PFTIJAH */
 
 /**

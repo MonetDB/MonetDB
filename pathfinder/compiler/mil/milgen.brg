@@ -2046,7 +2046,8 @@ pft_create_pfop (PFpa_op_t *p, PFalg_simple_type_t t, int ordered)
 static void
 pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
 		     PFalg_col_t a_iter,
-		     PFalg_col_t a_item, PFalg_simple_type_t t_item,
+		     PFalg_col_t a_item,
+		     PFalg_simple_type_t t_item,
 		     PFalg_col_t a_frag,
 		     PFalg_col_t a_pos,
 		     PFalg_col_t a_score
@@ -2063,6 +2064,7 @@ pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
 	    assgn (var (v_item->name),
 		fetch (var (pack->name), lit_int (1))));
 	env_add (dest->env, a_item, t_item, v_item);
+
 
 	if ( a_frag ) {
 	    mvar_t *v_frag  = new_var (dest->refctr);
@@ -10469,7 +10471,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    unpin(pfop_opt,1);
 		    unpin(pfop_ign,1);
 
-		    pft_unpack_pfop(p,tjqres,fc_iter_a,fc_item_a,restype,fc_item_a,fc_pos_a,fc_score_a);
+		    if ( restype == aat_bln )
+		        pft_unpack_pfop(p,tjqres,fc_iter_a,fc_item_a,restype,0,fc_pos_a,fc_score_a);
+		    else
+		        pft_unpack_pfop(p,tjqres,fc_iter_a,fc_item_a,restype,fc_item_a,fc_pos_a,fc_score_a);
 
 		    unpin(tjqres,1);
 		} else if ( PFT_FUN_MANAGE(fcname) ) {
@@ -10543,6 +10548,128 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                           seqbase (new (type (mty_void), type(mty_oid) ),
                                             lit_oid (0))));
                     env_add (p->env, fc_pos_a, aat_nat, p_pos);
+
+
+		} else if ( (strcmp(fcname,PFT_TERMS) == 0) ||
+			    (strcmp(fcname,PFT_TERMS_O) == 0) ) {
+		    mvar_t *pfop_terms;
+		    mvar_t *pfop_term_opt;
+
+		    pfop_terms = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_pre,PFT_NOT_ORDERED);
+
+		    if ( strcmp(fcname,PFT_TERMS_O) == 0 ) {
+		        pfop_term_opt   = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,1),aat_pre,PFT_NOT_ORDERED);
+		    } else {
+		        pfop_term_opt   = pft_create_pfop(NULL,aat_pre,PFT_NOT_ORDERED);
+		    }
+
+		    mvar_t *tjsres = new_var(1);
+		    execute(
+		        assgn(var(tjsres->name),
+			    tj_terms(
+				var(fc_loop->name),
+				var (PF_MIL_VAR_WS),
+				var(pfop_terms->name),
+				var(pfop_term_opt->name)
+			    )
+			)
+		    );
+		    unpin(pfop_terms,1);
+		    unpin(pfop_term_opt,1);
+
+		    pft_unpack_pfop(p,tjsres,fc_iter_a,fc_item_a,aat_str,0,fc_pos_a,0);
+		    unpin(tjsres,1);
+		} else if ( (strcmp(fcname,PFT_TFALL) == 0) ||
+			    (strcmp(fcname,PFT_TFALL_O) == 0) ) {
+		    mvar_t *pfop_term;
+		    mvar_t *pfop_term_opt;
+
+		    pfop_term = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_str,PFT_NOT_ORDERED);
+
+		    if ( strcmp(fcname,PFT_TFALL_O) == 0 ) {
+		        pfop_term_opt   = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,1),aat_pre,PFT_NOT_ORDERED);
+		    } else {
+		        pfop_term_opt   = pft_create_pfop(NULL,aat_pre,PFT_NOT_ORDERED);
+		    }
+
+		    mvar_t *tjsres = new_var(1);
+		    execute(
+		        assgn(var(tjsres->name),
+			    tj_tfall(
+				var(fc_loop->name),
+				var (PF_MIL_VAR_WS),
+				var(pfop_term->name),
+				var(pfop_term_opt->name)
+			    )
+			)
+		    );
+		    unpin(pfop_term,1);
+		    unpin(pfop_term_opt,1);
+
+		    pft_unpack_pfop(p,tjsres,fc_iter_a,fc_item_a,aat_int,0,fc_pos_a,0);
+		    unpin(tjsres,1);
+		} else if ( (strcmp(fcname,PFT_TF) == 0) ||
+			    (strcmp(fcname,PFT_TF_O) == 0) ) {
+		    mvar_t *pfop_el;
+		    mvar_t *pfop_str;
+		    mvar_t *pfop_opt;
+
+		    pfop_el = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_pre,PFT_NOT_ORDERED);
+		    pfop_str = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,1),aat_str,PFT_NOT_ORDERED);
+
+		    if ( strcmp(fcname,PFT_TF_O) == 0 ) {
+		        pfop_opt   = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,2),aat_pre,PFT_NOT_ORDERED);
+		    } else {
+		        pfop_opt   = pft_create_pfop(NULL,aat_pre,PFT_NOT_ORDERED);
+		    }
+
+		    mvar_t *tjsres = new_var(1);
+		    execute(
+		        assgn(var(tjsres->name),
+			    tj_tf(
+				var(fc_loop->name),
+				var (PF_MIL_VAR_WS),
+				var(pfop_el->name),
+				var(pfop_str->name),
+				var(pfop_opt->name)
+			    )
+			)
+		    );
+		    unpin(pfop_el,1);
+		    unpin(pfop_str,1);
+		    unpin(pfop_opt,1);
+
+		    pft_unpack_pfop(p,tjsres,fc_iter_a,fc_item_a,aat_int,0,fc_pos_a,0);
+		    unpin(tjsres,1);
+		} else if ( (strcmp(fcname,PFT_FBTERMS) == 0) ||
+			    (strcmp(fcname,PFT_FBTERMS_O) == 0) ) {
+		    mvar_t *pfop_terms;
+		    mvar_t *pfop_term_opt;
+
+		    pfop_terms = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_pre,PFT_NOT_ORDERED);
+
+		    if ( strcmp(fcname,PFT_FBTERMS_O) == 0 ) {
+		        pfop_term_opt   = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,1),aat_pre,PFT_NOT_ORDERED);
+		    } else {
+		        pfop_term_opt   = pft_create_pfop(NULL,aat_pre,PFT_NOT_ORDERED);
+		    }
+
+		    mvar_t *tjsres = new_var(1);
+		    execute(
+		        assgn(var(tjsres->name),
+			    tj_fbterms(
+				var(fc_loop->name),
+				var (PF_MIL_VAR_WS),
+				var(pfop_terms->name),
+				var(pfop_term_opt->name)
+			    )
+			)
+		    );
+		    unpin(pfop_terms,1);
+		    unpin(pfop_term_opt,1);
+
+		    pft_unpack_pfop(p,tjsres,fc_iter_a,fc_item_a,aat_str,0,fc_pos_a,0);
+		    unpin(tjsres,1);
 		} else if (strcmp(fcname,PFT_SCORE) == 0 ) {
 		    mvar_t *pfop_id;
 		    mvar_t *pfop_nodes;

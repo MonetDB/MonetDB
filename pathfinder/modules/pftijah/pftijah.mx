@@ -2712,6 +2712,87 @@ PROC ALG_tj_query_handler(
      return res;
 }
 
+PROC ALG_tj_terms(
+	BAT[void,any] par_loop,
+	BAT[oid,bat]  par_ws,
+	BAT[oid,bat]  par1_el,
+	BAT[oid,bat]  par2_options
+	) : BAT[void,bat] 
+{
+	var iter := new(void,oid).seqbase(0@0);
+	var item := new(void,oid).seqbase(0@0);
+	var pos  := new(void,oid).seqbase(0@0);
+	var frag := new(void,oid).seqbase(0@0);
+	var ipik := iter;
+
+	printf("#! just fill in the blanks here Henning.....");
+
+        var res := ALG_tj_pfop(iter,item,frag,pos.materialize(ipik));
+
+        return res;
+}
+
+PROC ALG_tj_tfall(
+	BAT[void,any] par_loop,
+	BAT[oid,bat]  par_ws,
+	BAT[oid,bat]  par1_str,
+	BAT[oid,bat]  par2_options
+	) : BAT[void,bat] 
+{
+	var iter := new(void,oid).seqbase(0@0);
+	var item := new(void,oid).seqbase(0@0);
+	var pos  := new(void,oid).seqbase(0@0);
+	var frag := new(void,oid).seqbase(0@0);
+	var ipik := iter;
+
+	printf("#! just fill in the blanks here Henning.....");
+
+        var res := ALG_tj_pfop(iter,item,frag,pos.materialize(ipik));
+
+        return res;
+}
+
+PROC ALG_tj_tf(
+	BAT[void,any] par_loop,
+	BAT[oid,bat]  par_ws,
+	BAT[oid,bat]  par1_el,
+	BAT[oid,bat]  par2_str,
+	BAT[oid,bat]  par3_options
+	) : BAT[void,bat] 
+{
+	var iter := new(void,oid).seqbase(0@0);
+	var item := new(void,oid).seqbase(0@0);
+	var pos  := new(void,oid).seqbase(0@0);
+	var frag := new(void,oid).seqbase(0@0);
+	var ipik := iter;
+
+	printf("#! just fill in the blanks here Henning.....");
+
+        var res := ALG_tj_pfop(iter,item,frag,pos.materialize(ipik));
+
+        return res;
+}
+
+PROC ALG_tj_fbterms(
+	BAT[void,any] par_loop,
+	BAT[oid,bat]  par_ws,
+	BAT[oid,bat]  par1_el,
+	BAT[oid,bat]  par2_options
+	) : BAT[void,bat] 
+{
+	var iter := new(void,oid).seqbase(0@0);
+	var item := new(void,oid).seqbase(0@0);
+	var pos  := new(void,oid).seqbase(0@0);
+	var frag := new(void,oid).seqbase(0@0);
+	var ipik := iter;
+
+	printf("#! just fill in the blanks here Henning.....");
+
+        var res := ALG_tj_pfop(iter,item,frag,pos.materialize(ipik));
+
+        return res;
+}
+
 #
 var ftindex;
 

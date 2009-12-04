@@ -3002,6 +3002,60 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_integer () },
             .ret_ty = PFty_xs_integer () } },
         .alg = PFbui_tijah_resultsize }
+    ,  /* tijah:terms(element*) as string* */
+      { .ns = PFns_tijah, .loc = "terms",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()), },
+            .ret_ty = PFty_star (PFty_xs_string ()) } },
+        .alg = PFbui_tijah_terms }
+    ,  /* tijah:terms(element*,node) as string* */
+      { .ns = PFns_tijah, .loc = "terms",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()),
+                                   PFty_xs_anyNode () },
+            .ret_ty = PFty_star (PFty_xs_string ()) } },
+        .alg = PFbui_tijah_terms_o }
+    ,  /* tijah:tf-all(string) as integer */
+      { .ns = PFns_tijah, .loc = "tf-all",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string () },
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_tijah_tfall }
+    ,  /* tijah:tf-all(string,node) as integer */
+      { .ns = PFns_tijah, .loc = "tf-all",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string (),
+                                   PFty_xs_anyNode () },
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_tijah_tfall_o }
+    ,  /* tijah:tf(element*,string) as integer */
+      { .ns = PFns_tijah, .loc = "tf",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()),
+	    			   PFty_xs_string ()},
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_tijah_tf }
+    ,  /* tijah:tf(element*,string,node) as integer */
+      { .ns = PFns_tijah, .loc = "tf",
+        .arity = 3, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()),
+	    			   PFty_xs_string (),
+                                   PFty_xs_anyNode () },
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_tijah_tf_o }
+    ,  /* tijah:fb-terms(element*) as string* */
+      { .ns = PFns_tijah, .loc = "fb-terms",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()) },
+            .ret_ty = PFty_star (PFty_xs_string ()) } },
+        .alg = PFbui_tijah_fbterms }
+    ,  /* tijah:fb-terms(element*,node) as string* */
+      { .ns = PFns_tijah, .loc = "fb-terms",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()),
+                                   PFty_xs_anyNode () },
+            .ret_ty = PFty_star (PFty_xs_string ()) } },
+        .alg = PFbui_tijah_fbterms_o }
 #endif
 
 #ifdef HAVE_GEOXML

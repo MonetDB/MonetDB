@@ -437,6 +437,10 @@ enum PFmil_kind_t {
     , m_tj_ft_index_info
     , m_tj_add_fti_tape
     , m_tj_docmgmt_tape
+    , m_tj_terms
+    , m_tj_tfall
+    , m_tj_tf
+    , m_tj_fbterms
 #endif
 #ifdef HAVE_GEOXML
     , m_geo_point    /**< wkb create */
@@ -1121,6 +1125,15 @@ PFmil_t * PFmil_tj_add_fti_tape (const PFmil_t *a, const PFmil_t *b, const PFmil
 PFmil_t * PFmil_tj_tokenize (const PFmil_t *a);
 
 PFmil_t * PFmil_tj_ft_index_info (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c);
+
+
+PFmil_t * PFmil_tj_terms (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d);
+
+PFmil_t * PFmil_tj_tfall (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d);
+
+PFmil_t * PFmil_tj_tf (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e);
+
+PFmil_t * PFmil_tj_fbterms (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d);
 
 #endif
 

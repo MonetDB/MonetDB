@@ -742,6 +742,15 @@ PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
 #define PFT_TOKENIZE   "pftijah_tokenize"
 #define PFT_RESSIZE    "pftijah_ressize"
 
+#define PFT_TERMS      "pftijah_terms"
+#define PFT_TERMS_O    "pftijah_terms_o"
+#define PFT_TFALL      "pftijah_tfall"
+#define PFT_TFALL_O    "pftijah_tfall_o"
+#define PFT_TF         "pftijah_tf"
+#define PFT_TF_O       "pftijah_tf_o"
+#define PFT_FBTERMS    "pftijah_fbterms"
+#define PFT_FBTERMS_O  "pftijah_fbterms_o"
+
 #endif /* HAVE_PFTIJAH */
 
 #endif  /* ALGEBRA_H */
