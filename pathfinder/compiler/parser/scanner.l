@@ -692,7 +692,7 @@ _                                {S}
                                      pf_yield (StringLiteral);
                                    }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <OPERATOR>{
@@ -792,7 +792,7 @@ _                                {S}
 "with"                             { gotoState (DEFAULT); pf_yield (with);}
 "modify"                           { gotoState (DEFAULT); pf_yield (modify);}
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <NAMESPACEDECL>{
@@ -805,7 +805,7 @@ _                                {S}
                                    }
 "="                                { pf_yield (equals); }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <NAMESPACEKEYWORD>{
@@ -817,7 +817,7 @@ _                                {S}
                                      pf_yield (StringLiteral);
                                    }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <VARNAME>{
@@ -827,7 +827,7 @@ _                                {S}
                                      gotoState (OPERATOR);
                                      pf_yield (QName);
                                    }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <SINGLETYPE>{
@@ -838,7 +838,7 @@ _                                {S}
                                      pf_yield (QName);
                                    }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <ITEMTYPE>{
@@ -882,7 +882,7 @@ _                                {S}
 ")"                                { gotoState (OCCURRENCEINDICATOR);
                                      pf_yield (rparen); }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <OCCURRENCEINDICATOR>{
@@ -893,7 +893,7 @@ _                                {S}
 "+"                                { gotoState (OPERATOR);
                                      pf_yield (plus); }
 {_}                                ;
-.                                  { unput (yytext[yyleng-1]);
+([\300-\377][\200-\277]*|.)        { unput (yytext[yyleng-1]);
                                      gotoState (OPERATOR); }
 }
 
@@ -912,7 +912,7 @@ _                                {S}
 ")"                                { popState (); pf_yield (rparen); }
 "*"                                { pf_yield (star); }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <KINDTESTFORPI>{
@@ -924,7 +924,7 @@ _                                {S}
                                    }
 ")"                                { popState (); pf_yield (rparen); }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <START_TAG>{
@@ -942,7 +942,7 @@ _                                {S}
 "/>"                               { popState (); pf_yield (slash_gt); }
 ">"                                { gotoState (ELEMENT_CONTENT);
                                      pf_yield (greater_than); }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <QUOT_ATTRIBUTE_CONTENT>{
@@ -962,7 +962,7 @@ _                                {S}
 {CharRef}                          { pflval.str = entity_ref (yytext, NULL);
                                      pf_yield (CharRef);
                                    }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <APOS_ATTRIBUTE_CONTENT>{
@@ -983,7 +983,7 @@ _                                {S}
 {CharRef}                          { pflval.str = entity_ref (yytext, NULL);
                                      pf_yield (CharRef);
                                    }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <ELEMENT_CONTENT>{
@@ -1013,7 +1013,7 @@ _                                {S}
 {ElementContentChar}               { pflval.str = PFstrndup (yytext, yyleng);
                                      pf_yield (ElementContentChar);
                                    }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <XML_COMMENT>{
@@ -1021,7 +1021,7 @@ _                                {S}
 {Char}                             { pflval.str = PFstrndup (yytext, yyleng);
                                      pf_yield (PFChar);
                                    }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <PROCESSING_INSTRUCTION>{
@@ -1031,7 +1031,7 @@ _                                {S}
 {PITarget}                         { pflval.str = PFstrndup (yytext, yyleng);
                                      pf_yield (PITarget);
                                    }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <PROCESSING_INSTRUCTION_CONTENT>{
@@ -1039,7 +1039,7 @@ _                                {S}
 {Char}                             { pflval.str = PFstrndup (yytext, yyleng);
                                      pf_yield (PFChar);
                                    }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <CDATA_SECTION>{
@@ -1047,7 +1047,7 @@ _                                {S}
 {Char}                             { pflval.str = PFstrndup (yytext, yyleng);
                                      pf_yield (PFChar);
                                    }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <END_TAG>{
@@ -1058,7 +1058,7 @@ _                                {S}
                                      pf_yield (QName);
                                    }
 {S}                                { pf_yield (S); }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <PRESERVE_MODE>{
@@ -1067,7 +1067,7 @@ _                                {S}
 ","                                { gotoState (INHERIT_MODE);
                                      pf_yield (comma); }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <INHERIT_MODE>{
@@ -1076,7 +1076,7 @@ _                                {S}
 ";"                                { gotoState (DEFAULT);
                                      pf_yield (semicolon); }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <PRAGMA_TARGET>{
@@ -1087,7 +1087,7 @@ _                                {S}
                                                                    yyleng));
                                      pf_yield (QName);
                                    }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <PRAGMA_CONTENT>{
@@ -1095,7 +1095,7 @@ _                                {S}
                                      pf_yield (PragmaContents); }
 "#)"                               { gotoState (NEXT_PRAGMA);
                                      pf_yield (hash_paren); }
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 
 <NEXT_PRAGMA>{
@@ -1105,7 +1105,7 @@ _                                {S}
                                      gotoState (DEFAULT);
                                      pf_yield (lbrace); }
 {_}                                ;
-.                                  { pf_yield (invalid_character); }
+([\300-\377][\200-\277]*|.)        { pf_yield (invalid_character); }
 }
 %%
 

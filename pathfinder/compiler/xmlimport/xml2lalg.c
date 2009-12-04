@@ -2460,8 +2460,7 @@ getRootNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     if(nodeSetPtr)
         xmlXPathFreeNodeSet(nodeSetPtr);
     */
-    if(xpathObjPtr)
-        xmlXPathFreeObject(xpathObjPtr);
+    xmlXPathFreeObject(xpathObjPtr);
 
     return rootNode;
 }
