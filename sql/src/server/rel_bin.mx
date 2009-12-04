@@ -85,7 +85,7 @@ bin_find_column( stmt *sub, char *rname, char *name )
 		for (n = sub->op1.lval->h; n; n = n->next) {
 			char *nme = column_name(n->data);
 
-			if (strcmp(nme, name) == 0) {
+			if (nme && strcmp(nme, name) == 0) {
 				res = n->data;
 				_DELETE(nme);
 				break;
