@@ -445,12 +445,14 @@ Before continuing we should make sure that all clients
 	/* deregister everything that was registered, ignore errors */
 	if ((err = SABAOTHwildRetreat(&t)) != MAL_SUCCEED) {
 		fprintf(stderr, "!%s", err);
-		GDKfree(err);
+		if (err != M5OutOfMemory)
+			GDKfree(err);
 	}
 	/* the server will now be shut down */
 	if ((err = SABAOTHregisterStop(&t)) != MAL_SUCCEED) {
 		fprintf(stderr, "!%s", err);
-		GDKfree(err);
+		if (err != M5OutOfMemory)
+			GDKfree(err);
 	}
 	GDKexit(0); 	/* properly end GDK */
 }

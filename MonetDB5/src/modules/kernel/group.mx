@@ -879,7 +879,8 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 			BBPreleaseref(nh);
 			BBPreleaseref(nbn);
 		} else {
-			GDKfree(msg);
+			if (msg != M5OutOfMemory)
+				GDKfree(msg);
 			BBPreleaseref(bx->batCacheid);
 			BBPreleaseref(histo->batCacheid);
 			BBPreleaseref(bn->batCacheid);

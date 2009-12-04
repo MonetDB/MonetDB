@@ -2067,7 +2067,7 @@ if( ret != MAL_SUCCEED ) {
 	/* Detect any exception received from the implementation. */
 	/* The first identifier is an optional exception name */
 	if( strstr(ret,"!skip-to-end") ){
-		GDKfree(ret);
+		GDKfree(ret);			/* no need to check for M5OutOfMemory */
 		ret= MAL_SUCCEED;
 		stkpc= mb->stop;
 		@2;
@@ -2102,7 +2102,8 @@ all.
 		ret = 0;
 	} else {
 		stream_printf(cntxt->fdout,"%s",ret);
-		GDKfree(ret);
+		if (ret != M5OutOfMemory)
+			GDKfree(ret);
 	}
 	/* position yourself at the catch instruction for further decisions */
 	@:skipToCatch(exceptionVar,@2,@3)@

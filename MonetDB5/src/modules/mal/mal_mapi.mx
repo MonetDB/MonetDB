@@ -580,7 +580,7 @@ void SERVERannounce(struct in_addr addr, int port) {
 				(unsigned) ((ntohl(addr.s_addr) >> 8) & 0xff),
 				(unsigned) (ntohl(addr.s_addr) & 0xff));
 	}
-	if ((buf = SABAOTHmarchConnection(&ret, &host, &port)) != MAL_SUCCEED)
+	if ((buf = SABAOTHmarchConnection(&ret, &host, &port)) != MAL_SUCCEED && buf != M5OutOfMemory)
 		GDKfree(buf);
 }
 
