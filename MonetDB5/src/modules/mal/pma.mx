@@ -75,10 +75,6 @@ comment "test the function of deletion"
 @:pma_mal(lng)@
 @:pma_mal(flt)@
 @:pma_mal(dbl)@
-@(
-StM: disabled as the code clearly cannot handle type str (yet?)
-@:pma_mal(str)@
-@)
 
 @+ PMA API
 @h
@@ -115,10 +111,6 @@ pma_export str PMAtestdel_@1(void *dummy, bat *b);
 @:pma_decl(lng)@
 @:pma_decl(flt)@
 @:pma_decl(dbl)@
-@(
-StM: disabled as the code clearly cannot handle type str (yet?)
-@:pma_decl(str)@
-@)
 #endif	/* _PMA_H_ */
 
 @+ PMA implementation
@@ -155,10 +147,6 @@ PMAnew(bat *res, int *tpe, int *sz) {
 	for (cnt = PMA_SEG; cnt < *sz; cnt <<= 1);	/* figure out the size */
 	b = BATnew(TYPE_void, *tpe, cnt);
 	if (b) {
-@(
-StM: disabled as the code clearly cannot handle other than fixed-size linear types (yet?)
-		var_t nil_off;
-@)
 		switch(ATOMstorage(*tpe)) {
 		case TYPE_chr: @:fillnill(chr, chr_nil)@
 		case TYPE_bte: @:fillnill(bte, bte_nil)@
@@ -168,15 +156,8 @@ StM: disabled as the code clearly cannot handle other than fixed-size linear typ
 		case TYPE_flt: @:fillnill(flt, flt_nil)@
 		case TYPE_dbl: @:fillnill(dbl, dbl_nil)@
 		case TYPE_ptr: @:fillnill(ptr, ptr_nil)@
-		default:	
-			BBPunfix(b->batCacheid);
-			return "PMAnew: type not supported (yet?)";
-@(
-StM: disabled as the code clearly cannot handle other than fixed-size linear types (yet?)
-			       BUNins(b, NULL, (ptr)str_nil, FALSE);
-                	       nil_off = *(var_t*) Tloc(b, BUNfirst(b));
-		               @:fillnill(wrd, nil_off)@
-@)
+		default:		BBPunfix(b->batCacheid);
+						return "PMAnew: type not supported (yet?)";
 		}
 		BATsetcount(b, cnt);
 		b->tsorted = 0;
@@ -417,7 +398,7 @@ PMAdel_@1(void *dummy, bat *bid, oid *pos) {
 	bat ret;
 	BAT *b, *bn;
 	@1 *base, *basen;
-	(void)dummy;
+	dummy = 0;
 	b = BATdescriptor(*bid);
 	if (b == NULL) return "PMAdel: illegal bat parameter";
 	psz = BATcount(b);
@@ -725,9 +706,9 @@ PMAfnd_@1(oid *lo_res, oid *hi_res, bat *bid, oid *lo, oid *hi, @1 *val) {
 pma_export str
 PMAbulkins_@1(oid *pos_res, bat *bid, oid *pos, bat *ibid) {
 	bit fgw, fg;
-	int tpe, size;
+	int tpe, size, slen;
 	oid i, j, k, ht, sz, isz, psz, cnt, icnt, lv, wsz, snum, scl, scr, wbeg, mpos, cur;
-	dbl dens, dent, step, dstep, slen;
+	dbl dens, dent, step, dstep;
 	bat ret;
 	BAT *b, *bi, *bn;
 	@1 *base, *basei, *basen;
@@ -795,7 +776,7 @@ PMAbulkins_@1(oid *pos_res, bat *bid, oid *pos, bat *ibid) {
 					cur = i;
 				}
 			} else {
-				if (fg && (i - cur >= slen)) {
+				if (fg && ((int)(i - cur) >= slen)) {
 					base[cur] = base[i];
 					base[i] = (@1)@1_nil;
 					cur += slen;
@@ -815,7 +796,7 @@ PMAbulkins_@1(oid *pos_res, bat *bid, oid *pos, bat *ibid) {
 					cur = i;
 				}
 			} else {
-				if (fg && (cur - i >= slen)) {
+				if (fg && ((int)(cur - i) >= slen)) {
 					base[cur] = base[i];
 					base[i] = (@1)@1_nil;
 					cur -= slen;
@@ -839,7 +820,7 @@ PMAbulkins_@1(oid *pos_res, bat *bid, oid *pos, bat *ibid) {
 		while (TaoMin * size < cnt + icnt) size <<= 1;
 		dstep = (dbl)size / (cnt + icnt);
 		slen = ceil(dstep);
-		if ((cnt + icnt) * slen > size) slen--;
+		if ((int)(cnt + icnt) * slen > size) slen--;
 		tpe = TYPE_@1;
 		PMAnew(&ret, &tpe, &size);
 		bn =  BATdescriptor(ret);
@@ -877,7 +858,7 @@ PMAtestins_@1(void *dummy, bat *bid, int *num) {
 	BAT *b;
 	oid lo, hi, lo_res, hi_res, pos_res;
 	int i;
-	(void)dummy;
+	dummy = 0;
 	b = BATdescriptor(*bid);
 	if (b == NULL) return "PMAfnd: illegal bat parameter";
 	for (i = 0; i < *num; i++) {
@@ -916,7 +897,3 @@ PMAtestdel_@1(void *dummy, bat *bid) {
 @:pma_impl(lng)@
 @:pma_impl(flt)@
 @:pma_impl(dbl)@
-@(
-StM: disabled as the code clearly cannot handle type str (yet?)
-@:pma_impl(str)@
-@)
