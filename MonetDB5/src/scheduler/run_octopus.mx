@@ -200,7 +200,8 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 		msg= RMTconnect(&conn, &workers[i].uri, &workers[i].usr, &workers[i].pwd);
 		if (msg ){
 			stream_printf(cntxt->fdout,"!%s\n",msg);
-			GDKfree(msg);
+			if (msg != M5OutOfMemory)
+				GDKfree(msg);
 			msg = NULL;
 			(void) RMTdisconnect(&ret,&conn);
 			continue;
