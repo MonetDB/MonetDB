@@ -3310,7 +3310,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return NULL;
 	}
 
-	if (f == sql_where && !groupby) 
+	if (f == sql_where) 
 		return sql_error(sql, 02, "%s: not allowed in WHERE clause",
 				toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
 	
@@ -4087,8 +4087,10 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return sql_error(sql, 10, "SELECT: too many nested operators");
 
 	e = rel_value_exp2(sql, rel, se, f, ek, &is_last);
-	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !is_last) 
+	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !is_last) {
+		assert(*rel);
 		return rel_lastexp(sql, *rel);
+	}
 	return e;
 }
 
