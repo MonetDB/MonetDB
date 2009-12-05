@@ -33,7 +33,7 @@ sort a table of students on age first, and then on their names.
 @mal
 module pma;
 
-command new(tpe:int, sze:int) :bat[:oid,:any_1]
+command new(tpe:int, sze:wrd) :bat[:oid,:any_1]
 address PMAnew
 comment "create a new empty PMA-organized BAT (PMA for short)";
 
@@ -93,7 +93,7 @@ comment "test the function of deletion"
 
 #include <gdk.h>
 #include <gdk_atoms.h>
-pma_export str PMAnew(bat *res, int *tpe, int *sz);
+pma_export str PMAnew(bat *res, int *tpe, BUN *sz);
 @= pma_decl
 pma_export str PMAins_@1(oid *pos_res, bat *b, oid *pos, @1 *val);
 pma_export str PMAbulkins_@1(oid *pos_res, bat *b, oid *pos, bat *bi);
@@ -137,13 +137,13 @@ pma_export str PMAtestdel_@1(void *dummy, bat *b);
 
 @c
 pma_export str
-PMAnew(bat *res, int *tpe, int *sz) {
+PMAnew(bat *res, int *tpe, BUN *sz) {
 	BAT *b;
-	wrd cnt, i;
+	BUN cnt, i;
 	if (*tpe < 0)
-		return "PMAnew: illegal type";
+		throw(MAL,"pma.new","tpe argument is incorrect");
 	if (ATOMstorage(*tpe) == TYPE_void || ATOMstorage(*tpe) > TYPE_lng)
-		return "PMAnew: type not supported (yet?)";
+		throw(MAL,"pma.new","tpe not supported (yet?)");
 	for (cnt = PMA_SEG; cnt < *sz; cnt <<= 1);	/* figure out the size */
 	b = BATnew(TYPE_void, *tpe, cnt);
 	if (b) {
@@ -157,7 +157,7 @@ PMAnew(bat *res, int *tpe, int *sz) {
 		case TYPE_dbl: @:fillnill(dbl, dbl_nil)@
 		case TYPE_ptr: @:fillnill(ptr, ptr_nil)@
 		default:		BBPunfix(b->batCacheid);
-						return "PMAnew: type not supported (yet?)";
+						throw(MAL,"pma.new","tpe not supported (yet?)");
 		}
 		BATsetcount(b, cnt);
 		b->tsorted = 0;
@@ -165,25 +165,25 @@ PMAnew(bat *res, int *tpe, int *sz) {
 		BBPkeepref(*res = b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return "PMAnew: allocation failed";
+	throw(MAL,"pma.new","pma allocation failed");
 }
 
 @= pma_impl
 pma_export str
 PMAins_@1(oid *pos_res, bat *bid, oid *pos, @1 *val) {
 	bit fgw, fg;
-	oid i, j, k, lt, rt, ht, sz , psz, cnt, lv, wsz, snum, scl, scr, wbeg, wend, mpos;
+	BUN i, j, k, lt, rt, ht, sz , psz, cnt, lv, wsz, snum, scl, scr, wbeg, wend, mpos;
 	dbl dens, dent, step, dstep, slen;
 	BAT *b;
 	@1 *base;
 
 	b =  BATdescriptor(*bid);
-	if (b == NULL) return "PMAins: illegal bat parameter";
+	if (b == NULL) throw(MAL,"pma.ins","illegal bat parameter");
 	base = (@1*) Tloc(b, BUNfirst(b));
 	sz = PMA_SEG;
 	psz = BATcount(b);
 	for (ht = 0; psz > sz; sz <<= 1) ht++;
-	if (psz != sz) return "PMAins: illegal bat size";
+	if (psz != sz) throw(MAL,"pma.ins","illegal bat size");
 	if (ht == 0) {
 		dent = TaoMin;
 		step = 0;
@@ -319,7 +319,7 @@ PMAins_@1(oid *pos_res, bat *bid, oid *pos, @1 *val) {
 		}
 	} else {	/* extend to a double sized new PMA-managed BAT */
 		psz <<= 1;
-		if ((b = BATextend(b, (BUN)psz)) == NULL) return "PMAins: BATextend fails";
+		if ((b = BATextend(b, (BUN)psz)) == NULL) throw(MAL,"pma.ins","BATextend fails");
 		BATsetcount(b, psz);
 		b->tsorted = 0;
 		BATkey(BATmirror(b), FALSE);
@@ -335,7 +335,7 @@ PMAins_@1(oid *pos_res, bat *bid, oid *pos, @1 *val) {
 			*pos_res = j;
 			for (k = 1; k < slen; k++) base[j-k] = (@1)@1_nil;
 			j -= slen;
-			for (; (int)i >= 0; i--) {
+			for (; i > 0; i--) {
 				if (base[i] != @1_nil) {
 					base[j] = base[i];
 					base[i] = (@1)@1_nil;
@@ -359,7 +359,7 @@ PMAins_@1(oid *pos_res, bat *bid, oid *pos, @1 *val) {
 			for (k = 1; k < slen; k++) 	base[j-k] = (@1)@1_nil;
 			j -= slen;
 			assert(j + slen > i);
-			for (; (int)i >= 0; i--) {
+			for (; i > 0; i--) {
 				if (j < i + slen) break;
 				if (base[i] != @1_nil) {
 					base[j] = base[i];
@@ -372,15 +372,15 @@ PMAins_@1(oid *pos_res, bat *bid, oid *pos, @1 *val) {
 		}
 	}
 	/* check only, for debugging */
-	/*for (i = *pos_res; (int)i >= 0; i--) {
+	/*for (i = *pos_res; i > 0; i--) {
 		if (base[i] == @1_nil) continue;
-		else if (base[i] > *val) { printf("PMAins before: %d\n", (int)i); assert(0); }
+		else if (base[i] > *val) { printf("PMAins before: %d\n", i); assert(0); }
 		else if (base[i] < *val) break;
 		if (i == 0) break;
 	}
 	for (i++; i < psz; i++) {
 		if (base[i] == @1_nil) continue;
-		else if (base[i] < *val) { printf("PMAfnd after: %d\n", (int)i); assert(0); }
+		else if (base[i] < *val) { printf("PMAfnd after: %d\n", i); assert(0); }
 		else if (base[i] > *val) break;
 	}*/
 	/* ~check only, for debugging */
@@ -392,19 +392,19 @@ PMAins_@1(oid *pos_res, bat *bid, oid *pos, @1 *val) {
 pma_export str
 PMAdel_@1(void *dummy, bat *bid, oid *pos) {
 	bit fg, fgw;
-	oid i, j, ht, sz, wsz, psz, wbeg, lv, snum, scl, scr, cnt;
+	BUN i, j, ht, sz, wsz, psz, wbeg, lv, snum, scl, scr, cnt, slen, nsz;
+	int tpe;
 	dbl dens, dent, step, dstep;
-	int tpe, nsz, slen;
 	bat ret;
 	BAT *b, *bn;
 	@1 *base, *basen;
 	dummy = 0;
 	b = BATdescriptor(*bid);
-	if (b == NULL) return "PMAdel: illegal bat parameter";
+	if (b == NULL) throw(MAL,"pma.del","illegal bat parameter");
 	psz = BATcount(b);
 	sz = PMA_SEG;
 	for(ht = 0; psz > sz; sz <<= 1) ht++;
-	if (psz != sz) return "PMAdel: illegal bat size";
+	if (psz != sz) throw(MAL,"pma.del","illegal bat size");
 	base = (@1 *) Tloc(b, BUNfirst(b));
 	if (base[*pos] == @1_nil) return MAL_SUCCEED;
 	base[*pos] = (@1)@1_nil;
@@ -493,21 +493,21 @@ PMAdel_@1(void *dummy, bat *bid, oid *pos) {
 
 pma_export str
 PMAbulkdel_@1(void *dummy, bat *bid, oid *lo, oid *hi) {
-	oid i, j, k, ht, lv, snum, wbeg, wsz, sz, psz, cnt, icnt, scl, scr;
+	BUN i, j, k, ht, lv, snum, wbeg, wsz, sz, psz, cnt, icnt, scl, scr, nsz, slen;
 	bit fg, fgw;
 	dbl dens, dent, step, dstep;
-	int tpe, nsz, slen;
+	int tpe;
 	bat ret;
 	BAT *b, *bn;
 	@1 *base, *basen;
 	b = BATdescriptor(*bid);
 	psz = BATcount(b);
-	if (b == NULL) return "PMAdel: illegal bat parameter";
+	if (b == NULL) throw(MAL,"pma.bulkdel","illegal bat parameter");
 	if (*lo > *hi || *hi > psz) return MAL_SUCCEED;
 	if (*lo == *hi) return PMAdel_@1(dummy, bid, hi);
 	sz = PMA_SEG;
 	for(ht = 0; psz > sz; sz <<= 1) ht++;
-	if (psz != sz) return "PMAdel: illegal bat size";
+	if (psz != sz) throw(MAL,"pma.bulkdel","illegal bat size");
 	(ht == 0) ? (step = 0) : (step = (RouMax - Dmin) / ht);
 	base = (@1 *) Tloc(b, BUNfirst(b));
 	icnt = 0;
@@ -616,10 +616,10 @@ PMAbulkdel_@1(void *dummy, bat *bid, oid *lo, oid *hi) {
 pma_export str
 PMAfnd_@1(oid *lo_res, oid *hi_res, bat *bid, oid *lo, oid *hi, @1 *val) {
 	BAT* b = BATdescriptor(*bid);
-	oid i, md, h, l;
+	BUN i, md, h, l;
 	@1 *base;
-	if (b == NULL) return "PMAfnd: illegal bat parameter";
-	if (*lo > *hi) return "PMAfnd: illegal search parameter (low > high)";
+	if (b == NULL) throw(MAL,"pma.fnd","illegal bat parameter");
+	if (*lo > *hi) throw(MAL,"pma.fnd","low>high");
 	base = (@1*) Tloc(b, BUNfirst(b));
 	if (*lo == *hi) md = *lo;
 	h = *hi;
@@ -690,14 +690,14 @@ PMAfnd_@1(oid *lo_res, oid *hi_res, bat *bid, oid *lo, oid *hi, @1 *val) {
 			if (base[i] == @1_nil)    continue;
 			else if (base[i] == *val) *lo_res = i;
 			else if (base[i] < *val)  break;
-			else                      return "PMAfnd: the PMA should be ordered";
+			else                      throw(MAL,"pma.fnd","pma not ordered");
 			if (i == l) break;
 		}
 		for (i = md + 1; i <= h; i++) {
 			if (base[i] == @1_nil)    continue;
 			else if (base[i] == *val) *hi_res = i;
 			else if (base[i] > *val)  break;
-			else                      return "PMAfnd: the PMA should be ordered";
+			else                      throw(MAL,"pma.fnd","pma not ordered");
 		}
 	}
 	return MAL_SUCCEED;
@@ -706,15 +706,15 @@ PMAfnd_@1(oid *lo_res, oid *hi_res, bat *bid, oid *lo, oid *hi, @1 *val) {
 pma_export str
 PMAbulkins_@1(oid *pos_res, bat *bid, oid *pos, bat *ibid) {
 	bit fgw, fg;
-	int tpe, size, slen;
-	oid i, j, k, ht, sz, isz, psz, cnt, icnt, lv, wsz, snum, scl, scr, wbeg, mpos, cur;
+	int tpe;
+	BUN i, j, k, ht, sz, isz, psz, cnt, icnt, lv, wsz, snum, scl, scr, wbeg, mpos, cur, slen, size;
 	dbl dens, dent, step, dstep;
 	bat ret;
 	BAT *b, *bi, *bn;
 	@1 *base, *basei, *basen;
 	b =  BATdescriptor(*bid);
 	bi =  BATdescriptor(*ibid);
-	if (b == NULL || bi == NULL) return "PMAins: illegal bat parameter";
+	if (b == NULL || bi == NULL) throw(MAL,"pma.bulkins","illegal bat parameter");
 	base = (@1*) Tloc(b, BUNfirst(b));
 	basei = (@1*) Tloc(bi, BUNfirst(bi));
 	isz = BATcount(bi);
@@ -726,7 +726,7 @@ PMAbulkins_@1(oid *pos_res, bat *bid, oid *pos, bat *ibid) {
 	sz = PMA_SEG;
 	psz = BATcount(b);
 	for (ht = 0; psz > sz; sz <<= 1) ht++;
-	if (psz != sz) return "PMAins: illegal bat size";
+	if (psz != sz) throw(MAL,"pma.bulkins","illegal bat size");
 	if (ht == 0) {
 		dent = TaoMin;
 		step = 0;
@@ -776,7 +776,7 @@ PMAbulkins_@1(oid *pos_res, bat *bid, oid *pos, bat *ibid) {
 					cur = i;
 				}
 			} else {
-				if (fg && ((int)(i - cur) >= slen)) {
+				if (fg && ((i - cur) >= slen)) {
 					base[cur] = base[i];
 					base[i] = (@1)@1_nil;
 					cur += slen;
@@ -796,7 +796,7 @@ PMAbulkins_@1(oid *pos_res, bat *bid, oid *pos, bat *ibid) {
 					cur = i;
 				}
 			} else {
-				if (fg && ((int)(cur - i) >= slen)) {
+				if (fg && ((cur - i) >= slen)) {
 					base[cur] = base[i];
 					base[i] = (@1)@1_nil;
 					cur -= slen;
@@ -820,7 +820,7 @@ PMAbulkins_@1(oid *pos_res, bat *bid, oid *pos, bat *ibid) {
 		while (TaoMin * size < cnt + icnt) size <<= 1;
 		dstep = (dbl)size / (cnt + icnt);
 		slen = ceil(dstep);
-		if ((int)(cnt + icnt) * slen > size) slen--;
+		if ((cnt + icnt) * slen > size) slen--;
 		tpe = TYPE_@1;
 		PMAnew(&ret, &tpe, &size);
 		bn =  BATdescriptor(ret);
@@ -860,7 +860,7 @@ PMAtestins_@1(void *dummy, bat *bid, int *num) {
 	int i;
 	dummy = 0;
 	b = BATdescriptor(*bid);
-	if (b == NULL) return "PMAfnd: illegal bat parameter";
+	if (b == NULL) throw(MAL,"pma.testins","illegal bat parameter");
 	for (i = 0; i < *num; i++) {
 		int ival = rand();
 		@1 val = (@1) ival;
@@ -880,7 +880,7 @@ PMAtestdel_@1(void *dummy, bat *bid) {
 	BAT *b;
 	while (1) {
 		b = BATdescriptor(*bid);
-		if (b == NULL) return "PMAfnd: illegal bat parameter";
+		if (b == NULL) throw(MAL,"pma.testdel","illegal bat parameter");
 		sz = BATcount(b);
 		if (sz == PMA_SEG) break;
 		pos = rand() % sz;
