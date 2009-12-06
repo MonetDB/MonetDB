@@ -1042,6 +1042,7 @@ clrFunction(InstrPtr p)
 	p->token = ASSIGNsymbol;
 	p->fcn = 0;
 	p->blk = 0;
+	p->typechk= TYPE_UNKNOWN;
 	setModuleId(p, NULL);
 	setFunctionId(p, NULL);
 }
