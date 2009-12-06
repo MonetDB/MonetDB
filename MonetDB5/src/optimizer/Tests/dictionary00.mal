@@ -1,0 +1,10 @@
+# The micro test for managing the dictionary tables
+
+b := bat.new(:oid,:int);
+bat.append(b,1);
+bat.append(b,7);
+dictionary.new("mylucky",b);
+
+(idx,val):= dictionary.bind("mylucky");
+io.print(idx);
+io.print(val);

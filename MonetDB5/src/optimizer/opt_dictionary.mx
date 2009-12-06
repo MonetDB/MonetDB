@@ -1,0 +1,278 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@f opt_dictionary
+@- The dictionary optimizer
+Datawarehouse applications are organized as star-schemas, where dimension
+tables factor out common recurring bits-and-pieces. For example, it factors
+out the list of US states, cities, regions, etc..
+To get the most compact and still performance wise fast datawarehouse,
+a DBA should analyse the database and repeatedly finetune the decisions
+towards a compact star schema.
+
+The dictionary optimizer is meant to alleviate this task by maintaining
+dictionaries for organizing static data sets and replace their database
+references by pointers into the index. For example, a string column
+with all US states can be replaced by a tinyint column with indices
+into the dictionary table.
+
+The optimizer maintains a list of dictionaries, represented by a persistent
+catalog BAT.
+The optimizer looks for the following code fragments
+@verbatim
+  a:bat[:oid,:str]:= sql.bind("sys","tab","col",0);
+  b:= algebra.select(a,"a");
+@end verbatim
+and replaces them into 
+@verbatim
+  (idx:bat[:oid,:sht],val:bat[:sht,:str]):= dictionary.bind("sys/tab/col/0");
+  bv:= algebra.select(val,"a");
+  b:= algebra.join(idx,bv);
+@end verbatim
+
+In the first implementation, we explicitly migrate columns to the dictionary.
+The source BAT will remain in existence, but will be emptied. This way we can always
+migrate the dictionary back into the persistent table without disturbing
+the SQL catalog.
+
+Ultimately, the optimizer detects opportunities for replacement of columns.
+@{
+@mal
+module dictionary;
+
+command bind(nme:str) (idx:bat[:oid,:any_1], val:bat[:any_1,:any_2])
+address DICTbind
+comment "Localise the dictionary";
+
+command new(nme:str,b:bat[:any_1,:any_2]) 
+address DICTnew
+comment "Add a new dictionary table";
+
+command drop(nme:str)
+address DICTdrop
+comment "Remove the dictionary entry";
+
+pattern optimizer.dictionary():str
+address OPTdictionary;
+pattern optimizer.dictionary(mod:str, fcn:str):str
+address OPTdictionary
+comment "Capitalize dictionary encodings ";
+
+@h
+#ifndef _OPT_DICTIONARY_
+#define _OPT_DICTIONARY_
+#include "opt_prelude.h"
+#include "opt_support.h"
+
+#define DEBUG_OPT_DICTIONARY 
+opt_export str DICTbind(int *idx, int *val, str * nme);
+opt_export str DICTnew(int *idx, str *nme, int *bid);
+opt_export str DICTdrop(int *ret, str *nme);
+
+@c
+#include "mal_config.h"
+#include "opt_prelude.h"
+#include "opt_dictionary.h"
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
+
+static BAT *dictIndex, *dictValue;
+
+static int DICTinit();
+
+static int 
+DICTfind(int *idx, int *val, str nme)
+{
+	BUN p;
+	BATiter bidx = bat_iterator(dictIndex);
+	BATiter bval = bat_iterator(dictValue);
+	p = BUNfnd(BATmirror(dictIndex), (ptr) nme);
+	if ( p != BUN_NONE ){
+		*idx = *(int*) BUNhead(bidx, p);
+		*val = *(int*) BUNhead(bval, BUNfnd(BATmirror(dictValue), (ptr) nme ) );
+		return 0;
+	}
+	return -1;
+}
+
+int
+OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	InstrPtr *old,q;
+	int limit;
+
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	DICTinit();
+	limit = mb->stop;
+	old = mb->stmt;
+	
+    if ( newMalBlkStmt(mb, mb->ssize) < 0)
+        return 0;
+
+	for (i=0; i< limit; i++){
+        q= getInstrPtr(mb,i);
+        if (getModuleId(q)!= sqlRef )
+            continue;
+		/* replace the BAT if a dictionary exists */
+		/* also look at the SQL append group */
+	}
+	return 0;
+	
+}
+@-
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(dictionary)@
+#endif
+@c
+#include "opt_statistics.h"
+
+@:wrapOptimizer(dictionary,OPT_CHECK_ALL)@
+@-
+Dictionary implementation.
+@c
+int
+DICTinit()
+{
+    BAT *b, *bn;
+	if ( dictIndex == NULL){
+		mal_set_lock(mal_contextLock, "dictionary");
+		if ( dictIndex ){
+			/* parallel initialization action */
+			mal_unset_lock(mal_contextLock, "dictionary");
+			return 0;
+		}
+		b = BATdescriptor(BBPindex("dictIndex"));
+		if (b) {
+			bn = BATdescriptor(BBPindex("dictValue"));
+			if (bn ){
+				dictIndex = b;
+				dictValue = bn;
+			} else
+				BBPreleaseref(b->batCacheid);
+			mal_unset_lock(mal_contextLock, "dictionary");
+			return 0;
+		}
+
+		b = BATnew(TYPE_int,TYPE_str, 255);
+		if (b == NULL) {
+			mal_unset_lock(mal_contextLock, "dictionary");
+			return -1;
+		}
+		bn = BATnew(TYPE_int, TYPE_str, 255);
+		if (bn == NULL) {
+			BBPreleaseref(b->batCacheid);
+			mal_unset_lock(mal_contextLock, "dictionary");
+			return -1;
+		}
+
+		BATkey(b, TRUE);
+		BBPrename(b->batCacheid, "dictIndex");
+		BATmode(b, PERSISTENT);
+		BBPkeepref(b->batCacheid);
+		dictIndex = b;
+
+		BATkey(bn, TRUE);
+		BBPrename(bn->batCacheid, "dictValue");
+		BATmode(bn, PERSISTENT);
+		BBPkeepref(bn->batCacheid);
+		dictValue = bn;
+		mal_unset_lock(mal_contextLock, "dictionary");
+	}
+    return 0;
+}
+
+str DICTbind(int *idx, int *val, str * nme)
+{
+	*idx = *val = 0;
+	if( DICTinit() )
+		throw(MAL,"dictionary.bind","No catalog table");
+	if ( DICTfind(idx, val, *nme) )
+		throw(MAL,"dictionary.bind","Not found in catalog table");
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.bind %d %d\n",*idx, *val);
+#endif
+	return MAL_SUCCEED;
+}
+
+str DICTnew(int *ret, str *nme, int *bid)
+{
+	int idx,val, typ;
+	size_t cnt;
+	BAT *b, *bx, *bv;
+
+	if( DICTinit() )
+		throw(MAL,"dictionary.new","No catalog table");
+	if ( DICTfind(&idx,&val,*nme) == 0)
+		throw(MAL,"dictionary.new", "duplicate entry");
+	b = (BAT *) BATdescriptor(*bid);
+    if (b == 0)
+        /* Simple ignore the binding if you can;t find the bat */
+        throw(MAL, "dict.new", RUNTIME_OBJECT_MISSING);
+
+	bv= BATkunique(b);
+	if ( bv == NULL)
+		throw(MAL,"dict.new","Can not access unique list");
+	
+	cnt = BATcount(bv);
+	if ( cnt < 256 )
+		typ= TYPE_bte;
+	else
+	if ( cnt < 1<<15 )
+		typ= TYPE_sht;
+	else
+	if ( cnt < (size_t) 1<<31 )
+		typ= TYPE_int;
+	else
+		typ= TYPE_lng;
+	bx =  BATnew(TYPE_void, typ, BATcount(b));
+	/* create the dictionary representation */
+	switch(typ){
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+		;
+	}
+
+	BUNins(dictIndex,&bx->batCacheid, *nme, FALSE);
+	BUNins(dictValue,&bv->batCacheid, *nme, FALSE);
+	BATmode(bx, PERSISTENT);
+	BATmode(bv, PERSISTENT);
+	BBPkeepref(bx->batCacheid);
+	BBPkeepref(bv->batCacheid);
+	BBPreleaseref(*bid);
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.new  %d->%d %d\n",typ,bx->batCacheid, bv->batCacheid);
+#endif
+	(void) ret;
+	return MAL_SUCCEED;
+}
+
+str DICTdrop(int *ret, str *nme)
+{
+	if( DICTinit() )
+		throw(MAL,"dictionary.drop","No catalog table");
+	(void) ret;
+	(void) nme;
+	throw(MAL,"dictionary.drop", PROGRAM_NYI);
+}
+@}
