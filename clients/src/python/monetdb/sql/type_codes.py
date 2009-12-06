@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 # definition of types, for more info:
-# http://monetdb.cwi.nl/projects/monetdb/SQL/Documentation/Data-Types.html
+# http://monetdb.cwi.nl/SQL/Documentation/Data-Types.html
 
 CHAR = 'char'                      # (L) character string with length L
 VARCHAR = 'varchar'                # (L) string with atmost length L
