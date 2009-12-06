@@ -30,7 +30,41 @@ The result becomes.
 @verbatim
 	(ext3,grp3) := group.derivepath(b,c,d);
 @end verbatim
+
+Another example is where we are looking for distinct values.
+Then we don't need the extend and can fall back to a simple histogram
+trimming the count part. In the fragment below, the ext1 lifetime
+ends at the groups.new function.
+@verbatim
+	(ext1,grp1) := group.new(b);
+	d:= bat.mirror(ext1);
+	ext1 := nil;
+@end verbatim
+
 @{
+Experiments on the airtraffic database gave the following results.
+@verbatim
+SELECT DISTINCT("AirlineID") FROM ontime 
+Looking at cold/hot run "AirlineID" decimal(8,2) DEFAULT NULL,
+cold Timer   15560.180 msec 
+hot Timer    6284.703 msec 
+After addition of the derivePath optimizer to turn it into kunique.
+cold Timer   15328.508 msec
+hot Timer    3713.352 msec
+
+a cold/hot "Year" smallint DEFAULT NULL,
+cold Timer    5517.951 msec 
+hot Timer    1288.417 msec 
+With deriverPath
+cold Timer    9961.625 msec
+hot Timer    3153.128 msec
+turning off derivePath optimizer again
+hot Timer    1318.827 msec
+
+conclusion (after a few more checks)
+perhaps kunique needs some techniques from group.new. 
+@end verbatim
+SELECT DISTINCT("year") FROM ontime 
 @mal
 pattern optimizer.derivePath():str
 address OPTderivePath;
@@ -56,15 +90,21 @@ comment "internal routine to handle derivation paths.
 static int
 OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, actions=0;
+	int i, j, actions=0;
 	int *pc;
 	str derivePathRef = putName("derivePath",10);
 	InstrPtr q;
 	InstrPtr *old;
 	int limit,slimit;
+    Lifespan span;
+
+
 
 	(void) cntxt;
 	(void) stk;
+    span= setLifespan(mb);
+    if( span == NULL)
+        return 0;
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
@@ -82,8 +122,35 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 0; i<limit; i++){
 		p= old[i];
 		if( getModuleId(p)== groupRef && getFunctionId(p)== newRef ){
-			pc[getArg(p,0)] = i;
-			pc[getArg(p,1)] = i;
+			if ( getEndLifespan(span,getArg(p,1)) == i  ){
+				/* we are only interested in the distinct values */
+				/* trafo:  (ext,grp):= group.new(B);
+				   becomes: br:= bat.reverse(B);
+							kb:= algebra.kunique(br);
+							ext:= bat.reverse(kb);
+				*/
+				q= newStmt(mb,batRef, reverseRef);
+				q= pushArgument(mb,q,getArg(p,2));
+				delArgument(p,1);
+				clrFunction(p);
+				setModuleId(p,algebraRef);
+				setFunctionId(p,kuniqueRef);
+				getArg(p,1) = getArg(q,0);
+				j = getArg(p,0);
+				pushInstruction(mb,p);
+				q= newStmt(mb,batRef, reverseRef);
+				pushArgument(mb,q,getArg(q,0));
+				getArg(p,0) = getArg(q,0);
+				getArg(q,0) = j;
+				clrVarUDFtype(mb,j);
+				clrVarFixed(mb,j);
+				setVarType(mb,j,TYPE_any);
+				actions++;
+				continue;
+			} else {
+				pc[getArg(p,0)] = i;
+				pc[getArg(p,1)] = i;
+			}
 		}
 		if( getModuleId(p)== groupRef && getFunctionId(p)== deriveRef ){
 @-
@@ -120,7 +187,7 @@ This creates a series of join paths, many of which will be removed during deadco
 }
 @include optimizerWrapper.mx
 @h
-@:exportOptimizer(derivePath)@
+@:exportOptimizer(derivePath,OPT_CHECK_ALL)@
 #endif
 opt_export str ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
@@ -143,4 +210,5 @@ ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	throw(MAL,"group.derivePath",PROGRAM_NYI);
 }
+
 @}

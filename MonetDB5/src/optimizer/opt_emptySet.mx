@@ -106,7 +106,7 @@ comment "Symbolic evaluation of empty BAT expressions";
 
 #define propagate(X) {p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1)); \
 	getArg(p,1)= getArg(p,X); p->argc = 2; p->fcn = 0; actions++;\
-	p->typechk=TYPE_UNKNOWN; p->fcn= NULL; \
+	clrFunction(p); \
 	if(getArgType(mb,p,0)== getArgType(mb,p,X)){\
 	setModuleId(p,NULL); setFunctionId(p,NULL); } \
 	else {actions++;setModuleId(p,NULL); setFunctionId(p,NULL); alias[getArg(p,0)]= getArg(p,1); } }
@@ -261,12 +261,11 @@ of removal of superflous constructions.
 					!isUnsafeFunction(p) &&
 					isaBatType(getArgType(mb,p,0))){
 					int tpe=getArgType(mb,p,0);
+					clrFunction(p);
 					setModuleId(p, batRef);
 					setFunctionId(p, newRef);
 					p->argc = 1;
 					p->token = ASSIGNsymbol;
-					p->typechk= TYPE_UNKNOWN;
-					p->fcn = NULL;
 					p= pushArgument(mb, p, 
 						newTypeVariable(mb, getHeadType(tpe)));
 					p= pushArgument(mb, p, 
