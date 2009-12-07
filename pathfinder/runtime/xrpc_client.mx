@@ -895,6 +895,8 @@ byvalue_request(
         }
     } else {
         GDKerror("byvalue_request: failed to create outgoing buffer\n");
+        if (b)
+            buffer_destroy(b);
         return NULL;
     }
 
