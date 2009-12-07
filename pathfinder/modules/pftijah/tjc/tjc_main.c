@@ -246,7 +246,7 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
         if (DEBUG) stream_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
 	return NULL;
     }
-    if (!status && ptree) {
+    if (!status) {
 	root = &ptree->node[ptree->length - 1];
         if (DEBUG) stream_printf(GDKout,"#!tjc start normalize\n");
 	normalize(ptree);
