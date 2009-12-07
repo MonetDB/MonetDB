@@ -346,8 +346,11 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		s = cntxt->fdout;
 	else {
 		s = append_wastream(recycleLog);
-		if (s == NULL || stream_errnr(s))
-				throw(MAL,"recycle", RUNTIME_FILE_NOT_FOUND ":%s", recycleLog);
+		if (s == NULL || stream_errnr(s)) {
+			if (s)
+				stream_destroy(s);
+			throw(MAL,"recycle", RUNTIME_FILE_NOT_FOUND ":%s", recycleLog);
+		}
 	}
 
 	for(i=0; i< mb->stop; i++){
