@@ -32,6 +32,9 @@
 #include <string.h> /* memcpy */
 #include <strings.h> /* strcasecmp */
 #include <gdk.h> /* GDKmalloc */
+#ifdef HAVE_UUID_UUID_H
+#include <uuid/uuid.h>
+#endif
 
 /**
  * Returns a GDKmalloced copy of s, with the first occurrence of
@@ -314,6 +317,7 @@ generatePassphraseFile(char *path)
 	return(NULL);
 }
 
+char *
 generateUUID(void)
 {
 #ifdef HAVE_UUID_UUID_H
