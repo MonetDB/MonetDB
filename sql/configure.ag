@@ -117,6 +117,8 @@ dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 
 dnl  stuff required for merovingian and monetdb
 AC_CHECK_HEADERS([fcntl.h stropts.h sys/ioctl.h sys/un.h termios.h])
+AC_CHECK_HEADERS([uuid/uuid.h])
+AC_SEARCH_LIBS([uuid_generate], [uuid])
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
