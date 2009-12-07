@@ -468,6 +468,9 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 				line= NULL;
 				continue;
 			}
+			/* make sure we return a pointer that can (and should) be freed by the caller */
+			if (line)
+				line = buf;
 		}
 	} while (line == NULL);
 	return line;
@@ -496,8 +499,8 @@ readConsole(Client cntxt)
 #endif
 	buf= getConsoleInput(cntxt, cntxt->prompt, 0, 1);
 	if( buf) {
-		int len= (int) strlen(buf);
-		if( len >= (int) cntxt->fdin->size) {
+		size_t len= strlen(buf);
+		if( len >= cntxt->fdin->size) {
 			/* extremly dirty inplace buffer overwriting */
 			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
 			cntxt->fdin->size = len;
@@ -505,6 +508,7 @@ readConsole(Client cntxt)
 		strcpy(cntxt->fdin->buf, buf);
 		cntxt->fdin->pos = 0;
 		cntxt->fdin->len = len;
+		free(buf);
 		return 1;
 	} else {
 		cntxt->fdin->eof = 1;
