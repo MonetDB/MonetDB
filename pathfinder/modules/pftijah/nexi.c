@@ -496,9 +496,9 @@ int old_main(BAT* optbat, char* startNodes_name)
 	} else if (strcmp(optName, "returnNumber") == 0) {
 	    // ignore, is handled by milprint_summer
         } else if (strcmp(optName, "term-proximity") == 0) {
-                qenv_prox_val = (char*)strdup(optVal);
+                qenv_prox_val = strdup(optVal);
         } else if (strcmp(optName, "feedback-docs") == 0) {
-                qenv_fb_val = (char*)strdup(optVal);
+                qenv_fb_val = strdup(optVal);
         } else if (strcmp(optName, "newversion") == 0) {
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
@@ -511,6 +511,10 @@ int old_main(BAT* optbat, char* startNodes_name)
     BAT* fb = pftu_lookup_bat(pftu_batname1("tj_%s_fragments",(char*)parserCtx->collection,0));
     if ( ! fb ) {
            stream_printf(GDKerr,"Error: cannot find fragments bat for collection \"%s\".\n",parserCtx->collection);
+	   if (qenv_prox_val)
+		   free(qenv_prox_val);
+	   if (qenv_vb_val)
+		   free(qenv_fb_val);
            return 0;
     }
     if ( BATcount(fb) > 1 ) {
