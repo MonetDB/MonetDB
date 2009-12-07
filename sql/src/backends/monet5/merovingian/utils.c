@@ -314,4 +314,37 @@ generatePassphraseFile(char *path)
 	return(NULL);
 }
 
+generateUUID(void)
+{
+#ifdef HAVE_UUID_UUID_H
+# ifdef UUID_PRINTABLE_STRING_LENGTH
+	/* Solaris */
+	char out[UUID_PRINTABLE_STRING_LENGTH];
+# else
+	char out[37];
+# endif
+	uuid_t uuid;
+	uuid_generate(uuid);
+	uuid_unparse(uuid, out);
+#else
+	/* try to do some pseudo interesting stuff, and stash it in the
+	 * format of an UUID to at least return some uniform answer */
+	char out[37];
+	char *p = out;
+	short seed;
+
+	/* generate something like this:
+	 * cefa7a9c-1dd2-11b2-8350-880020adbeef ("%08x-%04x-%04x-%04x-%012x") */
+	p += snprintf(p, 5, "%04x", rand() % 65536);
+	p += snprintf(p, 6, "%04x-", rand() % 65536);
+	p += snprintf(p, 6, "%04x-", rand() % 65536);
+	p += snprintf(p, 6, "%04x-", rand() % 65536);
+	p += snprintf(p, 6, "%04x-", rand() % 65536);
+	p += snprintf(p, 5, "%04x", rand() % 65536);
+	p += snprintf(p, 5, "%04x", rand() % 65536);
+	p += snprintf(p, 5, "%04x", rand() % 65536);
+#endif
+	return(strdup(out));
+}
+
 /* vim:set ts=4 sw=4 noexpandtab: */

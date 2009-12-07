@@ -47,6 +47,7 @@ void secondsToString(char *buf, time_t t, int longness);
 void abbreviateString(char *ret, const char *in, size_t width);
 void generateSalt(char *buf[], unsigned int len);
 char *generatePassphraseFile(char *path);
+char *generateUUID(void);
 
 #endif
 
