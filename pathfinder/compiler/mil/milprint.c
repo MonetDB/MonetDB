@@ -453,6 +453,7 @@ static char *ID[] = {
     , [m_tj_query_handler] = "ALG_tj_query_handler"
     , [m_tj_ftfun_handler] = "ALG_tj_ftfun_handler"
     , [m_tj_add_fti_tape]  = "ALG_tj_add_fti_tape"
+    , [m_tj_docmgmt_tape ] = "ALG_tj_docmgmt_tape"
     , [m_tj_terms ]        = "ALG_tj_terms"
     , [m_tj_tfall ]        = "ALG_tj_tfall"
     , [m_tj_tf ]           = "ALG_tj_tf"
