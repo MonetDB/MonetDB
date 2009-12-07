@@ -2,7 +2,7 @@ Source: monetdb-sql
 Section: misc
 Priority: extra
 Maintainer: MonetDB BV <monet@cwi.nl>
-Build-Depends: debhelper (>= 5), autotools-dev, cdbs, libmonetdb-dev, libmonetdb-client-dev, libmonetdb5-server-dev
+Build-Depends: debhelper (>= 5), autotools-dev, cdbs, libmonetdb-dev, libmonetdb-client-dev, libmonetdb5-server-dev, uuid-dev
 Standards-Version: 3.8.0
 
 Package: monetdb5-sql
