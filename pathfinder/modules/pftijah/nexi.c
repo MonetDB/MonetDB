@@ -513,7 +513,7 @@ int old_main(BAT* optbat, char* startNodes_name)
            stream_printf(GDKerr,"Error: cannot find fragments bat for collection \"%s\".\n",parserCtx->collection);
 	   if (qenv_prox_val)
 		   free(qenv_prox_val);
-	   if (qenv_vb_val)
+	   if (qenv_fb_val)
 		   free(qenv_fb_val);
            return 0;
     }
