@@ -335,7 +335,6 @@ generateUUID(void)
 	 * format of an UUID to at least return some uniform answer */
 	char out[37];
 	char *p = out;
-	short seed;
 
 	/* generate something like this:
 	 * cefa7a9c-1dd2-11b2-8350-880020adbeef ("%08x-%04x-%04x-%04x-%012x") */
