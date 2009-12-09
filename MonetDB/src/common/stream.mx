@@ -2331,7 +2331,10 @@ buffer_get_buf(buffer *b)
 void
 buffer_destroy(buffer *b)
 {
-	free(b->buf);
+	if (b == NULL)
+		return;
+	if (b->buf)
+		free(b->buf);
 	free(b);
 }
 

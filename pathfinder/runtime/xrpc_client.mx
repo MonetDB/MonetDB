@@ -734,6 +734,8 @@ response2bat(
     resp = buffer_create(MAX_BUF_SIZE);
     if (!resp || resp->len == 0) {
         GDKerror("response2bat: failed to create buffer for XRPC response message\n");
+        if (resp)
+            buffer_destroy(resp);
         return NULL;
     }
 
@@ -893,6 +895,8 @@ byvalue_request(
         }
     } else {
         GDKerror("byvalue_request: failed to create outgoing buffer\n");
+        if (b)
+            buffer_destroy(b);
         return NULL;
     }
 

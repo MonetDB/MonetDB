@@ -752,9 +752,13 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
                 MT_up_sema(mc->s, "XRPC"); /* activate the thread */
                 return 0;
             }
+        }
+        if (fdout) {
             stream_close(fdout);
             stream_destroy(fdout);
         }
+    }
+    if (fdin) {
         stream_close(fdin);
         stream_destroy(fdin);
     }

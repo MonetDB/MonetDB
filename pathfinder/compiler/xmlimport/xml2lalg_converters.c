@@ -192,6 +192,7 @@ PFxml2la_conv_2PFLA_attributeName_unq (const char* s)
     char        *idString = NULL;
     PFalg_col_t  ori      = col_NULL;
     unsigned int length   = 0;
+    PFalg_col_t  rv;
 
     if (PFstrUtils_beginsWith(s, "iter")) {
         ori = col_iter;
@@ -219,9 +220,11 @@ PFxml2la_conv_2PFLA_attributeName_unq (const char* s)
     idString = PFstrUtils_substring (s + length, s + strlen(s));
 
     if (idString[0] == '0')
-        return PFcol_new_fixed (ori, 0);
+        rv = PFcol_new_fixed (ori, 0);
     else
-        return PFcol_new_fixed (ori, atoi (idString));
+        rv = PFcol_new_fixed (ori, atoi (idString));
+    free(idString);
+    return rv;
 }
 
 /**

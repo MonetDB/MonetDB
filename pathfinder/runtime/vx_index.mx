@@ -128,10 +128,15 @@ int CMD_XQH_C_bat(BAT **res, BAT *l, BAT *r) {
     if (ALIGNsynced(l, r)) {
         size_t i = 0, cnt = BATcount(l);
         BAT *bn = *res = BATnew(TYPE_void, TYPE_int, cnt);
-        int *lval = (int*) Tloc(bn, BUNfirst(l));
-        int *rval = (int*) Tloc(bn, BUNfirst(r));
-        int *dst  = (int*) Tloc(bn, BUNfirst(bn));
+        int *lval;
+        int *rval;
+        int *dst;
+
         if (bn == NULL) return GDK_FAIL;
+
+        lval = (int*) Tloc(bn, BUNfirst(l));
+        rval = (int*) Tloc(bn, BUNfirst(r));
+        dst  = (int*) Tloc(bn, BUNfirst(bn));
 
         for(i=0; i<cnt; i++)
             dst[i] = XQH_C(lval[i], rval[i]);
