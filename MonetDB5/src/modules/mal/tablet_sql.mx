@@ -79,6 +79,7 @@ typedef struct{
 	size_t seplen, rseplen;
 	char quote;
 	char *base, *input;	/* area for tokenizer */
+	int basesize;
 	int *cols;	/* columns to handle */
 	char ***fields;
 } READERtask;
@@ -464,6 +465,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	task->rseplen = strlen(rsep);
 	task->errbuf =  cntxt->errbuf;
 	task->base = GDKzalloc(b->size+2);	
+	task->basesize = b->size+2;
 	task->input = task->base + 1; /* wrap the buffer with null bytes */
 	task->base[b->size+1]= 0;
 
@@ -511,6 +513,11 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	t1 = GDKusec();
 	while ( (task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
 
+		if ( (size_t) task->basesize <= task->b->size){
+			/* end of record not found within 32M */
+			/* most likely wrong delimiter */
+			break;
+		}
 		memcpy(task->input, task->b->buf, task->b->size);
 
 #ifdef _DEBUG_TABLET_
