@@ -1379,10 +1379,18 @@ plan_difference (const PFla_op_t *n)
 static bool
 dependent_col (const PFla_op_t *n, PFalg_col_t dependent)
 {
-    for (unsigned int i = 0; i < n->schema.count; i++)
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+        /* Avoid problematic results in case of circular dependencies:
+           If the column @a dependent functionally describes a column
+           (before it appears as dependent column) we don't mark it 
+           as dependent. */ 
+        if (n->schema.items[i].name != dependent &&
+            PFprop_fd (n->prop, dependent, n->schema.items[i].name))
+            return false;
         if (n->schema.items[i].name != dependent &&
             PFprop_fd (n->prop, n->schema.items[i].name, dependent))
             return true;
+    }
     return false;
 }
 
