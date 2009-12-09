@@ -6072,12 +6072,13 @@ int CMDxquery_hash(int *dst, char* val) {
 int CMDxquery_hash_bat(BAT **res, BAT* b) {
     BUN cnt = BATcount(b);
     BAT *bn = *res = BATnew(TYPE_void, TYPE_int, cnt);
-    int *dst = (int*) Tloc(bn, BUNfirst(bn));
+    int *dst;
     BUN p, q;
     BATiter bi;
 
     if (bn == NULL) return GDK_FAIL;
     bi = bat_iterator(b);
+    dst = (int*) Tloc(bn, BUNfirst(bn));
     BATloop(b,p,q) {
         str val = (str) BUNtvar(bi,p);
         XQUERY_HASH(dst, val);
