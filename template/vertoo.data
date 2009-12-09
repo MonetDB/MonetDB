@@ -1,4 +1,4 @@
 monetdb = major:1; minor:34; release:0;
 monetdb4 = major:4; minor:34; release:0;
 monetdb5 = major:5; minor:16; release:0;
-template = major:0; minor:11; release:1;
+template = major:0; minor:11; release:2;

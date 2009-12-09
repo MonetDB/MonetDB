@@ -25,7 +25,7 @@
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.60)
-AC_INIT([MonetDB XQuery], [0.34.1], [monet@cwi.nl], [MonetDB-XQuery])
+AC_INIT([MonetDB XQuery], [0.34.2], [monet@cwi.nl], [MonetDB-XQuery])
 #                          ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
