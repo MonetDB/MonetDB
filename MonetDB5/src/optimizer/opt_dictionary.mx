@@ -92,7 +92,7 @@ opt_export str DICTdrop(int *ret, str *nme);
 
 static BAT *dictIndex, *dictValue;
 
-static int DICTinit();
+static int DICTinit(void);
 
 static int 
 DICTfind(int *idx, int *val, str nme)
@@ -150,7 +150,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 Dictionary implementation.
 @c
 int
-DICTinit()
+DICTinit(void)
 {
     BAT *b, *bn;
 	if ( dictIndex == NULL){
