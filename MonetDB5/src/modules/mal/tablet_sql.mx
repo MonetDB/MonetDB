@@ -79,7 +79,7 @@ typedef struct{
 	size_t seplen, rseplen;
 	char quote;
 	char *base, *input;	/* area for tokenizer */
-	int basesize;
+	size_t basesize;
 	int *cols;	/* columns to handle */
 	char ***fields;
 } READERtask;
@@ -513,7 +513,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	t1 = GDKusec();
 	while ( (task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
 
-		if ( (size_t) task->basesize <= task->b->size){
+		if (task->basesize <= task->b->size){
 			/* end of record not found within 32M */
 			/* most likely wrong delimiter */
 			break;
