@@ -116,10 +116,6 @@ profile.sh
 radix.mal
 radix.stable.err
 radix.stable.out
-rdf.mal
-rdf.stable.err
-rdf.stable.out
-rdf.testdata.ttl
 register00.mal
 register00.stable.err
 register00.stable.out
