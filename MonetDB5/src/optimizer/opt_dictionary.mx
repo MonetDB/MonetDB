@@ -113,7 +113,7 @@ int
 OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	InstrPtr *old,q;
+	InstrPtr q;
 	int limit;
 
 	(void) cntxt;
@@ -122,7 +122,6 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) pci;
 	DICTinit();
 	limit = mb->stop;
-	old = mb->stmt;
 	
     if ( newMalBlkStmt(mb, mb->ssize) < 0)
         return 0;
