@@ -78,23 +78,23 @@ pattern toString(i:oid):str
 address TKNZRtakeOid
 comment "get the string representation of an element (same as take)";
 
-command getLevel(i:int):bat[:int,:str]
-address command
+command getLevel(i:int):bat[:oid,:str]
+address TKNZRgetLevel
 comment "administrative function that returns the bat on level i";
 
 command getDepth():bat[:void,:bte]
 address TKNZRgetDepth
 comment "administrative function that returns the depth bat";
 
-command getHeight():bat[:void,:oid]
+command getHeight():bat[:void,:wrd]
 address TKNZRgetHeight
 comment "administrative function that returns the height bat";
 
-command getCount():bat[:int,:lng]
+command getCount():bat[:int,:wrd]
 address TKNZRgetCount
 comment "debuging function that returns the size of the bats at each level";
 
-command getCardinality():bat[:int,:lng]
+command getCardinality():bat[:int,:wrd]
 address TKNZRgetCardinality
 comment "debuging function that returns the unique tokens at each level";
 
@@ -124,7 +124,7 @@ comment "debuging function that returns the unique tokens at each level";
 @h
 tokenizer_export str TKNZRopen             (int *r, str *name);
 tokenizer_export str TKNZRclose            (int *r);
-tokenizer_export str TKNZRdeposit          (oid *pos, str tuple);
+tokenizer_export str TKNZRdeposit          (oid *pos, str *tuple);
 tokenizer_export str TKNZRtake             @:params@
 tokenizer_export str TKNZRlocate           @:params@
 tokenizer_export str TKNZRtakeOid          @:params@
@@ -187,7 +187,7 @@ TKNZRopen(int *ret, str *in)
 
 	if (idx == 0) { /* new tokenizer */
 
-		b = BATnew(TYPE_void, TYPE_chr, 1024);
+		b = BATnew(TYPE_void, TYPE_oid, 1024);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 		BATkey(b, FALSE);
@@ -483,14 +483,14 @@ TKNZRdepositFile(int *r, str *fnme)
 
 @c
 str
-TKNZRdeposit(oid *pos, str s)
+TKNZRdeposit(oid *pos, str *s)
 {
 	char tuple[2048];
 
 	@:init_check@
 
-	if (strlen(s)<2048)
-		strcpy(tuple,s);
+	if (strlen(*s)<2048)
+		strcpy(tuple,*s);
 	else throw(MAL, "tokenizer.deposit", ILLEGAL_ARGUMENT "string too long");
 
 	TKNZRinsert(pos, tuple);
