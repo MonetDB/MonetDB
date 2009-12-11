@@ -39,7 +39,7 @@ static confkeyval _internal_prop_keys[] = {
 	{"shared",   NULL, STR},
 	{"nthreads", NULL, INT},
 	{"optpipe",  NULL, STR},
-	{"master",   NULL, BOOL},
+	{"master",   NULL, STR},
 	{"slave",    NULL, MURI},
 	{ NULL,      NULL, INVALID}
 };
@@ -204,6 +204,29 @@ setProp(char *path, char *key, char *val)
 					return(strdup(buf));
 				}
 				value++;
+			}
+		} else if (strcmp(key, "master") == 0) {
+			/* basically this is either a boolean or a UUID (in practice
+			 * it is a freeform string, that sometimes happens to be a
+			 * UUID)
+			 * first perform a sneaky hack to do the boolean check */
+			kv->type = BOOL;
+			if ((err = setConfVal(kv, val)) != NULL) {
+				GDKfree(err);
+				/* restore */
+				kv->type = STR;
+			} else {
+				/* restore */
+				kv->type = STR;
+				if (strcmp(kv->val, "yes") == 0) {
+					/* generate a unique ID for this database */
+					val = generateUUID();
+					if ((err = setConfVal(kv, val)) != NULL) {
+						/* can't fail */
+						assert(0);
+					}
+					free(val);
+				}
 			}
 		}
 	}

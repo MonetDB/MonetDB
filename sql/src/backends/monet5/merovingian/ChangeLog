@@ -1,6 +1,12 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  11 Dec 2009; Fabian Groffen <fabian@cwi.nl> merovingian_forkmserver.c,
+  monetdb.1, properties.c:
+  The master property of a database now contains an id that is used to
+  identify the master to the slaves. The id can be given using monetdb set, or
+  one is generated when no id is supplied (when just setting it to 'yes')
+
   30 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c,
   merovingian_forkmserver.c, monetdb.c, properties.c, utils.c, utils.h:
   Add slave property for databases

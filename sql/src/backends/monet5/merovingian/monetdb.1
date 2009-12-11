@@ -195,6 +195,20 @@ in the
 .BR merovingian (1)
 manpage.  Note that this property can be set for a running database, and
 that a change takes immediate effect in the network.
+.IP "  master=<yes|no|id>"
+Defines if the database is to be started as a replication master 
+.RI ( yes ", " id "), or not (" no ).
+Replication masters are identified by slaves by their
+.IR id .
+When no
+.I id
+is given (when
+.I yes
+is given as argument), a UUID is generated for the master.  Note that
+the
+.I id
+is not required to be in the format of a UUID (see
+.BR uuid_generate (3)).
 .IP "inherit property database [database ...]"
 Like set, but unsets the database-local value, and reverts to inherit
 from the default again.
