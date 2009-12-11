@@ -1,6 +1,6 @@
 Name:		MonetDB-release
 Version:	1.0
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	MonetDB YUM Repository
 
 Group:		Applications/Databases
@@ -19,7 +19,8 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
-This package provides the necessary files to use the MonetDB repository.
+This package provides the necessary files to use the MonetDB YUM
+repository.
 
 %prep
 %setup -q
@@ -48,6 +49,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Dec 11 2009 Sjoerd Mullender <sjoerd@acm.org> - 1.0-3
+- Added a testing repository (for release candidates).
+
 * Fri Nov  6 2009 Sjoerd Mullender <sjoerd@acm.org> - 1.0-2
 - Don't import key when installing MonetDB-release RPM, but when the
   first package asks for it.
