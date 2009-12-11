@@ -33,6 +33,7 @@ srpm: MonetDB-release-1.0.tar.gz
 	mkdir -p rpmbuild/tmp
 	rpmbuild --macros "`rpmbuild --showrc | sed -n 's/macrofiles *: *//p'`:$(srcdir)/.rpmmacros" -ts MonetDB-release-1.0.tar.gz
 	mv rpmbuild/SRPMS/*.src.rpm .
+	rpm --addsign --define='_signature gpg' --define='_gpg_name 0x0583366F' *.src.rpm
 
 rpm: MonetDB-release-1.0.tar.gz
 	mkdir -p rpmbuild/BUILD
@@ -44,3 +45,4 @@ rpm: MonetDB-release-1.0.tar.gz
 	mkdir -p rpmbuild/tmp
 	rpmbuild --macros "`rpmbuild --showrc | sed -n 's/macrofiles *: *//p'`:$(srcdir)/.rpmmacros" -tb MonetDB-release-1.0.tar.gz
 	mv rpmbuild/RPMS/noarch/*.noarch.rpm .
+	rpm --addsign --define='_signature gpg' --define='_gpg_name 0x0583366F' *.noarch.rpm
