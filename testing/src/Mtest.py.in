@@ -2511,7 +2511,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if TO.match(l):
                     killed = True
         if not killed and os.path.isfile(TestOutFile):
-            for l in open(TestErrFile):
+            for l in open(TestOutFile):
                 if TO.match(l):
                     killed = True
 
