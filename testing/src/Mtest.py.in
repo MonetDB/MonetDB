@@ -188,7 +188,8 @@ F_WARN = 1
 F_SOCK = 2
 F_TIME = 3
 F_KILL = 4
-F_ERROR = 5
+F_SEGV = 5
+F_ERROR = 6
 
 FAILURES = {
     F_SKIP  : "F_SKIP",
@@ -197,6 +198,7 @@ FAILURES = {
     F_SOCK  : "F_SOCK",
     F_TIME  : "F_TIME",
     F_KILL  : "F_KILL",
+    F_SEGV  : "F_SEGV",
     F_ERROR : "F_ERROR"
 }
 
@@ -400,6 +402,7 @@ stylesheet = Element('style', None, Text('''
 .killed  { font-weight: bold; font-style: italic; color: purple; }
 .timeout { font-weight: bold; font-style: italic; color: purple; }
 .socket  { font-weight: bold; font-style: italic; color: purple; }
+.segfault { font-weight: bold; font-style: italic; color: purple; }
 .warning { font-weight: bold; color: orange; }
 .good    {  }
 .header  { font-family: helvetica, arial; text-align: center; }
@@ -626,6 +629,9 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         if SockTime == F_KILL:
             diffclass = 'killed'
             difftext = difftext + ' (Killed)'
+        if SockTime == F_SEGV:
+            diffclass = 'segfault'
+            difftext = difftext = ' (Crash)'
     if COMPBITSOIDSLINK:
         SYSTEM = DISTVER+", "+COMPBITSOIDSLINK+":"
     else:
@@ -811,6 +817,8 @@ def AddHref (href, target, linktext, diff) :
         klass = 'timeout'
     elif diff == F_SOCK:
         klass = 'socket'
+    elif diff == F_SEGV:
+        klass = 'segfault'
     elif diff == F_WARN:
         klass = 'warning'
     else:
@@ -867,6 +875,8 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         tstclass = 'timeout'
     elif e == F_SOCK:
         tstclass = 'socket'
+    elif e == F_SEGV:
+        tstclass = 'segfault'
     elif o == F_WARN or e == F_WARN:
         tstclass = 'warning'
     else:
@@ -1770,14 +1780,23 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         TestErr.close()
 
         t0 = time.time()
-        if DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets):
-            timeout = F_TIME
-        else:
-            timeout = F_OK
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets)
+
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
             STDOUT.write(" %7.3fs " % TX)
+
+        timeout = F_OK
+        killed = F_OK
+        segfaulted = F_OK
+
+        if tres == 'timeout':
+            timeout = F_TIME
+        elif tres == 'kill':
+            killed = F_KILL
+        elif tres == 'segfault':
+            segfaulted = F_SEGV
 
         if ATJOB1:
             StopAt(ATJOB1,ME)
@@ -1789,7 +1808,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         if MkillUsers:
             os.system(MkillUsers)
 
-        killed = F_OK
         n = TST+".KILLED."
         for (x,txf) in [("out",TestOutFile),("err",TestErrFile)]:
             f = n+x
@@ -1804,7 +1822,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 if p is not None:
                     for l in open(f):
                         p.write("! "+l)
-                        killed = F_KILL
+#                        killed = F_KILL
                     p.close()
 
         sockerr = F_OK
@@ -1837,6 +1855,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 STDOUT.write("\n%s : Killed!\n" % TST)
             else:
                 STDOUT.write("(Killed!) ")
+
+        if segfaulted == F_SEGV:
+            if quiet:
+                STDOUT.write("\n%s : Crashed!\n" % TST)
+            else:
+                STDOUT.write("(Crashed!) ")
 
         if not quiet:
             STDOUT.write("\n")
@@ -1895,7 +1919,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout == F_TIME or killed == F_KILL:
+            if timeout == F_TIME or killed == F_KILL or segfaulted == F_SEGV:
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYout = -1
             else:
@@ -1952,7 +1976,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout == F_TIME or killed == F_KILL:
+            if timeout == F_TIME or killed == F_KILL or segfaulted == F_SEGV:
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYerr = -1
             else:
@@ -1980,7 +2004,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     cmd += ' -d'
                 os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.err.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEerr, TST))
 
-            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, killed))
+            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, killed, segfaulted))
 
     return TX,FailedOut,FailedErr,elem
 ### RunTest(env, TST, BusyPorts, COND, oktests) #
@@ -2504,18 +2528,40 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             killProc(pSrvr, SrvrErr, Srvr)
             raise
 
+    timedout = False
     if not killed:
         TO = re.compile("^!.*Mtimeout.*: Timeout: ", re.MULTILINE)
         if os.path.isfile(TestErrFile):
             for l in open(TestErrFile):
                 if TO.match(l):
-                    killed = True
-        if not killed and os.path.isfile(TestOutFile):
+                    timedout = True
+        if not timedout and os.path.isfile(TestOutFile):
             for l in open(TestOutFile):
                 if TO.match(l):
-                    killed = True
+                    timedout = True
 
-    return killed
+    segfaulted = False
+    if not killed and not timedout:
+        # Try to detect segfaults and the like
+        TO = re.compile("^/[a-zA-Z/]+sh: .* (Memory fault|Segmentation fault|Bus error)", re.MULTILINE)
+        # FIXME: this begs for a much nicer solution (100% copy of above)
+        if os.path.isfile(TestErrFile):
+            for l in open(TestErrFile):
+                if TO.match(l):
+                    segfaulted = True
+        if not segfaulted and os.path.isfile(TestOutFile):
+            for l in open(TestOutFile):
+                if TO.match(l):
+                    segfaulted = True
+
+    if killed:
+        return "kill"
+    elif timedout:
+        return "timeout"
+    elif segfaulted:
+        return "segfault"
+
+    return None
 
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets) #
 
@@ -3724,7 +3770,7 @@ def main(argv) :
 
         # we write in SQL the same codes as testweb uses in the HTML
         # pages, for readability
-        Fcodes = ['o', 'x', 'S', 'T', 'X', '-']
+        Fcodes = ['o', 'x', 'S', 'T', 'X', 'V', '-']
 
         # we are not interested in the compiler, not its path, nor its
         # options.  We do store the options separately, though
@@ -3787,6 +3833,9 @@ VALUES (%s, '%s', '%s', '%s',
         if Failure[F_KILL]:
             how = "SIGNIFICANTLY"
             what += "  %3d out of %3d tests had orphan processes killed\n" % (Failure[F_KILL],num_tests)
+        if Failure[F_SEGV]:
+            how = "SIGNIFICANTLY"
+            what += "  %3d out of %3d tests resulted in a crash\n" % (Failure[F_SEGV],num_tests)
         if Failure[F_ERROR]:
             how = "SIGNIFICANTLY"
             what += "  %3d out of %3d tests produced %s different output\n" % (Failure[F_ERROR],num_tests,how)
@@ -3850,3 +3899,4 @@ if __name__ == "__main__":
 
 #       END
 #############################################################################
+# vim: set ts=4 sw=4 expandtab:
