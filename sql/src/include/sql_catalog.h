@@ -24,12 +24,16 @@
 #include <sql_list.h>
 #include <stream.h>
 
+#define tr_none		0
+#define tr_readonly	1
+#define tr_writable	2
+#define tr_serializable 4
+
 #define ACT_NO_ACTION 0
 #define ACT_CASCADE 1
 #define ACT_RESTRICT 2
 #define ACT_SET_NULL 3
 #define ACT_SET_DEFAULT 4
-
 
 #define DROP_RESTRICT 0
 #define DROP_CASCADE 1

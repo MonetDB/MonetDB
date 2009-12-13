@@ -45,7 +45,6 @@ lib_sqlserver = {
 		sql_datetime.mx \
 		sql_decimal.mx \
 		sql_statement.mx \
-		sql_trans.mx \
 		sql_schema.mx \
 		sql_semantic.mx \
 		sql_rel2bin.mx \
