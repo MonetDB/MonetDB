@@ -74,7 +74,7 @@ set would call for assessment on their effect.
 @- SQL specifics
 The @code{bind} operations of SQL requires special care,
 because they refer to containers that might initially be empty,
-but aren't upon a second call.
+but aren't upon a second call of the query plan.
 This calls for a defensive approach, where a constraint check
 is left behind to detect a plan whose conditions are not met
 anymore. Of course, we can drop the constraint if we know that

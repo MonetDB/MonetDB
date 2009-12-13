@@ -26,7 +26,7 @@ towards a compact star schema.
 
 The dictionary optimizer is meant to alleviate this task by maintaining
 dictionaries for organizing static data sets and replace their database
-references by pointers into the index. For example, a string column
+valued by references into the index. For example, a string column
 with all US states can be replaced by a tinyint column with indices
 into the dictionary table.
 
@@ -35,21 +35,47 @@ catalog BAT.
 The optimizer looks for the following code fragments
 @verbatim
   a:bat[:oid,:str]:= sql.bind("sys","tab","col",0);
-  b:= algebra.select(a,"a");
+  d:bat[:oid,:int]  := sql.bind("sys","tab","col",1);
+  x := algebra.kdifference(b,d);
+  e:bat[:oid,:int]  := sql.bind("sys","tab","col",2);
+  y := algebra.kunion(x,e);
+  c := algebra.select(y,0,2);
+  io.print(c);
 @end verbatim
-and replaces them into 
+and replaces it based on the catalog knowledge
+that the base table is organised as dictionary 
 @verbatim
-  (idx:bat[:oid,:sht],val:bat[:sht,:str]):= dictionary.bind("sys/tab/col/0");
-  bv:= algebra.select(val,"a");
-  b:= algebra.join(idx,bv);
+    (_14:bat[:oid,:bte] ,_15:bat[:bte,:int] ) := dictionary.bind("sys/tab/col/0");
+    d:bat[:oid,:int]  := sql.bind("sys","tab","col",1);
+    (_17,_18) := dictionary.expand(_14,_15,d);
+    _19 := dictionary.encode(_18,d);    
+    _20 := algebra.kdifference(_14,_19);
+    e:bat[:oid,:int]  := sql.bind("sys","tab","col",2);
+    (_21,_22) := dictionary.expand(_20,_15,e);
+    _23 := dictionary.encode(_22,e);    
+    _24 := algebra.kunion(_20,_23);     
+    _25 := algebra.select(_15,0,2);     
+    c := algebra.join(_24,_25);         
+    io.print(c);                        
 @end verbatim
+The insertion/update deltas may lead to possible updates of the dictionary value list,
+which is taken care of by expand(). It returns a fresh local dictionary pair;
+it can not be found in the persistent dictionary catalog.
+The next step is to encode the list of tuples to be included in the index itself using encode().
+The remainder reflects a common SQL block, such that the selection is executed against
+the compressed table. Only when needed in the print(), it will be expanded to include
+the OIDs needed.
 
 In the first implementation, we explicitly migrate columns to the dictionary.
 The source BAT will remain in existence, but will be emptied. This way we can always
 migrate the dictionary back into the persistent table without disturbing
 the SQL catalog.
+Ultimately, the optimizer should detect opportunities for replacement of columns
+automatically.
 
-Ultimately, the optimizer detects opportunities for replacement of columns.
+Pushing the dictionary information through the plan is organized around a subset
+of the MAL operators. As soon as we find any other instruction, the dictionary
+is expanded to its normal BAT for further processing.
 @{
 @mal
 module dictionary;
@@ -66,6 +92,15 @@ command drop(nme:str)
 address DICTdrop
 comment "Remove the dictionary entry";
 
+command expand(idx:bat[:oid,:any_1], val:bat[:any_1,:any_2], b:bat[:oid,:any_2]) (ridx:bat[:oid,:any_1], rval:bat[:any_1,:any_2])
+address DICTexpand
+comment "Extend the dictionary with the values in b. This may trigger a partial recompilation of the MAL program when the storage type :any_1
+is not sufficient anymore.";
+
+command encode(val:bat[:any_1,:any_2], b:bat[:oid,:any_2]):bat[:oid,:any_1]
+address DICTencode
+comment "Use the dictionary to encode a table b.";
+
 pattern optimizer.dictionary():str
 address OPTdictionary;
 pattern optimizer.dictionary(mod:str, fcn:str):str
@@ -80,6 +115,8 @@ comment "Capitalize dictionary encodings ";
 
 #define DEBUG_OPT_DICTIONARY 
 opt_export str DICTbind(int *idx, int *val, str * nme);
+opt_export str DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid);
+opt_export str DICTencode(int *ridx, int *val, int *bid);
 opt_export str DICTnew(int *idx, str *nme, int *bid);
 opt_export str DICTdrop(int *ret, str *nme);
 
@@ -112,12 +149,16 @@ DICTfind(int *idx, int *val, str nme)
 int
 OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
-	InstrPtr q;
-	int limit;
+	int i,j, actions=0;
+	int *idx, *val;
+	InstrPtr *old,q, qq;
+	int x, v, limit;
+	BUN p;
+	char buf[BUFSIZ];
+	BAT *bi, *bv;
+	str dictionaryRef = putName("dictionary",10);
 
 	(void) cntxt;
-	(void) mb;
 	(void) stk;
 	(void) pci;
 	DICTinit();
@@ -126,15 +167,152 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
     if ( newMalBlkStmt(mb, mb->ssize) < 0)
         return 0;
 
+	idx = (int*) GDKzalloc(mb->vtop * sizeof(int));
+	val = (int*) GDKzalloc(mb->vtop * sizeof(int));
 	for (i=0; i< limit; i++){
-        q= getInstrPtr(mb,i);
-        if (getModuleId(q)!= sqlRef )
-            continue;
+        q= old[i];
+
 		/* replace the BAT if a dictionary exists */
-		/* also look at the SQL append group */
+		buf[0]= 0;
+		if ( getModuleId(q) == sqlRef && getFunctionId(q) == bindRef)
+			snprintf(buf,BUFSIZ,"%s/%s/%s/%d", 
+				getVarConstant(mb,getArg(q,1)).val.sval, getVarConstant(mb, getArg(q,2)).val.sval,
+				getVarConstant(mb,getArg(q,3)).val.sval, getVarConstant(mb, getArg(q,4)).val.ival);
+		else
+		if ( getModuleId(q) == sqlRef && getFunctionId(q) == binddbatRef)
+			snprintf(buf,BUFSIZ,"%s/%s/%s", 
+				getVarConstant(mb,getArg(q,1)).val.sval, getVarConstant(mb,getArg(q,2)).val.sval, getVarConstant(mb,getArg(q,3)).val.sval);
+		else
+		if ( getModuleId(q) == sqlRef && getFunctionId(q) == bindidxRef)
+			snprintf(buf,BUFSIZ,"%s/%s/%s", 
+				getVarConstant(mb, getArg(q,1)).val.sval, getVarConstant(mb, getArg(q,2)).val.sval, getVarConstant(mb,getArg(q,3)).val.sval);
+
+		if ( buf[0] ){
+			BATiter bidx = bat_iterator(dictIndex);
+			BATiter bval = bat_iterator(dictValue);
+			p = BUNfnd(BATmirror(dictIndex), (ptr) buf);
+			if ( p != BUN_NONE ){
+				x = *(int*) BUNhead(bidx, p);
+				v = *(int*) BUNhead(bval, BUNfnd(BATmirror(dictValue), (ptr) buf ) );
+#ifdef DEBUG_OPT_DICTIONARY 
+				stream_printf(GDKout, "#Located a dictionary %s ? %s %d %d\n",buf, (p?"ok":"no"), x,v);
+#endif
+				/* replace the sql.bind */
+				bi = BATdescriptor(x);
+				if ( bi == NULL){
+					GDKfree(idx);
+					GDKfree(val);
+					return 0;
+				}
+				bv = BATdescriptor(v);
+				if ( bv == NULL){
+					BBPreleaseref(bi->batCacheid);
+					GDKfree(idx);
+					GDKfree(val);
+					return 0;
+				}
+				/* construct: (bi:bat[:oid,:type], bv:bat[:type,:any2]):= dictionary.bind(name); */
+				qq = newStmt(mb,"dictionary",bindRef);
+				qq = pushArgument(mb,qq, newTmpVariable(mb,newBatType(bi->ttype,bv->ttype)));
+				qq->retc++;
+				qq = pushStr(mb,qq,buf);
+				setVarType(mb, getArg(qq,0), newBatType(TYPE_oid,bi->ttype));
+				setVarUDFtype(mb, getArg(qq,0));
+				setVarUDFtype(mb, getArg(qq,1));
+				/* let's remember them */
+				idx[getArg(q,0)] = getArg(qq,0);
+				val[getArg(q,0)] = getArg(qq,1);
+				actions++;
+				continue;
+			}
+			pushInstruction(mb,q);
+		} else {
+@-
+We have to re-cast each instruction based on a possible dictionary 
+representation of an argument. For some operators we may postpone
+reconstruction and introduce a new dictionary pair.
+@c
+			if (  getModuleId(q) == algebraRef ){
+				if ( (getFunctionId(q) == selectRef ||
+					 getFunctionId(q) == uselectRef ||
+					 getFunctionId(q) == thetaselectRef ||
+					 getFunctionId(q) == thetauselectRef ) &&
+					idx[getArg(q,1)] && val[getArg(q,1)] ){
+					j = getArg(q,0);
+					idx[j] = idx[getArg(q,1)];
+					getArg(q,1) = val[getArg(q,1)];
+					getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
+					val[j] = getArg(q,0);
+#ifdef DEBUG_OPT_DICTIONARY 
+						stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+#endif
+					actions++;
+					pushInstruction(mb,q);
+					continue;
+				}
+				if ( getFunctionId(q) == kdifferenceRef  ||
+					 getFunctionId(q) == kunionRef ){
+@-
+The arguments can be singular or both ref to a dictionary pair.
+We deal with the most prominent case provided by SQL only. 
+@c
+					if ( (idx[getArg(q,1)] || val[getArg(q,1)]) && idx[getArg(q,2)] == 0){
+						/* (aidxnew,avalnew) := dictionary.expand(aidx,aval,b) */
+
+						qq= newStmt(mb,dictionaryRef,"expand");
+						setVarType(mb, getArg(qq,0), getVarType(mb,idx[getArg(q,1)]));
+						qq= pushArgument(mb,qq,newTmpVariable(mb, getVarType(mb,val[getArg(q,1)])) );
+						qq->retc++;
+						qq = pushArgument(mb,qq, idx[getArg(q,1)]);
+						qq = pushArgument(mb,qq, val[getArg(q,1)]);
+						qq = pushArgument(mb,qq, getArg(q,2));
+
+						j = getArg(q,0);
+						idx[j] = getArg(qq,0);
+						val[j] = getArg(qq,1);
+						actions++;
+						/* bidx := dictionary.encode(aval,b) */
+						qq = newStmt(mb,"dictionary","encode");
+						qq = pushArgument(mb,qq, val[j]);
+						qq = pushArgument(mb,qq, getArg(q,2));
+
+						pushInstruction(mb,q);
+						getArg(q,1) = idx[j];
+						getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
+						idx[j] = getArg(q,0);
+						getArg(q,2) = getArg(qq,0);
+#ifdef DEBUG_OPT_DICTIONARY 
+						stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+#endif
+						continue;
+					}
+				}
+				if ( getFunctionId(q) == markTRef){
+				}
+			} 
+			if (  getModuleId(q) == batRef ){
+			}
+			/* default cases call for source reconstruction */
+			for (j = q->retc; j < q->argc; j++)
+			if ( idx[getArg(q,j)] || val[getArg(q,j)]){
+				/* recast void to type needed for the join */
+				qq= newStmt(mb,algebraRef,joinRef);
+				getArg(qq,0) = getArg(q,j);
+				setVarType(mb,getArg(qq,0), newBatType(getHeadType(getVarType(mb,idx[getArg(q,j)])), getTailType(getVarType(mb,val[getArg(q,j)]))));
+				qq= pushArgument(mb,qq,idx[getArg(q,j)]);
+				qq= pushArgument(mb,qq,val[getArg(q,j)]);
+				idx[getArg(q,j)] = 0;
+				val[getArg(q,j)] = 0;
+			}
+			pushInstruction(mb,q);
+		}
 	}
-	return 0;
-	
+#ifdef DEBUG_OPT_DICTIONARY 
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+#endif
+	GDKfree(idx);
+	GDKfree(val);
+	return actions;
 }
 @-
 @include optimizerWrapper.mx
@@ -148,6 +326,18 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 @-
 Dictionary implementation.
 @c
+
+void 
+DICTcommit(BAT *b1, BAT *b2)
+{
+	BAT *bl = BATnew(TYPE_void, TYPE_str, 10);
+	BATseqbase(bl,0);
+	BUNappend(bl, BBPname(b1->batCacheid), FALSE);
+	BUNappend(bl, BBPname(b2->batCacheid), FALSE);
+	TMsubcommit(bl);
+	BBPreclaim(bl);
+}
+
 int
 DICTinit(void)
 {
@@ -195,6 +385,7 @@ DICTinit(void)
 		BBPkeepref(bn->batCacheid);
 		dictValue = bn;
 		mal_unset_lock(mal_contextLock, "dictionary");
+		DICTcommit(dictIndex,dictValue);
 	}
     return 0;
 }
@@ -228,8 +419,11 @@ str DICTnew(int *ret, str *nme, int *bid)
         throw(MAL, "dict.new", RUNTIME_OBJECT_MISSING);
 
 	bv= BATkunique(b);
-	if ( bv == NULL)
+	if ( bv == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL,"dict.new","Can not access unique list");
+	}
+	BATorder(BATmirror(bv));
 	
 	cnt = BATcount(bv);
 	if ( cnt < 256 )
@@ -240,9 +434,14 @@ str DICTnew(int *ret, str *nme, int *bid)
 	else
 	if ( cnt < (size_t) 1<<31 )
 		typ= TYPE_int;
-	else
-		typ= TYPE_lng;
-	bx =  BATnew(TYPE_void, typ, BATcount(b));
+	else{
+		/* don't create a dictionary */
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bv->batCacheid);
+		return MAL_SUCCEED;
+	}
+	bx =  BATnew(TYPE_oid, typ, BATcount(b));
+	bv =  BATnew(typ, bv->ttype, BATcount(b));
 	/* create the dictionary representation */
 	switch(typ){
 	case TYPE_bte:
@@ -259,10 +458,52 @@ str DICTnew(int *ret, str *nme, int *bid)
 	BBPkeepref(bx->batCacheid);
 	BBPkeepref(bv->batCacheid);
 	BBPreleaseref(*bid);
+	DICTcommit(bx,bv);
+	DICTcommit(dictIndex,dictValue);
+	/* now the original BAT can be cleared */
+	BATclear(b);
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.new  %d->%d %d\n",typ,bx->batCacheid, bv->batCacheid);
 #endif
 	(void) ret;
+	return MAL_SUCCEED;
+}
+
+@-
+Extending a dictionary could lead to overflow of the reference type.
+This should trigger a partial re-compilation
+@c
+str 
+DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
+{
+	BAT *bi, *bv, *b;
+	b = (BAT *) BATdescriptor(*bid);
+    if (b == 0)
+        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
+	bi = (BAT *) BATdescriptor(*idx);
+    if (bi == 0){
+		BBPreleaseref(b->batCacheid);
+        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
+	}
+	bv = (BAT *) BATdescriptor(*val);
+    if (bv == 0){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bv->batCacheid);
+        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
+	}
+
+	/* DO THE WORK */
+
+	*ridx = bi->batCacheid;
+	*rval = bv->batCacheid;
+	return MAL_SUCCEED;
+}
+str 
+DICTencode(int *ridx, int *val, int *bid)
+{
+	(void) ridx;
+	(void) val;
+	(void) bid;
 	return MAL_SUCCEED;
 }
 
