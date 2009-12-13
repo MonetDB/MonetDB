@@ -10,18 +10,18 @@ stderr of test 'autocommit_illegal_statements-bug-sf-953545` in directory 'src/t
 # 15:22:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53599  < autocommit_illegal_statements-bug-sf-953545.sql
 # 15:22:34 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:30318
 QUERY = ROLLBACK;
-ERROR = !ROLLBACK: not allowed in auto commit mode
-MAPI  = monetdb@localhost:45579
+ERROR = !SQLException:sql.trans:ROLLBACK: not allowed in auto commit mode
+MAPI  = monetdb@localhost:30318
 QUERY = COMMIT;
-ERROR = !COMMIT: not allowed in auto commit mode
-MAPI  = monetdb@localhost:45579
+ERROR = !SQLException:sql.trans:COMMIT: not allowed in auto commit mode
+MAPI  = monetdb@localhost:30318
 QUERY = SAVEPOINT failingsavepoint;
-ERROR = !SAVEPOINT: not allowed in auto commit mode
-MAPI  = monetdb@localhost:45579
+ERROR = !SQLException:sql.trans:SAVEPOINT: not allowed in auto commit mode
+MAPI  = monetdb@localhost:30318
 QUERY = RELEASE SAVEPOINT failingsavepoint;
-ERROR = !RELEASE SAVEPOINT: not allowed in auto commit mode
+ERROR = !SQLException:sql.trans:RELEASE SAVEPOINT: not allowed in auto commit mode
 
 # 15:22:34 >  
 # 15:22:34 >  Done.

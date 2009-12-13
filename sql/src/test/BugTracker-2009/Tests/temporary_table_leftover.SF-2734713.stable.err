@@ -78,21 +78,19 @@ stderr of test 'temporary_table_leftover.SF-2734713` in directory 'src/test/BugT
 # 19:21:38 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30398 
 # 19:21:38 >  
 
-MAPI  = monetdb@alf:30398
+MAPI  = monetdb@localhost:31523
 QUERY = blabla;
 ERROR = !syntax error, unexpected IDENT in: "blabla"
-MAPI  = monetdb@alf:30398
+MAPI  = monetdb@localhost:31523
 QUERY = COMMIT;
-ERROR = !COMMIT: failed
-        !ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
-MAPI  = monetdb@alf:30398
+ERROR = !SQLException:sql.trans:COMMIT: failed
+MAPI  = monetdb@localhost:31523
 QUERY = blabla;
 ERROR = !syntax error, unexpected IDENT in: "blabla"
-MAPI  = monetdb@alf:30398
+MAPI  = monetdb@localhost:31523
 QUERY = COMMIT;
-ERROR = !COMMIT: failed
-        !ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
-MAPI  = monetdb@alf:30398
+ERROR = !SQLException:sql.trans:COMMIT: failed
+MAPI  = monetdb@localhost:31523
 QUERY = drop table persistent_temopary;
 ERROR = !DROP TABLE: no such table 'persistent_temopary'
 

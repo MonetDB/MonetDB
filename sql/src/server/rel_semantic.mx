@@ -47,6 +47,7 @@ extern int compare2range( int l, int r );
 #include "rel_semantic.h"
 #include "rel_select.h"
 #include "rel_updates.h"
+#include "rel_trans.h"
 #include "rel_exp.h"
 
 #include <unistd.h>
@@ -185,6 +186,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case TR_ROLLBACK:
 	case TR_START:
 	case TR_MODE:
+		return rel_transactions(sql, s);
 
 	case SQL_CREATE_SCHEMA:
 	case SQL_DROP_SCHEMA:

@@ -80,19 +80,18 @@ stderr of test 'crash_on_fkey_update2.SF-1703497` in directory 'src/test/BugTrac
 # 21:01:02 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38808 
 # 21:01:02 >  
 
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@localhost:33906
 QUERY = update t2 set id = 10 where id =3;
 ERROR = !SQLException:assert:UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@localhost:33906
 QUERY = drop table t2;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@localhost:33906
 QUERY = drop table t1;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@localhost:33906
 QUERY = COMMIT;
-ERROR = !COMMIT: failed
-        !ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
+ERROR = !SQLException:sql.trans:COMMIT: failed
 
 # 21:01:03 >  
 # 21:01:03 >  Done.

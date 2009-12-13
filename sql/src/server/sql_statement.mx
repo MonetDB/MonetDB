@@ -97,6 +97,7 @@ typedef enum stmt_type {
 	st_append,
 	st_table_clear,
 	st_exception,
+	st_trans,
 
 	st_append_col,
 	st_append_idx,
@@ -214,6 +215,8 @@ extern stmt *stmt_delete(sql_table *t, stmt *b);
 extern stmt *stmt_append(stmt *c, stmt *values);
 extern stmt *stmt_table_clear(sql_table *t);
 extern stmt *stmt_export(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file);
+extern stmt *stmt_trans(int type, stmt *chain, stmt *name);
+
 extern stmt *stmt_temp(sql_subtype *t);
 extern stmt *stmt_atom(atom *op1);
 extern stmt *stmt_atom_string(char *s);
@@ -388,6 +391,7 @@ st_type2string(st_type type)
 		ST(append);
 		ST(table_clear);
 		ST(exception);
+		ST(trans);
 
 		ST(append_col);
 		ST(append_idx);
@@ -635,6 +639,7 @@ stmt_destroy(stmt *s)
 		case st_return:
 		case st_assign:
 		case st_exception:
+		case st_trans:
 
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
@@ -694,7 +699,6 @@ stmt_destroy(stmt *s)
 			if (s->op2.lval)
 				list_destroy(s->op2.lval);
 			break;
-
 		case st_aggr:
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
@@ -917,6 +921,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_var:
 		case st_temp:
 		case st_atom:
+		case st_trans:
 			break;
 
 			/* special cases */
@@ -1840,6 +1845,17 @@ stmt_export(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt 
 	return s;
 }
 
+stmt *
+stmt_trans(int type, stmt *chain, stmt *name)
+{
+	stmt *s = stmt_create(st_trans);
+
+	s->op1.stval = chain;
+	s->op2.stval = name;
+	s->flag = type;
+	return s;
+}
+
 void
 stmt_set_nrcols(stmt *s)
 {
@@ -2728,6 +2744,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 					stmt_stmt2dot(s->op4.stval, l, i, fp), -(s->optimized));
 			break;
 
+		case st_trans:
 		case st_atom:
 		case st_bat:
 			break;
@@ -2823,6 +2840,8 @@ print_stmt(stmt *s, int *nr)
 	case st_rs_column:
 	case st_export:
 			printf("export\n"); break;
+	case st_trans:
+			printf("trans\n"); break;
 	case st_affected_rows: 
 	case st_while: 
 	case st_if: 

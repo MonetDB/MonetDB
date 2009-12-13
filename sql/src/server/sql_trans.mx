@@ -34,7 +34,7 @@
 #define tr_writable	2
 #define tr_serializable 4
 
-extern stmt *transactions(mvc *sql, symbol *sym);
+extern stmt *sql_transactions(mvc *sql, symbol *sym);
 
 #endif /*_SQL_TRANS_H_*/
 
@@ -46,7 +46,7 @@ extern stmt *transactions(mvc *sql, symbol *sym);
 #include "sql_env.h"
 
 stmt *
-transactions(mvc *sql, symbol *s)
+sql_transactions(mvc *sql, symbol *s)
 {
 	int ret = 0;
 

@@ -80,7 +80,7 @@ stderr of test 'rollback_bug` in directory 'src/test/BugTracker-2009` itself:
 # 11:34:05 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=32901 
 # 11:34:05 >  
 
-MAPI  = monetdb@alf:34628
+MAPI  = monetdb@localhost:31523
 QUERY = CREATE TABLE phpbb_attachments (
 ERROR = !type (long) unknown in: "create table phpbb_attachments (
         !	attach_id integer default next value for "sys"."phpbb_attachments_seq",
@@ -89,7 +89,7 @@ ERROR = !type (long) unknown in: "create table phpbb_attachments (
         !	in_message smallint default '0' not null ,
         !	poster_id integer default '0' not null ,
         !	is_orphan long default"
-MAPI  = monetdb@alf:34628
+MAPI  = monetdb@localhost:31523
 QUERY = CREATE TABLE phpbb_attachments (
 ERROR = !type (long) unknown in: "create table phpbb_attachments (
         !	attach_id integer default next value for "sys"."phpbb_attachments_seq",
@@ -99,13 +99,12 @@ ERROR = !type (long) unknown in: "create table phpbb_attachments (
         !	poster_id integer default '0' not null ,
         !	is_orphan long default"
         !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@alf:34628
+MAPI  = monetdb@localhost:31523
 QUERY = CREATE TABLE phpbb_acl_groups (
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@alf:34628
+MAPI  = monetdb@localhost:31523
 QUERY = COMMIT;
-ERROR = !COMMIT: failed
-        !ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
+ERROR = !SQLException:sql.trans:COMMIT: failed
 
 # 11:34:05 >  
 # 11:34:05 >  Done.

@@ -219,8 +219,8 @@ head_column(stmt *st)
 	case st_affected_rows:
 
 	case st_export:
-
 	case st_exception:
+	case st_trans:
 
 	case st_while:
 	case st_if:
@@ -1202,6 +1202,7 @@ rel2bin(mvc *c, stmt *s)
 	case st_column:
 	case st_append:
 	case st_exception:
+	case st_trans:
 
 	case st_aggr:
 	case st_unop:

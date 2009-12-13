@@ -758,6 +758,7 @@ SQLreader(Client c)
 #endif
 	language = be->language;	/* 'S' for SQL, 'D' from debugger */
 	m = be->mvc;
+	m->errstr[0] = 0;
 @- 
 Continue processing any left-over input from the previous round.
 @c
@@ -1150,7 +1151,7 @@ produce code.
 
 		s = sql_symbol2stmt(m, m->sym);
 
-		if (s==0 || (err = mvc_status(m))) {
+		if (s==0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
@@ -1164,7 +1165,7 @@ produce code.
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
-		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
 			scanner_query_processed(&(m->scanner));
 			backend_callinline(be, c, s );
 			if( m->emode == m_inplace)

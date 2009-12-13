@@ -13,9 +13,15 @@ TABLE 	(card MULTI)
 	-> exps		is list of column expressions (also used for aliases)
 	-> l		table function expression
 
-OUTPUT (card 0!, top of the tree always)
-	-> exps		is list of output options
-	-> l		relation to output
+/* Wrapping relational operator, is a big complex top level only 
+   operator, which only does DDL kind of statements
+ */
+DDL 	(card 0!, top of the tree always)
+	-> flags	/* OUTPUT, TRANSACTION-types, CREATE/DROP/ALTER* */ 
+	-> exps		For 'OUTPUT' is list of output options
+			For 'transactions' simple flags
+			for CREATE etc full sql string.
+	-> l		only used for 'OUTPUT' relation to output
 
 SELECT 	(card MULTI or same ...?) 
 	-> exps		selection expressions (ie all e_cmp)

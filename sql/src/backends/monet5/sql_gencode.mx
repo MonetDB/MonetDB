@@ -1614,6 +1614,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			break;
 		}
+		case st_trans:{
+			int l,r = -1;
+
+			l = _dumpstmt(sql, mb, s->op1.stval);
+			if (s->op2.stval)
+				r = _dumpstmt(sql, mb, s->op2.stval);
+			q = newStmt1(mb, sqlRef, "trans");
+			q = pushInt(mb, q, s->flag);
+			q = pushArgument(mb, q, l);
+			if (r > 0) 
+				q = pushArgument(mb, q, r);
+			else
+				q = pushNil(mb, q, TYPE_str);
+			s->nr = getDestVar(q);
+			break;
+		}
 		case st_alias:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);
 			break;

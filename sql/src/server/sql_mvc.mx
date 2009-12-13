@@ -401,7 +401,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		fprintf(stderr, "mvc_commit %s\n", (name) ? name : "");
 
 	if (m->session->status < 0) {
-		GDKerror("COMMIT: transaction is aborted, will ROLLBACK instead");
+		(void)sql_error(m, 010, "COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -435,7 +435,7 @@ mvc_commit(mvc *m, int chain, char *name)
 	cur -> parent = tr;
 	tr = cur;
 	if (ok != SQL_OK) {
-		GDKerror("COMMIT: transaction is aborted, will ROLLBACK instead");
+		(void)sql_error(m, 010, "COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -462,7 +462,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		}
 	} else {
 		store_unlock();
-		GDKerror("COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
+		(void)sql_error(m, 010, "COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -498,7 +498,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
 		if (!tr) {
-			GDKerror("rollback savepoint %s doesn't exists", name);
+			(void)sql_error(m, 010, "rollback savepoint %s doesn't exists", name);
 			m->session->status = -1;
 			store_unlock();
 			return -1;
@@ -558,7 +558,7 @@ mvc_release(mvc *m, char *name)
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
 	if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
-		GDKerror("release savepoint %s doesn't exists", name);
+		(void)sql_error(m, 010, "release savepoint %s doesn't exists", name);
 		m->session->status = -1;
 		return -1;
 	}

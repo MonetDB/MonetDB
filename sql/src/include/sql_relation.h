@@ -67,12 +67,52 @@ typedef struct expression {
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128
  
+// todo make enum
+#define DDL_OUTPUT	1
+
+#define DDL_RELEASE	11
+#define DDL_COMMIT	12
+#define DDL_ROLLBACK	13
+#define DDL_TRANS	14
+
+#define DDL_CREATE_SCHEMA 21
+#define DDL_DROP_SCHEMA   22
+#define DDL_ALTER_SCHEMA  23
+#define DDL_CREATE_TABLE 24
+#define DDL_DROP_TABLE 	 25
+#define DDL_ALTER_TABLE  26
+#define DDL_CREATE_VIEW  27
+#define DDL_DROP_VIEW    35
+#define DDL_CREATE_INDEX  36
+#define DDL_DROP_INDEX    37
+
+#define DDL_CREATE_FUNCTION 41 
+#define DDL_DROP_FUNCTION   42 
+#define DDL_CREATE_TYPE 43 
+#define DDL_DROP_TYPE   44 
+#define DDL_CREATE_TRIGGER 45 
+#define DDL_DROP_TRIGGER   46 
+
+#define DDL_GRANT_ROLES 51
+#define DDL_REVOKE_ROLES 52
+#define DDL_GRANT 	53
+#define DDL_REVOKE 	54
+#define DDL_CREATE_USER 55
+#define DDL_DROP_USER 	56
+#define DDL_ALTER_USER 	57
+#define DDL_RENAME_USER 58
+#define DDL_CREATE_ROLE 59
+#define DDL_DROP_ROLE 	60
+
+#define DDL_CONNECT 	61
+#define DDL_DISCONNECT 	62
+
 #define MAXOPS 20
 
 typedef enum operator_type {
 	op_basetable = 0,
 	op_table,
-	op_output,
+	op_ddl,
 	op_project,
 	op_select,	/* includes order by */
 	op_join,
@@ -97,8 +137,10 @@ typedef enum operator_type {
 	(e->type == e_func && e->r)
 #define is_base(op) \
 	(op == op_basetable || op == op_table)
-#define is_output(op) \
-	(op == op_output)
+#define is_ddl(op) \
+	(op == op_ddl)
+#define is_output(rel) \
+	(rel->op == op_ddl && rel->flag == DDL_OUTPUT)
 #define is_outerjoin(op) \
 	(op == op_left || op == op_right || op == op_full)
 #define is_join(op) \

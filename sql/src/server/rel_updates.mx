@@ -652,6 +652,27 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 	return res;
 }
 
+static sql_rel *
+rel_output(sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file) 
+{
+	sql_rel *rel = rel_create();
+	list *exps = new_exp_list();
+
+	append(exps, sep);
+	append(exps, rsep);
+	append(exps, ssep);
+	append(exps, null_string);
+	if (file)
+		append(exps, file);
+	rel->l = l;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_OUTPUT;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
 
 static sql_rel *
 copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)

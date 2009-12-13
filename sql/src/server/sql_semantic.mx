@@ -993,14 +993,16 @@ semantic(mvc *sql, symbol *s)
 		return NULL;
 
 	switch (s->token) {
+/*
 	case TR_COMMIT:
 	case TR_SAVEPOINT:
 	case TR_RELEASE:
 	case TR_ROLLBACK:
 	case TR_START:
 	case TR_MODE:
-		res = transactions(sql, s);
+		res = sql_transactions(sql, s);
 		break;
+*/
 	case SQL_CREATE_SCHEMA:
 	case SQL_DROP_SCHEMA:
 	case SQL_CREATE_TABLE:

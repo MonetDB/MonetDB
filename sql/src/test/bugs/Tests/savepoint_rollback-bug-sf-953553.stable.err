@@ -80,10 +80,9 @@ stderr of test 'savepoint_rollback-bug-sf-953553` in directory 'src/test/bugs` i
 # 21:02:42 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38808 
 # 21:02:42 >  
 
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@localhost:30318
 QUERY = ROLLBACK TO SAVEPOINT a2;
-ERROR = !ROLLBACK TO SAVEPOINT: (a2) failed
-        !ERROR: rollback savepoint a2 doesn't exists
+ERROR = !SQLException:sql.trans:ROLLBACK TO SAVEPOINT: (a2) failed
 
 # 21:02:42 >  
 # 21:02:42 >  Done.

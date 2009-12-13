@@ -3433,6 +3433,72 @@ refs_find_rel(list *refs, sql_rel *rel)
 	return NULL;
 }
 
+#define E_ATOM_INT(e) ((atom*)((sql_exp*)e)->l)->data.val.lval
+#define E_ATOM_STRING(e) ((atom*)((sql_exp*)e)->l)->data.val.sval
+
+static stmt *
+rel2bin_output(mvc *sql, sql_rel *rel, list *refs) 
+{
+	node *n = rel->exps->h;
+	char *tsep = _strdup(E_ATOM_STRING(n->data));
+	char *rsep = _strdup(E_ATOM_STRING(n->next->data));
+	char *ssep = _strdup(E_ATOM_STRING(n->next->next->data));
+	char *ns   = _strdup(E_ATOM_STRING(n->next->next->next->data));
+	char *fn   = NULL;
+	stmt *s = NULL, *fns = NULL;
+	list *slist = create_stmt_list();
+
+	if (rel->l)  /* first construct the sub relation */
+		s = subrel_bin(sql, rel->l, refs);
+	if (!s) 
+		return NULL;	
+
+	if (n->next->next->next->next) {
+		fn = E_ATOM_STRING(n->next->next->next->next->data);
+		fns = stmt_atom_string(_strdup(fn));
+	}
+	list_append(slist, stmt_export(s, tsep, rsep, ssep, ns, fns));
+	if (s->type == st_list && ((stmt*)s->op1.lval->h->data)->nrcols != 0) {
+		stmt *cnt = stmt_aggr(stmt_dup(s->op1.lval->h->data), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1);
+		list_append(slist, stmt_affected_rows(cnt));
+	} else {
+		list_append(slist, stmt_affected_rows(stmt_atom_wrd(1)));
+	}
+	s = stmt_list(slist);
+	return s;
+}
+
+static stmt *
+rel2bin_trans(mvc *sql, sql_rel *rel, list *refs) 
+{
+	node *en = rel->exps->h;
+	stmt *chain = exp_bin(sql, en->data, NULL, NULL, NULL, NULL);
+	stmt *name = NULL;
+
+	(void)refs;
+	if (en->next)
+		name = exp_bin(sql, en->next->data, NULL, NULL, NULL, NULL);
+	return stmt_trans(rel->flag, chain, name);
+}
+
+static stmt *
+rel2bin_ddl(mvc *sql, sql_rel *rel, list *refs) 
+{
+	stmt *s = NULL;
+
+	if (rel->flag == DDL_OUTPUT) {
+		s = rel2bin_output(sql, rel, refs);
+		sql->type = Q_TABLE;
+	} else if (rel->flag <= DDL_TRANS) {
+		s = rel2bin_trans(sql, rel, refs);
+		sql->type = Q_TRANS;
+	} else {
+		sql->type = Q_SCHEMA;
+		return NULL;
+	}
+	return s;
+}
+
 static stmt *
 subrel_bin(mvc *sql, sql_rel *rel, list *refs) 
 {
@@ -3510,8 +3576,8 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 		s = rel2bin_delete(sql, rel, refs);
 		sql->type = Q_UPDATE;
 		break;
-	case op_output:
-		assert(0);
+	case op_ddl:
+		s = rel2bin_ddl(sql, rel, refs);
 		break;
 	}
 	if (s && rel_is_ref(rel)) {
@@ -3541,44 +3607,14 @@ rel_bin(mvc *sql, sql_rel *rel)
 	return s;
 }
 
-#define E_ATOM_STRING(e) ((atom*)((sql_exp*)e)->l)->data.val.sval
-
 stmt *
 output_rel_bin(mvc *sql, sql_rel *rel ) 
 {
-	sql_rel *p = rel;
 	list *refs = list_create(NULL);
-	stmt *s = NULL;
+	stmt *s = subrel_bin( sql, rel, refs);
 
-	if (is_output(p->op)) 
-		rel = p->l;
-	s = subrel_bin( sql, rel, refs);
-
-	if (s && p != rel) {
-		node *n = p->exps->h;
-		char *tsep = _strdup(E_ATOM_STRING(n->data));
-		char *rsep = _strdup(E_ATOM_STRING(n->next->data));
-		char *ssep = _strdup(E_ATOM_STRING(n->next->next->data));
-		char *ns   = _strdup(E_ATOM_STRING(n->next->next->next->data));
-		char *fn   = NULL;
-		stmt *fns = NULL;
-		list *slist = create_stmt_list();
-
-		if (n->next->next->next->next) {
-			fn = E_ATOM_STRING(n->next->next->next->next->data);
-			fns = stmt_atom_string(_strdup(fn));
-		}
-		list_append(slist, stmt_export(s, tsep, rsep, ssep, ns, fns));
-		if (s->type == st_list && ((stmt*)s->op1.lval->h->data)->nrcols != 0) {
-			stmt *cnt = stmt_aggr(stmt_dup(s->op1.lval->h->data), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1);
-			list_append(slist, stmt_affected_rows(cnt));
-		} else {
-			list_append(slist, stmt_affected_rows(stmt_atom_wrd(1)));
-		}
-		s = stmt_list(slist);
-	} else if (s && s->type != st_none && sql->type == Q_TABLE) {
+	if (!is_ddl(rel->op) && s && s->type != st_none && sql->type == Q_TABLE)
 		s = stmt_output(s);
-	}
 	list_destroy(refs);
 	return s;
 }

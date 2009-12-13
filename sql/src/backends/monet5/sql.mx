@@ -40,15 +40,9 @@ pattern init():void
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
 
-pattern transaction():void
+pattern trans(type:int,chain:int,name:str):void
 address SQLtransaction
-comment "Start a transaction";
-pattern commit():void
-address SQLcommit
-comment "Commit the transaction";
-pattern rollback():void
-address SQLrollback
-comment "Abort the transaction";
+comment "a transaction statement (type can be commit,release,rollback or start)";
 
 pattern eval(cmd:str):void 
 address SQLstatement
@@ -967,8 +961,6 @@ extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
 extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access);
 
 sql5_export str SQLtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1352,42 +1344,66 @@ getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b )
 str
 SQLtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	mvc *m = NULL;
-	str msg = getContext(cntxt,mb, &m, NULL);
-
-	(void) cntxt;
-	(void) stk;
-	(void) pci;
-	if (msg)
-		return msg;
-	mvc_trans(m);
-	return MAL_SUCCEED;
-}
-
-str
-SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg = getContext(cntxt,mb, &m, NULL);
-	int *ret  = (int *) getArgReference(stk, pci, 0);
+	mvc *sql = NULL;
+	str msg = getContext(cntxt, mb, &sql, NULL);
+	int type = *(int*) getArgReference(stk, pci, 1);
+	int chain = *(int*) getArgReference(stk, pci, 2);
+	str name = *(str*) getArgReference(stk, pci, 3);
+	char buf[BUFSIZ];
+	int ret = 0;
 
 	if (msg)
 		return msg;
-	*ret = 0;
-	mvc_commit(m, 0, NULL); /* keep the changes */
-	return MAL_SUCCEED;
-}
-str
-SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m=NULL;
-	str msg = getContext(cntxt,mb, &m, NULL);
-	int *ret  = (int *) getArgReference(stk, pci, 0);
+	if (name && strcmp(name, str_nil) == 0)
+		name = NULL;
 
-	if (msg)
-		return msg;
-	*ret = 0;
-	mvc_rollback(m, 0, NULL); /* keep the changes */
+	switch (type) {
+	case DDL_RELEASE:
+		if (sql->session->auto_commit == 1) 
+			throw(SQL, "sql.trans", "RELEASE SAVEPOINT: not allowed in auto commit mode");
+		ret = mvc_release(sql, name);
+		if (ret < 0) {
+			snprintf(buf, BUFSIZ, "RELEASE SAVEPOINT: (%s) failed", name);
+			throw(SQL, "sql.trans", buf);
+		}
+		break;
+	case DDL_COMMIT:
+		if (sql->session->auto_commit == 1) {
+			if (name)
+				throw(SQL,"sql.trans", "SAVEPOINT: not allowed in auto commit mode");
+			else
+				throw(SQL,"sql.trans", "COMMIT: not allowed in auto commit mode");
+		}
+		ret = mvc_commit(sql, chain, name);
+		if (ret < 0 && !name) 
+			throw(SQL, "sql.trans", "COMMIT: failed");
+		if (ret < 0 && name) {
+			snprintf(buf, BUFSIZ, "SAVEPOINT: (%s) failed", name);
+			throw(SQL, "sql.trans", buf);
+		}
+		break;
+	case DDL_ROLLBACK:
+		if (sql->session->auto_commit == 1) 
+			throw(SQL, "sql.trans", "ROLLBACK: not allowed in auto commit mode");
+		ret = mvc_rollback(sql, chain, name);
+		if (ret < 0 && name) {
+			snprintf(buf, BUFSIZ, "ROLLBACK TO SAVEPOINT: (%s) failed", name);
+			throw(SQL, "sql.trans", buf);
+		}
+		break;
+	case DDL_TRANS:
+		if (sql->session->auto_commit == 0) 
+			throw(SQL, "sql.trans", "START TRANSACTION: cannot start a transaction within a transaction");
+		if (sql->session->active)
+			mvc_rollback(sql, 0, NULL);
+		sql->session->auto_commit = 0;
+		sql->session->ac_on_commit = 1;
+		sql->session->level = chain;
+		(void) mvc_trans(sql);
+		break;
+	default:
+		throw(SQL, "sql.trans", "transaction unknown type");
+	}
 	return MAL_SUCCEED;
 }
 
