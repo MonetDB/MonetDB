@@ -619,7 +619,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         f.close()
         diffclass = 'error'
         difftext = 'Major differences'
-    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME, F_KILL):
+    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME, F_KILL, F_SEGV):
         if SockTime == F_SOCK:
             diffclass = 'socket'
             difftext = difftext + ' (Socket)'
@@ -865,7 +865,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
-    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_KILL):
+    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_KILL, F_SEGV):
         e = SockTime
     if o == F_ERROR or e == F_ERROR:
         tstclass = 'error'
