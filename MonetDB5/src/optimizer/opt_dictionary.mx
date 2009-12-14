@@ -288,11 +288,40 @@ We deal with the most prominent case provided by SQL only.
 						continue;
 					}
 				}
-				if ( getFunctionId(q) == markTRef){
+@-
+Marking the dictionary pair idx(oid,bte) and val(bte,int) can be realised by performing
+a semijoin on idx followed by the markT. The value is of no interested.
+@c
+				if ( getFunctionId(q) == markTRef && (idx[getArg(q,1)] || val[getArg(q,1)]) ){
+					qq= newStmt(mb,batRef,reverseRef);
+					qq= pushArgument(mb, qq, idx[getArg(q,1)]);
+					j = getArg(qq,0);
+
+					qq= newStmt(mb,algebraRef,semijoinRef);
+					qq= pushArgument(mb, qq, j);
+					qq= pushArgument(mb, qq, val[getArg(q,1)]);
+					j = getArg(qq,0);
+
+					qq= newStmt(mb,batRef,reverseRef);
+					qq= pushArgument(mb, qq, j);
+					actions++;
+					getArg(q,1) = getArg(qq,0);
+					pushInstruction(mb,q);
+					continue;
+				}
+@-
+Combination of the next column with the pivot table.
+@c
+				if ( getFunctionId(q) == leftjoinRef && (idx[getArg(q,2)] || val[getArg(q,2)]) ){
+					j = getArg(q,0);
+					val[j] = val[getArg(q,2)];
+					getArg(q,2) = idx[getArg(q,2)];
+					idx[j] = newTmpVariable(mb, newBatType(getHeadType(getVarType(mb,getArg(q,1))), getTailType(getVarType(mb,getArg(q,2)))) );
+					pushInstruction(mb,q);
+					getArg(q,0) = idx[j];
+					continue;
 				}
 			} 
-			if (  getModuleId(q) == batRef ){
-			}
 			/* default cases call for source reconstruction */
 			for (j = q->retc; j < q->argc; j++)
 			if ( idx[getArg(q,j)] || val[getArg(q,j)]){
@@ -448,7 +477,6 @@ str DICTnew(int *ret, str *nme, int *bid)
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
-	case TYPE_lng:
 		;
 	}
 

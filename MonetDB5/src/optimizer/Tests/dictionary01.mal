@@ -14,16 +14,19 @@ i:bat[:int,:str]:= bbp.bind("dictIndex");
 v:bat[:int,:str]:= bbp.bind("dictValue");
 io.print(i,v);
 
-function tst();
+function sql.tst();
   b:bat[:oid,:int] := sql.bind("sys","tab","col",0);
   d:bat[:oid,:int] := sql.bind("sys","tab","col",1);
   x:= algebra.kdifference(b,d);
   e:bat[:oid,:int] := sql.bind("sys","tab","col",2);
   y := algebra.kunion(x,e);
   c:= algebra.select(y,0,2);
-  io.print(c);
+  m:= algebra.markT(c,0@0);
+  f:bat[:oid,:int] := sql.bind("sys","tab","col",0);
+  j:= algebra.leftjoin(m,f,100:lng);
+  io.print(j);
 end tst;
 
-optimizer.dictionary("user","tst");
-mdb.List("user","tst");
-user.tst();
+optimizer.dictionary("sql","tst");
+mdb.List("sql","tst");
+sql.tst();
