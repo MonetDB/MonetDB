@@ -46,10 +46,14 @@ monet_version(void)
 			"based on kernel v%s (" SZFMT "-bit oids)\n",
 			(size_t) (sizeof(ptr) * 8), GDKversion(),
 			(size_t) (sizeof(oid) * 8));
-	printf("Copyright (c) 1993-July 2008 CWI\nCopyright (c) August 2008-2009 MonetDB B.V., all rights reserved\n");
+	printf("Copyright (c) 1993-July 2008 CWI\n"
+			"Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved\n");
 	printf("Visit http://monetdb.cwi.nl/ for further information\n");
-	printf("Kernel detected %.1fGiB memory and %d cpu core%s\n",
-			sz_mem_gb, cores, (cores != 1) ? "s" : "");
+	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
+			sz_mem_gb, cores, cores != 1 ? "s" : "");
+	/* don't want to GDKinit just for this
+			"using %d thread%s\n",
+			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
 	printf("Configured for prefix: " MONETDB5_PREFIX "\n");
 	printf("Libraries:\n");
 #ifdef HAVE_LIBPCRE

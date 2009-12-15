@@ -169,8 +169,7 @@ monet_hello(opt *set, int setlen)
 #endif
 	char *msg = mo_find_option(set, setlen, "monet_welcome");
 
-	size_t sz_mem_b = MT_npages() * MT_pagesize();
-	dbl    sz_mem_h = (dbl) sz_mem_b;
+	dbl    sz_mem_h = (dbl)(MT_npages() * MT_pagesize());
 	char  *qc = " kMGTPE";
 	int    qi = 0;
 
@@ -192,8 +191,8 @@ monet_hello(opt *set, int setlen)
 			HOST, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
 	size -= strlen(s);
 	s += strlen(s);
-	snprintf(s,size,"# Detected %.3f %ciB (" SZFMT " bytes) main-memory.\n", 
-			sz_mem_h, qc[qi], sz_mem_b);
+	snprintf(s,size,"# Found %.3f %ciB available main-memory.\n", 
+			sz_mem_h, qc[qi]);
 	size -= strlen(s);
 	s += strlen(s);
 #ifdef MONET_GLOBAL_DEBUG
