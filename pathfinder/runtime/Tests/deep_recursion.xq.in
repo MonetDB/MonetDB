@@ -1,0 +1,36 @@
+pf:add-doc("$TSTSRCDIR/deep_recursion.xml","document.xml")
+<>
+element result {
+ for $name in distinct-values( (
+  let $var1 :=
+   let $var2 :=
+    let $var3 :=
+     let $var4 :=
+      let $var5 :=
+       let $var6 :=
+        let $var7 :=
+         let $var8 :=
+          let $var9 :=
+           let $var10 :=
+            let $var11 :=
+             let $var12 := doc('document.xml')//properties/..
+             return $var12[ (self::registry) ]
+            return $var11/ancestor-or-self::file[1]/properties/..
+           return $var10[ properties/(name)[ contains( lower-case(.),
+'system' ) ]  ]
+          return $var9/child::registry/properties/..
+         return $var8/child::key/properties/..
+        return $var7/child::key/properties/..
+       return $var6/child::key/properties/..
+      return $var5[ properties/(name)[ . = 'Enum' ]  ]
+     return $var4/descendant-or-self::key/properties/..
+    return $var3[ properties/(name)[ contains( lower-case(.), 'usb' ) ]
+]
+   return $var2/descendant-or-self::value/properties/..
+  return $var1[ properties/(name)[ . = 'LocationInformation' ]  ]
+  )/properties/*/name()
+ )
+ return element name { $name }
+}
+<>
+pf:del-doc("document.xml")

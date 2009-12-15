@@ -1,0 +1,17 @@
+stderr of test 'deep_recursion` in directory 'runtime` itself:
+
+
+# 17:08:27 >  
+# 17:08:27 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31451 --set xrpc_port=41338 --set monet_prompt= --trace  "--dbname=mTests_runtime" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 17:08:27 >  
+
+
+# 17:08:28 >  
+# 17:08:28 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=31451 deep_recursion.xq
+# 17:08:28 >  
+
+
+# 17:08:28 >  
+# 17:08:28 >  Done.
+# 17:08:28 >  
+
