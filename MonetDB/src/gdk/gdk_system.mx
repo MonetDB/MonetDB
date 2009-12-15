@@ -339,9 +339,9 @@ MT_init(void)
 		_MT_pagesize = sysInfo.dwPageSize;
 	}
 #else
-#if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
+# if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
 	_MT_pagesize = sysconf(_SC_PAGESIZE);
-#endif
+# endif
 #endif
 	if (_MT_pagesize <= 0)
 		_MT_pagesize = 4096;	/* default */
@@ -366,14 +366,40 @@ MT_init(void)
 #if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #else
-#ifdef HAVE_GETRLIMIT
+# if defined(HAVE_GETRLIMIT) && defined(RLIMIT_RSS)
 	{
 		struct rlimit rl;
 
+		/* Specifies the limit (in pages) of the process's resident set
+		 * (the number of virtual pages resident in RAM). This limit
+		 * only has effect in Linux 2.4.x, x < 30, and there only
+		 * affects calls to madvise() specifying MADV_WILLNEED */
+		/* FIXME: this looks like a total wrong thing to check in any
+		 * case to me */
 		getrlimit(RLIMIT_RSS, &rl);
 		_MT_npages = rl.rlim_cur / _MT_pagesize;
 	}
+# else
+#  error "don't know how to get the amount of physical memory for your OS"
+# endif
 #endif
+#ifdef HAVE_GETRLIMIT
+	{
+		struct rlimit rl;
+		size_t memlim;
+
+		/* The environment can be limited memory wise.  In such case the
+		 * physically available memory, is not necessarily what we can
+		 * also use. */
+		getrlimit(RLIMIT_DATA, &rl);
+		if (rl.rlim_cur != (rlim_t)RLIM_INFINITY) {
+			/* rlimit returns in bytes, recalculate */
+			memlim = rl.rlim_cur / _MT_pagesize;
+			/* if it's more restrictive, take that as value */
+			if (memlim < _MT_npages)
+				_MT_npages = memlim;
+		}
+	}
 #endif
 }
 
