@@ -631,7 +631,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
             difftext = difftext + ' (Killed)'
         if SockTime == F_SEGV:
             diffclass = 'segfault'
-            difftext = difftext = ' (Crash)'
+            difftext = difftext + ' (Crash)'
     if COMPBITSOIDSLINK:
         SYSTEM = DISTVER+", "+COMPBITSOIDSLINK+":"
     else:
