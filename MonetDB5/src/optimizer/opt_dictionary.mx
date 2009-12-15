@@ -437,7 +437,9 @@ str DICTnew(int *ret, str *nme, int *bid)
 {
 	int idx,val, typ;
 	size_t cnt;
-	BAT *b, *bx, *bv;
+	BAT *b, *bo, *bx, *bv;
+	BATiter bi, bii;
+	BUN p,q;
 
 	if( DICTinit() )
 		throw(MAL,"dictionary.new","No catalog table");
@@ -448,14 +450,14 @@ str DICTnew(int *ret, str *nme, int *bid)
         /* Simple ignore the binding if you can;t find the bat */
         throw(MAL, "dict.new", RUNTIME_OBJECT_MISSING);
 
-	bv= BATkunique(b);
-	if ( bv == NULL){
+	bo= BATkunique(b);
+	if ( bo == NULL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL,"dict.new","Can not access unique list");
 	}
-	BATorder(BATmirror(bv));
+	BATorder(bo);
 	
-	cnt = BATcount(bv);
+	cnt = BATcount(bo);
 	if ( cnt < 256 )
 		typ= TYPE_bte;
 	else
@@ -467,16 +469,47 @@ str DICTnew(int *ret, str *nme, int *bid)
 	else{
 		/* don't create a dictionary */
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bv->batCacheid);
+		BBPreleaseref(bo->batCacheid);
 		return MAL_SUCCEED;
 	}
-	bx =  BATnew(TYPE_oid, typ, BATcount(b));
-	bv =  BATnew(typ, bv->ttype, BATcount(b));
+	bx =  BATnew(TYPE_void, typ, BATcount(b));
+	bv =  BATnew(typ, b->ttype, BATcount(b));
 	/* create the dictionary representation */
+@=
+Factor out the index construction by type
+@= mkindex
+	{	@1 *v,o;
+		ptr w;
+		/* complete value table */
+		bi = bat_iterator(bo);
+		o = 0;
+		BATloop(bo,p,q){
+			bunfastins(bv, &o, BUNtail(bi,p));
+			o++;
+		}
+		bv->tsorted = bo->tsorted;
+		bv->tdense = bo->tdense;
+		if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
+
+		/* complete the index table */
+		BATseqbase(bx,0);
+		o = 0;
+		bi = bat_iterator(b);
+		bii = bat_iterator(bv);
+		v = (@1*) Tloc(bx, BUNfirst(bx));
+		BATloop(b,p,q){
+			w= BUNtail(bi,p);
+			*v++ = *(@1*) BUNhead(bii,BUNfnd(BATmirror(bv), w));
+		}
+		BATsetcount(bx, BATcount(b));
+		if (!(bx->batDirty&2)) bx = BATsetaccess(bx, BAT_READ);
+	}
+	break;
+@c
 	switch(typ){
-	case TYPE_bte:
-	case TYPE_sht:
-	case TYPE_int:
+	case TYPE_bte: @:mkindex(bte)@
+	case TYPE_sht: @:mkindex(sht)@
+	case TYPE_int: @:mkindex(int)@
 		;
 	}
 
@@ -487,6 +520,7 @@ str DICTnew(int *ret, str *nme, int *bid)
 	BBPkeepref(bx->batCacheid);
 	BBPkeepref(bv->batCacheid);
 	BBPreleaseref(*bid);
+	BBPreleaseref(bo->batCacheid);
 	DICTcommit(bx,bv);
 	DICTcommit(dictIndex,dictValue);
 	/* now the original BAT can be cleared */
@@ -496,6 +530,12 @@ str DICTnew(int *ret, str *nme, int *bid)
 #endif
 	(void) ret;
 	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(bx->batCacheid);
+	BBPreleaseref(bv->batCacheid);
+	BBPreleaseref(bo->batCacheid);
+	BBPreleaseref(*bid);
+	throw(MAL, "dictionary.new", OPERATION_FAILED " During bulk operation");
 }
 
 @-
@@ -521,7 +561,7 @@ DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 
-	/* DO THE WORK */
+	/* DO THE WORK by checking if there is enough space */
 
 	*ridx = bi->batCacheid;
 	*rval = bv->batCacheid;
