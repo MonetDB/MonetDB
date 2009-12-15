@@ -1793,8 +1793,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
 
         if tres == 'timeout':
             timeout = F_TIME
-        elif tres == 'kill':
-            killed = F_KILL
         elif tres == 'segfault':
             segfaulted = F_SEGV
 
@@ -1822,7 +1820,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 if p is not None:
                     for l in open(f):
                         p.write("! "+l)
-#                        killed = F_KILL
+                        killed = F_KILL
                     p.close()
 
         sockerr = F_OK
@@ -2336,14 +2334,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntOut = open(TestOutFile, 'a')
             ClntErr = open(TestErrFile, 'a')
 
-        killed = False
+        timedout = False
         if ServerReady:
             if   CALL == "other":
                 cmd = os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
-                killed = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+                timedout = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL == "python":
                 cmd = exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
-                killed = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+                timedout = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs", "milS", "milSXs"]:
                 cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
                 if par['ALGEBRA']:
@@ -2360,12 +2358,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 for f in d:
                     if test.match(f):
                         if CALL[:3] == "mal":
-                            killed = RunIt(cmd + f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                            timedout = RunIt(cmd + f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                         elif par['M5']:
-                            killed = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                            timedout = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                         else:
-                            killed = RunIt(cmd, open(f), ClntOut, ClntErr, TIMEOUT)
-                    if killed:
+                            timedout = RunIt(cmd, open(f), ClntOut, ClntErr, TIMEOUT)
+                    if timedout:
                         break
             elif CALL in ["milC", "milCXs", "malC", "malCXs"]:
                 TSTs = []
@@ -2387,8 +2385,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     Clnt = ''               # cannot happen
                 for f in TSTs:
-                    killed = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
-                    if killed:
+                    timedout = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
+                    if timedout:
                         break
 
                 #TODO
@@ -2408,8 +2406,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
                 Clnt = exe['SQL_Client'][1]
                 for f in TSTs:
-                    killed = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
-                    if killed:
+                    timedout = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
+                    if timedout:
                         break
             elif CALL in ["xq", "xqXs"]:
                 TSTs = []
@@ -2426,8 +2424,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
                 Clnt = exe['XQuery_Client'][1]+" "
                 for f in TSTs:
-                    killed = RunIt(Clnt+f, "", ClntOut, ClntErr, TIMEOUT)
-                    if killed:
+                    timedout = RunIt(Clnt+f, "", ClntOut, ClntErr, TIMEOUT)
+                    if timedout:
                         break
         else:
             for fp in ClntOut,ClntErr:
@@ -2479,7 +2477,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             pSrvr.wait()
             pSrvrTimer.cancel()
             pSrvrTimer = None
-            killed = killed or pSrvr.killed
+            timedout = timedout or pSrvr.killed
             if MkillUsersAT:
                 StopAt(ATJOB2,ME)
 
@@ -2542,7 +2540,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 segfaulted = True
 
     timedout = False
-    if not killed and not segfaulted:
+    if not timedout and not segfaulted:
         TO = re.compile("^!.*Mtimeout.*: Timeout: ", re.MULTILINE)
         if os.path.isfile(TestErrFile):
             for l in open(TestErrFile):
@@ -2555,8 +2553,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     if segfaulted:
         return "segfault"
-    elif killed:
-        return "kill"
     elif timedout:
         return "timeout"
 
