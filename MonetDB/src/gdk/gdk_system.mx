@@ -354,19 +354,19 @@ MT_init(void)
 		if (GlobalMemoryStatusEx(&memStatEx))
 			_MT_npages = (size_t) (memStatEx.ullTotalPhys / _MT_pagesize);
 	}
-#endif
-#ifdef HAVE_GLOBALMEMORYSTATUS
+#else
+# ifdef HAVE_GLOBALMEMORYSTATUS
 	if (_MT_npages <= 0) {
 		MEMORYSTATUS memStat;
 
 		GlobalMemoryStatus(&memStat);
 		_MT_npages = memStat.dwTotalPhys / _MT_pagesize;
 	}
-#endif
-#if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
+# else
+#  if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
-#else
-# if defined(HAVE_GETRLIMIT) && defined(RLIMIT_RSS)
+#  else
+#   if defined(HAVE_GETRLIMIT) && defined(RLIMIT_RSS)
 	{
 		struct rlimit rl;
 
@@ -379,10 +379,12 @@ MT_init(void)
 		getrlimit(RLIMIT_RSS, &rl);
 		_MT_npages = rl.rlim_cur / _MT_pagesize;
 	}
-# else
-#  error "don't know how to get the amount of physical memory for your OS"
-# endif
-#endif
+#   else
+#    error "don't know how to get the amount of physical memory for your OS"
+#   endif /* getrlimit */
+#  endif /* sysconf */
+# endif /* GlobalMemoryStatus */
+#endif /* GlobalMemoryStatusEx */
 #ifdef HAVE_GETRLIMIT
 	{
 		struct rlimit rl;
