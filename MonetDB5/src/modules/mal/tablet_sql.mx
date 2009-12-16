@@ -239,6 +239,10 @@ SQLload_error(READERtask *task, Tablet *as, int idx, str csep, str rsep)
 		else sz += cseplen;
 
 	line = (str) GDKzalloc(sz + rseplen + 1);
+	if ( line == 0){
+		as->error = M5OutOfMemory;
+		return 0;
+	}
 	for ( i = 0; i < as->nr_attrs; i++){
 		if (task->fields[i][idx])
 			strcat(line,task->fields[i][idx]);
@@ -266,7 +270,9 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 			if (!line) {
 				str errline = SQLload_error(task,as,task->next,csep,rsep);
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
-					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c[0]) + task->next +1, i);
+					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, (errline?errline:""), BATcount(as->format->c[0]) + task->next +1, i);
+				if ( errline )
+					GDKerror(errmsg);
 				as->error = GDKstrdup(errmsg);
 				GDKfree(errline);
 				*start = 0; /* to avoid handling an incomplete quoted field */
@@ -293,6 +299,7 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 		if ( i < as->nr_attrs-1)  {
 			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
 					 fmt->sep, BATcount(fmt->c[0]) + 1 + task->next, i);
+			GDKerror(errmsg);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
 				return -1;
@@ -320,6 +327,10 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 		return;
 	}
 	loc = (lng*) GDKzalloc(sizeof(lng) * threads);
+	if ( loc == 0){
+		task->as->error = M5OutOfMemory;
+		return;
+	}
 	/* use of load directives */
 	for ( i=0; i < nr_attrs; i++)
 		for ( j=0; j < threads; j++)
@@ -374,6 +385,10 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	/* large tables. Instead rely on madvise */
 	GDK_vm_trim = 0;
 
+	if ( task == 0){
+		as->error = M5OutOfMemory;
+		return BUN_NONE;
+	}
 	assert(rsep);
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
@@ -387,6 +402,12 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	task->seplen = strlen(csep);
 	task->errbuf =  cntxt->errbuf;
 
+	if ( task->fields == 0 ||
+		 task->cols == 0 ||
+		 task->time == 0 ){
+		as->error = M5OutOfMemory;
+		return BUN_NONE;
+	}
 	as->error = NULL;
 
 	/* there is no point in creating more threads than we have columns */
@@ -395,6 +416,10 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
 	for( i=0; i< as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
+		if ( task->fields[i] == 0){
+			as->error = M5OutOfMemory;
+			return BUN_NONE;
+		}
 		task->cols[i] = (int) (i+1);	/* to distinguish non initialized later with zero */
 		/* advice memory manager on expected use of results */
 		BATmadvise(as->format[i].c[0], BUF_SEQUENTIAL,BUF_SEQUENTIAL,0,0);
@@ -406,6 +431,10 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	for( j= 0; j < threads ; j++){
 		ptask[j]= *task;
 		ptask[j].cols =  (int*) GDKzalloc(as->nr_attrs * sizeof(int));
+		if ( ptask[j].cols == 0){
+			as->error = M5OutOfMemory;
+			return BUN_NONE;
+		}
 		MT_init_sema(ptask[j].sema,0,"sqlworker");
 		MT_init_sema(ptask[j].reply,0,"sqlworker");
 		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j]);
@@ -458,6 +487,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 					task->fields[i] = GDKrealloc(task->fields[i], sizeof(char*) * (task->limit + 10000));
 					if ( task->fields[i] == 0){	/* major error */
 						GDKerror("tablet_sql:Memory allocation problem");
+						as->error = M5OutOfMemory;
 						return BUN_NONE;
 					}
 
@@ -498,7 +528,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				}
 			}
 
-			if (*e != 0 || ateof) {
+			if ((e != NULL && *e != 0) || ateof) {
 				/* found a complete record, or an incomplete one at the end of the file */
 				if ( --skip < 0 ) {
 					task->fields[0][task->next] = s;
