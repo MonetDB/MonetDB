@@ -104,7 +104,7 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "opt_deadcode.h"
 #include "mal_builder.h"
 
-#define propagate(X) {p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1)); \
+#define propagate(X) {p->token= ASSIGNsymbol; \
 	getArg(p,1)= getArg(p,X); p->argc = 2; p->fcn = 0; actions++;\
 	clrFunction(p); \
 	if(getArgType(mb,p,0)== getArgType(mb,p,X)){\
@@ -251,21 +251,24 @@ We assume here that string constants have been matched already.
 						break;
 					} 
 				}
+				if (getModuleId(p)== batRef) {
+					if ( f == reverseRef || f == mirrorRef ){
+						empty[getArg(p, 0)]= 1;
+					}
+				}
 @-
 If the target variable is empty and the function does not
 have a side-effect, we can replace it with a construction
 of the empty set. The dead-code optimizer will take care
 of removal of superflous constructions.
-				if( p->retc==1 && !hasSideEffects(p, FALSE) &&
+@c
+				if( p->retc==1 && p->token == ASSIGNsymbol &&
 					!isLinearFlow(p) &&
-					!isUnsafeFunction(p) &&
 					isaBatType(getArgType(mb,p,0))){
 					int tpe=getArgType(mb,p,0);
 					clrFunction(p);
 					setModuleId(p, batRef);
 					setFunctionId(p, newRef);
-					p->argc = 1;
-					p->token = ASSIGNsymbol;
 					p= pushArgument(mb, p, 
 						newTypeVariable(mb, getHeadType(tpe)));
 					p= pushArgument(mb, p, 
@@ -273,7 +276,6 @@ of removal of superflous constructions.
 					actions++;
 					break;
 				}
-@c
 			}
 		}
 	}
