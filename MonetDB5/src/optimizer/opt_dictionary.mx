@@ -18,8 +18,8 @@
 @f opt_dictionary
 @- The dictionary optimizer
 Datawarehouse applications are organized as star-schemas, where dimension
-tables factor out common recurring bits-and-pieces. For example, it factors
-out the list of US states, cities, regions, etc..
+tables factor out common recurring bits-and-pieces. For example, 
+the list of US states, cities, regions, etc..
 To get the most compact and still performance wise fast datawarehouse,
 a DBA should analyse the database and repeatedly finetune the decisions
 towards a compact star schema.
@@ -30,9 +30,14 @@ valued by references into the index. For example, a string column
 with all US states can be replaced by a tinyint column with indices
 into the dictionary table.
 
+The MonetDB approach is to mimick this behavior using straightforward
+dictionary encodings.
 The optimizer maintains a list of dictionaries, represented by a persistent
 catalog BAT.
-The optimizer looks for the following code fragments
+
+An example of the optimizer is shown below, which uses a selection
+on one dictionary compressed column to collect values of
+the second one without materializing the original table.
 @verbatim
   a:bat[:oid,:str]:= sql.bind("sys","tab","col",0);
   d:bat[:oid,:int]  := sql.bind("sys","tab","col",1);
@@ -66,8 +71,7 @@ The remainder reflects a common SQL block, such that the selection is executed a
 the compressed table. Only when needed in the print(), it will be expanded to include
 the OIDs needed.
 
-In the first implementation, we explicitly migrate columns to the dictionary.
-The source BAT will remain in existence, but will be emptied. This way we can always
+The source BAT remains in existence, but will be emptied. This way we can always
 migrate the dictionary back into the persistent table without disturbing
 the SQL catalog.
 Ultimately, the optimizer should detect opportunities for replacement of columns
@@ -76,6 +80,16 @@ automatically.
 Pushing the dictionary information through the plan is organized around a subset
 of the MAL operators. As soon as we find any other instruction, the dictionary
 is expanded to its normal BAT for further processing.
+
+@-
+The key challenge is to determine when to move a BAT into its dictionary format.
+Two situations come to mind. First, during bulk copying we can start with
+the dictionary compression.
+Alternatively, we attempt dictionary compression as part of query processing.
+Selections over non-compressed base tables are time-consuming,
+they drag them into memory, and thus a good moment to perform a test.
+The first approach is to take action when the base table memory footprint
+is significant.
 @{
 @mal
 module dictionary;
@@ -101,6 +115,10 @@ command encode(val:bat[:any_1,:any_2], b:bat[:oid,:any_2]):bat[:oid,:any_1]
 address DICTencode
 comment "Use the dictionary to encode a table b.";
 
+command compress{unsafe}(s:str, b:bat[:any_1,:any_2]) 
+address DICTcompress
+comment "Try to replace a table by its dictionary equivalent.";
+
 pattern optimizer.dictionary():str
 address OPTdictionary;
 pattern optimizer.dictionary(mod:str, fcn:str):str
@@ -117,6 +135,7 @@ comment "Capitalize dictionary encodings ";
 opt_export str DICTbind(int *idx, int *val, str * nme);
 opt_export str DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid);
 opt_export str DICTencode(int *ridx, int *val, int *bid);
+opt_export str DICTcompress(int *ret, str *nme, int *bid);
 opt_export str DICTnew(int *idx, str *nme, int *bid);
 opt_export str DICTdrop(int *ret, str *nme);
 
@@ -149,12 +168,13 @@ DICTfind(int *idx, int *val, str nme)
 int
 OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j, actions=0;
+	int vlim, i,j, actions=0;
 	int *idx, *val;
 	InstrPtr *old,q, qq;
 	int x, v, limit;
 	BUN p;
 	char buf[BUFSIZ];
+	str *names;
 	BAT *bi, *bv;
 	str dictionaryRef = putName("dictionary",10);
 
@@ -167,6 +187,10 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	
     if ( newMalBlkStmt(mb, mb->ssize) < 0)
         return 0;
+	vlim = mb->vtop;
+	names = (str *) GDKzalloc(vlim * sizeof(str*));
+	if ( names == 0)
+		return 0;
 
 	idx = (int*) GDKzalloc(mb->vtop * sizeof(int));
 	val = (int*) GDKzalloc(mb->vtop * sizeof(int));
@@ -191,6 +215,8 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if ( buf[0] ){
 			BATiter bidx = bat_iterator(dictIndex);
 			BATiter bval = bat_iterator(dictValue);
+
+			names[getArg(q,0)]= (str) GDKstrdup(buf);
 			p = BUNfnd(BATmirror(dictIndex), (ptr) buf);
 			if ( p != BUN_NONE ){
 				x = *(int*) BUNhead(bidx, p);
@@ -237,18 +263,25 @@ reconstruction and introduce a new dictionary pair.
 				if ( (getFunctionId(q) == selectRef ||
 					 getFunctionId(q) == uselectRef ||
 					 getFunctionId(q) == thetaselectRef ||
-					 getFunctionId(q) == thetauselectRef ) &&
-					idx[getArg(q,1)] && val[getArg(q,1)] ){
-					j = getArg(q,0);
-					idx[j] = idx[getArg(q,1)];
-					getArg(q,1) = val[getArg(q,1)];
-					getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
-					val[j] = getArg(q,0);
+					 getFunctionId(q) == thetauselectRef ) ){
+					if ( idx[getArg(q,1)] && val[getArg(q,1)] ){
+						j = getArg(q,0);
+						idx[j] = idx[getArg(q,1)];
+						getArg(q,1) = val[getArg(q,1)];
+						getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
+						val[j] = getArg(q,0);
+						pushInstruction(mb,q);
 #ifdef DEBUG_OPT_DICTIONARY 
-						stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+							stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
 #endif
+					} else
+					if ( names[getArg(q,0)] ) {
+						pushInstruction(mb,q);
+						qq = newStmt(mb, dictionaryRef, putName("compress",8));
+						qq = pushStr(mb,qq,buf);
+						pushArgument(mb,qq, getArg(q,1));
+					}
 					actions++;
-					pushInstruction(mb,q);
 					continue;
 				}
 				if ( getFunctionId(q) == kdifferenceRef  ||
@@ -340,6 +373,9 @@ Combination of the next column with the pivot table.
 #ifdef DEBUG_OPT_DICTIONARY 
 	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
+	for ( i = 0; i<vlim; i++)
+	if ( names[i])
+		GDKfree(names[i]);
 	GDKfree(idx);
 	GDKfree(val);
 	return actions;
@@ -505,7 +541,7 @@ Factor out the index construction by type
 	}
 @= mkindex
 	@:define(@1,@2)@
-	@:encode(@1)@
+	@:encode(@1,@2)@
 	break;
 @c
 	switch(typ){
@@ -636,6 +672,35 @@ DICTencode(int *ridx, int *vid, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bv->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str DICTcompress(int *ret, str *nme, int *bid)
+{
+	BAT *b, *bs = 0, *bh = 0;
+	double ratio;
+
+	b = (BAT *) BATdescriptor(*bid);
+    if (b == 0)
+        throw(MAL,"dictionary.convert",RUNTIME_OBJECT_MISSING);
+	/* conversion is only relevant for larger tables */
+	/* determine the memory footprint */
+
+	/* alternatively, we sample the table */
+	bs= BATsample(b, (size_t) 1000);
+	if ( bs )
+		bh= BAThistogram(bs);
+	if ( bs && bh )
+		ratio = (double) BATcount(bh) / (double) BATcount(bs);
+#ifdef DEBUG_OPT_DICTIONARY 
+	if ( bs && bh )
+		stream_printf(GDKout,"dictionary.convert sample " SZFMT " " SZFMT" %f\n", BATcount(bs), BATcount(bh),ratio);
+#endif
+	BBPreleaseref(b->batCacheid);
+	if ( bs)
+		BBPreleaseref(bs->batCacheid);
+	if ( bh)
+		BBPreleaseref(bh->batCacheid);
+	return DICTnew(ret,nme,bid);
 }
 
 str DICTdrop(int *ret, str *nme)
