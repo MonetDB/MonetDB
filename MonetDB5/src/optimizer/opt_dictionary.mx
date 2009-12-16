@@ -433,6 +433,16 @@ str DICTbind(int *idx, int *val, str * nme)
 	return MAL_SUCCEED;
 }
 
+static int
+DICTtype(size_t cnt){
+	if ( cnt < 256 )
+		return TYPE_bte;
+	if ( cnt < 1<<15 )
+		return TYPE_sht;
+	if ( cnt < (size_t) 1<<31 )
+		return TYPE_int;
+	return TYPE_lng;
+}
 str DICTnew(int *ret, str *nme, int *bid)
 {
 	int idx,val, typ;
@@ -458,42 +468,23 @@ str DICTnew(int *ret, str *nme, int *bid)
 	BATorder(bo);
 	
 	cnt = BATcount(bo);
-	if ( cnt < 256 )
-		typ= TYPE_bte;
-	else
-	if ( cnt < 1<<15 )
-		typ= TYPE_sht;
-	else
-	if ( cnt < (size_t) 1<<31 )
-		typ= TYPE_int;
-	else{
+	typ= DICTtype(cnt);
+	if( typ == TYPE_lng){
 		/* don't create a dictionary */
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(bo->batCacheid);
 		return MAL_SUCCEED;
 	}
 	bx =  BATnew(TYPE_void, typ, BATcount(b));
+	BATseqbase(bx,0);
 	bv =  BATnew(typ, b->ttype, BATcount(b));
 	/* create the dictionary representation */
 @=
 Factor out the index construction by type
-@= mkindex
-	{	@1 *v,o;
+@= encode
+	{	@1 *v;
 		ptr w;
-		/* complete value table */
-		bi = bat_iterator(bo);
-		o = 0;
-		BATloop(bo,p,q){
-			bunfastins(bv, &o, BUNtail(bi,p));
-			o++;
-		}
-		bv->tsorted = bo->tsorted;
-		bv->tdense = bo->tdense;
-		if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
-
 		/* complete the index table */
-		BATseqbase(bx,0);
-		o = 0;
 		bi = bat_iterator(b);
 		bii = bat_iterator(bv);
 		v = (@1*) Tloc(bx, BUNfirst(bx));
@@ -501,18 +492,33 @@ Factor out the index construction by type
 			w= BUNtail(bi,p);
 			*v++ = *(@1*) BUNhead(bii,BUNfnd(BATmirror(bv), w));
 		}
-		BATsetcount(bx, BATcount(b));
-		if (!(bx->batDirty&2)) bx = BATsetaccess(bx, BAT_READ);
 	}
+@= define
+	{	@1 o;
+		/* complete value table */
+		bi = bat_iterator(@2);
+		o = 0;
+		BATloop(@2,p,q){
+			bunfastins(bv, &o, BUNtail(bi,p));
+			o++;
+		}
+	}
+@= mkindex
+	@:define(@1,@2)@
+	@:encode(@1)@
 	break;
 @c
 	switch(typ){
-	case TYPE_bte: @:mkindex(bte)@
-	case TYPE_sht: @:mkindex(sht)@
-	case TYPE_int: @:mkindex(int)@
-		;
+	case TYPE_bte: @:mkindex(bte,bo)@
+	case TYPE_sht: @:mkindex(sht,bo)@
+	case TYPE_int: @:mkindex(int,bo)@
 	}
+	BATsetcount(bx, BATcount(b));
+	if (!(bx->batDirty&2)) bx = BATsetaccess(bx, BAT_READ);
 
+	bv->tsorted = bo->tsorted;
+	bv->tdense = bo->tdense;
+	if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
 	BUNins(dictIndex,&bx->batCacheid, *nme, FALSE);
 	BUNins(dictValue,&bv->batCacheid, *nme, FALSE);
 	BATmode(bx, PERSISTENT);
@@ -540,39 +546,95 @@ bunins_failed:
 
 @-
 Extending a dictionary could lead to overflow of the reference type.
-This should trigger a partial re-compilation
+This means, we end up with larger idx tables.
+This should trigger a partial re-compilation of the MAL program.
 @c
 str 
 DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
 {
-	BAT *bi, *bv, *b;
+	BAT *bx, *bv, *b, *bn, *rv;
+	BATiter bi, bii;
+	BUN p,q;
+
 	b = (BAT *) BATdescriptor(*bid);
     if (b == 0)
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
-	bi = (BAT *) BATdescriptor(*idx);
-    if (bi == 0){
+	bx = (BAT *) BATdescriptor(*idx);
+    if (bx == 0){
 		BBPreleaseref(b->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 	bv = (BAT *) BATdescriptor(*val);
     if (bv == 0){
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bv->batCacheid);
+		BBPreleaseref(bx->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 
-	/* DO THE WORK by checking if there is enough space */
+	/* check how many new elements should be added to the val */
+	bn = BATsemijoin(BATmirror(b), BATmirror(bv));
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.expand " SZFMT " " SZFMT " " SZFMT "\n", 
+		BATcount(bv), BATcount(b), BATcount(bn));
+#endif
+	rv = bv;
+	bv= BATcopy(bv, DICTtype(BATcount(bv) + BATcount(bn)), bv->ttype,TRUE);
+	BBPreleaseref(bn->batCacheid);
+	BBPreleaseref(rv->batCacheid);
+	if (bv == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bx->batCacheid);
+        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
+	}
 
-	*ridx = bi->batCacheid;
-	*rval = bv->batCacheid;
+	rv = bx;
+	bx= BATcopy(bx, bx->htype, bx->ttype,TRUE);
+	if (bx == NULL)
+        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
+	BBPreleaseref(rv->batCacheid);
+
+	switch(bv->htype){
+	case TYPE_bte: @:mkindex(bte,b)@
+	case TYPE_sht: @:mkindex(sht,b)@
+	case TYPE_int: @:mkindex(int,b)@
+	}
+	
+	BBPkeepref(*ridx = bx->batCacheid);
+	BBPkeepref(*rval = bv->batCacheid);
 	return MAL_SUCCEED;
+bunins_failed:
+	BBPreleaseref(bx->batCacheid);
+	BBPreleaseref(bv->batCacheid);
+	throw(MAL, "dictionary.new", OPERATION_FAILED " During bulk operation");
 }
+@-
+Use a value table to encode the BAT.
+@c
 str 
-DICTencode(int *ridx, int *val, int *bid)
+DICTencode(int *ridx, int *vid, int *bid)
 {
-	(void) ridx;
-	(void) val;
-	(void) bid;
+	BAT *b, *bv, *bx;
+	BATiter bi, bii;
+	BUN p,q;
+
+	b= (BAT *) BATdescriptor(*bid);
+    if (b == 0)
+        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
+	bv= (BAT *) BATdescriptor(*vid);
+    if (bv == 0){
+		BBPreleaseref(b->batCacheid);
+        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
+	}
+
+	bx = BATnew(TYPE_void, bv->htype, BATcount(b));
+	switch(bv->htype){
+	case TYPE_bte: @:encode(bte)@
+	case TYPE_sht: @:encode(sht)@
+	case TYPE_int: @:encode(int)@
+	}
+	BBPkeepref(*ridx= bx->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(bv->batCacheid);
 	return MAL_SUCCEED;
 }
 
