@@ -288,3 +288,8 @@ mitosis_pipe=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,
 #The default + datacyclotron
 datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
 #
+# the default + derivePath
+derive_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,derivePath,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+#
+#the default + dictionary
+dictionary_pipe=inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
