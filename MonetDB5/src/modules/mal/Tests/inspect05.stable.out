@@ -887,6 +887,7 @@ end main;
 [ "keepquery",				  "function",	  "sql",	  "(qid:int,qry:str,parse:lng,optimize:lng):void;",											  "nil"							  ]
 [ "queryId",				  "function",	  "sql",	  "(qid:int):void;",															  "nil"							  ]
 [ "bind",				  "command",	  "dictionary",	  "(nme:str) (idx:bat[:oid,:any_1],val:bat[:any_1,:any_2]) ",										  "DICTbind;"						  ]
+[ "compress",				  "pattern",	  "dictionary",	  "(s:str,b:bat[:any_1,:any_2]):void ",											  "DICTcompress;"				  ]
 [ "drop",				  "command",	  "dictionary",	  "(nme:str):void ",															  "DICTdrop;"						  ]
 [ "encode",				  "command",	  "dictionary",	  "(val:bat[:any_1,:any_2],b:bat[:oid,:any_2]):bat[:oid,:any_1] ",									  "DICTencode;"						  ]
 [ "expand",				  "command",	  "dictionary",	  "(idx:bat[:oid,:any_1],val:bat[:any_1,:any_2],b:bat[:oid,:any_2]) (ridx:bat[:oid,:any_1],rval:bat[:any_1,:any_2]) ",			  "DICTexpand;"						  ]

@@ -101,6 +101,7 @@ end main;
 [ "crackers",	  nil	  ]
 [ "date",	  nil	  ]
 [ "daytime",	  nil	  ]
+[ "dictionary",	  nil	  ]
 [ "factories",	  nil	  ]
 [ "group",	  nil	  ]
 [ "identifier",	  nil	  ]
