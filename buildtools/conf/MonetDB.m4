@@ -786,7 +786,7 @@ case "$GCC-$CC-$host_os" in
 ;;
 yes-*-*)
 	case "$host_os" in
-	cygwin*|freebsd*|irix*|darwin*)
+	cygwin*|freebsd*|openbsd*|irix*|darwin*)
 		;;
 	*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
