@@ -23,20 +23,9 @@
 @mal
 module rdf;
 
-command shred(location:str, graphname:str):bat[:void, :bat]
+command shred(location:str, graphname:str, schema:str):bat[:void, :bat]
 address RDFParser
 comment "look behind you!"
-
-command printTriples(b:bat[:void, :bat], order:int):void
-address RDFPrintTriples
-comment "print triples of a graph for debug purposes.
-Order is:
-1=SPO,
-2=SOP,
-3=PSO,
-4=POS,
-5=OPS,
-6=OSP";
 
 @h
 #ifndef _RDF_H_
@@ -53,12 +42,18 @@ Order is:
 #endif
 
 /* internal debug messages */
-#define _DEBUG_RDF_SHRD
-#define _DEBUG_RDF
+#define _RDF_DEBUG
 
-rdf_export str RDFParser(int *retval, str *location, str *graphname);
+rdf_export str
+RDFParser(int *retval, str *location, str *graphname, str *schemam);
 
-typedef enum {
+#define TRIPLE_STORE 1
+#define MLA_STORE    2
+
+#define STORE TRIPLE_STORE /* this should become a compile time option */
+
+#if STORE == TRIPLE_STORE
+ typedef enum {
 	S_sort, P_sort, O_sort, /* sorted */
 	P_PO, O_PO, /* spo */
 	P_OP, O_OP, /* sop */
@@ -67,98 +62,16 @@ typedef enum {
 	S_SP, P_SP, /* osp */
 	S_PS, P_PS, /* ops */
 	MAP_LEX
-} graphBATType;
+ } graphBATType;
+#elif STORE == MLA_STORE
+ typedef enum {
+	S_sort, P_sort, O_sort,
+	MAP_LEX
+ } graphBATType;
+#endif /* STORE */
 
 #define N_GRAPH_BAT (MAP_LEX+1)
 
 #endif /* _RDF_H_ */
 
 @c
-#include "mal_config.h"
-#include "mal_exception.h"
-#include <gdk.h>
-#include "rdf.h"
-
-@= printTriples
-if ((s = BATdescriptor(g[@1])) == NULL) {
-	BBPunfix(graph->batCacheid);
-	throw(MAL, "rdf.printTriples", "BAT @1 is missing");
-}
-if ((p = BATdescriptor(g[@2])) == NULL) {
-	BBPunfix(graph->batCacheid);
-	BBPunfix(s->batCacheid);
-	throw(MAL, "rdf.printTriples", "BAT @2 is missing");
-}
-if ((o = BATdescriptor(g[@3])) == NULL) {
-	BBPunfix(graph->batCacheid);
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	throw(MAL, "rdf.printTriples", "BAT @3 is missing");
-}
-if ((m = BATdescriptor(g[MAP_LEX])) == NULL) {
-	BBPunfix(graph->batCacheid);
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	BBPunfix(o->batCacheid);
-	throw(MAL, "rdf.printTriples", "BAT MAP_LEX is missing");
-}
-
-@c
-str
-RDFPrintTriples (int retval, bat *Graph, int *order) {
-	BAT *print_bats[3];
-	BAT *graph = NULL, *s = NULL, *p = NULL, *o = NULL, *m = NULL;
-	bat *g;
-	(void) retval;
-
-	if ((graph = BATdescriptor(*Graph)) == NULL) {
-		throw(MAL, "rdf.printTriples", "BAT graph is missing");
-	}
-	g = (bat *) Tloc(graph, BUNfirst(graph));
-
-	switch (*order) {
-		case 1:
-			stream_printf(GDKout, "\tOrder = [Subject, Property, Object]\n");
-			@:printTriples(S_sort,P_PO,O_PO)@
-			break;
-		case 2:
-			stream_printf(GDKout, "\tOrder = [Subject, Object, Property]\n");
-			@:printTriples(S_sort,P_OP,O_OP)@
-			break;
-		case 3:
-			stream_printf(GDKout, "\tOrder = [Property, Subject, Object]\n");
-			@:printTriples(S_SO,P_sort,O_SO)@
-			break;
-		case 4:
-			stream_printf(GDKout, "\tOrder = [Property, Object, Subject]\n");
-			@:printTriples(S_OS,P_sort, O_OS)@
-			break;
-		case 5:
-			stream_printf(GDKout, "\tOrder = [Object, Property, Subject]\n");
-			@:printTriples(S_PS,P_PS,O_sort)@
-			break;
-		case 6:
-			stream_printf(GDKout, "\tOrder = [Object, Subject, Property]\n");
-			@:printTriples(S_SP,P_SP,O_sort)@
-			break;
-		default:
-			BBPunfix(graph->batCacheid);
-			throw(MAL, "rdf.printTriples", "Unknown order parameter");
-	}
-
-	print_bats[0] =  BATleftfetchjoin(s, m, BATcount(s));
-	print_bats[1] =  BATleftfetchjoin(p, m, BATcount(p));
-	print_bats[2] =  BATleftfetchjoin(o, m, BATcount(o));
-	BATmultiprintf(GDKout, 4, print_bats, TRUE, 0, 0);
-	/* cleaning */
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	BBPunfix(o->batCacheid);
-	BBPunfix(m->batCacheid);
-	BBPunfix(graph->batCacheid);
-	BBPreclaim(print_bats[0]);
-	BBPreclaim(print_bats[1]);
-	BBPreclaim(print_bats[2]);
-
-	return MAL_SUCCEED;
-}
