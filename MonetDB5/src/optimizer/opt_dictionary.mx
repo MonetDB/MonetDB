@@ -168,7 +168,7 @@ DICTfind(int *idx, int *val, str nme)
 int
 OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int vlim, i,j, actions=0;
+	int i,j, actions=0;
 	int *idx, *val;
 	InstrPtr *old,q, qq;
 	int x, v, limit;
@@ -186,7 +186,6 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	
     if ( newMalBlkStmt(mb, mb->ssize) < 0)
         return 0;
-	vlim = mb->vtop;
 
 	idx = (int*) GDKzalloc(mb->vtop * sizeof(int));
 	if ( idx == 0)
