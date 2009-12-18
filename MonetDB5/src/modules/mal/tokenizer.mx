@@ -183,7 +183,7 @@ TKNZRopen(int *ret, str *in)
 	snprintf(name, 128, "%s", *in);
 	batname = (str) GDKmalloc(128*sizeof(char));
 	snprintf(batname, 128, "%s_height", name);
-	idx = BBPindex(name);
+	idx = BBPindex(batname);
 
 	if (idx == 0) { /* new tokenizer */
 
@@ -217,6 +217,7 @@ TKNZRopen(int *ret, str *in)
 		BUNappend(TRANS, batname, FALSE);
 
 	} else { /* existing tokenizer */
+
 		tokenBAT[HEIGHT] = BATdescriptor(idx);
 		BUNappend(TRANS, batname, FALSE);
 		snprintf(batname, 128, "%s_depth", name);
@@ -363,6 +364,7 @@ Find the common prefix first
 			BATiter mi = bat_iterator(m);
 			int fnd = 0;
 
+			if (m->H->hash == NULL) BAThash(m, 2*BATcount(m));
 			HASHloop_str(mi, m->H->hash, p, parts[i]) {
 				if (*((oid *)BUNtail(mi,p)) == prv) {
 					prv = (oid) p;
