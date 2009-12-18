@@ -238,15 +238,15 @@ comment "Invalidate all copies maintained at slaves";
 
 pattern append(s:str, t:str, c:str, :any_1, tag:oid):void
 address MASTERappendValue
-comment "Dump the scalar on the MAL log");
+comment "Dump the scalar on the MAL log";
 
 pattern append(s:str, t:str, c:str, b:bat[:oid,:any_1], tag:oid):void
 address MASTERappend
-comment "Dump the BAT on the MAL log");
+comment "Dump the BAT on the MAL log";
 
 pattern delete(s:str, t:str, b:bat[:oid,:any_1], tag:oid):void
 address MASTERdelete
-comment "Dump the BAT with deletions on the MAL log");
+comment "Dump the BAT with deletions on the MAL log";
 
 pattern copy(sname:str, tname:str, tsep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, tag:oid):void
 address MASTERcopy
@@ -291,14 +291,11 @@ comment "Slave suspends synchronisation with master";
 
 pattern open(tag:oid):int
 address SLAVEopen
-comment "Marks the start of a replication record. It checks the slave log
-table for existence of the tag. If so, or upon an error,
-it kills the log channel.";
+comment "Marks the start of a replication record. It checks the slave log table for existence of the tag. If so, or upon an error, it kills the log channel.";
 
 command close(tag:oid,stamp:timestamp)
 address SLAVEclose
-comment "End of replication record. Add the time stamp op completion
-to the slave log.";
+comment "End of replication record. Add the time stamp op completion to the slave log.";
 
 command drop{unsafe}(fcnname:str)
 address SLAVEdrop
