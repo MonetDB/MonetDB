@@ -342,7 +342,7 @@ static str
 post_processing (parserData *pdata)
 {
 #if STORE == TRIPLE_STORE
-	int cnt;
+	BUN cnt;
 	BAT *map_oid = NULL, *S = NULL, *P = NULL, *O = NULL, *ctref= NULL;
 	BAT **graph = pdata->graph;
 	BATiter bi, mi;
@@ -373,6 +373,7 @@ post_processing (parserData *pdata)
 	S = graph[S_sort];
 	P = graph[P_sort];
 	O = graph[O_sort];
+	cnt = BATcount(S);
 
 	/* order SPO/SOP */
 	graph[S_sort] = BATmirror(BATsort(BATmirror(S))); /* sort on S */
