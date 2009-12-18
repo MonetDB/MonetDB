@@ -20,11 +20,13 @@
 -- It only needs to be run once after a fresh installation of MonetDB/SQL.
 
 -- create an RDF schema
-create schema RDF;
+create schema rdf;
 
 -- create a graph_name|id table
 create table rdf.graph (gname string, gid int);
 
 -- create a procudure to load an RDF document
-create procedure rdf_shred(location string, gname string)
+-- the chema string should be removed in the future and auto-fill it from
+-- the backend
+create procedure rdf_shred(location string, gname string, sch string)
 	external name sql.rdfshred;
