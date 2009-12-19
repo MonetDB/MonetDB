@@ -251,6 +251,12 @@ include opt_remoteQueries;
 include crackers; 
 
 @-
+The RDF module stuff
+@mal
+include tokenizer;
+include rdf;
+
+@-
 In practice, we have to introduce different startup for each
 client group or database.
 @c
