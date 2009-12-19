@@ -324,7 +324,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			char *tname = getVarConstant(mb, getArg(p,2)).val.sval;
 			char *cname = NULL;
 			int not_null = 0;
-			oid rows = 1;
+			oid rows = 1; /* default to cope with delta bats */
 			int mode = 0;
 			int part = 0;
 			int k = getArg(p,0);

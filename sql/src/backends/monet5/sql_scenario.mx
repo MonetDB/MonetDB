@@ -267,6 +267,7 @@ SQLinit(void)
 			((SQLdebug&112)==0 && mvc_init(FALSE, store_bat, 0) < 0))
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
+	mal_unset_lock(sql_contextLock,"SQL init");
 	if (!GDKembedded && MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL) < 0) {
 		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting log manager failed");
