@@ -870,7 +870,7 @@ function octopus.getVariable(conn:str,name:str):any_1;
 	return getVariable:= b;
 end octopus.getVariable;
 
-pattern rdfshred (location:str, gname:str)
+pattern rdfshred (location:str, gname:str, schema:str)
 address SQLrdfShred
 comment "Procedure that wraps around the shredder of the rdf module in MAL. 
 Shredding an RDF data file from location results in 7 new tables (6 
@@ -4428,6 +4428,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_subtype tpe;
 	str *location = (str *) getArgReference(stk,pci,1);
 	str *name = (str *) getArgReference(stk,pci,2);
+	str *schema = (str *) getArgReference(stk,pci,3);
 	char buff[24];
 	mvc *m = NULL;
 	int id = 0;
@@ -4437,7 +4438,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 
-	sch = mvc_bind_schema(m, "rdf");
+	sch = mvc_bind_schema(m, *schema);
 	if ( sch == NULL)
 		throw(MAL,"sql.rdfSchred","Schema missing");
 	g_tbl = mvc_bind_table(m, sch, "graph");
@@ -4452,7 +4453,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr, gname, *name, TYPE_str);
 	store_funcs.append_col(m->session->tr, gid, &id, TYPE_int);
 
-	msg = RDFParser(&docbats, location, name);
+	msg = RDFParser(&docbats, location, name, schema);
 	if (msg)
 		return msg;
 
