@@ -4368,7 +4368,7 @@ Take a SQL table and compress its columns using the dictionary compression schem
 	return MAL_SUCCEED;
 @c
 str SQLcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:compression(DICTnew(&ret, &nme, &b->batCacheid))@
+	@:compression(DICTcompress(&ret, &nme, &b->batCacheid))@
 }
 str SQLdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:compression(DICTdecompress(&ret, &nme))@
