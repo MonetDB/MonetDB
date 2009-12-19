@@ -126,10 +126,13 @@ The raptor parser needs to register a callback function that handles one triple
 at a time. Function rdf_parser_triple_handler() does exactly this.
 
 @= rdf_insert
+@:rdf_BUNappend_unq(@1, @2)@
+#if 0
 #ifdef _TKNZR_H
  @:rdf_tknzr_insert(@2)@
 #else
  @:rdf_BUNappend_unq(@1, @2)@
+#endif
 #endif
 
 @= rdf_BUNappend_unq
