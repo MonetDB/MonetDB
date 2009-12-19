@@ -98,14 +98,6 @@ command bind(nme:str) (idx:bat[:oid,:any_1], val:bat[:any_1,:any_2])
 address DICTbind
 comment "Localise the dictionary";
 
-command new(nme:str,b:bat[:any_1,:any_2]) 
-address DICTnew
-comment "Add a new dictionary table";
-
-command drop(nme:str)
-address DICTdrop
-comment "Remove the dictionary entry";
-
 command expand(idx:bat[:oid,:any_1], val:bat[:any_1,:any_2], b:bat[:oid,:any_2]) (ridx:bat[:oid,:any_1], rval:bat[:any_1,:any_2])
 address DICTexpand
 comment "Extend the dictionary with the values in b. This may trigger a partial recompilation of the MAL program when the storage type :any_1
@@ -118,6 +110,10 @@ comment "Use the dictionary to encode a table b.";
 pattern compress{unsafe}(s:str, b:bat[:any_1,:any_2]) 
 address DICTcompress
 comment "Try to replace a table by its dictionary equivalent.";
+
+command decompress{unsafe}(nme:str)
+address DICTdecompress
+comment "Remove the dictionary entry";
 
 pattern optimizer.dictionary():str
 address OPTdictionary;
@@ -135,9 +131,8 @@ comment "Capitalize dictionary encodings ";
 opt_export str DICTbind(int *idx, int *val, str * nme);
 opt_export str DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid);
 opt_export str DICTencode(int *ridx, int *val, int *bid);
-opt_export str DICTcompress( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str DICTnew(int *idx, str *nme, int *bid);
-opt_export str DICTdrop(int *ret, str *nme);
+opt_export str DICTcompress(int *idx, str *nme, int *bid);
+opt_export str DICTdecompress(int *ret, str *nme);
 
 @c
 #include "mal_config.h"
@@ -206,8 +201,8 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getVarConstant(mb,getArg(q,3)).val.sval, getVarConstant(mb, getArg(q,4)).val.ival);
 		else
 		if ( getModuleId(q) == sqlRef && getFunctionId(q) == binddbatRef)
-			snprintf(buf,BUFSIZ,"%s/%s/%s", 
-				getVarConstant(mb,getArg(q,1)).val.sval, getVarConstant(mb,getArg(q,2)).val.sval, getVarConstant(mb,getArg(q,3)).val.sval);
+			snprintf(buf,BUFSIZ,"%s/%s/%d", 
+				getVarConstant(mb,getArg(q,1)).val.sval, getVarConstant(mb,getArg(q,2)).val.sval, getVarConstant(mb,getArg(q,3)).val.ival);
 		else
 		if ( getModuleId(q) == sqlRef && getFunctionId(q) == bindidxRef)
 			snprintf(buf,BUFSIZ,"%s/%s/%s", 
@@ -252,21 +247,25 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				actions++;
 				continue;
 			} else  
-			if ( getVarConstant(mb,getArg(q,4)).val.ival == 0 ){
+				pushInstruction(mb,q);
 @-
+The trigger to convert tables is postponed.
 For all 0-kind binds we will try to create a dictionary pair.
 This means it becomes visible at the next query, then it
 is also the right moment to zap the base table itself.
 Moreover, we have to invalidate the plan when a new
 dictionary element has been added since its construction.
 Recompilation is then necessary, and preferably done automatically.
-@c
+			if ( getModuleId(q) == sqlRef && getFunctionId(q) == bindRef && getVarConstant(mb,getArg(q,4)).val.ival == 0 ){
+				int one=1;
 				pushInstruction(mb,q);
 				qq = newStmt(mb, dictionaryRef, putName("compress",8));
 				qq = pushStr(mb,qq,buf);
+				varSetProp(mb, getArg(getInstrPtr(mb,0), 0), runonceProp, op_eq, (ptr) &one);
 				pushArgument(mb,qq, getArg(q,0));
 			} else
 				pushInstruction(mb,q);
+@c
 		} else {
 @-
 We have to re-cast each instruction based on a possible dictionary 
@@ -286,9 +285,10 @@ reconstruction and introduce a new dictionary pair.
 						val[j] = getArg(q,0);
 						pushInstruction(mb,q);
 #ifdef DEBUG_OPT_DICTIONARY 
-							stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+						stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
 #endif
-					} 
+					} else
+						pushInstruction(mb,q);
 					actions++;
 					continue;
 				}
@@ -484,13 +484,14 @@ DICTtype(size_t cnt){
 		return TYPE_int;
 	return TYPE_lng;
 }
-str DICTnew(int *ret, str *nme, int *bid)
+str DICTcompress(int *ret, str *nme, int *bid)
 {
 	int idx,val, typ;
 	size_t cnt;
-	BAT *b, *bo, *bx, *bv;
+	BAT *b, *bo, *bx, *bv, *bs, *bh;
 	BATiter bi, bii;
 	BUN p,q;
+	double ratio = 1.0;
 
 	if( DICTinit() )
 		throw(MAL,"dictionary.new","No catalog table");
@@ -501,6 +502,26 @@ str DICTnew(int *ret, str *nme, int *bid)
         /* Simple ignore the binding if you can;t find the bat */
         throw(MAL, "dict.new", RUNTIME_OBJECT_MISSING);
 
+	/* compression is only relevant for larger tables */
+	/* or determine its memory footprint */
+
+	/* alternatively, we sample the table 
+	if ( BATcount(b) < (size_t) 1000)
+		return MAL_SUCCEED; */
+	bs= BATsample(b, (size_t) 1000);
+	if ( bs )
+		bh= BAThistogram(bs);
+	if ( bs && bh  && BATcount(bs) > 0)
+		ratio = (double) BATcount(bh) / (double) BATcount(bs);
+#ifdef DEBUG_OPT_DICTIONARY 
+	if ( bs && bh )
+		stream_printf(GDKout,"#dictionary.compress sample " SZFMT " " SZFMT" %f\n", BATcount(bs), BATcount(bh),ratio);
+#endif
+	if ( bs)
+		BBPreleaseref(bs->batCacheid);
+	if ( bh)
+		BBPreleaseref(bh->batCacheid);
+
 	bo= BATkunique(b);
 	if ( bo == NULL){
 		BBPreleaseref(b->batCacheid);
@@ -510,12 +531,18 @@ str DICTnew(int *ret, str *nme, int *bid)
 	
 	cnt = BATcount(bo);
 	typ= DICTtype(cnt);
-	if( typ == TYPE_lng){
+	if( typ == TYPE_lng || typ == b->ttype){
 		/* don't create a dictionary */
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.new %s not compressed\n",*nme);
+#endif
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(bo->batCacheid);
 		return MAL_SUCCEED;
 	}
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.new %s compressed from type %d to %d " SZFMT" elm\n",*nme,b->ttype,typ, cnt);
+#endif
 	bx =  BATnew(TYPE_void, typ, BATcount(b));
 	BATseqbase(bx,0);
 	bv =  BATnew(typ, b->ttype, BATcount(b));
@@ -605,6 +632,9 @@ DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
 		BBPreleaseref(b->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.expand %d %d %d\n",*idx, *val,*bid);
+#endif
 	bv = (BAT *) BATdescriptor(*val);
     if (bv == 0){
 		BBPreleaseref(b->batCacheid);
@@ -666,6 +696,9 @@ DICTencode(int *ridx, int *vid, int *bid)
 		BBPreleaseref(b->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.encode %d %d\n",*vid,*bid);
+#endif
 
 	bx = BATnew(TYPE_void, bv->htype, BATcount(b));
 	switch(bv->htype){
@@ -679,65 +712,15 @@ DICTencode(int *ridx, int *vid, int *bid)
 	return MAL_SUCCEED;
 }
 
-str DICTcompress( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret=(int*) getArgReference(stk, pci, 0);
-	str *nme= (str*) getArgReference(stk, pci, 1);
-    int *bid= (int*) getArgReference(stk, pci, 2);
-	BAT *b, *bs = 0, *bh = 0;
-	double ratio= 1.0;
-	int idx,val,one=1;
-	str msg;
-
-@-
-If we already have the dictionary, then this was created by a concurrent query 
-and we have to invalidate the current plan, because the base table is zapped.
-@c
-	msg = DICTbind(&idx, &val, nme);
-	if ( msg == MAL_SUCCEED)
-        throw(MAL,"dictionary.compress","Query plan out of date");
-	GDKfree(msg);
-
-	b = (BAT *) BATdescriptor(*bid);
-    if (b == 0)
-        throw(MAL,"dictionary.compress",RUNTIME_OBJECT_MISSING);
-
-	/* conversion is only relevant for larger tables */
-	/* determine its memory footprint */
-
-	/* alternatively, we sample the table 
-	if ( BATcount(b) < (size_t) 1000)
-		return MAL_SUCCEED; */
-	bs= BATsample(b, (size_t) 1000);
-	if ( bs )
-		bh= BAThistogram(bs);
-	if ( bs && bh  && BATcount(bs) > 0)
-		ratio = (double) BATcount(bh) / (double) BATcount(bs);
-#ifdef DEBUG_OPT_DICTIONARY 
-	if ( bs && bh )
-		stream_printf(cntxt->fdout,"#dictionary.compress sample " SZFMT " " SZFMT" %f\n", BATcount(bs), BATcount(bh),ratio);
-#else
-	(void) cntxt;
-#endif
-	BBPreleaseref(b->batCacheid);
-	if ( bs)
-		BBPreleaseref(bs->batCacheid);
-	if ( bh)
-		BBPreleaseref(bh->batCacheid);
-	/* invalidate the query plan by permitting it to run only once 
-	varSetProp(mb, getArg(getInstrPtr(mb,0), 0), runonceProp, op_eq, (ptr) &one);
-*/
-	(void) mb;
-	(void) one;
-	return DICTnew(ret,nme,bid);
-}
-
-str DICTdrop(int *ret, str *nme)
+str DICTdecompress(int *ret, str *nme)
 {
 	if( DICTinit() )
-		throw(MAL,"dictionary.drop","No catalog table");
+		throw(MAL,"dictionary.decompress","No catalog table");
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.decompress %s\n",*nme);
+#endif
 	(void) ret;
 	(void) nme;
-	throw(MAL,"dictionary.drop", PROGRAM_NYI);
+	throw(MAL,"dictionary.decompress", PROGRAM_NYI);
 }
 @}

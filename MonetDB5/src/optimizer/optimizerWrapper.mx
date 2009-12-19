@@ -79,8 +79,11 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mb = s->def;
 		stk= 0;
 	} 
-	if( mb->errors )
+	if( mb->errors ){
+		/* when we have errors, we still want to see them */
+		addtoMalBlkHistory(mb,"@1");
 		return MAL_SUCCEED;
+	}
 	actions= OPT@1Implementation(cntxt, mb,stk,p);
 #ifdef _DEBUG_OPTIMIZER_
 	stream_printf(cntxt->fdout,"finished @1 %d\n",actions);
