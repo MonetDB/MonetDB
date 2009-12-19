@@ -429,8 +429,12 @@ DICTinit(void)
 		if (b) {
 			bn = BATdescriptor(BBPindex("dictValue"));
 			if (bn ){
-				dictIndex = b;
-				dictValue = bn;
+				bs = BATdescriptor(BBPindex("dictBase"));
+				if ( bs ) {
+					dictIndex = b;
+					dictValue = bn;
+					dictBase = bs;
+				}
 			} else
 				BBPreleaseref(b->batCacheid);
 			mal_unset_lock(mal_contextLock, "dictionary");
