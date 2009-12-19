@@ -483,7 +483,6 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	ret = URLisaURL(&isURI, location);
 	if (ret != MAL_SUCCEED) {
 		TKNZRclose(&iret);
-		@:clean_raptor@
 		@:clean@
 		return ret;
 	} else if (isURI) {
