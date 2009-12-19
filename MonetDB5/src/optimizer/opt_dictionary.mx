@@ -141,20 +141,22 @@ opt_export str DICTdecompress(int *ret, str *nme);
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 
-static BAT *dictIndex, *dictValue;
+static BAT *dictIndex, *dictValue, *dictBase;
 
 static int DICTinit(void);
 
 static int 
-DICTfind(int *idx, int *val, str nme)
+DICTfind(int *idx, int *val, int *base, str nme)
 {
 	BUN p;
 	BATiter bidx = bat_iterator(dictIndex);
 	BATiter bval = bat_iterator(dictValue);
+	BATiter bbase = bat_iterator(dictBase);
 	p = BUNfnd(BATmirror(dictIndex), (ptr) nme);
 	if ( p != BUN_NONE ){
 		*idx = *(int*) BUNhead(bidx, p);
 		*val = *(int*) BUNhead(bval, BUNfnd(BATmirror(dictValue), (ptr) nme ) );
+		*base = *(int*) BUNhead(bbase, BUNfnd(BATmirror(dictBase), (ptr) nme ) );
 		return 0;
 	}
 	return -1;
@@ -396,12 +398,18 @@ Dictionary implementation.
 @c
 
 void 
-DICTcommit(BAT *b1, BAT *b2)
+DICTcommit(BAT *b1, BAT *b2, BAT *b3, BAT *b4 )
 {
 	BAT *bl = BATnew(TYPE_void, TYPE_str, 10);
 	BATseqbase(bl,0);
-	BUNappend(bl, BBPname(b1->batCacheid), FALSE);
-	BUNappend(bl, BBPname(b2->batCacheid), FALSE);
+	if (b1)
+		BUNappend(bl, BBPname(b1->batCacheid), FALSE);
+	if (b2)
+		BUNappend(bl, BBPname(b2->batCacheid), FALSE);
+	if (b3)
+		BUNappend(bl, BBPname(b3->batCacheid), FALSE);
+	if (b4)
+		BUNappend(bl, BBPname(b4->batCacheid), FALSE);
 	TMsubcommit(bl);
 	BBPreclaim(bl);
 }
@@ -409,7 +417,7 @@ DICTcommit(BAT *b1, BAT *b2)
 int
 DICTinit(void)
 {
-    BAT *b, *bn;
+    BAT *b, *bn, *bs;
 	if ( dictIndex == NULL){
 		mal_set_lock(mal_contextLock, "dictionary");
 		if ( dictIndex ){
@@ -440,6 +448,13 @@ DICTinit(void)
 			mal_unset_lock(mal_contextLock, "dictionary");
 			return -1;
 		}
+		bs = BATnew(TYPE_int, TYPE_str, 255);
+		if (bs == NULL) {
+			BBPreleaseref(b->batCacheid);
+			BBPreleaseref(bn->batCacheid);
+			mal_unset_lock(mal_contextLock, "dictionary");
+			return -1;
+		}
 
 		BATkey(b, TRUE);
 		BBPrename(b->batCacheid, "dictIndex");
@@ -452,19 +467,29 @@ DICTinit(void)
 		BATmode(bn, PERSISTENT);
 		BBPkeepref(bn->batCacheid);
 		dictValue = bn;
+
+		BATkey(bs, TRUE);
+		BBPrename(bs->batCacheid, "dictBase");
+		BATmode(bs, PERSISTENT);
+		BBPkeepref(bs->batCacheid);
+		dictBase = bs;
 		mal_unset_lock(mal_contextLock, "dictionary");
-		DICTcommit(dictIndex,dictValue);
+		DICTcommit(dictIndex,dictValue, dictBase,0);
 	}
     return 0;
 }
 
 str DICTbind(int *idx, int *val, str * nme)
 {
+	int base = 0;
 	*idx = *val = 0;
 	if( DICTinit() )
 		throw(MAL,"dictionary.bind","No catalog table");
-	if ( DICTfind(idx, val, *nme) )
+	if ( DICTfind(idx, val, &base, *nme) )
 		throw(MAL,"dictionary.bind","Not found in catalog table");
+	BBPkeepref(*idx);
+	BBPkeepref(*val);
+	(void) base;
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.bind %d %d\n",*idx, *val);
 #endif
@@ -483,16 +508,17 @@ DICTtype(size_t cnt){
 }
 str DICTcompress(int *ret, str *nme, int *bid)
 {
-	int idx,val, typ;
+	int idx,val,base, typ;
 	size_t cnt;
 	BAT *b, *bo, *bx, *bv, *bs, *bh =0;
 	BATiter bi, bii;
 	BUN p,q;
 	double ratio = 1.0;
 
+	(void) base;
 	if( DICTinit() )
 		throw(MAL,"dictionary.new","No catalog table");
-	if ( DICTfind(&idx,&val,*nme) == 0)
+	if ( DICTfind(&idx,&val, &base, *nme) == 0)
 		throw(MAL,"dictionary.new", "duplicate entry");
 	b = (BAT *) BATdescriptor(*bid);
     if (b == 0)
@@ -512,7 +538,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 		ratio = (double) BATcount(bh) / (double) BATcount(bs);
 #ifdef DEBUG_OPT_DICTIONARY 
 	if ( bs && bh )
-		stream_printf(GDKout,"#dictionary.compress sample " SZFMT " " SZFMT" %f\n", BATcount(bs), BATcount(bh),ratio);
+		stream_printf(GDKout,"#dictionary.compress sample " SZFMT " " SZFMT" %f %f\n", BATcount(bs), BATcount(bh),ratio, ratio * BATcount(b));
 #endif
 	if ( bs)
 		BBPreleaseref(bs->batCacheid);
@@ -538,7 +564,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 		return MAL_SUCCEED;
 	}
 #ifdef DEBUG_OPT_DICTIONARY 
-	stream_printf(GDKout,"#dictionary.new %s compressed from type %d to %d " SZFMT" elm\n",*nme,b->ttype,typ, cnt);
+	stream_printf(GDKout,"#dictionary.new %s compressed from type %s to %s " SZFMT" elm\n", *nme, getTypeName(b->ttype), getTypeName(typ), cnt);
 #endif
 	bx =  BATnew(TYPE_void, typ, BATcount(b));
 	BATseqbase(bx,0);
@@ -586,14 +612,14 @@ Factor out the index construction by type
 	if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
 	BUNins(dictIndex,&bx->batCacheid, *nme, FALSE);
 	BUNins(dictValue,&bv->batCacheid, *nme, FALSE);
+	BUNins(dictBase,&b->batCacheid, *nme, FALSE);
 	BATmode(bx, PERSISTENT);
 	BATmode(bv, PERSISTENT);
 	BBPkeepref(bx->batCacheid);
 	BBPkeepref(bv->batCacheid);
 	BBPreleaseref(*bid);
 	BBPreleaseref(bo->batCacheid);
-	DICTcommit(bx,bv);
-	DICTcommit(dictIndex,dictValue);
+	DICTcommit(bx,bv, dictIndex,dictValue);
 	/* now the original BAT can be cleared */
 	BATclear(b);
 #ifdef DEBUG_OPT_DICTIONARY 
@@ -648,15 +674,19 @@ DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
 	bv= BATcopy(rv, DICTtype(BATcount(rv) + BATcount(bn)), rv->ttype,TRUE);
 	BBPreleaseref(bn->batCacheid);
 	BBPreleaseref(rv->batCacheid);
-	if (rv == NULL){
+	if (bv == NULL){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(rx->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 
 	bx= BATcopy(rx, rx->htype, rx->ttype,TRUE);
-	if (bx == NULL)
+	if (bx == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bv->batCacheid);
+		BBPreleaseref(rx->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
+	}
 	BBPreleaseref(rx->batCacheid);
 
 	switch(bv->htype){
@@ -711,13 +741,47 @@ DICTencode(int *ridx, int *vid, int *bid)
 
 str DICTdecompress(int *ret, str *nme)
 {
+	int idx = 0, val= 0, base = 0;
+	BAT *bx, *bv, *bs, *b;
+	BUN p;
+
 	if( DICTinit() )
 		throw(MAL,"dictionary.decompress","No catalog table");
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.decompress %s\n",*nme);
 #endif
+	if ( DICTfind(&idx,&val,&base,*nme) == 0)
+		return MAL_SUCCEED;
+	bx= (BAT *) BATdescriptor(idx);
+    if (bx == 0)
+        throw(MAL,"dictionary.compress",RUNTIME_OBJECT_MISSING);
+	bv= (BAT *) BATdescriptor(val);
+    if (bv == 0){
+		BBPreleaseref(bx->batCacheid);
+        throw(MAL,"dictionary.compress",RUNTIME_OBJECT_MISSING);
+	}
+	bs= (BAT *) BATdescriptor(base);
+    if (bs == 0){
+		BBPreleaseref(bv->batCacheid);
+		BBPreleaseref(bx->batCacheid);
+        throw(MAL,"dictionary.compress",RUNTIME_OBJECT_MISSING);
+	}
+	mal_set_lock(mal_contextLock, "dictionary");
+	b = BATjoin(bx,bv,BUN_NONE);
+	BATappend(bs,b,TRUE);
+	BBPreleaseref(b->batCacheid);
+
+	/* remove the element from the dictionary catalog */
+	p = BUNfnd(BATmirror(dictIndex), (ptr) nme);
+	if ( p != BUN_NONE ){
+		BUNdelete(bx, p, TRUE);
+		BUNdelete(bv, BUNfnd(BATmirror(dictValue), (ptr) nme ) , TRUE);
+		BUNdelete(bs, BUNfnd(BATmirror(dictBase), (ptr) nme ) , TRUE);
+	}
+	BBPreleaseref(bv->batCacheid); BBPreleaseref(bx->batCacheid);
+	BBPreleaseref(bs->batCacheid);
+	mal_unset_lock(mal_contextLock, "dictionary");
 	(void) ret;
-	(void) nme;
-	throw(MAL,"dictionary.decompress", PROGRAM_NYI);
+	return MAL_SUCCEED;
 }
 @}
