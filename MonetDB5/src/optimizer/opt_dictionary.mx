@@ -199,14 +199,10 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			snprintf(buf,BUFSIZ,"%s/%s/%s/%d", 
 				getVarConstant(mb,getArg(q,1)).val.sval, getVarConstant(mb, getArg(q,2)).val.sval,
 				getVarConstant(mb,getArg(q,3)).val.sval, getVarConstant(mb, getArg(q,4)).val.ival);
-		else
-		if ( getModuleId(q) == sqlRef && getFunctionId(q) == binddbatRef)
-			snprintf(buf,BUFSIZ,"%s/%s/%d", 
-				getVarConstant(mb,getArg(q,1)).val.sval, getVarConstant(mb,getArg(q,2)).val.sval, getVarConstant(mb,getArg(q,3)).val.ival);
-		else
-		if ( getModuleId(q) == sqlRef && getFunctionId(q) == bindidxRef)
-			snprintf(buf,BUFSIZ,"%s/%s/%s", 
-				getVarConstant(mb, getArg(q,1)).val.sval, getVarConstant(mb, getArg(q,2)).val.sval, getVarConstant(mb,getArg(q,3)).val.sval);
+@-
+The dbat is not part of the dictionary encoding. It should be dealt with in the context
+of OID sizes. The same holds for idx bats.
+@c
 
 		if ( buf[0] ){
 			BATiter bidx = bat_iterator(dictIndex);
@@ -298,7 +294,8 @@ reconstruction and introduce a new dictionary pair.
 The arguments can be singular or both ref to a dictionary pair.
 We deal with the most prominent case provided by SQL only. 
 @c
-					if ( (idx[getArg(q,1)] || val[getArg(q,1)]) && idx[getArg(q,2)] == 0){
+					if ( (idx[getArg(q,1)] || val[getArg(q,1)]) && idx[getArg(q,2)] == 0 &&
+						getArgType(mb,q,2) == getArgType(mb,q,1) ){
 						/* (aidxnew,avalnew) := dictionary.expand(aidx,aval,b) */
 
 						qq= newStmt(mb,dictionaryRef,"expand");
@@ -488,7 +485,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 {
 	int idx,val, typ;
 	size_t cnt;
-	BAT *b, *bo, *bx, *bv, *bs, *bh;
+	BAT *b, *bo, *bx, *bv, *bs, *bh =0;
 	BATiter bi, bii;
 	BUN p,q;
 	double ratio = 1.0;
@@ -620,49 +617,47 @@ This should trigger a partial re-compilation of the MAL program.
 str 
 DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
 {
-	BAT *bx, *bv, *b, *bn, *rv;
+	BAT *bx, *bv, *b, *bn, *rv, *rx;
 	BATiter bi, bii;
 	BUN p,q;
 
 	b = (BAT *) BATdescriptor(*bid);
     if (b == 0)
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
-	bx = (BAT *) BATdescriptor(*idx);
-    if (bx == 0){
+	rx = (BAT *) BATdescriptor(*idx);
+    if (rx == 0){
 		BBPreleaseref(b->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.expand %d %d %d\n",*idx, *val,*bid);
 #endif
-	bv = (BAT *) BATdescriptor(*val);
-    if (bv == 0){
+	rv = (BAT *) BATdescriptor(*val);
+    if (rv == 0){
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bx->batCacheid);
+		BBPreleaseref(rx->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 
 	/* check how many new elements should be added to the val */
-	bn = BATsemijoin(BATmirror(b), BATmirror(bv));
+	bn = BATsemijoin(BATmirror(b), BATmirror(rv));
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.expand " SZFMT " " SZFMT " " SZFMT "\n", 
-		BATcount(bv), BATcount(b), BATcount(bn));
+		BATcount(rv), BATcount(b), BATcount(bn));
 #endif
-	rv = bv;
-	bv= BATcopy(bv, DICTtype(BATcount(bv) + BATcount(bn)), bv->ttype,TRUE);
+	bv= BATcopy(rv, DICTtype(BATcount(rv) + BATcount(bn)), rv->ttype,TRUE);
 	BBPreleaseref(bn->batCacheid);
 	BBPreleaseref(rv->batCacheid);
-	if (bv == NULL){
+	if (rv == NULL){
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bx->batCacheid);
+		BBPreleaseref(rx->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 
-	rv = bx;
-	bx= BATcopy(bx, bx->htype, bx->ttype,TRUE);
+	bx= BATcopy(rx, rx->htype, rx->ttype,TRUE);
 	if (bx == NULL)
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
-	BBPreleaseref(rv->batCacheid);
+	BBPreleaseref(rx->batCacheid);
 
 	switch(bv->htype){
 	case TYPE_bte: @:mkindex(bte,b)@
@@ -670,10 +665,12 @@ DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
 	case TYPE_int: @:mkindex(int,b)@
 	}
 	
+	BBPreleaseref(b->batCacheid);
 	BBPkeepref(*ridx = bx->batCacheid);
 	BBPkeepref(*rval = bv->batCacheid);
 	return MAL_SUCCEED;
 bunins_failed:
+	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bx->batCacheid);
 	BBPreleaseref(bv->batCacheid);
 	throw(MAL, "dictionary.new", OPERATION_FAILED " During bulk operation");
