@@ -514,7 +514,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 {
 	int idx,val,base, typ;
 	size_t cnt;
-	BAT *b, *bo, *bx, *bv, *bs, *bh =0;
+	BAT *b, *bo, *bx = 0, *bv = 0, *bs, *bh =0;
 	BATiter bi;
 	BUN p,q;
 	double ratio = 1.0;
