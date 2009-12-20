@@ -1046,7 +1046,7 @@ TRACEtable(void){
 }
 
 static BAT *
-TRACEcreate(str hnme, str tnme, int ht, int tt)
+TRACEcreate(str hnme, str tnme, int tt)
 {
 	BAT *b;
 	char buf[128];
@@ -1056,7 +1056,8 @@ TRACEcreate(str hnme, str tnme, int ht, int tt)
 	if (b)
 		return b;
 
-	b = BATnew(ht, tt, 256);
+	b = BATnew(TYPE_void, tt, 256);
+	BATseqbase(b,0);
 	if (b == NULL)
 		return NULL;
 
@@ -1074,18 +1075,18 @@ initTrace(void)
 	if (TRACE_init)
 		return 0;		/* already initialized */
 	mal_set_lock(mal_contextLock, "trace");
-	TRACE_id_event = TRACEcreate("id", "event", TYPE_int, TYPE_int);
-	TRACE_id_time = TRACEcreate("id", "time", TYPE_int, TYPE_str);
-	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_int, TYPE_lng);
-	TRACE_id_pc = TRACEcreate("id", "pc", TYPE_int, TYPE_str);
-	TRACE_id_stmt = TRACEcreate("id", "stmt", TYPE_int, TYPE_str);
-	TRACE_id_type = TRACEcreate("id", "type", TYPE_int, TYPE_str);
-	TRACE_id_rbytes = TRACEcreate("id", "rbytes", TYPE_int, TYPE_lng);
-	TRACE_id_wbytes = TRACEcreate("id", "wbytes", TYPE_int, TYPE_lng);
-	TRACE_id_reads = TRACEcreate("id", "read", TYPE_int, TYPE_lng);
-	TRACE_id_writes = TRACEcreate("id", "write", TYPE_int, TYPE_lng);
-	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int, TYPE_int);
-	TRACE_id_user = TRACEcreate("id", "thread", TYPE_int, TYPE_int);
+	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
+	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
+	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
+	TRACE_id_pc = TRACEcreate("id", "pc", TYPE_str);
+	TRACE_id_stmt = TRACEcreate("id", "stmt", TYPE_str);
+	TRACE_id_type = TRACEcreate("id", "type", TYPE_str);
+	TRACE_id_rbytes = TRACEcreate("id", "rbytes", TYPE_lng);
+	TRACE_id_wbytes = TRACEcreate("id", "wbytes", TYPE_lng);
+	TRACE_id_reads = TRACEcreate("id", "read", TYPE_lng);
+	TRACE_id_writes = TRACEcreate("id", "write", TYPE_lng);
+	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
+	TRACE_id_user = TRACEcreate("id", "thread", TYPE_int);
 	if (TRACE_id_event == NULL ||
 		TRACE_id_time == NULL ||
 		TRACE_id_ticks == NULL ||
@@ -1183,21 +1184,21 @@ getTraceType(str nme)
 	if (initTrace() )
 		return TYPE_any;
 	if (strcmp(nme, "time") == 0)
-		return newBatType(TYPE_int,TYPE_str);
+		return newBatType(TYPE_void,TYPE_str);
 	if (strcmp(nme, "ticks") == 0)
-		return newBatType(TYPE_int,TYPE_lng);
+		return newBatType(TYPE_void,TYPE_lng);
 	if (strcmp(nme, "pc") == 0)
-		return newBatType(TYPE_int,TYPE_str);
+		return newBatType(TYPE_void,TYPE_str);
 	if (strcmp(nme, "thread") == 0)
-		return newBatType(TYPE_int,TYPE_int);
+		return newBatType(TYPE_void,TYPE_int);
 	if (strcmp(nme, "stmt") == 0)
-		return newBatType(TYPE_int,TYPE_str);
+		return newBatType(TYPE_void,TYPE_str);
 	if (strcmp(nme, "rbytes") == 0)
-		return newBatType(TYPE_int,TYPE_lng);
+		return newBatType(TYPE_void,TYPE_lng);
 	if (strcmp(nme, "wbytes") == 0)
-		return newBatType(TYPE_int,TYPE_lng);
+		return newBatType(TYPE_void,TYPE_lng);
 	if (strcmp(nme, "reads") == 0 || strcmp(nme,"writes")== 0)
-		return newBatType(TYPE_int,TYPE_lng);
+		return newBatType(TYPE_void,TYPE_lng);
 	return TYPE_any;
 }
 
@@ -1221,7 +1222,6 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	static struct rusage   prevUsage; 
 #endif
 	str stmt, c;
-	int evnt;
 	InstrPtr pci= getInstrPtr(mb,pc);
 
 	if (TRACE_init == 0)
@@ -1244,19 +1244,19 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
 	mal_set_lock(profileLock, "profileLock");
-	evnt = TRACE_init++;
 
 	/* update the Trace tables */
 	snprintf(buf, 1024, "%s.%s[%d]", 
 		getModuleId(getInstrPtr(mb, 0)), 
 		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
-	BUNins(TRACE_id_pc, &evnt, buf, FALSE);
+	BUNappend(TRACE_id_pc, buf, FALSE);
 	
-	BUNins(TRACE_id_thread, &evnt, &tid, FALSE);
+	BUNappend(TRACE_id_thread, &tid, FALSE);
 
-	BUNins(TRACE_id_user, &evnt, &idx, FALSE);
+	BUNappend(TRACE_id_user, &idx, FALSE);
 	
-	BUNins(TRACE_id_event, &evnt, &evnt, FALSE);
+	BUNappend(TRACE_id_event, &TRACE_init, FALSE);
+	TRACE_init++;
 
 	{	char *tbuf, *c;
 
@@ -1264,10 +1264,10 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		c = strchr(tbuf, '\n');
 		if (c) 
 			c[-5] = 0;
-		BUNins(TRACE_id_time, &evnt, tbuf, FALSE);
+		BUNappend(TRACE_id_time, tbuf, FALSE);
 	}
 
-	BUNins(TRACE_id_ticks, &evnt, &mb->profiler[pc].ticks, FALSE);
+	BUNappend(TRACE_id_ticks, &mb->profiler[pc].ticks, FALSE);
 
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
@@ -1275,7 +1275,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	while (c && *c && (isspace((int) *c) || *c == '!'))
 		c++;
-	BUNins(TRACE_id_stmt, &evnt, c, FALSE);
+	BUNappend(TRACE_id_stmt, c, FALSE);
 
 	{	char abuf[BUFSIZ], *tpe;
 		int i, j;
@@ -1287,7 +1287,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 			snprintf(abuf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
 			GDKfree(tpe);
 		}
-		BUNins(TRACE_id_type, &evnt, &abuf, FALSE);
+		BUNappend(TRACE_id_type, &abuf, FALSE);
 	}
 	GDKfree(stmt);
 	
@@ -1317,13 +1317,13 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 */
 #ifdef HAVE_SYS_RESOURCE_H
 	v = infoUsage.ru_inblock- prevUsage.ru_inblock;
-	BUNins(TRACE_id_reads, &evnt, &v, FALSE);
+	BUNappend(TRACE_id_reads, &v, FALSE);
 	v = infoUsage.ru_oublock- prevUsage.ru_oublock;
-	BUNins(TRACE_id_writes, &evnt, &v, FALSE);
+	BUNappend(TRACE_id_writes, &v, FALSE);
 	prevUsage = infoUsage;
 #else
-	BUNins(TRACE_id_reads, &evnt, &v, FALSE);
-	BUNins(TRACE_id_writes, &evnt, &v, FALSE);
+	BUNappend(TRACE_id_reads, &v, FALSE);
+	BUNappend(TRACE_id_writes, &v, FALSE);
 #endif
 
 /*
@@ -1337,8 +1337,8 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #endif
 */
-	BUNins(TRACE_id_rbytes, &evnt, &mb->profiler[pc].rbytes, FALSE);
-	BUNins(TRACE_id_wbytes, &evnt, &mb->profiler[pc].wbytes, FALSE);
+	BUNappend(TRACE_id_rbytes, &mb->profiler[pc].rbytes, FALSE);
+	BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
 
 	eventcounter++;
 	flushLog();
