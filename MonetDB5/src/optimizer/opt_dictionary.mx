@@ -127,7 +127,7 @@ comment "Capitalize dictionary encodings ";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define DEBUG_OPT_DICTIONARY 
+/* #define DEBUG_OPT_DICTIONARY  */
 opt_export str DICTbind(int *idx, int *val, str * nme);
 opt_export str DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid);
 opt_export str DICTencode(int *ridx, int *val, int *bid);
@@ -378,7 +378,8 @@ Combination of the next column with the pivot table.
 		}
 	}
 #ifdef DEBUG_OPT_DICTIONARY 
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+	if (actions)
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
 	GDKfree(idx);
 	GDKfree(val);
@@ -530,16 +531,23 @@ str DICTcompress(int *ret, str *nme, int *bid)
         throw(MAL, "dict.new", RUNTIME_OBJECT_MISSING);
 
 	/* compression is only relevant for larger tables */
+	if ( BATcount(b) < (size_t) 10000)
+		return MAL_SUCCEED; 
 	/* or determine its memory footprint */
 
-	/* alternatively, we sample the table 
-	if ( BATcount(b) < (size_t) 1000)
-		return MAL_SUCCEED; */
+	/* alternatively, we sample the table */
 	bs= BATsample(b, (size_t) 1000);
 	if ( bs )
 		bh= BAThistogram(bs);
 	if ( bs && bh  && BATcount(bs) > 0)
 		ratio = (double) BATcount(bh) / (double) BATcount(bs);
+	/* only look at sufficient duplicates */
+	if ( ratio > 0.8 ){
+		BBPreleaseref(b->batCacheid);
+		if ( bs) BBPreleaseref(bs->batCacheid);
+		if ( bh) BBPreleaseref(bh->batCacheid);
+		return MAL_SUCCEED;
+	}
 #ifdef DEBUG_OPT_DICTIONARY 
 	if ( bs && bh )
 		stream_printf(GDKout,"#dictionary.compress sample " SZFMT " " SZFMT" %f %f\n", BATcount(bs), BATcount(bh),ratio, ratio * BATcount(b));
@@ -581,9 +589,6 @@ Factor out the index construction by type
 			bunfastins(bv, &o, BUNtail(bi,p));
 			o++;
 		}
-#ifdef DEBUG_OPT_DICTIONARY 
-	stream_printf(GDKout,"#dictionary.new values in encoding table" SZFMT " \n", BATcount(bv));
-#endif
 	} break;
 @c
 	switch(typ){
@@ -595,7 +600,7 @@ Factor out the index construction by type
 	bv->hsorted = GDK_SORTED;
 	bx = BATjoin(b,BATmirror(bv), BUN_NONE);
 #ifdef DEBUG_OPT_DICTIONARY 
-	stream_printf(GDKout,"#dictionary.new index in encoding table" SZFMT " \n", BATcount(bx));
+	stream_printf(GDKout,"#dictionary.new values table " SZFMT " \n", BATcount(bv));
 #endif
 
 	if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
