@@ -515,7 +515,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	int idx,val,base, typ;
 	size_t cnt;
 	BAT *b, *bo, *bx, *bv, *bs, *bh =0;
-	BATiter bi, bii;
+	BATiter bi;
 	BUN p,q;
 	double ratio = 1.0;
 
@@ -544,17 +544,15 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	if ( bs && bh )
 		stream_printf(GDKout,"#dictionary.compress sample " SZFMT " " SZFMT" %f %f\n", BATcount(bs), BATcount(bh),ratio, ratio * BATcount(b));
 #endif
-	if ( bs)
-		BBPreleaseref(bs->batCacheid);
-	if ( bh)
-		BBPreleaseref(bh->batCacheid);
+	if ( bs) BBPreleaseref(bs->batCacheid);
+	if ( bh) BBPreleaseref(bh->batCacheid);
 
-	bo= BATkunique(b);
+	bo= BAThistogram(b); /* BATkunique(BATmirror(b));*/
 	if ( bo == NULL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL,"dict.new","Can not access unique list");
 	}
-	BATorder(bo);
+	bo = BATmirror(bo);
 	
 	cnt = BATcount(bo);
 	typ= DICTtype(cnt);
@@ -570,49 +568,34 @@ str DICTcompress(int *ret, str *nme, int *bid)
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.new %s compressed from type %s to %s " SZFMT" elm\n", *nme, getTypeName(b->ttype), getTypeName(typ), cnt);
 #endif
-	bx =  BATnew(TYPE_void, typ, BATcount(b));
-	BATseqbase(bx,0);
 	bv =  BATnew(typ, b->ttype, BATcount(b));
 	/* create the dictionary representation */
 @=
 Factor out the index construction by type
-@= encode
-	{	@1 *v;
-		ptr w;
-		/* complete the index table */
-		bi = bat_iterator(b);
-		bii = bat_iterator(bv);
-		v = (@1*) Tloc(bx, BUNfirst(bx));
-		BATloop(b,p,q){
-			w= BUNtail(bi,p);
-			*v++ = *(@1*) BUNhead(bii,BUNfnd(BATmirror(bv), w));
-		}
-	}
-@= define
+@= mkindex
 	{	@1 o;
-		/* complete value table */
+		/* complete encoding table */
 		bi = bat_iterator(@2);
-		o = 0;
+		o = (@1) @3;
 		BATloop(@2,p,q){
 			bunfastins(bv, &o, BUNtail(bi,p));
 			o++;
 		}
-	}
-@= mkindex
-	@:define(@1,@2)@
-	@:encode(@1,@2)@
-	break;
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.new values in encoding table" SZFMT " \n", BATcount(bv));
+#endif
+	} break;
 @c
 	switch(typ){
-	case TYPE_bte: @:mkindex(bte,bo)@
-	case TYPE_sht: @:mkindex(sht,bo)@
-	case TYPE_int: @:mkindex(int,bo)@
+	case TYPE_bte: @:mkindex(bte,bo,0)@
+	case TYPE_sht: @:mkindex(sht,bo,0)@
+	case TYPE_int: @:mkindex(int,bo,0)@
 	}
-	BATsetcount(bx, BATcount(b));
-	if (!(bx->batDirty&2)) bx = BATsetaccess(bx, BAT_READ);
+	bx = BATjoin(b,BATmirror(bv), BUN_NONE);
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.new index in encoding table" SZFMT " \n", BATcount(bx));
+#endif
 
-	bv->tsorted = bo->tsorted;
-	bv->tdense = bo->tdense;
 	if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
 	BUNins(dictIndex,&bx->batCacheid, *nme, FALSE);
 	BUNins(dictValue,&bv->batCacheid, *nme, FALSE);
@@ -632,11 +615,11 @@ Factor out the index construction by type
 	(void) ret;
 	return MAL_SUCCEED;
 bunins_failed:
-	BBPreleaseref(bx->batCacheid);
-	BBPreleaseref(bv->batCacheid);
-	BBPreleaseref(bo->batCacheid);
+	if (bx) BBPreleaseref(bx->batCacheid);
+	if (bv) BBPreleaseref(bv->batCacheid);
 	BBPreleaseref(*bid);
-	throw(MAL, "dictionary.new", OPERATION_FAILED " During bulk operation");
+	BBPreleaseref(bo->batCacheid);
+	throw(MAL,"dictionary.compress","failed");
 }
 
 @-
@@ -648,66 +631,55 @@ str
 DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
 {
 	BAT *bx, *bv, *b, *bn, *rv, *rx;
-	BATiter bi, bii;
+	BATiter bi;
 	BUN p,q;
 
 	b = (BAT *) BATdescriptor(*bid);
-    if (b == 0)
-        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	rx = (BAT *) BATdescriptor(*idx);
-    if (rx == 0){
-		BBPreleaseref(b->batCacheid);
-        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
-	}
-#ifdef DEBUG_OPT_DICTIONARY 
-	stream_printf(GDKout,"#dictionary.expand %d %d %d\n",*idx, *val,*bid);
-#endif
 	rv = (BAT *) BATdescriptor(*val);
-    if (rv == 0){
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(rx->batCacheid);
+    if (rv == 0 || b == 0 || rx == 0){
+		if ( b  ) BBPreleaseref(b->batCacheid);
+		if ( rx ) BBPreleaseref(rx->batCacheid);
+		if ( rv ) BBPreleaseref(rv->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 
-	/* check how many new elements should be added to the val */
+	/* check how many new elements should be added to the encoding table */
 	bn = BATsemijoin(BATmirror(b), BATmirror(rv));
 #ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.expand %d %d %d\n",*idx, *val,*bid);
 	stream_printf(GDKout,"#dictionary.expand " SZFMT " " SZFMT " " SZFMT "\n", 
 		BATcount(rv), BATcount(b), BATcount(bn));
 #endif
+	if ( BATcount(bn) != 0){
+	}
 	bv= BATcopy(rv, DICTtype(BATcount(rv) + BATcount(bn)), rv->ttype,TRUE);
 	BBPreleaseref(bn->batCacheid);
 	BBPreleaseref(rv->batCacheid);
-	if (bv == NULL){
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(rx->batCacheid);
-        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
-	}
-
 	bx= BATcopy(rx, rx->htype, rx->ttype,TRUE);
-	if (bx == NULL){
+	if (bx == NULL || bv == NULL){
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bv->batCacheid);
+		if ( bx == NULL ) BBPreleaseref(bv->batCacheid);
+		if ( bv == NULL ) BBPreleaseref(bx->batCacheid);
 		BBPreleaseref(rx->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
 	BBPreleaseref(rx->batCacheid);
 
 	switch(bv->htype){
-	case TYPE_bte: @:mkindex(bte,b)@
-	case TYPE_sht: @:mkindex(sht,b)@
-	case TYPE_int: @:mkindex(int,b)@
+	case TYPE_bte: @:mkindex(bte,b,BATcount(bv))@
+	case TYPE_sht: @:mkindex(sht,b,BATcount(bv))@
+	case TYPE_int: @:mkindex(int,b,BATcount(bv))@
 	}
 	
 	BBPreleaseref(b->batCacheid);
 	BBPkeepref(*ridx = bx->batCacheid);
 	BBPkeepref(*rval = bv->batCacheid);
-	return MAL_SUCCEED;
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(bx->batCacheid);
-	BBPreleaseref(bv->batCacheid);
-	throw(MAL, "dictionary.new", OPERATION_FAILED " During bulk operation");
+	if (bx) BBPreleaseref(bx->batCacheid);
+	if (bv) BBPreleaseref(bv->batCacheid);
+	return MAL_SUCCEED;
 }
 @-
 Use a value table to encode the BAT.
@@ -716,8 +688,6 @@ str
 DICTencode(int *ridx, int *vid, int *bid)
 {
 	BAT *b, *bv, *bx;
-	BATiter bi, bii;
-	BUN p,q;
 
 	b= (BAT *) BATdescriptor(*bid);
     if (b == 0)
@@ -731,12 +701,10 @@ DICTencode(int *ridx, int *vid, int *bid)
 	stream_printf(GDKout,"#dictionary.encode %d %d\n",*vid,*bid);
 #endif
 
-	bx = BATnew(TYPE_void, bv->htype, BATcount(b));
-	switch(bv->htype){
-	case TYPE_bte: @:encode(bte)@
-	case TYPE_sht: @:encode(sht)@
-	case TYPE_int: @:encode(int)@
-	}
+	bx = BATjoin(b,BATmirror(bv), BUN_NONE);
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(GDKout,"#dictionary.encode index in encoding table" SZFMT " \n", BATcount(bx));
+#endif
 	BBPkeepref(*ridx= bx->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bv->batCacheid);
