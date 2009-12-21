@@ -656,7 +656,7 @@ DICTexpand(int *rval, int *val, int *bid)
 	if ( BATcount(bn) == 0){
 		BBPreleaseref(bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		BBPkeepref(*rval= bv->batCacheid);
+		BBPkeepref(*rval= rv->batCacheid);
 		return MAL_SUCCEED;
 	}
 	bv= BATcopy(rv, DICTtype(BATcount(rv) + BATcount(bn)), rv->ttype,FALSE);
