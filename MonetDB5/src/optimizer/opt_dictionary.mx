@@ -72,8 +72,7 @@ the compressed table. Only when needed in the print(), it will be expanded to in
 the OIDs needed.
 
 The source BAT remains in existence, but will be emptied. This way we can always
-migrate the dictionary back into the persistent table without disturbing
-the SQL catalog.
+migrate the dictionary back into the persistent table without disturbing the BAT catalog.
 Ultimately, the optimizer should detect opportunities for replacement of columns
 automatically.
 
@@ -90,6 +89,10 @@ Selections over non-compressed base tables are time-consuming,
 they drag them into memory, and thus a good moment to perform a test.
 The first approach is to take action when the base table memory footprint
 is significant.
+
+The implementation is somewhat simplified by the fact that we already
+know that the plan is semantically correct before the optimizer
+starts its work.
 @{
 @mal
 module dictionary;
@@ -140,6 +143,8 @@ opt_export str DICTdecompress(int *ret, str *nme);
 #include "opt_dictionary.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
+
+#define isDiction(X) (idx[X] && val[X])
 
 static BAT *dictIndex, *dictValue, *dictBase;
 
@@ -271,11 +276,9 @@ representation of an argument. For some operators we may postpone
 reconstruction and introduce a new dictionary pair.
 @c
 			if (  getModuleId(q) == algebraRef ){
-				if ( (getFunctionId(q) == selectRef ||
-					 getFunctionId(q) == uselectRef ||
-					 getFunctionId(q) == thetaselectRef ||
-					 getFunctionId(q) == thetauselectRef ) ){
-					if ( idx[getArg(q,1)] && val[getArg(q,1)] ){
+				if ( getFunctionId(q) == selectRef ||
+					 getFunctionId(q) == thetaselectRef ){
+					if ( isDiction(getArg(q,1)) ) {
 						j = getArg(q,0);
 						idx[j] = idx[getArg(q,1)];
 						getArg(q,1) = val[getArg(q,1)];
@@ -290,46 +293,87 @@ reconstruction and introduce a new dictionary pair.
 					actions++;
 					continue;
 				}
-				if ( getFunctionId(q) == kdifferenceRef  ||
-					 getFunctionId(q) == kunionRef ){
+				if ( getFunctionId(q) == uselectRef  ||
+					 getFunctionId(q) == thetauselectRef  ){
+					if ( isDiction(getArg(q,1)) ) {
+						/* case : r:bat[:oid,:void] := algebra.uselect(dict,arg) */
+						/* become: k:= algebra.select(val,arg) ; v:= join(idx,k); r:= algebra.project(v);  */
+						setFunctionId(q, (getFunctionId(q)== uselectRef?selectRef:putName("thetaselect",11)));
+						pushInstruction(mb,q);
+						j = getArg(q,0);
+						getArg(q,0)= newTmpVariable(mb, getVarType(mb,val[getArg(q,1)]));
+
+						qq= newStmt(mb, algebraRef,joinRef);
+						qq= pushArgument(mb,qq, idx[getArg(q,1)]);
+						qq= pushArgument(mb,qq, getArg(q,0));
+						getArg(q,1) = val[getArg(q,1)];
+
+						q = newStmt(mb, algebraRef, projectRef);
+						getArg(q,0) = j;
+						qq= pushArgument(mb,q, getArg(qq,0));
+					} else
+						pushInstruction(mb,q);
+					actions++;
+					continue;
+				}
 @-
 The arguments can be singular or both ref to a dictionary pair.
 We deal with the most prominent case provided by SQL only. 
 @c
-					if ( (idx[getArg(q,1)] || val[getArg(q,1)]) && idx[getArg(q,2)] == 0 &&
-						getArgType(mb,q,2) == getArgType(mb,q,1) ){
-						/* avalnew := dictionary.expand(aval,b) */
-
-						qq= newStmt(mb,dictionaryRef,"expand");
-						setVarType(mb, getArg(qq,0), getVarType(mb,val[getArg(q,1)]));
-						qq = pushArgument(mb,qq, val[getArg(q,1)]);
-						qq = pushArgument(mb,qq, getArg(q,2));
-
+				if ( getFunctionId(q) == kdifferenceRef   && isDiction(getArg(q,1)) && ! isDiction(getArg(q,2))){
+					j = getArg(q,0);
+					val[j] = val[getArg(q,1)];
+					getArg(q,1) = idx[getArg(q,1)];
+					getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
+					idx[j] = getArg(q,0);
+					pushInstruction(mb,q);
+					continue;
+				} 
+@-
+The kunion requires that both operands have the same signature.
+This means we have to possibly expand the encoding table and derive an encoding for the 2nd argument.
+@c
+				if ( getFunctionId(q) == kunionRef && isDiction(getArg(q,1))   && ! isDiction(getArg(q,2))){
+					actions++;
+					if( getVarType(mb,idx[getArg(q,2)]) == getArgType(mb,q,1)  ){
 						j = getArg(q,0);
-						idx[j] = idx[getArg(q,1)];
-						val[j] = getArg(qq,1);
-						actions++;
-						/* bidx := dictionary.encode(aval,b) */
-						qq = newStmt(mb,"dictionary","encode");
-						qq = pushArgument(mb,qq, val[j]);
-						qq = pushArgument(mb,qq, getArg(q,2));
-
-						pushInstruction(mb,q);
-						getArg(q,1) = idx[j];
+						val[j] = val[getArg(q,1)];
+						getArg(q,1) = idx[getArg(q,1)];
 						getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
 						idx[j] = getArg(q,0);
-						getArg(q,2) = getArg(qq,0);
-#ifdef DEBUG_OPT_DICTIONARY 
-						stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
-#endif
+						pushInstruction(mb,q);
 						continue;
 					}
+					/* case: kunion(idx:bat[:oid,:bte], b:bat[:oid,:str] */
+					/* avalnew := dictionary.expand(aval,b) */
+
+					qq= newStmt(mb,dictionaryRef,"expand");
+					setVarType(mb, getArg(qq,0), getVarType(mb,val[getArg(q,1)]));
+					qq = pushArgument(mb,qq, val[getArg(q,1)]);
+					qq = pushArgument(mb,qq, getArg(q,2));
+					j = getArg(q,0);
+					val[j] = getArg(qq,0);
+
+					/* bidx := dictionary.encode(aval,b) */
+					qq = newStmt(mb,"dictionary","encode");
+					qq = pushArgument(mb,qq, val[j]);
+					qq = pushArgument(mb,qq, getArg(q,2));
+
+					pushInstruction(mb,q);
+					getArg(q,1) = idx[getArg(q,1)];
+					getArg(q,2) = getArg(qq,0);
+					getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
+					idx[j] = getArg(q,0);
+#ifdef DEBUG_OPT_DICTIONARY 
+					stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+#endif
+					continue;
 				}
 @-
 Marking the dictionary pair idx(oid,bte) and val(bte,int) can be realised by performing
 a semijoin on idx followed by the markT. The value is of no interested.
 @c
-				if ( getFunctionId(q) == markTRef && (idx[getArg(q,1)] || val[getArg(q,1)]) ){
+				if ( getFunctionId(q) == markTRef && isDiction(getArg(q,1)) ) {
 					qq= newStmt(mb,batRef,reverseRef);
 					qq= pushArgument(mb, qq, idx[getArg(q,1)]);
 					j = getArg(qq,0);
@@ -349,7 +393,19 @@ a semijoin on idx followed by the markT. The value is of no interested.
 @-
 Combination of the next column with the pivot table.
 @c
-				if ( getFunctionId(q) == leftjoinRef && (idx[getArg(q,2)] || val[getArg(q,2)]) ){
+				if ( getFunctionId(q) == semijoinRef && isDiction(getArg(q,1))  && !isDiction(getArg(q,2)) ) {
+					j = getArg(q,0);
+					val[j] = val[getArg(q,1)];
+					getArg(q,1) = idx[getArg(q,1)];
+					getArg(q,0) = newTmpVariable(mb, getVarType(mb,getArg(q,1)));
+					idx[j] = getArg(q,0);
+					pushInstruction(mb,q);
+					continue;
+				}
+@-
+In the leftjoin you can carry along the value encoding.
+@c
+				if ( getFunctionId(q) == leftjoinRef && isDiction(getArg(q,2)) ) {
 					j = getArg(q,0);
 					val[j] = val[getArg(q,2)];
 					getArg(q,2) = idx[getArg(q,2)];
@@ -358,10 +414,57 @@ Combination of the next column with the pivot table.
 					getArg(q,0) = idx[j];
 					continue;
 				}
+@-
+Projections are easy. We simply drop the encoding table.
+@c
+				if ( getFunctionId(q) == projectRef && isDiction(getArg(q,1))   && q->argc==2) {
+					val[j = getArg(q,0)] = val[getArg(q,1)];
+					getArg(q,1) = idx[getArg(q,1)];
+					getArg(q,0) = newTmpVariable(mb, getVarType(mb,getArg(q,1)));
+					idx[j] = getArg(q,0);
+					pushInstruction(mb,q);
+					continue;
+				}
 			} 
+@-
+The aggregation group is more involved, because we use the expensive OID scheme to
+administer the groups.
+@c
+			if (  getModuleId(q) == groupRef ){
+				if ( getFunctionId(q) == newRef && isDiction(getArg(q,1))   ) {
+					/* case : (ext,grp):= group.new(dict) */
+					/* give : code:= kuniq(rev(idx)); ext := join(idx,code); grp= join(rev(code),val)*/
+					int ext, grp, code;
+					ext = getArg(q,0);
+					grp = getArg(q,1);
+					j = getArg(q,2);
+					freeInstruction(q);
+
+					q = newStmt(mb,batRef,reverseRef);
+					q = pushArgument(mb,q,idx[j]);
+
+					qq = newStmt(mb,algebraRef, kuniqueRef);
+					qq = pushArgument(mb,qq,getArg(q,0));
+					code = getArg(qq,0);
+
+					qq = newStmt(mb,algebraRef,joinRef);
+					qq = pushArgument(mb,qq, idx[j]);
+					qq = pushArgument(mb,qq, code);
+					getArg(qq,0) = ext;
+
+					q = newStmt(mb,batRef,reverseRef);
+					q = pushArgument(mb,q,code);
+					qq = newStmt(mb,algebraRef,joinRef);
+					qq = pushArgument(mb,qq, getArg(q,0));
+					qq = pushArgument(mb,qq, val[j]);
+					getArg(qq,0) = grp;
+					actions++;
+					continue;
+				}
+			}
 			/* default cases call for source reconstruction */
 			for (j = q->retc; j < q->argc; j++)
-			if ( idx[getArg(q,j)] || val[getArg(q,j)]){
+			if ( isDiction(getArg(q,j)) ){
 				/* recast void to type needed for the join */
 				qq= newStmt(mb,algebraRef,joinRef);
 				getArg(qq,0) = getArg(q,j);
@@ -508,6 +611,7 @@ DICTtype(size_t cnt){
 		return TYPE_int;
 	return TYPE_lng;
 }
+
 str DICTcompress(int *ret, str *nme, int *bid)
 {
 	int idx,val,base, typ;
@@ -515,7 +619,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	BAT *b, *bo, *bx = 0, *bv = 0, *bs, *bh =0;
 	BATiter bi;
 	BUN p,q;
-	double ratio = 1.0;
+	double ratio = 0.0;
 
 	(void) base;
 	if( DICTinit() )
@@ -600,6 +704,7 @@ Factor out the index construction by type
 	stream_printf(GDKout,"#dictionary.new values table " SZFMT " \n", BATcount(bv));
 #endif
 
+	if (!(bx->batDirty&2)) bx = BATsetaccess(bx, BAT_READ);
 	if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
 	BUNins(dictIndex,&bx->batCacheid, *nme, FALSE);
 	BUNins(dictValue,&bv->batCacheid, *nme, FALSE);
