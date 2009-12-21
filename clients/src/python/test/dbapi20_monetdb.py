@@ -156,6 +156,7 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
         finally:
             con.close()
 
+
     def test_substring(self):
         con = self._connect()
         try:
@@ -171,35 +172,53 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
             con.close()
 
 
+    def test_newline(self):
+        teststrings = [
+            'abc\ndef',
+            'abc\\ndef',
+            'abc\\\ndef',
+            'abc"def',
+            'abc""def',
+            'abc\'def',
+            'abc\'\'def',
+            "abc\"def",
+            "abc\"\"def",
+            "abc'def",
+            "abc''def",
+            ]
+
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL1(cur)
+            for i in teststrings:
+                args = {'beer': i}
+                cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
+                cur.execute('select * from %sbooze' % self.table_prefix)
+                row = cur.fetchone()
+                cur.execute('delete from %sbooze where name=%%s' % self.table_prefix, i)
+                self.assertEqual(i, row[0], 'newline not properly converted, got %s, should be %s' % (row[0], i))
+        finally:
+            con.close()
+
 
     def test_Exceptions(self):
         # we override this since StandardError is depricated in python 3
         self.failUnless(issubclass(self.driver.Warning,Exception))
         self.failUnless(issubclass(self.driver.Error,Exception))
-        self.failUnless(
-            issubclass(self.driver.InterfaceError,self.driver.Error)
-            )
-        self.failUnless(
-            issubclass(self.driver.DatabaseError,self.driver.Error)
-            )
-        self.failUnless(
-            issubclass(self.driver.OperationalError,self.driver.Error)
-            )
-        self.failUnless(
-            issubclass(self.driver.IntegrityError,self.driver.Error)
-            )
-        self.failUnless(
-            issubclass(self.driver.InternalError,self.driver.Error)
-            )
-        self.failUnless(
-            issubclass(self.driver.ProgrammingError,self.driver.Error)
-            )
-        self.failUnless(
-            issubclass(self.driver.NotSupportedError,self.driver.Error)
-            )
+        self.failUnless(issubclass(self.driver.InterfaceError, self.driver.Error))
+        self.failUnless(issubclass(self.driver.DatabaseError, self.driver.Error))
+        self.failUnless(issubclass(self.driver.OperationalError, self.driver.Error))
+        self.failUnless(issubclass(self.driver.IntegrityError, self.driver.Error))
+        self.failUnless(issubclass(self.driver.InternalError, self.driver.Error))
+        self.failUnless(issubclass(self.driver.ProgrammingError, self.driver.Error))
+        self.failUnless(issubclass(self.driver.NotSupportedError, self.driver.Error))
+
 
 
 if __name__ == '__main__':
-    #unittest.main()
     suite = unittest.TestLoader().loadTestsFromTestCase(Test_Monetdb_Sql)
+    # if you want to run a single test:
+    #suite = unittest.TestLoader().loadTestsFromName('test_newline', Test_Monetdb_Sql)
     TextTestRunnerNoTime(verbosity=3).run(suite)
+
