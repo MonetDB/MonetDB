@@ -20,10 +20,10 @@ import sys
 
 from monetdb.sql import converters
 from monetdb.monetdb_exceptions import *
+from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
 
-from monetdb import mapi
 
 
 
@@ -191,7 +191,7 @@ class Cursor:
                 query = operation % tuple([self.__monetizer.convert(item)
                     for item in parameters])
             elif isinstance(parameters, str):
-                query = operation % parameters
+                query = operation % self.__monetizer.convert(parameters)
             else:
                 self.__exception_handler(ValueError,
                         "Parameters should be None, dict or list, now it is %s"
