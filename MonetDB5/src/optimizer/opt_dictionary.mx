@@ -52,11 +52,11 @@ that the base table is organised as dictionary
 @verbatim
     (_14:bat[:oid,:bte] ,_15:bat[:bte,:int] ) := dictionary.bind("sys/tab/col/0");
     d:bat[:oid,:int]  := sql.bind("sys","tab","col",1);
-    (_17,_18) := dictionary.expand(_14,_15,d);
+    _18 := dictionary.expand(_15,d);
     _19 := dictionary.encode(_18,d);    
     _20 := algebra.kdifference(_14,_19);
     e:bat[:oid,:int]  := sql.bind("sys","tab","col",2);
-    (_21,_22) := dictionary.expand(_20,_15,e);
+    _22 := dictionary.expand(_15,e);
     _23 := dictionary.encode(_22,e);    
     _24 := algebra.kunion(_20,_23);     
     _25 := algebra.select(_15,0,2);     
@@ -98,7 +98,7 @@ command bind(nme:str) (idx:bat[:oid,:any_1], val:bat[:any_1,:any_2])
 address DICTbind
 comment "Localise the dictionary";
 
-command expand(idx:bat[:oid,:any_1], val:bat[:any_1,:any_2], b:bat[:oid,:any_2]) (ridx:bat[:oid,:any_1], rval:bat[:any_1,:any_2])
+command expand(val:bat[:any_1,:any_2], b:bat[:oid,:any_2]):bat[:any_1,:any_2]
 address DICTexpand
 comment "Extend the dictionary with the values in b. This may trigger a partial recompilation of the MAL program when the storage type :any_1
 is not sufficient anymore.";
@@ -129,7 +129,7 @@ comment "Capitalize dictionary encodings ";
 
 /* #define DEBUG_OPT_DICTIONARY  */
 opt_export str DICTbind(int *idx, int *val, str * nme);
-opt_export str DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid);
+opt_export str DICTexpand(int *rval, int *val, int *bid);
 opt_export str DICTencode(int *ridx, int *val, int *bid);
 opt_export str DICTcompress(int *idx, str *nme, int *bid);
 opt_export str DICTdecompress(int *ret, str *nme);
@@ -298,18 +298,15 @@ We deal with the most prominent case provided by SQL only.
 @c
 					if ( (idx[getArg(q,1)] || val[getArg(q,1)]) && idx[getArg(q,2)] == 0 &&
 						getArgType(mb,q,2) == getArgType(mb,q,1) ){
-						/* (aidxnew,avalnew) := dictionary.expand(aidx,aval,b) */
+						/* avalnew := dictionary.expand(aval,b) */
 
 						qq= newStmt(mb,dictionaryRef,"expand");
-						setVarType(mb, getArg(qq,0), getVarType(mb,idx[getArg(q,1)]));
-						qq= pushArgument(mb,qq,newTmpVariable(mb, getVarType(mb,val[getArg(q,1)])) );
-						qq->retc++;
-						qq = pushArgument(mb,qq, idx[getArg(q,1)]);
+						setVarType(mb, getArg(qq,0), getVarType(mb,val[getArg(q,1)]));
 						qq = pushArgument(mb,qq, val[getArg(q,1)]);
 						qq = pushArgument(mb,qq, getArg(q,2));
 
 						j = getArg(q,0);
-						idx[j] = getArg(qq,0);
+						idx[j] = idx[getArg(q,1)];
 						val[j] = getArg(qq,1);
 						actions++;
 						/* bidx := dictionary.encode(aval,b) */
@@ -565,7 +562,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	cnt = BATcount(bo);
 	typ= DICTtype(cnt);
 	if( typ == TYPE_lng || typ == b->ttype){
-		/* don't create a dictionary */
+		/* don't create a new dictionary */
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.new %s not compressed\n",*nme);
 #endif
@@ -635,18 +632,16 @@ This means, we end up with larger idx tables.
 This should trigger a partial re-compilation of the MAL program.
 @c
 str 
-DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
+DICTexpand(int *rval, int *val, int *bid)
 {
-	BAT *bx, *bv, *b, *bn, *rv, *rx;
+	BAT *bv, *b, *bn, *rv;
 	BATiter bi;
 	BUN p,q;
 
 	b = (BAT *) BATdescriptor(*bid);
-	rx = (BAT *) BATdescriptor(*idx);
 	rv = (BAT *) BATdescriptor(*val);
-    if (rv == 0 || b == 0 || rx == 0){
+    if (rv == 0 || b == 0 ){
 		if ( b  ) BBPreleaseref(b->batCacheid);
-		if ( rx ) BBPreleaseref(rx->batCacheid);
 		if ( rv ) BBPreleaseref(rv->batCacheid);
         throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
 	}
@@ -658,19 +653,15 @@ DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
 	stream_printf(GDKout,"#dictionary.expand " SZFMT " " SZFMT " " SZFMT "\n", 
 		BATcount(rv), BATcount(b), BATcount(bn));
 #endif
-	if ( BATcount(bn) != 0){
+	if ( BATcount(bn) == 0){
+		BBPreleaseref(bn->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		BBPkeepref(*rval= bv->batCacheid);
+		return MAL_SUCCEED;
 	}
-	bv= BATcopy(rv, DICTtype(BATcount(rv) + BATcount(bn)), rv->ttype,TRUE);
+	bv= BATcopy(rv, DICTtype(BATcount(rv) + BATcount(bn)), rv->ttype,FALSE);
 	BBPreleaseref(bn->batCacheid);
 	BBPreleaseref(rv->batCacheid);
-	bx= BATcopy(rx, rx->htype, rx->ttype,TRUE);
-	if (bx == NULL || bv == NULL){
-		BBPreleaseref(b->batCacheid);
-		if ( bx == NULL ) BBPreleaseref(bv->batCacheid);
-		if ( bv == NULL ) BBPreleaseref(bx->batCacheid);
-		BBPreleaseref(rx->batCacheid);
-        throw(MAL,"dictionary.expand",RUNTIME_OBJECT_MISSING);
-	}
 @= mkindex2
 	{	@1 o;
 		bi = bat_iterator(@2);
@@ -691,9 +682,7 @@ DICTexpand(int *ridx, int *rval, int *idx, int *val, int *bid)
 	}
 	BATpropcheck(bv, BATPROPS_QUICK);
 
-	BBPreleaseref(rx->batCacheid);
 	BBPreleaseref(b->batCacheid);
-	BBPkeepref(*ridx = bx->batCacheid);
 	BBPkeepref(*rval = bv->batCacheid);
 	return MAL_SUCCEED;
 }
