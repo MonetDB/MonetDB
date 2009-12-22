@@ -254,7 +254,8 @@ include crackers;
 The RDF module stuff
 @mal
 include tokenizer;
-include rdf;
+# FIXME: !MALException:malInclude:could not open file: rdf
+#include rdf;
 
 @-
 In practice, we have to introduce different startup for each
