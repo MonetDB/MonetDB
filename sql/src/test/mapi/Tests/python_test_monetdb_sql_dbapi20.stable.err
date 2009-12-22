@@ -103,6 +103,7 @@ test_fetchall (__main__.Test_Monetdb_Sql) ... ok
 test_fetchmany (__main__.Test_Monetdb_Sql) ... ok
 test_fetchone (__main__.Test_Monetdb_Sql) ... ok
 test_mixedfetch (__main__.Test_Monetdb_Sql) ... ok
+test_newline (__main__.Test_Monetdb_Sql) ... ok
 test_nextset (__main__.Test_Monetdb_Sql) ... ok
 test_paramstyle (__main__.Test_Monetdb_Sql) ... ok
 test_rollback (__main__.Test_Monetdb_Sql) ... ok
@@ -116,7 +117,7 @@ test_unicode (__main__.Test_Monetdb_Sql) ... ok
 test_utf8 (__main__.Test_Monetdb_Sql) ... ok
 
 ----------------------------------------------------------------------
-Ran 38 tests
+Ran 39 tests
 
 OK
 
