@@ -437,6 +437,7 @@ administer the groups. This calls for a modification of the encoding table.
 case : (ext,grp):= group.new((idx,val)),
 gives: (ext,grp) := group.new(idx); val:= dictionary.group(idx,val)
 We have to remember the grouping only.
+Derived paths are similar to the group new.
 @c
 			if (  getModuleId(q) == groupRef ){
 				if ( getFunctionId(q) == newRef && isDiction(getArg(q,2))   ) {
@@ -447,6 +448,19 @@ We have to remember the grouping only.
 					val[j] = getArg(qq,0);
 
 					getArg(q,2) = idx[getArg(q,2)];
+					idx[j] = getArg(q,0);
+					pushInstruction(mb,q);
+					actions++;
+					continue;
+				}
+				if ( getFunctionId(q) == deriveRef && isDiction(getArg(q,4))   ) {
+					j = getArg(q,0);
+					qq = newStmt(mb,dictionaryRef,groupRef);
+					pushArgument(mb,qq, idx[getArg(q,4)]);
+					pushArgument(mb,qq, val[getArg(q,4)]);
+					val[j] = getArg(qq,0);
+
+					getArg(q,4) = idx[getArg(q,4)];
 					idx[j] = getArg(q,0);
 					pushInstruction(mb,q);
 					actions++;
