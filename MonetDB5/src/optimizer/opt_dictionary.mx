@@ -626,11 +626,11 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	BUN p,q;
 	double ratio = 0.0;
 
-	(void) base;
 	if( DICTinit() )
 		throw(MAL,"dictionary.new","No catalog table");
 	if ( DICTfind(&idx,&val, &base, *nme) == 0)
 		throw(MAL,"dictionary.new", "duplicate entry");
+	(void)base;
 	b = (BAT *) BATdescriptor(*bid);
     if (b == 0)
         /* Simple ignore the binding if you can;t find the bat */
