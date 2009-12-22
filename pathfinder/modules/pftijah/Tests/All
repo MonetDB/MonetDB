@@ -35,4 +35,12 @@ test_bug2836870
 load_bug2831472
 test_bug2831472
 test_comp_tokenize
+options_test
+terms2
+terms3
+terms4
+tf1
+tf2
+tfall
+terms_tf
 cleanup
