@@ -42,8 +42,8 @@ class Pythonizer:
             type_codes.WRD: int,
             type_codes.BIGINT: int,
             type_codes.SERIAL: int,
-            type_codes.REAL: int,
-            type_codes.DOUBLE: int,
+            type_codes.REAL: float,
+            type_codes.DOUBLE: float,
             type_codes.BOOLEAN: self.__bool,
             type_codes.DATE: self.__date,
             type_codes.TIME: self.__time,
@@ -81,12 +81,12 @@ class Pythonizer:
                 if n > 0:
                     if n % 2 == 0:
                         # even number of slashes: '\' '\' 'n' --> '\' 'n'
-                        a.extend(['\\'] * (n/2))
+                        a.extend(['\\'] * int(n/2))
                         a.append(c)
                         n = 0
                     else:
                         # odd number of slashes: '\' '\' '\' 'n' --> '\' '\n'
-                        a.extend(['\\'] * ((n - 1)/2))
+                        a.extend(['\\'] * int((n - 1)/2))
                         if c in c_escapes.keys():
                             a.append(c_escapes[c])
                         else:
