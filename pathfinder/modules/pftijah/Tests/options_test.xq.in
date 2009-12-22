@@ -1,0 +1,24 @@
+tijah:create-ft-index(
+        ("thesis.xml"),
+        <TijahOptions
+                ft-index="porter"
+                tokenizer="fast"
+                stemmer="porter-english"
+        />
+)
+<>
+tijah:create-ft-index(
+        ("thesis.xml"),
+        <TijahOptions
+                ft-index="snowball"
+                stemmer="snowball-english"
+        />
+)
+<>
+tijah:create-ft-index(
+        ("thesis.xml"),
+        <TijahOptions
+                ft-index="nostem"
+        />
+)
+
