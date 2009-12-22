@@ -26,6 +26,8 @@ set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\crackers\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\crackers
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\rdf\.libs
+set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\rdf
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\src\mal;%PATH%
