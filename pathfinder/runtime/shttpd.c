@@ -564,8 +564,10 @@ do_embedded(struct conn *c)
 		}
 
 		/* Return if not all POST data buffered */
-		if (c->nposted < c->cclength || c->cclength == 0)
+		if (c->nposted < c->cclength || c->cclength == 0) {
+            free(arg);
 			return;
+        }
 
 		/* Null-terminate query data */
 		c->query[c->cclength] = '\0';
