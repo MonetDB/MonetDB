@@ -39,6 +39,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 /* malloc to return result buffers with */
 #define EXTERN_MALLOC(n)        PFmalloc(n)
