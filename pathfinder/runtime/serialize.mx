@@ -2211,7 +2211,10 @@ xquery_print_result_DRIVER (
                 ret = draw_queryflow(*xrpc_updating, *xrpc_seqnr, xrpc_method, time_exec, xrpc_hostport, participants);
                 BBPunfix(participants->batCacheid);
             }
-            if (ret == GDK_FAIL) return ret;
+            if (ret == GDK_FAIL) {
+                detach_teestream(fp);
+                return ret;
+            }
         }
     }
     ret = xquery_print_result_driver (
