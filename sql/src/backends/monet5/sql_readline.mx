@@ -186,6 +186,7 @@ SQLreadConsole(Client cntxt){
 			if (cntxt->fdin->buf == NULL) {
 				cntxt->fdin->len = 0;
 				cntxt->fdin->size = 0;
+				free(buf);
 				return -1;
 			}
 			cntxt->fdin->len = len;
