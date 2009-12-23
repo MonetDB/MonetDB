@@ -150,12 +150,12 @@ command_tree **CAS_plan_gen(
 
   if ( mil_filename && !(mil_file = fopen(mil_filename,"w")) ) {
     printf("Error: cannot find file for writing mil code.\n");
-    return NULL;
+    goto error;
   }
 
   if ( logical_filname && !(logical_file = fopen(logical_filname,"w")) ) {
     printf("Error: cannot find file for writing logical plan.\n");
-    return NULL;
+    goto error;
   }
 
   /* formating the mil header */
@@ -185,7 +185,7 @@ command_tree **CAS_plan_gen(
   p_command = GDKmalloc(MAX_QUERIES*OPERAND_MAX * sizeof(command_tree));
   if ( !p_command_array || !p_command ) {
       stream_printf(GDKout,"CAS_plan_gen: GDKmalloc failed.\n");
-      return 0;
+      goto error;
   }
 
   /* printf("%d\n",p_command_array); */
@@ -3000,4 +3000,8 @@ command_tree **CAS_plan_gen(
 
   return p_command_start;
 
+ error:
+  if ( mil_file ) fclose(mil_file);
+  if ( logical_file ) fclose(logical_file);
+  return NULL;
 }
