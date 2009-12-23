@@ -567,5 +567,6 @@ runAsso(char *array, caliblng maxrange, caliblng minstride, caliblng shift, cali
 	fflush(stderr);
 #endif
 
+	free(ymax);
 	return result;
 }
