@@ -734,15 +734,12 @@ response2bat(
     resp = buffer_create(MAX_BUF_SIZE);
     if (!resp || resp->len == 0) {
         GDKerror("response2bat: failed to create buffer for XRPC response message\n");
-        if (resp)
-            buffer_destroy(resp);
-        return NULL;
+        goto error;
     }
 
     if( !(ret = stream_readline(in, respStatus, 1024)) ){
         GDKerror("response2bat: failed to receive response from %s:%d", host, port);
-        buffer_destroy(resp);
-        return NULL;
+        goto error;
     }
 
     /* We only speak HTTP/1.1 */
@@ -758,8 +755,7 @@ response2bat(
             GDKerror("%s\n", respStatus);
             ret = stream_readline(in, respStatus, 1024);
         } while (ret > 0);
-        buffer_destroy(resp);
-        return NULL;
+        goto error;
     }
     respStatus[ret -2] = '\0';
 
@@ -770,8 +766,7 @@ response2bat(
     } while (ret > 0);
     if (ret < 0) {
         GDKerror("response2bat: failed to receive response from %s:%d", host, port);
-        buffer_destroy(resp);
-        return NULL;
+        goto error;
     }
 
     /* Now, we can check the response status */
@@ -785,27 +780,24 @@ response2bat(
         } while (ret > 0);
         if (ret < 0) {
             GDKerror("response2bat: failed to receive response from %s:%d", host, port);
-            return NULL;
+            goto error;
         }
         resp->buf[resp->pos] = 0;
         handle_error_msg(resp->buf);
-        buffer_destroy(resp);
-        return NULL;
+        goto error;
     }
 
     /* Start timing Client DeSerialisation */
     lng time_xrpcClntDeSeria = GDKusec();
     if (!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))){
         GDKerror("response2bat: failed to malloc shredBAT\n");
-        buffer_destroy(resp);
-        return NULL;
+        goto error;
     }
 
     if(shred(shredBAT, NULL, NULL, in, 0, NULL, NULL, NULL) ==GDK_FAIL) {
         GDKerror("response2bat: invalid XRPC response received\n");
         BBPreclaim(shredBAT);
-        buffer_destroy(resp);
-        return NULL;
+        goto error;
     }
     /* Stop timing Client DeSerialisation */
     time_xrpcClntDeSeria = GDKusec() - time_xrpcClntDeSeria;
@@ -816,6 +808,10 @@ response2bat(
     }
 
     return shredBAT;
+  error:
+    if (resp)
+        buffer_destroy(resp);
+    return NULL;
 }
 
 static buffer *
