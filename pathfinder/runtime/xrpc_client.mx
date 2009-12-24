@@ -724,6 +724,7 @@ response2bat(
         int port,
         bool updCall)
 {
+    lng time_xrpcClntDeSeria = 0;
     char respStatus[1024];
     int ret;
     buffer *resp;
@@ -788,7 +789,7 @@ response2bat(
     }
 
     /* Start timing Client DeSerialisation */
-    lng time_xrpcClntDeSeria = GDKusec();
+    time_xrpcClntDeSeria = GDKusec();
     if (!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))){
         GDKerror("response2bat: failed to malloc shredBAT\n");
         goto error;
