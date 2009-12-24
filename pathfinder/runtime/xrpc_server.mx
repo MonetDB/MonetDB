@@ -656,7 +656,7 @@ xrpc_handle_wsat_request(mapi_client *mc, struct shttpd_callback_arg *arg)
             if (*p != ' ' && *p != '\t' && *p != '\n') break; 
         if (*p == '\'' || *p == '\"') {
             char *q = strchr(p+1, *p);
-            if (*q) { *q = 0; mode = p+1; }
+            if (q) { *q = 0; mode = p+1; }
         }
     } 
     msg = strchr(msg, '<');
