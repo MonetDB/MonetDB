@@ -564,8 +564,10 @@ do_embedded(struct conn *c)
 		}
 
 		/* Return if not all POST data buffered */
-		if (c->nposted < c->cclength || c->cclength == 0)
+		if (c->nposted < c->cclength || c->cclength == 0) {
+            free(arg);
 			return;
+        }
 
 		/* Null-terminate query data */
 		c->query[c->cclength] = '\0';
@@ -2761,14 +2763,17 @@ shttpd_addmimetype(const char *ext, const char *mime)
 {
 	struct mimetype	*p;
 
-	/* XXX possible resource leak  */
 	if ((p = calloc(1, sizeof(*p))) != NULL &&
 	    (p->ext = mystrdup(ext)) != NULL &&
 	    (p->mime = mystrdup(mime)) != NULL) {
 		p->extlen	= strlen(p->ext);
 		p->next		= mimetypes;
 		mimetypes	= p;
-	}
+	} else if (p) {
+        if (p->ext) free(p->ext);
+        if (p->mime) free(p->mime);
+        free(p);
+    }
 }
 
 /*

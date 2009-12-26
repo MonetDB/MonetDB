@@ -90,10 +90,11 @@ BAT *
 seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
 {
 	BATiter bi = bat_iterator(b);
-	REGISTER BUN _p = BUNlast(bn);
+	REGISTER BUN _p;
 	@:seqscanPrologue@
 	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7_nocheck_noinc[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" OIDFMT ", str_idx=" OIDFMT ");\n",
 				    BATgetId(b), BATgetId(bn), oid_ctr, str_idx);
+	_p = BUNlast(bn);
 	BATloop(b, p, q) {
 		ptr v = BUN@3(bi, p);
 

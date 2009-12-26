@@ -269,8 +269,8 @@ list_keysort(list *l, int *keys, fdup dup)
 	/* sort descending */
 	GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
 	for(j=0; j<cnt; j++) {
-		for(n = l->h, i = 0; n && i != pos[j]; n = n->next, i++) 
-			;
+		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
+			assert(n);
 		list_append(res, dup(n->data));
 	}
 	return res;
@@ -292,8 +292,8 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 	/* sort descending */
 	GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
 	for(j=0; j<cnt; j++) {
-		for(n = l->h, i = 0; n && i != pos[j]; n = n->next, i++) 
-			;
+		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
+			assert(n);
 		list_append(res, dup(n->data));
 	}
 	return res;

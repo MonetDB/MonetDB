@@ -472,7 +472,7 @@ typedef struct tijahContextStruct {
 
 static INLINE int
 tj_pushTag(tjCtx* tjctx, oid start, oid tagoid) {
-	if ( tjctx->tagStackPtr > MAXTAGDEPTH ) {
+	if ( tjctx->tagStackPtr >= MAXTAGDEPTH ) {
 	     GDKerror("tj_pushTag: MAXTAGDEPTH exceeded.\n");
 	     return -1;
 	}

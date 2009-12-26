@@ -39,6 +39,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 /* malloc to return result buffers with */
 #define EXTERN_MALLOC(n)        PFmalloc(n)
@@ -462,6 +463,7 @@ static void opt_elim(opt_t* o, unsigned int stmt, int kill_nilassign) {
         if ((assigns_to < 32768) & (o->stmts[stmt].used == 0) & o->stmts[stmt].inactive & (o->curvar+1 < OPT_VARS)) {
                 char *p = o->stmts[stmt].mil;
 
+                assert(assigns_to < OPT_STMTS);
                 o->stmts[stmt].assigns_to |= 32768; /* this ensures we kill the statement only once */
 
                 /* decrease the use count of the var declaration statement */

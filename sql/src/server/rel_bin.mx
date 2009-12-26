@@ -1578,6 +1578,8 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 
 		assert(e->type == e_cmp && e->flag == cmp_equal);
 		s = exp_bin(sql, e->r, NULL, NULL, NULL, NULL);
+		if (s == NULL)
+			return NULL;
 
 		if (!s) {
 			stmt_destroy(h);

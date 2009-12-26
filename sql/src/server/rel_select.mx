@@ -3487,8 +3487,10 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 	if (opt_else || else_exp) {
 		sql_exp *result = else_exp;
 
-		if (!result)
-			result = rel_value_exp(sql, rel, opt_else, f, ek);
+		if (!result && !(result = rel_value_exp(sql, rel, opt_else, f, ek))) {
+			list_destroy(conds);
+			return NULL;
+		}
 
 		tpe = exp_subtype(result);
 		if (tpe && restype) {

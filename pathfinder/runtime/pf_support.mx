@@ -8855,11 +8855,11 @@ xquery_print_result_file (
                              NULL, /* xrpc_seqnr */
                              NULL, /* xrpc_timeout */
                              NULL);/* xrpc_start */
-                         stream_destroy(s);
+                        BBPreclaim(k);
                     }
-                    BBPreclaim(k);
+                    BBPreclaim(i);
                 }
-                BBPreclaim(i);
+                stream_destroy(s);
             } 
             fclose(fp);
         } else {
