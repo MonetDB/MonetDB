@@ -30,7 +30,7 @@ logger = logging.getLogger("monetdb")
 class Pythonizer:
     """ convert mapi type to python type """
 
-    def __init__(self):
+    def __init__(self, use_unicode=False):
         self.mapping = {
             type_codes.CHAR: self.__strip,
             type_codes.VARCHAR: self.__strip,
@@ -42,8 +42,8 @@ class Pythonizer:
             type_codes.WRD: int,
             type_codes.BIGINT: int,
             type_codes.SERIAL: int,
-            type_codes.REAL: int,
-            type_codes.DOUBLE: int,
+            type_codes.REAL: float,
+            type_codes.DOUBLE: float,
             type_codes.BOOLEAN: self.__bool,
             type_codes.DATE: self.__date,
             type_codes.TIME: self.__time,
@@ -56,18 +56,54 @@ class Pythonizer:
             type_codes.MEDIUMINT: int,
             type_codes.LONGINT: int,
             type_codes.FLOAT: float,
-
         }
 
+        self.use_unicode = use_unicode
+
     def __string(self, data):
+        if self.use_unicode:
+            return unicode(data)
         return str(data)
 
     def __strip(self, data):
-        """ returns a python string, chops of quotes.
+        """ returns a python string, chops of quotes,
+        replace escape characters.
         inverse of escape"""
-        data = data.replace("\\\\", "\\")
-        data = data.replace("\'", "'")
-        data = data.replace("\\\"", "\"")
+
+        logging.debug(data)
+        c_escapes = {'n':'\n', 't':'\t', 'r':'\r', '"':'\"'}
+        a = []
+        n = 0
+        for c in data:
+            if c == '\\':
+                n = n + 1
+            else:
+                if n > 0:
+                    if n % 2 == 0:
+                        # even number of slashes: '\' '\' 'n' --> '\' 'n'
+                        a.extend(['\\'] * int(n/2))
+                        a.append(c)
+                        n = 0
+                    else:
+                        # odd number of slashes: '\' '\' '\' 'n' --> '\' '\n'
+                        a.extend(['\\'] * int((n - 1)/2))
+                        if c in c_escapes.keys():
+                            a.append(c_escapes[c])
+                        else:
+                            logging.warning('unsupported escape character: \\%s' % c)
+                        n = 0
+                else:
+                    a.append(c)
+                    n = 0
+        if n > 0:
+            a.extend(['\\'] * (n/2))
+            a.append(c)
+        data = ''.join(a)
+
+
+        logging.debug(data)
+        if self.use_unicode:
+            return unicode(data[1:-1])
         return data[1:-1]
 
     def __decimal(self, data):
@@ -93,6 +129,8 @@ class Pythonizer:
         """ Converts a monet blob in string representation to a python string.
         The input is a string in the format: '(length: char char char char ... )'
         w/ char in hex representation. The output is the string of chars. """
+        #TODO: need to check if blob datatype should use this? otherwise
+        # this can be removed
         x = x[x.find(":")+2:-1]
         return ''.join(map(lambda x: chr(int(x, 16)), x.split(" ")))
 
@@ -157,7 +195,7 @@ class Monetizer:
 
     def __escape(self, data):
         data = str(data).replace( "\\", "\\\\")
-        data = data.replace( "'", "\\'")
+        data = data.replace( "\'", "\\\'")
         return "'%s'" % str(data)
 
     def __string(self, data):
@@ -168,7 +206,6 @@ class Monetizer:
 
     def __unicode(self, data):
         return self.__escape(data.encode('utf-8'))
-
 
 
 
