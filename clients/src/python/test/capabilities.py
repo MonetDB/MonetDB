@@ -249,6 +249,21 @@ class DatabaseTest(unittest.TestCase):
             ('col1 DECIMAL(5,2)',),
             generator)
 
+    def test_REAL(self):
+        def generator(row,col):
+            return row*1000.0
+        self.check_data_integrity(
+            ('col1 REAL',),
+            generator)
+
+    def test_DOUBLE(self):
+        def generator(row,col):
+            return row/1e-99
+        self.check_data_integrity(
+            ('col1 DOUBLE',),
+            generator)
+
+
 
     def test_DATE(self):
         ticks = time()

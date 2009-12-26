@@ -55,5 +55,6 @@ if __name__ == '__main__':
         gc.set_debug(gc.DEBUG_LEAK)
     #unittest.main()
     suite = unittest.TestLoader().loadTestsFromTestCase(Test_Monetdb_Sql)
+    #suite = unittest.TestLoader().loadTestsFromName('test_REAL', Test_Monetdb_Sql)
     TextTestRunnerNoTime(verbosity=3).run(suite)
 
