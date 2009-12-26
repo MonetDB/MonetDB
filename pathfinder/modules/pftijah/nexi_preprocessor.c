@@ -350,9 +350,11 @@ int preprocess(int preproc_type) {
       tok_var = tokpre->val[itp++];
       tnl_append(commain,com_var);
 
+/*
       char* ch_img = strrchr(tok_var, '/');
       ch_img++;
-      /*printf("%s\n", ch_img); */
+      printf("%s\n", ch_img); 
+*/
       tsl_append(tokmain,tok_var);
 
     }
