@@ -79,7 +79,6 @@ automatically.
 Pushing the dictionary information through the plan is organized around a subset
 of the MAL operators. As soon as we find any other instruction, the dictionary
 is expanded to its normal BAT for further processing.
-
 @-
 The key challenge is to determine when to move a BAT into its dictionary format.
 Two situations come to mind. First, during bulk copying we can start with
@@ -134,7 +133,7 @@ comment "Capitalize dictionary encodings ";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_DICTIONARY  */
+/* #define DEBUG_OPT_DICTIONARY   */
 opt_export str DICTbind(int *idx, int *val, str * nme);
 opt_export str DICTexpand(int *rval, int *val, int *bid);
 opt_export str DICTencode(int *ridx, int *val, int *bid);
@@ -175,7 +174,7 @@ DICTfind(int *idx, int *val, int *base, str nme)
 int
 OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j, actions=0;
+	int i,j,k, actions=0;
 	int *idx, *val;
 	InstrPtr *old,q, qq;
 	int x, v, limit;
@@ -191,6 +190,11 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	limit = mb->stop;
 	old = mb->stmt;
 	
+#ifdef DEBUG_OPT_DICTIONARY 
+	stream_printf(cntxt->fdout,"#dictionary optimizer\n");
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG);
+#endif
+
     if ( newMalBlkStmt(mb, mb->ssize) < 0)
         return 0;
 
@@ -202,6 +206,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		GDKfree(idx);
 		return 0;
 	}
+
 	for (i=0; i< limit; i++){
         q= old[i];
 
@@ -252,6 +257,9 @@ of OID sizes. The same holds for idx bats.
 				/* let's remember them */
 				idx[getArg(q,0)] = getArg(qq,0);
 				val[getArg(q,0)] = getArg(qq,1);
+#ifdef DEBUG_OPT_DICTIONARY 
+				stream_printf(GDKout, "#Assigned %s to  %d %d\n",buf, idx[getArg(q,0)], val[getArg(q,0)]);
+#endif
 				actions++;
 				continue;
 			} else  
@@ -281,49 +289,61 @@ representation of an argument. For some operators we may postpone
 reconstruction and introduce a new dictionary pair.
 @c
 			if (  getModuleId(q) == algebraRef ){
-				if ( getFunctionId(q) == selectRef ||
-					 getFunctionId(q) == thetaselectRef ){
-					if ( isDiction(getArg(q,1)) ) {
+				if ( (getFunctionId(q) == selectRef ||
+					 getFunctionId(q) == thetaselectRef ) &&
+					isDiction(getArg(q,1))  ){
+#ifdef DEBUG_OPT_DICTIONARY 
+						stream_printf(GDKout,"#select dictionary %d %s %s\n", getArg(q,1), getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
+#endif
 						j = getArg(q,0);
 						idx[j] = idx[getArg(q,1)];
 						getArg(q,1) = val[getArg(q,1)];
 						getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
 						val[j] = getArg(q,0);
+						setVarUDFtype(mb,idx[j]);
+						setVarUDFtype(mb,val[j]);
 						pushInstruction(mb,q);
 #ifdef DEBUG_OPT_DICTIONARY 
 						stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+						stream_printf(GDKout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
 #endif
-					} else
-						pushInstruction(mb,q);
-					actions++;
-					continue;
-				}
-				if ( getFunctionId(q) == uselectRef  ||
-					 getFunctionId(q) == thetauselectRef  ){
-					if ( isDiction(getArg(q,1)) ) {
+						actions++;
+						continue;
+				} 
+				if ( (getFunctionId(q) == uselectRef  ||
+					 getFunctionId(q) == thetauselectRef ) &&
+					 isDiction(getArg(q,1)) ){
 						/* case : r:bat[:oid,:void] := algebra.uselect(dict,arg) */
 						/* become: k:= algebra.select(val,arg) ; v:= join(idx,k); r:= algebra.project(v);  */
+#ifdef DEBUG_OPT_DICTIONARY 
+						stream_printf(GDKout,"#uselect dictionary %d %s %s\n", getArg(q,1), getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
+#endif
 						setFunctionId(q, (getFunctionId(q)== uselectRef?selectRef:putName("thetaselect",11)));
-						pushInstruction(mb,q);
 						j = getArg(q,0);
+						pushInstruction(mb,q);
 						getArg(q,0)= newTmpVariable(mb, getVarType(mb,val[getArg(q,1)]));
 
 						qq= newStmt(mb, algebraRef,joinRef);
 						qq= pushArgument(mb,qq, idx[getArg(q,1)]);
 						qq= pushArgument(mb,qq, getArg(q,0));
 						getArg(q,1) = val[getArg(q,1)];
+						setVarType(mb,getArg(qq,0), newBatType(getHeadType(getVarType(mb,getArg(qq,1))), getTailType(getVarType(mb,getArg(qq,2))))) ;
+						setVarUDFtype(mb,getArg(qq,0));
 
 						q = newStmt(mb, algebraRef, projectRef);
+						q= pushArgument(mb,q, getArg(qq,0));
 						getArg(q,0) = j;
-						qq= pushArgument(mb,q, getArg(qq,0));
-					} else
-						pushInstruction(mb,q);
-					actions++;
-					continue;
+#ifdef DEBUG_OPT_DICTIONARY 
+						stream_printf(GDKout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+						stream_printf(GDKout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
+#endif
+						actions++;
+						continue;
 				}
 @-
 The arguments can be singular or both ref to a dictionary pair.
 We deal with the most prominent case provided by SQL only. 
+After a kdifference, the value table may contain too much information.
 @c
 				if ( getFunctionId(q) == kdifferenceRef   && isDiction(getArg(q,1)) && ! isDiction(getArg(q,2))){
 					j = getArg(q,0);
@@ -332,6 +352,8 @@ We deal with the most prominent case provided by SQL only.
 					getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
 					idx[j] = getArg(q,0);
 					pushInstruction(mb,q);
+					setVarUDFtype(mb,idx[j]);
+					setVarUDFtype(mb,val[j]);
 					continue;
 				} 
 @-
@@ -346,6 +368,8 @@ This means we have to possibly expand the encoding table and derive an encoding 
 						getArg(q,1) = idx[getArg(q,1)];
 						getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
 						idx[j] = getArg(q,0);
+						setVarUDFtype(mb,idx[j]);
+						setVarUDFtype(mb,val[j]);
 						pushInstruction(mb,q);
 						continue;
 					}
@@ -369,6 +393,8 @@ This means we have to possibly expand the encoding table and derive an encoding 
 					getArg(q,2) = getArg(qq,0);
 					getArg(q,0)= newTmpVariable(mb, getVarType(mb,getArg(q,1)));
 					idx[j] = getArg(q,0);
+					setVarUDFtype(mb,idx[j]);
+					setVarUDFtype(mb,val[j]);
 #ifdef DEBUG_OPT_DICTIONARY 
 					stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
 #endif
@@ -395,6 +421,7 @@ a semijoin on idx followed by the markT. The value is of no interested.
 					pushInstruction(mb,q);
 					continue;
 				}
+@c
 @-
 Combination of the next column with the pivot table.
 @c
@@ -404,33 +431,74 @@ Combination of the next column with the pivot table.
 					getArg(q,1) = idx[getArg(q,1)];
 					getArg(q,0) = newTmpVariable(mb, getVarType(mb,getArg(q,1)));
 					idx[j] = getArg(q,0);
+					setVarUDFtype(mb,idx[j]);
+					setVarUDFtype(mb,val[j]);
 					pushInstruction(mb,q);
 					continue;
 				}
 @-
-In the leftjoin you can carry along the value encoding.
+In the (left)join you can prejoin the value encoding.
 @c
-				if ( getFunctionId(q) == leftjoinRef && isDiction(getArg(q,2)) ) {
+				if ( (getFunctionId(q) == leftjoinRef  || getFunctionId(q) == joinRef) &&
+					isDiction(getArg(q,2)) && !isDiction(getArg(q,1)) ){
 					j = getArg(q,0);
 					val[j] = val[getArg(q,2)];
 					getArg(q,2) = idx[getArg(q,2)];
-					idx[j] = newTmpVariable(mb, newBatType(getHeadType(getVarType(mb,getArg(q,1))), getTailType(getVarType(mb,getArg(q,2)))) );
+					idx[j] = getArg(q,0) = newTmpVariable(mb, newBatType(getHeadType(getVarType(mb,getArg(q,1))), getTailType(getVarType(mb,getArg(q,2)))) );
 					pushInstruction(mb,q);
-					getArg(q,0) = idx[j];
+					setVarUDFtype(mb,idx[j]);
+					setVarUDFtype(mb,val[j]);
+					continue;
+				}
+				if ( (getFunctionId(q) == leftjoinRef  || getFunctionId(q) == joinRef) &&
+					!isDiction(getArg(q,2)) && isDiction(getArg(q,1)) ){
+					k = getArg(q,0);
+					j = getArg(q,1);
+					pushInstruction(mb,q);
+					getArg(q,1) = val[j];
+					getArg(q,0) = newTmpVariable(mb, newBatType(getHeadType(getVarType(mb,val[j])), getTailType(getVarType(mb,getArg(q,2)))) );
+
+					qq= newStmt(mb,algebraRef,joinRef);
+					qq= pushArgument(mb,qq, idx[j]);
+					qq= pushArgument(mb,qq, getArg(q,0));
+					getArg(qq,0) = k;
+					continue;
+				}
+				if ( (getFunctionId(q) == leftjoinRef  || getFunctionId(q) == joinRef) &&
+					isDiction(getArg(q,2)) && isDiction(getArg(q,1)) ){
+					/* j:= join((i1,v1), (i2,v2)) -> v:= join(v1,i2); i3:= join(v,v2); j:= join(i1,i3) */
+					int n;
+					j = getArg(q,0);
+					k = getArg(q,1);
+					n = getArg(q,2);
+
+					pushInstruction(mb,q);
+					getArg(q,1) = val[k];
+					getArg(q,2) = idx[n];
+					getArg(q,0) = newTmpVariable(mb, newBatType(getHeadType(getVarType(mb,getArg(q,1))), getTailType(getVarType(mb,getArg(q,2)))) );
+
+					qq= newStmt(mb,algebraRef,joinRef);
+					qq= pushArgument(mb,qq, getArg(q,0));
+					qq= pushArgument(mb,qq, val[n]);
+					qq= pushLng(mb,qq, lng_nil);
+					getArg(qq,0) = newTmpVariable(mb, newBatType(getHeadType(getVarType(mb,getArg(qq,1))), getTailType(getVarType(mb,getArg(qq,2)))) );
+
+					q= newStmt(mb,algebraRef,joinRef);
+					q= pushArgument(mb,q, idx[k]);
+					q= pushArgument(mb,q, getArg(qq,0));
+					q= pushLng(mb,q, lng_nil);
+					getArg(q,0) = j;
 					continue;
 				}
 @-
 Projections are easy. We simply drop the encoding table.
 @c
 				if ( getFunctionId(q) == projectRef && isDiction(getArg(q,1))   && q->argc==2) {
-					val[j = getArg(q,0)] = val[getArg(q,1)];
 					getArg(q,1) = idx[getArg(q,1)];
-					getArg(q,0) = newTmpVariable(mb, getVarType(mb,getArg(q,1)));
-					idx[j] = getArg(q,0);
 					pushInstruction(mb,q);
 					continue;
 				}
-			} 
+			}
 @-
 The aggregation group is more involved, because we use the expensive OID scheme to
 administer the groups. This calls for a modification of the encoding table.
@@ -449,22 +517,29 @@ Derived paths are similar to the group new.
 
 					getArg(q,2) = idx[getArg(q,2)];
 					idx[j] = getArg(q,0);
+					setVarUDFtype(mb,idx[j]);
+					setVarUDFtype(mb,val[j]);
 					pushInstruction(mb,q);
 					actions++;
 					continue;
 				}
 				if ( getFunctionId(q) == deriveRef && isDiction(getArg(q,4))   ) {
 					j = getArg(q,0);
-					qq = newStmt(mb,dictionaryRef,groupRef);
-					pushArgument(mb,qq, idx[getArg(q,4)]);
-					pushArgument(mb,qq, val[getArg(q,4)]);
-					val[j] = getArg(qq,0);
-
 					getArg(q,4) = idx[getArg(q,4)];
-					idx[j] = getArg(q,0);
+					if ( isDiction(getArg(q,3)) ){
+						val[j] = val[getArg(q,0)];
+						idx[j] = getArg(q,0);
+						setVarUDFtype(mb,idx[j]);
+						setVarUDFtype(mb,val[j]);
+					} 
 					pushInstruction(mb,q);
 					actions++;
 					continue;
+				}
+			}
+			if (  getModuleId(q) == batRef ){
+				if (getFunctionId(q) == mirrorRef && isDiction(getArg(q,1))) {
+					getArg(q,1) = idx[getArg(q,1)];
 				}
 			}
 			/* default cases call for source reconstruction */
@@ -483,8 +558,10 @@ Derived paths are similar to the group new.
 		}
 	}
 #ifdef DEBUG_OPT_DICTIONARY 
-	if (actions)
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+	if (actions) {
+		chkProgram(cntxt->nspace, mb);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG);
+	}
 #endif
 	GDKfree(idx);
 	GDKfree(val);
@@ -608,14 +685,16 @@ str DICTbind(int *idx, int *val, str * nme)
 
 static int
 DICTtype(size_t cnt){
-	if ( cnt < 256 )
+	if ( cnt < 255 )
 		return TYPE_bte;
-	if ( cnt < 1<<15 )
+	if ( cnt < (1<<15)  - 1)
 		return TYPE_sht;
-	if ( cnt < (size_t) 1<<31 )
+	if ( cnt < (size_t) (1<<31) - 1 )
 		return TYPE_int;
 	return TYPE_lng;
 }
+
+
 
 str DICTcompress(int *ret, str *nme, int *bid)
 {
@@ -626,11 +705,11 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	BUN p,q;
 	double ratio = 0.0;
 
+	(void) base;
 	if( DICTinit() )
 		throw(MAL,"dictionary.new","No catalog table");
 	if ( DICTfind(&idx,&val, &base, *nme) == 0)
 		throw(MAL,"dictionary.new", "duplicate entry");
-	(void)base;
 	b = (BAT *) BATdescriptor(*bid);
     if (b == 0)
         /* Simple ignore the binding if you can;t find the bat */
@@ -692,25 +771,26 @@ Factor out the index construction by type
 		bi = bat_iterator(@2);
 		o = (@1) @3;
 		BATloop(@2,p,q){
-			bunfastins(bv, &o, BUNtail(bi,p));
+			BUNins(bv, &o, BUNtail(bi,p),FALSE);
 			o++;
 		}
 	} break;
 @c
 	switch(typ){
-	case TYPE_bte: @:mkindex(bte,bo,0)@
-	case TYPE_sht: @:mkindex(sht,bo,0)@
-	case TYPE_int: @:mkindex(int,bo,0)@
+	case TYPE_bte: @:mkindex(bte,bo,bte_nil+1)@
+	case TYPE_sht: @:mkindex(sht,bo,sht_nil+1)@
+	case TYPE_int: @:mkindex(int,bo,int_nil+1)@
 	}
-	BATpropcheck(bv, BATPROPS_QUICK);
 	bv->hsorted = GDK_SORTED;
+	if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
+	BATpropcheck(bv, BATPROPS_QUICK);
+
 	bx = BATjoin(b,BATmirror(bv), BUN_NONE);
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.new values table " SZFMT " \n", BATcount(bv));
 #endif
 
 	if (!(bx->batDirty&2)) bx = BATsetaccess(bx, BAT_READ);
-	if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
 	BUNins(dictIndex,&bx->batCacheid, *nme, FALSE);
 	BUNins(dictValue,&bv->batCacheid, *nme, FALSE);
 	BUNins(dictBase,&b->batCacheid, *nme, FALSE);
@@ -721,19 +801,15 @@ Factor out the index construction by type
 	BBPreleaseref(*bid);
 	BBPreleaseref(bo->batCacheid);
 	DICTcommit(bx,bv, dictIndex,dictValue);
-	/* now the original BAT can be cleared */
-	BATclear(b);
+
+	/* now the storage space of the BAT can be recycled */
+	BBPreleaseref(b->batCacheid);
+	/* BATreinit(b); TO BE DONE */
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.new  %d->%d %d\n",typ,bx->batCacheid, bv->batCacheid);
 #endif
 	(void) ret;
 	return MAL_SUCCEED;
-bunins_failed:
-	if (bx) BBPreleaseref(bx->batCacheid);
-	if (bv) BBPreleaseref(bv->batCacheid);
-	BBPreleaseref(*bid);
-	BBPreleaseref(bo->batCacheid);
-	throw(MAL,"dictionary.compress","failed");
 }
 
 @-
@@ -759,7 +835,7 @@ DICTexpand(int *rval, int *val, int *bid)
 	/* check how many new elements should be added to the encoding table */
 	bn = BATsemijoin(BATmirror(b), BATmirror(rv));
 #ifdef DEBUG_OPT_DICTIONARY 
-	stream_printf(GDKout,"#dictionary.expand %d %d %d\n",*idx, *val,*bid);
+	stream_printf(GDKout,"#dictionary.expand %d %d\n",*val,*bid);
 	stream_printf(GDKout,"#dictionary.expand " SZFMT " " SZFMT " " SZFMT "\n", 
 		BATcount(rv), BATcount(b), BATcount(bn));
 #endif
