@@ -102,6 +102,12 @@ Enhancement of this optimizer to learn over time is considered a research issue.
 @- Implementation details
 We keep both dictionary encoding and original available on disk.
 Preferrably we deal with read only tables.
+
+The current limitation are the batcalc operations, which require the fully
+materialized table (mostly). Likewise, the grouping operations may call
+for reconstruction of the original. The implementation can be pushed
+further by replacement/enhancement of this libraries with dictionary 
+awareness.
 @{
 The implementation is somewhat simplified by the fact that we already
 know that the plan is semantically correct before the optimizer
