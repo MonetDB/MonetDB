@@ -3210,14 +3210,14 @@ str bat@2_2_@1( int *res, int *bid )
 	bn->T->nonil= b->T->nonil;
 	if ( b->T->nonil){
 		for (; p<q; p++)
-			*o = (@1)*p;
+			*o++ = (@1)*p;
 	} else{
 		for (; p<q; p++)
 		if (*p == @2_nil) {
-			*o = @1_nil;
+			*o++ = @1_nil;
 			bn->T->nonil= FALSE;
 		} else
-			*o = (@1)*p;
+			*o++ = (@1)*p;
 	}
 	BATsetcount(bn, BATcount(b));
     bn->tsorted = 0;
@@ -3274,7 +3274,7 @@ str bat@2_2_@1( int *res, int *bid )
 			val = *p;
 			/* see if the number fits in the data type */
 			if ((@3)(@1)val > (@3) GDK_@1_min && val > (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
-				*o = (@1)val;
+				*o++ = (@1)val;
 			} else {
 				msg= createException(SQL, "convert", "value (" @4 ") exceeds limits of type @1", val);
 				break;
@@ -3283,13 +3283,13 @@ str bat@2_2_@1( int *res, int *bid )
 	} else{
 		for (; p<q; p++)
 		if (*p == @2_nil) {
-			*o = @1_nil;
+			*o++ = @1_nil;
 			bn->T->nonil= FALSE;
 		} else {
 			val = *p;
 			/* see if the number fits in the data type */
 			if ((@3)(@1)val > (@3) GDK_@1_min && val > (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
-				*o = (@1)val;
+				*o++ = (@1)val;
 			} else {
 				msg= createException(SQL, "convert", "value (" @4 ") exceeds limits of type @1", val);
 				break;
