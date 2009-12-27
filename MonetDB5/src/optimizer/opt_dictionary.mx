@@ -767,6 +767,10 @@ str DICTcompress(int *ret, str *nme, int *bid)
 #endif
 	if ( bs) BBPreleaseref(bs->batCacheid);
 	if ( bh) BBPreleaseref(bh->batCacheid);
+	if ( ratio > 0.2 ){
+		BBPreleaseref(b->batCacheid);
+		return MAL_SUCCEED;
+	}
 
 	bo= BAThistogram(b); /* BATkunique(BATmirror(b));*/
 	if ( bo == NULL){
@@ -777,7 +781,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	
 	cnt = BATcount(bo);
 	typ= DICTtype(cnt);
-	if( typ == TYPE_lng || typ == b->ttype || ratio > 0.2){
+	if( typ == TYPE_lng || typ == b->ttype ){
 		/* don't create a new dictionary */
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.new %s not compressed\n",*nme);
