@@ -3212,6 +3212,7 @@ str bat@2_2_@1( int *res, int *bid )
 		for (; p<q; p++)
 			*o = (@1)*p;
 	} else{
+		for (; p<q; p++)
 		if (*p == @2_nil) {
 			*o = @1_nil;
 			bn->T->nonil= FALSE;
