@@ -1107,12 +1107,9 @@ isUpdateInstruction(InstrPtr p){
 		getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == setAccessRef ||
-		getFunctionId(p) == setWriteModeRef ||
 		getFunctionId(p) == replaceRef ||
-		getFunctionId(p) == deleteRef ||
-		getFunctionId(p) == clear_tableRef))
-		return TRUE;
+		getFunctionId(p) == deleteRef ))
+			return TRUE;
 	return FALSE;
 }
 int
@@ -1125,7 +1122,10 @@ hasSideEffects(InstrPtr p, int strict)
 		 getFunctionId(p) == reuseRef)
 			return TRUE;
 */
-	if( isUpdateInstruction(p) )
+	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
+	     (getFunctionId(p) == setAccessRef ||
+	 	  getFunctionId(p) == setWriteModeRef ||
+		  getFunctionId(p) == clear_tableRef))
 		return TRUE;
 
 	if (getFunctionId(p) == depositRef) 
@@ -1167,7 +1167,8 @@ hasSideEffects(InstrPtr p, int strict)
 		if( getFunctionId(p) == disconnectRef)
 			return TRUE;
 	}
-	if (strict && getModuleId(p) != groupRef && getFunctionId(p)==newRef)
+	if (strict &&  getFunctionId(p) == newRef &&
+		getModuleId(p) != groupRef )
 		return TRUE;
 
 	if ( getModuleId(p) == octopusRef){

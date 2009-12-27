@@ -144,7 +144,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		for ( k = 0; k < p->argc; k++)
 			getArg(p,k) = alias[getArg(p,k)];
 
-		if ( hasSideEffects(p, TRUE) )
+		if ( hasSideEffects(p, TRUE)  || isUpdateInstruction(p))
 			for ( k = p->retc; k < p->argc; k++)
 				lastassigned[getArg(p,k)] = i;
 @-
@@ -192,18 +192,19 @@ Like all optimizer decisions, it is safe to stop.
 		}
 
 		for (j = i - 1; j >= last; j--) 
-			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn && !hasSideEffects(q, TRUE)){
+			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn && !hasSideEffects(q, TRUE) && !isUpdateInstruction(p)){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 				stream_printf(cntxt->fdout,"CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
 					hasSameSignature(mb, p, q), 
 					hasSameArguments(mb, p, q), last);
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-				stream_printf(cntxt->fdout," :%d %d=%d %d %d %d %d %d\n", 
+				stream_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
 					q->token != ASSIGNsymbol ,
 					lastassigned[getArg(q,0)],i,
 					!hasCommonResults(p, q), 
 					!hasSideEffects(q, TRUE),
+					!isUpdateInstruction(q),
 					isLinearFlow(q),
 					isLinearFlow(p));
 #endif

@@ -135,7 +135,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			freeInstruction(p);
 			actions++;
 		} else
-		if (se || hasSideEffects(p, FALSE) || !isLinearFlow(p) || 
+		if (se || hasSideEffects(p, FALSE) || isUpdateInstruction(p) || !isLinearFlow(p) || 
 				isProcedure(mb,p)  || 
 				(p->retc == 1 && varGetProp( mb, getArg(p,0), unsafeProp ) != NULL) ||
 				p->barrier /* ==side-effect */)

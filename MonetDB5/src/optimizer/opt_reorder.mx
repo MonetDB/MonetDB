@@ -177,7 +177,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= old[i];
 		if( p->token == ENDsymbol)
 			break;
-		if( hasSideEffects(p,TRUE)  || p->barrier ){
+		if( hasSideEffects(p,TRUE) || isUpdateInstruction(p)  || p->barrier ){
 			OPTdepthfirst(cntxt, mb, i, old, dep);
 			/* remove last instruction and keep for later */
 			p= mb->stmt[mb->stop-1];

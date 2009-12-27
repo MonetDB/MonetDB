@@ -293,7 +293,7 @@ The bakeIterator currently supports a single result variable.
 			continue;
 		}
 
-		if( !hasSideEffects(p,TRUE) && p->retc == 1 &&
+		if( !hasSideEffects(p,TRUE) && !isUpdateInstruction(p) && p->retc == 1 &&
 			isLinearFlow(p) &&
 			!isBlocking(p) &&
 			getModuleId(p) != batcalcRef &&

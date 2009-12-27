@@ -237,7 +237,7 @@ after the loop, because then you may not simple move an expression.
 		stream_printf(cntxt->fdout,"move %d to stack %s\n", i, (se ?"within":"before"));
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
-		if (blkexit && se == FALSE && !hasSideEffects(p, TRUE) )
+		if (blkexit && se == FALSE && !hasSideEffects(p, TRUE) && !isUpdateInstruction(p) )
 			before[bk++] = p;
 		else
 			within[ik++] = p;

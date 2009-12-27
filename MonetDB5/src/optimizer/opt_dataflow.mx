@@ -118,7 +118,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	pushInstruction(mb,old[0]);
 
-	initProfiler(mb);
 	/* remove the inlined dataflow barriers */
 	for (i = 1; i<limit; i++) {
 		p = old[i];
@@ -142,7 +141,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p->token == ENDsymbol)
 			break;
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)
+		if (hasSideEffects(p,TRUE) || (getModuleId(p)== sqlRef && isUpdateInstruction(p)) || isUnsafeFunction(p)
 		   || blockCntrl(p) || (!dumbcopy && blockExit(p))){
 			@:flowblock@
 			pushInstruction(mb,p);

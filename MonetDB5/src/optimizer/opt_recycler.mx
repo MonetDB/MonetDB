@@ -151,7 +151,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	q= newFcnCall(mb,"recycle","prelude");
 	for (i = 1; i<limit; i++) {
 		p = old[i];
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
+		if (hasSideEffects(p,TRUE) || isUpdateInstruction(p) || isUnsafeFunction(p)){
 			if( getModuleId(p)== recycleRef ){ /*don't inline recycle instr. */
 				freeInstruction(p);
 				continue;
