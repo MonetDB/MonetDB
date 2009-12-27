@@ -2243,7 +2243,7 @@ backend_create_func(backend *be, sql_func *f)
 		InstrPtr p = getInstrPtr(curBlk,i);
 		if ( getFunctionId(p)== bindRef || getFunctionId(p)== bindidxRef)
 			continue;
-		sideeffects = sideeffects || hasSideEffects(p,FALSE);
+		sideeffects = sideeffects || hasSideEffects(p,FALSE) || isUpdateInstruction(p);
 		if ( p->token == RETURNsymbol || p->token == YIELDsymbol ||
 		     p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
