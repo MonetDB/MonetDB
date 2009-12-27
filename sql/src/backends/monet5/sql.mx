@@ -3195,28 +3195,37 @@ str
 
 str bat@2_2_@1( int *res, int *bid )
 {
-	BAT *b, *dst;
-	BATiter bi;
-	BUN p,q;
-	char *msg = NULL;
+	BAT *b, *bn;
+	@2 *p,*q;
+	@1 *o;
 
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
 	}
-	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	BATseqbase(dst, b->hseqbase);
-	BATloop(b,p,q) {
-		@2 *v = (@2*)BUNtail(bi,p);
-		@1 r;
-		msg = @2_2_@1( &r, v );
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	bn = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(bn, b->hseqbase);
+	o = (@1*) Tloc(bn,BUNfirst(bn));
+	p = (@2*) Tloc(b, BUNfirst(b));
+	q = (@2*) Tloc(b, BUNlast(b));
+	bn->T->nonil= b->T->nonil;
+	if ( b->T->nonil){
+		for (; p<q; p++)
+			*o = (@1)*p;
+	} else{
+		if (*p == @2_nil) {
+			*o = @1_nil;
+			bn->T->nonil= FALSE;
+		} else
+			*o = (@1)*p;
 	}
-	BBPkeepref( *res = dst->batCacheid);
+	BATsetcount(bn, BATcount(b));
+    bn->tsorted = 0;
+    BATkey(BATmirror(bn),FALSE);
+    if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+
+	BBPkeepref( *res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
-	return msg;
+	return MAL_SUCCEED;
 }
 @c
 
@@ -3244,26 +3253,54 @@ str @2_2_@1( @1 *res, @2 *v )
 
 str bat@2_2_@1( int *res, int *bid )
 {
-	BAT *b, *dst;
-	BATiter bi;
-	BUN p,q;
+	BAT *b, *bn;
+	@2 *p,*q;
 	char *msg = NULL;
+	@1 *o;
+	@3 val;
 
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
 	}
-	bi = bat_iterator(b);
-	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
-	BATseqbase(dst, b->hseqbase);
-	BATloop(b,p,q) {
-		@2 *v = (@2*)BUNtail(bi,p);
-		@1 r;
-		msg = @2_2_@1( &r, v );
-		if (msg)
-			break;
-		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	bn = BATnew(b->htype, TYPE_@1, BATcount(b));
+	BATseqbase(bn, b->hseqbase);
+	o = (@1*) Tloc(bn,BUNfirst(bn));
+	p = (@2*) Tloc(b, BUNfirst(b));
+	q = (@2*) Tloc(b, BUNlast(b));
+	bn->T->nonil= b->T->nonil;
+	if ( b->T->nonil){
+		for (; p<q; p++){
+			val = *p;
+			/* see if the number fits in the data type */
+			if ((@3)(@1)val > (@3) GDK_@1_min && val > (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
+				*o = (@1)val;
+			} else {
+				msg= createException(SQL, "convert", "value (" @4 ") exceeds limits of type @1", val);
+				break;
+			}
+		}
+	} else{
+		for (; p<q; p++)
+		if (*p == @2_nil) {
+			*o = @1_nil;
+			bn->T->nonil= FALSE;
+		} else {
+			val = *p;
+			/* see if the number fits in the data type */
+			if ((@3)(@1)val > (@3) GDK_@1_min && val > (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
+				*o = (@1)val;
+			} else {
+				msg= createException(SQL, "convert", "value (" @4 ") exceeds limits of type @1", val);
+				break;
+			}
+		}
 	}
-	BBPkeepref( *res = dst->batCacheid);
+	BATsetcount(bn, BATcount(b));
+    bn->tsorted = 0;
+    BATkey(BATmirror(bn),FALSE);
+    if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+
+	BBPkeepref( *res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
 }
@@ -3516,6 +3553,79 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:fnumcastdown(int,dbl)@
 @:fnumcastdown(wrd,dbl)@
 @:fnumcastdown(lng,dbl)@
+
+@-
+Code derived from the BATcast module because the old sql code was way to slow.
+Focused for the time being on DECIMAL conversion.
+@= GeneralFixed
+sql5_export str CMDconvert_@1_dec2_@2(int *ret, int *bid);
+str CMDconvert_@1_@2(int *ret, int *bid)
+{
+    BAT *b,*bn;
+    @2 *o;
+
+	if( (b= BATdescriptor(*bid)) == NULL ){ 
+         throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+   }
+
+    bn = BATnew(TYPE_void, TYPE_@2, BATcount(b));
+    BATseqbase(bn, b->hseqbase);
+    if (bn == NULL) {
+        throw(MAL, "batcalc.@2", MAL_MALLOC_FAIL);
+    }
+    bn->hsorted = b->hsorted;
+    bn->tsorted = b->tsorted;
+    bn->H->nonil = 1;
+    bn->T->nonil = b->T->nonil;
+
+    o = (@2*)Tloc(bn,BUNfirst(bn));
+
+    if (b->ttype == TYPE_void) {
+        oid t = b->tseqbase;
+        BUN i, cnt = BATcount(b);
+
+        for(i=0; i<cnt; i++)
+            *o++ = (@2)t++;
+    } else {
+        @1 *p = (@1*)Tloc(b, BUNfirst(b));
+        @1 *q = (@1*)Tloc(b, BUNlast(b));
+
+        if (b->T->nonil)
+            for(; p<q; o++, p++)
+                *o = (@2) *p;
+        else
+			if (@3) {
+            for(; p<q; o++, p++)
+                if (*p == @1_nil) {
+                    *o = @2_nil;
+                    bn->T->nonil = 0;
+                } else
+                    *o = (@2) ((*p + (*p < 0 ? -5:5))/ scales[@3]);
+			} else
+            for(; p<q; o++, p++)
+                if (*p == @1_nil) {
+                    *o = @2_nil;
+                    bn->T->nonil = 0;
+                } else
+                    *o = (@2) *p;
+
+    }
+	/* wrapup */
+    BATsetcount(bn, BATcount(b));
+    if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+    BATkey(BATmirror(bn), FALSE);
+    bn->tsorted = 0;
+
+    if (b->htype != bn->htype) {
+        BAT *r = VIEWcreate(b,bn);
+
+        BBPreleaseref(bn->batCacheid);
+        bn = r;
+    }
+    BBPkeepref(*ret = bn->batCacheid);
+    BBPreleaseref(b->batCacheid);
+    return MAL_SUCCEED;
+}
 
 @= fnumcastup
 @:simpleupcast(@1,@2)@
