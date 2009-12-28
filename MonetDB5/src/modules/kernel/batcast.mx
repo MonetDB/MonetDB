@@ -155,7 +155,7 @@ str CMDconvert_@1(int *ret, int *bid)
 	BAT *b, *bn;
 
 	@:getBATdescriptor(bid, b, "batcalc.@1")@
-	bn = BATcopy(b, b->htype, b->ttype, 2);
+	bn = BATcopy(b, b->htype, b->ttype, 0);
 	@:tstBAT("batcalc.@1")@
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
