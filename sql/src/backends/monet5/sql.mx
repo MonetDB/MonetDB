@@ -3220,9 +3220,9 @@ str bat@2_2_@1( int *res, int *bid )
 			*o++ = (@1)*p;
 	}
 	BATsetcount(bn, BATcount(b));
-    bn->tsorted = 0;
-    BATkey(BATmirror(bn),FALSE);
-    if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPkeepref( *res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3297,9 +3297,9 @@ str bat@2_2_@1( int *res, int *bid )
 		}
 	}
 	BATsetcount(bn, BATcount(b));
-    bn->tsorted = 0;
-    BATkey(BATmirror(bn),FALSE);
-    if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPkeepref( *res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3402,9 +3402,9 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			*o = (@1) ((*p +  (*p<0)?-5:5) / scales[scale]);
 	}
 	BATsetcount(bn, BATcount(b));
-    bn->tsorted = 0;
-    BATkey(BATmirror(bn),FALSE);
-    if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BBPkeepref( *res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3565,9 +3565,9 @@ str CMDconvert_@1_@2(int *ret, int *bid)
     BAT *b,*bn;
     @2 *o;
 
-	if( (b= BATdescriptor(*bid)) == NULL ){ 
-         throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
-   }
+    if( (b= BATdescriptor(*bid)) == NULL ){ 
+        throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+    }
 
     bn = BATnew(TYPE_void, TYPE_@2, BATcount(b));
     BATseqbase(bn, b->hseqbase);
@@ -3595,20 +3595,20 @@ str CMDconvert_@1_@2(int *ret, int *bid)
             for(; p<q; o++, p++)
                 *o = (@2) *p;
         else
-			if (@3) {
-            for(; p<q; o++, p++)
-                if (*p == @1_nil) {
-                    *o = @2_nil;
-                    bn->T->nonil = 0;
-                } else
-                    *o = (@2) ((*p + (*p < 0 ? -5:5))/ scales[@3]);
-			} else
-            for(; p<q; o++, p++)
-                if (*p == @1_nil) {
-                    *o = @2_nil;
-                    bn->T->nonil = 0;
-                } else
-                    *o = (@2) *p;
+            if (@3) {
+                for(; p<q; o++, p++)
+                    if (*p == @1_nil) {
+                        *o = @2_nil;
+                        bn->T->nonil = 0;
+                    } else
+                        *o = (@2) ((*p + (*p < 0 ? -5:5))/ scales[@3]);
+            } else
+                for(; p<q; o++, p++)
+                    if (*p == @1_nil) {
+                        *o = @2_nil;
+                        bn->T->nonil = 0;
+                    } else
+                        *o = (@2) *p;
 
     }
 	/* wrapup */
