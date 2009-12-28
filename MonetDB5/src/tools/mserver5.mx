@@ -169,10 +169,12 @@ monet_hello(opt *set, int setlen)
 #endif
 	char *msg = mo_find_option(set, setlen, "monet_welcome");
 
-	dbl    sz_mem_h = (dbl)(MT_npages() * MT_pagesize());
+	dbl    sz_mem_h;
 	char  *qc = " kMGTPE";
 	int    qi = 0;
 
+	monet_memory = MT_npages() * MT_pagesize();
+	sz_mem_h = (dbl) monet_memory;
 	while (sz_mem_h >= 1000.0 && qi < 6) {
 		sz_mem_h /= 1024.0;
 		qi++;

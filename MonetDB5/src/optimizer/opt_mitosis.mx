@@ -75,6 +75,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
 	VarPtr v;
+	int typewidth= 2 *sizeof(TYPE_oid);
 
 	(void)cntxt;
 	(void) stk;
@@ -101,10 +102,12 @@ base table and passes them on as a row property.
 #endif
 		   )
 			r= (BUN) v->value.val.lval;
-			if (r > rowcnt && r > PARTITION_THRESHOLD){
+			if (r >= rowcnt && r > PARTITION_THRESHOLD){
 				rowcnt = r;
 				target = q;
 				estimate++;
+				if ( getTailType(getVarType(mb, getArg(q,0))) >= TYPE_str && typewidth <  (int) (3 * sizeof(TYPE_oid)) )
+					typewidth ++;  /* make the piece smaller */ 
 				r = 0;
 			}
 		}
@@ -113,13 +116,15 @@ base table and passes them on as a row property.
 @-
 The number of pieces should be based on the footprint of the queryplan,
 such that preferrably it can be handled without swapping intermediates.
-For the time being we just go for small pieces compared to memory
-spread evenly over the threads and the common type.
+For the time being we just go for small pieces compared to memory detected upon start.
+A fictive rowcount is derived based on TYPE_lng, such that two pieces
+would fit into memory conveniently for processing. We attempt to use
+at least all threads.
 @c
-	r= (BUN) (GDKmem_inuse() /2/sizeof(oid)/GDKnr_threads); /* how much fits  */
+	r= (BUN) (monet_memory /typewidth/GDKnr_threads); /* how much fits  */
 	if (rowcnt > r )
 		pieces = (int) (rowcnt /r+1);
-	if (pieces < GDKnr_threads && rowcnt > PARTITION_THRESHOLD)
+	if (pieces < GDKnr_threads )
 		pieces = GDKnr_threads;
 	if (pieces > 256)
 		pieces = 256; /* cut off potential plan explosion */
@@ -128,9 +133,10 @@ spread evenly over the threads and the common type.
 		return 0;
 	OPTDEBUG
 		stream_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
-			"on %d threads %d pieces\n",
+			"on " BUNFMT " rows/piece %d threads %d pieces\n",
 				getVarConstant(mb, getArg(q,1)).val.sval,
 				getVarConstant(mb, getArg(q,2)).val.sval,
+				(BUN) (monet_memory /2/sizeof(oid)/GDKnr_threads),
 				GDKnr_threads,pieces);
 #ifdef _DEBUG_OPT_MITOSIS
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
