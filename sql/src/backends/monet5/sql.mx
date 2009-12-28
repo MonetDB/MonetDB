@@ -3608,7 +3608,7 @@ str CMDconvert_@1_@2(int *ret, int *bid)
                         *o = @2_nil;
                         bn->T->nonil = 0;
                     } else
-                        *o = (@2) *p;
+                        *o = (@2) ((*p + (*p < 0 ? -5:5))/ scales[@3]);
 
     }
 	/* wrapup */
