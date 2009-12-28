@@ -332,19 +332,19 @@ command append(i:bat[:any_1,:any_2], u:any_2, force:bit):bat[:any_1,:any_2]
 address BKCappend_val_force_wrap
 comment "append the value u to i";
 
-command inplace( o:bat[:any_1,:any_2], id:any_1, t:any_2) :void
+command inplace( o:bat[:any_1,:any_2], id:any_1, t:any_2) :bat[:any_1,:any_2]
 address BKCbun_inplace
 comment "inplace replace values on the given locations";
 
-command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2]) :void
+command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BKCbat_inplace
 comment "inplace replace values on the given locations";
 
-command inplace( o:bat[:any_1,:any_2], id:any_1, t:any_2, force:bit) :void
+command inplace( o:bat[:any_1,:any_2], id:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
 address BKCbun_inplace_force
 comment "inplace replace values on the given locations";
 
-command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2], force:bit) :void
+command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2], force:bit) :bat[:any_1,:any_2]
 address BKCbat_inplace_force
 comment "inplace replace values on the given locations";
 
@@ -2966,7 +2966,7 @@ BKCbun_inplace(int *r, int *bid, oid *id, ptr t)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	void_inplace5(o, *id, t,FALSE);
-	BBPreleaseref(o->batCacheid);
+	BBPreleaseref(*r = o->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2980,7 +2980,7 @@ BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	void_inplace5(o, *id, t, *force);
-	BBPreleaseref(o->batCacheid);
+	BBPreleaseref(*r = o->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2998,7 +2998,7 @@ BKCbat_inplace(int *r, int *bid, int *rid)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	void_replace_bat5(o, d,FALSE);
-	BBPreleaseref(o->batCacheid);
+	BBPreleaseref(*r = o->batCacheid);
 	BBPreleaseref(d->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -3017,7 +3017,7 @@ BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	void_replace_bat5(o, d, *force);
-	BBPreleaseref(o->batCacheid);
+	BBPreleaseref(*r = o->batCacheid);
 	BBPreleaseref(d->batCacheid);
 	return MAL_SUCCEED;
 }
