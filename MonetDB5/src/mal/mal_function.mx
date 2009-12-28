@@ -800,9 +800,14 @@ void chkDeclarations(MalBlkPtr mb){
 	int pc,i, k,l;
 	InstrPtr p;
 	short blks[MAXDEPTH], top= 0, blkId=1;
-	int *decl =(int*) alloca(sizeof(int) * mb->vtop);
+	int *decl;
 
-	memset((char*) decl, 0, sizeof(int) * mb->vtop);
+	decl = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	if ( decl == NULL) {
+		showScriptException(mb,pc,SYNTAX, MAL_MALLOC_FAIL);
+		mb->errors = 1;
+		return;
+	}
 	blks[top] = blkId;
 
 	/* all signature variables are declared at outer level */
@@ -892,9 +897,9 @@ in the context of a global stack.
 				stream_printf(GDKout,"new block %d at top %d\n",blks[top], top);
 #endif
 				} else {
-					showScriptException(mb,pc,SYNTAX,
-						"too deeply nested  MAL program");
+					showScriptException(mb,pc,SYNTAX, "too deeply nested  MAL program");
 					mb->errors++;
+					GDKfree(decl);
 					return;
 				}
 			}
@@ -917,6 +922,7 @@ leading to uninitialized variables.
 			}
 		}
 	}
+	GDKfree(decl);
 }
 @-
 Data flow analysis.
