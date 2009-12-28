@@ -272,11 +272,12 @@ static int PQ_siblings (
 static int PQ_data_compare (PQ_state * const m,
 		PQ_Entry const * const left, PQ_Entry const * const right)
 {
+	int result;
 #ifdef PriQue_STATS
 	++ m->count.key_compare;
 #endif
 
-	int const result = m->comp_fct (
+	result = m->comp_fct (
 			left->index,
 			(m->data == NULL ? NULL : m->data [left->index]),
 			right->index,
@@ -291,11 +292,11 @@ static int PQ_data_compare (PQ_state * const m,
 static inline int PQ_compare (PQ_state * const m,
 		PQ_Entry const * const left, PQ_Entry const * const right)
 {
+	int result;
 #ifdef PriQue_STATS
 	++ m->count.compare;
 #endif
 
-	int result;
 
 	if (left->normkey > right->normkey)
 		result = 1;
@@ -389,6 +390,7 @@ void PQ_xPriorityQueue (PQ_state * const m)
 
 int PQ_empty (PQ_state * const m)
 {
+	int result;
 #ifdef PriQue_DEBUG
 	PQ_AssertConsistency (m, 1, 0);
 #endif
@@ -397,7 +399,6 @@ int PQ_empty (PQ_state * const m)
 	++ m->count.empty;
 #endif
 
-	int result;
 	for (;;)
 	{
 		PQ_Entry * const entry = & m->heap [PQ_root ()];
@@ -434,6 +435,8 @@ int /* deferred */ PQ_push (
 		int const defer,
 		PQ_Data const data)
 {
+	PQ_Entry candidate;
+	int deferred;
 #ifdef PriQue_DEBUG
 	PQ_AssertConsistency (m, 1, 0);
 #endif
@@ -442,8 +445,6 @@ int /* deferred */ PQ_push (
 	++ m->count.push;
 #endif
 
-	PQ_Entry candidate;
-	int deferred;
 	candidate.index = index;
 	candidate.normkey = normkey;
 	deferred = PQ_adjust_normkey (m, & candidate, defer);
@@ -464,10 +465,10 @@ PQ_Index PQ_top (
 		int * const deferred,
 		PQ_Data * const data)
 {
+	PQ_Index index;
 #ifdef PriQue_STATS
 	++ m->count.top;
 #endif
-	PQ_Index index;
 	if (PQ_empty (m))
 		return PQ_badIndex ();
 	{
@@ -490,12 +491,13 @@ PQ_Index PQ_pop (
 		int * const deferred,
 		PQ_Data * const data)
 {
+	int l_deferred;
+	PQ_Index index;
 #ifdef PriQue_STATS
 	++ m->count.pop;
 #endif
 
-	int l_deferred;
-	PQ_Index const index = PQ_top (m, & l_deferred, data);
+	index = PQ_top (m, & l_deferred, data);
 	if (index == PQ_badIndex ())
 		return PQ_badIndex ();
 
@@ -571,6 +573,8 @@ int /* deferred */ PQ_replace (
 		int const defer,
 		PQ_Data * const data)
 {
+	PQ_Entry candidate;
+	int deferred;
 #ifdef PriQue_DEBUG
 	PQ_AssertConsistency (m, 1, 0);
 #endif
@@ -579,8 +583,6 @@ int /* deferred */ PQ_replace (
 	++ m->count.replace;
 #endif
 
-	PQ_Entry candidate;
-	int deferred;
 	candidate.index = index;
 	candidate.normkey = normkey;
 	deferred = PQ_adjust_normkey (m, & candidate, defer);
@@ -715,7 +717,7 @@ void PQ_reduce_keys (PQ_state * const m)
 	}
 
 #ifdef PriQue_DEBUG
-	PQ_AssertConsistency (m);
+	PQ_AssertConsistency (m,1,1);
 #endif
 }
 
@@ -723,14 +725,14 @@ void PQ_pass (PQ_state * const m, PQ_Entry * candidate)
 {
 	if (candidate->index != m->heap [PQ_root ()].index)
 	{
-#ifdef PriQue_STATS
-		++ m->count.search_pass;
-#endif
-
 		PQ_Entry * stack [8 * sizeof (void *)];
 		PQ_Entry ** top_of_stack = stack;
 		PQ_Index entry;
 		PQ_Index mask;
+#ifdef PriQue_STATS
+		++ m->count.search_pass;
+#endif
+
 		*top_of_stack = candidate;
 
 		entry = PQ_leaf (m, candidate->index);
@@ -818,11 +820,11 @@ char const * const PQ_tag (PQ_state const * const m, PQ_Entry const & heap)
 void PQ_print_key (
 		PQ_state const * const m,
 		char const prefix [],
-		PQ_Entry const & heap,
+		PQ_Entry const &heap,
 		char const suffix [])
 {
 	printf ("%s index %ld tag '%s' - normkey %lu",
-			prefix, long (heap.index),
+			prefix, (long) (heap.index),
 			PQ_tag (m, heap), (unsigned long) (heap.normkey));
 
 	if (PQ_is_sentinel (m, heap.normkey))
@@ -852,12 +854,12 @@ void PQ_print (PQ_state const * const m, char const header [])
 {
 
 	printf ("*** priority heap \"%s\" with %ld entries: %s ***\n",
-			m->name, long (m->capacity), header);
+			m->name, (long) (m->capacity), header);
 
 
 	for (PQ_Index entry = 0;  entry < m->nodes;  ++ entry)
 	{
-		printf ("entry %ld", long (entry));
+		printf ("entry %ld", (long) (entry));
 		PQ_print_key (m, "", m->heap [entry], "\n");
 	}
 }
@@ -935,16 +937,16 @@ void PQ_AssertConsistency (
 		{
 			printf ("=== mapping information ===\n");
 			printf ("zero entry %d, zero sibling %d\n",
-					int (m->zero_entrynode), int (m->zero_sibling));
+					(int) (m->zero_entrynode), (int) (m->zero_sibling));
 			printf ("  %5s %5s -- %s\n",
 					"index", "norm", "entry point + parents ...");
 			for (index = 0;  index < m->nodes;  ++ index)
 			{
-				printf ("  %5d --", int (index));
+				printf ("  %5d --", (int) (index));
 				for (PQ_Index up = PQ_leaf (m, index);
 						up != PQ_root ();  PQ_parent (& up))
-					printf (" %d", int (up));
-				printf (" %d\n", int (PQ_root ()));
+					printf (" %d", (int) (up));
+				printf (" %d\n", (int) (PQ_root ()));
 			}
 		}
 
@@ -966,7 +968,7 @@ void PQ_AssertConsistency (
 		if (0)
 			for (index = 0;  index < m->nodes;  ++ index)
 				printf ("  index = %3d, count = %3d\n",
-						int (index), int (map [index]));
+						(int) (index), (int) (map [index]));
 		for (index = 0;  index < m->nodes;  ++ index)
 			DebugAssert (map [index] <= 2);
 		{
@@ -987,7 +989,7 @@ void PQ_AssertConsistency (
 		if (0)
 			for (index = 0;  index < m->nodes;  ++ index)
 				tagprintf ("  index = %3d, count = %3d\n",
-						int (index), int (map [index]));
+						(int) (index), (int) (map [index]));
 		for (index = 0;  index < m->nodes;  ++ index)
 		{
 			DebugAssert (map [index] == 2);
@@ -1064,11 +1066,13 @@ void PQ_AssertConsistency (
 
 		for (index = m->nodes;  index -- > 0;  )
 		{
+			PQ_Index mask;
+			 PQ_Entry * candidate;
 			entry = PQ_leaf (m, index);
-			PQ_Index mask = PQ_leaf_mask (m, entry);
+			mask = PQ_leaf_mask (m, entry);
 			if (0)
 				tagprintf ("index %ld, entry %ld, mask %ld\n",
-						long (index), long (entry), long (mask));
+						(long) (index), (long) (entry), (long) (mask));
 
 			for (  ;  m->heap [entry].index != index;
 					PQ_parent (& entry), PQ_parent_mask (& mask))
@@ -1079,7 +1083,7 @@ void PQ_AssertConsistency (
 			if (entry == PQ_root ())
 				continue;
 
-			PQ_Entry * const candidate = & m->heap [entry];
+			candidate = & m->heap [entry];
 
 			while (PQ_parent (& entry), entry != PQ_root ())
 				if (PQ_siblings (index, m->heap [entry].index, mask))
@@ -1104,12 +1108,12 @@ static size_t aligned (void const * const ptr)
 
 void PQ_sizes (PQ_state const * const m)
 {
+	long bytes = sizeof (PQ_state);
 	printf ("sizes of priority queue '%s':", (char *) m->name);
 
 	printf (" %ld+%ld",
 			(long) (sizeof (*m) - sizeof (m->count)),
 			(long) (sizeof (m->count)));
-	long bytes = sizeof (PQ_state);
 
 	printf (" + %ld*%ld",
 			(long) (m->nodes), (long) (sizeof (PQ_Entry)));
@@ -1138,6 +1142,7 @@ static int IsPowerOf2 (size_t const x)
 
 void PQ_statistics (PQ_state const * const m, char const header [])
 {
+	unsigned long search_compare;
 	unsigned long const pmnk_compare =
 			m->count.compare - m->count.key_compare;
 	double const items = m->count.push + m->count.replace;
@@ -1147,7 +1152,7 @@ void PQ_statistics (PQ_state const * const m, char const header [])
 		PQ_Index n = m->nodes;
 		for (log2 = 0;  n > 1;  ++ log2, n /= 2) ;
 	}
-	unsigned long search_compare = m->count.compare
+	search_compare = m->count.compare
 #ifdef PriQue_DEBUG
 			- m->count.heap_check * (m->nodes - 1)
 #endif

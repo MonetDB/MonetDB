@@ -230,7 +230,7 @@ address CRKselectBounds2_@2
 comment "Similar to select but always make sure that we do not create a large piece 
 	 i.e., bigger than half the size of the cracked piece";
 
-command selectsm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit, mode:int, rounding:bit):bat[:oid,:@2]
+command selectsm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit, mode:int, rounding:bit,sliceSize:int):bat[:oid,:@2]
 address CRKselectSortMerge_@2
 comment "Slice and sort for the first query. Incrementally merge slices for the next ones.";
 
@@ -616,17 +616,10 @@ command fullAlignment(b1:bat[:oid,:@1],b2:bat[:oid,:@1],b3:bat[:oid,:@2]):void
 address CRKFullAlignment_@1_@2
 comment "Align a bat with the cracks on a map";
 
-command singlePassJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@1],b3:bat[:oid,:@2]):bat[:oid,:oid]
-address CRKOnePassJoin_@1_@2
-comment "First partition on separate pieces the left input based on the right index. Then join matching pieces";
-
 command alignJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@1],b3:bat[:oid,:@2]):bat[:oid,:oid]
 address CRKAlignJoin_@1_@2
 comment "Join and on the fly align a map with an intermediate result bat, i.e., not cracked";
 
-command alignedJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@1],b3:bat[:oid,:@2]):bat[:oid,:oid]
-address CRKAlreadyAlignedJoin_@1_@2
-comment "Join an aligned cracker bat with a map";
 @
 
 @= Joins2
