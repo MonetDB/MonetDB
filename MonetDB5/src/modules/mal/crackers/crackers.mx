@@ -241,6 +241,10 @@ comment "Slice and crack for the first query. Incrementally crack+merge slices f
 command extsort(b:bat[:oid,:@2], mode:int):bat[:oid,:@2]
 address CRKPartitionedSort_@2
 comment "Slice and sort";
+
+command extsort2(b:bat[:oid,:@2], sliceSize:int):bat[:oid,:@2]
+address CRKExternalSort_@2
+comment "Slice and external sort";
 @
 
 @= JoinSelect

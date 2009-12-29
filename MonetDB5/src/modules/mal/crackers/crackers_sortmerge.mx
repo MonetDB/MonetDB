@@ -49,6 +49,7 @@
 @= SelectFunctions_decl
 crackers_export str CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *mode, bit *rounding, int *sliceSize);
 crackers_export str CRKPartitionedSort_@1(int *vid, int *bid, int *mode);
+crackers_export str CRKExternalSort_@1(int *vid, int *bid, int *psliceSize);
 @
 
 
@@ -107,6 +108,123 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	if (*mode==3){
 		@:PQMerge(@1)@
 	}
+@
+
+@= MergeExtSort
+
+	QNodesSize=0;
+	current=head;
+	while(current!=NULL){
+		current->start=0;
+		current->tuples=BATcount(current->slice);
+		current->merged=current->tuples;
+		QNodes[QNodesSize++]=current;
+		current=current->next;
+	}
+
+{
+	PQ_state pq;
+	PQ_Index heapsize = QNodesSize;
+	PQ_Key const range = 1<<26;
+	size_t size = PQ_RequiredSpace (heapsize, 0);
+	char * space = malloc (size);
+	int resIndex;
+	int deferred;
+	oid *sh;
+	@1 *st;
+	oid mergeTuples;
+
+	rh = (oid*)Hloc(br,BUNfirst(br));
+	rt = (@1 *)Tloc(br,BUNfirst(br));
+
+	/* We use the value "as is" as PQ_Key for PQ_push();
+	 * PQ_Key is defined as unsigned int;
+	 * hence, we can (for now) only allow <= 4 byte integer types, here.
+	 *
+	 * TODO:
+	 * Either fix the implementation to indeed (correctly) support all types,
+	 * or omit the PQMerge inplementation for all non-supported types.
+	 */
+#if SIZEOF_WRD == SIZEOF_INT
+#define MAX_4_BYTE_INT_TYPE TYPE_wrd
+#else
+#if SIZEOF_OID == SIZEOF_INT
+#define MAX_4_BYTE_INT_TYPE TYPE_oid
+#else
+#define MAX_4_BYTE_INT_TYPE TYPE_int
+#endif
+#endif
+	if (TYPE_@1 <= TYPE_void || TYPE_@1 > MAX_4_BYTE_INT_TYPE)
+		throw(MAL, "crackers.sortmerge", "Type not supported by PQMerge");
+
+	PQ_PriorityQueue (& pq, "merge", space, size, heapsize, range, 0, 0, NULL, NULL);
+	
+	/*QNodes is an array of pointers to a simple struct 
+	that contains info on the slices with qualifying values*/
+
+	/*put all first values in the queue*/
+	for(j=0;j<QNodesSize;j++){
+		st=(@1  *)Tloc(QNodes[j]->slice,BUNfirst(QNodes[j]->slice)+QNodes[j]->start); 
+		PQ_push (& pq, j, (PQ_Key)*st, 0, NULL);
+	}
+
+	/*pop the smallest and push the next one from the same slice*/
+	mergeTuples=totalTuples-QNodesSize;
+	for(i=0;i<mergeTuples;i++){
+		resIndex = PQ_pop (& pq, & deferred, NULL);
+		sh=(oid *)Hloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
+		st=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
+		
+		*rh=*sh;
+		*rt=*st;
+		rh++;rt++;
+		QNodes[resIndex]->start++;
+		QNodes[resIndex]->tuples--;
+		
+		if (QNodes[resIndex]->tuples>0){
+			st++;	
+			PQ_push (& pq, resIndex, (PQ_Key)*st, 0, NULL);
+		}else {
+			BAT *fullSlice;
+			BBPunfix(QNodes[resIndex]->slice->batCacheid);
+			/*BBPreclaim(QNodes[resIndex]->slice);*/
+			if ((fullSlice = BATdescriptor(QNodes[resIndex]->batId)) == NULL)
+				throw(MAL, "crackers.sortmerge", "Cannot access descriptor");
+
+			if (QNodes[resIndex]->merged >= BATcount(fullSlice)){ 
+				i--;
+				QNodesSize--;
+			}else{
+				BAT *tempslice;
+				oid nextBatch=bucketSize>(BATcount(fullSlice)-QNodes[resIndex]->merged)?BATcount(fullSlice)-QNodes[resIndex]->merged:bucketSize;
+				tempslice=BATslice(fullSlice,QNodes[resIndex]->merged+1,QNodes[resIndex]->merged+1+nextBatch);		
+				QNodes[resIndex]->slice=BATcopy(tempslice,tempslice->htype, tempslice->ttype, TRUE);
+				BBPunfix(tempslice->batCacheid);
+				QNodes[resIndex]->start=0;
+				QNodes[resIndex]->tuples=nextBatch;	
+				QNodes[resIndex]->merged+=nextBatch;
+
+				st=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
+				PQ_push (& pq, resIndex, (PQ_Key)*st, 0, NULL);
+			}		
+			BBPunfix(fullSlice->batCacheid);
+			/*BBPreclaim(fullSlice);*/
+		}	
+	}
+
+	/*pop all remaining values*/
+	for(j=0;j<QNodesSize;j++){
+		resIndex = PQ_pop (& pq, & deferred, NULL);
+		sh=(oid *)Hloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
+		st=(@1  *)Tloc(QNodes[resIndex]->slice,BUNfirst(QNodes[resIndex]->slice)+QNodes[resIndex]->start);
+		
+		*rh=*sh;
+		*rt=*st;
+		rh++;rt++;
+		QNodes[resIndex]->start++;
+		QNodes[resIndex]->tuples--;
+	}
+}
 @
 
 @= NwayMerge
@@ -800,7 +918,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 			b->hdense = FALSE;
 			b->tdense = FALSE;
 			BATkey(BATmirror(b),FALSE);
-			BATmode(b,PERSISTENT);
 			b->batRestricted= BAT_WRITE;
 			t1=GDKusec();
 			BATmirror(BATorder(BATmirror(b)));
@@ -820,6 +937,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 				current=smNode;
 			}
 			
+			BATmode(b,PERSISTENT);
 			BBPkeepref(b->batCacheid);
 			BBPunfix(slice->batCacheid);
 
@@ -980,7 +1098,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		printf("\n Missed case! \n");
 
 	printf("Merged "OIDFMT" tuples \n",totalmergedTuples);	
-	//view = BATslice(VIEWhead_(br, BAT_READ), resStart, resEnd);
 	if (*rounding){
 		BAT *temp=BATslice(br,resStart, resEnd);
 		temp->hsorted = FALSE;
@@ -1218,6 +1335,103 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	return MAL_SUCCEED;
 @
 
+@= ExtSortBody
+	BAT *b,*bo,*br;
+	oid sliceSize,i;
+	struct sortMergeNode *current,*head=NULL;
+	@1  *rt;
+	oid *rh;
+	oid endSlice,startSlice;
+	oid totalTuples;
+	struct sortMergeNode *QNodes[1000000];
+	int QNodesSize=0;
+	int j;
+	oid tupleSize,memoryForMerging,bucketSize;
+	lng timeStart=GDKusec();
+	
+	
+	if ((bo = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "crackers.sortmerge", "Cannot access descriptor");
+
+	/*slicing*/
+	sliceSize=*psliceSize;
+	tupleSize=12;
+	memoryForMerging=1024*1024*1024;
+	bucketSize= ((memoryForMerging/tupleSize)) / (BATcount(bo)/sliceSize);
+	bucketSize=bucketSize>sliceSize?sliceSize:bucketSize;
+	printf("use buckets of "OIDFMT" tuples\n ",bucketSize);
+
+	/*sort the slices*/
+	current=NULL;
+	startSlice=0;
+	endSlice=sliceSize>BATcount(bo)?BATcount(bo):sliceSize;
+
+	while (1){
+		struct sortMergeNode *smNode;
+		BAT *tempslice;
+		BAT *slice=BATslice(bo, startSlice, endSlice);
+		b = BATcopy(slice, bo->htype, bo->ttype, TRUE);
+		BBPunfix(slice->batCacheid);
+		if ( bo->htype == TYPE_void)
+			b = BATmaterializeh(b);
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE;
+		b->tdense = FALSE;
+		BATkey(BATmirror(b),FALSE);
+		b->batRestricted= BAT_WRITE;
+		BATmirror(BATorder(BATmirror(b)));
+
+		smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
+		smNode->batId=b->batCacheid;
+		tempslice=BATslice(b,0,bucketSize);
+		smNode->slice=BATcopy(tempslice,tempslice->htype, tempslice->ttype, TRUE);
+		BBPunfix(tempslice->batCacheid);
+		smNode->next=NULL;
+		
+		if (head==NULL){
+			head=smNode;
+			current=head;
+		}
+		else{	
+			current->next = smNode;
+			current=smNode;
+		}
+		
+		/*BATsave(b);*/
+		BATmode(b,PERSISTENT);
+		BBPkeepref(b->batCacheid);
+		BBPreclaim(b);
+
+		if (endSlice==BATcount(bo))
+			break;
+		startSlice=endSlice;
+		endSlice=endSlice+sliceSize>BATcount(bo)?BATcount(bo):endSlice+sliceSize;
+	}
+	
+	br=BATnew(TYPE_oid, bo->ttype,BATcount(bo));
+	BATsetcount(br,BATcount(bo));
+	totalTuples=BATcount(br);
+	BBPunfix(bo->batCacheid);
+	
+	printf("sorting phase %lld \n",GDKusec()-timeStart);
+
+	@:MergeExtSort(@1,@2,@3,@4)@
+
+	br->hsorted = FALSE;
+	br->tsorted = TRUE;
+	br->hdense =  TRUE;
+	br->tdense =  TRUE;
+	BATkey(BATmirror(br),FALSE);
+	BATmode(br,PERSISTENT);
+	br->batRestricted= BAT_READ;
+	*vid = br->batCacheid;
+	BBPkeepref(*vid);
+
+	return MAL_SUCCEED;
+@
+
+
 @= SortMergeOperations
 static str
 SelectSortMergeBounds_@1(int *vid, int *bid, @1 *plow, @1 *phgh, bit *inclusiveLow, bit *inclusiveHgh, int *mode, bit *rounding, int *psliceSize){	
@@ -1229,6 +1443,10 @@ CRKPartitionedSort_@1(int *vid, int *bid, int *mode){
 	@:SortBody(@1,@2,@3,@4,)@
 }
 
+str
+CRKExternalSort_@1(int *vid, int *bid, int *psliceSize){	
+	@:ExtSortBody(@1,@2,@3,@4,)@
+}
 @
 
 @}
