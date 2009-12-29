@@ -164,6 +164,12 @@ at least all threads.
 			pushInstruction(mb,p);
 			continue;
 		}
+		/* Don't split the (index) bat if we already have identified a range */
+		/* This will happen if we inline separately optimized routines */
+		if ( p->argc != 5 ){
+			pushInstruction(mb,p);
+			continue;
+		}
 		if (strcmp(schema, getVarConstant(mb, getArg(p,1)).val.sval) ||
 		    strcmp(table, getVarConstant(mb, getArg(p,2)).val.sval)){
 			pushInstruction(mb,p);
@@ -195,6 +201,7 @@ at least all threads.
 
 			k= getArg(q,0)= newTmpVariable(mb,tpe);
 			setVarUDFtype(mb,k);
+			setVarUsed(mb,k);
 			if (getFunctionId(p) == binddbatRef) {
 				varSetProp(mb, k, PropertyIndex("tlb"), op_gte, (ptr) &low.value);
 				varSetProp(mb, k, PropertyIndex("tub"), op_lt, (ptr) &hgh.value);
