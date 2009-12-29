@@ -169,6 +169,10 @@ at least all threads.
 			pushInstruction(mb,p);
 			continue;
 		}
+		/* we keep the original bind operation, because it allows
+			for easy undo when the mergtable can not do something
+		*/
+		pushInstruction(mb,p);
 		
 		slice= (BUN) (rowcnt/pieces);
 		hgh.value.vtype= low.value.vtype= TYPE_oid;
@@ -191,7 +195,6 @@ at least all threads.
 
 			k= getArg(q,0)= newTmpVariable(mb,tpe);
 			setVarUDFtype(mb,k);
-			setVarUsed(mb,k);
 			if (getFunctionId(p) == binddbatRef) {
 				varSetProp(mb, k, PropertyIndex("tlb"), op_gte, (ptr) &low.value);
 				varSetProp(mb, k, PropertyIndex("tub"), op_lt, (ptr) &hgh.value);

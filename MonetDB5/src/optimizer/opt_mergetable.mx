@@ -1825,8 +1825,10 @@ fail:
 		mb->stop = oldtop;
 		for(i=0; i<mb->stop; i++) {
 			InstrPtr p = mb->stmt[i];
-			if (p && getModuleId(p) == matRef && getFunctionId(p) == newRef)
-				getFunctionId(p) = packRef;
+			if (p && getModuleId(p) == matRef && getFunctionId(p) == newRef){
+				/* simply drop this function, for the base binding is available */
+				p->token = NOOPsymbol;
+			}
 		}
 #ifdef DEBUG_OPT_MERGETABLE
 		stream_printf(GDKout,"Result of multi table optimizer FAILED\n");

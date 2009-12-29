@@ -115,6 +115,10 @@ starts its work.
 @mal
 module dictionary;
 
+command initialize()
+address DICTinitialize
+comment "Intialize the dictionary catalog if needed";
+
 command bind(nme:str) (idx:bat[:oid,:any_1], val:bat[:any_1,:any_2])
 address DICTbind
 comment "Localise the dictionary";
@@ -153,6 +157,7 @@ comment "Capitalize dictionary encodings ";
 #include "opt_support.h"
 
 /* #define DEBUG_OPT_DICTIONARY   */
+opt_export str DICTinitialize(int *ret);
 opt_export str DICTbind(int *idx, int *val, str * nme);
 opt_export str DICTexpand(int *rval, int *val, int *bid);
 opt_export str DICTencode(int *ridx, int *val, int *bid);
@@ -620,6 +625,11 @@ DICTcommit(BAT *b1, BAT *b2, BAT *b3, BAT *b4 )
 	BBPreclaim(bl);
 }
 
+@-
+We should distinguish between enabling the dictionary optimizer
+and initialization of the current run.
+@c
+
 int
 DICTinit(void)
 {
@@ -646,47 +656,55 @@ DICTinit(void)
 			mal_unset_lock(mal_contextLock, "dictionary");
 			return 0;
 		}
-
-		b = BATnew(TYPE_int,TYPE_str, 255);
-		if (b == NULL) {
-			mal_unset_lock(mal_contextLock, "dictionary");
-			return -1;
-		}
-		bn = BATnew(TYPE_int, TYPE_str, 255);
-		if (bn == NULL) {
-			BBPreleaseref(b->batCacheid);
-			mal_unset_lock(mal_contextLock, "dictionary");
-			return -1;
-		}
-		bs = BATnew(TYPE_int, TYPE_str, 255);
-		if (bs == NULL) {
-			BBPreleaseref(b->batCacheid);
-			BBPreleaseref(bn->batCacheid);
-			mal_unset_lock(mal_contextLock, "dictionary");
-			return -1;
-		}
-
-		BATkey(b, TRUE);
-		BBPrename(b->batCacheid, "dictIndex");
-		BATmode(b, PERSISTENT);
-		BBPkeepref(b->batCacheid);
-		dictIndex = b;
-
-		BATkey(bn, TRUE);
-		BBPrename(bn->batCacheid, "dictValue");
-		BATmode(bn, PERSISTENT);
-		BBPkeepref(bn->batCacheid);
-		dictValue = bn;
-
-		BATkey(bs, TRUE);
-		BBPrename(bs->batCacheid, "dictBase");
-		BATmode(bs, PERSISTENT);
-		BBPkeepref(bs->batCacheid);
-		dictBase = bs;
-		mal_unset_lock(mal_contextLock, "dictionary");
-		DICTcommit(dictIndex,dictValue, dictBase,0);
 	}
     return 0;
+}
+
+str DICTinitialize(int *ret)
+{
+    BAT *b, *bn, *bs;
+	if ( DICTinit() == 0)
+		return MAL_SUCCEED;
+	b = BATnew(TYPE_int,TYPE_str, 255);
+	if (b == NULL) {
+		mal_unset_lock(mal_contextLock, "dictionary");
+        throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATnew(TYPE_int, TYPE_str, 255);
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
+		mal_unset_lock(mal_contextLock, "dictionary");
+        throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
+	}
+	bs = BATnew(TYPE_int, TYPE_str, 255);
+	if (bs == NULL) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bn->batCacheid);
+		mal_unset_lock(mal_contextLock, "dictionary");
+        throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
+	}
+
+	BATkey(b, TRUE);
+	BBPrename(b->batCacheid, "dictIndex");
+	BATmode(b, PERSISTENT);
+	BBPkeepref(b->batCacheid);
+	dictIndex = b;
+
+	BATkey(bn, TRUE);
+	BBPrename(bn->batCacheid, "dictValue");
+	BATmode(bn, PERSISTENT);
+	BBPkeepref(bn->batCacheid);
+	dictValue = bn;
+
+	BATkey(bs, TRUE);
+	BBPrename(bs->batCacheid, "dictBase");
+	BATmode(bs, PERSISTENT);
+	BBPkeepref(bs->batCacheid);
+	dictBase = bs;
+	mal_unset_lock(mal_contextLock, "dictionary");
+	DICTcommit(dictIndex,dictValue, dictBase,0);
+	(void) ret;
+	return MAL_SUCCEED;
 }
 
 str DICTbind(int *idx, int *val, str * nme)
