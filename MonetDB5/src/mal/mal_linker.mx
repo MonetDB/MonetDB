@@ -304,10 +304,14 @@ void
 initLibraries()
 {
 	int i;
+	str msg;
+
 	noDlopen = TRUE;
 	if(noDlopen == FALSE)
 	for(i=0;preloaded[i];i++) {
-	    loadLibrary(preloaded[i],FALSE);
+	    msg = loadLibrary(preloaded[i],FALSE);
+		if ( msg )
+			stream_printf(GDKerr,"#%s\n",msg);
 	}
 }
 

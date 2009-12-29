@@ -327,7 +327,7 @@ findBox(str name)
 	mal_set_lock(mal_contextLock, "findBox");
 
 	for (i = 0; i < MAXSPACES; i++)
-		if (box[i] != NULL && idcmp(name, box[i]->name) == 0) {
+		if (box[i] != NULL && name && idcmp(name, box[i]->name) == 0) {
 #ifdef DEBUG_MAL_BOX
 			stream_printf(GDKout, "found the box '%s' %d\n", name, i);
 #endif

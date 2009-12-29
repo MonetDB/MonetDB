@@ -1008,6 +1008,7 @@ All properties identified below are maintained, because this allows
 for easy integration with SQL.
 @c
 static int TRACE_init=0;
+static int TRACE_event=0;
 static BAT *TRACE_id_event=0;
 static BAT *TRACE_id_time=0;
 static BAT *TRACE_id_ticks=0;
@@ -1053,10 +1054,15 @@ TRACEcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "trace_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b)
-		return b;
+	if (b ) {
+		if ( b->htype == TYPE_int)
+			/* old code */
+			BBPreclaim(b);
+		else
+			return b;
+	}
 
-	b = BATnew(TYPE_void, tt, 256);
+	b = BATnew(TYPE_void, tt, 1<<16);
 	BATseqbase(b,0);
 	if (b == NULL)
 		return NULL;
@@ -1133,17 +1139,21 @@ clearTrace(void)
 {
 	if (initTrace() )
 		return;
+	mal_set_lock(mal_contextLock, "cleanup");
 	/* drop all trace tables */
-	BATclear(TRACE_id_event);
-	BATclear(TRACE_id_time);
-	BATclear(TRACE_id_ticks);
-	BATclear(TRACE_id_pc);
-	BATclear(TRACE_id_stmt);
-	BATclear(TRACE_id_type);
-	BATclear(TRACE_id_thread);
-	BATclear(TRACE_id_user);
-	BATclear(TRACE_id_reads);
-	BATclear(TRACE_id_writes);
+	BBPclear(TRACE_id_event->batCacheid);
+	BBPclear(TRACE_id_time->batCacheid);
+	BBPclear(TRACE_id_ticks->batCacheid);
+	BBPclear(TRACE_id_pc->batCacheid);
+	BBPclear(TRACE_id_stmt->batCacheid);
+	BBPclear(TRACE_id_type->batCacheid);
+	BBPclear(TRACE_id_thread->batCacheid);
+	BBPclear(TRACE_id_user->batCacheid);
+	BBPclear(TRACE_id_reads->batCacheid);
+	BBPclear(TRACE_id_writes->batCacheid);
+	TRACE_init= 0;
+	mal_unset_lock(mal_contextLock, "cleanup");
+	initTrace();
 }
 
 BAT *
@@ -1224,8 +1234,6 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	str stmt, c;
 	InstrPtr pci= getInstrPtr(mb,pc);
 
-	if (TRACE_init == 0)
-		return;
 	if (delayswitch > 0) {
 		/* first call to profiled */
 		delayswitch--;
@@ -1243,8 +1251,12 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
-	mal_set_lock(profileLock, "profileLock");
+	if ( initTrace() )
+		return ;
+	if (TRACE_init == 0)
+		return;
 
+	mal_set_lock(profileLock, "profileLock");
 	/* update the Trace tables */
 	snprintf(buf, 1024, "%s.%s[%d]", 
 		getModuleId(getInstrPtr(mb, 0)), 
@@ -1255,8 +1267,8 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	BUNappend(TRACE_id_user, &idx, FALSE);
 	
-	BUNappend(TRACE_id_event, &TRACE_init, FALSE);
-	TRACE_init++;
+	BUNappend(TRACE_id_event, &TRACE_event, FALSE);
+	TRACE_event++;
 
 	{	char *tbuf, *c;
 
@@ -1351,6 +1363,7 @@ have to safe monitor information.
 @c
 void initProfiler(MalBlkPtr mb){
 	if( mb->profiler) return;
+	initTrace();
 	mb->profiler = (ProfPtr) GDKzalloc(mb->ssize*sizeof(ProfRecord));
 }
 
