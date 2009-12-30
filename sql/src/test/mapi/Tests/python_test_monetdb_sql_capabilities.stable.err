@@ -81,7 +81,9 @@ test_CHAR (__main__.Test_Monetdb_Sql) ... ok
 test_DATE (__main__.Test_Monetdb_Sql) ... ok
 test_DATETIME (__main__.Test_Monetdb_Sql) ... ok
 test_DECIMAL (__main__.Test_Monetdb_Sql) ... ok
+test_DOUBLE (__main__.Test_Monetdb_Sql) ... ok
 test_INT (__main__.Test_Monetdb_Sql) ... ok
+test_REAL (__main__.Test_Monetdb_Sql) ... ok
 test_TEXT (__main__.Test_Monetdb_Sql) ... ok
 test_TIME (__main__.Test_Monetdb_Sql) ... ok
 test_TIMESTAMP (__main__.Test_Monetdb_Sql) ... ok
@@ -92,7 +94,7 @@ test_transactions (__main__.Test_Monetdb_Sql) ... ok
 test_truncation (__main__.Test_Monetdb_Sql) ... ok
 
 ----------------------------------------------------------------------
-Ran 14 tests
+Ran 16 tests
 
 OK
 
