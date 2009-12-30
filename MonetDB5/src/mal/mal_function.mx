@@ -804,7 +804,7 @@ void chkDeclarations(MalBlkPtr mb){
 
 	decl = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if ( decl == NULL) {
-		showScriptException(mb,pc,SYNTAX, MAL_MALLOC_FAIL);
+		showScriptException(mb,0,SYNTAX, MAL_MALLOC_FAIL);
 		mb->errors = 1;
 		return;
 	}
