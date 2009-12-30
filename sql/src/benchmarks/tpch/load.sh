@@ -22,7 +22,7 @@ set -x
 PWD=`pwd`
 echo $PWD
 
-SQL='mclient -lsql -umonetdb -Pmonetdb'
+SQL='mclient -lsql'
 if [ $# -eq 1 ]; then
 	SQL="$1"
 fi

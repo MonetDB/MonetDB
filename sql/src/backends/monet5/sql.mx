@@ -3202,7 +3202,8 @@ str bat@2_2_@1( int *res, int *bid )
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
 	}
-	bn = BATnew(b->htype, TYPE_@1, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
+	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
@@ -3222,10 +3223,17 @@ str bat@2_2_@1( int *res, int *bid )
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
+
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
-	BBPkeepref( *res = bn->batCacheid);
-	BBPunfix(b->batCacheid);
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*res = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @c
@@ -3263,8 +3271,9 @@ str bat@2_2_@1( int *res, int *bid )
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "batcalc.@2_2_@1", "Cannot access descriptor");
 	}
-	bn = BATnew(b->htype, TYPE_@1, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
 	BATseqbase(bn, b->hseqbase);
+	bn->H->nonil = 1;
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
@@ -3299,10 +3308,17 @@ str bat@2_2_@1( int *res, int *bid )
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
+
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
-	BBPkeepref( *res = bn->batCacheid);
-	BBPunfix(b->batCacheid);
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*res = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return msg;
 }
 @-
@@ -3385,7 +3401,8 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "batcalc.@2_dec2_@1", "Cannot access descriptor");
 	}
-	bn = BATnew(b->htype, TYPE_@1, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_@1, BATcount(b));
+	bn->hsorted = b->hsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
@@ -3404,10 +3421,17 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
+
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
-	BBPkeepref( *res = bn->batCacheid);
-	BBPunfix(b->batCacheid);
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	BBPkeepref(*res = bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return msg;
 }
 
@@ -4447,11 +4471,9 @@ Take a SQL table and compress its columns using the dictionary compression schem
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_schema	*s;
 	sql_table 	*t;
-	sql_column	*c;
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
-	BAT *b;
 	node *o;
 	char buf[BUFSIZ], *nme= buf;
 	int ret;
@@ -4468,14 +4490,30 @@ Take a SQL table and compress its columns using the dictionary compression schem
 	/* actually build the hash on the multi-column primary key */
 
 	for (o = t->columns.set->h; o; o = o->next) {
-		c = o->data;
+		BAT *b, *e;
+		sql_delta *d;
+		sql_column	*c = o->data;
+
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL)
-			throw(MAL,"sql.cluster","Can not access descriptor");
+			throw(MAL,"sql.compress","Can not access descriptor");
+		e = BATnew(b->htype, b->ttype, 0);
+		BATsetaccess(e, BAT_READ);
+		d = c->data;
+		d->bid = 0;
+		d->ibase = 0;
+		d->ibid = e->batCacheid; /* use the insert bat */
+		c->base.wtime = c->base.rtime = tr->stime;
 		snprintf(buf,BUFSIZ,"%s/%s/%s/0", *sch, *tbl, c->base.name);
 		msg = @1;
 		BBPreleaseref(b->batCacheid);
+		BBPdecref(b->batCacheid, TRUE);
+		BBPkeepref(e->batCacheid);
 	}
+	/* bat was cleared */
+	t->cleared = 1;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 	return MAL_SUCCEED;
 @c
 str SQLcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

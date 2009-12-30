@@ -306,9 +306,8 @@ bat_max_@1length(BAT *b)
 			return NULL;
 		s++;
 		for( i = 0; *s && i < t->scale; i++, s++) {
-			if (*s < '0' || *s > '9') {
+			if (*s < '0' || *s > '9') 
 				return NULL;
-			}
 			res *= 10;
 			res += (*s-'0');
 		}
