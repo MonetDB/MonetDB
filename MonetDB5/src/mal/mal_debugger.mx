@@ -1637,6 +1637,7 @@ mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1){
 	mal_set_lock(mal_contextLock,"trapped procedure");
 	if ( trapped_mb == 0){
 		stream_printf(cntxt->fdout,"#no trapped function\n");
+		mal_unset_lock(mal_contextLock,"trapped procedure");
 		return MAL_SUCCEED;
 	}
 	c = trapped_cntxt;

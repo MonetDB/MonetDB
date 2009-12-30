@@ -609,7 +609,7 @@ DFLOWclaim(lng claim)
 	if ( claim == 0)
 		return 0;
 
-    mal_set_lock(mal_contextLock, "DFLOWdelay");
+    	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if ( memorypool == 0 && memoryclaims == 0)
 		memorypool = MT_npages() * MT_pagesize();
 	
@@ -637,7 +637,7 @@ DFLOWclaim(lng claim)
 	stream_printf(GDKout,"DFLOWrelease %d " LLFMT " " LLFMT"\n",
 		memoryclaims, memorypool, claim);
 #endif
-    mal_unset_lock(mal_contextLock, "DFLOWdelay");
+    	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return memoryclaims;
 }
 @-
@@ -1244,8 +1244,10 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		flow->todo = q_create(256); 
 
 		/* queues are available? */
-		if ( flow->done == NULL || flow->todo == NULL)
+		if ( flow->done == NULL || flow->todo == NULL) {
+			mal_unset_lock(mal_contextLock, "runMALdataflow");
 			return MAL_SUCCEED;
+		}
 
 		flow->worker = NULL;
 		flow->nway = GDKnr_threads;

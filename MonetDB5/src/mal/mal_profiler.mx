@@ -1108,6 +1108,7 @@ initTrace(void)
 	) {
 		mal_unset_lock(mal_contextLock, "trace");
 		cleanupProfiler();
+		mal_set_lock(mal_contextLock, "trace");
 	 } else
 		TRACE_init = 1;
 	mal_unset_lock(mal_contextLock, "trace");

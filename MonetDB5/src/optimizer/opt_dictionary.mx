@@ -233,8 +233,12 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 
 	for (i=0; i< limit; i++){
-        q= old[i];
+        	q= old[i];
 
+		if (getModuleId(q) == NULL) {
+			pushInstruction(mb, q);
+			continue;
+		}
 		/* replace the BAT if a dictionary exists */
 		buf[0]= 0;
 		if ( getModuleId(q) == sqlRef && getFunctionId(q) == bindRef)
@@ -633,7 +637,7 @@ and initialization of the current run.
 int
 DICTinit(void)
 {
-    BAT *b, *bn, *bs;
+    	BAT *b, *bn, *bs;
 	if ( dictIndex == NULL){
 		mal_set_lock(mal_contextLock, "dictionary");
 		if ( dictIndex ){
@@ -644,44 +648,46 @@ DICTinit(void)
 		b = BATdescriptor(BBPindex("dictIndex"));
 		if (b) {
 			bn = BATdescriptor(BBPindex("dictValue"));
-			if (bn ){
+			if (bn){
 				bs = BATdescriptor(BBPindex("dictBase"));
 				if ( bs ) {
 					dictIndex = b;
 					dictValue = bn;
 					dictBase = bs;
 				}
-			} else
+			} else {
 				BBPreleaseref(b->batCacheid);
+			}
 			mal_unset_lock(mal_contextLock, "dictionary");
 			return 0;
 		}
 	}
-    return 0;
+    	return 0;
 }
 
 str DICTinitialize(int *ret)
 {
-    BAT *b, *bn, *bs;
+    	BAT *b, *bn, *bs;
 	if ( DICTinit() == 0)
 		return MAL_SUCCEED;
+	mal_set_lock(mal_contextLock, "dictionary");
 	b = BATnew(TYPE_int,TYPE_str, 255);
 	if (b == NULL) {
 		mal_unset_lock(mal_contextLock, "dictionary");
-        throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
+        	throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATnew(TYPE_int, TYPE_str, 255);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
 		mal_unset_lock(mal_contextLock, "dictionary");
-        throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
+        	throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
 	}
 	bs = BATnew(TYPE_int, TYPE_str, 255);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(bn->batCacheid);
 		mal_unset_lock(mal_contextLock, "dictionary");
-        throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
+        	throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
 	}
 
 	BATkey(b, TRUE);
