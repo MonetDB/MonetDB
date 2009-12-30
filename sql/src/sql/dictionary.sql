@@ -19,3 +19,5 @@ create procedure compress (s string, t string)
 create procedure decompress (s string, t string)
     external name sql.decompress;
 
+create procedure initializeDictionary ()
+    external name dictionary.initialize;
