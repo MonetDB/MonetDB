@@ -1804,6 +1804,7 @@ because they are not needed for the execution.
 For the time being, they are no-ops.
 @c
 	(void) stk; 
+	chkProgram(cntxt->nspace,mb);
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"Result of multi table optimizer\n");
 	(void) optimizerCheck(cntxt,mb,"merge test",1,0,0);
@@ -1811,7 +1812,7 @@ For the time being, they are no-ops.
 #endif
 
 fail:
-	if( error){
+	if( error || mb->errors){
 		actions= 0;
 #ifdef DEBUG_OPT_MERGETABLE
 		stream_printf(GDKout, "## %s.%s\n", getModuleId(p), getFunctionId(p));
