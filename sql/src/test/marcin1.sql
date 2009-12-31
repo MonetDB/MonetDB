@@ -15,7 +15,7 @@ commit;
 -- and now some strange queries and even stranger results
 
 -- cartesian-product missing
-select * from t1,t2;
+select * from t1,t2 order by t1.id, t1.val, t2.id, t2.val;
 
 -- These actually give good results (cartesian-product like):
 select t1.id,t2.id from t1,t2 where t1.id<>t2.id;
