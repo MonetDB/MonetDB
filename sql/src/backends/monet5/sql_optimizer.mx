@@ -598,12 +598,14 @@ addQueryToCache(Client c)
 	str optimizer;
 	MalBlkPtr mb;
 	ValRecord src;
+	mvc *m;
 
 	insertSymbol(c->nspace, c->curprg);
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
 	mb = c->curprg->def;
 	chkProgram(c->nspace, mb);
+	m = ((mvc *) c->state[MAL_SCENARIO_OPTIMIZE]);
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "ADD QUERY TO CACHE\n");
 	printFunction(GDKout,mb,0,LIST_MAL_ALL);
@@ -628,6 +630,8 @@ to allow inspection.
 	stack_set_var(be->mvc, "optimizer", VALset(&src, TYPE_str, setOptimizers(optimizer)));
 	addOptimizers(c,mb);
 	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
+	if ( m->emod & mod_debug )
+		addtoMalBlkHistory(mb,"getStatistics");
 	optimizeMALBlock(c,mb);
 
 	/* time to execute the optimizers */
