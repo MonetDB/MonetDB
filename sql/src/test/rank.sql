@@ -45,8 +45,8 @@ select RANK() over (PARTITION BY id) as foo, id, k from ranktest;
 select RANK() over (PARTITION BY id ORDER BY id, k) as foo, id, k from ranktest;
 select RANK() over (ORDER BY id, k) as foo, id, k from ranktest;
 
-select DENSE_RANK() over () as foo, id, k from ranktest;
-select DENSE_RANK() over (PARTITION BY id) as foo, id, k from ranktest;
-select DENSE_RANK() over (PARTITION BY id ORDER BY id, k) as foo, id, k from ranktest;
-select DENSE_RANK() over (ORDER BY id, k) as foo, id, k from ranktest;
+select DENSE_RANK() over () as foo, id, k from ranktest order by k;
+select DENSE_RANK() over (PARTITION BY id) as foo, id, k from ranktest order by k;
+select DENSE_RANK() over (PARTITION BY id ORDER BY id, k) as foo, id, k from ranktest order by k;
+select DENSE_RANK() over (ORDER BY id, k) as foo, id, k from ranktest order by k;
 drop table ranktest;

@@ -1,4 +1,5 @@
 -- show behavior of optimizer plans
+set optimizer='default_pipe'; -- overrule others
 
 select optimizer;
 set optimizer='off';
