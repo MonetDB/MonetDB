@@ -1,3 +1,4 @@
+set optimizer='default_pipe';	-- to avoid different answers
 set trace = 'none'; -- non-documented feature to not get any trace output
 
 create function tracelog() 
