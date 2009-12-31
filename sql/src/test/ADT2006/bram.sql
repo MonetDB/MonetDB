@@ -332,7 +332,7 @@ GROUP BY v.name HAVING count(w.name) >= 2;
 
 
 select i.name, count(v.victim) AS cases from inspector i JOIN inspector_victim v ON (v.inspector = i.name)
-GROUP BY i.name HAVING count(v.victim) > 1;
+GROUP BY i.name HAVING count(v.victim) > 1 order by i.name;
 
 
 (SELECT 'Detective' as grade, count(name) AS inspectors FROM inspector
