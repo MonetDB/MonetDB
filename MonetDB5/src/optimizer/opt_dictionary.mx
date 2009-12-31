@@ -591,7 +591,7 @@ Derived paths are similar to the group new.
 	}
 #ifdef DEBUG_OPT_DICTIONARY 
 	if (actions) {
-		chkProgram(cntxt->nspace, mb);
+		chkTypes(cntxt->nspace, mb, TRUE);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG);
 	}
 #endif

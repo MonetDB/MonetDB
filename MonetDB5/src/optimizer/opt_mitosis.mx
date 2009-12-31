@@ -79,6 +79,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void)cntxt;
 	(void) stk;
+	if ( varGetProp( mb, getArg(getInstrPtr(mb,0),0), unsafeProp ) != NULL){
+		/* don't apply mitosis, it is an SQL defined function */
+		return 0;
+	}
 	
 	/* locate the largest non-partitioned table */
 	for (i=1; i< mb->stop; i++){

@@ -1792,24 +1792,26 @@ It requires MAT materialization.
 		if (p->argc >= 2)
 			propagateProp(mb, p, getArg(p,1));
 	}
-	for(i=0; i<slimit; i++)
-		if (old[i]) {
-			assert(!check_instr(mb, old[i]));
-			freeInstruction(old[i]);
-		}
-	GDKfree(old);
 @-
 As a final optimization, we could remove the mal.new definitions,
 because they are not needed for the execution.
 For the time being, they are no-ops.
 @c
 	(void) stk; 
-	chkProgram(cntxt->nspace,mb);
+	chkTypes(cntxt->nspace,mb, TRUE);
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"Result of multi table optimizer\n");
 	(void) optimizerCheck(cntxt,mb,"merge test",1,0,0);
 	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
+	if ( mb->errors == 0) {
+		for(i=0; i<slimit; i++)
+			if (old[i]) {
+				assert(!check_instr(mb, old[i]));
+				freeInstruction(old[i]);
+			}
+		GDKfree(old);
+	}
 
 fail:
 	if( error || mb->errors){

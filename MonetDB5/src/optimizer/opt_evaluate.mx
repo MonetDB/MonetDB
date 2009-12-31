@@ -123,8 +123,10 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb){
 	mb->stop = j;
 	for( ; j<i; j++)
 		mb->stmt[j] = NULL;
-	if (action)
-		chkProgram(cntxt->nspace,mb);
+	if (action){
+		chkTypes(cntxt->nspace,mb,TRUE);
+		return mb->errors?0:action;
+	}
 	return action;
 }
 static int
