@@ -25,12 +25,29 @@ Over..
 # 13:54:35 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=34075 
 # 13:54:35 >  
 
+[ 1	]
 % sys.t_int # table_name
 % i # name
 % int # type
 % 1 # length
+[ NULL	]
+[ 2	]
+% sys.t_int # table_name
+% i # name
+% int # type
+% 2 # length
+[ NULL	]
+[ 3	]
+[ -4	]
+% sys.t_int # table_name
+% i # name
+% int # type
+% 2 # length
+[ NULL	]
+[ 3	]
+[ -4	]
 
-# 22:56:12 >  
-# 22:56:12 >  Done.
-# 22:56:12 >  
+# 09:41:35 >  
+# 09:41:35 >  Done.
+# 09:41:35 >  
 
