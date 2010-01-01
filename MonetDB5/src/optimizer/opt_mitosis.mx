@@ -134,8 +134,8 @@ at least all threads.
 	OPTDEBUG
 		stream_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
 			"on " BUNFMT " rows/piece %d threads %d pieces\n",
-				getVarConstant(mb, getArg(q,1)).val.sval,
-				getVarConstant(mb, getArg(q,2)).val.sval,
+				getVarConstant(mb, getArg(target,1)).val.sval,
+				getVarConstant(mb, getArg(target,2)).val.sval,
 				(BUN) (monet_memory /2/sizeof(oid)/GDKnr_threads),
 				GDKnr_threads,pieces);
 #ifdef _DEBUG_OPT_MITOSIS

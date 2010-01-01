@@ -443,9 +443,10 @@ when scheduled correctly, would not lead to duplicate work.
 		return 0;
 	}
 
-	if ( newMalBlkStmt(mb, mb->ssize) < 0)
+	if ( newMalBlkStmt(mb, mb->ssize) < 0){
 		GDKfree(tentacle);
 		return 0;
+	}
 	pushInstruction(mb, old[0]);
 
 	sig= old[0];
