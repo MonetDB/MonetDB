@@ -2252,6 +2252,8 @@ backend_create_func(backend *be, sql_func *f)
 		varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 	if ( sideeffects)
 		varSetProp(curBlk, getArg(curInstr, 0), unsafeProp, op_eq, NULL);
+	/* SQL function definitions meant for inlineing should not be optimized before */
+	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
 	stmt_destroy(s);
 	addQueryToCache(c);
 	if (backup) 
