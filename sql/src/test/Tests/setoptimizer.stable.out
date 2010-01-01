@@ -58,18 +58,18 @@ Over..
 % . # table_name
 % single_value # name
 % varchar # type
-% 185 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
+% 177 # length
+[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
 % . # table_name
 % single_value # name
 % varchar # type
-% 185 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
+% 177 # length
+[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
 % . # table_name
 % single_value # name
 % varchar # type
-% 185 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
+% 177 # length
+[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
 
 # 20:30:45 >  
 # 20:30:45 >  Done.
