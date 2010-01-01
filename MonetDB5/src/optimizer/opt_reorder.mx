@@ -43,6 +43,14 @@ If you are not careful, you will end up with
 the breathfirst plan again.
 This track is abandonded in favor of a combination
 of octopus and recycler on a single platform.
+
+Beware, variables can be assigned a value multiple times.
+The order this implies should be respected.
+
+Hidden dependencies occur als with e.g. sql.assert() calls.
+Reordering them may easily lead to an assertion violation.
+Therefore, reordering should be limited to basic blocks without
+side-effects.
 @{
 @mal
 pattern optimizer.reorder():str
@@ -89,7 +97,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 
 	for ( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		list[i]= (Node) GDKzalloc(sizeof(NodeRecord)+sizeof(int)*p->maxarg);
+		list[i]= (Node) GDKzalloc(sizeof(NodeRecord) + sizeof(int) * p->maxarg);
 		if (list[i] == NULL){
 			for (i--; i>=0; i--)
 				GDKfree(list[i]);
@@ -100,7 +108,11 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 		list[i]->cnt= p->argc;
 		for( j=p->retc; j<p->argc; j++)
 			list[i]->stmt[j]= var[getArg(p,j)];
-		/* where it was assigned last */
+		/* keep the assignment order */
+		for( j= 0; j < p->retc; j++)
+		if ( var[ getArg(p,j)] )
+			list[i]->stmt[j] = var [getArg(p,j)];
+		/* remember the last assignment  */
 		for( j=0; j<p->retc; j++){
 			var[getArg(p,j)]= i;
 		}
@@ -140,7 +152,7 @@ OPTdepthfirst(Client cntxt, MalBlkPtr mb, int pc, InstrPtr old[], Node dep[])
 	old[pc] = 0;
 	if( p == NULL)
 		return;
-	for (i= p->retc; i< p->argc; i++)
+	for (i= 0; i< p->argc; i++)
 		OPTdepthfirst(cntxt, mb,dep[pc]->stmt[i], old, dep);
 #ifdef DEBUG_OPT_REORDER
 			stream_printf(cntxt->fdout,"dump[%d]:",pc);
@@ -159,10 +171,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
-	if ( varGetProp( mb, getArg(getInstrPtr(mb,0),0), unsafeProp ) != NULL){
-		/* don't apply reorder, it is an SQL defined function */
-		return 0;
-	}
 #ifdef DEBUG_OPT_REORDER
 	stream_printf(cntxt->fdout,"REORDER\n");
 	printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
@@ -181,7 +189,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= old[i];
 		if( p->token == ENDsymbol)
 			break;
-		if( hasSideEffects(p,TRUE) || isUpdateInstruction(p)  || p->barrier ){
+		if( hasSideEffects(p,TRUE) || isUpdateInstruction(p)  || isUnsafeFunction(p) || p->barrier ){
 			OPTdepthfirst(cntxt, mb, i, old, dep);
 			/* remove last instruction and keep for later */
 			p= mb->stmt[mb->stop-1];
