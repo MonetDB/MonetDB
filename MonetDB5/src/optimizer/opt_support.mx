@@ -659,6 +659,13 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	optimizerInit();
 	/* assume the type and flow have been checked already */
+	/* SQL functions intended to be inlined should not be optimized */
+	if ( varGetProp( mb, getArg(getInstrPtr(mb,0),0), inlineProp ) != NULL &&
+		 varGetProp( mb, getArg(getInstrPtr(mb,0),0), sqlfunctionProp ) != NULL
+	)
+        return 0;
+
+
 	do {
 		/* any errors should abort the optimizer */
 		if (mb->errors)

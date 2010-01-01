@@ -187,6 +187,7 @@ opt_export int pivotProp;		/* int */
 opt_export int pivotDisjunctiveProp;	/* int */
 opt_export int removeProp;		/* int */
 opt_export int tableProp;	        /* str */
+opt_export int sqlfunctionProp;
 
 opt_export int inlineProp;		/* binary */
 opt_export int keepProp;		/* binary */
@@ -373,6 +374,7 @@ int pivotProp;
 int pivotDisjunctiveProp;
 int removeProp;
 int tableProp;
+int sqlfunctionProp;
 
 int inlineProp;
 int keepProp;
@@ -563,6 +565,7 @@ void optimizerInit(){
 		runonceProp = PropertyIndex("runonce");
 		singletonProp = PropertyIndex("singleton");
 		unsafeProp = PropertyIndex("unsafe");
+		sqlfunctionProp = PropertyIndex("sqlfunction");
 
 		stableProp = PropertyIndex("stableProp");
 		insertionsProp = PropertyIndex("insertionsProp");

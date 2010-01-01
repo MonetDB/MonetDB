@@ -159,6 +159,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
+	if ( varGetProp( mb, getArg(getInstrPtr(mb,0),0), unsafeProp ) != NULL){
+		/* don't apply reorder, it is an SQL defined function */
+		return 0;
+	}
 #ifdef DEBUG_OPT_REORDER
 	stream_printf(cntxt->fdout,"REORDER\n");
 	printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
