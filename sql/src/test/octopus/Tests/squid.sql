@@ -3,6 +3,7 @@
 -- The squid is built around a database comprising 2 tables
 -- each with two attributes only.
 
+set optimizer='octopus_pipe';
 create table squidA(
 	Bid int, Cval int);
 create table squidD(

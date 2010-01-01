@@ -1,21 +1,17 @@
 START TRANSACTION;
-CREATE USER "lhm" WITH ENCRYPTED PASSWORD '2fc2b8f3eefad34081778949b3123c388b588d12d5678d27cbdc3808a56b14dec1ffb73df2adf83dbd5e121b1d57d712e0cb8d79c797101840c8a81cdb8665b3' NAME 'LHM user' SCHEMA "sys";
-CREATE SCHEMA "lhm" AUTHORIZATION "lhm";
-ALTER USER "lhm" SET SCHEMA "lhm";
-SET SCHEMA "lhm";
 
-CREATE TABLE "lhm".subject_term (a1 VARCHAR(1000), prob DOUBLE);
-INSERT INTO "lhm".subject_term VALUES ('reference', 1.000000 );
-INSERT INTO "lhm".subject_term VALUES ('description', 1.000000 );
+CREATE TABLE subject_term (a1 VARCHAR(1000), prob DOUBLE);
+INSERT INTO subject_term VALUES ('reference', 1.000000 );
+INSERT INTO subject_term VALUES ('description', 1.000000 );
 
-CREATE TABLE "lhm"."docdict" (
+CREATE TABLE "docdict" (
 	"docid" int NOT NULL,
 	"doc" varchar(1000),
 	"type" varchar(30),
 	"prob" double DEFAULT 1.000000,
 	CONSTRAINT "docdict_docid_pkey" PRIMARY KEY ("docid")
 );
-COPY 62 RECORDS INTO "lhm"."docdict" FROM stdin USING DELIMITERS '\t';
+COPY 62 RECORDS INTO "docdict" FROM stdin USING DELIMITERS '\t';
 0	"EP-00101575-A"	"patent-document"	1
 1	"EP-00103038-A"	"patent-document"	1
 2	"EP-00103043-A"	"patent-document"	1
@@ -78,14 +74,14 @@ COPY 62 RECORDS INTO "lhm"."docdict" FROM stdin USING DELIMITERS '\t';
 59	"WO-1997003443-A1"	"patent-document"	1
 60	"WO-1997041562-A1"	"patent-document"	1
 61	"WO-1998052191-A1"	"patent-document"	1
-CREATE TABLE "lhm"."nedict" (
+CREATE TABLE "nedict" (
 	"neid" int NOT NULL,
 	"ne" varchar(1000),
 	"type" varchar(30),
 	"prob" double DEFAULT 1.000000,
 	CONSTRAINT "nedict_neid_pkey" PRIMARY KEY ("neid")
 );
-COPY 175 RECORDS INTO "lhm"."nedict" FROM stdin USING DELIMITERS '\t';
+COPY 175 RECORDS INTO "nedict" FROM stdin USING DELIMITERS '\t';
 0	""	"country"	1
 1	"AT"	"country"	1
 2	"BE"	"country"	1
@@ -261,13 +257,13 @@ COPY 175 RECORDS INTO "lhm"."nedict" FROM stdin USING DELIMITERS '\t';
 172	"TOKIN CORPORATION"	"company"	1
 173	"TOYODA GOSEI CO LTD"	"company"	1
 174	"TOYODA GOSEI KK"	"company"	1
-CREATE TABLE "lhm"."doc_string" (
+CREATE TABLE "doc_string" (
 	"docid" int,
 	"attribute" varchar(30),
 	"value" varchar(10000),
 	"prob" double DEFAULT 1.000000
 );
-COPY 288 RECORDS INTO "lhm"."doc_string" FROM stdin USING DELIMITERS '\t';
+COPY 288 RECORDS INTO "doc_string" FROM stdin USING DELIMITERS '\t';
 0	"date"	"20000127"	1
 0	"doc-number"	"00101575"	1
 0	"kind"	"A"	1
@@ -556,13 +552,13 @@ COPY 288 RECORDS INTO "lhm"."doc_string" FROM stdin USING DELIMITERS '\t';
 61	"doc-number"	"1998052191"	1
 61	"kind"	"A1"	1
 61	"ucid"	"WO-1998052191-A1"	1
-CREATE TABLE "lhm"."ne_string" (
+CREATE TABLE "ne_string" (
 	"neid" int,
 	"attribute" varchar(30),
 	"value" varchar(10000),
 	"prob" double DEFAULT 1.000000
 );
-COPY 298 RECORDS INTO "lhm"."ne_string" FROM stdin USING DELIMITERS '\t';
+COPY 298 RECORDS INTO "ne_string" FROM stdin USING DELIMITERS '\t';
 0	"code"	""	1
 1	"code"	"AT"	1
 2	"code"	"BE"	1
@@ -861,13 +857,13 @@ COPY 298 RECORDS INTO "lhm"."ne_string" FROM stdin USING DELIMITERS '\t';
 174	"address"	"JP"	1
 174	"name"	"TOYODA GOSEI KK"	1
 174	"normalized_name"	"TOYODA GOSEI KK"	1
-CREATE TABLE "lhm"."doc_doc" (
+CREATE TABLE "doc_doc" (
 	"docid1" int,
 	"predicate" varchar(30),
 	"docid2" int,
 	"prob" double DEFAULT 1.000000
 );
-COPY 69 RECORDS INTO "lhm"."doc_doc" FROM stdin USING DELIMITERS '\t';
+COPY 69 RECORDS INTO "doc_doc" FROM stdin USING DELIMITERS '\t';
 19	"application-reference"	2	1
 19	"cited_by"	12	1
 19	"cited_by"	13	1
@@ -937,13 +933,13 @@ COPY 69 RECORDS INTO "lhm"."doc_doc" FROM stdin USING DELIMITERS '\t';
 28	"cited_by"	8	1
 28	"priority-claim"	42	1
 28	"publication-reference"	28	1
-CREATE TABLE "lhm"."ne_doc" (
+CREATE TABLE "ne_doc" (
 	"neid" int,
 	"predicate" varchar(30),
 	"docid" int,
 	"prob" double DEFAULT 1.000000
 );
-COPY 302 RECORDS INTO "lhm"."ne_doc" FROM stdin USING DELIMITERS '\t';
+COPY 302 RECORDS INTO "ne_doc" FROM stdin USING DELIMITERS '\t';
 1	"ep-contracting-states"	19	1
 2	"ep-contracting-states"	19	1
 3	"ep-contracting-states"	19	1
@@ -1246,13 +1242,13 @@ COPY 302 RECORDS INTO "lhm"."ne_doc" FROM stdin USING DELIMITERS '\t';
 172	"assignee_of"	26	1
 173	"assignee_of"	23	1
 174	"assignee_of"	23	1
-CREATE TABLE "lhm"."ne_ne" (
+CREATE TABLE "ne_ne" (
 	"neid1" int,
 	"predicate" varchar(30),
 	"neid2" int,
 	"prob" double DEFAULT 1.000000
 );
-COPY 74 RECORDS INTO "lhm"."ne_ne" FROM stdin USING DELIMITERS '\t';
+COPY 74 RECORDS INTO "ne_ne" FROM stdin USING DELIMITERS '\t';
 25	"country"	16	1
 26	"country"	15	1
 27	"country"	16	1
@@ -1327,13 +1323,13 @@ COPY 74 RECORDS INTO "lhm"."ne_ne" FROM stdin USING DELIMITERS '\t';
 98	"part_of"	45	1
 99	"part_of"	45	1
 100	"part_of"	45	1
-CREATE TABLE "lhm"."termdict" (
+CREATE TABLE "termdict" (
 	"termid" int NOT NULL,
 	"term" varchar(1000),
 	"prob" double,
 	CONSTRAINT "termdict_termid_pkey" PRIMARY KEY ("termid")
 );
-COPY 4302 RECORDS INTO "lhm"."termdict" FROM stdin USING DELIMITERS '\t';
+COPY 4302 RECORDS INTO "termdict" FROM stdin USING DELIMITERS '\t';
 0	"#STOPWORD#"	1
 1	"a"	1
 2	"about"	1
@@ -5636,12 +5632,12 @@ COPY 4302 RECORDS INTO "lhm"."termdict" FROM stdin USING DELIMITERS '\t';
 4299	"agents"	1
 4300	"deemed"	1
 4301	"20010419"	1
-CREATE TABLE "lhm"."tf_sum" (
+CREATE TABLE "tf_sum" (
 	"termid" int,
 	"docid" int,
 	"prob" double
 );
-COPY 1000 RECORDS INTO "lhm"."tf_sum" FROM stdin USING DELIMITERS '\t';
+COPY 1000 RECORDS INTO "tf_sum" FROM stdin USING DELIMITERS '\t';
 430	20	0.00095683606208802892
 430	21	0.00081625249410484314
 430	27	0.000293513354857646
@@ -6642,11 +6638,11 @@ COPY 1000 RECORDS INTO "lhm"."tf_sum" FROM stdin USING DELIMITERS '\t';
 776	28	0.00011519410206197443
 777	20	0.0015947267701467149
 777	21	0.0013604208235080718
-CREATE TABLE "lhm"."idf_bm25" (
+CREATE TABLE "idf_bm25" (
 	"termid" int,
 	"prob" float(53,1)
 );
-COPY 3424 RECORDS INTO "lhm"."idf_bm25" FROM stdin USING DELIMITERS '\t';
+COPY 3424 RECORDS INTO "idf_bm25" FROM stdin USING DELIMITERS '\t';
 430	1.0986122886681098
 432	1.0986122886681098
 434	0.64662716492505246
@@ -10072,12 +10068,12 @@ COPY 3424 RECORDS INTO "lhm"."idf_bm25" FROM stdin USING DELIMITERS '\t';
 4298	1.9459101490553132
 4299	1.9459101490553132
 SET SCHEMA "sys";
-ALTER TABLE "lhm"."doc_doc" ADD CONSTRAINT "doc_doc_docid1_fkey" FOREIGN KEY ("docid1") REFERENCES "lhm"."docdict" ("docid");
-ALTER TABLE "lhm"."doc_doc" ADD CONSTRAINT "doc_doc_docid2_fkey" FOREIGN KEY ("docid2") REFERENCES "lhm"."docdict" ("docid");
-ALTER TABLE "lhm"."doc_string" ADD CONSTRAINT "doc_string_docid_fkey" FOREIGN KEY ("docid") REFERENCES "lhm"."docdict" ("docid");
-ALTER TABLE "lhm"."ne_doc" ADD CONSTRAINT "ne_doc_docid_fkey" FOREIGN KEY ("docid") REFERENCES "lhm"."docdict" ("docid");
-ALTER TABLE "lhm"."ne_doc" ADD CONSTRAINT "ne_doc_neid_fkey" FOREIGN KEY ("neid") REFERENCES "lhm"."nedict" ("neid");
-ALTER TABLE "lhm"."ne_ne" ADD CONSTRAINT "ne_ne_neid1_fkey" FOREIGN KEY ("neid1") REFERENCES "lhm"."nedict" ("neid");
-ALTER TABLE "lhm"."ne_ne" ADD CONSTRAINT "ne_ne_neid2_fkey" FOREIGN KEY ("neid2") REFERENCES "lhm"."nedict" ("neid");
-ALTER TABLE "lhm"."ne_string" ADD CONSTRAINT "ne_string_neid_fkey" FOREIGN KEY ("neid") REFERENCES "lhm"."nedict" ("neid");
+ALTER TABLE "doc_doc" ADD CONSTRAINT "doc_doc_docid1_fkey" FOREIGN KEY ("docid1") REFERENCES "docdict" ("docid");
+ALTER TABLE "doc_doc" ADD CONSTRAINT "doc_doc_docid2_fkey" FOREIGN KEY ("docid2") REFERENCES "docdict" ("docid");
+ALTER TABLE "doc_string" ADD CONSTRAINT "doc_string_docid_fkey" FOREIGN KEY ("docid") REFERENCES "docdict" ("docid");
+ALTER TABLE "ne_doc" ADD CONSTRAINT "ne_doc_docid_fkey" FOREIGN KEY ("docid") REFERENCES "docdict" ("docid");
+ALTER TABLE "ne_doc" ADD CONSTRAINT "ne_doc_neid_fkey" FOREIGN KEY ("neid") REFERENCES "nedict" ("neid");
+ALTER TABLE "ne_ne" ADD CONSTRAINT "ne_ne_neid1_fkey" FOREIGN KEY ("neid1") REFERENCES "nedict" ("neid");
+ALTER TABLE "ne_ne" ADD CONSTRAINT "ne_ne_neid2_fkey" FOREIGN KEY ("neid2") REFERENCES "nedict" ("neid");
+ALTER TABLE "ne_string" ADD CONSTRAINT "ne_string_neid_fkey" FOREIGN KEY ("neid") REFERENCES "nedict" ("neid");
 COMMIT;
