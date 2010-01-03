@@ -1207,7 +1207,7 @@ DFLOWexecute( DataFlow flow )
 
 
 static DataFlow flows = NULL;
-static int workerid;
+static int workerid = 0;
 
 str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)

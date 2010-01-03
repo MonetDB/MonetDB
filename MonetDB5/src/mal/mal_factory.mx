@@ -298,7 +298,7 @@ typedef struct {
 
 #define MAXPLANTS 256
 static PlantRecord plants[MAXPLANTS];
-static int lastPlant;
+static int lastPlant= 0;
 static int plantId = 1;
 
 mal_export Plant newPlant(MalBlkPtr mb);

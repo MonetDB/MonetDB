@@ -1218,7 +1218,7 @@ void
 cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	/* static struct Mallinfo prevMalloc; */
-	static int eventcounter;
+	static int eventcounter = 0;
 	char buf[1024];
 	int tid= (int) THRgettid();
 	lng v = 0;

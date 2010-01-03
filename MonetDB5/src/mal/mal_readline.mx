@@ -320,7 +320,7 @@ showCommands(void)
 }
 
 #ifdef HAVE_LIBREADLINE
-static int initReadline;
+static int initReadline = 0;
 #endif
 
 char *

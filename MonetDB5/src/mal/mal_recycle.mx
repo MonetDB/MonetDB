@@ -2011,7 +2011,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
     int i, j, ridx, idx, pc = -1, evicted=0;
     bat bid= -1, nbid= -1;
     InstrPtr q;
-    static str selectRef, like_selectRef, thetaselectRef;
+    static str selectRef = 0, like_selectRef = 0, thetaselectRef = 0;
     bit gluse = FALSE;
 	lng ticks = GDKusec();
 

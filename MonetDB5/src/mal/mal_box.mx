@@ -261,7 +261,7 @@ only.
 #endif
 
 #define MAXSPACES 64		/* >MAXCLIENTS+ max modules !! */
-Box box[MAXSPACES];
+static Box malbox[MAXSPACES];
 static int topbox=0;
 
 static str boxFileName(Box box, str extension);
@@ -277,24 +277,24 @@ newBox(str name)
 	stream_printf(GDKout, "create new box '%s'\n", name);
 #endif
 	for (i = 0; i < topbox; i++)
-		if (box[i] != NULL && idcmp(name, box[i]->name) == 0) {
+		if (malbox[i] != NULL && idcmp(name, malbox[i]->name) == 0) {
 			mal_unset_lock(mal_contextLock, "newBox");
 #ifdef DEBUG_MAL_BOX
 			stream_printf(GDKout,"newBox:duplicate box definition\n");
 #endif
-			return box[i];
+			return malbox[i];
 		}
 	for (i = 0; i < topbox; i++)
-		if (box[i] == NULL) {
+		if (malbox[i] == NULL) {
 			@:newBOX@
-			box[i] = obj;
+			malbox[i] = obj;
 			break;
 		}
 	mal_unset_lock(mal_contextLock, "newBox");
 	if (i == topbox) { 
 		if ( topbox < MAXSPACES){
 			@:newBOX@
-			box[topbox++] = obj;
+			malbox[topbox++] = obj;
 		} else
 			return NULL;
 	}
@@ -307,13 +307,13 @@ newBox(str name)
 
 static void
 freeBox(Client cntxt, int i){
-		if (box[i] && box[i]->val) {
-			garbageCollector(cntxt, box[i]->sym, box[i]->val,TRUE);
-			GDKfree(box[i]->name);
-			freeMalBlk(box[i]->sym);
-			GDKfree(box[i]->val);
-			GDKfree(box[i]);
-			box[i] = 0;
+		if (malbox[i] && malbox[i]->val) {
+			garbageCollector(cntxt, malbox[i]->sym, malbox[i]->val,TRUE);
+			GDKfree(malbox[i]->name);
+			freeMalBlk(malbox[i]->sym);
+			GDKfree(malbox[i]->val);
+			GDKfree(malbox[i]);
+			malbox[i] = 0;
 		}
 }
 void
@@ -333,12 +333,12 @@ findBox(str name)
 	mal_set_lock(mal_contextLock, "findBox");
 
 	for (i = 0; i < topbox; i++)
-		if (box[i] != NULL && name && idcmp(name, box[i]->name) == 0) {
+		if (malbox[i] != NULL && name && idcmp(name, malbox[i]->name) == 0) {
 #ifdef DEBUG_MAL_BOX
 			stream_printf(GDKout, "found the box '%s' %d\n", name, i);
 #endif
 			mal_unset_lock(mal_contextLock, "findBox");
-			return box[i];
+			return malbox[i];
 		}
 	mal_unset_lock(mal_contextLock, "findBox");
 #ifdef DEBUG_MAL_BOX
@@ -384,20 +384,19 @@ destroyBox(str name)
 
 	mal_set_lock(mal_contextLock, "destroyBox");
 	for (i = j = 0; i < topbox; i++) {
-		if (idcmp(box[j]->name, name) == 0) {
-			free(box[i]->name);
-			freeMalBlk(box[i]->sym);
-			if ( box[i]->val)
-				freeStack(box[i]->val);
-			boxfile = boxFileName(box[i], 0);
+		if (idcmp(malbox[j]->name, name) == 0) {
+			free(malbox[i]->name);
+			freeMalBlk(malbox[i]->sym);
+			if ( malbox[i]->val)
+				freeStack(malbox[i]->val);
+			boxfile = boxFileName(malbox[i], 0);
 			unlink(boxfile);
 			GDKfree(boxfile);
-			MT_destroy_lock(box[i]->lock);
+			MT_destroy_lock(malbox[i]->lock);
 		} else
-			box[i] = box[j++];
+			malbox[i] = malbox[j++];
 	}
 	mal_unset_lock(mal_contextLock, "destroyBox");
-
 }
 
 @- Operations
@@ -599,8 +598,8 @@ getBoxNames(int *bid)
 
 	b = BATnew(TYPE_int, TYPE_str, (BUN) MAXSPACES);
 	for (i = 0; i < topbox; i++)
-		if (box[i] != NULL) {
-			BUNins(b, &i, box[i]->name, FALSE);
+		if (malbox[i] != NULL) {
+			BUNins(b, &i, malbox[i]->name, FALSE);
 		}
 	BBPincref(*bid = b->batCacheid, TRUE);
 	BBPunfix(*bid);
