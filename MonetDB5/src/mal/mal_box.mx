@@ -262,6 +262,7 @@ only.
 
 #define MAXSPACES 64		/* >MAXCLIENTS+ max modules !! */
 Box box[MAXSPACES];
+static int topbox=0;
 
 static str boxFileName(Box box, str extension);
 
@@ -275,7 +276,7 @@ newBox(str name)
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "create new box '%s'\n", name);
 #endif
-	for (i = 0; i < MAXSPACES; i++)
+	for (i = 0; i < topbox; i++)
 		if (box[i] != NULL && idcmp(name, box[i]->name) == 0) {
 			mal_unset_lock(mal_contextLock, "newBox");
 #ifdef DEBUG_MAL_BOX
@@ -283,15 +284,20 @@ newBox(str name)
 #endif
 			return box[i];
 		}
-	for (i = 0; i < MAXSPACES; i++)
+	for (i = 0; i < topbox; i++)
 		if (box[i] == NULL) {
 			@:newBOX@
 			box[i] = obj;
 			break;
 		}
 	mal_unset_lock(mal_contextLock, "newBox");
-	if (i == MAXSPACES) 
-		return NULL;
+	if (i == topbox) { 
+		if ( topbox < MAXSPACES){
+			@:newBOX@
+			box[topbox++] = obj;
+		} else
+			return NULL;
+	}
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "succeeded at %d\n", i);
 #endif
@@ -315,7 +321,7 @@ freeBoxes(Client cntxt)
 {
 	int i;
 
-	for (i = 0; i < MAXSPACES; i++)
+	for (i = 0; i < topbox;  i++)
 		freeBox(cntxt, i);
 }
 
@@ -326,7 +332,7 @@ findBox(str name)
 
 	mal_set_lock(mal_contextLock, "findBox");
 
-	for (i = 0; i < MAXSPACES; i++)
+	for (i = 0; i < topbox; i++)
 		if (box[i] != NULL && name && idcmp(name, box[i]->name) == 0) {
 #ifdef DEBUG_MAL_BOX
 			stream_printf(GDKout, "found the box '%s' %d\n", name, i);
@@ -377,7 +383,7 @@ destroyBox(str name)
 	str boxfile;
 
 	mal_set_lock(mal_contextLock, "destroyBox");
-	for (i = j = 0; i < MAXSPACES; i++) {
+	for (i = j = 0; i < topbox; i++) {
 		if (idcmp(box[j]->name, name) == 0) {
 			free(box[i]->name);
 			freeMalBlk(box[i]->sym);
@@ -592,7 +598,7 @@ getBoxNames(int *bid)
 	int i;
 
 	b = BATnew(TYPE_int, TYPE_str, (BUN) MAXSPACES);
-	for (i = 0; i < MAXSPACES; i++)
+	for (i = 0; i < topbox; i++)
 		if (box[i] != NULL) {
 			BUNins(b, &i, box[i]->name, FALSE);
 		}
