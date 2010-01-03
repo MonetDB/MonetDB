@@ -468,7 +468,7 @@ doChallenge(str cmd, stream *in, stream *out) {
 	}
 }
 
-static char *threadcommand;
+static char *threadcommand = 0;
 #ifdef HAVE_SYS_UN_H
 static SOCKET usock = INVALID_SOCKET;
 #endif

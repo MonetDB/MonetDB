@@ -723,7 +723,7 @@ static void BPMprintRing(stream *f, Partition p){
 Make sure we allocate space for both straight and reversed
 BAT rings.
 @c
-static Partition *bpmcatbase;
+static Partition *bpmcatbase = 0;
 
 static void assureSpace(){
 	if( BBPlimit >bpmcatsize){

@@ -413,16 +413,16 @@ static oid startTag = 0;	/* current transaction file bounds */
 static oid endTag = 0;		/* last transaction identifier given */
 static int fcnTag = 0;		/* unique labeling of the functions */
 static oid cutoffTag = 0;	/* to signal out of date slaves */
-static char logFile[PATHLENGTH]; 
-static stream *repFile;
-static int sendLogs;		/* permit forwarding of log records */
+static char logFile[PATHLENGTH]=""; 
+static stream *repFile = 0;
+static int sendLogs = 0;		/* permit forwarding of log records */
 
 /* slave synchronisation status */
-static BAT *slavetid;
-static BAT *slavecommit;
-static BAT *slavevalid;
-static BAT *slaveerror;
-static int acceptLogs;
+static BAT *slavetid = 0;
+static BAT *slavecommit = 0;
+static BAT *slavevalid = 0;
+static BAT *slaveerror = 0;
+static int acceptLogs = 0;
 
 static void
 SLAVEinitLog(){
