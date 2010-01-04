@@ -752,7 +752,6 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	BUN p,q;
 	double ratio = 0.0;
 
-	(void) base;
 	if( DICTinit() )
 		throw(MAL,"dictionary.new","No catalog table");
 
@@ -768,6 +767,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 		BUNdelete(dictValue,BUNfnd(dictValue, (ptr) &val), TRUE);
 		BUNdelete(dictBase,BUNfnd(dictBase, bid), TRUE);
 	}
+	(void) base;
 
 	b = (BAT *) BATdescriptor(*bid);
     if (b == 0)
