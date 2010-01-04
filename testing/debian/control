@@ -7,7 +7,7 @@ Standards-Version: 3.8.0
 
 Package: monetdb-testing
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python, libmonetdb1, libmonetdb-dev, python-monetdb
+Depends: ${shlibs:Depends}, ${misc:Depends}, python, libmonetdb1, libmonetdb-dev
 Description: database system for high-performance applications, libraries
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
