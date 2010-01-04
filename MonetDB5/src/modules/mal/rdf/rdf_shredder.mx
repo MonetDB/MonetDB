@@ -127,12 +127,10 @@ at a time. Function rdf_parser_triple_handler() does exactly this.
 
 @= rdf_insert
 @:rdf_BUNappend_unq(@1, @2)@
-#if 0
 #ifdef _TKNZR_H
  @:rdf_tknzr_insert(@2)@
 #else
  @:rdf_BUNappend_unq(@1, @2)@
-#endif
 #endif
 
 @= rdf_BUNappend_unq
@@ -150,7 +148,7 @@ if (bun == BUN_NONE) {
 }
 
 @= rdf_tknzr_insert
-TKNZRdeposit(&bun,(str *)&@1);
+TKNZRdeposit(&bun,(str *)&(@1));
 
 @= rdf_BUNappend
 {@1 = BUNappend(@1, @2, TRUE);}
