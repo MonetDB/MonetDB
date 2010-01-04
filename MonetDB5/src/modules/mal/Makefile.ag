@@ -30,7 +30,7 @@ LIBS = {
 		chopper.mx constraints.mx language.mx box.mx \
 		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx pqueue.mx mkey.mx \
-		factories.mx mdb.mx  \
+		factories.mx groupby.mx mdb.mx  \
 		urlbox.mx mat.mx histogram.mx \
 		sabaoth.mx remote.mx txtsim.mx recycle.mx \
 		cluster.mx trader.mx pma.mx \
@@ -172,7 +172,7 @@ headers_h = {
 		chopper.mx constraints.mx language.mx box.mx \
 		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx pqueue.mx mkey.mx \
-		factories.mx mdb.mx  \
+		factories.mx groupby.mx mdb.mx  \
 		urlbox.mx mat.mx histogram.mx \
 		sabaoth.mx remote.mx  batxml.mx  recycle.mx \
 		cluster.mx trader.mx replication.mx pma.mx \
@@ -189,7 +189,7 @@ headers_mal = {
 		profiler.mx const.mx batExtensions.mx algebraExtensions.mx \
 		inspect.mx manual.mx mal_io.mx pqueue.mx mkey.mx \
 		chopper.mx clients.mx \
-		factories.mx mdb.mx pcre.mx  tablet.mx mat.mx histogram.mx \
+		factories.mx groupby.mx mdb.mx pcre.mx  tablet.mx mat.mx histogram.mx \
 		urlbox.mx statistics.mx transaction.mx \
 		mal_mapi.mx sabaoth.mx remote.mx  \
 		bpm.mx batxml.mx txtsim.mx recycle.mx \

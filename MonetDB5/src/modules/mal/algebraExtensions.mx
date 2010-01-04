@@ -82,7 +82,7 @@ ae_export str ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "mal_errors.h"
 #include "mmath.h"
 #include <gdk_posix.h>
-#define PGALIGN(X) (void*)( ( ((size_t)X)/MT_pagesize()) * MT_pagesize())
+#define PGALIGN(X) (void*)(((size_t)X)/monet_memory)
 
 str
 ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt){
@@ -130,7 +130,7 @@ is calculated for the heap(s) only.
 
 static
 size_t GDKbatfootprint(BAT *b){
-	size_t mem = MT_npages() * MT_pagesize();
+	size_t mem = monet_memory;
 	size_t size = b->H->heap.size + b->T->heap.size;
 	ALGODEBUG THRprintf(GDKout,
 		"footprint " SZFMT " " SZFMT " " SZFMT" \n",mem, size, size /(mem/100));
@@ -192,7 +192,7 @@ GDKblockjoin(BAT *b, BAT *c){
 	BUN blim, cap = BUN_NONE;
 	BUN clim,cl;
 	int k =0;
-	BUN blk = (BUN) (MT_npages() * MT_pagesize() / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
+	BUN blk = (BUN) (monet_memory / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
 
 	blim = BATcount(b);
 	clim = BATcount(c);
@@ -207,11 +207,15 @@ GDKblockjoin(BAT *b, BAT *c){
 				bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
 			bn= BATappend(bn,j, FALSE);
 		}
-		cap = BATcount(j )* 2;
+		if ( cap == BUN_NONE)
+			cap = BATcount(j )* 2;
+		else 
+			cap += BATcount(j) * 1.2;
 		BBPunfix(j->batCacheid);
 		BBPunfix( cp->batCacheid);
 	}
 printf("block size " BUNFMT "\n|",blk);
+printf("total size " BUNFMT "\n", blim * (sizeof(int) + ATOMsize(b->ttype)) );
 printf("outersize " BUNFMT " inner size " BUNFMT "\n", blim,clim);
 printf("inner loop %d\n",k);
 	if ( bn == 0)
@@ -226,7 +230,7 @@ GDKblockjoin2(BAT *b, BAT *c){
 	BUN blim, bl, cap = BUN_NONE;
 	BUN clim,cl, blk;
 	int i=0, k =0;
-	size_t _blk = (size_t) (MT_npages() * MT_pagesize() / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
+	size_t _blk = (size_t) (monet_memory / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
 
 	assert(_blk <= (size_t)BUN_MAX);
 	blk = (BUN) _blk;
@@ -243,12 +247,16 @@ GDKblockjoin2(BAT *b, BAT *c){
 		for( cl = 0; cl < clim + blk; cl+= blk){
 			k++;
 			cp = BATslice(c, cl, cl+blk);
-		posix_madvise(PGALIGN(Tloc(cp,BUNfirst(cp))), BATcount(cp) * sizeof(int), MADV_SEQUENTIAL);
+			posix_madvise(PGALIGN(Tloc(cp,BUNfirst(cp))), BATcount(cp) * sizeof(int), MADV_SEQUENTIAL);
 			j = BATjoin(bp,cp, cap);
 			if (bn == 0)
 				bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
+			posix_madvise(PGALIGN(Tloc(bn,BUNfirst(bn))), BATcount(bn) * sizeof(int), MADV_SEQUENTIAL);
 			bn= BATappend(bn,j, TRUE);
-			cap = BATcount(j )* 2;
+			if ( cap == BUN_NONE)
+				cap = BATcount(j )* 2;
+			else 
+				cap += BATcount(j) * 1.2;
 			BBPunfix(j->batCacheid);
 			BBPunfix( cp->batCacheid);
 		}
@@ -411,7 +419,7 @@ printf("inner loop %d\n",k);
 
 static BAT *
 StMpartjoin(BAT **_b, BAT **_c, int shift) {
-	size_t sz_mem = MT_npages() * MT_pagesize();
+	size_t sz_mem = monet_memory;
 	size_t sz_l2  = 4 * 1024 * 1024;
 #ifdef StM_GDK_M_SIZES
 	size_t org_mmap_minsize = GDK_mmap_minsize;
