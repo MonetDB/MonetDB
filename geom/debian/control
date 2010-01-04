@@ -19,8 +19,8 @@ Description: database system for high-performance applications, xquery frontend
 
 Package: monetdb-geom-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb-dev, monetdb-geom, libmonetdb5-geom0
-# libmonetdb4-geom0
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb-dev, monetdb-geom, libmonetdb5-server-geom0
+# libmonetdb4-server-geom0
 Description: database system for high-performance applications, xquery frontend
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
