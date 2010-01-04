@@ -2201,8 +2201,7 @@ main(int argc, char **argv)
 	mapi_cache_limit(mid, -1);
 	if (dump) {
 		if (mode == SQL) {
-			dump_tables(mid, toConsole, 0);
-			exit(0);
+			exit(dump_tables(mid, toConsole, 0));
 		} else {
 			fprintf(stderr, "Dump only supported for SQL\n");
 			exit(1);
