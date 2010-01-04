@@ -267,6 +267,71 @@ HEAPextend(Heap *h, size_t size)
 	return -1;
 }
 
+int
+GDKupgradevarheap(COLrec *c, BUN capacity, var_t v, int copyall)
+{
+	chr shift = c->shift;
+	unsigned short width = c->width;
+	unsigned char *pc;
+	unsigned short *ps;
+	unsigned int *pi;
+#if SIZEOF_VAR_T == 8
+	var_t *pv;
+#endif
+	size_t i, n;
+
+	assert(width != 0);
+	assert(width < SIZEOF_VAR_T && v >= ((var_t) 1 << (8 * width)));
+	while (width < SIZEOF_VAR_T && v >= ((var_t) 1 << (8 * width))) {
+		width <<= 1;
+		shift++;
+	}
+	assert(c->width < width);
+	assert(c->shift < shift);
+	/* we need to convert the whole heap, since we may be in the
+	   middle of an insert loop that adjusts the free value at the
+	   end */
+	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
+	HEAPextend(&c->heap, (size_t) capacity << shift);
+	pc = (unsigned char *) c->heap.base + n;
+	ps = (unsigned short *) c->heap.base + n;
+	pi = (unsigned int *) c->heap.base + n;
+	pv = (var_t *) c->heap.base + n;
+	/* convert from back to front so that we can do it in-place */
+	for (i = 0; i < n; i++) {
+		switch (c->width) {
+		case 1:
+			v = *--pc + GDK_VAROFFSET;
+			break;
+		case 2:
+			v = *--ps + GDK_VAROFFSET;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			v = *--pi;
+			break;
+#endif
+		}
+		switch (width) {
+		case 2:
+			*--ps = (unsigned short) v - GDK_VAROFFSET;
+			break;
+		case 4:
+			*--pi = (unsigned int) v;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			*--pv = v;
+			break;
+#endif
+		}
+	}
+	c->heap.free <<= shift - c->shift;
+	c->shift = shift;
+	c->width = width;
+	return GDK_SUCCEED;
+}
+
 @}
 @- HEAPcopy
 simple: alloc and copy. Notice that we suppose a preallocated dst->filename (or NULL),

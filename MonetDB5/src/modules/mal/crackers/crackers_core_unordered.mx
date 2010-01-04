@@ -739,7 +739,36 @@ CRKcrackUnorderedThreeCopy_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last
 
 	tdummy= *(@2*) @5;
         *(@2*) @5= *(@2*) @6;
-        *(@2*) @6 = tdummy;
+        *(@2*) @6 = (@2)tdummy;
+@= shuffleSidewaysStr
+	hdummy = *(@1*) @2;
+	*(@1*) @2= *(@1*) @3;
+        *(@1*) @3= hdummy;
+
+	switch (b->T->width) {
+	case 1:
+		tdummy= (var_t)*(unsigned char*) @4;
+		*(unsigned char*) @4= *(unsigned char*) @5;
+		*(unsigned char*) @5 = (unsigned char)tdummy;
+		break;
+	case 2:
+		tdummy= (var_t)*(unsigned short*) @4;
+		*(unsigned short*) @4= *(unsigned short*) @5;
+		*(unsigned short*) @5 = (unsigned short)tdummy;
+		break;
+#if SIZEOF_VAR_T == 8
+	case 4:
+		tdummy= (var_t)*(unsigned int*) @4;
+		*(unsigned int*) @4= *(unsigned int*) @5;
+		*(unsigned int*) @5 = (unsigned int)tdummy;
+		break;
+#endif
+	default:
+		tdummy= *(var_t*) @4;
+		*(var_t*) @4= *(var_t*) @5;
+		*(var_t*) @5 = tdummy;
+		break;
+	}
 @
 
 @= printVarTypes
@@ -981,7 +1010,7 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, BUN first, B
 str
 CRKcrackUnorderedZeroSideways_@3_@1_str( BAT *b, @1 mval, BUN first, BUN last, oid *pos){
         @1 *vm, *vl, *h0;
-        var_t *vmt, *vlt;
+        char *vmt, *vlt;
         @1 hdummy;
         var_t tdummy;
 	BUN firstBUN;
@@ -991,24 +1020,24 @@ CRKcrackUnorderedZeroSideways_@3_@1_str( BAT *b, @1 mval, BUN first, BUN last, o
         h0  = (@1*)Hloc(b, firstBUN);
         vm  = (@1*)Hloc(b, firstBUN+first);
         vl  = (@1*)Hloc(b, firstBUN+last );
-        vmt = (var_t*)Tloc(b, firstBUN+first);
-        vlt = (var_t*)Tloc(b, firstBUN+last );
+        vmt = (char*)Tloc(b, firstBUN+first);
+        vlt = (char*)Tloc(b, firstBUN+last );
 
         while(vm<vl) {
                 if (@6_@4(vm, &mval,@7@1)){
                         vm  ++; 
-			vmt ++;
+			vmt += b->T->width;
 		}
                 else {
                         while( @6_@5(vl, &mval,@7@1) && vl>vm){
                                 vl  --; 
-				vlt --;
+				vlt -= b->T->width;
 			}
-                        @:shuffleSideways(@1,var_t,vm,vl,vmt,vlt)@
+                        @:shuffleSidewaysStr(@1,vm,vl,vmt,vlt)@
                         vl  --;
-			vlt --;
+			vlt -= b->T->width;
                         vm  ++;
-			vmt ++;
+			vmt += b->T->width;
                 }
         }
 
@@ -1032,7 +1061,7 @@ CRKcrackUnorderedZeroSideways_@3_@1_str( BAT *b, @1 mval, BUN first, BUN last, o
 str
 CRKcrackUnorderedThreeSideways_@3_@4_@1_str( BAT *b, @1 low, @1 hgh, BUN first, BUN last, oid *posl, oid *posh){
         @1 *vm, *vl, *hmax, *h0;
-        var_t *vmt, *vlt, *hmaxt;
+        char *vmt, *vlt, *hmaxt;
         @1 hdummy;
         var_t tdummy;
 	BUN firstBUN;
@@ -1043,10 +1072,10 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_str( BAT *b, @1 low, @1 hgh, BUN first, 
 
         vm    = (@1*)Hloc(b, firstBUN+first);
         hmax  = (@1*)Hloc(b, firstBUN+last);
-        vmt   = (var_t*)Tloc(b, firstBUN+first);
-        hmaxt = (var_t*)Tloc(b, firstBUN+last);
+        vmt   = (char*)Tloc(b, firstBUN+first);
+        hmaxt = (char*)Tloc(b, firstBUN+last);
         while( @9_@8(hmax, &hgh,@[10]@1) && hmax>vm){
-                hmax--; hmaxt--;
+                hmax--; hmaxt-=b->T->width;
 	}
 
 	if (hmax == vm){
@@ -1067,14 +1096,14 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_str( BAT *b, @1 low, @1 hgh, BUN first, 
         while( @9_@6(vl, &low,@[10]@1) && vl>vm){
                 /* move all high values into their final place */
                 if( @9_@8(vl, &hgh,@[10]@1)){
-                        @:shuffleSideways(@1,var_t,vl,hmax,vlt,hmaxt)@
-                        hmax--;hmaxt--;
+                        @:shuffleSidewaysStr(@1,vl,hmax,vlt,hmaxt)@
+                        hmax--;hmaxt-=b->T->width;
                 }
-                vl--; vlt--;
+                vl--; vlt-=b->T->width;
         }
 	if (vl == vm){ /* Left piece is empty */
 		if (@9_@8(vl, &hgh,@[10]@1)){
-			@:shuffleSideways(@1,var_t,vl,hmax,vlt,hmaxt)@
+			@:shuffleSidewaysStr(@1,vl,hmax,vlt,hmaxt)@
 			*posl = (oid) (vl - h0);
 		}
 		else if (@9_@6(vl, &low,@[10]@1))
@@ -1089,15 +1118,15 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_str( BAT *b, @1 low, @1 hgh, BUN first, 
         /* perform Zero crack first */
         while(vm<=vl) {
                 if (@9_@5(vm, &low,@[10]@1)){
-                        vm ++; vmt ++;
+                        vm ++; vmt += b->T->width;
                 } else {
-                        @:shuffleSideways(@1,var_t,vm,vl,vmt,vlt)@
+                        @:shuffleSidewaysStr(@1,vm,vl,vmt,vlt)@
                         while( @9_@6(vl, &low,@[10]@1) && vl>vm){
                                 if(@9_@8(vl, &hgh,@[10]@1) ){
-                                        @:shuffleSideways(@1,var_t,vl,hmax,vlt,hmaxt)@
-                                        hmax--; hmaxt--;
+                                        @:shuffleSidewaysStr(@1,vl,hmax,vlt,hmaxt)@
+                                        hmax--; hmaxt-=b->T->width;
                                 }
-                                vl --; vlt --;
+                                vl --; vlt -= b->T->width;
                         }
                 }
         }

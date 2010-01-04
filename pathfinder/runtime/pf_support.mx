@@ -8266,7 +8266,7 @@ CMDSplitBat(BAT **res, BAT *b, str sep)
 				nbats++;
 			}
 			BUNfndVOID(r, bn[i], &o);
-			ATOMreplace(TYPE_str, bn[i].b->theap, Tloc(bn[i].b, r), s);
+			Treplacevalue(bn[i].b, Tloc(bn[i].b, r), s);
 			i++;
 			s = e ? e + seplen : NULL;
 		}

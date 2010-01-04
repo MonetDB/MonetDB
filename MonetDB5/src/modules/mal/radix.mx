@@ -1611,7 +1611,7 @@ int
 M4_RDX_BATinteger(BAT **ret, BAT *b, int *width)
 {
 	BAT *bn, *m;
-	int tpe, log = 0;
+	int tpe, lg = 0;
 	int val = *width;
 
 	while (val) {
@@ -1620,13 +1620,13 @@ M4_RDX_BATinteger(BAT **ret, BAT *b, int *width)
 		val >>= 1;
 		if (stop)
 			break;
-		log++;
+		lg++;
 	}
-	if (*width <= 0 || log > 8 || val) {
+	if (*width <= 0 || lg > 8 || val) {
 		GDKerror("BATinteger: unknown width %d\n", *width);
 		return GDK_FAIL;
 	}
-	tpe = TYPE_integer1 + log * 2;
+	tpe = TYPE_integer1 + lg * 2;
 	if (ATOMsize(tpe) <= ATOMsize(b->ttype)) {
 		/* view implementation */
 		bn = VIEWcreate(b);
@@ -1991,12 +1991,12 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 
 		while (src < end) {
 			hash_t x = any_RADIX(BUNtail(b, src), mask) >> shift;
-			BUN p = base + dst[x];
+			BUN bun = base + dst[x];
 
 			if (dst[x] == lim[x])
 				break;
-			integerCopy((int *) BUNhloc(bn, p), b, src, width, distance);
-			ATOMput(ttpe, bn->theap, BUNtloc(bn, p), BUNtail(b, src));
+			integerCopy((int *) BUNhloc(bn, bun), b, src, width, distance);
+			ATOMput(ttpe, bn->theap, BUNtloc(bn, bun), BUNtail(b, src));
 			dst[x] += dst_bunsize;
 			src += src_bunsize;
 		}
@@ -2006,12 +2006,12 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 
 		while (src < end) {
 			hash_t x = any_RADIX(BUNtail(b, src), mask) >> shift;
-			BUN p = base + dst[x];
+			BUN bun = base + dst[x];
 
 			if (dst[x] == lim[x])
 				break;
-			ATOMput(htpe, bn->hheap, BUNhloc(bn, p), BUNhead(b, src));
-			ATOMput(ttpe, bn->theap, BUNtloc(bn, p), BUNtail(b, src));
+			ATOMput(htpe, bn->hheap, BUNhloc(bn, bun), BUNhead(b, src));
+			ATOMput(ttpe, bn->theap, BUNtloc(bn, bun), BUNtail(b, src));
 			dst[x] += dst_bunsize;
 			src += src_bunsize;
 		}
@@ -2062,7 +2062,7 @@ radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN o
 {
 	BUN lo_limit, hi_limit, cur;
 	size_t ntuples = BUNindex(b,end)-BUNindex(b,start);
-	size_t nchunks = ((size_t)1) << nbits;
+	size_t nchunks = (size_t) 1 << nbits;
 	size_t chunksize = ntuples/nchunks;
 	size_t i;
 	size_t mask = (nchunks-1) << shift;
@@ -2122,7 +2122,7 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 	int shift = ABS(*nbits), total_shift, res = 0;
 	size_t n;
 	size_t cap = BATcount(b);
-	int radix[MAXPARAMS], argc = 1, *p;
+	int radix[MAXPARAMS], argc = 1, *arg;
 	size_t *lim;
 	oid maxbits = 0;
 	bat limitid = BBPindex(nme);
@@ -2152,10 +2152,10 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 
 	radix[0] = *nbits;
 	/*va_start(ap, nbits);*/
-	while ((p = va_arg(ap, int *)) != NULL) {
-		ALGODEBUG THRprintf(GDKout, ",%d", *p);
+	while ((arg = va_arg(ap, int *)) != NULL) {
+		ALGODEBUG THRprintf(GDKout, ",%d", *arg);
 
-		radix[argc] = *p;
+		radix[argc] = *arg;
 		shift += ABS(radix[argc]);
 		argc++;
 	}
@@ -2208,7 +2208,7 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 	}
 
 	while (--argc >= 0 && radix[argc] > 0) {
-		size_t i, h = ((size_t) 1) << radix[argc], j = h * sizeof(size_t), *k, *l = lim;
+		size_t i, h = (size_t) 1 << radix[argc], j = h * sizeof(size_t), *k, *l = lim;
 		size_t *dst = (size_t *) GDKmalloc(sizeof(size_t) * h);
 		size_t *cnt = (size_t *) GDKmalloc(sizeof(size_t) * h);
 		BAT *prev = bn, *lims = NULL;
@@ -2270,7 +2270,7 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 	} else {
 		if (bn->ttype == TYPE_oid) {
 			/* now check whether we saw any higher bits; if not, its sorted! */
-			bn->tsorted = (total_shift >= 30) || (maxbits & 0x3FFFFFFF) < (((oid) 1) << total_shift);
+			bn->tsorted = (total_shift >= 30) || (maxbits & 0x3FFFFFFF) < ((oid) 1 << total_shift);
 		}
 		bn->tsorted |= total_shift << 1;	/* set radix bits */
 	}
@@ -2422,7 +2422,7 @@ radix setting for a certain BAT dataset (tail column).
 int
 M4_RDX_radix_count(BAT **res, BAT *b, int *shift, int *radix)
 {
-	size_t mask = ((size_t) 1) << *radix;
+	size_t mask = (size_t) 1 << *radix;
 	int off = *shift;
 	BAT *bn = BATnew(TYPE_int, TYPE_int, mask);
 	int bunsize;
@@ -2472,7 +2472,7 @@ M4_RDX_radix_count(BAT **res, BAT *b, int *shift, int *radix)
 int
 M4_RDX_radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 {
-	size_t mask = ((size_t) 1) << *radix;
+	size_t mask = (size_t) 1 << *radix;
 	int off = *shift;
 	BAT *bn = *res = BATnew(TYPE_int, TYPE_int, mask);
 	size_t xx;
@@ -3106,7 +3106,7 @@ M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 
 	/* create destination bat and init some variables */
 	if (any == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
-		tpe = any = TYPE_var;
+		tpe = any = b->T->width == 1 ? TYPE_bte : (b->T->width == 2 ? TYPE_sht : (b->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
 	/* init variables for the decluster operation */
@@ -3148,7 +3148,7 @@ M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	GDKfree(cnk);
 
 	/* string heaps with double elimination were treated as ints */
-	if (any == TYPE_var && ATOMstorage(b->ttype) == TYPE_str) {
+	if (any != b->ttype && ATOMstorage(b->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
 		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
@@ -3163,6 +3163,8 @@ M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 		} else {
 			bm->htype = bn->ttype = b->ttype;
 			bm->hvarsized = bn->tvarsized = 1;
+			bn->T->width = b->T->width;
+			bn->T->shift = b->T->shift;
 		}
 	}
 	if (*res == NULL) {
@@ -3376,7 +3378,7 @@ M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 
 	/* create destination bat and init some variables */
 	if (any == TYPE_str && GDK_ELIMDOUBLES(a->theap)) {
-		tpe = any = TYPE_var;
+		tpe = any = a->T->width == 1 ? TYPE_bte : (a->T->width == 2 ? TYPE_sht : (a->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
 	/* init variables for the decluster operation */
@@ -3420,7 +3422,7 @@ M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	GDKfree(cnk);
 
 	/* string heaps with double elimination were treated as ints */
-	if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
+	if (any != a->ttype && ATOMstorage(a->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
 		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
@@ -3435,6 +3437,8 @@ M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 		} else {
 			bm->htype = bn->ttype = a->ttype;
 			bm->hvarsized = bn->tvarsized = 1;
+			bn->T->width = a->T->width;
+			bn->T->shift = a->T->shift;
 		}
 	}
 	if (*res == NULL) {
@@ -3517,7 +3521,7 @@ M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 
 	/* create destination bat and init some variables */
 	if (any == TYPE_str && GDK_ELIMDOUBLES(a->theap)) {
-		tpe = any = TYPE_var;
+		tpe = any = a->T->width == 1 ? TYPE_bte : (a->T->width == 2 ? TYPE_sht : (a->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
 	/* init variables for the decluster operation */
@@ -3560,7 +3564,7 @@ M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	GDKfree(cnk);
 
 	/* string heaps with double elimination were treated as ints */
-	if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
+	if (any != a->ttype && ATOMstorage(a->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
 		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
@@ -3575,6 +3579,8 @@ M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 		} else {
 			bm->htype = bn->ttype = a->ttype;
 			bm->hvarsized = bn->tvarsized = 1;
+			bn->T->width = a->T->width;
+			bn->T->shift = a->T->shift;
 		}
 	}
 	if (*res == NULL) {
@@ -3640,7 +3646,7 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 
 	/* create destination bat and init some variables */
 	if (any == TYPE_str && GDK_ELIMDOUBLES(a->theap)) {
-		tpe = any = TYPE_var;
+		tpe = any = a->T->width == 1 ? TYPE_bte : (a->T->width == 2 ? TYPE_sht : (a->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
 	/* init variables for the decluster operation */
@@ -3683,7 +3689,7 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	GDKfree(cnk);
 
 	/* string heaps with double elimination were treated as ints */
-	if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
+	if (any != a->ttype && ATOMstorage(a->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
 		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
@@ -3698,6 +3704,8 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 		} else {
 			bm->htype = bn->ttype = a->ttype;
 			bm->hvarsized = bn->tvarsized = 1;
+			bn->T->width = a->T->width;
+			bn->T->shift = a->T->shift;
 		}
 	}
 	if (*res == NULL) {
@@ -3781,7 +3789,7 @@ M4_RDX_jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, 
 	int any = attr->ttype;
 	BAT *bn = BATnew(proj->htype, any, BATcount(proj));
 	int zz = *shift;
-	size_t xx, yy = ((size_t) 1) << *nbits;
+	size_t xx, yy = (size_t) 1 << *nbits;
 	size_t *cluster = (size_t *) GDKmalloc((yy + 1) * sizeof(size_t));
 	BUN p, q, r, s;
 
@@ -3879,7 +3887,7 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 @)
 	int any = attr->ttype;
 	BAT *bn = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
-	size_t xx = bo->batBuns->free, yy = ((size_t) 1) << *nbits, cnt = bo->batCount;
+	size_t xx = bo->batBuns->free, yy = (size_t) 1 << *nbits, cnt = bo->batCount;
 	int zz = *shift;
 	size_t *cluster = (size_t *) GDKmalloc((yy + 1) * sizeof(size_t));
 	BUN p, q, r, bobak;
@@ -4298,7 +4306,7 @@ M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 	/* compute skiprate and if set, prefetch full first cluster */
 	skiprate = ((dbl) v_cnt) / c_cnt;
 	if (stride < 0) {
-		cur_prefetch = (char *) vf + width * MIN(v_cnt, ((ssize_t) 1) << radix_shift);
+		cur_prefetch = (char *) vf + width * MIN(v_cnt, (ssize_t) 1 << radix_shift);
 		prefetch(cur_prefetch - vf, 128, (dbl *) vf);
 	}
 
@@ -4311,7 +4319,7 @@ M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 		/* handle prefetching of the next cluster */
 		if (cur_prefetch) {
 			/* increment concurrent prefetch pointer */
-			size_t prefetch_pos = (size_t) (i * skiprate) + (((size_t) 1) << radix_shift);
+			size_t prefetch_pos = (size_t) (i * skiprate) + ((size_t) 1 << radix_shift);
 
 			cur_prefetch = vf + width * prefetch_pos;
 			if (cur_prefetch + n * width * ((int) skiprate) > BUNlast(v))
@@ -4319,7 +4327,7 @@ M4_RDX_posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 		} else if (stride >= 0) {
 			/* handle sequential prefetching if applicable */
 			if (prev_bits != cur_bits && radix_shift > 3) {
-				size_t length = width * MIN(v_cnt - cur_bits, ((size_t) 1) << radix_shift);
+				size_t length = width * MIN(v_cnt - cur_bits, (size_t) 1 << radix_shift);
 
 				(void) prefetch(length, stride, (dbl *) (vf + cur_bits * width));
 				if (skiprate * width > 128) {

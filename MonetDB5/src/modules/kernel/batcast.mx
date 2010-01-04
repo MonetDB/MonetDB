@@ -246,22 +246,22 @@ batcast_export str CMDconvert_str_@1(int *ret, int *bid);
 str CMDconvert_str_@1(int *ret, int *bid)
 {
 	BAT *b,*bn;
-	var_t *p,*q;
-	BUN r = 0;
+	BATiter bi;
+	BUN p, q, r = 0;
 
 	@:getBATdescriptor(bid, b, "batcalc.@1")@
 	@:voidresultBAT(TYPE_@1,"batcalc.@1")@
-	p = (var_t*) Tloc(b,BUNfirst(b));
-	q = (var_t*) Tloc(b,BUNlast(b));
+	bi = bat_iterator(b);
 
-	for(; p<q; p++, r++){
+	BATloop(b, p, q) {
 		ptr v = NULL; 
-		int len=0;
+		int len = 0;
 
-		ATOMfromstr (TYPE_@1, &v, &len, (char*)Tbase(b)+((*p)<<GDK_VARSHIFT));
-		ATOMput(TYPE_@1, bn->T->vheap, Tloc(bn,r), v);
-		if (ATOMextern(TYPE_@1) )
+		ATOMfromstr(TYPE_@1, &v, &len, (char *) BUNtvar(bi, p));
+		ATOMput(TYPE_@1, bn->T->vheap, Tloc(bn, r), v);
+		if (ATOMextern(TYPE_@1))
 			GDKfree(v);
+		r++;
 	}
 	BATsetcount(bn, BATcount(b));
 bunins_failed:

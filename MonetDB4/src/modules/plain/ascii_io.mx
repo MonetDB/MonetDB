@@ -587,11 +587,11 @@ ASCIIcreate_bats(ascii *as)
 		nr = as->nr;
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, nr);
-		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
 			GDKerror("ASCIIcreate_bats: Failed to create bat of size " BUNFMT "\n", as->nr);
 			return -1;
 		}
+		fmt[i].ci = bat_iterator(fmt[i].c);
 	}
 	return 0;
 }

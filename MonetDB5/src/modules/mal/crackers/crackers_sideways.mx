@@ -1827,13 +1827,10 @@ createView:
 			ctail++;
 		}
 		if (bp->ttype==TYPE_str){
-			var_t *ntail = (var_t*)Tloc(b,  BUNfirst(b));
-			var_t *ptail = (var_t*)Tloc(bp, BUNfirst(bp));
-			for(j=0;j<sizeM;j++){
-				*ntail = *ptail;
-				ntail++;
-				ptail++;
-			}
+			assert(b->T->width <= bp->T->width);
+			if (bp->T->width != b->T->width)
+				GDKupgradevarheap(b->T, sizeM, (var_t) 1 << (bp->T->width - 1), 0);
+			memcpy(Tloc(b,  BUNfirst(b)), Tloc(bp, BUNfirst(bp)), sizeM << bp->T->width);
 
 			{
 				/* Copy the heap of the tail. I have to check this with niels */

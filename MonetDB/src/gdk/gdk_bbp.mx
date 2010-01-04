@@ -773,8 +773,17 @@ BBPinit(void)
 
 			if ((t = ATOMindex(type)) < 0)
 				t = ATOMunknown_find(type);
-			else if (BATatoms[t].size != width || BATatoms[t].varsized != var)
-				GDKfatal("BBPinit: inconsistent entry in BBP.dir");
+			else if (BATatoms[t].varsized != var)
+				GDKfatal("BBPinit: inconsistent entry in BBP.dir: @1.varsized mismatch for BAT " LLFMT "\n", batid);
+			else if (var && t != 0 ?
+				 BATatoms[t].size < width ||
+				 (width != 1 && width != 2 && width != 4
+#if SIZEOF_VAR_T == 8
+				  && width != 8
+#endif
+				 ) :
+				 BATatoms[t].size != width)
+				GDKfatal("BBPinit: inconsistent entry in BBP.dir: @1.size mismatch for BAT " LLFMT "\n", batid);
 			bs->@1.type = t;
 			bs->@1.width = width;
 			bs->@1.varsized = var != 0;

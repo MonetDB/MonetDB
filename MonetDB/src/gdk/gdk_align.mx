@@ -426,6 +426,7 @@ BATmaterializeh(BAT *b)
 	Heap head;
 	BUN p, q;
 	oid h, *x;
+	chr tshift;
 
 	BATcheck(b, "BATmaterialize: bat required");
 	assert(!isVIEW(b));
@@ -454,7 +455,12 @@ BATmaterializeh(BAT *b)
 
 	/* point of no return */
 	b->htype = ht;
+	tshift = b->T->shift;
 	BATsetdims(b);
+	if (b->ttype) {
+		b->T->shift = tshift;	/* restore in case it got changed */
+		b->T->width = 1 << tshift;
+	}
 	b->batDirty = TRUE;
 	b->batDirtydesc = TRUE;
 	b->H->heap.dirty = TRUE;

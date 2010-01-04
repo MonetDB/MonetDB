@@ -100,27 +100,26 @@ typedef struct {
 
 @= register_swap
 /* fast record swapping */
-#define @1_SWAP(TYPE, a, b, s) {			\
-	@1 *_pa = (@1 *) (a);				\
-	@1 *_pb = (@1 *) (b);				\
-	@1 _tmp = *_pa;					\
-	*_pa = *_pb;					\
-	*_pb = _tmp;					\
-}
+#define @1_SWAP(TYPE, a, b, s)			\
+	do {					\
+		@1 *_pa = (@1 *) (a);		\
+		@1 *_pb = (@1 *) (b);		\
+		@1 _tmp = *_pa;			\
+		*_pa = *_pb;			\
+		*_pb = _tmp;			\
+	} while (0)
 #define direct_@1_SWAP(TYPE, a, b, s)			\
 	@1_SWAP(TYPE, a, b, s)
 
-#define offset_@1_SWAP(TYPE, a, b, s)			\
-	var_t_SWAP(TYPE, a, b, s)
+#define offset_@1_SWAP(TYPE, a, b, s)	offset_any_SWAP(TYPE, a, b, s)
 
-#define @1_multi_SWAP(TYPE, a, b, n, nt)		\
+#define @1_multi_SWAP(TYPE, a, b, n, nt, s)		\
 	tpe_SWAP(TYPE, a, b, n)
 
-#define direct_@1_multi_SWAP(TYPE, a, b, n, nt)		\
+#define direct_@1_multi_SWAP(TYPE, a, b, n, nt, s)		\
 	tpe_SWAP(TYPE, a, b, n)
 
-#define offset_@1_multi_SWAP(TYPE, a, b, n, nt)		\
-	tpe_SWAP(var_t, a, b, n)
+#define offset_@1_multi_SWAP(TYPE, a, b, n, nt, s) offset_any_multi_SWAP(TYPE, a, b, n, nt, s)
 
 @c
 @:register_swap(chr)@
@@ -130,29 +129,47 @@ typedef struct {
 @:register_swap(lng)@
 @:register_swap(flt)@
 @:register_swap(dbl)@
-@:register_swap(var_t)@
 
 #define iterate_SWAP(TYPE, a, b, s) 		 tpe_SWAP(bte, a, b, s)
 #define direct_any_SWAP(TYPE, a, b, s) 		 tpe_SWAP(bte, a, b, s)
-#define offset_any_SWAP(TYPE, a, b, s) 		 var_t_SWAP(var_t, a, b, s)
-#define iterate_multi_SWAP(TYPE, a, b, n, nt) 	 tpe_SWAP(bte, a, b, nt)
-#define direct_any_multi_SWAP(TYPE, a, b, n, nt) tpe_SWAP(bte, a, b, nt)
-#define offset_any_multi_SWAP(TYPE, a, b, n, nt) tpe_SWAP(var_t, a, b, n)
+#define offset_any_SWAP(TYPE, a, b, s)			\
+	do {						\
+		switch (s) {				\
+		case 1: chr_SWAP(TYPE, a, b, s); break; \
+		case 2: sht_SWAP(TYPE, a, b, s); break; \
+		case 4: int_SWAP(TYPE, a, b, s); break; \
+		case 8: lng_SWAP(TYPE, a, b, s); break; \
+		default: assert(0);			\
+		}					\
+	} while (0)
+#define iterate_multi_SWAP(TYPE, a, b, n, nt, s) tpe_SWAP(bte, a, b, nt)
+#define direct_any_multi_SWAP(TYPE, a, b, n, nt, s) tpe_SWAP(bte, a, b, nt)
+#define offset_any_multi_SWAP(TYPE, a, b, n, nt, s) 		\
+	do {							\
+		switch (s) {					\
+		case 1: tpe_SWAP(chr, a, b, (nt)); break;	\
+		case 2: tpe_SWAP(sht, a, b, (nt)>>1); break;	\
+		case 4: tpe_SWAP(int, a, b, (nt)>>2); break;	\
+		case 8: tpe_SWAP(lng, a, b, (nt)>>3); break;	\
+		default: assert(0);				\
+		}						\
+	} while (0)
 
 /* no swapping for voids */
 #define void_SWAP(TYPE, a, b, s)
-#define void_multi_SWAP(TYPE, a, b, n, nt)
+#define void_multi_SWAP(TYPE, a, b, n, nt, s)
 
-#define tpe_SWAP(TYPE, a, b, n) {			\
-	ssize_t _i = (ssize_t) (n);			\
-	TYPE *_pa = (TYPE*)(a);				\
-	TYPE *_pb = (TYPE*)(b);				\
-	while (--_i >= 0) {				\
-		TYPE _tmp = *_pa;			\
-		*_pa++ = *_pb;				\
-		*_pb++ = _tmp;				\
-	}						\
-}
+#define tpe_SWAP(TYPE, a, b, n)			\
+	do {					\
+		ssize_t _i = (ssize_t) (n);	\
+		TYPE *_pa = (TYPE*)(a);		\
+		TYPE *_pb = (TYPE*)(b);		\
+		while (--_i >= 0) {		\
+			TYPE _tmp = *_pa;	\
+			*_pa++ = *_pb;		\
+			*_pb++ = _tmp;		\
+		}				\
+	} while (0)
 
 @}
 @-
@@ -190,7 +207,18 @@ typedef lng ptrdiff_t;
 #endif
 #endif
 
-#define offset(p)		(buf->offst + ((*(var_t*) (p)) << buf->vshift))
+#if SIZEOF_VAR_T == 8
+#define offset(p)		(buf->offst + \
+				 ((buf->hshift==0 ? (size_t)*(unsigned char*)(p)+GDK_VAROFFSET : \
+				   (buf->hshift==1 ? (size_t)*(unsigned short*)(p)+GDK_VAROFFSET : \
+				    (buf->hshift==2 ? (size_t)*(unsigned int*)(p) : \
+				     (size_t)*(var_t*)(p)))) << buf->vshift))
+#else
+#define offset(p)		(buf->offst + \
+				 ((buf->hshift==0 ? (size_t)*(unsigned char*)(p)+GDK_VAROFFSET : \
+				   (buf->hshift==1 ? (size_t)*(unsigned short*)(p)+GDK_VAROFFSET : \
+				    (size_t)*(var_t*)(p))) << buf->vshift))
+#endif
 #define direct(p)		(p)
 
 #define any_LE(a,b)		((buf->cmp)(a,b) <= 0)
@@ -368,11 +396,11 @@ loop:
 
 	pn = h + MULT_WIDTH(n);
 	r = MIN(pa - h, pb - pa);
-	@2_@3_multi_SWAP(@3, h, pb - r, DIV_WIDTH(r), r);
-	@1_multi_SWAP(@1, t, t+MULT_TS(DIV_WIDTH(pb-r-h)), DIV_WIDTH(r), MULT_TS(DIV_WIDTH(r)));
+	@2_@3_multi_SWAP(@3, h, pb - r, DIV_WIDTH(r), r, buf->hs);
+	@1_multi_SWAP(@1, t, t+MULT_TS(DIV_WIDTH(pb-r-h)), DIV_WIDTH(r), MULT_TS(DIV_WIDTH(r)), buf->ts);
 	r = MIN(pd - pc, (ptrdiff_t) (pn - pd - buf->hs));
-	@2_@3_multi_SWAP(@3, pb, pn - r, DIV_WIDTH(r), r);
-	@1_multi_SWAP(@1, t+MULT_TS(DIV_WIDTH(pb-h)), t+MULT_TS(DIV_WIDTH(pn-r-h)), DIV_WIDTH(r), MULT_TS(DIV_WIDTH(r)));
+	@2_@3_multi_SWAP(@3, pb, pn - r, DIV_WIDTH(r), r, buf->hs);
+	@1_multi_SWAP(@1, t+MULT_TS(DIV_WIDTH(pb-h)), t+MULT_TS(DIV_WIDTH(pn-r-h)), DIV_WIDTH(r), MULT_TS(DIV_WIDTH(r)), buf->ts);
 	if ((r = pb - pa) > buf->hs)
 		GDKqsort_@1_@2_@3@5(h, t, DIV_WIDTH(r), buf);
 	if ((r = pd - pc) > buf->hs) { 

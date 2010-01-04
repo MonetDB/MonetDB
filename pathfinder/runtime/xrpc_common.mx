@@ -461,7 +461,7 @@ xrpc_parse_message(
                         oid end_pre = hdr_node_pre + pre_sizeT[hdr_node_pre];
                         while(++hdr_node_pre <= end_pre) {
                             if (pre_kindT[hdr_node_pre] == TEXT) {
-                                s = text_base + (prop_textT[pre_propT[hdr_node_pre]] << GDK_VARSHIFT);
+                                s = text_base + VarHeapVal(prop_textT, pre_propT[hdr_node_pre], prop_text->T->width);
                                 BUNappend(participants, s, FALSE);
                             }
                         }
@@ -484,7 +484,7 @@ xrpc_parse_message(
                         oid end_pre = hdr_node_pre + pre_sizeT[hdr_node_pre];
                         while(++hdr_node_pre <= end_pre) {
                             if (pre_kindT[hdr_node_pre] == TEXT) {
-                                s = text_base + (prop_textT[pre_propT[hdr_node_pre]] << GDK_VARSHIFT);
+                                s = text_base + VarHeapVal(prop_textT, pre_propT[hdr_node_pre], prop_text->T->width);
                                 if (isqid) {
                                     qid = GDKstrdup(s);
                                 } else {
@@ -638,7 +638,7 @@ xrpc_parse_message(
                                 "is expected to have a simple value", msg+strlen(XRPC_NS)+1, i, j, k);
                         goto cleanup;
                     }
-                    req->argval[req->nr_args] = text_base + (prop_textT[pre_propT[val_node_pre]] << GDK_VARSHIFT);
+                    req->argval[req->nr_args] = text_base + VarHeapVal(prop_textT, pre_propT[val_node_pre], prop_text->T->width);
                 } else if (strcmp(pul, XRPC_NS"|attribute") == 0) {
                     while(ao_ptr < nattrs && attr_ownT[ao_ptr] < tpe_node_pre) ao_ptr++;
                     if (attr_ownT[ao_ptr] == tpe_node_pre) {

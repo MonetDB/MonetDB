@@ -224,22 +224,46 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 void
 CLUSTER_key_str( BAT *map, BAT *b)
 {
-	var_t *bt, *be;
+	char *bt, *be;
 	oid *o;
+	BUN h;
 
 	assert(BUNfirst(b) == 0);
 	assert(BUNfirst(map) == 0);
 	o = (oid*)Tloc(map, 0);
-	bt = (var_t *)Tloc(b, 0);
-	be = bt + BATcount(b);
-	for ( ; bt < be; bt++){
-	/* hash on the string reference */
-#if SIZEOF_VAR_T == SIZEOF_INT
-		BUN h = hash_int(b->T->hash,bt);
-#else 
-		BUN h = hash_oid(b->T->hash,bt);
+	bt = (char *)Tloc(b, 0);
+	be = bt + (BATcount(b) << b->T->width);
+	switch (b->T->width) {
+	case 1:
+		for ( ; bt < be; bt += 1){
+		/* hash on the string reference */
+			h = hash_bte(b->T->hash,bt);
+			*o++= h;
+		}
+		break;
+	case 2:
+		for ( ; bt < be; bt += 2){
+		/* hash on the string reference */
+			h = hash_sht(b->T->hash,bt);
+			*o++= h;
+		}
+		break;
+#if SIZEOF_VAR_T == 8
+	case 4:
+		for ( ; bt < be; bt += 4){
+		/* hash on the string reference */
+			h = hash_int(b->T->hash,bt);
+			*o++= h;
+		}
+		break;
 #endif
-		*o++= h;
+	default:
+		for ( ; bt < be; bt += 8){
+		/* hash on the string reference */
+			h = hash_lng(b->T->hash,bt);
+			*o++= h;
+		}
+		break;
 	}
 }
 str  

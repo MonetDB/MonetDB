@@ -735,15 +735,13 @@ in this implementation.
 @= BUNins_array_special
 	{
 		ptr _h = (buntrick==-1)?BUNhpos(bhi,ph):BUNhloc(bhi,ph);
-		bunfastins_nocheck(@1, d, _h, *(ptr*)@3, hs, ts);
+		bunfastins_nocheck(@1, d, _h, *(ptr*)@3, Hsize(@1), Tsize(@1));
 		d++;
 		(void) dst; /* only used in "multiplex" case below */
 	}
 
 @= BUNins_array_multiplex
 	(void) bhi; /* only used in "special" case above */
-	(void) hs;  /* only used in "special" case above */
-	(void) ts;  /* only used in "special" case above */
 	switch (buntrick) {
 	case 0:	  
 		goto bunins_failed;
@@ -839,7 +837,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	int ret_sze = ATOMsize(ret_tpe);
 	ptr  tptr = (ptr) GDKmalloc(ret_sze+8);
 	ptr  tnil = ATOMnilptr(ret_tpe);
-	int replace = FALSE, hs, ts, buntrick = 0;
+	int replace = FALSE, buntrick = 0;
 	bulkerror_t bulkerror;
 	char *dst;
 
@@ -893,14 +891,12 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 		}
 		dst = Tloc(retb, BUNfirst(retb));
 	}
-	hs = Hsize(retb);
-	ts = Tsize(retb);
 	bulkerror_init(&bulkerror);
 
 	if (argc == 2) {
 #ifndef FIRST_PARAM_FIXEDSIZE
 		if (a1) {
-			@:arrayloop1(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT))@
+			@:arrayloop1(@1,a1+VarHeapVal(p1,0,s1))@
 		} else
 #endif
 		{
@@ -910,15 +906,15 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 #ifndef FIRST_PARAM_FIXEDSIZE
 		if (a1) {
 			if (a2) {
-				@:arrayloop2(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),a2+((*(var_t*)p2) << GDK_VARSHIFT))@
+				@:arrayloop2(@1,a1+VarHeapVal(p1,0,s1),a2+VarHeapVal(p2,0,s2))@
 			} else {
-				@:arrayloop2(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),p2)@
+				@:arrayloop2(@1,a1+VarHeapVal(p1,0,s1),p2)@
 			}
 		} else
 #endif
 		{
 			if (a2) {
-				@:arrayloop2(@1,p1,a2+((*(var_t*)p2) << GDK_VARSHIFT))@
+				@:arrayloop2(@1,p1,a2+VarHeapVal(p2,0,s2))@
 			} else {
 				@:arrayloop2(@1,p1,p2)@
 			}
@@ -927,28 +923,28 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	} else if (a1) {
 		if (a2) {
 			if (a3) {
-				@:arrayloop3(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),a2+((*(var_t*)p2) << GDK_VARSHIFT),a3+((*(var_t*)p3) << GDK_VARSHIFT))@
+				@:arrayloop3(@1,a1+VarHeapVal(p1,0,s1),a2+VarHeapVal(p2,0,s2),a3+VarHeapVal(p3,0,s3))@
 			} else {
-				@:arrayloop3(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),a2+((*(var_t*)p2) << GDK_VARSHIFT),p3)@
+				@:arrayloop3(@1,a1+VarHeapVal(p1,0,s1),a2+VarHeapVal(p2,0,s2),p3)@
 			}
 		} else {
 			if (a3) {
-				@:arrayloop3(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),p2,a3+((*(var_t*)p3) << GDK_VARSHIFT))@
+				@:arrayloop3(@1,a1+VarHeapVal(p1,0,s1),p2,a3+VarHeapVal(p3,0,s3))@
 			} else {
-				@:arrayloop3(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),p2,p3)@
+				@:arrayloop3(@1,a1+VarHeapVal(p1,0,s1),p2,p3)@
 			}
 		}
 #endif
 	} else {
 		if (a2) {
 			if (a3) {
-				@:arrayloop3(@1,p1,a2+((*(var_t*)p2) << GDK_VARSHIFT),a3+((*(var_t*)p3) << GDK_VARSHIFT))@
+				@:arrayloop3(@1,p1,a2+VarHeapVal(p2,0,s2),a3+VarHeapVal(p3,0,s3))@
 			} else {
-				@:arrayloop3(@1,p1,a2+((*(var_t*)p2) << GDK_VARSHIFT),p3)@
+				@:arrayloop3(@1,p1,a2+VarHeapVal(p2,0,s2),p3)@
 			}
 		} else {
 			if (a3) {
-				@:arrayloop3(@1,p1,p2,a3+((*(var_t*)p3) << GDK_VARSHIFT))@
+				@:arrayloop3(@1,p1,p2,a3+VarHeapVal(p3,0,s3))@
 			} else {
 				@:arrayloop3(@1,p1,p2,p3)@
 			}
@@ -1531,7 +1527,7 @@ there are the {strings, polygons, images, etc}!
 	if ((BAThordered(b) & 1) == 0 && ATOMvarsized(b->ttype)) {
 		hidden_vartype = b->ttype;	/* just copy offsets */
 	}
-	nested = BATnew(hidden_vartype ? TYPE_var : (b->ttype?b->ttype:TYPE_oid), TYPE_void, (BATcount(b) * 3) / (BATcount(extent) + 1));
+	nested = BATnew(hidden_vartype ? (b->T->width == 1 ? TYPE_bte : (b->T->width == 2 ? TYPE_sht : (b->T->width == 4 ? TYPE_int : TYPE_lng))) : (b->ttype ? b->ttype : TYPE_oid), TYPE_void, (BATcount(b) * 3) / (BATcount(extent) + 1));
 	nested_rev = BATmirror(nested);
 	nested->batRestricted = BAT_READ;
 	prop_key = (b->batSet || b->tkey);
@@ -1544,6 +1540,8 @@ there are the {strings, polygons, images, etc}!
 		nested->hvarsized = TRUE;
 		nested->hheap = (Heap*) alloca(sizeof(Heap));
 		*nested->hheap = *b->theap;
+		nested->H->width = b->T->width;
+		nested->H->shift = b->T->shift;
 	}
 
 	/* TRICK: for sorted aggregation, we let 'nested' point into 'b' */
@@ -1717,7 +1715,6 @@ a temporary BAT 'nested'; in which we insert all tail values.
 @c
 	} else {
 		oid voiddelta = b->tseqbase - minpos;
-		int hs = Hsize(nested);
 		Heap *head = &nested->H->heap;
 
 		nested->batDeleted = nested->batInserted = 0;
@@ -1889,7 +1886,7 @@ call and we have the additional knowledge (through the atom heap trick) that:
 			goto bunins_failed;
 		nested->batDeleted = nested->batDeleted = nested->batFirst = 0;
 	}
-	if (hs == SIZEOF_OID) {
+	if (Hsize(nested) == SIZEOF_OID) {
 		if (b->ttype == TYPE_void) {
 			*(oid*) (head->base + head->free) = voiddelta + @1;
 		} else {
@@ -1900,16 +1897,16 @@ call and we have the additional knowledge (through the atom heap trick) that:
 #endif
 		}
 #if SIZEOF_OID != SIZEOF_INT
-	} else if (hs == SIZEOF_INT) {
+	} else if (Hsize(nested) == SIZEOF_INT) {
 	        *(int*) (head->base + head->free) = *(int*) BUNtloc(bi,@1);
 #endif
-	} else if (hs > SIZEOF_INT) {
-		memcpy(head->base + head->free, BUNtloc(bi,@1), hs);
-	} else if (hs == 1) {
+	} else if (Hsize(nested) > SIZEOF_INT) {
+		memcpy(head->base + head->free, BUNtloc(bi,@1), Hsize(nested));
+	} else if (Hsize(nested) == 1) {
 		*(bte*) (head->base + head->free) = *(bte*) BUNtloc(bi,@1);
 	} else {
 		*(sht*) (head->base + head->free) = *(sht*) BUNtloc(bi,@1);
 	}
-	head->free += hs;
+	head->free += Hsize(nested);
 	nested->batCount++;
 @}

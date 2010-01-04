@@ -90,7 +90,7 @@ int CMD_XQH_H_bat(BAT **res, BAT* b) {
         var_t *src = (var_t*) Tloc(b, BUNfirst(b));
         int *dst = (int*) Tloc(bn, BUNfirst(bn));
         for(i=0; i<cnt; i++)
-            dst[i] =  XQH_H(base + (src[i]<<GDK_VARSHIFT));
+            dst[i] =  XQH_H(base + VarHeapVal(src, i, b->T->width));
 
         ALIGNsetH(bn, b);
         BATsetcount(bn, cnt);
@@ -593,12 +593,12 @@ bats, nid_state, value_nid, nid_lexical. All BATs are shorted on head.
  * to be only of kind TEXT. This is not true during updates,
  * since there might *not* be a text node (deleted).
  */
-pre_hsh[pre] = XQH_H(text_base + (pre_text[pre_prop[pre]]<<GDK_VARSHIFT));
+pre_hsh[pre] = XQH_H(text_base + VarHeapVal(pre_text, pre_prop[pre], text_width));
 cur++;
 
 @= found_update_string
 if (pre_kind[pre] == TEXT) {
-    pre_hsh[pre] = XQH_H(text_base + (pre_text[pre_prop[pre]]<<GDK_VARSHIFT));
+    pre_hsh[pre] = XQH_H(text_base + VarHeapVal(pre_text, pre_prop[pre], text_width));
     cur++;
 } else {
     /* deal with non-text nodes */
@@ -609,12 +609,12 @@ if (pre_kind[pre] == TEXT) {
  * to be only of kind TEXT. This is not true during updates,
  * since there might *not* be a text node (deleted).
  */
-pre_state[pre] = dbl_fsm(text_base + (pre_text[pre_prop[pre]] << GDK_VARSHIFT));
+pre_state[pre] = dbl_fsm(text_base + VarHeapVal(pre_text, pre_prop[pre], text_width));
 cur++;
 
 @= found_update_dbl
 if (pre_kind[pre] == TEXT) {
-    pre_state[pre] = dbl_fsm(text_base + (pre_text[pre_prop[pre]] << GDK_VARSHIFT));
+    pre_state[pre] = dbl_fsm(text_base + VarHeapVal(pre_text, pre_prop[pre], text_width));
     cur++;
 } else {
     /* deal with non-text nodes */
@@ -754,10 +754,11 @@ index_@1_@2(                        /* OUTPUT:                     */
         @:decleration_@1_@2()@
                                           /* DOCUMENT:                   */
         oid* pre_prop,                    /* - pre_prop column           */
-        var_t* pre_text,                  /* - fixed-size offsets of the
+        void* pre_text,                   /* - fixed-size offsets of the
                                                pre_text string column    */
         char* text_base,                  /* - base pointer of the
                                                pre_text string heap      */
+        unsigned short text_width,        /* - width of pre_text column  */
         unsigned int* pre_size,           /* - pre_size column           */
         unsigned char* pre_level,         /* - pre_level column          */
         unsigned char* pre_kind,          /* - pre_kind column           */
@@ -914,6 +915,7 @@ CMD_vx_create_@1(          /* RESULT:   */
                     pre_prop,
                     (var_t*) Tloc(prop_text, BUNfirst(prop_text)),
                     (char*) prop_text->T->vheap->base,
+                    prop_text->T->width,
                     pre_size, pre_level, pre_kind, limit,
                     context, BATcount(ctx_bat))) {
             status = GDK_SUCCEED;
@@ -1006,6 +1008,7 @@ CMD_vx_update_@1(          /* RESULT:   */
                 pre_prop,
                 (var_t*) Tloc(prop_text, BUNfirst(prop_text)),
                 (char*) prop_text->T->vheap->base,
+                prop_text->T->width,
                 pre_size, pre_level, pre_kind, limit,
                 context, BATcount(ctx_bat))) {
         status = GDK_SUCCEED;

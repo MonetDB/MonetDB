@@ -213,8 +213,14 @@ ATOMelmshift(int sz)
 void
 BATsetdims(BAT *b)
 {
-	b->H->width = ATOMsize(b->htype);
-	b->T->width = ATOMsize(b->ttype);
+	if (b->htype == TYPE_str)
+		b->H->width = 1;
+	else
+		b->H->width = ATOMsize(b->htype);
+	if (b->ttype == TYPE_str)
+		b->T->width = 1;
+	else
+		b->T->width = ATOMsize(b->ttype);
 	b->H->shift = ATOMelmshift(Hsize(b));
 	b->T->shift = ATOMelmshift(Tsize(b));
 	assert_shift_width(b->H->shift,b->H->width);
@@ -559,6 +565,9 @@ BATclear(BAT *b)
 		void (*hatmdel)(Heap*,var_t*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*,var_t*) = BATatoms[b->ttype].atomDel;
 
+		/* TYPE_str has no del method, so we shouldn't get here */
+		assert(hatmdel == NULL || b->H->width == sizeof(var_t));
+		assert(tatmdel == NULL || b->T->width == sizeof(var_t));
 		if (hatmdel || tatmdel) {
 			BATiter bi = bat_iterator(b);
 
@@ -826,6 +835,19 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		if (bn == NULL)
 			return NULL;
 
+		if (bn->hvarsized && bn->htype) {
+			bn->H->shift = b->H->shift;
+			bn->H->width = b->H->width;
+			if (HEAPextend(&bn->H->heap, BATcapacity(bn) << bn->H->shift) < 0)
+				goto bunins_failed;
+		}
+		if (bn->tvarsized && bn->ttype) {
+			bn->T->shift = b->T->shift;
+			bn->T->width = b->T->width;
+			if (HEAPextend(&bn->T->heap, BATcapacity(bn) << bn->T->shift) < 0)
+				goto bunins_failed;
+		}
+
 		if (ht == TYPE_void && tt == TYPE_void) {
 			/* case (2): a void,void result => nothing to copy! */
 			bn->H->heap.free = 0;
@@ -891,13 +913,12 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = BUNfirst(bn);
 			BATiter bi = bat_iterator(b);
-			unsigned short hs = Hsize(b), ts = Tsize(b);
 
 			BATloop(b, p, q) {
 				ptr h = BUNhead(bi, p);
 				ptr t = BUNtail(bi, p);
 
-				bunfastins_nocheck(bn, r, h, t, hs, ts);
+				bunfastins_nocheck(bn, r, h, t, Hsize(bn), Tsize(bn));
 				r++;
 			}
 		} else if ((ht && b->htype == TYPE_void) || (tt && b->ttype == TYPE_void)) {
@@ -1578,9 +1599,11 @@ last inserted bun (if present) is copied over it.
 			(*tunfix) (BUNtail(bi, p));
 		}
 		if (hatmdel) {
+			assert(b->H->width == sizeof(var_t));
 			(*hatmdel) (b->H->vheap, (var_t *) BUNhloc(bi, p));
 		}
 		if (tatmdel) {
+			assert(b->T->width == sizeof(var_t));
 			(*tatmdel) (b->T->vheap, (var_t *) BUNtloc(bi, p));
 		}
 		idx1 = p;
@@ -1713,7 +1736,7 @@ explicitly.
 
 @= uncommit_replace
 	@:tacc_update(del,t@1,p,pit)@
-	ATOMreplace(b->ttype, b->T->vheap, BUNtloc(bi, p), t);
+	Treplacevalue(b, BUNtloc(bi, p), t);
 	@:tacc_update(ins,t@1,p,pit)@
 	if (BATtordered(b) & 1 || BATtordered(b) == (bit) GDK_SORTED_REV) {
 		int tt = b->ttype;
@@ -1932,7 +1955,11 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	BATiter bi = bat_iterator(b);
 	int (*hcmp) (ptr, ptr), (*tcmp) (ptr, ptr);
 	int htpe, ttpe, hint = 0, tint = 0, hlng = 0, tlng = 0;
-	var_t hidx, tidx;
+	union {
+		var_t v;
+		int i;
+		lng l;
+	} hidx, tidx;
 	BUN p, q;
 	BAT *v = NULL;
 
@@ -2034,21 +2061,43 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	/* exploit string double elimination, when present */
 	htpe = ATOMstorage(b->htype);
 	ttpe = ATOMstorage(b->ttype);
-	if (htpe == TYPE_str && GDK_ELIMDOUBLES(b->H->vheap)) {
-		hidx = strLocate(b->H->vheap, x);
-		if (hidx == 0)
+	if (htpe == TYPE_str && GDK_ELIMDOUBLES(b->H->vheap) && b->H->width > 2) {
+		hidx.v = strLocate(b->H->vheap, x);
+		if (hidx.v == 0)
 			return BUN_NONE;	/* x does not occur */
 		if (b->H->hash == NULL) {
-			htpe = TYPE_oid;
-			x = &hidx;
+			switch (b->H->width) {
+			case SIZEOF_INT:
+				hidx.i = hidx.v;
+				x = &hidx.i;
+				htpe = TYPE_int;
+				break;
+			case SIZEOF_LNG:
+				hidx.l = hidx.v;
+				x = &hidx.l;
+				htpe = TYPE_lng;
+				break;
+			}
 		}
 	}
-	if (ttpe == TYPE_str && GDK_ELIMDOUBLES(b->T->vheap)) {
-		tidx = strLocate(b->T->vheap, y);
-		if (tidx == 0)
+	if (ttpe == TYPE_str && GDK_ELIMDOUBLES(b->T->vheap) && b->T->width > 2) {
+		tidx.v = strLocate(b->T->vheap, y);
+		if (tidx.v == 0)
 			return BUN_NONE;	/* y does not occur */
-		ttpe = TYPE_oid;
-		y = &tidx;
+		if (b->T->hash == NULL) {
+			switch (b->T->width) {
+			case SIZEOF_INT:
+				tidx.i = tidx.v;
+				y = &tidx.i;
+				ttpe = TYPE_int;
+				break;
+			case SIZEOF_LNG:
+				tidx.l = tidx.v;
+				y = &tidx.l;
+				ttpe = TYPE_lng;
+				break;
+			}
+		}
 	}
 
 	/* type analysis. For equi-lookup {flt,dbl,wrd,oid} can all be treated as either int or lng */

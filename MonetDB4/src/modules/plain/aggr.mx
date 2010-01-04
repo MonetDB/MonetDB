@@ -1107,7 +1107,8 @@ CMDcard(wrd *result, BAT *b, wrd *maxelements)
 			int tpe = b->ttype;
 
 			if (tpe == TYPE_str && strElimDoubles(b->theap)) {
-				tpe = TYPE_var;	/* use offsets only in case of a double-eliminated string heap */
+				/* use offsets only in case of a double-eliminated string heap */
+				tpe = b->T->width == 1 ? TYPE_bte : (b->T->width == 2 ? TYPE_sht : (b->T->width == 4 ? TYPE_int : TYPE_lng));
 			}
 #if 0
 #endif

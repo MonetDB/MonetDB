@@ -459,7 +459,7 @@ BAThash(BAT *b, BUN masksize)
 					h->link[r] = h->hash[c];
 					h->hash[c] = r;
 				}
-	break;
+				break;
 			}
 		} while (r < p && mask < cnt && (mask <<= 2));
 

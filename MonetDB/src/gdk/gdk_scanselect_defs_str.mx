@@ -31,7 +31,7 @@ Adding test for v != nil for types where nil != MIN.
 @{
 
 @= DEFseqscanTTget
-	@:DEFseqscanHTget(eq_str,var,tloc,if(*(var_t*)v==str_idx),tl,@1)@
+	@:DEFseqscanHTget(eq_str,var,tloc,if((b->T->width==1?(var_t)*(unsigned char*)v:(b->T->width==2?(var_t)*(unsigned short*)v:(b->T->width==4?(var_t)*(unsigned int*)v:*(var_t*)v)))==str_idx),tl,@1)@
 @-
 
 Generate all working functions.

@@ -1916,7 +1916,7 @@ copy_segment(MT_mmap_hdl *hdl, BAT *bn, BAT *b, oid src, BUN dst, BUN cnt)
 			BUN end = BUNlast(bn);
 
 			for (; cur < end; cur++) {
-				ATOMreplace(bn->ttype, bn->theap, Tloc(bn,cur), nil); 
+				Treplacevalue(bn, Tloc(bn,cur), nil);
 			}
 		}
 	}

@@ -472,12 +472,10 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 			dst++;
 		}
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
-		var_t *cur = (var_t *) BUNtloc(bi, BUNfirst(b));
-		var_t *end = (var_t *) BUNtloc(bi, BUNlast(b));
-		str base = b->theap->base;
+		BUN p, q;
 
-		while (cur < end) {
-                        str src = base + (*cur << GDK_VARSHIFT);
+		BATloop(b, p, q) {
+			str src = (str) BUNtvar(bi, p);
 			BUN h;
 			int val;
 			GDK_STRHASH(src, h);
@@ -486,9 +484,9 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 #else
 			val = (int) (h >> 32) ^ (int) h;
 #endif
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
-			cur++;
+			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ val;
 			dst++;
+			src++;
 		}
 	} else if (b->ttype == TYPE_void) {
 		BUN p, q;

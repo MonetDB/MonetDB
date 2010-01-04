@@ -203,8 +203,8 @@ merge_getmem@1(MergeState *ms, ssize_t need)
 		}						\
 	} while (0)
 
-#define ISLT_any(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + ((*(var_t*) (X)) << GDK_VARSHIFT), (ms)->heap + ((*(var_t*) (Y)) << GDK_VARSHIFT)) : (*(ms)->compare)((X), (Y))) < 0)
-#define ISLT_any_rev(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + ((*(var_t*) (X)) << GDK_VARSHIFT), (ms)->heap + ((*(var_t*) (Y)) << GDK_VARSHIFT)) : (*(ms)->compare)((X), (Y))) > 0)
+#define ISLT_any(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + VarHeapVal(X,0,(ms)->hs), (ms)->heap + VarHeapVal(Y,0,(ms)->hs)) : (*(ms)->compare)((X), (Y))) < 0)
+#define ISLT_any_rev(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + VarHeapVal(X,0,(ms)->hs), (ms)->heap + VarHeapVal(Y,0,(ms)->hs)) : (*(ms)->compare)((X), (Y))) > 0)
 @= islt
 #define ISLT_@1@2(X, Y, ms)	(* (@1 *) (X) @3 * (@1 *) (Y))
 

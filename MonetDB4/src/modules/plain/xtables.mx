@@ -551,8 +551,10 @@ tailtype(BAT *b, int str_trick)
 	case TYPE_dbl:
 		return TYPE_lng;
 	case TYPE_str:
-		if (str_trick && GDK_ELIMDOUBLES((b->theap)))
-			return TYPE_var;	/* string offsets are identifying integers */
+		if (str_trick && GDK_ELIMDOUBLES((b->theap))) {
+			/* string offsets are identifying integers */
+			return b->T->width == 1 ? TYPE_bte : (b->T->width == 2 ? TYPE_sht : (b->T->width == 4? TYPE_int : TYPE_lng));
+		}
 	}
 	return tpe;
 }
@@ -1218,7 +1220,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 				@2
 			}
 			@1
-			offp[cur] = (base) ? r<<a->T->shift : ((var_t*)a->T->heap.base)[r];
+			offp[cur] = (base) ? r<<a->T->shift : VarHeapVal(a->T->heap.base, r, a->T->width);
 			ids[cur] = o;
 			cur++;
 			this += sizeof(oid);

@@ -1610,7 +1610,6 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			BUN q = BUNlast(b);
 			BUN p = BUNfirst(b);
 			BUN r = BUNfirst(bn);
-			unsigned short hs = Hsize(bn), ts = Tsize(bn);
 
 			if (tpe == TYPE_oid && b->ttype == TYPE_void) {
 				/* void => oid materialization is a special case */
@@ -1618,7 +1617,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 				oid inc = (curid != oid_nil);
 
 				BATloop(b, p, q) {
-					bunfastins_nocheck(bn, r, BUNhead(bi, p), &curid, hs, ts);
+					bunfastins_nocheck(bn, r, BUNhead(bi, p), &curid, Hsize(bn), Tsize(bn));
 					r++;
 					curid += inc;
 				}
@@ -1642,7 +1641,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 								c = chr_nil;
 						} else
 							c = *s;
-						bunfastins_nocheck(bn, r, BUNhead(bi, p), &c, hs, ts);
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), &c, Hsize(bn), Tsize(bn));
 						r++;
 					}
 					reduce = 1; /* first character might be identical for several strings */
@@ -1653,7 +1652,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					BATloop(b, p, q) {
 						/* nil str value will produce a nil atom value */
 						(*fromstr) (BUNtvar(bi, p), &len, &v);
-						bunfastins_nocheck(bn, r, BUNhead(bi, p), v, hs, ts);
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), v, Hsize(bn), Tsize(bn));
 						r++;
 					}
 					reduce = 1; /* strings might only differ by (ignored) whitespace */
@@ -1678,7 +1677,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 							s[0] = 0xC0 | ((s[0] >> 6) & 0x03);
 #endif
 						}
-						bunfastins_nocheck(bn, r, BUNhead(bi, p), s, hs, ts);
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), s, Hsize(bn), Tsize(bn));
 						r++;
 					}
 				} else {
@@ -1693,10 +1692,10 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 
 						if ((*cmp) (t, nilptr)) {
 							(*tostr) ((str *) (ptr) &v, &len, t);
-							bunfastins_nocheck(bn, r, BUNhead(bi, p), v, hs, ts);
+							bunfastins_nocheck(bn, r, BUNhead(bi, p), v, Hsize(bn), Tsize(bn));
 							r++;
 						} else {
-							bunfastins_nocheck(bn, r, BUNhead(bi, p), str_nil, hs, ts);
+							bunfastins_nocheck(bn, r, BUNhead(bi, p), str_nil, Hsize(bn), Tsize(bn));
 							r++;
 							reduce = 1; /* NILs destroy keyness */
 						}
@@ -1726,7 +1725,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 					GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", ATOMname(b->ttype), ATOMname(tpe));
 					goto bunins_failed;
 				}
-				bunfastins_nocheck(bn, r, BUNhead(bi, p), s, hs, ts);
+				bunfastins_nocheck(bn, r, BUNhead(bi, p), s, Hsize(bn), Tsize(bn));
 				r++;
 				if (ATOMextern(BATttype(b))) {
 					for (p++; p < q; p++) {
@@ -1737,7 +1736,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 							GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", ATOMname(b->ttype), ATOMname(tpe));
 							goto bunins_failed;
 						}
-						bunfastins_nocheck(bn, r, BUNhead(bi, p), s, hs, ts);
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), s, Hsize(bn), Tsize(bn));
 						r++;
 					}
 				} else {
@@ -1749,7 +1748,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 							GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", ATOMname(b->ttype), ATOMname(tpe));
 							goto bunins_failed;
 						}
-						bunfastins_nocheck(bn, r, BUNhead(bi, p), s, hs, ts);
+						bunfastins_nocheck(bn, r, BUNhead(bi, p), s, Hsize(bn), Tsize(bn));
 						r++;
 					}
 				}
