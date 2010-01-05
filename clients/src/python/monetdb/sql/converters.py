@@ -61,8 +61,6 @@ class Pythonizer:
         self.use_unicode = use_unicode
 
     def __string(self, data):
-        if self.use_unicode:
-            return unicode(data)
         return str(data)
 
     def __strip(self, data):
@@ -102,8 +100,8 @@ class Pythonizer:
 
 
         logging.debug(data)
-        if self.use_unicode:
-            return unicode(data[1:-1])
+        if self.use_unicode and sys.version_info[0] < 3:
+            return unicode(data[1:-1].decode("UTF-8"))
         return data[1:-1]
 
     def __decimal(self, data):

@@ -96,7 +96,7 @@ class Cursor:
         self.__query_id = -1
 
         # the type converters
-        self.__pythonizer = converters.Pythonizer()
+        self.__pythonizer = converters.Pythonizer(use_unicode=self.connection.use_unicode)
         self.__monetizer = converters.Monetizer()
 
 

@@ -30,7 +30,8 @@ class Connection:
 
 
     def __init__(self, username="monetdb", password="monetdb",
-        hostname="localhost", port=50000, database="demo", autocommit=False):
+        hostname="localhost", port=50000, database="demo", autocommit=False,
+        use_unicode=False):
         """ Set up a connection to a MonetDB SQL database.
 
         username -- username for connection (default: monetdb)
@@ -40,6 +41,9 @@ class Connection:
         database -- name of the database (default: demo)
         autocommit -- enable/disable auto commit (default: False,
                       required by DBAPI)
+        use_unicode -- use unicode for strings or not (default: False,
+                       only has effect on python2 since python3 is
+                       always unicode)
         """
 
         self.mapi = mapi.Server()
@@ -47,6 +51,7 @@ class Connection:
         self.mapi.connect(hostname=hostname, port=int(port), username=username,
             password=password, database=database, language="sql")
         self.set_autocommit(self.autocommit)
+        self.use_unicode=use_unicode
 
 
     def close(self):
