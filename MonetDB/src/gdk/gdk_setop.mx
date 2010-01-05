@@ -486,6 +486,7 @@ TODO synced/key case..
 	(void)h2; /* in some cases the @6 check doesn't use the h2 */
 	BATmmap_unpin(r);
 
+@c
 #define DIRECT_MAX 256
 
 #define chr_EQ(x,y) simple_EQ(x,y,chr)
@@ -495,9 +496,6 @@ TODO synced/key case..
 #define lng_EQ(x,y) simple_EQ(x,y,lng)
 #define flt_EQ(x,y) simple_EQ(x,y,flt)
 #define dbl_EQ(x,y) simple_EQ(x,y,dbl)
-
-#define hashvar(h,v) hash_any(h,v)
-#define hashloc(h,v) hash_any(h,v)
 
 /* later add version for l void tail, remove general tail values then */
 @= directcheck
