@@ -933,7 +933,8 @@ typedef struct {
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
 #define GDKLIBRARY_PRE_VARSHIFT	061022  /* almost compatible version, see gdk_bbp.mx */
-#define GDKLIBRARY		061023
+#define GDKLIBRARY_PRE_VARWIDTH 061023  /* backward compatible version */
+#define GDKLIBRARY		061024
 
 typedef struct BAT {
 	/* static bat properties */

@@ -645,6 +645,7 @@ BBPinit(void)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_PRE_VARWIDTH &&
 	    bbpversion != GDKLIBRARY_PRE_VARSHIFT) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
