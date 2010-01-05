@@ -705,6 +705,7 @@ BBPinit(void)
 		char logical[1024];
 		lng inserted, deleted, first, count, capacity;
 		unsigned short map_head, map_tail, map_hheap, map_theap;
+		int Hhashash, Thashash;
 
 		if (sscanf(buf,
 			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %lld %lld %hu %hu %hu %hu"
@@ -772,6 +773,8 @@ BBPinit(void)
 				    &n) < 12)
 				GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
+			@1hashash = var & 2;
+			var &= ~2;
 			if ((t = ATOMindex(type)) < 0)
 				t = ATOMunknown_find(type);
 			else if (BATatoms[t].varsized != var)
@@ -836,6 +839,7 @@ BBPinit(void)
 			bs->@1.vheap->filename = NULL;
 			bs->@1.vheap->storage = (char) storage;
 			bs->@1.vheap->copied = 0;
+			bs->@1.vheap->hashash = @1hashash != 0;
 			bs->@1.vheap->newstorage = (chr) storage;
 			bs->@1.vheap->dirty = 0;
 			nread += n;
@@ -1016,7 +1020,7 @@ new_bbpentry(stream *s, bat i)
 	if (stream_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
 			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
 			  BBP[i].cache->@1.width,
-			  BBP[i].cache->@1.varsized,
+			  BBP[i].cache->@1.varsized | (BBP[i].cache->@1.vheap ? BBP[i].cache->@1.vheap->hashash << 1 : 0),
 			  ((unsigned short) BBP[i].cache->@1.sorted & 0xFF) | (((unsigned short) BBP[i].cache->@1.key & 0x01) << 8) | (((unsigned short) BBP[i].cache->@1.dense & 0x01) << 9) | (((unsigned short) BBP[i].cache->@1.nonil & 0x01) << 10) | (((unsigned short) BBP[i].cache->@1.nil & 0x01) << 11),
 			  BBP[i].cache->@1.nokey[0],
 			  BBP[i].cache->@1.nokey[1],

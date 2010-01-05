@@ -344,6 +344,7 @@ HEAPcopy(Heap *dst, Heap *src)
 	if (HEAPalloc(dst, src->size, 1) == 0) {
 		dst->free = src->free;
 		memcpy(dst->base, src->base, src->free);
+		dst->hashash = src->hashash;
 		return 0;
 	}
 	return -1;

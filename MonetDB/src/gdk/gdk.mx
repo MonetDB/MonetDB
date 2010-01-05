@@ -679,7 +679,8 @@ typedef struct {
 	str filename;		/* file containing image of the heap */
 
 	char storage;		/* storage mode (mmap/malloc). */
-	bit copied;		/* a copy of an existing map. */
+	unsigned char copied:1,	/* a copy of an existing map. */
+		      hashash:1;  /* the string heap contains hash values */
 	chr newstorage;		/* new desired storage mode at re-allocation. */
 	chr dirty;		/* specific heap dirty marker */
 } Heap;

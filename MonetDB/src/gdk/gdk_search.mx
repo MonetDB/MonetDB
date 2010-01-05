@@ -89,6 +89,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define hash_loc(H,V)         hash_any(H,V)
 #define hash_var(H,V)         hash_any(H,V)
 #define hash_any(H,V)         (ATOMhash((H)->type, (V)) & (H)->mask)
+#define heap_hash_any(hp,H,V) ((hp) && (hp)->hashash ? ((BUN *) (V))[-1] & (H)->mask : hash_any(H,V))
 #define hash_bte(H,V)         ((BUN) (*(unsigned char*) (V)) & (H)->mask)
 #define hash_chr(H,V)         hash_bte(H,V)
 #define hash_sht(H,V)         ((BUN) mix_sht(*((unsigned short*) (V))) & (H)->mask)
@@ -451,7 +452,7 @@ BAThash(BAT *b, BUN masksize)
 			default:
 				for (; r < p; r++) {
 					ptr v = BUNhead(bi, r);
-					BUN c = hash_any(h, v);
+					BUN c = heap_hash_any(b->H->vheap, h, v);
 
 					if (h->hash[c] == BUN_NONE && 
 					    nslots-- == 0) 
@@ -491,7 +492,7 @@ BAThash(BAT *b, BUN masksize)
 		default:
 			for (; p < q; p++) {
 				ptr v = BUNhead(bi, p);
-				BUN c = hash_any(h, v);
+				BUN c = heap_hash_any(b->H->vheap, h, v);
 
 				h->link[p] = h->hash[c];
 				h->hash[c] = p;
