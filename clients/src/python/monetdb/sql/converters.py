@@ -70,7 +70,6 @@ class Pythonizer:
         replace escape characters.
         inverse of escape"""
 
-        logging.debug(data)
         c_escapes = {'n':'\n', 't':'\t', 'r':'\r', '"':'\"'}
         a = []
         n = 0
@@ -101,7 +100,6 @@ class Pythonizer:
         data = ''.join(a)
 
 
-        logging.debug(data)
         if self.use_unicode:
             return unicode(data[1:-1])
         return data[1:-1]
