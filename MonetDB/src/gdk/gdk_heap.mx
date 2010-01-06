@@ -296,7 +296,9 @@ GDKupgradevarheap(COLrec *c, BUN capacity, var_t v, int copyall)
 	pc = (unsigned char *) c->heap.base + n;
 	ps = (unsigned short *) c->heap.base + n;
 	pi = (unsigned int *) c->heap.base + n;
+#if SIZEOF_VAR_T == 8
 	pv = (var_t *) c->heap.base + n;
+#endif
 	/* convert from back to front so that we can do it in-place */
 	for (i = 0; i < n; i++) {
 		switch (c->width) {
