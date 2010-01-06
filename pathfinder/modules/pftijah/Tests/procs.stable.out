@@ -738,6 +738,7 @@ procs();
 [ "tj_dump_collection(str) : void"																								  ]
 [ "tj_ent2tid(BAT[str,dbl]) : BAT[oid,dbl]"																									  ]
 [ "tj_extend_collection(str, BAT[void,str]) : void"																						  ]
+[ "tj_fb_terms(str, BAT[int,BAT], int, dbl) : BAT[void,str]"																							  ]
 [ "tj_get_collection_lock(str) : lock"																								  ]
 [ "tj_get_ft_index(BAT[str,str], bit) : str"																							  ]
 [ "tj_global_delete() : void"																										  ]

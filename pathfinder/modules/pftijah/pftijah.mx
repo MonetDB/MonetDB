@@ -3072,15 +3072,107 @@ PROC ALG_tj_fbterms(
 	BAT[oid,bat]  par2_options
 	) : BAT[void,bat] 
 {
-	var iter := new(void,oid).seqbase(0@0);
-	var item := new(void,oid).seqbase(0@0);
-	var pos  := new(void,oid).seqbase(0@0);
-	var frag := new(void,oid).seqbase(0@0);
-	var ipik := iter;
+	var res_iter := new(void,oid).seqbase(0@0);
+	var res_item := new(void,str).seqbase(0@0);
+	var res_pos  := new(void,oid).seqbase(0@0);
+	var res_kind := new(void,oid).seqbase(0@0);
+	var res_ipik := res_iter;
 
-	printf("#! just fill in the blanks here Henning.....");
+        # unpack param bats and init vars
+        var el_iter := par1_el.fetch(0);
+        var el_item := par1_el.fetch(1);
+        var el_kind := par1_el.fetch(2);
+        var opt_iter, opt_item, opt_kind;
+        var has_options := (par2_options.count_wrd() > wrd(0));
+        if ( has_options ) {
+           opt_iter := par2_options.fetch(0);
+           opt_item := par2_options.fetch(1);
+           opt_kind := par2_options.fetch(2);
+        }
+        var optbat;
+        var ftiName;
+        var ret_num := int(nil);
+        var lambda := dbl(0.5);
+        var xdoc_name, xdoc_firstpre, xpfpre;
+        var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
+        var index_elem;
 
-        var res := ALG_tj_pfop(iter,item,frag,pos.materialize(ipik));
+        # check for loop-invariant parameters
+        var single_val_opt := (opt_item.tunique().count_wrd() = wrd(1));
+        if ( single_val_opt ) {
+           if ( has_options ) {
+              var opt_iter_i := opt_iter.slice(0,0).tmark(0@0);
+              var opt_item_i := opt_item.slice(0,0).tmark(0@0);
+              var opt_kind_i := opt_kind.slice(0,0).tmark(0@0);
+              if ( verbose ) printf(HASH +" ALG_tj_terms: running option handler on single value option paramter.\n");
+              optbat := serialize_tijah_opt(par_ws,1,opt_iter_i,opt_iter_i,opt_item_i,set_kind(opt_kind_i,ELEM),new(void,lng),new(void,dbl),new(void,str));
+              if ( verbose ) optbat.print();
+           } else {
+              optbat := new(str,str,32);
+           }
+           ftiName := tj_get_ft_index(optbat,true);
+           if ( optbat.exist("returnNumber") ) {
+              ret_num := int(optbat.find("returnNumber"));
+           }
+           if ( optbat.exist("collection-lambda") ) {
+              lambda := dbl(optbat.find("collection-lambda"));
+           }
+           var frags := tj_used_frags(ftiName);
+           var xftiName := "tj_" + ftiName;
+           var xindex := [+](const xftiName, [str](frags));
+           xdoc_name := [bat]([+](xindex, const "_doc_name"));
+           xdoc_firstpre := [bat]([+](xindex, const "_doc_firstpre"));
+           xpfpre := [bat]([+](xindex, const "_pfpre"));
+
+           index_elem := [pf2tijah_node](const true, xdoc_name, xdoc_firstpre, xpfpre, const el_item, const [int](el_kind), const doc_loaded);
+        }
+       
+        # main: loop over variant params and execution 
+        par_loop@batloop() {
+           if ( verbose ) printf(HASH +" ALG_tj_terms: loop start, id=%d.\n",$t);
+           if ( not(single_val_opt) ) {
+              if ( has_options ) {
+                 var opt_iter_i := opt_iter.select($t);
+                 var opt_item_i := opt_item.semijoin(opt_iter_i).tmark(0@0);
+                 var opt_kind_i := opt_kind.semijoin(opt_iter_i).tmark(0@0);
+                 opt_iter_i := opt_iter_i.tmark(0@0);
+                 if ( verbose ) printf(HASH +" ALG_tj_terms: running option handler on iter specific option params.\n");
+                 optbat := serialize_tijah_opt(par_ws,1,opt_iter_i,opt_iter_i,opt_item_i,set_kind(opt_kind_i,ELEM),new(void,lng),new(void,dbl),new(void,str));
+                 if ( verbose ) optbat.print();
+              } else {
+                 optbat := new(str,str,32);
+              }
+              ftiName := tj_get_ft_index(optbat,true);
+              if ( optbat.exist("returnNumber") ) {
+                 ret_num := int(optbat.find("returnNumber"));
+              }
+              if ( optbat.exist("collection-lambda") ) {
+                 lambda := dbl(optbat.find("collection-lambda"));
+              }
+              var frags := tj_used_frags(ftiName);
+              var xftiName := "tj_" + ftiName;
+              var xindex := [+](const xftiName, [str](frags));
+              xdoc_name := [bat]([+](xindex, const "_doc_name"));
+              xdoc_firstpre := [bat]([+](xindex, const "_doc_firstpre"));
+              xpfpre := [bat]([+](xindex, const "_pfpre"));
+
+              index_elem := [pf2tijah_node](const true, xdoc_name, xdoc_firstpre, xpfpre, const el_item, const [int](el_kind), const doc_loaded);
+           }
+         
+           var el_iter_i := el_iter.select($t);
+           var index_elem_i := [semijoin](index_elem, const el_iter_i);
+           index_elem_i := [int](index_elem_i.reverse()).reverse();
+           
+           var terms := tj_fb_terms(ftiName, index_elem_i, ret_num, lambda);
+           
+           res_iter.append(terms.project($t));
+           res_pos.append(terms.mark(1@0));
+           res_item.append(terms);
+        }
+
+        # result preparation
+        res_ipik := res_iter;
+        var res := ALG_tj_pfop(res_iter,res_item,res_kind,res_pos.materialize(res_ipik));
 
         return res;
 }
@@ -4594,10 +4686,9 @@ PROC tj_terms_contained_by(str ftindex, bat[oid,any] elem) : bat[void,oid]
 {
     var size := bat("tj_" + ftindex + "_size");
     var elem_desc := treemergejoin_nest_pre(elem.reverse(), size, size);
-    var descs := elem_desc.reverse().kunique().mark(0@0);
-    var terms := descs.kdiff(bat("tj_" + ftindex + "_pfpre"));
-    var tids := bat("tj_" + ftindex + "_tid").semijoin(terms).tmark(0@0);
-    return tids;
+    var elem_terms := elem_desc.reverse().kdiff(bat("tj_" + ftindex + "_pfpre")).reverse();
+    var elem_tid := elem_terms.leftfetchjoin(bat("tj_" + ftindex + "_tid"));
+    return elem_tid;
 }
 
 ##
@@ -4607,11 +4698,77 @@ PROC tj_terms(str ftiName, bat[int,bat] index_elem) : bat[void,str]
 {
     var ftindex := [+](const ftiName, [str](index_elem.hmark(0@0))); 
     var tid_bats := [tj_terms_contained_by](ftindex, index_elem.tmark(0@0));
-    var tids := new(void,oid).seqbase(0@0);
-    [append](const tids, tid_bats);
-    var tids_unique := tids.reverse().kunique().mark(0@0);
+    var tid_bat := new(oid,oid);
+    [insert](const tid_bat, tid_bats);
+    var tids_unique := tid_bat.reverse().kunique().mark(0@0);
     var terms := bat("tj_" + ftiName + "_termdict").semijoin(tids_unique).tmark(0@0);
     return terms;
+}
+
+PROC tj_fb_terms(str ftiName, bat[int,bat] index_elem, int ret_num, dbl lambda) : bat[void,str]
+{
+    var ftindex := [+](const ftiName, [str](index_elem.hmark(0@0))); 
+    var tid_bats := [tj_terms_contained_by](ftindex, index_elem.tmark(0@0));
+    
+    #assign new fragment independent elem IDs to union the containment join results into one bat
+    var e_tid := new(oid,oid);
+    var base := 0@0;
+    var elems := new(void,oid).seqbase(base);
+    tid_bats@batloop() {
+       var e_tid_frag := $t;
+       var es := e_tid_frag.kunique().hmark(base);
+       e_tid.insert(es.join(e_tid_frag));
+       elems.append(es);
+       base := oid(int(elems.reverse().max()) + 1);
+    }
+    elems := elems.reverse();
+    var coll_freq := bat("tj_" + ftiName + "_termfreq");
+    var c_size := bat("tj_" + ftiName + "_param").find("collectionSize").wrd();
+    
+    # calculate collection frequencies of occurring terms
+    var tids := e_tid.tunique().sort();
+    var tid_collfreq := coll_freq.semijoin(tids).[dbl]().[/](dbl(c_size));
+    var lambda := dbl(0.5);
+    var _lambda := dbl(1.0) - lambda;
+    var tid_collfreq_lambda := tid_collfreq.[*](lambda); 
+ 
+    # calculate and aggregate term frequencies in fb elements (mixture model to avoid zero freqs)
+    var ex_tid := [uselect](const e_tid.reverse(), elems);
+    var ex_hist := [histogram]([reverse](ex_tid)).[sort]();
+    ex_tid := nil;
+    var e_size := [sum](ex_hist);
+    # unavoidable batloop part
+    var tid_prob := new(oid,dbl);
+    ex_hist@batloop() {
+       var tids := $t.hmark(0@0);
+       var prob := [dbl]($t.tmark(0@0)).access(BAT_WRITE);
+       prob [:/=] dbl(e_size.find($h));
+       prob [:*=] _lambda;
+       prob := tids.reverse().leftfetchjoin(prob);
+       tid_prob.insert(left_add(tid_collfreq_lambda, prob));
+    }
+    ex_hist := nil;
+    e_size := nil;
+    var tid_logprob := [log](tid_prob);
+    tid_prob := nil;
+    var tid_sumlogprob := {sum}(tid_logprob); 
+    tid_logprob := nil;
+    
+    # subtract log collection term likelihood from normalized log fb term likelihood
+    var fac1 := dbl(1.0) / (_lambda * elems.count_wrd());
+    var fac2 := dbl(-1.0) * lambda / _lambda;
+    var tid_normsumlogprob := tid_sumlogprob.[*](fac1);
+    tid_sumlogprob := nil;
+    var tid_collfreqlog := [log](tid_collfreq);
+    var tid_normcollfreqlog := tid_collfreqlog.[*](fac2);
+    tid_collfreqlog := nil;
+    tid_normsumlogprob.chk_order();
+    tid_normcollfreqlog.chk_order();
+    var fbtids := left_add(tid_normsumlogprob, tid_normcollfreqlog).[exp]().tsort_rev();
+
+    if (not(isnil(ret_num))) fbtids := fbtids.slice(0, ret_num - 1);
+    var fbterms := fbtids.hmark(0@0).leftfetchjoin(bat("tj_" + ftiName + "_termdict"));
+    return fbterms;
 }
 
 PROC tj_term2tid (str ftiName, bat[void,str] terms, bit stemming) : bat[oid,oid] 
