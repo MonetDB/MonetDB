@@ -215,7 +215,7 @@ GDKblockjoin(BAT *b, BAT *c){
 		BBPunfix( cp->batCacheid);
 	}
 printf("block size " BUNFMT "\n|",blk);
-printf("total size " BUNFMT "\n", blim * (sizeof(int) + ATOMsize(b->ttype)) );
+printf("total size " BUNFMT "\n", (BUN) (blim * (sizeof(int) + ATOMsize(b->ttype))) );
 printf("outersize " BUNFMT " inner size " BUNFMT "\n", blim,clim);
 printf("inner loop %d\n",k);
 	if ( bn == 0)
