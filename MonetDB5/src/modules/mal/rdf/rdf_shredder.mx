@@ -148,7 +148,10 @@ if (bun == BUN_NONE) {
 }
 
 @= rdf_tknzr_insert
-TKNZRdeposit(&bun,(str *)&(@1));
+{
+	str t = @1;
+	TKNZRdeposit(&bun,&t);
+}
 
 @= rdf_BUNappend
 {@1 = BUNappend(@1, @2, TRUE);}
@@ -166,7 +169,7 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 
 	if (triple->subject_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE
 			|| triple->subject_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS) {
-		@:rdf_insert(graph[MAP_LEX],triple->subject)@
+		@:rdf_insert(graph[MAP_LEX],(str)triple->subject)@
 		@:rdf_BUNappend(graph[S_sort], &bun)@
 		bun = BUN_NONE;
 	} else {
@@ -174,7 +177,7 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 	}
 
 	if (triple->predicate_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE) {
-		@:rdf_insert(graph[MAP_LEX],triple->predicate)@
+		@:rdf_insert(graph[MAP_LEX],(str)triple->predicate)@
 		@:rdf_BUNappend(graph[P_sort], &bun)@
 		bun = BUN_NONE;
 	} else {
@@ -183,7 +186,7 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 
 	if (triple->object_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE
 			|| triple->object_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS) {
-		@:rdf_insert(graph[MAP_LEX],triple->object)@
+		@:rdf_insert(graph[MAP_LEX],(str)triple->object)@
 		@:rdf_BUNappend(graph[O_sort], &bun)@
 		bun = BUN_NONE;
 	} else if (triple->object_type == RAPTOR_IDENTIFIER_TYPE_LITERAL) {
