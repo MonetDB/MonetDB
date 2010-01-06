@@ -1823,7 +1823,6 @@ usage(const char *prog)
 	fprintf(stderr, " -i          | --interactive      read stdin after command line args\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,xquery,mal,mil}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
-	fprintf(stderr, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
 	fprintf(stderr, " -t          | --time             time commands\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
@@ -1833,6 +1832,7 @@ usage(const char *prog)
 	fprintf(stderr, " -?          | --help             show this usage message\n");
 
 	fprintf(stderr, "\nSQL specific opions \n");
+	fprintf(stderr, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
