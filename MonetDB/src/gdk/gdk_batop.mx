@@ -2828,6 +2828,10 @@ found@3@2:		(* (int *) BUNtloc(bni, r))++;
 		@:histoloop_inner(loc,_lng,simple,lng)@
 		break;
 #endif
+	case TYPE_str:
+		if (b->T->vheap->hashash) {
+			@:histoloop_inner(var,_str_hv,atom,tt)@
+		}
 	default:
 		if (bn->hvarsized) {
 			@:histoloop_inner(var,var,atom,tt)@

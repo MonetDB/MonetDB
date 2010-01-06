@@ -3398,6 +3398,11 @@ for determining which algebra commands set properties sub-optimally.
 					case TYPE_dbl:
 						@:hash_disprove(_lng,loc)@
 #endif
+					case TYPE_str:
+						if (b->H->vheap->hashash) {
+							@:hash_disprove(_str_hv,var)@
+						}
+						/* fall through */
 					default:
 						@:hash_disprove(_any,ead)@
 					}

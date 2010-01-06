@@ -443,7 +443,7 @@ the fast inner loops, optimized towards their type.
 
 		BATloop(l, p, q) {
 			v = BUN@3(li, p);
-			if (@1_EQ(v, nil, @2)) {
+			if (@1_EQ(v, nil, @4)) {
 				continue; /* skip nil */
 			}
 			HASHloop_@2(ri, r->H->hash, yy, v) {
@@ -475,28 +475,33 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	switch (any = ATOMstorage(l->ttype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
-		@:hashjoin(simple,chr,tloc)@
+		@:hashjoin(simple,chr,tloc,chr)@
 #endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
-		@:hashjoin(simple,bte,tloc)@
+		@:hashjoin(simple,bte,tloc,bte)@
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
-		@:hashjoin(simple,sht,tloc)@
+		@:hashjoin(simple,sht,tloc,sht)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
 	case TYPE_flt:
-		@:hashjoin(simple,int,tloc)@
+		@:hashjoin(simple,int,tloc,int)@
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl:
 	case TYPE_lng:
-		@:hashjoin(simple,lng,tloc)@
+		@:hashjoin(simple,lng,tloc,lng)@
 #endif
+	case TYPE_str:
+		if (l->T->vheap->hashash) {
+			@:hashjoin(atom,str_hv,tail,any)@
+		}
+		/* fall through */
 	default:
-		@:hashjoin(atom,any,tail)@
+		@:hashjoin(atom,any,tail,any)@
 	}
 	BATmmap_unpin(r);
 
@@ -1305,7 +1310,7 @@ if no match can be found.
 		BUN i = 0;
 
 		v = (ptr) BUNtail(li, p);
-		if (!@1_EQ(v, nilh, @2))
+		if (!@1_EQ(v, nilh, @5))
 			HASHloop_@2(ri, r->H->hash, xx, v) {
 				@3(bn, s, BUNhead(li, p), BUNtail(ri, xx));
 				i++;
@@ -1408,28 +1413,33 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		switch (any) {
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
-			@:outerjoinloop(simple,chr,@1,@2)@
+			@:outerjoinloop(simple,chr,@1,@2,chr)@
 #endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
-			@:outerjoinloop(simple,bte,@1,@2)@
+			@:outerjoinloop(simple,bte,@1,@2,bte)@
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
-			@:outerjoinloop(simple,sht,@1,@2)@
+			@:outerjoinloop(simple,sht,@1,@2,sht)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int:
 		case TYPE_flt:
-			@:outerjoinloop(simple,int,@1,@2)@
+			@:outerjoinloop(simple,int,@1,@2,int)@
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 		case TYPE_dbl:
 		case TYPE_lng:
-			@:outerjoinloop(simple,lng,@1,@2)@
+			@:outerjoinloop(simple,lng,@1,@2,lng)@
 #endif
+		case TYPE_str:
+			if (l->T->vheap->hashash) {
+				@:outerjoinloop(atom,str_hv,@1,@2,any)@
+			}
+			/* fall through */
 		default:
-			@:outerjoinloop(atom,any,@1,@2)@
+			@:outerjoinloop(atom,any,@1,@2,any)@
 		}
 @c
 		bn->tsorted = 0;
@@ -1895,16 +1905,17 @@ iff BAThkey(r) and one on l to find the matching tuples.
 	BUN yy;
 	BUN rp = 0, rq = 0;
 	ptr nil = ATOMnilptr(l->htype);
+	ptr v;
 
 	if (merge) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: merge\n");
 		BATloop(r, rp, rq) {
-			ptr v = BUN@3(ri, rp);
+			v = BUN@3(ri, rp);
 
 			yy = rp+1;
-			if (yy < rq && @1_EQ(v, BUN@3(ri, yy), @2))
+			if (yy < rq && @1_EQ(v, BUN@3(ri, yy), @4))
 				continue;
-			if (!@1_EQ(v, nil, @2)) {
+			if (!@1_EQ(v, nil, @4)) {
 				HASHloop_@2(li, l->H->hash, yy, v)
 					bunfastins(bn, v, BUNtail(li, yy));
 			}
@@ -1912,21 +1923,21 @@ iff BAThkey(r) and one on l to find the matching tuples.
 	} else if (rdoubles) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: rdoubles\n");
 		BATloop(r, rp, rq) {
-			ptr v = BUN@3(ri, rp);
+			v = BUN@3(ri, rp);
 
 			HASHloop_@2(ri, r->H->hash, yy, v)
 				break;
 			if (yy != rp)
 				continue;
-			if (!@1_EQ(v, nil, @2)) {
+			if (!@1_EQ(v, nil, @4)) {
 				HASHloop_@2(li, l->H->hash, yy, v)
 					bunfastins(bn, v, BUNtail(li, yy));
 			}
 		}
 	} else {
 		BATloop(r, rp, rq) {
-			ptr v = BUN@3(ri, rp);
-			if (!@1_EQ(v, nil, @2)) {
+			v = BUN@3(ri, rp);
+			if (!@1_EQ(v, nil, @4)) {
 				HASHloop_@2(li, l->H->hash, yy, v)
 					bunfastins(bn, v, BUNtail(li, yy));
 			}
@@ -1952,28 +1963,33 @@ BATrevsemijoin(BAT *l, BAT *r)
 	switch (any = ATOMstorage(l->htype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
-		@:revsemijoin(simple,chr,hloc)@
+		@:revsemijoin(simple,chr,hloc,chr)@
 #endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
-		@:revsemijoin(simple,bte,hloc)@
+		@:revsemijoin(simple,bte,hloc,bte)@
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
-		@:revsemijoin(simple,sht,hloc)@
+		@:revsemijoin(simple,sht,hloc,sht)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
 	case TYPE_flt:
-		@:revsemijoin(simple,int,hloc)@
+		@:revsemijoin(simple,int,hloc,int)@
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl:
 	case TYPE_lng:
-		@:revsemijoin(simple,lng,hloc)@
+		@:revsemijoin(simple,lng,hloc,lng)@
 #endif
+	case TYPE_str:
+		if (r->H->vheap->hashash) {
+			@:revsemijoin(atom,str_hv,head,any)@
+		}
+		/* fall through */
 	default:
-		@:revsemijoin(atom,any,head)@
+		@:revsemijoin(atom,any,head,any)@
 	}
 	BATmmap_unpin(l);
 	/* propagate properties */

@@ -113,7 +113,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 
 @= hashfnd
 #define HASHfnd_@1(x,y,z)	{					\
-	BUN _i;							\
+	BUN _i;								\
 	(x) = BUN_NONE;							\
 	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BATgetId((y).b))) \
 		HASHloop_@1((y), (y).b->H->hash, _i, (z)) {		\
@@ -123,10 +123,19 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 }
 @h
 #define HASHfnd_str(x,y,z)	{					\
-	BUN _i;							\
+	BUN _i;								\
 	(x) = BUN_NONE;							\
 	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_str: hash build failed on %s.\n", BATgetId((y).b))) \
 		HASHloop_str((y), (y).b->H->hash, _i, (z)) {		\
+			(x) = _i;					\
+			break;						\
+		}							\
+}
+#define HASHfnd_str_hv(x,y,z)	{					\
+	BUN _i;								\
+	(x) = BUN_NONE;							\
+	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_str_hv: hash build failed on %s.\n", BATgetId((y).b))) \
+		HASHloop_str_hv((y), (y).b->H->hash, _i, (z)) {		\
 			(x) = _i;					\
 			break;						\
 		}							\
@@ -172,6 +181,11 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 	BUN _c;				\
 	GDK_STRHASH(v,_c);			\
 	_c &= (h)->mask;			\
+	h->link[i] = h->hash[_c];		\
+	h->hash[_c] = i;			\
+}
+#define HASHins_str_hv(h,i,v) {			\
+	BUN _c = ((BUN *) v)[-1] & (h)->mask;	\
 	h->link[i] = h->hash[_c];		\
 	h->hash[_c] = i;			\
 }

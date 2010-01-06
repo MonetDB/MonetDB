@@ -89,7 +89,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 
                 BATloop(l, p, q) {
                         v = BUN@3(li, p);
-                        if (@1_EQ(v, nil, @2)) {
+                        if (@1_EQ(v, nil, @4)) {
                                 continue; /* skip nil */
                         }
                         HASHloop_@2(ri, r->H->hash, yy, v) {
@@ -121,28 +121,33 @@ CRKjoin(BAT *bn, BAT *l, BAT *r) {
 	switch (any = ATOMstorage(l->ttype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
-		@:hashjoin(simple,chr,tloc)@
+		@:hashjoin(simple,chr,tloc,chr)@
 #endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
-		@:hashjoin(simple,bte,tloc)@
+		@:hashjoin(simple,bte,tloc,bte)@
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
-		@:hashjoin(simple,sht,tloc)@
+		@:hashjoin(simple,sht,tloc,sht)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
 	case TYPE_flt:
-		@:hashjoin(simple,int,tloc)@
+		@:hashjoin(simple,int,tloc,int)@
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl:
 	case TYPE_lng:
-		@:hashjoin(simple,lng,tloc)@
+		@:hashjoin(simple,lng,tloc,lng)@
 #endif
+	case TYPE_str:
+		if (l->T->vheap->hashash) {
+			@:hashjoin(atom,str_hv,tail,any)@
+		}
+		/* fall through */
 	default:
-		@:hashjoin(atom,any,tail)@
+		@:hashjoin(atom,any,tail,any)@
 	}
 
       bunins_failed: /* blindly assume bunins does NOT fail*/

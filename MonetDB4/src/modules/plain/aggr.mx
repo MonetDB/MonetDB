@@ -1014,7 +1014,7 @@ CMDsize(wrd *ret, BAT *b)
 		cursize = 1; /* start counting unique elements... (at one) */
 		BATloop(b, p, q) {
 			ptr cur =  (ptr) BUNt@2(bi, p);
-			if (!@1_EQ(prev, cur, @3)) {
+			if (!@1_EQ(prev, cur, @5)) {
 				CARD_INC_@4(cursize, maxsize);
 				prev = cur;
 			}
@@ -1052,31 +1052,36 @@ CMDsize(wrd *ret, BAT *b)
 		switch(ATOMstorage(any)) {
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
-			@:card_bound_tpe(simple,loc,chr,@1)@
+			@:card_bound_tpe(simple,loc,chr,@1,chr)@
 #endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
-			@:card_bound_tpe(simple,loc,bte,@1)@
+			@:card_bound_tpe(simple,loc,bte,@1,bte)@
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
-			@:card_bound_tpe(simple,loc,sht,@1)@
+			@:card_bound_tpe(simple,loc,sht,@1,sht)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int:
 		case TYPE_flt:
-			@:card_bound_tpe(simple,loc,int,@1)@
+			@:card_bound_tpe(simple,loc,int,@1,int)@
 #endif
 #if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
 		case TYPE_lng:
 		case TYPE_dbl:
-			@:card_bound_tpe(simple,loc,lng,@1)@
+			@:card_bound_tpe(simple,loc,lng,@1,lng)@
 #endif
+		case TYPE_str:
+			if (b->T->vheap->hashash) {
+				@:card_bound_tpe(atom,var,str_hv,@1,any)@
+			}
+			/* fall through */
 		default:
 			if (b->tvarsized) {
-				@:card_bound_tpe(atom,var,any,@1)@
+				@:card_bound_tpe(atom,var,any,@1,any)@
 			} else {
-				@:card_bound_tpe(atom,loc,any,@1)@
+				@:card_bound_tpe(atom,loc,any,@1,any)@
 			}
 		}
 	}

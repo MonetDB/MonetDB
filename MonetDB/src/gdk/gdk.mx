@@ -3160,8 +3160,11 @@ head column of `b'). The 'hb' is an integer index, pointing out the
 #define HASHloop(bi, h, hb, v)						\
 	for (hb = h->hash[HASHprobe(h, v)]; hb != BUN_NONE; hb = h->link[hb])	\
 		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
-#define HASHloop_str(bi, h, hb, v)					\
-	for (hb = h->hash[strHash(v)&h->mask]; hb != BUN_NONE; hb = h->link[hb])	\
+#define HASHloop_str_hv(bi, h, hb, v)				\
+	for (hb = (h)->hash[((BUN *) (v))[-1]&(h)->mask]; hb != BUN_NONE; hb = (h)->link[hb]) \
+		if (GDK_STREQ(v, BUNhvar(bi, hb)))
+#define HASHloop_str(bi, h, hb, v)				\
+	for (hb = (h)->hash[strHash(v)&(h)->mask]; hb != BUN_NONE; hb = (h)->link[hb]) \
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 @-
 For string search, we can optimize if the string heap has eliminated
@@ -3201,10 +3204,10 @@ above, to specialized versions (for speed) where the type is known
 (e.g. @%HASHloop_int@), or the fact that the atom is fixed-sized
 (@%HASHlooploc@) or variable-sized (@%HASHloopvar@).
 @h
-#define HASHlooploc(bi,	h, hb, v)					\
+#define HASHlooploc(bi, h, hb, v)					\
 	for (hb = h->hash[HASHprobe(h, v)]; hb != BUN_NONE; hb = h->link[hb])	\
 		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
-#define HASHloopvar(bi,	h, hb, v)					\
+#define HASHloopvar(bi, h, hb, v)					\
 	for (hb = h->hash[HASHprobe(h, v)]; hb != BUN_NONE; hb = h->link[hb])	\
 		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
 @

@@ -198,6 +198,11 @@ Implementation is either merge- or hash-based.
 	case TYPE_lng:
 		@:elim(@1,loc,_lng,simple_CMP(h,BUNhloc(bi,r),lng))@
 #endif
+	case TYPE_str:
+		if (b->H->vheap->hashash) {
+			@:elim(@1,var,_str_hv,GDK_STRCMP(h,BUNhvar(bi,r)))@
+		}
+		/* fall through */
 	default:
 		{
 			int (*merge)(ptr, ptr) = BATatoms[b->htype].atomCmp;
@@ -672,7 +677,11 @@ TODO synced/key case..
 	if (BAThdense(l)) {
 		@:hashcheck(@1,pos,@2,@3,@5,TRUE)@
 	} else if (hash) {
-		@:hashcheck(@1,@2,@2,@3,@5,@4)@
+		if (l->htype == TYPE_str && l->H->vheap->hashash) {
+			@:hashcheck(@1,@2,@2,_str_hv,@5,@4)@
+		} else {
+			@:hashcheck(@1,@2,@2,@3,@5,@4)@
+		}
 	} else {
 		@:mergecheck(@1,@2,@3,@4,@5)@
 	}

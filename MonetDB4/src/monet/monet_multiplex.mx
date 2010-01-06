@@ -1734,8 +1734,15 @@ a temporary BAT 'nested'; in which we insert all tail values.
 
 				if (BATprepareHash(b))
 					goto bunins_failed;
-				HASHloop(bi, b->H->hash, hh, last) {
-					@:bunins_unary(hh)@
+				if (extent->ttype == TYPE_str &&
+				    extent->T->vheap->hashash) {
+					HASHloop_str_hv(bi, b->H->hash, hh, last) {
+						@:bunins_unary(hh)@
+					}
+				} else {
+					HASHloop(bi, b->H->hash, hh, last) {
+						@:bunins_unary(hh)@
+					}
 				}
 				@:exec_interpret(last)@
 				nested->hsorted = 0;

@@ -545,15 +545,28 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
 		BUN p, q;
 
-		BATloop(b, p, q) {
-			str val_p = (str) BUNtvar(bi, p);
-			BUN h;
-			wrd val;
-			GDK_STRHASH(val_p, h);
-			val = (wrd) h;
-			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ val;
-			dst++;
-			src++;
+		if (b->T->vheap->hashash) {
+			BATloop(b, p, q) {
+				str val_p = (str) BUNtvar(bi, p);
+				BUN h;
+				wrd val;
+				h = ((BUN *) val_p)[-1];
+				val = (wrd) h;
+				*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ val;
+				dst++;
+				src++;
+			}
+		} else {
+			BATloop(b, p, q) {
+				str val_p = (str) BUNtvar(bi, p);
+				BUN h;
+				wrd val;
+				GDK_STRHASH(val_p, h);
+				val = (wrd) h;
+				*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ val;
+				dst++;
+				src++;
+			}
 		}
 	} else if (b->ttype == TYPE_void) {
 		BUN p, q;
