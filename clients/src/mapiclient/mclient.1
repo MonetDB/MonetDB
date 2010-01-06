@@ -168,6 +168,14 @@ will have to be quoted or else the shell will interpret it.
 .SS
 SQL Options
 .TP
+\fB\-\-null=\fP\fInullstr\fP (\fB\-n\fP \fInullstr\fP)
+Set the string to be used as NULL representation when using the
+sql, csv, or tab output formats.  If not used, NULL values are
+represented by the string "null" in the sql output format, and as the
+empty string in the csv and tab output formats.
+Note that an argument is required, so in order to use the empty
+string, use \fB\-n ""\fP (with the space) or \fB\-\-null=\fP.
+.TP
 \fB\-\-rows=\fP\fInr\fP (\fB\-r\fP \fInr\fP)
 If specified, query results will be paged by an internal pager at the
 specified number of lines.

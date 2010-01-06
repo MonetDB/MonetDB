@@ -233,7 +233,8 @@ static enum modifiers specials = NOmodifier;
 /* keep these aligned, the MINCOLSIZE should ensure you can always
  * write the NULLSTRING */
 #define MINCOLSIZE 4
-#define NULLSTRING "null"
+static char default_nullstring[] = "null";
+static char *nullstring = default_nullstring;
 
 /* stolen piece */
 #ifdef HAVE_FTIME
@@ -540,7 +541,8 @@ XMLrenderer(MapiHdl hdl)
 		" <!ELEMENT row (column)+>\n"			/* a row consists of one or more columns */
 		" <!ELEMENT column (#PCDATA)>\n"
 		" <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
-		" <!ATTLIST column name CDATA #IMPLIED>]>\n");	/* a column may have a name */
+		" <!ATTLIST column name CDATA #IMPLIED\n"	/* a column may have a name */
+		"                  isnull (true|false) 'false'>]>\n");
 	stream_printf(toConsole_raw, "<table");
 	name = mapi_get_table(hdl, 0);
 	if (name != NULL && *name != 0)
@@ -555,10 +557,15 @@ XMLrenderer(MapiHdl hdl)
 			name = mapi_get_name(hdl, i);
 			if (name != NULL && *name != 0)
 				XMLprattr("name", name);
+			if (data == NULL) {
+				XMLprattr("isnull", "true");
+				stream_write(toConsole_raw, "/", 1, 1);
+			}
 			stream_write(toConsole_raw, ">", 1, 1);
-			if (data)
+			if (data) {
 				XMLprdata(data);
-			stream_printf(toConsole_raw, "</column>");
+				stream_printf(toConsole_raw, "</column>");
+			}
 		}
 		stream_printf(toConsole_raw, "</row>\n");
 	}
@@ -578,7 +585,7 @@ CSVrenderer(MapiHdl hdl)
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
-				s = "";
+				s = nullstring == default_nullstring ? "" : nullstring;
 			if (strchr(s, *sep) != NULL || strchr(s, '\n') != NULL || strchr(s, '"') != NULL) {
 				stream_printf(toConsole, "%s\"", i == 0 ? "" : sep);
 				while (*s) {
@@ -881,7 +888,7 @@ SQLrenderer(MapiHdl hdl)
 		for (i = 0; i < fields; i++) {
 			rest[i] = mapi_fetch_field(hdl, i);
 			if (rest[i] == NULL)
-				rest[i] = NULLSTRING;
+				rest[i] = nullstring;
 			else {
 				char *p = rest[i];
 
@@ -1816,6 +1823,7 @@ usage(const char *prog)
 	fprintf(stderr, " -i          | --interactive      read stdin after command line args\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,xquery,mal,mil}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
+	fprintf(stderr, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
 	fprintf(stderr, " -t          | --time             time commands\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
@@ -1881,6 +1889,7 @@ main(int argc, char **argv)
 		{"interactive", 0, 0, 'i'},
 		{"language", 1, 0, 'l'},
 		{"log", 1, 0, 'L'},
+		{"null", 1, 0, 'n'},
 #ifdef HAVE_POPEN
 		{"pager", 1, 0, '|'},
 #endif
@@ -1995,7 +2004,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:Ggh:I:iL:l:"
+				"f:Ggh:I:iL:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -2055,6 +2064,9 @@ main(int argc, char **argv)
 				fprintf(stderr, "language option needs to be one of sql, mil, mal, or xquery\n");
 				exit(-1);
 			}
+			break;
+		case 'n':
+			nullstring = optarg;
 			break;
 		case 'u':
 			user = optarg;
