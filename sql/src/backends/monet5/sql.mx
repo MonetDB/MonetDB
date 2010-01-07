@@ -3739,14 +3739,14 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	bn->T->nonil= b->T->nonil;
 	if ( b->T->nonil){
 		for (; p<q; p++) 
-			*o = *p/scales[scale];
+			*o = (@1) (*p/scales[scale]);
 	} else{
 		for (; p<q; p++) {
 			if (*p == @2_nil) {
 				*o = @1_nil;
 				bn->T->nonil= FALSE;
 			} else 
-				*o = *p/scales[scale];
+				*o = (@1) (*p/scales[scale]);
 		}
 	}
 	BATsetcount(bn, BATcount(b));
@@ -3925,7 +3925,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	bn->T->nonil= b->T->nonil;
 	if ( b->T->nonil){
 		for (; p<q; p++) {
-			val = (*p+ (*p<0)?-5:5)/scales[scale];
+			val = (@2) ((*p+ (*p<0)?-5:5)/scales[scale]);
 			/* see if the number fits in the data type */
 			if (val > GDK_@1_min && val <= GDK_@1_max)
 				*o = (@1)val;
@@ -3941,7 +3941,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				*o = @1_nil;
 				bn->T->nonil= FALSE;
 			} else {
-				val = ( *p + ( *p<0)?-5:5)/scales[scale];
+				val = (@2) (( *p + ( *p<0)?-5:5)/scales[scale]);
 				/* see if the number fits in the data type */
 				if (val > GDK_@1_min && val <= GDK_@1_max)
 					*o = (@1)val;

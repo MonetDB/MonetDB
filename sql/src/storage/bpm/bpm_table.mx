@@ -294,8 +294,8 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 static oid 
 rids_next(rids *r)
 {
-	if (r->cur < BATcount(r->data)) {
-		BATiter bi = bat_iterator(r->data);
+	if (r->cur < BATcount((BAT *) r->data)) {
+		BATiter bi = bat_iterator((BAT *) r->data);
 		return *(oid*)BUNhead(bi, r->cur++);
 	}
 	return oid_nil;
