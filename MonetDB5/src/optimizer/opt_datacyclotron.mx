@@ -182,16 +182,18 @@ static int
 OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, actions=0, k = 0, z= 0;
-	DCYcatalog *regs[mb->vtop], *reg = NULL;
+	DCYcatalog **regs, *reg = NULL;
 	VarRecord low,hgh;
 	InstrPtr *old, new, matq;
 	int limit;
 #ifdef BIND_DATACYCLOTRON_OPT
 	int j;
 	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
-	char newArg[mb->vtop][1000];
+	char (*newArg)[1000];
 	char *oldArg= (char*) GDKzalloc(mb->vtop *sizeof(char));
 	int *tpes= (int*) GDKzalloc(mb->vtop *sizeof(int));
+
+	newArg = alloca(sizeof(*newArg) * mb->vtop);
 
 	if ( (used == NULL) && (newArg == NULL))
 		return 0;
@@ -199,6 +201,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	(void) stk;
 	(void) cntxt;
 
+	regs = (DCYcatalog **) alloca(sizeof(*regs) * mb->vtop);
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize);
