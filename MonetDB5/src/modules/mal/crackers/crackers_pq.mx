@@ -810,33 +810,33 @@ void PQ_pass (PQ_state * const m, PQ_Entry * candidate)
 
 #ifdef PriQue_DEBUG
 
-char const * const PQ_tag (PQ_state const * const m, PQ_Entry const & heap)
+char const * const PQ_tag (PQ_state const * const m, PQ_Entry const *heap)
 {
-	return heap.normkey < m->nodes ? "early" :
-			heap.normkey > PQ_maxKey () - m->nodes ? "late" :
-			heap.normkey < m->nextrun ? "this" : "next";
+	return heap->normkey < m->nodes ? "early" :
+			heap->normkey > PQ_maxKey () - m->nodes ? "late" :
+			heap->normkey < m->nextrun ? "this" : "next";
 }
 
 void PQ_print_key (
 		PQ_state const * const m,
 		char const prefix [],
-		PQ_Entry const &heap,
+		PQ_Entry const *heap,
 		char const suffix [])
 {
 	printf ("%s index %ld tag '%s' - normkey %lu",
-			prefix, (long) (heap.index),
-			PQ_tag (m, heap), (unsigned long) (heap.normkey));
+			prefix, (long) (heap->index),
+			PQ_tag (m, heap), (unsigned long) (heap->normkey));
 
-	if (PQ_is_sentinel (m, heap.normkey))
+	if (PQ_is_sentinel (m, heap->normkey))
 	{
 		printf (" %s sentinel",
-			heap.normkey == PQ_early_sentinel (heap.index) ?
+			heap->normkey == PQ_early_sentinel (heap->index) ?
 				"early" : "late");
 	}
 
 	else
 	{
-		PQ_Index const delta = heap.normkey - m->nodes;
+		PQ_Index const delta = heap->normkey - m->nodes;
 
 		printf (" = run %lu, key %lu",
 				(unsigned long) (delta / m->run_incr),
@@ -844,7 +844,7 @@ void PQ_print_key (
 
 		if (m->data != NULL)
 			printf (" data %#x",
-					(unsigned int) m->data [heap.index]);
+					(unsigned int) m->data [heap->index]);
 	}
 
 	printf ("%s", suffix);
@@ -860,7 +860,7 @@ void PQ_print (PQ_state const * const m, char const header [])
 	for (PQ_Index entry = 0;  entry < m->nodes;  ++ entry)
 	{
 		printf ("entry %ld", (long) (entry));
-		PQ_print_key (m, "", m->heap [entry], "\n");
+		PQ_print_key (m, "", &m->heap [entry], "\n");
 	}
 }
 
