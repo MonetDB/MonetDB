@@ -67,6 +67,10 @@ class Server:
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        # For performance, mirror MonetDB/src/common/stream.c socket settings.
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 0)
+        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
         try:
             self.socket.connect((hostname, port))
         except socket.error, error:
