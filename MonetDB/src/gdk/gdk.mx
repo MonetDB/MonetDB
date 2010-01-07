@@ -1586,6 +1586,10 @@ static INLINE BUN BUNlast(BAT *b)
 }
 #endif
 
+#ifdef NDEBUG
+#define BATcount(b)	((b)->batCount)
+#endif
+
 @
 @}
 
@@ -1657,7 +1661,9 @@ was in there.
 @{
 @h
 gdk_export str BATrename(BAT *b, str nme);
+#ifndef BATcount
 gdk_export BUN BATcount(BAT *b);
+#endif
 gdk_export BUN BATcount_no_nil(BAT *b);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);

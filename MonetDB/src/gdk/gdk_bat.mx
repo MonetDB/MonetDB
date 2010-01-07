@@ -400,7 +400,7 @@ BATguess(BAT *b)
 	BUN newcap;
 
 	BATcheck(b, "BATguess");
-	newcap = BATcount(b);
+	newcap = b->batCount;
 	if (newcap < 10 * BATTINY)
 		return newcap;
 	if (newcap < 50 * BATTINY)
@@ -513,7 +513,7 @@ BATclear(BAT *b)
 	}
 
 	/* small BAT: delete all elements by hand */
-	if (!voidbat && BATcount(b) < 20) {
+	if (!voidbat && b->batCount < 20) {
 		BATloopDEL(b, p, q) {
 			p = BUNdelete(b, p, FALSE);
 		}
@@ -779,7 +779,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 	BAT *bn = NULL;
 
 	BATcheck(b, "BATcopy");
-	cnt = BATcount(b);
+	cnt = b->batCount;
 
 	/* maybe a bit ugly to change the requested bat types?? */
 	if (b->htype == TYPE_void && !writable)
@@ -1094,7 +1094,7 @@ This code assumes that new elements are appended to the BUN list.
 @= void_insertbun
 	if ((@1) && b->@1type == TYPE_void && b->@1seqbase != oid_nil) {
 		if (* (oid *) @1 != oid_nil) {
-			if (BATcount(b) == 0) {
+			if (b->batCount == 0) {
 				b->@1seqbase = * (oid *) @1;
 			} else if (* (oid *) @1 != (b->@1seqbase + BUNlast(b))) {
 		 		b = BATmaterialize@1(b);
@@ -1141,7 +1141,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 		BATiter bi = bat_iterator(b);
 
 		p = BUNlast(b);	/* insert at end */
-		if (p == BUN_MAX || BATcount(b) == BUN_MAX) {
+		if (p == BUN_MAX || b->batCount == BUN_MAX) {
 			GDKerror("BUNins: bat too large\n");
 			return NULL;
 		}
@@ -1304,7 +1304,7 @@ MAXoid(BAT *i)
 	BATiter ii = bat_iterator(i);
 	oid o = i->hseqbase - 1;
 
-	if (BATcount(i))
+	if (i->batCount)
 		o = *(oid *) BUNhead(ii, BUNlast(i) - 1);
 	if (!BAThordered(i)) {
 		BUN r, s;
@@ -1347,7 +1347,7 @@ BUNappend(BAT *b, ptr t, bit force)
 	}
 
 	p = BUNlast(b);		/* insert at end */
-	if (p == BUN_MAX || BATcount(b) == BUN_MAX) {
+	if (p == BUN_MAX || b->batCount == BUN_MAX) {
 		GDKerror("BUNappend: bat too large\n");
 		return NULL;
 	}
@@ -1417,8 +1417,8 @@ BUNappend(BAT *b, ptr t, bit force)
 				b->tkey = bm->hkey = b->tdense = FALSE;
 			}
 		} else if (b->tseqbase != oid_nil) {	/* virtual ids */
-			if (b->tseqbase + BATcount(b) != *(oid *) t) {
-				BUN cnt = BATcount(b);
+			if (b->tseqbase + b->batCount != *(oid *) t) {
+				BUN cnt = b->batCount;
 
 				b = BATmaterializet(b);
 				countonly = 0;
@@ -1786,7 +1786,7 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 		} else {
 			@:uncommit_replace(loc)@
 		}
-		if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && BATcount(b) > 1) {
+		if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
 			BATkey(bm, FALSE);
 		}
 		if (b->T->nonil) 
@@ -1846,7 +1846,7 @@ void_inplace(BAT *b, oid id, ptr val, bit force)
 
 	assert(b->htype == TYPE_void);
 	assert(b->hseqbase != oid_nil);
-	assert(BATcount(b) > (id -b->hseqbase));
+	assert(b->batCount > (id -b->hseqbase));
 
 	b->batInserted = 0;
 	BUNfndVOID(p, bi, (ptr) &id);
@@ -1985,7 +1985,7 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	if (BAThdense(b)) {
 		BUN i = (BUN) (*(oid *) x - b->hseqbase);
 
-		if (i < BATcount(b)) {
+		if (i < b->batCount) {
 			i += BUNfirst(b);
 			p = i;
 			if ((*tcmp) (y, BUNtail(bi, p)) == 0)
@@ -2184,6 +2184,9 @@ It can be implemented quickly, because the system ensures a dense
 BUN list.
 @{
 @c
+#ifdef BATcount		/* may be defined in gdh.mx */
+#undef BATcount
+#endif
 BUN
 BATcount(BAT *b)
 {
@@ -3096,7 +3099,7 @@ check if duplicated properties are equal
 		     ((b->H->heap.size > b->H->heap.maxsize) << 13) |
 		     (((b->H->heap.free > b->H->heap.size) & (b->htype != TYPE_void)) |
 		      ((b->T->heap.free > b->T->heap.size) & (b->ttype != TYPE_void))) << 14 | 
-		     (((xx - yy) != BATcount(b)) << 15) |
+		     (((xx - yy) != b->batCount) << 15) |
 			((b->H->type && (b->U->capacity > (b->H->heap.size>>b->H->shift))) |
 			(b->T->type && (b->U->capacity > (b->T->heap.size>>b->T->shift)))) << 16;
 
@@ -3114,7 +3117,7 @@ check if duplicated properties are equal
 			b->H->key = bm->T->key = b->batDirty = TRUE;
 		}
 		if (BAThdense(b) && !b->hkey) {
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is dense but not key!?\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is dense but not key!?\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 		}
 	}
 	if (BAThdense(b) && !b->hkey)
@@ -3127,17 +3130,17 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 	}
 	if (xx > yy /* BATcount(b) > 0 */ && BAThdense(b) && b->htype == TYPE_oid && *(oid *) BUNhloc(bi, BUNfirst(b)) != b->hseqbase) {
 		GDKerror("BATpropcheck: BAT %s(%d) with "BUNFMT" tuples seqbase of dense oid bat is wrong! " OIDFMT " != " OIDFMT "\n",
-			 BATgetId(b), b->batCacheid, BATcount(b), b->hseqbase, *(oid *) BUNhloc(bi, BUNfirst(b)));
+			 BATgetId(b), b->batCacheid, b->batCount, b->hseqbase, *(oid *) BUNhloc(bi, BUNfirst(b)));
 	}
 	if (xx <= yy + 1) {	/* BATcount(b) <= 1 */
 		if (ATOMlinear(tpe) && !(b->hsorted & 1)) {
-			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 
 			b->batDirtydesc = TRUE;
 			b->hsorted = GDK_SORTED;
 		}
 		if (!b->hkey) {
-			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)key!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)key!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 
 			BATkey(b, TRUE);
 		}
@@ -3150,7 +3153,7 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 				hsb = *(oid *) BUNhloc(bi, BUNfirst(b));
 			}
 			if (hsb != oid_nil) {
-				XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 
 				b->hdense = b->batDirtydesc = TRUE;
 				BATseqbase(b, hsb);
@@ -3164,18 +3167,18 @@ first propagate already known properties. that will save some effort.
 	if (VIEWparentcol(b) && ALIGNsynced(parent = BBP_cache(VIEWhparent(b)), b)) {
 		/* quickly propagate properties from parent to child */
 		if (((BAThordered(parent) & 1) && !(BAThordered(b) & 1)) && !b->H->heap.copied) {
-			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples inherits (h)sorted from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
+			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples inherits (h)sorted from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount, BATgetId(parent), parent->batCacheid);
 
 			b->batDirtydesc = TRUE;
 			b->hsorted = GDK_SORTED;
 		}
 		if (parent->hkey && !b->hkey) {
-			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples inherits (h)key from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
+			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples inherits (h)key from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount, BATgetId(parent), parent->batCacheid);
 
 			BATkey(b, TRUE);
 		}
 		if (BAThdense(parent) && tpe == TYPE_oid && !BAThdense(b)) {
-			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "BUNFMT" tuples inherits (h)dense from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
+			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "BUNFMT" tuples inherits (h)dense from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount, BATgetId(parent), parent->batCacheid);
 
 			b->hdense = b->batDirtydesc = TRUE;
 			BATseqbase(b, *(oid *) BUNhloc(bi, BUNfirst(b)));
@@ -3356,7 +3359,7 @@ for determining which algebra commands set properties sub-optimally.
 @c
 	if (disprove_key || disprove_nonil) {
 		if (p < q) {
-			BUN cnt = BATcount(b);
+			BUN cnt = b->batCount;
 			BUN lim = (BUN) ((mode & BATPROPS_ALL) ? GDK_int_max : 16000);
 
 			lim = MIN(cnt, lim);
@@ -3465,28 +3468,28 @@ failed to disprove on exhaustive check => succeeded to prove
       exit:
 	if (mode & BATPROPS_CHECK) {
 		if ((sorted_bak & 1) && !(BAThordered(b) & 1)) {
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 			if (BAThordered(b))
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples remains marked radix-clustered on %d bits; not checked!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BAThordered(b) >> 1);
+				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples remains marked radix-clustered on %d bits; not checked!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount, BAThordered(b) >> 1);
 		}
 		if (key_bak && !b->hkey)
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 		if (nonil_bak && !b->H->nonil)
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked nonil!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked nonil!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 		if (dense_bak && disprove_dense) {
 			if (!BAThdense(b))
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 			if (seq_bak != b->hseqbase)
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples had incorrect seqbase!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples had incorrect seqbase!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 		}
 		XPROPDEBUG {
 			if (!(sorted_bak & 1) && (BAThordered(b) & 1))	/* StM: GDK_SORTED_REV ? */
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was not marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was not marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 			if (!key_bak && b->hkey)
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was not marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was not marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 			if (!dense_bak && disprove_dense) {
 				if (BAThdense(b))
-					GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was not marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+					GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was not marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
 			}
 		}
 	}
