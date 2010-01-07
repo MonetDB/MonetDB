@@ -1214,7 +1214,7 @@ collect statistics that help us decide what to do
 		if (swap && BATtvoid(r) && !BAThvoid(l))
 			rfetch = 0;
 	}
-	must_hash = swap && rsize < lsize ? l->T->hash == NULL : r->H->hash == NULL;
+	must_hash = swap && rsize > lsize ? l->T->hash == NULL : r->H->hash == NULL;
 @-
 In special cases (equal join columns, void join columns, or ordered
 join columns), we take special action.
