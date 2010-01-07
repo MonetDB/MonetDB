@@ -1270,10 +1270,10 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			_ptr = (p);					\
 			switch ((b)->H->width) {			\
 			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) _d - GDK_VAROFFSET; \
+				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) _d - GDK_VAROFFSET; \
+				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 4:						\
 				* (unsigned int *) _ptr = (unsigned int) _d; \
@@ -1299,10 +1299,10 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			_ptr = (p);					\
 			switch ((b)->T->width) {			\
 			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) _d - GDK_VAROFFSET; \
+				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) _d - GDK_VAROFFSET; \
+				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 4:						\
 				* (unsigned int *) _ptr = (unsigned int) _d; \
@@ -1343,10 +1343,10 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			_ptr = (p);					\
 			switch ((b)->H->width) {			\
 			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) _d - GDK_VAROFFSET; \
+				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) _d - GDK_VAROFFSET; \
+				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 4:						\
 				* (unsigned int *) _ptr = (unsigned int) _d; \
@@ -1387,10 +1387,10 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			_ptr = (p);					\
 			switch ((b)->T->width) {			\
 			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) _d - GDK_VAROFFSET; \
+				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) _d - GDK_VAROFFSET; \
+				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 4:						\
 				* (unsigned int *) _ptr = (unsigned int) _d; \
