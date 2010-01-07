@@ -1529,12 +1529,14 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
  * the BAT header) extra parameters would be needed in their APIs.
  */ 
 typedef unsigned short stridx_t;
-#define GDK_VARSHIFT 3 
+#define SIZEOF_STRIDX_T SIZEOF_SHORT
+#define GDK_VARSHIFT 3
 #define GDK_VARALIGN (1<<GDK_VARSHIFT)
 #else
 typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_t not to break BAT images */
-#define GDK_VARSHIFT 0 
-#define GDK_VARALIGN sizeof(stridx_t)
+#define SIZEOF_STRIDX_T SIZEOF_VAR_T
+#define GDK_VARSHIFT 0
+#define GDK_VARALIGN SIZEOF_STRIDX_T
 #endif
 
 #if SIZEOF_VAR_T == 8

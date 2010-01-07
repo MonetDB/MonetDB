@@ -1928,7 +1928,8 @@ The @%strPut@ routine. The routine @%strLocate@ can be used to identify
 the location of a string in the heap if it exists. Otherwise it returns
 zero.
 @c
-#define EXTRALEN SIZEOF_BUN	/* make (2*SIZEOF_BUN) to also store length (heaps are then incompatible) */
+/* if at least (2*SIZEOF_BUN), also store length (heaps are then incompatible) */
+#define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 var_t
 strLocate(Heap *h, str v)
