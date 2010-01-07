@@ -1181,7 +1181,7 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 {
 	size_t lsize, rsize;
 	BUN i, lcount, rcount;
-	int lfetch, rfetch, must_hash;
+	bit lfetch, rfetch, must_hash;
 	lng logr, logl;
 
 	ERRORcheck(l == NULL, "BATjoin: invalid left operand");
