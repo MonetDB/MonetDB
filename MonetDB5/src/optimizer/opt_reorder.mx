@@ -113,9 +113,11 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 		if ( var[ getArg(p,j)] )
 			list[i]->stmt[j] = var [getArg(p,j)];
 		/* remember the last assignment  */
-		for( j=0; j<p->retc; j++){
+		for( j=0; j<p->retc; j++)
 			var[getArg(p,j)]= i;
-		}
+		/* and also remember when it was last used */
+		for( j=p->retc; j<p->argc; j++)
+			var[getArg(p,j)]= i;
 	}
 #ifdef DEBUG_OPT_REORDER_DETAILS
 	stream_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
