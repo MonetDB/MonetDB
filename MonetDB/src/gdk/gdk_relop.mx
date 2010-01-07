@@ -1198,8 +1198,8 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 @-
 collect statistics that help us decide what to do
 @c
-	lsize = l->H->heap.size + l->T->heap.size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
-	rsize = r->H->heap.size + r->T->heap.size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
+	lsize = lcount * (Hsize(l) + Tsize(l)) + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0) + 2 * lcount * sizeof(BUN);
+	rsize = rcount * (Hsize(r) + Tsize(r)) + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0) + 2 * rcount * sizeof(BUN);
 	for (logr = 4, i = rcount; i > 0; logr++)
 		i >>= 1;
 	for (logl = 4, i = lcount; i > 0; logl++)
@@ -1242,7 +1242,7 @@ loop binary search (both implemented by BATmergejoin).
 hash join: the bread&butter join of monet
 @c
 	/* Simple rule, always build hash on the smallest */ 
-	if (swap && rcount > lcount) {
+	if (swap && rsize > lsize) {
 		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)," BUNFMT "));\n", estimate);
 
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), estimate));
