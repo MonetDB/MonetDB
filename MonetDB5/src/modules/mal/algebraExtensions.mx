@@ -210,7 +210,7 @@ GDKblockjoin(BAT *b, BAT *c){
 		if ( cap == BUN_NONE)
 			cap = BATcount(j )* 2;
 		else 
-			cap += BATcount(j) * 1.2;
+			cap += (BUN) (BATcount(j) * 1.2);
 		BBPunfix(j->batCacheid);
 		BBPunfix( cp->batCacheid);
 	}
@@ -256,7 +256,7 @@ GDKblockjoin2(BAT *b, BAT *c){
 			if ( cap == BUN_NONE)
 				cap = BATcount(j )* 2;
 			else 
-				cap += BATcount(j) * 1.2;
+				cap += (BUN) (BATcount(j) * 1.2);
 			BBPunfix(j->batCacheid);
 			BBPunfix( cp->batCacheid);
 		}
