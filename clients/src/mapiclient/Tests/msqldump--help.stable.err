@@ -14,8 +14,7 @@ Usage: msqldump [ options ]
 Options are:
  -h hostname | --host=hostname    host to connect to
  -p portnr   | --port=portnr      port to connect to
- -u user     | --user=user        user id (if flag not given, ask for one)
- -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)
+ -u user     | --user=user        user id
  -d database | --database=database  database to connect to
  -f          | --functions      dump functions
  -D          | --describe       describe database

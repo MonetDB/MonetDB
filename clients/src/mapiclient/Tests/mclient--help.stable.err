@@ -15,8 +15,7 @@ Usage: mclient --language=(sql|xquery|mal|mil) [ options ]
 Options are:
  -h hostname | --host=hostname    host to connect to
  -p portnr   | --port=portnr      port to connect to
- -u user     | --user=user        user id (if flag not given, ask for one)
- -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)
+ -u user     | --user=user        user id
  -d database | --database=database  database to connect to
  -e          | --echo            echo the query
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
@@ -32,6 +31,7 @@ Options are:
  -?          | --help             show this usage message
 
 SQL specific opions 
+ -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes
  -r nr       | --rows=nr          for pagination
  -w nr       | --width=nr         for pagination
  -D          | --dump             create an SQL dump
