@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2009 MonetDB B.V.
+# Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
 ''' Python DB API 2.0 driver compliance unit test suite.
@@ -35,6 +35,15 @@ import unittest
 import time
 
 # $Log$
+# Revision 1.2  2009/05/19 12:04:13  sjoerd
+# propagated changes of Tuesday May 19 2009
+# from the May2009 branch to the development trunk
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 2009/05/19 - sjoerd: src/python/test/dbapi20.py,1.1.2.1
+# Add license to files.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
 # Revision 1.1  2009/04/27 13:01:18  gijzelaerr
 # moved tests from tests to test
 #
