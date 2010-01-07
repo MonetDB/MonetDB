@@ -500,8 +500,11 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	if (as->nr_attrs < (BUN) threads)
 		threads = (int) as->nr_attrs;
 
+	/* allocate enough space for pointers into the buffer pool.  */
+	/* the record separator is considered a column */
+	task->limit =  b->size / (as->nr_attrs+1);
 	for( i=0; i< as->nr_attrs; i++) {
-		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
+		task->fields[i] = GDKzalloc(sizeof(char*) * task->limit);
 		if ( task->fields[i] == 0){
 			as->error = M5OutOfMemory;
 			return BUN_NONE;
@@ -510,11 +513,11 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		/* advice memory manager on expected use of results */
 		BATmadvise(as->format[i].c[0], BUF_SEQUENTIAL,BUF_SEQUENTIAL,0,0);
 	}
-	task->workers = threads;
-	task->limit = 10000;
+
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",threads,csep,rsep,quote);
 #endif
+	task->workers = threads;
 	for( j= 0; j < threads ; j++){
 		ptask[j]= *task;
 		ptask[j].id= j;
@@ -574,19 +577,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		   rethink the matter. */
 		e = s;
 		while (s < end && (maxrow < 0 || cnt < (BUN) maxrow) ) {
-			/* alloc more space in the task buffer */
-			if ( task->next == task->limit ){
-				for( i=0; i< as->nr_attrs; i++)  {
-					task->fields[i] = GDKrealloc(task->fields[i], sizeof(char*) * (task->limit + 10000));
-					if ( task->fields[i] == 0){	/* major error */
-						GDKerror("tablet_sql:Memory allocation problem (realloc"SZFMT" for field "BUNFMT")\n", sizeof(char*) * (task->limit + 10000), i);
-						as->error = M5OutOfMemory;
-						return BUN_NONE;
-					}
-				}
-
-				task->limit += 10000;
-			}
 			/* tokenize the record completely
 			   the format of the input should comply to
 			   the following grammar rule
