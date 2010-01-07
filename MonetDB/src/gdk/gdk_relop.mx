@@ -1179,7 +1179,7 @@ This routine does the join optimization. TODO: it should be expressed in MIL.
 static BAT *
 batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 {
-	size_t lsize, rsize;
+	size_t lsize, rsize, mem_size = MT_npages() * MT_pagesize();
 	BUN i, lcount, rcount;
 	bit lfetch, rfetch, must_hash;
 	lng logr, logl;
@@ -1222,6 +1222,94 @@ collect statistics that help us decide what to do
 			rfetch = 0;
 	}
 	must_hash = swap && rsize > lsize ? l->T->hash == NULL : r->H->hash == NULL;
+@-
+Inner input out of memory => sort-merge-join performs better than hash-join or even random-access fetch-join.
+@c
+	if (((swap && MIN(lsize,rsize) > mem_size) || (!swap && rsize > mem_size)) && !(BATtordered(l) & BAThordered(r) & 1)) {
+		/* inner input out of memory, but not both sorted (sequential-access fetch/merge handled by special cases below) */
+		if (BATtordered(l)&1 || swap) {
+			/* left tail already sorted (i.e., no re-order required) or
+			 * left-order-preserving not required (i.e., re-order allowed) */
+			BAT *ls, *rs, *j;
+			
+			ls = BATtordered(l)&1 ? l : BATmirror(BATsort(BATmirror(l)));
+			ERRORcheck(ls == NULL, "BATjoin: BATmirror(BATsort(BATmirror(l))) failed");
+			rs = BAThordered(r)&1 ? r : BATsort(r);
+			ERRORcheck(rs == NULL, "BATjoin: BATsort(r) failed");
+			if (swap && rsize > lsize) {
+				ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BATmergejoin(BATmirror(BATsort(r)), BATsort(BATmirror(l)), " BUNFMT "));\n", estimate);
+				j = BATmirror(batmergejoin(BATmirror(rs), BATmirror(ls), estimate, swap, NULL));
+				ERRORcheck(j == NULL, "BATjoin: BATmirror(batmergejoin(BATmirror(rs), BATmirror(ls), estimate, swap, NULL)) failed");
+			} else {
+				ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmergejoin(BATmirror(BATsort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
+				j = batmergejoin(ls, rs, estimate, swap, NULL);
+				ERRORcheck(j == NULL, "BATjoin: batmergejoin(ls, rs, estimate, swap, NULL) failed");
+			}
+			if (ls != l) {
+				BBPunfix(ls->batCacheid);
+			}
+			if (rs != r) {
+				BBPunfix(rs->batCacheid);
+			}
+			return j;
+		} else
+		/* as of here, left order must be preserved / restored */
+		if (BAThordered(l)&1 && l->htype < TYPE_str) {
+			/* left head sorted (i.e., left order can be restored with simple (stable) sort of join result),
+			 * provided the sort is fast (i.e., not on varsized types) */
+			BAT *ls, *rs, *jj, *j;
+
+			ALGODEBUG THRprintf(GDKout, "#BATjoin: BAT[s]sort(BATmergejoin(BATmirror(BAT[s]sort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
+			ls = BAThkey(l) ? BATmirror(BATsort(BATmirror(l))) : BATmirror(BATssort(BATmirror(l)));
+			ERRORcheck(ls == NULL, "BATjoin: BATmirror(BAT[s]sort(BATmirror(l))) failed");
+			rs = BAThordered(r)&1 ? r : BATsort(r);
+			ERRORcheck(rs == NULL, "BATjoin: BATsort(r) failed");
+			jj = batmergejoin(ls, rs, estimate, swap, NULL);
+			ERRORcheck(jj == NULL, "BATjoin: batmergejoin(ls, rs, estimate, swap, NULL) failed");
+			BBPunfix(ls->batCacheid); ls = NULL;
+			if (rs != r) {
+				BBPunfix(rs->batCacheid); rs = NULL;
+			}
+			j = BAThkey(l) ? BATsort(jj) : BATssort(jj);
+			ERRORcheck(j == NULL, "BATjoin: BAT[s]sort(jj) failed");
+			BBPunfix(jj->batCacheid); jj = NULL;
+			return j;
+		} else {
+			/* - separate left head & tail using BATmark
+			 * - sort left tail
+			 * - sort right head
+			 * - merge-join left (tail) & right (head)
+			 * - sort join result on BATmark-generated left OIDs to restore left order
+			 * - re-add left head with seq. access fetchjoin
+			 */
+			BAT *lh, *lt, *ls, *rs, *jj, *js, *j;
+
+			ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(batfetchjoin(BATmirror(BATsort(BATmergejoin(BATmirror(BATsort(BATmark(BATmirror(l),0))), BATsort(r), " BUNFMT "))), BATmirror(BATmark(l,0))));\n", estimate);
+			lh = BATmark(l,0);
+			ERRORcheck(lh == NULL, "BATjoin: BATmark(l,0) failed");
+			lt = BATmirror(BATmark(BATmirror(l),0));
+			ERRORcheck(lt == NULL, "BATjoin: BATmirror(BATmark(BATmirror(l),0)) failed");
+			ls = BATmirror(BATsort(BATmirror(lt)));
+			ERRORcheck(ls == NULL, "BATjoin: BATmirror(BATsort(BATmirror(lt))) failed");
+			BBPunfix(lt->batCacheid); lt = NULL;
+			rs = BAThordered(r)&1 ? r : BATsort(r);
+			ERRORcheck(rs == NULL, "BATjoin: BATsort(r) failed");
+			jj = batmergejoin(ls, rs, estimate, swap, NULL);
+			ERRORcheck(jj == NULL, "BATjoin: batmergejoin(ls, rs, estimate, swap, NULL) failed");
+			BBPunfix(ls->batCacheid); ls = NULL;
+			if (rs != r) {
+				BBPunfix(rs->batCacheid); rs = NULL;
+			}
+			js = BATsort(jj);
+			ERRORcheck(js == NULL, "BATjoin: BATsort(jj) failed");
+			BBPunfix(jj->batCacheid); jj = NULL;
+			j = BATmirror(batfetchjoin(BATmirror(js), BATmirror(lh), BATcount(js), swap, TRUE));
+			ERRORcheck(j == NULL, "BATjoin: BATmirror(batfetchjoin(BATmirror(js), BATmirror(lh), BATcount(js), swap, TRUE)) failed");
+			BBPunfix(js->batCacheid); js = NULL;
+			BBPunfix(lh->batCacheid); lh = NULL;
+			return j;
+		}
+	}
 @-
 In special cases (equal join columns, void join columns, or ordered
 join columns), we take special action.
