@@ -340,7 +340,13 @@ hashing.
 #define match_sync(bi,p,r) r++
 #define match_hash(bi,p,r) BUNfndOID(r,bi,p); if (r == BUN_NONE) continue;
 
-#define declare_atom int any = b->ttype; BUN (*hashfcn)(ptr) = BATatoms[any].atomHash;
+static BUN
+lookup_str_hash(ptr v)
+{
+	return ((BUN *) v)[-1];
+}
+
+#define declare_atom int any = b->ttype; BUN (*hashfcn)(ptr) = b->ttype == TYPE_str && b->T->vheap->hashash ? lookup_str_hash : BATatoms[any].atomHash;
 #define declare_simple	/* any and hash would otherwise give unused variable warning */
 
 #define htype_sync(b) BAThdense(b)?TYPE_void:TYPE_oid
