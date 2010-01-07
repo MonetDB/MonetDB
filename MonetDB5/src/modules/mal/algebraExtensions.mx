@@ -82,7 +82,7 @@ ae_export str ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "mal_errors.h"
 #include "mmath.h"
 #include <gdk_posix.h>
-#define PGALIGN(X) (void*)(((size_t)X)/monet_memory)
+#define PGALIGN(X) (void*)((((size_t)X) / MT_pagesize()) * MT_pagesize())
 
 str
 ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt){
