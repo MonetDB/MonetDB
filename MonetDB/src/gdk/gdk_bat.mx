@@ -2068,12 +2068,12 @@ BUNlocate(BAT *b, ptr x, ptr y)
 		if (b->H->hash == NULL) {
 			switch (b->H->width) {
 			case SIZEOF_INT:
-				hidx.i = hidx.v;
+				hidx.i = (int) hidx.v;
 				x = &hidx.i;
 				htpe = TYPE_int;
 				break;
 			case SIZEOF_LNG:
-				hidx.l = hidx.v;
+				hidx.l = (lng) hidx.v;
 				x = &hidx.l;
 				htpe = TYPE_lng;
 				break;
@@ -2087,12 +2087,12 @@ BUNlocate(BAT *b, ptr x, ptr y)
 		if (b->T->hash == NULL) {
 			switch (b->T->width) {
 			case SIZEOF_INT:
-				tidx.i = tidx.v;
+				tidx.i = (int) tidx.v;
 				y = &tidx.i;
 				ttpe = TYPE_int;
 				break;
 			case SIZEOF_LNG:
-				tidx.l = tidx.v;
+				tidx.l = (lng) tidx.v;
 				y = &tidx.l;
 				ttpe = TYPE_lng;
 				break;
