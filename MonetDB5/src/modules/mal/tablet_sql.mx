@@ -483,13 +483,14 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		while (s < end && (maxrow < 0 || cnt < (BUN) maxrow) ) {
 			/* alloc space in the task buffer */
 			if ( task->next == task->limit ){
-				for( i=0; i< as->nr_attrs; i++) 
+				for( i=0; i< as->nr_attrs; i++)  {
 					task->fields[i] = GDKrealloc(task->fields[i], sizeof(char*) * (task->limit + 10000));
 					if ( task->fields[i] == 0){	/* major error */
 						GDKerror("tablet_sql:Memory allocation problem (realloc"SZFMT" for field "BUNFMT")\n", sizeof(char*) * (task->limit + 10000), i);
 						as->error = M5OutOfMemory;
 						return BUN_NONE;
 					}
+				}
 
 				task->limit += 10000;
 			}
