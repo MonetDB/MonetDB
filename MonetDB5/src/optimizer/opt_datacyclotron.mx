@@ -238,10 +238,14 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					setModuleId(new,datacyclotronRef);
 #ifdef BIND_DATACYCLOTRON_OPT
 					setFunctionId(new,bindRef);
+					getArg(new,0) = newTmpVariable(mb, tpe);
 #else
 					setFunctionId(new,copyRef);
-#endif
+					new = pushArgument(mb, new, newTmpVariable(mb,TYPE_int));
+					new->retc++;
 					getArg(new,0) = newTmpVariable(mb, tpe);
+					getArg(new,1) = newTmpVariable(mb, TYPE_int);
+#endif
 
 					new = pushStr(mb,new,reg->schema);
 					new = pushStr(mb,new,reg->table);
@@ -251,9 +255,12 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					new = pushInt(mb,new,reg->f_bun[k]);
 					new = pushInt(mb,new,reg->l_bun[k]);
 					pushInstruction(mb,new);
-					newArg[getArg(p,0)][k] = getArg(new,0);
 					used[getArg(p,0)] = 1;
-#ifndef BIND_DATACYCLOTRON_OPT
+#ifdef BIND_DATACYCLOTRON_OPT
+					newArg[getArg(p,0)][k] = getArg(new,0);
+				}
+#else
+					newArg[getArg(p,0)][k] = getArg(new,1);
 
 					low.value.val.oval= reg->f_bun[k];
 					hgh.value.val.oval= reg->l_bun[k];
@@ -264,8 +271,6 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					matq= pushArgument(mb,matq,z);
 				}
 				pushInstruction(mb,matq);
-#else
-				}
 #endif
 			} else 
 					pushInstruction(mb,p);
@@ -382,11 +387,12 @@ DCunpin(int *ret, int *bid){
 }
 
 @h
-opt_export str DCcopy(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
+opt_export str DCcopy(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
 @c
 str
-DCcopy(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
-	(void) ret;
+DCcopy(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
+	(void) ret_id;
+	(void) ret_bat;
 	(void) sch;
 	(void) tab;
 	(void) col;
