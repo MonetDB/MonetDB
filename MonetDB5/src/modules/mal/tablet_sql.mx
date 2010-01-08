@@ -502,11 +502,17 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
 	/* allocate enough space for pointers into the buffer pool.  */
 	/* the record separator is considered a column */
-	task->limit =  b->size / (as->nr_attrs+1);
+	task->limit =  b->size / as->nr_attrs + as->nr_attrs;
 	for( i=0; i< as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char*) * task->limit);
 		if ( task->fields[i] == 0){
 			as->error = M5OutOfMemory;
+			while( i != 0)
+				GDKfree(task->fields[--i]);
+			GDKfree(task->base);
+			GDKfree(task->fields);
+			GDKfree(task->cols);
+			GDKfree(task->time);
 			return BUN_NONE;
 		}
 		task->cols[i] = (int) (i+1);	/* to distinguish non initialized later with zero */
