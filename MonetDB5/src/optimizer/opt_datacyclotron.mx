@@ -38,8 +38,8 @@ The number of overloaded instructions is kept to a minimum.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/* #define DEBUG_DATACYCLOTRON_OPT */
-#define BIND_DATACYCLOTRON_OPT 
+/*#define DEBUG_DATACYCLOTRON_OPT*/
+/*#define BIND_DATACYCLOTRON_OPT */
 
 #define SCHEMA_LENG     32 
 #define TABLE_LENG      32 
@@ -181,27 +181,26 @@ findRegist( str sch, str tab, str col, int acc) {
 static int
 OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, actions=0, k = 0, z= 0;
+	int i, actions=0, k = 0, z= 0, j = 0;
 	DCYcatalog **regs, *reg = NULL;
 	VarRecord low,hgh;
 	InstrPtr *old, new, matq;
 	int limit;
-#ifdef BIND_DATACYCLOTRON_OPT
-	int j;
-	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
-	char (*newArg)[1000];
-	char *oldArg= (char*) GDKzalloc(mb->vtop *sizeof(char));
-	int *tpes= (int*) GDKzalloc(mb->vtop *sizeof(int));
+	int (*newArg)[1000];
+	char *used= (char*) GDKzalloc((mb->vtop+100) *sizeof(char));
 
-	newArg = alloca(sizeof(*newArg) * mb->vtop);
+#ifdef BIND_DATACYCLOTRON_OPT
+	int *tpes= (int*) GDKmalloc((mb->vtop+100) *sizeof(int));
+#endif
+
+	newArg = GDKmalloc(sizeof(*newArg) * (mb->vtop+100));
 
 	if ( (used == NULL) && (newArg == NULL))
 		return 0;
-#endif
 	(void) stk;
 	(void) cntxt;
 
-	regs = (DCYcatalog **) alloca(sizeof(*regs) * mb->vtop);
+	regs = (DCYcatalog **) GDKmalloc(sizeof(*regs) * (mb->vtop+100));
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize);
@@ -222,8 +221,6 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			if (regs[getArg(p,0)]) {
 				int tpe = TYPE_int;
 				reg = regs[getArg(p,0)];
-				tpes[getArg(p,0)] = getArgType(mb,p,0);
-
 #ifndef BIND_DATACYCLOTRON_OPT
 				tpe = getArgType(mb,p,0);
 
@@ -232,6 +229,8 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				setFunctionId(matq,newRef);
 				getArg(matq,0)= getArg(p,0);
 				hgh.value.vtype= low.value.vtype= TYPE_oid;
+#else
+				tpes[getArg(p,0)] = getArgType(mb,p,0);
 #endif
 
 				for (k = 0; k < reg->partitions; k++ ) {
@@ -252,13 +251,9 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					new = pushInt(mb,new,reg->f_bun[k]);
 					new = pushInt(mb,new,reg->l_bun[k]);
 					pushInstruction(mb,new);
-#ifdef BIND_DATACYCLOTRON_OPT
-					used[getArg(p,0)] = 1;
 					newArg[getArg(p,0)][k] = getArg(new,0);
-					oldArg[getArg(p,0)] = getArg(p,0);
-
-				}
-#else
+					used[getArg(p,0)] = 1;
+#ifndef BIND_DATACYCLOTRON_OPT
 
 					low.value.val.oval= reg->f_bun[k];
 					hgh.value.val.oval= reg->l_bun[k];
@@ -269,6 +264,8 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					matq= pushArgument(mb,matq,z);
 				}
 				pushInstruction(mb,matq);
+#else
+				}
 #endif
 			} else 
 					pushInstruction(mb,p);
@@ -283,7 +280,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					matq= newInstruction(NULL,ASSIGNsymbol);
 					setModuleId(matq,matRef);
 					setFunctionId(matq,newRef);
-					getArg(matq,0)= oldArg[getArg(p,j)];
+					getArg(matq,0)= getArg(p,j);
 					hgh.value.vtype= low.value.vtype= TYPE_oid;
 
 					for (k = 0; k < reg->partitions; k++ ) {
@@ -292,6 +289,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 						setFunctionId(new,pinRef);
 
 						getArg(new,0) = newTmpVariable(mb, tpes[getArg(p,j)]);
+						setVarUDFtype(mb,getArg(new,0));
 
 						pushArgument(mb,new,newArg[getArg(p,j)][k]);
 						pushInstruction(mb,new);
@@ -305,10 +303,14 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					}
 					pushInstruction(mb,matq);
 				}
-
+#endif
 			if (functionExit(p))
 				for (j = 0; j< mb->vtop; j++) 
+#ifdef BIND_DATACYCLOTRON_OPT
 					if ( used[j] == 2) {
+#else
+					if ( used[j] == 1) {
+#endif
 						reg = regs[j];
 						for (k = 0; k < reg->partitions; k++ ) {
 							new= newStmt(mb,"datacyclotron","unpin");
@@ -316,13 +318,24 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 						}
 					}
-#endif
 			pushInstruction(mb,p);
 		}
 		
 	}
+
+#ifdef BIND_DATACYCLOTRON_OPT
+	GDKfree(tpes);
+#endif
+	GDKfree(used);
+	GDKfree(newArg);
+	GDKfree(regs);
 	GDKfree(old);
 
+#ifdef DEBUG_DATACYCLOTRON_OPT
+	clrDeclarations(mb);
+	chkTypes(cntxt->nspace,mb,TRUE);
+	printFunction(cntxt->fdout,mb, 0,LIST_MAL_ALL);
+#endif
 	return actions;
 }
 @include optimizerWrapper.mx
