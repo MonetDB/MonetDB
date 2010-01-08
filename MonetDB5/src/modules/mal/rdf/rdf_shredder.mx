@@ -126,7 +126,6 @@ The raptor parser needs to register a callback function that handles one triple
 at a time. Function rdf_parser_triple_handler() does exactly this.
 
 @= rdf_insert
-@:rdf_BUNappend_unq(@1, @2)@
 #ifdef _TKNZR_H
  @:rdf_tknzr_insert(@2)@
 #else
@@ -140,11 +139,13 @@ if (bun == BUN_NONE) {
 		HASHdestroy(@1);
 		BAThash(BATmirror(@1), 2*BATcount(@1));
 	}
-	bun = (BUN) @1->batCount;
+	bun = (BUN) ((@1)->hseqbase + (@1)->batCount);
 	@1 = BUNappend(@1, (ptr)@2, TRUE);
 	if (@1 == NULL) {
 		@:raptor_exception(pdata, "could not append in@1")@
 	}
+} else {
+	bun = (@1)->hseqbase + bun;
 }
 
 @= rdf_tknzr_insert
