@@ -1,20 +1,16 @@
-# ChangeLog for MonetDB5
-# Copyright
-# $Header$
+# ChangeLog file for MonetDB5
+# This file is updated with Maddlog
 
-  15 Nov 2009; Fabian Groffen <fabian@cwi.nl> src/mal/mal_session.mx:
-  Removed the ability to redirect to other running databases in the same
+* Sun Nov 15 2009 Fabian Groffen <fabian@cwi.nl>
+- Removed the ability to redirect to other running databases in the same
   dbfarm.  This functionality has been taken over completely by
   merovingian, and only results in confusement these days, bug #2891191.
-
-  15 Nov 2009; Fabian Groffen <fabian@cwi.nl> configure.ag,
-  src/tools/mserver5.mx:
-  Added --enable-console configure argument, defaulting to 'yes' for
+- Added --enable-console configure argument, defaulting to 'yes' for
   now.  Disabling the server console increases security by avoiding
   local access exploits.  This is not the default since our Testing
   setup cannot deal with a console-less server yet.
 
-  03 Nov 2009; Fabian Groffen <fabian@cwi.nl>
-  src/tools/monet_version.c.in:
-  Report detected amount of main memory and cpu cores in output of
+* Tue Nov  3 2009 Fabian Groffen <fabian@cwi.nl>
+- Report detected amount of main memory and cpu cores in output of
   `mserver5 --version`.
+
