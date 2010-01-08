@@ -4701,10 +4701,11 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, map_tbl, "lexical"), s, TYPE_bat);
+			mvc_bind_column(m, map_tbl, "lexical"),
+			BATmirror(BATmark(BATmirror(s),0)), TYPE_bat);
 	store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, map_tbl, "sid"),
-			BATmark(s, 0),
+			BATmirror(BATmark(s, 0)),
 			TYPE_bat);
 	BBPunfix(s->batCacheid);
 
