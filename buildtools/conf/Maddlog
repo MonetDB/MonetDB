@@ -1,0 +1,167 @@
+#!/bin/sh
+# -*-shell-script-*-
+
+d=.
+while [ ! -f $d/vertoo.data ]; do
+    if [ $d -ef / ]; then
+	echo "$0: cannot find top directory of package" >&2
+	exit 1
+    fi
+    d=../$d
+done
+CL=$d/ChangeLog
+if [ -f $d/CVS/Tag ]; then
+    tag=$(< $d/CVS/Tag)
+    case $tag in
+    T*)	CL=$CL.${tag#?};;
+    esac
+fi
+PROJECT=$(< $d/CVS/Repository)
+
+nocommit=
+while [ $# -gt 0 ]; do
+    case "$1" in
+    --email=*)
+	EMAIL=${1#--email=}
+	shift
+	;;
+    --email|-e)
+	EMAIL=$2
+	shift
+	shift
+	;;
+    -e*)
+	EMAIL=${1#-e}
+	shift
+	;;
+    --fullname=*)
+	FULLNAME=${1#--fullname=}
+	shift
+	;;
+    --fullname|-n)
+	FULLNAME=$2
+	shift
+	shift
+	;;
+    -n*)
+	FULLNAME=${1#-n}
+	shift
+	;;
+    --logfile=*)
+	CL=${1#--logfile=}
+	shift
+	;;
+    --logfile|-f)
+	CL=$2
+	shift
+	shift
+	;;
+    -f*)
+	CL=${1#-f}
+	shift
+	;;
+    --nocommit)
+	nocommit=true
+	shift
+	;;
+    --)
+	shift
+	break
+	;;
+    -*)
+	cat >&2 <<-EOF
+	$0: unknown option $1
+	Valid options are:
+	--email=user@domain (-e user@domain)
+	--fullname=FullName (-n FullName)
+	--logfile=filename (-f filename)
+	--nocommit
+	EOF
+	exit 1
+	;;
+    *)
+	break
+	;;
+    esac
+done
+
+if [ $# -gt 0 ]; then
+    msg=$*
+else
+    nl=$'\n  '
+    echo "Log message (end with ^D or empty line):"
+    msg=
+    while read line && [ "$line" ]; do
+	msg="${msg:+$msg$nl}$line"
+    done
+fi
+
+# figure out full name and email address
+# use $FULLNAME and $EMAIL if set in the environment, else find full
+# name using the finger command and regenerate an email address from
+# user name and domain
+: ${USER:=$(whoami)}
+: ${FULLNAME:=$(finger -l $USER | sed -n "s/Login: $USER .*Name: \\(.*\\)/\\1/p")}
+: ${EMAIL:=$(if [ -f /etc/mailname ]; then echo $USER@$(< /etc/mailname); elif [ -d /etc/postfix ]; then echo $USER@$(postconf -h mydomain); else echo $USER@$HOSTNAME; fi)}
+
+file=ChangeLog.$RANDOM
+
+case "$CL" in
+*/*)
+    cd "${CL%/*}"
+    CL=${CL##*/}
+    ;;
+esac
+cvs update "$CL"
+
+if [ -f "$CL" ]; then
+    sed 's/^/X/' "$CL" | {
+    date=
+    user=
+    first=true
+    while read -r line; do
+	line=${line#X}
+	case "$line" in
+	'* '???\ ???\ [\ 123][0-9]\ 20[0-9][0-9]\ *\<*@*\>)
+	    if [ "$first" = true ]; then
+		date=$(expr "$line" : '\* \(... ... .. ....\) .*')
+		user=$(expr "$line" : '\* ... ... .. .... \(.*\)')
+		if [ "$date" = "$(date +'%a %b %_d %Y')" -a "$user" = "$FULLNAME <$EMAIL>" ]; then
+		    echo "$line"
+		    echo "- $msg"
+		else
+		    echo "* $(date +'%a %b %_d %Y') $FULLNAME <$EMAIL>"
+		    echo "- $msg"
+		    echo
+		    echo "$line"
+		fi
+		first=false
+	    else
+		echo "$line"
+	    fi
+	    ;;
+	*)
+	    echo "$line"
+	    ;;
+	esac
+    done
+    if [ "$first" = true ]; then
+	echo "* $(date +'%a %b %_d %Y') $FULLNAME <$EMAIL>"
+	echo "- $msg"
+	echo
+    fi
+    }
+else
+    echo "# ChangeLog file for $PROJECT"
+    echo "# This file is updated with Maddlog"
+    echo
+    echo "* $(date +'%a %b %_d %Y') $FULLNAME <$EMAIL>"
+    echo "- $msg"
+    echo
+fi > $file
+
+mv $file "$CL"
+
+if [ ! "$nocommit" ]; then
+    cvs commit -m "$msg" "$CL"
+fi
