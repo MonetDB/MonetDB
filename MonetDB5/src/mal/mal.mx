@@ -202,7 +202,7 @@ mal_export int             monet_welcome;
 mal_export str             *monet_script;
 mal_export int 				monet_daemon;
 mal_export char 			monet_motd[2048];
-mal_export lng				monet_memory;
+mal_export size_t			monet_memory;
 
 #define mal_set_lock(X,Y) if(GDKprotected) MT_set_lock(X,Y)
 #define mal_unset_lock(X,Y) if(GDKprotected) MT_unset_lock(X,Y)
@@ -228,7 +228,7 @@ int monet_welcome = 1;
 str *monet_script;
 int monet_daemon=0;
 char monet_motd[2048];
-lng	monet_memory;
+size_t monet_memory;
 @}
 @-
 @node Execution Engine, Session Scenarios, MAL Synopsis , Design  Overview
