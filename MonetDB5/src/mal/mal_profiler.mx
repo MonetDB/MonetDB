@@ -1092,7 +1092,7 @@ initTrace(void)
 	TRACE_id_reads = TRACEcreate("id", "read", TYPE_lng);
 	TRACE_id_writes = TRACEcreate("id", "write", TYPE_lng);
 	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
-	TRACE_id_user = TRACEcreate("id", "thread", TYPE_int);
+	TRACE_id_user = TRACEcreate("id", "user", TYPE_int);
 	if (TRACE_id_event == NULL ||
 		TRACE_id_time == NULL ||
 		TRACE_id_ticks == NULL ||
