@@ -195,10 +195,10 @@ SQLworker_column(READERtask *task, int col)
 	Column *fmt = task->as->format;
 	str err = 0;
 
+	/* watch out for concurrent threads */
+	mal_set_lock(mal_contextLock,"tablet insert value");
 	if ( BATcapacity(fmt[col].c[0]) < BATcount(fmt[col].c[0]) + task->next ) {
-		if ( (fmt[col].c[0] =  BATextend(fmt[col].c[0], BATgrows(fmt[col].c[0]) + task->next)) == NULL){
-			/* watch out for concurrent threads */
-			mal_set_lock(mal_contextLock,"tablet insert value");
+		if ( (fmt[col].c[0] =  BATextend(fmt[col].c[0], BATgrows(fmt[col].c[0]) + task->limit)) == NULL){
 			if (task->as->error == NULL)
 				task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full");
 			mal_unset_lock(mal_contextLock,"tablet insert value");
@@ -206,6 +206,7 @@ SQLworker_column(READERtask *task, int col)
 			return -1;
 		}
 	}
+	mal_unset_lock(mal_contextLock,"tablet insert value");
 
 	for ( i = 0; i< task->next ; i++)
 	if ( task->fields[col][i] ) { /* no errors */
