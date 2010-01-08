@@ -1,8 +1,10 @@
-# MonetDB/Buildtools ChangeLog
-# Copyright 2009 MonetDB B.V.
+# ChangeLog file for buildtools
+# This file is updated with Maddlog
 
-  01 Dec 2009; Fabian Groffen <fabian@cwi.nl> conf/Makefile.am,
-  +conf/mchangelog:
-  Added mchangelog script that I use to add ChangeLog entries. The script is a
+* Fri Jan  8 2010 Sjoerd Mullender <sjoerd@cwi.nl>
+- Added Maddlog script to add ChangeLog entries.
+
+* Tue Dec  1 2009 Fabian Groffen <fabian@cwi.nl>
+- Added mchangelog script that I use to add ChangeLog entries. The script is a
   highly modified version of Gentoo's echangelog script.
 
