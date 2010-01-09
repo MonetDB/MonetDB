@@ -943,8 +943,10 @@ void PQ_AssertConsistency (
 					"index", "norm", "entry point + parents ...");
 			for (index = 0;  index < m->nodes;  ++ index)
 			{
+				PQ_Index  up;
+
 				printf ("  %5d --", (int) (index));
-				for (PQ_Index up = PQ_leaf (m, index);
+				for (up = PQ_leaf (m, index);
 						up != PQ_root ();  PQ_parent (& up))
 					printf (" %d", (int) (up));
 				printf (" %d\n", (int) (PQ_root ()));
