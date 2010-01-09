@@ -1432,7 +1432,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, InstrPtr *old, int oldtop, int cur, mat_t *m
 	/* recognize kdiff(u).union(u) but also kdiff(u).union(select(u, ..)) */
 	if (getFunctionId(p) == kdifferenceRef &&
 	    cur + 2 < oldtop && 
-	    getModuleId(u) == algebraRef && getFunctionId(u) == kunionRef &&
+	    (getModuleId(u) == algebraRef || getModuleId(u) == pcreRef) && getFunctionId(u) == kunionRef &&
 	    isSelect(q) &&
 	    p->argv[0] == u->argv[1] && 
 	    p->argv[2] == q->argv[1] &&
