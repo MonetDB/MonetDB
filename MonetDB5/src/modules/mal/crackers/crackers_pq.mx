@@ -843,8 +843,8 @@ void PQ_print_key (
 				(unsigned long) (delta % m->run_incr));
 
 		if (m->data != NULL)
-			printf (" data %#x",
-					(unsigned int) m->data [heap->index]);
+			printf (" data " PTRFMT,
+					PTRFMTCAST m->data [heap->index]);
 	}
 
 	printf ("%s", suffix);
@@ -852,12 +852,13 @@ void PQ_print_key (
 
 void PQ_print (PQ_state const * const m, char const header [])
 {
+	PQ_Index entry;
 
 	printf ("*** priority heap \"%s\" with %ld entries: %s ***\n",
 			m->name, (long) (m->capacity), header);
 
 
-	for (PQ_Index entry = 0;  entry < m->nodes;  ++ entry)
+	for (entry = 0;  entry < m->nodes;  ++ entry)
 	{
 		printf ("entry %ld", (long) (entry));
 		PQ_print_key (m, "", &m->heap [entry], "\n");
