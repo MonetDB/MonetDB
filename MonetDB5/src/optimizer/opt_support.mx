@@ -1291,7 +1291,13 @@ int isFragmentGroup(InstrPtr p){
 
 int isSelect(InstrPtr p) 
 {
-	return (getModuleId(p)== algebraRef && (
+	return  (getModuleId(p)== pcreRef && (
+			getFunctionId(p)== likeselectRef ||
+			getFunctionId(p)== likeuselectRef  ||
+			getFunctionId(p)== ilikeselectRef  ||
+			getFunctionId(p)== ilikeuselectRef  
+			))  ||
+			(getModuleId(p)== algebraRef && (
 		getFunctionId(p)== selectRef ||
 		getFunctionId(p)== selectNotNilRef ||
 		getFunctionId(p)== uselectRef ||
