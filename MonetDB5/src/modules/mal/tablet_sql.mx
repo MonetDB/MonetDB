@@ -503,7 +503,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
 	/* allocate enough space for pointers into the buffer pool.  */
 	/* the record separator is considered a column */
-	task->limit =  b->size / as->nr_attrs + as->nr_attrs;
+	task->limit =  (int) (b->size / as->nr_attrs + as->nr_attrs);
 	for( i=0; i< as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char*) * task->limit);
 		if ( task->fields[i] == 0){
