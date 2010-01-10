@@ -52,6 +52,7 @@ observed time spending so far.
 #include <gdk_posix.h>
 
 /* #define _DEBUG_TABLET_*/
+/* #define MLOCK_TST did not make a difference on sf10 */
 
 #define BREAKLINE 1
 #define UPDATEBAT 2
@@ -495,6 +496,12 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		as->error = M5OutOfMemory;
 		return BUN_NONE;
 	}
+#ifdef MLOCK_TST
+	mlock( task->fields, as->nr_attrs * sizeof(char *));
+	mlock( task->cols, as->nr_attrs * sizeof(int));
+	mlock( task->time, as->nr_attrs * sizeof(lng));
+	mlock( task->base, b->size +2);
+#endif
 	as->error = NULL;
 
 	/* there is no point in creating more threads than we have columns */
@@ -514,8 +521,14 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			GDKfree(task->fields);
 			GDKfree(task->cols);
 			GDKfree(task->time);
+#ifdef MLOCK_TST
+			munlockall();
+#endif
 			return BUN_NONE;
 		}
+#ifdef MLOCK_TST
+		mlock( task->fields[i], sizeof(char*) * task->limit);
+#endif
 		task->cols[i] = (int) (i+1);	/* to distinguish non initialized later with zero */
 		/* advice memory manager on expected use of results */
 		BATmadvise(as->format[i].c[0], BUF_SEQUENTIAL,BUF_SEQUENTIAL,0,0);
@@ -533,6 +546,9 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			as->error = M5OutOfMemory;
 			return BUN_NONE;
 		}
+#ifdef MLOCK_TST
+		mlock( ptask[j].cols, sizeof(char*) * task->limit);
+#endif
 		MT_init_sema(ptask[j].sema,0,"sqlworker");
 		MT_init_sema(ptask[j].reply,0,"sqlworker");
 		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j]);
@@ -548,6 +564,9 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	MT_down_sema(task->consumer, "tablet loader");
 	tio = GDKusec() - tio;
 	t1 = GDKusec();
+#ifdef MLOCK_TST
+		mlock( task->b->buf, task->b->size);
+#endif
 	while ( (task->b->pos < task->b->len || !task->b->eof) && cnt < (BUN) maxrow && res == 0) {
 
 		if ( task->basesize <= task->b->size){
@@ -770,6 +789,9 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	GDKfree(task->time);
 	GDKfree(task->base);
 	GDKfree(task);
+#ifdef MLOCK_TST
+	munlockall();
+#endif
 
 	/* restore system setting */
 	GDK_vm_trim = vmtrim;
