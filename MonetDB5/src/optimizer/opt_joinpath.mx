@@ -402,11 +402,13 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
     /* merge joins are by far the cheapest */
 	if ( flag == 0 ){
 		/* leftjoin issues */
-		if (l->tdense )
+		if (l->tsorted && r->hsorted )
 			return 1;
-		if (l->tsorted )
+		if (l->tdense )
 			return lc;
 	}
+	if (l->tsorted && r->hsorted )
+		return MIN(lc,rc);
 	if ( isVIEW(l) && lc > rc )
 		return lc;
 	if( l->tsorted || r->hsorted)
