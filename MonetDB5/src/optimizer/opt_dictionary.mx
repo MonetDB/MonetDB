@@ -210,7 +210,8 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
-	DICTinit();
+	if ( DICTinit() < 0)
+		return 0;
 	limit = mb->stop;
 	old = mb->stmt;
 	
@@ -658,11 +659,10 @@ DICTinit(void)
 			} else {
 				BBPreleaseref(b->batCacheid);
 			}
-			mal_unset_lock(mal_contextLock, "dictionary");
-			return 0;
 		}
+		mal_unset_lock(mal_contextLock, "dictionary");
 	}
-    	return 0;
+	return dictIndex != 0 && dictValue != 0 && dictBase != 0;
 }
 
 str DICTinitialize(int *ret)
