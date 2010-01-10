@@ -80,6 +80,7 @@ inlineCst
 mitosis00
 
 joinpath
+leftjoinpath
 groupderive
 
 ifthencst
