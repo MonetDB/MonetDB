@@ -495,10 +495,10 @@ abandoning the task.
 @c
 		switch(flag){
 		case 0:
-			b = BATleftjoin(joins[j], joins[j + 1], BUN_NONE);
+			b = BATleftjoin(joins[j], joins[j + 1], BATcount(joins[j]));
 			break;
 		case 1:
-			b = BATjoin(joins[j], joins[j + 1], BUN_NONE);
+			b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
 			break;
 		case 2:
 			b = BATsemijoin(joins[j], joins[j + 1]);
