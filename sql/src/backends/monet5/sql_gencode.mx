@@ -1178,7 +1178,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				q = pushNil(mb, q, TYPE_lng);
 				break;
 			default:
 				showException(SQL,"sql","SQL2MAL: error impossible\n");
