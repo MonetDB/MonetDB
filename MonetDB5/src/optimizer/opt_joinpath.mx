@@ -367,7 +367,7 @@ For the time being we limit ourself to a default of 1Kelements
 #define SMALL_OPERAND	1024
 #define CLUSTER_THRESHOLD	(1<<21) /* 2M */
 BUN
-ALGjoinCost(Client cntxt, BAT *l, BAT *r)
+ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 {
 	BUN lc, rc;
 #if 0
@@ -400,9 +400,16 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r)
 	/* estimate the maximal, because the determines work */
 	/* avoid materialization of views to early */
     /* merge joins are by far the cheapest */
+	if ( flag == 0 ){
+		/* leftjoin issues */
+		if (l->tdense )
+			return 1;
+		if (l->tsorted )
+			return lc;
+	}
 	if ( isVIEW(l) && lc > rc )
 		return lc;
-	if( l->tsorted && r->hsorted)
+	if( l->tsorted || r->hsorted)
 		return MIN(lc,rc);
 	/* foreign key joins are common */
 	if( l->ttype== TYPE_oid  || r->htype == TYPE_oid || r->htype== TYPE_void)
@@ -444,7 +451,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 	/* solve the join by pairing the smallest first */
 	while (top > 1) {
 		j = 0;
-		estimate = ALGjoinCost(cntxt,joins[0],joins[1]);
+		estimate = ALGjoinCost(cntxt,joins[0],joins[1],flag);
 #ifdef DEBUG_OPT_JOINPATH
 		stream_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
 			joins[1]->batCacheid,(int)estimate);
@@ -452,7 +459,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 	(void) cntxt;
 #endif
 		for (i = 1; i < top - 1; i++) {
-			e = ALGjoinCost(cntxt,joins[i], joins[i + 1]);
+			e = ALGjoinCost(cntxt,joins[i], joins[i + 1],flag);
 #ifdef DEBUG_OPT_JOINPATH
 		stream_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
 			joins[i+1]->batCacheid,(int)e);
