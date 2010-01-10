@@ -210,7 +210,7 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
-	if ( DICTinit() < 0)
+	if ( DICTinit() == 0)
 		return 0;
 	limit = mb->stop;
 	old = mb->stmt;
@@ -717,7 +717,7 @@ str DICTbind(int *idx, int *val, str * nme)
 {
 	int base = 0;
 	*idx = *val = 0;
-	if( DICTinit() )
+	if( DICTinit() == 0 )
 		throw(MAL,"dictionary.bind","No catalog table");
 	if ( DICTfind(idx, val, &base, *nme) )
 		throw(MAL,"dictionary.bind","Not found in catalog table");
@@ -752,7 +752,7 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	BUN p,q;
 	double ratio = 0.0;
 
-	if( DICTinit() )
+	if( DICTinit()  == 0)
 		throw(MAL,"dictionary.new","No catalog table");
 
 	if ( DICTfind(&idx,&val, &base, *nme) == 0){
@@ -965,7 +965,7 @@ str DICTdecompress(int *ret, str *nme)
 	BAT *bx, *bv, *bs, *b;
 	BUN p;
 
-	if( DICTinit() )
+	if( DICTinit() == 0 )
 		throw(MAL,"dictionary.decompress","No catalog table");
 #ifdef DEBUG_OPT_DICTIONARY 
 	stream_printf(GDKout,"#dictionary.decompress %s\n",*nme);
