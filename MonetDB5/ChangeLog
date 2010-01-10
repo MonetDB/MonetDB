@@ -2,6 +2,9 @@
 # This file is updated with Maddlog
 
 * Sun Jan 10 2010 Martin Kersten <mk@>
+- The joinpath optimizer has been extended with recognition of the leftjoin.
+  This way, series of leftjoin operations can be optimized by looking at
+  the smallest starting point.
 - Introduced a dictionary encoding option to the optimizer pipeline.
   Encoding is initiated with a SQL call compress(tablename).
 
