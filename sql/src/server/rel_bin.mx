@@ -1561,12 +1561,13 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		list_append(pl, s);
 	}
 	psub = stmt_list(pl);
-	/* In case of an topn 
+	/* In case of a topn 
 		if both order by and distinct: then get first order by col early
 			do topn on it. Project all again! Then rest
          */
 	if (topn && rel->r) {
 		list *oexps = rel->r, *npl = create_stmt_list();
+		int before_project = need_distinct(rel) || (list_length(oexps) > 1);
 		sql_exp *orderbycole = oexps->h->data; 
 
 		stmt *limit, *orderbycols = exp_bin(sql, orderbycole, sub, psub, NULL, NULL); 
@@ -1576,7 +1577,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			stmt_destroy(sub);
 			return NULL;
 		}
-		limit = stmt_limit(orderbycols, 0, l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, 1));
+		limit = stmt_limit(orderbycols, 0, l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, before_project));
 		for ( n=pl->h ; n; n = n->next) {
 			list_append(npl, 
 			 	stmt_semijoin(column(stmt_dup(n->data)), 
