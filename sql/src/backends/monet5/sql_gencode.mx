@@ -228,6 +228,7 @@ dump_cols(MalBlkPtr mb, list *l, int result_set)
 		q = pushArgument(mb, q, result_set);
 		q = pushStr(mb, q, ncn);
 		q = pushArgument(mb, q, c->nr);
+		c->nr = getDestVar(q);
 		_DELETE(ncn);
 		_DELETE(cn);
 	}
@@ -948,7 +949,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					int k;
 
 					q = newStmt1(mb, pcreRef,
-							(s->flag == cmp_like ? "like_uselect" : "ilike_uselect"));
+							(s->flag == cmp_notlike ? "like_uselect" : "ilike_uselect"));
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, e);
