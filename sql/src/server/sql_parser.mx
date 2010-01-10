@@ -3199,7 +3199,7 @@ like_predicate:
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
-		  append_int(l, FALSE);  /* case insensitive */
+		  append_int(l, FALSE);  /* case sensitive */
 		  $$ = _symbol_create_list( SQL_NOT_LIKE, l ); }
  |  pred_exp NOT ILIKE like_exp
 		{ dlist *l = L();
@@ -3211,7 +3211,7 @@ like_predicate:
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
-		  append_int(l, FALSE);  /* case insensitive */
+		  append_int(l, FALSE);  /* case sensitive */
 		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  |  pred_exp ILIKE like_exp
 		{ dlist *l = L();

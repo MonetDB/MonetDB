@@ -1847,7 +1847,7 @@ compare_str2type( char *compare_op)
 	} else if (compare_op[0] == 'i') {
 		type = cmp_ilike;
 	} else if (compare_op[0] == 'n') {
-		if (strcmp(compare_op, "not_like")) {
+		if (strcmp(compare_op, "not_like") == 0) {
 			type = cmp_notlike;
 		} else {
 			type = cmp_notilike;
