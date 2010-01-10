@@ -15,4 +15,4 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = monet5 tst
+SUBDIRS = monet5 
