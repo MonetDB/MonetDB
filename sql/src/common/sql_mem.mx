@@ -117,6 +117,15 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 	return r;
 }
 
+char *sa_zalloc( sql_allocator *sa, size_t sz )
+{
+	char *r = sa_alloc(sa, sz);
+
+	if (r)
+		memset(r, 0, sz);
+	return r;
+}	
+
 void sa_destroy( sql_allocator *sa ) 
 {
 	size_t i ;

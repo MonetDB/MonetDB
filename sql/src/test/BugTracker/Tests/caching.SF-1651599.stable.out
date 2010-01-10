@@ -2678,6 +2678,7 @@ Over..
 [ "insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 5423.298,611.794,512.611,298.611,794.512,6927.7794,7794.6927;",	1	]
 [ "insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 7527.5970,null,7844.3785,5970.3785,5737.7844,4238.329,329.4238;",	1	]
 [ "insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 3869.3905,null,9208.3881,null,9725.9208,435.9519,9519.435;",	1	]
+[ "create table foo (foo1 float,foo2 float,foo3 float,foo4 float,foo5 float,foo6 float,foo7 float);",	1	]
 
 # 16:22:23 >  
 # 16:22:23 >  Done.

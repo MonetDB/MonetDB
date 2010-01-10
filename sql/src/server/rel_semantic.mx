@@ -48,6 +48,8 @@ extern int compare2range( int l, int r );
 #include "rel_select.h"
 #include "rel_updates.h"
 #include "rel_trans.h"
+#include "rel_schema.h"
+#include "rel_sequence.h"
 #include "rel_exp.h"
 
 #include <unistd.h>
@@ -190,10 +192,19 @@ rel_semantic(mvc *sql, symbol *s)
 
 	case SQL_CREATE_SCHEMA:
 	case SQL_DROP_SCHEMA:
+
 	case SQL_CREATE_TABLE:
+	case SQL_CREATE_VIEW:
 	case SQL_DROP_TABLE:
-	case SQL_ALTER_TABLE:
 	case SQL_DROP_VIEW:
+	case SQL_ALTER_TABLE:
+		return rel_schemas(sql, s);
+
+	case SQL_CREATE_SEQ:
+	case SQL_ALTER_SEQ:
+	case SQL_DROP_SEQ:
+		return rel_sequences(sql, s);
+
 	case SQL_CREATE_INDEX:
 	case SQL_DROP_INDEX:
 	case SQL_CREATE_USER:
@@ -211,10 +222,6 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_TRIGGER:
 	case SQL_CONNECT:
 	case SQL_DISCONNECT:
-
-	case SQL_CREATE_SEQ:
-	case SQL_ALTER_SEQ:
-	case SQL_DROP_SEQ:
 
 	case SQL_CREATE_FUNC:
 	case SQL_CREATE_PROC:
@@ -287,9 +294,26 @@ rel_semantic(mvc *sql, symbol *s)
 		return rel;
 	}
 
-	case SQL_MULSTMT:
-		assert(0); /* handled before rel_semantic */
-		return NULL;
+	case SQL_MULSTMT: {
+		//assert(0); /* handled before rel_semantic */
+		dnode *d;
+		sql_rel *r = NULL;
+
+		stack_push_frame(sql, "MUL");
+		for (d = s->data.lval->h; d; d = d->next) {
+			symbol *sym = d->data.sym;
+			sql_rel *nr = rel_semantic(sql, sym);
+			
+			if (!nr)
+				return NULL;
+			if (r)
+				r = rel_list(r, nr);
+			else
+				r = nr;
+		}
+		stack_pop_frame(sql);
+		return r;
+	} 	
 	case SQL_PREP:
 	{
 		dnode *d = s->data.lval->h;
@@ -301,16 +325,6 @@ rel_semantic(mvc *sql, symbol *s)
 		return r;
 	}
 
-	case SQL_CREATE_VIEW:
-	{
-		dlist *l = s->data.lval;
-		sql_rel *ret = rel_view(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
-
-		assert(l->h->next->next->next->type == type_int);
-		assert(l->h->next->next->next->next->type == type_int);
-		sql->type = Q_SCHEMA;
-		return ret;
-	} break;
 	case SQL_SELECT:
 	case SQL_JOIN:
 	case SQL_CROSS:

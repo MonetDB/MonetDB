@@ -359,15 +359,17 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
 
-				not_null = !c->null;
+				if (c) {
+					not_null = !c->null;
 
-				if (active_store_type == store_bpm && c->data) {
-					bpm = c->data;
-					part = bpm->nr;
+					if (active_store_type == store_bpm && c->data) {
+						bpm = c->data;
+						part = bpm->nr;
+					}
+					cnt = store_funcs.count_col(c);
+					assert(cnt <= (size_t) GDK_oid_max);
+					rows = (oid) cnt;
 				}
-				cnt = store_funcs.count_col(c);
-				assert(cnt <= (size_t) GDK_oid_max);
-				rows = (oid) cnt;
 			}	
 			if (rows > 1 && mode != RD_INS)
 				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_oid, &rows));

@@ -137,7 +137,7 @@ query has been successfully executed.
 	lng Tparse;
 } mvc;
 
-extern int mvc_init(int debug, store_type store, backend_stack stk);
+extern int mvc_init(char *dbname, int debug, store_type store, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 
@@ -183,7 +183,7 @@ extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern void mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
 extern sql_table *mvc_create_cluster(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
-extern sql_table *mvc_create_view(mvc *c, sql_schema *s, char *name, char *sql, bit system);
+extern sql_table *mvc_create_view(mvc *c, sql_schema *s, char *name, int persistence, char *sql, bit system);
 extern sql_table *mvc_create_generated(mvc *c, sql_schema *s, char *name, char *sql, bit system);
 
 extern void mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
@@ -194,7 +194,7 @@ extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 
-extern sql_key *mvc_create_ukey(mvc *m, sql_table *t, char *kname, key_type kt);
+extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, char *kname, key_type kt);
 extern sql_key *mvc_create_ukey_done(mvc *m, sql_key *k);
 extern sql_fkey *mvc_create_fkey(mvc *m, sql_table *t, char *kname, key_type kt, sql_key *rk, int on_delete, int on_update);
 extern sql_key *mvc_create_kc(mvc *m, sql_key *k, sql_column *c);
@@ -245,6 +245,10 @@ extern void stack_set_string(mvc *sql, char *name, str v);
 extern lng stack_get_number(mvc *sql, char *name);
 extern void stack_set_number(mvc *sql, char *name, lng v);
 
+extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
+extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);
+extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
+
 #endif /*_SQL_MVC_H*/
 @c
 
@@ -265,11 +269,10 @@ extern void stack_set_number(mvc *sql, char *name, lng v);
 static int mvc_debug = 0;
 
 int
-mvc_init(int debug, store_type store, backend_stack stk)
+mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 {
 	int first = 0;
 	char *logdir = "sql_logs";
-	char *dbname = GDKgetenv("gdk_dbname");
 
 	assert(dbname);
 
@@ -296,7 +299,7 @@ mvc_init(int debug, store_type store, backend_stack stk)
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
 
-		t = mvc_create_view(m, s, "tables", "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type < 2;", 1);
+		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type < 2;", 1);
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
@@ -306,7 +309,7 @@ mvc_init(int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
 		mvc_create_column_(m, t, "temporary", "smallint", 16);
 
-		t = mvc_create_view(m, s, "columns", "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;", 1);
+		t = mvc_create_view(m, s, "columns", SQL_PERSIST, "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;", 1);
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "type", "varchar", 1024);
@@ -986,7 +989,6 @@ mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int
 		fprintf(stderr, "mvc_create_type %s\n", name);
 
 	t = sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
-	sql->type = Q_SCHEMA;
 	return t;
 }
 
@@ -999,7 +1001,6 @@ mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *r
 		fprintf(stderr, "mvc_create_func %s\n", name);
 
 	f = sql_trans_create_func(sql->session->tr, s, name, args, res, issql, aggr, mod, impl, is_func);
-	sql->type = Q_SCHEMA;
 	return f;
 }
 
@@ -1010,7 +1011,6 @@ mvc_drop_func(mvc *m, sql_schema *s, sql_func *f, int drop_action)
 		fprintf(stderr, "mvc_drop_func %s %s\n", s->base.name, f->base.name);
 
 	sql_trans_drop_func(m->session->tr, s, f->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
-	m->type = Q_SCHEMA;
 }
 
 void
@@ -1020,7 +1020,6 @@ mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 		fprintf(stderr, "mvc_drop_all_func %s %s\n", s->base.name, ((sql_func *) list_func->h->data)->base.name);
 
 	sql_trans_drop_all_func(m->session->tr, s, list_func, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
-	m->type = Q_SCHEMA;
 }
 
 sql_schema *
@@ -1032,7 +1031,6 @@ mvc_create_schema(mvc *m, char *name, int auth_id, int owner)
 		fprintf(stderr, "mvc_create_schema %s %d %d\n", name, auth_id, owner);
 
 	s = sql_trans_create_schema(m->session->tr, name, auth_id, owner);
-	m->type = Q_SCHEMA;
 	return s;
 }
 
@@ -1042,55 +1040,58 @@ mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_schema %s\n", s->base.name);
 	sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
-	m->type = Q_SCHEMA;
+	m->last = NULL;
 }
 
-sql_key *
+sql_ukey *
 mvc_create_ukey(mvc *m, sql_table *t, char *name, key_type kt)
 {
-	sql_key *k;
-
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_ukey %s %u\n", t->base.name, kt);
-	k = sql_trans_create_ukey(m->session->tr, t, name, kt);
-	m->type = Q_SCHEMA;
-	return k;
+	if (t->persistence == SQL_DECLARED_TABLE)
+		return create_sql_ukey(m->sa, t, name, kt);	
+	else
+		return (sql_ukey*)sql_trans_create_ukey(m->session->tr, t, name, kt);
 }
 
 sql_key *
 mvc_create_ukey_done(mvc *m, sql_key *k)
 {
-	k = sql_trans_key_done(m->session->tr, k);
-	m->type = Q_SCHEMA;
-	return k;
+	if (k->t->persistence == SQL_DECLARED_TABLE)
+		return key_create_done(m->sa, k);
+	else
+		return sql_trans_key_done(m->session->tr, k);
 }
 
 sql_fkey *
 mvc_create_fkey(mvc *m, sql_table *t, char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
 {
-	sql_fkey *fk;
-
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_fkey %s %u " PTRFMT "\n", t->base.name, kt, PTRFMTCAST rkey);
-	fk = sql_trans_create_fkey(m->session->tr, t, name, kt, rkey, on_delete, on_update);
-	m->type = Q_SCHEMA;
-	return fk;
+	if (t->persistence == SQL_DECLARED_TABLE)
+		return create_sql_fkey(m->sa, t, name, kt, rkey, on_delete, on_update);	
+	else
+		return sql_trans_create_fkey(m->session->tr, t, name, kt, rkey, on_delete, on_update);
 }
 
 sql_key *
-mvc_create_kc(mvc *m, sql_key *k, sql_column *c /*, extra options such as trunc */ )
+mvc_create_kc(mvc *m, sql_key *k, sql_column *c)
 {
-	sql_trans_create_kc(m->session->tr, k, c);
-	m->type = Q_SCHEMA;
-	return k;
+	if (k->t->persistence == SQL_DECLARED_TABLE)
+		return create_sql_kc(m->sa, k, c);
+	else
+		return sql_trans_create_kc(m->session->tr, k, c);
 }
 
 sql_fkey *
-mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c /*, extra options such as trunc */ )
+mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c)
 {
-	sql_trans_create_fkc(m->session->tr, fk, c);
-	m->type = Q_SCHEMA;
-	return fk;
+	sql_key *k = (sql_key*)fk;
+
+	if (k->t->persistence == SQL_DECLARED_TABLE)
+		return (sql_fkey*)create_sql_kc(m->sa, k, c);
+	else
+		return sql_trans_create_fkc(m->session->tr, fk, c);
 }
 
 void
@@ -1098,7 +1099,10 @@ mvc_drop_key(mvc *m, sql_schema *s, sql_key *k, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_key %s %s\n", s->base.name, k->base.name);
-	sql_trans_drop_key(m->session->tr, s, k->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+	if (k->t->persistence == SQL_DECLARED_TABLE)
+		drop_sql_key(k->t, k->base.id, drop_action);
+	else
+		sql_trans_drop_key(m->session->tr, s, k->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 sql_idx *
@@ -1109,17 +1113,22 @@ mvc_create_idx(mvc *m, sql_table *t, char *name, idx_type it)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_idx %s %u\n", t->base.name, it);
 
-	i = sql_trans_create_idx(m->session->tr, t, name, it);
-	m->type = Q_SCHEMA;
+	if (t->persistence == SQL_DECLARED_TABLE)
+		/* declared tables should not end up in the catalog */
+		return create_sql_idx(m->sa, t, name, it);
+	else
+		i = sql_trans_create_idx(m->session->tr, t, name, it);
 	return i;
 }
 
 sql_idx *
-mvc_create_ic(mvc *m, sql_idx * i, sql_column *c /*, extra options such as trunc */ )
+mvc_create_ic(mvc *m, sql_idx * i, sql_column *c)
 {
-	sql_trans_create_ic(m->session->tr, i, c);
-	m->type = Q_SCHEMA;
-	return i;
+	if (i->t->persistence == SQL_DECLARED_TABLE)
+		/* declared tables should not end up in the catalog */
+		return create_sql_ic(m->sa, i, c);
+	else
+		return sql_trans_create_ic(m->session->tr, i, c);
 }
 
 void
@@ -1128,8 +1137,11 @@ mvc_drop_idx(mvc *m, sql_schema *s, sql_idx *i)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_idx %s %s\n", s->base.name, i->base.name);
 
-	m->type = Q_SCHEMA;
-	sql_trans_drop_idx(m->session->tr, s, i->base.id, DROP_RESTRICT);
+	if (i->t->persistence == SQL_DECLARED_TABLE)
+		/* declared tables should not end up in the catalog */
+		return drop_sql_idx(i->t, i->base.id);
+	else
+		sql_trans_drop_idx(m->session->tr, s, i->base.id, DROP_RESTRICT);
 }
 
 sql_trigger * 
@@ -1142,7 +1154,6 @@ mvc_create_trigger(mvc *m, sql_table *t, char *name, sht time, sht orientation, 
 
 	i = sql_trans_create_trigger(m->session->tr, t, name, time, orientation, 
 			event, old_name, new_name, condition, statement);
-	m->type = Q_SCHEMA;
 	return i;
 }
 
@@ -1150,7 +1161,6 @@ sql_trigger *
 mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ )
 {
 	sql_trans_create_tc(m->session->tr, i, c);
-	m->type = Q_SCHEMA;
 	return i;
 }
 
@@ -1160,7 +1170,6 @@ mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_trigger %s %s\n", s->base.name, tri->base.name);
 
-	m->type = Q_SCHEMA;
 	sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
 
@@ -1173,12 +1182,13 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, bit system, int persistence,
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_table %s %s %d %d %d\n", s->base.name, name, system, persistence, commit_action);
 
-	if (!s && persistence == SQL_DECLARED_TABLE)
+	if (persistence == SQL_DECLARED_TABLE) {
 		/* declared tables should not end up in the catalog */
-		t = create_sql_table(name, tt_table, system, persistence, commit_action);
-	else
+		t = create_sql_table(m->sa, name, tt_table, system, persistence, commit_action);
+		t->s = s;
+	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt_table, system, persistence, commit_action, sz);
-	m->type = Q_SCHEMA;
+	}
 	return t;
 }
 
@@ -1191,21 +1201,25 @@ mvc_create_cluster(mvc *m, sql_schema *s, char *name, bit system, int persistenc
 		fprintf(stderr, "mvc_create_cluster %s %s %d %d %d\n", s->base.name, name, system, persistence, commit_action);
 
 	t = sql_trans_create_table(m->session->tr, s, name, NULL, tt_cluster, system, persistence, commit_action, sz);
-	m->type = Q_SCHEMA;
 	return t;
 }
 
 
 sql_table *
-mvc_create_view(mvc *m, sql_schema *s, char *name, char *sql, bit system)
+mvc_create_view(mvc *m, sql_schema *s, char *name, int persistence, char *sql, bit system)
 {
 	sql_table *t = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_view %s %s %s\n", s->base.name, name, sql);
 
-	t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
-	m->type = Q_SCHEMA;
+	if (persistence == SQL_DECLARED_TABLE) {
+		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0);
+		t->s = s;
+		t->query = _strdup(sql);
+	} else {
+		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
+	}
 	return t;
 }
 
@@ -1218,7 +1232,6 @@ mvc_create_generated(mvc *m, sql_schema *s, char *name, char *sql, bit system)
 		fprintf(stderr, "mvc_create_generated %s %s %s\n", s->base.name, name, sql);
 
 	t = sql_trans_create_table(m->session->tr, s, name, sql, tt_generated, system, SQL_PERSIST, 0, 0);
-	m->type = Q_SCHEMA;
 	return t;
 }
 
@@ -1229,13 +1242,12 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 		fprintf(stderr, "mvc_drop_table %s %s\n", s->base.name, t->base.name);
 
 	sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
-	m->type = Q_SCHEMA;
+	m->last = NULL;
 }
 
 BUN
 mvc_clear_table(mvc *m, sql_table *t)
 {
-	m->type = Q_UPDATE;
 	return sql_trans_clear_table(m->session->tr, t);
 }
 
@@ -1247,7 +1259,6 @@ mvc_create_column_(mvc *m, sql_table *t, char *name, char *type, int digits)
 	if (!sql_find_subtype(&tpe, type, digits, 0))
 		return NULL;
 
-	m->type = Q_SCHEMA;
 	return sql_trans_create_column(m->session->tr, t, name, &tpe);
 }
 
@@ -1256,10 +1267,9 @@ mvc_create_column(mvc *m, sql_table *t, char *name, sql_subtype *tpe)
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
-	m->type = Q_SCHEMA;
-	if (!t->s && t->persistence == SQL_DECLARED_TABLE)
+	if (t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
-		return create_sql_column(t, name, tpe);
+		return create_sql_column(m->sa, t, name, tpe);
 	else
 		return sql_trans_create_column(m->session->tr, t, name, tpe);
 }
@@ -1269,8 +1279,11 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_column %s %s\n", t->base.name, col->base.name);
-	sql_trans_drop_column(m->session->tr, t, col->base.id,  drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
-	m->type = Q_SCHEMA;
+	if (col->t->persistence == SQL_DECLARED_TABLE)
+		drop_sql_column(t, col->base.id, drop_action);
+	else
+		sql_trans_drop_column(m->session->tr, t, col->base.id,  drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+	m->last = NULL;
 }
 
 void
@@ -1278,7 +1291,6 @@ mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type)
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
-	m->type = Q_SCHEMA;
 	if (id != depend_id)
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
 	
@@ -1292,7 +1304,6 @@ mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type)
 	
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_dependencies on %d of type %d\n", depend_id, dep_type);
-	m->type = Q_SCHEMA;
 
 	for (i = 0; i < list_length(id_l); i++)
 	{
@@ -1309,7 +1320,6 @@ mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 	
 	if (mvc_debug)
 		fprintf(stderr, "mvc_check_dependency on %d\n", id);
-	m->type = Q_SCHEMA;
 
 
 	switch(type) {
@@ -1347,7 +1357,6 @@ mvc_connect_catalog(mvc *m, char *server, int port, char *db, char *db_alias, ch
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_connect_catalog of database %s on server %s\n",db, server);
-	m->type = Q_SCHEMA;
 
 	return sql_trans_connect_catalog(m->session->tr, server, port, db, db_alias, user, passwd, lng);
 		
@@ -1358,7 +1367,6 @@ mvc_disconnect_catalog(mvc *m, char *db_alias)
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_disconnect_catalog for db_alias %s\n",db_alias);
-	m->type = Q_SCHEMA;
 
 	return sql_trans_disconnect_catalog(m->session->tr, db_alias);
 		
@@ -1369,7 +1377,6 @@ mvc_disconnect_catalog_ALL(mvc *m)
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_disconnect_catalog_ALL \n");
-	m->type = Q_SCHEMA;
 
 	return sql_trans_disconnect_catalog_ALL(m->session->tr);
 		
@@ -1380,7 +1387,6 @@ mvc_get_connection(mvc *m, int id, char *server, char *db, char *db_alias, char 
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_get_connection details for connection of database %s on server %s by the user %s\n",db, server, user);
-	m->type = Q_SCHEMA;
 
 	return sql_trans_get_connection(m->session->tr, id, server, db, db_alias, user);
 			
@@ -1392,7 +1398,8 @@ mvc_null(mvc *m, sql_column *col, int isnull)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_null %s %d\n", col->base.name, isnull);
 
-	m->type = Q_SCHEMA;
+	if (col->t->persistence == SQL_DECLARED_TABLE)
+		col->null = isnull;
 	return sql_trans_alter_null(m->session->tr, col, isnull);
 }
 
@@ -1402,8 +1409,12 @@ mvc_default(mvc *m, sql_column *col, char *val)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_default %s %s\n", col->base.name, val);
 
-	m->type = Q_SCHEMA;
-	return sql_trans_alter_default(m->session->tr, col, val);
+	if (col->t->persistence == SQL_DECLARED_TABLE) {
+		col->def = sa_strdup(m->sa, val);
+		return col;
+	} else {
+		return sql_trans_alter_default(m->session->tr, col, val);
+	}
 }
 
 sql_column *
@@ -1412,8 +1423,12 @@ mvc_drop_default(mvc *m, sql_column *col)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_default %s\n", col->base.name);
 
-	m->type = Q_SCHEMA;
-	return sql_trans_alter_default(m->session->tr, col, NULL);
+	if (col->t->persistence == SQL_DECLARED_TABLE) {
+		col->def = NULL;
+		return col;
+	} else {
+		return sql_trans_alter_default(m->session->tr, col, NULL);
+	}
 }
 
 int 
@@ -1730,3 +1745,22 @@ stack_get_number(mvc *sql, char *name)
 	}
 	return 0;
 }
+
+sql_column *
+mvc_copy_column( mvc *m, sql_table *t, sql_column *c)
+{
+	return sql_trans_copy_column(m->session->tr, t, c);
+}
+
+sql_key *
+mvc_copy_key(mvc *m, sql_table *t, sql_key *k)
+{
+	return sql_trans_copy_key(m->session->tr, t, k);
+}
+
+sql_idx *
+mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
+{
+	return sql_trans_copy_idx(m->session->tr, t, i);
+}
+

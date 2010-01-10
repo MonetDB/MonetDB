@@ -15,32 +15,84 @@
 @' Copyright August 2008-2010 MonetDB B.V.
 @' All Rights Reserved.
 
-@f sql_sequence
+@f rel_sequence
 @a N.J. Nes
 @* 
 
 @h
-#ifndef _SQL_SEQUENCE_H_
-#define _SQL_SEQUENCE_H_
+#ifndef _REL_SEQUENCE_H_
+#define _REL_SEQUENCE_H_
 
 #include "sql_symbol.h"
 #include <sql_statement.h>
 #include <store_sequence.h>
 
-extern stmt *sequences(mvc *sql, symbol *s);
+extern sql_rel *rel_sequences(mvc *sql, symbol *s);
 extern char* sql_next_seq_name(mvc *sql);
 
-#endif /*_SQL_SEQUENCE_H_*/
+#endif /*_REL_SEQUENCE_H_*/
 @c
 
 #include "sql_config.h"
-#include "sql_sequence.h"
-#include "sql_semantic.h"
+#include "rel_select.h"
+#include "rel_sequence.h"
+#include "rel_exp.h"
 #include "sql_privileges.h"
-#include "rel_subquery.h"
 
-stmt *
-sql_create_seq(
+char*
+sql_next_seq_name(mvc *m)
+{
+	oid id = store_next_oid();
+	oid len = 5 + ((id+7)>>3);
+	char *msg = sa_alloc(m->sa, len);
+
+	snprintf(msg, len, "seq_%d", store_next_oid());
+	return msg;
+}
+
+static sql_rel *
+rel_drop_seq(char *sname, char *seqname)
+{
+	sql_rel *rel = rel_create();
+	list *exps = new_exp_list();
+
+	append(exps, exp_atom_int(0));
+	append(exps, exp_atom_clob(sname));
+	append(exps, exp_atom_clob(seqname));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_DROP_SEQ;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_seq(int cat_type, char *sname, sql_sequence *s, sql_rel *r, sql_exp *val)
+{
+	sql_rel *rel = rel_create();
+	list *exps = new_exp_list();
+
+	if (val)
+		append(exps, val);
+	else
+		append(exps, exp_atom_int(0));
+	append(exps, exp_atom_str(sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_ptr(s));
+	rel->l = r;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = cat_type;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_create_seq(
 	mvc *sql,
 	sql_schema *ss,
 	dlist *qname,
@@ -52,6 +104,8 @@ sql_create_seq(
 	lng cache,
 	int cycle)
 {
+	sql_rel *res = NULL;
+	sql_sequence *seq = NULL;
 	char* name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
@@ -78,12 +132,15 @@ sql_create_seq(
 	if (max < 0) max = 0;
 	if (cache <= 0) cache = 1;
 
-	sql_trans_create_sequence(sql->session->tr, s, name, start, min, max, inc, cache, cycle);  
-	return stmt_none();
+	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, cycle);  
+	res = rel_seq(DDL_CREATE_SEQ, s->base.name, seq, NULL, NULL);
+	if (res)
+		stack_push_rel_view(sql, name, rel_dup(res));
+	return res;
 }
 
-static stmt *
-sql_alter_seq(
+static sql_rel *
+rel_alter_seq(
 		mvc *sql,
 		sql_schema *ss,
 		dlist *qname,
@@ -97,11 +154,12 @@ sql_alter_seq(
 {
 	char* name = qname_table(qname);
 	char *sname = qname_schema(qname);
-	int start_type = start_list->h->data.i_val;
 	sql_sequence *seq;
-	stmt *val = NULL, *ssname = NULL, *seqname = NULL;
-	sql_subtype *lng_t = sql_bind_localtype("lng");
 	sql_schema *s = NULL;
+
+	int start_type = start_list->h->data.i_val;
+	sql_rel *r = NULL;
+	sql_exp *val = NULL;
 
 	assert(start_list->h->type == type_int);
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -121,71 +179,41 @@ sql_alter_seq(
 	}
 
 	/* first alter the known values */
-	sql_trans_alter_sequence(sql->session->tr, seq, min, max, inc, cache, cycle);
+	seq = create_sql_sequence(sql->sa, s, name, seq->start, min, max, inc, cache, cycle);  
 
 	/* restart maybe a query, ie we create a statement 
 	   restart(ssname,seqname,value) */ 
 
 	if (start_type == 0) {
-		val = stmt_atom_lng(seq->start);
+		val = exp_atom_lng(seq->start);
 	} else if (start_type == 1) { /* value (exp) */
 		exp_kind ek = {type_value, card_value, FALSE};
-		val = value_exp(sql, start_list->h->next->data.sym, sql_sel, ek);
+		int is_last = 0;
+		sql_subtype *lng_t = sql_bind_localtype("lng");
 
-		if (!val || !(val = check_types(sql, lng_t, val, type_equal)))
+		val = rel_value_exp2(sql, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
+		(void)is_last;
+		if (!val || !(val = rel_check_type(sql, lng_t, val, type_equal)))
 			return NULL;
 	} else if (start_type == 2) {
 		switch (start_list->h->next->type) {
 			case type_int:
-				val = stmt_atom_lng((lng)start_list->h->next->data.i_val);
+				val = exp_atom_lng((lng)start_list->h->next->data.i_val);
 				break;
 			case type_lng:
-				val = stmt_atom_lng(start_list->h->next->data.l_val);
+				val = exp_atom_lng(start_list->h->next->data.l_val);
 				break;
 			default:
 				assert(0);
 		}
 	}
-	ssname = stmt_atom_string(_strdup(seq->s->base.name));
-	seqname = stmt_atom_string(_strdup(name));
-	return sql_Nop_(sql, "restart", ssname, seqname, val, NULL);
+	return rel_seq(DDL_ALTER_SEQ, s->base.name, seq, r, val);
 }
 
-static stmt *
-sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
+sql_rel *
+rel_sequences(mvc *sql, symbol *s)
 {
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
-
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE SEQUENCE: no such schema '%s'", sname);
-	if (!s)
-		s = ss;
-	if (!find_sql_sequence(s, name)) {
-		return sql_error(sql, 02, "DROP SEQUENCE: no such sequence '%s'", name);
-	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"),  s->base.name);
-	}
-	sql_trans_drop_sequence(sql->session->tr, s, name, 0);  
-	return stmt_none();
-}
-
-char*
-sql_next_seq_name(mvc *m)
-{
-	oid id = store_next_oid();
-	oid len = 5 + ((id+7)>>3);
-	char *msg = sa_alloc(m->sa, len);
-
-	snprintf(msg, len, "seq_%d", store_next_oid());
-	return msg;
-}
-
-stmt *
-sequences(mvc *sql, symbol *s)
-{
-	stmt *res = NULL;
+	sql_rel *res = NULL;
 
 	switch (s->token) {
 		case SQL_CREATE_SEQ:
@@ -199,7 +227,7 @@ sequences(mvc *sql, symbol *s)
 			assert(h->h->next->next->next->type == type_lng);
 			assert(h->h->next->next->next->next->type == type_lng);
 			assert(h->h->next->next->next->next->next->type == type_int);
-			res = sql_create_seq(
+			res = rel_create_seq(
 /* mvc* sql */		sql,
 /* sql_schema* s */	cur_schema(sql), 
 /* dlist* qname */	l->h->data.lval, 
@@ -222,7 +250,7 @@ sequences(mvc *sql, symbol *s)
 			assert(h->h->next->next->next->type == type_lng);
 			assert(h->h->next->next->next->next->type == type_lng);
 			assert(h->h->next->next->next->next->next->type == type_int);
-			res = sql_alter_seq(
+			res = rel_alter_seq(
 /* mvc* sql */		sql,
 /* sql_schema* s */	cur_schema(sql), 
 /* dlist* qname */	l->h->data.lval, 
@@ -238,7 +266,15 @@ sequences(mvc *sql, symbol *s)
 		case SQL_DROP_SEQ:
 		{
 			dlist *l = s->data.lval;
-			res = sql_drop_seq(sql, cur_schema(sql), l->h->data.lval);
+			char *sname = qname_schema(l->h->data.lval);
+			char *seqname = qname_table(l->h->data.lval);
+
+			if (!sname) {
+				sql_schema *ss = cur_schema(sql);
+
+				sname = ss->base.name;
+			}
+			res = rel_drop_seq(sname, seqname);
 		}
 		break;
 		default:

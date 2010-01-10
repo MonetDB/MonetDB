@@ -5,12 +5,12 @@ stderr of test 'create_on_ro_db_crash.SF-2830238` in directory 'src/test/BugTrac
 # 21:37:20 >  /usr/bin/python create_on_ro_db_crash.SF-2830238.py create_on_ro_db_crash.SF-2830238 
 # 21:37:20 >  
 
-MAPI  = monetdb@alf:39382
+MAPI  = monetdb@localhost:39621
 QUERY = create table t2 (a int);
-ERROR = !schema statements cannot be executed on a readonly database.
-# builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
-# builtin opt 	gdk_version = 1.32.0
-# builtin opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
+ERROR = !MALException:(unknown):schema statements cannot be executed on a readonly database.
+# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
+# builtin opt 	gdk_version = 1.35.0
+# builtin opt 	prefix = /home/niels/scratch/monetdb/Linux-i686
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB

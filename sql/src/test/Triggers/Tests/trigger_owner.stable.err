@@ -10,24 +10,24 @@ stderr of test 'trigger_owner` in directory 'src/test/Triggers` itself:
 # 14:14:18 >  Mtimeout -timeout 60 ./trigger_owner.SQL trigger_owner 
 # 14:14:18 >  
 
-MAPI  = user_test@localhost:35358
+MAPI  = user_test@localhost:38198
 QUERY = create trigger test1 after insert on t1
 ERROR = !CREATE TRIGGER: access denied for user_test to schema ;'sys'
-MAPI  = user_test@localhost:35358
+MAPI  = user_test@localhost:38198
 QUERY = create table t2(age int);
 ERROR = !CREATE TABLE: insufficient privileges for user 'user_test' in schema 'sys'
-MAPI  = monetdb@localhost:35358
+MAPI  = monetdb@localhost:38198
 QUERY = create trigger test2 after insert on t2
 ERROR = !CREATE TRIGGER: unknown table 't2'
-MAPI  = monetdb@localhost:35358
+MAPI  = monetdb@localhost:38198
 QUERY = drop trigger test1;
 ERROR = !DROP TRIGGER: unknown trigger test1
-MAPI  = monetdb@localhost:35358
+MAPI  = monetdb@localhost:38198
 QUERY = drop trigger test2;
 ERROR = !DROP TRIGGER: unknown trigger test2
-MAPI  = monetdb@localhost:35358
+MAPI  = monetdb@localhost:38198
 QUERY = drop table t2;
-ERROR = !DROP TABLE: no such table 't2'
+ERROR = !SQLException:sql.catalog:DROP TABLE: no such table 't2'
 
 # 14:14:18 >  
 # 14:14:18 >  Done.

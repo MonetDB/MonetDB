@@ -79,10 +79,9 @@ stderr of test 'alter_table_set_not_null.SF-1997030` in directory 'src/test/BugT
 # 19:06:38 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35202 
 # 19:06:38 >  
 
-MAPI  = monetdb@alf:38580
+MAPI  = monetdb@localhost:30291
 QUERY = ALTER TABLE foo ALTER COLUMN i SET NOT NULL;
-ERROR = !SQLException:assert:ALTER TABLE: NOT NULL constraint violated for column foo.i
-
+ERROR = !SQLException:sql.catalog:ALTER TABLE: NOT NULL constraint violated for column foo.i
 
 # 19:06:38 >  
 # 19:06:38 >  Done.

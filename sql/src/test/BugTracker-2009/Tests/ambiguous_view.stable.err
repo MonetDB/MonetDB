@@ -79,15 +79,15 @@ stderr of test 'ambiguous_view` in directory 'src/test/BugTracker-2009` itself:
 # 20:07:37 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38269 
 # 20:07:37 >  
 
-MAPI  = monetdb@alf:38269
+MAPI  = monetdb@localhost:38198
 QUERY = CREATE VIEW eur_kg_test AS
 ERROR = !CREATE VIEW: duplicate column name dt_uom
-MAPI  = monetdb@alf:38269
+MAPI  = monetdb@localhost:38198
 QUERY = select * from eur_kg_test;
 ERROR = !SELECT: no such table 'eur_kg_test'
-MAPI  = monetdb@alf:38269
+MAPI  = monetdb@localhost:38198
 QUERY = drop view eur_kg_test;
-ERROR = !DROP VIEW: unknown view 'eur_kg_test'
+ERROR = !SQLException:sql.catalog:DROP VIEW: unknown view 'eur_kg_test'
 
 # 20:07:37 >  
 # 20:07:37 >  Done.

@@ -22,6 +22,7 @@ DDL 	(card 0!, top of the tree always)
 			For 'transactions' simple flags
 			for CREATE etc full sql string.
 	-> l		only used for 'OUTPUT' relation to output
+	-> r		(only for DDL_LIST)
 
 SELECT 	(card MULTI or same ...?) 
 	-> exps		selection expressions (ie all e_cmp)
@@ -60,7 +61,7 @@ TOPN	(card ATOM, AGGR, or MULTI (same card as lower relation))
 	-> l		is relation
 
 INSERT|DELETE|UPDATE 	(card MULTI)
-	-> l 		is table to modify
+	-> l 		is relation to modify
 	-> r		to be inserted/deleted/updated relation
 only (UPDATE)
 	-> exps		list of columns to update (ugh) !

@@ -80,7 +80,7 @@ extern stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
 extern stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always);
 extern stmt *sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
 extern stmt *scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
-extern stmt *sql_parse(mvc *m, char *query, char mode);
+extern stmt *sql_parse(mvc *m, sql_allocator *sql, char *query, char mode);
 
 /* literals in the parser are kept outside of the abstract syntax tree
    in the arg array, this to allow for more reuse of cached queries */
@@ -116,7 +116,6 @@ extern char * toUpperCopy(char *dest, const char *src);
 #include "sql_semantic.h"
 #include "sql_schema.h"
 #include "sql_env.h"
-#include "sql_sequence.h"
 #include "sql_privileges.h"
 #include "sql_psm.h"
 #include "sql_string.h"
@@ -300,7 +299,7 @@ qname_catalog(dlist *qname)
 }
 
 stmt *
-sql_parse(mvc *m, char *query, char mode)
+sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 {
 	mvc *o = NULL;
 	stmt *sq = NULL;
@@ -345,7 +344,7 @@ sql_parse(mvc *m, char *query, char mode)
 	m->user_id = USER_MONETDB;
 
 	/* create private allocator */
-	m->sa = sa_create();
+	m->sa = (sa)?sa:sa_create();
 
 	if (sqlparse(m) || !m->sym) {
 		/* oops an error */
@@ -366,7 +365,7 @@ sql_parse(mvc *m, char *query, char mode)
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
 	stream_destroy(buf);
-	if (m->sa)
+	if (m->sa && m->sa != sa)
 		sa_destroy(m->sa);
 	m->sym = NULL;
 	{
@@ -992,13 +991,6 @@ semantic(mvc *sql, symbol *s)
 		return NULL;
 
 	switch (s->token) {
-	case SQL_CREATE_SCHEMA:
-	case SQL_DROP_SCHEMA:
-	case SQL_CREATE_TABLE:
-	case SQL_DROP_TABLE:
-	case SQL_ALTER_TABLE:
-	case SQL_CREATE_VIEW:
-	case SQL_DROP_VIEW:
 	case SQL_CREATE_INDEX:
 	case SQL_DROP_INDEX:
 	case SQL_CREATE_USER:
@@ -1017,11 +1009,6 @@ semantic(mvc *sql, symbol *s)
 	case SQL_CONNECT:
 	case SQL_DISCONNECT:
 		res = schemas(sql, s);
-		break;
-	case SQL_CREATE_SEQ:
-	case SQL_ALTER_SEQ:
-	case SQL_DROP_SEQ:
-		res = sequences(sql, s);
 		break;
 	case SQL_CREATE_FUNC:
 	case SQL_CREATE_PROC:

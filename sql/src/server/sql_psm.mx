@@ -45,6 +45,7 @@ extern stmt * sequential_block (mvc *sql, sql_subtype *res, dlist *blk, char *op
 #include "rel_select.h"
 #include "rel_updates.h"
 #include "rel_optimizer.h"
+#include "rel_schema.h"
 #include "rel_bin.h"
 
 static stmt*
@@ -151,7 +152,7 @@ psm_declare_table(mvc *sql, dnode *n)
 	dlist *qname = n->next->data.lval;
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
-	stmt *ret, *r;
+	//stmt *ret, *r;
 	sql_subtype ctype = *sql_bind_localtype("bat");
 
 	if (sname)  /* not allowed here */
@@ -162,18 +163,19 @@ psm_declare_table(mvc *sql, dnode *n)
 	
 	assert(n->next->next->next->type == type_int);
 	
-	ret = sql_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val);
+	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val);
 
-	if (!ret)
+	if (!rel || rel->op != op_ddl || rel->flag != DDL_CREATE_TABLE)
 		return NULL;
 
-	ctype.comp_type = find_basetable(ret); 
+	ctype.comp_type = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
+//find_basetable(ret);
 
-	r = stmt_var(_strdup(name), &ctype, 1, sql->frame );
-	rel = rel_basetable(ctype.comp_type, name);
-	stack_push_rel_var(sql, name, rel, &ctype);
-	stmt_destroy(ret);
-	return r;
+	//r = stmt_var(_strdup(name), &ctype, 1, sql->frame );
+	//rel = rel_basetable(ctype.comp_type, name);
+	stack_push_rel_var(sql, name, rel_dup(rel), &ctype);
+	//stmt_destroy(ret);
+	return rel_bin(sql, rel);
 }
 
 /* [ label: ]

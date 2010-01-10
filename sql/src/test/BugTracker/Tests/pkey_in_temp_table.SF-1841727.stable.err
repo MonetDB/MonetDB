@@ -12,21 +12,6 @@ stderr of test 'pkey_in_temp_table.SF-1841727` in directory 'src/test/BugTracker
 # 16:39:59 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=35124 
 # 16:39:59 >  
 
-MAPI  = monetdb@alf:37526
-QUERY = CREATE TEMP TABLE pktable1841727 (ptest1 int PRIMARY KEY);
-ERROR = !CONSTRAINT: constraints on temporary tables are not supported
-MAPI  = monetdb@alf:37526
-QUERY = insert into pktable1841727 values(1);
-ERROR = !INSERT INTO: no such table 'pktable1841727'
-MAPI  = monetdb@alf:37526
-QUERY = insert into pktable1841727 values(1);
-ERROR = !INSERT INTO: no such table 'pktable1841727'
-MAPI  = monetdb@alf:37526
-QUERY = select * from pktable1841727;
-ERROR = !SELECT: no such table 'pktable1841727'
-MAPI  = monetdb@alf:37526
-QUERY = drop table pktable1841727;
-ERROR = !DROP TABLE: no such table 'pktable1841727'
 
 # 16:39:59 >  
 # 16:39:59 >  Done.

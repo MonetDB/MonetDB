@@ -29,7 +29,9 @@
 #include "sql_symbol.h"
 #include "sql_statement.h"
 
-extern sql_rel *rel_update( sql_table *t, sql_rel *updates, list *exps);
+extern sql_rel *rel_update( sql_rel *t, sql_rel *updates, list *exps);
+extern sql_rel *rel_insert( sql_rel *t, sql_rel *inserts);
+extern sql_rel *rel_delete( sql_rel *t, sql_rel *deletes);
 
 extern sql_rel *rel_updates(mvc *sql, symbol *sym);
 
@@ -78,13 +80,13 @@ insert_exp_array(sql_table *t, int *Len)
 	return inserts;
 }
 
-static sql_rel *
-rel_insert(sql_table *t, sql_rel *inserts)
+sql_rel *
+rel_insert(sql_rel *t, sql_rel *inserts)
 {
 	sql_rel * r = rel_create();
 
-	if (t->clustered) /* needs a way to propagate ! */
-		t->clustered = 0;
+//	if (t->clustered) /* needs a way to propagate ! */
+//		t->clustered = 0;
 	r->op = op_insert;
 	r->l = t;
 	r->r = inserts;
@@ -121,7 +123,7 @@ rel_insert_cluster(mvc *sql, sql_table *t, sql_rel *inserts)
 		inserts = rel_orderby(sql, inserts, obe);
 	}
 	r->op = op_insert;
-	r->l = t;
+	r->l = rel_basetable(t, t->base.name);
 	r->r = inserts;
 	return r;
 }
@@ -284,11 +286,11 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	_DELETE(inserts);
 	list_destroy(r->exps);
 	r->exps = exps;
-	return rel_insert(t, r);
+	return rel_insert(rel_basetable(t, tname), r);
 }
 
 sql_rel *
-rel_update( sql_table *t, sql_rel *updates, list *exps)
+rel_update( sql_rel *t, sql_rel *updates, list *exps)
 {
 	sql_rel *r = rel_create();
 
@@ -408,13 +410,13 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			list_append(exps, exp_column(t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
 			rel_project_add_exp(sql, r, v);
 		}
-		r = rel_update(t, r, exps);
+		r = rel_update(rel_basetable(t, tname), r, exps);
 		return r;
 	}
 }
 
-static sql_rel *
-rel_delete(sql_table *t, sql_rel *deletes)
+sql_rel *
+rel_delete(sql_rel *t, sql_rel *deletes)
 {
 	sql_rel *r = rel_create();
 
@@ -482,9 +484,9 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 				r = rel_project(r, append(new_exp_list(), e));
 
 			}
-			r = rel_delete(t, r);
+			r = rel_delete(rel_basetable(t, tname), r);
 		} else {	/* delete all */
-			r = rel_delete(t, NULL);
+			r = rel_delete(rel_basetable(t, tname), NULL);
 		}
 		return r;
 	}

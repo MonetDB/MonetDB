@@ -43,6 +43,7 @@ extern atom *atom_string( sql_subtype *tpe, char *val, int destroy);
 extern atom *atom_string2( sql_allocator *sa, sql_subtype *tpe, char *val, int destroy);
 extern atom *atom_general( sql_subtype *tpe, char *val, int destroy);
 extern atom *atom_dec( sql_subtype *tpe, lng val, double dval);
+extern atom *atom_ptr( sql_subtype *tpe, void *v);
 
 extern int atom_neg( atom *a );
 extern unsigned int atom_num_digits( atom *a );
@@ -286,6 +287,19 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 		a->destroy = 0;
 		a->isnull = 1;
 	}
+	return a;
+}
+
+atom *
+atom_ptr( sql_subtype *tpe, void *v)
+{
+	atom *a = atom_create();
+	a->tpe = *tpe;
+	a->destroy = 0;
+	a->isnull = 0;
+	a->data.vtype = TYPE_ptr;
+	VALset(&a->data, a->data.vtype, &v);
+	a->data.len = 0;
 	return a;
 }
 

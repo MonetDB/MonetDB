@@ -30,6 +30,7 @@ typedef struct node {
 typedef void (*fdestroy) (void *);
 
 typedef struct list {
+	sql_allocator *sa;
 	fdestroy destroy;
 	node *h;
 	node *t;
@@ -39,6 +40,7 @@ typedef struct list {
 typedef int (*traverse_func) (void *clientdata, int seqnr, void *data);
 
 extern list *list_create(fdestroy destroy);
+extern list *list_new(sql_allocator *sa);
 
 extern void list_destroy(list *l);
 extern int list_length(list *l);

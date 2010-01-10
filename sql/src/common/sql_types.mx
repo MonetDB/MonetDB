@@ -1302,6 +1302,7 @@ sqltypeinit(void)
 
 	t = ts;
 	TABLE = *t++ = sql_create_type("TABLE", 0, 0, 0, EC_TABLE, "bat");
+	*t++ = sql_create_type("PTR", 0, 0, 0, EC_TABLE, "ptr");
 
 	BIT = *t++ = sql_create_type("BOOLEAN", 1, 0, 2, EC_BIT, "bit");
 	sql_create_alias(BIT->sqlname, "BOOL");

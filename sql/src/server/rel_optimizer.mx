@@ -3306,8 +3306,12 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
+		rel->l = rewrite(sql, rel->l, rewriter);
+		break;
 	case op_ddl: 
 		rel->l = rewrite(sql, rel->l, rewriter);
+		if (rel->r)
+			rel->r = rewrite(sql, rel->r, rewriter);
 		break;
 	case op_insert:
 	case op_update:

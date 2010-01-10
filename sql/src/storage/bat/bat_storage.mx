@@ -618,9 +618,15 @@ create_col(sql_trans *tr, sql_column *c)
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
 		return new_persistent_bat(tr, c->data, c->t->sz);
 	} else if (!bat->ibid) {
+		sql_column *fc;
+		int cnt = 0;
+
 		/* alter ? */
-		if (c->t->base.flag == TR_OLD) {
-			sql_column *fc = c->t->columns.set->h->data;
+		if (c->t->columns.set && (fc = c->t->columns.set->h->data) != NULL) {
+			sql_delta *d = fc->data;
+			cnt = d->cnt; 
+		}
+		if (cnt) {
 			sql_delta *d = fc->data;
 
 			bat->bid = copyBat(d->bid, type, 0);

@@ -130,6 +130,7 @@ extern void base_set_name(sql_base * b, char *name);
 extern void base_destroy(sql_base * b);
 
 typedef struct changeset {
+	sql_allocator *sa;
 	fdestroy destroy;
 	struct list *set;
 	struct list *dset;
@@ -137,6 +138,7 @@ typedef struct changeset {
 } changeset;
 
 extern void cs_init(changeset * cs, fdestroy destroy);
+extern void cs_new(changeset * cs, sql_allocator *sa);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
@@ -283,6 +285,7 @@ typedef struct sql_key {	/* pkey, ukey, fkey */
 
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
+	int drop_action;	/* only needed for alter drop key */
 } sql_key;
 
 typedef struct sql_ukey {	/* pkey, ukey */
@@ -367,6 +370,7 @@ typedef struct sql_column {
 	bit null;
 	char *def;
 	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
+	int drop_action;	/* only used for alter statements */
 
 	struct sql_table *t;
 	void *data;

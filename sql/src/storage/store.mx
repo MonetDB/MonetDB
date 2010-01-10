@@ -1093,21 +1093,23 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 }
 
 sql_table *
-create_sql_table(char *name, sht type, bit system, int persistence, int commit_action)
+create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action)
 {
-	sql_table *t = ZNEW(sql_table);
+	sql_table *t = (sa)?SA_ZNEW(sa, sql_table):ZNEW(sql_table);
 
-	assert((persistence==SQL_PERSIST || commit_action) && commit_action>=0);
+	assert((persistence==SQL_PERSIST ||
+		persistence==SQL_DECLARED_TABLE || 
+		commit_action) && commit_action>=0);
 	base_init(&t->base, next_oid(), TR_NEW, name);
 	t->type = type;
 	t->system = system;
 	t->persistence = (temp_t)persistence;
 	t->commit_action = (ca_t)commit_action;
 	t->query = NULL;
-	cs_init(&t->columns, (fdestroy) &column_destroy);
-	cs_init(&t->idxs, (fdestroy) &idx_destroy);
-	cs_init(&t->keys, (fdestroy) &key_destroy);
-	cs_init(&t->triggers, (fdestroy) &trigger_destroy);
+	(sa)?cs_new(&t->columns, sa):cs_init(&t->columns, (fdestroy) &column_destroy);
+	(sa)?cs_new(&t->idxs, sa):cs_init(&t->idxs, (fdestroy) &idx_destroy);
+	(sa)?cs_new(&t->keys, sa):cs_init(&t->keys, (fdestroy) &key_destroy);
+	(sa)?cs_new(&t->triggers, sa):cs_init(&t->triggers, (fdestroy) &trigger_destroy);
 	t->pkey = NULL;
 	t->cluster = NULL;
 	t->sz = COLSIZE;
@@ -1116,13 +1118,62 @@ create_sql_table(char *name, sht type, bit system, int persistence, int commit_a
 	return t;
 }
 
+sql_column *
+dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
+{
+	sql_column *col = SA_ZNEW(sa, sql_column);
+
+	base_init(&col->base, c->base.id, TR_NEW, c->base.name);
+	col->type = c->type;
+	col->def = NULL;
+	if (c->def)
+		col->def = sa_strdup(sa, c->def);
+	col->null = c->null;
+	col->colnr = c->colnr;
+	col->t = t;
+	col->unique = c->unique;
+	cs_add(&t->columns, col, TR_NEW);
+	return col;
+}
+
+sql_table *
+dup_sql_table(sql_allocator *sa, sql_table *t)
+{
+	node *n;
+	sql_table *nt = create_sql_table(sa, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action);
+
+	for (n = t->columns.set->h; n; n = n->next) 
+		dup_sql_column(sa, nt, n->data);
+	nt->columns.dset = NULL;
+	nt->columns.nelm = NULL;
+	
+/*
+	if (t->idxs.set) {
+		for (n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *i = n->data;
+			mvc_copy_idx(sql, nt, i);
+		}
+	}
+	if (t->keys.set) {
+		for (n = t->keys.set->h; n; n = n->next) {
+			sql_key *k = n->data;
+
+			mvc_copy_key(sql, nt, k);
+		}
+	}
+*/
+	/* TODO copy triggers */
+
+	return nt;
+}
+
 static sql_table *
 bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 {
 	int istmp = isTempSchema(s);
 	int persistence = istmp?SQL_GLOBAL_TEMP:SQL_PERSIST;
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
-	sql_table *t = create_sql_table(name, tt_table, 1, persistence, commit_action);
+	sql_table *t = create_sql_table(NULL, name, tt_table, 1, persistence, commit_action);
 
 	if (bs_debug)
 		fprintf(stderr, "bootstrap_create_table %s\n", name );
@@ -1184,7 +1235,12 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	bs_debug = debug;
 
 	/* initialize empty bats */
-	bat_utils_init();
+	if (store == store_bat ||
+	    store == store_su ||
+	    store == store_ro ||
+	    store == store_suro ||
+	    store == store_bpm) 
+		bat_utils_init();
 	if (store == store_bat) {
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
@@ -1575,6 +1631,46 @@ key_dup(sql_trans *tr, int flag, sql_key *k, sql_table *t)
 	return nk;
 }
 
+sql_key *
+sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k )
+{
+	sql_key *nk = key_dup(tr, TR_NEW, k, t);
+	sql_fkey *fk = (sql_fkey*)nk;
+	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_table *syskey = find_sql_table(syss, "keys");
+	sql_table *syskc = find_sql_table(syss, "keycolumns");
+	int neg = -1, action = -1, nr;
+	node *n;
+
+	cs_add(&t->keys, nk, TR_NEW);
+
+	if (nk->type == fkey) 
+		action = (fk->on_update<<8) + fk->on_delete;
+
+	table_funcs.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey->k.base.id : &neg, &action);
+
+	if (nk->type == fkey)
+		sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey->k.base.id, nk->base.id, FKEY_DEPENDENCY);
+
+	for (n = nk->columns->h, nr = 0; n; n = n->next, nr++) {
+		sql_kc *kc = n->data;
+
+		table_funcs.table_insert(tr, syskc, &k->base.id, kc->c->base.name, &kc->trunc, &nr);
+
+		if (nk->type == fkey)
+			sql_trans_create_dependency(tr, kc->c->base.id, k->base.id, FKEY_DEPENDENCY);
+		if (nk->type == pkey) {
+			sql_trans_create_dependency(tr, kc->c->base.id, k->base.id, KEY_DEPENDENCY);
+			sql_trans_alter_null(tr, kc->c, 0);
+		}
+	}
+
+	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	if (isGlobalTable(t)) 
+		tr->schema_updates ++;
+	return nk;
+}
+
 static sql_idx *
 idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 {
@@ -1604,6 +1700,49 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 		list_append(ni->columns, kc_dup(tr, flag, okc, t));
 	}
 	list_append(t->s->idxs, ni);
+	return ni;
+}
+
+sql_idx *
+sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
+{
+	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_table *sysidx = find_sql_table(syss, "idxs");
+	sql_table *sysic = find_sql_table(syss, "keycolumns");
+	node *n;
+	int nr;
+	sql_idx *ni = ZNEW(sql_idx);
+
+	base_init(&ni->base, i->base.id, TR_NEW, i->base.name);
+
+	ni->columns = list_create((fdestroy) &kc_destroy);
+	ni->t = t;
+	ni->type = i->type;
+	ni->key = NULL;
+
+	if (ni->type == isclustered) {
+		ni->t->cluster = ni;
+		ni->t->clustered = i->t->clustered;
+	}
+
+	for (n = i->columns->h, nr = 0; n; n = n->next, nr++) {
+		sql_kc *okc = n->data, *ic;
+
+		list_append(ni->columns, ic = kc_dup(tr, TR_NEW, okc, t));
+
+		table_funcs.table_insert(tr, sysic, &ni->base.id, ic->c->base.name, &ic->trunc, &nr);
+		sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->stime;
+	}
+	list_append(t->s->idxs, ni);
+	cs_add(&t->idxs, ni, TR_NEW);
+
+	if (!isDeclaredTable(t) && isTable(ni->t) && idx_is_column(ni->type))
+		store_funcs.create_idx(tr, ni);
+	if (!isDeclaredTable(t))
+		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
+	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	if (isGlobalTable(t)) 
+		tr->schema_updates ++;
 	return ni;
 }
 
@@ -1660,6 +1799,35 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	if (isNew(oc) && flag == TR_NEW && tr->parent == gtrans) 
 		oc->base.flag = TR_OLD;
 	return c;
+}
+
+sql_column *
+sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
+{
+	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_table *syscolumn = find_sql_table(syss, "_columns");
+	sql_column *col = ZNEW(sql_column);
+
+	base_init(&col->base, c->base.id, TR_NEW, c->base.name);
+	col->type = c->type;
+	col->def = NULL;
+	if (c->def)
+		col->def = _strdup(c->def);
+	col->null = c->null;
+	col->colnr = c->colnr;
+	col->t = t;
+	col->unique = c->unique;
+
+	cs_add(&t->columns, col, TR_NEW);
+
+	if (isTable(t))
+		store_funcs.create_col(tr, col);
+	if (!isDeclaredTable(t))
+		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr);
+	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	if (isGlobalTable(t)) 
+		tr->schema_updates ++;
+	return col;
 }
 
 static sql_table *
@@ -3408,7 +3576,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 sql_table *
 sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz)
 {
-	sql_table *t = create_sql_table(name, tt, system, persistence, commit_action);
+	sql_table *t = create_sql_table(NULL, name, tt, system, persistence, commit_action);
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
@@ -3440,12 +3608,103 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	return t;
 }
 
-sql_column *
-create_sql_column(sql_table *t, char *name, sql_subtype *tpe)
+sql_key *
+create_sql_kc(sql_allocator *sa, sql_key *k, sql_column *c)
 {
-	sql_column *col = ZNEW(sql_column);
-	base_init(&col->base, next_oid(), TR_NEW, name);
+	sql_kc *kc = SA_ZNEW(sa, sql_kc);
 
+	kc->c = c;
+	kc->trunc = 0;
+	list_append(k->columns, kc);
+	if (k->idx)
+		create_sql_ic(sa, k->idx, c);
+	if (k->type == pkey)
+		c->null = 0;
+	return k;
+}
+
+sql_ukey *
+create_sql_ukey(sql_allocator *sa, sql_table *t, char *name, key_type kt)
+{
+	sql_key *nk = NULL;
+	sql_ukey *tk;
+
+	nk = (kt != fkey) ? (sql_key *) SA_ZNEW(sa, sql_ukey) : (sql_key *) SA_ZNEW(sa, sql_fkey);
+ 	tk = (sql_ukey *) nk;
+	assert(name);
+
+	base_init(&nk->base, next_oid(), TR_NEW, name);
+
+	nk->type = kt;
+	nk->columns = list_new(sa);
+	nk->idx = NULL;
+	nk->t = t;
+
+	tk->keys = NULL;
+	if (nk->type == pkey)
+		t->pkey = tk;
+	cs_add(&t->keys, nk, TR_NEW);
+	return tk;
+}
+
+sql_fkey *
+create_sql_fkey(sql_allocator *sa, sql_table *t, char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
+{
+	sql_key *nk;
+	sql_fkey *fk = NULL;
+	sql_ukey *uk = (sql_ukey *) rkey;
+
+	nk = (kt != fkey) ? (sql_key *) SA_ZNEW(sa, sql_ukey) : (sql_key *) SA_ZNEW(sa, sql_fkey);
+
+	assert(name);
+	base_init(&nk->base, next_oid(), TR_NEW, name);
+	nk->type = kt;
+	nk->columns = list_new(sa);
+	nk->t = t;
+	nk->idx = create_sql_idx(sa, t, name, (nk->type == fkey) ? join_idx : hash_idx);
+	nk->idx->key = nk;
+
+	fk = (sql_fkey *) nk;
+
+	fk->on_delete = on_delete;
+	fk->on_update = on_update;	
+
+	fk->rkey = uk;
+	cs_add(&t->keys, nk, TR_NEW);
+	return (sql_fkey*) nk;
+}
+
+sql_idx *
+create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c)
+{
+	sql_kc *ic = SA_ZNEW(sa, sql_kc);
+
+	ic->c = c;
+	ic->trunc = 0;
+	list_append(i->columns, ic);
+	return i;
+}
+
+sql_idx *
+create_sql_idx(sql_allocator *sa, sql_table *t, char *name, idx_type it)
+{
+	sql_idx *ni = SA_ZNEW(sa, sql_idx);
+
+	base_init(&ni->base, next_oid(), TR_NEW, name);
+	ni->columns = list_new(sa);
+	ni->t = t;
+	ni->type = it;
+	ni->key = NULL;
+	cs_add(&t->idxs, ni, TR_NEW);
+	return ni;
+}
+
+sql_column *
+create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe)
+{
+	sql_column *col = (sa)?SA_ZNEW(sa, sql_column):ZNEW(sql_column);
+
+	base_init(&col->base, next_oid(), TR_NEW, name);
 	col->type = *tpe;
 	col->def = NULL;
 	col->null = 1;
@@ -3527,7 +3786,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 	if (!tpe)
 		return NULL;
 
- 	col = create_sql_column(t, name, tpe );
+ 	col = create_sql_column(NULL, t, name, tpe );
 
 	if (isTable(col->t))
 		store_funcs.create_col(tr, col);
@@ -3539,6 +3798,36 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 		tr->schema_updates ++;
 	return col;
 }
+
+void 
+drop_sql_column(sql_table *t, int id, int drop_action)
+{
+	node *n = list_find_base_id(t->columns.set, id);
+	sql_column *col = n->data;
+
+	col->drop_action = drop_action; 
+	cs_del(&t->columns, n, TR_OLD);
+}
+
+void 
+drop_sql_idx(sql_table *t, int id)
+{
+	node *n = list_find_base_id(t->idxs.set, id);
+
+	cs_del(&t->idxs, n, TR_OLD);
+}
+
+void 
+drop_sql_key(sql_table *t, int id, int drop_action)
+{
+	node *n = list_find_base_id(t->keys.set, id);
+	sql_key *k = n->data;
+
+	k->drop_action = drop_action; 
+	cs_del(&t->keys, n, TR_OLD);
+}
+
+
 
 void
 sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
@@ -3811,6 +4100,38 @@ table_has_idx( sql_table *t, list *keycols)
 }
 
 sql_key *
+key_create_done(sql_allocator *sa, sql_key *k) 
+{
+	node *n;
+	sql_idx *i;
+
+	/* for now we only mark the end of unique/primary key definitions */ 
+	if (k->type == fkey) 
+		return k;
+
+	if ((i = table_has_idx(k->t, k->columns)) != NULL) {
+		/* use available hash, or use the order */
+		if (hash_index(i->type)) {
+			k->idx = i;
+			if (!k->idx->key)
+				k->idx->key = k;
+		}
+		return k;
+	}
+
+	/* we need to create an index */
+	k->idx = create_sql_idx(sa, k->t, k->base.name, hash_idx);
+	k->idx->key = k;
+
+	for (n=k->columns->h; n; n = n->next) {
+		sql_kc *kc = n->data;
+
+		create_sql_ic(sa, k->idx, kc->c);
+	}
+	return k;
+}
+
+sql_key *
 sql_trans_key_done(sql_trans *tr, sql_key *k) 
 {
 	node *n;
@@ -3901,7 +4222,8 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 
 	if (ni->type == isclustered) {
 		t->cluster= ni;
-		if (store_funcs.count_col(t->columns.set->h->data) == 0) 
+		if (!isDeclaredTable(t) &&
+		    store_funcs.count_col(t->columns.set->h->data) == 0) 
 			t->clustered = 1;
 		/* TODO save clustered on disk */
 	}
@@ -3909,9 +4231,10 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 	cs_add(&t->idxs, ni, TR_NEW);
 	list_append(t->s->idxs, ni);
 
-	if (isTable(ni->t) && idx_is_column(ni->type))
+	if (!isDeclaredTable(t) && isTable(ni->t) && idx_is_column(ni->type))
 		store_funcs.create_idx(tr, ni);
-	table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
+	if (!isDeclaredTable(t))
+		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
 	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
@@ -3919,7 +4242,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 }
 
 sql_idx *
-sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options such as trunc */ )
+sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 {
 	sql_kc *ic = ZNEW(sql_kc);
 	int nr = list_length(i->columns);
@@ -3930,7 +4253,6 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options 
 	ic->c = c;
 	ic->trunc = 0;
 	list_append(i->columns, ic);
-
 
 	if (hash_index(i->type) && list_length(i->columns) > 1) {
 		/* Correct the unique flag of the keys first column */
@@ -4077,16 +4399,13 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	}
 }
 
-sql_sequence * 
-sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle )
+sql_sequence *
+create_sql_sequence(sql_allocator *sa, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle) 
 {
-	sql_sequence *seq = ZNEW(sql_sequence);
-	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *sysseqs = find_sql_table(syss, "sequences");
+	sql_sequence *seq = (sa)?SA_ZNEW(sa, sql_sequence):ZNEW(sql_sequence);
 
 	assert(name);
 	base_init(&seq->base, next_oid(), TR_NEW, name);
-
 	seq->start = start;
 	seq->minvalue = min;
 	seq->maxvalue = max;
@@ -4095,10 +4414,18 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, l
 	seq->cycle = cycle;
 	seq->s = s;
 
+	return seq;
+}
+
+sql_sequence * 
+sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle )
+{
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sysseqs = find_sql_table(syss, "sequences");
+	sql_sequence *seq = create_sql_sequence(NULL, s, name, start, min, max, inc, cacheinc, cycle);
+
 	cs_add(&s->seqs, seq, TR_NEW);
-
 	table_funcs.table_insert(tr, sysseqs, &seq->base.id, &s->base.id, seq->base.name, &seq->start, &seq->minvalue, &seq->maxvalue, &seq->increment, &seq->cacheinc, &seq->cycle);
-
 	s->base.wtime = tr->wtime = tr->stime;
 	return seq;
 }

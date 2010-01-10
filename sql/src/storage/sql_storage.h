@@ -39,7 +39,8 @@ typedef enum store_type {
 	store_su,	/* single user, read/write */
 	store_ro,	/* multi user, read only */
 	store_suro,	/* single user, read only */
-	store_bpm	/* bat partition manager */
+	store_bpm,	/* bat partition manager */
+	store_tst
 } store_type;
 
 #define STORE_READONLY(st) ((st) == store_ro || (st) == store_suro)
@@ -311,13 +312,11 @@ extern void reset_functions(sql_trans *tr);
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner);
 extern void sql_trans_drop_schema(sql_trans *tr, int id, int drop_action);
 
-extern sql_table *create_sql_table(char *name, sht type, bit system, int persistence, int commit_action);
 extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz);
 
 extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action);
 extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
 
-extern sql_column *create_sql_column(sql_table *t, char *nme, sql_subtype *tpe);
 extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe);
 extern void sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action);
 extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
@@ -340,6 +339,7 @@ extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, char 
 extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern void sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action);
 
+extern sql_sequence *create_sql_sequence(sql_allocator *sa, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle );
 extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle );
 extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, char *name, int drop_action);
 extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, lng cycle);
@@ -363,5 +363,24 @@ extern int sql_trans_connect_catalog(sql_trans *tr, char *server, int port, char
 extern int sql_trans_disconnect_catalog(sql_trans *tr, char *db_alias);
 extern int sql_trans_disconnect_catalog_ALL(sql_trans *tr);
 extern list *sql_trans_get_connection(sql_trans *tr,int id, char *server, char *db, char *db_alias, char *user);
+
+extern sql_table *create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action);
+extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, char *nme, sql_subtype *tpe);
+extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, char *nme, key_type kt);
+extern sql_fkey *create_sql_fkey(sql_allocator *sa, sql_table *t, char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
+extern sql_key *create_sql_kc(sql_allocator *sa, sql_key *k, sql_column *c);
+extern sql_key * key_create_done(sql_allocator *sa, sql_key *k);
+
+extern sql_idx *create_sql_idx(sql_allocator *sa, sql_table *t, char *nme, idx_type it);
+extern sql_idx *create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c);
+/* for alter we need to duplicate a table */
+extern sql_table *dup_sql_table(sql_allocator *sa, sql_table *t);
+extern void drop_sql_column(sql_table *t, int id, int drop_action);
+extern void drop_sql_idx(sql_table *t, int id);
+extern void drop_sql_key(sql_table *t, int id, int drop_action);
+
+extern sql_column *sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c);
+extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k);
+extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i);
 
 #endif /*SQL_STORAGE_H */

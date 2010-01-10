@@ -57,6 +57,7 @@ extern sql_exp * exp_atom_lng(lng l);
 extern sql_exp * exp_atom_wrd(wrd w);
 extern sql_exp * exp_atom_str(str s, sql_subtype *st);
 extern sql_exp * exp_atom_clob(str s);
+extern sql_exp * exp_atom_ptr(void *s);
 extern sql_exp * exp_atom_ref(int i, sql_subtype *tpe);
 extern sql_exp * exp_param(char *name, sql_subtype *tpe, int frame);
 extern sql_exp * exp_column( char *rname, char *name, sql_subtype *t, int card, int has_nils, int intern);
@@ -331,6 +332,13 @@ exp_atom_clob(str s)
 
 	sql_find_subtype(&clob, "clob", 0, 0);
 	return exp_atom(atom_string(&clob, _strdup(s), 1 ));
+}
+
+sql_exp *
+exp_atom_ptr(void *s) 
+{
+	sql_subtype *t = sql_bind_localtype("ptr");
+	return exp_atom(atom_ptr(t, s));
 }
 
 sql_exp * 

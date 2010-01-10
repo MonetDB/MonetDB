@@ -10,10 +10,10 @@ stderr of test 'drop_foreignkey_selfreferencing` in directory 'src/test/bugs` it
 # 22:06:39 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53813  < drop_foreignkey_selfreferencing.sql
 # 22:06:39 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@localhost:35701
 QUERY = drop table a;
-ERROR = !DROP TABLE: FOREIGN KEY b.b_id_fkey depends on a
-MAPI  = monetdb@localhost:45579
+ERROR = !SQLException:sql.catalog:DROP TABLE: FOREIGN KEY b.b_id_fkey depends on a
+MAPI  = monetdb@localhost:35701
 QUERY = drop table b;
 ERROR = !current transaction is aborted (please ROLLBACK)
 

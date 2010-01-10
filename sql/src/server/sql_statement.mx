@@ -98,6 +98,7 @@ typedef enum stmt_type {
 	st_table_clear,
 	st_exception,
 	st_trans,
+	st_catalog,
 
 	st_append_col,
 	st_append_idx,
@@ -216,6 +217,7 @@ extern stmt *stmt_append(stmt *c, stmt *values);
 extern stmt *stmt_table_clear(sql_table *t);
 extern stmt *stmt_export(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file);
 extern stmt *stmt_trans(int type, stmt *chain, stmt *name);
+extern stmt *stmt_catalog(int type, stmt *name, stmt *auth, stmt *action);
 
 extern stmt *stmt_temp(sql_subtype *t);
 extern stmt *stmt_atom(atom *op1);
@@ -392,6 +394,7 @@ st_type2string(st_type type)
 		ST(table_clear);
 		ST(exception);
 		ST(trans);
+		ST(catalog);
 
 		ST(append_col);
 		ST(append_idx);
@@ -640,6 +643,7 @@ stmt_destroy(stmt *s)
 		case st_assign:
 		case st_exception:
 		case st_trans:
+		case st_catalog:
 
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
@@ -922,6 +926,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_temp:
 		case st_atom:
 		case st_trans:
+		case st_catalog:
 			break;
 
 			/* special cases */
@@ -1856,6 +1861,18 @@ stmt_trans(int type, stmt *chain, stmt *name)
 	return s;
 }
 
+stmt *
+stmt_catalog(int type, stmt *sname, stmt *auth, stmt *action)
+{
+	stmt *s = stmt_create(st_catalog);
+
+	s->op1.stval = sname;
+	s->op2.stval = auth;
+	s->op3.stval = action;
+	s->flag = type;
+	return s;
+}
+
 void
 stmt_set_nrcols(stmt *s)
 {
@@ -2745,6 +2762,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			break;
 
 		case st_trans:
+		case st_catalog:
 		case st_atom:
 		case st_bat:
 			break;
@@ -2842,6 +2860,8 @@ print_stmt(stmt *s, int *nr)
 			printf("export\n"); break;
 	case st_trans:
 			printf("trans\n"); break;
+	case st_catalog:
+			printf("catalog\n"); break;
 	case st_affected_rows: 
 	case st_while: 
 	case st_if: 

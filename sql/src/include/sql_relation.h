@@ -69,6 +69,11 @@ typedef struct expression {
  
 // todo make enum
 #define DDL_OUTPUT	1
+#define DDL_LIST	2	
+
+#define DDL_CREATE_SEQ  5
+#define DDL_ALTER_SEQ   6
+#define DDL_DROP_SEQ    7
 
 #define DDL_RELEASE	11
 #define DDL_COMMIT	12
@@ -77,14 +82,15 @@ typedef struct expression {
 
 #define DDL_CREATE_SCHEMA 21
 #define DDL_DROP_SCHEMA   22
-#define DDL_ALTER_SCHEMA  23
+
 #define DDL_CREATE_TABLE 24
 #define DDL_DROP_TABLE 	 25
-#define DDL_ALTER_TABLE  26
-#define DDL_CREATE_VIEW  27
-#define DDL_DROP_VIEW    35
-#define DDL_CREATE_INDEX  36
-#define DDL_DROP_INDEX    37
+#define DDL_CREATE_VIEW  26
+#define DDL_DROP_VIEW    27
+#define DDL_ALTER_TABLE  28
+
+#define DDL_CREATE_INDEX  30
+#define DDL_DROP_INDEX    31
 
 #define DDL_CREATE_FUNCTION 41 
 #define DDL_DROP_FUNCTION   42 

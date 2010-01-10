@@ -29,8 +29,9 @@ Over..
 % .plan # table_name
 % rel # name
 % clob # type
-% 22 # length
-insert(sys.cm_tmp, 
+% 54 # length
+insert(
+| table(sys.cm_tmp) [ cm_tmp.i, cm_tmp.%TID% NOT NULL ]
 | union (
 | | table [ cm_tmp.i ],
 | | table [ cm_tmp.i ]

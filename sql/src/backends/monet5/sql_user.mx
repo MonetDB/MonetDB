@@ -240,7 +240,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_func(m, s, "db_users", l, &tpe, FALSE, FALSE, "sql", "db_users", 1);
 	list_destroy(l);
 
-	t = mvc_create_view(m, s, "users",
+	t = mvc_create_view(m, s, "users", SQL_PERSIST,
 			"SELECT u.\"name\" AS \"name\", "
 				"ui.\"fullname\", ui.\"default_schema\" "
 			"FROM db_users() AS u LEFT JOIN "

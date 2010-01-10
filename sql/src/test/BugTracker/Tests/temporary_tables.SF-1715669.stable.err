@@ -10,9 +10,9 @@ stderr of test 'temporary_tables.SF-1715669` in directory 'src/test/BugTracker` 
 # 09:35:56 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32868 
 # 09:35:56 >  
 
-MAPI  = monetdb@localhost:32868
+MAPI  = monetdb@localhost:38198
 QUERY = drop table t1;
-ERROR = !DROP TABLE: no such table 't1'
+ERROR = !SQLException:sql.catalog:DROP TABLE: no such table 't1'
 
 # 09:35:56 >  
 # 09:35:56 >  Done.

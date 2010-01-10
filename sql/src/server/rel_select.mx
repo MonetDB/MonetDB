@@ -30,13 +30,14 @@ extern sql_rel* rel_create(void);
 extern sql_rel* rel_setop(sql_rel *l, sql_rel *r, operator_type setop);
 
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
-extern sql_rel *rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent);
 extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek);
 extern sql_rel * rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f);
 extern sql_exp * rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f);
 extern sql_rel * rel_project(sql_rel *l, list *e);
 extern void rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
 extern list * rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname , int intern);
+
+extern void rel_add_intern(mvc *sql, sql_rel *rel);
 
 extern void rel_select_add_exp(sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select(sql_rel *l, sql_exp *e);
@@ -83,13 +84,12 @@ extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 #include "sql_semantic.h" 	/* TODO this dependency should be removed, move
 				   the dependend code into sql_mvc */
 #include "sql_privileges.h"
-#include "sql_sequence.h"
 #include "sql_env.h"
 #include "rel_exp.h"
 #include "rel_xml.h"
-#include "rel_bin.h"
 #include "rel_dump.h"
 #include "rel_prop.h"
+#include "rel_sequence.h"
 
 #define rel_groupby_gbe(r,e) rel_groupby(r, append(new_exp_list(), e))
 #define ERR_AMBIGUOUS		050000
@@ -1038,7 +1038,7 @@ static sql_rel * rel_joinquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_rel * rel_crossquery(mvc *sql, sql_rel *rel, symbol *q);
 static sql_rel * rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *sq);
 
-static void
+void
 rel_add_intern(mvc *sql, sql_rel *rel)
 {
 	if (rel->op == op_project && rel->l && rel->exps && !need_distinct(rel)) {
@@ -3616,7 +3616,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 	if (!s)
 		s = sql->session->schema;
 
-	if (!find_sql_sequence(s, seq)) 
+	if (!find_sql_sequence(s, seq) && !stack_find_rel_view(sql, seq)) 
 		return sql_error(sql, 02, "NEXT VALUE FOR: "
 			"no such sequence '%s'.'%s'", s->base.name, seq);
 	sql_find_subtype(&t, "varchar", 0, 0);
@@ -4945,159 +4945,6 @@ rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek)
 		toplevel = 1;
 
 	return rel_query(sql, rel, sq, toplevel, ek);
-}
-
-static char *
-as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
-{
-	if (column_spec) {
-		dnode *n = column_spec->h;
-		node *m = sq->exps->h;
-
-		for (; n; n = n->next, m = m->next) {
-			char *cname = n->data.sval;
-			sql_exp *e = m->data;
-			sql_subtype *tp = exp_subtype(e);
-
-			if (mvc_bind_column(sql, t, cname))
-				return cname;
-			mvc_create_column(sql, t, cname, tp);
-		}
-	} else {
-		node *m;
-
-		for (m = sq->exps->h; m; m = m->next) {
-			sql_exp *e = m->data;
-			char *cname = exp_name(e);
-			sql_subtype *tp = exp_subtype(e);
-
-			if (!cname)
-				cname = "v";
-			if (mvc_bind_column(sql, t, cname))
-				return cname;
-			mvc_create_column(sql, t, cname, tp);
-		}
-	}
-	return NULL;
-}
-
-static sql_rel *
-view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
-{
-	dnode *n = column_spec->h;
-	node *m = sq->exps->h;
-	list *l = new_exp_list();
-
-	for (; n && m; n = n->next, m = m->next) {
-		char *cname = n->data.sval;
-		sql_exp *e = m->data;
-		sql_exp *n = exp_is_atom(e)?exp_dup(e):exp_column(e->rname, e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
-
-		exp_setname(n, NULL, cname);
-		list_append(l, n);
-	}
-	/* skip any intern columns */
-	for (; m; m = m->next) {
-		sql_exp *e = m->data;
-		if (!is_intern(e))
-			break;
-	}
-	if (n || m) {
-		list_destroy(l);
-		return sql_error(sql, 02, "Column lists do not match");
-	}
-	(void)name;
-	sq = rel_project(sq, l);
-	set_processed(sq);
-	return sq;
-}
-
-
-sql_rel *
-rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent)
-{
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	int instantiate = (sql->emode == m_instantiate || !persistent);
-	int deps = (sql->emode == m_deps);
-	int create = (!instantiate && !deps);
-
-	(void) check;		/* Stefan: unused!? */
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
-	if (s == NULL)
-		s = cur_schema(sql);
-
-	if (create && (t = mvc_bind_table(sql, s, name)) != NULL) {
-		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use", name);
-	} else if (create && !schema_privs(sql->role_id, s)) {
-		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
-	} else if (query) {
-		char emode = sql->emode;
-		sql_rel *sq = NULL;
-		char *q = QUERY(sql->scanner);
-
-		if (query->token == SQL_SELECT) {
-			SelectNode *sn = (SelectNode *) query;
-
-			if (sn->limit >= 0)
-				return sql_error(sql, 01, "CREATE VIEW: LIMIT not supported");
-			if (sn->orderby)
-				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
-		}
-
-		if (create) /* for subtable we only need direct dependencies */
-			sql->emode = m_deps;
-		sq = rel_selects(sql, query);
-		sql->emode = emode;
-		if (!sq)
-			return NULL;
-
-
-		if (!create)
-			rel_add_intern(sql, sq);
-
-		if (create) {
-			char *n;
-
-			t = mvc_create_view(sql, s, name, q, 0);
-			if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
-				sql_error(sql, 01, "CREATE VIEW: duplicate column name %s", n);
-				rel_destroy(sq);
-				return NULL;
-			}
-		}
-
-		if (deps && sq) { 
-			rel_destroy(sq);
-
-			t = mvc_bind_table(sql, s, name);
-			sq = rel_basetable(t, name);
-		}
-			
-		if (!persistent && column_spec) 
-			sq = view_rename_columns( sql, name, sq, column_spec);
-
-		if (create && sq && persistent) {
-			stmt *sqs = rel_bin(sql, sq);
-			list *view_id_l = stmt_list_dependencies(sqs, VIEW_DEPENDENCY);
-			list *id_l = stmt_list_dependencies(sqs, COLUMN_DEPENDENCY);
-			list *func_id_l = stmt_list_dependencies(sqs, FUNC_DEPENDENCY);
-			mvc_create_dependencies(sql, id_l, t->base.id, VIEW_DEPENDENCY);
-			mvc_create_dependencies(sql, view_id_l, t->base.id, VIEW_DEPENDENCY);
-			mvc_create_dependencies(sql, func_id_l, t->base.id, VIEW_DEPENDENCY);
-			list_destroy(id_l);
-			list_destroy(view_id_l);
-			list_destroy(func_id_l);
-			stmt_destroy(sqs);
-			rel_destroy(sq);
-			return rel_project(NULL, NULL);
-		}
-		return sq;
-	}
-	return NULL;
 }
 
 sql_rel *

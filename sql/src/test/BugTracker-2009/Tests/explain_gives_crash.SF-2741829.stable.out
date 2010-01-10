@@ -21,12 +21,108 @@ Ready.
 
 Over..
 
-# 22:45:54 >  
-# 22:45:54 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35519 
-# 22:45:54 >  
+# 11:37:27 >  
+# 11:37:27 >  mclient -lsql -i --host=localhost --port=39621 
+# 11:37:27 >  
 
+% .explain # table_name
+% mal # name
+% clob # type
+% 0 # length
+function user.s0_1{autoCommit=true}():void;
+    sql.catalog(28,"sys",3008394056,0);
+barrier _46 := language.dataflow();
+    _6:bat[:oid,:int]  := sql.bind("sys","blabla","id",0);
+    _9 := algebra.selectNotNil(_6);
+    _6:bat[:oid,:int]  := nil:BAT;
+    _10:bat[:oid,:oid]  := sql.bind_dbat("sys","blabla",1);
+    _12 := bat.reverse(_10);
+    _10:bat[:oid,:oid]  := nil:BAT;
+    _13 := algebra.kdifference(_9,_12);
+    _9 := nil:BAT;
+    _12 := nil:BAT;
+    (ext20,grp18) := group.new(_13);
+    _13 := nil:BAT;
+    _16 := bat.mirror(ext20);
+    ext20 := nil:BAT;
+    _17:bat[:oid,:wrd]  := aggr.count(grp18,grp18,_16);
+    grp18 := nil:BAT;
+    _16 := nil:BAT;
+    _18 := aggr.count(_17);
+    _19:wrd  := aggr.sum(_17);
+    _17:bat[:oid,:wrd]  := nil:BAT;
+    _20 := calc.isnil(_19);
+    _22 := calc.ifthenelse(_20,0:wrd,_19);
+    _23 := calc.!=(_18,_22);
+exit _46;
+    sql.assert(_23,"UPDATE: UNIQUE constraint 'blabla.dada' violated");
+end s0_1;
+% .explain # table_name
+% mal # name
+% clob # type
+% 0 # length
+function user.s1_1{autoCommit=true}():void;
+    sql.catalog(28,"sys",3009062784,0);
+barrier _46 := language.dataflow();
+    _6:bat[:oid,:int]  := sql.bind("sys","blabla","id",0);
+    _9 := algebra.selectNotNil(_6);
+    _6:bat[:oid,:int]  := nil:BAT;
+    _10:bat[:oid,:oid]  := sql.bind_dbat("sys","blabla",1);
+    _12 := bat.reverse(_10);
+    _10:bat[:oid,:oid]  := nil:BAT;
+    _13 := algebra.kdifference(_9,_12);
+    _9 := nil:BAT;
+    _12 := nil:BAT;
+    (ext20,grp18) := group.new(_13);
+    _13 := nil:BAT;
+    _16 := bat.mirror(ext20);
+    ext20 := nil:BAT;
+    _17:bat[:oid,:wrd]  := aggr.count(grp18,grp18,_16);
+    grp18 := nil:BAT;
+    _16 := nil:BAT;
+    _18 := aggr.count(_17);
+    _19:wrd  := aggr.sum(_17);
+    _17:bat[:oid,:wrd]  := nil:BAT;
+    _20 := calc.isnil(_19);
+    _22 := calc.ifthenelse(_20,0:wrd,_19);
+    _23 := calc.!=(_18,_22);
+exit _46;
+    sql.assert(_23,"UPDATE: UNIQUE constraint 'blabla.dada' violated");
+end s1_1;
+% .explain # table_name
+% mal # name
+% clob # type
+% 0 # length
+function user.s0_1{autoCommit=true}():void;
+    sql.catalog(28,"sys",3006267824,0);
+barrier _46 := language.dataflow();
+    _6:bat[:oid,:int]  := sql.bind("sys","blabla","id",0);
+    _9 := algebra.selectNotNil(_6);
+    _6:bat[:oid,:int]  := nil:BAT;
+    _10:bat[:oid,:oid]  := sql.bind_dbat("sys","blabla",1);
+    _12 := bat.reverse(_10);
+    _10:bat[:oid,:oid]  := nil:BAT;
+    _13 := algebra.kdifference(_9,_12);
+    _9 := nil:BAT;
+    _12 := nil:BAT;
+    (ext20,grp18) := group.new(_13);
+    _13 := nil:BAT;
+    _16 := bat.mirror(ext20);
+    ext20 := nil:BAT;
+    _17:bat[:oid,:wrd]  := aggr.count(grp18,grp18,_16);
+    grp18 := nil:BAT;
+    _16 := nil:BAT;
+    _18 := aggr.count(_17);
+    _19:wrd  := aggr.sum(_17);
+    _17:bat[:oid,:wrd]  := nil:BAT;
+    _20 := calc.isnil(_19);
+    _22 := calc.ifthenelse(_20,0:wrd,_19);
+    _23 := calc.!=(_18,_22);
+exit _46;
+    sql.assert(_23,"UPDATE: UNIQUE constraint 'blabla.dada' violated");
+end s0_1;
 
-# 22:45:54 >  
-# 22:45:54 >  Done.
-# 22:45:54 >  
+# 11:37:28 >  
+# 11:37:28 >  Done.
+# 11:37:28 >  
 

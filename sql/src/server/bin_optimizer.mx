@@ -541,6 +541,7 @@ bin_optimizer(mvc *c, stmt *s)
 	case st_append:
 	case st_exception:
 	case st_trans:
+	case st_catalog:
 
 	case st_aggr:
 	case st_unop:

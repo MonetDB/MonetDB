@@ -471,7 +471,6 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	return k;
 }
 
-
 InstrPtr
 pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 {
@@ -1630,6 +1629,24 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			break;
 		}
+		case st_catalog: {
+			int l = -1, r = -1, k = -1;
+
+			l = _dumpstmt(sql, mb, s->op1.stval);
+			if (s->op2.stval)
+				r = _dumpstmt(sql, mb, s->op2.stval);
+			k = _dumpstmt(sql, mb, s->op3.stval);
+			q = newStmt1(mb, sqlRef, "catalog");
+			q = pushInt(mb, q, s->flag);
+			q = pushArgument(mb, q, l);
+			if (r > 0) 
+				q = pushArgument(mb, q, r);
+			else
+				q = pushNil(mb, q, TYPE_str);
+			q = pushArgument(mb, q, k);
+			s->nr = getDestVar(q);
+			break;
+		}
 		case st_alias:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);
 			break;
@@ -2174,12 +2191,13 @@ backend_create_func(backend *be, sql_func *f)
 	Symbol backup = NULL;
 	stmt *s;
 	int i, retseen =0, sideeffects =0;
+	sql_allocator *sa = sa_create(); 	/* NIELS: leaks, will be resolved once we keep rel,sa,mb (for recompiles) */
 
 	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || f->sql > 1)
 		return;
 	f->sql++;
-	s = sql_parse(m, f->imp, m_instantiate);
+	s = sql_parse(m, sa, f->imp, m_instantiate);
 	if (!s) {
 		fputs(m->errstr, stderr);
 		return;

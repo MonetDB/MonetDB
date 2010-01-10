@@ -56,12 +56,13 @@ lib_sqlserver = {
 		sql_mvc.mx \    
 		sql_env.mx \    
 		sql_privileges.mx \  
-		sql_sequence.mx \  
 		sql_psm.mx \  
 		rel_semantic.mx \
 		rel_select.mx \
 		rel_updates.mx \
 		rel_trans.mx \
+		rel_schema.mx \
+		rel_sequence.mx \
 		rel_subquery.mx \
 		rel_prop.mx \
 		rel_exp.mx \

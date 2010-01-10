@@ -80,25 +80,25 @@ stderr of test 'alter_add_constraint_should_check_existing_data.SF-2075241` in d
 # 16:00:59 >  mclient -lsql -umonetdb -Pmonetdb --host=alviss --port=38461 
 # 16:00:59 >  
 
-MAPI  = monetdb@alf:31886
+MAPI  = monetdb@localhost:37406
 QUERY = alter table A add constraint test1 primary key (test);
-ERROR = !SQLException:assert:CONSTRAINT PRIMARY KEY: NOT NULL constraint violated for column a.test
-MAPI  = monetdb@alf:31886
+ERROR = !SQLException:sql.catalog:ALTER TABLE: NOT NULL constraint violated for column a.test
+MAPI  = monetdb@localhost:37406
 QUERY = alter table A add constraint test1 primary key (test);
 ERROR = !SQLException:assert:UPDATE: PRIMARY KEY constraint 'a.test1' violated
-MAPI  = monetdb@alf:31886
+MAPI  = monetdb@localhost:37406
 QUERY = insert into A (test) values (1);
 ERROR = !SQLException:assert:INSERT INTO: PRIMARY KEY constraint 'a.test1' violated
-MAPI  = monetdb@alf:31886
+MAPI  = monetdb@localhost:37406
 QUERY = alter table A add constraint test1 primary key (test, id);
-ERROR = !SQLException:assert:CONSTRAINT PRIMARY KEY: NOT NULL constraint violated for column a.test
-MAPI  = monetdb@alf:31886
+ERROR = !SQLException:sql.catalog:ALTER TABLE: NOT NULL constraint violated for column a.test
+MAPI  = monetdb@localhost:37406
 QUERY = alter table A add constraint test1 primary key (test, id);
-ERROR = !SQLException:assert:CONSTRAINT PRIMARY KEY: NOT NULL constraint violated for column a.id
-MAPI  = monetdb@alf:31886
+ERROR = !SQLException:sql.catalog:ALTER TABLE: NOT NULL constraint violated for column a.id
+MAPI  = monetdb@localhost:37406
 QUERY = alter table A add constraint test1 primary key (test, id);
-ERROR = !SQLException:assert:CONSTRAINT PRIMARY KEY: NOT NULL constraint violated for column a.test
-MAPI  = monetdb@alf:31886
+ERROR = !SQLException:sql.catalog:ALTER TABLE: NOT NULL constraint violated for column a.test
+MAPI  = monetdb@localhost:37406
 QUERY = insert into t2 select * from t1;
 ERROR = !SQLException:assert:INSERT INTO: PRIMARY KEY constraint 't2.t2_id_pkey' violated
 

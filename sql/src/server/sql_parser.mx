@@ -204,7 +204,7 @@ extern int sqlparse(void *);
 #include "sql_decimal.h"	/* for decimal_from_str() */
 #include "sql_semantic.h"	/* for sql_add_param() & sql_add_arg() */
 #include "sql_env.h"
-#include "sql_sequence.h"	/* for sql_next_seq_name() */
+#include "rel_sequence.h"	/* for sql_next_seq_name() */
 
 #include <unistd.h>
 #include <string.h>
@@ -741,8 +741,14 @@ sqlstmt:
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
-   sql SCOLON 		{ mvc *m = (mvc*)parm;
-		  	  m->sym = $$ = $3; YYACCEPT; 
+	sql SCOLON 	{ mvc *m = (mvc*)parm;
+			  if (m->sym) {
+				append_symbol(m->sym->data.lval, $3);
+				$$ = m->sym;
+			  } else {
+				m->sym = $$ = $3;
+			  }
+			  YYACCEPT;
 			}
  | SQL_PLAN 		{ mvc *m = (mvc*)parm;
 		  	  m->emode = m_plan;
@@ -750,15 +756,28 @@ sqlstmt:
 			  m->scanner.key = 0;
 			}
 	sql SCOLON 	{ mvc *m = (mvc*)parm;
-		  	  m->sym = $$ = $3; YYACCEPT; 
+			  if (m->sym) {
+				append_symbol(m->sym->data.lval, $3);
+				$$ = m->sym;
+			  } else {
+				m->sym = $$ = $3;
+			  }
+			  YYACCEPT;
 			}
+
  | SQL_EXPLAIN 		{ mvc *m = (mvc*)parm;
 		  	  m->emode = m_explain;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
 	sql SCOLON 	{ mvc *m = (mvc*)parm;
-		  	  m->sym = $$ = $3; YYACCEPT; 
+			  if (m->sym) {
+				append_symbol(m->sym->data.lval, $3);
+				$$ = m->sym;
+			  } else {
+				m->sym = $$ = $3;
+			  }
+			  YYACCEPT;
 			}
  | SQL_DEBUG 		{ mvc *m = (mvc*)parm;
 			  if (m->scanner.mode == LINE_1) {

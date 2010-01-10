@@ -25,9 +25,9 @@
 #include "sql_list.h"
 
 static node *
-node_create(void *data)
+node_create(sql_allocator *sa, void *data)
 {
-	node *n = NEW(node);
+	node *n = (sa)?SA_NEW(sa, node):NEW(node);
 
 	n->next = NULL;
 	n->data = data;
@@ -39,7 +39,20 @@ list_create(fdestroy destroy)
 {
 	list *l = NEW(list);
 
+	l->sa = NULL;
 	l->destroy = destroy;
+	l->h = l->t = NULL;
+	l->cnt = 0;
+	return l;
+}
+
+list *
+list_new(sql_allocator *sa)
+{
+	list *l = SA_NEW(sa, list);
+
+	l->sa = sa;
+	l->destroy = NULL;
 	l->h = l->t = NULL;
 	l->cnt = 0;
 	return l;
@@ -58,7 +71,8 @@ node_destroy(list *l, node *n)
 {
 	if (n->data && l->destroy)
 		l->destroy(n->data);
-	_DELETE(n);
+	if (!l->sa)
+		_DELETE(n);
 }
 
 void
@@ -73,7 +87,8 @@ list_destroy(list *l)
 			n = n->next;
 			node_destroy(l, t);
 		}
-		_DELETE(l);
+		if (!l->sa)
+			_DELETE(l);
 	}
 }
 
@@ -88,7 +103,7 @@ list_length(list *l)
 list *
 list_append(list *l, void *data)
 {
-	node *n = node_create(data);
+	node *n = node_create(l->sa, data);
 
 	if (l->cnt) {
 		l->t->next = n;
@@ -104,7 +119,7 @@ list *
 list_append_before(list *l, node *m, void *data)
 {
 	node *p = l->h;
-	node *n = node_create(data);
+	node *n = node_create(l->sa, data);
 
 	n->next = m;
 	if (p == m){
@@ -121,7 +136,7 @@ list_append_before(list *l, node *m, void *data)
 list *
 list_prepend(list *l, void *data)
 {
-	node *n = node_create(data);
+	node *n = node_create(l->sa, data);
 
 	if (!l->cnt) {
 		l->t = n;
