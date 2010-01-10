@@ -385,6 +385,8 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(oid,flt)@
 	@:mal_coercion(oid,dbl)@
 
+	@:mal_coercion(ptr,ptr)@
+
 	@:mal_coercion(flt,flt)@
 	@:mal_coercion(flt,dbl)@
 	@:mal_coercion(flt,bte)@
@@ -1361,6 +1363,8 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(oid,wrd, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,flt, || *a < 0 || *a > GDK_oid_max, (oid) *a)@
 @:mal_coercion_impl(oid,dbl, || *a < 0 || *a > GDK_oid_max, (oid) *a)@
+
+@:mal_coercion_impl(ptr,ptr, , *a)@
 
 @:mal_coercion_impl(flt,flt, ,       *a)@
 @:mal_coercion_impl(flt,dbl, || *a < GDK_flt_min || *a > GDK_flt_max, (flt) *a)@
