@@ -1266,6 +1266,12 @@ int isFragmentGroup(InstrPtr p){
 			(getModuleId(p)== constraintsRef && 
 				getFunctionId(p)== putName("emptySet",8)) ||
 */
+			(getModuleId(p)== pcreRef && (
+			getFunctionId(p)== likeselectRef ||
+			getFunctionId(p)== likeuselectRef  ||
+			getFunctionId(p)== ilikeselectRef  ||
+			getFunctionId(p)== ilikeuselectRef  
+			))  ||
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== selectRef ||
 				getFunctionId(p)== selectNotNilRef ||
@@ -1273,8 +1279,6 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== antiuselectRef ||
 				getFunctionId(p)== thetauselectRef ||
-				getFunctionId(p)== likeselectRef ||
-				getFunctionId(p)== likeuselectRef ||
 				getFunctionId(p)== reuseRef
 			)	)  ||
 			(getModuleId(p)== pcreRef && (
