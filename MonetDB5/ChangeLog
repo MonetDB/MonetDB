@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Sun Jan 10 2010 Martin Kersten <mk@>
+- The ilike[u]select operations has been included in the repertoire
+  recognized by the mergetable optimizer for push through of selections.
 - The joinpath optimizer has been extended with recognition of the leftjoin.
   This way, series of leftjoin operations can be optimized by looking at
   the smallest starting point.
