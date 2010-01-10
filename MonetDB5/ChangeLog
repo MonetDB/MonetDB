@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Sun Jan 10 2010 Martin Kersten <mk@>
+- Introduced a dictionary encoding option to the optimizer pipeline.
+  Encoding is initiated with a SQL call compress(tablename).
+
 * Sun Nov 15 2009 Fabian Groffen <fabian@cwi.nl>
 - Removed the ability to redirect to other running databases in the same
   dbfarm.  This functionality has been taken over completely by
