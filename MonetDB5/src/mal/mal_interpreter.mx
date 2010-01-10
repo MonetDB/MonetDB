@@ -45,6 +45,7 @@ to be passed by a handle.
 /* #define DEBUG_FLOW */
 /* #define DEBUG_FLOW2 */
 /*#define STACKTRACE*/
+/* #define DEBUG_MEMORY_CLAIM*/
 
 mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
@@ -592,7 +593,7 @@ typedef struct {
 @-
 Running all eligible instructions in parallel creates
 resource contention. This means we should implement
-an admission control scheme where thread are temporarily
+an admission control scheme where threads are temporarily
 postponed if the claim for memory exceeds a threshold
 In general such contentions will be hard to predict,
 because they depend on the algorithm, the input sizes,
@@ -611,21 +612,21 @@ DFLOWclaim(lng claim)
 
     	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if ( memorypool == 0 && memoryclaims == 0)
-		memorypool = MT_npages() * MT_pagesize();
+		memorypool = monet_memory;
 	
 	if ( claim > 0 ) {
 		if ( memoryclaims == 0 || memorypool >claim){
 			memorypool -= claim;
 			memoryclaims ++;
-#ifdef DEBUG_FLOW
-			stream_printf(GDKout,"DFLOWclaim %d " LLFMT " " LLFMT"\n",
+#ifdef DEBUG_MEMORY_CLAIM
+			stream_printf(GDKout,"DFLOWclaim memoryclaim %d  pool " LLFMT "  claim " LLFMT"\n",
 				memoryclaims, memorypool, claim);
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		} 
-#ifdef DEBUG_FLOW
-		stream_printf(GDKout,"DFLOWclaim REFUSE" LLFMT " " LLFMT"\n",
+#ifdef DEBUG_MEMORY_CLAIM
+		stream_printf(GDKout,"DFLOWclaim REFUSE memoryclaim %d  pool " LLFMT " claim " LLFMT"\n",
 			memoryclaims, memorypool, claim);
 #endif
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -633,9 +634,9 @@ DFLOWclaim(lng claim)
 	} 
 	memorypool += -claim;
 	memoryclaims --;
-#ifdef DEBUG_FLOW
-	stream_printf(GDKout,"DFLOWrelease %d " LLFMT " " LLFMT"\n",
-		memoryclaims, memorypool, claim);
+#ifdef DEBUG_MEMORY_CLAIM
+		stream_printf(GDKout,"DFLOWrelease memoryclaim %d  pool " LLFMT " claim " LLFMT"\n",
+			memoryclaims, memorypool, claim);
 #endif
     	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return memoryclaims;
@@ -846,8 +847,13 @@ Possibly delay processing when we run out of memory.
 	if ( claim < 64 * 1024 * 1024)
 		claim = 0;
     while (claim > 0 &&  (i = DFLOWclaim(claim) ) ){
+#ifdef DEBUG_MEMORY_CLAIM
+		printInstruction(GDKout,mb,0,pci,LIST_MAL_DEBUG);
+		stream_printf(GDKout,"DFLOWdelay claim " LLFMT"\n", claim);
+#endif
         MT_sleep_ms(i * 20);
-        claim -= 64 * 1024 * 1024 ; /* reduce claim with a MB */
+		DFLOWclaim(-claim);
+        claim /= 2 ; /* reduce claim */
     }
 
 	@:beginProfile(t)@
