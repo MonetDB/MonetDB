@@ -63,7 +63,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "mal_interpreter.h"
 
 /* #define _DEBUG_OPT_MITOSIS*/
-#define PARTITION_THRESHOLD (BUN) GDKnr_threads
+#define PARTITION_THRESHOLD (BUN) GDKnr_threads	/* should be increased in production version */
 
 static int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -75,7 +75,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
 	VarPtr v;
-	int typewidth= 2 *sizeof(TYPE_oid);
+	int typewidth= 3 *sizeof(TYPE_oid); /* 2 arguments and a result */
 
 	(void)cntxt;
 	(void) stk;
@@ -90,10 +90,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		if( q->argc >5 )
 			continue; /* already partitioned */
-		
 @-
 The SQL optimizer already collects the counts of the
 base table and passes them on as a row property.
+All pieces for a single subplan should ideally fit together.
 @c
 		v= varGetProp(mb, getArg(q,0), rowsProp);
 		if (v && v->value.val.lval >= 0
@@ -106,8 +106,6 @@ base table and passes them on as a row property.
 				rowcnt = r;
 				target = q;
 				estimate++;
-				if ( getTailType(getVarType(mb, getArg(q,0))) >= TYPE_str && typewidth <  (int) (3 * sizeof(TYPE_oid)) )
-					typewidth ++;  /* make the piece smaller */ 
 				r = 0;
 			}
 		}
@@ -117,9 +115,11 @@ base table and passes them on as a row property.
 The number of pieces should be based on the footprint of the queryplan,
 such that preferrably it can be handled without swapping intermediates.
 For the time being we just go for small pieces compared to memory detected upon start.
-A fictive rowcount is derived based on TYPE_lng, such that two pieces
+A fictive rowcount is derived based on TYPE_lng, such that all pieces
 would fit into memory conveniently for processing. We attempt to use
 at least all threads.
+Experience shows that the pieces should not be too small.
+To keep the threads working, we create more pieces then threads.
 @c
 	r= (BUN) (monet_memory /typewidth/GDKnr_threads); /* how much fits  */
 	if (rowcnt > r )
@@ -133,11 +133,10 @@ at least all threads.
 		return 0;
 	OPTDEBUG
 		stream_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
-			"on " BUNFMT " rows/piece %d threads %d pieces\n",
+			" with " BUNFMT " rows into " BUNFMT " rows/piece %d threads %d pieces\n",
 				getVarConstant(mb, getArg(target,1)).val.sval,
 				getVarConstant(mb, getArg(target,2)).val.sval,
-				(BUN) (monet_memory /2/sizeof(oid)/GDKnr_threads),
-				GDKnr_threads,pieces);
+				rowcnt, r, GDKnr_threads,pieces);
 #ifdef _DEBUG_OPT_MITOSIS
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
