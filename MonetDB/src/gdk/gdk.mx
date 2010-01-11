@@ -1263,7 +1263,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			ptr _ptr;					\
 			ATOMput((b)->htype, (b)->H->vheap, &_d, v);	\
 			if ((b)->H->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((var_t) 1 << (8 * (b)->H->width))) {	\
+			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) {	\
 				/* doesn't fit in current heap, upgrade it */ \
 				GDKupgradevarheap((b)->H, BATcapacity(b), _d, (copyall)); \
 			}						\
@@ -1292,7 +1292,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			ptr _ptr;					\
 			ATOMput((b)->ttype, (b)->T->vheap, &_d, v);	\
 			if ((b)->T->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((var_t) 1 << (8 * (b)->T->width))) {	\
+			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) {	\
 				/* doesn't fit in current heap, upgrade it */ \
 				GDKupgradevarheap((b)->T, BATcapacity(b), _d, (copyall)); \
 			}						\
@@ -1336,7 +1336,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			}						\
 			ATOMreplace((b)->htype, (b)->H->vheap, &_d, v);	\
 			if ((b)->H->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((var_t) 1 << (8 * (b)->H->width))) {	\
+			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) {	\
 				/* doesn't fit in current heap, upgrade it */ \
 				GDKupgradevarheap((b)->H, BATcapacity(b), _d, 0); \
 			}						\
@@ -1380,7 +1380,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			}						\
 			ATOMreplace((b)->ttype, (b)->T->vheap, &_d, v);	\
 			if ((b)->T->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((var_t) 1 << (8 * (b)->T->width))) {	\
+			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) {	\
 				/* doesn't fit in current heap, upgrade it */ \
 				GDKupgradevarheap((b)->T, BATcapacity(b), _d, 0); \
 			}						\
