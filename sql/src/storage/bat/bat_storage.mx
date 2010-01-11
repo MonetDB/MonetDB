@@ -619,7 +619,7 @@ create_col(sql_trans *tr, sql_column *c)
 		return new_persistent_bat(tr, c->data, c->t->sz);
 	} else if (!bat->ibid) {
 		sql_column *fc;
-		int cnt = 0;
+		size_t cnt = 0;
 
 		/* alter ? */
 		if (c->t->columns.set && (fc = c->t->columns.set->h->data) != NULL) {
