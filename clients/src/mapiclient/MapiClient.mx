@@ -1005,6 +1005,10 @@ SQLrenderer(MapiHdl hdl)
 static void
 setFormatter(Mapi mid, char *s)
 {
+#ifdef WIN32
+	if (formatter == TESTformatter)
+		_set_output_format(0);
+#endif
 	if (mode == XQUERY) {
 		mapi_output(mid, s);
 		if (s != output) {
@@ -1022,9 +1026,12 @@ setFormatter(Mapi mid, char *s)
 		formatter = RAWformatter;
 	else if (strcmp(s, "xml") == 0)
 		formatter = XMLformatter;
-	else if (strcmp(s, "test") == 0)
+	else if (strcmp(s, "test") == 0) {
+#ifdef WIN32
+		_set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
 		formatter = TESTformatter;
-	else
+	} else
 		stream_printf(toConsole, "unsupported formatter\n");
 }
 
