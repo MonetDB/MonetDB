@@ -983,9 +983,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 				assert(l->h->next->next->next->type == type_int);
 				res = rel_create_table(sql, ss, l->h->data.i_val, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
-#ifndef NDEBUG
 				dlist *l = n->data.sym->data.lval;
-#endif
 
 				assert(l->h->next->next->next->type == type_int);
 				assert(l->h->next->next->next->next->type == type_int);
