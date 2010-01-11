@@ -1941,7 +1941,7 @@ strLocate(Heap *h, str v)
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) { 
 		next = (stridx_t*) (h->base + *ref);
 		if (GDK_STRCMP(v, (str) (next+1)) == 0) 
-			return (sizeof(stridx_t) + *ref) >> GDK_VARSHIFT; /* found */
+			return (var_t) ((sizeof(stridx_t) + *ref) >> GDK_VARSHIFT);	 /* found */
 	}
 	return 0;
 }
