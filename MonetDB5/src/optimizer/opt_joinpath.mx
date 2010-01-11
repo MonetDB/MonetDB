@@ -460,7 +460,7 @@ opt_export BAT * ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag);
 BAT *
 ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 {
-	BAT *b;
+	BAT *b = NULL;
 	BUN estimate, e;
 	int i, j, k;
 	int *postpone= (int*) GDKzalloc(sizeof(int) *top);
