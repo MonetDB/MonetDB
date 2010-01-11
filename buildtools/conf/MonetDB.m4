@@ -814,7 +814,7 @@ esac
 dnl --enable-strict
 AC_ARG_ENABLE(strict,
 	AC_HELP_STRING([--enable-strict],
-		[enable strict compiler flags [default=$dft_strict]]),
+		[enable strict compiler flags (default=$dft_strict)]),
 	enable_strict=$enableval,
 	enable_strict=$dft_strict)
 dnl  Set compiler switches.
@@ -1750,7 +1750,7 @@ AC_SUBST(translatepath)
 dnl --with-anttranslatepath
 AC_ARG_WITH(anttranslatepath,
 	AC_HELP_STRING([--with-anttranslatepath=PROG],
-		[program to translate paths from configure-time format to a format that can be given to the ant program [default: 'readlink -f' or value for --with-translatepath]]),
+		[program to translate paths from configure-time format to a format that can be given to the ant program (default: 'readlink -f' or value for --with-translatepath)]),
 	anttranslatepath="$withval")
 AC_SUBST(anttranslatepath)
 ]) dnl AC_DEFUN AM_MONETDB_TRANSLATEPATH
@@ -1763,7 +1763,7 @@ AM_MONETDB_TRANSLATEPATH()
 dnl --enable-noexpand
 AC_ARG_ENABLE(noexpand,
 	AC_HELP_STRING([--enable-noexpand],
-		[do not expand the comma-separated list of MIL types given as argument, or "all" if no expansion should be done [default=]]),
+		[do not expand the comma-separated list of MIL types given as argument, or "all" if no expansion should be done (default=)]),
 	enable_noexpand=$enableval,
 	enable_noexpand=)
 case $enable_noexpand in
@@ -1822,7 +1822,7 @@ esac
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
 	AC_HELP_STRING([--enable-debug],
-		[enable full debugging [default=$dft_debug]]),
+		[enable full debugging (default=$dft_debug)]),
 	enable_debug=$enableval,
 	enable_debug=$dft_debug)
 if test "x$enable_debug" = xyes; then
@@ -1857,7 +1857,7 @@ fi
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
 	AC_HELP_STRING([--enable-assert],
-		[enable assertions in the code [default=$dft_assert]]),
+		[enable assertions in the code (default=$dft_assert)]),
 	enable_assert=$enableval,
 	enable_assert=$dft_assert)
 if test "x$enable_assert" = xno; then
@@ -1867,7 +1867,7 @@ fi
 dnl --enable-optimize
 AC_ARG_ENABLE(optimize,
 	AC_HELP_STRING([--enable-optimize],
-		[enable extra optimization [default=$dft_optimi]]),
+		[enable extra optimization (default=$dft_optimi)]),
 	enable_optim=$enableval, enable_optim=$dft_optimi)
 if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xyes; then
@@ -2029,7 +2029,7 @@ AC_SUBST(SUN_NOOPT_CFLAGS)
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,
 	AC_HELP_STRING([--enable-warning],
-		[enable extended compiler warnings [default=$dft_warning]]),
+		[enable extended compiler warnings (default=$dft_warning)]),
 	enable_warning=$enableval,
 	enable_warning=$dft_warning)
 if test "x$enable_warning" = xyes; then
@@ -2050,7 +2050,7 @@ fi
 dnl --enable-profile
 need_profiling=no
 AC_ARG_ENABLE(profile,
-	AC_HELP_STRING([--enable-profile], [enable profiling [default=no]]),
+	AC_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
 	enable_prof=$enableval,
 	enable_prof=no)
 if test "x$enable_prof" = xyes; then
@@ -2070,7 +2070,7 @@ dnl --enable-instrument
 need_instrument=no
 AC_ARG_ENABLE(instrument,
 	AC_HELP_STRING([--enable-instrument],
-		[enable instrument [default=no]]),
+		[enable instrument (default=no)]),
 	enable_instrument=$enableval,
 	enable_instrument=no)
 if test "x$enable_instrument" = xyes; then
