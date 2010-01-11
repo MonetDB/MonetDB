@@ -1764,7 +1764,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} 	break;
 	case DDL_ALTER_SEQ:
 	{
-		lng *val;
+		lng *val = NULL;
 		sql_sequence *s = *(sql_sequence**) getArgReference(stk, pci, 3);
 		if (getArgType(mb, pci, 4) == TYPE_lng) 
 			val = getArgReference(stk, pci, 4);
