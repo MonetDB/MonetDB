@@ -3143,9 +3143,9 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 
 	if (rel->r) { /* first construct the update relation */
 		update = subrel_bin(sql, rel->r, refs);
-		if (!update)  
-			return NULL;	
 	}
+	if (!update)  
+		return NULL;	
 	updates = table_update_array(t, &len);
 	tid = update->op1.lval->h->data;
 	for (n = update->op1.lval->h->next, m = rel->exps->h; 
