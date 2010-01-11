@@ -1139,7 +1139,7 @@ mvc_drop_idx(mvc *m, sql_schema *s, sql_idx *i)
 
 	if (i->t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
-		return drop_sql_idx(i->t, i->base.id);
+		drop_sql_idx(i->t, i->base.id);
 	else
 		sql_trans_drop_idx(m->session->tr, s, i->base.id, DROP_RESTRICT);
 }
