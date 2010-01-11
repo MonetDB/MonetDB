@@ -369,6 +369,7 @@ parse_request(stream *out,
             send_err(out, ERR500, "env:Receiver", err);
         else
             send_err(out, ERR400, "env:Sender", err);
+        return NULL;
     }
     if(!isAdmin && !isTrusted(out, req->location)) {
         XRPCreq_free(req);
