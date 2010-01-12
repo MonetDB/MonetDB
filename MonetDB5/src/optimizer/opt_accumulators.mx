@@ -94,7 +94,7 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			continue;
 		}
 #ifdef DEBUG_OPT_OPTIMIZER
-	printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 		if (p->retc==1 && p->argc == 2) {
 			/* unary operation, avoid clash with binary */
@@ -132,9 +132,9 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 				p=q; /* restore */
 			} else  {
 #ifdef DEBUG_OPT_OPTIMIZER
-			stream_printf(cntxt->fdout, "Found accumulation candidate ");
-			stream_printf(cntxt->fdout, "%d: %d(%d)\n", i, getArg(p,0),getArg(p,2));
-			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+				stream_printf(cntxt->fdout, "Found accumulation candidate ");
+				stream_printf(cntxt->fdout, "%d: %d(%d)\n", i, getArg(p,0),getArg(p,2));
+				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 				freeInstruction(q);
 				actions++;  
