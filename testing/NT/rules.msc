@@ -30,7 +30,7 @@ MONETDB_LIBS=/libpath:"$(MONETDB_PREFIX)\lib"
 
 pkg = testing
 CONFIG_H=testing_config.h
-VERSION=1.34.3
+VERSION=1.34.4
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
