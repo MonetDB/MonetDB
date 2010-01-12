@@ -69,25 +69,25 @@ The accumulator versions modifies the first argument,
 provided it is a temporary BAT and not a view.
 @= calcGrp
 
-	command @1{target=1}(b:bat[:oid,:@5], c:bat[:oid,:@3], aflag:bit, bflag:bit):bat[:oid,:@4]
+	command @1{target=1}(b:bat[:oid,:@4], c:bat[:oid,:@5], aflag:bit, bflag:bit):bat[:oid,:@3]
 	address CMDbataccum@2_@3_@4_@5
 	comment "Binary BAT calculator function which may re-use store of arguments ";
 
-	command @1{target=1}(cst:@4, b:bat[:oid,:@5], cflag:bit, bflag:bit):bat[:oid,:@4]
+	command @1{target=1}(cst:@3, b:bat[:oid,:@4], cflag:bit, bflag:bit):bat[:oid,:@3]
 	address CMDbataccum@2cst2_@3_@4_@5
 	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
 
-	command @1{target=1}(b:bat[:oid,:@4], cst:@5, bflag:bit, cflag:bit) :bat[:oid,:@4]
+	command @1{target=1}(b:bat[:oid,:@3], cst:@4, bflag:bit, cflag:bit) :bat[:oid,:@3]
 	address CMDbataccum@2cst_@3_@4_@5
 	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
 
-	command @1(b:bat[:oid,:@4], cst:@5) :bat[:oid,:@3] 
+	command @1(b:bat[:oid,:@3], cst:@4) :bat[:oid,:@5] 
 	address CMDbat@2cst_@3_@4_@5;
 
-	command @1(cst:@4, b:bat[:oid,:@5]) :bat[:oid,:@3] 
+	command @1(cst:@3, b:bat[:oid,:@4]) :bat[:oid,:@5] 
 	address CMDcst@2bat_@3_@4_@5;
 
-	command @1(b:bat[:oid,:@4], c:bat[:oid,:@5]) :bat[:oid,:@3] 
+	command @1(b:bat[:oid,:@3], c:bat[:oid,:@4]) :bat[:oid,:@5] 
 	address CMDbat@2_@3_@4_@5
 	comment "Binary BAT calculator function with new BAT result";
 
@@ -125,53 +125,53 @@ C qualifier and the operands
 	@:calcGrp(or,OR,wrd,wrd,wrd)@
 	@:calcGrp(or,OR,lng,lng,lng)@
 
-	@:calcGrp(<<,LSH,oid,oid,int)@
-	@:calcGrp(<<,LSH,bte,bte,int)@
-	@:calcGrp(<<,LSH,sht,sht,int)@
+	@:calcGrp(<<,LSH,oid,int,oid)@
+	@:calcGrp(<<,LSH,bte,int,bte)@
+	@:calcGrp(<<,LSH,sht,int,sht)@
 	@:calcGrp(<<,LSH,int,int,int)@
-	@:calcGrp(<<,LSH,wrd,wrd,int)@
-	@:calcGrp(<<,LSH,lng,lng,int)@
+	@:calcGrp(<<,LSH,wrd,int,wrd)@
+	@:calcGrp(<<,LSH,lng,int,lng)@
 
-	@:calcGrp(>>,RSH,oid,oid,int)@
-	@:calcGrp(>>,RSH,bte,bte,int)@
-	@:calcGrp(>>,RSH,sht,sht,int)@
+	@:calcGrp(>>,RSH,oid,int,oid)@
+	@:calcGrp(>>,RSH,bte,int,bte)@
+	@:calcGrp(>>,RSH,sht,int,sht)@
 	@:calcGrp(>>,RSH,int,int,int)@
-	@:calcGrp(>>,RSH,wrd,wrd,int)@
-	@:calcGrp(>>,RSH,lng,lng,int)@
+	@:calcGrp(>>,RSH,wrd,int,wrd)@
+	@:calcGrp(>>,RSH,lng,int,lng)@
 
 @= coerceGrp
-	@:calcGrp(@1,@2,lng,int,sht)@
-	@:calcGrp(@1,@2,lng,sht,int)@
-	@:calcGrp(@1,@2,lng,bte,sht)@
-	@:calcGrp(@1,@2,lng,sht,bte)@
-	@:calcGrp(@1,@2,lng,lng,sht)@
+	@:calcGrp(@1,@2,int,sht,lng)@
+	@:calcGrp(@1,@2,sht,int,lng)@
+	@:calcGrp(@1,@2,bte,sht,lng)@
+	@:calcGrp(@1,@2,sht,bte,lng)@
 	@:calcGrp(@1,@2,lng,sht,lng)@
-	@:calcGrp(@1,@2,lng,sht,sht)@
-	@:calcGrp(@1,@2,lng,lng,int)@
+	@:calcGrp(@1,@2,sht,lng,lng)@
+	@:calcGrp(@1,@2,sht,sht,lng)@
 	@:calcGrp(@1,@2,lng,int,lng)@
-	@:calcGrp(@1,@2,lng,bte,int)@
-	@:calcGrp(@1,@2,lng,int,bte)@
-	@:calcGrp(@1,@2,lng,int,int)@
-	@:calcGrp(@1,@2,lng,lng,bte)@
-	@:calcGrp(@1,@2,lng,bte,bte)@
+	@:calcGrp(@1,@2,int,lng,lng)@
+	@:calcGrp(@1,@2,bte,int,lng)@
+	@:calcGrp(@1,@2,int,bte,lng)@
+	@:calcGrp(@1,@2,int,int,lng)@
 	@:calcGrp(@1,@2,lng,bte,lng)@
-	@:calcGrp(@1,@2,lng,lng,bte)@
+	@:calcGrp(@1,@2,bte,bte,lng)@
+	@:calcGrp(@1,@2,bte,lng,lng)@
+	@:calcGrp(@1,@2,lng,bte,lng)@
 	@:calcGrp(@1,@2,lng,lng,lng)@
 
-	@:calcGrp(@1,@2,int,sht,sht)@
-	@:calcGrp(@1,@2,int,bte,bte)@
-	@:calcGrp(@1,@2,int,sht,bte)@
-	@:calcGrp(@1,@2,int,bte,sht)@
-	@:calcGrp(@1,@2,int,int,sht)@
+	@:calcGrp(@1,@2,sht,sht,int)@
+	@:calcGrp(@1,@2,bte,bte,int)@
+	@:calcGrp(@1,@2,sht,bte,int)@
+	@:calcGrp(@1,@2,bte,sht,int)@
 	@:calcGrp(@1,@2,int,sht,int)@
+	@:calcGrp(@1,@2,sht,int,int)@
+	@:calcGrp(@1,@2,bte,int,int)@
 	@:calcGrp(@1,@2,int,bte,int)@
-	@:calcGrp(@1,@2,int,int,bte)@
 	@:calcGrp(@1,@2,int,int,int)@
 
 	@:calcGrp(@1,@2,sht,sht,sht)@
+	@:calcGrp(@1,@2,bte,sht,sht)@
 	@:calcGrp(@1,@2,sht,bte,sht)@
-	@:calcGrp(@1,@2,sht,sht,bte)@
-	@:calcGrp(@1,@2,sht,bte,bte)@
+	@:calcGrp(@1,@2,bte,bte,sht)@
 
 	@:calcGrp(@1,@2,dbl,dbl,dbl)@
 	@:calcGrp(@1,@2,flt,flt,flt)@
@@ -304,116 +304,116 @@ fixed-sized types.
 @-
 @= accum
 {
-	@1 *o = (@1*)Tloc(bn, BUNfirst(bn));
-	@3 *p = (@3*)Tloc(b, BUNfirst(b));
-	@3 *q = (@3*)Tloc(b, BUNlast(b));
-	@4 *r = (@4*)Tloc(right, BUNfirst(right));
+	@4 *o = (@4*)Tloc(bn, BUNfirst(bn));
+	@2 *p = (@2*)Tloc(b, BUNfirst(b));
+	@2 *q = (@2*)Tloc(b, BUNlast(b));
+	@3 *r = (@3*)Tloc(right, BUNfirst(right));
 
 	if (b->T->nonil && right->T->nonil)
 		for (; p<q; o++, p++, r++)
-			*o = (@1) (*p @2 *r);
+			*o = (@4) (*p @1 *r);
 	else if (b->T->nonil) {
 		for (; p<q; o++, p++, r++){
 			/* this code is better as x?nil:y  */
-			if(*r == @4_nil) {
-				*o = @1_nil;
+			if(*r == @3_nil) {
+				*o = @4_nil;
 				bn->T->nonil = 0;
 			} else 
-				*o = (@1) (*p @2 *r);
+				*o = (@4) (*p @1 *r);
 		}
 	} else if (right->T->nonil)
 		for (; p<q; o++, p++, r++){
 			/* this code is better as x?nil:y  */
-			if(*p == @3_nil ) {
-				*o = @1_nil;
+			if(*p == @2_nil ) {
+				*o = @4_nil;
 				bn->T->nonil = 0;
 			} else 
-				*o = (@1) (*p @2 *r);
+				*o = (@4) (*p @1 *r);
 		}
 	else
 		for (; p<q; o++, p++, r++){
 			/* this code is better as x?nil:y  */
-			if(*p == @3_nil || *r == @4_nil) {
-				*o = @1_nil;
+			if(*p == @2_nil || *r == @3_nil) {
+				*o = @4_nil;
 				bn->T->nonil = 0;
 			} else 
-				*o = (@1) (*p @2 *r);
+				*o = (@4) (*p @1 *r);
 		}
 }
 @= accumCst
 {
-	@1 *o = (@1*)Tloc(bn, BUNfirst(bn)); 
-	@3 *p = (@3*)Tloc(b, BUNfirst(b));
-	@3 *q = (@3*)Tloc(b, BUNlast(b));
-	@4 c  = *(@4*)cst;
+	@4 *o = (@4*)Tloc(bn, BUNfirst(bn)); 
+	@2 *p = (@2*)Tloc(b, BUNfirst(b));
+	@2 *q = (@2*)Tloc(b, BUNlast(b));
+	@3 c  = *(@3*)cst;
 
-	if( c == @4_nil){
+	if( c == @3_nil){
 		for (;p<q; o++, p++)
-			*o = @1_nil;
+			*o = @4_nil;
 		bn->T->nonil = 0;
 	} else
 	if (b->T->nonil)
 		for (;p<q; o++, p++)
-			*o = *p @2 c;
+			*o = *p @1 c;
 	else
 		for (;p<q; o++, p++) {
-			if (*p == @3_nil ) {
-				*o = @1_nil;
+			if (*p == @2_nil ) {
+				*o = @4_nil;
 				bn->T->nonil = 0;
 			} else 
-				*o = *p @2 c;
+				*o = *p @1 c;
 		}
 }
 @= accumCstLeft
 {
-	@1 *o = (@1*)Tloc(bn, BUNfirst(bn)); 
-	@3 c  = *(@3*)cst;
-	@4 *p = (@4*)Tloc(b, BUNfirst(b));
-	@4 *q = (@4*)Tloc(b, BUNlast(b));
+	@4 *o = (@4*)Tloc(bn, BUNfirst(bn)); 
+	@2 c  = *(@2*)cst;
+	@3 *p = (@3*)Tloc(b, BUNfirst(b));
+	@3 *q = (@3*)Tloc(b, BUNlast(b));
 
-	if (c == @3_nil) {
+	if (c == @2_nil) {
 		for (; p<q; o++, p++)
-			*o = @1_nil;
+			*o = @4_nil;
 		bn->T->nonil = 0;
 	} else
 	if (b->T->nonil)
 		for (; p<q; o++, p++)
-			*o = c @2 *p;
+			*o = c @1 *p;
 	else
 		for (; p<q; o++, p++) {
-			if (*p == @4_nil ) {
-				*o = @1_nil;
+			if (*p == @3_nil ) {
+				*o = @4_nil;
 				bn->T->nonil = 0;
 			} else 
-				*o = c @2 *p;
+				*o = c @1 *p;
 		}
 }
 @= accumCstDIV
 {
-	@1 *o = (@1*)Tloc(bn, BUNfirst(bn)); 
-	@3 c  = *(@3*)cst;
-	@4 *p = (@4*)Tloc(b, BUNfirst(b));
-	@4 *q = (@4*)Tloc(b, BUNlast(b));
+	@4 *o = (@4*)Tloc(bn, BUNfirst(bn)); 
+	@2 c  = *(@2*)cst;
+	@3 *p = (@3*)Tloc(b, BUNfirst(b));
+	@3 *q = (@3*)Tloc(b, BUNlast(b));
 
 	if (c == 0)
-		res = createException(ARITH, "batcalc.@1", "Division by zero");
+		res = createException(ARITH, "batcalc.@4", "Division by zero");
 	else 
 	if (b->T->nonil)
 		for (; p<q; o++, p++){
 			if ( *p == 0)
-				res = createException(ARITH, "batcalc.@1", "Division by zero");
+				res = createException(ARITH, "batcalc.@4", "Division by zero");
 			else
-				*o = c @2 *p;
+				*o = c @1 *p;
 		}
 	else
 		for (; p<q; o++, p++) {
-			if (*p == @4_nil) {
-				*o = @1_nil;
+			if (*p == @3_nil) {
+				*o = @4_nil;
 				bn->T->nonil = 0;
 			} else if (*p == 0)
-				res = createException(ARITH, "batcalc.@1", "Division by zero");
+				res = createException(ARITH, "batcalc.@4", "Division by zero");
 			else
-				*o = c @2 *p;
+				*o = c @1 *p;
 		}
 }
 @-
@@ -434,10 +434,10 @@ two primary command structures are dealt with in the CMD* alternatives.
 The similar code base is produced for dealing with a constant argument. 
 @= loopImpl
 {	
-	@3 *o = (@3*)Tloc(bn, BUNfirst(bn));
-	@4 *p = (@4*)Tloc(b, BUNfirst(b));
-	@4 *q = (@4*)Tloc(b, BUNlast(b));
-	@5 *r = (@5*)Tloc(right, BUNfirst(right));
+	@5 *o = (@5*)Tloc(bn, BUNfirst(bn));
+	@3 *p = (@3*)Tloc(b, BUNfirst(b));
+	@3 *q = (@3*)Tloc(b, BUNlast(b));
+	@4 *r = (@4*)Tloc(right, BUNfirst(right));
 
 #if CMD_@2 == CMD_DIV
 	if (b->T->nonil && right->T->nonil) {
@@ -446,76 +446,76 @@ The similar code base is produced for dealing with a constant argument.
 			if (*r == 0)
 				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			else
-				*o = (@3)(*p / *r);
+				*o = (@5)(*p / *r);
 	} else if (b->T->nonil ) {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*r == @5_nil) {
-				*o = @3_nil;
+			if (*r == @4_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
 			} else if (*r == 0)
 				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			else 
-				*o = (@3)(*p / *r);
+				*o = (@5)(*p / *r);
 		}
 	} else if (right->T->nonil ) {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++) 
 			/* this code is better as x?nil:y  */
-			if (*p == @4_nil) {
-				*o = @3_nil;
+			if (*p == @3_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
 			} else if (*r == 0)
 				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			else
-				*o = (@3)(*p / *r);
+				*o = (@5)(*p / *r);
 	} else {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++) 
 			/* this code is better as x?nil:y  */
-			if (*p == @4_nil || *r == @5_nil) {
-				*o = @3_nil;
+			if (*p == @3_nil || *r == @4_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
 			} else if (*r == 0) {
 				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			} else
-				*o = (@3)(*p / *r);
+				*o = (@5)(*p / *r);
 	}
 #else
 	if (b->T->nonil && right->T->nonil) {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++)
-			*o = (@3) (*p @1 *r);
+			*o = (@5) (*p @1 *r);
 	} else if (b->T->nonil ) {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*r == @5_nil) {
-				*o = @3_nil;
+			if (*r == @4_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
 			} else
-				*o = (@3) (*p @1 *r);
+				*o = (@5) (*p @1 *r);
 		}
 	} else if (right->T->nonil) {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*p == @4_nil) {
-				*o = @3_nil;
+			if (*p == @3_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
 			} else
-				*o = (@3) (*p @1 *r);
+				*o = (@5) (*p @1 *r);
 		}
 	} else {
 		bn->T->nonil = 1;
 		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*p == @4_nil || *r == @5_nil) {
-				*o = @3_nil;
+			if (*p == @3_nil || *r == @4_nil) {
+				*o = @5_nil;
 				bn->T->nonil = 0;
 			} else 
-				*o = (@3) (*p @1 *r);
+				*o = (@5) (*p @1 *r);
 		}
 	}
 #endif
@@ -530,7 +530,7 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:getBATdescriptor(r,right,"batcalc.@1")@
 	@:chkSize(b,right,CMDbat@2)@
-	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
+	@:voidresultBAT(TYPE_@5,"batcalc.@1")@
 
 	@:loopImpl(@1,@2,@3,@4,@5)@
 
@@ -560,16 +560,16 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 	char *res = MAL_SUCCEED;
 
 	@:getBATdescriptor(l,b,"batcalc.@1")@
-	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
+	@:voidresultBAT(TYPE_@5,"batcalc.@1")@
 
 #if CMD_@2 == CMD_DIV
-	if (*(@5*)cst == 0) {
+	if (*(@4*)cst == 0) {
 		res = createException(ARITH, "batcalc.@1", "Division by zero");
 	} else {
-		@:accumCst(@3,@1,@4,@5)@ 
+		@:accumCst(@1,@3,@4,@4)@ 
 	}
 #else
-	@:accumCst(@3,@1,@4,@5)@ 
+	@:accumCst(@1,@3,@4,@4)@ 
 #endif
 	BATsetcount(bn, BATcount(b));
 	if (@6 & 1) {
@@ -580,7 +580,7 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 	} else
 	if (@6 & 16) { 
 #if @7 /* skip this for TYPE_oid */
-		if (*(@5*)cst < 0)
+		if (*(@4*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
 		else
 #endif
@@ -609,12 +609,12 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 	char *res = MAL_SUCCEED;
 
 	@:getBATdescriptor(l,b,"batcalc.@1")@
-	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
+	@:voidresultBAT(TYPE_@5,"batcalc.@1")@
 
 #if CMD_@2 == CMD_DIV
-	@:accumCstDIV(@3,@1,@4,@5)@ 
+	@:accumCstDIV(@1,@3,@4,@5)@ 
 #else
-	@:accumCstLeft(@3,@1,@4,@5)@ 
+	@:accumCstLeft(@1,@3,@4,@5)@ 
 #endif
 	BATsetcount(bn, BATcount(b));
 	if (@6 & 2) {
@@ -625,7 +625,7 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 	} else
 	if (@6 & 32) { 
 #if @7 /* skip this for TYPE_oid */
-		if (*(@5*)cst < 0)
+		if (*(@4*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
 		else
 #endif
@@ -709,13 +709,13 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 	@:chkSize(bn,b,CMDbataccum@2)@
 
 #if CMD_@2 == CMD_DIV
-	if (*(@5*)cst == 0) {
+	if (*(@4*)cst == 0) {
 		res = createException(ARITH, "batcalc.@1", "Division by zero");
 	} else {
-		@:accumCst(@3,@1,@4,@5)@ 
+		@:accumCst(@1,@3,@4,@5)@ 
 	}
 #else
-	@:accumCst(@3,@1,@4,@5)@ 
+	@:accumCst(@1,@3,@4,@5)@ 
 #endif
 	if (@6 & 1)
 		bn->tsorted = BATtordered(b);
@@ -725,7 +725,7 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 	else
 	if (@6 & 16) { 
 #if @7 /* skip this for TYPE_oid */
-		if (*(@5*)cst < 0)
+		if (*(@4*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
 		else
 #endif
@@ -764,9 +764,9 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 	@:chkSize(bn,b,CMDbataccum@2)@
 
 #if CMD_@2 == CMD_DIV
-	@:accumCstDIV(@3,@1,@4,@5)@ 
+	@:accumCstDIV(@1,@3,@4,@5)@ 
 #else
-	@:accumCstLeft(@3,@1,@4,@5)@ 
+	@:accumCstLeft(@1,@3,@4,@5)@ 
 #endif
 	if (@6 & 2) {
 		bn->tsorted = BATtordered(b);
@@ -776,7 +776,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 	} else
 	if (@6 & 32) { 
 #if @7 /* skip this for TYPE_oid */
-		if (*(@5*)cst < 0)
+		if (*(@4*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
 		else
 #endif
@@ -817,36 +817,36 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 @:arithmeticImpl(@1,@2,bte,bte,bte,@3,1)@
 
 @:arithmeticImpl(@1,@2,sht,sht,sht,@3,1)@
+@:arithmeticImpl(@1,@2,bte,sht,sht,@3,1)@
 @:arithmeticImpl(@1,@2,sht,bte,sht,@3,1)@
-@:arithmeticImpl(@1,@2,sht,sht,bte,@3,1)@
-@:arithmeticImpl(@1,@2,sht,bte,bte,@3,1)@
+@:arithmeticImpl(@1,@2,bte,bte,sht,@3,1)@
 
-@:arithmeticImpl(@1,@2,int,int,sht,@3,1)@
 @:arithmeticImpl(@1,@2,int,sht,int,@3,1)@
-@:arithmeticImpl(@1,@2,int,sht,sht,@3,1)@
-@:arithmeticImpl(@1,@2,int,bte,sht,@3,1)@
-@:arithmeticImpl(@1,@2,int,sht,bte,@3,1)@
-@:arithmeticImpl(@1,@2,int,bte,bte,@3,1)@
+@:arithmeticImpl(@1,@2,sht,int,int,@3,1)@
+@:arithmeticImpl(@1,@2,sht,sht,int,@3,1)@
+@:arithmeticImpl(@1,@2,bte,sht,int,@3,1)@
+@:arithmeticImpl(@1,@2,sht,bte,int,@3,1)@
+@:arithmeticImpl(@1,@2,bte,bte,int,@3,1)@
+@:arithmeticImpl(@1,@2,bte,int,int,@3,1)@
 @:arithmeticImpl(@1,@2,int,bte,int,@3,1)@
-@:arithmeticImpl(@1,@2,int,int,bte,@3,1)@
 @:arithmeticImpl(@1,@2,int,int,int,@3,1)@
 
 @:arithmeticImpl(@1,@2,lng,lng,lng,@3,1)@
+@:arithmeticImpl(@1,@2,bte,lng,lng,@3,1)@
 @:arithmeticImpl(@1,@2,lng,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,lng,bte,@3,1)@
+@:arithmeticImpl(@1,@2,sht,lng,lng,@3,1)@
 @:arithmeticImpl(@1,@2,lng,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,lng,sht,@3,1)@
-@:arithmeticImpl(@1,@2,lng,sht,sht,@3,1)@
-@:arithmeticImpl(@1,@2,lng,sht,int,@3,1)@
-@:arithmeticImpl(@1,@2,lng,bte,sht,@3,1)@
-@:arithmeticImpl(@1,@2,lng,sht,bte,@3,1)@
-@:arithmeticImpl(@1,@2,lng,int,sht,@3,1)@
+@:arithmeticImpl(@1,@2,sht,sht,lng,@3,1)@
+@:arithmeticImpl(@1,@2,sht,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,bte,sht,lng,@3,1)@
+@:arithmeticImpl(@1,@2,sht,bte,lng,@3,1)@
+@:arithmeticImpl(@1,@2,int,sht,lng,@3,1)@
+@:arithmeticImpl(@1,@2,int,lng,lng,@3,1)@
 @:arithmeticImpl(@1,@2,lng,int,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,lng,int,@3,1)@
-@:arithmeticImpl(@1,@2,lng,bte,bte,@3,1)@
-@:arithmeticImpl(@1,@2,lng,bte,int,@3,1)@
-@:arithmeticImpl(@1,@2,lng,int,bte,@3,1)@
-@:arithmeticImpl(@1,@2,lng,int,int,@3,1)@
+@:arithmeticImpl(@1,@2,bte,bte,lng,@3,1)@
+@:arithmeticImpl(@1,@2,bte,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,int,bte,lng,@3,1)@
+@:arithmeticImpl(@1,@2,int,int,lng,@3,1)@
 
 @c
 /*
@@ -876,10 +876,10 @@ define here the necessary implementations separately by copying
 the arithmeticImpl block and removing elements not required.
 @c
 @= numeric_funcs
-batcalc_export str bataccum@1_@3_@4_@5(BAT *bn, BAT *b, BAT *right);
-str bataccum@1_@3_@4_@5(BAT *bn, BAT *b, BAT *right)
+batcalc_export str bataccum@2_@3_@4_@5(BAT *bn, BAT *b, BAT *right);
+str bataccum@2_@3_@4_@5(BAT *bn, BAT *b, BAT *right)
 {	
-	@:accum(@3,@2,@4,@5)@
+	@:accum(@1,@3,@4,@5)@
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -887,18 +887,18 @@ str bataccum@1_@3_@4_@5(BAT *bn, BAT *b, BAT *right)
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r);
-str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
+batcalc_export str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r);
+str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 {	
 	BAT *bn, *b, *right;
 	str msg;
 
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:getBATdescriptor(r,right,"batcalc.@1")@
-	@:chkSize(b,right,CMDbat@1)@
-	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
+	@:chkSize(b,right,CMDbat@2)@
+	@:voidresultBAT(TYPE_@5,"batcalc.@1")@
 
-	msg = bataccum@1_@3_@4_@5(bn,b,right);
+	msg = bataccum@2_@3_@4_@5(bn,b,right);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
@@ -914,8 +914,8 @@ str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 	return msg;
 }
 
-batcalc_export str CMDbataccum@1_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag);
-str CMDbataccum@1_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
+batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag);
+str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 {	
 	BAT *bn, *b, *right;
 	str msg;
@@ -930,13 +930,13 @@ str CMDbataccum@1_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 	else{
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(right->batCacheid);
-		return CMDbat@1_@3_@4_@5(ret,l,r);
+		return CMDbat@2_@3_@4_@5(ret,l,r);
 	}
 
-	@:chkSize(bn,b,CMDbataccum@1)@
-	@:chkSize(bn,right,CMDbataccum@1)@
+	@:chkSize(bn,b,CMDbataccum@2)@
+	@:chkSize(bn,right,CMDbataccum@2)@
 
-	msg = bataccum@1_@3_@4_@5(bn,b,right);
+	msg = bataccum@2_@3_@4_@5(bn,b,right);
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -944,8 +944,8 @@ str CMDbataccum@1_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 	return msg;
 }
 
-batcalc_export str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst);
-str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
+batcalc_export str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst);
+str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	
 	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
@@ -953,7 +953,7 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:voidresultBAT(b->ttype,"batcalc.@1")@
 
-	@:accumCst(@3,@2,@4,@5)@ 
+	@:accumCst(@1,@3,@4,@5)@ 
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -971,8 +971,8 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 	return res;
 }
 
-batcalc_export str CMDbataccum@1cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag);
-str CMDbataccum@1cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag)
+batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag);
+str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag)
 {	
 	BAT *bn, *b;
 
@@ -982,18 +982,18 @@ str CMDbataccum@1cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 		bn = b;
 	else {
 		BBPreleaseref(b->batCacheid);
-		return CMDbat@1cst_@3_@4_@5(ret,l,cst);
+		return CMDbat@2cst_@3_@4_@5(ret,l,cst);
 	}
 
-	@:chkSize(bn,b,CMDbataccum@1)@
+	@:chkSize(bn,b,CMDbataccum@2)@
 
 	switch(BATttype(b)){
-	case TYPE_oid: @:accumCst(oid,@2,oid,oid)@ break;
-	case TYPE_bte: @:accumCst(bte,@2,bte,bte)@ break;
-	case TYPE_sht: @:accumCst(sht,@2,sht,sht)@ break;
-	case TYPE_int: @:accumCst(int,@2,int,int)@ break;
-	case TYPE_wrd: @:accumCst(wrd,@2,wrd,wrd)@ break;
-	case TYPE_lng: @:accumCst(lng,@2,lng,lng)@ break;
+	case TYPE_oid: @:accumCst(@1,oid,oid,oid)@ break;
+	case TYPE_bte: @:accumCst(@1,bte,bte,bte)@ break;
+	case TYPE_sht: @:accumCst(@1,sht,sht,sht)@ break;
+	case TYPE_int: @:accumCst(@1,int,int,int)@ break;
+	case TYPE_wrd: @:accumCst(@1,wrd,wrd,wrd)@ break;
+	case TYPE_lng: @:accumCst(@1,lng,lng,lng)@ break;
 	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT " Expected {oid,bte,sht,int,wrd,lng}");
 	}
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
@@ -1003,16 +1003,16 @@ str CMDbataccum@1cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l);
-str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
+batcalc_export str CMDcst@2bat_@3_@4_@5(int *ret,void *cst, int *l);
+str CMDcst@2bat_@3_@4_@5(int *ret,void *cst, int *l)
 {	
 	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
 
 	@:getBATdescriptor(l,b,"batcalc.@1")@
-	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
+	@:voidresultBAT(TYPE_@5,"batcalc.@1")@
 
-	@:accumCstLeft(@3,@2,@4,@5)@ 
+	@:accumCstLeft(@1,@3,@4,@5)@ 
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -1030,8 +1030,8 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 	return res;
 }
 
-batcalc_export str CMDbataccum@1cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag);
-str CMDbataccum@1cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag)
+batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag);
+str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag)
 {	
 	BAT *bn, *b;
 
@@ -1041,18 +1041,18 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 		bn = b;
 	else {
 		BBPreleaseref(b->batCacheid);
-		return CMDcst@1bat_@3_@4_@5(ret,cst,r);
+		return CMDcst@2bat_@3_@4_@5(ret,cst,r);
 	}
 
-	@:chkSize(bn,b,CMDbataccum@1)@
+	@:chkSize(bn,b,CMDbataccum@2)@
 
 	switch(BATttype(b)){
-	case TYPE_oid: @:accumCstLeft(oid,@2,oid,oid)@ break;
-	case TYPE_bte: @:accumCstLeft(bte,@2,bte,bte)@ break;
-	case TYPE_sht: @:accumCstLeft(sht,@2,sht,sht)@ break;
-	case TYPE_int: @:accumCstLeft(int,@2,int,int)@ break;
-	case TYPE_wrd: @:accumCstLeft(wrd,@2,wrd,wrd)@ break;
-	case TYPE_lng: @:accumCstLeft(lng,@2,lng,lng)@ break;
+	case TYPE_oid: @:accumCstLeft(@1,oid,oid,oid)@ break;
+	case TYPE_bte: @:accumCstLeft(@1,bte,bte,bte)@ break;
+	case TYPE_sht: @:accumCstLeft(@1,sht,sht,sht)@ break;
+	case TYPE_int: @:accumCstLeft(@1,int,int,int)@ break;
+	case TYPE_wrd: @:accumCstLeft(@1,wrd,wrd,wrd)@ break;
+	case TYPE_lng: @:accumCstLeft(@1,lng,lng,lng)@ break;
 	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT " Expected {oid,bte,sht,int,wrd,lng}");
 	}
 
@@ -1063,71 +1063,71 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 	return MAL_SUCCEED;
 }
 @c
-@:numeric_funcs(MOD,%,oid,oid,oid)@
-@:numeric_funcs(MOD,%,bte,bte,bte)@
-@:numeric_funcs(MOD,%,sht,sht,sht)@
-@:numeric_funcs(MOD,%,int,int,int)@
-@:numeric_funcs(MOD,%,wrd,wrd,wrd)@
-@:numeric_funcs(MOD,%,lng,lng,lng)@
-@:numeric_funcs(XOR,^,oid,oid,oid)@
-@:numeric_funcs(XOR,^,bte,bte,bte)@
-@:numeric_funcs(XOR,^,sht,sht,sht)@
-@:numeric_funcs(XOR,^,int,int,int)@
-@:numeric_funcs(XOR,^,wrd,wrd,wrd)@
-@:numeric_funcs(XOR,^,lng,lng,lng)@
-@:numeric_funcs(AND,&,oid,oid,oid)@
-@:numeric_funcs(AND,&,bte,bte,bte)@
-@:numeric_funcs(AND,&,sht,sht,sht)@
-@:numeric_funcs(AND,&,int,int,int)@
-@:numeric_funcs(AND,&,wrd,wrd,wrd)@
-@:numeric_funcs(AND,&,lng,lng,lng)@
-@:numeric_funcs(OR,|,oid,oid,oid)@
-@:numeric_funcs(OR,|,bte,bte,bte)@
-@:numeric_funcs(OR,|,sht,sht,sht)@
-@:numeric_funcs(OR,|,int,int,int)@
-@:numeric_funcs(OR,|,wrd,wrd,wrd)@
-@:numeric_funcs(OR,|,lng,lng,lng)@
+@:numeric_funcs(%,MOD,oid,oid,oid)@
+@:numeric_funcs(%,MOD,bte,bte,bte)@
+@:numeric_funcs(%,MOD,sht,sht,sht)@
+@:numeric_funcs(%,MOD,int,int,int)@
+@:numeric_funcs(%,MOD,wrd,wrd,wrd)@
+@:numeric_funcs(%,MOD,lng,lng,lng)@
+@:numeric_funcs(^,XOR,oid,oid,oid)@
+@:numeric_funcs(^,XOR,bte,bte,bte)@
+@:numeric_funcs(^,XOR,sht,sht,sht)@
+@:numeric_funcs(^,XOR,int,int,int)@
+@:numeric_funcs(^,XOR,wrd,wrd,wrd)@
+@:numeric_funcs(^,XOR,lng,lng,lng)@
+@:numeric_funcs(&,AND,oid,oid,oid)@
+@:numeric_funcs(&,AND,bte,bte,bte)@
+@:numeric_funcs(&,AND,sht,sht,sht)@
+@:numeric_funcs(&,AND,int,int,int)@
+@:numeric_funcs(&,AND,wrd,wrd,wrd)@
+@:numeric_funcs(&,AND,lng,lng,lng)@
+@:numeric_funcs(|,OR,oid,oid,oid)@
+@:numeric_funcs(|,OR,bte,bte,bte)@
+@:numeric_funcs(|,OR,sht,sht,sht)@
+@:numeric_funcs(|,OR,int,int,int)@
+@:numeric_funcs(|,OR,wrd,wrd,wrd)@
+@:numeric_funcs(|,OR,lng,lng,lng)@
 
-@:numeric_funcs(LSH,<<,oid,oid,int)@
-@:numeric_funcs(LSH,<<,bte,bte,int)@
-@:numeric_funcs(LSH,<<,sht,sht,int)@
-@:numeric_funcs(LSH,<<,int,int,int)@
-@:numeric_funcs(LSH,<<,wrd,wrd,int)@
-@:numeric_funcs(LSH,<<,lng,lng,int)@
+@:numeric_funcs(<<,LSH,oid,int,oid)@
+@:numeric_funcs(<<,LSH,bte,int,bte)@
+@:numeric_funcs(<<,LSH,sht,int,sht)@
+@:numeric_funcs(<<,LSH,int,int,int)@
+@:numeric_funcs(<<,LSH,wrd,int,wrd)@
+@:numeric_funcs(<<,LSH,lng,int,lng)@
 
-@:numeric_funcs(RSH,>>,oid,oid,int)@
-@:numeric_funcs(RSH,>>,bte,bte,int)@
-@:numeric_funcs(RSH,>>,sht,sht,int)@
-@:numeric_funcs(RSH,>>,int,int,int)@
-@:numeric_funcs(RSH,>>,wrd,wrd,int)@
-@:numeric_funcs(RSH,>>,lng,lng,int)@
+@:numeric_funcs(>>,RSH,oid,int,oid)@
+@:numeric_funcs(>>,RSH,bte,int,bte)@
+@:numeric_funcs(>>,RSH,sht,int,sht)@
+@:numeric_funcs(>>,RSH,int,int,int)@
+@:numeric_funcs(>>,RSH,wrd,int,wrd)@
+@:numeric_funcs(>>,RSH,lng,int,lng)@
 
 @- Implementation of unary operations
 @= accumUnary
 	{
-		@1* p = (@1*)Tloc(b,BUNfirst(b));
-		@1 *q = (@1*)Tloc(b,BUNlast(b));
-		@1 *o = (@1*)Tloc(bn,BUNfirst(bn));
+		@2* p = (@2*)Tloc(b,BUNfirst(b));
+		@2 *q = (@2*)Tloc(b,BUNlast(b));
+		@2 *o = (@2*)Tloc(bn,BUNfirst(bn));
 
 		if (b->T->nonil)
 			for(; p<q; p++, o++)
-				*o = @2(*p);
+				*o = @1(*p);
 		else
 			for(; p<q; p++, o++){
 				/* this code is better as x?nil:y  */
-				if(*p == @1_nil ) {
-					*o = @1_nil;
+				if(*p == @2_nil ) {
+					*o = @2_nil;
 					bn->T->nonil = 0;
 				} else 
-					*o = @2(*p);
+					*o = @1(*p);
 			}
 	}
 @-
 Unary accummulators are only called indirectly. They cannot
 always be defined without signature clashes, eg. -(batA,batC).
 @= unary_impl
-batcalc_export str CMDunary@1(int *ret, int *bid);
-str CMDunary@1(int *ret, int *bid)
+batcalc_export str CMDunary@2(int *ret, int *bid);
+str CMDunary@2(int *ret, int *bid)
 {
 	BAT *b,*bn;
 	
@@ -1135,13 +1135,13 @@ str CMDunary@1(int *ret, int *bid)
 	@:voidresultBAT(b->ttype,"batcalc.@1")@
 
 	switch(BATttype(bn)){
-	case TYPE_bte: @:accumUnary(bte,@2)@ break;
-	case TYPE_sht: @:accumUnary(sht,@2)@ break;
-	case TYPE_int: @:accumUnary(int,@2)@ break;
-	case TYPE_wrd: @:accumUnary(wrd,@2)@ break;
-	case TYPE_lng: @:accumUnary(lng,@2)@ break;
-	case TYPE_flt: @:accumUnary(flt,@2)@ break;
-	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
+	case TYPE_bte: @:accumUnary(@1,bte)@ break;
+	case TYPE_sht: @:accumUnary(@1,sht)@ break;
+	case TYPE_int: @:accumUnary(@1,int)@ break;
+	case TYPE_wrd: @:accumUnary(@1,wrd)@ break;
+	case TYPE_lng: @:accumUnary(@1,lng)@ break;
+	case TYPE_flt: @:accumUnary(@1,flt)@ break;
+	case TYPE_dbl: @:accumUnary(@1,dbl)@ break;
 	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT " Expected {bte,sht,int,wrd,lng,flt,dbl}");
 	}
 	BATsetcount(bn, BATcount(b));
@@ -1161,10 +1161,10 @@ str CMDunary@1(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 @c
-@:unary_impl(MIN,-)@
-@:unary_impl(MINMIN,--)@
-@:unary_impl(PLUSPLUS,++)@
-@:unary_impl(ABS,calc_abs)@
+@:unary_impl(-,MIN)@
+@:unary_impl(--,MINMIN)@
+@:unary_impl(++,PLUSPLUS)@
+@:unary_impl(calc_abs,ABS)@
 
 @= accumUnaryISNIL
 {
@@ -1235,8 +1235,8 @@ str CMDunaryISNIL(int *ret, int *bid)
 @- Comparison operator implementation
 The structure of this code is copied from the arithmetic scheme.
 @= baselineCode
-batcalc_export str CMD_@1_@3(int *ret, int *l, int *r);
-str CMD_@1_@3(int *ret, int *l, int *r)
+batcalc_export str CMD_@2_@3(int *ret, int *l, int *r);
+str CMD_@2_@3(int *ret, int *l, int *r)
 {	
 	BAT *bn, *b, *right;
 	@3 *p, *q, *t;
@@ -1254,16 +1254,16 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 		
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
-			*o = (*p @2 *t);
+			*o = (*p @1 *t);
 	} else if (b->T->nonil) {
 		for (;p<q; p++, t++, o++) {
 			if (*t == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*p)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (!*p)
 					*o = 0;
 				else
@@ -1273,17 +1273,17 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 					bn->T->nonil = 0;
 				}
 			} else 
-				*o = (*p @2 *t);
+				*o = (*p @1 *t);
 		}
 	} else if (right->T->nonil)
 		for (;p<q; p++, t++, o++) {
 			if (*p == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*t)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (!*t)
 					*o = 0;
 				else
@@ -1293,17 +1293,17 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 					bn->T->nonil = 0;
 				}
 			} else 
-				*o = (*p @2 *t);
+				*o = (*p @1 *t);
 		}
 	else
 		for (;p<q; p++, t++, o++) {
 			if (*p == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*t != @3_nil && *t)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (*t != @3_nil && !*t)
 					*o = 0;
 				else
@@ -1313,12 +1313,12 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 					bn->T->nonil = 0;
 				}
 			} else if (*t == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*p)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (!*p)
 					*o = 0;
 				else
@@ -1328,7 +1328,7 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 					bn->T->nonil = 0;
 				}
 			} else
-				*o = *p @2 *t;
+				*o = *p @1 *t;
 		}
 
 	BATsetcount(bn, BATcount(b));
@@ -1349,8 +1349,8 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r);
-str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
+batcalc_export str CMDaccum_@2_@3(int *ret, int *d, int *l, int *r);
+str CMDaccum_@2_@3(int *ret, int *d, int *l, int *r)
 {	
 	BAT *bn, *b, *right;
 	@3 *p, *q, *t;
@@ -1369,16 +1369,16 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 		
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
-			*o = (*p @2 *t);
+			*o = (*p @1 *t);
 	} else if (b->T->nonil) {
 		for (;p<q; p++, t++, o++) {
 			if (*t == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*p)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (!*p)
 					*o = 0;
 				else
@@ -1388,17 +1388,17 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 					bn->T->nonil = 0;
 				}
 			} else 
-				*o = (*p @2 *t);
+				*o = (*p @1 *t);
 		}
 	} else if (right->T->nonil)
 		for (;p<q; p++, t++, o++) {
 			if (*p == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*t)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (!*t)
 					*o = 0;
 				else
@@ -1408,17 +1408,17 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 					bn->T->nonil = 0;
 				}
 			} else 
-				*o = (*p @2 *t);
+				*o = (*p @1 *t);
 		}
 	else
 		for (;p<q; p++, t++, o++) {
 			if (*p == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*t != @3_nil && *t)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (*t != @3_nil && !*t)
 					*o = 0;
 				else
@@ -1428,12 +1428,12 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 					bn->T->nonil = 0;
 				}
 			} else if (*t == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*p)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (!*p)
 					*o = 0;
 				else
@@ -1443,7 +1443,7 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 					bn->T->nonil = 0;
 				}
 			} else 
-				*o = (*p @2 *t);
+				*o = (*p @1 *t);
 		}
 
 	BATsetcount(bn, BATcount(b));
@@ -1456,8 +1456,8 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 	return MAL_SUCCEED;
 }
 @= baselineCstCode
-batcalc_export str CMD_@1_@3_cst(int *ret, int *l, @3 *cst);
-str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
+batcalc_export str CMD_@2_@3_cst(int *ret, int *l, @3 *cst);
+str CMD_@2_@3_cst(int *ret, int *l, @3 *cst)
 {	
 	BAT *bn, *b;
 	@3 *p, *q;
@@ -1471,7 +1471,7 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 	q = (@3*)Tloc(b,BUNlast(b));
 		
 	if (*cst == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 		for (;p<q; p++, o++)
 			if (*p != @3_nil && *p)
 				*o = 1;
@@ -1480,7 +1480,7 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 				bn->T->nonil = 0;
 			}
 #else
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 		for (;p<q; p++, o++)
 			if (*p != @3_nil && !*p)
 				*o = 0;
@@ -1496,16 +1496,16 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 #endif
 	} else if (b->T->nonil )
 		for (;p<q; p++, o++)
-			*o = (*p @2 *cst);
+			*o = (*p @1 *cst);
 	else
 		for (;p<q; p++, o++) {
 			if( *p == @3_nil ) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*cst)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (!*cst)
 					*o = 0;
 				else
@@ -1515,7 +1515,7 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 					bn->T->nonil = 0;
 				}
 			} else 
-				*o = (*p @2 *cst);
+				*o = (*p @1 *cst);
 		}
 
 	BATsetcount(bn, BATcount(b));
@@ -1537,11 +1537,11 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 batcalc_export str CMD_@4_cst_@3(int *ret, @3 *cst, int *l);
 str CMD_@4_cst_@3(int *ret, @3 *cst, int *l) 
 {
-	return CMD_@1_@3_cst(ret,l,cst);
+	return CMD_@2_@3_cst(ret,l,cst);
 }
 
-batcalc_export str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst);
-str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
+batcalc_export str CMDaccum_@2_@3_cst(int *ret, int *r, int *l, @3 *cst);
+str CMDaccum_@2_@3_cst(int *ret, int *r, int *l, @3 *cst)
 {	
 	BAT *bn, *b;
 	@3 *p, *q;
@@ -1556,7 +1556,7 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 	q = (@3*)Tloc(b,BUNlast(b));
 		
 	if (*cst == @3_nil) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 		bn->T->nonil = 1;
 		for (;p<q; p++, o++)
 			if (*p != @3_nil && *p)
@@ -1566,7 +1566,7 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 				bn->T->nonil = 0;
 			}
 #else
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 		bn->T->nonil = 1;
 		for (;p<q; p++, o++)
 			if (*p != @3_nil && !*p)
@@ -1583,16 +1583,16 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 #endif
 	} else if (b->T->nonil )
 		for (;p<q; p++, o++)
-			*o = (*p @2 *cst);
+			*o = (*p @1 *cst);
 	else
 		for (;p<q; p++, o++) {
 			if( *p == @3_nil ) {
-#if OPERATOR_@1 == OPERATOR_OR
+#if OPERATOR_@2 == OPERATOR_OR
 				if (*cst)
 					*o = 1;
 				else
 #endif
-#if OPERATOR_@1 == OPERATOR_AND
+#if OPERATOR_@2 == OPERATOR_AND
 				if (!*cst)
 					*o = 0;
 				else
@@ -1602,7 +1602,7 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 					bn->T->nonil = 0;
 				}
 			} else 
-				*o = (*p @2 *cst);
+				*o = (*p @1 *cst);
 		}
 
 	bn->tsorted = 0;
@@ -1615,7 +1615,7 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 batcalc_export str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l);
 str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 {
-	return CMDaccum_@1_@3_cst(ret, r, l, cst);
+	return CMDaccum_@2_@3_cst(ret, r, l, cst);
 }
 
 @-
@@ -1650,23 +1650,23 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 #define OPERATOR_AND 6
 #define OPERATOR_OR 7
 
-@:operatorImpl(GE,>=)@
-@:operatorImpl(LE,<=)@
-@:operatorImpl(GT,>)@
-@:operatorImpl(LT,<)@
-@:operatorImpl(EQ,==)@
-@:operatorImpl(NEQ,!=)@
-@:baselineCode(AND,&&,bit)@
-@:baselineCode(OR,||,bit)@
+@:operatorImpl(>=,GE)@
+@:operatorImpl(<=,LE)@
+@:operatorImpl(>,GT)@
+@:operatorImpl(<,LT)@
+@:operatorImpl(==,EQ)@
+@:operatorImpl(!=,NEQ)@
+@:baselineCode(&&,AND,bit)@
+@:baselineCode(||,OR,bit)@
 
-@:operatorCstImpl(GE,>=,LT)@
-@:operatorCstImpl(LT,<,GE)@
-@:operatorCstImpl(GT,>,LE)@
-@:operatorCstImpl(LE,<=,GT)@
-@:operatorCstImpl(EQ,==,EQ)@
-@:operatorCstImpl(NEQ,!=,NEQ)@
-@:baselineCstCode(AND,&&,bit,AND)@
-@:baselineCstCode(OR,||,bit,OR)@
+@:operatorCstImpl(>=,GE,LT)@
+@:operatorCstImpl(<,LT,GE)@
+@:operatorCstImpl(>,GT,LE)@
+@:operatorCstImpl(<=,LE,GT)@
+@:operatorCstImpl(==,EQ,EQ)@
+@:operatorCstImpl(!=,NEQ,NEQ)@
+@:baselineCstCode(&&,AND,bit,AND)@
+@:baselineCstCode(||,OR,bit,OR)@
 
 batcalc_export str CMDbitbataccumNOT(int *ret, int *d, int *l);
 str
