@@ -67,7 +67,7 @@ because they avoid expensive BAT copying.
 
 The accumulator versions modifies the first argument,
 provided it is a temporary BAT and not a view.
-@= calcGrp
+@= calcGrp1
 
 	command @1{target=1}(b:bat[:oid,:@3], c:bat[:oid,:@4], aflag:bit, bflag:bit):bat[:oid,:@5]
 	address CMDbataccum@2_@3_@4_@5
@@ -80,7 +80,8 @@ provided it is a temporary BAT and not a view.
 	command @1{target=1}(b:bat[:oid,:@3], cst:@4, bflag:bit, cflag:bit) :bat[:oid,:@5]
 	address CMDbataccum@2cst_@3_@4_@5
 	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
-
+@-
+@= calcGrp2
 	command @1(b:bat[:oid,:@3], cst:@4) :bat[:oid,:@5] 
 	address CMDbat@2cst_@3_@4_@5;
 
@@ -90,6 +91,10 @@ provided it is a temporary BAT and not a view.
 	command @1(b:bat[:oid,:@3], c:bat[:oid,:@4]) :bat[:oid,:@5] 
 	address CMDbat@2_@3_@4_@5
 	comment "Binary BAT calculator function with new BAT result";
+@-
+@= calcGrp3
+	@:calcGrp1(@1,@2,@3,@4,@5)@
+	@:calcGrp2(@1,@2,@3,@4,@5)@
 
 @-
 We need instantiations for the accumulator code,
@@ -97,115 +102,115 @@ but should limit modulo functions to integer-based types.
 The calc group contains the operator, the desired result typ, its
 C qualifier and the operands
 @mal
-	@:calcGrp(%,MOD,oid,oid,oid)@
-	@:calcGrp(%,MOD,bte,bte,bte)@
-	@:calcGrp(%,MOD,sht,sht,sht)@
-	@:calcGrp(%,MOD,int,int,int)@
-	@:calcGrp(%,MOD,wrd,wrd,wrd)@
-	@:calcGrp(%,MOD,lng,lng,lng)@
+	@:calcGrp3(%,MOD,oid,oid,oid)@
+	@:calcGrp3(%,MOD,bte,bte,bte)@
+	@:calcGrp3(%,MOD,sht,sht,sht)@
+	@:calcGrp3(%,MOD,int,int,int)@
+	@:calcGrp3(%,MOD,wrd,wrd,wrd)@
+	@:calcGrp3(%,MOD,lng,lng,lng)@
 
-	@:calcGrp(xor,XOR,oid,oid,oid)@
-	@:calcGrp(xor,XOR,bte,bte,bte)@
-	@:calcGrp(xor,XOR,sht,sht,sht)@
-	@:calcGrp(xor,XOR,int,int,int)@
-	@:calcGrp(xor,XOR,wrd,wrd,wrd)@
-	@:calcGrp(xor,XOR,lng,lng,lng)@
+	@:calcGrp3(xor,XOR,oid,oid,oid)@
+	@:calcGrp3(xor,XOR,bte,bte,bte)@
+	@:calcGrp3(xor,XOR,sht,sht,sht)@
+	@:calcGrp3(xor,XOR,int,int,int)@
+	@:calcGrp3(xor,XOR,wrd,wrd,wrd)@
+	@:calcGrp3(xor,XOR,lng,lng,lng)@
 
-	@:calcGrp(and,AND,oid,oid,oid)@
-	@:calcGrp(and,AND,bte,bte,bte)@
-	@:calcGrp(and,AND,sht,sht,sht)@
-	@:calcGrp(and,AND,int,int,int)@
-	@:calcGrp(and,AND,wrd,wrd,wrd)@
-	@:calcGrp(and,AND,lng,lng,lng)@
+	@:calcGrp3(and,AND,oid,oid,oid)@
+	@:calcGrp3(and,AND,bte,bte,bte)@
+	@:calcGrp3(and,AND,sht,sht,sht)@
+	@:calcGrp3(and,AND,int,int,int)@
+	@:calcGrp3(and,AND,wrd,wrd,wrd)@
+	@:calcGrp3(and,AND,lng,lng,lng)@
 
-	@:calcGrp(or,OR,oid,oid,oid)@
-	@:calcGrp(or,OR,bte,bte,bte)@
-	@:calcGrp(or,OR,sht,sht,sht)@
-	@:calcGrp(or,OR,int,int,int)@
-	@:calcGrp(or,OR,wrd,wrd,wrd)@
-	@:calcGrp(or,OR,lng,lng,lng)@
+	@:calcGrp3(or,OR,oid,oid,oid)@
+	@:calcGrp3(or,OR,bte,bte,bte)@
+	@:calcGrp3(or,OR,sht,sht,sht)@
+	@:calcGrp3(or,OR,int,int,int)@
+	@:calcGrp3(or,OR,wrd,wrd,wrd)@
+	@:calcGrp3(or,OR,lng,lng,lng)@
 
-	@:calcGrp(<<,LSH,oid,int,oid)@
-	@:calcGrp(<<,LSH,bte,int,bte)@
-	@:calcGrp(<<,LSH,sht,int,sht)@
-	@:calcGrp(<<,LSH,int,int,int)@
-	@:calcGrp(<<,LSH,wrd,int,wrd)@
-	@:calcGrp(<<,LSH,lng,int,lng)@
+	@:calcGrp3(<<,LSH,oid,int,oid)@
+	@:calcGrp3(<<,LSH,bte,int,bte)@
+	@:calcGrp3(<<,LSH,sht,int,sht)@
+	@:calcGrp3(<<,LSH,int,int,int)@
+	@:calcGrp3(<<,LSH,wrd,int,wrd)@
+	@:calcGrp3(<<,LSH,lng,int,lng)@
 
-	@:calcGrp(>>,RSH,oid,int,oid)@
-	@:calcGrp(>>,RSH,bte,int,bte)@
-	@:calcGrp(>>,RSH,sht,int,sht)@
-	@:calcGrp(>>,RSH,int,int,int)@
-	@:calcGrp(>>,RSH,wrd,int,wrd)@
-	@:calcGrp(>>,RSH,lng,int,lng)@
+	@:calcGrp3(>>,RSH,oid,int,oid)@
+	@:calcGrp3(>>,RSH,bte,int,bte)@
+	@:calcGrp3(>>,RSH,sht,int,sht)@
+	@:calcGrp3(>>,RSH,int,int,int)@
+	@:calcGrp3(>>,RSH,wrd,int,wrd)@
+	@:calcGrp3(>>,RSH,lng,int,lng)@
 
 @= coerceGrp
-	@:calcGrp(@1,@2,bte,bte,lng)@
-	@:calcGrp(@1,@2,bte,sht,lng)@
-	@:calcGrp(@1,@2,bte,int,lng)@
-	@:calcGrp(@1,@2,bte,wrd,lng)@
-	@:calcGrp(@1,@2,bte,lng,lng)@
-	@:calcGrp(@1,@2,sht,bte,lng)@
-	@:calcGrp(@1,@2,sht,sht,lng)@
-	@:calcGrp(@1,@2,sht,int,lng)@
-	@:calcGrp(@1,@2,sht,wrd,lng)@
-	@:calcGrp(@1,@2,sht,lng,lng)@
-	@:calcGrp(@1,@2,int,bte,lng)@
-	@:calcGrp(@1,@2,int,sht,lng)@
-	@:calcGrp(@1,@2,int,int,lng)@
-	@:calcGrp(@1,@2,int,wrd,lng)@
-	@:calcGrp(@1,@2,int,lng,lng)@
-	@:calcGrp(@1,@2,wrd,bte,lng)@
-	@:calcGrp(@1,@2,wrd,sht,lng)@
-	@:calcGrp(@1,@2,wrd,int,lng)@
-	@:calcGrp(@1,@2,wrd,wrd,lng)@
-	@:calcGrp(@1,@2,wrd,lng,lng)@
-	@:calcGrp(@1,@2,lng,bte,lng)@
-	@:calcGrp(@1,@2,lng,sht,lng)@
-	@:calcGrp(@1,@2,lng,int,lng)@
-	@:calcGrp(@1,@2,lng,wrd,lng)@
-	@:calcGrp(@1,@2,lng,lng,lng)@
+	@:calcGrp2(@1,@2,bte,bte,lng)@
+	@:calcGrp2(@1,@2,bte,sht,lng)@
+	@:calcGrp2(@1,@2,bte,int,lng)@
+	@:calcGrp2(@1,@2,bte,wrd,lng)@
+	@:calcGrp3(@1,@2,bte,lng,lng)@
+	@:calcGrp2(@1,@2,sht,bte,lng)@
+	@:calcGrp2(@1,@2,sht,sht,lng)@
+	@:calcGrp2(@1,@2,sht,int,lng)@
+	@:calcGrp2(@1,@2,sht,wrd,lng)@
+	@:calcGrp3(@1,@2,sht,lng,lng)@
+	@:calcGrp2(@1,@2,int,bte,lng)@
+	@:calcGrp2(@1,@2,int,sht,lng)@
+	@:calcGrp2(@1,@2,int,int,lng)@
+	@:calcGrp2(@1,@2,int,wrd,lng)@
+	@:calcGrp3(@1,@2,int,lng,lng)@
+	@:calcGrp2(@1,@2,wrd,bte,lng)@
+	@:calcGrp2(@1,@2,wrd,sht,lng)@
+	@:calcGrp2(@1,@2,wrd,int,lng)@
+	@:calcGrp2(@1,@2,wrd,wrd,lng)@
+	@:calcGrp3(@1,@2,wrd,lng,lng)@
+	@:calcGrp3(@1,@2,lng,bte,lng)@
+	@:calcGrp3(@1,@2,lng,sht,lng)@
+	@:calcGrp3(@1,@2,lng,int,lng)@
+	@:calcGrp3(@1,@2,lng,wrd,lng)@
+	@:calcGrp3(@1,@2,lng,lng,lng)@
 
-	@:calcGrp(@1,@2,bte,bte,wrd)@
-	@:calcGrp(@1,@2,bte,sht,wrd)@
-	@:calcGrp(@1,@2,bte,int,wrd)@
-	@:calcGrp(@1,@2,bte,wrd,wrd)@
-	@:calcGrp(@1,@2,sht,bte,wrd)@
-	@:calcGrp(@1,@2,sht,sht,wrd)@
-	@:calcGrp(@1,@2,sht,int,wrd)@
-	@:calcGrp(@1,@2,sht,wrd,wrd)@
-	@:calcGrp(@1,@2,int,bte,wrd)@
-	@:calcGrp(@1,@2,int,sht,wrd)@
-	@:calcGrp(@1,@2,int,int,wrd)@
-	@:calcGrp(@1,@2,int,wrd,wrd)@
-	@:calcGrp(@1,@2,wrd,bte,wrd)@
-	@:calcGrp(@1,@2,wrd,sht,wrd)@
-	@:calcGrp(@1,@2,wrd,int,wrd)@
-	@:calcGrp(@1,@2,wrd,wrd,wrd)@
+	@:calcGrp2(@1,@2,bte,bte,wrd)@
+	@:calcGrp2(@1,@2,bte,sht,wrd)@
+	@:calcGrp2(@1,@2,bte,int,wrd)@
+	@:calcGrp3(@1,@2,bte,wrd,wrd)@
+	@:calcGrp2(@1,@2,sht,bte,wrd)@
+	@:calcGrp2(@1,@2,sht,sht,wrd)@
+	@:calcGrp2(@1,@2,sht,int,wrd)@
+	@:calcGrp3(@1,@2,sht,wrd,wrd)@
+	@:calcGrp2(@1,@2,int,bte,wrd)@
+	@:calcGrp2(@1,@2,int,sht,wrd)@
+	@:calcGrp2(@1,@2,int,int,wrd)@
+	@:calcGrp3(@1,@2,int,wrd,wrd)@
+	@:calcGrp3(@1,@2,wrd,bte,wrd)@
+	@:calcGrp3(@1,@2,wrd,sht,wrd)@
+	@:calcGrp3(@1,@2,wrd,int,wrd)@
+	@:calcGrp3(@1,@2,wrd,wrd,wrd)@
 
-	@:calcGrp(@1,@2,bte,bte,int)@
-	@:calcGrp(@1,@2,bte,sht,int)@
-	@:calcGrp(@1,@2,bte,int,int)@
-	@:calcGrp(@1,@2,sht,bte,int)@
-	@:calcGrp(@1,@2,sht,sht,int)@
-	@:calcGrp(@1,@2,sht,int,int)@
-	@:calcGrp(@1,@2,int,bte,int)@
-	@:calcGrp(@1,@2,int,sht,int)@
-	@:calcGrp(@1,@2,int,int,int)@
+	@:calcGrp2(@1,@2,bte,bte,int)@
+	@:calcGrp2(@1,@2,bte,sht,int)@
+	@:calcGrp3(@1,@2,bte,int,int)@
+	@:calcGrp2(@1,@2,sht,bte,int)@
+	@:calcGrp2(@1,@2,sht,sht,int)@
+	@:calcGrp3(@1,@2,sht,int,int)@
+	@:calcGrp3(@1,@2,int,bte,int)@
+	@:calcGrp3(@1,@2,int,sht,int)@
+	@:calcGrp3(@1,@2,int,int,int)@
 
-	@:calcGrp(@1,@2,bte,bte,sht)@
-	@:calcGrp(@1,@2,bte,sht,sht)@
-	@:calcGrp(@1,@2,sht,bte,sht)@
-	@:calcGrp(@1,@2,sht,sht,sht)@
+	@:calcGrp2(@1,@2,bte,bte,sht)@
+	@:calcGrp3(@1,@2,bte,sht,sht)@
+	@:calcGrp3(@1,@2,sht,bte,sht)@
+	@:calcGrp3(@1,@2,sht,sht,sht)@
 
-	@:calcGrp(@1,@2,bte,bte,bte)@
+	@:calcGrp3(@1,@2,bte,bte,bte)@
 
-	@:calcGrp(@1,@2,flt,flt,dbl)@
-	@:calcGrp(@1,@2,flt,dbl,dbl)@
-	@:calcGrp(@1,@2,dbl,flt,dbl)@
-	@:calcGrp(@1,@2,dbl,dbl,dbl)@
+	@:calcGrp2(@1,@2,flt,flt,dbl)@
+	@:calcGrp3(@1,@2,flt,dbl,dbl)@
+	@:calcGrp3(@1,@2,dbl,flt,dbl)@
+	@:calcGrp3(@1,@2,dbl,dbl,dbl)@
 
-	@:calcGrp(@1,@2,flt,flt,flt)@
+	@:calcGrp3(@1,@2,flt,flt,flt)@
 
 @-
 @mal
