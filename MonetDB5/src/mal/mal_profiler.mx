@@ -328,41 +328,41 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 
 @c
 #define PROFevent   0
-#define PROFpc      1
-#define PROFoper    2
-#define PROFtime    3
-#define PROFticks   4
-#define PROFcpu     5
-#define PROFmemory  6
-#define PROFreads   7
-#define PROFwrites  8
-#define PROFrbytes  9
-#define PROFwbytes 10
-#define PROFstmt   11
-#define PROFaggr   12
-#define PROFprocess 13
-#define PROFthread 14
-#define PROFuser 15
+#define PROFtime    1
+#define PROFthread  2
+#define PROFpc      3
+#define PROFoper    4
+#define PROFticks   5
+#define PROFcpu     6
+#define PROFmemory  7
+#define PROFreads   8
+#define PROFwrites  9
+#define PROFrbytes  10
+#define PROFwbytes  11
+#define PROFstmt    12
+#define PROFaggr    13
+#define PROFprocess 14
+#define PROFuser    15
 
 static struct {
 	str name;		/* which logical counter is needed */
 	int status;		/* trace it or not */
 } profileCounter[] = {
 	/*  0 */  { "event", 0},
-	/*  1 */  { "pc", 0},
-	/*  2 */  { "operation", 0},
-	/*  3 */  { "time", 0},
-	/*  4 */  { "ticks", 0},
-	/*  5 */  { "cpu", 0},
-	/*  6 */  { "memory", 0},
-	/*  7 */  { "reads", 0},
-	/*  8 */  { "writes", 0},
-	/*  9 */  { "rbytes", 0},
-	/*  10 */  { "wbytes", 0},
-	/*  11 */  { "stmt", 0},
-	/*  12 */  { "aggregate", 0},
-	/*  13 */  { "process", 0},
-	/*  14 */  { "thread", 0},
+	/*  1 */  { "time", 0},
+	/*  2 */  { "thread", 0},
+	/*  3 */  { "pc", 0},
+	/*  4 */  { "operation", 0},
+	/*  5 */  { "ticks", 0},
+	/*  6 */  { "cpu", 0},
+	/*  7 */  { "memory", 0},
+	/*  8 */  { "reads", 0},
+	/*  9 */  { "writes", 0},
+	/*  10 */  { "rbytes", 0},
+	/*  11 */  { "wbytes", 0},
+	/*  12 */  { "stmt", 0},
+	/*  13 */  { "aggregate", 0},
+	/*  14 */  { "process", 0},
 	/*  15 */  { "user", 0},
 	/*  16 */  { 0, 0}
 };
@@ -450,13 +450,16 @@ offlineProfilerHeader(void)
 	@:getEventStream()@	/* profilerEvent -> void */
 	log0("# ");
 	if (profileCounter[PROFevent].status) {
-		log0("event\t");
+		log0("event,\t");
 	} 
-	if (profileCounter[PROFpc].status) {
-		log0("function,\tline,\t");
-	}
 	if (profileCounter[PROFtime].status) {
 		log0("time,\t");
+	}
+	if (profileCounter[PROFthread].status) {
+		log0("thread,\t");
+	}
+	if (profileCounter[PROFpc].status) {
+		log0("function,\tline,\t");
 	}
 	if (profileCounter[PROFticks].status) {
 		log0("usec,\t");
@@ -497,9 +500,6 @@ offlineProfilerHeader(void)
 		log0("count,\t clkticks,\t");
 	if (profileCounter[PROFstmt].status) {
 		log0("stmt,\t");
-	}
-	if (profileCounter[PROFthread].status) {
-		log0("thread,\t");
 	}
 	if (profileCounter[PROFuser].status) {
 		log0("user,\t");
@@ -550,6 +550,21 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (profileCounter[PROFevent].status) {
 		log("%d,\t", eventcounter);
 	} 
+	if (profileCounter[PROFtime].status) {
+		char *tbuf, *c;
+
+		tbuf= ctime(&mb->profiler[pc].clock);
+		c = strchr(tbuf, '\n');
+		if (c) {
+			c[-5] = '"';
+			c[-4] = 0;
+		}
+		tbuf[10] = '"';
+		log("%s,\t", tbuf + 10);
+	}
+	if (profileCounter[PROFthread].status) {
+		log(" %d,", THRgettid());
+	}
 	if (profileCounter[PROFpc].status) {
 		str mod = "";
 		str fcn = "";
@@ -567,18 +582,6 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 					getModuleId(pci), getFunctionId(pci));
 		} else
  			log("\"%s\",\t",operatorName(pci->token));
-	}
-	if (profileCounter[PROFtime].status) {
-		char *tbuf, *c;
-
-		tbuf= ctime(&mb->profiler[pc].clock);
-		c = strchr(tbuf, '\n');
-		if (c) {
-			c[-5] = '"';
-			c[-4] = 0;
-		}
-		tbuf[10] = '"';
-		log("%s,\t", tbuf + 10);
 	}
 	if (profileCounter[PROFticks].status) {
 		log(LLFMT",\t", mb->profiler[pc].ticks);
@@ -643,9 +646,6 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 			GDKfree(stmtq);
 		}
 		GDKfree(stmt);
-	}
-	if (profileCounter[PROFthread].status) {
-		log(" %d", THRgettid());
 	}
 	if (profileCounter[PROFuser].status) {
 		log(" %d", idx);
