@@ -143,19 +143,45 @@ C qualifier and the operands
 	@:calcGrp(@1,@2,bte,bte,lng)@
 	@:calcGrp(@1,@2,bte,sht,lng)@
 	@:calcGrp(@1,@2,bte,int,lng)@
+	@:calcGrp(@1,@2,bte,wrd,lng)@
 	@:calcGrp(@1,@2,bte,lng,lng)@
 	@:calcGrp(@1,@2,sht,bte,lng)@
 	@:calcGrp(@1,@2,sht,sht,lng)@
 	@:calcGrp(@1,@2,sht,int,lng)@
+	@:calcGrp(@1,@2,sht,wrd,lng)@
 	@:calcGrp(@1,@2,sht,lng,lng)@
 	@:calcGrp(@1,@2,int,bte,lng)@
 	@:calcGrp(@1,@2,int,sht,lng)@
 	@:calcGrp(@1,@2,int,int,lng)@
+	@:calcGrp(@1,@2,int,wrd,lng)@
 	@:calcGrp(@1,@2,int,lng,lng)@
+	@:calcGrp(@1,@2,wrd,bte,lng)@
+	@:calcGrp(@1,@2,wrd,sht,lng)@
+	@:calcGrp(@1,@2,wrd,int,lng)@
+	@:calcGrp(@1,@2,wrd,wrd,lng)@
+	@:calcGrp(@1,@2,wrd,lng,lng)@
 	@:calcGrp(@1,@2,lng,bte,lng)@
 	@:calcGrp(@1,@2,lng,sht,lng)@
 	@:calcGrp(@1,@2,lng,int,lng)@
+	@:calcGrp(@1,@2,lng,wrd,lng)@
 	@:calcGrp(@1,@2,lng,lng,lng)@
+
+	@:calcGrp(@1,@2,bte,bte,wrd)@
+	@:calcGrp(@1,@2,bte,sht,wrd)@
+	@:calcGrp(@1,@2,bte,int,wrd)@
+	@:calcGrp(@1,@2,bte,wrd,wrd)@
+	@:calcGrp(@1,@2,sht,bte,wrd)@
+	@:calcGrp(@1,@2,sht,sht,wrd)@
+	@:calcGrp(@1,@2,sht,int,wrd)@
+	@:calcGrp(@1,@2,sht,wrd,wrd)@
+	@:calcGrp(@1,@2,int,bte,wrd)@
+	@:calcGrp(@1,@2,int,sht,wrd)@
+	@:calcGrp(@1,@2,int,int,wrd)@
+	@:calcGrp(@1,@2,int,wrd,wrd)@
+	@:calcGrp(@1,@2,wrd,bte,wrd)@
+	@:calcGrp(@1,@2,wrd,sht,wrd)@
+	@:calcGrp(@1,@2,wrd,int,wrd)@
+	@:calcGrp(@1,@2,wrd,wrd,wrd)@
 
 	@:calcGrp(@1,@2,bte,bte,int)@
 	@:calcGrp(@1,@2,bte,sht,int)@
@@ -174,6 +200,9 @@ C qualifier and the operands
 
 	@:calcGrp(@1,@2,bte,bte,bte)@
 
+	@:calcGrp(@1,@2,flt,flt,dbl)@
+	@:calcGrp(@1,@2,flt,dbl,dbl)@
+	@:calcGrp(@1,@2,dbl,flt,dbl)@
 	@:calcGrp(@1,@2,dbl,dbl,dbl)@
 
 	@:calcGrp(@1,@2,flt,flt,flt)@
@@ -814,19 +843,45 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 @:arithmeticImpl(@1,@2,bte,bte,lng,@3,1)@
 @:arithmeticImpl(@1,@2,bte,sht,lng,@3,1)@
 @:arithmeticImpl(@1,@2,bte,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,bte,wrd,lng,@3,1)@
 @:arithmeticImpl(@1,@2,bte,lng,lng,@3,1)@
 @:arithmeticImpl(@1,@2,sht,bte,lng,@3,1)@
 @:arithmeticImpl(@1,@2,sht,sht,lng,@3,1)@
 @:arithmeticImpl(@1,@2,sht,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,sht,wrd,lng,@3,1)@
 @:arithmeticImpl(@1,@2,sht,lng,lng,@3,1)@
 @:arithmeticImpl(@1,@2,int,bte,lng,@3,1)@
 @:arithmeticImpl(@1,@2,int,sht,lng,@3,1)@
 @:arithmeticImpl(@1,@2,int,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,int,wrd,lng,@3,1)@
 @:arithmeticImpl(@1,@2,int,lng,lng,@3,1)@
+@:arithmeticImpl(@1,@2,wrd,bte,lng,@3,1)@
+@:arithmeticImpl(@1,@2,wrd,sht,lng,@3,1)@
+@:arithmeticImpl(@1,@2,wrd,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,wrd,wrd,lng,@3,1)@
+@:arithmeticImpl(@1,@2,wrd,lng,lng,@3,1)@
 @:arithmeticImpl(@1,@2,lng,bte,lng,@3,1)@
 @:arithmeticImpl(@1,@2,lng,sht,lng,@3,1)@
 @:arithmeticImpl(@1,@2,lng,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,lng,wrd,lng,@3,1)@
 @:arithmeticImpl(@1,@2,lng,lng,lng,@3,1)@
+
+@:arithmeticImpl(@1,@2,bte,bte,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,bte,sht,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,bte,int,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,bte,wrd,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,sht,bte,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,sht,sht,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,sht,int,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,sht,wrd,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,int,bte,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,int,sht,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,int,int,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,int,wrd,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,wrd,bte,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,wrd,sht,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,wrd,int,wrd,@3,1)@
+@:arithmeticImpl(@1,@2,wrd,wrd,wrd,@3,1)@
 
 @:arithmeticImpl(@1,@2,bte,bte,int,@3,1)@
 @:arithmeticImpl(@1,@2,bte,sht,int,@3,1)@
@@ -845,6 +900,9 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 
 @:arithmeticImpl(@1,@2,bte,bte,bte,@3,1)@
 
+@:arithmeticImpl(@1,@2,flt,flt,dbl,@3,1)@
+@:arithmeticImpl(@1,@2,flt,dbl,dbl,@3,1)@
+@:arithmeticImpl(@1,@2,dbl,flt,dbl,@3,1)@
 @:arithmeticImpl(@1,@2,dbl,dbl,dbl,@3,1)@
 
 @:arithmeticImpl(@1,@2,flt,flt,flt,@3,1)@
