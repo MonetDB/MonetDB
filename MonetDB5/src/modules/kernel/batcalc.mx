@@ -613,11 +613,9 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 		bn->tsorted = REVERT_SORTED(BATtordered(b));
 	} else
 	if (@6 & 16) { 
-#if @7 /* skip this for TYPE_oid */
 		if (*(@4*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
 		else
-#endif
 			bn->tsorted = BATtordered(b);
 	} else {
 		bn->tsorted = 0;
@@ -658,11 +656,9 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 		bn->tsorted = REVERT_SORTED(BATtordered(b));
 	} else
 	if (@6 & 32) { 
-#if @7 /* skip this for TYPE_oid */
 		if (*(@4*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
 		else
-#endif
 			bn->tsorted = BATtordered(b);
 	} else {
 		bn->tsorted = 0;
@@ -760,11 +756,9 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 		bn->tsorted = REVERT_SORTED(BATtordered(b));
 	else
 	if (@6 & 16) { 
-#if @7 /* skip this for TYPE_oid */
 		if (*(@4*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
 		else
-#endif
 			bn->tsorted = BATtordered(b);
 	} else {
 		bn->tsorted = 0;
@@ -811,11 +805,9 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 		bn->tsorted = REVERT_SORTED(BATtordered(b));
 	} else
 	if (@6 & 32) { 
-#if @7 /* skip this for TYPE_oid */
 		if (*(@4*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
 		else
-#endif
 			bn->tsorted = BATtordered(b);
 	} else {
 		bn->tsorted = 0;
@@ -834,8 +826,8 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 }
 @-
 @= arithmeticImpl_3
-	@:arithmeticImpl_1(@1,@2,@3,@4,@5,@6,@7)@
-	@:arithmeticImpl_2(@1,@2,@3,@4,@5,@6,@7)@
+	@:arithmeticImpl_1(@1,@2,@3,@4,@5,@6)@
+	@:arithmeticImpl_2(@1,@2,@3,@4,@5,@6)@
 @-
 @c
 #include "mal_config.h"
@@ -851,72 +843,72 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 */
 
 @= arithGrpImpl
-@:arithmeticImpl_1(@1,@2,bte,bte,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,bte,sht,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,bte,int,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,bte,wrd,lng,@3,1)@
-@:arithmeticImpl_3(@1,@2,bte,lng,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,sht,bte,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,sht,sht,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,sht,int,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,sht,wrd,lng,@3,1)@
-@:arithmeticImpl_3(@1,@2,sht,lng,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,int,bte,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,int,sht,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,int,int,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,int,wrd,lng,@3,1)@
-@:arithmeticImpl_3(@1,@2,int,lng,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,wrd,bte,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,wrd,sht,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,wrd,int,lng,@3,1)@
-@:arithmeticImpl_1(@1,@2,wrd,wrd,lng,@3,1)@
-@:arithmeticImpl_3(@1,@2,wrd,lng,lng,@3,1)@
-@:arithmeticImpl_3(@1,@2,lng,bte,lng,@3,1)@
-@:arithmeticImpl_3(@1,@2,lng,sht,lng,@3,1)@
-@:arithmeticImpl_3(@1,@2,lng,int,lng,@3,1)@
-@:arithmeticImpl_3(@1,@2,lng,wrd,lng,@3,1)@
-@:arithmeticImpl_3(@1,@2,lng,lng,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,bte,lng,@3)@
+@:arithmeticImpl_1(@1,@2,bte,sht,lng,@3)@
+@:arithmeticImpl_1(@1,@2,bte,int,lng,@3)@
+@:arithmeticImpl_1(@1,@2,bte,wrd,lng,@3)@
+@:arithmeticImpl_3(@1,@2,bte,lng,lng,@3)@
+@:arithmeticImpl_1(@1,@2,sht,bte,lng,@3)@
+@:arithmeticImpl_1(@1,@2,sht,sht,lng,@3)@
+@:arithmeticImpl_1(@1,@2,sht,int,lng,@3)@
+@:arithmeticImpl_1(@1,@2,sht,wrd,lng,@3)@
+@:arithmeticImpl_3(@1,@2,sht,lng,lng,@3)@
+@:arithmeticImpl_1(@1,@2,int,bte,lng,@3)@
+@:arithmeticImpl_1(@1,@2,int,sht,lng,@3)@
+@:arithmeticImpl_1(@1,@2,int,int,lng,@3)@
+@:arithmeticImpl_1(@1,@2,int,wrd,lng,@3)@
+@:arithmeticImpl_3(@1,@2,int,lng,lng,@3)@
+@:arithmeticImpl_1(@1,@2,wrd,bte,lng,@3)@
+@:arithmeticImpl_1(@1,@2,wrd,sht,lng,@3)@
+@:arithmeticImpl_1(@1,@2,wrd,int,lng,@3)@
+@:arithmeticImpl_1(@1,@2,wrd,wrd,lng,@3)@
+@:arithmeticImpl_3(@1,@2,wrd,lng,lng,@3)@
+@:arithmeticImpl_3(@1,@2,lng,bte,lng,@3)@
+@:arithmeticImpl_3(@1,@2,lng,sht,lng,@3)@
+@:arithmeticImpl_3(@1,@2,lng,int,lng,@3)@
+@:arithmeticImpl_3(@1,@2,lng,wrd,lng,@3)@
+@:arithmeticImpl_3(@1,@2,lng,lng,lng,@3)@
 
-@:arithmeticImpl_1(@1,@2,bte,bte,wrd,@3,1)@
-@:arithmeticImpl_1(@1,@2,bte,sht,wrd,@3,1)@
-@:arithmeticImpl_1(@1,@2,bte,int,wrd,@3,1)@
-@:arithmeticImpl_3(@1,@2,bte,wrd,wrd,@3,1)@
-@:arithmeticImpl_1(@1,@2,sht,bte,wrd,@3,1)@
-@:arithmeticImpl_1(@1,@2,sht,sht,wrd,@3,1)@
-@:arithmeticImpl_1(@1,@2,sht,int,wrd,@3,1)@
-@:arithmeticImpl_3(@1,@2,sht,wrd,wrd,@3,1)@
-@:arithmeticImpl_1(@1,@2,int,bte,wrd,@3,1)@
-@:arithmeticImpl_1(@1,@2,int,sht,wrd,@3,1)@
-@:arithmeticImpl_1(@1,@2,int,int,wrd,@3,1)@
-@:arithmeticImpl_3(@1,@2,int,wrd,wrd,@3,1)@
-@:arithmeticImpl_3(@1,@2,wrd,bte,wrd,@3,1)@
-@:arithmeticImpl_3(@1,@2,wrd,sht,wrd,@3,1)@
-@:arithmeticImpl_3(@1,@2,wrd,int,wrd,@3,1)@
-@:arithmeticImpl_3(@1,@2,wrd,wrd,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,bte,wrd,@3)@
+@:arithmeticImpl_1(@1,@2,bte,sht,wrd,@3)@
+@:arithmeticImpl_1(@1,@2,bte,int,wrd,@3)@
+@:arithmeticImpl_3(@1,@2,bte,wrd,wrd,@3)@
+@:arithmeticImpl_1(@1,@2,sht,bte,wrd,@3)@
+@:arithmeticImpl_1(@1,@2,sht,sht,wrd,@3)@
+@:arithmeticImpl_1(@1,@2,sht,int,wrd,@3)@
+@:arithmeticImpl_3(@1,@2,sht,wrd,wrd,@3)@
+@:arithmeticImpl_1(@1,@2,int,bte,wrd,@3)@
+@:arithmeticImpl_1(@1,@2,int,sht,wrd,@3)@
+@:arithmeticImpl_1(@1,@2,int,int,wrd,@3)@
+@:arithmeticImpl_3(@1,@2,int,wrd,wrd,@3)@
+@:arithmeticImpl_3(@1,@2,wrd,bte,wrd,@3)@
+@:arithmeticImpl_3(@1,@2,wrd,sht,wrd,@3)@
+@:arithmeticImpl_3(@1,@2,wrd,int,wrd,@3)@
+@:arithmeticImpl_3(@1,@2,wrd,wrd,wrd,@3)@
 
-@:arithmeticImpl_1(@1,@2,bte,bte,int,@3,1)@
-@:arithmeticImpl_1(@1,@2,bte,sht,int,@3,1)@
-@:arithmeticImpl_3(@1,@2,bte,int,int,@3,1)@
-@:arithmeticImpl_1(@1,@2,sht,bte,int,@3,1)@
-@:arithmeticImpl_1(@1,@2,sht,sht,int,@3,1)@
-@:arithmeticImpl_3(@1,@2,sht,int,int,@3,1)@
-@:arithmeticImpl_3(@1,@2,int,bte,int,@3,1)@
-@:arithmeticImpl_3(@1,@2,int,sht,int,@3,1)@
-@:arithmeticImpl_3(@1,@2,int,int,int,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,bte,int,@3)@
+@:arithmeticImpl_1(@1,@2,bte,sht,int,@3)@
+@:arithmeticImpl_3(@1,@2,bte,int,int,@3)@
+@:arithmeticImpl_1(@1,@2,sht,bte,int,@3)@
+@:arithmeticImpl_1(@1,@2,sht,sht,int,@3)@
+@:arithmeticImpl_3(@1,@2,sht,int,int,@3)@
+@:arithmeticImpl_3(@1,@2,int,bte,int,@3)@
+@:arithmeticImpl_3(@1,@2,int,sht,int,@3)@
+@:arithmeticImpl_3(@1,@2,int,int,int,@3)@
 
-@:arithmeticImpl_1(@1,@2,bte,bte,sht,@3,1)@
-@:arithmeticImpl_3(@1,@2,bte,sht,sht,@3,1)@
-@:arithmeticImpl_3(@1,@2,sht,bte,sht,@3,1)@
-@:arithmeticImpl_3(@1,@2,sht,sht,sht,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,bte,sht,@3)@
+@:arithmeticImpl_3(@1,@2,bte,sht,sht,@3)@
+@:arithmeticImpl_3(@1,@2,sht,bte,sht,@3)@
+@:arithmeticImpl_3(@1,@2,sht,sht,sht,@3)@
 
-@:arithmeticImpl_3(@1,@2,bte,bte,bte,@3,1)@
+@:arithmeticImpl_3(@1,@2,bte,bte,bte,@3)@
 
-@:arithmeticImpl_1(@1,@2,flt,flt,dbl,@3,1)@
-@:arithmeticImpl_3(@1,@2,flt,dbl,dbl,@3,1)@
-@:arithmeticImpl_3(@1,@2,dbl,flt,dbl,@3,1)@
-@:arithmeticImpl_3(@1,@2,dbl,dbl,dbl,@3,1)@
+@:arithmeticImpl_1(@1,@2,flt,flt,dbl,@3)@
+@:arithmeticImpl_3(@1,@2,flt,dbl,dbl,@3)@
+@:arithmeticImpl_3(@1,@2,dbl,flt,dbl,@3)@
+@:arithmeticImpl_3(@1,@2,dbl,dbl,dbl,@3)@
 
-@:arithmeticImpl_3(@1,@2,flt,flt,flt,@3,1)@
+@:arithmeticImpl_3(@1,@2,flt,flt,flt,@3)@
 
 @c
 /*
