@@ -2286,12 +2286,15 @@ It simply skips the barrier block upon return.
 			if( mb->profiler[stkpc].trace)
 			{
 				ppc= stkpc;
-				mb->profiler[ppc].clk= @1->clk;
+				mb->profiler[ppc].clk= 0;
 				mb->profiler[ppc].clock= stk->clock;
+				/* emit the instruction upon start as well */
+				profilerEvent(cntxt->idx,mb,stk,stkpc);
 #ifdef HAVE_TIMES
 				times(&stk->timer);
 				mb->profiler[ppc].timer= stk->timer;
 #endif
+				mb->profiler[ppc].clk= @1->clk;
 			}
 		}
 	}
@@ -2302,7 +2305,7 @@ It simply skips the barrier block upon return.
 		if( malProfileMode == 0)
 			/* mostly true */;
 		else
-		if(@1 != NULL && ppc>= 0 && mb->profiler != NULL && mb->profiler[ppc].trace )
+		if(@1 != NULL && ppc>= 0 && mb->profiler != NULL && mb->profiler[ppc].trace  && mb->profiler[ppc].clk)
 		{
 			newclk= GDKusec();
 			mb->profiler[ppc].counter++;
