@@ -277,12 +277,12 @@ The command signatures are similar to those above, producing a bit result.
 
 
 @= compareGrp
+	@:comparison(>=,@1,GE)@
+	@:comparison(<=,@1,LE)@
+	@:comparison(>,@1,GT)@
 	@:comparison(<,@1,LT)@
 	@:comparison(==,@1,EQ)@
 	@:comparison(!=,@1,NEQ)@
-	@:comparison(>,@1,GT)@
-	@:comparison(<=,@1,LE)@
-	@:comparison(>=,@1,GE)@
 @mal
 	@:compareGrp(bit)@
 	@:compareGrp(bte)@
@@ -1688,9 +1688,9 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 	@:baselineCode(@1,@2,int)@
 	@:baselineCode(@1,@2,wrd)@
 	@:baselineCode(@1,@2,lng)@
-	@:baselineCode(@1,@2,oid)@
-	@:baselineCode(@1,@2,flt)@
 	@:baselineCode(@1,@2,dbl)@
+	@:baselineCode(@1,@2,flt)@
+	@:baselineCode(@1,@2,oid)@
 @= operatorCstImpl
 	@:baselineCstCode(@1,@2,bit,@3)@
 	@:baselineCstCode(@1,@2,bte,@3)@
@@ -1698,9 +1698,9 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 	@:baselineCstCode(@1,@2,int,@3)@
 	@:baselineCstCode(@1,@2,wrd,@3)@
 	@:baselineCstCode(@1,@2,lng,@3)@
-	@:baselineCstCode(@1,@2,oid,@3)@
-	@:baselineCstCode(@1,@2,flt,@3)@
 	@:baselineCstCode(@1,@2,dbl,@3)@
+	@:baselineCstCode(@1,@2,flt,@3)@
+	@:baselineCstCode(@1,@2,oid,@3)@
 @c
 /* these 8 macros are there to be able to do prepossessor-time conditionals */
 #define OPERATOR_GE 0
