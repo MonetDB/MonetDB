@@ -555,7 +555,7 @@ The similar code base is produced for dealing with a constant argument.
 	}
 #endif
 }
-@= arithmeticImpl
+@= arithmeticImpl_2
 batcalc_export str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r);
 str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 {	
@@ -682,6 +682,8 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 	BBPreleaseref(b->batCacheid);
 	return res;
 }
+@-
+@= arithmeticImpl_1
 /*
 The accumulator variants may re-use the storage of an argument only when it is not shared,
 nor being a persistent BAT
@@ -831,6 +833,11 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 	BBPreleaseref(b->batCacheid);
 	return res;
 }
+@-
+@= arithmeticImpl_3
+	@:arithmeticImpl_2(@1,@2,@3,@4,@5,@6,@7)@
+	@:arithmeticImpl_1(@1,@2,@3,@4,@5,@6,@7)@
+@-
 @c
 #include "mal_config.h"
 #include "batcalc.h"
@@ -845,72 +852,72 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 */
 
 @= arithGrpImpl
-@:arithmeticImpl(@1,@2,bte,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,bte,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,bte,int,lng,@3,1)@
-@:arithmeticImpl(@1,@2,bte,wrd,lng,@3,1)@
-@:arithmeticImpl(@1,@2,bte,lng,lng,@3,1)@
-@:arithmeticImpl(@1,@2,sht,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,sht,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,sht,int,lng,@3,1)@
-@:arithmeticImpl(@1,@2,sht,wrd,lng,@3,1)@
-@:arithmeticImpl(@1,@2,sht,lng,lng,@3,1)@
-@:arithmeticImpl(@1,@2,int,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,int,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,int,int,lng,@3,1)@
-@:arithmeticImpl(@1,@2,int,wrd,lng,@3,1)@
-@:arithmeticImpl(@1,@2,int,lng,lng,@3,1)@
-@:arithmeticImpl(@1,@2,wrd,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,wrd,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,wrd,int,lng,@3,1)@
-@:arithmeticImpl(@1,@2,wrd,wrd,lng,@3,1)@
-@:arithmeticImpl(@1,@2,wrd,lng,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,int,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,wrd,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,lng,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,bte,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,sht,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,int,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,wrd,lng,@3,1)@
+@:arithmeticImpl_3(@1,@2,bte,lng,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,sht,bte,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,sht,sht,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,sht,int,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,sht,wrd,lng,@3,1)@
+@:arithmeticImpl_3(@1,@2,sht,lng,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,int,bte,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,int,sht,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,int,int,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,int,wrd,lng,@3,1)@
+@:arithmeticImpl_3(@1,@2,int,lng,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,wrd,bte,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,wrd,sht,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,wrd,int,lng,@3,1)@
+@:arithmeticImpl_2(@1,@2,wrd,wrd,lng,@3,1)@
+@:arithmeticImpl_3(@1,@2,wrd,lng,lng,@3,1)@
+@:arithmeticImpl_3(@1,@2,lng,bte,lng,@3,1)@
+@:arithmeticImpl_3(@1,@2,lng,sht,lng,@3,1)@
+@:arithmeticImpl_3(@1,@2,lng,int,lng,@3,1)@
+@:arithmeticImpl_3(@1,@2,lng,wrd,lng,@3,1)@
+@:arithmeticImpl_3(@1,@2,lng,lng,lng,@3,1)@
 
-@:arithmeticImpl(@1,@2,bte,bte,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,bte,sht,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,bte,int,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,bte,wrd,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,sht,bte,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,sht,sht,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,sht,int,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,sht,wrd,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,int,bte,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,int,sht,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,int,int,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,int,wrd,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,wrd,bte,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,wrd,sht,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,wrd,int,wrd,@3,1)@
-@:arithmeticImpl(@1,@2,wrd,wrd,wrd,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,bte,wrd,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,sht,wrd,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,int,wrd,@3,1)@
+@:arithmeticImpl_3(@1,@2,bte,wrd,wrd,@3,1)@
+@:arithmeticImpl_2(@1,@2,sht,bte,wrd,@3,1)@
+@:arithmeticImpl_2(@1,@2,sht,sht,wrd,@3,1)@
+@:arithmeticImpl_2(@1,@2,sht,int,wrd,@3,1)@
+@:arithmeticImpl_3(@1,@2,sht,wrd,wrd,@3,1)@
+@:arithmeticImpl_2(@1,@2,int,bte,wrd,@3,1)@
+@:arithmeticImpl_2(@1,@2,int,sht,wrd,@3,1)@
+@:arithmeticImpl_2(@1,@2,int,int,wrd,@3,1)@
+@:arithmeticImpl_3(@1,@2,int,wrd,wrd,@3,1)@
+@:arithmeticImpl_3(@1,@2,wrd,bte,wrd,@3,1)@
+@:arithmeticImpl_3(@1,@2,wrd,sht,wrd,@3,1)@
+@:arithmeticImpl_3(@1,@2,wrd,int,wrd,@3,1)@
+@:arithmeticImpl_3(@1,@2,wrd,wrd,wrd,@3,1)@
 
-@:arithmeticImpl(@1,@2,bte,bte,int,@3,1)@
-@:arithmeticImpl(@1,@2,bte,sht,int,@3,1)@
-@:arithmeticImpl(@1,@2,bte,int,int,@3,1)@
-@:arithmeticImpl(@1,@2,sht,bte,int,@3,1)@
-@:arithmeticImpl(@1,@2,sht,sht,int,@3,1)@
-@:arithmeticImpl(@1,@2,sht,int,int,@3,1)@
-@:arithmeticImpl(@1,@2,int,bte,int,@3,1)@
-@:arithmeticImpl(@1,@2,int,sht,int,@3,1)@
-@:arithmeticImpl(@1,@2,int,int,int,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,bte,int,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,sht,int,@3,1)@
+@:arithmeticImpl_3(@1,@2,bte,int,int,@3,1)@
+@:arithmeticImpl_2(@1,@2,sht,bte,int,@3,1)@
+@:arithmeticImpl_2(@1,@2,sht,sht,int,@3,1)@
+@:arithmeticImpl_3(@1,@2,sht,int,int,@3,1)@
+@:arithmeticImpl_3(@1,@2,int,bte,int,@3,1)@
+@:arithmeticImpl_3(@1,@2,int,sht,int,@3,1)@
+@:arithmeticImpl_3(@1,@2,int,int,int,@3,1)@
 
-@:arithmeticImpl(@1,@2,bte,bte,sht,@3,1)@
-@:arithmeticImpl(@1,@2,bte,sht,sht,@3,1)@
-@:arithmeticImpl(@1,@2,sht,bte,sht,@3,1)@
-@:arithmeticImpl(@1,@2,sht,sht,sht,@3,1)@
+@:arithmeticImpl_2(@1,@2,bte,bte,sht,@3,1)@
+@:arithmeticImpl_3(@1,@2,bte,sht,sht,@3,1)@
+@:arithmeticImpl_3(@1,@2,sht,bte,sht,@3,1)@
+@:arithmeticImpl_3(@1,@2,sht,sht,sht,@3,1)@
 
-@:arithmeticImpl(@1,@2,bte,bte,bte,@3,1)@
+@:arithmeticImpl_3(@1,@2,bte,bte,bte,@3,1)@
 
-@:arithmeticImpl(@1,@2,flt,flt,dbl,@3,1)@
-@:arithmeticImpl(@1,@2,flt,dbl,dbl,@3,1)@
-@:arithmeticImpl(@1,@2,dbl,flt,dbl,@3,1)@
-@:arithmeticImpl(@1,@2,dbl,dbl,dbl,@3,1)@
+@:arithmeticImpl_2(@1,@2,flt,flt,dbl,@3,1)@
+@:arithmeticImpl_3(@1,@2,flt,dbl,dbl,@3,1)@
+@:arithmeticImpl_3(@1,@2,dbl,flt,dbl,@3,1)@
+@:arithmeticImpl_3(@1,@2,dbl,dbl,dbl,@3,1)@
 
-@:arithmeticImpl(@1,@2,flt,flt,flt,@3,1)@
+@:arithmeticImpl_3(@1,@2,flt,flt,flt,@3,1)@
 
 @c
 /*
