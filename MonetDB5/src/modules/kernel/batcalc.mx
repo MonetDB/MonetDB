@@ -232,13 +232,10 @@ C qualifier and the operands
 	address CMDunaryPLUSPLUS
 	comment "Unary minus over the tail of the bat";
 
-	command isnil(b:bat[:any_1,:@1]):bat[:any_1,:bit] 
-	address CMDunaryISNIL
-	comment "Unary check for nil over the tail of the bat";
-
 	command abs(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
 	address CMDunaryABS
 	comment "Unary abs over the tail of the bat";
+@-
 @mal
 @:unary(bte)@
 @:unary(sht)@
@@ -247,19 +244,24 @@ C qualifier and the operands
 @:unary(lng)@
 @:unary(flt)@
 @:unary(dbl)@
-
-	command isnil(b:bat[:any_1,:oid]):bat[:any_1,:bit] 
+@-
+@= unaryISNIL
+	command isnil(b:bat[:any_1,:@1]):bat[:any_1,:bit] 
 	address CMDunaryISNIL
 	comment "Unary check for nil over the tail of the bat";
-	command isnil(b:bat[:any_1,:str]):bat[:any_1,:bit] 
-	address CMDunaryISNIL
-	comment "Unary check for nil over the tail of the bat";
-	command isnil(b:bat[:any_1,:bit]):bat[:any_1,:bit] 
-	address CMDunaryISNIL
-	comment "Unary check for nil over the tail of the bat";
-	command isnil(b:bat[:any_1,:chr]):bat[:any_1,:chr] 
-	address CMDunaryISNIL
-	comment "Unary check for nil over the tail of the bat";
+@-
+@mal
+@:unaryISNIL(bit)@
+@:unaryISNIL(chr)@
+@:unaryISNIL(bte)@
+@:unaryISNIL(oid)@
+@:unaryISNIL(sht)@
+@:unaryISNIL(int)@
+@:unaryISNIL(wrd)@
+@:unaryISNIL(lng)@
+@:unaryISNIL(flt)@
+@:unaryISNIL(dbl)@
+@:unaryISNIL(str)@
 @-
 @+ Comparison routines
 The command signatures are similar to those above, producing a bit result.
