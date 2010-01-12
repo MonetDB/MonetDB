@@ -102,7 +102,6 @@ but should limit modulo functions to integer-based types.
 The calc group contains the operator, the desired result typ, its
 C qualifier and the operands
 @mal
-	@:calcGrp3(%,MOD,oid,oid,oid)@
 	@:calcGrp3(%,MOD,bte,bte,bte)@
 	@:calcGrp3(%,MOD,sht,sht,sht)@
 	@:calcGrp3(%,MOD,int,int,int)@
@@ -1119,7 +1118,6 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 	return MAL_SUCCEED;
 }
 @c
-@:numeric_funcs(%,MOD,oid,oid,oid)@
 @:numeric_funcs(%,MOD,bte,bte,bte)@
 @:numeric_funcs(%,MOD,sht,sht,sht)@
 @:numeric_funcs(%,MOD,int,int,int)@
