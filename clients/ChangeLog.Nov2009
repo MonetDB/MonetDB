@@ -1,0 +1,6 @@
+# ChangeLog file for clients
+# This file is updated with Maddlog
+
+* Mon Jan  4 2010 Sjoerd Mullender <sjoerd@cwi.nl>
+- Fix exit code of mclient -D in case dump fails.
+

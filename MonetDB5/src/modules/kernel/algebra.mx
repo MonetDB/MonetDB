@@ -1215,18 +1215,22 @@ CMDmax_@1(@1* result, BAT *b)
 		}
 	}
 	if (aggr) {
-	       memcpy(aggr, x=v, ATOMsize(t));
+		memcpy(aggr, x=v, ATOMsize(t));
 	} else {
-	       /* alloc new space and copy the atom into it */
-	       s = ATOMlen(t, v);
-	       memcpy(x = (ptr) GDKmalloc(s), v, s);
-       }
+		/* alloc new space and copy the atom into it */
+		s = ATOMlen(t, v);
+		x = GDKmalloc(s);
+		if (x)
+			memcpy(x, v, s);
+	}
 @= voidaggr
 	if (aggr) {
 		*(oid *) aggr = *(oid *) (x=v);
 	} else {
 		/* alloc new space and copy the atom into it */
-		memcpy(x = (ptr) GDKmalloc(sizeof(oid)), v, s);
+		x = GDKmalloc(sizeof(oid));
+		if (x)
+			memcpy(x, v, s);
 	}
 @= aggrmin
 	v = (s == 0)?ATOMnilptr(t):BUNtail(bi, BUNfirst(b));
@@ -1352,8 +1356,7 @@ CMDminany(ptr result, BAT *b)
 	if (!ATOMlinear(b->ttype))
 		return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n", ATOMname(b->ttype));
 	if (ATOMvarsized(b->ttype)) {
-			*(ptr *) result = BATmin(b, NULL);
-			return (result)?GDK_SUCCEED:GDK_FAIL;
+		return (*(ptr *) result = BATmin(b, NULL)) ? GDK_SUCCEED : GDK_FAIL;
 	}
 	if (BATmin(b, result)) {
 		if (b->ttype == TYPE_bat)
@@ -1369,8 +1372,7 @@ CMDmaxany(ptr result, BAT *b)
 	if (!ATOMlinear(b->ttype))
 		return GDKerror("CMDmaxANY: atom '%s' cannot be ordered linearly\n", ATOMname(b->ttype));
 	if (ATOMvarsized(b->ttype)) {
-			*(ptr *) result = BATmax(b, NULL);
-			return (result)?GDK_SUCCEED:GDK_FAIL;
+		return (*(ptr *) result = BATmax(b, NULL)) ? GDK_SUCCEED : GDK_FAIL;
 	}
 	if (BATmax(b, result)) {
 		if (b->ttype == TYPE_bat)
