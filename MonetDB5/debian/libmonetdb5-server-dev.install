@@ -7,4 +7,5 @@ debian/tmp/usr/include/MonetDB5/mal/*.h usr/include/MonetDB5/mal
 debian/tmp/usr/include/MonetDB5/optimizer/*.h usr/include/MonetDB5/optimizer
 debian/tmp/usr/include/MonetDB5/scheduler/*.h usr/include/MonetDB5/scheduler
 debian/tmp/usr/include/MonetDB5/rdf/*.h usr/include/MonetDB5/rdf
+debian/tmp/usr/include/MonetDB5/tools/*.h usr/include/MonetDB5/tools
 debian/tmp/usr/lib/lib*.so usr/lib

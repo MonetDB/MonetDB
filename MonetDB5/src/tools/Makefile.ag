@@ -49,6 +49,10 @@ bin_Mbeddedmal = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
+headers_h = {
+	HEADERS = h
+	DIR = includedir/MonetDB5/tools
+	SOURCES = embeddedclient.h
+}
 
-EXTRA_DIST = embeddedclient.h
 EXTRA_DIST_DIR = Tests

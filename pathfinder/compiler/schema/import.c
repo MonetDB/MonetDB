@@ -794,7 +794,7 @@ schema_import_start_element (void *ctx,
 }
 
 /**
- * Callback invoked whenever the see a closing tag </t>.
+ * Callback invoked whenever we see a closing tag </t>.
  *
  * @param SAX parser context
  * @param t tag name
@@ -811,7 +811,7 @@ schema_import_end_element (void *ctx, const xmlChar *t)
     closing_tag = map_closing_tag (ctx, (char *) t);
 
     /* perform type mapping DFA transition */
-    if (dfa[state][closing_tag] == HOLE) {
+    if (closing_tag == HOLE || dfa[state][closing_tag] == HOLE) {
         PFinfo (OOPS_SCHEMAIMPORT, "unexpected </%s>", t);
         xmlParserError (ctx, "\n");
         PFoops (OOPS_SCHEMAIMPORT, "check schema well-formedness");

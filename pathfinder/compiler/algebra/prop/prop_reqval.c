@@ -670,8 +670,10 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
             /* overrule any previous negative setting
                (which may be introduced by multiple parent edges) */
             map = find_map (MAP_LIST(n), n->sem.select.col);
-            map->sel_name = true;
-            map->sel_val  = true;
+            if (map) {
+                map->sel_name = true;
+                map->sel_val  = true;
+            }
             break;
 
         case la_pos_select:

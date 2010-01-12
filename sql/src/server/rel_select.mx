@@ -2392,6 +2392,9 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	}
 	case SQL_NOT: { 
 		sql_exp *le = rel_logical_value_exp(sql, rel, sc->data.sym, f);
+
+		if (!le)
+			return le;
 		return rel_unop_(sql, le, NULL, "not", 0);
 	}
 	case SQL_ATOM: {

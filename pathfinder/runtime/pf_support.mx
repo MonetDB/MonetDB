@@ -7446,6 +7446,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 		"mposjoin: third input BAT (ws_item) must not be empty.\n");
 
 	the_cont_bat = BATdescriptor(*(bat*)Tloc(ws_item, BUNfirst(ws_item)));
+    ERRORcheck(the_cont_bat == NULL, "mposjoin: cannot find BAT.\n");
 	tt = the_cont_bat->ttype;
 	BBPunfix(the_cont_bat->batCacheid);
 	the_cont_bat = NULL;
