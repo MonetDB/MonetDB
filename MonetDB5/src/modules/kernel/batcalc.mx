@@ -1051,15 +1051,8 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 
 	@:chkSize(bn,b,CMDbataccum@2)@
 
-	switch(BATttype(b)){
-	case TYPE_oid: @:accumCst(@1,oid,oid,oid)@ break;
-	case TYPE_bte: @:accumCst(@1,bte,bte,bte)@ break;
-	case TYPE_sht: @:accumCst(@1,sht,sht,sht)@ break;
-	case TYPE_int: @:accumCst(@1,int,int,int)@ break;
-	case TYPE_wrd: @:accumCst(@1,wrd,wrd,wrd)@ break;
-	case TYPE_lng: @:accumCst(@1,lng,lng,lng)@ break;
-	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT " Expected {oid,bte,sht,int,wrd,lng}");
-	}
+	@:accumCst(@1,@3,@4,@5)@
+
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
 	BBPkeepref(*ret = bn->batCacheid);
@@ -1110,15 +1103,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 
 	@:chkSize(bn,b,CMDbataccum@2)@
 
-	switch(BATttype(b)){
-	case TYPE_oid: @:accumCstLeft(@1,oid,oid,oid)@ break;
-	case TYPE_bte: @:accumCstLeft(@1,bte,bte,bte)@ break;
-	case TYPE_sht: @:accumCstLeft(@1,sht,sht,sht)@ break;
-	case TYPE_int: @:accumCstLeft(@1,int,int,int)@ break;
-	case TYPE_wrd: @:accumCstLeft(@1,wrd,wrd,wrd)@ break;
-	case TYPE_lng: @:accumCstLeft(@1,lng,lng,lng)@ break;
-	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT " Expected {oid,bte,sht,int,wrd,lng}");
-	}
+	@:accumCstLeft(@1,@3,@4,@5)@
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 

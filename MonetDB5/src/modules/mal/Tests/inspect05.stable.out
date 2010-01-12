@@ -5165,6 +5165,7 @@ end main;
 [ "rangesplit",			  "command",	  "algebra",	  "(b:bat[:any_1,:any_2],ranges:int):bat[:any_2,:BAT] ",										  "ALGrangesplit;"					  ]
 [ "reuse",			  "command",	  "algebra",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "ALGreuse;"						  ]
 [ "revert",			  "command",	  "algebra",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "ALGrevert;"						  ]
+[ "semijoinPath",		  "pattern",	  "algebra",	  "(l:bat[:any,:any]...):bat[:any,:any] ",												  "ALGjoinPath;"				  ]
 [ "split",			  "command",	  "algebra",	  "(b:bat[:lng,:oid]):bat[:oid,:oid] ",													  "ALGsplit;"						  ]
 [ "sunion",			  "command",	  "algebra",	  "(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",								  "ALGsunion;"						  ]
 [ "sdifference",		  "command",	  "algebra",	  "(left:bat[:any_1,:any_2],right:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",								  "ALGsdiff;"						  ]
