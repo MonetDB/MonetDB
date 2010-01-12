@@ -453,8 +453,6 @@ implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
 	throw(MAL, "batcalc.@3", ILLEGAL_ARGUMENT " Requires bats of identical size");
-@= tstBat
-if( bn== NULL) {*ret= 0; throw(MAL, "batcalc.@1", MAL_MALLOC_FAIL);}
 @-
 The code block below heavily uses the MX code expansion involved,
 but in essence the structure is relatively simple.
