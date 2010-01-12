@@ -11262,9 +11262,11 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             /* get the type name, and assure there *is* a namespace */
             char *tpe = PFty_str(TY(LR(args)));
             char *nme;
-            if (maxbufsize < strlen(tpe) + 4) {
+            if (buf == NULL || maxbufsize < strlen(tpe) + 4) {
                 maxbufsize = strlen(tpe) + 4;
                 buf = buf ? realloc(buf, maxbufsize) : malloc(maxbufsize);
+                if (buf == NULL)
+                    PFoops(OOPS_OUTOFMEM, "can't get requested memory.");
             }
             nme = buf;
             if (strchr(tpe, ':') == NULL)  {
