@@ -66,8 +66,8 @@ class Pythonizer:
         return str(data)
 
     def __strip(self, data):
-        """ returns a python string, chops of quotes,
-        replace escape characters.
+        """ returns a python string, chops off quotes,
+        replaces escape characters.
         inverse of escape"""
 
         c_escapes = {'n':'\n', 't':'\t', 'r':'\r', '"':'\"'}
@@ -124,7 +124,7 @@ class Pythonizer:
         return Timestamp(*date+time)
 
     def __blob(self, x):
-        """ Converts a monet blob in string representation to a python string.
+        """ Converts a monetdb blob in string representation to a python string.
         The input is a string in the format: '(length: char char char char ... )'
         w/ char in hex representation. The output is the string of chars. """
         #TODO: need to check if blob datatype should use this? otherwise
