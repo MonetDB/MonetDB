@@ -343,6 +343,7 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 #define PROFaggr    13
 #define PROFprocess 14
 #define PROFuser    15
+#define PROFstart   16
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -364,7 +365,8 @@ static struct {
 	/*  13 */  { "aggregate", 0},
 	/*  14 */  { "process", 0},
 	/*  15 */  { "user", 0},
-	/*  16 */  { 0, 0}
+	/*  16 */  { "start", 0},
+	/*  17 */  { 0, 0}
 };
 
 @-
@@ -426,6 +428,8 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 #ifdef MALprofiler
 	if( mb->profiler == NULL) return;
+	if (profileCounter[PROFstart].status == 0 && mb->profiler[pc].ticks== 0) 
+		return;
 	if( myname == 0)
 		myname= putName("profiler",8);
 	if( getModuleId(getInstrPtr(mb,pc)) == myname)
@@ -563,7 +567,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		log("%s,\t", tbuf + 10);
 	}
 	if (profileCounter[PROFthread].status) {
-		log(" %d,", THRgettid());
+		log(" %d,\t", THRgettid());
 	}
 	if (profileCounter[PROFpc].status) {
 		str mod = "";
