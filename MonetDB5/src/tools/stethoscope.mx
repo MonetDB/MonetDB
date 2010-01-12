@@ -48,6 +48,7 @@ Event selector:
     e =event
     f =function 
     o =operation called
+    i =interpreter theread
     T =time
     t =ticks
     c =cpu statistics
@@ -57,6 +58,7 @@ Event selector:
     b =bytes read/written
     s =statement
 	p =pgfaults,cntxtswitches
+	S =Start profiling instruction
 @end verbatim
 
 Ideally, the stream of events should be piped into a
@@ -92,7 +94,7 @@ stethoscope  +tis algebra.* bat.* group.* sql.* aggr.*
 
 static struct {
 	char tag;
-    char *ptag;       /* which profiler counter is needed */
+    char *ptag;       /* which profiler group counter is needed */
     char *name;       /* which logical counter is needed */
     int status;     /* trace it or not */
 } profileCounter[] = {
@@ -108,7 +110,6 @@ static struct {
     /*  9  */  {'c', "cpu", "cutime", 0},
     /*  0  */  {'c', "cpu", "stime", 0},
     /*  1  */  {'c', "cpu", "cstime", 0},
-    /*  1  */  {'c', "cpu", "thread", 0},
     /*  2  */  {'m', "memory", "arena", 0},
     /*  3  */  {'m', "memory", "ordblks", 0},
     /*  4  */  {'m', "memory", "smblks", 0},
@@ -126,8 +127,10 @@ static struct {
     /*  6  */  {'p', "process","swaps", 0},
     /*  7  */  {'p', "process","ctxt switch", 0},
     /*  8  */  {'p', "process","inv switch", 0},
-    /*  9  */  {'u', "user","user", 0},
-    /*  0  */  {0, 0,  0, 0}
+    /*  9  */  {'i', "thread", "thread", 0},
+    /*  0  */  {'u', "user","user", 0},
+    /*  1  */  {'S', "start","start", 0},
+    /*  2  */  {0, 0,  0, 0}
 };
 
 static Mapi dbh;
@@ -153,10 +156,12 @@ usage(){
 	fprintf(stderr,"-g | --gnuplot\n");
 
 	fprintf(stderr,"The trace options:\n");
+	fprintf(stderr,"    S =Start instruction profiling\n");
 	fprintf(stderr,"    a =aggregates\n");
 	fprintf(stderr,"    e =event\n");
 	fprintf(stderr,"    f =function \n");
 	fprintf(stderr,"    o =operation called\n");
+	fprintf(stderr,"    i =interpreter thread\n");
 	fprintf(stderr,"    T =time\n");
 	fprintf(stderr,"    t =ticks\n");
 	fprintf(stderr,"    c =cpu statistics\n");
@@ -316,7 +321,10 @@ int main(int argc, char **argv)
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_trace(dbh,1);*/
-	printf("#connection with server for '%s' established\n",dbname);
+	if( dbname)
+		printf("#connection with server for '%s' established\n",dbname);
+	else
+		printf("#connection with server established\n");
 
 	/* set counters */
 	for(i=0; profileCounter[i].tag; i++){
@@ -324,11 +332,11 @@ int main(int argc, char **argv)
 		snprintf(buf,BUFSIZ,"profiler.deactivate(\"%s\");",
 			profileCounter[i].ptag);
 		doQ(buf);
-		snprintf(buf,BUFSIZ,"profiler.activate(\"%s\");",
-			profileCounter[i].ptag);
+		snprintf(buf,BUFSIZ,"profiler.activate(\"%s\");", profileCounter[i].ptag);
 		if( profileCounter[i].status){
 			doQ(buf);
 			colind[colcnt++]=i;
+			printf("#%s\n",buf);
 		}
 	}
 
