@@ -521,15 +521,16 @@ abandoning the task.
 			/* reset the postponed joins */
 			for( k=0; k<top; k++)
 				postpone[k]=FALSE;
+			if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 			postponed = 0;
 		}
 #ifdef DEBUG_OPT_JOINPATH
+		if (b )
 		stream_printf(cntxt->fdout, "#joinPath %d:= join(%d,%d)\n", 
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 #endif
 		BBPdecref(joins[j]->batCacheid, FALSE);
 		BBPdecref(joins[j+1]->batCacheid, FALSE);
-        	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 		joins[j] = b;
 		top--;
 		for (i = j + 1; i < top; i++)
