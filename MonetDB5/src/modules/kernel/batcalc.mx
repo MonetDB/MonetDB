@@ -68,6 +68,17 @@ because they avoid expensive BAT copying.
 The accumulator versions modifies the first argument,
 provided it is a temporary BAT and not a view.
 @= calcGrp1
+	command @1(b:bat[:oid,:@3], cst:@4) :bat[:oid,:@5] 
+	address CMDbat@2cst_@3_@4_@5;
+
+	command @1(cst:@3, b:bat[:oid,:@4]) :bat[:oid,:@5] 
+	address CMDcst@2bat_@3_@4_@5;
+
+	command @1(b:bat[:oid,:@3], c:bat[:oid,:@4]) :bat[:oid,:@5] 
+	address CMDbat@2_@3_@4_@5
+	comment "Binary BAT calculator function with new BAT result";
+@-
+@= calcGrp2
 
 	command @1{target=1}(b:bat[:oid,:@3], c:bat[:oid,:@4], aflag:bit, bflag:bit):bat[:oid,:@5]
 	address CMDbataccum@2_@3_@4_@5
@@ -80,17 +91,6 @@ provided it is a temporary BAT and not a view.
 	command @1{target=1}(b:bat[:oid,:@3], cst:@4, bflag:bit, cflag:bit) :bat[:oid,:@5]
 	address CMDbataccum@2cst_@3_@4_@5
 	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
-@-
-@= calcGrp2
-	command @1(b:bat[:oid,:@3], cst:@4) :bat[:oid,:@5] 
-	address CMDbat@2cst_@3_@4_@5;
-
-	command @1(cst:@3, b:bat[:oid,:@4]) :bat[:oid,:@5] 
-	address CMDcst@2bat_@3_@4_@5;
-
-	command @1(b:bat[:oid,:@3], c:bat[:oid,:@4]) :bat[:oid,:@5] 
-	address CMDbat@2_@3_@4_@5
-	comment "Binary BAT calculator function with new BAT result";
 @-
 @= calcGrp3
 	@:calcGrp1(@1,@2,@3,@4,@5)@
@@ -145,25 +145,25 @@ C qualifier and the operands
 	@:calcGrp3(>>,RSH,lng,int,lng)@
 
 @= coerceGrp
-	@:calcGrp2(@1,@2,bte,bte,lng)@
-	@:calcGrp2(@1,@2,bte,sht,lng)@
-	@:calcGrp2(@1,@2,bte,int,lng)@
-	@:calcGrp2(@1,@2,bte,wrd,lng)@
+	@:calcGrp1(@1,@2,bte,bte,lng)@
+	@:calcGrp1(@1,@2,bte,sht,lng)@
+	@:calcGrp1(@1,@2,bte,int,lng)@
+	@:calcGrp1(@1,@2,bte,wrd,lng)@
 	@:calcGrp3(@1,@2,bte,lng,lng)@
-	@:calcGrp2(@1,@2,sht,bte,lng)@
-	@:calcGrp2(@1,@2,sht,sht,lng)@
-	@:calcGrp2(@1,@2,sht,int,lng)@
-	@:calcGrp2(@1,@2,sht,wrd,lng)@
+	@:calcGrp1(@1,@2,sht,bte,lng)@
+	@:calcGrp1(@1,@2,sht,sht,lng)@
+	@:calcGrp1(@1,@2,sht,int,lng)@
+	@:calcGrp1(@1,@2,sht,wrd,lng)@
 	@:calcGrp3(@1,@2,sht,lng,lng)@
-	@:calcGrp2(@1,@2,int,bte,lng)@
-	@:calcGrp2(@1,@2,int,sht,lng)@
-	@:calcGrp2(@1,@2,int,int,lng)@
-	@:calcGrp2(@1,@2,int,wrd,lng)@
+	@:calcGrp1(@1,@2,int,bte,lng)@
+	@:calcGrp1(@1,@2,int,sht,lng)@
+	@:calcGrp1(@1,@2,int,int,lng)@
+	@:calcGrp1(@1,@2,int,wrd,lng)@
 	@:calcGrp3(@1,@2,int,lng,lng)@
-	@:calcGrp2(@1,@2,wrd,bte,lng)@
-	@:calcGrp2(@1,@2,wrd,sht,lng)@
-	@:calcGrp2(@1,@2,wrd,int,lng)@
-	@:calcGrp2(@1,@2,wrd,wrd,lng)@
+	@:calcGrp1(@1,@2,wrd,bte,lng)@
+	@:calcGrp1(@1,@2,wrd,sht,lng)@
+	@:calcGrp1(@1,@2,wrd,int,lng)@
+	@:calcGrp1(@1,@2,wrd,wrd,lng)@
 	@:calcGrp3(@1,@2,wrd,lng,lng)@
 	@:calcGrp3(@1,@2,lng,bte,lng)@
 	@:calcGrp3(@1,@2,lng,sht,lng)@
@@ -171,41 +171,41 @@ C qualifier and the operands
 	@:calcGrp3(@1,@2,lng,wrd,lng)@
 	@:calcGrp3(@1,@2,lng,lng,lng)@
 
-	@:calcGrp2(@1,@2,bte,bte,wrd)@
-	@:calcGrp2(@1,@2,bte,sht,wrd)@
-	@:calcGrp2(@1,@2,bte,int,wrd)@
+	@:calcGrp1(@1,@2,bte,bte,wrd)@
+	@:calcGrp1(@1,@2,bte,sht,wrd)@
+	@:calcGrp1(@1,@2,bte,int,wrd)@
 	@:calcGrp3(@1,@2,bte,wrd,wrd)@
-	@:calcGrp2(@1,@2,sht,bte,wrd)@
-	@:calcGrp2(@1,@2,sht,sht,wrd)@
-	@:calcGrp2(@1,@2,sht,int,wrd)@
+	@:calcGrp1(@1,@2,sht,bte,wrd)@
+	@:calcGrp1(@1,@2,sht,sht,wrd)@
+	@:calcGrp1(@1,@2,sht,int,wrd)@
 	@:calcGrp3(@1,@2,sht,wrd,wrd)@
-	@:calcGrp2(@1,@2,int,bte,wrd)@
-	@:calcGrp2(@1,@2,int,sht,wrd)@
-	@:calcGrp2(@1,@2,int,int,wrd)@
+	@:calcGrp1(@1,@2,int,bte,wrd)@
+	@:calcGrp1(@1,@2,int,sht,wrd)@
+	@:calcGrp1(@1,@2,int,int,wrd)@
 	@:calcGrp3(@1,@2,int,wrd,wrd)@
 	@:calcGrp3(@1,@2,wrd,bte,wrd)@
 	@:calcGrp3(@1,@2,wrd,sht,wrd)@
 	@:calcGrp3(@1,@2,wrd,int,wrd)@
 	@:calcGrp3(@1,@2,wrd,wrd,wrd)@
 
-	@:calcGrp2(@1,@2,bte,bte,int)@
-	@:calcGrp2(@1,@2,bte,sht,int)@
+	@:calcGrp1(@1,@2,bte,bte,int)@
+	@:calcGrp1(@1,@2,bte,sht,int)@
 	@:calcGrp3(@1,@2,bte,int,int)@
-	@:calcGrp2(@1,@2,sht,bte,int)@
-	@:calcGrp2(@1,@2,sht,sht,int)@
+	@:calcGrp1(@1,@2,sht,bte,int)@
+	@:calcGrp1(@1,@2,sht,sht,int)@
 	@:calcGrp3(@1,@2,sht,int,int)@
 	@:calcGrp3(@1,@2,int,bte,int)@
 	@:calcGrp3(@1,@2,int,sht,int)@
 	@:calcGrp3(@1,@2,int,int,int)@
 
-	@:calcGrp2(@1,@2,bte,bte,sht)@
+	@:calcGrp1(@1,@2,bte,bte,sht)@
 	@:calcGrp3(@1,@2,bte,sht,sht)@
 	@:calcGrp3(@1,@2,sht,bte,sht)@
 	@:calcGrp3(@1,@2,sht,sht,sht)@
 
 	@:calcGrp3(@1,@2,bte,bte,bte)@
 
-	@:calcGrp2(@1,@2,flt,flt,dbl)@
+	@:calcGrp1(@1,@2,flt,flt,dbl)@
 	@:calcGrp3(@1,@2,flt,dbl,dbl)@
 	@:calcGrp3(@1,@2,dbl,flt,dbl)@
 	@:calcGrp3(@1,@2,dbl,dbl,dbl)@
@@ -555,7 +555,7 @@ The similar code base is produced for dealing with a constant argument.
 	}
 #endif
 }
-@= arithmeticImpl_2
+@= arithmeticImpl_1
 batcalc_export str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r);
 str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 {	
@@ -683,7 +683,7 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 	return res;
 }
 @-
-@= arithmeticImpl_1
+@= arithmeticImpl_2
 /*
 The accumulator variants may re-use the storage of an argument only when it is not shared,
 nor being a persistent BAT
@@ -835,8 +835,8 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 }
 @-
 @= arithmeticImpl_3
-	@:arithmeticImpl_2(@1,@2,@3,@4,@5,@6,@7)@
 	@:arithmeticImpl_1(@1,@2,@3,@4,@5,@6,@7)@
+	@:arithmeticImpl_2(@1,@2,@3,@4,@5,@6,@7)@
 @-
 @c
 #include "mal_config.h"
@@ -852,25 +852,25 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 */
 
 @= arithGrpImpl
-@:arithmeticImpl_2(@1,@2,bte,bte,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,bte,sht,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,bte,int,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,bte,wrd,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,bte,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,sht,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,int,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,wrd,lng,@3,1)@
 @:arithmeticImpl_3(@1,@2,bte,lng,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,sht,bte,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,sht,sht,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,sht,int,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,sht,wrd,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,sht,bte,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,sht,sht,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,sht,int,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,sht,wrd,lng,@3,1)@
 @:arithmeticImpl_3(@1,@2,sht,lng,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,int,bte,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,int,sht,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,int,int,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,int,wrd,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,int,bte,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,int,sht,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,int,int,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,int,wrd,lng,@3,1)@
 @:arithmeticImpl_3(@1,@2,int,lng,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,wrd,bte,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,wrd,sht,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,wrd,int,lng,@3,1)@
-@:arithmeticImpl_2(@1,@2,wrd,wrd,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,wrd,bte,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,wrd,sht,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,wrd,int,lng,@3,1)@
+@:arithmeticImpl_1(@1,@2,wrd,wrd,lng,@3,1)@
 @:arithmeticImpl_3(@1,@2,wrd,lng,lng,@3,1)@
 @:arithmeticImpl_3(@1,@2,lng,bte,lng,@3,1)@
 @:arithmeticImpl_3(@1,@2,lng,sht,lng,@3,1)@
@@ -878,41 +878,41 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 @:arithmeticImpl_3(@1,@2,lng,wrd,lng,@3,1)@
 @:arithmeticImpl_3(@1,@2,lng,lng,lng,@3,1)@
 
-@:arithmeticImpl_2(@1,@2,bte,bte,wrd,@3,1)@
-@:arithmeticImpl_2(@1,@2,bte,sht,wrd,@3,1)@
-@:arithmeticImpl_2(@1,@2,bte,int,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,bte,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,sht,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,int,wrd,@3,1)@
 @:arithmeticImpl_3(@1,@2,bte,wrd,wrd,@3,1)@
-@:arithmeticImpl_2(@1,@2,sht,bte,wrd,@3,1)@
-@:arithmeticImpl_2(@1,@2,sht,sht,wrd,@3,1)@
-@:arithmeticImpl_2(@1,@2,sht,int,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,sht,bte,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,sht,sht,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,sht,int,wrd,@3,1)@
 @:arithmeticImpl_3(@1,@2,sht,wrd,wrd,@3,1)@
-@:arithmeticImpl_2(@1,@2,int,bte,wrd,@3,1)@
-@:arithmeticImpl_2(@1,@2,int,sht,wrd,@3,1)@
-@:arithmeticImpl_2(@1,@2,int,int,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,int,bte,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,int,sht,wrd,@3,1)@
+@:arithmeticImpl_1(@1,@2,int,int,wrd,@3,1)@
 @:arithmeticImpl_3(@1,@2,int,wrd,wrd,@3,1)@
 @:arithmeticImpl_3(@1,@2,wrd,bte,wrd,@3,1)@
 @:arithmeticImpl_3(@1,@2,wrd,sht,wrd,@3,1)@
 @:arithmeticImpl_3(@1,@2,wrd,int,wrd,@3,1)@
 @:arithmeticImpl_3(@1,@2,wrd,wrd,wrd,@3,1)@
 
-@:arithmeticImpl_2(@1,@2,bte,bte,int,@3,1)@
-@:arithmeticImpl_2(@1,@2,bte,sht,int,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,bte,int,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,sht,int,@3,1)@
 @:arithmeticImpl_3(@1,@2,bte,int,int,@3,1)@
-@:arithmeticImpl_2(@1,@2,sht,bte,int,@3,1)@
-@:arithmeticImpl_2(@1,@2,sht,sht,int,@3,1)@
+@:arithmeticImpl_1(@1,@2,sht,bte,int,@3,1)@
+@:arithmeticImpl_1(@1,@2,sht,sht,int,@3,1)@
 @:arithmeticImpl_3(@1,@2,sht,int,int,@3,1)@
 @:arithmeticImpl_3(@1,@2,int,bte,int,@3,1)@
 @:arithmeticImpl_3(@1,@2,int,sht,int,@3,1)@
 @:arithmeticImpl_3(@1,@2,int,int,int,@3,1)@
 
-@:arithmeticImpl_2(@1,@2,bte,bte,sht,@3,1)@
+@:arithmeticImpl_1(@1,@2,bte,bte,sht,@3,1)@
 @:arithmeticImpl_3(@1,@2,bte,sht,sht,@3,1)@
 @:arithmeticImpl_3(@1,@2,sht,bte,sht,@3,1)@
 @:arithmeticImpl_3(@1,@2,sht,sht,sht,@3,1)@
 
 @:arithmeticImpl_3(@1,@2,bte,bte,bte,@3,1)@
 
-@:arithmeticImpl_2(@1,@2,flt,flt,dbl,@3,1)@
+@:arithmeticImpl_1(@1,@2,flt,flt,dbl,@3,1)@
 @:arithmeticImpl_3(@1,@2,flt,dbl,dbl,@3,1)@
 @:arithmeticImpl_3(@1,@2,dbl,flt,dbl,@3,1)@
 @:arithmeticImpl_3(@1,@2,dbl,dbl,dbl,@3,1)@
