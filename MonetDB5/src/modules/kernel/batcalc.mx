@@ -426,12 +426,12 @@ fixed-sized types.
 	@3 *q = (@3*)Tloc(b, BUNlast(b));
 
 	if (c == 0)
-		res = createException(ARITH, "batcalc.@4", "Division by zero");
+		res = createException(ARITH, "batcalc.@1", "Division by zero");
 	else 
 	if (b->T->nonil)
 		for (; p<q; o++, p++){
 			if ( *p == 0)
-				res = createException(ARITH, "batcalc.@4", "Division by zero");
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			else
 				*o = c @1 *p;
 		}
@@ -441,7 +441,7 @@ fixed-sized types.
 				*o = @4_nil;
 				bn->T->nonil = 0;
 			} else if (*p == 0)
-				res = createException(ARITH, "batcalc.@4", "Division by zero");
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
 			else
 				*o = c @1 *p;
 		}
