@@ -2287,6 +2287,7 @@ It simply skips the barrier block upon return.
 			{
 				ppc= stkpc;
 				mb->profiler[ppc].clk= 0;
+				mb->profiler[ppc].ticks= 0;
 				mb->profiler[ppc].clock= stk->clock;
 				/* emit the instruction upon start as well */
 				profilerEvent(cntxt->idx,mb,stk,stkpc);
