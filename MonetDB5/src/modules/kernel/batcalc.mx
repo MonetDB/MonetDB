@@ -140,42 +140,44 @@ C qualifier and the operands
 	@:calcGrp(>>,RSH,lng,int,lng)@
 
 @= coerceGrp
-	@:calcGrp(@1,@2,int,sht,lng)@
-	@:calcGrp(@1,@2,sht,int,lng)@
-	@:calcGrp(@1,@2,bte,sht,lng)@
-	@:calcGrp(@1,@2,sht,bte,lng)@
-	@:calcGrp(@1,@2,lng,sht,lng)@
-	@:calcGrp(@1,@2,sht,lng,lng)@
-	@:calcGrp(@1,@2,sht,sht,lng)@
-	@:calcGrp(@1,@2,lng,int,lng)@
-	@:calcGrp(@1,@2,int,lng,lng)@
-	@:calcGrp(@1,@2,bte,int,lng)@
-	@:calcGrp(@1,@2,int,bte,lng)@
-	@:calcGrp(@1,@2,int,int,lng)@
-	@:calcGrp(@1,@2,lng,bte,lng)@
 	@:calcGrp(@1,@2,bte,bte,lng)@
+	@:calcGrp(@1,@2,bte,sht,lng)@
+	@:calcGrp(@1,@2,bte,int,lng)@
 	@:calcGrp(@1,@2,bte,lng,lng)@
+	@:calcGrp(@1,@2,sht,bte,lng)@
+	@:calcGrp(@1,@2,sht,sht,lng)@
+	@:calcGrp(@1,@2,sht,int,lng)@
+	@:calcGrp(@1,@2,sht,lng,lng)@
+	@:calcGrp(@1,@2,int,bte,lng)@
+	@:calcGrp(@1,@2,int,sht,lng)@
+	@:calcGrp(@1,@2,int,int,lng)@
+	@:calcGrp(@1,@2,int,lng,lng)@
 	@:calcGrp(@1,@2,lng,bte,lng)@
+	@:calcGrp(@1,@2,lng,bte,lng)@
+	@:calcGrp(@1,@2,lng,sht,lng)@
+	@:calcGrp(@1,@2,lng,int,lng)@
 	@:calcGrp(@1,@2,lng,lng,lng)@
 
-	@:calcGrp(@1,@2,sht,sht,int)@
 	@:calcGrp(@1,@2,bte,bte,int)@
-	@:calcGrp(@1,@2,sht,bte,int)@
 	@:calcGrp(@1,@2,bte,sht,int)@
-	@:calcGrp(@1,@2,int,sht,int)@
-	@:calcGrp(@1,@2,sht,int,int)@
 	@:calcGrp(@1,@2,bte,int,int)@
+	@:calcGrp(@1,@2,sht,bte,int)@
+	@:calcGrp(@1,@2,sht,sht,int)@
+	@:calcGrp(@1,@2,sht,int,int)@
 	@:calcGrp(@1,@2,int,bte,int)@
+	@:calcGrp(@1,@2,int,sht,int)@
 	@:calcGrp(@1,@2,int,int,int)@
 
-	@:calcGrp(@1,@2,sht,sht,sht)@
+	@:calcGrp(@1,@2,bte,bte,sht)@
 	@:calcGrp(@1,@2,bte,sht,sht)@
 	@:calcGrp(@1,@2,sht,bte,sht)@
-	@:calcGrp(@1,@2,bte,bte,sht)@
+	@:calcGrp(@1,@2,sht,sht,sht)@
+
+	@:calcGrp(@1,@2,bte,bte,bte)@
 
 	@:calcGrp(@1,@2,dbl,dbl,dbl)@
+
 	@:calcGrp(@1,@2,flt,flt,flt)@
-	@:calcGrp(@1,@2,bte,bte,bte)@
 
 @-
 @mal
@@ -810,43 +812,45 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 */
 
 @= arithGrpImpl
-@:arithmeticImpl(@1,@2,flt,flt,flt,@3,1)@
-@:arithmeticImpl(@1,@2,dbl,dbl,dbl,@3,1)@
-@:arithmeticImpl(@1,@2,oid,oid,oid,@3,0)@
+@:arithmeticImpl(@1,@2,bte,bte,lng,@3,1)@
+@:arithmeticImpl(@1,@2,bte,sht,lng,@3,1)@
+@:arithmeticImpl(@1,@2,bte,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,bte,lng,lng,@3,1)@
+@:arithmeticImpl(@1,@2,sht,bte,lng,@3,1)@
+@:arithmeticImpl(@1,@2,sht,sht,lng,@3,1)@
+@:arithmeticImpl(@1,@2,sht,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,sht,lng,lng,@3,1)@
+@:arithmeticImpl(@1,@2,int,bte,lng,@3,1)@
+@:arithmeticImpl(@1,@2,int,sht,lng,@3,1)@
+@:arithmeticImpl(@1,@2,int,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,int,lng,lng,@3,1)@
+@:arithmeticImpl(@1,@2,lng,bte,lng,@3,1)@
+@:arithmeticImpl(@1,@2,lng,sht,lng,@3,1)@
+@:arithmeticImpl(@1,@2,lng,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,lng,lng,lng,@3,1)@
+
+@:arithmeticImpl(@1,@2,bte,bte,int,@3,1)@
+@:arithmeticImpl(@1,@2,bte,sht,int,@3,1)@
+@:arithmeticImpl(@1,@2,bte,int,int,@3,1)@
+@:arithmeticImpl(@1,@2,sht,bte,int,@3,1)@
+@:arithmeticImpl(@1,@2,sht,sht,int,@3,1)@
+@:arithmeticImpl(@1,@2,sht,int,int,@3,1)@
+@:arithmeticImpl(@1,@2,int,bte,int,@3,1)@
+@:arithmeticImpl(@1,@2,int,sht,int,@3,1)@
+@:arithmeticImpl(@1,@2,int,int,int,@3,1)@
+
+@:arithmeticImpl(@1,@2,bte,bte,sht,@3,1)@
+@:arithmeticImpl(@1,@2,bte,sht,sht,@3,1)@
+@:arithmeticImpl(@1,@2,sht,bte,sht,@3,1)@
+@:arithmeticImpl(@1,@2,sht,sht,sht,@3,1)@
 
 @:arithmeticImpl(@1,@2,bte,bte,bte,@3,1)@
 
-@:arithmeticImpl(@1,@2,sht,sht,sht,@3,1)@
-@:arithmeticImpl(@1,@2,bte,sht,sht,@3,1)@
-@:arithmeticImpl(@1,@2,sht,bte,sht,@3,1)@
-@:arithmeticImpl(@1,@2,bte,bte,sht,@3,1)@
+@:arithmeticImpl(@1,@2,dbl,dbl,dbl,@3,1)@
 
-@:arithmeticImpl(@1,@2,int,sht,int,@3,1)@
-@:arithmeticImpl(@1,@2,sht,int,int,@3,1)@
-@:arithmeticImpl(@1,@2,sht,sht,int,@3,1)@
-@:arithmeticImpl(@1,@2,bte,sht,int,@3,1)@
-@:arithmeticImpl(@1,@2,sht,bte,int,@3,1)@
-@:arithmeticImpl(@1,@2,bte,bte,int,@3,1)@
-@:arithmeticImpl(@1,@2,bte,int,int,@3,1)@
-@:arithmeticImpl(@1,@2,int,bte,int,@3,1)@
-@:arithmeticImpl(@1,@2,int,int,int,@3,1)@
+@:arithmeticImpl(@1,@2,flt,flt,flt,@3,1)@
 
-@:arithmeticImpl(@1,@2,lng,lng,lng,@3,1)@
-@:arithmeticImpl(@1,@2,bte,lng,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,sht,lng,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,sht,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,sht,int,lng,@3,1)@
-@:arithmeticImpl(@1,@2,bte,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,sht,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,int,sht,lng,@3,1)@
-@:arithmeticImpl(@1,@2,int,lng,lng,@3,1)@
-@:arithmeticImpl(@1,@2,lng,int,lng,@3,1)@
-@:arithmeticImpl(@1,@2,bte,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,bte,int,lng,@3,1)@
-@:arithmeticImpl(@1,@2,int,bte,lng,@3,1)@
-@:arithmeticImpl(@1,@2,int,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,oid,oid,oid,@3,0)@
 
 @c
 /*
@@ -1069,18 +1073,21 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 @:numeric_funcs(%,MOD,int,int,int)@
 @:numeric_funcs(%,MOD,wrd,wrd,wrd)@
 @:numeric_funcs(%,MOD,lng,lng,lng)@
+
 @:numeric_funcs(^,XOR,oid,oid,oid)@
 @:numeric_funcs(^,XOR,bte,bte,bte)@
 @:numeric_funcs(^,XOR,sht,sht,sht)@
 @:numeric_funcs(^,XOR,int,int,int)@
 @:numeric_funcs(^,XOR,wrd,wrd,wrd)@
 @:numeric_funcs(^,XOR,lng,lng,lng)@
+
 @:numeric_funcs(&,AND,oid,oid,oid)@
 @:numeric_funcs(&,AND,bte,bte,bte)@
 @:numeric_funcs(&,AND,sht,sht,sht)@
 @:numeric_funcs(&,AND,int,int,int)@
 @:numeric_funcs(&,AND,wrd,wrd,wrd)@
 @:numeric_funcs(&,AND,lng,lng,lng)@
+
 @:numeric_funcs(|,OR,oid,oid,oid)@
 @:numeric_funcs(|,OR,bte,bte,bte)@
 @:numeric_funcs(|,OR,sht,sht,sht)@
