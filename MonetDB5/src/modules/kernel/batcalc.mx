@@ -905,8 +905,6 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 
 @:arithmeticImpl(@1,@2,flt,flt,flt,@3,1)@
 
-@:arithmeticImpl(@1,@2,oid,oid,oid,@3,0)@
-
 @c
 /*
 @1:   +,   -,   *,   /     basic arithmetic operator symbol
