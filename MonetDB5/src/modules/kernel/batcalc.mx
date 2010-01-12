@@ -601,10 +601,10 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 	if (*(@4*)cst == 0) {
 		res = createException(ARITH, "batcalc.@1", "Division by zero");
 	} else {
-		@:accumCst(@1,@3,@4,@4)@ 
+		@:accumCst(@1,@3,@4,@5)@ 
 	}
 #else
-	@:accumCst(@1,@3,@4,@4)@ 
+	@:accumCst(@1,@3,@4,@5)@ 
 #endif
 	BATsetcount(bn, BATcount(b));
 	if (@6 & 1) {
