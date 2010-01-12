@@ -153,7 +153,6 @@ C qualifier and the operands
 	@:calcGrp(@1,@2,int,int,lng)@
 	@:calcGrp(@1,@2,int,lng,lng)@
 	@:calcGrp(@1,@2,lng,bte,lng)@
-	@:calcGrp(@1,@2,lng,bte,lng)@
 	@:calcGrp(@1,@2,lng,sht,lng)@
 	@:calcGrp(@1,@2,lng,int,lng)@
 	@:calcGrp(@1,@2,lng,lng,lng)@
