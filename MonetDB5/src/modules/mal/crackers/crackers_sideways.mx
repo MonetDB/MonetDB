@@ -1544,8 +1544,7 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid){
                 CRKcrackUnorderedThreeSideways_LO_RE_@1_@2(b,*low,*hgh, @3, @4, &vl, &vh);
         if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
                 CRKcrackUnorderedThreeSideways_LO_RO_@1_@2(b,*low,*hgh, @3, @4, &vl, &vh);
-
-        if (vl != (oid)-1 && vh != (oid)-1 && vl < vh){
+        if (vl != (oid)-1 && vh != (oid)-1 && vl <= vh){
 		CrackerIndex[m].pieces++; /* add one more piece since we are making 
 						at least 2 new pieces */
                 if (vl>0) _vl=vl-1; else _vl=vl;
@@ -2129,7 +2128,6 @@ createView:
 		/* update the cracker tape and the cursor of the map */
 		AddToTape_@1(h, *low, *hgh, *inclusiveLow, *inclusiveHgh );
 		CrackerIndex[m].nextCrack++;
-
                 goto createView;
 	}
 
