@@ -1,0 +1,14 @@
+# ChangeLog file for buildtools
+# This file is updated with Maddlog
+
+* Thu Dec  6 2007 Fabian Groffen <fabian@cwi.nl>
+- Implemented rudimentary conditional support for ant targets
+
+* Wed Dec  5 2007 Fabian Groffen <fabian@cwi.nl>
+- Allow for 'included' dependencies, such that the wonders of libtool can
+  compile against a build dir of a dependency, instead of its installation
+  dir.
+
+* Tue Jan  9 2007 Fabian Groffen <fabian@cwi.nl>
+- Initial autotooled setup
+

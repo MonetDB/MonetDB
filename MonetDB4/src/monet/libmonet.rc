@@ -1,0 +1,42 @@
+#include <Windows.h>
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+1 VERSIONINFO
+  FILEVERSION 4,36,0,1
+  PRODUCTVERSION 4,36,0,1
+  FILEFLAGSMASK 0x3fL
+  FILEFLAGS 0
+  FILEOS VOS_NT_WINDOWS32
+  FILETYPE VFT_DLL
+  FILESUBTYPE 0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904b0"	// US-English; Unicode
+    BEGIN
+      VALUE "Comments", "\0"
+      VALUE "CompanyName", "CWI\0"
+      VALUE "FileDescription", "MonetDB4 Library DLL\0"
+      VALUE "FileVersion", "4.36.0\0"
+      //                    ^^^^^^^^
+      // Maintained via vertoo. Please don't modify by hand!
+      // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+      VALUE "InternalName", "libmonet\0"
+      VALUE "LegalCopyright", "Copyright © CWI 2004-2008\0"
+      VALUE "LegalTrademarks", "\0"
+      VALUE "OriginalFilename", "libmonet.dll\0"
+      VALUE "PrivateBuild", "\0"
+      VALUE "ProductName", "MonetDB4 Server\0"
+      VALUE "ProductVersion", "4.36.0\0"
+      //                       ^^^^^^^^
+      // Maintained via vertoo. Please don't modify by hand!
+      // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+      VALUE "SpecialBuild", "\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200	// US-English; Unicode
+  END
+END
