@@ -199,5 +199,5 @@ fi > $file
 mv $file "$CL"
 
 if [ ! "$nocommit" ]; then
-    cvs commit -m "$msg" "$CL"
+    cvs commit -m "  $msg" "$CL"
 fi
