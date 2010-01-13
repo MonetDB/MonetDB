@@ -1,7 +1,0 @@
-# ChangeLog file for MonetDB
-# This file is updated with Maddlog
-
-* Wed Jan  6 2010 Sjoerd Mullender <sjoerd@cwi.nl>
-- Changed the string heap implementation to also contain the hashes of strings.
-- Changed the implementation of the string offset columns to be dynamically sized.
-
