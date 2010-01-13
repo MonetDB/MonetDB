@@ -48,16 +48,16 @@ BuildRequires: libxml2-devel
 
 %define builddoc 0
 
-Requires: MonetDB-client >= 1.34
+Requires: MonetDB-client >= 1.36
 #                           ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.34
+BuildRequires: MonetDB-devel >= 1.36
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB-client-devel >= 1.34
+BuildRequires: MonetDB-client-devel >= 1.36
 #                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
