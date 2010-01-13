@@ -1,0 +1,62 @@
+# -*- makefile -*-
+
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2010 MonetDB B.V.
+# All Rights Reserved.
+
+# treat warnings as errors
+W_CFLAGS = -WX
+
+RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
+!INCLUDE $(RULESMSC)
+
+VERSION = 0.16.0
+#         ^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+
+pkg = geom
+CONFIG_H=geom_config.h
+
+GEOS = C:\geos-3.0.win$(bits)
+GEOS_LIBS = $(GEOS)\lib\geos_c_i$(DEBUGLIB).lib
+GEOS_INCS = -I$(GEOS)\include
+
+MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include\MonetDB
+
+MONETDB_INCS=-I"$(MONETDB_INCLUDEDIR)" -I"$(MONETDB_INCLUDEDIR)\common" -I"$(MONETDB_INCLUDEDIR)\gdk"
+MONETDB_LIBS=/libpath:"$(MONETDB_PREFIX)\lib"
+MONETDB_MODS=/libpath:"$(MONETDB_PREFIX)\lib\MonetDB"
+
+!IFDEF HAVE_MONETDB4
+MONETDB4_INCLUDEDIR=$(MONETDB4_PREFIX)\include\MonetDB4
+
+MONETDB4_INCS=-I"$(MONETDB4_INCLUDEDIR)" -I"$(MONETDB4_INCLUDEDIR)\monet" -I"$(MONETDB4_INCLUDEDIR)\plain" -I"$(MONETDB4_INCLUDEDIR)\contrib"
+MONETDB4_LIBS=/libpath:"$(MONETDB4_PREFIX)\lib"
+MONETDB4_MODS=/libpath:"$(MONETDB4_PREFIX)\lib\MonetDB4"
+!ELSE
+MONETDB4_INCS=
+!ENDIF
+
+!IFDEF HAVE_MONETDB5
+MONETDB5_INCLUDEDIR=$(MONETDB5_PREFIX)\include\MonetDB5
+
+MONETDB5_INCS=-I"$(MONETDB5_INCLUDEDIR)" -I"$(MONETDB5_INCLUDEDIR)\atoms" -I"$(MONETDB5_INCLUDEDIR)\compiler" -I"$(MONETDB5_INCLUDEDIR)\kernel" -I"$(MONETDB5_INCLUDEDIR)\mal" -I"$(MONETDB5_INCLUDEDIR)\mil" -I"$(MONETDB5_INCLUDEDIR)\optimizer" -I"$(MONETDB5_INCLUDEDIR)\scheduler"
+MONETDB5_LIBS=/libpath:"$(MONETDB5_PREFIX)\lib"
+MONETDB5_MODS=/libpath:"$(MONETDB5_PREFIX)\lib\MonetDB5"
+!ELSE
+MONETDB5_INCS=
+!ENDIF
