@@ -29,7 +29,7 @@ URL: http://monetdb.cwi.nl/
 Source: http://downloads.sourceforge.net/monetdb/MonetDB-client-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-Requires: MonetDB >= 1.34
+Requires: MonetDB >= 1.36
 #                    ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -48,7 +48,7 @@ BuildRequires: readline-devel, openssl-devel
 %endif
 
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.34
+BuildRequires: MonetDB-devel >= 1.36
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -58,7 +58,7 @@ BuildRequires: MonetDB-devel >= 1.34
 Summary: MonetDB Client development package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
-Requires: MonetDB-devel >= 1.34
+Requires: MonetDB-devel >= 1.36
 #                          ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
