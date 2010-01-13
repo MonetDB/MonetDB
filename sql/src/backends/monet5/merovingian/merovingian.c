@@ -680,14 +680,16 @@ main(int argc, char *argv[])
 
 		len = fread(_mero_controlpass, 1,
 				sizeof(_mero_controlpass) - 1, secretf);
+		fclose(secretf);
 		_mero_controlpass[len] = '\0';
 		len = strlen(_mero_controlpass); /* secret can contain null-bytes */
+		/* strip trailing newlines */
+		for (; len > 0 && _mero_controlpass[len - 1] == '\n'; len--)
+			_mero_controlpass[len - 1] = '\0';
 		if (len == 0) {
 			Mfprintf(stderr, "control passphrase has zero-length\n");
-			fclose(secretf);
 			MERO_EXIT(1);
 		}
-		fclose(secretf);
 	}
 
 	/* we need a pidfile */
