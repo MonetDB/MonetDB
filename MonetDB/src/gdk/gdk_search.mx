@@ -171,35 +171,39 @@ A new entry is added with @%HASHins@ using the BAT, the BUN index,
 and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 
 @= hashins
-#define HASHins_@1(h, i, v) {			\
-	BUN _c = hash_@1(h,v);		\
+#define HASHins_@1(h, i, v) do {		\
+	BUN _c = hash_@1(h,v);			\
 	h->link[i] = h->hash[_c];		\
 	h->hash[_c] = i;			\
-}
+} while (0)
 @h
-#define HASHins_str(h,i,v) {			\
-	BUN _c;				\
+#define HASHins_str(h,i,v) do {			\
+	BUN _c;					\
 	GDK_STRHASH(v,_c);			\
 	_c &= (h)->mask;			\
 	h->link[i] = h->hash[_c];		\
 	h->hash[_c] = i;			\
-}
-#define HASHins_str_hv(h,i,v) {			\
+} while (0)
+#define HASHins_str_hv(h,i,v) do {		\
 	BUN _c = ((BUN *) v)[-1] & (h)->mask;	\
 	h->link[i] = h->hash[_c];		\
 	h->hash[_c] = i;			\
-}
+} while (0)
 
-#define HASHins_any(h,i,v) {			\
+#define HASHins_any(h,i,v) do {			\
 	BUN _c = HASHprobe(h, v);		\
 	h->link[i] = h->hash[_c];		\
 	h->hash[_c] = i;			\
-}
+} while (0)
 
 /* HASHins now receives a BAT* param and has become adaptive; killing wrongly configured hash tables */
 /* use HASHins_any or HASHins_<tpe> instead if you know what you're doing or want to keep the hash whatever */
-#define HASHins(b,i,v) \
-	do if (((i) & 1023) == 1023 && HASHgonebad((b),(v))) { HASHremove(b); } else  { HASHins_any((b)->H->hash,(i),(v)); } while (0)
+#define HASHins(b,i,v) do {						\
+	if (((i) & 1023) == 1023 && HASHgonebad((b),(v)))		\
+		HASHremove(b);						\
+	else								\
+		HASHins_any((b)->H->hash,(i),(v));			\
+} while (0)
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)

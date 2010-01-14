@@ -2831,7 +2831,9 @@ found@3@2:		(* (int *) BUNtloc(bni, r))++;
 	case TYPE_str:
 		if (b->T->vheap->hashash) {
 			@:histoloop_inner(var,_str_hv,atom,tt)@
+			break;
 		}
+		/* fall through */
 	default:
 		if (bn->hvarsized) {
 			@:histoloop_inner(var,var,atom,tt)@
