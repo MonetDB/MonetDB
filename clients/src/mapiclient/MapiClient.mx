@@ -688,7 +688,8 @@ TESTrenderer(MapiHdl hdl)
 			sep = ",\t";
 			if (s == NULL)
 				stream_printf(toConsole, "NULL");
-			else if (strcmp(tp, "varchar") == 0) {
+			else if (strcmp(tp, "varchar") == 0 ||
+				 strcmp(tp, "char") == 0) {
 				stream_printf(toConsole, "\"");
 				while (*s) {
 					switch (*s) {
@@ -708,8 +709,6 @@ TESTrenderer(MapiHdl hdl)
 						stream_write(toConsole, "\\\"", 1, 2);
 						break;
 					default:
-						if (*s == *sep)
-							stream_write(toConsole, "\\", 1, 1);
 						stream_write(toConsole, s, 1, 1);
 						break;
 					}
