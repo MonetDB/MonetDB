@@ -1,6 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+  13 Jan 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c:
+  Strip trailing newlines from the control channel password, bug #2931392
+
 *Nov2009
 
   26 Oct 2009; Fabian Groffen <fabian@cwi.nl> utils.c
