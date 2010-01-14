@@ -689,7 +689,8 @@ TESTrenderer(MapiHdl hdl)
 			if (s == NULL)
 				stream_printf(toConsole, "NULL");
 			else if (strcmp(tp, "varchar") == 0 ||
-				 strcmp(tp, "char") == 0) {
+				 strcmp(tp, "char") == 0 ||
+				 strcmp(tp, "clob") == 0) {
 				stream_printf(toConsole, "\"");
 				while (*s) {
 					switch (*s) {
