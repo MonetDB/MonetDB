@@ -17,8 +17,8 @@
 
 INCLUDES = \
 	-I../atoms -I../../mal \
-	$(MONETDB_INCS)  \
-	$(HWCOUNTERS_INCS) $(PCL_FLAGS) $(ICONV_CFLAGS)
+	$(MONETDB_INCS) $(HWCOUNTERS_INCS) $(PCL_FLAGS) \
+	$(SPHINXCLIENT_CFLAGS) $(ICONV_CFLAGS)
 
 MTSAFE
 
@@ -110,6 +110,17 @@ lib__logger = {
 		
 }
 
+lib__sphinx = {
+	COND = HAVE_SPHINXCLIENT
+	DIR = libdir/MonetDB5
+	SEP = _
+	SOURCES = sphinx.mx
+
+	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(MALLOC_LIBS) \
+		$(SPHINXCLIENT_LIBS) ../../mal/libmonetdb5
+}
+
 headers_h = {
 	DIR = includedir/MonetDB5/kernel
 	SOURCES = \
@@ -120,7 +131,8 @@ headers_h = {
 		aggr_be_sum.mx aggr_be_prod.mx aggr_be_avg.mx aggr_be_minmax.mx aggr_be_count.mx \
 		aggr_bge_sum.mx aggr_bge_prod.mx aggr_bge_avg.mx aggr_bge_minmax.mx aggr_bge_count.mx \
 		counters.mx microbenchmark.mx \
-		batstr.mx batmtime.mx batcolor.mx group.mx array.mx logger.mx
+		batstr.mx batmtime.mx batcolor.mx group.mx array.mx logger.mx \
+		sphinx.mx
 	HEADERS = h 
 }
 
@@ -131,7 +143,8 @@ headers_mal = {
 		mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \
 		batcolor.mx batifthen.mx batcast.mx batcalc.mx batmmath.mx \
 		group.mx aggr.mx array.mx \
-		counters.mx logger.mx microbenchmark.mx
+		counters.mx logger.mx microbenchmark.mx \
+		sphinx.mx
 }
 
 EXTRA_DIST_DIR = Tests

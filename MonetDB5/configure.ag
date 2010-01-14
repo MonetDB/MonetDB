@@ -278,6 +278,37 @@ AC_SUBST(LIBXML2_CFLAGS, $LIBXML2_CFLAGS)
 AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
+have_sphinxclient="auto"
+AC_ARG_WITH(sphinxclient,
+    AC_HELP_STRING([--with-sphinxclient=DIR],[sphinxclient library is installed in DIR]),
+    [have_sphinxclient="$withval"], [have_sphinxclient="auto"])
+if test "x$have_sphinxclient" != xno; then
+	case "$have_sphinxclient" in
+	auto|yes)
+	    ;;
+	*)
+	    SPHINXCLIENT_CFLAGS="-I$have_sphinxclient/include"
+	    SPHINXCLIENT_LIBS="-L$have_sphinxclient/lib -lsphinxclient"
+	    ;;
+	esac
+
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $SPHINXCLIENT_CFLAGS"
+	LDFLAGS="$LDFLAGS $SPHINXCLIENT_LIBS"
+	AC_CHECK_HEADER(sphinxclient.h,
+		AC_CHECK_LIB(sphinxclient, sphinx_create,
+			AC_DEFINE(HAVE_SPHINXCLIENT, 1, [Define if you have the sphinxclient library])
+			have_sphinxclient=yes,
+			[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([-lsphinxclient library not found]); fi; have_sphinxclient=no ]),
+		[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([sphinxclient.h header not found]); fi; have_sphinxclient=no ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(SPHINXCLIENT_CFLAGS, $SPHINXCLIENT_CFLAGS)
+AC_SUBST(SPHINXCLIENT_LIBS, $SPHINXCLIENT_LIBS)
+AM_CONDITIONAL(HAVE_SPHINXCLIENT, test x"$have_sphinxclient" != xno)
+
 dnl RIPEMD160 is patent free, academic and European, but unfortunately
 dnl can't use it by default, as that would exclude JDBC usage (Java
 dnl doesn't natively support RIPEMD160).

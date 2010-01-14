@@ -1,0 +1,156 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2010 MonetDB B.V.
+@' All Rights Reserved.
+
+@f sphinx
+@a S.A.M.M. de Konink
+@v 0.1
+@* The Sphinx module
+The Sphinx module implements an external full text search engine returning a
+list of identifiers based on a query string and an index to search upon.
+
+@mal
+module sphinx;
+
+command search(q:str) :bat[:int,:lng]
+address SPHINXsearch
+comment "Searches the query on all indices";
+
+command searchIndex(q:str, i:str) :bat[:oid,:lng]
+address SPHINXsearchIndex
+comment "Search the query on the specified indices";
+
+pattern sphinx_searchIndex(q:str, i:str) :bat[:str,:bat]
+address SPHINXsearchIndexWrap
+comment "Searches the query on all indices";
+
+@h
+#ifndef SPHINX_H
+#define SPHINX_H
+
+#include <gdk.h>
+#include <ctype.h>
+#include <sphinxclient.h>
+#include "mal_client.h"
+#include "mal_interpreter.h"
+
+#ifdef WIN32
+#ifndef LIBSPHINX
+#define sphinx_export extern __declspec(dllimport)
+#else
+#define sphinx_export extern __declspec(dllexport)
+#endif
+#else
+#define sphinx_export extern
+#endif
+
+sphinx_export str SPHINXsearch(int *ret, str *query);
+sphinx_export str SPHINXsearchIndex(int *ret, str *query, str *index);
+sphinx_export str SPHINXsearchIndexWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#endif /* SPHINX_H */
+
+@c
+#include "mal_config.h"
+#include "sphinx.h"
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_exception.h"
+#include <sphinxclient.h>
+
+/* COMMAND "SPHINXsearchIndex": Search the query on the specified indices
+ * SIGNATURE: SPHINXsearchIndex(str, str) : bat[oid,lng]; */
+str
+sphinx_searchIndex(BAT **ret, /* put pointer to BAT[oid,int] record here. */
+                   str query, str index)
+{
+	int i;
+	BAT *bn;
+	sphinx_client *client;
+	sphinx_result *res;
+	oid o = 0;
+
+	client = sphinx_create ( SPH_TRUE );
+	if (client == NULL)
+		throw(MAL, "sphinx.searchIndex", "Cannot create Sphinx object");
+
+	res = sphinx_query ( client, query, index, NULL );
+	if (!res || (res && res->num_matches == 0)) {
+		bn = BATnew(TYPE_void, TYPE_lng, 0);
+	} else {
+		bn = BATnew(TYPE_void, TYPE_lng, res->num_matches);
+		for ( i = 0; i < res->num_matches; i++ ) {
+			lng sphinx_id = sphinx_get_id ( res, i );
+			o++;
+			BUNfastins(bn, &o, &sphinx_id);
+		}
+
+	}
+	sphinx_destroy (client);
+
+	bn->hseqbase = 0;
+        bn->T->sorted = 0;
+        bn->T->nonil = 1;
+	BATkey(BATmirror(bn), FALSE);
+
+	*ret = bn;
+	return MAL_SUCCEED;
+}
+
+str
+SPHINXsearchIndex(int *ret, str *query, str *index)
+{
+	BAT *b = NULL;
+	str msg = sphinx_searchIndex(&b, *query, *index);
+
+	if (!b)
+		throw(MAL, "sphinx.searchIndex", "Cannot create Sphinx object");
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+	return msg;
+}
+
+str
+SPHINXsearch(int *ret, str *query)
+{
+	str index = "*";
+	return SPHINXsearchIndex(ret, query, &index);
+}
+
+/* str sphinx_searchIndex(int *ret, str *query, str *index); */
+str
+SPHINXsearchIndexWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat ret;
+	BAT *t;
+	int *r = (int *) getArgReference(stk, pci, 0);
+	str *query = (str *) getArgReference(stk, pci, 1);
+	str *index = (str *) getArgReference(stk, pci, 2);
+
+	(void) cntxt;
+	(void) mb;
+	SPHINXsearchIndex(&ret, query, index);
+
+	t = BATnew(TYPE_str, TYPE_bat, 1);
+	BUNins(t, "id", &ret, FALSE);
+
+	BBPdecref(ret, TRUE);
+	*r = t->batCacheid;
+	BBPkeepref(*r);
+	return MAL_SUCCEED;
+}
+
+@}
