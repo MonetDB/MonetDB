@@ -205,7 +205,6 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 		HASHins_str_hv((b)->H->hash,(i),(v));		\
 	else							\
 		HASHins_any((b)->H->hash,(i),(v));		\
-	}							\
 } while (0)
 
 #if SIZEOF_VOID_P == SIZEOF_INT
