@@ -211,7 +211,7 @@ monet_hello(opt *set, int setlen)
 	snprintf(s,size,"# Copyright (c) 1993-July 2008 CWI.\n");
 	size -= strlen(s);
 	s += strlen(s);
-	snprintf(s,size,"# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved\n");
+	snprintf(s,size,"# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved\n");
 	if (msg && strcmp(msg, "yes") == 0){
 		printf("%s",monet_motd);
 		printf("# Visit http://monetdb.cwi.nl/ for further information\n");

@@ -16,10 +16,10 @@
 *
 * The Initial Developer of the Original Code is the "University of Twente".
 * Portions created by the "University of Twente" are
-* Copyright (C) 2006-2009 "University of Twente".
+* Copyright (C) 2006-2010 "University of Twente".
 *
 * Portions created by the "CWI" are
-* Copyright (C) 2008-2009 "CWI".
+* Copyright (C) 2008-2010 "CWI".
 *
 * All Rights Reserved.
 * 
