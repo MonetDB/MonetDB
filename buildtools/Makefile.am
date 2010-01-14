@@ -17,6 +17,8 @@
 
 ## Please run automake on this file to produce a Makefile.in
 
+AUTOMAKE_OPTIONS = foreign
+
 if ENABLE_MEL
        OPT_MEL = mel
 endif
