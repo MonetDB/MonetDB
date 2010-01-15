@@ -928,7 +928,7 @@ URLtoString(str *s, int *len, str src)
 		*s = GDKstrdup("nil");
 		return 0;
 	}
-	l = src == 0 ? 3 : (int) strlen(src) + 3;
+	l = (int) strlen(src) + 3;
 	/* if( !*s) *s= (str)GDKmalloc(*len = l); */
 
 	if (l >= *len) {
