@@ -307,19 +307,15 @@ hashing.
 #define HASH_sht(p) ((BUN) (*(unsigned short*) (p)))
 #define HASH_int(p) ((BUN) *(unsigned int*) (p))
 #define HASH_lng(p) ((BUN)(((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
+#define HASH_str_hv(p) (((BUN *) (p))[-1])
 #define HASH_any(p) ((*hashfcn)(p))
 
 #define match_sync(bi,p,r) r++
 #define match_hash(bi,p,r) BUNfndOID(r,bi,p); if (r == BUN_NONE) continue;
 
-static BUN
-lookup_str_hash(ptr v)
-{
-	return ((BUN *) v)[-1];
-}
-
-#define declare_atom int any = b->ttype; BUN (*hashfcn)(ptr) = b->ttype == TYPE_str && b->T->vheap->hashash ? lookup_str_hash : BATatoms[any].atomHash;
+#define declare_atom int any = b->ttype; BUN (*hashfcn)(ptr) = BATatoms[any].atomHash;
 #define declare_simple	/* any and hash would otherwise give unused variable warning */
+#define declare_str_hv
 
 #define htype_sync(b) BAThdense(b)?TYPE_void:TYPE_oid
 #define htype_hash(b) TYPE_oid
@@ -328,6 +324,8 @@ lookup_str_hash(ptr v)
 #define ttype_atom(b,t) b->ttype
 
 #define STANDARD_MASK ((BUN) 1023)
+
+#define str_hv_EQ(a,b,t) GDK_STREQ(a,b)
 
 /*
    Note:
@@ -565,6 +563,7 @@ tailtype(BAT *b, int str_trick)
 @:groupAll(sht,tloc,simple,@1,@2)@
 @:groupAll(int,tloc,simple,@1,@2)@
 @:groupAll(lng,tloc,simple,@1,@2)@
+@:groupAll(str_hv,tvar,str_hv,@1,@2)@
 @:groupAll(any,tail,atom,@1,@2)@
 
 /* Generate both 'normal' CTgroup and parameterized CTgroups */
@@ -671,6 +670,12 @@ bits(BUN i)
 	case TYPE_lng:
 		@?@5:returnvalue(@5)@ CTgroup_lng_@4_STANDARD(b,@2,@3);
 		break;
+	case TYPE_str:
+		if (b->T->vheap->hashash) {
+			@?@5:returnvalue(@5)@ CTgroup_str_hv_@4_STANDARD(b,@2,@3);
+			break;
+		}
+		/* fall through */
 	default:
 		@?@5:returnvalue(@5)@ CTgroup_any_@4_STANDARD(b,@2,@3);
 		break;
@@ -691,6 +696,12 @@ bits(BUN i)
 	case TYPE_lng:
 		@?@5:returnvalue(@5)@ CTgroup_lng_@4_CUSTOM(mask,*rng,b,@2,@3);
 		break;
+	case TYPE_str:
+		if (b->T->vheap->hashash) {
+			@?@5:returnvalue(@5)@ CTgroup_str_hv_@4_CUSTOM(mask,*rng,b,@2,@3);
+			break;
+		}
+		/* fall through */
 	default:
 		@?@5:returnvalue(@5)@ CTgroup_any_@4_CUSTOM(mask,*rng,b,@2,@3);
 		break;
@@ -816,11 +827,13 @@ bunins_failed:
 @:derive(sync,sht,tloc,simple,@1)@
 @:derive(sync,int,tloc,simple,@1)@
 @:derive(sync,lng,tloc,simple,@1)@
+@:derive(sync,str_hv,tvar,str_hv,@1)@
 @:derive(sync,any,tail,atom,@1)@
 @:derive(hash,bte,tloc,simple,@1)@
 @:derive(hash,sht,tloc,simple,@1)@
 @:derive(hash,int,tloc,simple,@1)@
 @:derive(hash,lng,tloc,simple,@1)@
+@:derive(hash,str_hv,tvar,str_hv,@1)@
 @:derive(hash,any,tail,atom,@1)@
 @c
 @:wrappedderive(unclustered)@
@@ -841,6 +854,12 @@ bunins_failed:
 	case TYPE_lng:
 		histo = CTderive_@1_lng_@2(ct_map,ct_histo,b,bn,m);
 		break;
+	case TYPE_str:
+		if (b->T->vheap->hashash) {
+			histo = CTderive_@1_str_hv_@2(ct_map,ct_histo,b,bn,m);
+			break;
+		}
+		/* fall through */
 	default:
 		histo = CTderive_@1_any_@2(ct_map,ct_histo,b,bn,m);
 		break;
