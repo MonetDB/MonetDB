@@ -855,8 +855,8 @@ The remote site may return a single error
 with a series of error lines. These contain
 then a starting !. They are all stripped here.
 @= catchErrors
-{int rn;
-	if ( ( (rn=mapi_error(mid)) == -4 && hdl && mapi_result_error(hdl))  || rn){
+{int rn = mapi_error(mid);
+	if ( ( rn == -4 && hdl && mapi_result_error(hdl))  || rn){
 		str err,newerr;
 		size_t l;
 		char *e,*f;
