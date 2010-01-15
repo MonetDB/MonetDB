@@ -135,7 +135,6 @@ extern tjStemCtx* getStemmingContext(char* name);
 "does",\
 "done",\
 "down",\
-"down",\
 "downed",\
 "downing",\
 "downs",\
@@ -207,8 +206,6 @@ extern tjStemCtx* getStemmingContext(char* name);
 "her",\
 "here",\
 "herself",\
-"high",\
-"high",\
 "high",\
 "higher",\
 "highest",\
@@ -284,7 +281,6 @@ extern tjStemCtx* getStemmingContext(char* name);
 "needs",\
 "never",\
 "new",\
-"new",\
 "newer",\
 "newest",\
 "next",\
@@ -351,7 +347,6 @@ extern tjStemCtx* getStemmingContext(char* name);
 "rather",\
 "really",\
 "right",\
-"right",\
 "room",\
 "rooms",\
 "s",\
@@ -390,7 +385,6 @@ extern tjStemCtx* getStemmingContext(char* name);
 "somewhere",\
 "state",\
 "states",\
-"still",\
 "still",\
 "such",\
 "sure",\
