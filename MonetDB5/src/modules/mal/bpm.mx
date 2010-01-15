@@ -1385,9 +1385,10 @@ BPMemptySet(int *ret, bat *bid)
 	}
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		b = BATdescriptor(bpmcat[i]->bid);
-		if (b)
+		if (b){
 			cnt = BATcount(b);
-		BBPunfix(b->batCacheid);
+			BBPunfix(b->batCacheid);
+		}
 		if (cnt)
 			throw(OPTIMIZER, "mal.assert", "emptySet");
 	}
@@ -2023,7 +2024,8 @@ The  newbounds should be set and they should be added to the ring.
 		if( bs1== NULL && bs2==NULL){
 			return MAL_SUCCEED;
 		}
-		BBPkeepref(bs2->batCacheid);
+		if (bs2)
+			BBPkeepref(bs2->batCacheid);
 	} else bs1= bs2= b;
 @-
 Add the new partition based on RS.
