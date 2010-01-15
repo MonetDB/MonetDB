@@ -1495,6 +1495,7 @@ void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 		else
 		if(strcmp(fld,"true")==0)
 			v->val.cval[0]= TRUE;
+		else
 		if(strcmp(fld,"false")==0)
 			v->val.cval[0]= FALSE;
 		v->val.cval[1]= 0;
