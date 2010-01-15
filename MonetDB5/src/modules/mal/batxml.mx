@@ -276,7 +276,7 @@ BATXMLxmltext(int *ret, int *bid)
 		} else {
 			str s;
 
-			if (size < len) {
+			if (buf == 0 || size < len) {
 				size = len + 128;
 				if (buf != NULL)
 					GDKfree(buf);
