@@ -865,11 +865,10 @@ The delay penalty decreases with each step to ensure progress.
 	delay = MEMORY_DELAY;
     claim = getMemoryClaim(stk, pci);
     while (claim > 0 && delay > 0 &&  (i = DFLOWclaim(claim) ) ){
+#ifdef DEBUG_MEMORY_CLAIM
 		printInstruction(GDKout,mb,0,pci,LIST_MAL_DEBUG);
 		stream_printf(GDKout,"#DFLOWdelay thread %d claim " LLFMT" delay %d ms\n", 
 				tid, claim,(int)log((double)claim + memorypool) * delay);
-#ifdef DEBUG_MEMORY_CLAIM
-		/* show it */
 #endif
         MT_sleep_ms(( (int)log((double)claim + memorypool)) * delay);
 		delay /= 2;	/* waiting penalty decreases over time */
