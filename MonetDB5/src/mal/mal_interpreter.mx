@@ -45,7 +45,7 @@ to be passed by a handle.
 /* #define DEBUG_FLOW */
 /* #define DEBUG_FLOW2 */
 /*#define STACKTRACE*/
-/* #define DEBUG_MEMORY_CLAIM*/
+/*#define DEBUG_MEMORY_CLAIM*/
 
 mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
@@ -61,6 +61,7 @@ mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
+mal_export lng getMemoryClaim(MalStkPtr stk, InstrPtr pci);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
@@ -70,6 +71,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_recycle.h"
 #include "mal_type.h"
+#include "math.h"
 
 #define SLOW 1
 #define FAST 0
@@ -610,23 +612,23 @@ DFLOWclaim(lng claim)
 	if ( claim == 0)
 		return 0;
 
-    	mal_set_lock(mal_contextLock, "DFLOWdelay");
+	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if ( memorypool == 0 && memoryclaims == 0)
-		memorypool = monet_memory;
+		memorypool = 0.8 * monet_memory;
 	
 	if ( claim > 0 ) {
-		if ( memoryclaims == 0 || memorypool >claim){
+		if ( memoryclaims == 0 || memorypool > claim){
 			memorypool -= claim;
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"DFLOWclaim memoryclaim %d  pool " LLFMT "  claim " LLFMT"\n",
+			stream_printf(GDKout,"DFLOWclaim memoryclaim %d  pool left " LLFMT "  claim " LLFMT"\n",
 				memoryclaims, memorypool, claim);
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		} 
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"DFLOWclaim REFUSE memoryclaim %d  pool " LLFMT " claim " LLFMT"\n",
+		stream_printf(GDKout,"DFLOWclaim REFUSE memoryclaim %d  pool left " LLFMT " claim " LLFMT"\n",
 			memoryclaims, memorypool, claim);
 #endif
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -635,7 +637,7 @@ DFLOWclaim(lng claim)
 	memorypool += -claim;
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"DFLOWrelease memoryclaim %d  pool " LLFMT " claim " LLFMT"\n",
+		stream_printf(GDKout,"DFLOWrelease memoryclaim %d  pool left " LLFMT " claim " LLFMT"\n",
 			memoryclaims, memorypool, claim);
 #endif
     	mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -800,6 +802,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int prevpc = 0;
 	int tid = t->id;
 	lng claim;
+	int delay;
     
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -842,18 +845,20 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 
 @-
 Possibly delay processing when we run out of memory.
+This heuristic needs fine tuning based on memory access patterns.
 @c
-    claim = getVolume(stk,pci,0);
-	if ( claim < 64 * 1024 * 1024)
-		claim = 0;
-    while (claim > 0 &&  (i = DFLOWclaim(claim) ) ){
-#ifdef DEBUG_MEMORY_CLAIM
+	delay = 132;
+    claim = getMemoryClaim(stk,pci);
+    while (delay > 0 && claim > 0 &&  (i = DFLOWclaim(claim) ) ){
 		printInstruction(GDKout,mb,0,pci,LIST_MAL_DEBUG);
-		stream_printf(GDKout,"DFLOWdelay claim " LLFMT"\n", claim);
+		stream_printf(GDKout,"#DFLOWdelay thread %d claim " LLFMT"\n", tid, claim);
+#ifdef DEBUG_MEMORY_CLAIM
+		/* show it */
 #endif
-        MT_sleep_ms(i * 20);
+        MT_sleep_ms((int)log((double)claim) * delay);
 		DFLOWclaim(-claim);
         claim /= 2 ; /* reduce claim */
+		delay /= 2;	/* and delay factor */
     }
 
 	@:beginProfile(t)@
@@ -2390,7 +2395,46 @@ For performance evaluation it is handy to know the
 maximal amount of bytes read/written. The actual
 amount is harder to guess, because it too much
 depends on the operation.
+The memory claim is used to direct the dataflow
+interpreter.
+@= heapinfo
+hp= @1;
+if(hp && hp->base)
+	vol += hp->size;
+@= hashinfo
+h= @1;
+if(h && h->mask)
+	vol += (h->mask+h->lim+1)*sizeof(int) + sizeof(*h);
 @c
+lng
+getMemoryClaim(MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	lng vol=0, volf= 0;
+	BAT *b;
+	Heap *hp;
+	Hash *h;
+	
+	for(i=  pci->retc; i< pci->argc; i++) {
+		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+			if (b==NULL) 
+				continue;
+			@:heapinfo(&b->H->heap,tail)@
+			@:heapinfo(&b->T->heap,head)@
+			@:heapinfo(b->H->vheap,hheap)@
+			@:heapinfo(b->T->vheap,theap)@
+			@:hashinfo(b->H->hash,hhash)@
+			@:hashinfo(b->T->hash,thash)@
+			BBPunfix(b->batCacheid); 
+			if ( volf == 0) volf = vol;
+		}
+	}
+	if (stk->stk[getArg(pci,0)].vtype == TYPE_bat)
+		vol+= volf;
+	return vol;
+}
+
 lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
 	int i, limit;
