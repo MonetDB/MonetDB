@@ -626,7 +626,7 @@ Another option would be to maintain a priority queue of
 suspended instructions.
 @c
 #define MEMORY_THRESHOLD  0.8
-#define MEMORY_DELAY  32	/* ms initial delay */
+#define MEMORY_DELAY  16000	/* ms initial delay /GB  */
 
 lng memorypool;		/* memory claimed by concurrent threads */
 int memoryclaims;	/* number of threads active with expensive operations */
@@ -666,38 +666,40 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 int
 DFLOWclaim(lng claim)
 {
+	int m;
 	/* optimistically set memory */
 	if ( claim == 0)
 		return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	if ( memorypool == 0 && memoryclaims == 0)
+	if ( memorypool <= 0 && memoryclaims == 0)
 		memorypool = MEMORY_THRESHOLD * monet_memory;
 	
 	if ( claim > 0 ) {
-		if ( memoryclaims == 0 || (memorypool > claim || memoryclaims == 0)){
+		if ( memoryclaims == 0 || memorypool > claim ){
 			memorypool -= claim;
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"DFLOWclaim memoryclaim %d  pool left " LLFMT "  claim " LLFMT"\n",
-				memoryclaims, memorypool, claim);
+			stream_printf(GDKout,"DFLOWclaim thread %d  pool left " LLFMT "  claim " LLFMT"\n",
+				THRgettid(), memorypool, claim);
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		} 
-		/* claim can not be satisfied */
+		m = memoryclaims;
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
-		return memoryclaims;
+		return m;
 	} 
 	/* release memory claimed before */
 	memorypool += -claim;
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"DFLOWrelease memoryclaim %d  pool left " LLFMT " claim " LLFMT"\n",
-			memoryclaims, memorypool, claim);
+		stream_printf(GDKout,"DFLOWrelease thread %d  pool left " LLFMT " claim " LLFMT"\n",
+			THRgettid(), memorypool, claim);
 #endif
-    	mal_unset_lock(mal_contextLock, "DFLOWdelay");
-	return memoryclaims;
+	m = memoryclaims;
+	mal_unset_lock(mal_contextLock, "DFLOWdelay");
+	return m;
 }
 
 @-
@@ -857,32 +859,56 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		}
 	}
 
-@-
-Possibly delay processing when we run out of memory.
-The delay is based on the total claim of all threads taking together.
-The delay penalty decreases with each step to ensure progress.
-@c
-	delay = MEMORY_DELAY;
-    claim = getMemoryClaim(stk, pci);
-    while (claim > 0 && delay > 0 &&  (i = DFLOWclaim(claim) ) ){
-#ifdef DEBUG_MEMORY_CLAIM
-		printInstruction(GDKout,mb,0,pci,LIST_MAL_DEBUG);
-		stream_printf(GDKout,"#DFLOWdelay thread %d claim " LLFMT" delay %d ms\n", 
-				tid, claim,(int)log((double)claim + memorypool) * delay);
-#endif
-        MT_sleep_ms(( (int)log((double)claim + memorypool)) * delay);
-		delay /= 2;	/* waiting penalty decreases over time */
-    }
-
 	@:beginProfile(t)@
 	ret = MAL_SUCCEED;
-@-
-The number of instructions allowed is severely
-limited.
-We don't allow sequential flow control here.
-@c
 	@:MALrecycleStart(t)@ {
         lng tcs = 0;
+@-
+Delay processing when we run out of memory and could not recycle.
+The memory pool should be freed, which means that the delay should
+be based on the claims outstanding, i.e. the memory pool size.
+Since most operations are linear in the size of their operands,
+it makes sense to use a formula that estimates the memory traffic before the pool is empty.
+(use a 2GB/sec memory transfer rate.)
+This is still optimistic, because in IO dominant situations delaying
+activities further would be better. This is covered by a high starting
+value for the DELAY and degrade linearly.
+
+The delay penalty is used as an upperbound before the penalty 
+is decreased. If it so happens that resources are
+freed quickly, then the instruction delay loop is abandoned.
+
+The process could be refined by checking for cheap operations,
+i.e. those that would require memory at all (aggr.count)
+This, however, would lead to a dependency to the upper layers,
+because in the kernel we don't know what routines are available
+with this properyty.
+@c
+		delay = MEMORY_DELAY;
+		claim = getMemoryClaim(stk, pci);
+		while (claim > 0 && DFLOWclaim(claim) ){
+			int d = (delay * (memorypool < 0 ? (lng) (monet_memory) - memorypool: memorypool))/(1024*1024*1024);
+#ifdef DEBUG_MEMORY_CLAIM
+			stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT" delay %d ms\n", tid, claim, memorypool,d);
+#endif
+			for ( ; d >= 0; d -= 100)
+			{	/* at least one delay step */
+				MT_sleep_ms( 100);
+				if ( DFLOWclaim(claim) == 0) {
+#ifdef DEBUG_MEMORY_CLAIM
+					stream_printf(GDKout,"#DFLOW continue thread %d, saving %d ms\n", tid, d);
+#endif
+					goto gotmemory;
+				}
+			}
+			delay -= 0.01 * MEMORY_DELAY;	/* waiting penalty decreases over time */
+		}
+	gotmemory:
+
+@-
+The number of instructions allowed is severely limited.
+We don't allow sequential flow control here.
+@c
         switch (pci->token){
 		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
 		case PATcall: @:patterncall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
@@ -900,10 +926,9 @@ We don't allow sequential flow control here.
 			ret = createScriptException(mb, stkpc, MAL,
 					NULL, "unkown operation");
 		}
+		DFLOWclaim(-claim);
 		@:MALrecycleExit(t)@
 	}
-	/* update the list of eligable instructions */
-    DFLOWclaim(-claim);
 	@:endProfile(t)@
 	if (ret)
 		fs->pc = -1;
@@ -912,15 +937,13 @@ We don't allow sequential flow control here.
 
 @-
 A consequence of multiple threads is that they may claim more
-space then available. This will cause GDKmalloc to fail.
+space then available. This may cause GDKmalloc to fail.
 In many cases this situation will be temporary, because
 threads will ultimately release resources.
 Therefore, we wait for it.
-In the unlucky situation that after an hour we have not
-reached a solution, the task is automatically abandoned.
+
 Alternatively, a front-end can set the flow administration
 program counter to -1, which leads to a soft abort.
-
 [UNFORTUNATELY this approach does not (yet) work
 because there seem to a possibility of a deadlock
 between incref and bbptrim. Furthermore, we have
@@ -934,7 +957,6 @@ runDFLOWworker(void *t)
 	FlowTask *task = (FlowTask*) t;
 	str err;
 	int oldpc;
-/*	int hour=0; */
 	Thread thr;
 
 	thr = THRnew(MT_getpid(), "DFLOWworker");
@@ -945,16 +967,6 @@ runDFLOWworker(void *t)
 			(err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
 			/* restore the instruction and wait*/
 			THRprintf(GDKerr, "#Thread %d needs memory:%s\n",task->id,err);
-/*
-			fs->pc = oldpc;
-			MT_sleep_ms(60000);
-			THRprintf(GDKerr, "#Retry for memory access thread %d \n",task->id);
-			if (hour++ >60 ) {
-				hour=0;
-				break;
-			}
-			GDKfree(fs->error);	
-*/
 			break;
 		}
 		q_enqueue(fs->flow->done, fs);
