@@ -847,11 +847,11 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 Possibly delay processing when we run out of memory.
 This heuristic needs fine tuning based on memory access patterns.
 @c
-	delay = 132;
+	delay = 32;
     claim = getMemoryClaim(stk,pci);
     while (delay > 0 && claim > 0 &&  (i = DFLOWclaim(claim) ) ){
 		printInstruction(GDKout,mb,0,pci,LIST_MAL_DEBUG);
-		stream_printf(GDKout,"#DFLOWdelay thread %d claim " LLFMT"\n", tid, claim);
+		stream_printf(GDKout,"#DFLOWdelay thread %d claim " LLFMT" delay %d ms\n", tid, claim,(int)log((double)claim) * delay);
 #ifdef DEBUG_MEMORY_CLAIM
 		/* show it */
 #endif
