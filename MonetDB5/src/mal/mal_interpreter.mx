@@ -600,10 +600,68 @@ postponed if the claim for memory exceeds a threshold
 In general such contentions will be hard to predict,
 because they depend on the algorithm, the input sizes,
 and the output produced.
-The pessimistic claim is:  getVolume(stk,pci,0)
+
+The heuristic is based on calculating the storage footprint
+of the operands and assuming it preferrably should fit in memory.
+Ofcourse, there may be intermediate structures being
+used and the size of the result is not a priori known.
+For this, we use a high watermark on the amount of
+physical memory we pre-allocate for the claims.
+
+Instructions are eligible to be executed when the
+total footprint of all concurrent executions stays below
+the high-watermark or it is the single expensive
+instruction being started.
+
+When we run out of memory, the instruction is delayed.
+How long depends on the other instructions to free up 
+resources. The current policy simple takes a local
+decision by delaying the instruction based on its
+past and the size of the memory pool size.
+The waiting penalty decreases with each step to ensure
+it will ultimately taken into execution, with possibly
+all resource contention effects.
+
+Another option would be to maintain a priority queue of 
+suspended instructions.
 @c
+#define MEMORY_THRESHOLD  0.8
+#define MEMORY_DELAY  32	/* ms initial delay */
+
 lng memorypool;		/* memory claimed by concurrent threads */
-int memoryclaims;	/* number of threads active */
+int memoryclaims;	/* number of threads active with expensive operations */
+
+#define heapinfo(X) hp= X; if(hp && hp->base) vol += hp->size;
+#define hashinfo(X) h= X; if(h && h->mask) vol += (h->mask+h->lim+1)*sizeof(int) + sizeof(*h);
+
+lng
+getMemoryClaim(MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	lng vol=0, firstoperand= 0;
+	BAT *b;
+	Heap *hp;
+	Hash *h;
+	
+	for(i=  pci->retc; i< pci->argc; i++) {
+		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+			if (b==NULL) 
+				continue;
+			heapinfo(&b->H->heap);
+			heapinfo(&b->T->heap);
+			heapinfo(b->H->vheap);
+			heapinfo(b->T->vheap);
+			hashinfo(b->H->hash);
+			hashinfo(b->T->hash);
+			BBPunfix(b->batCacheid); 
+			if ( firstoperand == 0) firstoperand = vol;
+		}
+	}
+	if (stk->stk[getArg(pci,0)].vtype == TYPE_bat)
+		vol+= firstoperand;
+	return vol;
+}
 
 int
 DFLOWclaim(lng claim)
@@ -614,10 +672,10 @@ DFLOWclaim(lng claim)
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if ( memorypool == 0 && memoryclaims == 0)
-		memorypool = 0.8 * monet_memory;
+		memorypool = MEMORY_THRESHOLD * monet_memory;
 	
 	if ( claim > 0 ) {
-		if ( memoryclaims == 0 || memorypool > claim){
+		if ( memoryclaims == 0 || (memorypool > claim || memoryclaims == 0)){
 			memorypool -= claim;
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
@@ -627,13 +685,11 @@ DFLOWclaim(lng claim)
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		} 
-#ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"DFLOWclaim REFUSE memoryclaim %d  pool left " LLFMT " claim " LLFMT"\n",
-			memoryclaims, memorypool, claim);
-#endif
+		/* claim can not be satisfied */
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		return memoryclaims;
 	} 
+	/* release memory claimed before */
 	memorypool += -claim;
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
@@ -642,48 +698,6 @@ DFLOWclaim(lng claim)
 #endif
     	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return memoryclaims;
-}
-@-
-The cost of a flow step depends on availability of its
-arguments and the total size of the BATs being accessed.
-All references to variables outside the block are considered
-initialized. All within the block or not, until an instruction
-delivers it as a target.
-
-There are several options to calculate the cost.
-The dataflow optimizer turns on profiling, which means
-we can use the aggregated timing as an indication of the
-expected cost. This works optimal for similar queries.
-
-The base line is to use the BAT counts, because these
-are the more interesting instructions to consider.
-@c
-lng
-MALflowCost(MalBlkPtr mb, MalStkPtr stk, int pc){
-	int i,bid;
-	lng cost= 0;
-	BAT *b;
-	InstrPtr p;
-
-	if (mb->profiler && mb->profiler[pc].counter)
-		cost= mb->profiler[pc].ticks/ mb->profiler[pc].counter;
-
-	/* cost is linear related to the total input */
-	if (cost == 0){
-		p= getInstrPtr(mb,pc);
-		for(i= p->retc; i<p->argc; i++)
-		if( isaBatType(getArgType(mb,p,i)) &&
-			(bid= ABS(stk->stk[getArg(p,i)].val.bval)) ){
-			b= BATdescriptor(bid);
-			if( b == NULL) continue;
-			cost += BATcount(b);
-			BBPreleaseref(bid);
-		}
-	}
-	/* naive costs */
-	if (cost == 0)
-		cost = p->argc;
-	return cost;
 }
 
 @-
@@ -845,20 +859,20 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 
 @-
 Possibly delay processing when we run out of memory.
-This heuristic needs fine tuning based on memory access patterns.
+The delay is based on the total claim of all threads taking together.
+The delay penalty decreases with each step to ensure progress.
 @c
-	delay = 32;
-    claim = getMemoryClaim(stk,pci);
-    while (delay > 0 && claim > 0 &&  (i = DFLOWclaim(claim) ) ){
+	delay = MEMORY_DELAY;
+    claim = getMemoryClaim(stk, pci);
+    while (claim > 0 && delay > 0 &&  (i = DFLOWclaim(claim) ) ){
 		printInstruction(GDKout,mb,0,pci,LIST_MAL_DEBUG);
-		stream_printf(GDKout,"#DFLOWdelay thread %d claim " LLFMT" delay %d ms\n", tid, claim,(int)log((double)claim) * delay);
+		stream_printf(GDKout,"#DFLOWdelay thread %d claim " LLFMT" delay %d ms\n", 
+				tid, claim,(int)log((double)claim + memorypool) * delay);
 #ifdef DEBUG_MEMORY_CLAIM
 		/* show it */
 #endif
-        MT_sleep_ms((int)log((double)claim) * delay);
-		DFLOWclaim(-claim);
-        claim /= 2 ; /* reduce claim */
-		delay /= 2;	/* and delay factor */
+        MT_sleep_ms(( (int)log((double)claim + memorypool)) * delay);
+		delay /= 2;	/* waiting penalty decreases over time */
     }
 
 	@:beginProfile(t)@
@@ -2395,46 +2409,7 @@ For performance evaluation it is handy to know the
 maximal amount of bytes read/written. The actual
 amount is harder to guess, because it too much
 depends on the operation.
-The memory claim is used to direct the dataflow
-interpreter.
-@= heapinfo
-hp= @1;
-if(hp && hp->base)
-	vol += hp->size;
-@= hashinfo
-h= @1;
-if(h && h->mask)
-	vol += (h->mask+h->lim+1)*sizeof(int) + sizeof(*h);
 @c
-lng
-getMemoryClaim(MalStkPtr stk, InstrPtr pci)
-{
-	int i;
-	lng vol=0, volf= 0;
-	BAT *b;
-	Heap *hp;
-	Hash *h;
-	
-	for(i=  pci->retc; i< pci->argc; i++) {
-		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-			if (b==NULL) 
-				continue;
-			@:heapinfo(&b->H->heap,tail)@
-			@:heapinfo(&b->T->heap,head)@
-			@:heapinfo(b->H->vheap,hheap)@
-			@:heapinfo(b->T->vheap,theap)@
-			@:hashinfo(b->H->hash,hhash)@
-			@:hashinfo(b->T->hash,thash)@
-			BBPunfix(b->batCacheid); 
-			if ( volf == 0) volf = vol;
-		}
-	}
-	if (stk->stk[getArg(pci,0)].vtype == TYPE_bat)
-		vol+= volf;
-	return vol;
-}
-
 lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
 	int i, limit;
