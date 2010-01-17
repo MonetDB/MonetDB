@@ -1785,7 +1785,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		return rel_merge_projects(changes, sql, rel);
 
 	/* merge select and cross product ? */
-	if (rel->op == op_select && r && r->op == op_join && list_empty(r->exps) && !(rel_is_ref(r))) {
+	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
 		list *exps = rel->exps;
 
 		if (!r->exps)
@@ -1987,7 +1987,6 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
 			l->l = NULL;
 			rel_destroy(l);
 			(*changes)++;
-			return rel;
 		} 
 	}
 	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
@@ -1998,9 +1997,12 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
 			r->l = NULL;
 			rel_destroy(r);
 			(*changes)++;
-			return rel;
 		}
 	} 
+	if (is_join(rel->op) && rel->exps && list_length(rel->exps) == 0) {
+		list_destroy(rel->exps);
+		rel->exps = NULL;
+	}
 	return rel;
 }
 
