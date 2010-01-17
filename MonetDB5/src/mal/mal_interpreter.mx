@@ -881,15 +881,15 @@ with this properyty.
 @c
 		claim = getMemoryClaim(stk, pci);
 		if ( DFLOWclaim(claim) ){
-			stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
 #ifdef DEBUG_MEMORY_CLAIM
+			stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
 #endif
 			for ( ; ; )
 			{
 				MT_sleep_ms( 100);
 				if ( DFLOWclaim(claim) == 0) {
-					stream_printf(GDKout,"#DFLOWcontinue thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
 #ifdef DEBUG_MEMORY_CLAIM
+					stream_printf(GDKout,"#DFLOWcontinue thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
 #endif
 					break;
 				}
