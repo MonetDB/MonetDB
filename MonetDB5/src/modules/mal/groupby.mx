@@ -73,7 +73,7 @@ comment "Derive the grouping of all tuples in the BATs and determine minimum val
 The group oid is materialized.";
 
 pattern avg(pivot:bat[:oid,:any_1],b:bat[:oid,:any_2]...) :bat[:oid,:any_2]
-address GROUPmin
+address GROUPavg
 comment "Derive the grouping of all tuples in the BATs and determine average value.
 The group oid is materialized.";
 
