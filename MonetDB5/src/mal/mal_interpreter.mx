@@ -71,7 +71,6 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_recycle.h"
 #include "mal_type.h"
-#include "math.h"
 
 #define SLOW 1
 #define FAST 0
@@ -626,41 +625,50 @@ Another option would be to maintain a priority queue of
 suspended instructions.
 @c
 #define MEMORY_THRESHOLD  0.8
-#define MEMORY_DELAY  16000	/* ms initial delay /GB  */
 
 lng memorypool;		/* memory claimed by concurrent threads */
 int memoryclaims;	/* number of threads active with expensive operations */
 
-#define heapinfo(X) hp= X; if(hp && hp->base) vol += hp->size;
-#define hashinfo(X) h= X; if(h && h->mask) vol += (h->mask+h->lim+1)*sizeof(int) + sizeof(*h);
+#define heapinfo(X) if((X) && (X)->base) vol = (X)->size; else vol = 0;
+#define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
 
 lng
 getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	lng vol=0, firstoperand= 0;
+	lng total = 0, vol=0;
+	BUN cnt = 0;
 	BAT *b;
-	Heap *hp;
-	Hash *h;
 	
 	for(i=  pci->retc; i< pci->argc; i++) {
 		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 			if (b==NULL) 
 				continue;
-			heapinfo(&b->H->heap);
-			heapinfo(&b->T->heap);
-			heapinfo(b->H->vheap);
-			heapinfo(b->T->vheap);
-			hashinfo(b->H->hash);
-			hashinfo(b->T->hash);
+			heapinfo(&b->H->heap); total += vol;
+			heapinfo(&b->T->heap); total += vol;
+			heapinfo(b->H->vheap); total += vol;
+			heapinfo(b->T->vheap); total += vol;
+			hashinfo(b->H->hash); total += vol;
+			hashinfo(b->T->hash); total += vol;
+			/* prepare for hashes */
+			if ( b->H->hash == NULL && b->hsorted == 0  &&
+			     b->T->hash == NULL && b->tsorted == 0 ){
+				if ( BATcount(b)  > cnt)
+					cnt = BATcount(b);
+			} 
 			BBPunfix(b->batCacheid); 
-			if ( firstoperand == 0) firstoperand = vol;
 		}
 	}
+	/* accommodate for one hash */
+	total += cnt * sizeof(int);
+	/* accomodate for result */
 	if (stk->stk[getArg(pci,0)].vtype == TYPE_bat)
-		vol+= firstoperand;
-	return vol;
+		total *= 2;	/* 'worst' case coming from a mat.pack */
+#ifdef DEBUG_MEMORY_CLAIM
+	stream_printf(GDKout,"#DFLOWgetMemoryClaim " LLFMT " pool " LLFMT "\n", total, memorypool);
+#endif
+	return total;
 }
 
 int
@@ -818,7 +826,6 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int prevpc = 0;
 	int tid = t->id;
 	lng claim;
-	int delay;
     
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -865,18 +872,6 @@ DFLOWstep(FlowTask *t, FlowStep fs)
         lng tcs = 0;
 @-
 Delay processing when we run out of memory and could not recycle.
-The memory pool should be freed, which means that the delay should
-be based on the claims outstanding, i.e. the memory pool size.
-Since most operations are linear in the size of their operands,
-it makes sense to use a formula that estimates the memory traffic before the pool is empty.
-(use a 2GB/sec memory transfer rate.)
-This is still optimistic, because in IO dominant situations delaying
-activities further would be better. This is covered by a high starting
-value for the DELAY and degrade linearly.
-
-The delay penalty is used as an upperbound before the penalty 
-is decreased. If it so happens that resources are
-freed quickly, then the instruction delay loop is abandoned.
 
 The process could be refined by checking for cheap operations,
 i.e. those that would require memory at all (aggr.count)
@@ -884,26 +879,22 @@ This, however, would lead to a dependency to the upper layers,
 because in the kernel we don't know what routines are available
 with this properyty.
 @c
-		delay = MEMORY_DELAY;
 		claim = getMemoryClaim(stk, pci);
-		while (claim > 0 && DFLOWclaim(claim) ){
-			int d = (delay * (memorypool < 0 ? (lng) (monet_memory) - memorypool: memorypool))/(1024*1024*1024);
+		if ( DFLOWclaim(claim) ){
+			stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
 #ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT" delay %d ms\n", tid, claim, memorypool,d);
 #endif
-			for ( ; d >= 0; d -= 100)
-			{	/* at least one delay step */
+			for ( ; ; )
+			{
 				MT_sleep_ms( 100);
 				if ( DFLOWclaim(claim) == 0) {
+					stream_printf(GDKout,"#DFLOWcontinue thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
 #ifdef DEBUG_MEMORY_CLAIM
-					stream_printf(GDKout,"#DFLOW continue thread %d, saving %d ms\n", tid, d);
 #endif
-					goto gotmemory;
+					break;
 				}
 			}
-			delay -= 0.01 * MEMORY_DELAY;	/* waiting penalty decreases over time */
 		}
-	gotmemory:
 
 @-
 The number of instructions allowed is severely limited.
