@@ -1081,17 +1081,6 @@ algebra_export str ALGprojecttail_@1(int *ret,int *bid, ptr *val);
 algebra_export str ALGidentity(int *ret, int *bid);
 algebra_export str ALGmaterialize(int *ret, int *bid);
 algebra_export str ALGreuse(int *ret, int *bid);
-
-@= avg_export
-algebra_export str ALGavg_@1(dbl *res, int *bid) {
-@h
-@:avg_export(bte)@
-@:avg_export(sht)@
-@:avg_export(int)@
-@:avg_export(wrd)@
-@:avg_export(lng)@
-@:avg_export(flt)@
-@:avg_export(dbl)@
 #endif
 @c
 #include "mal_config.h"
