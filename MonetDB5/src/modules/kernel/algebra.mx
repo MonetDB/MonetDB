@@ -775,6 +775,25 @@ comment "Gives the avg of all tail values";
 @:avg_definition(lng)@
 @:avg_definition(flt)@
 @:avg_definition(dbl)@
+
+@- Standard deviation
+The standard deviation of a set is the square root of its variance.
+The variance is the sum of squares of the deviation of each value in the set
+from the mean (average) value, divided by the population of the set.
+
+@= stdev_definition
+command stdev (b:bat[:any_1,:@1] ) :dbl
+address ALGstdev_@1
+comment "Gives the standard deviation of all tail values";
+@mal
+@:stdev_definition(bte)@
+@:stdev_definition(sht)@
+@:stdev_definition(int)@
+@:stdev_definition(wrd)@
+@:stdev_definition(lng)@
+@:stdev_definition(flt)@
+@:stdev_definition(dbl)@
+
 @-
 @= aggregate_definition
 command @1 ( b:bat[:any_1,:@2] ) :@2 
@@ -889,6 +908,17 @@ algebra_export str ALGavg_@1(dbl *res, int *bid);
 @:avg_export(lng)@
 @:avg_export(flt)@
 @:avg_export(dbl)@
+
+@= stdev_export
+algebra_export str ALGstdev_@1(dbl *res, int *bid);
+@h
+@:stdev_export(bte)@
+@:stdev_export(sht)@
+@:stdev_export(int)@
+@:stdev_export(wrd)@
+@:stdev_export(lng)@
+@:stdev_export(flt)@
+@:stdev_export(dbl)@
 
 @= ALGsum_export
 algebra_export str ALGsum_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
@@ -1086,6 +1116,7 @@ algebra_export str ALGreuse(int *ret, int *bid);
 #include "mal_config.h"
 #include "algebra.h"
 #include "gdk_rangejoin.h"
+#include <math.h>
 
 @* Command Implementations in C
 This module contains just a wrapper implementations; since all described
@@ -4004,7 +4035,7 @@ CMDavg_@1(dbl* res, BAT *b)
 str ALGavg_@1(dbl *res, int *bid) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "algebra.prod", RUNTIME_OBJECT_MISSING);
+		 throw(MAL, "algebra.avg", RUNTIME_OBJECT_MISSING);
 	}
 	CMDavg_@1(res,b);
 	BBPreleaseref(b->batCacheid);
@@ -4018,5 +4049,63 @@ str ALGavg_@1(dbl *res, int *bid) {
 @:avg_impl(lng)@
 @:avg_impl(flt)@
 @:avg_impl(dbl)@
+
+@+ BAT standard deviation
+
+@= stdev_impl
+str ALGstdev_@1(dbl *res, int *bid) {
+	BAT *b;
+	BUN cnt = 0;
+
+	if ((b=BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.stdev", RUNTIME_OBJECT_MISSING);
+	}
+	cnt = BATcount(b);
+
+	if (cnt) {
+		dbl stdev = 0;
+		/* first, we need the average of the tail values */
+		bit t = TRUE;
+		dbl avg = 0;
+		CMDsum_@1_dbl(&avg, b, &t);
+		if (avg != dbl_nil) {
+			BATiter bi = bat_iterator(b);
+			BUN p,q;
+
+			avg /= cnt;
+
+			/* next, we need the sum of the squares of the difference of each
+			   value in the tail with the avg */
+
+			/* no need to check for nil values on the tail, the CMDsum has
+			   already done that and reported back */
+			BATloop(b, p, q) {
+				@1 value = *(@1*) BUNtloc(bi, p);
+				value -= avg;    /* diff from avg  */
+				value *= value;  /* square         */
+				stdev += value;  /* sum of squares */
+			}
+
+			/* finaly, divide by the cnt and compute the square root */
+			*res = sqrt(stdev/cnt);
+		} else {
+			*res = dbl_nil;
+		}
+	} else {
+		*res = dbl_nil;
+	}
+
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+@c
+@:stdev_impl(bte)@
+@:stdev_impl(sht)@
+@:stdev_impl(int)@
+@:stdev_impl(wrd)@
+@:stdev_impl(lng)@
+@:stdev_impl(flt)@
+@:stdev_impl(dbl)@
 
 @}
