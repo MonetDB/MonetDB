@@ -21,7 +21,7 @@ setup(name='monetdb.sql',
       version='1.0',
       description='Native MonetDB driver',
       author='Gijs Molenaar',
-      author_email='gijs.molenaar@cw.nl',
+      author_email='gijs.molenaar@cwi.nl',
       url='http://www.monetdb.nl',
       packages=['monetdb', 'monetdb.sql'],
      )
