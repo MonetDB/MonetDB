@@ -2,6 +2,11 @@
 # This file is updated with Maddlog
 
 * Mon Jan 18 2010 Martin Kersten <mk@>
+- The MAL interpreter has been extended with an operation
+  admission policy to control the memory claims of all
+  concurrent running interpreters. Instructions are hold
+  up unto there is sufficient resource or the query plan
+  can not avoid its execution anymore.
 - The join path optimizer has been extended with searching for
   join*, semijoin*, and leftjoin* paths. Furthermore, it avoids
   duplicate work by factoring out all common simple join paths.
