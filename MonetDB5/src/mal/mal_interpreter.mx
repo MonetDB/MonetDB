@@ -45,7 +45,7 @@ to be passed by a handle.
 /* #define DEBUG_FLOW */
 /* #define DEBUG_FLOW2 */
 /*#define STACKTRACE*/
-/* #define DEBUG_MEMORY_CLAIM*/
+/*#define DEBUG_MEMORY_CLAIM*/
 
 mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
@@ -61,6 +61,7 @@ mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
+mal_export lng getMemoryClaim(MalStkPtr stk, InstrPtr pci);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
@@ -598,90 +599,115 @@ postponed if the claim for memory exceeds a threshold
 In general such contentions will be hard to predict,
 because they depend on the algorithm, the input sizes,
 and the output produced.
-The pessimistic claim is:  getVolume(stk,pci,0)
+
+The heuristic is based on calculating the storage footprint
+of the operands and assuming it preferrably should fit in memory.
+Ofcourse, there may be intermediate structures being
+used and the size of the result is not a priori known.
+For this, we use a high watermark on the amount of
+physical memory we pre-allocate for the claims.
+
+Instructions are eligible to be executed when the
+total footprint of all concurrent executions stays below
+the high-watermark or it is the single expensive
+instruction being started.
+
+When we run out of memory, the instruction is delayed.
+How long depends on the other instructions to free up 
+resources. The current policy simple takes a local
+decision by delaying the instruction based on its
+past and the size of the memory pool size.
+The waiting penalty decreases with each step to ensure
+it will ultimately taken into execution, with possibly
+all resource contention effects.
+
+Another option would be to maintain a priority queue of 
+suspended instructions.
 @c
+#define MEMORY_THRESHOLD  0.8
+
 lng memorypool;		/* memory claimed by concurrent threads */
-int memoryclaims;	/* number of threads active */
+int memoryclaims;	/* number of threads active with expensive operations */
+
+#define heapinfo(X) if((X) && (X)->base) vol = (X)->size; else vol = 0;
+#define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
+
+lng
+getMemoryClaim(MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	lng total = 0, vol=0;
+	BUN cnt = 0;
+	BAT *b;
+	
+	for(i=  pci->retc; i< pci->argc; i++) {
+		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+			if (b==NULL) 
+				continue;
+			heapinfo(&b->H->heap); total += vol;
+			heapinfo(&b->T->heap); total += vol;
+			heapinfo(b->H->vheap); total += vol;
+			heapinfo(b->T->vheap); total += vol;
+			hashinfo(b->H->hash); total += vol;
+			hashinfo(b->T->hash); total += vol;
+			/* prepare for hashes */
+			if ( b->H->hash == NULL && b->hsorted == 0  &&
+			     b->T->hash == NULL && b->tsorted == 0 ){
+				if ( BATcount(b)  > cnt)
+					cnt = BATcount(b);
+			} 
+			BBPunfix(b->batCacheid); 
+		}
+	}
+	/* accommodate for one hash */
+	total += cnt * sizeof(int);
+	/* accomodate for result */
+	if (stk->stk[getArg(pci,0)].vtype == TYPE_bat)
+		total *= 2;	/* 'worst' case coming from a mat.pack */
+#ifdef DEBUG_MEMORY_CLAIM
+	stream_printf(GDKout,"#DFLOWgetMemoryClaim " LLFMT " pool " LLFMT "\n", total, memorypool);
+#endif
+	return total;
+}
 
 int
 DFLOWclaim(lng claim)
 {
+	int m;
 	/* optimistically set memory */
 	if ( claim == 0)
 		return 0;
 
-    	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	if ( memorypool == 0 && memoryclaims == 0)
-		memorypool = monet_memory;
+	mal_set_lock(mal_contextLock, "DFLOWdelay");
+	if ( memorypool <= 0 && memoryclaims == 0)
+		memorypool = MEMORY_THRESHOLD * monet_memory;
 	
 	if ( claim > 0 ) {
-		if ( memoryclaims == 0 || memorypool >claim){
+		if ( memoryclaims == 0 || memorypool > claim ){
 			memorypool -= claim;
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"DFLOWclaim memoryclaim %d  pool " LLFMT "  claim " LLFMT"\n",
-				memoryclaims, memorypool, claim);
+			stream_printf(GDKout,"DFLOWclaim thread %d  pool left " LLFMT "  claim " LLFMT"\n",
+				THRgettid(), memorypool, claim);
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		} 
-#ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"DFLOWclaim REFUSE memoryclaim %d  pool " LLFMT " claim " LLFMT"\n",
-			memoryclaims, memorypool, claim);
-#endif
+		m = memoryclaims;
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
-		return memoryclaims;
+		return m;
 	} 
+	/* release memory claimed before */
 	memorypool += -claim;
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"DFLOWrelease memoryclaim %d  pool " LLFMT " claim " LLFMT"\n",
-			memoryclaims, memorypool, claim);
+		stream_printf(GDKout,"DFLOWrelease thread %d  pool left " LLFMT " claim " LLFMT"\n",
+			THRgettid(), memorypool, claim);
 #endif
-    	mal_unset_lock(mal_contextLock, "DFLOWdelay");
-	return memoryclaims;
-}
-@-
-The cost of a flow step depends on availability of its
-arguments and the total size of the BATs being accessed.
-All references to variables outside the block are considered
-initialized. All within the block or not, until an instruction
-delivers it as a target.
-
-There are several options to calculate the cost.
-The dataflow optimizer turns on profiling, which means
-we can use the aggregated timing as an indication of the
-expected cost. This works optimal for similar queries.
-
-The base line is to use the BAT counts, because these
-are the more interesting instructions to consider.
-@c
-lng
-MALflowCost(MalBlkPtr mb, MalStkPtr stk, int pc){
-	int i,bid;
-	lng cost= 0;
-	BAT *b;
-	InstrPtr p;
-
-	if (mb->profiler && mb->profiler[pc].counter)
-		cost= mb->profiler[pc].ticks/ mb->profiler[pc].counter;
-
-	/* cost is linear related to the total input */
-	if (cost == 0){
-		p= getInstrPtr(mb,pc);
-		for(i= p->retc; i<p->argc; i++)
-		if( isaBatType(getArgType(mb,p,i)) &&
-			(bid= ABS(stk->stk[getArg(p,i)].val.bval)) ){
-			b= BATdescriptor(bid);
-			if( b == NULL) continue;
-			cost += BATcount(b);
-			BBPreleaseref(bid);
-		}
-	}
-	/* naive costs */
-	if (cost == 0)
-		cost = p->argc;
-	return cost;
+	m = memoryclaims;
+	mal_unset_lock(mal_contextLock, "DFLOWdelay");
+	return m;
 }
 
 @-
@@ -840,31 +866,40 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		}
 	}
 
-@-
-Possibly delay processing when we run out of memory.
-@c
-    claim = getVolume(stk,pci,0);
-	if ( claim < 64 * 1024 * 1024)
-		claim = 0;
-    while (claim > 0 &&  (i = DFLOWclaim(claim) ) ){
-#ifdef DEBUG_MEMORY_CLAIM
-		printInstruction(GDKout,mb,0,pci,LIST_MAL_DEBUG);
-		stream_printf(GDKout,"DFLOWdelay claim " LLFMT"\n", claim);
-#endif
-        MT_sleep_ms(i * 20);
-		DFLOWclaim(-claim);
-        claim /= 2 ; /* reduce claim */
-    }
-
 	@:beginProfile(t)@
 	ret = MAL_SUCCEED;
-@-
-The number of instructions allowed is severely
-limited.
-We don't allow sequential flow control here.
-@c
 	@:MALrecycleStart(t)@ {
         lng tcs = 0;
+@-
+Delay processing when we run out of memory and could not recycle.
+
+The process could be refined by checking for cheap operations,
+i.e. those that would require memory at all (aggr.count)
+This, however, would lead to a dependency to the upper layers,
+because in the kernel we don't know what routines are available
+with this properyty.
+@c
+		claim = getMemoryClaim(stk, pci);
+		if ( DFLOWclaim(claim) ){
+#ifdef DEBUG_MEMORY_CLAIM
+			stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
+#endif
+			for ( ; ; )
+			{
+				MT_sleep_ms( 100);
+				if ( DFLOWclaim(claim) == 0) {
+#ifdef DEBUG_MEMORY_CLAIM
+					stream_printf(GDKout,"#DFLOWcontinue thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
+#endif
+					break;
+				}
+			}
+		}
+
+@-
+The number of instructions allowed is severely limited.
+We don't allow sequential flow control here.
+@c
         switch (pci->token){
 		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
 		case PATcall: @:patterncall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
@@ -882,10 +917,9 @@ We don't allow sequential flow control here.
 			ret = createScriptException(mb, stkpc, MAL,
 					NULL, "unkown operation");
 		}
+		DFLOWclaim(-claim);
 		@:MALrecycleExit(t)@
 	}
-	/* update the list of eligable instructions */
-    DFLOWclaim(-claim);
 	@:endProfile(t)@
 	if (ret)
 		fs->pc = -1;
@@ -894,15 +928,13 @@ We don't allow sequential flow control here.
 
 @-
 A consequence of multiple threads is that they may claim more
-space then available. This will cause GDKmalloc to fail.
+space then available. This may cause GDKmalloc to fail.
 In many cases this situation will be temporary, because
 threads will ultimately release resources.
 Therefore, we wait for it.
-In the unlucky situation that after an hour we have not
-reached a solution, the task is automatically abandoned.
+
 Alternatively, a front-end can set the flow administration
 program counter to -1, which leads to a soft abort.
-
 [UNFORTUNATELY this approach does not (yet) work
 because there seem to a possibility of a deadlock
 between incref and bbptrim. Furthermore, we have
@@ -916,7 +948,6 @@ runDFLOWworker(void *t)
 	FlowTask *task = (FlowTask*) t;
 	str err;
 	int oldpc;
-/*	int hour=0; */
 	Thread thr;
 
 	thr = THRnew(MT_getpid(), "DFLOWworker");
@@ -927,16 +958,6 @@ runDFLOWworker(void *t)
 			(err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
 			/* restore the instruction and wait*/
 			THRprintf(GDKerr, "#Thread %d needs memory:%s\n",task->id,err);
-/*
-			fs->pc = oldpc;
-			MT_sleep_ms(60000);
-			THRprintf(GDKerr, "#Retry for memory access thread %d \n",task->id);
-			if (hour++ >60 ) {
-				hour=0;
-				break;
-			}
-			GDKfree(fs->error);	
-*/
 			break;
 		}
 		q_enqueue(fs->flow->done, fs);
