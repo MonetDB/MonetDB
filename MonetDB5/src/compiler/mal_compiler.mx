@@ -146,7 +146,7 @@ mal_compiler_export str MCloadFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 static char *mccPrelude[] = {
 	"/* MAL to C compiler\n",
 	"   Copyright (c) 2001-July 2008, CWI.\n",
-	"   Copyright (c) August 2008-2009, MonetDB B.V..\n",
+	"   Copyright (c) August 2008-2010, MonetDB B.V..\n",
 	"   All rights reserved.\n",
 	"*/\n",
 	"#include \"mal_config.h\"\n",
