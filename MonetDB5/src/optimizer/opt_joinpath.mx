@@ -124,77 +124,60 @@ comment "internal routine to handle join paths.
 /* #define DEBUG_OPT_JOINPATH  */
 @-
 Post-optimization. After the join path has been constructed
-we factor out common header subpaths. This heuristic is to
+we could search for common subpaths. This heuristic is to
 remove any pair which is used more then once.
+Inner paths are often foreign key walks.
 The heuristics is sufficient for the code produced by SQL frontend.
-The alternative is to search for all possible subpaths
-and materialize them.
+The alternative is to search for all possible subpaths and materialize them.
+For example, using recursion for all common paths.
 @c
 #include "mal_config.h"
 #include "opt_joinpath.h"
 #include "cluster.h"
 
+typedef struct{
+	int cnt;
+	int lvar, rvar;
+	str fcn;
+	InstrPtr p;
+} Candidate;
+
 static int
-OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
+OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 {
-	int i,j,k,cnt,top=0;
+	int i,j,k,top=0, actions =0;
 	str joinPathRef = putName("joinPath",8);
 	str leftjoinPathRef = putName("leftjoinPath",12);
 	str semijoinPathRef = putName("semijoinPath",12);
 	InstrPtr q,p,*old, *paths;
-	int limit, *used;
+	int limit;
+	Candidate *candidate;
 
+	candidate = (Candidate *) GDKzalloc(mb->stop * sizeof(Candidate));
+	if ( candidate == NULL)
+		return 0;
 	(void) cntxt;
-	paths = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * mb->stop);
-	if ( paths== NULL)
-		return 0;
 
+	/* collect all candidates */
 	limit= mb->stop;
-	for(i=0; i< limit; i++)
-	if ( getFunctionId(mb->stmt[i])== joinPathRef || getFunctionId(mb->stmt[i])== leftjoinPathRef || getFunctionId(mb->stmt[i]) == semijoinRef)
-		paths[top++] = mb->stmt[i];
-
-	/* let's trim the paths first , because they are incrementally added */
-	k=1;
-	for (i=1;i<top; ){
-		if (paths[i]->argv[1] == paths[k-1]->argv[1]){
-			i++;
-			continue;
+	for(i=0, p= getInstrPtr(mb, i); i< limit; i++, p= getInstrPtr(mb, i))
+	if ( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinRef)
+		for ( j= p->retc; j< p->argc-1; j++){
+				for (k= 0; k < top; k++)
+				if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p)){
+					candidate[k].cnt++;
+					break;
+				}
+				if ( k == top && top < mb->stop ){
+					candidate[k].cnt =1;
+					candidate[k].lvar = getArg(p,j);
+					candidate[k].rvar = getArg(p,j+1);
+					candidate[k].fcn = getFunctionId(p);
+					top++;
+				}
 		}
-		if (paths[i]->argv[2] == paths[k-1]->argv[1]){
-			i++;
-			continue;
-		}
-		paths[k++]= paths[i++];
-	}
-	top=k;
 
-	/* determine the joinpaths whose header should be replaced, because
-	   it occurs multiple times */
-	for( k=i=0; i<top; i++){
-		cnt =0;
-		for ( j=i+1; j<top; j++)
-		if ( getArg(paths[i], 1) == getArg(paths[j],1) &&
-			getArg(paths[i], 2) == getArg(paths[j],2) )
-			cnt++;
-		if ( cnt >= 1)
-			paths[k++] = paths[i];
-	}
-	top = k;
-	used = (int*) GDKzalloc(sizeof(int) * top);
-	if ( used == NULL){
-		GDKfree(paths);
-		return 0;
-	}
-
-#ifdef DEBUG_OPT_JOINPATH 
-	stream_printf(cntxt->fdout,"start of header compression\n");
-	for( i =0; i<top; i++)
-		printInstruction(cntxt->fdout,mb, 0, paths[i],0);
-	printFunction(cntxt->fdout,mb,0,0);
-#endif
-
-	/* now replace the joinpaths that have a common head */
+	/* now inject and replace the subpaths */
 	old= mb->stmt;
 	limit= mb->stop;
 	if ( newMalBlkStmt(mb,mb->ssize) < 0){
@@ -202,27 +185,39 @@ OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
 		return 0;
 	}
 
-	for (i = 0; i<limit; i++){
-		p= old[i];
-		if( getModuleId(p)== algebraRef && (getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinPathRef)){
-			for(j=0;j<top;j++)
-			if ( getArg(p, 1) == getArg(paths[j],1) &&
-				getArg(p, 2) == getArg(paths[j],2) ){
-				if (used[j] == 0){
-					/* reform joinpath */
-					q= copyInstruction(paths[j]);
-					setFunctionId(q,joinRef);
-					q->argc=3;
-					used[j] = getArg(q,0) = newTmpVariable(mb, TYPE_any);
-					pushInstruction(mb,q);
+	for(i=0, p= old[i]; i< limit; i++, p= old[i])
+	{
+		if( getModuleId(p)== algebraRef && (getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinPathRef))
+		for ( j= p->retc ; j< p->argc-1; j++){
+				for (k= 0; k < top; k++)
+				if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p) && candidate[k].cnt > 1){
+					if ( candidate[k].p == 0 ) {
+						if ( candidate[k].fcn == joinPathRef)
+							q= newStmt(mb, algebraRef, joinRef);
+						else
+						if ( candidate[k].fcn == leftjoinPathRef) 
+							q= newStmt(mb, algebraRef, leftjoinRef);
+						else
+						if ( candidate[k].fcn == semijoinPathRef)
+							q= newStmt(mb, algebraRef, semijoinRef);
+						q= pushArgument(mb,q, candidate[k].lvar);
+						q= pushArgument(mb,q, candidate[k].rvar);
+						candidate[k].p = q;
+					} 
+					delArgument(p,j);
+					getArg(p,j) = getArg(candidate[k].p,0);
+					if ( p->argc == 3 ){
+							if (getFunctionId(p) == leftjoinPathRef)
+								setFunctionId(p, leftjoinRef);
+							else
+							if ( getFunctionId(p) == semijoinPathRef)
+								setFunctionId(p, semijoinRef);
+							else
+							if ( getFunctionId(p) == joinPathRef)
+								setFunctionId(p, joinRef);
+					}
+					actions ++;
 				}
-				/* replace the header by the factored out pair */
-				getArg(p,1)= used[j];
-				delArgument(p,2);
-				if (p->argc == 3)
-					setFunctionId(p, joinRef);
-				break;
-			}
 		}
 		pushInstruction(mb,p);
 	}
@@ -231,9 +226,11 @@ OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
 	printFunction(cntxt->fdout,mb,0,0);
 #endif
 	GDKfree(old);
-	GDKfree(paths);
-	GDKfree(used);
-	return 0;
+	GDKfree(candidate);
+	/* there may be new opportunities to remove common expressions */
+	/* but recursion makes the code less efficient due to longer retention */
+	/* return actions? actions + OPTjoinSubPath(cntxt, mb): actions;*/
+	return actions;
 }
 @-
 @c
@@ -369,9 +366,9 @@ Final type check.
 	for(; i<slimit; i++)
 	if(old[i])
 		freeInstruction(old[i]);
-	/* perform the second phase */
+	/* perform the second phase, try out */
 	if (actions )
-		OPTjoinPathPrefix(cntxt, mb);
+		actions += OPTjoinSubPath(cntxt, mb);
 	GDKfree(old);
 	GDKfree(pc);
 	OPTDEBUG
