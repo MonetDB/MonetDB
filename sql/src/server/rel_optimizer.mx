@@ -40,6 +40,7 @@ extern sql_exp * rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 #include "rel_prop.h"
 #include "rel_exp.h"
 #include "rel_dump.h"
+#include "sql_env.h"
 
 typedef struct global_props {
 	int cnt[MAXOPS];
@@ -448,6 +449,14 @@ sql_column_kc_cmp(sql_column *c, sql_kc *kc)
 	/* return on equality */
 	return (c->colnr - kc->c->colnr);
 }
+
+static int
+kc_column_cmp(sql_kc *kc, sql_column *c)
+{
+	/* return on equality */
+	return !(c == kc->c);
+}
+
 
 static sql_idx *
 find_fk_index(sql_table *l, list *lcols, sql_table *r, list *rcols)
@@ -1807,6 +1816,12 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
 						list_destroy(lexps);
 						lexps = NULL;
 					}
+/*
+				} else {
+					if (!nexps) 
+						nexps = new_exp_list();
+					append(nexps, exp_dup(e));
+*/
 				}
 			}
 		}
@@ -1816,6 +1831,12 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
 			list_destroy(nexps);
 			nexps = NULL;
 		}
+/*
+		if (nexps) {	
+			list_destroy(rel->exps);
+			rel->exps = nexps;
+		}
+*/
 	}
 	return rel;
 }
@@ -2370,6 +2391,80 @@ rel_groupby_order(int *changes, mvc *sql, sql_rel *rel)
 		}
 		rel->r = list_keysort(gbe, scores, (fdup)exp_dup);
 		list_destroy(gbe);
+	}
+	return rel;
+}
+
+/* reduce group by expressions based on pkey info */
+static sql_rel *
+rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel) 
+{
+	list *gbe = rel->r;
+
+	*changes = 0;
+	(void)sql;
+	if (is_groupby(rel->op) && list_length(gbe) > 1 && list_length(gbe)<9) {
+		node *n;
+		char *scores = alloca(list_length(gbe));
+		int k, j, i;
+		sql_column *c;
+		sql_table **tbls;
+
+		gbe = rel->r;
+		tbls = (sql_table**)alloca(sizeof(sql_table*)*list_length(gbe));
+		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
+			sql_exp *e = n->data;
+
+			c = exp_find_column(rel, e);
+			if (c) {
+				for(j = 0; j < i; j++)
+					if (c->t == tbls[j])
+						break;
+				tbls[j] = c->t;
+				i += (j == i);
+			}
+		}
+		if (i) { /* forall tables find pkey and 
+				remove useless other columns */
+			for(j = 0; j < i; j++) {
+				int l, nr = 0;
+
+				k = list_length(gbe);
+				memset(scores, 0, list_length(gbe));
+				if (tbls[j]->pkey) {
+					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
+						fcmp cmp = (fcmp)&kc_column_cmp;
+						sql_exp *e = n->data;
+
+						c = exp_find_column(rel, e);
+						if (c && list_find(tbls[j]->pkey->k.columns, c, cmp) != NULL) {
+							scores[l] = 1;
+							nr ++;
+						}
+					}
+				}
+				if (nr && list_length(tbls[j]->pkey->k.columns) == nr) {
+					list *ngbe = new_exp_list();
+					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
+						sql_exp *e = n->data;
+
+						if (scores[l])
+							append(ngbe, exp_dup(e)); 
+					}
+					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
+						sql_exp *e = n->data;
+
+						c = exp_find_column(rel, e);
+						if (!c || c->t != tbls[j]) 
+							append(ngbe, exp_dup(e)); 
+					}
+
+					list_destroy(rel->r);
+					rel->r = ngbe;
+				} 
+				gbe = rel->r;
+			}
+		}
 	}
 	return rel;
 }
@@ -3387,8 +3482,10 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	if (gp.cnt[op_select]) 
 		rel = rewrite(sql, rel, &rel_remove_empty_select); 
 
-	if (gp.cnt[op_select] && gp.cnt[op_join]) 
+	if (gp.cnt[op_select] && gp.cnt[op_join]) {
 		rel = rewrite(sql, rel, &rel_push_select_down_join); 
+		rel = rewrite(sql, rel, &rel_remove_empty_select); 
+	}
 
 	if (gp.cnt[op_topn])
 		rel = rewrite(sql, rel, &rel_push_topn_down); 
@@ -3397,8 +3494,6 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	   the 'unique/primary (right hand side)' done before the (fake)-join and the selections on the foreign 
 	   part done after. */
 	
-
-
 	if (gp.cnt[op_join] && gp.cnt[op_groupby]) {
 		rel = rewrite(sql, rel, &rel_push_count_down);
 		rel = rewrite(sql, rel, &rel_push_join_down); 
@@ -3407,6 +3502,7 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	if (gp.cnt[op_groupby]) {
 		rel = rewrite(sql, rel, &rel_avg2sum_count); 
 		rel = rewrite(sql, rel, &rel_groupby_order); 
+		rel = rewrite(sql, rel, &rel_reduce_groupby_exps); 
 	}
 
 	if (gp.cnt[op_join] || gp.cnt[op_left])
