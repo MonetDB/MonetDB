@@ -1,3 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Jan 18 2010 Martin Kersten <mk@>
+- The join path optimizer has been extended with searching for
+  join*, semijoin*, and leftjoin* paths. Furthermore, it avoids
+  duplicate work by factoring out all common simple join paths.
+  .
+
