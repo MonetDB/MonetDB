@@ -208,7 +208,7 @@ typedef enum operator_type {
 
 /* used for expressions and relations */
 #define is_intern(e) \
-	((e->flag&EXP_INTERN))
+	(e->type != e_atom && (e->flag&EXP_INTERN))
 #define set_intern(e) \
 	e->flag |= EXP_INTERN
 

@@ -76,7 +76,7 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 # 23:26:36 >  mclient -lsql -i --host=eir --port=38510 
 # 23:26:36 >  
 
-MAPI  = monetdb@alf:39359
+MAPI  = monetdb@alf:32257
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
 ERROR = !SQLException:sql:End of string (') missing in "1	'dwerg.net word volwassen, er is eindelijk content
         !en het voicemail archief begint al aardig vol te lopen.
@@ -100,6 +100,27 @@ ERROR = !SQLException:sql:End of string (') missing in "1	'dwerg.net word volwas
         !		
         !" at line 1 field 1
         !SQLException:importTable:failed to import table
+        !ERROR: End of string (') missing in "1	'dwerg.net word volwassen, er is eindelijk content
+        !ERROR: en het voicemail archief begint al aardig vol te lopen.
+        !ERROR: De commentaar en rating code voor de voicemails is ook
+        !ERROR: al vrij aardig aan het vorderen. Dus dat beloofd nog
+        !ERROR: wat.r
+        !ERROR: <br /><br />r
+        !ERROR: Mja, het is dat ik veel te veel
+        !ERROR: tijd heb en het helemaal verkeerd indeel dat het
+        !ERROR: allemaal nogal lang duurt, maar in principe is het nog
+        !ERROR: maar een uurtje of 6 werk om het goed te krijgen. Zoals
+        !ERROR: je kan zien heb ik bij de voicemails al wat leuke
+        !ERROR: knopjes gezet, en het aantal voicemails dat je in 1
+        !ERROR: keer ziet verhoogd naar 15. Poepoe.r
+        !ERROR: <br /><br
+        !ERROR: />r
+        !ERROR: Het is me allemaal wat...r
+        !ERROR: <br /><br
+        !ERROR: />r
+        !ERROR: Muziek: Air	1	2002-02-22 00:21:00.000
+        !ERROR: 		
+        !ERROR: " at line 1 field 1
 
 # 23:26:36 >  
 # 23:26:36 >  Done.
