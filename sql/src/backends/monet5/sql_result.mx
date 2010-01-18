@@ -815,8 +815,8 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 	return 0;
 }
 
-int 
-export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid, ptr p) 
+static int 
+export_length( stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p) 
 {
 	int ok = 1;
 	size_t count = 0;
@@ -920,14 +920,14 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 		ok = mvc_send_int(s, 10);
 	} else if (eclass == EC_TIME) {
 		count = 8;
-		if (scale)	/* time zone */
+		if (tz)	/* time zone */
 			count += 6;	/* +03:30 */
 		if (digits > 1)	/* fractional seconds precision (including dot) */
 			count += digits;
 		ok = mvc_send_lng(s, (lng) count);
 	} else if (eclass == EC_TIMESTAMP) {
 		count = 10 + 1 + 8;
-		if (scale)	/* time zone */
+		if (tz)	/* time zone */
 			count += 6;		/* +03:30 */
 		if (digits)	/* fractional seconds precision */
 			count += digits;
@@ -964,7 +964,7 @@ mvc_export_value(mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, 
 	    stream_write(s, " # name\n% ", 10, 1) == 1 &&
 	    stream_write(s, type, strlen(type), 1) == 1 &&
 	    stream_write(s, " # type\n% ", 10, 1) == 1 &&
-	    export_length(s, mtype, eclass, d, sc, 0, p) &&
+	    export_length(s, mtype, eclass, d, sc, has_tz(eclass,type), 0, p) &&
 	    stream_write(s, " # length\n[ ", 12, 1) == 1 &&
 	    export_value( m, s, eclass, type, d, sc, p, mtype, &buf, &len, ns)) 
 		ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
@@ -1117,7 +1117,7 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 		int mtype = c->type.type->localtype;
 		int eclass = c->type.type->eclass;
 
-		if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, c->b, c->p))
+		if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
 			return export_error(order);
 		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
 			return export_error(order);
