@@ -336,7 +336,6 @@ BATappend(BAT *b, BAT *n, bit force)
 			b->tkey |= (n->tkey & TRUE);
 			b->T->nokey[0] = n->T->nokey[0];
 			b->T->nokey[1] = n->T->nokey[1];
-			b->H->nonil = n->H->nonil; 
 			b->T->nonil = n->T->nonil; 
 		} else {
 			BUN last = BUNlast(b) - 1;
