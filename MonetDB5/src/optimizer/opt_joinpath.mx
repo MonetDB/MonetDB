@@ -32,8 +32,7 @@ To illustrate, consider
 @end verbatim
 The optimizer will first replace all arguments
 by their join sequence. The underlying instructions
-are left behind for the deadcode optimizer to be
-removed.
+are left behind for the deadcode optimizer to be removed.
 @verbatim
 	a:= bat.new(:oid,:oid);
 	j1:= algebra.join(a,b);
@@ -44,8 +43,12 @@ removed.
 The same operation is applied to sequences of leftjoin
 operations.
 
+Any join result used multiple times should be calculated once.
+A list of inlined paths is kept around to detect those.
+
 In principle, the joinpaths may contain common
 subpaths, whose materialization would improve performance.
+
 The SQL front-end produces often produces
 snippets of the following structure
 @verbatim
@@ -70,8 +73,9 @@ a materialized join.
 	...
     z2:= algebra.join(_13,d);
 @end verbatim
+
 An alternative is to make recognition
-of the common re-useable paths an
+of any common re-useable paths an
 integral part of the joinPath body.
 
 @verbatim
@@ -243,6 +247,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str semijoinPathRef = putName("semijoinPath",12);
 	InstrPtr q,r;
 	InstrPtr *old;
+	int *varcnt;		/* use count */
 	int limit,slimit;
 
 	(void) cntxt;
@@ -257,8 +262,21 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
-	if (pc == NULL)
+	varcnt= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); 
+	if (pc == NULL || varcnt == NULL){
+		if (pc ) GDKfree(pc);
+		if (varcnt ) GDKfree(varcnt);
 		return 0;
+	}
+@-
+Count the variable use as arguments first.
+@c
+	for (i = 0; i<limit; i++){
+		p= old[i];
+		for(j=p->retc; j<p->argc; j++)
+			varcnt[getArg(p,j)]++;
+	}
+
 	for (i = 0; i<limit; i++){
 		p= old[i];
 		if( getModuleId(p)== algebraRef && (getFunctionId(p)== joinRef || getFunctionId(p) == leftjoinRef || getFunctionId(p) == semijoinRef)){
@@ -270,31 +288,37 @@ This creates a series of join paths, many of which will be removed during deadco
 			q->argc=1;
 			for(j=p->retc; j<p->argc; j++){
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
-				assert(r);
+@-
+Don't inject a pattern when it is used more then once.
+@c
+				if (r && varcnt[getArg(p,j)] > 1){
+#ifdef DEBUG_OPT_JOINPATH 
+					stream_printf(cntxt->fdout,"double use %d %d\n", getArg(p,j), varcnt[getArg(p,j)]);
+					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+#endif
+					r = 0;
+				}
 #ifdef DEBUG_OPT_JOINPATH 
 				stream_printf(cntxt->fdout,"expand list \n");
 				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 #endif
 				if ( getFunctionId(p) == joinRef){
-					if( r &&  getModuleId(r)== algebraRef && 
-						( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
+					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
 							q = pushArgument(mb,q,getArg(r,k));
 					} else 
 						q = pushArgument(mb,q,getArg(p,j));
 				} else 
 				if ( getFunctionId(p) == leftjoinRef){
-					if( r &&  getModuleId(r)== algebraRef && 
-						( getFunctionId(r)== leftjoinRef  || getFunctionId(r)== leftjoinPathRef) ){
+					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== leftjoinRef  || getFunctionId(r)== leftjoinPathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
 							q = pushArgument(mb,q,getArg(r,k));
 					} else 
 						q = pushArgument(mb,q,getArg(p,j));
 				} else
 				if ( getFunctionId(p) == semijoinRef){
-					if( r &&  getModuleId(r)== algebraRef && 
-						( getFunctionId(r)== semijoinRef  || getFunctionId(r)== semijoinPathRef) ){
+					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== semijoinRef  || getFunctionId(r)== semijoinPathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
 							q = pushArgument(mb,q,getArg(r,k));
 					} else 
@@ -302,6 +326,7 @@ This creates a series of join paths, many of which will be removed during deadco
 				}
 			}
 #ifdef DEBUG_OPT_JOINPATH 
+			chkTypes(cntxt->nspace,mb,TRUE);
 			stream_printf(cntxt->fdout,"new [left]joinPath instruction\n");
 			printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 #endif
@@ -320,6 +345,7 @@ Final type check.
 			!( getTailType(getArgType(mb,q,j))== TYPE_void &&
 				getHeadType(getArgType(mb,q,j))== TYPE_oid)
 			 ){
+				/* don't use it */
 				freeInstruction(q);
 				goto wrapup;
 			}
@@ -330,7 +356,7 @@ Final type check.
 			if ( q->argc > 3  &&  getFunctionId(q) == leftjoinRef)
 				setFunctionId(q,leftjoinPathRef);
 			else
-			if ( q->argc > 2  &&  getFunctionId(q) == semijoinRef)
+			if ( q->argc > 2  &&  getFunctionId(q) == semijoinRef) 
 				setFunctionId(q,semijoinPathRef);
 			p= q;
 			actions++;
@@ -351,6 +377,10 @@ Final type check.
 	OPTDEBUG
 	if ( actions)
 		stream_printf(cntxt->fdout,"#opt_joinpath: %d statements glued\n",actions);
+#ifdef DEBUG_OPT_JOINPATH 
+	stream_printf(cntxt->fdout,"OPTjoinPath finished\n");
+	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
+#endif
 	return actions;
 }
 @include optimizerWrapper.mx

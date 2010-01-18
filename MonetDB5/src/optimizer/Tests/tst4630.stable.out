@@ -32,10 +32,10 @@ function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]
     b1 := b;                            #  2 b1:bat[:any_2,:any_3] := b:bat[:any_2,:any_3] {G}
     c1 := c;                            #  3 c1:bat[:any_3,:any_4] := c:bat[:any_3,:any_4] {G}
     z := algebra.join(a,b);             #  4 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {G}
-    zz := algebra.joinPath(a,b,c);      #  5 zz:bat[:any,:any] := ALGjoinPath(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]) {G}
-    ww := algebra.joinPath(a,b,a1);     #  6 ww:bat[:any,:any] := ALGjoinPath(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], a1:bat[:any_1,:any_2]) {G}
-    yy := algebra.joinPath(a,b,a1,b1);  #  7 yy:bat[:any,:any] := ALGjoinPath(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], a1:bat[:any_1,:any_2], b1:bat[:any_2,:any_3]) {G}
-    xx := algebra.joinPath(a,b,a1,b1,c1);#  8 xx:bat[:any,:any] := ALGjoinPath(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], a1:bat[:any_1,:any_2], b1:bat[:any_2,:any_3], c1:bat[:any_3,:any_4]) {G}
+    zz := algebra.join(z,c);            #  5 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {G}
+    ww := algebra.join(z,a1);           #  6 ww:bat[:any,:any] := ALGjoin(z:bat[:any,:any], a1:bat[:any_1,:any_2]) {G}
+    yy := algebra.joinPath(z,a1,b1);    #  7 yy:bat[:any,:any] := ALGjoinPath(z:bat[:any,:any], a1:bat[:any_1,:any_2], b1:bat[:any_2,:any_3]) {G}
+    xx := algebra.joinPath(z,a1,b1,c1); #  8 xx:bat[:any,:any] := ALGjoinPath(z:bat[:any,:any], a1:bat[:any_1,:any_2], b1:bat[:any_2,:any_3], c1:bat[:any_3,:any_4]) {G}
     return qry := xx;                   #  9 qry:bat[:any_1,:any_4] := xx:bat[:any,:any] {G}
 end qry;                                # 10  
 

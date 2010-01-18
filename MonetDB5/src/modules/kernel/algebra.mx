@@ -1462,8 +1462,8 @@ CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 {
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
-	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
-	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
+	ptr l = (b->ttype == TYPE_bat && low) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat && high) ? (ptr) &((BAT *) high)->batCacheid : high;
 
 	if (b->ttype == TYPE_bat && l != h ) {
 		GDKerror("CMDselect: range-selects on type BAT are not supported\n");
