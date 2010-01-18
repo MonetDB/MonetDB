@@ -411,7 +411,7 @@ monet_hello(stream *out)
 		stream_printf(out, "# based on GDK   v%s\n", GDKversion());
 		stream_printf(out, "# Copyright (c) 1993-July 2008, CWI. "
 			      "All rights reserved.\n");
-		stream_printf(out, "# Copyright (c) August 2008-2009, MonetDB B.V.. "
+		stream_printf(out, "# Copyright (c) August 2008-2010, MonetDB B.V.. "
 			      "All rights reserved.\n");
 		stream_printf(out, "# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
 		                   monet_arch, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
