@@ -9133,7 +9133,7 @@ PROC add_content (BAT[void, str] item, BAT[void, BAT] ws, int slot) : BAT[void,o
     var X_prop := X_strings.leftjoin(ws_string_prop);
     X_strings := nil;
     ws_string_prop := nil;
-    var newProp := X_item.leftjoin(X_prop);
+    var newProp := X_item.leftjoin(X_prop).tmark(item.seqbase());
     X_item := nil;
     X_prop := nil;
 
