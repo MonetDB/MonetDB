@@ -149,7 +149,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	str joinPathRef = putName("joinPath",8);
 	str leftjoinPathRef = putName("leftjoinPath",12);
 	str semijoinPathRef = putName("semijoinPath",12);
-	InstrPtr q,p,*old, *paths;
+	InstrPtr q,p,*old;
 	int limit;
 	Candidate *candidate;
 
@@ -180,10 +180,8 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	/* now inject and replace the subpaths */
 	old= mb->stmt;
 	limit= mb->stop;
-	if ( newMalBlkStmt(mb,mb->ssize) < 0){
-		GDKfree(paths);
+	if ( newMalBlkStmt(mb,mb->ssize) < 0)
 		return 0;
-	}
 
 	for(i=0, p= old[i]; i< limit; i++, p= old[i])
 	{
