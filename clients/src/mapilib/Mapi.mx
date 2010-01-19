@@ -283,6 +283,7 @@ section.
 @item mapi_explain_query()	@tab	Display error message and context on stream
 @item mapi_fetch_all_rows()	@tab	Fetch all answers from server into cache
 @item mapi_fetch_field()	@tab Fetch a field from the current row
+@item mapi_fetch_field_len()	@tab Fetch the length of a field from the current row
 @item mapi_fetch_field_array()	@tab Fetch all fields from the current row
 @item mapi_fetch_line()	@tab	Retrieve the next line
 @item mapi_fetch_reset()	@tab	Set the cache reader to the beginning
@@ -596,6 +597,13 @@ analyzed in using @code{mapi\_error()}.
 Return a pointer a C-string representation of the value returned.  A
 zero is returned upon encountering an error or when the database value
 is NULL; this can be analyzed in using @code{mapi\_error()}.
+
+@item size_t mapi_fetch_fiels_len(MapiHdl hdl, int fnr)
+
+Return the length of the C-string representation excluding trailing NULL
+byte of the value.  Zero is returned upon encountering an error, when the
+database value is NULL, of when the string is the empty string.  This can
+be analyzed by using @code{mapi\_error()} and @code{mapi\_fetch\_field()}.
 
 @item MapiMsg mapi_next_result(MapiHdl hdl)
 
@@ -963,6 +971,7 @@ struct MapiRowBuf {
 		int tupleindex;	/* index of tuple rows */
 		mapi_int64 tuplerev;	/* reverse map of tupleindex */
 		char **anchors;	/* corresponding field pointers */
+		size_t *lens;	/* corresponding field lenghts */
 	} *line;
 };
 
@@ -1246,6 +1255,7 @@ mapi_export mapi_int64 mapi_get_last_id(MapiHdl hdl);
 mapi_export mapi_int64 mapi_rows_affected(MapiHdl hdl);
 
 mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
+mapi_export size_t mapi_fetch_field_len(MapiHdl hdl, int fnr);
 mapi_export MapiMsg mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *outparam);
 mapi_export char **mapi_fetch_field_array(MapiHdl hdl);
 mapi_export char *mapi_fetch_line(MapiHdl hdl);
@@ -1286,7 +1296,7 @@ static int mapi_extend_params(MapiHdl hdl, int minparams);
 static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error);
 static void close_connection(Mapi mid);
 static MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
-static int unquote(const char *msg, char **start, const char **next, int endchar);
+static int unquote(const char *msg, char **start, const char **next, int endchar, size_t *lenp);
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 
@@ -1726,6 +1736,8 @@ close_result(MapiHdl hdl)
 					}
 				free(result->cache.line[i].anchors);
 			}
+			if (result->cache.line[i].lens)
+				free(result->cache.line[i].lens);
 		}
 		free(result->cache.line);
 		result->cache.line = NULL;
@@ -3570,7 +3582,7 @@ mapi_trace(Mapi mid, int flag)
 
 
 static int
-slice_row(const char *reply, char *null, char ***anchorsp, int length, int endchar)
+slice_row(const char *reply, char *null, char ***anchorsp, size_t **lensp, int length, int endchar)
 {
 	/* This function does the actual work for splicing a real,
 	   multi-column row into columns.  It skips over the first
@@ -3579,25 +3591,32 @@ slice_row(const char *reply, char *null, char ***anchorsp, int length, int endch
 	char *start;
 	char **anchors;
 	int i;
+	size_t len;
+	size_t *lens;
 
 	reply++;		/* skip over initial char (usually '[') */
 	i = 0;
 	anchors = length == 0 ? NULL : malloc(length * sizeof(*anchors));
+	lens = length == 0 ? NULL : malloc(length * sizeof(*lens));
 	do {
 		if (i >= length) {
 			length = i + 1;
 			REALLOC(anchors, length);
+			REALLOC(lens, length);
 		}
-		if (!unquote(reply, &start, &reply, endchar) && null && strcmp(start, null) == 0) {
+		if (!unquote(reply, &start, &reply, endchar, &len) && null && strcmp(start, null) == 0) {
 			/* indicate NULL/nil with NULL pointer */
 			free(start);
 			start = NULL;
+			len = 0;
 		}
+		lens[i] = len;
 		anchors[i++] = start;
 		while (reply && *reply && isspace((int) (unsigned char) *reply))
 			reply++;
 	} while (reply && *reply && *reply != endchar);
 	*anchorsp = anchors;
+	*lensp = lens;
 	return i;
 }
 
@@ -3624,8 +3643,12 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 				free(result->cache.line[i].anchors[j]);
 			free(result->cache.line[i].anchors);
 		}
+		if (result->cache.line[i].lens)
+			free(result->cache.line[i].lens);
 		result->cache.line[i].anchors = result->cache.line[i + k].anchors;
 		result->cache.line[i + k].anchors = 0;
+		result->cache.line[i].lens = result->cache.line[i + k].lens;
+		result->cache.line[i + k].lens = 0;
 		result->cache.line[i].fldcnt = result->cache.line[i + k].fldcnt;
 		if (result->cache.line[i].rows &&
 		    (result->cache.line[i].rows[0] == '[' ||
@@ -3653,7 +3676,10 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 				free(result->cache.line[i].anchors[j]);
 			free(result->cache.line[i].anchors);
 		}
+		if (result->cache.line[i].lens)
+			free(result->cache.line[i].lens);
 		result->cache.line[i].anchors = 0;
+		result->cache.line[i].lens = 0;
 		result->cache.line[i].fldcnt = 0;
 	}
 	result->cache.reader -= k;
@@ -3706,6 +3732,7 @@ mapi_extend_cache(struct MapiResultSet *result, int cacheall)
 		result->cache.line[i].tupleindex = -1;
 		result->cache.line[i].tuplerev = -1;
 		result->cache.line[i].anchors = NULL;
+		result->cache.line[i].lens = NULL;
 	}
 	result->cache.limit = newsize;
 }
@@ -3735,6 +3762,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	char *tag, *etag;
 	int i, n;
 	char **anchors;
+	size_t *lens;
 
 	if (line[0] == '&') {
 		char *nline = line;
@@ -3801,7 +3829,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		return result;
 	}
 
-	n = slice_row(line, NULL, &anchors, 10, '#');
+	n = slice_row(line, NULL, &anchors, &lens, 10, '#');
 
 	tag = etag + 1;
 	while (*tag && isspace((int) (unsigned char) *tag))
@@ -3856,6 +3884,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		if (anchors[i])
 			free(anchors[i]);
 	free(anchors);
+	free(lens);
 
 	return result;
 }
@@ -3962,6 +3991,7 @@ mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const ch
 	int i, n;
 	const char **tuple;
 	char **anchors;
+	size_t *lens;
 
 	if (columns <= 0)
 		return MERROR;
@@ -3995,8 +4025,12 @@ mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const ch
 		result->cache.line[n].fldcnt = columns;
 		anchors = malloc(columns * sizeof(*anchors));
 		result->cache.line[n].anchors = anchors;
-		for (i = 0; i < columns; i++)
+		lens = malloc(columns * sizeof(*lens));
+		result->cache.line[n].lens = lens;
+		for (i = 0; i < columns; i++) {
 			anchors[i] = tuple[i] ? strdup(tuple[i]) : NULL;
+			lens[i] = tuple[i] ? strlen(tuple[i]) : 0;
+		}
 	}
 	hdl->active = NULL;
 	return mid->error;
@@ -4587,12 +4621,13 @@ of the unquoted part section.
    *next points to either the start of the next value (i.e. after the
    separating comma, possibly to the leading white space of the next
    value), or to the trailing ] or NULL byte if this was the last
-   value.
+   value.  *lenp is the number of bytes occupied by the (possibly
+   converted) value, excluding final NULL byte.
    msg is *not* a const string: it is altered by this function.
    The function returns true if the string was quoted.
 */
 static int
-unquote(const char *msg, char **str, const char **next, int endchar)
+unquote(const char *msg, char **str, const char **next, int endchar, size_t *lenp)
 {
 	const char *p = msg;
 	char quote;
@@ -4688,6 +4723,8 @@ unquote(const char *msg, char **str, const char **next, int endchar)
 		if (next)
 			*next = p;
 		*str = start;
+		if (lenp)
+			*lenp = len;
 
 		return 1;
 	} else {
@@ -4716,6 +4753,8 @@ unquote(const char *msg, char **str, const char **next, int endchar)
 		(*str)[len] = 0;
 		if (next)
 			*next = p;
+		if (lenp)
+			*lenp = len;
 		return 0;
 	}
 }
@@ -4725,7 +4764,7 @@ mapi_unquote(char *msg)
 {
 	char *start;
 
-	unquote(msg, &start, NULL, ']');
+	unquote(msg, &start, NULL, ']', NULL);
 	return start;
 }
 
@@ -4978,14 +5017,16 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 		/* nothing to slice */
 		i = 1;
 		REALLOC(result->cache.line[cr].anchors, 1);
+		REALLOC(result->cache.line[cr].lens, 1);
 		/* skip initial '=' if present */
 		if (*p == '=')
 			p++;
 		result->cache.line[cr].anchors[0] = strdup(p);
+		result->cache.line[cr].lens[0] = strlen(p);
 	} else {
 		/* work on a copy to preserve the original */
 		p = strdup(p);
-		i = slice_row(p, result->hdl->mid->languageId == LANG_SQL ? "NULL" : "nil", &result->cache.line[cr].anchors, result->fieldcnt, ']');
+		i = slice_row(p, result->hdl->mid->languageId == LANG_SQL ? "NULL" : "nil", &result->cache.line[cr].anchors, &result->cache.line[cr].lens, result->fieldcnt, ']');
 		free(p);
 	}
 	if (i > result->fieldcnt) {
@@ -5105,6 +5146,33 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 			return result->cache.line[cr].anchors[fnr];
 	}
 	mapi_setError(hdl->mid, "Illegal field number", "mapi_fetch_field", MERROR);
+	return 0;
+}
+
+size_t
+mapi_fetch_field_len(MapiHdl hdl, int fnr)
+{
+	int cr;
+	struct MapiResultSet *result;
+
+	mapi_hdl_check0(hdl, "mapi_fetch_field_len");
+
+	if ((result = hdl->result) == NULL ||
+	    (cr = result->cache.reader) < 0 ||
+	    (result->cache.line[cr].rows[0] != '[' &&
+	     result->cache.line[cr].rows[0] != '=')) {
+		mapi_setError(hdl->mid, "Must do a successful mapi_fetch_row first", "mapi_fetch_field_len", MERROR);
+		return 0;
+	}
+	assert(result->cache.line != NULL);
+	if (fnr >= 0) {
+		/* slice if needed */
+		if (result->cache.line[cr].fldcnt == 0)
+			mapi_slice_row(result, cr);
+		if (fnr < result->cache.line[cr].fldcnt)
+			return result->cache.line[cr].lens[fnr];
+	}
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_fetch_field_len", MERROR);
 	return 0;
 }
 
