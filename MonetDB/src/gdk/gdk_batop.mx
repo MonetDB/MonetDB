@@ -85,10 +85,14 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		return b;
 	bi = bat_iterator(b);
 	ni = bat_iterator(n);
+	bhw = b->H->width;
+	btw = b->T->width;
+	nhw = n->H->width;
+	ntw = n->T->width;
+	hp = NULL;
+	tp = NULL;
 @= prep_strapp
 	@1t = b->@1type;
-	b@1w = b->@2->width;
-	n@1w = n->@2->width;
 	if (@1t == TYPE_str &&
 	    (!GDK_ELIMDOUBLES(b->@2->vheap) || b->batCount == 0) &&
 	    !GDK_ELIMDOUBLES(n->@2->vheap) &&
@@ -136,9 +140,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 @c
 	if (!append) {
 		@:prep_strapp(h,H)@
-	} else if (b->H->type == TYPE_void)
-		hp = NULL;
-	else {
+	} else if (b->H->type != TYPE_void) {
 		hp = &o;
 		o = MAXoid(b);
 	}
