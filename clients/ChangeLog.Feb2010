@@ -1,0 +1,8 @@
+# ChangeLog file for clients
+# This file is updated with Maddlog
+
+* Tue Jan 19 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented new function mapi_fetch_field_len() which returns the
+  length (excluding trailing NULL byte) of the field returned by
+  mapi_fetch_field().
+
