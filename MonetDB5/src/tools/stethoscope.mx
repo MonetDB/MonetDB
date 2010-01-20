@@ -303,7 +303,8 @@ int main(int argc, char **argv)
 	if(argc>1 && a<argc && argv[a][0]=='+'){
 		setCounter(argv[a]+1);
 		a++;
-	}
+	} else
+		setCounter("TtiesS");
 
 	signal(SIGABRT, stopListening);
 #ifdef SIGPIPE
