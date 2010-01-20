@@ -1895,6 +1895,7 @@ usage(const char *prog)
 	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
 	fprintf(stderr, " -u user     | --user=user        user id\n");
+	fprintf(stderr, " -P passwd   | --passwd=passwd    password (requires -u)\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 
 	fprintf(stderr, " -e          | --echo             echo the query\n");
@@ -1954,6 +1955,7 @@ main(int argc, char **argv)
 	struct stat statb;
 	stream *config = NULL;
 	char user_set_as_flag = 0;
+	char passwd_set_as_flag = 0;
 	static struct option long_options[] = {
 		{"algebra", 0, 0, 'G'},
 		{"no-algebra", 0, 0, 'g'},
@@ -1976,6 +1978,7 @@ main(int argc, char **argv)
 #ifdef HAVE_POPEN
 		{"pager", 1, 0, '|'},
 #endif
+		{"passwd", 1, 0, 'P'},
 		{"port", 1, 0, 'p'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
@@ -2091,7 +2094,7 @@ main(int argc, char **argv)
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:p:s:tXu:H?", long_options, &option_index)) != -1) {
+				"w:r:P:p:s:tXu:H?", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
 #ifdef HAVE_POPEN
@@ -2154,6 +2157,10 @@ main(int argc, char **argv)
 		case 'u':
 			user = optarg;
 			user_set_as_flag = 1;
+			break;
+		case 'P':
+			passwd = optarg;
+			passwd_set_as_flag = 1;
 			break;
 		case 'f':
 			output = strdup(optarg); /* output format */
@@ -2250,8 +2257,12 @@ main(int argc, char **argv)
 #endif	/* HAVE_ICONV */
 
 	/* when config file would provide defaults */
-	if (user_set_as_flag)
+	if (user_set_as_flag && !passwd_set_as_flag) {
 		passwd = NULL;
+	} else if (passwd_set_as_flag && !user_set_as_flag) {
+		fprintf(stderr, "%s: -P flag can only be used with -u\n\n", argv[0]);
+		usage(argv[0]);
+	}
 
 	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
