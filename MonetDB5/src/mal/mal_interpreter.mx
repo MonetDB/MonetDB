@@ -44,8 +44,8 @@ to be passed by a handle.
 /*#define DEBUG_MAL_INTERPRETER*/
 /* #define DEBUG_FLOW */
 /* #define DEBUG_FLOW2 */
-/*#define STACKTRACE*/
-/*#define DEBUG_MEMORY_CLAIM*/
+/* #define STACKTRACE*/
+/* #define DEBUG_MEMORY_CLAIM*/
 
 mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
@@ -624,33 +624,52 @@ all resource contention effects.
 Another option would be to maintain a priority queue of 
 suspended instructions.
 @c
-#define MEMORY_THRESHOLD  0.8
+#define MEMORY_THRESHOLD  0.5
 
 lng memorypool;		/* memory claimed by concurrent threads */
 int memoryclaims;	/* number of threads active with expensive operations */
 
-#define heapinfo(X) if((X) && (X)->base) vol = (X)->size; else vol = 0;
+#define heapinfo(X) if((X) && (X)->base) vol = (X)->maxsize; else vol = 0;
 #define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
 
 lng
 getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	lng total = 0, vol=0;
+	lng t, total = 0, vol=0, guess=0;
 	BUN cnt = 0;
-	BAT *b;
+	BAT *b, *bv;
 	
 	for(i=  pci->retc; i< pci->argc; i++) {
 		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 			if (b==NULL) 
 				continue;
-			heapinfo(&b->H->heap); total += vol;
-			heapinfo(&b->T->heap); total += vol;
-			heapinfo(b->H->vheap); total += vol;
-			heapinfo(b->T->vheap); total += vol;
-			hashinfo(b->H->hash); total += vol;
-			hashinfo(b->T->hash); total += vol;
+			bv = NULL;
+			t = total;
+			if ( isVIEW(b) &&  VIEWhparent(b) ) {
+				bv = BATdescriptor(VIEWhparent(b));
+				heapinfo(&bv->H->heap); total += vol;
+				heapinfo(bv->H->vheap); total += vol;
+				hashinfo(bv->H->hash); total += vol;
+				BBPunfix(bv->batCacheid);
+			} else { 
+				heapinfo(&b->H->heap); total += vol;
+				heapinfo(b->H->vheap); total += vol;
+				hashinfo(b->H->hash); total += vol;
+			}
+
+			if (isVIEW(b) && VIEWtparent(b) ) {
+				bv = BATdescriptor(VIEWtparent(b));
+				heapinfo(&bv->T->heap); total += vol;
+				heapinfo(bv->T->vheap); total += vol;
+				hashinfo(bv->T->hash); total += vol;
+				BBPunfix(bv->batCacheid);
+			} else { 
+				heapinfo(&b->T->heap); total += vol;
+				heapinfo(b->T->vheap); total += vol;
+				hashinfo(b->T->hash); total += vol;
+			}
 			/* prepare for hashes */
 			if ( b->H->hash == NULL && b->hsorted == 0  &&
 			     b->T->hash == NULL && b->tsorted == 0 ){
@@ -658,15 +677,17 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 					cnt = BATcount(b);
 			} 
 			BBPunfix(b->batCacheid); 
+			if ( guess < total-t )
+				guess = total-t;
 		}
 	}
 	/* accommodate for one hash */
 	total += cnt * sizeof(int);
-	/* accomodate for result */
-	if (stk->stk[getArg(pci,0)].vtype == TYPE_bat)
-		total *= 2;	/* 'worst' case coming from a mat.pack */
+	/* accomodate for result based on largest argument */
+	total += guess;	
 #ifdef DEBUG_MEMORY_CLAIM
-	stream_printf(GDKout,"#DFLOWgetMemoryClaim " LLFMT " pool " LLFMT "\n", total, memorypool);
+	if ( total )
+		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claim " LLFMT"\n", memorypool,total);
 #endif
 	return total;
 }
@@ -688,7 +709,7 @@ DFLOWclaim(lng claim)
 			memorypool -= claim;
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"DFLOWclaim thread %d  pool left " LLFMT "  claim " LLFMT"\n",
+			stream_printf(GDKout,"#DFLOWclaim   thread %d pool " LLFMT " claim " LLFMT"\n",
 				THRgettid(), memorypool, claim);
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -702,7 +723,7 @@ DFLOWclaim(lng claim)
 	memorypool += -claim;
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"DFLOWrelease thread %d  pool left " LLFMT " claim " LLFMT"\n",
+		stream_printf(GDKout,"#DFLOWrelease thread %d pool " LLFMT " claim " LLFMT"\n",
 			THRgettid(), memorypool, claim);
 #endif
 	m = memoryclaims;
@@ -881,16 +902,16 @@ with this properyty.
 @c
 		claim = getMemoryClaim(stk, pci);
 		if ( DFLOWclaim(claim) ){
-#ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
-#endif
+			PARDEBUG stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n", THRgettid(), claim, memorypool);
 			for ( ; ; )
 			{
-				MT_sleep_ms( 100);
+				MT_sleep_ms( 50);
 				if ( DFLOWclaim(claim) == 0) {
-#ifdef DEBUG_MEMORY_CLAIM
-					stream_printf(GDKout,"#DFLOWcontinue thread %d claim  " LLFMT " pool "LLFMT"\n", tid, claim, memorypool);
-#endif
+					PARDEBUG
+					if ( claim) {
+						stream_printf(GDKout,"#DFLOWcontinue thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
+						printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
+					}
 					break;
 				}
 			}

@@ -137,7 +137,7 @@ void formatVolume(str buf, int len, lng vol){
 	if( vol <1024* 1024*1024)
 		snprintf(buf,len, LLFMT "M",vol/1024/1024);
 	else
-		snprintf(buf,len, LLFMT "G",vol/1024/1024/1024);
+		snprintf(buf,len, "%6.1fG",vol/1024.0/1024/1024);
 }
 
 @}

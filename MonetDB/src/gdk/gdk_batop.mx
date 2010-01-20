@@ -62,6 +62,172 @@ The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
 @{
 @c
+static BAT *
+insert_string_bat(BAT *b, BAT *n, int append)
+{
+	BATiter bi, ni;		/* iterators */
+	int ht, tt;		/* head and tail types */
+	BUN hoff = BUN_NONE, toff = BUN_NONE;  /* head and tail offsets */
+	BUN p, q;		/* loop variables */
+	oid o = 0;		/* in case we're appending */
+	ptr hp, tp;		/* head and tail value pointers */
+	bte hbv, tbv;		/* head and tail value-as-bte */
+	sht hsv, tsv;		/* head and tail value-as-sht */
+	int hiv, tiv;		/* head and tail value-as-int */
+#if SIZEOF_VAR_T == 8
+	lng hlv, tlv;		/* head and tail value-as-lng */
+#endif
+	var_t v;		/* value */
+	int nhw, ntw, bhw, btw;	/* shortcuts for {b,n}->{H,T}->width */
+
+	assert(!append || b->H->type == TYPE_void || b->H->type == TYPE_oid);
+	if (n->batCount == 0)
+		return b;
+	bi = bat_iterator(b);
+	ni = bat_iterator(n);
+@= prep_strapp
+	@1t = b->@1type;
+	b@1w = b->@2->width;
+	n@1w = n->@2->width;
+	if (@1t == TYPE_str &&
+	    (!GDK_ELIMDOUBLES(b->@2->vheap) || b->batCount == 0) &&
+	    !GDK_ELIMDOUBLES(n->@2->vheap) &&
+	    b->@2->vheap->hashash == n->@2->vheap->hashash &&
+	    (b->@1key & BOUND2BTRUE) == 0 &&
+	    (VIEW@1parent(n) == 0 ||
+	     BATcapacity(BBP_cache(VIEW@1parent(n))) < 2 * BATcount(n))) {
+		/* append string heaps */
+		@1off = b->batCount == 0 ? 0 : b->@2->vheap->size;
+		if (HEAPextend(b->@2->vheap, @1off + n->@2->vheap->size) < 0) {
+			@1off = BUN_NONE;
+			goto bunins_failed;
+		}
+		memcpy(b->@2->vheap->base + @1off, n->@2->vheap->base, n->@2->vheap->size);
+		b->@2->vheap->free = @1off + n->@2->vheap->free;
+		if (b->@2->width < SIZEOF_VAR_T &&
+		    ((var_t) 1 << 8 * b->@2->width) < (b->@2->width <= 2 ? b->@2->vheap->size - GDK_VAROFFSET : b->@2->vheap->size)) {
+			/* offsets aren't going to fit */
+			if (GDKupgradevarheap(b->@2, BATcapacity(b), b->@2->vheap->size, 0) == GDK_FAIL) {
+				@1off = BUN_NONE;
+				goto bunins_failed;
+			}
+			b@1w = b->@2->width;
+		}
+		switch (b@1w) {
+		case 1:
+			@1t = TYPE_bte;
+			break;
+		case 2:
+			@1t = TYPE_sht;
+			break;
+		default:
+			@1t = TYPE_int;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			@1t = TYPE_lng;
+			break;
+#endif
+		}
+		b->@2->varsized = 0;
+		n->@2->varsized = 0;
+		b->@2->type = @1t;
+	}
+@c
+	if (!append) {
+		@:prep_strapp(h,H)@
+	} else if (b->H->type == TYPE_void)
+		hp = NULL;
+	else {
+		hp = &o;
+		o = MAXoid(b);
+	}
+	@:prep_strapp(t,T)@
+
+	BATloop(n, p, q) {
+@= read_strapp
+		@1p = b->@2->type ? BUN@3(ni, p) : NULL;
+		if (@1off != BUN_NONE) {
+			assert(@1p != NULL);
+			switch (n@1w) {
+			case 1:
+				v = (var_t) * (unsigned char *) @1p + GDK_VAROFFSET;
+				break;
+			case 2:
+				v = (var_t) * (unsigned short *) @1p + GDK_VAROFFSET;
+				break;
+			default:
+				v = (var_t) * (unsigned int *) @1p;
+				break;
+#if SIZEOF_VAR_T == 8
+			case 8:
+				v = * (var_t *) @1p;
+				break;
+#endif
+			}
+			v += @1off;
+			assert(v > 0);
+			assert(v < b->@2->vheap->free);
+			switch (b@1w) {
+			case 1:
+				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
+				@1bv = (unsigned char) (v - GDK_VAROFFSET);
+				@1p = (ptr) &@1bv;
+				break;
+			case 2:
+				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
+				@1sv = (unsigned short) (v - GDK_VAROFFSET);
+				@1p = (ptr) &@1sv;
+				break;
+			default:
+#if SIZEOF_VAR_T == 8
+				assert(v < ((var_t) 1 << 32));
+#endif
+				@1iv = (unsigned int) v;
+				@1p = (ptr) &@1iv;
+				break;
+#if SIZEOF_VAR_T == 8
+			case 8:
+				@1lv = (unsigned char) v;
+				@1p = (ptr) &@1lv;
+				break;
+#endif
+			}
+		}
+@c
+		if (!append) {
+			@:read_strapp(h,H,head)@
+		}
+		@:read_strapp(t,T,tail)@
+		bunfastins(b, hp, tp);
+		if (append)
+			o++;
+	}
+	if (hoff != BUN_NONE) {
+		b->H->varsized = 1;
+		n->H->varsized = 1;
+		b->H->type = TYPE_str;
+	}
+	if (toff != BUN_NONE) {
+		b->T->varsized = 1;
+		n->T->varsized = 1;
+		b->T->type = TYPE_str;
+	}
+	return b;
+  bunins_failed:
+	if  (hoff != BUN_NONE) {
+		b->H->varsized = 1;
+		n->H->varsized = 1;
+		b->H->type = TYPE_str;
+	}
+	if  (toff != BUN_NONE) {
+		b->T->varsized = 1;
+		n->H->varsized = 1;
+		b->T->type = TYPE_str;
+	}
+	return NULL;
+}
+
 #define bunins(b,h,t) if (BUNins(b,h,t,force) == NULL) return NULL;
 BAT *
 BATins(BAT *b, BAT *n, bit force)
@@ -106,7 +272,7 @@ BATins(BAT *b, BAT *n, bit force)
 			b->hseqbase = h;
 			BATmirror(b)->tseqbase = h;
 		} else if (t + 1 != (BUN) h || !BAThdense(n)) {
-			b = BATmaterialize(b);
+			b = BATmaterializeh(b);
 			countonly = 0;
 			if (b == NULL)
 				return NULL;
@@ -127,7 +293,11 @@ BATins(BAT *b, BAT *n, bit force)
 				return NULL;
 		}
 	}
-	if (b->T->hash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && ((b->hkey & BOUND2BTRUE) == 0 || n->hkey) && (b->H->hash == NULL || ATOMstorage(b->htype) == TYPE_int)) {
+	if (b->T->hash == NULL &&
+	    b->batSet == 0 &&
+	    (b->tkey & BOUND2BTRUE) == 0 &&
+	    ((b->hkey & BOUND2BTRUE) == 0 || n->hkey) &&
+	    (b->H->hash == NULL || ATOMstorage(b->htype) == TYPE_int)) {
 		if ((b->hkey & BOUND2BTRUE)) {
 			tmp = n = BATkdiff(n, b);
 			if (n == NULL)
@@ -199,6 +369,17 @@ BATins(BAT *b, BAT *n, bit force)
 		}
 		if (countonly) {
 			BATsetcount(b, b->batCount + n->batCount);
+		} else if ((b->htype == TYPE_str &&
+			    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->H->vheap)) &&
+			    !GDK_ELIMDOUBLES(n->H->vheap) &&
+			    b->H->vheap->hashash == n->H->vheap->hashash &&
+			    VIEWhparent(n) == 0) ||
+			   (b->ttype == TYPE_str &&
+			    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->T->vheap)) &&
+			    !GDK_ELIMDOUBLES(n->T->vheap) &&
+			    b->T->vheap->hashash == n->T->vheap->hashash &&
+			    VIEWtparent(n) == 0)) {
+			b = insert_string_bat(b, n, 0);
 		} else if (b->htype == TYPE_void) {
 			BATiter ni = bat_iterator(n);
 			BATloop(n, p, q) {
@@ -311,7 +492,10 @@ BATappend(BAT *b, BAT *n, bit force)
 	if (b->T->hash && (2 * b->T->hash->mask) < (BATcount(b) + sz)) {
 		HASHremove(BATmirror(b));
 	}
-	if (!(b->T->hash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->H->hash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid))))
+	if (b->T->hash != NULL ||
+	    b->batSet ||
+	    (b->tkey & BOUND2BTRUE) != 0 ||
+	    (b->H->hash != NULL && ATOMstorage(b->htype) != ATOMstorage(TYPE_oid)))
 		fastpath = 0;
 
 	if (fastpath) {
@@ -331,7 +515,6 @@ BATappend(BAT *b, BAT *n, bit force)
 			b->tkey |= (n->tkey & TRUE);
 			b->T->nokey[0] = n->T->nokey[0];
 			b->T->nokey[1] = n->T->nokey[1];
-			b->H->nonil = n->H->nonil; 
 			b->T->nonil = n->T->nonil; 
 		} else {
 			BUN last = BUNlast(b) - 1;
@@ -359,7 +542,13 @@ BATappend(BAT *b, BAT *n, bit force)
 				b->T->nodense = last;
 			}
 		}
-		if (b->htype == TYPE_void) {
+		if (b->ttype == TYPE_str &&
+		    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->T->vheap)) &&
+		    !GDK_ELIMDOUBLES(n->T->vheap) &&
+		    b->T->vheap->hashash == n->T->vheap->hashash &&
+		    VIEWtparent(n) == 0) {
+			b = insert_string_bat(b, n, 1);
+		} else if (b->htype == TYPE_void) {
 			BATiter ni = bat_iterator(n);
 
 			BATloop(n, p, q) {

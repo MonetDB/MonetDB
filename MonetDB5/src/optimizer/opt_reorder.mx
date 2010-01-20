@@ -76,6 +76,9 @@ comment "Reorder by dataflow dependencies";
 @-
 Collect the statement dependencies in a table first
 This can be done in linear time in size of the program.
+Also check for barrier blocks. We only allow reordering
+for a linear plan. Future extensions could consider
+re-ordering basic blocks only.
 @c
 typedef struct{
 	int cnt;
@@ -88,6 +91,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 	int *var = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	int i,j;
 	InstrPtr p;
+	int block=0;
 	
 	if (list == NULL || var == NULL){
 		if (list ) GDKfree(list);
@@ -97,6 +101,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 
 	for ( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
+		block |= p->barrier != 0;
 		list[i]= (Node) GDKzalloc(sizeof(NodeRecord) + sizeof(int) * p->maxarg);
 		if (list[i] == NULL){
 			for (i--; i>=0; i--)
@@ -115,10 +120,17 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 		/* remember the last assignment  */
 		for( j=0; j<p->retc; j++)
 			var[getArg(p,j)]= i;
-		/* and also remember when it was last used 
+		/* and also remember when it was last used.
+		   this would lead to more breath-first processing,
+		   something we want to avoid.
 		for( j=p->retc; j<p->argc; j++)
 			var[getArg(p,j)]= i;
 		*/
+	}
+	if ( block ){
+		for (i--; i>=0; i--)
+			GDKfree(list[i]);
+		return NULL;
 	}
 #ifdef DEBUG_OPT_REORDER_DETAILS
 	stream_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
@@ -179,6 +191,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
 #endif
 	dep = OPTdependencies(cntxt,mb);
+	if ( dep == NULL)
+		return 0;
 	limit= mb->stop;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
