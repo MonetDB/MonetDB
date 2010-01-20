@@ -1,6 +1,12 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Jan 20 2010 Sjoerd Mullender <sjoerd@acm.org>
+- mclient timer information (-t option) is now written to standard error
+  instead of standard output.  This makes getting timer information easier
+  when there is a large amout of regular output (which can be redirected to
+  a file or /dev/null).
+
 * Tue Jan 19 2010 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented new function mapi_fetch_field_len() which returns the
   length (excluding trailing NULL byte) of the field returned by
