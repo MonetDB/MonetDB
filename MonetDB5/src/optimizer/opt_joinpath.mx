@@ -149,7 +149,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	str joinPathRef = putName("joinPath",8);
 	str leftjoinPathRef = putName("leftjoinPath",12);
 	str semijoinPathRef = putName("semijoinPath",12);
-	InstrPtr q,p,*old;
+	InstrPtr q = NULL, p, *old;
 	int limit;
 	Candidate *candidate;
 
