@@ -321,6 +321,9 @@ gdk_export int closedir(DIR *dir);
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif
+#ifdef HAVE_SYS_PROCFS_H
+# include <sys/procfs.h>
+#endif
 
 #if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
 #undef DEBUG_ALLOC
@@ -1059,9 +1062,27 @@ MT_init_posix(int alloc_map)
 size_t
 MT_getrss(void)
 {
-	/* get RSS  -- linux only for the moment */
 	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
+
+#ifdef HAVE_SYS_PROCFS_H
+	/* assume that if we have sys/procfs we're on a system that supports
+	 * the Solaris way, this assumption may break */
+	prpsinfo_t psbuff;
+	if (MT_mmap_procfile[0] == 0) {
+		/* getpid returns pid_t, cast to long to be sure */
+		sprintf(MT_mmap_procfile, "/proc/%ld", (long) getpid());
+	}
+	fd = open(MT_mmap_procfile, O_RDONLY);
+	if (fd >= 0) {
+		if (ioctl(fd, PIOCPSINFO, &psbuff) != -1) {
+			close(fd);
+			return psbuff.pr_byrssize;
+		}
+		close(fd);
+	}
+#else
+	/* get RSS  -- linux only for the moment */
 
 	if (MT_mmap_procfile[0] == 0) {
 		/* getpid returns pid_t, cast to long to be sure */
@@ -1085,6 +1106,7 @@ MT_getrss(void)
 			return ((size_t) atol(r)) * MT_pagesize();
 		}
 	}
+#endif
 	return 0;
 }
 
