@@ -136,7 +136,7 @@ partial result.
 	...
 @end example
 
-MAL supports the full breath of computational paradigms 
+MAL supports the full breadth of computational paradigms 
 deployed in a database setting. It is language framework
 where the execution semantics is determined by the
 code transformations and the final engine choosen.
