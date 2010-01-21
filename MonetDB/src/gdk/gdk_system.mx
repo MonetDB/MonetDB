@@ -61,6 +61,9 @@ the latest iteration of this layer.
 @h
 #include <sys/types.h>
 #ifdef HAVE_SYS_SYSCTL_H
+# if defined(__OpenBSD__)
+#  include <sys/param.h>
+# endif
 # include <sys/sysctl.h>
 #endif
 #ifdef HAVE_SIGNAL_H
@@ -570,17 +573,24 @@ MT_check_nr_cores(void)
 {
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__MACH__)
 	size_t len = sizeof(int);
+	int mib[2];
 #endif
 	int ncpus = -1;
 
-	/* this works on Linux, Solaris and AIX */
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
+	/* this works on Linux, Solaris and AIX */
 	ncpus = sysconf(_SC_NPROCESSORS_ONLN);
 #endif
 
-	/* sysctl should work on all BSDs (includes Darwin) */
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__MACH__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__MACH__)
+	/* sysctl should work on most BSDs (includes Darwin) */
 	sysctlbyname("hw.ncpu", &ncpus, &len, NULL, 0);
+#endif
+
+#if defined(__OpenBSD__) 
+	/* Everyone should have permission to make this call, 
+	 * if we get a failure something is really wrong. */
+	sysctl(mib, 2, &ncpus, &len, NULL, 0);
 #endif
 
 	/* if we ever need HPUX or OSF/1 (hope not), see
