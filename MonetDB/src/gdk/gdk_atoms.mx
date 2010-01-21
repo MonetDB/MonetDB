@@ -2027,10 +2027,12 @@ strPut(Heap *h, var_t *dst, str v)
 	pos = h->free + pad + extralen;
 	*dst = (var_t) (pos >> GDK_VARSHIFT);
 	memcpy(h->base + pos, v, len);
-	((BUN *) (h->base + pos))[-1] = strhash;
+	if (h->hashash) {
+		((BUN *) (h->base + pos))[-1] = strhash;
 #if EXTRALEN > SIZEOF_BUN
-	((BUN *) (h->base + pos))[-2] = (BUN) len;
+		((BUN *) (h->base + pos))[-2] = (BUN) len;
 #endif
+	}
 	h->free += pad + len + extralen;
 
 	/* maintain hash table */
