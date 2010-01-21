@@ -464,7 +464,7 @@ printStatus(sabdb *stats, int mode, int twidth)
 		} else {
 			sprintf(up, "(unknown)");
 		}
-		printf("  last crash: %s\n", up);
+		printf("  last start with crash: %s\n", up);
 		if (uplog.laststart != -1) {
 			t = localtime(&uplog.laststart);
 			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
