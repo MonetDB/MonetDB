@@ -702,7 +702,7 @@ DFLOWclaim(lng claim)
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if ( memorypool <= 0 && memoryclaims == 0)
-		memorypool = MEMORY_THRESHOLD * monet_memory;
+			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
 	
 	if ( claim > 0 ) {
 		if ( memoryclaims == 0 || memorypool > claim ){
