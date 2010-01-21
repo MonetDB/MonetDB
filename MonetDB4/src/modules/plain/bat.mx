@@ -1371,8 +1371,8 @@ CMDinfo(BAT **retval, BAT *b)
 
 	BUNins(bn, "batId", BATgetId(b),FALSE);
 	BUNins(bn, "batCacheid", local_itoa((ssize_t)(b->batCacheid)),FALSE);
-	BUNins(bn, "hparentid", local_itoa((ssize_t)(b->H->parentid)),FALSE);
-	BUNins(bn, "tparentid", local_itoa((ssize_t)(b->T->parentid)),FALSE);
+	BUNins(bn, "hparentid", local_itoa((ssize_t)(b->H->heap.parentid)),FALSE);
+	BUNins(bn, "tparentid", local_itoa((ssize_t)(b->T->heap.parentid)),FALSE);
 	BUNins(bn, "batSharecnt", local_itoa((ssize_t)(b->batSharecnt)),FALSE);
 	BUNins(bn, "batCount", local_utoa((size_t)b->batCount),FALSE);
 	BUNins(bn, "batCapacity", local_utoa((size_t)b->batCapacity),FALSE);
@@ -2086,9 +2086,9 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 		bn->P->lview = TRUE;
 		bn->T->heap.copied = TRUE;
 		if (bn->H->type != TYPE_void)
-			BBPshare(bn->H->parentid = b->batCacheid);
+			BBPshare(bn->H->heap.parentid = b->batCacheid);
 		if (bn->T->type != TYPE_void)
-			BBPshare(bn->T->parentid = -b->batCacheid);
+			BBPshare(bn->T->heap.parentid = -b->batCacheid);
 	}
 	return GDK_SUCCEED;
   error:
