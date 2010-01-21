@@ -234,7 +234,7 @@ VIEWhcreate(BAT *h)
 	bn->H->props = NULL;
 	bn->H->heap.copied = 0;
 	if (hp)
-		bn->H->parentid = hp;
+		bn->H->heap.parentid = hp;
 	if (hp && isVIEW(h)) 
 		bn->H->hash = NULL;
 	BATinit_idents(bn);
@@ -305,9 +305,9 @@ a void. Take care to zero the accelerator data, though.
 
 	/* correct values after copy of head and tail info */
 	if (hp)
-		bn->H->parentid = hp;
+		bn->H->heap.parentid = hp;
 	if (tp)
-		bn->T->parentid = tp;
+		bn->T->heap.parentid = tp;
 	BATinit_idents(bn);
 @-
 The b->P structure cannot be shared and must be copied individually.
@@ -368,7 +368,7 @@ VIEWhead(BAT *b)
 	bn->T->varsized = 1;
 	bn->T->shift = 0;
 	bn->T->width = 0;
-	bn->T->parentid = 0;
+	bn->T->heap.parentid = 0;
 	bn->T->hash = NULL;
 	bn->T->heap.maxsize = bn->T->heap.size = bn->T->heap.free = 0;
 	bn->T->heap.base = NULL;
@@ -403,8 +403,8 @@ VIEWcombine(BAT *b)
 	if (bn->htype != TYPE_void) {
 		bn->T = bn->H;
 		bm->H = bn->H;
-		if (bn->T->parentid)
-			BBPshare(bn->T->parentid);
+		if (bn->T->heap.parentid)
+			BBPshare(bn->T->heap.parentid);
 		ALIGNsetH(bn, b);
 	} else {
 		BATseqbase(bm, bn->hseqbase);
@@ -504,20 +504,30 @@ VIEWunlink(BAT *b)
 {
 	if (b) {
 		bat hp = VIEWhparent(b), tp = VIEWtparent(b);
+		bat vhp = VIEWhparent(b), vtp = VIEWtparent(b);
 		BAT *hpb = NULL, *tpb = NULL; 
+		BAT *vhpb = NULL, *vtpb = NULL; 
 
 		if (hp)
 			hpb = BBP_cache(hp);
 		if (tp)
 			tpb = BBP_cache(tp);
+		if (hp && !vhp)
+			vhp = hp;
+		if (vhp)
+			vhpb = BBP_cache(vhp);
+		if (tp && !vtp)
+			vtp = tp;
+		if (vtp)
+			vtpb = BBP_cache(vtp);
 
-		if (hpb == NULL && tpb == NULL)
+		if (hpb == NULL && tpb == NULL && vhpb == NULL && vtpb == NULL)
 			return;
 
 		/* unlink heaps shared with parent */
-		if (hpb && b->H->vheap && b->H->vheap == hpb->H->vheap) 
+		if (vhpb && b->H->vheap && b->H->vheap == vhpb->H->vheap) 
 			b->H->vheap = NULL;
-		if (tpb && b->T->vheap && b->T->vheap == tpb->H->vheap)
+		if (vtpb && b->T->vheap && b->T->vheap == vtpb->H->vheap)
 			b->T->vheap = NULL;
 
 		/* unlink properties shared with parent */
@@ -628,7 +638,7 @@ VIEWreset(BAT *b)
 		n->T->width = v->T->width;
 		n->T->seq = v->T->seq;
 
-		n->H->parentid = n->T->parentid = 0;
+		n->H->heap.parentid = n->T->heap.parentid = 0;
 		n->batRestricted = BAT_WRITE;
 
 		/* reset BOUND2KEY */
@@ -641,13 +651,13 @@ VIEWreset(BAT *b)
 
 		/* unshare from parents heap */
 		if (hh.base) {
-			n->H->vheap = (Heap *) GDKmalloc(sizeof(Heap));
+			n->H->vheap = (Heap *) GDKzalloc(sizeof(Heap));
 			if (n->H->vheap == NULL)
 				goto bailout;
 			*n->H->vheap = hh;
 		}
 		if (th.base) {
-			n->T->vheap = (Heap *) GDKmalloc(sizeof(Heap));
+			n->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
 			if (n->T->vheap == NULL)
 				goto bailout;
 			*n->T->vheap = th;
@@ -719,10 +729,18 @@ VIEWdestroy(BAT *b)
 {
 	assert(isVIEW(b));
 	VIEWunlink(b);
-	b->H->heap.base = NULL;
-	b->H->heap.filename = NULL;
-	b->T->heap.base = NULL;
-	b->T->heap.filename = NULL;
+	if (b->htype && !b->H->heap.parentid) {
+		HEAPfree(&b->H->heap);
+	} else {
+		b->H->heap.base = NULL;
+		b->H->heap.filename = NULL;
+	}
+	if (b->ttype && !b->T->heap.parentid) {
+		HEAPfree(&b->T->heap);
+	} else {
+		b->T->heap.base = NULL;
+		b->T->heap.filename = NULL;
+	}
 	b->H->vheap = NULL;
 	b->T->vheap = NULL;
 	BATfree(b);

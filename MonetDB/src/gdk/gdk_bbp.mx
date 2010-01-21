@@ -542,6 +542,7 @@ fixstrheap(void)
 			h.filename = NULL;
 			h.base = NULL;
 			h.dirty = 0;
+			h.parentid = 0;
 
 			/* load old string heap */
 			if (HEAPload(&h, filename, "@2heap", 0) < 0)
@@ -944,12 +945,18 @@ BBPexit(void)
 						skipped = 1;
 						continue;
 					}
-					if (b->H->parentid || b->T->parentid) {
-						bat hp = b->H->parentid, tp = b->T->parentid;
+					/* NIELS ?? Why reduce share count, its done in VIEWdestroy !! */
+					if (isVIEW(b)) {
+						bat hp = VIEWhparent(b), tp = VIEWtparent(b);
+						bat vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
 						if (hp)
 							BBP_cache(hp)->batSharecnt--;
 						if (tp)
 							BBP_cache(tp)->batSharecnt--;
+						if (vhp)
+							BBP_cache(vhp)->batSharecnt--;
+						if (vtp)
+							BBP_cache(vtp)->batSharecnt--;
 					}
 					if (isVIEW(b))
 						VIEWdestroy(b);
@@ -1820,6 +1827,7 @@ decref(bat i, int logical, int releaseShare)
 		gdk_unset_lock(GDKswapLock(i), "BBPdecref");
 		return refs;
 	}
+	assert(BBP_cache(i)->batSharecnt >= 0);
 
 	/* decrement references by one */
 	if (logical) {
@@ -2167,7 +2175,8 @@ static int
 BBPdestroy(BAT *b)
 {
 	int clear = 1;
-	bat hp = b->H->parentid, tp = b->T->parentid;
+	bat hp = VIEWhparent(b), tp = VIEWtparent(b);
+	bat vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
 
 	if (isVIEW(b)) {	/* a physical view */
 		VIEWdestroy(b);
@@ -2203,15 +2212,19 @@ BBPdestroy(BAT *b)
 	/* parent released when completely done with child */
 	if (hp)
 		GDKunshare(hp);
+	if (!hp && vhp)
+		GDKunshare(vhp);
 	if (tp)
 		GDKunshare(tp);
+	if (!tp && vtp)
+		GDKunshare(vtp);
 	return 0;
 }
 
 static int
 BBPfree(BAT *b, str calledFrom)
 {
-	bat bid = ABS(b->batCacheid), hp = b->H->parentid, tp = b->T->parentid;
+	bat bid = ABS(b->batCacheid), hp = VIEWhparent(b), tp = VIEWtparent(b), vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
 	int ret;
 
 	assert(BBPswappable(b));
@@ -2237,6 +2250,10 @@ BBPfree(BAT *b, str calledFrom)
 		GDKunshare(hp);
 	if (ret == 0 && tp)
 		GDKunshare(tp);
+	if (ret == 0 && vhp)
+		GDKunshare(vhp);
+	if (ret == 0 && vtp)
+		GDKunshare(vtp);
 	return ret;
 }
 
@@ -2847,7 +2864,7 @@ batcache_del(batcache_t * bc)
 	}
 
 	/* revive and free the old bat */
-	assert(b->H->parentid == 0 && b->T->parentid == 0);
+	assert(b->H->heap.parentid == 0 && b->T->heap.parentid == 0);
 	BATfree(b);		/* maybe unsafe without lock ? */
 	*BBP_logical(bid) = 't';
 	assert(bc - batcache < batcache_maxbuckets);
@@ -2947,7 +2964,7 @@ static int
 BBPaddtobin(BAT *b)
 {
 	int bin = BATCACHE_BIN(b->htype, b->ttype);
-	bat bid = b->batCacheid, hp = VIEWhparent(b), tp = VIEWtparent(b);
+	bat bid = b->batCacheid, hp = VIEWhparent(b), tp = VIEWtparent(b), vhp = VIEWhparent(b), vtp = VIEWtparent(b);
 	char *s = BBP_logical(bid);
 	BAT *m = BBP_cache(-bid);
 
@@ -2960,7 +2977,8 @@ BBPaddtobin(BAT *b)
 	    b->P->lview ||
 	    BBPtmpcheck(s) == 0 ||
 	    b->htype > TYPE_str ||
-	    b->ttype > TYPE_str) {
+	    b->ttype > TYPE_str ||
+	    vhp || vtp) {
 		BATDEBUG THRprintf(GDKout, "#BBPaddtobin %d %d "BUNFMT" %d N1\n", b->htype, b->ttype, b->U->capacity, bin);
 		BATdelete(b);	/* handles persistent case also (file deletes) */
 		return 1;
@@ -2992,7 +3010,7 @@ BBPaddtobin(BAT *b)
 			GDKunshare(hp);
 		if (tp)
 			GDKunshare(tp);
-		b->H->parentid = b->T->parentid = 0;
+		b->H->heap.parentid = b->T->heap.parentid = 0;
 		b->batPersistence = TRANSIENT;
 
 		/* take care of mirror views */

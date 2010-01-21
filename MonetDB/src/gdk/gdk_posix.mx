@@ -2115,7 +2115,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 void
 MT_sleep_ms(unsigned int ms)
 {
-#ifdef HAVE_NANOSLEEP
+#ifdef HAVE_NANOSLEEP_dont_use
 	struct timespec ts;
 
 	ts.tv_sec = (time_t) (ms / 1000);

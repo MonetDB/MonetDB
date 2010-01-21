@@ -683,6 +683,7 @@ typedef struct {
 		      hashash:1;  /* the string heap contains hash values */
 	chr newstorage;		/* new desired storage mode at re-allocation. */
 	chr dirty;		/* specific heap dirty marker */
+	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
 typedef struct {
@@ -927,7 +928,6 @@ typedef struct {
 	Hash *hash;		/* hash table */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
-	bat parentid;		/* cache id of VIEW parent bat */
 } COLrec;
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
@@ -3035,10 +3035,15 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * for the reversed view. A special case are the VIEWcombine bats, these
  * always refer to the same parent column (i.e. no correction needed)
  */
-#define isVIEW(x) (!(x)->P->lview && ((x)->H->parentid || (x)->T->parentid))
+#define isVIEW(x) (!(x)->P->lview && \
+	((x)->H->heap.parentid || ((x)->H->vheap&&(x)->H->vheap->parentid) || \
+	 (x)->T->heap.parentid || ((x)->T->vheap&&(x)->T->vheap->parentid)))
+
 #define isVIEWCOMBINE(x) ((x)->H == (x)->T)
-#define VIEWhparent(x)	((x)->P->lview?0:(x)->H->parentid)
-#define VIEWtparent(x)	((x)->P->lview?0:(x)->T->parentid)
+#define VIEWhparent(x)	((x)->P->lview?0:(x)->H->heap.parentid)
+#define VIEWvhparent(x)	(((x)->P->lview||!(x)->H->vheap)?0:(x)->H->vheap->parentid)
+#define VIEWtparent(x)	((x)->P->lview?0:(x)->T->heap.parentid)
+#define VIEWvtparent(x)	(((x)->P->lview||!(x)->T->vheap)?0:(x)->T->vheap->parentid)
 
 /* VIEWparentcol(b) tells whether the head column was inherited from the parent
  * "as is". We must check whether the type was not overridden in the view.

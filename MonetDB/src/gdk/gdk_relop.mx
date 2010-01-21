@@ -991,26 +991,32 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		}
 		/* handle string trick */
 		if (rtt != r->ttype && ATOMstorage(r->ttype) == TYPE_str) {
-			bn->theap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (bn->theap && r->theap->filename) {
-				char *nme = BBP_physical(bn->batCacheid);
+			bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
+			if (r->batRestricted == BAT_READ) {
+                                int parent = r->T->vheap->parentid;
 
-				bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
-				if (bn->theap->filename == NULL) {
+				if (!parent)
+					parent = r->T->heap.parentid;
+				if (!parent) 
+					parent = -r->batCacheid;
+                                BBPshare(parent);
+				*bn->T->vheap = *r->T->vheap;
+				bn->T->vheap->parentid = parent;
+			} else {
+				if (bn->theap && r->theap->filename) {
+					char *nme = BBP_physical(bn->batCacheid);
+
+					bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
+					if (bn->theap->filename == NULL) {
+						BBPreclaim(bn);
+						goto ready;
+					}
+					GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+				}
+				if (HEAPcopy(bn->theap, r->theap) < 0) {
 					BBPreclaim(bn);
 					goto ready;
 				}
-				GDKfilepath(bn->theap->filename, NULL, nme, "theap");
-			}
-			if (r->batRestricted == BAT_READ && HEAPshare(bn->theap, r->theap, 0) == 0) {
-                                int parent = r->T->parentid;
-				if (!parent) parent = -r->batCacheid;
-                                bn->P->lview = TRUE;
-                                bn->T->parentid = parent;
-                                BBPshare(parent);
-			} else if (HEAPcopy(bn->theap, r->theap) < 0) {
-				BBPreclaim(bn);
-				goto ready;
 			}
 			bn->ttype = r->ttype;
 			bn->tvarsized = 1;

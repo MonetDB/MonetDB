@@ -665,7 +665,7 @@ BATload_intern(bat i)
 
 	/* initialize descriptor */
 	b->batDirtydesc = FALSE;
-	b->H->parentid = b->T->parentid = 0;
+	b->H->heap.parentid = b->T->heap.parentid = 0;
 	b->batSharecnt = 0;
 
 	/* load succeeded; register it in BBP */

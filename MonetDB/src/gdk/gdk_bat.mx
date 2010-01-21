@@ -543,6 +543,7 @@ BATclear(BAT *b)
 
 		hh.filename = th.filename = NULL;
 		hh.base = th.base = NULL;
+		hh.parentid = th.parentid = 0;
 		if (b->H->vheap && b->H->vheap->free > 0) {
 			if (ATOMheap(b->htype, &hh, cap) < 0)
 				return NULL;
@@ -903,11 +904,11 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			/* if we have copy-on-write heaps, bn is a logical view on b to ensure the heaps stay stable */
 			if (hremap || hvremap) {
 				bn->P->lview = TRUE;
-				BBPshare(bn->H->parentid = b->batCacheid);
+				BBPshare(bn->H->heap.parentid = b->batCacheid);
 			}
 			if (tremap || tvremap) {
 				bn->P->lview = TRUE;
-				BBPshare(bn->T->parentid = -b->batCacheid);
+				BBPshare(bn->T->heap.parentid = -b->batCacheid);
 			}
 		} else if (BATatoms[ht].atomFix || BATatoms[tt].atomFix || (ht && tt) || ATOMstorage(MAX(ht, tt)) >= TYPE_str) {
 			/* case (4): one-by-one BUN insert (really slow) */
@@ -2850,10 +2851,14 @@ batunshare(BAT *b, str fcn)
 	if (b->T->vheap)
 		@:heap_unshare(b->T->vheap,T->vheap)@
 	b->P->lview = 0;
-	if (b->H->parentid)
-		BBPunshare(b->H->parentid);
-	if (b->T->parentid)
-		BBPunshare(b->T->parentid);
+	if (b->H->heap.parentid)
+		BBPunshare(b->H->heap.parentid);
+	if (b->T->heap.parentid)
+		BBPunshare(b->T->heap.parentid);
+	if (b->H->vheap && b->H->vheap->parentid)
+		BBPunshare(b->H->vheap->parentid);
+	if (b->T->vheap && b->T->vheap->parentid)
+		BBPunshare(b->T->vheap->parentid);
 	return 0;
 }
 
