@@ -1065,9 +1065,8 @@ MT_getrss(void)
 	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
 
-#ifdef HAVE_SYS_PROCFS_H
-	/* assume that if we have sys/procfs we're on a system that supports
-	 * the Solaris way, this assumption may break */
+#if __sun__
+	/* retrieve RSS the Solaris way */
 	prpsinfo_t psbuff;
 	if (MT_mmap_procfile[0] == 0) {
 		/* getpid returns pid_t, cast to long to be sure */
