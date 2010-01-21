@@ -39,6 +39,10 @@ command sync() :void
 address UNIXsync
 comment "Flush memory, expensive but sometimes needed";
 
+command getrss() :lng
+address UNIXgetRSS
+comment "Retrieve the current Resident Set Size.";
+
 @- Implementation
 The remainder is a straight forward mapping to the underlying
 facilities
@@ -125,6 +129,12 @@ str UNIXsync(int *res){
 #ifndef _MSC_VER				/* not on Windows */
 	sync();
 #endif
+	return MAL_SUCCEED;
+}
+
+unix_export str UNIXgetRSS(lng *res);
+str UNIXgetRSS(lng *res) {
+	*res = MT_getrss();
 	return MAL_SUCCEED;
 }
 @}

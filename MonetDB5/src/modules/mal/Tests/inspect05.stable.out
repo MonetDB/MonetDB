@@ -5599,6 +5599,7 @@ end main;
 [ "unset",			  "command",	  "lock",	  "(l:lock):void ",															  "LCKunset;"						  ]
 [ "getenv",			  "command",	  "unix",	  "(nme:str):str ",															  "UNIXgetenv;"						  ]
 [ "sync",			  "command",	  "unix",		  "():void ",															  "UNIXsync;"					  ]
+[ "getrss",			  "command",	  "unix",		  "():void ",															  "UNIXgetRSS;"					  ]
 [ "setenv",			  "command",	  "unix",	  "(nme:str,val:str):bit ",														  "UNIXsetenv;"						  ]
 [ "List",			  "pattern",	  "mdb",	  "(M:str,F:str):void ",														  "MDBlist3Detail;"					  ]
 [ "List",			  "pattern",	  "mdb",	  "():void ",																  "MDBlistDetail;"					  ]
