@@ -816,10 +816,10 @@ printBATproperties(stream *f, BAT *b){
 		stream_printf(f, " refs=%d ", BBP_refs(ABS(b->batCacheid)) );
 	if( b->batSharecnt)
 		stream_printf(f, " views=%d", b->batSharecnt);
-	if (b->H->parentid)
-		stream_printf(f, "view on %s ", BBPname(b->H->parentid));
-	if (b->T->parentid)
-		stream_printf(f, "tail view on %s ", BBPname(b->T->parentid));
+	if (b->H->heap.parentid)
+		stream_printf(f, "view on %s ", BBPname(b->H->heap.parentid));
+	if (b->T->heap.parentid)
+		stream_printf(f, "tail view on %s ", BBPname(b->T->heap.parentid));
 }
 @+ MAL debugger parser
 The debugger structure is inherited from GDB.

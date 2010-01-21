@@ -1867,7 +1867,7 @@ createView:
 				/* if we have copy-on-write heaps, bn is a logical view on b to ensure the heaps stay stable */
 				if (tremap || tvremap) {
 					b->P->lview = TRUE;
-					BBPshare(b->T->parentid = -bp->batCacheid);
+					BBPshare(b->T->heap.parentid = -bp->batCacheid);
 				}
 			}
 		}else{
