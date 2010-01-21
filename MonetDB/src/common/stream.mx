@@ -1497,8 +1497,8 @@ open_urlstream(const char *url)
 	}
 	curl_easy_setopt(c->handle, CURLOPT_URL, s->name);
 	curl_easy_setopt(c->handle, CURLOPT_WRITEDATA, s);
-	curl_easy_setopt(c->handle, CURLOPT_VERBOSE, FALSE);
-	curl_easy_setopt(c->handle, CURLOPT_NOSIGNAL, TRUE);
+	curl_easy_setopt(c->handle, CURLOPT_VERBOSE, 0);
+	curl_easy_setopt(c->handle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(c->handle, CURLOPT_WRITEFUNCTION, write_callback);
 #ifdef USE_CURL_MULTI
 	if (multi_handle == NULL)
