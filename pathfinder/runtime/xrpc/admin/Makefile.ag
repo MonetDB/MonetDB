@@ -39,7 +39,6 @@ headers_html = {
 		content.html \
 		ctit.gif \
 		ctit.png \
-		cwi.bmp \
 		cwi_logo.png \
 		index.html \
 		menu.html \
@@ -47,7 +46,7 @@ headers_html = {
 		multimedian_logo.png \
 		sf.bmp \
 		title.html \
-		tum-logo.gif \
+		logo-uni-tuebingen.png \
 		xrpcwebclient.js
 }
 

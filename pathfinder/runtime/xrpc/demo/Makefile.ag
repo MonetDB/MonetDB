@@ -46,7 +46,7 @@ headers_img = {
 	HEADERS = bmp gif png gif map
 	DIR = datadir/MonetDB/xrpc/demo
 	SOURCES = \
-		cwi.bmp \
+		cwi_logo.png \
 		MultimediaN.png \
 		monet.png \
         noquery.gif
