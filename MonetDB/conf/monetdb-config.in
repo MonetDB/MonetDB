@@ -39,10 +39,8 @@ pkgdatadir="${datadir}/${pkg}"
 pkgincludedir="${includedir}/${pkg}"
 pythonlibdir="${prefix}/@PYTHON_LIBDIR@"
 
-usage()
-{
-    cat <<EOF
-Usage: `basename $0` [OPTION]
+prog=`basename $0`
+usage="Usage: $prog [OPTION]
 
 Known values for OPTION are:
 
@@ -59,14 +57,11 @@ Install directories ${pkg} was configured to
   --datadir  --sysconfdir  --localstatedir  --libdir  --infodir
   --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
   --pythonlibdir
-
-EOF
-
-    exit $1
-}
+"
 
 if test $# -eq 0; then
-    usage 1 >&2
+    echo "$usage" >&2
+    exit 1
 fi
 
 cflags=false
@@ -110,7 +105,8 @@ while test $# -gt 0; do
         ;;
 
     --help)
-	usage 0
+	echo "$usage"
+	exit 0
 	;;
 
     --includes)
@@ -156,7 +152,8 @@ while test $# -gt 0; do
 	;;
 
     *)
-	usage 1 >&2
+	echo "$usage" >&2
+	exit 1
 	;;
     esac
     shift
