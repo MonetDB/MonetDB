@@ -1065,7 +1065,7 @@ MT_getrss(void)
 	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
 
-#ifdef __sun__
+#if defined(HAVE_PROCFS_H) && defined(__sun__)
 	/* retrieve RSS the Solaris way (2.6+) */
 	psinfo_t psbuff;
 	if (MT_mmap_procfile[0] == 0) {
