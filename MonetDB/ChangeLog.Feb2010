@@ -1,6 +1,12 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Jan 21 2010 Fabian Groffen <fabian@cwi.nl>
+- Added implementation of MT_getrss() for Solaris.  This yields in the
+  kernel knowing about its (approximate) memory usage to try and help
+  the operating system to free that memory that is best to free, instead
+  of a random page, e.g. the work of the vmtrim thread.
+
 * Wed Jan 20 2010 Sjoerd Mullender <sjoerd@cwi.nl>
 - Implemented a "fast" string BAT append:
   Under certain conditions, instead of inserting values one-by-one,

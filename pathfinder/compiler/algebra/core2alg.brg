@@ -2158,12 +2158,66 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           seqcast (seqtype, CoreExpr) */
         case 22:
+        {
             /*
              * `seqcast' nodes are only introduced for static typing.
              * They are not meant to be executed.
              */
-            A(p) = A(R(p));
-            break;
+            struct  PFla_pair_t pair = A(R(p));
+            PFty_t              t;
+            PFalg_simple_type_t algty;
+
+            t = PFty_prime (PFty_defn (L(p)->sem.type));
+
+            /*
+             * Unfortunately, we only know how to cast atomic types
+             * into (exactly) one of our builtin atomic types. We
+             * cannot sensibly cast, e.g., into subtypes thereof.
+             */
+            if (PFty_equality (t, PFty_xs_string ()))
+                algty = aat_str;
+            else if (PFty_equality (t, PFty_untypedAtomic ()))
+                algty = aat_uA;
+            else if (PFty_equality (t, PFty_xs_integer ()))
+                algty = aat_int;
+            else if (PFty_equality (t, PFty_xs_decimal ()))
+                algty = aat_dec;
+            else if (PFty_equality (t, PFty_xs_double ()))
+                algty = aat_dbl;
+            else if (PFty_equality (t, PFty_xs_boolean ()))
+                algty = aat_bln;
+            else if (PFty_equality (t, PFty_xs_datetime ()))
+                algty = aat_dtime;
+            else if (PFty_equality (t, PFty_xs_date ()))
+                algty = aat_date;
+            else if (PFty_equality (t, PFty_xs_time ()))
+                algty = aat_time;
+            else if (PFty_equality (t, PFty_xs_gyearmonth ()))
+                algty = aat_gymonth;
+            else if (PFty_equality (t, PFty_xs_gyear ()))
+                algty = aat_gyear;
+            else if (PFty_equality (t, PFty_xs_gmonthday ()))
+                algty = aat_gmday;
+            else if (PFty_equality (t, PFty_xs_gmonth ()))
+                algty = aat_gmonth;
+            else if (PFty_equality (t, PFty_xs_gday ()))
+                algty = aat_gday;
+            else if (PFty_equality (t, PFty_xs_duration ()))
+                algty = aat_duration;
+            else if (PFty_equality (t, PFty_xs_yearmonthduration ()))
+                algty = aat_ymduration;
+            else if (PFty_equality (t, PFty_xs_daytimeduration ()))
+                algty = aat_dtduration;
+            else
+                algty = 0;
+
+            if (algty)
+                A(p) = (struct PFla_pair_t) {
+                    .rel  = type_assert_pos (pair.rel, col_item, algty),
+                    .frag = pair.frag };
+            else
+                A(p) = pair;
+        }   break;
 
         /* CoreExpr:     locsteps (ancestor (seqtype), CoreExpr) */
         case 30:

@@ -1,0 +1,12 @@
+stderr of test 'bad_histgram.SF-2931465` in directory 'tests/BugTracker` itself:
+
+
+# 13:49:48 >  
+# 13:49:48 >   Mserver "--config=/home/sjoerd/Monet-candidate/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/home/sjoerd/Monet-candidate/lib64/MonetDB4:/home/sjoerd/Monet-candidate/lib64/MonetDB4/lib:/home/sjoerd/Monet-candidate/lib64/MonetDB4/bin" --set "gdk_dbfarm=/home/sjoerd/Monet-candidate/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36625 --set xrpc_port=43952 --set monet_prompt= --trace  --dbname=mTests_tests_BugTracker  
+# 13:49:48 >  
+
+
+# 13:49:48 >  
+# 13:49:48 >  Done.
+# 13:49:48 >  
+
