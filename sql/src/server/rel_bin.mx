@@ -3725,7 +3725,7 @@ rel2bin_catalog_table(mvc *sql, sql_rel *rel, list *refs)
 {
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(sql, en->data, NULL, NULL, NULL, NULL);
-	stmt *table, *sname;
+	stmt *table = NULL, *sname;
 
 	(void)refs;
 	en = en->next;

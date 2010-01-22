@@ -321,8 +321,8 @@ gdk_export int closedir(DIR *dir);
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif
-#ifdef HAVE_SYS_PROCFS_H
-# include <sys/procfs.h>
+#ifdef HAVE_PROCFS_H
+# include <procfs.h>
 #endif
 
 #if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
@@ -1065,18 +1065,18 @@ MT_getrss(void)
 	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
 
-#ifdef __sun__
-	/* retrieve RSS the Solaris way */
-	prpsinfo_t psbuff;
+#if defined(HAVE_PROCFS_H) && defined(__sun__)
+	/* retrieve RSS the Solaris way (2.6+) */
+	psinfo_t psbuff;
 	if (MT_mmap_procfile[0] == 0) {
 		/* getpid returns pid_t, cast to long to be sure */
-		sprintf(MT_mmap_procfile, "/proc/%ld", (long) getpid());
+		sprintf(MT_mmap_procfile, "/proc/%ld/psinfo", (long) getpid());
 	}
 	fd = open(MT_mmap_procfile, O_RDONLY);
 	if (fd >= 0) {
-		if (ioctl(fd, PIOCPSINFO, &psbuff) != -1) {
+		if (read(fd, &psbuff, sizeof(psbuff)) == sizeof(psbuff)) {
 			close(fd);
-			return psbuff.pr_byrssize;
+			return psbuff.pr_rssize * 1024;
 		}
 		close(fd);
 	}

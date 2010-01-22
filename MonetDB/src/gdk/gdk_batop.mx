@@ -65,7 +65,7 @@ The content of a BAT can be appended to (removed from) another using
 static BAT *
 insert_string_bat(BAT *b, BAT *n, int append)
 {
-	BATiter bi, ni;		/* iterators */
+	BATiter ni;		/* iterators */
 	int ht, tt;		/* head and tail types */
 	BUN hoff = BUN_NONE, toff = BUN_NONE;  /* head and tail offsets */
 	BUN p, q;		/* loop variables */
@@ -83,7 +83,6 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	assert(!append || b->H->type == TYPE_void || b->H->type == TYPE_oid);
 	if (n->batCount == 0)
 		return b;
-	bi = bat_iterator(b);
 	ni = bat_iterator(n);
 	bhw = b->H->width;
 	btw = b->T->width;
