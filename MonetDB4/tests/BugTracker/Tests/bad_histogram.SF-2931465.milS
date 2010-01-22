@@ -1,7 +1,7 @@
 module(unix);
 module(ascii_io);
 var TSTSRCDIR := getenv("TSTSRCDIR");
-var td := new(oid,str).import(TSTSRCDIR+"/bad_histgram.SF-2931465.csv");
+var td := new(oid,str).import(TSTSRCDIR+"/bad_histogram.SF-2931465.csv");
 printf("\nHISTOGRAM REPORTS COUNT 2 FOR STRING \"tragedy\", BUT IT IS UNIQUE\n");
 printf("td.select(\"tragedy\").count(): %d\n", td.select("tragedy").count());
 printf("td.histogram().find(\"tragedy\"): %d\n", td.histogram().find("tragedy"));
