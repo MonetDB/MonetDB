@@ -1,4 +1,4 @@
-#!@BASH@
+#!/bin/sh
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -29,10 +29,8 @@ libdir="@Qlibdir@"
 M4libdir="${libdir}/MonetDB4"
 M5libdir="${libdir}/MonetDB5"
 
-usage()
-{
-    cat <<EOF
-Usage: `basename $0` [OPTION]
+prog=`basename $0`
+usage="Usage: $prog [OPTION]
 
 Known values for OPTION are:
 
@@ -46,14 +44,11 @@ Known values for OPTION are:
 
 Install directories ${pkg} was configured to
   --prefix
-
-EOF
-
-    exit $1
-}
+"
 
 if test $# -eq 0; then
-    usage 1 >&2
+    echo "$usage" >&2
+    exit 1
 fi
 
 while test $# -gt 0; do
@@ -90,7 +85,8 @@ while test $# -gt 0; do
 	;;
 
     --help)
-	usage 0
+	echo "$usage"
+	exit 0
 	;;
 
     --conds)
@@ -119,7 +115,8 @@ while test $# -gt 0; do
 	;;
 
     *)
-	usage 1 >&2
+	echo "$usage" >&2
+	exit 1
 	;;
     esac
     shift
