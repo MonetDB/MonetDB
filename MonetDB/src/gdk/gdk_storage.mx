@@ -701,8 +701,8 @@ To avoid random disk access to large (memory-mapped) BATs it may help to issue a
 request. 
 Of course, it does not make sense to touch more then we can physically accomodate.
 @c
-static size_t 
-BATpreload_(BAT *b) {
+size_t 
+BATpreload(BAT *b) {
 	size_t dummy = 0, *i;
 	size_t step = MT_pagesize()/sizeof(size_t);
 	size_t pages = (size_t) (0.8 * MT_npages());
@@ -722,6 +722,7 @@ BATpreload_(BAT *b) {
 	return dummy;
 }
 
+/* PETER: disable (experiment)
 size_t 
 BATpreload(BAT *b) {
 	BAT *bv;
@@ -742,6 +743,7 @@ BATpreload(BAT *b) {
 	}
 	return dummy;
 }
+*/
 @}
 
 @- BATdelete
