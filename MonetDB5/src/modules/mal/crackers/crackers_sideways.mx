@@ -1828,7 +1828,7 @@ createView:
 		if (bp->ttype==TYPE_str){
 			assert(b->T->width <= bp->T->width);
 			if (bp->T->width != b->T->width)
-				GDKupgradevarheap(b->T, sizeM, (var_t) 1 << (bp->T->width - 1), 0);
+				GDKupgradevarheap(b->T, (var_t) 1 << (bp->T->width - 1), 0);
 			memcpy(Tloc(b,  BUNfirst(b)), Tloc(bp, BUNfirst(bp)), sizeM << bp->T->width);
 
 			{

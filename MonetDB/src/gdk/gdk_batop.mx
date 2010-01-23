@@ -110,7 +110,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		if (b->@2->width < SIZEOF_VAR_T &&
 		    ((var_t) 1 << 8 * b->@2->width) < (b->@2->width <= 2 ? b->@2->vheap->size - GDK_VAROFFSET : b->@2->vheap->size)) {
 			/* offsets aren't going to fit */
-			if (GDKupgradevarheap(b->@2, BATcapacity(b), b->@2->vheap->size, 0) == GDK_FAIL) {
+			if (GDKupgradevarheap(b->@2, b->@2->vheap->size, 0) == GDK_FAIL) {
 				@1off = BUN_NONE;
 				goto bunins_failed;
 			}
