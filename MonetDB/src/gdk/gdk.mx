@@ -1380,7 +1380,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			}						\
 			ATOMreplace((b)->ttype, (b)->T->vheap, &_d, v);	\
 			if ((b)->T->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
+			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
 				GDKupgradevarheap((b)->T, ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d), 0); \
 			}						\
