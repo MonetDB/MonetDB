@@ -702,7 +702,7 @@ request.
 Of course, it does not make sense to touch more then we can physically accomodate.
 @c
 size_t 
-BATpreload(BAT *b) {
+BATpreload_(BAT *b) {
 	size_t dummy = 0, *i;
 	size_t step = MT_pagesize()/sizeof(size_t);
 	size_t pages = (size_t) (0.8 * MT_npages());
@@ -722,7 +722,6 @@ BATpreload(BAT *b) {
 	return dummy;
 }
 
-/* PETER: disable (experiment)
 size_t 
 BATpreload(BAT *b) {
 	BAT *bv;
@@ -743,7 +742,6 @@ BATpreload(BAT *b) {
 	}
 	return dummy;
 }
-*/
 @}
 
 @- BATdelete
