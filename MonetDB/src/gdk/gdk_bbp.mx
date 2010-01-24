@@ -1823,11 +1823,11 @@ decref(bat i, int logical, int releaseShare)
 	BAT *b;
 
 	gdk_set_lock(GDKswapLock(i), "BBPdecref");
+	assert(!BBP_cache(i) || BBP_cache(i)->batSharecnt >= releaseShare);
 	if (releaseShare && --BBP_cache(i)->batSharecnt > 0) {
 		gdk_unset_lock(GDKswapLock(i), "BBPdecref");
 		return refs;
 	}
-	assert(BBP_cache(i)->batSharecnt >= 0);
 
 	/* decrement references by one */
 	if (logical) {
