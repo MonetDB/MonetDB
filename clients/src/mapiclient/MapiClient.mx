@@ -334,8 +334,8 @@ timerEnd(void)
 {
 	t1 = gettime();
 	if (mark && specials == NOmodifier) {
-		fprintf(stderr, "%s %7ld.%03ld msec %s\n", mark, (long) ((t1 - t0) / 1000), (long) ((t1 - t0) % 1000), mark2 ? mark2 : "");
-		fflush(stderr);
+		fprintf(toConsole, "%s %7ld.%03ld msec %s\n", mark, (long) ((t1 - t0) / 1000), (long) ((t1 - t0) % 1000), mark2 ? mark2 : "");
+		fflush(toConsole);
 	}
 }
 
