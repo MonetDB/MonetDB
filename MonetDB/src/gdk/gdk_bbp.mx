@@ -2959,6 +2959,8 @@ BBPaddtobin(BAT *b)
 	    (b->T->heap.storage != STORE_MEM) ||
 	    b->P->lview ||
 	    BBPtmpcheck(s) == 0 ||
+	    (b->htype == TYPE_str && b->H->width > 1) ||
+	    (b->ttype == TYPE_str && b->T->width > 1) ||
 	    b->htype > TYPE_str ||
 	    b->ttype > TYPE_str) {
 		BATDEBUG THRprintf(GDKout, "#BBPaddtobin %d %d "BUNFMT" %d N1\n", b->htype, b->ttype, b->U->capacity, bin);
@@ -3074,6 +3076,8 @@ BBPrecycle(int ht, int tt, size_t cap)
 		bs->H.type = ht;
         	bs->H.varsized = BATatoms[bs->H.type].varsized;
 		bs->H.sorted = ATOMlinear(ht) ? GDK_SORTED : 0;
+		if (ht == TYPE_str)
+			bs->H.width = 1;
 		bs->H.align = 0;
 		bs->H.key = FALSE;
 		bs->H.dense = 0;
@@ -3084,6 +3088,8 @@ BBPrecycle(int ht, int tt, size_t cap)
 		bs->T.type = tt;
         	bs->T.varsized = BATatoms[bs->T.type].varsized;
 		bs->T.sorted = ATOMlinear(tt) ? GDK_SORTED : 0;
+		if (tt == TYPE_str)
+			bs->T.width = 1;
 		bs->T.align = 0;
 		bs->T.key = FALSE;
 		bs->T.dense = 0;
