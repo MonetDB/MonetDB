@@ -68,6 +68,11 @@ $SQL < Skyserver_dropViews.sql
 $SQL < Skyserver_dropConstraints.sql
 $SQL < Skyserver_dropTables.sql
 
+cat << EOF > .monetdb
+user=monetdb
+password=monetdb
+EOF
+
 echo Remove User
 $SQL < drop_user.sql
 
