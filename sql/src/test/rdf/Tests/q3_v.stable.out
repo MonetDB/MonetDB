@@ -22,16 +22,16 @@ Ready.
 
 Over..
 
-# 23:32:53 >  
-# 23:32:53 >  mclient -lsql -i -umonetdb -Pmonetdb --host=alviss --port=33231 
-# 23:32:53 >  
+# 16:30:06 >  
+# 16:30:06 >  mclient -lsql -i --host=alf --port=33614 
+# 16:30:06 >  
 
-% sys.b,	sys.b,	sys.b # table_name
-% prop,	obj,	L1 # name
-% int,	int,	wrd # type
-% 1,	1,	1 # length
+% .trip,	.trip,	.trip # table_name
+% prop,	obj,	cnt # name
+% char,	int,	wrd # type
+% 16,	1,	1 # length
 
-# 23:32:54 >  
-# 23:32:54 >  Done.
-# 23:32:54 >  
+# 16:30:07 >  
+# 16:30:07 >  Done.
+# 16:30:07 >  
 
