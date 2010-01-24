@@ -365,7 +365,7 @@ extern int sql_trans_disconnect_catalog_ALL(sql_trans *tr);
 extern list *sql_trans_get_connection(sql_trans *tr,int id, char *server, char *db, char *db_alias, char *user);
 
 extern sql_table *create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action);
-extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, char *nme, sql_subtype *tpe);
+extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe);
 extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(sql_allocator *sa, sql_table *t, char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
 extern sql_key *create_sql_kc(sql_allocator *sa, sql_key *k, sql_column *c);
