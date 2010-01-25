@@ -278,7 +278,9 @@ mal_export str SABAOTHmarchConnection(int *ret, str *host, int *port);
 /**
  * Writes an URI to the connection file based on the given arguments.
  * If the file doesn't exist, it is created.  Multiple invocations of
- * this function for the same arguments are NOT ignored.
+ * this function for the same arguments are NOT ignored.  If port is set
+ * to <= 0, this function treats the host argument as UNIX domain
+ * socket, in which case host must start with a '/'.
  */
 str SABAOTHmarchConnection(int *ret, str *host, int *port) {
 	FILE *f;
@@ -290,25 +292,40 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port) {
 
 	rethrow("sabaoth.marchConnection", tmp,
 			getDBPath(&path, PATHLENGTH, CONNECTIONFILE));
+
+	if (*port <= 0 && *host[0] != '/')
+		throw(ILLARG, "sabaoth.marchConnection",
+				"UNIX domain connections should be given as "
+				"absolute path, got: %s", *host);
+
+	/* emit a warning if we are in maintenance mode only once */
+	rethrow("sabaoth.getMyStatus", tmp,
+			SABAOTHgetMyStatus(&stats));
+	if (stats->locked == 1 && stats->conns != NULL || stats->conns->val != NULL)
+		fprintf(stderr, "#warning: database is running in "
+				"maintenance mode, only administrator logins allowed\n");
+	SABAOTHfreeStatus(&stats);
+
 	if ((f = fopen(path, "a")) != NULL) {
 		/* append to the file */
-		fprintf(f, "mapi:monetdb://%s:%i/\n", *host, *port);
+		if (*port > 0) {
+			fprintf(f, "mapi:monetdb://%s:%i/\n", *host, *port);
+		} else {
+			fprintf(f, "mapi:monetdb://%s/\n", *host);
+		}
 		(void)fflush(f);
 		(void)fclose(f);
-		/* (some) people tend to like (very) noisy programs, hence to
-		 * please them, announce that we're now available from outside */
-		printf("# Listening for connection requests on "
-				"mapi:monetdb://%s:%i/\n", *host, *port);
-		/* emit a warning if we are in maintenance mode */
-		rethrow("sabaoth.getMyStatus", tmp,
-				SABAOTHgetMyStatus(&stats));
-		if (stats->locked == 1)
-			fprintf(stderr, "#warning: database is running in "
-					"maintenance mode\n");
-		SABAOTHfreeStatus(&stats);
+		/* announce that we're now reachable */
+		if (*port > 0) {
+			printf("# Listening for connection requests on "
+					"mapi:monetdb://%s:%i/\n", *host, *port);
+		} else {
+			printf("# Listening for UNIX domain connection requests on "
+					"mapi:monetdb://%si/\n", *host);
+		}
 		return(MAL_SUCCEED);
 	}
-	throw(IO, "sabaoth.marchConnection", RUNTIME_FILE_NOT_FOUND ":%s", path);
+	throw(IO, "sabaoth.marchConnection", RUNTIME_FILE_NOT_FOUND ": %s", path);
 }
 
 @h
