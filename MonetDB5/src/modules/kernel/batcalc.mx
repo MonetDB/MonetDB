@@ -80,15 +80,15 @@ provided it is a temporary BAT and not a view.
 @-
 @= calcGrp2
 
-	command @1{target=1}(b:bat[:oid,:@3], c:bat[:oid,:@4], aflag:bit, bflag:bit):bat[:oid,:@5]
+	command @1(b:bat[:oid,:@3], c:bat[:oid,:@4], aflag:bit, bflag:bit):bat[:oid,:@5]
 	address CMDbataccum@2_@3_@4_@5
 	comment "Binary BAT calculator function which may re-use store of arguments ";
 
-	command @1{target=1}(cst:@3, b:bat[:oid,:@4], cflag:bit, bflag:bit):bat[:oid,:@5]
+	command @1(cst:@3, b:bat[:oid,:@4], cflag:bit, bflag:bit):bat[:oid,:@5]
 	address CMDbataccum@2cst2_@3_@4_@5
 	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
 
-	command @1{target=1}(b:bat[:oid,:@3], cst:@4, bflag:bit, cflag:bit) :bat[:oid,:@5]
+	command @1(b:bat[:oid,:@3], cst:@4, bflag:bit, cflag:bit) :bat[:oid,:@5]
 	address CMDbataccum@2cst_@3_@4_@5
 	comment "(BAT,Constant) calculator function which may re-use store of BAT argument";
 @-
