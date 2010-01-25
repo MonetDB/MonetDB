@@ -301,7 +301,8 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port) {
 	/* emit a warning if we are in maintenance mode only once */
 	rethrow("sabaoth.getMyStatus", tmp,
 			SABAOTHgetMyStatus(&stats));
-	if (stats->locked == 1 && stats->conns != NULL || stats->conns->val != NULL)
+	if (stats->locked == 1 &&
+			(stats->conns == NULL || stats->conns->val == NULL))
 		fprintf(stderr, "#warning: database is running in "
 				"maintenance mode, only administrator logins allowed\n");
 	SABAOTHfreeStatus(&stats);
