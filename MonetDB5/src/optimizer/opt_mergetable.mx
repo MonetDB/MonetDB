@@ -1826,13 +1826,16 @@ fail:
 		mb->stmt = old;
 		mb->ssize = slimit;
 		mb->stop = oldtop;
+		/* This code does not seem necessary and affects the cyclotron */
+		/* It should fall back to the mat.new runtime */
+		/*
 		for(i=0; i<mb->stop; i++) {
 			InstrPtr p = mb->stmt[i];
 			if (p && getModuleId(p) == matRef && getFunctionId(p) == newRef){
-				/* simply drop this function, for the base binding is available */
 				p->token = NOOPsymbol;
 			}
 		}
+		*/
 #ifdef DEBUG_OPT_MERGETABLE
 		stream_printf(GDKout,"Result of multi table optimizer FAILED\n");
 		(void) optimizerCheck(cntxt,mb,"merge test",1,0,0);
