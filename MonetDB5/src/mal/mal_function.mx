@@ -856,7 +856,7 @@ in the context of a global stack.
 			        mb->errors++;
 			    }
 			}
-			if( (blockCntrl(p) || blockStart(p)) && !isTmpVar(mb,l))
+			if( blockCntrl(p) || blockStart(p) )
 				setVarInit(mb, l);
 		}
 		/* define variables */
