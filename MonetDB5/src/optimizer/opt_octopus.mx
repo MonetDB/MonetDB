@@ -313,7 +313,8 @@ already have been handled and produce their target.
 	setArgType(mb,q,0,getVarType(mb,varid));
 	setVarUDFtype(mb,getArg(q,0));
 	cst.vtype = TYPE_str;
-	cst.val.sval= GDKstrdup("tbd");
+	snprintf(buf,BUFSIZ,"tbd_%d",varid); 
+	cst.val.sval= GDKstrdup(buf);
 	cst.len= (int) strlen(cst.val.sval);
 	tbd = defConstant(mb, TYPE_str, &cst);
 	q= pushArgument(mb,q,tbd);
