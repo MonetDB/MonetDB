@@ -760,6 +760,7 @@ MT_mmap_save_tile(int i, size_t tile, stream *err)
 	}
 	if (t > 200) {
 		/* this took time; so we should report back on our actions and await new orders */
+		(void) pthread_mutex_lock(&MT_mmap_lock);
 		if (MT_mmap_tab[i].save_tile == 1) {
 			MT_mmap_tab[i].first_tile = tile;
 			/* leave first tile for later sequential use pass (start unloading after it) */
