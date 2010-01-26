@@ -1265,7 +1265,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			if ((b)->H->width < SIZEOF_VAR_T &&		\
 			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->H, ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d), (copyall)); \
+				GDKupgradevarheap((b)->H, _d, (copyall)); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->H->width) {			\
@@ -1294,7 +1294,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			if ((b)->T->width < SIZEOF_VAR_T &&		\
 			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->T, ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d), (copyall)); \
+				GDKupgradevarheap((b)->T, _d, (copyall)); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->T->width) {			\
@@ -1338,7 +1338,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			if ((b)->H->width < SIZEOF_VAR_T &&		\
 			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->H, ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d), 0); \
+				GDKupgradevarheap((b)->H, _d, 0); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->H->width) {			\
@@ -1382,7 +1382,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			if ((b)->T->width < SIZEOF_VAR_T &&		\
 			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->T, ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d), 0); \
+				GDKupgradevarheap((b)->T, _d, 0); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->T->width) {			\
