@@ -280,7 +280,7 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 #endif
 	size_t i, n;
 
-	assert(c->parentid == 0);
+	assert(c->heap.parentid == 0);
 	assert(width != 0);
 	assert(v >= GDK_VAROFFSET);
 	assert(width < SIZEOF_VAR_T && (width <= 2 ? v - GDK_VAROFFSET : v) >= ((var_t) 1 << (8 * width)));
