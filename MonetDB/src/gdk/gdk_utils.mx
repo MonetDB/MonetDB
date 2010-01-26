@@ -400,8 +400,11 @@ int GDK_vm_trim = 1;
 
 /* at least each 50M of memory increase, BBPtrim is run */
 #define CHKMEM(meminc, vminc) do {					\
-	int memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000))); \
-	int vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000))); \
+	int memchk, vmchk; \
+	malloc_lock(); \
+	memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000))); \
+	vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000))); \
+	malloc_unlock(); \
 	if (memchk || vmchk) GDKmemchk(memchk, vmchk);			\
 } while (0)
 
