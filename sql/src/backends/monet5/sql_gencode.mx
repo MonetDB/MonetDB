@@ -547,11 +547,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 	node *n;
 
  	if (THRhighwater()) {
-		/* FIXME: this needs a proper solution, but at least this avoids
-		 * crashing, which is just a wee bit better */
-		showException(SQL, "sql", "too many nested operators");
 		if (sql->client->exception_buf)
 			longjmp(*sql->client->exception_buf, -1);
+		showException(SQL, "sql", "too many nested operators");
 		assert(0);
 	}
 

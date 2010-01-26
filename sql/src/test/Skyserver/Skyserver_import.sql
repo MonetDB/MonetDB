@@ -1,18 +1,15 @@
 
-COPY 25000 RECORDS INTO RC3 FROM 
-'DATA/RC3.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
+COPY 25000 RECORDS INTO RC3 FROM 'DATA/RC3.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
 
 COPY 30000 RECORDS INTO Stetson FROM 'DATA/Stetson.dat.bz2' USING DELIMITERS '\t', '\015\n', '"' NULL as '';
 
 COPY 1000 RECORDS INTO QsoCatalogAll FROM 'DATA/QsoCatalogAll.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
-
 
 COPY 100 RECORDS INTO QsoConcordance FROM 'DATA/QsoConcordance.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
 
 COPY 3000 RECORDS INTO Target FROM 'DATA/Target.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
 
 COPY 1000 RECORDS INTO TilingRun FROM 'DATA/TilingRun.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
-
 
 COPY 1000 RECORDS INTO TargetParam FROM 'DATA/TargetParam.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
 
@@ -79,7 +76,7 @@ COPY 1000 RECORDS INTO SpecPhotoAll FROM 'DATA/SpecPhotoAll.dat.bz2' USING DELIM
 
 COPY 1000 RECORDS INTO QuasarCatalog FROM 'DATA/QuasarCatalog.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
 
-COPY 28000 RECORDS INTO SpecLineIndex FROM 'DATA/SpecLineIndex1.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
+--COPY 28000 RECORDS INTO SpecLineIndex FROM 'DATA/SpecLineIndex1.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
 
 COPY 39000 RECORDS INTO SpecLineAll FROM 'DATA/SpecLineAll.dat.bz2' USING DELIMITERS '\t', '\015\n', '"';
 
