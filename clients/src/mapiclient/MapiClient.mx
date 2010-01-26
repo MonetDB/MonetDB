@@ -1116,7 +1116,8 @@ format_result(Mapi mid, MapiHdl hdl)
 		/* handle errors first */
 		if ((reply = mapi_result_error(hdl)) != NULL) {
 			if (formatter == RAWformatter ||
-			    formatter == TESTformatter)
+			    formatter == TESTformatter ||
+			    formatter == CSVformatter)
 				mapi_explain_result(hdl, stderr);
 			else
 				stream_printf(toConsole, "%s", reply);
