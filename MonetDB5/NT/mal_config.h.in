@@ -30,3 +30,6 @@
 
 /* Version number of package */
 #define VERSION "@VERSION@"
+
+/* For now we need the console. */
+#define HAVE_CONSOLE 1
