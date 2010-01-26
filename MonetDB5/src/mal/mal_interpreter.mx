@@ -624,7 +624,7 @@ all resource contention effects.
 Another option would be to maintain a priority queue of 
 suspended instructions.
 @c
-#define MEMORY_THRESHOLD  0.5
+#define MEMORY_THRESHOLD  0.8
 
 lng memorypool;		/* memory claimed by concurrent threads */
 int memoryclaims;	/* number of threads active with expensive operations */
@@ -661,9 +661,9 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 
 			if (isVIEW(b) && VIEWtparent(b) ) {
 				bv = BATdescriptor(VIEWtparent(b));
-				heapinfo(&bv->T->heap); total += vol;
-				heapinfo(bv->T->vheap); total += vol;
-				hashinfo(bv->T->hash); total += vol;
+				heapinfo(&bv->H->heap); total += vol;
+				heapinfo(bv->H->vheap); total += vol;
+				hashinfo(bv->H->hash); total += vol;
 				BBPunfix(bv->batCacheid);
 			} else { 
 				heapinfo(&b->T->heap); total += vol;
@@ -681,10 +681,12 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 				guess = total-t;
 		}
 	}
-	/* accommodate for one hash */
+	/* accommodate for one hash 
 	total += cnt * sizeof(int);
-	/* accomodate for result based on largest argument */
+	*/
+	/* accomodate for result based on largest argument 
 	total += guess;	
+	*/
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total )
 		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claim " LLFMT"\n", memorypool,total);
@@ -847,6 +849,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int prevpc = 0;
 	int tid = t->id;
 	lng claim;
+	BAT *b;
     
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -916,7 +919,17 @@ with this properyty.
 				}
 			}
 		}
-
+@-
+To improve memory access behavior we touch the pages of all BATs to enforce them to become memory resident.
+@c
+		for(i=  pci->retc; i< pci->argc; i++) 
+			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+				b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+				if (b==NULL) 
+					continue;
+				(void) BATpreload(b);
+				BBPunfix(b->batCacheid);
+			}
 @-
 The number of instructions allowed is severely limited.
 We don't allow sequential flow control here.

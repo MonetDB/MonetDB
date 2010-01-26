@@ -1263,9 +1263,9 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			ptr _ptr;					\
 			ATOMput((b)->htype, (b)->H->vheap, &_d, v);	\
 			if ((b)->H->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) {	\
+			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->H, BATcapacity(b), _d, (copyall)); \
+				GDKupgradevarheap((b)->H, _d, (copyall)); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->H->width) {			\
@@ -1292,9 +1292,9 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			ptr _ptr;					\
 			ATOMput((b)->ttype, (b)->T->vheap, &_d, v);	\
 			if ((b)->T->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) {	\
+			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->T, BATcapacity(b), _d, (copyall)); \
+				GDKupgradevarheap((b)->T, _d, (copyall)); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->T->width) {			\
@@ -1322,7 +1322,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			_ptr = (p);					\
 			switch ((b)->H->width) {			\
 			case 1:						\
-				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET;	\
+				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
 				break;					\
 			case 2:						\
 				_d = (var_t) * (unsigned short *) _ptr + GDK_VAROFFSET; \
@@ -1336,9 +1336,9 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			}						\
 			ATOMreplace((b)->htype, (b)->H->vheap, &_d, v);	\
 			if ((b)->H->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) {	\
+			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->H, BATcapacity(b), _d, 0); \
+				GDKupgradevarheap((b)->H, _d, 0); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->H->width) {			\
@@ -1366,7 +1366,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			_ptr = (p);					\
 			switch ((b)->T->width) {			\
 			case 1:						\
-				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET;	\
+				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
 				break;					\
 			case 2:						\
 				_d = (var_t) * (unsigned short *) _ptr + GDK_VAROFFSET; \
@@ -1380,9 +1380,9 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 			}						\
 			ATOMreplace((b)->ttype, (b)->T->vheap, &_d, v);	\
 			if ((b)->T->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) {	\
+			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->T, BATcapacity(b), _d, 0); \
+				GDKupgradevarheap((b)->T, _d, 0); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->T->width) {			\
@@ -1452,7 +1452,7 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 		(b)->batCount++;			\
 	} while (0)
 
-gdk_export int GDKupgradevarheap(COLrec *c, BUN capacity, var_t v, int copyall);
+gdk_export int GDKupgradevarheap(COLrec *c, var_t v, int copyall);
 gdk_export BAT *BUNfastins(BAT *b, ptr left, ptr right);
 gdk_export BAT *BUNins(BAT *b, ptr left, ptr right, bit force);
 gdk_export BAT *BUNappend(BAT *b, ptr right, bit force);
@@ -1814,6 +1814,7 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 
 gdk_export BAT *BATload(str nme);
 gdk_export BAT *BATload_intern(bat bid);
+gdk_export size_t BATpreload(BAT *b);
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATmmap_pin(BAT *b);

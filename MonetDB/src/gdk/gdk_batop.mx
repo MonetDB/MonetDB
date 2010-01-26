@@ -67,7 +67,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 {
 	BATiter ni;		/* iterators */
 	int ht, tt;		/* head and tail types */
-	BUN hoff = BUN_NONE, toff = BUN_NONE;  /* head and tail offsets */
+	size_t hoff = ~ (size_t) 0, toff = ~ (size_t) 0; /* head and tail offsets */
 	BUN p, q;		/* loop variables */
 	oid o = 0;		/* in case we're appending */
 	ptr hp, tp;		/* head and tail value pointers */
@@ -77,7 +77,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 #if SIZEOF_VAR_T == 8
 	lng hlv, tlv;		/* head and tail value-as-lng */
 #endif
-	var_t v;		/* value */
+	size_t v;		/* value */
 	int nhw, ntw, bhw, btw;	/* shortcuts for {b,n}->{H,T}->width */
 
 	assert(!append || b->H->type == TYPE_void || b->H->type == TYPE_oid);
@@ -102,16 +102,16 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		/* append string heaps */
 		@1off = b->batCount == 0 ? 0 : b->@2->vheap->size;
 		if (HEAPextend(b->@2->vheap, @1off + n->@2->vheap->size) < 0) {
-			@1off = BUN_NONE;
+			@1off = ~ (size_t) 0;
 			goto bunins_failed;
 		}
 		memcpy(b->@2->vheap->base + @1off, n->@2->vheap->base, n->@2->vheap->size);
 		b->@2->vheap->free = @1off + n->@2->vheap->free;
 		if (b->@2->width < SIZEOF_VAR_T &&
-		    ((var_t) 1 << 8 * b->@2->width) < (b->@2->width <= 2 ? b->@2->vheap->size - GDK_VAROFFSET : b->@2->vheap->size)) {
+		    ((size_t) 1 << 8 * b->@2->width) < (b->@2->width <= 2 ? b->@2->vheap->size - GDK_VAROFFSET : b->@2->vheap->size)) {
 			/* offsets aren't going to fit */
-			if (GDKupgradevarheap(b->@2, BATcapacity(b), b->@2->vheap->size, 0) == GDK_FAIL) {
-				@1off = BUN_NONE;
+			if (GDKupgradevarheap(b->@2, b->@2->vheap->size, 0) == GDK_FAIL) {
+				@1off = ~ (size_t) 0;
 				goto bunins_failed;
 			}
 			b@1w = b->@2->width;
@@ -148,41 +148,41 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	BATloop(n, p, q) {
 @= read_strapp
 		@1p = b->@2->type ? BUN@3(ni, p) : NULL;
-		if (@1off != BUN_NONE) {
+		if (@1off != ~ (size_t) 0) {
 			assert(@1p != NULL);
 			switch (n@1w) {
 			case 1:
-				v = (var_t) * (unsigned char *) @1p + GDK_VAROFFSET;
+				v = (size_t) * (unsigned char *) @1p + GDK_VAROFFSET;
 				break;
 			case 2:
-				v = (var_t) * (unsigned short *) @1p + GDK_VAROFFSET;
+				v = (size_t) * (unsigned short *) @1p + GDK_VAROFFSET;
 				break;
 			default:
-				v = (var_t) * (unsigned int *) @1p;
+				v = (size_t) * (unsigned int *) @1p;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 8:
-				v = * (var_t *) @1p;
+				v = (size_t) * (var_t *) @1p;
 				break;
 #endif
 			}
 			v += @1off;
-			assert(v > 0);
+			assert(v >= GDK_VAROFFSET);
 			assert(v < b->@2->vheap->free);
 			switch (b@1w) {
 			case 1:
-				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
+				assert(v - GDK_VAROFFSET < ((size_t) 1 << 8));
 				@1bv = (unsigned char) (v - GDK_VAROFFSET);
 				@1p = (ptr) &@1bv;
 				break;
 			case 2:
-				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
+				assert(v - GDK_VAROFFSET < ((size_t) 1 << 16));
 				@1sv = (unsigned short) (v - GDK_VAROFFSET);
 				@1p = (ptr) &@1sv;
 				break;
 			default:
 #if SIZEOF_VAR_T == 8
-				assert(v < ((var_t) 1 << 32));
+				assert(v < ((size_t) 1 << 32));
 #endif
 				@1iv = (unsigned int) v;
 				@1p = (ptr) &@1iv;
@@ -204,24 +204,24 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		if (append)
 			o++;
 	}
-	if (hoff != BUN_NONE) {
+	if (hoff != ~ (size_t) 0) {
 		b->H->varsized = 1;
 		n->H->varsized = 1;
 		b->H->type = TYPE_str;
 	}
-	if (toff != BUN_NONE) {
+	if (toff != ~ (size_t) 0) {
 		b->T->varsized = 1;
 		n->T->varsized = 1;
 		b->T->type = TYPE_str;
 	}
 	return b;
   bunins_failed:
-	if  (hoff != BUN_NONE) {
+	if  (hoff != ~ (size_t) 0) {
 		b->H->varsized = 1;
 		n->H->varsized = 1;
 		b->H->type = TYPE_str;
 	}
-	if  (toff != BUN_NONE) {
+	if  (toff != ~ (size_t) 0) {
 		b->T->varsized = 1;
 		n->H->varsized = 1;
 		b->T->type = TYPE_str;

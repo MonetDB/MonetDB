@@ -268,7 +268,7 @@ HEAPextend(Heap *h, size_t size)
 }
 
 int
-GDKupgradevarheap(COLrec *c, BUN capacity, var_t v, int copyall)
+GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 {
 	chr shift = c->shift;
 	unsigned short width = c->width;
@@ -280,9 +280,11 @@ GDKupgradevarheap(COLrec *c, BUN capacity, var_t v, int copyall)
 #endif
 	size_t i, n;
 
+	assert(c->parentid == 0);
 	assert(width != 0);
-	assert(width < SIZEOF_VAR_T && v >= ((var_t) 1 << (8 * width)));
-	while (width < SIZEOF_VAR_T && v >= ((var_t) 1 << (8 * width))) {
+	assert(v >= GDK_VAROFFSET);
+	assert(width < SIZEOF_VAR_T && (width <= 2 ? v - GDK_VAROFFSET : v) >= ((var_t) 1 << (8 * width)));
+	while (width < SIZEOF_VAR_T && (width <= 2 ? v - GDK_VAROFFSET : v) >= ((var_t) 1 << (8 * width))) {
 		width <<= 1;
 		shift++;
 	}
@@ -292,7 +294,7 @@ GDKupgradevarheap(COLrec *c, BUN capacity, var_t v, int copyall)
 	   middle of an insert loop that adjusts the free value at the
 	   end */
 	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
-	if (HEAPextend(&c->heap, (size_t) capacity << shift) < 0)
+	if (HEAPextend(&c->heap, (c->heap.size >> c->shift) << shift) < 0)
 		return GDK_FAIL;
 	pc = (unsigned char *) c->heap.base + n;
 	ps = (unsigned short *) c->heap.base + n;
