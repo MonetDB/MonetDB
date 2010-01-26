@@ -433,6 +433,14 @@ static ssize_t GDK_vm_cursize = 0;
 static int mtrace = 0;
 #endif
 
+#ifndef NDEBUG
+#define malloc_lock() gdk_set_lock(GDKthreadLock, "malloc")
+#define	malloc_unlock()	gdk_unset_lock(GDKthreadLock, "malloc");
+#else
+#define malloc_lock() 
+#define	malloc_unlock()
+#endif
+	
 size_t
 GDKvm_heapsize(void)
 {
@@ -443,7 +451,9 @@ GDKvm_heapsize(void)
 
 #ifdef __linux__
 	/* on linux, malloc may also use mmapped space, so the bytes-in-malloc may be much bigger than the sbrk() region */
+	malloc_lock();
 	ret = MAX(GDK_mallocedbytes_estimate, ret);
+	malloc_unlock();
 #endif
 	return ret;
 #endif
@@ -462,8 +472,11 @@ GDKmem_inuse(void)
 {
 	/* RAM/swapmem that Monet is really using now */
 	ssize_t mem_cursize = GDK_mem_cursize;
-	size_t mem_mallocedbytes_estimate = GDK_mallocedbytes_estimate;
+	size_t mem_mallocedbytes_estimate;
 
+	malloc_lock();
+	mem_mallocedbytes_estimate = GDK_mallocedbytes_estimate;
+	malloc_unlock();
 	if (mem_cursize < 0)
 		mem_cursize = GDK_mem_cursize = 0;
 
@@ -532,7 +545,9 @@ GDKmem_heapcheck(int t)
 			add_mem(memBat, _blk, _idx);
 		}
 #endif
+		malloc_lock();
 		GDK_mallocedbytes_estimate += _memdelta;
+		malloc_unlock();
 #ifdef GDK_MEM_KEEPHISTO
 		{
 			int _idx;
@@ -554,12 +569,15 @@ GDKmem_heapcheck(int t)
 			del_mem(memBat,_blk);
 		}
 #endif
+
+		malloc_lock();
 		if (_memdelta > GDK_mallocedbytes_estimate) {
 			/* clearly, the stats are off: it should never become less-than-zero */
 			GDKmem_heapcheck(GDKms());
 		} else {
 			GDK_mallocedbytes_estimate -= _memdelta;
 		}
+		malloc_unlock();
 #ifdef GDK_MEM_KEEPHISTO
 		{
 			int _idx;
@@ -679,7 +697,9 @@ GDKmemchk(int memchk, int vmchk)
 
 			/* check max every 10 secs, and only if its incorrectness bothers us (i.e. causes BBPtrim) */
 			if ((t - GDK_heapcheck_last) > 10000) {
+				malloc_lock();
 				GDKmem_heapcheck(t);	/* correct thread-unsafe estimate */
+				malloc_unlock();
 			}
 		}
 		BBPtrim(memtarget, vmtarget);
