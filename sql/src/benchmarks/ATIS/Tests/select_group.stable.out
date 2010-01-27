@@ -75,12 +75,12 @@ Over..
 % L5 # name
 % double # type
 % 22 # length
-[ 2.0592592592592593	]
+[ 2.059259259	]
 % sys. # table_name
 % L10 # name
 % double # type
 % 22 # length
-[ 2.3760683760683761	]
+[ 2.376068376	]
 % sys.aircraft,	sys.aircraft,	sys.aircraft # table_name
 % L13,	L14,	L15 # name
 % wrd,	int,	int # type
@@ -115,7 +115,7 @@ Over..
 % from_airport,	to_airport,	L25 # name
 % char,	char,	double # type
 % 3,	3,	22 # length
-[ "ATL",	"BOS",	154.36842105263159	]
+[ "ATL",	"BOS",	154.3684211	]
 % sys.ground_service,	sys. # table_name
 % city_code,	L30 # name
 % char,	double # type

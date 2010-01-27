@@ -2928,9 +2928,9 @@ def main(argv) :
         dft['setXRPC_DOCROOT']   = "'--set \"xrpc_docroot='+env['XRPC_DOCROOT']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['XRPCPORT']       = "str(randomPort(40000,49999))"
-        dft['MILCLIENT']      = "'mclient -lmil'"
-        dft['MALCLIENT']      = "'mclient -lmal'"
-        dft['SQLCLIENT']      = "'mclient -lsql'"
+        dft['MILCLIENT']      = "'mclient -lmil -ftest'"
+        dft['MALCLIENT']      = "'mclient -lmal -ftest'"
+        dft['SQLCLIENT']      = "'mclient -lsql -ftest'"
         dft['SQLDUMP']        = "'msqldump'"
         dft['XQUERYCLIENT']   = "'mclient -lxquery -fxml'"
 

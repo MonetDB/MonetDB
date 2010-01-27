@@ -67,17 +67,17 @@ Over..
 % n1,	m1,	sd1 # name
 % wrd,	double,	double # type
 % 1,	22,	22 # length
-[ 3,	2,	0.81649658092772626	]
+[ 3,	2,	0.8164965809	]
 % .pass1,	.pass1,	sys. # table_name
 % n2,	m2,	sd2 # name
 % wrd,	double,	double # type
 % 1,	22,	22 # length
-[ 3,	2,	0.81649658092772603	]
+[ 3,	2,	0.8164965809	]
 % sys.x,	.agg,	sys. # table_name
 % n2,	m2,	sd2 # name
 % wrd,	double,	double # type
 % 1,	22,	22 # length
-[ 3,	2,	0.81649658092772603	]
+[ 3,	2,	0.8164965809	]
 
 # 21:59:45 >  
 # 21:59:45 >  Done.
