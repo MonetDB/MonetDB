@@ -216,7 +216,7 @@ ODBCutf82wchar(const SQLCHAR *s,
 			 * should follow */
 			if (n == 0 || n >= 6)
 				return "Illegal UTF-8 sequence";
-			if (s + n >= e)
+			if (s + n > e)
 				return "Truncated UTF-8 sequence";
 			c &= ~(0xFFC0) >> n;
 			while (--n >= 0) {
