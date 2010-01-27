@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Jan 27 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed bug in the ODBC driver where a non-ASCII character at the end of a
+  string caused an error when the string was converted to wide characters.
+
 * Wed Jan 20 2010 Sjoerd Mullender <sjoerd@acm.org>
 - mclient timer information (-t option) is now written to standard error
   instead of standard output.  This makes getting timer information easier
