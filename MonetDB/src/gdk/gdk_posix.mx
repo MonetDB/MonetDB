@@ -760,14 +760,13 @@ MT_mmap_save_tile(int i, size_t tile, stream *err)
 	}
 	if (t > 200) {
 		/* this took time; so we should report back on our actions and await new orders */
-		(void) pthread_mutex_lock(&MT_mmap_lock);
+		/* note that MT_mmap_lock is already locked by our parent */
 		if (MT_mmap_tab[i].save_tile == 1) {
 			MT_mmap_tab[i].first_tile = tile;
 			/* leave first tile for later sequential use pass (start unloading after it) */
 			MT_mmap_tab[i].unload_tile = tile + MT_MMAP_TILE;
 		}
 		MT_mmap_tab[i].save_tile = tile + MT_MMAP_TILE;
-		(void) pthread_mutex_unlock(&MT_mmap_lock);
 		return 1;
 	}
 	return 0;
@@ -866,12 +865,12 @@ done:	if (worry > 1) {
 					/* first run, walk backwards until we hit an unsaved tile */
 					for (off = MT_mmap_tab[i].len; off >= MT_MMAP_TILE; off -= MT_MMAP_TILE)
 						if (MT_mmap_save_tile(i, off, err))
-							return worry;
+							goto bailout;
 				} else {
 					/* save the next tile */
 					for (off = MT_mmap_tab[i].save_tile; off + MT_MMAP_TILE < MT_mmap_tab[i].len; off += MT_MMAP_TILE) {
 						if (MT_mmap_save_tile(i, off, err))
-							return worry;
+							goto bailout;
 					}
 					/* we seem to have run through all savable tiles */
 					if (MT_mmap_tab[i].last_tile++ == 0) {
@@ -882,6 +881,7 @@ done:	if (worry > 1) {
 		}
 		MT_mmap_cur = i;
 	}
+  bailout:
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	return (worry);
 }
