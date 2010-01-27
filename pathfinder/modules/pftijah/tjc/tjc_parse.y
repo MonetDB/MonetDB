@@ -144,7 +144,7 @@ NexiQuery		: Path OptPathNoPred
 			    if ($3) { *($3->fixme) = $2->root; $$ = tjcp_wire1 (tjc_tree, p_nexi, $3->root); 
 			    TJCfree($2); TJCfree($3); }
 			    else { $$ = tjcp_wire1 (tjc_tree, p_nexi, $2->root); TJCfree($2); }
-			  }  
+			  } 
 			;
 RelativePath_ 		: "."
 	     		  { $$ = tjcp_leaf (tjc_tree, p_ctx); }
@@ -294,10 +294,15 @@ QueryEntity		: ENTITY
 
 int tjc_parser (char* input, TJptree_t **res)
 {
+  int result = 0;
   setTJCscanstring(input);
 
   tjc_tree   = tjcp_inittree();
-  int result = tjcparse();
+  if (tjcparse()) {
+     result = 1; // parsing failed
+  }
+  destroyTJCscanBuffer();
+
   *res = tjc_tree;
   tjc_tree = NULL;
 
