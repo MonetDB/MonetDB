@@ -253,7 +253,7 @@ yyerror (char const *message)
 
 void setTJCscanstring(const char *s) { tjc_scan_string(s); }
 
-void destroyTJCscanBuffer() { tjclex_destroy(); }
+void destroyTJCscanBuffer(void) { tjclex_destroy(); }
 
 /* vim:set shiftwidth=4 expandtab: */
 
