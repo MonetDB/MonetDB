@@ -1076,8 +1076,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_050AB95BFF544D0EB04C54457B719F80"
             {
-            "SourcePath" = "8:share\\MonetDB\\xrpc\\admin\\cwi.bmp"
-            "TargetName" = "8:cwi.bmp"
+            "SourcePath" = "8:share\\MonetDB\\xrpc\\admin\\cwi_logo.png"
+            "TargetName" = "8:cwi_logo.png"
             "Tag" = "8:"
             "Folder" = "8:_71271857FB974539AB5464AFFDA316BD"
             "Condition" = "8:"
@@ -2196,8 +2196,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_74080E49BF774EE28CACEF053E2A6A76"
             {
-            "SourcePath" = "8:share\\MonetDB\\xrpc\\admin\\tum-logo.gif"
-            "TargetName" = "8:tum-logo.gif"
+            "SourcePath" = "8:share\\MonetDB\\xrpc\\admin\\logo-uni-tuebingen.png"
+            "TargetName" = "8:logo-uni-tuebingen.png"
             "Tag" = "8:"
             "Folder" = "8:_71271857FB974539AB5464AFFDA316BD"
             "Condition" = "8:"
