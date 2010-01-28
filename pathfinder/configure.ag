@@ -610,7 +610,7 @@ dnl The xmlshredder requires strdup() & strndup(). We test here if both are
 dnl available on the system. If not, we will define them ourselves
 dnl in shred_helpers.h & shred_helpers.c
 AC_CHECK_FUNCS([strdup strndup],
-	AC_CHECK_DECLS([strdup, strndup],,[
+	AC_CHECK_DECLS([strdup, strndup],,,[
 		#ifdef HAVE_STRING_H
 		#ifndef _GNU_SOURCE
 		#define _GNU_SOURCE /* enable strndup prototype (on Linux, only?) */
