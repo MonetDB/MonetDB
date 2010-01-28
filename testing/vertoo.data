@@ -1,2 +1,2 @@
 monetdb = major:1; minor:34; release:0;
-testing = major:1; minor:34; release:4;
+testing = major:1; minor:34; release:5;
