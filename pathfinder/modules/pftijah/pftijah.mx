@@ -3222,7 +3222,7 @@ PROC ALG_tj_ftfun_handler(
      	GDKerror("ALG_tj_ftfun_handler: options not implemented yet");
      if ( has_ign )
      	GDKerror("ALG_tj_ftfun_handler: ignores not implemented yet");
-
+     var single_val_opt := (pfop_query.fetch(1@0).tunique().count_wrd() = wrd(1));
      par_loop@batloop() {
         var iter_tjPre;
         var ftc_term := pfop_query.fetch(1@0).fetch(int($h));
@@ -3233,7 +3233,8 @@ PROC ALG_tj_ftfun_handler(
         var err := CATCH({
           var sn_iter := pfop_sn.fetch(0@0);
           var sn_iteration := pfop_query.fetch(0@0).fetch(int($h));
-          sn_iter := sn_iter.select(sn_iteration);
+	  if ( not(single_val_opt) )
+              sn_iter := sn_iter.select(sn_iteration);
           var sn_item := pfop_sn.fetch(1@0).semijoin(sn_iter);
           var sn_kind := pfop_sn.fetch(2@0).semijoin(sn_iter);
   
@@ -3268,6 +3269,9 @@ PROC ALG_tj_ftfun_handler(
         });
         lock_unset(tijah_lock);
         if (not(isnil(err))) ERROR(err);
+        
+	if ( single_val_opt )
+	    break;
      }
      var result_item_b;
      result_iter   := pfop_sn.fetch(0@0);
