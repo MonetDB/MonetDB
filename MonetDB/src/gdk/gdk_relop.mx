@@ -441,6 +441,7 @@ the fast inner loops, optimized towards their type.
 	{
 		BUN yy;
 
+		BATpreload_(r);
 		BATloop(l, p, q) {
 			v = BUN@3(li, p);
 			if (@1_EQ(v, nil, @4)) {
@@ -1401,6 +1402,7 @@ if no match can be found.
 	BUN p, q;
 	@4
 
+	BATpreload_(r);
 	BATloop(l, p, q) {
 		BUN i = 0;
 
@@ -2004,6 +2006,7 @@ iff BAThkey(r) and one on l to find the matching tuples.
 
 	if (merge) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: merge\n");
+		BATpreload_(l);
 		BATloop(r, rp, rq) {
 			v = BUN@3(ri, rp);
 
@@ -2017,6 +2020,8 @@ iff BAThkey(r) and one on l to find the matching tuples.
 		}
 	} else if (rdoubles) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: rdoubles\n");
+		BATpreload_(r);
+		BATpreload_(l);
 		BATloop(r, rp, rq) {
 			v = BUN@3(ri, rp);
 
@@ -2030,6 +2035,7 @@ iff BAThkey(r) and one on l to find the matching tuples.
 			}
 		}
 	} else {
+		BATpreload_(l);
 		BATloop(r, rp, rq) {
 			v = BUN@3(ri, rp);
 			if (!@1_EQ(v, nil, @4)) {
