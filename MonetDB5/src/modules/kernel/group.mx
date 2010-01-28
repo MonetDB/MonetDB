@@ -372,8 +372,10 @@ typedef struct {
 
 @= map_init_def
 #define map_init_@1(map,hash,mask,entry,mapsize)			\
+	BATpreload_(b); 				\
 	if (m) {							\
 		map = m->map; hash = m->hash; mask = m->mask;		\
+		BATpreload_(map); 				\
 	} else {							\
 		BUN _yy;						\
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
@@ -415,6 +417,7 @@ map2histo(BAT *map)
 			BBPreclaim(map);
 		return NULL;
 	}
+	BATpreload_(map);
 	sz = BATcount(map);
 	bn = BATnew(TYPE_oid,TYPE_wrd,sz);
 	if ( bn == NULL){
