@@ -30,12 +30,12 @@ Over..
 % L1,	L2,	single_value,	L3,	single_value,	L4 # name
 % char,	wrd,	char,	double,	char,	double # type
 % 22,	9,	15,	22,	20,	22 # length
-[ "count(n8) == 100000000",	100000000,	"avg(n8) == 1.21",	1.2099999975113553,	"avg(sqrt(n8)) == 1.1",	1.0999999983176105	]
+[ "count(n8) == 100000000",	100000000,	"avg(n8) == 1.21",	1.209999998,	"avg(sqrt(n8)) == 1.1",	1.099999998	]
 % .L11,	sys. # table_name
 % L11,	L12 # name
 % char,	double # type
 % 20,	22 # length
-[ "avg(sqrt(n8)) == 1.1",	1.0999999983176105	]
+[ "avg(sqrt(n8)) == 1.1",	1.099999998	]
 
 # 13:13:03 >  
 # 13:13:03 >  Done.

@@ -76,4 +76,5 @@ extern tjc_config* tjc_c_GLOBAL;
 
 extern void setTJCscanstring(const char *);
 
+extern void destroyTJCscanBuffer(void);
 #endif

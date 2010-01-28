@@ -73,7 +73,7 @@ mdb>help
 	break [<var>]    -- set breakpoint on current instruction or <var>
 	delete [<var>]   -- remove break/trace point <var>
 	debug <int>      -- set kernel debugging mask
-	dot [<int>] [<file>]  -- generate the dependency graph
+	dot [<int>] [<file>]  -- generate the dependency graph for level <int>
 	step             -- advance to next MAL instruction
 	module           -- display a module signatures
 	atom             -- show atom list
@@ -1240,7 +1240,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				stream_printf(out,"Set debug mask to %d\n",GDKdebug);
 				break;
 			}
-			if (strncmp(b, "down", 2) == 0 ) {
+			if (strncmp(b, "down", 4) == 0 ) {
 				MalStkPtr ref = stk;
 				/* find the previous one from the base */
 				stk= stkbase;
@@ -1263,7 +1263,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				if( mdot == NULL)
 					mdot= mb;
 				/* optional file */
-				snprintf(name,PATHLENGTH,"/%s-%s.dot",
+				snprintf(name,PATHLENGTH,"/%s.%s.dot",
 					getModuleId(getInstrPtr(mdot,0)),
 					getFunctionId(getInstrPtr(mdot,0)));
 				if (*b == 0){

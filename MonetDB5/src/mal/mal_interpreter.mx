@@ -849,7 +849,9 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int prevpc = 0;
 	int tid = t->id;
 	lng claim;
+@-
 	BAT *b;
+@c
     
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -910,8 +912,7 @@ with this properyty.
 			{
 				MT_sleep_ms( 50);
 				if ( DFLOWclaim(claim) == 0) {
-					PARDEBUG
-					if ( claim) {
+					PARDEBUG {
 						stream_printf(GDKout,"#DFLOWcontinue thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
 						printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 					}
@@ -921,7 +922,7 @@ with this properyty.
 		}
 @-
 To improve memory access behavior we touch the pages of all BATs to enforce them to become memory resident.
-@c
+@-
 		for(i=  pci->retc; i< pci->argc; i++) 
 			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 				b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
@@ -2338,6 +2339,7 @@ It simply skips the barrier block upon return.
 		time(&stk->clock);
 		if( mb->profiler != NULL ){
 			@1->clk= GDKusec();
+			mal_set_lock(mal_contextLock, "DFLOWdelay");
 			if( mb->profiler[stkpc].trace)
 			{
 				ppc= stkpc;
@@ -2352,6 +2354,7 @@ It simply skips the barrier block upon return.
 #endif
 				mb->profiler[ppc].clk= @1->clk;
 			}
+			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		}
 	}
 #endif

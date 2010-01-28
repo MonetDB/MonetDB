@@ -40,7 +40,7 @@
 #include "tjc_phys_optimize.h"
 #include "tjc_milprint.h"
 
-#define DEBUG 0
+#define DEBUG 0 
 
 tjc_config* tjc_c_GLOBAL;
 
@@ -233,7 +233,6 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
 	return NULL;
     }
 
-    if (DEBUG) stream_printf(GDKout,"#!tjc parsing[%s]\n!",query);
     int status = tjc_parser(query,&ptree);
     if (DEBUG) stream_printf(GDKout,"#!tjc parser status = %d\n",status);
     if (use_sn && (ptree->is_rel_path_exp == 0)) {
