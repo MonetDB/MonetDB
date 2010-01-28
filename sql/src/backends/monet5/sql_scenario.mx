@@ -273,7 +273,6 @@ SQLinit(void)
 		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
-	mal_unset_lock(sql_contextLock,"SQL init");
 	return MAL_SUCCEED;
 }
 

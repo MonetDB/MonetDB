@@ -661,12 +661,121 @@ SQLqueryEcho(MapiHdl hdl)
 	}
 }
 
+/* state machine to recognize integers, floating point numbers, OIDs */
+static char *
+classify(const char *s, size_t l)
+{
+	/* state is the current state of the state machine:
+	   0 - initial state, no input seen
+	   1 - initial sign
+	   2 - valid integer (with optionally a sign)
+	   3 - valid integer, followed by a decimal point
+	   4 - fixed point number of the form [sign] digits period digits
+	   5 - exponent marker after integer or fixed point number
+	   6 - sign after exponent marker
+	   7 - valid floating point number with exponent
+	   8 - integer followed by single 'L'
+	   9 - integer followed by 'LL' (lng)
+	   10 - fixed or floating point number followed by single 'L'
+	   11 - fixed or floating point number followed by 'LL' (dbl)
+	   12 - integer followed by '@'
+	   13 - valid OID (integer followed by '@0')
+	*/
+	int state = 0;
+
+	if ((l == 4 && strcmp(s, "true") == 0) ||
+	    (l == 5 && strcmp(s, "false") == 0))
+		return "bit";
+	while (l != 0) {
+		if (*s == 0 || !isascii(*s))
+			return "str";
+		if (isdigit(*s)) {
+			switch (state) {
+			case 0:
+			case 1:
+				state = 2;	/* digit after optional sign */
+				break;
+			case 3:
+				state = 4;	/* digit after decimal point */
+				break;
+			case 5:
+			case 6:
+				state = 7;	/* digit after exponent marker and optional sign */
+				break;
+			case 12:
+				if (*s == '0')	/* only @0 allowed */
+					state = 13;
+				else
+					return "str";
+				break;
+			}
+		} else if (*s == '.') {
+			if (state == 2)
+				state = 3;	/* decimal point */
+			else
+				return "str";
+		} else if (*s == 'e' || *s == 'E') {
+			if (state == 2 || state == 4)
+				state = 5;	/* exponent marker */
+			else
+				return "str";
+		} else if (*s == '+' || *s == '-') {
+			if (state == 0)
+				state = 1;	/* sign at start */
+			else if (state == 5)
+				state = 6;	/* sign after exponent marker */
+			else
+				return "str";
+		} else if (*s == '@') {
+			if (state == 2)
+				state = 12; 	/* OID marker */
+			else
+				return "str";
+		} else if (*s == 'L') {
+			switch (state) {
+			case 2:
+				state = 8;	/* int + 'L' */
+				break;
+			case 8:
+				state = 9;	/* int + 'LL' */
+				break;
+			case 4:
+			case 7:
+				state = 10;	/* dbl + 'L' */
+				break;
+			case 10:
+				state = 11;	/* dbl + 'LL' */
+				break;
+			default:
+				return "str";
+			}
+		}
+		s++;
+		l--;
+	}
+	switch (state) {
+	case 13:
+		return "oid";
+	case 2:
+		return "int";
+	case 4:
+	case 7:
+	case 11:
+		return "dbl";
+	case 9:
+		return "lng";
+	default:
+		return "str";
+	}
+}
+
 static void
 TESTrenderer(MapiHdl hdl)
 {
 	int fields;
 	char *reply;
 	char *s;
+	size_t l;
 	char *tp;
 	char *sep;
 	int i;
@@ -683,15 +792,32 @@ TESTrenderer(MapiHdl hdl)
 		sep = "[ ";
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
+			l = mapi_fetch_field_len(hdl, i);
 			tp = mapi_get_type(hdl, i);
+			if (strcmp(tp, "unknown") == 0)
+				tp = classify(s, l);
 			stream_printf(toConsole, "%s", sep);
 			sep = ",\t";
 			if (s == NULL)
-				stream_printf(toConsole, "NULL");
+				stream_printf(toConsole, mode == SQL ? "NULL" : "nil");
 			else if (strcmp(tp, "varchar") == 0 ||
 				 strcmp(tp, "char") == 0 ||
 				 strcmp(tp, "clob") == 0 ||
-				 strcmp(tp, "str") == 0) {
+				 strcmp(tp, "str") == 0 ||
+				 /* NULL byte in string? */
+				 strlen(s) < l ||
+				 /* start or end with white space? */
+				 (isascii(*s) && isspace(*s)) ||
+				 (isascii(s[l - 1]) && isspace(s[l - 1])) ||
+				 /* a bunch of geom types */
+				 strcmp(tp, "curve") == 0 ||
+				 strcmp(tp, "geometry") == 0 ||
+				 strcmp(tp, "linestring") == 0 ||
+				 strcmp(tp, "mbr") == 0 ||
+				 strcmp(tp, "multilinestring") == 0 ||
+				 strcmp(tp, "point") == 0 ||
+				 strcmp(tp, "polygon") == 0 ||
+				 strcmp(tp, "surface") == 0) {
 				stream_printf(toConsole, "\"");
 				while (*s) {
 					switch (*s) {
@@ -711,13 +837,17 @@ TESTrenderer(MapiHdl hdl)
 						stream_write(toConsole, "\\\"", 1, 2);
 						break;
 					default:
-						stream_write(toConsole, s, 1, 1);
+						if ((unsigned char) *s < ' ')
+							stream_printf(toConsole, "\\%03o", (int) (unsigned char) *s);
+						else
+							stream_write(toConsole, s, 1, 1);
 						break;
 					}
 					s++;
 				}
 				stream_write(toConsole, "\"", 1, 1);
-			} else if (strcmp(tp, "double") == 0)
+			} else if (strcmp(tp, "double") == 0 ||
+				   strcmp(tp, "dbl") == 0)
 				stream_printf(toConsole, "%.10g", atof(s));
 			else
 				stream_printf(toConsole, "%s", s);
@@ -1116,7 +1246,8 @@ format_result(Mapi mid, MapiHdl hdl)
 		/* handle errors first */
 		if ((reply = mapi_result_error(hdl)) != NULL) {
 			if (formatter == RAWformatter ||
-			    formatter == TESTformatter)
+			    formatter == TESTformatter ||
+			    formatter == CSVformatter)
 				mapi_explain_result(hdl, stderr);
 			else
 				stream_printf(toConsole, "%s", reply);
