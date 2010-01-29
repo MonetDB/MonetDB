@@ -29,7 +29,7 @@ MAKEFILE_HEAD = '''
 
 #automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
 automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
-buildtools_ext = ['mx', 'm', 'y', 'l']
+buildtools_ext = ['mx', 'm', 'y', 'l', 't']
 
 def split_filename(f):
     base = f
@@ -895,7 +895,7 @@ def msc_library(fd, var, libmap, msc):
     fd.write(deps + "\n")
     ln = pref + sep + libname
     if libmap.has_key('NOINST'):
-        fd.write("%s.lib: $(%s_DEPS)\n" % (ln, ln.replace('-','_')))
+        fd.write("%s.lib: $(%s_DEPS) $(%s_LIBS)\n" % (ln, ln.replace('-','_'), ln.replace('-','_')))
         fd.write('\t$(ARCHIVER) /out:"%s.lib" $(%s_OBJS)\n' % (ln, ln.replace('-','_')))
     else:
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
