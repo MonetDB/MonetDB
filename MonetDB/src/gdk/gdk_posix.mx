@@ -718,22 +718,23 @@ MT_fadvise(void *base, size_t len, int advice)
 static void
 MT_mmap_unload_tile(int i, size_t off, stream *err)
 {
+	size_t len = MIN((size_t) MT_MMAP_TILE, MT_mmap_tab[i].len - off);
 	/* tell Linux to please stop caching this stuff */
-	int ret = posix_madvise(MT_mmap_tab[i].base + off, MT_MMAP_TILE, POSIX_MADV_DONTNEED);
+	int ret = posix_madvise(MT_mmap_tab[i].base + off, len, POSIX_MADV_DONTNEED);
 
 	if (err) {
 		stream_printf(err, "#MT_mmap_unload_tile: posix_madvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
 			      MT_mmap_tab[i].path, (unsigned int) (off >> 20),
-			      (unsigned int) (MT_MMAP_TILE >> 20), MT_mmap_tab[i].fd, ret);
+			      (unsigned int) (len >> 20), MT_mmap_tab[i].fd, ret);
 	}
 #ifdef HAVE_POSIX_FADVISE
 	if (!do_not_use_posix_fadvise) {
 		/* tell the OS quite clearly that you want to drop this */
-		ret = posix_fadvise(MT_mmap_tab[i].fd, off, MT_MMAP_TILE, POSIX_FADV_DONTNEED);
+		ret = posix_fadvise(MT_mmap_tab[i].fd, off, len, POSIX_FADV_DONTNEED);
 		if (err) {
 			stream_printf(err, "#MT_mmap_unload_tile: posix_fadvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
 				      MT_mmap_tab[i].path, (unsigned int) (off >> 20),
-				      (unsigned int) (MT_MMAP_TILE >> 20), MT_mmap_tab[i].fd, ret);
+				      (unsigned int) (len >> 20), MT_mmap_tab[i].fd, ret);
 		}
 	}
 #endif
@@ -743,20 +744,21 @@ static int
 MT_mmap_save_tile(int i, size_t tile, stream *err)
 {
 	int t, ret;
+	size_t len = MIN((size_t) MT_MMAP_TILE, MT_mmap_tab[i].len - tile);
 
 	/* save to disk an 128MB tile, and observe how long this takes */
 	if (err) {
 		stream_printf(err, "#MT_mmap_save_tile: msync(%s,off=%uM,%u,SYNC)...\n",
 			      MT_mmap_tab[i].path, (unsigned int) (tile >> 20),
-			      (unsigned int) (MT_MMAP_TILE >> 20));
+			      (unsigned int) (len >> 20));
 	}
  	t = GDKms();
-	ret = MT_msync(MT_mmap_tab[i].base, tile, MT_MMAP_TILE, MMAP_SYNC);
+	ret = MT_msync(MT_mmap_tab[i].base, tile, len, MMAP_SYNC);
 	t = GDKms() - t;
 	if (err) {
 		stream_printf(err, "#MT_mmap_save_tile: msync(%s,tile=%uM,%uM,SYNC) = %d (%dms)\n",
 			      MT_mmap_tab[i].path, (unsigned int) (tile >> 20),
-			      (unsigned int) (MT_MMAP_TILE >> 20), ret, t);
+			      (unsigned int) (len >> 20), ret, t);
 	}
 	if (t > 200) {
 		/* this took time; so we should report back on our actions and await new orders */
