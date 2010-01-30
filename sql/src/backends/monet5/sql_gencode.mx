@@ -1117,6 +1117,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 			char *jt = "join";
 
+			assert(l >= 0 && r >= 0);
 			if (s->type == st_outerjoin) {
 				jt = "outerjoin";
 			}

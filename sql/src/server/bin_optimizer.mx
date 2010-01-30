@@ -448,6 +448,15 @@ bin_optimizer(mvc *c, stmt *s)
 			s->op2.stval = stmt_dup(old->op1.stval);
 			stmt_destroy(old);
 		}
+		/* same as above but now with alias in between */ 
+		if (isEqJoin(s) && 
+		    s->op2.stval->type == st_alias &&
+		    s->op1.stval->t == s->op2.stval->op1.stval->h &&
+		    s->op2.stval->op1.stval->type == st_diff){
+			stmt *old = s->op2.stval;
+			s->op2.stval = stmt_dup(old->op1.stval->op1.stval);
+			stmt_destroy(old);
+		}
 		s->optimized = 3;
 		return stmt_dup(s);
 	}
