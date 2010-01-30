@@ -234,6 +234,7 @@ scanner_init_keywords(void)
 	keywords_insert("TABLE", TABLE);
 	keywords_insert("TEMPORARY", TEMPORARY);
 	keywords_insert("TEMP", TEMPORARY);
+	keywords_insert("STREAM", STREAM);
 	keywords_insert("TO", TO);
 	keywords_insert("UNION", UNION);
 	keywords_insert("EXCEPT", EXCEPT);
@@ -805,6 +806,8 @@ int scanner_symbol(mvc * c, int cur)
 	case ')':
 	case ',':
 	case '=':
+	case '[':
+	case ']':
 		lc->started = 1;
 		return scanner_token(lc, cur);
 	case '@':

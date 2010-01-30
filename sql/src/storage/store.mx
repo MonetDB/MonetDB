@@ -565,6 +565,8 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	t->persistence = SQL_PERSIST; 
 	if (t->commit_action)
 		t->persistence = SQL_GLOBAL_TEMP;
+	if (isStream(t))
+		t->persistence = SQL_STREAM;
 	t->cleared = 0;
 
 	t->pkey = NULL;
@@ -3584,7 +3586,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	/* temps all belong to a special tmp schema and only views
 	   have a query */
 	assert( (isTable(t) ||
-		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql));
+		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t));
 
 	t->query = sql ? _strdup(sql) : NULL;
 	t->s = s;

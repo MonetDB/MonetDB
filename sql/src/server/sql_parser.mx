@@ -694,7 +694,7 @@ CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMPORARY
+%token TEMPORARY STREAM
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
@@ -1454,6 +1454,7 @@ opt_temp:
  |  TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
  |  LOCAL TEMPORARY	{ $$ = SQL_LOCAL_TEMP; }
  |  GLOBAL TEMPORARY	{ $$ = SQL_GLOBAL_TEMP; }
+ |  STREAM		{ $$ = SQL_STREAM; }
  ;
 
 opt_on_commit: /* only for temporary tables */
@@ -3031,6 +3032,22 @@ table_ref:
 				{ $$ = $2;
 				  append_symbol($2->data.lval, $4); }
 */
+
+/* Basket expression, TODO window */
+ |  '[' select_no_parens ']' table_name 	
+	{
+		dlist *basket_table_func = L();
+		dlist *basket_func = L();
+	  	dlist *basket_func_name = append_string(L(), "basket");
+		dlist *arg_list = L();
+
+  	  	append_list(basket_func, basket_func_name);
+ 	  	append_list(basket_func, append_symbol(arg_list, $2));
+
+		append_symbol(basket_table_func, _symbol_create_list( SQL_NOP, basket_func ));
+		append_symbol(basket_table_func, $4);
+		$$ = _symbol_create_list(SQL_TABLE, basket_table_func); 
+	}
  ;
 
 table_name:
