@@ -104,7 +104,8 @@ typedef enum temp_t {
 	SQL_PERSIST,
 	SQL_LOCAL_TEMP,
 	SQL_GLOBAL_TEMP,
-	SQL_DECLARED_TABLE	/* variable inside a stored procedure */
+	SQL_DECLARED_TABLE,	/* variable inside a stored procedure */
+	SQL_STREAM
 } temp_t;
 
 typedef enum commit_action_t { 
@@ -380,13 +381,15 @@ typedef enum table_types {
 	tt_table = 0, 		/* table */
 	tt_view = 1, 		/* view */
 	tt_generated = 2,	/* generated (functions can be sql or c-code) */
-	tt_cluster = 3		/* table supporting the clustered index */
+	tt_cluster = 3,		/* table supporting the clustered index */
+	tt_stream = 4		/* stream */
 } table_types;
 
 #define isTable(x) 	(x->type==tt_table||x->type==tt_cluster)
 #define isView(x)  	(x->type==tt_view)
 #define isGenerated(x)  (x->type==tt_generated)
 #define isCluster(x)  	(x->type==tt_cluster)
+#define isStream(x)  	(x->type==tt_stream)
 
 typedef struct sql_table {
 	sql_base base;
