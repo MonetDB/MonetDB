@@ -27,7 +27,6 @@
 #include "sql_semantic.h"
 
 extern stmt *select_into(mvc *sql, symbol *sq, exp_kind ek );
-extern stmt *flat_subquery(mvc *sql, symbol *sq);
 
 extern stmt *value_exp(mvc *sql, symbol *se, int f, exp_kind knd);
 extern stmt *logical_value_exp(mvc *sql, symbol *sc, int f, exp_kind knd);
@@ -343,21 +342,6 @@ sql_reorder(stmt *order, stmt *s)
 	stmt_destroy(s);
 	stmt_destroy(order);
 	return stmt_list(l);
-}
-
-stmt *
-flat_subquery(mvc *sql, symbol *sq)
-{
-	stmt *s = NULL;
-	exp_kind ek = {type_value, card_relation, TRUE};
-
-	s = _subquery(sql, sq, ek);
-	if (s && s->type == st_ordered) {
-		stmt *n = sql_reorder(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval));
-		stmt_destroy(s);
-		s = n;
-	}
-	return s;
 }
 
 stmt *

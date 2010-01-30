@@ -223,7 +223,7 @@ is_reduced( stmt *s )
 
 	case st_join:
 		/* fetch join, look at the join operands */
-		if (s->flag == cmp_equal && 
+		if (isEqJoin(s) &&
 		    s->op1.stval->t && s->op1.stval->t == s->op2.stval->h)
 			return  is_reduced(s->op1.stval) + 
 				is_reduced(s->op2.stval);
@@ -280,7 +280,7 @@ bin_optimizer(mvc *c, stmt *s)
 
 		/* push through the projection joins */
 		if (s->flag == 0 &&
-		    j->type == st_join && j->flag == cmp_equal && 
+		    isEqJoin(j) &&
 		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) {
 			stmt *l = stmt_dup(j->op1.stval);
 			stmt *r = stmt_dup(j->op2.stval);
@@ -301,7 +301,7 @@ bin_optimizer(mvc *c, stmt *s)
 		   the topn into the right part */
 		if (s->flag != 0 /* topn, ie limit and orderby */ &&
 		    j->type == st_join && 
-		  ((j->flag == cmp_equal && 
+		  ((isEqJoin(j) &&
 		    !is_reduced(j) &&
 		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) || 
 		    j->flag == cmp_all)) {
@@ -381,8 +381,7 @@ bin_optimizer(mvc *c, stmt *s)
 		if (os->op1.stval->type == st_join) {
 			j = os->op1.stval;
 			/* equi join on same base table */
-			if (j->type == st_join && 
-		    		j->flag == cmp_equal &&
+			if (isEqJoin(j) &&
 		    		j->op1.stval->t == j->op2.stval->h ) {
 				stmt *l = stmt_dup(j->op1.stval);
 				stmt *r = stmt_dup(j->op2.stval);
@@ -442,7 +441,7 @@ bin_optimizer(mvc *c, stmt *s)
 		 * if join on oids from the same table then 	
 		 * right kdiff is not needed 
 		 */
-		if (s->type == st_join && s->flag == cmp_equal && 
+		if (isEqJoin(s) && 
 		    s->op1.stval->t == s->op2.stval->h &&
 		    s->op2.stval->type == st_diff){
 			stmt *old = s->op2.stval;
@@ -477,6 +476,16 @@ bin_optimizer(mvc *c, stmt *s)
 	case st_uselect2: {
 		stmt *res = NULL;
 
+		/* push down the select through st_alias */
+		if (s->op1.stval->type == st_alias) {
+			stmt *a = s->op1.stval;
+	
+			s = push_select( s, stmt_dup(a->op1.stval)); 
+			s = stmt_alias(s, table_name(a), column_name(a));
+			res = bin_optimizer(c, s);
+			stmt_destroy(s);
+			return res;
+		}
 		/* push down the select through st_diff */
 		if (s->op1.stval->type == st_diff && s->flag != cmp_notequal) {
 			stmt *d = s->op1.stval;

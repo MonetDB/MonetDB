@@ -152,7 +152,6 @@ psm_declare_table(mvc *sql, dnode *n)
 	dlist *qname = n->next->data.lval;
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
-	//stmt *ret, *r;
 	sql_subtype ctype = *sql_bind_localtype("bat");
 
 	if (sname)  /* not allowed here */
@@ -169,12 +168,7 @@ psm_declare_table(mvc *sql, dnode *n)
 		return NULL;
 
 	ctype.comp_type = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
-//find_basetable(ret);
-
-	//r = stmt_var(_strdup(name), &ctype, 1, sql->frame );
-	//rel = rel_basetable(ctype.comp_type, name);
 	stack_push_rel_var(sql, name, rel_dup(rel), &ctype);
-	//stmt_destroy(ret);
 	return rel_bin(sql, rel);
 }
 

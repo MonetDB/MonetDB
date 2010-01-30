@@ -2201,9 +2201,11 @@ backend_create_func(backend *be, sql_func *f)
 		return;
 	} else {
 		stmt *opt;
+
 		opt = rel2bin(m, s);
 		stmt_destroy(s);
-		s = opt;
+		s = bin_optimizer(m, opt);
+		stmt_destroy(opt);
 	}
 	assert(s);
 
