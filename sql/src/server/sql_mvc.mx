@@ -1536,13 +1536,12 @@ stack_pop_until(mvc *sql, int top)
 		sql_var *v = &sql->vars[--sql->topvars];
 
 		_DELETE(v->name);
-		if (v->s) {
-			stmt_destroy(v->s);
-			VALclear(&v->value);
-			v->value.vtype = 0;
-			if (v->type.comp_type && v->view) 
-				table_destroy(v->type.comp_type);
-		}
+		VALclear(&v->value);
+		v->value.vtype = 0;
+		if (v->type.comp_type && v->view) 
+			table_destroy(v->type.comp_type);
+		else if (v->s && v->view)
+			rel_destroy(v->s);
 	}
 }
 
