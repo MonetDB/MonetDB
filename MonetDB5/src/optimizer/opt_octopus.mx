@@ -160,7 +160,7 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_OCTOPUS            show partial result */
+/* #define DEBUG_OPT_OCTOPUS           show partial result */
 
 @c
 #include "mal_config.h"
@@ -253,6 +253,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr sig, InstrPtr pci, int start, 
 		if ( name) GDKfree(name);
 		return 0;
 	}
+
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout,"#create tentacle for %d %d %d\n",start,idx,varid);
 	printInstruction(cntxt->fdout,mb,0,pci,0);
@@ -601,13 +602,16 @@ The tentacle code should be optimized by the remaining optimizers too.
 
 	for (j=last+1; j< limit; j++)
 	for (i=0; i<tn; i++)
-	if ( old[j] && old[j]->token != REMsymbol)
+	if ( old[j] && old[j]->token != REMsymbol){
+		if ( getModuleId(old[j]) == optimizerRef && 
+			getFunctionId(old[j]) == putName("reduce",6) )
+		        newStmt(tentacle[i], optimizerRef,putName("recycle",7));
 		newStmt(tentacle[i], getModuleId(old[j]),getFunctionId(old[j]));
-	
+	}
 	for (i=0; i<tn; i++){
 		clrDeclarations(tentacle[i]);
 		chkProgram(cntxt->nspace,tentacle[i]);
-		optimizeMALBlock(cntxt,tentacle[i]);
+/*		optimizeMALBlock(cntxt,tentacle[i]); */
 		if ( tentacle[i]->errors ) 
 			mb->errors++;
 	}
@@ -623,6 +627,10 @@ The tentacle code should be optimized by the remaining optimizers too.
 		}
 	}
 #endif
+/*
+	for (i=0; i<tn; i++)
+		printFunction(GDKout, tentacle[i], 0, LIST_MAL_STMT);
+*/
 	GDKfree(old);
 	GDKfree(tentacle);
 	return actions;
