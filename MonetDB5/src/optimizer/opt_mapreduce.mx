@@ -52,7 +52,7 @@ end s0_0;
 This plan is turned into two routines. One to be executed
 on the individual nodes and one to assemble the results.
 @verbatim
-function user.s0_0mp()(:bat[:oid,:int],
+function user.s0_0mp() (s0_0:void,X61:bat[:oid,:int],X85:bat[:oid,:str],X109:bat[:oid,:int],X134:bat[:oid,:str],X142:bat[:oid,:sht],X168:bat[:oid,:bit],X191:bat[:oid,:sht],X201:bat[:oid,:bte]);
     _23:bat[:oid,:sht]  := sql.bind("sys","_tables","type",1);
     _24:bat[:oid,:oid]  := sql.bind_dbat("sys","_tables",1);
     _25 := bat.reverse(_24);
@@ -61,24 +61,42 @@ function user.s0_0mp()(:bat[:oid,:int],
     _98 := bat.append(_96,_95,true);
     _96:bat[:oid,:bte]  := nil:BAT;
     _99 := bat.append(_98,_93,true);
-	return (a,b,c,d,e,f,g,h):= (_33,_44,_54,_64,_70,_81,_91,_99);
+    return (s0_0,X61,X85,X109,X134,X142,X168,X191,X201);
 end s0_0mp;
-function user.s0_0mp();
-barrier go:= language.dataflow();
-	...
-exit go;
-	...
-    _100 := sql.resultSet(8,1,_33);
-    sql.rsColumn(_100,".tables","id","int",32,0,_33);
-    sql.rsColumn(_100,".tables","name","varchar",1024,0,_44);
-    sql.rsColumn(_100,".tables","schema_id","int",32,0,_54);
-    sql.rsColumn(_100,".tables","query","varchar",2048,0,_64);
-    sql.rsColumn(_100,".tables","type","smallint",16,0,_70);
-    sql.rsColumn(_100,".tables","system","boolean",1,0,_81);
-    sql.rsColumn(_100,".tables","commit_action","smallint",16,0,_91);
-    sql.rsColumn(_100,".tables","temporary","tinyint",8,0,_99);
-    _121 := io.stdout();
-    sql.exportResult(_121,_100);
+function user.s0_0():void;
+    s0_0 := nil:void;
+    X61 := nil:bat[:oid,:int];
+    X85 := nil:bat[:oid,:str];
+    X109 := nil:bat[:oid,:int];
+    X134 := nil:bat[:oid,:str];
+    X142 := nil:bat[:oid,:sht];
+    X168 := nil:bat[:oid,:bit];
+    X191 := nil:bat[:oid,:sht];
+    X201 := nil:bat[:oid,:bte];
+barrier _250 := language.dataflow();
+    (_253,_254,_255,_256,_257,_258,_259,_260,_261) := mapreduce.exec(0,"user","s0_0mp");
+    (_263,_264,_265,_266,_267,_268,_269,_270,_271) := mapreduce.exec(1,"user","s0_0mp");
+    (_273,_274,_275,_276,_277,_278,_279,_280,_281) := mapreduce.exec(2,"user","s0_0mp");
+    X61 := mat.pack(_254,_264,_274);
+    X85 := mat.pack(_255,_265,_275);
+    X109 := mat.pack(_256,_266,_276);
+    X134 := mat.pack(_257,_267,_277);
+    X142 := mat.pack(_258,_268,_278);
+    X168 := mat.pack(_259,_269,_279);
+    X191 := mat.pack(_260,_270,_280);
+    X201 := mat.pack(_261,_271,_281);
+exit _250;
+    X202 := sql.resultSet(8,1,X61);
+    sql.rsColumn(X202,".tables","id","int",32,0,X61);
+    sql.rsColumn(X202,".tables","name","varchar",1024,0,X85);
+    sql.rsColumn(X202,".tables","schema_id","int",32,0,X109);
+    sql.rsColumn(X202,".tables","query","varchar",2048,0,X134);
+    sql.rsColumn(X202,".tables","type","smallint",16,0,X142);
+    sql.rsColumn(X202,".tables","system","boolean",1,0,X168);
+    sql.rsColumn(X202,".tables","commit_action","smallint",16,0,X191);
+    sql.rsColumn(X202,".tables","temporary","tinyint",8,0,X201);
+    X232 := io.stdout();
+    sql.exportResult(X232,X202);
 end s0_0;
 @end verbatim
 The code can be considered a refinement of the Octopus.
