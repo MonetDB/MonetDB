@@ -2089,11 +2089,11 @@ InstrPtr
 pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
 {
 	assert(p->retc);
-	if (p->argv[p->retc - 1] == -1) {
-		p->argv[p->retc - 1] = varid;
+	if (p->argv[0] == -1) {
+		p->argv[0] = varid;
 		return p;
 	}
-	p = pushArgument(mb, p, varid);
+	p =setArgument(mb,p,p->retc,varid);
 	p->retc++;
 	return p;
 }

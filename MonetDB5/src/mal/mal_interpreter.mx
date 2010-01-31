@@ -640,7 +640,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 	BUN cnt = 0;
 	BAT *b, *bv;
 	
-	for(i=  pci->retc; i< pci->argc; i++) {
+	for(i=  pci->retc; i< pci->argc; i++) 
 		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 			if (b==NULL) 
@@ -680,7 +680,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 			if ( guess < total-t )
 				guess = total-t;
 		}
-	}
+	
 	/* accommodate for one hash 
 	total += cnt * sizeof(int);
 	*/
@@ -907,14 +907,17 @@ with this properyty.
 @c
 		claim = getMemoryClaim(stk, pci);
 		if ( DFLOWclaim(claim) ){
-			PARDEBUG stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n", THRgettid(), claim, memorypool);
+			PARDEBUG if (  claim ) {
+				stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
+				printInstruction(GDKout, mb, 0, pci, LIST_MAL_DEBUG);
+			}
 			for ( ; ; )
 			{
 				MT_sleep_ms( 50);
 				if ( DFLOWclaim(claim) == 0) {
 					PARDEBUG {
 						stream_printf(GDKout,"#DFLOWcontinue thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
-						printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
+						printInstruction(GDKout, mb, 0, pci, LIST_MAL_STMT);
 					}
 					break;
 				}
