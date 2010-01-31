@@ -3133,6 +3133,7 @@ rel_select_use_index(int *changes, mvc *sql, sql_rel *rel)
 }
 
 /* TODO CSE */
+#if 0
 static list *
 exp_merge(list *exps)
 {
@@ -3142,7 +3143,7 @@ exp_merge(list *exps)
 		/*sql_exp *le = e->l;*/
 		sql_exp *re = e->r;
 
-		if (e->type == e_cmp && e->flag != cmp_or)
+		if (e->type == e_cmp && e->flag == cmp_or)
 			continue;
 
 		/* only look for gt, gte, lte, lt */
@@ -3160,6 +3161,7 @@ exp_merge(list *exps)
 	}
 	return exps;
 }
+#endif
 
 static sql_rel *
 rel_select_order(int *changes, mvc *sql, sql_rel *rel) 
@@ -3171,7 +3173,8 @@ rel_select_order(int *changes, mvc *sql, sql_rel *rel)
 			
 		exps = list_sort(rel->exps, (fkeyvalue)&exp_keyvalue, (fdup)&exp_dup);
 		list_destroy(rel->exps);
-		rel->exps = exp_merge(exps);
+		//rel->exps = exp_merge(exps);
+		rel->exps = exps;
 	}
 	return rel;
 }

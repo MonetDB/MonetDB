@@ -1271,7 +1271,6 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 				cbat->ibid = e_bat(cur->ttype);
 			}
 			bat_clear(pi);
-			assert(obat->ibase == cbat->ibase);
 			obat->ibase = cbat->ibase = BATcount(cur);
 			BATseqbase(pi, obat->ibase);
 			bat_destroy(pi);

@@ -1117,6 +1117,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 			char *jt = "join";
 
+			assert(l >= 0 && r >= 0);
 			if (s->type == st_outerjoin) {
 				jt = "outerjoin";
 			}
@@ -2201,9 +2202,11 @@ backend_create_func(backend *be, sql_func *f)
 		return;
 	} else {
 		stmt *opt;
+
 		opt = rel2bin(m, s);
 		stmt_destroy(s);
-		s = opt;
+		s = bin_optimizer(m, opt);
+		stmt_destroy(opt);
 	}
 	assert(s);
 

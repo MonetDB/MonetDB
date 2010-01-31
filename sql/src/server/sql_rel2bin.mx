@@ -861,8 +861,9 @@ push_semijoin( stmt *select, stmt *s )
 		stmt *op1 = stmt_dup(select->op1.stval);
 
 		op1 = push_semijoin(op1, s);
+		op1 = stmt_unop(op1, sql_dup_func(select->op4.funcval));
 		stmt_destroy(select);
-		return stmt_unop(op1, sql_dup_func(select->op4.funcval));
+		return op1;
 	}
 	if (select->type == st_binop) {
 		stmt *op1 = stmt_dup(select->op1.stval);

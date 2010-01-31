@@ -241,6 +241,9 @@ extern stmt *stmt_selectN(stmt *l, stmt *r, sql_subfunc *op);
 extern stmt *stmt_uselectN(stmt *l, stmt *r, sql_subfunc *op);
 extern stmt *stmt_likeselect(stmt *op1, stmt *op2, stmt *op3, comp_type cmptype);
 
+#define isEqJoin(j) \
+	(j->type == st_join && (j->flag == cmp_equal || j->flag == cmp_project))
+
 extern stmt *stmt_semijoin(stmt *op1, stmt *op2);
 
 extern stmt *stmt_relselect_init(void);
