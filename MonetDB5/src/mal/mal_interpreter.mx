@@ -511,7 +511,7 @@ workslow:
 			}
 		}
 
-		@:beginProfile(stk)@
+		@:beginProfile(stk,1)@
 		@:MALrecycleStart(stk)@ {
       	    lng tcs = 0;
             @:MALinterpret(SLOW)@
@@ -892,6 +892,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		}
 	}
 
+	@:beginProfile(t,1)@
 	ret = MAL_SUCCEED;
 	@:MALrecycleStart(t)@ {
         lng tcs = 0;
@@ -922,7 +923,7 @@ with this properyty.
 				}
 			}
 		}
-		@:beginProfile(t)@
+		@:beginProfile(t,0)@
 @-
 To improve memory access behavior we touch the pages of all BATs to enforce them to become memory resident.
 @-
@@ -2350,7 +2351,7 @@ It simply skips the barrier block upon return.
 				mb->profiler[ppc].ticks= 0;
 				mb->profiler[ppc].clock= stk->clock;
 				/* emit the instruction upon start as well */
-				profilerEvent(cntxt->idx,mb,stk,stkpc);
+				if ( @2 )profilerEvent(cntxt->idx,mb,stk,stkpc);
 #ifdef HAVE_TIMES
 				times(&stk->timer);
 				mb->profiler[ppc].timer= stk->timer;
