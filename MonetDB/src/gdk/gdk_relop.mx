@@ -586,6 +586,7 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densefetchjoin(@1,@2);\n");
 
+	BATpreload_(r);
 	BATloop(l, l_cur, l_end) {
 		@:bunfastins_nocheck_(@1,@2)@
 		r_cur++;
@@ -619,6 +620,7 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedfetchjoin(@1,@2);\n");
 
+	BATpreload_(r);
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNtail(li, l_cur));
 		r_cur = yy;
@@ -656,6 +658,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATmmap_pin(r);
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultfetchjoin(@1,@2);\n");
 
+	BATpreload_(r);
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNtail(li, l_cur));
 		if (yy < base || yy >= end) {
@@ -752,6 +755,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= densevoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densevoidfetchjoin(@1);\n");
 	r_cur = (BUN) (offset + * (oid *) BUNtloc(li, BUNfirst(l)));
+	BATpreload_(r);
 	BATloop(l, l_cur, l_end) {
 		@1put(bn, Tloc(bn,dst));
 		r_cur++;
@@ -760,6 +764,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1);\n");
+	BATpreload_(r);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
 
@@ -770,6 +775,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
+	BATpreload_(r);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
 
@@ -1479,6 +1485,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		bit nonil = TRUE;
 		BUN p, q, w, s = BUNfirst(bn);
 
+		BATpreload_(r);
 		BATloop(l, p, q) {
 			oid v = *(oid *) BUNtail(li, p);
 			ptr t = nilt;
@@ -1817,6 +1824,7 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 		ptr nil = ATOMnilptr(l->ttype);
 		BUN rp, rq, lp, lq;
 
+		BATpreload_(r);
 		BATloop(l, lp, lq) {
 			ptr v = (ptr) BUNtail(li, lp);
 
@@ -1881,6 +1889,7 @@ differ significantly.
 	BUN lp, lq;
 	ptr nil = ATOMnilptr(l->htype);
 
+	BATpreload_(r);
 	if (cpy == l) {
 		BATloop(l, lp, lq) {
 			ptr v = BUNh@1(li, lp);
@@ -2169,6 +2178,7 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	/* iterate l; positional fetch in r */
 	if (!BAThordered(l))	/* StM: (!(BAThordered(l)&1)) ? */
 		BATmmap_pin(r);
+	BATpreload_(r);
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNhloc(li, l_cur));
 		if (yy < base || yy >= end) {
