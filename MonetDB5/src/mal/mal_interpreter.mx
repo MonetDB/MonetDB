@@ -849,9 +849,6 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int prevpc = 0;
 	int tid = t->id;
 	lng claim;
-@-
-	BAT *b;
-@c
     
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -925,17 +922,9 @@ with this properyty.
 		}
 		@:beginProfile(t,0)@
 @-
-To improve memory access behavior we touch the pages of all BATs to enforce them to become memory resident.
-@-
-		for(i=  pci->retc; i< pci->argc; i++) 
-			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-				b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-				if (b==NULL) 
-					continue;
-				(void) BATpreload(b);
-				BBPunfix(b->batCacheid);
-			}
-@-
+To improve memory access behavior we could touch the pages of all BATs to enforce them to become memory resident.
+This won't work, because it is not selective enough. The advice should be selectively given in the kernel.
+
 The number of instructions allowed is severely limited.
 We don't allow sequential flow control here.
 @c
