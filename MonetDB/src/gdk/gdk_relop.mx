@@ -297,6 +297,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	l_start = l_end = BUNfirst(l);
 	r_start = r_end = BUNfirst(r);
 
+	BATpreload_(l);
+	BATpreload_(r);
 	switch (loc) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
