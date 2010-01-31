@@ -1326,7 +1326,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 				@2
 			}
 			@1
-			offp[cur] = (base) ? r<<a->T->shift : VarHeapVal(a->T->heap.base, r, a->T->width);
+			offp[cur] = (base) ? r<<a->T->shift : VarHeapValRaw(a->T->heap.base, r, a->T->width);
 			ids[cur] = o;
 			cur++;
 			this += sizeof(oid);
