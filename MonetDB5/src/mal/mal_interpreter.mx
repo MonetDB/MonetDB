@@ -892,7 +892,6 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		}
 	}
 
-	@:beginProfile(t)@
 	ret = MAL_SUCCEED;
 	@:MALrecycleStart(t)@ {
         lng tcs = 0;
@@ -907,7 +906,10 @@ with this properyty.
 @c
 		claim = getMemoryClaim(stk, pci);
 		if ( DFLOWclaim(claim) ){
-			PARDEBUG stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n", THRgettid(), claim, memorypool);
+			PARDEBUG {
+				stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
+				printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
+			}
 			for ( ; ; )
 			{
 				MT_sleep_ms( 50);
@@ -920,6 +922,7 @@ with this properyty.
 				}
 			}
 		}
+		@:beginProfile(t)@
 @-
 To improve memory access behavior we touch the pages of all BATs to enforce them to become memory resident.
 @-
