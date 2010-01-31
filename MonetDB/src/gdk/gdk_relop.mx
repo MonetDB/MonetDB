@@ -294,6 +294,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	/* the algorithm */
 	loc = ATOMstorage(l->ttype);
 
+	l_last = BUNlast(l);
+	r_last = BUNlast(r);
 	l_start = l_end = BUNfirst(l);
 	r_start = r_end = BUNfirst(r);
 
