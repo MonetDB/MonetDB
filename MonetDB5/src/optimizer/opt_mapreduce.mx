@@ -1,0 +1,309 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2010 MonetDB B.V.
+@' All Rights Reserved.
+
+@f opt_mapreduce
+@a M. Kersten, F. Groffen
+@- Map-Reduce
+The Map-Reduce infrastructure requires a little optimizer to turn
+an arbitrary query into a plan to be executed on the elements of the Cloud.
+
+In the first implementation we don't optimize the plan against the mapping scheme.
+We simply assume that the complete query can be executed and that only the
+result sets should be assembled.
+
+Consider part of the query plan for 'select * from tables'
+@verbatim
+function user.s0_0{autoCommit=true}():void;
+    _23:bat[:oid,:sht]  := sql.bind("sys","_tables","type",1);
+    _24:bat[:oid,:oid]  := sql.bind_dbat("sys","_tables",1);
+    _25 := bat.reverse(_24);
+...
+    _96:bat[:oid,:bte]  := bat.new(nil:oid,nil:bte);
+    _98 := bat.append(_96,_95,true);
+    _96:bat[:oid,:bte]  := nil:BAT;
+    _99 := bat.append(_98,_93,true);
+    _100 := sql.resultSet(8,1,_33);
+    sql.rsColumn(_100,".tables","id","int",32,0,_33);
+    sql.rsColumn(_100,".tables","name","varchar",1024,0,_44);
+    sql.rsColumn(_100,".tables","schema_id","int",32,0,_54);
+    sql.rsColumn(_100,".tables","query","varchar",2048,0,_64);
+    sql.rsColumn(_100,".tables","type","smallint",16,0,_70);
+    sql.rsColumn(_100,".tables","system","boolean",1,0,_81);
+    sql.rsColumn(_100,".tables","commit_action","smallint",16,0,_91);
+    sql.rsColumn(_100,".tables","temporary","tinyint",8,0,_99);
+    _121 := io.stdout();
+    sql.exportResult(_121,_100);
+end s0_0;
+@end verbatim
+This plan is turned into two routines. One to be executed
+on the individual nodes and one to assemble the results.
+@verbatim
+function user.s0_0mp()(:bat[:oid,:int],
+    _23:bat[:oid,:sht]  := sql.bind("sys","_tables","type",1);
+    _24:bat[:oid,:oid]  := sql.bind_dbat("sys","_tables",1);
+    _25 := bat.reverse(_24);
+...
+    _96:bat[:oid,:bte]  := bat.new(nil:oid,nil:bte);
+    _98 := bat.append(_96,_95,true);
+    _96:bat[:oid,:bte]  := nil:BAT;
+    _99 := bat.append(_98,_93,true);
+	return (a,b,c,d,e,f,g,h):= (_33,_44,_54,_64,_70,_81,_91,_99);
+end s0_0mp;
+function user.s0_0mp();
+barrier go:= language.dataflow();
+	...
+exit go;
+	...
+    _100 := sql.resultSet(8,1,_33);
+    sql.rsColumn(_100,".tables","id","int",32,0,_33);
+    sql.rsColumn(_100,".tables","name","varchar",1024,0,_44);
+    sql.rsColumn(_100,".tables","schema_id","int",32,0,_54);
+    sql.rsColumn(_100,".tables","query","varchar",2048,0,_64);
+    sql.rsColumn(_100,".tables","type","smallint",16,0,_70);
+    sql.rsColumn(_100,".tables","system","boolean",1,0,_81);
+    sql.rsColumn(_100,".tables","commit_action","smallint",16,0,_91);
+    sql.rsColumn(_100,".tables","temporary","tinyint",8,0,_99);
+    _121 := io.stdout();
+    sql.exportResult(_121,_100);
+end s0_0;
+@end verbatim
+The code can be considered a refinement of the Octopus.
+@{
+@mal
+pattern optimizer.mapreduce():str
+address OPTmapreduce;
+pattern optimizer.mapreduce(mod:str, fcn:str):str
+address OPTmapreduce
+comment "Modify the plan to exploit parallel processing on multiple cores using map-reduce";
+
+module mapreduce;
+pattern exec(mod:str,fcn:str):any_1...
+address MRexec
+comment "Execute the function on a MR node. Upon failure use backup.";
+@h
+#ifndef _OPT_MAPREDUCE_
+#define _OPT_MAPREDUCE_
+#include "opt_prelude.h"
+#include "opt_support.h"
+
+opt_export str MRexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+#include "mal_config.h"
+#include "opt_mapreduce.h"
+#include "mal_interpreter.h"
+
+/* #define _DEBUG_OPT_MAPREDUCE*/
+
+@-
+The work distribution assumes that we know at compile time
+the number of nodes participating in the cloud setting.
+It calls the map-reduce executor to produce a result
+possible with the aid of a replica.
+@c
+#define MINNODES 3
+
+static int
+MRcloudSize(){
+	int nodes = MINNODES; /* to be based on what mero can tell us */
+	/* set the gdk_nr_threads to ensure enough control parallelism */
+	if ( GDKnr_threads < nodes )
+		GDKnr_threads = nodes;
+	return nodes; 
+}
+
+static void
+MRdistributework(MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
+{
+	InstrPtr p, *packs;
+	int i,n,j,r,v;
+
+	n= MRcloudSize();
+	packs = (InstrPtr *) GDKmalloc(sig->retc * sizeof(InstrPtr));
+	for ( i = 0; i<sig->retc; i++) 
+	{
+		packs[i] = p = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(p, matRef);
+		setFunctionId(p, packRef);
+		getArg(p,0) = getArg(sig,i);
+		p = newAssignment(mb);
+		getArg(p,0)= getArg(sig,i);
+		pushNil(mb,p, getArgType(mc,sig,i));
+	}
+
+	p = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(p, languageRef);
+	setFunctionId(p, dataflowRef);
+	p->barrier = BARRIERsymbol;
+	r= getArg(p,0)= newTmpVariable(mb, TYPE_int);
+	pushInstruction(mb,p);
+
+	for ( i = 0; i< n; i++)
+	{
+		p = newInstruction(mb,ASSIGNsymbol);
+		setModuleId(p, putName("mapreduce",9));
+		setFunctionId(p, putName("exec",4));
+		p = pushInt(mb,p, i);
+		p = pushStr(mb, p, getModuleId(sig));
+		p = pushStr(mb, p, getFunctionId(sig));
+		for (j = 0; j < sig->retc; j++) {
+			v = newTmpVariable(mb, getArgType(mc,sig,j));
+			p= pushReturn(mb,p,v);
+			packs[j] = pushArgument(mb,packs[j],v);
+		}
+		pushInstruction(mb,p);
+	}
+
+	for ( i = 1; i<sig->retc; i++) 
+		pushInstruction(mb, packs[i]);
+	GDKfree(packs);
+
+	p = newInstruction(mb,ASSIGNsymbol);
+	p->barrier = EXITsymbol;
+	getArg(p,0) = r;
+	pushInstruction(mb,p);
+}
+
+static int
+OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i, j, limit, copy = 0;
+	InstrPtr *old, ret,sig;
+	str resultSetRef= putName("resultSet",9);
+	MalBlkPtr mc;
+	char nme[IDLENGTH];
+	Symbol new;
+	Lifespan span;
+
+	(void) stk;
+	
+#ifdef _DEBUG_OPT_MAPREDUCE
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+#endif
+
+    mc = copyMalBlk(mb);
+	snprintf(nme,IDLENGTH,"%smp", getFunctionId(getInstrPtr(mb,0)));
+	setFunctionId(getInstrPtr(mc,0), putName(nme,strlen(nme)));
+	p= getInstrPtr(mc,0);
+	new = newSymbol(getFunctionId(p),p->token);
+	freeMalBlk(new->def);
+	new->def = mc;
+	insertSymbol(findModule(cntxt->nspace, getModuleId(p)),new);
+
+	span = setLifespan(mb);
+@-
+Massage mbcopy to act as the mapreduce program, producing a partial answer.
+@c
+	old = mc->stmt;
+	limit= mc->stop;
+	if ( newMalBlkStmt(mc,mc->ssize) < 0 )
+		return 0;
+
+	sig = old[0];
+	pushInstruction(mc,old[0]);
+	for(i=1;i<limit;i++){
+		p = old[i];
+		if (p->token == ENDsymbol){
+			ret = newInstruction(mc, ASSIGNsymbol);
+			ret->barrier= RETURNsymbol;
+			for( j=0;j< sig->retc; j++)
+				ret = pushReturn(mc,ret,getArg(sig,j));
+			pushInstruction(mc,ret);
+			copy = 0;
+		}
+@-
+We copy statements until we find a map-reduce blocking operation.
+Collect all BAT variables up to now whose lifespan has not yet ended.
+They should be passed back to the controlling program
+@c
+		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef ){
+			for( j=0;j< mb->vtop; j++)
+			if (getBeginLifespan(span,j) < i && getEndLifespan(span,j) >= i && isaBatType(getVarType(mb,j) ) )
+				sig = pushReturn(mc,sig, j);
+		}
+		if ( copy == 0) 
+			copy = (getModuleId(p)== sqlRef && getFunctionId(p)==resultSetRef);
+		if ( copy ) {
+			freeInstruction(p);
+			continue;
+		}
+		pushInstruction(mc,p);
+	}
+	mc->stmt[0] = sig;
+	GDKfree(old);
+#ifdef _DEBUG_OPT_MAPREDUCE
+	stream_printf(cntxt->fdout,"MAPREDUCE program\n");
+	printFunction(cntxt->fdout,mc,0,LIST_MAL_STMT);
+#endif
+@-
+Create the corresponding controller program
+@c
+	old = mb->stmt;
+	limit= mb->stop;
+	if ( newMalBlkStmt(mb,mb->ssize) < 0 )
+		return 0;
+
+	pushInstruction(mb,old[0]);
+	copy = 0;
+	for(i=1;i<limit;i++){
+		p = old[i];
+@-
+Again, find the blocking operation and inject the map call
+@c
+		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef ){
+			MRdistributework(mb,mc,sig);
+			p = old[i];
+		}
+		if ( copy == 0) 
+			copy = (getModuleId(p)== sqlRef && getFunctionId(p)==resultSetRef);
+		if ( copy == 0 ) {
+			freeInstruction(p);
+			continue;
+		}
+		pushInstruction(mb,p);
+	}
+	GDKfree(old);
+
+#ifdef _DEBUG_OPT_MAPREDUCE
+	stream_printf(cntxt->fdout,"MAPREDUCE controller\n");
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT);
+#endif
+	return 1;
+}
+
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(mapreduce)@
+#endif
+@c
+#include "opt_statistics.h"
+@:wrapOptimizer(mapreduce,OPT_CHECK_ALL)@
+
+@-
+The runtime support for the map-reduce depends on the facilities provided
+by the remote module and merovingian. It should register the plan remotely,
+execute it and remove it at some point.
+[code can be taken from octopus]
+@c
+str
+MRexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+@}
