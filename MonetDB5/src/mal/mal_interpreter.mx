@@ -511,7 +511,7 @@ workslow:
 			}
 		}
 
-		@:beginProfile(stk)@
+		@:beginProfile(stk,1)@
 		@:MALrecycleStart(stk)@ {
       	    lng tcs = 0;
             @:MALinterpret(SLOW)@
@@ -849,9 +849,6 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int prevpc = 0;
 	int tid = t->id;
 	lng claim;
-@-
-	BAT *b;
-@c
     
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -892,7 +889,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		}
 	}
 
-	@:beginProfile(t)@
+	@:beginProfile(t,1)@
 	ret = MAL_SUCCEED;
 	@:MALrecycleStart(t)@ {
         lng tcs = 0;
@@ -907,9 +904,9 @@ with this properyty.
 @c
 		claim = getMemoryClaim(stk, pci);
 		if ( DFLOWclaim(claim) ){
-			PARDEBUG if (  claim ) {
+			PARDEBUG {
 				stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
-				printInstruction(GDKout, mb, 0, pci, LIST_MAL_DEBUG);
+				printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 			}
 			for ( ; ; )
 			{
@@ -923,18 +920,11 @@ with this properyty.
 				}
 			}
 		}
+		@:beginProfile(t,0)@
 @-
-To improve memory access behavior we touch the pages of all BATs to enforce them to become memory resident.
-@-
-		for(i=  pci->retc; i< pci->argc; i++) 
-			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-				b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-				if (b==NULL) 
-					continue;
-				(void) BATpreload(b);
-				BBPunfix(b->batCacheid);
-			}
-@-
+To improve memory access behavior we could touch the pages of all BATs to enforce them to become memory resident.
+This won't work, because it is not selective enough. The advice should be selectively given in the kernel.
+
 The number of instructions allowed is severely limited.
 We don't allow sequential flow control here.
 @c
@@ -2350,7 +2340,7 @@ It simply skips the barrier block upon return.
 				mb->profiler[ppc].ticks= 0;
 				mb->profiler[ppc].clock= stk->clock;
 				/* emit the instruction upon start as well */
-				profilerEvent(cntxt->idx,mb,stk,stkpc);
+				if ( @2 )profilerEvent(cntxt->idx,mb,stk,stkpc);
 #ifdef HAVE_TIMES
 				times(&stk->timer);
 				mb->profiler[ppc].timer= stk->timer;
