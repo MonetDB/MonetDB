@@ -285,6 +285,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 		GDKerror("mergejoin: right input is not sorted.\n");
 		return NULL;
 	}
+	BATpreload_(l);
+	BATpreload_(r);
 	if (bn == NULL) {
 		@:joinbat(JOIN_EQ,mergejoin(l,r,NULL,nil_on_miss,BUN_NONE,NULL),estimate)@
 	}
@@ -292,13 +294,9 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	/* the algorithm */
 	loc = ATOMstorage(l->ttype);
 
-	l_last = BUNlast(l);
-	r_last = BUNlast(r);
 	l_start = l_end = BUNfirst(l);
 	r_start = r_end = BUNfirst(r);
 
-	BATpreload_(l);
-	BATpreload_(r);
 	switch (loc) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
@@ -3074,6 +3072,7 @@ overhead.
 			BAT *b = n->b;
 			BATiter bi = n->bi;
 
+			BATpreload_(b);
 			/* one-by-one traversal of the lead column? => no matching done.
 			 */
 			if (n == lead_col) {
