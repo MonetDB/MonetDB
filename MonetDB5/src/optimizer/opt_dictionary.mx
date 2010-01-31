@@ -278,8 +278,7 @@ of OID sizes. The same holds for idx bats.
 				}
 				/* construct: (bi:bat[:oid,:type], bv:bat[:type,:any2]):= dictionary.bind(name); */
 				qq = newStmt(mb,"dictionary",bindRef);
-				qq = pushArgument(mb,qq, newTmpVariable(mb,newBatType(bi->ttype,bv->ttype)));
-				qq->retc++;
+				qq = pushReturn(mb,qq, newTmpVariable(mb,newBatType(bi->ttype,bv->ttype)));
 				qq = pushStr(mb,qq,buf);
 				setVarType(mb, getArg(qq,0), newBatType(TYPE_oid,bi->ttype));
 				setVarUDFtype(mb, getArg(qq,0));

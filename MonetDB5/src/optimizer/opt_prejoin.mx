@@ -120,8 +120,7 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			getTailType(getArgType(mb,p,1)) == TYPE_oid ){
 			q= newStmt(mb,algebraRef, "prejoin");
 			setArgType(mb,q,0,getArgType(mb,p,1));
-			q= pushArgument(mb,q,newTmpVariable(mb, getArgType(mb,p,2)));
-			q->retc++;
+			q= pushReturn(mb,q,newTmpVariable(mb, getArgType(mb,p,2)));
 			q= pushArgument(mb,q,getArg(p,1));
 			q= pushArgument(mb,q,getArg(p,2));
 			getArg(p,1)= getArg(q,0);
