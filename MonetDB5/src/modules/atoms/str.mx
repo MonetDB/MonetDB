@@ -1626,8 +1626,11 @@ strConcat(str *res, str s, ptr val, int t)
 	if (* (str) val == chr_nil || *s == chr_nil)
 		*res = GDKstrdup(str_nil);
 	else {
-		if ( l1+l2+1 >= INT_MAX)
+		if (l1+l2+1 >= INT_MAX) {
+			if (valstr && (str) valstr != str_nil)
+				GDKfree(valstr);
 			return GDK_FAIL;
+		}
 		*res = (str) GDKmalloc((int) (l1 + l2 + 1));
 		memcpy(*res, s, l1);
 		memcpy(*res + l1, (str) val, l2);
