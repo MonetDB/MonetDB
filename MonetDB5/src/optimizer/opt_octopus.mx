@@ -181,6 +181,8 @@ Therefore, we recursively break a plan by looking for the
 pack instructions and collect all dependent instructions.
 The original block is trimmed as far as needed.
 @c
+static lng octopusSeq = 0;
+
 static int
 OCTinitcode(Client cntxt, MalBlkPtr mb){
 	InstrPtr p;
@@ -302,8 +304,10 @@ already have been handled and produce their target.
 		}
 	}
 
-	snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
-		getFunctionId(getInstrPtr(mb,0)),varid);
+/*	snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
+		getFunctionId(getInstrPtr(mb,0)),varid); */
+
+	snprintf(buf,BUFSIZ,"tentacle_"LLFMT"_%d", mb->octid,varid);
 	name =  putName(buf,strlen(buf));
 
 	snprintf(buf,BUFSIZ,"exec_%s", 
@@ -394,7 +398,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr q, p, sig, *old;
 	int last=0, i, j, limit, actions=0, arg[1024];
 	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
-	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm = NULL;
+	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm = NULL, tmb;
 	Symbol s2;
 	int target= -1, update=0, autocommit=0;
 	int version,v2;
@@ -450,6 +454,7 @@ when scheduled correctly, would not lead to duplicate work.
 		return 0;
 	}
 	pushInstruction(mb, old[0]);
+	mb->octid = octopusSeq++;
 
 	sig= old[0];
 	for (i = 1; i < limit; i++) {
@@ -603,10 +608,16 @@ The tentacle code should be optimized by the remaining optimizers too.
 	for (j=last+1; j< limit; j++)
 	for (i=0; i<tn; i++)
 	if ( old[j] && old[j]->token != REMsymbol){
+		tmb = tentacle[i];
 		if ( getModuleId(old[j]) == optimizerRef && 
-			getFunctionId(old[j]) == putName("reduce",6) )
-		        newStmt(tentacle[i], optimizerRef,putName("recycle",7));
-		newStmt(tentacle[i], getModuleId(old[j]),getFunctionId(old[j]));
+			getFunctionId(old[j]) == putName("reduce",6) ) {
+				q = newStmt(tmb, optimizerRef,putName("recycle",7));
+                q = pushStr(tmb, q, octopusRef);
+                q = pushStr(tmb, q, getFunctionId(getInstrPtr(tmb,0)));
+		}
+		q = newStmt(tmb, getModuleId(old[j]),getFunctionId(old[j]));
+		q = pushStr(tmb, q, octopusRef);
+		q = pushStr(tmb, q, getFunctionId(getInstrPtr(tmb,0)));
 	}
 	for (i=0; i<tn; i++){
 		clrDeclarations(tentacle[i]);

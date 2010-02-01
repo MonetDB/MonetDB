@@ -104,7 +104,7 @@ are monitored and also trigger cleaning the cache.
 #include "opt_recycler.h"
 #include "mal_instruction.h"
 
-static int recycleSeq = 0;
+static lng recycleSeq = 0;
 
 static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
