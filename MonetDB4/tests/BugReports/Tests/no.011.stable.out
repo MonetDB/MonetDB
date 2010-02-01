@@ -5,8 +5,6 @@ stdout of test 'no.011` in directory 'tests/BugReports` itself:
 # 22:20:28 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_tests_BugReports  < no.011.milS
 # 22:20:28 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.20.1
 # based on GDK   v1.20.1
 # Copyright (c) 1993-2007, CWI. All rights reserved.

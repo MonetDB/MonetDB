@@ -15,8 +15,6 @@ stdout of test 'tstvoid` in directory 'scripts/gold` itself:
 # 14:00:25 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=52450 --set sql_port=51629 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
 # 14:00:25 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.3.15
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.

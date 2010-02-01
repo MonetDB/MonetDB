@@ -5,8 +5,6 @@ stdout of test 'cleanup_crash.SF-2027870` in directory 'tests/BugTracker` itself
 # 18:07:40 >   Mserver "--config=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/conf/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/plain:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/contrib:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/mapi/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/mapi:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/scripts/tools" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=33300 --set xrpc_port=49394 --set monet_prompt= --trace  --dbname=mTests_tests_BugTracker  
 # 18:07:40 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.24.1
 # based on GDK   v1.24.1
 # Copyright (c) 1993-2008, CWI. All rights reserved.

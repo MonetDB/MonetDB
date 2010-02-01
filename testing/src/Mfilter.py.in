@@ -50,9 +50,6 @@ test = (
 ## sql5
                       r"^printf\(\"\\nReady.\\n\"\);",
                       r"^quit\(\);",
-                      r"^!WARNING: GDKlockHome: created directory .*$",
-                      r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$",
-                      r"^!WARNING: BBPdir: initializing BBP.$",
                       r"^MAPI  = .*@.*:[0-9]*$",
                       r'^QUERY = execute at { ".*:[0-9]*" }$',
                     r"^Pathfinder (?:XQuery Compiler|XML Shredder) \(.Revision: .* .\)$",

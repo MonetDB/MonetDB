@@ -2,8 +2,6 @@ stdout of test 'Views` in directory 'src/test/Views` itself:
 
 
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.99.19
 # Copyright (c) 1993-2006 CWI, all rights reserved
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked

@@ -5,8 +5,6 @@ stdout of test 'test_00` in directory 'tests/suite_00` itself:
 # 23:14:37 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32851 --set xrpc_port=41440 --set monet_prompt= --trace  --dbname=mTests_tests_suite_00  
 # 23:14:37 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.23.0
 # based on GDK   v1.23.0
 # Copyright (c) 1993-2008, CWI. All rights reserved.

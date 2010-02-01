@@ -15,8 +15,6 @@ stdout of test 'tst100` in directory 'scripts/gold` itself:
 # 17:04:34 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/MonetDB/_PREFIX_d_/etc/monet.conf --debug=10 --set monet_mod_path=/var/tmp/MonetDB/_PREFIX_d_/lib/MonetDB --dbfarm /var/tmp/MonetDB/_PREFIX_d_/var/dbfarm --set monet_prompt= /ufs/manegold/tmp/Tests-d10/Tests/trace.mil --dbname=Tests_scripts_gold_tst100
 # 17:04:34 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
