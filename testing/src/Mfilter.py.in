@@ -50,28 +50,12 @@ test = (
 ## sql5
                       r"^printf\(\"\\nReady.\\n\"\);",
                       r"^quit\(\);",
-##                    r"^module\(mprof\);$",
-##                    r'^pm(?:[BE]\("(?:global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$',
-##                    r'^printf\("#~BeginProfilingOutput~#\\n"\);$',
-##                    r"^Mdestroydb: processing database ..*. in ",
-##                    r"^Mcreatedb: processing database ..*. in ",
-##                    r"^Mcreatedb: using default dbdir ",
-##                    r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$",
-##                    r"^Mcreatedb: database .* has been initialized succesfully!$",
                       r"^!WARNING: GDKlockHome: created directory .*$",
                       r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$",
                       r"^!WARNING: BBPdir: initializing BBP.$",
-##                    r"^connection= .*:[0-9]*$",
-##                    r"^Connecting to server: localhost:[0-9]*$",
-##                    r"^server listening on port [0-9]*$",
-##                    r"^SQL  connected to database .* using schema .*$",
                       r"^MAPI  = .*@.*:[0-9]*$",
                       r'^QUERY = execute at { ".*:[0-9]*" }$',
                     r"^Pathfinder (?:XQuery Compiler|XML Shredder) \(.Revision: .* .\)$",
-##                    r"^SQL  .* affected$",
-##                    r": Symbol .(?:exit|_setjmp). causes overflow in R_X86_64_PC32 relocation$",
-##                    r"^\+\=+\+$",
-##                    r"^\+\-+\+$",
                 # Tokens depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
                 # ant output we want to ignore
@@ -108,70 +92,6 @@ test = (
                  ])+')',  re.MULTILINE),
         # differences due to property-checking, which we want to treat as "minor differences"
         re.compile('(?:'+')|(?:'.join([
-##                    r'^synced\(x,[yz]\) := (?:true|false)$',
-##                #dir(): # name                 htype          ttype          count       heat        dirty                      status             kind               refcnt      lrefcnt     #
-##                    r'^\[ "[A-Za-z0-9_]+",\t* +"[a-z_]+",\t* +"[a-z_]+",\t* +[0-9]+,\t* +[0-9]+,\t* +"(?:dirty|clean|diffs)",\t* +"(?:load|disk)",\t* +"(?:tran|pers)",\t* +[0-9]+,\t* +[0-9]+\t* +\]$',
-##                    r'^\[ ".+",\t* +0,\t* +"(?:load|disk)",\t* +"(?:tran|pers)",\t* +0\t* +\]$',
-##                # tests/from_Twente/Bugs/Arjen_01:
-##                    r'^\[ "(?:(?:bat|cur)Stamp|[ht]align(?:|flushed))",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$',
-##                    r'^\[ "batId",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+"\t* +\]$',
-##                    r'^\[ "lastUsed",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+"\t* +\]$',
-##                    r'^\[ "bat(?:Cacheid|Parentid)",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$',
-##                    r'^\[ "bat(?:Share|Ref)cnt",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]"\t* +\]$',
-##                    r'^\[ "batDirtydesc",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"(?:dirty|clean)",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"dirty"\t* +\]$',
-##                    r'^\[ "batBuns\.(?:free|(?:max)?size)",\t* +"(?:20|212|40|424)",\t* +"(?:20|212)",\t* +"(?:8|56)",\t* +"(?:4|16|32|212|424)",\t* +"(?:8|56)",\t* +"(?:16|212|32|424)",\t* +"(?:3|24|48|424|848)",\t* +"(?:3|24|48|424|848)",\t* +"(?:12|212|24|424)",\t* +"(?:3|24|48|424|848)",\t* +"(?:12|212)"\t* +\]$',
-##                    r'^\[ "head",\t* +"void",\t* +"void",\t* +"void",\t* +"v?oid",\t* +"void",\t* +"oid",\t* +"v?oid",\t* +"v?oid",\t* +"oid",\t* +"void",\t* +"void"\t* +\]$',
-##                    r'^\[ "hdense",\t* +"1",\t* +"1",\t* +"1",\t* +"[01]",\t* +"1",\t* +"[01]",\t* +"[01]",\t* +"[01]",\t* +"[01]",\t* +"1",\t* +"1"\t* +\]$',
-##                    r'^\[ "hvarsized",\t* +"1",\t* +"1",\t* +"1",\t* +"[01]",\t* +"1",\t* +"0",\t* +"[01]",\t* +"[01]",\t* +"0",\t* +"1",\t* +"1"\t* +\]$',
-##                    r'^\[ "hloc",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"[04]",\t* +"0"\t* +\]$',
-##                    r'^\[ "hsorted",\t* +"65",\t* +"65",\t* +"65",\t* +"65",\t* +"65",\t* +"65",\t* +"65",\t* +"65",\t* +"(?:1|65)",\t* +"65",\t* +"65"\t* +\]$',
-##                    r'^\[ "hseqbase",\t* +"0@0",\t* +"0@0",\t* +"0@0",\t* +"(?:1@0|nil)",\t* +"0@0",\t* +"(?:0@0|nil)",\t* +"(?:1@0|nil)",\t* +"(?:1@0|nil)",\t* +"(?:1@0|nil)",\t* +"0@0",\t* +"0@0"\t* +\]$',
-##                    r'^\[ "tail",\t* +"oid",\t* +"int",\t* +"bit",\t* +"void",\t* +"bit",\t* +"void",\t* +"v?oid",\t* +"void",\t* +"void",\t* +"v?oid",\t* +"int"\t* +\]$',
-##                    r'^\[ "tdense",\t* +"1",\t* +"0",\t* +"0",\t* +"1",\t* +"0",\t* +"1",\t* +"[01]",\t* +"1",\t* +"1",\t* +"[01]",\t* +"0"\t* +\]$',
-##                    r'^\[ "tvarsized",\t* +"0",\t* +"0",\t* +"0",\t* +"1",\t* +"0",\t* +"1",\t* +"[01]",\t* +"1",\t* +"1",\t* +"[01]",\t* +"0"\t* +\]$',
-##                    r'^\[ "tloc",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"[04]",\t* +"[04]",\t* +"0",\t* +"0",\t* +"0"\t* +\]$',
-##                    r'^\[ "tsorted",\t* +"(?:1|65)",\t* +"(?:1|65)",\t* +"(?:0|65)",\t* +"65",\t* +"0",\t* +"65",\t* +"65",\t* +"65",\t* +"65",\t* +"65",\t* +"(?:1|65)"\t* +\]$',
-##                    r'^\[ "tseqbase",\t* +"0@0",\t* +"nil",\t* +"nil",\t* +"0@0",\t* +"nil",\t* +"0@0",\t* +"(?:0@0|nil)",\t* +"0@0",\t* +"0@0",\t* +"(?:1@0|nil)",\t* +"nil"\t* +\]$',
-##                    r'^\[ "batCopiedtodisk",\t* +"[01]",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0",\t* +"0"\t* +\]$',
-##                # tests/from_Twente/Bugs/Arjen_02:
-##                    r'^\[ "(?:(?:bat|cur)Stamp|[ht]align(?:|flushed))",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$',
-##                    r'^\[ "batId",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+",\t* +"tmp_[0-9]+"\t* +\]$',
-##                    r'^\[ "lastUsed",\t* +"[0-9]+",\t* +"[0-9]+",\t* +"[0-9]+"\t* +\]$',
-##                    r'^\[ "bat(?:Cacheid|Parentid)",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$',
-##                    r'^\[ "bat(?:Share|Ref)cnt",\t* +"[0-2]",\t* +"[0-2]",\t* +"[0-2]"\t* +\]$',
-##                    r'^\[ "batBuns\.(?:free|(?:max)?size)",\t* +"(?:16|212)",\t* +"(?:7|56)",\t* +"(?:2|8|212|16|424)"\t* +\]$',
-##                    r'^\[ "head",\t* +"void",\t* +"void",\t* +"v?oid"\t* +\]$',
-##                    r'^\[ "h(?:dense|varsized)",\t* +"1",\t* +"1",\t* +"[01]"\t* +\]$',
-##                    r'^\[ "hseqbase",\t* +"0@0",\t* +"0@0",\t* +"(?:2@0|nil)"\t* +\]$',
-##                    r'^\[ "tsorted",\t* +"(?:1|65)",\t* +"(?:0|65)",\t* +"65"\t* +\]$',
-##                    r'^\[ "batCopiedtodisk",\t* +"[01]",\t* +"0",\t* +"0"\t* +\]$',
-##                # tests/from_Twente/moa/test:
-##                    r'^\[ [01]@0,\t* +[10]@0\t* +\]$',
-##                    r'^\[ (?:[01]@0,\t* +)?(?:40[89]@0|[89]000)\t* +\]$',
-##                    r'^\[ (?:[24]@0,\t* +)?(?:40[57]@0|[57]000)\t* +\]$',
-##                    r'^\[ (?:[58]@0,\t* +)?(?:40[14]@0|[14]000)\t* +\]$',
-##                    r'^\[ (?:[67]@0,\t* +)?(?:40[23]@0|[23]000)\t* +\]$',
-##                    r'^\[ 3@0,\t* +40[1234]@0\t* +\]$',
-##                    r'^\[ 2@0,\t* +406@0\t* +\]$',
-##                    r'^_MMjoin_18\.find\(7@0\)\.print;$',
-##                # src/modules/plain/salgebra (on Windows):
-##                    r'^\[ "batId",\t* +"(?:28|29|30|31)"\t* +\]$',
-##                    r'^\[ (?:28|29|30|31),\t* +"ti",\t* +2,\t* +ti\t* +\]$',
-##                # src/modules/plain/mmath[2], tests/BugReports/Tests/no.125 (Linux.GNU.32):
-##                    r'^\[ \-?1\.2246(?:467991473532|063538223773)e\-0?16 \]$',
-##                    r'^\[ 6\.123(?:233995736766|0317691118863)e\-0?17 \]$',
-##                    r'^\[ -1\.8369(?:701987210297|095307335659)e\-0?16 \]$',
-##                    r'^\[ 1\.6331[28]e\+0?16 \]$',
-##                    r'^\[ 5\.443(?:75|93)e\+0?15 \]$',
-##                    r'^\[ 2\.302585092994045[59] \]$',
-##                    r'^\[ 0\.707106781186547(?:46|57) \]$',
-##                    r'^\[ 1\.047197551196597[69] \]$',
-##                    r'^\[ 16331(?:778728383844|239353195370) \]$',
-##                    r'^\[ 5443(?:926242794615|746451065123) \]$',
-##                    r'^\[ 0\.1000000014901161[12] \]$',
-##                    r'^\[ (?:0\.99999999999999989|1) \]$',
-##                    r'^\[ \-?0\.523598775598298(?:93|82) \]$',
-##                    r'^\[ 2\.094395102393195[73] \]$',
                 # src/modules/plain/aggr[X3]:
                     r'^\[ .*(?:,\t* ? "?2\.562203[64]3e\+0?13"?)+\t* ? \]$',
                     r'^\[ .*(?:,\t* ? "?7\.65432(?:119|072)"?)+\t* ? \]$',
@@ -180,16 +100,6 @@ test = (
                     r'^\[ .*(?:,\t* ? "?6\.6666666666666(?:288|67)"?)+\t* ? \]$',
                     r'^\[ .*(?:,\t* ? "?6\.6666666666666(?:128|67)"?)+\t* ? \]$',
                     r'^\[ .*(?:,\t* ? "?158\.765432098765(?:22|36?|44|59|64)"?)+\t* ? \]$',
-##                # src/modules/plain/decimal:
-##                    r'^\[ "[dn]ec_tiny",\t* +1122E\-30\t* +\]$',
-##                    r'^\[ "[dn]ec_small",\t* +2244\t* +\]$',
-##                    r'^\[ "[dn]ec_num",\t* +4488E15\t* +\]$',
-##                    r'^\[ "[dn]ec_big",\t* +1122E40\t* +\]$',
-##                    r'^\[ "[dn]ec_huge",\t* +2244E9010\t* +\]$',
-##                # src/modules/plain/color:
-##                    r'^\[ 0\.498039(?:18|21)6 \]$',
-##                # src/monet/monet_mod_cnt-copy_C:
-##                    r'^\[ "(?:mapi_params|tmp_62)",\t* *[10],\t* *[10],\t* *0\t* *\]$',
                 # src/gdk/cast:
                     r'^\[ (?:\-|)0 \]$',
                 # MonetDB4/src/modules/plain/Tests/mmath.milS (SunOS/Solaris: GNU vs. Sun compiler):
@@ -200,20 +110,10 @@ test = (
                     r'^0.900000 0.500000 0.400000 (?:\-|)0.000000 0.400000 0.500000 0.900000 1 *$',
                 # pathfinder/tests/XPathMark/Tests/Q1[023]:
                     r'^(?:</item>|)<item (?:id="item9"|featured="yes") (?:id="item9"|featured="yes")>$',
-##                # src/mapi/monet_BATs (on Linux2.4.26.ntv_32-d):
-##                    r'^\[ "monet_mod_use",\t* *(?:44|66)\t* *\]$',
-##                # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
-##                    r'^IPO: using IR for .*$',
-##                    r'^IPO: performing single-file optimizations$',
-##                # src/tools/{client,multiClientSeq}
-##                    r'^ERROR = (?:Connection terminated|Lost connection with server)$',
-##                    r'^ERROR = (?:communication line broken|Connection lost)$',
                 # sql/src/benchmarks/arno_flt/Tests/init:
                     r'^.*\t2.7445021260064(?:099|1)e\-06\t',
                 # Broken sql error messages:
                     r'^QUERY = (?:\-\-|select|insert|INSERT) ',
-##                # pathfinder: loader/usage (without BerkeleyDB):
-##                    r'^     -c: compress node properties \(40% encoding speed\)$',
                 # ld warnings on IRIX64:
                     r"^ld64: WARNING 84 : .*/common/.libs/libmutils.so is not used for resolving any symbol.$",
                 # (extra) error messages that used to occur with M4/sql but don't any more with M5/sql:
@@ -357,26 +257,7 @@ def mFilter (FILE, IGNORE) :
             oline = "#~ " + iline
         elif test[4].match(iline):
             # differences due to property-checking, which we want to treat as "minor differences"; see above
-##            if os.name == "nt" and iline[:5] == 'quit();':
-##                oline = "#" + iline
-##            else:
             oline = "=" + iline
-##        elif len(ftmp) > 2              and \
-##             test[3].match(iline)       and \
-##             test[2].match(ftmp[-1])    and \
-##             test[1].match(ftmp[-2]):
-##            # differing error messages when loading non-existing modules in dynamic and static Mserver; see above
-##            oline = iline
-##            for i in -1, -2:
-##                w = len(ftmp[i].split())
-##                c = wlen(ftmp[i])
-##                il = il - 1
-##                iw = iw - w
-##                ic = ic - c
-##                el = el - 1
-##                ew = ew - w
-##                ec = ec - c
-##                ftmp[i] = "#~ " + ftmp[i]
         elif bbp_dir.match(iline):
             l = iline.split(' ')
             l[5] = '<lastused>'
@@ -481,8 +362,6 @@ def mFilter (FILE, IGNORE) :
                         warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
         fout.flush()
     fout.close()
-##    if os.name == "nt":
-##        time.sleep(1)
 ### mFilter (FILE, IGNORE) #
 
 #############################################################################
