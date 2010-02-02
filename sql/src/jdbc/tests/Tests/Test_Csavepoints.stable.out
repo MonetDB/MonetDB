@@ -25,8 +25,7 @@ Over..
 # 21:41:21 >  
 
 0. true	true
-1. savepoint...failed :) SAVEPOINT: not allowed in auto commit mode
-
+1. savepoint...failed :) SQLException:sql.trans:SAVEPOINT: not allowed in auto commit mode
 0. false	false
 2. savepoint...passed :)
 3. savepoint...passed :)

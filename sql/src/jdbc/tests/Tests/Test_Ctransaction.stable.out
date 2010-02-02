@@ -25,7 +25,7 @@ Over..
 # 22:06:14 >  
 
 0. true	true
-1. commit...failed :) COMMIT: not allowed in auto commit mode
+1. commit...failed :) SQLException:sql.trans:COMMIT: not allowed in auto commit mode
 2. false	false
 3. commit...passed :)
 4. commit...passed :)
@@ -37,7 +37,7 @@ Over..
 10. start transaction...passed :)
 11. rollback...passed :)
 12. true	true
-13. commit...failed :) COMMIT: not allowed in auto commit mode
+13. commit...failed :) SQLException:sql.trans:COMMIT: not allowed in auto commit mode
 
 # 22:16:06 >  
 # 22:16:06 >  Done.
