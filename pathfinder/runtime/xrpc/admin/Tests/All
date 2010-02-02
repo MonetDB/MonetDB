@@ -1,8 +1,11 @@
 add_del_doc_noxrpc
-add_del_doc
-backup_restore_noxrpc
-backup_restore
-db_stats_noxrpc
-db_stats
-db_env_noxrpc
-db_env
+NOT_ALGEBRA?add_del_doc
+# fn:put()
+NOT_ALGEBRA?backup_restore_noxrpc
+NOT_ALGEBRA?backup_restore
+# pf:mil()
+NOT_ALGEBRA?db_stats_noxrpc
+NOT_ALGEBRA?db_stats
+# pf:mil()
+NOT_ALGEBRA?db_env_noxrpc
+NOT_ALGEBRA?db_env

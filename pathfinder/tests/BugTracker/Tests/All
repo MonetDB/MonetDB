@@ -50,15 +50,17 @@ wrong_result_duplication.SF-1549292
 type_error_with_typeswitch.SF-1559355
 type_errors_with_fn-name.SF-1563354
 fn-name_on_text_nodes.SF-1564964
-complex-XQuery-batbat_lng_add_inplace-error-OK.SF-1562868
-complex-XQuery-batbat_lng_add_inplace-error-KO.SF-1562868
-complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868
+# recursive function
+NOT_ALGEBRA?complex-XQuery-batbat_lng_add_inplace-error-OK.SF-1562868
+NOT_ALGEBRA?complex-XQuery-batbat_lng_add_inplace-error-KO.SF-1562868
+NOT_ALGEBRA?complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868
 interpret_while-bit_nil.SF-1567021
 treat_as.SF-1586454
 shredding-remap-error.SF-1487156.unpack_doc
 shredding-remap-error.SF-1487156.shred_doc
 shredding-remap-error.SF-1487156.cache_doc
-recursion_type_error.SF-1579524
+# recursive function
+NOT_ALGEBRA?recursion_type_error.SF-1579524
 #NOT_WIN32?
 ID_1509806?xs_untypedAtomic.SF-1509806.mps
 polymorphic_sequences.SF-1497419.mps
@@ -74,7 +76,8 @@ insert_multiple.SF-1590580
 inserting_multiple_elements.SF-1590583
 collection-naming.SF-1590782
 pf_docname.SF-2418722
-if-condition_testing_empty_sequence.SF-1589820
+# recursive function
+NOT_ALGEBRA?if-condition_testing_empty_sequence.SF-1589820
 update_error.SF-1579510
 value_append_to_nil.SF-1592689
 path_steps_with_name_tests_on_transsient_nodes.SF-1610247.alg
@@ -100,20 +103,24 @@ predicate_selects_too_few_nodes.SF-1636588_ws
 seqcast_opt_int_to_numeric.SF-1637867
 entities_dtd.SF-1642663
 entities_dtd.SF-1642665
-call2builtin_function_crashes_XRPC_client.SF-1655857
-conflict_normal_xrpc_queries_nx.SF-1644610
-conflict_normal_xrpc_queries_xn.SF-1644610
-interleave_PUT_GET_crashes_Mserver.SF-1676443
+# XRPC
+NOT_ALGEBRA?call2builtin_function_crashes_XRPC_client.SF-1655857
+NOT_ALGEBRA?conflict_normal_xrpc_queries_nx.SF-1644610
+NOT_ALGEBRA?conflict_normal_xrpc_queries_xn.SF-1644610
+# fn:put()
+NOT_ALGEBRA?interleave_PUT_GET_crashes_Mserver.SF-1676443
 id-function_fails_to_locate_some_kinds_of_nodes.SF-1698498
 char_escape_SF-1681921
 pf_add-doc_property_error.SF-1706438
 corrupt_after_update.SF-1706640
 nested_element_construction.SF-1712578
 mposjoin_missing_matches.SF-1712595
-put_to_tmp.SF-1718066
+# fn:put()
+NOT_ALGEBRA?put_to_tmp.SF-1718066
 type_check.SF-1705898
 accessing_renamed_inserted_deleted_node.SF-1718622-1718635-1718709
-posjoin_null_BAT_2nd_run.SF-1678948
+# recursive function
+NOT_ALGEBRA?posjoin_null_BAT_2nd_run.SF-1678948
 NULL_BAT_in_serializer.SF-1694814a
 NULL_BAT_in_serializer.SF-1694814b
 order-by_error.SF-1724774
@@ -137,13 +144,15 @@ swizzle-bug2.SF-1763495
 wrong_use_of_leftfetchjoin.SF-1760168
 wrong_use_of_leftfetchjoin.d0.SF-1760168
 wrong_numeric_cast_in_general_comparison.SF-1731555
-pf-O0_produces_wrong_MIL.SF-1771532
+# recursive function
+NOT_ALGEBRA?pf-O0_produces_wrong_MIL.SF-1771532
 insert_attribute_gives_ERROR_in_merged_union.SF-1763575
 immune_for_updates.SF-1766259
 port_busy.SF-1809586
 repeated-insert.SF-1814911
 fn_normalize-space.SF-1828362
-recursive_function.SF-1835745
+# recursive function
+NOT_ALGEBRA?recursive_function.SF-1835745
 variable_in_module.SF-1836980
 preceding-sibling_failure.SF-1841747-d10
 preceding-sibling_failure.SF-1841747-d0
@@ -153,7 +162,8 @@ insert-new-page.SF-1854215
 substitution_fails.SF-1871789
 uncompilable_comparison.SF-1871790
 for_variable.SF-1887055
-Alignment_error.SF-1886994
+# recursive function
+NOT_ALGEBRA?Alignment_error.SF-1886994
 ALGsegfault.SF-1894964a
 ALGsegfault.SF-1894964b
 empty_tbl_seg_fault.SF-1961027
