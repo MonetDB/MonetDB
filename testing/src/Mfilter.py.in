@@ -69,17 +69,6 @@ test = (
                     r'^! /.*/bin/[Mm](?:(?:server5?|apiClient|timeout|diff):e+|log:)$',
                     r'^! /usr/bin/mserver5:  m$',
                  ])+')',  re.MULTILINE),
-        # differing error messages when loading non-existing modules in dynamic and static Mserver
-        re.compile('(?:'+')|(?:'.join([
-                    r"^!ERROR: DL_open: Unknown error.$",
-                    r"^!ERROR: DL_open: library not found \(STATIC\).$",
-                 ])+')',  re.MULTILINE),
-        re.compile('(?:'+')|(?:'.join([
-                    r"^!ERROR: TBL_loadmod: module load .* cancelled.$",
-                 ])+')',  re.MULTILINE),
-        re.compile('(?:'+')|(?:'.join([
-                    r"^!ERROR: module\(.*\): load error.$",
-                 ])+')',  re.MULTILINE),
         # differences due to property-checking, which we want to treat as "minor differences"
         re.compile('(?:'+')|(?:'.join([
                 # src/modules/plain/aggr[X3]:
@@ -239,13 +228,13 @@ def mFilter (FILE, IGNORE) :
             # ignore differences in "VariableOutput" or "ProfilingOutput"
             oline = "#~ " + iline
             n = n + 1
-        elif test[5].match(iline):
+        elif test[2].match(iline):
             # warnings and messages that should be treated as errors:
             oline = "!~" + iline
         elif test[0].match(iline):
             # potential differences, which we want to ignore; see above
             oline = "#~ " + iline
-        elif test[4].match(iline):
+        elif test[1].match(iline):
             # differences due to property-checking, which we want to treat as "minor differences"; see above
             oline = "=" + iline
         elif bbp_dir.match(iline):
