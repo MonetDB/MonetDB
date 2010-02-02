@@ -2698,7 +2698,7 @@ mapi_start_talking(Mapi mid)
 	mid->active = hdl;
 	read_into_cache(hdl, 0);
 	if (mid->error) {
-		char *errorstr;
+		char *errorstr = NULL;
 		MapiMsg error;
 		struct MapiResultSet *result;
 		/* propagate error from result to mid, the error probably is in
