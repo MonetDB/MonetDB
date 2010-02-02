@@ -922,7 +922,7 @@ print(res_mu.fetch(0));
 z1.insert(8@0,9@0);
 
 res_mu := merged_union (z1, a2); # fst not sorted
-!ERROR: merged_union: tail of first BAT/column of table 1 must be (resvers-)sorted.
+!ERROR: merged_union: tail of first BAT/column of table 1 must be (reverse-)sorted.
 !ERROR: CMDmerged_union: operation failed.
 res_mu := merged_union (a2, z1); # snd not sorted
 !ERROR: merged_union: tail of first BAT/column of table 2 must be sorted.
