@@ -12,10 +12,8 @@ stdout of test 'not` in directory 'src/test/bugs` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.19.0 loaded
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

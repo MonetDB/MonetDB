@@ -10,10 +10,8 @@ stdout of test 'bind_with_cast.SF-1720934` in directory 'src/test/BugTracker` it
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

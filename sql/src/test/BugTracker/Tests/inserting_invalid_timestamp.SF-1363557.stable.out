@@ -10,10 +10,8 @@ stdout of test 'inserting_invalid_timestamp.SF-1363557` in directory 'src/test/B
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

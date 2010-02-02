@@ -12,13 +12,11 @@ stdout of test 'scalar_and_predicate_bug` in directory 'src/test/bugs` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.20.3 loaded
 
-printf("\nReady.\n");
 
 Ready.
 
 
 
-quit();
 
 Over..
 

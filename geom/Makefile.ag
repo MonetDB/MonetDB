@@ -17,7 +17,7 @@
 
 SUBDIRS = conf src
 
-EXTRA_DIST = RunMtest.in RunMapprove.in rpm.mk.in MonetDB-geom.spec.in MonetDB-geom.spec
+EXTRA_DIST = RunMtest.in RunMapprove.in rpm.mk.in MonetDB-geom.spec MonetDB-geom.spec
 EXTRA_DIST_DIR = NT debian BugTracker
 
 TESTS = RunMtest

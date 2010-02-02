@@ -134,7 +134,6 @@ dropping 'enum' ... done.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-quit();
 
 # 17:07:30 >  
 # 17:07:30 >  Done.

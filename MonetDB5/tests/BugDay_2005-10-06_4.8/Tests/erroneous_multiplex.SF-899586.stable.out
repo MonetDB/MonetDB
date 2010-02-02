@@ -42,7 +42,6 @@ print([multi1](b));
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
 !ERROR: interpret_params: print(param 1): evaluation error.
-quit();
 
 # 10:17:37 >  
 # 10:17:37 >  Done.

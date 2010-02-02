@@ -1,5 +1,5 @@
-%define name MonetDB5-server
-%define version @VERSION@
+%define name MonetDB4-server
+%define version 4.36.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
@@ -26,17 +26,11 @@ Vendor: MonetDB BV <monet@cwi.nl>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/MonetDB5-server-%{version}.tar.gz
+Source: http://downloads.sourceforge.net/monetdb/MonetDB4-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
-
-%{!?_with_raptor: %{!?_without_raptor: %define _with_raptor --with-raptor}}
 
 Requires(pre): shadow-utils
 BuildRequires: pcre-devel
-%if %{?_with_raptor:1}%{!?_with_raptor:0}
-BuildRequires: raptor-devel >= 1.4.16
-%endif
-BuildRequires: libxml2-devel
 
 # when we want MonetDB to run as system daemon, we need this
 # also see the scriptlets below
@@ -45,6 +39,9 @@ BuildRequires: libxml2-devel
 # Requires(preun): /sbin/chkconfig
 # Requires(preun): /sbin/service
 # Requires(postun): /sbin/service
+
+# by default we do not build the netcdf package
+%{!?_with_netcdf: %{!?_without_netcdf: %define _without_netcdf --without-netcdf}}
 
 %define builddoc 0
 
@@ -63,13 +60,37 @@ BuildRequires: MonetDB-client-devel >= 1.36
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %endif
 
+%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
+%package netcdf
+Summary: MonetDB4 module for using NetCDF
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+Requires: netcdf
+BuildRequires: netcdf-devel
+
+%description netcdf
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+
+This package contains a module for use with the MonetDB4 server
+component to interface to the NetCDF (network Common Data Form)
+libraries.
+%endif
+
 %package devel
 Summary: MonetDB development package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
-Requires: MonetDB-devel
-Requires: MonetDB-client-devel
-Requires: libxml2-devel
+Requires: MonetDB-devel >= 1.36
+#                          ^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+Requires: MonetDB-client-devel >= 1.36
+#                                 ^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 
 %description
 MonetDB is a database management system that is developed from a
@@ -77,9 +98,9 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
-This package contains the MonetDB5 server component.  You need this
-package if you want to work using the MAL language, or if you want to
-use the SQL frontend (in which case you need MonetDB-SQL-server5 as
+This package contains the MonetDB4 server component.  You need this
+package if you want to work using the MIL language, or if you want to
+use the XQuery frontend (in which case you need MonetDB4-XQuery as
 well).
 
 %description devel
@@ -88,12 +109,12 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
-This package contains the files needed to develop with MonetDB5.
+This package contains the files needed to develop with MonetDB4.
 
 %prep
 rm -rf $RPM_BUILD_ROOT
 
-%setup -q -n MonetDB5-server-%{version}
+%setup -q -n MonetDB4-server-%{version}
 
 %build
 
@@ -105,7 +126,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
-	%{?_with_raptor} %{?_without_raptor}
+	%{?_with_netcdf} %{?_without_netcdf}
 
 make
 
@@ -115,12 +136,12 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
 mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB
-mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB5
+mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB4
 # insert example db here!
 
 # cleanup stuff we don't want to install
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
-rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5/Tests/*
+rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 
 %pre
 getent group monetdb >/dev/null || groupadd -r monetdb
@@ -134,12 +155,12 @@ exit 0
 
 # when we want MonetDB to run as system daemon, we need this
 # # This adds the proper /etc/rc*.d links for the script
-# /sbin/chkconfig --add monetdb5
+# /sbin/chkconfig --add monetdb4
 
 # %preun
 # if [ $1 = 0 ]; then
-# 	/sbin/service monetdb5 stop >/dev/null 2>&1
-# 	/sbin/chkconfig --del monetdb5
+# 	/sbin/service monetdb4 stop >/dev/null 2>&1
+# 	/sbin/chkconfig --del monetdb4
 # fi
 
 %postun
@@ -147,7 +168,7 @@ exit 0
 
 # when we want MonetDB to run as system daemon, we need this
 # if [ "$1" -ge "1" ]; then
-# 	/sbin/service monetdb5 condrestart >/dev/null 2>&1 || :
+# 	/sbin/service monetdb4 condrestart >/dev/null 2>&1 || :
 # fi
 
 %clean
@@ -155,38 +176,43 @@ rm -fr $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%{_bindir}/mserver5
-%{_bindir}/Mbeddedmal
-%{_bindir}/stethoscope
+%{_bindir}/Mserver
+%{_bindir}/Mbeddedmil
 
-%{_libdir}/*.so.*
-%dir %{_libdir}/MonetDB5
-%dir %{_libdir}/MonetDB5/lib
-%{_libdir}/MonetDB5/lib/*.so*
-%{_libdir}/MonetDB5/*.mal
+%{_libdir}/libmonet.so.*
+%{_libdir}/libembeddedmil.so.*
+%dir %{_libdir}/MonetDB4
+%dir %{_libdir}/MonetDB4/lib
+%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
+%exclude %{_libdir}/MonetDB4/lib/lib_mnetcdf.so*
+%exclude %{_libdir}/MonetDB4/mnetcdf.mil
+%endif
+%{_libdir}/MonetDB4/lib/*.so*
+%{_libdir}/MonetDB4/*.mil
 
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
-%attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB5
+%attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB4
 
-%config(noreplace) %{_sysconfdir}/monetdb5.conf
+%config(noreplace) %{_sysconfdir}/MonetDB.conf
+
+%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
+%files netcdf
+%{_libdir}/MonetDB4/lib/lib_mnetcdf.so*
+%{_libdir}/MonetDB4/mnetcdf.mil
+%{_includedir}/MonetDB4/mnetcdf/*.[hcm]
+%endif
 
 %files devel
 %defattr(-,root,root)
-%{_bindir}/monetdb5-config
-%dir %{_includedir}/MonetDB5
-%dir %{_includedir}/MonetDB5/atoms
-%dir %{_includedir}/MonetDB5/compiler
-%dir %{_includedir}/MonetDB5/crackers
-%dir %{_includedir}/MonetDB5/kernel
-%dir %{_includedir}/MonetDB5/mal
-%dir %{_includedir}/MonetDB5/optimizer
-%dir %{_includedir}/MonetDB5/scheduler
-%dir %{_includedir}/MonetDB5/rdf
-%dir %{_includedir}/MonetDB5/tools
-%{_includedir}/MonetDB5/*/*.[hcm]
-%{_libdir}/*.so
+%{_bindir}/monetdb4-config
+%{_bindir}/calibrator
+%{_libdir}/pkgconfig/MonetDB.pc
+%dir %{_includedir}/MonetDB4
+%{_includedir}/MonetDB4/*/*.[hcm]
+%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
+%exclude %{_includedir}/MonetDB4/mnetcdf/*.[hcm]
+%endif
+%{_libdir}/libmonet.so
+%{_libdir}/libembeddedmil.so
 
 %changelog
-* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
-- Built.
-

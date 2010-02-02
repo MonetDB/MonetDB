@@ -39,7 +39,6 @@ var b := new(int,int);
 b.insert(1,2);
 b@batloop(){$h.print();}
 [ 1 ]
-quit();
 
 # 17:06:46 >  
 # 17:06:46 >  Done.

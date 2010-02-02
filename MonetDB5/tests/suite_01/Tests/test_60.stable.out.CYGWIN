@@ -669,7 +669,6 @@ s(0,999);
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 [ 8 ]
-quit();
 
 # 18:34:03 >  
 # 18:34:03 >  Done.

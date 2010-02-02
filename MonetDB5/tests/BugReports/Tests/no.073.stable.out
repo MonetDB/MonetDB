@@ -146,7 +146,6 @@ ba.print();
 [ "een",  1	  ]
 [ "twee", 2	  ]
 commit();
-quit();
 
 # 09:44:44 >  
 # 09:44:44 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/opensource/MonetDB/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log" --set mapi_port=48869 --set sql_port=52397 --set monet_prompt= --trace --dbname=mTests_tests_BugReports  < no.073_s01.milM
@@ -179,7 +178,6 @@ ab.print();
 #-----------------#
 [ 1,	  "een"	  ]
 [ 2,	  "twee"  ]
-quit();
 
 # 17:06:52 >  
 # 17:06:52 >  Done.

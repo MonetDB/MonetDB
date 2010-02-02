@@ -78,7 +78,6 @@ print(t2.aligned(t));
 print(t2.synced(t));
 [ false ]
 
-quit();
 
 # 17:09:12 >  
 # 17:09:12 >  Done.

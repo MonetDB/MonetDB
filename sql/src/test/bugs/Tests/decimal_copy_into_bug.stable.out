@@ -12,10 +12,8 @@ stdout of test 'decimal_copy_into_bug` in directory 'src/test/bugs` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.20.3 loaded
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

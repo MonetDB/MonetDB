@@ -10,10 +10,8 @@ stdout of test 'default_next_value_for_non_ex_seq.SF.1246631` in directory 'src/
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

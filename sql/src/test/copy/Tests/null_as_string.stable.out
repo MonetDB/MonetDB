@@ -14,10 +14,8 @@ stdout of test 'null_as_string` in directory 'src/test/copy` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.23.0 loaded
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

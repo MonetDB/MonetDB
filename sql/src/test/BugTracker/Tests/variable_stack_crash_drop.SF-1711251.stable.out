@@ -10,10 +10,8 @@ stdout of test 'variable_stack_crash_drop.SF-1711251` in directory 'src/test/Bug
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

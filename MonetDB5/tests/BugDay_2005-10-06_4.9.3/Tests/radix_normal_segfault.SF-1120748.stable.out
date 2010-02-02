@@ -15,7 +15,6 @@ normal(0).print();
 # h	t	  # name
 # oid	int	  # type
 #-----------------#
-quit();
 
 # 12:30:48 >  
 # 12:30:48 >  Done.

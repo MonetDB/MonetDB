@@ -10,10 +10,8 @@ stdout of test 'insert_from_no-existing_tables.SF-1037020` in directory 'src/tes
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

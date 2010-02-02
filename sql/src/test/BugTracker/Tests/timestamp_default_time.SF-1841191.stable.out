@@ -12,10 +12,8 @@ stdout of test 'timestamp_default_time.SF-1841191` in directory 'src/test/BugTra
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.20.3 loaded
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

@@ -10,10 +10,8 @@ stdout of test 'insert_values.SF-1578838` in directory 'src/test/BugTracker` its
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

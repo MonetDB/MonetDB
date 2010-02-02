@@ -10,10 +10,8 @@ stdout of test 'not_null.SF-933194` in directory 'src/test/BugDay_2005-10-06_2.9
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

@@ -15,7 +15,7 @@ M5INSTALLER = install-m5installer
 M5INSTALLER =
 !ENDIF
 
-all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMtest.bat RunMapprove.bat
+all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h inttypes.h RunMserver.bat RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
@@ -57,6 +57,14 @@ unistd.h:
 	$(ECHO) #define getpid _getpid >> unistd.h
 	$(ECHO) #define umask _umask >> unistd.h
 	$(ECHO) #endif >> unistd.h
+
+inttypes.h:
+	$(ECHO) typedef signed char int8_t; > inttypes.h
+	$(ECHO) typedef unsigned char uint8_t; >> inttypes.h
+	$(ECHO) typedef short int16_t; >> inttypes.h
+	$(ECHO) typedef unsigned short uint16_t; >> inttypes.h
+	$(ECHO) typedef int int32_t; >> inttypes.h
+	$(ECHO) typedef unsigned int uint32_t; >> inttypes.h
 
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
 	if exist "$(SRCDIR)\RunMtest.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat

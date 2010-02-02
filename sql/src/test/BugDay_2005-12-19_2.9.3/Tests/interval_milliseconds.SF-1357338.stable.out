@@ -10,13 +10,11 @@ stdout of test 'interval_milliseconds.SF-1357338` in directory 'src/test/BugDay_
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
 # semantic relational algebra
 # falling back to direct mode 
 # semantic relational algebra
-quit();
 
 Over..
 

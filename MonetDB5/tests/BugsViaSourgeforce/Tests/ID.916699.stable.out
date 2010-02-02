@@ -109,7 +109,6 @@ print(sdiff(r1,s1));
 # h	tmp_39	  # name
 # oid	int	  # type
 #-----------------#
-quit();
 
 # 19:53:30 >  
 # 19:53:30 >  Done.

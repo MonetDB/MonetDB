@@ -31,7 +31,6 @@ a.seqbase(newoid(a.count()));
 [ 1,	  nil	  ]
 [ 2,	  nil	  ]
 [ 3,	  nil	  ]
-quit();
 
 # 04:45:26 >  
 # 04:45:26 >  Done.

@@ -168,7 +168,6 @@ Clients2.print();
 # BAT:	  Clients2	  #
 # (oid)	  (int)		  #
 #-------------------------#
-quit();
 
 
 # Monet Database Server V4.3.5
@@ -195,7 +194,6 @@ bat("Clients2").print();
 # BAT:	  Clients2	  #
 # (oid)	  (int)		  #
 #-------------------------#
-quit();
 
 # 17:06:53 >  
 # 17:06:53 >  Done.

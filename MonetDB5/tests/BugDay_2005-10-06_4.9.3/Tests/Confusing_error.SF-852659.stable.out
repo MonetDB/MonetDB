@@ -10,10 +10,8 @@ stdout of test 'Confusing_error.SF-852659` in directory 'tests/BugDay_2005-10-06
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

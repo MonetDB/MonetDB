@@ -78,7 +78,6 @@ env(1);
 !ERROR: interpret: no matching MIL operator to 'env(int)'.
 !MAYBE YOU MEAN:
 !	env() : void
-quit();
 
 # 17:07:26 >  
 # 17:07:26 >  Done.

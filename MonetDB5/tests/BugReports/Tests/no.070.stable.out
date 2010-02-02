@@ -44,7 +44,6 @@ var a := new(int,int);
 !MAYBE YOU MEAN:
 !	sqrt(flt) : flt
 !	sqrt(dbl) : dbl
-quit();
 
 # 17:06:51 >  
 # 17:06:51 >  Done.

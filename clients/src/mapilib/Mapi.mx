@@ -2698,11 +2698,19 @@ mapi_start_talking(Mapi mid)
 	mid->active = hdl;
 	read_into_cache(hdl, 0);
 	if (mid->error) {
-		/* propagate error from result to mid
-		   mapi_close_handle clears the errors, so
-		   save them first */
-		char *errorstr = hdl->result ? hdl->result->errorstr : mid->errorstr;
-		MapiMsg error = mid->error;
+		char *errorstr = NULL;
+		MapiMsg error;
+		struct MapiResultSet *result;
+		/* propagate error from result to mid, the error probably is in
+		 * the last produced result, not the first
+		 * mapi_close_handle clears the errors, so save them first */
+		for (result = hdl->result; result; result = result->next) {
+			errorstr = result->errorstr;
+			result->errorstr = NULL;	/* clear these so errorstr doesn't get freed */
+		}
+		if (!errorstr)
+			errorstr = mid->errorstr;
+		error = mid->error;
 
 		if (hdl->result)
 			hdl->result->errorstr = NULL;	/* clear these so errorstr doesn't get freed */
@@ -3948,9 +3956,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			   yet (duh!), or if we've already seen
 			   normal output for the current one */
 			if (result == NULL ||
-			    result->cache.writer > 0 ||
-			    result->querytype == Q_TABLE ||
-			    result->querytype == Q_UPDATE) {
+					result->cache.writer > 0 ||
+					result->querytype == Q_TABLE ||
+					result->querytype == Q_UPDATE)
+			{
 				result = new_result(hdl);
 				hdl->active = result;
 			}

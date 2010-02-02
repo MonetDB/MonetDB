@@ -20,7 +20,7 @@ SUBDIRS = src conf scripts
 EXTRA_DIST = configure.ag RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		RunMserver.bat.in RunMserver.in \
-		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in
+		rpm.mk.in MonetDB-server.spec MonetDB-server.spec
 
 EXTRA_DIST_DIR = NT tests debian
 

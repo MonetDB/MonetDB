@@ -10,11 +10,9 @@ stdout of test 'range_predicate.SF-1711242` in directory 'src/test/BugTracker` i
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
 
-quit();
 
 Over..
 

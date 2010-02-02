@@ -10,10 +10,8 @@ stdout of test 'create_column_name_data.SF-1440214` in directory 'src/test/BugTr
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

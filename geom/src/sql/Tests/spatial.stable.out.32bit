@@ -1,19 +1,24 @@
 stdout of test 'spatial` in directory 'src/sql` itself:
 
 
-# 22:58:03 >  
-# 22:58:03 >  Mtimeout -timeout 180  Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35790 --set xrpc_port=47197 --set monet_prompt= --trace "--dbname=mTests_src_sql" --dbinit="module(geom); module(sql_server);" ; echo ; echo Over..
-# 22:58:03 >  
+# 20:49:36 >  
+# 20:49:36 >   mserver5 "--config=/home/sjoerd/Monet/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/home/sjoerd/src/MonetDB/devel/geom/x86_64-unknown-linux-gnu/src/monetdb5/.libs:/home/sjoerd/src/MonetDB/devel/geom/x86_64-unknown-linux-gnu/src/monetdb5:/home/sjoerd/Monet/lib64/MonetDB5:/home/sjoerd/Monet/lib64/MonetDB5/lib:/home/sjoerd/Monet/lib64/MonetDB5/bin:/home/sjoerd/Monet/lib64/MonetDB5:/home/sjoerd/Monet/lib64/MonetDB5/lib:/home/sjoerd/Monet/lib64/MonetDB5/bin" --set "gdk_dbfarm=/home/sjoerd/src/MonetDB/devel/geom/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/home/sjoerd/src/MonetDB/devel/geom/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/home/sjoerd/src/MonetDB/devel/geom/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=38689 --set xrpc_port=41370 --set monet_prompt= --trace  "--dbname=mTests_src_sql" --set mal_listing=0 "--dbinit=include geom; include sql;" ; echo ; echo Over..
+# 20:49:36 >  
 
-# Monet Database Server V4.18.1
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_sql', using 2 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koolmees.mullender.nl:38689/
+# MonetDB/GIS module v0.5.0 loaded
+# MonetDB/SQL module v2.25.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 

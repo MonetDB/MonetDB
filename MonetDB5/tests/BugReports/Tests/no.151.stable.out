@@ -44,7 +44,6 @@ setoid(oid(20000000));
 var a:= new(int,bat);
 var b:= new(int,bat);
 a.insert(1,b);
-quit();
 
 # 17:07:23 >  
 # 17:07:23 >  Done.

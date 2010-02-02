@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Feb 02 2010 Fabian Groffen <fabian@cwi.nl>
+- Fixed crash upon connect to a server that is under maintenance but has
+  the requested language (scenario) not loaded.
+
 * Wed Jan 27 2010 Sjoerd Mullender <sjoerd@acm.org>
 - Fixed bug in the ODBC driver where a non-ASCII character at the end of a
   string caused an error when the string was converted to wide characters.

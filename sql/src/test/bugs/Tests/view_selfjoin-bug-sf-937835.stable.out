@@ -10,10 +10,8 @@ stdout of test 'view_selfjoin-bug-sf-937835` in directory 'src/test/bugs` itself
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 
