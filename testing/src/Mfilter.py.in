@@ -50,8 +50,8 @@ test = (
                 # MAPI & XRPC port numbers
                     r"^MAPI  = .*@.*:[0-9]*$",
                     r'^QUERY = execute at { ".*:[0-9]*" }$',
-                # Pathfinder revision number
-                    r"^Pathfinder (?:XQuery Compiler|XML Shredder) \(.Revision: .* .\)$",
+                # Pathfinder revision number (`pf -{h,H}` in pathfinder/compiler/Tests/usage{,H}*)
+                    r"^Pathfinder XQuery Compiler \(.Revision: .* .\)$",
                 # Tokens depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
                 # ant output we want to ignore
