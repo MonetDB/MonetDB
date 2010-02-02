@@ -87,8 +87,6 @@ test = (
                     r"^!ERROR: DESCload: atom 'lock' unknown, in BAT '[0-9]+'.$",
                 # Broken sql error messages:
                     r'^QUERY = (?:\-\-|select|insert|INSERT) ',
-                # ld warnings on IRIX64:
-                    r"^ld64: WARNING 84 : .*/common/.libs/libmutils.so is not used for resolving any symbol.$",
                 # (extra) error messages that used to occur with M4/sql but don't any more with M5/sql:
                     r'^.*!ERROR: .*operation failed.$',
                 # suggested alternatives in case of XQuery type errors:
