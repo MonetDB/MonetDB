@@ -54,10 +54,6 @@ test = (
                     r"^Pathfinder XQuery Compiler \(.Revision: .* .\)$",
                 # Tokens depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
-                # ant output we want to ignore
-                    r'^Buildfile:.*$',
-                    r'^Building jar: .*$',
-                    r'^Total time: [0-9]+ seconds?$',
                 # remove wine errors:
                     r"^fixme:.*$",
                 # ignore big- vs. little-endian byte-orders in test tests/BugDay_2005-10-06_4.8/Tests/print_CTgroup.SF-1315791.*:
