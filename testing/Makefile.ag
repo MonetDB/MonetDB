@@ -18,6 +18,6 @@
 SUBDIRS = src conf
 
 EXTRA_DIST = configure.ag rpm.mk.in \
-		MonetDB-testing.spec MonetDB-testing.spec.in
+		MonetDB-testing.spec MonetDB-testing.spec
 
 EXTRA_DIST_DIR = NT debian

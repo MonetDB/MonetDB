@@ -1,5 +1,5 @@
 %define name MonetDB-geom
-%define version @VERSION@
+%define version 0.16.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
@@ -171,6 +171,3 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
-* Tue May 27 2008 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
-- Built.
-

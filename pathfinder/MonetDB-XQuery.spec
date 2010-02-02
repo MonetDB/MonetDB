@@ -1,5 +1,5 @@
 %define name MonetDB4-XQuery
-%define version @VERSION@
+%define version 0.36.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
@@ -138,6 +138,3 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/monetdb-xquery-config
 
 %changelog
-* Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
-- Built.
-
