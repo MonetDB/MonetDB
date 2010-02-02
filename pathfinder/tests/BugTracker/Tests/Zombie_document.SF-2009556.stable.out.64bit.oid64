@@ -36,7 +36,7 @@ Over..
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>1</XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><collection updatable="false" size="95 KiB" numDocs="2">MyCol</collection></XQueryResult>
+<XQueryResult><collection updatable="false" size="96 KiB" numDocs="2">MyCol</collection></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>!ERROR: serialize.mx: cannot print the special collection node.
 <?xml version="1.0" encoding="utf-8"?>
@@ -46,7 +46,7 @@ Over..
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>2</XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><collection updatable="false" size="95 KiB" numDocs="1">MyCol</collection></XQueryResult>
+<XQueryResult><collection updatable="false" size="96 KiB" numDocs="1">MyCol</collection></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>!ERROR: serialize.mx: cannot print the special collection node.
 <?xml version="1.0" encoding="utf-8"?>
