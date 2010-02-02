@@ -13,10 +13,8 @@ stdout of test 'copy_into_crash.SF-1975402` in directory 'BugTracker` itself:
 # MonetDB/GIS module v0.4.0 loaded
 # MonetDB/SQL module v2.24.0 loaded
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

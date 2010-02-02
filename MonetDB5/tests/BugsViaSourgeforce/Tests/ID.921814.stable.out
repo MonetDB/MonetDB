@@ -38,7 +38,6 @@ printf("oid(0)   -> %s\n",str(b.find(oid(0))));
 !ERROR: interpret_params: printf(param 2): evaluation error.
 printf("oid(nil) -> %s\n",str(b.find(oid(nil))));
 oid(nil) -> zero
-quit();
 
 # 22:15:22 >  
 # 22:15:22 >  Done.

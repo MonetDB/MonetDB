@@ -15,7 +15,6 @@ stdout of test 'ID.986551` in directory 'tests/BugsViaSourgeforce` itself:
 ! can't help you here, sorry.
 (*"print")(2);
 [ 2 ]
-quit();
 
 # 11:47:59 >  
 # 11:47:59 >  Done.

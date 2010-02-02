@@ -10,10 +10,8 @@ stdout of test 'crash_on_insert.SF-1639113` in directory 'src/test/BugTracker` i
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

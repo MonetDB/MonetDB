@@ -8,7 +8,6 @@ stdout of test 'load` in directory 'src/benchmarks/arno` itself:
 # Monet Database Server V4.3.4
 # Copyright (c) 1993-2001, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-printf("\nReady.\n");
 
 Ready.
 

@@ -10,10 +10,8 @@ stdout of test 'Test_Rbooleans` in directory 'src/jdbc/tests` itself:
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

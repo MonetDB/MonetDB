@@ -47,11 +47,10 @@ def wlen(str) :
 test = (
         # potential differences, which we want to ignore
         re.compile('(?:'+')|(?:'.join([
-## sql5
-                      r"^printf\(\"\\nReady.\\n\"\);",
-                      r"^quit\(\);",
-                      r"^MAPI  = .*@.*:[0-9]*$",
-                      r'^QUERY = execute at { ".*:[0-9]*" }$',
+                # MAPI & XRPC port numbers
+                    r"^MAPI  = .*@.*:[0-9]*$",
+                    r'^QUERY = execute at { ".*:[0-9]*" }$',
+                # Pathfinder revision number
                     r"^Pathfinder (?:XQuery Compiler|XML Shredder) \(.Revision: .* .\)$",
                 # Tokens depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',

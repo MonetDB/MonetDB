@@ -596,7 +596,6 @@ synced(x,z) := true
 #z3:= z2.CThistosum(z);
 #print(z3);
 
-quit();
 
 # 15:31:07 >  
 # 15:31:07 >  Done.

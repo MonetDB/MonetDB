@@ -21,7 +21,6 @@ table(bat(void,int).seqbase(0@0).insert(nil,1));
 # int	  # type
 #---------#
 [ 1	  ]
-quit();
 
 # 14:21:17 >  
 # 14:21:17 >  Done.

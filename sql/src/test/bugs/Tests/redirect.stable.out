@@ -12,10 +12,8 @@ stdout of test 'redirect` in directory 'src/test/bugs` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.20.0 loaded
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

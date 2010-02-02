@@ -14,10 +14,8 @@ stdout of test 'number_null_first_row.SF-1833286` in directory 'src/test/BugTrac
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.20.1 loaded
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

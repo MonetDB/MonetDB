@@ -10,7 +10,6 @@ stdout of test 'timestamp_fraction.SF-1357342` in directory 'src/test/BugDay_200
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
 # semantic relational algebra
@@ -20,7 +19,6 @@ Ready.
 # semantic relational algebra
 # falling back to direct mode 
 # semantic relational algebra
-quit();
 
 Over..
 

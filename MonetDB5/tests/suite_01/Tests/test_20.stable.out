@@ -69,7 +69,6 @@ undef forward;
 forward();
 !ERROR: interpret: no matching MIL operator to 'forward()'.
 
-quit();
 
 # 17:08:58 >  
 # 17:08:58 >  Done.

@@ -14,10 +14,8 @@ stdout of test 'dump` in directory 'src/benchmarks/viam` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.21.0 loaded
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

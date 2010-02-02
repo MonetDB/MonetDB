@@ -10,10 +10,8 @@ stdout of test 'init` in directory 'src/benchmarks/arno_flt` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

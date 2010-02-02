@@ -10,10 +10,8 @@ stdout of test 'limit_in_create_view.SF-924448` in directory 'src/test/BugDay_20
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

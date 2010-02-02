@@ -10,10 +10,8 @@ stdout of test 'prepare-where.SF-1238867.1238959.1238965.1240124` in directory '
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

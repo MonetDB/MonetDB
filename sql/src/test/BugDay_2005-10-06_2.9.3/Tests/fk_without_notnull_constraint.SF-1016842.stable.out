@@ -10,10 +10,8 @@ stdout of test 'fk_without_notnull_constraint.SF-1016842` in directory 'src/test
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

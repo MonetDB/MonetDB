@@ -199,7 +199,6 @@ print(insert(access(copy(void_int_bat),BAT_WRITE),
 # The provided stable output has been hand-crafted to 
 # depict that which I argue to be the 'correct' outpu.
 #
-quit();
 
 # 18:07:21 >  
 # 18:07:21 >  Done.

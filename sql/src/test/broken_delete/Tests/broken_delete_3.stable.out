@@ -12,10 +12,8 @@ stdout of test 'broken_delete_3` in directory 'src/test/broken_delete` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 # MonetDB/SQL module v2.20.0 loaded
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

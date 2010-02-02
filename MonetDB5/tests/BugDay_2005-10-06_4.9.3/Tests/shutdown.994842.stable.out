@@ -21,7 +21,6 @@ kill_mserver();
 !ERROR: interpret: no matching MIL operator to 'kill_mserver()'.
 killall_mserver();
 !ERROR: interpret: no matching MIL operator to 'killall_mserver()'.
-quit();
 
 # 16:13:34 >  
 # 16:13:34 >  Done.

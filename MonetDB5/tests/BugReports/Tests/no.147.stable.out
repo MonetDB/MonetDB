@@ -558,7 +558,6 @@ printf("#~BeginVariableOutput~#\n");view_gdk_thread().print();printf("#~EndVaria
 #-------------------------#
 [ 6,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-quit();
 
 # 17:07:17 >  
 # 17:07:17 >  Done.

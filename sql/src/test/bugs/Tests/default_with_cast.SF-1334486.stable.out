@@ -10,10 +10,8 @@ stdout of test 'default_with_cast.SF-1334486` in directory 'src/test/bugs` itsel
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

@@ -19,7 +19,6 @@ proc test() : void {
 
 test();
 [ "good" ]
-quit();
 
 # 11:40:27 >  
 # 11:40:27 >  Done.

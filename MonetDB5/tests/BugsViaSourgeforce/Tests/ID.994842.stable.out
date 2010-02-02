@@ -10,7 +10,6 @@ stdout of test 'ID.994842` in directory 'tests/BugsViaSourgeforce` itself:
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl for further information.
 
-printf("\nReady.\n");
 
 Ready.
 

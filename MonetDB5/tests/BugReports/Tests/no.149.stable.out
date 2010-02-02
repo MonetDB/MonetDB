@@ -105,7 +105,6 @@ b.print();
 [ 1,	  "Hallo 1"			  ]
 [ 1,	  "Hallo dit is een string 1"	  ]
 [ 1,	  "Hallo 1"			  ]
-quit();
 
 # 17:07:22 >  
 # 17:07:22 >  Done.

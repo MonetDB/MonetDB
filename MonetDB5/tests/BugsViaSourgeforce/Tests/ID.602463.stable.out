@@ -48,7 +48,6 @@ join(t1.reverse().mirror(),t2).print();
 # BAT:	  tmp_30  #
 # (void)  (int)	  #
 #-----------------#
-quit();
 
 # 16:45:44 >  
 # 16:45:44 >  Done.

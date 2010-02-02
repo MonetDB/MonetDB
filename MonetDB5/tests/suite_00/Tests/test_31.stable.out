@@ -524,7 +524,6 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 [ "system",	  550	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-quit();
 
 # 17:08:48 >  
 # 17:08:48 >  Done.

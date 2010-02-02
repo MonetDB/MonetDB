@@ -10,10 +10,8 @@ stdout of test 'cast_bool2int-bug-sf-1000576` in directory 'src/test/bugs` itsel
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

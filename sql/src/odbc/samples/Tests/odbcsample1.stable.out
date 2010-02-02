@@ -10,10 +10,8 @@ stdout of test 'odbcsample1` in directory 'src/odbc/samples` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 

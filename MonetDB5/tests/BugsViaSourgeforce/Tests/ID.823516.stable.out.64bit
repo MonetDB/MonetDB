@@ -156,7 +156,6 @@ kdiff(post,pre).print();
 # int	str	  # type
 #-----------------#
 [ 30,	  "pre"	  ]
-quit();
 
 # 17:26:11 >  
 # 17:26:11 >  Done.

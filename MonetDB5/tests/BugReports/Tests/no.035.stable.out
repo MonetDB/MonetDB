@@ -59,7 +59,6 @@ adm_fcntbl
 adm_acctbl
 adm_atomtbl
 monet_unicode_case
-quit();
 
 # 13:14:58 >  
 # 13:14:58 >  Done.

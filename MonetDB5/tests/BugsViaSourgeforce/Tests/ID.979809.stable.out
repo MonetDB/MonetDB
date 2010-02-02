@@ -70,7 +70,6 @@ print(bats.find("one"),bats.find("two"));
 [ 6@0,	  6@0,	  "world"	  ]
 
 
-quit();
 
 # 23:38:16 >  
 # 23:38:16 >  Done.

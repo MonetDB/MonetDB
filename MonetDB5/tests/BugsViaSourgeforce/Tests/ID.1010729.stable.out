@@ -48,7 +48,6 @@ b.insert(nil,1).insert(nil, 2).insert(nil, 3);
 [ 0@0,	  1	  ]
 [ 1@0,	  2	  ]
 [ 2@0,	  3	  ]
-quit();
 
 # 23:29:45 >  
 # 23:29:45 >  Done.
