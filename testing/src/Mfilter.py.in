@@ -87,8 +87,6 @@ test = (
                     r"^!ERROR: DESCload: atom 'lock' unknown, in BAT '[0-9]+'.$",
                 # Broken sql error messages:
                     r'^QUERY = (?:\-\-|select|insert|INSERT) ',
-                # (extra) error messages that used to occur with M4/sql but don't any more with M5/sql:
-                    r'^.*!ERROR: .*operation failed.$',
                 # suggested alternatives in case of XQuery type errors:
                     r'^type error:   .*$',
                 # Debugging "strange" errors on Solaris x86:
