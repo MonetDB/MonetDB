@@ -85,12 +85,6 @@ test = (
                     r'^\[ (?:\-|)[Ii]nfinity \]$',
                 # src/monet/modrefcnt1 & tests/BugDay_2005-11-09_4.9.3/double_load_double_drop.SF-1082293 (on Itanium)
                     r"^!ERROR: DESCload: atom 'lock' unknown, in BAT '[0-9]+'.$",
-                # pathfinder/tests/XQuery/fn_aps:
-                    r'^0.900000 0.500000 0.400000 (?:\-|)0.000000 0.400000 0.500000 0.900000 1 *$',
-                # pathfinder/tests/XPathMark/Tests/Q1[023]:
-                    r'^(?:</item>|)<item (?:id="item9"|featured="yes") (?:id="item9"|featured="yes")>$',
-                # sql/src/benchmarks/arno_flt/Tests/init:
-                    r'^.*\t2.7445021260064(?:099|1)e\-06\t',
                 # Broken sql error messages:
                     r'^QUERY = (?:\-\-|select|insert|INSERT) ',
                 # ld warnings on IRIX64:
