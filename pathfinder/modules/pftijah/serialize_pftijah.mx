@@ -659,25 +659,30 @@ static int init_tagFiltering(tjCtx* tjctx, char* kind, char *l) {
 
     /* determine kind of filtering */
     if ( strcmp(kind,"whitelist")==0 )
-    	tjctx->whitelisting = 1;
-    else 
+        tjctx->whitelisting = 1;
+    else
         tjctx->whitelisting = 0;
 
+    if ( !(l = GDKstrdup(l)) ) {
+        GDKerror("init_tagFiltering: out of memory\n");
+        return 0;
+    }
     /* read the tags */
     if ( (t = strtok(l,delchars2)) ) do {
-	/* not the empty string here */
-	if ( cnt++ == 0 ) {
-	    tjctx->b_filtering = BATmirror(BAThash(BATmirror(
-	     		BATnew(TYPE_void, TYPE_str,32)),0));
-	    if ( !tjctx->b_filtering ) {
-	    	return 0;
-	    }
-	}
-	str v = (str)t;
-	oid my_oid_nil = oid_nil;
-	if ( !BUNins(tjctx->b_filtering, &my_oid_nil, v, FALSE) )
-	     return 0;
+        /* not the empty string here */
+        if ( cnt++ == 0 ) {
+            tjctx->b_filtering = BATmirror(BAThash(BATmirror(
+                        BATnew(TYPE_void, TYPE_str,32)),0));
+            if ( !tjctx->b_filtering ) {
+                return 0;
+            }
+        }
+        str v = (str)t;
+        oid my_oid_nil = oid_nil;
+        if ( !BUNins(tjctx->b_filtering, &my_oid_nil, v, FALSE) )
+             return 0;
     } while ( (t=strtok(NULL,delchars2)) );
+    GDKfree(l);
 
     /* set runtime status variables */
     tjctx->filterDepth = 0;

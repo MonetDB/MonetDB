@@ -5,8 +5,6 @@ stdout of test 'cast7` in directory 'tests/XQuery` itself:
 # 17:31:49 >   Mserver "--config=/local_tmp/work_stable/MonetDB4/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/work_stable/pathfinder/Linux/lib/MonetDB4:/local_tmp/work_stable/pathfinder/Linux/lib/MonetDB4/lib:/local_tmp/work_stable/MonetDB4/Linux/lib/MonetDB4:/local_tmp/work_stable/MonetDB4/Linux/lib/MonetDB4/lib:/local_tmp/work_stable/MonetDB4/Linux/lib/MonetDB4/bin" --set "gdk_dbfarm=/local_tmp/work_stable/MonetDB4/Linux/var/MonetDB4/dbfarm" --set "sql_logdir=/local_tmp/work_stable/MonetDB4/Linux/var/MonetDB4/sql_logs" --set "xquery_logdir=/local_tmp/work_stable/MonetDB4/Linux/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30620 --set xrpc_port=48153 --set monet_prompt= --trace  "--dbname=mTests_tests_XQuery" --set sql_debug=16384 --set xquery_backend=algebra "--dbinit= module(pathfinder);" ; echo ; echo Over..
 # 17:31:49 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # MonetDB Server v4.24.0
 # based on GDK   v1.24.0
 # Copyright (c) 1993-2008, CWI. All rights reserved.

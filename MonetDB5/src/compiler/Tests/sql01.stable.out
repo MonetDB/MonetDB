@@ -11,8 +11,6 @@ stdout of test 'sql01` in directory 'src/compiler` itself:
 
 
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # MonetDB server v5.3.0, based on kernel v1.21.0
 # Serving database 'mTests_src_compiler'
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
