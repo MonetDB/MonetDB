@@ -13,7 +13,6 @@ stdout of test 'stream_assert_quit.SF-1218291` in directory 'tests/BugDay_2005-1
 printf("\nReady.\n");
 
 Ready.
-quit();
 
 Over..
 
