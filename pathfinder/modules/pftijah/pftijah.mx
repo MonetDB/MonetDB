@@ -1669,32 +1669,37 @@ PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
       var t_start := usec();
     
       var commitBats := _tj_create_commitBats();
- 
+
       # get first free collection fragment (first fragment that is not yet filled completely)       
       var collBat := _tj_get_collection_frag(ftiName, commitBats);
 
       # set access back to BAT_APPEND
       _tj_set_forwardindex_access(collBat, BAT_APPEND);
-
-      var frag_size := lng(_tj_get_parameter2(collBat, "fragmentSize"));
+      
+      _tj_set_parameter2(collBat, "status", "building");
+      var frag_size := wrd(_tj_get_parameter2(collBat, "fragmentSize"));
+      var last_pre;
       uri@batloop() {
-         _tj_add2collection_frag(ftiName, collBat, $h, $t, shred);
-         
-         # check capacity of current fragment
-         var last_pre := lng(_tj_get_parameter2(collBat, "_last_tijahPre"));
-         if ( last_pre >= frag_size ) {
+        last_pre := _tj_add2collection_frag(ftiName, collBat, $h, $t, shred);
+        
+        # check capacity of current fragment
+        if ( last_pre >= frag_size ) {
+          if ( verbose ) tj_verbose(HASH +"TJ tj_add2collection_frag(\"%s\"), fragment limit reached.\n",ftiName);
+            _tj_set_parameter2(collBat, "_last_tijahPre", str(last_pre));
             _tj_finalize_collection_frag(ftiName, collBat, commitBats, false);
             collBat := _tj_get_collection_frag(ftiName, commitBats);
             _tj_set_forwardindex_access(collBat, BAT_APPEND);
-         }
+          }
       }
+      # update params
+      _tj_set_parameter2(collBat, "_last_tijahPre", str(last_pre));
       _tj_finalize_collection_frag(ftiName, collBat, commitBats, false);
       _tj_commit_frag(collBat, commitBats); 
 
       if ( timing ) {
-         var ms := (usec()-t_start)/1000;
-         printf(HASH +"TJ tj_add2collection(BAT): total time = %lld.%03llds.\n",/(ms,1000),%(ms,1000));
-       }
+        var ms := (usec()-t_start)/1000;
+        printf(HASH +"TJ tj_add2collection(BAT): total time = %lld.%03llds.\n",/(ms,1000),%(ms,1000));
+      }
     });
     lock_unset(coll_lock);
     if ( verbose ) tj_verbose(HASH +"TJ tj_add2collection_frag(\"%s\") finished.\n",ftiName);
@@ -1705,34 +1710,34 @@ PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
 # this _tj_add2collection_frag adds a single document to the index (calling tj_throw2collection)
 # if necessary, the document is shredded before
 #
-PROC _tj_add2collection_frag(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_name, bit shred) : void
+PROC _tj_add2collection_frag(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_name, bit shred) : wrd
 { 
     var ms;
     if ( verbose ) tj_verbose(HASH +"TJ _tj_add2collection_frag(\"%s\",\"%s\",\"%s\") start.\n",ftiName,uri_loc,uri_name);
     if ( shred ) {
-	var pf_collection := _tj_get_parameter2(collBat,"pf_collection");
-	if ( isnil(uri_loc) ) {
-	    ERROR("_tj_add2collection: should specify doc_uri (and doc_name).");
-	}
-        if ( isnil(uri_name) ) {
-	  uri_name := uri_loc;
-	} else if ( uri_name = "" ) {
-	  uri_name := uri_loc;
-	}
-        if (not(bat("doc_name").reverse().exist(uri_name))) {
-            var s_start := usec();
-	    if ( isnil(pf_collection) ) {
-    	        shred_doc(uri_loc,uri_name);
-	    } else {
-    	        shred_doc(uri_loc,uri_name,pf_collection,0LL);
-	    }
-            if ( timing ) {
-	      ms := (usec() - s_start)/1000;
-              printf(HASH +"TJ _tj_add2collection_frag(\"%s\"): shred time = %lld.%03llds.\n",uri_name,/(ms,1000),%(ms,1000));
-            }
+      var pf_collection := _tj_get_parameter2(collBat,"pf_collection");
+      if ( isnil(uri_loc) ) {
+          ERROR("_tj_add2collection: should specify doc_uri (and doc_name).");
+      }
+      if ( isnil(uri_name) ) {
+        uri_name := uri_loc;
+      } else if ( uri_name = "" ) {
+        uri_name := uri_loc;
+      }
+      if (not(bat("doc_name").reverse().exist(uri_name))) {
+        var s_start := usec();
+        if ( isnil(pf_collection) ) {
+          shred_doc(uri_loc,uri_name);
         } else {
-            if ( verbose ) tj_verbose(HASH +"TJ _tj_add2collection_frag doc(\"%s\") already shredded.\n",uri_name);
-	}
+          shred_doc(uri_loc,uri_name,pf_collection,0LL);
+        }
+        if ( timing ) {
+          ms := (usec() - s_start)/1000;
+          printf(HASH +"TJ _tj_add2collection_frag(\"%s\"): shred time = %lld.%03llds.\n",uri_name,/(ms,1000),%(ms,1000));
+        }
+      } else {
+        if ( verbose ) tj_verbose(HASH +"TJ _tj_add2collection_frag doc(\"%s\") already shredded.\n",uri_name);
+      }
     }
     var	i_start := usec();
     var xrpc_mode := "";
@@ -1741,16 +1746,16 @@ PROC _tj_add2collection_frag(str ftiName, BAT[str,bat] collBat, str uri_loc, str
     _tj_throw2collection(collBat,ws_opt,uri_name);
     ws_destroy(ws_opt);
     
-    #update params
+    # compute last pre
     var lstPre := collBat.find("size").count_wrd() + 1;
-    _tj_set_parameter2(collBat, "_last_tijahPre", str(lstPre));
-    _tj_set_parameter2(collBat, "status", "building");
 
     if ( timing ) {
-	ms := (usec()-i_start)/1000;
-        printf(HASH +"TJ _tj_add2collection_frag(\"%s\"): forward index creation time = %lld.%03llds.\n",uri_name,/(ms,1000),%(ms,1000));
+      ms := (usec()-i_start)/1000;
+      printf(HASH +"TJ _tj_add2collection_frag(\"%s\"): forward index creation time = %lld.%03llds.\n",uri_name,/(ms,1000),%(ms,1000));
     }
     if ( verbose ) tj_verbose(HASH +"TJ _tj_add2collection_frag(\"%s\") finished.\n",ftiName);
+    
+    return lstPre;
 }
 
 # 
