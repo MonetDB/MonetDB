@@ -13,6 +13,7 @@ stdout of test 'declare_variable_as_TYPE.SF-1625597` in directory 'tests/BugTrac
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 

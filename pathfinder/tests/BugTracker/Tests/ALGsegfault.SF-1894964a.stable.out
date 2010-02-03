@@ -17,6 +17,7 @@ stdout of test 'ALGsegfault.SF-1894964a` in directory 'tests/BugTracker` itself:
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 

@@ -24,7 +24,7 @@ table( doc_location.select("http://www.cwi.nl/~boncz/xmark/auctions.xml").col_na
 # URI						size	  # name
 # str						lng	  # type
 #-----------------------------------------------------------------#
-[ "http://www.cwi.nl/~boncz/xmark/auctions.xml",  185856	  ]
+[ "http://www.cwi.nl/~boncz/xmark/auctions.xml",  188928	  ]
 printf("\nDone..\n");
 
 Done..

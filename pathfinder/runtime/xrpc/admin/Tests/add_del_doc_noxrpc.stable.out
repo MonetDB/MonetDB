@@ -29,7 +29,7 @@ Over..
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
   <collections-after-add>
-    <collection><numDocs>2</numDocs><size>625 KiB</size><updatable>true</updatable>xmark</collection>
+    <collection><numDocs>2</numDocs><size>611 KiB</size><updatable>true</updatable>xmark</collection>
   </collections-after-add>
   <documents-after-add>
     <document><updatable>true</updatable><collection>xmark</collection>xmark1.xml</document>
