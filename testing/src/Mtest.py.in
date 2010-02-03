@@ -2134,7 +2134,7 @@ def killProc(proc, outfile = None, cmd = None):
     try:
         os.kill(-proc.pid, signal.SIGKILL)
     except AttributeError:
-        subprocess.Popen(['pskill','-t',str(proc.pid)])
+        subprocess.Popen(['taskkill','/T',str(proc.pid)])
     except OSError:
         pass
     if outfile is not None and cmd is not None:
@@ -2900,7 +2900,8 @@ if os.path.exists(os.path.join('CVS', 'Repository')):
         if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
             ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
         elif par['PACKAGE'] != 'monetdb-java':
-            Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
+            if par['PACKAGE'] != '.':
+                Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
             par['PACKAGE'] = 'monetdb'
             Warn('Using default package="%s".' % par['PACKAGE'])
 
