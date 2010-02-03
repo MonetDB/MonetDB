@@ -3055,6 +3055,8 @@ a different value function, this also allows for factoring out type-checking
 overhead.
 @{
 @= multijoin
+	for (i = 0; i < argc; i++)
+		BATpreload_(reorder[i]->b);
 	while (algo) {
 		ptr h;		/* points to current ID */
 
@@ -3074,7 +3076,6 @@ overhead.
 			BAT *b = n->b;
 			BATiter bi = n->bi;
 
-			BATpreload_(b);
 			/* one-by-one traversal of the lead column? => no matching done.
 			 */
 			if (n == lead_col) {
