@@ -81,8 +81,15 @@
 #include "parser.tab.h"
 
 #ifdef _MSC_VER
-/* avoid deprecation warning on Windows */
-#define isatty _isatty
+/* avoid deprecation warning and incompatible declaration complaints
+ * on Windows */
+#include <io.h>
+#define isatty my_isatty
+int
+my_isatty(int fd)
+{
+	return _isatty(fd);
+}
 #endif
 
 /* bison 1.33 does not include this line in XQuery.tab.h. So we do it here. */
