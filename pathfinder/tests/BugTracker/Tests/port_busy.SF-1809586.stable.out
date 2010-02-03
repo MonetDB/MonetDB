@@ -14,11 +14,11 @@ module(mapi);
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Detected 7.753 GiB (8324386816 bytes) main-memory.
 # Visit http://monetdb.cwi.nl/ for further information.
-!ERROR: MAPIlisten:binding to stream socket (32202) failed
-!OS: Address already in use
 print(1);
 [ 1 ]
 quit();
+!ERROR: MAPIlisten:binding to stream socket (39041) failed
+!OS: Address already in use
 module(pathfinder);
 # MonetDB Server v4.34.0
 # based on GDK   v1.34.0
@@ -28,7 +28,7 @@ module(pathfinder);
 # Detected 7.753 GiB (8324386816 bytes) main-memory.
 # Visit http://monetdb.cwi.nl/ for further information.
 # PF/Tijah module v0.13.0 loaded. http://dbappl.cs.utwente.nl/pftijah
-!ERROR: MAPIlisten:binding to stream socket (32202) failed
+!ERROR: MAPIlisten:binding to stream socket (39041) failed
 !OS: Address already in use
 XRPCPORT
 module(mapi);
