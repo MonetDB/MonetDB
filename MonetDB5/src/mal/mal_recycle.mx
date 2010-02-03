@@ -885,10 +885,9 @@ RECYCLEinterest(InstrPtr p){
 bit 
 isBindInstr(InstrPtr p)
 {
-	return (getModuleId(p)==putName("sql",3) &&
-		(putName("bind",4)== getFunctionId(p) ||
-		 putName("bind_idxbat",11) == getFunctionId(p)));
-				
+	return (putName("bind",4)== getFunctionId(p) ||
+		 putName("bind_idxbat",11) == getFunctionId(p) ||
+		 putName("bind_dbat",9) == getFunctionId(p));
 }
 
 #ifdef _DEBUG_CACHE_
@@ -2006,12 +2005,77 @@ thetaselectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 }
 
 static int
+RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
+{
+	int i, j;
+	InstrPtr q;
+	static str octopusRef = 0, bindRef = 0;
+	bit gluse = FALSE;
+
+	if (octopusRef == 0)
+		octopusRef = putName("octopus",7);
+	if (bindRef == 0)
+        bindRef = putName("bind",4);
+
+	mal_set_lock(recycleLock,"recycle");
+	for (i = 0; i < recycleBlk->stop; i++){
+    	q = getInstrPtr(recycleBlk,i);
+		if ( getModuleId(q) != octopusRef ||
+			 getFunctionId(q) != bindRef ) continue; 
+
+		if (p->argc < q->argc-1) continue; 
+		/* sub-range instructions can be subsumed from entire table */
+
+		if (p->argc == q->argc-1) {	/* check for exact match */
+					/* all args except connection (1) should match */
+			for (j = p->retc + 1; j < p->argc; j++)
+                if ( VALcmp(&s->stk[getArg(p,j)],
+					 &getVarConstant(recycleBlk, getArg(q,j))) )
+                	goto notfound;
+
+            /* found an exact match */
+            /* get the results on the stack */
+            for( j=0; j<p->retc; j++){
+                VALcopy(&s->stk[getArg(p,j)],
+                    &getVarConstant(recycleBlk,getArg(q,j)) );
+                if (s->stk[getArg(p,j)].vtype == TYPE_bat)
+                    BBPincref( s->stk[getArg(p,j)].val.bval, TRUE);
+            }
+            recycleBlk->profiler[i].counter++;
+            if ( recycleBlk->profiler[i].clk < cntxt->rcc->time0 )
+                        gluse = recycleBlk->profiler[i].trace = TRUE;
+            else { /*local use - return the credit */
+			    returnCrd(q);
+            }
+            recycleBlk->profiler[i].clk = GDKusec();
+            cntxt->rcc->recTrans++;
+			cntxt->rcc->recTransKB += recycleBlk->profiler[i].wbytes;
+            cntxt->rcc->recent = i;
+            mal_unset_lock(recycleLock,"recycle");
+            return i;
+			
+		} else {  /* check if p (9 args) transfers a sub-range of the cached q (7 args) */
+		/* TODO */
+
+		}
+
+		notfound:
+			continue;
+	}
+
+	mal_unset_lock(recycleLock,"recycle");
+	return -1;
+}
+
+
+static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
     int i, j, ridx, idx, pc = -1, evicted=0;
     bat bid= -1, nbid= -1;
     InstrPtr q;
-    static str selectRef = 0, like_selectRef = 0, thetaselectRef = 0;
+    static str selectRef = 0, like_selectRef = 0, thetaselectRef = 0, 
+		octopusRef = 0, bindRef = 0;
     bit gluse = FALSE;
 	lng ticks = GDKusec();
 
@@ -2021,9 +2085,18 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
         like_selectRef= putName("like_select",11);
 	if (thetaselectRef == 0)
         thetaselectRef= putName("thetaselect",11);
+    if (octopusRef == 0)
+        octopusRef = putName("octopus",7);
+	if (bindRef == 0)
+        bindRef = putName("bind",4);
 
     if( recycleBlk == 0 || reusePolicy == 0)
         return -1;
+
+	/* separate matching of data transfer instructions: octopus.bind() */
+	if ( getModuleId(p) == octopusRef && getFunctionId(p) == bindRef )
+		return RECYCLEdataTransfer(cntxt, s, p);
+
     mal_set_lock(recycleLock,"recycle");
 
     for (i = 0; i < recycleBlk->stop; i++){
@@ -2205,7 +2278,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( recycleBlk == NULL )
 		return 0;
 	if ( !RECYCLEinterest(p) )  /* don't scan RP for non-monitored instructions */
-        	return 0;
+		return 0;
 	if ( cntxt->rcc->curQ < 0 )	/* don't use recycling before initialization
 				by prelude() */
 		return 0;
@@ -2231,6 +2304,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 	lng rd = getVolume(stk,p, 1)/ RU +1;
 	lng wr = getVolume(stk,p, 0)/ RU +1;
 	ValRecord *v;
+	static str octopusRef = 0, bindRef = 0;
 
 	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
 	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
@@ -2238,6 +2312,17 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 	v = &stk->stk[getArg(p,0)]; /* don't count memory for persistent bats */
 	if ((v->vtype == TYPE_bat) && (BBP_status( *(int*)VALget(v)) & BBPPERSISTENT))
 		wr = 0;
+	
+    if (octopusRef == 0)
+        octopusRef = putName("octopus",7);
+	if (bindRef == 0)
+        bindRef = putName("bind",4);
+
+	/* track data transfer */
+	if ( getModuleId(p) == octopusRef && getFunctionId(p) == bindRef ) {
+		cntxt->rcc->trans++;
+		cntxt->rcc->transKB += wr;
+	}
 
 	if ( wr > memLimit)
 		return;
@@ -2476,7 +2561,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef _DEBUG_CACHE_
                         if ( q->token == NOOPsymbol ) continue;
 #endif
-			if (isBindInstr(q)){
+			if (isBindInstr(q) && getModuleId(q) == putName("sql",3) ){
 				for (j=p->retc; j<p->argc; j++)
 					if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 					break;

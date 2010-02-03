@@ -229,6 +229,10 @@ typedef struct RECSTAT {
 	lng ccCalls;		/* Number of calls to cleanCache */
 	lng ccInstr;		/* Number of instructions cleaned */
 	lng crdInstr;		/*	Number of instructions not admited in RP by CRD */
+	int trans;          /* Number of data transfer instructions */
+	lng transKB;        /* Size in KB of transferred data */
+	int recTrans;       /* Number of recycled data transfer instructions */
+	lng recTransKB;     /* Size in KB of recycled transferred data */
 } *RecPtr, RecStat;
 
 mal_export str activateCounter(str name);

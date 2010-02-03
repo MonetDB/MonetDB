@@ -338,8 +338,8 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 	static int q=0;
 	stream *s;
 	InstrPtr p;
-	int potrec=0, instr=0, i;
-	lng recmem=0;
+	int potrec=0, nonbind=0, i, trans=0;
+	lng reusedmem=0;
 
 	if (recycleLog == NULL) 
 		s = cntxt->fdout;
@@ -356,29 +356,42 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		p = mb->stmt[i];
 		if ( RECYCLEinterest(p) ){
 			potrec++;
-			if (!isBindInstr(p)) instr++;
+			if ( !isBindInstr(p) ) nonbind++;
+			else if ( getModuleId(p) == putName("octopus",7) ) trans++;
 		}
 	}
 
-	for(i=0; i< recycleBlk->stop; i++)
+	for(i=0; i < recycleBlk->stop; i++)
 #ifdef _DEBUG_CACHE_
 		if ( getInstrPtr(recycleBlk,i)->token != NOOPsymbol ) 
 #endif
 		if ( recycleBlk->profiler[i].counter >1) 
-			recmem += recycleBlk->profiler[i].wbytes;
+			reusedmem += recycleBlk->profiler[i].wbytes;
 
-	stream_printf(s,"%d\t %3d\t %3d\t %3d\t %7.2f\t",++q, mb->stop, potrec,
-		cntxt->rcc->recycled0,(GDKusec()-cntxt->rcc->time0)/1000.0);
-	stream_printf(s,"%3d\t %4d\t %4d\t ",cntxt->rcc->recycled,cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
+	stream_printf(s,"%d\t %7.2f\t ", ++q, (GDKusec()-cntxt->rcc->time0)/1000.0);
+	if ( monitorRecycler & 2) { /* Current query stat */
+		stream_printf(s,"%3d\t %3d\t %3d\t ", mb->stop, potrec, nonbind);
+		stream_printf(s,"%3d\t %3d\t ", cntxt->rcc->recycled0, cntxt->rcc->recycled);
+	}
+
+	if ( monitorRecycler & 1) { /* RP stat */
+		stream_printf(s,"| %4d\t %4d\t ",cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
+		stream_printf(s, LLFMT "\t" LLFMT "\t ", recyclerUsedMemory, reusedmem);
 #ifdef _DEBUG_CACHE_
-	stream_printf(s,"%d\t %d\t ",cntxt->rcc->recycleRem,cntxt->rcc->recycleMiss);
+		stream_printf(s,"%d\t %d\t ",cntxt->rcc->recycleRem,cntxt->rcc->recycleMiss);
 #endif
-	stream_printf(s, LLFMT "\t" LLFMT "\t %d", recyclerUsedMemory, recmem, instr);
+	}
+
+	if ( monitorRecycler & 4) { /* Data transfer stat */
+		stream_printf(s,"| %2d\t "LLFMT"\t ",cntxt->rcc->trans, cntxt->rcc->transKB);
+		stream_printf(s,"%2d\t "LLFMT"\t ",cntxt->rcc->recTrans, cntxt->rcc->recTransKB);
+	}
 
 	if ( reusePolicy == REUSE_MULTI )
 		stream_printf(s, " \t%5.2f \t%5.2f\n", msFindTime/1000.0, msComputeTime/1000.0);
 	else stream_printf(s,"\n");
-	if( s !=cntxt->fdout)
+
+	if( s != cntxt->fdout )
 		close_stream(s);
 	return MAL_SUCCEED;
 }
@@ -473,12 +486,28 @@ RECYCLElog(int *ret, str *nm)
 	recycleLog = GDKstrdup(*nm);
 	s = open_wastream(recycleLog);
     if (s){
+
+		stream_printf(s,"# Q\t TimeQ(ms)\t");
+		if ( monitorRecycler & 2) { /* Current query stat */
+			stream_printf(s,"InstrQ\t PotRecQ\t NonBind\t ");
+			stream_printf(s,"RecQ\t TotRec\t ");
+		}
+
+		if ( monitorRecycler & 1) { /* RP stat */
+			stream_printf(s,"| TotExec\tTotCL\tMem(KB)\tReused\t ");
 #ifdef _DEBUG_CACHE_
-		stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ(ms)\tRecTot\tInstrTot\tRPTot\tRPRem\tRPMiss\tMem(KB)\tReusedMem\tInstrNoGBC\n");
-#else
-		stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ\t  Rec\tInstr\tRPTot\tMem \tReused\tInstr\tmsFind\tmsComp\n");
-		stream_printf(s,"#  \t       \t             \t (ms)\t  Tot\t Tot \tRPTot\t(KB)\tMem \tNoGBC\t(ms)\t(ms)\n");
+			stream_printf(s,"RPRem\tRPMiss\t ");
 #endif
+		}
+
+		if ( monitorRecycler & 4) { /* Data transfer stat */
+			stream_printf(s,"| Trans#\t Trans(KB)\t RecTrans#\t RecTrans(KB)\t ");
+		}
+
+		if ( reusePolicy == REUSE_MULTI )
+			stream_printf(s, "MSFind\t MSCompute\n");
+		else stream_printf(s,"\n");
+
 		close_stream(s);
 	}
 
@@ -500,6 +529,8 @@ RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	maxAggr = ALGmaxany;
 	msFindTime = 0;			/* multi-subsume measurements */
 	msComputeTime = 0;
+	cntxt->rcc->trans = cntxt->rcc->recTrans = 0;
+	cntxt->rcc->transKB = cntxt->rcc->recTransKB =0;
 	return MAL_SUCCEED;
 }
 str 
@@ -509,7 +540,7 @@ RECYCLEepilogue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) p;
 	cntxt->rcc->curQ = -1;  
 	cntxt->rcc->recycled += cntxt->rcc->recycled0; 
-	if (monitorRecycler == 2 ) 
+	if ( monitorRecycler ) 
 		return RECYCLErunningStat(cntxt,mb);
 	return MAL_SUCCEED;
 }
