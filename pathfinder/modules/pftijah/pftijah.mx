@@ -2945,7 +2945,12 @@ PROC ALG_tj_docmgmt_tape2(BAT[str,bat] tape,
                 cb.insert(str(nil),$t);
             }
             fti_cluster@batloop() {
-                if ( verbose ) { printf(HASH +"TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); $t.print(); }
+                if ( verbose ) { 
+									tj_verbose(HASH +"TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); 
+									# $t.print(); 
+									# careful wuth the previous print, it may be huge
+									tj_verbose(HASH +"TJ:tj_play_doc_tape() doclist is %d docs long.\n",int($t.count_wrd()));
+								}
                 tj_add2collection($h,$t,false);
             }
 
