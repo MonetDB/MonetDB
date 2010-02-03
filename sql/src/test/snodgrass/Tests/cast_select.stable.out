@@ -43,7 +43,7 @@ SELECT CAST('12:34:56' AS TIME) = TIME '12:34:56';
 1 row
 
 SELECT CAST(TIME '12:34:56' AS TIMESTAMP WITH TIME ZONE) = TIMESTAMP '1997-07-23 12:34:56-07:00';
-Error on line 5: CAST: cannot cast type 'time' to type 'timestamptz'
+Error on line 5: types time(1,0) (daytime) and timestamptz(7,0) (timestamp) are not equal
 --rollback;
 SELECT CAST( TIME '12:34:56.123' AS TIME(6) ) = TIME '12:34:56.123000';
 +----------------+
