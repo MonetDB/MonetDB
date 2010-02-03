@@ -582,19 +582,12 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "}\n\n";
 		break;
 	case OP_NULL:
-		o << "static char *" << atom <<"_nil = NULL;\n";
-		o << "static ptr " << atom;
-
-		o << "_null(void){\n";
-		o << "   char *p1,*p2;\n";
-		o << "   if (" << atom <<"_nil == NULL)\n";
-		o << "      " << atom <<"_nil = (char*)GDKmalloc(" << len << ");\n";
-		o << "   p1 = " << atom <<"_nil;\n";
-
-		o << "   p2 = p1 + " << len << ";\n";
-		o << "   while(p1 < p2) *p1++ = -127;\n";
+		o << "static char " << atom <<"_nil[" << len << "] = {";
+		for (int i = d.size(); i > 0; i--)
+			o << "'\\201',";
+		o << "};\n";
+		o << "static ptr " << atom << "_null(void){\n";
 		o << "   return (ptr)" << atom <<"_nil;\n";
-
 		o << "}\n\n";
 		break;
 	case OP_FIX:
