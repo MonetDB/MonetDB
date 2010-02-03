@@ -43,7 +43,7 @@ SELECT CAST('12:34:56' AS TIME) = TIME '12:34:56';
 1 row
 
 SELECT CAST(TIME '12:34:56' AS TIMESTAMP WITH TIME ZONE) = TIMESTAMP '1997-07-23 12:34:56-07:00';
-Error on line 5: CAST: cannot cast type 'time' to type 'timestamptz'
+Error on line 5: types time(1,0) (daytime) and timestamptz(7,0) (timestamp) are not equal
 --rollback;
 SELECT CAST( TIME '12:34:56.123' AS TIME(6) ) = TIME '12:34:56.123000';
 +----------------+
@@ -134,7 +134,7 @@ SELECT CAST('2 12:34' AS INTERVAL DAY TO MINUTE );
 1 row
 
 SELECT CAST('12:34' AS INTERVAL DAY TO MINUTE ); -- err: works not
-Error on line 21: ERROR: second_interval_str: operation failed.
+Error on line 21: SQLException:calc.second_interval:wrong format (12:34)
 SELECT CAST( INTERVAL'86 00:00:00' DAY TO SECOND AS INTERVAL HOUR TO SECOND ) = INTERVAL '2064:00:00' HOUR TO SECOND;
 +----------------+
 | =_single_value |
@@ -144,7 +144,7 @@ SELECT CAST( INTERVAL'86 00:00:00' DAY TO SECOND AS INTERVAL HOUR TO SECOND ) = 
 1 row
 
 SELECT CAST('86 00:00:00' AS INTERVAL HOUR(3) TO SECOND ); -- err: overflow exception
-Error on line 23: ERROR: second_interval_str: operation failed.
+Error on line 23: SQLException:calc.second_interval:wrong format (86 00:00:00)
 SELECT CAST( CAST( 7430400 AS INTERVAL SECOND ) AS INTERVAL DAY TO SECOND ) = INTERVAL '86 00:00:00' DAY TO SECOND;
 +----------------+
 | =_single_value |

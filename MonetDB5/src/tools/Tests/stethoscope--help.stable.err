@@ -18,10 +18,12 @@ stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}
 -h | --host=<hostname>
 -g | --gnuplot
 The trace options:
+    S =Start instruction profiling
     a =aggregates
     e =event
     f =function 
     o =operation called
+    i =interpreter thread
     T =time
     t =ticks
     c =cpu statistics

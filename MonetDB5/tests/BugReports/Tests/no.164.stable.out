@@ -32,7 +32,6 @@ stdout of test 'no.164` in directory 'tests/BugReports` itself:
 # >Description:
 # heapclustercopy fails with
 # !ERROR: CLUSTERcopyheap: BAT 2: BAT required.
-# !ERROR: CMDheapclustercopy: operation failed.
 # 
 # ========
 # test.script
@@ -100,7 +99,6 @@ stdout of test 'no.164` in directory 'tests/BugReports` itself:
 # module("cluster");
 # a.heapclustercopy(b);
 # !ERROR: CLUSTERcopyheap: BAT 2: BAT required.
-# !ERROR: CMDheapclustercopy: operation failed.
 # table(a,b);
 # #-----------------#
 # # tmp_23| tmp_24  #
@@ -110,7 +108,6 @@ stdout of test 'no.164` in directory 'tests/BugReports` itself:
 # [ "C",    "A"     ]
 # heapclustercopy(a,b);
 # !ERROR: CLUSTERcopyheap: BAT 2: BAT required.
-# !ERROR: CMDheapclustercopy: operation failed.
 # table(a,b);
 # #-----------------#
 # # tmp_23| tmp_24  #
@@ -120,7 +117,6 @@ stdout of test 'no.164` in directory 'tests/BugReports` itself:
 # [ "C",    "A"     ]
 # b.heapclustercopy(a);
 # !ERROR: CLUSTERcopyheap: BAT 2: BAT required.
-# !ERROR: CMDheapclustercopy: operation failed.
 # table(a,b);
 # #-----------------#
 # # tmp_23| tmp_24  #
@@ -130,7 +126,6 @@ stdout of test 'no.164` in directory 'tests/BugReports` itself:
 # [ "C",    "A"     ]
 # heapclustercopy(b,a);
 # !ERROR: CLUSTERcopyheap: BAT 2: BAT required.
-# !ERROR: CMDheapclustercopy: operation failed.
 # table(a,b);
 # #-----------------#
 # # tmp_23| tmp_24  #

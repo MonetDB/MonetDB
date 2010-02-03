@@ -32,7 +32,6 @@ print([multi2](b));
 !ERROR: [multi2]: 2 times inserted nil due to errors at tuples 1, 2.
 !ERROR: [multi2]: first error was:
 !ERROR: CMDfind: value not found.
-!ERROR: CMDfind: operation failed.
 !ERROR: interpret_params: print(param 1): evaluation error.
 print([multi1](b));
 !ERROR: [multi1]: 2 times inserted nil due to errors at tuples 1, 2.
@@ -40,7 +39,6 @@ print([multi1](b));
 !ERROR: [multi2]: 2 times inserted nil due to errors at tuples 1, 2.
 !ERROR: [multi2]: first error was:
 !ERROR: CMDfind: value not found.
-!ERROR: CMDfind: operation failed.
 !ERROR: interpret_params: print(param 1): evaluation error.
 
 # 10:17:37 >  

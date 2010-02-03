@@ -21,7 +21,6 @@ b.access(BAT_READ);
 
 print(rangesplit(b,0));
 !ERROR: BAThashsplit: number of ranges must not be less than 1!
-!ERROR: CMDrangesplit: operation failed.
 !ERROR: print(param 1): evaluation error.
 print(rangesplit(b,-1));
 !WARNING: BATrangesplit: reduced number of ranges (18446744073709551615) to number of tuples (10).
@@ -96,7 +95,6 @@ print(rangesplit(b,n + 1));
 
 print(hashsplit(b,0));
 !ERROR: BAThashsplit: number of ranges must not be less than 1!
-!ERROR: CMDhashsplit: operation failed.
 !ERROR: print(param 1): evaluation error.
 print(hashsplit(b,-1));
 !WARNING: BAThashsplit: reduced number of ranges (18446744073709551615) to number of tuples (10).

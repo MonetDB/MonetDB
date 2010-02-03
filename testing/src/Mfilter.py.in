@@ -54,18 +54,12 @@ test = (
                     r"^Pathfinder XQuery Compiler \(.Revision: .* .\)$",
                 # Tokens depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
-                # ant output we want to ignore
-                    r'^Buildfile:.*$',
-                    r'^Building jar: .*$',
-                    r'^Total time: [0-9]+ seconds?$',
-                # remove wine errors:
-                    r"^fixme:.*$",
                 # ignore big- vs. little-endian byte-orders in test tests/BugDay_2005-10-06_4.8/Tests/print_CTgroup.SF-1315791.*:
-                    r"^\[ .?\\000\\000\\000.?\\000\\000\\000.? \]$",
+                    r"^\[ .?\\000\\000\\000.?\\000\\000\\000.?.\]$",
                 # ignore compile date/time in helps messages:
                     r"^COMPILED:  by adm on .*$",
                 # ignore varying BAT IDs in error message (test leftfetchjoin_crash.SF-1705726)
-                    r"^!ERROR: BATfetchjoin\(tmp_[0-9]+,tmp_[0-9]+\) does not hit always .* => can't use fetchjoin.$",
+                    r"^!ERROR: BATfetchjoin\(tmp_[0-9]+,tmp_[0-9]+\) does not hit always \(\|bn\|=0 != 2=\|l\|\) => can't use fetchjoin.$",
                 # `fuser` (in MkillUsers) triggers these errors on Gentoo with "hardened" kernel
                     r'^! Cannot open /proc/net/unix: Permission denied$',
                     r'^! Cannot stat file /proc/[0-9]+/fd/[0-9]+: (?:No such file or directory|Permission denied)$',
@@ -74,17 +68,6 @@ test = (
                 # suspicious output/messages/errors? most probably triggered by MkillUsers, but apparently not causing any harm:
                     r'^! /.*/bin/[Mm](?:(?:server5?|apiClient|timeout|diff):e+|log:)$',
                     r'^! /usr/bin/mserver5:  m$',
-                 ])+')',  re.MULTILINE),
-        # differing error messages when loading non-existing modules in dynamic and static Mserver
-        re.compile('(?:'+')|(?:'.join([
-                    r"^!ERROR: DL_open: Unknown error.$",
-                    r"^!ERROR: DL_open: library not found \(STATIC\).$",
-                 ])+')',  re.MULTILINE),
-        re.compile('(?:'+')|(?:'.join([
-                    r"^!ERROR: TBL_loadmod: module load .* cancelled.$",
-                 ])+')',  re.MULTILINE),
-        re.compile('(?:'+')|(?:'.join([
-                    r"^!ERROR: module\(.*\): load error.$",
                  ])+')',  re.MULTILINE),
         # differences due to property-checking, which we want to treat as "minor differences"
         re.compile('(?:'+')|(?:'.join([
@@ -102,18 +85,8 @@ test = (
                     r'^\[ (?:\-|)[Ii]nfinity \]$',
                 # src/monet/modrefcnt1 & tests/BugDay_2005-11-09_4.9.3/double_load_double_drop.SF-1082293 (on Itanium)
                     r"^!ERROR: DESCload: atom 'lock' unknown, in BAT '[0-9]+'.$",
-                # pathfinder/tests/XQuery/fn_aps:
-                    r'^0.900000 0.500000 0.400000 (?:\-|)0.000000 0.400000 0.500000 0.900000 1 *$',
-                # pathfinder/tests/XPathMark/Tests/Q1[023]:
-                    r'^(?:</item>|)<item (?:id="item9"|featured="yes") (?:id="item9"|featured="yes")>$',
-                # sql/src/benchmarks/arno_flt/Tests/init:
-                    r'^.*\t2.7445021260064(?:099|1)e\-06\t',
                 # Broken sql error messages:
                     r'^QUERY = (?:\-\-|select|insert|INSERT) ',
-                # ld warnings on IRIX64:
-                    r"^ld64: WARNING 84 : .*/common/.libs/libmutils.so is not used for resolving any symbol.$",
-                # (extra) error messages that used to occur with M4/sql but don't any more with M5/sql:
-                    r'^.*!ERROR: .*operation failed.$',
                 # suggested alternatives in case of XQuery type errors:
                     r'^type error:   .*$',
                 # Debugging "strange" errors on Solaris x86:
@@ -245,13 +218,13 @@ def mFilter (FILE, IGNORE) :
             # ignore differences in "VariableOutput" or "ProfilingOutput"
             oline = "#~ " + iline
             n = n + 1
-        elif test[5].match(iline):
+        elif test[2].match(iline):
             # warnings and messages that should be treated as errors:
             oline = "!~" + iline
         elif test[0].match(iline):
             # potential differences, which we want to ignore; see above
             oline = "#~ " + iline
-        elif test[4].match(iline):
+        elif test[1].match(iline):
             # differences due to property-checking, which we want to treat as "minor differences"; see above
             oline = "=" + iline
         elif bbp_dir.match(iline):
