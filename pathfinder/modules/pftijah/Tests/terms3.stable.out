@@ -1,0 +1,36 @@
+stdout of test 'terms3` in directory 'modules/pftijah` itself:
+
+
+# 15:03:49 >  
+# 15:03:49 >   Mserver "--config=/export/scratch0/henning/stable/monet/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/export/scratch0/henning/stable/monet/lib/MonetDB4:/export/scratch0/henning/stable/monet/lib/MonetDB4/lib:/export/scratch0/henning/stable/monet/lib/MonetDB4/bin" --set "gdk_dbfarm=/export/scratch0/henning/stable/monet/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38734 --set xrpc_port=43406 --set monet_prompt= --trace  "--dbname=mTests_modules_pftijah" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 15:03:49 >  
+
+# MonetDB Server v4.36.0
+# based on GDK   v1.36.0
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-2010, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Detected 7.751 GiB (8322658304 bytes) main-memory.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.13.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.36.0 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:43406/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:03:49 >  
+# 15:03:49 >  mclient -lxquery -fxml --host=asbjorn --port=38734 terms3.xq
+# 15:03:49 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><res><section>xml databas section contain word time inform retriev relev</section><section>xml inform retriev section contain word time databas relev previous</section><section>pathfind section xml databas</section><section>tijah section xml inform retriev system</section><section>xml definit section contain databas inform retriev</section></res></XQueryResult>
+
+# 15:03:49 >  
+# 15:03:49 >  Done.
+# 15:03:49 >  
+
