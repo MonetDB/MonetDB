@@ -175,7 +175,7 @@ Over..
 # BAT:	  test	  #
 # (int)	  (lock)  #
 #-----------------#
-[ 0 ]
+[ 0	]
 
 # 18:26:30 >  
 # 18:26:30 >  Mtimeout -timeout 60 MapiClient "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708 < modrefcnt2_s02.milC
