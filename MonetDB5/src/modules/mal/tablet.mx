@@ -1330,8 +1330,16 @@ TABLETcollect_bats(Tablet * as)
 	for (i = 0; i < as->nr_attrs; i++) {
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c[0]->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c[0], BAT_READ);
+		BATpreload(fmt[i].c[0]);
 		BATpropcheck(fmt[i].c[0], BATPROPS_ALL);
+		/* drop the hashes, we don't need them now  and they consume space */
+		HASHremove(fmt[i].c[0]);
+
+		BATpreload(fmt[i].c[0]);
 		BATpropcheck(BATmirror(fmt[i].c[0]), BATPROPS_ALL);
+		/* drop the hashes, we don't need them now  and they consume space */
+		HASHremove(BATmirror(fmt[i].c[0]));
+
 		if (cnt != BATcount(fmt[i].c[0])) {
 			if ( as->error == 0) /* a new error */
 				GDKerror("Error: column %d  count " BUNFMT " differs from " BUNFMT "\n",i,BATcount(fmt[i].c[0]),cnt);
