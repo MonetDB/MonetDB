@@ -146,9 +146,10 @@ void milprint_end_frag (tjc_config *tjc_c, TJatree_t *tree, int frag) {
 	TJCPRINTF(MILOUT,"nexi_result%d := tj_prior_%s(nexi_result%d);\n", frag, tjc_c->prior, frag);
     }
     TJCPRINTF(MILOUT,"nexi_result%d := tsort_rev(nexi_result%d);\n", frag, frag);
+    /* we will do this at a later stage in order to return the complete result size
     if (tjc_c->topk) {
         TJCPRINTF(MILOUT,"nexi_result%d := nexi_result%d.slice(0, %d);\n", frag, frag, tjc_c->topk - 1);
-    }
+    } */
     if (tjc_c->inexout) {
         TJCPRINTF(MILOUT,"nexi_result%d := tj_pre2inexpath(nexi_result%d);\n", frag, frag);
     }
