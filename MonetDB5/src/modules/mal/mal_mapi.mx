@@ -745,7 +745,8 @@ SERVERlisten_default(int *ret)
 		p = GDKgetenv("mapi_port");
 		if (p)
 			port = (int) strtol(p, NULL, 10);
-		return SERVERlisten(&port, 0, &maxusers, 0);
+		p = GDKgetenv("mapi_usock");
+		return SERVERlisten(&port, &p, &maxusers, 0);
 	}
 	return MAL_SUCCEED;
 }

@@ -1,7 +1,12 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Mon Jan 18 2010 Martin Kersten <mk@>
+* Thu Feb 04 2010 Fabian Groffen <fabian@cwi.nl>
+- The config variable mapi_usock can now be used to instruct the server
+  to listen for connections on a local UNIX domain socket on UNIX-like
+  systems.
+
+* Mon Jan 18 2010 Martin Kersten <mk@cwi.nl>
 - The MAL interpreter has been extended with an operation
   admission policy to control the memory claims of all
   concurrent running interpreters. Instructions are hold
@@ -10,5 +15,4 @@
 - The join path optimizer has been extended with searching for
   join*, semijoin*, and leftjoin* paths. Furthermore, it avoids
   duplicate work by factoring out all common simple join paths.
-  .
 
