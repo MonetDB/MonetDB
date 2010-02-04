@@ -312,7 +312,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port) {
 		if (*port > 0) {
 			fprintf(f, "mapi:monetdb://%s:%i/\n", *host, *port);
 		} else {
-			fprintf(f, "mapi:monetdb://%s/\n", *host);
+			fprintf(f, "mapi:monetdb://%s\n", *host);
 		}
 		(void)fflush(f);
 		(void)fclose(f);
