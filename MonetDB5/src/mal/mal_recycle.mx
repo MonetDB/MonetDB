@@ -2010,7 +2010,6 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 	int i, j;
 	InstrPtr q;
 	static str octopusRef = 0, bindRef = 0;
-	bit gluse = FALSE;
 
 	if (octopusRef == 0)
 		octopusRef = putName("octopus",7);
@@ -2043,7 +2042,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
             }
             recycleBlk->profiler[i].counter++;
             if ( recycleBlk->profiler[i].clk < cntxt->rcc->time0 )
-                        gluse = recycleBlk->profiler[i].trace = TRUE;
+                    recycleBlk->profiler[i].trace = TRUE;
             else { /*local use - return the credit */
 			    returnCrd(q);
             }
