@@ -687,6 +687,7 @@ errno == WSAEADDRINUSE &&
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
 
 		length = (SOCKLEN) sizeof(userver);
+		unlink(usockfile);
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			unlink(usockfile);
 			throw(IO, "mal_mapi.listen",
