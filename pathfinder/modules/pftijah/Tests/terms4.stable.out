@@ -1,0 +1,36 @@
+stdout of test 'terms4` in directory 'modules/pftijah` itself:
+
+
+# 15:03:49 >  
+# 15:03:49 >   Mserver "--config=/export/scratch0/henning/stable/monet/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/export/scratch0/henning/stable/monet/lib/MonetDB4:/export/scratch0/henning/stable/monet/lib/MonetDB4/lib:/export/scratch0/henning/stable/monet/lib/MonetDB4/bin" --set "gdk_dbfarm=/export/scratch0/henning/stable/monet/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38734 --set xrpc_port=43406 --set monet_prompt= --trace  "--dbname=mTests_modules_pftijah" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 15:03:49 >  
+
+# MonetDB Server v4.36.0
+# based on GDK   v1.36.0
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-2010, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Detected 7.751 GiB (8322658304 bytes) main-memory.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.13.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.36.0 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:43406/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:03:50 >  
+# 15:03:50 >  mclient -lxquery -fxml --host=asbjorn --port=38734 terms4.xq
+# 15:03:50 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><res><section stemming="porter">xml databas section contain word time inform retriev relev</section><section stemming="porter">xml inform retriev section contain word time databas relev previou</section><section stemming="porter">pathfind section xml databas</section><section stemming="porter">tijah section xml inform retriev system</section><section stemming="porter">xml definit section contain databas inform retriev</section><section stemming="snowball">xml databas section contain word time inform retriev relev</section><section stemming="snowball">xml inform retriev section contain word time databas relev previous</section><section stemming="snowball">pathfind section xml databas</section><section stemming="snowball">tijah section xml inform retriev system</section><section stemming="snowball">xml definit section contain databas inform retriev</section><section stemming="nostem">xml databases this section is about it contains the words and many times more than say information retrieval should be relevant to next</section><section stemming="nostem">xml information retrieval this section is about it contains the words and many times more than say databases should be relevant to previous</section><section stemming="nostem">pathfinder this section is about the xml database more than any other</section><section stemming="nostem">tijah this section is about the xml information retrieval system more than any other</section><section stemming="nostem">xml definitions this section contains that are used in databases and information retrieval</section></res></XQueryResult>
+
+# 15:03:50 >  
+# 15:03:50 >  Done.
+# 15:03:50 >  
+

@@ -1,0 +1,36 @@
+stdout of test 'terms_tf` in directory 'modules/pftijah` itself:
+
+
+# 15:03:52 >  
+# 15:03:52 >   Mserver "--config=/export/scratch0/henning/stable/monet/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/export/scratch0/henning/stable/monet/lib/MonetDB4:/export/scratch0/henning/stable/monet/lib/MonetDB4/lib:/export/scratch0/henning/stable/monet/lib/MonetDB4/bin" --set "gdk_dbfarm=/export/scratch0/henning/stable/monet/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38734 --set xrpc_port=43406 --set monet_prompt= --trace  "--dbname=mTests_modules_pftijah" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 15:03:52 >  
+
+# MonetDB Server v4.36.0
+# based on GDK   v1.36.0
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-2010, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Detected 7.751 GiB (8322658304 bytes) main-memory.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.13.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.36.0 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:43406/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:03:52 >  
+# 15:03:52 >  mclient -lxquery -fxml --host=asbjorn --port=38734 terms_tf.xq
+# 15:03:52 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><terms><section num="1"><term name="xml">4</term><term name="databas">4</term><term name="section">2</term><term name="contain">1</term><term name="word">1</term><term name="time">1</term><term name="inform">1</term><term name="retriev">1</term><term name="relev">1</term></section><section num="2"><term name="xml">4</term><term name="inform">4</term><term name="retriev">4</term><term name="section">2</term><term name="contain">1</term><term name="word">1</term><term name="time">1</term><term name="databas">1</term><term name="relev">1</term><term name="previous">1</term></section><section num="3"><term name="pathfind">4</term><term name="section">3</term><term name="xml">1</term><term name="databas">1</term></section><section num="4"><term name="tijah">4</term><term name="section">3</term><term name="xml">1</term><term name="inform">1</term><term name="retriev">1</term><term name="system">1</term></section><section num="5"><term name="xml">3</term><term name="definit">2</term><term name="section">1</term><term name="contain">1</term><term name="databas">1</term><term name="inform">1</term><term name="retriev">1</term></section></terms></XQueryResult>
+
+# 15:03:52 >  
+# 15:03:52 >  Done.
+# 15:03:52 >  
+
