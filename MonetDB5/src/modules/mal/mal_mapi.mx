@@ -45,15 +45,12 @@ comment "Start a Mapi server with the default settings.";
 command listen(port:int):int
 address SERVERlisten_port
 comment "Start a Mapi listener on the port given.";
-command listen(port:int, maxusers:int):int
-address SERVERlisten2
-comment "Start a Mapi listener.";
-
+command listen(unixsocket:str):int
+address SERVERlisten_usock
+comment "Start a Mapi listener on the unix socket file given.";
 command listen(port:int, maxusers:int, cmd:str):int
-address SERVERlisten3
-comment "Start the Mapi listener on <port> for <maxusers>. 
-	For a new client connection MAL procedure <cmd>(Stream s_in, Stream s_out)
-	is called.If no <cmd> is specified a new client thread is forked.";
+address SERVERlisten_cmd
+comment "Start the Mapi listener on <port> for <maxusers>.  For a new client connection MAL procedure <cmd>(Stream s_in, Stream s_out) is called.  If no <cmd> is specified a new client thread is forked.";
 
 command stop():void
 address SERVERstop
@@ -251,16 +248,6 @@ comment "Bind a remote variable to a local one.";
 mapi.listen();
 @-
 @{
-#command listen(open:bit):int
-#address SERVERlisten_open
-#comment "Start a Mapi server on the default port global bound or not";
-#command receive(key:int,nme:str):bat[:any_1,:any_2]
-#address SERVERreceive
-#comment "Fetch a bat from a remote site";
-
-#command send(key:int,nme:str, r:bat[:any_1,:any_2]):void
-#address SERVERsend
-#comment "Send a bat to a remote site";
 
 @h
 #ifndef SERVER_H
@@ -294,9 +281,9 @@ mapi.listen();
 
 mal_mapi_export str SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
 mal_mapi_export str SERVERlisten_default(int *ret);
-mal_mapi_export str SERVERlisten2(int *ret, int *port, int *maxusers);
-mal_mapi_export str SERVERlisten3(int *ret, int *port, int *maxusers, str *cmd);
 mal_mapi_export str SERVERlisten_port(int *ret, int *pid);
+mal_mapi_export str SERVERlisten_usock(int *ret, str *usock);
+mal_mapi_export str SERVERlisten_cmd(int *ret, int *port, int *maxusers, str *cmd);
 mal_mapi_export str SERVERstop(int *ret);
 mal_mapi_export str SERVERsuspend(int *ret);
 mal_mapi_export str SERVERresume(int *ret);
@@ -469,9 +456,6 @@ doChallenge(str cmd, stream *in, stream *out) {
 }
 
 static char *threadcommand = 0;
-#ifdef HAVE_SYS_UN_H
-static SOCKET usock = INVALID_SOCKET;
-#endif
 static MT_Id listener[8]; 
 static int lastlistener=0;
 static int serveractive=TRUE;
@@ -481,10 +465,16 @@ SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
 	char *cmd = threadcommand;
-	SOCKET sock = Sock? *Sock : INVALID_SOCKET;
+	SOCKET sock = INVALID_SOCKET;
+	SOCKET usock = INVALID_SOCKET;
 
-	if ( Sock) GDKfree(Sock);
-	if( lastlistener < 8 )
+	if (*Sock) {
+		sock = Sock[0];
+		usock = Sock[1];
+		GDKfree(Sock);
+	}
+
+	if (lastlistener < 8)
 		listener[lastlistener++] = MT_getpid();
 	do {
 		int retval;
@@ -506,10 +496,10 @@ SERVERlistenThread(SOCKET *Sock)
 		/* temporarily use msgsock to record the larger of sock and usock */
 		msgsock = sock;
 #ifdef HAVE_SYS_UN_H
-		if (usock != INVALID_SOCKET )
+		if (usock != INVALID_SOCKET)
 			msgsock = usock;
 #endif
-		retval = select((int) msgsock + 1, &fds, NULL, NULL, &tv);
+		retval = select((int)msgsock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -522,8 +512,8 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
-				if (MT_geterrno() != EINTR || serveractive==FALSE) {
+			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
+				if (MT_geterrno() != EINTR || serveractive == FALSE) {
 					msg = "accept failed\n";
 					goto error;
 				}
@@ -531,7 +521,7 @@ SERVERlistenThread(SOCKET *Sock)
 			}
 #ifdef HAVE_SYS_UN_H
 		} else if (usock != INVALID_SOCKET && FD_ISSET(usock, &fds)) {
-			if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
+			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR) {
 					msg = "accept failed\n";
 					goto error;
@@ -545,9 +535,9 @@ SERVERlistenThread(SOCKET *Sock)
 		printf("server:accepted\n");
 		fflush(stdout);
 #endif
-		doChallenge(cmd, 
- 			socket_rastream(msgsock, "Server read"),
- 			socket_wastream(msgsock, "Server write"));
+		doChallenge(cmd,
+				socket_rastream(msgsock, "Server read"),
+				socket_wastream(msgsock, "Server write"));
 	} while (1);
 error:
 	throw(IO, "mal_mapi.listen", msg);
@@ -559,29 +549,36 @@ error:
  * hostname address is used, to make the info usable for servers outside
  * localhost.
  */
-void SERVERannounce(struct in_addr addr, int port) {
+void SERVERannounce(struct in_addr addr, int port, str usockfile) {
 	str buf = alloca(sizeof(char) * 1024);
 	str host = NULL;
 	int ret = 0;
 
-	if (addr.s_addr == INADDR_ANY) {
-		host = alloca(sizeof(char) * (90 + 1));
-		gethostname(host, 90);
-		host[90] = '\0';
-	} else {
-		/* avoid doing this, it requires some includes that probably
-		 * give trouble on windowz
-		host = inet_ntoa(addr);
-		 */
-		host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
-		sprintf(host, "%u.%u.%u.%u",
-				(unsigned) ((ntohl(addr.s_addr) >> 24) & 0xff),
-				(unsigned) ((ntohl(addr.s_addr) >> 16) & 0xff),
-				(unsigned) ((ntohl(addr.s_addr) >> 8) & 0xff),
-				(unsigned) (ntohl(addr.s_addr) & 0xff));
+	if (port > 0) {
+		if (addr.s_addr == INADDR_ANY) {
+			host = alloca(sizeof(char) * (90 + 1));
+			gethostname(host, 90);
+			host[90] = '\0';
+		} else {
+			/* avoid doing this, it requires some includes that probably
+			 * give trouble on windowz
+			host = inet_ntoa(addr);
+			 */
+			host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
+			sprintf(host, "%u.%u.%u.%u",
+					(unsigned) ((ntohl(addr.s_addr) >> 24) & 0xff),
+					(unsigned) ((ntohl(addr.s_addr) >> 16) & 0xff),
+					(unsigned) ((ntohl(addr.s_addr) >> 8) & 0xff),
+					(unsigned) (ntohl(addr.s_addr) & 0xff));
+		}
+		if ((buf = SABAOTHmarchConnection(&ret, &host, &port)) != MAL_SUCCEED && buf != M5OutOfMemory)
+			GDKfree(buf);
 	}
-	if ((buf = SABAOTHmarchConnection(&ret, &host, &port)) != MAL_SUCCEED && buf != M5OutOfMemory)
-		GDKfree(buf);
+	if (usockfile != NULL) {
+		port = 0;
+		if ((buf = SABAOTHmarchConnection(&ret, &usockfile, &port)) != MAL_SUCCEED && buf != M5OutOfMemory)
+			GDKfree(buf);
+	}
 }
 
 str
@@ -589,11 +586,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 {
 	struct sockaddr_in server;
 	SOCKET sock = INVALID_SOCKET;
-	SOCKET *Sock;
+	SOCKET *psock;
 	char accept_any = 0;
 	char autosense = 0;
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
+	SOCKET usock = INVALID_SOCKET;
 #endif
 	SOCKLEN length = 0;
 	int on = 1;
@@ -703,19 +701,17 @@ errno == WSAEADDRINUSE &&
 	stream_printf(cntxt->fdout, "#SERVERlisten:Network started at %d\n", port);
 #endif
 	threadcommand = cmd;
-	Sock = GDKmalloc(sizeof(SOCKET));
+	psock = GDKmalloc(sizeof(SOCKET) * 3);
 
-	if (Sock == NULL)
+	if (psock == NULL)
 		throw(MAL,"mal_mapi.listen", MAL_MALLOC_FAIL);
-	*Sock = sock;
-	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
-		GDKfree(Sock);
+	psock[0] = sock;
+	psock[1] = usock;
+	psock[2] = INVALID_SOCKET;
+	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, psock) < 0) {
+		GDKfree(psock);
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED " Starting thread failed");
 	} 
-#ifdef HAVE_SYS_UN_H
-	if (usockfile)
-		unlink(usockfile);
-#endif
 	gethostname(host, (int) 512);
 	(void) msg;
 #ifdef DEBUG_SERVER
@@ -727,7 +723,7 @@ errno == WSAEADDRINUSE &&
 	 * predictable... */
 	srand((int)time(NULL));
 
-	SERVERannounce(server.sin_addr, port);
+	SERVERannounce(server.sin_addr, port, usockfile);
 	return MAL_SUCCEED;
 }
 
@@ -755,14 +751,15 @@ SERVERlisten_default(int *ret)
 }
 
 str
-SERVERlisten2(int *ret, int *port, int *maxusers)
+SERVERlisten_usock(int *ret, str *usock)
 {
+	int maxusers = SERVERMAXUSERS;
 	(void) ret;
-	return SERVERlisten(port, 0, maxusers, 0);
+	return SERVERlisten(0, usock, &maxusers, 0);
 }
 
 str
-SERVERlisten3(int *ret, int *port, int *maxusers, str *cmd)
+SERVERlisten_cmd(int *ret, int *port, int *maxusers, str *cmd)
 {
 	(void) ret;
 	return SERVERlisten(port, 0, maxusers, cmd);
