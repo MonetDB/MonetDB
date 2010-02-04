@@ -171,6 +171,8 @@ mel.yy.cxx: mel.ll mel.h symtable.h symbol.h list.h ListIterator.h FileInfo.h op
 	$(LEX) $(LFLAGS) "mel.ll"
 	if exist lex.yy.c $(MV) lex.yy.c "mel.yy.cxx"
 	if exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "mel.yy.cxx"
+# if LEX is the Cygwin flex, it produces an extra \r which VS doesn't like
+	-sed -i "s/\r//" "mel.yy.cxx"
 mel.yy.obj: mel.yy.cxx mel_config.h
 mel.yy: mel.mx
 mil.cxx: mil.mx
