@@ -10745,9 +10745,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 			/* "var res := item%s.join(tijah_scoreDB.fetch(4@0));\n" */
                         execute (
                            assgn (var (new_item->name),
-		               join( var(p_item->name), 
+		               tmark (join( var(p_item->name), 
 			       	     fetch( var(PF_MIL_TIJAH_SCORE_DB),
-				         lit_int(4)) ) ) );
+				         lit_int(4)) ), lit_oid (0)) ) );
                         env_add (p->env, fc_item_a, aat_int, new_item);
 		    }
 		    PFalg_simple_type_t postype = op1->schema.items[1].type;
