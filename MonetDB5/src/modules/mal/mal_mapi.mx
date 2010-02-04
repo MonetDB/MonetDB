@@ -678,7 +678,6 @@ errno == WSAEADDRINUSE &&
 	if (usockfile) {
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock == INVALID_SOCKET ) {
-			unlink(usockfile);
 			throw(IO, "mal_mapi.listen",
 					OPERATION_FAILED " Creation of Unix socket failed: %s",
 					strerror(errno));
