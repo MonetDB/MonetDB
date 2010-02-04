@@ -322,7 +322,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port) {
 					"mapi:monetdb://%s:%i/\n", *host, *port);
 		} else {
 			printf("# Listening for UNIX domain connection requests on "
-					"mapi:monetdb://%si/\n", *host);
+					"mapi:monetdb://%s\n", *host);
 		}
 		return(MAL_SUCCEED);
 	}
