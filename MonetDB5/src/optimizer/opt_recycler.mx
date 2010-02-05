@@ -114,7 +114,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr *old, q;
 	int limit, updstmt = 0;
 	char *recycled;
-	short app_sc = -1,app_tbl = -1;
+	short app_sc = -1, app_tbl = -1, in = 0;
 
 	(void) cntxt;
 	(void) stk;
@@ -149,6 +149,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	/* create a handle for recycler */
 	q= newFcnCall(mb,"recycle","prelude");
+	in = 1;
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		if (hasSideEffects(p,TRUE) || isUpdateInstruction(p) || isUnsafeFunction(p)){
@@ -189,7 +190,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 
-		if( p->token== ENDsymbol){
+		if( in && (p->token== ENDsymbol || p->barrier == RETURNsymbol )) {
 			if ( updstmt && app_sc >= 0 ){
 					q= newFcnCall(mb,"recycle","reset");
 					pushArgument(mb,q, app_sc);
@@ -197,6 +198,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			(void) newFcnCall(mb,"recycle","epilogue");
 			pushInstruction(mb,p);
+			in = 0;
 			continue;
 		} 
 
