@@ -154,6 +154,10 @@ address OPToctopus;
 pattern optimizer.octopus(mod:str, fcn:str):str
 address OPToctopus
 comment "Map-execute-reduce parallelism optimizer";
+
+pattern legAdvice(mod:str, fcn:str):int
+address OPTlegAdvice
+comment "Derive the number of legs to be used for query function";
 @h
 #ifndef _OPT_OCTOPUS_
 #define _OPT_OCTOPUS_
@@ -162,6 +166,8 @@ comment "Map-execute-reduce parallelism optimizer";
 
 /* #define DEBUG_OPT_OCTOPUS           show partial result */
 
+opt_export str OPTlegAdvice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export int OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "mal_config.h"
 #include "opt_octopus.h"
@@ -653,4 +659,30 @@ The tentacle code should be optimized by the remaining optimizers too.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(octopus,OPT_CHECK_ALL)@
+@-
+The remainder contains the octopus support routines.
+The legAdvice function has to negotiate with merovingian to
+determine the number of legs to use for a specific query plan.
+This may involve the size and structure of the database tables 
+accessed as well.
+@c
+int 
+OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return GDKnr_threads;
+}
+
+str 
+OPTlegAdvice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int*) getArgReference(stk,pci,0);
+
+	(void) cntxt;
+	*ret = OPTlegAdviceInternal(mb,stk,pci);
+	return MAL_SUCCEED;
+}
 @}

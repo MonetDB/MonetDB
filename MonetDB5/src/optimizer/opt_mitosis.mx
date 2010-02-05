@@ -60,6 +60,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 @c
 #include "mal_config.h"
 #include "opt_mitosis.h"
+#include "opt_octopus.h"
 #include "mal_interpreter.h"
 
 /* #define _DEBUG_OPT_MITOSIS*/
@@ -120,7 +121,11 @@ would fit into memory conveniently for processing. We attempt to use
 at least all threads.
 Experience shows that the pieces should not be too small.
 To keep the threads working, we create more pieces then threads.
+
+The pieces to be used may be overruled by the octopus optimizer.
 @c
+	if ( (r = OPTlegAdviceInternal(mb,stk,p)) )
+		pieces = r;
 	r= (BUN) (monet_memory /typewidth/GDKnr_threads); /* how much fits  */
 	if (rowcnt > r )
 		pieces = (int) (rowcnt /r+1);
