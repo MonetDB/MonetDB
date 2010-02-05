@@ -617,9 +617,8 @@ runScenarioBody(Client c)
 #endif
 
 
-	if (!c->exception_buf)
-		c->exception_buf = (void*)GDKzalloc(sizeof(jmp_buf));
-	if (setjmp( *c->exception_buf) < 0) 
+	c->exception_buf_initialized = 1;
+	if (setjmp( c->exception_buf) < 0) 
 		c->mode = FINISHING;
 	while (c->mode > FINISHING || msg != MAL_SUCCEED) {
 		if (msg != MAL_SUCCEED){
@@ -666,6 +665,7 @@ runScenarioBody(Client c)
 	}
 	if (c->phase[MAL_SCENARIO_EXITCLIENT])
 		(*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
+	c->exception_buf_initialized = 0;
 	return msg;
 }
 
