@@ -184,23 +184,26 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			continue;
 		}
+
+		if( p->token == ENDsymbol || p->barrier == RETURNsymbol ){ 
+			if ( in ){
+				if ( updstmt && app_sc >= 0 ){
+					q= newFcnCall(mb,"recycle","reset");
+					pushArgument(mb,q, app_sc);
+					pushArgument(mb,q, app_tbl);
+				}
+				(void) newFcnCall(mb,"recycle","epilogue");
+				in = 0;
+			}
+			pushInstruction(mb,p);
+			continue;
+		} 
+
 		if (p->barrier  && p->token != CMDcall){
 			/* never save a barrier unless it is a command and side-effect free */
 			pushInstruction(mb,p);
 			continue;
 		}
-
-		if( in && (p->token== ENDsymbol || p->barrier == RETURNsymbol )) {
-			if ( updstmt && app_sc >= 0 ){
-					q= newFcnCall(mb,"recycle","reset");
-					pushArgument(mb,q, app_sc);
-					pushArgument(mb,q, app_tbl);
-			}
-			(void) newFcnCall(mb,"recycle","epilogue");
-			pushInstruction(mb,p);
-			in = 0;
-			continue;
-		} 
 
 		/* don't change instructions in update statements */
 		if( updstmt){
