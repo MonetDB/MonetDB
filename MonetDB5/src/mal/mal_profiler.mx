@@ -763,6 +763,7 @@ str
 startProfiling(void)
 {
 #ifdef MALprofiler
+	mal_set_lock(mal_profileLock, "profileLock");
 	if (eventstream != NULL) {
 		offlineProfiling=TRUE;
 		delayswitch = 1;
@@ -770,6 +771,7 @@ startProfiling(void)
 		cachedProfiling=TRUE;
 	initTrace();
 	malProfileMode = TRUE;
+	mal_unset_lock(mal_profileLock, "profileLock");
 #endif
 	return MAL_SUCCEED;
 }
@@ -1062,7 +1064,6 @@ initTrace(void)
 {
 	if (TRACE_init)
 		return 0;		/* already initialized */
-	mal_set_lock(mal_contextLock, "trace");
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
@@ -1087,13 +1088,10 @@ initTrace(void)
 		TRACE_id_writes == NULL ||
 		TRACE_id_thread == NULL ||
 		TRACE_id_user == NULL 
-	) {
-		mal_unset_lock(mal_contextLock, "trace");
+	) 
 		cleanupProfiler();
-		mal_set_lock(mal_contextLock, "trace");
-	 } else
+	 else
 		TRACE_init = 1;
-	mal_unset_lock(mal_contextLock, "trace");
 	return TRACE_init ? 0: -1;
 }
 
@@ -1120,8 +1118,8 @@ cleanupProfiler(){
 void
 clearTrace(void)
 {
-	if (initTrace() )
-		return;
+	if (TRACE_init == 0)
+		return;		/* not initialized */
 	mal_set_lock(mal_contextLock, "cleanup");
 	/* drop all trace tables */
 	BBPclear(TRACE_id_event->batCacheid);
@@ -1135,14 +1133,14 @@ clearTrace(void)
 	BBPclear(TRACE_id_reads->batCacheid);
 	BBPclear(TRACE_id_writes->batCacheid);
 	TRACE_init= 0;
-	mal_unset_lock(mal_contextLock, "cleanup");
 	initTrace();
+	mal_unset_lock(mal_contextLock, "cleanup");
 }
 
 BAT *
 getTrace(str nme)
 {
-	if (initTrace() )
+	if (TRACE_init == 0)
 		return NULL;
 	if (strcmp(nme, "event") == 0)
 		return TRACE_id_event;
@@ -1234,12 +1232,12 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
-	if ( initTrace() )
-		return ;
-	if (TRACE_init == 0)
-		return;
-
 	mal_set_lock(mal_profileLock, "profileLock");
+	if ( initTrace() || TRACE_init == 0){
+		mal_unset_lock(mal_profileLock, "profileLock");
+		return;
+	}
+
 	/* update the Trace tables */
 	snprintf(buf, 1024, "%s.%s[%d]", 
 		getModuleId(getInstrPtr(mb, 0)), 
