@@ -554,13 +554,16 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		char *tbuf, *c;
 
 		tbuf= ctime(&mb->profiler[pc].clock);
-		c = strchr(tbuf, '\n');
-		if (c) {
-			c[-5] = '"';
-			c[-4] = 0;
-		}
-		tbuf[10] = '"';
-		log("%s,\t", tbuf + 10);
+		if (tbuf) {
+			c = strchr(tbuf, '\n');
+			if (c) {
+				c[-5] = '"';
+				c[-4] = 0;
+			}
+			tbuf[10] = '"';
+			log("%s,\t", tbuf + 10);
+		} else
+			log("%s,\t","nil");
 	}
 	if (profileCounter[PROFthread].status) {
 		log(" %d,\t", THRgettid());
@@ -1297,7 +1300,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		}
 		BUNappend(TRACE_id_type, &abuf, FALSE);
 	}
-	GDKfree(stmt);
+	if(stmt) GDKfree(stmt);
 	
 /* The remainder requires their own BATs
 #ifdef HAVE_TIMES
