@@ -121,6 +121,8 @@ Implementation is either merge- or hash-based.
 			return NULL;
 		}
 	}
+	BATpreload(b);
+	BATpreload(bn);
 	BATloop(b, p, q) {
 		ptr h = BUNh@2(bi, p);
 		ptr t = BUNt@3(bi, p);
@@ -470,6 +472,8 @@ TODO synced/key case..
 	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
 	pin = 1;
 	BATmmap_pin(r);
+	BATpreload(l);
+	BATpreload(r);
 	if (BATprepareHash(r))
 		goto bunins_failed;
 	BATloop(l, p1, q1) {

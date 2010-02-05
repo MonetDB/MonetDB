@@ -2299,7 +2299,7 @@ THRdel(Thread t)
 	if (t->cleanup) {
 		(*t->cleanup) (t);
 	}
-/*	The stream may be closed by a parallel thread, causing an abort
+/*	The stream may haven been closed (e.g. in freeClient)  causing an abort
 	PARDEBUG THRprintf(GDKout, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 */
 
