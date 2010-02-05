@@ -63,6 +63,7 @@ a posteriori analysis.
 #profiler.activate("pc");
 profiler.activate("time,ticks");
 profiler.activate("stmt");
+#profiler.activate("type");
 #profiler.activate("cpu");
 #profiler.activate("memory");
 #profiler.activate("reads");
@@ -342,6 +343,7 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 #define PROFprocess 14
 #define PROFuser    15
 #define PROFstart   16
+#define PROFtype   17
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -496,12 +498,12 @@ offlineProfilerHeader(void)
 		log0("wbytes,\t");
 	if (profileCounter[PROFaggr].status)
 		log0("count,\t clkticks,\t");
-	if (profileCounter[PROFstmt].status) {
+	if (profileCounter[PROFstmt].status)
 		log0("stmt,\t");
-	}
-	if (profileCounter[PROFuser].status) {
+	if (profileCounter[PROFtype].status) 
+		log0("types,\t");
+	if (profileCounter[PROFuser].status)
 		log0("user,\t");
-	}
 	log0("# name\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
@@ -644,6 +646,19 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 			GDKfree(stmtq);
 		}
 		GDKfree(stmt);
+	}
+	if (profileCounter[PROFtype].status) {
+		char abuf[BUFSIZ], *tpe;
+		int i, j;
+		abuf[0]=0;
+		for ( i= 0; i< pci->retc; i++)
+		if( getArgType(mb,pci,i) != TYPE_void ){
+			j = (int) strlen(abuf);
+			tpe= getTypeName(getArgType(mb,pci,i));
+			snprintf(abuf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
+			GDKfree(tpe);
+		}
+		log("%s",abuf);
 	}
 	if (profileCounter[PROFuser].status) {
 		log(" %d", idx);
