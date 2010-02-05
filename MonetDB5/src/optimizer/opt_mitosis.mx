@@ -126,16 +126,18 @@ The pieces to be used may be overruled by the octopus optimizer.
 @c
 	if ( (r = OPTlegAdviceInternal(mb,stk,p)) )
 		pieces = r;
-	r= (BUN) (monet_memory /typewidth/GDKnr_threads); /* how much fits  */
-	if (rowcnt > r )
-		pieces = (int) (rowcnt /r+1);
-	if (pieces < GDKnr_threads )
-		pieces = GDKnr_threads;
-	if (pieces > 256)
-		pieces = 256; /* cut off potential plan explosion */
+	else {
+		r= (BUN) (monet_memory /typewidth/GDKnr_threads); /* how much fits  */
+		if (rowcnt > r )
+			pieces = (int) (rowcnt /r+1);
+		if (pieces < GDKnr_threads )
+			pieces = GDKnr_threads;
+		if (pieces > 256)
+			pieces = 256; /* cut off potential plan explosion */
 
-	if ( (size_t) rowcnt < (size_t) pieces || pieces <=1)
-		return 0;
+		if ( (size_t) rowcnt < (size_t) pieces || pieces <=1)
+			return 0;
+	}
 	OPTDEBUG
 		stream_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
 			" with " BUNFMT " rows into " BUNFMT " rows/piece %d threads %d pieces\n",
