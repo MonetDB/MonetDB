@@ -681,9 +681,8 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 				guess = total-t;
 		}
 	}
-	/* accommodate for one hash 
+	/* accommodate for one hash  */
 	total += cnt * sizeof(int);
-	*/
 	/* accomodate for result based on largest argument 
 	total += guess;	
 	*/
