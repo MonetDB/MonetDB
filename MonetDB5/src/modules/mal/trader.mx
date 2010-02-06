@@ -30,10 +30,9 @@ FactFinder
 @mal
 module trader;
 
-pattern makeBid(fnname:str, maxcost:int):int
+pattern makeBid(fnname:str, bidtype:sht):lng
 address TRADERmakeBid
-comment "Estimate cost for execution of function octopus.<fnname> 
-assuming maximal cost maxcost";
+comment "Make a bid for execution of function octopus.<fnname>";
 
 @h
 #ifndef _TRADER_
@@ -55,6 +54,8 @@ assuming maximal cost maxcost";
 
 trader_export str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+#define BID_TRANS	1
+#define BID_COVER	2
 #endif
 
 @-
@@ -76,14 +77,19 @@ static lng estimateSavings0(MalBlkPtr mb)
 }
 */
 
-static lng estimateSavings(MalBlkPtr mb)
+static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 {
 	MalStkPtr stk = NULL;
-	int i, j, k, pc;
-	lng savedCost;
+	int i, j, k, marked = 0;
 	ValPtr lhs, rhs;
 	InstrPtr p, q;
-	lng savedTicks = 0, savedIBytes = 0, savedOBytes = 0;
+	lng savedInstr = 0, savedKB = 0;
+	static str octopusRef = 0, bindRef = 0;
+
+	if (octopusRef == 0)
+		octopusRef = putName("octopus",7);
+	if (bindRef == 0)
+        bindRef = putName("bind",4);
 
 	if( recycleBlk == 0 || reusePolicy == 0)
 		return 0;
@@ -113,11 +119,17 @@ static lng estimateSavings(MalBlkPtr mb)
 		}
 	}
 
-	/* Match against the recycle pool */
 	for (k = 0; k < mb->stop; k++){
 		p = getInstrPtr(mb,k);
-		pc = -1;
+		if ( !RECYCLEinterest(p) ) 
+			continue;
+		marked++;
+		if ( bidtype == BID_TRANS )  /* check only octopus.bind */
+			if ( getModuleId(p) != octopusRef ||
+				 getFunctionId(p) != bindRef )
+				continue; 
 
+		/* Match p against the recycle pool */
 		for (i = 0; i < recycleBlk->stop; i++){
 			q = getInstrPtr(recycleBlk,i);
 
@@ -128,22 +140,15 @@ static lng estimateSavings(MalBlkPtr mb)
 			switch(reusePolicy){
 	
 			case REUSE_COVER:
-				/* 1: reuse smallest range covering */
-				/* if (q->argc-1 > 3 && getFunctionId(p) == selectRef &&
-				    getVarConstant(recycleBlk, getArg(q,1)).val.bval == 
-						stk->stk[getArg(p,1)].val.bval &&
-					BATatoms[getArgType(recycleBlk,q,2)].linear )
-
-				{			
-					if (selectSubset(p,q,stk)){
-						pc = i;
-					}
-				}
-			*/
+				/* 1: check for subsumption : TODO*/
+			
 			case REUSE_EXACT:
 				/* 2: exact covering */
-				if (p->argc > q->argc-1) continue;
-				for (j = p->retc; j < p->argc; j++)
+				if (p->argc != q->argc-1) continue;
+		
+				if ( bidtype == BID_TRANS ) j = p->retc + 1;
+				else j = p->retc;
+				for ( ; j < p->argc; j++)
 					if (VALcmp(&stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 						goto nomatch;
 
@@ -152,28 +157,28 @@ static lng estimateSavings(MalBlkPtr mb)
 					VALcopy(&stk->stk[getArg(p,j)],
 						&getVarConstant(recycleBlk,getArg(q,j)) );
 				}
-				savedTicks += recycleBlk->profiler[i].ticks;	
-				savedIBytes += recycleBlk->profiler[i].rbytes;
-				savedOBytes += recycleBlk->profiler[i].wbytes;
+
+				if ( bidtype == BID_TRANS )
+					savedKB += recycleBlk->profiler[i].wbytes;
+				else savedInstr++;
 				goto nextinstr;
 
 				nomatch: 
 					continue;
 			}
-		} /* end loop over RP */
-		if ( pc >= 0 ){ /* instruction is subsumed */
-			savedTicks += recycleBlk->profiler[pc].ticks/2;	
-			savedIBytes += recycleBlk->profiler[pc].rbytes/2;
-			savedOBytes += recycleBlk->profiler[pc].wbytes/2;
-		}
+
+		}	/* end loop over RP */
+
+		/* processing of subsumed instruction: TODO */
+
 		nextinstr:
 			continue;
 	}
 
-	savedCost = (lng) (recycleAlpha * savedTicks/10.0 + (1-recycleAlpha)* (savedIBytes + savedOBytes)/1000.0);
 	freeStack(stk);
-	return  savedCost;
-
+	if ( bidtype == BID_TRANS )
+		return savedKB;
+	return (marked? (lng)100*savedInstr/marked: 0) ;
 }
 
 
@@ -181,20 +186,16 @@ str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *c = (lng *) getArgReference(stk,pci,0);
 	str fnname = *(str *) getArgReference(stk,pci,1);
-	lng *maxcost = (lng *) getArgReference(stk,pci,2);
+	sht bidtype = *(sht *) getArgReference(stk,pci,2);
 	Symbol sym;
-	lng s;
 
+	(void) mb;
     sym = findSymbol(cntxt->nspace, putName("octopus",7), fnname);
     if ( sym == NULL)
         throw(MAL,"trader.makeBid", RUNTIME_SIGNATURE_MISSING "%s", fnname);
         
-    mb = sym->def;
-    s = estimateSavings(mb);
+    *c = estimateSavings(sym->def, bidtype);
 
-    /* Correct according to the load*/
-    
-	*c = *maxcost - s;
 	return MAL_SUCCEED;
 }   
 
