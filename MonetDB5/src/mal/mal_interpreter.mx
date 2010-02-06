@@ -1134,8 +1134,7 @@ DFLOWexecute( DataFlow flow )
 				for(j=0; j<p->retc && !blocked; j++) {
 					int oa = getArg(p,j);
 
-					/* inuse or 
-					   this is a reassign statement*/
+					/* inuse or this is a reassign statement*/
 					if (!flow->blocked[oa] ||
 					   (flow->reassign[oa] &&
 					    flow->reassign[oa] <= fs[i].pc)) {
@@ -1295,8 +1294,8 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		flow = (DataFlow)GDKzalloc(sizeof(DataFlowRec));
 
 		/* seems enough for the time being */
-		flow->done = q_create(256);
-		flow->todo = q_create(256); 
+		flow->done = q_create(2048);
+		flow->todo = q_create(2048); 
 
 		/* queues are available? */
 		if ( flow->done == NULL || flow->todo == NULL) {
