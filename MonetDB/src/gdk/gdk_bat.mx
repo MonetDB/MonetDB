@@ -1867,6 +1867,8 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 	BUN r, s;
 	BATiter ui = bat_iterator(u);
 
+	BATpreload(b);
+	BATpreload(u);
 	BATloop(u, r, s) {
 		oid updid = *(oid *) BUNhead(ui, r);
 		ptr val = BUNtail(ui, r);
