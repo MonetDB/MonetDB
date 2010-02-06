@@ -444,7 +444,6 @@ the fast inner loops, optimized towards their type.
 		BUN yy;
 
 		BATpreload_(l);
-		BATpreload_(r);
 		BATloop(l, p, q) {
 			v = BUN@3(li, p);
 			if (@1_EQ(v, nil, @4)) {
@@ -474,6 +473,7 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	@:joinbat(JOIN_EQ,BAThashjoin(l,r,BUN_NONE),estimate)@
 
 	BATmmap_pin(r);
+	BATpreload(r);
 	if (BATprepareHash(r))
 		return NULL;
 	switch (any = ATOMstorage(l->ttype)) {
@@ -663,8 +663,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATmmap_pin(r);
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultfetchjoin(@1,@2);\n");
 
-	BATpreload_(l);
 	BATpreload_(r);
+	BATpreload_(bn);
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNtail(li, l_cur));
 		if (yy < base || yy >= end) {
@@ -761,8 +761,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= densevoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densevoidfetchjoin(@1);\n");
 	r_cur = (BUN) (offset + * (oid *) BUNtloc(li, BUNfirst(l)));
-	BATpreload_(l);
 	BATpreload_(r);
+	BATpreload_(bn);
 	BATloop(l, l_cur, l_end) {
 		@1put(bn, Tloc(bn,dst));
 		r_cur++;
@@ -771,8 +771,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1);\n");
-	BATpreload_(l);
 	BATpreload_(r);
+	BATpreload_(bn);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
 
@@ -783,8 +783,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
-	BATpreload_(l);
 	BATpreload_(r);
+	BATpreload_(bn);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
 
@@ -807,8 +807,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 			return bn;
 		dst = BUNfirst(bn);
 		bni = bat_iterator(bn);
-		BATpreload_(l);
 		BATpreload_(r);
+		BATpreload_(bn);
 		BATloop(l, l_cur, l_end) {
 			BUN _yy = (BUN) (offset + * (oid *) BUNtail(li, l_cur));
 
