@@ -1261,13 +1261,13 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	snprintf(buf, 1024, "%s.%s[%d]", 
 		getModuleId(getInstrPtr(mb, 0)), 
 		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
-	BUNappend(TRACE_id_pc, buf, FALSE);
+	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
 	
-	BUNappend(TRACE_id_thread, &tid, FALSE);
+	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
 
-	BUNappend(TRACE_id_user, &idx, FALSE);
+	TRACE_id_user = BUNappend(TRACE_id_user, &idx, FALSE);
 	
-	BUNappend(TRACE_id_event, &TRACE_event, FALSE);
+	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
 	TRACE_event++;
 
 	{	char *tbuf, *c;
@@ -1276,10 +1276,10 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		c = strchr(tbuf, '\n');
 		if (c) 
 			c[-5] = 0;
-		BUNappend(TRACE_id_time, tbuf, FALSE);
+		TRACE_id_time = BUNappend(TRACE_id_time, tbuf, FALSE);
 	}
 
-	BUNappend(TRACE_id_ticks, &mb->profiler[pc].ticks, FALSE);
+	TRACE_id_ticks = BUNappend(TRACE_id_ticks, &mb->profiler[pc].ticks, FALSE);
 
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
@@ -1287,7 +1287,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	while (c && *c && (isspace((int) *c) || *c == '!'))
 		c++;
-	BUNappend(TRACE_id_stmt, c, FALSE);
+	TRACE_id_stmt = BUNappend(TRACE_id_stmt, c, FALSE);
 
 	{	char abuf[BUFSIZ], *tpe;
 		int i, j;
@@ -1299,7 +1299,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 			snprintf(abuf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
 			GDKfree(tpe);
 		}
-		BUNappend(TRACE_id_type, &abuf, FALSE);
+		TRACE_id_type = BUNappend(TRACE_id_type, &abuf, FALSE);
 	}
 	if(stmt) GDKfree(stmt);
 	
@@ -1329,13 +1329,13 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 */
 #ifdef HAVE_SYS_RESOURCE_H
 	v = infoUsage.ru_inblock- prevUsage.ru_inblock;
-	BUNappend(TRACE_id_reads, &v, FALSE);
+	TRACE_id_reads = BUNappend(TRACE_id_reads, &v, FALSE);
 	v = infoUsage.ru_oublock- prevUsage.ru_oublock;
-	BUNappend(TRACE_id_writes, &v, FALSE);
+	TRACE_id_writes = BUNappend(TRACE_id_writes, &v, FALSE);
 	prevUsage = infoUsage;
 #else
-	BUNappend(TRACE_id_reads, &v, FALSE);
-	BUNappend(TRACE_id_writes, &v, FALSE);
+	TRACE_id_reads = BUNappend(TRACE_id_reads, &v, FALSE);
+	TRACE_id_writes = BUNappend(TRACE_id_writes, &v, FALSE);
 #endif
 
 /*
@@ -1349,8 +1349,8 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #endif
 */
-	BUNappend(TRACE_id_rbytes, &mb->profiler[pc].rbytes, FALSE);
-	BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
+	TRACE_id_rbytes = BUNappend(TRACE_id_rbytes, &mb->profiler[pc].rbytes, FALSE);
+	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
 
 	eventcounter++;
 	flushLog();
