@@ -710,7 +710,7 @@ BATpreload_(BAT *b) {
 
 	if ( b->T->vheap && b->T->vheap->base  && pages){
 		IODEBUG THRprintf(GDKout,"#BATpreloaded(%s): T->vheap\n", BATgetId(b));
-		limit = (size_t *) (b->T->vheap->base + b->T->vheap->free - 4 * step);
+		limit = (size_t *) (b->T->vheap->base + b->T->vheap->free) - 4 * step;
 		for ( i = (size_t *) b->T->vheap->base; i < limit  && pages > 0; i+= step, pages--){
 			v1 = *i;
 			i += step;
@@ -724,7 +724,7 @@ BATpreload_(BAT *b) {
 	}
 	if ( b->T->heap.base && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s): T->heap\n", BATgetId(b));
-		limit = (size_t *) (b->T->heap.base + b->T->heap.free - 4 * step);
+		limit = (size_t *) (b->T->heap.base + b->T->heap.free) - 4 * step;
 		for ( i = (size_t *) b->T->heap.base; i < limit && pages > 0; i+= step, pages--) {
 			v1 = *i;
 			i += step;
@@ -738,7 +738,7 @@ BATpreload_(BAT *b) {
 	}
 	if ( b->H->heap.base && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s): H->heap\n", BATgetId(b));
-		limit = (size_t *) (b->H->heap.base + b->H->heap.free - 4 * step);
+		limit = (size_t *) (b->H->heap.base + b->H->heap.free) - 4 * step;
 		for ( i = (size_t *) b->H->heap.base; i <  limit && pages > 0 ; i+= step, pages--) {
 			v1 = *i;
 			i += step;
@@ -752,7 +752,7 @@ BATpreload_(BAT *b) {
 	}
 	if ( b->H->vheap && b->H->vheap->base && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s): H->vheap\n", BATgetId(b));
-		limit = (size_t *) (b->H->vheap->base + b->H->vheap->free);
+		limit = (size_t *) (b->H->vheap->base + b->H->vheap->free) - 4 * step;
 		for ( i = (size_t *) b->H->vheap->base; i < limit && pages > 0 ; i+= step, pages--) {
 			v1 = *i;
 			i += step;
