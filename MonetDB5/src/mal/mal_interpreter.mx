@@ -144,7 +144,7 @@ updateBigFoot(Client cntxt, int bid, int add)
 
 	if (bid != bat_nil ){
 		BUN cnt = 0;
-		b= BATdescriptor(bid);
+		b= BBPquickdesc(ABS(bid),TRUE);
 		if (b == NULL)
 			return;
 		if ( isVIEW(b) ){
@@ -2451,16 +2451,16 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	i = rd?pci->retc:0;
 	
 	if( stk->stk[getArg(pci,0)].vtype == TYPE_bat){
-		b = BATdescriptor(stk->stk[getArg(pci,0)].val.bval);
+		b = BBPquickdesc(ABS(stk->stk[getArg(pci,0)].val.bval), TRUE);
 		if (b) {
 			isview = isVIEW(b);
-			BBPunfix(b->batCacheid);
 		}
 	}
 	for(; i<limit; i++) {
 		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			BUN cnt = 0;
-			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+
+			b = BBPquickdesc(ABS(stk->stk[getArg(pci,i)].val.bval), TRUE);
 			if (b==NULL) 
 				continue;
 			cnt = BATcount(b);
@@ -2468,7 +2468,6 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 			   But when we output a slice that is not the case. */
 			vol += ((rd && !isview) || !VIEWhparent(b))?headsize(b,cnt):0;
 			vol += ((rd && !isview) || !VIEWtparent(b))?tailsize(b,cnt):0;
-			BBPunfix(b->batCacheid);
 		}
 	}
 	return vol;
