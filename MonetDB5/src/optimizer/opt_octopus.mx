@@ -316,8 +316,7 @@ already have been handled and produce their target.
 	snprintf(buf,BUFSIZ,"tentacle_"LLFMT"_%d", mb->octid,varid);
 	name =  putName(buf,strlen(buf));
 
-	snprintf(buf,BUFSIZ,"exec_%s", 
-		getFunctionId(getInstrPtr(mb,0)));
+	snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->octid);
 	name2 =  putName(buf,strlen(buf));
 
 	q= newFcnCall(mb,octopusRef, name2);
@@ -476,7 +475,7 @@ when scheduled correctly, would not lead to duplicate work.
 			int conn,dbvar,qvar;
 
 			/* prepare the exec_ procedure */
-			snprintf(buf,BUFSIZ,"exec_%s", getFunctionId(getInstrPtr(mb,0)));
+			snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->octid);
 			s2= newFunction(octopusRef, putName(buf,strlen(buf)), FUNCTIONsymbol);
 			sm= s2->def;
 			q= getInstrPtr(sm,0);
