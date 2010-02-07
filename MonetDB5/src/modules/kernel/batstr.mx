@@ -239,6 +239,7 @@ str STRbat@1(int *ret, int *l)
 
 	bi = bat_iterator(b);
 
+	BATpreload(b);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi,p);
 		x = (@3) BUNtail(bi,p);
@@ -275,6 +276,7 @@ str STRbat@1(int *ret, int *l)
 
 	bi = bat_iterator(b);
 
+	BATpreload(b);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi,p);
 		str y = (str)str_nil, *yp = &y;
@@ -322,6 +324,7 @@ STRbat@2Cst(int *ret, int *l, str *cst)
 	
 	if (strcmp(*cst, str_nil) == 0) 
 		isnil = 1;
+	BATpreload(b);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 
@@ -369,6 +372,8 @@ STRbat@2(int *ret, int *l, int *r)
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
 
+	BATpreload(left);
+	BATpreload(right);
 	BATloop(left, p, q) {
 		bit y = TRUE;
 		ptr h = BUNhead(lefti, p);
@@ -411,6 +416,8 @@ str STRbat@1(int *ret, int *l, int *r)
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
 
+	BATpreload(left);
+	BATpreload(right);
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
 		ptr tl = BUNtail(lefti,p);
@@ -444,6 +451,7 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 
 	lefti = bat_iterator(left);
 
+	BATpreload(left);
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
 		ptr tl = BUNtail(lefti,p);
@@ -476,6 +484,8 @@ str STRbat@1(int *ret, int *l, int *r)
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
 
+	BATpreload(left);
+	BATpreload(right);
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
@@ -509,6 +519,7 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 
 	lefti = bat_iterator(left);
 
+	BATpreload(left);
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
@@ -539,6 +550,7 @@ str STRcst@1bat(int *ret, @3 *cst, int *r)
 
 	righti = bat_iterator(right);
 
+	BATpreload(right);
 	BATloop(right, p, q) {
 		ptr h = BUNhead(righti,p);
 		str tr = (str) BUNtail(righti,p);
@@ -579,6 +591,7 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 
 	bi = bat_iterator(b);
 
+	BATpreload(b);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 		str y = (str)str_nil, *yp = &y;
@@ -622,6 +635,7 @@ STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc)
 
 	bi = bat_iterator(b);
 
+	BATpreload(b);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 		ptr t = BUNtail(bi, p);
@@ -666,6 +680,7 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 	bn->tsorted = b->tsorted;
 
 	bi = bat_iterator(b);
+	BATpreload(b);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 		str t =  (str) BUNtail(bi, p);
@@ -720,6 +735,7 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 	lefti = bat_iterator(left);
 	starti = bat_iterator(start);
 	lengthi = bat_iterator(length);
+	BATpreload(left);
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
@@ -764,6 +780,7 @@ str STRbatreplace(int *ret, int *l, str *pat, str *s2)
 	bn->tsorted=0; 
 
 	li = bat_iterator(left);
+	BATpreload(left);
 	BATloop(left, p, q) {
 		ptr h = BUNhead(li,p);
 		str tl = (str) BUNtail(li,p);

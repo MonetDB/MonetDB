@@ -647,6 +647,11 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 	mb->stmt = p;
 	mb->stop = 0;
 	mb->ssize = maxstmts;
+	if( mb->profiler){
+		GDKfree(mb->profiler);
+		mb->profiler = (ProfPtr) GDKzalloc( (mb->ssize + STMT_INCREMENT)*sizeof(ProfRecord));
+		assert(mb->profiler);
+	}
 	return 0;
 }
 
@@ -666,8 +671,6 @@ newMalBlk(int maxvars, int maxstmts)
 		GDKerror("newMalBlk:"MAL_MALLOC_FAIL);
 		return NULL;
 	}
-	if ( newMalBlkStmt(mb, maxstmts) < 0)
-		return NULL;
 
 	mb->var = v;
 
@@ -689,6 +692,8 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->recycle = 0;
 	mb->recid = 0;
 	mb->trap = 0;
+	if ( newMalBlkStmt(mb, maxstmts) < 0)
+		return NULL;
 	return mb;
 }
 
@@ -2272,8 +2277,8 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 		if( mb->profiler){
 			ProfPtr old = mb->profiler;
 			int osize = mb->ssize;
-			mb->profiler = (ProfPtr) GDKzalloc(
-				(mb->ssize + STMT_INCREMENT)*sizeof(ProfRecord));
+			mb->profiler = (ProfPtr) GDKzalloc( (mb->ssize + STMT_INCREMENT)*sizeof(ProfRecord));
+			assert(mb->profiler);
 			memcpy((char*) mb->profiler, (char*) old, sizeof(ProfRecord)*osize);
 			GDKfree(old);
 		}

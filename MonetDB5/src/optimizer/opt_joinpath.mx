@@ -413,11 +413,13 @@ BUN
 ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 {
 	BUN lc, rc;
+	BUN cost=0;
 #if 0
 	BUN lsize,rsize;
 	BAT *lsample, *rsample, *j; 
 #endif
 
+	(void) flag;
 	lc = BATcount(l);
 	rc = BATcount(r);
 #if 0	
@@ -440,33 +442,29 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		stream_printf(cntxt->fdout,"#orderedvoidfetchjoin ? %d\n",
 			BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) );
 	}
-	/* estimate the maximal, because the determines work */
-	/* avoid materialization of views to early */
-    /* merge joins are by far the cheapest */
-	if ( flag == 0 ){
-		/* leftjoin issues */
-		if (l->tsorted || r->hsorted )
-			return MIN(lc,rc);
-		if (l->tdense )
-			return lc;
-	}
-	if ( isVIEW(l) && lc > rc )
-		return lc;
-	if( l->tsorted || r->hsorted)
-		return MIN(lc,rc);
-	/* foreign key joins are common */
-	if( l->ttype== TYPE_oid  || r->htype == TYPE_oid || r->htype== TYPE_void)
-		return MAX(lc,rc);
-	if (l->tkey || r->hkey)
-		return MAX(lc,rc);
 	/* if either operand is very small, we should use that one */
 	if (rc < SMALL_OPERAND )
-		return rc;
+		cost = rc;
+	else
 	if (lc < SMALL_OPERAND )
-		return lc;
+		cost = lc;
+	else
+	/* foreign key joins are common */
+	if( l->ttype== TYPE_oid  && r->htype== TYPE_void)
+		cost = lc;
+	else
+    /* merge joins are cheap */
+	if (l->tsorted || r->hsorted || l->tkey || r->hkey)
+		cost = MIN(lc,rc);
+	else
 	if (lc * rc >= BUN_MAX)
-		return BUN_MAX;
-	return lc * rc;
+		cost = BUN_MAX;
+	else
+		cost = lc * rc;
+	OPTDEBUG{
+		stream_printf(cntxt->fdout,"#batjoin cost ?"BUNFMT"\n",cost);
+	}
+	return cost;
 }
 @-
 The join path type analysis should also be done at run time,
