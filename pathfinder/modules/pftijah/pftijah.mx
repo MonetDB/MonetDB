@@ -1431,6 +1431,7 @@ PROC _tj_init_collection_base(str ftiName, BAT[str,str] param, BAT[str,bat] comm
       var blacklist      := "";
       var fragsize       := str(INT_MAX / 2);
       var delay_finalize := "0";
+      var docsize        := "small";
   
       param@batloop() {
         if ( verbose ) tj_verbose(HASH +"TJ _tj_init_collection_base():param[%s]=\"%s\"\n",$h,$t);
@@ -1442,6 +1443,8 @@ PROC _tj_init_collection_base(str ftiName, BAT[str,str] param, BAT[str,bat] comm
             parambat.insert($h,$t);
         } else if ( $h = "fragmentSize" ) {
             fragsize := $t;
+        } else if ( $h = "documentSize" ) {
+            docsize := toLower($t);
         } else if ( $h = "whitelist" ) {
             whitelist := $t;
         } else if ( $h = "blacklist" ) {
@@ -1460,6 +1463,7 @@ PROC _tj_init_collection_base(str ftiName, BAT[str,str] param, BAT[str,bat] comm
       parambat.insert("tokenizer",tokenizer);
       parambat.insert("stemmer",stemmer);
       parambat.insert("fragmentSize",fragsize);
+      parambat.insert("documentSize",docsize);
       parambat.insert("curFragment","0");
       parambat.insert("preExpansion","4");
       parambat.insert("lastStopWord","0");
@@ -1468,6 +1472,7 @@ PROC _tj_init_collection_base(str ftiName, BAT[str,str] param, BAT[str,bat] comm
       parambat.insert("_last_tijahPre","1");
       parambat.insert("_last_finalizedPre","0");
       parambat.insert("delay_finalize",delay_finalize);
+
       if( not(whitelist = "") )
             parambat.insert("whitelist",whitelist);
       if( not(blacklist = "") )
@@ -1652,17 +1657,17 @@ ADDHELP("tj_add2collection_frag", "flokstra & rode", "Sept 2009",
 "PARAMETERS:\n\
 -` str ftiName: the name of the collection.\n
 - BAT[str,str]: the bat containing the [location,name] pairs of the xml docs.\n\
-- bit shred: when true the doc is shredded when necessary.\n\
+- bit shred: when true the doc is shredded when necessary (deprecated).\n\
 DESCRIPTION:\n\
-The multidocument version of tj_add2collection. The main difference with the\n\
-other method is the [str,str] bat which contains the location of the document\n\
-in the head and the name in the tail.\n\
-The advantage of this method is that the collection is finalized after all\n\
-xml documents in the bat are added to the collection.",
+Adds a documents to the index. If needed, the index is split into several fragments.\n\
+Each fragment is finalized after it is filled to its maximum capacity.",
 "pftijah");
 PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
 {
     if ( verbose ) tj_verbose(HASH +"TJ tj_add2collection_frag(\"%s\") called.\n",ftiName);
+    if (shred)
+      GDKerror("tj_add2collection_frag: shred bit no longer supported");
+      
     var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
     var err := CATCH({
@@ -1677,20 +1682,37 @@ PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
       _tj_set_forwardindex_access(collBat, BAT_APPEND);
       
       _tj_set_parameter2(collBat, "status", "building");
+
       var frag_size := wrd(_tj_get_parameter2(collBat, "fragmentSize"));
+
+      # for large documents, we need to check the fragment capacity limit for after each document
+      # for small documents, this is too expensive, so we do it in larger batches
+      var doc_size := _tj_get_parameter2(collBat, "documentSize");
+      var chunksize := 10000;
+      if (doc_size = "large")
+        chunksize := 1;
+      
+      var first_doc := 0;
+      var last_doc := uri.count()-1;
       var last_pre;
-      uri@batloop() {
-        last_pre := _tj_add2collection_frag(ftiName, collBat, $h, $t, shred);
+      while(first_doc <= last_doc) {
+        var uri_chunk := uri.slice(first_doc, first_doc+chunksize-1);
+        var ws_opt := ws_create(0); 
+        ws_opendoc(ws_opt, uri_chunk.tmark(0@0));
+        _tj_throw2collection_bat(collBat,ws_opt,uri_chunk);
+        ws_destroy(ws_opt);
+        last_pre := collBat.find("size").count_wrd() + 1;
         
         # check capacity of current fragment
         if ( last_pre >= frag_size ) {
           if ( verbose ) tj_verbose(HASH +"TJ tj_add2collection_frag(\"%s\"), fragment limit reached.\n",ftiName);
-            _tj_set_parameter2(collBat, "_last_tijahPre", str(last_pre));
-            _tj_finalize_collection_frag(ftiName, collBat, commitBats, false);
-            collBat := _tj_get_collection_frag(ftiName, commitBats);
-            _tj_set_forwardindex_access(collBat, BAT_APPEND);
-          }
-      }
+          _tj_set_parameter2(collBat, "_last_tijahPre", str(last_pre));
+          _tj_finalize_collection_frag(ftiName, collBat, commitBats, false);
+          collBat := _tj_get_collection_frag(ftiName, commitBats);
+          _tj_set_forwardindex_access(collBat, BAT_APPEND);
+        }
+        first_doc := first_doc+chunksize;
+      } 
       # update params
       _tj_set_parameter2(collBat, "_last_tijahPre", str(last_pre));
       _tj_finalize_collection_frag(ftiName, collBat, commitBats, false);
@@ -1706,57 +1728,6 @@ PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
     if (not(isnil(err))) ERROR(err);
 }
 
-#
-# this _tj_add2collection_frag adds a single document to the index (calling tj_throw2collection)
-# if necessary, the document is shredded before
-#
-PROC _tj_add2collection_frag(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_name, bit shred) : wrd
-{ 
-    var ms;
-    if ( verbose ) tj_verbose(HASH +"TJ _tj_add2collection_frag(\"%s\",\"%s\",\"%s\") start.\n",ftiName,uri_loc,uri_name);
-    if ( shred ) {
-      var pf_collection := _tj_get_parameter2(collBat,"pf_collection");
-      if ( isnil(uri_loc) ) {
-          ERROR("_tj_add2collection: should specify doc_uri (and doc_name).");
-      }
-      if ( isnil(uri_name) ) {
-        uri_name := uri_loc;
-      } else if ( uri_name = "" ) {
-        uri_name := uri_loc;
-      }
-      if (not(bat("doc_name").reverse().exist(uri_name))) {
-        var s_start := usec();
-        if ( isnil(pf_collection) ) {
-          shred_doc(uri_loc,uri_name);
-        } else {
-          shred_doc(uri_loc,uri_name,pf_collection,0LL);
-        }
-        if ( timing ) {
-          ms := (usec() - s_start)/1000;
-          printf(HASH +"TJ _tj_add2collection_frag(\"%s\"): shred time = %lld.%03llds.\n",uri_name,/(ms,1000),%(ms,1000));
-        }
-      } else {
-        if ( verbose ) tj_verbose(HASH +"TJ _tj_add2collection_frag doc(\"%s\") already shredded.\n",uri_name);
-      }
-    }
-    var	i_start := usec();
-    var xrpc_mode := "";
-    var ws_opt := ws_create(0); 
-    ws_opendoc(ws_opt, bat(void,str,1).append(uri_name));
-    _tj_throw2collection(collBat,ws_opt,uri_name);
-    ws_destroy(ws_opt);
-    
-    # compute last pre
-    var lstPre := collBat.find("size").count_wrd() + 1;
-
-    if ( timing ) {
-      ms := (usec()-i_start)/1000;
-      printf(HASH +"TJ _tj_add2collection_frag(\"%s\"): forward index creation time = %lld.%03llds.\n",uri_name,/(ms,1000),%(ms,1000));
-    }
-    if ( verbose ) tj_verbose(HASH +"TJ _tj_add2collection_frag(\"%s\") finished.\n",ftiName);
-    
-    return lstPre;
-}
 
 # 
 # _tj_finalize_collection_frag builds an inverted index on the given fragment (if finalization is not delayed)
