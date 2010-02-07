@@ -1,0 +1,41 @@
+stdout of test 'tableDataLimit.SF-2944504` in directory 'src/test/BugTracker-2010` itself:
+
+
+# 16:45:01 >  
+# 16:45:01 >   mserver5 "--config=/ufs/alink/opt/MonetDB-Feb2010/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/alink/opt/MonetDB-Feb2010/lib/MonetDB5:/ufs/alink/opt/MonetDB-Feb2010/lib/MonetDB5/lib:/ufs/alink/opt/MonetDB-Feb2010/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch0/alink/dbfarm-MonetDB-Feb2010/"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35997 --set xrpc_port=44508 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 16:45:01 >  
+
+# MonetDB server v5.18.0, based on kernel v1.36.0
+# Serving database 'mTests_src_test_BugTracker-2010', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://loki.ins.cwi.nl:35997/
+# MonetDB/SQL module v2.36.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 16:45:01 >  
+# 16:45:01 >  mclient -lsql -ftest -i --host=loki --port=35997 
+# 16:45:01 >  
+
+[ 4	]
+% sys.test,	sys.test # table_name
+% x,	y # name
+% int,	int # type
+% 2,	2 # length
+[ 15,	17	]
+[ 11,	13	]
+[ 6,	9	]
+
+# 16:45:01 >  
+# 16:45:01 >  Done.
+# 16:45:01 >  
+

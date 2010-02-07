@@ -127,9 +127,14 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 static char *
 as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 {
+        sql_rel *r = sq;
+
+        if (is_topn(r->op))
+                r = sq->l;
+
 	if (column_spec) {
 		dnode *n = column_spec->h;
-		node *m = sq->exps->h;
+		node *m = r->exps->h;
 
 		for (; n; n = n->next, m = m->next) {
 			char *cname = n->data.sval;
@@ -143,7 +148,7 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 	} else {
 		node *m;
 
-		for (m = sq->exps->h; m; m = m->next) {
+		for (m = r->exps->h; m; m = m->next) {
 			sql_exp *e = m->data;
 			char *cname = exp_name(e);
 			sql_subtype *tp = exp_subtype(e);
