@@ -1867,8 +1867,8 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 	BUN r, s;
 	BATiter ui = bat_iterator(u);
 
-	BATpreload(b);
-	BATpreload(u);
+	BATpreload_(u);
+	BATpreload_(b);
 	BATloop(u, r, s) {
 		oid updid = *(oid *) BUNhead(ui, r);
 		ptr val = BUNtail(ui, r);
@@ -2115,7 +2115,7 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	/* hashloop over head values, check tail values */
 	if (b->H->hash) {
 		BUN h;
-		BATpreload(b);
+		BATpreload_(b);
 
 		if (hint && tint) {
 			HASHloop_int(bi, b->H->hash, h, x)

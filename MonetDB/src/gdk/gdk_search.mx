@@ -441,8 +441,6 @@ BAThash(BAT *b, BUN masksize)
 				}
 				return NULL;
 			}
-			if (hp->storage != STORE_MEM)
-				MT_mmap_pin(hp->base, hp->maxsize);
 
 			switch (tpe) {
 #ifndef NOEXPAND_CHR
@@ -517,8 +515,6 @@ BAThash(BAT *b, BUN masksize)
 			}
 			break;
 		}
-		if (hp->storage != STORE_MEM)
-			MT_mmap_pin(hp->base, hp->maxsize);
 		b->H->hash = h;
 	}
 	gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
