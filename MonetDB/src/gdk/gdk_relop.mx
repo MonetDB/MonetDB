@@ -444,7 +444,6 @@ the fast inner loops, optimized towards their type.
 		BUN yy;
 
 		BATpreload_(l);
-		BATpreload_(r);
 		BATloop(l, p, q) {
 			v = BUN@3(li, p);
 			if (@1_EQ(v, nil, @4)) {
@@ -473,7 +472,7 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	@:joincheck(BAThashjoin,l->ttype,r->htype)@
 	@:joinbat(JOIN_EQ,BAThashjoin(l,r,BUN_NONE),estimate)@
 
-	BATmmap_pin(r);
+	BATpreload(r);
 	if (BATprepareHash(r))
 		return NULL;
 	switch (any = ATOMstorage(l->ttype)) {
@@ -507,7 +506,6 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	default:
 		@:hashjoin(atom,any,tail,any)@
 	}
-	BATmmap_unpin(r);
 
 	/* propagate alignment info */
 	bn->hsorted = BAThordered(l);
@@ -524,7 +522,6 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
-	BATmmap_unpin(r);
 	return NULL;
 
 }
@@ -660,11 +657,10 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	offset = (ssize_t) base - (ssize_t) r->hseqbase; /* cast first, subtract second */
 	end = base + BATcount(r);
 
-	BATmmap_pin(r);
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultfetchjoin(@1,@2);\n");
 
-	BATpreload_(l);
 	BATpreload_(r);
+	BATpreload_(bn);
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNtail(li, l_cur));
 		if (yy < base || yy >= end) {
@@ -674,11 +670,9 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		@:bunfastins_nocheck_(@1,@2)@
 		dst++;
 	}
-	BATmmap_unpin(r);
 	ret = bn;
       goto bunins_failed;
       bunins_failed:
-	BATmmap_unpin(r);
 	BATsetcount(bn, dst);
 	if (!ret)
 		BBPreclaim(bn);
@@ -761,8 +755,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= densevoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densevoidfetchjoin(@1);\n");
 	r_cur = (BUN) (offset + * (oid *) BUNtloc(li, BUNfirst(l)));
-	BATpreload_(l);
 	BATpreload_(r);
+	BATpreload_(bn);
 	BATloop(l, l_cur, l_end) {
 		@1put(bn, Tloc(bn,dst));
 		r_cur++;
@@ -771,8 +765,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1);\n");
-	BATpreload_(l);
 	BATpreload_(r);
+	BATpreload_(bn);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
 
@@ -783,7 +777,6 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
-	BATpreload_(l);
 	BATpreload_(r);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
@@ -807,8 +800,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 			return bn;
 		dst = BUNfirst(bn);
 		bni = bat_iterator(bn);
-		BATpreload_(l);
 		BATpreload_(r);
+		BATpreload_(bn);
 		BATloop(l, l_cur, l_end) {
 			BUN _yy = (BUN) (offset + * (oid *) BUNtail(li, l_cur));
 
@@ -1496,7 +1489,6 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	if (!bn)
 		goto bunins_failed;
 
-	BATmmap_pin(r);
 	if (BAThdense(r)) {
 		/* positional algorithm: hash on void column would give error and is stupid */
 		ptr nilt = ATOMnilptr(r->ttype);
@@ -1567,7 +1559,6 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 @c
 		bn->tsorted = 0;
 	}
-	BATmmap_unpin(r);
 	/* set sorted flags by hand, because we used BUNfastins() */
 	if (r->hkey) {
 		ALIGNsetH(bn, l);	/* always 1 hit, so columns are equal */
@@ -1591,7 +1582,6 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	return bn;
 
       bunins_failed:
-	BATmmap_unpin(r);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1949,7 +1939,6 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 			return NULL;
 	}
 
-	BATmmap_pin(r);
 	switch (loc = var = ATOMstorage(l->htype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
@@ -1994,7 +1983,6 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 			}
 		}
 	}
-	BATmmap_unpin(r);
 
 	/* propagate properties */
 	bn->hsorted = l->hsorted;
@@ -2014,7 +2002,6 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 
 	return bn;
       bunins_failed:
-	BATmmap_unpin(r);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -2092,7 +2079,6 @@ BATrevsemijoin(BAT *l, BAT *r)
 	if (rdoubles && BATprepareHash(r))
 		return NULL;
 
-	BATmmap_pin(l);
 	switch (any = ATOMstorage(l->htype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
@@ -2124,7 +2110,6 @@ BATrevsemijoin(BAT *l, BAT *r)
 	default:
 		@:revsemijoin(atom,any,head,any)@
 	}
-	BATmmap_unpin(l);
 	/* propagate properties */
 	bn->hsorted = bn->tsorted = 0;
 	if (BAThkey(r) && BATtkey(l) && BATcount(bn) == BATcount(r)) {
@@ -2136,7 +2121,6 @@ BATrevsemijoin(BAT *l, BAT *r)
 
 	return bn;
       bunins_failed:
-	BATmmap_unpin(l);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -2199,8 +2183,6 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	}
 
 	/* iterate l; positional fetch in r */
-	if (!BAThordered(l))	/* StM: (!(BAThordered(l)&1)) ? */
-		BATmmap_pin(r);
 	BATpreload_(l);
 	BATpreload_(r);
 	BATloop(l, l_cur, l_end) {
@@ -2215,8 +2197,6 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 			bunfastins(bn, BUNhead(ri, r_cur), BUNtail(li, l_cur));
 		}
 	}
-	if (!BAThordered(l))	/* StM: (!(BAThordered(l)&1)) ? */
-		BATmmap_unpin(r);
 
 	/* property propagation */
 	bn->hsorted = (BAThordered(l) & BAThordered(r) & 1 ? GDK_SORTED : FALSE);
@@ -2240,8 +2220,6 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 
 	return bn;
       bunins_failed:
-	if (!BAThordered(l))	/* StM: (!(BAThordered(l)&1)) ? */
-		BATmmap_unpin(r);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -2507,9 +2485,8 @@ BATantijoin(BAT *l, BAT *r)
 	if (sz == 0)
 		return bn;
 
-	BATmmap_pin(r);
+	BATpreload_(r);
 	@:antijoin_switch_lht@
-	BATmmap_unpin(r);
 
 	if (bn) {
 		bn->hsorted = l->hsorted;
@@ -2682,9 +2659,8 @@ BATcross(BAT *l, BAT *r)
 	if (sz == 0)
 		return bn;
 
-	BATmmap_pin(r);
+	BATpreload_(r);
 	@:cross_switch_lht@
-	BATmmap_unpin(r);
 
 	if (bn) {
 		bn->hsorted = l->hsorted;
