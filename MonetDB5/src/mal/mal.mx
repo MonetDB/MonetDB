@@ -275,6 +275,8 @@ in a critical section, which is known to be a severe performance hindrance.
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;
+mal_export MT_Lock  mal_profileLock ;
+
 
 mal_export int mal_init(void);
 mal_export void mal_exit(void);
@@ -325,6 +327,7 @@ mal_export int moreClients(int reruns);
 
 MT_Lock     mal_contextLock;
 MT_Lock     mal_remoteLock;
+MT_Lock  	mal_profileLock ;
 @-
 Initialization of the MAL context
 The compiler directive STRUCT_ALIGNED tells that the
@@ -359,6 +362,7 @@ void tstAligned(void)
 int mal_init(){
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
 	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
+	MT_lock_init( &mal_profileLock, "mal_profileLock");
 
 	GDKprotect();
 	tstAligned();

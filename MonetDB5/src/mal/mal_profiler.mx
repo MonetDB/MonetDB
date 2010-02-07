@@ -63,6 +63,7 @@ a posteriori analysis.
 #profiler.activate("pc");
 profiler.activate("time,ticks");
 profiler.activate("stmt");
+#profiler.activate("type");
 #profiler.activate("cpu");
 #profiler.activate("memory");
 #profiler.activate("reads");
@@ -300,11 +301,9 @@ reset once the owner leaves. The routine profilerReset() handles the case.
 #include "mal_profiler.h"
 #include "mal_debugger.h"
 
-static MT_Lock profileLock ;
 static stream *eventstream = 0;
 
 #ifdef MALprofiler
-static int profileLockInitialized = 0;
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
 static str myname=0;
@@ -348,6 +347,7 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 #define PROFprocess 14
 #define PROFuser    15
 #define PROFstart   16
+#define PROFtype   17
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -370,7 +370,8 @@ static struct {
 	/*  14 */  { "process", 0},
 	/*  15 */  { "user", 0},
 	/*  16 */  { "start", 0},
-	/*  17 */  { 0, 0}
+	/*  17 */  { "type", 0},
+	/*  18 */  { 0, 0}
 };
 
 @-
@@ -402,13 +403,9 @@ The parameter of getEventStream is the return value of the enclosing function:
 	setStartPoint:  a str
 	setEndPoint:    a str
 @= getEventStream
-	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock,"M5_profileLock");
-		profileLockInitialized= 1;
-	}
-	mal_set_lock(profileLock,"profileLock");
+	mal_set_lock(mal_profileLock,"profileLock");
 	if( eventstream == NULL) {
-	    mal_unset_lock(profileLock,"profileLock");
+	    mal_unset_lock(mal_profileLock,"profileLock");
 	    return @1;
 	}
 @+ Offline processing
@@ -506,15 +503,15 @@ offlineProfilerHeader(void)
 		log0("wbytes,\t");
 	if (profileCounter[PROFaggr].status)
 		log0("count,\t clkticks,\t");
-	if (profileCounter[PROFstmt].status) {
+	if (profileCounter[PROFstmt].status)
 		log0("stmt,\t");
-	}
-	if (profileCounter[PROFuser].status) {
+	if (profileCounter[PROFtype].status) 
+		log0("types,\t");
+	if (profileCounter[PROFuser].status)
 		log0("user,\t");
-	}
 	log0("# name\n");
 	flushLog();
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 }
 
 void
@@ -562,13 +559,16 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		char *tbuf, *c;
 
 		tbuf= ctime(&mb->profiler[pc].clock);
-		c = strchr(tbuf, '\n');
-		if (c) {
-			c[-5] = '"';
-			c[-4] = 0;
-		}
-		tbuf[10] = '"';
-		log("%s,\t", tbuf + 10);
+		if (tbuf) {
+			c = strchr(tbuf, '\n');
+			if (c) {
+				c[-5] = '"';
+				c[-4] = 0;
+			}
+			tbuf[10] = '"';
+			log("%s,\t", tbuf + 10);
+		} else
+			log("%s,\t","nil");
 	}
 	if (profileCounter[PROFthread].status) {
 		log(" %d,\t", THRgettid());
@@ -655,13 +655,26 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		}
 		GDKfree(stmt);
 	}
+	if (profileCounter[PROFtype].status) {
+		char abuf[BUFSIZ], *tpe;
+		int i, j;
+		abuf[0]=0;
+		for ( i= 0; i< pci->retc; i++)
+		if( getArgType(mb,pci,i) != TYPE_void ){
+			j = (int) strlen(abuf);
+			tpe= getTypeName(getArgType(mb,pci,i));
+			snprintf(abuf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
+			GDKfree(tpe);
+		}
+		log("%s",abuf);
+	}
 	if (profileCounter[PROFuser].status) {
 		log(" %d", idx);
 	}
 	log0(" ]\n");
 	eventcounter++;
 	flushLog();
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 }
 #endif
 @+ Postprocessing events
@@ -673,11 +686,7 @@ setLogFile(stream *fd, Module mod, str fname)
 {
 	(void) mod;		/* still unused */
 #ifdef MALprofiler
-	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock,"M5_profileLock");
-		profileLockInitialized= 1;
-	}
-	mal_set_lock(profileLock, "profileLock");
+	mal_set_lock(mal_profileLock, "profileLock");
 	if( strcmp(fname,"console")==0)
 		eventstream = mal_clients[0].fdout;
 	else
@@ -688,7 +697,7 @@ setLogFile(stream *fd, Module mod, str fname)
 	if (eventstream == NULL) {
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 #else
 	(void) fname;
 	stream_printf(GDKout, "# MonetDB not compiled for profiling\n");
@@ -701,16 +710,12 @@ setLogStream(Module cntxt, str host, int port)
 {
 	(void) cntxt;		/* still unused */
 #ifdef MALprofiler
-	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock,"M5_profileLock");
-		profileLockInitialized= 1;
-	}
-	mal_set_lock(profileLock, "profileLock");
+	mal_set_lock(mal_profileLock, "profileLock");
 	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL)
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	if (eventstream)
 		eventstream = wbstream(eventstream, BUFSIZ);
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 #else
 	(void) host;
 	(void) port;
@@ -748,7 +753,7 @@ setStartPoint(Module cntxt, str mod, str fcn)
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */ )@
 	stream_printf(GDKout, "# start point not set\n");
 	flushLog();
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 #else
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
 #endif
@@ -765,7 +770,7 @@ setEndPoint(Module cntxt, str mod, str fcn)
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */ )@
 	stream_printf(GDKout, "# end point not set\n");
 	flushLog();
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 #else
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
 #endif
@@ -781,6 +786,7 @@ str
 startProfiling(void)
 {
 #ifdef MALprofiler
+	mal_set_lock(mal_profileLock, "profileLock");
 	if (eventstream != NULL) {
 		offlineProfiling=TRUE;
 		delayswitch = 1;
@@ -788,6 +794,7 @@ startProfiling(void)
 		cachedProfiling=TRUE;
 	initTrace();
 	malProfileMode = TRUE;
+	mal_unset_lock(mal_profileLock, "profileLock");
 #endif
 	return MAL_SUCCEED;
 }
@@ -818,9 +825,9 @@ MPresetProfiler(stream *fdout)
 {
 	if (fdout != eventstream)
 		return;
-	mal_set_lock(profileLock, "profileLock");
+	mal_set_lock(mal_profileLock, "profileLock");
 	eventstream = 0;
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 }
 
 @-
@@ -892,11 +899,7 @@ setFilter(Module cntxt, str mod, str fcn)
 		fcn = matchall;
 	profileAll = strcmp(mod, "*") == 0 && strcmp(fcn, "*") == 0;
 
-	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock,"M5_profileLock");
-		profileLockInitialized= 1;
-	}
-	mal_set_lock(profileLock, "profileLock");
+	mal_set_lock(mal_profileLock, "profileLock");
 	if( mod && fcn && topFilter<32){
 		modFilter[topFilter]= putName(mod,strlen(mod));
 		fcnFilter[topFilter++]= putName(fcn,strlen(fcn));
@@ -912,7 +915,7 @@ setFilter(Module cntxt, str mod, str fcn)
 				}
 		s = s->outer;
 	}
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 #else
 	(void) cntxt;
 	(void) mod;
@@ -938,11 +941,7 @@ clrFilter(Module cntxt, str mod, str fcn)
 	(void) mod;
 	(void) fcn;		/* still unused */
 
-	if( ! profileLockInitialized) {
-		MT_lock_init(&profileLock,"M5_profileLock");
-		profileLockInitialized= 1;
-	}
-	mal_set_lock(profileLock, "profileLock");
+	mal_set_lock(mal_profileLock, "profileLock");
 	for(j=0; j<topFilter; j++){
 		modFilter[j]=NULL;
 		fcnFilter[j]=NULL;
@@ -963,7 +962,7 @@ clrFilter(Module cntxt, str mod, str fcn)
 				}
 		s = s->outer;
 	}
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 #else
 	(void) cntxt;
 	(void) mod;
@@ -1088,7 +1087,6 @@ initTrace(void)
 {
 	if (TRACE_init)
 		return 0;		/* already initialized */
-	mal_set_lock(mal_contextLock, "trace");
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
@@ -1113,13 +1111,10 @@ initTrace(void)
 		TRACE_id_writes == NULL ||
 		TRACE_id_thread == NULL ||
 		TRACE_id_user == NULL 
-	) {
-		mal_unset_lock(mal_contextLock, "trace");
+	) 
 		cleanupProfiler();
-		mal_set_lock(mal_contextLock, "trace");
-	 } else
+	 else
 		TRACE_init = 1;
-	mal_unset_lock(mal_contextLock, "trace");
 	return TRACE_init ? 0: -1;
 }
 
@@ -1146,8 +1141,8 @@ cleanupProfiler(){
 void
 clearTrace(void)
 {
-	if (initTrace() )
-		return;
+	if (TRACE_init == 0)
+		return;		/* not initialized */
 	mal_set_lock(mal_contextLock, "cleanup");
 	/* drop all trace tables */
 	BBPclear(TRACE_id_event->batCacheid);
@@ -1161,14 +1156,14 @@ clearTrace(void)
 	BBPclear(TRACE_id_reads->batCacheid);
 	BBPclear(TRACE_id_writes->batCacheid);
 	TRACE_init= 0;
-	mal_unset_lock(mal_contextLock, "cleanup");
 	initTrace();
+	mal_unset_lock(mal_contextLock, "cleanup");
 }
 
 BAT *
 getTrace(str nme)
 {
-	if (initTrace() )
+	if (TRACE_init == 0)
 		return NULL;
 	if (strcmp(nme, "event") == 0)
 		return TRACE_id_event;
@@ -1260,23 +1255,23 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
-	if ( initTrace() )
-		return ;
-	if (TRACE_init == 0)
+	mal_set_lock(mal_profileLock, "profileLock");
+	if ( initTrace() || TRACE_init == 0){
+		mal_unset_lock(mal_profileLock, "profileLock");
 		return;
+	}
 
-	mal_set_lock(profileLock, "profileLock");
 	/* update the Trace tables */
 	snprintf(buf, 1024, "%s.%s[%d]", 
 		getModuleId(getInstrPtr(mb, 0)), 
 		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
-	BUNappend(TRACE_id_pc, buf, FALSE);
+	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
 	
-	BUNappend(TRACE_id_thread, &tid, FALSE);
+	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
 
-	BUNappend(TRACE_id_user, &idx, FALSE);
+	TRACE_id_user = BUNappend(TRACE_id_user, &idx, FALSE);
 	
-	BUNappend(TRACE_id_event, &TRACE_event, FALSE);
+	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
 	TRACE_event++;
 
 	{	char *tbuf, *c;
@@ -1285,10 +1280,10 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		c = strchr(tbuf, '\n');
 		if (c) 
 			c[-5] = 0;
-		BUNappend(TRACE_id_time, tbuf, FALSE);
+		TRACE_id_time = BUNappend(TRACE_id_time, tbuf, FALSE);
 	}
 
-	BUNappend(TRACE_id_ticks, &mb->profiler[pc].ticks, FALSE);
+	TRACE_id_ticks = BUNappend(TRACE_id_ticks, &mb->profiler[pc].ticks, FALSE);
 
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
@@ -1296,7 +1291,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	while (c && *c && (isspace((int) *c) || *c == '!'))
 		c++;
-	BUNappend(TRACE_id_stmt, c, FALSE);
+	TRACE_id_stmt = BUNappend(TRACE_id_stmt, c, FALSE);
 
 	{	char abuf[BUFSIZ], *tpe;
 		int i, j;
@@ -1308,9 +1303,9 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 			snprintf(abuf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
 			GDKfree(tpe);
 		}
-		BUNappend(TRACE_id_type, &abuf, FALSE);
+		TRACE_id_type = BUNappend(TRACE_id_type, &abuf, FALSE);
 	}
-	GDKfree(stmt);
+	if(stmt) GDKfree(stmt);
 	
 /* The remainder requires their own BATs
 #ifdef HAVE_TIMES
@@ -1338,13 +1333,13 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 */
 #ifdef HAVE_SYS_RESOURCE_H
 	v = infoUsage.ru_inblock- prevUsage.ru_inblock;
-	BUNappend(TRACE_id_reads, &v, FALSE);
+	TRACE_id_reads = BUNappend(TRACE_id_reads, &v, FALSE);
 	v = infoUsage.ru_oublock- prevUsage.ru_oublock;
-	BUNappend(TRACE_id_writes, &v, FALSE);
+	TRACE_id_writes = BUNappend(TRACE_id_writes, &v, FALSE);
 	prevUsage = infoUsage;
 #else
-	BUNappend(TRACE_id_reads, &v, FALSE);
-	BUNappend(TRACE_id_writes, &v, FALSE);
+	TRACE_id_reads = BUNappend(TRACE_id_reads, &v, FALSE);
+	TRACE_id_writes = BUNappend(TRACE_id_writes, &v, FALSE);
 #endif
 
 /*
@@ -1358,12 +1353,12 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #endif
 */
-	BUNappend(TRACE_id_rbytes, &mb->profiler[pc].rbytes, FALSE);
-	BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
+	TRACE_id_rbytes = BUNappend(TRACE_id_rbytes, &mb->profiler[pc].rbytes, FALSE);
+	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
 
 	eventcounter++;
 	flushLog();
-	mal_unset_lock(profileLock, "profileLock");
+	mal_unset_lock(mal_profileLock, "profileLock");
 }
 #endif
 @-
