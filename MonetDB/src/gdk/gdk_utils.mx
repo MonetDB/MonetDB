@@ -2246,9 +2246,10 @@ THRnew(MT_Id pid, str name)
 {
 	int tid = 0;
 	Thread t;
-	Thread s = GDK_find_thread(pid);
+	Thread s;
 
 	gdk_set_lock(GDKthreadLock, "THRnew");
+	s = GDK_find_thread(pid);
 	if (s == NULL) {
 		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
 			if (s->pid == pid) {
@@ -2298,7 +2299,9 @@ THRdel(Thread t)
 	if (t->cleanup) {
 		(*t->cleanup) (t);
 	}
+/*	The stream may haven been closed (e.g. in freeClient)  causing an abort
 	PARDEBUG THRprintf(GDKout, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
+*/
 
 	t->pid = 0;
 	GDKnrofthreads--;
