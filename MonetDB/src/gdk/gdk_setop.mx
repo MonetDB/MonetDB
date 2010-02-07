@@ -121,6 +121,8 @@ Implementation is either merge- or hash-based.
 			return NULL;
 		}
 	}
+	BATpreload_(b);
+	BATpreload_(bn);
 	BATloop(b, p, q) {
 		ptr h = BUNh@2(bi, p);
 		ptr t = BUNt@3(bi, p);
@@ -468,8 +470,8 @@ TODO synced/key case..
 	BATiter ri = bat_iterator(r);
 
 	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
-	pin = 1;
-	BATmmap_pin(r);
+	BATpreload_(l);
+	BATpreload_(r);
 	if (BATprepareHash(r))
 		goto bunins_failed;
 	BATloop(l, p1, q1) {
@@ -489,7 +491,6 @@ TODO synced/key case..
 		MISS@1(h, t);
 	}
 	(void)h2; /* in some cases the @6 check doesn't use the h2 */
-	BATmmap_unpin(r);
 
 @c
 #define DIRECT_MAX 256
@@ -707,7 +708,6 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 {
 	int hash = TRUE, (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
 	ptr hnil, tnil;
-	int pin = 0;
 
 	/* determine how to do the intersect */
 	if (BAThordered(l) & BAThordered(r) & 1) {
@@ -776,8 +776,6 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 	}
 	return bn;
   bunins_failed:
-	if (pin)
-		BATmmap_unpin(r);
 	BBPreclaim(bn);
 	return NULL;
 }
