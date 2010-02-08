@@ -4080,7 +4080,7 @@ str ALGstdev_@1(dbl *res, int *bid) {
 			/* no need to check for nil values on the tail, the CMDsum has
 			   already done that and reported back */
 			BATloop(b, p, q) {
-				@1 value = *(@1*) BUNtloc(bi, p);
+				dbl value = (dbl) *(@1*) BUNtloc(bi, p);
 				value -= avg;    /* diff from avg  */
 				value *= value;  /* square         */
 				stdev += value;  /* sum of squares */
