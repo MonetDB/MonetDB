@@ -1074,7 +1074,6 @@ TRACEcreate(str hnme, str tnme, int tt)
 	BBPrename(b->batCacheid, buf);
 	BATmode(b, PERSISTENT);
 	BATcommit(b);
-	BBPkeepref(b->batCacheid);
 	return b;
 }
 
