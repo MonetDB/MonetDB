@@ -802,6 +802,7 @@ stopProfiling(void)
 	malProfileMode = FALSE;
 	offlineProfiling= FALSE;
 	cachedProfiling= FALSE;
+	closeProfilerStream();
 #endif
 	return MAL_SUCCEED;
 }

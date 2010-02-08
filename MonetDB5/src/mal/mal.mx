@@ -412,6 +412,7 @@ Before continuing we should make sure that all clients
 @c
 	MCexitPending();
 	RECYCLEshutdown(mal_clients); /* remove any left over intermediates */
+	stopProfiling();
 #if 0
 {
 	int reruns=0, goon;
