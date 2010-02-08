@@ -1666,7 +1666,7 @@ PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
 {
     if ( verbose ) tj_verbose(HASH +"TJ tj_add2collection_frag(\"%s\") called.\n",ftiName);
     if (shred)
-      GDKerror("tj_add2collection_frag: shred bit no longer supported");
+      ERROR("tj_add2collection_frag: shred bit no longer supported");
       
     var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
@@ -3196,11 +3196,11 @@ PROC ALG_tj_ftfun_handler(
      var has_ign     := (pfop_ign.count_wrd() > wrd(0));
 
      if ( not(pfop_sn.count_wrd() > wrd(0)) )
-     	GDKerror("ALG_tj_ftfun_handler: startnodes not specified");
+     	ERROR("ALG_tj_ftfun_handler: startnodes not specified");
      if ( has_options )
-     	GDKerror("ALG_tj_ftfun_handler: options not implemented yet");
+     	ERROR("ALG_tj_ftfun_handler: options not implemented yet");
      if ( has_ign )
-     	GDKerror("ALG_tj_ftfun_handler: ignores not implemented yet");
+     	ERROR("ALG_tj_ftfun_handler: ignores not implemented yet");
      var single_val_opt := (pfop_query.fetch(1@0).tunique().count_wrd() = wrd(1));
      par_loop@batloop() {
         var iter_tjPre;
