@@ -114,7 +114,7 @@
                       BAT[oid,oid] item,
 		      BAT[oid,int] kind,
                       BAT[oid,str]  doc_loaded)
-		       : BAT[oid,oid] = CMDpf2tijah_node;
+		       : BAT[void,oid] = CMDpf2tijah_node;
  "Translate Pathfinder node sequence to tijah node sequence"
 
 .COMMAND offsetindex( BAT[void,oid] offset_tid, wrd res_size)
@@ -3221,28 +3221,43 @@ PROC ALG_tj_ftfun_handler(
           var xdoc_firstpre := bat("tj_" + ftiName + "0_doc_firstpre");
           var xpfpre := bat("tj_" + ftiName + "0_pfpre");
           var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
+
+	  var tjPre_score;
+
           if ( verbose ) tj_verbose(HASH +" ALG_tj_ftfun_handler: compute startnodes\n");
           iter_tjPre := pf2tijah_node(true,xdoc_name,xdoc_firstpre,xpfpre,sn_item,[int](sn_kind),doc_loaded);
+	  if ( not(ftc_term.startsWith("%")) ) {
+             if ( verbose ) tj_verbose(HASH +" ALG_tj_ftfun_handler: run precompiled term search\n");
 	  
-	  # now tokenize the term string and add a default weight
-	  var T := tijah_tokenize2bat(ftc_term).reverse().project(dbl(1.0));
-	  var Q := tj_prepare_query(T);
+	      # now tokenize the term string and add a default weight
+	      var T := tijah_tokenize2bat(ftc_term).reverse().project(dbl(1.0));
+	      var Q := tj_prepare_query(T);
 
-	  # tj_init_termHash(ftiName);
-	  # tj_init_tagHash(ftiName);
-	  var scorebase := dbl(0.000000);
-	  var c_lambda  := dbl(0.800000);
-	  var okapi_k1  := dbl(1.200000);
-	  var okapi_b   := dbl(0.750000);
-	  var downprop  := "max";
-	  var upprop    := "max";
-	  var andcomb   := "prod";
-	  var orcomb    := "sum";
-	  var returnall := TRUE;
+	      # tj_init_termHash(ftiName);
+	      # tj_init_tagHash(ftiName);
+	      var scorebase := dbl(0.000000);
+	      var c_lambda  := dbl(0.800000);
+	      var okapi_k1  := dbl(1.200000);
+	      var okapi_b   := dbl(0.750000);
+	      var downprop  := "max";
+	      var upprop    := "max";
+	      var andcomb   := "prod";
+	      var orcomb    := "sum";
+	      var returnall := TRUE;
 
-	  var tjPre_score := tj_containing_query_nest_pre_term_NLLR(iter_tjPre.reverse(), Q);
+	      tjPre_score := tj_containing_query_nest_pre_term_NLLR(iter_tjPre.reverse(), Q);
+	  } else {
+             if ( verbose ) tj_verbose(HASH +" ALG_tj_ftfun_handler: run compiled  nexi query\n");
+	     ftc_term := ftc_term.substring(2); # strip the "%"
+	     # the next tmark() is a bit mysterious. The result of pf2tijah_node
+	     # should be a [void,oid] but is an [oid,oid]
+	     iter_tjPre := iter_tjPre.tmark(0@0);
+	     var opt := new(str,str);
+	     opt.insert("return-all","true");
+	     opt.insert("_query",ftc_term);
+	     tjPre_score := run_tijah_query("DFLT_FT_INDEX",opt,true,iter_tjPre);
+	  }
 	  var iter_score := iter_tjPre.leftjoin(tjPre_score);
-
 
 	  result_item_s.append(iter_score);
         });
