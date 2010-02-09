@@ -1914,7 +1914,9 @@ unloadmod_bat(BAT *b, oid mid)
 		}
 		return MAX(0, refs - yy);
 	}
-	return BBPreclaim(b);
+	/* refs == 0, cause BBPfree() to be called */
+	BBPfix(b->batCacheid);
+	return BBPunfix(b->batCacheid);
 }
 
 static int
