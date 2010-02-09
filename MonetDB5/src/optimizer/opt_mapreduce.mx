@@ -135,169 +135,162 @@ possible with the aid of a replica.
 #define MINNODES 3
 
 static int
-MRcloudSize(){
+MRcloudSize()
+{
 	int nodes = MINNODES; /* to be based on what mero can tell us */
 	/* set the gdk_nr_threads to ensure enough control parallelism */
-	if ( GDKnr_threads < nodes )
+	if (GDKnr_threads < nodes)
 		GDKnr_threads = nodes;
-	return nodes; 
+	return nodes;
 }
 
 static void
 MRdistributework(MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 {
 	InstrPtr p, *packs;
-	int i,n,j,r,v;
+	int i, n, j, r, v;
 
-	n= MRcloudSize();
-	packs = (InstrPtr *) GDKmalloc(sig->retc * sizeof(InstrPtr));
-	for ( i = 0; i<sig->retc; i++) 
-	{
+	n = MRcloudSize();
+	packs = (InstrPtr *)GDKmalloc(sig->retc * sizeof(InstrPtr));
+	for (i = 0; i < sig->retc; i++) {
 		packs[i] = p = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(p, matRef);
 		setFunctionId(p, packRef);
-		getArg(p,0) = getArg(sig,i);
+		getArg(p, 0) = getArg(sig, i);
 		p = newAssignment(mb);
-		getArg(p,0)= getArg(sig,i);
-		pushNil(mb,p, getArgType(mc,sig,i));
+		getArg(p, 0) = getArg(sig, i);
+		pushNil(mb, p, getArgType(mc, sig, i));
 	}
 
-	p = newInstruction(mb,ASSIGNsymbol);
+	p = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(p, languageRef);
 	setFunctionId(p, dataflowRef);
 	p->barrier = BARRIERsymbol;
-	r= getArg(p,0)= newTmpVariable(mb, TYPE_int);
-	pushInstruction(mb,p);
+	r = getArg(p, 0) = newTmpVariable(mb, TYPE_int);
+	pushInstruction(mb, p);
 
-	for ( i = 0; i< n; i++)
-	{
-		p = newInstruction(mb,ASSIGNsymbol);
-		setModuleId(p, putName("mapreduce",9));
-		setFunctionId(p, putName("exec",4));
-		p = pushInt(mb,p, i);
+	for (i = 0; i < n; i++) {
+		p = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(p, putName("mapreduce", 9));
+		setFunctionId(p, putName("exec", 4));
+		p = pushInt(mb, p, i);
 		p = pushStr(mb, p, getModuleId(sig));
 		p = pushStr(mb, p, getFunctionId(sig));
 		for (j = 0; j < sig->retc; j++) {
-			v = newTmpVariable(mb, getArgType(mc,sig,j));
-			p= pushReturn(mb,p,v);
-			packs[j] = pushArgument(mb,packs[j],v);
+			v = newTmpVariable(mb, getArgType(mc, sig, j));
+			p = pushReturn(mb, p, v);
+			packs[j] = pushArgument(mb, packs[j], v);
 		}
-		pushInstruction(mb,p);
+		pushInstruction(mb, p);
 	}
 
-	for ( i = 1; i<sig->retc; i++) 
+	for (i = 1; i < sig->retc; i++)
 		pushInstruction(mb, packs[i]);
 	GDKfree(packs);
 
-	p = newInstruction(mb,ASSIGNsymbol);
+	p = newInstruction(mb, ASSIGNsymbol);
 	p->barrier = EXITsymbol;
-	getArg(p,0) = r;
-	pushInstruction(mb,p);
+	getArg(p, 0) = r;
+	pushInstruction(mb, p);
 }
 
 static int
 OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, limit, copy = 0;
-	InstrPtr *old, ret,sig;
-	str resultSetRef= putName("resultSet",9);
+	InstrPtr *old, ret, sig;
+	str resultSetRef = putName("resultSet", 9);
 	MalBlkPtr mc;
 	char nme[IDLENGTH];
 	Symbol new;
 	Lifespan span;
 
-	(void) stk;
-	
+	(void)stk;
+
 #ifdef _DEBUG_OPT_MAPREDUCE
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 
-    mc = copyMalBlk(mb);
-	snprintf(nme,IDLENGTH,"%smp", getFunctionId(getInstrPtr(mb,0)));
-	setFunctionId(getInstrPtr(mc,0), putName(nme,strlen(nme)));
-	p= getInstrPtr(mc,0);
-	new = newSymbol(getFunctionId(p),p->token);
+	mc = copyMalBlk(mb);
+	snprintf(nme, IDLENGTH, "%smp", getFunctionId(getInstrPtr(mb, 0)));
+	setFunctionId(getInstrPtr(mc, 0), putName(nme, strlen(nme)));
+	p = getInstrPtr(mc, 0);
+	new = newSymbol(getFunctionId(p), p->token);
 	freeMalBlk(new->def);
 	new->def = mc;
-	insertSymbol(findModule(cntxt->nspace, getModuleId(p)),new);
+	insertSymbol(findModule(cntxt->nspace, getModuleId(p)), new);
 
 	span = setLifespan(mb);
-@-
-Massage mbcopy to act as the mapreduce program, producing a partial answer.
-@c
+	/* Massage mbcopy to act as the mapreduce program, producing a
+	 * partial answer. */
 	old = mc->stmt;
-	limit= mc->stop;
-	if ( newMalBlkStmt(mc,mc->ssize) < 0 )
+	limit = mc->stop;
+	if (newMalBlkStmt(mc, mc->ssize) < 0)
 		return 0;
 
 	sig = old[0];
-	pushInstruction(mc,old[0]);
-	for(i=1;i<limit;i++){
+	pushInstruction(mc, old[0]);
+	for (i = 1; i < limit; i++) {
 		p = old[i];
-		if (p->token == ENDsymbol){
+		if (p->token == ENDsymbol) {
 			ret = newInstruction(mc, ASSIGNsymbol);
-			ret->barrier= RETURNsymbol;
-			for( j=0;j< sig->retc; j++)
-				ret = pushReturn(mc,ret,getArg(sig,j));
-			pushInstruction(mc,ret);
+			ret->barrier = RETURNsymbol;
+			for (j = 0; j < sig->retc; j++)
+				ret = pushReturn(mc, ret, getArg(sig, j));
+			pushInstruction(mc, ret);
 			copy = 0;
 		}
-@-
-We copy statements until we find a map-reduce blocking operation.
-Collect all BAT variables up to now whose lifespan has not yet ended.
-They should be passed back to the controlling program
-@c
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef ){
-			for( j=0;j< mb->vtop; j++)
-			if (getBeginLifespan(span,j) < i && getEndLifespan(span,j) >= i && isaBatType(getVarType(mb,j) ) )
-				sig = pushReturn(mc,sig, j);
+		/* We copy statements until we find a map-reduce blocking
+		 * operation.  Collect all BAT variables up to now whose
+		 * lifespan has not yet ended.  They should be passed back to
+		 * the controlling program */
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef) {
+			for (j = 0; j < mb->vtop; j++)
+				if (getBeginLifespan(span, j) < i && getEndLifespan(span, j) >= i && isaBatType(getVarType(mb, j)))
+					sig = pushReturn(mc, sig, j);
 		}
-		if ( copy == 0) 
-			copy = (getModuleId(p)== sqlRef && getFunctionId(p)==resultSetRef);
-		if ( copy ) {
+		if (copy == 0)
+			copy = (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef);
+		if (copy) {
 			freeInstruction(p);
 			continue;
 		}
-		pushInstruction(mc,p);
+		pushInstruction(mc, p);
 	}
 	mc->stmt[0] = sig;
 	GDKfree(old);
 #ifdef _DEBUG_OPT_MAPREDUCE
-	stream_printf(cntxt->fdout,"MAPREDUCE program\n");
-	printFunction(cntxt->fdout,mc,0,LIST_MAL_STMT);
+	stream_printf(cntxt->fdout, "MAPREDUCE program\n");
+	printFunction(cntxt->fdout, mc, 0, LIST_MAL_STMT);
 #endif
-@-
-Create the corresponding controller program
-@c
+	/* Create the corresponding controller program */
 	old = mb->stmt;
-	limit= mb->stop;
-	if ( newMalBlkStmt(mb,mb->ssize) < 0 )
+	limit = mb->stop;
+	if (newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
 
-	pushInstruction(mb,old[0]);
+	pushInstruction(mb, old[0]);
 	copy = 0;
-	for(i=1;i<limit;i++){
+	for (i = 1; i < limit; i++) {
 		p = old[i];
-@-
-Again, find the blocking operation and inject the map call
-@c
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef ){
-			MRdistributework(mb,mc,sig);
+		/* Again, find the blocking operation and inject the map call */
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef) {
+			MRdistributework(mb, mc, sig);
 			p = old[i];
 		}
-		if ( copy == 0) 
-			copy = (getModuleId(p)== sqlRef && getFunctionId(p)==resultSetRef);
-		if ( copy == 0 ) {
+		if (copy == 0)
+			copy = (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef);
+		if (copy == 0) {
 			freeInstruction(p);
 			continue;
 		}
-		pushInstruction(mb,p);
+		pushInstruction(mb, p);
 	}
 	GDKfree(old);
 
 #ifdef _DEBUG_OPT_MAPREDUCE
-	stream_printf(cntxt->fdout,"MAPREDUCE controller\n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT);
+	stream_printf(cntxt->fdout, "MAPREDUCE controller\n");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 	return 1;
 }
@@ -319,9 +312,9 @@ execute it and remove it at some point.
 str
 MRexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) mb;
-	(void) stk;
-	(void) pci;
+	(void)mb;
+	(void)stk;
+	(void)pci;
 	return MAL_SUCCEED;
 }
 @}
