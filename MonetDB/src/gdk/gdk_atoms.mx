@@ -1986,11 +1986,14 @@ strPut(Heap *h, var_t *dst, str v)
 		if (GDK_STRCMP(v, h->base + pos) == 0) {
 			return *dst = (var_t) (pos >> GDK_VARSHIFT); /* already in heap; do not insert! */
 		}
-#if SIZEOF_VAR_T < SIZEOF_VOID_P
-		pad &= (GDK_VARALIGN-1); /* a full VARALIGN pad can be omitted */
-#else
-		pad = 0; /* only 32-bits var_t in 64-bits needs padding */
+#if SIZEOF_VAR_T >= SIZEOF_VOID_P  /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
+		if (extralen == 0) /* i.e., h->hashash == FALSE */
+			/* no VARSHIFT and no string hash value stored => no padding/alignment needed */
+			pad = 0;
+		else
 #endif
+			/* pad to align on VARALIGN for VARSHIFT and/or string hash value */
+			pad &= (GDK_VARALIGN-1);
 	}
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
