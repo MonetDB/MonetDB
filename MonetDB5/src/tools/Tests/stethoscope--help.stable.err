@@ -32,6 +32,7 @@ The trace options:
     w =block writes
     b =bytes read/written
     s =statement
+    y =argument types
     p =pg faults, cntxt switches
     u =user
 
