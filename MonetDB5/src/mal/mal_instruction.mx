@@ -2702,10 +2702,9 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 					advance(t,base,len);
 					if (cv)
 						GDKfree(cv);
-					d= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+					d= BBPquickdesc(stk->stk[getArg(p,i)].val.ival,TRUE);
 					if( d){
 						snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
-						BBPreleaseref(d->batCacheid);
 						advance(t,base,len);
 					}
 				}
@@ -2802,12 +2801,11 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			if( flg & LIST_MAL_VALUE && isaBatType(getVarType(mb,getArg(p,i)) ) ){
 				BAT *d = 0;
 				if (stk && stk->stk[getArg(p,i)].vtype== TYPE_bat){
-					d= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+					d= BBPquickdesc(stk->stk[getArg(p,i)].val.ival,TRUE);
 				} else
-					d= BATdescriptor(getVarConstant(mb,getArg(p,i)).val.ival);
+					d= BBPquickdesc(getVarConstant(mb,getArg(p,i)).val.ival,TRUE);
 				if( d){
 					snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
-					BBPreleaseref(d->batCacheid);
 					advance(t,base,len);
 				}
 			}
