@@ -173,7 +173,7 @@ is not acceptable.
 Instead, we maintain a simple lock with each connection, which
 can be used to issue a safe, but blocking get/put/exec/register request.
 @- Implementation
-@h
+@c
 typedef struct _connection {
 	MT_Lock            lock;      /* lock to avoid interference */
 	str                name;      /* the handle for this connection */
