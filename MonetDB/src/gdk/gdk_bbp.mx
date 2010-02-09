@@ -1810,15 +1810,25 @@ BBPshare(bat parent)
 }
 
 static INLINE int
-decref(bat i, int logical, int releaseShare)
+decref(bat i, int logical, int releaseShare, int lock)
 {
-	int refs = 0, swap = 0, swap_unloading = 0;
+	int refs = 0, swap = 0;
 	BAT *b;
 
-	gdk_set_lock(GDKswapLock(i), "BBPdecref");
+	if (lock)
+		gdk_set_lock(GDKswapLock(i), "BBPdecref");
 	if (releaseShare && --BBP_cache(i)->batSharecnt > 0) {
-		gdk_unset_lock(GDKswapLock(i), "BBPdecref");
+		if (lock)
+			gdk_unset_lock(GDKswapLock(i), "BBPdecref");
 		return refs;
+	}
+
+	while (BBP_status(i) & BBPUNLOADING) {
+		if (lock)
+			gdk_unset_lock(GDKswapLock(i), "BBPdecref");
+		BBPspin(i, "BBPdecref", BBPUNLOADING);
+		if (lock)
+			gdk_set_lock(GDKswapLock(i), "BBPdecref");
 	}
 
 	/* decrement references by one */
@@ -1848,23 +1858,16 @@ decref(bat i, int logical, int releaseShare)
 			BBP_lastused(i) = sec;
 	} else if (b || (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
-		if (BBP_status(i) & BBPUNLOADING) {
-			/* BBPtrim was unloading this bat that just now lost its last refcnt. */
-			incref(i, logical, FALSE);	/* cannot destroy it now; back off */
-			swap_unloading = TRUE;
-		} else {
-			BBP_status_on(i, BBPUNLOADING, "BBPdecref");
-			swap = TRUE;
-		}
+		assert((BBP_status(i) & BBPUNLOADING) == 0);
+		BBP_status_on(i, BBPUNLOADING, "BBPdecref");
+		swap = TRUE;
 	}
 
 	/* unlock before re-locking in unload; as saving a dirty persistent bat may take a long time */
-	gdk_unset_lock(GDKswapLock(i), "BBPdecref");
+	if (lock)
+		gdk_unset_lock(GDKswapLock(i), "BBPdecref");
 
-	if (swap_unloading) {
-		BBPspin(i, "BBPdecref", BBPUNLOADING);	/* wait for unload to complete */
-		decref(i, logical, FALSE);	/* and just try again */
-	} else if (swap) {
+	if (swap) {
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 
 		b = BBPquickdesc(i, TRUE);
@@ -1872,7 +1875,8 @@ decref(bat i, int logical, int releaseShare)
 			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
 		} else if (b) {
 			BBP_unload_inc(i, "BBPdecref");
-			BBPfree(b, "BBPdecref");	/* free memory of transient */
+			if (BBPfree(b, "BBPdecref")) /* free memory of transient */
+				return -1;  /* indicate failure */
 		}
 	}
 	return refs;
@@ -1886,7 +1890,7 @@ BBPdecref(bat i, int logical)
 	}
 	if (i < 0)
 		i = -i;
-	return decref(i, logical, FALSE);
+	return decref(i, logical, FALSE, TRUE);
 }
 
 @-
@@ -1912,17 +1916,16 @@ BBPkeepref(bat i)
 		while (BBP_status(i) & BBPUNLOADING) {
 			if (lock)
 				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
-			MT_sleep_ms(1);
+			BBPspin(i, "BBPkeepref", BBPUNLOADING);
 			if (lock)
 				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
 		}
 		/* got the lock */
-		++BBP_lrefs(i);
+		++BBP_lrefs(i);	/* incref(i, TRUE, FALSE); */
 		assert(BBP_refs(i));
-		--BBP_refs(i);
+		--BBP_refs(i);	/* decref(i, FALSE, FALSE, FALSE); */
 		if (lock)
 			gdk_unset_lock(GDKswapLock(i), "BBPfix");
-		/* decref(i, FALSE, lock); */
 	}
 }
 void
@@ -1941,13 +1944,13 @@ BBPreleaselref(bat i)
 		while (BBP_status(i) & BBPUNLOADING) {
 			if (lock)
 				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
-			MT_sleep_ms(1);
+			BBPspin(i, "BBPreleaselref", BBPUNLOADING);
 			if (lock)
 				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
 		}
 		/* got the lock */
 		assert(BBP_lrefs(i));
-		--BBP_lrefs(i);
+		--BBP_lrefs(i);	/* decref(i, TRUE, FALSE, FALSE); */
 		if (lock)
 			gdk_unset_lock(GDKswapLock(i), "BBPfix");
 	}
@@ -1969,12 +1972,12 @@ BBPreleaseref(bat i)
 		while (BBP_status(i) & BBPUNLOADING) {
 			if (lock)
 				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
-			MT_sleep_ms(1);
+			BBPspin(i, "BBPreleaseref", BBPUNLOADING);
 			if (lock)
 				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
 		}
 		/* got the lock */
-		assert(BBP_refs(i));
+		assert(BBP_refs(i)); /* decref(i, FALSE, FALSE, FALSE); */
 		--BBP_refs(i);
 		if (lock)
 			gdk_unset_lock(GDKswapLock(i), "BBPfix");
@@ -1986,7 +1989,7 @@ GDKunshare(bat parent)
 {
 	if (parent < 0)
 		parent = -parent;
-	(void) decref(parent, FALSE, TRUE);
+	(void) decref(parent, FALSE, TRUE, TRUE);
 }
 
 void
@@ -2006,51 +2009,16 @@ Return values:
 int
 BBPreclaim(BAT *b)
 {
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 	bat i;
-	int reclaim_while_unloading = 0;
-	int ret = 0;
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
 	if (b == NULL)
 		return -1;
  	i = ABS(b->batCacheid);
-	if (lock)
-		gdk_set_lock(GDKswapLock(i), "BBPreclaim");
 
-	BATDEBUG THRprintf(GDKout, "#BBPreclaim: bat(%d) view=%d lrefs=%d ref=%d stat=%d\n", (int) b->batCacheid, b->batSharecnt, BBP_lrefs(b->batCacheid), BBP_refs(b->batCacheid), BBP_status(b->batCacheid));
+	assert(BBP[i].refs == 1 && BBP[i].lrefs == 0);
 
-	if (BBP_refs(b->batCacheid) > 1) {
-		GDKerror("BBPreclaim: %d refs > 1 (%d)\n", i, BBP_refs(i));
-		assert(0);
-		ret = -1;
-	} else if (BBP_status(i) & BBPUNLOADING) {
-		/* BBPtrim was unloading this bat that just now is getting killed. */
-		reclaim_while_unloading = TRUE;
-	} else {
-		/* unload whatever the LRU in the BBP */
-		BBP_refs(b->batCacheid) = 0;
-		BBP_status_on(i, BBPUNLOADING, "BBPreclaim");
-	}
-	if (lock)
-		gdk_unset_lock(GDKswapLock(i), "BBPreclaim");
-
-	if (reclaim_while_unloading) {
-		BBPspin(i, "BBPreclaim", BBPUNLOADING);	/* wait for unload to complete */
-		return BBPreclaim(b);
-	}
-
-	/* BBPfree potentially saves the BAT. Do this after releasing the short-term lock */
-	if (ret == 0) {
-		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
-
-		if (destroy) {
-			ret = BBPdestroy(BBP_cache(i));
-		} else {
-			BBP_unload_inc(i, "BBPreclaim");
-			ret = BBPfree(b, "BBPreclaim");
-		}
-	}
-	return ret;
+	return decref(i, 0, 0, lock) < 0;
 }
 
 @-
@@ -2124,9 +2092,9 @@ BBPsave(BAT *b)
 
 	if (BBP_status(bid) & BBPSAVING) {
 		/* wait until save in other thread completes */
-		BBPspin(bid, "BBPsave", BBPSAVING);
 		if (lock)
 			gdk_unset_lock(GDKswapLock(bid), "BBPsave");
+		BBPspin(bid, "BBPsave", BBPSAVING);
 	} else {
 		/* save it */
 		int flags = BBPSAVING;
