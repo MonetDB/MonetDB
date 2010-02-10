@@ -2009,17 +2009,16 @@ Return values:
 int
 BBPreclaim(BAT *b)
 {
-	bat i, j = 0;
+	bat i;
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
 	if (b == NULL)
 		return -1;
  	i = ABS(b->batCacheid);
 
-	while (BBP[i].refs > 0 && j >= 0)
-		j = decref(i, 0, 0, lock);
+	assert(BBP_refs(i) == 1);
 
-	return j < 0;
+	return decref(i, 0, 0, lock) < 0;
 }
 
 @-
