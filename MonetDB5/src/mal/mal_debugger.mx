@@ -1495,9 +1495,12 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		n= getVar(mb,i);
 		v= stk->stk+i;
 		if (isaBatType(n->type) && v->val.ival) {
+			int i = v->val.ival;
 			BAT *b;
 
-			b = BBPquickdesc(v->val.ival, TRUE);
+			b = BBPquickdesc(ABS(i), TRUE);
+			if (i < 0)
+				b = BATmirror(b);
 			if (b) {
 				nme = getTypeName(n->type);
 				nmeOnStk = getTypeName(newBatType(b->htype, b->ttype));
@@ -1779,8 +1782,12 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 
 	if (v && v->vtype == TYPE_bat){
-		BAT *b = BBPquickdesc(v->val.ival, TRUE);
+		int i = v->val.ival;
+		BAT *b = BBPquickdesc(i, TRUE);
 
+		b = BBPquickdesc(ABS(i), TRUE);
+		if (i < 0)
+			b = BATmirror(b);
 		if (b){
 			nme= getTypeName(newBatType(b->htype, b->ttype));
 			stream_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
