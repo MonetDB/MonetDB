@@ -539,6 +539,7 @@ bin_optimizer(mvc *c, stmt *s)
 	}
 
 	case st_temp:
+	case st_single:
 	case st_diff:
 	case st_union:
 	case st_outerjoin:

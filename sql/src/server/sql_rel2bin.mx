@@ -115,6 +115,7 @@ tail_column(stmt *st)
 	case st_basetable:	/* a table is not a column */
 	case st_table:		/* a table is not a column */
 	case st_temp:
+	case st_single:
 	case st_unop:
 	case st_binop:
 	case st_Nop:
@@ -198,6 +199,7 @@ head_column(stmt *st)
 	case st_basetable:
 	case st_table:
 	case st_temp:
+	case st_single:
 	case st_idxbat:
 
 	case st_rs_column:
@@ -1185,6 +1187,7 @@ rel2bin(mvc *c, stmt *s)
 	case st_uselectN: 
 
 	case st_temp:
+	case st_single:
 	case st_diff:
 	case st_union:
 	case st_outerjoin:

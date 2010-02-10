@@ -55,6 +55,7 @@ typedef enum stmt_type {
 	st_basetable,	
 	st_table,		/* some functions return a table */
 	st_temp,		/* temporal bat */
+	st_single,		/* single value bat */
 	st_rs_column,
 	st_column,		/* relational column result */
 	st_bat,
@@ -349,6 +350,7 @@ st_type2string(st_type type)
 		ST(basetable);
 		ST(table);
 		ST(temp);
+		ST(single);
 
 		ST(rs_column);
 		ST(column);
@@ -680,6 +682,7 @@ stmt_destroy(stmt *s)
 
 			/* special cases */
 		case st_temp:
+		case st_single:
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
 
@@ -927,6 +930,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_none:
 		case st_var:
 		case st_temp:
+		case st_single:
 		case st_atom:
 		case st_trans:
 		case st_catalog:
@@ -1095,6 +1099,17 @@ stmt_temp(sql_subtype *t)
 	s->nrcols = 1;
 	return s;
 }
+
+stmt *
+stmt_single(sql_subtype *t)
+{
+	stmt *s = stmt_create(st_single);
+
+	s->op4.typeval = *t;
+	s->nrcols = 1;
+	return s;
+}
+
 
 stmt *
 stmt_column(stmt *op1, stmt *table, sql_table *t)
@@ -2230,6 +2245,7 @@ tail_type(stmt *st)
 		return atom_type(st->op1.aval);
 	case st_convert:
 	case st_temp:
+	case st_single:
 	case st_rs_column:
 		return &st->op4.typeval;
 	case st_var:
@@ -2295,6 +2311,7 @@ head_type(stmt *st)
 		return head_type(st->op1.lval->h->data);
 
 	case st_temp:
+	case st_single:
 	case st_bat:
 	case st_idxbat:
 	case st_const:
@@ -2438,6 +2455,7 @@ column_name(stmt *st)
 			return atom2string(st->op1.aval);
 	case st_var:
 	case st_temp:
+	case st_single:
 		return _strdup("single_value");
 
 	case st_relselect:
@@ -2506,6 +2524,7 @@ table_name(stmt *st)
 
 	case st_var:
 	case st_temp:
+	case st_single:
 	case st_relselect:
 	case st_releqjoin:
 	case st_reljoin:
@@ -2563,6 +2582,7 @@ schema_name(stmt *st)
 		return NULL;
 	case st_var:
 	case st_temp:
+	case st_single:
 		return NULL;
 	case st_relselect:
 	case st_releqjoin:
@@ -2733,6 +2753,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		/* large group with only up till 3 operants */ 
 		case st_column:
 		case st_temp:
+		case st_single:
 		case st_aggr:
 		case st_unop: case st_binop: case st_Nop:
 		case st_diff: case st_union:
@@ -2854,6 +2875,7 @@ print_stmt(stmt *s, int *nr)
 	switch(s->type) {
 	case st_none: 	
 	case st_temp:
+	case st_single:
 	case st_unique:
 		 	printf("temp,unique,none\n"); break;
 	case st_exception:

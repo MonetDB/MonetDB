@@ -360,7 +360,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				as2 = exp_bin(sql, attr->h->next->data, left, right, NULL, sel);
 			/* insert single value into a column */
 			if (as && as->nrcols <= 0 && !left)
-				as = stmt_append(stmt_temp(tail_type(as)), as);
+				as = const_column(as);
 		} else {
 			/* count(*) may need the default group (relation) and
 			   and/or an attribute to count */
@@ -371,7 +371,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			} else {
 				/* create dummy single value in a column */
 				as = stmt_atom_wrd(0);
-				as = stmt_append(stmt_temp(tail_type(as)), as);
+				as = const_column(as);
 			}
 		}
 		if (!as) 
@@ -1617,9 +1617,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 static stmt *
 rel2bin_predicate(void) 
 {
-	sql_subtype *bt = sql_bind_localtype("bit");
-	stmt *temp = stmt_temp(bt);
-	return stmt_append(temp, stmt_bool(1));
+	return const_column(stmt_bool(1));
 }
 
 static stmt *
@@ -2282,12 +2280,9 @@ join_idx_insert(mvc *sql, sql_idx * i, list *inserts)
 		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
 		s = stmt_mark(stmt_reverse(s), 0);
 		if (cond) {
-			stmt *t = stmt_temp(bt);
-			stmt *isnull = stmt_temp(tail_type(s));
 			stmt *notnull = s;
-
-			isnull = stmt_append(isnull, stmt_atom(atom_general(tail_type(s), NULL, 0)));
-			t = stmt_append(t, cond);
+			stmt *isnull = const_column(stmt_atom(atom_general(tail_type(s), NULL, 0)));
+			stmt *t = const_column(cond);
 			isnull = stmt_join(t, stmt_reverse(stmt_const(stmt_reverse(isnull), stmt_bool(1))), cmp_equal);
 			notnull = stmt_join(stmt_dup(t), stmt_reverse(stmt_const(stmt_reverse(notnull), stmt_bool(0))), cmp_equal);
 			s = stmt_union(isnull, notnull);
