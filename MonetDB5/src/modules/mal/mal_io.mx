@@ -859,6 +859,7 @@ Open the file. Memory map it to minimize buffering problems.
 		buf = (char *) GDKmalloc(bufsize);
 		if ( buf == NULL) {
 			BBPunfix(b->batCacheid);
+			fclose(fp);
 			throw(MAL,"io.import",MAL_MALLOC_FAIL);
 		}
 
