@@ -75,7 +75,7 @@ comment "Fill an array representation with constants ";
 
 @= grid_hdefs
 #define new_@1_bat(b,s) {(b)=BATnew(TYPE_void,TYPE_@1,(BUN) (s)); \
-                         BATseqbase((b),0);                 }
+                         if (b) BATseqbase((b),0);                 }
 #define add_@1s(b,n)    {(b)->T->heap.free+=(size_t)(n)*sizeof(@1);\
 			                   (b)->batCount+=(BUN)n;\
                          BATkey(BATmirror((b)),0);          \
