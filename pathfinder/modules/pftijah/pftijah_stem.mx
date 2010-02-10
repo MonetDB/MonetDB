@@ -782,10 +782,11 @@ static tjStemCtx porter_dutch = { "porter-dutch", porter_dutch_init, porter_dutc
  */
 
 tjStemCtx* getStemmingContext(char* name) {
-	(void) name;
 	tjStemCtx* res;
 
-	if ( strcmp(name,"nostemming")==0 )
+	if (name == NULL)
+	    res = & nostemming;
+	else if ( strcmp(name,"nostemming")==0 )
 	    res = & nostemming;
 	else if ( strcmp(name,"default")==0 )
 	    res = & nostemming;
