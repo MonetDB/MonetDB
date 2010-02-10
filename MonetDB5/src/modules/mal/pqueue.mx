@@ -155,19 +155,20 @@ static INLINE BUN parent(BUN posel)
 }
 
 /*initialize pqueue*/
-static void
+static int
 do_pqueue_init(BAT **h, BAT *b, BUN maxsize)
 {
 	*h = BATnew(TYPE_oid, b->ttype, maxsize);
-        if (*h)
-                (*h)->batDirty |= 2;
+	if (*h == NULL)
+		return GDK_FAIL;
+	(*h)->batDirty |= 2;
+	return GDK_SUCCEED;
 }
 
 int 
 pqueue_init(BAT **h, BAT *b, wrd *maxsize)
 {
-	do_pqueue_init(h, b, (BUN) *maxsize);
-  	return GDK_SUCCEED;
+	return do_pqueue_init(h, b, (BUN) *maxsize);
 }
 
 #define ht_swap(tpe,cur,ins) {					\
@@ -314,7 +315,8 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
 
   if ((BUN) *N < n)
 	  n = (BUN) *N;
-  do_pqueue_init(H,t,n);
+  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+	  return GDK_FAIL;
   v = (@1*)BUNtail(ti,BUNfirst(t));
 
   for(i=0; i<n; i++, idx++, v++) {
@@ -335,7 +337,8 @@ int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
 
   if ((BUN) *N < n)
 	  n = (BUN) *N;
-  do_pqueue_init(H,t,n);
+  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+	  return GDK_FAIL;
 
   for(i=0; i<n; i++, p++) {
 	pqueue_enqueue_@1@2(*H, (oid*)BUNhloc(ti,p), (@1*)BUNtloc(ti,p)); 
@@ -358,8 +361,13 @@ int pqueue_utopn_void@1@2(BAT **H, BAT *t, int *N)
   oid idx = t->hseqbase;
 
   n = (BUN) *N;
-  do_pqueue_init(H,t,n);
+  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+	  return GDK_FAIL;
   duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+  if (duplicates == NULL) {
+	  BBPunfix((*H)->batCacheid);
+	  return GDK_FAIL;
+  }
   v = (@1*)BUNtail(ti,BUNfirst(t));
 
   for(i=0, j=0; j < cnt && i<n; j++, idx++, v++) {
@@ -401,8 +409,13 @@ int pqueue_utopn_@1@2(BAT **H, BAT *t, int *N)
   oid *idx;
 
   n = (BUN) *N;
-  do_pqueue_init(H,t,n);
+  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+	  return GDK_FAIL;
   duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+  if (duplicates == NULL) {
+	  BBPunfix((*H)->batCacheid);
+	  return GDK_FAIL;
+  }
   v = (@1*)BUNtail(ti,BUNfirst(t));
   idx = (oid*)BUNhead(ti,BUNfirst(t));
 
@@ -583,7 +596,8 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
 
   if ((BUN) *N < n)
    	n = (BUN) *N;
-  do_pqueue_init(H,t,n);
+  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+	  return GDK_FAIL;
 
   for(i=0; i<n; i++, idx++, p++) {
 	pqueue_enqueue_any@1(*H, &idx, BUNtail(ti,p), tpe); 
@@ -604,7 +618,8 @@ int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
 
   if ((BUN) *N < n)
    	n = (BUN) *N;
-  do_pqueue_init(H,t,n);
+  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+	  return GDK_FAIL;
 
   for(i=0; i<n; i++, p++) {
 	pqueue_enqueue_any@1(*H, (oid*)BUNhloc(ti,p), BUNtail(ti,p), tpe); 
@@ -627,8 +642,13 @@ int pqueue_utopn_voidany@1(BAT **H, BAT *t, int *N)
   int tpe = BATttype(t);
 
   n = (BUN) *N;
-  do_pqueue_init(H,t,n);
+  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+	  return GDK_FAIL;
   duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+  if (duplicates == NULL) {
+	  BBPunfix((*H)->batCacheid);
+	  return GDK_FAIL;
+  }
   hi = bat_iterator(*H);
 
   for(i=0, j=0; j < cnt && i<n; j++, idx++, q++) {
@@ -674,8 +694,13 @@ int pqueue_utopn_any@1(BAT **H, BAT *t, int *N)
   int tpe = BATttype(t);
 
   n = (BUN) *N;
-  do_pqueue_init(H,t,n);
+  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+	  return GDK_FAIL;
   duplicates = BATnew(TYPE_oid, TYPE_oid, n);
+  if (duplicates == NULL) {
+	  BBPunfix((*H)->batCacheid);
+	  return GDK_FAIL;
+  }
   hi = bat_iterator(*H);
 
   idx = (oid*)BUNhead(ti,BUNfirst(t));
@@ -878,11 +903,7 @@ PQtopn_@1@2(int *ret, int *bid, int *N){
 	BAT *b,*bn = NULL;
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);
-	if (b->htype == TYPE_void)
-		pqueue_topn_void@1@2(&bn,b,N);
-	else
-		pqueue_topn_@1@2(&bn,b,N);
-	if( bn){
+	if ((b->htype == TYPE_void ? pqueue_topn_void@1@2(&bn,b,N) : pqueue_topn_@1@2(&bn,b,N)) == GDK_SUCCEED && bn) {
 		*ret= bn->batCacheid;
 		BBPkeepref(*ret);
 		BBPreleaseref(b->batCacheid);
@@ -897,11 +918,7 @@ PQutopn_@1@2(int *ret, int *bid, int *N){
 	BAT *b,*bn = NULL;
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);
-	if (b->htype == TYPE_void)
-		pqueue_utopn_void@1@2(&bn,b,N);
-	else
-		pqueue_utopn_@1@2(&bn,b,N);
-	if( bn){
+	if ((b->htype == TYPE_void ? pqueue_utopn_void@1@2(&bn,b,N) : pqueue_utopn_@1@2(&bn,b,N)) == GDK_SUCCEED && bn) {
 		*ret= bn->batCacheid;
 		BBPkeepref(*ret);
 		BBPreleaseref(b->batCacheid);
