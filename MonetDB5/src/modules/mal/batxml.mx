@@ -267,12 +267,20 @@ BATXMLxmltext(int *ret, int *bid)
 			elem = xmlDocGetRootElement(d);
 			content = (str) xmlNodeGetContent(elem);
 			xmlFreeDoc(d);
+			if (content == NULL) {
+				err= MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		} else if (*t == 'C') {
 			if (doc == NULL)
 				doc = xmlParseMemory("<doc/>", 6);
 			xmlParseInNodeContext(xmlDocGetRootElement(doc), t + 1, (int) (len - 1), 0, &elem);
 			content = (str) xmlNodeGetContent(elem);
 			xmlFreeNodeList(elem);
+			if (content == NULL) {
+				err= MAL_MALLOC_FAIL;
+				goto bunins_failed;
+			}
 		} else {
 			str s;
 
@@ -298,6 +306,7 @@ BATXMLxmltext(int *ret, int *bid)
 			}
 			*s = 0;
 		}
+		assert(content != NULL || buf != NULL);
 		bunfastins(bn, h, content != NULL ? content : buf);
 		if (content != NULL)
 			GDKfree(content);
