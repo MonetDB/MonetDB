@@ -1990,6 +1990,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 	if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)){
 		ValRecord vr = *cst;
 		int otype = cst->vtype;
+		assert(type != TYPE_any);  /* help Coverity */
 		msg= convertConstant(type, cst);
 		if (msg) {
 			str ft,tt;
