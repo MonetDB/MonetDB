@@ -259,7 +259,7 @@ MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret = (int*) getArgReference(stk,pci,0);
 
 	(void) cntxt;
-	if (pci == NULL || stk->cmd ){
+	if (stk->cmd ){
 		*ret = 1; /* ignore dataflow request */
 		return MAL_SUCCEED;
 	}
