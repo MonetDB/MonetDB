@@ -437,11 +437,14 @@ static int mtrace = 0;
 #endif
 
 #ifndef NDEBUG
-#define malloc_lock() gdk_set_lock(GDKthreadLock, "malloc")
-#define	malloc_unlock()	gdk_unset_lock(GDKthreadLock, "malloc");
+static MT_Lock mbyteslock;
+#define malloc_lock() gdk_set_lock(mbyteslock, "malloc")
+#define	malloc_unlock()	gdk_unset_lock(mbyteslock, "malloc");
+#define malloc_lock_init() MT_init_lock(mbyteslock, "mbyteslock")
 #else
 #define malloc_lock() 
 #define	malloc_unlock()
+#define malloc_lock_init()
 #endif
 	
 size_t
@@ -1469,6 +1472,7 @@ GDKprotect(void)
 		MT_init_lock(GDKunloadLock, "GDKunloadLock");
 		MT_init_cond(GDKunloadCond, "GDKunloadCond");
 		MT_init_lock(GDKtmLock, "GDKtmLock");
+		malloc_lock_init();
 		GDKprotected = 1;
 	}
 }
