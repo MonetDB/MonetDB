@@ -904,17 +904,26 @@ Get the new information for the server socket and start listening.
 		} else
 			continue;
 		/* in embedded mode we allow just one client */
-		if (!(GDKembedded && monet_forks > 0)) 
-		{
+		if (!(GDKembedded && monet_forks > 0)) {
 			mapi_client *fc = NULL;
 			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
 			stream *fdout = socket_wastream(msgsock, "Mserver mapi write");
 			if (fdin == 0 || stream_errnr(fdin)) {
 				GDKsyserror("MAPIlisten:fdin problems\n");
+				if (fdin) {
+					stream_close(fdin);
+					stream_destroy(fdin);
+				}
 				continue;
 			}
 			if (fdout == 0 || stream_errnr(fdout)) {
 				GDKsyserror("MAPIlisten:fdout problems\n");
+				if (fdout) {
+					stream_close(fdout);
+					stream_destroy(fdout);
+				}
+				stream_close(fdin);
+				stream_destroy(fdin);
 				continue;
 			}
 
