@@ -282,7 +282,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		 * no need to check for database stuff, because that is done per
 		 * database itself (one gets a redirect) */
 		err = AUTHcheckCredentials(&uid, &root, &user, &passwd, &challenge, &algo, &lang);
-		assert(lang):			/* we expect it's still not NULL */
+		assert(lang);			/* we expect it's still not NULL */
 		if (err != MAL_SUCCEED) {
 			stream_printf(fout, "!%s\n", err);
 			stream_flush(fout);
