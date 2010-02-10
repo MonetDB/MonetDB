@@ -999,13 +999,13 @@ PROC _tj_commit(BAT[str,bat] collBat) : void
 
 ADDHELP("tj_add2collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
-- str ftiName: the name of the collection.\n
-- str uri_loc: the location of the xml document.\n
-- str uri_name: the name of the xml document (optional).\n
+- str ftiName: the name of the collection.\n\
+- str uri_loc: the location of the xml document.\n\
+- str uri_name: the name of the xml document (optional).\n\
 - bit shred: when true the doc is shredded when necessary.\n\
 DESCRIPTION:\n\
 Add a document to a pftijah collection. The document is indexed and if the \n\
-shred parameter is true it is also shredded in Pathfinder. 
+shred parameter is true it is also shredded in Pathfinder. \n\
 The index is automatically finalized at the end of the method.",
 "pftijah");
 PROC tj_add2collection(str ftiName, str uri_loc, str uri_name, bit shred) : void
@@ -1650,14 +1650,14 @@ PROC _tj_create_commitBats() : BAT[str,bat]
 PROC tj_add2collection_frag(str ftiName, str uri, str filename, bit shred) : void
 {
       var uris := new(str,str).insert(uri, filename);
-      return tj_add2collection_frag(ftiName, uris, shred);
+      tj_add2collection_frag(ftiName, uris, shred);
 }
 
 ADDHELP("tj_add2collection_frag", "flokstra & rode", "Sept 2009",
 "PARAMETERS:\n\
--` str ftiName: the name of the collection.\n
+- str ftiName: the name of the collection.\n\
 - BAT[str,str]: the bat containing the [location,name] pairs of the xml docs.\n\
-- bit shred: when true the doc is shredded when necessary (deprecated).\n\
+- bit shred: when true the doc is shredded when necessary.\n\
 DESCRIPTION:\n\
 Adds a documents to the index. If needed, the index is split into several fragments.\n\
 Each fragment is finalized after it is filled to its maximum capacity.",
@@ -1665,9 +1665,6 @@ Each fragment is finalized after it is filled to its maximum capacity.",
 PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
 {
     if ( verbose ) tj_verbose(HASH +"TJ tj_add2collection_frag(\"%s\") called.\n",ftiName);
-    if (shred)
-      ERROR("tj_add2collection_frag: shred bit no longer supported");
-      
     var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
     var err := CATCH({
@@ -1678,6 +1675,37 @@ PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
       # get first free collection fragment (first fragment that is not yet filled completely)       
       var collBat := _tj_get_collection_frag(ftiName, commitBats);
 
+      # shred documents if needed
+      if ( shred ) {
+        var pf_collection := _tj_get_parameter2(collBat,"pf_collection");
+        uri@batloop() {
+          var uri_loc := $h;
+          var uri_name := $t;
+          if ( isnil(uri_loc) ) {
+            ERROR("tj_add2collection_frag: should specify doc_uri (and doc_name).");
+          }
+          if ( isnil(uri_name) ) {
+            uri_name := uri_loc;
+          } else if ( uri_name = "" ) {
+            uri_name := uri_loc;
+          }
+          if (not(bat("doc_name").reverse().exist(uri_name))) {
+            var s_start := usec();
+            if ( isnil(pf_collection) ) {
+              shred_doc(uri_loc,uri_name);
+            } else {
+              shred_doc(uri_loc,uri_name,pf_collection,0LL);
+            }
+            if ( timing ) {
+              ms := (usec() - s_start)/1000;
+              printf(HASH +"TJ tj_add2collection_frag(\"%s\"): shred time = %lld.%03llds.\n",uri_name,/(ms,1000),%(ms,1000));
+            }
+          } else {
+            if ( verbose ) tj_verbose(HASH +"TJ tj_add2collection_frag doc(\"%s\") already shredded.\n",uri_name);
+          }
+        }
+      }
+    
       # set access back to BAT_APPEND
       _tj_set_forwardindex_access(collBat, BAT_APPEND);
       
@@ -1694,7 +1722,7 @@ PROC tj_add2collection_frag(str ftiName, BAT[str,str] uri, bit shred) : void
       
       var first_doc := 0;
       var last_doc := uri.count()-1;
-      var last_pre;
+      var last_pre := collBat.find("size").count_wrd() + 1;
       while(first_doc <= last_doc) {
         var uri_chunk := uri.slice(first_doc, first_doc+chunksize-1);
         var ws_opt := ws_create(0); 
