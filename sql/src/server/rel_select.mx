@@ -2958,6 +2958,8 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int table_func)
 	return NULL;
 }
 
+static sql_exp * _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int f);
+
 static sql_exp *
 rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 {
@@ -2967,11 +2969,19 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
 	sql_exp *e = rel_value_exp(sql, rel, l->next->data.sym, fs, iek);
+	sql_subfunc *f = NULL;
+	sql_subtype *t = NULL;
 
 	if (!e)
 		return NULL;
 	if (sname) 
 		s = mvc_bind_schema(sql, sname);
+	if (!s)
+		s = sql->session->schema;
+	t = exp_subtype(e);
+	f = sql_bind_func(s, fname, t, NULL);
+	if (f && f->func->aggr)
+		return _rel_aggr(sql, rel, 0, fname, l->next->data.sym, fs);
 	return rel_unop_(sql, e, s, fname, (ek.card == card_relation));
 }
 
@@ -3255,18 +3265,12 @@ flatten_exps( mvc *sql, list *exps )
 }
 
 static sql_exp *
-rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
+_rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int f)
 {
-	dlist *l = se->data.lval;
 	sql_subaggr *a = NULL;
-	int distinct = l->h->next->data.i_val;
-	char *aggrstr = l->h->data.sval;
-	sql_exp *e = NULL, *exp = NULL;
-	sql_rel *groupby;
 	int no_nil = 0;
-
-	assert(l->h->next->type == type_int);
-	groupby = *rel;
+	sql_exp *e = NULL, *exp = NULL;
+	sql_rel *groupby = *rel;
 
 	if (f == sql_having && is_select(groupby->op)) 
 		groupby = groupby->l;
@@ -3294,7 +3298,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return sql_error(sql, 02, "%s: not allowed in WHERE clause",
 				toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
 	
-	if (!l->h->next->next->data.sym) {	/* count(*) case */
+	if (!sym) {	/* count(*) case */
 
 		if (strcmp(aggrstr, "count") != 0) {
 			return sql_error(sql, 02, "%s: unable to perform '%s(*)'",
@@ -3324,7 +3328,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		sql_rel *gr = groupby->l;
 
 		no_nil = 1;
-		e = rel_value_exp(sql, &gr, l->h->next->next->data.sym, f, ek);
+		e = rel_value_exp(sql, &gr, sym, f, ek);
 		groupby->l = gr;
 	}
 
@@ -3358,6 +3362,17 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		exp_destroy(e);
 		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
 	}
+}
+
+static sql_exp *
+rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
+{
+	dlist *l = se->data.lval;
+	int distinct = l->h->next->data.i_val;
+	char *aggrstr = l->h->data.sval;
+
+	assert(l->h->next->type == type_int);
+	return _rel_aggr( sql, rel, distinct, aggrstr, l->h->next->next->data.sym, f);
 }
 
 static sql_exp *
