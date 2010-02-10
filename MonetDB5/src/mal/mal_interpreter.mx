@@ -147,10 +147,8 @@ updateBigFoot(Client cntxt, int bid, int add)
 		b= BBPquickdesc(ABS(bid),TRUE);
 		if (b == NULL)
 			return;
-		if ( isVIEW(b) ){
-			BBPunfix(b->batCacheid);
+		if ( isVIEW(b) )
 			return;
-		}
 		/* count it once ! */
 		cntxt->cnt = cnt = BATcount(b);
 		if (add) {
@@ -2452,9 +2450,8 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	
 	if( stk->stk[getArg(pci,0)].vtype == TYPE_bat){
 		b = BBPquickdesc(ABS(stk->stk[getArg(pci,0)].val.bval), TRUE);
-		if (b) {
+		if (b) 
 			isview = isVIEW(b);
-		}
 	}
 	for(; i<limit; i++) {
 		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
