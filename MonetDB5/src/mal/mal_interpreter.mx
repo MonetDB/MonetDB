@@ -164,7 +164,6 @@ updateBigFoot(Client cntxt, int bid, int add)
 			cntxt->vmfoot = 0;
 		if (cntxt->vmfoot > cntxt->bigfoot)
 			cntxt->bigfoot = cntxt->vmfoot;
-		BBPunfix(b->batCacheid);
 	}
 }
 @-
