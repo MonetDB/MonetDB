@@ -800,7 +800,6 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 			return bn;
 		dst = BUNfirst(bn);
 		bni = bat_iterator(bn);
-		BATpreload_(r);
 		BATpreload_(bn);
 		BATloop(l, l_cur, l_end) {
 			BUN _yy = (BUN) (offset + * (oid *) BUNtail(li, l_cur));
@@ -2479,7 +2478,6 @@ BATantijoin(BAT *l, BAT *r)
 	if (sz == 0)
 		return bn;
 
-	BATpreload_(r);
 	@:antijoin_switch_lht@
 
 	if (bn) {
@@ -2653,7 +2651,6 @@ BATcross(BAT *l, BAT *r)
 	if (sz == 0)
 		return bn;
 
-	BATpreload_(r);
 	@:cross_switch_lht@
 
 	if (bn) {
