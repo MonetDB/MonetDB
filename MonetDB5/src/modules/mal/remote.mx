@@ -114,13 +114,13 @@ comment "register <mod>.<fcn> at the remote site";
 pattern exec(conn:str, mod:str, func:str):str
 address RMTexec
 comment "remotely executes <mod>.<func> and returns the handle to its result";
-pattern exec(conn:str, mod:str, func:str)(:str, :str)
+pattern exec(conn:str, mod:str, func:str):str...
 address RMTexec
 comment "remotely executes <mod>.<func> and returns the handle to its result";
 pattern exec(conn:str, mod:str, func:str, :str...):str
 address RMTexec
 comment "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
-pattern exec(conn:str, mod:str, func:str, :str...)(:str, :str)
+pattern exec(conn:str, mod:str, func:str, :str...):str...
 address RMTexec
 comment "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
 
@@ -1003,7 +1003,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* finish end execute the invocation string */
 	len += snprintf(&qbuf[len], BUFSIZ - len, ");");
 #ifdef _DEBUG_REMOTE
-		stream_printf(cntxt->fdout,"#remote.exec:%s:%s\n",c->name,qbuf);
+	stream_printf(cntxt->fdout,"#remote.exec:%s:%s\n",c->name,qbuf);
 #endif
 	tmp = RMTquery(&mhdl, "remote.exec", c->mconn, qbuf);
 	if (mhdl)
