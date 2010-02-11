@@ -1330,7 +1330,7 @@ TABLETcollect_bats(Tablet * as)
 	for (i = 0; i < as->nr_attrs; i++) {
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c[0]->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c[0], BAT_READ);
-		BATpreload(fmt[i].c[0], BUF_WILLNEED);
+		BATpreload_(fmt[i].c[0], BUF_WILLNEED);
 		BATpropcheck(fmt[i].c[0], BATPROPS_ALL);
 		/* drop the hashes, we don't need them now  and they consume space */
 		HASHremove(fmt[i].c[0]);

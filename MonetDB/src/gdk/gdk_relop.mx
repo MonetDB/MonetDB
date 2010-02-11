@@ -472,7 +472,7 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	@:joincheck(BAThashjoin,l->ttype,r->htype)@
 	@:joinbat(JOIN_EQ,BAThashjoin(l,r,BUN_NONE),estimate)@
 
-	BATpreload(r, BUF_WILLNEED);
+	BATpreload_(r, BUF_WILLNEED);
 	if (BATprepareHash(r))
 		return NULL;
 	switch (any = ATOMstorage(l->ttype)) {

@@ -485,7 +485,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		return " Illegal number of rotate bits";
 	}
 	
-	BATpreload(b, BUF_SEQUENTIAL);
+	BATpreload_(b, BUF_SEQUENTIAL);
 	br = BATnew(TYPE_void, TYPE_wrd, BATcount(bn));
 	if (br == NULL) {
 #ifdef _DEBUG_MKEY_
