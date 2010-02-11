@@ -1045,7 +1045,6 @@ CThistosum(
 
 	resi = bat_iterator(res);
 	BATpreload_(b);
-	BATpreload_(c);
 	BATloop(b, p, q) {
 		oh = (oid *) BUNhloc(bi, p);
 		i = *(wrd *) BUNtloc(bi, p);
