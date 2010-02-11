@@ -702,7 +702,7 @@ request.
 Of course, it does not make sense to touch more then we can physically accomodate.
 @c
 size_t 
-BATpreload_(BAT *b, int advise) {
+BATpreload_(BAT *b, int what, int advise) {
 	size_t *i, *limit;
 	size_t v1 = 0, v2 = 0, v3 = 0, v4 = 0;
 	size_t step = MT_pagesize()/sizeof(size_t);
@@ -710,7 +710,7 @@ BATpreload_(BAT *b, int advise) {
 
 	/* ! StM: this has not been activated, yet ! */
 	/* BATmadvise(b, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED); */
-	if ( b->T->vheap && b->T->vheap->base  && pages){
+	if ( what&USE_TAIL && b->T->vheap && b->T->vheap->base  && pages){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->vheap\n", BATgetId(b), advise);
 		limit = (size_t *) (b->T->vheap->base + b->T->vheap->free - sizeof(size_t)) - 4 * step;
 		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
@@ -726,7 +726,7 @@ BATpreload_(BAT *b, int advise) {
 			v1 += *i;
 		}
 	}
-	if ( b->T->heap.base && pages ){
+	if ( what&USE_TAIL && b->T->heap.base && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->heap\n", BATgetId(b), advise);
 		limit = (size_t *) (b->T->heap.base + b->T->heap.free - sizeof(size_t)) - 4 * step;
 		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
@@ -742,7 +742,7 @@ BATpreload_(BAT *b, int advise) {
 			v1 += *i;
 		}
 	}
-	if ( b->H->heap.base && pages ){
+	if ( what&USE_HEAD && b->H->heap.base && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
 		limit = (size_t *) (b->H->heap.base + b->H->heap.free - sizeof(size_t)) - 4 * step;
 		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
@@ -758,7 +758,7 @@ BATpreload_(BAT *b, int advise) {
 			v1 += *i;
 		}
 	}
-	if ( b->H->vheap && b->H->vheap->base && pages ){
+	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->vheap\n", BATgetId(b), advise);
 		limit = (size_t *) (b->H->vheap->base + b->H->vheap->free) - 4 * step;
 		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
@@ -774,8 +774,9 @@ BATpreload_(BAT *b, int advise) {
 			v1 += *i;
 		}
 	}
-	gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
-	if ( b->H->hash && pages ){
+	if ( what&USE_HHASH || what&USE_THASH )
+		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
+	if ( what&USE_HHASH && b->H->hash && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->hash\n", BATgetId(b), advise);
 		limit = (size_t *) (b->H->hash->heap->base + b->H->hash->heap->size - sizeof(size_t)) - 4 * step;
 		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
@@ -791,7 +792,7 @@ BATpreload_(BAT *b, int advise) {
 			v1 += *i;
 		}
 	}
-	if ( b->T->hash && pages ){
+	if ( what&USE_THASH && b->T->hash && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->hash\n", BATgetId(b), advise);
 		limit = (size_t *) (b->T->hash->heap->base + b->T->hash->heap->size - sizeof(size_t)) - 4 * step;
 		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
@@ -807,28 +808,29 @@ BATpreload_(BAT *b, int advise) {
 			v1 += *i;
 		}
 	}
-	gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
+	if ( what&USE_HHASH || what&USE_THASH )
+		gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
 	/* ! StM: this has not been activated, yet ! */
 	/* BATmadvise(b, advise, advise, BUF_WILLNEED, BUF_WILLNEED); */
 	return v1 + v2 + v3 + v4;
 }
 
 size_t 
-BATpreload(BAT *b, int advise) {
+BATpreload(BAT *b, int what, int advise) {
 	BAT *bv;
 	size_t dummy = 0;
 
 	if (!isVIEW(b) )
-		return BATpreload_(b, advise);
+		return BATpreload_(b, what, advise);
 
 	if ( isVIEW(b) &&  VIEWhparent(b) ) {
 		bv = BATdescriptor(VIEWhparent(b));
-		dummy += BATpreload_(bv, advise);
+		dummy += BATpreload_(bv, what, advise);
 		BBPunfix(bv->batCacheid);
 	}
 	if (isVIEW(b) && VIEWtparent(b) ) {
 		bv = BATdescriptor(VIEWtparent(b));
-		dummy += BATpreload_(bv, advise);
+		dummy += BATpreload_(bv, what, advise);
 		BBPunfix(bv->batCacheid);
 	}
 	return dummy;

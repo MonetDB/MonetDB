@@ -2305,7 +2305,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( t == NULL)
 		throw(MAL,"sql.append","Table missing");
 	if (tpe == TYPE_bat)
-		BATpreload_((BAT*)ins, BUF_SEQUENTIAL);	
+		BATpreload_((BAT*)ins, USE_ALL, BUF_SEQUENTIAL);	
 	c = mvc_bind_column(m, t, cname);
 	if (c) {
 		store_funcs.append_col(m->session->tr, c, ins, tpe);
@@ -2352,7 +2352,7 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( t == NULL)
 		throw(MAL,"sql.update","Table missing");
 	if (tpe == TYPE_bat)
-		BATpreload_((BAT*)ins, BUF_SEQUENTIAL);	
+		BATpreload_((BAT*)ins, USE_ALL, BUF_SEQUENTIAL);	
 	c = mvc_bind_column(m, t, cname);
 	if (c) {
 		store_funcs.update_col(m->session->tr, c, ins, tpe, 0);
@@ -3333,7 +3333,7 @@ batstr_2dec_@1( int *res, int *bid, int *d, int *sc )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
-	BATpreload_(b, BUF_SEQUENTIAL);
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b,p,q) {
 		str v = (str)BUNtail(bi,p);
 		@1 r;
@@ -3361,7 +3361,7 @@ batstr_2num_@1( int *res, int *bid, int *len )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
-	BATpreload_(b, BUF_SEQUENTIAL);
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b,p,q) {
 		str v = (str)BUNtail(bi,p);
 		@1 r;
@@ -3484,7 +3484,7 @@ batstr_2_@1( int *res, int *bid )
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
-	BATpreload_(b, BUF_SEQUENTIAL);
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b,p,q) {
 		str v = (str)BUNtail(bi,p);
 		@3 r;
@@ -3599,7 +3599,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bi = bat_iterator(b);
 	dst = BATnew(b->htype, TYPE_str, BATcount(b));
 	BATseqbase(dst, b->hseqbase);
-	BATpreload_(b, BUF_SEQUENTIAL);
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b,p,q) {
 		ptr v = (ptr)BUNtail(bi,p);
 		msg = SQLstr_cast_( &r, m, *eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);

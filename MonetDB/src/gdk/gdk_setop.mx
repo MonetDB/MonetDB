@@ -121,8 +121,8 @@ Implementation is either merge- or hash-based.
 			return NULL;
 		}
 	}
-	BATpreload_(b, BUF_SEQUENTIAL);
-	BATpreload_(bn, BUF_SEQUENTIAL);
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(bn, USE_HEAD|USE_TAIL|USE_HHASH, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr h = BUNh@2(bi, p);
 		ptr t = BUNt@3(bi, p);
@@ -470,8 +470,8 @@ TODO synced/key case..
 	BATiter ri = bat_iterator(r);
 
 	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
-	BATpreload_(l, BUF_SEQUENTIAL);
-	BATpreload_(r, BUF_WILLNEED);
+	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	if (BATprepareHash(r))
 		goto bunins_failed;
 	BATloop(l, p1, q1) {
