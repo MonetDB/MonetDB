@@ -98,6 +98,14 @@ exit _250;
     X232 := io.stdout();
     sql.exportResult(X232,X202);
 end s0_0;
+function mapreduce.exec_3(conn:str, mod:str, fcn:str):any_1...;
+	remote.register(conn, mod, fcn);
+	(X201,X202,X203) := remote.exec(conn, mod, fcn);
+	Y201 := remote.get(conn, X201);
+	Y202 := remote.get(conn, X202);
+	Y203 := remote.get(conn, X203);
+	return (Y201,Y202,Y203);
+end exec;
 @end verbatim
 The code can be considered a refinement of the Octopus.
 @{
@@ -109,7 +117,7 @@ address OPTmapreduce
 comment "Modify the plan to exploit parallel processing on multiple cores using map-reduce";
 
 module mapreduce;
-pattern exec(mod:str,fcn:str):any_1...
+pattern exec(conn:str, mod:str, fcn:str):any_1...
 address MRexec
 comment "Execute the function on a MR node. Upon failure use backup.";
 @h
@@ -123,6 +131,7 @@ opt_export str MRexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_config.h"
 #include "opt_mapreduce.h"
 #include "mal_interpreter.h"
+#include "remote.h"
 
 /* #define _DEBUG_OPT_MAPREDUCE*/
 
@@ -132,34 +141,90 @@ the number of nodes participating in the cloud setting.
 It calls the map-reduce executor to produce a result
 possible with the aid of a replica.
 @c
-#define MINNODES 3
+
+typedef struct _mapnode {
+	str uri;
+	str user;
+	str pass;
+} mapnode;
+
+#define MAXNODES 256
+static mapnode mapnodes[MAXNODES];
 
 static int
 MRcloudSize()
 {
-	int nodes = MINNODES; /* to be based on what mero can tell us */
-	/* set the gdk_nr_threads to ensure enough control parallelism */
-	if (GDKnr_threads < nodes)
-		GDKnr_threads = nodes;
-	return nodes;
+	str msg;
+	bat bid = 0;
+	BAT *b;
+	BUN p, q;
+	BATiter bi;
+	int mapcount = 0;
+	/* FIXME: poolname should be configurable */
+	str s = "*/testpool/node/*";
+	
+	msg = RMTresolve(&bid, &s);
+	if (msg != MAL_SUCCEED) {
+		if (msg != M5OutOfMemory)
+			GDKfree(msg);
+		return(0);
+	}
+
+	b = BATdescriptor(bid);
+	if (b == NULL)
+		return(0);
+
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		str t = (str)BUNtail(bi, p);
+
+		if (mapcount == MAXNODES)
+			break;
+
+		mapnodes[mapcount].uri = GDKstrdup(t);
+		mapnodes[mapcount].user = GDKstrdup("monetdb");
+		mapnodes[mapcount].pass = GDKstrdup("monetdb");
+		mapcount++;
+	}
+	BBPreleaseref(bid);
+
+	if (GDKnr_threads < mapcount)
+		GDKnr_threads = mapcount;
+
+	return(mapcount);
 }
 
 static void
-MRdistributework(MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
+MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 {
-	InstrPtr p, *packs;
-	int i, n, j, r, v;
+	InstrPtr o, p, *packs;
+	int i, n, j, q, r, v, *w;
+	int *gets;
+	(void)cntxt;
 
-	n = MRcloudSize();
+	n = MRcloudSize(); /* FIXME: free */
+
+	assert(n);
+	assert(sig->retc);
+
 	packs = (InstrPtr *)GDKmalloc(sig->retc * sizeof(InstrPtr));
-	for (i = 0; i < sig->retc; i++) {
-		packs[i] = p = newInstruction(mb, ASSIGNsymbol);
+	gets = (int *)GDKmalloc(n * sig->retc * sizeof(int));
+
+	for (j = 0; j < sig->retc; j++) {
+		packs[j] = p = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(p, matRef);
 		setFunctionId(p, packRef);
-		getArg(p, 0) = getArg(sig, i);
+		getArg(p, 0) = getArg(sig, j);
+
 		p = newAssignment(mb);
-		getArg(p, 0) = getArg(sig, i);
-		pushNil(mb, p, getArgType(mc, sig, i));
+		getArg(p, 0) = getArg(sig, j);
+		pushNil(mb, p, getArgType(mc, sig, j));
+
+		for (i = 0; i < n; i++) {
+			p = newAssignment(mb);
+			gets[(i * sig->retc) + (j - 1)] = getArg(p, 0);
+			pushNil(mb, p, getArgType(mc, sig, j));
+		}
 	}
 
 	p = newInstruction(mb, ASSIGNsymbol);
@@ -170,35 +235,73 @@ MRdistributework(MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 	pushInstruction(mb, p);
 
 	for (i = 0; i < n; i++) {
+		/* q := remote.connect("uri", "user", "pass"); */
+		p = newStmt(mb, remoteRef, connectRef);
+		p = pushStr(mb, p, mapnodes[i].uri);
+		p = pushStr(mb, p, mapnodes[i].user);
+		p = pushStr(mb, p, mapnodes[i].pass);
+		p = pushStr(mb, p, "msql");
+		q = getArg(p, 0);
+
+		/* remote.register(q, "mod", "fcn"); */
+		p = newStmt(mb, remoteRef, putName("register", 8));
+		p = pushArgument(mb, p, q);
+		p = pushStr(mb, p, getModuleId(sig));
+		p = pushStr(mb, p, getFunctionId(sig));
+
+		/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
+		w = (int *)GDKmalloc(sig->retc * sizeof(int));
 		p = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(p, putName("mapreduce", 9));
-		setFunctionId(p, putName("exec", 4));
-		p = pushInt(mb, p, i);
+		setModuleId(p, remoteRef);
+		setFunctionId(p, execRef);
+		p = pushArgument(mb, p, q);
 		p = pushStr(mb, p, getModuleId(sig));
 		p = pushStr(mb, p, getFunctionId(sig));
 		for (j = 0; j < sig->retc; j++) {
-			v = newTmpVariable(mb, getArgType(mc, sig, j));
+			/* x1 := remote.put(q, :type) */
+			o = newFcnCall(mb, remoteRef, putRef);
+			o = pushArgument(mb, o, q);
+			o = pushArgument(mb, o, gets[(i * sig->retc) + (j - 1)]);
+			v = getArg(o, 0);
 			p = pushReturn(mb, p, v);
-			packs[j] = pushArgument(mb, packs[j], v);
+			w[j] = v;
 		}
 		pushInstruction(mb, p);
+
+		/* y1 := remote.get(q, x1); */
+		for (j = 0; j < sig->retc; j++) {
+			p = newFcnCall(mb, remoteRef, getRef);
+			p = pushArgument(mb, p, q);
+			p = pushArgument(mb, p, w[j]);
+			v = getArg(p, 0) = gets[(i * sig->retc) + (j - 1)];
+			packs[j] = pushArgument(mb, packs[j], v);
+		}
+		GDKfree(w);
+
+		/* remote.disconnect(q); */
+		p = newStmt(mb, remoteRef, disconnectRef);
+		p = pushArgument(mb, p, q);
 	}
 
 	for (i = 1; i < sig->retc; i++)
 		pushInstruction(mb, packs[i]);
 	GDKfree(packs);
+	GDKfree(gets);
 
 	p = newInstruction(mb, ASSIGNsymbol);
 	p->barrier = EXITsymbol;
 	getArg(p, 0) = r;
 	pushInstruction(mb, p);
+#ifdef _DEBUG_OPT_MAPREDUCE
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+#endif
 }
 
 static int
-OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	int i, j, limit, copy = 0;
-	InstrPtr *old, ret, sig;
+	InstrPtr f, p, *old, ret, sig;
 	str resultSetRef = putName("resultSet", 9);
 	MalBlkPtr mc;
 	char nme[IDLENGTH];
@@ -206,6 +309,7 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	Lifespan span;
 
 	(void)stk;
+	(void)pc;
 
 #ifdef _DEBUG_OPT_MAPREDUCE
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
@@ -213,12 +317,12 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	mc = copyMalBlk(mb);
 	snprintf(nme, IDLENGTH, "%smp", getFunctionId(getInstrPtr(mb, 0)));
-	setFunctionId(getInstrPtr(mc, 0), putName(nme, strlen(nme)));
-	p = getInstrPtr(mc, 0);
-	new = newSymbol(getFunctionId(p), p->token);
+	f = getInstrPtr(mc, 0);
+	setFunctionId(f, putName(nme, strlen(nme)));
+	new = newSymbol(getFunctionId(f), f->token);
 	freeMalBlk(new->def);
 	new->def = mc;
-	insertSymbol(findModule(cntxt->nspace, getModuleId(p)), new);
+	insertSymbol(findModule(cntxt->nspace, getModuleId(f)), new);
 
 	span = setLifespan(mb);
 	/* Massage mbcopy to act as the mapreduce program, producing a
@@ -229,7 +333,9 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		return 0;
 
 	sig = old[0];
-	pushInstruction(mc, old[0]);
+	pushInstruction(mc, sig);
+	getArg(sig, 0) = -1; /* get rid of default retval */
+	sig->argc = 1;
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 		if (p->token == ENDsymbol) {
@@ -241,13 +347,10 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			copy = 0;
 		}
 		/* We copy statements until we find a map-reduce blocking
-		 * operation.  Collect all BAT variables up to now whose
-		 * lifespan has not yet ended.  They should be passed back to
-		 * the controlling program */
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef) {
-			for (j = 0; j < mb->vtop; j++)
-				if (getBeginLifespan(span, j) < i && getEndLifespan(span, j) >= i && isaBatType(getVarType(mb, j)))
-					sig = pushReturn(mc, sig, j);
+		 * operation.  Collect all BAT variables that are necessary for
+		 * the rsColumn calls. */
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == rsColumnRef) {
+			sig = pushReturn(mc, sig, getArg(p, 7));
 		}
 		if (copy == 0)
 			copy = (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef);
@@ -275,7 +378,7 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		p = old[i];
 		/* Again, find the blocking operation and inject the map call */
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef) {
-			MRdistributework(mb, mc, sig);
+			MRdistributework(cntxt, mb, mc, sig);
 			p = old[i];
 		}
 		if (copy == 0)
