@@ -26,7 +26,7 @@ io.print(id);
 
 d:bat[:void,:bte] := tokenizer.getDepth();
 io.print(d);
-h:bat[:void,:wrd] := tokenizer.getHeight();
+h:bat[:void,:oid] := tokenizer.getHeight();
 io.print(h);
 
 level0:bat[:oid,:str] := tokenizer.getLevel(0);
@@ -38,7 +38,7 @@ io.print(level1);
 io.print(level2);
 io.print(level3);
 
-cnt:bat[:int,:wrd] := tokenizer.getCount();
+cnt:bat[:oid,:wrd] := tokenizer.getCount();
 io.print(cnt);
 cnt := tokenizer.getCardinality();
 io.print(cnt);
