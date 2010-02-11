@@ -1031,7 +1031,8 @@ struct MapiStruct {
 	int cachelimit;		/* default maximum number of rows to cache */
 	int redircnt;		/* redirection count, used to cut of redirect loops */
 	int redirmax;       /* maximum redirects before giving up */
-	char *redirects[50];/* NULL-terminated list of redirects */
+#define MAXREDIR 50
+	char *redirects[MAXREDIR];/* NULL-terminated list of redirects */
 
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
@@ -2898,9 +2899,8 @@ mapi_resolve(const char *host, int port, const char *pattern)
 		if (mid->error == MOK) {
 			close_connection(mid); /* we didn't expect a connection actually */
 		} else {
-			char **ret = malloc(sizeof(char *) * sizeof(mid->redirects));
-			memcpy(ret, mid->redirects,
-					sizeof(char *) * sizeof(mid->redirects));
+			char **ret = malloc(sizeof(char *) * MAXREDIR);
+			memcpy(ret, mid->redirects, sizeof(char *) * MAXREDIR);
 			mid->redirects[0] = NULL;  /* make sure the members aren't freed */
 			mapi_destroy(mid);
 			return ret;
