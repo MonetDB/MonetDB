@@ -86,15 +86,15 @@ command getDepth():bat[:void,:bte]
 address TKNZRgetDepth
 comment "administrative function that returns the depth bat";
 
-command getHeight():bat[:void,:wrd]
+command getHeight():bat[:void,:oid]
 address TKNZRgetHeight
 comment "administrative function that returns the height bat";
 
-command getCount():bat[:int,:wrd]
+command getCount():bat[:oid,:wrd]
 address TKNZRgetCount
 comment "debuging function that returns the size of the bats at each level";
 
-command getCardinality():bat[:int,:wrd]
+command getCardinality():bat[:void,:wrd]
 address TKNZRgetCardinality
 comment "debuging function that returns the unique tokens at each level";
 
@@ -202,7 +202,7 @@ TKNZRopen(int *ret, str *in)
 		BUNappend(TRANS, batname, FALSE);
 
 		snprintf(batname, 128, "%s_depth", name);
-		b = BATnew(TYPE_void, TYPE_chr, 1024);
+		b = BATnew(TYPE_void, TYPE_bte, 1024);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 		BATkey(b, FALSE);
@@ -638,18 +638,18 @@ TKNZRgetHeight (int *r) {
 }
 
 str
-TKNZRgetCount(int *r) {
+TKNZRgetCount (int *r) {
 	BAT *b;
 	int i;
-	lng cnt;
+	wrd cnt;
 
 	@:init_check@
-	b= BATnew(TYPE_int,TYPE_lng, tokenDepth+1);
-	if( b== NULL)
+	b= BATnew(TYPE_void, TYPE_wrd, tokenDepth+1);
+	if (b == NULL)
 		throw(MAL, "tokenizer.getCount", MAL_MALLOC_FAIL);
-	for(i=0; i < tokenDepth; i++){
-		cnt = (lng) BATcount(tokenBAT[i]);
-		BUNins(b,&i, &cnt, FALSE);
+	for (i = 0; i < tokenDepth; i++) {
+		cnt = (wrd) BATcount(tokenBAT[i]);
+		BUNappend(b, &cnt, FALSE);
 	}
 	*r = b->batCacheid;
 	BBPkeepref(*r);
@@ -657,20 +657,20 @@ TKNZRgetCount(int *r) {
 }
 
 str
-TKNZRgetCardinality(int *r) {
+TKNZRgetCardinality (int *r) {
 	BAT *b, *bn;
 	int i;
-	lng cnt;
+	wrd cnt;
 
 	@:init_check@
-	b= BATnew(TYPE_int,TYPE_lng, tokenDepth+1);
-	if( b== NULL)
+	b= BATnew(TYPE_void,TYPE_wrd, tokenDepth+1);
+	if (b == NULL)
 		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
-	for(i=0; i<tokenDepth; i++){
+	for (i = 0; i < tokenDepth; i++){
 		bn = (BAT *) BATkunique(BATmirror(tokenBAT[i]));
-		cnt = (lng) BATcount(bn);
+		cnt = (wrd) BATcount(bn);
 		BBPunfix(bn->batCacheid);
-		BUNins(b,&i, &cnt, FALSE);
+		BUNappend(b, &cnt, FALSE);
 	}
 	*r = b->batCacheid;
 	BBPkeepref(*r);
