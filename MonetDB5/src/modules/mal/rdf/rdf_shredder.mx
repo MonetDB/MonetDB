@@ -27,7 +27,9 @@
 #include "url.h"
 #include "rdf.h"
 #include "raptor.h"
+#if 0
 #include "../tokenizer.h"
+#endif
 
 typedef struct graphBATdef {
 	graphBATType batType;    /* BAT type             */
@@ -35,6 +37,8 @@ typedef struct graphBATdef {
 	int headType;            /* type of left column  */
 	int tailType;            /* type of right column */
 } graphBATdef;
+
+static BUN batsz = 10000000;
 
 /* this list should be kept alligned with the graphBATType enum */
 #if STORE == TRIPLE_STORE
@@ -264,7 +268,7 @@ parserData_create (str location)
 		pdata->graph[i] = create_BAT (
 				graphdef[i].headType,
 				graphdef[i].tailType,
-				BATTINY);                       /* DOTO: estimate size */
+				batsz);                       /* DOTO: estimate size */
 		if (pdata->graph[i] == NULL) {
 			return NULL;
 		}
@@ -274,7 +278,7 @@ parserData_create (str location)
 	pdata->graph[MAP_LEX] = create_BAT (
 			graphdef[MAP_LEX].headType,
 			graphdef[MAP_LEX].tailType,
-			BATTINY);                           /* DOTO: estimate size */
+			batsz);                           /* DOTO: estimate size */
 	if (pdata->graph[MAP_LEX] == NULL) {
 		return NULL;
 	}
@@ -346,10 +350,10 @@ int CTrefine(BAT **ret, BAT *b, BAT *a); /* from modules/kernel/group.mx */
 static str
 post_processing (parserData *pdata)
 {
-#if STORE == TRIPLE_STORE
 	BUN cnt;
 	BAT *map_oid = NULL, *S = NULL, *P = NULL, *O = NULL, *ctref= NULL;
 	BAT **graph = pdata->graph;
+#ifdef _TKNZR_H
 	BATiter bi, mi;
 	BUN p, d, r;
 	oid *bt;
@@ -379,7 +383,31 @@ post_processing (parserData *pdata)
 	P = graph[P_sort];
 	O = graph[O_sort];
 	cnt = BATcount(S);
+#else
+	/* order MAP_LEX */
+	BATorder(BATmirror(graph[MAP_LEX]));
+	map_oid = BATmark(graph[MAP_LEX], 0);   /* BATmark will create a copy */
+	BATorder(map_oid);
+	BATsetaccess(map_oid, BAT_READ);        /* force BAtmark not to copy bat */
+	map_oid = BATmirror(BATmark(BATmirror(map_oid), 0));
+	BATsetaccess(graph[MAP_LEX], BAT_READ); /* force BATmark not to copy bat */
+	graph[MAP_LEX] = BATmirror(BATmark(BATmirror(graph[MAP_LEX]), 0));
 
+	/* convert old oids of S_sort, P_sort, O_sort to new ones */
+	cnt = BATcount(graph[S_sort]);
+	S = BATfetchjoin(graph[S_sort], map_oid, cnt);
+	if (S == NULL) goto bailout;
+	BBPreclaim(graph[S_sort]);
+	P = BATfetchjoin(graph[P_sort], map_oid, cnt);
+	if (P == NULL) goto bailout;
+	BBPreclaim(graph[P_sort]);
+	O = BATfetchjoin(graph[O_sort], map_oid, cnt);
+	if (O == NULL) goto bailout;
+	BBPreclaim(graph[O_sort]);
+	BBPreclaim(map_oid);
+#endif
+
+#if STORE == TRIPLE_STORE
 	/* order SPO/SOP */
 	graph[S_sort] = BATmirror(BATsort(BATmirror(S))); /* sort on S */
 	@:order(graph[S_sort],P,O,PO)@
@@ -408,6 +436,24 @@ post_processing (parserData *pdata)
 
 	return MAL_SUCCEED;
 
+#elif STORE == MLA_STORE
+	graph[S_sort] = BATmirror(BATsort(BATmirror(S))); /* sort on S */
+	S = BATmirror(BATmark(graph[S_sort],0));
+	graph[S_sort] = BATmirror(BATmark(BATmirror(graph[S_sort]), 0));
+	if (graph[S_sort] == NULL) goto bailout;
+	graph[P_sort] = BATleftfetchjoin(S, P, BATcount(S));
+	if (graph[P_sort] == NULL) goto bailout;
+	graph[O_sort] = BATleftfetchjoin(S, O, BATcount(S));
+	if (graph[O_sort] == NULL) goto bailout;
+
+	/* free memory */
+	BBPreclaim(S);
+	BBPreclaim(P);
+	BBPreclaim(O);
+
+	return MAL_SUCCEED;
+#endif
+
 bailout:
 	if (map_oid != NULL) BBPreclaim(map_oid);
 	if (ctref   != NULL) BBPreclaim(ctref);
@@ -415,11 +461,6 @@ bailout:
 	if (P       != NULL) BBPreclaim(P);
 	if (O       != NULL) BBPreclaim(O);
 	return NULL;
-
-#elif STORE == MLA_STORE
-	(void) pdata;
-	return MAL_SUCCEED;
-#endif
 }
 
 @= clean_raptor
@@ -455,15 +496,21 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	(void) graphname;
 
 	/* init tokenizer */
+#ifdef _TKNZR_H
 	if (TKNZRopen (NULL, schema) != MAL_SUCCEED) {
 		throw(RDF, "rdf.rdfShred",
 				"could not open the tokenizer\n");
 	}
+#else
+	(void) schema;
+#endif
 
 	/* Init pdata  */
 	pdata = parserData_create(*location);
 	if (pdata == NULL) {
+#ifdef _TKNZR_H
 		TKNZRclose(&iret);
+#endif
 		@:clean@
 		throw(RDF, "rdf.rdfShred",
 				"could not allocate enough memory for pdata\n");
@@ -473,7 +520,9 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	raptor_init();
 	pdata->rparser = rparser = raptor_new_parser("guess");
 	if (rparser == NULL) {
+#ifdef _TKNZR_H
 		TKNZRclose(&iret);
+#endif
 		raptor_finish();
 		@:clean@
 		throw(RDF, "rdf.rdfShred", "could not create raptor parser object\n");
@@ -484,7 +533,9 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	/* Parse URI or local file. */
 	ret = URLisaURL(&isURI, location);
 	if (ret != MAL_SUCCEED) {
+#ifdef _TKNZR_H
 		TKNZRclose(&iret);
+#endif
 		@:clean@
 		return ret;
 	} else if (isURI) {
@@ -496,6 +547,9 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 		iret = raptor_parse_file(rparser, uri, NULL);
 	}
 	@:clean_raptor@
+#ifdef _TKNZR_H
+	TKNZRclose(&iret);
+#endif
 
 	graph = pdata->graph;
 	assert (pdata->tcount == BATcount(graph[S_sort]) &&
@@ -504,23 +558,18 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 
 	/* error check */
 	if (iret) {
-		TKNZRclose(&iret);
 		@:clean@
 		throw(RDF, "rdf.rdfShred", "parsing failed\n");
 	}
 	if (pdata->exception) {
-		TKNZRclose(&iret);
 		throw(RDF, "rdf.rdfShred", "%s\n", pdata->exceptionMsg);
 	} else if (pdata->fatal) {
-		TKNZRclose(&iret);
 		throw(RDF, "rdf.rdfShred", "last fatal error was:\n%s\n",
 				pdata->fatalMsg);
 	} else if (pdata->error) {
-		TKNZRclose(&iret);
 		throw(RDF, "rdf.rdfShred", "last error was:\n%s\n",
 				pdata->errorMsg);
 	} else if (pdata->warning) {
-		TKNZRclose(&iret);
 		throw(RDF, "rdf.rdfShred", "last warning was:\n%s\n",
 				pdata->warningMsg);
 	}
@@ -528,7 +577,6 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	/* post processing step */
 	ret = post_processing(pdata);
 	if (ret != MAL_SUCCEED) {
-		TKNZRclose(&iret);
 		@:clean@
 		throw(RDF, "rdf.rdfShred", "could not post-proccess data");
 	}
@@ -536,7 +584,6 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	/* prepare return bat of bats */
 	retbat = BATnew(TYPE_void, TYPE_bat, N_GRAPH_BAT);
 	if (retbat == NULL) {
-		TKNZRclose(&iret);
 		@:clean@
 		throw(RDF, "rdf.rdfShred",
 				"could not allocate enough memory for return bat");
@@ -548,7 +595,6 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	}
 
 	GDKfree(pdata);
-	TKNZRclose(&iret);
 	BBPkeepref(*retval = retbat->batCacheid);
 
 	return MAL_SUCCEED;
