@@ -486,7 +486,7 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 
 	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
-	BATpreload_(map); 				\
+	BATpreload_(map);
 	BATloop(b, p, q) {
 		declare_@4
 		ptr tcur = BUN@2(bi,p);
@@ -730,7 +730,7 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 		BBPunfix(s->batCacheid);
 		BBPfix(histo->batCacheid);
 		BBPfix(map->batCacheid);
-		BATpreload_(histo); 				\
+		BATpreload_(histo);
 		BATloop(histo, p, q) {
 			/* + 4 for an average chain list of 4 */
 			r += (BUN) (((dbl)cnt/SAMPLE_SIZE)/(*(wrd*)Tloc(histo,p)+4));
@@ -770,7 +770,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 
 	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
-	BATpreload_(map); 				\
+	BATpreload_(map);
 	BATloop(b, p, q) {
 		ptr tcur = BUN@3(bi,p);
 		BUN c;
@@ -1044,8 +1044,8 @@ CThistosum(
 		return GDK_FAIL;
 
 	resi = bat_iterator(res);
-	BATpreload_(b); 				\
-	BATpreload_(c); 				\
+	BATpreload_(b);
+	BATpreload_(c);
 	BATloop(b, p, q) {
 		oh = (oid *) BUNhloc(bi, p);
 		i = *(wrd *) BUNtloc(bi, p);
@@ -2302,7 +2302,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		GDKfree(extremes);
 		return GDK_FAIL;
 	}
-	BATpreload_(e); 				\
+	BATpreload_(e);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		ptr t =  BUNtail(bi,p);
