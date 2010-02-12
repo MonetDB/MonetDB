@@ -762,7 +762,7 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		}
 		if (preload > 0 && advise != BUF_SEQUENTIAL) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
-			limit = (size_t *) (b->H->heap.base - sizeof(size_t)) - 4 * step;
+			limit = (size_t *) (b->H->heap.base + b->H->heap.free - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
 			i = (size_t *) (b->H->heap.base + (sizeof(size_t) - (((size_t) b->H->heap.base) & (sizeof(size_t) - 1))));
 			for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
@@ -783,7 +783,7 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		}
 		if (preload > 0 && advise != BUF_SEQUENTIAL) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->heap\n", BATgetId(b), advise);
-			limit = (size_t *) (b->T->heap.base - sizeof(size_t)) - 4 * step;
+			limit = (size_t *) (b->T->heap.base + b->T->heap.free - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
 			i = (size_t *) (b->T->heap.base + (sizeof(size_t) - (((size_t) b->T->heap.base) & (sizeof(size_t) - 1))));
 			for (; i < limit && pages > 0; i+= 4*step, pages-= 4) {
