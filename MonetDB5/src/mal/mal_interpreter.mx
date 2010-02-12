@@ -79,6 +79,11 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static void displayVolume(Client cntxt, lng vol);
 
+#define MEMORY_THRESHOLD  0.8
+
+static lng memorypool;		/* memory claimed by concurrent threads */
+static int memoryclaims = 0;	/* number of threads active with expensive operations */
+
 @-
 The struct alignment leads to 40% gain in simple instructions when set.
 @c
@@ -621,11 +626,6 @@ all resource contention effects.
 Another option would be to maintain a priority queue of 
 suspended instructions.
 @c
-#define MEMORY_THRESHOLD  0.8
-
-lng memorypool;		/* memory claimed by concurrent threads */
-int memoryclaims;	/* number of threads active with expensive operations */
-
 #define heapinfo(X) if((X) && (X)->base) vol = (X)->maxsize; else vol = 0;
 #define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
 
@@ -674,15 +674,14 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 					cnt = BATcount(b);
 			} 
 			BBPunfix(b->batCacheid); 
-			if ( guess < total-t )
+			if ( guess == 0)
 				guess = total-t;
 		}
 	}
 	/* accommodate for one hash  */
 	total += cnt * sizeof(int);
-	/* accomodate for result based on largest argument 
+	/* accomodate for result based on first argument */
 	total += guess;	
-	*/
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total )
 		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claim " LLFMT"\n", memorypool,total);
@@ -693,40 +692,38 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 int
 DFLOWclaim(lng claim)
 {
-	int m;
 	/* optimistically set memory */
 	if ( claim == 0)
 		return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	if ( memorypool <= 0 && memoryclaims == 0)
+	if (memorypool <= 0 && memoryclaims == 0)
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
 	
 	if ( claim > 0 ) {
-		if ( memoryclaims == 0 || memorypool > claim ){
+		if (memoryclaims == 0 || memorypool > claim ){
 			memorypool -= claim;
 			memoryclaims ++;
-#ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"#DFLOWclaim   thread %d pool " LLFMT " claim " LLFMT"\n",
-				THRgettid(), memorypool, claim);
-#endif
+			PARDEBUG{
+			stream_printf(GDKout,"#DFLOWclaim %3d  thread %d pool " LLFMT " claim " LLFMT"\n",
+				memoryclaims, THRgettid(), memorypool, claim);
+			}
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		} 
-		m = memoryclaims;
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
-		return m;
+		return -1;
 	} 
 	/* release memory claimed before */
+	assert(memoryclaims > 0 );
 	memorypool += -claim;
 	memoryclaims --;
-#ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"#DFLOWrelease thread %d pool " LLFMT " claim " LLFMT"\n",
-			THRgettid(), memorypool, claim);
-#endif
-	m = memoryclaims;
+	PARDEBUG{
+		stream_printf(GDKout,"#DFLOWrelease %3d thread %d pool " LLFMT " claim " LLFMT"\n",
+			memoryclaims, THRgettid(), memorypool, claim);
+	}
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
-	return m;
+	return 0;
 }
 
 @-
@@ -1734,12 +1731,13 @@ This property setting facility leads to a performance
 loss of a factor 4(?) on the micro benchmarks.
 It does not belong here, but should be propagated 
 to the operators.
-			BAT *b;
-			if ((b = BATdescriptor(bid)) != NULL) {
-				BATsettrivprop(b);
+*/
+		{ BAT *b;
+			if ( bid && (b = BATdescriptor(bid)) != NULL) {
+				BATmadvise(b, BUF_NORMAL, BUF_NORMAL, BUF_NORMAL, BUF_NORMAL);
 				BBPunfix(bid);
 			}
-*/
+		}
 		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
