@@ -1495,9 +1495,12 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		n= getVar(mb,i);
 		v= stk->stk+i;
 		if (isaBatType(n->type) && v->val.ival) {
+			int i = v->val.ival;
 			BAT *b;
 
-			b = BATdescriptor(v->val.ival);
+			b = BBPquickdesc(ABS(i), TRUE);
+			if (i < 0)
+				b = BATmirror(b);
 			if (b) {
 				nme = getTypeName(n->type);
 				nmeOnStk = getTypeName(newBatType(b->htype, b->ttype));
@@ -1507,7 +1510,6 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 						nme, nmeOnStk);
 					stk->cmd='n';
 				}
-				BBPunfix(b->batCacheid);
 				GDKfree(nme);
 			}
 		}
@@ -1780,12 +1782,15 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 
 	if (v && v->vtype == TYPE_bat){
-		BAT *b = BATdescriptor(v->val.ival);
+		int i = v->val.ival;
+		BAT *b = BBPquickdesc(i, TRUE);
 
+		b = BBPquickdesc(ABS(i), TRUE);
+		if (i < 0)
+			b = BATmirror(b);
 		if (b){
 			nme= getTypeName(newBatType(b->htype, b->ttype));
 			stream_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
-			BBPunfix(b->batCacheid);
 		} else {
 			nme = getTypeName(n->type);
 			stream_printf(f, " :%s", nme);
@@ -1833,11 +1838,6 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 		BBPunfix(bs->batCacheid);
 
 		BBPunfix(b->batCacheid);
-	} else if (isaBatType(n->type) && v) {
-		BAT *b = BATdescriptor(v->val.ival);
-
-		if (b) 
-			BBPunfix(b->batCacheid);
 	} 
 }
 

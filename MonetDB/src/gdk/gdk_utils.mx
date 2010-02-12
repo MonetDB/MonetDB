@@ -437,11 +437,14 @@ static int mtrace = 0;
 #endif
 
 #ifndef NDEBUG
-#define malloc_lock() gdk_set_lock(GDKthreadLock, "malloc")
-#define	malloc_unlock()	gdk_unset_lock(GDKthreadLock, "malloc");
+static MT_Lock mbyteslock;
+#define malloc_lock() gdk_set_lock(mbyteslock, "malloc")
+#define	malloc_unlock()	gdk_unset_lock(mbyteslock, "malloc");
+#define malloc_lock_init() MT_init_lock(mbyteslock, "mbyteslock")
 #else
 #define malloc_lock() 
 #define	malloc_unlock()
+#define malloc_lock_init()
 #endif
 	
 size_t
@@ -1469,6 +1472,7 @@ GDKprotect(void)
 		MT_init_lock(GDKunloadLock, "GDKunloadLock");
 		MT_init_cond(GDKunloadCond, "GDKunloadCond");
 		MT_init_lock(GDKtmLock, "GDKtmLock");
+		malloc_lock_init();
 		GDKprotected = 1;
 	}
 }
@@ -1509,12 +1513,15 @@ GDKvmtrim(void *limit)
 		}
 		if (highload) { /* memcrunch distress varies from 1 to 4 */
 			/* rss is above 0.75mem_maxsize!! start using mmap-on-tempfile */
- 			if (!bak_mmap_minsize) bak_mmap_minsize = GDK_mmap_minsize;
 			/* minsize =        memsize iff highload = 0
 			 *         = ..in between.. iff highload = 1-3
 			 *         =          128MB iff highload = 4
 			 */
-			GDK_mmap_minsize = ((size_t) 1) << (27 + membits*(4-highload)); 
+			size_t new_mmap_minsize = ((size_t) 1) << (27 + membits*(4-highload)); 
+ 			if (!bak_mmap_minsize) bak_mmap_minsize = GDK_mmap_minsize;
+			if (new_mmap_minsize < bak_mmap_minsize) {
+				GDK_mmap_minsize = new_mmap_minsize;
+			}
 		} else if (bak_mmap_minsize) {
 			GDK_mmap_minsize = bak_mmap_minsize; /* revert to default setting */
 			bak_mmap_minsize = 0;
@@ -1595,7 +1602,6 @@ GDKinit(opt *set, int setlen)
 	}
 #endif
 #endif
-
 	/* Mserver by default takes 80% of all memory as a default */
 	GDK_mem_maxsize_max = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	GDK_mmap_minsize = GDK_mem_maxsize = GDK_mem_maxsize_max;
@@ -1678,6 +1684,9 @@ GDKinit(opt *set, int setlen)
 	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
 	if (GDKnr_threads == 0)
 		GDKnr_threads = MT_check_nr_cores();
+	if ( GDKnr_threads)
+		GDK_mmap_minsize /= GDKnr_threads;
+
 	return 1;
 }
 

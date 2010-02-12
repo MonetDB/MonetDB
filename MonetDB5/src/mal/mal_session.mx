@@ -282,6 +282,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		 * no need to check for database stuff, because that is done per
 		 * database itself (one gets a redirect) */
 		err = AUTHcheckCredentials(&uid, &root, &user, &passwd, &challenge, &algo, &lang);
+		assert(lang);			/* we expect it's still not NULL */
 		if (err != MAL_SUCCEED) {
 			stream_printf(fout, "!%s\n", err);
 			stream_flush(fout);
@@ -336,13 +337,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			c->nspace->outer = mal_clients[0].nspace->outer;
 		}
 
-		if (!lang) {
-			if ((s = defaultScenario(c))) {
-				stream_printf(c->fdout, "!%s\n", s);
-				stream_flush(c->fdout);
-				c->mode = FINISHING;
-			}
-		} else if ((s = setScenario(c, lang)) != NULL) {
+		if ((s = setScenario(c, lang)) != NULL) {
 			stream_printf(c->fdout, "!%s\n", s);
 			stream_flush(c->fdout);
 			c->mode = FINISHING;

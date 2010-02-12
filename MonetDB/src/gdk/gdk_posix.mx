@@ -820,7 +820,7 @@ MT_mmap_trim(size_t target, void *fp)
 					MT_mmap_tab[i].unload_tile = 0;
 					MT_mmap_tab[i].wrap_tile++;
 				}
-				while (MT_mmap_tab[i].unload_tile < lim) { 
+				while (MT_mmap_tab[i].unload_tile < lim && MT_mmap_tab[i].unload_tile < MT_mmap_tab[i].len) { 
 					MT_mmap_save_tile(i, MT_mmap_tab[i].unload_tile, err);
 					MT_mmap_unload_tile(i, MT_mmap_tab[i].unload_tile, err);
 					MT_mmap_tab[i].unload_tile += MT_MMAP_TILE;
