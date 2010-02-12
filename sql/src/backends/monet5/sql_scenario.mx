@@ -458,6 +458,7 @@ SQLexitClient(Client c)
 		if ( m == NULL)
 			throw(SQL, "SQLexitClient", "MVC catalogue not available");
 
+		assert(m->session);
 		if (m->session->auto_commit && m->session->active) {
 			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0) 
 				(void) handle_error(m, c->fdout, 0);
@@ -468,7 +469,7 @@ SQLexitClient(Client c)
 		res_tables_destroy(m->results);
 		m->results= NULL;
 
-		if (m->session && m->session->tr)
+		if (m->session->tr)
 			reset_functions(m->session->tr);
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
