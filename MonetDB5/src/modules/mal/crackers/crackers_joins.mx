@@ -113,11 +113,13 @@ CRKjoin(BAT *bn, BAT *l, BAT *r) {
 	BATiter li = bat_iterator(l);
         BATiter ri = bat_iterator(r);
 
-	BATmmap_pin(r);
+	BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
 	if (BATprepareHash(r)){
 		T2=GDKusec();
 		return T2-T1;
 	}
+	_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	switch (any = ATOMstorage(l->ttype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
@@ -151,7 +153,7 @@ CRKjoin(BAT *bn, BAT *l, BAT *r) {
 	}
 
       bunins_failed: /* blindly assume bunins does NOT fail*/
-	BATmmap_unpin(r);
+	_BATpreload(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	T2=GDKusec();
 	return T2-T1;
 }
