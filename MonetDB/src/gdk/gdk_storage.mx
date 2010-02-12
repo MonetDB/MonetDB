@@ -710,28 +710,10 @@ BATpreload_(BAT *b, int what, int advise) {
 
 	/* ! StM: this has not been activated, yet ! */
 	/* BATmadvise(b, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED); */
-
-	/* string heaps (inherent random access) */
-	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base && pages ) {
-		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->vheap\n", BATgetId(b), advise);
-		limit = (size_t *) (b->H->vheap->base + b->H->vheap->free) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-		i = (size_t *) (b->H->vheap->base + (sizeof(size_t) - ((size_t)b->H->vheap->base & (sizeof(size_t) - 1))));
-		for (; i < limit && pages > 0 ; i+= 4*step, pages-= 4) {
-			v1 += *i;
-			v2 += *(i + step);
-			v3 += *(i + 2*step);
-			v4 += *(i + 3*step);
-		}
-		limit += 4 * step;
-		for (; i < limit  && pages > 0; i+= step, pages--) {
-			v1 += *i;
-		}
-	}
-	if ( what&USE_TAIL && b->T->vheap && b->T->vheap->base  && pages) {
+	if ( what&USE_TAIL && b->T->vheap && b->T->vheap->base  && pages){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->vheap\n", BATgetId(b), advise);
 		limit = (size_t *) (b->T->vheap->base + b->T->vheap->free - sizeof(size_t)) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
 		i = (size_t *) (b->T->vheap->base + (sizeof(size_t) - ((size_t)b->T->vheap->base & (sizeof(size_t) - 1))));
 		for (; i < limit  && pages > 0; i+= 4*step, pages-= 4) {
 			v1 += *i;
@@ -744,30 +726,11 @@ BATpreload_(BAT *b, int what, int advise) {
 			v1 += *i;
 		}
 	}
-
-	/* BUN heaps (no need to preload for sequential access) */
-	if ( advise != BUF_SEQUENTIAL && what&USE_HEAD && b->H->heap.base && pages ) {
-		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
-		limit = (size_t *) (BUNhead(bat_iterator(b), BUNlast(b)) - sizeof(size_t)) - 4 * step;
-		i = 
-		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-		i = (size_t *) (BUNhead(bat_iterator(b), BUNfirst(b)) + (sizeof(size_t) - ((size_t)BUNhead(bat_iterator(b), BUNfirst(b)) & (sizeof(size_t) - 1))));
-		for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
-			v1 += *i;
-			v2 += *(i + step);
-			v3 += *(i + 2*step);
-			v4 += *(i + 3*step);
-		}
-		limit += 4 * step;
-		for (; i < limit  && pages > 0; i+= step, pages--) {
-			v1 += *i;
-		}
-	}
-	if ( advise != BUF_SEQUENTIAL && what&USE_TAIL && b->T->heap.base && pages ) {
+	if ( what&USE_TAIL && b->T->heap.base && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->heap\n", BATgetId(b), advise);
-		limit = (size_t *) (BUNtail(bat_iterator(b), BUNlast(b)) - sizeof(size_t)) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-		i = (size_t *) (BUNtail(bat_iterator(b), BUNfirst(b)) + (sizeof(size_t) - ((size_t)BUNtail(bat_iterator(b), BUNfirst(b)) & (sizeof(size_t) - 1))));
+		limit = (size_t *) (b->T->heap.base + b->T->heap.free - sizeof(size_t)) - 4 * step;
+		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
+		i = (size_t *) (b->T->heap.base + (sizeof(size_t) - ((size_t)b->T->heap.base & (sizeof(size_t) - 1))));
 		for (; i < limit && pages > 0; i+= 4*step, pages-= 4) {
 			v1 += *i;
 			v2 += *(i + step);
@@ -779,14 +742,44 @@ BATpreload_(BAT *b, int what, int advise) {
 			v1 += *i;
 		}
 	}
-
-	/* hash indices (inherent random access) */
+	if ( what&USE_HEAD && b->H->heap.base && pages ){
+		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
+		limit = (size_t *) (b->H->heap.base + b->H->heap.free - sizeof(size_t)) - 4 * step;
+		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
+		i = (size_t *) (b->H->heap.base + (sizeof(size_t) - ((size_t)b->H->heap.base & (sizeof(size_t) - 1))));
+		for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
+			v1 += *i;
+			v2 += *(i + step);
+			v3 += *(i + 2*step);
+			v4 += *(i + 3*step);
+		}
+		limit += 4 * step;
+		for (; i < limit  && pages > 0; i+= step, pages--) {
+			v1 += *i;
+		}
+	}
+	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base && pages ){
+		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->vheap\n", BATgetId(b), advise);
+		limit = (size_t *) (b->H->vheap->base + b->H->vheap->free) - 4 * step;
+		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
+		i = (size_t *) (b->H->vheap->base + (sizeof(size_t) - ((size_t)b->H->vheap->base & (sizeof(size_t) - 1))));
+		for (; i < limit && pages > 0 ; i+= 4*step, pages-= 4) {
+			v1 += *i;
+			v2 += *(i + step);
+			v3 += *(i + 2*step);
+			v4 += *(i + 3*step);
+		}
+		limit += 4 * step;
+		for (; i < limit  && pages > 0; i+= step, pages--) {
+			v1 += *i;
+		}
+	}
 	if ( what&USE_HHASH || what&USE_THASH )
 		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
-	if ( what&USE_HHASH && b->H->hash && pages ) {
+	if ( what&USE_HHASH && b->H->hash && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->hash\n", BATgetId(b), advise);
 		limit = (size_t *) (b->H->hash->heap->base + b->H->hash->heap->size - sizeof(size_t)) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
 		i = (size_t *) (b->H->hash->heap->base + (sizeof(size_t) - ((size_t)b->H->hash->heap->base & (sizeof(size_t) - 1))));
 		for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
 			v1 += *i;
@@ -799,10 +792,10 @@ BATpreload_(BAT *b, int what, int advise) {
 			v1 += *i;
 		}
 	}
-	if ( what&USE_THASH && b->T->hash && pages ) {
+	if ( what&USE_THASH && b->T->hash && pages ){
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->hash\n", BATgetId(b), advise);
 		limit = (size_t *) (b->T->hash->heap->base + b->T->hash->heap->size - sizeof(size_t)) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
 		i = (size_t *) (b->T->hash->heap->base + (sizeof(size_t) - ((size_t)b->T->hash->heap->base & (sizeof(size_t) - 1))));
 		for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
 			v1 += *i;
@@ -817,10 +810,8 @@ BATpreload_(BAT *b, int what, int advise) {
 	}
 	if ( what&USE_HHASH || what&USE_THASH )
 		gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
-
 	/* ! StM: this has not been activated, yet ! */
 	/* BATmadvise(b, advise, advise, BUF_WILLNEED, BUF_WILLNEED); */
-
 	return v1 + v2 + v3 + v4;
 }
 
