@@ -978,7 +978,7 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 		BBPreclaim(bn);
 		return NULL;
 	}
-	BATpreload(b);
+	BATpreload_(b, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	while (bn) {
 		BUN q = BUNfirst(bn);
 		BUN r;

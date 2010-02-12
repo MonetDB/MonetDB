@@ -285,8 +285,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 		GDKerror("mergejoin: right input is not sorted.\n");
 		return NULL;
 	}
-	BATpreload_(l);
-	BATpreload_(r);
+	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_HEAD|USE_TAIL, r_scan > 0 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 	if (bn == NULL) {
 		@:joinbat(JOIN_EQ,mergejoin(l,r,NULL,nil_on_miss,BUN_NONE,NULL),estimate)@
 	}
@@ -443,7 +443,7 @@ the fast inner loops, optimized towards their type.
 	{
 		BUN yy;
 
-		BATpreload_(l);
+		BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 		BATloop(l, p, q) {
 			v = BUN@3(li, p);
 			if (@1_EQ(v, nil, @4)) {
@@ -472,7 +472,7 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	@:joincheck(BAThashjoin,l->ttype,r->htype)@
 	@:joinbat(JOIN_EQ,BAThashjoin(l,r,BUN_NONE),estimate)@
 
-	BATpreload(r);
+	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	if (BATprepareHash(r))
 		return NULL;
 	switch (any = ATOMstorage(l->ttype)) {
@@ -586,8 +586,8 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densefetchjoin(@1,@2);\n");
 
-	BATpreload_(l);
-	BATpreload_(r);
+	BATpreload_(l, USE_HEAD, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(l, l_cur, l_end) {
 		@:bunfastins_nocheck_(@1,@2)@
 		r_cur++;
@@ -621,8 +621,8 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedfetchjoin(@1,@2);\n");
 
-	BATpreload_(l);
-	BATpreload_(r);
+	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNtail(li, l_cur));
 		r_cur = yy;
@@ -659,8 +659,9 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultfetchjoin(@1,@2);\n");
 
-	BATpreload_(r);
-	BATpreload_(bn);
+	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_TAIL, BUF_WILLNEED);
+	/*BATpreload_(bn, BUF_SEQUENTIAL);*/
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNtail(li, l_cur));
 		if (yy < base || yy >= end) {
@@ -755,8 +756,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= densevoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densevoidfetchjoin(@1);\n");
 	r_cur = (BUN) (offset + * (oid *) BUNtloc(li, BUNfirst(l)));
-	BATpreload_(r);
-	BATpreload_(bn);
+	BATpreload_(r, USE_TAIL, BUF_SEQUENTIAL);
+	/*BATpreload_(bn, BUF_SEQUENTIAL);*/
 	BATloop(l, l_cur, l_end) {
 		@1put(bn, Tloc(bn,dst));
 		r_cur++;
@@ -765,8 +766,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1);\n");
-	BATpreload_(r);
-	BATpreload_(bn);
+	BATpreload_(r, USE_TAIL, BUF_SEQUENTIAL);
+	/*BATpreload_(bn, BUF_SEQUENTIAL);*/
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
 
@@ -777,7 +778,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
-	BATpreload_(r);
+	BATpreload_(l, USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_TAIL, BUF_WILLNEED);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
 
@@ -800,8 +802,9 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 			return bn;
 		dst = BUNfirst(bn);
 		bni = bat_iterator(bn);
-		BATpreload_(r);
-		BATpreload_(bn);
+		BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATpreload_(r, USE_TAIL, BUF_WILLNEED);
+		/*BATpreload_(bn, BUF_SEQUENTIAL);*/
 		BATloop(l, l_cur, l_end) {
 			BUN _yy = (BUN) (offset + * (oid *) BUNtail(li, l_cur));
 
@@ -1418,8 +1421,8 @@ if no match can be found.
 	BUN p, q;
 	@4
 
-	BATpreload_(l);
-	BATpreload_(r);
+	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	BATloop(l, p, q) {
 		BUN i = 0;
 
@@ -1495,8 +1498,8 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		bit nonil = TRUE;
 		BUN p, q, w, s = BUNfirst(bn);
 
-		BATpreload_(l);
-		BATpreload_(r);
+		BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATpreload_(r, USE_TAIL, BATtordered(l)&1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 		BATloop(l, p, q) {
 			oid v = *(oid *) BUNtail(li, p);
 			ptr t = nilt;
@@ -1833,8 +1836,8 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 		ptr nil = ATOMnilptr(l->ttype);
 		BUN rp, rq, lp, lq;
 
-		BATpreload_(l);
-		BATpreload_(r);
+		BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATpreload_(r, USE_HEAD|USE_TAIL, BATcount(l) <= 1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 		BATloop(l, lp, lq) {
 			ptr v = (ptr) BUNtail(li, lp);
 
@@ -1899,9 +1902,9 @@ differ significantly.
 	BUN lp, lq;
 	ptr nil = ATOMnilptr(l->htype);
 
-	BATpreload_(l);
-	BATpreload_(r);
 	if (cpy == l) {
+		BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATpreload_(r, USE_HEAD, BUF_WILLNEED);
 		BATloop(l, lp, lq) {
 			ptr v = BUNh@1(li, lp);
 
@@ -1910,6 +1913,8 @@ differ significantly.
 			}
 		}
 	} else {
+		BATpreload_(l, USE_HEAD, BUF_SEQUENTIAL);
+		BATpreload_(r, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 		BATloop(l, lp, lq) {
 			BUN rp, rq;
 			ptr v = BUNh@1(li, lp);
@@ -2023,8 +2028,8 @@ iff BAThkey(r) and one on l to find the matching tuples.
 
 	if (merge) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: merge\n");
-		BATpreload_(r);
-		BATpreload_(l);
+		BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
+		BATpreload_(l, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 		BATloop(r, rp, rq) {
 			v = BUN@3(ri, rp);
 
@@ -2038,8 +2043,8 @@ iff BAThkey(r) and one on l to find the matching tuples.
 		}
 	} else if (rdoubles) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: rdoubles\n");
-		BATpreload_(r);
-		BATpreload_(l);
+		BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
+		BATpreload_(l, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 		BATloop(r, rp, rq) {
 			v = BUN@3(ri, rp);
 
@@ -2053,8 +2058,8 @@ iff BAThkey(r) and one on l to find the matching tuples.
 			}
 		}
 	} else {
-		BATpreload_(r);
-		BATpreload_(l);
+		BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
+		BATpreload_(l, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 		BATloop(r, rp, rq) {
 			v = BUN@3(ri, rp);
 			if (!@1_EQ(v, nil, @4)) {
@@ -2183,8 +2188,8 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	}
 
 	/* iterate l; positional fetch in r */
-	BATpreload_(l);
-	BATpreload_(r);
+	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_HEAD|USE_TAIL, BAThordered(l)&1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNhloc(li, l_cur));
 		if (yy < base || yy >= end) {
@@ -2351,8 +2356,8 @@ antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	bni = bat_iterator(bn);
 	dst = BUNfirst(bn);
 	ALGODEBUG THRprintf(GDKout, "#BATantijoin: antijoin_@1_@2();\n");
-	BATpreload_(l);
-	BATpreload_(r);
+	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_HEAD|USE_TAIL, BATcount(l) <= 1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 	BATloop(l, l_cur, l_end) {
 		ptr v = (ptr) BUNtail(li, l_cur);
 		BATloop(r, r_cur, r_end) {
@@ -2485,7 +2490,6 @@ BATantijoin(BAT *l, BAT *r)
 	if (sz == 0)
 		return bn;
 
-	BATpreload_(r);
 	@:antijoin_switch_lht@
 
 	if (bn) {
@@ -2530,8 +2534,8 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 	bni = bat_iterator(bn);
 	dst = BUNfirst(bn);
 	ALGODEBUG THRprintf(GDKout, "#BATcross: cross_@1_@2();\n");
-	BATpreload_(l);
-	BATpreload_(r);
+	BATpreload_(l, USE_HEAD, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_TAIL, BATcount(l) <= 1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 	BATloop(l, l_cur, l_end) {
 		BATloop(r, r_cur, r_end) {
 			@:bunfastins_nocheck_(@1,@2)@
@@ -2659,7 +2663,6 @@ BATcross(BAT *l, BAT *r)
 	if (sz == 0)
 		return bn;
 
-	BATpreload_(r);
 	@:cross_switch_lht@
 
 	if (bn) {
@@ -3038,7 +3041,7 @@ overhead.
 @{
 @= multijoin
 	for (i = 0; i < argc; i++)
-		BATpreload_(reorder[i]->b);
+		BATpreload_(reorder[i]->b, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	while (algo) {
 		ptr h;		/* points to current ID */
 
