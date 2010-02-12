@@ -178,7 +178,6 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		}
 		/* use the right oid ranges, don't change the input */
-		BATpreload_(b);
 		BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}

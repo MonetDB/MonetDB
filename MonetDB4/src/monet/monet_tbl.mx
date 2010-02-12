@@ -1914,6 +1914,14 @@ unloadmod_bat(BAT *b, oid mid)
 		}
 		return MAX(0, refs - yy);
 	}
+	/* refs == 0, cause BBPfree() to be called */
+	/* refs: 0 -> 1 to ensure BBPreclaim() calls decref() */
+	BBPfix(b->batCacheid);
+        /* make very cold to ensure the decref() calls BBPfree() */
+	/* we trust that unloadmod_check_use(),
+	 * the only caller of unloadmod_bat(),
+	 * has acquired "all" locks via BBPlock() */
+        BBP_lastused(ABS(b->batCacheid)) = 0;
 	return BBPreclaim(b);
 }
 
