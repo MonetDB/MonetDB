@@ -529,6 +529,8 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	if (hash && !m)
 		GDKfree(hash);
+	if (m)
+		_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 	return m ? NULL : map2histo(map);
 bunins_failed:
 	_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
@@ -818,6 +820,8 @@ found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 	if (hash && !m)
 		GDKfree(hash);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	if (m)
+		_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 	return m?NULL:map2histo(map);
 bunins_failed:
 	_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
