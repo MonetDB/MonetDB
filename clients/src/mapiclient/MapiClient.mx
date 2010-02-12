@@ -2211,7 +2211,7 @@ main(int argc, char **argv)
 				if (strcmp(q, "true") == 0 || strcmp(q, "on") == 0) {
 					save_history = 1;
 					q = NULL;
-				} else if (strcmp(q, "false") || strcmp(q, "off") == 0) {
+				} else if (strcmp(q, "false") == 0 || strcmp(q, "off") == 0) {
 					save_history = 0;
 					q = NULL;
 				}
