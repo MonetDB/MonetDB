@@ -806,6 +806,7 @@ stopProfiling(void)
 	malProfileMode = FALSE;
 	offlineProfiling= FALSE;
 	cachedProfiling= FALSE;
+	closeProfilerStream();
 #endif
 	return MAL_SUCCEED;
 }
@@ -1078,7 +1079,6 @@ TRACEcreate(str hnme, str tnme, int tt)
 	BBPrename(b->batCacheid, buf);
 	BATmode(b, PERSISTENT);
 	BATcommit(b);
-	BBPkeepref(b->batCacheid);
 	return b;
 }
 
