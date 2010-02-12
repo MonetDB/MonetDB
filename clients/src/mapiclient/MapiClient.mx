@@ -2188,7 +2188,7 @@ main(int argc, char **argv)
 				passwd = strdup(q); /* leak */
 				q = NULL;
 			} else if (strcmp(buf, "language") == 0) {
-				language = q;
+				language = strdup(q); /* leak */
 				if (strcmp(language, "sql") == 0) {
 					mode = SQL;
 					q = NULL;
@@ -2203,7 +2203,16 @@ main(int argc, char **argv)
 					stream_printf(stderr_stream, "%s:%d: unsupported "
 							"language: %s\n",
 							stream_name(config), line, q);
+					free(language);
 					language = NULL;
+					q = NULL;
+				}
+			} else if (strcmp(buf, "save_history") == 0) {
+				if (strcmp(q, "true") == 0 || strcmp(q, "on") == 0) {
+					save_history = 1;
+					q = NULL;
+				} else if (strcmp(q, "false") || strcmp(q, "off") == 0) {
+					save_history = 0;
 					q = NULL;
 				}
 			}
