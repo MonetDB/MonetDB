@@ -748,10 +748,10 @@ BATpreload_(BAT *b, int what, int advise) {
 	/* BUN heaps (no need to preload for sequential access) */
 	if ( advise != BUF_SEQUENTIAL && what&USE_HEAD && b->H->heap.base && pages ) {
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
-		limit = (size_t *) (BUNhead(BATiter(b), BUNlast(b)) - sizeof(size_t)) - 4 * step;
+		limit = (size_t *) (BUNhead(bat_iterator(b), BUNlast(b)) - sizeof(size_t)) - 4 * step;
 		i = 
 		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-		i = (size_t *) (BUNhead(BATiter(b), BUNfirst(b)) + (sizeof(size_t) - ((size_t)BUNhead(BATiter(b), BUNfirst(b)) & (sizeof(size_t) - 1))));
+		i = (size_t *) (BUNhead(bat_iterator(b), BUNfirst(b)) + (sizeof(size_t) - ((size_t)BUNhead(bat_iterator(b), BUNfirst(b)) & (sizeof(size_t) - 1))));
 		for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
 			v1 += *i;
 			v2 += *(i + step);
@@ -765,9 +765,9 @@ BATpreload_(BAT *b, int what, int advise) {
 	}
 	if ( advise != BUF_SEQUENTIAL && what&USE_TAIL && b->T->heap.base && pages ) {
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->heap\n", BATgetId(b), advise);
-		limit = (size_t *) (BUNtail(BATiter(b), BUNlast(b)) - sizeof(size_t)) - 4 * step;
+		limit = (size_t *) (BUNtail(bat_iterator(b), BUNlast(b)) - sizeof(size_t)) - 4 * step;
 		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-		i = (size_t *) (BUNtail(BATiter(b), BUNfirst(b)) + (sizeof(size_t) - ((size_t)BUNtail(BATiter(b), BUNfirst(b)) & (sizeof(size_t) - 1))));
+		i = (size_t *) (BUNtail(bat_iterator(b), BUNfirst(b)) + (sizeof(size_t) - ((size_t)BUNtail(bat_iterator(b), BUNfirst(b)) & (sizeof(size_t) - 1))));
 		for (; i < limit && pages > 0; i+= 4*step, pages-= 4) {
 			v1 += *i;
 			v2 += *(i + step);
