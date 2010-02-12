@@ -1674,6 +1674,12 @@ GDKinit(opt *set, int setlen)
 		GDKsetenv("monet_pid", buf);
 	}
 
+	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
+	if (GDKnr_threads == 0)
+		GDKnr_threads = MT_check_nr_cores();
+	if ( GDKnr_threads)
+		GDK_mmap_minsize /= GDKnr_threads;
+
 #ifdef HAVE_POSIX_FADVISE
 	if (!GDKembedded && GDK_vm_trim) {
 		MT_Id t;
@@ -1681,11 +1687,6 @@ GDKinit(opt *set, int setlen)
 		MT_create_thread(&t, GDKvmtrim, &GDK_mem_maxsize);
 	}
 #endif
-	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
-	if (GDKnr_threads == 0)
-		GDKnr_threads = MT_check_nr_cores();
-	if ( GDKnr_threads)
-		GDK_mmap_minsize /= GDKnr_threads;
 
 	return 1;
 }
