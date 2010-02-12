@@ -1731,13 +1731,12 @@ This property setting facility leads to a performance
 loss of a factor 4(?) on the micro benchmarks.
 It does not belong here, but should be propagated 
 to the operators.
-*/
-		{ BAT *b;
-			if ( bid && (b = BATdescriptor(bid)) != NULL) {
-				BATmadvise(b, BUF_NORMAL, BUF_NORMAL, BUF_NORMAL, BUF_NORMAL);
+			BAT *b;
+			if ((b = BATdescriptor(bid)) != NULL) {
+				BATsettrivprop(b);
 				BBPunfix(bid);
 			}
-		}
+*/
 		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
