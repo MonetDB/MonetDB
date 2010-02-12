@@ -2519,10 +2519,6 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
 				(@2)->base, @3, @1);
 		return -1;
 	}
-@= pin
-	if ((@2) && (@2)->base && ((@2)->storage != STORE_MEM)) {
-		MT_mmap_@1((@2)->base, (@2)->maxsize);
-	}
 @c
 
 static int BUF_TO_MMAP[] = {
@@ -2562,28 +2558,6 @@ BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
 		@:madvise(BUF_TO_MMAP[tb],(&b->T->heap),(&b->T->heap)->size)@
 		@:madvise(BUF_TO_MMAP[thp],b->T->vheap,b->T->vheap->size)@
 	}
-	return 0;
-}
-
-int
-BATmmap_pin(BAT *b)
-{
-	BATcheck(b, "BATmmap_pin");
-	@:pin(pin,(&b->H->heap))@
-	@:pin(pin,(&b->T->heap))@
-	@:pin(pin,b->H->vheap)@
-	@:pin(pin,b->T->vheap)@
-	return 0;
-}
-
-int
-BATmmap_unpin(BAT *b)
-{
-	BATcheck(b, "BATmmap_unpin");
-	@:pin(unpin,(&b->H->heap))@
-	@:pin(unpin,(&b->T->heap))@
-	@:pin(unpin,b->H->vheap)@
-	@:pin(unpin,b->T->vheap)@
 	return 0;
 }
 
@@ -2742,6 +2716,9 @@ backup_new(Heap *hp, int lockbat) {
 static int
 HEAPchangeaccess(Heap *hp, int dstmode, int existing)
 {
+       if (hp->storage == STORE_MMAP && hp->free >= MT_MMAP_TILE) { 
+                MT_mmap_inform(hp->base, hp->free, 0, 0, (dstmode == BAT_READ)?-1:1); /* inform vmtrim of the new mode */
+	}
 	if (hp->base == NULL || hp->newstorage == STORE_MEM || !existing || dstmode == -1)
 		return hp->newstorage; /* 0<=>2,1<=>3,a<=>b */
 

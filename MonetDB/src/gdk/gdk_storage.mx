@@ -702,7 +702,7 @@ request.
 Of course, it does not make sense to touch more then we can physically accomodate.
 @c
 size_t 
-BATpreload_(BAT *b, int what, int advise) {
+BATpreload(BAT *b, int what, int advise, int preload) {
 	size_t *i, *limit;
 	size_t v1 = 0, v2 = 0, v3 = 0, v4 = 0;
 	size_t step = MT_pagesize()/sizeof(size_t);
@@ -710,130 +710,147 @@ BATpreload_(BAT *b, int what, int advise) {
 
 	/* ! StM: this has not been activated, yet ! */
 	/* BATmadvise(b, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED); */
-	if ( what&USE_TAIL && b->T->vheap && b->T->vheap->base  && pages){
-		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->vheap\n", BATgetId(b), advise);
-		limit = (size_t *) (b->T->vheap->base + b->T->vheap->free - sizeof(size_t)) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
-		i = (size_t *) (b->T->vheap->base + (sizeof(size_t) - ((size_t)b->T->vheap->base & (sizeof(size_t) - 1))));
-		for (; i < limit  && pages > 0; i+= 4*step, pages-= 4) {
-			v1 += *i;
-			v2 += *(i + step);
-			v3 += *(i + 2*step);
-			v4 += *(i + 3*step);
+
+	/* string heaps (inherent random access) */
+	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base && pages ) {
+		if (b->H->vheap->storage != STORE_MEM && b->H->vheap->free > MT_MMAP_TILE) {
+			MT_mmap_inform(b->H->vheap->base, b->H->vheap->free, preload, BUF_WILLNEED, 0);
 		}
-		limit += 4 * step;
-		for (; i < limit  && pages > 0; i+= step, pages--) {
-			v1 += *i;
-		}
-	}
-	if ( what&USE_TAIL && b->T->heap.base && pages ){
-		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->heap\n", BATgetId(b), advise);
-		limit = (size_t *) (b->T->heap.base + b->T->heap.free - sizeof(size_t)) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
-		i = (size_t *) (b->T->heap.base + (sizeof(size_t) - ((size_t)b->T->heap.base & (sizeof(size_t) - 1))));
-		for (; i < limit && pages > 0; i+= 4*step, pages-= 4) {
-			v1 += *i;
-			v2 += *(i + step);
-			v3 += *(i + 2*step);
-			v4 += *(i + 3*step);
-		}
-		limit += 4 * step;
-		for (; i < limit  && pages > 0; i+= step, pages--) {
-			v1 += *i;
+		if (preload) {
+			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->vheap\n", BATgetId(b), advise);
+			limit = (size_t *) (b->H->vheap->base + b->H->vheap->free) - 4 * step;
+			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+			i = (size_t *) (b->H->vheap->base + (sizeof(size_t) - ((size_t)b->H->vheap->base & (sizeof(size_t) - 1))));
+			for (; i < limit && pages > 0 ; i+= 4*step, pages-= 4) {
+				v1 += *i;
+				v2 += *(i + step);
+				v3 += *(i + 2*step);
+				v4 += *(i + 3*step);
+			}
+			limit += 4 * step;
+			for (; i < limit  && pages > 0; i+= step, pages--) {
+				v1 += *i;
+			}
 		}
 	}
-	if ( what&USE_HEAD && b->H->heap.base && pages ){
-		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
-		limit = (size_t *) (b->H->heap.base + b->H->heap.free - sizeof(size_t)) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
-		i = (size_t *) (b->H->heap.base + (sizeof(size_t) - ((size_t)b->H->heap.base & (sizeof(size_t) - 1))));
-		for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
-			v1 += *i;
-			v2 += *(i + step);
-			v3 += *(i + 2*step);
-			v4 += *(i + 3*step);
+	if ( what&USE_TAIL && b->T->vheap && b->T->vheap->base  && pages) {
+		if (b->T->vheap->storage != STORE_MEM && b->T->vheap->free > MT_MMAP_TILE) {
+			MT_mmap_inform(b->T->vheap->base, b->T->vheap->free, preload, BUF_WILLNEED, 0);
 		}
-		limit += 4 * step;
-		for (; i < limit  && pages > 0; i+= step, pages--) {
-			v1 += *i;
-		}
-	}
-	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base && pages ){
-		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->vheap\n", BATgetId(b), advise);
-		limit = (size_t *) (b->H->vheap->base + b->H->vheap->free) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
-		i = (size_t *) (b->H->vheap->base + (sizeof(size_t) - ((size_t)b->H->vheap->base & (sizeof(size_t) - 1))));
-		for (; i < limit && pages > 0 ; i+= 4*step, pages-= 4) {
-			v1 += *i;
-			v2 += *(i + step);
-			v3 += *(i + 2*step);
-			v4 += *(i + 3*step);
-		}
-		limit += 4 * step;
-		for (; i < limit  && pages > 0; i+= step, pages--) {
-			v1 += *i;
+		if (preload) {	
+			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->vheap\n", BATgetId(b), advise);
+			limit = (size_t *) (b->T->vheap->base + b->T->vheap->free - sizeof(size_t)) - 4 * step;
+			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+			i = (size_t *) (b->T->vheap->base + (sizeof(size_t) - ((size_t)b->T->vheap->base & (sizeof(size_t) - 1))));
+			for (; i < limit  && pages > 0; i+= 4*step, pages-= 4) {
+				v1 += *i;
+				v2 += *(i + step);
+				v3 += *(i + 2*step);
+				v4 += *(i + 3*step);
+			}
+			limit += 4 * step;
+			for (; i < limit  && pages > 0; i+= step, pages--) {
+				v1 += *i;
+			}
 		}
 	}
+
+	/* BUN heaps (no need to preload for sequential access) */
+	if ( what&USE_HEAD && b->H->heap.base && pages ) {
+		if (b->H->heap.storage != STORE_MEM && b->H->heap.free > MT_MMAP_TILE) {
+			MT_mmap_inform(b->H->heap.base, b->H->heap.free, preload, advise, 0);
+		}
+		if (preload && advise != BUF_SEQUENTIAL) {
+			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
+			limit = (size_t *) (b->H->heap.base - sizeof(size_t)) - 4 * step;
+			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+			i = (size_t *) (b->H->heap.base + (sizeof(size_t) - (((size_t) b->H->heap.base) & (sizeof(size_t) - 1))));
+			for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
+				v1 += *i;
+				v2 += *(i + step);
+				v3 += *(i + 2*step);
+				v4 += *(i + 3*step);
+			}
+			limit += 4 * step;
+			for (; i < limit  && pages > 0; i+= step, pages--) {
+				v1 += *i;
+			}
+		}
+	}
+	if ( what&USE_TAIL && b->T->heap.base && pages ) {
+		if (b->T->heap.storage != STORE_MEM && b->T->heap.free > MT_MMAP_TILE) {
+			MT_mmap_inform(b->T->heap.base, b->T->heap.free, preload, advise, 0);
+		}
+		if (preload && advise != BUF_SEQUENTIAL) {
+			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->heap\n", BATgetId(b), advise);
+			limit = (size_t *) (b->T->heap.base - sizeof(size_t)) - 4 * step;
+			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+			i = (size_t *) (b->T->heap.base + (sizeof(size_t) - (((size_t) b->T->heap.base) & (sizeof(size_t) - 1))));
+			for (; i < limit && pages > 0; i+= 4*step, pages-= 4) {
+				v1 += *i;
+				v2 += *(i + step);
+				v3 += *(i + 2*step);
+				v4 += *(i + 3*step);
+			}
+			limit += 4 * step;
+			for (; i < limit  && pages > 0; i+= step, pages--) {
+				v1 += *i;
+			}
+		}
+	}
+
+	/* hash indices (inherent random access) */
 	if ( what&USE_HHASH || what&USE_THASH )
 		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
-	if ( what&USE_HHASH && b->H->hash && pages ){
-		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->hash\n", BATgetId(b), advise);
-		limit = (size_t *) (b->H->hash->heap->base + b->H->hash->heap->size - sizeof(size_t)) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
-		i = (size_t *) (b->H->hash->heap->base + (sizeof(size_t) - ((size_t)b->H->hash->heap->base & (sizeof(size_t) - 1))));
-		for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
-			v1 += *i;
-			v2 += *(i + step);
-			v3 += *(i + 2*step);
-			v4 += *(i + 3*step);
+	if ( what&USE_HHASH && b->H->hash && b->H->hash->heap && b->H->hash->heap->base && pages ) {
+		if (b->H->hash->heap->storage != STORE_MEM && b->H->hash->heap->free > MT_MMAP_TILE) {
+			MT_mmap_inform(b->H->hash->heap->base, b->H->hash->heap->free, preload, BUF_WILLNEED, 0);
 		}
-		limit += 4 * step;
-		for (; i < limit  && pages > 0; i+= step, pages--) {
-			v1 += *i;
+		if (preload) {
+			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->hash\n", BATgetId(b), advise);
+			limit = (size_t *) (b->H->hash->heap->base + b->H->hash->heap->size - sizeof(size_t)) - 4 * step;
+			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+			i = (size_t *) (b->H->hash->heap->base + (sizeof(size_t) - ((size_t)b->H->hash->heap->base & (sizeof(size_t) - 1))));
+			for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
+				v1 += *i;
+				v2 += *(i + step);
+				v3 += *(i + 2*step);
+				v4 += *(i + 3*step);
+			}
+			limit += 4 * step;
+			for (; i < limit  && pages > 0; i+= step, pages--) {
+				v1 += *i;
+			}
 		}
 	}
-	if ( what&USE_THASH && b->T->hash && pages ){
-		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->hash\n", BATgetId(b), advise);
-		limit = (size_t *) (b->T->hash->heap->base + b->T->hash->heap->size - sizeof(size_t)) - 4 * step;
-		/* we need to ensure alignment, here, as b might be a view and head.base of views are not necessarily aligned */
-		i = (size_t *) (b->T->hash->heap->base + (sizeof(size_t) - ((size_t)b->T->hash->heap->base & (sizeof(size_t) - 1))));
-		for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
-			v1 += *i;
-			v2 += *(i + step);
-			v3 += *(i + 2*step);
-			v4 += *(i + 3*step);
+	if ( what&USE_THASH && b->T->hash && b->T->hash->heap && b->T->hash->heap->base && pages ) {
+		if (b->T->hash->heap->storage != STORE_MEM && b->T->hash->heap->free > MT_MMAP_TILE) {
+			MT_mmap_inform(b->T->hash->heap->base, b->T->hash->heap->free, preload, BUF_WILLNEED, 0);
 		}
-		limit += 4 * step;
-		for (; i < limit  && pages > 0; i+= step, pages--) {
-			v1 += *i;
+		if (preload) {
+			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->hash\n", BATgetId(b), advise);
+			limit = (size_t *) (b->T->hash->heap->base + b->T->hash->heap->size - sizeof(size_t)) - 4 * step;
+			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+			i = (size_t *) (b->T->hash->heap->base + (sizeof(size_t) - ((size_t)b->T->hash->heap->base & (sizeof(size_t) - 1))));
+			for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
+				v1 += *i;
+				v2 += *(i + step);
+				v3 += *(i + 2*step);
+				v4 += *(i + 3*step);
+			}
+			limit += 4 * step;
+			for (; i < limit  && pages > 0; i+= step, pages--) {
+				v1 += *i;
+			}
 		}
 	}
 	if ( what&USE_HHASH || what&USE_THASH )
 		gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
+
 	/* ! StM: this has not been activated, yet ! */
 	/* BATmadvise(b, advise, advise, BUF_WILLNEED, BUF_WILLNEED); */
+
 	return v1 + v2 + v3 + v4;
-}
-
-size_t 
-BATpreload(BAT *b, int what, int advise) {
-	BAT *bv;
-	size_t dummy = 0;
-
-	if (!isVIEW(b) )
-		return BATpreload_(b, what, advise);
-
-	if ( isVIEW(b) &&  VIEWhparent(b) ) {
-		bv = BATdescriptor(VIEWhparent(b));
-		dummy += BATpreload_(bv, what, advise);
-		BBPunfix(bv->batCacheid);
-	}
-	if (isVIEW(b) && VIEWtparent(b) ) {
-		bv = BATdescriptor(VIEWtparent(b));
-		dummy += BATpreload_(bv, what, advise);
-		BBPunfix(bv->batCacheid);
-	}
-	return dummy;
 }
 @}
 

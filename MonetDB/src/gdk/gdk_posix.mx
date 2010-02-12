@@ -199,6 +199,10 @@ gdk_export int MT_alloc_table(void);
 #define MMAP_ASYNC		8192	/* asynchronous writes (default if ommitted) */
 #define MMAP_SYNC		16384	/* writing is done synchronously */
 
+#define MT_MMAP_LOG 27
+#define MT_MMAP_TILE (1<<MT_MMAP_LOG)
+#define MT_MMAP_BUFSIZE 4096
+
 /* in order to be sure of madvise and msync modes, pass them to mmap() call as well */
 
 /* a hook function to add any initialization required for the MT_ functionality */
@@ -228,8 +232,7 @@ gdk_export void *MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len);
 gdk_export void MT_mmap_close(MT_mmap_hdl *hdl);
 
 gdk_export int MT_mmap_trim(size_t lim, void *err);
-gdk_export void MT_mmap_pin(void *p, size_t len);
-gdk_export void MT_mmap_unpin(void *p, size_t len);
+gdk_export void MT_mmap_inform(void *p, size_t len, int preload, int pattern, int writable);
 
 gdk_export void *MT_vmalloc(size_t size, size_t * maxsize);
 gdk_export void MT_vmfree(void *p, size_t size);
@@ -533,7 +536,8 @@ typedef struct {
 	int wrap_tile;          /* unloading has reached end of map? */
 	int last_tile;          /* saving has reached end of map? */
 	int fd;			/* open fd (==-1 for anon vm), retained to give posix_fadvise */
-	int pincnt;		/* incremented while a MIL command uses heap with a random pattern */
+	int usecnt;		/* number of threads accessing the heap now */
+	int random;		/* number of threads accessing the heap randomly now */
 	int writable;
 	int next;
 } MT_mmap_t;
@@ -542,8 +546,6 @@ typedef struct {
 static int do_not_use_posix_fadvise = 0;
 #endif
 
-#define MT_MMAP_TILE (1<<27)
-#define MT_MMAP_BUFSIZE 4096
 MT_mmap_t MT_mmap_tab[MT_MMAP_BUFSIZE];
 int MT_mmap_cur = -1, MT_mmap_first = -1, MT_mmap_free = 0;
 
@@ -557,7 +559,8 @@ MT_mmap_empty(int i)
 	MT_mmap_tab[i].len = 0;
 	MT_mmap_tab[i].writable = 0;
 	MT_mmap_tab[i].fd = -1;
-	MT_mmap_tab[i].pincnt = -1;
+	MT_mmap_tab[i].usecnt = 0;
+	MT_mmap_tab[i].random = 0;
 }
 
 static void
@@ -634,7 +637,8 @@ MT_mmap_new(char *path, void *base, size_t len, int fd, int writable)
 		MT_mmap_tab[i].unload_tile = 0;
 		MT_mmap_tab[i].writable = writable;
 		MT_mmap_tab[i].fd = fd;
-		MT_mmap_tab[i].pincnt = 0;
+		MT_mmap_tab[i].usecnt = 0;
+		MT_mmap_tab[i].random = 0;
 		fd = -fd;
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
@@ -712,6 +716,7 @@ MT_fadvise(void *base, size_t len, int advice)
 #endif
 	return ret;
 }
+
 #endif /* NATIVE_WIN32 */
 
 
@@ -809,51 +814,39 @@ MT_mmap_trim(size_t target, void *fp)
 	/* try to selectively unload pages from the writable regions */
 	if (rss > target) {
 		size_t delta = ((rss - target) + 4 * MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE - 1);
+		int curprio, keepprio, maxprio = 0;
 
-		/* try to unload the previously saved writable heap tiles */
-		for (i = MT_mmap_next(MT_mmap_cur); delta && i != MT_mmap_cur; i = MT_mmap_next(i)) {
-			assert(i >= 0);
-			if (MT_mmap_tab[i].fd >= 0 && MT_mmap_tab[i].writable) {
-				size_t lim = (MT_mmap_tab[i].wrap_tile == 1)?
-						MT_mmap_tab[i].save_tile:MT_mmap_tab[i].len;
-				if (MT_mmap_tab[i].unload_tile >= lim) {
-					MT_mmap_tab[i].unload_tile = 0;
-					MT_mmap_tab[i].wrap_tile++;
-				}
-				while (MT_mmap_tab[i].unload_tile < lim && MT_mmap_tab[i].unload_tile < MT_mmap_tab[i].len) { 
-					MT_mmap_save_tile(i, MT_mmap_tab[i].unload_tile, err);
-					MT_mmap_unload_tile(i, MT_mmap_tab[i].unload_tile, err);
-					MT_mmap_tab[i].unload_tile += MT_MMAP_TILE;
-					if ((delta -= MT_MMAP_TILE) == 0) {
-						rss = MT_getrss();
-						if (rss < target) goto done;
-						delta = ((rss - target) + 4 * MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE - 1);
+		/* try to unload heap tiles, in order of precedence (usecnt) */
+		for(keepprio=0; keepprio <= maxprio; keepprio++) {
+			for (i = MT_mmap_next(MT_mmap_cur); delta && i != MT_mmap_cur; i = MT_mmap_next(i)) {
+				assert(i >= 0);
+
+				curprio = MT_mmap_tab[i].usecnt + 4*MT_mmap_tab[i].random;
+				if (maxprio < curprio) maxprio = curprio;
+
+				if (MT_mmap_tab[i].fd >= 0 && curprio == keepprio) {
+					size_t lim = (MT_mmap_tab[i].wrap_tile == 1)?  MT_mmap_tab[i].save_tile:MT_mmap_tab[i].len;
+					if (MT_mmap_tab[i].unload_tile >= lim) {
+						MT_mmap_tab[i].unload_tile = 0;
+						MT_mmap_tab[i].wrap_tile++;
+					}
+					while (MT_mmap_tab[i].unload_tile < lim && MT_mmap_tab[i].unload_tile < MT_mmap_tab[i].len) { 
+						if (MT_mmap_tab[i].writable) MT_mmap_save_tile(i, MT_mmap_tab[i].unload_tile, err);
+						MT_mmap_unload_tile(i, MT_mmap_tab[i].unload_tile, err);
+						MT_mmap_tab[i].unload_tile += MT_MMAP_TILE;
+						if ((delta -= MT_MMAP_TILE) == 0) {
+							rss = MT_getrss();
+							if (rss < target) {
+								MT_mmap_cur = i;
+								goto done;
+							}
+							delta = ((rss - target) + 4 * MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE - 1);
+						}
 					}
 				}
 			}
 		}
 		rss = MT_getrss();
-	}
-	if (rss > target) {
-		size_t delta = ((rss - target) + 4 * MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE - 1);
-
-		/* in case of real despair, hit all read-only maps */
-		for (i = MT_mmap_next(MT_mmap_cur); delta && i != MT_mmap_cur; i = MT_mmap_next(i)) {
-			assert(i >= 0);
-			if (MT_mmap_tab[i].fd >= 0 && !MT_mmap_tab[i].writable) {
-				if (MT_mmap_tab[i].unload_tile >= MT_mmap_tab[i].len)
-					MT_mmap_tab[i].unload_tile = 0;
-				while (MT_mmap_tab[i].unload_tile < MT_mmap_tab[i].len) {
-					MT_mmap_unload_tile(i, MT_mmap_tab[i].unload_tile, err);
-					MT_mmap_tab[i].unload_tile += MT_MMAP_TILE;
-					if ((delta -= MT_MMAP_TILE) == 0) {
-						rss = MT_getrss();
-						if (rss < target) goto done;
-						delta = ((rss - target) + 4 * MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE - 1);
-					}
-				}
-			}
-		}
 	}
 done:	if (worry > 1) {
 		/* schedule background saves of tiles */
@@ -862,7 +855,7 @@ done:	if (worry > 1) {
 			if (MT_mmap_tab[i].fd >= 0 &&
 			    MT_mmap_tab[i].writable &&
 		 	    MT_mmap_tab[i].last_tile <= 1 && 
-			    (MT_mmap_tab[i].pincnt == 0 || MT_mmap_tab[i].len > target)) {
+			    (MT_mmap_tab[i].random == 0 || MT_mmap_tab[i].len > target)) {
 				if (MT_mmap_tab[i].save_tile == 1) {
 					/* first run, walk backwards until we hit an unsaved tile */
 					for (off = MT_mmap_tab[i].len; off >= MT_MMAP_TILE; off -= MT_MMAP_TILE)
@@ -881,38 +874,28 @@ done:	if (worry > 1) {
 				}
 			}
 		}
-		MT_mmap_cur = i;
 	}
-  bailout:
+bailout:
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	return (worry);
 }
 
+/* a thread informs it is goin to (preload==1) or stops (preload==-1) using a range of memory */
 void
-MT_mmap_pin(void *base, size_t len)
+MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 {
 	int i;
 
 	(void) pthread_mutex_lock(&MT_mmap_lock);
 	i = MT_mmap_idx(base, len);
 	if (i >= 0) {
-		MT_mmap_tab[i].pincnt++;
+		if (writable) MT_mmap_tab[i].writable = (writable > 0);
+		MT_mmap_tab[i].random += (advise == BUF_WILLNEED); /* done as a counter to keep track of multiple threads */
+		MT_mmap_tab[i].usecnt += preload; /* active thread count */
+		if (preload > 0) (void) posix_madvise(base, len, advise);
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 
-}
-
-void
-MT_mmap_unpin(void *base, size_t len)
-{
-	int i;
-
-	(void) pthread_mutex_lock(&MT_mmap_lock);
-	i = MT_mmap_idx(base, len);
-	if (i >= 0) {
-		MT_mmap_tab[i].pincnt--;
-	}
-	(void) pthread_mutex_unlock(&MT_mmap_lock);
 }
 
 void *
