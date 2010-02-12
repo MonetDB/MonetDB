@@ -746,7 +746,7 @@ BATpreload_(BAT *b, int what, int advise) {
 	}
 
 	/* BUN heaps (no need to preload for sequential access) */
-	if ( advise != BUF_SEQUENTIAL && what&USE_HEAD && && b->H->heap.base && pages ) {
+	if ( advise != BUF_SEQUENTIAL && what&USE_HEAD && b->H->heap.base && pages ) {
 		IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
 		limit = (size_t *) (BUNhead(b, BUNlast(b)) - sizeof(size_t)) - 4 * step;
 		i = 
