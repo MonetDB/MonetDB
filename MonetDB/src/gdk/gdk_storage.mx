@@ -711,17 +711,17 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 	/* ! StM: this has not been activated, yet ! */
 	/* BATmadvise(b, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED); */
 
-	/* string heaps (inherent random access) */
-	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base && pages ) {
+	/* VAR heaps (inherent random access) */
+	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base ) {
 		if (b->H->vheap->storage != STORE_MEM && b->H->vheap->free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->H->vheap->base, b->H->vheap->free, preload, BUF_WILLNEED, 0);
 		}
-		if (preload > 0) {
+		if (preload > 0 && pages > 0) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->vheap\n", BATgetId(b), advise);
 			limit = (size_t *) (b->H->vheap->base + b->H->vheap->free) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
 			i = (size_t *) (b->H->vheap->base + (sizeof(size_t) - ((size_t)b->H->vheap->base & (sizeof(size_t) - 1))));
-			for (; i < limit && pages > 0 ; i+= 4*step, pages-= 4) {
+			for (; i < limit && pages > 3 ; i+= 4*step, pages-= 4) {
 				v1 += *i;
 				v2 += *(i + step);
 				v3 += *(i + 2*step);
@@ -733,16 +733,16 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 			}
 		}
 	}
-	if ( what&USE_TAIL && b->T->vheap && b->T->vheap->base  && pages) {
+	if ( what&USE_TAIL && b->T->vheap && b->T->vheap->base ) {
 		if (b->T->vheap->storage != STORE_MEM && b->T->vheap->free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->T->vheap->base, b->T->vheap->free, preload, BUF_WILLNEED, 0);
 		}
-		if (preload > 0) {	
+		if (preload > 0 && pages > 0) {	
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->vheap\n", BATgetId(b), advise);
 			limit = (size_t *) (b->T->vheap->base + b->T->vheap->free - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
 			i = (size_t *) (b->T->vheap->base + (sizeof(size_t) - ((size_t)b->T->vheap->base & (sizeof(size_t) - 1))));
-			for (; i < limit  && pages > 0; i+= 4*step, pages-= 4) {
+			for (; i < limit  && pages > 3; i+= 4*step, pages-= 4) {
 				v1 += *i;
 				v2 += *(i + step);
 				v3 += *(i + 2*step);
@@ -756,16 +756,16 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 	}
 
 	/* BUN heaps (no need to preload for sequential access) */
-	if ( what&USE_HEAD && b->H->heap.base && pages ) {
+	if ( what&USE_HEAD && b->H->heap.base ) {
 		if (b->H->heap.storage != STORE_MEM && b->H->heap.free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->H->heap.base, b->H->heap.free, preload, advise, 0);
 		}
-		if (preload > 0 && advise != BUF_SEQUENTIAL) {
+		if (preload > 0 && pages > 0 && advise != BUF_SEQUENTIAL) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
 			limit = (size_t *) (b->H->heap.base + b->H->heap.free - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-			i = (size_t *) (b->H->heap.base + (sizeof(size_t) - (((size_t) b->H->heap.base) & (sizeof(size_t) - 1))));
-			for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
+			i = (size_t *) (b->H->heap.base + (sizeof(size_t) - ((size_t)b->H->heap.base & (sizeof(size_t) - 1))));
+			for (; i <  limit && pages > 3 ; i+= 4*step, pages-= 4) {
 				v1 += *i;
 				v2 += *(i + step);
 				v3 += *(i + 2*step);
@@ -777,16 +777,16 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 			}
 		}
 	}
-	if ( what&USE_TAIL && b->T->heap.base && pages ) {
+	if ( what&USE_TAIL && b->T->heap.base ) {
 		if (b->T->heap.storage != STORE_MEM && b->T->heap.free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->T->heap.base, b->T->heap.free, preload, advise, 0);
 		}
-		if (preload > 0 && advise != BUF_SEQUENTIAL) {
+		if (preload > 0 && pages > 0 && advise != BUF_SEQUENTIAL) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->heap\n", BATgetId(b), advise);
 			limit = (size_t *) (b->T->heap.base + b->T->heap.free - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-			i = (size_t *) (b->T->heap.base + (sizeof(size_t) - (((size_t) b->T->heap.base) & (sizeof(size_t) - 1))));
-			for (; i < limit && pages > 0; i+= 4*step, pages-= 4) {
+			i = (size_t *) (b->T->heap.base + (sizeof(size_t) - ((size_t)b->T->heap.base & (sizeof(size_t) - 1))));
+			for (; i < limit && pages > 3; i+= 4*step, pages-= 4) {
 				v1 += *i;
 				v2 += *(i + step);
 				v3 += *(i + 2*step);
@@ -799,19 +799,19 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		}
 	}
 
-	/* hash indices (inherent random access) */
+	/* HASH indices (inherent random access) */
 	if ( what&USE_HHASH || what&USE_THASH )
 		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
-	if ( what&USE_HHASH && b->H->hash && b->H->hash->heap && b->H->hash->heap->base && pages ) {
+	if ( what&USE_HHASH && b->H->hash && b->H->hash->heap && b->H->hash->heap->base ) {
 		if (b->H->hash->heap->storage != STORE_MEM && b->H->hash->heap->free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->H->hash->heap->base, b->H->hash->heap->free, preload, BUF_WILLNEED, 0);
 		}
-		if (preload > 0) {
+		if (preload > 0 && pages > 0) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->hash\n", BATgetId(b), advise);
 			limit = (size_t *) (b->H->hash->heap->base + b->H->hash->heap->size - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
 			i = (size_t *) (b->H->hash->heap->base + (sizeof(size_t) - ((size_t)b->H->hash->heap->base & (sizeof(size_t) - 1))));
-			for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
+			for (; i <  limit && pages > 3 ; i+= 4*step, pages-= 4) {
 				v1 += *i;
 				v2 += *(i + step);
 				v3 += *(i + 2*step);
@@ -823,16 +823,16 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 			}
 		}
 	}
-	if ( what&USE_THASH && b->T->hash && b->T->hash->heap && b->T->hash->heap->base && pages ) {
+	if ( what&USE_THASH && b->T->hash && b->T->hash->heap && b->T->hash->heap->base ) {
 		if (b->T->hash->heap->storage != STORE_MEM && b->T->hash->heap->free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->T->hash->heap->base, b->T->hash->heap->free, preload, BUF_WILLNEED, 0);
 		}
-		if (preload > 0) {
+		if (preload > 0 && pages > 0) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->hash\n", BATgetId(b), advise);
 			limit = (size_t *) (b->T->hash->heap->base + b->T->hash->heap->size - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
 			i = (size_t *) (b->T->hash->heap->base + (sizeof(size_t) - ((size_t)b->T->hash->heap->base & (sizeof(size_t) - 1))));
-			for (; i <  limit && pages > 0 ; i+= 4*step, pages-= 4) {
+			for (; i <  limit && pages > 3 ; i+= 4*step, pages-= 4) {
 				v1 += *i;
 				v2 += *(i + step);
 				v3 += *(i + 2*step);
