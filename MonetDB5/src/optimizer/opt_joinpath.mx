@@ -161,7 +161,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	/* collect all candidates */
 	limit= mb->stop;
 	for(i=0, p= getInstrPtr(mb, i); i< limit; i++, p= getInstrPtr(mb, i))
-	if ( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinRef)
+	if ( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinPathRef)
 		for ( j= p->retc; j< p->argc-1; j++){
 				for (k= 0; k < top; k++)
 				if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p)){
