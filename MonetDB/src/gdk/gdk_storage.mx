@@ -716,7 +716,7 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		if (b->H->vheap->storage != STORE_MEM && b->H->vheap->free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->H->vheap->base, b->H->vheap->free, preload, BUF_WILLNEED, 0);
 		}
-		if (preload) {
+		if (preload > 0) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->vheap\n", BATgetId(b), advise);
 			limit = (size_t *) (b->H->vheap->base + b->H->vheap->free) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
@@ -737,7 +737,7 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		if (b->T->vheap->storage != STORE_MEM && b->T->vheap->free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->T->vheap->base, b->T->vheap->free, preload, BUF_WILLNEED, 0);
 		}
-		if (preload) {	
+		if (preload > 0) {	
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->vheap\n", BATgetId(b), advise);
 			limit = (size_t *) (b->T->vheap->base + b->T->vheap->free - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
@@ -760,7 +760,7 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		if (b->H->heap.storage != STORE_MEM && b->H->heap.free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->H->heap.base, b->H->heap.free, preload, advise, 0);
 		}
-		if (preload && advise != BUF_SEQUENTIAL) {
+		if (preload > 0 && advise != BUF_SEQUENTIAL) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
 			limit = (size_t *) (b->H->heap.base - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
@@ -781,7 +781,7 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		if (b->T->heap.storage != STORE_MEM && b->T->heap.free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->T->heap.base, b->T->heap.free, preload, advise, 0);
 		}
-		if (preload && advise != BUF_SEQUENTIAL) {
+		if (preload > 0 && advise != BUF_SEQUENTIAL) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->heap\n", BATgetId(b), advise);
 			limit = (size_t *) (b->T->heap.base - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
@@ -806,7 +806,7 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		if (b->H->hash->heap->storage != STORE_MEM && b->H->hash->heap->free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->H->hash->heap->base, b->H->hash->heap->free, preload, BUF_WILLNEED, 0);
 		}
-		if (preload) {
+		if (preload > 0) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->hash\n", BATgetId(b), advise);
 			limit = (size_t *) (b->H->hash->heap->base + b->H->hash->heap->size - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
@@ -827,7 +827,7 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		if (b->T->hash->heap->storage != STORE_MEM && b->T->hash->heap->free > MT_MMAP_TILE) {
 			MT_mmap_inform(b->T->hash->heap->base, b->T->hash->heap->free, preload, BUF_WILLNEED, 0);
 		}
-		if (preload) {
+		if (preload > 0) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->hash\n", BATgetId(b), advise);
 			limit = (size_t *) (b->T->hash->heap->base + b->T->hash->heap->size - sizeof(size_t)) - 4 * step;
 			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
