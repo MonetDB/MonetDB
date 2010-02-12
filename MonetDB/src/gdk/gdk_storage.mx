@@ -708,9 +708,6 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 	size_t step = MT_pagesize()/sizeof(size_t);
 	size_t pages = (size_t) (0.8 * MT_npages());
 
-	/* ! StM: this has not been activated, yet ! */
-	/* BATmadvise(b, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED); */
-
 	/* VAR heaps (inherent random access) */
 	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base ) {
 		if (b->H->vheap->storage != STORE_MEM && b->H->vheap->free > MT_MMAP_TILE) {
@@ -846,9 +843,6 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 	}
 	if ( what&USE_HHASH || what&USE_THASH )
 		gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
-
-	/* ! StM: this has not been activated, yet ! */
-	/* BATmadvise(b, advise, advise, BUF_WILLNEED, BUF_WILLNEED); */
 
 	return v1 + v2 + v3 + v4;
 }
