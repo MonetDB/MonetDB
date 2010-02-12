@@ -390,6 +390,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	bn->T->nonil = r->T->nonil & !nil_on_miss;
 	return bn;
       bunins_failed:
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_HEAD|USE_TAIL, r_scan > 0 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -475,9 +477,13 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	@:joincheck(BAThashjoin,l->ttype,r->htype)@
 	@:joinbat(JOIN_EQ,BAThashjoin(l,r,BUN_NONE),estimate)@
 
-	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
-	if (BATprepareHash(r))
+	BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
+	if (BATprepareHash(r)) {
+		_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
 		return NULL;
+	}
+	_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	switch (any = ATOMstorage(l->ttype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
@@ -1434,7 +1440,6 @@ if no match can be found.
 	BUN p, q;
 	@4
 
-	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	BATloop(l, p, q) {
 		BUN i = 0;
@@ -1449,7 +1454,6 @@ if no match can be found.
 			@3(bn, s, BUNhead(li, p), nilt);
 		}
 	}
-	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	_BATpreload(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 }
 break;
@@ -1507,13 +1511,13 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	if (!bn)
 		goto bunins_failed;
 
+	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	if (BAThdense(r)) {
 		/* positional algorithm: hash on void column would give error and is stupid */
 		ptr nilt = ATOMnilptr(r->ttype);
 		bit nonil = TRUE;
 		BUN p, q, w, s = BUNfirst(bn);
 
-		BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 		BATpreload_(r, USE_TAIL, BATtordered(l)&1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 		BATloop(l, p, q) {
 			oid v = *(oid *) BUNtail(li, p);
@@ -1528,7 +1532,6 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 			bunfastins_nocheck(bn, s, BUNhead(li, p), t, Hsize(bn), Tsize(bn));
 			s++;
 		}
-		_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 		_BATpreload(r, USE_TAIL, BATtordered(l)&1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 		bn->tsorted = ((BATtordered(l) & BATtordered(r) & 1) && nonil) ? GDK_SORTED : 0;
 	} else {
@@ -1579,6 +1582,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 @c
 		bn->tsorted = 0;
 	}
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	/* set sorted flags by hand, because we used BUNfastins() */
 	if (r->hkey) {
 		ALIGNsetH(bn, l);	/* always 1 hit, so columns are equal */
@@ -1602,6 +1606,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	return bn;
 
       bunins_failed:
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1879,6 +1884,10 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 	bn->T->nonil = r->T->nonil;
 	return bn;
       bunins_failed:
+	if (!optimize) {
+		_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		_BATpreload(r, USE_HEAD|USE_TAIL, BATcount(l) <= 1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
+	}
 	BBPreclaim(bn);
 	return NULL;
 }

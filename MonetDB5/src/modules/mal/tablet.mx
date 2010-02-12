@@ -1338,6 +1338,7 @@ TABLETcollect_bats(Tablet * as)
 		BATpropcheck(BATmirror(fmt[i].c[0]), BATPROPS_ALL);
 		/* drop the hashes, we don't need them now  and they consume space */
 		HASHremove(BATmirror(fmt[i].c[0]));
+		_BATpreload(fmt[i].c[0], USE_ALL, BUF_WILLNEED);
 
 		if (cnt != BATcount(fmt[i].c[0])) {
 			if ( as->error == 0) /* a new error */

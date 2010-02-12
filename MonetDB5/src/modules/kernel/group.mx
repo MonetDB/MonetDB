@@ -431,6 +431,7 @@ map2histo(BAT *map)
 	BATkey(BATmirror(bn),FALSE);
 	bn->tsorted = 0;
 bunins_failed:
+	_BATpreload(map, USE_HEAD, BUF_SEQUENTIAL);
 	if (map)
 		BBPreclaim(map);
 	return bn;
@@ -530,6 +531,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		GDKfree(hash);
 	return m ? NULL : map2histo(map);
 bunins_failed:
+	_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 	BBPreclaim(bn);
 	if (hash && !m)
 		GDKfree(hash);
@@ -735,6 +737,7 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 			/* + 4 for an average chain list of 4 */
 			r += (BUN) (((dbl)cnt/SAMPLE_SIZE)/(*(wrd*)Tloc(histo,p)+4));
 		}
+		_BATpreload(histo, USE_TAIL, BUF_SEQUENTIAL);
 		BBPunfix(histo->batCacheid);
 		BBPunfix(map->batCacheid);
 		if (histo != ct_histo)
@@ -817,6 +820,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	return m?NULL:map2histo(map);
 bunins_failed:
+	_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 	if (hash && !m)
 		GDKfree(hash);
 	BBPreclaim(bn);
@@ -1064,6 +1068,7 @@ CThistosum(
 			*z += i;
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	res->hsorted = res->tsorted = 0;
 	if (!(res->batDirty&2)) res = BATsetaccess(res, BAT_READ);
 	*retval = res;
@@ -2320,6 +2325,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 			break;
 		}
 	}
+	_BATpreload(e, USE_ALL, BUF_WILLNEED);
 	GDKfree(extremes);
 	if (!ret) {
 		BBPreclaim(bn);

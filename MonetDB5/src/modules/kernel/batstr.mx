@@ -250,9 +250,11 @@ str STRbat@1(int *ret, int *l)
 			@2(yp,x);
 		bunfastins(bn, h, yp);
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
 bunins_failed:
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "batstr.@1", OPERATION_FAILED " During bulk operation");
@@ -289,9 +291,11 @@ str STRbat@1(int *ret, int *l)
 			GDKfree(y);
 	}
 	bn->T->nonil = 0;
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
 bunins_failed:
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "batstr.@1", OPERATION_FAILED " During bulk operation");
@@ -337,9 +341,11 @@ STRbat@2Cst(int *ret, int *l, str *cst)
 		bunfastins(bn, h, &y);
 	}
 	bn->tsorted = (BATtordered(b)&1)?@3:0;
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "batstr.@1", OPERATION_FAILED " During bulk operation");
@@ -385,12 +391,16 @@ STRbat@2(int *ret, int *l, int *r)
 		bunfastins(bn, h, &y);
 	}
 	bn->T->nonil = 0;
-	BBPreleaseref(right->batCacheid);
 	bn->tsorted = (BATtordered(left)&BATtordered(right)&1)?@3:0;
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
+	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret, bn, left);
 	return MAL_SUCCEED;
 
 bunins_failed:
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	BBPunfix(*ret);
@@ -427,11 +437,15 @@ str STRbat@1(int *ret, int *l, int *r)
 		@7;
 	}
 	bn->T->nonil = 0;
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	BBPunfix(*ret);
@@ -460,10 +474,12 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 		@7;
 	}
 	bn->T->nonil = 0;
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(*ret);
 	throw(MAL, "batstr"@5, OPERATION_FAILED " During bulk operation");
@@ -495,11 +511,15 @@ str STRbat@1(int *ret, int *l, int *r)
 		@7;
 	}
 	bn->T->nonil = 0;
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	BBPunfix(*ret);
@@ -528,10 +548,12 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 		@7;
 	}
 	bn->T->nonil = 0;
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(left->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr"@5, OPERATION_FAILED " During bulk operation");
@@ -559,10 +581,12 @@ str STRcst@1bat(int *ret, @3 *cst, int *r)
 		@7;
 	}
 	bn->T->nonil = 0;
+	_BATpreload(right, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	finalizeResult(ret,bn,right);
 	return MAL_SUCCEED;
 
 bunins_failed:
+	_BATpreload(right, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(right->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr"@5, OPERATION_FAILED " During bulk operation");
@@ -604,9 +628,11 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 			GDKfree(yp);
 	}
 	bn->T->nonil = 0;
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bn->batCacheid);
 	throw(MAL, "batstr.subString", OPERATION_FAILED " During bulk operation");
@@ -645,6 +671,7 @@ STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc)
 	}
 	bn->T->nonil = 0;
 bunins_failed:
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -692,6 +719,7 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 	}
 	bn->T->nonil = 0;
 bunins_failed:
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -746,12 +774,14 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 		GDKfree(*vp);
 	}
 	bn->T->nonil = 0;
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(start->batCacheid);
 	BBPreleaseref(length->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(start->batCacheid);
 	BBPreleaseref(length->batCacheid);
@@ -789,10 +819,12 @@ str STRbatreplace(int *ret, int *l, str *pat, str *s2)
 		GDKfree(*vp);
 	}
 	bn->T->nonil = 0;
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
 bunins_failed:
+	_BATpreload(left, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(left->batCacheid);
 	BBPunfix(*ret);
 	throw(MAL, "batstr.replace", OPERATION_FAILED " During bulk operation");

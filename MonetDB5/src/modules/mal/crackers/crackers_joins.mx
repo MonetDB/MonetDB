@@ -115,6 +115,7 @@ CRKjoin(BAT *bn, BAT *l, BAT *r) {
 
 	BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
 	if (BATprepareHash(r)){
+		_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
 		T2=GDKusec();
 		return T2-T1;
 	}
