@@ -37,7 +37,7 @@ function user.main():void;
     io.print(id);
     d:bat[:void,:bte]  := tokenizer.getDepth();
     io.print(d);
-    h:bat[:void,:wrd]  := tokenizer.getHeight();
+    h:bat[:void,:oid]  := tokenizer.getHeight();
     io.print(h);
     level0:bat[:oid,:str]  := tokenizer.getLevel(0);
     level1:bat[:oid,:str]  := tokenizer.getLevel(1);
@@ -47,9 +47,9 @@ function user.main():void;
     io.print(level1);
     io.print(level2);
     io.print(level3);
-    cnt:bat[:int,:wrd]  := tokenizer.getCount();
+    cnt:bat[:void,:wrd]  := tokenizer.getCount();
     io.print(cnt);
-    cnt:bat[:int,:wrd]  := tokenizer.getCardinality();
+    cnt:bat[:void,:wrd]  := tokenizer.getCardinality();
     io.print(cnt);
     tokenizer.close();
 end main;
@@ -57,19 +57,19 @@ end main;
 [ 4@0 ]
 #-----------------#
 # h	t	  # name
-# void	chr	  # type
+# void	bte	  # type
 #-----------------#
-[ 0@0,	  '\003'  ]
-[ 1@0,	  '\004'  ]
-[ 2@0,	  '\004'  ]
-[ 3@0,	  '\003'  ]
-[ 4@0,	  '\004'  ]
-[ 5@0,	  '\003'  ]
-[ 6@0,	  '\004'  ]
-[ 7@0,	  '\004'  ]
-[ 8@0,	  '\004'  ]
-[ 9@0,	  '\003'  ]
-[ 10@0,	  '\003'  ]
+[ 0@0,	  3	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  4	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  3	  ]
+[ 6@0,	  4	  ]
+[ 7@0,	  4	  ]
+[ 8@0,	  4	  ]
+[ 9@0,	  3	  ]
+[ 10@0,	  3	  ]
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
@@ -118,20 +118,20 @@ end main;
 [ 3@0,	  "~mk"		  ]
 #-----------------#
 # h	t	  # name
-# int	lng	  # type
+# void	lng	  # type
 #-----------------#
-[ 0,	  2	  ]
-[ 1,	  2	  ]
-[ 2,	  5	  ]
-[ 3,	  6	  ]
+[ 0@0,	  2	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  5	  ]
+[ 3@0,	  6	  ]
 #-----------------#
 # h	t	  # name
-# int	lng	  # type
+# void	lng	  # type
 #-----------------#
-[ 0,	  2	  ]
-[ 1,	  1	  ]
-[ 2,	  5	  ]
-[ 3,	  2	  ]
+[ 0@0,	  2	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  5	  ]
+[ 3@0,	  2	  ]
 
 # 14:46:36 >  
 # 14:46:36 >  Done.

@@ -90,7 +90,7 @@ command getHeight():bat[:void,:oid]
 address TKNZRgetHeight
 comment "administrative function that returns the height bat";
 
-command getCount():bat[:oid,:wrd]
+command getCount():bat[:void,:wrd]
 address TKNZRgetCount
 comment "debuging function that returns the size of the bats at each level";
 
@@ -647,6 +647,7 @@ TKNZRgetCount (int *r) {
 	b= BATnew(TYPE_void, TYPE_wrd, tokenDepth+1);
 	if (b == NULL)
 		throw(MAL, "tokenizer.getCount", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for (i = 0; i < tokenDepth; i++) {
 		cnt = (wrd) BATcount(tokenBAT[i]);
 		BUNappend(b, &cnt, FALSE);
@@ -666,6 +667,7 @@ TKNZRgetCardinality (int *r) {
 	b= BATnew(TYPE_void,TYPE_wrd, tokenDepth+1);
 	if (b == NULL)
 		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for (i = 0; i < tokenDepth; i++){
 		bn = (BAT *) BATkunique(BATmirror(tokenBAT[i]));
 		cnt = (wrd) BATcount(bn);
