@@ -626,7 +626,8 @@ all resource contention effects.
 Another option would be to maintain a priority queue of 
 suspended instructions.
 @c
-#define heapinfo(X) if((X) && (X)->base) vol = (X)->maxsize; else vol = 0;
+#define heapinfo(X) if((X) ) vol = Hloc((X), BUNlast((X)))-Hloc((X), BUNfirst((X))) ; else vol = 0;
+#define vheapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
 #define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
 
 lng
@@ -635,38 +636,21 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 	int i;
 	lng t, total = 0, vol=0, guess=0;
 	BUN cnt = 0;
-	BAT *b, *bv;
+	BAT *b;
 	
 	for(i=  pci->retc; i< pci->argc; i++) {
 		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 			if (b==NULL) 
 				continue;
-			bv = NULL;
 			t = total;
-			if ( isVIEW(b) &&  VIEWhparent(b) ) {
-				bv = BATdescriptor(VIEWhparent(b));
-				heapinfo(&bv->H->heap); total += vol;
-				heapinfo(bv->H->vheap); total += vol;
-				hashinfo(bv->H->hash); total += vol;
-				BBPunfix(bv->batCacheid);
-			} else { 
-				heapinfo(&b->H->heap); total += vol;
-				heapinfo(b->H->vheap); total += vol;
-				hashinfo(b->H->hash); total += vol;
-			}
+			heapinfo(b); total += vol;
+			vheapinfo(b->H->vheap); total += vol;
+			hashinfo(b->H->hash); total += vol;
 
-			if (isVIEW(b) && VIEWtparent(b) ) {
-				bv = BATdescriptor(VIEWtparent(b));
-				heapinfo(&bv->H->heap); total += vol;
-				heapinfo(bv->H->vheap); total += vol;
-				hashinfo(bv->H->hash); total += vol;
-				BBPunfix(bv->batCacheid);
-			} else { 
-				heapinfo(&b->T->heap); total += vol;
-				heapinfo(b->T->vheap); total += vol;
-				hashinfo(b->T->hash); total += vol;
-			}
+			heapinfo(b); total += vol;
+			vheapinfo(b->T->vheap); total += vol;
+			hashinfo(b->T->hash); total += vol;
 			/* prepare for hashes */
 			if ( b->H->hash == NULL && b->hsorted == 0  &&
 			     b->T->hash == NULL && b->tsorted == 0 ){
@@ -704,10 +688,10 @@ DFLOWclaim(lng claim)
 		if (memoryclaims == 0 || memorypool > claim ){
 			memorypool -= claim;
 			memoryclaims ++;
-			PARDEBUG{
+#ifdef DEBUG_MEMORY_CLAIM
 			stream_printf(GDKout,"#DFLOWclaim %3d  thread %d pool " LLFMT " claim " LLFMT"\n",
 				memoryclaims, THRgettid(), memorypool, claim);
-			}
+#endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
 		} 
@@ -718,10 +702,10 @@ DFLOWclaim(lng claim)
 	assert(memoryclaims > 0 );
 	memorypool += -claim;
 	memoryclaims --;
-	PARDEBUG{
+#ifdef DEBUG_MEMORY_CLAIM
 		stream_printf(GDKout,"#DFLOWrelease %3d thread %d pool " LLFMT " claim " LLFMT"\n",
 			memoryclaims, THRgettid(), memorypool, claim);
-	}
+#endif
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return 0;
 }
@@ -793,7 +777,7 @@ q_dequeue(queue *q)
 	/* LIFO favors garbage collection*/
 	r = q->data[--q->last];	
 #else
-	/* FIFO */
+	/* FIFO favors sub plan execution */
 	r = q->data[q->first];
 	q->first = (q->first+1)&(q->size-1); 
 #endif
@@ -1726,17 +1710,6 @@ the bind(namespace, batname, mode) operation. [todo]
 				backup[i]=0;
 				sbackup[i]=0;
 			} 
-/*
-This property setting facility leads to a performance
-loss of a factor 4(?) on the micro benchmarks.
-It does not belong here, but should be propagated 
-to the operators.
-			BAT *b;
-			if ((b = BATdescriptor(bid)) != NULL) {
-				BATsettrivprop(b);
-				BBPunfix(bid);
-			}
-*/
 		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
