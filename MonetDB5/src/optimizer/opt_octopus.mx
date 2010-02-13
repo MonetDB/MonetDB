@@ -164,7 +164,7 @@ comment "Derive the number of legs to be used for query function";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_OCTOPUS           show partial result */
+/*#define DEBUG_OPT_OCTOPUS         show partial result */
 
 opt_export str OPTlegAdvice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export int OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -188,6 +188,7 @@ pack instructions and collect all dependent instructions.
 The original block is trimmed as far as needed.
 @c
 static lng octopusSeq = 0;
+sht bidStrategy = 1;
 
 static int
 OCTinitcode(Client cntxt, MalBlkPtr mb){
@@ -238,18 +239,19 @@ OCTexitcode(MalBlkPtr mb, int conn,int varid){
 }
 
 static MalBlkPtr 
-OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr sig, InstrPtr pci, int start, int idx, int v2){
+OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr *old, InstrPtr pci, int start, int idx, int v2,
+int tcnt, int *wnm, int *tnm, int **sch){
 	MalBlkPtr tm = NULL;
-	InstrPtr p = NULL, q;
-	int varid= pci->argv[idx],i,j,top=0, fnd,tbd;
+	InstrPtr p = NULL, q, sig = old[0];
+	int varid= pci->argv[idx],i,j,top=0, fnd, k;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
 	int *alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
 	str name= NULL, name2= NULL;
 	Symbol s;
-	ValRecord cst;
-	int conn=0;
+/*	ValRecord cst; */
+	int conn=0, tidx=idx-1;
 
 	/* check if the head is properly administered for Octopus */
 	SABAOTHgetLocalConnection(&name);
@@ -272,7 +274,8 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr sig, InstrPtr pci, int start, 
 	/* locate the last assignment for varid */
 	fnd = -1;
 	for (i = start; i > 0; i--){
-		p= getInstrPtr(mb,i);
+/*		p= getInstrPtr(mb,i); */
+		p = old[i];
 		for (j=0; j<p->retc; j++)
 			if ( getArg(p,j) == varid){
 				fnd= j;
@@ -294,7 +297,8 @@ Find the instructions needed. Beware pack operations
 already have been handled and produce their target.
 @c
 	for (; i > 0; i--){
-		p= getInstrPtr(mb,i);
+/*		p= getInstrPtr(mb,i); */
+		p = old[i];
 		fnd = 0;
 		if ( p->barrier ){
 			for (j = 0; j < p->argc; j++)
@@ -311,36 +315,41 @@ already have been handled and produce their target.
 	}
 
 /*	snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
-		getFunctionId(getInstrPtr(mb,0)),varid); */
+		getFunctionId(getInstrPtr(mb,0)),varid); 
 
-	snprintf(buf,BUFSIZ,"tentacle_"LLFMT"_%d", mb->octid,varid);
-	name =  putName(buf,strlen(buf));
+	snprintf(buf,BUFSIZ,"tentacle_"LLFMT"_%d", mb->octid,varid); */
+	name = (str) getVarValue(mb, tnm[tidx]);
+	putName(name,strlen(name));
 
 	snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->octid);
 	name2 =  putName(buf,strlen(buf));
 
-	q= newFcnCall(mb,octopusRef, name2);
-	setArgType(mb,q,0,getVarType(mb,varid));
-	setVarUDFtype(mb,getArg(q,0));
-	cst.vtype = TYPE_str;
+/*	cst.vtype = TYPE_str;
 	snprintf(buf,BUFSIZ,"tbd_%d",varid); 
 	cst.val.sval= GDKstrdup(buf);
 	cst.len= (int) strlen(cst.val.sval);
-	tbd = defConstant(mb, TYPE_str, &cst);
-	q= pushArgument(mb,q,tbd);
-	q= pushStr(mb,q,name);
-	q= pushArgument(mb,q,v2);
-	needed[varid]= 1;
-	for (j= sig->retc; j <  sig->argc; j++)
-		q = pushArgument(mb,q,getArg(sig, j));
-	getArg(pci,idx) = getArg(q,0);
+	tbd = defConstant(mb, TYPE_str, &cst); */
 
-	/* create the tentacle procedure */
+/* generate tentacle CALLS: every tentacle is called once on each worker: tcnt times */
+	for ( k = 0; k < tcnt; k++ ){
+		q= newStmt2(mb,octopusRef, name2);
+		setArgType(mb,q,0,getVarType(mb,varid));
+		setVarUDFtype(mb,getArg(q,0));
+		q= pushArgument(mb,q,sch[k][tidx]);
+		q= pushArgument(mb,q,wnm[k]);
+		q= pushArgument(mb,q,tnm[tidx]);
+		q= pushArgument(mb,q,v2);
+		needed[varid]= 1;
+		for (j= sig->retc; j <  sig->argc; j++)
+			q = pushArgument(mb,q,getArg(sig, j));
+	}
+	
+	/* create the TENTACLE procedure */
 	s= newFunction(octopusRef,name,FUNCTIONsymbol);
 	tm= s->def;
 	tm->keephistory= mb->keephistory;
 	p= getInstrPtr(tm,0);
-	for(i=q->retc+2; i<q->argc; i++){
+	for(i=q->retc+3; i<q->argc; i++){
 		alias[getArg(q,i)] = cloneVariable(tm,mb,getArg(q,i));
 		p= pushArgument(tm,p, alias[getArg(q,i)]);
 	}
@@ -400,16 +409,20 @@ already have been handled and produce their target.
 static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr q, p, sig, *old;
+	InstrPtr q, p, sig, *old, r;
 	int last=0, i, j, limit, actions=0, arg[1024];
 	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
 	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm = NULL, tmb;
 	Symbol s2;
 	int target= -1, update=0, autocommit=0;
 	int version,v2;
-	int k,l;
+	int k,l, rexit, bs, tcnt;
 	char buf[BUFSIZ];
-
+	ValRecord cst;
+	int *wnm,*tnm;	/* array indices to var table where workers and tentacle names are stored */
+	int **bid;		/* array index to bids variables */
+	int **sch;		/* array index to schedule variables */
+	static str registerRef = 0;
 
 	if ( tentacle == NULL)
 		return 0;
@@ -433,6 +446,8 @@ when scheduled correctly, would not lead to duplicate work.
 @c
 	(void) fixModule(cntxt->nspace,octopusRef);
 
+	if (registerRef == 0)
+		registerRef = putName("register",8);
 	limit = mb->stop;
 	old = mb->stmt;
 
@@ -471,18 +486,21 @@ when scheduled correctly, would not lead to duplicate work.
 		}
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) && 
 			i == target && tn + p->argc - p->retc < maxtn){
-			InstrPtr qq;
-			int conn,dbvar,qvar;
+			InstrPtr qq, mp;
+			int conn,dbvar,qvar,schvar;
 
+			tcnt = p->argc - p->retc;
 			/* prepare the exec_ procedure */
 			snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->octid);
 			s2= newFunction(octopusRef, putName(buf,strlen(buf)), FUNCTIONsymbol);
 			sm= s2->def;
 			q= getInstrPtr(sm,0);
 			setArgType(sm,q,0,getArgType(mb,p,1));
+			schvar = newVariable(sm,GDKstrdup("scheduled"),TYPE_bte);
 			dbvar= newVariable(sm,GDKstrdup("dbname"),TYPE_str);
 			qvar = newVariable(sm,GDKstrdup("query"),TYPE_str);
 			version= newVariable(sm,GDKstrdup("version"),TYPE_int);
+			q= pushArgument(sm,q,schvar);
 			q= pushArgument(sm,q,dbvar);
 			q= pushArgument(sm,q,qvar);
 			q= pushArgument(sm,q,version);
@@ -498,6 +516,93 @@ when scheduled correctly, would not lead to duplicate work.
 			getArg(q,0)= getArg(p,0);
 			q= pushNil(mb,q, getVarType(mb, getArg(p,0)));
 
+			/* Generate register block */
+			r = newStmt2(mb,schedulerRef,registerRef);
+			r->barrier = BARRIERsymbol;
+			setArgType(mb,r,0, TYPE_bit);
+			rexit = getArg(r,0);
+
+			/* generate string constants holding worker and tentacle names */
+			cst.vtype = TYPE_str;
+			
+			wnm = (int*) GDKzalloc(sizeof(int) * tcnt);
+			tnm = (int*) GDKzalloc(sizeof(int) * tcnt);
+			bid = (int**) GDKzalloc(sizeof(int*) * tcnt);
+			sch = (int**) GDKzalloc(sizeof(int*) * tcnt);
+			for ( j= 0; j < tcnt; j++){
+				snprintf(buf,BUFSIZ,"worker_%d",j); 
+				cst.val.sval= GDKstrdup(buf);
+				cst.len= (int) strlen(cst.val.sval);
+				wnm[j] = defConstant(mb, TYPE_str, &cst);
+	
+				snprintf(buf,BUFSIZ,"tentacle_"LLFMT"_%d", mb->octid,p->argv[j]); 
+				cst.val.sval= GDKstrdup(buf);
+				cst.len= (int) strlen(cst.val.sval);
+				tnm[j] = defConstant(mb, TYPE_str, &cst);
+
+				bid[j] = (int*) GDKzalloc(sizeof(int) * tcnt);
+				sch[j] = (int*) GDKzalloc(sizeof(int) * tcnt);
+			}
+			
+			for ( j= 0; j < tcnt; j++)
+				for ( k= 0; k < tcnt; k++){
+					r = newFcnCall(mb,octopusRef, registerRef);
+					r = pushArgument(mb,r,wnm[k]);
+					r = pushArgument(mb,r,tnm[j]);
+			}
+
+			r = newAssignment(mb);
+			r->barrier= EXITsymbol;
+			getArg(r,0) = rexit;
+
+			/* Generate bidding block */
+			for ( j = 0; j < tcnt; j++)
+				for ( k = 0; k < tcnt; k++){
+					r = newAssignment(mb);
+					setArgType(mb,r,0,TYPE_lng);
+					pushLng(mb,r,(lng)-1);
+					bid[k][j] = getArg(r,0);
+			}
+			r = newStmt2(mb,languageRef,dataflowRef);
+			r->barrier = BARRIERsymbol;
+			setArgType(mb,r,0, TYPE_int);
+			rexit = getArg(r,0);
+
+			cst.vtype = TYPE_sht;
+			cst.val.shval = bidStrategy;
+			bs = defConstant(mb, TYPE_sht, &cst);
+			for ( j = 0; j < tcnt; j++)
+				for ( k = 0; k < tcnt; k++){
+					r = newStmt2(mb,octopusRef, putName("getBid",6));
+					r = pushArgument(mb,r,wnm[k]);
+					r = pushArgument(mb,r,tnm[j]);
+					r = pushArgument(mb,r,bs);
+		/*			setArgType(mb,r,0,TYPE_lng);*/
+					setVarUDFtype(mb,getArg(r,0));
+					getArg(r,0) = bid[k][j];
+			}
+
+			r = newAssignment(mb);
+			r->barrier= EXITsymbol;
+			getArg(r,0) = rexit;
+
+			/* Generate call to bid scheduling */
+			r = newStmt2(mb, schedulerRef, putName("makeSchedule",12));
+			setArgType(mb,r,0, TYPE_bte);
+			setVarUDFtype(mb,getArg(r,0));
+			for ( k = 0; k < tcnt; k++)
+				for ( j= 0; j < tcnt; j++){
+					sch[k][j] = newTmpVariable(mb, TYPE_bte);
+					r = pushArgument(mb,r,sch[k][j]);
+			}
+			r->retc = tcnt * tcnt +1;
+			r = pushInt(mb,r,tcnt);
+			for ( k = 0; k < tcnt; k++)
+				for ( j= 0; j < tcnt; j++)
+					r = pushArgument(mb,r,bid[k][j]);
+
+			/* Execution block */
+
 			/* barrier (go,version):= scheduler.octopus(timeout); */
 			qq= q= newStmt(mb,schedulerRef,octopusRef);
 			setArgType(mb,q,0, TYPE_bit);
@@ -508,9 +613,17 @@ when scheduled correctly, would not lead to duplicate work.
 			q->barrier = BARRIERsymbol;
 
 			for ( j= p->retc; j<p->argc; j++)
-				tentacle[tn++] =  OPTtentacle(cntxt,mb,sig,p,mb->stop-1,j,v2);
+				tentacle[tn++] = OPTtentacle(cntxt,mb,old,p,i-1,j,v2,tcnt,wnm,tnm,sch);
 
-			pushInstruction(mb,p);
+/*			pushInstruction(mb,p); */
+
+			/* create new mat.pack() instruction */
+			mp = newFcnCall(mb,matRef,packRef);
+			getArg(mp,0) = getArg(p,0);
+			for ( k = getPC(mb,qq) + 1; k < getPC(mb,mp); k++) {
+				mp = pushArgument(mb,mp,getArg(getInstrPtr(mb,k),0)); 
+			}
+/*			freeInstruction(p); */
 
 			/* exit c; */
 			q= newAssignment(mb);
@@ -521,6 +634,20 @@ when scheduled correctly, would not lead to duplicate work.
 			q->argc=2;
 
 			/* now finalize the exec operation */
+
+			/* exec_qry:= nil; */
+			q = newAssignment(sm);
+			getArg(q,0) = getArg(getInstrPtr(sm,0),0);
+			q = pushNil(sm,q,getArgType(sm,q,0));
+			
+			/* barrier cond:= calc.>(i,0); */
+			r = newFcnCall(sm,calcRef,putName(">",1));
+			r->barrier = BARRIERsymbol;
+			rexit = getArg(r,0);  
+			setArgType(sm,r,0,TYPE_bit);
+			r = pushArgument(sm,r,schvar);
+			r = pushBte(sm,r,0);
+
 			q = newStmt(sm, remoteRef,connectRef);
 			conn= getArg(q,0);
 			q = pushArgument(sm, q, dbvar);
@@ -582,11 +709,19 @@ when scheduled correctly, would not lead to duplicate work.
 			q = newStmt(sm, remoteRef,disconnectRef);
 			pushArgument(sm,q,conn);
 
-			/* return exec_qry:= l; */
+			/* exec_qry:= l; */
+			q= newAssignment(sm);
+			getArg(q,0)= getArg(getInstrPtr(sm,0),0);
+			pushArgument(sm,q,l);
+
+			r = newAssignment(sm);
+			r->barrier= EXITsymbol;
+			getArg(r,0) = rexit;
+
+			/* return exec_qry; */
 			q= newAssignment(sm);
 			q->barrier= RETURNsymbol;
 			getArg(q,0)= getArg(getInstrPtr(sm,0),0);
-			pushArgument(sm,q,l);
 
 			pushEndInstruction(sm);
 			insertSymbol(findModule(cntxt->nspace,octopusRef),s2);
@@ -631,6 +766,8 @@ The tentacle code should be optimized by the remaining optimizers too.
 		if ( tentacle[i]->errors ) 
 			mb->errors++;
 	}
+		chkDeclarations(mb);
+/*		chkProgram(cntxt->nspace,mb);  */
 #ifdef DEBUG_OPT_OCTOPUS
 	if (actions) {
 		stream_printf(cntxt->fdout, "DONE octopus \n");
@@ -647,6 +784,14 @@ The tentacle code should be optimized by the remaining optimizers too.
 	for (i=0; i<tn; i++)
 		printFunction(GDKout, tentacle[i], 0, LIST_MAL_STMT);
 */
+	GDKfree(wnm);
+	GDKfree(tnm);
+	for ( j= 0; j < tcnt; j++){
+		GDKfree(bid[j]);
+		GDKfree(sch[j]);
+	}
+	GDKfree(bid);
+	GDKfree(sch);
 	GDKfree(old);
 	GDKfree(tentacle);
 	return actions;
