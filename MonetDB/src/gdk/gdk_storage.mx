@@ -710,8 +710,8 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 
 	/* VAR heaps (inherent random access) */
 	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base ) {
-		if (b->H->vheap->storage != STORE_MEM && b->H->vheap->free > MT_MMAP_TILE) {
-			MT_mmap_inform(b->H->vheap->base, b->H->vheap->free, preload, BUF_WILLNEED, 0);
+		if (b->H->vheap->storage != STORE_MEM && b->H->vheap->size > MT_MMAP_TILE) {
+			MT_mmap_inform(b->H->vheap->base, b->H->vheap->size, preload, BUF_WILLNEED, 0);
 		}
 		if (preload > 0 && pages > 0) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->vheap\n", BATgetId(b), advise);
@@ -731,8 +731,8 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		}
 	}
 	if ( what&USE_TAIL && b->T->vheap && b->T->vheap->base ) {
-		if (b->T->vheap->storage != STORE_MEM && b->T->vheap->free > MT_MMAP_TILE) {
-			MT_mmap_inform(b->T->vheap->base, b->T->vheap->free, preload, BUF_WILLNEED, 0);
+		if (b->T->vheap->storage != STORE_MEM && b->T->vheap->size > MT_MMAP_TILE) {
+			MT_mmap_inform(b->T->vheap->base, b->T->vheap->size, preload, BUF_WILLNEED, 0);
 		}
 		if (preload > 0 && pages > 0) {	
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->vheap\n", BATgetId(b), advise);
@@ -754,8 +754,8 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 
 	/* BUN heaps (no need to preload for sequential access) */
 	if ( what&USE_HEAD && b->H->heap.base ) {
-		if (b->H->heap.storage != STORE_MEM && b->H->heap.free > MT_MMAP_TILE) {
-			MT_mmap_inform(b->H->heap.base, b->H->heap.free, preload, advise, 0);
+		if (b->H->heap.storage != STORE_MEM && b->H->heap.size > MT_MMAP_TILE) {
+			MT_mmap_inform(b->H->heap.base, b->H->heap.size, preload, advise, 0);
 		}
 		if (preload > 0 && pages > 0 && advise != BUF_SEQUENTIAL) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->heap\n", BATgetId(b), advise);
@@ -775,8 +775,8 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		}
 	}
 	if ( what&USE_TAIL && b->T->heap.base ) {
-		if (b->T->heap.storage != STORE_MEM && b->T->heap.free > MT_MMAP_TILE) {
-			MT_mmap_inform(b->T->heap.base, b->T->heap.free, preload, advise, 0);
+		if (b->T->heap.storage != STORE_MEM && b->T->heap.size > MT_MMAP_TILE) {
+			MT_mmap_inform(b->T->heap.base, b->T->heap.size, preload, advise, 0);
 		}
 		if (preload > 0 && pages > 0 && advise != BUF_SEQUENTIAL) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->heap\n", BATgetId(b), advise);
@@ -800,8 +800,8 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 	if ( what&USE_HHASH || what&USE_THASH )
 		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATpreload");
 	if ( what&USE_HHASH && b->H->hash && b->H->hash->heap && b->H->hash->heap->base ) {
-		if (b->H->hash->heap->storage != STORE_MEM && b->H->hash->heap->free > MT_MMAP_TILE) {
-			MT_mmap_inform(b->H->hash->heap->base, b->H->hash->heap->free, preload, BUF_WILLNEED, 0);
+		if (b->H->hash->heap->storage != STORE_MEM && b->H->hash->heap->size > MT_MMAP_TILE) {
+			MT_mmap_inform(b->H->hash->heap->base, b->H->hash->heap->size, preload, BUF_WILLNEED, 0);
 		}
 		if (preload > 0 && pages > 0) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): H->hash\n", BATgetId(b), advise);
@@ -821,8 +821,8 @@ BATpreload(BAT *b, int what, int advise, int preload) {
 		}
 	}
 	if ( what&USE_THASH && b->T->hash && b->T->hash->heap && b->T->hash->heap->base ) {
-		if (b->T->hash->heap->storage != STORE_MEM && b->T->hash->heap->free > MT_MMAP_TILE) {
-			MT_mmap_inform(b->T->hash->heap->base, b->T->hash->heap->free, preload, BUF_WILLNEED, 0);
+		if (b->T->hash->heap->storage != STORE_MEM && b->T->hash->heap->size > MT_MMAP_TILE) {
+			MT_mmap_inform(b->T->hash->heap->base, b->T->hash->heap->size, preload, BUF_WILLNEED, 0);
 		}
 		if (preload > 0 && pages > 0) {
 			IODEBUG THRprintf(GDKout,"#BATpreload(%s,%d): T->hash\n", BATgetId(b), advise);
