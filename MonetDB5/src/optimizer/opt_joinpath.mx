@@ -235,8 +235,6 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	GDKfree(old);
 	GDKfree(candidate);
 	/* there may be new opportunities to remove common expressions */
-	/* but recursion makes the code less efficient due to longer retention */
-	/* return actions? actions + OPTjoinSubPath(cntxt, mb): actions;*/
 	if ( actions )
 		return actions + OPTjoinSubPath(cntxt, mb);
 	return actions;
