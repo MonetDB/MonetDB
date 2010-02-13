@@ -2513,6 +2513,9 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 	if (p->retc == 1) {
 		tpe = getTypeName(getArgType(mb, p, 0));
 		snprintf(t,(len-(t-base)),"):%s", tpe);
+		advance(t,base,len);
+		if (p->varargs & VARRETS)
+			sprintf(t, "...");
 		GDKfree(tpe);
 		advance(t,base,len);
 	} else {
