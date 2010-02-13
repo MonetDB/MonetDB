@@ -301,12 +301,11 @@ static int
 OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	int i, j, limit, copy = 0;
-	InstrPtr f, p, *old, ret, sig;
+	InstrPtr p, *old, ret, sig;
 	str resultSetRef = putName("resultSet", 9);
 	MalBlkPtr mc;
 	char nme[IDLENGTH];
 	Symbol new;
-	Lifespan span;
 
 	(void)stk;
 	(void)pc;
@@ -316,63 +315,70 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #endif
 
 	mc = copyMalBlk(mb);
-	snprintf(nme, IDLENGTH, "%smp", getFunctionId(getInstrPtr(mb, 0)));
-	f = getInstrPtr(mc, 0);
-	setFunctionId(f, putName(nme, strlen(nme)));
-	new = newSymbol(getFunctionId(f), f->token);
-	freeMalBlk(new->def);
-	new->def = mc;
-	insertSymbol(findModule(cntxt->nspace, getModuleId(f)), new);
-
-	span = setLifespan(mb);
-	/* Massage mbcopy to act as the mapreduce program, producing a
-	 * partial answer. */
 	old = mc->stmt;
 	limit = mc->stop;
+
 	if (newMalBlkStmt(mc, mc->ssize) < 0)
 		return 0;
 
-	sig = old[0];
+	snprintf(nme, IDLENGTH, "%smp", getFunctionId(getInstrPtr(mb, 0)));
+	new = newFunction(userRef, putName(nme, strlen(nme)), FUNCTIONsymbol);
+	sig = copyInstruction(getInstrPtr(new->def, 0));
+	freeMalBlk(new->def);
+	new->def = mc;
+	mc->keephistory = mb->keephistory;
 	pushInstruction(mc, sig);
+
 	getArg(sig, 0) = -1; /* get rid of default retval */
-	sig->argc = 1;
+	copy = 1;
 	for (i = 1; i < limit; i++) {
 		p = old[i];
+
+		/* inject return at end of program */
 		if (p->token == ENDsymbol) {
 			ret = newInstruction(mc, ASSIGNsymbol);
 			ret->barrier = RETURNsymbol;
+			getArg(ret, 0) = -1; /* get rid of default retval */
 			for (j = 0; j < sig->retc; j++)
 				ret = pushReturn(mc, ret, getArg(sig, j));
 			pushInstruction(mc, ret);
+			/* don't care about the optimizers */
+			pushInstruction(mc, p);
 			copy = 0;
 		}
-		/* We copy statements until we find a map-reduce blocking
-		 * operation.  Collect all BAT variables that are necessary for
-		 * the rsColumn calls. */
+
+		/* Collect all BAT variables that are necessary for the rsColumn
+		 * calls. */
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == rsColumnRef) {
 			sig = pushReturn(mc, sig, getArg(p, 7));
-		}
-		if (copy == 0)
-			copy = (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef);
-		if (copy) {
+			/* don't replicate the statement */
 			freeInstruction(p);
 			continue;
 		}
-		pushInstruction(mc, p);
+		if (copy)
+			copy = !(getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef);
+		if (copy) {
+			pushInstruction(mc, p);
+		} else {
+			freeInstruction(p);
+		}
 	}
-	mc->stmt[0] = sig;
-	GDKfree(old);
 #ifdef _DEBUG_OPT_MAPREDUCE
 	stream_printf(cntxt->fdout, "MAPREDUCE program\n");
 	printFunction(cntxt->fdout, mc, 0, LIST_MAL_STMT);
 #endif
+
 	/* Create the corresponding controller program */
 	old = mb->stmt;
 	limit = mb->stop;
+
+	/* zap */
 	if (newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
 
+	/* copy function */
 	pushInstruction(mb, old[0]);
+
 	copy = 0;
 	for (i = 1; i < limit; i++) {
 		p = old[i];
@@ -381,17 +387,19 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			MRdistributework(cntxt, mb, mc, sig);
 			p = old[i];
 		}
-		if (copy == 0)
+		if (!copy)
 			copy = (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef);
-		if (copy == 0) {
+		if (copy) {
+			pushInstruction(mb, p);
+		} else {
 			freeInstruction(p);
-			continue;
 		}
-		pushInstruction(mb, p);
 	}
 	GDKfree(old);
 
-#ifdef _DEBUG_OPT_MAPREDUCE
+	insertSymbol(findModule(cntxt->nspace, userRef), new);
+
+#ifndef _DEBUG_OPT_MAPREDUCE
 	stream_printf(cntxt->fdout, "MAPREDUCE controller\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
