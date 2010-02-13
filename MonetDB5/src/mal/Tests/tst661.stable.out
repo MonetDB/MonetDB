@@ -1,0 +1,40 @@
+stdout of test 'tst661` in directory 'src/mal` itself:
+
+
+# 16:47:50 >  
+# 16:47:50 >   mserver5 "--config=/ufs/mk/Feb2010//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/Feb2010//Linux/lib/MonetDB5:/ufs/mk/Feb2010//Linux/lib/MonetDB5/lib:/ufs/mk/Feb2010//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/Feb2010//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38050 --set xrpc_port=49094 --set monet_prompt= --trace  --dbname=mTests_src_mal  tst661.mal
+# 16:47:50 >  
+
+# MonetDB server v5.18.0, based on kernel v1.36.0
+# Serving database 'mTests_src_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38050/
+pattern user.fi(i:int):int... address MDBdummy;
+pattern user.fs(i:int):str... address MDBdummy;
+function user.tst():void;
+    a := user.fi(1);
+    (a,b) := user.fi(1);
+    (a,b,c) := user.fi(1);
+    z := user.fs(1);
+    (y,z) := user.fs(1);
+end tst;
+function user.main():void;
+#Testing variable return lists 
+    mdb.List("user","tst");
+end main;
+function user.tst():void;               #  0 tst:void := user.tst() {G}
+    a := user.fi(1);                    #  1 a:int := MDBdummy(_2:int) 
+    (a,b) := user.fi(1);                #  2 (a:int, b:int) := MDBdummy(_2:int) 
+    (a,b,c) := user.fi(1);              #  3 (a:int, b:int, c:int) := MDBdummy(_2:int) 
+    z := user.fs(1);                    #  4 z:str := MDBdummy(_2:int) {G}
+    (y,z) := user.fs(1);                #  5 (y:str, z:str) := MDBdummy(_2:int) {G}
+end tst;                                #  6  
+
+# 16:47:50 >  
+# 16:47:50 >  Done.
+# 16:47:50 >  
+
