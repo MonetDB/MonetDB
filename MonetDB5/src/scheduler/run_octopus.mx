@@ -58,6 +58,15 @@ The default is to use the local database as a target.
 pattern scheduler.octopus(t:int)(:bit,version:int)
 address OCTOPUSrun
 comment "Run the program block in parallel, but don't wait longer then t seconds. Also fix a consistent database version.";
+
+pattern scheduler.register():bit
+address OCTOPUSdiscoverRegister
+comment "Discover workers and register tentacles.";
+
+pattern scheduler.makeSchedule(:int,:lng...):bte...
+address OCTOPUSmakeSchedule
+comment "Make schedule based on bids.";
+
 @h
 #ifndef _RUN_OCTOPUS
 #define _RUN_OCTOPUS
@@ -78,6 +87,8 @@ comment "Run the program block in parallel, but don't wait longer then t seconds
 #endif
 
 octopus_export str OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+octopus_export str OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+octopus_export str OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_OCTOPUS */
 
 @+ Octopus scheduling implementation
@@ -103,12 +114,17 @@ typedef struct {
 	str uri;
 	str usr;
 	str pwd;
+	lng *bids;
 	Registry nxt;	/* list of registered queries */
 } Worker;
 
 #define MAXSITES 2048	/* should become dynamic at some point */
 static Worker workers[MAXSITES];
 static int nroctopus = 0;
+/*sht bidStrategy = 1; 
+#define BID_TRANS	1
+#define BID_COVER	2
+*/
 
 static str
 OCTOPUSdiscover(Client cntxt){
@@ -267,6 +283,8 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 	return msg;
 }
+
+
 @-
 The scheduler runs all tentacles asynchronously.
 We should be careful in accessing a site that runs out
@@ -281,7 +299,7 @@ know when updates have been taken place.
 The time-out parameter is not used yet.
 @c
 str
-OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OCTOPUSrun_org(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *res = (bit*) getArgReference(stk,pci,0);
 	int *version = (int*) getArgReference(stk,pci,1);
@@ -317,6 +335,134 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* if necessary increase the worker set */
 	/* DFLOWworkers(threadcnt); */
 	(void) threadcnt;
+	return runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
+}
+
+@-
+Discover available workers and register tentacles on them
+scheduler.register():bit;
+@c
+str
+OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit *res = (bit*) getArgReference(stk,pci,0);
+	int j, start, stop, k, found, v;
+	InstrPtr p;
+	str msg = MAL_SUCCEED;
+	ValPtr wname;
+
+	*res = 0;	/* execute the block */
+
+	msg= OCTOPUSdiscover(cntxt);
+	if ( msg )
+		return msg; 
+
+	/* Associate logical names "worker_x" with discovered worker uri-s */
+
+	start= getPC(mb,pci) + 1;
+	for (j = start; j<mb->stop ; j++){
+		p= getInstrPtr(mb,j);
+		if ( p->barrier == EXITsymbol )
+			break;
+		v = getArg(p,1);
+		wname = &getVarConstant(mb, v);
+
+		found = 0;
+		for ( k = 0; k < nroctopus; k++ )
+			if ( strcmp(wname->val.sval, workers[k].name) == 0 ){
+				found = 1;
+				break;
+			}
+		if ( found ) {
+			garbageElement(cntxt, &stk->stk[v]);
+			stk->stk[v].val.sval = GDKstrdup(workers[k].uri);
+			stk->stk[v].len = (int) strlen(stk->stk[v].val.sval);
+		} else {	/* disable instaruction */
+			garbageElement(cntxt, &stk->stk[v]);
+			stk->stk[v].val.sval = GDKstrdup("NOTworker");
+			stk->stk[v].len = (int) strlen(stk->stk[v].val.sval);
+			p->token = NOOPsymbol;
+		}
+	}
+	stop = j;
+	*res = 1;
+	return runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
+}
+
+str
+OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bte *res = (bte*) getArgReference(stk,pci,0);
+	int tcnt, offset, i, j, k, idx;
+	str msg = MAL_SUCCEED;
+	lng **bid;	
+	bte **sch, *s;
+
+	*res = 0;	
+	(void) mb;
+	(void) cntxt;
+
+	tcnt = *(int*) getArgReference(stk,pci,pci->retc);
+	if ( pci->argc != 2*tcnt*tcnt + 2 )
+		return "Wrong argument number of makeSchedule";
+	offset = tcnt * tcnt + 2;
+	bid = (lng**) GDKzalloc(sizeof(lng*) * tcnt);
+	sch = (bte**) GDKzalloc(sizeof(bte*) * tcnt);
+
+	for ( j = 0; j < tcnt; j++){
+		bid[j] = (lng*) GDKzalloc(sizeof(lng) * tcnt);
+		sch[j] = (bte*) GDKzalloc(sizeof(bte) * tcnt);
+	}
+	for ( i = offset; i < pci->argc; i++) {
+		j = (int) (i-offset) / tcnt;
+		k = (int) (i-offset) % tcnt;
+		bid[j][k] = *(lng*) getArgReference(stk,pci,i);
+	}
+
+	/* compute schedule */
+	for ( j = 0; j < tcnt; j++)
+		for ( k = 0; k < tcnt; k++){
+			if ( j == k )
+				sch[j][k] = 1;
+			else sch[j][k] = 0;
+	}
+
+	/* set returned schedule variables */
+	for ( j = 0; j < tcnt; j++)
+		for ( k = 0; k < tcnt; k++){
+			idx = j * tcnt + k + 1;
+			s = (bte*) getArgReference(stk,pci,idx);
+			*s = sch[j][k];
+	}
+	*res = 1;
+
+	for ( j= 0; j < tcnt; j++){
+		GDKfree(bid[j]);
+		GDKfree(sch[j]);
+	}
+	GDKfree(bid);
+	GDKfree(sch);
+	return msg;
+}
+
+str
+OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit *res = (bit*) getArgReference(stk,pci,0);
+	int j, start, stop;
+	InstrPtr p;
+	*res = 0;	/* execute the block */
+
+
+	start= getPC(mb,pci) + 1;
+	for (j= start; j<mb->stop ; j++){
+		p= getInstrPtr(mb,j);
+		if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef)
+			break;
+	}
+	stop = j;
+	*res = 1;
+
 	return runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
 }
 @}
