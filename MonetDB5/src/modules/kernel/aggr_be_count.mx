@@ -267,7 +267,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	BATpreload_(e,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*(bit *) BUNtloc(bi, p) == TRUE) {
 			oid *h = (oid *) BUNhead(bi, p);
@@ -280,7 +280,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 			}
 		}
 	}
-	_BATpreload(e,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	*ret = bn;
 	return GDK_SUCCEED;
 }
