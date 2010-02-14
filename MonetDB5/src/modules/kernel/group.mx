@@ -2114,7 +2114,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 				throw(MAL, "group.@1", OPERATION_FAILED " Cannot insert zero");
 			}
 		}
-		BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
+		_BATpreload(e, USE_HEAD, BUF_SEQUENTIAL);
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
 		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
@@ -2763,7 +2763,7 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 			sum =0;
 		}
 	}
-	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 	if(i != *size)
 		BUNfastins(bn, &o, &sum);
 
