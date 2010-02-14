@@ -1306,6 +1306,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 	r = (BUN) (this - base);
 @= refine_loop
 		/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
+		BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 		BATloop(b, p, q) {
 			if ((*cmp) (BUNtail(bi, last), BUNtail(bi, p))) {
 				cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
@@ -1339,6 +1340,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 			cur++;
 			this += sizeof(oid);
 		}
+		_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 @c
 		cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
 		hdst += cnt;
@@ -1722,6 +1724,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		BBPreclaim(bn);
 		throw(MAL, "group.sum", MAL_MALLOC_FAIL);
 	}
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1738,9 +1741,11 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 @-
 @= small_aggr_sum
 	sums = (@3*) GDKzalloc(range*sizeof(@3));
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1756,6 +1761,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(bn, p, q) {
 		oid h = (*(oid*) BUNhead(bni,p)) - min;
 		*(@3*)BUN@2(bni, p) = sums[h];
@@ -1766,6 +1772,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		BBPreclaim(bn);
 		throw(MAL, "group.prod", MAL_MALLOC_FAIL);
 	}
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1782,11 +1789,13 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 @c
 @= small_aggr_prod
 	prods = (@3*) GDKmalloc(range*sizeof(@3));
 	for (i = 0; i < range; i++)
 		prods[i] = one;
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1802,6 +1811,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(bn, p, q) {
 		oid h = (*(oid*) BUNhead(bni,p)) - min;
 		*(@3*)BUN@2(bni, p) = prods[h];
@@ -1814,6 +1824,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		BBPreclaim(bn);
 		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	}
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1831,6 +1842,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	/* postprocess by dividing sums by counts */
 	BATloop(bn, p, q) {
 		dbl *dst = (dbl*) BUN@2(bni, p);
@@ -1846,6 +1858,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 @= small_aggr_avg
 	sums = (dbl*) GDKzalloc(range*sizeof(dbl));
 	cnt  = (BUN*) GDKzalloc(range*sizeof(BUN));
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1862,6 +1875,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	/* postprocess by dividing sums by counts */
 	BATloop(bn, p, q) {
 		oid h = (*(oid*) BUNhead(bni,p)) - min;
@@ -1915,15 +1929,18 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
 				throw(MAL, "group.sum", OPERATION_FAILED " Cannot insert zero");
 			}
 		}
+		_BATpreload(e, USE_HEAD, BUF_SEQUENTIAL);
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
 		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
@@ -1935,6 +1952,7 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 			else if (i > max)
 				max = i;
 		}
+		_BATpreload(e, USE_HEAD, BUF_SEQUENTIAL);
 	}
 	range = max - min + 1;
 
@@ -1988,15 +2006,18 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
 				BBPreclaim(bn);
 				throw(MAL, "group.prod", OPERATION_FAILED " Cannot insert one");
 			}
 		}
+		_BATpreload(e, USE_HEAD, BUF_SEQUENTIAL);
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
 		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
 				BBPreclaim(bn);
@@ -2008,6 +2029,7 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 			else if (i > max)
 				max = i;
 		}
+		_BATpreload(e, USE_HEAD, BUF_SEQUENTIAL);
 	}
 	range = max - min + 1;
 
@@ -2085,15 +2107,18 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
 				throw(MAL, "group.@1", OPERATION_FAILED " Cannot insert zero");
 			}
 		}
+		BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
 		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
+		BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
@@ -2105,6 +2130,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 			else if (i > max)
 				max = i;
 		}
+		_BATpreload(e, USE_HEAD, BUF_SEQUENTIAL);
 	}
 	range = max - min + 1;
 
@@ -2205,6 +2231,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	memset(sum, 0, nElements*sizeof(dbl));
 	memset(sumsquares, 0, nElements*sizeof(dbl));
 
+	BATpreload_(b, USE_HEAD, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		if (*h != previousOid) {
@@ -2226,11 +2253,13 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 			}
 		}
 	}
+	_BATpreload(b, USE_HEAD, BUF_SEQUENTIAL);
 
 	/* postprocess by dividing sumsquares and sum by counts and
 	   substracting square of the averages from the average sum of
 	   squares */
 	idx = 0;
+	BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 	BATloop(e, p, q) {
 		if (cnt[idx] == wrd_nil) {
 			@1 _nil = @1_nil;
@@ -2253,6 +2282,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 		}
 		idx++;
 	}
+	_BATpreload(e, USE_HEAD, BUF_SEQUENTIAL);
 	GDKfree(cnt);
 	GDKfree(sum);
 	if (err) {
@@ -2436,6 +2466,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 
 	bi = bat_iterator(b);
 	bni = bat_iterator(bn);
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = *(oid*) BUNhead(bi,p);
 		@2 t =  *(@2*) BUNtail(bi,p);
@@ -2450,6 +2481,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 				*val = t;
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	bn->hsorted = b->hsorted ;
 	bn->tsorted = b->tsorted ;
 	BBPkeepref(*retval= bn->batCacheid);
@@ -2480,6 +2512,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 		BBPreclaim(bn);
 		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 
@@ -2493,9 +2526,11 @@ str GRP@1_oid_@2(int *retval, int *bid)
 			}
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 @c
 @= small_aggr_count
 	cnt  = (wrd*) GDKzalloc(range*sizeof(wrd));
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 
@@ -2507,6 +2542,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 			}
 		}
 	}
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(bn, p, q) {
 		oid h = (*(oid*) BUNhead(bni,p)) - min;
 		*(wrd*)BUNtloc(bni, p) = cnt[h];
@@ -2568,6 +2604,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 		max = *(oid *) BUNhead(ei, BUNlast(e) - 1);
 	} else {
 		min = max = *(oid *) BUNhead(ei, BUNfirst(e));
+		BATpreload_(b, USE_HEAD, BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 				BBPreclaim(bn);
@@ -2579,6 +2616,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 			else if (i > max)
 				max = i;
 		}
+		_BATpreload(b, USE_HEAD, BUF_SEQUENTIAL);
 	}
 	range = max - min + 1;
 
@@ -2643,17 +2681,21 @@ GRPsize(int *retval, int *bid, int *eid)
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
 	bni = bat_iterator(bn);
+	BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 	BATloop(e, p, q) {
 		if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 			BBPreclaim(bn);
 			throw(MAL, "group.count", OPERATION_FAILED);
 		}
 	}
+	_BATpreload(e, USE_HEAD, BUF_SEQUENTIAL);
 	/* scan b, and add increment totals for true values */
 	if (BATprepareHash(bn)) {
 		BBPreclaim(bn);
 		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
+	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(bn, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 	BATloop(b, p, q) {
 		if (*(bit *) BUNtloc(bi, p) == TRUE) {
 			oid *h = (oid *) BUNhead(bi, p);
@@ -2666,6 +2708,8 @@ GRPsize(int *retval, int *bid, int *eid)
 			}
 		}
 	}
+	_BATpreload(bn, USE_HEAD|USE_TAIL, BUF_WILLNEED);
+	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPkeepref(*retval = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
@@ -2706,6 +2750,7 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 	i = *size;
 	sum =0;
 	bi = bat_iterator(b);
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		sum += *(@1*) BUNtail(bi,p);
 		if (--i == 0){
@@ -2718,6 +2763,7 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 			sum =0;
 		}
 	}
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
 	if(i != *size)
 		BUNfastins(bn, &o, &sum);
 

@@ -88,6 +88,7 @@ structure to compute a group of common aggregates.
 	}
 	/* scan b, adding sums, and incrementing counts */
 	bhsb = b->hseqbase - 1;
+	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			@6 *t = (@6*) BUNt@7(bi,p);
@@ -119,10 +120,12 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
+	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	/* postprocess by dividing sums by counts */
 	if (@1) {
 	    if (sums) {
 		/* sums in sums-array */
+		BATpreload_(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			oid h = (*(oid*) BUNh@4(bni,p)) - min;
 			dbl *dst = (dbl*) BUNt@7(bni, p);
@@ -132,11 +135,13 @@ structure to compute a group of common aggregates.
 				*dst = (dbl) (sums[h]/cnt[h]);
 			}
 		}
+		_BATpreload(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		GDKfree(sums);
 	    }
 	} else {
 		/* sums in-place */
 		BUN yy = 0;
+		BATpreload_(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			dbl *dst = (dbl*) BUNt@7(bni, p);
 			if (cnt[yy] == 0) {
@@ -146,6 +151,7 @@ structure to compute a group of common aggregates.
 			}
 			yy++;
 		}
+		_BATpreload(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 
 	}
 	if (cnt)
