@@ -160,7 +160,7 @@ structure to compute a group of common aggregates.
 	    }
 	} else {
 		BUN yy = 0;
-		BATpreload_(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		BATpreload_(bn,USE_TAIL,BUF_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			@9 *dst = (@9*)BUNtloc(bni, p);
 			if (hit[yy] == 0) {
@@ -168,7 +168,7 @@ structure to compute a group of common aggregates.
 			}
 			yy++;
 		}
-		_BATpreload(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		_BATpreload(bn,USE_TAIL,BUF_SEQUENTIAL);
 	}
 	if (hit)
 		GDKfree(hit);
