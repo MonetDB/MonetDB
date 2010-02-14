@@ -3895,7 +3895,7 @@ str ALGprojecthead_@1(int *ret,ptr *val, int *bid){
 
 	@:getBATdescriptor(bid,b,"batcalc.project")@
 
-	bn= BATnew(TYPE_@1,BAThtype(b),BATcount(b));
+	bn= BATnew(TYPE_@1,BATttype(b),BATcount(b));
 	@:tstBAT("algebra.project")@
 	bi = bat_iterator(b);
 	BATpreload_(b,USE_TAIL,BUF_SEQUENTIAL);
