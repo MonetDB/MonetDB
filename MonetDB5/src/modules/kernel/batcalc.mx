@@ -346,6 +346,7 @@ fixed-sized types.
 	@3 *r = (@3*)Tloc(right, BUNfirst(right));
 
 	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(right, USE_TAIL, BUF_SEQUENTIAL);
 	if (b->T->nonil && right->T->nonil)
 		for (; p<q; o++, p++, r++)
 			*o = (@4) (*p @1 *r);
@@ -376,6 +377,7 @@ fixed-sized types.
 			} else 
 				*o = (@4) (*p @1 *r);
 		}
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
 	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 }
 @= accumCst
@@ -1318,6 +1320,7 @@ str CMD_@2_@3(int *ret, int *l, int *r)
 	t = (@3*)Tloc(right,BUNfirst(right));
 		
 	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(right, USE_TAIL, BUF_SEQUENTIAL);
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			*o = (*p @1 *t);
@@ -1397,6 +1400,7 @@ str CMD_@2_@3(int *ret, int *l, int *r)
 				*o = *p @1 *t;
 		}
 
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
 	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
@@ -1435,6 +1439,7 @@ str CMDaccum_@2_@3(int *ret, int *d, int *l, int *r)
 	t = (@3*)Tloc(right,BUNfirst(right));
 		
 	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(right, USE_TAIL, BUF_SEQUENTIAL);
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			*o = (*p @1 *t);
@@ -1513,6 +1518,7 @@ str CMDaccum_@2_@3(int *ret, int *d, int *l, int *r)
 			} else 
 				*o = (*p @1 *t);
 		}
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
 	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 
 	BATsetcount(bn, BATcount(b));
