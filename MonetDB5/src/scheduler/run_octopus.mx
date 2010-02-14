@@ -393,10 +393,10 @@ str
 OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bte *res = (bte*) getArgReference(stk,pci,0);
-	int tcnt, offset, i, j, k, idx;
+	int tcnt=1, offset, i, j, k, idx;
 	str msg = MAL_SUCCEED;
-	lng **bid;	
-	bte **sch, *s;
+	lng **bid=NULL;	
+	bte **sch=NULL, *s;
 
 	*res = 0;	
 	(void) mb;

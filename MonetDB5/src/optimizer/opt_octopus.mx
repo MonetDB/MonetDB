@@ -416,12 +416,12 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	Symbol s2;
 	int target= -1, update=0, autocommit=0;
 	int version,v2;
-	int k,l, rexit, bs, tcnt;
+	int k,l, rexit, bs, tcnt=0;
 	char buf[BUFSIZ];
 	ValRecord cst;
-	int *wnm,*tnm;	/* array indices to var table where workers and tentacle names are stored */
-	int **bid;		/* array index to bids variables */
-	int **sch;		/* array index to schedule variables */
+	int *wnm=NULL,*tnm=NULL;	/* array indices to var table where workers and tentacle names are stored */
+	int **bid=NULL;		/* array index to bids variables */
+	int **sch=NULL;		/* array index to schedule variables */
 	static str registerRef = 0;
 
 	if ( tentacle == NULL)
