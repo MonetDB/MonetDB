@@ -415,6 +415,8 @@ diskblock.
 
 	mp = (oid*) Tloc(map, 0);
 	bp = (oid*) Tloc(b, 0);
+	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(map,USE_HEAD|USE_TAIL,BUF_WILLNEED);
 	BATloop(b,p,q){
 		oid ocur = bp[p];
 
@@ -441,6 +443,8 @@ diskblock.
 		mp[basket[bnr].base] = idx++;
 		basket[bnr].base++;
 	}
+	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(map,USE_HEAD|USE_TAIL,BUF_WILLNEED);
 	BBPunfix(*B);
 	BBPkeepref(*RB= map->batCacheid);
 	return MAL_SUCCEED;

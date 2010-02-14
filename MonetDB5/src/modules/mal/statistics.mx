@@ -427,6 +427,7 @@ STATupdateAll(int *ret, int forced)
 
 	if (STAT_id_nme) {
 		BATiter STAT_id_nmei = bat_iterator(STAT_id_nme);
+		BATpreload_(STAT_id_nme,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		BATloop(STAT_id_nme, p, q) {
 			name = (str) BUNtail(STAT_id_nmei, p);
 			i = BBPindex(name);
@@ -448,6 +449,7 @@ STATupdateAll(int *ret, int forced)
 				STATforceUpdate(ret, &name);
 			}
 		}
+		_BATpreload(STAT_id_nme,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	}
 	return MAL_SUCCEED;
 }
