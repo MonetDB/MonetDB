@@ -2604,7 +2604,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 		max = *(oid *) BUNhead(ei, BUNlast(e) - 1);
 	} else {
 		min = max = *(oid *) BUNhead(ei, BUNfirst(e));
-		BATpreload_(b, USE_HEAD, BUF_SEQUENTIAL);
+		BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 				BBPreclaim(bn);
@@ -2616,7 +2616,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 			else if (i > max)
 				max = i;
 		}
-		_BATpreload(b, USE_HEAD, BUF_SEQUENTIAL);
+		_BATpreload(e, USE_HEAD, BUF_SEQUENTIAL);
 	}
 	range = max - min + 1;
 
