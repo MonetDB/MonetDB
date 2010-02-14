@@ -280,7 +280,7 @@ str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
 	p = (@1*)Tloc(b,BUNfirst(b));
 	q = (@1*)Tloc(b,BUNlast(b));
 		
-	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
 	if ( @1_isnil(*cst))
 		for (;p<q; p++, o++) 
 				*o = bit_nil;
@@ -294,7 +294,7 @@ str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
 				*o = bit_nil;
 			else @1@2(o,p,cst);
 
-	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
