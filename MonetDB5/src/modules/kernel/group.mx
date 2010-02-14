@@ -1313,6 +1313,10 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 @= refine_loop
 		/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
 		BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		if (BAThordered(b)&1 && BAThdense(a))
+			BATpreload_(a, USE_TAIL, BUF_SEQUENTIAL);
+		else
+			BATpreload_(a, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 		BATloop(b, p, q) {
 			if ((*cmp) (BUNtail(bi, last), BUNtail(bi, p))) {
 				cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
@@ -1346,6 +1350,10 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 			cur++;
 			this += sizeof(oid);
 		}
+		if (BAThordered(b)&1 && BAThdense(a))
+			_BATpreload(a, USE_TAIL, BUF_SEQUENTIAL);
+		else
+			_BATpreload(a, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 		_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 @c
 		cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
@@ -1731,6 +1739,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		throw(MAL, "group.sum", MAL_MALLOC_FAIL);
 	}
 	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	if (BAThordered(b)&1 && BAThdense(bn))
+		BATpreload_(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		BATpreload_(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1747,6 +1759,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
+	if (BAThordered(b)&1 && BAThdense(bn))
+		_BATpreload(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		_BATpreload(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 @-
 @= small_aggr_sum
@@ -1779,6 +1795,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		throw(MAL, "group.prod", MAL_MALLOC_FAIL);
 	}
 	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	if (BAThordered(b)&1 && BAThdense(bn))
+		BATpreload_(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		BATpreload_(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1795,6 +1815,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
+	if (BAThordered(b)&1 && BAThdense(bn))
+		_BATpreload(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		_BATpreload(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 @c
 @= small_aggr_prod
@@ -1831,6 +1855,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	}
 	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	if (BAThordered(b)&1 && BAThdense(bn))
+		BATpreload_(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		BATpreload_(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1848,6 +1876,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
+	if (BAThordered(b)&1 && BAThdense(bn))
+		_BATpreload(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		_BATpreload(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	/* postprocess by dividing sums by counts */
 	BATloop(bn, p, q) {
@@ -2238,6 +2270,8 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	memset(sumsquares, 0, nElements*sizeof(dbl));
 
 	BATpreload_(b, USE_HEAD, BUF_SEQUENTIAL);
+	if (!(BAThordered(b)&1 && BAThdense(e)))
+		BATpreload_(e, USE_HEAD|USE_HHASH, BUF_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		if (*h != previousOid) {
@@ -2259,6 +2293,8 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 			}
 		}
 	}
+	if (!(BAThordered(b)&1 && BAThdense(e)))
+		_BATpreload(e, USE_HEAD|USE_HHASH, BUF_WILLNEED);
 	_BATpreload(b, USE_HEAD, BUF_SEQUENTIAL);
 
 	/* postprocess by dividing sumsquares and sum by counts and
@@ -2346,7 +2382,8 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		GDKfree(extremes);
 		return GDK_FAIL;
 	}
-	BATpreload_(e, USE_ALL, BUF_WILLNEED);
+	if (!(BAThordered(b)&1 && BAThdense(e)))
+		BATpreload_(e, USE_HEAD|USE_HHASH, BUF_WILLNEED);
 	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
@@ -2358,7 +2395,8 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		}
 	}
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_WILLNEED);
-	_BATpreload(e, USE_ALL, BUF_WILLNEED);
+	if (!(BAThordered(b)&1 && BAThdense(e)))
+		_BATpreload(e, USE_HEAD|USE_HHASH, BUF_WILLNEED);
 	/* insert the extreme values into the result */
 	yy = 0;
 	BATpreload_(e, USE_HEAD, BUF_SEQUENTIAL);
@@ -2523,6 +2561,10 @@ str GRP@1_oid_@2(int *retval, int *bid)
 		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
 	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	if (BAThordered(b)&1 && BAThdense(bn))
+		BATpreload_(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		BATpreload_(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 
@@ -2536,6 +2578,10 @@ str GRP@1_oid_@2(int *retval, int *bid)
 			}
 		}
 	}
+	if (BAThordered(b)&1 && BAThdense(bn))
+		_BATpreload(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		_BATpreload(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 @c
 @= small_aggr_count
@@ -2705,7 +2751,10 @@ GRPsize(int *retval, int *bid, int *eid)
 		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
 	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
-	BATpreload_(bn, USE_HEAD|USE_TAIL, BUF_WILLNEED);
+	if (BAThordered(b)&1 && BAThdense(bn))
+		BATpreload_(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		BATpreload_(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	BATloop(b, p, q) {
 		if (*(bit *) BUNtloc(bi, p) == TRUE) {
 			oid *h = (oid *) BUNhead(bi, p);
@@ -2718,7 +2767,10 @@ GRPsize(int *retval, int *bid, int *eid)
 			}
 		}
 	}
-	_BATpreload(bn, USE_HEAD|USE_TAIL, BUF_WILLNEED);
+	if (BAThordered(b)&1 && BAThdense(bn))
+		_BATpreload(bn, USE_TAIL, BUF_SEQUENTIAL);
+	else
+		_BATpreload(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPkeepref(*retval = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
