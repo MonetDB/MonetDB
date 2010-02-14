@@ -1118,7 +1118,7 @@ CMDsum_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 	BATcheck(b,"BATsum_@1_@2");
 	if (!BATcount(b) && *empty_is_nil)
 		result = @2_nil;
-	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(b,USE_TAIL,BUF_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			result += *(@1*) BUNtloc(bi, p);
@@ -1134,7 +1134,7 @@ CMDsum_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 			}
 		}
 	}
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b,USE_TAIL,BUF_SEQUENTIAL);
 	*res = result;
 	return GDK_SUCCEED;
 }
@@ -1155,7 +1155,7 @@ CMDprod_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 	BATcheck(b,"BATprodInt");
 	if (!BATcount(b) && *empty_is_nil)
 		result = @2_nil;
-	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(b,USE_TAIL,BUF_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			result *= *(@1*) BUNtloc(bi, p);
@@ -1171,7 +1171,7 @@ CMDprod_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 			}
 		}
 	}
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b,USE_TAIL,BUF_SEQUENTIAL);
 	*res = result;
 	return GDK_SUCCEED;
 }
@@ -1199,7 +1199,7 @@ CMDmax_@1(@1* result, BAT *b)
 		char* nil = BATatoms[t].atomNull;
 		BUN p,q;
 
-		BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		BATpreload_(b,USE_TAIL,BUF_SEQUENTIAL);
 		if (b->T->nonil) {
 			BATloop(b, p, q) {
 				x = (ptr) BUNt@2(bi, p);
@@ -1219,7 +1219,7 @@ CMDmax_@1(@1* result, BAT *b)
 				}
 			}
 		}
-		_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		_BATpreload(b,USE_TAIL,BUF_SEQUENTIAL);
 	}
 	if (aggr) {
 		memcpy(aggr, x=v, ATOMsize(t));
@@ -2205,14 +2205,14 @@ CMDsplit(BAT **ret, BAT *b)
 	BUN i;
 	lng *r = (lng *) BUNhead(bi, BUNfirst(b));
 
-	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(b,USE_HEAD,BUF_SEQUENTIAL);
 	for (i = 0; i < n; i++, r++) {
 		oid hp = (int) (*r >> 32);
 		oid tp = (int) *r;
 
 		bunfastins(bn, &hp, &tp);
 	}
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b,USE_HEAD,BUF_SEQUENTIAL);
 
 	bn->hsorted = BAThordered(b)&1 ? GDK_SORTED : FALSE ;
 	bn->tsorted = FALSE ;
@@ -2225,7 +2225,7 @@ CMDsplit(BAT **ret, BAT *b)
 
 	return GDK_SUCCEED;
 bunins_failed:
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b,USE_HEAD,BUF_SEQUENTIAL);
 	BBPreclaim(bn);
 	return GDK_FAIL;
 }
@@ -3898,7 +3898,7 @@ str ALGprojecthead_@1(int *ret,ptr *val, int *bid){
 	bn= BATnew(TYPE_@1,BAThtype(b),BATcount(b));
 	@:tstBAT("algebra.project")@
 	bi = bat_iterator(b);
-	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(b,USE_TAIL,BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr v = BUNtail(bi,p);
 		bunfastins(bn, val,v);
@@ -3906,7 +3906,7 @@ str ALGprojecthead_@1(int *ret,ptr *val, int *bid){
 	bn->H->nonil = (ATOMcmp(bn->htype, val, ATOMnilptr(bn->htype))); 
 	bn->T->nonil = b->T->nonil;
 bunins_failed:
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b,USE_TAIL,BUF_SEQUENTIAL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -3923,7 +3923,7 @@ str ALGprojecttail_@1(int *ret,int *bid, ptr *val){
 	bn= BATnew(BAThtype(b),TYPE_@1,BATcount(b));
 	@:tstBAT("algebra.project")@
 	bi = bat_iterator(b);
-	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(b,USE_HEAD,BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr v = BUNhead(bi,p);
 		bunfastins(bn,v, val);
@@ -3931,7 +3931,7 @@ str ALGprojecttail_@1(int *ret,int *bid, ptr *val){
 	bn->H->nonil = b->H->nonil;
 	bn->T->nonil = (ATOMcmp(bn->ttype, val, ATOMnilptr(bn->ttype))); 
 bunins_failed:
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b,USE_HEAD,BUF_SEQUENTIAL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
