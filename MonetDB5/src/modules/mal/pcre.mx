@@ -1355,7 +1355,7 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 		br = (bit*)Tloc(r, BUNfirst(r));
 		strsi = bat_iterator(strs);
 
-		BATpreload_(strs,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		BATpreload_(strs,USE_TAIL,BUF_SEQUENTIAL);
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			BATloop(strs, p, q) {
 				str s = (str)BUNtail(strsi, p);
@@ -1392,7 +1392,7 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 				}
 			}
 		}
-		_BATpreload(strs,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		_BATpreload(strs,USE_TAIL,BUF_SEQUENTIAL);
 		BATsetcount(r, i);
 		r->tsorted = 0;
 		BATkey(BATmirror(r),FALSE);
