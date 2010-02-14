@@ -892,7 +892,10 @@ MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 		if (writable) MT_mmap_tab[i].writable = (writable > 0);
 		MT_mmap_tab[i].random += preload * (advise == BUF_WILLNEED); /* done as a counter to keep track of multiple threads */
 		MT_mmap_tab[i].usecnt += preload; /* active thread count */
-		if (preload > 0) (void) posix_madvise(base, len, advise);
+		if (preload > 0) 
+			(void) posix_madvise(base, len, advise);
+		else if (MT_mmap_tab[i].usecnt == 0) 
+			(void) posix_madvise(base, len, BUF_NORMAL);
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 
