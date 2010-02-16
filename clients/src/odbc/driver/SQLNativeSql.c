@@ -62,7 +62,7 @@ SQLNativeSql_(ODBCStmt *stmt,
 #endif
 
 	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn, stmt->noScan);
-	copyString(query, szSqlStr, cbSqlStrMax, pcbSqlStr, SQLINTEGER, addStmtError, stmt, free(query); return SQL_ERROR);
+	copyString(query, strlen(query), szSqlStr, cbSqlStrMax, pcbSqlStr, SQLINTEGER, addStmtError, stmt, free(query); return SQL_ERROR);
 	free(query);
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;

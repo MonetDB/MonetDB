@@ -45,10 +45,10 @@ static struct msql_types {
 	int concise_type;
 } msql_types[] = {
 	{"bigint", SQL_BIGINT},
-	{"blob", SQL_BINARY},
+	{"blob", SQL_LONGVARBINARY},
 	{"boolean", SQL_BIT},
 	{"char", SQL_CHAR},
-	{"clob", SQL_CHAR},
+	{"clob", SQL_LONGVARCHAR},
 	{"date", SQL_TYPE_DATE},
 	{"decimal", SQL_DECIMAL},
 	{"double", SQL_DOUBLE},
@@ -196,7 +196,9 @@ ODBCInitResult(ODBCStmt *stmt)
 		rec->sql_desc_num_prec_radix = tp->radix;
 		rec->sql_desc_unsigned = tp->radix == 0 ? SQL_TRUE : SQL_FALSE;
 
-		if (rec->sql_desc_concise_type == SQL_CHAR || rec->sql_desc_concise_type == SQL_VARCHAR)
+		if (rec->sql_desc_concise_type == SQL_CHAR ||
+		    rec->sql_desc_concise_type == SQL_VARCHAR ||
+		    rec->sql_desc_concise_type == SQL_LONGVARCHAR)
 			rec->sql_desc_case_sensitive = SQL_TRUE;
 		else
 			rec->sql_desc_case_sensitive = SQL_FALSE;

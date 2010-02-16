@@ -91,7 +91,7 @@ SQLGetDescRec_(ODBCDesc *desc,
 		*Nullable = rec->sql_desc_nullable;
 
 	if (isID(desc)) {
-		copyString(rec->sql_desc_name, Name, BufferLength, StringLength, SQLSMALLINT, addDescError, desc, return SQL_ERROR);
+		copyString(rec->sql_desc_name, strlen((char *) rec->sql_desc_name), Name, BufferLength, StringLength, SQLSMALLINT, addDescError, desc, return SQL_ERROR);
 	}
 
 	return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;

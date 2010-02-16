@@ -958,6 +958,7 @@ ODBCFetch(ODBCStmt *stmt,
 	  int row)
 {
 	char *data;
+	size_t datalen;
 	SQLSMALLINT sql_type;
 	SQLUINTEGER maxdatetimeval;
 	ODBCDesc *ard, *ird;
@@ -1029,7 +1030,7 @@ ODBCFetch(ODBCStmt *stmt,
 	data = mapi_fetch_field(stmt->hdl, col - 1);
 	if (mapi_error(stmt->Dbc->mid)) {
 		/* General error */
-		addStmtError(stmt, "HY000", NULL, 0);
+		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	}
 	if (nullp)
@@ -1044,6 +1045,7 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 		return SQL_SUCCESS;
 	}
+	datalen = mapi_fetch_field_len(stmt->hdl, col - 1);
 
 	/* first convert to internal (binary) format */
 
@@ -1086,22 +1088,28 @@ ODBCFetch(ODBCStmt *stmt,
 		nval.precision = 1;
 		nval.scale = 0;
 		nval.sign = 1;
-		while (space(*data))
+		while (datalen != 0 && space(*data)) {
 			data++;
-		if (strncasecmp(data, "true", 4) == 0) {
+			datalen--;
+		}
+		if (datalen >= 4 && strncasecmp(data, "true", 4) == 0) {
 			data += 4;
+			datalen -= 4;
 			nval.val = 1;
-		} else if (strncasecmp(data, "false", 5) == 0) {
+		} else if (datalen >= 5 && strncasecmp(data, "false", 5) == 0) {
 			data += 5;
+			datalen -= 5;
 			nval.val = 0;
 		} else {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
 			return SQL_ERROR;
 		}
-		while (space(*data))
+		while (datalen != 0 && space(*data)) {
 			data++;
-		if (*data) {
+			datalen--;
+		}
+		if (datalen != 0) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
 			return SQL_ERROR;
@@ -1164,7 +1172,7 @@ ODBCFetch(ODBCStmt *stmt,
 			/* allocate temporary space */
 			buflen = 511; /* should be enough for most types */
 			if (sql_type == SQL_CHAR && data != NULL)
-				buflen = (SQLINTEGER) strlen(data); /* but this is certainly enough for strings */
+				buflen = (SQLINTEGER) datalen; /* but this is certainly enough for strings */
 			ptr = malloc(buflen + 1);
 
 			lenp = NULL;
@@ -1175,8 +1183,57 @@ ODBCFetch(ODBCStmt *stmt,
 
 		default:
 		case SQL_CHAR:
-			copyString(data, ptr, buflen, lenp, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
+		case SQL_VARCHAR:
+		case SQL_LONGVARCHAR:
+			copyString(data, datalen, ptr, buflen, lenp, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
 			break;
+		case SQL_BINARY:
+		case SQL_VARBINARY:
+		case SQL_LONGVARBINARY: {
+			size_t i;
+			int n;
+			unsigned char c = 0;
+			SQLINTEGER j = 0;
+			unsigned char *p = ptr;
+
+			if (buflen < 0) {
+				/* Invalid string or buffer length */
+				addStmtError(stmt, "HY090", NULL, 0);
+#ifdef WITH_WCHAR
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+#endif
+				return SQL_ERROR;
+			}
+			for (i = 0; i < datalen; i++) {
+				if ('0' <= data[i] && data[i] <= '9')
+					n = data[i] - '0';
+				else if ('A' <= data[i] && data[i] <= 'F')
+					n = data[i] - 'A' + 10;
+				else if ('a' <= data[i] && data[i] <= 'f')
+					n = data[i] - 'a' + 10;
+				else {
+					/* should not happen */
+					/* General error */
+					addStmtError(stmt, "HY000", "Unexpected data from server", 0);
+#ifdef WITH_WCHAR
+					if (type == SQL_C_WCHAR)
+						free(ptr);
+#endif
+					return SQL_ERROR;
+				}
+				if (i & 1) {
+					c |= n;
+					if (j < buflen)
+						p[j] = c;
+					j++;
+				} else
+					c = n << 4;
+			}
+			if (lenp)
+				*lenp = j;
+			break;
+		}
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
@@ -2565,6 +2622,7 @@ ODBCStore(ODBCStmt *stmt,
 	switch (sqltype) {
 	case SQL_CHAR:
 	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
 		assign(buf, bufpos, buflen, '\'', stmt);
 		switch (ctype) {
 		case SQL_C_CHAR:
@@ -2719,6 +2777,27 @@ ODBCStore(ODBCStmt *stmt,
 			break;
 		}
 		assign(buf, bufpos, buflen, '\'', stmt);
+		break;
+	case SQL_BINARY:
+	case SQL_VARBINARY:
+	case SQL_LONGVARBINARY:
+		switch (ctype) {
+		case SQL_C_CHAR:
+		case SQL_C_BINARY:
+			assigns(buf, bufpos, buflen, "blob '", stmt);
+			for (i = 0; i < slen; i++) {
+				unsigned char c = (unsigned char) sval[i];
+
+				assign(buf, bufpos, buflen, "0123456789ABCDEF"[c >> 4], stmt);
+				assign(buf, bufpos, buflen, "0123456789ABCDEF"[c & 0xF], stmt);
+			}
+			assign(buf, bufpos, buflen, '\'', stmt);
+			break;
+		default:
+			/* Restricted data type attribute violation */
+			addStmtError(stmt, "07006", NULL, 0);
+			return SQL_ERROR;
+		}
 		break;
 	case SQL_TYPE_DATE:
 		i = 1;

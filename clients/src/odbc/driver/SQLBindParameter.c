@@ -157,10 +157,10 @@ SQLBindParameter_(ODBCStmt *stmt,
 	switch (ParameterType) {
 	case SQL_CHAR:
 	case SQL_VARCHAR:
-/* 	case SQL_LONGVARCHAR: */
+	case SQL_LONGVARCHAR:
 /* 	case SQL_BINARY: */
-/* 	case SQL_VARBINARY: */
-/* 	case SQL_LONGVARBINARY: */
+	case SQL_VARBINARY:
+	case SQL_LONGVARBINARY:
 	case SQL_TYPE_DATE:
 	case SQL_INTERVAL_MONTH:
 /* 	case SQL_INTERVAL_YEAR: */
@@ -208,10 +208,7 @@ SQLBindParameter_(ODBCStmt *stmt,
 		return SQL_ERROR;
 
 	/* these types are not allowed by the server */
-	case SQL_LONGVARCHAR:
 	case SQL_BINARY:
-	case SQL_VARBINARY:
-	case SQL_LONGVARBINARY:
 	case SQL_INTERVAL_YEAR:
 	case SQL_INTERVAL_YEAR_TO_MONTH:
 	case SQL_INTERVAL_DAY:
