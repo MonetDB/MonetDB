@@ -276,7 +276,7 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	}
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
-	throw(MAL, "aggrX3_sum.@4",GDK_EXCEPTION);
+	throw(MAL, "aggrX3_prod.@4",GDK_EXCEPTION);
 }
 @-
 @= AX3sumprod
@@ -548,7 +548,7 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	BBPreleaseref(g->batCacheid);
-	throw(MAL, "aggrX3_prod3",GDK_EXCEPTION);
+	throw(MAL, "aggrX3_avg3",GDK_EXCEPTION);
 }
 @c
 @:AX3arithavg3(bte,loc)@
@@ -590,7 +590,7 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	BBPreleaseref(g->batCacheid);
-	throw(MAL, "aggrX3_prod3",GDK_EXCEPTION);
+	throw(MAL, "aggrX3_@13",GDK_EXCEPTION);
 }
 @c
 @:AX3extreme3(min,<)@
@@ -627,7 +627,7 @@ AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	BBPreleaseref(g->batCacheid);
-	throw(MAL, "aggrX3_prod3", GDK_EXCEPTION);
+	throw(MAL, "aggrX3_count3", GDK_EXCEPTION);
 }
 @-
 The remainder contains the few MIL proc translations 
