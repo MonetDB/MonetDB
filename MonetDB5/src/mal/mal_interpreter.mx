@@ -626,8 +626,7 @@ all resource contention effects.
 Another option would be to maintain a priority queue of 
 suspended instructions.
 @c
-#define heapinfo(X) if((X) ) vol = Hloc((X), BUNlast((X)))-Hloc((X), BUNfirst((X))) ; else vol = 0;
-#define vheapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
+#define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
 #define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
 
 lng
@@ -644,12 +643,12 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 			if (b==NULL) 
 				continue;
 			t = total;
-			heapinfo(b); total += vol;
-			vheapinfo(b->H->vheap); total += vol;
+			heapinfo(&b->H->heap); total += vol;
+			heapinfo(b->H->vheap); total += vol;
 			hashinfo(b->H->hash); total += vol;
 
-			heapinfo(b); total += vol;
-			vheapinfo(b->T->vheap); total += vol;
+			heapinfo(&b->T->heap); total += vol;
+			heapinfo(b->T->vheap); total += vol;
 			hashinfo(b->T->hash); total += vol;
 			/* prepare for hashes */
 			if ( b->H->hash == NULL && b->hsorted == 0  &&
@@ -658,7 +657,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 					cnt = BATcount(b);
 			} 
 			BBPunfix(b->batCacheid); 
-			if ( guess == 0)
+			if ( guess < total - t)
 				guess = total-t;
 		}
 	}
@@ -668,7 +667,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci)
 	total += guess;	
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total )
-		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claim " LLFMT"\n", memorypool,total);
+		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claim " LLFMT "guess" LLFMT "\n", memorypool,total,guess);
 #endif
 	return total;
 }
@@ -880,6 +879,10 @@ because in the kernel we don't know what routines are available
 with this properyty.
 @c
 		claim = getMemoryClaim(stk, pci);
+		PARDEBUG {
+			stream_printf(GDKout,"#DFLOWclaim thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
+			printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
+		}
 		if ( DFLOWclaim(claim) ){
 			PARDEBUG {
 				stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
