@@ -466,7 +466,7 @@ def msc_scripts(fd, var, scripts, msc):
         else:
             cscript = script
             condname = ''
-        if not scripts.has_key('NOINST'):
+        if not scripts.has_key('NOINST') and not scripts.has_key('NOINST_MSC'):
             msc['INSTALL'][script] = cscript, '', sd, '', condname
         msc['SCRIPTS'].append(cscript)
 
@@ -810,7 +810,7 @@ def msc_library(fd, var, libmap, msc):
 
     v = sep + libname
     makedll = pref + v + dll
-    if libmap.has_key('NOINST'):
+    if libmap.has_key('NOINST') or libmap.has_key('NOINST_MSC'):
         makelib = pref + v + '.lib'
     else:
         makelib = makedll
@@ -829,7 +829,7 @@ def msc_library(fd, var, libmap, msc):
     else:
         condname = ''
 
-    if libmap.has_key('NOINST'):
+    if libmap.has_key('NOINST') or libmap.has_key('NOINST_MSC'):
         msc['NLIBS'].append(makelib)
     else:
         msc['LIBS'].append(makelib)
@@ -894,7 +894,7 @@ def msc_library(fd, var, libmap, msc):
     fd.write(srcs + "\n")
     fd.write(deps + "\n")
     ln = pref + sep + libname
-    if libmap.has_key('NOINST'):
+    if libmap.has_key('NOINST') or libmap.has_key('NOINST_MSC'):
         fd.write("%s.lib: $(%s_DEPS)\n" % (ln, ln.replace('-','_')))
         fd.write('\t$(ARCHIVER) /out:"%s.lib" $(%s_OBJS)\n' % (ln, ln.replace('-','_')))
     else:
