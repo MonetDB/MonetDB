@@ -796,15 +796,15 @@ MT_mmap_trim(size_t target, void *fp)
 {
 	stream *err = (stream *) fp;
 	size_t off, rss = MT_getrss();
-	/* worry = 0   if rss < 5/8 target (target = .8RAM)
+	/* worry = 0   if rss < 17/20 target (target = .8RAM)
          * ----- start mmap sync zone ------------------------
-	 *       = 1   5/8target <= rss <6/8 target
-	 *       = 2   6/8target <= rss <7/8 target
-	 *       = 3   7/8target <= rss <8/8 target
+	 *       = 1   17/20target <= rss <18/20 target
+	 *       = 2   18/20target <= rss <19/20 target
+	 *       = 3   19/20target <= rss <target
          * ----- start mmap posix_fadvise don'tneed zone -----
 	 *       = 4   rss > target
          */
-	int i, worry = (int) MIN(MAX(4, rss*8/(size_t) MAX(1,target)) - 4, 4);
+	int i, worry = (int) MIN(MAX(16, rss*20/(size_t) MAX(1,target)) - 16, 4);
 
 	(void) pthread_mutex_lock(&MT_mmap_lock);
 	if (err) {
@@ -852,8 +852,7 @@ done:	if (worry > 1) {
 		/* schedule background saves of tiles */
 		for (i = MT_mmap_next(MT_mmap_cur); i != MT_mmap_cur; i = MT_mmap_next(i)) {
 			assert(i >= 0);
-			if (MT_mmap_tab[i].fd >= 0 &&
-			    MT_mmap_tab[i].writable &&
+			if (MT_mmap_tab[i].writable &&
 		 	    MT_mmap_tab[i].last_tile <= 1 && 
 			    (MT_mmap_tab[i].random == 0 || MT_mmap_tab[i].len > target)) {
 				if (MT_mmap_tab[i].save_tile == 1) {
@@ -1113,7 +1112,7 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 	void *ret = (void *) -1L;
 
 	(void) nremaps;
-	if (fd >= 0) {
+	if (fd > 1) {
 		hdl->mode = mode;
 		hdl->fixed = NULL;
 		hdl->hdl = (void *) (ssize_t) fd;
