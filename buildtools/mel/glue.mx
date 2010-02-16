@@ -496,43 +496,50 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 	}
 	switch (op) {
 	case OP_TOSTR:
-		o << "static int " << atom;
-
-		o << "_tostr(char **dst, int *len, char *src ){\n";
-		o << "   int i = 0; unsigned char *buf = 0;\n";
-		o << "   if( *len < " << len << "*4+1 ){\n";
-		o << "      if (*dst && *len > 0) GDKfree(*dst);\n";
-		o << "      *dst = (char*)GDKmalloc(*len = " << len << "*4+1 );\n";
+		o << "static int\n";
+		o << atom << "_tostr(char **dst, int *len, char *src)\n{\n";
+		o << "   int i = 0;\n";
+		o << "   unsigned char *buf = 0;\n\n";
+		o << "   if (*len < " << len << " * 4 + 3) {\n";
+		o << "      if (*dst && *len > 0)\n";
+		o << "         GDKfree(*dst);\n";
+		o << "      *dst = (char *) GDKmalloc(*len = " << len << " * 4 + 3);\n";
 		o << "   }\n";
-		o << "   for( i = 0, buf = (unsigned char *) *dst; i < " << len << "; i++){\n";
-		o << "      unsigned char c = (unsigned char) *src++;\n";
-		o << "      if (GDKisprint(c)) *buf++ = c;\n";
+		o << "   buf = (unsigned char *) *dst;\n";
+		o << "   *buf++ = '\"';\n";
+		o << "   for (i = 0; i < " << len << "; i++) {\n";
+		o << "      unsigned char c = (unsigned char) *src++;\n\n";
+		o << "      if (GDKisprint(c) && c != '\"' && c != '\\\\')\n";
+		o << "         *buf++ = c;\n";
 		o << "      else {\n";
 		o << "         *buf++ = '\\\\';\n";
-		o << "         *buf++ = '0'+c/64;\n";
-		o << "         *buf++ = '0'+(c%64)/8;\n";
-		o << "         *buf++ = '0'+c%8;\n\n";
+		o << "         *buf++ = '0' + c / 64;\n";
+		o << "         *buf++ = '0' + (c % 64) / 8;\n";
+		o << "         *buf++ = '0' + c % 8;\n";
 		o << "      }\n";
 		o << "   }\n";
+		o << "   *buf++ = '\"';\n";
 		o << "   *buf = 0;\n";
 		o << "   return (int) (buf - (unsigned char *) *dst);\n";
 		o << "}\n\n";
 		break;
 	case OP_FROMSTR:
-		o << "static int " << atom;
-
-		o << "_fromstr(char *src, int *len, char **dst ){\n";
-		o << "   int i = 0; unsigned char *buf = 0;\n";
-		o << "   if( *len < " << len << " ){\n";
-		o << "      if (*dst && *len > 0) GDKfree(*dst);\n";
-		o << "      *dst = (char*)GDKmalloc(*len = " << len << " );\n";
+		o << "static int\n";
+		o << atom << "_fromstr(char *src, int *len, char **dst)\n{\n";
+		o << "   int i = 0;\n";
+		o << "   unsigned char *buf = 0;\n\n";
+		o << "   if (*len < " << len << ") {\n";
+		o << "      if (*dst && *len > 0)\n";
+		o << "         GDKfree(*dst);\n";
+		o << "      *dst = (char *) GDKmalloc(*len = " << len << ");\n";
 		o << "   }\n";
-		o << "   for( i = 0, buf = (unsigned char *) src; i < " << len << "; i++,buf++){\n";
-		o << "      if (*buf == '\\\\'){\n";
-		o << "         if ((buf[1]<'0')||(buf[1]>'3')||\n";
-		o << "             (buf[2]<'0')||(buf[2]>'7')||\n";
-		o << "             (buf[3]<'0')||(buf[3]>'7')) continue;\n";
-		o << " 	       (*dst)[i] = buf[1]*64+buf[2]*8+buf[3];\n";
+		o << "   for (i = 0, buf = (unsigned char *) src; i < " << len << "; i++,buf++) {\n";
+		o << "      if (*buf == '\\\\') {\n";
+		o << "         if (buf[1] < '0' || buf[1] > '3' ||\n";
+		o << "             buf[2] < '0' || buf[2] > '7' ||\n";
+		o << "             buf[3] < '0' || buf[3] > '7')\n";
+		o << "            continue;\n";
+		o << "         (*dst)[i] = buf[1] * 64 + buf[2] * 8 + buf[3];\n";
 		o << "         buf += 4;\n";
 		o << "      } else {\n";
 		o << "         (*dst)[i] = *buf;\n";
