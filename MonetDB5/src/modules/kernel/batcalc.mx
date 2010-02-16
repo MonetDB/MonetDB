@@ -387,6 +387,7 @@ fixed-sized types.
 	@2 *q = (@2*)Tloc(b, BUNlast(b));
 	@3 c  = *(@3*)cst;
 
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
 	if( c == @3_nil){
 		for (;p<q; o++, p++)
 			*o = @4_nil;
@@ -403,6 +404,7 @@ fixed-sized types.
 			} else 
 				*o = *p @1 c;
 		}
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 }
 @= accumCstLeft
 {
