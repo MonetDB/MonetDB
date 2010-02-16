@@ -346,11 +346,11 @@ aggr_export str AX3aggrX3_@1(int *ret, int *bid, int *eid);
 str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	BAT *b, *e, *bn;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.@1", RUNTIME_OBJECT_MISSING);
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.@1", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( CMDaggrX3_@1(&bn,b,e) == GDK_SUCCEED){
@@ -435,16 +435,16 @@ str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BAT *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "aggr.sum", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.sum3", RUNTIME_OBJECT_MISSING);
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.sum", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.sum3", RUNTIME_OBJECT_MISSING);
 	}
 	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.sum", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.sum3", RUNTIME_OBJECT_MISSING);
 	}
 	if( CMDaggrX3_sum3_@1_@2(&bn,b,g,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -468,15 +468,15 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BAT *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.prod", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.prod3", RUNTIME_OBJECT_MISSING);
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.prod", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.prod3", RUNTIME_OBJECT_MISSING);
 	}
 	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.prod", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.prod3", RUNTIME_OBJECT_MISSING);
 	}
 	if( CMDaggrX3_prod3_@1_@2(&bn,b,g,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -525,16 +525,16 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	BAT *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.avg3", RUNTIME_OBJECT_MISSING);
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.avg3", RUNTIME_OBJECT_MISSING);
 	}
 	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.avg3", RUNTIME_OBJECT_MISSING);
 	}
 	if( CMDaggrX3_avg3_@1(&bn,b,g,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -567,16 +567,16 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	BAT *b,*g,*e, *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.@13", RUNTIME_OBJECT_MISSING);
 	}
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.@13", RUNTIME_OBJECT_MISSING);
 	}
 	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.@13", RUNTIME_OBJECT_MISSING);
 	}
 	if( CMDaggrX3_@13(&bn,b,g,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
@@ -604,16 +604,16 @@ AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)
 	BAT *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "aggr.count", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.count3", RUNTIME_OBJECT_MISSING);
 	}
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.count", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.count3", RUNTIME_OBJECT_MISSING);
 	}
 	if ((g = BATdescriptor(*gid)) == NULL) {
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.count", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.count3", RUNTIME_OBJECT_MISSING);
 	}
 	if (CMDaggrX3_count3(&bn, b, g, e, ignore_nils) == GDK_SUCCEED) {
 		BBPreleaseref(b->batCacheid);
