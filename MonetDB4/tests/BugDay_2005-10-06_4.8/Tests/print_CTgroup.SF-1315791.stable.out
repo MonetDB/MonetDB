@@ -21,7 +21,7 @@ Over..
 # 15:23:56 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/sjoerd/Monet/etc/MonetDB.conf" --host=localhost --port=32331 < print_CTgroup.SF-1315791.milC
 # 15:23:56 >  
 
-[ "\000\000\000#\000\000\000 ]
+[ "\"\000\000\000#\000\000\000"	]
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
