@@ -73,6 +73,18 @@ CrackPopulate_@1(
 	@1 max,   	/* max value in base column		*/
 	int pieces	/* number of pieces to create (power of 2) */
 );
+
+str
+CrackPopulateSideways_@1(
+	BAT *bcol,	/* :BAT[:void,:@1]	base column	*/
+	BAT *bcol2,	/* :BAT[:void,:@1]	base column2	*/
+	BAT *ccol,	/* :BAT[:@1,:@1]	cracker column	*/
+	BAT *cidx,	/* :BAT[:oid,:@1]	cracker index	*/
+	int m,    	/* position in cracker index structure	*/
+	@1 min,   	/* min value in base column		*/
+	@1 max,   	/* max value in base column		*/
+	int pieces	/* number of pieces to create (power of 2) */
+);
 @
 
 
@@ -276,6 +288,155 @@ CrackPopulate_@1(
 	BATkey(BATmirror(ccol), bcol->tkey);
 	ccol->H->nonil = TRUE;
 	ccol->T->nonil = bcol->T->nonil;
+	ccol->batDirty = TRUE;
+
+	/* populate cracker index */
+	addCrackerIndex_@1(m, &min, 1, (oid) 0, cidx);
+	for (j = 1; j < pieces; j++) {
+		@1 bound = ((@1) j << shift) + min;
+		addCrackerIndex_@1(m, &bound, 1, (oid) (cnt[j-1] == 0 ? 0 : cnt[j-1] - 1), cidx);
+	}
+	addCrackerIndex_@1(m, &max, 0, (oid) (n-1), cidx);
+
+	GDKfree(cnt); cnt = NULL;
+
+	return MAL_SUCCEED;
+}
+str
+CrackPopulateSideways_@1(
+	BAT *bcol,	/* :BAT[:void,:@1]	base column	*/
+	BAT *bcol2,	/* :BAT[:void,:@1]	base column2	*/
+	BAT *ccol,	/* :BAT[:@1,:@1]	cracker column	*/
+	BAT *cidx,	/* :BAT[:oid,:@1]	cracker index	*/
+	int m,    	/* position in cracker index structure	*/
+	@1 min,   	/* min value in base column		*/
+	@1 max,   	/* max value in base column		*/
+	int pieces	/* number of pieces to create (power of 2) */
+)
+{
+	unsigned_@1 range;
+	@1 *bcol_t, *ccol_t, *bcol2_t;
+	@1 *ccol_h;
+	int rbits, pbits, shift;
+	BUN i, n, *cnt;
+	int j;
+
+	if (bcol == NULL)
+		throw(MAL,"CrackPopulate_@1","base column must no be NULL pointer");
+	if (bcol2 == NULL)
+		throw(MAL,"CrackPopulate_@1","base column must no be NULL pointer");
+	if (ccol == NULL)
+		throw(MAL,"CrackPopulate_@1","cracker column must no be NULL pointer");
+	if (cidx == NULL)
+		throw(MAL,"CrackPopulate_@1","cracker index must no be NULL pointer");
+	if (!BAThdense(bcol))
+		throw(MAL,"CrackPopulate_@1","base column head must be dense");
+	if (bcol->ttype != TYPE_@1)
+		throw(MAL,"CrackPopulate_@1","base column tail must be of type @1");
+	if (ccol->htype != TYPE_@1)
+		throw(MAL,"CrackPopulate_@1","cracker column head must be of type @1");
+	if (ccol->ttype != TYPE_@1)
+		throw(MAL,"CrackPopulate_@1","cracker column tail must be of type @1");
+	if (BATcapacity(ccol) < BATcount(bcol))
+		throw(MAL,"CrackPopulate_@1","cracker column must be at least as long as base column");
+	if (cidx->htype != TYPE_oid)
+		throw(MAL,"CrackPopulate_@1","cracker index head must be of type oid");
+	if (cidx->ttype != TYPE_@1)
+		throw(MAL,"CrackPopulate_@1","cracker index tail must be of type @1");
+	if (min >= max)
+		throw(MAL,"CrackPopulate_@1","min must be smaller than max");
+	if (pieces < 2)
+		throw(MAL,"CrackPopulate_@1","number of pieces must be at least 2");
+
+	if ((n = BATcount(bcol)) == 0)
+		return MAL_SUCCEED;
+
+	if (n != BATcount(bcol2))
+		return MAL_SUCCEED;
+
+	/* round pieces to power of 2 >= pieces */
+	pieces--;
+	pbits = 0;
+	while (pieces > 0) {
+		pbits++;
+		pieces >>= 1;
+	}
+	pieces = 1 << pbits;
+	if ((BUN) pieces > BATcount(bcol))
+		throw(MAL,"CrackPopulate_@1","number of pieces must not exceed count of base column");
+
+	/* find covered range, shifting lower bound to 0 */
+	range = max - min;
+	rbits = 0;
+	while (range > 0) {
+		rbits++;
+		range >>= 1;
+	}
+	if (pbits > rbits) {
+		pbits = rbits;
+		pieces = 1 << pbits;
+	}
+	shift = rbits - pbits;
+
+	n = BATcount(bcol);
+	bcol_t = (@1*) Tloc(bcol, BUNfirst(bcol));
+
+	/* minor sanity check */
+	if (bcol_t[0]   < min || bcol_t[0]   > max || \
+	    bcol_t[n/2] < min || bcol_t[n/2] > max || \
+	    bcol_t[n-1] < min || bcol_t[n-1] > max)
+		throw(MAL,"CrackPopulate_@1","base column tail values not in [min,max]");
+
+	cnt = (BUN*) GDKzalloc(pieces * sizeof(BUN));
+	if (cnt == NULL)
+		throw(MAL,"CrackPopulate_@1","failed to allocate cnt");
+	/* invest in bcol scan to count exact piece sizes */
+	if (shift > 0)
+		for (i = 0; i < n; i++) {
+			assert(bcol_t[i] >= min && bcol_t[i] <= max);
+			cnt[(int) ((bcol_t[i] - min) >> shift)]++;
+		}
+	else
+		for (i = 0; i < n; i++) {
+			assert(bcol_t[i] >= min && bcol_t[i] <= max);
+			cnt[(int) (bcol_t[i] - min)]++;
+		}
+
+	/* convert piece sizes into offsets */
+	for (j = pieces - 1; j >= 0; j--) {
+		int k;
+		cnt[j] = 0;
+		for (k = j - 1; k >= 0; k--)
+			cnt[j] += cnt[k];
+	}
+
+	/* populate cracker column */
+	bcol2_t = (@1*) Tloc(bcol2, BUNfirst(bcol2));
+	ccol_t = (@1*) Tloc(ccol, BUNfirst(ccol));
+	ccol_h = (@1*)  Hloc(ccol, BUNfirst(ccol));
+	if (shift > 0)
+		for (i = 0; i < n; i++) {
+			BUN p = cnt[(int) ((bcol_t[i] - min) >> shift)]++;
+			ccol_h[p] = bcol_t[i];
+			ccol_t[p] = bcol2_t[i];
+		}
+	else
+		for (i = 0; i < n; i++) {
+			BUN p = cnt[(int) (bcol_t[i] - min)]++;
+			ccol_h[p] = bcol_t[i];
+			ccol_t[p] = bcol2_t[i];
+		}
+
+	/* set properties */
+	BATsetcount(ccol, n);
+	ccol->tdense = FALSE;
+	ccol->hdense = FALSE;
+	ccol->hsorted = BATtordered(bcol)&1 ? GDK_SORTED : 0;
+	ccol->tsorted = BATtordered(bcol2)&1 ? GDK_SORTED : 0;
+	BATkey(ccol, bcol->tkey);
+	BATkey(BATmirror(ccol), bcol2->tkey);
+	ccol->H->nonil = bcol->T->nonil;
+	ccol->T->nonil = bcol2->T->nonil;
 	ccol->batDirty = TRUE;
 
 	/* populate cracker index */
