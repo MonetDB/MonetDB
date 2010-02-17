@@ -896,7 +896,7 @@ bailout:
 void
 MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 {
-	int i, unload =0;
+	int i, unload =0,ret;
 
 	(void) pthread_mutex_lock(&MT_mmap_lock);
 	i = MT_mmap_idx(base, len);
@@ -907,11 +907,15 @@ MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 		unload = MT_mmap_tab[i].usecnt == 0;
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
-	if (preload > 0) 
-		(void) posix_madvise(base, len, advise);
+	if (i>= 0 && preload > 0) 
+		ret = posix_madvise(base, len, advise);
 	else if (unload)
-		(void) posix_madvise(base, len, BUF_NORMAL);
-
+		ret = posix_madvise(base, len, BUF_NORMAL);
+	if (ret) {
+		stream_printf(GDKerr, "#MT_mmap_inform: posix_madvise(%s,off=%uMB,%uMB,fd=%d,BUF_NORMAL) = %d\n",
+			      (i >=0? MT_mmap_tab[i].path:""), (unsigned int) (len >> 20),
+			      (unsigned int) (len >> 20), ( i >= 0?MT_mmap_tab[i].fd:-1), errno);
+	}
 }
 
 void *
