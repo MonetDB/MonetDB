@@ -267,7 +267,7 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 			int res = ATOMfromstr(type, &p, &a->data.len, val);
 
 			/* no result or nil means error (SQL has NULL not nil) */
-			if (res <= 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
+			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				/*_DELETE(val);*/
 				_DELETE(a);
 				if (p)

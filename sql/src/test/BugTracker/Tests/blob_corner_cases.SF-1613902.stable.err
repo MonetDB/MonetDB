@@ -10,11 +10,6 @@ stderr of test 'blob_corner_cases.SF-1613902` in directory 'src/test/BugTracker`
 # 17:03:24 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30168  < blob_corner_cases.SF-1613902.sql
 # 17:03:24 >  
 
-MAPI  = monetdb@localhost:30168
-QUERY = INSERT
-ERROR = !incorrect blob  in: "insert
-        !into testtable (id, data)
-        !values (1, blob '')"
 
 # 17:03:25 >  
 # 17:03:25 >  Done.
