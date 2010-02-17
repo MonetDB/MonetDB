@@ -896,7 +896,7 @@ bailout:
 void
 MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 {
-	int i, unload =0,ret;
+	int i, unload = 0, ret = 0;
 
 	(void) pthread_mutex_lock(&MT_mmap_lock);
 	i = MT_mmap_idx(base, len);
