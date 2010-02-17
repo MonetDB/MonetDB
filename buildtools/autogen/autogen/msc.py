@@ -895,8 +895,9 @@ def msc_library(fd, var, libmap, msc):
     fd.write(deps + "\n")
     ln = pref + sep + libname
     if libmap.has_key('NOINST') or libmap.has_key('NOINST_MSC'):
-        fd.write("%s.lib: $(%s_DEPS) $(%s_LIBS)\n" % (ln, ln.replace('-','_'), ln.replace('-','_')))
-        fd.write('\t$(ARCHIVER) /out:"%s.lib" $(%s_OBJS)\n' % (ln, ln.replace('-','_')))
+        ln_ = ln.replace('-','_')
+        fd.write("%s.lib: $(%s_DEPS)\n" % (ln, ln_))
+        fd.write('\t$(ARCHIVER) /out:"%s.lib" $(%s_OBJS) $(%s_LIBS)\n' % (ln, ln_, ln_))
     else:
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
         fd.write("%s%s: $(%s_DEPS) \n" % (ln, dll, ln.replace('-','_')))
