@@ -712,6 +712,10 @@ yes-*-*)
 		dnl  /usr/include/cygwin/signal.h ...
 		CPPFLAGS="$CPPFLAGS -std=gnu99"
 		;;
+	*-hp*)
+		dnl  hp-ux includes and c99 don't mix
+		CPPFLAGS="$CPPFLAGS"
+		;;
 	4.2.*-*)
 		dnl gcc 4.2 has a warning on inline functions in C99 mode being
 		dnl made for real in gcc 4.3.  We disable the warning and we
