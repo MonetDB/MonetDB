@@ -91,7 +91,7 @@ structure to compute a group of common aggregates.
 	}
 	/* scan b, and mul values to prods in-place or in prods-array */
 	bhsb = b->hseqbase - 1;
-	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			@6 *t = (@6*) BUNt@7(bi,p);
@@ -123,11 +123,11 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	if (@1) {
 	    if (prods) {
 		/* copy prods array to final result */
-		BATpreload_(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessBegin(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			oid h = (*(oid*) BUNh@4(bni,p)) - min;
 			@9 *dst = (@9*)BUNt@7(bni, p);
@@ -137,12 +137,12 @@ structure to compute a group of common aggregates.
 				*dst = prods[h];
 			}
 		}
-		_BATpreload(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessEnd(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		GDKfree(prods);
 	    }
 	} else {
 		BUN yy = 0;
-		BATpreload_(bn,USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessBegin(bn,USE_TAIL,BUF_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			@9 *dst = (@9*)BUNt@7(bni, p);
 			if (hit[yy] == 0) {
@@ -150,7 +150,7 @@ structure to compute a group of common aggregates.
 			}
 			yy++;
 		}
-		_BATpreload(bn,USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessEnd(bn,USE_TAIL,BUF_SEQUENTIAL);
 	}
 	if (hit)
 		GDKfree(hit);

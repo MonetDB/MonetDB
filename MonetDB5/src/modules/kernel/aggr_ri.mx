@@ -39,22 +39,22 @@
 		oid onil = oid_nil;
 		(void) onil;	/* silence compiler about unused variable */
 		ALGODEBUG THRprintf(GDKout, "#init_result(@1): e->htype == TYPE_void, e->hseqbase=" OIDFMT "\n", e->hseqbase);
-		BATpreload_(e,USE_HEAD,BUF_SEQUENTIAL);
+		BATaccessBegin(e,USE_HEAD,BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			void@1_bunfastins_nocheck_noinc(bn, _p, &onil, &zero);
 			_p++;
 		}
-		_BATpreload(e,USE_HEAD,BUF_SEQUENTIAL);
+		BATaccessEnd(e,USE_HEAD,BUF_SEQUENTIAL);
 		BATseqbase(bn,e->hseqbase);
 	} else if (BAThordered(e)&1) {
 		if (_cnt)
 			min = *(oid*)BUNhloc(ei, BUNfirst(e));
-		BATpreload_(e,USE_HEAD,BUF_SEQUENTIAL);
+		BATaccessBegin(e,USE_HEAD,BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(ei,p), &zero);
 			_p++;
 		}
-		_BATpreload(e,USE_HEAD,BUF_SEQUENTIAL);
+		BATaccessEnd(e,USE_HEAD,BUF_SEQUENTIAL);
 		if (_cnt)
 			max = *(oid*)BUNhloc(ei, BUNlast(e)-1);
 		ALGODEBUG THRprintf(GDKout, "#init_result(@1): BAThordered(e)&1, min=" OIDFMT ", max=" OIDFMT "\n", min, max);
@@ -62,7 +62,7 @@
 		oid i;
 		if (_cnt)
 			min = max = *(oid*)BUNhloc(ei, BUNfirst(e));
-		BATpreload_(e,USE_HEAD,BUF_SEQUENTIAL);
+		BATaccessBegin(e,USE_HEAD,BUF_SEQUENTIAL);
 		BATloop(e, p, q) {
 			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(ei,p), &zero);
 			_p++;
@@ -72,7 +72,7 @@
 			else if (i > max)
 				max = i;
 		}
-		_BATpreload(e,USE_HEAD,BUF_SEQUENTIAL);
+		BATaccessEnd(e,USE_HEAD,BUF_SEQUENTIAL);
 		ALGODEBUG THRprintf(GDKout, "#init_result(@1): min=" OIDFMT ", max=" OIDFMT "\n", min, max);
 	}
 	BATsetcount(bn, _p);

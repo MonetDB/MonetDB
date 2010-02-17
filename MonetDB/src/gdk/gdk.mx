@@ -1802,7 +1802,7 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define BUF_WILLNEED	3	/* Will need these pages */
 #define BUF_DONTNEED	4	/* Don't need these pages */
 
-/* Heaps that are use and hence should to be loaded by BATpreload */
+/* Heaps that are use and hence should to be loaded by BATaccess */
 #define USE_HEAD	1	/* BUNs & string heap */
 #define USE_TAIL	2	/* BUNs & string heap */
 #define USE_HHASH	4	/* hash index */
@@ -1811,9 +1811,9 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 
 gdk_export BAT *BATload(str nme);
 gdk_export BAT *BATload_intern(bat bid);
-#define BATpreload_(b,what,advise) BATpreload(b,what,advise,1)
-#define _BATpreload(b,what,advise) BATpreload(b,what,advise,-1)
-gdk_export size_t BATpreload(BAT *b, int what, int advise, int load);
+#define BATaccessBegin(b,what,advise) BATaccess(b,what,advise,1)
+#define BATaccessEnd(b,what,advise) BATaccess(b,what,advise,-1)
+gdk_export size_t BATaccess(BAT *b, int what, int advise, int load);
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);

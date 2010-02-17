@@ -128,12 +128,12 @@ structure to compute a group of common aggregates.
 	}
 	if (@1 && cnt) {
 		/* copy cnt array to final result */
-		BATpreload_(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessBegin(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			oid h = (*(oid*) BUNh@4(bni,p)) - min;
 			*(wrd*)BUNtloc(bni, p) = cnt[h];
 		}
-		_BATpreload(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessEnd(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		GDKfree(cnt);
 	}
 @c
@@ -143,8 +143,8 @@ structure to compute a group of common aggregates.
 */
 @= aggrX3_count3_loop
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,@7);\n");
-	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
-	BATpreload_(g,USE_TAIL,BUF_WILLNEED);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessBegin(g,USE_TAIL,BUF_WILLNEED);
 	BATloop(b, p, q) {
 		oid v = *(oid*) @5;
 
@@ -161,8 +161,8 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
-	_BATpreload(g,USE_TAIL,BUF_WILLNEED);
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessEnd(g,USE_TAIL,BUF_WILLNEED);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	break;
 @h
 int

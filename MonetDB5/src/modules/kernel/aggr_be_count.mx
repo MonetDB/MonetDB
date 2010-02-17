@@ -124,12 +124,12 @@ structure to compute a group of common aggregates.
 	}
 	if (@1 && cnt) {
 		/* copy cnt array to final result */
-		BATpreload_(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessBegin(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			oid h = (*(oid*) BUNh@4(bni,p)) - min;
 			*(wrd*)BUNtloc(bni, p) = cnt[h];
 		}
-		_BATpreload(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessEnd(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 		GDKfree(cnt);
 	}
 @c
@@ -139,7 +139,7 @@ structure to compute a group of common aggregates.
 */
 @= aggrX3_count_loop
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_count_loop(@1,@2,@3,@4,@5,@6,@7);\n");
-	BATpreload_(b,USE_HEAD,BUF_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD,BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid *h = (oid*) @5;
 
@@ -151,7 +151,7 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
-	_BATpreload(b,USE_HEAD,BUF_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD,BUF_SEQUENTIAL);
 	break;
 @h
 int
@@ -253,21 +253,21 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
-	BATpreload_(e,USE_HEAD,BUF_SEQUENTIAL);
+	BATaccessBegin(e,USE_HEAD,BUF_SEQUENTIAL);
 	BATloop(e, p, q) {
 		if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
 	}
-	_BATpreload(e,USE_HEAD,BUF_SEQUENTIAL);
+	BATaccessEnd(e,USE_HEAD,BUF_SEQUENTIAL);
 	/* scan b, and add increment totals for true values */
 	if (BATprepareHash(bn)) {
 		GDKerror("CMDaggrX3_size(): BATprepareHash(bn) failed");
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*(bit *) BUNtloc(bi, p) == TRUE) {
 			oid *h = (oid *) BUNhead(bi, p);
@@ -280,7 +280,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 			}
 		}
 	}
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	*ret = bn;
 	return GDK_SUCCEED;
 }

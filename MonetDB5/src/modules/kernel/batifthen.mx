@@ -132,8 +132,8 @@ CMDifThen_@1(int *ret, int *bid, int *tid)
 	tbi = bat_iterator(tb);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
-	BATpreload_(b,USE_HEAD, BUF_SEQUENTIAL);
-	BATpreload_(tb,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(tb,USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*t == bit_nil) {
 			BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);
@@ -143,8 +143,8 @@ CMDifThen_@1(int *ret, int *bid, int *tid)
 		}
 		t++;
 	}
-	_BATpreload(tb,USE_TAIL, BUF_SEQUENTIAL);
-	_BATpreload(b,USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(tb,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD, BUF_SEQUENTIAL);
 	bn->T->nonil = (b->T->nonil && tb->T->nonil);
 	BBPreleaseref(tb->batCacheid);
 	@:wrapup@
@@ -165,7 +165,7 @@ str CMDifThenCst_@1(int *ret, int *bid, @1 *tid)
 	bi = bat_iterator(b);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
-	BATpreload_(b,USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
 			BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);
@@ -173,7 +173,7 @@ str CMDifThenCst_@1(int *ret, int *bid, @1 *tid)
 			BUNfastins(bn, BUNhead(bi,p), (ptr) tid);
 		t++;
 	}
-	_BATpreload(b,USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD, BUF_SEQUENTIAL);
 	bn->T->nonil = (b->T->nonil && *tid != nilval);
 	@:wrapup@
 }
@@ -196,7 +196,7 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	t = (bit*)Tloc(b,BUNfirst(b));
 	dst = (@1*)Tloc(bn, BUNfirst(bn));
 
-	BATpreload_(b,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b,USE_TAIL, BUF_SEQUENTIAL);
 	for (p=0; p<cnt; p++) {
 		if (t[p] == bit_nil) 
 			dst[p] = nilval;
@@ -205,7 +205,7 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 		else
 			dst[p] = *eid;
 	}
-	_BATpreload(b,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b,USE_TAIL, BUF_SEQUENTIAL);
 	bn->T->nonil = (b->T->nonil && *tid != nilval && *eid != nilval);
 	BATsetcount(bn, p);
 	@:void_wrapup@
@@ -235,9 +235,9 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 	tbv = (@1*)Tloc(tb, BUNfirst(tb));
 	ebv = (@1*)Tloc(eb, BUNfirst(eb));
 
-	BATpreload_(b,USE_TAIL, BUF_SEQUENTIAL);
-	BATpreload_(tb,USE_TAIL, BUF_SEQUENTIAL);
-	BATpreload_(eb,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(tb,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(eb,USE_TAIL, BUF_SEQUENTIAL);
 	for (p=0; p<cnt; p++) {
 		if (t[p] == bit_nil) 
 			dst[p] = nilval;
@@ -246,9 +246,9 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 		else
 			dst[p] = ebv[p];
 	}
-	_BATpreload(b,USE_TAIL, BUF_SEQUENTIAL);
-	_BATpreload(tb,USE_TAIL, BUF_SEQUENTIAL);
-	_BATpreload(eb,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(tb,USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(eb,USE_TAIL, BUF_SEQUENTIAL);
 	bn->T->nonil = (b->T->nonil && tb->T->nonil && eb->T->nonil);
 	BATsetcount(bn, p);
 	BBPreleaseref(tb->batCacheid);
@@ -362,7 +362,7 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	eid = *(@1**)eid;
 	nilptr = (@1*)nilval;
 #endif
-	BATpreload_(b, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
 			BUNfastins(bn, BUNhead(bi,p), (ptr)nilptr);
@@ -372,7 +372,7 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 			BUNfastins(bn, BUNhead(bi,p), (ptr) eid);
 		t++;
 	}
-	_BATpreload(b, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD, BUF_SEQUENTIAL);
 #if @2
 	bn->T->nonil = (b->T->nonil && strcmp((@1)tid,nilval) != 0 && strcmp((@1)eid,nilval) != 0);
 #else
@@ -409,9 +409,9 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 #if @2
 	nilptr = (@1*)nilval;
 #endif
-	BATpreload_(b, USE_HEAD, BUF_SEQUENTIAL);
-	BATpreload_(tb, USE_TAIL, BUF_SEQUENTIAL);
-	BATpreload_(eb, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(tb, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(eb, USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
 			BUNfastins(bn, BUNhead(bi,p), (ptr)nilptr);
@@ -421,9 +421,9 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 			BUNfastins(bn, BUNhead(bi,p), BUNtail(ebi, p));
 		t++;
 	}
-	_BATpreload(b, USE_HEAD, BUF_SEQUENTIAL);
-	_BATpreload(tb, USE_TAIL, BUF_SEQUENTIAL);
-	_BATpreload(eb, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(tb, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(eb, USE_TAIL, BUF_SEQUENTIAL);
 	bn->T->nonil = (b->T->nonil && tb->T->nonil && eb->T->nonil);
 	BBPreleaseref(tb->batCacheid);
 	BBPreleaseref(eb->batCacheid);
@@ -456,8 +456,8 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 	val = *(@1**)val;
 	nilptr = (@1*)nilval;
 #endif
-	BATpreload_(b, USE_HEAD, BUF_SEQUENTIAL);
-	BATpreload_(eb, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(eb, USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
 			BUNfastins(bn, BUNhead(bi,p), (ptr)nilptr);
@@ -467,8 +467,8 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 			BUNfastins(bn, BUNhead(bi,p), BUNtail(ebi, p));
 		t++;
 	}
-	_BATpreload(b, USE_HEAD, BUF_SEQUENTIAL);
-	_BATpreload(eb, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(eb, USE_TAIL, BUF_SEQUENTIAL);
 #if @2
 	bn->T->nonil = (b->T->nonil && eb->T->nonil && strcmp((@1)val,nilval) != 0);
 #else
@@ -504,8 +504,8 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 	val = *(@1**)val;
 	nilptr = (@1*)nilval;
 #endif
-	BATpreload_(b, USE_HEAD, BUF_SEQUENTIAL);
-	BATpreload_(tb, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(tb, USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*t == bit_nil)
 			BUNfastins(bn, BUNhead(bi,p), (ptr)nilptr);
@@ -515,8 +515,8 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 			BUNfastins(bn, BUNhead(bi,p), val);
 		t++;
 	}
-	_BATpreload(b, USE_HEAD, BUF_SEQUENTIAL);
-	_BATpreload(tb, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(tb, USE_TAIL, BUF_SEQUENTIAL);
 #if @2
 	bn->T->nonil = (b->T->nonil && tb->T->nonil && strcmp((@1)val,nilval) != 0);
 #else

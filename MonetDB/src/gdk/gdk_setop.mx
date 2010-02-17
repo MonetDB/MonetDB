@@ -121,8 +121,8 @@ Implementation is either merge- or hash-based.
 			return NULL;
 		}
 	}
-	BATpreload_(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
-	BATpreload_(bn, USE_HEAD|USE_TAIL|USE_HHASH, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(bn, USE_HEAD|USE_TAIL|USE_HHASH, BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr h = BUNh@2(bi, p);
 		ptr t = BUNt@3(bi, p);
@@ -146,8 +146,8 @@ Implementation is either merge- or hash-based.
 			zz++;
 		}
 	}
-	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
-	_BATpreload(bn, USE_HEAD|USE_TAIL|USE_HHASH, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(bn, USE_HEAD|USE_TAIL|USE_HHASH, BUF_SEQUENTIAL);
 @= elim
 	{
 		int (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
@@ -472,14 +472,14 @@ TODO synced/key case..
 	BATiter ri = bat_iterator(r);
 
 	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
-	BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(r, USE_HEAD, BUF_SEQUENTIAL);
 	if (BATprepareHash(r)) {
-		_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessEnd(r, USE_HEAD, BUF_SEQUENTIAL);
 		goto bunins_failed;
 	}
-	_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
-	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
-	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(r, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
+	BATaccessBegin(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATloop(l, p1, q1) {
 		h = BUNh@2(li, p1);
 		t = BUNtail(li, p1);
@@ -496,8 +496,8 @@ TODO synced/key case..
 			continue;
 		MISS@1(h, t);
 	}
-	_BATpreload(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
-	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
+	BATaccessEnd(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	(void)h2; /* in some cases the @6 check doesn't use the h2 */
 
 @c
