@@ -165,6 +165,7 @@ str CLRbat@1(int *ret, int *l)
 
 	bi = bat_iterator(b);
 
+	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi,p);
 		x= (@3 *) BUNtail(bi,p);
@@ -175,10 +176,12 @@ str CLRbat@1(int *ret, int *l)
 			@2(yp,x);
 		bunfastins(bn, h, yp);
 	}
+	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	bn->H->nonil = b->H->nonil;
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
 bunins_failed:
+	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bn->batCacheid);
 	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");
@@ -232,6 +235,9 @@ str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 
 	p2= BUNfirst(b2);
 	p3= BUNfirst(b3);
+	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(b2,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(b3,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi,p);
 		x= (@3 *) BUNtail(bi,p);
@@ -248,10 +254,16 @@ str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 		p2++;
 		p3++;
 	}
+	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b2,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b3,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	bn->H->nonil = b->H->nonil;
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
 bunins_failed:
+	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b2,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(b3,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bn->batCacheid);
 	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");

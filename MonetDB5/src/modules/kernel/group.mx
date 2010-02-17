@@ -535,7 +535,8 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	return m ? NULL : map2histo(map);
 bunins_failed:
-	_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
+	if (m)
+		_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreclaim(bn);
 	if (hash && !m)
@@ -829,7 +830,8 @@ found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	return m?NULL:map2histo(map);
 bunins_failed:
-	_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
+	if (m)
+		_BATpreload(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 	_BATpreload(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	if (hash && !m)
 		GDKfree(hash);
