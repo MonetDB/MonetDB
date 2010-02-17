@@ -76,7 +76,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
 	VarPtr v;
-	int typewidth= 3 *sizeof(TYPE_oid); /* 2 arguments and a result */
+	size_t typewidth= 3 *sizeof(TYPE_oid); /* 2 arguments and a result */
 
 	(void)cntxt;
 	(void) stk;
@@ -124,8 +124,8 @@ To keep the threads working, we create more pieces then threads.
 
 The pieces to be used may be overruled by the octopus optimizer.
 @c
-	if ( (r = OPTlegAdviceInternal(mb,stk,p)) )
-		pieces = r;
+	if ( (i = OPTlegAdviceInternal(mb,stk,p)) )
+		pieces = i;
 	else {
 		r= (BUN) (monet_memory /typewidth/GDKnr_threads); /* how much fits  */
 		if (rowcnt > r )
