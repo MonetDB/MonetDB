@@ -89,7 +89,7 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
    API there are generally three arguments involved: the pointer to a
    buffer, the length of that buffer, and a pointer to where the
    actual string length is to be stored. */
-#define copyString(str, buf, len, lenp, lent, errfunc, hdl, ret)	\
+#define copyString(str, strlen, buf, len, lenp, lent, errfunc, hdl, ret)	\
 	do {								\
 		lent _l;						\
 		if ((len) < 0) {					\
@@ -97,7 +97,7 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
 			errfunc((hdl), "HY090", NULL, 0);		\
 			ret;						\
 		}							\
-		_l = (str) ? (lent) strlen((char *) (str)) : 0;		\
+		_l = (str) ? (lent) (strlen) : 0;			\
 		if (buf)						\
 			strncpy((char *) (buf), (str) ? (char *) (str) : "", (len)); \
 		if (lenp)						\

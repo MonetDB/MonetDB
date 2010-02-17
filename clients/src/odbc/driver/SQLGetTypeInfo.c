@@ -201,10 +201,73 @@ static struct types {
 		-1,		       /* interval_precision */
 		NULL		       /* tuple */
 	},
-	/* longvarbinary */
-	/* varbinary */
+	{
+		"binary large object", /* type_name */
+		SQL_LONGVARBINARY,     /* data_type */
+		1000000,	       /* column_size */
+		"'",		       /* literal_prefix */
+		"'",		       /* literal_suffix */
+		NULL,		       /* create_params */
+		SQL_NULLABLE,	       /* nullable */
+		SQL_TRUE,	       /* case_sensitive */
+		SQL_SEARCHABLE,	       /* searchable */
+		-1,		       /* unsigned_attribute */
+		SQL_FALSE,	       /* fixed_prec_scale */
+		SQL_FALSE,	       /* auto_unique_value */
+		NULL,		       /* local_type_name */
+		-1,		       /* minimum_scale */
+		-1,		       /* maximum_scale */
+		SQL_LONGVARBINARY,     /* sql_data_type */
+		-1,		       /* sql_datetime_sub */
+		-1,		       /* num_prec_radix */
+		-1,		       /* interval_precision */
+		NULL		       /* tuple */
+	},
+	{
+		"binary large object", /* type_name */
+		SQL_VARBINARY,	       /* data_type */
+		1000000,	       /* column_size */
+		"'",		       /* literal_prefix */
+		"'",		       /* literal_suffix */
+		"length",	       /* create_params */
+		SQL_NULLABLE,	       /* nullable */
+		SQL_TRUE,	       /* case_sensitive */
+		SQL_SEARCHABLE,	       /* searchable */
+		-1,		       /* unsigned_attribute */
+		SQL_FALSE,	       /* fixed_prec_scale */
+		SQL_FALSE,	       /* auto_unique_value */
+		NULL,		       /* local_type_name */
+		-1,		       /* minimum_scale */
+		-1,		       /* maximum_scale */
+		SQL_VARBINARY,	       /* sql_data_type */
+		-1,		       /* sql_datetime_sub */
+		-1,		       /* num_prec_radix */
+		-1,		       /* interval_precision */
+		NULL		       /* tuple */
+	},
 	/* binary */
-	/* longvarchar */
+	{
+		"character large object", /* type_name */
+		SQL_LONGVARCHAR,       /* data_type */
+		1000000,	       /* column_size */
+		"'",		       /* literal_prefix */
+		"'",		       /* literal_suffix */
+		NULL,		       /* create_params */
+		SQL_NULLABLE,	       /* nullable */
+		SQL_TRUE,	       /* case_sensitive */
+		SQL_SEARCHABLE,	       /* searchable */
+		-1,		       /* unsigned_attribute */
+		SQL_FALSE,	       /* fixed_prec_scale */
+		SQL_FALSE,	       /* auto_unique_value */
+		NULL,		       /* local_type_name */
+		-1,		       /* minimum_scale */
+		-1,		       /* maximum_scale */
+		SQL_LONGVARCHAR,       /* sql_data_type */
+		-1,		       /* sql_datetime_sub */
+		-1,		       /* num_prec_radix */
+		-1,		       /* interval_precision */
+		NULL		       /* tuple */
+	},
 	{
 		"character",	       /* type_name */
 		SQL_CHAR,	       /* data_type */

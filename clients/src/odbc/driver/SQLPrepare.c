@@ -219,7 +219,9 @@ SQLPrepare_(ODBCStmt *stmt,
 		rec->sql_desc_num_prec_radix = tp->radix;
 		rec->sql_desc_unsigned = tp->radix == 0 ? SQL_TRUE : SQL_FALSE;
 
-		if (rec->sql_desc_concise_type == SQL_CHAR || rec->sql_desc_concise_type == SQL_VARCHAR)
+		if (rec->sql_desc_concise_type == SQL_CHAR ||
+		    rec->sql_desc_concise_type == SQL_VARCHAR ||
+		    rec->sql_desc_concise_type == SQL_LONGVARCHAR)
 			rec->sql_desc_case_sensitive = SQL_TRUE;
 		else
 			rec->sql_desc_case_sensitive = SQL_FALSE;

@@ -241,6 +241,9 @@ ODBCDisplaySize(ODBCDescRec *rec)
 	case SQL_WCHAR:
 	case SQL_WVARCHAR:
 	case SQL_WLONGVARCHAR:
+	case SQL_BINARY:
+	case SQL_VARBINARY:
+	case SQL_LONGVARBINARY:
 		return rec->sql_desc_length;
 	case SQL_DECIMAL:
 	case SQL_NUMERIC:

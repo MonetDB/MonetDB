@@ -722,7 +722,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 
 	/* copy the data to the supplied output parameters */
 	if (sValue) {
-		copyString(sValue, pInfoValue, nInfoValueMax, pnLength, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
+		copyString(sValue, strlen(sValue), pInfoValue, nInfoValueMax, pnLength, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 	} else if (pInfoValue) {
 		if (len == sizeof(SQLUINTEGER))
 			*(SQLUINTEGER *) pInfoValue = (SQLUINTEGER) nValue;
