@@ -21,7 +21,8 @@ function user.main():void;
     j1 := algebra.join(a,b);
     j2 := algebra.joinPath(a,b,c);
     j3 := algebra.join(b,b);
-    j4 := algebra.joinPath(b,b,b);
+    _14 := algebra.join(b,b);
+    j4 := algebra.join(_14,b);
     mdb.List();
 end main;
 function user.main():void;              #  0 main:void := user.main() {G}
@@ -32,9 +33,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
     j1 := algebra.join(a,b);            #  5 j1:bat[:void,:oid] := ALGjoin(a:bat[:void,:oid], b:bat[:oid,:oid]) {G}
     j2 := algebra.joinPath(a,b,c);      #  6 j2:bat[:void,:str] := ALGjoinPath(a:bat[:void,:oid], b:bat[:oid,:oid], c:bat[:oid,:str]) {G}
     j3 := algebra.join(b,b);            #  7 j3:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
-    j4 := algebra.joinPath(b,b,b);      #  8 j4:bat[:oid,:oid] := ALGjoinPath(b:bat[:oid,:oid], b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
-    mdb.List();                         #  9 _13:void := MDBlistDetail() 
-end main;                               # 10  
+    _14 := algebra.join(b,b);           #  8 _14:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    j4 := algebra.join(_14,b);          #  9 j4:bat[:oid,:oid] := ALGjoin(_14:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    mdb.List();                         # 10 _13:void := MDBlistDetail() 
+end main;                               # 11  
 
 # 20:30:05 >  
 # 20:30:05 >  Done.
