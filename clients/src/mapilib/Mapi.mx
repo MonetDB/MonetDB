@@ -4110,9 +4110,25 @@ mapi_execute_internal(MapiHdl hdl)
 						stream_flush(mid->tracelog);
 					}
 					check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
+					i += n;
+					if (i == size) {
+						if (mid->languageId == LANG_SQL) {
+							stream_write(mid->to, ";", 1, 1);
+							check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
+							if (mid->tracelog) {
+								stream_write(mid->tracelog, ";", 1, 1);
+								stream_flush(mid->tracelog);
+							}
+						}
+						stream_write(mid->to, "\n", 1, 1);
+						if (mid->tracelog) {
+							stream_write(mid->tracelog, "\n", 1, 1);
+							stream_flush(mid->tracelog);
+						}
+						check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
+					}
 					stream_flush(mid->to);
 					check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
-					i += n;
 					if (read_into_cache(hdl, 0) != MOK)
 						return mid->error;
 					if (i >= size && hdl->needmore) {
