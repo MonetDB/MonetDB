@@ -363,6 +363,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	}
 	/* propagate properties */
       bunins_done:
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_HEAD|USE_TAIL, r_scan > 0 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 	bn->hsorted = BAThordered(l);
 	bn->tsorted = FALSE;
 	if (r->hkey) {
@@ -388,6 +390,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	bn->T->nonil = r->T->nonil & !nil_on_miss;
 	return bn;
       bunins_failed:
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_HEAD|USE_TAIL, r_scan > 0 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -453,6 +457,7 @@ the fast inner loops, optimized towards their type.
 				bunfastins(bn, BUNhead(li, p), BUNtail(ri, yy));
 			}
 		}
+		_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 		/* set sorted flags by hand, because we used BUNfastins() */
 		bn->hsorted = BAThordered(l);
 		bn->tsorted = FALSE;
@@ -472,9 +477,13 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	@:joincheck(BAThashjoin,l->ttype,r->htype)@
 	@:joinbat(JOIN_EQ,BAThashjoin(l,r,BUN_NONE),estimate)@
 
-	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
-	if (BATprepareHash(r))
+	BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
+	if (BATprepareHash(r)) {
+		_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
 		return NULL;
+	}
+	_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
+	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	switch (any = ATOMstorage(l->ttype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
@@ -506,6 +515,7 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	default:
 		@:hashjoin(atom,any,tail,any)@
 	}
+	_BATpreload(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 
 	/* propagate alignment info */
 	bn->hsorted = BAThordered(l);
@@ -596,6 +606,8 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	ret = bn;
       goto bunins_failed;
       bunins_failed:
+	_BATpreload(l, USE_HEAD, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_TAIL, BUF_SEQUENTIAL);
 	BATsetcount(bn, dst);
 	if (!ret)
 		BBPreclaim(bn);
@@ -632,6 +644,8 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	ret = bn;
       goto bunins_failed;
       bunins_failed:
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_TAIL, BUF_SEQUENTIAL);
 	BATsetcount(bn, dst);
 	if (!ret)
 		BBPreclaim(bn);
@@ -674,6 +688,9 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	ret = bn;
       goto bunins_failed;
       bunins_failed:
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_TAIL, BUF_WILLNEED);
+	/*_BATpreload(bn, BUF_SEQUENTIAL);*/
 	BATsetcount(bn, dst);
 	if (!ret)
 		BBPreclaim(bn);
@@ -763,6 +780,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		r_cur++;
 		dst++;
 	}
+	_BATpreload(r, USE_TAIL, BUF_SEQUENTIAL);
+	/*_BATpreload(bn, BUF_SEQUENTIAL);*/
 @c
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1);\n");
@@ -775,6 +794,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		@1put(bn, Tloc(bn,dst));
 		dst++;
 	}
+	_BATpreload(r, USE_TAIL, BUF_SEQUENTIAL);
+	/*_BATpreload(bn, BUF_SEQUENTIAL);*/
 @c
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
@@ -793,6 +814,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		@1put(bn, Tloc(bn,dst));
 		dst++;
 	}
+	_BATpreload(l, USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_TAIL, BUF_WILLNEED);
 	if (nondense) {
 		BATiter bni; 
 		/* not (yet?) completely type-optimized ! */
@@ -816,6 +839,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 			@1put(bn, BUNtloc(bni, dst));
 			dst++;
 		}
+		_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		_BATpreload(r, USE_TAIL, BUF_WILLNEED);
 	}
 @c
 @= voidfetchjoin
@@ -1421,7 +1446,6 @@ if no match can be found.
 	BUN p, q;
 	@4
 
-	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BATpreload_(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	BATloop(l, p, q) {
 		BUN i = 0;
@@ -1436,6 +1460,7 @@ if no match can be found.
 			@3(bn, s, BUNhead(li, p), nilt);
 		}
 	}
+	_BATpreload(r, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 }
 break;
 @
@@ -1492,13 +1517,13 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	if (!bn)
 		goto bunins_failed;
 
+	BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	if (BAThdense(r)) {
 		/* positional algorithm: hash on void column would give error and is stupid */
 		ptr nilt = ATOMnilptr(r->ttype);
 		bit nonil = TRUE;
 		BUN p, q, w, s = BUNfirst(bn);
 
-		BATpreload_(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 		BATpreload_(r, USE_TAIL, BATtordered(l)&1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 		BATloop(l, p, q) {
 			oid v = *(oid *) BUNtail(li, p);
@@ -1513,6 +1538,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 			bunfastins_nocheck(bn, s, BUNhead(li, p), t, Hsize(bn), Tsize(bn));
 			s++;
 		}
+		_BATpreload(r, USE_TAIL, BATtordered(l)&1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 		bn->tsorted = ((BATtordered(l) & BATtordered(r) & 1) && nonil) ? GDK_SORTED : 0;
 	} else {
 		/* hash based algorithm (default) */
@@ -1562,6 +1588,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 @c
 		bn->tsorted = 0;
 	}
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	/* set sorted flags by hand, because we used BUNfastins() */
 	if (r->hkey) {
 		ALIGNsetH(bn, l);	/* always 1 hit, so columns are equal */
@@ -1585,6 +1612,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	return bn;
 
       bunins_failed:
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1853,6 +1881,8 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 				}
 			}
 		}
+		_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		_BATpreload(r, USE_HEAD|USE_TAIL, BATcount(l) <= 1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 	}
 	bn->hsorted = l->hsorted;
 	bn->tsorted = 0;
@@ -1860,6 +1890,10 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 	bn->T->nonil = r->T->nonil;
 	return bn;
       bunins_failed:
+	if (!optimize) {
+		_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		_BATpreload(r, USE_HEAD|USE_TAIL, BATcount(l) <= 1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
+	}
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1912,6 +1946,8 @@ differ significantly.
 				bunfastins(bn, v, BUNtail(li, lp));
 			}
 		}
+		_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		_BATpreload(r, USE_HEAD, BUF_WILLNEED);
 	} else {
 		BATpreload_(l, USE_HEAD, BUF_SEQUENTIAL);
 		BATpreload_(r, USE_HEAD|USE_TAIL, BUF_WILLNEED);
@@ -1925,6 +1961,8 @@ differ significantly.
 				}
 			}
 		}
+		_BATpreload(l, USE_HEAD, BUF_SEQUENTIAL);
+		_BATpreload(r, USE_HEAD|USE_TAIL, BUF_WILLNEED);
 	}
 }
 break;
@@ -2041,6 +2079,8 @@ iff BAThkey(r) and one on l to find the matching tuples.
 					bunfastins(bn, v, BUNtail(li, yy));
 			}
 		}
+		_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
+		_BATpreload(l, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	} else if (rdoubles) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: rdoubles\n");
 		BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
@@ -2057,6 +2097,8 @@ iff BAThkey(r) and one on l to find the matching tuples.
 					bunfastins(bn, v, BUNtail(li, yy));
 			}
 		}
+		_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
+		_BATpreload(l, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	} else {
 		BATpreload_(r, USE_HEAD, BUF_SEQUENTIAL);
 		BATpreload_(l, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
@@ -2067,6 +2109,8 @@ iff BAThkey(r) and one on l to find the matching tuples.
 					bunfastins(bn, v, BUNtail(li, yy));
 			}
 		}
+		_BATpreload(r, USE_HEAD, BUF_SEQUENTIAL);
+		_BATpreload(l, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
 	}
 }
 break;
@@ -2202,6 +2246,8 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 			bunfastins(bn, BUNhead(ri, r_cur), BUNtail(li, l_cur));
 		}
 	}
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_HEAD|USE_TAIL, BAThordered(l)&1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 
 	/* property propagation */
 	bn->hsorted = (BAThordered(l) & BAThordered(r) & 1 ? GDK_SORTED : FALSE);
@@ -2370,6 +2416,8 @@ antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		}
 	}
 	BATsetcount(bn, dst);
+	_BATpreload(l, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_HEAD|USE_TAIL, BATcount(l) <= 1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 
 	return bn;
 
@@ -2542,6 +2590,8 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 			dst++;
 		}
 	}
+	_BATpreload(l, USE_HEAD, BUF_SEQUENTIAL);
+	_BATpreload(r, USE_TAIL, BATcount(l) <= 1 ? BUF_SEQUENTIAL : BUF_WILLNEED);
 	BATsetcount(bn, dst);
 
 	return bn;
@@ -3041,7 +3091,7 @@ overhead.
 @{
 @= multijoin
 	for (i = 0; i < argc; i++)
-		BATpreload_(reorder[i]->b, USE_HEAD|USE_TAIL|USE_HHASH, BUF_WILLNEED);
+		BATpreload_(reorder[i]->b, USE_HEAD|USE_TAIL|USE_HHASH, reorder[i]->sync?BUF_SEQUENTIAL:BUF_WILLNEED);
 	while (algo) {
 		ptr h;		/* points to current ID */
 
@@ -3152,4 +3202,6 @@ overhead.
 	if (lead_col->hi < q) {
 		MULTIJOIN_SYNCED(status) = 0;	/* an interrupt occurred! */
 	}
+	for (i = 0; i < argc; i++)
+		_BATpreload(reorder[i]->b, USE_HEAD|USE_TAIL|USE_HHASH, reorder[i]->sync?BUF_SEQUENTIAL:BUF_WILLNEED);
 @}

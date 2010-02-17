@@ -999,6 +999,7 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 		BBPreclaim(bn);
 		bn = BATnew(ht, tt, size);
 	}
+	_BATpreload(b, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
 	return bn;
 }
 

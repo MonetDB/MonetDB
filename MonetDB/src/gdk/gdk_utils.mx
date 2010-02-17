@@ -1491,7 +1491,7 @@ GDKvmtrim(void *limit)
 		/* compute rounded down log2 of memsize / nr_threads */ 
 		size_t s = GDK_mem_maxsize_max / GDKnr_threads;
 		while((s >>= 1) > 0) membits++; 
-		membits = (MAX(0,membits-27))/4;
+		membits = (MAX(0,membits-MT_MMAP_LOG))/4;
 	}
 	do {
 		stream *fp = NULL;
@@ -1517,7 +1517,7 @@ GDKvmtrim(void *limit)
 			 *         =  ..in between.. iff highload = 1-3
 			 *         =           128MB iff highload = 4
 			 */
-			size_t new_mmap_minsize = ((size_t) 1) << (27 + membits*(4-highload)); 
+			size_t new_mmap_minsize = ((size_t) 1) << (MT_MMAP_LOG + membits*(4-highload)); 
  			if (!bak_mmap_minsize) bak_mmap_minsize = GDK_mmap_minsize;
 			if (new_mmap_minsize < bak_mmap_minsize) {
 				GDK_mmap_minsize = new_mmap_minsize;
@@ -1677,8 +1677,12 @@ GDKinit(opt *set, int setlen)
 	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
 	if (GDKnr_threads == 0)
 		GDKnr_threads = MT_check_nr_cores();
+#ifdef NATIVE_WIN32
 	if ( GDKnr_threads)
 		GDK_mmap_minsize /= GDKnr_threads;
+#else
+	GDK_mmap_minsize = 256*1024*1024;
+#endif
 
 #ifdef HAVE_POSIX_FADVISE
 	if (!GDKembedded && GDK_vm_trim) {

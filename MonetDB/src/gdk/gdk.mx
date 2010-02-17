@@ -1757,10 +1757,6 @@ gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
 @item int
 @tab BATmadvise (BAT *b, int hb, int tb, int hh, int th )
 @item int
-@tab BATmmap_pin (BAT *b)
-@item int
-@tab BATmmap_unpin (BAT *b)
-@item int
 @tab BATdelete (BAT *b)
 @end multitable
 @-
@@ -1772,12 +1768,6 @@ columns.
 @
 Failure to read or write the BAT results in a NULL, otherwise it
 returns the BAT pointer.
-@
-MonetDB now has a mmap trim thread that takes care of flushing the
-memory mapped regions when MonetDB starts to consume too much
-main memory. Heaps (that are randomly accessed) can be excluded
-from this mechanism, by pinning them. BATmmap_pin/unpin do
-this for all heaps of a BAT.
 
 @- Heap Storage Modes
 The discriminative storage modes are memory-mapped, compressed, or 
@@ -1821,12 +1811,11 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 
 gdk_export BAT *BATload(str nme);
 gdk_export BAT *BATload_intern(bat bid);
-gdk_export size_t BATpreload_(BAT *b, int what, int advise);
-gdk_export size_t BATpreload(BAT *b, int what, int advise);
+#define BATpreload_(b,what,advise) BATpreload(b,what,advise,1)
+#define _BATpreload(b,what,advise) BATpreload(b,what,advise,-1)
+gdk_export size_t BATpreload(BAT *b, int what, int advise, int load);
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th);
-gdk_export int BATmmap_pin(BAT *b);
-gdk_export int BATmmap_unpin(BAT *b);
 gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATvmsize(BAT *b, int dirty);

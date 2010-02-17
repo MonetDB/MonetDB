@@ -689,7 +689,6 @@ BBPinit(void)
 			GDKfatal("BBPinit: could not alloc arena");
 	}
 	memset(BBP, 0, BBPlimit * sizeof(BBPrec));
-	MT_mmap_pin(BBP, BBPlimit * sizeof(BBPrec));
 
 	/* read the BBP.dir and insert the BATs into the BBP */
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
