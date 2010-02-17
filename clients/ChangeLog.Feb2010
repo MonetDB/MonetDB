@@ -6,6 +6,7 @@
   the requested language (scenario) not loaded.
 
 * Wed Feb 17 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a bug in the Mapi libary when sending very large queries to the server.
 - Implemented BLOB and CLOB support in ODBC driver.
 
 * Wed Jan 27 2010 Sjoerd Mullender <sjoerd@acm.org>
