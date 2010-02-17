@@ -131,7 +131,6 @@ CNTXTinit(void)
 		}
 	}
 	memset(monet_cntxtbuf, 0, (monet_cntxtmax + 1) * sizeof(CntxtRec));
-	MT_mmap_pin(monet_cntxtbuf, (monet_cntxtmax + 1) * sizeof(CntxtRec));
 	monet_cntxt = monet_cntxtbuf + 1;
 }
 
