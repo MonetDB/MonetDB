@@ -266,6 +266,7 @@ str CMDconvert_str_@1(int *ret, int *bid)
 	}
 	BATsetcount(bn, BATcount(b));
 bunins_failed:
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 	@:wrapup@
 }
 @-
