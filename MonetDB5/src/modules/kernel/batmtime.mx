@@ -122,6 +122,8 @@ str MTIMEbat_@1_@2_@3(int *ret, int *l)
 	q = (@1*)Tloc(b,BUNlast(b));
 	t = (@1*)Tloc(right,BUNfirst(right));
 		
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(right, USE_TAIL, BUF_SEQUENTIAL);
 	if (b->T->nonil)
 		for (;p<q; p++, t++, o++)
 			@1@2(o,p,t);
@@ -131,6 +133,8 @@ str MTIMEbat_@1_@2_@3(int *ret, int *l)
 				*o = bit_nil;
 			else @1@2(o,p,t);
 
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
     if (b->htype != bn->htype) {
@@ -165,6 +169,8 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 	q = (@1*)Tloc(b,BUNlast(b));
 	t = (@1*)Tloc(right,BUNfirst(right));
 		
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(right, USE_TAIL, BUF_SEQUENTIAL);
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			@1@2(o,p,t);
@@ -186,6 +192,8 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 				*o = bit_nil;
 			else @1@2(o,p,t);
 
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
 	BBPreleaseref(right->batCacheid);
@@ -222,6 +230,8 @@ str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r)
 	q = (@1*)Tloc(b,BUNlast(b));
 	t = (@1*)Tloc(right,BUNfirst(right));
 		
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATpreload_(right, USE_TAIL, BUF_SEQUENTIAL);
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			@1@2(o,p,t);
@@ -243,6 +253,8 @@ str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r)
 				*o = bit_nil;
 			else @1@2(o,p,t);
 
+	_BATpreload(right, USE_TAIL, BUF_SEQUENTIAL);
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 	BBPreleaseref(right->batCacheid);
 
 	BATsetcount(bn, BATcount(b));
@@ -268,6 +280,7 @@ str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
 	p = (@1*)Tloc(b,BUNfirst(b));
 	q = (@1*)Tloc(b,BUNlast(b));
 		
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
 	if ( @1_isnil(*cst))
 		for (;p<q; p++, o++) 
 				*o = bit_nil;
@@ -281,6 +294,7 @@ str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
 				*o = bit_nil;
 			else @1@2(o,p,cst);
 
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -303,6 +317,7 @@ str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l)
 	p = (@1*)Tloc(b,BUNfirst(b));
 	q = (@1*)Tloc(b,BUNlast(b));
 		
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
 	if (@1_isnil(*cst))
 		for (;p<q; p++, o++) 
 				*o = bit_nil;
@@ -315,6 +330,7 @@ str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l)
 			if( @1_isnil(*p) )
 				*o = bit_nil;
 			else @1@2(o,cst,p);
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
@@ -346,6 +362,7 @@ str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst)
 	p = (@1*)Tloc(b,BUNfirst(b));
 	q = (@1*)Tloc(b,BUNlast(b));
 		
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
 	if ( @1_isnil(*cst))
 		for (;p<q; p++, o++)
 			*o = bit_nil;
@@ -359,6 +376,7 @@ str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst)
 				*o = bit_nil;
 			else @1@2(o,p,cst);
 
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 	BBPkeepref(*ret= bn->batCacheid);
@@ -380,6 +398,7 @@ str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l)
 	p = (@1*)Tloc(b,BUNfirst(b));
 	q = (@1*)Tloc(b,BUNlast(b));
 		
+	BATpreload_(b, USE_TAIL, BUF_SEQUENTIAL);
 	if ( @1_isnil(*cst))
 		for (;p<q; p++, o++)
 			*o = bit_nil;
@@ -392,6 +411,7 @@ str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l)
 			if ( @1_isnil(*p) )
 				*o = bit_nil;
 			else @1@2(o,cst,p);
+	_BATpreload(b, USE_TAIL, BUF_SEQUENTIAL);
 
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);

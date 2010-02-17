@@ -78,6 +78,8 @@ structure to compute a group of common aggregates.
 	offset = (ssize_t) base - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
+	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(g,USE_TAIL,BUF_WILLNEED);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			ptr t = BUNt@7(bi,p);
@@ -119,13 +121,17 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
+	_BATpreload(g,USE_TAIL,BUF_WILLNEED);
+	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	/* insert the extreme values into the result */
+	BATpreload_(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 	BATloop(bn, r, q) {
 		oid *h = (oid*)BUNh@4(bni,r);
 		ptr val = extremes[@8];
 		(void) h;	/* silence compiler about unused variable */
 		ATOMput(bn->ttype, bn->theap, BUNtloc(bni,r), val?val:nil);
 	}
+	_BATpreload(bn,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
 @c
 /*	aggrX3_minmax3_oid
 		e-void-head	e-oid-head	e-oid-head	e-oid-head
@@ -173,6 +179,8 @@ structure to compute a group of common aggregates.
 	offset = (ssize_t) base - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
+	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATpreload_(g,USE_TAIL,BUF_WILLNEED);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			ptr t = BUNt@7(bi,p);
@@ -216,6 +224,8 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
+	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	_BATpreload(g,USE_TAIL,BUF_WILLNEED);
 	/* insert the extreme values into the result */
 	BATloop(bn, r, q) {
 		oid *h = (oid*)BUNh@4(bni,r);
