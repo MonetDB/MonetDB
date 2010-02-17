@@ -1552,6 +1552,14 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 			BATmin(b,&l);
 			if (h != int_nil && l != int_nil && h-l > 0 && (BUN) (h-l) < N) 
 				N = (BUN) (h-l);
+		} else if (b->ttype == TYPE_wrd) {
+			wrd h, l;
+			BATmax(b,&h);
+			BATmin(b,&l);
+			if (h != wrd_nil && l != wrd_nil && h-l > 0 && (BUN) (h-l) < N) {
+				assert(h-l <= (wrd) BUN_MAX);
+				N = (BUN) (h-l);
+			}
 		} else if (b->ttype == TYPE_lng) {
 			lng h, l;
 			BATmax(b,&h);
