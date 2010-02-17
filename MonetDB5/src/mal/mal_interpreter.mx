@@ -45,7 +45,7 @@ to be passed by a handle.
 /* #define DEBUG_FLOW */
 /* #define DEBUG_FLOW2 */
 /* #define STACKTRACE*/
- #define DEBUG_MEMORY_CLAIM
+/* #define DEBUG_MEMORY_CLAIM*/
 
 mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
