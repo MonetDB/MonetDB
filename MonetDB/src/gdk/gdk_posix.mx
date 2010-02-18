@@ -909,10 +909,8 @@ MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 		unload = MT_mmap_tab[i].usecnt == 0;
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
-	if (i >= 0 && preload > 0) 
-		ret = posix_madvise(base, len, advise);
-	else if (unload)
-		ret = posix_madvise(base, len, MMAP_NORMAL);
+	if (unload)
+		ret = posix_madvise(base, len, BUF_SEQUENTIAL);
 	if (ret) {
 		stream_printf(GDKerr, "#MT_mmap_inform: posix_madvise(file=%s, fd=%d, base="PTRFMT", len="SZFMT"MB, advice=%d) = %d\n",
 			      (i >= 0 ? MT_mmap_tab[i].path : ""), (i >= 0 ? MT_mmap_tab[i].fd : -1),
