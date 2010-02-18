@@ -735,7 +735,8 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 			}
 		hottop = h;
 	}
-	/* input also invalidates the hot set */
+	/* input also invalidates part of the hot set */
+	argclaim = argclaim * (memorypool / (memorypool+memoryused));
 	for ( h = j= 0; j< hottop; j++)
 	if ( argclaim > 0)
 			argclaim -= hotpotatoes[j].claim;
@@ -752,7 +753,6 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 	BAT *b;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
 
 	for ( i= 0; i< pci->retc; i++) 
 	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
@@ -774,6 +774,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 			action++;
 		}
 	}
+	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
 (void) h;
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total && action )
