@@ -7,3 +7,4 @@ batcast.SF-1730987
 empty_line_crash.SF-1806638
 parser.SF-2051309
 mal_var_persistent_over_sessions.SF-2581675
+merge-join_properties.SF-2952191
