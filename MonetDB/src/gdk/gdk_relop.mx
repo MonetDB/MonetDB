@@ -373,7 +373,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	}
 	bn->H->nonil = l->H->nonil;
 	bn->tsorted = FALSE;
-	if (!nil_on_miss) {
+	if (!hasnils) {
 		if (BATtordered(l) & 1) {
 			if (l->tkey && BATcount(bn) == BATcount(r)) {
 				ALIGNsetT(bn, r);
@@ -386,7 +386,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 			BATkey(BATmirror(bn), TRUE);
 		}
 	}
-	bn->T->nonil = r->T->nonil & !nil_on_miss;
+	bn->T->nonil = r->T->nonil && !hasnils;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
