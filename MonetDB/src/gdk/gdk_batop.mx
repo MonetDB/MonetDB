@@ -1213,12 +1213,6 @@ Create the result BAT and execute the select algorithm.
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
 
 			bn = BAT_hashselect(b, bn, tl);
-		} else if (!preserve_order && equi && ATOMsize(b->ttype) > 1 && estimate * 100 < batcnt && batcnt * 2 * sizeof(int) < (GDK_mem_maxsize / 4)) {
-			/* Build a hash-table on the fly for equi-select if the selectivity is low
-			 * and it is not too big */
-			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
-
-			bn = BAT_hashselect(b, bn, tl);
 		} else {
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_scanselect(b=%s, bn=%s, tl, th, equi=%d, nequi=%d, lval=%d, hval=%d, nocheck=%d);\n", BATgetId(b), BATgetId(b), BATgetId(bn), equi, nequi, lval, hval, nocheck);
 
