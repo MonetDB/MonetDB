@@ -1362,8 +1362,10 @@ shred_external_subset(void *xmlCtx,
                 ctx->myDoc = xmlNewDoc(ctx->version);
             }
                 
-            if (!dtd)
+            if (!dtd) {
                 GDKerror("shred_external_subset: problem with reading external DTD (\"%s\")\n", SystemID);
+                BAILOUT(shredCtx);
+            }
 
             if (ctx->myDoc->extSubset) {
                 stream_printf(GDKout, "!WARNING: double external subset (\"%s\") may cause problems.\n", SystemID);
