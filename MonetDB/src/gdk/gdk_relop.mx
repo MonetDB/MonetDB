@@ -364,7 +364,6 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	/* propagate properties */
       bunins_done:
 	bn->hsorted = BAThordered(l);
-	bn->tsorted = FALSE;
 	if (r->hkey) {
 		if (BATcount(bn) == BATcount(l)) {
 			ALIGNsetH(bn, l);
@@ -373,16 +372,18 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 		}
 	}
 	bn->H->nonil = l->H->nonil;
-	if (l->tkey) {
-		bn->tsorted = BATtordered(r) & BATtordered(l) & 1;
-		if (!nil_on_miss) {
-			if (BATcount(bn) == BATcount(r)) {
+	bn->tsorted = FALSE;
+	if (!nil_on_miss) {
+		if (BATtordered(l) & 1) {
+			if (l->tkey && BATcount(bn) == BATcount(r)) {
 				ALIGNsetT(bn, r);
-			} else if (r->tkey) {
-				BATkey(BATmirror(bn), TRUE);
+			} else
+			if (l->tkey || r->hkey) {
+				bn->tsorted = BATtordered(r);
 			}
-		} else if (hasnils) {
-			bn->tsorted = 0;	/* nils destroy the ordering */
+		}
+		if (l->tkey && r->tkey) {
+			BATkey(BATmirror(bn), TRUE);
 		}
 	}
 	bn->T->nonil = r->T->nonil & !nil_on_miss;
