@@ -659,7 +659,7 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 void
 getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *hotclaim)
 {
-	int i,h;
+	int i, h = int_nil;
 	lng guess=0, t=0, total = 0, vol=0;
 	BUN cnt = 0;
 	BAT *b;
@@ -671,6 +671,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *h
 		*hotclaim =0;
 	if (argclaim){
 		for(i=  pci->retc; i< pci->argc; i++) {
+			h = int_nil;
 			@:calcclaim@
 			if ( guess == 0)
 				guess = total -t;
@@ -759,6 +760,8 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 	{
 		total = 0;
 		@:calcclaim@
+		(void) t;
+		(void) h;
 		if ( total ) {
 			hotpotatoes[hottop].bid = ABS(stk->stk[getArg(pci,i)].val.bval);
 			hotpotatoes[hottop].claim = total;
@@ -775,7 +778,6 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 		}
 	}
 	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
-(void) h;
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total && action )
 		stream_printf(GDKout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
