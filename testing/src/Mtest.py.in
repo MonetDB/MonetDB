@@ -3404,9 +3404,9 @@ def main(argv) :
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
-        exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -i --host=%s --port=%s' % (env['MILCLIENT'], HOST, env['MAPIPORT'])
-        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
+        exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MILCLIENT'], HOST, env['MAPIPORT'])
+        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['MAPIPORT'])
         if par['ALGEBRA']:
