@@ -684,7 +684,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *h
 		*argclaim = total;
 	}
 	if ( retclaim  && *retclaim == 0)
-		*retclaim = guess;
+		*retclaim = guess * pci->retc;
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total )
 		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
