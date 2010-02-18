@@ -300,14 +300,14 @@ TKNZRfindOid(oid *pos, char d, oid h) {
 
 	*pos = BUN_NONE;
 	bi = bat_iterator(b);
-	BATpreload_(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*((char *) BUNtail(bi, p)) == d) {
 			*pos = *(oid *) BUNhead(bi, p);
 			p = q;
 		}
 	}
-	_BATpreload(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

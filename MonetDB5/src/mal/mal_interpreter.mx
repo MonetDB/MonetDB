@@ -61,7 +61,7 @@ mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
-mal_export lng getMemoryClaim(MalStkPtr stk, InstrPtr pci);
+mal_export void getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *hotclaim);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
@@ -80,10 +80,16 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 static void displayVolume(Client cntxt, lng vol);
 
 #define MEMORY_THRESHOLD  0.8
+#define MAXHOT 16
 
 static lng memorypool;		/* memory claimed by concurrent threads */
+static lng memoryused;		/* memory used for intermediates */
 static int memoryclaims = 0;	/* number of threads active with expensive operations */
-
+static struct{
+	lng claim;	/* actual claim on memory*/
+	int bid;
+} hotpotatoes[MAXHOT];
+static int hottop;
 @-
 The struct alignment leads to 40% gain in simple instructions when set.
 @c
@@ -625,71 +631,176 @@ all resource contention effects.
 
 Another option would be to maintain a priority queue of 
 suspended instructions.
+@= calcclaim
+t = total;
+if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+	b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+	if (b==NULL) 
+		continue;
+	heapinfo(&b->H->heap); total += vol;
+	heapinfo(b->H->vheap); total += vol;
+	hashinfo(b->H->hash); total += vol;
+
+	heapinfo(&b->T->heap); total += vol;
+	heapinfo(b->T->vheap); total += vol;
+	hashinfo(b->T->hash); total += vol;
+	/* prepare for hashes */
+	if ( b->H->hash == NULL && b->hsorted == 0  &&
+		 b->T->hash == NULL && b->tsorted == 0 ){
+		if ( BATcount(b)  > cnt)
+			cnt = BATcount(b);
+	} 
+	BBPunfix( h = b->batCacheid); 
+}
 @c
 #define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
 #define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
 
-lng
-getMemoryClaim(MalStkPtr stk, InstrPtr pci)
+void
+getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *hotclaim)
 {
-	int i;
-	lng t, total = 0, vol=0, guess=0;
+	int i,h;
+	lng guess=0, t=0, total = 0, vol=0;
 	BUN cnt = 0;
 	BAT *b;
 	
-	for(i=  pci->retc; i< pci->argc; i++) {
-		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-			if (b==NULL) 
-				continue;
-			t = total;
-			heapinfo(&b->H->heap); total += vol;
-			heapinfo(b->H->vheap); total += vol;
-			hashinfo(b->H->hash); total += vol;
-
-			heapinfo(&b->T->heap); total += vol;
-			heapinfo(b->T->vheap); total += vol;
-			hashinfo(b->T->hash); total += vol;
-			/* prepare for hashes */
-			if ( b->H->hash == NULL && b->hsorted == 0  &&
-			     b->T->hash == NULL && b->tsorted == 0 ){
-				if ( BATcount(b)  > cnt)
-					cnt = BATcount(b);
-			} 
-			BBPunfix(b->batCacheid); 
-			if ( guess < total - t)
-				guess = total-t;
+	total = 0;
+	if (retclaim)
+		*retclaim =0;
+	if (hotclaim)
+		*hotclaim =0;
+	if (argclaim){
+		for(i=  pci->retc; i< pci->argc; i++) {
+			@:calcclaim@
+			if ( guess == 0)
+				guess = total -t;
+			/* claims on hotpotatoes are not counted */
+			if (hotclaim)
+			for (t =0; t< hottop; t++)
+			if (hotpotatoes[t].bid == h)
+				*hotclaim += hotpotatoes[t].claim;
 		}
+		*argclaim = total;
 	}
-	/* accommodate for one hash  */
-	total += cnt * sizeof(int);
-	/* accomodate for result based on first argument */
-	total += guess;	
+	if ( retclaim  && *retclaim == 0)
+		*retclaim = guess;
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total )
-		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claim " LLFMT "guess" LLFMT "\n", memorypool,total,guess);
+		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
 #endif
-	return total;
+}
+@-
+After we have executed the instruction, we should release any hotpotatoe claim (it is hot only once)
+and make more precise claims for the return arguments. Moreover, we should reduce the hot potatoe set,
+due to other arguments being loaded.
+@c
+void
+updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim)
+{
+	/* remove the result arguments from the hot set */
+	int i,j,h,bid;
+	
+	if ( hottop == MAXHOT || memoryused > (lng) (MEMORY_THRESHOLD * monet_memory) ){
+		/* forget everything returning memory to pool */
+		for ( i =0; i< hottop; i++){
+			hotpotatoes[i].claim=0;
+			hotpotatoes[i].bid=0;
+		}
+		memoryused = 0;
+		hottop = 0; 
+#ifdef DEBUG_MEMORY_CLAIM
+		stream_printf(GDKout,"#DFLOWhotpotatoes reset\n");
+#endif
+	}
+
+	if (memorypool == 0 ){
+		/* not initialized */
+		return;
+	}
+	for ( i = start; i< stop; i++) 
+	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
+	{
+		for ( h = j= 0; j< hottop; j++)
+			if ( hotpotatoes[j].bid != ABS(bid))
+				hotpotatoes[h++]= hotpotatoes[j];
+			else{
+#ifdef DEBUG_MEMORY_CLAIM
+				if ( hotpotatoes[j].claim){
+					str cv = NULL;
+					ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
+					stream_printf(GDKout,"#DFLOWhotpotatoes[%d] drops  [%s]" LLFMT "\n", j, cv, hotpotatoes[j].claim);
+					if (cv) GDKfree(cv);
+				}
+#endif
+			}
+		hottop = h;
+	}
+	/* input also invalidates part of the hot set */
+	argclaim = argclaim * (memorypool / (memorypool+memoryused));
+	for ( h = j= 0; j< hottop; j++)
+	if ( argclaim > 0)
+			argclaim -= hotpotatoes[j].claim;
+	else	hotpotatoes[h++]= hotpotatoes[j];
+	hottop = h; 
+}
+
+void
+updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
+{
+	lng action=0,total,t,vol;
+	int i,h,bid;
+	BUN cnt = 0;
+	BAT *b;
+
+	mal_set_lock(mal_contextLock, "DFLOWdelay");
+
+	for ( i= 0; i< pci->retc; i++) 
+	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
+	{
+		total = 0;
+		@:calcclaim@
+		if ( total ) {
+			hotpotatoes[hottop].bid = ABS(stk->stk[getArg(pci,i)].val.bval);
+			hotpotatoes[hottop].claim = total;
+#ifdef DEBUG_MEMORY_CLAIM
+			if ( total ) {
+				str cv = NULL;
+				ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
+				stream_printf(GDKout,"#DFLOWhotpotatoes[%d] claims [%s]" LLFMT "\n", hottop, cv, total);
+				GDKfree(cv);
+			}
+#endif
+			hottop++;
+			action++;
+		}
+	}
+	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
+(void) h;
+#ifdef DEBUG_MEMORY_CLAIM
+	if ( total && action )
+		stream_printf(GDKout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
+#endif
+	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 }
 
 int
-DFLOWclaim(lng claim)
+DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 {
 	/* optimistically set memory */
-	if ( claim == 0)
+	if ( argclaim + retclaim == 0)
 		return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if (memorypool <= 0 && memoryclaims == 0)
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
 	
-	if ( claim > 0 ) {
-		if (memoryclaims == 0 || memorypool > claim ){
-			memorypool -= claim;
+	if ( argclaim + retclaim > 0 ) {
+		if (memoryclaims == 0 || memorypool - memoryused > argclaim + retclaim -hotclaim){
+			memorypool -= (argclaim + retclaim);
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"#DFLOWclaim %3d  thread %d pool " LLFMT " claim " LLFMT"\n",
-				memoryclaims, THRgettid(), memorypool, claim);
+			stream_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
+				memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
@@ -698,13 +809,14 @@ DFLOWclaim(lng claim)
 		return -1;
 	} 
 	/* release memory claimed before */
-	assert(memoryclaims > 0 );
-	memorypool += -claim;
+	memorypool += -argclaim -retclaim ; 
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"#DFLOWrelease %3d thread %d pool " LLFMT " claim " LLFMT"\n",
-			memoryclaims, THRgettid(), memorypool, claim);
+		stream_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
+			memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
+		stream_flush(GDKout);
 #endif
+	assert(memoryclaims >= 0 );
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 	return 0;
 }
@@ -824,7 +936,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	MT_Lock *lock = &flow->done->l;
 	int prevpc = 0;
 	int tid = t->id;
-	lng claim;
+	lng argclaim,retclaim,hotclaim;
     
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -876,30 +988,30 @@ The process could be refined by checking for cheap operations,
 i.e. those that would require memory at all (aggr.count)
 This, however, would lead to a dependency to the upper layers,
 because in the kernel we don't know what routines are available
-with this properyty.
+with this property.
+Note, al alternative scheme is to push the instruction back
+on the queue, searching for one that can be handled instead. [todo].
 @c
-		claim = getMemoryClaim(stk, pci);
-		PARDEBUG {
-			stream_printf(GDKout,"#DFLOWclaim thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
-			printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
-		}
-		if ( DFLOWclaim(claim) ){
+		getMemoryClaim(stk, pci, &argclaim, &retclaim,&hotclaim);
+		if ( DFLOWadmission(argclaim,retclaim,hotclaim) ){
 			PARDEBUG {
-				stream_printf(GDKout,"#DFLOWdelay thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
+				stream_printf(GDKout,"#DFLOWdelay thread %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
 				printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 			}
 			for ( ; ; )
 			{
-				MT_sleep_ms( 50);
-				if ( DFLOWclaim(claim) == 0) {
+				MT_sleep_ms( 25);
+				if ( DFLOWadmission(argclaim,retclaim,hotclaim) == 0) {
 					PARDEBUG {
-						stream_printf(GDKout,"#DFLOWcontinue thread %d claim  " LLFMT " pool "LLFMT"\n#", THRgettid(), claim, memorypool);
+						stream_printf(GDKout,"#DFLOWcont  thread %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
 						printInstruction(GDKout, mb, 0, pci, LIST_MAL_STMT);
 					}
 					break;
 				}
 			}
 		}
+		/* remove all result hotpotatoes now */
+		updMemoryUsedPart(stk,pci,0,pci->retc,-1);
 		@:beginProfile(t,0)@
 @-
 To improve memory access behavior we could touch the pages of all BATs to enforce them to become memory resident.
@@ -909,11 +1021,11 @@ The number of instructions allowed is severely limited.
 We don't allow sequential flow control here.
 @c
         switch (pci->token){
-		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
-		case PATcall: @:patterncall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
-		case CMDcall: @:commandcall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
-		case FACcall: @:factorycall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
-		case FCNcall: @:functioncall(SLOW,fs->pc = -1; DFLOWclaim(-claim); return ret,t)@ break;
+		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case PATcall: @:patterncall(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case CMDcall: @:commandcall(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case FACcall: @:factorycall(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case FCNcall: @:functioncall(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
 		case NOOPsymbol:
 		case REMsymbol:
 			break;
@@ -925,7 +1037,8 @@ We don't allow sequential flow control here.
 			ret = createScriptException(mb, stkpc, MAL,
 					NULL, "unkown operation");
 		}
-		DFLOWclaim(-claim);
+		updMemoryUsed(stk,pci,argclaim);
+		DFLOWadmission(-argclaim,-retclaim,-hotclaim);
 		@:MALrecycleExit(t)@
 	}
 	@:endProfile(t)@
