@@ -869,19 +869,34 @@ logger_readlog(logger *lg, char *filename)
 		case LOG_INSERT:
 		case LOG_DELETE:
 		case LOG_UPDATE:
-			err = (log_read_updates(lg, tr, &l, name) != LOG_OK);
+			if (name == NULL)
+				err = 1;
+			else
+				err = (log_read_updates(lg, tr, &l, name) != LOG_OK);
 			break;
 		case LOG_CREATE:
-			err = (log_read_create(lg, tr, name) != LOG_OK);
+			if (name == NULL)
+				err = 1;
+			else
+				err = (log_read_create(lg, tr, name) != LOG_OK);
 			break;
 		case LOG_USE:
-			log_read_use(lg, tr, &l, name);
+			if (name == NULL)
+				err = 1;
+			else
+				log_read_use(lg, tr, &l, name);
 			break;
 		case LOG_DESTROY:
-			log_read_destroy(lg, tr, name);
+			if (name == NULL)
+				err = 1;
+			else
+				log_read_destroy(lg, tr, name);
 			break;
 		case LOG_CLEAR:
-			log_read_clear(lg, tr, name);
+			if (name == NULL)
+				err = 1;
+			else
+				log_read_clear(lg, tr, name);
 			break;
 		default:
 			err = -2;
