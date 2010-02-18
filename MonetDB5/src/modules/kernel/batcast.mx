@@ -253,7 +253,7 @@ str CMDconvert_str_@1(int *ret, int *bid)
 	@:voidresultBAT(TYPE_@1,"batcalc.@1")@
 	bi = bat_iterator(b);
 
-	BATaccessBegin(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr v = NULL; 
 		int len = 0;
@@ -266,7 +266,7 @@ str CMDconvert_str_@1(int *ret, int *bid)
 	}
 	BATsetcount(bn, BATcount(b));
 bunins_failed:
-	BATaccessEnd(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	@:wrapup@
 }
 @-

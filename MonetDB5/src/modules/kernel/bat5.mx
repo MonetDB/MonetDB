@@ -949,7 +949,7 @@ void_replace_bat5(BAT *b, BAT *u, bit force)
 	BUN nr = 0;
 	BUN r, s;
 
-	BATaccessBegin(u,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessBegin(u,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(u, r, s) {
 		oid updid = *(oid *) BUNhead(ui, r);
 		ptr val = BUNtail(ui, r);
@@ -958,7 +958,7 @@ void_replace_bat5(BAT *b, BAT *u, bit force)
 			return BUN_NONE;
 		nr++;
 	}
-	BATaccessEnd(u,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessEnd(u,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	return nr;
 }
 
@@ -2822,14 +2822,14 @@ void_delete_bat(BAT *b, BAT *d, int delta)
 			nr++;
 		}
 	} else {
-		BATaccessBegin(d,USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessBegin(d,USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(d, r, s) {
 			oid delid = *(oid *) BUNtail(di, r);
 
 			void_inplace5(b, delid, nil, TRUE);
 			nr++;
 		}
-		BATaccessEnd(d,USE_TAIL,BUF_SEQUENTIAL);
+		BATaccessEnd(d,USE_TAIL,MMAP_SEQUENTIAL);
 	}
 	return nr;
 }

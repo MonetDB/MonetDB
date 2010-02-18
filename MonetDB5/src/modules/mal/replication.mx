@@ -697,7 +697,7 @@ MASTERdump(BAT *b, str buf, int type, int tag)
 
 	i = MASTERgetBuffer(tag);
 	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q)
 	{
 		ATOMformat(getHeadType(type), BUNhead(bi, p), &headv);
@@ -747,7 +747,7 @@ MASTERdump(BAT *b, str buf, int type, int tag)
 		master[i].top += l;
 		master[i].buf[master[i].top] = 0;
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,BUF_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	GDKfree(tail);
 	GDKfree(head);
 	return MAL_SUCCEED;

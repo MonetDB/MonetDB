@@ -415,7 +415,7 @@ map2histo(BAT *map)
 			BBPreclaim(map);
 		return NULL;
 	}
-	BATaccessBegin(map, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(map, USE_HEAD, MMAP_SEQUENTIAL);
 	sz = BATcount(map);
 	bn = BATnew(TYPE_oid,TYPE_wrd,sz);
 	if ( bn == NULL){
@@ -431,7 +431,7 @@ map2histo(BAT *map)
 	BATkey(BATmirror(bn),FALSE);
 	bn->tsorted = 0;
 bunins_failed:
-	BATaccessEnd(map, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(map, USE_HEAD, MMAP_SEQUENTIAL);
 	if (map)
 		BBPreclaim(map);
 	return bn;
@@ -487,8 +487,8 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 
 	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
-	BATaccessBegin(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		declare_@4
 		ptr tcur = BUN@2(bi,p);
@@ -531,13 +531,13 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	if (hash && !m)
 		GDKfree(hash);
 	if (m)
-		BATaccessEnd(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	return m ? NULL : map2histo(map);
 bunins_failed:
 	if (m)
-		BATaccessEnd(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPreclaim(bn);
 	if (hash && !m)
 		GDKfree(hash);
@@ -738,12 +738,12 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 		BBPunfix(s->batCacheid);
 		BBPfix(histo->batCacheid);
 		BBPfix(map->batCacheid);
-		BATaccessBegin(histo, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessBegin(histo, USE_TAIL, MMAP_SEQUENTIAL);
 		BATloop(histo, p, q) {
 			/* + 4 for an average chain list of 4 */
 			r += (BUN) (((dbl)cnt/SAMPLE_SIZE)/(*(wrd*)Tloc(histo,p)+4));
 		}
-		BATaccessEnd(histo, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(histo, USE_TAIL, MMAP_SEQUENTIAL);
 		BBPunfix(histo->batCacheid);
 		BBPunfix(map->batCacheid);
 		if (histo != ct_histo)
@@ -779,8 +779,8 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 
 	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
-	BATaccessBegin(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		ptr tcur = BUN@3(bi,p);
 		BUN c;
@@ -826,13 +826,13 @@ found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 		GDKfree(hash);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	if (m)
-		BATaccessEnd(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	return m?NULL:map2histo(map);
 bunins_failed:
 	if (m)
-		BATaccessEnd(map, USE_HEAD|USE_TAIL, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	if (hash && !m)
 		GDKfree(hash);
 	BBPreclaim(bn);
@@ -1060,7 +1060,7 @@ CThistosum(
 		return GDK_FAIL;
 
 	resi = bat_iterator(res);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oh = (oid *) BUNhloc(bi, p);
 		i = *(wrd *) BUNtloc(bi, p);
@@ -1080,7 +1080,7 @@ CThistosum(
 			*z += i;
 		}
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	res->hsorted = res->tsorted = 0;
 	if (!(res->batDirty&2)) res = BATsetaccess(res, BAT_READ);
 	*retval = res;
@@ -1314,11 +1314,11 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 	r = (BUN) (this - base);
 @= refine_loop
 		/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
-		BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 		if (BAThordered(b)&1 && BAThdense(a))
-			BATaccessBegin(a, USE_TAIL, BUF_SEQUENTIAL);
+			BATaccessBegin(a, USE_TAIL, MMAP_SEQUENTIAL);
 		else
-			BATaccessBegin(a, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
+			BATaccessBegin(a, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 		BATloop(b, p, q) {
 			if ((*cmp) (BUNtail(bi, last), BUNtail(bi, p))) {
 				cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
@@ -1353,10 +1353,10 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 			this += sizeof(oid);
 		}
 		if (BAThordered(b)&1 && BAThdense(a))
-			BATaccessEnd(a, USE_TAIL, BUF_SEQUENTIAL);
+			BATaccessEnd(a, USE_TAIL, MMAP_SEQUENTIAL);
 		else
-			BATaccessEnd(a, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
-		BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+			BATaccessEnd(a, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
+		BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 @c
 		cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
 		hdst += cnt;
@@ -1748,11 +1748,11 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		BBPreclaim(bn);
 		throw(MAL, "group.sum", MAL_MALLOC_FAIL);
 	}
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessBegin(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
+		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1770,14 +1770,14 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		}
 	}
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessEnd(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 @-
 @= small_aggr_sum
 	sums = (@3*) GDKzalloc(range*sizeof(@3));
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1793,7 +1793,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(bn, p, q) {
 		oid h = (*(oid*) BUNhead(bni,p)) - min;
 		*(@3*)BUN@2(bni, p) = sums[h];
@@ -1804,11 +1804,11 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		BBPreclaim(bn);
 		throw(MAL, "group.prod", MAL_MALLOC_FAIL);
 	}
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessBegin(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
+		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1826,16 +1826,16 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		}
 	}
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessEnd(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 @c
 @= small_aggr_prod
 	prods = (@3*) GDKmalloc(range*sizeof(@3));
 	for (i = 0; i < range; i++)
 		prods[i] = one;
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1851,7 +1851,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(bn, p, q) {
 		oid h = (*(oid*) BUNhead(bni,p)) - min;
 		*(@3*)BUN@2(bni, p) = prods[h];
@@ -1864,11 +1864,11 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		BBPreclaim(bn);
 		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	}
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessBegin(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
+		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1887,10 +1887,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		}
 	}
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessEnd(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	/* postprocess by dividing sums by counts */
 	BATloop(bn, p, q) {
 		dbl *dst = (dbl*) BUN@2(bni, p);
@@ -1906,7 +1906,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 @= small_aggr_avg
 	sums = (dbl*) GDKzalloc(range*sizeof(dbl));
 	cnt  = (BUN*) GDKzalloc(range*sizeof(BUN));
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -1923,7 +1923,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			}
 		}
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	/* postprocess by dividing sums by counts */
 	BATloop(bn, p, q) {
 		oid h = (*(oid*) BUNhead(bni,p)) - min;
@@ -1977,18 +1977,18 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
-		BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
 				throw(MAL, "group.sum", OPERATION_FAILED " Cannot insert zero");
 			}
 		}
-		BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
 		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
-		BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
@@ -2000,7 +2000,7 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 			else if (i > max)
 				max = i;
 		}
-		BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 	}
 	range = max - min + 1;
 
@@ -2054,18 +2054,18 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
-		BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
 				BBPreclaim(bn);
 				throw(MAL, "group.prod", OPERATION_FAILED " Cannot insert one");
 			}
 		}
-		BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
 		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
-		BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
 				BBPreclaim(bn);
@@ -2077,7 +2077,7 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 			else if (i > max)
 				max = i;
 		}
-		BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 	}
 	range = max - min + 1;
 
@@ -2155,18 +2155,18 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
-		BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
 				throw(MAL, "group.@1", OPERATION_FAILED " Cannot insert zero");
 			}
 		}
-		BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
 	} else {
 		min = max = *(oid*)BUNhead(ei, BUNfirst(e));
-		BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
@@ -2178,7 +2178,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 			else if (i > max)
 				max = i;
 		}
-		BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 	}
 	range = max - min + 1;
 
@@ -2279,9 +2279,9 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	memset(sum, 0, nElements*sizeof(dbl));
 	memset(sumsquares, 0, nElements*sizeof(dbl));
 
-	BATaccessBegin(b, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
 	if (!(BAThordered(b)&1 && BAThdense(e)))
-		BATaccessBegin(e, USE_HEAD|USE_HHASH, BUF_WILLNEED);
+		BATaccessBegin(e, USE_HEAD|USE_HHASH, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		if (*h != previousOid) {
@@ -2304,14 +2304,14 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 		}
 	}
 	if (!(BAThordered(b)&1 && BAThdense(e)))
-		BATaccessEnd(e, USE_HEAD|USE_HHASH, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessEnd(e, USE_HEAD|USE_HHASH, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
 
 	/* postprocess by dividing sumsquares and sum by counts and
 	   substracting square of the averages from the average sum of
 	   squares */
 	idx = 0;
-	BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 	BATloop(e, p, q) {
 		if (cnt[idx] == wrd_nil) {
 			@1 _nil = @1_nil;
@@ -2334,7 +2334,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 		}
 		idx++;
 	}
-	BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 	GDKfree(cnt);
 	GDKfree(sum);
 	if (err) {
@@ -2393,8 +2393,8 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 	if (!(BAThordered(b)&1 && BAThdense(e)))
-		BATaccessBegin(e, USE_HEAD|USE_HHASH, BUF_WILLNEED);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_WILLNEED);
+		BATaccessBegin(e, USE_HEAD|USE_HHASH, MMAP_WILLNEED);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 		ptr t =  BUNtail(bi,p);
@@ -2404,12 +2404,12 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 			@:extreme_body_@3(@2)@
 		}
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	if (!(BAThordered(b)&1 && BAThdense(e)))
-		BATaccessEnd(e, USE_HEAD|USE_HHASH, BUF_WILLNEED);
+		BATaccessEnd(e, USE_HEAD|USE_HHASH, MMAP_WILLNEED);
 	/* insert the extreme values into the result */
 	yy = 0;
-	BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 	BATloop(e, p, q) {
 		@3 val = extremes[yy++];
 		if (BUNfastins(bn, BUNhead(ei,p), @:extreme_tail_@3@) == NULL) {
@@ -2417,7 +2417,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 			break;
 		}
 	}
-	BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 	GDKfree(extremes);
 	if (!ret) {
 		BBPreclaim(bn);
@@ -2524,7 +2524,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 
 	bi = bat_iterator(b);
 	bni = bat_iterator(bn);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = *(oid*) BUNhead(bi,p);
 		@2 t =  *(@2*) BUNtail(bi,p);
@@ -2539,7 +2539,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 				*val = t;
 		}
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	bn->hsorted = b->hsorted ;
 	bn->tsorted = b->tsorted ;
 	BBPkeepref(*retval= bn->batCacheid);
@@ -2570,11 +2570,11 @@ str GRP@1_oid_@2(int *retval, int *bid)
 		BBPreclaim(bn);
 		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessBegin(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
+		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
 
@@ -2589,14 +2589,14 @@ str GRP@1_oid_@2(int *retval, int *bid)
 		}
 	}
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessEnd(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 @c
 @= small_aggr_count
 	cnt  = (wrd*) GDKzalloc(range*sizeof(wrd));
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 
@@ -2608,7 +2608,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 			}
 		}
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(bn, p, q) {
 		oid h = (*(oid*) BUNhead(bni,p)) - min;
 		*(wrd*)BUNtloc(bni, p) = cnt[h];
@@ -2670,7 +2670,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 		max = *(oid *) BUNhead(ei, BUNlast(e) - 1);
 	} else {
 		min = max = *(oid *) BUNhead(ei, BUNfirst(e));
-		BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 				BBPreclaim(bn);
@@ -2682,7 +2682,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 			else if (i > max)
 				max = i;
 		}
-		BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+		BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 	}
 	range = max - min + 1;
 
@@ -2747,24 +2747,24 @@ GRPsize(int *retval, int *bid, int *eid)
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
 	bni = bat_iterator(bn);
-	BATaccessBegin(e, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 	BATloop(e, p, q) {
 		if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 			BBPreclaim(bn);
 			throw(MAL, "group.count", OPERATION_FAILED);
 		}
 	}
-	BATaccessEnd(e, USE_HEAD, BUF_SEQUENTIAL);
+	BATaccessEnd(e, USE_HEAD, MMAP_SEQUENTIAL);
 	/* scan b, and add increment totals for true values */
 	if (BATprepareHash(bn)) {
 		BBPreclaim(bn);
 		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessBegin(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
+		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		if (*(bit *) BUNtloc(bi, p) == TRUE) {
 			oid *h = (oid *) BUNhead(bi, p);
@@ -2778,10 +2778,10 @@ GRPsize(int *retval, int *bid, int *eid)
 		}
 	}
 	if (BAThordered(b)&1 && BAThdense(bn))
-		BATaccessEnd(bn, USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
-		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, BUF_WILLNEED);
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, BUF_SEQUENTIAL);
+		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref(*retval = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
@@ -2822,7 +2822,7 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 	i = *size;
 	sum =0;
 	bi = bat_iterator(b);
-	BATaccessBegin(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		sum += *(@1*) BUNtail(bi,p);
 		if (--i == 0){
@@ -2835,7 +2835,7 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 			sum =0;
 		}
 	}
-	BATaccessEnd(b, USE_TAIL, BUF_SEQUENTIAL);
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if(i != *size)
 		BUNfastins(bn, &o, &sum);
 
