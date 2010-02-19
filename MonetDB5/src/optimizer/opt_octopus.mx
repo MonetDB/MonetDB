@@ -335,7 +335,7 @@ already have been handled and produce their target.
 		q= newStmt2(mb,octopusRef, name2);
 		setArgType(mb,q,0,getVarType(mb,varid));
 		setVarUDFtype(mb,getArg(q,0));
-		q= pushArgument(mb,q,sch[k][tidx]);
+		q= pushArgument(mb,q,sch[tidx][k]);
 		q= pushArgument(mb,q,wnm[k]);
 		q= pushArgument(mb,q,tnm[tidx]);
 		q= pushArgument(mb,q,v2);
@@ -561,7 +561,7 @@ when scheduled correctly, would not lead to duplicate work.
 					r = newAssignment(mb);
 					setArgType(mb,r,0,TYPE_lng);
 					pushLng(mb,r,(lng)-1);
-					bid[k][j] = getArg(r,0);
+					bid[j][k] = getArg(r,0);
 			}
 			r = newStmt2(mb,languageRef,dataflowRef);
 			r->barrier = BARRIERsymbol;
@@ -579,7 +579,7 @@ when scheduled correctly, would not lead to duplicate work.
 					r = pushArgument(mb,r,bs);
 		/*			setArgType(mb,r,0,TYPE_lng);*/
 					setVarUDFtype(mb,getArg(r,0));
-					getArg(r,0) = bid[k][j];
+					getArg(r,0) = bid[j][k];
 			}
 
 			r = newAssignment(mb);
@@ -590,16 +590,16 @@ when scheduled correctly, would not lead to duplicate work.
 			r = newStmt2(mb, schedulerRef, putName("makeSchedule",12));
 			setArgType(mb,r,0, TYPE_bte);
 			setVarUDFtype(mb,getArg(r,0));
-			for ( k = 0; k < tcnt; k++)
-				for ( j= 0; j < tcnt; j++){
-					sch[k][j] = newTmpVariable(mb, TYPE_bte);
-					r = pushArgument(mb,r,sch[k][j]);
+			for ( j = 0; j < tcnt; j++)
+				for ( k = 0; k < tcnt; k++){
+					sch[j][k] = newTmpVariable(mb, TYPE_bte);
+					r = pushArgument(mb,r,sch[j][k]);
 			}
 			r->retc = tcnt * tcnt +1;
 			r = pushInt(mb,r,tcnt);
-			for ( k = 0; k < tcnt; k++)
-				for ( j= 0; j < tcnt; j++)
-					r = pushArgument(mb,r,bid[k][j]);
+			for ( j = 0; j < tcnt; j++)
+				for ( k = 0; k < tcnt; k++)
+					r = pushArgument(mb,r,bid[j][k]);
 
 			/* Execution block */
 
