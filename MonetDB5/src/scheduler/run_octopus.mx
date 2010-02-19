@@ -63,7 +63,7 @@ pattern scheduler.register():bit
 address OCTOPUSdiscoverRegister
 comment "Discover workers and register tentacles.";
 
-pattern scheduler.makeSchedule(:int,:lng...):bte...
+pattern scheduler.makeSchedule(:int,:lng...)(:bte,:bte,:bte,:bte,:bte)
 address OCTOPUSmakeSchedule
 comment "Make schedule based on bids.";
 
@@ -121,6 +121,7 @@ typedef struct {
 #define MAXSITES 2048	/* should become dynamic at some point */
 static Worker workers[MAXSITES];
 static int nroctopus = 0;
+bte optTarget = 1; 
 /*sht bidStrategy = 1; 
 #define BID_TRANS	1
 #define BID_COVER	2
@@ -331,11 +332,11 @@ OCTOPUSrun_org(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( msg )
 		return msg;
 
-	*res =1;
+	/* *res =1; */
 	/* if necessary increase the worker set */
 	/* DFLOWworkers(threadcnt); */
 	(void) threadcnt;
-	return runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
+	return runMALdataflow(cntxt,mb,start-1,stop+1,stk,0,pci);
 }
 
 @-
@@ -359,8 +360,8 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Associate logical names "worker_x" with discovered worker uri-s */
 
-	start= getPC(mb,pci) + 1;
-	for (j = start; j<mb->stop ; j++){
+	start= getPC(mb,pci);
+	for (j = start + 1; j<mb->stop ; j++){
 		p= getInstrPtr(mb,j);
 		if ( p->barrier == EXITsymbol )
 			break;
@@ -385,9 +386,60 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	stop = j;
-	*res = 1;
 	return runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
 }
+
+lng
+putJob(int t, int tcnt, lng **bid, bte *busy, bte **rsch)
+{
+	int k,r;
+	bte *cur=NULL;
+	char fl = 0;
+	lng c=0, rc, maxc=0;
+	
+	cur = (bte*) GDKzalloc(sizeof(bte) * tcnt);
+
+	for (k = 0; k < tcnt; k++){
+		if (busy[k]) continue;
+		if ( bid[t][k] < 0 ) continue; /* bid<0 => I don't want to participate */
+		busy[k] = 1;
+		if (t < tcnt - 1){
+			rc = putJob(t+1,tcnt,bid,busy,&cur);
+			switch (optTarget){
+			case 1:	/* maximize the total */
+				c = rc + bid[t][k];
+				break;
+			case 2:	/* makespan */
+				c = (rc > bid[t][k])? rc: bid[t][k];
+				break;
+			}
+		}
+		else {
+			c = bid[t][k];
+		}
+	
+		if (fl) {
+			if (c > maxc){
+				(*rsch)[t] = k;
+				maxc = c;
+				for (r = t+1; r < tcnt; r++)
+					(*rsch)[r] = cur[r];
+			}
+		}
+		else {
+			(*rsch)[t] = k;
+			maxc = c;
+			for (r = t+1; r < tcnt; r++)
+				(*rsch)[r] = cur[r];
+			fl = 1;
+		}
+		busy[k] = 0;
+	}
+
+	GDKfree(cur);
+	return maxc;
+}
+
 
 str
 OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -396,7 +448,8 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tcnt=1, offset, i, j, k, idx;
 	str msg = MAL_SUCCEED;
 	lng **bid=NULL;	
-	bte **sch=NULL, *s;
+	bte *sch=NULL, *s, *busy;
+	lng c;
 
 	*res = 0;	
 	(void) mb;
@@ -407,11 +460,11 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return "Wrong argument number of makeSchedule";
 	offset = tcnt * tcnt + 2;
 	bid = (lng**) GDKzalloc(sizeof(lng*) * tcnt);
-	sch = (bte**) GDKzalloc(sizeof(bte*) * tcnt);
+	sch = (bte*) GDKzalloc(sizeof(bte) * tcnt);
+	busy = (bte*) GDKzalloc(sizeof(bte) * tcnt);
 
 	for ( j = 0; j < tcnt; j++){
 		bid[j] = (lng*) GDKzalloc(sizeof(lng) * tcnt);
-		sch[j] = (bte*) GDKzalloc(sizeof(bte) * tcnt);
 	}
 	for ( i = offset; i < pci->argc; i++) {
 		j = (int) (i-offset) / tcnt;
@@ -420,28 +473,28 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* compute schedule */
+/*	Round Robin
 	for ( j = 0; j < tcnt; j++)
-		for ( k = 0; k < tcnt; k++){
-			if ( j == k )
-				sch[j][k] = 1;
-			else sch[j][k] = 0;
-	}
-
+		sch[j] = j;
+*/
+	/* Optimal */	
+	c = putJob(0,tcnt,bid,busy,&sch);
+		
 	/* set returned schedule variables */
 	for ( j = 0; j < tcnt; j++)
 		for ( k = 0; k < tcnt; k++){
 			idx = j * tcnt + k + 1;
 			s = (bte*) getArgReference(stk,pci,idx);
-			*s = sch[j][k];
+			if ( sch[j] == k)
+				*s = 1;
+			else *s = 0;
 	}
-	*res = 1;
 
-	for ( j= 0; j < tcnt; j++){
+	for ( j= 0; j < tcnt; j++)
 		GDKfree(bid[j]);
-		GDKfree(sch[j]);
-	}
 	GDKfree(bid);
 	GDKfree(sch);
+	GDKfree(busy);
 	return msg;
 }
 
@@ -449,20 +502,18 @@ str
 OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *res = (bit*) getArgReference(stk,pci,0);
-	int j, start, stop;
+	int j, start;
 	InstrPtr p;
 	*res = 0;	/* execute the block */
 
 
-	start= getPC(mb,pci) + 1;
-	for (j= start; j<mb->stop ; j++){
-		p= getInstrPtr(mb,j);
-		if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef)
+	start = getPC(mb,pci);
+	for (j = start + 1; j< mb->stop ; j++){
+		p = getInstrPtr(mb,j);
+		if ( p->barrier == EXITsymbol )
 			break;
 	}
-	stop = j;
-	*res = 1;
 
-	return runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
+	return runMALdataflow(cntxt,mb,start,j,stk,0,pci);
 }
 @}
