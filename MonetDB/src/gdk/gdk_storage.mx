@@ -750,7 +750,7 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 	if ( what&USE_HHASH || what&USE_THASH ) {
 		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATaccess");
 		if ( what&USE_HHASH && b->H->hash && b->H->hash->heap && b->H->hash->heap->base) {
-			budget -= sz = (b->H->hash->heap->free > (size_t) budget)?budget:(ssize_t)b->T->hash->heap->free;
+			budget -= sz = (b->H->hash->heap->free > (size_t) budget)?budget:(ssize_t)b->H->hash->heap->free;
 			v += access_heap(id, "hhash", b->H->hash->heap, b->H->hash->heap->base, sz, 1, preload, MMAP_WILLNEED);
 		}
 		if ( what&USE_THASH && b->T->hash && b->T->hash->heap && b->T->hash->heap->base) {
