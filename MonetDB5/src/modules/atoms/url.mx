@@ -228,9 +228,9 @@ url_getAnchor(str *retval, /* put string: pointer to char here. */
 	s = strchr(Str1, '#');
 	if (s == 0) 
 		s= (str) str_nil;
-	d = (str) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getAnchor", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -250,9 +250,9 @@ url_getBasename(str *retval, url t)
 		s++;
 	else
 		s = (str) str_nil;
-	d = (str)  GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getBasename", "Allocation failed");
 	s = strchr(d, '.');
 	if (s)
 		*s = 0;
@@ -293,8 +293,9 @@ url_getContext(str *retval, url Str1)
 	if (s == 0)
 		s= (str) str_nil;
 	d = GDKmalloc(strlen(Str1) - (s - Str1) + 1);
-	if (d)
-		strcpy(d, s);
+	if (d == NULL)
+		throw(MAL, "url.getContext", "Allocation failed");
+	strcpy(d, s);
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -386,9 +387,9 @@ URLgetDomain(str *retval, str *u)
 	if (d)
 		s = d + 1;
 getDomain_done:
-	d = (char*) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getDomain", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -412,9 +413,9 @@ url_getExtension(str *retval, url t)
 			s = (str) str_nil;
 	} else
 		s = (str) str_nil;
-	d = (str) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getExtension", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -433,9 +434,9 @@ url_getFile(str *retval, url t)
 		s++;
 	else
 		s = (str) str_nil;
-	d = (str) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getFile", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -470,9 +471,9 @@ url_getHost(str *retval, url t)
 	}
 	*b = 0;
 getHost_done:
-	d = (char*) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getHost", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -512,9 +513,9 @@ url_getPort(str *retval, url t)
 	else
 		s = (str)str_nil;
 getPort_done:
-	d = (char*) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getPort", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -535,12 +536,12 @@ url_getProtocol(str *retval, /* put string: pointer to char here. */
 	for (; *t && *t != ':'; t++) {
 		*b++ = *t;
 		if (i++ == 1023)
-			throw(PARSE, "url_getProtocol", "server name too long");
+			throw(PARSE, "url.getProtocol", "server name too long");
 	}
 	*b = 0;
-	d = (char*) GDKmalloc(strlen(buf) + 1);
-	if (d)
-		strcpy(d, buf);
+	d = GDKstrdup(buf);
+	if (d == NULL)
+		throw(MAL, "url.getProtocol", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -559,9 +560,9 @@ url_getQuery(str *retval, url Str1)
 		s= (str) str_nil;
 	 else 
 		s++;
-	d = (char*) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getQuery", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -629,13 +630,13 @@ url_getRobotURL(str *retval, /* put string: pointer to char here. */
 	for (; *t && *t != '/'; t++) {
 		*b++ = *t;
 		if (i++ == 1000)
-			throw(PARSE, "url.getRobot", "server name too long");
+			throw(PARSE, "url.getRobotURL", "server name too long");
 	}
 	strcpy(b, "/robots.txt");
 getRobot_done:
-	d = (char*) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getRobotURL", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 #if 0 /* not reached */
@@ -683,9 +684,9 @@ url_getUser(str *retval, url t)
 		*b = 0;
 	}
 getUser_done:
-	d = (char*) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.getUser", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -806,9 +807,9 @@ url_new3(str *retval,   /* put string: pointer to char here. */
 		s = (str) str_nil;
 	else
 		sprintf(buf, "%s://%s/%s", Protocol, Server, File);
-	d = (str) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.newurl", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -829,9 +830,9 @@ url_new4(str *retval,   /* put string: pointer to char here. */
 		s = (str) str_nil;
 	else
 		sprintf(buf, "%s://%s:%d/%s", Protocol, Server, *Port, File);
-	d = (str) GDKmalloc(strlen(s) + 1);
-	if (d)
-		strcpy(d, s);
+	d = GDKstrdup(s);
+	if (d == NULL)
+		throw(MAL, "url.newurl", "Allocation failed");
 	*retval = d;
 	return MAL_SUCCEED;
 }
@@ -934,6 +935,8 @@ URLtoString(str *s, int *len, str src)
 	if (l >= *len) {
 		GDKfree(*s);
 		*s = (str) GDKmalloc(l);
+		if (*s == NULL)
+			return 0;
 	}
 	snprintf(*s, l, "\"%s\"", src);
 	*len = l - 1;
@@ -1061,6 +1064,8 @@ URLnew3(str *url, str *protocol, str *server, str *file)
 	l = (int) (GDK_STRLEN(*file) + GDK_STRLEN(*server) +
 			GDK_STRLEN(*protocol) + 10);
 	*url = (str) GDKmalloc(l);
+	if (*url == NULL)
+		throw(MAL, "url.newurl", "Allocation failed");
 	snprintf(*url, l, "%s://", *protocol);
 	i = (int) strlen(*url);
 	snprintf(*url +i, l - i, "%s", *server);
@@ -1086,6 +1091,8 @@ URLnew4(str *url, str *protocol, str *server, int *port, str *file)
 		Protocol = "";
 	l = (int) (strlen(File) + strlen(Server) + strlen(Protocol) + 20);
 	*url = (str) GDKmalloc(l);
+	if (*url == NULL)
+		throw(MAL, "url.newurl", "Allocation failed");
 	snprintf(*url, l, "%s://", Protocol);
 	i = (int) strlen(*url);
 	snprintf(*url +i, l - i, "%s", Server);
