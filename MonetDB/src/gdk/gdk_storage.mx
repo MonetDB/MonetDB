@@ -700,6 +700,21 @@ BATload(str nme)
 To avoid random disk access to large (memory-mapped) BATs it may help to issue a preload request. 
 Of course, it does not make sense to touch more then we can physically accomodate (budget).
 @c
+/* quick and probabilistic test for a sequentially correlated heap */
+int heap_sequential(BAT *b) {
+	size_t i, n = (size_t) BATcount(b), skip = n/100, off = (size_t) BUNfirst(b);
+	BATiter bi = bat_iterator(b);
+	str p, q = BUNhead(bi, ((BUN) off));	
+
+	/* check if the pointers are ordered */
+	if (skip == 0) return 1;
+	for(i=0; (i += skip) < n; q=p) {
+		p = BUNhead(bi, ((BUN) off+i));
+		if (p < q) return 0;
+	}
+	return 1;
+}
+
 /* modern linux tends to use 128K readaround  = 64K readahead
  * changes have been going on in 2009, towards true readahead
  * http://tomoyo.sourceforge.jp/cgi-bin/lxr/source/mm/readahead.c 
@@ -739,7 +754,7 @@ static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, size_t
 
 size_t 
 BATaccess(BAT *b, int what, int advise, int preload) {
-	size_t v = 0, sz, budget = 0.8 * MT_npages(), seqbudget = budget/8;
+	size_t v = 0, sz, budget = (size_t) (0.8 * MT_npages()), seqbudget = budget/8;
 	str id = BATgetId(b);
 	BATiter bi = bat_iterator(b);
 
@@ -764,8 +779,7 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 		if (b->H->vheap && b->H->vheap->base) {
 			char *lo = BUNhead(bi, BUNfirst(b)), *hi = BUNhead(bi, BUNlast(b)-1);
 			int heap_advise = advise;
-			if (b->H->vheap->copied || hi < lo) { 
-				/* shared string heaps are not (likely) to be sequentially correlated */
+			if (hi < lo || (preload > 0 && !heap_sequential(b))) { /* not sequentially correlated! */
 				lo = b->H->vheap->base; hi = lo + b->H->vheap->free;
 				heap_advise = MADV_WILLNEED;
 			}
@@ -779,8 +793,7 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 		if (b->T->vheap && b->T->vheap->base) {
 			char *lo = BUNtail(bi, BUNfirst(b)), *hi = BUNtail(bi, BUNlast(b)-1);
 			int heap_advise = advise;
-			if (b->T->vheap->copied || hi < lo) { 
-				/* shared string heaps are not (likely) to be sequentially correlated */
+			if (hi < lo || (preload > 0 && !heap_sequential(BATmirror(b)))) { /* not sequentially correlated! */
 				lo = b->T->vheap->base; hi = lo + b->T->vheap->free;
 				heap_advise = MADV_WILLNEED;
 			}

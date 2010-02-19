@@ -252,6 +252,8 @@ BATins(BAT *b, BAT *n, bit force)
 	if (b->htype != TYPE_void && (b->ttype == TYPE_void || (!b->H->hash && b->T->hash && ATOMstorage(b->ttype) == TYPE_int))) {	/* OIDDEPEND */
 		return BATmirror(BATins(BATmirror(b), BATmirror(n), force));
 	}
+	BATaccessBegin(b, USE_HHASH|USE_THASH, MMAP_WILLNEED);
+	BATaccessBegin(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (BUNlast(b) + BATcount(n) > BATcapacity(b)) {
 		/* if needed space exceeds a normal growth extend just
@@ -299,7 +301,7 @@ BATins(BAT *b, BAT *n, bit force)
 	    b->batSet == 0 &&
 	    (b->tkey & BOUND2BTRUE) == 0 &&
 	    ((b->hkey & BOUND2BTRUE) == 0 || n->hkey) &&
-	    (b->H->hash == NULL || ATOMstorage(b->htype) == TYPE_int)) {
+	    (b->H->hash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid))) {
 		if ((b->hkey & BOUND2BTRUE)) {
 			tmp = n = BATkdiff(n, b);
 			if (n == NULL)
@@ -396,7 +398,7 @@ BATins(BAT *b, BAT *n, bit force)
 				ptr v = BUNhead(ni, p);
 
 				bunfastins_nocheck(b, r, v, BUNtail(ni, p), Hsize(b), Tsize(b));
-				HASHins_int(b->H->hash, i, v);
+				HASHins_oid(b->H->hash, i, v);
 				r++;
 				i++;
 			}
@@ -417,6 +419,8 @@ BATins(BAT *b, BAT *n, bit force)
       bunins_failed:
 	if (tmp)
 		BBPreclaim(tmp);
+	BATaccessEnd(b, USE_HHASH|USE_THASH, MMAP_WILLNEED);
+	BATaccessEnd(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	return res;
 }
 
@@ -438,6 +442,8 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	b->batDirty = 1;
+	BATaccessBegin(b, USE_HHASH|USE_THASH, MMAP_SEQUENTIAL);
+	BATaccessBegin(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (sz > BATcapacity(b) - BUNlast(b)) {
 		/* if needed space exceeds a normal growth extend just
@@ -648,6 +654,8 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 	b->H->nonil &= n->H->nonil; 
 	b->T->nonil &= n->T->nonil; 
+	BATaccessEnd(b, USE_HHASH|USE_THASH, MMAP_WILLNEED);
+	BATaccessEnd(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	return b;
       bunins_failed:
 	return NULL;
