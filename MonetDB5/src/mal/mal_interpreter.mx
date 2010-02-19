@@ -79,7 +79,7 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static void displayVolume(Client cntxt, lng vol);
 
-#define MEMORY_THRESHOLD  0.8
+#define MEMORY_THRESHOLD  0.9
 #define MAXHOT 16
 
 static lng memorypool;		/* memory claimed by concurrent threads */
