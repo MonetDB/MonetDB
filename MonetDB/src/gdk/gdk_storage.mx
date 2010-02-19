@@ -769,7 +769,7 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 				lo = b->H->vheap->base; hi = lo + b->H->vheap->free;
 				heap_advise = MADV_WILLNEED;
 			}
-			sz = (heap_advise == MADV_SEQUENTIAL)?seqbudget:budget; 
+			sz = (heap_advise == MADV_SEQUENTIAL && budget > seqbudget)?seqbudget:budget; 
 			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
 			if (heap_advise == MADV_SEQUENTIAL) seqbudget -= sz;
 			v += access_heap(id, "hheap", b->H->vheap, lo, (size_t) (hi-lo), sz, preload, heap_advise);
@@ -784,7 +784,7 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 				lo = b->T->vheap->base; hi = lo + b->T->vheap->free;
 				heap_advise = MADV_WILLNEED;
 			}
-			sz = (heap_advise == MADV_SEQUENTIAL)?seqbudget:budget; 
+			sz = (heap_advise == MADV_SEQUENTIAL && budget > seqbudget)?seqbudget:budget; 
 			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
 			if (heap_advise == MADV_SEQUENTIAL) seqbudget -= sz;
 			v += access_heap(id, "theap", b->T->vheap, lo, (size_t) (hi-lo), sz, preload, heap_advise);
@@ -795,7 +795,7 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 	if ( what&USE_HEAD ) {
 		if (b->H->heap.base) {
 			char *lo = BUNhloc(bi, BUNfirst(b)), *hi = BUNhloc(bi, BUNlast(b)-1);
-			sz = (advise == MADV_SEQUENTIAL)?seqbudget:budget; 
+			sz = (advise == MADV_SEQUENTIAL && budget > seqbudget)?seqbudget:budget; 
 			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
 			if (advise == MADV_SEQUENTIAL) seqbudget -= sz;
 			v += access_heap(id, "hbuns", &b->H->heap, lo, (size_t) (hi-lo), sz, preload, advise);
@@ -804,7 +804,7 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 	if ( what&USE_TAIL ) {
 		if (b->T->heap.base) {
 			char *lo = BUNtloc(bi, BUNfirst(b)), *hi = BUNtloc(bi, BUNlast(b)-1);
-			sz = (advise == MADV_SEQUENTIAL)?seqbudget:budget; 
+			sz = (advise == MADV_SEQUENTIAL && budget > seqbudget)?seqbudget:budget; 
 			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
 			if (advise == MADV_SEQUENTIAL) seqbudget -= sz;
 			v += access_heap(id, "tbuns", &b->T->heap, lo, (size_t) (hi-lo), sz, preload, advise);
