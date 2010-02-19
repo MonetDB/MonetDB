@@ -897,7 +897,7 @@ bailout:
 void
 MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 {
-	int i, unload = 0, ret = 0;
+	int i, ret = 0;
 
 	assert(advise==MMAP_NORMAL||advise==MMAP_RANDOM||advise==MMAP_SEQUENTIAL||advise==MMAP_WILLNEED||advise==MMAP_DONTNEED);
 
@@ -907,8 +907,8 @@ MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 		if (writable) MT_mmap_tab[i].writable = (writable > 0);
 		MT_mmap_tab[i].random += preload * (advise == MMAP_WILLNEED); /* done as a counter to keep track of multiple threads */
 		MT_mmap_tab[i].usecnt += preload; /* active thread count */
-		unload = MT_mmap_tab[i].usecnt == 0;
-		if (unload) ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~MT_pagesize(), MMAP_SEQUENTIAL);
+		if (MT_mmap_tab[i].usecnt == 0)
+			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~MT_pagesize(), MMAP_SEQUENTIAL);
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	if (ret) {
