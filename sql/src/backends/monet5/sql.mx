@@ -888,6 +888,32 @@ function octopus.getVariable(conn:str,name:str):any_1;
 	return getVariable:= b;
 end octopus.getVariable;
 
+function octopus.register(dbname:str, fn:str):void;
+	conn := remote.connect(dbname,"monetdb", "monetdb", "msql");
+	remote.register(conn,"octopus",fn);
+	catch ANYexception:str ;
+	exit ANYexception:str ;
+    remote.disconnect(conn);
+end octopus.register;
+
+function octopus.getBid(dbname:str, fn:str, bidtype:sht):lng;
+res:lng := calc.lng(-1);
+barrier remotewrk := calc.!=(dbname,"NOTworker");
+	conn := remote.connect(dbname,"monetdb", "monetdb", "msql");
+    r_fn := remote.put(conn,fn);
+    r_bt := remote.put(conn,bidtype);
+    r_getBid := remote.put(conn,getBid);
+    r_getBid := remote.exec(conn,"trader","makeBid",r_fn,r_bt);
+    res:lng  := remote.get(conn,r_getBid);
+  catch ANYexception:str ;
+    remote.disconnect(conn);
+    raise ANYexception:str ;
+  exit ANYexception:str ;
+    remote.disconnect(conn);
+exit remotewrk;
+    return getBid:lng := res;
+end getBid;
+
 pattern rdfshred (location:str, gname:str, schema:str)
 address SQLrdfShred
 comment "Procedure that wraps around the shredder of the rdf module in MAL. 
