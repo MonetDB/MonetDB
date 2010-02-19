@@ -298,8 +298,9 @@ void normalizeq2(TJptree_t *ptree)
 
 void normalize_query(tjc_config* tjc_c, TJptree_t *ptree)
 {
-    //rule 7 would change the semnatics for conjunctive retrieval models
-    if (strcmp(tjc_c->irmodel, "LM") != 0)
-    	normalizeq1 (ptree);
+    //avoid this normalization step in all cases: people want to express explicit AND semantics 
+    /* if (strcmp(tjc_c->irmodel, "LM") != 0)
+    	normalizeq1 (ptree); */
+    (void) tjc_c;
     normalizeq2 (ptree);
 }
