@@ -4337,6 +4337,7 @@ PROC tj_containing_query_@1_@2_term_@3 (bat[oid,any] left, bat[oid,bat] query) :
         # get collection count of term
         var t_pre := _getTermPositions($h);
         e_pre := e_pre.@5(_getTermDoc_@1_@2(e_pre, e_size, t_pre));
+	e_pre := e_pre.chk_order(); # jf order patch
     }
     
     var res := e_pre;
@@ -4536,6 +4537,7 @@ PROC tj_containing_query_@1_@2_entity_@3 (bat[oid,any] left, bat[oid,dbl] query)
         # get collection count of term
         var t_pre := _getConceptPositions($h);
         e_pre := e_pre.@5(_getTermDoc_@1_@2(e_pre, e_size, t_pre));
+	e_pre := e_pre.chk_order(); # jf order patch
     }
     
     var res := e_pre;
