@@ -1,0 +1,39 @@
+stdout of test 'tst662` in directory 'src/mal` itself:
+
+
+# 16:39:29 >  
+# 16:39:29 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39370 --set xrpc_port=47577 --set monet_prompt= --trace  --dbname=mTests_src_mal  tst662.mal
+# 16:39:29 >  
+
+# MonetDB server v5.19.0, based on kernel v1.37.0
+# Serving database 'mTests_src_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39370/
+pattern user.makeSchedule(i:int,l:lng...):bte... address MDBdummy;
+function user.tst():void;
+    X100 := -1:lng;
+    X102 := -1:lng;
+    X103 := -1:lng;
+    X104 := -1:lng;
+    (X112:bte ,X113,X114,X115,X116) := user.makeSchedule(2,X100,X103,X102,X104);
+end tst;
+function user.main():void;
+#Testing variable return lists 
+    mdb.List("user","tst");
+end main;
+function user.tst():void;               #  0 tst:void := user.tst() 
+    X100 := -1:lng;                     #  1 X100:lng := _2:lng 
+    X102 := -1:lng;                     #  2 X102:lng := _2:lng 
+    X103 := -1:lng;                     #  3 X103:lng := _2:lng 
+    X104 := -1:lng;                     #  4 X104:lng := _2:lng 
+    (X112:bte ,X113,X114,X115,X116) := user.makeSchedule(2,X100,X103,X102,X104);#  5 (X112:bte, X113:bte, X114:bte, X115:bte, X116:bte) := MDBdummy(_11:int, X100:lng, X103:lng, X102:lng, X104:lng) 
+end tst;                                #  6  
+
+# 16:39:29 >  
+# 16:39:29 >  Done.
+# 16:39:29 >  
+

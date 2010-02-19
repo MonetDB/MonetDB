@@ -215,10 +215,8 @@ list. So we save some instructions factoring this caise out.
 Be careful, the variable number of return arguments should
 be considered as well.
 @c
-	if ( sig->varargs & VARRETS)
-		i= p->argc -( sig->argc-sig->retc);
-	else
-		i= p->retc;
+	i= p->retc;
+	/* first handle the variable argument list */
 	for(k=sig->retc; i<p->argc; k++, i++){
 		int actual = getArgType(mb,p,i);
 		int formal = getArgType(s->def,sig,k);
@@ -265,6 +263,9 @@ in the list determines the required type of all.
 				/* the type of the last one has already been set */
 				int actual = getArgType(mb,p,i);
 				int formal = getArgType(s->def,sig,k);
+				if (k == sig->argc-1 && sig->varargs & VARARGS)
+					k--;
+
 				formal= getPolyType(formal,polytype);
 				if( formal == actual || formal == TYPE_any) 
 					continue;
@@ -356,6 +357,8 @@ the resulting type can not be determined.
 	for(i=0; i < p->retc; i++){
 		int actual = getArgType(mb,p,i);
 		int formal = getArgType(s->def,sig,i);
+
+		if (k== sig->retc-1 && sig->varargs & VARRETS) k--;
 
 		if( actual== formal)
 			returntype[i]= actual;
