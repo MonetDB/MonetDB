@@ -764,7 +764,7 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 		if (b->H->vheap && b->H->vheap->base) {
 			char *lo = BUNhead(bi, BUNfirst(b)), *hi = BUNhead(bi, BUNlast(b)-1);
 			int heap_advise = advise;
-			if (b->H->vheap->copied || lo < hi) { 
+			if (b->H->vheap->copied || hi < lo) { 
 				/* shared string heaps are not (likely) to be sequentially correlated */
 				lo = b->H->vheap->base; hi = lo + b->H->vheap->free;
 				heap_advise = MADV_WILLNEED;
@@ -779,7 +779,7 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 		if (b->T->vheap && b->T->vheap->base) {
 			char *lo = BUNtail(bi, BUNfirst(b)), *hi = BUNtail(bi, BUNlast(b)-1);
 			int heap_advise = advise;
-			if (b->T->vheap->copied || lo < hi) { 
+			if (b->T->vheap->copied || hi < lo) { 
 				/* shared string heaps are not (likely) to be sequentially correlated */
 				lo = b->T->vheap->base; hi = lo + b->T->vheap->free;
 				heap_advise = MADV_WILLNEED;
