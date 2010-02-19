@@ -732,7 +732,7 @@ static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, int to
 		for (hi += 7*page; lo <= hi; lo +=page) v0 += *lo;
 	}
 	IODEBUG THRprintf(GDKout,"#BATpreload(%s->%s,preload=%d,sz=%dMB,%s) = %dms \n", id, hp, preload, (int) (sz>>20), 
-		(advise==BUF_WILLNEED)?"WILLNEED":(advise==BUF_SEQUENTIAL)?"SEQUENTIAL":"UNKNOWN", GDKms()-t);
+		(advise==MMAP_WILLNEED)?"WILLNEED":(advise==MMAP_SEQUENTIAL)?"SEQUENTIAL":"UNKNOWN", GDKms()-t);
 	return v0+v1+v2+v3+v4+v5+v6+v7;
 }
 
@@ -765,24 +765,24 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 		if (b->H->heap.base) {
 			char *lo = BUNhloc(bi, BUNfirst(b)), *hi = BUNhloc(bi, BUNlast(b)-1);
 			budget -= sz = ((hi-lo) > budget)?budget:(hi-lo);
-			v += access_heap(id, "hbuns", &b->H->heap, lo, sz, (advise == BUF_WILLNEED), preload, advise);
+			v += access_heap(id, "hbuns", &b->H->heap, lo, sz, (advise == MMAP_WILLNEED), preload, advise);
 		}
 		if (b->H->vheap && b->H->vheap->base) {
 			char *lo = BUNhead(bi, BUNfirst(b)), *hi = BUNhead(bi, BUNlast(b)-1);
 			budget -= sz = ((hi-lo) > budget)?budget:(hi-lo);
-			v += access_heap(id, "hheap", b->H->vheap, lo, sz, (advise == BUF_WILLNEED), preload, advise);
+			v += access_heap(id, "hheap", b->H->vheap, lo, sz, (advise == MMAP_WILLNEED), preload, advise);
 		}
 	}
 	if ( what&USE_TAIL) {
 		if (b->T->heap.base) {
 			char *lo = BUNtloc(bi, BUNfirst(b)), *hi = BUNtloc(bi, BUNlast(b)-1);
 			budget -= sz = ((hi-lo) > budget)?budget:(hi-lo);
-			v += access_heap(id, "tbuns", &b->T->heap, lo, sz, (advise == BUF_WILLNEED), preload, advise);
+			v += access_heap(id, "tbuns", &b->T->heap, lo, sz, (advise == MMAP_WILLNEED), preload, advise);
 		}
 		if (b->T->vheap && b->T->vheap->base) {
 			char *lo = BUNtail(bi, BUNfirst(b)), *hi = BUNtail(bi, BUNlast(b)-1);
 			budget -= sz = ((hi-lo) > budget)?budget:(hi-lo);
-			v += access_heap(id, "theap", b->T->vheap, lo, sz, (advise == BUF_WILLNEED), preload, advise);
+			v += access_heap(id, "theap", b->T->vheap, lo, sz, (advise == MMAP_WILLNEED), preload, advise);
 		}
 	}
 	return v;
