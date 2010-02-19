@@ -675,7 +675,7 @@ MT_mmap_del(void *base, size_t len)
 #ifdef HAVE_POSIX_FADVISE
 			if (!do_not_use_posix_fadvise && MT_mmap_tab[victim].fd >= 0) {
 				/* tell the OS quite clearly that you want to drop this */
-				ret = posix_fadvise(MT_mmap_tab[victim].fd, 0LL, MT_mmap_tab[victim].len & ~MT_pagesize(), POSIX_FADV_DONTNEED);
+				ret = posix_fadvise(MT_mmap_tab[victim].fd, 0LL, MT_mmap_tab[victim].len & ~(MT_pagesize()-1), POSIX_FADV_DONTNEED);
 #ifdef MMAP_DEBUG
 				stream_printf(GDKerr, "#MT_mmap_del: posix_fadvise(%s,fd=%d,%uMB,POSIX_FADV_DONTNEED) = %d\n", MT_mmap_tab[victim].path, MT_mmap_tab[victim].fd, (unsigned int) (MT_mmap_tab[victim].len >> 20), ret);
 #endif
@@ -709,7 +709,7 @@ MT_fadvise(void *base, size_t len, int advice)
 		i = MT_mmap_idx(base, len);
 		if (i >= 0) {
 			if (MT_mmap_tab[i].fd >= 0) {
-				ret = posix_fadvise(MT_mmap_tab[i].fd, 0, len & ~MT_pagesize(), advice);
+				ret = posix_fadvise(MT_mmap_tab[i].fd, 0, len & ~(MT_pagesize()-1), advice);
 #ifdef MMAP_DEBUG
 				stream_printf(GDKerr, "#MT_fadvise: posix_fadvise(%s,fd=%d,%uMB,%d) = %d\n", MT_mmap_tab[i].path, MT_mmap_tab[i].fd, (unsigned int) (len >> 20), advice, ret);
 #endif
@@ -733,7 +733,7 @@ MT_mmap_unload_tile(int i, size_t off, stream *err)
 {
 	size_t len = MIN((size_t) MT_MMAP_TILE, MT_mmap_tab[i].len - off);
 	/* tell Linux to please stop caching this stuff */
-	int ret = posix_madvise(MT_mmap_tab[i].base + off, len & ~MT_pagesize(), POSIX_MADV_DONTNEED);
+	int ret = posix_madvise(MT_mmap_tab[i].base + off, len & ~(MT_pagesize()-1), POSIX_MADV_DONTNEED);
 
 	if (err) {
 		stream_printf(err, "#MT_mmap_unload_tile: posix_madvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
@@ -743,7 +743,7 @@ MT_mmap_unload_tile(int i, size_t off, stream *err)
 #ifdef HAVE_POSIX_FADVISE
 	if (!do_not_use_posix_fadvise) {
 		/* tell the OS quite clearly that you want to drop this */
-		ret = posix_fadvise(MT_mmap_tab[i].fd, off, len & ~MT_pagesize(), POSIX_FADV_DONTNEED);
+		ret = posix_fadvise(MT_mmap_tab[i].fd, off, len & ~(MT_pagesize()-1), POSIX_FADV_DONTNEED);
 		if (err) {
 			stream_printf(err, "#MT_mmap_unload_tile: posix_fadvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
 				      MT_mmap_tab[i].path, (unsigned int) (off >> 20),
@@ -908,7 +908,7 @@ MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 		MT_mmap_tab[i].random += preload * (advise == MMAP_WILLNEED); /* done as a counter to keep track of multiple threads */
 		MT_mmap_tab[i].usecnt += preload; /* active thread count */
 		if (MT_mmap_tab[i].usecnt == 0)
-			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~MT_pagesize(), MMAP_SEQUENTIAL);
+			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize()-1), MMAP_SEQUENTIAL);
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	if (ret) {
@@ -1155,7 +1155,7 @@ MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len)
 
 	if (ret != (void *) -1L) {
 		if (hdl->mode & MMAP_ADVISE) {
-			(void) MT_madvise(ret, len & ~MT_pagesize(), hdl->mode & MMAP_ADVISE);
+			(void) MT_madvise(ret, len & ~(MT_pagesize()-1), hdl->mode & MMAP_ADVISE);
 		}
 		hdl->fixed = (void *) ((char *) ret + len);
 	}

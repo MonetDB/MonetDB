@@ -707,7 +707,7 @@ Of course, it does not make sense to touch more then we can physically accomodat
  * Peter Feb2010: I tried to do prefetches further apart, to trigger multiple readahead
  *                units in parallel, but it does improve performance visibly 
  */
-static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, int touch, int preload, int adv) {
+static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, size_t touch, int preload, int adv) {
 	size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0, v4 = 0, v5 =0, v6 = 0, v7 = 0, page = MT_pagesize();
 	str advise = (adv==MMAP_WILLNEED)?"WILLNEED":(adv==MMAP_SEQUENTIAL)?"SEQUENTIAL":(adv==MMAP_RANDOM)?"RANDOM":(adv==MMAP_NORMAL)?"NORMAL":NULL;
 	int t = GDKms();
@@ -725,7 +725,7 @@ static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, int to
 	if (touch && preload > 0) {
 		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
 		size_t *lo = (size_t *) (((size_t) base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-		size_t *hi = (size_t *) (base + sz);
+		size_t *hi = (size_t *) (base + touch);
 		for (hi -= 8*page; lo <= hi; lo += 8*page) {
 			/* try to trigger loading of multiple pages without blocking */
 			v0 += lo[0*page]; v1 += lo[1*page]; v2 += lo[2*page]; v3 += lo[3*page];
@@ -733,14 +733,13 @@ static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, int to
 		}
 		for (hi += 7*page; lo <= hi; lo +=page) v0 += *lo;
 	}
-	IODEBUG THRprintf(GDKout,"#BATpreload(%s->%s,preload=%d,sz=%dMB,%s) = %dms \n", id, hp, preload, (int) (sz>>20), advise, GDKms()-t);
+	IODEBUG THRprintf(GDKout,"#BATpreload(%s->%s,preload=%d,sz=%dMB,touch=%dMB,%s) = %dms \n", id, hp, preload, (int) (sz>>20), (int) (touch>>20), advise, GDKms()-t);
 	return v0+v1+v2+v3+v4+v5+v6+v7;
 }
 
 size_t 
 BATaccess(BAT *b, int what, int advise, int preload) {
-	ssize_t budget = (ssize_t) (0.8 * MT_npages());
-	size_t v = 0, sz;
+	size_t v = 0, sz, budget = (ssize_t) (0.8 * MT_npages()), seqbudget = budget/8;
 	str id = BATgetId(b);
 	BATiter bi = bat_iterator(b);
 
@@ -750,11 +749,11 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 	if ( what&USE_HHASH || what&USE_THASH ) {
 		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATaccess");
 		if ( what&USE_HHASH && b->H->hash && b->H->hash->heap && b->H->hash->heap->base) {
-			budget -= sz = (b->H->hash->heap->size > (size_t) budget)?budget:(ssize_t)b->H->hash->heap->size;
+			budget -= sz = (b->H->hash->heap->size > budget)?budget:b->H->hash->heap->size;
 			v += access_heap(id, "hhash", b->H->hash->heap, b->H->hash->heap->base, sz, 1, preload, MMAP_WILLNEED);
 		}
 		if ( what&USE_THASH && b->T->hash && b->T->hash->heap && b->T->hash->heap->base) {
-			budget -= sz = (b->T->hash->heap->size > (size_t) budget)?budget:(ssize_t)b->T->hash->heap->size;
+			budget -= sz = (b->T->hash->heap->size > budget)?budget:b->T->hash->heap->size;
 			v += access_heap(id, "thash", b->T->hash->heap, b->T->hash->heap->base, sz, 1, preload, MMAP_WILLNEED);
 		}
 		gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATaccess");
@@ -765,24 +764,30 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 		if (b->H->vheap && b->H->vheap->base) {
 			char *lo = BUNhead(bi, BUNfirst(b)), *hi = BUNhead(bi, BUNlast(b)-1);
 			int heap_advise = advise;
-			if (b->H->vheap->copied) { /* shared string heaps are not (likely) to be sequentially correlated */
+			if (b->H->vheap->copied || lo < hi) { 
+				/* shared string heaps are not (likely) to be sequentially correlated */
 				lo = b->H->vheap->base; hi = lo + b->H->vheap->free;
 				heap_advise = MADV_WILLNEED;
 			}
-			budget -= sz = ((hi-lo) > budget)?budget:(hi-lo);
-			v += access_heap(id, "hheap", b->H->vheap, lo, sz, (advise == BUF_WILLNEED), preload, heap_advise);
+			sz = (heap_advise == MADV_SEQUENTIAL)?seqbudget:budget; 
+			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
+			if (heap_advise == MADV_SEQUENTIAL) seqbudget -= sz;
+			v += access_heap(id, "hheap", b->H->vheap, lo, (size_t) (hi-lo), sz, preload, heap_advise);
 		}
 	}
 	if ( what&USE_TAIL ) {
 		if (b->T->vheap && b->T->vheap->base) {
 			char *lo = BUNtail(bi, BUNfirst(b)), *hi = BUNtail(bi, BUNlast(b)-1);
 			int heap_advise = advise;
-			if (b->T->vheap->copied) { /* shared string heaps are not (likely) to be sequentially correlated */
+			if (b->T->vheap->copied || lo < hi) { 
+				/* shared string heaps are not (likely) to be sequentially correlated */
 				lo = b->T->vheap->base; hi = lo + b->T->vheap->free;
 				heap_advise = MADV_WILLNEED;
 			}
-			budget -= sz = ((hi-lo) > budget)?budget:(hi-lo);
-			v += access_heap(id, "theap", b->T->vheap, lo, sz, (advise == BUF_WILLNEED), preload, heap_advise);
+			sz = (heap_advise == MADV_SEQUENTIAL)?seqbudget:budget; 
+			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
+			if (heap_advise == MADV_SEQUENTIAL) seqbudget -= sz;
+			v += access_heap(id, "theap", b->T->vheap, lo, (size_t) (hi-lo), sz, preload, heap_advise);
 		}
 	}
 
@@ -790,15 +795,19 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 	if ( what&USE_HEAD ) {
 		if (b->H->heap.base) {
 			char *lo = BUNhloc(bi, BUNfirst(b)), *hi = BUNhloc(bi, BUNlast(b)-1);
-			budget -= sz = ((hi-lo) > budget)?budget:(hi-lo);
-			v += access_heap(id, "hbuns", &b->H->heap, lo, sz, (advise == MMAP_WILLNEED), preload, advise);
+			sz = (advise == MADV_SEQUENTIAL)?seqbudget:budget; 
+			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
+			if (advise == MADV_SEQUENTIAL) seqbudget -= sz;
+			v += access_heap(id, "hbuns", &b->H->heap, lo, (size_t) (hi-lo), sz, preload, advise);
 		}
 	}
 	if ( what&USE_TAIL ) {
 		if (b->T->heap.base) {
 			char *lo = BUNtloc(bi, BUNfirst(b)), *hi = BUNtloc(bi, BUNlast(b)-1);
-			budget -= sz = ((hi-lo) > budget)?budget:(hi-lo);
-			v += access_heap(id, "tbuns", &b->T->heap, lo, sz, (advise == MMAP_WILLNEED), preload, advise);
+			sz = (advise == MADV_SEQUENTIAL)?seqbudget:budget; 
+			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
+			if (advise == MADV_SEQUENTIAL) seqbudget -= sz;
+			v += access_heap(id, "tbuns", &b->T->heap, lo, (size_t) (hi-lo), sz, preload, advise);
 		}
 	}
 	return v;
