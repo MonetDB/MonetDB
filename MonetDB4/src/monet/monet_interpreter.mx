@@ -2244,6 +2244,7 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 	handle->status = 0;
 	handle->h_len = BATatoms[ht].atomLen;
 	handle->t_len = BATatoms[tt].atomLen;
+	assert(parallel <= 0 || handle->params != NULL);  /* help Coverity */
 	for (i = 0; i < parallel; i++) {
 		handle->params[2 * i].vtype = ht;
 		handle->params[2 * i].len = ATOMsize(ht);
