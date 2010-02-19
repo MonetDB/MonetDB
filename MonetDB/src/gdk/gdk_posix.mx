@@ -1198,7 +1198,7 @@ MT_msync(void *p, size_t off, size_t len, int mode)
 int
 MT_madvise(void *p, size_t len, int advise)
 {
-	int ret = posix_madvise(p, len & ~MT_pagesize(), advise);
+	int ret = posix_madvise(p, len & ~(MT_pagesize()-1), advise);
 
 #ifdef MMAP_DEBUG
 	stream_printf(GDKerr, "#posix_madvise(" PTRFMT "," SZFMT ",%d) = %d\n", PTRFMTCAST p, len, advise, ret);
