@@ -739,7 +739,7 @@ static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, size_t
 
 size_t 
 BATaccess(BAT *b, int what, int advise, int preload) {
-	size_t v = 0, sz, budget = (ssize_t) (0.8 * MT_npages()), seqbudget = budget/8;
+	size_t v = 0, sz, budget = 0.8 * MT_npages(), seqbudget = budget/8;
 	str id = BATgetId(b);
 	BATiter bi = bat_iterator(b);
 
