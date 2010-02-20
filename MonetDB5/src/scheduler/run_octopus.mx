@@ -502,7 +502,7 @@ str
 OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *res = (bit*) getArgReference(stk,pci,0);
-	int j, start;
+	int j, start, v;
 	InstrPtr p;
 	*res = 0;	/* execute the block */
 
@@ -512,6 +512,10 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getInstrPtr(mb,j);
 		if ( p->barrier == EXITsymbol )
 			break;
+		v = getArg(p,2);
+		if ( strcmp(stk->stk[v].val.sval, "NOTworker") == 0 )
+                        p->token = NOOPsymbol;
+
 	}
 
 	return runMALdataflow(cntxt,mb,start,j,stk,0,pci);
