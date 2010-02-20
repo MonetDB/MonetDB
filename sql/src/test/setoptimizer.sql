@@ -12,7 +12,7 @@ select optimizer;
 set optimizer='on';
 select optimizer;
 
-set optimizer='mitosis_pipe';
+set optimizer='nov2009_pipe';
 select optimizer;
 
 -- and some errors
