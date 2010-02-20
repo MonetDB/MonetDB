@@ -1202,7 +1202,7 @@ isGarbageStmt( MalBlkPtr mb, InstrPtr p)
 }
 
 static str
-DFLOWexecute( DataFlow flow )
+DFLOWscheduler( DataFlow flow )
 {
 	int queued = 0;
 	int pc = 0, i, j, candidates=0;
@@ -1218,11 +1218,11 @@ DFLOWexecute( DataFlow flow )
 	
 	while(pc < limit) {
 		candidates = 0; /* to avoid N^2 run finding blocked instructions and keep focus*/
+		for( ; pc < limit; pc++)
+			if ( fs[pc].status == DFLOWpending)
+				break;
 		for(i = pc; i < limit && candidates < 2 * flow->nway ; i++) {
-			if (fs[i].status == DFLOWwrapup) 
-				if (pc == i)
-					pc++;
-			if (fs[i].status == DFLOWpending) { 
+			if (fs[i].status == DFLOWpending) {
 				InstrPtr p = getInstrPtr(flow->mb, fs[i].pc);
 				int blocked = 0;
 
@@ -1266,7 +1266,7 @@ DFLOWexecute( DataFlow flow )
 						}
 				}
 
-				if (!blocked) { 
+				if (!blocked ){
 					queued++;
 					fs[i].status = DFLOWrunning;
 
@@ -1422,7 +1422,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow->reassign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
 	mal_unset_lock(mal_contextLock, "runMALdataflow");
 
-	ret = DFLOWexecute(flow);
+	ret = DFLOWscheduler(flow);
 	GDKfree(flow->status);
 	GDKfree(flow->blocked);
 	GDKfree(flow->inuse);
