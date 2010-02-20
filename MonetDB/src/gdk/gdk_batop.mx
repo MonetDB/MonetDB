@@ -416,9 +416,9 @@ BATins(BAT *b, BAT *n, bit force)
 		@:updateloop(b,n,bunins)@
 	}
 	res = b;
+      bunins_failed:
 	BATaccessEnd(b, USE_HHASH|USE_THASH, MMAP_WILLNEED);
 	BATaccessEnd(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-      bunins_failed:
 	if (tmp)
 		BBPreclaim(tmp);
 	return res;
@@ -658,6 +658,8 @@ BATappend(BAT *b, BAT *n, bit force)
 	BATaccessEnd(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	return b;
       bunins_failed:
+	BATaccessEnd(b, USE_HHASH|USE_THASH, MMAP_WILLNEED);
+	BATaccessEnd(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	return NULL;
 }
 
