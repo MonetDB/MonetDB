@@ -242,7 +242,7 @@ static MalBlkPtr
 OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr *old, InstrPtr pci, int start, int idx, int v2,
 int tcnt, int *wnm, int *tnm, int **sch, int **res){
 	MalBlkPtr tm = NULL;
-	InstrPtr p = NULL, q, sig = old[0];
+	InstrPtr p = NULL, q = NULL, sig = old[0];
 	int varid= pci->argv[idx],i,j,top=0, fnd, k;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
