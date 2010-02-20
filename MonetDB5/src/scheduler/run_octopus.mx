@@ -63,7 +63,11 @@ pattern scheduler.register():bit
 address OCTOPUSdiscoverRegister
 comment "Discover workers and register tentacles.";
 
-pattern scheduler.makeSchedule(:int,:lng...)(:bte,:bte,:bte,:bte,:bte)
+pattern scheduler.bidding():bit
+address OCTOPUSbidding
+comment "Collect bids from workers.";
+
+pattern scheduler.makeSchedule(:int,:lng...)(:lng,:bte,:bte,:bte,:bte)
 address OCTOPUSmakeSchedule
 comment "Make schedule based on bids.";
 
@@ -88,6 +92,7 @@ comment "Make schedule based on bids.";
 
 octopus_export str OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 octopus_export str OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+octopus_export str OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 octopus_export str OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_OCTOPUS */
 
@@ -352,7 +357,7 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	ValPtr wname;
 
-	*res = 0;	/* execute the block */
+	*res = 1;	/* execute the block */
 
 	msg= OCTOPUSdiscover(cntxt);
 	if ( msg )
@@ -386,7 +391,32 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	stop = j;
-	return runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
+	msg = runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
+	*res = 0;
+	return msg;
+}
+
+str
+OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+        bit *res = (bit*) getArgReference(stk,pci,0);
+        int j, start;
+        InstrPtr p;
+	str msg = MAL_SUCCEED;
+
+        *res = 1;       /* execute the block */
+
+        start = getPC(mb,pci);
+        for (j = start + 1; j< mb->stop ; j++){
+                p = getInstrPtr(mb,j);
+                if ( p->barrier == EXITsymbol )
+                        break;
+        }
+
+        msg = runMALdataflow(cntxt,mb,start,j,stk,0,pci);
+	*res = 0;
+        return msg;
+
 }
 
 lng
@@ -444,14 +474,13 @@ putJob(int t, int tcnt, lng **bid, bte *busy, bte **rsch)
 str
 OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bte *res = (bte*) getArgReference(stk,pci,0);
+	lng *res = (lng*) getArgReference(stk,pci,0);
 	int tcnt=1, offset, i, j, k, idx;
 	str msg = MAL_SUCCEED;
 	lng **bid=NULL;	
 	bte *sch=NULL, *s, *busy;
 	lng c;
 
-	*res = 0;	
 	(void) mb;
 	(void) cntxt;
 
@@ -490,6 +519,7 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			else *s = 0;
 	}
 
+	*res = c;
 	for ( j= 0; j < tcnt; j++)
 		GDKfree(bid[j]);
 	GDKfree(bid);
@@ -504,9 +534,9 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *res = (bit*) getArgReference(stk,pci,0);
 	int j, start, v;
 	InstrPtr p;
-	*res = 0;	/* execute the block */
+	str msg = MAL_SUCCEED;
 
-
+	*res = 1;	/* execute the block */
 	start = getPC(mb,pci);
 	for (j = start + 1; j< mb->stop ; j++){
 		p = getInstrPtr(mb,j);
@@ -518,6 +548,9 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	}
 
-	return runMALdataflow(cntxt,mb,start,j,stk,0,pci);
+	msg = runMALdataflow(cntxt,mb,start,j,stk,0,pci);
+	*res = 0; 	/* skip to the exit */
+        return msg;
+
 }
 @}
