@@ -758,6 +758,8 @@ BATaccess(BAT *b, int what, int advise, int preload) {
 	str id = BATgetId(b);
 	BATiter bi = bat_iterator(b);
 
+	assert(advise==MMAP_NORMAL||advise==MMAP_RANDOM||advise==MMAP_SEQUENTIAL||advise==MMAP_WILLNEED||advise==MMAP_DONTNEED);
+
 	if (BATcount(b) == 0) return 0;
 
 	/* HASH indices (inherent random access). handle first as they *will* be access randomly (one can always hope for locality on the other heaps) */
