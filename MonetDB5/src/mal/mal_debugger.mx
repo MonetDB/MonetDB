@@ -302,7 +302,7 @@ working directory. The program call
 @example
 dot -Tpdf user-tst-0.dot -o user-tst-0.pdf
 @end example
-creates a PDF file with the graphs. The Linux pdfnup utility can be used to
+creates a PDF file with the graphs. The Linux pdfposter utility can be used to
 produce a proper printing. Alternatively, the Adobe reader professional
 can break it up into multiple pages.
 
