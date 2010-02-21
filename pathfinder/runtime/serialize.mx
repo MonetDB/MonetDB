@@ -492,7 +492,7 @@ xmlNsPush (XmlNsFrame** top, char* prefix, char* uri)
 
     if ( fp ) {
 #ifdef DEBUGNS
-        stream_printf (GDKerr, "+NS:xmlNsPush(\"%s\",\"%s\")\n", prefix, uri);
+        stream_printf (GDKerr, "+NS:xmlNsPush(\"%s\",\"%s\")\n", prefix ? prefix : "", uri ? uri : "");
 #endif
         fp->prefix = NULL;
         fp->uri    = NULL;
@@ -687,7 +687,7 @@ check@1AttrNsChange (XqueryCtx* ctx,
     /* check in current node context if a namespace
        with this prefix is declared */
     while (fp) {
-        if (!strcmp (prefix, fp->prefix))
+        if (prefix && !strcmp (prefix, fp->prefix))
             break;
             
         fp = fp->prev;
@@ -708,7 +708,7 @@ check@1AttrNsChange (XqueryCtx* ctx,
     /* check in current node context if a namespace
        with this prefix is declared */
     while (fp) {
-        if (!strcmp (prefix, fp->prefix))
+        if (prefix && !strcmp (prefix, fp->prefix))
             break;
             
         if (fp == limit)
@@ -726,9 +726,10 @@ check@1AttrNsChange (XqueryCtx* ctx,
         return ctx->driverFun->@2 (ctx, prefix, loc, val);
     }
 
+    assert (prefix != NULL);
 
     /* uri and prefix match -> no namespace attribute needed */
-    if (!strcmp (uri, fp->uri))
+    if (uri && !strcmp (uri, fp->uri))
         return ctx->driverFun->@2 (ctx, prefix, loc, val);
 
 
@@ -738,7 +739,7 @@ check@1AttrNsChange (XqueryCtx* ctx,
     if (currentPrefix && 
         (currentUri = xmlNsUriFind (&ctx->nsTop, currentPrefix)) &&
         /* check if prefix has been redeclared */
-        !strcmp (currentUri, uri))
+        uri && !strcmp (currentUri, uri))
         return ctx->driverFun->@2 (ctx, currentPrefix, loc, val);
 
 
