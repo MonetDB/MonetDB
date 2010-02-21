@@ -73,7 +73,7 @@ mdb>help
 	break [<var>]    -- set breakpoint on current instruction or <var>
 	delete [<var>]   -- remove break/trace point <var>
 	debug <int>      -- set kernel debugging mask
-	dot [<int>] [<file>]  -- generate the dependency graph for level <int>
+	dot <obj> [<file>]  -- generate the dependency graph 
 	step             -- advance to next MAL instruction
 	module           -- display a module signatures
 	atom             -- show atom list
@@ -286,7 +286,7 @@ Lists the atoms currently known
 @item modules [<mod>]
 Lists the modules currently known. An optional <mod> argument
 produces a list of all signatures within the module identified.
-@item dot [<mod>.<fcn>['['<nr>']']] [<file>]
+@item dot <mod>.<fcn>['['<nr>']'] [<file>]
 A dataflow diagram can be produced using the @sc{dot} command.
 It expects a function identifier with an optional history index
 and produces a file for the Linux program @sc{dot},
@@ -295,21 +295,17 @@ complexity.
 @end table
 
 @example
-mdb>dot user.test
+mdb>dot user.main
 @end example
-This example produces the @sc{user-tst.dot} in the current
+This example produces the @sc{user.main.dot} in the current
 working directory. The program call
 @example
-dot -Tps user-tst-0.dot -o user-tst-0.ps
+dot -Tpdf user-tst-0.dot -o user-tst-0.pdf
 @end example
 creates a postscript file with the graphs. With the Adobe reader professional
 you can break it up into multiple pages. An alternative
 is the program available from 
  @sc{http://www.tug.org/tex-archive/support/poster/poster.c}
-The result is shown in the figure below:
-
-Since the flow graphs become rather complex, an optional variable
-list limits its size.[TODO]
 
 @node Runtime Inspection, Debugger Attachment, Program Inspection,  The MAL Debugger
 @+ Runtime Inspection and Reflection
@@ -856,13 +852,14 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out){
 		if (fcnname == NULL ) 
 			return NULL;
 		*fcnname = 0;
-		fcnname++;
-		if( (h= strchr(fcnname,'[')) ){
+		if( (h= strchr(fcnname+1,'[')) ){
 			*h=0; idx= atoi(h+1);
 		} 
-		fsym= findSymbolInModule( findModule(cntxt->nspace,putName(b,strlen(b))), fcnname);
+		fsym= findSymbolInModule( findModule(cntxt->nspace,putName(b,strlen(b))), fcnname+1);
+		*fcnname = '.';
+		if(h) *h='[';
 		if (fsym == 0) {
-			stream_printf(out, "'%s.%s' not found\n", b,fcnname);
+			stream_printf(out, "'%s.%s' not found\n", b,fcnname+1);
 			return NULL;
 		}
 		m= fsym->def;
@@ -1258,24 +1255,29 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				char name[PATHLENGTH];
 
 				skipWord(cntxt, b);
-				skipBlanc(cntxt, b);
 				mdot= mdbLocateMalBlk(cntxt,mb,b,out);
+				skipNonBlanc(cntxt, b);
+				skipBlanc(cntxt, b);
 				if( mdot == NULL)
 					mdot= mb;
+				snprintf(name,PATHLENGTH,"/%s.%s.dot", getModuleId(getInstrPtr(mdot,0)), getFunctionId(getInstrPtr(mdot,0)));
 				/* optional file */
-				snprintf(name,PATHLENGTH,"/%s.%s.dot",
-					getModuleId(getInstrPtr(mdot,0)),
-					getFunctionId(getInstrPtr(mdot,0)));
+				skipBlanc(cntxt, b);
 				if (*b == 0){
-					strcat(fname,name+1);
+					strcpy(fname,monet_cwd);
+					strcat(fname,name);
 				} else if (*b != '/'){
 					strcpy(fname,monet_cwd);
 					strcat(fname,name);
-				} else {
+				} else 
+				if ( b[strlen(b)-1] == '/'){
+					strcpy(fname,b);
 					strcat(fname,name+1);
-				}
-				stream_printf(out,"#dot to %s\n",fname);
+				} else 
+					strcat(fname,b);
+				
 				showFlowGraph(mdot,0,fname);
+				stream_printf(out,"#dot file '%s' created\n",fname);
 				break;
 			}
 			skipWord(cntxt, b);
@@ -1403,8 +1405,7 @@ signatures satisfying the pattern.
 					for (m=mb; m != NULL; m = m->history)
 						printFunction(out, m, 0, lstng);
 				} else
-				if( m == NULL && !strchr(b,'.') && 
-					!strchr(b,'[') && !isdigit((int)*b)){
+				if( m == NULL && !strchr(b,'.') && !strchr(b,'[') && !isdigit((int)*b)){
 					/* optionally dump the complete module */
 					fsym = findModule(cntxt->nspace, putName(b, strlen(b)));
 					if (fsym == 0) {
@@ -2012,7 +2013,7 @@ mdbHelp(stream *f)
 	stream_printf(f, "break [<var>]    -- set breakpoint on current instruction or <var>\n");
 	stream_printf(f, "delete [<var>]   -- remove break/trace point <var>\n");
 	stream_printf(f, "debug <int>      -- set kernel debugging mask\n");
-	stream_printf(f, "dot [<int>] [<file>]  -- generate the dependency graph\n");
+	stream_printf(f, "dot <obj> [<file>]  -- generate the dependency graph\n");
 	stream_printf(f, "step             -- advance to next MAL instruction\n");
 	stream_printf(f, "module           -- display a module signatures\n");
 	stream_printf(f, "atom             -- show atom list\n");

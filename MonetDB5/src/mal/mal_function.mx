@@ -975,40 +975,23 @@ showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 }
 
 @-
-At a later stage we could extend the flow details with the status
-of crucial properties, e.g., processing time, cost, size
+We only display the minimal debugging information. The remainder
+can be obtained through the profiler.
 @c
 static void
 showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 {
 	str s, msg;
-	int i;
 
 	(void) stk;		/* fool the compiler */
-	msg = instruction2str(mb,stk, p, 0);
+	msg = instruction2str(mb,stk, p, LIST_MAL_DEBUG);
 	stream_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
-	for (s = msg+1; *s; s++)
+	for (s = msg; *s; s++)
 		if (*s == '"')
 			stream_printf(f, "\\\"");
 		else
 			stream_printf(f, "%c", *s);
 	GDKfree(msg);
-	for(i=0;i<p->retc; i++){
-		char *ps = NULL;
-		stream_printf(f, "\\n%s",getArgName(mb,p,i));
-		stream_printf(f,":%s", s=getTypeName(getVarType(mb,getArg(p,i))));
-		GDKfree(s);
-
-		ps = s = varGetPropStr(mb, getArg(p, i));
-		for (; s && *s; s++)
-			if (*s == '"')
-				stream_printf(f, "\\\"");
-			else
-				stream_printf(f, "%c", *s);
-		if (ps )
-			GDKfree(ps);
-	}
-	/* later: add BAT runtime properties */
 	stream_printf(f, "\"];\n");
 }
 
@@ -1034,6 +1017,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	}
 	for (i = 1; i < mb->stop ; i++) {
 		p = getInstrPtr(mb, i);
+	
 		showFlowDetails(mb, stk, p, i, f);
 
 		for (k = 0; k < p->retc; k++) 
@@ -1049,6 +1033,8 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 			for (k =0; k< p->retc; k++) 
 				if( getArgType(mb,p,k) != TYPE_void)
 					showInFlow(mb, i, p->argv[k], f);
+		if ( p->token == ENDsymbol)
+			break;
 	}
 	stream_printf(f, "}\n");
 	if (f != GDKout)
