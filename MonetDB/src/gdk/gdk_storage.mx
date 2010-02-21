@@ -697,156 +697,133 @@ BATload(str nme)
 	return BATload_intern(i);
 }
 @- BAT preload
-To avoid random disk access to large (memory-mapped) BATs it may help to issue a preload
-request. 
-Of course, it does not make sense to touch more then we can physically accomodate.
+To avoid random disk access to large (memory-mapped) BATs it may help to issue a preload request. 
+Of course, it does not make sense to touch more then we can physically accomodate (budget).
 @c
+/* quick and probabilistic test for a sequentially correlated heap */
+int heap_sequential(BAT *b) {
+	size_t i, n = (size_t) BATcount(b), skip = n/100, off = (size_t) BUNfirst(b);
+	BATiter bi = bat_iterator(b);
+	str p, q = BUNhead(bi, ((BUN) off));	
+
+	/* check if the pointers are ordered */
+	if (skip == 0) return 1;
+	for(i=0; (i += skip) < n; q=p) {
+		p = BUNhead(bi, ((BUN) off+i));
+		if (p < q) return 0;
+	}
+	return 1;
+}
+
+/* modern linux tends to use 128K readaround  = 64K readahead
+ * changes have been going on in 2009, towards true readahead
+ * http://tomoyo.sourceforge.jp/cgi-bin/lxr/source/mm/readahead.c 
+ * 
+ * Peter Feb2010: I tried to do prefetches further apart, to trigger multiple readahead
+ *                units in parallel, but it does improve performance visibly 
+ */
+static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, size_t touch, int preload, int adv) {
+	size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0, v4 = 0, v5 =0, v6 = 0, v7 = 0, page = MT_pagesize();
+	str advise = (adv==MMAP_WILLNEED)?"WILLNEED":(adv==MMAP_SEQUENTIAL)?"SEQUENTIAL":(adv==MMAP_RANDOM)?"RANDOM":(adv==MMAP_NORMAL)?"NORMAL":NULL;
+	int t = GDKms();
+	assert(advise);
+	if (h->storage != STORE_MEM && h->size > MT_MMAP_TILE) {
+		MT_mmap_inform(h->base, h->size, preload, adv, 0);
+		if (preload > 0) {
+			size_t alignskip = (page - (((size_t) base) & (page-1))) & (page-1);
+			size_t alignedsz = (size_t) (((sz < alignskip)?0:((size_t) (sz-alignskip))) & ~(page-1));
+                	int ret = posix_madvise(base + alignskip, alignedsz, adv);
+        		if (ret) THRprintf(GDKerr, "#MT_mmap_inform: posix_madvise(file=%s, base="PTRFMT", len="SZFMT"MB, advice=%s) = %d\n", 
+					h->filename, PTRFMTCAST (base + alignskip), alignedsz >> 20, advise, errno);
+		}
+	}
+	if (touch && preload > 0) {
+		/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
+		size_t *lo = (size_t *) (((size_t) base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
+		size_t *hi = (size_t *) (base + touch);
+		for (hi -= 8*page; lo <= hi; lo += 8*page) {
+			/* try to trigger loading of multiple pages without blocking */
+			v0 += lo[0*page]; v1 += lo[1*page]; v2 += lo[2*page]; v3 += lo[3*page];
+			v4 += lo[4*page]; v5 += lo[5*page]; v6 += lo[6*page]; v7 += lo[7*page];
+		}
+		for (hi += 7*page; lo <= hi; lo +=page) v0 += *lo;
+	}
+	IODEBUG THRprintf(GDKout,"#BATpreload(%s->%s,preload=%d,sz=%dMB,touch=%dMB,%s) = %dms \n", id, hp, preload, (int) (sz>>20), (int) (touch>>20), advise, GDKms()-t);
+	return v0+v1+v2+v3+v4+v5+v6+v7;
+}
+
 size_t 
 BATaccess(BAT *b, int what, int advise, int preload) {
-	size_t *i, *limit;
-	size_t v1 = 0, v2 = 0, v3 = 0, v4 = 0;
-	size_t step = MT_pagesize()/sizeof(size_t);
-	size_t pages = (size_t) (0.8 * MT_npages());
+	size_t v = 0, sz, budget = (size_t) (0.8 * MT_npages()), seqbudget = budget/8;
+	str id = BATgetId(b);
+	BATiter bi = bat_iterator(b);
 
-	assert(advise==MMAP_NORMAL||advise==MMAP_RANDOM||advise==MMAP_SEQUENTIAL||advise==MMAP_WILLNEED||advise==MMAP_DONTNEED);
+	if (BATcount(b) == 0) return 0;
 
-	/* VAR heaps (inherent random access) */
-	if ( what&USE_HEAD && b->H->vheap && b->H->vheap->base ) {
-		if (b->H->vheap->storage != STORE_MEM && b->H->vheap->size > MT_MMAP_TILE) {
-			MT_mmap_inform(b->H->vheap->base, b->H->vheap->size, preload, MMAP_WILLNEED, 0);
-		}
-		if (preload > 0 && pages > 0) {
-			IODEBUG THRprintf(GDKout,"#BATaccess(%s,%d): H->vheap\n", BATgetId(b), advise);
-			limit = (size_t *) (b->H->vheap->base + b->H->vheap->free) - 4 * step;
-			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-			i = (size_t *) (((size_t)b->H->vheap->base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-			for (; i <= limit && pages > 3 ; i+= 4*step, pages-= 4) {
-				v1 += *i;
-				v2 += *(i + step);
-				v3 += *(i + 2*step);
-				v4 += *(i + 3*step);
-			}
-			limit += 4 * step;
-			for (; i <= limit  && pages > 0; i+= step, pages--) {
-				v1 += *i;
-			}
-		}
-	}
-	if ( what&USE_TAIL && b->T->vheap && b->T->vheap->base ) {
-		if (b->T->vheap->storage != STORE_MEM && b->T->vheap->size > MT_MMAP_TILE) {
-			MT_mmap_inform(b->T->vheap->base, b->T->vheap->size, preload, MMAP_WILLNEED, 0);
-		}
-		if (preload > 0 && pages > 0) {	
-			IODEBUG THRprintf(GDKout,"#BATaccess(%s,%d): T->vheap\n", BATgetId(b), advise);
-			limit = (size_t *) (b->T->vheap->base + b->T->vheap->free - sizeof(size_t)) - 4 * step;
-			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-			i = (size_t *) (((size_t)b->T->vheap->base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-			for (; i <= limit  && pages > 3; i+= 4*step, pages-= 4) {
-				v1 += *i;
-				v2 += *(i + step);
-				v3 += *(i + 2*step);
-				v4 += *(i + 3*step);
-			}
-			limit += 4 * step;
-			for (; i <= limit  && pages > 0; i+= step, pages--) {
-				v1 += *i;
-			}
-		}
-	}
-
-	/* BUN heaps (no need to preload for sequential access) */
-	if ( what&USE_HEAD && b->H->heap.base ) {
-		if (b->H->heap.storage != STORE_MEM && b->H->heap.size > MT_MMAP_TILE) {
-			MT_mmap_inform(b->H->heap.base, b->H->heap.size, preload, advise, 0);
-		}
-		if (preload > 0 && pages > 0 && advise != MMAP_SEQUENTIAL) {
-			IODEBUG THRprintf(GDKout,"#BATaccess(%s,%d): H->heap\n", BATgetId(b), advise);
-			limit = (size_t *) (Hloc(b, BUNlast(b)) - sizeof(size_t)) - 4 * step;
-			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-			i = (size_t *) (((size_t)Hloc(b, BUNfirst(b)) + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-			for (; i <= limit && pages > 3 ; i+= 4*step, pages-= 4) {
-				v1 += *i;
-				v2 += *(i + step);
-				v3 += *(i + 2*step);
-				v4 += *(i + 3*step);
-			}
-			limit += 4 * step;
-			for (; i <= limit  && pages > 0; i+= step, pages--) {
-				v1 += *i;
-			}
-		}
-	}
-	if ( what&USE_TAIL && b->T->heap.base ) {
-		if (b->T->heap.storage != STORE_MEM && b->T->heap.size > MT_MMAP_TILE) {
-			MT_mmap_inform(b->T->heap.base, b->T->heap.size, preload, advise, 0);
-		}
-		if (preload > 0 && pages > 0 && advise != MMAP_SEQUENTIAL) {
-			IODEBUG THRprintf(GDKout,"#BATaccess(%s,%d): T->heap\n", BATgetId(b), advise);
-			limit = (size_t *) (Tloc(b, BUNlast(b)) - sizeof(size_t)) - 4 * step;
-			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-			i = (size_t *) (((size_t)Tloc(b, BUNfirst(b)) + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-			for (; i <= limit && pages > 3; i+= 4*step, pages-= 4) {
-				v1 += *i;
-				v2 += *(i + step);
-				v3 += *(i + 2*step);
-				v4 += *(i + 3*step);
-			}
-			limit += 4 * step;
-			for (; i <= limit  && pages > 0; i+= step, pages--) {
-				v1 += *i;
-			}
-		}
-	}
-
-	/* HASH indices (inherent random access) */
-	if ( what&USE_HHASH || what&USE_THASH )
+	/* HASH indices (inherent random access). handle first as they *will* be access randomly (one can always hope for locality on the other heaps) */
+	if ( what&USE_HHASH || what&USE_THASH ) {
 		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATaccess");
-	if ( what&USE_HHASH && b->H->hash && b->H->hash->heap && b->H->hash->heap->base ) {
-		if (b->H->hash->heap->storage != STORE_MEM && b->H->hash->heap->size > MT_MMAP_TILE) {
-			MT_mmap_inform(b->H->hash->heap->base, b->H->hash->heap->size, preload, MMAP_WILLNEED, 0);
+		if ( what&USE_HHASH && b->H->hash && b->H->hash->heap && b->H->hash->heap->base) {
+			budget -= sz = (b->H->hash->heap->size > budget)?budget:b->H->hash->heap->size;
+			v += access_heap(id, "hhash", b->H->hash->heap, b->H->hash->heap->base, sz, 1, preload, MMAP_WILLNEED);
 		}
-		if (preload > 0 && pages > 0) {
-			IODEBUG THRprintf(GDKout,"#BATaccess(%s,%d): H->hash\n", BATgetId(b), advise);
-			limit = (size_t *) (b->H->hash->heap->base + b->H->hash->heap->size - sizeof(size_t)) - 4 * step;
-			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-			i = (size_t *) (((size_t)b->H->hash->heap->base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-			for (; i <= limit && pages > 3 ; i+= 4*step, pages-= 4) {
-				v1 += *i;
-				v2 += *(i + step);
-				v3 += *(i + 2*step);
-				v4 += *(i + 3*step);
-			}
-			limit += 4 * step;
-			for (; i <= limit  && pages > 0; i+= step, pages--) {
-				v1 += *i;
-			}
+		if ( what&USE_THASH && b->T->hash && b->T->hash->heap && b->T->hash->heap->base) {
+			budget -= sz = (b->T->hash->heap->size > budget)?budget:b->T->hash->heap->size;
+			v += access_heap(id, "thash", b->T->hash->heap, b->T->hash->heap->base, sz, 1, preload, MMAP_WILLNEED);
 		}
-	}
-	if ( what&USE_THASH && b->T->hash && b->T->hash->heap && b->T->hash->heap->base ) {
-		if (b->T->hash->heap->storage != STORE_MEM && b->T->hash->heap->size > MT_MMAP_TILE) {
-			MT_mmap_inform(b->T->hash->heap->base, b->T->hash->heap->size, preload, MMAP_WILLNEED, 0);
-		}
-		if (preload > 0 && pages > 0) {
-			IODEBUG THRprintf(GDKout,"#BATaccess(%s,%d): T->hash\n", BATgetId(b), advise);
-			limit = (size_t *) (b->T->hash->heap->base + b->T->hash->heap->size - sizeof(size_t)) - 4 * step;
-			/* we need to ensure alignment, here, as b might be a view and heap.base of views are not necessarily aligned */
-			i = (size_t *) (((size_t)b->T->hash->heap->base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-			for (; i <= limit && pages > 3 ; i+= 4*step, pages-= 4) {
-				v1 += *i;
-				v2 += *(i + step);
-				v3 += *(i + 2*step);
-				v4 += *(i + 3*step);
-			}
-			limit += 4 * step;
-			for (; i <= limit  && pages > 0; i+= step, pages--) {
-				v1 += *i;
-			}
-		}
-	}
-	if ( what&USE_HHASH || what&USE_THASH )
 		gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATaccess");
+	}
 
-	return v1 + v2 + v3 + v4;
+	/* vheaps next, as shared vheaps are not seq-correlated needing WILLNEED (use prefetch budget for this first) */
+	if ( what&USE_HEAD ) {
+		if (b->H->vheap && b->H->vheap->base) {
+			char *lo = BUNhead(bi, BUNfirst(b)), *hi = BUNhead(bi, BUNlast(b)-1);
+			int heap_advise = advise;
+			if (hi < lo || (preload > 0 && !heap_sequential(b))) { /* not sequentially correlated! */
+				lo = b->H->vheap->base; hi = lo + b->H->vheap->free;
+				heap_advise = MMAP_WILLNEED;
+			}
+			sz = (heap_advise == MMAP_SEQUENTIAL && budget > seqbudget)?seqbudget:budget; 
+			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
+			if (heap_advise == MMAP_SEQUENTIAL) seqbudget -= sz;
+			v += access_heap(id, "hheap", b->H->vheap, lo, (size_t) (hi-lo), sz, preload, heap_advise);
+		}
+	}
+	if ( what&USE_TAIL ) {
+		if (b->T->vheap && b->T->vheap->base) {
+			char *lo = BUNtail(bi, BUNfirst(b)), *hi = BUNtail(bi, BUNlast(b)-1);
+			int heap_advise = advise;
+			if (hi < lo || (preload > 0 && !heap_sequential(BATmirror(b)))) { /* not sequentially correlated! */
+				lo = b->T->vheap->base; hi = lo + b->T->vheap->free;
+				heap_advise = MMAP_WILLNEED;
+			}
+			sz = (heap_advise == MMAP_SEQUENTIAL && budget > seqbudget)?seqbudget:budget; 
+			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
+			if (heap_advise == MMAP_SEQUENTIAL) seqbudget -= sz;
+			v += access_heap(id, "theap", b->T->vheap, lo, (size_t) (hi-lo), sz, preload, heap_advise);
+		}
+	}
+
+	/* BUN heaps are last in line for prefetch budget */
+	if ( what&USE_HEAD ) {
+		if (b->H->heap.base) {
+			char *lo = BUNhloc(bi, BUNfirst(b)), *hi = BUNhloc(bi, BUNlast(b)-1);
+			sz = (advise == MMAP_SEQUENTIAL && budget > seqbudget)?seqbudget:budget; 
+			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
+			if (advise == MMAP_SEQUENTIAL) seqbudget -= sz;
+			v += access_heap(id, "hbuns", &b->H->heap, lo, (size_t) (hi-lo), sz, preload, advise);
+		}
+	}
+	if ( what&USE_TAIL ) {
+		if (b->T->heap.base) {
+			char *lo = BUNtloc(bi, BUNfirst(b)), *hi = BUNtloc(bi, BUNlast(b)-1);
+			sz = (advise == MMAP_SEQUENTIAL && budget > seqbudget)?seqbudget:budget; 
+			budget -= sz = (((size_t) (hi-lo)) > sz)?sz:((size_t) (hi-lo));
+			if (advise == MMAP_SEQUENTIAL) seqbudget -= sz;
+			v += access_heap(id, "tbuns", &b->T->heap, lo, (size_t) (hi-lo), sz, preload, advise);
+		}
+	}
+	return v;
 }
 @}
 

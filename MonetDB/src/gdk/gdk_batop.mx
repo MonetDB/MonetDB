@@ -299,7 +299,7 @@ BATins(BAT *b, BAT *n, bit force)
 	    b->batSet == 0 &&
 	    (b->tkey & BOUND2BTRUE) == 0 &&
 	    ((b->hkey & BOUND2BTRUE) == 0 || n->hkey) &&
-	    (b->H->hash == NULL || ATOMstorage(b->htype) == TYPE_int)) {
+	    (b->H->hash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid))) {
 		if ((b->hkey & BOUND2BTRUE)) {
 			tmp = n = BATkdiff(n, b);
 			if (n == NULL)
@@ -316,6 +316,8 @@ BATins(BAT *b, BAT *n, bit force)
 		if (BATcount(b) || (BATcount(n) && n->ttype != TYPE_void && !n->tdense))
 			BAThash(BATmirror(b), BATcount(b) + BATcount(n));
 	}
+	BATaccessBegin(b, USE_HHASH|USE_THASH, MMAP_WILLNEED);
+	BATaccessBegin(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	b->batDirty = 1;
 	if (fastpath) {
 		BUN p, q, r = BUNlast(b);
@@ -396,7 +398,7 @@ BATins(BAT *b, BAT *n, bit force)
 				ptr v = BUNhead(ni, p);
 
 				bunfastins_nocheck(b, r, v, BUNtail(ni, p), Hsize(b), Tsize(b));
-				HASHins_int(b->H->hash, i, v);
+				HASHins_oid(b->H->hash, i, v);
 				r++;
 				i++;
 			}
@@ -415,6 +417,8 @@ BATins(BAT *b, BAT *n, bit force)
 	}
 	res = b;
       bunins_failed:
+	BATaccessEnd(b, USE_HHASH|USE_THASH, MMAP_WILLNEED);
+	BATaccessEnd(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	if (tmp)
 		BBPreclaim(tmp);
 	return res;
@@ -438,6 +442,8 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	b->batDirty = 1;
+	BATaccessBegin(b, USE_HHASH|USE_THASH, MMAP_SEQUENTIAL);
+	BATaccessBegin(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (sz > BATcapacity(b) - BUNlast(b)) {
 		/* if needed space exceeds a normal growth extend just
@@ -648,8 +654,12 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 	b->H->nonil &= n->H->nonil; 
 	b->T->nonil &= n->T->nonil; 
+	BATaccessEnd(b, USE_HHASH|USE_THASH, MMAP_WILLNEED);
+	BATaccessEnd(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	return b;
       bunins_failed:
+	BATaccessEnd(b, USE_HHASH|USE_THASH, MMAP_WILLNEED);
+	BATaccessEnd(n, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	return NULL;
 }
 
@@ -1211,12 +1221,6 @@ Create the result BAT and execute the select algorithm.
 
 		if (!preserve_order && equi && b->T->hash) {
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
-
-			bn = BAT_hashselect(b, bn, tl);
-		} else if (!preserve_order && equi && ATOMsize(b->ttype) > 1 && estimate * 100 < batcnt && batcnt * 2 * sizeof(int) < (GDK_mem_maxsize / 4)) {
-			/* Build a hash-table on the fly for equi-select if the selectivity is low
-			 * and it is not too big */
-			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
 
 			bn = BAT_hashselect(b, bn, tl);
 		} else {

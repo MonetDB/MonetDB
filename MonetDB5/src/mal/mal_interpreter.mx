@@ -79,7 +79,7 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static void displayVolume(Client cntxt, lng vol);
 
-#define MEMORY_THRESHOLD  0.8
+#define MEMORY_THRESHOLD  0.9
 #define MAXHOT 16
 
 static lng memorypool;		/* memory claimed by concurrent threads */
@@ -684,7 +684,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *h
 		*argclaim = total;
 	}
 	if ( retclaim  && *retclaim == 0)
-		*retclaim = guess;
+		*retclaim = guess * pci->retc;
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total )
 		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
@@ -1202,10 +1202,10 @@ isGarbageStmt( MalBlkPtr mb, InstrPtr p)
 }
 
 static str
-DFLOWexecute( DataFlow flow )
+DFLOWscheduler( DataFlow flow )
 {
 	int queued = 0;
-	int pc = 0, i, j;
+	int pc = 0, i, j, candidates=0;
 	int limit = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
 	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit);
@@ -1217,11 +1217,12 @@ DFLOWexecute( DataFlow flow )
 		flow->cntxt->timer = GDKusec();
 	
 	while(pc < limit) {
-		for(i = pc; i < limit && queued < (flow->nway<<1); i++) {
-			if (fs[i].status == DFLOWwrapup) 
-				if (pc == i)
-					pc++;
-			if (fs[i].status == DFLOWpending) { 
+		candidates = 0; /* to avoid N^2 run finding blocked instructions and keep focus*/
+		for( ; pc < limit; pc++)
+			if ( fs[pc].status == DFLOWpending)
+				break;
+		for(i = pc; i < limit && candidates < 2 * flow->nway ; i++) {
+			if (fs[i].status == DFLOWpending) {
 				InstrPtr p = getInstrPtr(flow->mb, fs[i].pc);
 				int blocked = 0;
 
@@ -1265,7 +1266,7 @@ DFLOWexecute( DataFlow flow )
 						}
 				}
 
-				if (!blocked) { 
+				if (!blocked ){
 					queued++;
 					fs[i].status = DFLOWrunning;
 
@@ -1274,6 +1275,7 @@ DFLOWexecute( DataFlow flow )
 	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
 #endif
 					q_enqueue(flow->todo, fs+i);
+					candidates++;
 				}
 			}
 		}
@@ -1420,7 +1422,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow->reassign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
 	mal_unset_lock(mal_contextLock, "runMALdataflow");
 
-	ret = DFLOWexecute(flow);
+	ret = DFLOWscheduler(flow);
 	GDKfree(flow->status);
 	GDKfree(flow->blocked);
 	GDKfree(flow->inuse);
