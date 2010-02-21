@@ -1273,8 +1273,10 @@ str CALC@22@1(@1 *res, @2 *a)
 {
 	if (*a == @2_nil @3) {
 		*res= @1_nil;
+/*	obey semantics above, don't check for information loss
 		if (*a != @2_nil)
 			throw(MAL, "calc.@1", ARGUMENT_TOO_LARGE);
+*/
 	} else {
 		*res= @4;
 	}
