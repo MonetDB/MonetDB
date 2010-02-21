@@ -609,10 +609,10 @@ when scheduled correctly, would not lead to duplicate work.
 			/* Initialize result variables */
                         for ( j = 0; j < tcnt; j++)
                                 for ( k = 0; k < tcnt; k++){
-/*                                        r = newFcnCall(mb,batRef,newRef);*/
-					r = newAssignment(mb);
+                                        r = newFcnCall(mb,batRef,newRef);
                                         setArgType(mb,r,0,resType);
-					r = pushNil(mb,r, resType);
+					r = pushType(mb,r, getHeadType(resType));
+					r = pushType(mb,r, getTailType(resType));
                                         res[j][k] = getArg(r,0);
                         }
 
@@ -648,11 +648,12 @@ when scheduled correctly, would not lead to duplicate work.
 
 			/* now finalize the exec operation */
 
-			/* exec_qry:= nil; */
-			q = newAssignment(sm);
+			/* exec_qry:= bat.new(:htp,:ttp); */
+			q = newFcnCall(sm,batRef,newRef);
 			getArg(q,0) = getArg(getInstrPtr(sm,0),0);
-			q = pushNil(sm,q,getArgType(sm,q,0));
-			
+			q = pushType(sm,q, getHeadType(getArgType(mb,p,1)));
+			q = pushType(sm,q, getTailType(getArgType(mb,p,1)));
+	
 			/* barrier cond:= calc.>(i,0); */
 			r = newFcnCall(sm,calcRef,putName(">",1));
 			r->barrier = BARRIERsymbol;
@@ -793,7 +794,10 @@ The tentacle code should be optimized by the remaining optimizers too.
 		}
 	}
 #endif
-/*	for (i=0; i<tn; i++)
+/*	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+	printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
+
+	for (i=0; i<tn; i++)
 		printFunction(GDKout, tentacle[i], 0, LIST_MAL_STMT);
 */
 	GDKfree(wnm);
