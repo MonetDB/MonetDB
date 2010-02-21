@@ -912,9 +912,9 @@ MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	if (ret) {
-		stream_printf(GDKerr, "#MT_mmap_inform: posix_madvise(file=%s, fd=%d, base="PTRFMT", len="SZFMT"MB, advice=%d) = %d\n",
+		stream_printf(GDKerr, "#MT_mmap_inform: posix_madvise(file=%s, fd=%d, base="PTRFMT", len="SZFMT"MB, advice=MMAP_SEQUENTIAL) = %d\n",
 			      (i >= 0 ? MT_mmap_tab[i].path : ""), (i >= 0 ? MT_mmap_tab[i].fd : -1),
-			      PTRFMTCAST base, len >> 20, advise, errno);
+			      PTRFMTCAST base, len >> 20, errno);
 	}
 }
 
