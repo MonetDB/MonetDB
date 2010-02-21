@@ -834,7 +834,7 @@ MT_mmap_trim(size_t target, void *fp)
 			for (i = MT_mmap_next(MT_mmap_cur); delta && i != MT_mmap_cur; i = MT_mmap_next(i)) {
 				assert(i >= 0);
 
-				curprio = MT_mmap_tab[i].usecnt + 4*MT_mmap_tab[i].random;
+				curprio = MT_mmap_tab[i].usecnt + MT_mmap_tab[i].writable + 4*MT_mmap_tab[i].random;
 				if (maxprio < curprio) maxprio = curprio;
 
 				if (MT_mmap_tab[i].fd >= 0 && curprio == keepprio) {
