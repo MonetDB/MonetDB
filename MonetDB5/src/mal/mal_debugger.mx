@@ -302,10 +302,9 @@ working directory. The program call
 @example
 dot -Tpdf user-tst-0.dot -o user-tst-0.pdf
 @end example
-creates a postscript file with the graphs. With the Adobe reader professional
-you can break it up into multiple pages. An alternative
-is the program available from 
- @sc{http://www.tug.org/tex-archive/support/poster/poster.c}
+creates a PDF file with the graphs. The Linux pdfnup utility can be used to
+produce a proper printing. Alternatively, the Adobe reader professional
+can break it up into multiple pages.
 
 @node Runtime Inspection, Debugger Attachment, Program Inspection,  The MAL Debugger
 @+ Runtime Inspection and Reflection
