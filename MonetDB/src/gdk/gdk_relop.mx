@@ -1002,9 +1002,9 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 
 		if (ATOMstorage(rtt) == TYPE_str &&
 		    estimate > batcache_maxbuckets * BATTINY &&
-		    /* GDK_ELIMDOUBLES(r->theap) && */
+		    ((BATtordered(l)&1) || r->T->vheap->free < MT_MMAP_TILE) &&
 		    (!rcount || (lcount << 3) > rcount)) {
-			/* insert double-eliminated strings as ints */
+			/* insert as ints and copy/share the string heap */
 			rtt = r->T->width == 1 ? TYPE_bte : (r->T->width == 2 ? TYPE_sht : (r->T->width == 4 ? TYPE_int : TYPE_lng));
 		}
 		bn = BATnew(BAThtype(l), ATOMtype(rtt), estimate);
@@ -1017,12 +1017,10 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 			/* dense => ordered, i.e., we did check the bounderies already above */
 			/* and we can do a "synchronized walk" through l & r */
 			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && BATtdense(l)\n");
-
 			@:fetchjoin_switch_lht(dense)@
 		} else if ((BATtordered(l) & 1) || hitalways) {
 			/* we did check the bounderies already above (BATtordered(l)&1) or simply "trust" hitalways */
 			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && ( BATtordered(l)&1 [== %d] || hitalways [== %d] )\n", (int)(BATtordered(l)&1), (int)hitalways);
-
 			@:fetchjoin_switch_lht(ordered)@
 		} else {
 			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && !BATtordered(l)&1 && !hitalways\n");

@@ -260,8 +260,13 @@ mapi_open=false       # should be set to 'true' to allow for
 # sql_optimizer=inline,remap,deadcode,multiplex
 
 # Set and define the default pipeline
-sql_optimizer=mitosis_pipe
-default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+sql_optimizer=default_pipe
+
+# The default pipe line contains as of Feb2010 mitosis-mergetable-reorder, aimed at large tables and improved access locality
+default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+
+# the default pipeline used in the November 2009 release
+nov2009_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 
 # experimental pipelines stressing various components
 
@@ -285,9 +290,6 @@ datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcod
 # platforms only)
 octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 
-# The Mitosis-mergetable-reorder pipeline, aimed at better variable
-# access locality
-mitosis_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 #
 #The default + datacyclotron
 datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
