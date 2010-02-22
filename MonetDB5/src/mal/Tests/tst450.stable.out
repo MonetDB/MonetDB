@@ -138,7 +138,6 @@ end main;
 [ "tablet",	  nil	  ]
 [ "timestamp",	  nil	  ]
 [ "timezone",	  nil	  ]
-[ "tokenizer",	  nil	  ]
 [ "trader",		  nil	  ]
 [ "transaction",  nil	  ]
 [ "txtsim",	  nil	  ]
@@ -519,9 +518,6 @@ command io.import(b:bat[:any_1,:any_2],filepath:str):bat[:any_1,:any_2] address 
 
 command str.insert(s:str,start:int,l:int,s2:str):str address STRinsert;
 #Insert a string into another
-
-command tokenizer.depositFile(fnme:str):void address TKNZRdepositFile;
-#batch insertion from a file of strings to tokenize, each string is seperated by a new line
 
 command transaction.alpha(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] address TRNtrans_alpha;
 #List insertions since last commit.

@@ -28,18 +28,6 @@ end main;
 # str				str		str		str																	str							  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "main",			  "function",	  "user",	  "():void;",																  "nil"							  ]
-[ "close",				  "command",	  "tokenizer",	  "():void ",														  "TKNZRclose;"						  ]
-[ "depositFile",			  "command",	  "tokenizer",	  "(fnme:str):void ",													  "TKNZRdepositFile;"					  ]
-[ "getCardinality",			  "command",	  "tokenizer",	  "():bat[:int,:wrd] ",													  "TKNZRgetCardinality;"				  ]
-[ "getCount",				  "command",	  "tokenizer",	  "():bat[:int,:wrd] ",													  "TKNZRgetCount;"					  ]
-[ "getHeight",				  "command",	  "tokenizer",	  "():bat[:void,:wrd] ",												  "TKNZRgetHeight;"					  ]
-[ "getDepth",				  "command",	  "tokenizer",	  "():bat[:void,:bte] ",												  "TKNZRgetDepth;"					  ]
-[ "getLevel",				  "command",	  "tokenizer",	  "(i:int):bat[:oid,:str] ",												  "TKNZRgetLevel;"					  ]
-[ "locate",				  "pattern",	  "tokenizer",	  "(s:str):oid ",													  "TKNZRlocate;"					  ]
-[ "open",				  "command",	  "tokenizer",	  "(name:str):void ",													  "TKNZRopen;"						  ]
-[ "toString",				  "pattern",	  "tokenizer",	  "(i:oid):str ",													  "TKNZRtakeOid;"					  ]
-[ "tokenize",				  "command",	  "tokenizer",	  "(u:str):oid ",													  "TKNZRdeposit;"					  ]
-[ "take",				  "pattern",	  "tokenizer",	  "(i:oid):str ",													  "TKNZRtakeOid;"					  ]
 [ "DeleteMap",			  "command",	  "crackers",	  "(b:bat[:oid,:dbl],bp:bat[:oid,:dbl]):void ",												  "DeleteCrackerMap;"					  ]
 [ "DeleteMap",			  "command",	  "crackers",	  "(b:bat[:oid,:dbl],bp:bat[:oid,:int]):void ",												  "DeleteCrackerMap;"					  ]
 [ "DeleteMap",			  "command",	  "crackers",	  "(b:bat[:oid,:dbl],bp:bat[:oid,:str]):void ",												  "DeleteCrackerMap;"					  ]

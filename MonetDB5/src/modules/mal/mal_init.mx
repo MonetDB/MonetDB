@@ -253,7 +253,6 @@ include crackers;
 @-
 The RDF module stuff
 @mal
-#include tokenizer;
 # FIXME: !MALException:malInclude:could not open file: rdf
 #include rdf;
 
