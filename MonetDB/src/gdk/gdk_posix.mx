@@ -215,7 +215,7 @@ gdk_export size_t MT_getrss(void);
 gdk_export void *MT_mmap(char *path, int mode, off_t off, size_t len);
 gdk_export int MT_munmap(void *p, size_t len);
 gdk_export int MT_msync(void *p, size_t off, size_t len, int mode);
-gdk_export int MT_madvise(void *p, size_t len, int advise);
+gdk_export int MT_madvise(void *p, size_t len, int advice);
 
 typedef struct MT_mmap_hdl_t {
 	void *hdl;
@@ -373,7 +373,7 @@ char *MT_heapbase = NULL;
 
 /* Crude VM buffer management that keep a list of all memory mapped regions.
  *
- * a.k.a. "helping stupid VM implementations that ignore VM advise"
+ * a.k.a. "helping stupid VM implementations that ignore VM advice"
  *
  * The main goal is to be able to tell the OS to please stop buffering all memory
  * mapped pages when under pressure. A major problem is materialization of large
@@ -506,7 +506,7 @@ char *MT_heapbase = NULL;
  *   we could resort to saving and unloading random tiles.
  * 
  * To do better, our BAT algorithms should provide even more detailed
- * advise on their access patterns, which may even consist of pointers
+ * advice on their access patterns, which may even consist of pointers
  * to the cursors (i.e. pointers to b->batBuns->free or the cursors
  * in radix-cluster), which an enhanced version of this thread might
  * take into account.
@@ -895,17 +895,17 @@ bailout:
 
 /* a thread informs it is goin to (preload==1) or stops (preload==-1) using a range of memory */
 void
-MT_mmap_inform(void *base, size_t len, int preload, int advise, int writable)
+MT_mmap_inform(void *base, size_t len, int preload, int advice, int writable)
 {
 	int i, ret = 0;
 
-	assert(advise==MMAP_NORMAL||advise==MMAP_RANDOM||advise==MMAP_SEQUENTIAL||advise==MMAP_WILLNEED||advise==MMAP_DONTNEED);
+	assert(advice==MMAP_NORMAL||advice==MMAP_RANDOM||advice==MMAP_SEQUENTIAL||advice==MMAP_WILLNEED||advice==MMAP_DONTNEED);
 
 	(void) pthread_mutex_lock(&MT_mmap_lock);
 	i = MT_mmap_idx(base, len);
 	if (i >= 0) {
 		if (writable) MT_mmap_tab[i].writable = (writable > 0);
-		MT_mmap_tab[i].random += preload * (advise == MMAP_WILLNEED); /* done as a counter to keep track of multiple threads */
+		MT_mmap_tab[i].random += preload * (advice == MMAP_WILLNEED); /* done as a counter to keep track of multiple threads */
 		MT_mmap_tab[i].usecnt += preload; /* active thread count */
 		if (MT_mmap_tab[i].usecnt == 0)
 			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize()-1), MMAP_SEQUENTIAL);
@@ -1196,14 +1196,14 @@ MT_msync(void *p, size_t off, size_t len, int mode)
 }
 
 int
-MT_madvise(void *p, size_t len, int advise)
+MT_madvise(void *p, size_t len, int advice)
 {
-	int ret = posix_madvise(p, len & ~(MT_pagesize()-1), advise);
+	int ret = posix_madvise(p, len & ~(MT_pagesize()-1), advice);
 
 #ifdef MMAP_DEBUG
-	stream_printf(GDKerr, "#posix_madvise(" PTRFMT "," SZFMT ",%d) = %d\n", PTRFMTCAST p, len, advise, ret);
+	stream_printf(GDKerr, "#posix_madvise(" PTRFMT "," SZFMT ",%d) = %d\n", PTRFMTCAST p, len, advice, ret);
 #endif
-	if (MT_fadvise(p, len, advise))
+	if (MT_fadvise(p, len, advice))
 		ret = -1;
 	return ret;
 }
@@ -1507,11 +1507,11 @@ MT_msync(void *p, size_t off, size_t len, int mode)
 }
 
 int
-MT_madvise(void *p, size_t len, int advise)
+MT_madvise(void *p, size_t len, int advice)
 {
 	(void) p;
 	(void) len;
-	(void) advise;
+	(void) advice;
 	return 0;		/* would -1 be better? */
 }
 
