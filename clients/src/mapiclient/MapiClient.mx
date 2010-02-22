@@ -2271,11 +2271,9 @@ main(int argc, char **argv)
 				   strcmp(optarg, "ma") == 0) {
 				language = "mal";
 				mode = MAL;
-#ifdef CAN_I_HAS_MSQL_LANGUAGE
 			} else if (strcmp(optarg, "msql") == 0) {
 				language = "msql";
 				mode = MAL;
-#endif
 			} else if (strcmp(optarg, "xquery") == 0 ||
 				   strcmp(optarg, "xquer") == 0 ||
 				   strcmp(optarg, "xque") == 0 ||
