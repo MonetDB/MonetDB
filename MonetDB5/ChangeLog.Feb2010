@@ -14,7 +14,6 @@
   - All update instructions return their target to mark the dataflow.
   - Clean up of (bat)calc module.
   - Packing pieces together simplified and speed up.
-  - Tokenizer added for URIs.
 - The MAL interpreter has been extended with an operator admission scheme, which is
   active during parallel execution. It blocks threads if the total amount of memory
   needed for the operator can not be claimed. Only if there is one operation
