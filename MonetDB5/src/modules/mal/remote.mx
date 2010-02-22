@@ -39,20 +39,19 @@ identifier that was returned by put, results in an object with the same
 value and type as the one that was put.  The result of such an operation is
 equivalent to making an (expensive) copy of the original object.
 
-The register function takes a local MAL function and makes it known
-at a remote site. It ensures that it does not overload an already
-known operation remotely, which could create a semantic conflict.
-Deregister a function is forbidden, because it would allow for taking
+The register function takes a local MAL function and makes it known at a
+remote site. It ensures that it does not overload an already known
+operation remotely, which could create a semantic conflict.
+Deregistering a function is forbidden, because it would allow for taking
 over the remote site completely.
-C-implemented functions, such as io.print() cannot be remotely 
-stored. It would require even more complicated (byte?) code 
-shipping and remote compilation to make it work.  
-Currently, the remote procedure may only returns a single value.
+C-implemented functions, such as io.print() cannot be remotely stored.
+It would require even more complicated (byte) code shipping and remote
+compilation to make it work.  
 
 The choice to let exec only execute functions was made to avoid problems
 to decide what should be returned to the caller.  With a function it is
 clear and simple to return that what the function signature prescribes.
-Any side effect (e.g.  io.print calls) may cause havoc in the system,
+Any side effect (e.g. io.print calls) may cause havoc in the system,
 but are currently ignored.
 
 This leads to the final contract of this module.  The methods should be
