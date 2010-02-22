@@ -6,6 +6,9 @@
   to listen for connections on a local UNIX domain socket on UNIX-like
   systems.
 
+* Mon Feb 22 2010 Martin Kersten <mk@(none)>
+- Fixed cleaning the user module context upon session end.
+
 * Mon Jan 18 2010 Martin Kersten <mk@cwi.nl>
 - The MAL interpreter has been extended with an operation
   admission policy to control the memory claims of all
