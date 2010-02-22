@@ -487,7 +487,7 @@ when scheduled correctly, would not lead to duplicate work.
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) && 
 			i == target && tn + p->argc - p->retc < maxtn){
 			InstrPtr qq, mp;
-			int conn,dbvar,qvar,schvar, resType;
+			int conn,dbvar,qvar,schvar, resType, mpArgType;
 
 			tcnt = p->argc - p->retc;
 			resType = getVarType(mb, getArg(p,0));
@@ -496,7 +496,8 @@ when scheduled correctly, would not lead to duplicate work.
 			s2= newFunction(octopusRef, putName(buf,strlen(buf)), FUNCTIONsymbol);
 			sm= s2->def;
 			q= getInstrPtr(sm,0);
-			setArgType(sm,q,0,getArgType(mb,p,1));
+			mpArgType = getArgType(mb,p,1);
+			setArgType(sm,q,0,mpArgType);
 			schvar = newVariable(sm,GDKstrdup("scheduled"),TYPE_bte);
 			dbvar= newVariable(sm,GDKstrdup("dbname"),TYPE_str);
 			qvar = newVariable(sm,GDKstrdup("query"),TYPE_str);
@@ -592,7 +593,7 @@ when scheduled correctly, would not lead to duplicate work.
 
 			/* Generate call to bid scheduling */
 			r = newStmt2(mb, schedulerRef, putName("makeSchedule",12));
-			setArgType(mb,r,0, TYPE_lng);
+			setArgType(mb,r,0, TYPE_bte);
 			setVarUDFtype(mb,getArg(r,0));
 			for ( j = 0; j < tcnt; j++)
 				for ( k = 0; k < tcnt; k++){
@@ -609,10 +610,16 @@ when scheduled correctly, would not lead to duplicate work.
 			/* Initialize result variables */
                         for ( j = 0; j < tcnt; j++)
                                 for ( k = 0; k < tcnt; k++){
-                                        r = newFcnCall(mb,batRef,newRef);
-                                        setArgType(mb,r,0,resType);
-					r = pushType(mb,r, getHeadType(resType));
-					r = pushType(mb,r, getTailType(resType));
+					if (isaBatType(mpArgType)){
+	                                        r = newFcnCall(mb,batRef,newRef);
+						r = pushType(mb,r, getHeadType(mpArgType));
+						r = pushType(mb,r, getTailType(mpArgType));
+					}
+					else {
+						r = newAssignment(mb);
+                        			r = pushNil(mb,r, mpArgType);
+					}
+					setArgType(mb,r,0,mpArgType);
                                         res[j][k] = getArg(r,0);
                         }
 
@@ -648,11 +655,16 @@ when scheduled correctly, would not lead to duplicate work.
 
 			/* now finalize the exec operation */
 
-			/* exec_qry:= bat.new(:htp,:ttp); */
-			q = newFcnCall(sm,batRef,newRef);
+			if (isaBatType(mpArgType)){ 	/* exec_qry:= bat.new(:htp,:ttp); */
+                        	q = newFcnCall(sm,batRef,newRef);
+				q = pushType(sm,q, getHeadType(mpArgType));
+                                q = pushType(sm,q, getTailType(mpArgType));
+			}
+			else {				/* exec_qry:= nil:tp; */
+				q = newAssignment(sm);
+				q = pushNil(sm,q, mpArgType);
+			}
 			getArg(q,0) = getArg(getInstrPtr(sm,0),0);
-			q = pushType(sm,q, getHeadType(getArgType(mb,p,1)));
-			q = pushType(sm,q, getTailType(getArgType(mb,p,1)));
 	
 			/* barrier cond:= calc.>(i,0); */
 			r = newFcnCall(sm,calcRef,putName(">",1));
