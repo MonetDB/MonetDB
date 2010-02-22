@@ -1,14 +1,14 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Feb 22 2010 Martin Kersten <mk@cwi.nl>
+- Fixed cleaning the user module context upon session end.
+  Fixes bug #2956664
+
 * Thu Feb 04 2010 Fabian Groffen <fabian@cwi.nl>
 - The config variable mapi_usock can now be used to instruct the server
   to listen for connections on a local UNIX domain socket on UNIX-like
   systems.
-
-* Mon Feb 22 2010 Martin Kersten <mk@cwi.nl>
-- Fixed cleaning the user module context upon session end.
-  Fixes bug #2956664
 
 * Mon Jan 18 2010 Martin Kersten <mk@cwi.nl>
 - The MAL interpreter has been extended with an operation
