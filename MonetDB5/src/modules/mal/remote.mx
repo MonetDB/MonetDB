@@ -68,11 +68,11 @@ module remote;
 
 command prelude():void
 address RMTprelude
-comment "Initialise the remote module.";
+comment "initialise the remote module";
 
 command epilogue():void
 address RMTepilogue
-comment "Release the resources held by the remote module.";
+comment "release the resources held by the remote module";
 
 
 # global connection resolve function
@@ -150,7 +150,6 @@ comment "remotely executes <mod>.<func> using the argument list of remote object
 #include <mal_interpreter.h>
 #include <mal_function.h> /* for printFunction */
 #include <mal_instruction.h> /* for getmodule/func macros */
-#include <mal_sabaoth.h> /* for local "connections" */
 #include <mapilib/Mapi.h>
 #include "remote.h"	/* for the implementation of the functions */
 
@@ -878,15 +877,15 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	(void)cntxt;
 
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
+		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
 	/* find local definition */
 	sym = findSymbol(cntxt->nspace, putName(mod, strlen(mod)), putName(fcn, strlen(fcn)));
 	if (sym == NULL)
-		throw(MAL, "remote.register", ILLEGAL_ARGUMENT " Function '%s.%s' not found", mod, fcn);
+		throw(MAL, "remote.register", ILLEGAL_ARGUMENT ": no such function: %s.%s", mod, fcn);
 
 	/* lookup conn */
-	rethrow("remote.put", tmp, RMTfindconn(&c, conn));
+	rethrow("remote.register", tmp, RMTfindconn(&c, conn));
 
 	/* this call should be a single transaction over the channel*/
 	mal_set_lock(c->lock, "remote.register"); 
@@ -900,7 +899,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	if (msg == MAL_SUCCEED) {
 		mal_unset_lock(c->lock, "remote.register"); 
 		throw(MAL, "remote.register",
-				OPERATION_FAILED " Function '%s.%s' already defined on the remote site",
+				OPERATION_FAILED ": function '%s.%s' already exists on the remote site",
 				mod, fcn);
 	}
 	if (mhdl)
