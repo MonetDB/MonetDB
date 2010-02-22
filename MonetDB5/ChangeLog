@@ -8,6 +8,7 @@
 
 * Mon Feb 22 2010 Martin Kersten <mk@cwi.nl>
 - Fixed cleaning the user module context upon session end.
+  Fixes bug #2956664
 
 * Mon Jan 18 2010 Martin Kersten <mk@cwi.nl>
 - The MAL interpreter has been extended with an operation
