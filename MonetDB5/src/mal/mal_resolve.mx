@@ -354,7 +354,7 @@ the resulting type can not be determined.
 		}
 	} else 
 	/* check for non-polymorphic return */
-	for(i=0; i < p->retc; i++){
+	for( k = i=0; i < p->retc; i++){
 		int actual = getArgType(mb,p,i);
 		int formal = getArgType(s->def,sig,i);
 
