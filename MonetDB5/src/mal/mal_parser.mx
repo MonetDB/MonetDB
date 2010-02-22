@@ -1089,6 +1089,11 @@ during the final phase reshuffle the return values to the beginning (?)
 			int varid=0;
 			int type= TYPE_any;
 			@:binding(0)@
+			/* we may be confronted by a variable target type list */
+			if( MALkeyword(cntxt,"...",3) ){
+				curInstr->varargs |= VARRETS;
+				setPolymorphic(curInstr,TYPE_any,TRUE);
+			}
 			if( (ch=currChar(cntxt)) != ',') {
 				 if( ch==')') break;
 				 return (MalBlkPtr) parseError(cntxt, "',' expected\n");

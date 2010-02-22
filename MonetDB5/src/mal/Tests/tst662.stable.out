@@ -14,12 +14,18 @@ stdout of test 'tst662` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39370/
 pattern user.makeSchedule(i:int,l:lng...):bte... address MDBdummy;
+pattern user.makeScheduleB(i:int,l:lng...) (_3:int,_4:bte...) address MDBdummy;
+pattern user.makeScheduleC(i:int,l:lng...):any_1... address MDBdummy;
+pattern user.makeScheduleD(i:int,l:lng...):any... address MDBdummy;
 function user.tst():void;
     X100 := -1:lng;
     X102 := -1:lng;
     X103 := -1:lng;
     X104 := -1:lng;
     (X112:bte ,X113,X114,X115,X116) := user.makeSchedule(2,X100,X103,X102,X104);
+    (X118:int ,X113,X114,X115,X116) := user.makeScheduleB(2,X100,X103,X102,X104);
+    (X118:int ,X113,X114,X115,X116) := user.makeScheduleC(2,X100,X103,X102,X104);
+    (X118:int ,X113,X114,X115,X116) := user.makeScheduleD(2,X100,X103,X102,X104);
 end tst;
 function user.main():void;
 #Testing variable return lists 
@@ -31,7 +37,10 @@ function user.tst():void;               #  0 tst:void := user.tst()
     X103 := -1:lng;                     #  3 X103:lng := _2:lng 
     X104 := -1:lng;                     #  4 X104:lng := _2:lng 
     (X112:bte ,X113,X114,X115,X116) := user.makeSchedule(2,X100,X103,X102,X104);#  5 (X112:bte, X113:bte, X114:bte, X115:bte, X116:bte) := MDBdummy(_11:int, X100:lng, X103:lng, X102:lng, X104:lng) 
-end tst;                                #  6  
+    (X118:int ,X113,X114,X115,X116) := user.makeScheduleB(2,X100,X103,X102,X104);#  6 (X118:int, X113:bte, X114:bte, X115:bte, X116:bte) := MDBdummy(_11:int, X100:lng, X103:lng, X102:lng, X104:lng) 
+    (X118:int ,X113,X114,X115,X116) := user.makeScheduleC(2,X100,X103,X102,X104);#  7 (X118:int, X113:bte, X114:bte, X115:bte, X116:bte) := MDBdummy(_11:int, X100:lng, X103:lng, X102:lng, X104:lng) 
+    (X118:int ,X113,X114,X115,X116) := user.makeScheduleD(2,X100,X103,X102,X104);#  8 (X118:int, X113:bte, X114:bte, X115:bte, X116:bte) := MDBdummy(_11:int, X100:lng, X103:lng, X102:lng, X104:lng) 
+end tst;                                #  9  
 
 # 16:39:29 >  
 # 16:39:29 >  Done.
