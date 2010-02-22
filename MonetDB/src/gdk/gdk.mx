@@ -1778,7 +1778,7 @@ As can be seen in the bat record, each BAT has one BUN-heap (@emph{bn}), and
 possibly two heaps (@emph{hh} and @emph{th}) for variable-sized atoms.
 @
 The @%BATmadvise@ call works in the same way. Using the @%madvise()@ system
-call it issues buffer management advise to the OS kernel, as for the
+call it issues buffer management advice to the OS kernel, as for the
 expected usage pattern of the memory in a heap.
 @{
 @h
@@ -1795,7 +1795,7 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define REMAP_PAGE_MAXBITS (REMAP_PAGE_BITS+3)
 #define REMAP_PAGE_MAXSIZE ((size_t) 1 << REMAP_PAGE_MAXBITS) /* max page bytesize of unary BUN heap (8-byte atom) */
 
-/* Buffer management advise for heaps */
+/* Buffer management advice for heaps */
 #define BUF_NORMAL	0	/* No further special treatment */
 #define BUF_RANDOM	1	/* Expect random page references */
 #define BUF_SEQUENTIAL	2	/* Expect sequential page references */
@@ -1811,9 +1811,9 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 
 gdk_export BAT *BATload(str nme);
 gdk_export BAT *BATload_intern(bat bid);
-#define BATaccessBegin(b,what,advise) BATaccess(b,what,advise,1)
-#define BATaccessEnd(b,what,advise) BATaccess(b,what,advise,-1)
-gdk_export size_t BATaccess(BAT *b, int what, int advise, int load);
+#define BATaccessBegin(b,what,advice) BATaccess(b,what,advice,1)
+#define BATaccessEnd(b,what,advice) BATaccess(b,what,advice,-1)
+gdk_export size_t BATaccess(BAT *b, int what, int advice, int load);
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
