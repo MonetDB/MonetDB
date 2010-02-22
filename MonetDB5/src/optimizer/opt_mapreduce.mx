@@ -198,8 +198,8 @@ static void
 MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 {
 	InstrPtr o, p, *packs;
-	int i, n, j, q, r, v, *w;
-	int *gets;
+	int i, n, j, q, r, v;
+	int *gets, *w;
 	(void)cntxt;
 
 	n = MRcloudSize(); /* FIXME: free */
@@ -207,8 +207,9 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 	assert(n);
 	assert(sig->retc);
 
-	packs = (InstrPtr *)GDKmalloc(sig->retc * sizeof(InstrPtr));
-	gets = (int *)GDKmalloc(n * sig->retc * sizeof(int));
+	packs = (InstrPtr *)alloca(sig->retc * sizeof(InstrPtr));
+	gets = (int *)alloca(n * sig->retc * sizeof(int));
+	w = (int *)alloca(sig->retc * sizeof(int));
 
 	for (j = 0; j < sig->retc; j++) {
 		packs[j] = p = newInstruction(mb, ASSIGNsymbol);
@@ -250,7 +251,6 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 		p = pushStr(mb, p, getFunctionId(sig));
 
 		/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
-		w = (int *)GDKmalloc(sig->retc * sizeof(int));
 		p = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(p, remoteRef);
 		setFunctionId(p, execRef);
@@ -276,7 +276,6 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 			v = getArg(p, 0) = gets[(i * sig->retc) + (j - 1)];
 			packs[j] = pushArgument(mb, packs[j], v);
 		}
-		GDKfree(w);
 
 		/* remote.disconnect(q); */
 		p = newStmt(mb, remoteRef, disconnectRef);
@@ -285,8 +284,6 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 
 	for (i = 1; i < sig->retc; i++)
 		pushInstruction(mb, packs[i]);
-	GDKfree(packs);
-	GDKfree(gets);
 
 	p = newInstruction(mb, ASSIGNsymbol);
 	p->barrier = EXITsymbol;
@@ -342,9 +339,6 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			for (j = 0; j < sig->retc; j++)
 				ret = pushReturn(mc, ret, getArg(sig, j));
 			pushInstruction(mc, ret);
-			/* don't care about the optimizers */
-			pushInstruction(mc, p);
-			copy = 0;
 		}
 
 		/* Collect all BAT variables that are necessary for the rsColumn
@@ -399,7 +393,7 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	insertSymbol(findModule(cntxt->nspace, userRef), new);
 
-#ifndef _DEBUG_OPT_MAPREDUCE
+#ifdef _DEBUG_OPT_MAPREDUCE
 	stream_printf(cntxt->fdout, "MAPREDUCE controller\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
