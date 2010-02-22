@@ -56,7 +56,6 @@ HAVE_LIBXML2?xml05
 HAVE_LIBXML2?xml10
 
 cluster00
-tokenizer00
 
 #HAVE_RAPTOR?rdf
 

@@ -27,9 +27,6 @@
 #include "url.h"
 #include "rdf.h"
 #include "raptor.h"
-#if 0
-#include "../tokenizer.h"
-#endif
 
 typedef struct graphBATdef {
 	graphBATType batType;    /* BAT type             */

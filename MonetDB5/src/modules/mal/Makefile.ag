@@ -34,7 +34,7 @@ LIBS = {
 		urlbox.mx mat.mx histogram.mx \
 		sabaoth.mx remote.mx txtsim.mx recycle.mx \
 		cluster.mx trader.mx pma.mx
-		#radix.mx tokenizer.mx
+		#radix.mx
 
 	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(CLIENTS_LIBS) -lMapi \
@@ -175,7 +175,7 @@ headers_h = {
 		urlbox.mx mat.mx histogram.mx \
 		sabaoth.mx remote.mx  batxml.mx  recycle.mx \
 		cluster.mx trader.mx replication.mx pma.mx
-		#radix.mx tokenizer.mx
+		#radix.mx
 
 	HEADERS = h 
 }
@@ -192,7 +192,7 @@ headers_mal = {
 		mal_mapi.mx sabaoth.mx remote.mx  \
 		bpm.mx batxml.mx txtsim.mx recycle.mx \
 		cluster.mx trader.mx replication.mx pma.mx
-	#radix.mx tokenizer.mx
+	#radix.mx
 }
 
 EXTRA_DIST_DIR = Tests
