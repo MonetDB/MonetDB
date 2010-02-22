@@ -159,7 +159,7 @@ comment "remotely executes <mod>.<func> using the argument list of remote object
 #endif
 #include <unistd.h> /* gethostname */
 
-@-
+/*
 Technically, these methods need to be serialised per connection, 
 hence a scheduler that interleaves e.g. multiple get calls, 
 simply violates this constraint.  If parallelism to the same site 
@@ -170,6 +170,7 @@ is not acceptable.
 
 Instead, we maintain a simple lock with each connection, which
 can be used to issue a safe, but blocking get/put/exec/register request.
+*/
 @- Implementation
 @c
 typedef struct _connection {
@@ -237,7 +238,7 @@ remote_export str RMTresolve(int *ret, str *pat) {
 	if (tmp != NULL)
 		port = atoi(tmp);
 	if (port == 0)
-		port = 50000;  /* hardcoded default from merovingian.mx */
+		port = 50000;  /* hardcoded default from merovingian.c */
 	gethostname(path, 8096);
 	or = redirs = mapi_resolve(path, port, *pat);
 
@@ -302,8 +303,8 @@ str RMTconnectScen(
 
 	m = mapi_mapiuri(*ouri, *user, *passwd, *scen);
 	if (mapi_error(m))
-		throw(MAL, "remote.connect", "unable to connect: %s",
-				mapi_error_str(m));
+		throw(MAL, "remote.connect", "unable to connect to '%s': %s",
+				*ouri, mapi_error_str(m));
 
 	mal_set_lock(mal_remoteLock, "remote.connect");
 
@@ -320,8 +321,7 @@ str RMTconnectScen(
 
 	if (mapi_reconnect(m) != MOK) {
 		mal_unset_lock(mal_remoteLock, "remote.connect");
-		throw(IO, "remote.connect", OPERATION_FAILED ": an error occurred "
-				"during connect to '%s': %s",
+		throw(IO, "remote.connect", "unable to connect to '%s': %s",
 				*ouri, mapi_error_str(m));
 	}
 
@@ -418,23 +418,8 @@ str RMTdisconnect(int *ret, str *conn) {
 	}
 
 	mal_unset_lock(mal_remoteLock, "remote.disconnect");
-	throw(MAL, "remote.disconnect", OPERATION_FAILED " No such connection with name '%s'", *conn);
+	throw(MAL, "remote.disconnect", "no such connection: %s", *conn);
 }
-
-#if 0
-code for reconnecting if necessary
-			/* ok found, ensure it is connected */
-			mal_set_lock(c->lock, "remote.<findconn>"); /* shared connection */
-			if (mapi_ping(c->mconn) != MOK && mapi_reconnect(c->mconn) != MOK) {
-				mal_unset_lock(c->lock, "remote.<findconn>");
-				throw(IO, "remote.<findconn>", OPERATION_FAILED 
-					" An error occurred during connect of '%s': %s",
-						conn, mapi_error_str(c->mconn));
-				/* TODO: throw away connection? */
-			}
-			*ret = c;
-			mal_unset_lock(c->lock, "remote.<findconn>");
-#endif
 
 /**
  * Helper function to return a connection matching a given string, or an
@@ -460,7 +445,7 @@ RMTfindconn(connection *ret, str conn) {
 		c = c->next;
 	}
 	mal_unset_lock(mal_remoteLock, "remote.<findconn>");
-	throw(MAL, "remote.<findconn>", OPERATION_FAILED " No such active connection '%s'", conn);
+	throw(MAL, "remote.<findconn>", "no such connection: %s", conn);
 }
 
 /**
@@ -515,16 +500,20 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 			str err = createException(
 					getExceptionType(mapi_result_error(mhdl)),
 					func,
-					"%s", getExceptionMessage(mapi_result_error(mhdl)));
+					"(mapi://%s@%s/%s) %s",
+					mapi_get_user(conn),
+					mapi_get_host(conn),
+					mapi_get_dbname(conn),
+					getExceptionMessage(mapi_result_error(mhdl)));
 			mapi_close_handle(mhdl);
 			return(err);
 		}
 	} else {
 		if (mapi_error(conn) != MOK) {
-			throw(IO, func, OPERATION_FAILED ": an error occurred on connection: %s",
+			throw(IO, func, "an error occurred on connection: %s",
 					mapi_error_str(conn));
 		} else {
-			throw(MAL, func, OPERATION_FAILED ": remote function invocation didn't return a result");
+			throw(MAL, func, "remote function invocation didn't return a result");
 		}
 	}
 
@@ -581,10 +570,10 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	conn = *(str*) getArgReference(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
+		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 	ident = *(str*) getArgReference(stk, pci, 2);
 	if (ident == 0 || isIdentifier(ident) < 0)
-		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT " Identifier expected, got '%s'", ident);
+		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT ": identifier expected, got '%s'", ident);
 
 	/* lookup conn, set c if valid */
 	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
@@ -593,7 +582,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	v = getArgReference(stk, pci, 0);
 
 	if (rtype == TYPE_any || isAnyExpression(rtype)) {
-		throw(MAL, "remote.get", ILLEGAL_ARGUMENT " Cannot deal with any (%s) type",
+		throw(MAL, "remote.get", ILLEGAL_ARGUMENT ": unsupported any type: %s",
 				getTypeName(rtype));
 	}
 	/* check if the remote type complies with what we expect.
@@ -602,7 +591,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	rt = getTypeIdentifier(rtype);
 	if (strcmp(ident + strlen(ident) - strlen(rt), rt))
 		throw(MAL, "remote.get", ILLEGAL_ARGUMENT 
-			" Type of remote object does not match expected type");
+			": remote object type %s does not match expected type %s",
+			rt, ident);
 	GDKfree(rt);
 
 	if (isaBatType(rtype)) {
@@ -698,7 +688,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				tval[BUFSIZ] = '\0';
 				mapi_close_handle(mhdl);
 				mal_unset_lock(c->lock, "remote.get"); 
-				throw(MAL, "remote.get", OPERATION_FAILED " unable to parse value '%s'", tval);
+				throw(MAL, "remote.get", "unable to parse value: %s", tval);
 			}
 		}
 	}
@@ -729,7 +719,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	conn = *(str*) getArgReference(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.put", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
+		throw(ILLARG, "remote.put", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
 	/* lookup conn */
 	rethrow("remote.put", tmp, RMTfindconn(&c, conn));
@@ -748,7 +738,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	 * object remotely*/
 	if (type == TYPE_any || isAnyExpression(type)) {
 		mal_unset_lock(c->lock, "remote.put"); 
-		throw(MAL, "remote.put", OPERATION_FAILED " cannot deal with '%s' type",
+		throw(MAL, "remote.put", "unsupported type: %s",
 				getTypeName(type));
 	} else if (isaBatType(type)) {
 		BATiter bi;
@@ -899,7 +889,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	if (msg == MAL_SUCCEED) {
 		mal_unset_lock(c->lock, "remote.register"); 
 		throw(MAL, "remote.register",
-				OPERATION_FAILED ": function '%s.%s' already exists on the remote site",
+				"function already exists at the remote site: %s.%s",
 				mod, fcn);
 	}
 	if (mhdl)
