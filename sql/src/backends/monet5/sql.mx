@@ -5052,7 +5052,11 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *sch;
 	sql_table *g_tbl;
 	sql_column *gname, *gid;
+#if STORE == TRIPLE_STORE
 	sql_table *spo_tbl, *sop_tbl, *pso_tbl, *pos_tbl, *osp_tbl, *ops_tbl;
+#elif STORE == MLA_STORE
+	sql_table *spo_tbl;
+#endif /* STORE */
 	sql_table *map_tbl;
 	sql_subtype tpe;
 	str *location = (str *) getArgReference(stk,pci,1);
@@ -5094,12 +5098,16 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_find_subtype(&tpe, "oid", 31, 0);
 		/* sql_find_subtype(&tpe, "int", 32, 0); */
 	}
+#if STORE == TRIPLE_STORE
 	@:crt_tbl(id,spo,subject,property,object)@
 	@:crt_tbl(id,sop,subject,object,property)@
 	@:crt_tbl(id,pso,property,subject,object)@
 	@:crt_tbl(id,pos,property,object,subject)@
 	@:crt_tbl(id,osp,object,subject,property)@
 	@:crt_tbl(id,ops,object,property,subject)@
+#elif STORE == MLA_STORE
+	@:crt_tbl(id,spo,subject,property,object)@
+#endif /* STORE */
 
 	sprintf(buff, "map%d", id);
 	map_tbl = mvc_create_table(m, sch, buff, 0, SQL_PERSIST, 0, 2);
@@ -5127,19 +5135,28 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			TYPE_bat);
 	BBPunfix(s->batCacheid);
 
+#if STORE == TRIPLE_STORE
 	@:crt_col(spo_tbl,S_sort,P_PO,O_PO)@
 	@:crt_col(sop_tbl,S_sort,P_OP,O_OP)@
 	@:crt_col(pso_tbl,S_SO,P_sort,O_SO)@
 	@:crt_col(pos_tbl,S_OS,P_sort,O_OS)@
 	@:crt_col(osp_tbl,S_SP,P_SP,O_sort)@
 	@:crt_col(ops_tbl,S_PS,P_PS,O_sort)@
+#elif STORE == MLA_STORE
+	@:crt_col(spo_tbl,S_sort,P_sort,O_sort)@
+#endif /* STORE */
+
+
+
 
 	/* unfix graph */
 	BBPunfix(graph->batCacheid);
 
 	return MAL_SUCCEED;
+
+
 #else
 	(void) cntxt; (void) mb; (void) stk; (void) pci;
 	throw(SQL, "sql.rdfShred", "RDF support is missing from Monet5");
-#endif
+#endif /* RDF */
 }
