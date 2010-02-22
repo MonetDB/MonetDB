@@ -308,6 +308,12 @@ Don't inject a pattern when it is used more then once.
 				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 #endif
 				if ( getFunctionId(p) == joinRef){
+					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== leftjoinRef  || getFunctionId(r)== leftjoinPathRef) ){
+						/* joins can be reduced to left joins */
+						setFunctionId(q, leftjoinPathRef);
+						for(k= r->retc; k<r->argc; k++) 
+							q = pushArgument(mb,q,getArg(r,k));
+					} else
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
 							q = pushArgument(mb,q,getArg(r,k));
