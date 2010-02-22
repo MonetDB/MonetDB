@@ -128,7 +128,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			fclose(fp);
 			h->newstorage = STORE_MMAP;
 			HEAPload(h, nme, ext, FALSE);
-			if (h->base != NULL) MT_madvise(h->base, h->size, MADV_SEQUENTIAL);
+			if (h->base != NULL) MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
 		}
 		GDKfree(of);
 	}
@@ -176,7 +176,7 @@ HEAPextend(Heap *h, size_t size)
 		HEAPfree(h);
 		h->maxsize = h->size = size;
 		if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
-			MT_madvise(h->base, h->size, MADV_SEQUENTIAL);
+			MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
 			return 0;
 		}
 	} else {
@@ -240,7 +240,7 @@ HEAPextend(Heap *h, size_t size)
 				EXTENDDEBUG fprintf(stderr,"#HEAPextend: converting malloced to %s mmapped heap\n",h->newstorage==STORE_MMAP?"shared":"privately");
 				/* try to allocate a memory-mapped based heap */
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
-					MT_madvise(h->base, h->size, MADV_SEQUENTIAL);
+					MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
 					/* copy data to heap and free old memory */
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
