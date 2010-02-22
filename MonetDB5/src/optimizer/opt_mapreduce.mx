@@ -282,8 +282,8 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 		p = pushArgument(mb, p, q);
 	}
 
-	for (i = 1; i < sig->retc; i++)
-		pushInstruction(mb, packs[i]);
+	for (j = 0; j < sig->retc; j++)
+		pushInstruction(mb, packs[j]);
 
 	p = newInstruction(mb, ASSIGNsymbol);
 	p->barrier = EXITsymbol;
