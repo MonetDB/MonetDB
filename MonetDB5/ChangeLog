@@ -6,7 +6,7 @@
   to listen for connections on a local UNIX domain socket on UNIX-like
   systems.
 
-* Mon Feb 22 2010 Martin Kersten <mk@(none)>
+* Mon Feb 22 2010 Martin Kersten <mk@cwi.nl>
 - Fixed cleaning the user module context upon session end.
 
 * Mon Jan 18 2010 Martin Kersten <mk@cwi.nl>

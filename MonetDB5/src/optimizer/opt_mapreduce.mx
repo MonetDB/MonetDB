@@ -218,9 +218,10 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 		getArg(p, 0) = getArg(sig, j);
 
 		/* make return variable for mat.pack known upfront */
-		p = newAssignment(mb);
+		p = newFcnCall(mb, batRef, newRef);
+		p = pushType(mb, p, getHeadType(getArgType(mc, sig, j)));
+		p = pushType(mb, p, getTailType(getArgType(mc, sig, j)));
 		getArg(p, 0) = getArg(sig, j);
-		pushNil(mb, p, getArgType(mc, sig, j));
 
 		/* same for all sub results that we push into the mat.pack as
 		 * arguments at the same time */
