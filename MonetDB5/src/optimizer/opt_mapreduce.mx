@@ -217,14 +217,19 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 		setFunctionId(p, packRef);
 		getArg(p, 0) = getArg(sig, j);
 
+		/* make return variable for mat.pack known upfront */
 		p = newAssignment(mb);
 		getArg(p, 0) = getArg(sig, j);
 		pushNil(mb, p, getArgType(mc, sig, j));
 
+		/* same for all sub results that we push into the mat.pack as
+		 * arguments at the same time */
 		for (i = 0; i < n; i++) {
 			p = newAssignment(mb);
-			gets[(i * sig->retc) + (j - 1)] = getArg(p, 0);
+			setArgType(mb, p, 0, getArgType(mc, sig, j));
 			pushNil(mb, p, getArgType(mc, sig, j));
+			gets[(i * sig->retc) + (j - 1)] = getArg(p, 0);
+			pushArgument(mb, packs[j], getArg(p, 0));
 		}
 	}
 
@@ -273,8 +278,7 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 			p = newFcnCall(mb, remoteRef, getRef);
 			p = pushArgument(mb, p, q);
 			p = pushArgument(mb, p, w[j]);
-			v = getArg(p, 0) = gets[(i * sig->retc) + (j - 1)];
-			packs[j] = pushArgument(mb, packs[j], v);
+			getArg(p, 0) = gets[(i * sig->retc) + (j - 1)];
 		}
 
 		/* remote.disconnect(q); */
