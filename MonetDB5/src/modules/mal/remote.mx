@@ -500,7 +500,7 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 			str err = createException(
 					getExceptionType(mapi_result_error(mhdl)),
 					func,
-					"(mapi://%s@%s/%s) %s",
+					"(mapi://%s\@%s/%s) %s",
 					mapi_get_user(conn),
 					mapi_get_host(conn),
 					mapi_get_dbname(conn),
