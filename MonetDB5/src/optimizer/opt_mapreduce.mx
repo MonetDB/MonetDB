@@ -226,11 +226,12 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 		/* same for all sub results that we push into the mat.pack as
 		 * arguments at the same time */
 		for (i = 0; i < n; i++) {
-			p = newAssignment(mb);
+			p = newFcnCall(mb, batRef, newRef);
+			p = pushType(mb, p, getHeadType(getArgType(mc, sig, j)));
+			p = pushType(mb, p, getTailType(getArgType(mc, sig, j)));
 			setArgType(mb, p, 0, getArgType(mc, sig, j));
-			pushNil(mb, p, getArgType(mc, sig, j));
 			gets[(i * sig->retc) + (j - 1)] = getArg(p, 0);
-			pushArgument(mb, packs[j], getArg(p, 0));
+			packs[j] = pushArgument(mb, packs[j], getArg(p, 0));
 		}
 	}
 
@@ -295,6 +296,7 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 	getArg(p, 0) = r;
 	pushInstruction(mb, p);
 #ifdef _DEBUG_OPT_MAPREDUCE
+	chkProgram(cntxt->nspace, mb);
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 }
