@@ -14,7 +14,17 @@
 -- Copyright August 2008-2010 MonetDB B.V.
 -- All Rights Reserved.
 
+-- Perform LZ-compression over a specific table;
 create procedure gzcompress (s string, t string)
     external name sql.gzcompress;
 create procedure gzdecompress (s string, t string)
     external name sql.gzdecompress;
+
+-- Truncate the storage for columns with a compressed image
+create procedure truncate (s string, t string)
+    external name sql.truncate;
+
+-- Remove the compressed images
+create procedure expand (s string, t string)
+    external name sql.expand;
+

@@ -810,6 +810,13 @@ comment "Perform LZ compression on a table";
 pattern gzdecompress(sch:str, tbl:str):void
 address SQLgzdecompress
 comment "Perform LZ decompression on a table";
+pattern truncate(sch:str, tbl:str):void
+address SQLtruncate
+comment "Remove the tables when you have a compressed image";
+pattern expand(sch:str, tbl:str):void
+address SQLexpand
+comment "Remove the compressed image";
+
 @-
 The distributed processing of queries requires the SQL runtime
 system to be able to deliver portions of the BATs in an efficient
@@ -1067,6 +1074,8 @@ sql5_export str SQLdictcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 sql5_export str SQLdictdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLoctopusBind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLoctopusBinddbat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -5053,6 +5062,12 @@ str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 str SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:gzcompression(CMDbbpdecompress(&ret, &b->batCacheid))@
+}
+str SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	@:gzcompression(CMDbbptruncate(&ret, &b->batCacheid))@
+}
+str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	@:gzcompression(CMDbbpexpand(&ret, &b->batCacheid))@
 }
 @- Shredding RDF documents through SQL
 Wrapper around the RDF shredder of the rdf module of M5. The first time
