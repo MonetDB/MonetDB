@@ -106,3 +106,42 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libbat.so
 
 %changelog
+* Mon Feb 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
+- Various concurrency bugs were fixed.
+- Various changes were made to run better on systems that don't have enough
+  memory to keep everything in core that was touched during query processing.
+  This is done by having the higher layers giving hints to the database
+  kernel about future use, and the database kernel giving hings to the
+  operating system kernel about how (virtual) memory is going to be used.
+
+* Thu Feb 18 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 1.36.1-20100223
+- Fixed bug in mergejoin implementation.
+  This fixes bug  #2952191.
+
+* Tue Feb  2 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
+- Added support for compiling on Windows using the Cygwin-provided
+  version of flex.
+
+* Thu Jan 21 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
+- Fix compilation issue when configured with --with-curl.
+  This fixes bug #2924999.
+
+* Thu Jan 21 2010 Fabian Groffen <fabian@cwi.nl> - 1.36.1-20100223
+- Added implementation of MT_getrss() for Solaris.  This yields in the
+  kernel knowing about its (approximate) memory usage to try and help
+  the operating system to free that memory that is best to free, instead
+  of a random page, e.g. the work of the vmtrim thread.
+
+* Wed Jan 20 2010 Sjoerd Mullender <sjoerd@cwi.nl> - 1.36.1-20100223
+- Implemented a "fast" string BAT append:
+  Under certain conditions, instead of inserting values one-by-one,
+  we now concatenate the string heap wholesale and just manipulate
+  the offsets.
+  This works both for BATins and BATappend.
+
+* Wed Jan  6 2010 Sjoerd Mullender <sjoerd@cwi.nl> - 1.36.1-20100223
+- Changed the string heap implementation to also contain the hashes of
+  strings.
+- Changed the implementation of the string offset columns to be
+  dynamically sized.
+
