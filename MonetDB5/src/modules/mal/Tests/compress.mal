@@ -1,0 +1,34 @@
+#test some compression work
+
+t0:= alarm.usec();
+b:= bat.new(:oid,:lng);
+
+INT_MAX := 2147483647;
+dbgmsk_restore := mdb.getDebug();
+dbgmsk_unset := 8+8388608;
+dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+mdb.setDebug(dbgmsk_set);
+
+barrier (go,i):= language.newRange(0:lng);
+	k:= mmath.rand();
+	l:= calc.lng(k);
+	bat.insert(b,nil:oid,l);
+	redo (go,i):= language.nextElement(1:lng,100000:lng);
+exit (go,i);
+
+mdb.setDebug(dbgmsk_restore);
+
+s:= aggr.sum(b);
+io.print(s);
+
+bbp.compress(b);
+zz:= bbp.decompress(b);
+c:= aggr.count(zz);
+io.print(c);
+ss:= aggr.sum(zz);
+s:= ss-s;
+io.print(s);	# should be zero
+
+#bbp.truncate(b);
+#bbp.expand(b);
