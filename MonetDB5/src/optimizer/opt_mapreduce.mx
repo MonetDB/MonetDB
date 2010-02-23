@@ -344,6 +344,7 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			for (j = 0; j < sig->retc; j++)
 				ret = pushReturn(mc, ret, getArg(sig, j));
 			pushInstruction(mc, ret);
+			copy = 1;
 		}
 
 		/* Collect all BAT variables that are necessary for the rsColumn
