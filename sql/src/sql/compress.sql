@@ -21,10 +21,10 @@ create procedure gzdecompress (s string, t string)
     external name sql.gzdecompress;
 
 -- Truncate the storage for columns with a compressed image
-create procedure truncate (s string, t string)
-    external name sql.truncate;
+create procedure gztruncate (s string, t string)
+    external name sql.gztruncate;
 
 -- Remove the compressed images
-create procedure expand (s string, t string)
-    external name sql.expand;
+create procedure gzexpand (s string, t string)
+    external name sql.gzexpand;
 

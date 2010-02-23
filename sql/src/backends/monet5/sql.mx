@@ -810,10 +810,10 @@ comment "Perform LZ compression on a table";
 pattern gzdecompress(sch:str, tbl:str):void
 address SQLgzdecompress
 comment "Perform LZ decompression on a table";
-pattern truncate(sch:str, tbl:str):void
+pattern gztruncate(sch:str, tbl:str):void
 address SQLtruncate
 comment "Remove the tables when you have a compressed image";
-pattern expand(sch:str, tbl:str):void
+pattern gzexpand(sch:str, tbl:str):void
 address SQLexpand
 comment "Remove the compressed image";
 
@@ -5038,10 +5038,10 @@ LZ compression is inherited from the underlying stream implementation.
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(MAL,"sql.cluster","Schema missing");
+		throw(MAL,"sql.@2","Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(MAL,"sql.cluster","Table missing");
+		throw(MAL,"sql.@2","Table missing");
 
 	/* actually build the hash on the multi-column primary key */
 
@@ -5051,23 +5051,23 @@ LZ compression is inherited from the underlying stream implementation.
 
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL)
-			throw(MAL,"sql.compress","Can not access descriptor");
+			throw(MAL,"sql.@2","Can not access descriptor");
 		msg = @1;
 		BBPreleaseref(b->batCacheid);
 	}
 	return MAL_SUCCEED;
 @c
 str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbpcompress(&ret, &b->batCacheid))@
+	@:gzcompression(CMDbbpcompress(&ret, &b->batCacheid),gzcompress)@
 }
 str SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbpdecompress(&ret, &b->batCacheid))@
+	@:gzcompression(CMDbbpdecompress(&ret, &b->batCacheid),gzdecompress)@
 }
 str SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbptruncate(&ret, &b->batCacheid))@
+	@:gzcompression(CMDbbptruncate(&ret, &b->batCacheid),truncate)@
 }
 str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbpexpand(&ret, &b->batCacheid))@
+	@:gzcompression(CMDbbpexpand(&ret, &b->batCacheid),expand)@
 }
 @- Shredding RDF documents through SQL
 Wrapper around the RDF shredder of the rdf module of M5. The first time
