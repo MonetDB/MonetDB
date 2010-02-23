@@ -702,14 +702,15 @@ Of course, it does not make sense to touch more then we can physically accomodat
 @c
 /* quick and probabilistic test for a sequentially correlated heap */
 int heap_sequential(BAT *b) {
-	size_t i, n = (size_t) BATcount(b), skip = n/100, off = (size_t) BUNfirst(b);
+	BUN n = BATcount(b), skip = n/100, i = BUNfirst(b);
 	BATiter bi = bat_iterator(b);
-	str p, q = BUNhead(bi, ((BUN) off));	
+	str p, q = BUNhead(bi, i);	
 
 	/* check if the pointers are ordered */
 	if (skip == 0) return 1;
-	for(i=0; (i += skip) < n; q=p) {
-		p = BUNhead(bi, ((BUN) off+i));
+	n = BUNlast(b);
+	for (i += skip; i < n; q = p, i += skip) {
+		p = BUNhead(bi, i);
 		if (p < q) return 0;
 	}
 	return 1;
