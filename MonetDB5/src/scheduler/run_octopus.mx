@@ -67,7 +67,7 @@ pattern scheduler.bidding():bit
 address OCTOPUSbidding
 comment "Collect bids from workers.";
 
-pattern scheduler.makeSchedule(:int,:lng...)(:lng,:bte,:bte,:bte,:bte)
+pattern scheduler.makeSchedule(:int,:lng...):bte...
 address OCTOPUSmakeSchedule
 comment "Make schedule based on bids.";
 
@@ -337,7 +337,7 @@ OCTOPUSrun_org(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( msg )
 		return msg;
 
-	/* *res =1; */
+	/* *res =1;*/
 	/* if necessary increase the worker set */
 	/* DFLOWworkers(threadcnt); */
 	(void) threadcnt;
@@ -474,20 +474,18 @@ putJob(int t, int tcnt, lng **bid, bte *busy, bte **rsch)
 str
 OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *res = (lng*) getArgReference(stk,pci,0);
 	int tcnt=1, offset, i, j, k, idx;
 	str msg = MAL_SUCCEED;
 	lng **bid=NULL;	
 	bte *sch=NULL, *s, *busy;
-	lng c;
 
 	(void) mb;
 	(void) cntxt;
 
 	tcnt = *(int*) getArgReference(stk,pci,pci->retc);
-	if ( pci->argc != 2*tcnt*tcnt + 2 )
+	if ( pci->argc != 2*tcnt*tcnt + 1 )
 		return "Wrong argument number of makeSchedule";
-	offset = tcnt * tcnt + 2;
+	offset = tcnt * tcnt + 1;
 	bid = (lng**) GDKzalloc(sizeof(lng*) * tcnt);
 	sch = (bte*) GDKzalloc(sizeof(bte) * tcnt);
 	busy = (bte*) GDKzalloc(sizeof(bte) * tcnt);
@@ -507,19 +505,18 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sch[j] = j;
 */
 	/* Optimal */	
-	c = putJob(0,tcnt,bid,busy,&sch);
+	putJob(0,tcnt,bid,busy,&sch);
 		
 	/* set returned schedule variables */
 	for ( j = 0; j < tcnt; j++)
 		for ( k = 0; k < tcnt; k++){
-			idx = j * tcnt + k + 1;
+			idx = j * tcnt + k;
 			s = (bte*) getArgReference(stk,pci,idx);
 			if ( sch[j] == k)
 				*s = 1;
 			else *s = 0;
 	}
 
-	*res = c;
 	for ( j= 0; j < tcnt; j++)
 		GDKfree(bid[j]);
 	GDKfree(bid);

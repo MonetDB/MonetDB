@@ -594,13 +594,15 @@ when scheduled correctly, would not lead to duplicate work.
 			/* Generate call to bid scheduling */
 			r = newStmt2(mb, schedulerRef, putName("makeSchedule",12));
 			setArgType(mb,r,0, TYPE_bte);
-			setVarUDFtype(mb,getArg(r,0));
+			sch[0][0] = getArg(r,0);
+			setVarUDFtype(mb,getArg(r,0)); 
 			for ( j = 0; j < tcnt; j++)
-				for ( k = 0; k < tcnt; k++){
-					sch[j][k] = newTmpVariable(mb, TYPE_bte);
-					r = pushArgument(mb,r,sch[j][k]);
-			}
-			r->retc = tcnt * tcnt +1;
+				for ( k = 0; k < tcnt; k++)
+					if ( j || k){
+						sch[j][k] = newTmpVariable(mb, TYPE_bte);
+						r = pushArgument(mb,r,sch[j][k]);
+					}
+			r->retc = tcnt * tcnt;
 			r = pushInt(mb,r,tcnt);
 			for ( j = 0; j < tcnt; j++)
 				for ( k = 0; k < tcnt; k++)
