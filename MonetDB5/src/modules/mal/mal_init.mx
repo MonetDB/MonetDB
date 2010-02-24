@@ -188,6 +188,7 @@ include opt_dataflow;
 include opt_dictionary;
 include opt_deadcode;
 include opt_datacyclotron;
+include opt_compression;
 include opt_commonTerms;
 include opt_costModel;
 include opt_emptySet;

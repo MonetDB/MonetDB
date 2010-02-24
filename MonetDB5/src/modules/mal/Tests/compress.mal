@@ -1,4 +1,9 @@
 #test some compression work
+module sql;
+function sql.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
+    return bat.new(:any_1,:any_2);
+end bind;
+
 
 t0:= alarm.usec();
 b:= bat.new(:oid,:lng);
@@ -33,3 +38,10 @@ io.printf("Checksum difference should be zero %f\n",s);
 
 #bbp.truncate(b);
 #bbp.expand(b);
+
+functionq qry();
+	b:bat[:oid,:int]:= sql.bind("sys","tab","col",0);
+end bind;
+optimizer.compress("user","qry");
+mdb.list("user","qry");
+
