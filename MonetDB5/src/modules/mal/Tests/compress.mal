@@ -20,7 +20,7 @@ exit (go,i);
 mdb.setDebug(dbgmsk_restore);
 
 s:= aggr.sum(b);
-io.print(s);
+#io.print(s);
 
 bbp.compress(b);
 zz:= bbp.decompress(b);
@@ -28,7 +28,8 @@ c:= aggr.count(zz);
 io.print(c);
 ss:= aggr.sum(zz);
 s:= ss-s;
-io.print(s);	# should be zero
+#io.print(ss);
+io.printf("Checksum difference should be zero %f\n",s);
 
 #bbp.truncate(b);
 #bbp.expand(b);

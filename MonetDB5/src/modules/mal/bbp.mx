@@ -527,19 +527,15 @@ for shipping data around. We keep the truncated file around for consistency
 of the database structures.
 @c
 static void
-CMDtruncateheap(Heap *h,str ext)
+CMDtruncateheap(Heap *h)
 {
-	FILE *f;
+	char buf[PATHLENGTH];
 	if ( h == 0 || h->filename == 0 || h->storage != STORE_MMAP)
 		return;
 	/* reduce disk footprint */
-	f = (FILE *) GDKfilelocate(h->filename, "wrb+", ext);
-	if (f)  {
-		ftruncate(fileno(f), (off_t) 0);
-		fclose(f);
-		h->base = 0;
-	}
-	IODEBUG stream_printf(GDKout,"#truncate %s file now truncated? %s\n", h->filename,f==0?"no":"yes");
+	snprintf(buf,PATHLENGTH,"%s/%s",BATDIR,h->filename);
+	truncate(buf,0);
+	IODEBUG stream_printf(GDKout,"#truncate %s file\n", h->filename);
 }
 
 static str
@@ -613,12 +609,11 @@ CMDexpandheap(Heap *h)
 		return MAL_SUCCEED;
 
 	GDKfilepath(buf, BATDIR, h->filename, "gz");
-	fp = open_gzwastream(buf);
+	fp = open_gzrstream(buf);
 	if ( fp ){
 		if ( HEAPextend(h,h->size) < 0)
 			throw(MAL,"bbp.expand",MAL_MALLOC_FAIL);
 		/* skip header */
-		stream_read(fp, (void*) h->base,1, 2);
 		if ( (ssize_t) h->size != stream_read(fp, (void*) h->base,1, h->size))
 			throw(MAL,"bbp.expand","failed to decompress");
 		MT_msync(h->base, 0, h->size, MMAP_SYNC);
@@ -690,10 +685,10 @@ CMDbbptruncate(int *ret, int *bid)
 	if (b == 0)
 		throw(MAL, "bbp.truncate", INTERNAL_BAT_ACCESS);
 	IODEBUG stream_printf(GDKout,"#truncate BAT %d %s \n", *bid, BBP_physical(*bid));
-	CMDtruncateheap(&b->H->heap,"heap");
-	CMDtruncateheap(b->H->vheap,"vheap");
-	CMDtruncateheap(&b->T->heap,"heap");
-	CMDtruncateheap(b->T->vheap,"vheap");
+	CMDtruncateheap(&b->H->heap);
+	CMDtruncateheap(b->H->vheap);
+	CMDtruncateheap(&b->T->heap);
+	CMDtruncateheap(b->T->vheap);
 	BBPkeepref(*ret = *bid);
 	return MAL_SUCCEED;
 }
