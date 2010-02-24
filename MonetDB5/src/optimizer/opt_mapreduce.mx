@@ -194,74 +194,132 @@ MRcloudSize()
 	return(mapcount);
 }
 
+enum coltype {
+	NONE,
+	cBAT,
+	VAL,
+	COUNT,
+	SUM,
+	MIN,
+	MAX,
+	AVG
+};
+
+typedef struct _mapcol {
+	enum coltype type;
+	int val1;
+	int val1type;
+	int val2;
+	int val2type;
+	int val3;
+	int val3type;
+	struct _mapcol *next;
+} mapcol;
+
 static void
-MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
+MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 {
 	InstrPtr o, p, *packs;
-	int i, n, j, q, r, v;
+	int i, n, j, q, barrier, v, retc;
 	int *gets, *w;
+	mapcol *lcol;
 	(void)cntxt;
 
 	n = MRcloudSize(); /* FIXME: free */
 
 	assert(n);
-	assert(sig->retc);
+	assert(col);
 
-	packs = (InstrPtr *)alloca(sig->retc * sizeof(InstrPtr));
-	gets = (int *)alloca(n * sig->retc * sizeof(int));
-	w = (int *)alloca(sig->retc * sizeof(int));
+	retc = 0;
+	for (lcol = col; lcol != NULL; lcol = lcol->next)
+		retc += lcol->type == AVG ? 2 : 1;
 
-	for (j = 0; j < sig->retc; j++) {
-		/* make return variable for mat.pack known upfront */
-		q = getArgType(mc, sig, j);
-		if (isaBatType(q)) {
+	assert(retc);
+
+	packs = (InstrPtr *)alloca(retc * sizeof(InstrPtr));
+	gets = (int *)alloca(n * retc * sizeof(int));
+	w = (int *)alloca(retc * sizeof(int));
+
+	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
+		if (lcol->type == cBAT) {
+			/* x := mat.pack(...) */
 			packs[j] = p = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(p, matRef);
 			setFunctionId(p, packRef);
-			getArg(p, 0) = getArg(sig, j);
+			getArg(p, 0) = lcol->val1;
 
+			/* make return variable for mat.pack known upfront */
 			p = newFcnCall(mb, batRef, newRef);
-			p = pushType(mb, p, getHeadType(q));
-			p = pushType(mb, p, getTailType(q));
+			p = pushType(mb, p, getHeadType(lcol->val1type));
+			p = pushType(mb, p, getTailType(lcol->val1type));
+			getArg(p, 0) = lcol->val1;
+		} else if (lcol->type == AVG) {
+			/* basically 2 times the code below */
+			packs[j++] = p = newFcnCall(mb, batRef, newRef);
+			p = pushType(mb, p, TYPE_void);
+			p = pushType(mb, p, lcol->val2type);
+			packs[j] = p = newFcnCall(mb, batRef, newRef);
+			p = pushType(mb, p, TYPE_void);
+			p = pushType(mb, p, lcol->val3type);
+
+			p = newAssignment(mb);
+			p = pushNil(mb, p, lcol->val2type);
+			setArgType(mb, p, 0, lcol->val2type);
+			getArg(p, 0) = lcol->val2;
+			p = newAssignment(mb);
+			p = pushNil(mb, p, lcol->val3type);
+			setArgType(mb, p, 0, lcol->val3type);
+			getArg(p, 0) = lcol->val3;
 		} else {
 			/* it took me some time to figure out that mat doesn't
 			 * properly support operations performed on a pack of
 			 * values, so just create a bat containing the values */
 			packs[j] = p = newFcnCall(mb, batRef, newRef);
 			p = pushType(mb, p, TYPE_void);
-			p = pushType(mb, p, q);
+			p = pushType(mb, p, lcol->val1type);
 
 			/* this will hold the final result */
 			p = newAssignment(mb);
-			p = pushNil(mb, p, q);
-			setArgType(mb, p, 0, q);
+			p = pushNil(mb, p, lcol->val1type);
+			setArgType(mb, p, 0, lcol->val1type);
+			getArg(p, 0) = lcol->val1;
 		}
-		getArg(p, 0) = getArg(sig, j);
 
 		/* same for all sub results that we push into the mat.pack as
 		 * arguments at the same time */
 		for (i = 0; i < n; i++) {
-			if (isaBatType(q)) {
+			if (lcol->type == cBAT) {
 				p = newFcnCall(mb, batRef, newRef);
-				p = pushType(mb, p, getHeadType(q));
-				p = pushType(mb, p, getTailType(q));
-				setArgType(mb, p, 0, q);
-				gets[(i * sig->retc) + (j - 1)] = getArg(p, 0);
+				p = pushType(mb, p, getHeadType(lcol->val1type));
+				p = pushType(mb, p, getTailType(lcol->val1type));
+				setArgType(mb, p, 0, lcol->val1type);
+				gets[(i * retc) + j] = getArg(p, 0);
 				packs[j] = pushArgument(mb, packs[j], getArg(p, 0));
+			} else if (lcol->type == AVG) {
+				/* 2x code from else case */
+				p = newAssignment(mb);
+				p = pushNil(mb, p, lcol->val2type);
+				setArgType(mb, p, 0, lcol->val2type);
+				gets[(i * retc) + j - 1] = getArg(p, 0);
+				p = newAssignment(mb);
+				p = pushNil(mb, p, lcol->val3type);
+				setArgType(mb, p, 0, lcol->val3type);
+				gets[(i * retc) + j] = getArg(p, 0);
 			} else {
 				p = newAssignment(mb);
-				p = pushNil(mb, p, q);
-				setArgType(mb, p, 0, q);
-				gets[(i * sig->retc) + (j - 1)] = getArg(p, 0);
+				p = pushNil(mb, p, lcol->val1type);
+				setArgType(mb, p, 0, lcol->val1type);
+				gets[(i * retc) + j] = getArg(p, 0);
 			}
 		}
 	}
 
+	/* barrier language.dataflow */
 	p = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(p, languageRef);
 	setFunctionId(p, dataflowRef);
 	p->barrier = BARRIERsymbol;
-	r = getArg(p, 0) = newTmpVariable(mb, TYPE_int);
+	barrier = getArg(p, 0) = newTmpVariable(mb, TYPE_int);
 	pushInstruction(mb, p);
 
 	for (i = 0; i < n; i++) {
@@ -286,11 +344,11 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 		p = pushArgument(mb, p, q);
 		p = pushStr(mb, p, getModuleId(sig));
 		p = pushStr(mb, p, getFunctionId(sig));
-		for (j = 0; j < sig->retc; j++) {
+		for (j = 0; j < retc; j++) {
 			/* x1 := remote.put(q, :type) */
 			o = newFcnCall(mb, remoteRef, putRef);
 			o = pushArgument(mb, o, q);
-			o = pushArgument(mb, o, gets[(i * sig->retc) + (j - 1)]);
+			o = pushArgument(mb, o, gets[(i * retc) + j]);
 			v = getArg(o, 0);
 			p = pushReturn(mb, p, v);
 			w[j] = v;
@@ -298,17 +356,18 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 		pushInstruction(mb, p);
 
 		/* y1 := remote.get(q, x1); */
-		for (j = 0; j < sig->retc; j++) {
+		for (j = 0; j < retc; j++) {
 			p = newFcnCall(mb, remoteRef, getRef);
 			p = pushArgument(mb, p, q);
 			p = pushArgument(mb, p, w[j]);
-			getArg(p, 0) = gets[(i * sig->retc) + (j - 1)];
-			if (!isaBatType(getArgType(mc, sig, j))) {
+			getArg(p, 0) = gets[(i * retc) + j];
+			/* in case we work around mat.pack, insert the value in the bat */
+			if (!isaBatType(getArgType(mb, sig, j))) { /* too lazy to do it based on cols */
 				/* bat.insert(b, y1) */
 				p = newFcnCall(mb, batRef, insertRef);
 				p = pushArgument(mb, p, getArg(packs[j], 0));
 				p = pushNil(mb, p, TYPE_void);
-				p = pushArgument(mb, p, gets[(i * sig->retc) + (j - 1)]);
+				p = pushArgument(mb, p, gets[(i * retc) + j]);
 			}
 		}
 
@@ -317,20 +376,54 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 		p = pushArgument(mb, p, q);
 	}
 
-	for (j = 0; j < sig->retc; j++) {
-		q = getArgType(mc, sig, j);
-		if (isaBatType(q)) {
-			pushInstruction(mb, packs[j]);
-		} else {
-			p = newFcnCall(mb, aggrRef, sumRef);
-			p = pushArgument(mb, p, getArg(packs[j], 0));
-			getArg(p, 0) = getArg(sig, j);
+	/* perform the correct actions for aggregates */
+	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
+		switch (lcol->type) {
+			case cBAT:
+				pushInstruction(mb, packs[j]);
+			break;
+			case AVG:
+				p = newFcnCall(mb, aggrRef, sumRef);
+				p = pushArgument(mb, p, getArg(packs[j], 0));
+				getArg(p, 0) = lcol->val2;
+				j++;
+				p = newFcnCall(mb, aggrRef, sumRef);
+				p = pushArgument(mb, p, getArg(packs[j], 0));
+				getArg(p, 0) = lcol->val3;
+				/* val1 := calc./(val2, val3); */
+				p = newFcnCall(mb, calcRef, divRef);
+				p = pushArgument(mb, p, lcol->val2);
+				p = pushArgument(mb, p, lcol->val3);
+				getArg(p, 0) = lcol->val1;
+			break;
+			case COUNT:
+				p = newFcnCall(mb, aggrRef, sumRef);
+				p = pushArgument(mb, p, getArg(packs[j], 0));
+				getArg(p, 0) = lcol->val1;
+			break;
+			case MAX:
+				p = newFcnCall(mb, aggrRef, maxRef);
+				p = pushArgument(mb, p, getArg(packs[j], 0));
+				getArg(p, 0) = lcol->val1;
+			break;
+			case MIN:
+				p = newFcnCall(mb, aggrRef, minRef);
+				p = pushArgument(mb, p, getArg(packs[j], 0));
+				getArg(p, 0) = lcol->val1;
+			break;
+			case SUM:
+				p = newFcnCall(mb, aggrRef, sumRef);
+				p = pushArgument(mb, p, getArg(packs[j], 0));
+				getArg(p, 0) = lcol->val1;
+			break;
+			default:
+				assert(0);
 		}
 	}
 
 	p = newInstruction(mb, ASSIGNsymbol);
 	p->barrier = EXITsymbol;
-	getArg(p, 0) = r;
+	getArg(p, 0) = barrier;
 	pushInstruction(mb, p);
 #ifdef _DEBUG_OPT_MAPREDUCE
 	chkProgram(cntxt->nspace, mb);
@@ -338,16 +431,20 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 #endif
 }
 
+enum copymode { BOTH, MAP, REDUCE };
+
 static int
 OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	int i, j, limit, copy = 0;
-	InstrPtr p, *old, ret, sig;
-	str resultSetRef = putName("resultSet", 9);
+	int i, j, limit;
+	enum copymode copy = BOTH;
+	InstrPtr p, *old, *orig, ret, sig;
 	str exportValueRef = putName("exportValue", 11);
 	MalBlkPtr mc;
 	char nme[IDLENGTH];
 	Symbol new;
+	mapcol *col, *lastcol;
+	int *depinstrs = NULL, *walk;
 
 	(void)stk;
 	(void)pc;
@@ -356,98 +453,212 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 
+	col = lastcol = NULL;
+
 	mc = copyMalBlk(mb);
 	old = mc->stmt;
+	orig = mb->stmt;
 	limit = mc->stop;
 
+	snprintf(nme, IDLENGTH, "%smp", getFunctionId(getInstrPtr(mb, 0)));
+
+	/* zap */
 	if (newMalBlkStmt(mc, mc->ssize) < 0)
 		return 0;
+	if (newMalBlkStmt(mb, mb->ssize) < 0)
+		return 0;
 
-	snprintf(nme, IDLENGTH, "%smp", getFunctionId(getInstrPtr(mb, 0)));
 	new = newFunction(userRef, putName(nme, strlen(nme)), FUNCTIONsymbol);
 	sig = copyInstruction(getInstrPtr(new->def, 0));
 	freeMalBlk(new->def);
 	new->def = mc;
 	mc->keephistory = mb->keephistory;
-	pushInstruction(mc, sig);
 
-	getArg(sig, 0) = -1; /* get rid of default retval */
-	copy = 1;
-	for (i = 1; i < limit; i++) {
+	depinstrs = (int *)alloca(sizeof(int) * (limit + 1));
+	depinstrs[0] = 0;
+	/* run upside down, selecting all dependent instructions as we go */
+	for (i = limit - 1; i > 0; i--) {
 		p = old[i];
+
+		/* collect all variables that are necessary for the rsColumn and
+		 * exportValue calls */
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == rsColumnRef) {
+			walk = depinstrs;
+			while (*walk != 0)
+				walk++;
+			*walk++ = getArg(p, 7);
+			*walk = 0;
+			if (lastcol == NULL) {
+				col = lastcol = alloca(sizeof(mapcol));
+			} else {
+				lastcol = lastcol->next = alloca(sizeof(mapcol));
+			}
+			lastcol->val1 = getArg(p, 7);
+			lastcol->val1type = getArgType(mc, p, 7);
+			lastcol->type = isaBatType(getArgType(mc, p, 7)) ? cBAT : VAL;
+			lastcol->next = NULL;
+		} else if (getModuleId(p) == sqlRef &&
+				getFunctionId(p) == exportValueRef)
+		{
+			walk = depinstrs;
+			while (*walk != 0)
+				walk++;
+			*walk++ = getArg(p, 8);
+			*walk = 0;
+			if (lastcol == NULL) {
+				col = lastcol = alloca(sizeof(mapcol));
+			} else {
+				lastcol = lastcol->next = alloca(sizeof(mapcol));
+			}
+			lastcol->type = VAL;
+			lastcol->next = NULL;
+			lastcol->val1 = getArg(p, 8);
+			lastcol->val1type = getArgType(mc, p, 8);
+		}
+
+		for (walk = depinstrs; *walk != 0; walk++) {
+			for (j = 0; j < p->retc; j++) {
+				if (*walk == getArg(p, j)) {
+					int *replace = walk;
+					while (*walk != 0)
+						walk++;
+					*replace = *(--walk);
+					for (j = p->retc; j < p->argc; j++)
+						if (isTmpVar(mc, getArg(p, j)))
+							*walk++ = getArg(p, j);
+					copy = MAP;
+					*walk-- = 0; /* outer for-loop will ++ and test */
+					break;
+				}
+			}
+		}
+		
+		switch (copy) {
+			case BOTH:
+				pushInstruction(mc, p);
+				pushInstruction(mb, orig[i]);
+			break;
+			case MAP:
+				pushInstruction(mc, p);
+				freeInstruction(orig[i]);
+				orig[i] = NULL;
+				copy = REDUCE;
+			break;
+			case REDUCE:
+				freeInstruction(p);
+				pushInstruction(mb, orig[i]);
+			break;
+		}
+
+		/* after we've seen end, we'll see post stuff (resultset) */
+		if (p->token == ENDsymbol)
+			copy = REDUCE;
+	}
+	pushInstruction(mc, sig);
+	pushInstruction(mb, orig[0]);
+
+	/* fix order by reversing again */
+	GDKfree(old);
+	old = mc->stmt;
+	limit = mc->stop;
+	/* zap */
+	if (newMalBlkStmt(mc, mc->ssize) < 0)
+		return 0;
+	/* at the same time fix the return code + inject */
+	for (i = limit - 1; i >= 0; i--) {
+		p = old[i];
+		/* check for the direct args of what we return */
+		for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+			if (getArg(p, 0) == lastcol->val1) {
+				if (getModuleId(p) == calcRef && getFunctionId(p) == divRef)
+				{
+					/* special case of an average calculation, need both
+					 * arguments */
+					lastcol->type = AVG;
+					lastcol->val2 = getArg(p, 1);
+					lastcol->val2type = getArgType(mc, p, 1);
+					lastcol->val3 = getArg(p, 2);
+					lastcol->val3type = getArgType(mc, p, 2);
+					/* skip the actual calculation */
+					freeInstruction(p);
+					p = NULL;
+					break;
+				} else if (getModuleId(p) == aggrRef &&
+						getFunctionId(p) == maxRef)
+				{
+					lastcol->type = MAX;
+				} else if (getModuleId(p) == aggrRef &&
+						getFunctionId(p) == minRef)
+				{
+					lastcol->type = MIN;
+				} else if (getModuleId(p) == aggrRef &&
+						getFunctionId(p) == countRef)
+				{
+					lastcol->type = COUNT;
+				} else if (getModuleId(p) == aggrRef &&
+						getFunctionId(p) == sumRef)
+				{
+					lastcol->type = SUM;
+				} else {
+					/* must be normal bat thing */
+					lastcol->type = cBAT;
+				}
+			}
+		}
+		if (p == NULL)
+			continue;
 
 		/* inject return at end of program */
 		if (p->token == ENDsymbol) {
+			getArg(sig, 0) = -1; /* get rid of default retval */
 			ret = newInstruction(mc, ASSIGNsymbol);
 			ret->barrier = RETURNsymbol;
 			getArg(ret, 0) = -1; /* get rid of default retval */
-			for (j = 0; j < sig->retc; j++)
-				ret = pushReturn(mc, ret, getArg(sig, j));
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				if (lastcol->type == AVG) {
+					sig = pushReturn(mc, sig, lastcol->val2);
+					ret = pushReturn(mc, ret, lastcol->val2);
+					sig = pushReturn(mc, sig, lastcol->val3);
+					ret = pushReturn(mc, ret, lastcol->val3);
+				} else {
+					sig = pushReturn(mc, sig, lastcol->val1);
+					ret = pushReturn(mc, ret, lastcol->val1);
+				}
+			}
 			pushInstruction(mc, ret);
-			copy = 1;
 		}
 
-		/* Collect all BAT variables that are necessary for the rsColumn
-		 * calls. */
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == rsColumnRef) {
-			sig = pushReturn(mc, sig, getArg(p, 7));
-			/* don't replicate the statement */
-			freeInstruction(p);
-			continue;
-		} else if (getModuleId(p) == sqlRef && getFunctionId(p) == exportValueRef) {
-			sig = pushReturn(mc, sig, getArg(p, 8));
-			/* this is a combined column + resultSet */
-			copy = 0;
-		}
-		if (copy)
-			copy = !(getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef);
-		if (copy) {
-			pushInstruction(mc, p);
-		} else {
-			freeInstruction(p);
-		}
+		pushInstruction(mc, p);
 	}
+
 #ifdef _DEBUG_OPT_MAPREDUCE
-	stream_printf(cntxt->fdout, "MAPREDUCE program\n");
+	stream_printf(cntxt->fdout, "MAP program\n");
 	printFunction(cntxt->fdout, mc, 0, LIST_MAL_STMT);
 #endif
 
-	/* Create the corresponding controller program */
-	old = mb->stmt;
+	/* fix order by reversing again */
+	GDKfree(orig);
+	orig = mb->stmt;
 	limit = mb->stop;
-
 	/* zap */
 	if (newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
-
-	/* copy function */
-	pushInstruction(mb, old[0]);
-
-	copy = 0;
-	for (i = 1; i < limit; i++) {
-		p = old[i];
-		/* Again, find the blocking operation and inject the map call */
-		if (getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef
-					|| getFunctionId(p) == exportValueRef))
-		{
-			MRdistributework(cntxt, mb, mc, sig);
-			p = old[i];
-			copy = 1;
-		}
-		if (copy) {
-			pushInstruction(mb, p);
-		} else {
-			freeInstruction(p);
-		}
+	/* add the map calls right after the function signature */
+	pushInstruction(mb, orig[limit - 1]);
+	MRdistributework(cntxt, mb, col, sig);
+	for (i = limit - 2; i >= 0; i--) {
+		pushInstruction(mb, orig[i]);
 	}
-	GDKfree(old);
-
-	insertSymbol(findModule(cntxt->nspace, userRef), new);
 
 #ifdef _DEBUG_OPT_MAPREDUCE
-	stream_printf(cntxt->fdout, "MAPREDUCE controller\n");
+	stream_printf(cntxt->fdout, "REDUCE program\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
+
+	GDKfree(old);
+	GDKfree(orig);
+
+	insertSymbol(findModule(cntxt->nspace, userRef), new);
 	return 1;
 }
 
