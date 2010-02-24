@@ -338,3 +338,29 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Wed Feb 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100224
+- Rebuilt.
+
+* Wed Feb 17 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
+- Fixed a bug in the Mapi libary when sending very large queries to the server.
+- Implemented BLOB and CLOB support in ODBC driver.
+
+* Tue Feb 02 2010 Fabian Groffen <fabian@cwi.nl> - 1.36.1-20100223
+- Fixed crash upon connect to a server that is under maintenance but has
+  the requested language (scenario) not loaded.
+
+* Wed Jan 27 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
+- Fixed bug in the ODBC driver where a non-ASCII character at the end of a
+  string caused an error when the string was converted to wide characters.
+
+* Wed Jan 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
+- mclient timer information (-t option) is now written to standard error
+  instead of standard output.  This makes getting timer information easier
+  when there is a large amout of regular output (which can be redirected to
+  a file or /dev/null).
+
+* Tue Jan 19 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
+- Implemented new function mapi_fetch_field_len() which returns the
+  length (excluding trailing NULL byte) of the field returned by
+  mapi_fetch_field().
+
