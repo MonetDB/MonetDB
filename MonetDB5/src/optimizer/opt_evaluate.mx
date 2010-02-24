@@ -183,7 +183,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #endif
 		/* be aware that you only assign once to a variable */
 		if( p->retc == 1 && OPTallConstant(cntxt,mb,p) && 
-			!isUnsafeFunction(p) && p->token!= EXITsymbol){ 
+			!isUnsafeFunction(p) && p->token!= EXITsymbol && p->barrier != BARRIERsymbol ){ 
 			if( assignedOnce(mb,span,getArg(p,0)) ==FALSE)
 				continue;
 			actions++;
