@@ -1,3 +1,9 @@
+monetdb5-server (5.18.1-20100224) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 24 Feb 2010 11:08:01 +0100
+
 monetdb5-server (5.18.1-20100223) unstable; urgency=low
 
   * The MonetDB 5 code base underwent a series of small/medium changes:

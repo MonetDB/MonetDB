@@ -106,6 +106,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libbat.so
 
 %changelog
+* Wed Feb 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100224
+- Rebuilt.
+
 * Mon Feb 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
 - Various concurrency bugs were fixed.
 - Various changes were made to run better on systems that don't have enough

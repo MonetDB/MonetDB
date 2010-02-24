@@ -1,3 +1,9 @@
+monetdb (1.36.1-20100224) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 24 Feb 2010 11:07:31 +0100
+
 monetdb (1.36.1-20100223) unstable; urgency=low
 
   * Various concurrency bugs were fixed.

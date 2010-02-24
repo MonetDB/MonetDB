@@ -1,3 +1,9 @@
+monetdb-client (1.36.1-20100224) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 24 Feb 2010 11:08:30 +0100
+
 monetdb-client (1.36.1-20100223) unstable; urgency=low
 
   * Fixed a bug in the Mapi libary when sending very large queries to the server.

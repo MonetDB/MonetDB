@@ -338,6 +338,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Wed Feb 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100224
+- Rebuilt.
+
 * Wed Feb 17 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
 - Fixed a bug in the Mapi libary when sending very large queries to the server.
 - Implemented BLOB and CLOB support in ODBC driver.

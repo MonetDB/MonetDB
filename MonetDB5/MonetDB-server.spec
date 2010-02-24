@@ -187,6 +187,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Wed Feb 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.1-20100224
+- Rebuilt.
+
 * Sun Feb 21 2010 Martin Kersten <mk@(none)> - 5.18.1-20100223
 - The MonetDB 5 code base underwent a series of small/medium changes:
   - Solving name conflicts with external libraries in mal_box.
