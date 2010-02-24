@@ -223,6 +223,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	SQLCLIENT	mclient -lsql				sql-client program	`)
 	SQLDUMP	        msqldump				sql-dump program	`)
 	XQUERYCLIENT	mclient -lxquery -fxml			xquery-client program	`)
+	PF		pf (or pf -M if using MPS)		xquery stand-alone compiler
 
     `) Alternative MIL-, MAL-, SQL-, & XQUERY- client programs need to accept (or ignore)
        "--config=", "--host=", & "--port=" options.
