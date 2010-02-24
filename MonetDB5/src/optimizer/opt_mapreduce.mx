@@ -212,26 +212,48 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 	w = (int *)alloca(sig->retc * sizeof(int));
 
 	for (j = 0; j < sig->retc; j++) {
-		packs[j] = p = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(p, matRef);
-		setFunctionId(p, packRef);
-		getArg(p, 0) = getArg(sig, j);
-
 		/* make return variable for mat.pack known upfront */
-		p = newFcnCall(mb, batRef, newRef);
-		p = pushType(mb, p, getHeadType(getArgType(mc, sig, j)));
-		p = pushType(mb, p, getTailType(getArgType(mc, sig, j)));
+		q = getArgType(mc, sig, j);
+		if (isaBatType(q)) {
+			packs[j] = p = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(p, matRef);
+			setFunctionId(p, packRef);
+			getArg(p, 0) = getArg(sig, j);
+
+			p = newFcnCall(mb, batRef, newRef);
+			p = pushType(mb, p, getHeadType(q));
+			p = pushType(mb, p, getTailType(q));
+		} else {
+			/* it took me some time to figure out that mat doesn't
+			 * properly support operations performed on a pack of
+			 * values, so just create a bat containing the values */
+			packs[j] = p = newFcnCall(mb, batRef, newRef);
+			p = pushType(mb, p, TYPE_void);
+			p = pushType(mb, p, q);
+
+			/* this will hold the final result */
+			p = newAssignment(mb);
+			p = pushNil(mb, p, q);
+			setArgType(mb, p, 0, q);
+		}
 		getArg(p, 0) = getArg(sig, j);
 
 		/* same for all sub results that we push into the mat.pack as
 		 * arguments at the same time */
 		for (i = 0; i < n; i++) {
-			p = newFcnCall(mb, batRef, newRef);
-			p = pushType(mb, p, getHeadType(getArgType(mc, sig, j)));
-			p = pushType(mb, p, getTailType(getArgType(mc, sig, j)));
-			setArgType(mb, p, 0, getArgType(mc, sig, j));
-			gets[(i * sig->retc) + (j - 1)] = getArg(p, 0);
-			packs[j] = pushArgument(mb, packs[j], getArg(p, 0));
+			if (isaBatType(q)) {
+				p = newFcnCall(mb, batRef, newRef);
+				p = pushType(mb, p, getHeadType(q));
+				p = pushType(mb, p, getTailType(q));
+				setArgType(mb, p, 0, q);
+				gets[(i * sig->retc) + (j - 1)] = getArg(p, 0);
+				packs[j] = pushArgument(mb, packs[j], getArg(p, 0));
+			} else {
+				p = newAssignment(mb);
+				p = pushNil(mb, p, q);
+				setArgType(mb, p, 0, q);
+				gets[(i * sig->retc) + (j - 1)] = getArg(p, 0);
+			}
 		}
 	}
 
@@ -281,6 +303,13 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 			p = pushArgument(mb, p, q);
 			p = pushArgument(mb, p, w[j]);
 			getArg(p, 0) = gets[(i * sig->retc) + (j - 1)];
+			if (!isaBatType(getArgType(mc, sig, j))) {
+				/* bat.insert(b, y1) */
+				p = newFcnCall(mb, batRef, insertRef);
+				p = pushArgument(mb, p, getArg(packs[j], 0));
+				p = pushNil(mb, p, TYPE_void);
+				p = pushArgument(mb, p, gets[(i * sig->retc) + (j - 1)]);
+			}
 		}
 
 		/* remote.disconnect(q); */
@@ -288,8 +317,16 @@ MRdistributework(Client cntxt, MalBlkPtr mb, MalBlkPtr mc, InstrPtr sig)
 		p = pushArgument(mb, p, q);
 	}
 
-	for (j = 0; j < sig->retc; j++)
-		pushInstruction(mb, packs[j]);
+	for (j = 0; j < sig->retc; j++) {
+		q = getArgType(mc, sig, j);
+		if (isaBatType(q)) {
+			pushInstruction(mb, packs[j]);
+		} else {
+			p = newFcnCall(mb, aggrRef, sumRef);
+			p = pushArgument(mb, p, getArg(packs[j], 0));
+			getArg(p, 0) = getArg(sig, j);
+		}
+	}
 
 	p = newInstruction(mb, ASSIGNsymbol);
 	p->barrier = EXITsymbol;
@@ -307,6 +344,7 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int i, j, limit, copy = 0;
 	InstrPtr p, *old, ret, sig;
 	str resultSetRef = putName("resultSet", 9);
+	str exportValueRef = putName("exportValue", 11);
 	MalBlkPtr mc;
 	char nme[IDLENGTH];
 	Symbol new;
@@ -356,6 +394,10 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			/* don't replicate the statement */
 			freeInstruction(p);
 			continue;
+		} else if (getModuleId(p) == sqlRef && getFunctionId(p) == exportValueRef) {
+			sig = pushReturn(mc, sig, getArg(p, 8));
+			/* this is a combined column + resultSet */
+			copy = 0;
 		}
 		if (copy)
 			copy = !(getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef);
@@ -385,12 +427,13 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 		/* Again, find the blocking operation and inject the map call */
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef) {
+		if (getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef
+					|| getFunctionId(p) == exportValueRef))
+		{
 			MRdistributework(cntxt, mb, mc, sig);
 			p = old[i];
+			copy = 1;
 		}
-		if (!copy)
-			copy = (getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef);
 		if (copy) {
 			pushInstruction(mb, p);
 		} else {
