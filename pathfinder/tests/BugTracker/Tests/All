@@ -173,11 +173,9 @@ multi-join_query_compile_error.SF-1908822
 immune_for_updates.SF-1981852
 join-query_compilation_error.SF-1889694
 iter_in_join.SF-1991938
-compilation_or_runtime_choice.SF-1991738_0_MPS
-compilation_or_runtime_choice.SF-1991738_0_ALG
-#type error: can't cast type 'untypedAtomic*' to type 'integer?'
-untypedAtomic?compilation_or_runtime_choice.SF-1991738_1_MPS
-compilation_or_runtime_choice.SF-1991738_1_ALG
+compilation_or_runtime_choice.SF-1991738_0
+#type error in MPS: can't cast type 'untypedAtomic*' to type 'integer?'
+WITH_ALGEBRA?compilation_or_runtime_choice.SF-1991738_1
 test_order.SF-2009467
 NOT_ALGEBRA?pfmil_prints_garbage.SF-2015232
 NOT_ALGEBRA?pfmil_loses_last_bun.SF-2015219
