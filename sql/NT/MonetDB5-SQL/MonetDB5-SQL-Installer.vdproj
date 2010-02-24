@@ -3457,7 +3457,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_667BD650736E43C9A8B6899179FA0CAA"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.36.1\\dump-restore.txt"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.37.0\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"
@@ -3557,8 +3557,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6A6181D776F04BA0AD223E266AB8B39A"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.37.0\\dump-restore.txt"
-            "TargetName" = "8:dump-restore.txt"
+            "SourcePath" = "8:Lib\\MonetDB5\\lib_groupby.dll"
+            "TargetName" = "8:lib_groupby.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -4717,8 +4717,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9D0C7CC7DBE342A6901EBE1DF0252793"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.37.0\\dump-restore.html"
-            "TargetName" = "8:dump-restore.html"
+            "SourcePath" = "8:Lib\\MonetDB5\\opt_multiplex.mal"
+            "TargetName" = "8:opt_multiplex.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -4877,7 +4877,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A9DB6CF8297A4BEEAF7A6D4958A4B0D6"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.36.1\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.37.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"

@@ -2549,8 +2549,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3213F9F7BF0C46CDA4B50BA6E77B9AD7"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.37.0\\dump-restore.html"
-            "TargetName" = "8:dump-restore.html"
+            "SourcePath" = "8:Lib\\MonetDB5\\opt_strengthReduction.mal"
+            "TargetName" = "8:opt_strengthReduction.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -2669,7 +2669,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_380F5AEC34A748AF9AE41F715472D526"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.36.1\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.37.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_4A91789AB7C84241A62C790D7B406FE0"
