@@ -61,15 +61,15 @@ coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 	a = getArg(p, 0);
 	b = getArg(p, 1);
 	t = getVarType(mb, b);
-	if( getVarType(mb,a) != t) return 0;
+	if (getVarType(mb, a) != t)
+		return 0;
 	if (strcmp(getFunctionId(p), ATOMname(t)) == 0) {
 		removeInstruction(mb, p); /* dead code */
-		for(; i< mb->stop; i++){
-			p= getInstrPtr(mb,i);
-			for( k= p->retc; k < p->argc; k++)
-			if( p->argv[k]== a) {
-				p->argv[k]= b;
-			}
+		for (; i < mb->stop; i++) {
+			p = getInstrPtr(mb, i);
+			for (k = p->retc; k < p->argc; k++)
+				if (p->argv[k] == a)
+					p->argv[k] = b;
 		}
 		return 1;
 	}
