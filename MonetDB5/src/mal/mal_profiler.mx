@@ -161,18 +161,18 @@ The SQL frontend can access the profiler.
 @verbatim
 create function tracelog() 
 	returns table (
-		event integer,		-- event counter
-		clk varchar(20), 	-- wallclock, no mtime in kernel
-		pc varchar(50), 	-- module.function[nr]
-		thread int, 		-- thread identifier
-		"user" int, 			-- client identifier
-		ticks integer, 		-- time in microseconds
-		reads integer, 		-- number of blocks read
-		writes integer, 	-- number of blocks written
-		rbytes integer,		-- amount of bytes touched
-		wbytes integer,		-- amount of bytes written
-		type string,		-- return types
-		stmt string			-- actual statement executed
+		event integer,      -- event counter
+		clk varchar(20),    -- wallclock, no mtime in kernel
+		pc varchar(50),     -- module.function[nr]
+		thread int,         -- thread identifier
+		"user" int,         -- client identifier
+		ticks integer,      -- time in microseconds
+		reads integer,      -- number of blocks read
+		writes integer,     -- number of blocks written
+		rbytes integer,     -- amount of bytes touched
+		wbytes integer,     -- amount of bytes written
+		type string,        -- return types
+		stmt string         -- actual statement executed
 	)
 	external name sql.dump_trace;
 @end verbatim
@@ -204,12 +204,12 @@ in the interpreter to collect the information.
 #endif
 
 #if defined(SOLARIS) && defined(OSVER) && OSVER < 560
-#include "/usr/ucbinclude/sys/rusage.h"
-#include "/usr/ucbinclude/sys/resource.h"
+# include "/usr/ucbinclude/sys/rusage.h"
+# include "/usr/ucbinclude/sys/resource.h"
 #endif
 
 #ifdef HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
+# include <sys/resource.h>
 typedef struct rusage Rusage;
 #endif
 
@@ -219,21 +219,21 @@ typedef struct Mallinfo Mallinfo;
 @- Recycler statistics per client
 @h
 typedef struct RECSTAT {
-	int statements;	/* total number of statements executed */
-	int recycled;		/* total number of statements recycled */
-	int recycled0;		/* recycled statements per query */
-	lng time0;			/* time per query */
-	int curQ;	/* index of current query in Qry Patterns array*/
-	int recent;	/* the most recent entry in RP touched by current query */
-	int recycleMiss; /* DBG:count of misses due to cache eviction */
-	int recycleRem;	/* DBG:count of removed entries */
-	lng ccCalls;		/* Number of calls to cleanCache */
-	lng ccInstr;		/* Number of instructions cleaned */
-	lng crdInstr;		/*	Number of instructions not admited in RP by CRD */
-	int trans;          /* Number of data transfer instructions */
-	lng transKB;        /* Size in KB of transferred data */
-	int recTrans;       /* Number of recycled data transfer instructions */
-	lng recTransKB;     /* Size in KB of recycled transferred data */
+	int statements;   /* total number of statements executed */
+	int recycled;     /* total number of statements recycled */
+	int recycled0;    /* recycled statements per query */
+	lng time0;        /* time per query */
+	int curQ;         /* index of current query in Qry Patterns array*/
+	int recent;       /* the most recent entry in RP touched by current query */
+	int recycleMiss;  /* DBG:count of misses due to cache eviction */
+	int recycleRem;   /* DBG:count of removed entries */
+	lng ccCalls;      /* Number of calls to cleanCache */
+	lng ccInstr;      /* Number of instructions cleaned */
+	lng crdInstr;     /* Number of instructions not admited in RP by CRD */
+	int trans;        /* Number of data transfer instructions */
+	lng transKB;      /* Size in KB of transferred data */
+	int recTrans;     /* Number of recycled data transfer instructions */
+	lng recTransKB;   /* Size in KB of recycled transferred data */
 } *RecPtr, RecStat;
 
 mal_export str activateCounter(str name);
@@ -274,7 +274,6 @@ mal_export lng getDiskReads(void);
 mal_export lng getDiskWrites(void);
 mal_export lng getUserTime(void);
 mal_export lng getSystemTime(void);
-#define DEBUG_MAL_PROFILER
 
 #endif
 @+ Performance tracing
@@ -306,7 +305,7 @@ static stream *eventstream = 0;
 #ifdef MALprofiler
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
-static str myname=0;
+static str myname = 0;
 
 int
 profilerAvailable(void)
@@ -325,9 +324,9 @@ profilerAvailable(void)
 #endif
 static int initTrace(void);
 
-int malProfileMode = 0;		/* global flag to indicate profiling mode */
-static int profileAll = 0;	/* all instructions should be profiled */
-static int delayswitch = 0;	/* to wait before sending the profile info */
+int malProfileMode = 0;     /* global flag to indicate profiling mode */
+static int profileAll = 0;  /* all instructions should be profiled */
+static int delayswitch = 0; /* to wait before sending the profile info */
 
 @c
 #define PROFevent   0
@@ -347,7 +346,7 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 #define PROFprocess 14
 #define PROFuser    15
 #define PROFstart   16
-#define PROFtype   17
+#define PROFtype    17
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -378,11 +377,11 @@ static struct {
 The counters can be set individually. 
 @= setCounter
 	int i;
-	for(i=0; profileCounter[i].name;i++)
-	if( strcmp(profileCounter[i].name,name)==0){
-	    profileCounter[i].status = @1 ;
-	    return 0;
-	}
+	for (i = 0; profileCounter[i].name; i++)
+		if (strcmp(profileCounter[i].name, name) == 0) {
+			profileCounter[i].status = @1;
+			return 0;
+		}
 	throw(MAL, "@2", RUNTIME_OBJECT_UNDEFINED ":%s", name);
 @c
 str
@@ -403,22 +402,22 @@ The parameter of getEventStream is the return value of the enclosing function:
 	setStartPoint:  a str
 	setEndPoint:    a str
 @= getEventStream
-	mal_set_lock(mal_profileLock,"profileLock");
-	if( eventstream == NULL) {
-	    mal_unset_lock(mal_profileLock,"profileLock");
-	    return @1;
+	mal_set_lock(mal_profileLock, "profileLock");
+	if (eventstream == NULL) {
+		mal_unset_lock(mal_profileLock, "profileLock");
+		return @1;
 	}
 @+ Offline processing
 The offline processing structure is the easiest. We merely have to
 produce a correct tuple format for the front-end.
 @c
-#define log(X,Y) if(eventstream) if( stream_printf(eventstream,X,Y)<0) \
-		{closeProfilerStream();}
-#define log0(X) if(eventstream) if( stream_printf(eventstream,X) <0) \
-		{closeProfilerStream();}
-#define log2(X,Y,Z) if(eventstream) if(stream_printf(eventstream,X,Y,Z) <0) \
-		{closeProfilerStream();}
-#define flushLog() if(eventstream) stream_flush(eventstream); \
+#define log(X, Y) if (eventstream) if (stream_printf(eventstream, X, Y) < 0) \
+		{ closeProfilerStream(); }
+#define log0(X) if (eventstream) if (stream_printf(eventstream, X) < 0)	\
+		{ closeProfilerStream(); }
+#define log2(X, Y, Z) if (eventstream) if (stream_printf(eventstream, X, Y, Z) < 0) \
+		{ closeProfilerStream(); }
+#define flushLog() if (eventstream) stream_flush(eventstream);
 
 @- Event dispatching
 The profiler strategy is encapsulated here
@@ -428,22 +427,22 @@ void
 profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 #ifdef MALprofiler
-	if( mb->profiler == NULL) return;
-	if (profileCounter[PROFstart].status == 0 && mb->profiler[pc].ticks== 0) 
+	if (mb->profiler == NULL) return;
+	if (profileCounter[PROFstart].status == 0 && mb->profiler[pc].ticks == 0)
 		return;
-	if( myname == 0)
-		myname= putName("profiler",8);
-	if( getModuleId(getInstrPtr(mb,pc)) == myname)
+	if (myname == 0)
+		myname = putName("profiler", 8);
+	if (getModuleId(getInstrPtr(mb, pc)) == myname)
 		return;
 	if (offlineProfiling)
 		offlineProfilerEvent(idx, mb, stk, pc);
 	if (cachedProfiling)
 		cachedProfilerEvent(idx, mb, stk, pc);
 #else
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pc;
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pc;
 #endif
 }
 
@@ -452,11 +451,11 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 static void
 offlineProfilerHeader(void)
 {
-	@:getEventStream()@	/* profilerEvent -> void */
+	@:getEventStream()@   /* profilerEvent -> void */
 	log0("# ");
 	if (profileCounter[PROFevent].status) {
 		log0("event,\t");
-	} 
+	}
 	if (profileCounter[PROFtime].status) {
 		log0("time,\t");
 	}
@@ -486,7 +485,7 @@ offlineProfilerHeader(void)
 		log0("fsmblks,\t");
 		log0("uordblks,\t");
 	}
-	if (profileCounter[PROFreads].status) 
+	if (profileCounter[PROFreads].status)
 		log0("blk reads,\t");
 	if (profileCounter[PROFwrites].status)
 		log0("blk writes,\t");
@@ -505,7 +504,7 @@ offlineProfilerHeader(void)
 		log0("count,\t clkticks,\t");
 	if (profileCounter[PROFstmt].status)
 		log0("stmt,\t");
-	if (profileCounter[PROFtype].status) 
+	if (profileCounter[PROFtype].status)
 		log0("types,\t");
 	if (profileCounter[PROFuser].status)
 		log0("user,\t");
@@ -518,7 +517,7 @@ void
 offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	static struct Mallinfo prevMalloc;
-	InstrPtr pci = getInstrPtr(mb,pc);
+	InstrPtr pci = getInstrPtr(mb, pc);
 
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
@@ -536,7 +535,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		offlineProfilerHeader();
 		delayswitch--;
 	}
-	@:getEventStream()@	/* profilerEvent -> void */
+	@:getEventStream()@   /* profilerEvent -> void */
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
@@ -554,11 +553,11 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	log0("[ ");
 	if (profileCounter[PROFevent].status) {
 		log("%d,\t", eventcounter);
-	} 
+	}
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
 
-		tbuf= ctime(&mb->profiler[pc].clock);
+		tbuf = ctime(&mb->profiler[pc].clock);
 		if (tbuf) {
 			c = strchr(tbuf, '\n');
 			if (c) {
@@ -568,7 +567,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 			tbuf[10] = '"';
 			log("%s,\t", tbuf + 10);
 		} else
-			log("%s,\t","nil");
+			log("%s,\t", "nil");
 	}
 	if (profileCounter[PROFthread].status) {
 		log(" %d,\t", THRgettid());
@@ -577,25 +576,25 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		str mod = "";
 		str fcn = "";
 
-		if (stk->blk){
+		if (stk->blk) {
 			mod = getModuleId(getInstrPtr(stk->blk, 0));
 			fcn = getFunctionId(getInstrPtr(stk->blk, 0));
 		}
-		log2("\"%s.%s\",\t", mod,fcn);
+		log2("\"%s.%s\",\t", mod, fcn);
 		log("%d,\t", getPC(mb, pci));
 	}
 	if (profileCounter[PROFoper].status) {
-		if( getModuleId(pci) && getFunctionId(pci)){
+		if (getModuleId(pci) && getFunctionId(pci)) {
 			log2("\"%s.%s\",\t",
-					getModuleId(pci), getFunctionId(pci));
+				getModuleId(pci), getFunctionId(pci));
 		} else
- 			log("\"%s\",\t",operatorName(pci->token));
+			log("\"%s\",\t", operatorName(pci->token));
 	}
 	if (profileCounter[PROFticks].status) {
-		log(LLFMT",\t", mb->profiler[pc].ticks);
+		log(LLFMT ",\t", mb->profiler[pc].ticks);
 	}
 #ifdef HAVE_TIMES
-	if (profileCounter[PROFcpu].status && delayswitch<0) {
+	if (profileCounter[PROFcpu].status && delayswitch < 0) {
 		log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
 		log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
 		log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
@@ -603,27 +602,27 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #endif
 
-	if (profileCounter[PROFmemory].status && delayswitch<0) {
+	if (profileCounter[PROFmemory].status && delayswitch < 0) {
 #ifdef HAVE_SYS_RESOURCE_H
 		log("%d,\t", infoUsage.ru_maxrss);
 #endif
-		log(SZFMT ",\t", (size_t) (infoMalloc.arena - prevMalloc.arena));
-		log(SZFMT ",\t", (size_t) (infoMalloc.ordblks - prevMalloc.ordblks));
-		log(SZFMT ",\t", (size_t) (infoMalloc.smblks - prevMalloc.smblks));
-		log(SZFMT ",\t", (size_t) (infoMalloc.hblkhd - prevMalloc.hblkhd));
-		log(SZFMT ",\t", (size_t) (infoMalloc.hblks - prevMalloc.hblks));
-		log(SZFMT ",\t", (size_t) (infoMalloc.fsmblks - prevMalloc.fsmblks));
-		log(SZFMT ",\t", (size_t) (infoMalloc.uordblks - prevMalloc.uordblks));
+		log(SZFMT ",\t", (size_t)(infoMalloc.arena - prevMalloc.arena));
+		log(SZFMT ",\t", (size_t)(infoMalloc.ordblks - prevMalloc.ordblks));
+		log(SZFMT ",\t", (size_t)(infoMalloc.smblks - prevMalloc.smblks));
+		log(SZFMT ",\t", (size_t)(infoMalloc.hblkhd - prevMalloc.hblkhd));
+		log(SZFMT ",\t", (size_t)(infoMalloc.hblks - prevMalloc.hblks));
+		log(SZFMT ",\t", (size_t)(infoMalloc.fsmblks - prevMalloc.fsmblks));
+		log(SZFMT ",\t", (size_t)(infoMalloc.uordblks - prevMalloc.uordblks));
 		prevMalloc = infoMalloc;
 	}
 #ifdef HAVE_SYS_RESOURCE_H
-	if ( (profileCounter[PROFreads].status ||
-		  profileCounter[PROFwrites].status) && delayswitch<0) {
+	if ((profileCounter[PROFreads].status ||
+		 profileCounter[PROFwrites].status) && delayswitch < 0) {
 		log("%d,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
 		log("%d,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		prevUsage = infoUsage;
 	}
-	if (profileCounter[PROFprocess].status && delayswitch<0) {
+	if (profileCounter[PROFprocess].status && delayswitch < 0) {
 		log("%d,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
 		log("%d,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
 		log("%d,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
@@ -632,24 +631,24 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		prevUsage = infoUsage;
 	}
 #endif
-	if (profileCounter[PROFrbytes].status) 
-		log(LLFMT",\t", mb->profiler[pc].rbytes);
-	if (profileCounter[PROFwbytes].status) 
-		log(LLFMT",\t", mb->profiler[pc].wbytes);
+	if (profileCounter[PROFrbytes].status)
+		log(LLFMT ",\t", mb->profiler[pc].rbytes);
+	if (profileCounter[PROFwbytes].status)
+		log(LLFMT ",\t", mb->profiler[pc].wbytes);
 
-	if (profileCounter[PROFaggr].status) 
+	if (profileCounter[PROFaggr].status)
 		log2("%d,\t%d,\t", mb->profiler[pc].counter, mb->profiler[pc].clk);
-	
+
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
 		str stmtq;
 		stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
 		c = stmt;
 
-		while (c && *c && isspace((int) *c))
+		while (c && *c && isspace((int)*c))
 			c++;
-		stmtq= mal_quote(c,strlen(c));
-		if (stmtq != NULL){
+		stmtq = mal_quote(c, strlen(c));
+		if (stmtq != NULL) {
 			log(" \"%s\"", stmtq);
 			GDKfree(stmtq);
 		}
@@ -658,15 +657,15 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (profileCounter[PROFtype].status) {
 		char abuf[BUFSIZ], *tpe;
 		int i, j;
-		abuf[0]=0;
-		for ( i= 0; i< pci->retc; i++)
-		if( getArgType(mb,pci,i) != TYPE_void ){
-			j = (int) strlen(abuf);
-			tpe= getTypeName(getArgType(mb,pci,i));
-			snprintf(abuf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
-			GDKfree(tpe);
-		}
-		log("%s",abuf);
+		abuf[0] = 0;
+		for (i = 0; i < pci->retc; i++)
+			if (getArgType(mb, pci, i) != TYPE_void) {
+				j = (int)strlen(abuf);
+				tpe = getTypeName(getArgType(mb, pci, i));
+				snprintf(abuf + j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci, i)), tpe, (i < pci->retc - 1 ? ", " : ""));
+				GDKfree(tpe);
+			}
+		log("%s", abuf);
 	}
 	if (profileCounter[PROFuser].status) {
 		log(" %d", idx);
@@ -684,13 +683,12 @@ stream, including "stdout".
 str
 setLogFile(stream *fd, Module mod, str fname)
 {
-	(void) mod;		/* still unused */
+	(void)mod;      /* still unused */
 #ifdef MALprofiler
 	mal_set_lock(mal_profileLock, "profileLock");
-	if( strcmp(fname,"console")==0)
+	if (strcmp(fname, "console") == 0)
 		eventstream = mal_clients[0].fdout;
-	else
-	if( strcmp(fname,"stdout")==0)
+	else if (strcmp(fname, "stdout") == 0)
 		eventstream = fd;
 	else
 		eventstream = open_wastream(fname);
@@ -699,7 +697,7 @@ setLogFile(stream *fd, Module mod, str fname)
 	}
 	mal_unset_lock(mal_profileLock, "profileLock");
 #else
-	(void) fname;
+	(void)fname;
 	stream_printf(GDKout, "# MonetDB not compiled for profiling\n");
 #endif
 	return MAL_SUCCEED;
@@ -708,7 +706,7 @@ setLogFile(stream *fd, Module mod, str fname)
 str
 setLogStream(Module cntxt, str host, int port)
 {
-	(void) cntxt;		/* still unused */
+	(void)cntxt;        /* still unused */
 #ifdef MALprofiler
 	mal_set_lock(mal_profileLock, "profileLock");
 	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL)
@@ -717,27 +715,27 @@ setLogStream(Module cntxt, str host, int port)
 		eventstream = wbstream(eventstream, BUFSIZ);
 	mal_unset_lock(mal_profileLock, "profileLock");
 #else
-	(void) host;
-	(void) port;
+	(void)host;
+	(void)port;
 	stream_printf(GDKout, "# MonetDB not compiled for profiling\n");
 #endif
 	return MAL_SUCCEED;
 }
 
 str
-openProfilerStream( stream *fd)
+openProfilerStream(stream *fd)
 {
 	malProfileMode = TRUE;
 	eventstream = fd;
-	delayswitch = 1;	/* avoid an incomplete initial profile event */
+	delayswitch = 1;    /* avoid an incomplete initial profile event */
 	return MAL_SUCCEED;
 }
 
 str
 closeProfilerStream(void)
 {
-	if ( eventstream)
-		(void) stream_close(eventstream);
+	if (eventstream)
+		(void)stream_close(eventstream);
 	eventstream = NULL;
 	malProfileMode = FALSE;
 	return MAL_SUCCEED;
@@ -746,11 +744,11 @@ closeProfilerStream(void)
 str
 setStartPoint(Module cntxt, str mod, str fcn)
 {
-	(void) cntxt;
-	(void) mod;
-	(void) fcn;		/* still unused */
+	(void)cntxt;
+	(void)mod;
+	(void)fcn;      /* still unused */
 #ifdef MALprofiler
-	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */ )@
+	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */)@
 	stream_printf(GDKout, "# start point not set\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
@@ -763,11 +761,11 @@ setStartPoint(Module cntxt, str mod, str fcn)
 str
 setEndPoint(Module cntxt, str mod, str fcn)
 {
-	(void) cntxt;
-	(void) mod;
-	(void) fcn;		/* still unused */
+	(void)cntxt;
+	(void)mod;
+	(void)fcn;      /* still unused */
 #ifdef MALprofiler
-	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */ )@
+	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */)@
 	stream_printf(GDKout, "# end point not set\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
@@ -788,10 +786,10 @@ startProfiling(void)
 #ifdef MALprofiler
 	mal_set_lock(mal_profileLock, "profileLock");
 	if (eventstream != NULL) {
-		offlineProfiling=TRUE;
+		offlineProfiling = TRUE;
 		delayswitch = 1;
 	} else
-		cachedProfiling=TRUE;
+		cachedProfiling = TRUE;
 	initTrace();
 	malProfileMode = TRUE;
 	mal_unset_lock(mal_profileLock, "profileLock");
@@ -804,8 +802,8 @@ stopProfiling(void)
 {
 #ifdef MALprofiler
 	malProfileMode = FALSE;
-	offlineProfiling= FALSE;
-	cachedProfiling= FALSE;
+	offlineProfiling = FALSE;
+	cachedProfiling = FALSE;
 	closeProfilerStream();
 #endif
 	return MAL_SUCCEED;
@@ -846,15 +844,15 @@ int
 instrFilter(InstrPtr pci, str mod, str fcn)
 {
 #ifdef MALprofiler
-	if (pci && getFunctionId(pci) &&  fcn && mod &&
-		(*fcn == '*' || fcn== getFunctionId(pci))  &&
-		(*mod == '*' || mod== getModuleId(pci))
-	)
+	if (pci && getFunctionId(pci) && fcn && mod &&
+		(*fcn == '*' || fcn == getFunctionId(pci)) &&
+		(*mod == '*' || mod == getModuleId(pci))
+		)
 		return 1;
 #else
-	(void) pci;
-	(void) mod;
-	(void) fcn;
+	(void)pci;
+	(void)mod;
+	(void)fcn;
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
 #endif
 	return 0;
@@ -869,16 +867,17 @@ static str modFilter[32], fcnFilter[32];
 static int topFilter;
 
 void
-setFilterOnBlock(MalBlkPtr mb, str mod, str fcn){
-	int cnt,k,i;
+setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
+{
+	int cnt, k, i;
 	InstrPtr p;
 
 	initProfiler(mb);
 	for (k = 0; k < mb->stop; k++) {
 		p = getInstrPtr(mb, k);
-		cnt =0;
-		for(i=0;i<topFilter; i++)
-		cnt += instrFilter(p,modFilter[i],fcnFilter[i]);
+		cnt = 0;
+		for (i = 0; i < topFilter; i++)
+			cnt += instrFilter(p, modFilter[i], fcnFilter[i]);
 		mb->profiler[k].trace = profileAll || cnt ||
 								(mod && fcn && instrFilter(p, mod, fcn));
 	}
@@ -893,34 +892,34 @@ setFilter(Module cntxt, str mod, str fcn)
 	Symbol t;
 	str matchall = "*";
 
-	(void) cntxt;
-	if ( mod == NULL)
+	(void)cntxt;
+	if (mod == NULL)
 		mod = matchall;
-	if ( fcn == NULL)
+	if (fcn == NULL)
 		fcn = matchall;
 	profileAll = strcmp(mod, "*") == 0 && strcmp(fcn, "*") == 0;
 
 	mal_set_lock(mal_profileLock, "profileLock");
-	if( mod && fcn && topFilter<32){
-		modFilter[topFilter]= putName(mod,strlen(mod));
-		fcnFilter[topFilter++]= putName(fcn,strlen(fcn));
-	} 
+	if (mod && fcn && topFilter < 32) {
+		modFilter[topFilter] = putName(mod, strlen(mod));
+		fcnFilter[topFilter++] = putName(fcn, strlen(fcn));
+	}
 	while (s != NULL) {
 		if (s->subscope)
 			for (j = 0; j < MAXSCOPE; j++)
 				if (s->subscope[j]) {
-					for (t = s->subscope[j]; t != NULL; t = t->peer){
-						if(t->def )
-							setFilterOnBlock(t->def,mod,fcn);
+					for (t = s->subscope[j]; t != NULL; t = t->peer) {
+						if (t->def)
+							setFilterOnBlock(t->def, mod, fcn);
 					}
 				}
 		s = s->outer;
 	}
 	mal_unset_lock(mal_profileLock, "profileLock");
 #else
-	(void) cntxt;
-	(void) mod;
-	(void) fcn;
+	(void)cntxt;
+	(void)mod;
+	(void)fcn;
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
 #endif
 }
@@ -939,35 +938,35 @@ clrFilter(Module cntxt, str mod, str fcn)
 	Symbol t;
 	MalBlkPtr mb;
 
-	(void) mod;
-	(void) fcn;		/* still unused */
+	(void)mod;
+	(void)fcn;      /* still unused */
 
 	mal_set_lock(mal_profileLock, "profileLock");
-	for(j=0; j<topFilter; j++){
-		modFilter[j]=NULL;
-		fcnFilter[j]=NULL;
+	for (j = 0; j < topFilter; j++) {
+		modFilter[j] = NULL;
+		fcnFilter[j] = NULL;
 	}
-	topFilter=0;
+	topFilter = 0;
 	profileAll = FALSE;
 	while (s != NULL) {
 		if (s->subscope)
 			for (j = 0; j < MAXSCOPE; j++)
 				if (s->subscope[j]) {
 					for (t = s->subscope[j]; t != NULL; t = t->peer) {
-						if(t->def && (mb=t->def)->profiler)
-						for (k = 0; k < t->def->stop; k++)
-						if( instrFilter(getInstrPtr(t->def, k), mod, fcn) ){
-							mb->profiler[k].trace = FALSE;
-						}
+						if (t->def && (mb = t->def)->profiler)
+							for (k = 0; k < t->def->stop; k++)
+								if (instrFilter(getInstrPtr(t->def, k), mod, fcn)) {
+									mb->profiler[k].trace = FALSE;
+								}
 					}
 				}
 		s = s->outer;
 	}
 	mal_unset_lock(mal_profileLock, "profileLock");
 #else
-	(void) cntxt;
-	(void) mod;
-	(void) fcn;
+	(void)cntxt;
+	(void)mod;
+	(void)fcn;
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
 #endif
 }
@@ -979,30 +978,33 @@ in the context of the function to avoid loosing
 track due to optimizers re-assigning names.
 @c
 void
-setFilterVariable(MalBlkPtr mb, int arg){
-	int i,k;
+setFilterVariable(MalBlkPtr mb, int arg)
+{
+	int i, k;
 	InstrPtr p;
 
-	for(i=0; i< mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		for( k=0; k<p->argc; k++)
-		if( getArg(p,k) == arg){
+	for (i = 0; i < mb->stop; i++) {
+		p = getInstrPtr(mb, i);
+		for (k = 0; k < p->argc; k++)
+			if (getArg(p, k) == arg) {
 				initProfiler(mb);
 				mb->profiler[i].trace = TRUE;
-		}
+			}
 	}
 }
+
 void
-clrFilterVariable(MalBlkPtr mb, int arg){
-	int i,k;
+clrFilterVariable(MalBlkPtr mb, int arg)
+{
+	int i, k;
 	InstrPtr p;
 
-	for(i=0; i< mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		for( k=0; k<p->argc; k++)
-		if( getArg(p,k) == arg){
+	for (i = 0; i < mb->stop; i++) {
+		p = getInstrPtr(mb, i);
+		for (k = 0; k < p->argc; k++)
+			if (getArg(p, k) == arg) {
 				mb->profiler[i].trace = FALSE;
-		}
+			}
 	}
 }
 
@@ -1015,42 +1017,43 @@ to avoid disc overflow using profiler.reset().
 All properties identified below are maintained, because this allows
 for easy integration with SQL.
 @c
-static int TRACE_init=0;
-static int TRACE_event=0;
-static BAT *TRACE_id_event=0;
-static BAT *TRACE_id_time=0;
-static BAT *TRACE_id_ticks=0;
-static BAT *TRACE_id_pc=0;
-static BAT *TRACE_id_stmt=0;
-static BAT *TRACE_id_type=0;
-static BAT *TRACE_id_rbytes=0;
-static BAT *TRACE_id_wbytes=0;
-static BAT *TRACE_id_reads=0;
-static BAT *TRACE_id_writes=0;
-static BAT *TRACE_id_thread=0;
-static BAT *TRACE_id_user=0;
+static int TRACE_init = 0;
+static int TRACE_event = 0;
+static BAT *TRACE_id_event = 0;
+static BAT *TRACE_id_time = 0;
+static BAT *TRACE_id_ticks = 0;
+static BAT *TRACE_id_pc = 0;
+static BAT *TRACE_id_stmt = 0;
+static BAT *TRACE_id_type = 0;
+static BAT *TRACE_id_rbytes = 0;
+static BAT *TRACE_id_wbytes = 0;
+static BAT *TRACE_id_reads = 0;
+static BAT *TRACE_id_writes = 0;
+static BAT *TRACE_id_thread = 0;
+static BAT *TRACE_id_user = 0;
 
 BAT *
-TRACEtable(void){
+TRACEtable(void)
+{
 	BAT *t;
 
-	if(initTrace() )
+	if (initTrace())
 		return NULL;
-	t= BATnew(TYPE_str,TYPE_bat,9);
-	if ( t == NULL)
+	t = BATnew(TYPE_str, TYPE_bat, 9);
+	if (t == NULL)
 		return NULL;
-	BUNins(t,"event", &TRACE_id_event->batCacheid, FALSE);
-	BUNins(t,"clk", &TRACE_id_time->batCacheid, FALSE);
-	BUNins(t,"pc", &TRACE_id_pc->batCacheid, FALSE);
-	BUNins(t,"thread", &TRACE_id_thread->batCacheid, FALSE);
-	BUNins(t,"user", &TRACE_id_user->batCacheid, FALSE);
-	BUNins(t,"ticks", &TRACE_id_ticks->batCacheid, FALSE);
-	BUNins(t,"reads", &TRACE_id_reads->batCacheid, FALSE);
-	BUNins(t,"writes", &TRACE_id_writes->batCacheid, FALSE);
-	BUNins(t,"rbytes", &TRACE_id_rbytes->batCacheid, FALSE);
-	BUNins(t,"wbytes", &TRACE_id_wbytes->batCacheid, FALSE);
-	BUNins(t,"type", &TRACE_id_type->batCacheid, FALSE);
-	BUNins(t,"stmt", &TRACE_id_stmt->batCacheid, FALSE);
+	BUNins(t, "event", &TRACE_id_event->batCacheid, FALSE);
+	BUNins(t, "clk", &TRACE_id_time->batCacheid, FALSE);
+	BUNins(t, "pc", &TRACE_id_pc->batCacheid, FALSE);
+	BUNins(t, "thread", &TRACE_id_thread->batCacheid, FALSE);
+	BUNins(t, "user", &TRACE_id_user->batCacheid, FALSE);
+	BUNins(t, "ticks", &TRACE_id_ticks->batCacheid, FALSE);
+	BUNins(t, "reads", &TRACE_id_reads->batCacheid, FALSE);
+	BUNins(t, "writes", &TRACE_id_writes->batCacheid, FALSE);
+	BUNins(t, "rbytes", &TRACE_id_rbytes->batCacheid, FALSE);
+	BUNins(t, "wbytes", &TRACE_id_wbytes->batCacheid, FALSE);
+	BUNins(t, "type", &TRACE_id_type->batCacheid, FALSE);
+	BUNins(t, "stmt", &TRACE_id_stmt->batCacheid, FALSE);
 	return t;
 }
 
@@ -1062,16 +1065,16 @@ TRACEcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "trace_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b ) {
-		if ( b->htype == TYPE_int)
+	if (b) {
+		if (b->htype == TYPE_int)
 			/* old code */
 			BBPreclaim(b);
 		else
 			return b;
 	}
 
-	b = BATnew(TYPE_void, tt, 1<<16);
-	BATseqbase(b,0);
+	b = BATnew(TYPE_void, tt, 1 << 16);
+	BATseqbase(b, 0);
 	if (b == NULL)
 		return NULL;
 
@@ -1086,7 +1089,7 @@ int
 initTrace(void)
 {
 	if (TRACE_init)
-		return 0;		/* already initialized */
+		return 0;       /* already initialized */
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
@@ -1110,29 +1113,30 @@ initTrace(void)
 		TRACE_id_reads == NULL ||
 		TRACE_id_writes == NULL ||
 		TRACE_id_thread == NULL ||
-		TRACE_id_user == NULL 
-	) 
+		TRACE_id_user == NULL
+		)
 		cleanupProfiler();
-	 else
+	else
 		TRACE_init = 1;
-	return TRACE_init ? 0: -1;
+	return TRACE_init ? 0 : -1;
 }
 
-#define CLEANUPprofile(X)  if(X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence= TRANSIENT; } (X)= NULL;
+#define CLEANUPprofile(X)  if (X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence = TRANSIENT; } (X) = NULL;
 str
-cleanupProfiler(){
+cleanupProfiler()
+{
 	mal_set_lock(mal_contextLock, "cleanup");
-	CLEANUPprofile( TRACE_id_event );
-	CLEANUPprofile( TRACE_id_time );
-	CLEANUPprofile( TRACE_id_pc );
-	CLEANUPprofile( TRACE_id_stmt );
-	CLEANUPprofile( TRACE_id_type );
-	CLEANUPprofile( TRACE_id_rbytes );
-	CLEANUPprofile( TRACE_id_wbytes );
-	CLEANUPprofile( TRACE_id_reads );
-	CLEANUPprofile( TRACE_id_writes );
-	CLEANUPprofile( TRACE_id_thread );
-	CLEANUPprofile( TRACE_id_user );
+	CLEANUPprofile(TRACE_id_event);
+	CLEANUPprofile(TRACE_id_time);
+	CLEANUPprofile(TRACE_id_pc);
+	CLEANUPprofile(TRACE_id_stmt);
+	CLEANUPprofile(TRACE_id_type);
+	CLEANUPprofile(TRACE_id_rbytes);
+	CLEANUPprofile(TRACE_id_wbytes);
+	CLEANUPprofile(TRACE_id_reads);
+	CLEANUPprofile(TRACE_id_writes);
+	CLEANUPprofile(TRACE_id_thread);
+	CLEANUPprofile(TRACE_id_user);
 	TRACE_init = 0;
 	mal_unset_lock(mal_contextLock, "cleanup");
 	return MAL_SUCCEED;
@@ -1142,7 +1146,7 @@ void
 clearTrace(void)
 {
 	if (TRACE_init == 0)
-		return;		/* not initialized */
+		return;     /* not initialized */
 	mal_set_lock(mal_contextLock, "cleanup");
 	/* drop all trace tables */
 	BBPclear(TRACE_id_event->batCacheid);
@@ -1155,7 +1159,7 @@ clearTrace(void)
 	BBPclear(TRACE_id_user->batCacheid);
 	BBPclear(TRACE_id_reads->batCacheid);
 	BBPclear(TRACE_id_writes->batCacheid);
-	TRACE_init= 0;
+	TRACE_init = 0;
 	initTrace();
 	mal_unset_lock(mal_contextLock, "cleanup");
 }
@@ -1195,24 +1199,24 @@ getTrace(str nme)
 int
 getTraceType(str nme)
 {
-	if (initTrace() )
+	if (initTrace())
 		return TYPE_any;
 	if (strcmp(nme, "time") == 0)
-		return newBatType(TYPE_void,TYPE_str);
+		return newBatType(TYPE_void, TYPE_str);
 	if (strcmp(nme, "ticks") == 0)
-		return newBatType(TYPE_void,TYPE_lng);
+		return newBatType(TYPE_void, TYPE_lng);
 	if (strcmp(nme, "pc") == 0)
-		return newBatType(TYPE_void,TYPE_str);
+		return newBatType(TYPE_void, TYPE_str);
 	if (strcmp(nme, "thread") == 0)
-		return newBatType(TYPE_void,TYPE_int);
+		return newBatType(TYPE_void, TYPE_int);
 	if (strcmp(nme, "stmt") == 0)
-		return newBatType(TYPE_void,TYPE_str);
+		return newBatType(TYPE_void, TYPE_str);
 	if (strcmp(nme, "rbytes") == 0)
-		return newBatType(TYPE_void,TYPE_lng);
+		return newBatType(TYPE_void, TYPE_lng);
 	if (strcmp(nme, "wbytes") == 0)
-		return newBatType(TYPE_void,TYPE_lng);
-	if (strcmp(nme, "reads") == 0 || strcmp(nme,"writes")== 0)
-		return newBatType(TYPE_void,TYPE_lng);
+		return newBatType(TYPE_void, TYPE_lng);
+	if (strcmp(nme, "reads") == 0 || strcmp(nme, "writes") == 0)
+		return newBatType(TYPE_void, TYPE_lng);
 	return TYPE_any;
 }
 
@@ -1223,7 +1227,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	/* static struct Mallinfo prevMalloc; */
 	static int eventcounter = 0;
 	char buf[1024];
-	int tid= (int) THRgettid();
+	int tid = (int)THRgettid();
 	lng v = 0;
 
 #ifdef HAVE_TIMES
@@ -1233,10 +1237,10 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	/* struct Mallinfo infoMalloc; */
 #ifdef HAVE_SYS_RESOURCE_H
 	struct rusage infoUsage;
-	static struct rusage   prevUsage; 
+	static struct rusage prevUsage;
 #endif
 	str stmt, c;
-	InstrPtr pci= getInstrPtr(mb,pc);
+	InstrPtr pci = getInstrPtr(mb, pc);
 
 	if (delayswitch > 0) {
 		/* first call to profiled */
@@ -1246,7 +1250,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
-	if (!( profileAll || mb->profiler[pc].trace ) )
+	if (!(profileAll || mb->profiler[pc].trace))
 		return;
 #ifdef HAVE_TIMES
 	times(&newTms);
@@ -1256,29 +1260,30 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
 	mal_set_lock(mal_profileLock, "profileLock");
-	if ( initTrace() || TRACE_init == 0){
+	if (initTrace() || TRACE_init == 0) {
 		mal_unset_lock(mal_profileLock, "profileLock");
 		return;
 	}
 
 	/* update the Trace tables */
-	snprintf(buf, 1024, "%s.%s[%d]", 
-		getModuleId(getInstrPtr(mb, 0)), 
+	snprintf(buf, 1024, "%s.%s[%d]",
+		getModuleId(getInstrPtr(mb, 0)),
 		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
 	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
-	
+
 	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
 
 	TRACE_id_user = BUNappend(TRACE_id_user, &idx, FALSE);
-	
+
 	TRACE_id_event = BUNappend(TRACE_id_event, &TRACE_event, FALSE);
 	TRACE_event++;
 
-	{	char *tbuf, *c;
+	{
+		char *tbuf, *c;
 
-		tbuf= ctime(&mb->profiler[pc].clock);
+		tbuf = ctime(&mb->profiler[pc].clock);
 		c = strchr(tbuf, '\n');
-		if (c) 
+		if (c)
 			c[-5] = 0;
 		TRACE_id_time = BUNappend(TRACE_id_time, tbuf, FALSE);
 	}
@@ -1289,52 +1294,53 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
 	c = stmt;
 
-	while (c && *c && (isspace((int) *c) || *c == '!'))
+	while (c && *c && (isspace((int)*c) || *c == '!'))
 		c++;
 	TRACE_id_stmt = BUNappend(TRACE_id_stmt, c, FALSE);
 
-	{	char abuf[BUFSIZ], *tpe;
+	{
+		char abuf[BUFSIZ], *tpe;
 		int i, j;
-		abuf[0]=0;
-		for ( i= 0; i< pci->retc; i++)
-		if( getArgType(mb,pci,i) != TYPE_void ){
-			j = (int) strlen(abuf);
-			tpe= getTypeName(getArgType(mb,pci,i));
-			snprintf(abuf+j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci,i)),tpe, (i<pci->retc-1?", ":""));
-			GDKfree(tpe);
-		}
+		abuf[0] = 0;
+		for (i = 0; i < pci->retc; i++)
+			if (getArgType(mb, pci, i) != TYPE_void) {
+				j = (int)strlen(abuf);
+				tpe = getTypeName(getArgType(mb, pci, i));
+				snprintf(abuf + j, BUFSIZ - j, "%s:%s%s", getVarName(mb, getArg(pci, i)), tpe, (i < pci->retc - 1 ? ", " : ""));
+				GDKfree(tpe);
+			}
 		TRACE_id_type = BUNappend(TRACE_id_type, &abuf, FALSE);
 	}
-	if(stmt) GDKfree(stmt);
-	
+	if (stmt) GDKfree(stmt);
+
 /* The remainder requires their own BATs
-#ifdef HAVE_TIMES
+ #ifdef HAVE_TIMES
 	if( profileCounter[PROFcpu].status ){
-	    log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
-	    log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
-	    log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
-	    log("%d,\t", newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime);
+		log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
+		log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
+		log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
+		log("%d,\t", newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime);
 	}
-#endif
+ #endif
 
 	if( profileCounter[PROFmemory].status ){
-#ifdef HAVE_SYS_RESOURCE_H
-	    log("%d,\t",infoUsage.ru_maxrss);
-#endif
-	    log("%d,\t", infoMalloc.arena-prevMalloc.arena);
-	    log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
-	    log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
-	    log("%d,\t", infoMalloc.hblkhd-prevMalloc.hblkhd);
-	    log("%d,\t", infoMalloc.hblks-prevMalloc.hblks);
-	    log("%d,\t", infoMalloc.fsmblks-prevMalloc.fsmblks);
-	    log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
-	    prevMalloc = infoMalloc;
+ #ifdef HAVE_SYS_RESOURCE_H
+		log("%d,\t",infoUsage.ru_maxrss);
+ #endif
+		log("%d,\t", infoMalloc.arena-prevMalloc.arena);
+		log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
+		log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
+		log("%d,\t", infoMalloc.hblkhd-prevMalloc.hblkhd);
+		log("%d,\t", infoMalloc.hblks-prevMalloc.hblks);
+		log("%d,\t", infoMalloc.fsmblks-prevMalloc.fsmblks);
+		log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
+		prevMalloc = infoMalloc;
 	}
-*/
+ */
 #ifdef HAVE_SYS_RESOURCE_H
-	v = infoUsage.ru_inblock- prevUsage.ru_inblock;
+	v = infoUsage.ru_inblock - prevUsage.ru_inblock;
 	TRACE_id_reads = BUNappend(TRACE_id_reads, &v, FALSE);
-	v = infoUsage.ru_oublock- prevUsage.ru_oublock;
+	v = infoUsage.ru_oublock - prevUsage.ru_oublock;
 	TRACE_id_writes = BUNappend(TRACE_id_writes, &v, FALSE);
 	prevUsage = infoUsage;
 #else
@@ -1344,15 +1350,15 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 /*
 	if( profileCounter[PROFprocess].status ){
-	    log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
-	    log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
-	    log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
-	    log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
-	    log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
-	    prevUsage = infoUsage;
+		log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
+		log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
+		log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
+		log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
+		log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
+		prevUsage = infoUsage;
 	}
-#endif
-*/
+ #endif
+ */
 	TRACE_id_rbytes = BUNappend(TRACE_id_rbytes, &mb->profiler[pc].rbytes, FALSE);
 	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
 
@@ -1365,10 +1371,11 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 The profile vector is added to the MAL block the first time we
 have to safe monitor information.
 @c
-void initProfiler(MalBlkPtr mb){
-	if( mb->profiler) return;
+void initProfiler(MalBlkPtr mb)
+{
+	if (mb->profiler) return;
 	initTrace();
-	mb->profiler = (ProfPtr) GDKzalloc(mb->ssize*sizeof(ProfRecord));
+	mb->profiler = (ProfPtr)GDKzalloc(mb->ssize * sizeof(ProfRecord));
 }
 
 lng
@@ -1406,6 +1413,7 @@ getUserTime()
 	return 0;
 #endif
 }
+
 lng
 getSystemTime()
 {
@@ -1418,24 +1426,23 @@ getSystemTime()
 #endif
 }
 
-
 lng
 getDiskSpace()
 {
 	BAT *b;
-	int i; 
-	lng size=0;
+	int i;
+	lng size = 0;
 
 	for (i = 1; i < BBPsize; i++)
-		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
-			b= BATdescriptor(i);
-			if( b){
+		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
+			b = BATdescriptor(i);
+			if (b) {
 				size += sizeof(BAT);
 				if (!isVIEW(b)) {
 					BUN cnt = BATcount(b);
 
-					size += headsize(b,cnt);
-					size += tailsize(b,cnt);
+					size += headsize(b, cnt);
+					size += tailsize(b, cnt);
 					/* the upperbound is used for the heaps */
 					if (b->hheap)
 						size += b->hheap->size;
