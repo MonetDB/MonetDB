@@ -629,6 +629,18 @@ CMDbbpdecompress(int *ret, int *bid)
 	if (b == 0)
 		throw(MAL, "bbp.compress", INTERNAL_BAT_ACCESS);
 	bn = BATnew(b->htype,b->ttype,BATcount(b));
+	/* copy the properties of the source */
+	bn->hsorted = b->hsorted;
+	bn->tsorted = b->tsorted;
+	bn->hkey = b->hkey;
+	bn->tkey = b->tkey;
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
+	bn->H->dense = b->H->dense;
+	bn->T->dense = b->T->dense;
+	bn->hseqbase = b->hseqbase;
+	bn->tseqbase = b->tseqbase;
+	BATsetcount(bn, BATcount(b));
 
 	if (BATcount(b) ){
 		decomp += CMDdecompressheap(&b->H->heap,&bn->H->heap);
@@ -643,16 +655,6 @@ CMDbbpdecompress(int *ret, int *bid)
 			BBPkeepref(*ret = b->batCacheid);
 			return MAL_SUCCEED;
 		}
-		/* copy the properties of the source */
-		bn->hsorted = b->hsorted;
-		bn->tsorted = b->tsorted;
-		bn->hkey = b->hkey;
-		bn->tkey = b->tkey;
-		bn->H->nonil = b->H->nonil;
-		bn->T->nonil = b->T->nonil;
-		bn->H->dense = b->H->dense;
-		bn->T->dense = b->T->dense;
-		BATsetcount(bn, BATcount(b));
 	}
 	BBPreleaseref(b->batCacheid);
 	BBPkeepref(*ret = bn->batCacheid);
