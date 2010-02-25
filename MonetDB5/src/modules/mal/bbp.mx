@@ -530,12 +530,14 @@ static void
 CMDtruncateheap(Heap *h)
 {
 	char buf[PATHLENGTH];
-	if ( h == 0 || h->filename == 0 || h->storage != STORE_MMAP)
+	if (h == 0 || h->filename == 0 || h->storage != STORE_MMAP)
 		return;
 	/* reduce disk footprint */
-	snprintf(buf,PATHLENGTH,"%s/%s",BATDIR,h->filename);
-	(void) truncate(buf,0);
-	IODEBUG stream_printf(GDKout,"#truncate %s file\n", h->filename);
+	snprintf(buf, PATHLENGTH, "%s/%s", BATDIR, h->filename);
+	if (truncate(buf, 0) != 0) /* must do something with returnvalue */
+		IODEBUG stream_printf(GDKout, "#failed to truncate: %s\n",
+				strerror(errno));
+	IODEBUG stream_printf(GDKout, "#truncate %s file\n", h->filename);
 }
 
 static str
