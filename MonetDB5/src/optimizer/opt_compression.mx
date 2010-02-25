@@ -80,13 +80,16 @@ OPTcompressImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p = old[i];
 		if (getModuleId(p)== sqlRef && (getFunctionId(p) == bindRef) ) {
 			pushInstruction(mb,p);
-			q= newStmt(mb,bbpRef,compressRef);
+			q= newStmt(mb,bbpRef,decompressRef);
 			setArgType(mb,q,0, getArgType(mb,p,0));
+			setVarUDFtype(mb,getArg(q,0));
 			k = getArg(p,0);
 			getArg(p,0)= getArg(q,0);
 			getArg(q,0)= k;
+			q= pushArgument(mb,q,getArg(p,0));
 			p= q;
 			actions++;
+			continue;
 		} 
 		pushInstruction(mb,p);
 	}
