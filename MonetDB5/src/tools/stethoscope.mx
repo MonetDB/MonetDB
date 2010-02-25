@@ -95,94 +95,96 @@ stethoscope -hhost +tis "algebra.*" "bat.*" "group.*" "sql.*" "aggr.*"
 
 static struct {
 	char tag;
-    char *ptag;       /* which profiler group counter is needed */
-    char *name;       /* which logical counter is needed */
-    int status;     /* trace it or not */
+	char *ptag;     /* which profiler group counter is needed */
+	char *name;     /* which logical counter is needed */
+	int status;     /* trace it or not */
 } profileCounter[] = {
-    /*  0  */  {'a', "aggregate", "total count", 0},
-    /*  1  */  {'a', "aggregate", "total ticks", 0},
-    /*  2  */  {'e', "event", "event id", 0},
-    /*  3  */  {'f', "pc", "function", 0},
-    /*  4  */  {'f', "pc", "pc", 0},
-    /*  5  */  {'o', "operation","operation", 0},
-    /*  6  */  {'T', "time", "time stamp", 0},
-    /*  7  */  {'t', "ticks", "usec ticks", 1},
-    /*  8  */  {'c', "cpu", "utime", 0},
-    /*  9  */  {'c', "cpu", "cutime", 0},
-    /*  0  */  {'c', "cpu", "stime", 0},
-    /*  1  */  {'c', "cpu", "cstime", 0},
-    /*  2  */  {'m', "memory", "arena", 0},
-    /*  3  */  {'m', "memory", "ordblks", 0},
-    /*  4  */  {'m', "memory", "smblks", 0},
-    /*  5  */  {'m', "memory", "hblkhd", 0},
-    /*  6  */  {'m', "memory", "hblks", 0},
-    /*  7  */  {'m', "memory", "fsmblks", 0},
-    /*  8  */  {'m', "memory", "uordblks", 0},
-    /*  9  */  {'r', "reads","blk reads", 0},
-    /*  0  */  {'w', "writes","blk writes", 0},
-    /*  1  */  {'b', "rbytes", "rbytes", 0},
-    /*  2  */  {'b', "wbytes", "wbytes", 0},
-    /*  3  */  {'s', "stmt", "stmt", 2},
-    /*  4  */  {'p', "process","pg reclaim", 0},
-    /*  5  */  {'p', "process","pg faults", 0},
-    /*  6  */  {'p', "process","swaps", 0},
-    /*  7  */  {'p', "process","ctxt switch", 0},
-    /*  8  */  {'p', "process","inv switch", 0},
-    /*  9  */  {'i', "thread", "thread", 0},
-    /*  0  */  {'u', "user","user", 0},
-    /*  1  */  {'S', "start","start", 0},
-    /*  2  */  {'y', "type","type", 0},
-    /*  3  */  {0, 0,  0, 0}
+	/*  0  */ { 'a', "aggregate", "total count", 0 },
+	/*  1  */ { 'a', "aggregate", "total ticks", 0 },
+	/*  2  */ { 'e', "event", "event id", 0 },
+	/*  3  */ { 'f', "pc", "function", 0 },
+	/*  4  */ { 'f', "pc", "pc", 0 },
+	/*  5  */ { 'o', "operation", "operation", 0 },
+	/*  6  */ { 'T', "time", "time stamp", 0 },
+	/*  7  */ { 't', "ticks", "usec ticks", 1 },
+	/*  8  */ { 'c', "cpu", "utime", 0 },
+	/*  9  */ { 'c', "cpu", "cutime", 0 },
+	/*  0  */ { 'c', "cpu", "stime", 0 },
+	/*  1  */ { 'c', "cpu", "cstime", 0 },
+	/*  2  */ { 'm', "memory", "arena", 0 },
+	/*  3  */ { 'm', "memory", "ordblks", 0 },
+	/*  4  */ { 'm', "memory", "smblks", 0 },
+	/*  5  */ { 'm', "memory", "hblkhd", 0 },
+	/*  6  */ { 'm', "memory", "hblks", 0 },
+	/*  7  */ { 'm', "memory", "fsmblks", 0 },
+	/*  8  */ { 'm', "memory", "uordblks", 0 },
+	/*  9  */ { 'r', "reads", "blk reads", 0 },
+	/*  0  */ { 'w', "writes", "blk writes", 0 },
+	/*  1  */ { 'b', "rbytes", "rbytes", 0 },
+	/*  2  */ { 'b', "wbytes", "wbytes", 0 },
+	/*  3  */ { 's', "stmt", "stmt", 2 },
+	/*  4  */ { 'p', "process", "pg reclaim", 0 },
+	/*  5  */ { 'p', "process", "pg faults", 0 },
+	/*  6  */ { 'p', "process", "swaps", 0 },
+	/*  7  */ { 'p', "process", "ctxt switch", 0 },
+	/*  8  */ { 'p', "process", "inv switch", 0 },
+	/*  9  */ { 'i', "thread", "thread", 0 },
+	/*  0  */ { 'u', "user", "user", 0 },
+	/*  1  */ { 'S', "start", "start", 0 },
+	/*  2  */ { 'y', "type", "type", 0 },
+	/*  3  */ { 0, 0, 0, 0 }
 };
 
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 
-#define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
-						   dbh?mapi_explain(dbh,stderr):			\
-							   fprintf(stderr,"command failed\n"),	\
+#define die(dbh, hdl) (hdl ? mapi_explain_query(hdl, stderr) :  \
+					   dbh ? mapi_explain(dbh, stderr) :        \
+					   fprintf(stderr, "command failed\n"),     \
 					   exit(-1))
 
 #define doQ(X) \
 	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
-		die(dbh, hdl);
+			 die(dbh, hdl);
 
 void
-usage(){
-	fprintf(stderr,"stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}\n");
-	fprintf(stderr,"-d | --dbname=<database_name>\n");
-	fprintf(stderr,"-u | --user=<user>\n");
-	fprintf(stderr,"-P | --password=<password>\n");
-	fprintf(stderr,"-p | --port=<portnr>\n");
-	fprintf(stderr,"-h | --host=<hostname>\n");
-	fprintf(stderr,"-g | --gnuplot\n");
+usage()
+{
+	fprintf(stderr, "stethoscope [options] +[Ttcmipesrwd] {<mod>.<fcn>}\n");
+	fprintf(stderr, "-d | --dbname=<database_name>\n");
+	fprintf(stderr, "-u | --user=<user>\n");
+	fprintf(stderr, "-P | --password=<password>\n");
+	fprintf(stderr, "-p | --port=<portnr>\n");
+	fprintf(stderr, "-h | --host=<hostname>\n");
+	fprintf(stderr, "-g | --gnuplot\n");
 
-	fprintf(stderr,"The trace options:\n");
-	fprintf(stderr,"    S =Start instruction profiling\n");
-	fprintf(stderr,"    a =aggregates\n");
-	fprintf(stderr,"    e =event\n");
-	fprintf(stderr,"    f =function \n");
-	fprintf(stderr,"    o =operation called\n");
-	fprintf(stderr,"    i =interpreter thread\n");
-	fprintf(stderr,"    T =time\n");
-	fprintf(stderr,"    t =ticks\n");
-	fprintf(stderr,"    c =cpu statistics\n");
-	fprintf(stderr,"    m =memory resources\n");
-	fprintf(stderr,"    r =block reads\n");
-	fprintf(stderr,"    w =block writes\n");
-	fprintf(stderr,"    b =bytes read/written\n");
-	fprintf(stderr,"    s =statement\n");
-	fprintf(stderr,"    y =argument types\n");
-	fprintf(stderr,"    p =pg faults, cntxt switches\n");
-	fprintf(stderr,"    u =user\n");
+	fprintf(stderr, "The trace options:\n");
+	fprintf(stderr, "    S =Start instruction profiling\n");
+	fprintf(stderr, "    a =aggregates\n");
+	fprintf(stderr, "    e =event\n");
+	fprintf(stderr, "    f =function \n");
+	fprintf(stderr, "    o =operation called\n");
+	fprintf(stderr, "    i =interpreter thread\n");
+	fprintf(stderr, "    T =time\n");
+	fprintf(stderr, "    t =ticks\n");
+	fprintf(stderr, "    c =cpu statistics\n");
+	fprintf(stderr, "    m =memory resources\n");
+	fprintf(stderr, "    r =block reads\n");
+	fprintf(stderr, "    w =block writes\n");
+	fprintf(stderr, "    b =bytes read/written\n");
+	fprintf(stderr, "    s =statement\n");
+	fprintf(stderr, "    y =argument types\n");
+	fprintf(stderr, "    p =pg faults, cntxt switches\n");
+	fprintf(stderr, "    u =user\n");
 }
 @-
 Any signal should be captured and turned into a graceful
 termination of the profiling session.
 @c
 void
-stopListening(int i){
-	(void) i;
+stopListening(int i)
+{
+	(void)i;
 	signal(i, SIG_IGN);
 	doQ("profiler.setNone();");
 	doQ("profiler.stop();");
@@ -190,110 +192,112 @@ stopListening(int i){
 	exit(0);
 }
 
-void setCounter(char *nme){
-	int i,k=1;
-	
-	for(i=0; profileCounter[i].tag; i++)
-		profileCounter[i].status=0;
+void setCounter(char *nme)
+{
+	int i, k = 1;
 
-	for( ; *nme; nme++)
-	for(i=0; profileCounter[i].tag; i++)
-		if( profileCounter[i].tag == *nme)
-			profileCounter[i].status= k++;
+	for (i = 0; profileCounter[i].tag; i++)
+		profileCounter[i].status = 0;
+
+	for (; *nme; nme++)
+		for (i = 0; profileCounter[i].tag; i++)
+			if (profileCounter[i].tag == *nme)
+				profileCounter[i].status = k++;
 }
+
 char *
-getFieldName(int k){
+getFieldName(int k)
+{
 	int i;
-	for(i=0; profileCounter[i].tag; i++)
-		if( profileCounter[i].status== k)
+	for (i = 0; profileCounter[i].tag; i++)
+		if (profileCounter[i].status == k)
 			return profileCounter[i].name;
 	return "unknown";
 }
 
 void
-plottemplate(int * colind, int n){
-	FILE *pl,*pld;
-	double sz= 1.0/n;
+plottemplate(int * colind, int n)
+{
+	FILE *pl, *pld;
+	double sz = 1.0 / n;
 	int i;
 
-	pl= fopen("stet.gp","w");
-	fprintf(pl,"load \"stet_dyn.gp\"\n");
-	fprintf(pl,"pause 1\nreread \n");
-	fclose(pl); 
+	pl = fopen("stet.gp", "w");
+	fprintf(pl, "load \"stet_dyn.gp\"\n");
+	fprintf(pl, "pause 1\nreread \n");
+	fclose(pl);
 /*	pld= fopen("stet_dyn_tmpl.gp","w");*/
-	pld= fopen("stet_dyn.gp","w");
-	fprintf(pld,"set multiplot\n\n");
-	for(i=0;i<n;i++){
-		fprintf(pld,"set size 1.0, 1.0 \nset origin 0.0, 0.0 \n");
-		fprintf(pld,"set size 1.0,%4.2f\n",sz);
-		fprintf(pld,"set origin 0.0,%4.2f\n",1-(i+1)*sz);
-		fprintf(pld,"set ylabel \"%s\"\n", profileCounter[colind[i]].name);
-		fprintf(pld,"unset key\n");
-		fprintf(pld,"plot \"stet_cur.dat\" using 1:%d with boxes fs solid 0.7\n\n",i+2);
+	pld = fopen("stet_dyn.gp", "w");
+	fprintf(pld, "set multiplot\n\n");
+	for (i = 0; i < n; i++) {
+		fprintf(pld, "set size 1.0, 1.0 \nset origin 0.0, 0.0 \n");
+		fprintf(pld, "set size 1.0,%4.2f\n", sz);
+		fprintf(pld, "set origin 0.0,%4.2f\n", 1 - (i + 1) * sz);
+		fprintf(pld, "set ylabel \"%s\"\n", profileCounter[colind[i]].name);
+		fprintf(pld, "unset key\n");
+		fprintf(pld, "plot \"stet_cur.dat\" using 1:%d with boxes fs solid 0.7\n\n", i + 2);
 	}
-	fprintf(pld,"\nunset multiplot"); 
-	
-	fclose(pld); 
+	fprintf(pld, "\nunset multiplot");
 
-	}
-
+	fclose(pld);
+}
 
 
 int main(int argc, char **argv)
 {
-	int a=1,i=1,ln=1;
+	int a = 1, i = 1, ln = 1;
 	char * response, *x;
 	char buf[BUFSIZ];
 	char *mod, *fcn;
-	char *host="localhost";
-	int	portnr= 50000;
-	char *dbname= NULL;
-	char *user= "monetdb";
-	char *password= "monetdb";
+	char *host = "localhost";
+	int portnr = 50000;
+	char *dbname = NULL;
+	char *user = "monetdb";
+	char *password = "monetdb";
 	FILE *d;
 	char cmd[100];
-	int colind[30],colcnt=0;
+	int colind[30], colcnt = 0;
 	stream *s;
-	int gnuplot=FALSE;
+	int gnuplot = FALSE;
 
-    static struct option long_options[8] = {
-        {"dbname", 1, 0, 'd'},
-        {"user", 1, 0, 'u'},
-        {"password", 1, 0, 'P'},
-        {"port", 1, 0, 'p'},
-        {"host", 1, 0, 'h'},
-        {"help", 0, 0, '?'},
-        {"gnuplot", 1, 0, 'g'},
-        {0, 0, 0, 0}
-    };
-	for(;;){
-		int option_index=0;
-		int c=  getopt_long(argc, argv, "d:u:P:p:?:h:g",
-                    long_options, &option_index);
-		if( c == -1)
+	static struct option long_options[8] = {
+		{ "dbname", 1, 0, 'd' },
+		{ "user", 1, 0, 'u' },
+		{ "password", 1, 0, 'P' },
+		{ "port", 1, 0, 'p' },
+		{ "host", 1, 0, 'h' },
+		{ "help", 0, 0, '?' },
+		{ "gnuplot", 1, 0, 'g' },
+		{ 0, 0, 0, 0 }
+	};
+	while (1) {
+		int option_index = 0;
+		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g",
+			long_options, &option_index);
+		if (c == -1)
 			break;
-		switch(c){
+		switch (c) {
 		case 'd':
-			dbname= optarg;
+			dbname = optarg;
 			break;
 		case 'u':
-			user= optarg;
+			user = optarg;
 			break;
 		case 'P':
-			password= optarg;
+			password = optarg;
 			break;
 		case 'p':
-			portnr= atol(optarg);
+			portnr = atol(optarg);
 			break;
 		case 'g':
-			gnuplot= TRUE;
+			gnuplot = TRUE;
 			break;
 		case 'h':
 			if (strcmp(long_options[option_index].name, "help") == 0) {
 				printf("help\n");
 			}
 			if (strcmp(long_options[option_index].name, "host") == 0) {
-				host= optarg;
+				host = optarg;
 				break;
 			}
 		default:
@@ -302,9 +306,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	a= optind;
-	if(argc>1 && a<argc && argv[a][0]=='+'){
-		setCounter(argv[a]+1);
+	a = optind;
+	if (argc > 1 && a < argc && argv[a][0] == '+') {
+		setCounter(argv[a] + 1);
 		a++;
 	} else
 		setCounter("TtiesS");
@@ -325,22 +329,22 @@ int main(int argc, char **argv)
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_trace(dbh,1);*/
-	if( dbname)
-		printf("#connection with server for '%s' established\n",dbname);
+	if (dbname)
+		printf("#connection with server for '%s' established\n", dbname);
 	else
 		printf("#connection with server established\n");
 
 	/* set counters */
-	for(i=0; profileCounter[i].tag; i++){
+	for (i = 0; profileCounter[i].tag; i++) {
 		/* deactivate any left over counter first */
-		snprintf(buf,BUFSIZ,"profiler.deactivate(\"%s\");",
+		snprintf(buf, BUFSIZ, "profiler.deactivate(\"%s\");",
 			profileCounter[i].ptag);
 		doQ(buf);
-		snprintf(buf,BUFSIZ,"profiler.activate(\"%s\");", profileCounter[i].ptag);
-		if( profileCounter[i].status){
+		snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");", profileCounter[i].ptag);
+		if (profileCounter[i].status) {
 			doQ(buf);
-			colind[colcnt++]=i;
-			printf("#%s\n",buf);
+			colind[colcnt++] = i;
+			printf("#%s\n", buf);
 		}
 	}
 
@@ -348,9 +352,9 @@ int main(int argc, char **argv)
 	for(j=0;j<colcnt;j++)
 		printf("%d\t",colind[j]);
 	printf("\n");  */
-	
+
 	/* Set Filters */
-	snprintf(buf,BUFSIZ,"profiler.openStream(\"%s\", %d);", host, portnr);
+	snprintf(buf, BUFSIZ, "profiler.openStream(\"%s\", %d);", host, portnr);
 	doQ(buf);
 
 	if ((s = udp_rastream(host, portnr, "profileStream")) == NULL) {
@@ -360,63 +364,62 @@ int main(int argc, char **argv)
 
 	doQ("profiler.setNone();");
 
-	if(a== argc) {
+	if (a == argc) {
 		doQ("profiler.setAll();");
 	} else
-	for(; a <argc; a++){
-		char *c;
-		c= strchr(argv[a],'.');
-		if(  c ){
-			mod= argv[a];
-			if( mod==c) mod="*";
-			fcn= c+1;
-			if( *fcn == 0) fcn="*";
-			*c=0;
-		} else {
-			fcn= argv[a];
-			mod= "*";
+		for (; a < argc; a++) {
+			char *c;
+			c = strchr(argv[a], '.');
+			if (c) {
+				mod = argv[a];
+				if (mod == c) mod = "*";
+				fcn = c + 1;
+				if (*fcn == 0) fcn = "*";
+				*c = 0;
+			} else {
+				fcn = argv[a];
+				mod = "*";
+			}
+			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
+			printf("%s\n", buf);
+			doQ(buf);
 		}
-		snprintf(buf,BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");",mod,fcn);
-		printf("%s\n",buf);
-		doQ(buf);
-	}
 	doQ("profiler.start();");
 
-	if(gnuplot)
-		plottemplate(colind,colcnt);
+	if (gnuplot)
+		plottemplate(colind, colcnt);
 
 	printf("#ready to receive events\n");
-	while( stream_read(s, buf, 1, BUFSIZ) ) {
+	while (stream_read(s, buf, 1, BUFSIZ)) {
 		char *e;
 		response = buf;
-		while((e=strchr(response,'\n')) != NULL) {
+		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			printf("%s\n", response);
-			x=strchr(response,'[');
-			if (gnuplot && x){
-				d= fopen("stet.dat","a+");
-				fprintf(d,"%d\t",ln++);
-				for(;*x!='\0';x++)
-					if( *x == '"') break; /* stop at first string */
-					else
-					if (strchr("[],\"",*x)==NULL)
-						fprintf(d,"%c",*x);
-				fprintf(d,"\n");
+			x = strchr(response, '[');
+			if (gnuplot && x) {
+				d = fopen("stet.dat", "a+");
+				fprintf(d, "%d\t", ln++);
+				for (; *x != '\0'; x++)
+					if (*x == '"') break;  /* stop at first string */
+					else if (strchr("[],\"", *x) == NULL)
+						fprintf(d, "%c", *x);
+				fprintf(d, "\n");
 				fclose(d);
-				
-			/* update plot file */
-						
+
+				/* update plot file */
+
 				if (ln > 20)
-					sprintf(cmd,"sed '1, %d d' stet.dat > stet_cur.dat",ln-20);
-				else 
-					sprintf(cmd,"cp stet.dat stet_cur.dat");
-			/*	printf("%s \n",cmd);*/
+					sprintf(cmd, "sed '1, %d d' stet.dat > stet_cur.dat", ln - 20);
+				else
+					sprintf(cmd, "cp stet.dat stet_cur.dat");
+				/*	printf("%s \n",cmd);*/
 				if (system(cmd) != 0)
 					fprintf(stderr, "command `%s' failed\n", cmd);
 			}
-			response = e+1;
+			response = e + 1;
 		}
-	} 
+	}
 
 	doQ("profiler.closeStream();");
 	if (mapi_error(dbh) != MOK)
