@@ -21,12 +21,12 @@ Column stores mostly exploit some form of compression to reduce the
 footprint on disk and to improve disk/memory/cache bandwidth at 
 the expense of cpu/memory cycles. 
 
-A naive approach is take a (preferrably lightweight) compression
-algorithm and deplay it against the units of access, e.g. disk/buffers.
+A naive approach is to take a (preferrably lightweight) compression
+algorithm and deploy it against the units of access, e.g. disk/buffers.
 In MonetDB our granularity is a BAT, which therefore forms the basis
 for (de)compressed access.
 
-The optimizer (first implementation) simple injects call to the
+This optimizer simple injects calls to a
 decompression routine to exploit any available compressed image
 in favor of accessing the expanded version. This would allow
 for experimentation with readonly databases.
@@ -39,6 +39,20 @@ becomes
  b:bat[:oid,:int]:= bbp.decompress(_1);
 @end verbatim
 
+The benefit from this approach should not be overestimated.
+For example, accessing corresponding attributes for a small result set
+stil calls for a complete decoding of the complete column. 
+The recycler would come in handy to avoid this overhead over multiple
+queries.
+Therefore, it would be most appropriate for porting a database
+and to decompress its columns once. Or to reduce the disk footprint
+for tables of little interest.
+
+The optimizer merely functions as an example on how to deal with
+foreign storage schemes, which are converted into the BAT format
+as part of a binding phase. The routines CMDbbpcompress and CMDbbpdecompress
+in the bbp module contains further details on how to extract the
+data and move it into a temporary memory mapped BAT.
 @mal
 pattern optimizer.compression():str
 address OPTcompress;
