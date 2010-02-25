@@ -572,7 +572,7 @@ CMDdecompressheap(Heap *h, Heap *hn)
 	stream *fp;
 	char buf[PATHLENGTH];
 
-	if ( h==0  || hn == 0 || h->storage != STORE_MMAP || hn->storage != STORE_MMAP)
+	if ( h==0  || hn == 0 || h->storage != STORE_MMAP  || h->filename == 0)
 		return 0;
 
 	GDKfilepath(buf, BATDIR, h->filename, "gz");
@@ -585,6 +585,10 @@ CMDdecompressheap(Heap *h, Heap *hn)
 			(ssize_t) h->size != stream_read(fp, (void*) hn->base,1, h->size))
 			return -999;
 		hn->free = h->free;
+		hn->parentid = h->parentid;
+		hn->newstorage = h->newstorage;
+		hn->hashash = h->hashash;
+		assert(h->copied == 0);
 		IODEBUG stream_printf(GDKout,"#decompress %s size " SZFMT" \n", buf, h->size);
 		close_stream(fp);
 		return 1;

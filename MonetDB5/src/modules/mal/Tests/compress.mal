@@ -39,9 +39,9 @@ io.printf("Checksum difference should be zero %f\n",s);
 #bbp.truncate(b);
 #bbp.expand(b);
 
-functionq qry();
+function qry();
 	b:bat[:oid,:int]:= sql.bind("sys","tab","col",0);
 end bind;
-optimizer.compress("user","qry");
+optimizer.compression("user","qry");
 mdb.list("user","qry");
 
