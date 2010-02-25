@@ -572,63 +572,28 @@ CMDdecompressheap(Heap *h, Heap *hn)
 	stream *fp;
 	char buf[PATHLENGTH];
 
-	if ( h==0  || hn == 0 || h->storage != STORE_MMAP)
+	if ( h==0  || hn == 0 || h->storage != STORE_MMAP || hn->storage != STORE_MMAP)
 		return 0;
 
-	if (h->base){
-		/* simlpe HEAPcopy */
-	}
-	if ( h->filename){
-			GDKfilepath(buf, BATDIR, h->filename, "gz");
-			fp = open_gzrastream(buf);
-			if ( fp ){
-				if ( HEAPextend(hn,h->size) < 0)
-					return -999;
-				/* skip header */
-				if ( stream_read(fp, (void*) hn->base,1, 2) != 2 ||
-				    (ssize_t) h->size != stream_read(fp, (void*) hn->base,1, h->size))
-					return -999;
-				hn->free = h->free;
-				IODEBUG stream_printf(GDKout,"#decompress %s size " SZFMT" \n", buf, h->size);
-				close_stream(fp);
-				return 1;
-			}
+	GDKfilepath(buf, BATDIR, h->filename, "gz");
+	fp = open_gzrastream(buf);
+	if ( fp ){
+		if ( HEAPextend(hn,h->size) < 0)
+			return -999;
+		/* skip header */
+		if ( stream_read(fp, (void*) hn->base,1, 2) != 2 ||
+			(ssize_t) h->size != stream_read(fp, (void*) hn->base,1, h->size))
+			return -999;
+		hn->free = h->free;
+		IODEBUG stream_printf(GDKout,"#decompress %s size " SZFMT" \n", buf, h->size);
+		close_stream(fp);
+		return 1;
 	}
 #else
 	(void) h;
 	(void) hn;
 #endif
 	return 0;
-}
-
-static str
-CMDexpandheap(Heap *h)
-{
-#ifdef HAVE_LIBZ
-	stream *fp;
-	char buf[PATHLENGTH];
-
-	if ( h==0 || h->filename == 0 || h->storage != STORE_MMAP )
-		return MAL_SUCCEED;
-
-	GDKfilepath(buf, BATDIR, h->filename, "gz");
-	fp = open_gzrstream(buf);
-	if ( fp ){
-		if ( HEAPextend(h,h->size) < 0)
-			throw(MAL,"bbp.expand",MAL_MALLOC_FAIL);
-		/* skip header */
-		if ( stream_read(fp, (void*) h->base,1, 2) != 2 ||
-		   (ssize_t) h->size != stream_read(fp, (void*) h->base,1, h->size))
-			throw(MAL,"bbp.expand","failed to decompress");
-		MT_msync(h->base, 0, h->size, MMAP_SYNC);
-		IODEBUG stream_printf(GDKout,"#expand %s size " SZFMT" \n", buf, h->size);
-		close_stream(fp);
-		GDKunlink(BATDIR,h->filename,"gz");
-	}
-#else
-	(void) h;
-#endif
-	return MAL_SUCCEED;
 }
 
 str
@@ -678,8 +643,18 @@ CMDbbpdecompress(int *ret, int *bid)
 			BBPkeepref(*ret = b->batCacheid);
 			return MAL_SUCCEED;
 		}
+		/* copy the properties of the source */
+		bn->hsorted = b->hsorted;
+		bn->tsorted = b->tsorted;
+		bn->hkey = b->hkey;
+		bn->tkey = b->tkey;
+		bn->H->nonil = b->H->nonil;
+		bn->T->nonil = b->T->nonil;
+		bn->H->dense = b->H->dense;
+		bn->T->dense = b->T->dense;
 		BATsetcount(bn, BATcount(b));
 	}
+	BBPreleaseref(b->batCacheid);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -696,6 +671,7 @@ CMDbbptruncate(int *ret, int *bid)
 	CMDtruncateheap(b->H->vheap);
 	CMDtruncateheap(&b->T->heap);
 	CMDtruncateheap(b->T->vheap);
+	HASHdestroy(b);
 	BBPkeepref(*ret = *bid);
 	return MAL_SUCCEED;
 }
@@ -703,15 +679,19 @@ str
 CMDbbpexpand(int *ret, int *bid)
 {
 	BAT *b;
+	int decomp = 0;
+
 	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
 		throw(MAL, "bbp.expand", INTERNAL_BAT_ACCESS);
-	CMDexpandheap(&b->H->heap);
-	CMDexpandheap(b->H->vheap);
-	CMDexpandheap(&b->T->heap);
-	CMDexpandheap(b->T->vheap);
+	decomp += CMDdecompressheap(&b->H->heap,&b->H->heap);
+	decomp += CMDdecompressheap(b->H->vheap,b->H->vheap);
+	decomp += CMDdecompressheap(&b->T->heap,&b->T->heap);
+	decomp += CMDdecompressheap(b->T->vheap,b->T->vheap);
+	if (decomp < 0)
+		throw(MAL,"bbp.expand",MAL_MALLOC_FAIL);
 	BBPkeepref(*ret = *bid);
-	throw(MAL, "bbp.expand", "NYI");
+	return MAL_SUCCEED;
 }
 @-
 Moving BATs in/out of the box also involves
