@@ -57,7 +57,7 @@ Event selector:
     w =block writes
     b =bytes read/written
     s =statement
-	y = argument types
+	y =argument types
 	p =pgfaults,cntxtswitches
 	S =Start profiling instruction
 @end verbatim
@@ -67,11 +67,11 @@ Ideally, the stream of events should be piped into a
 A short term solution is to generate a gnuplot script
 to display the numerics organized as time lines.
 With a backup of the event lists give you all the
-information needed for a descent post-mortem analysis.
+information needed for a decent post-mortem analysis.
 
 A convenient way to watch most of the SQL interaction
 you may use the command:
-stethoscope  +tis algebra.* bat.* group.* sql.* aggr.*
+stethoscope -hhost +tis "algebra.*" "bat.*" "group.*" "sql.*" "aggr.*"
 @{
 @c
 #include "mal_config.h"
@@ -85,7 +85,7 @@ stethoscope  +tis algebra.* bat.* group.* sql.* aggr.*
 #include <unistd.h>
 
 #ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
+# include "monet_getopt.h"
 #else
 # ifdef HAVE_GETOPT_H
 #  include "getopt.h"
