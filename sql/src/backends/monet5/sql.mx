@@ -797,11 +797,11 @@ pattern cluster2(sch:str, tbl:str)
 address SQLcluster2
 comment "Cluster the columns of a table on the (first) primary key";
 
-pattern dictionary(sch:str, tbl:str):void
-address SQLdictcompress
+pattern newdictionary(sch:str, tbl:str):void
+address SQLnewDictionary
 comment "Perform dictionary compression on a table";
-pattern dictionary(sch:str, tbl:str):void
-address SQLdictdecompress
+pattern dropdictionary(sch:str, tbl:str):void
+address SQLdropDictionary
 comment "Perform dictionary decompression on a table";
 
 pattern gzcompress(sch:str, tbl:str):void
@@ -1070,8 +1070,8 @@ sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
 sql5_export str not_unique_oids(bat *ret, bat *bid);
 sql5_export str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLdictcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLdictdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -5015,10 +5015,10 @@ Take a SQL table and compress its columns using the dictionary compression schem
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 	return MAL_SUCCEED;
 @c
-str SQLdictcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:compression(DICTcompress(&ret, &nme, &b->batCacheid))@
 }
-str SQLdictdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:compression(DICTdecompress(&ret, &nme))@
 }
 @-
@@ -5032,7 +5032,8 @@ LZ compression is inherited from the underlying stream implementation.
 	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
 	node *o;
-	int ret;
+	int ret,i;
+	char buf[PATHLENGTH], *sbuf= buf;
 
 	if (msg)
 		return msg;
@@ -5049,25 +5050,28 @@ LZ compression is inherited from the underlying stream implementation.
 		BAT *b;
 		sql_column	*c = o->data;
 
-		b = store_funcs.bind_col(tr, c, 0);
-		if (b == NULL)
-			throw(MAL,"sql.@2","Can not access descriptor");
-		msg = @1;
-		BBPreleaseref(b->batCacheid);
+		for ( i= 0; i<3; i++) {
+			b = store_funcs.bind_col(tr, c, i);
+			if (b == NULL)
+				throw(MAL,"sql.@2","Can not access descriptor");
+			snprintf(buf,PATHLENGTH,"%s_%s_%s_%d", *sch, *tbl, c->base.name,i);
+			msg = @1;
+			BBPreleaseref(b->batCacheid);
+		}
 	}
 	return MAL_SUCCEED;
 @c
 str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbpcompress(&ret, &b->batCacheid),gzcompress)@
+	@:gzcompression(CMDbbpcompress(&ret, &b->batCacheid,&sbuf),gzcompress)@
 }
 str SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbpdecompress(&ret, &b->batCacheid),gzdecompress)@
+	@:gzcompression(CMDbbpdecompress(&ret, &b->batCacheid,&sbuf),gzdecompress)@
 }
 str SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbptruncate(&ret, &b->batCacheid),truncate)@
+	@:gzcompression(CMDbbptruncate(&ret, &b->batCacheid,&sbuf),truncate)@
 }
 str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbpexpand(&ret, &b->batCacheid),expand)@
+	@:gzcompression(CMDbbpexpand(&ret, &b->batCacheid,&sbuf),expand)@
 }
 @- Shredding RDF documents through SQL
 Wrapper around the RDF shredder of the rdf module of M5. The first time
