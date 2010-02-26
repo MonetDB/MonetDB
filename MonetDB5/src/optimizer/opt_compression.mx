@@ -51,7 +51,7 @@ for tables of little interest.
 Furthermore, the BAT id associated with a SQL column will change
 under updates. This means you can effectively only use it in
 readonly mode. Create database, load it, compress it, and 
-one read it afterwards.
+only read it afterwards.
 
 The optimizer merely functions as an example on how to deal with
 foreign storage schemes, which are converted into the BAT format
