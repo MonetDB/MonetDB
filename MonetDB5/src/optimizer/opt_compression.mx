@@ -36,7 +36,7 @@ b:bat[:oid,:int]:= sql.bind("sys","tab","col",0);
 becomes 
 @verbatim
  _1:bat[:oid,:int]:= sql.bind("sys","tab","col",0);
- b:bat[:oid,:int]:= bbp.decompress(_1);
+ b:bat[:oid,:int]:= bbp.decompress(_1,"sys_tab_col_0");
 @end verbatim
 
 Caveats. The benefit from this approach should not be overestimated.
@@ -44,14 +44,12 @@ For example, accessing corresponding attributes for a small result set
 stil calls for a complete decoding of the complete column. 
 The recycler would come in handy to avoid this overhead over multiple
 queries.
-Therefore, it would be most appropriate for porting a database
-and to decompress its columns once. Or to reduce the disk footprint
-for tables of little interest.
 
 Furthermore, the BAT id associated with a SQL column will change
 under updates. This means you can effectively only use it in
 readonly mode. Create database, load it, compress it, and 
-only read it afterwards.
+only read it afterwards. Therefore, we inject a symbolic name,
+which in the context of SQL would be unique.
 
 The optimizer merely functions as an example on how to deal with
 foreign storage schemes, which are converted into the BAT format
@@ -86,6 +84,7 @@ OPTcompressImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, actions=0, limit, k;
 	InstrPtr *old, q;
+	char buf[PATHLENGTH];
 
 	(void) stk;
 	(void) cntxt;
@@ -106,6 +105,12 @@ OPTcompressImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			getArg(p,0)= getArg(q,0);
 			getArg(q,0)= k;
 			q= pushArgument(mb,q,getArg(p,0));
+			snprintf(buf,PATHLENGTH,"%s_%s_%s_%d",
+				getVarConstant(mb,getArg(p,1)).val.sval,
+				getVarConstant(mb,getArg(p,2)).val.sval,
+				getVarConstant(mb,getArg(p,3)).val.sval,
+				getVarConstant(mb,getArg(p,4)).val.ival);
+			q= pushStr(mb,q,buf);
 			p= q;
 			actions++;
 			continue;
