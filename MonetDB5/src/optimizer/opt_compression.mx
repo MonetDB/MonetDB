@@ -39,7 +39,7 @@ becomes
  b:bat[:oid,:int]:= bbp.decompress(_1);
 @end verbatim
 
-The benefit from this approach should not be overestimated.
+Caveats. The benefit from this approach should not be overestimated.
 For example, accessing corresponding attributes for a small result set
 stil calls for a complete decoding of the complete column. 
 The recycler would come in handy to avoid this overhead over multiple
@@ -47,6 +47,11 @@ queries.
 Therefore, it would be most appropriate for porting a database
 and to decompress its columns once. Or to reduce the disk footprint
 for tables of little interest.
+
+Furthermore, the BAT id associated with a SQL column will change
+under updates. This means you can effectively only use it in
+readonly mode. Create database, load it, compress it, and 
+one read it afterwards.
 
 The optimizer merely functions as an example on how to deal with
 foreign storage schemes, which are converted into the BAT format
