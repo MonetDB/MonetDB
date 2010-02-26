@@ -786,6 +786,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= orderedvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1);\n");
+	BATaccessBegin(l, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(r, USE_TAIL, MMAP_SEQUENTIAL);
 	/*BATaccessBegin(bn, MMAP_SEQUENTIAL);*/
 	BATloop(l, l_cur, l_end) {
@@ -795,6 +796,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		@1put(bn, Tloc(bn,dst));
 		dst++;
 	}
+	BATaccessEnd(l, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(r, USE_TAIL, MMAP_SEQUENTIAL);
 	/*BATaccessEnd(bn, MMAP_SEQUENTIAL);*/
 @c
