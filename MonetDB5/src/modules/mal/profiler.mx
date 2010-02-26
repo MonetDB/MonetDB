@@ -86,6 +86,9 @@ comment "Send the log events to a file, stdout or console";
 pattern openStream(host:str, port:int):void
 address CMDsetProfilerStream
 comment "Send the log events to a stream ";
+pattern openUDPStream():int 
+address CMDopenUDPProfilerStream
+comment "Send the events to opened UDP stream, for which the port number is returned";
 command closeStream():void 
 address CMDcloseProfilerStream
 comment "Stop sending the event records";
@@ -230,6 +233,7 @@ profiler_export str CMDclearTrace(int *res);
 profiler_export str CMDdumpTrace(int *res);
 profiler_export str CMDgetTrace(int *res, str *ev);
 profiler_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDopenUDPProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 profiler_export str CMDcloseProfilerStream(int *res);
 profiler_export str CMDcleanup(int *ret);
 profiler_export str CMDgetEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -327,6 +331,32 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) pc;
 	return openProfilerStream(cntxt->fdout);
 }
+
+str
+CMDopenUDPProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+{
+	stream *s;
+	char host[128];
+	int port;
+	int *ret = (int*)getArgReference(stk, pc, 0);
+	(void)mb;       /* fool compiler */
+	checkProfiler("setProfiler");
+	gethostname(host, 128);
+	for (port = 50010; port < 62010; port++) {
+		if ((s = udp_wastream(host, port, "testStream")) != NULL) {
+			stream_close(s);
+			stream_destroy(s);
+			break;
+		}
+	}
+	if (s == NULL)
+		throw(MAL, "profiler.openUDPStream",
+				"unable to open UDP port: no ports available");
+	setLogStream(cntxt->nspace, host, port);
+	*ret = port;
+	return MAL_SUCCEED;
+}
+
 str
 CMDcloseProfilerStream(int *res)
 {
