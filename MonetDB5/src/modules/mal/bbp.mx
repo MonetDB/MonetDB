@@ -535,9 +535,9 @@ CMDtruncateheap(Heap *h)
 	/* reduce disk footprint */
 	snprintf(buf, PATHLENGTH, "%s/%s", BATDIR, h->filename);
 	if (truncate(buf, 0) != 0) /* must do something with returnvalue */
-		IODEBUG stream_printf(GDKout, "#failed to truncate: %s\n",
+		IODEBUG stream_printf(GDKstdout, "#failed to truncate: %s\n",
 				strerror(errno));
-	IODEBUG stream_printf(GDKout, "#truncate %s file\n", h->filename);
+	IODEBUG stream_printf(GDKstdout, "#truncate %s file\n", h->filename);
 }
 
 static str
@@ -555,7 +555,7 @@ CMDcompressheap(Heap *h)
 				close_stream(fp);
 				throw(MAL,"bbp.compress","compress write error");
 			}
-			IODEBUG stream_printf(GDKout,"#compress %s size " SZFMT" is now compressed\n", buf,h->size);
+			IODEBUG stream_printf(GDKstdout,"#compress %s size " SZFMT" is now compressed\n", buf,h->size);
 			close_stream(fp);
 		}
 	}
@@ -572,24 +572,26 @@ CMDdecompressheap(Heap *h, Heap *hn)
 	stream *fp;
 	char buf[PATHLENGTH];
 
-	if ( h==0  || hn == 0 || h->storage != STORE_MMAP  || h->filename == 0)
+	if ( !h || !hn)
 		return 0;
 
+	if ( h->storage != STORE_MMAP || h->filename == 0)
+		return -9;
+
 	GDKfilepath(buf, BATDIR, h->filename, "gz");
-	fp = open_gzrastream(buf);
-	if ( fp ){
+	fp = open_gzrstream(buf);
+	if ( fp && !stream_errnr(fp)){
 		if ( HEAPextend(hn,h->size) < 0)
 			return -999;
 		/* skip header */
-		if ( stream_read(fp, (void*) hn->base,1, 2) != 2 ||
-			(ssize_t) h->size != stream_read(fp, (void*) hn->base,1, h->size))
+		if ((ssize_t) h->size != stream_read(fp, (void*) hn->base,1, h->size))
 			return -999;
 		hn->free = h->free;
 		hn->parentid = h->parentid;
 		hn->newstorage = h->newstorage;
 		hn->hashash = h->hashash;
 		assert(h->copied == 0);
-		IODEBUG stream_printf(GDKout,"#decompress %s size " SZFMT" \n", buf, h->size);
+		IODEBUG stream_printf(GDKstdout,"#decompress %s size " SZFMT" \n", buf, h->size);
 		close_stream(fp);
 		return 1;
 	}
@@ -610,7 +612,7 @@ CMDbbpcompress(int *ret, int *bid)
 	if (b == 0)
 		throw(MAL, "bbp.compress", INTERNAL_BAT_ACCESS);
 	if ( BATcount(b) ){
-		IODEBUG stream_printf(GDKout,"#compress BAT %d %s \n", *bid, BBP_physical(*bid));
+		IODEBUG stream_printf(GDKstdout,"#compress BAT %d %s \n", *bid, BBP_physical(*bid));
 		if ( (msg = CMDcompressheap(&b->H->heap))  )
 			return msg;
 		if ( (msg = CMDcompressheap(b->H->vheap))  )
@@ -631,39 +633,58 @@ CMDbbpdecompress(int *ret, int *bid)
 
 	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
-		throw(MAL, "bbp.compress", INTERNAL_BAT_ACCESS);
-	bn = BATnew(b->htype,b->ttype,BATcount(b));
-	/* copy the properties of the source */
-	bn->hsorted = b->hsorted;
-	bn->tsorted = b->tsorted;
-	bn->hkey = b->hkey;
-	bn->tkey = b->tkey;
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = b->T->nonil;
-	bn->H->dense = b->H->dense;
-	bn->T->dense = b->T->dense;
-	bn->hseqbase = b->hseqbase;
-	bn->tseqbase = b->tseqbase;
-	BATsetcount(bn, BATcount(b));
-
+		throw(MAL, "bbp.decompress", INTERNAL_BAT_ACCESS);
 	if (BATcount(b) ){
-		decomp += CMDdecompressheap(&b->H->heap,&bn->H->heap);
-		decomp += CMDdecompressheap(b->H->vheap,bn->H->vheap);
-		decomp += CMDdecompressheap(&b->T->heap,&bn->T->heap);
-		decomp += CMDdecompressheap(b->T->vheap,bn->T->vheap);
-		IODEBUG	stream_printf(GDKout,"#decompressed BAT %d %s decomp %d \n", *bid, BBP_physical(*bid),decomp);
-		if (decomp < 0)
+
+		bn = BATnew(b->htype,b->ttype,0);
+		/* copy the properties of the source */
+		bn->hsorted = b->hsorted;
+		bn->tsorted = b->tsorted;
+		bn->hkey = b->hkey;
+		bn->tkey = b->tkey;
+		bn->H->nonil = b->H->nonil;
+		bn->T->nonil = b->T->nonil;
+		bn->H->dense = b->H->dense;
+		bn->T->dense = b->T->dense;
+		bn->hseqbase = b->hseqbase;
+		bn->tseqbase = b->tseqbase;
+	
+		/* use the stored width for varsized atoms */
+		bn->H->width = b->H->width;
+		bn->H->shift = b->H->shift;
+		bn->T->width = b->T->width;
+		bn->T->shift = b->T->shift;
+		BATsetcapacity(bn, BATcount(b));
+		BATsetcount(bn, BATcount(b));
+
+		if (b->H->type)
+			decomp += CMDdecompressheap(&b->H->heap,&bn->H->heap);
+		if (b->H->type)
+			decomp += CMDdecompressheap(b->H->vheap,bn->H->vheap);
+		if (b->T->type)
+			decomp += CMDdecompressheap(&b->T->heap,&bn->T->heap);
+		if (b->T->type)
+			decomp += CMDdecompressheap(b->T->vheap,bn->T->vheap);
+		IODEBUG	stream_printf(GDKstdout,"#decompressed BAT %d %s decomp %d \n", *bid, BBP_physical(*bid),decomp);
+		if (decomp < -800) {
+			BBPreleaseref(bn->batCacheid);
+			BBPreleaseref(b->batCacheid);
 			throw(MAL,"bbp.decompress",MAL_MALLOC_FAIL);
-		if ( decomp == 0){
+		}
+		if ( decomp <= 0){
 			BBPreleaseref(bn->batCacheid);
 			BBPkeepref(*ret = b->batCacheid);
 			return MAL_SUCCEED;
 		}
+		BATsetaccess(bn, b->P->restricted);
+		BBPreleaseref(b->batCacheid);
+		BBPkeepref(*ret = bn->batCacheid);
+		return MAL_SUCCEED;
 	}
-	BBPreleaseref(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
+	BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 str
 CMDbbptruncate(int *ret, int *bid)
 {
@@ -672,7 +693,7 @@ CMDbbptruncate(int *ret, int *bid)
 	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
 		throw(MAL, "bbp.truncate", INTERNAL_BAT_ACCESS);
-	IODEBUG stream_printf(GDKout,"#truncate BAT %d %s \n", *bid, BBP_physical(*bid));
+	IODEBUG stream_printf(GDKstdout,"#truncate BAT %d %s \n", *bid, BBP_physical(*bid));
 	CMDtruncateheap(&b->H->heap);
 	CMDtruncateheap(b->H->vheap);
 	CMDtruncateheap(&b->T->heap);
