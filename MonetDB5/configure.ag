@@ -336,8 +336,8 @@ dnl We simply can't disable it for now because Testing gets hopelessly
 dnl upset about it, but we can offer to the user to disable it for
 dnl increased security.
 use_console=yes
-AC_ARG_WITH(console,
-	AC_HELP_STRING([--with-console],
+AC_ARG_ENABLE(console,
+	AC_HELP_STRING([--enable-console],
 		[enables direct console on the server (involves security risks)]),
 	use_console="$withval")
 if test x$use_console = xyes ; then

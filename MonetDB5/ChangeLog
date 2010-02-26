@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Fri Feb 26 2010 Fabian Groffen <fabian@cwi.nl>
+- configure.ag: Renamed --with-console to --enable-console.  Default
+  remains console being enabled.
+
 * Mon Feb 22 2010 Martin Kersten <mk@cwi.nl>
 - Fixed cleaning the user module context upon session end.
   Fixes bug #2956664
