@@ -439,7 +439,7 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (cachedProfiling)
 		cachedProfilerEvent(idx, mb, stk, pc);
 #else
-	(void)cntxt;
+	(void)idx;
 	(void)mb;
 	(void)stk;
 	(void)pc;
@@ -697,6 +697,7 @@ setLogFile(stream *fd, Module mod, str fname)
 	}
 	mal_unset_lock(mal_profileLock, "profileLock");
 #else
+	(void)fd;
 	(void)fname;
 	stream_printf(GDKout, "# MonetDB not compiled for profiling\n");
 #endif
@@ -1018,7 +1019,9 @@ All properties identified below are maintained, because this allows
 for easy integration with SQL.
 @c
 static int TRACE_init = 0;
+#ifdef MALprofiler
 static int TRACE_event = 0;
+#endif
 static BAT *TRACE_id_event = 0;
 static BAT *TRACE_id_time = 0;
 static BAT *TRACE_id_ticks = 0;

@@ -289,8 +289,6 @@ mal_export int moreClients(int reruns);
  */
 
 
-#define MALprofiler     1       /* activate the profiler */
-
 /* Listing modes are globally known */
 #define LIST_INPUT      1       /* echo original input */
 #define LIST_MAL_STMT  2       /* show mal instruction */

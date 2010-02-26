@@ -28,6 +28,7 @@ bin_mserver5 = {
 }
 
 bin_stethoscope = {
+	COND = WANT_STETHOSCOPE
 	SOURCES = stethoscope.mx
 	LIBS = @SHARED_LIBS@ -lbat -lmutils -lstream \
 			$(MONETDB_LIBS) $(CLIENTS_LIBS) -lMapi \

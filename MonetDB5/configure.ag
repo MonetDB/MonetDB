@@ -344,6 +344,14 @@ if test x$use_console = xyes ; then
 	AC_DEFINE([HAVE_CONSOLE], 1, [If the console should be used])
 fi
 
+enable_profiler=yes
+AC_ARG_ENABLE(profiler,
+	AC_HELP_STRING([--enable-profiler], [adds profiling support, installs stethoscope, a MonetDB profiling tool]), enable_profiler="$withval")
+if test x$enable_profiler = xyes ; then
+	AC_DEFINE([MALprofiler], 1, [If profiling support should be compiled in])
+fi
+AM_CONDITIONAL(WANT_STETHOSCOPE, test x"$enable_profiler" = xyes)
+
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()
 AC_DEFINE_UNQUOTED(MONETDB5_PREFIX,"$QXprefix",[architecture-independent files])
