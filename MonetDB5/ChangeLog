@@ -1,7 +1,7 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Fri Feb 26 2010 Martin Kersten <mk@(none)>
+* Fri Feb 26 2010 Martin Kersten <mk@cwi.nl>
 - Added the compression optimizer as an example of how to gain access to
   foreign file formats deep down in the kernel and transfer them just
   in time into a temporary BAT.
