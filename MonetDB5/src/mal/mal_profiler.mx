@@ -518,8 +518,10 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
-	if (!profileAll && mb->profiler[pc].trace == FALSE)
+	if (!profileAll && mb->profiler[pc].trace == FALSE) {
+		mal_unset_lock(mal_profileLock, "profileLock");
 		return;
+	}
 #ifdef HAVE_TIMES
 	times(&newTms);
 #endif

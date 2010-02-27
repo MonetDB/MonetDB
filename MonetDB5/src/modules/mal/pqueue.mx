@@ -52,19 +52,19 @@ command dequeue_@2(h:bat[:oid,:@1])
 address PQdequeue_@1@2
 comment "Removes top element of the @2-pqueue and updates it";
 
-command topn_@2(t:bat[:oid,:@1], n:int) :bat[:oid,:@1] 
+command topn_@2(t:bat[:oid,:@1], n:wrd) :bat[:oid,:@1] 
 address PQtopn_@1@2
 comment "Return the topn elements of the bat t using a @2-pqueue";
 
-command topn_@2(t:bat[:void,:@1],n:int) :bat[:oid,:@1] 
+command topn_@2(t:bat[:void,:@1], n:wrd) :bat[:oid,:@1] 
 address PQtopn_@1@2
 comment "Return the topn elements of the bat t using a @2-pqueue";
 
-command utopn_@2(t:bat[:oid,:@1], n:int) :bat[:oid,:@1] 
+command utopn_@2(t:bat[:oid,:@1], n:wrd) :bat[:oid,:@1] 
 address PQutopn_@1@2
 comment "Return the unique topn elements of the bat t using a @2-pqueue";
 
-command utopn_@2(t:bat[:void,:@1],n:int) :bat[:oid,:@1] 
+command utopn_@2(t:bat[:void,:@1], n:wrd) :bat[:oid,:@1] 
 address PQutopn_@1@2
 comment "Return the unique topn elements of the bat t using a @2-pqueue";
 
@@ -81,19 +81,19 @@ command dequeue_@1(h:bat[:oid,:any_1])
 address PQdequeue_any@1
 comment "Removes top element of the @1-pqueue and updates it";
 
-command topn_@1(t:bat[:oid,:any_1], n:int) :bat[:oid,:any_1] 
+command topn_@1(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:any_1] 
 address PQtopn_any@1
 comment "Return the topn elements of the bat t using a @1-pqueue";
 
-command topn_@1(t:bat[:void,:any_1], n:int) :bat[:oid,:any_1] 
+command topn_@1(t:bat[:void,:any_1], n:wrd) :bat[:oid,:any_1] 
 address PQtopn_any@1
 comment "Return the topn elements of the bat t using a @1-pqueue";
 
-command utopn_@1(t:bat[:oid,:any_1], n:int) :bat[:oid,:any_1] 
+command utopn_@1(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:any_1] 
 address PQutopn_any@1
 comment "Return the unique topn elements of the bat t using a @1-pqueue";
 
-command utopn_@1(t:bat[:void,:any_1], n:int) :bat[:oid,:any_1] 
+command utopn_@1(t:bat[:void,:any_1], n:wrd) :bat[:oid,:any_1] 
 address PQutopn_any@1
 comment "Return the unique topn elements of the bat t using a @1-pqueue";
 
@@ -306,7 +306,7 @@ int pqueue_topreplace_@1@2(BAT *h,
 
 /* TopN, based on @2-pqueue */
 
-int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
+int pqueue_topn_void@1@2(BAT **H, BAT *t, wrd *N)
 {
   BATiter ti = bat_iterator(t);
   @1 *v;
@@ -329,7 +329,7 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
+int pqueue_topn_@1@2(BAT **H, BAT *t, wrd *N)
 {
   BATiter ti = bat_iterator(t);
   BUN i, n = BATcount(t);
@@ -352,7 +352,7 @@ int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
 
 /* TopN (unique values), based on @2-pqueue */
 
-int pqueue_utopn_void@1@2(BAT **H, BAT *t, int *N)
+int pqueue_utopn_void@1@2(BAT **H, BAT *t, wrd *N)
 {
   BAT *duplicates = NULL, *b;
   BATiter ti = bat_iterator(t);
@@ -400,7 +400,7 @@ int pqueue_utopn_void@1@2(BAT **H, BAT *t, int *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_utopn_@1@2(BAT **H, BAT *t, int *N)
+int pqueue_utopn_@1@2(BAT **H, BAT *t, wrd *N)
 {
   BAT *duplicates = NULL, *b;
   BATiter ti = bat_iterator(t);
@@ -586,7 +586,7 @@ int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
   return GDK_SUCCEED;
 }
 
-int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
+int pqueue_topn_voidany@1(BAT **H, BAT *t, wrd *N)
 {
   BATiter ti = bat_iterator(t);
   BUN i, n = BATcount(t);
@@ -609,7 +609,7 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
+int pqueue_topn_any@1(BAT **H, BAT *t, wrd *N)
 {
   BATiter ti = bat_iterator(t);
   BUN i, n = BATcount(t);
@@ -631,7 +631,7 @@ int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_utopn_voidany@1(BAT **H, BAT *t, int *N)
+int pqueue_utopn_voidany@1(BAT **H, BAT *t, wrd *N)
 {
   BAT *duplicates = NULL, *b;
   BATiter hi, ti = bat_iterator(t);
@@ -683,7 +683,7 @@ int pqueue_utopn_voidany@1(BAT **H, BAT *t, int *N)
   return GDK_SUCCEED;
 }
 
-int pqueue_utopn_any@1(BAT **H, BAT *t, int *N)
+int pqueue_utopn_any@1(BAT **H, BAT *t, wrd *N)
 {
   BAT *duplicates = NULL, *b;
   BATiter hi, ti = bat_iterator(t);
@@ -747,7 +747,7 @@ proc pqueue_peek( BAT[oid,any] h ) : any {
 	return h.fetch(0);
 }
 
-proc pqueue_topn( BAT[oid,any] t, int n, int direction ) : BAT[oid,any] {
+proc pqueue_topn( BAT[oid,any] t, wrd n, int direction ) : BAT[oid,any] {
 	if (direction > 0) {
 		return pqueue_topn_max(t,n);
 	} else {
@@ -897,9 +897,9 @@ PQdequeue_@1@2(int *ret, int *bid){
 	return MAL_SUCCEED;
 }
 
-pqueue_export str PQtopn_@1@2(int *ret, int *bid, int *N);
+pqueue_export str PQtopn_@1@2(int *ret, int *bid, wrd *N);
 str
-PQtopn_@1@2(int *ret, int *bid, int *N){
+PQtopn_@1@2(int *ret, int *bid, wrd *N){
 	BAT *b,*bn = NULL;
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);
@@ -912,9 +912,9 @@ PQtopn_@1@2(int *ret, int *bid, int *N){
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "pqueue.topN", MAL_MALLOC_FAIL);
 }
-pqueue_export str PQutopn_@1@2(int *ret, int *bid, int *N);
+pqueue_export str PQutopn_@1@2(int *ret, int *bid, wrd *N);
 str
-PQutopn_@1@2(int *ret, int *bid, int *N){
+PQutopn_@1@2(int *ret, int *bid, wrd *N){
 	BAT *b,*bn = NULL;
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);

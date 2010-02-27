@@ -539,7 +539,10 @@ We have to remember the grouping only.
 Derived paths are similar to the group new.
 @c
 			if (  getModuleId(q) == groupRef ){
-				if ( getFunctionId(q) == newRef && isDiction(getArg(q,2))   ) {
+				if (q->argc == 3 &&
+			           (getFunctionId(q) == newRef ||
+				    getFunctionId(q) == doneRef) && 
+				    isDiction(getArg(q,2))) {
 					j = getArg(q,0);
 					qq = newStmt(mb,dictionaryRef,groupRef);
 					pushArgument(mb,qq, idx[getArg(q,2)]);
@@ -554,7 +557,10 @@ Derived paths are similar to the group new.
 					actions++;
 					continue;
 				}
-				if ( getFunctionId(q) == deriveRef && isDiction(getArg(q,4))   ) {
+				if (q->argc == 5 &&
+				   (getFunctionId(q) == deriveRef ||
+				    getFunctionId(q) == doneRef) && 
+				    isDiction(getArg(q,4))) {
 					j = getArg(q,0);
 					getArg(q,4) = idx[getArg(q,4)];
 					if ( isDiction(getArg(q,3)) ){
@@ -568,7 +574,7 @@ Derived paths are similar to the group new.
 					continue;
 				}
 			}
-			if (  getModuleId(q) == batRef ){
+			if (getModuleId(q) == batRef ){
 				if (getFunctionId(q) == mirrorRef && isDiction(getArg(q,1))) {
 					getArg(q,1) = idx[getArg(q,1)];
 				}

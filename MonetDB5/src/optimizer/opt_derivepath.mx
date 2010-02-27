@@ -121,7 +121,8 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if( getModuleId(p)== groupRef && getFunctionId(p)== newRef ){
+		if (getModuleId(p) == groupRef && p->argc == 3 &&
+		   (getFunctionId(p) == newRef || getFunctionId(p) == doneRef)){
 			if ( getEndLifespan(span,getArg(p,1)) == i  ){
 				/* we are only interested in the distinct values */
 				/* trafo:  (ext,grp):= group.new(B);
@@ -152,7 +153,8 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				pc[getArg(p,1)] = i;
 			}
 		}
-		if( getModuleId(p)== groupRef && getFunctionId(p)== deriveRef ){
+		if (getModuleId(p) == groupRef && p->argc == 5 &&
+		   (getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef)){
 @-
 Try to expand its argument list with what we have found so far.
 This creates a series of join paths, many of which will be removed during deadcode elimination.

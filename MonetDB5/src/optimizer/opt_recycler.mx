@@ -170,14 +170,14 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 				if (getModuleId(p) == sqlRef){
 					if (getFunctionId(p) == appendRef){
-						app_sc = getArg(p,1);
-						app_tbl = getArg(p,2);
+						app_sc = getArg(p,2);
+						app_tbl = getArg(p,3);
 					} else {
 						q= newFcnCall(mb,"recycle","reset");
 						pushArgument(mb,q, getArg(p,1));
 						pushArgument(mb,q, getArg(p,2));
 						if (getFunctionId(p) == updateRef)
-							pushArgument(mb,q, getArg(p,3));
+							pushArgument(mb,q, getArg(p,4));
 					}
 					actions++;
 				}
@@ -314,7 +314,7 @@ with the transaction commits.
 @c
 		if (getModuleId(p)== sqlRef && 
 			(((getFunctionId(p)==bindRef || getFunctionId(p) == putName("bind_idxbat",11)) && 
-				getVarConstant(mb, getArg(p,4)).val.ival != 0) ||
+				getVarConstant(mb, getArg(p,5)).val.ival != 0) ||
 				getFunctionId(p)== binddbatRef) ) {
 				recycled[getArg(p,0)]=0;
 				p->recycle = REC_NO_INTEREST; /* this instruction is not monitored */

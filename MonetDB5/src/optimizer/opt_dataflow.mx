@@ -150,7 +150,7 @@ as a single side effect free function. [TEST FOR SQL SPEEDUP]
 			continue;
 		}
 @c
-		if (hasSideEffects(p,TRUE) || isUpdateInstruction(p) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p))){
+		if (hasSideEffects(p,TRUE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p))){
 			@:flowblock@
 			pushInstruction(mb,p);
 			continue;

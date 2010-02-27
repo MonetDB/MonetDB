@@ -213,7 +213,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		if( p->token == ENDsymbol)
 			break;
-		if( hasSideEffects(p,TRUE) || isUpdateInstruction(p)  || isUnsafeFunction(p) || p->barrier ){
+		if( hasSideEffects(p,TRUE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p))  || isUnsafeFunction(p) || p->barrier ){
 			OPTdepthfirst(cntxt, mb, i, old, dep);
 			/* remove last instruction and keep for later */
 			p= mb->stmt[mb->stop-1];

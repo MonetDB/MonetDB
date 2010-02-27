@@ -1159,6 +1159,7 @@ hasSideEffects(InstrPtr p, int strict)
 		if (getFunctionId(p) == binddbatRef) return FALSE;
 		if (getFunctionId(p) == columnBindRef) return FALSE;
 		if (getFunctionId(p) == copy_fromRef) return FALSE;
+		if (isUpdateInstruction(p)) return FALSE;
 		return TRUE;
 	}
 	if( getModuleId(p) == languageRef){

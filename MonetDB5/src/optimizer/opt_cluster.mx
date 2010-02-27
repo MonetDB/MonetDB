@@ -52,9 +52,10 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 
 #define GRP_NEW 	1
 #define GRP_DERIVE 	2
-#define AGGR_CNTS 	3
-#define AGGR_CNT 	4
-#define AGGR_SUM 	5
+#define GRP_DONE 	3
+#define AGGR_CNTS 	4
+#define AGGR_CNT 	5
+#define AGGR_SUM 	6
 
 #define ORDERBY_NONE 	1
 #define ORDERBY_SORT 	2
@@ -100,6 +101,13 @@ cluster_groupby(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			state = GRP_DERIVE;
 			h = getArg(q,0);
 			g = getArg(q,1);
+		} else if (state == GRP_NEW && 
+		    getModuleId(q) == groupRef &&
+		    getFunctionId(q) == doneRef &&
+		    q->argc == 2) {
+			state = GRP_DONE;
+			h = getArg(q,0);
+			g = getArg(q,1);
 		} else if (state == GRP_DERIVE &&
 		    getModuleId(q) == groupRef &&
 		    getFunctionId(q) == deriveRef &&
@@ -109,6 +117,14 @@ cluster_groupby(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			h = getArg(q,0);
 			g = getArg(q,1);
 		} else if (state == GRP_DERIVE &&
+		    getModuleId(q) == groupRef &&
+		    getFunctionId(q) == doneRef &&
+		    q->argc == 4 &&
+		    h == getArg(q,2) && g == getArg(q,3)) {
+			state = GRP_DONE;
+			h = getArg(q,0);
+			g = getArg(q,1);
+		} else if (state == GRP_DONE &&
 		    getModuleId(q) == aggrRef &&
 		    q->argc == 4 &&
 		    getFunctionId(q) == countRef) {

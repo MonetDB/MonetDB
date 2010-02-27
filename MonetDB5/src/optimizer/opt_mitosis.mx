@@ -87,9 +87,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (getModuleId(q)!= sqlRef || getFunctionId(q)!=bindRef )
 			continue;
 		/* don't split insert or update BATs */
-		if (getVarConstant(mb, getArg(q,4)).val.ival != 0 )
+		if (getVarConstant(mb, getArg(q,5)).val.ival != 0 )
 			continue;
-		if( q->argc >5 )
+		if( q->argc > 6 )
 			continue; /* already partitioned */
 @-
 The SQL optimizer already collects the counts of the
@@ -141,8 +141,8 @@ The pieces to be used may be overruled by the octopus optimizer.
 	OPTDEBUG
 		stream_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
 			" with " BUNFMT " rows into " BUNFMT " rows/piece %d threads %d pieces\n",
-				getVarConstant(mb, getArg(target,1)).val.sval,
 				getVarConstant(mb, getArg(target,2)).val.sval,
+				getVarConstant(mb, getArg(target,3)).val.sval,
 				rowcnt, r, GDKnr_threads,pieces);
 #ifdef _DEBUG_OPT_MITOSIS
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
@@ -154,8 +154,8 @@ The pieces to be used may be overruled by the octopus optimizer.
 		return 0;
 	estimate=0;
 
-	schema = getVarConstant(mb, getArg(target,1)).val.sval;
-	table = getVarConstant(mb, getArg(target,2)).val.sval;
+	schema = getVarConstant(mb, getArg(target,2)).val.sval;
+	table = getVarConstant(mb, getArg(target,3)).val.sval;
 	for(i=0;i<limit;i++){
 		p= old[i];
 
@@ -166,18 +166,18 @@ The pieces to be used may be overruled by the octopus optimizer.
 			continue;
 		}
 		/* don't split insert or update BATs */
-		if (getVarConstant(mb, getArg(p,4)).val.ival != 0 ){
+		if (getVarConstant(mb, getArg(p,5)).val.ival != 0 ){
 			pushInstruction(mb,p);
 			continue;
 		}
 		/* Don't split the (index) bat if we already have identified a range */
 		/* This will happen if we inline separately optimized routines */
-		if ( p->argc != 5 ){
+		if ( p->argc != 6 ){
 			pushInstruction(mb,p);
 			continue;
 		}
-		if (strcmp(schema, getVarConstant(mb, getArg(p,1)).val.sval) ||
-		    strcmp(table, getVarConstant(mb, getArg(p,2)).val.sval)){
+		if (strcmp(schema, getVarConstant(mb, getArg(p,2)).val.sval) ||
+		    strcmp(table, getVarConstant(mb, getArg(p,3)).val.sval)){
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -203,7 +203,7 @@ The pieces to be used may be overruled by the octopus optimizer.
 				hgh.value.val.oval= low.value.val.oval+slice;
 				q= pushOid(mb,q,hgh.value.val.oval);
 			} else
-				pushNil(mb,q, TYPE_oid);
+				q= pushNil(mb,q, TYPE_oid);
 
 			k= getArg(q,0)= newTmpVariable(mb,tpe);
 			setVarUDFtype(mb,k);

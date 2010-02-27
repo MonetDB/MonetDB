@@ -102,14 +102,34 @@ address GRPgroup_custom
 comment "Cross tabulation group initialization like GRPgroup, but with 
 		user provided #bits in hashmask and #distinct values in range.";
 
-command derive(hist:bat[:any_1,:wrd], map:bat[:any_1,:oid], attr:bat[:any_1,:any_2])
+command done(attr:bat[:any_1,:any_2] )
+	(histo:bat[:any_1,:wrd], grp:bat[:any_1,:void]) 
+address GRPgroup;
+
+command done(attr:bat[:any_1,:any_2] )
+	(histo:bat[:any_1,:wrd], grp:bat[:any_1,:oid]) 
+address GRPgroup;
+
+command done(attr:bat[:any_1,:any_2], N:int, rng:int)
+	(histo:bat[:any_1,:wrd],grp:bat[:any_1,:oid]) 
+address GRPgroup_custom;
+
+command derive(hist:bat[:any_1,:wrd], map:bat[:any_1,:oid], a:bat[:any_1,:any_2])
 	(histo:bat[:any_1,:wrd],grp:bat[:any_1,:oid]) 
 address GRPderive
 comment "Cross tabulation group extension step.  Returned head values are 
 		identical as in 'ct'. Tail values are from the same domain and 
 		indicate further refinement of the groups in 'ct', taking into 
 		account also the tail-values in 'attr'.";
-command derive(histo:bat[:void,:wrd], map:bat[:void,:oid], attr:bat[:oid,:any_2])
+command derive(histo:bat[:void,:wrd], map:bat[:void,:oid], a:bat[:oid,:any_2])
+	(hist:bat[:oid,:wrd],grp:bat[:oid,:oid]) 
+address GRPderive;
+
+command done(hist:bat[:any_1,:wrd], map:bat[:any_1,:oid], a:bat[:any_1,:any_2])
+	(histo:bat[:any_1,:wrd],grp:bat[:any_1,:oid]) 
+address GRPderive;
+
+command done(histo:bat[:void,:wrd], map:bat[:void,:oid], a:bat[:oid,:any_2])
 	(hist:bat[:oid,:wrd],grp:bat[:oid,:oid]) 
 address GRPderive;
 
