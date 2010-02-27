@@ -255,26 +255,28 @@ str
 CMDactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
+	str msg= MAL_SUCCEED;
 
 	(void) cntxt;		/* fool compiler */
 	(void) mb;		/* fool compiler */
 	checkProfiler("activate");
-	for ( i= pci->retc; i < pci->argc; i++)
-			activateCounter(*(str*) getArgReference(stk,pci,i));
-	return MAL_SUCCEED;
+	for ( i= pci->retc; i < pci->argc && msg == MAL_SUCCEED; i++)
+			msg =activateCounter(*(str*) getArgReference(stk,pci,i));
+	return msg;
 }
 
 str
 CMDdeactivateProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
+	str msg= MAL_SUCCEED;
 
 	(void) cntxt;		/* fool compiler */
 	(void) mb;		/* fool compiler */
 	checkProfiler("deactivate");
-	for ( i= pci->retc; i < pci->argc; i++)
-			deactivateCounter(*(str*) getArgReference(stk,pci,i));
-	return MAL_SUCCEED;
+	for ( i= pci->retc; i < pci->argc && msg == MAL_SUCCEED; i++)
+			msg =deactivateCounter(*(str*) getArgReference(stk,pci,i));
+	return msg;
 }
 
 str
