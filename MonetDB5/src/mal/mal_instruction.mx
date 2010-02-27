@@ -296,10 +296,8 @@ instruction in the source.]
 
 #define isaSignature(P)  ((P)->token >=COMMANDsymbol)
 
-#ifdef MALprofiler
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
-#endif
 #endif
 
 #define DEBUG_MAL_INSTR
@@ -2453,14 +2451,12 @@ The MAL profiler dumps some performance data at the
 beginning of each line.
 
 @= performanceData
-#ifdef MALprofiler
     if( mb->profiler ){
 		int pc= getPC(mb,p);
         double avg= (mb->profiler[pc].ticks+0.0)/mb->profiler[pc].counter;
         snprintf(t,(len-(t-base)),"[%7d, %5.2f] ",mb->profiler[pc].counter,avg);
     }
     advance(t,base,len);
-#endif
 @-
 
 @= showParam

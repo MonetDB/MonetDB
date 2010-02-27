@@ -2390,12 +2390,6 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 
 @-
 @+ Performance section
-The interpreter has a built-in performance monitor hook, which is
-activated using the compile option MALprofiler. Activation can lead to
-a significant performance degradation, because for all traced functions
-we have to keep track of essential system counter information.
-See @ref{The MAL Profiler} for more details.
-
 Running the program under dataflow control will screw up the
 order in which performance trace data is displayed. Moreover,
 we do not clearly see the start and end of the dataflow execution,
@@ -2403,16 +2397,13 @@ because the performance data is the result of the 'failed' runMALdataflow().
 It simply skips the barrier block upon return.
 
 @= performanceVariables
-#ifdef MALprofiler
 	lng newclk=0;
 	int ppc= -2;
 	if (malProfileMode ) {
 		setFilterOnBlock(mb, 0, 0);
 		ppc = -1;
 	}
-#endif
 @= beginProfile
-#ifdef MALprofiler
 	if ( stk) {
 		time(&stk->clock);
 		if( mb->profiler != NULL ){
@@ -2435,9 +2426,7 @@ It simply skips the barrier block upon return.
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		}
 	}
-#endif
 @= endProfile
-#ifdef MALprofiler
 	if ( stk != NULL) {
 		if( malProfileMode == 0)
 			/* mostly true */;
@@ -2458,7 +2447,6 @@ It simply skips the barrier block upon return.
 		if ( cntxt->qtimeout &&  time(NULL) - stk->clock > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	}
-#endif
 
 @= timingHndlr
 #if @1
