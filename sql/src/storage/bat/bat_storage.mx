@@ -1220,12 +1220,14 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 {
 	int ok = LOG_OK;
 	BAT *ups, *ins, *cur;
+	int cleared = 0;
 
 	(void)tr;
 	assert(store_nr_active>0);
 
 	/* for cleared tables the bid is reset */
 	if (cbat->bid == 0) {
+		cleared = 1;
 		cbat->bid = obat->bid;
 		temp_dup(cbat->bid);
 	}
@@ -1233,7 +1235,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 	cur = temp_descriptor(obat->bid);
 	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
-	if (BUNlast(ins) > BUNfirst(ins)) {
+	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
 		if (BUNlast(ins) > ins->batInserted && (store_nr_active > 1 || cluster)) { 
 			BAT *ci = temp_descriptor(obat->ibid);
 
@@ -1282,7 +1284,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 
 	ups = temp_descriptor(cbat->ubid);
 	/* any updates */
-	if (BUNlast(ups) > BUNfirst(ups)) {
+	if (BUNlast(ups) > BUNfirst(ups) || cleared ) {
 		if ((BUNlast(ups) > ups->batInserted || BATdirty(ups)) && (store_nr_active > 1 || cluster)) { 
 			BAT *cu = temp_descriptor(obat->ubid);
 

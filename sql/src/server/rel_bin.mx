@@ -59,13 +59,13 @@ print_stmtlist( stmt *l )
 }
 
 static stmt *
-bin_find_column( stmt *sub, char *rname, char *name ) 
+list_find_column( list *l, char *rname, char *name ) 
 {
 	stmt *res = NULL;
 	node *n;
 
 	if (rname) {
-		for (n = sub->op1.lval->h; n; n = n->next) {
+		for (n = l->h; n; n = n->next) {
 			char *rnme = table_name(n->data);
 			char *nme = column_name(n->data);
 
@@ -82,7 +82,7 @@ bin_find_column( stmt *sub, char *rname, char *name )
 				_DELETE(nme);
 		}
 	} else {
-		for (n = sub->op1.lval->h; n; n = n->next) {
+		for (n = l->h; n; n = n->next) {
 			char *nme = column_name(n->data);
 
 			if (nme && strcmp(nme, name) == 0) {
@@ -97,6 +97,12 @@ bin_find_column( stmt *sub, char *rname, char *name )
 	if (!res)
 		return NULL;
 	return stmt_dup(res);
+}
+
+static stmt *
+bin_find_column( stmt *sub, char *rname, char *name ) 
+{
+	return list_find_column( sub->op1.lval, rname, name);
 }
 
 static list *
@@ -309,6 +315,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				}
 			}
 			/* order on the group first */
+			grp_done(g);
 			if (g) 
 				orderby = stmt_order(stmt_dup(g->grp), 1);
 			for (en = obe->h; en; en = en->next) {
@@ -1087,6 +1094,7 @@ rel2bin_distinct(stmt *s)
 			grp = grp_create(column(t), grp);
 		}
 	}
+	grp_done(grp);
 
 	for (n = s->op1.lval->h; n; n = n->next) {
 		stmt *t = n->data;
@@ -1213,6 +1221,8 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		grp_destroy(rgrp);
 		return NULL;
 	}
+	grp_done(lgrp);
+	grp_done(rgrp);
 
  	a = sql_bind_aggr(sql->session->schema, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
@@ -1356,6 +1366,8 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		grp_destroy(rgrp);
 		return NULL;
 	}
+	grp_done(lgrp);
+	grp_done(rgrp);
 
  	a = sql_bind_aggr(sql->session->schema, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a, 1); 
@@ -1464,28 +1476,28 @@ sql_reorder(stmt *order, stmt *s)
 	return stmt_list(l);
 }
 
-static int
+static wrd
 topn_limit( sql_rel *rel )
 {
 	if (rel->exps) {
 		sql_exp *limit = rel->exps->h->data;
 		atom *a = limit->l;
 
-		return a->data.val.ival;
+		return a->data.val.lval;
 	}
 	return -1;
 }
 
-static int
+static wrd
 topn_offset( sql_rel *rel )
 {
-	int o = 0;
+	wrd o = 0;
 
 	if (rel->exps && list_length(rel->exps) > 1) {
 		sql_exp *offset = rel->exps->h->next->data;
 		atom *a = offset->l;
 
-		o = a->data.val.ival;
+		o = a->data.val.lval;
 		if (o <= 0)
 			o = 0;
 	}
@@ -1510,7 +1522,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	list *pl; 
 	node *en, *n;
 	stmt *sub = NULL, *psub = NULL;
-	int l = -1;
+	wrd l = -1;
 
 	if (topn) {
 		int o = topn_offset(topn);
@@ -1602,12 +1614,21 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 				cond_stmt_destroy(orderby);
 				return NULL;
 			}
+			/* single values don't need sorting */
+			if (orderbycols->nrcols == 0) {
+				stmt_destroy(orderbycols);
+				if (orderby)
+					stmt_destroy(orderby);
+				orderby = NULL;
+				break;
+			}
 			if (orderby)
 				orderby = stmt_reorder(orderby, orderbycols, is_ascending(orderbycole));
 			else
 				orderby = stmt_order(orderbycols, is_ascending(orderbycole));
 		}
-		psub = stmt_ordered(orderby, psub);
+		if (orderby)
+			psub = stmt_ordered(orderby, psub);
 	}
 	if (sub) 
 		stmt_destroy(sub);
@@ -1823,6 +1844,7 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 			groupby = grp_create(gbcol, groupby);
 		}
 	}
+	grp_done(groupby);
 	/* now aggregate */
 	l = create_stmt_list();
 	aggrs = rel->exps;
@@ -1878,7 +1900,7 @@ static stmt *
 rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *newl;
-	int l = -1, o = 0;
+	wrd l = -1, o = 0;
 	stmt *sub = NULL, *order = NULL;
 	node *n;
 
@@ -2117,12 +2139,13 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			sql_subaggr *sum;
 			stmt *count_sum = NULL;
 			sql_subfunc *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
-			stmt *ssum;
+			stmt *ssum, *ss;
 
 			stmt *ins = stmt_dup(nth(inserts, c->c->colnr)->op2.stval);
 			group *g = grp_create(ins, NULL);
-			stmt *ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt), 1);
 
+			grp_done(g);
+			ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt), 1);
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr(sql->session->schema, "sum", tail_type(ss));
 			ssum = stmt_aggr(ss, NULL, sum, 1);
@@ -2659,6 +2682,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 
 				g = grp_create(upd, g);
 			}
+			grp_done(g);
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt), 1);
 			grp_destroy(g);
 			/* (count(ss) <> sum(ss)) */
@@ -2717,6 +2741,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			}
 
 			g = grp_create(upd, NULL);
+			grp_done(g);
 			ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt), 1);
 
 			/* (count(ss) <> sum(ss)) */

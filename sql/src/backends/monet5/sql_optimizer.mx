@@ -320,8 +320,8 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
 			ValRecord vr;
 			InstrPtr q;
-			char *sname = getVarConstant(mb, getArg(p,1)).val.sval;
-			char *tname = getVarConstant(mb, getArg(p,2)).val.sval;
+			char *sname = getVarConstant(mb, getArg(p,2)).val.sval;
+			char *tname = getVarConstant(mb, getArg(p,3)).val.sval;
 			char *cname = NULL;
 			int not_null = 0;
 			oid rows = 1; /* default to cope with delta bats */
@@ -336,10 +336,10 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				continue;
 			}
 			if (f == binddbatRef) {
-				mode = getVarConstant(mb, getArg(p,3)).val.ival;
-			} else {
-				cname = getVarConstant(mb, getArg(p,3)).val.sval;
 				mode = getVarConstant(mb, getArg(p,4)).val.ival;
+			} else {
+				cname = getVarConstant(mb, getArg(p,4)).val.sval;
+				mode = getVarConstant(mb, getArg(p,5)).val.ival;
 			}
 
 

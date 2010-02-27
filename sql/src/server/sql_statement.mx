@@ -149,6 +149,7 @@ typedef enum comp_type {
 
 /* flag to indicate anti join/select */
 #define ANTI 16
+#define GRP_DONE 32
 
 typedef struct stmt {
 	sql_ref ref;
@@ -283,7 +284,7 @@ extern stmt *stmt_mirror(stmt *s);
 
 #define LIMIT_DIRECTION(dir,order,before_project) \
 		(dir<<2)+(before_project<<1)+(order)
-extern stmt *stmt_limit(stmt *s, int offset, int limit, int direction);
+extern stmt *stmt_limit(stmt *s, wrd offset, wrd limit, int direction);
 extern stmt *stmt_order(stmt *s, int direction);
 extern stmt *stmt_reorder(stmt *s, stmt *t, int direction);
 
@@ -323,6 +324,7 @@ extern stmt *stmt_dup(stmt *s);
 extern list* stmt_list_dependencies(stmt *s, int depend_type);
 
 extern group *grp_create(stmt *s, group *og);
+extern void grp_done(group *g);
 extern void grp_destroy(group *g);
 extern group *grp_dup(group *g);
 
@@ -600,6 +602,13 @@ grp_create(stmt *s, group *og)
 	}
 	g->ext = stmt_ext(stmt_dup(g->grp));
 	return g;
+}
+
+void 
+grp_done(group *g)
+{
+	if (g && g->grp)
+		g->grp->flag = GRP_DONE;
 }
 
 void
@@ -1157,6 +1166,9 @@ stmt_delta_table_bat(sql_column *c, stmt *basetable, int access )
 {
 	stmt *s = stmt_bat(c, basetable, access );
 
+	if (c->t->readonly)
+		return s;
+
 	if (isTable(c->t) &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	    access == RDONLY && c->t->persistence == SQL_PERSIST && !c->t->commit_action) {
@@ -1190,6 +1202,9 @@ stmt *
 stmt_delta_table_idxbat(sql_idx * idx, int access)
 {
 	stmt *s = stmt_idxbat(idx, access);
+
+	if (idx->t->readonly)
+		return s;
 
 	if (isTable(idx->t) &&
 	   (idx->base.flag != TR_NEW || idx->t->base.flag != TR_NEW /* alter */) && 
@@ -1446,13 +1461,13 @@ stmt_mirror(stmt *s)
 }
 
 stmt *
-stmt_limit(stmt *s, int offset, int limit, int direction)
+stmt_limit(stmt *s, wrd offset, wrd limit, int direction)
 {
 	stmt *ns = stmt_create(st_limit);
 
 	ns->op1.stval = s;
-	ns->op2.stval = stmt_atom_int(offset);
-	ns->op3.stval = stmt_atom_int(limit);
+	ns->op2.stval = stmt_atom_wrd(offset);
+	ns->op3.stval = stmt_atom_wrd(limit);
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;

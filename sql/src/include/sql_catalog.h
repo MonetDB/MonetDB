@@ -372,6 +372,7 @@ typedef struct sql_column {
 	char *def;
 	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
 	int drop_action;	/* only used for alter statements */
+	int storage_type;
 
 	struct sql_table *t;
 	void *data;
@@ -397,6 +398,7 @@ typedef struct sql_table {
 	bit system;		/* system or user table */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
+	bit readonly;	
 	char *query;		/* views and generated may require some query 
 
 				   A generated without a query is simply 

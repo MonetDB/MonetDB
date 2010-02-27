@@ -29,7 +29,7 @@ Over..
 % schem,	clust,	real_time # name
 % clob,	clob,	bigint # type
 % 7,	3,	4 # length
-[ "triples",	"pso",	1063	]
+[ "triples",	"pso",	2002	]
 
 # 00:34:20 >  
 # 00:34:20 >  Done.

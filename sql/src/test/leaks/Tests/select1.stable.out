@@ -34,7 +34,8 @@ Over..
 % L1 # name
 % wrd # type
 % 3 # length
-[ 118	]
+[ 120	]
+#select 1; 
 % . # table_name
 % single_value # name
 % tinyint # type
@@ -44,7 +45,7 @@ Over..
 % L1 # name
 % wrd # type
 % 3 # length
-[ 118	]
+[ 120	]
 
 # 22:03:05 >  
 # 22:03:05 >  Done.

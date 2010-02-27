@@ -28,22 +28,23 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.x,	sys.x # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary,	n,	s # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	tinyint,	int,	varchar # type
-% 4,	12,	4,	0,	1,	5,	1,	1,	1,	3 # length
-[ 1062,	"schemas",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
-[ 1067,	"types",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
-[ 1076,	"functions",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
-[ 1085,	"args",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
-[ 1093,	"sequences",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
-[ 1103,	"dependencies",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
-[ 1107,	"connections",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
-[ 1116,	"_tables",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
-[ 1124,	"_columns",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
-[ 1134,	"keys",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
+#select * from tables, x limit 10;
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.x,	sys.x # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	n,	s # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar # type
+% 4,	12,	4,	0,	1,	5,	1,	5,	1,	1,	3 # length
+[ 2001,	"schemas",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2006,	"types",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2015,	"functions",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2024,	"args",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2032,	"sequences",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2042,	"dependencies",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2046,	"connections",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2055,	"_tables",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2064,	"_columns",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2075,	"keys",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
 
-# 14:20:16 >  
-# 14:20:16 >  Done.
-# 14:20:16 >  
+# 19:39:26 >  
+# 19:39:26 >  Done.
+# 19:39:26 >  
 

@@ -570,10 +570,8 @@ int yydebug=1;
 	opt_from_grantor
 	opt_grantor
 	opt_index_type
-	opt_limit
 	opt_match
 	opt_match_type
-	opt_offset
 	opt_on_commit
 	opt_port
 	opt_ref_action
@@ -602,6 +600,9 @@ int yydebug=1;
 	opt_start
 	lngval
 	poslng
+	nonzerolng
+	opt_limit
+	opt_offset
 	opt_increment
 	opt_min
 	opt_max
@@ -1099,7 +1100,6 @@ alter_statement:
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element
-
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
@@ -1108,6 +1108,11 @@ alter_statement:
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE qname SET READ ONLY
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_symbol(l, NULL);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
@@ -1321,7 +1326,7 @@ opt_restart:
  */
 opt_increment:
 	/* empty */		{ $$ = -1; }
-  |	INCREMENT BY nonzero	{ $$ = $3; }
+  |	INCREMENT BY nonzerolng	{ $$ = $3; }
   ;
 
 /*
@@ -1333,8 +1338,8 @@ opt_increment:
  */
 opt_min:
 	/* empty */ 			{ $$ = -1; }
-  |	MINVALUE nonzero		{ $$ = $2; }
-  |	NOMINVALUE				{ $$ =  0; }
+  |	MINVALUE nonzerolng		{ $$ = $2; }
+  |	NOMINVALUE			{ $$ =  0; }
   ;
 
 /*
@@ -1346,8 +1351,8 @@ opt_min:
  */
 opt_max:
 	/* empty */			{ $$ = -1; }
-  |	MAXVALUE nonzero		{ $$ = $2; }
-  |	NOMAXVALUE				{ $$ =  0; }
+  |	MAXVALUE nonzerolng		{ $$ = $2; }
+  |	NOMAXVALUE			{ $$ =  0; }
   ;
 
 /*
@@ -1358,7 +1363,7 @@ opt_max:
  */
 opt_cache:
 	/* empty */			{ $$ = -1; }
-  |	CACHE nonzero			{ $$ = $2; }
+  |	CACHE nonzerolng		{ $$ = $2; }
   ;
 
 /*
@@ -3129,12 +3134,12 @@ opt_order_by_clause:
 
 opt_limit:
     /* empty */ 			{ $$ = -1; }
- |  LIMIT nonzero			{ $$ = $2; }
+ |  LIMIT nonzerolng			{ $$ = $2; }
  ;
 
 opt_offset:
 	/* empty */			{ $$ = -1; }
- |  OFFSET posint			{ $$ = $2; }
+ |  OFFSET poslng			{ $$ = $2; }
  ;
 
 sort_specification_list:
@@ -4275,6 +4280,16 @@ nonzero:
 		}
 	;
 
+nonzerolng:
+	lngval
+		{ $$ = $1;
+		  if ($$ <= 0) {
+			$$ = -1;
+			yyerror("Positive value greater than 0 expected");
+			YYABORT;
+		  }
+		}
+	;
 
 poslng:
 	lngval 	{ $$ = $1;

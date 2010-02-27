@@ -192,6 +192,7 @@ extern sql_column *mvc_create_column_(mvc *c, sql_table *t, char *name, char *ty
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
+extern sql_table * mvc_readonly(mvc *m, sql_table *t, int readonly);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 
 extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, char *kname, key_type kt);
@@ -307,6 +308,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "type", "smallint", 16);
 		mvc_create_column_(m, t, "system", "boolean", 1);
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
+		mvc_create_column_(m, t, "readonly", "boolean", 1);
 		mvc_create_column_(m, t, "temporary", "smallint", 16);
 
 		t = mvc_create_view(m, s, "columns", SQL_PERSIST, "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;", 1);
@@ -319,6 +321,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "default", "varchar", 2048);
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
+		mvc_create_column_(m, t, "storage_type", "int", 32);
 
 		sql_create_env(m, s);
 		sql_create_privileges(m, s);
@@ -1398,8 +1401,10 @@ mvc_null(mvc *m, sql_column *col, int isnull)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_null %s %d\n", col->base.name, isnull);
 
-	if (col->t->persistence == SQL_DECLARED_TABLE)
+	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		col->null = isnull;
+		return col;
+	}
 	return sql_trans_alter_null(m->session->tr, col, isnull);
 }
 
@@ -1429,6 +1434,19 @@ mvc_drop_default(mvc *m, sql_column *col)
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, NULL);
 	}
+}
+
+sql_table *
+mvc_readonly(mvc *m, sql_table *t, int readonly)
+{
+	if (mvc_debug)
+		fprintf(stderr, "mvc_readonly %s %d\n", t->base.name, readonly);
+
+	if (t->persistence == SQL_DECLARED_TABLE) {
+		t->readonly = readonly;
+		return t;
+	}
+	return sql_trans_alter_readonly(m->session->tr, t, readonly);
 }
 
 int 

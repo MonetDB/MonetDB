@@ -70,7 +70,7 @@ stderr of test 'event_s07` in directory 'src/test/Via-m` itself:
 # 14:41:43 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=30006 
 # 14:41:43 >  
 
-MAPI  = monetdb@yngling:31032
+MAPI  = monetdb@alf:37695
 QUERY = set id_event = add_event('event 2', '2009-06-23', 'artist2', 'location2', 'description2');
 ERROR = !SQLException:assert:INSERT INTO: UNIQUE constraint 'event.unq_event_name' violated
 

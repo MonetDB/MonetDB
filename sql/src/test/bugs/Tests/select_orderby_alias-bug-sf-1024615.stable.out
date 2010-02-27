@@ -21,18 +21,21 @@ Ready.
 
 Over..
 
-# 12:31:04 >  
-# 12:31:04 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30086 
-# 12:31:04 >  
+# 19:43:02 >  
+# 19:43:02 >  mclient -lsql -ftest -i -e --host=alf --port=32764 
+# 19:43:02 >  
 
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
-% id,	table_id,	type,	name,	rkey,	action,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary,	id,	name,	authorization,	owner # name
-% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	tinyint,	int,	varchar,	int,	int # type
-% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	0,	1,	1 # length
-% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
-% id,	table_id,	type,	name,	rkey,	action,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary,	id,	name,	authorization,	owner # name
-% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	tinyint,	int,	varchar,	int,	int # type
-% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1,	0,	1,	1 # length
+#SELECT * FROM "sys"."keys" AS "keys", "sys"."keycolumns" AS
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% id,	table_id,	type,	name,	rkey,	action,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
+% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
+#SELECT * FROM "sys"."keys" AS "keys", "sys"."keycolumns" AS
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% id,	table_id,	type,	name,	rkey,	action,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
+% int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
+#SELECT cast(null AS varchar(1)) AS "TABLE_CAT",
 % .,	sys.schemas,	.tables,	sys.keycolumns,	sys.keys,	sys.keys # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
 % varchar,	varchar,	varchar,	varchar,	int,	varchar # type

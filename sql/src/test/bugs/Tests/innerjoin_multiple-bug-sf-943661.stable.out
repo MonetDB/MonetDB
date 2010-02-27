@@ -28,7 +28,7 @@ Over..
 % sys.schemas,	.tables,	.columns # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
-% 3,	10,	11 # length
+% 3,	10,	12 # length
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
 [ "sys",	"args",	"name"	]
@@ -41,6 +41,7 @@ Over..
 [ "sys",	"columns",	"name"	]
 [ "sys",	"columns",	"null"	]
 [ "sys",	"columns",	"number"	]
+[ "sys",	"columns",	"storage_type"	]
 [ "sys",	"columns",	"table_id"	]
 [ "sys",	"columns",	"type"	]
 [ "sys",	"columns",	"type_digits"	]
@@ -93,7 +94,7 @@ Over..
 % sys.s,	.t,	.c # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
-% 3,	10,	11 # length
+% 3,	10,	12 # length
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
 [ "sys",	"args",	"name"	]
@@ -106,6 +107,7 @@ Over..
 [ "sys",	"columns",	"name"	]
 [ "sys",	"columns",	"null"	]
 [ "sys",	"columns",	"number"	]
+[ "sys",	"columns",	"storage_type"	]
 [ "sys",	"columns",	"table_id"	]
 [ "sys",	"columns",	"type"	]
 [ "sys",	"columns",	"type_digits"	]

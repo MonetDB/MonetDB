@@ -1026,7 +1026,7 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		node *n;
 		sql_rel *res = NULL;
 		sql_table *nt = dup_sql_table(sql->sa, t);
-		if (!nt || table_element(sql, te, s, nt, 1) == SQL_ERR) 
+		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
 			return NULL;
 
 		if (t->persistence != SQL_DECLARED_TABLE && s)
@@ -1035,7 +1035,11 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		if (t->s && !nt->s)
 			nt->s = t->s;
 
+		if (!te) /* Set Read only */
+			nt = mvc_readonly(sql, nt, 1);
 		res = rel_table( DDL_ALTER_TABLE, sname, nt, 0);
+		if (!te) /* Set Read only */
+			return res;
 
 		/* new columns need update with default values */
 		if (nt->columns.nelm) {

@@ -316,6 +316,7 @@ extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *nam
 
 extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action);
 extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
+extern sql_table *sql_trans_alter_readonly(sql_trans *tr, sql_table *t, int readonly);
 
 extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe);
 extern void sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action);

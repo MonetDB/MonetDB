@@ -286,8 +286,8 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *r = stmt_dup(j->op2.stval);
 
 			l = stmt_limit(l, 
-			      s->op2.stval->op1.aval->data.val.ival,
-			      s->op3.stval->op1.aval->data.val.ival,
+			      s->op2.stval->op1.aval->data.val.wval,
+			      s->op3.stval->op1.aval->data.val.wval,
 			      s->flag);
 			s = stmt_join(l, r, cmp_equal); 
 			ns = bin_optimizer(c, s);
@@ -309,8 +309,8 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *r = stmt_dup(j->op2.stval);
 
 			r = stmt_limit(r, 
-			      s->op2.stval->op1.aval->data.val.ival,
-			      s->op3.stval->op1.aval->data.val.ival,
+			      s->op2.stval->op1.aval->data.val.wval,
+			      s->op3.stval->op1.aval->data.val.wval,
 			      s->flag);
 			s = stmt_join(l, r, cmp_equal); 
 			ns = bin_optimizer(c, s);
@@ -323,8 +323,8 @@ bin_optimizer(mvc *c, stmt *s)
 		/* try to push the limit through the order */
 		if (j->type == st_order) {
 			s = stmt_order(stmt_limit(stmt_dup(j->op1.stval),
-				s->op2.stval->op1.aval->data.val.ival,
-				s->op3.stval->op1.aval->data.val.ival,
+				s->op2.stval->op1.aval->data.val.wval,
+				s->op3.stval->op1.aval->data.val.wval,
 				LIMIT_DIRECTION(j->flag,1,0)), j->flag);
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
@@ -336,8 +336,8 @@ bin_optimizer(mvc *c, stmt *s)
 		/* try to push the limit through the reverse */
 		if (!s->flag && j->type == st_reverse) {
 			s = stmt_reverse(stmt_limit(stmt_dup(j->op1.stval),
-				s->op2.stval->op1.aval->data.val.ival,
-				s->op3.stval->op1.aval->data.val.ival,
+				s->op2.stval->op1.aval->data.val.wval,
+				s->op3.stval->op1.aval->data.val.wval,
 				0));
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
@@ -347,10 +347,10 @@ bin_optimizer(mvc *c, stmt *s)
 			return ns;
 		}
 		/* try to push the limit through the mark (only if there is no offset) */
-		if (!s->op2.stval->op1.aval->data.val.ival && j->type == st_mark) {
+		if (!s->op2.stval->op1.aval->data.val.wval && j->type == st_mark) {
 			s = stmt_mark_tail(stmt_limit(stmt_dup(j->op1.stval),
-				s->op2.stval->op1.aval->data.val.ival,
-				s->op3.stval->op1.aval->data.val.ival, s->flag),
+				s->op2.stval->op1.aval->data.val.wval,
+				s->op3.stval->op1.aval->data.val.wval, s->flag),
 				j->op2.stval->op1.aval->data.val.ival);
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);

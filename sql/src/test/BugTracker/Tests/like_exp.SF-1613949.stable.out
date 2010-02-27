@@ -21,16 +21,17 @@ Ready.
 
 Over..
 
-# 21:38:42 >  
-# 21:38:42 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33867  < like_exp.SF-1613949.sql
-# 21:38:42 >  
+# 19:37:54 >  
+# 19:37:54 >  mclient -lsql -ftest -i -e --host=alf --port=32764 
+# 19:37:54 >  
 
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	tinyint # type
-% 1,	0,	1,	0,	1,	5,	1,	1 # length
+#select * from tables where name LIKE ('hel%');
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
+% 1,	0,	1,	0,	1,	5,	1,	5,	1 # length
 
-# 21:38:42 >  
-# 21:38:42 >  Done.
-# 21:38:42 >  
+# 19:37:54 >  
+# 19:37:54 >  Done.
+# 19:37:54 >  
 

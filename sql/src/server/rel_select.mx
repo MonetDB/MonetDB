@@ -4364,6 +4364,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 					rel = rel_groupby_gbe(rel, e); 
 				}
 			} else {
+				node *m;
+
 				list *gbexps = new_exp_list();
 
 				decorrelated = 1;
@@ -4379,14 +4381,13 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 				/* now create a groupby on the inner */
 				inner = rel_groupby(rel_dup(rel->r), gbexps);
 				inner = rel_label(sql, inner);
-				for (n = ce->h; n; n = n->next) {
+				for (n = ce->h, m = gbexps->h; n && m; n = n->next, m = m->next) {
 					sql_exp *e = n->data;
-					sql_exp *re = e->r;
+					sql_exp *gbe = m->data;
 	
 					assert(e->type == e_cmp);
-					assert(re->type == e_column);
-					re = exp_column(rel_name(inner), re->r, exp_subtype(re), inner->card, has_nil(re), is_intern(re));
-					e = exp_compare( exp_dup(e->l), re, e->flag);
+					gbe = exp_column(rel_name(inner), exp_name(gbe), exp_subtype(gbe), inner->card, has_nil(gbe), is_intern(gbe));
+					e = exp_compare( exp_dup(e->l), gbe, e->flag);
 					append(jexps, e);
 				}
 				outer = rel_dup(outer);
@@ -4559,9 +4560,9 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	if (sn->limit > 0 || sn->offset > 0) {
 		list *exps = new_exp_list();
 
-		append(exps, exp_atom_int(sn->limit));
+		append(exps, exp_atom_lng(sn->limit));
 		if (sn->offset > 0)
-			append(exps, exp_atom_int(sn->offset));
+			append(exps, exp_atom_lng(sn->offset));
 		rel = rel_topn(rel, exps);
 	}
 	return rel;

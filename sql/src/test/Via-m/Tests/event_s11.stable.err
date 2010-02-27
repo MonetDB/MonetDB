@@ -67,16 +67,16 @@ stderr of test 'event_s11` in directory 'src/test/Via-m` itself:
 # 15:59:49 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=32412 
 # 15:59:49 >  
 
-MAPI  = monetdb@yngling:31032
+MAPI  = monetdb@alf:37695
 QUERY = set id_event = add_event('event 4', 123456, 'artist2', 'location3', 'description3');
 ERROR = !types int(32,0) (int) and date(0,0) (date) are not equal
-MAPI  = monetdb@yngling:31032
+MAPI  = monetdb@alf:37695
 QUERY = delete from event where event_name = 'event 2';
 ERROR = !SQLException:assert:DELETE: FOREIGN KEY constraint 'event.event_event_id_pkey' violated
-MAPI  = monetdb@yngling:31032
+MAPI  = monetdb@alf:37695
 QUERY = insert into event_metadata (
 ERROR = !SQLException:assert:INSERT INTO: UNIQUE constraint 'event_metadata.unq_metadata' violated
-MAPI  = monetdb@yngling:31032
+MAPI  = monetdb@alf:37695
 QUERY = set id_event = add_event('event 4', '2009-06-24', 'artist4', 'location4', 'description4');
 ERROR = !SQLException:assert:INSERT INTO: UNIQUE constraint 'event.unq_event_name' violated
 
