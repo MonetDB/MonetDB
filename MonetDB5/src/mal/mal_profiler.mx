@@ -189,9 +189,6 @@ Dealing with it is major effort affecting both the kernel
 and the upper layers. For the time being, access to the
 data is considered priority over the leak.
 @{
-The profiler is activated by defining MALprofiler in the source tree.
-This leads to securing space for the counters and for code
-in the interpreter to collect the information.
 
 @h
 #ifndef _MAL_PROFILER_H
@@ -302,7 +299,6 @@ reset once the owner leaves. The routine profilerReset() handles the case.
 
 static stream *eventstream = 0;
 
-#ifdef MALprofiler
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
 static str myname = 0;
@@ -314,14 +310,6 @@ profilerAvailable(void)
 }
 static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
-#else
-int
-profilerAvailable(void)
-{
-	return 0;
-}
-
-#endif
 static int initTrace(void);
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
@@ -426,7 +414,6 @@ Note that the profiler itself should lead to event generations.
 void
 profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
-#ifdef MALprofiler
 	if (mb->profiler == NULL) return;
 	if (profileCounter[PROFstart].status == 0 && mb->profiler[pc].ticks == 0)
 		return;
@@ -438,15 +425,7 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 		offlineProfilerEvent(idx, mb, stk, pc);
 	if (cachedProfiling)
 		cachedProfilerEvent(idx, mb, stk, pc);
-#else
-	(void)idx;
-	(void)mb;
-	(void)stk;
-	(void)pc;
-#endif
 }
-
-#ifdef MALprofiler
 
 static void
 offlineProfilerHeader(void)
@@ -675,7 +654,6 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
 }
-#endif
 @+ Postprocessing events
 The events may be sent for offline processing through a
 stream, including "stdout".
@@ -684,7 +662,6 @@ str
 setLogFile(stream *fd, Module mod, str fname)
 {
 	(void)mod;      /* still unused */
-#ifdef MALprofiler
 	mal_set_lock(mal_profileLock, "profileLock");
 	if (strcmp(fname, "console") == 0)
 		eventstream = mal_clients[0].fdout;
@@ -696,11 +673,6 @@ setLogFile(stream *fd, Module mod, str fname)
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
 	mal_unset_lock(mal_profileLock, "profileLock");
-#else
-	(void)fd;
-	(void)fname;
-	stream_printf(GDKout, "# MonetDB not compiled for profiling\n");
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -708,18 +680,12 @@ str
 setLogStream(Module cntxt, str host, int port)
 {
 	(void)cntxt;        /* still unused */
-#ifdef MALprofiler
 	mal_set_lock(mal_profileLock, "profileLock");
 	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL)
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	if (eventstream)
 		eventstream = wbstream(eventstream, BUFSIZ);
 	mal_unset_lock(mal_profileLock, "profileLock");
-#else
-	(void)host;
-	(void)port;
-	stream_printf(GDKout, "# MonetDB not compiled for profiling\n");
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -748,14 +714,10 @@ setStartPoint(Module cntxt, str mod, str fcn)
 	(void)cntxt;
 	(void)mod;
 	(void)fcn;      /* still unused */
-#ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */)@
 	stream_printf(GDKout, "# start point not set\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
-#else
-	stream_printf(GDKout, "# Monet not compiled for profiling\n");
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -765,14 +727,10 @@ setEndPoint(Module cntxt, str mod, str fcn)
 	(void)cntxt;
 	(void)mod;
 	(void)fcn;      /* still unused */
-#ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */)@
 	stream_printf(GDKout, "# end point not set\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
-#else
-	stream_printf(GDKout, "# Monet not compiled for profiling\n");
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -784,7 +742,6 @@ is initiated. This is controlled by a delay-switch
 str
 startProfiling(void)
 {
-#ifdef MALprofiler
 	mal_set_lock(mal_profileLock, "profileLock");
 	if (eventstream != NULL) {
 		offlineProfiling = TRUE;
@@ -794,19 +751,16 @@ startProfiling(void)
 	initTrace();
 	malProfileMode = TRUE;
 	mal_unset_lock(mal_profileLock, "profileLock");
-#endif
 	return MAL_SUCCEED;
 }
 
 str
 stopProfiling(void)
 {
-#ifdef MALprofiler
 	malProfileMode = FALSE;
 	offlineProfiling = FALSE;
 	cachedProfiling = FALSE;
 	closeProfilerStream();
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -844,18 +798,10 @@ abstracted away.
 int
 instrFilter(InstrPtr pci, str mod, str fcn)
 {
-#ifdef MALprofiler
 	if (pci && getFunctionId(pci) && fcn && mod &&
-		(*fcn == '*' || fcn == getFunctionId(pci)) &&
-		(*mod == '*' || mod == getModuleId(pci))
-		)
+			(*fcn == '*' || fcn == getFunctionId(pci)) &&
+			(*mod == '*' || mod == getModuleId(pci)))
 		return 1;
-#else
-	(void)pci;
-	(void)mod;
-	(void)fcn;
-	stream_printf(GDKout, "# Monet not compiled for profiling\n");
-#endif
 	return 0;
 }
 
@@ -887,7 +833,6 @@ setFilterOnBlock(MalBlkPtr mb, str mod, str fcn)
 void
 setFilter(Module cntxt, str mod, str fcn)
 {
-#ifdef MALprofiler
 	int j;
 	Module s = cntxt;
 	Symbol t;
@@ -917,12 +862,6 @@ setFilter(Module cntxt, str mod, str fcn)
 		s = s->outer;
 	}
 	mal_unset_lock(mal_profileLock, "profileLock");
-#else
-	(void)cntxt;
-	(void)mod;
-	(void)fcn;
-	stream_printf(GDKout, "# Monet not compiled for profiling\n");
-#endif
 }
 
 @-
@@ -933,7 +872,6 @@ each separate top level routine.
 void
 clrFilter(Module cntxt, str mod, str fcn)
 {
-#ifdef MALprofiler
 	int j, k;
 	Module s = cntxt;
 	Symbol t;
@@ -964,12 +902,6 @@ clrFilter(Module cntxt, str mod, str fcn)
 		s = s->outer;
 	}
 	mal_unset_lock(mal_profileLock, "profileLock");
-#else
-	(void)cntxt;
-	(void)mod;
-	(void)fcn;
-	stream_printf(GDKout, "# Monet not compiled for profiling\n");
-#endif
 }
 @-
 The instructions to be monitored can also be identified
@@ -1019,9 +951,7 @@ All properties identified below are maintained, because this allows
 for easy integration with SQL.
 @c
 static int TRACE_init = 0;
-#ifdef MALprofiler
 static int TRACE_event = 0;
-#endif
 static BAT *TRACE_id_event = 0;
 static BAT *TRACE_id_time = 0;
 static BAT *TRACE_id_ticks = 0;
@@ -1223,7 +1153,6 @@ getTraceType(str nme)
 	return TYPE_any;
 }
 
-#ifdef MALprofiler
 void
 cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
@@ -1369,7 +1298,6 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
 }
-#endif
 @-
 The profile vector is added to the MAL block the first time we
 have to safe monitor information.

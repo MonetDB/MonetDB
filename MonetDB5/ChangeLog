@@ -9,9 +9,6 @@
 * Fri Feb 26 2010 Fabian Groffen <fabian@cwi.nl>
 - Renamed configure argument --with-console to --enable-console.
   Default remains console being enabled.
-- Added --enable-profiler configure argument to enable/disable
-  stethoscope and the backend profiling support.  Default setting is
-  enabled.
 
 * Mon Feb 22 2010 Martin Kersten <mk@cwi.nl>
 - Fixed cleaning the user module context upon session end.
