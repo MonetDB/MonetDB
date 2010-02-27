@@ -203,9 +203,10 @@ malInclude(Client c, str name, int listing)
 
 	c->fdin = NULL;
 	c->srcFile = name;
-	if ((s = malLoadScript(c, name, &c->fdin)))
+	if ((s = malLoadScript(c, name, &c->fdin))) {
 		stream_printf(c->fdout, "!%s\n", s);
-	else 
+		GDKfree(s);
+	} else 
 		parseMAL(c,c->curprg);
 
 	@:restoreClient()@
