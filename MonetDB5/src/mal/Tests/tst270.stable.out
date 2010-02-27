@@ -58,7 +58,7 @@ function user.main():void;
 #profiler.setAll(); 
     profiler.activate("ticks");
     profiler.activate("pc");
-    profiler.activate("statement");
+    profiler.activate("stmt");
 #profiler.setFilter("*","*"); 
     profiler.setFilter("*","insert");
     profiler.openStream("/tmp/MonetEvents");
@@ -96,8 +96,8 @@ end main;
 # h				tmp_5		  # name
 # str				str		  # type
 #-----------------------------------------#
-[ "batId",		  "tmp_10"	  ]
-[ "batCacheid",		  "8"		  ]
+[ "batId",		  "tmp_23"	  ]
+[ "batCacheid",		  "19"		  ]
 [ "hparentid",		  "0"		  ]
 [ "tparentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
@@ -115,7 +115,7 @@ end main;
 [ "hident",			  "h"		  ]
 [ "hdense",			  "0"		  ]
 [ "hseqbase",			  "0@0"		  ]
-[ "hkey",		  "0"		  ]
+[ "hkey",		  "1"		  ]
 [ "hvarsized",			  "0"		  ]
 [ "halign",			  "20000000"	  ]
 [ "hnosorted",		  "0"		  ]
@@ -129,7 +129,7 @@ end main;
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "0@0"		  ]
 [ "tsorted",		  "65"		  ]
-[ "tkey",		  "0"		  ]
+[ "tkey",		  "1"		  ]
 [ "tvarsized",			  "0"		  ]
 [ "talign",			  "20000001"	  ]
 [ "tnosorted",		  "0"		  ]
@@ -144,9 +144,9 @@ end main;
 [ "batFirst",		  "0"		  ]
 [ "htop",		  "0"		  ]
 [ "ttop",		  "0"		  ]
-[ "batStamp",		  "4"		  ]
-[ "lastUsed",		  "159"		  ]
-[ "curStamp",		  "5"		  ]
+[ "batStamp",		  "16"		  ]
+[ "lastUsed",		  "171"		  ]
+[ "curStamp",		  "17"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]
 [ "H->heap.dirty",	  "clean"	  ]
@@ -156,13 +156,13 @@ end main;
 [ "head.maxsize",	  "1024"	  ]
 [ "head.storage",	  "malloced"	  ]
 [ "head.newstorage",	  "malloced"	  ]
-[ "head.filename",	  "10.head"	  ]
+[ "head.filename",	  "23.head"	  ]
 [ "tail.free",		  "0"		  ]
 [ "tail.size",		  "1024"	  ]
 [ "tail.maxsize",	  "1024"	  ]
 [ "tail.storage",	  "malloced"	  ]
 [ "tail.newstorage",	  "malloced"	  ]
-[ "tail.filename",	  "10.tail"	  ]
+[ "tail.filename",	  "23.tail"	  ]
 [ "H->vheap->dirty",	  "clean"	  ]
 [ "T->vheap->dirty",	  "clean"	  ]
 #~EndVariableOutput~#

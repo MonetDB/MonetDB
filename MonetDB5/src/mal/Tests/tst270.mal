@@ -3,7 +3,7 @@
 #profiler.setAll();
 profiler.activate("ticks");
 profiler.activate("pc");
-profiler.activate("statement");
+profiler.activate("stmt");
 #profiler.setFilter("*","*");
 profiler.setFilter("*","insert");
 profiler.openStream("/tmp/MonetEvents");

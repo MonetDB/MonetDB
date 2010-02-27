@@ -14,7 +14,6 @@ profiler.activate("ticks");
 profiler.activate("stmt");
 profiler.activate("rbytes");
 profiler.activate("wbytes");
-profiler.activate("disk");
 profiler.setAll();
 
 profiler.start();
@@ -35,4 +34,3 @@ rdbytes:= profiler.getTrace("rbytes");
 wrbytes:= profiler.getTrace("wbytes");
 #io.print(wrbytes);
 io.print(rdbytes,wrbytes);
-#io.print(ticks,rdbytes,wrbytes,diskspace);
