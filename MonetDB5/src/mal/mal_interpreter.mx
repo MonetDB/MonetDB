@@ -701,9 +701,9 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 	/* remove the result arguments from the hot set */
 	int i,j,h,bid;
 	
-	if ( hottop == MAXHOT || memoryused > (lng) (MEMORY_THRESHOLD * monet_memory) ){
+	if ( hottop >= MAXHOT || memoryused > (lng) (MEMORY_THRESHOLD * monet_memory) ){
 		/* forget everything returning memory to pool */
-		for ( i =0; i< hottop; i++){
+		for ( i =0; i< MAXHOT; i++){
 			hotpotatoes[i].claim=0;
 			hotpotatoes[i].bid=0;
 		}
@@ -755,7 +755,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 
-	for ( i= 0; i< pci->retc; i++) 
+	for ( i= 0; i< pci->retc && hottop < MAXHOT; i++) 
 	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
 	{
 		total = 0;
@@ -1005,7 +1005,7 @@ on the queue, searching for one that can be handled instead. [todo].
 				MT_sleep_ms( 25);
 				if ( DFLOWadmission(argclaim,retclaim,hotclaim) == 0) {
 					PARDEBUG {
-						stream_printf(GDKout,"#DFLOWcont  thread %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
+						stream_printf(GDKout,"#DFLOWcont  thread %d delay " LLFMT " pool  " LLFMT" delayed " LLFMT " ms\n#", THRgettid(),  memorypool, argclaim+retclaim, (GDKusec()-stk->clk)/1000);
 						printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 					}
 					break;
