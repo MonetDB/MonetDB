@@ -848,7 +848,8 @@ TESTrenderer(MapiHdl hdl)
 				}
 				stream_write(toConsole, "\"", 1, 1);
 			} else if (strcmp(tp, "double") == 0 ||
-				   strcmp(tp, "dbl") == 0)
+				   strcmp(tp, "dbl") == 0 ||
+				   strcmp(tp, "real") == 0)
 				stream_printf(toConsole, "%.10g", atof(s));
 			else
 				stream_printf(toConsole, "%s", s);
