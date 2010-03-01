@@ -242,6 +242,7 @@ mal_export void initProfiler(MalBlkPtr mb);
 mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export str setLogFile(stream *fd, Module cntxt, str fname);
 mal_export str setLogStream(Module cntxt, str host, int port);
+mal_export str setLogStreamStream(Module cntxt, stream *s);
 mal_export str setStartPoint(Module cntxt, str mod, str fcn);
 mal_export str setEndPoint(Module cntxt, str mod, str fcn);
 
@@ -685,8 +686,19 @@ setLogStream(Module cntxt, str host, int port)
 	mal_set_lock(mal_profileLock, "profileLock");
 	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL)
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
-	if (eventstream)
-		eventstream = wbstream(eventstream, BUFSIZ);
+	eventstream = wbstream(eventstream, BUFSIZ);
+	mal_unset_lock(mal_profileLock, "profileLock");
+	return MAL_SUCCEED;
+}
+
+str
+setLogStreamStream(Module cntxt, stream *s)
+{
+	(void)cntxt;        /* still unused */
+	mal_set_lock(mal_profileLock, "profileLock");
+	if ((eventstream = s) == NULL)
+		throw(ILLARG, "mal.profiler", "stream must not be NULL");
+	eventstream = wbstream(eventstream, BUFSIZ);
 	mal_unset_lock(mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
