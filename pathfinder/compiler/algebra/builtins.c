@@ -4124,7 +4124,7 @@ PFbui_pf_number (const PFla_op_t *loop,
     (void) ordering;
     (void) side_effects;
 
-    /* This variant of number ignores NaN values alltogether
+    /* This variant of number ignores NaN values altogether
        as it can be used in selections only. */
 
     return (struct  PFla_pair_t) {
