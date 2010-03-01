@@ -40,6 +40,14 @@ bin_msqldump = {
 		$(ICONV_LIBS)
 }
 
+bin_stethoscope = {
+	SOURCES = stethoscope.c
+	LIBS = libmcutil \
+		   ../mapilib/libMapi $(MAPI_LIBS) \
+		   $(MONETDB_LIBS) -lstream \
+		   $(MALLOC_LIBS) $(PTHREAD_LIBS)
+}
+
 man_MANS = mclient.1
 
 EXTRA_DIST = msqldump.h mprompt.h $(man_MANS)
