@@ -530,14 +530,18 @@ of the database structures.
 static void
 CMDtruncateheap(Heap *h,str fnme)
 {
+	FILE *f;
 	char buf[PATHLENGTH];
 	if (h == 0 || h->filename == 0 || h->storage != STORE_MMAP)
 		return;
 	/* reduce disk footprint */
 	snprintf(buf, PATHLENGTH, "%s/%s.%s", BATDIR, fnme, (strrchr(h->filename,'.')? strrchr(h->filename,'.')+1:""));
-	if (truncate(buf, 0) != 0) /* must do something with returnvalue */
+	if ((f = fopen(buf, "w")) == NULL) {
 		IODEBUG stream_printf(GDKstdout, "#failed to truncate: %s\n",
 				strerror(errno));
+	} else {
+		fclose(f);
+	}
 	IODEBUG stream_printf(GDKstdout, "#truncate %s file\n", fnme);
 }
 
