@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Mar 01 2010 Fabian Groffen <fabian@cwi.nl>
+- Removed stethoscope from MonetDB5 sources.  New location is in the
+  clients repository.
+
 * Fri Feb 26 2010 Martin Kersten <mk@cwi.nl>
 - Added the compression optimizer as an example of how to gain access to
   foreign file formats deep down in the kernel and transfer them just

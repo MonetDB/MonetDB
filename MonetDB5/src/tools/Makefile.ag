@@ -27,14 +27,6 @@ bin_mserver5 = {
                 $(PCRE_LIBS) $(OPENSSL_LIBS)
 }
 
-bin_stethoscope = {
-	SOURCES = stethoscope.mx
-	LIBS = @SHARED_LIBS@ -lbat -lmutils -lstream \
-			$(MONETDB_LIBS) $(CLIENTS_LIBS) -lMapi \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
 lib_embeddedmal = {
 	SOURCES = embeddedclient.c.in
 	LIBS = ../mal/libmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
