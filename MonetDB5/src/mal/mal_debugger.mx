@@ -1783,7 +1783,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 	if (v && v->vtype == TYPE_bat){
 		int i = v->val.ival;
-		BAT *b = BBPquickdesc(i, TRUE);
+		BAT *b = BBPquickdesc(ABS(i), TRUE);
 
 		b = BBPquickdesc(ABS(i), TRUE);
 		if (i < 0)
