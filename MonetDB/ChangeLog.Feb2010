@@ -1,3 +1,6 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Mar 01 2010 Fabian Groffen <fabian@cwi.nl>
+- Fixed bug in UDP stream creation causing UDP connections to already
+  bound ports to be reported as successful.
