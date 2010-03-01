@@ -1,0 +1,34 @@
+stdout of test 'correlated_update_type_mismatch.SF-2947841` in directory 'src/test/BugTracker-2010` itself:
+
+
+# 14:11:08 >  
+# 14:11:08 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=32228 --set xrpc_port=42441 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 14:11:08 >  
+
+# MonetDB server v5.18.1, based on kernel v1.36.0
+# Serving database 'mTests_src_test_BugTracker-2010', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.754 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32228/
+# MonetDB/SQL module v2.36.1 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 14:11:09 >  
+# 14:11:09 >  mclient -lsql -ftest -i -e --host=alf --port=32228 
+# 14:11:09 >  
+
+[ 0	]
+
+# 14:11:09 >  
+# 14:11:09 >  Done.
+# 14:11:09 >  
+
