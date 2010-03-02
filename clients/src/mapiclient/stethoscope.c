@@ -70,7 +70,7 @@
  * 
  * A convenient way to watch most of the SQL interaction
  * you may use the command:
- * stethoscope -hhost +tis "algebra.*" "bat.*" "group.*" "sql.*" "aggr.*"
+ * stethoscope -umonetdb -Pmonetdb -hhost +tis "algebra.*" "bat.*" "group.*" "sql.*" "aggr.*"
  */
 
 #include "clients_config.h"
@@ -372,7 +372,7 @@ doProfile(void *d)
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
-			printf("%s\n", response);
+			printf("%s%s\n", id, response);
 			if (gnuplot && (x = strchr(response, '['))) {
 				d = fopen("stet.dat", "a+");
 				fprintf(d, "%zd\t", ln++);
