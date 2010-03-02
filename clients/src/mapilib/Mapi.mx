@@ -2890,7 +2890,13 @@ char **
 mapi_resolve(const char *host, int port, const char *pattern)
 {
 	int rmax;
-	Mapi mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
+	Mapi mid;
+
+	/* if it doesn't make sense, don't try to crash */
+	if (host == NULL || port <= 0 || pattern == NULL)
+		return NULL;
+
+	mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
 	if (mid && mid->error == MOK) {
 		rmax = mid->redirmax;
 		mid->redirmax = 0;
