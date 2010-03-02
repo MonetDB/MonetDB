@@ -2079,23 +2079,25 @@ mapi_mapiuri(
 	dbname = p; /* temp misuse */
 	
 	if ((p = strchr(dbname, '/')) == NULL) {
-		mapi_setError(mid, "URI must contain database name",
-				"mapi_mapiuri", MERROR);
-		return(mid);
+		p = dbname;
+		dbname = NULL;
+	} else {
+		*p++ = '\0';
+		if (*p == '\0') {
+			p = dbname;
+			dbname = NULL;
+		} else {
+			char *t = dbname;
+			dbname = p;
+			p = t;
+		}
 	}
-	*p++ = '\0';
-	if (*p == '\0') {
-		mapi_setError(mid, "URI must contain database name",
-				"mapi_mapiuri", MERROR);
-		return(mid);
-	}
-	port = atoi(dbname);
+	port = atoi(p);
 	if (port <= 0) {
 		mapi_setError(mid, "URI contains invalid port",
 				"mapi_mapiuri", MERROR);
 		return(mid);
 	}
-	dbname = p;
 
 	if (mid->hostname)
 		free(mid->hostname);
@@ -2119,7 +2121,7 @@ mapi_mapiuri(
 		mid->languageId = LANG_XQUERY;
 	if (mid->database)
 		free(mid->database);
-	mid->database = strdup(dbname);
+	mid->database = dbname == NULL ? NULL : strdup(dbname);
 
 	return(mid);
 }
@@ -2890,7 +2892,13 @@ char **
 mapi_resolve(const char *host, int port, const char *pattern)
 {
 	int rmax;
-	Mapi mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
+	Mapi mid;
+
+	/* if it doesn't make sense, don't try to crash */
+	if (host == NULL || port <= 0 || pattern == NULL)
+		return NULL;
+
+	mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
 	if (mid && mid->error == MOK) {
 		rmax = mid->redirmax;
 		mid->redirmax = 0;
