@@ -266,8 +266,8 @@ doProfile(void *d)
 	char *response, *x;
 	char buf[BUFSIZ];
 	char *mod, *fcn;
-	char *host = "localhost";
-	int portnr = 50000;
+	char *host;
+	int portnr;
 	char cmd[100];
 	char id[10];
 	int colind[30], colcnt = 0;
@@ -329,6 +329,7 @@ doProfile(void *d)
 		goto stop_cleanup;
 	}
 
+	host = mapi_get_host(dbh);
 	printf("-- %sopening UDP profile stream for %s:%d\n",
 			id, host, portnr);
 	if ((wthr->s = udp_rastream(host, portnr, "profileStream")) == NULL) {
@@ -462,7 +463,8 @@ main(int argc, char **argv)
 			break;
 		case 'h':
 			if (strcmp(long_options[option_index].name, "help") == 0) {
-				printf("help\n");
+				usage();
+				break;
 			}
 			if (strcmp(long_options[option_index].name, "host") == 0) {
 				host = optarg;
@@ -481,6 +483,12 @@ main(int argc, char **argv)
 	} else
 		setCounter("TtiesS");
 
+	if (user == NULL || password == NULL) {
+		fprintf(stderr, "%s: need -u and -P arguments\n", argv[0]);
+		usage();
+		exit(-1);
+	}
+
 	signal(SIGABRT, stopListening);
 #ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
@@ -496,13 +504,18 @@ main(int argc, char **argv)
 	/* try and find multiple options, we assume that we always need a
 	 * local merovingian for that, in the future we probably need to fix
 	 * this in a decent manner */
-	oalts = alts = mapi_resolve(host, portnr, dbname);
+	if (dbname != NULL) {
+		oalts = alts = mapi_resolve(host, portnr, dbname);
+	} else {
+		alts = NULL;
+		dbname = "";
+	}
 
 	if (alts == NULL) {
 		/* nothing to redirect, so a single host to try */
 		char uri[512];
 		snprintf(uri, 512, "mapi:monetdb://%s:%d/%s", host, portnr, dbname);
-		walk = malloc(sizeof(wthread));
+		walk = thds = malloc(sizeof(wthread));
 		walk->uri = uri;
 		walk->user = user;
 		walk->pass = password;
@@ -510,6 +523,7 @@ main(int argc, char **argv)
 		walk->argv = &argv[a - 1];
 		walk->tid = 0;
 		walk->s = NULL;
+		walk->next = NULL;
 		doProfile(walk);
 		free(walk);
 	} else {
