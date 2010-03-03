@@ -520,7 +520,7 @@ main(int argc, char **argv)
 		walk->user = user;
 		walk->pass = password;
 		walk->argc = argc - a;
-		walk->argv = &argv[a - 1];
+		walk->argv = &argv[a];
 		walk->tid = 0;
 		walk->s = NULL;
 		walk->next = NULL;
@@ -536,7 +536,7 @@ main(int argc, char **argv)
 			walk->user = user;
 			walk->pass = password;
 			walk->argc = argc - a;
-			walk->argv = &argv[a - 1];
+			walk->argv = &argv[a];
 			walk->s = NULL;
 			pthread_create(&walk->id, NULL, &doProfile, walk);
 			alts++;
