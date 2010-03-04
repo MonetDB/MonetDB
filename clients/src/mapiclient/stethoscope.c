@@ -533,7 +533,12 @@ main(int argc, char **argv)
 		walk->tid = 0;
 		walk->s = NULL;
 		walk->next = NULL;
-		doProfile(walk);
+		/* In principle we could do this without a thread, but it seems
+		 * that if we do it that way, ctrl-c (or any other signal)
+		 * doesn't interrupt the read inside this function, and hence
+		 * the function never terminates... at least on Linux */
+		pthread_create(&walk->id, NULL, &doProfile, walk);
+		pthread_join(walk->id, NULL);
 		free(walk);
 	} else {
 		/* fork runner threads for all alternatives */
