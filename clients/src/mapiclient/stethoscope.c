@@ -426,6 +426,7 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *password = NULL;
 	int gnuplot = 0;
+	struct sigaction sa;
 	char **alts, **oalts;
 	wthread *walk;
 
@@ -489,15 +490,23 @@ main(int argc, char **argv)
 		exit(-1);
 	}
 
-	signal(SIGABRT, stopListening);
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = stopListening;
+	if (
 #ifdef SIGPIPE
-	signal(SIGPIPE, stopListening);
+			sigaction(SIGPIPE, &sa, NULL) == -1 ||
 #endif
 #ifdef SIGHUP
-	signal(SIGHUP, stopListening);
+			sigaction(SIGHUP, &sa, NULL) == -1 ||
 #endif
-	signal(SIGTERM, stopListening);
-	signal(SIGINT, stopListening);
+			sigaction(SIGINT, &sa, NULL) == -1 ||
+			sigaction(SIGQUIT, &sa, NULL) == -1 ||
+			sigaction(SIGTERM, &sa, NULL) == -1)
+	{
+		fprintf(stderr, "%s: unable to create signal handlers\n", argv[0]);
+		exit(-1);
+	}
 
 	close(0); /* get rid of stdin */
 
