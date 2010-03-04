@@ -157,7 +157,6 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/mserver5
 %{_bindir}/Mbeddedmal
-%{_bindir}/stethoscope
 
 %{_libdir}/*.so.*
 %dir %{_libdir}/MonetDB5
