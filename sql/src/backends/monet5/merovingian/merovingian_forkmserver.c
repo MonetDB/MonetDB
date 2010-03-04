@@ -322,8 +322,15 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = NULL;
 
 		fprintf(stdout, "arguments:");
-		for (c = 0; argv[c] != NULL; c++)
-			fprintf(stdout, " %s", argv[c]);
+		for (c = 0; argv[c] != NULL; c++) {
+			/* very stupid heuristic to make copy/paste easier from
+			 * merovingian's log */
+			if (strchr(argv[c], ' ') != NULL) {
+				fprintf(stdout, " \"%s\"", argv[c]);
+			} else {
+				fprintf(stdout, " %s", argv[c]);
+			}
+		}
 		Mfprintf(stdout, "\n");
 
 		execv(_mero_mserver, argv);
