@@ -274,6 +274,7 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/mclient
 %{_bindir}/msqldump
+%{_bindir}/stethoscope
 %{_libdir}/libMapi.so.*
 %{_mandir}/man1/mclient.1.gz
 
