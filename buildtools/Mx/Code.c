@@ -294,7 +294,7 @@ CodeSubBlk(char *sub, char **argv)
 	if (!s)
 		return s;
 	while (*s) {
-		if (s[0] == MARK && s > sub && s[-1] != '\\' && '1' <= s[1] && s[1] <= '9') {
+		if (s[0] == MARK && (s == sub || s[-1] != '\\') && '1' <= s[1] && s[1] <= '9') {
 			/* argument @<digit> */
 			s++;
 			for (a = argv[*s - '0']; a && *a;) {
@@ -303,7 +303,7 @@ CodeSubBlk(char *sub, char **argv)
 				*b++ = *a++;
 			}
 			s++;
-		} else if (s[0] == MARK && s > sub && s[-1] != '\\' && s[1] == '[' && isdigit((int) s[2])) {
+		} else if (s[0] == MARK && (s == sub || s[-1] != '\\') && s[1] == '[' && isdigit((int) s[2])) {
 			/* EXPANDED ARGUMENT LIST: @[<digit>+] */
 			char *olds = s;
 			int n = 0;
