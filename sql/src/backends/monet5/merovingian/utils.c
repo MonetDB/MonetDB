@@ -286,7 +286,7 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
  * Padds the remaining bytes in buf with null-bytes.
  */
 void
-generateSalt(char **buf, unsigned int len)
+generateSalt(char *buf, unsigned int len)
 {
 	unsigned int c;
 	unsigned int size = (unsigned int)rand();
@@ -294,9 +294,9 @@ generateSalt(char **buf, unsigned int len)
 	unsigned int min = len * 0.42;
 	size = (size % (fill - min)) + min;
 	for (c = 0; c < size; c++)
-		(*buf)[c] = seedChars[rand() % 62];
+		buf[c] = seedChars[rand() % 62];
 	for ( ; c < len; c++)
-		(*buf)[c] = '\0';
+		buf[c] = '\0';
 }
 
 char *
@@ -304,7 +304,7 @@ generatePassphraseFile(char *path)
 {
 	FILE *f;
 	unsigned int len = 48;
-	char *buf[len];
+	char buf[len];
 
 	generateSalt(buf, len);
 	if ((f = fopen(path, "w")) == NULL) {

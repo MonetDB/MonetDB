@@ -193,7 +193,7 @@ controlRunner(void *d)
 
 			/* send challenge */
 			p = buf;
-			generateSalt(&p, 32);
+			generateSalt(p, 32);
 			len = snprintf(buf2, sizeof(buf2),
 					"merovingian:1:%s:\n", p);
 			send(msgsock, buf2, len, 0);
