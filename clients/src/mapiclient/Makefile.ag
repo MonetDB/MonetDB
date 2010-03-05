@@ -44,7 +44,7 @@ bin_stethoscope = {
 	SOURCES = stethoscope.c
 	LIBS = libmcutil \
 		   ../mapilib/libMapi $(MAPI_LIBS) \
-		   $(MONETDB_LIBS) -lstream \
+		   $(MONETDB_LIBS) -lmutils -lstream \
 		   $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 
