@@ -303,15 +303,22 @@ char *
 generatePassphraseFile(char *path)
 {
 	FILE *f;
-	char *buf = alloca(sizeof(char) * 48);
+	unsigned int len = 48;
+	char *buf[len];
 
-	generateSalt(&buf, 48);
-	f = fopen(path, "w");
-	if (fwrite(buf, 1, 48, f) < 48) {
-		snprintf(buf, sizeof(buf), "cannot write secret: %s",
+	generateSalt(buf, len);
+	if ((f = fopen(path, "w")) == NULL) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to open '%s': %s",
+				path, strerror(errno));
+		return(strdup(err));
+	}
+	if (fwrite(buf, 1, len, f) < len) {
+		char err[512];
+		snprintf(err, sizeof(err), "cannot write secret: %s",
 				strerror(errno));
 		fclose(f);
-		return(strdup(buf));
+		return(strdup(err));
 	}
 	fclose(f);
 	return(NULL);
