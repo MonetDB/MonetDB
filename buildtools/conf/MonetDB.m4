@@ -2286,7 +2286,8 @@ if test "x$have_openssl" != xno; then
 	LIBS="$LIBS $OPENSSL_LIBS"
 	AC_CHECK_LIB(ssl, SSL_read,
 		OPENSSL_LIBS="$OPENSSL_LIBS -lssl",
-		[ why_no_openssl="OpenSSL library not found"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ])
+		[ why_no_openssl="OpenSSL library not found"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ],
+		[-lcrypto])
 	dnl on some systems, -lcrypto needs to be passed as well
 	AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
 	LIBS="$save_LIBS"
