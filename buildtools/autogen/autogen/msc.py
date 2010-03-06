@@ -354,17 +354,17 @@ def msc_dep(fd, tar, deplist, msc):
     if ext == "tab.h":
         fd.write(getsrc)
         x, de = split_filename(deplist[0])
-        if de == 'y':
-            fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
-            fd.write("\t$(DEL) y.tab.c\n")
-            fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
-        else:
-            fd.write('\t$(YACC) $(YFLAGS) "%s.yy"\n' % b)
-            fd.write("\t$(DEL) y.tab.c\n")
-            fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
+        of = b + '.' + de
+        of = msc_translate_file(of, msc)
+        fd.write('\t$(YACC) $(YFLAGS) "%s"\n' % of)
+        fd.write("\t$(DEL) y.tab.c\n")
+        fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
     if ext == "tab.c":
         fd.write(getsrc)
-        fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
+        x, de = split_filename(deplist[0])
+        of = b + '.' + de
+        of = msc_translate_file(of, msc)
+        fd.write('\t$(YACC) $(YFLAGS) "%s"\n' % of)
         fd.write('\t$(FILTER) $(FILTERPREF)"    ;" y.tab.c > "%s.tab.c"\n' % b)
         fd.write("\t$(DEL) y.tab.h\n")
     if ext == "yy.c":
