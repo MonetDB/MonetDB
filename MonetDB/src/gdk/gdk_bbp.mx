@@ -1600,6 +1600,9 @@ bbpclear(bat i, int idx, str lock)
 		THRprintf(GDKout, "#clear %d (%s)\n", (int) i, BBPname(i));
 	}
 	BBPuncacheit_(i, TRUE);
+	BATDEBUG {
+		stream_printf(GDKout,"#BBPclear set to unloading %d\n",i);
+	}
 	BBP_status_set(i, BBPUNLOADING, "BBPclear");
 	BBP_refs(i) = 0;
 	BBP_lrefs(i) = 0;
@@ -1866,6 +1869,9 @@ decref(bat i, int logical, int releaseShare, int lock)
 	} else if (b || (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
 		assert((BBP_status(i) & BBPUNLOADING) == 0);
+		BATDEBUG {
+			stream_printf(GDKout,"#BBPdecref set to unloading BAT %d\n",i);
+		}
 		BBP_status_on(i, BBPUNLOADING, "BBPdecref");
 		swap = TRUE;
 	}
@@ -1881,6 +1887,9 @@ decref(bat i, int logical, int releaseShare, int lock)
 		if (b && destroy) {
 			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
 		} else if (b) {
+			BATDEBUG {
+				stream_printf(GDKout,"#BBPdecref unload and free bat %d\n",i);
+			}
 			BBP_unload_inc(i, "BBPdecref");
 			if (BBPfree(b, "BBPdecref")) /* free memory of transient */
 				return -1;  /* indicate failure */
@@ -2059,6 +2068,9 @@ BBPdescriptor(bat i)
 			b = BBP_cache(i);
 			if (b == NULL) {
 				load = TRUE;
+				BATDEBUG {
+					stream_printf(GDKout,"#BBPdescriptor set to unloading BAT %d\n",j);
+				}
 				BBP_status_on(j, BBPLOADING, "BBPdescriptor");
 			}
 		}
@@ -2209,6 +2221,9 @@ BBPfree(BAT *b, str calledFrom)
 		BBPuncacheit_(bid, FALSE);
 	}
 	/* clearing bits can be done without the lock */
+	BATDEBUG {
+		stream_printf(GDKout,"#BBPfree turn off unloading %d\n",bid);
+	}
 	BBP_status_off(bid, BBPUNLOADING, calledFrom);
 	BBP_unload_dec(bid, calledFrom);
 
@@ -2405,6 +2420,9 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int dirty)
 				MEMDEBUG {
 					THRprintf(GDKout, "#TRIMSELECT: unload %s [" SZFMT "," SZFMT "] bytes [" SZFMT "," SZFMT "] dirty\n", BBPname(b->batCacheid), memdelta, vmdelta, memdirty, vmdirty);
 				}
+				BATDEBUG {
+					stream_printf(GDKout,"#BBPtrim_select set to unloading BAT %d\n",bbptrim[cur].bid);
+				}
 				BBP_status_on(bbptrim[cur].bid, BBPUNLOADING, "BBPtrim_select");
 				BBP_unload_inc(bbptrim[cur].bid, "BBPtrim_select");
 				*memtarget = *memtarget > memdelta ? *memtarget - memdelta : 0;
@@ -2550,6 +2568,9 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 
 			bats_written += (b->batPersistence != TRANSIENT && BATdirty(b));
 			bats_unloaded++;
+			BATDEBUG {
+				stream_printf(GDKout,"#BBPtrim unloaded and free bat %d\n",b->batCacheid);
+			}
 			BBPfree(b, "BBPtrim");
 		}
 		/* continue while we can scan for more candiates */
@@ -2916,6 +2937,9 @@ batcache_get(batcache_t * bc, int bin)
 		*BBP_logical(bid) = 't';
 		BBP_refs(bid)++;
 
+		BATDEBUG {
+			stream_printf(GDKout,"#BBPrecycle turn off unloading %d\n",bid);
+		}
 		/* clearing bits can be done without the lock */
 		BBP_status_off(bid, BBPUNLOADING, "BBPrecycle");
 	}
