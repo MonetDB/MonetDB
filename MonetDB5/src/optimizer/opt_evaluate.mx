@@ -97,22 +97,20 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb){
 			if ( p->argc == 2 && isVarConstant(mb, getArg(p,1))  &&
 				getArgType(mb,p,1) == TYPE_bit &&
 				getVarConstant(mb,getArg(p,1)).val.cval[0] == 0){
-				skip=block;
+				if ( skip == 0)
+					skip = block;
 				action++;
 			}
-			/* for blocks definitely entered we may do a little more
-			   provided we respect the other flow of control statements
-				[todo]
-			if ( p->argc == 2 && isVarConstant(mb, getArg(p,1))  &&
-				getArgType(mb,p,1) == TYPE_bit &&
-				getVarConstant(mb,getArg(p,1)).val.cval[0] == 1){
-				p->token = REMsymbol;
-				getInstrPtr(mb, p->jump)->token = REMsymbol;
-			}
-			*/
 		}
-		if (blockExit(p))
+		if (blockExit(p)){
+			if( skip)
+				freeInstruction(p);
+			else
+				mb->stmt[j++] =p;
+			if (skip == block)
+				skip = 0;
 			block--;
+		} else
 		if( skip)
 			freeInstruction(p);
 		else
@@ -143,7 +141,7 @@ static int
 OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
-	int i, k, limit, *alias;
+	int i, k, limit, *alias, barrier;
 	MalStkPtr env = NULL;
 	str msg;
 	int debugstate= cntxt->itrace, actions = 0;
@@ -182,12 +180,14 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);	
 #endif
 		/* be aware that you only assign once to a variable */
-		if( p->retc == 1 && OPTallConstant(cntxt,mb,p) && 
-			!isUnsafeFunction(p) && p->token!= EXITsymbol && p->barrier != BARRIERsymbol ){ 
+		if( p->retc == 1 && OPTallConstant(cntxt,mb,p) && !isUnsafeFunction(p) ){ 
 			if( assignedOnce(mb,span,getArg(p,0)) ==FALSE)
 				continue;
 			actions++;
+			barrier = p->barrier;
+			p->barrier = 0;
 			msg = reenterMAL(cntxt,mb,i,i+1,env,0,0);
+			p->barrier = barrier;
 #ifdef DEBUG_OPT_CX
 			stream_printf(cntxt->fdout,"retc var %s\n",getVarName(mb,getArg(p,0)));
 			stream_printf(cntxt->fdout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
