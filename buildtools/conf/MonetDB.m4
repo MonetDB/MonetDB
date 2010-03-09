@@ -1222,6 +1222,7 @@ if test "x$have_java" != xno; then
         else
            AC_MSG_ERROR([Java version too old ($JAVA_REQUIRED_VERSION required) or too new ($JAVA_REQ_VER_MAX an higher not yet supported)])
         fi
+        JAVA_HOME="`echo $JAVAC | sed 's:/bin/javac$::'`"
      fi
      have_java=no
   elif test "x$JAVAC" = "x"; then
@@ -1245,6 +1246,7 @@ if test "x$have_java" != xno; then
     JAR=""
     JAVADOC=""
     CLASSPATH=""
+    JAVA_HOME=""
   fi
   if test x"$ANT" = xno; then
     have_java="no"
@@ -1256,6 +1258,7 @@ AC_SUBST(JAVAC)
 AC_SUBST(JAR)
 AC_SUBST(JAVADOC)
 AC_SUBST(CLASSPATH)
+AC_SUBST(JAVA_HOME)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java != xno)
 
 ]) dnl AC_DEFUN AM_MONETDB_ANT_JAVA
@@ -3037,3 +3040,5 @@ else
 fi
 
 ]) dnl AC_DEFUN AM_MONETDB_MEL
+
+dnl vim: set expandtab :
