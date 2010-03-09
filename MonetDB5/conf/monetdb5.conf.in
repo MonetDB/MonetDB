@@ -138,7 +138,7 @@ monet_welcome=yes
 
 
 # Merovingian section
-#====================================
+#====================
 # Merovingian logs messages and errors by default to the stdout and
 # stderr channels on the console.  By setting one or both of the
 # variables below, one can specify messages and/or errors to be logged
@@ -218,7 +218,7 @@ mero_controlport=50001
 
 # MAL section
 # Monet Virtual Machine
-#====================================
+#======================
 mal_init=@libdir@@DIRSEP@MonetDB5/mal_init.mal
 mal_listing = 2 
 #    1 = List the original input
@@ -242,7 +242,7 @@ mapi_open=false       # should be set to 'true' to allow for
                       # default, but e.g. enabled by Merovingian
 
 # SQL Interface Section
-#====================================
+#======================
 # The SQL debug level (should be disabled for normal use)
 # sql_debug=0
 
@@ -255,12 +255,12 @@ mapi_open=false       # should be set to 'true' to allow for
 # optimizers to run, or one or more variables containing the optimizer
 # pipeline to run.  The latter is provided for readability purposes
 # only.
-#
-# The minimal pipeline necessary by the server to operate correctly:
-# sql_optimizer=inline,remap,deadcode,multiplex
 
 # Set and define the default pipeline
 sql_optimizer=default_pipe
+
+# The minimal pipeline necessary by the server to operate correctly
+minimal_pipe=inline,remap,deadcode,multiplex
 
 # The default pipe line contains as of Feb2010 mitosis-mergetable-reorder, aimed at large tables and improved access locality
 default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
