@@ -1,6 +1,16 @@
 # ChangeLog file for java
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  09 Mar 2010; Fabian Groffen <fabian@cwi.nl> configure.ag, Makefile.ag:
+  Set JAVA_HOME to the configure derived value, such that ant will use
+  the javac compiler as found by configure, and not the one it was built
+  with itself.  This solves the problem that the JDBC driver still fails
+  to compile on e.g. Fedora systems even though configure
+  --with-java=/path/to/sun/jdk-5 was given, because ant still uses
+  gjc/icedtea by itself.
+
+*Feb2010
+
   09 Oct 2009; Fabian Groffen <fabian@cwi.nl> configure.ag,
   build.properties, build.xml:
   Bump Java source version to 1.5.  Java 1.5 is the current J2EE, and code

@@ -41,3 +41,6 @@ ant_distxrpc = {
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
+JAVA_HOME = @JAVA_HOME@
+
+# vim: ft=automake :
