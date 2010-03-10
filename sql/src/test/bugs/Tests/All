@@ -99,3 +99,4 @@ create_index
 select_from_values
 or_in_crash
 crash_order_by
+in_or_bug
