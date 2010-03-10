@@ -118,11 +118,17 @@ char* db_create(char* dbname) {
 	/* put this database under maintenance, make sure no race condition
 	 * ever can happen, by putting it under maintenance before it even
 	 * exists for Merovingian */
-	fclose(fopen(path, "w"));
+	if ((f = fopen(path, "w")) != NULL)
+		fclose(f); /* if this fails, below probably fails too */
 
 	/* avoid GDK making fugly complaints */
 	snprintf(path, sizeof(path), "%s/%s/.gdk_lock", dbfarm, dbname);
-	f = fopen(path, "w");
+	if ((f = fopen(path, "w")) == NULL) {
+		snprintf(buf, sizeof(buf), "cannot write lock file: %s",
+				strerror(errno));
+		GDKfree(dbfarm);
+		return(strdup(buf));
+	}
 	/* to all insanity, .gdk_lock is "valid" if it contains a
 	 * ':', which it does by pure coincidence of time having a
 	 * ':' in there twice... */

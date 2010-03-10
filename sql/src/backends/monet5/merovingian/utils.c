@@ -286,7 +286,7 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
  * Padds the remaining bytes in buf with null-bytes.
  */
 void
-generateSalt(char **buf, unsigned int len)
+generateSalt(char *buf, unsigned int len)
 {
 	unsigned int c;
 	unsigned int size = (unsigned int)rand();
@@ -294,24 +294,31 @@ generateSalt(char **buf, unsigned int len)
 	unsigned int min = len * 0.42;
 	size = (size % (fill - min)) + min;
 	for (c = 0; c < size; c++)
-		(*buf)[c] = seedChars[rand() % 62];
+		buf[c] = seedChars[rand() % 62];
 	for ( ; c < len; c++)
-		(*buf)[c] = '\0';
+		buf[c] = '\0';
 }
 
 char *
 generatePassphraseFile(char *path)
 {
 	FILE *f;
-	char *buf = alloca(sizeof(char) * 48);
+	unsigned int len = 48;
+	char buf[len];
 
-	generateSalt(&buf, 48);
-	f = fopen(path, "w");
-	if (fwrite(buf, 1, 48, f) < 48) {
-		snprintf(buf, sizeof(buf), "cannot write secret: %s",
+	generateSalt(buf, len);
+	if ((f = fopen(path, "w")) == NULL) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to open '%s': %s",
+				path, strerror(errno));
+		return(strdup(err));
+	}
+	if (fwrite(buf, 1, len, f) < len) {
+		char err[512];
+		snprintf(err, sizeof(err), "cannot write secret: %s",
 				strerror(errno));
 		fclose(f);
-		return(strdup(buf));
+		return(strdup(err));
 	}
 	fclose(f);
 	return(NULL);

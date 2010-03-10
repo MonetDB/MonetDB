@@ -227,23 +227,22 @@ handleClient(int sock)
 				strerror(errno));
 		host = "(unknown)";
 	} else {
-		/* avoid doing this, it requires some includes that probably
-		 * give trouble on windowz
-		host = inet_ntoa(saddr.sin_addr);
-		 */
+		size_t len;
 		struct hostent *hoste = 
 			gethostbyaddr(&saddr.sin_addr.s_addr, 4, saddr.sin_family);
 		if (hoste == NULL) {
-			host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
-			sprintf(host, "%u.%u.%u.%u:%u",
+			len = (3 + 1 + 3 + 1 + 3 + 1 + 3 + 1 + 5) + 1;
+			host = alloca(sizeof(char) * len);
+			snprintf(host, len, "%u.%u.%u.%u:%u",
 					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
 					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
 					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
 					(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
 					(unsigned) (ntohs(saddr.sin_port)));
 		} else {
-			host = alloca(sizeof(char) * (strlen(hoste->h_name) + 1 + 5 + 1));
-			sprintf(host, "%s:%u",
+			len = strlen(hoste->h_name) + 1 + 5 + 1;
+			host = alloca(sizeof(char) * len);
+			snprintf(host, len, "%s:%u",
 					hoste->h_name, (unsigned) (ntohs(saddr.sin_port)));
 		}
 	}
