@@ -555,7 +555,7 @@ typedef __int64 gdk_int64;
 #endif
 
 /* define printf formats for printing ptrdiff_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) || defined(__hpux)
 #define PDFMT "%td"
 #elif SIZEOF_PTRDIFF_T == SIZEOF_INT
 #define PDFMT "%d"
