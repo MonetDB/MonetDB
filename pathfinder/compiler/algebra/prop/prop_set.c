@@ -421,6 +421,18 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
             break;
 
         case la_difference:
+            /* Switch the set property from TRUE to MAYBE (TRUE+col)
+               if there is only a single column col and keep the MAYBE
+               information if it stores the same column name. */
+            if (n->prop->set && n->schema.count == 1) {
+                PFalg_col_t col = n->schema.items[0].name;
+                if ((n->prop->set_col && n->prop->set_col == col) ||
+                    !n->prop->set_col) {
+                    l_col = col;
+                    l_set = true;
+                    break;
+                }
+            }
             /* the left argument may not prune duplicates
                (as this might lead to more result tuples) */
             l_set = false;
