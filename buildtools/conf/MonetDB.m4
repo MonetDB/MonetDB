@@ -1226,6 +1226,7 @@ if test "x$have_java" != xno; then
         else
            AC_MSG_ERROR([Java version too old ($JAVA_REQUIRED_VERSION required) or too new ($JAVA_REQ_VER_MAX an higher not yet supported)])
         fi
+        JAVA_HOME="`echo $JAVAC | sed 's:/bin/javac$::'`"
      fi
      have_java=no
   elif test "x$JAVAC" = "x"; then
@@ -1249,6 +1250,7 @@ if test "x$have_java" != xno; then
     JAR=""
     JAVADOC=""
     CLASSPATH=""
+    JAVA_HOME=""
   fi
   if test x"$ANT" = xno; then
     have_java="no"
@@ -1260,6 +1262,7 @@ AC_SUBST(JAVAC)
 AC_SUBST(JAR)
 AC_SUBST(JAVADOC)
 AC_SUBST(CLASSPATH)
+AC_SUBST(JAVA_HOME)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java != xno)
 
 ]) dnl AC_DEFUN AM_MONETDB_ANT_JAVA
@@ -2290,7 +2293,8 @@ if test "x$have_openssl" != xno; then
 	LIBS="$LIBS $OPENSSL_LIBS"
 	AC_CHECK_LIB(ssl, SSL_read,
 		OPENSSL_LIBS="$OPENSSL_LIBS -lssl",
-		[ why_no_openssl="OpenSSL library not found"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ])
+		[ why_no_openssl="OpenSSL library not found"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ],
+		[-lcrypto])
 	dnl on some systems, -lcrypto needs to be passed as well
 	AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
 	LIBS="$save_LIBS"
@@ -3040,3 +3044,5 @@ else
 fi
 
 ]) dnl AC_DEFUN AM_MONETDB_MEL
+
+dnl vim: set expandtab :
