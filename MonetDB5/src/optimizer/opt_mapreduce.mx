@@ -433,13 +433,13 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 #endif
 }
 
-enum copymode { MAP, REDUCE, REDUCE_FIRST, BOTH };
+enum copymode { FREE, STICK, SINGLE_DUP, DUP };
 
 static int
 OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	int i, limit;
-	enum copymode copy = BOTH;
+	enum copymode copy;
 	InstrPtr p, *old, *orig, ret, sig;
 	MalBlkPtr mc;
 	char nme[IDLENGTH];
@@ -491,18 +491,22 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	mc->keephistory = mb->keephistory;
 	pushInstruction(mc, sig);
 
-	/* run through plan, selecting all necessary instructions as we go */
-	copy = REDUCE;
-	for (i = 0; i < limit; i++) {
+	/* We do a two-phase scan over the original plan to get a MAP and
+	 * REDUCE program.  We cannot do it in a single scan, because
+	 * sql.bind patterns (for columns) are possibly scattered over the
+	 * full plan.  We need them all first to determine the signature and
+	 * return correctly. */
+	copy = FREE;
+	for (i = 0; i < limit; i++) { /* phase 1 */
 		p = old[i];
 
 		if (getModuleId(p) == sqlRef) {
 			if (getFunctionId(p) == mvcRef) {
 				/* sql.mvc(): we need this statement everywhere */
-				copy = BOTH;
+				copy = SINGLE_DUP;
 			} else if (getFunctionId(p) == bindRef) {
 				/* start of sql.bind, kdiff, kunion, etc. sequence */
-				copy = MAP;
+				copy = STICK;
 			} else if (getFunctionId(p) == binddbatRef) {
 				/* start tracking ... actually no, just blindly assume :) */
 				pushInstruction(mc, p);
@@ -520,6 +524,8 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				/* this is a column reference, keep it */
 				if (lastcol == NULL) {
 					col = lastcol = alloca(sizeof(mapcol));
+					/* this is the first one, leave a marker */
+					orig[i] = (InstrPtr)1; /* should leave some symbol */
 				} else {
 					lastcol = lastcol->next = alloca(sizeof(mapcol));
 				}
@@ -530,55 +536,82 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				lastcol->next = NULL;
 				/* the rest is a reduce plan, but we need to inject a
 				 * return still if there isn't another column following */
-				copy = REDUCE_FIRST;
+				copy = FREE;
 				continue;
 			}
 		}
 
-		/* terminate both map and reduce functions properly */
+		/* terminate ASAP here, we finish in 2nd phase */
 		if (p->token == ENDsymbol)
-			copy = BOTH;
+			break;
 
 		switch (copy) {
-			case MAP:
+			case FREE:
+				freeInstruction(p);
+			break;
+			case SINGLE_DUP:
+				copy = FREE;
+				pushInstruction(mc, p);
+			break;
+			case STICK:
 				pushInstruction(mc, p);
 				freeInstruction(orig[i]);
 				orig[i] = NULL;
 			break;
-			case REDUCE_FIRST:
-				/* this is the moment we just have done the sql.binds
-				 * and final kdifference */
-				copy = REDUCE;
-				/* fix the return types and calling signature of the map
-				 * program */
-				getArg(sig, 0) = -1; /* get rid of default retval */
-				ret = newInstruction(mc, ASSIGNsymbol);
-				ret->barrier = RETURNsymbol;
-				getArg(ret, 0) = -1; /* get rid of default retval */
-				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
-				{	
-					if (lastcol->type == AVG) {
-						sig = pushReturn(mc, sig, lastcol->val2);
-						ret = pushReturn(mc, ret, lastcol->val2);
-						sig = pushReturn(mc, sig, lastcol->val3);
-						ret = pushReturn(mc, ret, lastcol->val3);
-					} else {
-						sig = pushReturn(mc, sig, lastcol->val1);
-						ret = pushReturn(mc, ret, lastcol->val1);
-					}
-				}
-				pushInstruction(mc, ret);
-				MRdistributework(cntxt, mb, col, sig);
-			case REDUCE:
-				freeInstruction(p);
-				pushInstruction(mb, orig[i]);
-			break;
-			case BOTH:
-				pushInstruction(mc, p);
-				pushInstruction(mb, orig[i]);
+			case DUP:
+				assert(0); /* make GCC happy */
 			break;
 		}
+	}
 
+	copy = STICK;
+	for (i = 0; i < limit; i++) { /* phase 2 */
+		p = orig[i];
+		if (p == NULL)
+			continue;
+
+		if (p == (InstrPtr)1) {
+			/* this is the moment the first sql.bind occurred
+			 * fix the return types and calling signature of the map
+			 * program, inject a return instruction */
+			getArg(sig, 0) = -1; /* get rid of default retval */
+			ret = newInstruction(mc, ASSIGNsymbol);
+			ret->barrier = RETURNsymbol;
+			getArg(ret, 0) = -1; /* get rid of default retval */
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
+			{	
+				if (lastcol->type == AVG) {
+					sig = pushReturn(mc, sig, lastcol->val2);
+					ret = pushReturn(mc, ret, lastcol->val2);
+					sig = pushReturn(mc, sig, lastcol->val3);
+					ret = pushReturn(mc, ret, lastcol->val3);
+				} else {
+					sig = pushReturn(mc, sig, lastcol->val1);
+					ret = pushReturn(mc, ret, lastcol->val1);
+				}
+			}
+			pushInstruction(mc, ret);
+			MRdistributework(cntxt, mb, col, sig);
+			continue;
+		}
+
+		/* terminate both map and reduce functions properly */
+		if (p->token == ENDsymbol)
+			copy = DUP;
+
+		switch (copy) {
+			case STICK:
+				pushInstruction(mb, p);
+			break;
+			case DUP:
+				pushInstruction(mc, old[i]);
+				pushInstruction(mb, p);
+			break;
+			case NONE:
+			case SINGLE_DUP:
+				assert(0); /* make GCC happy */
+			break;
+		}
 	}
 
 #ifdef _DEBUG_OPT_MAPREDUCE
