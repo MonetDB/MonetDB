@@ -433,20 +433,18 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 #endif
 }
 
-enum copymode { BOTH, MAP, REDUCE };
+enum copymode { MAP, REDUCE, REDUCE_FIRST, BOTH };
 
 static int
 OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	int i, j, limit;
+	int i, limit;
 	enum copymode copy = BOTH;
 	InstrPtr p, *old, *orig, ret, sig;
-	str exportValueRef = putName("exportValue", 11);
 	MalBlkPtr mc;
 	char nme[IDLENGTH];
 	Symbol new;
 	mapcol *col, *lastcol;
-	int *depinstrs = NULL, *walk;
 
 	(void)stk;
 	(void)pc;
@@ -455,9 +453,25 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 
+	/* For now we assume that the default ritual of the SQL compiler is
+	 * as follows:
+	 *   sql.bind(xx, 0)
+	 *   sql.bind(xx, 2)
+	 *   kdiff
+	 *   kunion
+	 *   sql.bind(xx, 1)
+	 *   kunion
+	 *   sql.bind_dbat(xx, 1)
+	 *   reverse
+	 *   final := kdifference()
+	 * This means we can spot the bind_dbat, and predict the
+	 * reverse/kdifference to know the bare minimum map-reducable input.
+	 * Any plan should work from that point on.  Anything further pushed
+	 * into the map plan is an optimisation. */
+
 	col = lastcol = NULL;
 
-	mc = copyMalBlk(mb);
+	mc = copyMalBlk(mb); /* for the map-program */
 	old = mc->stmt;
 	orig = mb->stmt;
 	limit = mc->stop;
@@ -475,185 +489,103 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	freeMalBlk(new->def);
 	new->def = mc;
 	mc->keephistory = mb->keephistory;
+	pushInstruction(mc, sig);
 
-	depinstrs = (int *)alloca(sizeof(int) * (limit + 1));
-	depinstrs[0] = 0;
-	/* run upside down, selecting all dependent instructions as we go */
-	for (i = limit - 1; i > 0; i--) {
+	/* run through plan, selecting all necessary instructions as we go */
+	copy = REDUCE;
+	for (i = 0; i < limit; i++) {
 		p = old[i];
 
-		/* collect all variables that are necessary for the rsColumn and
-		 * exportValue calls */
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == rsColumnRef) {
-			walk = depinstrs;
-			while (*walk != 0)
-				walk++;
-			*walk++ = getArg(p, 7);
-			*walk = 0;
-			if (lastcol == NULL) {
-				col = lastcol = alloca(sizeof(mapcol));
-			} else {
-				lastcol = lastcol->next = alloca(sizeof(mapcol));
+		if (getModuleId(p) == sqlRef) {
+			if (getFunctionId(p) == mvcRef) {
+				/* sql.mvc(): we need this statement everywhere */
+				copy = BOTH;
+			} else if (getFunctionId(p) == bindRef) {
+				/* start of sql.bind, kdiff, kunion, etc. sequence */
+				copy = MAP;
+			} else if (getFunctionId(p) == binddbatRef) {
+				/* start tracking ... actually no, just blindly assume :) */
+				pushInstruction(mc, p);
+				freeInstruction(orig[i]);
+				orig[i] = NULL;
+				i++; /* bat.reverse */
+				pushInstruction(mc, old[i]);
+				freeInstruction(orig[i]);
+				orig[i] = NULL;
+				i++; /* algebra.kdifference */
+				p = old[i];
+				pushInstruction(mc, p);
+				freeInstruction(orig[i]);
+				orig[i] = NULL;
+				/* this is a column reference, keep it */
+				if (lastcol == NULL) {
+					col = lastcol = alloca(sizeof(mapcol));
+				} else {
+					lastcol = lastcol->next = alloca(sizeof(mapcol));
+				}
+				lastcol->val1 = getArg(p, 0);
+				lastcol->val1type = getArgType(mc, p, 0);
+				lastcol->type =
+					isaBatType(getArgType(mc, p, 0)) ? cBAT : VAL;
+				lastcol->next = NULL;
+				/* the rest is a reduce plan, but we need to inject a
+				 * return still if there isn't another column following */
+				copy = REDUCE_FIRST;
+				continue;
 			}
-			lastcol->val1 = getArg(p, 7);
-			lastcol->val1type = getArgType(mc, p, 7);
-			lastcol->type = isaBatType(getArgType(mc, p, 7)) ? cBAT : VAL;
-			lastcol->next = NULL;
-		} else if (getModuleId(p) == sqlRef &&
-				getFunctionId(p) == exportValueRef)
-		{
-			walk = depinstrs;
-			while (*walk != 0)
-				walk++;
-			*walk++ = getArg(p, 8);
-			*walk = 0;
-			if (lastcol == NULL) {
-				col = lastcol = alloca(sizeof(mapcol));
-			} else {
-				lastcol = lastcol->next = alloca(sizeof(mapcol));
-			}
-			lastcol->type = VAL;
-			lastcol->next = NULL;
-			lastcol->val1 = getArg(p, 8);
-			lastcol->val1type = getArgType(mc, p, 8);
 		}
 
-		for (walk = depinstrs; *walk != 0; walk++) {
-			for (j = 0; j < p->retc; j++) {
-				if (*walk == getArg(p, j)) {
-					int *replace = walk;
-					while (*walk != 0)
-						walk++;
-					*replace = *(--walk);
-					for (j = p->retc; j < p->argc; j++)
-						if (isTmpVar(mc, getArg(p, j)))
-							*walk++ = getArg(p, j);
-					copy = MAP;
-					*walk-- = 0; /* outer for-loop will ++ and test */
-					break;
-				}
-			}
-		}
-		
+		/* terminate both map and reduce functions properly */
+		if (p->token == ENDsymbol)
+			copy = BOTH;
+
 		switch (copy) {
-			case BOTH:
-				pushInstruction(mc, p);
-				pushInstruction(mb, orig[i]);
-			break;
 			case MAP:
 				pushInstruction(mc, p);
 				freeInstruction(orig[i]);
 				orig[i] = NULL;
-				copy = REDUCE;
 			break;
+			case REDUCE_FIRST:
+				/* this is the moment we just have done the sql.binds
+				 * and final kdifference */
+				copy = REDUCE;
+				/* fix the return types and calling signature of the map
+				 * program */
+				getArg(sig, 0) = -1; /* get rid of default retval */
+				ret = newInstruction(mc, ASSIGNsymbol);
+				ret->barrier = RETURNsymbol;
+				getArg(ret, 0) = -1; /* get rid of default retval */
+				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
+				{	
+					if (lastcol->type == AVG) {
+						sig = pushReturn(mc, sig, lastcol->val2);
+						ret = pushReturn(mc, ret, lastcol->val2);
+						sig = pushReturn(mc, sig, lastcol->val3);
+						ret = pushReturn(mc, ret, lastcol->val3);
+					} else {
+						sig = pushReturn(mc, sig, lastcol->val1);
+						ret = pushReturn(mc, ret, lastcol->val1);
+					}
+				}
+				pushInstruction(mc, ret);
+				MRdistributework(cntxt, mb, col, sig);
 			case REDUCE:
 				freeInstruction(p);
 				pushInstruction(mb, orig[i]);
 			break;
+			case BOTH:
+				pushInstruction(mc, p);
+				pushInstruction(mb, orig[i]);
+			break;
 		}
 
-		/* after we've seen end, we'll see post stuff (resultset) */
-		if (p->token == ENDsymbol)
-			copy = REDUCE;
-	}
-	pushInstruction(mc, sig);
-	pushInstruction(mb, orig[0]);
-
-	/* fix order by reversing again */
-	GDKfree(old);
-	old = mc->stmt;
-	limit = mc->stop;
-	/* zap */
-	if (newMalBlkStmt(mc, mc->ssize) < 0)
-		return 0;
-	/* at the same time fix the return code + inject */
-	for (i = limit - 1; i >= 0; i--) {
-		p = old[i];
-		/* check for the direct args of what we return */
-		for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
-			if (getArg(p, 0) == lastcol->val1) {
-				if (getModuleId(p) == calcRef && getFunctionId(p) == divRef)
-				{
-					/* special case of an average calculation, need both
-					 * arguments */
-					lastcol->type = AVG;
-					lastcol->val2 = getArg(p, 1);
-					lastcol->val2type = getArgType(mc, p, 1);
-					lastcol->val3 = getArg(p, 2);
-					lastcol->val3type = getArgType(mc, p, 2);
-					/* skip the actual calculation */
-					freeInstruction(p);
-					p = NULL;
-					break;
-				} else if (getModuleId(p) == aggrRef &&
-						getFunctionId(p) == maxRef)
-				{
-					lastcol->type = MAX;
-				} else if (getModuleId(p) == aggrRef &&
-						getFunctionId(p) == minRef)
-				{
-					lastcol->type = MIN;
-				} else if (getModuleId(p) == aggrRef &&
-						getFunctionId(p) == countRef)
-				{
-					lastcol->type = COUNT;
-				} else if (getModuleId(p) == aggrRef &&
-						getFunctionId(p) == sumRef)
-				{
-					lastcol->type = SUM;
-				} else {
-					/* must be normal bat thing */
-					lastcol->type = cBAT;
-				}
-			}
-		}
-		if (p == NULL)
-			continue;
-
-		/* inject return at end of program */
-		if (p->token == ENDsymbol) {
-			getArg(sig, 0) = -1; /* get rid of default retval */
-			ret = newInstruction(mc, ASSIGNsymbol);
-			ret->barrier = RETURNsymbol;
-			getArg(ret, 0) = -1; /* get rid of default retval */
-			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
-				if (lastcol->type == AVG) {
-					sig = pushReturn(mc, sig, lastcol->val2);
-					ret = pushReturn(mc, ret, lastcol->val2);
-					sig = pushReturn(mc, sig, lastcol->val3);
-					ret = pushReturn(mc, ret, lastcol->val3);
-				} else {
-					sig = pushReturn(mc, sig, lastcol->val1);
-					ret = pushReturn(mc, ret, lastcol->val1);
-				}
-			}
-			pushInstruction(mc, ret);
-		}
-
-		pushInstruction(mc, p);
 	}
 
 #ifdef _DEBUG_OPT_MAPREDUCE
 	stream_printf(cntxt->fdout, "MAP program\n");
 	chkProgram(cntxt->nspace, mc);
 	printFunction(cntxt->fdout, mc, 0, LIST_MAL_STMT);
-#endif
 
-	/* fix order by reversing again */
-	GDKfree(orig);
-	orig = mb->stmt;
-	limit = mb->stop;
-	/* zap */
-	if (newMalBlkStmt(mb, mb->ssize) < 0)
-		return 0;
-	/* add the map calls right after the function signature */
-	pushInstruction(mb, orig[limit - 1]);
-	MRdistributework(cntxt, mb, col, sig);
-	for (i = limit - 2; i >= 0; i--) {
-		pushInstruction(mb, orig[i]);
-	}
-
-#ifdef _DEBUG_OPT_MAPREDUCE
 	stream_printf(cntxt->fdout, "REDUCE program\n");
 	chkProgram(cntxt->nspace, mb);
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
