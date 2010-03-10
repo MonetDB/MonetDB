@@ -2527,7 +2527,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		    l->card != CARD_ATOM && has_nil(l)) {
 			e = rel_unop_(sql, exp_dup(l), NULL, "isnull", 0);
 			e = exp_compare( e, exp_atom_bool(0), cmp_equal);
-			if (!is_select(rel->op))
+			if (!is_select(rel->op) && !rel_is_ref(rel))
 				left = rel = rel_select(rel, e);
 			else
 				rel_select_add_exp(rel, e);
@@ -2605,10 +2605,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					l = exp_dup(l);
 					if (sc->token == SQL_NOT_IN) {
 						ne = exp_compare( l, r, cmp_notequal);
-						if (!is_select(rel->op))
-							rel = rel_select(rel, ne);
-						else
-							rel_select_add_exp(rel, ne);
+						rel = rel_select(rel, ne);
 					} else { 
 						ne = exp_compare( l, r, cmp_equal);
 						if (!e) 
@@ -2620,12 +2617,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 							);
 					}
 				}
-				if (e && sc->token == SQL_IN) {
-					if (!is_select(rel->op))
-						rel = rel_select(rel, e);
-					else
-						rel_select_add_exp(rel, e);
-				}
+				if (e && sc->token == SQL_IN) 
+					rel = rel_select(rel, e);
 				exp_destroy(l);
 				list_destroy(vals);
 				return rel;
