@@ -76,6 +76,11 @@
 #include <sys/wait.h>
 #endif
 
+/* hp ux doesn't define getpagesize with _XOPEN_SOURCE>=600 */
+#if defined(__hpux)
+extern int getpagesize(void);
+#endif
+
 #define NUMLOADS 100000
 #define REDUCE	 10
 #define	NUMTRIES 3

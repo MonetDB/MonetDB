@@ -86,6 +86,10 @@ The remainder is a wrapper around the calibrator library.
 #endif
 #include "calib.proto.h"
 
+/* hp ux doesn't define getpagesize with _XOPEN_SOURCE>=600 */
+#if defined(__hpux)
+extern int getpagesize(void);
+#endif
 
 #define NUMLOADS 100000
 #define REDUCE	 10
