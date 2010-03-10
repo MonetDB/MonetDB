@@ -1895,8 +1895,9 @@ udp_socket(udp_stream *udp, char *hostname, int port, int write)
 	serv = (struct sockaddr *) &udp->addr;
 	servsize = (socklen_t) sizeof(udp->addr);
 	udp->s = socket(serv->sa_family, SOCK_DGRAM, IPPROTO_UDP);
-	if (udp->s == INVALID_SOCKET ||
-	   (!write && bind(udp->s, serv, servsize) < 0)) 
+	if (udp->s == INVALID_SOCKET)
+		return 0;
+	if (write && bind(udp->s, serv, servsize) < 0)
 		return 0;
 	return 1;
 }
