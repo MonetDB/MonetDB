@@ -25,6 +25,8 @@ In the first implementation we don't optimize the plan against the mapping schem
 We simply assume that the complete query can be executed and that only the
 result sets should be assembled.
 
+[OUTOFDATE]
+
 Consider part of the query plan for 'select * from tables'
 @verbatim
 function user.s0_0{autoCommit=true}():void;
@@ -242,6 +244,7 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 
 	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
 		if (lcol->type == cBAT) {
+#ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
 			/* x := mat.pack(...) */
 			packs[j] = p = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(p, matRef);
@@ -253,6 +256,12 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 			p = pushType(mb, p, getHeadType(lcol->val1type));
 			p = pushType(mb, p, getTailType(lcol->val1type));
 			getArg(p, 0) = lcol->val1;
+#else /* it's not, do it manually */
+			packs[j] = p = newFcnCall(mb, batRef, newRef);
+			p = pushType(mb, p, getHeadType(lcol->val1type));
+			p = pushType(mb, p, getTailType(lcol->val1type));
+			getArg(p, 0) = lcol->val1;
+#endif
 		} else if (lcol->type == AVG) {
 			/* basically 2 times the code below */
 			packs[j++] = p = newFcnCall(mb, batRef, newRef);
@@ -294,7 +303,9 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 				p = pushType(mb, p, getTailType(lcol->val1type));
 				setArgType(mb, p, 0, lcol->val1type);
 				gets[(i * retc) + j] = getArg(p, 0);
+#ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
 				packs[j] = pushArgument(mb, packs[j], getArg(p, 0));
+#endif
 			} else if (lcol->type == AVG) {
 				/* 2x code from else case */
 				p = newAssignment(mb);
@@ -361,6 +372,7 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 			p = pushArgument(mb, p, q);
 			p = pushArgument(mb, p, w[j]);
 			getArg(p, 0) = gets[(i * retc) + j];
+#ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
 			/* in case we work around mat.pack, insert the value in the bat */
 			if (!isaBatType(getArgType(mb, sig, j))) { /* too lazy to do it based on cols */
 				/* bat.insert(b, y1) */
@@ -369,6 +381,13 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 				p = pushNil(mb, p, TYPE_void);
 				p = pushArgument(mb, p, gets[(i * retc) + j]);
 			}
+#endif
+			/* bat.insert(b, y1) */
+			p = newFcnCall(mb, batRef, insertRef);
+			p = pushArgument(mb, p, getArg(packs[j], 0));
+			if (!isaBatType(getArgType(mb, sig, j)))
+				p = pushNil(mb, p, TYPE_void);
+			p = pushArgument(mb, p, gets[(i * retc) + j]);
 		}
 
 		/* remote.disconnect(q); */
@@ -386,7 +405,13 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
 		switch (lcol->type) {
 			case cBAT:
+#ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
 				pushInstruction(mb, packs[j]);
+#else
+				p = newFcnCall(mb, algebraRef, markHRef);
+				p = pushArgument(mb, p, getArg(packs[j], 0));
+				getArg(p, 0) = lcol->val1;
+#endif
 			break;
 			case AVG:
 				p = newFcnCall(mb, aggrRef, sumRef);
@@ -429,7 +454,7 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 
 #ifdef _DEBUG_OPT_MAPREDUCE
 	chkProgram(cntxt->nspace, mb);
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 }
 
