@@ -689,7 +689,7 @@ classify(const char *s, size_t l)
 	while (l != 0) {
 		if (*s == 0 || !isascii(*s))
 			return "str";
-		if (isdigit(*s)) {
+		if (isdigit((int)*s)) {
 			switch (state) {
 			case 0:
 			case 1:
@@ -807,8 +807,8 @@ TESTrenderer(MapiHdl hdl)
 				 /* NULL byte in string? */
 				 strlen(s) < l ||
 				 /* start or end with white space? */
-				 (isascii(*s) && isspace(*s)) ||
-				 (isascii(s[l - 1]) && isspace(s[l - 1])) ||
+				 (isascii(*s) && isspace((int)*s)) ||
+				 (isascii(s[l - 1]) && isspace((int)s[l - 1])) ||
 				 /* a bunch of geom types */
 				 strcmp(tp, "curve") == 0 ||
 				 strcmp(tp, "geometry") == 0 ||

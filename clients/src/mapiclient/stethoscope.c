@@ -559,4 +559,5 @@ main(int argc, char **argv)
 			free(walk);
 		}
 	}
+	return 0;
 }
