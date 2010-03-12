@@ -141,15 +141,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p->token == ENDsymbol)
 			break;
-@-
-A peephole optimization is to consider a columnBind directly followed by an append of a BAT
-as a single side effect free function. [TEST FOR SQL SPEEDUP]
-		if ( getFunctionId(p) == columnBindRef && getFunctionId(old[i+1]) == appendRef && getModuleId(old[i+1]) == sqlRef){
-			i++;
-			entries++;
-			continue;
-		}
-@c
 		if (hasSideEffects(p,TRUE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p))){
 			@:flowblock@
 			pushInstruction(mb,p);
