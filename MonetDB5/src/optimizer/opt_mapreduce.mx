@@ -458,7 +458,7 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 #endif
 }
 
-enum copymode { FREE, STICK, SINGLE_DUP, DUP };
+enum copymode { FREE, STICK, SINGLE_DUP, DUP, LEAVE };
 
 static int
 OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
@@ -561,7 +561,7 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				lastcol->next = NULL;
 				/* the rest is a reduce plan, but we need to inject a
 				 * return still if there isn't another column following */
-				copy = FREE;
+				copy = LEAVE;
 				continue;
 			}
 		}
@@ -573,6 +573,9 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		switch (copy) {
 			case FREE:
 				freeInstruction(p);
+			break;
+			case LEAVE:
+				/* make GCC happy */
 			break;
 			case SINGLE_DUP:
 				copy = FREE;
@@ -596,44 +599,68 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			continue;
 
 		if (p == (InstrPtr)1) {
-			/* this is the moment the first sql.bind occurred
-			 * fix the return types and calling signature of the map
-			 * program, inject a return instruction */
+			/* this is the moment the first sql.bind occurred set the
+			 * calling signature of the map program */
 			getArg(sig, 0) = -1; /* get rid of default retval */
-			ret = newInstruction(mc, ASSIGNsymbol);
-			ret->barrier = RETURNsymbol;
-			getArg(ret, 0) = -1; /* get rid of default retval */
-			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
-			{	
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (lastcol->type == AVG) {
 					sig = pushReturn(mc, sig, lastcol->val2);
-					ret = pushReturn(mc, ret, lastcol->val2);
 					sig = pushReturn(mc, sig, lastcol->val3);
-					ret = pushReturn(mc, ret, lastcol->val3);
 				} else {
 					sig = pushReturn(mc, sig, lastcol->val1);
-					ret = pushReturn(mc, ret, lastcol->val1);
 				}
 			}
-			pushInstruction(mc, ret);
 			MRdistributework(cntxt, mb, col, sig);
 			continue;
 		}
 
+		if (getModuleId(p) == algebraRef && (
+					getFunctionId(p) == sortTailRef ||
+					getFunctionId(p) == sortReverseTailRef ||
+					getFunctionId(p) == sliceRef))
+		{
+			/* simple ORDER BY [DESC] or LIMIT/OFFSET */
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				if (getArg(p, 1) == lastcol->val1) {
+					copy = SINGLE_DUP;
+					/* fix return */
+					lastcol->val1 = getArg(p, 0);
+				}
+			}
+		}
+
 		/* terminate both map and reduce functions properly */
-		if (p->token == ENDsymbol)
+		if (p->token == ENDsymbol) {
+			/* make sure the return comes at the end, as we may have
+			 * added some stuff to the MAP program in this phase,
+			 * changing the actual return variable */
+			ret = newInstruction(mc, ASSIGNsymbol);
+			ret->barrier = RETURNsymbol;
+			getArg(ret, 0) = -1; /* get rid of default retval */
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				if (lastcol->type == AVG) {
+					ret = pushReturn(mc, ret, lastcol->val2);
+					ret = pushReturn(mc, ret, lastcol->val3);
+				} else {
+					ret = pushReturn(mc, ret, lastcol->val1);
+				}
+			}
+			pushInstruction(mc, ret);
 			copy = DUP;
+		}
 
 		switch (copy) {
 			case STICK:
 				pushInstruction(mb, p);
 			break;
+			case SINGLE_DUP:
+				copy = STICK;
 			case DUP:
 				pushInstruction(mc, old[i]);
 				pushInstruction(mb, p);
 			break;
+			case LEAVE:
 			case NONE:
-			case SINGLE_DUP:
 				assert(0); /* make GCC happy */
 			break;
 		}
