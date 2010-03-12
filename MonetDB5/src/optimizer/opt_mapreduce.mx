@@ -562,6 +562,10 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				/* the rest is a reduce plan, but we need to inject a
 				 * return still if there isn't another column following */
 				copy = LEAVE;
+				/* TODO: we should do a forward search for calc./ and
+				 * then track the dependencies backwards to see if we
+				 * end up with this column, if so, this will be a AVG,
+				 * and hence we have to set two returns for this column */
 				continue;
 			}
 		}
@@ -624,7 +628,37 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				if (getArg(p, 1) == lastcol->val1) {
 					copy = SINGLE_DUP;
 					/* fix return */
-					lastcol->val1 = getArg(p, 0);
+					lastcol->val1 = getArg(old[i], 0);
+					break;
+				}
+			}
+		} else if (getModuleId(p) == aggrRef && (
+					getFunctionId(p) == maxRef ||
+					getFunctionId(p) == minRef))
+		{
+			/* MAX/MIN aggregation, we cannot return a single val, since we
+			 * already fixed the signature, so create a container BAT */
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				if (getArg(p, 1) == lastcol->val1) {
+					/* basically perform a MAX over all MAXes */
+					pushInstruction(mc, old[i]);
+					pushInstruction(mb, p);
+					lastcol->val2 = getArg(old[i], 0);
+					/* BAT for return */
+					p = newFcnCall(mc, batRef, newRef);
+					p = pushType(mc, p, getHeadType(lastcol->val1type));
+					p = pushType(mc, p, getTailType(lastcol->val1type));
+					lastcol->val3 = getArg(p, 0);
+					/* bat.insert */
+					p = newFcnCall(mc, batRef, insertRef);
+					p = pushArgument(mc, p, lastcol->val3);
+					p = pushNil(mc, p, getHeadType(lastcol->val1type));
+					p = pushArgument(mc, p, lastcol->val2);
+					/* fix return */
+					lastcol->val1 = lastcol->val3;
+					/* we already DUP_SINGLE'd */
+					copy = STICK;
+					break;
 				}
 			}
 		}
