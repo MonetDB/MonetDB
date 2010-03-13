@@ -389,6 +389,17 @@ An error at this stage normally lead to an abort.
 # define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
+#include <limits.h>		/* for *_MIN and *_MAX */
+#include <float.h>		/* for FLT_MAX and DBL_MAX */
+#ifndef LLONG_MAX
+#ifdef LONGLONG_MAX
+#define LLONG_MAX LONGLONG_MAX
+#define LLONG_MIN LONGLONG_MIN
+#else
+#define LLONG_MAX LL_CONSTANT(9223372036854775807)
+#define LLONG_MIN (-LL_CONSTANT(9223372036854775807) - LL_CONSTANT(1))
+#endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -2037,6 +2048,7 @@ typedef struct {
 	bat next[2];		/* next BBP slot in link list */
 	BATstore *cache;	/* cached header info */
 	str path;		/* dir + basename for storage */
+	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	int lastused;		/* BBP LRU stamp */
@@ -2054,6 +2066,7 @@ gdk_export BBPrec *BBP;
 #define BBP_logical(i)  BBP[ABS(i)].nme[(i)<0]
 #define BBP_next(i)     BBP[ABS(i)].next[(i)<0]
 #define BBP_physical(i) BBP[ABS(i)].path
+#define BBP_options(i)  BBP[ABS(i)].options
 #define BBP_desc(i)	BBP[ABS(i)].cache
 #define BBP_refs(i)     BBP[ABS(i)].refs
 #define BBP_lrefs(i)    BBP[ABS(i)].lrefs

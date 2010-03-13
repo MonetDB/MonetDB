@@ -701,7 +701,7 @@ BBPinit(void)
 		int lastused;
 		int nread;
 		BATstore *bs;
-		char *s;
+		char *s, *options = NULL;
 		char logical[1024];
 		lng inserted, deleted, first, count, capacity;
 		unsigned short map_head, map_tail, map_hheap, map_theap;
@@ -848,8 +848,10 @@ BBPinit(void)
 		@:vheapinit(H)@
 		@:vheapinit(T)@
 
-		if (buf[nread] != '\n')
+		if (buf[nread] != '\n' && buf[nread] != ' ')
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
+		if (buf[nread] == ' ')
+			options = buf+nread+1;
 
 		BBP[bid].cache = bs;
 		BBP[bid].status = BBPEXISTING;  /* do we need other status bits? */
@@ -867,6 +869,9 @@ BBPinit(void)
 		else
 			BBP[bid].nme[1] = GDKstrdup(BBPtmpname(tailname, sizeof(tailname), -bid));
 		BBP[bid].path = GDKstrdup(filename);
+		BBP[bid].options = NULL;
+		if (options)
+			BBP[bid].options = GDKstrdup(options);
 		BBP[bid].lastused = lastused;
 		if (lastused > max_stamp)
 			max_stamp = lastused;
@@ -1051,6 +1056,9 @@ new_bbpentry(stream *s, bat i)
 @c
 	@:vheapprint(H)@
 	@:vheapprint(T)@
+
+	if (BBP[i].options)
+		stream_printf(s, " %s", BBP[i].options);
 
 	return stream_printf(s, "\n");
 }
