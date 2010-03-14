@@ -2,6 +2,9 @@
 # This file is updated with Maddlog
 
 * Sun Mar 14 2010 Martin Kersten <martin.kersten@cwi.nl>
+- The MAL debugger list command has been extended with
+  an optional hash '#', which produces line numbers for
+  each of reference and analysis of variable span.
 - The dataflow scheduler has been revamped to allow for
   more parellelism to be exploited.
 - The garbage collection administration has been changed. Every variable record
