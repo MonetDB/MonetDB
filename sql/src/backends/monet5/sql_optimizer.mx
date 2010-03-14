@@ -453,7 +453,7 @@ static char *previouspipe = 0;
 	
 str
 SQLvalidatePipeline(void){
-	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, replication= FALSE;
+	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, replication= FALSE, multiplex=FALSE, garbage=FALSE;
 	int i;
 
 	mal_set_lock(sql_contextLock,"SQL optimizer");
@@ -475,6 +475,12 @@ SQLvalidatePipeline(void){
 		else
 		if (strcmp(optimizers[i],"replication") == 0)
 			replication= TRUE;
+		else
+		if (strcmp(optimizers[i],"multiplex") == 0)
+			multiplex= TRUE;
+		else
+		if (strcmp(optimizers[i],"garbageCollector") == 0 && optimizers[i+1] == 0)
+			garbage= TRUE;
 
 #ifdef WIN32
 		else
@@ -488,13 +494,17 @@ SQLvalidatePipeline(void){
 		throw(SQL,"optimizer"," 'mitosis' needs 'mergetable'\n");
 	}
 
-	if ( --i >= 0 && optimizers[i] && strcmp(optimizers[i],"multiplex") ){
+	if (optimizers[0] && multiplex == 0){
 		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer"," 'multiplex' should be the last\n");
+		throw(SQL,"optimizer"," 'multiplex' should be used\n");
 	}
 	if (optimizers[0] && deadcode == FALSE ){
 		mal_unset_lock(sql_contextLock,"SQL optimizer");
 		throw(SQL,"optimizer"," 'deadcode' should be used at least once\n");
+	}
+	if (optimizers[0] && garbage == FALSE ){
+		mal_unset_lock(sql_contextLock,"SQL optimizer");
+		throw(SQL,"optimizer"," 'garbageCollector' should be used as the last one\n");
 	}
 @-
 For replicated databases we need to ensure that the corresponding optimizer

@@ -625,7 +625,8 @@ INSPECTgetEnvironment(int *ret)
 	if (b == 0)
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
 
-	BBPfix(*ret = b->batCacheid);
+	BBPincref(b->batCacheid,TRUE);
+	*ret = b->batCacheid;
 	return MAL_SUCCEED;
 }
 

@@ -27,8 +27,8 @@ mdb.setDebug(dbgmsk_restore);
 s:= aggr.sum(b);
 #io.print(s);
 
-bbp.compress(b);
-zz:= bbp.decompress(b);
+bbp.compress(b,"/tmp/bx");
+zz:= bbp.decompress(b,"/tmp/bx");
 c:= aggr.count(zz);
 io.print(c);
 ss:= aggr.sum(zz);
@@ -41,7 +41,7 @@ io.printf("Checksum difference should be zero %f\n",s);
 
 function qry();
 	b:bat[:oid,:int]:= sql.bind("sys","tab","col",0);
-end bind;
+end qry;
 optimizer.compression("user","qry");
 mdb.list("user","qry");
 

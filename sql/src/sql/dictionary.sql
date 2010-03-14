@@ -14,10 +14,10 @@
 -- Copyright August 2008-2010 MonetDB B.V.
 -- All Rights Reserved.
 
-create procedure dictionary (s string, t string)
-    external name sql.dictcompress;
-create procedure undoDictionary (s string, t string)
-    external name sql.dictdecompress;
+create procedure newdictionary (s string, t string)
+    external name sql.newdictionary;
+create procedure dropdictionary (s string, t string)
+    external name sql.dropdictionary;
 
-create procedure initializeDictionary ()
+create procedure initializedictionary ()
     external name dictionary.initialize;

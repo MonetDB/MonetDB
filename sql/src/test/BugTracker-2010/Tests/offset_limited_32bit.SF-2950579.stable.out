@@ -27,17 +27,17 @@ Over..
 # 09:37:07 >  
 
 #SELECT * from tables OFFSET 2147483647; -- never finishes
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	tinyint # type
-% 1,	0,	1,	0,	1,	5,	1,	1 # length
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
+% 1,	0,	1,	0,	1,	5,	1,	5,	1 # length
 #SELECT * from tables OFFSET 2147483646; -- returns instantly
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	tinyint # type
-% 1,	0,	1,	0,	1,	5,	1,	1 # length
+% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint # type
+% 1,	0,	1,	0,	1,	5,	1,	5,	1 # length
 
-# 09:37:07 >  
-# 09:37:07 >  Done.
-# 09:37:07 >  
+# 08:08:12 >  
+# 08:08:12 >  Done.
+# 08:08:12 >  
 

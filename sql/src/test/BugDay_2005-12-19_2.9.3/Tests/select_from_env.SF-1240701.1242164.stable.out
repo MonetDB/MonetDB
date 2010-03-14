@@ -78,6 +78,7 @@ Over..
 [ "datacyclotron_pipe"	]
 [ "derive_pipe"	]
 [ "dictionary_pipe"	]
+[ "compression_pipe"	]
 [ "gdk_mem_pagebits"	]
 [ "gdk_mem_bigsize"	]
 [ "monet_pid"	]

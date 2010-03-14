@@ -1563,8 +1563,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *n = (s->type==st_append_col)?appendRef:updateRef;
 
 			q = newStmt2(mb, sqlRef, n);
-			getArg(q, 0) = sql->mvc_var;
 			q = pushArgument(mb, q, sql->mvc_var); 
+			getArg(q, 0) = sql->mvc_var= newTmpVariable(mb,TYPE_ptr);
 			q = pushSchema(mb, q, c->t);
 			q = pushStr(mb, q, c->t->base.name);
 			q = pushStr(mb, q, c->base.name);
@@ -1579,8 +1579,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *n = (s->type==st_append_idx)?appendRef:updateRef;
 
 			q = newStmt2(mb, sqlRef, n);
-			getArg(q, 0) = sql->mvc_var;
 			q = pushArgument(mb, q, sql->mvc_var); 
+			getArg(q, 0) = sql->mvc_var= newTmpVariable(mb,TYPE_ptr);
 			q = pushSchema(mb, q, i->t);
 			q = pushStr(mb, q, i->t->base.name);
 			q = pushStr(mb, q, i->base.name);
@@ -1592,8 +1592,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_table *t = s->op1.tval;
 
 			q = newStmt1(mb, sqlRef, "delete");
-			getArg(q, 0) = sql->mvc_var;
 			q = pushArgument(mb, q, sql->mvc_var); 
+			getArg(q, 0) = sql->mvc_var= newTmpVariable(mb,TYPE_ptr);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			q = pushArgument(mb, q, r);
@@ -1883,6 +1883,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			getArg(q,0) = bvar;
 			q->argc = q->retc = 1;
 			q->barrier= EXITsymbol;
+			q = newStmt1(mb, sqlRef, "mvc");
+			sql->mvc_var = getDestVar(q);
 		} 	break;
 		case st_if: {
 			int c,t,e;
@@ -1896,6 +1898,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			getArg(q,0)= t;
 			q->argc= q->retc=1;
 			q->barrier= EXITsymbol;
+			q = newStmt1(mb, sqlRef, "mvc");
+			sql->mvc_var = getDestVar(q);
 
 			q= newStmt1(mb, calcRef, "not");
 			q->barrier= BARRIERsymbol;
@@ -1907,6 +1911,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			getArg(q,0)= e;
 			q->argc= q->retc=1;
 			q->barrier= EXITsymbol;
+			q = newStmt1(mb, sqlRef, "mvc");
+			sql->mvc_var = getDestVar(q);
 		}	break;
 		case st_return: {
 			int c = _dumpstmt(sql,mb, s->op1.stval);

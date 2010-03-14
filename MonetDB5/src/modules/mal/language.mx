@@ -472,5 +472,4 @@ CMDsetIOTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
     return MAL_SUCCEED;
 }
-
 @}

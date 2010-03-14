@@ -2276,7 +2276,7 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 	}
 
 	if (bn == b) {
-		BBPfix(b->batCacheid);
+		BBPkeepref(b->batCacheid);
 		if (limits) {
 			ssize_t zero = 0;
 			size_t cnt = BATcount(b);

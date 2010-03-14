@@ -106,11 +106,11 @@ comment "Locate the BAT using its BBP index in the BAT buffer pool";
 
 command compress(b:bat[:any_1,:any_2],fnme:str):bat[:any_1,:any_2]
 address CMDbbpcompress
-comment "Generate a compressed image of the BAT";
+comment "Generate a compressed image of the BAT on a specific file";
 
 command decompress(b:bat[:any_1,:any_2],fnme:str):bat[:any_1,:any_2] 
 address CMDbbpdecompress
-comment "Obtain a temporary decompressed image of a BAT";
+comment "Obtain a temporary decompressed image of a BAT from a specific file";
 
 command truncate(b:bat[:any_1,:any_2],fnme:str):bat[:any_1,:any_2]
 address CMDbbptruncate

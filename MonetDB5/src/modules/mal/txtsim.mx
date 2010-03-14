@@ -1033,7 +1033,7 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 #}
 #mal implementation
 @mal
-function txtsim.str2qgrams(s:str):bat[:oid,:str];
+function txtsim.str2qgrams{inline}(s:str):bat[:oid,:str];
     s := txtsim.qgramnormalize(s);
 
     l := calc.length(s);

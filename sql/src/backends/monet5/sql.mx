@@ -68,19 +68,19 @@ pattern eval(cmd:str, output:bit):void
 address SQLstatement
 comment "Compile and execute a single sql statement (and optionaly send output on the output stream)";
 
-pattern assert{unsafe}(b:bit,msg:str):void
+pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
 
-pattern assert{unsafe}(b:int,msg:str):void
+pattern assert(b:int,msg:str):void
 address SQLassertInt
 comment "Generate an exception when b!=0";
 
-pattern assert{unsafe}(b:wrd,msg:str):void
+pattern assert(b:wrd,msg:str):void
 address SQLassertWrd
 comment "Generate an exception when b!=0";
 
-pattern assert{unsafe}(b:lng,msg:str):void
+pattern assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
 @- The SQL multi-version catalog
@@ -379,7 +379,7 @@ pattern argRecord(a:any...):str
 address SQLargRecord
 comment "Glue together the calling sequence";
 
-function sql_environment():bat[:str,:bat];
+function sql_environment{inline}():bat[:str,:bat];
 	b := bat.new(:str,:bat,2);
 	e := inspect.getEnvironment();
 	n := algebra.markT(e, 0:oid);
@@ -390,7 +390,7 @@ function sql_environment():bat[:str,:bat];
 	return sql_environment := b2;
 end sql_environment;
 
-function clients():bat[:str,:bat];
+function clients{inline}():bat[:str,:bat];
 	b := bat.new(:str,:bat,5);
 	u:= clients.getUsers();
 	b1:= bat.insert(b,"user",u);
@@ -405,7 +405,7 @@ function clients():bat[:str,:bat];
 	return clients := b5;
 end clients;
 
-function bbp():bat[:str,:bat];
+function bbp{inline}():bat[:str,:bat];
 	b := bat.new(:str,:bat,12);
 	ns := bbp.getNames();
 	ri := algebra.markT(ns, 0:oid);

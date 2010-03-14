@@ -22,7 +22,7 @@ function user.main():void;
     conn:str  := remote.connect(uri,"monetdb","monetdb");
     remote.register(conn,"octopus","qry");
 end main;
-!MALException:remote.register:Operation failed Function 'octopus.qry' already defined on the remote site
+
 
 
 # 14:43:51 >  
