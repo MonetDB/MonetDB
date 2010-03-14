@@ -29,7 +29,7 @@ MAKEFILE_HEAD = '''
 
 #automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
 automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
-buildtools_ext = ['mx', 'm', 'y', 'l']
+buildtools_ext = ['mx', 'm', 'y', 'l', 't']
 
 def split_filename(f):
     base = f
@@ -354,17 +354,17 @@ def msc_dep(fd, tar, deplist, msc):
     if ext == "tab.h":
         fd.write(getsrc)
         x, de = split_filename(deplist[0])
-        if de == 'y':
-            fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
-            fd.write("\t$(DEL) y.tab.c\n")
-            fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
-        else:
-            fd.write('\t$(YACC) $(YFLAGS) "%s.yy"\n' % b)
-            fd.write("\t$(DEL) y.tab.c\n")
-            fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
+        of = b + '.' + de
+        of = msc_translate_file(of, msc)
+        fd.write('\t$(YACC) $(YFLAGS) "%s"\n' % of)
+        fd.write("\t$(DEL) y.tab.c\n")
+        fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
     if ext == "tab.c":
         fd.write(getsrc)
-        fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
+        x, de = split_filename(deplist[0])
+        of = b + '.' + de
+        of = msc_translate_file(of, msc)
+        fd.write('\t$(YACC) $(YFLAGS) "%s"\n' % of)
         fd.write('\t$(FILTER) $(FILTERPREF)"    ;" y.tab.c > "%s.tab.c"\n' % b)
         fd.write("\t$(DEL) y.tab.h\n")
     if ext == "yy.c":
@@ -895,8 +895,9 @@ def msc_library(fd, var, libmap, msc):
     fd.write(deps + "\n")
     ln = pref + sep + libname
     if libmap.has_key('NOINST') or libmap.has_key('NOINST_MSC'):
-        fd.write("%s.lib: $(%s_DEPS)\n" % (ln, ln.replace('-','_')))
-        fd.write('\t$(ARCHIVER) /out:"%s.lib" $(%s_OBJS)\n' % (ln, ln.replace('-','_')))
+        ln_ = ln.replace('-','_')
+        fd.write("%s.lib: $(%s_DEPS)\n" % (ln, ln_))
+        fd.write('\t$(ARCHIVER) /out:"%s.lib" $(%s_OBJS) $(%s_LIBS)\n' % (ln, ln_, ln_))
     else:
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
         fd.write("%s%s: $(%s_DEPS) \n" % (ln, dll, ln.replace('-','_')))

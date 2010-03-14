@@ -712,6 +712,10 @@ yes-*-*)
 		dnl  /usr/include/cygwin/signal.h ...
 		CPPFLAGS="$CPPFLAGS -std=gnu99"
 		;;
+	*-hp*)
+		dnl  hp-ux includes and c99 don't mix
+		CPPFLAGS="$CPPFLAGS"
+		;;
 	4.2.*-*)
 		dnl gcc 4.2 has a warning on inline functions in C99 mode being
 		dnl made for real in gcc 4.3.  We disable the warning and we
@@ -754,6 +758,20 @@ have_c99=yes
 AC_MSG_RESULT(yes)],
 AC_MSG_RESULT(no))
 
+AC_DEFUN([AC_CHECK_DEFINED],[
+AS_VAR_PUSHDEF([ac_var],[ac_cv_defined_$1])dnl
+AC_CACHE_CHECK([for $1 defined], ac_var,
+AC_TRY_COMPILE(,[
+  #ifdef $1
+    	int ok;
+  #else
+  	choke me
+  #endif
+],AS_VAR_SET(ac_var, yes),AS_VAR_SET(ac_var, no)))
+AS_IF([test AS_VAR_GET(ac_var) != "no"], [$2], [$3])dnl
+AS_VAR_POPDEF([ac_var])dnl
+])
+  
 dnl MonetDB code requires some POSIX and XOPEN extensions 
 case "$GCC-$CC-$host_os" in
 *-*-solaris*)
@@ -789,7 +807,7 @@ yes-*-*)
 	cygwin*|freebsd*|openbsd*|irix*|darwin*)
 		;;
 	*)
-		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
+		AC_CHECK_DEFINED(_POSIX_C_SOURCE, [ echo "already defined"; ], [ AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag]) ] )
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 		;;
@@ -2173,8 +2191,12 @@ esac
 					dnl sun
 					AC_CHECK_LIB(pthread, sem_post,
 						pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
-						[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
-						"-lposix4")))))
+						dnl hp-ux
+						AC_CHECK_LIB(pthread, sem_wait, 
+							pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt",
+							[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
+																										"-lrt"),
+					"-lposix4")))))
 	AC_CHECK_LIB($pthread, pthread_kill,
 		AC_DEFINE(HAVE_PTHREAD_KILL, 1,
 			[Define if you have the pthread_kill function]))

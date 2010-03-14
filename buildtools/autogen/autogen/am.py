@@ -21,7 +21,7 @@ from codegen import find_org
 
 #automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
 automake_ext = ['o', 'lo', 'c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'php.c', 'py.c', 'pm.c', 'ruby.c', 'def', '']
-buildtools_ext = ['mx', 'm', 'y', 'l', 'brg']
+buildtools_ext = ['mx', 'm', 'y', 'l', 'brg', 't']
 
 am_assign = "+="
 
