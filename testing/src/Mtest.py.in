@@ -2753,11 +2753,14 @@ if os.name == "nt":
         if m and m.group(2):
             RELEASE = m.group(2)
 else:
-    SYST    = os.uname()[0].split("_NT-", 1)[0]
+    SYST    = os.uname()[0].split("_NT-", 1)[0].replace("-","")
     if SYST == "AIX":
         RELEASE = os.uname()[3]+"."+os.uname()[2]
     else:
         RELEASE = os.uname()[2].split("(", 1)[0]
+        MAJOR = RELEASE.split(".", 1)[0]
+        if "A" <= MAJOR and MAJOR <= "Z":
+            RELEASE = RELEASE.split(".", 1)[1]
 
 # this is for the wine/mingw setup
 if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
