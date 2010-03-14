@@ -80,8 +80,8 @@ mdb>help
 	finish           -- finish current call
 	exit             -- terminate executionr
 	quit             -- turn off debugging
-	list <obj>       -- list current program block
-	List <obj>       -- list with type information
+	list[#] <obj>       -- list current program block
+	List[#] <obj>       -- list with type information
 	span             -- list the life span of variables
 	var  <obj>       -- print symbol table for module
 	optimizer <obj>  -- display optimizer steps
@@ -970,7 +970,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 		case 'n':	/* next */
 		case 's':	/* step */
 			if (strncmp("span", b, 4) == 0) {
-				Lifespan span= newLifespan(mb);
+				Lifespan span= setLifespan(mb);
 				debugLifespan(cntxt,mb,span);
 				GDKfree(span);
 				continue;
@@ -1397,6 +1397,10 @@ signatures satisfying the pattern.
 			lstng= LIST_MAL_DEBUG | LIST_MAL_UDF;
 			if ( *b=='L') lstng |= LIST_MAL_PROPS | LIST_MAL_DETAIL;
 			skipWord(cntxt, b);
+			if ( *b=='#' ) {
+				lstng |= LIST_MAL_LNR;
+				b++;
+			}
 			if (*b != 0) {
 				MalBlkPtr m= mdbLocateMalBlk(cntxt,mb,b,out);
 				if ( m && strchr(b,'*') ){
@@ -1466,7 +1470,7 @@ void
 mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i= getPC(mb,pci);
 	stream_printf(cntxt->fdout,"!MDB dump of instruction %d\n",i);
-	printFunction(cntxt->fdout, mb, stk, LIST_MAL_ALL | LIST_MAL_PROPS);
+	printFunction(cntxt->fdout, mb, stk, LIST_MAL_ALL);
 	mdbBacktrace(cntxt, stk, i);
 	printStack(cntxt->fdout,mb,stk);
 }
@@ -1779,8 +1783,6 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 	printStackHdr(f,mb,v,index);
 
-
-
 	if (v && v->vtype == TYPE_bat){
 		int i = v->val.ival;
 		BAT *b = BBPquickdesc(ABS(i), TRUE);
@@ -1806,6 +1808,8 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	stream_printf(f, " %s", (isVarConstant(mb,index)? " constant" : ""));
 	stream_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
 	stream_printf(f, " %s", (isVarTypedef(mb,index) ? " type variable" : ""));
+	if ( getEndOfLife(mb,index))
+		stream_printf(f," eolife=%d ", getEndOfLife(mb,index));
 	GDKfree(nme);
 	if (n->propc){
 		nme = varGetPropStr(mb, index);
@@ -2019,8 +2023,8 @@ mdbHelp(stream *f)
 	stream_printf(f, "finish           -- finish current call\n");
 	stream_printf(f, "exit             -- terminate executionr\n");
 	stream_printf(f, "quit             -- turn off debugging\n");
-	stream_printf(f, "list <obj>       -- list current program block\n");
-	stream_printf(f, "List <obj>       -- list with type information\n");
+	stream_printf(f, "list[#] <obj>       -- list current program block\n");
+	stream_printf(f, "List[#] <obj>       -- list with type information\n");
 	stream_printf(f, "list [<step>]    -- list program block after optimizer step\n");
 	stream_printf(f, "var  <obj>       -- print symbol table for module\n");
 	stream_printf(f, "optimizer <obj>  -- display optimizer steps\n");
@@ -2074,8 +2078,9 @@ debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span)
 			snprintf(name,BUFSIZ,"%c%d ", TMPMARKER, getVar(mb,i)->tmpindex); 
 		else
 			snprintf(name,BUFSIZ,"%s ", getVar(mb,i)->name);
-		stream_printf(cntxt->fdout,"#%8s range %4d - %4d  ", 
+		stream_printf(cntxt->fdout,"#%8s eolife=%4d range %4d - %4d  ", 
 			name,
+			mb->var[i]->eolife,
 			getBeginLifespan(span,i),
 			getEndLifespan(span,i));
 		if( getLastUpdate(span,i))
