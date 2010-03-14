@@ -294,15 +294,16 @@ mal_export int moreClients(int reruns);
 #define LIST_MAL_STMT  2       /* show mal instruction */
 #define LIST_MAL_TYPE   4       /* show type resolutoin */
 #define LIST_MAL_UDF    8       /* show type resolutoin */
-#define LIST_MAL_PROPS  16       /* show optimizer properties */
+#define LIST_MAL_PROPS    16       /* show line numbers */
 #define LIST_MAL_DETAIL 32		/* type details */
 #define LIST_MAL_VALUE  64		/* list bat tuple count */
 #define LIST_MAPI       128       /* output Mapi compatible output */
 #define LIST_MAL_ARG 256		/* show the formal argument name */
+#define LIST_MAL_LNR    512       /* show line numbers */
 #define LIST_MAL_CALL  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE )
 #define LIST_MAL_DEBUG  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_VALUE | LIST_MAL_ARG)
-#define LIST_MAL_EXPLAIN  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_ARG)
-#define LIST_MAL_ALL   (LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL  | LIST_MAL_ARG)
+#define LIST_MAL_EXPLAIN  (LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_ARG)
+#define LIST_MAL_ALL   (LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL  | LIST_MAL_ARG | LIST_MAL_LNR)
 
 #ifndef WORDS_BIGENDIAN
 #define STRUCT_ALIGNED

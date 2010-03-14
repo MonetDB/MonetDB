@@ -322,6 +322,7 @@ typedef struct VARRECORD {
 	int flags;		/* see below, reserve some space */
 	int tmpindex;		/* temporary variable */
 	ValRecord value;
+	int eolife;			/* pc index when it should be garbage collected */
 	int propc, maxprop;	/* proc count and max number of properties */
 	int prps[];		/* property array */
 } *VarPtr, VarRecord;
@@ -341,8 +342,7 @@ typedef struct VARRECORD {
 #define TYPE_UNKNOWN     0
 #define TYPE_RESOLVED    2
 
-#define QUICKCLEANUP     1
-#define GARBAGECONTROL   2
+#define GARBAGECONTROL   3
 
 #define VARARGS 1	/* deal with variable arguments */
 #define VARRETS 2
@@ -432,7 +432,6 @@ for separate name space management.
 #define getFunctionId(P)       (P)->fcnname
 #define setFunctionId(P,S)  (P)->fcnname= S
 #define garbageControl(P)   ((P)->gc & GARBAGECONTROL)
-#define needsCleanup(P)   ((P)->gc & QUICKCLEANUP)
 
 #define getInstrPtr(M,I)    (M)->stmt[I]
 #define getSignature(S)     getInstrPtr((S)->def,0)
@@ -474,6 +473,8 @@ for separate name space management.
 #define getArgName(M,P,I)   getVarName((M),(P)->argv[I])
 #define getArgType(M,P,I)   getVarType((M),(P)->argv[I])
 #define getArgGDKType(M,P,I)      getVarGDKType((M),(P)->argv[I])
+
+#define getEndOfLife(X,Y)  (X)->var[Y]->eolife
 
 mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
 mal_export InstrPtr copyInstruction(InstrPtr p);
@@ -2632,6 +2633,10 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			s[1] = 0;
 			t = s + 1;
 		}
+	}
+	if (flg & LIST_MAL_LNR){
+		snprintf(t,len-1,"#%3d ",getPC(mb,p));
+		advance(t,base,len);
 	}
 	/* @:performanceData@ */
 	if (isTmpVar(mb, getArg(p, 0))) {

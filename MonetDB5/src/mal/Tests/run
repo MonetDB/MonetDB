@@ -23,4 +23,5 @@ do
 	$MSERVER $f </dev/null >> $t.valgrind.out 2>> $t.valgrind.err |tee $t.valgrind.out 
 	#diff -I'^# [Cc]ompiled for ' -I'^# config:' -I'^# dbfarm:' -I'^# dbname:' $t.out $s.out
 	#diff -I'^# [Cc]ompiled for ' -I'^# config:' -I'^# dbfarm:' -I'^# dbname:' $t.err $s.err
+	sleep 2
 done

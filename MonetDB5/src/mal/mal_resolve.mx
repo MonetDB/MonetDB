@@ -478,7 +478,7 @@ This piece of code may be shared by the separate binder
 	@:bindFunction@
 @-
 Since we now know the storage type of the receiving variable, we can
-set the garbagge collection flag.
+set the garbage collection flag.
 @= prepostProcess
 	if (findGDKtype(@1) == TYPE_bat ||
 		findGDKtype(@1) == TYPE_str ||
@@ -486,7 +486,7 @@ set the garbagge collection flag.
              @1>=0 && ATOMstorage(@1) == TYPE_str)){
 		getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
 		setVarCleanup(mb,getArg(p,@2));
-		p->gc|= QUICKCLEANUP;
+		p->gc|= GARBAGECONTROL;
 	}
 @c
 #ifdef DEBUG_MAL_RESOLVE
@@ -833,6 +833,7 @@ void chkProgram(Module s, MalBlkPtr mb)
 	chkTypes(s,mb, FALSE);
 	chkFlow(mb);
 	chkDeclarations(mb);
+	/* malGarbageCollector(mb);*/
 }
 @- Polymorphic type analysis
 MAL provides for type variables of the form any$N. This feature

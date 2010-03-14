@@ -89,6 +89,7 @@ mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 
 #define newLifespan(M) (Lifespan)GDKmalloc(sizeof(LifespanRecord)*(M)->vsize)
 mal_export Lifespan setLifespan(MalBlkPtr mb);
+mal_export void malGarbageCollector(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
@@ -661,12 +662,13 @@ any time, but at EXIT at the latest.
 Lifespan 
 setLifespan(MalBlkPtr mb)
 {
-	int pc, k, depth=0;
+	int pc, k, depth=0, prop;
 	InstrPtr p;
 	int *blk;
 	Lifespan span= newLifespan(mb);
 
 	memset((char*) span,0, sizeof(LifespanRecord)* mb->vtop);
+	prop = PropertyIndex("transparent");
 
 	blk= (int *) GDKzalloc(sizeof(int)*mb->vtop);
 
@@ -675,7 +677,7 @@ setLifespan(MalBlkPtr mb)
 		if( p->token == NOOPsymbol)
 			continue;
 
-		if( blockStart(p))
+		if( blockStart(p) && varGetProp(mb, getArg(p,0), prop) == NULL)
 			depth++;
 
 		for (k = 0; k < p->argc; k++) {
@@ -689,20 +691,24 @@ setLifespan(MalBlkPtr mb)
 				span[v].lastUpdate= pc;
 			if ( blk[v] == depth )
 				span[v].endLifespan = pc;
-			if ( k >= p->retc && blk[v] <depth)
-				span[v].endLifespan = 0;
+			
+			if ( k >= p->retc && blk[v] < depth )
+				span[v].endLifespan = -1;	/* declared in outer scope*/
 		}
 @-
 At a block exit we can finalize all variables defined within that block.
 This does not hold for dataflow blocks. They merely direct the execution
 thread, not the syntactic scope.
 @c
-		if( blockExit(p) &&
-			varGetProp(mb, getArg(p,0), PropertyIndex("transparent")) == NULL){
+		if( blockExit(p) ){
 			for (k = 0; k < mb->vtop; k++)
+			if ( span[k].endLifespan == -1)
+				span[k].endLifespan = pc;
+			else 
 			if ( span[k].endLifespan == 0 && blk[k]==depth)
 				span[k].endLifespan = pc;
-			depth--;
+			if (varGetProp(mb, getArg(p,0), prop) == NULL )
+				depth--;
 		}
 	}
 	for (k = 0; k < mb->vtop; k++)
@@ -768,6 +774,29 @@ getBlockExit(MalBlkPtr mb,int pc){
 			return pc;
 	}
 	return 0;
+}
+@- Garbage collection
+Variables are marked with their last line of use. At that point they
+can be garbage collected by the interpreter. Care should be taken
+for variables defined within a barrier block, they can be garbage collected
+at the end only due to possible redo-statements.
+@c
+void
+malGarbageCollector(MalBlkPtr mb)
+{
+	int i;
+	Lifespan span;
+
+	span = setLifespan(mb);
+	if ( span == NULL)
+		return ;
+
+	for (i = 0; i < mb->vtop; i++) 
+	if( isVarCleanup(mb,i)){
+		mb->var[i]->eolife = getEndLifespan(span,i);
+		mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
+	}
+	GDKfree(span);
 }
 @- Variable declaration
 Variables are implicitly declared upon first use.

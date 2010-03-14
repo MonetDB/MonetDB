@@ -90,8 +90,8 @@ function user.qry(low:int,hgh:int):bat[:oid,:int];#  0 qry:bat[:oid,:int] := use
     recycle.prelude();                  #  1 _9:void := RECYCLEprelude() 
     b := user.bind("schema","table","column",0);#  2 b:bat[:oid,:int] := user.bind(_4:str, _5:str, _6:str, _7:int) {GR}
     s1 := algebra.select(b,low,hgh);    #  3 s1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], low:int, hgh:int) {GR}
-    return qry := s1;                   #  4 qry:bat[:oid,:int] := s1:bat[:oid,:int] {G}
-    recycle.epilogue();                 #  5 _10:void := RECYCLEepilogue() 
+    recycle.epilogue();                 #  4 _10:void := RECYCLEepilogue() 
+    return qry := s1;                   #  5 qry:bat[:oid,:int] := s1:bat[:oid,:int] {G}
 end qry;                                #  6  
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     recycle.prelude();                  #  1 _6:void := RECYCLEprelude() 

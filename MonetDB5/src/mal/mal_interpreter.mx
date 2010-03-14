@@ -45,6 +45,7 @@ to be passed by a handle.
 /* #define DEBUG_FLOW */
 /* #define DEBUG_FLOW2 */
 /* #define STACKTRACE*/
+/* #define DEBUG_GC*/
 /* #define DEBUG_MEMORY_CLAIM*/
 
 mal_export void showErrors(Client cntxt);
@@ -89,7 +90,7 @@ static struct{
 	lng claim;	/* actual claim on memory*/
 	int bid;
 } hotpotatoes[MAXHOT];
-static int hottop = MAXHOT;
+static int hottop;
 @-
 The struct alignment leads to 40% gain in simple instructions when set.
 @c
@@ -197,6 +198,24 @@ BEWARE WE ASSUME THAT FIRST VARIABLES ON THE STACK ALIGN WITH THE SIGNATURE.
 		}
 	}
 @c
+static int
+isNotUsedIn(InstrPtr p, int start, int a)
+{
+	int k;
+	for (k=start; k<p->argc; k++)
+		if( getArg(p,k)== a) 
+			return 0;
+	return 1;
+}
+static int
+isOutputVar(InstrPtr p, int a)
+{
+	int k;
+	for (k=0; k <p->retc; k++)
+		if( getArg(p,k)== a) 
+			return 1;
+	return 0;
+}
 
 MalStkPtr
 prepareMALstack(MalBlkPtr mb, int size){
@@ -353,7 +372,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 
 	/* pass the new debug mode to the caller */
 	if (env && stk->cmd!='f') env->cmd = stk->cmd;
-	if ( keepAlive == 0 && garbageControl(getInstrPtr(mb,0)) )
+	if ( !keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(cntxt, mb,stk,env!=stk);
 	return ret;
 }
@@ -376,7 +395,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 
 #ifdef DEBUG_CALLMAL
 	stream_printf(cntxt->fdout,"callMAL\n");
-	printInstruction(cntxt->fdout,mb,pci,LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,mb,0,pci,LIST_MAL_ALL);
 #endif
 	switch( pci->token){
 	case FUNCTIONsymbol:
@@ -394,7 +413,6 @@ all arguments and return values.
 			stk->blk= mb;
 			stk->up = 0;
 			@:initStack(pci->argc)@
-			stk->keepAlive = TRUE;
 			*env= stk;
 		} else stk = *env;
 		assert(stk);
@@ -435,6 +453,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	int stamp= -1;
 	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
+	int *garbage= (int*) alloca(mb->maxarg * sizeof(int));
 	lng oldtimer=0;
 	struct Mallinfo oldMemory;
 	int stkpc = 0, prevpc = 0;
@@ -500,7 +519,7 @@ workslow:
 				stk->cmd= cntxt->itrace;
 			if( oldtimer)
 				t= GDKusec();
-			BBPTraceCall(cntxt,mb,stk,prevpc);
+			/*BBPTraceCall(cntxt,mb,stk,prevpc);*/
 			prevpc = stkpc;
 			mdbStep(cntxt,mb,stk,stkpc);
 			if( stk->cmd == 'x' || cntxt->mode == FINISHING) {
@@ -582,8 +601,7 @@ typedef struct DataFlow {
 	int start, stop;	/* guarded block under consideration*/
 	char *status;	/* statements can be blocked on other statements */
 	char *blocked;		/* blocked, should be created first */
-	int *inuse;		/* inuse reference count */
-	int *reassign;
+	int *inuse;			/* inuse in parallel threads reference count */
 	queue *done;		/* work finished */
 	queue *todo;		/* pending actions for this client */
 	int    nway;		/* number of workers */
@@ -687,7 +705,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *h
 		*retclaim = guess * pci->retc;
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total )
-		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
+		stream_printf(GDKstdout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
 #endif
 }
 @-
@@ -710,7 +728,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 		memoryused = 0;
 		hottop = 0; 
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"#DFLOWhotpotatoes reset\n");
+		stream_printf(GDKstdout,"#DFLOWhotpotatoes reset\n");
 #endif
 	}
 
@@ -729,7 +747,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 				if ( hotpotatoes[j].claim){
 					str cv = NULL;
 					ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-					stream_printf(GDKout,"#DFLOWhotpotatoes[%d] drops  [%s]" LLFMT "\n", j, cv, hotpotatoes[j].claim);
+					stream_printf(GDKstdout,"#DFLOWhotpotatoes[%d] drops  [%s]" LLFMT "\n", j, cv, hotpotatoes[j].claim);
 					if (cv) GDKfree(cv);
 				}
 #endif
@@ -769,7 +787,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 			if ( total ) {
 				str cv = NULL;
 				ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-				stream_printf(GDKout,"#DFLOWhotpotatoes[%d] claims [%s]" LLFMT "\n", hottop, cv, total);
+				stream_printf(GDKstdout,"#DFLOWhotpotatoes[%d] claims [%s]" LLFMT "\n", hottop, cv, total);
 				GDKfree(cv);
 			}
 #endif
@@ -780,7 +798,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total && action )
-		stream_printf(GDKout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
+		stream_printf(GDKstdout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
 #endif
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 }
@@ -801,7 +819,7 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 			memorypool -= (argclaim + retclaim);
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
+			stream_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
 				memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -814,9 +832,9 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 	memorypool += -argclaim -retclaim ; 
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
+		stream_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
 			memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
-		stream_flush(GDKout);
+		stream_flush(GDKstdout);
 #endif
 	assert(memoryclaims >= 0 );
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -901,16 +919,8 @@ q_dequeue(queue *q)
 	return r;
 }
 
-static int
-q_empty(queue *q)
-{
-	/* not thread save ! */
-	if (q->first < 0)
-		return 1;
-	return 0;
-}
 @-
-We simply move a cheap instruction into the front of the queue.
+We simply move an instruction into the front of the queue.
 Beware, we assume that variables are assigned a value once, otherwise
 the order may really create errors.
 The order of the instructions should be retained as long as possible.
@@ -928,6 +938,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int stamp = -1;
 	bat *backup= (bat*) alloca(flow->mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(flow->mb->maxarg * sizeof(str));
+	int *garbage= (int*) alloca(flow->mb->maxarg * sizeof(int));
 	Client cntxt = flow->cntxt;
 	MalBlkPtr mb = flow->mb;
 	MalStkPtr stk = flow->stk;
@@ -960,12 +971,12 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		lng tm = 0;
 		if( oldtimer)
 			tm = GDKusec();
-		BBPTraceCall(cntxt,mb,stk,prevpc);
+		/* BBPTraceCall(cntxt,mb,stk,prevpc);*/
 		mdbStep(cntxt,mb,stk, prevpc = getPC(mb,pci));
 		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			/* need a way to skip */
 			stkpc = mb->stop;
-			fs->pc = -1;
+			fs->status = -1;
 			return ret;
 		}
 		if (oldtimer ) {
@@ -997,7 +1008,7 @@ on the queue, searching for one that can be handled instead. [todo].
 		getMemoryClaim(stk, pci, &argclaim, &retclaim,&hotclaim);
 		if ( DFLOWadmission(argclaim,retclaim,hotclaim) ){
 			PARDEBUG {
-				stream_printf(GDKout,"#DFLOWdelay thread %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
+				stream_printf(GDKstdout,"#DFLOWdelay thread %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
 				printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 			}
 			for ( ; ; )
@@ -1005,8 +1016,8 @@ on the queue, searching for one that can be handled instead. [todo].
 				MT_sleep_ms( 25);
 				if ( DFLOWadmission(argclaim,retclaim,hotclaim) == 0) {
 					PARDEBUG {
-						stream_printf(GDKout,"#DFLOWcont  thread %d delay " LLFMT " pool  " LLFMT" delayed " LLFMT " ms\n#", THRgettid(),  memorypool, argclaim+retclaim, (GDKusec()-stk->clk)/1000);
-						printInstruction(GDKout, mb, 0, pci, LIST_MAL_STMT);
+						stream_printf(GDKstdout,"#DFLOWcont  thread %d delay " LLFMT " pool  " LLFMT" delayed " LLFMT " ms\n#", THRgettid(),  memorypool, argclaim+retclaim, (GDKusec()-stk->clk)/1000);
+						printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 					}
 					break;
 				}
@@ -1063,6 +1074,12 @@ because there seem to a possibility of a deadlock
 between incref and bbptrim. Furthermore, we have
 to be assured that the partial executed instruction
 does not lead to ref-count errors.]
+
+The worker produces a result which will potentially unblock
+instructions. This it can find itself without the help of the scheduler
+and without the need for a lock. (does it?, parallel workers?)
+It could also give preference to an instruction that eats away the object
+just produced. THis way it need not be saved on disk for a long time.
 @c
 static void
 runDFLOWworker(void *t)
@@ -1070,15 +1087,15 @@ runDFLOWworker(void *t)
 	FlowStep fs;
 	FlowTask *task = (FlowTask*) t;
 	str err;
-	int oldpc;
 	Thread thr;
 
 	thr = THRnew(MT_getpid(), "DFLOWworker");
 	while(task) {
 		fs = (FlowStep)q_dequeue(task->todo);
-		oldpc= fs->pc;
-		while (oldpc > 0 && (fs->error = DFLOWstep(task, fs)) && 
-			(err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
+#ifdef DEBUG_FLOW
+		printInstruction(GDKstdout, fs->flow->mb, 0, getInstrPtr(fs->flow->mb,fs->pc), LIST_MAL_STMT);
+#endif
+		while ((fs->error = DFLOWstep(task, fs)) && (err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
 			/* restore the instruction and wait*/
 			THRprintf(GDKerr, "#Thread %d needs memory:%s\n",task->id,err);
 			break;
@@ -1088,61 +1105,35 @@ runDFLOWworker(void *t)
 	THRdel(thr);
 }
 
-static void
-DFLOWreassign(DataFlow flow, FlowStep fs, int oa)
-{
-	int i, use = 0, limit = flow->stop - flow->start;
-	
-	for (i = flow->reassign[oa] - flow->start; i<limit; i++) {
-		int j, a;
-		InstrPtr p = getInstrPtr(flow->mb, fs[i].pc);
+@-
+The dataflow block assumes a linear MAL program.
+The dataflow administration is based on three properties.
+For each variable we keep a flag telling if it is blocked,
+i.e. not available, because it has not been assigned a value yet.
+Blocked[a]== 0 means that the variable can be used.
 
-		for (j=0; j<p->retc; j++){
-			a = getArg(p, j);
+The property inus[a] tells how many instructions still
+want to use the variable before it reaches the next assignment.
+Each instruction is counted once, even if the same variable is used multiple times.
 
-			if (a == oa) {
-				flow->reassign[a] = fs[i].pc;
-				/* the variable isn't used inbetween we should
-				   set the reassign one down */
-				if (!use) {
-					flow->reassign[a]++;
-					flow->blocked[a] = 1;
-				}
-				flow->inuse[a] = use;
-#ifdef DEBUG_FLOW
-	printf("%s [ %1d %2d %3d ]\n", getVarName(flow->mb,a), 
-		flow->blocked[a],
-		flow->inuse[a],
-		flow->reassign[a]);
-#endif
-				return;
-			}
-		}
-		for (j=p->retc; j<p->argc; j++){
-			a = getArg(p, j);
-			if (a == oa)
-				use++;
-		}
-	}
-	/* no reassign found */
-	flow->reassign[oa] = 0;
-	flow->inuse[oa] = use;
-}
+The eoscope statement should be treated with care, because it
+can only be executed when the inuse[a] drops  to 1.
+The instruction is enqued last.
 
-static int
-isOutputArg(InstrPtr p, int a)
-{
-	int k;
-	for (k=0; k<p->retc; k++)
-		if( getArg(p,k)== a) 
-			return 1;
-	return 0;
-}
+Further complications are the definitions of variables outside
+the dataflow block. They appear as input variables without assignment.
+They are considered unblocked.
 
+After an instruction has been executed, we should decrease
+the inuse[a] property for all input arguments. Furthermore, all
+target variables become nonblocked and can be used to enqueue instructions.
+
+@c
 static void
 DFLOWinit(DataFlow flow, FlowStep fs)
 {
 	int i, n;
+	char *assign= (char*) GDKzalloc(sizeof(char) * flow->mb->vtop);
 
 	for (n=0, i = flow->start; i<flow->stop; i++, n++) {
 		InstrPtr p = getInstrPtr(flow->mb, i);
@@ -1155,60 +1146,86 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 		fs[n].cost = -1; 
 		fs[n].error = NULL; 
 
-		for (j=0; j<p->retc; j++){
+		for (j=0; j<p->argc; j++){
 			a = getArg(p, j);
-
-			if (!flow->reassign[a] && (flow->blocked[a] ||
-			    (flow->inuse[a] && !flow->blocked[a])))
-				flow->reassign[a] = i;
-			if (!flow->reassign[a] && !flow->blocked[a] && !flow->inuse[a])
-				flow->blocked[a] = 1;
-		}
-		for (j=p->retc; j<p->argc; j++){
-			a = getArg(p, j);
-			if (!isVarConstant(flow->mb, a) && !isOutputArg(p,a) && !flow->reassign[a])
-				flow->inuse[a]++;
+			if ( assign[a])
+				continue;
+			if (j<p->retc ){
+				assign[a] = i;
+				if (!flow->inuse[a])
+					flow->blocked[a] = 1;
+			}
+			if (j>=p->retc  && !isVarConstant(flow->mb, a)  )
+				flow->inuse[a] += isNotUsedIn(p,j+1,a);
 		}
 	}
-#ifdef DEBUG_FLOW
-for (i=0; i < flow->mb->vtop; i++) 
-if ( flow->blocked[i] || flow->inuse[i] || flow->reassign[i] ){
-	printf("%s [ %1d %2d %3d ]\n", getVarName(flow->mb,i), 
-		flow->blocked[i],
-		flow->inuse[i],
-		flow->reassign[i]);
+	for( i=0; i<flow->mb->vtop; i++)
+		flow->inuse[i] = 0;
+#ifdef DEBUG_FLOW2
+	for (i=0; i < flow->mb->vtop; i++) 
+	if ( flow->blocked[i] || flow->inuse[i] || assign[i] ){
+		printf("%s %d [ %1d %2d ]\n", getVarName(flow->mb,i), 
+			getEndOfLife(flow->mb,i),
+			flow->blocked[i],
+			flow->inuse[i]);
 }
 #endif
+	GDKfree(assign);
 }
-@-
-Garbage collection statements are recognized by the pattern V:=nil:bat;
-@c
-static int
-isGarbageStmt( MalBlkPtr mb, InstrPtr p) 
-{
-	int ia;
-	ValPtr s;
 
-	if (p->retc != 1 || p->argc != 2)  
-		return 0;
-	if (!isVarConstant(mb, ia = getArg(p, 1))) 
-		return 0;
-	if (getVarGDKType(mb, ia) != TYPE_bat)  
-		return 0;
-	s = &getVarConstant(mb, ia);
-	if (s->val.bval && s->val.bval != bat_nil) 
-		return 0;
-	return 1;
+static int
+DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
+{
+	int j, blocked = 0;
+	(void) pc;
+
+	for(j=0; j<p->argc && !blocked; j++) {
+		if (j>=p->retc && flow->blocked[getArg(p,j)] )
+				blocked++;
+		else
+		if ( getEndOfLife(flow->mb,getArg(p,j))  == fs[i].pc ) {
+			/* make sure all instructions interested have already been executed */
+			/* and the eoscope variables are not used anymore */
+			int k;
+
+			blocked += flow->inuse[getArg(p,j)] != 0;
+			for ( k=0; k < i && !blocked; k++)
+			if (fs[k].status != DFLOWwrapup && fs[k].pc >= 0 ) /* pc = -1 could be the case before wrapup is set*/
+				blocked += !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, getArg(p,j));
+		}
+	}
+	return blocked == 0;
+}
+
+static void
+DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
+{
+	int j;
+	for(j=p->retc; j<p->argc; j++) {
+	if (!isVarConstant(flow->mb, getArg(p,j)))
+		flow->inuse[getArg(p,j)] += isNotUsedIn(p,j+1,getArg(p,j));
+	flow->blocked[getArg(p,j)] |= isOutputVar(p,getArg(p,j));
+	}
+
+	fs[i].status = DFLOWrunning;
+
+	PARDEBUG {
+		stream_printf(GDKstdout,"#enqueue %d", fs[i].pc);
+		for(j=p->retc; j<p->argc; j++)
+			stream_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
+		printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
+	}
 }
 
 static str
 DFLOWscheduler( DataFlow flow )
 {
-	int queued = 0;
-	int pc = 0, i, j, candidates=0;
+	int queued = 0, candidates;
+	int pc = 0, i, j, oa =0, ia;
 	int limit = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
-	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit);
+	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit), f;
+	InstrPtr p;
 
 	/* initialize the eligible statements */
 	DFLOWinit(flow, fs);
@@ -1216,146 +1233,96 @@ DFLOWscheduler( DataFlow flow )
 	if (flow->cntxt->flags & timerFlag)
 		flow->cntxt->timer = GDKusec();
 	
-	while(pc < limit) {
-		candidates = 0; /* to avoid N^2 run finding blocked instructions and keep focus*/
+	goto firststep;
+	while(queued){
+		PARDEBUG stream_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
+		f = q_dequeue(flow->done);
+		f->status = DFLOWwrapup;
+		queued--;
+		if (f->pc < 0) {
+			PARDEBUG {
+				stream_printf(GDKstdout,"#errors encountered %s ", f->error);
+			}
+			/* dequeue the remainders in case of an error */
+			while(queued-- > 0) 
+				(void)q_dequeue(flow->done);
+			return f->error;
+		} else {
+			p = getInstrPtr(flow->mb, f->pc);
+			PARDEBUG{
+				stream_printf(GDKstdout,"#dequeue %d", f->pc);
+				for(j=p->retc; j<p->argc; j++)
+					stream_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
+				printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
+			}
+
+			/* update the input args */
+			for(j=p->retc; j<p->argc; j++) {
+				ia = getArg(p,j);
+
+				if (isVarConstant(flow->mb, ia))
+					continue;
+
+				flow->inuse[ia] -= isNotUsedIn(p,j+1,ia);
+			}
+			/* deblock the output args */
+			for(j=0; j<p->retc; j++) {
+				oa = getArg(p,j);
+
+				flow->blocked[oa] = 0;
+				flow->inuse[oa] = 0;
+			}
+		}
+		firststep:
+		PARDEBUG if (queued)
+			stream_printf(GDKstdout,"#schedule new instructions, start from %d\n", pc);
+
+		candidates = 0;
 		for( ; pc < limit; pc++)
-			if ( fs[pc].status == DFLOWpending)
+			if ( fs[pc].status != DFLOWwrapup)
 				break;
-		for(i = pc; i < limit && candidates < 2 * flow->nway ; i++) {
-			if (fs[i].status == DFLOWpending) {
-				InstrPtr p = getInstrPtr(flow->mb, fs[i].pc);
-				int blocked = 0;
+		/* first try to find an instruction that uses the released target */
+		for(i = pc; i < limit && candidates <  2 * flow->nway ; i++)
+		if (fs[i].status == DFLOWpending ) {
+			p = getInstrPtr(flow->mb, fs[i].pc);
+			for( j=p->retc; j<p->argc; j++)
+			if ( getArg(p,j) == oa && DFLOWeligible(flow,fs,i,p,pc)){
+                queued++;
+                DFLOWactivate(flow,fs,i,p);
+                q_enqueue(flow->todo, fs+i);
+            }
+		}
 
-				/* check if output args are blocked */
-				for(j=0; j<p->retc && !blocked; j++) {
-					int oa = getArg(p,j);
-
-					/* inuse or this is a reassign statement*/
-					if (!flow->blocked[oa] ||
-					   (flow->reassign[oa] &&
-					    flow->reassign[oa] <= fs[i].pc)) {
-							blocked++;
-#ifdef DEBUG_FLOW
-						printf("oa fail enqueue %d %s [ %1d %2d %3d ]", fs[i].pc, 
-							getVarName(flow->mb,oa),
-							flow->blocked[oa], 
-							flow->inuse[oa], flow->reassign[oa]);
-						printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
-#endif
-					}
-				}
-				
-				/* check if input args aren't blocked */
-				for(j=p->retc; j<p->argc && !blocked; j++) {
-					int ia = getArg(p,j);
-
-					if ((!isOutputArg(p,ia) &&
-						 !isVarConstant(flow->mb, ia) &&
-					    flow->blocked[ia]) || 
-					   (!isOutputArg(p,ia) &&
-					    flow->reassign[ia] &&
-					    flow->reassign[ia] <= fs[i].pc)) {
-							blocked++;
-#ifdef DEBUG_FLOW
-						printf("ia fail enqueue %d  %s[ %1d %2d %3d ]", fs[i].pc, 
-							getVarName(flow->mb,ia),
-							flow->blocked[ia], 
-							flow->inuse[ia], flow->reassign[ia]);
-						printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
-#endif
-						}
-				}
-
-				if (!blocked ){
-					queued++;
-					fs[i].status = DFLOWrunning;
-
-#ifdef DEBUG_FLOW
-	printf("enqueue %d", fs[i].pc);
-	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
-#endif
-					q_enqueue(flow->todo, fs+i);
-					candidates++;
-				}
+		for(i = pc; i < limit && candidates <  flow->nway ; i++)
+		if (fs[i].status == DFLOWpending ) {
+			p = getInstrPtr(flow->mb, fs[i].pc);
+			/* check if input args aren't blocked */
+			if ( DFLOWeligible(flow,fs,i,p,pc)){
+				queued++;
+				DFLOWactivate(flow,fs,i,p);
+				q_enqueue(flow->todo, fs+i);
 			}
 		}
-		assert(queued || pc == limit); 
-		/* we cannot enqueue, lets wait for the results */ 
-		while(queued) {
-			FlowStep f;
-#ifdef DEBUG_FLOW
-			printf("waiting for results %d queued %d\n", fs[i].pc,queued);
-#endif
-
-			f = q_dequeue(flow->done);
-			f->status = DFLOWwrapup;
-			if (f->pc < 0) {
-#ifdef DEBUG_FLOW
-			printf("errors encountered %d \n", fs[i].pc);
-#endif
-				/* dequeue the remainders in case of an error */
-				while(--queued) 
-					(void)q_dequeue(flow->done);
-				pc = limit + 1;
-				return f->error;
-			} else {
-				InstrPtr p = getInstrPtr(flow->mb, f->pc);
-
-#ifdef DEBUG_FLOW
-	printf("done %d", f->pc);
-	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
-#endif
-				/* deblock the output args */
-				for(j=0; j<p->retc; j++) {
-					int oa = getArg(p,j);
-
-					/* use can now start */
-					flow->blocked[oa] = 0;
-
-					/* second statement, ie
-					   garbage collect or accum 
-					 */
-					/* based on type check for reassign */
-					if (flow->inuse[oa] == 0 && 
-					    flow->reassign[oa] == f->pc+1 &&
-					    !isGarbageStmt(flow->mb, p)) {
-						DFLOWreassign(flow, fs, oa);
-					} else if (flow->inuse[oa] == 0 &&
-					    !isGarbageStmt(flow->mb, p)) {
-						/* enable reassign */
-						flow->blocked[oa] = 1;
-						if (flow->reassign[oa])
-							flow->reassign[oa]++;
-					}
-				}
-
-				/* free the input args */
-				for(j=p->retc; j<p->argc; j++) {
-					int ia = getArg(p,j);
-
-					if (!isOutputArg(p,ia) && !isVarConstant(flow->mb, ia))
-						flow->inuse[ia]--;
-					assert(flow->inuse[ia] >= 0);
-					
-					if (!isOutputArg(p,ia) && flow->inuse[ia] == 0 && flow->reassign[ia]) {
-						/* enable reassign */
-						flow->blocked[ia] = 1;
-						if (flow->reassign[ia])
-							flow->reassign[ia]++;
-					}
-				}
-				if (pc == f->pc-flow->start)
-					pc++;
-
+	} 
+	PARDEBUG {
+		candidates = 0;
+		stream_printf(GDKstdout,"#end of data flow %d %d\n",pc,limit);
+		for ( i =0 ; i<limit; i++)
+			if (fs[i].status != DFLOWwrapup  && fs[i].pc >=0) {
+				stream_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].status, fs[i].pc);
+				printInstruction(GDKstdout, flow->mb, 0, getInstrPtr(flow->mb,fs[i].pc), LIST_MAL_STMT);
+				candidates++;
 			}
-			queued--;
-			if (pc < limit && q_empty(flow->done)) /* only fetch next if possible */
-				break;
+		if ( candidates)
+		for (i=0; i < flow->mb->vtop; i++) 
+		if ( flow->blocked[i] || flow->inuse[i] )
+			printf("%s %d [ %1d %2d ]\n", getVarName(flow->mb,i), 
+				getEndOfLife(flow->mb,i),
+				flow->blocked[i],
+				flow->inuse[i]);
 		}
-	}
 	return ret;
 }
-
 
 static DataFlow flows = NULL;
 static int workerid = 0;
@@ -1419,14 +1386,12 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow->status = (char*) GDKzalloc((stoppc-startpc+1));
 	flow->blocked = (char*) GDKzalloc(sizeof(char)*mb->vtop);
 	flow->inuse = (int*) GDKzalloc(sizeof(int)*mb->vtop);
-	flow->reassign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
 	mal_unset_lock(mal_contextLock, "runMALdataflow");
 
 	ret = DFLOWscheduler(flow);
 	GDKfree(flow->status);
 	GDKfree(flow->blocked);
 	GDKfree(flow->inuse);
-	GDKfree(flow->reassign);
 	mal_set_lock(mal_contextLock, "runMALdataflow");
 	flow->free = flows;
 	flows = flow;
@@ -1734,7 +1699,7 @@ cause errors in multi-assignment statements.
 		lhs = &stk->stk[pci->argv[k]];
 		rhs = &stk->stk[pci->argv[i]];
 		VALcopy(lhs,rhs);
-		if( lhs->vtype == TYPE_bat)
+		if( lhs->vtype == TYPE_bat && lhs->val.bval)
 			BBPincref(lhs->val.bval, TRUE);
 	}
 	@:restoreTarget(@1)@
@@ -1778,63 +1743,74 @@ This degrades performance significantly.
 After the parameters are fixed, we can safely free the destination
 variable and re-initialize it to nil.
 
-The policy implemented here is to make pin/unpin decisions part of
-the bind(namespace, batname, mode) operation. [todo]
-
+Before we execute an instruction the variables to be garbage collected
+are identified. In the post-execution phase they are removed.
 @= safeTarget
 #ifdef STACKTRACE
-	printf("safeTarget %d\n", needsCleanup(pci));
+	printf("safeTarget %d\n", garbageControl(pci));
 	printInstruction(cntxt->fdout,mb,pci, LIST_MAL_ALL);
 #endif
-	if( needsCleanup(pci) ){ 
-		assert(pci->retc <= mb->maxarg); 
-		for(i=0; i<pci->retc; i++) {
+	if( garbageControl(pci) ){ 
+		for(i=0; i < pci->argc; i++) {
 			sbackup[i]= 0;  
 			backup[i]= 0;  
-			if( stk->stk[getArg(pci,i)].vtype == TYPE_bat) {
+			garbage[i]= -1;  
+			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && getEndOfLife(mb,getArg(pci,i)) == stkpc && isNotUsedIn(pci,i+1,getArg(pci,i)) ){
+				garbage[i]= getArg(pci,i);
+#ifdef DEBUG_GC
+				stream_printf(GDKstdout,"GC %d %s prep\n",getArg(pci,i), getArgName(mb,pci,i));
+#endif
+			}
+
+			if( i < pci->retc &&  stk->stk[getArg(pci,i)].vtype == TYPE_bat) {
 				backup[i]= stk->stk[getArg(pci,i)].val.bval;
 				stamp= BBPcurstamp();
-			} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str) {
+			} else 
+			if( i < pci->retc &&  stk->stk[getArg(pci,i)].vtype == TYPE_str) {
 				backup[i]= stk->stk[getArg(pci,i)].len;
 				sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
 				backup[i] += (sbackup[i]!=NULL);
 			} 
 		}
 	} 
-@= batpropcheck
-{
-	if (@1->H != @1->T) {
-		BATpropcheck(BATmirror(@1), BATPROPS_QUICK);
-	}
-	BATpropcheck(@1, BATPROPS_QUICK);
-}
 @= restoreTarget
 #ifdef STACKTRACE
-	printf("restoreTarget %d\n", needsCleanup(pci));
+	printf("restoreTarget %d\n", garbageControl(pci));
 #endif
-	if(ret==MAL_SUCCEED && needsCleanup(pci) ){ 
-		for(i=0; i<pci->retc; i++)
-		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+	if(ret==MAL_SUCCEED && garbageControl(pci) ){ 
+		for(i=0; i<pci->argc; i++)
+		if( isaBatType(getArgType(mb,pci,i)) ){
 			bat bid = stk->stk[getArg(pci,i)].val.bval;
 
 			/* update the bigfoot information only if we need to gc */
 			if (cntxt->flags &  bigfootFlag)
 				updateBigFoot(cntxt, bid, TRUE);
-			if (backup[i]){
-				if (backup[i] != bid) {
+			if (i<pci->retc && backup[i]){
+				if (backup[i] != bid && i < pci->retc) {
 					/* possible garbage collect the variable */
 					if (cntxt->flags &  bigfootFlag)
 							updateBigFoot(cntxt, backup[i], FALSE);
 				}
 				BBPdecref(backup[i], TRUE);
 				backup[i]=0;
-				sbackup[i]=0;
 			} 
+			if ( garbage[i] >= 0){
+				bid = ABS(stk->stk[garbage[i]].val.bval);
+#ifdef DEBUG_GC
+				stream_printf(GDKstdout,"GC %d %s done %d\n",garbage[i], getVarName(mb,garbage[i]), BBP_lrefs(bid));
+#endif
+				BBPdecref( bid, TRUE);
+				stk->stk[garbage[i]].val.bval = 0;
+			}
 		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
 				if( backup[i] > 0) 
 					GDKfree(sbackup[i]);
+				if (i >= pci->retc){
+					stk->stk[getArg(pci,i)].val.sval= 0;
+					stk->stk[getArg(pci,i)].len= 0;
+				}
 				backup[i]=0;
 				sbackup[i]=0;
 			} 
@@ -1854,11 +1830,19 @@ the bind(namespace, batname, mode) operation. [todo]
 				continue;
 			}
 			if( b->batStamp <= stamp){
-				if( GDKdebug & 8)
-					@:batpropcheck(b)@
+				if( GDKdebug & 8){
+					if (b->H != b->T) {
+						BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+					}
+					BATpropcheck(b, BATPROPS_QUICK);
+				}
 			} else
-				if( GDKdebug & 2)
-					@:batpropcheck(b)@
+				if( GDKdebug & 2) {
+					if (b->H != b->T) {
+						BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+					}
+					BATpropcheck(b, BATPROPS_QUICK);
+				}
 			BBPunfix(b->batCacheid);
 		}
 	}
@@ -2083,8 +2067,7 @@ reaching end of function block.
 @= skipToCatch
 	if( stk->cmd == 'C' || mb->trap) {
 		stk->cmd = 'n';
-		BBPTraceCall(cntxt,mb,stk,prevpc);
-		prevpc = stkpc;
+		/* BBPTraceCall(cntxt,mb,stk,prevpc);*/
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			stkpc = mb->stop;
