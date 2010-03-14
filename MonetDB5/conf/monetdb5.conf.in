@@ -138,7 +138,7 @@ monet_welcome=yes
 
 
 # Merovingian section
-#====================
+#====================================
 # Merovingian logs messages and errors by default to the stdout and
 # stderr channels on the console.  By setting one or both of the
 # variables below, one can specify messages and/or errors to be logged
@@ -218,7 +218,7 @@ mero_controlport=50001
 
 # MAL section
 # Monet Virtual Machine
-#======================
+#====================================
 mal_init=@libdir@@DIRSEP@MonetDB5/mal_init.mal
 mal_listing = 2 
 #    1 = List the original input
@@ -242,7 +242,7 @@ mapi_open=false       # should be set to 'true' to allow for
                       # default, but e.g. enabled by Merovingian
 
 # SQL Interface Section
-#======================
+#====================================
 # The SQL debug level (should be disabled for normal use)
 # sql_debug=0
 
@@ -255,47 +255,50 @@ mapi_open=false       # should be set to 'true' to allow for
 # optimizers to run, or one or more variables containing the optimizer
 # pipeline to run.  The latter is provided for readability purposes
 # only.
+#
+# The minimal pipeline necessary by the server to operate correctly:
+# sql_optimizer=inline,remap,deadcode,multiplex
 
 # Set and define the default pipeline
 sql_optimizer=default_pipe
 
-# The minimal pipeline necessary by the server to operate correctly
-minimal_pipe=inline,remap,deadcode,multiplex
-
 # The default pipe line contains as of Feb2010 mitosis-mergetable-reorder, aimed at large tables and improved access locality
-default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
 # the default pipeline used in the November 2009 release
-nov2009_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+nov2009_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
 # experimental pipelines stressing various components
 
 # Replication
-replication_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
+replication_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
 
 # Accumulator
-accumulator_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,garbageCollector,dataflow,history,multiplex
+accumulator_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,dataflow,history,multiplex,garbageCollector
 
 # The Recycle pipeline for Skyserver
-recycler_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,garbageCollector,dataflow,history,multiplex
+recycler_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,dataflow,history,multiplex,garbageCollector
 
 # The Cracking pipeline(s)
-cracker_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
-sidcrack_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+cracker_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+sidcrack_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
 # The datacell pipeline
-datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
 # The Octopus pipeline for distributed processing (Merovingian enabled
 # platforms only)
-octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
 #
 #The default + datacyclotron
-datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,replication,multiplex
+datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
 #
 # the default + derivePath
-derive_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,derivePath,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+derive_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,derivePath,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 #
 #the default + dictionary
-dictionary_pipe=inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+dictionary_pipe=inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+#
+#the default + compression
+compression_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
