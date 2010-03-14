@@ -16,36 +16,22 @@ function user.main():void;
     t1 := bat.new(:oid,:int);
     t2 := array.grid(132000,8,1,0);
     t3 := array.grid(1,100,10560,0);
-    t3 := nil:BAT;
     t4 := array.grid(1,100,10560,0,8);
     t5 := batcalc.+(t2,t4);
-    t2 := nil:BAT;
-    t4 := nil:BAT;
     t6 := batcalc.oid(t5);
-    t5 := nil:BAT;
     t7 := algebra.join(t6,t1);
-    t7 := nil:BAT;
-    t6 := nil:BAT;
-    t1 := nil:BAT;
     mdb.List();
 end main;
 function user.main():void;              #  0 main:void := user.main() {G}
     t1 := bat.new(:oid,:int);           #  1 t1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     t2 := array.grid(132000,8,1,0);     #  2 t2:bat[:oid,:int] := ARRAYgrid_int(_5:int, _6:int, _7:int, _8:int) {G}
     t3 := array.grid(1,100,10560,0);    #  3 t3:bat[:oid,:int] := ARRAYgrid_int(_7:int, _10:int, _11:int, _8:int) {G}
-    t3 := nil:BAT;                      #  4 t3:bat[:oid,:int] := _19:BAT {G}
-    t4 := array.grid(1,100,10560,0,8);  #  5 t4:bat[:oid,:int] := ARRAYgridShift_int(_7:int, _10:int, _11:int, _8:int, _6:int) {G}
-    t5 := batcalc.+(t2,t4);             #  6 t5:bat[:oid,:int] := CMDbatADD_int_int_int(t2:bat[:oid,:int], t4:bat[:oid,:int]) {G}
-    t2 := nil:BAT;                      #  7 t2:bat[:oid,:int] := _19:BAT {G}
-    t4 := nil:BAT;                      #  8 t4:bat[:oid,:int] := _19:BAT {G}
-    t6 := batcalc.oid(t5);              #  9 t6:bat[:oid,:oid] := CMDconvert_int_oid(t5:bat[:oid,:int]) {G}
-    t5 := nil:BAT;                      # 10 t5:bat[:oid,:int] := _19:BAT {G}
-    t7 := algebra.join(t6,t1);          # 11 t7:bat[:oid,:int] := ALGjoin(t6:bat[:oid,:oid], t1:bat[:oid,:int]) {G}
-    t7 := nil:BAT;                      # 12 t7:bat[:oid,:int] := _19:BAT {G}
-    t6 := nil:BAT;                      # 13 t6:bat[:oid,:oid] := _19:BAT {G}
-    t1 := nil:BAT;                      # 14 t1:bat[:oid,:int] := _19:BAT {G}
-    mdb.List();                         # 15 _17:void := MDBlistDetail() 
-end main;                               # 16  
+    t4 := array.grid(1,100,10560,0,8);  #  4 t4:bat[:oid,:int] := ARRAYgridShift_int(_7:int, _10:int, _11:int, _8:int, _6:int) {G}
+    t5 := batcalc.+(t2,t4);             #  5 t5:bat[:oid,:int] := CMDbatADD_int_int_int(t2:bat[:oid,:int], t4:bat[:oid,:int]) {G}
+    t6 := batcalc.oid(t5);              #  6 t6:bat[:oid,:oid] := CMDconvert_int_oid(t5:bat[:oid,:int]) {G}
+    t7 := algebra.join(t6,t1);          #  7 t7:bat[:oid,:int] := ALGjoin(t6:bat[:oid,:oid], t1:bat[:oid,:int]) {G}
+    mdb.List();                         #  8 _17:void := MDBlistDetail() 
+end main;                               #  9  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

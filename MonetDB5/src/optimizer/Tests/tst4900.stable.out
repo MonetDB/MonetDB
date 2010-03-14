@@ -112,156 +112,90 @@ factory user.f1(s:str):void;            #  0 f1:void := user.f1(s:str) {G}
 #t4 := batcalc.*(8,t3); doing a reconstruction saves a lot 
     t4 := array.grid(1,100,10560,0,8);  #  5 t4:bat[:oid,:int] := ARRAYgridShift_int(_7:int, _10:int, _11:int, _8:int, _6:int) {G}
     t5 := batcalc.+(t2,t4,true,true);   #  6 t5:bat[:oid,:int] := CMDbataccumADD_int_int_int(t2:bat[:oid,:int], t4:bat[:oid,:int], _118:bit, _118:bit) {G}
-    t2 := nil:BAT;                      #  7 t2:bat[:oid,:int] := _121:BAT {G}
-    t4 := nil:BAT;                      #  8 t4:bat[:oid,:int] := _121:BAT {G}
-    t6 := batcalc.oid(t5);              #  9 t6:bat[:oid,:oid] := CMDconvert_int_oid(t5:bat[:oid,:int]) {G}
-    t5 := nil:BAT;                      # 10 t5:bat[:oid,:int] := _121:BAT {G}
-    t7 := algebra.join(t6,t1);          # 11 t7:bat[:oid,:dbl] := ALGjoin(t6:bat[:oid,:oid], t1:bat[:oid,:dbl]) {G}
-    t1:bat[:oid,:dbl]  := nil:BAT;      # 12 t1:bat[:oid,:dbl] := _121:BAT {G}
-    t8 := calc.dbl(1);                  # 13 t8:dbl := CALCflt2dbl(_18:flt) 
-    t9 := calc.dbl(2);                  # 14 t9:dbl := CALCflt2dbl(_20:flt) 
-    t10 := calc.dbl(3.1415);            # 15 t10:dbl := CALCflt2dbl(_22:flt) 
-    t11 := calc.*(t9,t10);              # 16 t11:dbl := CALCbinaryMULdbldbl(t9:dbl, t10:dbl) 
-    t12 := calc.dbl(14);                # 17 t12:dbl := CALCflt2dbl(_25:flt) 
-    t13 := mmath.pow(t11,t12);          # 18 t13:dbl := MATHbinary_POWdbl(t11:dbl, t12:dbl) 
-    t14 := mmath.sqrt(t13);             # 19 t14:dbl := MATHunary_SQRTdbl(t13:dbl) 
-    t15 := calc.dbl(t14);               # 20 t15:dbl := CALCdbl2dbl(t14:dbl) 
-    t16:bat[:oid,:dbl]  := bbp.bind("TREC2003_test_sigs_14x8x32318");# 21 t16:bat[:oid,:dbl] := CMDbbpbind(_30:str) {G}
-    t17 := array.grid(800,14,1,0);      # 22 t17:bat[:oid,:int] := ARRAYgrid_int(_32:int, _33:int, _7:int, _8:int) {G}
-    t18 := array.grid(100,8,14,0);      # 23 t18:bat[:oid,:int] := ARRAYgrid_int(_10:int, _6:int, _33:int, _8:int) {G}
-    t19 := array.grid(1,100,112,0);     # 24 t19:bat[:oid,:int] := ARRAYgrid_int(_7:int, _10:int, _36:int, _8:int) {G}
-    t19 := nil:BAT;                     # 25 t19:bat[:oid,:int] := _121:BAT {G}
+    t6 := batcalc.oid(t5);              #  7 t6:bat[:oid,:oid] := CMDconvert_int_oid(t5:bat[:oid,:int]) {G}
+    t7 := algebra.join(t6,t1);          #  8 t7:bat[:oid,:dbl] := ALGjoin(t6:bat[:oid,:oid], t1:bat[:oid,:dbl]) {G}
+    t8 := calc.dbl(1);                  #  9 t8:dbl := CALCflt2dbl(_18:flt) 
+    t9 := calc.dbl(2);                  # 10 t9:dbl := CALCflt2dbl(_20:flt) 
+    t10 := calc.dbl(3.1415);            # 11 t10:dbl := CALCflt2dbl(_22:flt) 
+    t11 := calc.*(t9,t10);              # 12 t11:dbl := CALCbinaryMULdbldbl(t9:dbl, t10:dbl) 
+    t12 := calc.dbl(14);                # 13 t12:dbl := CALCflt2dbl(_25:flt) 
+    t13 := mmath.pow(t11,t12);          # 14 t13:dbl := MATHbinary_POWdbl(t11:dbl, t12:dbl) 
+    t14 := mmath.sqrt(t13);             # 15 t14:dbl := MATHunary_SQRTdbl(t13:dbl) 
+    t15 := calc.dbl(t14);               # 16 t15:dbl := CALCdbl2dbl(t14:dbl) 
+    t16:bat[:oid,:dbl]  := bbp.bind("TREC2003_test_sigs_14x8x32318");# 17 t16:bat[:oid,:dbl] := CMDbbpbind(_30:str) {G}
+    t17 := array.grid(800,14,1,0);      # 18 t17:bat[:oid,:int] := ARRAYgrid_int(_32:int, _33:int, _7:int, _8:int) {G}
+    t18 := array.grid(100,8,14,0);      # 19 t18:bat[:oid,:int] := ARRAYgrid_int(_10:int, _6:int, _33:int, _8:int) {G}
+    t19 := array.grid(1,100,112,0);     # 20 t19:bat[:oid,:int] := ARRAYgrid_int(_7:int, _10:int, _36:int, _8:int) {G}
 #t20 := batcalc.*(8,t19); 
-    t20 := array.grid(1,100,112,0,8);   # 27 t20:bat[:oid,:int] := ARRAYgridShift_int(_7:int, _10:int, _36:int, _8:int, _39:int) {G}
-    t21 := batcalc.+(t18,t20,true,true);# 28 t21:bat[:oid,:int] := CMDbataccumADD_int_int_int(t18:bat[:oid,:int], t20:bat[:oid,:int], _118:bit, _118:bit) {G}
-    t18 := nil:BAT;                     # 29 t18:bat[:oid,:int] := _121:BAT {G}
-    t20 := nil:BAT;                     # 30 t20:bat[:oid,:int] := _121:BAT {G}
-    t22 := batcalc.*(14,t21);           # 31 t22:bat[:oid,:int] := CMDcstMULbat_int_int_int(_33:int, t21:bat[:oid,:int]) {G}
-    t23 := batcalc.+(t17,t22,true,true);# 32 t23:bat[:oid,:int] := CMDbataccumADD_int_int_int(t17:bat[:oid,:int], t22:bat[:oid,:int], _118:bit, _118:bit) {G}
-    t17 := nil:BAT;                     # 33 t17:bat[:oid,:int] := _121:BAT {G}
-    t22 := nil:BAT;                     # 34 t22:bat[:oid,:int] := _121:BAT {G}
-    t24 := batcalc.oid(t23);            # 35 t24:bat[:oid,:oid] := CMDconvert_int_oid(t23:bat[:oid,:int]) {G}
-    t23 := nil:BAT;                     # 36 t23:bat[:oid,:int] := _121:BAT {G}
-    t25 := algebra.join(t24,t16);       # 37 t25:bat[:oid,:dbl] := ALGjoin(t24:bat[:oid,:oid], t16:bat[:oid,:dbl]) {G}
-    t24 := nil:BAT;                     # 38 t24:bat[:oid,:oid] := _121:BAT {G}
-    t30 := batcalc.oid(t21);            # 39 t30:bat[:oid,:oid] := CMDconvert_int_oid(t21:bat[:oid,:int]) {G}
-    t21 := nil:BAT;                     # 40 t21:bat[:oid,:int] := _121:BAT {G}
-    t31 := array.grid(1,800,1,0);       # 41 t31:bat[:oid,:int] := ARRAYgrid_int(_47:int, _32:int, _47:int, _48:int) {G}
-    t32 := aggr.product(t25,t30,t31);   # 42 t32:bat[:oid,:dbl] := AX3aggrX3_prod3_dbl_dbl(t25:bat[:oid,:dbl], t30:bat[:oid,:oid], t31:bat[:oid,:int]) {G}
-    t25 := nil:BAT;                     # 43 t25:bat[:oid,:dbl] := _121:BAT {G}
-    t30 := nil:BAT;                     # 44 t30:bat[:oid,:oid] := _121:BAT {G}
-    t31 := nil:BAT;                     # 45 t31:bat[:oid,:int] := _121:BAT {G}
-    t33 := batcalc.*(t15,t32,false,true);# 46 t33:bat[:oid,:dbl] := CMDbataccumMULcst2_dbl_dbl_dbl(t15:dbl, t32:bat[:oid,:dbl], _119:bit, _118:bit) {G}
-    t32 := nil:BAT;                     # 47 t32:bat[:oid,:dbl] := _121:BAT {G}
-    t34 := batcalc./(t8,t33,false,true);# 48 t34:bat[:oid,:dbl] := CMDbataccumDIVcst2_dbl_dbl_dbl(t8:dbl, t33:bat[:oid,:dbl], _119:bit, _118:bit) {G}
-    t33 := nil:BAT;                     # 49 t33:bat[:oid,:dbl] := _121:BAT {G}
-    t40 := algebra.join(t6,t34);        # 50 t40:bat[:oid,:dbl] := ALGjoin(t6:bat[:oid,:oid], t34:bat[:oid,:dbl]) {G}
-    t6 := nil:BAT;                      # 51 t6:bat[:oid,:oid] := _121:BAT {G}
-    t34 := nil:BAT;                     # 52 t34:bat[:oid,:dbl] := _121:BAT {G}
-    t41 := calc.dbl(-0.5);              # 53 t41:dbl := CALCflt2dbl(_54:flt) 
+    t20 := array.grid(1,100,112,0,8);   # 22 t20:bat[:oid,:int] := ARRAYgridShift_int(_7:int, _10:int, _36:int, _8:int, _39:int) {G}
+    t21 := batcalc.+(t18,t20,true,true);# 23 t21:bat[:oid,:int] := CMDbataccumADD_int_int_int(t18:bat[:oid,:int], t20:bat[:oid,:int], _118:bit, _118:bit) {G}
+    t22 := batcalc.*(14,t21);           # 24 t22:bat[:oid,:int] := CMDcstMULbat_int_int_int(_33:int, t21:bat[:oid,:int]) {G}
+    t23 := batcalc.+(t17,t22,true,true);# 25 t23:bat[:oid,:int] := CMDbataccumADD_int_int_int(t17:bat[:oid,:int], t22:bat[:oid,:int], _118:bit, _118:bit) {G}
+    t24 := batcalc.oid(t23);            # 26 t24:bat[:oid,:oid] := CMDconvert_int_oid(t23:bat[:oid,:int]) {G}
+    t25 := algebra.join(t24,t16);       # 27 t25:bat[:oid,:dbl] := ALGjoin(t24:bat[:oid,:oid], t16:bat[:oid,:dbl]) {G}
+    t30 := batcalc.oid(t21);            # 28 t30:bat[:oid,:oid] := CMDconvert_int_oid(t21:bat[:oid,:int]) {G}
+    t31 := array.grid(1,800,1,0);       # 29 t31:bat[:oid,:int] := ARRAYgrid_int(_47:int, _32:int, _47:int, _48:int) {G}
+    t32 := aggr.product(t25,t30,t31);   # 30 t32:bat[:oid,:dbl] := AX3aggrX3_prod3_dbl_dbl(t25:bat[:oid,:dbl], t30:bat[:oid,:oid], t31:bat[:oid,:int]) {G}
+    t33 := batcalc.*(t15,t32,false,true);# 31 t33:bat[:oid,:dbl] := CMDbataccumMULcst2_dbl_dbl_dbl(t15:dbl, t32:bat[:oid,:dbl], _119:bit, _118:bit) {G}
+    t34 := batcalc./(t8,t33,false,true);# 32 t34:bat[:oid,:dbl] := CMDbataccumDIVcst2_dbl_dbl_dbl(t8:dbl, t33:bat[:oid,:dbl], _119:bit, _118:bit) {G}
+    t40 := algebra.join(t6,t34);        # 33 t40:bat[:oid,:dbl] := ALGjoin(t6:bat[:oid,:oid], t34:bat[:oid,:dbl]) {G}
+    t41 := calc.dbl(-0.5);              # 34 t41:dbl := CALCflt2dbl(_54:flt) 
 #t42:bat[:oid,:dbl] := bbp.bind("Query_14x1320"); 
-    t43 := array.grid(1056000,14,1,0);  # 55 t43:bat[:oid,:int] := ARRAYgrid_int(_58:int, _33:int, _47:int, _48:int) {G}
-    t44 := array.grid(100,1320,112,0);  # 56 t44:bat[:oid,:int] := ARRAYgrid_int(_60:int, _61:int, _36:int, _48:int) {G}
+    t43 := array.grid(1056000,14,1,0);  # 36 t43:bat[:oid,:int] := ARRAYgrid_int(_58:int, _33:int, _47:int, _48:int) {G}
+    t44 := array.grid(100,1320,112,0);  # 37 t44:bat[:oid,:int] := ARRAYgrid_int(_60:int, _61:int, _36:int, _48:int) {G}
 #t45 := batcalc.*(14,t44); 
-    t45 := array.grid(100,1320,112,0,14);# 58 t45:bat[:oid,:int] := ARRAYgridShift_int(_60:int, _61:int, _36:int, _48:int, _33:int) {G}
-    t46 := batcalc.+(t43,t45,false,true);# 59 t46:bat[:oid,:int] := CMDbataccumADD_int_int_int(t43:bat[:oid,:int], t45:bat[:oid,:int], _119:bit, _118:bit) {G}
-    t45 := nil:BAT;                     # 60 t45:bat[:oid,:int] := _121:BAT {G}
-    t47 := batcalc.oid(t46);            # 61 t47:bat[:oid,:oid] := CMDconvert_int_oid(t46:bat[:oid,:int]) {G}
-    t46 := nil:BAT;                     # 62 t46:bat[:oid,:int] := _121:BAT {G}
-    t47 := nil:BAT;                     # 63 t47:bat[:oid,:oid] := _121:BAT {G}
-    t42:bat[:oid,:dbl]  := nil:BAT;     # 64 t42:bat[:oid,:dbl] := _121:BAT {G}
-    t49:bat[:oid,:dbl]  := bbp.bind("TREC2003_test_mus_14x8x32318");# 65 t49:bat[:oid,:dbl] := CMDbbpbind(_68:str) {G}
-    t51 := array.grid(132000,8,14,0);   # 66 t51:bat[:oid,:int] := ARRAYgrid_int(_70:int, _39:int, _71:int, _48:int) {G}
-    t52 := array.grid(1,100,147840,0);  # 67 t52:bat[:oid,:int] := ARRAYgrid_int(_47:int, _60:int, _73:int, _48:int) {G}
+    t45 := array.grid(100,1320,112,0,14);# 39 t45:bat[:oid,:int] := ARRAYgridShift_int(_60:int, _61:int, _36:int, _48:int, _33:int) {G}
+    t46 := batcalc.+(t43,t45,false,true);# 40 t46:bat[:oid,:int] := CMDbataccumADD_int_int_int(t43:bat[:oid,:int], t45:bat[:oid,:int], _119:bit, _118:bit) {G}
+    t47 := batcalc.oid(t46);            # 41 t47:bat[:oid,:oid] := CMDconvert_int_oid(t46:bat[:oid,:int]) {G}
+    t49:bat[:oid,:dbl]  := bbp.bind("TREC2003_test_mus_14x8x32318");# 42 t49:bat[:oid,:dbl] := CMDbbpbind(_68:str) {G}
+    t51 := array.grid(132000,8,14,0);   # 43 t51:bat[:oid,:int] := ARRAYgrid_int(_70:int, _39:int, _71:int, _48:int) {G}
+    t52 := array.grid(1,100,147840,0);  # 44 t52:bat[:oid,:int] := ARRAYgrid_int(_47:int, _60:int, _73:int, _48:int) {G}
 #t53 := batcalc.*(8,t52); 
-    t53 := array.grid(1,100,147840,0,8);# 69 t53:bat[:oid,:int] := ARRAYgridShift_int(_47:int, _60:int, _73:int, _48:int, _76:int) {G}
-    t54 := batcalc.+(t51,t53,false,true);# 70 t54:bat[:oid,:int] := CMDbataccumADD_int_int_int(t51:bat[:oid,:int], t53:bat[:oid,:int], _119:bit, _118:bit) {G}
-    t53 := nil:BAT;                     # 71 t53:bat[:oid,:int] := _121:BAT {G}
-    t55 := batcalc.*(14,t54,false,true);# 72 t55:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_71:int, t54:bat[:oid,:int], _119:bit, _118:bit) {G}
-    t54 := nil:BAT;                     # 73 t54:bat[:oid,:int] := _121:BAT {G}
-    t56 := batcalc.+(t43,t55,true,true);# 74 t56:bat[:oid,:int] := CMDbataccumADD_int_int_int(t43:bat[:oid,:int], t55:bat[:oid,:int], _118:bit, _118:bit) {G}
-    t43 := nil:BAT;                     # 75 t43:bat[:oid,:int] := _121:BAT {G}
-    t55 := nil:BAT;                     # 76 t55:bat[:oid,:int] := _121:BAT {G}
-    t57 := batcalc.oid(t56);            # 77 t57:bat[:oid,:oid] := CMDconvert_int_oid(t56:bat[:oid,:int]) {G}
-    t56 := nil:BAT;                     # 78 t56:bat[:oid,:int] := _121:BAT {G}
-    t58 := algebra.join(t57,t49);       # 79 t58:bat[:oid,:dbl] := ALGjoin(t57:bat[:oid,:oid], t49:bat[:oid,:dbl]) {G}
-    t49:bat[:oid,:dbl]  := nil:BAT;     # 80 t49:bat[:oid,:dbl] := _121:BAT {G}
-    t48 := nil:BAT;                     # 81 t48:bat[:oid,:dbl] := _121:BAT {G}
-    t58 := nil:BAT;                     # 82 t58:bat[:oid,:dbl] := _121:BAT {G}
+    t53 := array.grid(1,100,147840,0,8);# 46 t53:bat[:oid,:int] := ARRAYgridShift_int(_47:int, _60:int, _73:int, _48:int, _76:int) {G}
+    t54 := batcalc.+(t51,t53,false,true);# 47 t54:bat[:oid,:int] := CMDbataccumADD_int_int_int(t51:bat[:oid,:int], t53:bat[:oid,:int], _119:bit, _118:bit) {G}
+    t55 := batcalc.*(14,t54,false,true);# 48 t55:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_71:int, t54:bat[:oid,:int], _119:bit, _118:bit) {G}
+    t56 := batcalc.+(t43,t55,true,true);# 49 t56:bat[:oid,:int] := CMDbataccumADD_int_int_int(t43:bat[:oid,:int], t55:bat[:oid,:int], _118:bit, _118:bit) {G}
+    t57 := batcalc.oid(t56);            # 50 t57:bat[:oid,:oid] := CMDconvert_int_oid(t56:bat[:oid,:int]) {G}
+    t58 := algebra.join(t57,t49);       # 51 t58:bat[:oid,:dbl] := ALGjoin(t57:bat[:oid,:oid], t49:bat[:oid,:dbl]) {G}
 #t61 := batcalc.pow(t59,t9); 
-    t59 := nil:BAT;                     # 84 t59:bat[:oid,:dbl] := _121:BAT {G}
-    t71 := algebra.join(t57,t16);       # 85 t71:bat[:oid,:dbl] := ALGjoin(t57:bat[:oid,:oid], t16:bat[:oid,:dbl]) {G}
-    t57 := nil:BAT;                     # 86 t57:bat[:oid,:oid] := _154:BAT {G}
-    t16:bat[:oid,:dbl]  := nil:BAT;     # 87 t16:bat[:oid,:dbl] := _154:BAT {G}
-    t61 := nil:BAT;                     # 88 t61:bat[:oid,:dbl] := _154:BAT {G}
-    t71 := nil:BAT;                     # 89 t71:bat[:oid,:dbl] := _154:BAT {G}
-    t76 := batcalc.*(1320,t52,false,true);# 90 t76:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_61:int, t52:bat[:oid,:int], _119:bit, _118:bit) {G}
-    t52 := nil:BAT;                     # 91 t52:bat[:oid,:int] := _154:BAT {G}
-    t77 := batcalc.+(t44,t76,true,true);# 92 t77:bat[:oid,:int] := CMDbataccumADD_int_int_int(t44:bat[:oid,:int], t76:bat[:oid,:int], _118:bit, _118:bit) {G}
-    t44 := nil:BAT;                     # 93 t44:bat[:oid,:int] := _154:BAT {G}
-    t76 := nil:BAT;                     # 94 t76:bat[:oid,:int] := _154:BAT {G}
-    t78 := batcalc.*(8,t77,false,true); # 95 t78:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_76:int, t77:bat[:oid,:int], _119:bit, _118:bit) {G}
-    t77 := nil:BAT;                     # 96 t77:bat[:oid,:int] := _154:BAT {G}
-    t79 := batcalc.+(t51,t78,true,true);# 97 t79:bat[:oid,:int] := CMDbataccumADD_int_int_int(t51:bat[:oid,:int], t78:bat[:oid,:int], _118:bit, _118:bit) {G}
-    t51 := nil:BAT;                     # 98 t51:bat[:oid,:int] := _154:BAT {G}
-    t78 := nil:BAT;                     # 99 t78:bat[:oid,:int] := _154:BAT {G}
-    t80 := batcalc.oid(t79);            #100 t80:bat[:oid,:oid] := CMDconvert_int_oid(t79:bat[:oid,:int]) {G}
-    t79 := nil:BAT;                     #101 t79:bat[:oid,:int] := _154:BAT {G}
-    t81 := array.grid(1,1056000,1,0);   #102 t81:bat[:oid,:int] := ARRAYgrid_int(_93:int, _94:int, _93:int, _95:int) {G}
-    t72 := nil:BAT;                     #103 t72:bat[:oid,:dbl] := _154:BAT {G}
-    t80 := nil:BAT;                     #104 t80:bat[:oid,:oid] := _154:BAT {G}
-    t82 := nil:BAT;                     #105 t82:bat[:oid,:dbl] := _154:BAT {G}
-    t83 := nil:BAT;                     #106 t83:bat[:oid,:dbl] := _154:BAT {G}
-    t40 := nil:BAT;                     #107 t40:bat[:oid,:dbl] := _154:BAT {G}
-    t84 := nil:BAT;                     #108 t84:bat[:oid,:dbl] := _154:BAT {G}
-    t7 := nil:BAT;                      #109 t7:bat[:oid,:dbl] := _154:BAT {G}
-    t85 := nil:BAT;                     #110 t85:bat[:oid,:dbl] := _154:BAT {G}
+    t71 := algebra.join(t57,t16);       # 53 t71:bat[:oid,:dbl] := ALGjoin(t57:bat[:oid,:oid], t16:bat[:oid,:dbl]) {G}
+    t76 := batcalc.*(1320,t52,false,true);# 54 t76:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_61:int, t52:bat[:oid,:int], _119:bit, _118:bit) {G}
+    t77 := batcalc.+(t44,t76,true,true);# 55 t77:bat[:oid,:int] := CMDbataccumADD_int_int_int(t44:bat[:oid,:int], t76:bat[:oid,:int], _118:bit, _118:bit) {G}
+    t78 := batcalc.*(8,t77,false,true); # 56 t78:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_76:int, t77:bat[:oid,:int], _119:bit, _118:bit) {G}
+    t79 := batcalc.+(t51,t78,true,true);# 57 t79:bat[:oid,:int] := CMDbataccumADD_int_int_int(t51:bat[:oid,:int], t78:bat[:oid,:int], _118:bit, _118:bit) {G}
+    t80 := batcalc.oid(t79);            # 58 t80:bat[:oid,:oid] := CMDconvert_int_oid(t79:bat[:oid,:int]) {G}
+    t81 := array.grid(1,1056000,1,0);   # 59 t81:bat[:oid,:int] := ARRAYgrid_int(_93:int, _94:int, _93:int, _95:int) {G}
 #t87 := array.grid(100,1320,8,0); will save 30% by reuse 
-    t87 := array.grid(t81,100,1320,8,0);#112 t87:bat[:oid,:int] := ARRAYgridBAT_int(t81:bat[:oid,:int], _103:int, _104:int, _76:int, _95:int) {G}
-    t81 := nil:BAT;                     #113 t81:bat[:oid,:int] := _154:BAT {G}
-    t89 := batcalc.*(1320,t3,false,true);#114 t89:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_104:int, t3:bat[:oid,:int], _119:bit, _118:bit) {G}
-    t3 := nil:BAT;                      #115 t3:bat[:oid,:int] := _154:BAT {G}
-    t90 := batcalc.+(t87,t89,true,true);#116 t90:bat[:oid,:int] := CMDbataccumADD_int_int_int(t87:bat[:oid,:int], t89:bat[:oid,:int], _118:bit, _118:bit) {G}
-    t87 := nil:BAT;                     #117 t87:bat[:oid,:int] := _154:BAT {G}
-    t89 := nil:BAT;                     #118 t89:bat[:oid,:int] := _154:BAT {G}
-    t91 := batcalc.oid(t90);            #119 t91:bat[:oid,:oid] := CMDconvert_int_oid(t90:bat[:oid,:int]) {G}
-    t90 := nil:BAT;                     #120 t90:bat[:oid,:int] := _154:BAT {G}
-    t92 := array.grid(1,132000,1,0);    #121 t92:bat[:oid,:int] := ARRAYgrid_int(_93:int, _109:int, _93:int, _95:int) {G}
-    t86 := nil:BAT;                     #122 t86:bat[:oid,:dbl] := _154:BAT {G}
-    t91 := nil:BAT;                     #123 t91:bat[:oid,:oid] := _154:BAT {G}
-    t92 := nil:BAT;                     #124 t92:bat[:oid,:int] := _154:BAT {G}
-    t93 := nil:BAT;                     #125 t93:bat[:oid,:dbl] := _154:BAT {G}
-    t95 := array.grid(1,100,1320,0);    #126 t95:bat[:oid,:int] := ARRAYgrid_int(_93:int, _103:int, _104:int, _95:int) {G}
-    t96 := batcalc.oid(t95);            #127 t96:bat[:oid,:oid] := CMDconvert_int_oid(t95:bat[:oid,:int]) {G}
-    t95 := nil:BAT;                     #128 t95:bat[:oid,:int] := _154:BAT {G}
-    t97 := array.grid(1,100,1,0);       #129 t97:bat[:oid,:int] := ARRAYgrid_int(_93:int, _103:int, _93:int, _95:int) {G}
-    t94 := nil:BAT;                     #130 t94:bat[:oid,:dbl] := _154:BAT {G}
-    t96 := nil:BAT;                     #131 t96:bat[:oid,:oid] := _154:BAT {G}
-    t98 := nil:BAT;                     #132 t98:bat[:oid,:dbl] := _154:BAT {G}
-    t97 := nil:BAT;                     #133 t97:bat[:oid,:int] := _187:BAT {G}
-    top := nil:BAT;                     #134 top:bat[:oid,:dbl] := _187:BAT {G}
-barrier always := true;                 #135 always:bit := _190:bit {J153}
-    t42:bat[:oid,:dbl]  := bbp.bind(s); #136 t42:bat[:oid,:dbl] := CMDbbpbind(s:str) {G}
-    t48 := algebra.join(t47,t42);       #137 t48:bat[:oid,:dbl] := ALGjoin(t47:bat[:oid,:oid], t42:bat[:oid,:dbl]) {G}
-    t59 := batcalc.-(t48,t58,true,true);#138 t59:bat[:oid,:dbl] := CMDbataccumSUB_dbl_dbl_dbl(t48:bat[:oid,:dbl], t58:bat[:oid,:dbl], _118:bit, _118:bit) {G}
-    t61 := batcalc.*(t59,t59,true,true);#139 t61:bat[:oid,:dbl] := CMDbataccumMUL_dbl_dbl_dbl(t59:bat[:oid,:dbl], t59:bat[:oid,:dbl], _118:bit, _118:bit) {G}
-    t72 := batcalc./(t61,t71,true,true);#140 t72:bat[:oid,:dbl] := CMDbataccumDIV_dbl_dbl_dbl(t61:bat[:oid,:dbl], t71:bat[:oid,:dbl], _118:bit, _118:bit) {G}
-    t82 := aggr.sum(t72,t80,t81);       #141 t82:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t72:bat[:oid,:dbl], t80:bat[:oid,:oid], t81:bat[:oid,:int]) {G}
-    t83 := batcalc.*(t41,t82,false,true);#142 t83:bat[:oid,:dbl] := CMDbataccumMULcst2_dbl_dbl_dbl(t41:dbl, t82:bat[:oid,:dbl], _119:bit, _118:bit) {G}
-    t84 := batmmath.exp(t83);           #143 t84:bat[:oid,:dbl] := CMDscience_bat_dbl_exp(t83:bat[:oid,:dbl]) {G}
-    t85 := batcalc.*(t40,t84,true,true);#144 t85:bat[:oid,:dbl] := CMDbataccumMUL_dbl_dbl_dbl(t40:bat[:oid,:dbl], t84:bat[:oid,:dbl], _118:bit, _118:bit) {G}
-    t86 := batcalc.*(t7,t85,true,true); #145 t86:bat[:oid,:dbl] := CMDbataccumMUL_dbl_dbl_dbl(t7:bat[:oid,:dbl], t85:bat[:oid,:dbl], _118:bit, _118:bit) {G}
-    t93 := aggr.sum(t86,t91,t92);       #146 t93:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t86:bat[:oid,:dbl], t91:bat[:oid,:oid], t92:bat[:oid,:int]) {G}
-    t94 := batmmath.log(t93);           #147 t94:bat[:oid,:dbl] := CMDscience_bat_dbl_log(t93:bat[:oid,:dbl]) {G}
-    t98 := aggr.sum(t94,t96,t97);       #148 t98:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t94:bat[:oid,:dbl], t96:bat[:oid,:oid], t97:bat[:oid,:int]) {G}
-    top := t98;                         #149 top:bat[:oid,:dbl] := t98:bat[:oid,:dbl] {G}
-    io.table(t97,top);                  #150 _117:void := IOttable(t97:bat[:oid,:int], top:bat[:oid,:dbl]) 
-    yield f1;                           #151 f1:void 
-    redo always;                        #152 always:bit {J136}
-exit always;                            #153 always:bit 
-end f1;                                 #154  
+    t87 := array.grid(t81,100,1320,8,0);# 61 t87:bat[:oid,:int] := ARRAYgridBAT_int(t81:bat[:oid,:int], _103:int, _104:int, _76:int, _95:int) {G}
+    t89 := batcalc.*(1320,t3,false,true);# 62 t89:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_104:int, t3:bat[:oid,:int], _119:bit, _118:bit) {G}
+    t90 := batcalc.+(t87,t89,true,true);# 63 t90:bat[:oid,:int] := CMDbataccumADD_int_int_int(t87:bat[:oid,:int], t89:bat[:oid,:int], _118:bit, _118:bit) {G}
+    t91 := batcalc.oid(t90);            # 64 t91:bat[:oid,:oid] := CMDconvert_int_oid(t90:bat[:oid,:int]) {G}
+    t92 := array.grid(1,132000,1,0);    # 65 t92:bat[:oid,:int] := ARRAYgrid_int(_93:int, _109:int, _93:int, _95:int) {G}
+    t95 := array.grid(1,100,1320,0);    # 66 t95:bat[:oid,:int] := ARRAYgrid_int(_93:int, _103:int, _104:int, _95:int) {G}
+    t96 := batcalc.oid(t95);            # 67 t96:bat[:oid,:oid] := CMDconvert_int_oid(t95:bat[:oid,:int]) {G}
+    t97 := array.grid(1,100,1,0);       # 68 t97:bat[:oid,:int] := ARRAYgrid_int(_93:int, _103:int, _93:int, _95:int) {G}
+barrier always := true;                 # 69 always:bit := _118:bit {J87}
+    t42:bat[:oid,:dbl]  := bbp.bind(s); # 70 t42:bat[:oid,:dbl] := CMDbbpbind(s:str) {G}
+    t48 := algebra.join(t47,t42);       # 71 t48:bat[:oid,:dbl] := ALGjoin(t47:bat[:oid,:oid], t42:bat[:oid,:dbl]) {G}
+    t59 := batcalc.-(t48,t58,true,true);# 72 t59:bat[:oid,:dbl] := CMDbataccumSUB_dbl_dbl_dbl(t48:bat[:oid,:dbl], t58:bat[:oid,:dbl], _118:bit, _118:bit) {G}
+    t61 := batcalc.*(t59,t59,true,true);# 73 t61:bat[:oid,:dbl] := CMDbataccumMUL_dbl_dbl_dbl(t59:bat[:oid,:dbl], t59:bat[:oid,:dbl], _118:bit, _118:bit) {G}
+    t72 := batcalc./(t61,t71,true,true);# 74 t72:bat[:oid,:dbl] := CMDbataccumDIV_dbl_dbl_dbl(t61:bat[:oid,:dbl], t71:bat[:oid,:dbl], _118:bit, _118:bit) {G}
+    t82 := aggr.sum(t72,t80,t81);       # 75 t82:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t72:bat[:oid,:dbl], t80:bat[:oid,:oid], t81:bat[:oid,:int]) {G}
+    t83 := batcalc.*(t41,t82,false,true);# 76 t83:bat[:oid,:dbl] := CMDbataccumMULcst2_dbl_dbl_dbl(t41:dbl, t82:bat[:oid,:dbl], _119:bit, _118:bit) {G}
+    t84 := batmmath.exp(t83);           # 77 t84:bat[:oid,:dbl] := CMDscience_bat_dbl_exp(t83:bat[:oid,:dbl]) {G}
+    t85 := batcalc.*(t40,t84,true,true);# 78 t85:bat[:oid,:dbl] := CMDbataccumMUL_dbl_dbl_dbl(t40:bat[:oid,:dbl], t84:bat[:oid,:dbl], _118:bit, _118:bit) {G}
+    t86 := batcalc.*(t7,t85,true,true); # 79 t86:bat[:oid,:dbl] := CMDbataccumMUL_dbl_dbl_dbl(t7:bat[:oid,:dbl], t85:bat[:oid,:dbl], _118:bit, _118:bit) {G}
+    t93 := aggr.sum(t86,t91,t92);       # 80 t93:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t86:bat[:oid,:dbl], t91:bat[:oid,:oid], t92:bat[:oid,:int]) {G}
+    t94 := batmmath.log(t93);           # 81 t94:bat[:oid,:dbl] := CMDscience_bat_dbl_log(t93:bat[:oid,:dbl]) {G}
+    t98 := aggr.sum(t94,t96,t97);       # 82 t98:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t94:bat[:oid,:dbl], t96:bat[:oid,:oid], t97:bat[:oid,:int]) {G}
+    top := t98;                         # 83 top:bat[:oid,:dbl] := t98:bat[:oid,:dbl] {G}
+    io.table(t97,top);                  # 84 _117:void := IOttable(t97:bat[:oid,:int], top:bat[:oid,:dbl]) {G}
+    yield f1;                           # 85 f1:void 
+    redo always;                        # 86 always:bit {J70}
+exit always;                            # 87 always:bit 
+end f1;                                 # 88  
 
-# 23:53:01 >  
-# 23:53:01 >  Done.
-# 23:53:01 >  
+# 23:39:03 >  
+# 23:39:03 >  Done.
+# 23:39:03 >  
 

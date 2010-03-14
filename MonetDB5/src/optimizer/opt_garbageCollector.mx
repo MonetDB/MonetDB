@@ -98,8 +98,9 @@ comment "Garbage collector optimizer";
 #include "mal_properties.h"
 
 @-
-There are two basic ways to release a BAT. The cheapest one is
-to just assign a nil value, which triggers the decrement
+There are three ways to release a BAT. The cheapest one is to
+let the system do it automatically upon last use. Alternative,
+to assign a nil value, which triggers the decrement
 of the reference count. The second option is to call a function,
 which could take care of more things, such as saving
 potential interesting results or issueing a memory map advice.
@@ -143,34 +144,23 @@ tables.
 }
 @}
 @-
-Garbage collection is not always required, even unwanted.
-For example, the BATs used to assemble the pieces of
-an XML document should be released after it has been
-consumed in e.g. xml.str().
-
 Keeping variables around beyond their end-of-life-span
 can be marked with the proper 'keep'.
 @c
 static int
-OPTkeepVariable(MalBlkPtr mb, InstrPtr p, int idx)
-{
-	return (varGetProp(mb, getArg(p, idx), keepProp) != NULL);
-}
-@c
-static int
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, limit, vlimit, done;
+	int i, j, k, n = 0, limit, vlimit, depth=0;
 	InstrPtr p, q, *old;
 	int actions = 0;
 	Lifespan span;
 
 	(void) cntxt;
+	(void) stk;
 	(void) pci;
-	(void) stk;		/* to fool compilers */
-
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
+
 	span = setLifespan(mb);
 	if ( span == NULL)
 		return 0;
@@ -186,53 +176,57 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 
+		if (blockStart(p) )
+			depth++;
+		if ( p->token == ENDsymbol)
+			break;
+		
 		pushInstruction(mb, p);
+		n = mb->stop-1;
 		for (j = 0; j < p->argc; j++) {
-			if (getEndLifespan(span,getArg(p,j)) == i &&
-				isaBatType(getArgType(mb, p, j))) {
-				/* avoid duplicate releases */
-				done = 0;
-				for (k = j - 1; k >= 0; k--)
-					if (getArg(p, j) == getArg(p, k))
-						done++;
-
-				if (done == 0 && p->barrier != RETURNsymbol &&
-					 !OPTkeepVariable(mb,p,j)){
-#ifdef DEBUG_OPT_GARBAGE
-				printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);
-#endif
-					q= newAssignment(mb);
-					getArg(q,0) = getArg(p,j);
-					q= pushNil(mb,q, TYPE_bat);
-					actions++;
-				}
+			if (getEndLifespan(span,getArg(p,j)) == i && isaBatType(getArgType(mb, p, j)) ){
+				mb->var[getArg(p,j)]->eolife = n;
+				p->gc |= GARBAGECONTROL;
 			} 
 		}
 		if (blockExit(p) ){
-			for (k = 0; k < vlimit; k++)
-			if (getEndLifespan(span,k) == i &&
-				isaBatType(getVarType(mb,k)) &&
-				varGetProp(mb, k, keepProp) == NULL){
-					q= newAssignment(mb);
-					getArg(q,0) = k;
-					q= pushNil(mb,q, TYPE_bat);
-					actions++;
+			/* force garbage collection of all within upper block */
+			depth--;
+			for (k = 0; k < vlimit; k++) {
+				if (getEndLifespan(span,k) == i &&
+					isaBatType(getVarType(mb,k)) &&
+					varGetProp(mb, k, keepProp) == NULL){
+						q= newAssignment(mb);
+						getArg(q,0) = k;
+						q= pushNil(mb,q, TYPE_bat);
+						q->gc |= GARBAGECONTROL;
+						mb->var[k]->eolife = mb->stop-1;
+						actions++;
+				}
 			}
 		}
 	}
+	assert( p->token == ENDsymbol);
+	pushInstruction(mb, p);
+	for (i++; i < limit; i++) 
+		pushInstruction(mb, old[i]);
+	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
+	GDKfree(old);
+	GDKfree(span);
 #ifdef DEBUG_OPT_GARBAGE
-	{
+	{ int k;
 		stream_printf(cntxt->fdout, "Garbage collected BAT variables \n");
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+		for ( k =0; k < vlimit; k++)
+		stream_printf(cntxt->fdout,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
+			getVarName(mb,k), mb->var[k]->eolife,
+			getBeginLifespan(span,k), getLastUpdate(span,k), getEndLifespan(span,k));
 		stream_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
 #endif
-	GDKfree(old);
-	GDKfree(span);
 	OPTDEBUG
 	if(actions)
 		stream_printf(cntxt->fdout,"#opt_garbagecollector: %d variables reset\n",actions);
-	return actions;
+	return actions+1;
 }
 
 @include optimizerWrapper.mx
