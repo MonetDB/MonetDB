@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Sun Mar 14 2010 Martin Kersten <martin.kersten@cwi.nl>
+- The dataflow scheduler has been revamped to allow for
+  more parellelism to be exploited.
 - The garbage collection administration has been changed. Every variable record
   now comes with an end-of-life field (eolife), which denotes the instruction whereafter
   the BAT variable reference counter can be decremented. The garbage collector is
