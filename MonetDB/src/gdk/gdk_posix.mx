@@ -321,6 +321,10 @@ gdk_export int closedir(DIR *dir);
 #include <stdio.h>
 #include <unistd.h> /* sbrk on Solaris */
 
+#if defined(__hpux)
+extern char *sbrk(int);
+#endif
+
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif

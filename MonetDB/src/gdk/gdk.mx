@@ -389,6 +389,17 @@ An error at this stage normally lead to an abort.
 # define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
+#include <limits.h>		/* for *_MIN and *_MAX */
+#include <float.h>		/* for FLT_MAX and DBL_MAX */
+#ifndef LLONG_MAX
+#ifdef LONGLONG_MAX
+#define LLONG_MAX LONGLONG_MAX
+#define LLONG_MIN LONGLONG_MIN
+#else
+#define LLONG_MAX LL_CONSTANT(9223372036854775807)
+#define LLONG_MIN (-LL_CONSTANT(9223372036854775807) - LL_CONSTANT(1))
+#endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -555,7 +566,7 @@ typedef __int64 gdk_int64;
 #endif
 
 /* define printf formats for printing ptrdiff_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) || defined(__hpux)
 #define PDFMT "%td"
 #elif SIZEOF_PTRDIFF_T == SIZEOF_INT
 #define PDFMT "%d"

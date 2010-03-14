@@ -718,17 +718,6 @@ The current policy is to use the smallest value in any ordered domain.
 The routine atomnil returns a pointer to the nil value representation.
 @{
 @h
-#include <limits.h>		/* for *_MIN and *_MAX */
-#include <float.h>		/* for FLT_MAX and DBL_MAX */
-#ifndef LLONG_MAX
-#ifdef LONGLONG_MAX
-#define LLONG_MAX LONGLONG_MAX
-#define LLONG_MIN LONGLONG_MIN
-#else
-#define LLONG_MAX LL_CONSTANT(9223372036854775807)
-#define LLONG_MIN (-LL_CONSTANT(9223372036854775807) - LL_CONSTANT(1))
-#endif
-#endif
 #define GDK_bit_max ((bit) 1)
 #define GDK_bit_min ((bit) 0)
 #define GDK_chr_max ((chr) SCHAR_MAX)

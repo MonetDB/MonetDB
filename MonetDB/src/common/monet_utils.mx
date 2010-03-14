@@ -104,7 +104,7 @@ typedef lng ptrdiff_t;
 #endif
 
 /* define printf formats for printing size_t and ssize_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) && (!defined(__APPLE_CC__) || __GNUC__ > 3)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) && (!defined(__APPLE_CC__) || __GNUC__ > 3) || defined(__hpux)
 #define SZFMT "%zu"
 #define SSZFMT "%zd"
 #elif defined(__MINGW32__)
