@@ -1715,11 +1715,14 @@ GRPrefine(int *retid, int *bid, int *aid)
 	@:chkHeader(a,GRPrefine)@
 
 	CTrefine(&bn, b, a);
+	if (!bn){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(a->batCacheid);
+		throw(MAL, "group.refine", OPERATION_FAILED);
+	}
+	BBPkeepref(*retid = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
-	if (!bn)
-		throw(MAL, "group.refine", OPERATION_FAILED);
-	BBPkeepref(*retid = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1740,11 +1743,14 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 	@:chkHeader(a,GRPrefine_rev)@
 
 	CTrefine_rev(&bn, b, a);
+	if (!bn){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(a->batCacheid);
+		throw(MAL, "group.refine", OPERATION_FAILED);
+	}
+	BBPkeepref(*retid = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
-	if (!bn)
-		throw(MAL, "group.refine", OPERATION_FAILED);
-	BBPkeepref(*retid = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2499,11 +2505,14 @@ GRP@1(int *retval, int *bid, int *eid)
 	} else {
 		res = CMDaggr_@1_ptr(&bn, b, e);
 	}
+	if (!res){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(e->batCacheid);
+		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
+	}
+	BBPkeepref(*retval = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
-	if (!res)
-		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
-	BBPkeepref(*retval = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 @c
