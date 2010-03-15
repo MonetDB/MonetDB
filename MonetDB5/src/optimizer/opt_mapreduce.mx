@@ -463,7 +463,7 @@ enum copymode { FREE, STICK, SINGLE_DUP, DUP, LEAVE };
 static int
 OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	int i, limit;
+	int i, j, limit;
 	enum copymode copy;
 	InstrPtr p, *old, *orig, ret, sig;
 	MalBlkPtr mc;
@@ -636,13 +636,12 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					getFunctionId(p) == maxRef ||
 					getFunctionId(p) == minRef))
 		{
-			/* MAX/MIN aggregation, we cannot return a single val, since we
-			 * already fixed the signature, so create a container BAT */
+			/* MAX/MIN aggregation, we cannot return a single val, since
+			 * we already fixed the signature, so create a container BAT */
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->val1) {
 					/* basically perform a MAX over all MAXes */
 					pushInstruction(mc, old[i]);
-					pushInstruction(mb, p);
 					lastcol->val2 = getArg(old[i], 0);
 					/* BAT for return */
 					p = newFcnCall(mc, batRef, newRef);
@@ -658,6 +657,80 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					lastcol->val1 = lastcol->val3;
 					/* we already DUP_SINGLE'd */
 					copy = STICK;
+					p = orig[i];
+					break;
+				}
+			}
+		} else if (getModuleId(p) == aggrRef && (
+					getFunctionId(p) == countRef ||
+					getFunctionId(p) == sumRef))
+		{
+			/* COUNT/SUM, push down, replace with SUM in REDUCE program,
+			 * fix up the return type */
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				if (getArg(p, 1) == lastcol->val1) {
+					pushInstruction(mc, old[i]);
+					lastcol->val2 = getArg(old[i], 0);
+					/* BAT for return */
+					p = newFcnCall(mc, batRef, newRef);
+					p = pushType(mc, p, getHeadType(lastcol->val1type));
+					p = pushType(mc, p, getArgType(mc, old[i], 0));
+					setArgType(mc, p, 0,
+							newBatType(getHeadType(lastcol->val1type),
+								getArgType(mc, old[i], 0)));
+					lastcol->val3 = getArg(p, 0);
+					lastcol->val3type = getArgType(mc, p, 0);
+					/* bat.insert */
+					p = newFcnCall(mc, batRef, insertRef);
+					p = pushArgument(mc, p, lastcol->val3);
+					p = pushNil(mc, p, getHeadType(lastcol->val1type));
+					p = pushArgument(mc, p, lastcol->val2);
+
+					/* propagate type change */
+					for (j = 0; j < sig->retc; j++) {
+						if (getArg(sig, j) == lastcol->val1) {
+							/* we have to fix all pre-registered BATs
+							 * that are necessary to avoid "undefined"
+							 * errors, can't do better than scan
+							 * backwards and pick up what we need to fix */
+							int k;
+							p = NULL;
+							for (k = mb->stop - 1; k >= 0; k--) {
+								p = mb->stmt[k];
+								if (getModuleId(p) == batRef &&
+										getFunctionId(p) == insertRef &&
+										getArg(p, 1) == lastcol->val1)
+								{
+#define FINDANDFIX(X, Y) { \
+	int s; \
+	InstrPtr pt; \
+	for (s = 0; s < mb->stop; s++) { \
+		pt = mb->stmt[s]; \
+		if (getArg(pt, 0) == getArg(X, Y) && \
+				getModuleId(pt) == batRef && \
+				getFunctionId(pt) == newRef) \
+		{ \
+			setArgType(mb, pt, 2, getTailType(lastcol->val3type)); \
+			setArgType(mb, pt, 0, lastcol->val3type); \
+			break; \
+		} \
+	} \
+}
+									FINDANDFIX(p, 2);
+								}
+							}
+							FINDANDFIX(sig, j);
+							/* fix return and sig in one go the same time */
+							getArg(sig, j) = lastcol->val1 = lastcol->val3;
+							break;
+						}
+					}
+					/* now make a SUM on the REDUCE side */
+					p = newFcnCall(mb, aggrRef, sumRef);
+					p = pushArgument(mb, p, getArg(orig[i], 1));
+					getArg(p, 0) = getArg(orig[i], 0);
+					/* we injected an alternative instruction */
+					copy = NONE;
 					break;
 				}
 			}
@@ -693,8 +766,10 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				pushInstruction(mc, old[i]);
 				pushInstruction(mb, p);
 			break;
-			case LEAVE:
 			case NONE:
+				copy = STICK;
+			break;
+			case LEAVE:
 				assert(0); /* make GCC happy */
 			break;
 		}
