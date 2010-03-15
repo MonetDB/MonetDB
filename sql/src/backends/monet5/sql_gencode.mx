@@ -213,7 +213,7 @@ drop_table(MalBlkPtr mb, str n)
 The dump_cols produces a sequence of instructions for
 the front-end to prepare presentation of a result table (bat).
 @c
-void
+int
 dump_cols(MalBlkPtr mb, list *l, int result_set)
 {
 	node *n;
@@ -228,10 +228,11 @@ dump_cols(MalBlkPtr mb, list *l, int result_set)
 		q = pushArgument(mb, q, result_set);
 		q = pushStr(mb, q, ncn);
 		q = pushArgument(mb, q, c->nr);
-		c->nr = getDestVar(q);
+		result_set = c->nr = getDestVar(q);
 		_DELETE(ncn);
 		_DELETE(cn);
 	}
+	return result_set;
 }
 
 @-
@@ -1839,7 +1840,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				s->nr = getDestVar(q);
 				q = pushType(mb, q, TYPE_str);
 				q = pushType(mb, q, TYPE_bat);
-				dump_cols(mb, l, s->nr);
+				s->nr = dump_cols(mb, l, s->nr);
 			} else {
 				q = newStmt1(mb, sqlRef, "print");
 				q = pushStr(mb, q, "not a valid output list\n");

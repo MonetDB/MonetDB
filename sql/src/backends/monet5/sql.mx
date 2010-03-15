@@ -2282,8 +2282,9 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			hval = *(oid *)getArgReference(stk, pci, 7);
 			bn =  BATslice(b, lval,hval);
 			BATseqbase(bn, lval);
+			BBPkeepref( *bid = bn->batCacheid);
 			BBPreleaseref(b->batCacheid);
-			b= bn;
+			return MAL_SUCCEED;
 		}
 		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
@@ -2315,8 +2316,9 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			hval = *(oid *)getArgReference(stk, pci, 7);
 			bn =  BATslice(b, lval,hval);
 			BATseqbase(bn, lval);
+			BBPkeepref( *bid = bn->batCacheid);
 			BBPreleaseref(b->batCacheid);
-			b= bn;
+			return MAL_SUCCEED;
 		}
 		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
@@ -3125,7 +3127,6 @@ zero_or_one(ptr ret, int *bid)
 		memcpy(ret, p, _s);
 	}
 	BBPreleaseref(b->batCacheid);
-	
 	return MAL_SUCCEED;
 }
 
@@ -3738,8 +3739,10 @@ str bat@2_2_@1( int *res, int *bid )
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
 
+		BBPkeepref(*res = r->batCacheid);
 		BBPreleaseref(bn->batCacheid);
-		bn = r;
+		BBPreleaseref(b->batCacheid);
+		return MAL_SUCCEED;
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -3824,8 +3827,10 @@ str bat@2_2_@1( int *res, int *bid )
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
 
+		BBPkeepref(*res = r->batCacheid);
 		BBPreleaseref(bn->batCacheid);
-		bn = r;
+		BBPreleaseref(b->batCacheid);
+		return msg;
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -3946,8 +3951,10 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
 
+		BBPkeepref(*res = r->batCacheid);
 		BBPreleaseref(bn->batCacheid);
-		bn = r;
+		BBPreleaseref(b->batCacheid);
+		return msg;
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -4203,8 +4210,10 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
 
+		BBPkeepref(*res = r->batCacheid);
 		BBPreleaseref(bn->batCacheid);
-		bn = r;
+		BBPreleaseref(b->batCacheid);
+		return msg;
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -4413,8 +4422,10 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);
 
+		BBPkeepref(*res = r->batCacheid);
 		BBPreleaseref(bn->batCacheid);
-		bn = r;
+		BBPreleaseref(b->batCacheid);
+		return msg;
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -5019,9 +5030,9 @@ Take a SQL table and compress its columns using the dictionary compression schem
 		c->base.wtime = c->base.rtime = tr->stime;
 		snprintf(buf,BUFSIZ,"%s/%s/%s/0", *sch, *tbl, c->base.name);
 		msg = @1;
+		BBPkeepref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		BBPdecref(b->batCacheid, TRUE);
-		BBPkeepref(e->batCacheid);
 	}
 	/* bat was cleared */
 	t->cleared = 1;
