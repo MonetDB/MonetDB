@@ -701,7 +701,9 @@ To avoid random disk access to large (memory-mapped) BATs it may help to issue a
 Of course, it does not make sense to touch more then we can physically accomodate (budget).
 @c
 /* quick and probabilistic test for a sequentially correlated heap */
-int heap_sequential(BAT *b) {
+int
+heap_sequential(BAT *b)
+{
 	BUN n = BATcount(b), skip = n/100, i = BUNfirst(b);
 	BATiter bi = bat_iterator(b);
 	str p, q = BUNhead(bi, i);	
@@ -723,7 +725,9 @@ int heap_sequential(BAT *b) {
  * Peter Feb2010: I tried to do prefetches further apart, to trigger multiple readahead
  *                units in parallel, but it does improve performance visibly 
  */
-static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, size_t touch, int preload, int adv) {
+static size_t
+access_heap(str id, str hp, Heap *h, char* base, size_t sz, size_t touch, int preload, int adv)
+{
 	size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0, v4 = 0, v5 =0, v6 = 0, v7 = 0, page = MT_pagesize();
 	str advice = (adv==MMAP_WILLNEED)?"WILLNEED":(adv==MMAP_SEQUENTIAL)?"SEQUENTIAL":(adv==MMAP_RANDOM)?"RANDOM":(adv==MMAP_NORMAL)?"NORMAL":NULL;
 	int t = GDKms();
@@ -754,7 +758,8 @@ static size_t access_heap(str id, str hp, Heap *h, char* base, size_t sz, size_t
 }
 
 size_t 
-BATaccess(BAT *b, int what, int advice, int preload) {
+BATaccess(BAT *b, int what, int advice, int preload)
+{
 	size_t v = 0, sz, budget = (size_t) (0.8 * MT_npages()), seqbudget = budget/8;
 	str id = BATgetId(b);
 	BATiter bi = bat_iterator(b);
