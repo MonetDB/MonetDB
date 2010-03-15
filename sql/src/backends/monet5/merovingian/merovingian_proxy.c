@@ -81,9 +81,10 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	struct sockaddr_in server;
 	struct sockaddr *serv;
 	socklen_t servsize;
-	int ssock;
+	int ssock = INVALID_SOCKET;
 	char *port, *t;
 	char *conn;
+	struct stat statbuf;
 	stream *sfdin, *sfout;
 	merovingian_proxy *pctos, *pstoc;
 	pthread_t ptid;
@@ -100,32 +101,46 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 			port++;
 			if ((t = strchr(port, '/')) != NULL)
 				*t = '\0';
+		} else if (stat(conn, &statbuf) != -1) {
+			ssock = 0;
 		} else {
 			return(newErr("can't find a port in redirect, "
-						"this is not going to work: %s", url));
+						"or is not a UNIX socket file: %s", url));
 		}
 	} else {
 		return(newErr("unsupported protocol/scheme in redirect: %s", url));
 	}
 
-	hp = gethostbyname(conn);
-	if (hp == NULL)
-		return(newErr("cannot get address for hostname '%s': %s",
-					conn, strerror(errno)));
+	if (ssock != INVALID_SOCKET) {
+		struct sockaddr_un server;
+		/* UNIX socket connect */
+		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
+			return(newErr("cannot open socket: %s", strerror(errno)));
+		memset(&server, 0, sizeof(struct sockaddr_un));
+		server.sun_family = AF_UNIX;
+		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
+		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)))
+			return(newErr("cannot connect: %s", strerror(errno)));
+	} else {
+		hp = gethostbyname(conn);
+		if (hp == NULL)
+			return(newErr("cannot get address for hostname '%s': %s",
+						conn, strerror(errno)));
 
-	memset(&server, 0, sizeof(server));
-	memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-	server.sin_family = hp->h_addrtype;
-	server.sin_port = htons((unsigned short) (atoi(port) & 0xFFFF));
-	serv = (struct sockaddr *) &server;
-	servsize = sizeof(server);
+		memset(&server, 0, sizeof(server));
+		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
+		server.sin_family = hp->h_addrtype;
+		server.sin_port = htons((unsigned short) (atoi(port) & 0xFFFF));
+		serv = (struct sockaddr *) &server;
+		servsize = sizeof(server);
 
-	ssock = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
-	if (ssock == INVALID_SOCKET)
-		return(newErr("failed to open socket: %s", strerror(errno)));
+		ssock = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
+		if (ssock == INVALID_SOCKET)
+			return(newErr("cannot open socket: %s", strerror(errno)));
 
-	if (connect(ssock, serv, servsize) < 0)
-		return(newErr("failed to connect: %s", strerror(errno)));
+		if (connect(ssock, serv, servsize) < 0)
+			return(newErr("cannot connect: %s", strerror(errno)));
+	}
 
 	sfdin = block_stream(socket_rastream(ssock, "merovingian<-server (proxy read)"));
 	sfout = block_stream(socket_wastream(ssock, "merovingian->server (proxy write)"));
