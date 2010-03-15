@@ -2301,8 +2301,8 @@ connect_to_server(Mapi mid)
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
 		serv = (struct sockaddr *) &userver;
-		servsize = sizeof(userver);
-		s = socket(userver.sun_family, SOCK_STREAM, IPPROTO_TCP);
+		servsize = sizeof(struct sockaddr_un);
+		s = socket(PF_UNIX, SOCK_STREAM, 0);
 	} else
 #endif
 	{
