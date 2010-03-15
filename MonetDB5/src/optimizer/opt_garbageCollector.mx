@@ -173,6 +173,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		return 0;
 	}
 
+	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 
@@ -206,6 +207,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			}
 		}
 	}
+	assert(p);
 	assert( p->token == ENDsymbol);
 	pushInstruction(mb, p);
 	for (i++; i < limit; i++) 
