@@ -3599,13 +3599,14 @@ ALGslice(int *ret, bat *bid, lng *start, lng *end)
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
 	}
 	CMDslice(&bn, b, start, end);
-	BBPreleaseref(b->batCacheid);
 	if (bn != NULL) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
+		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPreleaseref(b->batCacheid);
 	throw(MAL, "algebra.slice", GDK_EXCEPTION);
 }
 
