@@ -196,7 +196,6 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
-	BBPreleaseref(right->batCacheid);
 
     if (b->htype != bn->htype) {
         BAT *r = VIEWcreate(b,bn);
@@ -209,6 +208,7 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -255,12 +255,12 @@ str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r)
 
 	BATaccessEnd(right, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BBPreleaseref(right->batCacheid);
 
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
