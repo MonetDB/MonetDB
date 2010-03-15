@@ -991,7 +991,7 @@ char **getHelp(Module m, str inputpat, int completion)
 						char *w;
 						strcpy(buf+1,"comment ");
 						v= buf+1+8;
-						for( w= s->def->help; *w && v <buf+BUFSIZ-1; w++)
+						for( w= s->def->help; *w && v <buf+BUFSIZ-2; w++)
 						if( *w == '\n'){
 							/*ignore */
 						} else *v++ = *w;
@@ -1059,7 +1059,7 @@ char **getHelpMatch(char *pat){
 						*v++ = '\\';
 						*v++ = 'n';
 						*v++ = '#';
-						for( w= s->def->help; *w && v <buf+BUFSIZ-1; w++)
+						for( w= s->def->help; *w && v <buf+BUFSIZ-3; w++)
 						if( *w == '\n'){
 							*v++ = '\\';
 							*v++ = 'n';
