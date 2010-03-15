@@ -1666,7 +1666,11 @@ socket_open(SOCKET sock, const char *name)
 	errno = 0;
 	domain = 0;
 	len = sizeof(domain);
+#if defined(SO_DOMAIN)
 	getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *)&domain, &len);
+#elif defined(SO_TYPE)
+	getsockopt(sock, SOL_SOCKET, SO_TYPE, (void *)&domain, &len);
+#endif
 #if defined(SO_KEEPALIVE) && !defined(WIN32)
 	if (domain != PF_UNIX) { /* not on UNIX sockets */
 		int opt = 0;
