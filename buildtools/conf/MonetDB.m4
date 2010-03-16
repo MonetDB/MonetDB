@@ -2684,36 +2684,46 @@ AC_ARG_WITH(pcl,
 	AC_HELP_STRING([--with-pcl=DIR],
 		[pcl library is installed in DIR]),
 	have_pcl="$withval")
+AC_MSG_CHECKING(for libpcl)
+case "$have_pcl" in
+yes|no|auto)
+	;;
+*)
+	PCL_CFLAGS="-I$withval/include"
+	PCL_LIBS="-L$withval/lib"
+        AC_MSG_CHECKING(in $withval) 
+	;;
+esac
 if test "x$have_pcl" != xno; then
-  if test "x$have_pcl" != xauto; then
-    PCL_CFLAGS="-I$withval/include"
-    PCL_LIBS="-L$withval/lib"
-  fi
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $PCL_CFLAGS"
+	AC_CHECK_HEADER(pcl.h, have_pcl_h=yes,
+		[ if test "x$have_pcl" != xauto; then AC_MSG_ERROR([pcl.h not found]); fi; have_pcl_h=no ])
+	CPPFLAGS="$save_CPPFLAGS"
 
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $PCL_CFLAGS"
-  AC_CHECK_HEADER(pcl.h, have_pcl=yes, have_pcl=no)
-  CPPFLAGS="$save_CPPFLAGS"
+	if test "x$have_pcl_h" = xyes; then
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $PCL_LIBS"
+		AC_CHECK_LIB(pcl, PCLinit, PCL_LIBS="$PCL_LIBS -lpcl"
+			AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes, 
+		 	if test "x$have_pcl" = xyes; then
+				save_LIBS="$LIBS"
+				LIBS="$LIBS $PCL_LIBS"
+				AC_CHECK_LIB(pcl, PCLexit, PCL_LIBS="$PCL_LIBS -lpcl -lperfctr"
+					AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes,
+					[ if test "x$have_pcl" != xauto; then AC_MSG_ERROR([libpcl not found]); fi; have_pcl=no ],
+					"-lperfctr")
+			fi
+		)
+		LIBS="$save_LIBS"
+	else
+		have_pcl=no
+	fi
 
-  if test "x$have_pcl" = xyes; then
-  	save_LIBS="$LIBS"
-  	LIBS="$LIBS $PCL_LIBS"
-  	AC_CHECK_LIB(pcl, PCLinit, PCL_LIBS="$PCL_LIBS -lpcl"
-        	AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes, 
- 	if test "x$have_pcl" = xyes; then
-  		save_LIBS="$LIBS"
-  		LIBS="$LIBS $PCL_LIBS"
-  		AC_CHECK_LIB(pcl, PCLexit, PCL_LIBS="$PCL_LIBS -lpcl -lperfctr"
-        		AC_DEFINE(HAVE_LIBPCL, 1, [Define if you have the pcl library]) have_pcl=yes, have_pcl=no, "-lperfctr")
-  		fi
-	)
-  	LIBS="$save_LIBS"
-  fi
-
-  if test "x$have_pcl" != xyes; then
-    PCL_CFLAGS=""
-    PCL_LIBS=""
-  fi
+	if test "x$have_pcl" != xyes; then
+		PCL_CFLAGS=""
+		PCL_LIBS=""
+	fi
 fi
 AC_SUBST(PCL_CFLAGS)
 AC_SUBST(PCL_LIBS)
