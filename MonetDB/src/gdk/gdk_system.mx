@@ -601,8 +601,11 @@ MT_check_nr_cores(void)
 {
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__MACH__)
 	size_t len = sizeof(int);
+#endif
+#if defined(__OpenBSD__)
 	int mib[2];
 #endif
+
 	int ncpus = -1;
 
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
