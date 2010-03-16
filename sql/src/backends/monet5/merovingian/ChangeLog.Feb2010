@@ -1,6 +1,12 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+  16 Mar 2010; Fabian Groffen <fabian@cwi.nl>
+  merovingian_controlrunner.c:
+  Enlarged buffer to avoid incomplete output being sent to monetdb(1),
+  causing commands like status and get to fail on certain
+  configurations.
+
   05 Mar 2010; Fabian Groffen <fabian@cwi.nl> merovingian_client.c:
   Avoid running over the allocated buffer space resulting in crashes
   when a client connects which IP address cannot be resolved into a

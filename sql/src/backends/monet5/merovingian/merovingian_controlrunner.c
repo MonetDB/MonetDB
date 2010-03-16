@@ -91,7 +91,7 @@ controlRunner(void *d)
 	int tsock = socks[1];
 	int sock = -1;
 	char buf[256];
-	char buf2[256];
+	char buf2[8096];
 	char *p, *q;
 	sabdb *stats;
 	int pos = 0;
