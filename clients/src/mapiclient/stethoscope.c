@@ -74,6 +74,7 @@
  */
 
 #include "clients_config.h"
+#include "monet_utils.h"
 #include "monet_options.h"
 #include <mapilib/Mapi.h>
 #include <stream.h>
@@ -376,7 +377,7 @@ doProfile(void *d)
 			printf("%s%s\n", id, response);
 			if (gnuplot && (x = strchr(response, '['))) {
 				d = fopen("stet.dat", "a+");
-				fprintf(d, "%zd\t", ln++);
+				fprintf(d, SZFMT"\t", ln++);
 				for (; *x != '\0'; x++) {
 					if (*x == '"') {
 						break;  /* stop at first string */
@@ -390,7 +391,7 @@ doProfile(void *d)
 				/* update plot file */
 
 				if (ln > 20) {
-					sprintf(cmd, "sed '1, %zd d' stet.dat > stet_cur.dat", ln - 20);
+					sprintf(cmd, "sed '1, "SZFMT" d' stet.dat > stet_cur.dat", ln - 20);
 				} else {
 					sprintf(cmd, "cp stet.dat stet_cur.dat");
 				}
