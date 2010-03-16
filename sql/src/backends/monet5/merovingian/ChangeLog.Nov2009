@@ -1,6 +1,8 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+*Nov2009-SP2
+
   21 Jan 2010; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Changed wording of monetdb status -l for last crash to indicate the time
   reported is not the crash time, but the time the server was started which
@@ -9,6 +11,7 @@
   13 Jan 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c:
   Strip trailing newlines from the control channel password, bug #2931392
 
+*Nov2009-SP1
 *Nov2009
 
   26 Oct 2009; Fabian Groffen <fabian@cwi.nl> utils.c

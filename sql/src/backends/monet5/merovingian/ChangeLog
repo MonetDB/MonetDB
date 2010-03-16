@@ -1,11 +1,45 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  05 Mar 2010; Fabian Groffen <fabian@cwi.nl> merovingian_client.c:
+  Avoid running over the allocated buffer space resulting in crashes
+  when a client connects which IP address cannot be resolved into a
+  hostname, bug #2964247
+
+*Feb2010
+*Nov2009-SP2
+
+  21 Jan 2010; Fabian Groffen <fabian@cwi.nl> monetdb.c:
+  Changed wording of monetdb status -l for last crash to indicate the time
+  reported is not the crash time, but the time the server was started which
+  eventually crashed, bug #2900355
+
+  13 Jan 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c:
+  Strip trailing newlines from the control channel password, bug #2931392
+
+*Nov2009-SP1
+
   11 Dec 2009; Fabian Groffen <fabian@cwi.nl> merovingian_forkmserver.c,
   monetdb.1, properties.c:
   The master property of a database now contains an id that is used to
   identify the master to the slaves. The id can be given using monetdb set, or
   one is generated when no id is supplied (when just setting it to 'yes')
+
+*Nov2009
+
+  26 Oct 2009; Fabian Groffen <fabian@cwi.nl> utils.c
+  Fix bug that caused monetdb status to list an incorrect uptime in
+  cases where the uptime was longer than 7 days.
+
+  08 Oct 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c,
+  merovingian_forkmserver.c, monetdb.c, properties.c:
+  Add optpipe setting to control the SQL optimiser pipeline, useful for
+  experimentation per database
+
+  08 Oct 2009; Fabian Groffen <fabian@cwi.nl> merovingian_forkmserver.c:
+  Export the URI the database is reachable from remotely to the database via
+  merovingian_uri GDKenvironment setting. This can be used by applications
+  inside the database that need to give a pointer back to themselves.
 
   30 Sep 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c,
   merovingian_forkmserver.c, monetdb.c, properties.c, utils.c, utils.h:
