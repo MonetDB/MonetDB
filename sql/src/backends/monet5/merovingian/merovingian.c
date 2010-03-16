@@ -47,7 +47,7 @@
  * number of times over a recent period.
  */
 
-#define MERO_VERSION   "1.2"
+#define MERO_VERSION   "1.3"
 #define MERO_PORT      50000
 
 #include "sql_config.h"

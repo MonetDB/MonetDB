@@ -220,12 +220,13 @@ forkMserver(str database, sabdb** stats, int force)
 		str dbname = alloca(sizeof(char) * 512);
 		str port = alloca(sizeof(char) * 24);
 		str muri = alloca(sizeof(char) * 512); /* possibly undersized */
+		str usock = alloca(sizeof(char) * 512);
 		char mydoproxy;
 		str nthreads = NULL;
 		str master = NULL;
 		str slave = NULL;
 		str pipeline = NULL;
-		str argv[25];	/* for the exec arguments */
+		str argv[27];	/* for the exec arguments */
 		confkeyval *ckv, *kv;
 		int c = 0;
 
@@ -288,24 +289,29 @@ forkMserver(str database, sabdb** stats, int force)
 		snprintf(vaultkey, 512, "monet_vault_key=%s/.vaultkey", (*stats)->path);
 		snprintf(muri, 512, "merovingian_uri=mapi:monetdb://%s:%d/%s",
 				_mero_hostname, _mero_port, database);
-		/* avoid this mserver binding to the same port as merovingian
-		 * but on another interface, (INADDR_ANY ... sigh) causing
-		 * endless redirects since 0.0.0.0 is not a valid address to
-		 * connect to, and hence the hostname is advertised instead */
-		snprintf(port, 24, "mapi_port=%d", _mero_port + 1);
 		argv[c++] = _mero_mserver;
 		argv[c++] = conffile;
 		argv[c++] = dbname;
 		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
 		argv[c++] = "--set"; argv[c++] = muri;
-		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
 		if (mydoproxy == 1) {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=false";
+			/* we "proxy", so we can just solely use UNIX domain sockets
+			 * internally */
+			snprintf(port, 24, "mapi_port=0");
+			snprintf(usock, 512, "mapi_usock=%s/.mapi.sock", (*stats)->path);
 		} else {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+			argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
+			/* avoid this mserver binding to the same port as merovingian
+			 * but on another interface, (INADDR_ANY ... sigh) causing
+			 * endless redirects since 0.0.0.0 is not a valid address to
+			 * connect to, and hence the hostname is advertised instead */
+			snprintf(port, 24, "mapi_port=%d", _mero_port + 1);
+			snprintf(usock, 512, "mapi_usock=");
 		}
-		argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 		argv[c++] = "--set"; argv[c++] = port;
+		argv[c++] = "--set"; argv[c++] = usock;
 		argv[c++] = "--set"; argv[c++] = vaultkey;
 		if (nthreads != NULL) {
 			argv[c++] = "--set"; argv[c++] = nthreads;
@@ -319,6 +325,8 @@ forkMserver(str database, sabdb** stats, int force)
 		if (slave != NULL) {
 			argv[c++] = "--set"; argv[c++] = slave;
 		}
+		/* keep this one last for easy copy/paste with gdb */
+		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
 		argv[c++] = NULL;
 
 		fprintf(stdout, "arguments:");

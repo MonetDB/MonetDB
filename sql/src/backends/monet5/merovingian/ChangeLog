@@ -2,6 +2,13 @@
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
   16 Mar 2010; Fabian Groffen <fabian@cwi.nl>
+  merovingian_forkmserver.c, merovingian_proxy.c:
+  Use mserver5's UNIX domain socket support when Merovingian is supposed
+  to proxy the connection to the database.
+
+*May2010
+
+  16 Mar 2010; Fabian Groffen <fabian@cwi.nl>
   merovingian_controlrunner.c:
   Enlarged buffer to avoid incomplete output being sent to monetdb(1),
   causing commands like status and get to fail on certain

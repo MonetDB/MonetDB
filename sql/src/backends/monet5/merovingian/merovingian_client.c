@@ -288,7 +288,8 @@ handleClient(int sock)
 		fflush(stdout);
 		stream_flush(fout);
 	} else {
-		Mfprintf(stdout, "proxying client %s for database '%s' to %s%s\n",
+		Mfprintf(stdout, "proxying client %s for database '%s' to "
+				"%s?database=%s\n",
 				host, database, redirs[0].conns->val, redirs[0].dbname);
 		/* merovingian is in control, only consider the first redirect */
 		stream_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
