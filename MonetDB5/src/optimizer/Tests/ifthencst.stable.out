@@ -26,8 +26,6 @@ barrier d := calc.not(true);
     io.print("never executed");
 exit d;
 end tst;
-[ "always executed" ]
-[ "always executed" ]
 function user.main():void;
 # some frontend generates the following code 
     mdb.list("user","tst");
