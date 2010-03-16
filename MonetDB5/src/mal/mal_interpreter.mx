@@ -456,7 +456,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	int *garbage= (int*) alloca(mb->maxarg * sizeof(int));
 	lng oldtimer=0;
 	struct Mallinfo oldMemory;
-	int stkpc = 0, prevpc = 0;
+	int stkpc = 0;
 	MT_Lock *lock = NULL;
 	int tid = 0;
 
@@ -519,8 +519,6 @@ workslow:
 				stk->cmd= cntxt->itrace;
 			if( oldtimer)
 				t= GDKusec();
-			/*BBPTraceCall(cntxt,mb,stk,prevpc);*/
-			prevpc = stkpc;
 			mdbStep(cntxt,mb,stk,stkpc);
 			if( stk->cmd == 'x' || cntxt->mode == FINISHING) {
 				stk->cmd = 0;
@@ -947,7 +945,6 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	lng oldtimer=0;
 	struct Mallinfo oldMemory = MT_mallinfo();
 	MT_Lock *lock = &flow->done->l;
-	int prevpc = 0;
 	int tid = t->id;
 	lng argclaim,retclaim,hotclaim;
     
@@ -971,8 +968,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		lng tm = 0;
 		if( oldtimer)
 			tm = GDKusec();
-		/* BBPTraceCall(cntxt,mb,stk,prevpc);*/
-		mdbStep(cntxt,mb,stk, prevpc = getPC(mb,pci));
+		mdbStep(cntxt,mb,stk, getPC(mb,pci));
 		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			/* need a way to skip */
 			stkpc = mb->stop;
@@ -2067,7 +2063,6 @@ reaching end of function block.
 @= skipToCatch
 	if( stk->cmd == 'C' || mb->trap) {
 		stk->cmd = 'n';
-		/* BBPTraceCall(cntxt,mb,stk,prevpc);*/
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			stkpc = mb->stop;
