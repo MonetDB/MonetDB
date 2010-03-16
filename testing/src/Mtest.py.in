@@ -1433,7 +1433,7 @@ def StartAt(cmd) :
 def StopAt(ATJOB,ME) :
     while  os.path.isfile(path("/tmp/.MkillUsers."+ME)):
         time.sleep(9)
-    if SYST == "IRIX" or SYST == "IRIX64" or SYSTVER[:-1] == "SunOS5.1" or SYST == "Darwin":
+    if SYST in ("IRIX", "IRIX64", "Darwin", "HPUX") or SYSTVER[:-1] == "SunOS5.1":
         ATRM = 'at -r '
     elif SYST == "SunOS":
         ATRM = 'atrm -f '
