@@ -43,13 +43,9 @@ catch MALException:str ;
 exit MALException:str ;
 end main;
 [ "mTests_src_modules_mal_monetdb_0" ]
-!TypeException:remote.get:'b1_str' may not be used before being initialized
+!TypeException:remote.get:(mapi:monetdb://monetdb@eir.ins.cwi.nl/mTests_src_modules_mal) 'b1_str' may not be used before being initialized
 
-!MALException:remote.disconnect:Operation failed No such connection with name 'mTests_src_modules_mal_monetdb_0'
-
-
-
-
+!MALException:remote.disconnect:no such connection: mTests_src_modules_mal_monetdb_0
 
 # 10:57:19 >  
 # 10:57:19 >  Done.
