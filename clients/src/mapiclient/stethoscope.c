@@ -143,6 +143,7 @@ typedef struct _wthread {
 	char *uri;
 	char *user;
 	char *pass;
+	int gnuplot;
 	stream *s;
 	size_t argc;
 	char **argv;
@@ -272,7 +273,6 @@ doProfile(void *d)
 	char cmd[100];
 	char id[10];
 	int colind[30], colcnt = 0;
-	int gnuplot = 0;
 	Mapi dbh;
 	MapiHdl hdl = NULL;
 
@@ -365,7 +365,7 @@ doProfile(void *d)
 	}
 	doQ("profiler.start();");
 
-	if (gnuplot)
+	if (wthr->gnuplot)
 		plottemplate(colind, colcnt);
 
 	printf("-- %sready to receive events\n", id);
@@ -375,7 +375,7 @@ doProfile(void *d)
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			printf("%s%s\n", id, response);
-			if (gnuplot && (x = strchr(response, '['))) {
+			if (wthr->gnuplot && (x = strchr(response, '['))) {
 				d = fopen("stet.dat", "a+");
 				fprintf(d, SZFMT"\t", ln++);
 				for (; *x != '\0'; x++) {
@@ -522,6 +522,7 @@ main(int argc, char **argv)
 		walk->uri = uri;
 		walk->user = user;
 		walk->pass = password;
+		walk->gnuplot = gnuplot;
 		walk->argc = argc - a;
 		walk->argv = &argv[a];
 		walk->tid = 0;
@@ -543,6 +544,7 @@ main(int argc, char **argv)
 			walk->uri = *alts;
 			walk->user = user;
 			walk->pass = password;
+			walk->gnuplot = gnuplot;
 			walk->argc = argc - a;
 			walk->argv = &argv[a];
 			walk->s = NULL;
