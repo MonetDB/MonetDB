@@ -2134,7 +2134,7 @@ def killProc(proc, outfile = None, cmd = None):
     try:
         os.kill(-proc.pid, signal.SIGKILL)
     except AttributeError:
-        subprocess.Popen(['taskkill','/T','/PID',str(proc.pid)])
+        subprocess.Popen(['taskkill','/F','/T','/PID',str(proc.pid)])
     except OSError:
         pass
     if outfile is not None and cmd is not None:
