@@ -10,9 +10,8 @@ case "$1" in
         if ! getent passwd monetdb > /dev/null; then
             adduser --system --home /var/lib/monetdb --disabled-password --shell /usr/sbin/nologin monetdb
         fi
-	mkdir -p /var/lib/monetdb /var/MonetDB4
-	chown monetdb.monetdb /var/lib/monetdb /var/MonetDB4
-	chmod u=rwx,go= /var/lib/monetdb
+	mkdir -p /var/MonetDB4
+	chown monetdb.monetdb /var/MonetDB4
 	chmod ug=rwx,o= /var/MonetDB4
     ;;
 
