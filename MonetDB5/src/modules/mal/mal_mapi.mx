@@ -608,9 +608,10 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	autosense = GDKgetenv_istrue("mapi_autosense");
 
 	port = *Port;
-	if (Usockfile == NULL || *Usockfile == 0 || strcmp(*Usockfile, str_nil) == 0)
+	if (Usockfile == NULL || *Usockfile == 0 ||
+		*Usockfile[0] == '\0' || strcmp(*Usockfile, str_nil) == 0) {
 		usockfile = NULL;
-	else {
+	} else {
 #ifdef HAVE_SYS_UN_H
 		usockfile = GDKstrdup(*Usockfile);
 #else
