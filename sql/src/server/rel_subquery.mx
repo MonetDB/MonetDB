@@ -428,6 +428,7 @@ rel_parse_val(mvc *m, char *query, char emode)
 	char *n;
 	int len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
+	stream *s;
 
 	m->qc = NULL;
 
@@ -442,9 +443,8 @@ rel_parse_val(mvc *m, char *query, char emode)
 	query[len+1] = 0;
 	len++;
 	buffer_init(b, query, len);
-	scanner_init( &m->scanner, 
-		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
-		NULL);
+	s = buffer_rastream(b, "sqlstatement");
+	scanner_init(&m->scanner, bstream_create(s, b->len), NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
 
@@ -471,6 +471,7 @@ rel_parse_val(mvc *m, char *query, char emode)
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
+	stream_destroy(s);
 
 	m->sym = NULL;
 	if (m->session->status || m->errstr[0]) {
@@ -496,6 +497,7 @@ rel_parse_value(mvc *m, char *query, char emode)
 	char *n;
 	int len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
+	stream *sr;
 
 	m->qc = NULL;
 
@@ -510,9 +512,8 @@ rel_parse_value(mvc *m, char *query, char emode)
 	query[len+1] = 0;
 	len++;
 	buffer_init(b, query, len);
-	scanner_init( &m->scanner, 
-		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
-		NULL);
+	sr = buffer_rastream(b, "sqlstatement");
+	scanner_init(&m->scanner, bstream_create(sr, b->len), NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
 
@@ -536,6 +537,7 @@ rel_parse_value(mvc *m, char *query, char emode)
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
+	stream_destroy(sr);
 
 	m->sym = NULL;
 	if (m->session->status || m->errstr[0]) {
