@@ -185,7 +185,7 @@ opt_icol (PFla_op_t *p)
 
         case la_attach:
             /* prune attach if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.attach.res)) {
+            if (PFprop_not_icol (p->prop, p->sem.attach.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -275,7 +275,7 @@ opt_icol (PFla_op_t *p)
 
         case la_fun_1to1:
             /* prune generic function operator if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.fun_1to1.res)) {
+            if (PFprop_not_icol (p->prop, p->sem.fun_1to1.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -286,7 +286,7 @@ opt_icol (PFla_op_t *p)
         case la_bool_and:
         case la_bool_or:
             /* prune binary operation if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.binary.res)) {
+            if (PFprop_not_icol (p->prop, p->sem.binary.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -294,7 +294,7 @@ opt_icol (PFla_op_t *p)
 
         case la_bool_not:
             /* prune unary operation if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.unary.res)) {
+            if (PFprop_not_icol (p->prop, p->sem.unary.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -335,7 +335,7 @@ opt_icol (PFla_op_t *p)
         case la_rank:
             /* prune rownum, rowrank, or rank if the result
                column is not required */
-            if (!PFprop_icol (p->prop, p->sem.sort.res)) {
+            if (PFprop_not_icol (p->prop, p->sem.sort.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -343,7 +343,7 @@ opt_icol (PFla_op_t *p)
 
         case la_rowid:
             /* prune rowid if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.rowid.res)) {
+            if (PFprop_not_icol (p->prop, p->sem.rowid.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -353,7 +353,7 @@ opt_icol (PFla_op_t *p)
             /* prune type if result column is not required */
         case la_cast:
             /* prune cast if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.type.res)) {
+            if (PFprop_not_icol (p->prop, p->sem.type.res)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -362,7 +362,7 @@ opt_icol (PFla_op_t *p)
         case la_type_assert:
             /* prune type assertion if restricted column is not
                used afterwards */
-            if (!PFprop_icol (p->prop, p->sem.type.col)) {
+            if (PFprop_not_icol (p->prop, p->sem.type.col)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }
@@ -373,7 +373,7 @@ opt_icol (PFla_op_t *p)
 
         case la_doc_access:
             /* prune doc_access if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.doc_access.res)) {
+            if (PFprop_not_icol (p->prop, p->sem.doc_access.res)) {
                 *p = *PFla_dummy (R(p));
                 break;
             }
@@ -382,7 +382,7 @@ opt_icol (PFla_op_t *p)
         case la_roots:
             /* prune twig if result column is not required */
             if (L(p)->kind == la_twig &&
-                !PFprop_icol (p->prop, L(p)->sem.iter_item.item))
+                PFprop_not_icol (p->prop, L(p)->sem.iter_item.item))
                 switch (LL(p)->kind) {
 
                     case la_docnode:
@@ -430,7 +430,7 @@ opt_icol (PFla_op_t *p)
                         assert(0);
                 }
             else if (L(p)->kind == la_doc_tbl &&
-                     !PFprop_icol (L(p)->prop, L(p)->sem.doc_tbl.res)) {
+                     PFprop_not_icol (L(p)->prop, L(p)->sem.doc_tbl.res)) {
                 *p = *PFla_dummy (LL(p));
                 break;
             }
@@ -440,20 +440,20 @@ opt_icol (PFla_op_t *p)
             if (L(p)->kind == la_fragment &&
                 LL(p)->kind == la_twig &&
                 LLL(p)->kind != la_textnode && /* retain textnodes */
-                !PFprop_icol (LL(p)->prop, LL(p)->sem.iter_item.item))
+                PFprop_not_icol (LL(p)->prop, LL(p)->sem.iter_item.item))
                 *p = *PFla_dummy (R(p));
             else if (R(p)->kind == la_fragment &&
                 RL(p)->kind == la_twig &&
                 RLL(p)->kind != la_textnode && /* retain textnodes */
-                !PFprop_icol (RL(p)->prop, RL(p)->sem.iter_item.item))
+                PFprop_not_icol (RL(p)->prop, RL(p)->sem.iter_item.item))
                 *p = *PFla_dummy (L(p));
             else if (L(p)->kind == la_fragment &&
                 LL(p)->kind == la_doc_tbl &&
-                !PFprop_icol (LL(p)->prop, LL(p)->sem.doc_tbl.res))
+                PFprop_not_icol (LL(p)->prop, LL(p)->sem.doc_tbl.res))
                 *p = *PFla_dummy (R(p));
             else if (R(p)->kind == la_fragment &&
                 RL(p)->kind == la_doc_tbl &&
-                !PFprop_icol (RL(p)->prop, RL(p)->sem.doc_tbl.res))
+                PFprop_not_icol (RL(p)->prop, RL(p)->sem.doc_tbl.res))
                 *p = *PFla_dummy (L(p));
             break;
 

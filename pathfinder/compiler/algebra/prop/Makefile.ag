@@ -46,6 +46,7 @@ lib_prop = {
                 prop_key.c \
                 prop_level.c \
                 prop_lineage.c \
+                prop_name_origin.c \
                 prop_ocol.c \
                 prop_ori_names.c \
                 prop_rec_delta.c \

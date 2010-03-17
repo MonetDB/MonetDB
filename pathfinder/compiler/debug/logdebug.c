@@ -625,25 +625,43 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
             break;
 
         case la_project:
-            if (n->sem.proj.items[0].new != n->sem.proj.items[0].old)
-                PFarray_printf (DOT, "%s (%s:%s", a_id[n->kind],
-                                PFcol_str (n->sem.proj.items[0].new),
-                                PFcol_str (n->sem.proj.items[0].old));
-            else
-                PFarray_printf (DOT, "%s (%s", a_id[n->kind],
-                                PFcol_str (n->sem.proj.items[0].old));
-
-            for (c = 1; c < n->sem.proj.count; c++)
-                if (n->sem.proj.items[c].new != n->sem.proj.items[c].old)
-                    PFarray_printf (DOT, ", %s:%s",
-                                    PFcol_str (n->sem.proj.items[c].new),
-                                    PFcol_str (n->sem.proj.items[c].old));
+            {
+                int startpos = PFarray_last (DOT),
+                    curpos;
+                char *sep,
+                     *space    = ", ",
+                     *newline  = ",\\n";
+                /* print first column */
+                if (n->sem.proj.items[0].new != n->sem.proj.items[0].old)
+                    PFarray_printf (DOT, "%s (%s:%s", a_id[n->kind],
+                                    PFcol_str (n->sem.proj.items[0].new),
+                                    PFcol_str (n->sem.proj.items[0].old));
                 else
-                    PFarray_printf (DOT, ", %s",
-                                    PFcol_str (n->sem.proj.items[c].old));
+                    PFarray_printf (DOT, "%s (%s", a_id[n->kind],
+                                    PFcol_str (n->sem.proj.items[0].old));
 
-            PFarray_printf (DOT, ")");
-            break;
+                for (c = 1; c < n->sem.proj.count; c++) {
+                    curpos = PFarray_last (DOT);
+                    if (curpos - startpos > 42) {
+                        sep = newline;
+                        startpos = curpos;
+                    }
+                    else
+                        sep = space;
+
+                    if (n->sem.proj.items[c].new != n->sem.proj.items[c].old)
+                        PFarray_printf (DOT, "%s%s:%s",
+                                        sep,
+                                        PFcol_str (n->sem.proj.items[c].new),
+                                        PFcol_str (n->sem.proj.items[c].old));
+                    else
+                        PFarray_printf (DOT, "%s%s",
+                                        sep,
+                                        PFcol_str (n->sem.proj.items[c].old));
+                }
+
+                PFarray_printf (DOT, ")");
+            } break;
 
         case la_select:
             PFarray_printf (DOT, "%s (%s)", a_id[n->kind],
@@ -1072,6 +1090,38 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
             fmt = prop_args;
 
         while (*fmt) {
+            if (*fmt == '+' || *fmt == 'N') {
+                bool  started  = false;
+                int   startpos = PFarray_last (DOT),
+                      curpos;
+                char *sep,
+                     *space    = ", ",
+                     *newline  = ",\\n";
+                /* list columns marked const */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_col_t col  = n->schema.items[i].name;
+                    char       *name = PFprop_name_origin (n->prop, col);
+                    if (name) {
+                        curpos = PFarray_last (DOT);
+                        if (!started) {
+                            started = true;
+                            sep = "\\nname origin: ";
+                        }
+                        else if (curpos - startpos > 42) {
+                            sep = newline;
+                            startpos = curpos;
+                        }
+                        else
+                            sep = space;
+
+                        PFarray_printf (DOT, 
+                                        "%s%s=%s",
+                                        sep,
+                                        PFcol_str (col),
+                                        name);
+                    }
+                }
+            }
             if (*fmt == '+' || *fmt == 'A') {
                 /* if present print cardinality */
                 if (PFprop_card (n->prop))

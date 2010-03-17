@@ -58,9 +58,9 @@
  * Test if @a col is in the list of icol columns in array @a icols
  */
 static bool
-icol_worker (PFalg_collist_t *icols, PFalg_col_t col)
+icol_worker (PFalg_collist_t *icols, PFalg_col_t col, bool exist)
 {
-    if (!icols) return false;
+    if (!icols) return !exist;
 
     for (unsigned int i = 0; i < clsize (icols); i++)
         if (col == clat (icols, i))
@@ -75,7 +75,16 @@ icol_worker (PFalg_collist_t *icols, PFalg_col_t col)
 bool
 PFprop_icol (const PFprop_t *prop, PFalg_col_t col)
 {
-    return icol_worker (prop->icols, col);
+    return icol_worker (prop->icols, col, true);
+}
+
+/**
+ * Test if @a col is *not* in the list of icol columns in container @a prop
+ */
+bool
+PFprop_not_icol (const PFprop_t *prop, PFalg_col_t col)
+{
+    return !icol_worker (prop->icols, col, false);
 }
 
 /**
@@ -85,7 +94,7 @@ PFprop_icol (const PFprop_t *prop, PFalg_col_t col)
 bool
 PFprop_icol_left (const PFprop_t *prop, PFalg_col_t col)
 {
-    return icol_worker (prop->l_icols, col);
+    return icol_worker (prop->l_icols, col, true);
 }
 
 /**
@@ -95,7 +104,7 @@ PFprop_icol_left (const PFprop_t *prop, PFalg_col_t col)
 bool
 PFprop_icol_right (const PFprop_t *prop, PFalg_col_t col)
 {
-    return icol_worker (prop->r_icols, col);
+    return icol_worker (prop->r_icols, col, true);
 }
 
 /*
@@ -149,7 +158,7 @@ union_ (PFalg_collist_t *a, PFalg_col_t b)
 {
     assert (a);
 
-    if (!icol_worker (a, b))
+    if (!icol_worker (a, b, false))
         cladd (a) = b;
 }
 
@@ -167,7 +176,7 @@ union_list (PFalg_collist_t *a, PFalg_collist_t *b)
 
     for (unsigned int i = 0; i < clsize (b); i++) {
         cur = clat (b, i);
-        if (!icol_worker (a, cur))
+        if (!icol_worker (a, cur, false))
             cladd (a) = cur;
     }
 }
@@ -196,7 +205,7 @@ diff (PFalg_collist_t *a, PFalg_col_t b)
 static bool
 in (PFalg_collist_t *a, PFalg_col_t b)
 {
-    return (icol_worker (a, b));
+    return (icol_worker (a, b, true));
 }
 
 /**

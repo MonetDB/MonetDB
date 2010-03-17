@@ -461,6 +461,7 @@ main (int argc, char *argv[])
            be too many columns involved */
                       false /* original names */,
                       true  /* unique names */,
+                      true  /* name origin */,
                       laroot, NULL);
 
         sqlroot = PFlalg2sql (laroot);

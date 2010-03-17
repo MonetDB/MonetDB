@@ -1913,10 +1913,16 @@ rowid_removal (PFla_op_t *p)
     /* re-route operators in case the underlying
        rowid operator is ignored by the DAG-branch. */
     if (L(p) && L(p)->kind == la_rowid &&
+        /* We know that no new rowid operators without properties
+           are introduced and thus !PFprop_icol... still returns
+           the correct result. */
         !PFprop_icol_left (p->prop, L(p)->sem.rowid.res)) {
         L(p) = PFla_attach (LL(p), L(p)->sem.rowid.res, PFalg_lit_nat(1));
     }
     if (R(p) && R(p)->kind == la_rowid &&
+        /* We know that no new rowid operators without properties
+           are introduced and thus !PFprop_icol... still returns
+           the correct result. */
         !PFprop_icol_right (p->prop, R(p)->sem.rowid.res)) {
         R(p) = PFla_attach (RL(p), R(p)->sem.rowid.res, PFalg_lit_nat(1));
     }

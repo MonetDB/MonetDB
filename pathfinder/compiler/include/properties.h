@@ -89,6 +89,7 @@ struct PFprop_t {
                                               nodes for the operator */
     PFarray_t       *ckeys;      /**< List of composite lists of columns that
                                       build a key for a relation. */
+    PFarray_t       *name_origin; /**< List of original names of columns */
 
     /* to allow peep-hole optimizations we also store property
        information of the children (left child 'l_', right child 'r_' */
@@ -183,6 +184,13 @@ struct level_t {
 };
 typedef struct level_t level_t;
 
+/* name origin item */
+struct name_origin_t {
+    PFalg_col_t  col;
+    char *       name;
+};
+typedef struct name_origin_t name_origin_t;
+
 /**
  * Create new property container.
  */
@@ -197,6 +205,7 @@ void PFprop_infer (bool card, bool const_, bool set,
                    bool key, bool fd, bool ocols, bool req_node,
                    bool reqval, bool level, bool refctr,
                    bool guides, bool ori_names, bool unq_names,
+                   bool name_origin,
                    PFla_op_t *root, PFguide_list_t *guide_list);
 
 /**
@@ -234,6 +243,7 @@ void PFprop_infer_req_node (PFla_op_t *root);
 void PFprop_infer_reqval (PFla_op_t *root);
 void PFprop_infer_unq_names (PFla_op_t *root);
 void PFprop_infer_ori_names (PFla_op_t *root);
+void PFprop_infer_name_origin (PFla_op_t *root);
 void PFprop_infer_level (PFla_op_t *root);
 void PFprop_infer_refctr (PFla_op_t *root);
 void PFprop_infer_guide (PFla_op_t *root, PFguide_list_t *guides);
@@ -401,6 +411,11 @@ PFalg_col_t PFprop_lineage_col (const PFprop_t *prop, PFalg_col_t col);
  * Test if @a col is in the list of icol columns in container @a prop
  */
 bool PFprop_icol (const PFprop_t *prop, PFalg_col_t col);
+
+/**
+ * Test if @a col is *not* in the list of icol columns in container @a prop
+ */
+bool PFprop_not_icol (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if @a col is in the list of icol columns of the left child
@@ -653,6 +668,13 @@ int PFprop_level_right (const PFprop_t *prop, PFalg_col_t col);
 /* define the unknown level to be smaller than the collection level */
 #define UNKNOWN_LEVEL -2
 #define LEVEL_KNOWN(l) (l > UNKNOWN_LEVEL)
+
+/* --------------------- name origin property accessors -------------------- */
+
+/**
+ * Return the original name of column @a col (in container @a prop).
+ */
+char * PFprop_name_origin (const PFprop_t *prop, PFalg_col_t col);
 
 /* ------------------ reference counter property accessors ----------------- */
 

@@ -102,7 +102,7 @@ opt_monetxq (PFla_op_t *p)
                visible column and thus that the pattern is
                not nested in a for loop. */
             if (PFprop_set (p->prop) &&
-                !PFprop_icol (p->prop, p->sem.step.item_res) &&
+                PFprop_not_icol (p->prop, p->sem.step.item_res) &&
                 p->sem.step.spec.axis == alg_chld &&
                 p->sem.step.spec.kind != node_kind_node &&
                 p->sem.step.spec.kind != node_kind_doc) {

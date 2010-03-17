@@ -289,7 +289,7 @@ opt_guide(PFla_op_t *n)
                   n->sem.step.spec.axis == alg_self) &&
                  find_guide_max (n->sem.step.guide_count,
                                  n->sem.step.guides) <= 1)) &&
-                !PFprop_icol (n->prop, n->sem.step.item))
+                PFprop_not_icol (n->prop, n->sem.step.item))
                 merge_guide_steps (n);
             break;
 

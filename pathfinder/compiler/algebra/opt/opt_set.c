@@ -218,7 +218,7 @@ opt_set (PFla_op_t *p)
         case la_step:
             if (PFprop_set (p->prop) &&
                 PFprop_icol (p->prop, p->sem.step.item) &&
-                !PFprop_icol (p->prop, p->sem.step.iter))
+                PFprop_not_icol (p->prop, p->sem.step.iter))
                 *p = *PFla_step (
                           L(p),
                           PFla_attach (
@@ -276,7 +276,7 @@ opt_set (PFla_op_t *p)
         case la_guide_step:
             if (PFprop_set (p->prop) &&
                 PFprop_icol (p->prop, p->sem.step.item) &&
-                !PFprop_icol (p->prop, p->sem.step.iter))
+                PFprop_not_icol (p->prop, p->sem.step.iter))
                 *p = *PFla_guide_step (
                           L(p),
                           PFla_attach (

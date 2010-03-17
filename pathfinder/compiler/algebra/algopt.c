@@ -396,6 +396,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                    be too many columns involved */
                               false /* original names */,
                               true  /* unique names */,
+                              true  /* name origin */,
                               root, guide_list);
 
                 tm = PFtimer_stop (tm);

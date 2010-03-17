@@ -368,10 +368,10 @@ plan_cross (const PFla_op_t *n)
 
     /* check if the output is independent of the left side */
     for (unsigned int i = 0; i < L(n)->schema.count; i++)
-        l_indep &= !PFprop_icol (n->prop, L(n)->schema.items[i].name);
+        l_indep &= PFprop_not_icol (n->prop, L(n)->schema.items[i].name);
     /* check if the output is independent of the right side */
     for (unsigned int i = 0; i < R(n)->schema.count; i++)
-        r_indep &= !PFprop_icol (n->prop, R(n)->schema.items[i].name);
+        r_indep &= PFprop_not_icol (n->prop, R(n)->schema.items[i].name);
     
     /* add plans with dependent cross products */
     if (l_indep ||

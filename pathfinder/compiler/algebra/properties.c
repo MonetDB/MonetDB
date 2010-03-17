@@ -120,6 +120,9 @@ PFprop (void)
     /* initialize composite key list */
     ret->ckeys = NULL;
 
+    /* initialize name origin list */
+    ret->name_origin = NULL;
+
     return ret;
 }
 
@@ -133,6 +136,7 @@ PFprop_infer (bool card, bool const_, bool set,
               bool key, bool fds, bool ocols, bool req_node,
               bool reqval, bool level, bool refctr,
               bool guides, bool ori_names, bool unq_names,
+              bool name_origin,
               PFla_op_t *root, PFguide_list_t *guide_list)
 {
     PFprop_create_prop (root);
@@ -175,6 +179,8 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_ocol (root);
     if (ori_names)
         PFprop_infer_ori_names (root);
+    if (name_origin)
+        PFprop_infer_name_origin (root);
     if (refctr)
         PFprop_infer_refctr (root);
 }
