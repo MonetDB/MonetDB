@@ -471,8 +471,10 @@ The scenarios are run until we finally close the last one.
 					break;
 				resetScenario(c);
 			} while (c->scenario);
+#ifdef BUG_2581675_FIXED		/* when client record reinitialized properly, this code can be reinstated */
 			if (!MCwait(c))
 				break;
+#endif
 		} while(c->scenario && c->mode != FINISHING);
 	}
 @-
@@ -519,7 +521,7 @@ MALexitClient(Client c)
 		garbageCollector(c, c->curprg->def, c->glb,TRUE);
 	if ( c-> bak)
 		return NULL;
-	MCcloseClient(c);
+	c->mode = FINISHING;
 	return NULL;
 }
 
