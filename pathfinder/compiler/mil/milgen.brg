@@ -4180,6 +4180,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 #endif
         } break; /* fold) */
 
+        /* Rel:     empty_tbl */
+        case 9:
+            PFlog ("empty sequence should never occur in MIL generation."
+                   " (optimizations disabled?)");
         /* Rel:      lit_tbl */
         case 8: /* fold( */
             /* iterate over table columns */
@@ -4209,13 +4213,6 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                         execute (access (var (v->name), BAT_READ));
                     }
-            break; /* fold) */
-
-        /* Rel:     empty_tbl */
-        case 9: /* fold( */
-            PFoops (OOPS_FATAL,
-                    "empty sequence should never occur in MIL generation."
-                    " (optimizations disabled?)");
             break; /* fold) */
 
         /* Rel:      attach (Rel) */
