@@ -5338,6 +5338,27 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, R(p));
 
+            /* align the column names */
+            for (unsigned int i = 0; i < PFarray_last (COLMAP(p)); i++) {
+                PFalg_col_t col;
+                col = (*(sql_column_env_t *) PFarray_at (COLMAP(p), i)).col;
+                if (col == p->sem.merge_adjacent.iter_in) {
+                    (*(sql_column_env_t *) PFarray_at (COLMAP(p), i)).col
+                        = p->sem.merge_adjacent.iter_res;
+                    continue;
+                }
+                if (col == p->sem.merge_adjacent.pos_in) {
+                    (*(sql_column_env_t *) PFarray_at (COLMAP(p), i)).col
+                        = p->sem.merge_adjacent.pos_res;
+                    continue;
+                }
+                if (col == p->sem.merge_adjacent.item_in) {
+                    (*(sql_column_env_t *) PFarray_at (COLMAP(p), i)).col
+                        = p->sem.merge_adjacent.item_res;
+                    continue;
+                }
+            }
+
             FRAG(p) = FRAG(L(p));
             break;
 
