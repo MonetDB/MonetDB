@@ -116,7 +116,7 @@ def main():
 
 suffixrules = {
     # suffix:(pre,     post,  start,  end)
-    '.ac':   ('',      '',    '# ',   ''),
+    '.ac':   ('',      '',    'dnl ', ''),
     '.ag':   ('',      '',    '# ',   ''),
     '.am':   ('',      '',    '# ',   ''),
     '.bash': ('',      '',    '# ',   ''),
