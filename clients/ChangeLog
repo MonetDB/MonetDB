@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Mar 17 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented the changes required for properly running ODBC on a 64-bit platform.
+
 * Mon Mar 01 2010 Fabian Groffen <fabian@cwi.nl>
 - Added stethoscope, an utility to profile MonetDB5 instances,
   originally from the MonetDB5 repository.
