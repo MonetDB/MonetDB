@@ -1610,6 +1610,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         elem = SkipTest(env, TST, EXT, "as "+env['XQUERYCLIENT'].split(None, 1)[0]+" is not available.")
     elif SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and not env['exe']['Mserver'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.")
+    elif EXT in [".milS", ".malS"] and not env['exe']['Mserver'][0]:
+        elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.")
     elif CALL == "python"  and  not env['exe']['python'][0]:
         elem = SkipTest(env, TST, EXT, "as python is not available.")
         #TODO:
@@ -2141,13 +2143,16 @@ def killProc(proc, outfile = None, cmd = None):
         outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
     proc.killed = True
 
-def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut) :
+def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
+    if not SrvrOut:
+        SrvrOut = subprocess.PIPE
+
     TestOut.write(Prompt(cmd))
     TestOut.flush()
     TestErr.write(Prompt(cmd))
     TestErr.flush()
 
-    proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = TestErr, universal_newlines = True)
+    proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = SrvrOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     t.start()
@@ -2160,7 +2165,7 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut) :
             Warn("Flushing input pipe in LaunchIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
     return proc, t
-### LaunchIt(cmd, TestIn, TestOut, TestErr) #
+### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, SrvrOut) #
 
 def CollectIt(pOut, TestOut) :
     if pOut:
@@ -2269,26 +2274,24 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntErrFile = TST+".client.err"
             ClntOut = open(ClntOutFile,"w")
             ClntErr = open(ClntErrFile,"w")
-
             PROLOGUE = ""
             if os.path.isfile(TST+".prologue") and par['M4']:
                 PROLOGUE = " "+TST+".prologue"
-            if os.path.isfile(TST+".prologue5") and par['M5']:
+            elif os.path.isfile(TST+".prologue5") and par['M5']:
                 PROLOGUE = " "+TST+".prologue5"
+            DBINIT=""
+            if os.path.isfile(TST+".dbinit") and par['M4']:
+                dbinit = TST+".dbinit"
+                DBINIT = open(dbinit).readline().strip()
+            elif os.path.isfile(TST+".dbinit5") and par['M5']:
+                dbinit = TST+".dbinit5"
+                DBINIT = open(dbinit).readline().strip()
 
             Srvr = '%s%s "--dbname=%s"' % (exe['Mserver'][1], LOCAL_CONF, TSTDB)
             if par['ALGEBRA']:
                 Srvr += ' --set xquery_backend=algebra'
             if par['NOALGEBRA']:
                 Srvr += ' --set xquery_backend=milprint_summer'
-
-            DBINIT=""
-            if os.path.isfile(TST+".dbinit") and par['M4']:
-                dbinit = TST+".dbinit"
-                DBINIT = open(dbinit).readline().strip()
-            if os.path.isfile(TST+".dbinit5") and par['M5']:
-                dbinit = TST+".dbinit5"
-                DBINIT = open(dbinit).readline().strip()
 
             lang=""
 
@@ -3092,10 +3095,11 @@ def main(argv) :
             config = os.path.join(GetMonetConfig('monetdb5', '--sysconfdir'), 'monetdb5.conf')
         else:
             config = os.path.join(GetMonetConfig('monetdb4', '--sysconfdir'), 'MonetDB.conf')
-        try:
-            opts, args = monet_options.parse_options(['--config='+config] + argv[1:], options, Usage, False)
-        except monet_options.Error:
-            sys.exit(1)
+        if config:
+            try:
+                opts, args = monet_options.parse_options(['--config='+config] + argv[1:], options, Usage, False)
+            except monet_options.Error:
+                sys.exit(1)
 
     par['ALGEBRA'] = opts.get('algebra', 0)
     par['NOALGEBRA'] = opts.get('no-algebra', 0)
