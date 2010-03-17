@@ -7,7 +7,7 @@ Standards-Version: 3.8.0
 
 Package: monetdb5-sql
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb5-server, libmonetdb5-sql2
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb5-sql2
 Description: MonetDB SQL support for monetdb5
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -19,7 +19,7 @@ Description: MonetDB SQL support for monetdb5
 Package: libmonetdb5-sql2
 Section: libs
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb5-server5
+Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb5-server, libmonetdb5-server5
 Description: MonetDB SQL libraries for monetdb5-server
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
