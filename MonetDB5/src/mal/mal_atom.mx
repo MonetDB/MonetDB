@@ -134,6 +134,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 	(void) mb; /* fool compilers */
 	if( tpe<0 || tpe>= GDKatomcnt)
 		return 0;
+	assert(pci != 0);
 	switch(name[0]){
 	case 'd': 
 		if( idcmp("del",name)==0 && pci->argc==1){
