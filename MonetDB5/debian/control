@@ -16,7 +16,7 @@ Description: MonetDB database server version 5
  .
  This package contains the MonetDB5 server component.  You need this
  package if you want to work using the MAL language, or if you want to
- use the SQL frontend (in which case you need MonetDB-SQL-server5 as
+ use the SQL frontend (in which case you need libmonetdb5-sql2 as
  well).
 
 Package: libmonetdb5-server5
