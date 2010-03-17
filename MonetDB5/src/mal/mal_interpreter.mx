@@ -1223,13 +1223,17 @@ DFLOWscheduler( DataFlow flow )
 	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit), f;
 	InstrPtr p;
 
+	if ( limit == 0)
+		throw(MAL,"dataflow","Empty dataflow block");
 	/* initialize the eligible statements */
 	DFLOWinit(flow, fs);
 
 	if (flow->cntxt->flags & timerFlag)
 		flow->cntxt->timer = GDKusec();
 	
-	goto firststep;
+	if( limit)
+		goto firststep;	/* confuse static code analysers, i want a jump */
+
 	while(queued){
 		PARDEBUG stream_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
 		f = q_dequeue(flow->done);
