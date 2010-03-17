@@ -467,6 +467,42 @@ opt_set (PFla_op_t *p)
     }
 }
 
+/* Bottom-up rewrite that introduces additional distinct operators on top
+   of rank and equi-join operators if their schema contains a key. */
+static void
+opt_distinct (PFla_op_t *p)
+{
+    assert (p);
+
+    /* rewrite each node only once */
+    if (SEEN(p))
+        return;
+    else
+        SEEN(p) = true;
+
+    /* apply join-graph specific optimization for children */
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        opt_distinct (p->child[i]);
+
+    /* rewrite children */
+    if (L(p) &&
+        (L(p)->kind == la_rank ||
+         L(p)->kind == la_eqjoin) &&
+        !PFprop_set (L(p)->prop) &&
+        (PFprop_keys_count (L(p)->prop) || 
+         PFprop_ckey (L(p)->prop, L(p)->schema)))
+        L(p) = PFla_distinct (L(p));
+
+    if (R(p) &&
+        (R(p)->kind == la_rank ||
+         R(p)->kind == la_eqjoin) &&
+        !PFprop_set (R(p)->prop) &&
+        (PFprop_keys_count (R(p)->prop) || 
+         PFprop_ckey (R(p)->prop, R(p)->schema)))
+        R(p) = PFla_distinct (R(p));
+}
+
+
 /**
  * Invoke algebra optimization.
  *
@@ -478,48 +514,19 @@ opt_set (PFla_op_t *p)
 PFla_op_t *
 PFalgopt_join_graph (PFla_op_t *root, PFguide_list_t *guide_list)
 {
-    /* PHASE 1: Seed a distinct operator on top of the query plan
+    /* PHASE 1: Seed distinct operators on top of the query plan
                 if possible to remove all other distinct operators. */
 
-    /* Infer key property first */
-    PFprop_infer_key (root);
+    /* Infer all key information we can get */
+    PFprop_infer_composite_key (root);
+    PFprop_infer_key_and_fd (root);
+    /* Infer set property to avoid the excessive 
+       introduction of distinct operators */
+    PFprop_infer_set (root);
 
-    /* Place a distinct operator on top if the query represents a join
-       graph whose sort criterion is also the output (check for keyness
-       of column item only). Here we apply this rewrite first to remove all
-       distinct operators in the following phase and to remove the distinct
-       operator by key property analysis at the end (if it is not needed). */
-    if (root->kind == la_serialize_seq) {
-        PFla_op_t *p = root;
-        PFalg_col_t item = p->sem.ser_seq.item;
-
-        /* introduce a new distinct operator on top of the plan if the
-           input already forms a key, ... */
-        if (PFprop_key (p->prop, item) &&
-        /* ... the query is a join-graph query, ... */
-            !(PFprop_type_of (p, item) & ~aat_node) &&
-        /* ... and a distinct operator does not occur in the near
-           surrounding. */
-            R(p)->kind != la_distinct &&
-            !(R(p)->kind == la_project && RL(p)->kind == la_distinct)) {
-            /* once again check for the join graph
-               this time ensuring that the result does
-               not produce new nodes */
-            PFla_op_t *frag = LR(p);
-            while (frag->kind == la_frag_union) {
-                assert (R(frag)->kind == la_fragment);
-                if (RL(frag)->kind != la_doc_tbl)
-                    break;
-                frag = L(frag);
-            }
-            if (frag->kind != la_frag_union) {
-                assert (frag->kind == la_empty_frag);
-
-                /* introduce distinct */
-                R(p) = PFla_distinct (R(p));
-            }
-        }
-    }
+    /* introduce additional distinct operators on top of the plan */
+    opt_distinct (root);
+    PFla_dag_reset (root);
 
     /* PHASE 2: optimize based on top-down set property */
 
