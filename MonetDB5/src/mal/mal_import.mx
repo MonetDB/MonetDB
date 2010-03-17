@@ -175,12 +175,12 @@ It should be reset before continuing.
 The include operation parses the file indentified and 
 leaves the MAL code behind in the 'main' function.
 @h
-mal_export void malInclude(Client c, str name, int listing);
+mal_export str malInclude(Client c, str name, int listing);
 @c
-void
+str
 malInclude(Client c, str name, int listing)
 {
-	str s;
+	str s= MAL_SUCCEED;
 
 	bstream *oldfdin = c->fdin;
 	int oldyycur = c->yycur;
@@ -203,13 +203,11 @@ malInclude(Client c, str name, int listing)
 
 	c->fdin = NULL;
 	c->srcFile = name;
-	if ((s = malLoadScript(c, name, &c->fdin))) {
-		stream_printf(c->fdout, "!%s\n", s);
-		GDKfree(s);
-	} else 
+	if ((s = malLoadScript(c, name, &c->fdin)) == 0) 
 		parseMAL(c,c->curprg);
 
 	@:restoreClient()@
+	return s;
 }
 
 @+ File and input processing

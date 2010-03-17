@@ -69,7 +69,7 @@ int
 malBootstrap()
 {
 	Client c;
-	str bootfile = "mal_init", bf;
+	str bootfile = "mal_init", bf, s;
 
 	c = MCinitClient((oid)0, 0, 0);
 	c->nspace = newModule(NULL, putName("user", 4));
@@ -83,7 +83,12 @@ malBootstrap()
 		bootfile = bf;
 	MSinitClientPrg(c,"user", "main");
 	(void) MCinitClientThread(c);
-	malInclude(c, bootfile, 0);
+	s = malInclude(c, bootfile, 0);
+	if( s != NULL){
+		stream_printf(GDKout,"!%s\n",s);
+		GDKfree(s);
+		return 0;
+	}
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if (c->curprg->def->errors)
