@@ -216,7 +216,7 @@ AC_LANG_C
 
 if test -f "$srcdir"/vertoo.data; then
 	AC_ARG_WITH(burg,
-		AC_HELP_STRING([--with-burg=FILE], [burg is installed as FILE]),
+		AS_HELP_STRING([--with-burg=FILE], [burg is installed as FILE]),
 		have_burg="$withval",
 		have_burg=auto)
 	if test "x$have_burg" = xauto; then
@@ -338,7 +338,7 @@ dnl AC_ARG_WITH makes the --with-xxx available, then we do some checks and
 dnl see if we actually found libxml2.
 have_libxml2="auto"
 AC_ARG_WITH(libxml2,
-    AC_HELP_STRING([--with-libxml2=DIR],[libxml2 library is installed in DIR]),
+    AS_HELP_STRING([--with-libxml2=DIR],[libxml2 library is installed in DIR]),
     [have_libxml2="$withval"], [have_libxml2="auto"])
 have_SAX2="$have_libxml2"
 
@@ -440,7 +440,7 @@ dnl First allow the user to specify a location on the command line.
 dnl Further down see if we find the library and abort if not.
 have_gc="auto"
 AC_ARG_WITH(gc,
-    AC_HELP_STRING([--with-gc=DIR],[Boehm garbage collector library is installed in DIR]),
+    AS_HELP_STRING([--with-gc=DIR],[Boehm garbage collector library is installed in DIR]),
     [have_gc="$withval"], [have_gc="auto"])
 
 if test "x$have_gc" != xauto; then
@@ -508,7 +508,7 @@ if test "x$have_monetdb4" = xyes; then
 
     dft_pftijah=yes
     AC_ARG_ENABLE(pftijah,
-            AC_HELP_STRING([--enable-pftijah],
+            AS_HELP_STRING([--enable-pftijah],
                     [enable support for TIJAH (default=$dft_pftijah)]),
             enable_pftijah=$enableval,
             enable_pftijah=$dft_pftijah)
@@ -532,7 +532,7 @@ if test "x$have_monetdb4" = xyes; then
 
     dft_probxml=no
     AC_ARG_ENABLE(probxml,
-            AC_HELP_STRING([--enable-probxml],
+            AS_HELP_STRING([--enable-probxml],
                     [enable support for PROBXML (default=$dft_probxml)]),
             enable_probxml=$enableval,
             enable_probxml=$dft_probxml)
@@ -562,7 +562,7 @@ dnl This configure setting is primarily meant to ease debugging and
 dnl testing.  If you invoke configure with --with-default-backend=algebra,
 dnl Mtest will also use the algebraic back-end.
 AC_ARG_WITH(default-backend,
-            AC_HELP_STRING(
+            AS_HELP_STRING(
                [--with-default-backend=BACKEND],
                [select a default back-end (milprint_summer/algebra/sql)
                 for Pathfinder (default=algebra)]),

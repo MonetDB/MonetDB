@@ -196,7 +196,7 @@ else
   MONETDB_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(monetdb,
-	AC_HELP_STRING([--with-monetdb=DIR], [MonetDB Common is installed in DIR]),
+	AS_HELP_STRING([--with-monetdb=DIR], [MonetDB Common is installed in DIR]),
 	have_monetdb="$withval")
 if test "x$have_monetdb" != xno; then
   case "$have_monetdb" in
@@ -269,7 +269,7 @@ else
   CLIENTS_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(clients,
-	AC_HELP_STRING([--with-clients=DIR], [MonetDB Clients is installed in DIR]),
+	AS_HELP_STRING([--with-clients=DIR], [MonetDB Clients is installed in DIR]),
 	have_clients="$withval")
 if test "x$have_clients" != xno; then
   case "$have_clients" in
@@ -345,7 +345,7 @@ else
   MONETDB4_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(monetdb4,
-	AC_HELP_STRING([--with-monetdb4=DIR], [MonetDB4 is installed in DIR]),
+	AS_HELP_STRING([--with-monetdb4=DIR], [MonetDB4 is installed in DIR]),
 	have_monetdb4="$withval")
 if test "x$have_monetdb4" != xno; then
   case "$have_monetdb4" in
@@ -438,7 +438,7 @@ else
   MONETDB5_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(monetdb5,
-	AC_HELP_STRING([--with-monetdb5=DIR], [MonetDB5 is installed in DIR]),
+	AS_HELP_STRING([--with-monetdb5=DIR], [MonetDB5 is installed in DIR]),
 	have_monetdb5="$withval")
 if test "x$have_monetdb5" != xno; then
   case "$have_monetdb5" in
@@ -593,7 +593,7 @@ yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
 esac
 
 AC_ARG_WITH(bits,
-	AC_HELP_STRING([--with-bits=BITS],
+	AS_HELP_STRING([--with-bits=BITS],
 		[obsolete: use --enable-bits instead]),
 	AC_MSG_ERROR([argument --with-bits is obsolete: use --enable-bits instead]))
 
@@ -601,7 +601,7 @@ AC_CHECK_SIZEOF(long)
 native_bits=`expr $ac_cv_sizeof_long \* 8`
 bits=$native_bits
 AC_ARG_ENABLE(bits,
-	AC_HELP_STRING([--enable-bits=BITS],
+	AS_HELP_STRING([--enable-bits=BITS],
 		[specify number of bits (32 or 64)]), [
 case "$GCC-$CC-$enableval" in
 *-*-$native_bits)
@@ -674,7 +674,7 @@ AM_CONDITIONAL(BITS64, test x"$bits" = x64)
 
 oids=$bits
 AC_ARG_ENABLE(oid32,
-	AC_HELP_STRING([--enable-oid32],
+	AS_HELP_STRING([--enable-oid32],
 		[use 32 bits for OIDs on a 64-bit architecture]),
 	enable_oid32=$enableval,
 	enable_oid32=no)
@@ -831,7 +831,7 @@ esac
 
 dnl --enable-strict
 AC_ARG_ENABLE(strict,
-	AC_HELP_STRING([--enable-strict],
+	AS_HELP_STRING([--enable-strict],
 		[enable strict compiler flags (default=$dft_strict)]),
 	enable_strict=$enableval,
 	enable_strict=$dft_strict)
@@ -1167,7 +1167,7 @@ else
 fi
 
 AC_ARG_WITH(ant,
-	AC_HELP_STRING([--with-ant=FILE], [ant is installed as FILE]),
+	AS_HELP_STRING([--with-ant=FILE], [ant is installed as FILE]),
 	ANT="$withval",
 	ANT=ant)
 case "$ANT" in
@@ -1198,7 +1198,7 @@ JAVAC="javac"
 JAR="jar"
 JAVADOC="javadoc"
 AC_ARG_WITH(java,
-	AC_HELP_STRING([--with-java=DIR],
+	AS_HELP_STRING([--with-java=DIR],
 		[java, javac, jar and javadoc are installed in DIR/bin]),
 	have_java="$withval",
 	have_java=auto)
@@ -1432,7 +1432,7 @@ fi   dnl flex found on the system?
 
 if test -f "$srcdir"/vertoo.data; then
         AC_ARG_WITH(swig,
-                AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
+                AS_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
                 SWIG="$withval",
                 SWIG=swig)
         case "$SWIG" in
@@ -1481,7 +1481,7 @@ fi
 have_python=auto
 PYTHON=python
 AC_ARG_WITH(python,
-	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
+	AS_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
 	have_python="$withval")
 case "$have_python" in
 yes|no|auto)
@@ -1505,7 +1505,7 @@ fi
 if test "x$have_python" != xno; then
 	have_python_libdir=auto
 	AC_ARG_WITH(python-libdir,
-		AC_HELP_STRING([--with-python-libdir=DIR],
+		AS_HELP_STRING([--with-python-libdir=DIR],
 			[relative path for Python library directory (where Python modules should be installed)]),
 		have_python_libdir="$withval")
 	case "$have_python_libdir" in
@@ -1542,7 +1542,7 @@ PERL=perl
 PERL_INCS=
 PERL_LIBS=
 AC_ARG_WITH(perl,
-	AC_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
+	AS_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
 	have_perl="$withval")
 case "$have_perl" in
 yes|no|auto)
@@ -1566,7 +1566,7 @@ fi
 if test "x$have_perl" != xno; then
 	have_perl_incdir=auto
 	AC_ARG_WITH(perl-incdir,
-		AC_HELP_STRING([--with-perl-incdir=DIR],
+		AS_HELP_STRING([--with-perl-incdir=DIR],
 			[Perl include directory]),
 		have_perl_incdir="$withval")
 	case "$have_perl_incdir" in
@@ -1596,7 +1596,7 @@ if test "x$have_perl" != xno; then
 
 	have_perl_library=auto
 	AC_ARG_WITH(perl-library,
-		AC_HELP_STRING([--with-perl-library=DIR],
+		AS_HELP_STRING([--with-perl-library=DIR],
 			[Perl library directory (where -lperl can be found)]),
 		have_perl_library="$withval")
 	case "$have_perl_library" in
@@ -1617,7 +1617,7 @@ if test "x$have_perl" != xno; then
 
 	have_perl_libdir=auto
 	AC_ARG_WITH(perl-libdir,
-		AC_HELP_STRING([--with-perl-libdir=DIR],
+		AS_HELP_STRING([--with-perl-libdir=DIR],
 			[relative path for Perl library directory (where Perl modules should be installed)]),
 		have_perl_libdir="$withval")
 	case "$have_perl_libdir" in
@@ -1664,7 +1664,7 @@ fi
 RUBY=ruby
 have_rubygem_dir=auto
 AC_ARG_WITH(rubygem-dir,
-	AC_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
+	AS_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
 	have_rubygem_dir="$withval")
 case "$have_rubygem_dir" in
 yes|no|auto)
@@ -1699,7 +1699,7 @@ AC_SUBST(RUBY_DIR)
 RUBYGEM=gem
 have_rubygem=auto
 AC_ARG_WITH(rubygem,
-	AC_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
+	AS_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
 	have_rubygem="$withval")
 case "$have_rubygem" in
 yes|no|auto)
@@ -1759,7 +1759,7 @@ anttranslatepath=$READLINK
 
 dnl --with-translatepath
 AC_ARG_WITH(translatepath,
-	AC_HELP_STRING([--with-translatepath=PROG],
+	AS_HELP_STRING([--with-translatepath=PROG],
 		[program to translate paths from configure-time format to execute-time format.  Take care that this program can be given paths like ${prefix}/etc which should be translated carefully.]),
 	[translatepath="$withval"
 	 anttranslatepath="$withval"],
@@ -1770,7 +1770,7 @@ AC_SUBST(translatepath)
 
 dnl --with-anttranslatepath
 AC_ARG_WITH(anttranslatepath,
-	AC_HELP_STRING([--with-anttranslatepath=PROG],
+	AS_HELP_STRING([--with-anttranslatepath=PROG],
 		[program to translate paths from configure-time format to a format that can be given to the ant program (default: 'readlink -f' or value for --with-translatepath)]),
 	anttranslatepath="$withval")
 AC_SUBST(anttranslatepath)
@@ -1783,7 +1783,7 @@ AM_MONETDB_TRANSLATEPATH()
 
 dnl --enable-noexpand
 AC_ARG_ENABLE(noexpand,
-	AC_HELP_STRING([--enable-noexpand],
+	AS_HELP_STRING([--enable-noexpand],
 		[do not expand the comma-separated list of MIL types given as argument, or "all" if no expansion should be done (default=)]),
 	enable_noexpand=$enableval,
 	enable_noexpand=)
@@ -1842,7 +1842,7 @@ esac
 
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
-	AC_HELP_STRING([--enable-debug],
+	AS_HELP_STRING([--enable-debug],
 		[enable full debugging (default=$dft_debug)]),
 	enable_debug=$enableval,
 	enable_debug=$dft_debug)
@@ -1877,7 +1877,7 @@ fi
 
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
-	AC_HELP_STRING([--enable-assert],
+	AS_HELP_STRING([--enable-assert],
 		[enable assertions in the code (default=$dft_assert)]),
 	enable_assert=$enableval,
 	enable_assert=$dft_assert)
@@ -1887,7 +1887,7 @@ fi
 
 dnl --enable-optimize
 AC_ARG_ENABLE(optimize,
-	AC_HELP_STRING([--enable-optimize],
+	AS_HELP_STRING([--enable-optimize],
 		[enable extra optimization (default=$dft_optimi)]),
 	enable_optim=$enableval, enable_optim=$dft_optimi)
 if test "x$enable_optim" = xyes; then
@@ -2049,7 +2049,7 @@ AC_SUBST(SUN_NOOPT_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,
-	AC_HELP_STRING([--enable-warning],
+	AS_HELP_STRING([--enable-warning],
 		[enable extended compiler warnings (default=$dft_warning)]),
 	enable_warning=$enableval,
 	enable_warning=$dft_warning)
@@ -2071,7 +2071,7 @@ fi
 dnl --enable-profile
 need_profiling=no
 AC_ARG_ENABLE(profile,
-	AC_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
+	AS_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
 	enable_prof=$enableval,
 	enable_prof=no)
 if test "x$enable_prof" = xyes; then
@@ -2090,7 +2090,7 @@ AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
 dnl --enable-instrument
 need_instrument=no
 AC_ARG_ENABLE(instrument,
-	AC_HELP_STRING([--enable-instrument],
+	AS_HELP_STRING([--enable-instrument],
 		[enable instrument (default=no)]),
 	enable_instrument=$enableval,
 	enable_instrument=no)
@@ -2144,7 +2144,7 @@ PTHREAD_LIBS=""
 PTHREAD_INCS=""
 PTHREAD_EXTRA=""
 AC_ARG_WITH(pthread,
-	AC_HELP_STRING([--with-pthread=DIR],
+	AS_HELP_STRING([--with-pthread=DIR],
 		[pthread library is installed in DIR]), 
 	have_pthread="$withval")
 case "$have_pthread" in
@@ -2229,7 +2229,7 @@ have_readline=auto
 READLINE_LIBS=""
 READLINE_INCS=""
 AC_ARG_WITH(readline,
-	AC_HELP_STRING([--with-readline=DIR],
+	AS_HELP_STRING([--with-readline=DIR],
 		[readline library is installed in DIR]), 
 	have_readline="$withval")
 case "$have_readline" in
@@ -2295,7 +2295,7 @@ have_openssl=auto
 OPENSSL_LIBS=""
 OPENSSL_INCS=""
 AC_ARG_WITH(openssl,
-	AC_HELP_STRING([--with-openssl=DIR],
+	AS_HELP_STRING([--with-openssl=DIR],
 		[OpenSSL library is installed in DIR]), 
 	have_openssl="$withval")
 case "$have_openssl" in
@@ -2370,7 +2370,7 @@ CURL_CONFIG=''
 CURL_CFLAGS=''
 CURL_LIBS=''
 AC_ARG_WITH(curl,
-	AC_HELP_STRING([--with-curl=DIR],
+	AS_HELP_STRING([--with-curl=DIR],
 		[cURL library is installed in DIR]),
 	have_curl="$withval")
 case "$have_curl" in
@@ -2492,7 +2492,7 @@ have_z=auto
 Z_CFLAGS=""
 Z_LIBS=""
 AC_ARG_WITH(z,
-	AC_HELP_STRING([--with-z=DIR],
+	AS_HELP_STRING([--with-z=DIR],
 		[z library is installed in DIR]),
 	have_z="$withval")
 AC_MSG_CHECKING(for libz)
@@ -2532,7 +2532,7 @@ have_bz2=auto
 BZ_CFLAGS=""
 BZ_LIBS=""
 AC_ARG_WITH(bz2,
-	AC_HELP_STRING([--with-bz2=DIR],
+	AS_HELP_STRING([--with-bz2=DIR],
 		[bz2 library is installed in DIR]),
 	have_bz2="$withval")
 AC_MSG_CHECKING(for libbz2) 
@@ -2581,7 +2581,7 @@ have_hwcounters=auto
 HWCOUNTERS_LIBS=""
 HWCOUNTERS_INCS=""
 AC_ARG_WITH(hwcounters,
-	AC_HELP_STRING([--with-hwcounters=DIR],
+	AS_HELP_STRING([--with-hwcounters=DIR],
 		[hwcounters library is installed in DIR]), 
 	have_hwcounters="$withval")
 case "$have_hwcounters" in
@@ -2681,7 +2681,7 @@ have_pcl=auto
 PCL_CFLAGS=""
 PCL_LIBS=""
 AC_ARG_WITH(pcl,
-	AC_HELP_STRING([--with-pcl=DIR],
+	AS_HELP_STRING([--with-pcl=DIR],
 		[pcl library is installed in DIR]),
 	have_pcl="$withval")
 AC_MSG_CHECKING(for libpcl)
@@ -2736,7 +2736,7 @@ PCRE_LIBS=""
 PCRE_CONFIG=""
 PCRETEST=""
 AC_ARG_WITH(pcre,
-	AC_HELP_STRING([--with-pcre=DIR],
+	AS_HELP_STRING([--with-pcre=DIR],
 		[pcre library is installed in DIR]),
 	have_pcre="$withval")
 if test "x$have_pcre" != xno; then
@@ -2829,7 +2829,7 @@ have_iconv=auto
 ICONV_CFLAGS=""
 ICONV_LIBS=""
 AC_ARG_WITH(iconv,
-	AC_HELP_STRING([--with-iconv=DIR],
+	AS_HELP_STRING([--with-iconv=DIR],
 		[iconv library is installed in DIR]),
 	have_iconv="$withval")
 case "$have_iconv" in
@@ -2951,7 +2951,7 @@ fi
 AC_DEFUN([AM_MONETDB_UTILS],[
 
 AC_ARG_WITH(buildtools,
-    AC_HELP_STRING([--with-buildtools=DIR],
+    AS_HELP_STRING([--with-buildtools=DIR],
                    [MonetDB Buildtools are installed in DIR]),
     with_buildtools="$withval",
     with_buildtools="auto")
@@ -3006,7 +3006,7 @@ if test -f "$srcdir"/vertoo.data; then
 
 	dnl check for Monet and some basic utilities
 	AC_ARG_WITH(mx,
-		AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
+		AS_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
 		have_mx="$withval",
 		have_mx=auto)
 	if test "x$have_mx" = xauto; then
@@ -3049,7 +3049,7 @@ if test -f "$srcdir"/vertoo.data; then
 
 	MEL=""
 	AC_ARG_WITH(mel,
-		AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
+		AS_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
 		have_mel="$withval",
 		have_mel=auto)
 	if test "x$have_mel" = xauto; then

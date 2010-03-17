@@ -100,7 +100,7 @@ GEOS_CONFIG=''
 GEOS_INCS=''
 GEOS_LIBS=''
 AC_ARG_WITH(geos,
-	AC_HELP_STRING([--with-geos=DIR],
+	AS_HELP_STRING([--with-geos=DIR],
 		[geos library is installed in DIR]),
 	have_geos="$withval")
 if test "x$have_geos" != xno; then

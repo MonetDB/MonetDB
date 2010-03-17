@@ -1,25 +1,25 @@
 #                                               -*- Autoconf -*-
 
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-#
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2010 MonetDB B.V.
-# All Rights Reserved.
+dnl The contents of this file are subject to the MonetDB Public License
+dnl Version 1.1 (the "License"); you may not use this file except in
+dnl compliance with the License. You may obtain a copy of the License at
+dnl http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+dnl
+dnl Software distributed under the License is distributed on an "AS IS"
+dnl basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+dnl License for the specific language governing rights and limitations
+dnl under the License.
+dnl
+dnl The Original Code is the MonetDB Database System.
+dnl
+dnl The Initial Developer of the Original Code is CWI.
+dnl Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+dnl Copyright August 2008-2010 MonetDB B.V.
+dnl All Rights Reserved.
 
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.60)
 AC_INIT([MonetDB Buildtools], 1.0, monet@cwi.nl)
 AC_REVISION($Revision$)
 AM_INIT_AUTOMAKE([MonetDB], [1.0])
@@ -29,7 +29,7 @@ AC_PATH_PROGS([PYTHON], [python python2 python2.3 python2.4],
 			  [AC_ERROR(No python could be found in your path)])
 
 AC_ARG_ENABLE(mel,
-	AC_HELP_STRING([--enable-mel], 
+	AS_HELP_STRING([--enable-mel], 
 		[mel is only needed for MonetDB4]),
 	[enable_mel=$enableval],[enable_mel="yes"])
 

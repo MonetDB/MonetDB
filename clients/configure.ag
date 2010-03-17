@@ -103,7 +103,7 @@ UNIXODBC_CONFIG=''
 ODBC_INCS=''
 ODBC_LIBS=''
 AC_ARG_WITH(unixodbc,
-	AC_HELP_STRING([--with-unixodbc=DIR],
+	AS_HELP_STRING([--with-unixodbc=DIR],
 		[unixODBC library is installed in DIR]),
 	have_unixodbc="$withval")
 case "$have_unixodbc" in

@@ -92,7 +92,7 @@ have_netcdf=$dft_netcdf
 NETCDF_CFLAGS=""
 NETCDF_LIBS=""
 AC_ARG_WITH(netcdf,
-	AC_HELP_STRING([--with-netcdf=DIR],
+	AS_HELP_STRING([--with-netcdf=DIR],
 		[netcdf library is installed in DIR]),
 	have_netcdf="$withval")
 case "$have_netcdf" in

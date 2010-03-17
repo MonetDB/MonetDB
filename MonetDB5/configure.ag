@@ -154,7 +154,7 @@ RAPTOR_INCS=''
 RAPTOR_LIBS=''
 wrong=''
 AC_ARG_WITH(raptor,
-	AC_HELP_STRING([--with-raptor=DIR],
+	AS_HELP_STRING([--with-raptor=DIR],
 		[raptor library is installed in DIR]),
 	have_raptor="$withval")
 if test "x$have_raptor" != xno; then
@@ -225,7 +225,7 @@ AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
 
 have_libxml2="auto"
 AC_ARG_WITH(libxml2,
-    AC_HELP_STRING([--with-libxml2=DIR],[libxml2 library is installed in DIR]),
+    AS_HELP_STRING([--with-libxml2=DIR],[libxml2 library is installed in DIR]),
     [have_libxml2="$withval"], [have_libxml2="auto"])
 if test "x$have_libxml2" != xno; then
     XML2_CONFIG=""
@@ -280,7 +280,7 @@ AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
 have_sphinxclient="auto"
 AC_ARG_WITH(sphinxclient,
-    AC_HELP_STRING([--with-sphinxclient=DIR],[sphinxclient library is installed in DIR]),
+    AS_HELP_STRING([--with-sphinxclient=DIR],[sphinxclient library is installed in DIR]),
     [have_sphinxclient="$withval"], [have_sphinxclient="auto"])
 if test "x$have_sphinxclient" != xno; then
 	case "$have_sphinxclient" in
@@ -314,7 +314,7 @@ dnl can't use it by default, as that would exclude JDBC usage (Java
 dnl doesn't natively support RIPEMD160).
 MONETDB5_PASSWDHASH="SHA512"
 AC_ARG_WITH(password-backend,
-	AC_HELP_STRING([--with-password-backend=HASHALG],
+	AS_HELP_STRING([--with-password-backend=HASHALG],
 		[password hash algorithm, one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to $MONETDB5_PASSWDHASH]),
 	password_backend="$withval")
 case "$password_backend" in
@@ -337,7 +337,7 @@ dnl upset about it, but we can offer to the user to disable it for
 dnl increased security.
 use_console=yes
 AC_ARG_ENABLE(console,
-	AC_HELP_STRING([--enable-console],
+	AS_HELP_STRING([--enable-console],
 		[enables direct console on the server (involves security risks)]),
 	use_console="$withval")
 if test x$use_console = xyes ; then
