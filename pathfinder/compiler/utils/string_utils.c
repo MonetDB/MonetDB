@@ -40,15 +40,12 @@
 #include "pathfinder.h"
 
 #include "string_utils.h"
+#include "mem.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
-
-#ifdef NATIVE_WIN32
-#define strdup _strdup
-#endif
 
 typedef unsigned char byte;
 
@@ -168,9 +165,9 @@ PFstrUtils_dupUntil(char* from_str, char until_char)
     from_str++;
   }
   if (*from_str == '\0')
-    return(strdup(""));
+    return(PFstrdup(""));
   *from_str = '\0';
-  return_string = strdup(initial_string);
+  return_string = PFstrdup(initial_string);
   *from_str = until_char;
   return(return_string);
 }
