@@ -4556,22 +4556,26 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
 
                 expr_ty = type_of (L(p), ord);
-                expr = col_env_lookup (COLMAP(L(p)),
-                                       ord,
-                                       expr_ty);
+                /* cope with polymorphic columns here */
+                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                    if (t & TYPE_MASK (expr_ty)) {
+                        expr = col_env_lookup (COLMAP(L(p)),
+                                               ord,
+                                               t);
 
-                srtbylist = sortkey_list (
-                                sortkey_item (
-                                    /* different handling of boolean
-                                       types as search criterion */
-                                    (expr->kind == sql_column_name ||
-                                     expr->kind == sql_lit_int     ||
-                                     expr_ty    != aat_bln)
-                                         ? expr
-                                         : case_ (when (expr, TRUE_INT),
-                                                  else_ (FALSE_INT)),
-                                    asc),
-                                srtbylist);
+                        srtbylist = sortkey_list (
+                                        sortkey_item (
+                                            /* different handling of boolean
+                                               types as search criterion */
+                                            (expr->kind == sql_column_name ||
+                                             expr->kind == sql_lit_int     ||
+                                             t != aat_bln)
+                                            ? expr
+                                            : case_ (when (expr, TRUE_INT),
+                                                     else_ (FALSE_INT)),
+                                            asc),
+                                        srtbylist);
+                    }
             }
             col_env_add (COLMAP(p),
                          p->sem.sort.res,
