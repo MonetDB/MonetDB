@@ -2295,14 +2295,51 @@ connect_to_server(Mapi mid)
 
 #ifdef HAVE_SYS_UN_H
 	if (mid->hostname && mid->hostname[0] == '/') {
+		struct sockaddr_un server;
+		struct msghdr msg;
+		struct iovec vec;
+		char buf[1];
+
 		if (strlen(mid->hostname) >= sizeof(userver.sun_path)) {
 			return mapi_setError(mid, "path name too long", "mapi_reconnect", MERROR);
 		}
+
+		if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
+					strerror(errno));
+			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
+		}
+		memset(&userver, 0, sizeof(struct sockaddr_un));
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
 		serv = (struct sockaddr *) &userver;
 		servsize = sizeof(struct sockaddr_un);
 		s = socket(PF_UNIX, SOCK_STREAM, 0);
+
+		if (connect(s, serv, servsize) < 0) {
+			snprintf(errbuf, sizeof(errbuf), "initiating connection on socket "
+					"failed: %s", strerror(errno));
+			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
+		}
+
+		/* send first byte, nothing special to happen */
+		msg.msg_name = (struct sockaddr*)&server;
+		msg.msg_namelen = sizeof(server);
+		*buf = '0'; /* normal */
+		vec.iov_base = buf;
+		vec.iov_len = 1;
+		msg.msg_iov = &vec;
+		msg.msg_iovlen = 1;
+		msg.msg_control = NULL;
+		msg.msg_controllen = 0;
+		msg.msg_flags = 0;
+
+		if (sendmsg(s, &msg, 0) < 0) {
+			close(s);
+			snprintf(errbuf, sizeof(errbuf), "could not send initial byte: %s",
+					strerror(errno));
+			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
+		}
 	} else
 #endif
 	{
@@ -2321,19 +2358,20 @@ connect_to_server(Mapi mid)
 		serv = (struct sockaddr *) &server;
 		servsize = sizeof(server);
 		s = socket(server.sin_family, SOCK_STREAM, IPPROTO_TCP);
+
+		if (s == INVALID_SOCKET) {
+			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
+					strerror(errno));
+			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
+		}
+
+		if (connect(s, serv, servsize) < 0) {
+			snprintf(errbuf, sizeof(errbuf), "initiating connection on socket "
+					"failed: %s", strerror(errno));
+			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
+		}
 	}
 
-	if (s == INVALID_SOCKET) {
-		snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
-				strerror(errno));
-		return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
-	}
-
-	if (connect(s, serv, servsize) < 0) {
-		snprintf(errbuf, sizeof(errbuf), "initiating connection on socket "
-				"failed: %s", strerror(errno));
-		return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
-	}
 	mid->to = socket_wastream(s, "Mapi client write");
 	mapi_log_record(mid, "Mapi client write");
 	mid->from = socket_rastream(s, "Mapi client read");
