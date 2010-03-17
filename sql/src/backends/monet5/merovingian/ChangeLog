@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  17 Mar 2010; Fabian Groffen <fabian@cwi.nl> merovingian_proxy.c:
+  When a proxy connection is made to a local UNIX domain socket, pass
+  on the filedescriptor instead of proxying.
+
   16 Mar 2010; Fabian Groffen <fabian@cwi.nl>
   merovingian_forkmserver.c, merovingian_proxy.c:
   Use mserver5's UNIX domain socket support when Merovingian is supposed

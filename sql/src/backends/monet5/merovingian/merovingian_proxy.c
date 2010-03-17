@@ -115,8 +115,11 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 		/* UNIX socket connect, don't proxy, but pass socket fd */
 		struct sockaddr_un server;
 		struct msghdr msg;
+		char ccmsg[CMSG_SPACE(sizeof(ssock))];
+		struct cmsghdr *cmsg;
 		struct iovec vec;
 		char buf[1];
+		int psock = getSock(cfdin);
 
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 			return(newErr("cannot open socket: %s", strerror(errno)));
@@ -129,60 +132,31 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 		/* send first byte, nothing special to happen */
 		msg.msg_name = (struct sockaddr*)&server;
 		msg.msg_namelen = sizeof(server);
-		*buf = '0'; /* normal */
+		*buf = '1'; /* pass fd */
 		vec.iov_base = buf;
 		vec.iov_len = 1;
 		msg.msg_iov = &vec;
 		msg.msg_iovlen = 1;
-		msg.msg_control = NULL;
-		msg.msg_controllen = 0;
+		cmsg = CMSG_FIRSTHDR(&msg);
+		cmsg->cmsg_level = SOL_SOCKET;
+		cmsg->cmsg_type = SCM_RIGHTS;
+		cmsg->cmsg_len = CMSG_LEN(sizeof(psock));
+		*(int *)CMSG_DATA(cmsg) = psock;
+		msg.msg_control = ccmsg;
+		msg.msg_controllen = cmsg->cmsg_len;
 		msg.msg_flags = 0;
 
+		Mfprintf(stdout, "target connection is on local UNIX domain socket, "
+				"passing on filedescriptor instead of proxying\n");
 		if (sendmsg(ssock, &msg, 0) < 0) {
 			close(ssock);
 			return(newErr("could not send initial byte: %s", strerror(errno)));
 		}
+		close(psock);
 		
-#if 0
-		/* consume prompt */
-		sfdin = block_stream(socket_rastream(ssock, "merovingian<-server (proxy read)"));
-		/* eat away server welcome */
-		stream_read_block(fdin, buf, sizeof(buf), 1);
-		/* write sock response */
-		sfout = block_stream(socket_wastream(ssock, "merovingian->server (proxy write)"));
-		stream_printf(sfout, "SOCK:pass\n");
-		stream_flush(sfout);
-
-		int fd = getSock(cfdin);
-		char ccmsg[CMSG_SPACE(sizeof(fd))];
-		struct cmsghdr *cmsg;
-		struct iovec vec;  /* must send at least one byte */
-		char *str = "x";
-		int rv;
-
-		msg.msg_name = (struct sockaddr*)&unix_socket_name;
-		msg.msg_namelen = sizeof(unix_socket_name);
-
-		vec.iov_base = str;
-		vec.iov_len = 1;
-		msg.msg_iov = &vec;
-		msg.msg_iovlen = 1;
-
-		msg.msg_control = ccmsg;
-		msg.msg_controllen = sizeof(ccmsg);
-		cmsg = CMSG_FIRSTHDR(&msg);
-		cmsg->cmsg_level = SOL_SOCKET;
-		cmsg->cmsg_type = SCM_RIGHTS;
-		cmsg->cmsg_len = CMSG_LEN(sizeof(fd));
-		*(int*)CMSG_DATA(cmsg) = fd;
-		msg.msg_controllen = cmsg->cmsg_len;
-
-		msg.msg_flags = 0;
-
-		rv = (sendmsg(ssock, &msg, 0) != -1);
-		if (rv) close(fd);
-		return rv;
-#endif
+		close_stream(cfdin);
+		close_stream(cfout);
+		return(NO_ERR);
 	} else {
 		hp = gethostbyname(conn);
 		if (hp == NULL)
