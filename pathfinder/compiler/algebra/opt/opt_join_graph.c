@@ -163,7 +163,7 @@ opt_join_graph (PFla_op_t *p)
                        elsewhere. */
                     for (j = 0; j < clsize (collist); j++)
                         if (clat (collist, j) == p->sem.rowid.res ||
-                            !PFprop_icol (p->prop, clat (collist, j)))
+                            PFprop_not_icol (p->prop, clat (collist, j)))
                             break;
                     if (j == clsize (collist)) {
                         PFord_ordering_t sortby = PFordering ();
