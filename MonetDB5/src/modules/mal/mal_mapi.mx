@@ -428,8 +428,9 @@ doChallenge(str cmd, stream *in, stream *out) {
 		stream_flush(fdout);
 		/* get response */
 		if ((len = (int) stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
-			/* in embedded mode we allow just one client */
-			(GDKembedded && MCcountClients() > 1)) {
+				/* in embedded mode we allow just one client */
+				(GDKembedded && MCcountClients() > 1))
+		{
 			/* FIXME: tell the client in a normal way! */
 			stream_close(fdin);
 			stream_destroy(fdin);
@@ -460,7 +461,7 @@ static MT_Id listener[8];
 static int lastlistener=0;
 static int serveractive=TRUE;
 
-static str
+static void
 SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
@@ -476,6 +477,7 @@ SERVERlistenThread(SOCKET *Sock)
 
 	if (lastlistener < 8)
 		listener[lastlistener++] = MT_getpid();
+
 	do {
 		int retval;
 		struct timeval tv;
@@ -514,23 +516,87 @@ SERVERlistenThread(SOCKET *Sock)
 		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR || serveractive == FALSE) {
-					msg = "accept failed\n";
+					msg = "accept failed";
 					goto error;
 				}
 				continue;
 			}
 #ifdef HAVE_SYS_UN_H
 		} else if (usock != INVALID_SOCKET && FD_ISSET(usock, &fds)) {
+			struct msghdr msgh;
+			struct iovec iov;
+			char buf[1];
+			int rv;
+			int connfd = -1;
+			char ccmsg[CMSG_SPACE(sizeof(connfd))];
+			struct cmsghdr *cmsg;
+
 			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR) {
-					msg = "accept failed\n";
+					msg = "accept failed";
 					goto error;
 				}
 				continue;
 			}
+
+			/* BEWARE: unix domain sockets have a slightly different
+			 * behaviour initialy than normal sockets,b ecause we can
+			 * send filedescriptors or credentials with them.  To do so,
+			 * we need to use sendmsg/recvmsg, which operates on a bare
+			 * socket.  Unfortunately we *have* to send something, so it
+			 * is one byte that can optionally carry the ancillary data.
+			 * This byte is at this moment defined to contain a character:
+			 *  '0' - there is no ancillary data
+			 *  '1' - ancillary data for passing a file descriptor
+			 * The future may introduce a state for passing credentials.
+			 * Any unknown character must be interpreted as some unknown
+			 * action, and hence not supported by the server. */
+
+			iov.iov_base = buf;
+			iov.iov_len = 1;
+
+			msgh.msg_name = 0;
+			msgh.msg_namelen = 0;
+			msgh.msg_iov = &iov;
+			msgh.msg_iovlen = 1;
+			msgh.msg_control = ccmsg;
+			msgh.msg_controllen = sizeof(ccmsg);
+
+			rv = recvmsg(msgsock, &msgh, 0);
+			if (rv == -1) {
+				close(msgsock);
+				continue;
+			}
+
+			switch (*buf) {
+				case '0':
+					/* nothing special, nothing to do */
+				break;
+				case '1':
+					/* filedescriptor, put it in place of msgsock */
+					cmsg = CMSG_FIRSTHDR(&msgh);
+					if (!cmsg->cmsg_type == SCM_RIGHTS) {
+						close(msgsock);
+						fprintf(stderr, "!mal_mapi.listen: "
+								"expected filedescriptor, but "
+								"received something else\n");
+						continue;
+					}
+					close(msgsock);
+					msgsock = *(int*)CMSG_DATA(cmsg);
+				break;
+				default:
+					/* some unknown state */
+					close(msgsock);
+					fprintf(stderr, "!mal_mapi.listen: "
+							"unknown command type in first byte\n");
+					continue;
+				break;
+			}	
 #endif
-		} else
+		} else {
 			continue;
+		}
 #ifdef DEBUG_SERVER
 		printf("server:accepted\n");
 		fflush(stdout);
@@ -539,8 +605,9 @@ SERVERlistenThread(SOCKET *Sock)
 				socket_rastream(msgsock, "Server read"),
 				socket_wastream(msgsock, "Server write"));
 	} while (1);
+	return;
 error:
-	throw(IO, "mal_mapi.listen", msg);
+	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
 }
 
 /**
@@ -609,7 +676,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 
 	port = *Port;
 	if (Usockfile == NULL || *Usockfile == 0 ||
-		*Usockfile[0] == '\0' || strcmp(*Usockfile, str_nil) == 0) {
+		*Usockfile[0] == '\0' || strcmp(*Usockfile, str_nil) == 0)
+	{
 		usockfile = NULL;
 	} else {
 #ifdef HAVE_SYS_UN_H
@@ -650,13 +718,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 			if (bind(sock, (SOCKPTR) &server, length) < 0) {
 				if (
 #ifdef EADDRINUSE
-errno == EADDRINUSE &&
+						errno == EADDRINUSE &&
 #else 
 #ifdef WSAEADDRINUSE 
-errno == WSAEADDRINUSE &&
+						errno == WSAEADDRINUSE &&
 #endif
 #endif
- 					autosense && port <= 65535)
+						autosense && port <= 65535)
 				{
 					port++;
 					continue;
