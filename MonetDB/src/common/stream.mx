@@ -178,6 +178,7 @@ stream_export stream *file_rastream(FILE *fp, const char *name);
 stream_export stream *file_wastream(FILE *fp, const char *name);
 
 stream_export FILE* getFile(stream *s);
+stream_export SOCKET getSock(stream *s);
 stream_export stream *dupFileStream(stream *s);
 
 #ifdef HAVE_ICONV
@@ -1713,6 +1714,12 @@ socket_open(SOCKET sock, const char *name)
 #endif
 
 	return s;
+}
+
+SOCKET getSock(stream *s) {
+	if (s->read != socket_read)
+		return 0;
+	return s->stream_data.s;
 }
 
 stream *
