@@ -121,11 +121,19 @@ aggregate_pattern (PFla_op_t *p)
     if (p->kind != la_eqjoin) return NULL;
 
     /* make sure that all columns depend on the join argument */
-    for (i = 0; i < p->schema.count; i++)
+    for (i = 0; i < p->schema.count; i++) {
+        /* In case the column is not referenced we don't have to
+           test its fd relationship. In case there exist columns
+           that are not in the icols list they may be incorrectly
+           turned into distinct aggregates. Subsequent icols
+           optimization however deletes these aggregates. */
+        if (PFprop_not_icol (p->prop, p->schema.items[i].name))
+           continue;
         if (!PFprop_fd (p->prop,
                         p->sem.eqjoin.col1,
                         p->schema.items[i].name))
             return NULL;
+    }
 
     /* make sure that the result may return the join argument
        as a key column */
@@ -1100,13 +1108,33 @@ shrink_order_list (PFla_op_t *p)
             modified = true;
             continue;
         }
-        /* otherwise keep former criterion */
-        res = PFord_refine (res, cur, PFord_order_dir_at (sortby, i-1));
+        
+        /* Check if the ranking list already describes the new order (as the
+           new criterion functionally depends on the last added entry). */
+        if (!(PFord_count (res) &&
+              PFord_order_dir_at (res, PFord_count (res) - 1) == DIR_ASC &&
+              PFord_order_dir_at (sortby, i-1) == DIR_ASC &&
+              PFprop_fd (p->prop, 
+                         PFord_order_col_at (res, PFord_count (res) - 1),
+                         cur)))
+            /* otherwise keep former criterion */
+            res = PFord_refine (res, cur, PFord_order_dir_at (sortby, i-1));
     }
-    /* add last criterion */
-    res = PFord_refine (res,
-                        PFord_order_col_at (sortby, PFord_count (sortby) - 1),
-                        PFord_order_dir_at (sortby, PFord_count (sortby) - 1));
+    /* Check if the ranking list already describes the new order (as the
+       last criterion functionally depends on the last added entry). */
+    if (PFord_count (res) &&
+        PFord_order_dir_at (res, PFord_count (res) - 1) == DIR_ASC &&
+        PFord_order_dir_at (sortby, PFord_count (sortby) - 1) == DIR_ASC &&
+        PFprop_fd (p->prop, 
+                   PFord_order_col_at (res, PFord_count (res) - 1),
+                   PFord_order_col_at (sortby, PFord_count (sortby) - 1)))
+        modified = true;
+    else
+        /* add last criterion */
+        res = PFord_refine (
+                  res,
+                  PFord_order_col_at (sortby, PFord_count (sortby) - 1),
+                  PFord_order_dir_at (sortby, PFord_count (sortby) - 1));
 
     /* modify operator in case we have removed one or more order criteria */
     if (modified) {
@@ -1469,7 +1497,8 @@ opt_complex (PFla_op_t *p)
                no new row combinations may be generated and the equi-join
                thus only introduces (superfluous) duplicate rows. */
              /* set ok as rewrite can only result in equal or less rows */
-            if (PFprop_set (p->prop) &&
+            if ((PFprop_set (p->prop) ||
+                 PFprop_key (p->prop, p->sem.eqjoin.col1)) &&
                 PFprop_subdom (
                     p->prop,
                     PFprop_dom_left (p->prop,
