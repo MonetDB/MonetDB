@@ -74,15 +74,15 @@ typedef struct tODBCDRIVERSTMT {
 	enum StatementState State;	/* needed to detect invalid cursor state */
 	MapiHdl hdl;
 
-	unsigned int rowcount;	/* # affected rows */
+	mapi_int64 rowcount;	/* # affected rows */
 
 	/* startRow is the row number of first row in the result
 	   set (0 based); rowSetSize is the number of rows in the
 	   current result set; currentRow is the row number of the
 	   current row within the current result set */
-	unsigned int currentRow;
-	unsigned int startRow;
-	unsigned int rowSetSize;
+	mapi_int64 currentRow;
+	mapi_int64 startRow;
+	mapi_int64 rowSetSize;
 
 	unsigned int currentCol; /* used by SQLGetData() */
 	SQLINTEGER retrieved;	/* amount of data retrieved */
@@ -187,9 +187,9 @@ SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		    SQLINTEGER *pnLength, SQLINTEGER *pnIndicator,
 		    SQLSMALLINT precision, SQLSMALLINT scale,
 		    SQLINTEGER datetime_interval_precision, SQLINTEGER offset,
-		    int row);
+		    SQLULEN row);
 SQLRETURN ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset,
-		    int row, char **bufp, size_t *bufposp, size_t *buflenp,
+		    SQLULEN row, char **bufp, size_t *bufposp, size_t *buflenp,
 		    char *sep);
 SQLRETURN ODBCFreeStmt_(ODBCStmt *stmt);
 SQLRETURN ODBCInitResult(ODBCStmt *stmt);
@@ -211,7 +211,7 @@ SQLRETURN SQLColAttribute_(ODBCStmt *stmt,
 			   SQLUSMALLINT nCol,
 			   SQLUSMALLINT nFieldIdentifier,
 			   SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax,
-			   SQLSMALLINT *pnValueLength, SQLPOINTER pnValue);
+			   SQLSMALLINT *pnValueLength, SQLLEN *pnValue);
 SQLRETURN SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 			 SQLINTEGER nSqlStr);
 SQLRETURN SQLExecute_(ODBCStmt *stmt);

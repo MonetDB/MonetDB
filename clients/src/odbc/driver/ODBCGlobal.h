@@ -137,6 +137,18 @@ typedef __int64 ssize_t;
 #else
 #error no definition for PTRFMT
 #endif
+#ifdef SQLLEN			/* it's a define for 32, a typedef for 64 */
+#define LENFMT		"%d"
+#define ULENFMT		"%u"
+#else
+#ifdef _MSC_VER
+#define LENFMT		"%I64d"
+#define ULENFMT		"%I64u"
+#else
+#define LENFMT		"%lld"
+#define ULENFMT		"%llu"
+#endif
+#endif
 
 /* these functions are called from within the library */
 SQLRETURN SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle, SQLHANDLE *pnOutputHandle);

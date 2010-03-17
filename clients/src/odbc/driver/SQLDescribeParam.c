@@ -45,7 +45,7 @@ SQLRETURN SQL_API
 SQLDescribeParam(SQLHSTMT hStmt,
 		 SQLUSMALLINT nParmNumber,
 		 SQLSMALLINT *pnDataType,
-		 SQLUINTEGER *pnSize,
+		 SQLULEN *pnSize,
 		 SQLSMALLINT *pnDecDigits,
 		 SQLSMALLINT *pnNullable)
 {

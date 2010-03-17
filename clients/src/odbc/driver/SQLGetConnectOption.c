@@ -51,10 +51,12 @@ SQLGetConnectOption_(ODBCDbc *dbc,
 	case SQL_ODBC_CURSORS:
 	case SQL_OPT_TRACE:
 	case SQL_PACKET_SIZE:
-	case SQL_QUIET_MODE:
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
+		return SQLGetConnectAttr_(dbc, nOption, pvParam, 0, NULL);
+	case SQL_QUIET_MODE:
+		/* 32/64 bit integer argument */
 		return SQLGetConnectAttr_(dbc, nOption, pvParam, 0, NULL);
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:

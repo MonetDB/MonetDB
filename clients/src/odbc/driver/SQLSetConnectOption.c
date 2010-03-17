@@ -55,10 +55,12 @@ SQLSetConnectOption_(ODBCDbc *dbc,
 	case SQL_ODBC_CURSORS:
 	case SQL_OPT_TRACE:
 	case SQL_PACKET_SIZE:
-	case SQL_QUIET_MODE:
 	case SQL_TRANSLATE_OPTION:
 	case SQL_TXN_ISOLATION:
 		/* 32 bit integer argument */
+		return SQLSetConnectAttr_(dbc, nOption, (SQLPOINTER) (size_t) vParam, 0);
+	case SQL_QUIET_MODE:
+		/* 32/64 bit integer argument */
 		return SQLSetConnectAttr_(dbc, nOption, (SQLPOINTER) (size_t) vParam, 0);
 
 	case SQL_CURRENT_QUALIFIER:
@@ -85,7 +87,7 @@ SQLSetConnectOption(SQLHDBC hDbc,
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOption " PTRFMT " %d %lx\n", PTRFMTCAST hDbc, nOption, (unsigned long) vParam);
+	ODBCLOG("SQLSetConnectOption " PTRFMT " %d " ULENFMT "\n", PTRFMTCAST hDbc, nOption, vParam);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -116,7 +118,7 @@ SQLSetConnectOptionW(SQLHDBC hDbc,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOptionW " PTRFMT " %d %lx\n", PTRFMTCAST hDbc, nOption, (unsigned long) vParam);
+	ODBCLOG("SQLSetConnectOptionW " PTRFMT " %d " ULENFMT "\n", PTRFMTCAST hDbc, nOption, vParam);
 #endif
 
 	if (!isValidDbc(dbc))

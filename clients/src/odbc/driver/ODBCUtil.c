@@ -183,7 +183,7 @@ char *
 ODBCutf82wchar(const SQLCHAR *s,
 	       SQLINTEGER length,
 	       SQLWCHAR * buf,
-	       SQLINTEGER buflen,
+	       SQLLEN buflen,
 	       SQLSMALLINT *buflenout)
 {
 	SQLWCHAR *p;

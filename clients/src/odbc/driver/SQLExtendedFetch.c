@@ -43,7 +43,7 @@ SQLRETURN SQL_API
 SQLExtendedFetch(SQLHSTMT hStmt,
 		 SQLUSMALLINT nOrientation,
 		 SQLLEN nOffset,
-		 SQLULEN * pnRowCount,
+		 SQLULEN *pnRowCount,
 		 SQLUSMALLINT *pRowStatusArray)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
@@ -51,7 +51,7 @@ SQLExtendedFetch(SQLHSTMT hStmt,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExtendedFetch " PTRFMT " %d %d\n", PTRFMTCAST hStmt, nOrientation, nOffset);
+	ODBCLOG("SQLExtendedFetch " PTRFMT " %d " LENFMT "\n", PTRFMTCAST hStmt, nOrientation, nOffset);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -82,7 +82,7 @@ SQLExtendedFetch(SQLHSTMT hStmt,
 		stmt->State = EXTENDEDFETCHED;
 
 	if (SQL_SUCCEEDED(rc) && pnRowCount)
-		*pnRowCount = stmt->rowSetSize;
+		*pnRowCount = (SQLULEN) stmt->rowSetSize;
 
 	return rc;
 }

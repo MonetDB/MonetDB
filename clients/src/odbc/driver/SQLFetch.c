@@ -50,7 +50,7 @@ SQLFetch_(ODBCStmt *stmt)
 	ODBCDesc *desc;
 	ODBCDescRec *rec;
 	int i;
-	unsigned int row;
+	SQLULEN row;
 	SQLINTEGER offset;
 	SQLUSMALLINT *statusp;
 

@@ -68,7 +68,7 @@ SQLGetDescField_(ODBCDesc *desc,
 		return SQL_SUCCESS;
 	case SQL_DESC_ARRAY_SIZE:
 		if (isAD(desc))
-			*(SQLUINTEGER *) Value = desc->sql_desc_array_size;
+			*(SQLULEN *) Value = desc->sql_desc_array_size;
 		return SQL_SUCCESS;
 	case SQL_DESC_ARRAY_STATUS_PTR:
 		*(SQLUSMALLINT **) Value = desc->sql_desc_array_status_ptr;

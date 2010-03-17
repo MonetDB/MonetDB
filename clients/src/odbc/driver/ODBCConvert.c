@@ -948,14 +948,14 @@ ODBCFetch(ODBCStmt *stmt,
 	  SQLUSMALLINT col,
 	  SQLSMALLINT type,
 	  SQLPOINTER ptr,
-	  SQLINTEGER buflen,
-	  SQLINTEGER *lenp,
+	  SQLLEN buflen,
+	  SQLLEN *lenp,
 	  SQLINTEGER *nullp,
 	  SQLSMALLINT precision,
 	  SQLSMALLINT scale,
 	  SQLINTEGER datetime_interval_precision,
 	  SQLINTEGER offset,
-	  int row)
+	  SQLULEN row)
 {
 	char *data;
 	size_t datalen;
@@ -992,7 +992,7 @@ ODBCFetch(ODBCStmt *stmt,
 		ptr = (SQLPOINTER) ((char *) ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLPOINTER) : bind_type));
 
 	if (lenp && offset)
-		lenp = (SQLINTEGER *) ((char *) lenp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+		lenp = (SQLLEN *) ((char *) lenp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
 	if (nullp && offset)
 		nullp = (SQLINTEGER *) ((char *) nullp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
 
@@ -1150,8 +1150,8 @@ ODBCFetch(ODBCStmt *stmt,
 #endif
 	{
 		SQLPOINTER origptr;
-		SQLINTEGER origbuflen;
-		SQLINTEGER *origlenp;
+		SQLLEN origbuflen;
+		SQLLEN *origlenp;
 
 		if (buflen < 0) {
 			/* Invalid string or buffer length */
@@ -1159,7 +1159,7 @@ ODBCFetch(ODBCStmt *stmt,
 			return SQL_ERROR;
 		}
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
 
 		/* if SQL_C_WCHAR is requested, first convert to UTF-8
 		 * (SQL_C_CHAR), and at the end convert to UTF-16 */
@@ -1172,7 +1172,7 @@ ODBCFetch(ODBCStmt *stmt,
 			/* allocate temporary space */
 			buflen = 511; /* should be enough for most types */
 			if (sql_type == SQL_CHAR && data != NULL)
-				buflen = (SQLINTEGER) datalen; /* but this is certainly enough for strings */
+				buflen = (SQLLEN) datalen; /* but this is certainly enough for strings */
 			ptr = malloc(buflen + 1);
 
 			lenp = NULL;
@@ -1185,7 +1185,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_CHAR:
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
-			copyString(data, datalen, ptr, buflen, lenp, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
+			copyString(data, datalen, ptr, buflen, lenp, SQLLEN, addStmtError, stmt, return SQL_ERROR);
 			break;
 		case SQL_BINARY:
 		case SQL_VARBINARY:
@@ -1193,7 +1193,7 @@ ODBCFetch(ODBCStmt *stmt,
 			size_t i;
 			int n;
 			unsigned char c = 0;
-			SQLINTEGER j = 0;
+			SQLLEN j = 0;
 			unsigned char *p = ptr;
 
 			if (buflen < 0) {
@@ -1494,7 +1494,7 @@ ODBCFetch(ODBCStmt *stmt,
 			return SQL_ERROR;
 		}
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
 
 		switch (sql_type) {
 		case SQL_CHAR:
@@ -1519,7 +1519,7 @@ ODBCFetch(ODBCStmt *stmt,
 		break;
 	case SQL_C_BIT:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
 
 		if (lenp)
 			*lenp = 1;
@@ -1594,7 +1594,7 @@ ODBCFetch(ODBCStmt *stmt,
 			if (lenp)
 				*lenp = sizeof(signed char);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(signed char) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(signed char) : bind_type));
 			break;
 		case SQL_C_SSHORT:
 		case SQL_C_SHORT:
@@ -1602,7 +1602,7 @@ ODBCFetch(ODBCStmt *stmt,
 			if (lenp)
 				*lenp = sizeof(short);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(short) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(short) : bind_type));
 			break;
 		case SQL_C_SLONG:
 		case SQL_C_LONG:
@@ -1610,14 +1610,14 @@ ODBCFetch(ODBCStmt *stmt,
 			if (lenp)
 				*lenp = sizeof(long);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(long) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(long) : bind_type));
 			break;
 		case SQL_C_SBIGINT:
 			maxval <<= 63;
 			if (lenp)
 				*lenp = sizeof(SQLBIGINT);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLBIGINT) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLBIGINT) : bind_type));
 			break;
 		}
 		switch (sql_type) {
@@ -1694,27 +1694,27 @@ ODBCFetch(ODBCStmt *stmt,
 			if (lenp)
 				*lenp = sizeof(unsigned char);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
 			break;
 		case SQL_C_USHORT:
 			maxval <<= 16;
 			if (lenp)
 				*lenp = sizeof(unsigned short);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned short) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned short) : bind_type));
 			break;
 		case SQL_C_ULONG:
 			maxval <<= 32;
 			if (lenp)
 				*lenp = sizeof(unsigned long);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned long) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned long) : bind_type));
 			break;
 		case SQL_C_UBIGINT:
 			if (lenp)
 				*lenp = sizeof(SQLUBIGINT);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLUBIGINT) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLUBIGINT) : bind_type));
 			break;
 		}
 		maxval--;
@@ -1779,7 +1779,7 @@ ODBCFetch(ODBCStmt *stmt,
 	}
 	case SQL_C_NUMERIC:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_NUMERIC_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_NUMERIC_STRUCT) : bind_type));
 
 		switch (sql_type) {
 		case SQL_CHAR:
@@ -1877,7 +1877,7 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 		if (type == SQL_C_FLOAT) {
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(float) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(float) : bind_type));
 			*(float *) ptr = (float) fval;
 
 			if ((double) *(float *) ptr != fval) {
@@ -1889,7 +1889,7 @@ ODBCFetch(ODBCStmt *stmt,
 				*lenp = sizeof(float);
 		} else {
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(double) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(double) : bind_type));
 			*(double *) ptr = fval;
 
 			if (lenp)
@@ -1898,7 +1898,7 @@ ODBCFetch(ODBCStmt *stmt,
 		break;
 	case SQL_C_TYPE_DATE:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(DATE_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(DATE_STRUCT) : bind_type));
 
 		i = 1;
 		switch (sql_type) {
@@ -1934,7 +1934,7 @@ ODBCFetch(ODBCStmt *stmt,
 		break;
 	case SQL_C_TYPE_TIME:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIME_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIME_STRUCT) : bind_type));
 
 		i = 1;
 		switch (sql_type) {
@@ -1970,7 +1970,7 @@ ODBCFetch(ODBCStmt *stmt,
 		break;
 	case SQL_C_TYPE_TIMESTAMP:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIMESTAMP_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIMESTAMP_STRUCT) : bind_type));
 
 		i = 1;
 		switch (sql_type) {
@@ -2032,7 +2032,7 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_C_INTERVAL_MONTH:
 	case SQL_C_INTERVAL_YEAR_TO_MONTH:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
 
 		switch (sql_type) {
 		case SQL_CHAR:
@@ -2107,7 +2107,7 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_C_INTERVAL_HOUR_TO_SECOND:
 	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
 
 		switch (sql_type) {
 		case SQL_CHAR:
@@ -2318,7 +2318,7 @@ SQLRETURN
 ODBCStore(ODBCStmt *stmt,
 	  SQLUSMALLINT param,
 	  SQLINTEGER offset,
-	  int row,
+	  SQLULEN row,
 	  char **bufp,
 	  size_t *bufposp,
 	  size_t *buflenp,

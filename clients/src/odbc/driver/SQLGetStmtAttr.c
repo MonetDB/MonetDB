@@ -78,10 +78,10 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 		*(SQLHANDLE *) Value = stmt->ImplRowDescr;
 		return SQL_SUCCESS;
 	case SQL_ATTR_MAX_LENGTH:
-		*(SQLUINTEGER *) Value = 0;
+		*(SQLULEN *) Value = 0;
 		break;
 	case SQL_ATTR_MAX_ROWS:
-		*(SQLUINTEGER *) Value = 0;
+		*(SQLULEN *) Value = 0;
 		break;
 	case SQL_ATTR_NOSCAN:
 		*(SQLUINTEGER *) Value = stmt->noScan;
@@ -114,7 +114,7 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "24000", NULL, 0);
 			return SQL_ERROR;
 		}
-		*(SQLUINTEGER *) Value = stmt->currentRow;
+		*(SQLULEN *) Value = stmt->currentRow;
 		break;
 	case SQL_ATTR_ROW_OPERATION_PTR:
 		return SQLGetDescField_(stmt->ApplRowDescr, 0, SQL_DESC_ARRAY_STATUS_PTR, Value, BufferLength, StringLength);

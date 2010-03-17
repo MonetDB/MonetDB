@@ -45,14 +45,14 @@ SQLBindCol(SQLHSTMT hStmt,
 	   SQLUSMALLINT nCol,
 	   SQLSMALLINT nTargetType,
 	   SQLPOINTER pTargetValue,
-	   SQLINTEGER nTargetValueMax,
-	   SQLINTEGER *pnLengthOrIndicator)
+	   SQLLEN nTargetValueMax,
+	   SQLLEN *pnLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	ODBCDesc *desc;		/* Application Row Descriptor */
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindCol " PTRFMT " %d %d %d\n", PTRFMTCAST hStmt, nCol, nTargetType, nTargetValueMax);
+	ODBCLOG("SQLBindCol " PTRFMT " %d %d " LENFMT "\n", PTRFMTCAST hStmt, nCol, nTargetType, nTargetValueMax);
 #endif
 
 	if (!isValidStmt(stmt))

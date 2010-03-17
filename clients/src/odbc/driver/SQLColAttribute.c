@@ -48,7 +48,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		 SQLPOINTER pszValue,
 		 SQLSMALLINT nValueLengthMax,
 		 SQLSMALLINT *pnValueLength,
-		 SQLPOINTER pnValue)
+		 SQLLEN *pnValue)
 {
 	ODBCDescRec *rec;
 
@@ -109,11 +109,11 @@ SQLColAttribute_(ODBCStmt *stmt,
 		break;
 	case SQL_DESC_COUNT:
 		if (pnValue)
-			*(int *) pnValue = stmt->ImplRowDescr->sql_desc_count;
+			*(SQLLEN *) pnValue = stmt->ImplRowDescr->sql_desc_count;
 		break;
 	case SQL_DESC_DISPLAY_SIZE:	/* SQL_COLUMN_DISPLAY_SIZE */
 		if (pnValue)
-			*(int *) pnValue = rec->sql_desc_display_size;
+			*(SQLLEN *) pnValue = rec->sql_desc_display_size;
 		break;
 	case SQL_DESC_FIXED_PREC_SCALE:	/* SQL_COLUMN_MONEY */
 		if (pnValue)
@@ -125,7 +125,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 	case SQL_COLUMN_LENGTH:
 	case SQL_DESC_LENGTH:
 		if (pnValue)
-			*(int *) pnValue = rec->sql_desc_length;
+			*(SQLLEN *) pnValue = rec->sql_desc_length;
 		break;
 	case SQL_DESC_LITERAL_PREFIX:
 		copyString(rec->sql_desc_literal_prefix, strlen((char *) rec->sql_desc_literal_prefix), pszValue, nValueLengthMax, pnValueLength, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
@@ -149,7 +149,7 @@ SQLColAttribute_(ODBCStmt *stmt,
 		break;
 	case SQL_DESC_OCTET_LENGTH:
 		if (pnValue)
-			*(int *) pnValue = rec->sql_desc_octet_length;
+			*(SQLLEN *) pnValue = rec->sql_desc_octet_length;
 		break;
 	case SQL_COLUMN_PRECISION:
 	case SQL_DESC_PRECISION:

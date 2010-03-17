@@ -48,7 +48,7 @@ SQLDescribeCol_(ODBCStmt *stmt,
 		SQLSMALLINT nColNameMax,
 		SQLSMALLINT *pnColNameLength,
 		SQLSMALLINT *pnSQLDataType,
-		SQLUINTEGER *pnColSize,
+		SQLULEN *pnColSize,
 		SQLSMALLINT *pnDecDigits,
 		SQLSMALLINT *pnNullable)
 {
@@ -127,7 +127,7 @@ SQLDescribeCol(SQLHSTMT hStmt,
 	       SQLSMALLINT nColNameMax,
 	       SQLSMALLINT *pnColNameLength,
 	       SQLSMALLINT *pnSQLDataType,
-	       SQLUINTEGER *pnColSize,
+	       SQLULEN *pnColSize,
 	       SQLSMALLINT *pnDecDigits,
 	       SQLSMALLINT *pnNullable)
 {
@@ -153,7 +153,7 @@ SQLDescribeColA(SQLHSTMT hStmt,
 		SQLSMALLINT nColNameMax,
 		SQLSMALLINT *pnColNameLength,
 		SQLSMALLINT *pnSQLDataType,
-		SQLUINTEGER *pnColSize,
+		SQLULEN *pnColSize,
 		SQLSMALLINT *pnDecDigits,
 		SQLSMALLINT *pnNullable)
 {
@@ -167,7 +167,7 @@ SQLDescribeColW(SQLHSTMT hStmt,
 		SQLSMALLINT nColNameMax,
 		SQLSMALLINT *pnColNameLength,
 		SQLSMALLINT *pnSQLDataType,
-		SQLUINTEGER *pnColSize,
+		SQLULEN *pnColSize,
 		SQLSMALLINT *pnDecDigits,
 		SQLSMALLINT *pnNullable)
 {

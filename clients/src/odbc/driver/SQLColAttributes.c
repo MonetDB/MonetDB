@@ -44,10 +44,10 @@ SQLColAttributes_(ODBCStmt *stmt,
 		  SQLPOINTER pszDesc,
 		  SQLSMALLINT nDescMax,
 		  SQLSMALLINT *pcbDesc,
-		  SQLINTEGER *pfDesc)
+		  SQLLEN *pfDesc)
 {
 	SQLRETURN rc;
-	SQLINTEGER value;
+	SQLLEN value;
 
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nDescType) {
@@ -84,7 +84,7 @@ SQLColAttributes(SQLHSTMT hStmt,
 		 SQLPOINTER pszDesc,
 		 SQLSMALLINT nDescMax,
 		 SQLSMALLINT *pcbDesc,
-		 SQLINTEGER *pfDesc)
+		 SQLLEN *pfDesc)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 

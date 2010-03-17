@@ -45,7 +45,7 @@
 SQLRETURN SQL_API
 SQLPutData(SQLHSTMT hStmt,
 	   SQLPOINTER pData,
-	   SQLINTEGER nLengthOrIndicator)
+	   SQLLEN nLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 

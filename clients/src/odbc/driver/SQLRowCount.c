@@ -42,7 +42,7 @@
 
 SQLRETURN SQL_API
 SQLRowCount(SQLHSTMT hStmt,
-	    SQLINTEGER *pnRowCount)
+	    SQLLEN *pnRowCount)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -70,7 +70,7 @@ SQLRowCount(SQLHSTMT hStmt,
 	}
 
 	/* We can now set the "number of result set rows" value */
-	*pnRowCount = (SQLINTEGER) stmt->rowcount;
+	*pnRowCount = (SQLLEN) stmt->rowcount;
 
 	return SQL_SUCCESS;
 }

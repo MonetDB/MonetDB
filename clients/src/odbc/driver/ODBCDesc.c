@@ -231,7 +231,7 @@ addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno)
 	return &desc->descRec[recno];
 }
 
-SQLUINTEGER
+SQLULEN
 ODBCDisplaySize(ODBCDescRec *rec)
 {
 	switch (rec->sql_desc_concise_type) {

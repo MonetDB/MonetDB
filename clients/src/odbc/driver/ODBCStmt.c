@@ -104,7 +104,8 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->AutoApplRowDescr = stmt->ApplRowDescr;
 	stmt->AutoApplParamDescr = stmt->ApplParamDescr;
 
-	if (stmt->ApplRowDescr == NULL || stmt->ApplParamDescr == NULL || stmt->ImplRowDescr == NULL || stmt->ImplParamDescr == NULL) {
+	if (stmt->ApplRowDescr == NULL || stmt->ApplParamDescr == NULL ||
+	    stmt->ImplRowDescr == NULL || stmt->ImplParamDescr == NULL) {
 		destroyODBCStmt(stmt);
 		return NULL;
 	}

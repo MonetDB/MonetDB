@@ -38,14 +38,14 @@
 
 SQLRETURN SQL_API
 SQLParamOptions(SQLHSTMT hStmt,
-		SQLUINTEGER nRow,
-		SQLUINTEGER *pnRow)
+		SQLULEN nRow,
+		SQLULEN *pnRow)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLParamOptions " PTRFMT " %u\n", PTRFMTCAST hStmt, nRow);
+	ODBCLOG("SQLParamOptions " PTRFMT " " ULENFMT "\n", PTRFMTCAST hStmt, nRow);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

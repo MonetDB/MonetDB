@@ -57,19 +57,19 @@ SQLSetDescField_(ODBCDesc *desc,
 		addDescError(desc, "HY091", NULL, 0);
 		return SQL_ERROR;
 	case SQL_DESC_ARRAY_SIZE:
-		if ((SQLUINTEGER) (size_t) Value == 0) {
+		if ((SQLULEN) (size_t) Value == 0) {
 			/* Invalid attribute/option identifier */
 			addDescError(desc, "HY092", NULL, 0);
 			return SQL_ERROR;
 		}
 		if (isAD(desc)) {
 			/* limit size to protect against bugs */
-			if ((SQLUINTEGER) (size_t) Value > 10000) {
+			if ((SQLULEN) (size_t) Value > 10000) {
 				/* Driver does not support this function */
 				addDescError(desc, "IM001", NULL, 0);
 				return SQL_ERROR;
 			}
-			desc->sql_desc_array_size = (SQLUINTEGER) (size_t) Value;
+			desc->sql_desc_array_size = (SQLULEN) (size_t) Value;
 		}
 		return SQL_SUCCESS;
 	case SQL_DESC_ARRAY_STATUS_PTR:
@@ -93,7 +93,7 @@ SQLSetDescField_(ODBCDesc *desc,
 		return SQL_SUCCESS;
 	case SQL_DESC_ROWS_PROCESSED_PTR:
 		if (desc->Stmt)
-			desc->sql_desc_rows_processed_ptr = (SQLUINTEGER *) Value;
+			desc->sql_desc_rows_processed_ptr = (SQLULEN *) Value;
 		return SQL_SUCCESS;
 	}
 

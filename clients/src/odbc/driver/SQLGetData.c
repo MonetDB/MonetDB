@@ -45,8 +45,8 @@ SQLGetData(SQLHSTMT hStmt,
 	   SQLUSMALLINT nCol,
 	   SQLSMALLINT nTargetType,
 	   SQLPOINTER pTarget,
-	   SQLINTEGER nTargetLength,
-	   SQLINTEGER *pnLengthOrIndicator)
+	   SQLLEN nTargetLength,
+	   SQLLEN *pnLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -106,5 +106,7 @@ SQLGetData(SQLHSTMT hStmt,
 		nTargetType = desc->descRec[nCol].sql_desc_concise_type;
 	}
 
-	return ODBCFetch(stmt, nCol, nTargetType, pTarget, nTargetLength, pnLengthOrIndicator, pnLengthOrIndicator, UNAFFECTED, UNAFFECTED, UNAFFECTED, 0, 0);
+	return ODBCFetch(stmt, nCol, nTargetType, pTarget, nTargetLength,
+			 pnLengthOrIndicator, pnLengthOrIndicator, UNAFFECTED,
+			 UNAFFECTED, UNAFFECTED, 0, 0);
 }

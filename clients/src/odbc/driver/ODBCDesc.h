@@ -36,17 +36,17 @@ typedef struct {
 	SQLINTEGER sql_desc_datetime_interval_precision;
 	SQLINTEGER sql_desc_display_size;
 	SQLSMALLINT sql_desc_fixed_prec_scale;
-	SQLINTEGER *sql_desc_indicator_ptr;
+	SQLLEN *sql_desc_indicator_ptr;
 	SQLCHAR *sql_desc_label;
-	SQLUINTEGER sql_desc_length;
+	SQLULEN sql_desc_length;
 	SQLCHAR *sql_desc_literal_prefix;
 	SQLCHAR *sql_desc_literal_suffix;
 	SQLCHAR *sql_desc_local_type_name;
 	SQLCHAR *sql_desc_name;
 	SQLSMALLINT sql_desc_nullable;
 	SQLINTEGER sql_desc_num_prec_radix;
-	SQLUINTEGER sql_desc_octet_length;
-	SQLINTEGER *sql_desc_octet_length_ptr;
+	SQLULEN sql_desc_octet_length;
+	SQLLEN *sql_desc_octet_length_ptr;
 	SQLINTEGER sql_desc_parameter_type;
 	SQLSMALLINT sql_desc_precision;
 	SQLSMALLINT sql_desc_rowver;
@@ -71,12 +71,12 @@ typedef struct {
 	ODBCDescRec *descRec;
 
 	SQLSMALLINT sql_desc_alloc_type;
-	SQLUINTEGER sql_desc_array_size;
+	SQLULEN sql_desc_array_size;
 	SQLUSMALLINT *sql_desc_array_status_ptr;
 	SQLINTEGER *sql_desc_bind_offset_ptr;
 	SQLUINTEGER sql_desc_bind_type;
 	SQLSMALLINT sql_desc_count;
-	SQLUINTEGER *sql_desc_rows_processed_ptr;
+	SQLULEN *sql_desc_rows_processed_ptr;
 } ODBCDesc;
 
 #define isID(desc)	((desc)->Stmt != NULL)
@@ -99,7 +99,7 @@ ODBCError *getDescError(ODBCDesc *desc);
 void destroyODBCDesc(ODBCDesc *desc);
 void setODBCDescRecCount(ODBCDesc *desc, int count);
 ODBCDescRec *addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno);
-SQLUINTEGER ODBCDisplaySize(ODBCDescRec *rec);
+SQLULEN ODBCDisplaySize(ODBCDescRec *rec);
 
 SQLRETURN SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 SQLRETURN SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength);

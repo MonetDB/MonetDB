@@ -679,7 +679,6 @@ SQLGetInfo_(ODBCDbc *dbc,
 
 	/* return default values */
 	case SQL_DDL_INDEX:
-	case SQL_DRIVER_HDESC:
 	case SQL_DROP_ASSERTION:
 	case SQL_DROP_CHARACTER_SET:
 	case SQL_DROP_COLLATION:
@@ -701,6 +700,10 @@ SQLGetInfo_(ODBCDbc *dbc,
 	case SQL_TIMEDATE_DIFF_INTERVALS:
 		nValue = 0;
 		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_DRIVER_HDESC:
+		nValue = 0;
+		len = sizeof(SQLULEN);
 		break;
 	case SQL_DESCRIBE_PARAMETER:
 		sValue = "N";
@@ -724,7 +727,9 @@ SQLGetInfo_(ODBCDbc *dbc,
 	if (sValue) {
 		copyString(sValue, strlen(sValue), pInfoValue, nInfoValueMax, pnLength, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 	} else if (pInfoValue) {
-		if (len == sizeof(SQLUINTEGER))
+		if (len == sizeof(SQLULEN))
+			*(SQLULEN *) pInfoValue = (SQLULEN) nValue;
+		else if (len == sizeof(SQLUINTEGER))
 			*(SQLUINTEGER *) pInfoValue = (SQLUINTEGER) nValue;
 		else if (len == sizeof(SQLUSMALLINT))
 			*(SQLUSMALLINT *) pInfoValue = (SQLUSMALLINT) nValue;

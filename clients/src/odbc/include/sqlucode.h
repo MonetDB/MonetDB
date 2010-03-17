@@ -164,12 +164,12 @@ extern "C" {
 
 	odbc_export SQLRETURN SQL_API SQL_API SQLColAttributeA(SQLHSTMT hstmt, SQLSMALLINT iCol, SQLSMALLINT iField, SQLPOINTER pCharAttr, SQLSMALLINT cbCharAttrMax, SQLSMALLINT *pcbCharAttr, SQLPOINTER pNumAttr);
 
-	odbc_export SQLRETURN SQL_API SQL_API SQLColAttributesA(SQLHSTMT hstmt, SQLUSMALLINT icol, SQLUSMALLINT fDescType, SQLPOINTER rgbDesc, SQLSMALLINT cbDescMax, SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc);
+	odbc_export SQLRETURN SQL_API SQL_API SQLColAttributesA(SQLHSTMT hstmt, SQLUSMALLINT icol, SQLUSMALLINT fDescType, SQLPOINTER rgbDesc, SQLSMALLINT cbDescMax, SQLSMALLINT *pcbDesc, SQLLEN *pfDesc);
 
 	odbc_export SQLRETURN SQL_API SQL_API SQLConnectA(SQLHDBC hdbc, SQLCHAR *szDSN, SQLSMALLINT cbDSN, SQLCHAR *szUID, SQLSMALLINT cbUID, SQLCHAR *szAuthStr, SQLSMALLINT cbAuthStr);
 
 
-	odbc_export SQLRETURN SQL_API SQL_API SQLDescribeColA(SQLHSTMT hstmt, SQLUSMALLINT icol, SQLCHAR *szColName, SQLSMALLINT cbColNameMax, SQLSMALLINT *pcbColName, SQLSMALLINT *pfSqlType, SQLUINTEGER *pcbColDef, SQLSMALLINT *pibScale,
+	odbc_export SQLRETURN SQL_API SQL_API SQLDescribeColA(SQLHSTMT hstmt, SQLUSMALLINT icol, SQLCHAR *szColName, SQLSMALLINT cbColNameMax, SQLSMALLINT *pcbColName, SQLSMALLINT *pfSqlType, SQLULEN *pcbColDef, SQLSMALLINT *pibScale,
 							      SQLSMALLINT *pfNullable);
 
 
@@ -249,7 +249,7 @@ extern "C" {
 	odbc_export SQLRETURN SQL_API SQL_API SQLColumnPrivilegesA(SQLHSTMT hstmt, SQLCHAR *szCatalogName, SQLSMALLINT cbCatalogName, SQLCHAR *szSchemaName, SQLSMALLINT cbSchemaName, SQLCHAR *szTableName, SQLSMALLINT cbTableName, SQLCHAR *szColumnName,
 								   SQLSMALLINT cbColumnName);
 
-	odbc_export SQLRETURN SQL_API SQL_API SQLDescribeParamA(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT *pfSqlType, SQLUINTEGER *pcbParamDef, SQLSMALLINT *pibScale, SQLSMALLINT *pfNullable);
+	odbc_export SQLRETURN SQL_API SQL_API SQLDescribeParamA(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT *pfSqlType, SQLULEN *pcbParamDef, SQLSMALLINT *pibScale, SQLSMALLINT *pfNullable);
 
 
 	odbc_export SQLRETURN SQL_API SQL_API SQLForeignKeysA(SQLHSTMT hstmt, SQLCHAR *szPkCatalogName, SQLSMALLINT cbPkCatalogName, SQLCHAR *szPkSchemaName, SQLSMALLINT cbPkSchemaName, SQLCHAR *szPkTableName, SQLSMALLINT cbPkTableName,

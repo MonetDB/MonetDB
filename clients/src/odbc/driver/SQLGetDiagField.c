@@ -105,7 +105,7 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 	case SQL_DIAG_CURSOR_ROW_COUNT:
 		if (HandleType != SQL_HANDLE_STMT)
 			return SQL_ERROR;
-		*(SQLINTEGER *) DiagInfo = ((ODBCStmt *) Handle)->rowSetSize;
+		*(SQLLEN *) DiagInfo = (SQLLEN) ((ODBCStmt *) Handle)->rowSetSize;
 		return SQL_SUCCESS;
 	case SQL_DIAG_DYNAMIC_FUNCTION:
 		if (HandleType != SQL_HANDLE_STMT)
@@ -126,7 +126,7 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 	case SQL_DIAG_ROW_COUNT:
 		if (HandleType != SQL_HANDLE_STMT || ((ODBCStmt *) Handle)->State < EXECUTED0)
 			return SQL_ERROR;
-		*(SQLINTEGER *) DiagInfo = (SQLINTEGER) ((ODBCStmt *) Handle)->rowcount;
+		*(SQLLEN *) DiagInfo = (SQLLEN) ((ODBCStmt *) Handle)->rowcount;
 		return SQL_SUCCESS;
 	}
 

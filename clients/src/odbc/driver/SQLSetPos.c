@@ -41,14 +41,14 @@
 
 SQLRETURN SQL_API
 SQLSetPos(SQLHSTMT hStmt,
-	  SQLUSMALLINT nRow,
+	  SQLSETPOSIROW nRow,
 	  SQLUSMALLINT nOperation,
 	  SQLUSMALLINT nLockType)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetPos " PTRFMT " %d %d %d\n", PTRFMTCAST hStmt, nRow, nOperation, nLockType);
+	ODBCLOG("SQLSetPos " PTRFMT " " ULENFMT " %d %d\n", PTRFMTCAST hStmt, (SQLULEN) nRow, nOperation, nLockType);
 #endif
 
 	if (!isValidStmt(stmt))

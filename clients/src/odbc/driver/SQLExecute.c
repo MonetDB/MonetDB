@@ -107,7 +107,7 @@ ODBCInitResult(ODBCStmt *stmt)
 	}
 	nrCols = mapi_get_field_count(hdl);
 	stmt->querytype = mapi_get_querytype(hdl);
-	stmt->rowcount = (unsigned int) mapi_rows_affected(hdl);
+	stmt->rowcount = mapi_rows_affected(hdl);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("ODBCInitResult: querytype %d\n", stmt->querytype);

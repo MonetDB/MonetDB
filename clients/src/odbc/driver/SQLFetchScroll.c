@@ -97,13 +97,16 @@ SQLFetchScroll_(ODBCStmt *stmt,
 		    (stmt->currentRow != stmt->rowcount || FetchOffset >= 0)) {
 			if ((stmt->currentRow == 0 && FetchOffset <= 0) ||
 			    (stmt->startRow == 0 && FetchOffset < 0) ||
-			    (stmt->startRow > 0 && (int) stmt->startRow + FetchOffset < 0 &&
-			     /* FetchOffset must be negative, so cast works */ (unsigned int) -FetchOffset > RowSetSize)) {
+			    (stmt->startRow > 0 &&
+			     (int) stmt->startRow + FetchOffset < 0 &&
+			     /* FetchOffset must be negative, so cast works */
+			     (unsigned int) -FetchOffset > RowSetSize)) {
 				stmt->startRow = 0;
 				stmt->State = FETCHED;
 				return SQL_NO_DATA;
 			}
-			if (stmt->startRow > 0 && (int)stmt->startRow + FetchOffset < 0) {
+			if (stmt->startRow > 0 &&
+			    (int) stmt->startRow + FetchOffset < 0) {
 				stmt->startRow = 0;
 
 				/* Attempt to fetch before the result
@@ -111,7 +114,8 @@ SQLFetchScroll_(ODBCStmt *stmt,
 				addStmtError(stmt, "01S06", NULL, 0);
 				break;
 			}
-			if (stmt->startRow + FetchOffset >= stmt->rowcount || stmt->currentRow == stmt->rowcount) {
+			if (stmt->startRow + FetchOffset >= stmt->rowcount ||
+			    stmt->currentRow == stmt->rowcount) {
 				stmt->startRow = stmt->rowcount;
 				stmt->State = FETCHED;
 				return SQL_NO_DATA;
@@ -142,7 +146,7 @@ SQLFetchScroll_(ODBCStmt *stmt,
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;
 		}
-		if ((unsigned int) FetchOffset > stmt->rowcount) {
+		if (FetchOffset > stmt->rowcount) {
 			stmt->startRow = stmt->rowcount;
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;
@@ -170,7 +174,7 @@ SQLFetchScroll(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFetchScroll " PTRFMT " %d %d\n", PTRFMTCAST hStmt, FetchOrientation, FetchOffset);
+	ODBCLOG("SQLFetchScroll " PTRFMT " %d " LENFMT "\n", PTRFMTCAST hStmt, FetchOrientation, FetchOffset);
 #endif
 
 	if (!isValidStmt(stmt))

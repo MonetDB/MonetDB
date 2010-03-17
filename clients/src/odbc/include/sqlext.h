@@ -1850,7 +1850,7 @@ extern "C" {			/* Assume C declarations for C++ */
 
 	odbc_export SQLRETURN SQL_API SQLNumParams(SQLHSTMT hstmt, SQLSMALLINT *pcpar);
 
-	odbc_export SQLRETURN SQL_API SQLParamOptions(SQLHSTMT hstmt, SQLUINTEGER crow, SQLUINTEGER *pirow);
+	odbc_export SQLRETURN SQL_API SQLParamOptions(SQLHSTMT hstmt, SQLULEN crow, SQLULEN *pirow);
 
 	odbc_export SQLRETURN SQL_API SQLPrimaryKeys(SQLHSTMT hstmt, SQLCHAR *szCatalogName, SQLSMALLINT cbCatalogName, SQLCHAR *szSchemaName, SQLSMALLINT cbSchemaName, SQLCHAR *szTableName, SQLSMALLINT cbTableName);
 
