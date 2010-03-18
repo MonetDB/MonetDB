@@ -119,7 +119,7 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 		struct cmsghdr *cmsg;
 		struct iovec vec;
 		char buf[1];
-		int psock = getSock(cfdin);
+		int psock = socket_getsock(cfdin);
 
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 			return(newErr("cannot open socket: %s", strerror(errno)));
