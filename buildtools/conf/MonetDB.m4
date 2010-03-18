@@ -575,6 +575,20 @@ esac
 AC_SUBST(LINUX_DIST)
 ]) dnl AM_MONETDB_LINUX_DIST
         
+AC_DEFUN([AC_CHECK_DEFINED],[
+AS_VAR_PUSHDEF([ac_var],[ac_cv_defined_$1])dnl
+AC_CACHE_CHECK([for $1 defined], ac_var,
+AC_TRY_COMPILE(,[
+  #ifdef $1
+       int ok;
+  #else
+       choke me
+  #endif
+],AS_VAR_SET(ac_var, yes),AS_VAR_SET(ac_var, no)))
+AS_IF([test AS_VAR_GET(ac_var) != "no"], [$2], [$3])dnl
+AS_VAR_POPDEF([ac_var])dnl
+])
+
 AC_DEFUN([AM_MONETDB_COMPILER],
 [
  
@@ -689,89 +703,6 @@ AC_C_BIGENDIAN()
 
 AM_MONETDB_LINUX_DIST()
 
-dnl find out, whether the C compiler is C99 compliant
-dnl TODO: use AC_PROG_CC_C99()
-AC_MSG_CHECKING([if your compiler is C99 compliant])
-have_c99=no
-
-dnl  We need more features than the C89 standard offers, but not all
-dnl  (if any at all) C/C++ compilers implements the complete C99
-dnl  standard.  Moreover, there seems to be no standard for the
-dnl  defines that enable the features beyond C89 in the various
-dnl  platforms.  Here's what we found working so far...
-
-case "$GCC-$CC-$host_os" in
-yes-*-*)
-	dnl  GNU (gcc/g++)
-	case "$gcc_ver-$host_os" in
-	*-cygwin*|*-mingw*)
-		dnl  testing/src/Mtimeout.c fails to compile with
-		dnl  "--std=c99" as the compiler then refuses to recognize
-		dnl  the "sa_handler" member of the "sigaction" struct,
-		dnl  which is defined in an unnamed union in
-		dnl  /usr/include/cygwin/signal.h ...
-		CPPFLAGS="$CPPFLAGS -std=gnu99"
-		;;
-	*-hp*)
-		dnl  hp-ux includes and c99 don't mix
-		CPPFLAGS="$CPPFLAGS"
-		;;
-	4.2.*-*)
-		dnl gcc 4.2 has a warning on inline functions in C99 mode being
-		dnl made for real in gcc 4.3.  We disable the warning and we
-		dnl want to get away for a little while with GNU89 inlining
-		dnl semantics, until gcc 4.3 is within reach to get real ISO C99
-		dnl I think
-		CPPFLAGS="$CPPFLAGS -std=c99 -fgnu89-inline"
-		;;
-	*-freebsd*|*-irix*|*-darwin*|*-solaris*|[[34]].*-*)
-		CPPFLAGS="$CPPFLAGS -std=c99"
-		;;
-	esac
-	;;
--*icc*-linux*|-*ecc*-linux*)
-      	case "$host-$icc_ver" in
-        *-*-*-10.*)   	CPPFLAGS="$CPPFLAGS -std=c99"	;;
-        *-*-*-11.*)   	CPPFLAGS="$CPPFLAGS -std=c99"	;;
-      	*-*-*-*)    	CPPFLAGS="$CPPFLAGS -c99" 		;;
-      	esac   
-	;;
--*pgcc*-linux*)
-	CPPFLAGS="$CPPFLAGS -c9x"
-	;;
--*-solaris*)
-	CPPFLAGS="$CPPFLAGS -xc99"
-	;;
-esac
-
-AC_TRY_COMPILE([], [
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-return 0;
-#else
-#error "NOT C99 compliant"
-/* With some compilers, "#error" only triggers a warning; hence: */
-!Error "NOT C99 compliant"
-#endif
-], 
-[AC_DEFINE([HAVE_C99], 1, [Is your compiler C99 compliant?])
-have_c99=yes
-AC_MSG_RESULT(yes)],
-AC_MSG_RESULT(no))
-
-AC_DEFUN([AC_CHECK_DEFINED],[
-AS_VAR_PUSHDEF([ac_var],[ac_cv_defined_$1])dnl
-AC_CACHE_CHECK([for $1 defined], ac_var,
-AC_TRY_COMPILE(,[
-  #ifdef $1
-    	int ok;
-  #else
-  	choke me
-  #endif
-],AS_VAR_SET(ac_var, yes),AS_VAR_SET(ac_var, no)))
-AS_IF([test AS_VAR_GET(ac_var) != "no"], [$2], [$3])dnl
-AS_VAR_POPDEF([ac_var])dnl
-])
-  
 dnl MonetDB code requires some POSIX and XOPEN extensions 
 case "$GCC-$CC-$host_os" in
 *-*-solaris*)
