@@ -149,7 +149,7 @@ SQLFetch_(ODBCStmt *stmt)
 			statusp++;
 	}
 	if (desc->sql_desc_rows_processed_ptr)
-		*desc->sql_desc_rows_processed_ptr = stmt->rowSetSize;
+		*desc->sql_desc_rows_processed_ptr = (SQLULEN) stmt->rowSetSize;
 
 	if (statusp)
 		while (row++ < desc->sql_desc_array_size)

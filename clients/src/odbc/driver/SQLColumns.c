@@ -221,7 +221,7 @@ SQLColumns_(ODBCStmt *stmt,
 
 		n = stmt->rowcount;
 
-		tuples = malloc(sizeof(*tuples) * n);
+		tuples = malloc(sizeof(*tuples) * (size_t) n);
 		for (j = 0; j < NCOLUMNS; j++)
 			columnlengths[j] = mapi_get_len(stmt->hdl, j);
 
@@ -385,7 +385,7 @@ SQLColumns_(ODBCStmt *stmt,
 
 		ODBCResetStmt(stmt);
 
-		mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames, columntypes, columnlengths, n, tuples);
+		mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames, columntypes, columnlengths, (int) n, tuples);
 
 		for (i = 0; i < n; i++) {
 			for (j = 0; j < NCOLUMNS; j++)

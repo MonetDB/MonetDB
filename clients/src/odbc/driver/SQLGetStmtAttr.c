@@ -114,7 +114,7 @@ SQLGetStmtAttr_(ODBCStmt *stmt,
 			addStmtError(stmt, "24000", NULL, 0);
 			return SQL_ERROR;
 		}
-		*(SQLULEN *) Value = stmt->currentRow;
+		*(SQLULEN *) Value = (SQLULEN) stmt->currentRow;
 		break;
 	case SQL_ATTR_ROW_OPERATION_PTR:
 		return SQLGetDescField_(stmt->ApplRowDescr, 0, SQL_DESC_ARRAY_STATUS_PTR, Value, BufferLength, StringLength);
