@@ -41,7 +41,7 @@
 #include "alg_dag.h"
 #include "oops.h"
 #include "mem.h"
-#include <strings.h>
+#include <string.h>
 
 /* mnemonic column list accessors */
 #include "alg_cl_mnemonic.h"
