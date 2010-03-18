@@ -1182,7 +1182,6 @@ dnl   called earlier then AC_DISABLE_STATIC and AC_ENABLE_SHARED
 dnl To prevent this we take over some of these required macros and call them explicitly.
 
 AC_PROG_INSTALL()
-AC_PROG_LD()
 AC_DISABLE_STATIC()
 AC_ENABLE_SHARED()
 
