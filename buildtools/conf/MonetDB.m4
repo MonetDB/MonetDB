@@ -703,35 +703,6 @@ AC_C_BIGENDIAN()
 
 AM_MONETDB_LINUX_DIST()
 
-dnl MonetDB code requires some POSIX and XOPEN extensions 
-case "$GCC-$CC-$host_os" in
-yes-*-*)
-	case "$host_os" in
-	cygwin*|freebsd*|openbsd*|irix*|darwin*|solaris*)
-		;;
-	*)
-		AC_CHECK_DEFINED(_POSIX_C_SOURCE, [ echo "already defined"; ], [ AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag]) ] )
-		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-		;;
-	esac
-	case "$gcc_ver-$host_os" in
-	[[34]].*-linux-gnulibc1)
-		dnl this is for FreeBSD with linux compat libraries
-		AC_DEFINE(__BSD_VISIBLE, 1, [Compiler flag])
-		;;
-	esac
-	;;
--*icc*-linux*|-*ecc*-linux*|-*pgcc*-linux*)
-	dnl Define the same settings as for gcc, as we use the same
-	dnl header files
-	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
-	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-	;;
-esac
-
-
 dnl --enable-strict
 AC_ARG_ENABLE(strict,
 	AS_HELP_STRING([--enable-strict],
