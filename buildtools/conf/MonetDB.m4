@@ -786,9 +786,8 @@ case "$GCC-$CC-$host_os" in
 	dnl enable XPG6 and POSIX.1-2001.  Python (what else) in particular
 	dnl breaks here.
 	dnl
-	dnl MonetDB common requires XOPEN for popen/pclose in stream.mx and
-	dnl _XOPEN_SOURCE=500 for cmsghdr (fd passing) in Mapi.mx.
-	dnl SUSv3 == XPG6 == POSIX_C_SOURCE=200112L == _XOPEN_SOURCE=600
+	dnl MonetDB common requires XOPEN for popen/pclose in stream.mx
+	dnl SUSv3 == XPG6 == POSIX_C_SOURCE=200112L == XOPEN_SOURCE=600
 	dnl newer OpenSolaris have posix_madvise, enabled by the
 	dnl _XOPEN_SOURCE flag.  Older OpenSolaris (and Solaris) systems
 	dnl do not have posix_madvise, and break with the above defined.
@@ -801,7 +800,6 @@ case "$GCC-$CC-$host_os" in
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 	], [
 		AC_DEFINE(_XPG6, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 500, [Compiler flag])
 	])
 ;;
 yes-*-*)
