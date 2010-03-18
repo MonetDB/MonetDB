@@ -705,37 +705,9 @@ AM_MONETDB_LINUX_DIST()
 
 dnl MonetDB code requires some POSIX and XOPEN extensions 
 case "$GCC-$CC-$host_os" in
-*-*-solaris*)
-	dnl Basically, we introduced a small hell by requiring C99 for the
-	dnl whole of MonetDB on Solaris.  Solaris' headers specify:
-	dnl  It is invalid to compile an XPG3, XPG4, XPG4v2, or XPG5 application
-	dnl  using c99.  The same is true for POSIX.1-1990, POSIX.2-1992, POSIX.1b,
-	dnl  and POSIX.1c applications. Likewise, it is invalid to compile an XPG6
-	dnl  or a POSIX.1-2001 application with anything other than a c99 or later
-	dnl  compiler.  Therefore, we force an error in both cases.
-	dnl Conclusion: if we enable C99 (which we just did), we HAVE to
-	dnl enable XPG6 and POSIX.1-2001.  Python (what else) in particular
-	dnl breaks here.
-	dnl
-	dnl MonetDB common requires XOPEN for popen/pclose in stream.mx
-	dnl SUSv3 == XPG6 == POSIX_C_SOURCE=200112L == XOPEN_SOURCE=600
-	dnl newer OpenSolaris have posix_madvise, enabled by the
-	dnl _XOPEN_SOURCE flag.  Older OpenSolaris (and Solaris) systems
-	dnl do not have posix_madvise, and break with the above defined.
-	dnl
-	dnl Not doing C99 would be really nice, but for now not an option,
-	dnl hence, the only way to get out of this if on older Solaris
-	dnl systems is to set the by system header forbidden to set flag
-	dnl _XPG6
-	AC_CHECK_FUNC([posix_madvise], [
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-	], [
-		AC_DEFINE(_XPG6, 1, [Compiler flag])
-	])
-;;
 yes-*-*)
 	case "$host_os" in
-	cygwin*|freebsd*|openbsd*|irix*|darwin*)
+	cygwin*|freebsd*|openbsd*|irix*|darwin*|solaris*)
 		;;
 	*)
 		AC_CHECK_DEFINED(_POSIX_C_SOURCE, [ echo "already defined"; ], [ AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag]) ] )
@@ -1211,6 +1183,22 @@ AC_SUBST(JAVA_HOME)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java != xno)
 
 ]) dnl AC_DEFUN AM_MONETDB_ANT_JAVA
+
+AC_DEFUN([AM_MONETDB_MSG_CONTROL],[
+dnl What do we need to get the msg_control and msg_controllen fields on
+dnl struct msg (filedescriptor passing)?  In the future this could be a
+dnl check to see if we can find it, such that we can disable it compile
+dnl time if absent.  It looks however, as if it's available everywhere
+dnl we try where UNIX domain sockets also exist.  So we go by the
+dnl following simple implementation for now.
+
+case $host in
+	*-solaris*)
+        dnl Solaris needs this to get msg_control and msg_controllen
+		AC_DEFINE(_XOPEN_SOURCE, 500, [for msg_control and msg_controllen])
+	;;
+esac
+]) dnl AM_MONETDB_MSG_CONTROL
 
 AC_DEFUN([AM_MONETDB_TOOLS],[
 
