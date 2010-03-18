@@ -1,4 +1,5 @@
 #                                               -*- Autoconf -*-
+#                                               vim: ft=config :
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -157,6 +158,7 @@ AC_CHECK_HEADERS([crypt.h pwd.h sys/ioctl.h sys/un.h termios.h])
 AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r popen strcasecmp strncasecmp strtod strtof strtoll strtoull])
 AC_CHECK_DECLS([strtof, strtoll, strtoull])
 
+AM_MONETDB_MSG_CONTROL()
 
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()
