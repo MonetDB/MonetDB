@@ -108,16 +108,14 @@ addRegist( str sch, str tab, str col, int acc, int f_bun, int l_bun ) {
 		reg->partitions = 0;
 		reg->next = catalog;
 		catalog = reg;
+
+		reg->f_bun = GDKmalloc(DCYPARTITIONS*sizeof(int));
+		reg->l_bun = GDKmalloc(DCYPARTITIONS*sizeof(int));
 	}
 
-	if (!reg->f_bun)
-		reg->f_bun = (int*) GDKmalloc(DCYPARTITIONS*sizeof(int));
-	if (!reg->l_bun)
-		reg->l_bun = (int*) GDKmalloc(DCYPARTITIONS*sizeof(int));
-
-	if ( !(reg->partitions%DCYPARTITIONS) ) {
-		reg->f_bun = (int *) GDKrealloc(reg->f_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
-		reg->l_bun = (int *) GDKrealloc(reg->l_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
+	if ( reg->partitions && !(reg->partitions%DCYPARTITIONS) ) {
+		reg->f_bun = GDKrealloc(reg->f_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
+		reg->l_bun = GDKrealloc(reg->l_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
 	}
 
 	reg->f_bun[reg->partitions] = f_bun;
