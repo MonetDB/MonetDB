@@ -39,7 +39,7 @@ The number of overloaded instructions is kept to a minimum.
 #include "mal_interpreter.h"
 
 /*#define DEBUG_DATACYCLOTRON_OPT*/
-/*#define BIND_DATACYCLOTRON_OPT */
+#define BIND_DATACYCLOTRON_OPT
 
 #define SCHEMA_LENG     32 
 #define TABLE_LENG      32 
@@ -201,20 +201,20 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	InstrPtr *old, new, matq;
 	int limit;
 	int (*newArg)[1000];
-	char *used= (char*) GDKzalloc((mb->vtop+100) *sizeof(char));
+	char *used= (char*) GDKzalloc((mb->vtop+1000) *sizeof(char));
 
 #ifdef BIND_DATACYCLOTRON_OPT
-	int *tpes= (int*) GDKmalloc((mb->vtop+100) *sizeof(int));
+	int *tpes= (int*) GDKmalloc((mb->vtop+1000) *sizeof(int));
 #endif
 
-	newArg = GDKmalloc(sizeof(*newArg) * (mb->vtop+100));
+	newArg = GDKmalloc(sizeof(*newArg) * (mb->vtop+1000));
 
 	if ( (used == NULL) && (newArg == NULL))
 		return 0;
 	(void) stk;
 	(void) cntxt;
 
-	regs = (DCYcatalog **) GDKmalloc(sizeof(*regs) * (mb->vtop+100));
+	regs = (DCYcatalog **) GDKmalloc(sizeof(*regs) * (mb->vtop+1000));
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize);
