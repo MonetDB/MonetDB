@@ -1,4 +1,5 @@
 dnl -*- mode: autoconf -*-
+dnl vim: ft=config:
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -88,6 +89,9 @@ AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
+
+dnl src/modules/mal/mal_mapi.mx does UNIX domain socket handling
+AM_MONETDB_MSG_CONTROL()
 
 AM_MONETDB_UTILS()
 
