@@ -430,7 +430,7 @@ def Usage (options) :
          See  %(readme)s
          for details about  %(prog)s.
 """ % {'prog': THISFILE,
-       'readme': os.path.join(GetMonetConfig('monetdb','--source'),'src','testing','README'),
+       'readme': os.path.join(GetMonetConfig('monetdb-testing','--source'),'README'),
        })
     raise
 
