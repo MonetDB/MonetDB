@@ -1,4 +1,5 @@
 #                                               -*- Autoconf -*-
+#                                               vim: ft=config :
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -91,6 +92,9 @@ if test "x$have_monetdb5" != xyes; then
 	AC_MSG_ERROR([MonetDB/SQL requires at least version $req_monetdb5_ver of MonetDB5 (found $MONETDB5_VERSION).])
 fi
 
+dnl src/backends/monet5/merovingian does UNIX domain socket ancillary
+dnl data handling
+AM_MONETDB_MSG_CONTROL()
 
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()
