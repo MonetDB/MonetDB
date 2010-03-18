@@ -1287,10 +1287,10 @@ DFLOWscheduler( DataFlow flow )
 			p = getInstrPtr(flow->mb, fs[i].pc);
 			for( j=p->retc; j<p->argc; j++)
 			if ( getArg(p,j) == oa && DFLOWeligible(flow,fs,i,p,pc)){
-                queued++;
-                DFLOWactivate(flow,fs,i,p);
-                q_enqueue(flow->todo, fs+i);
-            }
+				queued++;
+				DFLOWactivate(flow,fs,i,p);
+				q_enqueue(flow->todo, fs+i);
+			}
 		}
 
 		for(i = pc; i < limit && candidates <  flow->nway ; i++)
