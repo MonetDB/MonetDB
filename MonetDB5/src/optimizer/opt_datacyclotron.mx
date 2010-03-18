@@ -44,6 +44,7 @@ The number of overloaded instructions is kept to a minimum.
 #define SCHEMA_LENG     32 
 #define TABLE_LENG      32 
 #define COLUMN_LENG     32 
+#define DCYPARTITIONS	200
 
 typedef struct DCYCATALOG {
 	char    schema[SCHEMA_LENG],
@@ -51,8 +52,8 @@ typedef struct DCYCATALOG {
                 column[COLUMN_LENG];
 	int 	access;
 	int 	partitions;
-	int 	f_bun[200];
-	int 	l_bun[200];
+	int 	*f_bun;
+	int 	*l_bun;
 	
 	struct DCYCATALOG *next;
 }DCYcatalog;
@@ -109,6 +110,16 @@ addRegist( str sch, str tab, str col, int acc, int f_bun, int l_bun ) {
 		catalog = reg;
 	}
 
+	if (!reg->f_bun)
+		reg->f_bun = (int*) GDKmalloc(DCYPARTITIONS*sizeof(int));
+	if (!reg->l_bun)
+		reg->l_bun = (int*) GDKmalloc(DCYPARTITIONS*sizeof(int));
+
+	if ( !(reg->partitions%DCYPARTITIONS) ) {
+		reg->f_bun = (int *) GDKrealloc(reg->f_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
+		reg->l_bun = (int *) GDKrealloc(reg->l_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
+	}
+
 	reg->f_bun[reg->partitions] = f_bun;
 	reg->l_bun[reg->partitions] = l_bun;
 	reg->partitions++;
@@ -154,7 +165,10 @@ dropRegist( str sch, str tab, str col, int acc ) {
 		prev_reg->next = reg->next;
 	else
 		catalog = reg->next;
-
+	if (reg->f_bun)
+		GDKfree(reg->f_bun);
+	if (reg->l_bun)
+		GDKfree(reg->l_bun);
 	GDKfree(reg);
 
 	return 1;		
