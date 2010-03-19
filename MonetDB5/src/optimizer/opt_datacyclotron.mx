@@ -39,11 +39,12 @@ The number of overloaded instructions is kept to a minimum.
 #include "mal_interpreter.h"
 
 /*#define DEBUG_DATACYCLOTRON_OPT*/
-/*#define BIND_DATACYCLOTRON_OPT */
+#define BIND_DATACYCLOTRON_OPT
 
 #define SCHEMA_LENG     32 
 #define TABLE_LENG      32 
 #define COLUMN_LENG     32 
+#define DCYPARTITIONS	200
 
 typedef struct DCYCATALOG {
 	char    schema[SCHEMA_LENG],
@@ -51,8 +52,8 @@ typedef struct DCYCATALOG {
                 column[COLUMN_LENG];
 	int 	access;
 	int 	partitions;
-	int 	f_bun[200];
-	int 	l_bun[200];
+	int 	*f_bun;
+	int 	*l_bun;
 	
 	struct DCYCATALOG *next;
 }DCYcatalog;
@@ -107,6 +108,14 @@ addRegist( str sch, str tab, str col, int acc, int f_bun, int l_bun ) {
 		reg->partitions = 0;
 		reg->next = catalog;
 		catalog = reg;
+
+		reg->f_bun = GDKmalloc(DCYPARTITIONS*sizeof(int));
+		reg->l_bun = GDKmalloc(DCYPARTITIONS*sizeof(int));
+	}
+
+	if ( reg->partitions && !(reg->partitions%DCYPARTITIONS) ) {
+		reg->f_bun = GDKrealloc(reg->f_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
+		reg->l_bun = GDKrealloc(reg->l_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
 	}
 
 	reg->f_bun[reg->partitions] = f_bun;
@@ -154,7 +163,10 @@ dropRegist( str sch, str tab, str col, int acc ) {
 		prev_reg->next = reg->next;
 	else
 		catalog = reg->next;
-
+	if (reg->f_bun)
+		GDKfree(reg->f_bun);
+	if (reg->l_bun)
+		GDKfree(reg->l_bun);
 	GDKfree(reg);
 
 	return 1;		
@@ -187,20 +199,20 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	InstrPtr *old, new, matq;
 	int limit;
 	int (*newArg)[1000];
-	char *used= (char*) GDKzalloc((mb->vtop+100) *sizeof(char));
+	char *used= (char*) GDKzalloc((mb->vtop+1000) *sizeof(char));
 
 #ifdef BIND_DATACYCLOTRON_OPT
-	int *tpes= (int*) GDKmalloc((mb->vtop+100) *sizeof(int));
+	int *tpes= (int*) GDKmalloc((mb->vtop+1000) *sizeof(int));
 #endif
 
-	newArg = GDKmalloc(sizeof(*newArg) * (mb->vtop+100));
+	newArg = GDKmalloc(sizeof(*newArg) * (mb->vtop+1000));
 
 	if ( (used == NULL) && (newArg == NULL))
 		return 0;
 	(void) stk;
 	(void) cntxt;
 
-	regs = (DCYcatalog **) GDKmalloc(sizeof(*regs) * (mb->vtop+100));
+	regs = (DCYcatalog **) GDKmalloc(sizeof(*regs) * (mb->vtop+1000));
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize);
