@@ -527,8 +527,7 @@ SERVERlistenThread(SOCKET *Sock)
 			struct iovec iov;
 			char buf[1];
 			int rv;
-			int connfd = -1;
-			char ccmsg[CMSG_SPACE(sizeof(connfd))];
+			char ccmsg[CMSG_SPACE(sizeof(int))];
 			struct cmsghdr *cmsg;
 
 			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
@@ -540,7 +539,7 @@ SERVERlistenThread(SOCKET *Sock)
 			}
 
 			/* BEWARE: unix domain sockets have a slightly different
-			 * behaviour initialy than normal sockets,b ecause we can
+			 * behaviour initialy than normal sockets, because we can
 			 * send filedescriptors or credentials with them.  To do so,
 			 * we need to use sendmsg/recvmsg, which operates on a bare
 			 * socket.  Unfortunately we *have* to send something, so it
