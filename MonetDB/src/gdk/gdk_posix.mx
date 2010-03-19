@@ -2276,11 +2276,20 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 	os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&os);
 	memset(&ov, 0, sizeof(ov));
+#if defined(DUMMYSTRUCTNAME) && (defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS))	/* Windows SDK v7.0 */
+	ov.u.s.Offset = (unsigned int) off;
+#if 0
+	ov.u.s.OffsetHigh = off >> 32;
+#else
+	ov.u.s.OffsetHigh = 0;	/* sizeof(off) == 4, i.e. off >> 32 is not possible */
+#endif
+#else
 	ov.Offset = (unsigned int) off;
 #if 0
 	ov.OffsetHigh = off >> 32;
 #else
 	ov.OffsetHigh = 0;	/* sizeof(off) == 4, i.e. off >> 32 is not possible */
+#endif
 #endif
 
 	if (fh == NULL) {
