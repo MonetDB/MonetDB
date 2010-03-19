@@ -715,6 +715,15 @@ using the target type.
 		}
 		@:prepostProcess(s1,k,mb)@
 	}
+	/* the case where we have no rhs */
+	if (p->barrier && p->retc == p->argc)
+	for( k=0; k<p->retc; k++){
+		int tpe = getArgType(mb,p,k);
+		if (findGDKtype(tpe) == TYPE_bat ||
+			findGDKtype(tpe) == TYPE_str ||
+			(!isPolyType(tpe) && tpe< TYPE_any && ATOMstorage(tpe) == TYPE_str))
+			setVarCleanup(mb,getArg(p,k));
+	}
 }
 @-
 Typechecking instructions can be delegated to runtime. In particular, 

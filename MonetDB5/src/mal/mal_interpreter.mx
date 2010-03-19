@@ -1470,9 +1470,11 @@ str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop
 			GDKfree(oldret);
 		} else {
 			if (stk->stk[exceptionVar].vtype == TYPE_str) {
+				str oldret = stk->stk[exceptionVar].val.sval;
 				ret = createScriptException(mb, mb->stop-1, MAL,
 						stk->stk[exceptionVar].val.sval,
 						"Exception not caught");
+				GDKfree(oldret);
 			} else {
 				ret = createScriptException(mb, mb->stop-1, MAL,
 						NULL, "Exception not caught");
@@ -2167,8 +2169,11 @@ str catchKernelException(Client cntxt, str ret){
 }
 @{
 @= exceptionHndlr
-if(cntxt->errbuf && cntxt->errbuf[0] ) 
-	ret = catchKernelException(cntxt, ret);
+if(cntxt->errbuf && cntxt->errbuf[0] ) {
+	str oldret = ret;
+	ret = catchKernelException(cntxt, oldret);
+	if( oldret) GDKfree(oldret);
+}
 
 if( ret != MAL_SUCCEED ) {
 	str msg = 0;
