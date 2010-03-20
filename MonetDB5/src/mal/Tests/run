@@ -8,7 +8,7 @@ MSERVER="valgrind  --leak-check=full --show-reachable=yes --num-callers=20 mserv
 
 echo "Initialize database"
 rm -rf $DBFARM/$DBNAME
-echo 'clients.quit();' | $MSERVER
+#echo 'clients.quit();' | $MSERVER
 
 mkdir -p valgrind
 for f in  `ls tst*.mal`

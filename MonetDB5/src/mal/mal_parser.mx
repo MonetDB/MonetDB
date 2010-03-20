@@ -1353,6 +1353,7 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
 		}
 		nme = idCopy(cntxt,i);
 		curInstr->fcn = getAddress(cntxt->srcFile, cntxt->nspace->name, nme,TRUE);
+		GDKfree(nme);
 		skipSpace(cntxt);
 	}
 	/* block is terminated at the END statement */
