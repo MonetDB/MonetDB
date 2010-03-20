@@ -185,6 +185,7 @@ AUTHinitTables() {
 	bat bid;
 	BAT *b;
 	int isNew = 1;
+	str msg = MAL_SUCCEED;
 
 	/* skip loading if already loaded */
 	if (user != NULL && pass != NULL && scen != NULL)
@@ -244,14 +245,19 @@ AUTHinitTables() {
 
 			BATloop(b, p, q) {
 				tmp = (str)BUNtail(bi, p);
-				rethrow("initTables", tmp,
-						AUTHdecypherValue(&pwd, &tmp));
+				rethrow("initTables", tmp, AUTHdecypherValue(&pwd, &tmp));
 				len = (int) strlen(pwd);
-				rethrow("initTables", tmp,
-						AUTHBackendSum(&sha1pwd, &pwd, &len));
+				msg= AUTHBackendSum(&sha1pwd, &pwd, &len);
 				GDKfree(pwd);
-				rethrow("initTables", tmp,
-						AUTHcypherValue(&pwd, &sha1pwd));
+				if (msg)
+					return msg;
+				pwd = NULL;
+				msg = AUTHcypherValue(&pwd, &sha1pwd);
+				if (msg){
+					if (pwd)
+						GDKfree(pwd);
+					return msg;
+				}
 				BUNins(n, BUNhead(bi, p), pwd, FALSE);
 				GDKfree(sha1pwd);
 				GDKfree(pwd);
@@ -315,9 +321,11 @@ AUTHinitTables() {
 		oid uid;
 		Client c = &mal_clients[0];
 
-		rethrow("initTables", tmp, AUTHBackendSum(&pw,
-					&user /* because user == pass */, &len));
-		rethrow("initTables", tmp, AUTHaddUser(&uid, &c, &user, &pw, &b));
+		rethrow("initTables", tmp, AUTHBackendSum(&pw, &user /* because user == pass */, &len));
+		msg= AUTHaddUser(&uid, &c, &user, &pw, &b);
+		GDKfree(pw);
+		if (msg)
+			return msg;
 		if (uid != 0)
 			throw(MAL, "initTables", INTERNAL_AUTHORIZATION " while they were just created!");
 		AUTHcommit();
@@ -340,7 +348,7 @@ AUTHcheckCredentials(
 		str *algo,
 		str *scenario)
 {
-	str tmp;
+	str tmp, msg= MAL_SUCCEED;
 	str pwd = NULL;
 	str hash = NULL;
 	BAT *b;
@@ -381,7 +389,11 @@ AUTHcheckCredentials(
 	/* decypher the password (we lose the original tmp here) */
 	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, &tmp));
 	/* generate the hash as the client should have done */
-	rethrow("checkCredentials", tmp, AUTHhashPassword(&hash, algo, &pwd, challenge));
+	msg = AUTHhashPassword(&hash, algo, &pwd, challenge);
+	if (msg ){
+		GDKfree(pwd);
+		return msg;
+	}
 	GDKfree(pwd);
 	/* and now we have it, compare it to what was given to us */
 	if (strcmp(*passwd, hash) != 0) {
@@ -599,11 +611,11 @@ AUTHchangeUsername(Client *c, str *olduser, str *newuser)
 str
 AUTHchangePassword(Client *c, str *oldpass, str *passwd) {
 	BUN p;
-	str err;
-	str tmp;
-	str hash;
+	str tmp= NULL;
+	str hash= NULL;
 	oid id;
 	BATiter passi;
+	str msg= MAL_SUCCEED;
 
 	/* precondition checks */
 	if (*oldpass == NULL || strNil(*oldpass))
@@ -620,12 +632,24 @@ AUTHchangePassword(Client *c, str *oldpass, str *passwd) {
 	tmp = BUNtail(passi, p);
 	assert (tmp != NULL);
 	/* decypher the password */
-	rethrow("changePassword", err, AUTHdecypherValue(&hash, &tmp));
-	if (strcmp(hash, *oldpass) != 0)
+	msg= AUTHdecypherValue(&hash, &tmp);
+	if ( msg){
+		GDKfree(hash);
+		return msg;
+	}
+	if (strcmp(hash, *oldpass) != 0){
+		GDKfree(hash);
 		throw(INVCRED, "changePassword", "Access denied");
+	}
 
+	GDKfree(hash);
 	/* cypher the password */
-	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
+	msg= AUTHcypherValue(&hash, passwd);
+	if ( msg){
+		GDKfree(hash);
+		return msg;
+	}
+
 	/* ok, just overwrite the password field for this user */
 	BUNinplace(pass, p, &id, hash, FALSE);
 	GDKfree(hash);
