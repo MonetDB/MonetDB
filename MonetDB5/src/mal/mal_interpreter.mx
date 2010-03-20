@@ -2223,6 +2223,8 @@ all.
 	/* assure correct variable type */
 	if (getVarType(mb,exceptionVar) == TYPE_str){
 		v=  &stk->stk[exceptionVar];
+		if ( v->val.sval)
+			GDKfree(v->val.sval);	/* old exception*/
 		v->vtype = TYPE_str;
 		v->val.sval= ret;
 		v->len= (int)strlen(v->val.sval);
