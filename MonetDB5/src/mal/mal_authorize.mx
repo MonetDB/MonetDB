@@ -310,7 +310,7 @@ AUTHinitTables() {
 		str user = "monetdb";
 		str pw; /* will become the right hash for "monetdb" */
 		int len = (int) strlen(user);
-		bat b = bat_nil;
+		bat b = 0;
 		str tmp;
 		oid uid;
 		Client c = &mal_clients[0];
@@ -472,7 +472,7 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 	useri = bat_iterator(user);
 	id = (oid*)(BUNhead(useri, p));
 
-	if (*scenarios != bat_nil) {
+	if (*scenarios != 0) {
 		b = BATdescriptor(*scenarios);
 		if (b == NULL) {
 			BATundo(user);
@@ -482,18 +482,19 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 		if (b->htype != TYPE_str) {
 			BATundo(user);
 			BATundo(pass);
+			BBPreleaseref(b->batCacheid);
 			throw(ILLARG, "addUser", INTERNAL_BAT_HEAD);
 		}
 
 		/* associate scenarios given in the BAT with the user */
-		if (BATcount(b) > 0) {
+		if (BATcount(b) > 0){
 			BATiter bi = bat_iterator(b);
-
 			BATloop(b, p, q) {
 				/* needs force, as sql makes a view over it */
 				BUNins(scen, id, BUNhead(bi, p), TRUE);
 			}
 		}
+		BBPreleaseref(b->batCacheid);
 	}
 
 	/* make the stuff persistent */
@@ -843,7 +844,7 @@ AUTHgetUsers(BAT **ret, Client *c, bat *scenarios) {
 
 	rethrow("getUsers", tmp, AUTHrequireAdmin(c));
 
-	if (*scenarios != bat_nil) {
+	if (*scenarios != 0) {
 		b = BATdescriptor(*scenarios);
 		if (b == NULL)
 			throw(ILLARG, "getUsers", "invalid BAT!");
