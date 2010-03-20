@@ -486,11 +486,9 @@ comment "Return hex string representation of the MD5 hash of the given string";
 clients_export str CLTmd5sum(str *ret, str *pw);
 @c
 str CLTmd5sum(str *ret, str *pw) {
-	str tmp;
 	int len = (int) strlen(*pw);
 	
-	rethrow("md5sum", tmp, AUTHMD5Sum(ret, pw, &len));
-	return(MAL_SUCCEED);
+	return AUTHMD5Sum(ret, pw, &len);
 }
 
 @mal
@@ -501,11 +499,9 @@ comment "Return hex string representation of the SHA-1 hash of the given string"
 clients_export str CLTsha1sum(str *ret, str *pw);
 @c
 str CLTsha1sum(str *ret, str *pw) {
-	str tmp;
 	int len = (int) strlen(*pw);
 	
-	rethrow("sha1sum", tmp, AUTHSHA1Sum(ret, pw, &len));
-	return(MAL_SUCCEED);
+	return AUTHSHA1Sum(ret, pw, &len);
 }
 
 @mal
@@ -516,11 +512,9 @@ comment "Return hex string representation of the RIPEMD160 hash of the given str
 clients_export str CLTripemd160sum(str *ret, str *pw);
 @c
 str CLTripemd160sum(str *ret, str *pw) {
-	str tmp;
 	int len = (int) strlen(*pw);
 	
-	rethrow("ripemd160sum", tmp, AUTHRIPEMD160Sum(ret, pw, &len));
-	return(MAL_SUCCEED);
+	return AUTHRIPEMD160Sum(ret, pw, &len);
 }
 
 @mal
@@ -531,11 +525,9 @@ comment "Return hex string representation of the SHA-2 hash with bits of the giv
 clients_export str CLTsha2sum(str *ret, str *pw, int *bits);
 @c
 str CLTsha2sum(str *ret, str *pw, int *bits) {
-	str tmp;
 	int len = (int) strlen(*pw);
 	
-	rethrow("sha2sum", tmp, AUTHSHA2Sum(ret, pw, &len, bits));
-	return(MAL_SUCCEED);
+	return AUTHSHA2Sum(ret, pw, &len, bits);
 }
 
 @mal
@@ -546,11 +538,9 @@ comment "Return hex string representation of the currently used hash of the give
 clients_export str CLTbackendsum(str *ret, str *pw);
 @c
 str CLTbackendsum(str *ret, str *pw) {
-	str tmp;
 	int len = (int) strlen(*pw);
 	
-	rethrow("sha2sum", tmp, AUTHBackendSum(ret, pw, &len));
-	return(MAL_SUCCEED);
+	return AUTHBackendSum(ret, pw, &len);
 }
 
 @mal
@@ -565,12 +555,10 @@ str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
 	str *pw = (str *)getArgReference(stk, pci, 2);
 	bat *sc = (bat *)getArgReference(stk, pci, 3);
-	str tmp;
 
 	(void)mb;
 	
-	rethrow("addUser", tmp, AUTHaddUser(ret, &cntxt, usr, pw, sc));
-	return(MAL_SUCCEED);
+	return AUTHaddUser(ret, &cntxt, usr, pw, sc);
 }
 
 @mal
@@ -581,14 +569,12 @@ comment "Remove the given user from the system";
 clients_export str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str tmp;
 	str *usr;
 	(void)mb;
 
 	usr = (str *)getArgReference(stk, pci, 1);
 
-	rethrow("removeUser", tmp, AUTHremoveUser(&cntxt, usr));
-	return(MAL_SUCCEED);
+	return AUTHremoveUser(&cntxt, usr);
 }
 
 @mal
@@ -600,11 +586,9 @@ clients_export str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 @c
 str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = (str *)getArgReference(stk, pci, 0);
-	str tmp;
 	(void)mb;
 
-	rethrow("getUsername", tmp, AUTHgetUsername(ret, &cntxt));
-	return(MAL_SUCCEED);
+	return AUTHgetUsername(ret, &cntxt);
 }
 
 @mal
@@ -617,12 +601,10 @@ clients_export str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = (str *)getArgReference(stk, pci, 0);
 	str *user = (str *)getArgReference(stk, pci, 1);
-	str tmp;
 
 	(void)mb;
 
-	rethrow("getPasswordHash", tmp, AUTHgetPasswordHash(ret, &cntxt, user));
-	return(MAL_SUCCEED);
+	return AUTHgetPasswordHash(ret, &cntxt, user);
 }
 
 @mal
@@ -635,12 +617,10 @@ clients_export str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *old = (str *)getArgReference(stk, pci, 1);
 	str *new = (str *)getArgReference(stk, pci, 2);
-	str tmp;
 
 	(void)mb;
 
-	rethrow("changeUsername", tmp, AUTHchangeUsername(&cntxt, old, new));
-	return(MAL_SUCCEED);
+	return AUTHchangeUsername(&cntxt, old, new);
 }
 
 @mal
@@ -653,12 +633,10 @@ clients_export str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *old = (str *)getArgReference(stk, pci, 1);
 	str *new = (str *)getArgReference(stk, pci, 2);
-	str tmp;
 
 	(void)mb;
 
-	rethrow("changePassword", tmp, AUTHchangePassword(&cntxt, old, new));
-	return(MAL_SUCCEED);
+	return AUTHchangePassword(&cntxt, old, new);
 }
 
 @mal
@@ -671,12 +649,10 @@ clients_export str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
 	str *new = (str *)getArgReference(stk, pci, 2);
-	str tmp;
 
 	(void)mb;
 
-	rethrow("setPassword", tmp, AUTHsetPassword(&cntxt, usr, new));
-	return(MAL_SUCCEED);
+	return AUTHsetPassword(&cntxt, usr, new);
 }
 
 @mal
@@ -690,21 +666,20 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	str *usr = (str *)getArgReference(stk, pci, 1);
 	str *pw = (str *)getArgReference(stk, pci, 2);
 	str *sc = (str *)getArgReference(stk, pci, 3);
-	str tmp;
 	str ch = "";
 	str algo = "SHA1";
 	oid id;
-	str pwd;
+	str pwd,msg;
 	int len = (int) strlen(*pw);
 
 	(void)mb;
 
-	rethrow("checkPermission", tmp,
-			AUTHSHA1Sum(&pwd, pw, &len));
-	rethrow("checkPermission", tmp,
-			AUTHcheckCredentials(&id, &cntxt, usr, &pwd, &ch, &algo, sc));
-	GDKfree(pwd);
-	return(MAL_SUCCEED);
+	msg =AUTHSHA1Sum(&pwd, pw, &len);
+	if (msg == MAL_SUCCEED ) {
+		msg =AUTHcheckCredentials(&id, &cntxt, usr, &pwd, &ch, &algo, sc);
+		GDKfree(pwd);
+	}
+	return msg;
 }
 
 @mal
@@ -717,12 +692,10 @@ clients_export str CLTaddScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 str CLTaddScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
 	str *sc = (str *)getArgReference(stk, pci, 2);
-	str tmp;
 
 	(void)mb;
 
-	rethrow("addScenario", tmp, AUTHaddScenario(&cntxt, usr, sc));
-	return(MAL_SUCCEED);
+	return AUTHaddScenario(&cntxt, usr, sc);
 }
 
 @mal
@@ -735,12 +708,10 @@ clients_export str CLTremoveScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 str CLTremoveScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
 	str *sc = (str *)getArgReference(stk, pci, 2);
-	str tmp;
 
 	(void)mb;
 
-	rethrow("removeScenario", tmp, AUTHremoveScenario(&cntxt, usr, sc));
-	return(MAL_SUCCEED);
+	return  AUTHremoveScenario(&cntxt, usr, sc);
 }
 
 @mal
@@ -758,7 +729,9 @@ str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	rethrow("getUsers", tmp, AUTHgetUsers(&r, &cntxt, scens));
+	tmp= AUTHgetUsers(&r, &cntxt, scens);
+	if( tmp)
+		return tmp;
 	BBPkeepref(*ret = r->batCacheid);
 	return(MAL_SUCCEED);
 }
