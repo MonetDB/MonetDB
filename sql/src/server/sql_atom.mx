@@ -277,7 +277,7 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 			VALset(&a->data, a->data.vtype, p);
 			a->destroy = 1;
 
-			if (p && ATOMstorage(a->data.vtype) < TYPE_str)
+			if (p && ATOMextern(a->data.vtype) == 0)
 				GDKfree(p);
 			/*_DELETE(val);*/
 		}
