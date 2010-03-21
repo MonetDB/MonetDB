@@ -454,7 +454,7 @@ my_pcre_free(void *blk)
 	size_t *sz = (size_t *) blk;
 
 	sz -= 1;
-	GDKfree((void *) sz);
+	GDKfree(sz);
 }
 
 str
