@@ -261,8 +261,7 @@ str CMDconvert_str_@1(int *ret, int *bid)
 		ATOMput(TYPE_@1, bn->T->vheap, Tloc(bn, r), v);
 		r++;
 	}
-	if (ATOMextern(TYPE_@1))
-		GDKfree(v);
+	GDKfree(v);
 	BATsetcount(bn, BATcount(b));
 bunins_failed:
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
