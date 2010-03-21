@@ -1789,6 +1789,7 @@ convertConstant(int type, ValPtr vr)
 		}
 		if ( strncmp(vr->val.sval,"nil",3)!= 0 &&
                 ATOMcmp(type, vr, ATOMnilptr(type)) ==0){
+			GDKfree(d);
 			VALinit(vr, type, ATOMnilptr(type));
 			throw(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 		}
