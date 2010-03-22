@@ -130,19 +130,20 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 			return(newErr("cannot connect: %s", strerror(errno)));
 
 		/* send first byte, nothing special to happen */
-		msg.msg_name = (struct sockaddr*)&server;
-		msg.msg_namelen = sizeof(server);
+		msg.msg_name = NULL;
+		msg.msg_namelen = 0;
 		*buf = '1'; /* pass fd */
 		vec.iov_base = buf;
 		vec.iov_len = 1;
 		msg.msg_iov = &vec;
 		msg.msg_iovlen = 1;
+		msg.msg_control = ccmsg;
+		msg.msg_controllen = sizeof(ccmsg);
 		cmsg = CMSG_FIRSTHDR(&msg);
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_RIGHTS;
 		cmsg->cmsg_len = CMSG_LEN(sizeof(psock));
 		*(int *)CMSG_DATA(cmsg) = psock;
-		msg.msg_control = ccmsg;
 		msg.msg_controllen = cmsg->cmsg_len;
 		msg.msg_flags = 0;
 
