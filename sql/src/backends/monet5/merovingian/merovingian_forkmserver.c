@@ -132,7 +132,7 @@ forkMserver(str database, sabdb** stats, int force)
 	/* Since we ask for a specific database, it should be either there
 	 * or not there.  Since we checked the latter case above, it should
 	 * just be there, and be the right one.  There also shouldn't be
-	 * more than one entries in the list, so we assume we have the right
+	 * more than one entry in the list, so we assume we have the right
 	 * one here. */
 
 	/* retrieve uplog information to print a short conclusion */
