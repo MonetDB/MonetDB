@@ -24,7 +24,7 @@ W_CFLAGS = -WX
 
 pkg = MonetDB
 CONFIG_H=monetdb_config.h
-VERSION=1.36.2
+VERSION=1.36.3
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

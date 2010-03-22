@@ -23,7 +23,7 @@ W_CFLAGS = -WX
 RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
 !INCLUDE $(RULESMSC)
 
-VERSION = 2.36.2
+VERSION = 2.36.3
 #         ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
