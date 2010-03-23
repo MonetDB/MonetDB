@@ -54,17 +54,16 @@ gdk_dbname=demo
 
 # valgrind issues:
 # for 32 bit systems it tries claim 3G of (virtual) memory
-# set the alloca map to "no" to run mserver with valgrind;
+# set the alloc map to "no" to run mserver with valgrind;
 # also, you need to tell valgrind to use 8-byte alignment, hence:
 # "valgrind --alignment=8 mserver --set gdk_alloc_map=no ..."
+# By default this behaviour is enabled, but should be better disabled
+# for normal use, hence:
 gdk_alloc_map=no
-
-# the kernel can be used in embedded situations (don't set this yourself)
-gdk_embedded=no
 
 # You can enable debug for specific parts.  By default debug is
 # switched off.
-gdk_debug=0
+#gdk_debug=0
 # possible values: (can be a combination of)
 #       1 = thread-specific debug output
 #       2 = CHECKMASK    = property enforcing on new BATs
