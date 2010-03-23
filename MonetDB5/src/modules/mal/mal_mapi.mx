@@ -665,8 +665,9 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	MT_Id pid, *pidp = &pid;
 	int port;
 	int maxusers;
-	char msg[512], *cmd, *usockfile, host[512];
+	char *cmd, *usockfile;
 #ifdef DEBUG_SERVER
+	char msg[512], host[512];
 	Client cntxt= mal_clients;
 #endif
 
@@ -784,9 +785,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		GDKfree(psock);
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED " Starting thread failed");
 	} 
-	gethostname(host, (int) 512);
-	(void) msg;
 #ifdef DEBUG_SERVER
+	gethostname(host, (int) 512);
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
 	stream_printf(cntxt->fdout, "%s", msg);
 #endif
