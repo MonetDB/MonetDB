@@ -1483,7 +1483,7 @@ topn_limit( sql_rel *rel )
 		sql_exp *limit = rel->exps->h->data;
 		atom *a = limit->l;
 
-		return a->data.val.lval;
+		return a->data.val.wval;
 	}
 	return -1;
 }
@@ -1497,7 +1497,7 @@ topn_offset( sql_rel *rel )
 		sql_exp *offset = rel->exps->h->next->data;
 		atom *a = offset->l;
 
-		o = a->data.val.lval;
+		o = a->data.val.wval;
 		if (o <= 0)
 			o = 0;
 	}
@@ -1525,7 +1525,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	wrd l = -1;
 
 	if (topn) {
-		int o = topn_offset(topn);
+		wrd o = topn_offset(topn);
 		l = topn_limit(topn);
 		if (l < 0) /* for now only handle topn 
 				including limit, ie not just offset */
@@ -1930,7 +1930,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *limit = NULL, *p, *j;
-		int lmt = l;
+		wrd lmt = l;
 
 		if (l < 0) {
 			l = o;

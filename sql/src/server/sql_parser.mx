@@ -259,6 +259,7 @@ extern int sqlparse(void *);
 %pure_parser
 %union {
 	int		i_val,bval;
+	wrd		w_val;
 	lng		l_val,operation;
 	double		fval;
 	char *		sval;
@@ -596,13 +597,18 @@ int yydebug=1;
 	XML_content_option
 	XML_whitespace_option
 
+%type <w_val>
+	wrdval
+	poswrd
+	nonzerowrd
+	opt_limit
+	opt_offset
+
 %type <l_val>
 	opt_start
 	lngval
 	poslng
 	nonzerolng
-	opt_limit
-	opt_offset
 	opt_increment
 	opt_min
 	opt_max
@@ -3134,12 +3140,12 @@ opt_order_by_clause:
 
 opt_limit:
     /* empty */ 			{ $$ = -1; }
- |  LIMIT nonzerolng			{ $$ = $2; }
+ |  LIMIT nonzerowrd			{ $$ = $2; }
  ;
 
 opt_offset:
 	/* empty */			{ $$ = -1; }
- |  OFFSET poslng			{ $$ = $2; }
+ |  OFFSET poswrd			{ $$ = $2; }
  ;
 
 sort_specification_list:
@@ -4291,8 +4297,29 @@ nonzerolng:
 		}
 	;
 
+nonzerowrd:
+	wrdval
+		{ $$ = $1;
+		  if ($$ <= 0) {
+			$$ = -1;
+			yyerror("Positive value greater than 0 expected");
+			YYABORT;
+		  }
+		}
+	;
+
 poslng:
 	lngval 	{ $$ = $1;
+		  if ($$ < 0) {
+			$$ = -1;
+			yyerror("Positive value expected");
+			YYABORT;
+		  }
+		}
+	;
+
+poswrd:
+	wrdval  { $$ = $1;
 		  if ($$ < 0) {
 			$$ = -1;
 			yyerror("Positive value expected");
@@ -4582,6 +4609,16 @@ name_commalist:
 
 lngval:
 	sqlINT	{ $$ = strtoll($1,NULL,10); }
+;
+
+wrdval:
+	sqlINT  {
+#if SIZEOF_WRD == SIZEOF_INT
+		  $$ = strtol($1,NULL,10);
+#else /* SIZEOF_WRD == SIZEOF_LNG a*/
+		  $$ = strtoll($1,NULL,10);
+#endif
+		}
 ;
 
 intval:

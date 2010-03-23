@@ -4553,9 +4553,9 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	if (sn->limit > 0 || sn->offset > 0) {
 		list *exps = new_exp_list();
 
-		append(exps, exp_atom_lng(sn->limit));
+		append(exps, exp_atom_wrd(sn->limit));
 		if (sn->offset > 0)
-			append(exps, exp_atom_lng(sn->offset));
+			append(exps, exp_atom_wrd(sn->offset));
 		rel = rel_topn(rel, exps);
 	}
 	return rel;
