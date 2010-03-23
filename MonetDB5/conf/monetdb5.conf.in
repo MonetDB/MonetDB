@@ -219,7 +219,6 @@ mero_controlport=50001
 # MAL section
 # Monet Virtual Machine
 #======================
-mal_init=@libdir@@DIRSEP@MonetDB5/mal_init.mal
 mal_listing = 2 
 #    1 = List the original input
 #    2 = List the MAL instruction
