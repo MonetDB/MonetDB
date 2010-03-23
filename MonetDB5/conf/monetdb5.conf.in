@@ -225,9 +225,9 @@ mal_listing = 2
 #    2 = List the MAL instruction
 #    4 = List the MAL type information
 #    8 = List the MAL UDF type
-#    16 = List the MAL properties
-#    32 = List the hidden details
-#    64 = List the bat tuple count
+#   16 = List the MAL properties
+#   32 = List the hidden details
+#   64 = List the bat tuple count
 
 # Monet Application Interface Section
 #====================================
@@ -262,13 +262,16 @@ sql_optimizer=default_pipe
 # The minimal pipeline necessary by the server to operate correctly
 minimal_pipe=inline,remap,deadcode,multiplex,garbageCollector
 
-# The default pipe line contains as of Feb2010 mitosis-mergetable-reorder, aimed at large tables and improved access locality
+# The default pipe line contains as of Feb2010
+# mitosis-mergetable-reorder, aimed at large tables and improved access
+# locality
 default_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
-# the default pipeline used in the November 2009 release
+# The default pipeline used in the November 2009 release
 nov2009_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
-# experimental pipelines stressing various components
+# Experimental pipelines stressing various components under development
+# Do not use any of these pipelines in production settings!
 
 # Replication
 replication_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
@@ -290,15 +293,14 @@ datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcod
 # platforms only)
 octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
-#
-#The default + datacyclotron
+# The default + datacyclotron
 datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
-#
-# the default + derivePath
+
+# The default + derivePath
 derive_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,derivePath,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-#
-#the default + dictionary
+
+# The default + dictionary
 dictionary_pipe=inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-#
-#the default + compression
+
+# The default + compression
 compression_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
