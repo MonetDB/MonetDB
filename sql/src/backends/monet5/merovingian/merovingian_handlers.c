@@ -25,7 +25,7 @@ static char *sigabrt = "SIGABRT";
 static char *sigsegv = "SIGSEGV";
 static char *sigkill = "SIGKILL";
 static char *
-sig2str(int sig)
+sigtostr(int sig)
 {
 	switch (sig) {
 		case SIGINT:
@@ -54,7 +54,7 @@ sig2str(int sig)
 static void
 handler(int sig)
 {
-	char *signame = sig2str(sig);
+	char *signame = sigtostr(sig);
 	if (signame == NULL) {
 		Mfprintf(stdout, "caught signal %d, starting shutdown sequence\n", sig);
 	} else {
@@ -183,7 +183,7 @@ childhandler(int sig, siginfo_t *si, void *unused)
 						"exit status %d\n", p->dbname,
 						(long long int)p->pid, si->si_status);
 			} else if (si->si_code == CLD_KILLED) {
-				char *sigstr = sig2str(si->si_status);
+				char *sigstr = sigtostr(si->si_status);
 				if (sigstr == NULL) {
 					sigstr = alloca(sizeof(char) * 8);
 					snprintf(sigstr, 8, "%d", si->si_status);
