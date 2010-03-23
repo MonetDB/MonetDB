@@ -2300,7 +2300,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr = '%s "--dbinit=%s module(mapi); mil_start();"' % (Srvr, DBINIT)
             if SERVER == "MAL":
                 lang="mal"
-                Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
+                Srvr = '%s --set mal_listing=2 "--dbinit=%s"' % (Srvr, DBINIT)
             if SERVER == "SQL":
                 lang="sql"
                 if par['M5']:
