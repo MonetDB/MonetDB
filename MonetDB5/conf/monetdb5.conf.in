@@ -111,6 +111,19 @@ gdk_debug=0
 # --xproperties (XPROPMASK )
 # --performance (JOINPROPMASK | DEADBEEFMASK)
 # --optimizers (OPTMASK)
+#
+# You can enable the server listing the parsed MAL program for any
+# script parsed on the command line.  By default this is disabled.
+#mal_listing = 0 
+# Legal values for mal_listing are:
+#    0 = Disable
+#    1 = List the original input
+#    2 = List the MAL instruction
+#    4 = List the MAL type information
+#    8 = List the MAL UDF type
+#   16 = List the MAL properties
+#   32 = List the hidden details
+#   64 = List the bat tuple count
 
 
 # Monet Section
@@ -215,18 +228,6 @@ mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
 # opened for some reason, Merovingian will not start.
 mero_controlport=50001
 
-
-# MAL section
-# Monet Virtual Machine
-#======================
-mal_listing = 2 
-#    1 = List the original input
-#    2 = List the MAL instruction
-#    4 = List the MAL type information
-#    8 = List the MAL UDF type
-#   16 = List the MAL properties
-#   32 = List the hidden details
-#   64 = List the bat tuple count
 
 # Monet Application Interface Section
 #====================================
