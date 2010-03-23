@@ -17,6 +17,36 @@
  * All Rights Reserved.
  */
 
+static char *sigint  = "SIGINT";
+static char *sigterm = "SIGTERM";
+static char *sigquit = "SIGQUIT";
+static char *sighup  = "SIGHUP";
+static char *sigabrt = "SIGABRT";
+static char *sigsegv = "SIGSEGV";
+static char *sigkill = "SIGKILL";
+static char *
+sig2str(int sig)
+{
+	switch (sig) {
+		case SIGINT:
+			return(sigint);
+		case SIGTERM:
+			return(sigterm);
+		case SIGQUIT:
+			return(sigquit);
+		case SIGHUP:
+			return(sighup);
+		case SIGABRT:
+			return(sigabrt);
+		case SIGSEGV:
+			return(sigsegv);
+		case SIGKILL:
+			return(sigkill);
+		default:
+			return(NULL);
+	}
+}
+
 /**
  * Handler for SIGINT, SIGTERM and SIGQUIT.  This starts a graceful
  * shutdown of merovingian.
@@ -24,21 +54,12 @@
 static void
 handler(int sig)
 {
-	char *signame = NULL;
-	switch (sig) {
-		case SIGINT:
-			signame = "SIGINT";
-		break;
-		case SIGTERM:
-			signame = "SIGTERM";
-		break;
-		case SIGQUIT:
-			signame = "SIGQUIT";
-		break;
-		default:
-			assert(0);
+	char *signame = sig2str(sig);
+	if (signame == NULL) {
+		Mfprintf(stdout, "caught signal %d, starting shutdown sequence\n", sig);
+	} else {
+		Mfprintf(stdout, "caught %s, starting shutdown sequence\n", signame);
 	}
-	Mfprintf(stdout, "caught %s, starting shutdown sequence\n", signame);
 	_mero_keep_listening = 0;
 }
 
@@ -162,9 +183,14 @@ childhandler(int sig, siginfo_t *si, void *unused)
 						"exit status %d\n", p->dbname,
 						(long long int)p->pid, si->si_status);
 			} else if (si->si_code == CLD_KILLED) {
+				char *sigstr = sig2str(si->si_status);
+				if (sigstr == NULL) {
+					sigstr = alloca(sizeof(char) * 8);
+					snprintf(sigstr, 8, "%d", si->si_status);
+				}
 				Mfprintf(stdout, "database '%s' (%lld) was killed by signal "
-						"%d\n", p->dbname,
-						(long long int)p->pid, si->si_status);
+						"%s\n", p->dbname,
+						(long long int)p->pid, sigstr);
 			} else if (si->si_code == CLD_DUMPED) {
 				Mfprintf(stdout, "database '%s' (%lld) has crashed "
 						"(dumped core)\n", p->dbname,
