@@ -110,7 +110,7 @@ typedef lng ptrdiff_t;
 #elif defined(__MINGW32__)
 #define SZFMT "%u"
 #define SSZFMT "%ld"
-#elif defined(__APPLE_CC__) /* && __GNUC__ <= 3 */
+#elif defined(__APPLE_CC__) && __GNUC__ <= 3
 #define SZFMT "%zu"
 	#if SIZEOF_SIZE_T == SIZEOF_INT
 	#define SSZFMT "%d"
