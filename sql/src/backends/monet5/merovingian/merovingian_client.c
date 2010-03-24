@@ -18,7 +18,7 @@
  */
 
 static err
-handleClient(int sock)
+handleClient(int sock, char isusock)
 {
 	stream *fdin, *fout;
 	str buf = alloca(sizeof(char) * 8096);
@@ -222,7 +222,9 @@ handleClient(int sock)
 		return(e);
 	}
 
-	if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
+	if (isusock) {
+		host = "(local)";
+	} else if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
 		Mfprintf(stderr, "couldn't get peername of client: %s\n",
 				strerror(errno));
 		host = "(unknown)";
@@ -298,7 +300,7 @@ handleClient(int sock)
 		stream_flush(fout);
 
 		/* wait for input, or disconnect in a proxy runner */
-		if ((e = startProxy(fdin, fout,
+		if ((e = startProxy(sock, fdin, fout,
 						redirs[0].conns->val, host)) != NO_ERR)
 		{
 			/* we need to let the client login in order not to violate
@@ -321,7 +323,7 @@ handleClient(int sock)
 }
 
 static str
-acceptConnections(int sock)
+acceptConnections(int sock, int usock)
 {
 	str msg;
 	int retval;
@@ -333,8 +335,10 @@ acceptConnections(int sock)
 		/* handle socket connections */
 		FD_ZERO(&fds);
 		FD_SET(sock, &fds);
+		FD_SET(usock, &fds);
 
-		retval = select(sock + 1, &fds, NULL, NULL, NULL);
+		retval = select((sock > usock ? sock : usock) + 1,
+				&fds, NULL, NULL, NULL);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -349,7 +353,7 @@ acceptConnections(int sock)
 			continue;
 		}
 		if (FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
+			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *) 0)) < 0) {
 				if (_mero_keep_listening == 0)
 					break;
 				if (errno != EINTR) {
@@ -358,9 +362,72 @@ acceptConnections(int sock)
 				}
 				continue;
 			}
+		} else if (FD_ISSET(usock, &fds)) {
+			struct msghdr msgh;
+			struct iovec iov;
+			char buf[1];
+			int rv;
+			char ccmsg[CMSG_SPACE(sizeof(int))];
+
+			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) < 0) {
+				if (_mero_keep_listening == 0)
+					break;
+				if (errno != EINTR) {
+					msg = strerror(errno);
+					goto error;
+				}
+				continue;
+			}
+
+			/* BEWARE: unix domain sockets have a slightly different
+			 * behaviour initialy than normal sockets, because we can
+			 * send filedescriptors or credentials with them.  To do so,
+			 * we need to use sendmsg/recvmsg, which operates on a bare
+			 * socket.  Unfortunately we *have* to send something, so it
+			 * is one byte that can optionally carry the ancillary data.
+			 * This byte is at this moment defined to contain a character:
+			 *  '0' - there is no ancillary data
+			 *  '1' - ancillary data for passing a file descriptor
+			 * The future may introduce a state for passing credentials.
+			 * Any unknown character must be interpreted as some unknown
+			 * action, and hence not supported by the server.
+			 * Since there is no reason why one would like to pass
+			 * descriptors to Merovingian, this is not implemented here. */
+
+			iov.iov_base = buf;
+			iov.iov_len = 1;
+
+			msgh.msg_name = 0;
+			msgh.msg_namelen = 0;
+			msgh.msg_iov = &iov;
+			msgh.msg_iovlen = 1;
+			msgh.msg_control = ccmsg;
+			msgh.msg_controllen = sizeof(ccmsg);
+
+			rv = recvmsg(msgsock, &msgh, 0);
+			if (rv == -1) {
+				close(msgsock);
+				continue;
+			}
+
+			switch (*buf) {
+				case '0':
+					/* nothing special, nothing to do */
+				break;
+				case '1':
+					/* filedescriptor, no way */
+					close(msgsock);
+					Mfprintf(stderr, "client error: fd passing not supported\n");
+				continue;
+				default:
+					/* some unknown state */
+					close(msgsock);
+					Mfprintf(stderr, "client error: unknown initial byte\n");
+				continue;
+			}	
 		} else
 			continue;
-		e = handleClient(msgsock);
+		e = handleClient(msgsock, FD_ISSET(usock, &fds));
 		if (e != NO_ERR) {
 			Mfprintf(stderr, "client error: %s\n", getErrMsg(e));
 			freeErr(e);

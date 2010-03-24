@@ -426,6 +426,7 @@ main(int argc, char *argv[])
 	str p, prefix;
 	FILE *cnf = NULL, *pidfile = NULL;
 	char buf[1024];
+	char bufu[1024];
 	sabdb* stats = NULL;
 	dpair d;
 	int pfd[2];
@@ -437,6 +438,7 @@ main(int argc, char *argv[])
 	int usock = -1;
 	int unsock = -1;
 	int csock = -1;
+	int socku = -1;
 	char doproxy = 1;
 	unsigned short discoveryport;
 	struct stat sb;
@@ -896,6 +898,8 @@ main(int argc, char *argv[])
 	/* set up control channel path */
 	snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
 	unlink(buf);
+	snprintf(bufu, 1024, "%s/mapi_socket", dbfarm);
+	unlink(bufu);
 	GDKfree(dbfarm);
 
 	/* open up connections */
@@ -903,6 +907,7 @@ main(int argc, char *argv[])
 			(e = openConnectionTCP(&sock, _mero_port, stdout)) == NO_ERR &&
 			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
 			(e = openConnectionUNIX(&unsock, buf)) == NO_ERR &&
+			(e = openConnectionUNIX(&socku, bufu)) == NO_ERR &&
 			(_mero_controlport == 0 || (e = openConnectionTCP(&csock, _mero_controlport, _mero_ctlout)) == NO_ERR)
 	   )
 	{
@@ -961,7 +966,7 @@ main(int argc, char *argv[])
 		}
 
 		/* handle external connections main loop */
-		e = acceptConnections(sock);
+		e = acceptConnections(sock, socku);
 
 		/* wait for the control runner and discovery thread to have
 		 * finished announcing they're going down */
@@ -977,6 +982,7 @@ main(int argc, char *argv[])
 
 	/* control channel is already closed at this point */
 	unlink(buf);
+	unlink(bufu);
 
 	if (e != NO_ERR) {
 		/* console */

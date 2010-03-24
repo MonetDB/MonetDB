@@ -1,6 +1,12 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  24 Mar 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c,
+  merovingian_client.c:
+  Implemented UNIX domain socket listener for Merovingian, found as
+  mapi_socket in the dbfarm.  Client connections can be made over it
+  like normal TCP connections.
+
   17 Mar 2010; Fabian Groffen <fabian@cwi.nl> merovingian_proxy.c:
   When a proxy connection is made to a local UNIX domain socket, pass
   on the filedescriptor instead of proxying.
