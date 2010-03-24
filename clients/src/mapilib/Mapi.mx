@@ -2295,7 +2295,6 @@ connect_to_server(Mapi mid)
 
 #ifdef HAVE_SYS_UN_H
 	if (mid->hostname && mid->hostname[0] == '/') {
-		struct sockaddr_un server;
 		struct msghdr msg;
 		struct iovec vec;
 		char buf[1];
@@ -2323,8 +2322,8 @@ connect_to_server(Mapi mid)
 		}
 
 		/* send first byte, nothing special to happen */
-		msg.msg_name = (struct sockaddr*)&server;
-		msg.msg_namelen = sizeof(server);
+		msg.msg_name = NULL;
+		msg.msg_namelen = 0;
 		*buf = '0'; /* normal */
 		vec.iov_base = buf;
 		vec.iov_len = 1;
