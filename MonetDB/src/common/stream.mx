@@ -1715,12 +1715,6 @@ socket_open(SOCKET sock, const char *name)
 	return s;
 }
 
-SOCKET socket_getsock(stream *s) {
-	if (s->read != socket_read)
-		return 0;
-	return s->stream_data.s;
-}
-
 stream *
 socket_rstream(SOCKET sock, const char *name)
 {
