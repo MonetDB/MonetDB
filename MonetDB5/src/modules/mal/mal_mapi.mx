@@ -466,8 +466,12 @@ SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
 	char *cmd = threadcommand;
+	int retval;
+	struct timeval tv;
+	fd_set fds;
 	SOCKET sock = INVALID_SOCKET;
 	SOCKET usock = INVALID_SOCKET;
+	SOCKET msgsock = INVALID_SOCKET;
 
 	if (*Sock) {
 		sock = Sock[0];
@@ -479,11 +483,6 @@ SERVERlistenThread(SOCKET *Sock)
 		listener[lastlistener++] = MT_getpid();
 
 	do {
-		int retval;
-		struct timeval tv;
-		fd_set fds;
-		SOCKET msgsock;
-
 		FD_ZERO(&fds);
 		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);
