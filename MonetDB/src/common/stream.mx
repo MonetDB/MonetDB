@@ -1651,8 +1651,7 @@ static stream *
 socket_open(SOCKET sock, const char *name)
 {
 	stream *s;
-	int domain;
-	socklen_t len;
+	int domain = 0;
 
 	if ((s = create_stream(name)) == NULL)
 		return NULL;
@@ -1665,7 +1664,10 @@ socket_open(SOCKET sock, const char *name)
 
 	errno = 0;
 #if defined(SO_DOMAIN)
-	getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *)&domain, &len);
+	{
+		socklen_t len;
+		getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *)&domain, &len);
+	}
 #endif
 #if defined(SO_KEEPALIVE) && !defined(WIN32)
 	if (domain != PF_UNIX) { /* not on UNIX sockets */
