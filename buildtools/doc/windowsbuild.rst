@@ -614,10 +614,10 @@ Optionally:
 - pathfinder (requires MonetDB4)
 
 Apart from buildtools, all packages contain a subfolder ``NT`` which
-contains a few Windows-specific source files, and which is the
-directory in which the Windows version is built.  (On Unix/Linux we
-recommend to build in a new directory which is not part of the source
-tree, but on Windows we haven't made this separation.)
+contains a few Windows-specific source files.  Like on Unix/Linux, we
+recommend to build in a new directory which is not part of the original
+source tree.  On Windows, this build directory must be a sibling of the
+aforementioned ``NT`` directory.
 
 Build Process
 -------------
@@ -679,12 +679,12 @@ Internal Variables
 - ``SQL_SOURCE`` - source folder of the sql component
 - ``PATHFINDER_SOURCE`` - source folder of the pathfinder component
 
-- ``MONETDB_BUILD`` - build folder of the MonetDB component (i.e. ``%MONETDB_SOURCE%\NT``)
-- ``CLIENTS_BUILD`` - build folder of the clients component (i.e. ``%CLIENTS_SOURCE%\NT``)
-- ``MONETDB4_BUILD`` - build folder of the MonetDB4 component (i.e. ``%MONETDB4_SOURCE%\NT``)
-- ``MONETDB5_BUILD`` - build folder of the MonetDB5 component (i.e. ``%MONETDB5_SOURCE%\NT``)
-- ``SQL_BUILD`` - build folder of the sql component (i.e. ``%SQL_SOURCE%\NT``)
-- ``PATHFINDER_BUILD`` - build folder of the pathfinder component (i.e. ``%PATHFINDER_SOURCE%\NT``)
+- ``MONETDB_BUILD`` - build folder of the MonetDB component (sibling of ``%MONETDB_SOURCE%\NT``)
+- ``CLIENTS_BUILD`` - build folder of the clients component (sibling of ``%CLIENTS_SOURCE%\NT``)
+- ``MONETDB4_BUILD`` - build folder of the MonetDB4 component (sibling of ``%MONETDB4_SOURCE%\NT``)
+- ``MONETDB5_BUILD`` - build folder of the MonetDB5 component (sibling of ``%MONETDB5_SOURCE%\NT``)
+- ``SQL_BUILD`` - build folder of the sql component (sibling of ``%SQL_SOURCE%\NT``)
+- ``PATHFINDER_BUILD`` - build folder of the pathfinder component (sibling of ``%PATHFINDER_SOURCE%\NT``)
 
 - ``MONETDB_PREFIX`` - installation folder of the MonetDB component
 - ``CLIENTS_PREFIX`` - installation folder of the clients component
@@ -784,9 +784,10 @@ MonetDB5.
 
 For each of the components, do the following::
 
- cd ...\<component>\NT
- nmake /nologo NEED_MX=1 ... "prefix=%..._PREFIX%"
- nmake /nologo NEED_MX=1 ... "prefix=%..._PREFIX%" install
+ mkdir ...\<component>\BUILD_DIR
+ cd ...\<component>\BUILD_DIR
+ nmake /nologo /f ..\NT\Makefile NEED_MX=1 ... "prefix=%..._PREFIX%"
+ nmake /nologo /f ..\NT\Makefile NEED_MX=1 ... "prefix=%..._PREFIX%" install
 
 Here the first ``...`` needs to be replaced by a list of parameters
 that tells the system which of the optional programs and libraries are

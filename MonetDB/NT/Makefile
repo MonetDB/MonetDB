@@ -7,7 +7,7 @@ CD = cd
 
 prefix = $(MAKEDIR)
 
-!INCLUDE "$(TOPDIR)\rules.msc"
+!INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
 UNISTD_H = unistd.h
 
@@ -18,23 +18,23 @@ IBITS =
 IBITS = 64
 !ENDIF
 
-all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) inttypes.h
+all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) inttypes.h monetdb_winconfig.h
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc"
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs monetdb_winconfig.h monetdb_config.h winrules.msc all
-	$(INSTALL) monetdb_winconfig.h "$(includedir)\MonetDB"
-	$(INSTALL) winrules.msc "$(pkgdatadir)"
+install: targetdirs monetdb_config.h ..\NT\winrules.msc all
+	$(INSTALL) ..\NT\monetdb_winconfig.h "$(includedir)\MonetDB"
+	$(INSTALL) ..\NT\winrules.msc "$(pkgdatadir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) banner.bmp "$(prefix)"
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) monetdb.ico "$(prefix)"
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) license.rtf "$(prefix)"
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) website.html "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\banner.bmp "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\monetdb.ico "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\license.rtf "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\website.html "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
 	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
@@ -46,8 +46,11 @@ $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
 
 all-msc: monetdb_config.h
 
-monetdb_config.h: monetdb_config.h.in
-	$(CONFIGURE) monetdb_config.h.in > monetdb_config.h
+monetdb_config.h: ..\NT\monetdb_config.h.in
+	$(CONFIGURE) ..\NT\monetdb_config.h.in > monetdb_config.h
+
+monetdb_winconfig.h: ..\NT\monetdb_winconfig.h
+	copy ..\NT\monetdb_winconfig.h monetdb_winconfig.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

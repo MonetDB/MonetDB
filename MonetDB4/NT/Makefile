@@ -7,7 +7,7 @@ CD = cd
 
 prefix = $(MAKEDIR)
 
-!INCLUDE "$(TOPDIR)\rules.msc"
+!INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
 UNISTD_H = unistd.h
 
@@ -28,9 +28,9 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 
 install: targetdirs monetdb4_config.h all $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) Mserver.bat "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\Mserver.bat "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
 	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
@@ -49,8 +49,8 @@ $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
 
 all-msc: monetdb4_config.h
 
-monetdb4_config.h: monetdb4_config.h.in
-	$(CONFIGURE) monetdb4_config.h.in > monetdb4_config.h
+monetdb4_config.h: ..\NT\monetdb4_config.h.in
+	$(CONFIGURE) ..\NT\monetdb4_config.h.in > monetdb4_config.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

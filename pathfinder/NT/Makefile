@@ -7,7 +7,7 @@ CD = cd
 
 prefix = $(MAKEDIR)
 
-!INCLUDE "$(TOPDIR)\rules.msc"
+!INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
 INSTALLER = MonetDB4-XQuery
 INSTALLER_PREREQ = "$(prefix)\banner.bmp" "$(prefix)\license.rtf" "$(prefix)\monetdb.ico"
@@ -28,22 +28,22 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 
 !IFDEF BITS32
 install-installer:
-	$(INSTALL) MonetDB4-XQuery\MonetDB4-XQuery-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB4-XQuery\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB4-XQuery\MonetDB4-XQuery-Installer.sln "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB4-XQuery\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\MonetDB4-XQuery-Installer.vdproj"
 !ENDIF
 !IFDEF BITS64
 install-installer:
-	$(INSTALL) MonetDB4-XQuery64\MonetDB4-XQuery-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB4-XQuery64\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB4-XQuery64\MonetDB4-XQuery-Installer.sln "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB4-XQuery64\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
 !ENDIF
 
 install: targetdirs pf_config.h all install-installer $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MXQserver.bat "$(prefix)"
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) pf.bat "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\MXQserver.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\pf.bat "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
 	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
 	if exist "$(prefix)\Debug\$(INSTALLER)$(IBITS).msi" $(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
@@ -61,8 +61,8 @@ $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
 
 all-msc: pf_config.h 
 
-pf_config.h: pf_config.h.in
-	$(CONFIGURE) pf_config.h.in > pf_config.h
+pf_config.h: ..\NT\pf_config.h.in
+	$(CONFIGURE) ..\NT\pf_config.h.in > pf_config.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

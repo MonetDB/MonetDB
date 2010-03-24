@@ -8,7 +8,7 @@ CD = cd
 
 prefix = $(MAKEDIR)
 
-!INCLUDE "$(TOPDIR)\rules.msc"
+!INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
 INSTALLER = MonetDB5-Server
 INSTALLER_PREREQ = "$(prefix)\banner.bmp" "$(prefix)\license.rtf" "$(prefix)\monetdb.ico"
@@ -27,9 +27,9 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 
 install: targetdirs mal_config.h all $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) M5server.bat "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\M5server.bat "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
 	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
@@ -48,8 +48,8 @@ $(SRCDIR)\Makefile.msc:
 
 all-msc: mal_config.h
 
-mal_config.h: mal_config.h.in
-	$(CONFIGURE) mal_config.h.in > mal_config.h
+mal_config.h: ..\NT\mal_config.h.in
+	$(CONFIGURE) ..\NT\mal_config.h.in > mal_config.h
 
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h

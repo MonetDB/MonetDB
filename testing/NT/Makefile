@@ -7,7 +7,7 @@ CD = cd
 
 prefix = $(MAKEDIR)
 
-!INCLUDE "$(TOPDIR)\rules.msc"
+!INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
 UNISTD_H = unistd.h
 
@@ -32,8 +32,8 @@ $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
 
 all-msc: testing_config.h
 
-testing_config.h: testing_config.h.in
-	$(CONFIGURE) testing_config.h.in > testing_config.h
+testing_config.h: ..\NT\testing_config.h.in
+	$(CONFIGURE) ..\NT\testing_config.h.in > testing_config.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

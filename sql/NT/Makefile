@@ -8,7 +8,7 @@ CD = cd
 
 prefix = $(MAKEDIR)
 
-!INCLUDE "$(TOPDIR)\rules.msc"
+!INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
 INSTALLER = MonetDB5-SQL
 INSTALLER_PREREQ = "$(prefix)\banner.bmp" "$(prefix)\license.rtf" "$(prefix)\monetdb.ico"
@@ -27,9 +27,9 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 
 install: targetdirs all install-m5installer $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MSQLserver.bat "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\MSQLserver.bat "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
+	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
 	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
@@ -45,15 +45,15 @@ install: targetdirs all install-m5installer $(INSTALLER_PREREQ)
 
 !IFDEF BITS32
 install-m5installer:
-	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.vdproj "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB5-SQL\MonetDB5-SQL-Installer.sln "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB5-SQL\MonetDB5-SQL-Installer.vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\MonetDB5-SQL-Installer.vdproj"
 !ENDIF
 
 !IFDEF BITS64
 install-m5installer:
-	$(INSTALL) MonetDB5-SQL64\MonetDB5-SQL-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB5-SQL64\MonetDB5-SQL-Installer.vdproj "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB5-SQL64\MonetDB5-SQL-Installer.sln "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB5-SQL64\MonetDB5-SQL-Installer.vdproj "$(prefix)"
 !ENDIF
 
 $(SRCDIR)\Makefile.msc:
@@ -61,8 +61,8 @@ $(SRCDIR)\Makefile.msc:
 
 all-msc: sql_config.h
 
-sql_config.h: sql_config.h.in
-	$(CONFIGURE) sql_config.h.in > sql_config.h
+sql_config.h: ..\NT\sql_config.h.in
+	$(CONFIGURE) ..\NT\sql_config.h.in > sql_config.h
 
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h

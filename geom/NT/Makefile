@@ -7,7 +7,7 @@ CD = cd
 
 prefix = $(MAKEDIR)
 
-!INCLUDE "$(TOPDIR)\rules.msc"
+!INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
 !IFDEF HAVE_MONETDB5
 M5INSTALLER = install-m5installer
@@ -27,15 +27,15 @@ install: targetdirs all $(M5INSTALLER)
 
 !IFDEF BITS32
 install-m5installer:
-	$(INSTALL) MonetDB5-Geom\MonetDB5-Geom-Module.sln "$(prefix)"
-	$(INSTALL) MonetDB5-Geom\MonetDB5-Geom-Module.vdproj "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB5-Geom\MonetDB5-Geom-Module.sln "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB5-Geom\MonetDB5-Geom-Module.vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\MonetDB5-Geom-Module.vdproj"
 !ENDIF
 
 !IFDEF BITS64
 install-m5installer:
-	$(INSTALL) MonetDB5-Geom64\MonetDB5-Geom-Module.sln "$(prefix)"
-	$(INSTALL) MonetDB5-Geom64\MonetDB5-Geom-Module.vdproj "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB5-Geom64\MonetDB5-Geom-Module.sln "$(prefix)"
+	$(INSTALL) ..\NT\MonetDB5-Geom64\MonetDB5-Geom-Module.vdproj "$(prefix)"
 !ENDIF
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
@@ -43,8 +43,8 @@ $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
 
 all-msc: geom_config.h
 
-geom_config.h: geom_config.h.in
-	$(CONFIGURE) geom_config.h.in > geom_config.h
+geom_config.h: ..\NT\geom_config.h.in
+	$(CONFIGURE) ..\NT\geom_config.h.in > geom_config.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

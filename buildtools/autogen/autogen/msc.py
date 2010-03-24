@@ -1139,7 +1139,7 @@ def output(tree, cwd, topdir):
 
     fd.write("TOPDIR = %s\n" % string.replace(reldir, '/', '\\'))
     fd.write("SRCDIR = $(TOPDIR)\\..%s\n" % string.replace(srcdir, '/', '\\'))
-    fd.write("!INCLUDE $(TOPDIR)\\rules.msc\n")
+    fd.write("!INCLUDE $(TOPDIR)\\..\\NT\\rules.msc\n")
     if tree.has_key("SUBDIRS"):
         fd.write("all: all-recursive all-msc\n")
         fd.write("check: check-recursive check-msc\n")
