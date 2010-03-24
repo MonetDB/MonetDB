@@ -75,7 +75,7 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 	/* keep queue of 5 */
 	listen(sock, 5);
 
-	Mfprintf(log, "listening for TCP connections on %s:%hu\n", host, port);
+	Mfprintf(log, "accepting connections on TCP socket %s:%hu\n", host, port);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -142,7 +142,7 @@ openConnectionUDP(int *ret, unsigned short port)
 }
 
 static err
-openConnectionUNIX(int *ret, char *path)
+openConnectionUNIX(int *ret, char *path, FILE *log)
 {
 	struct sockaddr_un server;
 	int sock = -1;
@@ -163,7 +163,7 @@ openConnectionUNIX(int *ret, char *path)
 	/* keep queue of 5 */
 	listen(sock, 5);
 
-	Mfprintf(_mero_ctlout, "handling commands over UNIX socket %s\n", path);
+	Mfprintf(log, "accepting connections on UNIX domain socket %s\n", path);
 
 	*ret = sock;
 	return(NO_ERR);

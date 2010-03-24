@@ -905,9 +905,9 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if (
 			(e = openConnectionTCP(&sock, _mero_port, stdout)) == NO_ERR &&
+			(e = openConnectionUNIX(&socku, bufu, stdout)) == NO_ERR &&
 			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
-			(e = openConnectionUNIX(&unsock, buf)) == NO_ERR &&
-			(e = openConnectionUNIX(&socku, bufu)) == NO_ERR &&
+			(e = openConnectionUNIX(&unsock, buf, _mero_ctlout)) == NO_ERR &&
 			(_mero_controlport == 0 || (e = openConnectionTCP(&csock, _mero_controlport, _mero_ctlout)) == NO_ERR)
 	   )
 	{
