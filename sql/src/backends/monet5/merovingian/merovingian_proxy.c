@@ -75,7 +75,7 @@ proxyThread(void *d)
 }
 
 static err
-startProxy(stream *cfdin, stream *cfout, char *url, char *client)
+startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 {
 	struct hostent *hp;
 	struct sockaddr_in server;
@@ -119,7 +119,6 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 		struct cmsghdr *cmsg;
 		struct iovec vec;
 		char buf[1];
-		int psock = socket_getsock(cfdin);
 
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 			return(newErr("cannot open socket: %s", strerror(errno)));
@@ -153,8 +152,11 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 			close(ssock);
 			return(newErr("could not send initial byte: %s", strerror(errno)));
 		}
+		/* block until the server acknowledges that it has psock
+		 * connected with itself */
+		recv(ssock, buf, 1, 0);
+		close(ssock);
 		close(psock);
-		
 		close_stream(cfdin);
 		close_stream(cfout);
 		return(NO_ERR);
