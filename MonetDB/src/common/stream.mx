@@ -1664,40 +1664,27 @@ socket_open(SOCKET sock, const char *name)
 	s->stream_data.s = sock;
 
 	errno = 0;
-	domain = 0;
-	len = sizeof(domain);
-#if defined(SO_TYPE)
-	getsockopt(sock, SOL_SOCKET, SO_TYPE, (void *)&domain, &len);
-#elif defined(SO_DOMAIN)
+#if defined(SO_DOMAIN)
 	getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *)&domain, &len);
 #endif
 #if defined(SO_KEEPALIVE) && !defined(WIN32)
 	if (domain != PF_UNIX) { /* not on UNIX sockets */
 		int opt = 0;
-		if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt, sizeof(opt)) < 0) {
-			s->errnr = OPEN_ERROR;
-			return s;
-		}
+		setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt, sizeof(opt));
 	}
 #endif
 #if defined(IPTOS_THROUGHPUT) && !defined(WIN32)
 	if (domain != PF_UNIX) { /* not on UNIX sockets */
 		int tos = IPTOS_THROUGHPUT;
 
-		if (setsockopt(sock, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos)) < 0) {
-			s->errnr = OPEN_ERROR;
-			return s;
-		}
+		setsockopt(sock, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos));
 	}
 #endif
 #ifdef TCP_NODELAY
 	if (domain != PF_UNIX) { /* not on UNIX sockets */
 		int nodelay = 1;
 
-		if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay, sizeof(nodelay)) < 0) {
-			s->errnr = OPEN_ERROR;
-			return s;
-		}
+		setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay, sizeof(nodelay));
 	}
 #endif
 #ifdef HAVE_FCNTL
