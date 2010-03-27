@@ -3404,7 +3404,7 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if par['M5']:
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --set mal_listing=2 --trace %s' % \
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         else:
             exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
