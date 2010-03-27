@@ -123,6 +123,9 @@ rm -fr $RPM_BUILD_ROOT
 %{python_sitelib}/MonetDBtesting/subprocess26.py
 
 %changelog
+* Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.3-20100322
+- Rebuilt.
+
 * Wed Feb 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100224
 - Rebuilt.
 

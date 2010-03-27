@@ -1,3 +1,9 @@
+monetdb-geom (0.16.3-20100322) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 22 Mar 2010 11:37:04 +0100
+
 monetdb-geom (0.16.1-20100224) unstable; urgency=low
 
   * Rebuilt.
