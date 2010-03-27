@@ -10,8 +10,16 @@ stdout of test 'insert_BOND` in directory 'src/benchmarks/arno` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34969/
-# MonetDB/SQL module v2.25.0 loaded
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31295/
+# MonetDB/SQL module v2.37.0 loaded
+function user.main():void;
+    INT_MAX := 2147483647;
+    dbgmsk := mdb.getDebug();
+    unset := calc.+(8,8388608);
+    keep := calc.xor(INT_MAX,unset);
+    set := calc.and(dbgmsk,keep);
+    mdb.setDebug(set);
+end main;
 
 Ready.
 #function user.main():void;

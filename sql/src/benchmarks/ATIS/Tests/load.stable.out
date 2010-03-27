@@ -11,8 +11,16 @@ stdout of test 'load` in directory 'src/benchmarks/ATIS` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30605/
-# MonetDB/SQL module v2.29.0 loaded
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31295/
+# MonetDB/SQL module v2.37.0 loaded
+function user.main():void;
+    INT_MAX := 2147483647;
+    dbgmsk := mdb.getDebug();
+    unset := calc.+(8,8388608);
+    keep := calc.xor(INT_MAX,unset);
+    set := calc.and(dbgmsk,keep);
+    mdb.setDebug(set);
+end main;
 
 Ready.
 #function user.main():void;
