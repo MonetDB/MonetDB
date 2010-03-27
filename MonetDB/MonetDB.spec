@@ -106,6 +106,12 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libbat.so
 
 %changelog
+* Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.3-20100322
+- Rebuilt.
+
+* Mon Mar 01 2010 Fabian Groffen <fabian@cwi.nl> - 1.36.3-20100322
+- Fixed bug in UDP stream creation causing UDP connections to already
+  bound ports to be reported as successful.
 * Wed Feb 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100224
 - Rebuilt.
 

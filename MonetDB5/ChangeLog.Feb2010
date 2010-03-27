@@ -1,7 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Thu Mar 18 2010 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a race condition that could occur if many clients were connecting
-  and disconnecting.
-

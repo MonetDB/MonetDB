@@ -186,6 +186,13 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.3-20100322
+- Rebuilt.
+
+* Thu Mar 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.3-20100322
+- Fixed a race condition that could occur if many clients were connecting
+  and disconnecting.
+
 * Wed Feb 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.1-20100224
 - Rebuilt.
 
