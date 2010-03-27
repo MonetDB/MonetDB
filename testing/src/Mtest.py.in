@@ -1245,7 +1245,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
                 io.printf(s);
                 clients.quit();
             '''
-        else:
+        if par['M4']:
             input = '''\
                 help("kunion");
                 {
@@ -1338,7 +1338,7 @@ def CheckMods(env, TST, SERVER, CALL) :
     if SERVER == "SQL":
         if par['M4']:
             sql_mods = ["sql_server", "streams", "ascii_io", "monettime", "alarm", "xtables", "aggrX3", "blob", "txtsim", "mmath", "mkey", "bat_arith", "pcre"]
-        else:
+        if par['M5']:
             sql_mods = ["sql"]
         for m in sql_mods:
             if m not in env['TST_MODS']:
@@ -2252,7 +2252,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     if par['M5']:
         PRINTF = "io.printf"
-    else:
+    if par['M4']:
         PRINTF = "printf"
 
     # Release reserved sockets and run the actual test
@@ -2277,13 +2277,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             PROLOGUE = ""
             if os.path.isfile(TST+".prologue") and par['M4']:
                 PROLOGUE = " "+TST+".prologue"
-            elif os.path.isfile(TST+".prologue5") and par['M5']:
+            if os.path.isfile(TST+".prologue5") and par['M5']:
                 PROLOGUE = " "+TST+".prologue5"
             DBINIT=""
             if os.path.isfile(TST+".dbinit") and par['M4']:
                 dbinit = TST+".dbinit"
                 DBINIT = open(dbinit).readline().strip()
-            elif os.path.isfile(TST+".dbinit5") and par['M5']:
+            if os.path.isfile(TST+".dbinit5") and par['M5']:
                 dbinit = TST+".dbinit5"
                 DBINIT = open(dbinit).readline().strip()
 
@@ -2305,7 +2305,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 lang="sql"
                 if par['M5']:
                     Srvr = '%s --set mal_listing=0 "--dbinit=%s include sql;"' % (Srvr, DBINIT)
-                else:
+                if par['M4']:
                     Srvr = '%s "--dbinit=%s module(sql_server);"' % (Srvr, DBINIT)
             if SERVER == "XQUERY":
                 lang="xquery"
@@ -2364,7 +2364,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                             timedout = RunIt(cmd + f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                         elif par['M5']:
                             timedout = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
-                        else:
+                        elif par['M4']:
                             timedout = RunIt(cmd, open(f), ClntOut, ClntErr, TIMEOUT)
                     if timedout:
                         break
@@ -2464,7 +2464,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             try:
                 if par['M5']:
                     pSrvr.stdin.write('clients.quit();\n')
-                else:
+                if par['M4']:
                     pSrvr.stdin.write('quit();\n')
                 pSrvr.stdin.flush()
             except IOError:
@@ -2903,7 +2903,7 @@ if os.path.exists(os.path.join('CVS', 'Repository')):
             repo = _PackageDict[repo]
     par['PACKAGE'] = repo
     if not CheckExec(par['PACKAGE']+'-config'):
-        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients', 'monetdb4', 'monetdb5'):
             ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
         elif par['PACKAGE'] != 'monetdb-java':
             if par['PACKAGE'] != '.':
@@ -3057,7 +3057,7 @@ def main(argv) :
         if par['PACKAGE'] == 'monetdb':
             if par['M4']:
                 par['PACKAGE'] = 'monetdb4'
-            elif par['M5']:
+            if par['M5']:
                 par['PACKAGE'] = 'monetdb5'
             Warn('No (suitable) ./CVS/Repository found and no -p/--package specified. Using default package="%s". Please use -p/--package to overrule.' % par['PACKAGE'])
     else:
@@ -3067,7 +3067,7 @@ def main(argv) :
                 pkg = _PackageDict[pkg]
         par['PACKAGE'] = pkg
     if not CheckExec(par['PACKAGE']+'-config'):
-        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients', 'monetdb4', 'monetdb5'):
             ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
         elif par['PACKAGE'] != 'monetdb-java':
             Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
@@ -3083,7 +3083,7 @@ def main(argv) :
         ErrXit('"-4/--MonetDB4" conflicts with "--package=monetdb5"!')
     if par['M5'] and par['PACKAGE'] == 'monetdb4':
         ErrXit('"-5/--MonetDB5" conflicts with "--package=monetdb4"!')
-    if not par['M4'] and not par['M5']:
+    if not par['M4'] and not par['M5'] and par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
         par['M4'] = par['PACKAGE'] not in ['monetdb5', 'monetdb-datacell', 'monetdb-template', 'monetdb-sql', 'monetdb-geom']
         par['M5'] = par['PACKAGE']     in ['monetdb5', 'monetdb-datacell', 'monetdb-template', 'monetdb-sql', 'monetdb-geom']
 
@@ -3093,7 +3093,7 @@ def main(argv) :
         # and have monet_options.parse_options() re-parse the command line arguments
         if par['M5']:
             config = os.path.join(GetMonetConfig('monetdb5', '--sysconfdir'), 'monetdb5.conf')
-        else:
+        if par['M4']:
             config = os.path.join(GetMonetConfig('monetdb4', '--sysconfdir'), 'MonetDB.conf')
         if config:
             try:
@@ -3204,9 +3204,12 @@ def main(argv) :
     if par['M5']:
         CONDITIONALS['HAVE_MONETDB5'] = '#'
         CONDITIONALS['HAVE_MONETDB4'] = ''
-    else:
+    elif par['M4']:
         CONDITIONALS['HAVE_MONETDB5'] = ''
         CONDITIONALS['HAVE_MONETDB4'] = '#'
+    else:
+        CONDITIONALS['HAVE_MONETDB5'] = ''
+        CONDITIONALS['HAVE_MONETDB4'] = ''
     CheckClassPath(quiet)
     if par['ALGEBRA']:
         CONDITIONALS['WITH_ALGEBRA'] = '#'
@@ -3406,7 +3409,7 @@ def main(argv) :
         if par['M5']:
             exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
-        else:
+        if par['M4']:
             exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
                                                                (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
@@ -3558,7 +3561,7 @@ def main(argv) :
 
         if par['M5']:
             QUIT = 'clients.quit();\n'
-        else:
+        if par['M4']:
             QUIT = 'quit();\n'
 
         env['TST_MODS'] = []
@@ -3604,7 +3607,7 @@ def main(argv) :
             if par['M5']:
                 mod_name = 'sql'
                 mod_load = 'include %s;' % mod_name
-            else:
+            if par['M4']:
                 mod_name = 'sql_server'
                 mod_load = 'module(%s);' % mod_name
             if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
@@ -3658,7 +3661,7 @@ def main(argv) :
             mod_name = 'pathfinder'
             if par['M5']:
                 mod_load = 'include %s;' % mod_name
-            else:
+            if par['M4']:
                 mod_load = 'module(%s);' % mod_name
             if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
                 ErrXit('Stopping Pathfinder testing as module "%s" fails to load!' % mod_name)
@@ -3672,7 +3675,7 @@ def main(argv) :
             mod_name = 'geom'
             if par['M5']:
                 mod_load = 'include %s;' % mod_name
-            else:
+            if par['M4']:
                 mod_load = 'module(%s);' % mod_name
             if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
                 ErrXit('Stopping Geom testing as module "%s" fails to load!' % mod_name)
