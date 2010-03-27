@@ -74,7 +74,7 @@ gdk_alloc_map=no
 #      32 = BATMASK      = BAT handling
 #      64 = PARSEMASK    = parser debugging
 #     128 = PARMASK      = Thread management
-#     256 = TRGMASK      = Event management 
+#     256 = TRGMASK      = Event management
 #     512 = TMMASK       = Transaction management
 #    1024 = TEMMASK      = Locks and Triggers
 #    2048 = DLMASK       = Dynamic loading
@@ -98,7 +98,7 @@ gdk_alloc_map=no
 #67108864 = ALLOCMASK    = exhaustive GDK malloc & free tracing for debugging
 #                          (GDK developers, only)
 #134217728 = OPTMASK     = trace the actions, decisions and effects of MAL optimizers
-# 
+#
 # Mserver 5 recognizes a series of command line names instead:
 # --threads ( 1 | PARMASK)
 # --memory (MEMMASK )
@@ -113,7 +113,7 @@ gdk_alloc_map=no
 #
 # You can enable the server listing the parsed MAL program for any
 # script parsed on the command line.  By default this is disabled.
-#mal_listing = 0 
+#mal_listing = 0
 # Legal values for mal_listing are:
 #    0 = Disable
 #    1 = List the original input
@@ -233,7 +233,7 @@ mero_controlport=50001
 mapi_port=50000       # default port to address an mserver
 mapi_autosense=false  # if set to 'true': automatically find a free port
                       # starting the search at mapi_port and going up
-mapi_open=false       # should be set to 'true' to allow for 
+mapi_open=false       # should be set to 'true' to allow for
                       # remote access to a server
 #mapi_usock=${gdk_dbfarm}@DIRSEP@mapi_socket
                       # mapi_usock is ignored on platforms that do not
