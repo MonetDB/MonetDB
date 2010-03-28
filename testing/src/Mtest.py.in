@@ -187,9 +187,10 @@ F_OK = 0
 F_WARN = 1
 F_SOCK = 2
 F_TIME = 3
-F_KILL = 4
-F_SEGV = 5
-F_ERROR = 6
+F_RECU = 4
+F_KILL = 5
+F_SEGV = 6
+F_ERROR = 7
 
 FAILURES = {
     F_SKIP  : "F_SKIP",
@@ -197,6 +198,7 @@ FAILURES = {
     F_WARN  : "F_WARN",
     F_SOCK  : "F_SOCK",
     F_TIME  : "F_TIME",
+    F_RECU  : "F_RECU",
     F_KILL  : "F_KILL",
     F_SEGV  : "F_SEGV",
     F_ERROR : "F_ERROR"
@@ -398,15 +400,16 @@ darkgreen = '#005500'
 orange = '#ffaa00'
 purple = '#aa00aa'
 stylesheet = Element('style', None, Text('''
-.error   { font-weight: bold; font-style: italic; color: red; }
-.killed  { font-weight: bold; font-style: italic; color: purple; }
-.timeout { font-weight: bold; font-style: italic; color: purple; }
-.socket  { font-weight: bold; font-style: italic; color: purple; }
-.segfault { font-weight: bold; font-style: italic; color: purple; }
-.warning { font-weight: bold; color: orange; }
-.good    {  }
-.header  { font-family: helvetica, arial; text-align: center; }
-.black   { color: black; }
+.error     { font-weight: bold; font-style: italic; color: red; }
+.segfault  { font-weight: bold; font-style: italic; color: purple; }
+.killed    { font-weight: bold; font-style: italic; color: purple; }
+.recursion { font-weight: bold; font-style: italic; color: purple; }
+.timeout   { font-weight: bold; font-style: italic; color: purple; }
+.socket    { font-weight: bold; font-style: italic; color: purple; }
+.warning   { font-weight: bold; color: orange; }
+.good      {  }
+.header    { font-family: helvetica, arial; text-align: center; }
+.black     { color: black; }
 '''))
 
 TIMES = []
@@ -619,13 +622,16 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
         f.close()
         diffclass = 'error'
         difftext = 'Major differences'
-    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME, F_KILL, F_SEGV):
+    if diffclass == 'error' and SockTime in (F_SOCK, F_TIME, F_RECU, F_KILL, F_SEGV):
         if SockTime == F_SOCK:
             diffclass = 'socket'
             difftext = difftext + ' (Socket)'
         if SockTime == F_TIME:
             diffclass = 'timeout'
             difftext = difftext + ' (Timeout)'
+        if SockTime == F_RECU:
+            diffclass = 'recursion'
+            difftext = difftext + ' (Recursion)'
         if SockTime == F_KILL:
             diffclass = 'killed'
             difftext = difftext + ' (Killed)'
@@ -813,6 +819,8 @@ def AddHref (href, target, linktext, diff) :
         klass = 'error'
     elif diff == F_KILL:
         klass = 'killed'
+    elif diff == F_RECU:
+        klass = 'recursion'
     elif diff == F_TIME:
         klass = 'timeout'
     elif diff == F_SOCK:
@@ -865,12 +873,14 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
-    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_KILL, F_SEGV):
+    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_KILL, F_SEGV):
         e = SockTime
     if o == F_ERROR or e == F_ERROR:
         tstclass = 'error'
     elif e == F_KILL:
         tstclass = 'killed'
+    elif e == F_RECU:
+        tstclass = 'recursion'
     elif e == F_TIME:
         tstclass = 'timeout'
     elif e == F_SOCK:
@@ -1790,11 +1800,14 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             STDOUT.write(" %7.3fs " % TX)
 
         timeout = F_OK
+        recursion = F_OK
         killed = F_OK
         segfaulted = F_OK
 
         if tres == 'timeout':
             timeout = F_TIME
+        elif tres == 'recursion':
+            recursion = F_RECU
         elif tres == 'segfault':
             segfaulted = F_SEGV
 
@@ -1849,6 +1862,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 STDOUT.write("\n%s : Timeout!\n" % TST)
             else:
                 STDOUT.write("(Timeout!) ")
+
+        if recursion == F_RECU:
+            if quiet:
+                STDOUT.write("\n%s : Recursion!\n" % TST)
+            else:
+                STDOUT.write("(Recursion!) ")
 
         if killed == F_KILL:
             if quiet:
@@ -1919,7 +1938,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout == F_TIME or killed == F_KILL or segfaulted == F_SEGV:
+            if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYout = -1
             else:
@@ -1976,7 +1995,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
-            if timeout == F_TIME or killed == F_KILL or segfaulted == F_SEGV:
+            if timeout == F_TIME or recursion == F_RECU or killed == F_KILL or segfaulted == F_SEGV:
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYerr = -1
             else:
@@ -2004,7 +2023,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     cmd += ' -d'
                 os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.err.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEerr, TST))
 
-            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, killed, segfaulted))
+            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, recursion, killed, segfaulted))
 
     return TX,FailedOut,FailedErr,elem
 ### RunTest(env, TST, BusyPorts, COND, oktests) #
@@ -2261,6 +2280,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     XRPCsockets[0].close()
     XRPCsockets[1].close()
 
+    timedout = False
     ServerReady = True
     pSrvr = None
     pSrvrTimer = None
@@ -2337,7 +2357,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntOut = open(TestOutFile, 'a')
             ClntErr = open(TestErrFile, 'a')
 
-        timedout = False
         if ServerReady:
             if   CALL == "other":
                 cmd = os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
@@ -2542,8 +2561,21 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if TO.match(l):
                 segfaulted = True
 
-    timedout = False
-    if not timedout and not segfaulted:
+    recursion = False
+    if not segfaulted:
+        # Try to detect aborts due to too deep recursion
+        TO = re.compile("aborted too deep recursion", re.MULTILINE)
+        # FIXME: this begs for a much nicer solution (100% copy of below)
+        if os.path.isfile(TestErrFile):
+            for l in open(TestErrFile):
+                if TO.match(l):
+                    recursion = True
+        if not recursion and os.path.isfile(TestOutFile):
+            for l in open(TestOutFile):
+                if TO.match(l):
+                    recursion = True
+
+    if not segfaulted and not recursion and not timedout:
         TO = re.compile("^!.*Mtimeout.*: Timeout: ", re.MULTILINE)
         if os.path.isfile(TestErrFile):
             for l in open(TestErrFile):
@@ -2556,6 +2588,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     if segfaulted:
         return "segfault"
+    elif recursion:
+        return "recursion"
     elif timedout:
         return "timeout"
 
@@ -3852,6 +3886,9 @@ VALUES (%s, '%s', '%s', '%s',
         if Failure[F_SEGV]:
             how = "SIGNIFICANTLY"
             what += "  %3d out of %3d tests resulted in a crash\n" % (Failure[F_SEGV],num_tests)
+        if Failure[F_RECU]:
+            how = "SIGNIFICANTLY"
+            what += "  %3d out of %3d tests ran into too deep recursion\n" % (Failure[F_RECU],num_tests)
         if Failure[F_ERROR]:
             how = "SIGNIFICANTLY"
             what += "  %3d out of %3d tests produced %s different output\n" % (Failure[F_ERROR],num_tests,how)
