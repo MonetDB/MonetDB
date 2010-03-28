@@ -1058,7 +1058,6 @@ end main;
 [ "getEvent",			  "pattern",	  "profiler",	  "() (_1:lng,_2:lng,_3:lng) ",													  "CMDgetEvent;"				  ]
 [ "getTrace",			  "command",	  "profiler",	  "(e:str):bat[:int,:any_1] ",														  "CMDgetTrace;"					  ]
 [ "noop",			  "command",	  "profiler",	  "():void ",																  "CMDnoopProfiler;"					  ]
-[ "openUDPStream",		  "pattern",	  "profiler",	  "():int ",														  "CMDopenUDPProfilerStream;"			  ]
 [ "openStream",			  "pattern",	  "profiler",	  "(host:str,port:int):void ",														  "CMDsetProfilerStream;"				  ]
 [ "openStream",			  "pattern",	  "profiler",	  "(fnme:str):void ",															  "CMDsetProfilerFile;"					  ]
 [ "openStream",			  "pattern",	  "profiler",	  "():void ",																  "CMDopenProfilerStream;"				  ]
