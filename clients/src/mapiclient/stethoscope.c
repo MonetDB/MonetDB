@@ -220,6 +220,7 @@ doProfile(void *d)
 	size_t a;
 	char *response, *x;
 	char buf[BUFSIZ];
+	char *e;
 	char *mod, *fcn;
 	char *host;
 	int portnr;
@@ -295,6 +296,7 @@ doProfile(void *d)
 	doQ("profiler.setNone();");
 
 	if (wthr->argc == 0) {
+		printf("-- %sprofiler.setAll();\n", id);
 		doQ("profiler.setAll();");
 	} else {
 		for (a = 0; a < wthr->argc; a++) {
@@ -315,11 +317,10 @@ doProfile(void *d)
 			doQ(buf);
 		}
 	}
+	printf("-- %sprofiler.start();\n", id);
 	doQ("profiler.start();");
 
-	printf("-- %sready to receive events\n", id);
 	while (stream_read(wthr->s, buf, 1, BUFSIZ)) {
-		char *e;
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
