@@ -16,7 +16,6 @@ stethoscope [options] +[trace options] {<mod>.<fcn>}
   -P | --password=<password>
   -p | --port=<portnr>
   -h | --host=<hostname>
-  -g | --gnuplot
 
 The trace options:
   S = start instruction profiling
