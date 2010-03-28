@@ -1823,7 +1823,7 @@ udp_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 #ifdef NATIVE_WIN32
 			    (int) /* on Windows, the length is an int... */
 #endif
-			    size, 0,(struct sockaddr *)&from, &fromlen)) < 0) {
+			    size, 0, (struct sockaddr *)&from, &fromlen)) < 0) {
 		s->errnr = READ_ERROR;
 		return res;
 	}
@@ -1897,7 +1897,7 @@ udp_socket(udp_stream *udp, char *hostname, int port, int write)
 	udp->s = socket(serv->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (udp->s == INVALID_SOCKET)
 		return 0;
-	if (write && bind(udp->s, serv, servsize) < 0)
+	if (!write && bind(udp->s, serv, servsize) < 0)
 		return 0;
 	return 1;
 }
