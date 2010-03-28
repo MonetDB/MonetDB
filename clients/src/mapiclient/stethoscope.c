@@ -211,18 +211,6 @@ setCounter(char *nme)
 				profileCounter[i].status = k++;
 }
 
-#if 0
-static char *
-getFieldName(int k)
-{
-	int i;
-	for (i = 0; profileCounter[i].tag; i++)
-		if (profileCounter[i].status == k)
-			return profileCounter[i].name;
-	return "unknown";
-}
-#endif
-
 static void
 plottemplate(int * colind, int n)
 {
