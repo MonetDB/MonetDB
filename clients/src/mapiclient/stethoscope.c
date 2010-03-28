@@ -264,33 +264,22 @@ doProfile(void *d)
 		x = profileCounter[i].ptag;
 	}
 
-	snprintf(buf, BUFSIZ, "port := profiler.openUDPStream();");
-	doQ(buf);
-	snprintf(buf, BUFSIZ, "io.print(port);");
-	doQ(buf);
-	x = NULL;
-	do {
-		if (!mapi_fetch_row(hdl))
+	host = mapi_get_host(dbh);
+	for (portnr = 50010; portnr < 62010; portnr++) {
+		if ((wthr->s = udp_rastream(host, portnr, "profileStream")) != NULL)
 			break;
-		x = mapi_fetch_field(hdl, 0);
-		if (x == NULL)
-			break;
-		portnr = atoi(x);
-	} while (0);
-	if (x == NULL) {
-		fprintf(stderr, "!! %sfailed to obtain port number from remote "
-				"server for profiling\n", id);
+	}
+	if (wthr->s == NULL) {
+		fprintf(stderr, "!! %sopening stream failed: no free ports available\n",
+				id);
 		goto stop_cleanup;
 	}
 
-	host = mapi_get_host(dbh);
-	printf("-- %sopening UDP profile stream for %s:%d\n",
-			id, host, portnr);
-	if ((wthr->s = udp_rastream(host, portnr, "profileStream")) == NULL) {
-		fprintf(stderr, "!! %sopening stream failed: %s\n",
-				id, strerror(errno));
-		goto stop_cleanup;
-	}
+	printf("-- %sopened UDP profile stream for %s:%d\n", id, host, portnr);
+
+	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
+			host, portnr);
+	doQ(buf);
 
 	/* Set Filters */
 	doQ("profiler.setNone();");
