@@ -40,7 +40,6 @@
  *     -u | --user=<user>
  *     -P | --password=<password>
  *     -p | --port=<portnr>
- *     -g | --gnuplot=<boolean>
  *     -h | --host=<hostname>
  * 
  * Event selector:
@@ -63,10 +62,6 @@
  * 
  * Ideally, the stream of events should be piped into a
  * 2D graphical tool, like xosview (Linux).
- * A short term solution is to generate a gnuplot script
- * to display the numerics organized as time lines.
- * With a backup of the event lists give you all the
- * information needed for a decent post-mortem analysis.
  * 
  * A convenient way to watch most of the SQL interaction
  * you may use the command:
@@ -143,7 +138,6 @@ typedef struct _wthread {
 	char *uri;
 	char *user;
 	char *pass;
-	int gnuplot;
 	stream *s;
 	size_t argc;
 	char **argv;
@@ -161,7 +155,6 @@ usage()
 	fprintf(stderr, "  -P | --password=<password>\n");
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
-	fprintf(stderr, "  -g | --gnuplot\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "The trace options:\n");
 	fprintf(stderr, "  S = start instruction profiling\n");
@@ -211,33 +204,6 @@ setCounter(char *nme)
 				profileCounter[i].status = k++;
 }
 
-static void
-plottemplate(int * colind, int n)
-{
-	FILE *pl, *pld;
-	double sz = 1.0 / n;
-	int i;
-
-	pl = fopen("stet.gp", "w");
-	fprintf(pl, "load \"stet_dyn.gp\"\n");
-	fprintf(pl, "pause 1\nreread \n");
-	fclose(pl);
-/*	pld= fopen("stet_dyn_tmpl.gp","w");*/
-	pld = fopen("stet_dyn.gp", "w");
-	fprintf(pld, "set multiplot\n\n");
-	for (i = 0; i < n; i++) {
-		fprintf(pld, "set size 1.0, 1.0 \nset origin 0.0, 0.0 \n");
-		fprintf(pld, "set size 1.0,%4.2f\n", sz);
-		fprintf(pld, "set origin 0.0,%4.2f\n", 1 - (i + 1) * sz);
-		fprintf(pld, "set ylabel \"%s\"\n", profileCounter[colind[i]].name);
-		fprintf(pld, "unset key\n");
-		fprintf(pld, "plot \"stet_cur.dat\" using 1:%d with boxes fs solid 0.7\n\n", i + 2);
-	}
-	fprintf(pld, "\nunset multiplot");
-
-	fclose(pld);
-}
-
 #define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
 					   dbh ? mapi_explain(dbh, stderr) :        \
 					   fprintf(stderr, "!! %scommand failed\n", id)); \
@@ -252,13 +218,11 @@ doProfile(void *d)
 	wthread *wthr = (wthread*)d;
 	int i;
 	size_t a;
-	size_t ln = 1;
 	char *response, *x;
 	char buf[BUFSIZ];
 	char *mod, *fcn;
 	char *host;
 	int portnr;
-	char cmd[100];
 	char id[10];
 	int colind[30], colcnt = 0;
 	Mapi dbh;
@@ -353,9 +317,6 @@ doProfile(void *d)
 	}
 	doQ("profiler.start();");
 
-	if (wthr->gnuplot)
-		plottemplate(colind, colcnt);
-
 	printf("-- %sready to receive events\n", id);
 	while (stream_read(wthr->s, buf, 1, BUFSIZ)) {
 		char *e;
@@ -363,30 +324,6 @@ doProfile(void *d)
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
 			printf("%s%s\n", id, response);
-			if (wthr->gnuplot && (x = strchr(response, '['))) {
-				d = fopen("stet.dat", "a+");
-				fprintf(d, SZFMT"\t", ln++);
-				for (; *x != '\0'; x++) {
-					if (*x == '"') {
-						break;  /* stop at first string */
-					} else if (strchr("[],\"", *x) == NULL) {
-						fprintf(d, "%c", *x);
-					}
-				}
-				fprintf(d, "\n");
-				fclose(d);
-
-				/* update plot file */
-
-				if (ln > 20) {
-					sprintf(cmd, "sed '1, "SZFMT" d' stet.dat > stet_cur.dat", ln - 20);
-				} else {
-					sprintf(cmd, "cp stet.dat stet_cur.dat");
-				}
-				/*	printf("%s \n",cmd);*/
-				if (system(cmd) != 0)
-					fprintf(stderr, "command `%s' failed\n", cmd);
-			}
 			response = e + 1;
 		}
 	}
@@ -414,7 +351,6 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *user = NULL;
 	char *password = NULL;
-	int gnuplot = 0;
 	char **alts, **oalts;
 	wthread *walk;
 
@@ -425,7 +361,6 @@ main(int argc, char **argv)
 		{ "port", 1, 0, 'p' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
-		{ "gnuplot", 1, 0, 'g' },
 		{ 0, 0, 0, 0 }
 	};
 	while (1) {
@@ -446,9 +381,6 @@ main(int argc, char **argv)
 			break;
 		case 'p':
 			portnr = atol(optarg);
-			break;
-		case 'g':
-			gnuplot = 1;
 			break;
 		case 'h':
 			if (strcmp(long_options[option_index].name, "help") == 0) {
@@ -510,7 +442,6 @@ main(int argc, char **argv)
 		walk->uri = uri;
 		walk->user = user;
 		walk->pass = password;
-		walk->gnuplot = gnuplot;
 		walk->argc = argc - a;
 		walk->argv = &argv[a];
 		walk->tid = 0;
@@ -532,7 +463,6 @@ main(int argc, char **argv)
 			walk->uri = *alts;
 			walk->user = user;
 			walk->pass = password;
-			walk->gnuplot = gnuplot;
 			walk->argc = argc - a;
 			walk->argv = &argv[a];
 			walk->s = NULL;
