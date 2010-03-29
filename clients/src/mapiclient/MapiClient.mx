@@ -1769,13 +1769,15 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					} else {
 						/* get all table names in current schema */
 						if ((hdl = mapi_query(mid,
-								      "SELECT \"t\".\"name\", \"t\".\"type\", "
-									      "\"s\".\"name\" "
-								      "FROM \"sys\".\"tables\" \"t\", "
-								      "\"sys\".\"schemas\" \"s\" "
-								      "WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
-								      "AND \"s\".\"name\" = \"current_schema\" "
-								      "ORDER BY \"t\".\"name\"")) != NULL &&
+									"SELECT \"t\".\"name\", \"t\".\"type\", "
+									"\"s\".\"name\" "
+									"FROM \"sys\".\"tables\" \"t\", "
+									"\"sys\".\"schemas\" \"s\" "
+									"WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
+									"AND \"s\".\"name\" = \"current_schema\" "
+									"AND \"t\".\"system\" = false "
+									"AND \"t\".\"temporary\" = 0 "
+									"ORDER BY \"t\".\"name\"")) != NULL &&
 						    mapi_error(mid) == MOK)
 						{
 							char *type, *name, *schema;

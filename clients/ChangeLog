@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Mar 29 2010 Fabian Groffen <fabian@cwi.nl>
+- Changed \d output of mclient no longer to list (internal use only) system tables.  Administrator users who like to inspect these tables can use SELECT * FROM tables; instead
+
 * Wed Mar 17 2010 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented the changes required for properly running ODBC on a 64-bit platform.
 
