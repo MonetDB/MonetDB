@@ -34,7 +34,7 @@ sort a table of students on age first, and then on their names.
 module pma;
 
 command new(tpe:int, sze:wrd) :bat[:oid,:any_1]
-address PMAnew
+address PMAnew_wrd
 comment "create a new empty PMA-organized BAT (PMA for short)";
 
 @= pma_mal
@@ -93,7 +93,7 @@ comment "test the function of deletion"
 
 #include <gdk.h>
 #include <gdk_atoms.h>
-pma_export str PMAnew(bat *res, int *tpe, BUN *sz);
+pma_export str PMAnew_wrd(bat *res, int *tpe, wrd *sz);
 @= pma_decl
 pma_export str PMAins_@1(oid *pos_res, bat *b, oid *pos, @1 *val);
 pma_export str PMAbulkins_@1(oid *pos_res, bat *b, oid *pos, bat *bi);
@@ -136,7 +136,7 @@ pma_export str PMAtestdel_@1(void *dummy, bat *b);
 }
 
 @c
-pma_export str
+static str
 PMAnew(bat *res, int *tpe, BUN *sz) {
 	BAT *b;
 	BUN cnt, i;
@@ -166,6 +166,17 @@ PMAnew(bat *res, int *tpe, BUN *sz) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL,"pma.new","pma allocation failed");
+}
+
+pma_export str
+PMAnew_wrd(bat *res, int *tpe, wrd *_sz) {
+	BUN sz;
+	if (*_sz <= 0)
+		throw(MAL,"pma.new","size must be > 0");
+	if (*_sz > (wrd) BUN_MAX)
+		throw(MAL,"pma.new","size must be <= "BUNFMT, BUN_MAX);
+	sz = (BUN) *_sz;
+	return PMAnew(res, tpe, &sz);
 }
 
 @= pma_impl
