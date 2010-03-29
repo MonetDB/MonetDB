@@ -250,7 +250,7 @@ char* db_destroy(char* dbname) {
 	if ((e = deletedir(stats->path)) != NULL) {
 		snprintf(buf, sizeof(buf), "failed to destroy '%s': %s",
 				dbname, e);
-		GDKfree(e);
+		free(e);
 		SABAOTHfreeStatus(&stats);
 		return(strdup(buf));
 	}

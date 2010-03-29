@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+  29 Mar 2010; Fabian Groffen <fabian@cwi.nl> database.c:
+  Fixed an issue where merovingian(1) would lock up or crash when
+  destroying a database failed.
+
 *Feb2010-SP1
 
   16 Mar 2010; Fabian Groffen <fabian@cwi.nl>
