@@ -20,23 +20,22 @@
 @v 0.1
 @* Tokenizer
 This module implements a vertical fragmented tokenizer for strings. It is based
-on the ideas of the urlbox module.
+on the ideas of the urlbox module by mk.
 
-The input string is tokenized according to a separator character (for now hard
-coded '/'). Each token is inserted to the next BAT with the same order of
-appearance in the string. We currently support 255 tokens in each string as
-this module is intended for use with short and similar strings such as URLs.
-In addition we maintain a 2-dimensional index that points to the depth and
-height of the last token of each string.
+The input string is tokenized according to a separator character. Each token is
+inserted to the next BAT with the same order of appearance in the string. We
+currently support 255 tokens in each string as this module is intended for use
+with short and similar strings such as URLs. In addition we maintain a
+2-dimensional index that points to the depth and height of the last token of
+each string. The 2-dimensional index is combined to one BAT where the 8 least
+significant bits represent the depth, and the rest bits the height.
 
-The operations supported is insert a string (with duplicate elimination),
-retrieve a string given its oid in the 2-dimensional index, and finally
-retrieve the oid of a given string or oid_nil if it does not exist.
+The tokenizer can be accessed in two ways. Given the oid retrieve the
+re-constructed string, or given a string return its oid if present, otherwise
+nil.
 
-@- Current status
-The two dimensional index is implemented with 2 bats. This will change by
-using only 1 bat and use the first 24 bits for height and the rest 8 for
-depth (on a 64bit arch this will be 56 and 8 respectively).
+Strings can be added either in batch (from a file or a bat of strings) and by
+appending a single string. Duplicate elimination is always performed.
 
 There can be only one tokenizer open at the same time. This is achieved by
 setting a TRANSaction bat. This might change in the future. However there
@@ -52,7 +51,7 @@ based on a vertical fragmented representation.";
 
 command open(name:str):void
 address TKNZRopen
-comment "open the names tokenizer store";
+comment "open the named tokenizer store, a new one is created if the specified name does not exist";
 
 command close():void
 address TKNZRclose
@@ -60,43 +59,35 @@ comment "close the current tokenizer store";
 
 pattern take(i:oid):str
 address TKNZRtakeOid
-comment "take the i-th string";
+comment "reconstruct and returns the i-th string";
 
 pattern locate(s:str):oid
 address TKNZRlocate
 comment "if the given string is in the store returns its oid, otherwise oid_nil";
 
-command tokenize(u:str):oid
-address TKNZRdeposit
-comment "tokenize a new string, if it is a duplicate entry the oid of the first entry is used";
+command append(u:str):oid
+address TKNZRappend
+comment "tokenize a new string and append it to the tokenizer (duplicate elimination is performed)";
 
 command depositFile(fnme:str):void
 address TKNZRdepositFile
-comment "batch insertion from a file of strings to tokenize, each string is seperated by a new line";
-
-pattern toString(i:oid):str
-address TKNZRtakeOid
-comment "get the string representation of an element (same as take)";
+comment "batch insertion from a file of strings to tokenize, each string is separated by a new line";
 
 command getLevel(i:int):bat[:oid,:str]
 address TKNZRgetLevel
 comment "administrative function that returns the bat on level i";
 
-command getDepth():bat[:void,:bte]
-address TKNZRgetDepth
-comment "administrative function that returns the depth bat";
-
-command getHeight():bat[:void,:oid]
-address TKNZRgetHeight
-comment "administrative function that returns the height bat";
+command getIndex():bat[:void,:oid]
+address TKNZRgetIndex
+comment "administrative function that returns the INDEX bat";
 
 command getCount():bat[:void,:wrd]
 address TKNZRgetCount
-comment "debuging function that returns the size of the bats at each level";
+comment "debugging function that returns the size of the bats at each level";
 
 command getCardinality():bat[:void,:wrd]
 address TKNZRgetCardinality
-comment "debuging function that returns the unique tokens at each level";
+comment "debugging function that returns the unique tokens at each level";
 
 @{
 @-
@@ -124,14 +115,12 @@ comment "debuging function that returns the unique tokens at each level";
 @h
 tokenizer_export str TKNZRopen             (int *r, str *name);
 tokenizer_export str TKNZRclose            (int *r);
-tokenizer_export str TKNZRdeposit          (oid *pos, str *tuple);
-tokenizer_export str TKNZRtake             @:params@
+tokenizer_export str TKNZRappend          (oid *pos, str *tuple);
 tokenizer_export str TKNZRlocate           @:params@
 tokenizer_export str TKNZRtakeOid          @:params@
 tokenizer_export str TKNZRdepositFile      (int *r, str *fnme);
 tokenizer_export str TKNZRgetLevel         (int *r, int *level);
-tokenizer_export str TKNZRgetDepth         (int *r);
-tokenizer_export str TKNZRgetHeight        (int *r);
+tokenizer_export str TKNZRgetIndex         (int *r);
 tokenizer_export str TKNZRgetCount         (int *r);
 tokenizer_export str TKNZRgetCardinality   (int *r);
 
@@ -144,12 +133,21 @@ tokenizer_export str TKNZRgetCardinality   (int *r);
 #include "mal_linker.h"
 
 #define MAX_TKNZR_DEPTH 256
-#define DEPTH MAX_TKNZR_DEPTH
-#define HEIGHT MAX_TKNZR_DEPTH+1
+#define INDEX MAX_TKNZR_DEPTH
 static int tokenDepth = 0;
-static BAT *tokenBAT[MAX_TKNZR_DEPTH+2];
+static BAT *tokenBAT[MAX_TKNZR_DEPTH+1];
 static BAT *TRANS = NULL;
 static char name[128];
+
+#if SIZEOF_OID == 4 /* 32-bit oid */
+#define MAX_h ((((oid)1)<<23)-1)
+#else /* 64-bit oid */
+#define MAX_h ((((oid)1)<<55)-1)
+#endif
+
+#define COMP(h, d) ((h<<8)|(d&255))
+#define GET_d(x) ((x)&255)
+#define GET_h(x) ((x)>>8)
 
 str
 TKNZRopen(int *ret, str *in)
@@ -170,19 +168,19 @@ TKNZRopen(int *ret, str *in)
 	}
 	tokenDepth = 0;
 
-	TRANS = BATnew(TYPE_void, TYPE_str, MAX_TKNZR_DEPTH+2);
+	TRANS = BATnew(TYPE_void, TYPE_str, MAX_TKNZR_DEPTH+1);
 	if (TRANS == NULL) {
 		throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 	}
     BATseqbase(TRANS, 0);
 
-	if (strlen(*in)>127)
-		throw(MAL, "tokenizer.deposit",
+	if (strlen(*in) > 127)
+		throw(MAL, "tokenizer.open",
 				ILLEGAL_ARGUMENT " tokenizer name too long");
 
 	snprintf(name, 128, "%s", *in);
-	batname = (str) GDKmalloc(128*sizeof(char));
-	snprintf(batname, 128, "%s_height", name);
+	batname = (str) GDKmalloc(134*sizeof(char));
+	snprintf(batname, 134, "%s_index", name);
 	idx = BBPindex(batname);
 
 	if (idx == 0) { /* new tokenizer */
@@ -192,39 +190,18 @@ TKNZRopen(int *ret, str *in)
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 		BATkey(b, FALSE);
 		BATseqbase(b,0);
-		tokenBAT[HEIGHT] = b;
+		tokenBAT[INDEX] = b;
 		if (BKCsetName(&r, (int *)&(b->batCacheid), (str *) &batname)
 				!= MAL_SUCCEED)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
 		if (BKCsetPersistent(&r,(int *)&(b->batCacheid)) != MAL_SUCCEED)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
-		BBPkeepref(b->batCacheid);
-		BUNappend(TRANS, batname, FALSE);
-
-		snprintf(batname, 128, "%s_depth", name);
-		b = BATnew(TYPE_void, TYPE_bte, 1024);
-		if (b == NULL)
-			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
-		BATkey(b, FALSE);
-		BATseqbase(b,0);
-		tokenBAT[DEPTH] = b;
-		if (BKCsetName(&r, (int *) &(b->batCacheid), (str *) &batname)
-				!= MAL_SUCCEED)
-			throw(MAL, "tokenizer.open", OPERATION_FAILED);
-		if (BKCsetPersistent(&r, (int *)  &(b->batCacheid)) != MAL_SUCCEED)
-			throw(MAL, "tokenizer.open", OPERATION_FAILED);
-		BBPkeepref(b->batCacheid);
+		//BBPkeepref(b->batCacheid);
 		BUNappend(TRANS, batname, FALSE);
 
 	} else { /* existing tokenizer */
 
-		tokenBAT[HEIGHT] = BATdescriptor(idx);
-		BUNappend(TRANS, batname, FALSE);
-		snprintf(batname, 128, "%s_depth", name);
-		idx = BBPindex(batname);
-		if (idx == 0)
-			throw(MAL, "tokenizer.open", RUNTIME_OBJECT_MISSING);
-		tokenBAT[DEPTH] = BATdescriptor(idx);
+		tokenBAT[INDEX] = BATdescriptor(idx);
 		BUNappend(TRANS, batname, FALSE);
 
 		for (depth = 0; depth < MAX_TKNZR_DEPTH; depth++) {
@@ -251,6 +228,7 @@ if (TRANS == NULL) {
 str
 TKNZRclose(int *r)
 {
+	int i;
 	(void) r;
 
 	@:init_check@
@@ -258,20 +236,26 @@ TKNZRclose(int *r)
 	TMsubcommit(TRANS);
 	BBPreclaim(TRANS);
 	TRANS = NULL;
+
+	for (i = 0; i < tokenDepth; i++) {
+		BBPunfix(tokenBAT[i]->batCacheid);
+	}
+	BBPunfix(tokenBAT[INDEX]->batCacheid);
+
 	tokenDepth = 0;
 
 	return MAL_SUCCEED;
 }
 
-@- the actual tokenize code
+@- Tokenize operations
 
 @c
 int
-TKNZRtokenize(str url, str *parts, char tkn) {
+TKNZRtokenize(str in, str *parts, char tkn) {
 	char *s, *t;
 	int depth = 0;
 
-	s = url;
+	s = in;
 	while (*s && *s != '\n') {
 		t = s;
 		while (*t && *t != '\n' && *t != tkn) t++;
@@ -288,71 +272,52 @@ TKNZRtokenize(str url, str *parts, char tkn) {
 	return depth;
 }
 
-str
-TKNZRfindOid(oid *pos, char d, oid h) {
-	BAT *b, *c;
-	BUN p, q;
-	BATiter bi;
-
-	b = BATuselect(tokenBAT[HEIGHT], (ptr) &h, NULL);
-	c = VIEWcombine(b); BBPunfix(b->batCacheid);
-	b = BATfetchjoin(c, tokenBAT[DEPTH], BATcount(c)); BBPunfix(c->batCacheid);
-
-	*pos = BUN_NONE;
-	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATloop(b, p, q) {
-		if (*((char *) BUNtail(bi, p)) == d) {
-			*pos = *(oid *) BUNhead(bi, p);
-			p = q;
-		}
-	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
 @= insert
-	str parts[MAX_TKNZR_DEPTH];
-	int i = 0, depth;
-	BAT *b;
-	BUN p;
-	BUN idx = 0;
-	oid prv = 0;
-	str batname;
-	int new, r;
-
-	depth = TKNZRtokenize(tuple, parts, '/');
+	depth = TKNZRtokenize(url, parts, '/');
 	new = depth;
-	batname = (str) GDKmalloc(128*sizeof(char));
 
-	if (depth == 0) return MAL_SUCCEED;
-	if (depth > MAX_TKNZR_DEPTH)
+	if (depth == 0) {
+		GDKfree(url);
+		return MAL_SUCCEED;
+	}
+	if (depth > MAX_TKNZR_DEPTH) {
+		GDKfree(url);
 		throw(MAL, "tokenizer",
-				ILLEGAL_ARGUMENT " strings breaks to too many parts");
+				ILLEGAL_ARGUMENT "input string breaks to too many parts");
+	}
 	if (depth > tokenDepth || tokenBAT[0] == NULL) {
 		new = tokenDepth;
 		for (i = tokenDepth; i < depth; i++){
 
 			/* make new bat */
+			batname = (str) GDKmalloc(128*sizeof(char));
 			snprintf(batname, 128, "%s_%d", name, i);
 			b = BATnew(TYPE_oid, TYPE_str, 1024);
-			if (b == NULL)
-				throw(MAL, "tokenizer.insert", MAL_MALLOC_FAIL);
+			if (b == NULL) {
+				GDKfree(batname);
+				GDKfree(url);
+				throw(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
+			}
 			BATkey(b, FALSE);
 			tokenBAT[i] = b;
 
 			if (BKCsetName(&r, (int *) &(b->batCacheid), (str *) &batname)
-					!= MAL_SUCCEED)
+					!= MAL_SUCCEED) {
+				GDKfree(batname);
+				GDKfree(url);
 				throw(MAL, "tokenizer.open", OPERATION_FAILED);
-			if (BKCsetPersistent(&r, (int *)  &(b->batCacheid)) != MAL_SUCCEED)
+			}
+			if (BKCsetPersistent(&r, (int *)  &(b->batCacheid))
+					!= MAL_SUCCEED) {
+				GDKfree(batname);
+				GDKfree(url);
 				throw(MAL, "tokenizer.open", OPERATION_FAILED);
+			}
 			BBPkeepref(b->batCacheid);
 			BUNappend(TRANS, batname, FALSE);
+			GDKfree(batname);
 		}
 		tokenDepth = depth;
-		GDKfree(batname);
 	}
 
 @-
@@ -381,14 +346,20 @@ Find the common prefix first
 	}
 
 @-
-Insert the remainder as a new url string
+Insert the remainder as a new string
 @= insremainder
 	for(; i < depth; i++){
 		idx = BATcount(tokenBAT[i]);
+		if (idx > MAX_h) {
+			GDKfree(url);
+			throw(MAL, "tokenizer.append",
+					OPERATION_FAILED " no more free oid's");
+		}
 		tokenBAT[i] = BUNins(tokenBAT[i], (ptr) &prv, parts[i], FALSE);
 		if (tokenBAT[i] == NULL) {
-			throw(MAL, "tokenizer.insert",
-					OPERATION_FAILED " could not insert");
+			GDKfree(url);
+			throw(MAL, "tokenizer.append",
+					OPERATION_FAILED " could not append");
 		}
 		if (tokenBAT[i]->T->hash == NULL ||
 			BATcount(tokenBAT[i]) > 4 * tokenBAT[i]->T->hash->mask) {
@@ -400,29 +371,50 @@ Insert the remainder as a new url string
 
 @c
 str
-TKNZRinsert(oid *pos, str tuple)
+TKNZRappend(oid *pos, str *s)
 {
+	str url;
+	str batname;
+	str parts[MAX_TKNZR_DEPTH];
+	int i, new, r, depth;
+	BAT *b;
+	BUN p;
+	BUN idx = 0;
+	oid prv = 0;
+	oid comp;
+
+	@:init_check@
+
+	if ((url = GDKstrdup(*s)) == NULL) {
+		throw(MAL, "tokenizer.append",
+				OPERATION_FAILED "could not allocate memory");
+	}
+
 	@:insert@
 	@:findcommon@
 
 	if (i == depth) {
-		TKNZRfindOid(pos, depth, prv);
-		if (*pos != BUN_NONE)
+		comp = COMP(prv, depth);
+		*pos = BUNfnd(tokenBAT[INDEX], (ptr) &comp);
+		if (*pos != BUN_NONE) {
 			/* the string is already there */
+			GDKfree(url);
 			return MAL_SUCCEED;
+		}
 	}
 
 	@:insremainder@
 
-	*pos = (oid) BATcount(tokenBAT[HEIGHT]);
-	BUNappend(tokenBAT[DEPTH], (ptr) &depth, TRUE);
-	BUNappend(tokenBAT[HEIGHT], (ptr) &prv, TRUE);
-	if (tokenBAT[HEIGHT]->T->hash == NULL ||
-			BATcount(tokenBAT[HEIGHT]) > 4 * tokenBAT[HEIGHT]->T->hash->mask) {
-		HASHdestroy(tokenBAT[HEIGHT]);
-		BAThash(BATmirror(tokenBAT[HEIGHT]), 2*BATcount(tokenBAT[HEIGHT]));
+	*pos = (oid) BATcount(tokenBAT[INDEX]);
+	comp = COMP(prv, depth);
+	BUNappend(tokenBAT[INDEX], (ptr) &comp, TRUE);
+	if (tokenBAT[INDEX]->T->hash == NULL ||
+			BATcount(tokenBAT[INDEX]) > 4 * tokenBAT[INDEX]->T->hash->mask) {
+		HASHdestroy(tokenBAT[INDEX]);
+		BAThash(BATmirror(tokenBAT[INDEX]), 2*BATcount(tokenBAT[INDEX]));
 	}
 
+	GDKfree(url);
 	return MAL_SUCCEED;
 }
 
@@ -472,7 +464,7 @@ TKNZRdepositFile(int *r, str *fnme)
 			}
 			/* found a string to be processed */
 			*t = 0;
-			TKNZRinsert(&pos, s);
+			TKNZRappend(&pos, &s);
 			*t= '\n';
 			s= t+1;
 			t= s;
@@ -485,48 +477,35 @@ TKNZRdepositFile(int *r, str *fnme)
 	return MAL_SUCCEED;
 }
 
-@c
-str
-TKNZRdeposit(oid *pos, str *s)
-{
-	char tuple[2048];
-
-	@:init_check@
-
-	if (strlen(*s)<2048)
-		strcpy(tuple,*s);
-	else throw(MAL, "tokenizer.deposit", ILLEGAL_ARGUMENT "string too long");
-
-	TKNZRinsert(pos, tuple);
-
-	return MAL_SUCCEED;
-}
-
 str
 TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	oid pos;
 	str url;
 	str parts[MAX_TKNZR_DEPTH];
-	char tuple[2048];
 	int i = 0, depth;
 	BUN p;
 	oid prv = 0;
+	oid comp;
 	(void) cntxt;
 	(void) mb;
 
 	@:init_check@
 
-	url = *(str*) getArgReference(stk, pci, 1);
-	if (strlen(url)<2048)
-		strcpy(tuple,url);
-	else throw(MAL, "tokenizer.locate", ILLEGAL_ARGUMENT "string too long");
+	url = (str) GDKmalloc(sizeof(char)*
+			(strlen(*(str*) getArgReference(stk, pci, 1))+1));
+	if (url == NULL) {
+		throw(MAL, "tokenizer.locate", OPERATION_FAILED "memory allocation");
+	}
+	strcpy(url, *(str*) getArgReference(stk, pci, 1));
 
-	depth = TKNZRtokenize(tuple, parts, '/');
+
+	depth = TKNZRtokenize(url, parts, '/');
 
 	if (depth == 0) {
 		pos = oid_nil;
 	} else if (depth > MAX_TKNZR_DEPTH) {
+		GDKfree(url);
 		throw(MAL, "tokenizer.locate",
 				ILLEGAL_ARGUMENT "strings breaks to too many parts");
 	} else if (depth > tokenDepth) {
@@ -543,30 +522,19 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				prv = (oid) p;
 			}
-			if (prv == oid_nil) 
+			if (prv == oid_nil) {
 				pos = oid_nil;
-			else 
-				TKNZRfindOid(&pos, depth, prv);
+			} else {
+				comp = COMP(prv,i);
+				pos = BUNfnd(BATmirror(tokenBAT[INDEX]), (ptr) &comp);
+			}
 		} else {
 			pos = oid_nil;
 		}
 	}
 
 	VALset(getArgReference(stk,pci,0), TYPE_oid, &pos);
-	return MAL_SUCCEED;
-}
-
-
-str
-TKNZRtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) stk;
-	(void) pci;
-	(void) cntxt;
-	(void) mb;        /* fool compiler */
-
-	@:init_check@
-
+	GDKfree(url);
 	return MAL_SUCCEED;
 }
 
@@ -586,11 +554,13 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:init_check@
 
 	id = *(oid*) getArgReference(stk, pci, 1);
-	if (id >= BATcount(tokenBAT[DEPTH])) {
+	if (id >= BATcount(tokenBAT[INDEX])) {
 		throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " illegal oid");
 	}
-	depth = *(chr *) Tloc(tokenBAT[DEPTH], id);
-	id = *(oid *) Tloc(tokenBAT[HEIGHT], id);
+	id = *(oid *) Tloc(tokenBAT[INDEX], id);
+
+	depth = GET_d(id);
+	id = GET_h(id);
 
 	for (i = depth-1; i >= 0; i--) {
 		BATiter bi = bat_iterator(tokenBAT[i]);
@@ -613,28 +583,20 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+TKNZRgetIndex (int *r) {
+	@:init_check@
+	*r = tokenBAT[INDEX]->batCacheid;
+	BBPincref(*r, TRUE);
+	return MAL_SUCCEED;
+}
+
+str
 TKNZRgetLevel (int *r, int *level) {
 
 	@:init_check@
 	if( *level < 0 || *level >= tokenDepth)
 		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
 	*r = tokenBAT[*level]->batCacheid;
-	BBPincref(*r, TRUE);
-	return MAL_SUCCEED;
-}
-
-str
-TKNZRgetDepth (int *r) {
-	@:init_check@
-	*r = tokenBAT[DEPTH]->batCacheid;
-	BBPincref(*r, TRUE);
-	return MAL_SUCCEED;
-}
-
-str
-TKNZRgetHeight (int *r) {
-	@:init_check@
-	*r = tokenBAT[HEIGHT]->batCacheid;
 	BBPincref(*r, TRUE);
 	return MAL_SUCCEED;
 }
@@ -654,6 +616,9 @@ TKNZRgetCount (int *r) {
 		cnt = (wrd) BATcount(tokenBAT[i]);
 		BUNappend(b, &cnt, FALSE);
 	}
+	b->hdense = TRUE;
+	BATseqbase(b, 0);
+	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
@@ -676,6 +641,10 @@ TKNZRgetCardinality (int *r) {
 		BBPunfix(bn->batCacheid);
 		BUNappend(b, &cnt, FALSE);
 	}
+
+	b->hdense = TRUE;
+	BATseqbase(b, 0);
+	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
 	BBPkeepref(*r);
 	return MAL_SUCCEED;
