@@ -1,6 +1,8 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+*Feb2010-SP1
+
   16 Mar 2010; Fabian Groffen <fabian@cwi.nl>
   merovingian_controlrunner.c:
   Enlarged buffer to avoid incomplete output being sent to monetdb(1),

@@ -1,6 +1,8 @@
 # ChangeLog file for java
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+*Feb2010-SP1
+
   09 Mar 2010; Fabian Groffen <fabian@cwi.nl> configure.ag, Makefile.ag:
   Set JAVA_HOME to the configure derived value, such that ant will use
   the javac compiler as found by configure, and not the one it was built
