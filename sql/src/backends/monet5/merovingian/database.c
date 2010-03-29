@@ -183,7 +183,7 @@ static char* deletedir(char *dir) {
 			return(strdup(buf));
 		}
 
-		if (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode)) {
+		if (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode) || S_ISSOCK(s.st_mode)) {
 			if (unlink(path) == -1) {
 				snprintf(buf, sizeof(buf), "unable to unlink file %s: %s",
 						path, strerror(errno));
