@@ -27,9 +27,7 @@
 #include "url.h"
 #include "rdf.h"
 #include "raptor.h"
-#if 0
 #include "../tokenizer.h"
-#endif
 
 typedef struct graphBATdef {
 	graphBATType batType;    /* BAT type             */
@@ -170,7 +168,7 @@ if (bun == BUN_NONE) {
 @= rdf_tknzr_insert
 {
 	str t = @1;
-	TKNZRdeposit(&bun,&t);
+	TKNZRappend(&bun,&t);
 }
 
 @= rdf_BUNappend
@@ -210,7 +208,7 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 		@:rdf_BUNappend(graph[O_sort], &bun)@
 		bun = BUN_NONE;
 	} else if (triple->object_type == RAPTOR_IDENTIFIER_TYPE_LITERAL) {
-		@:rdf_BUNappend_unq(graph[MAP_LEX], triple->object)@
+		@:rdf_BUNappend_unq_1(graph[MAP_LEX], triple->object)@
 		@:rdf_BUNappend(graph[O_sort], &bun)@
 		bun = BUN_NONE;
 	} else {
@@ -363,7 +361,7 @@ static str
 post_processing (parserData *pdata)
 {
 	BUN cnt;
-	BAT *map_oid = NULL, *S = NULL, *P = NULL, *O = NULL, *ctref= NULL;
+	BAT *map_oid = NULL, *S = NULL, *P = NULL, *O = NULL;
 	BAT **graph = pdata->graph;
 #ifdef _TKNZR_H
 	BATiter bi, mi;
@@ -396,6 +394,7 @@ post_processing (parserData *pdata)
 	O = graph[O_sort];
 	cnt = BATcount(S);
 #else
+	BAT *ctref= NULL;
 	/* order MAP_LEX */
 	BATorder(BATmirror(graph[MAP_LEX]));
 	map_oid = BATmark(graph[MAP_LEX], 0);   /* BATmark will create a copy */
@@ -456,6 +455,7 @@ post_processing (parserData *pdata)
 	return MAL_SUCCEED;
 #endif
 
+#ifndef _TKNZR_H
 bailout:
 	if (map_oid != NULL) BBPreclaim(map_oid);
 	if (ctref   != NULL) BBPreclaim(ctref);
@@ -463,6 +463,7 @@ bailout:
 	if (P       != NULL) BBPreclaim(P);
 	if (O       != NULL) BBPreclaim(O);
 	return NULL;
+#endif
 }
 
 @= clean_raptor
