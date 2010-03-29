@@ -2148,12 +2148,6 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 			free(mid->hostname);
 		mid->hostname = strdup(host);
 	}
-	if (port == 0) {
-		char *def;
-
-		if ((def = getenv("MAPIPORT")) != NULL)
-			port = atoi(def);
-	}
 	if (port == 0)
 		port = 50000;	/* hardwired default */
 
