@@ -1,5 +1,5 @@
 %define name MonetDB4-XQuery
-%define version 0.36.3
+%define version 0.36.4
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 

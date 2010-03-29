@@ -19,7 +19,7 @@ dnl -*- mode: autoconf -*-
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.60)
-AC_INIT([MonetDB Server], [5.18.3], [monet@cwi.nl], [MonetDB5-server])
+AC_INIT([MonetDB Server], [5.18.4], [monet@cwi.nl], [MonetDB5-server])
 #                          ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
