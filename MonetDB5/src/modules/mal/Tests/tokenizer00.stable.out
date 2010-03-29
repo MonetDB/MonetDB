@@ -16,29 +16,27 @@ stdout of test 'tokenizer00` in directory 'src/modules/mal` itself:
 function user.main():void;
 #basic test for the tokenizer module 
     tokenizer.open("test");
-    tokenizer.tokenize("http://www.cwi.nl");
-    tokenizer.tokenize("http://www.cwi.nl/");
-    tokenizer.tokenize("http://www.cwi.nl/~lsidir");
-    tokenizer.tokenize("http://www.cwi.nl/~mk");
-    tokenizer.tokenize("http://www.cwi.nl/~mk");
-    tokenizer.tokenize("http://www.ics.forth.gr");
-    tokenizer.tokenize("http://www.ics.forth.gr/");
-    tokenizer.tokenize("http://www.ics.forth.gr/~lsidir");
-    tokenizer.tokenize("http://www.cook.gr/");
-    tokenizer.tokenize("http://www.cook.gr/~lsidir");
-    tokenizer.tokenize("http://www.cook.gr/~mk");
-    tokenizer.tokenize("http://www.nocook.nl/~mk");
-    tokenizer.tokenize("http://www.nocook.nl/");
-    tokenizer.tokenize("ftp://thepiratebay.org");
+    tokenizer.append("http://www.cwi.nl");
+    tokenizer.append("http://www.cwi.nl/");
+    tokenizer.append("http://www.cwi.nl/~lsidir");
+    tokenizer.append("http://www.cwi.nl/~mk");
+    tokenizer.append("http://www.cwi.nl/~mk");
+    tokenizer.append("http://www.ics.forth.gr");
+    tokenizer.append("http://www.ics.forth.gr/");
+    tokenizer.append("http://www.ics.forth.gr/~lsidir");
+    tokenizer.append("http://www.cook.gr/");
+    tokenizer.append("http://www.cook.gr/~lsidir");
+    tokenizer.append("http://www.cook.gr/~mk");
+    tokenizer.append("http://www.nocook.nl/~mk");
+    tokenizer.append("http://www.nocook.nl/");
+    tokenizer.append("ftp://thepiratebay.org");
     id := 4@0:oid;
     t := tokenizer.take(id);
     io.print(t);
     id := tokenizer.locate(t);
     io.print(id);
-    d:bat[:void,:bte]  := tokenizer.getDepth();
+    d:bat[:void,:oid]  := tokenizer.getIndex();
     io.print(d);
-    h:bat[:void,:oid]  := tokenizer.getHeight();
-    io.print(h);
     level0:bat[:oid,:str]  := tokenizer.getLevel(0);
     level1:bat[:oid,:str]  := tokenizer.getLevel(1);
     level2:bat[:oid,:str]  := tokenizer.getLevel(2);
@@ -57,34 +55,18 @@ end main;
 [ 4@0 ]
 #-----------------#
 # h	t	  # name
-# void	bte	  # type
-#-----------------#
-[ 0@0,	  3	  ]
-[ 1@0,	  4	  ]
-[ 2@0,	  4	  ]
-[ 3@0,	  3	  ]
-[ 4@0,	  4	  ]
-[ 5@0,	  3	  ]
-[ 6@0,	  4	  ]
-[ 7@0,	  4	  ]
-[ 8@0,	  4	  ]
-[ 9@0,	  3	  ]
-[ 10@0,	  3	  ]
-#-----------------#
-# h	t	  # name
 # void	oid	  # type
 #-----------------#
-[ 0@0,	  0@0	  ]
-[ 1@0,	  0@0	  ]
-[ 2@0,	  1@0	  ]
-[ 3@0,	  1@0	  ]
-[ 4@0,	  2@0	  ]
-[ 5@0,	  2@0	  ]
-[ 6@0,	  3@0	  ]
-[ 7@0,	  4@0	  ]
-[ 8@0,	  5@0	  ]
-[ 9@0,	  3@0	  ]
-[ 10@0,	  4@0	  ]
+[ 0@0,	  3@0	  ]
+[ 1@0,	  4@0	  ]
+[ 2@0,	  260@0	  ]
+[ 3@0,	  259@0	  ]
+[ 4@0,	  516@0	  ]
+[ 5@0,	  515@0	  ]
+[ 6@0,	  772@0	  ]
+[ 7@0,	  1028@0  ]
+[ 8@0,	  1284@0  ]
+[ 9@0,	  1027@0  ]
 #-------------------------#
 # h	t		  # name
 # oid	str		  # type

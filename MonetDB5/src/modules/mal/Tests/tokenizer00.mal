@@ -3,20 +3,20 @@ include tokenizer;
 
 tokenizer.open("test");
 
-tokenizer.tokenize("http://www.cwi.nl");
-tokenizer.tokenize("http://www.cwi.nl/");
-tokenizer.tokenize("http://www.cwi.nl/~lsidir");
-tokenizer.tokenize("http://www.cwi.nl/~mk");
-tokenizer.tokenize("http://www.cwi.nl/~mk");
-tokenizer.tokenize("http://www.ics.forth.gr");
-tokenizer.tokenize("http://www.ics.forth.gr/");
-tokenizer.tokenize("http://www.ics.forth.gr/~lsidir");
-tokenizer.tokenize("http://www.cook.gr/");
-tokenizer.tokenize("http://www.cook.gr/~lsidir");
-tokenizer.tokenize("http://www.cook.gr/~mk");
-tokenizer.tokenize("http://www.nocook.nl/~mk");
-tokenizer.tokenize("http://www.nocook.nl/");
-tokenizer.tokenize("ftp://thepiratebay.org");
+tokenizer.append("http://www.cwi.nl");
+tokenizer.append("http://www.cwi.nl/");
+tokenizer.append("http://www.cwi.nl/~lsidir");
+tokenizer.append("http://www.cwi.nl/~mk");
+tokenizer.append("http://www.cwi.nl/~mk");
+tokenizer.append("http://www.ics.forth.gr");
+tokenizer.append("http://www.ics.forth.gr/");
+tokenizer.append("http://www.ics.forth.gr/~lsidir");
+tokenizer.append("http://www.cook.gr/");
+tokenizer.append("http://www.cook.gr/~lsidir");
+tokenizer.append("http://www.cook.gr/~mk");
+tokenizer.append("http://www.nocook.nl/~mk");
+tokenizer.append("http://www.nocook.nl/");
+tokenizer.append("ftp://thepiratebay.org");
 
 id := 4:oid;
 t  := tokenizer.take(id);
@@ -24,10 +24,8 @@ io.print(t);
 id := tokenizer.locate(t);
 io.print(id);
 
-d:bat[:void,:bte] := tokenizer.getDepth();
+d:bat[:void,:oid] := tokenizer.getIndex();
 io.print(d);
-h:bat[:void,:oid] := tokenizer.getHeight();
-io.print(h);
 
 level0:bat[:oid,:str] := tokenizer.getLevel(0);
 level1:bat[:oid,:str] := tokenizer.getLevel(1);
