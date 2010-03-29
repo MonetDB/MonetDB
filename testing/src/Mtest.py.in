@@ -3820,7 +3820,7 @@ def main(argv) :
 
         # we write in SQL the same codes as testweb uses in the HTML
         # pages, for readability
-        Fcodes = ['o', 'x', 'S', 'T', 'X', 'C', '-']
+        Fcodes = ['o', 'x', 'S', 'T', 'R', 'X', 'C', '-']
 
         # we are not interested in the compiler, not its path, nor its
         # options.  We do store the options separately, though
