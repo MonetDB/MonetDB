@@ -225,7 +225,6 @@ doProfile(void *d)
 	char *host;
 	int portnr;
 	char id[10];
-	int colind[30], colcnt = 0;
 	Mapi dbh;
 	MapiHdl hdl = NULL;
 
@@ -258,7 +257,6 @@ doProfile(void *d)
 			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
 					profileCounter[i].ptag);
 			doQ(buf);
-			colind[colcnt++] = i;
 			printf("-- %s%s\n", id, buf);
 		}
 		x = profileCounter[i].ptag;
