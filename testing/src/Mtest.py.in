@@ -2554,11 +2554,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     # FIXME: this begs for a much nicer solution (100% copy of below)
     if os.path.isfile(TestErrFile):
         for l in open(TestErrFile):
-            if TO.match(l):
+            if TO.search(l):
                 segfaulted = True
     if not segfaulted and os.path.isfile(TestOutFile):
         for l in open(TestOutFile):
-            if TO.match(l):
+            if TO.search(l):
                 segfaulted = True
 
     recursion = False
@@ -2568,11 +2568,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         # FIXME: this begs for a much nicer solution (100% copy of below)
         if os.path.isfile(TestErrFile):
             for l in open(TestErrFile):
-                if TO.match(l):
+                if TO.search(l):
                     recursion = True
         if not recursion and os.path.isfile(TestOutFile):
             for l in open(TestOutFile):
-                if TO.match(l):
+                if TO.search(l):
                     recursion = True
 
     if not segfaulted and not recursion and not timedout:
