@@ -1097,7 +1097,6 @@ end main;
 [ "get_row_count",		  "command",	  "mapi",		  "(hdl:int):lng ",														  "SERVERget_row_count;"			  ]
 [ "get_field_count",		  "command",	  "mapi",	  "(hdl:int):int ",															  "SERVERget_field_count;"				  ]
 [ "lookup",			  "command",	  "mapi",	  "(dbalias:str):int ",															  "SERVERlookup;"					  ]
-[ "listen",				  "command",	  "mapi",	  "(port:int,maxusers:int,cmd:str):int ",											  "SERVERlisten_cmd;"					  ]
 [ "listen",				  "command",	  "mapi",	  "(unixsocket:str):int ",													  "SERVERlisten_usock;"					  ]
 [ "listen",			  "command",	  "mapi",	  "(port:int):int ",															  "SERVERlisten_port;"					  ]
 [ "listen",			  "command",	  "mapi",	  "():int ",																  "SERVERlisten_default;"				  ]

@@ -48,9 +48,6 @@ comment "Start a Mapi listener on the port given.";
 command listen(unixsocket:str):int
 address SERVERlisten_usock
 comment "Start a Mapi listener on the unix socket file given.";
-command listen(port:int, maxusers:int, cmd:str):int
-address SERVERlisten_cmd
-comment "Start the Mapi listener on <port> for <maxusers>.  For a new client connection MAL procedure <cmd>(Stream s_in, Stream s_out) is called.  If no <cmd> is specified a new client thread is forked.";
 
 command stop():void
 address SERVERstop
@@ -279,11 +276,10 @@ mapi.listen();
 #define SERVERPORT		50000
 #define SERVERMAXUSERS 		5
 
-mal_mapi_export str SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
+mal_mapi_export str SERVERlisten(int *Port, str *Usockfile, int *Maxusers);
 mal_mapi_export str SERVERlisten_default(int *ret);
 mal_mapi_export str SERVERlisten_port(int *ret, int *pid);
 mal_mapi_export str SERVERlisten_usock(int *ret, str *usock);
-mal_mapi_export str SERVERlisten_cmd(int *ret, int *port, int *maxusers, str *cmd);
 mal_mapi_export str SERVERstop(int *ret);
 mal_mapi_export str SERVERsuspend(int *ret);
 mal_mapi_export str SERVERresume(int *ret);
@@ -381,82 +377,77 @@ static void generateChallenge(str buf, int min, int max) {
 }
 
 static void 
-doChallenge(str cmd, stream *in, stream *out) {
+doChallenge(stream *in, stream *out) {
 #ifdef DEBUG_SERVER
 	Client cntxt= mal_clients;
 #endif
-	if (cmd == NULL) {
-		char *buf = (char *) GDKmalloc(BLOCK + 1);
-		char *challenge;
-		char *algos;
-		stream *fdin = block_stream(in);
-		stream *fdout = block_stream(out);
-		bstream *bs;
-		int len = 0;
+	char *buf = (char *) GDKmalloc(BLOCK + 1);
+	char *challenge;
+	char *algos;
+	stream *fdin = block_stream(in);
+	stream *fdout = block_stream(out);
+	bstream *bs;
+	int len = 0;
 
-		if (buf == NULL || fdin == NULL || fdout == NULL){
-			if (fdin) {
-				stream_close(fdin);
-				stream_destroy(fdin);
-			}
-			if (fdout) {
-				stream_close(fdout);
-				stream_destroy(fdout);
-			}
-			if (buf)
-				GDKfree(buf);
-			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
-			return;
-		}
-
-		/* generate the challenge string */
-		challenge = alloca(sizeof(char) * (12 + 1));
-		generateChallenge(challenge, 8, 12);
-		if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert(0);
-		/* note that we claim to speak proto 9 here for hashed passwords */
-		stream_printf(fdout, "%s:mserver:9:%s:%s:%s:",
-				challenge,
-				algos,
-#ifdef WORDS_BIGENDIAN
-				"BIG",
-#else
-				"LIT",
-#endif
-				MONETDB5_PASSWDHASH
-				);
-		GDKfree(algos);
-		stream_flush(fdout);
-		/* get response */
-		if ((len = (int) stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
-				/* in embedded mode we allow just one client */
-				(GDKembedded && MCcountClients() > 1))
-		{
-			/* FIXME: tell the client in a normal way! */
+	if (buf == NULL || fdin == NULL || fdout == NULL){
+		if (fdin) {
 			stream_close(fdin);
 			stream_destroy(fdin);
+		}
+		if (fdout) {
 			stream_close(fdout);
 			stream_destroy(fdout);
-			GDKfree(buf);
-			return;
 		}
-		buf[len] = 0;
-#ifdef DEBUG_SERVER
-		printf("mal_mapi:Client accepted %s\n", buf);
-		fflush(stdout);
-
-		stream_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
-		stream_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
-#endif
-		bs = bstream_create(fdin, 128 * BLOCK);
-
-		bs->eof = 1;
-		MSscheduleClient(buf, challenge, bs, fdout);
-	} else {
-		/* in M4 it is possible to execute a command directly */
+		if (buf)
+			GDKfree(buf);
+		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+		return;
 	}
+
+	/* generate the challenge string */
+	challenge = alloca(sizeof(char) * (12 + 1));
+	generateChallenge(challenge, 8, 12);
+	if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert(0);
+	/* note that we claim to speak proto 9 here for hashed passwords */
+	stream_printf(fdout, "%s:mserver:9:%s:%s:%s:",
+			challenge,
+			algos,
+#ifdef WORDS_BIGENDIAN
+			"BIG",
+#else
+			"LIT",
+#endif
+			MONETDB5_PASSWDHASH
+			);
+	GDKfree(algos);
+	stream_flush(fdout);
+	/* get response */
+	if ((len = (int) stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
+			/* in embedded mode we allow just one client */
+			(GDKembedded && MCcountClients() > 1))
+	{
+		/* FIXME: tell the client in a normal way! */
+		stream_close(fdin);
+		stream_destroy(fdin);
+		stream_close(fdout);
+		stream_destroy(fdout);
+		GDKfree(buf);
+		return;
+	}
+	buf[len] = 0;
+#ifdef DEBUG_SERVER
+	printf("mal_mapi:Client accepted %s\n", buf);
+	fflush(stdout);
+
+	stream_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
+	stream_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
+#endif
+	bs = bstream_create(fdin, 128 * BLOCK);
+
+	bs->eof = 1;
+	MSscheduleClient(buf, challenge, bs, fdout);
 }
 
-static char *threadcommand = 0;
 static MT_Id listener[8]; 
 static int lastlistener=0;
 static int serveractive=TRUE;
@@ -465,7 +456,6 @@ static void
 SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
-	char *cmd = threadcommand;
 	int retval;
 	struct timeval tv;
 	fd_set fds;
@@ -599,7 +589,7 @@ SERVERlistenThread(SOCKET *Sock)
 		printf("server:accepted\n");
 		fflush(stdout);
 #endif
-		doChallenge(cmd,
+		doChallenge(
 				socket_rastream(msgsock, "Server read"),
 				socket_wastream(msgsock, "Server write"));
 	} while (1);
@@ -647,7 +637,7 @@ void SERVERannounce(struct in_addr addr, int port, str usockfile) {
 }
 
 str
-SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
+SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 {
 	struct sockaddr_in server;
 	SOCKET sock = INVALID_SOCKET;
@@ -664,7 +654,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	MT_Id pid, *pidp = &pid;
 	int port;
 	int maxusers;
-	char *cmd, *usockfile;
+	char *usockfile;
 #ifdef DEBUG_SERVER
 	char msg[512], host[512];
 	Client cntxt= mal_clients;
@@ -687,8 +677,6 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 #endif
 	}
 	maxusers = *Maxusers;
-	cmd = Cmd ? GDKstrdup(*Cmd) : NULL;
-
 	maxusers = (maxusers ? maxusers : SERVERMAXUSERS);
 
 	if (port <= 0 && usockfile == NULL)
@@ -768,7 +756,6 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 #ifdef DEBUG_SERVER
 	stream_printf(cntxt->fdout, "#SERVERlisten:Network started at %d\n", port);
 #endif
-	threadcommand = cmd;
 	psock = GDKmalloc(sizeof(SOCKET) * 3);
 
 	if (psock == NULL)
@@ -817,7 +804,7 @@ SERVERlisten_default(int *ret)
 		if (p)
 			port = (int) strtol(p, NULL, 10);
 		p = GDKgetenv("mapi_usock");
-		return SERVERlisten(&port, &p, &maxusers, 0);
+		return SERVERlisten(&port, &p, &maxusers);
 	}
 	return MAL_SUCCEED;
 }
@@ -827,14 +814,7 @@ SERVERlisten_usock(int *ret, str *usock)
 {
 	int maxusers = SERVERMAXUSERS;
 	(void) ret;
-	return SERVERlisten(0, usock, &maxusers, 0);
-}
-
-str
-SERVERlisten_cmd(int *ret, int *port, int *maxusers, str *cmd)
-{
-	(void) ret;
-	return SERVERlisten(port, 0, maxusers, cmd);
+	return SERVERlisten(0, usock, &maxusers);
 }
 
 str
@@ -844,7 +824,7 @@ SERVERlisten_port(int *ret, int *pid)
 	int maxusers = SERVERMAXUSERS;
 
 	(void) ret;
-	return SERVERlisten(&port, 0, &maxusers, 0);
+	return SERVERlisten(&port, 0, &maxusers);
 }
 @-
 The internet connection listener may be terminated from the server console,
@@ -890,7 +870,7 @@ SERVERclient(int *res, stream **In, stream **Out)
 {
 	(void) res;
 	/* in embedded mode we allow just one client */
-	doChallenge(NULL, *In, *Out);
+	doChallenge(*In, *Out);
 	return MAL_SUCCEED;
 }
 
