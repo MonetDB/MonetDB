@@ -812,6 +812,7 @@ output returned from the server.
 
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
+#include <sys/stat.h>
 #endif
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
@@ -2287,6 +2288,13 @@ connect_to_server(Mapi mid)
 		close_connection(mid);
 
 #ifdef HAVE_SYS_UN_H
+	if (mid->hostname == NULL) {
+		struct stat st;
+		snprintf(errbuf, sizeof(errbuf),
+				CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
+		if (stat(errbuf, &st) != 1 && S_ISSOCK(st.st_mode))
+			mid->hostname = strdup(errbuf);
+	}
 	if (mid->hostname && mid->hostname[0] == '/') {
 		struct msghdr msg;
 		struct iovec vec;
@@ -2337,8 +2345,10 @@ connect_to_server(Mapi mid)
 	{
 		struct hostent *hp;
 
-		if (mid->hostname == NULL ||
-		    (hp = gethostbyname(mid->hostname)) == NULL) {
+		if (mid->hostname == NULL)
+			mid->hostname = strdup("localhost");
+
+		if ((hp = gethostbyname(mid->hostname)) == NULL) {
 			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s",
 					strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
