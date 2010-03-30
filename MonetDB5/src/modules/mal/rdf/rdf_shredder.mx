@@ -360,7 +360,6 @@ int CTrefine(BAT **ret, BAT *b, BAT *a); /* from modules/kernel/group.mx */
 static str
 post_processing (parserData *pdata)
 {
-	BUN cnt;
 	BAT *map_oid = NULL, *S = NULL, *P = NULL, *O = NULL;
 	BAT **graph = pdata->graph;
 #ifdef _TKNZR_H
@@ -392,8 +391,9 @@ post_processing (parserData *pdata)
 	S = graph[S_sort];
 	P = graph[P_sort];
 	O = graph[O_sort];
-	cnt = BATcount(S);
+	/* cnt = BATcount(S); */
 #else
+	BUN cnt;
 	BAT *ctref= NULL;
 	/* order MAP_LEX */
 	BATorder(BATmirror(graph[MAP_LEX]));
