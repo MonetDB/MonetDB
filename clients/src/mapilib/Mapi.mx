@@ -2143,11 +2143,10 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 	if (mid == NULL)
 		return NULL;
 
-	if (host) {
-		if (mid->hostname)
-			free(mid->hostname);
-		mid->hostname = strdup(host);
-	}
+	if (mid->hostname)
+		free(mid->hostname);
+	mid->hostname = host ? strdup(host) : NULL;
+
 	if (port == 0)
 		port = 50000;	/* hardwired default */
 
