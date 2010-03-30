@@ -744,8 +744,9 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			 * changing the actual return variable */
 			ret = newInstruction(mc, ASSIGNsymbol);
 			ret->barrier = RETURNsymbol;
-			getArg(ret, 0) = -1; /* get rid of default retval */
-			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+			if (col == NULL) {
+				getArg(ret, 0) = newTmpVariable(mc, TYPE_void);
+			} else for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (lastcol->type == AVG) {
 					ret = pushReturn(mc, ret, lastcol->val2);
 					ret = pushReturn(mc, ret, lastcol->val3);
