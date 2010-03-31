@@ -27,7 +27,13 @@
 #endif
 #include <string.h>
 
-#include "testing_getopt.h"
+#ifdef HAVE_GETOPT
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+#else
+#include "testing_getopt.c"
+#endif
 
 static void
 showUsage(char *name)

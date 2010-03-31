@@ -16,10 +16,10 @@
 # All Rights Reserved.
 
 EXTRA_DIST = Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in \
-	     MkillUsers.in
+	     MkillUsers.in testing_getopt.c
 
 bin_Mdiff = {
-	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h testing_getopt.h testing_getopt.c
+	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
 	LIBS = $(MALLOC_LIBS)
 }
 
