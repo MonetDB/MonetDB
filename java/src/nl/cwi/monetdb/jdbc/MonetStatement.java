@@ -389,18 +389,90 @@ public class MonetStatement implements Statement {
 		return(internalExecute(sql));
 	}
 
-	/* these require us to have a clue what column will generate the
-	 * value, while we do not at all (not here at least) and also only
-	 * support one */
+	/**
+	 * Executes the given SQL statement, which may return multiple
+	 * results, and signals the driver that the auto-generated keys
+	 * indicated in the given array should be made available for
+	 * retrieval. This array contains the indexes of the columns in the
+	 * target table that contain the auto-generated keys that should be
+	 * made available. The driver will ignore the array if the given SQL
+	 * statement is not an INSERT statement.
+	 * <br /><br />
+	 * Under some (uncommon) situations, a single SQL statement may
+	 * return multiple result sets and/or update counts. Normally you
+	 * can ignore this unless you are (1) executing a stored procedure
+	 * that you know may return multiple results or (2) you are
+	 * dynamically executing an unknown SQL string.
+	 * <br /><br />
+	 * The execute method executes an SQL statement and indicates the
+	 * form of the first result. You must then use the methods
+	 * getResultSet or getUpdateCount  to retrieve the result, and
+	 * getMoreResults to move to any subsequent result(s).
+	 * <br /><br />
+	 * MonetDB only supports returing the generated key for one column,
+	 * which will be the first column that has a serial.  Hence, this
+	 * method cannot work as required and the driver will fall back to
+	 * executing with request to the database to return the generated
+	 * key, if any.
+	 * 
+	 * @param sql any SQL statement
+	 * @param columnIndexes an array of the indexes of the columns in
+	 *        the inserted row that should be made available for
+	 *        retrieval by a call to the method getGeneratedKeys
+	 * @return true if the first result is a ResultSet object; false if
+	 *         it is an update count or there are no results
+	 * @throws SQLException if a database access error occurs or the
+	 *         elements in the int array passed to this method are not
+	 *         valid column indexes
+	 */
 	public boolean execute(String sql, int[] columnIndexed)
 		throws SQLException
 	{
-		throw new SQLException("Method not supported, sorry!");
+		addWarning("execute: generated keys for fixed set of columns not supported");
+		return(execute(sql, Statement.RETURN_GENERATED_KEYS));
 	}
+
+	/**
+	 * Executes the given SQL statement, which may return multiple
+	 * results, and signals the driver that the auto-generated keys
+	 * indicated in the given array should be made available for
+	 * retrieval. This array contains the names of the columns in the
+	 * target table that contain the auto-generated keys that should be
+	 * made available. The driver will ignore the array if the given SQL
+	 * statement is not an INSERT statement.
+	 * <br /><br />
+	 * In some (uncommon) situations, a single SQL statement may return
+	 * multiple result sets and/or update counts. Normally you can
+	 * ignore this unless you are (1) executing a stored procedure that
+	 * you know may return multiple results or (2) you are dynamically
+	 * executing an unknown SQL string.
+	 * <br /><br />
+	 * The execute method executes an SQL statement and indicates the
+	 * form of the first result. You must then use the methods
+	 * getResultSet or getUpdateCount  to retrieve the result, and
+	 * getMoreResults to move to any subsequent result(s).
+	 * <br /><br />
+	 * MonetDB only supports returing the generated key for one column,
+	 * which will be the first column that has a serial.  Hence, this
+	 * method cannot work as required and the driver will fall back to
+	 * executing with request to the database to return the generated
+	 * key, if any.
+	 *
+	 * @param sql any SQL statement
+	 * @param columnNames an array of the names of the columns in the
+	 *        inserted row that should be made available for retrieval
+	 *        by a call to the method getGeneratedKeys
+	 * @return true if the next result is a ResultSet object; false if
+	 *         it is an update count or there are no more results
+	 * @throws SQLException if a database access error occurs or the
+	 *         elements of the String array passed to this method are
+	 *         not valid column names
+	 */
 	public boolean execute(String sql, String[] columnNames)
 		throws SQLException
 	{
-		throw new SQLException("Method not supported, sorry!");
+		addWarning("execute: generated keys for fixed set of columns not supported");
+		return(execute(sql, Statement.RETURN_GENERATED_KEYS));
 	}
 
 	/**

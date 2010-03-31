@@ -1,6 +1,14 @@
 # ChangeLog file for java
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  31 Mar 2010; Fabian Groffen <fabian@cwi.nl>
+  src/nl/cwi/monetdb/jdbc/MonetStatement.java:
+  Changed Statement.execute(sql, columnIndexes/columnNames) not to throw
+  an SQLException, but generate a warning and perform a normal execute
+  instead, as not to break clients that rely on the function, but don't
+  use its functionality (such as high-level generic programs that call
+  any driver and try to put it in a mode that it does what they expect).
+
 *Feb2010-SP1
 
   09 Mar 2010; Fabian Groffen <fabian@cwi.nl> configure.ag, Makefile.ag:
