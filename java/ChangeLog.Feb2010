@@ -2,7 +2,8 @@
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
   31 Mar 2010; Fabian Groffen <fabian@cwi.nl>
-  src/nl/cwi/monetdb/jdbc/MonetStatement.java:
+  src/nl/cwi/monetdb/jdbc/MonetStatement.java,
+  src/nl/cwi/monetdb/jdbc/MonetPreparedStatement.java:
   Do not to throw an SQLException, but generate a warning and try to
   perform as much as requested in an optimistic manner, as not to break
   clients that rely on the called method, but don't really use its
@@ -17,6 +18,8 @@
   - Statement.setEscapeProcessing(enable)
   - Statement.setMaxFieldSize(max)
   - Statement.setQueryTimeout(seconds)
+  - PreparedStatement.getMetaData()
+  - PreparedStatement.setNull(paramIndex, sqlType, typeName)
 
 *Feb2010-SP1
 
