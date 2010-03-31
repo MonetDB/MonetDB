@@ -24,7 +24,7 @@ check: "$(SRCDIR)\Makefile.msc"
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs testing_config.h all
+install: targetdirs all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"

@@ -38,7 +38,7 @@ install-installer:
 	$(INSTALL) ..\NT\MonetDB4-XQuery64\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
 !ENDIF
 
-install: targetdirs pf_config.h all install-installer $(INSTALLER_PREREQ)
+install: targetdirs all install-installer $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\MXQserver.bat "$(prefix)"
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\pf.bat "$(prefix)"

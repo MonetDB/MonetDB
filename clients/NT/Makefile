@@ -26,7 +26,7 @@ check: "$(SRCDIR)\Makefile.msc"
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs clients_config.h all $(INSTALLER_PREREQ)
+install: targetdirs all $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\mclient.bat "$(prefix)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"

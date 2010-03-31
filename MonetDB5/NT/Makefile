@@ -25,7 +25,7 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs mal_config.h all $(INSTALLER_PREREQ)
+install: targetdirs all $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\M5server.bat "$(prefix)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
