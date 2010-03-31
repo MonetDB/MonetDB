@@ -934,9 +934,7 @@ public class MonetStatement implements Statement {
 	 *        connection
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setCursorName(String name)
-		throws SQLException
-	{
+	public void setCursorName(String name) throws SQLException {
 		addWarning("setCursorName: positioned updates/deletes not supported");
 	}
 
@@ -957,9 +955,7 @@ public class MonetStatement implements Statement {
 	 *        it
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setEscapeProcessing(boolean enable)
-		throws SQLException
-	{
+	public void setEscapeProcessing(boolean enable) throws SQLException {
 		if (enable)
 			addWarning("setEscapeProcessing: JDBC escape syntax is not supported by this driver");
 	}
@@ -996,7 +992,7 @@ public class MonetStatement implements Statement {
 	 * value specified is zero, then the hint is ignored.
 	 *
 	 * @param rows the number of rows to fetch
-	 * @throws SQLException if the condition 0 <= rows <= this.getMaxRows()
+	 * @throws SQLException if the condition 0 &lt;= rows &lt;= this.getMaxRows()
 	 *         is not satisfied.
 	 */
 	public void setFetchSize(int rows) throws SQLException {
@@ -1007,7 +1003,29 @@ public class MonetStatement implements Statement {
 		}
 	}
 
-	public void setMaxFieldSize(int max) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
+	/**
+	 * Sets the limit for the maximum number of bytes in a ResultSet
+	 * column storing character or binary values to the given number of
+	 * bytes. This limit applies only to BINARY, VARBINARY,
+	 * LONGVARBINARY, CHAR, VARCHAR, and LONGVARCHAR fields. If the
+	 * limit is exceeded, the excess data is silently discarded. For
+	 * maximum portability, use values greater than 256.
+	 * <br /><br />
+	 * MonetDB does not support any fieldsize limiting, and hence the
+	 * driver does not emulate it either, since it doesn't really lead
+	 * to memory reduction.
+	 *
+	 * @param max the new column size limit in bytes; zero means there
+	 *        is no limit
+	 * @throws SQLException if a database access error occurs or the
+	 *         condition max &gt;= 0 is not satisfied
+	 */
+	public void setMaxFieldSize(int max) throws SQLException {
+		if (max < 0)
+			throw new SQLException("Illegal max value: " + max);
+		if (max > 0)
+			addWarning("setMaxFieldSize: field size limitation not supported");
+	}
 
 	/**
 	 * Sets the limit for the maximum number of rows that any ResultSet object
@@ -1018,11 +1036,30 @@ public class MonetStatement implements Statement {
 	 * @throws SQLException if the condition max >= 0 is not satisfied
 	 */
 	public void setMaxRows(int max) throws SQLException {
-		if (max < 0) throw new SQLException("Illegal max value: " + max);
+		if (max < 0)
+			throw new SQLException("Illegal max value: " + max);
 		maxRows = max;
 	}
 
-	public void setQueryTimeout(int seconds) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
+	/**
+	 * Sets the number of seconds the driver will wait for a Statement
+	 * object to execute to the given number of seconds. If the limit is
+	 * exceeded, an SQLException is thrown.
+	 * <br /><br />
+	 * MonetDB does not support cancelling running queries, hence this
+	 * method does not do anything.
+	 *
+	 * @param seconds the new query timeout limit in seconds; zero means
+	 *        there is no limit
+	 * @throws SQLException if a database access error occurs or the
+	 *         condition seconds &gt;= 0 is not satisfied
+	 */
+	public void setQueryTimeout(int seconds) throws SQLException {
+		if (seconds < 0)
+			throw new SQLException("Illegal timeout value: " + seconds);
+		if (seconds > 0)
+			addWarning("setQueryTimeout: query time outs not supported");
+	}
 
 	//== end methods of interface Statement
 
