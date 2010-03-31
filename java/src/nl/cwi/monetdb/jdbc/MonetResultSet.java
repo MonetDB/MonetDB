@@ -178,7 +178,8 @@ public class MonetResultSet implements ResultSet {
 			new SQLException("(Absolute) positioning not allowed on forward " +
 				" only result sets!");
 
-		if (header.isClosed()) throw new SQLException("ResultSet is closed!");
+		if (header.isClosed())
+			throw new SQLException("ResultSet is closed!");
 
 		// first calculate what the JDBC row is
 		if (row < 0) {
@@ -264,7 +265,7 @@ public class MonetResultSet implements ResultSet {
 		for (int i = 0; i < columns.length; i++) {
 			if (columns[i].equalsIgnoreCase(columnName)) return(i + 1);
 		}
-		throw new SQLException("No such columnname: " + columnName);
+		throw new SQLException("No such column name: " + columnName);
 	}
 
 	/**
@@ -1902,7 +1903,8 @@ public class MonetResultSet implements ResultSet {
 	 *         called on a closed connection
 	 */
 	public SQLWarning getWarnings() throws SQLException {
-		if (header.isClosed()) throw new SQLException("Cannot call on closed ResultSet");
+		if (header.isClosed())
+			throw new SQLException("Cannot call on closed ResultSet");
 
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
