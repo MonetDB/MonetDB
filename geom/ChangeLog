@@ -1,5 +1,5 @@
-# ChangeLog file for java
-# This file is updated with mchangelog (Gentoo echangelog bastard script)
+# ChangeLog file for geom
+# This file is updated with Maddlog
 
 * Wed Mar 24 2010 Stefan Manegold <manegold@cwi.nl>
 - Implemented build directory support for Windows,

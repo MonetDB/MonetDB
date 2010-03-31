@@ -1,6 +1,13 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Mar 24 2010 Stefan Manegold <manegold@cwi.nl>
+- Implemented build directory support for Windows,
+  i.e., like on Unix/Linux also on Windows we can now build in a separate
+  build directory as alternative to ...<package>NT, and thus keep the
+  latter clean from files generated during the build.
+  On Windows, the build directory must be a sibling of ...<package>NT .
+
 * Mon Mar 29 2010 Fabian Groffen <fabian@cwi.nl>
 - Changed \d output of mclient no longer to list (internal use only) system tables.  Administrator users who like to inspect these tables can use SELECT * FROM tables; instead
 

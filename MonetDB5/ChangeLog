@@ -1,6 +1,13 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Mar 24 2010 Stefan Manegold <manegold@cwi.nl>
+- Implemented build directory support for Windows,
+  i.e., like on Unix/Linux also on Windows we can now build in a separate
+  build directory as alternative to ...<package>NT, and thus keep the
+  latter clean from files generated during the build.
+  On Windows, the build directory must be a sibling of ...<package>NT .
+
 * Sun Mar 14 2010 Martin Kersten <martin.kersten@cwi.nl>
 - The MAL debugger list command has been extended with
   an optional hash '#', which produces line numbers for
