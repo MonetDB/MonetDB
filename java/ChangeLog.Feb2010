@@ -3,12 +3,18 @@
 
   31 Mar 2010; Fabian Groffen <fabian@cwi.nl>
   src/nl/cwi/monetdb/jdbc/MonetStatement.java:
-  Changed Statement.execute(sql, columnIndexes/columnNames) and
-  Statement.executeUpdate(sql, columnIndexes/columnNames) not to throw
-  an SQLException, but generate a warning and perform a normal execute
-  instead, as not to break clients that rely on the function, but don't
-  use its functionality (such as high-level generic programs that call
-  any driver and try to put it in a mode that it does what they expect).
+  Do not to throw an SQLException, but generate a warning and try to
+  perform as much as requested in an optimistic manner, as not to break
+  clients that rely on the called method, but don't really use its
+  functionality (such as high-level generic programs that call any
+  driver and try to put it in a mode that it does what they expect).
+  The following functions no longer throw an SQLException but now
+  generate a warning and perform actions as far as possible:
+  - Statement.execute(sql, columnIndexes/columnNames)
+  - Statement.executeUpdate(sql, columnIndexes/columnNames)
+  - Statement.getMaxFieldSize()
+  - Statement.setCursorName(name)
+  - Statement.setEscapeProcessing(enable)
 
 *Feb2010-SP1
 
