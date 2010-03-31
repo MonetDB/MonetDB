@@ -1,7 +1,7 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Wed Mar 31 2010 Stefan Manegold <manegold@cwi.nl>
+* Wed Mar 24 2010 Stefan Manegold <manegold@cwi.nl>
 - Implemented build directory support for Windows,
   i.e., like on Unix/Linux also on Windows we can now build in a separate
   build directory as alternative to ...<package>NT, and thus keep the
