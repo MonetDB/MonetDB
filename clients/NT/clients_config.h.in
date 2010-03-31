@@ -21,7 +21,7 @@
 
 /* Manual config.h. needed for win32 .  */
 
-#include <monetdb_winconfig.h>
+#include <winconfig.h>
 
 /* Define to 1 if you have the `popen' function. */
 /* #undef HAVE_POPEN */

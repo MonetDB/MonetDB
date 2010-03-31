@@ -19,7 +19,7 @@
 
 /* Manual config.h. needed for win32 .  */
 
-#include <monetdb_winconfig.h>
+#include <winconfig.h>
 
 /* ! Should be replaced by `monetdb5-config --prefix` ! */
 #define MONETDB5_PREFIX "@QXprefix@"

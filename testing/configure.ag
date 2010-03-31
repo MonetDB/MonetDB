@@ -27,7 +27,6 @@ AC_INIT([MonetDB Testing], [1.37.0], [monet@cwi.nl], [MonetDB-testing])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/Mtimeout.c])
@@ -60,19 +59,6 @@ AC_SUBST(TESTING_SOURCE)
 AM_MONETDB_XQ_VARS_1()
 
 
-# Check for Monet 
-req_monetdb_ver='1.36.0'
-#                ^^^^^^
-# Maintained via vertoo. Please don't modify by hand!
-# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-AM_MONETDB_COMMON($req_monetdb_ver)
-if test "x$have_monetdb" != xyes; then
-	if test "x$MONETDB_VERSION" = "x"; then
-		AC_MSG_ERROR([MonetDB was not found. Testing requires at least version $req_monetdb_ver of MonetDB.])
-	else
-		AC_MSG_ERROR([Testing requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDB_VERSION was found.])
-	fi
-fi
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()

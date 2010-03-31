@@ -29,21 +29,10 @@ URL: http://monetdb.cwi.nl/
 Source: http://downloads.sourceforge.net/monetdb/MonetDB-testing-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-Requires: MonetDB >= 1.36
-#                    ^^^^
-# Maintained via vertoo. Please don't modify by hand!
-# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 Obsoletes: MonetDB-python
 Requires: MonetDB-devel, MonetDB-client-devel, MonetDB4-server-devel, MonetDB5-server-devel, MonetDB-SQL-devel, MonetDB4-XQuery-devel, MonetDB-geom-devel
 
 BuildRequires: python
-
-%if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.36
-#                               ^^^^
-# Maintained via vertoo. Please don't modify by hand!
-# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-%endif
 
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 

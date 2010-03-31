@@ -1,5 +1,3 @@
-/* -*-C-*- */
-
 /*
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
@@ -19,24 +17,12 @@
  * All Rights Reserved.
  */
 
-/* Manual config.h. needed for win32 .  */
+#ifndef TESTING_GETOPT_H
+#define TESTING_GETOPT_H
 
-#include <winconfig.h>
+extern char *optarg;
+extern int optind, opterr;
 
-/* architecture-dependent files */
-#define GEOM_EXEC_PREFIX "${prefix}"
+int getopt(int argc, char **argv, const char *options);
 
-/* object code libraries */
-#define GEOM_LIBDIR "${exec_prefix}\\lib"
-
-/* modifiable single-machine data */
-#define GEOM_LOCALSTATEDIR "${prefix}\\var"
-
-/* architecture-independent files */
-#define GEOM_PREFIX "@QXprefix@"
-
-/* read-only single-machine data */
-#define GEOM_SYSCONFDIR "${prefix}\\etc"
-
-/* Version number of package */
-#define VERSION "@VERSION@"
+#endif

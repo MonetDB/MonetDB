@@ -20,7 +20,11 @@
 # treat warnings as errors
 W_CFLAGS = -WX
 
-RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
+!IFDEF NEED_MX
+RULESMSC = $(TOPDIR)\..\..\buildtools\conf\winrules.msc
+!ELSE
+RULESMSC = ToBeDefined
+!ENDIF
 !INCLUDE $(RULESMSC)
 
 MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include\MonetDB

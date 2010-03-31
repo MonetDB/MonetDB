@@ -551,7 +551,7 @@ typedef int socklen_t;
  * compile with `nmake MONET_OID64=1` to use 64-bit OIDs on 64-bit Windows;
  * remove the following 5 lines (and this comment) to make 64-bit OIDs
  * default on 64-bit Windows (then to be overruled via `nmake MONET_OID32=1`;
- * see also NT/winrules.msc .
+ * see also winrules.msc .
  */
 #ifdef _WIN64
 #ifndef MONET_OID64

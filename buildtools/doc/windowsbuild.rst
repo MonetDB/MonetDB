@@ -290,7 +290,7 @@ Download the source from http://www.openssl.org/.  We used the latest
 stable version (0.9.8k).  Follow the instructions in the file
 ``INSTALL.W32`` or ``INSTALL.W64``.
 
-Fix the ``OPENSSL`` definitions in ``MonetDB\NT\winrules.msc`` so that
+Fix the ``OPENSSL`` definitions in ``buildtools\conf\winrules.msc`` so that
 they refer to the location where you installed the library and call
 ``nmake`` with the extra parameter ``HAVE_OPENSSL=1``.
 
@@ -394,7 +394,7 @@ Build using the commands::
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64 install
 
-Fix the ``ICONV`` definitions in ``MonetDB\NT\winrules.msc`` so that
+Fix the ``ICONV`` definitions in ``buildtools\conf\winrules.msc`` so that
 they refer to the location where you installed the library and call
 ``nmake`` with the extra parameter ``HAVE_ICONV=1``.
 
@@ -433,7 +433,7 @@ directory, and copy the file
 ``projects\visualc6\win32_dll_release\zlib1.dll`` to the new ``bin``
 directory.
 
-Fix the ``LIBZ`` definitions in ``MonetDB\NT\winrules.msc`` so that
+Fix the ``LIBZ`` definitions in ``buildtools\conf\winrules.msc`` so that
 they refer to the location where you installed the library and call
 ``nmake`` with the extra parameter ``HAVE_LIBZ=1``.
 
@@ -505,7 +505,7 @@ After this, compile using ``nmake -f makefile.msc`` and copy the files
 the MonetDB build process can find them,
 e.g. ``C:\bzip2-1.0.5.win32``.
 
-Fix the ``LIBBZ2`` definitions in ``MonetDB\NT\winrules.msc`` so that
+Fix the ``LIBBZ2`` definitions in ``buildtools\conf\winrules.msc`` so that
 they refer to the location where you installed the library and call
 ``nmake`` with the extra parameter ``HAVE_LIBBZ2=1``.
 
@@ -633,8 +633,8 @@ where other parts of the suite can be found, and to tell the build
 process where to install the finished bits.
 
 In addition, you may need to edit some of the ``NT\rules.msc`` files
-(each component has one), or the file ``NT\winrules.msc`` in the
-MonetDB component which is included by all ``NT\rules.msc`` files.
+(each component has one), or the file ``buildtools\conf\winrules.msc``
+which is included by all ``NT\rules.msc`` files.
 
 Environment Variables
 ---------------------

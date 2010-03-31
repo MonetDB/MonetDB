@@ -21,7 +21,7 @@
 
 /* Manual config.h. needed for win32 .  */
 
-#include <monetdb_winconfig.h>
+#include <winconfig.h>
 
 #define lstat stat
 #define S_ISREG(mode)	(((mode) & _S_IFMT) == _S_IFREG)

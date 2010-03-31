@@ -18,16 +18,14 @@ IBITS =
 IBITS = 64
 !ENDIF
 
-all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) inttypes.h monetdb_winconfig.h
+all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) inttypes.h
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc"
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs monetdb_config.h ..\NT\winrules.msc all
-	$(INSTALL) ..\NT\monetdb_winconfig.h "$(includedir)\MonetDB"
-	$(INSTALL) ..\NT\winrules.msc "$(pkgdatadir)"
+install: targetdirs monetdb_config.h all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\banner.bmp "$(prefix)"
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\monetdb.ico "$(prefix)"
@@ -48,9 +46,6 @@ all-msc: monetdb_config.h
 
 monetdb_config.h: ..\NT\monetdb_config.h.in
 	$(CONFIGURE) ..\NT\monetdb_config.h.in > monetdb_config.h
-
-monetdb_winconfig.h: ..\NT\monetdb_winconfig.h
-	copy ..\NT\monetdb_winconfig.h monetdb_winconfig.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

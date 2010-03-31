@@ -20,7 +20,12 @@
 # treat warnings as errors
 W_CFLAGS = -WX
 
-!INCLUDE $(TOPDIR)\..\NT\winrules.msc
+!IFDEF NEED_MX
+RULESMSC = $(TOPDIR)\..\..\buildtools\conf\winrules.msc
+!ELSE
+RULESMSC = ToBeDefined
+!ENDIF
+!INCLUDE $(RULESMSC)
 
 pkg = MonetDB
 CONFIG_H=monetdb_config.h

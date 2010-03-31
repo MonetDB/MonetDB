@@ -22,21 +22,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "difflib.h"
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
 #ifdef HAVE_IO_H
 # include <io.h>
 #endif
 #include <string.h>
 
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
-#endif
+#include "testing_getopt.h"
 
 static void
 showUsage(char *name)

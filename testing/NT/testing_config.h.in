@@ -21,7 +21,7 @@
 
 /* Manual config.h. needed for win32 .  */
 
-#include <monetdb_winconfig.h>
+#include <winconfig.h>
 
 /* architecture-dependent files */
 #define TESTING_EXEC_PREFIX "${prefix}"

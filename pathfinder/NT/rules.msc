@@ -25,7 +25,11 @@ W_CFLAGS = -WX -wd279
 W_CFLAGS = -WX
 !ENDIF
 
-RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
+!IFDEF NEED_MX
+RULESMSC = $(TOPDIR)\..\..\buildtools\conf\winrules.msc
+!ELSE
+RULESMSC = ToBeDefined
+!ENDIF
 !INCLUDE $(RULESMSC)
 
 VERSION = 0.37.0

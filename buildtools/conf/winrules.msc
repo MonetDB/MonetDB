@@ -169,6 +169,14 @@ ANT = ant.bat
 
 # no need to edit beyond here..
 
+!IFDEF NEED_MX
+CONFIGURE_PY = "$(TOPDIR)\..\..\buildtools\conf\configure.py"
+WINCONFIG_INCS = "-I$(TOPDIR)\..\..\buildtools\conf"
+!ELSE
+CONFIGURE_PY = ToBeDefined
+WINCONFIG_INCS = ToBeDefined
+!ENDIF
+
 !IFDEF DEBUG
 !IF $(bits) == 64
 ZI =
@@ -181,7 +189,7 @@ NO_INLINE_CFLAGS =
 COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -wd4273 -wd4102 -MD -nologo -Ox
 NO_INLINE_CFLAGS = -Od -Ob0gysi-
 !ENDIF
-CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
+CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS)
 
 # No general LDFLAGS needed
 INSTALL = copy
@@ -311,7 +319,7 @@ HAVE_LIBXML2_FALSE=^#
 NEED_MX_FALSE=^#
 !ENDIF
 
-CONFIGURE=$(PYTHON) "$(TOPDIR)\..\..\MonetDB\conf\configure.py" \
+CONFIGURE=$(PYTHON) "$(CONFIGURE_PY)" \
 	"prefix=$(prefix)" \
 	"BITS32_FALSE=$(BITS32_FALSE)" \
 	"BITS64_FALSE=$(BITS64_FALSE)" \
@@ -406,10 +414,10 @@ MAKEDEBUG=DEBUG=1
 
 # When compiled with plain `nmake`,
 # 32-bit OIDs are used by default on 64-bit Windows
-# (see NT/monetdb_winconfig.h for details);
+# (see winconfig.h for details);
 # compile with `nmake MONET_OID64=1` to use 64-bit OIDs on 64-bit Windows;
 # compile with `nmake MONET_OID32=1` to use 32-bit OIDs on 64-bit Windows
-# in case the default is altered in NT/monetdb_winconfig.h .
+# in case the default is altered in winconfig.h .
 #!IFDEF BITS64
 !IF $(bits) == 64
 !IFNDEF MONET_OID64

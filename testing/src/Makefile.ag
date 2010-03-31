@@ -18,11 +18,9 @@
 EXTRA_DIST = Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in \
 	     MkillUsers.in
 
-INCLUDES = $(MONETDB_INCS)
-
 bin_Mdiff = {
-	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
-	LIBS = $(MONETDB_LIBS) -lmutils $(MALLOC_LIBS)
+	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h testing_getopt.h testing_getopt.c
+	LIBS = $(MALLOC_LIBS)
 }
 
 bin_Mtimeout = {
