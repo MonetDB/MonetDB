@@ -578,8 +578,65 @@ public class MonetStatement implements Statement {
 		return(getUpdateCount());
 	}
 
-	public int executeUpdate(String sql, int[] columnIndexed) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
-	public int executeUpdate(String sql, String[] columnNames) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
+	/**
+	 * Executes the given SQL statement and signals the driver that the
+	 * auto-generated keys indicated in the given array should be made
+	 * available for retrieval. The driver will ignore the array if the
+	 * SQL statement is not an INSERT statement.
+	 * <br /><br />
+	 * MonetDB only supports returing the generated key for one column,
+	 * which will be the first column that has a serial.  Hence, this
+	 * method cannot work as required and the driver will fall back to
+	 * executing with request to the database to return the generated
+	 * key, if any.
+	 *
+	 * @param sql an SQL INSERT, UPDATE or DELETE statement or an SQL
+	 *        statement that returns nothing, such as an SQL DDL statement
+	 * @param columnIndexes an array of column indexes indicating the
+	 *        columns that should be returned from the inserted row
+	 * @return either the row count for INSERT, UPDATE, or DELETE
+	 *         statements, or 0 for SQL statements that return nothing
+	 * @throws SQLException if a database access error occurs, the SQL
+	 *         statement returns a ResultSet object, or the second
+	 *         argument supplied to this method is not an int array
+	 *         whose elements are valid column indexes
+	 */
+	public int executeUpdate(String sql, int[] columnIndexes)
+		throws SQLException
+	{
+		addWarning("executeUpdate: generated keys for fixed set of columns not supported");
+		return(executeUpdate(sql, Statement.RETURN_GENERATED_KEYS));
+	}
+
+	/**
+	 * Executes the given SQL statement and signals the driver that the
+	 * auto-generated keys indicated in the given array should be made
+	 * available for retrieval. The driver will ignore the array if the
+	 * SQL statement is not an INSERT statement.
+	 * <br /><br />
+	 * MonetDB only supports returing the generated key for one column,
+	 * which will be the first column that has a serial.  Hence, this
+	 * method cannot work as required and the driver will fall back to
+	 * executing with request to the database to return the generated
+	 * key, if any.
+	 *
+	 * @param sql an SQL INSERT, UPDATE or DELETE statement or an SQL
+	 *        statement that returns nothing, such as an SQL DDL statement
+	 * @param columnNames an array of the names of the columns that
+	 *        should be returned from the inserted row
+	 * @return either the row count for INSERT, UPDATE, or DELETE
+	 *         statements, or 0 for SQL statements that return nothing
+	 * @throws SQLException if a database access error occurs, the SQL
+	 *         statement returns a ResultSet object, or the second
+	 *         argument supplied to this method is not a String array
+	 *         whose elements are valid column names
+	 */
+	public int executeUpdate(String sql, String[] columnNames)
+		throws SQLException
+	{
+		addWarning("executeUpdate: generated keys for fixed set of columns not supported");
+		return(executeUpdate(sql, Statement.RETURN_GENERATED_KEYS));
+	}
 
 	/**
 	 * Retrieves the Connection object that produced this Statement object.
