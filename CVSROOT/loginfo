@@ -28,20 +28,20 @@
 
 ALL $CVSROOT/CVSROOT/warn %s
 
-^CVSROOT $CVSROOT/CVSROOT/syncmail -q -u %{stVv} sjoerd@users.sourceforge.net
+^CVSROOT $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} sjoerd@users.sourceforge.net
 
-^MonetDB $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
-^clients $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
-^pathfinder $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-pf-checkins@lists.sourceforge.net
-^pf-haskell $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-pf-haskell@lists.sourceforge.net
-^pf-tools $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-pf-tools@lists.sourceforge.net
-^sql $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-sql-checkins@lists.sourceforge.net
-^geom $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-sql-checkins@lists.sourceforge.net
-^template $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-templ-chkins@lists.sourceforge.net
-^xml $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-xml-checkins@lists.sourceforge.net
-^buildtools $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
-^java $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
-^testing $CVSROOT/CVSROOT/syncmail -q -u %{stVv} monetdb-checkins@lists.sourceforge.net
+^MonetDB $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-checkins@lists.sourceforge.net
+^clients $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-checkins@lists.sourceforge.net
+^pathfinder $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-pf-checkins@lists.sourceforge.net
+^pf-haskell $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-pf-haskell@lists.sourceforge.net
+^pf-tools $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-pf-tools@lists.sourceforge.net
+^sql $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-sql-checkins@lists.sourceforge.net
+^geom $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-sql-checkins@lists.sourceforge.net
+^template $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-templ-chkins@lists.sourceforge.net
+^xml $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-xml-checkins@lists.sourceforge.net
+^buildtools $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-checkins@lists.sourceforge.net
+^java $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-checkins@lists.sourceforge.net
+^testing $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} monetdb-checkins@lists.sourceforge.net
 
 # catch all
-DEFAULT $CVSROOT/CVSROOT/syncmail -q -u %{stVv} sjoerd@users.sourceforge.net
+DEFAULT $CVSROOT/CVSROOT/syncmail -q -f users.sourceforge.net -u %{stVv} sjoerd@users.sourceforge.net
