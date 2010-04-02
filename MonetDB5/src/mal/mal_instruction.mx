@@ -446,6 +446,7 @@ for separate name space management.
 #define isTmpVar(M,I)   	((M)->var[I]->tmpindex)
 #define getVarType(M,I)     ((M)->var[I]->type)
 #define getVarGDKType(M,I)      getGDKType((M)->var[I]->type)
+#define ignoreVar(M,I)		((M)->var[I]->type == TYPE_ptr? 1: 0)
 @-
 @= varProperty
 #define clrVar@1(M,I)       ((M)->var[I]->flags &= ~VAR_@2)

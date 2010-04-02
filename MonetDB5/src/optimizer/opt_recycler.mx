@@ -217,10 +217,12 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		} 
 
-		/* general rule: all arguments are constants or recycled */
+		/* general rule: all arguments are constants or recycled, 
+		ignore C ponter arguments from mvc*/
 		cnt = 0;
 		for (j=p->retc; j<p->argc; j++)
-			if(recycled[getArg(p,j)] || isVarConstant(mb, getArg(p,j)) )
+			if( recycled[getArg(p,j)] || isVarConstant(mb, getArg(p,j))
+				|| ignoreVar(mb, getArg(p,j)) )
 				cnt++;
 		if (cnt == p->argc-p->retc) {
 #ifdef DEBUG_OPT_RECYCLER  
@@ -312,14 +314,15 @@ The delete and update BATs should not be recycled,
 because they may lead to view dependencies that later interfere
 with the transaction commits.
 @c
+/*	enable recycling of delta-bats
 		if (getModuleId(p)== sqlRef && 
 			(((getFunctionId(p)==bindRef || getFunctionId(p) == putName("bind_idxbat",11)) && 
 				getVarConstant(mb, getArg(p,5)).val.ival != 0) ||
 				getFunctionId(p)== binddbatRef) ) {
 				recycled[getArg(p,0)]=0;
-				p->recycle = REC_NO_INTEREST; /* this instruction is not monitored */
+				p->recycle = REC_NO_INTEREST; 
 			}
-
+*/
 		if (getModuleId(p) == octopusRef && 
 			 getFunctionId(p) == bindRef ) {
 				recycled[getArg(p,0)] = 1;
