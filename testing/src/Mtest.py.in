@@ -2927,17 +2927,27 @@ par = {}
 # the default; only used for usage information in case -p/--package has not been given
 par['PACKAGE'] = 'monetdb'
 # try to be "smart"
+repo = ''
 if os.path.exists(os.path.join('CVS', 'Repository')):
-    repo = open(os.path.join('CVS', 'Repository')).read()[:-1].lower()
+    repo = open(os.path.join('CVS', 'Repository')).read().strip().lower()
     i = repo.find('/')
     if i > 0:
         repo = repo[:i]
+elif os.path.exists(os.path.join('.svn', 'entries')):
+    svn = re.compile("^.*:.*//.*/([^/]*)$", re.MULTILINE)
+    for l in open(os.path.join('.svn', 'entries')):
+        fnd = svn.match(l)
+        if fnd:
+            repo = fnd.group(1).strip().lower()
+else:
+    repo = os.getcwd().split(os.sep)[-1]
+if repo:
     if repo[:6] != 'monetdb':
         if _PackageDict.has_key(repo):
             repo = _PackageDict[repo]
     par['PACKAGE'] = repo
     if not CheckExec(par['PACKAGE']+'-config'):
-        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
             ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
         elif par['PACKAGE'] != 'monetdb-java':
             if par['PACKAGE'] != '.':
@@ -3101,7 +3111,7 @@ def main(argv) :
                 pkg = _PackageDict[pkg]
         par['PACKAGE'] = pkg
     if not CheckExec(par['PACKAGE']+'-config'):
-        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
             ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
         elif par['PACKAGE'] != 'monetdb-java':
             Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
