@@ -292,6 +292,10 @@ datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcod
 # platforms only)
 octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
+# The MapReduce pipeline for a different flavour of distributed
+# processing on Merovingian enabled platforms
+mapreduce_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mapreduce,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+
 # The default + datacyclotron
 datacyclotron_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
 
