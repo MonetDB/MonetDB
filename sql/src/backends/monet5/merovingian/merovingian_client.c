@@ -48,7 +48,7 @@ handleClient(int sock, char isusock)
 	fout = block_stream(fout);
 
 	/* note that we claim to speak proto 8 here */
-	stream_printf(fout, "%s:merovingian:8:%s:%s",
+	stream_printf(fout, "%s:merovingian:8:%s:%s:",
 			"void",  /* some bs */
 			"md5,plain", /* we actually don't look at the password */
 #ifdef WORDS_BIGENDIAN
@@ -60,6 +60,7 @@ handleClient(int sock, char isusock)
 	stream_flush(fout);
 
 	/* get response */
+	buf[0] = '\0';
 	if (stream_read_block(fdin, buf, 8095, 1) < 0) {
 		/* we didn't get a terminated block :/ */
 		e = newErr("client sent challenge in incomplete block: %s", buf);
