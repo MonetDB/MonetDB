@@ -103,7 +103,18 @@ char* control_send(
 		}
 		/* we only understand merovingian:1 */
 		if (strncmp(sbuf, "merovingian:1:", strlen("merovingian:1:")) != 0) {
-			snprintf(sbuf, sizeof(sbuf), "unsupported merovingian server");
+			if (len > 2 &&
+					(strstr(sbuf + 2, ":BIG:") != NULL ||
+					 strstr(sbuf + 2, ":LIT:") != NULL))
+			{
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+						"server looks like a mapi server, "
+						"are you using merovingian's control port (e.g. 50001) "
+						"instead of its mapi port (e.g. 50000)?");
+			} else {
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+						"unsupported merovingian server");
+			}
 			return(strdup(sbuf));
 		}
 		buf = strchr(sbuf + strlen("merovingian:1:"), ':');
