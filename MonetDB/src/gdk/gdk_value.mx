@@ -126,6 +126,8 @@ VALget(ValPtr v)
 	case TYPE_lng:
 		return (void *) &v->val.lval;
 	case TYPE_str:
+		return (void *) v->val.sval;
+	case TYPE_ptr:
 		return (void *) v->val.pval;
 	}
 	return NULL;
@@ -719,6 +721,7 @@ VALcmp(ValPtr p, ValPtr q)
     if( p ==0 || q == 0 ) return  -1;
     if( (tpe = p ->vtype) != q->vtype ) return  -1;
 
+    if( tpe == TYPE_ptr ) return 0; /* ignore comparing C pointers */
     cmp = BATatoms[tpe].atomCmp;
     nilptr = ATOMnilptr(tpe);
     pp = VALget(p);
