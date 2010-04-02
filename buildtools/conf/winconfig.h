@@ -21,6 +21,9 @@
 
 /* Manual config.h. needed for win32 .  */
 
+#ifndef WINCONFIG_H
+#define WINCONFIG_H
+
 /* We use the value of _MSC_VER to distinguish the various versions of
  * Microsoft Visual Studio:
  * _MSC_VER = 1200: Visual Studio 6
@@ -754,3 +757,5 @@ typedef int ssize_t;
 /* #undef size_t */
 
 #define __SIZE_TYPE__ size_t
+
+#endif /* WINCONFIG_H */
