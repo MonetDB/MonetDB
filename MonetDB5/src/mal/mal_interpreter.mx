@@ -492,9 +492,7 @@ We rely on optimizing compilers to remove the redundant code.
 				goto workslow;
             
 				@:MALrecycleStart(stk)@ {
-				lng tcs = 0;
 				@:MALinterpret(FAST)@
-				@:MALrecycleExit(stk)@
 			}
 			@:MALflowofcontrol(FAST,continue)@
 		}
@@ -538,9 +536,7 @@ workslow:
 
 		@:beginProfile(stk,1)@
 		@:MALrecycleStart(stk)@ {
-      	    lng tcs = 0;
             @:MALinterpret(SLOW)@
-			@:MALrecycleExit(stk)@
 		}
 		@:MALflowofcontrol(SLOW,continue)@
 		@:endProfile(stk)@
@@ -989,7 +985,6 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	@:beginProfile(t,1)@
 	ret = MAL_SUCCEED;
 	@:MALrecycleStart(t)@ {
-        lng tcs = 0;
 @-
 Delay processing when we run out of memory and could not recycle.
 
@@ -1048,7 +1043,6 @@ We don't allow sequential flow control here.
 		}
 		updMemoryUsed(stk,pci,argclaim);
 		DFLOWadmission(-argclaim,-retclaim,-hotclaim);
-		@:MALrecycleExit(t)@
 	}
 	@:endProfile(t)@
 	if (ret)
@@ -1777,6 +1771,7 @@ are identified. In the post-execution phase they are removed.
 #ifdef STACKTRACE
 	printf("restoreTarget %d\n", garbageControl(pci));
 #endif
+	@:MALrecycleExit(stk)@
 	if(ret==MAL_SUCCEED && garbageControl(pci) ){ 
 		for(i=0; i<pci->argc; i++)
 		if( isaBatType(getArgType(mb,pci,i)) ){
@@ -2386,6 +2381,8 @@ It simply skips the barrier block upon return.
 @= performanceVariables
 	lng newclk=0;
 	int ppc= -2;
+	lng tcs = 0;
+	(void) tcs;
 	if (malProfileMode ) {
 		setFilterOnBlock(mb, 0, 0);
 		ppc = -1;
