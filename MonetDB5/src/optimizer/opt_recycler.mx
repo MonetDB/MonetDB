@@ -173,9 +173,9 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 						app_sc = getArg(p,2);
 						app_tbl = getArg(p,3);
 					} else {
-						q= newFcnCall(mb,"recycle","reset");
-						pushArgument(mb,q, getArg(p,1));
+						q = newFcnCall(mb,"recycle","reset");
 						pushArgument(mb,q, getArg(p,2));
+						pushArgument(mb,q, getArg(p,3));
 						if (getFunctionId(p) == updateRef)
 							pushArgument(mb,q, getArg(p,4));
 					}

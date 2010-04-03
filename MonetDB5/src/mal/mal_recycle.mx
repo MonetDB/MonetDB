@@ -2562,7 +2562,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 			if (isBindInstr(q) && getModuleId(q) == putName("sql",3) ){
 				for (j=p->retc; j<p->argc; j++)
-					if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
+					if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j+1))))
 					break;
 				if (j == p->argc){
 					v = &getVarConstant(recycleBlk,getArg(q,0));
