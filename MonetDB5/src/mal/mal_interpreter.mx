@@ -536,9 +536,9 @@ workslow:
 
 		@:beginProfile(stk,1)@
 		@:MALrecycleStart(stk)@ {
-            @:MALinterpret(SLOW)@
+            @:MALinterpret(FAST)@
 		}
-		@:MALflowofcontrol(SLOW,continue)@
+		@:MALflowofcontrol(FAST,continue)@
 		@:endProfile(stk)@
 	}
 	@:MALwrapup@
@@ -1025,11 +1025,11 @@ The number of instructions allowed is severely limited.
 We don't allow sequential flow control here.
 @c
         switch (pci->token){
-		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case PATcall: @:patterncall(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case CMDcall: @:commandcall(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case FACcall: @:factorycall(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case FCNcall: @:functioncall(SLOW,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case ASSIGNsymbol: @:assignStmt(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case PATcall: @:patterncall(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case CMDcall: @:commandcall(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case FACcall: @:factorycall(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case FCNcall: @:functioncall(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
 		case NOOPsymbol:
 		case REMsymbol:
 			break;
@@ -1696,7 +1696,7 @@ cause errors in multi-assignment statements.
 		if( lhs->vtype == TYPE_bat && lhs->val.bval)
 			BBPincref(lhs->val.bval, TRUE);
 	}
-	@:restoreTarget(@1)@
+	@:restoreTarget(@1,stk)@
 	ret = 0;
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1)@
@@ -1771,7 +1771,7 @@ are identified. In the post-execution phase they are removed.
 #ifdef STACKTRACE
 	printf("restoreTarget %d\n", garbageControl(pci));
 #endif
-	@:MALrecycleExit(stk)@
+	@:MALrecycleExit(@2)@
 	if(ret==MAL_SUCCEED && garbageControl(pci) ){ 
 		for(i=0; i<pci->argc; i++)
 		if( isaBatType(getArgType(mb,pci,i)) ){
@@ -1954,7 +1954,7 @@ are identified. In the post-execution phase they are removed.
 		ret = createScriptException(mb, stkpc, MAL, NULL,
 				"too many arguments for command call");
 	}
-	@:restoreTarget(@1)@
+	@:restoreTarget(@1,stk)@
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1,@2)@
 }
@@ -1966,7 +1966,7 @@ are identified. In the post-execution phase they are removed.
 	else {
 		@:safeTarget@
 		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
-		@:restoreTarget(@1,@2)@
+		@:restoreTarget(@1,stk)@
 		@:exceptionHndlr(@1,@2,@3)@
 		@:timingHndlr(@1,@2)@
 	}
@@ -1981,7 +1981,7 @@ non-returned values.
 	stk->pcup = stkpc;
 	@:safeTarget@
 	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
-	@:restoreTarget(@1)@
+	@:restoreTarget(@1,stk)@
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1)@
 }
