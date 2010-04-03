@@ -1696,7 +1696,7 @@ cause errors in multi-assignment statements.
 		if( lhs->vtype == TYPE_bat && lhs->val.bval)
 			BBPincref(lhs->val.bval, TRUE);
 	}
-	@:restoreTarget(@1,stk)@
+	@:restoreTarget(@1,@3)@
 	ret = 0;
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1)@
@@ -1954,7 +1954,7 @@ are identified. In the post-execution phase they are removed.
 		ret = createScriptException(mb, stkpc, MAL, NULL,
 				"too many arguments for command call");
 	}
-	@:restoreTarget(@1,stk)@
+	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1,@2)@
 }
@@ -1966,7 +1966,7 @@ are identified. In the post-execution phase they are removed.
 	else {
 		@:safeTarget@
 		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
-		@:restoreTarget(@1,stk)@
+		@:restoreTarget(@1,@3)@
 		@:exceptionHndlr(@1,@2,@3)@
 		@:timingHndlr(@1,@2)@
 	}
@@ -1981,7 +1981,7 @@ non-returned values.
 	stk->pcup = stkpc;
 	@:safeTarget@
 	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
-	@:restoreTarget(@1,stk)@
+	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1)@
 }
