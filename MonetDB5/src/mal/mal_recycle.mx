@@ -130,6 +130,7 @@ typedef struct QRYSTAT {
 	int lreuse; /* number of local reuse in current execution only */
 	int *crd;   /* instructions credits */
 	int stop;
+	bte unlimited;
 } QryStat, *QryStatPtr;
 
 typedef struct QRYPATTERN {
@@ -356,12 +357,13 @@ int RECYCLEnewQryStat(MalBlkPtr mb)
 	if ((idx = findQryStat(mb)) >= 0){
         qstat = recycleQPat->ptrn[idx];
 		qstat->calls++;
-        if ( qstat->calls > 3 ){
+        if ( qstat->calls >= recycleMaxInterest )
             if ( qstat->greuse  && admissionPolicy == ADM_ADAPT )
+				if ( !qstat->unlimited ) {
                 for (i = 0; i < qstat->stop; i++)
-                   if ( qstat->crd[i] >= REC_MIN_INTEREST &&
-                        qstat->crd[i] < recycleMaxInterest)
-                       qstat->crd[i]++;
+                   if ( qstat->crd[i] >= REC_MIN_INTEREST )
+                        qstat->crd[i] = recycleMaxInterest;
+				qstat->unlimited = 1;
         }
 		return idx;
 	}
@@ -1077,9 +1079,12 @@ compare by value.
 #endif
 
 	i = getPC(mb,p);
-	if (i < qsp->stop ) 
-		qsp->crd[i]--;
-	else stream_printf(cntxt->fdout,"Mismatch of credit array\n");
+	if ( admissionPolicy == ADM_INTEREST ||
+		(admissionPolicy == ADM_ADAPT && !qsp->unlimited )){
+		if (i < qsp->stop ) 
+			qsp->crd[i]--;
+		else stream_printf(cntxt->fdout,"Mismatch of credit array\n");
+	}
 
 	setIPtr(q,i,cst,c);
 	q->recycle = cntxt->rcc->curQ; 
