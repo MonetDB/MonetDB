@@ -1090,6 +1090,7 @@ runDFLOWworker(void *t)
 			THRprintf(GDKerr, "#Thread %d needs memory:%s\n",task->id,err);
 			break;
 		}
+		/* search an unblocking instruction */
 		q_enqueue(fs->flow->done, fs);
 	}
 	THRdel(thr);
@@ -1237,6 +1238,7 @@ DFLOWscheduler( DataFlow flow )
 			PARDEBUG {
 				stream_printf(GDKstdout,"#errors encountered %s ", f->error);
 			}
+			/* we have to wait for all threads to report back */
 			/* dequeue the remainders in case of an error */
 			while(queued-- > 0) 
 				(void)q_dequeue(flow->done);
@@ -1275,8 +1277,8 @@ DFLOWscheduler( DataFlow flow )
 		for( ; pc < limit; pc++)
 			if ( fs[pc].status != DFLOWwrapup)
 				break;
-		/* first try to find an instruction that uses the released target */
-		for(i = pc; i < limit && candidates <  2 * flow->nway ; i++)
+		/* first try to find all instructions that use the released target */
+		for(i = limit-1 ; i >= pc ; i--)
 		if (fs[i].status == DFLOWpending ) {
 			p = getInstrPtr(flow->mb, fs[i].pc);
 			for( j=p->retc; j<p->argc; j++)
@@ -1284,6 +1286,7 @@ DFLOWscheduler( DataFlow flow )
 				queued++;
 				DFLOWactivate(flow,fs,i,p);
 				q_enqueue(flow->todo, fs+i);
+				candidates++;
 			}
 		}
 
