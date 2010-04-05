@@ -610,12 +610,8 @@ faster system start.
 	MSinitClientPrg(mal_clients, "user", "main");
 	if (dbinit == NULL)
 		dbinit = GDKgetenv("dbinit");
-	if (dbinit) {
-		str input = GDKstrdup(dbinit);
-
-		callString(mal_clients, input, listing);
-		GDKfree(input);
-	}
+	if (dbinit) 
+		callString(mal_clients, dbinit, listing);
 
 	emergencyBreakpoint();
 	if (monet_script) for (i = 0; monet_script[i]; i++) {
