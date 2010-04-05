@@ -257,6 +257,7 @@ HEAPextend(Heap *h, size_t size)
 				/* and load heap back in via memory-mapped file */
 				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
 					/* success! */
+					MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
 					GDKclrerr();  /* don't leak errors from e.g. HEAPload */
 					return 0;
 				}
