@@ -126,8 +126,6 @@ VALget(ValPtr v)
 	case TYPE_lng:
 		return (void *) &v->val.lval;
 	case TYPE_str:
-		return (void *) v->val.sval;
-	case TYPE_ptr:
 		return (void *) v->val.pval;
 	}
 	return NULL;
