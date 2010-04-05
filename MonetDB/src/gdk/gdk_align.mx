@@ -728,7 +728,14 @@ void
 VIEWdestroy(BAT *b)
 {
 	assert(isVIEW(b));
+
+	/* remove any leftover private hash structures */
+	if (b->H->hash)
+		HASHremove(b);
+	if (b->T->hash)
+		HASHremove(BATmirror(b));
 	VIEWunlink(b);
+
 	if (b->htype && !b->H->heap.parentid) {
 		HEAPfree(&b->H->heap);
 	} else {
