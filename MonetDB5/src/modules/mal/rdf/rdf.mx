@@ -50,7 +50,7 @@ RDFParser(int *retval, str *location, str *graphname, str *schemam);
 #define TRIPLE_STORE 1
 #define MLA_STORE    2
 
-#define STORE MLA_STORE /* this should become a compile time option */
+#define STORE TRIPLE_STORE /* this should become a compile time option */
 
 #if STORE == TRIPLE_STORE
  typedef enum {
