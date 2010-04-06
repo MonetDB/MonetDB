@@ -450,7 +450,9 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	InstrPtr pci=0; 
 	int exceptionVar;
 	str ret=0;
+#if FAST
 	int stamp= -1;
+#endif
 	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	int *garbage= (int*) alloca(mb->maxarg * sizeof(int));
@@ -929,7 +931,9 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int i,k;
 	int exceptionVar= -1;
 	str ret = MAL_SUCCEED;
+#if FAST
 	int stamp = -1;
+#endif
 	bat *backup= (bat*) alloca(flow->mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(flow->mb->maxarg * sizeof(str));
 	int *garbage= (int*) alloca(flow->mb->maxarg * sizeof(int));
@@ -1691,7 +1695,7 @@ cause errors in multi-assignment statements.
 @-
 @= assignStmt
 {	
-	@:safeTarget@
+	@:safeTarget(@1)@
 	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
 		lhs = &stk->stk[pci->argv[k]];
 		rhs = &stk->stk[pci->argv[i]];
@@ -1761,7 +1765,9 @@ are identified. In the post-execution phase they are removed.
 
 			if( i < pci->retc &&  stk->stk[getArg(pci,i)].vtype == TYPE_bat) {
 				backup[i]= stk->stk[getArg(pci,i)].val.bval;
+#if @1
 				stamp= BBPcurstamp();
+#endif
 			} else 
 			if( i < pci->retc &&  stk->stk[getArg(pci,i)].vtype == TYPE_str) {
 				backup[i]= stk->stk[getArg(pci,i)].len;
@@ -1848,7 +1854,7 @@ are identified. In the post-execution phase they are removed.
 @-
 @= commandcall
 {	
-	@:safeTarget
+	@:safeTarget(@1)@
 	/* improve performance with 20 ms/1M calls*/
 	switch(pci->argc){
 	case 0 : ret = (str) (*pci->fcn)(); break;
@@ -1967,7 +1973,7 @@ are identified. In the post-execution phase they are removed.
 		ret = createScriptException(mb, stkpc, MAL, NULL,
 				"address of pattern missing");
 	else {
-		@:safeTarget@
+		@:safeTarget(@1)@
 		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
 		@:restoreTarget(@1,@3)@
 		@:exceptionHndlr(@1,@2,@3)@
@@ -1982,7 +1988,7 @@ non-returned values.
 @= functioncall
 {	
 	stk->pcup = stkpc;
-	@:safeTarget@
+	@:safeTarget(@1)@
 	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
