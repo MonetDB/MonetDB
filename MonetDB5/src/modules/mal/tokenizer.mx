@@ -196,7 +196,6 @@ TKNZRopen(int *ret, str *in)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
 		if (BKCsetPersistent(&r,(int *)&(b->batCacheid)) != MAL_SUCCEED)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
-		//BBPkeepref(b->batCacheid);
 		BUNappend(TRANS, batname, FALSE);
 
 	} else { /* existing tokenizer */
@@ -313,7 +312,6 @@ TKNZRtokenize(str in, str *parts, char tkn) {
 				GDKfree(url);
 				throw(MAL, "tokenizer.open", OPERATION_FAILED);
 			}
-			BBPkeepref(b->batCacheid);
 			BUNappend(TRANS, batname, FALSE);
 			GDKfree(batname);
 		}
