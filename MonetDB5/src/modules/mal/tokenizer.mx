@@ -393,7 +393,7 @@ TKNZRappend(oid *pos, str *s)
 
 	if (i == depth) {
 		comp = COMP(prv, depth);
-		*pos = BUNfnd(tokenBAT[INDEX], (ptr) &comp);
+		*pos = BUNfnd(BATmirror(tokenBAT[INDEX]), (ptr) &comp);
 		if (*pos != BUN_NONE) {
 			/* the string is already there */
 			GDKfree(url);
