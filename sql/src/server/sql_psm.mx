@@ -128,6 +128,8 @@ psm_declare(mvc *sql, dnode *n)
 }
 
 
+#if 0
+/* never used */
 static sql_table *
 find_basetable(stmt *s)
 {
@@ -144,6 +146,7 @@ find_basetable(stmt *s)
 	}
 	return NULL;
 }
+#endif
 
 static stmt *
 psm_declare_table(mvc *sql, dnode *n)
