@@ -1,10 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-  07 Apr 2010; Fabian Groffen <fabian@cwi.nl> control.c:
-  Fix logic in buffer enlargment, causing bug #2982104.  This bug
+  07 Apr 2010; Fabian Groffen <fabian@cwi.nl> control.c, monetdb.c:
+  Fix logic in buffer enlargments, causing bug #2982104.  These bug
   became visible when receiving more data from merovingian(1) than would
-  fit in the originally allocated buffer.  This could happen quite
+  fit in the originally allocated buffers.  This could happen quite
   easily for instance with `monetdb status` when there are many
   databases.
 
