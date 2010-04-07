@@ -135,7 +135,8 @@ char* control_send(
 			return(strdup("failed to allocate memory"));
 		while ((len = recv(sock, buf + bufpos, buflen - bufpos, 0)) > 0) {
 			if (len == buflen - bufpos) {
-				bufp = realloc(buf, sizeof(char) * buflen * 2);
+				buflen *= 2;
+				bufp = realloc(buf, sizeof(char) * buflen);
 				if (bufp == NULL) {
 					free(buf);
 					return(strdup("failed to allocate more memory"));
