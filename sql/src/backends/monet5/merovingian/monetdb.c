@@ -39,7 +39,7 @@
 #include "glob.h"
 #include "database.h"
 #include "control.h"
-#include <stdlib.h> /* exit, getenv */
+#include <stdlib.h> /* exit, getenv, qsort */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf, rename */
 #include <string.h> /* strerror */
@@ -285,6 +285,15 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
 	simple_argv_cmd(argc, argv, merocmd, successmsg, NULL);
 }
 
+static int
+cmpsabdb(const void *p1, const void *p2)
+{
+	const sabdb *q1 = *(sabdb* const*)p1;
+	const sabdb *q2 = *(sabdb* const*)p2;
+
+	return strcmp(q1->dbname, q2->dbname);
+}
+
 /**
  * Helper function to perform the equivalent of
  * SABAOTHgetStatus(&stats, x) but over the network.
@@ -295,6 +304,9 @@ MEROgetStatus(sabdb **ret, char *database)
 	sabdb *orig;
 	sabdb *stats;
 	sabdb *w = NULL;
+	size_t swlen = 50;
+	size_t swpos = 0;
+	sabdb **sw = malloc(sizeof(sabdb *) * swlen);
 	char *p;
 	char *buf;
 	char *e;
@@ -314,7 +326,7 @@ MEROgetStatus(sabdb **ret, char *database)
 			free(buf);
 			return(p);
 		}
-		while ((p = strtok(NULL, "\n")) != NULL) {
+		for (swpos = 0; (p = strtok(NULL, "\n")) != NULL; swpos++) {
 			e = SABAOTHdeserialise(&stats, &p);
 			if (e != NULL) {
 				printf("WARNING: failed to parse response from "
@@ -322,15 +334,25 @@ MEROgetStatus(sabdb **ret, char *database)
 				GDKfree(e);
 				continue;
 			}
-			if (orig == NULL) {
-				orig = w = stats;
-			} else {
-				w = w->next = stats;
-			}
+			if (swpos == swlen)
+				sw = realloc(sw, sizeof(sabdb *) * (swlen = swlen * 2));
+			sw[swpos] = stats;
 		}
 	}
 
 	free(buf);
+
+	if (swpos > 1) {
+		qsort(sw, swpos, sizeof(sabdb *), cmpsabdb);
+		orig = w = sw[0];
+		for (swlen = 1; swlen < swpos; swlen++)
+			w = w->next = sw[swlen];
+	} else if (swpos == 1) {
+		orig = sw[0];
+		orig->next = NULL;
+	}
+
+	free(sw);
 
 	*ret = orig;
 	return(NULL);
@@ -704,6 +726,19 @@ command_status(int argc, char *argv[])
 		SABAOTHfreeStatus(&orig);
 }
 
+static int
+cmpurl(const void *p1, const void *p2)
+{
+	const char *q1 = *(char* const*)p1;
+	const char *q2 = *(char* const*)p2;
+
+	if (strncmp("mapi:monetdb://", q1, 15) == 0)
+		q1 += 15;
+	if (strncmp("mapi:monetdb://", q2, 15) == 0)
+		q2 += 15;
+	return strcmp(q1, q2);
+}
+
 static void
 command_discover(int argc, char *argv[])
 {
@@ -775,7 +810,7 @@ command_discover(int argc, char *argv[])
 	if (posloc > 0) {
 		printf("%*slocation\n",
 				(int)(loclen - 8 /* "location" */ - ((loclen - 8) / 2)), "");
-		/* could qsort the array here but we don't :P */
+		qsort(locations, posloc, sizeof(char *), cmpurl);
 		for (loclen = 0; loclen < posloc; loclen++) {
 			printf("%s\n", locations[loclen]);
 			free(locations[loclen]);

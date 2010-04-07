@@ -1,5 +1,9 @@
-# ChangeLog file for sql/src/backends/monet5
-# This file is updated with mchangelog (Gentoo echangelog bastard script)
+# ChangeLog file for sql/src/backends/monet5/merovingian
+# This file is updated with mchangelog
+
+  07 Apr 2010; Fabian Groffen <fabian@cwi.nl> monetdb.c:
+  Sort output returned by discover, status and get commands based on url
+  or dbname.
 
   24 Mar 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c,
   merovingian_client.c:
