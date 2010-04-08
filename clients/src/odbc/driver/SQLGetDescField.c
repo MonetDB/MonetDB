@@ -86,7 +86,7 @@ SQLGetDescField_(ODBCDesc *desc,
 		return SQL_SUCCESS;
 	case SQL_DESC_ROWS_PROCESSED_PTR:
 		if (desc->Stmt)
-			*(SQLUINTEGER **) Value = desc->sql_desc_rows_processed_ptr;
+			*(SQLULEN **) Value = desc->sql_desc_rows_processed_ptr;
 		return SQL_SUCCESS;
 	}
 
@@ -135,8 +135,9 @@ SQLGetDescField_(ODBCDesc *desc,
 		*(SQLINTEGER *) Value = rec->sql_desc_datetime_interval_precision;
 		return SQL_SUCCESS;
 	case SQL_DESC_DISPLAY_SIZE:
+		/* XXX should this be SQLLEN? */
 		if (isIRD(desc))
-			*(SQLINTEGER *) Value = rec->sql_desc_display_size;
+			*(SQLINTEGER *) Value = (SQLINTEGER) rec->sql_desc_display_size;
 		return SQL_SUCCESS;
 	case SQL_DESC_FIXED_PREC_SCALE:
 		if (isID(desc))
@@ -144,14 +145,14 @@ SQLGetDescField_(ODBCDesc *desc,
 		return SQL_SUCCESS;
 	case SQL_DESC_INDICATOR_PTR:
 		if (isAD(desc))
-			*(SQLINTEGER **) Value = rec->sql_desc_indicator_ptr;
+			*(SQLLEN **) Value = rec->sql_desc_indicator_ptr;
 		return SQL_SUCCESS;
 	case SQL_DESC_LABEL:
 		if (isIRD(desc))
 			copyString(rec->sql_desc_label, strlen((char *) rec->sql_desc_label), Value, BufferLength, StringLength, SQLINTEGER, addDescError, desc, return SQL_ERROR);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LENGTH:
-		*(SQLUINTEGER *) Value = rec->sql_desc_length;
+		*(SQLUINTEGER *) Value = (SQLUINTEGER) rec->sql_desc_length;
 		return SQL_SUCCESS;
 	case SQL_DESC_LITERAL_PREFIX:
 		if (isIRD(desc))
@@ -177,11 +178,12 @@ SQLGetDescField_(ODBCDesc *desc,
 		*(SQLINTEGER *) Value = rec->sql_desc_num_prec_radix;
 		return SQL_SUCCESS;
 	case SQL_DESC_OCTET_LENGTH:
-		*(SQLINTEGER *) Value = rec->sql_desc_octet_length;
+		/* XXX should this be SQLLEN? */
+		*(SQLINTEGER *) Value = (SQLINTEGER) rec->sql_desc_octet_length;
 		return SQL_SUCCESS;
 	case SQL_DESC_OCTET_LENGTH_PTR:
 		if (isAD(desc))
-			*(SQLINTEGER **) Value = rec->sql_desc_octet_length_ptr;
+			*(SQLLEN **) Value = rec->sql_desc_octet_length_ptr;
 		return SQL_SUCCESS;
 	case SQL_DESC_PARAMETER_TYPE:
 		if (isIPD(desc))

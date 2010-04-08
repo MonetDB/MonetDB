@@ -15,6 +15,5 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = include \
-	  NOT_WIN32?setup:winsetup \
+SUBDIRS = NOT_WIN32?setup:winsetup \
 	  driver samples

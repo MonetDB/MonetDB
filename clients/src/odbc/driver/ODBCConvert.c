@@ -425,12 +425,12 @@ ODBCDefaultType(ODBCDescRec *rec)
 
 static SQLRETURN
 parseoptionalbracketednumber(char **svalp,
-			     SQLINTEGER *slenp,
+			     SQLLEN *slenp,
 			     int *val1p,
 			     int *val2p)
 {
 	char *sval = *svalp;
-	int slen = *slenp;
+	SQLLEN slen = *slenp;
 	char *eptr;
 	long val;
 
@@ -451,7 +451,7 @@ parseoptionalbracketednumber(char **svalp,
 	/* make sure there is a closing parenthesis in the string:
 	   this makes the calls to strtol safe */
 	{
-		int i;
+		SQLLEN i;
 
 		for (eptr = sval, i = slen; i > 0 && *eptr != ')'; i--, eptr++)
 			;
@@ -498,14 +498,14 @@ parseoptionalbracketednumber(char **svalp,
 	
 static SQLRETURN
 parsemonthintervalstring(char **svalp,
-			 SQLINTEGER *slenp,
+			 SQLLEN *slenp,
 			 SQL_INTERVAL_STRUCT *ival)
 {
 	char *sval = *svalp;
-	int slen = slenp ? *slenp : (int) strlen(sval);
+	SQLLEN slen = slenp ? *slenp : (SQLLEN) strlen(sval);
 	char *eptr;
 	long val1 = -1, val2 = -1;
-	int leadingprecision;
+	SQLLEN leadingprecision;
 
 	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
@@ -540,7 +540,7 @@ parsemonthintervalstring(char **svalp,
 	val1 = strtol(sval, &eptr, 10);
 	if (eptr == sval)
 		return SQL_ERROR;
-	leadingprecision = (int) (eptr - sval);
+	leadingprecision = (SQLLEN) (eptr - sval);
 	slen -= leadingprecision;
 	sval = eptr;
 	while (isspace((int) *sval)) {
@@ -652,14 +652,14 @@ parsemonthintervalstring(char **svalp,
 
 static SQLRETURN
 parsesecondintervalstring(char **svalp,
-			  SQLINTEGER *slenp,
+			  SQLLEN *slenp,
 			  SQL_INTERVAL_STRUCT *ival,
 			  int *secprecp)
 {
 	char *sval = *svalp;
-	int slen = slenp ? *slenp : (int) strlen(sval);
+	SQLLEN slen = slenp ? *slenp : (SQLLEN) strlen(sval);
 	char *eptr;
-	int leadingprecision;
+	SQLLEN leadingprecision;
 	int secondprecision = 0;
 	unsigned v1, v2, v3, v4;
 	int n;
@@ -950,7 +950,7 @@ ODBCFetch(ODBCStmt *stmt,
 	  SQLPOINTER ptr,
 	  SQLLEN buflen,
 	  SQLLEN *lenp,
-	  SQLINTEGER *nullp,
+	  SQLLEN *nullp,
 	  SQLSMALLINT precision,
 	  SQLSMALLINT scale,
 	  SQLINTEGER datetime_interval_precision,
@@ -994,7 +994,7 @@ ODBCFetch(ODBCStmt *stmt,
 	if (lenp && offset)
 		lenp = (SQLLEN *) ((char *) lenp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
 	if (nullp && offset)
-		nullp = (SQLINTEGER *) ((char *) nullp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+		nullp = (SQLLEN *) ((char *) nullp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
 
 	/* translate default type */
 	/* note, type can't be SQL_ARD_TYPE since when this function
@@ -1179,7 +1179,7 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 #endif
 		switch (sql_type) {
-			int sz;
+			SQLLEN sz;
 
 		default:
 		case SQL_CHAR:
@@ -1265,7 +1265,7 @@ ODBCFetch(ODBCStmt *stmt,
 				if (lenp)
 					*lenp += nval.scale + 1;
 				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*" O_ULLFMT, nval.scale, nval.val % f);
+					sz = (SQLLEN) snprintf(data, buflen, ".%0*" O_ULLFMT, nval.scale, nval.val % f);
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -1279,7 +1279,7 @@ ODBCFetch(ODBCStmt *stmt,
 			data = (char *) ptr;
 
 			for (i = 0; i < 18; i++) {
-				sz = snprintf(data, buflen, "%.*g", i, fval);
+				sz = (SQLLEN) snprintf(data, buflen, "%.*g", i, fval);
 				if (sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					if (i == 0) {
@@ -1298,7 +1298,7 @@ ODBCFetch(ODBCStmt *stmt,
 					snprintf(data, buflen, "%.*g", i - 1, fval);
 					/* max space that would have
 					   been needed */
-					sz = (int) strlen(data) + 17 - i;
+					sz = (SQLLEN) strlen(data) + 17 - i;
 					/* String data, right-truncated */
 					addStmtError(stmt, "01004", NULL, 0);
 					break;
@@ -2326,11 +2326,11 @@ ODBCStore(ODBCStmt *stmt,
 {
 	ODBCDescRec *ipdrec, *apdrec;
 	SQLPOINTER ptr;
-	SQLINTEGER *indicator_ptr;
+	SQLLEN *indicator_ptr;
 	SQLUINTEGER bind_type;
 	SQLSMALLINT ctype, sqltype;
 	char *sval = NULL;
-	SQLINTEGER slen = 0;
+	SQLLEN slen = 0;
 	bignum_t nval;
 	double fval = 0.0;
 	DATE_STRUCT dval;
@@ -2355,7 +2355,7 @@ ODBCStore(ODBCStmt *stmt,
 		ptr = (SQLPOINTER) ((char *) ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLPOINTER) : bind_type));
 	indicator_ptr = apdrec->sql_desc_indicator_ptr;
 	if (indicator_ptr && offset)
-		indicator_ptr = (SQLINTEGER *) ((char *) indicator_ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+		indicator_ptr = (SQLLEN *) ((char *) indicator_ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
 	if (ptr == NULL &&
 	    (indicator_ptr == NULL || *indicator_ptr != SQL_NULL_DATA)) {
 		/* COUNT field incorrect */
@@ -2395,7 +2395,7 @@ ODBCStore(ODBCStmt *stmt,
 	case SQL_C_BINARY:
 		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
 		sval = (char *) ptr;
-		fixODBCstring(sval, slen, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
+		fixODBCstring(sval, slen, SQLLEN, addStmtError, stmt, return SQL_ERROR);
 		break;
 #ifdef WITH_WCHAR
 	case SQL_C_WCHAR:

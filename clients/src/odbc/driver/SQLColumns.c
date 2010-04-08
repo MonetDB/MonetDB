@@ -213,8 +213,8 @@ SQLColumns_(ODBCStmt *stmt,
 
 	if (rc == SQL_SUCCESS) {
 		const char ***tuples;
-		int i, j;
-		mapi_int64 n;
+		int j;
+		SQLULEN i, n;
 		char *data;
 		int concise_type, data_type, sql_data_type, sql_datetime_sub;
 		int columnlengths[NCOLUMNS];

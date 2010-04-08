@@ -43,11 +43,11 @@
 SQLRETURN SQL_API
 SQLSetScrollOptions(SQLHSTMT hStmt,
 		    SQLUSMALLINT fConcurrency,
-		    SQLINTEGER crowKeyset,
+		    SQLLEN crowKeyset,
 		    SQLUSMALLINT crowRowset)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetScrollOptions " PTRFMT " %d %d %d\n", PTRFMTCAST hStmt, fConcurrency, crowKeyset, crowRowset);
+	ODBCLOG("SQLSetScrollOptions " PTRFMT " %d " LENFMT " %d\n", PTRFMTCAST hStmt, fConcurrency, crowKeyset, crowRowset);
 #endif
 
 	(void) fConcurrency;	/* Stefan: unused!? */

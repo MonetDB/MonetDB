@@ -34,7 +34,7 @@ typedef struct {
 	SQLPOINTER sql_desc_data_ptr;
 	SQLSMALLINT sql_desc_datetime_interval_code;
 	SQLINTEGER sql_desc_datetime_interval_precision;
-	SQLINTEGER sql_desc_display_size;
+	SQLLEN sql_desc_display_size;
 	SQLSMALLINT sql_desc_fixed_prec_scale;
 	SQLLEN *sql_desc_indicator_ptr;
 	SQLCHAR *sql_desc_label;

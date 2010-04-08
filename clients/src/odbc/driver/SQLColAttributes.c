@@ -108,7 +108,7 @@ SQLColAttributesA(SQLHSTMT hStmt,
 		  SQLPOINTER pszDesc,
 		  SQLSMALLINT nDescMax,
 		  SQLSMALLINT *pcbDesc,
-		  SQLINTEGER *pfDesc)
+		  SQLLEN *pfDesc)
 {
 	return SQLColAttributes(hStmt, nCol, nDescType, pszDesc, nDescMax, pcbDesc, pfDesc);
 }
@@ -120,7 +120,7 @@ SQLColAttributesW(SQLHSTMT hStmt,
 		  SQLPOINTER pszDesc,
 		  SQLSMALLINT nDescMax,
 		  SQLSMALLINT *pcbDesc,
-		  SQLINTEGER *pfDesc)
+		  SQLLEN *pfDesc)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLPOINTER ptr;

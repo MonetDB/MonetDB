@@ -146,7 +146,7 @@ SQLFetchScroll_(ODBCStmt *stmt,
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;
 		}
-		if (FetchOffset > stmt->rowcount) {
+		if ((SQLULEN) FetchOffset > stmt->rowcount) {
 			stmt->startRow = stmt->rowcount;
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;

@@ -65,7 +65,7 @@ ODBCLOG(const char *fmt, ...)
 	va_end(ap);
 }
 
-BOOL
+BOOL INSTAPI
 ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg, WORD msgmax, WORD * msgout)
 {
 	(void)hwnd;
@@ -202,7 +202,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-BOOL
+BOOL INSTAPI
 ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 {
 	struct data data;

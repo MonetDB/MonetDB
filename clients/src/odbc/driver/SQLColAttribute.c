@@ -206,7 +206,7 @@ SQLColAttribute(SQLHSTMT hStmt,
 		SQLPOINTER pszValue,
 		SQLSMALLINT nValueLengthMax,
 		SQLSMALLINT *pnValueLength,
-		SQLPOINTER pnValue)
+		SQLLEN *pnValue)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLColAttribute " PTRFMT " %d\n", PTRFMTCAST hStmt, nFieldIdentifier);
@@ -228,7 +228,7 @@ SQLColAttributeA(SQLHSTMT hStmt,
 		 SQLPOINTER pszValue,
 		 SQLSMALLINT nValueLengthMax,
 		 SQLSMALLINT *pnValueLength,
-		 SQLPOINTER pnValue)
+		 SQLLEN *pnValue)
 {
 	return SQLColAttribute(hStmt, (SQLUSMALLINT) nCol, (SQLUSMALLINT) nFieldIdentifier, pszValue, nValueLengthMax, pnValueLength, pnValue);
 }
@@ -240,7 +240,7 @@ SQLColAttributeW(SQLHSTMT hStmt,
 		 SQLPOINTER pszValue,
 		 SQLSMALLINT nValueLengthMax,
 		 SQLSMALLINT *pnValueLength,
-		 SQLPOINTER pnValue)
+		 SQLLEN *pnValue)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLPOINTER ptr;

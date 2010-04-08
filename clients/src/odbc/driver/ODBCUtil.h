@@ -108,8 +108,8 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
 	} while (0)
 
 #ifdef WITH_WCHAR
-extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR * s, SQLINTEGER length, char **errmsg);
-extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER buflen, SQLSMALLINT *buflenout);
+extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg);
+extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, SQLLEN buflen, SQLSMALLINT *buflenout);
 
 #define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)			\
 	do {								\

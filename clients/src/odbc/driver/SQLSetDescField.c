@@ -192,7 +192,7 @@ SQLSetDescField_(ODBCDesc *desc,
 		return SQL_SUCCESS;
 	case SQL_DESC_INDICATOR_PTR:
 		if (isAD(desc))
-			rec->sql_desc_indicator_ptr = (SQLINTEGER *) Value;
+			rec->sql_desc_indicator_ptr = (SQLLEN *) Value;
 		return SQL_SUCCESS;
 	case SQL_DESC_LENGTH:
 		rec->sql_desc_length = (SQLUINTEGER) (size_t) Value;
@@ -214,7 +214,7 @@ SQLSetDescField_(ODBCDesc *desc,
 		return SQL_SUCCESS;
 	case SQL_DESC_OCTET_LENGTH_PTR:
 		if (isAD(desc))
-			rec->sql_desc_octet_length_ptr = (SQLINTEGER *) Value;
+			rec->sql_desc_octet_length_ptr = (SQLLEN *) Value;
 		return SQL_SUCCESS;
 	case SQL_DESC_PARAMETER_TYPE:
 		switch ((SQLINTEGER) (ssize_t) Value) {

@@ -74,15 +74,15 @@ typedef struct tODBCDRIVERSTMT {
 	enum StatementState State;	/* needed to detect invalid cursor state */
 	MapiHdl hdl;
 
-	mapi_int64 rowcount;	/* # affected rows */
+	SQLULEN rowcount;	/* # affected rows */
 
 	/* startRow is the row number of first row in the result
 	   set (0 based); rowSetSize is the number of rows in the
 	   current result set; currentRow is the row number of the
 	   current row within the current result set */
-	mapi_int64 currentRow;
-	mapi_int64 startRow;
-	mapi_int64 rowSetSize;
+	SQLULEN currentRow;
+	SQLULEN startRow;
+	SQLULEN rowSetSize;
 
 	unsigned int currentCol; /* used by SQLGetData() */
 	SQLINTEGER retrieved;	/* amount of data retrieved */
@@ -182,10 +182,9 @@ SQLRETURN ODBCGetData(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		      SQLINTEGER *pnLengthOrIndicator);
 
 
-SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
-		    SQLPOINTER pTarget, SQLINTEGER nTargetLength,
-		    SQLINTEGER *pnLength, SQLINTEGER *pnIndicator,
-		    SQLSMALLINT precision, SQLSMALLINT scale,
+SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
+		    SQLPOINTER ptr, SQLLEN buflen, SQLLEN *lenp,
+		    SQLLEN *nullp, SQLSMALLINT precision, SQLSMALLINT scale,
 		    SQLINTEGER datetime_interval_precision, SQLINTEGER offset,
 		    SQLULEN row);
 SQLRETURN ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset,
@@ -197,16 +196,12 @@ const char *ODBCGetTypeInfo(int concise_type, int *data_type,
 			    int *sql_data_type, int *sql_datetime_sub);
 int ODBCConciseType(const char *name);
 void ODBCResetStmt(ODBCStmt *stmt);
-SQLRETURN SQLBindParameter_(ODBCStmt *stmt,
-			    SQLUSMALLINT ParameterNumber,
-			    SQLSMALLINT InputOutputType,
-			    SQLSMALLINT ValueType,
-			    SQLSMALLINT ParameterType,
-			    SQLUINTEGER ColumnSize,
+SQLRETURN SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
+			    SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
+			    SQLSMALLINT ParameterType, SQLULEN ColumnSize,
 			    SQLSMALLINT DecimalDigits,
-			    SQLPOINTER ParameterValuePtr,
-			    SQLINTEGER BufferLength,
-			    SQLINTEGER *StrLen_or_IndPtr);
+			    SQLPOINTER ParameterValuePtr, SQLLEN BufferLength,
+			    SQLLEN *StrLen_or_IndPtr);
 SQLRETURN SQLColAttribute_(ODBCStmt *stmt,
 			   SQLUSMALLINT nCol,
 			   SQLUSMALLINT nFieldIdentifier,
@@ -217,7 +212,7 @@ SQLRETURN SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 SQLRETURN SQLExecute_(ODBCStmt *stmt);
 SQLRETURN SQLFetch_(ODBCStmt *stmt);
 SQLRETURN SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT nOrientation,
-			  SQLINTEGER nOffset);
+			  SQLLEN nOffset);
 SQLRETURN SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option);
 SQLRETURN SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER BufferLength,

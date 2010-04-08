@@ -107,7 +107,14 @@ ODBCInitResult(ODBCStmt *stmt)
 	}
 	nrCols = mapi_get_field_count(hdl);
 	stmt->querytype = mapi_get_querytype(hdl);
-	stmt->rowcount = mapi_rows_affected(hdl);
+#if SIZEOF_SIZE_T == SIZEOF_INT
+	if (mapi_get_querytype(hdl) >= (mapi_int64) 1 << (sizeof(int) * 8)) {
+		/* General error */
+		addStmtError(stmt, "HY000", "Too many rows to handle", 0);
+		return SQL_ERROR;
+	}
+#endif
+	stmt->rowcount = (SQLULEN) mapi_rows_affected(hdl);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("ODBCInitResult: querytype %d\n", stmt->querytype);

@@ -100,7 +100,7 @@ static int utf8chkmsk[] = {
    ODBC fashion.
 */
 SQLCHAR *
-ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
+ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
 {
 	const SQLWCHAR *s1, *e;
 	unsigned long c;
