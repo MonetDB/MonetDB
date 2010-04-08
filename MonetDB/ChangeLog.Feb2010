@@ -1,3 +1,6 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Mar 29 2010 Fabian Groffen <fabian@cwi.nl>
+- Fix regression introduced in Feb2010-SP1 causing UDP connections to malfunction, in particular affecting the stethoscope tool.
+
