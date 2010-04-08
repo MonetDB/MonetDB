@@ -732,7 +732,7 @@ access_heap(str id, str hp, Heap *h, char* base, size_t sz, size_t touch, int pr
 	str advice = (adv==MMAP_WILLNEED)?"WILLNEED":(adv==MMAP_SEQUENTIAL)?"SEQUENTIAL":(adv==MMAP_RANDOM)?"RANDOM":(adv==MMAP_NORMAL)?"NORMAL":NULL;
 	int t = GDKms();
 	assert(advice);
-	if (h->storage != STORE_MEM && h->size > MT_MMAP_TILE) {
+	if (h->storage != STORE_MEM) {
 		MT_mmap_inform(h->base, h->size, preload, adv, 0);
 		if (preload > 0) {
 			size_t alignskip = (page - (((size_t) base) & (page-1))) & (page-1);
