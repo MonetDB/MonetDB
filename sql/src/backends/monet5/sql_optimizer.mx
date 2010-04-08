@@ -553,7 +553,7 @@ setOptimizers(str optimizer)
 	optimizerpipe= optimizer;
 	base = optimizer = GDKstrdup(optimizer);
 
-	/* An optimizer pipe is a semicolon separated list of names */
+	/* An optimizer pipe is a comma separated list of names */
 	while (optimizer && *optimizer ) {
 		nxt = strchr(optimizer,',');
 		if (nxt){
@@ -573,7 +573,7 @@ setOptimizers(str optimizer)
 		setOptimizers("default_pipe");
 		return GDKstrdup("default_pipe");
 	}else
-	if (top == 256){
+	if (top >= 255){
 		showException(SQL,"optimizer","Too many optimizer steps, use default pipe instead\n");
 		setOptimizers("default_pipe");
 		return GDKstrdup("default_pipe");
