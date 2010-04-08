@@ -16,7 +16,6 @@
 # All Rights Reserved.
 
 INCLUDES = \
-	../include \
 	../.. \
 	$(MONETDB_INCS) \
 	$(ODBC_INCS)
