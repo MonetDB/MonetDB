@@ -1864,7 +1864,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.setVariable", "failed");
 	if ( strcmp("optimizer",  varname)== 0) {
 		msg = setOptimizers(*(str *) getArgReference(stk,pci,2));
-		if ( msg != NULL &&  strcmp(msg,"default_pipe") == 0 && strcmp(msg,varname))
+		if ( msg != NULL && strcmp(msg,"default_pipe") == 0 )
 			return MAL_SUCCEED;
 		msg = SQLvalidatePipeline();
 		if ( msg ){
