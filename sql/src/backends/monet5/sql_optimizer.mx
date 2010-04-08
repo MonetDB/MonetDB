@@ -573,7 +573,7 @@ setOptimizers(str optimizer)
 		setOptimizers("default_pipe");
 		return GDKstrdup("default_pipe");
 	}else
-	if (top >= 255){
+	if (top == 256){
 		showException(SQL,"optimizer","Too many optimizer steps, use default pipe instead\n");
 		setOptimizers("default_pipe");
 		return GDKstrdup("default_pipe");
