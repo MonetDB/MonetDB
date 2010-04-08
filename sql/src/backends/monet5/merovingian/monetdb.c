@@ -797,7 +797,7 @@ command_discover(int argc, char *argv[])
 				/* store what we found */
 				if (posloc == numlocs)
 					locations = realloc(locations,
-							sizeof(char) * (numlocs = numlocs * 2));
+							sizeof(char *) * (numlocs = numlocs * 2));
 				locations[posloc++] = strdup(location);
 				if (strlen(location) > loclen)
 					loclen = strlen(location);

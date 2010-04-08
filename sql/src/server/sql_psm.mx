@@ -127,7 +127,9 @@ psm_declare(mvc *sql, dnode *n)
 	return stmt_list(l);
 }
 
+
 #if 0
+/* never used */
 static sql_table *
 find_basetable(stmt *s)
 {
