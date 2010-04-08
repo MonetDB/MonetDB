@@ -282,7 +282,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ResultSetMetaData getMetaData() throws SQLException {
-		throw new SQLException("Method currently not supported, sorry!");
+		return(null);
 	}
 
     /**
@@ -635,7 +635,9 @@ public class MonetPreparedStatement
 	 * @param x the parameter value
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setDate(int parameterIndex, java.sql.Date x) throws SQLException {
+	public void setDate(int parameterIndex, java.sql.Date x)
+		throws SQLException
+	{
 		setValue(parameterIndex, "date '" + x.toString() + "'");
 	}
 
@@ -749,7 +751,8 @@ public class MonetPreparedStatement
 	public void setNull(int paramIndex, int sqlType, String typeName)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		// MonetDB/SQL's NULL needs no type
+		setNull(paramIndex, sqlType);
 	}
 
 	/**

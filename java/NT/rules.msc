@@ -28,6 +28,6 @@ RULESMSC = ToBeDefined
 !INCLUDE $(RULESMSC)
 
 pkg = java
-VERSION=20091012
+VERSION=20100331
 
 ODBC_LIBS = odbccp32.lib user32.lib

@@ -389,18 +389,90 @@ public class MonetStatement implements Statement {
 		return(internalExecute(sql));
 	}
 
-	/* these require us to have a clue what column will generate the
-	 * value, while we do not at all (not here at least) and also only
-	 * support one */
+	/**
+	 * Executes the given SQL statement, which may return multiple
+	 * results, and signals the driver that the auto-generated keys
+	 * indicated in the given array should be made available for
+	 * retrieval. This array contains the indexes of the columns in the
+	 * target table that contain the auto-generated keys that should be
+	 * made available. The driver will ignore the array if the given SQL
+	 * statement is not an INSERT statement.
+	 * <br /><br />
+	 * Under some (uncommon) situations, a single SQL statement may
+	 * return multiple result sets and/or update counts. Normally you
+	 * can ignore this unless you are (1) executing a stored procedure
+	 * that you know may return multiple results or (2) you are
+	 * dynamically executing an unknown SQL string.
+	 * <br /><br />
+	 * The execute method executes an SQL statement and indicates the
+	 * form of the first result. You must then use the methods
+	 * getResultSet or getUpdateCount  to retrieve the result, and
+	 * getMoreResults to move to any subsequent result(s).
+	 * <br /><br />
+	 * MonetDB only supports returing the generated key for one column,
+	 * which will be the first column that has a serial.  Hence, this
+	 * method cannot work as required and the driver will fall back to
+	 * executing with request to the database to return the generated
+	 * key, if any.
+	 * 
+	 * @param sql any SQL statement
+	 * @param columnIndexes an array of the indexes of the columns in
+	 *        the inserted row that should be made available for
+	 *        retrieval by a call to the method getGeneratedKeys
+	 * @return true if the first result is a ResultSet object; false if
+	 *         it is an update count or there are no results
+	 * @throws SQLException if a database access error occurs or the
+	 *         elements in the int array passed to this method are not
+	 *         valid column indexes
+	 */
 	public boolean execute(String sql, int[] columnIndexed)
 		throws SQLException
 	{
-		throw new SQLException("Method not supported, sorry!");
+		addWarning("execute: generated keys for fixed set of columns not supported");
+		return(execute(sql, Statement.RETURN_GENERATED_KEYS));
 	}
+
+	/**
+	 * Executes the given SQL statement, which may return multiple
+	 * results, and signals the driver that the auto-generated keys
+	 * indicated in the given array should be made available for
+	 * retrieval. This array contains the names of the columns in the
+	 * target table that contain the auto-generated keys that should be
+	 * made available. The driver will ignore the array if the given SQL
+	 * statement is not an INSERT statement.
+	 * <br /><br />
+	 * In some (uncommon) situations, a single SQL statement may return
+	 * multiple result sets and/or update counts. Normally you can
+	 * ignore this unless you are (1) executing a stored procedure that
+	 * you know may return multiple results or (2) you are dynamically
+	 * executing an unknown SQL string.
+	 * <br /><br />
+	 * The execute method executes an SQL statement and indicates the
+	 * form of the first result. You must then use the methods
+	 * getResultSet or getUpdateCount  to retrieve the result, and
+	 * getMoreResults to move to any subsequent result(s).
+	 * <br /><br />
+	 * MonetDB only supports returing the generated key for one column,
+	 * which will be the first column that has a serial.  Hence, this
+	 * method cannot work as required and the driver will fall back to
+	 * executing with request to the database to return the generated
+	 * key, if any.
+	 *
+	 * @param sql any SQL statement
+	 * @param columnNames an array of the names of the columns in the
+	 *        inserted row that should be made available for retrieval
+	 *        by a call to the method getGeneratedKeys
+	 * @return true if the next result is a ResultSet object; false if
+	 *         it is an update count or there are no more results
+	 * @throws SQLException if a database access error occurs or the
+	 *         elements of the String array passed to this method are
+	 *         not valid column names
+	 */
 	public boolean execute(String sql, String[] columnNames)
 		throws SQLException
 	{
-		throw new SQLException("Method not supported, sorry!");
+		addWarning("execute: generated keys for fixed set of columns not supported");
+		return(execute(sql, Statement.RETURN_GENERATED_KEYS));
 	}
 
 	/**
@@ -506,8 +578,65 @@ public class MonetStatement implements Statement {
 		return(getUpdateCount());
 	}
 
-	public int executeUpdate(String sql, int[] columnIndexed) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
-	public int executeUpdate(String sql, String[] columnNames) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
+	/**
+	 * Executes the given SQL statement and signals the driver that the
+	 * auto-generated keys indicated in the given array should be made
+	 * available for retrieval. The driver will ignore the array if the
+	 * SQL statement is not an INSERT statement.
+	 * <br /><br />
+	 * MonetDB only supports returing the generated key for one column,
+	 * which will be the first column that has a serial.  Hence, this
+	 * method cannot work as required and the driver will fall back to
+	 * executing with request to the database to return the generated
+	 * key, if any.
+	 *
+	 * @param sql an SQL INSERT, UPDATE or DELETE statement or an SQL
+	 *        statement that returns nothing, such as an SQL DDL statement
+	 * @param columnIndexes an array of column indexes indicating the
+	 *        columns that should be returned from the inserted row
+	 * @return either the row count for INSERT, UPDATE, or DELETE
+	 *         statements, or 0 for SQL statements that return nothing
+	 * @throws SQLException if a database access error occurs, the SQL
+	 *         statement returns a ResultSet object, or the second
+	 *         argument supplied to this method is not an int array
+	 *         whose elements are valid column indexes
+	 */
+	public int executeUpdate(String sql, int[] columnIndexes)
+		throws SQLException
+	{
+		addWarning("executeUpdate: generated keys for fixed set of columns not supported");
+		return(executeUpdate(sql, Statement.RETURN_GENERATED_KEYS));
+	}
+
+	/**
+	 * Executes the given SQL statement and signals the driver that the
+	 * auto-generated keys indicated in the given array should be made
+	 * available for retrieval. The driver will ignore the array if the
+	 * SQL statement is not an INSERT statement.
+	 * <br /><br />
+	 * MonetDB only supports returing the generated key for one column,
+	 * which will be the first column that has a serial.  Hence, this
+	 * method cannot work as required and the driver will fall back to
+	 * executing with request to the database to return the generated
+	 * key, if any.
+	 *
+	 * @param sql an SQL INSERT, UPDATE or DELETE statement or an SQL
+	 *        statement that returns nothing, such as an SQL DDL statement
+	 * @param columnNames an array of the names of the columns that
+	 *        should be returned from the inserted row
+	 * @return either the row count for INSERT, UPDATE, or DELETE
+	 *         statements, or 0 for SQL statements that return nothing
+	 * @throws SQLException if a database access error occurs, the SQL
+	 *         statement returns a ResultSet object, or the second
+	 *         argument supplied to this method is not a String array
+	 *         whose elements are valid column names
+	 */
+	public int executeUpdate(String sql, String[] columnNames)
+		throws SQLException
+	{
+		addWarning("executeUpdate: generated keys for fixed set of columns not supported");
+		return(executeUpdate(sql, Statement.RETURN_GENERATED_KEYS));
+	}
 
 	/**
 	 * Retrieves the Connection object that produced this Statement object.
@@ -583,7 +712,26 @@ public class MonetStatement implements Statement {
 		}
 	}
 
-	public int getMaxFieldSize() throws SQLException { throw new SQLException("Method not supported, sorry!"); }
+	/**
+	 * Retrieves the maximum number of bytes that can be returned for
+	 * character and binary column values in a ResultSet object produced
+	 * by this Statement object. This limit applies only to BINARY,
+	 * VARBINARY, LONGVARBINARY, CHAR, VARCHAR, and LONGVARCHAR
+	 * columns. If the limit is exceeded, the excess data is silently
+	 * discarded.
+	 * <br /><br />
+	 * The MonetDB JDBC driver currently doesn't support limiting
+	 * fieldsizes, and hence always return 0 (unlimited).
+	 *
+	 * @return the current column size limit for columns storing
+	 *         character and binary values; zero means there is no limit
+	 * @throws SQLException if a database access error occurs
+	 */
+	public int getMaxFieldSize()
+		throws SQLException
+	{
+		return(0);
+	}
 
 	/**
 	 * Retrieves the maximum number of rows that a ResultSet object produced by
@@ -620,7 +768,7 @@ public class MonetStatement implements Statement {
 	 * flag, and returns true if the next result is a ResultSet object.
 	 * <br /><br />
 	 * There are no more results when the following is true:<br />
-	 * (!getMoreResults() && (getUpdateCount() == -1)
+	 * (!getMoreResults() &amp;&amp; (getUpdateCount() == -1)
 	 *
 	 * @param current one of the following Statement constants indicating what
 	 *                should happen to current ResultSet objects obtained using
@@ -650,6 +798,7 @@ public class MonetStatement implements Statement {
 	 * Retrieves the number of seconds the driver will wait for a
 	 * Statement object to execute.  If the limit is exceeded, a
 	 * SQLException is thrown.
+	 * <br /><br />
 	 * For MonetDB this method always returns zero, as no query
 	 * cancelling is possible.
 	 *
@@ -753,15 +902,63 @@ public class MonetStatement implements Statement {
 	 *         called on a closed connection
 	 */
 	public SQLWarning getWarnings() throws SQLException {
-		if (closed) throw new SQLException("Cannot call on closed Statement");
+		if (closed)
+			throw new SQLException("Cannot call on closed Statement");
 
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
 		return(warnings);
 	}
 
-	public void setCursorName(String name) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
-	public void setEscapeProcessing(boolean enable) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
+	/**
+	 * Sets the SQL cursor name to the given String, which will be used
+	 * by subsequent Statement object execute methods. This name can
+	 * then be used in SQL positioned update or delete statements to
+	 * identify the current row in the ResultSet object generated by
+	 * this statement. If the database does not support positioned
+	 * update/delete, this method is a noop. To insure that a cursor has
+	 * the proper isolation level to support updates, the cursor's
+	 * SELECT statement should have the form SELECT FOR UPDATE. If FOR
+	 * UPDATE is not present, positioned updates may fail.
+	 * <br /><br />
+	 * <b>Note:</b> By definition, the execution of positioned updates
+	 * and deletes must be done by a different Statement object than the
+	 * one that generated the ResultSet object being used for
+	 * positioning.  Also, cursor names must be unique within a
+	 * connection. 
+	 * <br /><br />
+	 * Since MonetDB does not support positioned update/delete, this
+	 * method is a noop.
+	 *
+	 * @param name the new cursor name, which must be unique within a
+	 *        connection
+	 * @throws SQLException if a database access error occurs
+	 */
+	public void setCursorName(String name) throws SQLException {
+		addWarning("setCursorName: positioned updates/deletes not supported");
+	}
+
+	/**
+	 * Sets escape processing on or off. If escape scanning is on (the
+	 * default), the driver will do escape substitution before sending
+	 * the SQL statement to the database. Note: Since prepared
+	 * statements have usually been parsed prior to making this call,
+	 * disabling escape processing for PreparedStatements objects will
+	 * have no effect.
+	 * <br /><br />
+	 * The MonetDB JDBC driver implements no escape processing at all in
+	 * its current implementation because it is too expensive, and in
+	 * general should not be necessary given SQL standards compliance.
+	 * In this sense, this driver will ignore any call to this function.
+	 *
+	 * @param enable true to enable escape processing; false to disable
+	 *        it
+	 * @throws SQLException if a database access error occurs
+	 */
+	public void setEscapeProcessing(boolean enable) throws SQLException {
+		if (enable)
+			addWarning("setEscapeProcessing: JDBC escape syntax is not supported by this driver");
+	}
 
 	/**
 	 * Gives the driver a hint as to the direction in which rows will be
@@ -795,7 +992,7 @@ public class MonetStatement implements Statement {
 	 * value specified is zero, then the hint is ignored.
 	 *
 	 * @param rows the number of rows to fetch
-	 * @throws SQLException if the condition 0 <= rows <= this.getMaxRows()
+	 * @throws SQLException if the condition 0 &lt;= rows &lt;= this.getMaxRows()
 	 *         is not satisfied.
 	 */
 	public void setFetchSize(int rows) throws SQLException {
@@ -806,7 +1003,29 @@ public class MonetStatement implements Statement {
 		}
 	}
 
-	public void setMaxFieldSize(int max) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
+	/**
+	 * Sets the limit for the maximum number of bytes in a ResultSet
+	 * column storing character or binary values to the given number of
+	 * bytes. This limit applies only to BINARY, VARBINARY,
+	 * LONGVARBINARY, CHAR, VARCHAR, and LONGVARCHAR fields. If the
+	 * limit is exceeded, the excess data is silently discarded. For
+	 * maximum portability, use values greater than 256.
+	 * <br /><br />
+	 * MonetDB does not support any fieldsize limiting, and hence the
+	 * driver does not emulate it either, since it doesn't really lead
+	 * to memory reduction.
+	 *
+	 * @param max the new column size limit in bytes; zero means there
+	 *        is no limit
+	 * @throws SQLException if a database access error occurs or the
+	 *         condition max &gt;= 0 is not satisfied
+	 */
+	public void setMaxFieldSize(int max) throws SQLException {
+		if (max < 0)
+			throw new SQLException("Illegal max value: " + max);
+		if (max > 0)
+			addWarning("setMaxFieldSize: field size limitation not supported");
+	}
 
 	/**
 	 * Sets the limit for the maximum number of rows that any ResultSet object
@@ -817,11 +1036,30 @@ public class MonetStatement implements Statement {
 	 * @throws SQLException if the condition max >= 0 is not satisfied
 	 */
 	public void setMaxRows(int max) throws SQLException {
-		if (max < 0) throw new SQLException("Illegal max value: " + max);
+		if (max < 0)
+			throw new SQLException("Illegal max value: " + max);
 		maxRows = max;
 	}
 
-	public void setQueryTimeout(int seconds) throws SQLException { throw new SQLException("Method not supported, sorry!"); }
+	/**
+	 * Sets the number of seconds the driver will wait for a Statement
+	 * object to execute to the given number of seconds. If the limit is
+	 * exceeded, an SQLException is thrown.
+	 * <br /><br />
+	 * MonetDB does not support cancelling running queries, hence this
+	 * method does not do anything.
+	 *
+	 * @param seconds the new query timeout limit in seconds; zero means
+	 *        there is no limit
+	 * @throws SQLException if a database access error occurs or the
+	 *         condition seconds &gt;= 0 is not satisfied
+	 */
+	public void setQueryTimeout(int seconds) throws SQLException {
+		if (seconds < 0)
+			throw new SQLException("Illegal timeout value: " + seconds);
+		if (seconds > 0)
+			addWarning("setQueryTimeout: query time outs not supported");
+	}
 
 	//== end methods of interface Statement
 

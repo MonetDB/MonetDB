@@ -552,7 +552,8 @@ public class MonetConnection implements Connection {
 	 *         called on a closed connection
 	 */
 	public SQLWarning getWarnings() throws SQLException {
-		if (closed) throw new SQLException("Cannot call on closed Connection");
+		if (closed)
+			throw new SQLException("Cannot call on closed Connection");
 
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
