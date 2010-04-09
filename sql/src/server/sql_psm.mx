@@ -127,27 +127,6 @@ psm_declare(mvc *sql, dnode *n)
 	return stmt_list(l);
 }
 
-
-#if 0
-/* never used */
-static sql_table *
-find_basetable(stmt *s)
-{
-	switch(s->type) {
-	case st_list:
-		if (list_length(s->op1.lval)) 
-			return find_basetable(s->op1.lval->h->data);
-		break;
-	case st_basetable:
-		return s->op1.tval;
-	default:
-		if (s->op1.stval)
-			return find_basetable(s->op1.stval);
-	}
-	return NULL;
-}
-#endif
-
 static stmt *
 psm_declare_table(mvc *sql, dnode *n)
 {
