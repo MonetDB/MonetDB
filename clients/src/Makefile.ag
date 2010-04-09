@@ -15,4 +15,4 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = mapilib mapiclient odbc HAVE_PERL?perl php HAVE_PYTHON?python HAVE_RUBYGEM?ruby examples HAVE_MAPILITE?mapilite
+SUBDIRS = mapilib mapiclient HAVE_UNIXODBC?odbc HAVE_PERL?perl php HAVE_PYTHON?python HAVE_RUBYGEM?ruby examples HAVE_MAPILITE?mapilite
