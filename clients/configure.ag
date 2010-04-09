@@ -99,30 +99,12 @@ AM_CONDITIONAL(HAVE_MAPILITE, test x$have_mapilite != xno)
 dnl unixODBC
 dnl this is only used by the ODBC driver
 have_unixodbc=auto
-UNIXODBC_PATH="$PATH"
-UNIXODBC_CONFIG=''
 ODBC_INCS=''
 ODBC_LIBS=''
 AC_ARG_WITH(unixodbc,
 	AS_HELP_STRING([--with-unixodbc=DIR],
 		[unixODBC library is installed in DIR]),
 	have_unixodbc="$withval")
-case "$have_unixodbc" in
-yes|no|auto)
-	;;
-*)
-	UNIXODBC_PATH="$withval/bin:$PATH"
-	;;
-esac
-if test "x$have_unixodbc" != xno; then
-	AC_PATH_PROG(UNIXODBC_CONFIG,odbc_config,,$UNIXODBC_PATH)
-	if test "x$UNIXODBC_CONFIG" = x; then
-		if test "x$have_unixodbc" = xyes; then
-			AC_MSG_ERROR([odbc_config not found; use --with-unixodbc=<path>])
-		fi
-		have_unixodbc=no
-	fi
-fi
 if test "x$have_unixodbc" != xno; then
 	case "$have_unixodbc" in
 	yes|auto)
@@ -147,6 +129,28 @@ if test "x$have_unixodbc" != xno; then
 	ODBC_LIBS="$ODBC_LIBS -lodbcinst"
 	AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1, [Define if you have the SQLGetPrivateProfileString function])
 fi
+if test "x$have_unixodbc" != xno; then
+	AC_MSG_CHECKING([checking whether SQLColAttribute uses SQLLEN * or SQLPOINTER])
+	AC_COMPILE_IFELSE(
+		AC_LANG_PROGRAM([[
+			#include <sql.h>
+			SQLRETURN SQL_API
+			SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength, SQLLEN *pnValue) {
+				(void) hStmt;
+				(void) nCol;
+				(void) nFieldIdentifier;
+				(void) pszValue;
+				(void) nValueLengthMax;
+				(void) pnValueLength;
+				(void) pnValue;
+				return SQL_SUCCESS;}]],
+			[[SQLColAttribute(0,0,0,0,0,0,0);]]),
+		[lenp_or_pointer_t='SQLLEN *'],
+		[lenp_or_pointer_t=SQLPOINTER])
+	AC_MSG_RESULT([using "$lenp_or_pointer_t"])
+	AC_DEFINE_UNQUOTED(LENP_OR_POINTER_T, $lenp_or_pointer_t, [Define as SQLLEN * or SQLPOINTER depending on the include file])
+fi
+
 AC_SUBST(ODBC_INCS)
 AC_SUBST(ODBC_LIBS)
 AM_CONDITIONAL(HAVE_UNIXODBC, test x$have_unixodbc != xno)

@@ -206,7 +206,7 @@ SQLRETURN SQLColAttribute_(ODBCStmt *stmt,
 			   SQLUSMALLINT nCol,
 			   SQLUSMALLINT nFieldIdentifier,
 			   SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax,
-			   SQLSMALLINT *pnValueLength, SQLLEN *pnValue);
+			   SQLSMALLINT *pnValueLength, LENP_OR_POINTER_T pnValue);
 SQLRETURN SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 			 SQLINTEGER nSqlStr);
 SQLRETURN SQLExecute_(ODBCStmt *stmt);

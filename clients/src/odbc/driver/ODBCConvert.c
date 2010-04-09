@@ -1382,7 +1382,7 @@ ODBCFetch(ODBCStmt *stmt,
 				if (lenp)
 					*lenp += fscale + 1;
 				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*u", fscale, tsval.fraction);
+					sz = snprintf(data, buflen, ".%0*u", fscale, (unsigned int) tsval.fraction);
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -1398,8 +1398,8 @@ ODBCFetch(ODBCStmt *stmt,
 			sz = snprintf((char *) ptr, buflen,
 				      "INTERVAL %s'%u-%02u' YEAR(%d) TO MONTH",
 				      ival.interval_sign ? "-" : "",
-				      ival.intval.year_month.year,
-				      ival.intval.year_month.month,
+				      (unsigned int) ival.intval.year_month.year,
+				      (unsigned int) ival.intval.year_month.month,
 				      i);
 
 			if (sz < 0 || sz >= buflen) {
@@ -1435,10 +1435,10 @@ ODBCFetch(ODBCStmt *stmt,
 
 			sz = snprintf(data, buflen, "INTERVAL %s'%u %02u:%02u:%02u",
 				      ival.interval_sign ? "-" : "",
-				      ival.intval.day_second.day,
-				      ival.intval.day_second.hour,
-				      ival.intval.day_second.minute,
-				      ival.intval.day_second.second);
+				      (unsigned int) ival.intval.day_second.day,
+				      (unsigned int) ival.intval.day_second.hour,
+				      (unsigned int) ival.intval.day_second.minute,
+				      (unsigned int) ival.intval.day_second.second);
 			if (sz < 0 || sz + w >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -1458,7 +1458,7 @@ ODBCFetch(ODBCStmt *stmt,
 				if (lenp)
 					*lenp += ivalprec + 1;
 				if (buflen > w + 2)
-					sz = snprintf(data, buflen, ".%0*u", ivalprec, ival.intval.day_second.fraction);
+					sz = snprintf(data, buflen, ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
 				if (buflen <= w + 2 || sz < 0 || sz + w >= buflen) {
 					sz = buflen - w - 1;
 					/* String data, right-truncated */
@@ -2698,7 +2698,7 @@ ODBCStore(ODBCStmt *stmt,
 			snprintf(data, sizeof(data), "%04hd-%02hu-%02hu %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (tsval.fraction) {
-				snprintf(data, sizeof(data), ".%09u", tsval.fraction);
+				snprintf(data, sizeof(data), ".%09u", (unsigned int) tsval.fraction);
 				/* remove trailing zeros */
 				for (i = 9; i > 0 && data[i] == '0'; i--)
 					data[i] = 0;
@@ -2706,70 +2706,70 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_INTERVAL_YEAR:
-			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.year_month.year);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.year_month.year);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_MONTH:
-			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.year_month.month);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.year_month.month);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_YEAR_TO_MONTH:
-			snprintf(data, sizeof(data), "%s%0*u-%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.year_month.year, ival.intval.year_month.month);
+			snprintf(data, sizeof(data), "%s%0*u-%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.year_month.year, (unsigned int) ival.intval.year_month.month);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_DAY:
-			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.day);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.day);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_HOUR:
-			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.hour);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.hour);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_MINUTE:
-			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.minute);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.minute);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_SECOND:
-			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.second);
+			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (ival.intval.day_second.fraction && ivalprec > 0) {
-				snprintf(data, sizeof(data), ".%0*u", ivalprec, ival.intval.day_second.fraction);
+				snprintf(data, sizeof(data), ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
 		case SQL_C_INTERVAL_DAY_TO_HOUR:
-			snprintf(data, sizeof(data), "%s%0*u %02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.day, ival.intval.day_second.hour);
+			snprintf(data, sizeof(data), "%s%0*u %02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.day, (unsigned int) ival.intval.day_second.hour);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_DAY_TO_MINUTE:
-			snprintf(data, sizeof(data), "%s%0*u %02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.day, ival.intval.day_second.hour, ival.intval.day_second.minute);
+			snprintf(data, sizeof(data), "%s%0*u %02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.day, (unsigned int) ival.intval.day_second.hour, (unsigned int) ival.intval.day_second.minute);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_DAY_TO_SECOND:
-			snprintf(data, sizeof(data), "%s%0*u %02u:%02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.day, ival.intval.day_second.hour, ival.intval.day_second.minute, ival.intval.day_second.second);
+			snprintf(data, sizeof(data), "%s%0*u %02u:%02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.day, (unsigned int) ival.intval.day_second.hour, (unsigned int) ival.intval.day_second.minute, (unsigned int) ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (ival.intval.day_second.fraction && ivalprec > 0) {
-				snprintf(data, sizeof(data), ".%0*u", ivalprec, ival.intval.day_second.fraction);
+				snprintf(data, sizeof(data), ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
 		case SQL_C_INTERVAL_HOUR_TO_MINUTE:
-			snprintf(data, sizeof(data), "%s%0*u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.hour, ival.intval.day_second.minute);
+			snprintf(data, sizeof(data), "%s%0*u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.hour, (unsigned int) ival.intval.day_second.minute);
 			assigns(buf, bufpos, buflen, data, stmt);
 			break;
 		case SQL_C_INTERVAL_HOUR_TO_SECOND:
-			snprintf(data, sizeof(data), "%s%0*u:%02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.hour, ival.intval.day_second.minute, ival.intval.day_second.second);
+			snprintf(data, sizeof(data), "%s%0*u:%02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.hour, (unsigned int) ival.intval.day_second.minute, (unsigned int) ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (ival.intval.day_second.fraction && ivalprec > 0) {
-				snprintf(data, sizeof(data), ".%0*u", ivalprec, ival.intval.day_second.fraction);
+				snprintf(data, sizeof(data), ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
 		case SQL_C_INTERVAL_MINUTE_TO_SECOND:
-			snprintf(data, sizeof(data), "%s%0*u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.minute, ival.intval.day_second.second);
+			snprintf(data, sizeof(data), "%s%0*u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.minute, (unsigned int) ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (ival.intval.day_second.fraction && ivalprec > 0) {
-				snprintf(data, sizeof(data), ".%0*u", ivalprec, ival.intval.day_second.fraction);
+				snprintf(data, sizeof(data), ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
@@ -2924,7 +2924,7 @@ ODBCStore(ODBCStmt *stmt,
 			snprintf(data, sizeof(data), "TIMESTAMP '%hu-%02hd-%02hd %02hu:%02hu:%02hu", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (tsval.fraction) {
-				snprintf(data, sizeof(data), ".%09u", tsval.fraction);
+				snprintf(data, sizeof(data), ".%09u", (unsigned int) tsval.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			assign(buf, bufpos, buflen, '\'', stmt);
@@ -2975,13 +2975,13 @@ ODBCStore(ODBCStmt *stmt,
 		}
 		switch (ival.interval_type) {
 		case SQL_IS_YEAR:
-			snprintf(data, sizeof(data), "INTERVAL %s'%u' YEAR", ival.interval_sign ? "" : "- ", ival.intval.year_month.year);
+			snprintf(data, sizeof(data), "INTERVAL %s'%u' YEAR", ival.interval_sign ? "" : "- ", (unsigned int) ival.intval.year_month.year);
 			break;
 		case SQL_IS_MONTH:
-			snprintf(data, sizeof(data), "INTERVAL %s'%u' MONTH", ival.interval_sign ? "" : "- ", ival.intval.year_month.month);
+			snprintf(data, sizeof(data), "INTERVAL %s'%u' MONTH", ival.interval_sign ? "" : "- ", (unsigned int) ival.intval.year_month.month);
 			break;
 		case SQL_IS_YEAR_TO_MONTH:
-			snprintf(data, sizeof(data), "INTERVAL %s'%u-%u' YEAR TO MONTH", ival.interval_sign ? "" : "- ", ival.intval.year_month.year, ival.intval.year_month.month);
+			snprintf(data, sizeof(data), "INTERVAL %s'%u-%u' YEAR TO MONTH", ival.interval_sign ? "" : "- ", (unsigned int) ival.intval.year_month.year, (unsigned int) ival.intval.year_month.month);
 			break;
 		default:
 			break;
@@ -3040,7 +3040,7 @@ ODBCStore(ODBCStmt *stmt,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
-		snprintf(data, sizeof(data), "INTERVAL %s'%u %u:%u:%u", ival.interval_sign ? "" : "- ", ival.intval.day_second.day, ival.intval.day_second.hour, ival.intval.day_second.minute, ival.intval.day_second.second);
+		snprintf(data, sizeof(data), "INTERVAL %s'%u %u:%u:%u", ival.interval_sign ? "" : "- ", (unsigned int) ival.intval.day_second.day, (unsigned int) ival.intval.day_second.hour, (unsigned int) ival.intval.day_second.minute, (unsigned int) ival.intval.day_second.second);
 		assigns(buf, bufpos, buflen, data, stmt);
 		assigns(buf, bufpos, buflen, "' DAY TO SECOND", stmt);
 		break;

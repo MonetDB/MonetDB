@@ -35,6 +35,9 @@
 /* Define to 1 if you have the `SQLGetPrivateProfileString' function. */
 #define HAVE_SQLGETPRIVATEPROFILESTRING 1
 
+/* Define as SQLLEN * or SQLPOINTER depending on the include file */
+#define LENP_OR_POINTER_T SQLLEN *
+
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 /* #undef HAVE_SYS_IOCTL_H */
 
