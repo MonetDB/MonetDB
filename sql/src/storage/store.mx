@@ -1510,7 +1510,7 @@ store_manager(void)
 		}
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
-		schema_number++;
+		gtrans->stime++;
 		if (store_funcs.gtrans_update)
 			store_funcs.gtrans_update(gtrans);
 		res = logger_funcs.restart();
