@@ -127,7 +127,7 @@
 
 /**
  * The following types are for the update functions. The following four types
- * represent the first parameter of an update function (which is a always of
+ * represent the first parameter of an update function (which is always of
  * kind node). This allows an update item to correctly encode all information
  * in separate types: update + node1 + str|qname|node * and to transport this
  * (triple) information to the update tape at the serialize operator.
