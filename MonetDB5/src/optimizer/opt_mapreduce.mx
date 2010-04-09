@@ -154,7 +154,7 @@ typedef struct _mapnode {
 static mapnode mapnodes[MAXNODES];
 
 static int
-MRcloudSize()
+MRcloudSize(str mrcluster)
 {
 	str msg;
 	bat bid = 0;
@@ -162,10 +162,12 @@ MRcloudSize()
 	BUN p, q;
 	BATiter bi;
 	int mapcount = 0;
-	/* FIXME: poolname should be configurable */
-	str s = "*/testpool/node/*";
+	char nodes[1024];
+	char *n = nodes;
+
+	snprintf(nodes, sizeof(nodes), "*/%s/node/*", mrcluster);
 	
-	msg = RMTresolve(&bid, &s);
+	msg = RMTresolve(&bid, &n);
 	if (msg != MAL_SUCCEED) {
 		if (msg != M5OutOfMemory)
 			GDKfree(msg);
@@ -219,7 +221,12 @@ typedef struct _mapcol {
 } mapcol;
 
 static void
-MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
+MRdistributework(
+		Client cntxt,
+		MalBlkPtr mb,
+		mapcol *col,
+		InstrPtr sig,
+		str mrcluster)
 {
 	InstrPtr o, p, *packs;
 	int i, n, j, q, barrier, v, retc;
@@ -227,7 +234,7 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 	mapcol *lcol;
 	(void)cntxt;
 
-	n = MRcloudSize(); /* FIXME: free */
+	n = MRcloudSize(mrcluster); /* FIXME: free */
 
 	assert(n);
 	assert(col);
@@ -461,17 +468,22 @@ MRdistributework(Client cntxt, MalBlkPtr mb, mapcol *col, InstrPtr sig)
 enum copymode { cNONE, FREE, STICK, SINGLE_DUP, DUP, LEAVE };
 
 static int
-OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+OPTmapreduceImplementation(
+		Client cntxt,
+		MalBlkPtr mb,
+		MalStkPtr stk,
+		InstrPtr pc)
 {
 	int i, j, limit;
 	enum copymode copy;
 	InstrPtr p, *old, *orig, ret, sig;
 	MalBlkPtr mc;
 	char nme[IDLENGTH];
+	char mrcluster[256];
 	Symbol new;
 	mapcol *col, *lastcol;
 
-	(void)stk;
+	(void)stk; /* useless, is NULL */
 	(void)pc;
 
 #ifdef _DEBUG_OPT_MAPREDUCE
@@ -501,7 +513,7 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	orig = mb->stmt;
 	limit = mc->stop;
 
-	snprintf(nme, IDLENGTH, "%smp", getFunctionId(getInstrPtr(mb, 0)));
+	snprintf(nme, IDLENGTH, "%smap", getFunctionId(getInstrPtr(mb, 0)));
 
 	/* zap */
 	if (newMalBlkStmt(mc, mc->ssize) < 0)
@@ -522,6 +534,7 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	 * full plan.  We need them all first to determine the signature and
 	 * return correctly. */
 	copy = FREE;
+	mrcluster[0] = '\0';
 	for (i = 0; i < limit; i++) { /* phase 1 */
 		p = old[i];
 
@@ -530,6 +543,32 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				/* sql.mvc(): we need this statement everywhere */
 				copy = SINGLE_DUP;
 			} else if (getFunctionId(p) == bindRef) {
+				str schema = NULL;
+				VALformat(&schema, &getVar(mc, getArg(p, 1))->value);
+				/* check if this is a column from a mapreduce schema (mr_*) */
+				if (strncmp(schema, "mr_", 3) != 0) {
+					freeSymbol(new);
+					GDKfree(mb->stmt);
+					mb->stmt = orig;
+					mb->stop = limit;
+					GDKfree(old);
+					return 0;
+				}
+				/* and that we don't mix 'n' match mapreduce schemas */
+				if (mrcluster[0] == '\0') {
+					snprintf(mrcluster, sizeof(mrcluster),
+							"%s", schema + 3);
+				} else {
+					if (strcmp(mrcluster, schema + 3) != 0) {
+						freeSymbol(new);
+						GDKfree(mb->stmt);
+						mb->stmt = orig;
+						mb->stop = limit;
+						GDKfree(old);
+						return 0;
+					}
+				}
+
 				/* start of sql.bind, kdiff, kunion, etc. sequence */
 				copy = STICK;
 			} else if (getFunctionId(p) == binddbatRef) {
@@ -615,7 +654,7 @@ OPTmapreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					sig = pushReturn(mc, sig, lastcol->val1);
 				}
 			}
-			MRdistributework(cntxt, mb, col, sig);
+			MRdistributework(cntxt, mb, col, sig, mrcluster);
 			continue;
 		}
 
