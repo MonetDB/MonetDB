@@ -90,7 +90,7 @@ static struct{
 	lng claim;	/* actual claim on memory*/
 	int bid;
 } hotpotatoes[MAXHOT];
-static int hottop;
+static int hottop = 0;
 @-
 The struct alignment leads to 40% gain in simple instructions when set.
 @c
@@ -372,7 +372,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 
 	/* pass the new debug mode to the caller */
 	if (env && stk->cmd!='f') env->cmd = stk->cmd;
-	if ( !keepAlive && garbageControl(getInstrPtr(mb,0)) )
+	if ( keepAlive == 0 && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(cntxt, mb,stk,env!=stk);
 	return ret;
 }
@@ -701,7 +701,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *h
 		*retclaim = guess * pci->retc;
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total )
-		stream_printf(GDKstdout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
+		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
 #endif
 }
 @-
@@ -724,7 +724,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 		memoryused = 0;
 		hottop = 0; 
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKstdout,"#DFLOWhotpotatoes reset\n");
+		stream_printf(GDKout,"#DFLOWhotpotatoes reset\n");
 #endif
 	}
 
@@ -743,7 +743,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 				if ( hotpotatoes[j].claim){
 					str cv = NULL;
 					ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-					stream_printf(GDKstdout,"#DFLOWhotpotatoes[%d] drops  [%s]" LLFMT "\n", j, cv, hotpotatoes[j].claim);
+					stream_printf(GDKout,"#DFLOWhotpotatoes[%d] drops  [%s]" LLFMT "\n", j, cv, hotpotatoes[j].claim);
 					if (cv) GDKfree(cv);
 				}
 #endif
@@ -783,7 +783,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 			if ( total ) {
 				str cv = NULL;
 				ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-				stream_printf(GDKstdout,"#DFLOWhotpotatoes[%d] claims [%s]" LLFMT "\n", hottop, cv, total);
+				stream_printf(GDKout,"#DFLOWhotpotatoes[%d] claims [%s]" LLFMT "\n", hottop, cv, total);
 				GDKfree(cv);
 			}
 #endif
@@ -794,7 +794,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total && action )
-		stream_printf(GDKstdout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
+		stream_printf(GDKout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
 #endif
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 }
@@ -815,7 +815,7 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 			memorypool -= (argclaim + retclaim);
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
+			stream_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
 				memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -828,9 +828,9 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 	memorypool += -argclaim -retclaim ; 
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKstdout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
+		stream_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
 			memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
-		stream_flush(GDKstdout);
+		stream_flush(GDKout);
 #endif
 	assert(memoryclaims >= 0 );
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -1003,7 +1003,7 @@ on the queue, searching for one that can be handled instead. [todo].
 		getMemoryClaim(stk, pci, &argclaim, &retclaim,&hotclaim);
 		if ( DFLOWadmission(argclaim,retclaim,hotclaim) ){
 			PARDEBUG {
-				stream_printf(GDKstdout,"#DFLOWdelay thread %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
+				stream_printf(GDKout,"#DFLOWdelay thread %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
 				printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 			}
 			for ( ; ; )
@@ -1011,7 +1011,7 @@ on the queue, searching for one that can be handled instead. [todo].
 				MT_sleep_ms( 25);
 				if ( DFLOWadmission(argclaim,retclaim,hotclaim) == 0) {
 					PARDEBUG {
-						stream_printf(GDKstdout,"#DFLOWcont  thread %d delay " LLFMT " pool  " LLFMT" delayed " LLFMT " ms\n#", THRgettid(),  memorypool, argclaim+retclaim, (GDKusec()-stk->clk)/1000);
+						stream_printf(GDKout,"#DFLOWcont  thread %d delay " LLFMT " pool  " LLFMT" delayed " LLFMT " ms\n#", THRgettid(),  memorypool, argclaim+retclaim, (GDKusec()-stk->clk)/1000);
 						printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 					}
 					break;
@@ -1094,7 +1094,6 @@ runDFLOWworker(void *t)
 			THRprintf(GDKerr, "#Thread %d needs memory:%s\n",task->id,err);
 			break;
 		}
-		/* search an unblocking instruction */
 		q_enqueue(fs->flow->done, fs);
 	}
 	THRdel(thr);
@@ -1215,7 +1214,7 @@ DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
 static str
 DFLOWscheduler( DataFlow flow )
 {
-	int queued = 0, candidates;
+	int queued = 0, candidates ;
 	int pc = 0, i, j, oa =0, ia;
 	int limit = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
@@ -1277,7 +1276,6 @@ DFLOWscheduler( DataFlow flow )
 		PARDEBUG if (queued)
 			stream_printf(GDKstdout,"#schedule new instructions, start from %d\n", pc);
 
-		candidates = 0;
 		for( ; pc < limit; pc++)
 			if ( fs[pc].status != DFLOWwrapup)
 				break;
@@ -1285,19 +1283,6 @@ DFLOWscheduler( DataFlow flow )
 		for(i = limit-1 ; i >= pc ; i--)
 		if (fs[i].status == DFLOWpending ) {
 			p = getInstrPtr(flow->mb, fs[i].pc);
-			for( j=p->retc; j<p->argc; j++)
-			if ( getArg(p,j) == oa && DFLOWeligible(flow,fs,i,p,pc)){
-				queued++;
-				DFLOWactivate(flow,fs,i,p);
-				q_enqueue(flow->todo, fs+i);
-				candidates++;
-			}
-		}
-
-		for(i = pc; i < limit && candidates <  flow->nway ; i++)
-		if (fs[i].status == DFLOWpending ) {
-			p = getInstrPtr(flow->mb, fs[i].pc);
-			/* check if input args aren't blocked */
 			if ( DFLOWeligible(flow,fs,i,p,pc)){
 				queued++;
 				DFLOWactivate(flow,fs,i,p);
@@ -1780,6 +1765,37 @@ are identified. In the post-execution phase they are removed.
 #ifdef STACKTRACE
 	printf("restoreTarget %d\n", garbageControl(pci));
 #endif
+	/* Provide debugging support */
+#if @1
+	if( GDKdebug & 10 && exceptionVar < 0) {
+		BAT *b;
+
+		for( i=0; i< pci->retc; i++)
+		if ( garbage[i] == 0 && stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
+				stk->stk[getArg(pci,i)].val.bval ){
+			b= BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+			if( b == NULL){
+				ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
+				continue;
+			}
+			if( b->batStamp <= stamp){
+				if( GDKdebug & 8){
+					if (b->H != b->T) {
+						BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+					}
+					BATpropcheck(b, BATPROPS_QUICK);
+				}
+			} else
+				if( GDKdebug & 2) {
+					if (b->H != b->T) {
+						BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+					}
+					BATpropcheck(b, BATPROPS_QUICK);
+				}
+			BBPunfix(b->batCacheid);
+		}
+	}
+#endif
 	@:MALrecycleExit(@2)@
 	if(ret==MAL_SUCCEED && garbageControl(pci) ){ 
 		for(i=0; i<pci->argc; i++)
@@ -1820,37 +1836,6 @@ are identified. In the post-execution phase they are removed.
 			} 
 		} 
 	}
-	/* Provide debugging support */
-#if @1
-	if( GDKdebug & 10 && exceptionVar < 0) {
-		BAT *b;
-
-		for( i=0; i< pci->retc; i++)
-		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
-				stk->stk[getArg(pci,i)].val.bval ){
-			b= BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-			if( b == NULL){
-				ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
-				continue;
-			}
-			if( b->batStamp <= stamp){
-				if( GDKdebug & 8){
-					if (b->H != b->T) {
-						BATpropcheck(BATmirror(b), BATPROPS_QUICK);
-					}
-					BATpropcheck(b, BATPROPS_QUICK);
-				}
-			} else
-				if( GDKdebug & 2) {
-					if (b->H != b->T) {
-						BATpropcheck(BATmirror(b), BATPROPS_QUICK);
-					}
-					BATpropcheck(b, BATPROPS_QUICK);
-				}
-			BBPunfix(b->batCacheid);
-		}
-	}
-#endif
 @-
 @= commandcall
 {	
