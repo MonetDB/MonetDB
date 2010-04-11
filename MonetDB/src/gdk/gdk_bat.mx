@@ -3350,7 +3350,7 @@ for determining which algebra commands set properties sub-optimally.
 
 				hp->filename = GDKmalloc(strlen(nme) + 12);
 				if (hp->filename != NULL)
-					sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
+					sprintf(hp->filename, "%s.%chash", nme, bv->batCacheid > 0 ? 'h' : 't');
 				if (hp->filename == NULL ||
 				    (bv->H->hash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
 					GDKfree(hp->filename);
