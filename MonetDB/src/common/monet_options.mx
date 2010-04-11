@@ -400,7 +400,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_debug");
-	set[i].value = strdup("8");
+	set[i].value = strdup("0");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_alloc_map");
