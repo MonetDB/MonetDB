@@ -192,14 +192,3 @@ AC_DEFINE_UNQUOTED(GEOM_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine dat
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-
-case "$host_os" in
-*mingw*)
-AM_CONDITIONAL(NOT_WIN32, false)
-AM_CONDITIONAL(NATIVE_WIN32, true)
-;;
-*)
-AM_CONDITIONAL(NOT_WIN32, true)
-AM_CONDITIONAL(NATIVE_WIN32, false)
-;;
-esac

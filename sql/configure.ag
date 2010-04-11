@@ -126,14 +126,3 @@ AC_SEARCH_LIBS([uuid_generate], [uuid])
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-
-case "$host_os" in
-*mingw*)
-AM_CONDITIONAL(NOT_WIN32, false)
-AM_CONDITIONAL(NATIVE_WIN32, true)
-;;
-*)
-AM_CONDITIONAL(NOT_WIN32, true)
-AM_CONDITIONAL(NATIVE_WIN32, false)
-;;
-esac
