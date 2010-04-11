@@ -26,6 +26,11 @@
 # but such client side configurations are better packed in their
 # own structure.
 
+# ----------------------------------------------------------- #
+# Please keep the comments below aligned with the defaults in #
+# MonetDB/src/common/monet_options.mx                         #
+# ----------------------------------------------------------- #
+
 # Absolute path where MonetDB is installed
 prefix=@prefix@
 exec_prefix=@exec_prefix@
@@ -40,14 +45,14 @@ gdk_dbfarm=@localstatedir@@DIRSEP@MonetDB5@DIRSEP@dbfarm
 # MonetDB can only handle one database at a time.  When you start an
 # mserver5 manually without specifying the database name yourself, the
 # following database name is used.
-gdk_dbname=demo
+#gdk_dbname=demo
 
 # The options below deal with various aspects of memory usage behaviour.
 # If you don't know what these values mean, you should leave them alone.
 
-# gdk_mem_bigsize will be initialized in GDKinit
 # memory chunks of size >= gdk_mem_bigsize (in bytes) will be mmaped anonymously
-#gdk_mem_bigsize=262144
+# default set in gdk_utils.mx: 1<<20 == 1024576 == 1 MiB
+#gdk_mem_bigsize=1024576
 # for 32 bit systems try to claim 3G of (virtual) memory;
 #gdk_vmtrim=yes
 # set to "no" to disable the vmtrim thread.
@@ -135,7 +140,7 @@ monet_mod_path=@libdir@@DIRSEP@MonetDB5@PATHSEP@@libdir@@DIRSEP@MonetDB5@DIRSEP@
 # Start mserver in daemon mode, or start with MAL interactive interface?
 monet_daemon=no
 # Display version and copyright information upon startup?
-monet_welcome=yes
+#monet_welcome=yes
 # Where is the file that stores the secret key to unlock the password
 # vault?  The file is read up to the first null-byte ('\0'), so you can
 # padd the file with trailing null-bytes to obfuscate the key length.
@@ -230,7 +235,7 @@ mero_controlport=50001
 
 # Monet Application Interface Section
 #====================================
-mapi_port=50000       # default port to address an mserver
+#mapi_port=50000      # default port to address an mserver
 mapi_autosense=false  # if set to 'true': automatically find a free port
                       # starting the search at mapi_port and going up
 mapi_open=false       # should be set to 'true' to allow for
@@ -307,3 +312,8 @@ dictionary_pipe=inline,remap,dictionary,evaluate,costModel,coercions,emptySet,al
 
 # The default + compression
 compression_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
+
+# ----------------------------------------------------------- #
+# Please keep the comments above aligned with the defaults in #
+# MonetDB/src/common/monet_options.mx                         #
+# ----------------------------------------------------------- #

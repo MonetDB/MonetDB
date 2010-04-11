@@ -371,6 +371,11 @@ mo_builtin_settings(opt **Set)
 	if (set == NULL)
 		return 0;
 
+	/* -------------------------------------------------------------- */
+	/* Please keep the below defaults aligned with the comments in    */
+	/* MonetDB4/conf/MonetDB.conf.in & MonetDB5/conf/monetdb5.conf.in */
+	/* -------------------------------------------------------------- */
+
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_arch");
 	snprintf(buf, BUFSIZ, "%dbit%s", (int) sizeof(char *) * 8, HOST);
@@ -391,11 +396,11 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbname");
-	set[i].value = strdup("tst");
+	set[i].value = strdup("demo");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbfarm");
-	snprintf(buf, BUFSIZ, "%s%c%s", MONETDB_LOCALSTATEDIR, DIR_SEP, PACKAGE);
+	snprintf(buf, BUFSIZ, "%s%c%s%c%s", MONETDB_LOCALSTATEDIR, DIR_SEP, PACKAGE, DIR_SEP, "dbfarm");
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
@@ -475,6 +480,12 @@ mo_builtin_settings(opt **Set)
 	set[i].name = strdup("standoff_end");
 	set[i].value = strdup("end");
 	i++;
+
+	/* -------------------------------------------------------------- */
+	/* Please keep the above defaults aligned with the comments in    */
+	/* MonetDB4/conf/MonetDB.conf.in & MonetDB5/conf/monetdb5.conf.in */
+	/* -------------------------------------------------------------- */
+
 	assert(i == N_OPTIONS);
 	*Set = set;
 	return i;

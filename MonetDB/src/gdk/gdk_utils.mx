@@ -391,7 +391,7 @@ the memory consumption.
 size_t GDK_mmap_minsize = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize_max = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
-size_t GDK_mem_bigsize = 1 << 20;
+size_t GDK_mem_bigsize = 1 << 20; /* please keep in sync with MonetDB.conf.in & monetdb5.conf.in */
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
 int GDK_vm_allocs = 0;

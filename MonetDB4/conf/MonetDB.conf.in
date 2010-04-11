@@ -4,6 +4,11 @@
 # system wide parameters.  It can reside in either the local directory
 # where Mserver is called, or the home directory of the MonetDB user. 
 
+# ----------------------------------------------------------- #
+# Please keep the comments below aligned with the defaults in #
+# MonetDB/src/common/monet_options.mx                         #
+# ----------------------------------------------------------- #
+
 # Where MonetDB is installed
 prefix=@Xprefix@
 exec_prefix=@Xexec_prefix@
@@ -21,16 +26,14 @@ gdk_dbfarm=@Xlocalstatedir@@DIRSEP@MonetDB4@DIRSEP@dbfarm
 # the name of the database to use below.  Note that you can use
 # multiple databases, but that you have to edit the database name
 # and restart MonetDB.
-gdk_dbname=demo
+#gdk_dbname=demo
 
 # The options below deal with various aspects of memory usage behaviour.
 # If you don't know what these values mean, you should leave them alone.
 
-# gdk_mem_bigsize will be set/limited to 
-# 1/2 of the physically available amount of main-memory
-# during start-up in src/tools/Mserver.mx
 # memory chunks of size >= gdk_mem_bigsize (in bytes) will be mmaped anonymously
-#gdk_mem_bigsize=262144
+# default set in gdk_utils.mx: 1<<20 == 1024576 == 1 MiB
+#gdk_mem_bigsize=1024576
 # for 32 bit systems try to claim 3G of (virtual) memory;
 #gdk_vmtrim=yes
 # set to "no" to disable the vmtrim thread.
@@ -47,7 +50,7 @@ gdk_embedded=no
 
 # You can enable debug for specific parts.  By default debug is
 # switched off.
-gdk_debug=0
+#gdk_debug=0
 # possible values: (can be a combination of)
 #       1 = thread-specific debug output
 #       2 = property enforcing on new BATs
@@ -83,12 +86,13 @@ gdk_debug=0
 # MonetDB Section
 #================
 # Administrator user name 
-monet_admin=adm
+#monet_admin=adm
 # Prompt when using MIL interface 
+#monet_prompt=>
 monet_prompt=MonetDB>
 # Show version and copyright information when starting the server or
 # a MIL client?
-monet_welcome=yes
+#monet_welcome=yes
 # Where do the MonetDB modules reside?
 # The first directory contains MIL modules, and either the second or third (depending on the system) the C modules.
 monet_mod_path=@Xlibdir@@DIRSEP@MonetDB4@PATHSEP@@Xlibdir@@DIRSEP@MonetDB4@DIRSEP@lib@PATHSEP@@Xlibdir@@DIRSEP@MonetDB4@DIRSEP@bin
@@ -98,13 +102,13 @@ monet_daemon=no
 # Monet Application Interface Section
 #====================================
 # default port to address an Mserver for a MIL session
-mapi_port=50000
+#mapi_port=50000
 #allow mclient sessions from outside the server machine
 mapi_open=false                    
 # show all the MIL output?  (default: no)
 #mapi_noheaders=no
 # The MAPI debug level (should be disabled for normal use)
-mapi_debug=0
+#mapi_debug=0
 # The number of concurrent clients can be set using mapi_clients
 # (smaller than 1 is not very useful)
 #mapi_clients=2
@@ -157,12 +161,10 @@ xrpc_trusted="http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;@Xexec_pre
 # standoff annotation XPath extension
 #standoff_ns=http://monetdb.cwi.nl/standoff
 standoff_ns=
-standoff_start=start
-standoff_end=end
+#standoff_start=start
+#standoff_end=end
 
-# Profile Interface Section
-#====================================
-# for 32 bit systems try to claim 3G of (virtual) memory;
-# set to "no" to run Mserver with valgrind.
-# valgrind --tool=callgrind Mserver --set gdk_alloc_map=no ..."
-#gdk_alloc_map=yes	
+# ----------------------------------------------------------- #
+# Please keep the comments above aligned with the defaults in #
+# MonetDB/src/common/monet_options.mx                         #
+# ----------------------------------------------------------- #
