@@ -3284,7 +3284,7 @@ PROC _ws_open(lng wsid,
 
     # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
     var idx_idx := idx_doc.ord_uselect(oid_nil).mirror();
-    var idx_ts := idx_idx.leftfetchjoin(idx_filenames).ord_uselect(str_nil).mirror().leftfetchjoin(idx_timestamps);
+    var idx_ts := idx_idx.leftfetchjoin(idx_filenames).ord_uselect(str_nil).mirror().leftfetchjoin(idx_timestamps).copy();
     idx_ts@batloop() { # URI (filename = nil)
         var b := [startsWith](idx_names.find($h), mirror(uri_lifetime)).uselect(true);
         var lifetime := lng_nil;
