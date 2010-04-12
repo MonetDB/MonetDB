@@ -539,19 +539,19 @@ setOptimizers(str optimizer)
 
 	/* catch  minimal pipes */
 	if (optimizer == NULL || *optimizer == 0 )
-		optimizer= GDKstrdup(minimalPlan);
+		optimizer= minimalPlan;
 	else
 	/* optimizers can be temporarily turned on/off */
 	if(strcmp(optimizer,"off")==0){
 		if( previouspipe == NULL)
 			previouspipe = optimizerpipe;
-		else return GDKstrdup(optimizerpipe);
-		optimizer= GDKstrdup(minimalPlan);
+		else return optimizerpipe;
+		optimizer= minimalPlan;
 	} else
 	if (strcmp(optimizer,"on")==0){
 		if (previouspipe)
 			optimizer= previouspipe;
-		else return GDKstrdup(optimizerpipe);
+		else return optimizerpipe;
 		previouspipe = 0;
 	} else {
 		/* the optimizer may be an environment alias */
@@ -563,7 +563,7 @@ setOptimizers(str optimizer)
 	optimizerpipe= optimizer;
 	base = optimizer = GDKstrdup(optimizer);
 
-	/* An optimizer pipe is a semicolon separated list of names */
+	/* An optimizer pipe is a comma separated list of names */
 	while (optimizer && *optimizer ) {
 		nxt = strchr(optimizer,',');
 		if (nxt){
@@ -572,23 +572,25 @@ setOptimizers(str optimizer)
 		}
 		if ((nme = putName(optimizer,strlen(optimizer))) == 0)
 			showException(SQL,"optimizer"," '%s' pipeline does not exist\n",optimizer);
-		else if (top<255)
-			optimizers[top++] = nme; 
+		else if (top<256)
+			optimizers[top++] = nme;
+		else
+			break;
 		optimizer = nxt;
 	} 
-	optimizers[top] = 0;
 	GDKfree(base);
-	if (top <= 1  && pipe == NULL){
-		showException(SQL,"optimizer","Optimizer '%s' pipeline does not exist, use default pipe instead\n", optimizerpipe?optimizerpipe:"undefined");
-		setOptimizers("default_pipe");
-		return GDKstrdup("default_pipe");
-	}else
 	if (top == 256){
 		showException(SQL,"optimizer","Too many optimizer steps, use default pipe instead\n");
 		setOptimizers("default_pipe");
-		return GDKstrdup("default_pipe");
+		return "default_pipe";
 	} 
-	return GDKstrdup(optimizerpipe);
+	optimizers[top] = 0;
+	if (top <= 1  && pipe == NULL){
+		showException(SQL,"optimizer","Optimizer '%s' pipeline does not exist, use default pipe instead\n", optimizerpipe?optimizerpipe:"undefined");
+		setOptimizers("default_pipe");
+		return "default_pipe";
+	}
+	return optimizerpipe;
 }
 
 static void
@@ -639,7 +641,7 @@ to allow inspection.
 		return;
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
-	stack_set_var(be->mvc, "optimizer", VALset(&src, TYPE_str, setOptimizers(optimizer)));
+	stack_set_var(be->mvc, "optimizer", VALset(&src, TYPE_str, GDKstrdup(setOptimizers(optimizer))));
 	addOptimizers(c,mb);
 	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
 	if ( m->emod & mod_debug )

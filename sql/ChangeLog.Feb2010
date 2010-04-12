@@ -1,0 +1,7 @@
+# ChangeLog file for sql
+# This file is updated with Maddlog
+
+* Thu Apr  8 2010 Stefan Manegold <manegold@cwi.nl>
+- fixed bug #2983773 "SQL: minimal optimizer pipe unstable"
+  https://sourceforge.net/tracker/index.php?func=detail&aid=2983773&group_id=56967&atid=482468
+
