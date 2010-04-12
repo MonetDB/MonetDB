@@ -159,8 +159,7 @@ xrpc_user="http://127.0.0.1;127.0.0.1;http://localhost;localhost"
 xrpc_trusted="http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;@Xexec_prefix@@DIRSEP@share@DIRSEP@MonetDB@DIRSEP@xrpc@DIRSEP@export"
 
 # standoff annotation XPath extension
-#standoff_ns=http://monetdb.cwi.nl/standoff
-standoff_ns=
+#standoff_ns=
 #standoff_start=start
 #standoff_end=end
 

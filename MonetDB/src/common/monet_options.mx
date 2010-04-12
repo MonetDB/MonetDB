@@ -470,7 +470,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("standoff_ns");
-	set[i].value = strdup("http://monetdb.cwi.nl/standoff");
+	set[i].value = strdup("");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("standoff_start");
