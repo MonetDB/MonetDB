@@ -153,7 +153,7 @@ fi
 
 AC_SUBST(ODBC_INCS)
 AC_SUBST(ODBC_LIBS)
-AM_CONDITIONAL(HAVE_UNIXODBC, test x$have_unixodbc != xno)
+AM_CONDITIONAL(HAVE_ODBC, test x$have_unixodbc != xno)
 
 # Checks for header files.
 AC_HEADER_TIME
