@@ -261,7 +261,7 @@ If an internal error in the utility occurs, exit code
 .B 2
 is returned.
 .SH FILES
-.I @esysconfdir@/monetdb5.conf
+.I @MONETDB5_CONFFILE@
 .RS
 The configuration file for MonetDB, located in the system configuration
 directory.  This file can be overridden by setting
