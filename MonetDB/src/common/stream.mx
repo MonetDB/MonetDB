@@ -1387,7 +1387,7 @@ write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 #ifndef USE_CURL_MULTI
 	/* move data if we don't have enough space */
 	if (c->maxsize - c->usesize < size && c->offset > 0) {
-		memmove(c->buffer, c->buffer +c->offset, c->usesize - c->offset);
+		memmove(c->buffer, c->buffer + c->offset, c->usesize - c->offset);
 		c->usesize -= c->offset;
 		c->offset = 0;
 	}
@@ -1398,7 +1398,7 @@ write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 		c->buffer = realloc(c->buffer, c->usesize + size);
 	}
 	/* finally, store the data we received */
-	memcpy(c->buffer +c->usesize, buffer, size);
+	memcpy(c->buffer + c->usesize, buffer, size);
 	c->usesize += size;
 	return size;
 }
@@ -1448,7 +1448,7 @@ curl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		if (cnt * elmsize > c->usesize - c->offset)
 			cnt = (c->usesize - c->offset) / elmsize;
 		size = cnt * elmsize;
-		memcpy(buf, c->buffer +c->offset, size);
+		memcpy(buf, c->buffer + c->offset, size);
 		c->offset += size;
 		if (c->offset == c->usesize)
 			c->usesize = c->offset = 0;
