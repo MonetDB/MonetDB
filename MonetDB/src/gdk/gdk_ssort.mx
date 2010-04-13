@@ -49,7 +49,7 @@ struct slice {
 
 typedef struct {
 	/* The comparison function. */
-	int (*compare)(ptr, ptr);
+	int (*compare) (ptr, ptr);
 	char *heap;
 	int hs;
 	int ts;
@@ -79,7 +79,7 @@ typedef struct {
 	   at address base[i] and extends for len[i] elements.  It's
 	   always true (so long as the indices are in bounds) that
 
-		pending[i].base + pending[i].len == pending[i+1].base
+	   pending[i].base + pending[i].len == pending[i+1].base
 
 	   so we could cut the storage for this, but it's a minor
 	   amount, and keeping all the info explicit simplifies the

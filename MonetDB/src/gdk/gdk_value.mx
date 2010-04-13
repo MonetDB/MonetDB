@@ -311,7 +311,8 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 			}
 		} else if ((orig_src_tpe == TYPE_bat && src->val.bval == 0) ||
 			   ATOMcmp(src_tpe, ATOMnilptr(src_tpe), VALptr(src)) == 0) {
-			/* dst_tpe is a built-in type, so VALptr(dst) (p) points to valid memory */
+			/* dst_tpe is a built-in type, so VALptr(dst)
+			   (p) points to valid memory */
 			memcpy(p, ATOMnilptr(dst_tpe), ATOMsize(dst_tpe));
 		} else {
 			switch (dst_tpe) {
@@ -670,7 +671,8 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 	return p;
 }
 
-/* VALconvert1, but returns a BAT* instead of a bat* and (thus) adds a physical fix to the bat */
+/* VALconvert1, but returns a BAT* instead of a bat* and (thus) adds a
+   physical fix to the bat */
 ptr
 VALconvert2(int typ, ValPtr src, ValPtr dst)
 {
@@ -700,7 +702,10 @@ VALconvert(int typ, ValPtr t)
 	/* first convert into a new location */
 	p = VALconvert1(typ, t, &dst);
 	/* then maybe free the old */
-	if (src_tpe != dst_tpe && t->vtype != typ && dst_tpe != TYPE_void && (src_tpe >= TYPE_str || dst_tpe >= TYPE_str))
+	if (src_tpe != dst_tpe &&
+	    t->vtype != typ &&
+	    dst_tpe != TYPE_void &&
+	    (src_tpe >= TYPE_str || dst_tpe >= TYPE_str))
 		VALclear(t);
 	/* and finally copy the result */
 	*t = dst;
@@ -708,25 +713,31 @@ VALconvert(int typ, ValPtr t)
 	t->vtype = typ;
 	return p == ILLEGALVALUE ? p : VALptr(t);
 }
+
 int
 VALcmp(ValPtr p, ValPtr q)
 {
 
-    int (*cmp) (ptr, ptr);
-    int tpe;
-    ptr nilptr, pp, pq;
+	int (*cmp) (ptr, ptr);
+	int tpe;
+	ptr nilptr, pp, pq;
 
-    if( p ==0 || q == 0 ) return  -1;
-    if( (tpe = p ->vtype) != q->vtype ) return  -1;
+	if (p == 0 || q == 0)
+		return -1;
+	if ((tpe = p->vtype) != q->vtype)
+		return -1;
 
-    if( tpe == TYPE_ptr ) return 0; /* ignore comparing C pointers */
-    cmp = BATatoms[tpe].atomCmp;
-    nilptr = ATOMnilptr(tpe);
-    pp = VALget(p);
-    pq = VALget(q);
-    if(((*cmp)(pp, nilptr)==0) && ((*cmp)(pq, nilptr)==0)) return 0; /* eq nil val */
-    if(((*cmp)(pp, nilptr)==0) || ((*cmp)(pq, nilptr)==0)) return -1;
-    return ((*cmp)(pp, pq));
+	if (tpe == TYPE_ptr)
+		return 0;	/* ignore comparing C pointers */
+	cmp = BATatoms[tpe].atomCmp;
+	nilptr = ATOMnilptr(tpe);
+	pp = VALget(p);
+	pq = VALget(q);
+	if (((*cmp) (pp, nilptr) == 0) && ((*cmp) (pq, nilptr) == 0))
+		return 0;	/* eq nil val */
+	if (((*cmp) (pp, nilptr) == 0) || ((*cmp) (pq, nilptr) == 0))
+		return -1;
+	return ((*cmp) (pp, pq));
 
 }
 

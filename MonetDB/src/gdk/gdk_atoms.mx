@@ -178,7 +178,7 @@ gdk_export int strNil(str s);
 gdk_export int strElimDoubles(Heap *h);
 gdk_export var_t strLocate(Heap *h, str v);
 gdk_export int strCmpNoNil(unsigned char *l, unsigned char *r);
-gdk_export int escapedStrlen(const char * src);
+gdk_export int escapedStrlen(const char *src);
 gdk_export int escapedStr(char *dst, const char *src);
 
 #ifdef __cplusplus
@@ -273,21 +273,25 @@ shtConvert(sht *s)
 {
 	*s = short_int_SWAP(*s);
 }
+
 static INLINE void
 intConvert(int *s)
 {
 	*s = normal_int_SWAP(*s);
 }
+
 static INLINE void
 lngConvert(lng *s)
 {
 	*s = long_long_SWAP(*s);
 }
+
 static INLINE int
 batFix(bat *b)
 {
 	return BBPincref(*b, TRUE);
 }
+
 static INLINE int
 batUnfix(bat *b)
 {
@@ -458,6 +462,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (int (*)(ptr)) strLen, strHeap,
 	 (void (*)(Heap *, int)) 0, 0},
 };
+
 int GDKatomcnt = TYPE_str + 1;
 
 @
@@ -543,7 +548,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		memset(BATatoms + t, 0, sizeof(atomDesc));
 		strcpy(BATatoms[t].name, id);
 		BATatoms[t].size = sizeof(int);	/* default */
-		assert_shift_width(ATOMelmshift(BATatoms[t].size),BATatoms[t].size);
+		assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;	/* default */
 		BATatoms[t].storage = t;	/* default */
@@ -553,12 +558,12 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		if (val) {
 			assert(val <= SHRT_MAX);
 			BATatoms[t].size = val;
-			assert_shift_width(ATOMelmshift(BATatoms[t].size),BATatoms[t].size);
+			assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
 			BATatoms[t].varsized = 0;
 			BATatoms[t].align = align(val);
 		} else {
 			BATatoms[t].size = sizeof(var_t);
-			assert_shift_width(ATOMelmshift(BATatoms[t].size),BATatoms[t].size);
+			assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
 			BATatoms[t].varsized = 1;
 			BATatoms[t].align = sizeof(var_t);
 		}
@@ -587,7 +592,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 
 		if (strcmp("heap", property) == 0) {
 			BATatoms[t].size = sizeof(var_t);
-			assert_shift_width(ATOMelmshift(BATatoms[t].size),BATatoms[t].size);
+			assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
 			BATatoms[t].varsized = 1;
 			BATatoms[t].align = sizeof(var_t);
 			atomset(BATatoms[t].atomHeap, (void (*)(Heap *, size_t)) arg);
@@ -936,12 +941,12 @@ do {									\
  * Note that a 64KB chunk of the heap contains at most 8K 8-byte aligned
  * strings. The 1K bucket list means that in worst load, the list length is 8 (OK).
  */
-#define GDK_STRHASHTABLE	(1<<10) /* 1024 */ 
+#define GDK_STRHASHTABLE	(1<<10)	/* 1024 */
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
 #define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(stridx_t))
-#define GDK_ELIMPOWER		16 /* 64KB is the threshold */
+#define GDK_ELIMPOWER		16	/* 64KB is the threshold */
 #define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
-#define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER) /* equivalently: ELIMBASE == 0 */
+#define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)	/* equivalently: ELIMBASE == 0 */
 #define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
 #define GDK_VAROFFSET		((var_t) (GDK_STRHASHSIZE >> GDK_VARSHIFT))
 
@@ -1673,8 +1678,8 @@ dblFromStr(char *src, int *len, dbl **dst)
 		if (p == src || (errno == ERANGE && d != 0)) {
 			**dst = dbl_nil;	/* default return value is nil */
 			p = src;
-		} else 
-		**dst = (dbl) d;
+		} else
+			**dst = (dbl) d;
 	}
 	return (int) (p - src);
 }
@@ -1711,30 +1716,30 @@ fltFromStr(char *src, int *len, flt **dst)
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && f != 0)
 #ifdef INFINITY
-			|| f == INFINITY
+		    || f == INFINITY
 #endif
 #ifdef NAN
 #ifndef __PGI
-			|| f == NAN
+		    || f == NAN
 #endif
 #endif
-			)
+		    )
 #else /* no strtof, try sscanf */
 		if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
 #ifdef INFINITY
-			|| f == INFINITY
+		    || f == INFINITY
 #endif
 #ifdef NAN
 #ifndef __PGI
-			|| f == NAN
+		    || f == NAN
 #endif
 #endif
-			)
+		    )
 #endif
 		{
 			**dst = flt_nil;	/* default return value is nil */
 			n = 0;
-		} else 
+		} else
 			**dst = (flt) f;
 	}
 	return n;
@@ -1927,17 +1932,18 @@ strLocate(Heap *h, str v)
 	size_t extralen = h->hashash ? EXTRALEN : 0;
 
 	/* search hash-table, if double-elimination is still in place */
-	BUN off; GDK_STRHASH(v, off);
+	BUN off;
+	GDK_STRHASH(v, off);
 	off &= GDK_STRHASHMASK;
 
 	/* should only use strLocate iff fully double eliminated */
 	assert(GDK_ELIMBASE(h->free) == 0);
 
 	/* search the linked list */
-	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) { 
-		next = (stridx_t*) (h->base + *ref);
-		if (GDK_STRCMP(v, (str) (next+1) + extralen) == 0) 
-			return (var_t) ((sizeof(stridx_t) + *ref + extralen) >> GDK_VARSHIFT); /* found */
+	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
+		next = (stridx_t *) (h->base + *ref);
+		if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0)
+			return (var_t) ((sizeof(stridx_t) + *ref + extralen) >> GDK_VARSHIFT);	/* found */
 	}
 	return 0;
 }
@@ -1946,7 +1952,7 @@ var_t
 strPut(Heap *h, var_t *dst, str v)
 {
 	size_t elimbase = GDK_ELIMBASE(h->free);
-	size_t pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN-1));
+	size_t pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
 	size_t pos, len = GDK_STRLEN(v);
 	size_t extralen = h->hashash ? EXTRALEN : 0;
 	stridx_t *bucket, *ref, *next;
@@ -1955,34 +1961,35 @@ strPut(Heap *h, var_t *dst, str v)
 	GDK_STRHASH(v, off);
 	strhash = off;
 	off &= GDK_STRHASHMASK;
-	bucket = ((stridx_t *) h->base) + off; 
+	bucket = ((stridx_t *) h->base) + off;
 
 	/* search hash-table, if double-elimination is still in place */
-	if (elimbase == 0) { /* small string heap (<64KB) -- fully double eliminated */
-		for (ref = bucket; *ref; ref = next) { /* search the linked list */
-			next = (stridx_t*) (h->base + *ref);
-			if (GDK_STRCMP(v, (str) (next+1) + extralen) == 0) { /* found */
+	if (elimbase == 0) {	/* small string heap (<64KB) -- fully double eliminated */
+		for (ref = bucket; *ref; ref = next) {	/* search the linked list */
+			next = (stridx_t *) (h->base + *ref);
+			if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0) {	/* found */
 				pos = sizeof(stridx_t) + *ref + extralen;
-				return *dst = (var_t) (pos >> GDK_VARSHIFT); 
+				return *dst = (var_t) (pos >> GDK_VARSHIFT);
 			}
 		}
 		/* is there room for the next pointer in the padding space? */
-		if (pad < sizeof(stridx_t)) 
-			pad += GDK_VARALIGN; /* if not, pad more */
+		if (pad < sizeof(stridx_t))
+			pad += GDK_VARALIGN;	/* if not, pad more */
 	} else if (*bucket) {
-	        /* large string heap (>=64KB) -- opportunistic/probabilistic double elimination */
+		/* large string heap (>=64KB) -- opportunistic/probabilistic double elimination */
 		pos = elimbase + *bucket + extralen;
 		if (GDK_STRCMP(v, h->base + pos) == 0) {
-			return *dst = (var_t) (pos >> GDK_VARSHIFT); /* already in heap; do not insert! */
+			return *dst = (var_t) (pos >> GDK_VARSHIFT);	/* already in heap; do not insert! */
 		}
-#if SIZEOF_VAR_T >= SIZEOF_VOID_P  /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
-		if (extralen == 0) /* i.e., h->hashash == FALSE */
+#if SIZEOF_VAR_T >= SIZEOF_VOID_P	/* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
+		if (extralen == 0)
+			/* i.e., h->hashash == FALSE */
 			/* no VARSHIFT and no string hash value stored => no padding/alignment needed */
 			pad = 0;
 		else
 #endif
 			/* pad to align on VARALIGN for VARSHIFT and/or string hash value */
-			pad &= (GDK_VARALIGN-1);
+			pad &= (GDK_VARALIGN - 1);
 	}
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
@@ -2004,7 +2011,7 @@ strPut(Heap *h, var_t *dst, str v)
 			/* if there is reserved space, first use the reserved space */
 			newsize = MIN(newsize, h->maxsize);
 		}
-		EXTENDDEBUG fprintf(stderr, "#HEAPextend in strPut %s "SZFMT" "SZFMT"\n",h->filename,h->size,newsize);
+		EXTENDDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
 		if (HEAPextend(h, newsize) < 0) {
 			return 0;
 		}
@@ -2029,18 +2036,18 @@ strPut(Heap *h, var_t *dst, str v)
 
 	/* maintain hash table */
 	pos -= extralen;
-	if (elimbase == 0) { /* small string heap: link the next pointer */
+	if (elimbase == 0) {	/* small string heap: link the next pointer */
 		/* the stridx_t next pointer directly precedes the
 		   string and optional (depending on hashash) hash
 		   value */
 		pos -= sizeof(stridx_t);
-		*(stridx_t*) (h->base + pos) = *bucket;
+		*(stridx_t *) (h->base + pos) = *bucket;
 	}
-	*bucket = (stridx_t) (pos - elimbase); /* set bucket to the new string */
+	*bucket = (stridx_t) (pos - elimbase);	/* set bucket to the new string */
 
 	if (h->free >= elimbase + GDK_ELIMLIMIT) {
-		memset(h->base, 0, GDK_STRHASHSIZE); /* flush hash table */	
-	} 
+		memset(h->base, 0, GDK_STRHASHSIZE);	/* flush hash table */
+	}
 	return *dst;
 }
 
@@ -2148,10 +2155,10 @@ GDKstrFromStr(unsigned char *dst, unsigned char *src, ssize_t len)
 				break;
 			}
 			escaped = FALSE;
-		} else if ( (c = *cur) == '\\') {
+		} else if ((c = *cur) == '\\') {
 			escaped = TRUE;
 			continue;
-		} 
+		}
 
 		if (n > 0) {
 			/* we're still expecting follow-up bytes in a
@@ -2268,12 +2275,15 @@ Convert a GDK string value to something printable.
 #endif
 
 int
-escapedStrlen(const char * src)
+escapedStrlen(const char *src)
 {
 	int end, sz = 0;
 
 	for (end = 0; src[end]; end++)
-		if (src[end] == '\t' || src[end] == '\n' || src[end] == '\\' || src[end] == '"') {
+		if (src[end] == '\t' ||
+		    src[end] == '\n' ||
+		    src[end] == '\\' ||
+		    src[end] == '"') {
 			sz += 2;
 #ifndef ASCII_CHR
 		} else if (src[end] == (char) '\302' &&
@@ -2299,10 +2309,10 @@ escapedStrlen(const char * src)
 }
 
 int
-escapedStr(char *dst, const char *src) 
+escapedStr(char *dst, const char *src)
 {
 	char *s, *r = (char *) src;
-	int cur = 0, l = 0; 
+	int cur = 0, l = 0;
 
 	for (s = dst; r[cur]; cur++)
 		if (r[cur] == '\t') {
@@ -2350,7 +2360,7 @@ strToStr(char **dst, int *len, char *src)
 	} else {
 		int sz = escapedStrlen(src);
 		@:atommem(char,sz+3)@
-		l = escapedStr((*dst)+1, src);
+		l = escapedStr((*dst) + 1, src);
 		l++;
 		(*dst)[0] = (*dst)[l++] = '"';
 		(*dst)[l] = 0;
@@ -2479,7 +2489,8 @@ OIDwrite(stream *s)
 	if (GDKoid) {
 		GDKflushed = GDKoid;
 		ATOMprint(TYPE_oid, &GDKflushed, s);
-		if (stream_errnr(s) || stream_write(s, " ", 1, 1) <= 0)
+		if (stream_errnr(s) ||
+		    stream_write(s, " ", 1, 1) <= 0)
 			ret = -1;
 	}
 	gdk_unset_lock(MT_system_lock, "OIDwrite");

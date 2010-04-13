@@ -386,7 +386,7 @@ MT_init(void)
 #    error "don't know how to get the amount of physical memory for your OS"
 #   endif /* getrlimit */
 #  endif /* sysconf */
-# endif /* GlobalMemoryStatus */
+# endif	/* GlobalMemoryStatus */
 #endif /* GlobalMemoryStatusEx */
 #ifdef HAVE_GETRLIMIT
 	{
@@ -397,7 +397,7 @@ MT_init(void)
 		 * physically available memory, is not necessarily what we can
 		 * also use. */
 		getrlimit(RLIMIT_DATA, &rl);
-		if (rl.rlim_cur != (rlim_t)RLIM_INFINITY) {
+		if (rl.rlim_cur != (rlim_t) RLIM_INFINITY) {
 			/* rlimit returns in bytes, recalculate */
 			memlim = rl.rlim_cur / _MT_pagesize;
 			/* if it's more restrictive, take that as value */
@@ -468,9 +468,10 @@ MT_join_thread(MT_Id t)
 {
 	pthread_t id;
 #ifdef PTW32
-        id.p = (void*) (t - 1); id.x = 0;
+	id.p = (void *) (t - 1);
+	id.x = 0;
 #else
-        id = (pthread_t) (t - 1);
+	id = (pthread_t) (t - 1);
 #endif
 	return pthread_join(id, NULL);
 }
@@ -482,9 +483,10 @@ MT_kill_thread(MT_Id t)
 #ifdef HAVE_PTHREAD_KILL
 	pthread_t id;
 #ifdef PTW32
-        id.p = (void*) (t - 1); id.x = 0;
+	id.p = (void *) (t - 1);
+	id.x = 0;
 #else
-        id = (pthread_t) (t - 1);
+	id = (pthread_t) (t - 1);
 #endif
 	return pthread_kill(id, SIGHUP);
 #else
@@ -559,39 +561,39 @@ MT_alive(int pid)
 #define SMP_TOLERANCE 0.40
 #define SMP_ROUNDS 1024*1024*128
 
-static void 
+static void
 smp_thread(void *data)
 {
-	unsigned int s=1,r;
+	unsigned int s = 1, r;
 
-	(void)data;
-	for(r=0;r<SMP_ROUNDS;r++)
-		s = s*r+r;
-	(void)s;
+	(void) data;
+	for (r = 0; r < SMP_ROUNDS; r++)
+		s = s * r + r;
+	(void) s;
 }
 
-static int 
+static int
 MT_check_nr_cores_(void)
 {
-	int i,curr=1,cores = 1;
-	double lasttime=0,thistime;
-	while(1) {	
+	int i, curr = 1, cores = 1;
+	double lasttime = 0, thistime;
+	while (1) {
 		lng t0, t1;
 		MT_Id *threads = GDKmalloc(sizeof(MT_Id) * curr);
 
-		t0=GDKusec();
-		for(i=0; i<curr; i++) 
-			MT_create_thread(threads+i, smp_thread, NULL);
-		for(i=0; i<curr; i++) 
+		t0 = GDKusec();
+		for (i = 0; i < curr; i++)
+			MT_create_thread(threads + i, smp_thread, NULL);
+		for (i = 0; i < curr; i++)
 			MT_join_thread(threads[i]);
-		t1=GDKusec();				
+		t1 = GDKusec();
 		GDKfree(threads);
-		thistime = (double)(t1-t0)/1000000;
-		if (lasttime>0 && thistime/lasttime>1+SMP_TOLERANCE)
+		thistime = (double) (t1 - t0) / 1000000;
+		if (lasttime > 0 && thistime / lasttime > 1 + SMP_TOLERANCE)
 			break;
 		lasttime = thistime;
 		cores = curr;
-		curr *= 2; /* only check for powers of 2 */
+		curr *= 2;	/* only check for powers of 2 */
 	}
 	return cores;
 }
@@ -618,7 +620,7 @@ MT_check_nr_cores(void)
 	sysctlbyname("hw.ncpu", &ncpus, &len, NULL, 0);
 #endif
 
-#if defined(__OpenBSD__) 
+#if defined(__OpenBSD__)
 	/* Everyone should have permission to make this call, 
 	 * if we get a failure something is really wrong. */
 	sysctl(mib, 2, &ncpus, &len, NULL, 0);

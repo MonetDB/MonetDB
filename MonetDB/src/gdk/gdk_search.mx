@@ -368,7 +368,7 @@ BAThash(BAT *b, BUN masksize)
 		bat p = VIEWhparent(b);
 		o = b;
 		b = BATdescriptor(p);
-		if (!ALIGNsynced(o,b)) {
+		if (!ALIGNsynced(o, b)) {
 			BBPunfix(b->batCacheid);
 			b = o;
 			o = NULL;
@@ -392,20 +392,20 @@ BAThash(BAT *b, BUN masksize)
 			cnt = BATcapacity(b);
 
 		if (b->htype == TYPE_void) {
-			ALGODEBUG THRprintf(GDKout,"#BAThash: creating hash-table on void column..\n");
+			ALGODEBUG THRprintf(GDKout, "#BAThash: creating hash-table on void column..\n");
 
 			tpe = TYPE_void;
 		}
 		/* determine hash mask size 
 		   p = first; then no dynamic scheme */
 		if (masksize > 0) {
-			mask = HASHmask(masksize);	
-		} else if (ATOMsize(ATOMstorage(tpe)) == 1) { 
-			mask = (1<<8); 			
-		} else if (ATOMsize(ATOMstorage(tpe)) == 2) { 
-			mask = (1<<12);
+			mask = HASHmask(masksize);
+		} else if (ATOMsize(ATOMstorage(tpe)) == 1) {
+			mask = (1 << 8);
+		} else if (ATOMsize(ATOMstorage(tpe)) == 2) {
+			mask = (1 << 12);
 		} else if (b->hkey) {
-			mask = HASHmask(cnt);	
+			mask = HASHmask(cnt);
 		} else {
 			/* dynamic hash: we start with HASHmask(cnt/64); if there are too many collisions
 			 * we try HASHmask(cnt/16), then HASHmask(cnt/4), and finally HASHmask(cnt).  */
@@ -429,9 +429,10 @@ BAThash(BAT *b, BUN masksize)
 				GDKfree(h);
 			/* create the hash structures */
 			hp = (Heap *) GDKzalloc(sizeof(Heap));
-			if (hp && (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL)
+			if (hp &&
+			    (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL)
 				sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
-			if (hp == NULL || 
+			if (hp == NULL ||
 			    hp->filename == NULL ||
 			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), mask)) == NULL) {
 				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
@@ -470,9 +471,9 @@ BAThash(BAT *b, BUN masksize)
 					ptr v = BUNhead(bi, r);
 					BUN c = heap_hash_any(b->H->vheap, h, v);
 
-					if (h->hash[c] == BUN_NONE && 
-					    nslots-- == 0) 
-						break; /* mask too full */
+					if (h->hash[c] == BUN_NONE &&
+					    nslots-- == 0)
+						break;	/* mask too full */
 					h->link[r] = h->hash[c];
 					h->hash[c] = r;
 				}
@@ -635,7 +636,7 @@ HASHdestroy(BAT *b)
 		HASHremove(b);
 		if (BATmirror(b))
 			HASHremove(BATmirror(b));
-	
+
 	}
 }
 

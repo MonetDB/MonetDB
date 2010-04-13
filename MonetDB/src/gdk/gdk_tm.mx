@@ -99,15 +99,16 @@ epilogue(int cnt, bat *subcommit)
 			BBP_status_on(bid, BBPEXISTING, subcommit ? "TMsubcommit" : "TMcommit");
 		} else if (BBP_status(bid) & BBPDELETED) {
 			/* check mmap modes of bats that are now transient. this has to be done 
-                         * after the commit succeeded, because the mmap modes allowed on transient bats 
-                         * would be dangerous on persistent bats. If the commit failed, the already
-                         * processed bats that would become transient after the commit, but didn't
-                         * due to the failure, would be a consistency risk.
-                         */
+			 * after the commit succeeded, because the mmap modes allowed on transient bats 
+			 * would be dangerous on persistent bats. If the commit failed, the already
+			 * processed bats that would become transient after the commit, but didn't
+			 * due to the failure, would be a consistency risk.
+			 */
 			BAT *b = BBP_cache(bid);
-			if (b) (void) BATcheckmodes(b, TRUE); /* check mmap modes */
-		} 
-                if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
+			if (b)
+				(void) BATcheckmodes(b, TRUE);	/* check mmap modes */
+		}
+		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
 			BAT *b = BBPquickdesc(bid, TRUE);
 
 			/* the unloaded ones are deleted without loading deleted disk images */

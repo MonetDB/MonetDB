@@ -89,7 +89,7 @@ typedef struct {
 	int vshift;		/* shift to be applied on var_ offsets */
 	unsigned hs;		/* width of head record */
 	unsigned ts;		/* width of tail record */
-	void *h;		/* start of head buns */		
+	void *h;		/* start of head buns */
 	void *t;		/* start of tail buns */
 } buf_t;
 

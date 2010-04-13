@@ -108,7 +108,7 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	BATcheck(b1, "ALIGNsetH: bat 1 required");
 	BATcheck(b2, "ALIGNsetH: bat 2 required");
 
- 	diff = (ssize_t) (BUNfirst(b1) - BUNfirst(b2));
+	diff = (ssize_t) (BUNfirst(b1) - BUNfirst(b2));
 	if (b2->halign == 0) {
 		b2->halign = OIDnew(1);
 		b2->batDirtydesc = TRUE;
@@ -214,7 +214,7 @@ VIEWhcreate(BAT *h)
 
 	BATcheck(h, "VIEWhcreate: bat required");
 	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
-	if (bs == NULL) 
+	if (bs == NULL)
 		bs = BATcreatedesc(h->htype, TYPE_void, FALSE);
 	bn = &bs->B;
 
@@ -223,7 +223,7 @@ VIEWhcreate(BAT *h)
 
 	if (h->htype == TYPE_void)
 		hp = 0;
-	if ((hp == 0 && h->htype != TYPE_void) || h->H->heap.copied) 
+	if ((hp == 0 && h->htype != TYPE_void) || h->H->heap.copied)
 		hp = h->batCacheid;
 	if (hp)
 		BBPshare(hp);
@@ -235,7 +235,7 @@ VIEWhcreate(BAT *h)
 	bn->H->heap.copied = 0;
 	if (hp)
 		bn->H->heap.parentid = hp;
-	if (hp && isVIEW(h)) 
+	if (hp && isVIEW(h))
 		bn->H->hash = NULL;
 	BATinit_idents(bn);
 @-
@@ -245,7 +245,7 @@ The b->P structure cannot be shared and must be copied individually.
 	bn->batDirty = BATdirty(h);
 	bn->batRestricted = BAT_READ;
 
-	if (recycled == NULL) 
+	if (recycled == NULL)
 		BBPcacheit(bs);	/* enter in BBP */
 	return bn;
 }
@@ -261,15 +261,15 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	BATcheck(h, "VIEWcreate_: bat required");
 	BATcheck(t, "VIEWcreate_: bat required");
 	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
-	if (!bs) 
+	if (!bs)
 		bs = BATcreatedesc(h->htype, t->ttype, FALSE);
 	bn = &bs->B;
 
 	hp = VIEWhparent(h);
 	tp = VIEWtparent(t);
-	if ((hp == 0 && h->htype != TYPE_void) || h->H->heap.copied) 
+	if ((hp == 0 && h->htype != TYPE_void) || h->H->heap.copied)
 		hp = h->batCacheid;
-	if ((tp == 0 && t->ttype != TYPE_void) || t->T->heap.copied) 
+	if ((tp == 0 && t->ttype != TYPE_void) || t->T->heap.copied)
 		tp = -t->batCacheid;
 	assert(h->htype != TYPE_void || !hp);
 	assert(t->ttype != TYPE_void || !tp);
@@ -322,21 +322,21 @@ want to take a horizontal fragment (stable=false), this cannot
 be done, and we need to put different information in U (so we can't 
 use a copy.
 @c
-	if (slice_view || !hp || isVIEW(h)) 
+	if (slice_view || !hp || isVIEW(h))
 		/* slices are unequal to their parents; cannot use accs */
 		bn->H->hash = NULL;
-	else 
+	else
 		/* equal pointers to parent mean view uses acc of parent */
 		bn->H->hash = h->H->hash;
-	if (slice_view || !tp || isVIEW(t)) 
+	if (slice_view || !tp || isVIEW(t))
 		bn->T->hash = NULL;
-	else 
+	else
 		bn->T->hash = t->T->hash;
-	if (recycled == NULL) 
+	if (recycled == NULL)
 		BBPcacheit(bs);	/* enter in BBP */
-	/* View of VIEW combine, ie we need to fix the head of the mirror */ 
+	/* View of VIEW combine, ie we need to fix the head of the mirror */
 	if (vc) {
- 		BAT *bm = BATmirror(bn);
+		BAT *bm = BATmirror(bn);
 		bm->H = bn->H;
 	}
 	return bn;
@@ -360,8 +360,8 @@ VIEWhead(BAT *b)
 	if (bn == NULL)
 		return NULL;
 	bs = BBP_desc(bn->batCacheid);
- 	bm = BATmirror(bn);
- 	if (bm == NULL)
+	bm = BATmirror(bn);
+	if (bm == NULL)
 		return NULL;
 	bm->H = bn->T = &bs->T;
 	bn->T->type = TYPE_void;
@@ -397,7 +397,7 @@ VIEWcombine(BAT *b)
 
 	if (bn == NULL)
 		return NULL;
- 	bm = BATmirror(bn);
+	bm = BATmirror(bn);
 	if (bm == NULL)
 		return NULL;
 	if (bn->htype != TYPE_void) {
@@ -433,7 +433,7 @@ BATmaterializeh(BAT *b)
 	ht = b->htype;
 	cnt = BATcapacity(b);
 	head = b->H->heap;
-	p = BUNfirst(b); 
+	p = BUNfirst(b);
 	q = BUNlast(b);
 	assert(cnt >= q - p);
 	ALGODEBUG THRprintf(GDKout, "#BATmaterialize(%d);\n", (int) b->batCacheid);
@@ -470,7 +470,7 @@ BATmaterializeh(BAT *b)
 
 	/* So now generate [h..h+cnt-1] */
 	h = b->hseqbase;
-	x = (oid*)b->H->heap.base;
+	x = (oid *) b->H->heap.base;
 	for (; p < q; p++)
 		*x++ = h++;
 	cnt = h - b->hseqbase;
@@ -505,8 +505,8 @@ VIEWunlink(BAT *b)
 	if (b) {
 		bat hp = VIEWhparent(b), tp = VIEWtparent(b);
 		bat vhp = VIEWhparent(b), vtp = VIEWtparent(b);
-		BAT *hpb = NULL, *tpb = NULL; 
-		BAT *vhpb = NULL, *vtpb = NULL; 
+		BAT *hpb = NULL, *tpb = NULL;
+		BAT *vhpb = NULL, *vtpb = NULL;
 
 		if (hp)
 			hpb = BBP_cache(hp);
@@ -525,7 +525,7 @@ VIEWunlink(BAT *b)
 			return;
 
 		/* unlink heaps shared with parent */
-		if (vhpb && b->H->vheap && b->H->vheap == vhpb->H->vheap) 
+		if (vhpb && b->H->vheap && b->H->vheap == vhpb->H->vheap)
 			b->H->vheap = NULL;
 		if (vtpb && b->T->vheap && b->T->vheap == vtpb->H->vheap)
 			b->T->vheap = NULL;
@@ -552,7 +552,7 @@ BAT *
 VIEWreset(BAT *b)
 {
 	bat hp, tp;
-	Heap head,tail, hh, th;
+	Heap head, tail, hh, th;
 
 	if (b == NULL)
 		return NULL;
@@ -581,7 +581,7 @@ VIEWreset(BAT *b)
 			if (head.filename == NULL)
 				goto bailout;
 			sprintf(head.filename, "%s.head", nme);
-			if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0) 
+			if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0)
 				goto bailout;
 		}
 		if (n->ttype) {
@@ -589,7 +589,7 @@ VIEWreset(BAT *b)
 			if (tail.filename == NULL)
 				goto bailout;
 			sprintf(tail.filename, "%s.tail", nme);
-			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0) 
+			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0)
 				goto bailout;
 		}
 		if (n->H->vheap) {
@@ -597,7 +597,7 @@ VIEWreset(BAT *b)
 			if (hh.filename == NULL)
 				goto bailout;
 			sprintf(hh.filename, "%s.hheap", nme);
-			if (ATOMheap(n->htype, &hh, cnt) < 0) 
+			if (ATOMheap(n->htype, &hh, cnt) < 0)
 				goto bailout;
 		}
 		if (n->T->vheap) {
@@ -605,12 +605,12 @@ VIEWreset(BAT *b)
 			if (th.filename == NULL)
 				goto bailout;
 			sprintf(th.filename, "%s.theap", nme);
-			if (ATOMheap(n->ttype, &th, cnt) < 0) 
+			if (ATOMheap(n->ttype, &th, cnt) < 0)
 				goto bailout;
 		}
 
 		v = VIEWcreate(b, b);
-		if (v == NULL) 
+		if (v == NULL)
 			goto bailout;
 
 		/* cut the link to your parents */
@@ -628,13 +628,13 @@ VIEWreset(BAT *b)
 
 		n->H->type = v->H->type;
 		n->H->varsized = v->H->varsized;
-		n->H->shift = v->H->shift; 
+		n->H->shift = v->H->shift;
 		n->H->width = v->H->width;
 		n->H->seq = v->H->seq;
 
 		n->T->type = v->T->type;
 		n->T->varsized = v->T->varsized;
-		n->T->shift = v->T->shift; 
+		n->T->shift = v->T->shift;
 		n->T->width = v->T->width;
 		n->T->seq = v->T->seq;
 
@@ -679,10 +679,10 @@ VIEWreset(BAT *b)
 		/* insert all of v in b, and quit */
 		BATins(b, v, FALSE);
 		BBPreclaim(v);
-		b = r; 
+		b = r;
 	}
 	return b;
-bailout:
+      bailout:
 	HEAPfree(&head);
 	HEAPfree(&tail);
 	HEAPfree(&hh);
@@ -702,19 +702,19 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	BUN cnt;
 	BATiter bi = bat_iterator(b);
 
-	if (b== NULL || view == NULL){
+	if (b == NULL || view == NULL) {
 		GDKerror("VIEWbounds: bat argument missing");
 		return;
 	}
-	if ( h > BATcount(b))
+	if (h > BATcount(b))
 		h = BATcount(b);
-	if ( h < l )
+	if (h < l)
 		h = l;
 	l += BUNfirst(b);
 	view->batFirst = view->batDeleted = view->batInserted = 0;
 	cnt = h - l;
-	view->H->heap.base = (view->htype)?BUNhloc(bi,l):NULL;
-	view->T->heap.base = (view->ttype)?BUNtloc(bi,l):NULL;
+	view->H->heap.base = (view->htype) ? BUNhloc(bi, l) : NULL;
+	view->T->heap.base = (view->ttype) ? BUNtloc(bi, l) : NULL;
 	view->H->heap.maxsize = view->H->heap.size = headsize(view, cnt);
 	view->T->heap.maxsize = view->T->heap.size = tailsize(view, cnt);
 	BATsetcount(view, cnt);

@@ -85,11 +85,11 @@ HEAPmargin(size_t maxsize)
 #if SIZEOF_VOID_P == 8
 	/* in 64-bits systems, try to enforce in-place realloc, but provoke the memcpy on 256MB, then 4GB */
 	size_t use = GDKvm_cursize();
-	ret = MIN(GDK_mem_maxsize, MAX(((size_t) 1) << 26, 16*maxsize));
-	if ((ret+ret) > (GDK_vm_maxsize-MIN(GDK_vm_maxsize,use))) /* only if room */
+	ret = MIN(GDK_mem_maxsize, MAX(((size_t) 1) << 26, 16 * maxsize));
+	if ((ret + ret) > (GDK_vm_maxsize - MIN(GDK_vm_maxsize, use)))	/* only if room */
 #endif
-	ret = ((size_t) (((double) BATMARGIN)*(double) maxsize)) - 1; /* do not waste VM on 32-bits */
-	return (1 + (MAX(maxsize,ret) >> 16)) << 16; /* round up to 64K */
+		ret = ((size_t) (((double) BATMARGIN) * (double) maxsize)) - 1;	/* do not waste VM on 32-bits */
+	return (1 + (MAX(maxsize, ret) >> 16)) << 16;	/* round up to 64K */
 }
 
 /* in 64-bits space, use very large margins to accommodate reallocations */
@@ -128,12 +128,13 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			fclose(fp);
 			h->newstorage = STORE_MMAP;
 			HEAPload(h, nme, ext, FALSE);
-			if (h->base != NULL) MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
+			if (h->base != NULL)
+				MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
 		}
 		GDKfree(of);
 	}
 	if (h->base == NULL) {
-		GDKerror("HEAPalloc: Insufficient space for HEAP of "SZFMT" bytes.", h->size);
+		GDKerror("HEAPalloc: Insufficient space for HEAP of " SZFMT " bytes.", h->size);
 		return -1;
 	}
 	h->newstorage = h->storage;
@@ -169,7 +170,7 @@ HEAPextend(Heap *h, size_t size)
 		return 0;
 
 	if (h->storage != STORE_MEM) {
-		EXTENDDEBUG fprintf(stderr,"#HEAPextend: extending %s mmapped heap\n",h->storage==STORE_MMAP?"shared":"privately");
+		EXTENDDEBUG fprintf(stderr, "#HEAPextend: extending %s mmapped heap\n", h->storage == STORE_MMAP ? "shared" : "privately");
 		/* memory mapped files extend: save and remap */
 		if (HEAPsave_intern(h, nme, ext, ".tmp") < 0)
 			return -1;
@@ -183,18 +184,18 @@ HEAPextend(Heap *h, size_t size)
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
 		size_t cur = GDKmem_inuse(), tot = GDK_mem_maxsize;
-                int exceeds_swap = size > (tot+tot - MIN(tot+tot, cur));
+		int exceeds_swap = size > (tot + tot - MIN(tot + tot, cur));
 		int can_mmap = h->filename && (size >= GDK_mem_bigsize || h->newstorage != STORE_MEM);
-		int small_cpy = (h->size*4 < size) && (size >= GDK_mmap_minsize);
+		int small_cpy = (h->size * 4 < size) && (size >= GDK_mmap_minsize);
 		/* the commented condition is to use explicit MMAP
 		   instead of anonymous MMAP in GDKmalloc */
-		int must_mmap = can_mmap && (small_cpy || exceeds_swap || h->newstorage != STORE_MEM /* || size >= GDK_mem_bigsize */);
+		int must_mmap = can_mmap && (small_cpy || exceeds_swap || h->newstorage != STORE_MEM /* || size >= GDK_mem_bigsize */ );
 
 		h->size = size;
 
 		if (can_mmap) {
 			/* in anonymous vm, if have to realloc anyway, we reserve some extra space */
-			h->maxsize = HEAPmargin(MAX(size,h->maxsize));
+			h->maxsize = HEAPmargin(MAX(size, h->maxsize));
 		} else {
 			h->maxsize = size;	/* for normal GDKmalloc, maxsize = size */
 		}
@@ -203,7 +204,7 @@ HEAPextend(Heap *h, size_t size)
 		if (!must_mmap) {
 			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
-			EXTENDDEBUG fprintf(stderr,"#HEAPextend: extending malloced heap\n");
+			EXTENDDEBUG fprintf(stderr, "#HEAPextend: extending malloced heap\n");
 			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
 			ALLOCDEBUG fprintf(stderr, "#HEAPextend " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->maxsize, PTRFMTCAST p, PTRFMTCAST h->base);
 			if (h->base)
@@ -237,7 +238,7 @@ HEAPextend(Heap *h, size_t size)
 					h->newstorage = h->storage = newmode;
 				}
 				h->base = NULL;
-				EXTENDDEBUG fprintf(stderr,"#HEAPextend: converting malloced to %s mmapped heap\n",h->newstorage==STORE_MMAP?"shared":"privately");
+				EXTENDDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
 				/* try to allocate a memory-mapped based heap */
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
 					MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
@@ -253,12 +254,12 @@ HEAPextend(Heap *h, size_t size)
 				}
 				/* then free memory */
 				HEAPfree(&bak);
-				of = NULL; /* file name is freed by HEAPfree */
+				of = NULL;	/* file name is freed by HEAPfree */
 				/* and load heap back in via memory-mapped file */
 				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
 					/* success! */
 					MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
-					GDKclrerr();  /* don't leak errors from e.g. HEAPload */
+					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
 					return 0;
 				}
 				/* we failed */
@@ -268,7 +269,7 @@ HEAPextend(Heap *h, size_t size)
 		}
 		*h = bak;
 	}
-	GDKerror("HEAPextend: failed to extend to "SZFMT" for %s%s\n", size, nme, ext ? ext : "");
+	GDKerror("HEAPextend: failed to extend to " SZFMT " for %s%s\n", size, nme, ext ? ext : "");
 	return -1;
 }
 
@@ -379,10 +380,10 @@ HEAPfree(Heap *h)
 				GDKsyserror("HEAPfree: %s was not mapped\n", h->filename);
 				assert(0);
 			}
-			IODEBUG THRprintf(GDKout, "#munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n",
+			IODEBUG THRprintf(GDKout,
+					  "#munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n",
 					  PTRFMTCAST(void *)h->base,
-					  h->maxsize,
-					  ret);
+					  h->maxsize, ret);
 		}
 		h->base = NULL;
 	}
@@ -409,31 +410,32 @@ HEAPload_intern(Heap *h, str nme, str ext, str suffix, int trunc)
 	size_t minsize = (1 + ((h->size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
 	FILE *fp = NULL;
 	int ret = 0, desc_status = 0;
-        long_str srcpath, dstpath;
-        struct stat st;
+	long_str srcpath, dstpath;
+	struct stat st;
 	char *p;
 
 	h->storage = h->newstorage;
 	h->maxsize = h->size;
 	if (h->filename == NULL)
 		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
-	if (h->filename == NULL) 
-		return -1;	
+	if (h->filename == NULL)
+		return -1;
 	sprintf(h->filename, "%s.%s", nme, ext);
 
-	/* round up mmap heap sizes to REMAP_PAGE_MAXSIZE (usually 512KB) segments */
+	/* round up mmap heap sizes to REMAP_PAGE_MAXSIZE (usually
+	   512KB) segments */
 	if ((h->storage != STORE_MEM) && (minsize != h->size)) {
 		h->size = minsize;
 		h->maxsize = MAX(minsize, h->maxsize);
 	}
 
-       /* when a bat is made read-only, we can truncate any unused space at the end of the heap */
-       if (trunc && truncsize < h->size) {
+	/* when a bat is made read-only, we can truncate any unused
+	   space at the end of the heap */
+	if (trunc && truncsize < h->size) {
 		fp = (FILE *) GDKfilelocate(nme, "mrb+", ext);
 		if (fp) {
 			ret = ftruncate(fileno(fp), (off_t) truncsize);
-			IODEBUG THRprintf(GDKout, "#ftruncate(file=%s.%s, size=" SZFMT ") = %d\n",
-					  nme, ext, truncsize, ret);
+			IODEBUG THRprintf(GDKout, "#ftruncate(file=%s.%s, size=" SZFMT ") = %d\n", nme, ext, truncsize, ret);
 			fclose(fp);
 			if (ret == 0) {
 				h->size = h->maxsize = truncsize;
@@ -443,13 +445,12 @@ HEAPload_intern(Heap *h, str nme, str ext, str suffix, int trunc)
 	}
 
 	IODEBUG {
-		THRprintf(GDKout, "#HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n",
-			  nme, ext, h->storage, h->free, h->size);
+		THRprintf(GDKout, "#HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->storage, h->free, h->size);
 	}
-	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
-	 * in MAP_PRIVATE (FILE_MAP_COPY) solution: we write to a file named .ext.new
-         * This file, if present, takes precedence.
-	 */
+	/* On some OSs (WIN32,Solaris), it is prohibited to write to a
+	   file that is open in MAP_PRIVATE (FILE_MAP_COPY)
+	   solution: we write to a file named .ext.new
+	   This file, if present, takes precedence. */
 	GDKfilepath(srcpath, BATDIR, nme, ext);
 	GDKfilepath(dstpath, BATDIR, nme, ext);
 	for (p = srcpath; *p; p++)
@@ -461,7 +462,7 @@ HEAPload_intern(Heap *h, str nme, str ext, str suffix, int trunc)
 		if (ret == 0) {
 			t0 = GDKms();
 			ret = unlink(dstpath);
-        		IODEBUG THRprintf(GDKout, "#unlink %s = %d (%dms)\n", dstpath, ret, GDKms() - t0);
+			IODEBUG THRprintf(GDKout, "#unlink %s = %d (%dms)\n", dstpath, ret, GDKms() - t0);
 		}
 		t0 = GDKms();
 		ret = rename(srcpath, dstpath);
@@ -469,7 +470,7 @@ HEAPload_intern(Heap *h, str nme, str ext, str suffix, int trunc)
 			GDKsyserror("HEAPload: rename of %s failed\n", srcpath);
 			return -1;
 		}
-       		IODEBUG THRprintf(GDKout, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
+		IODEBUG THRprintf(GDKout, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
 	}
 
 	h->base = (char *) GDKload(nme, ext, h->free, h->size, h->newstorage);
@@ -502,7 +503,7 @@ static int
 HEAPsave_intern(Heap *h, str nme, str ext, str suffix)
 {
 	int store = h->newstorage;
-        long_str extension;
+	long_str extension;
 
 	if (h->base == NULL) {
 		return -1;
@@ -510,15 +511,14 @@ HEAPsave_intern(Heap *h, str nme, str ext, str suffix)
 	if (h->storage != STORE_MEM && store == STORE_PRIV) {
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
-		strcpy(extension,ext);
-		strcat(extension,suffix);
-                ext = extension;
-	} else if (store != STORE_MEM) { 
+		strcpy(extension, ext);
+		strcat(extension, suffix);
+		ext = extension;
+	} else if (store != STORE_MEM) {
 		store = h->storage;
 	}
 	IODEBUG {
-		THRprintf(GDKout, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n",
-			  nme, ext, h->newstorage, h->free, h->size);
+		THRprintf(GDKout, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->newstorage, h->free, h->size);
 	}
 	return GDKsave(nme, ext, h->base, h->free, store);
 }
@@ -528,6 +528,7 @@ HEAPsave(Heap *h, str nme, str ext)
 {
 	return HEAPsave_intern(h, nme, ext, ".new");
 }
+
 @}
 @- HEAPdelete
 Delete any saved heap file. For memory mapped files, also try to remove any remaining X.new
@@ -544,7 +545,9 @@ HEAPdelete(Heap *h, str o, str ext)
 	}
 	if (h->base) {
 		if (h->copied == 0 && h->storage == STORE_MMAP) {
-			/* truncate file, so OS does not try to flush dirty data in mmap to file that is deleted anyway */
+			/* truncate file, so OS does not try to flush
+			   dirty data in mmap to file that is deleted
+			   anyway */
 			int ret, fd = GDKfdlocate(h->filename, "rb+", NULL);
 			IODEBUG THRprintf(GDKout, "#HEAPdelete(%s) GDKfdlocate(\"rb+\") = %d\n", h->filename, fd);
 
@@ -691,7 +694,8 @@ HEAP_printstatus(Heap *heap)
 	size_t block, cur_free = hheader->head;
 	CHUNK *blockp;
 
-	THRprintf(GDKout, "#HEAP has head " SZFMT " and alignment %d and size " SZFMT "\n",
+	THRprintf(GDKout,
+		  "#HEAP has head " SZFMT " and alignment %d and size " SZFMT "\n",
 		  hheader->head, hheader->alignment, heap->free);
 
 	/*
@@ -703,17 +707,19 @@ HEAP_printstatus(Heap *heap)
 		blockp = HEAP_index(heap, block, CHUNK);
 
 		if (block == cur_free) {
-			THRprintf(GDKout, "#   free block at " PTRFMT " has size " SZFMT " and next " SZFMT "\n",
+			THRprintf(GDKout,
+				  "#   free block at " PTRFMT " has size " SZFMT " and next " SZFMT "\n",
 				  PTRFMTCAST(void *)block,
-				  blockp->size,
-				  blockp->next);
+				  blockp->size, blockp->next);
 
 			cur_free = blockp->next;
 			block += blockp->size;
 		} else {
 			size_t size = blocksize(hheader, blockp);
 
-			THRprintf(GDKout, "#   block at " SZFMT " with size " SZFMT "\n", block, size);
+			THRprintf(GDKout,
+				  "#   block at " SZFMT " with size " SZFMT "\n",
+				  block, size);
 			block += size;
 		}
 	}
@@ -847,7 +853,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		   // Double the size of the heap.
 		   // TUNE: increase heap by diffent amount.
 		 */
-		EXTENDDEBUG fprintf(stderr, "#HEAPextend in HEAP_malloc %s "SZFMT" "SZFMT"\n",heap->filename,heap->size,newsize);
+		EXTENDDEBUG fprintf(stderr, "#HEAPextend in HEAP_malloc %s " SZFMT " " SZFMT "\n", heap->filename, heap->size, newsize);
 		if (HEAPextend(heap, newsize) < 0)
 			return 0;
 		heap->free = newsize;
@@ -1109,7 +1115,7 @@ HEAP_checkformat(Heap *heap)
 		HEADER *hheader = HEAP_index(heap, 0, HEADER);
 
 #if SIZEOF_SIZE_T==8
-		size_t hasfcn = *(size_t *) & image.sizefcn;
+		size_t hasfcn = *(size_t *) &image.sizefcn;
 #else
 		size_t hasfcn = (size_t) (image.sizefcn || image.dummy);
 

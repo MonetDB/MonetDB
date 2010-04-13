@@ -205,7 +205,7 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	ERRORcheck(TYPEerror(l->ttype, r->htype), "BATbandjoin: type conflict\n");
 	ALGODEBUG THRprintf(GDKout, "#BATbandjoin: nestedloop;\n");
 	bn = BATnew(BAThtype(l), BATttype(r), MIN(BATcount(l), BATcount(r)));
-	if (bn == NULL) 
+	if (bn == NULL)
 		return bn;
 	switch (ATOMstorage(r->htype)) {
 /* #ifndef NOEXPAND_CHR */
@@ -258,6 +258,7 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 
 	return bn;
 }
+
 @}
 @-
 The easiest case is to implement a nested loop for band operations.
@@ -371,13 +372,13 @@ break;
 @c
 
 static BAT *
-BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit) 
+BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit)
 {
 	BAT *bn = NULL;
 	BUN lc = BATcount(l), rc = BATcount(r);
 
 	ALGODEBUG THRprintf(GDKout, "#BATbandjoin: mergejoin;\n");
-	bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), limit?*limit:MIN(lc,rc));
+	bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), limit ? *limit : MIN(lc, rc));
 	switch (l->ttype) {
 /* #ifndef NOEXPAND_CHR */
 	case TYPE_chr:
@@ -426,13 +427,13 @@ BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit)
 	bn->H->nonil = l->H->nonil;
 	bn->T->nonil = r->T->nonil;
 	return bn;
-failed:
+      failed:
 	BBPreclaim(bn);
 	return NULL;
 }
 
 BAT *
-BATbandmergejoin_limit(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit) 
+BATbandmergejoin_limit(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit)
 {
 	BAT *ol = l, *or = r, *bn = NULL;
 
@@ -452,19 +453,21 @@ BATbandmergejoin_limit(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limi
 }
 
 BAT *
-BATbandmergejoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi) 
+BATbandmergejoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 {
 	return BATbandmergejoin_limit(l, r, c1, c2, li, hi, NULL);
 }
 
 BAT *
-BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi) 
+BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 {
 	if ((!BATtordered(l) && BATcount(l) < BATTINY) ||
 	    (!BAThordered(r) && BATcount(r) < BATTINY) ||
-	    ATOMtype(l->htype) != TYPE_oid || ATOMtype(r->ttype) != TYPE_oid)
+	    ATOMtype(l->htype) != TYPE_oid ||
+	    ATOMtype(r->ttype) != TYPE_oid)
 		return BATbandjoin_nl(l, r, c1, c2, li, hi);
 
 	return BATbandmergejoin(l, r, c1, c2, li, hi);
 }
+
 @}

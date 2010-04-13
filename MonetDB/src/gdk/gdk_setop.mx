@@ -262,17 +262,23 @@ BATins_sunique(BAT *bn, BAT *b)
 	last1 = (BUNlast(bn) - 1);
 	last2 = (BUNlast(b) - 1);
 
-	if (BATcount(b) && (BAThordered(b) & 1) && ATOMcmp(b->htype, BUNhead(bi, fst2), BUNhead(bi, last2)) == 0 &&
-	    (BATcount(bn) == 0 || (ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bi, fst2)) == 0 &&
-				   (BAThordered(bn) & 1) &&
-				   ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bni, last1)) == 0))) {
+	if (BATcount(b) &&
+	    (BAThordered(b) & 1) &&
+	    ATOMcmp(b->htype, BUNhead(bi, fst2), BUNhead(bi, last2)) == 0 &&
+	    (BATcount(bn) == 0 ||
+	     (ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bi, fst2)) == 0 &&
+	      (BAThordered(bn) & 1) &&
+	      ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bni, last1)) == 0))) {
 		ALGODEBUG THRprintf(GDKout, "#BATins_sunique: BATins_kunique(BATmirror(bn), BATmirror(b))\n");
 		return BATins_kunique(BATmirror(bn), BATmirror(b));
 	}
-	if (BATcount(b) && (BATtordered(b) & 1) && ATOMcmp(b->ttype, BUNtail(bi, fst2), BUNtail(bi, last2)) == 0 &&
-	    (BATcount(bn) == 0 || (ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bi, fst2)) == 0 &&
-				   (BATtordered(bn) & 1) &&
-				   ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bni, last1)) == 0))) {
+	if (BATcount(b) &&
+	    (BATtordered(b) & 1) &&
+	    ATOMcmp(b->ttype, BUNtail(bi, fst2), BUNtail(bi, last2)) == 0 &&
+	    (BATcount(bn) == 0 ||
+	     (ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bi, fst2)) == 0 &&
+	      (BATtordered(bn) & 1) &&
+	      ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bni, last1)) == 0))) {
 		ALGODEBUG THRprintf(GDKout, "#BATins_sunique: BATins_kunique(bn, b)\n");
 		return BATins_kunique(bn, b);
 	}
@@ -290,9 +296,9 @@ BATins_sunique(BAT *bn, BAT *b)
 	bn->H->nonil = b->H->nonil;
 	bn->T->nonil = b->T->nonil;
 	return bn;
-	bunins_failed:
-		BBPreclaim(bn);
-		return NULL;
+      bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 
