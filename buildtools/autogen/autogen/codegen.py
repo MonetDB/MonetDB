@@ -115,6 +115,7 @@ code_gen = {'m':        [ '.proto.h', '.glue.c', '.mil' ],
             #'fig':      [ '.eps' ],
             #'feps':     [ '.eps' ],
             'in':       [ '' ],
+            '1.in':     [ '.1' ],  # TODO: add more manpage sections as needed
             'cfg.in':   [ '.cfg' ],
             'java.in':  [ '.java' ],
             'mil.in':   [ '.mil' ],
