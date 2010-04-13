@@ -860,6 +860,9 @@ yes-*-*)
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
+	dnl  Let warning #148 "declaration is incompatible"
+	dnl  become an error to make configure tests work properly.
+	CFLAGS="$CFLAGS -we148"
 	dnl  Check for PIC does not work with Version 8.1, unless we disable
 	dnl  remark #1418: external definition with no prior declaration ... !?
 	case $icc_ver in
