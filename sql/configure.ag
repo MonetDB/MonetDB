@@ -123,6 +123,9 @@ dnl  stuff required for merovingian and monetdb
 AC_CHECK_HEADERS([fcntl.h stropts.h sys/ioctl.h sys/un.h termios.h])
 AC_CHECK_HEADERS([uuid/uuid.h])
 AC_SEARCH_LIBS([uuid_generate], [uuid])
+dnl the expanded version without any variable references any more
+esysconfdir="`eval echo \"$sysconfdir\"`"
+AC_SUBST([esysconfdir])
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"

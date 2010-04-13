@@ -61,7 +61,8 @@ bin_merovingian = {
 }
 
 bin_monetdb = {
-	SOURCES = monetdb.c
+	# hack: include monetdb.1.in here to get it expanded
+	SOURCES = monetdb.c monetdb.1.in
 	LIBS = \
 		libmeroutil \
 		$(MONETDB5_LIBS) -lmonetdb5 \
