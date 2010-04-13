@@ -290,12 +290,6 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_libdir}/libMonetODBC.*
 %{_libdir}/libMonetODBCs.*
-%dir %{_includedir}/MonetDB/odbc
-%{_includedir}/MonetDB/odbc/odbcinst.h
-%{_includedir}/MonetDB/odbc/sql.h
-%{_includedir}/MonetDB/odbc/sqlext.h
-%{_includedir}/MonetDB/odbc/sqltypes.h
-%{_includedir}/MonetDB/odbc/sqlucode.h
 
 %if %{?_with_php:1}%{!?_with_php:0}
 %files php

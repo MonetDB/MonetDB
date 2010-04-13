@@ -1,3 +1,2 @@
-debian/tmp/usr/include/MonetDB/odbc/*.h /usr/include/MonetDB/odbc
 debian/tmp/usr/lib/libMonetODBC.so usr/lib
 debian/tmp/usr/lib/libMonetODBCs.so usr/lib
