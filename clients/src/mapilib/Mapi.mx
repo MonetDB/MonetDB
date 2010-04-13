@@ -1031,9 +1031,9 @@ struct MapiStruct {
 
 	int cachelimit;		/* default maximum number of rows to cache */
 	int redircnt;		/* redirection count, used to cut of redirect loops */
-	int redirmax;       /* maximum redirects before giving up */
+	int redirmax;		/* maximum redirects before giving up */
 #define MAXREDIR 50
-	char *redirects[MAXREDIR];/* NULL-terminated list of redirects */
+	char *redirects[MAXREDIR];	/* NULL-terminated list of redirects */
 
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
@@ -1183,7 +1183,7 @@ mapi_export Mapi mapi_mapiuri(const char *url, const char *user, const char *pas
 mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_start_talking(Mapi mid);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
-mapi_export char** mapi_resolve(const char *host, int port, const char *pattern);
+mapi_export char **mapi_resolve(const char *host, int port, const char *pattern);
 #ifdef ST_READ			/* if stream.h was included */
 mapi_export stream **mapi_embedded_init(Mapi *midp, char *lang);
 #endif
@@ -1394,7 +1394,7 @@ indented_print(const char *msg, const char *prefix, FILE *fd)
 	/* for multiline error messages, indent all subsequent
 	   lines with the space it takes to print "ERROR = " */
 	const char *s = prefix, *p = msg, *q;
-	const int len = (int)strlen(s);
+	const int len = (int) strlen(s);
 	const char t = s[len - 1];
 
 	while (p && *p) {
@@ -1426,7 +1426,8 @@ mapi_explain(Mapi mid, FILE *fd)
 {
 	assert(mid);
 	if (mid->noexplain == NULL) {
-		fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname, mid->port);
+		fprintf(fd, "MAPI  = %s\@%s:%d\n",
+			mid->username, mid->hostname, mid->port);
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
 		if (mid->errorstr)
@@ -1448,7 +1449,8 @@ mapi_explain_query(MapiHdl hdl, FILE *fd)
 	mid = hdl->mid;
 	assert(mid);
 	if (mid->noexplain == NULL) {
-		fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname, mid->port);
+		fprintf(fd, "MAPI  = %s\@%s:%d\n",
+			mid->username, mid->hostname, mid->port);
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
 		if (hdl->query)
@@ -1468,7 +1470,9 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 {
 	Mapi mid;
 
-	if (hdl == NULL || hdl->result == NULL || hdl->result->errorstr == NULL)
+	if (hdl == NULL ||
+	    hdl->result == NULL ||
+	    hdl->result->errorstr == NULL)
 		return MOK;
 	assert(hdl);
 	assert(hdl->result);
@@ -1476,7 +1480,8 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 	mid = hdl->mid;
 	assert(mid);
 	if (mid->noexplain == NULL) {
-		fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname, mid->port);
+		fprintf(fd, "MAPI  = %s\@%s:%d\n",
+			mid->username, mid->hostname, mid->port);
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
 		if (hdl->query)
@@ -1610,7 +1615,8 @@ new_result(MapiHdl hdl)
 {
 	struct MapiResultSet *result;
 
-	assert((hdl->lastresult == NULL && hdl->result == NULL) || (hdl->result != NULL && hdl->lastresult != NULL && hdl->lastresult->next == NULL));
+	assert((hdl->lastresult == NULL && hdl->result == NULL) ||
+	       (hdl->result != NULL && hdl->lastresult != NULL && hdl->lastresult->next == NULL));
 
 	if (hdl->mid->trace == MAPI_TRACE)
 		printf("allocating new result set\n");
@@ -1664,10 +1670,16 @@ close_result(MapiHdl hdl)
 	if (mid->trace == MAPI_TRACE)
 		printf("closing result set\n");
 	if (result->tableid >= 0 && result->querytype != Q_PREPARE) {
-		if (mid->active && result->next == NULL && !mid->active->needmore && read_into_cache(mid->active, -1) != MOK)
+		if (mid->active &&
+		    result->next == NULL &&
+		    !mid->active->needmore &&
+		    read_into_cache(mid->active, -1) != MOK)
 			return MERROR;
-		assert(hdl->npending_close == 0 || (hdl->npending_close > 0 && hdl->pending_close != NULL));
-		if (mid->active && (mid->active->active != result || result->cache.tuplecount < result->row_count)) {
+		assert(hdl->npending_close == 0 ||
+		       (hdl->npending_close > 0 && hdl->pending_close != NULL));
+		if (mid->active &&
+		    (mid->active->active != result ||
+		     result->cache.tuplecount < result->row_count)) {
 			/* can't write "X" commands now, so save for later */
 			REALLOC(hdl->pending_close, hdl->npending_close + 1);
 			hdl->pending_close[hdl->npending_close] = result->tableid;
@@ -1708,7 +1720,9 @@ close_result(MapiHdl hdl)
 		}
 		result->tableid = -1;
 	}
-	if (mid->active == hdl && hdl->active == result && read_into_cache(hdl, -1) != MOK)
+	if (mid->active == hdl &&
+	    hdl->active == result &&
+	    read_into_cache(hdl, -1) != MOK)
 		return MERROR;
 	assert(hdl->active != result);
 	if (result->fields) {
@@ -1879,7 +1893,8 @@ finish_handle(MapiHdl hdl)
 	if (hdl == NULL)
 		return MERROR;
 	mid = hdl->mid;
-	if (mid->active == hdl && !hdl->needmore && read_into_cache(hdl, 0) != MOK)
+	if (mid->active == hdl && !hdl->needmore &&
+	    read_into_cache(hdl, 0) != MOK)
 		return MERROR;
 	if (mid->to) {
 		if (hdl->needmore) {
@@ -1896,7 +1911,8 @@ finish_handle(MapiHdl hdl)
 			snprintf(msg, sizeof(msg), "Xclose %d\n", hdl->pending_close[i]);
 			mapi_log_record(mid, msg);
 			mid->active = hdl;
-			if (stream_printf(mid->to, msg) < 0 || stream_flush(mid->to)) {
+			if (stream_printf(mid->to, msg) < 0 ||
+			    stream_flush(mid->to)) {
 				close_connection(mid);
 				mapi_setError(mid, stream_error(mid->to), "finish_handle", MTIMEOUT);
 				break;
@@ -2021,11 +2037,7 @@ mapi_new(void)
 }
 
 Mapi
-mapi_mapiuri(
-		const char *url,
-		const char *user,
-		const char *pass,
-		const char *lang)
+mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang)
 {
 	char uri[8096];
 	char *host;
@@ -2046,39 +2058,40 @@ mapi_mapiuri(
 
 	if (url == NULL) {
 		mapi_setError(mid, "url is null", "mapi_mapiuri", MERROR);
-		return(mid);
+		return mid;
 	}
 	if (user == NULL) {
 		mapi_setError(mid, "user is null", "mapi_mapiuri", MERROR);
-		return(mid);
+		return mid;
 	}
 	if (pass == NULL) {
 		mapi_setError(mid, "pass is null", "mapi_mapiuri", MERROR);
-		return(mid);
+		return mid;
 	}
 	if (lang == NULL) {
 		mapi_setError(mid, "lang is null", "mapi_mapiuri", MERROR);
-		return(mid);
+		return mid;
 	}
 
 	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) != 0) {
-		mapi_setError(mid, "url has unsupported scheme, "
-				"expecting mapi:monetdb://...", "mapi_mapiuri", MERROR);
-		return(mid);
+		mapi_setError(mid,
+			      "url has unsupported scheme, "
+			      "expecting mapi:monetdb://...",
+			      "mapi_mapiuri", MERROR);
+		return mid;
 	}
 
 	/* copy to a writable working buffer */
-	snprintf(uri, 8096, "%s", url + sizeof("mapi:monetdb://") - 1);
+	snprintf(uri, 8096, "%s", url +sizeof("mapi:monetdb://") - 1);
 
 	if ((p = strchr(uri, ':')) == NULL) {
-		mapi_setError(mid, "URI must contain a port number after the hostname",
-				"mapi_mapiuri", MERROR);
-		return(mid);
+		mapi_setError(mid, "URI must contain a port number after the hostname", "mapi_mapiuri", MERROR);
+		return mid;
 	}
 	*p++ = '\0';
 	host = uri;
-	dbname = p; /* temp misuse */
-	
+	dbname = p;		/* temp misuse */
+
 	if ((p = strchr(dbname, '/')) == NULL) {
 		p = dbname;
 		dbname = NULL;
@@ -2095,9 +2108,8 @@ mapi_mapiuri(
 	}
 	port = atoi(p);
 	if (port <= 0) {
-		mapi_setError(mid, "URI contains invalid port",
-				"mapi_mapiuri", MERROR);
-		return(mid);
+		mapi_setError(mid, "URI contains invalid port", "mapi_mapiuri", MERROR);
+		return mid;
 	}
 
 	if (mid->hostname)
@@ -2124,13 +2136,14 @@ mapi_mapiuri(
 		free(mid->database);
 	mid->database = dbname == NULL ? NULL : strdup(dbname);
 
-	return(mid);
+	return mid;
 }
 
 /* Allocate a new connection handle and fill in the information needed
    to connect to a server, but don't connect yet. */
 Mapi
-mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname)
+mapi_mapi(const char *host, int port, const char *username,
+	  const char *password, const char *lang, const char *dbname)
 {
 	Mapi mid;
 
@@ -2238,12 +2251,12 @@ parse_uri_query(Mapi mid, char *uri)
 	if ((uri = strchr(uri, '?')) == NULL)
 		return;
 
-	uri++; /* skip '?' */
+	uri++;			/* skip '?' */
 
 	do {
 		if ((amp = strchr(uri, '&')) != NULL)
 			*amp++ = '\0';
-		
+
 		if ((val = strchr(uri, '=')) != NULL) {
 			*val++ = '\0';
 			if (strcmp("database", uri) == 0) {
@@ -2253,11 +2266,11 @@ parse_uri_query(Mapi mid, char *uri)
 				free(mid->language);
 				mid->language = strdup(val);
 			} else if (strcmp("user", uri) == 0) {
-				/* until we figure out how this can be done safely wrt
-				 * security, ignore */
+				/* until we figure out how this can be
+				   done safely wrt security, ignore */
 			} else if (strcmp("password", uri) == 0) {
-				/* until we figure out how this can be done safely wrt
-				 * security, ignore */
+				/* until we figure out how this can be
+				   done safely wrt security, ignore */
 			} /* can't warn, ignore */
 		} /* else: invalid argument, can't warn, just skip */
 		uri = amp;
@@ -2291,7 +2304,7 @@ connect_to_server(Mapi mid)
 	if (mid->hostname == NULL) {
 		struct stat st;
 		snprintf(errbuf, sizeof(errbuf),
-				CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
+			 CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
 		if (stat(errbuf, &st) != 1 && S_ISSOCK(st.st_mode))
 			mid->hostname = strdup(errbuf);
 	}
@@ -2305,8 +2318,8 @@ connect_to_server(Mapi mid)
 		}
 
 		if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
-					strerror(errno));
+			snprintf(errbuf, sizeof(errbuf),
+				 "opening socket failed: %s", strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 		memset(&userver, 0, sizeof(struct sockaddr_un));
@@ -2317,15 +2330,16 @@ connect_to_server(Mapi mid)
 		s = socket(PF_UNIX, SOCK_STREAM, 0);
 
 		if (connect(s, serv, servsize) < 0) {
-			snprintf(errbuf, sizeof(errbuf), "initiating connection on socket "
-					"failed: %s", strerror(errno));
+			snprintf(errbuf, sizeof(errbuf),
+				 "initiating connection on socket failed: %s",
+				 strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 
 		/* send first byte, nothing special to happen */
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
-		*buf = '0'; /* normal */
+		*buf = '0';	/* normal */
 		vec.iov_base = buf;
 		vec.iov_len = 1;
 		msg.msg_iov = &vec;
@@ -2336,8 +2350,7 @@ connect_to_server(Mapi mid)
 
 		if (sendmsg(s, &msg, 0) < 0) {
 			close(s);
-			snprintf(errbuf, sizeof(errbuf), "could not send initial byte: %s",
-					strerror(errno));
+			snprintf(errbuf, sizeof(errbuf), "could not send initial byte: %s", strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 	} else
@@ -2349,8 +2362,7 @@ connect_to_server(Mapi mid)
 			mid->hostname = strdup("localhost");
 
 		if ((hp = gethostbyname(mid->hostname)) == NULL) {
-			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s",
-					strerror(errno));
+			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s", strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 		memset(&server, 0, sizeof(server));
@@ -2362,14 +2374,14 @@ connect_to_server(Mapi mid)
 		s = socket(server.sin_family, SOCK_STREAM, IPPROTO_TCP);
 
 		if (s == INVALID_SOCKET) {
-			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
-					strerror(errno));
+			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s", strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 
 		if (connect(s, serv, servsize) < 0) {
-			snprintf(errbuf, sizeof(errbuf), "initiating connection on socket "
-					"failed: %s", strerror(errno));
+			snprintf(errbuf, sizeof(errbuf),
+				 "initiating connection on socket failed: %s",
+				 strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 	}
@@ -2490,8 +2502,8 @@ mapi_start_talking(Mapi mid)
 #ifndef HAVE_OPENSSL
 			/* can't hash the password as required (no algorithms available) */
 			snprintf(buf, BLOCK, "server requires '%s' hash, "
-					"but client support was not compiled in",
-					serverhash);
+				 "but client support was not compiled in",
+				 serverhash);
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 #else
@@ -2506,58 +2518,58 @@ mapi_start_talking(Mapi mid)
 				strncat(key, mid->password, n);
 
 				if (strcmp(serverhash, "RIPEMD160") == 0) {
-					RIPEMD160((unsigned char *)key, n, md);
+					RIPEMD160((unsigned char *) key, n, md);
 					len = 40;
 				} else if (strcmp(serverhash, "SHA512") == 0) {
-					SHA512((unsigned char *)key, n, md);
+					SHA512((unsigned char *) key, n, md);
 					len = 128;
 				} else if (strcmp(serverhash, "SHA384") == 0) {
-					SHA384((unsigned char *)key, n, md);
+					SHA384((unsigned char *) key, n, md);
 					len = 96;
 				} else if (strcmp(serverhash, "SHA256") == 0) {
-					SHA256((unsigned char *)key, n, md);
+					SHA256((unsigned char *) key, n, md);
 					len = 64;
 				} else if (strcmp(serverhash, "SHA224") == 0) {
-					SHA224((unsigned char *)key, n, md);
+					SHA224((unsigned char *) key, n, md);
 					len = 56;
 				} else if (strcmp(serverhash, "SHA1") == 0) {
-					SHA1((unsigned char *)key, n, md);
+					SHA1((unsigned char *) key, n, md);
 					len = 40;
 				} else if (strcmp(serverhash, "MD5") == 0) {
-					MD5((unsigned char *)key, n, md);
+					MD5((unsigned char *) key, n, md);
 					len = 32;
 				} else {
-					snprintf(buf, BLOCK, "server requires unknown hash '%s'",
-							serverhash);
+					snprintf(buf, BLOCK, "server requires unknown hash '%s'", serverhash);
 					close_connection(mid);
-					return mapi_setError(mid, buf, "mapi_start_talking",
-							MERROR);
+					return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 				}
 
 				free(mid->password);
 				mid->password = malloc(sizeof(char) * (1 + 64 * 2 + 1));
 				sprintf(mid->password,
-						"\1%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-						"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-						"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-						"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-						"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-						"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-						"%02x%02x%02x%02x",
-						md[0], md[1], md[2], md[3], md[4],
-						md[5], md[6], md[7], md[8], md[9],
-						md[10], md[11], md[12], md[13], md[14],
-						md[15], md[16], md[17], md[18], md[19],
-						md[20], md[21], md[22], md[23], md[24],
-						md[25], md[26], md[27], md[28], md[29],
-						md[30], md[31], md[32], md[33], md[34],
-						md[35], md[36], md[37], md[38], md[39],
-						md[40], md[41], md[42], md[43], md[44],
-						md[45], md[46], md[47], md[48], md[49],
-						md[50], md[51], md[52], md[53], md[54],
-						md[55], md[56], md[57], md[58], md[59],
-						md[60], md[61], md[62], md[63]
-					   );
+					"\1%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+					"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+					"%02x%02x%02x%02x",
+					md[0], md[1], md[2], md[3],
+					md[4], md[5], md[6], md[7],
+					md[8], md[9], md[10], md[11],
+					md[12], md[13], md[14], md[15],
+					md[16], md[17], md[18], md[19],
+					md[20], md[21], md[22], md[23],
+					md[24], md[25], md[26], md[27],
+					md[28], md[29], md[30], md[31],
+					md[32], md[33], md[34], md[35],
+					md[36], md[37], md[38], md[39],
+					md[40], md[41], md[42], md[43],
+					md[44], md[45], md[46], md[47],
+					md[48], md[49], md[50], md[51],
+					md[52], md[53], md[54], md[55],
+					md[56], md[57], md[58], md[59],
+					md[60], md[61], md[62], md[63]);
 				mid->password[1 + len] = '\0';
 			}
 #endif
@@ -2584,14 +2596,15 @@ mapi_start_talking(Mapi mid)
 				strcpy(key, mid->password);
 			}
 			strncat(key, chal, strlen(chal));
-			RIPEMD160((unsigned char *)key, n, md);
-			hash = malloc(sizeof(char) * (/*{RIPEMD160}*/ 11 + 20 * 2 + 1));
+			RIPEMD160((unsigned char *) key, n, md);
+			hash = malloc(sizeof(char) * ( /*{RIPEMD160} */ 11 + 20 * 2 + 1));
 			sprintf(hash, "{RIPEMD160}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-				md[0], md[1], md[2], md[3], md[4],
-				md[5], md[6], md[7], md[8], md[9],
-				md[10], md[11], md[12], md[13], md[14],
-				md[15], md[16], md[17], md[18], md[19]);
+				md[0], md[1], md[2], md[3],
+				md[4], md[5], md[6], md[7],
+				md[8], md[9], md[10], md[11],
+				md[12], md[13], md[14], md[15],
+				md[16], md[17], md[18], md[19]);
 		} else if (strstr(hashes, "SHA1") != NULL) {
 			/* The SHA-1 RSA hash algorithm is a 160 bit hash.  In order to
 			 * use in a string, a hexadecimal representation of the bit
@@ -2609,14 +2622,15 @@ mapi_start_talking(Mapi mid)
 				strcpy(key, mid->password);
 			}
 			strncat(key, chal, strlen(chal));
-			SHA1((unsigned char *)key, n, md);
-			hash = malloc(sizeof(char) * (/*{SHA1}*/ 6 + 20 * 2 + 1));
+			SHA1((unsigned char *) key, n, md);
+			hash = malloc(sizeof(char) * ( /*{SHA1} */ 6 + 20 * 2 + 1));
 			sprintf(hash, "{SHA1}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-				md[0], md[1], md[2], md[3], md[4],
-				md[5], md[6], md[7], md[8], md[9],
-				md[10], md[11], md[12], md[13], md[14],
-				md[15], md[16], md[17], md[18], md[19]);
+				md[0], md[1], md[2], md[3],
+				md[4], md[5], md[6], md[7],
+				md[8], md[9], md[10], md[11],
+				md[12], md[13], md[14], md[15],
+				md[16], md[17], md[18], md[19]);
 		} else if (strstr(hashes, "MD5") != NULL) {
 			/* The MD5 hash algorithm is a 128 bit hash.  In order to
 			 * use in a string, a hexadecimal representation of the bit
@@ -2634,13 +2648,14 @@ mapi_start_talking(Mapi mid)
 				strcpy(key, mid->password);
 			}
 			strncat(key, chal, strlen(chal));
-			MD5((unsigned char *)key, n, md);
-			hash = malloc(sizeof(char) * (/*{MD5}*/ 5 + 16 * 2 + 1));
+			MD5((unsigned char *) key, n, md);
+			hash = malloc(sizeof(char) * ( /*{MD5} */ 5 + 16 * 2 + 1));
 			sprintf(hash, "{MD5}%02x%02x%02x%02x%02x%02x%02x%02x"
 				"%02x%02x%02x%02x%02x%02x%02x%02x",
-				md[0], md[1], md[2], md[3], md[4],
-				md[5], md[6], md[7], md[8], md[9],
-				md[10], md[11], md[12], md[13], md[14], md[15]);
+				md[0], md[1], md[2], md[3],
+				md[4], md[5], md[6], md[7],
+				md[8], md[9], md[10], md[11],
+				md[12], md[13], md[14], md[15]);
 #endif
 #ifdef HAVE_CRYPT
 		} else if (pversion == 8 && strstr(hashes, "crypt") != NULL) {
@@ -2674,7 +2689,7 @@ mapi_start_talking(Mapi mid)
 			/* call crypt to do the work */
 			cr = crypt(key, salt);
 			assert(cr != NULL);
-			hash = malloc(sizeof(char) * (/*{crypt}*/ 7 + strlen(cr) + 1));
+			hash = malloc(sizeof(char) * ( /*{crypt} */ 7 + strlen(cr) + 1));
 			sprintf(hash, "{crypt}%s", cr);
 #endif
 		} else if (pversion == 8 && strstr(hashes, "plain") != NULL) {
@@ -2683,10 +2698,10 @@ mapi_start_talking(Mapi mid)
 			 * the password and returns it.
 			 * As of proto v9 this super insecure "hash" has been dropped. */
 			if (strcmp(server, "merovingian") == 0) {
-				hash = strdup("{plain}Mellon..."); /* Elfish word for friend */
+				hash = strdup("{plain}Mellon...");	/* Elfish word for friend */
 			} else {
-				hash = malloc(sizeof(char) * (/*{plain}*/ 7 +
-								  strlen(mid->password) + strlen(chal) + 1));
+				hash = malloc(sizeof(char) * ( /*{plain} */ 7 +
+							      strlen(mid->password) + strlen(chal) + 1));
 				sprintf(hash, "{plain}%s%s", mid->password, chal);
 			}
 		}
@@ -2774,7 +2789,7 @@ mapi_start_talking(Mapi mid)
 				case '#':
 					motdlen += strlen(result->cache.line[i].rows) + 1;
 					break;
-				case '^': {
+				case '^':{
 					char **r = mid->redirects;
 					int m = sizeof(mid->redirects) - 1;
 					for (; *r != NULL && m > 0; r++)
@@ -2783,7 +2798,8 @@ mapi_start_talking(Mapi mid)
 						break;
 					*r++ = strdup(result->cache.line[i].rows + 1);
 					*r = NULL;
-				} break;
+					break;
+				}
 				}
 			}
 		}
@@ -2810,9 +2826,8 @@ mapi_start_talking(Mapi mid)
 			/* first see if we reached our redirection limit */
 			if (mid->redircnt >= mid->redirmax) {
 				mapi_close_handle(hdl);
-				mapi_setError(mid, "too many redirects",
-						"mapi_start_talking", MERROR);
-				return (mid->error);
+				mapi_setError(mid, "too many redirects", "mapi_start_talking", MERROR);
+				return mid->error;
 			}
 			/* we only implement following the first */
 			red = mid->redirects[0];
@@ -2836,7 +2851,7 @@ mapi_start_talking(Mapi mid)
 					if (q != NULL) {
 						mid->port = atoi(q);
 						if (mid->port == 0)
-							mid->port = 50000; /* hardwired default */
+							mid->port = 50000;	/* hardwired default */
 					}
 					db = red;
 				} else {
@@ -2846,7 +2861,7 @@ mapi_start_talking(Mapi mid)
 				if (mid->hostname)
 					free(mid->hostname);
 				mid->hostname = strdup(p);
-				if (mid->database) 
+				if (mid->database)
 					free(mid->database);
 				mid->database = db != NULL ? strdup(db) : NULL;
 
@@ -2882,10 +2897,11 @@ mapi_start_talking(Mapi mid)
 			} else {
 				q = alloca(sizeof(char) * (strlen(red) + 50));
 				snprintf(q, strlen(red) + 50,
-						"error while parsing redirect: %s\n", red);
+					 "error while parsing redirect: %s\n",
+					 red);
 				mapi_close_handle(hdl);
 				mapi_setError(mid, q, "mapi_start_talking", MERROR);
-				return (mid->error);
+				return mid->error;
 			}
 		}
 
@@ -2942,14 +2958,14 @@ mapi_resolve(const char *host, int port, const char *pattern)
 	if (mid && mid->error == MOK) {
 		rmax = mid->redirmax;
 		mid->redirmax = 0;
-		mapi_reconnect(mid);  /* real connect, don't follow redirects */
+		mapi_reconnect(mid);	/* real connect, don't follow redirects */
 		mid->redirmax = rmax;
 		if (mid->error == MOK) {
-			close_connection(mid); /* we didn't expect a connection actually */
+			close_connection(mid);	/* we didn't expect a connection actually */
 		} else {
 			char **ret = malloc(sizeof(char *) * MAXREDIR);
 			memcpy(ret, mid->redirects, sizeof(char *) * MAXREDIR);
-			mid->redirects[0] = NULL;  /* make sure the members aren't freed */
+			mid->redirects[0] = NULL;	/* make sure the members aren't freed */
 			mapi_destroy(mid);
 			return ret;
 		}
@@ -3762,7 +3778,7 @@ mapi_extend_cache(struct MapiResultSet *result, int cacheall)
 	}
 
 	/* extend row cache */
-  retry:;
+      retry:;
 	if (oldsize == 0)
 		incr = 100;
 	else
@@ -3770,7 +3786,9 @@ mapi_extend_cache(struct MapiResultSet *result, int cacheall)
 	if (incr > 200000)
 		incr = 20000;
 	newsize = oldsize + incr;
-	if (result->cache.rowlimit > 0 && newsize > result->cache.rowlimit && !cacheall) {
+	if (result->cache.rowlimit > 0 &&
+	    newsize > result->cache.rowlimit &&
+	    !cacheall) {
 		newsize = result->cache.rowlimit;
 		incr = newsize - oldsize;
 		if (incr <= 0) {
@@ -4004,14 +4022,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			   yet (duh!), or if we've already seen
 			   normal output for the current one */
 			if (result == NULL ||
-					result->cache.writer > 0 ||
-					result->querytype == Q_TABLE ||
-					result->querytype == Q_UPDATE)
-			{
+			    result->cache.writer > 0 ||
+			    result->querytype == Q_TABLE ||
+			    result->querytype == Q_UPDATE) {
 				result = new_result(hdl);
 				hdl->active = result;
 			}
-			add_error(result, line + 1 /* skip ! */);
+			add_error(result, line + 1 /* skip ! */ );
 			if (!mid->error)
 				mid->error = MSERVER;
 			break;
@@ -4031,9 +4048,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				hdl->active = result;
 			}
 			add_cache(result, strdup(line), !lookahead);
-			if (lookahead > 0 && (result->querytype == -1 /* unknown (not SQL) */  ||
-					      result->querytype == Q_TABLE ||
-					      result->querytype == Q_UPDATE))
+			if (lookahead > 0 &&
+			    (result->querytype == -1/* unknown (not SQL) */  ||
+			     result->querytype == Q_TABLE ||
+			     result->querytype == Q_UPDATE))
 				return mid->error;
 			break;
 		}
@@ -4579,18 +4597,14 @@ mapi_fetch_line_internal(MapiHdl hdl)
 	char *reply;
 
 	/* try to read a line from the cache */
-	if ((result = hdl->result) == NULL ||
-	    result->cache.writer <= 0 ||
-	    result->cache.reader + 1 >= result->cache.writer) {
+	if ((result = hdl->result) == NULL || result->cache.writer <= 0 || result->cache.reader + 1 >= result->cache.writer) {
 		mid = hdl->mid;
 		if (mid->active != hdl || hdl->needmore)
 			return NULL;
 
 		if (read_into_cache(hdl, 1) != MOK)
 			return NULL;
-		if ((result = hdl->result) == NULL ||
-		    result->cache.writer <= 0 ||
-		    result->cache.reader + 1 >= result->cache.writer)
+		if ((result = hdl->result) == NULL || result->cache.writer <= 0 || result->cache.reader + 1 >= result->cache.writer)
 			return NULL;
 	}
 	reply = result->cache.line[++result->cache.reader].rows;
@@ -4623,10 +4637,14 @@ mapi_fetch_line(MapiHdl hdl)
 		hdl->active = result;
 		if (hdl->mid->tracelog) {
 			mapi_log_header(hdl->mid, "W");
-			stream_printf(hdl->mid->tracelog, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount);
+			stream_printf(hdl->mid->tracelog, "X" "export %d " LLFMT "\n",
+				      result->tableid,
+				      result->cache.first + result->cache.tuplecount);
 			stream_flush(hdl->mid->tracelog);
 		}
-		if (stream_printf(hdl->mid->to, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
+		if (stream_printf(hdl->mid->to, "X" "export %d " LLFMT "\n",
+				  result->tableid,
+				  result->cache.first + result->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
 		reply = mapi_fetch_line_internal(hdl);
@@ -4728,7 +4746,9 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 					/* this could be the start of
 					   an octal sequence, check it
 					   out */
-					if (p[1] && p[2] && p[1] >= '0' && p[1] <= '7' && p[2] >= '0' && p[2] <= '7') {
+					if (p[1] && p[2] &&
+					    p[1] >= '0' && p[1] <= '7' &&
+					    p[2] >= '0' && p[2] <= '7') {
 						p += 2;
 						break;
 					}
@@ -4770,7 +4790,9 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 					/* this could be the start of
 					   an octal sequence, check it
 					   out */
-					if (p[1] && p[2] && p[1] >= '0' && p[1] <= '7' && p[2] >= '0' && p[2] <= '7') {
+					if (p[1] && p[2] &&
+					    p[1] >= '0' && p[1] <= '7' &&
+					    p[2] >= '0' && p[2] <= '7') {
 						*s = ((p[0] - '0') << 6) | ((p[1] - '0') << 3) | (p[2] - '0');
 						p += 2;
 						break;
@@ -4999,15 +5021,13 @@ store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *ds
 		break;
 #endif
 	case MAPI_DATE:
-		sscanf(val,
-		       "%hd-%hu-%hu",
+		sscanf(val, "%hd-%hu-%hu",
 		       &((MapiDate *) dst)->year,
 		       &((MapiDate *) dst)->month,
 		       &((MapiDate *) dst)->day);
 		break;
 	case MAPI_TIME:
-		sscanf(val,
-		       "%hu:%hu:%hu",
+		sscanf(val, "%hu:%hu:%hu",
 		       &((MapiTime *) dst)->hour,
 		       &((MapiTime *) dst)->minute,
 		       &((MapiTime *) dst)->second);
@@ -5016,8 +5036,7 @@ store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *ds
 		int n;
 
 		((MapiDateTime *) dst)->fraction = 0;
-		sscanf(val,
-		       "%hd-%hu-%hu %hu:%hu:%hu%n",
+		sscanf(val, "%hd-%hu-%hu %hu:%hu:%hu%n",
 		       &((MapiDateTime *) dst)->year,
 		       &((MapiDateTime *) dst)->month,
 		       &((MapiDateTime *) dst)->day,
@@ -5099,7 +5118,11 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 	} else {
 		/* work on a copy to preserve the original */
 		p = strdup(p);
-		i = slice_row(p, result->hdl->mid->languageId == LANG_SQL ? "NULL" : "nil", &result->cache.line[cr].anchors, &result->cache.line[cr].lens, result->fieldcnt, ']');
+		i = slice_row(p,
+			      result->hdl->mid->languageId == LANG_SQL ? "NULL" : "nil",
+			      &result->cache.line[cr].anchors,
+			      &result->cache.line[cr].lens,
+			      result->fieldcnt, ']');
 		free(p);
 	}
 	if (i > result->fieldcnt) {
@@ -5180,10 +5203,12 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			hdl->active = result;
 			if (mid->tracelog) {
 				mapi_log_header(mid, "W");
-				stream_printf(mid->tracelog, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount);
+				stream_printf(mid->tracelog, "X" "export %d " LLFMT "\n",
+					      result->tableid, result->cache.first + result->cache.tuplecount);
 				stream_flush(mid->tracelog);
 			}
-			if (stream_printf(mid->to, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
+			if (stream_printf(mid->to, "X" "export %d " LLFMT "\n",
+					  result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 			    stream_flush(mid->to))
 				check_stream(mid, mid->to, stream_error(mid->to), "mapi_fetch_line", 0);
 		}
@@ -5257,7 +5282,8 @@ mapi_fetch_field_array(MapiHdl hdl)
 
 	mapi_hdl_check0(hdl, "mapi_fetch_field_array");
 
-	if ((result = hdl->result) == NULL || (cr = result->cache.reader) < 0) {
+	if ((result = hdl->result) == NULL ||
+	    (cr = result->cache.reader) < 0) {
 		mapi_setError(hdl->mid, "Must do a successful mapi_fetch_row first", "mapi_fetch_field_array", MERROR);
 		return 0;
 	}
@@ -5279,7 +5305,8 @@ mapi_get_field_count(MapiHdl hdl)
 		int i;
 
 		for (i = 0; i < hdl->result->cache.writer; i++)
-			if (hdl->result->cache.line[i].rows[0] == '[' || hdl->result->cache.line[i].rows[0] == '=')
+			if (hdl->result->cache.line[i].rows[0] == '[' ||
+			    hdl->result->cache.line[i].rows[0] == '=')
 				mapi_slice_row(hdl->result, i);
 	}
 	return hdl->result ? hdl->result->fieldcnt : 0;
@@ -5317,7 +5344,8 @@ mapi_get_type(MapiHdl hdl, int fnr)
 	struct MapiResultSet *result;
 
 	mapi_hdl_check0(hdl, "mapi_get_type");
-	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt) {
+	if ((result = hdl->result) != 0 &&
+	    fnr >= 0 && fnr < result->fieldcnt) {
 		if (result->fields[fnr].columntype == NULL)
 			return "unknown";
 		return result->fields[fnr].columntype;
@@ -5357,7 +5385,7 @@ mapi_get_query(MapiHdl hdl)
 	if (hdl->query != NULL) {
 		return strdup(hdl->query);
 	} else {
-		return(NULL);
+		return NULL;
 	}
 }
 

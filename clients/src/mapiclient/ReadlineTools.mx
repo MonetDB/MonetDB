@@ -146,15 +146,15 @@ sql_completion(const char *text, int start, int end)
 	(void) end;
 
 	/* FIXME: Nice, context-sensitive completion strategy should go here */
-	if( strcmp(language,"sql") ==0){
+	if (strcmp(language, "sql") == 0) {
 		if (start == 0) {
 			matches = rl_completion_matches(text, sql_command_generator);
 		} else {
 			matches = rl_completion_matches(text, sql_tablename_generator);
 		}
 	}
-	if( strcmp(language,"mal") ==0){
-			matches = rl_completion_matches(text, sql_tablename_generator);
+	if (strcmp(language, "mal") == 0) {
+		matches = rl_completion_matches(text, sql_tablename_generator);
 	}
 
 	return (matches);
@@ -207,40 +207,42 @@ mil_completion(const char *text, int start, int end)
 /* The MAL completion help */
 
 static char *mal_commands[] = {
-    "address",
-    "atom",
-    "barrier",
-    "catch",
-    "command",
-    "comment",
-    "exit",
-    "end",
-    "function",
-    "factory",
-    "leave",
-    "pattern",
-    "module",
-    "raise",
-    "redo",
-    0
+	"address",
+	"atom",
+	"barrier",
+	"catch",
+	"command",
+	"comment",
+	"exit",
+	"end",
+	"function",
+	"factory",
+	"leave",
+	"pattern",
+	"module",
+	"raise",
+	"redo",
+	0
 };
 
 #ifdef illegal_ESC_binding
 /* see also init_readline() below */
-static int mal_help(int cnt, int key){
+static int
+mal_help(int cnt, int key)
+{
 	char *name, *c, buf[BUFSIZ];
-	int seekpos=0,rowcount;
+	int seekpos = 0, rowcount;
 	MapiHdl table_hdl;
 
 	(void) cnt;
 	(void) key;
 
-	c= rl_line_buffer+strlen(rl_line_buffer)-1;
-	while( c > rl_line_buffer && isspace(*c)) 
+	c = rl_line_buffer + strlen(rl_line_buffer) - 1;
+	while (c > rl_line_buffer && isspace(*c))
 		c--;
-	while( c > rl_line_buffer && !isspace(*c)) 
+	while (c > rl_line_buffer && !isspace(*c))
 		c--;
-	snprintf(buf,BUFSIZ, "manual.help(\"%s\");", c);
+	snprintf(buf, BUFSIZ, "manual.help(\"%s\");", c);
 	if ((table_hdl = mapi_query(_mid, buf)) == NULL || mapi_error(_mid)) {
 		if (table_hdl) {
 			mapi_explain_query(table_hdl, stderr);
@@ -257,8 +259,8 @@ static int mal_help(int cnt, int key){
 		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
 		mapi_fetch_row(table_hdl);
 		name = mapi_fetch_field(table_hdl, 0);
-		if ( name )
-			printf("%s\n",name);
+		if (name)
+			printf("%s\n", name);
 	}
 	return key;
 }
@@ -273,9 +275,9 @@ mal_command_generator(const char *text, int state)
 	static MapiHdl table_hdl;
 	char *name, buf[BUFSIZ];
 
-	/* we pick our own portion of the linebuffer*/
-	text= rl_line_buffer+strlen(rl_line_buffer)-1;
-	while( text > rl_line_buffer && ! isspace((int) *text)) 
+	/* we pick our own portion of the linebuffer */
+	text = rl_line_buffer + strlen(rl_line_buffer) - 1;
+	while (text > rl_line_buffer && !isspace((int) *text))
 		text--;
 	if (!state) {
 		idx = 0;
@@ -285,7 +287,7 @@ mal_command_generator(const char *text, int state)
 /*	printf("expand test:%s\n",text);
 	printf("currentline:%s\n",rl_line_buffer); */
 
-	while ( mal_commands[idx] && (name = mal_commands[idx++])) {
+	while (mal_commands[idx] && (name = mal_commands[idx++])) {
 #ifdef HAVE_STRNCASECMP
 		if (strncasecmp(name, text, len) == 0)
 #else
@@ -296,18 +298,19 @@ mal_command_generator(const char *text, int state)
 	/* try the server to answer */
 	if (!state) {
 		char cmd[BUFSIZ], *c;
-		c= strstr(text,":=");
-		if(c) text= c+2;
-		while(isspace((int)*text) )
+		c = strstr(text, ":=");
+		if (c)
+			text = c + 2;
+		while (isspace((int) *text))
 			text++;
-		c= strchr(text,'.');
-		if( c == NULL)
-			snprintf(cmd,BUFSIZ,"%s.*(",text);
+		c = strchr(text, '.');
+		if (c == NULL)
+			snprintf(cmd, BUFSIZ, "%s.*(", text);
 		else
-			snprintf(cmd,BUFSIZ,"%s(",text);
+			snprintf(cmd, BUFSIZ, "%s(", text);
 		seekpos = 0;
 		len = strlen(cmd);
-		snprintf(buf,BUFSIZ, "manual.completion(\"%s\");", cmd);
+		snprintf(buf, BUFSIZ, "manual.completion(\"%s\");", cmd);
 		if ((table_hdl = mapi_query(_mid, buf)) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
@@ -324,7 +327,7 @@ mal_command_generator(const char *text, int state)
 		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
 		mapi_fetch_row(table_hdl);
 		name = mapi_fetch_field(table_hdl, 0);
-		if ( name )
+		if (name)
 			return strdup(name);
 	}
 
@@ -360,7 +363,7 @@ continue_completion(rl_completion_func_t * func)
 void
 init_readline(Mapi mid, char *lang, int save_history)
 {
-	language= lang;
+	language = lang;
 	_mid = mid;
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MapiClient";

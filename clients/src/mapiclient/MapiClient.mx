@@ -154,7 +154,7 @@ enum modes {
 
 static enum modes mode = NOLANGUAGE;
 static stream *toConsole;
-static stream *toConsole_raw;	       /* toConsole without iconv conversion */
+static stream *toConsole_raw;	/* toConsole without iconv conversion */
 static stream *stdout_stream;
 static stream *stderr_stream;
 static FILE *fromConsole = NULL;
@@ -200,7 +200,7 @@ typedef long timertype;
 static timertype t0, t1;	/* used for timing */
 static char *mark, *mark2;
 
-#define UTF8BOM		"\xEF\xBB\xBF"  /* UTF-8 encoding of Unicode BOM */
+#define UTF8BOM		"\xEF\xBB\xBF"	/* UTF-8 encoding of Unicode BOM */
 #define UTF8BOMLENGTH	3	/* length of above */
 
 /* Pagination and simple ASCII-based rendering is provided for SQL
@@ -227,7 +227,7 @@ enum modifiers {
 	NOmodifier,
 	DEBUGmodifier
 };
-static enum modifiers specials = NOmodifier; 
+static enum modifiers specials = NOmodifier;
 /* set when we see DEBUG (only if mode == SQL).  Also retain these
  * modes until after you have received the answer. */
 
@@ -253,13 +253,13 @@ static char *nullstring = default_nullstring;
 # endif
 #endif
 #ifdef HAVE_STROPTS_H
-#include <stropts.h> /* ioctl */
+#include <stropts.h>		/* ioctl */
 #endif
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
 #ifdef HAVE_TERMIOS_H
-#include <termios.h> /* TIOCGWINSZ/TIOCSWINSZ */
+#include <termios.h>		/* TIOCGWINSZ/TIOCSWINSZ */
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
@@ -272,7 +272,7 @@ gettime(void)
 	/* Return the time in milliseconds since an epoch.  The epoch
 	   is roughly the time this program started. */
 #ifdef HAVE_QUERYPERFORMANCECOUNTER
-	static LARGE_INTEGER freq, start; /* automatically initialized to 0 */
+	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */
 	LARGE_INTEGER ctr;
 
 	if (start.QuadPart == 0 &&
@@ -286,26 +286,26 @@ gettime(void)
 #endif
 #ifdef HAVE_GETTIMEOFDAY
 	{
-	static struct timeval tpbase;  /* automatically initialized to 0 */
-	struct timeval tp;
+		static struct timeval tpbase;	/* automatically initialized to 0 */
+		struct timeval tp;
 
-	if (tpbase.tv_sec == 0)
-		gettimeofday(&tpbase, NULL);
-	gettimeofday(&tp, NULL);
-	tp.tv_sec -= tpbase.tv_sec;
-	return (timertype) tp.tv_sec * 1000000 + (timertype) tp.tv_usec;
+		if (tpbase.tv_sec == 0)
+			gettimeofday(&tpbase, NULL);
+		gettimeofday(&tp, NULL);
+		tp.tv_sec -= tpbase.tv_sec;
+		return (timertype) tp.tv_sec * 1000000 + (timertype) tp.tv_usec;
 	}
 #else
 #ifdef HAVE_FTIME
 	{
-	static struct timeb tbbase;  /* automatically initialized to 0 */
-	struct timeb tb;
+		static struct timeb tbbase;	/* automatically initialized to 0 */
+		struct timeb tb;
 
-	if (tbbase.time == 0)
-		ftime(&tbbase);
-	ftime(&tb);
-	tb.time -= tbbase.time;
-	return (timertype) tb.time * 1000000 + (timertype) tb.millitm * 1000;
+		if (tbbase.time == 0)
+			ftime(&tbbase);
+		ftime(&tb);
+		tb.time -= tbbase.time;
+		return (timertype) tb.time * 1000000 + (timertype) tb.millitm * 1000;
 	}
 #endif
 #endif
@@ -419,7 +419,7 @@ utf8skip(char *s, size_t i)
 	}
 	return s;
 }
-	
+
 static int
 SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 {
@@ -442,7 +442,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 	do {
 		more = 0;
 		for (i = 0; i < fields; i++) {
-			if (rest[i] == NULL || *rest[i] == 0) 
+			if (rest[i] == NULL || *rest[i] == 0)
 				stream_printf(toConsole, "%c %*s ",
 					      first ? '|' : ':', len[i], "");
 			else {
@@ -459,24 +459,37 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 							;
 					if (t == rest[i] && !isspace((int) *t))
 						t = utf8skip(rest[i], len[i]);
-					stream_printf(toConsole, "%c", first ? '|' : ':');
+					stream_printf(toConsole, "%c",
+						      first ? '|' : ':');
 					if (numeric[i])
-						stream_printf(toConsole, "%*s", (int) (len[i] - (ulen - utf8strlen(t))), "");
-					stream_printf(toConsole, " %.*s ", (int) (t - rest[i]), rest[i]);
+						stream_printf(toConsole, "%*s",
+							      (int) (len[i] - (ulen - utf8strlen(t))),
+							      "");
+					stream_printf(toConsole, " %.*s ",
+						      (int) (t - rest[i]),
+						      rest[i]);
 					if (!numeric[i])
-						stream_printf(toConsole, "%*s", (int) (len[i] - (ulen - utf8strlen(t))), "");
+						stream_printf(toConsole, "%*s",
+							      (int) (len[i] - (ulen - utf8strlen(t))),
+							      "");
 					while (isspace((int) *t))
 						t++;
 					rest[i] = *t ? t : 0;
 					if (rest[i])
 						more = 1;
 				} else {
-					stream_printf(toConsole, "%c", first ? '|' : ':');
+					stream_printf(toConsole, "%c",
+						      first ? '|' : ':');
 					if (numeric[i])
-						stream_printf(toConsole, "%*s", (int) (len[i] - ulen), "");
-					stream_printf(toConsole, " %s ", rest[i]);
+						stream_printf(toConsole, "%*s",
+							      (int) (len[i] - ulen),
+							      "");
+					stream_printf(toConsole, " %s ",
+						      rest[i]);
 					if (!numeric[i])
-						stream_printf(toConsole, "%*s", (int) (len[i] - ulen), "");
+						stream_printf(toConsole, "%*s",
+							      (int) (len[i] - ulen),
+							      "");
 					rest[i] = 0;
 				}
 			}
@@ -504,9 +517,9 @@ XMLprdata(const char *val)
 			stream_printf(toConsole_raw, "&quot;");
 		else if (*val == '\'')
 			stream_printf(toConsole_raw, "&apos;");
-		else if ((*val & 0xFF) < 0x20)  /* control character */
+		else if ((*val & 0xFF) < 0x20)	/* control character */
 			stream_printf(toConsole_raw, "&#%d;", *val & 0xFF);
-		else if ((*val & 0x80) != 0 /* && encoding != NULL */) {
+		else if ((*val & 0x80) != 0 /* && encoding != NULL */ ) {
 			int n, m;
 			int c = *val & 0x7F;
 
@@ -538,13 +551,14 @@ XMLrenderer(MapiHdl hdl)
 	/* we must use toConsole_raw since the XML file is encoded in UTF-8 */
 	stream_flush(toConsole);
 	stream_printf(toConsole_raw, "<?xml version='1.0' encoding='UTF-8'?>\n");
-	stream_printf(toConsole_raw, "<!DOCTYPE table [\n"
-		" <!ELEMENT table (row)*>\n"			/* a table consists of zero or more rows */
-		" <!ELEMENT row (column)+>\n"			/* a row consists of one or more columns */
-		" <!ELEMENT column (#PCDATA)>\n"
-		" <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
-		" <!ATTLIST column name CDATA #IMPLIED\n"	/* a column may have a name */
-		"                  isnull (true|false) 'false'>]>\n");
+	stream_printf(toConsole_raw,
+		      "<!DOCTYPE table [\n"
+		      " <!ELEMENT table (row)*>\n" /* a table consists of zero or more rows */
+		      " <!ELEMENT row (column)+>\n"	/* a row consists of one or more columns */
+		      " <!ELEMENT column (#PCDATA)>\n"
+		      " <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
+		      " <!ATTLIST column name CDATA #IMPLIED\n"	/* a column may have a name */
+		      "                  isnull (true|false) 'false'>]>\n");
 	stream_printf(toConsole_raw, "<table");
 	name = mapi_get_table(hdl, 0);
 	if (name != NULL && *name != 0)
@@ -589,7 +603,8 @@ CSVrenderer(MapiHdl hdl)
 			if (s == NULL)
 				s = nullstring == default_nullstring ? "" : nullstring;
 			if (strchr(s, *sep) != NULL || strchr(s, '\n') != NULL || strchr(s, '"') != NULL) {
-				stream_printf(toConsole, "%s\"", i == 0 ? "" : sep);
+				stream_printf(toConsole, "%s\"",
+					      i == 0 ? "" : sep);
 				while (*s) {
 					switch (*s) {
 					case '\n':
@@ -617,7 +632,8 @@ CSVrenderer(MapiHdl hdl)
 				}
 				stream_write(toConsole, "\"", 1, 1);
 			} else
-				stream_printf(toConsole, "%s%s", i == 0 ? "" : sep, s ? s : "");
+				stream_printf(toConsole, "%s%s",
+					      i == 0 ? "" : sep, s ? s : "");
 		}
 		stream_printf(toConsole, "\n");
 	}
@@ -681,7 +697,7 @@ classify(const char *s, size_t l)
 	   11 - fixed or floating point number followed by 'LL' (dbl)
 	   12 - integer followed by '@'
 	   13 - valid OID (integer followed by '@0')
-	*/
+	 */
 	int state = 0;
 
 	if ((l == 4 && strcmp(s, "true") == 0) ||
@@ -690,7 +706,7 @@ classify(const char *s, size_t l)
 	while (l != 0) {
 		if (*s == 0 || !isascii(*s))
 			return "str";
-		if (isdigit((int)*s)) {
+		if (isdigit((int) *s)) {
 			switch (state) {
 			case 0:
 			case 1:
@@ -729,7 +745,7 @@ classify(const char *s, size_t l)
 				return "str";
 		} else if (*s == '@') {
 			if (state == 2)
-				state = 12; 	/* OID marker */
+				state = 12;	/* OID marker */
 			else
 				return "str";
 		} else if (*s == 'L') {
@@ -808,8 +824,8 @@ TESTrenderer(MapiHdl hdl)
 				 /* NULL byte in string? */
 				 strlen(s) < l ||
 				 /* start or end with white space? */
-				 (isascii(*s) && isspace((int)*s)) ||
-				 (isascii(s[l - 1]) && isspace((int)s[l - 1])) ||
+				 (isascii(*s) && isspace((int) *s)) ||
+				 (isascii(s[l - 1]) && isspace((int) s[l - 1])) ||
 				 /* a bunch of geom types */
 				 strcmp(tp, "curve") == 0 ||
 				 strcmp(tp, "geometry") == 0 ||
@@ -839,7 +855,9 @@ TESTrenderer(MapiHdl hdl)
 						break;
 					default:
 						if ((unsigned char) *s < ' ')
-							stream_printf(toConsole, "\\%03o", (int) (unsigned char) *s);
+							stream_printf(toConsole,
+								      "\\%03o",
+								      (int) (unsigned char) *s);
 						else
 							stream_write(toConsole, s, 1, 1);
 						break;
@@ -987,7 +1005,7 @@ SQLrenderer(MapiHdl hdl)
 				if (s != NULL) {
 					size_t l = strlen(s);
 					assert(l <= INT_MAX);
-					hdr[i] = (int)l;
+					hdr[i] = (int) l;
 				} else {
 					hdr[i] = 0;
 				}
@@ -1103,7 +1121,7 @@ SQLrenderer(MapiHdl hdl)
 						memmove(p, p + 1, strlen(p));
 						break;
 					default:
-						 /* replace with ' ' */
+						/* replace with ' ' */
 						*p = ' ';
 						break;
 					}
@@ -1180,7 +1198,7 @@ setWidth(void)
 			pagewidth = ws.ws_col;
 		else
 #endif
-		pagewidth = DEFWIDTH;
+			pagewidth = DEFWIDTH;
 	}
 }
 
@@ -1261,43 +1279,51 @@ format_result(Mapi mid, MapiHdl hdl)
 		}
 
 		switch (mapi_get_querytype(hdl)) {
-			case Q_BLOCK:
-			case Q_PARSE:
-				/* should never see these */
-				continue;
-			case Q_UPDATE:
-				if (formatter == RAWformatter ||
-				    formatter == TESTformatter)
-					stream_printf(toConsole, "[ " LLFMT "\t]\n",
-							mapi_rows_affected(hdl));
-				else {
-					aff = mapi_rows_affected(hdl);
-					lid = mapi_get_last_id(hdl);
-					if (lid != -1) {
-						stream_printf(toConsole, LLFMT " affected row%s, "
-								"last generated key: " LLFMT "\n",
-								aff, (aff == 1 ? "" : "s"), lid);
-					} else {
-						stream_printf(toConsole, LLFMT " affected row%s\n",
-								aff, (aff == 1 ? "" : "s"));
-					}
+		case Q_BLOCK:
+		case Q_PARSE:
+			/* should never see these */
+			continue;
+		case Q_UPDATE:
+			if (formatter == RAWformatter ||
+			    formatter == TESTformatter)
+				stream_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
+			else {
+				aff = mapi_rows_affected(hdl);
+				lid = mapi_get_last_id(hdl);
+				if (lid != -1) {
+					stream_printf(toConsole,
+						      LLFMT " affected row%s, "
+						      "last generated key: " LLFMT "\n",
+						      aff,
+						      (aff == 1 ? "" : "s"),
+						      lid);
+				} else {
+					stream_printf(toConsole,
+						      LLFMT " affected row%s\n",
+						      aff,
+						      (aff == 1 ? "" : "s"));
 				}
-				continue;
-			case Q_SCHEMA:
-				if (formatter == TABLEformatter)
-					stream_printf(toConsole, "operation successful\n");
-				continue;
-			case Q_TRANS:
-				if (formatter == TABLEformatter)
-					stream_printf(toConsole, "auto commit mode: %s\n",
-							mapi_get_autocommit(mid) ? "on" : "off");
-				continue;
-			case Q_PREPARE:
-				if (formatter == TABLEformatter)
-					stream_printf(toConsole, "execute prepared statement "
-							"using: EXEC %d(...)\n", mapi_get_tableid(hdl));
-			case Q_TABLE:
-				break;
+			}
+			continue;
+		case Q_SCHEMA:
+			if (formatter == TABLEformatter)
+				stream_printf(toConsole,
+					      "operation successful\n");
+			continue;
+		case Q_TRANS:
+			if (formatter == TABLEformatter)
+				stream_printf(toConsole,
+					      "auto commit mode: %s\n",
+					      mapi_get_autocommit(mid) ? "on" : "off");
+			continue;
+		case Q_PREPARE:
+			if (formatter == TABLEformatter)
+				stream_printf(toConsole,
+					      "execute prepared statement "
+					      "using: EXEC %d(...)\n",
+					      mapi_get_tableid(hdl));
+		case Q_TABLE:
+			break;
 		}
 
 		oldpagewidth = pagewidth;
@@ -1347,13 +1373,14 @@ format_result(Mapi mid, MapiHdl hdl)
 			}
 		}
 		pagewidth = oldpagewidth;
-	} while (!stream_errnr(toConsole) && (rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
+	} while (!stream_errnr(toConsole) &&
+		 (rc = mapi_needmore(hdl)) == MOK &&
+		 (rc = mapi_next_result(hdl)) == 1);
 	if (stream_errnr(toConsole)) {
 		stream_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
 		errseen = 1;
 	}
-
 #ifdef HAVE_POPEN
 	end_pager(saveFD, saveFD_raw);
 #endif
@@ -1420,7 +1447,7 @@ doFile(Mapi mid, const char *file)
 	MapiHdl hdl = NULL;
 	MapiMsg rc = MOK;
 	int bufsize = 0;
-	int xquery_sep = 0;    /* we saw an XQuery separator (<>\n) */
+	int xquery_sep = 0;	/* we saw an XQuery separator (<>\n) */
 	int first = 1;		/* first line processing */
 	size_t skip;
 
@@ -1455,7 +1482,7 @@ doFile(Mapi mid, const char *file)
 				}
 				length = 0;
 				if (hdl == NULL)
-					break;  /* nothing more to do */
+					break;	/* nothing more to do */
 			} else {
 				length = strlen(buf);
 			}
@@ -1484,7 +1511,7 @@ doFile(Mapi mid, const char *file)
 		if (first &&
 		    length >= UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0)
-			skip = UTF8BOMLENGTH; /* skip Byte Order Mark (BOM) */
+			skip = UTF8BOMLENGTH;	/* skip Byte Order Mark (BOM) */
 		else
 			skip = 0;
 		first = 0;
@@ -1555,9 +1582,9 @@ showCommands(void)
 		stream_printf(toConsole, "\nSession commands:\n");
 		stream_printf(toConsole, "<>      - send query to server (or %s)\n",
 #ifdef WIN32
-			"CTRL-Z"
+			      "CTRL-Z"
 #else
-			"CTRL-D"
+			      "CTRL-D"
 #endif
 		    );
 	}
@@ -1649,7 +1676,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #endif
 			if (buf != oldbuf)
 				free(buf);
-			buf = oldbuf; 
+			buf = oldbuf;
 			line = fgets(buf, BUFSIZ, fp);
 		}
 		if (prompt) {
@@ -1671,15 +1698,16 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			buf = line;
 		} else
 #endif
-		if (line != NULL &&
+			if (line != NULL &&
 #ifdef HAVE_ICONV
-		    encoding == NULL &&
+			    encoding == NULL &&
 #endif
-		    first &&
-		    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0)
-			line += UTF8BOMLENGTH;  /* skip Byte Order Mark (BOM) */
+			    first &&
+			    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0)
+			line += UTF8BOMLENGTH;	/* skip Byte Order Mark (BOM) */
 		first = 0;
-		if (line == NULL || (mode == XQUERY && line[0] == '<' && line[1] == '>')) {
+		if (line == NULL ||
+		    (mode == XQUERY && line[0] == '<' && line[1] == '>')) {
 			/* end of file */
 			if (hdl == NULL) {
 				if (line != NULL)
@@ -1696,7 +1724,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		if (hdl == NULL && length > 0 && line[length - 1] == '\n') {
 			/* test for special commands */
 			if (mode != MAL)
-				while (length > 0 && (*line & ~0x7F) == 0 && isspace((int) *line)) {
+				while (length > 0 &&
+				       (*line & ~0x7F) == 0 &&
+				       isspace((int) *line)) {
 					line++;
 					length--;
 				}
@@ -1770,26 +1800,25 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					} else {
 						/* get all table names in current schema */
 						if ((hdl = mapi_query(mid,
-									"SELECT \"t\".\"name\", \"t\".\"type\", "
-									"\"s\".\"name\" "
-									"FROM \"sys\".\"tables\" \"t\", "
-									"\"sys\".\"schemas\" \"s\" "
-									"WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
-									"AND \"s\".\"name\" = \"current_schema\" "
-									"AND \"t\".\"system\" = false "
-									"AND \"t\".\"temporary\" = 0 "
-									"ORDER BY \"t\".\"name\"")) != NULL &&
-						    mapi_error(mid) == MOK)
-						{
+								      "SELECT \"t\".\"name\", \"t\".\"type\", "
+								      "\"s\".\"name\" "
+								      "FROM \"sys\".\"tables\" \"t\", "
+								      "\"sys\".\"schemas\" \"s\" "
+								      "WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
+								      "AND \"s\".\"name\" = \"current_schema\" "
+								      "AND \"t\".\"system\" = false "
+								      "AND \"t\".\"temporary\" = 0 "
+								      "ORDER BY \"t\".\"name\"")) != NULL &&
+						    mapi_error(mid) == MOK) {
 							char *type, *name, *schema;
 							while (fetch_row(hdl) == 3) {
 								name = mapi_fetch_field(hdl, 0);
 								type = mapi_fetch_field(hdl, 1);
 								schema = mapi_fetch_field(hdl, 2);
 								stream_printf(toConsole,
-										"%-6s  %s.%s\n",
-										*type == '1' ? "VIEW" : "TABLE",
-										schema, name);
+									      "%-6s  %s.%s\n",
+									      *type == '1' ? "VIEW" : "TABLE",
+									      schema, name);
 							}
 						}
 						mapi_close_handle(hdl);
@@ -1797,7 +1826,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					}
 					continue;
 
-				case 'D': {
+				case 'D':{
 #ifdef HAVE_POPEN
 					stream *saveFD, *saveFD_raw;
 #endif
@@ -2159,8 +2188,9 @@ main(int argc, char **argv)
 			if (stat(cfile, &statb) == 0) {
 				config = open_rastream(cfile);
 			} else {
-				stream_printf(stderr_stream, "failed to open file '%s': %s\n",
-						cfile, strerror(errno));
+				stream_printf(stderr_stream,
+					      "failed to open file '%s': %s\n",
+					      cfile, strerror(errno));
 			}
 		}
 	}
@@ -2172,12 +2202,11 @@ main(int argc, char **argv)
 		int line = 0;
 		while ((len = stream_readline(config, buf, sizeof(buf) - 1)) > 0) {
 			line++;
-			buf[len - 1] = '\0'; /* drop newline */
+			buf[len - 1] = '\0';	/* drop newline */
 			if (buf[0] == '#' || buf[0] == '\0')
 				continue;
 			if ((q = strchr(buf, '=')) == NULL) {
-				stream_printf(stderr_stream, "%s:%d: syntax error: %s\n",
-						stream_name(config), line, buf);
+				stream_printf(stderr_stream, "%s:%d: syntax error: %s\n", stream_name(config), line, buf);
 				continue;
 			}
 			*q++ = '\0';
@@ -2185,15 +2214,13 @@ main(int argc, char **argv)
 			 * a default, hence I only do things I think are useful
 			 * for now, needs a better solution */
 			if (strcmp(buf, "user") == 0) {
-				user = strdup(q); /* leak */
+				user = strdup(q);	/* leak */
 				q = NULL;
-			} else if (strcmp(buf, "password") == 0 ||
-					strcmp(buf, "passwd") == 0)
-			{
-				passwd = strdup(q); /* leak */
+			} else if (strcmp(buf, "password") == 0 || strcmp(buf, "passwd") == 0) {
+				passwd = strdup(q);	/* leak */
 				q = NULL;
 			} else if (strcmp(buf, "language") == 0) {
-				language = strdup(q); /* leak */
+				language = strdup(q);	/* leak */
 				if (strcmp(language, "sql") == 0) {
 					mode = SQL;
 					q = NULL;
@@ -2205,25 +2232,30 @@ main(int argc, char **argv)
 					q = NULL;
 				} else {
 					/* make sure we don't set garbage */
-					stream_printf(stderr_stream, "%s:%d: unsupported "
-							"language: %s\n",
-							stream_name(config), line, q);
+					stream_printf(stderr_stream,
+						      "%s:%d: unsupported "
+						      "language: %s\n",
+						      stream_name(config),
+						      line, q);
 					free(language);
 					language = NULL;
 					q = NULL;
 				}
 			} else if (strcmp(buf, "save_history") == 0) {
-				if (strcmp(q, "true") == 0 || strcmp(q, "on") == 0) {
+				if (strcmp(q, "true") == 0 ||
+				    strcmp(q, "on") == 0) {
 					save_history = 1;
 					q = NULL;
-				} else if (strcmp(q, "false") == 0 || strcmp(q, "off") == 0) {
+				} else if (strcmp(q, "false") == 0 ||
+					   strcmp(q, "off") == 0) {
 					save_history = 0;
 					q = NULL;
 				}
 			}
 			if (q != NULL)
-				stream_printf(stderr_stream, "%s:%d: unknown property: %s\n",
-						stream_name(config), line, buf);
+				stream_printf(stderr_stream,
+					      "%s:%d: unknown property: %s\n",
+					      stream_name(config), line, buf);
 		}
 		stream_destroy(config);
 	}
@@ -2236,7 +2268,8 @@ main(int argc, char **argv)
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:p:s:tXu:H?", long_options, &option_index)) != -1) {
+				"w:r:p:s:tXu:H?",
+				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
 #ifdef HAVE_POPEN
@@ -2263,8 +2296,7 @@ main(int argc, char **argv)
 		case 'l':
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 ||
-			    strcmp(optarg, "sq") == 0 ||
-			    strcmp(optarg, "s") == 0) {
+			    strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0) {
 				language = "sql";
 				mode = SQL;
 			} else if (strcmp(optarg, "mil") == 0 ||
@@ -2299,7 +2331,7 @@ main(int argc, char **argv)
 			user_set_as_flag = 1;
 			break;
 		case 'f':
-			output = strdup(optarg); /* output format */
+			output = strdup(optarg);	/* output format */
 			break;
 		case 'I':
 			input = optarg;
@@ -2368,7 +2400,6 @@ main(int argc, char **argv)
 		fprintf(stderr, "--input (-I) and --interactive (-i) cannot both be specified\n\n");
 		usage(argv[0]);
 	}
-
 #ifdef HAVE_ICONV
 #ifdef HAVE_NL_LANGINFO
 	if (encoding == NULL)
@@ -2390,7 +2421,7 @@ main(int argc, char **argv)
 		if ((cd_in = iconv_open("utf-8", encoding)) == (iconv_t) -1)
 			fprintf(stderr, "%s: warning: cannot convert UTF-8 to local character set %s\n", argv[0], encoding);
 	}
-#endif	/* HAVE_ICONV */
+#endif /* HAVE_ICONV */
 
 	/* when config file would provide defaults */
 	if (user_set_as_flag)
@@ -2440,13 +2471,8 @@ main(int argc, char **argv)
 
 	/* default formatter depends on whether we're interactive */
 	if (formatter == NOformatter) {
-		if (
-				(interactive || (!has_fileargs && command == NULL))
-				&& interactive_stdin
-				&& mode != XQUERY
-				&& mode != MAL
-		   )
-		{
+		if ((interactive || (!has_fileargs && command == NULL)) &&
+		    interactive_stdin && mode != XQUERY && mode != MAL) {
 			formatter = TABLEformatter;
 		} else {
 			formatter = RAWformatter;
@@ -2472,20 +2498,27 @@ main(int argc, char **argv)
 		char *lang;
 
 		switch (mode) {
-			case SQL:     lang = "/SQL";     break;;
-			case XQUERY:  lang = "/XQuery";  break;;
-			default:      lang = "";         break;;
+		case SQL:
+			lang = "/SQL";
+			break;
+		case XQUERY:
+			lang = "/XQuery";
+			break;
+		default:
+			lang = "";
+			break;
 		}
 
-		stream_printf(toConsole, "Welcome to mclient, the MonetDB%s "
-				"interactive terminal\n", lang);
+		stream_printf(toConsole,
+			      "Welcome to mclient, the MonetDB%s "
+			      "interactive terminal\n", lang);
 
-		if (mode == SQL && (hdl = mapi_query(mid,
-			"SELECT \"name\", \"value\" "
-				"FROM sys.env() AS env "
-				"WHERE \"name\" IN ('gdk_dbname', 'monet_version')")) != NULL &&
-			mapi_error(mid) == MOK)
-		{
+		if (mode == SQL &&
+		    (hdl = mapi_query(mid,
+				      "SELECT \"name\", \"value\" "
+				      "FROM sys.env() AS env "
+				      "WHERE \"name\" IN ('gdk_dbname', 'monet_version')")) != NULL &&
+		    mapi_error(mid) == MOK) {
 			char dbname[24], m5ver[24];
 			char *name, *val;
 			dbname[0] = m5ver[0] = '\0';
@@ -2502,8 +2535,7 @@ main(int argc, char **argv)
 			}
 			mapi_close_handle(hdl);
 			if (dbname[0] != '\0' && m5ver[0] != '\0')
-				stream_printf(toConsole, "Database: MonetDB v%s, '%s'\n",
-						m5ver, dbname);
+				stream_printf(toConsole, "Database: MonetDB v%s, '%s'\n", m5ver, dbname);
 		}
 		stream_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)
@@ -2526,8 +2558,7 @@ main(int argc, char **argv)
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
 		timerStart();
-		c = doRequest(mid, command,
-				(interactive || (!has_fileargs && command == NULL)));
+		c = doRequest(mid, command, (interactive || (!has_fileargs && command == NULL)));
 		timerEnd();
 	}
 
