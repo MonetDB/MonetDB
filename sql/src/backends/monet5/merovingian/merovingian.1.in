@@ -312,7 +312,7 @@ from functioning properly, an exit code
 .B 1
 is returned.
 .SH FILES
-.I /etc/monetdb5.conf
+.I @MONETDB5_CONFFILE@
 .RS
 The configuration file for MonetDB, located in the system configuration
 directory.
