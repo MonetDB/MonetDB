@@ -2785,8 +2785,13 @@ PFla_xml_qp_property (
 	}
 	nestSpaces[nest] = '\0';
 
-	fprintf (f, "%s<property name=\"%s\" value=\"%s\"",
-			nestSpaces, property.name, property.value);
+	fprintf (f, "%s<property name=\"%s\"",
+			nestSpaces, property.name);
+	if (property.value)
+	{
+	    fprintf (f, " value=\"%s\"",
+			property.value);
+	}
 	if (property.properties)
 	{
 		fprintf (f, ">\n");

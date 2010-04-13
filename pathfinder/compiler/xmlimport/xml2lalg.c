@@ -3013,9 +3013,10 @@ getPFLA_qp_property(
 	char* name =  PFstrdup(
 					  PFxml2la_xpath_getAttributeValueFromElementNode(
 							  nodePtr, "name"));
-	char* value = PFstrdup(
-					  PFxml2la_xpath_getAttributeValueFromElementNode(
-							  nodePtr, "value"));
+
+	char* valueXML = PFxml2la_xpath_getAttributeValueFromElementNode(
+							  nodePtr, "value");
+	char* value = valueXML != NULL ? PFstrdup(valueXML) : NULL;
 
 	PFarray_t*	properties = NULL;
 

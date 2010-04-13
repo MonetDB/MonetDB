@@ -195,8 +195,13 @@ print_property (PFla_pb_item_property_t property, unsigned int nest)
 	}
 	nestSpaces[nest] = '\0';
 
-	fprintf (stdout, "%s<property name=\"%s\" value=\"%s\"",
-			nestSpaces, property.name, property.value);
+	fprintf (stdout, "%s<property name=\"%s\"",
+	    nestSpaces, property.name);
+	if (property.value)
+	{
+	    fprintf (stdout, " value=\"%s\"",
+			property.value);
+	}
 	if (property.properties)
 	{
 		fprintf (stdout, ">\n");
