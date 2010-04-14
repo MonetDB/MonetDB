@@ -13,7 +13,7 @@ stderr of test 'mclient--help` in directory 'src/mapiclient` itself:
 Usage: mclient --language=(sql|xquery|mal|mil) [ options ]
 
 Options are:
- -h hostname | --host=hostname    host to connect to
+ -h hostname | --host=hostname    host or UNIX domain socket to connect to
  -p portnr   | --port=portnr      port to connect to
  -u user     | --user=user        user id
  -d database | --database=database  database to connect to
