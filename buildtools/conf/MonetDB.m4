@@ -491,8 +491,10 @@ if test "x$have_monetdb5" != xno; then
     MONETDB5_MOD_PATH="${libdir}/MonetDB5:${libdir}/MonetDB5/lib:${libdir}/MonetDB5/bin"
     MONETDB5_PREFIX="${prefix}"
     MONETDB5_CONFFILE="${sysconfdir}/monetdb5.conf"
-    # expand ${prefix} in ${sysconfdir} if using the default
-    eval "eval MONETDB5_CONFFILE=${MONETDB5_CONFFILE}"
+    MONETDB5_LOGDIR="${localstatedir}/var/log/MonetDB"
+    # expand ${prefix} if using the default
+    eval "eval MONETDB5_CONFFILE=\"${MONETDB5_CONFFILE}\""
+    eval "eval MONETDB5_LOGDIR=\"${MONETDB5_LOGDIR}\""
   elif test "x$have_monetdb5" != xyes; then
     MONETDB5_CFLAGS=""
     MONETDB5_INCS=""
@@ -502,15 +504,17 @@ if test "x$have_monetdb5" != xno; then
     MONETDB5_MOD_PATH=""
     MONETDB5_PREFIX=""
     MONETDB5_CONFFILE=""
+    MONETDB5_LOGDIR=""
   else
-    MONETDB5_CFLAGS=`$MONETDB5_CONFIG --cflags`
-    MONETDB5_INCS=`$MONETDB5_CONFIG --includes`
-    MONETDB5_INCLUDEDIR=`$MONETDB5_CONFIG --pkgincludedir`
-    MONETDB5_LIBS=`$MONETDB5_CONFIG --libs`
-    MONETDB5_MODS=`$MONETDB5_CONFIG --mods | sed 's/-L\([[^ ]]*\)/& -R\1/g'`
-    MONETDB5_MOD_PATH=`$MONETDB5_CONFIG --modpath`
-    MONETDB5_PREFIX=`$MONETDB5_CONFIG --prefix`
-    MONETDB5_CONFFILE=`$MONETDB5_CONFIG --sysconfdir`/monetdb5.conf
+    MONETDB5_CFLAGS="`$MONETDB5_CONFIG --cflags`"
+    MONETDB5_INCS="`$MONETDB5_CONFIG --includes`"
+    MONETDB5_INCLUDEDIR="`$MONETDB5_CONFIG --pkgincludedir`"
+    MONETDB5_LIBS="`$MONETDB5_CONFIG --libs`"
+    MONETDB5_MODS="`$MONETDB5_CONFIG --mods | sed 's/-L\([[^ ]]*\)/& -R\1/g'`"
+    MONETDB5_MOD_PATH="`$MONETDB5_CONFIG --modpath`"
+    MONETDB5_PREFIX="`$MONETDB5_CONFIG --prefix`"
+    MONETDB5_CONFFILE="`$MONETDB5_CONFIG --sysconfdir`/monetdb5.conf"
+    MONETDB5_LOGDIR="`$MONETDB5_CONFIG --localstatedir`/log/MonetDB"
   fi
   AC_DEFINE_UNQUOTED(MONETDB5_CONFFILE, "$MONETDB5_CONFFILE", [MonetDB5 config file location])
   AC_DEFINE_UNQUOTED(MONETDB5_PREFIX, "$MONETDB5_PREFIX", [MonetDB5 configured prefix])
