@@ -2548,7 +2548,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr q;
 	static str sqlRef = 0, bindRef = 0, bind_idxRef = 0, bind_dbatRef = 0;
 	int bid;
-	BAT *bref;
+	BAT *bref = NULL;
 
 	if (sqlRef == 0)
 		sqlRef = putName("sql",3);
