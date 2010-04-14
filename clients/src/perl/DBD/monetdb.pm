@@ -5,7 +5,7 @@ use sigtrap;
 use DBI();
 use MonetDB::CLI();
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 our $drh = undef;
 
 require DBD::monetdb::GetInfo;
@@ -670,6 +670,8 @@ sub DESTROY {
 
 1;
 
+__END__
+
 =head1 NAME
 
 DBD::monetdb - MonetDB Driver for DBI
@@ -783,6 +785,7 @@ index 0 and 1.
   $dsn = 'dbi:monetdb:';
   $dsn = "dbi:monetdb:host=$host";
   $dsn = "dbi:monetdb:host=$host;port=$port";
+  $dsn = "dbi:monetdb:host=$host;database=$database";
 
   $dbh = DBI->connect($dsn, $user, $password);
 
@@ -794,7 +797,11 @@ The default host to connect to is 'localhost', i.e. your workstation.
 
 =item port
 
-The port where MonetDB daemon listens to. Default for MonetDB is 50000.
+The port the MonetDB daemon listens to. Default for MonetDB is 50000.
+
+=item database
+
+The name of the database to connect to.
 
 =back
 
