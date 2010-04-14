@@ -161,9 +161,10 @@ monet_daemon=no
 # variables below, one can specify messages and/or errors to be logged
 # to a file instead.  It is legitimate to have both mero_msglog and
 # mero_errlog pointing to the same file, as in the default below.
-# Unsetting below defaults will make merovingian log to the screen.
-mero_msglog=@localstatedir@@DIRSEP@log@DIRSEP@MonetDB@DIRSEP@merovingian.log
-mero_errlog=@localstatedir@@DIRSEP@log@DIRSEP@MonetDB@DIRSEP@merovingian.log
+# Setting mero_msglog and/or mero_errlog to the empty string, results in
+# merovingian to log to the screen.
+#mero_msglog=@localstatedir@@DIRSEP@log@DIRSEP@MonetDB@DIRSEP@merovingian.log
+#mero_errlog=@localstatedir@@DIRSEP@log@DIRSEP@MonetDB@DIRSEP@merovingian.log
 #
 # Merovingian forks itself to detach into the background.  It stores its
 # pid in the following file, which can be used to stop Merovingian
