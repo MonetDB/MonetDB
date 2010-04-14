@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MEROVINGIAN 1 "SEPTEMBER 2009" Application "MonetDB Applications"
+.TH MEROVINGIAN 1 "APRIL 2010" Application "MonetDB Applications"
 .SH NAME
 merovingian \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -22,7 +22,7 @@ on Solaris systems, as part of a system startup.
 A
 .B merovingian
 instance manages one local cluster based on the dbfarm specified in the
-.I /etc/monetdb5.conf
+.I @MONETDB5_CONFFILE@
 config file.  Within this local cluster
 .B merovingian
 takes care of starting up databases when necessary, and stopping them
@@ -36,7 +36,7 @@ process, started on the fly when necessary.
 When started,
 .B merovingian
 runs in the background, sending log messages to
-.IR /var/log/merovingian.log ,
+.IR @MERO_LOG@ ,
 until being sent a stop, terminate or interrupt signal.  All arguments
 given when starting
 .B merovingian
@@ -57,15 +57,17 @@ controlled by the remote
 process.
 .SH CONFIGURATION
 .B merovingian
-defaults to use the configuration file that was placed in the file
+defaults to use the configuration file
+.I @MONETDB5_CONFFILE@
+that was placed in the file
 system during installation to control its behaviour.  If the environment
 variable
 .I MONETDB5CONF
 is set,
 .B merovingian
-uses the value of this variable as configuration file to load.  In the
-configuration file the following options can be specified.  Most are
-typically to be found under the
+uses the value of this variable as configuration file to load instead.
+In the configuration file the following options can be specified.  Most
+are typically to be found under the
 .I Merovingian
 section in the default configuration file.
 .IP gdk_dbfarm
@@ -74,7 +76,7 @@ The value of this setting determines which local cluster
 will monitor.
 .IP mero_msglog
 .IP mero_errlog
-When both options are unset,
+When both options are set to an empty string,
 .B merovingian
 logs messages and errors to the stdout and stderr channels on the
 caller's console.  By setting one or both of the
@@ -86,7 +88,8 @@ instead.  It is legitimate to have both
 .B mero_msglog
 and
 .B mero_errlog
-pointing to the same file.
+pointing to the same file, which is the default
+.RI ( @MERO_LOG@ ).
 .IP mero_pidfile
 Location pointing to the pidfile used by
 .B merovingian
@@ -317,7 +320,7 @@ is returned.
 The configuration file for MonetDB, located in the system configuration
 directory.
 .RE
-.I /var/log/merovingian.log
+.I @MERO_LOG@
 .RS
 The configuration file default location to write log output to.
 .SH "SEE ALSO"

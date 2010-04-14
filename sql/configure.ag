@@ -124,6 +124,8 @@ AC_CHECK_HEADERS([fcntl.h stropts.h sys/ioctl.h sys/un.h termios.h])
 AC_CHECK_HEADERS([uuid/uuid.h])
 AC_SEARCH_LIBS([uuid_generate], [uuid])
 AC_SUBST([MONETDB5_CONFFILE])
+AC_SUBST([MERO_LOG], [$MONETDB5_LOGDIR/merovingian.log])
+AC_DEFINE_UNQUOTED([MERO_LOG], ["$MONETDB5_LOGDIR/merovingian.log"], [where Merovingian will store its logs by default])
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"

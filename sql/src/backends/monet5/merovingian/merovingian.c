@@ -449,8 +449,8 @@ main(int argc, char *argv[])
 		{"gdk_dbfarm",         NULL,                       STR},
 		{"gdk_nr_threads",     NULL,                       INT},
 		{"sql_optimizer",      NULL,                       STR},
-		{"mero_msglog",        NULL,                       STR},
-		{"mero_errlog",        NULL,                       STR},
+		{"mero_msglog",        GDKstrdup(MERO_LOG),        STR},
+		{"mero_errlog",        GDKstrdup(MERO_LOG),        STR},
 		{"mero_port",          NULL,                       INT},
 		{"mero_exittimeout",   NULL,                       INT},
 		{"mero_pidfile",       NULL,                       STR},
@@ -534,9 +534,17 @@ main(int argc, char *argv[])
 	kv = findConfKey(ckv, "gdk_dbfarm");
 	dbfarm = replacePrefix(kv ? kv->val : NULL, prefix);
 	kv = findConfKey(ckv, "mero_msglog");
-	_mero_msglogfile = replacePrefix(kv ? kv->val : NULL, prefix);
+	_mero_msglogfile = replacePrefix(kv->val, prefix);
+	if (strcmp(kv->val, "") == 0) { /* has default, must be set */
+		GDKfree(kv->val);
+		kv->val = NULL;
+	}
 	kv = findConfKey(ckv, "mero_errlog");
-	_mero_errlogfile = replacePrefix(kv ? kv->val : NULL, prefix);
+	_mero_errlogfile = replacePrefix(kv->val, prefix);
+	if (strcmp(kv->val, "") == 0) { /* has default, must be set */
+		GDKfree(kv->val);
+		kv->val = NULL;
+	}
 	kv = findConfKey(ckv, "mero_exittimeout");
 	if (kv && kv->val != NULL)
 		_mero_exit_timeout = atoi(kv->val);
