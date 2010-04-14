@@ -36,7 +36,11 @@
 #define HAVE_SQLGETPRIVATEPROFILESTRING 1
 
 /* Define as SQLLEN * or SQLPOINTER depending on the include file */
+#ifdef _WIN64
 #define LENP_OR_POINTER_T SQLLEN *
+#else
+#define LENP_OR_POINTER_T SQLPOINTER
+#endif
 
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 /* #undef HAVE_SYS_IOCTL_H */
