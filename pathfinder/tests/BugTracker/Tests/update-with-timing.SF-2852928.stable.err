@@ -10,6 +10,9 @@ stderr of test 'update-with-timing.SF-2852928` in directory 'tests/BugTracker` i
 # 11:40:58 >  /usr/bin/python update-with-timing.SF-2852928.XQUERY.py update-with-timing.SF-2852928 
 # 11:40:58 >  
 
+#~BeginVariableOutput~#
+Timer      83.995 msec
+#~EndVariableOutput~#
 
 # 11:40:58 >  
 # 11:40:58 >  Done.

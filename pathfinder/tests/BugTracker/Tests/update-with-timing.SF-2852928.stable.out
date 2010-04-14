@@ -32,7 +32,6 @@ Trans      18.834 msec
 Shred      13.006 msec
 Query      15.582 msec
 Print      24.157 msec
-Timer      83.995 msec
 #~EndVariableOutput~#
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><hello lang="en" x="y">
