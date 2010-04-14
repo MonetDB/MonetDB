@@ -114,10 +114,12 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr *old, q;
 	int limit, updstmt = 0;
 	char *recycled;
-	short app_sc = -1, app_tbl = -1, in = 0;
+	short app_sc = -1, in = 0;
+
 
 	(void) cntxt;
 	(void) stk;
+
 	/* watch out, instructions may introduce new variables */
 	limit= mb->stop;
 	old = mb->stmt;
@@ -169,30 +171,29 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					actions++;
 				}
 				if (getModuleId(p) == sqlRef){
-					if (getFunctionId(p) == appendRef){
-						app_sc = getArg(p,2);
-						app_tbl = getArg(p,3);
-					} else {
-						q = newFcnCall(mb,"recycle","reset");
-						pushArgument(mb,q, getArg(p,2));
-						pushArgument(mb,q, getArg(p,3));
-						if (getFunctionId(p) == updateRef)
-							pushArgument(mb,q, getArg(p,4));
+					if (getFunctionId(p) == appendRef ){
+						if ( app_sc >= 0 )
+							continue;
+						else app_sc = getArg(p,2);
 					}
-					actions++;
+					q = newFcnCall(mb,"recycle","reset");
+					pushArgument(mb,q, getArg(p,2));
+					pushArgument(mb,q, getArg(p,3));
+					if (getFunctionId(p) == updateRef)
+						pushArgument(mb,q, getArg(p,4));
 				}
+				actions++;
 			}
 			continue;
 		}
-
 		if( p->token == ENDsymbol || p->barrier == RETURNsymbol ){ 
 			if ( in ){
-				if ( updstmt && app_sc >= 0 ){
+			/*	if ( updstmt && app_sc >= 0 ){
 					q= newFcnCall(mb,"recycle","reset");
 					pushArgument(mb,q, app_sc);
 					pushArgument(mb,q, app_tbl);
 				}
-				(void) newFcnCall(mb,"recycle","epilogue");
+			*/	(void) newFcnCall(mb,"recycle","epilogue");
 				in = 0;
 			}
 			pushInstruction(mb,p);
@@ -314,7 +315,7 @@ The delete and update BATs should not be recycled,
 because they may lead to view dependencies that later interfere
 with the transaction commits.
 @c
-/*	enable recycling of delta-bats
+/* enable recycling of delta-bats
 		if (getModuleId(p)== sqlRef && 
 			(((getFunctionId(p)==bindRef || getFunctionId(p) == putName("bind_idxbat",11)) && 
 				getVarConstant(mb, getArg(p,5)).val.ival != 0) ||

@@ -70,6 +70,7 @@ which inspects the variable table for alternative results.
 #define _DEBUG_RECYCLE_
 #define _DEBUG_RECYCLE_REUSE
 #define _DEBUG_CACHE_
+#define _DEBUG_RESET_
 */
 
 @-
@@ -2439,7 +2440,7 @@ has been detected.
 @c
 static void 
 RECYCLEevict(Client cntxt, bat *bats, int btop){
-	int i,j,k,top = 0;
+	int i,j,k,top = 0, rbid;
 	int action = 1, upd = 0;
 	int *dropped;
 	InstrPtr p;
@@ -2488,8 +2489,13 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 				if ( j >= p->retc ){ 			/* if some argument bat is updated */
 					for (j=0;j<p->retc; j++)	/* mark result bats as dropped */
 					if(getArgType(recycleBlk,p,j)==TYPE_bat || 
-						isaBatType(getArgType(recycleBlk, p,j)) )
-						dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
+						isaBatType(getArgType(recycleBlk, p,j)) ){
+							rbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
+							for (k=0; k<top; k++)
+								if ( dropped[k] == rbid ) break;
+							if ( k == top ) 
+								dropped[top++]= rbid;
+					}
 				}
 
 #ifdef _DEBUG_CACHE_
@@ -2498,7 +2504,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 	                        p->token = NOOPsymbol;
 				cntxt->rcc->recycleRem ++;
 				if ( recycleBlk->profiler[i].counter >1) {
-                	returnCrd(p);
+		                	returnCrd(p);
 				}
 
 #else
@@ -2536,16 +2542,28 @@ instructions dependent on the updated bat.
 @c
 void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j, btop=0;
+	int i,j, btop=0, k;
 	int *b;
 	ValRecord *v;
 	InstrPtr q;
+	static str sqlRef = 0, bindRef = 0, bind_idxRef = 0, bind_dbatRef = 0;
+	int bid;
+	BAT *bref;
 
+	if (sqlRef == 0)
+		sqlRef = putName("sql",3);
+	if (bindRef == 0)
+		bindRef = putName("bind",4);
+	if (bind_idxRef == 0)
+		bind_idxRef = putName("bind_idxbat",11);
+	if (bind_dbatRef == 0)
+		bind_dbatRef = putName("bind_dbat",9);
 
-#ifdef _DEBUG_RECYCLE_
+#ifdef _DEBUG_RESET_
 	stream_printf(cntxt->fdout,"RECYCLE reset\n");
 #else
 	(void) cntxt;
+	(void) bref;
 #endif
 	if( recycleBlk == NULL)
 		return;
@@ -2562,20 +2580,45 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	} else if (p->argc > 2) {
 		for (i=0; i<recycleBlk->stop; i++) {
 			q = getInstrPtr(recycleBlk,i);
+
 #ifdef _DEBUG_CACHE_
                         if ( q->token == NOOPsymbol ) continue;
 #endif
-			if (isBindInstr(q) && getModuleId(q) == putName("sql",3) ){
-				for (j=p->retc; j<p->argc; j++)
-					if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j+1))))
-					break;
-				if (j == p->argc){
-					v = &getVarConstant(recycleBlk,getArg(q,0));
-					if( v->val.bval )
-						b[btop++] = v->val.bval;
+
+			if ( getModuleId(q) != sqlRef ) continue;
+			if ( isBindInstr(q) ){
+#ifdef _DEBUG_RESET_
+				bid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
+				if ( (bref = BBPquickdesc(bid, FALSE)) )
+					stream_printf(cntxt->fdout,"Bid %d, count "LLFMT"\n", bid, BATcount(bref));
+				else stream_printf(cntxt->fdout,"Bid %d, NULL bat ref\n", bid);
+#endif
+				if ( ((getFunctionId(q) == bindRef ||
+					getFunctionId(q) == bind_idxRef ) && 
+					( getVarConstant(recycleBlk, getArg(q,5)).val.ival == 0 )) ||
+					( getFunctionId(q) == bind_dbatRef ) ){
+					for (j=p->retc; j<p->argc; j++)
+						if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j+1))))
+						break;
+					if (j == p->argc){
+						v = &getVarConstant(recycleBlk,getArg(q,0));
+						bid = v->val.bval;
+						if( bid ){
+							for (k=0; k<btop; k++)
+								if ( b[k] == bid ) break;
+							if ( k == btop ) {
+								b[btop++] = bid;
+#ifdef _DEBUG_RESET_
+							stream_printf(cntxt->fdout,"\nMarked for eviction due to update\n ");
+							printInstruction(cntxt->fdout,recycleBlk,0,q, LIST_MAL_ALL);
+							stream_printf(cntxt->fdout,"Bid %d\n ", b[btop-1]);
+#endif
+							}
+						}
+					}
 				}
 			}
-		}
+		} /* loop on recycleBlk */
 	}
 	if (btop){
 		mal_set_lock(recycleLock,"recycle");
