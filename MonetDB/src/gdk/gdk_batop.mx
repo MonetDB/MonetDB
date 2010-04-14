@@ -110,6 +110,8 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		}
 		memcpy(b->@2->vheap->base + @1off, n->@2->vheap->base, n->@2->vheap->size);
 		b->@2->vheap->free = @1off + n->@2->vheap->free;
+		/* flush double-elimination hash table */
+		memset(b->@2->vheap->base, 0, GDK_STRHASHSIZE);
 		if (b->@2->width < SIZEOF_VAR_T &&
 		    ((size_t) 1 << 8 * b->@2->width) < (b->@2->width <= 2 ? (b->@2->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->@2->vheap->size >> GDK_VARSHIFT))) {
 			/* offsets aren't going to fit */
