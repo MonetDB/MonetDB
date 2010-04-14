@@ -172,9 +172,9 @@ monet_daemon=no
 mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
 #
 # In normal use, Merovingian replaces an mserver, and hence listens for
-# connections on the same port as an mserver would do.  For certain
-# configs, however, it may be more suitable to use an alternate port,
-# which can be specified here.
+# connections on the same port as an mserver would do (mapi_port).  For
+# certain configs, however, it may be more suitable to use an alternate
+# port, which can be specified here.
 #mero_port=50000
 #
 # mservers that were started by Merovingian are shut down when the
@@ -187,7 +187,7 @@ mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
 # mserver is shut down, meaning they will live on after the Merovingian
 # has shut down.  The default is to shut down all started mservers with
 # a time-out of 60 seconds.
-#mero_exittimeout=0
+#mero_exittimeout=60
 #
 # Merovingian has two ways in which it can "attach" a connecting client
 # to the target database.  The first method uses a redirect to the
@@ -200,6 +200,10 @@ mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
 # Merovingian on the border of a network to serve requests to nodes in
 # the local (unreachable) network.  Hence, proxy mode is the default.
 # Uncomment the value below to use the first method of using redirects.
+# Note that Merovingian will use an efficient method to connect the
+# client with a local target database when proxy mode is active.  This
+# method is performance wise equal to forwarding, but completely hides
+# the actual way of connecting to the target database, like proxying.
 #mero_doproxy=no
 #
 # Neighbour discovery allows Merovingian to discover other running
@@ -207,8 +211,10 @@ mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
 # locally available databases to others periodically.  The interval used
 # here depends on the time-to-live of the databases before they need to
 # get refreshed.  The default is 10 minutes, which should keep traffic
-# in your network fairly low.  If you add and/or remove databases often,
-# you may want to decrease this value.
+# in your network fairly low.  Additions and removals are processed
+# immediately regardless of this timeout.  If you are in a network
+# environment where links disappear often, you may want to decrease this
+# value to more quickly remove no longer reachable databases.
 #mero_discoveryttl=600
 #
 # Neighbour discovery is done using UDP broadcasts on the port set by
