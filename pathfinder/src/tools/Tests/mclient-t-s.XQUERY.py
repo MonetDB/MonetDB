@@ -9,5 +9,7 @@ def client(args):
     sys.stderr.write(err)
 
 sys.stdout.write('#~BeginVariableOutput~#\n')
+sys.stderr.write('#~BeginVariableOutput~#\n')
 client(['-t', '-s', '(123)'])
 sys.stdout.write('#~EndVariableOutput~#\n')
+sys.stderr.write('#~EndVariableOutput~#\n')

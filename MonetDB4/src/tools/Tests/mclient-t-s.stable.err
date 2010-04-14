@@ -10,6 +10,9 @@ stderr of test 'mclient-t-s` in directory 'src/tools` itself:
 # 15:21:41 >  /usr/bin/python mclient-t-s.MIL.py mclient-t-s 
 # 15:21:41 >  
 
+#~BeginVariableOutput~#
+Timer       0.306 msec 
+#~EndVariableOutput~#
 
 # 15:21:41 >  
 # 15:21:41 >  Done.

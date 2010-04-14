@@ -8,6 +8,6 @@ def client(args):
     sys.stdout.write(out)
     sys.stderr.write(err)
 
-sys.stdout.write('#~BeginVariableOutput~#\n')
+sys.stderr.write('#~BeginVariableOutput~#\n')
 client(['-t', '-s', 'io.print(123);'])
-sys.stdout.write('#~EndVariableOutput~#\n')
+sys.stderr.write('#~EndVariableOutput~#\n')

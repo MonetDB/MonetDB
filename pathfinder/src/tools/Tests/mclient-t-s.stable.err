@@ -10,6 +10,9 @@ stderr of test 'mclient-t-s` in directory 'src/tools` itself:
 # 15:31:23 >  /usr/bin/python mclient-t-s.XQUERY.py mclient-t-s 
 # 15:31:23 >  
 
+#~BeginVariableOutput~#
+Timer      13.835 msec 
+#~EndVariableOutput~#
 
 # 15:31:23 >  
 # 15:31:23 >  Done.

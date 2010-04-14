@@ -24,10 +24,7 @@ Over..
 # 15:21:41 >  /usr/bin/python mclient-t-s.MIL.py mclient-t-s 
 # 15:21:41 >  
 
-#~BeginVariableOutput~#
 [ 123 ]
-Timer       0.351 msec 
-#~EndVariableOutput~#
 
 # 15:21:41 >  
 # 15:21:41 >  Done.

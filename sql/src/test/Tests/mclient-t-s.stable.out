@@ -26,14 +26,11 @@ Over..
 # 19:27:54 >  /usr/bin/python mclient-t-s.SQL.py mclient-t-s 
 # 19:27:54 >  
 
-#~BeginVariableOutput~#
 % . # table_name
 % single_value # name
 % tinyint # type
 % 3 # length
 [ 123	]
-Timer       1.628 msec 
-#~EndVariableOutput~#
 
 # 19:27:54 >  
 # 19:27:54 >  Done.
