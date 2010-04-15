@@ -2021,7 +2021,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 }
 
 static void
-usage(const char *prog)
+usage(const char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s --language=(sql|xquery|mal|mil) [ options ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
@@ -2059,7 +2059,7 @@ usage(const char *prog)
 	fprintf(stderr, " -I docname  | --input=docname    document name, XML document on standard input\n");
 	fprintf(stderr, " -G          | --algebra          use algebra frontend\n");
 	fprintf(stderr, " -g          | --no-algebra       use old frontend\n");
-	exit(-1);
+	exit(xit);
 }
 
 /* hardwired defaults, only used if monet environment cannot be found */
@@ -2347,23 +2347,27 @@ main(int argc, char **argv)
 			save_history = 1;
 			break;
 		case '?':
-			/* fall through */
+			/* a bit of a hack: look at the option that the
+			   current `c' is based on and see if we recognize
+			   it: if -? or --help, exit with 0, else with -1 */
+			usage(argv[0], strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
+			break;
 		default:
-			usage(argv[0]);
+			usage(argv[0], -1);
 		}
 	}
 	/* language value is mandatory */
 	if (mode == NOLANGUAGE) {
 		fprintf(stderr, "Please specify a language option\n\n");
-		usage(argv[0]);
+		usage(argv[0], -1);
 	}
 	if (input != NULL && mode != XQUERY) {
 		fprintf(stderr, "--input (-I) option only with XQuery\n\n");
-		usage(argv[0]);
+		usage(argv[0], -1);
 	}
 	if (input != NULL && interactive) {
 		fprintf(stderr, "--input (-I) and --interactive (-i) cannot both be specified\n\n");
-		usage(argv[0]);
+		usage(argv[0], -1);
 	}
 
 #ifdef HAVE_ICONV
@@ -2394,7 +2398,7 @@ main(int argc, char **argv)
 		passwd = NULL;
 	} else if (passwd_set_as_flag && !user_set_as_flag) {
 		fprintf(stderr, "%s: -P flag can only be used with -u\n\n", argv[0]);
-		usage(argv[0]);
+		usage(argv[0], -1);
 	}
 
 	if (user == NULL)
