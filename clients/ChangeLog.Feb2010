@@ -7,5 +7,7 @@
 - Fixed a problem in the PHP interface where under certain circumstances
   not all data from the server was read, leading to a limited number of rows
   being returned and other weird behavior.
+  This fixes SF bug 2975433.
 - If mclient is called with argument -? or --help, exit with exit code 0.
+  This fixes SF bug 2956574.
 
