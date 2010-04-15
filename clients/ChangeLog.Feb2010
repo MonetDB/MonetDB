@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Thu Apr 15 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Documented the database option in the DSN in the Perl interface.
+  Also incremented the version number of the Perl interface.
 - Fixed a problem in the PHP interface where under certain circumstances
   not all data from the server was read, leading to a limited number of rows
   being returned and other weird behavior.
