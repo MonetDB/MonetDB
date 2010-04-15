@@ -5,6 +5,11 @@
 - Fixed a bug that could cause a crash when string BATs are combined.
   (SF bug 2947763.)
 
+* Sun Apr 11 2010 Niels Nes <niels@cwi.nl>
+- Fixed a potential file leak: under certain conditions, files in the
+  database might not get deleted when they should (they would be
+  deleted when the server restarts).
+
 * Mon Mar 29 2010 Fabian Groffen <fabian@cwi.nl>
 - Fix regression introduced in Feb2010-SP1 causing UDP connections to malfunction, in particular affecting the stethoscope tool.
 
