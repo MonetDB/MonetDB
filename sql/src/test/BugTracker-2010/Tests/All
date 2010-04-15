@@ -4,8 +4,3 @@ order_by_on_single_row_view.SF-2950453
 offset_limited_32bit.SF-2950579
 correlated_update_type_mismatch.SF-2947841
 heap_combine_crash.SF-2947763
-# try these at the end: the first of these causes some sort of
-# corruption which the second test notices (the server doesn't start)
-alter-table-restart-crash.SF-2975018-1
-alter-table-restart-crash.SF-2975018-2
-# don't add anything here until bug for last test is fixed
