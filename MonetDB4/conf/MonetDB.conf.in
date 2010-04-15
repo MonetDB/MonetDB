@@ -97,7 +97,7 @@ monet_prompt=MonetDB>
 # The first directory contains MIL modules, and either the second or third (depending on the system) the C modules.
 monet_mod_path=@Xlibdir@@DIRSEP@MonetDB4@PATHSEP@@Xlibdir@@DIRSEP@MonetDB4@DIRSEP@lib@PATHSEP@@Xlibdir@@DIRSEP@MonetDB4@DIRSEP@bin
 # Start Mserver in daemon mode, or start with MIL interactive interface?
-monet_daemon=no
+#monet_daemon=no
 
 # Monet Application Interface Section
 #====================================

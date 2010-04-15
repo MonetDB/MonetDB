@@ -138,7 +138,7 @@ gdk_alloc_map=no
 # Where do the MonetDB modules reside? The second path is for windows dlls.
 monet_mod_path=@libdir@@DIRSEP@MonetDB5@PATHSEP@@libdir@@DIRSEP@MonetDB5@DIRSEP@lib@PATHSEP@@libdir@@DIRSEP@MonetDB5@DIRSEP@bin
 # Start mserver in daemon mode, or start with MAL interactive interface?
-monet_daemon=no
+#monet_daemon=no
 # Display version and copyright information upon startup?
 #monet_welcome=yes
 # Where is the file that stores the secret key to unlock the password

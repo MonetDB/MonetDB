@@ -81,7 +81,7 @@ class BuiltinOptions:
     monet_mod_path = os.path.join('@QXlibdir@','MonetDB') + \
                      os.pathsep + \
                      os.path.join('@QXlibdir@','bin')
-    monet_daemon = 'yes'
+    monet_daemon = 'no'
 
     def get(self, name, default = None):
         '''get(name, [default]) -> value

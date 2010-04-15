@@ -443,7 +443,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_daemon");
-	set[i].value = strdup("yes");
+	set[i].value = strdup("no");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("host");
