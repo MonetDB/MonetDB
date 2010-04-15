@@ -11,6 +11,10 @@ stderr of test 'mclient-t-s` in directory 'src/tools` itself:
 # 15:31:23 >  
 
 #~BeginVariableOutput~#
+Trans       2.823 msec
+Shred       0.000 msec
+Query       4.852 msec
+Print       0.370 msec
 Timer      13.835 msec 
 #~EndVariableOutput~#
 

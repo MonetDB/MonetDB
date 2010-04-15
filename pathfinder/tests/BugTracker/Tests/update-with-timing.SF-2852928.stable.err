@@ -11,6 +11,10 @@ stderr of test 'update-with-timing.SF-2852928` in directory 'tests/BugTracker` i
 # 11:40:58 >  
 
 #~BeginVariableOutput~#
+Trans      18.834 msec
+Shred      13.006 msec
+Query      15.582 msec
+Print      24.157 msec
 Timer      83.995 msec
 #~EndVariableOutput~#
 

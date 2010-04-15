@@ -881,12 +881,27 @@ static void
 RAWrenderer(MapiHdl hdl)
 {
 	char *line;
+	size_t n;
 
 	SQLqueryEcho(hdl);
 	while ((line = fetch_line(hdl)) != 0) {
-		if (*line == '=')
-			line++;
-		stream_printf(toConsole, "%s\n", line);
+		/* HACK to send also PF/XQuery break-down timings to stderr */
+		if (mode == XQUERY && mark && *line != '=' &&
+		    (n = strlen(line)) >= 22 &&  /* 7+10+5 */
+		    line[n-9] == '.' &&     /* decimal '.' */
+		    strncmp(line + n - 5, " msec", 5) == 0 &&
+		    (strncmp(line, "Trans  ", 7) == 0 ||
+		     strncmp(line, "Shred  ", 7) == 0 ||
+		     strncmp(line, "Query  ", 7) == 0 ||
+		     strncmp(line, "Print  ", 7) == 0 ||
+		     strncmp(line, "Update ", 7) == 0)) {
+			stream_flush(toConsole);
+			fprintf(stderr, "%s\n", line);
+		} else {
+			if (*line == '=')
+				line++;
+			stream_printf(toConsole, "%s\n", line);
+		}
 	}
 }
 

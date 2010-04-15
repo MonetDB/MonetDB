@@ -26,12 +26,10 @@ def main():
            ['--input=hello-SF.2852928.xml',
             '--collection=hello-SF.2852928.xml,10'],
            hellodoc)
-    sys.stdout.write('#~BeginVariableOutput~#\n')
     sys.stderr.write('#~BeginVariableOutput~#\n')
     client('xquery',
            ['-t',
             '-s', 'do insert <a/> into doc("hello-SF.2852928.xml")/hello'])
-    sys.stdout.write('#~EndVariableOutput~#\n')
     sys.stderr.write('#~EndVariableOutput~#\n')
     client('xquery', ['-s', 'doc("hello-SF.2852928.xml")'])
     client('xquery', ['-s', 'pf:del-doc("hello-SF.2852928.xml")'])

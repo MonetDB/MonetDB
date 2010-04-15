@@ -26,13 +26,6 @@ Over..
 # 11:40:58 >  /usr/bin/python update-with-timing.SF-2852928.XQUERY.py update-with-timing.SF-2852928 
 # 11:40:58 >  
 
-#~BeginVariableOutput~#
-
-Trans      18.834 msec
-Shred      13.006 msec
-Query      15.582 msec
-Print      24.157 msec
-#~EndVariableOutput~#
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><hello lang="en" x="y">
   <foo>text of node foo<bar>text of node bar</bar></foo>
