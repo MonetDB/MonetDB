@@ -2057,7 +2057,11 @@ usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s --language=(sql|xquery|mal|mil) [ options ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
+#ifdef HAVE_SYS_UN_H
 	fprintf(stderr, " -h hostname | --host=hostname    host or UNIX domain socket to connect to\n");
+#else
+	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
+#endif
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
 	fprintf(stderr, " -u user     | --user=user        user id\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
