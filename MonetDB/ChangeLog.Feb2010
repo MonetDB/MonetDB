@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Apr 15 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a bug that could cause a crash when string BATs are combined.
+  (SF bug 2947763.)
+
 * Mon Mar 29 2010 Fabian Groffen <fabian@cwi.nl>
 - Fix regression introduced in Feb2010-SP1 causing UDP connections to malfunction, in particular affecting the stethoscope tool.
 
