@@ -1,3 +1,6 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Thu Apr 15 2010 Sjoerd Mullender <sjoerd@acm.org>
+- If mclient is called with argument -? or --help, exit with exit code 0.
+
