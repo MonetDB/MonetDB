@@ -372,6 +372,8 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 	if ( monitorRecycler & 2) { /* Current query stat */
 		stream_printf(s,"%3d\t %3d\t %3d\t ", mb->stop, potrec, nonbind);
 		stream_printf(s,"%3d\t %3d\t ", cntxt->rcc->recycled0, cntxt->rcc->recycled);
+		stream_printf(s,"|| %3d\t %3d\t ", cntxt->rcc->RPadded0, cntxt->rcc->RPreset0);
+		stream_printf(s,"%3d\t ", recycleBlk?recycleBlk->stop:0);
 	}
 
 	if ( monitorRecycler & 1) { /* RP stat */
@@ -489,8 +491,9 @@ RECYCLElog(int *ret, str *nm)
 
 		stream_printf(s,"# Q\t TimeQ(ms)\t");
 		if ( monitorRecycler & 2) { /* Current query stat */
-			stream_printf(s,"InstrQ\t PotRecQ\t NonBind\t ");
+			stream_printf(s,"InstrQ\t PotRecQ NonBind ");
 			stream_printf(s,"RecQ\t TotRec\t ");
+			stream_printf(s,"|| RPadded  RPreset RPtotal ");
 		}
 
 		if ( monitorRecycler & 1) { /* RP stat */
@@ -531,6 +534,8 @@ RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	msComputeTime = 0;
 	cntxt->rcc->trans = cntxt->rcc->recTrans = 0;
 	cntxt->rcc->transKB = cntxt->rcc->recTransKB =0;
+	cntxt->rcc->RPadded0 = 0;     
+	cntxt->rcc->RPreset0 = 0;
 	return MAL_SUCCEED;
 }
 str 

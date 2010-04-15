@@ -1105,6 +1105,7 @@ compare by value.
 			recyclerUsedMemory, recycleBlk->stop,
 			cntxt->rcc->recycled0, cntxt->rcc->statements);
 	cntxt->rcc->recent = i;
+	cntxt->rcc->RPadded0++;
 	setSelectProp(q);
 
 #ifdef _DEBUG_CACHE_
@@ -2514,6 +2515,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 					returnCrd(p);
 				}
 				removeInstruction(recycleBlk, p);
+				cntxt->rcc->RPreset0++;
 #endif
 @-
 we assume that the variables defined are only used later on in the recycle
