@@ -261,7 +261,6 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
 [ "mapi_port",		  "33016"																																																																																																																																																													  ]
-[ "mapi_debug",		  "0"							  ]
 [ "mapi_clients",	  "2"										  ]
 [ "sql_debug",		  "0"							  ]
 [ "standoff_ns",	  ""																																																															  ]

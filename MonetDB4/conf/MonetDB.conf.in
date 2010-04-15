@@ -105,8 +105,6 @@ monet_mod_path=@Xlibdir@@DIRSEP@MonetDB4@PATHSEP@@Xlibdir@@DIRSEP@MonetDB4@DIRSE
 #mapi_port=50000
 #allow mclient sessions from outside the server machine
 mapi_open=false                    
-# The MAPI debug level (should be disabled for normal use)
-#mapi_debug=0
 # The number of concurrent clients can be set using mapi_clients
 # (smaller than 1 is not very useful)
 #mapi_clients=2

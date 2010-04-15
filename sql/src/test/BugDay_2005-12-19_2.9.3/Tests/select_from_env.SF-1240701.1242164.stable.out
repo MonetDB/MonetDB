@@ -45,7 +45,6 @@ Over..
 [ "monet_daemon"	]
 [ "host"	]
 [ "mapi_port"	]
-[ "mapi_debug"	]
 [ "mapi_clients"	]
 [ "sql_debug"	]
 [ "standoff_ns"	]

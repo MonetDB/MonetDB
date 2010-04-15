@@ -89,7 +89,7 @@ declare function admin:db-stats()
 { pf:mil('var ret; var err := CATCH({ lock_set(pf_short); ret := bat(str,str); var tot := 0LL; colname_runtime@batloop() tot :+= sum([batsize]($t)); ret.insert("xquery_index_curMB", str(tot/1048576LL)); tot := doc_timestamp.select(timestamp_nil,timestamp_nil).reverse(); ret.insert("xquery_cache_curdocs", str(count(tot))); tot := tot.join(doc_collection).tunique().reverse().join(collection_size).sum(); if (isnil(tot)) tot := 0LL; ret.insert("xquery_cache_curMB", str(tot/1048576LL)); ret.insert("xquery_log_curMB", str((logger_changes(pf_logger) - logger_base)/131072)); ret.insert("gdk_vm_cursize", str(vm_cursize())); ret.insert("gdk_mem_cursize", str(mem_cursize())); }); lock_unset(pf_short); if (not(isnil(err))) ERROR(err); return ret;') };
 
 declare function admin:db-env() 
-{ pf:mil('var dels := new(void, str, 20).append("exec_prefix").append("prefix").append("gdk_debug").append("gdk_embedded").append("gdk_vm_minsize").append("mapi_debug").append("mapi_noheaders").append("monet_daemon").append("monet_mod_path").append("monet_pid").append("monet_prompt").append("monet_welcome").append("sql_debug").reverse(); return monet_environment.kdiff(dels).access(BAT_WRITE).insert("gdk_mem_maxsize", str(mem_maxsize())).sort();') };
+{ pf:mil('var dels := new(void, str, 20).append("exec_prefix").append("prefix").append("gdk_debug").append("gdk_embedded").append("gdk_vm_minsize").append("monet_daemon").append("monet_mod_path").append("monet_pid").append("monet_prompt").append("monet_welcome").append("sql_debug").reverse(); return monet_environment.kdiff(dels).access(BAT_WRITE).insert("gdk_mem_maxsize", str(mem_maxsize())).sort();') };
 
 (: =================== HTTP =================== :)
 
