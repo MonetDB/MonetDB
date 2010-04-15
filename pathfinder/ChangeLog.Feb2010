@@ -1,0 +1,4 @@
+* Thu Apr 15 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a problem preventing the opening of remote documents in a
+  doc("http://...") query.
+
