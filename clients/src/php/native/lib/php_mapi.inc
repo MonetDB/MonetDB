@@ -457,10 +457,12 @@
 			exit();
 		}
 		$data = "";
-		$chunk_size = "";
 
 		$chunk_size = ((ord($header[1]) << 7) | (ord($header[0]) >> 1));
-		$data = socket_read($socket, $chunk_size);
+		// keep reading until we have everything
+		while (strlen($data) < $chunk_size) {
+			$data .= socket_read($socket, $chunk_size - strlen($data));
+		}
 
 
 		while ((ord($header[0]) & 1) == 0 ) {
@@ -471,10 +473,13 @@
 
 			$chunk_size = ( ((ord($header[1]))  << 7) | (ord($header[0]) >> 1) );
 
-			if ( ($block = socket_read($socket, $chunk_size)) == FALSE) {
-                	        $last_error = socket_strerror(socket_last_error());
-        	                exit();
-	                }
+			$block = "";
+			while (strlen($block) < $chunk_size) {
+				if ( ($block .= socket_read($socket, $chunk_size - strlen($block))) == FALSE) {
+					$last_error = socket_strerror(socket_last_error());
+					exit();
+				}
+			}
 
 
 			$data = $data . $block;
