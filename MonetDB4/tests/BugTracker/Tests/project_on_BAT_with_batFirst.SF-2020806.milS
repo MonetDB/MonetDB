@@ -4,7 +4,6 @@ a.delete("prefix");
 a.delete("gdk_debug");
 a.delete("gdk_embedded");
 a.delete("mapi_debug");
-a.delete("mapi_noheaders");
 a.delete("monet_daemon");
 a.delete("monet_mod_path");
 a.delete("monet_pid");
