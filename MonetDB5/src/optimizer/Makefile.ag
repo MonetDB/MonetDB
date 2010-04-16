@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = -I../mal -I../modules/atoms -I../modules/mal -I../modules/kernel $(MONETDB_INCS) \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(PCL_FLAGS) $(PCRE_CFLAGS)
+	$(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS)
 
 
 MTSAFE
