@@ -1,0 +1,7 @@
+# ChangeLog file for pathfinder
+# This file is updated with Maddlog
+
+* Fri Apr 09 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a problem preventing the opening of remote documents in a
+  doc("http://...") query.
+
