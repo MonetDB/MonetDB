@@ -4,3 +4,4 @@ order_by_on_single_row_view.SF-2950453
 offset_limited_32bit.SF-2950579
 correlated_update_type_mismatch.SF-2947841
 heap_combine_crash.SF-2947763
+rank-over-crash.SF-2926454
