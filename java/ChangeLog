@@ -1,7 +1,8 @@
 # ChangeLog file for java
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
-  16 Apr 2010; Fabian Groffen <fabian@cwi.nl> build.xml:
+  16 Apr 2010; Fabian Groffen <fabian@cwi.nl> build.xml, configure.ag,
+  Makefile.ag:
   Enable the merovingian control library for default distribution as it
   has been in use for some time without problems now.
 

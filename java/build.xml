@@ -77,7 +77,7 @@ All Rights Reserved.
 
     <antcall target="distxrpc" />
 
-    <antcall target="jar_mero_control" />
+    <antcall target="distmerocontrol" />
 
     <antcall target="doc" />
   </target>
@@ -85,7 +85,7 @@ All Rights Reserved.
   <target name="distall">
     <antcall target="distjdbc" />
     <antcall target="distxrpc" />
-    <antcall target="jar_mero_control" />
+    <antcall target="distmerocontrol" />
   </target>
 
   <target name="default">
@@ -103,6 +103,10 @@ All Rights Reserved.
     <antcall target="jar_xrpc_api" />
     <antcall target="jar_xrpc_wrapper" />
     <antcall target="jar_xrpc_client" />
+  </target>
+
+  <target name="distmerocontrol">
+    <antcall target="jar_mero_control" />
   </target>
 
   <!-- jar targets -->

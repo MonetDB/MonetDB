@@ -39,6 +39,12 @@ ant_distxrpc = {
 	FILES = xrpcapi.jar xrpcwrapper.jar xrpcclient.jar
 }
 
+ant_distmerocontrol = {
+	COND = HAVE_JAVAMEROCONTROL
+	DIR = datadir/MonetDB/lib
+	FILES = merocontrol.jar
+}
+
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
 JAVA_HOME = @JAVA_HOME@
