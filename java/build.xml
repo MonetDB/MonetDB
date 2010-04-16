@@ -70,11 +70,14 @@ All Rights Reserved.
   <!-- full target -->
   <target name="all">
     <antcall target="distjdbc" />
+
     <!-- xmldb is not in distjdbc because it needs a library which needs
          to be fetched first -->
     <antcall target="jar_xmldb" />
 
     <antcall target="distxrpc" />
+
+    <antcall target="jar_mero_control" />
 
     <antcall target="doc" />
   </target>
@@ -82,10 +85,12 @@ All Rights Reserved.
   <target name="distall">
     <antcall target="distjdbc" />
     <antcall target="distxrpc" />
+    <antcall target="jar_mero_control" />
   </target>
 
   <target name="default">
     <antcall target="jar_jdbcclient" />
+    <antcall target="jar_mero_control" />
   </target>
 
   <target name="distjdbc">
@@ -461,8 +466,7 @@ All Rights Reserved.
 
   <!-- documentation target -->
   <target name="doc"
-    depends="compile_mcl,compile_jdbc,compile_util,compile_client,
-    compile_xrpc_api,compile_xrpc_wrapper, compile_xrpc_client">
+    depends="compile_mcl,compile_jdbc,compile_util,compile_client,compile_xrpc_api,compile_xrpc_wrapper,compile_xrpc_client,compile_mero_control">
     <javadoc
       destdir="${docdir}"
       author="true"
@@ -476,6 +480,7 @@ All Rights Reserved.
         <include name="${client-package}/**/*.java" />
         <include name="${util-package}/**/*.java" />
         <include name="${xrpc-api-package}/**/*.java" />
+        <include name="${mero-control-package}/**/*.java" />
       </fileset>
 
       <fileset dir="${builddir}/src" defaultexcludes="yes">
@@ -484,6 +489,7 @@ All Rights Reserved.
         <include name="${client-package}/**/*.java" />
         <include name="${util-package}/**/*.java" />
         <include name="${xrpc-api-package}/**/*.java" />
+        <include name="${mero-control-package}/**/*.java" />
       </fileset>
     </javadoc>
   </target>
