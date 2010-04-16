@@ -1,0 +1,4 @@
+# this test causes the database to get into a state that the server
+# cannot recover from
+alter-table-restart-crash.SF-2975018-1
+alter-table-restart-crash.SF-2975018-2
