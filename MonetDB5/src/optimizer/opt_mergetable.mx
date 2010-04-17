@@ -1539,7 +1539,7 @@ check_instr(MalBlkPtr mb, InstrPtr p)
 static int
 OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
 {
-	InstrPtr *old=0;
+	InstrPtr *old=0, q;
 	mat_t *mat;
 	int oldtop, fm, i, k, m, mtop=0, slimit;
 	int size, match, actions=0, error=0;
@@ -1717,16 +1717,34 @@ And the min/max is as easy
 		if (match > 0 && (
 		    getModuleId(p) == groupRef || 
 		    getModuleId(p) == aggrRef || 
-		   (getModuleId(p) == batRef && 
-			getFunctionId(p) == sliceRef) ||
 		   (getModuleId(p) == algebraRef && 
 			(getFunctionId(p) == sortTailRef ||
 			 getFunctionId(p) == sortReverseTailRef)))) { 
 			error++;
 			goto fail;
 		}
-/*
-*/
+@-
+The slice operation can also be piggy backed onto the mat.pack using it
+as a property of the MAT. Pushing it through
+would be feasible as well, provide the start of the slice is a constant 0.
+For now, we use the mat.slice() operation, which ensures that we only
+copy those bats needed for subsequent slicing.
+@c
+		if (match > 0 && getModuleId(p) == algebraRef && 
+			getFunctionId(p) == sliceRef &&
+			(m=isMATalias(getArg(p,1), mat, mtop)) >= 0){
+				MATpackAll2(mb, NULL, mat, m, &mtop);
+				q= getInstrPtr(mb, mb->stop-1);
+				setFunctionId(q,sliceRef);
+				q= setArgument(mb,q,1,getArg(p,2));
+				q= setArgument(mb,q,2,getArg(p,3));
+
+				pushInstruction(mb, copyInstruction(p));
+				if (p->argc >= 2)
+					propagateProp(mb, p, getArg(p,1));
+				actions++;
+				continue;
+		}
 @-
 The mark operators are a special case of apply on parts as we need too
 correct the mark base oid's 
@@ -1818,7 +1836,6 @@ It requires MAT materialization.
 			if((m=isMATalias(getArg(p,k), mat, mtop)) >= 0){
 				MATpackAll2(mb, NULL, mat, m, &mtop);
 				actions++;
-				//break;
 			}
 		}
 		pushInstruction(mb, copyInstruction(p));
