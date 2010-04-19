@@ -206,6 +206,8 @@ A pitty that we have calculated the other slices as well.
 			return MAL_SUCCEED;
 		}
 		BBPunfix(b->batCacheid);
+	} else {
+		cnt = BUN_MAX;
 	}
 
 	bn = BATnew(ht, tt, cap);
