@@ -158,9 +158,9 @@ that are subsequently reduced.
 static str
 MATpackInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,*ret = (int*) getArgReference(stk,p,0);
+	int i0, i,*ret = (int*) getArgReference(stk,p,0);
 	BAT *b, *bn;
-	BUN cap=0, cnt = oid_nil;
+	BUN cap=0, cnt = BUN_NONE;
 	int ht = TYPE_any, tt = TYPE_any;
 
 	/* check for the slice range upper bound */
@@ -178,13 +178,11 @@ MATpackInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* upper bound of slice is inclusive position counting from 0 */
 		if (cnt < BUN_MAX)
 			cnt++;
-	}
 @-
 The optimal case is when we need a slice from the first
 piece. In that case we can simply return the BAT.
 A pitty that we have calculated the other slices as well.
 @c
-	if ( cnt != oid_nil){
 		b= BATdescriptor(stk->stk[getArg(p,3)].val.ival);
 		assert(b);
 		if ( BATcount(b) > cnt ){
@@ -192,12 +190,14 @@ A pitty that we have calculated the other slices as well.
 			return MAL_SUCCEED;
 		}
 		BBPunfix(b->batCacheid);
+
+		i0 = 3;
 	} else {
+		i0 = 1;
 		cnt = BUN_MAX;
 	}
 
-	for(i = 1; i < p->argc && cap < cnt; i++)
-	if ( isaBatType(getArgType(mb,p,i)) ){
+	for( i = i0; i < p->argc && cap < cnt; i++) {
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
@@ -219,8 +219,7 @@ A pitty that we have calculated the other slices as well.
 	if (tt == TYPE_void)
 		BATseqbase(BATmirror(bn), 0);
 
-	for( i = 1; i < p->argc && BATcount(bn) < cnt; i++)
-	if ( isaBatType(getArgType(mb,p,i)) ){
+	for( i = i0; i < p->argc && BATcount(bn) < cnt; i++) {
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL){
 			BBPreleaseref(bn->batCacheid);
