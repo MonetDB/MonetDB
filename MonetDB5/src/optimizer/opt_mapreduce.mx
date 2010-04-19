@@ -547,6 +547,7 @@ OPTmapreduceImplementation(
 				VALformat(&schema, &getVar(mc, getArg(p, 2))->value);
 				/* check if this is a column from a mapreduce schema (mr_*) */
 				if (strncmp(schema, "mr_", 3) != 0) {
+					GDKfree(schema);
 					freeSymbol(new);
 					GDKfree(mb->stmt);
 					mb->stmt = orig;
@@ -560,6 +561,7 @@ OPTmapreduceImplementation(
 							"%s", schema + 3);
 				} else {
 					if (strcmp(mrcluster, schema + 3) != 0) {
+						GDKfree(schema);
 						freeSymbol(new);
 						GDKfree(mb->stmt);
 						mb->stmt = orig;
@@ -568,6 +570,7 @@ OPTmapreduceImplementation(
 						return 0;
 					}
 				}
+				GDKfree(schema);
 
 				/* start of sql.bind, kdiff, kunion, etc. sequence */
 				copy = STICK;
