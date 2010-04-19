@@ -163,20 +163,6 @@ MATpackInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN cap=0, cnt = oid_nil;
 	int ht = TYPE_any, tt = TYPE_any;
 
-	for(i = 1; i < p->argc; i++)
-	if ( isaBatType(getArgType(mb,p,i)) ){
-		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
-		if( b == NULL)
-			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-		if (ht == TYPE_any){
-			ht = b->htype;
-			tt = b->ttype;
-		}
-		cap += BATcount(b);
-		BBPunfix(b->batCacheid);
-	}
-	assert( ht != TYPE_any);
-
 	/* check for the slice range upper bound */
 	if ( !isaBatType(getArgType(mb,p,2)) ){
 		switch getArgType(mb,p,2) {
@@ -210,6 +196,20 @@ A pitty that we have calculated the other slices as well.
 		cnt = BUN_MAX;
 	}
 
+	for(i = 1; i < p->argc && cap < cnt; i++)
+	if ( isaBatType(getArgType(mb,p,i)) ){
+		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if( b == NULL)
+			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		if (ht == TYPE_any){
+			ht = b->htype;
+			tt = b->ttype;
+		}
+		cap += BATcount(b);
+		BBPunfix(b->batCacheid);
+	}
+
+	assert( ht != TYPE_any);
 	bn = BATnew(ht, tt, cap);
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
