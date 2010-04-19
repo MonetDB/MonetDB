@@ -52,15 +52,15 @@ address MATpack
 comment "Materialize the MAT into a BAT";
 
 pattern slice(first:wrd, last:wrd, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpackSlice_wrd
+address MATpackSlice
 comment "Materialize a sliced MAT into a BAT";
 
 pattern slice(first:int, last:int, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpackSlice_wrd
+address MATpackSlice
 comment "Materialize a sliced MAT into a BAT";
 
 pattern slice(first:lng, last:lng, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpackSlice_wrd
+address MATpackSlice
 comment "Materialize a sliced MAT into a BAT";
 
 pattern print(b:bat[:any_1,:any_2]...):void
@@ -102,7 +102,7 @@ comment "retrieve the definition from the partition catalogue";
 
 mat_export str MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATpackSlice_wrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATdummy(int *ret, str *grp);
@@ -305,7 +305,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 str
-MATpackSlice_wrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
 	return MATpackInternal(mb,stk,p);
