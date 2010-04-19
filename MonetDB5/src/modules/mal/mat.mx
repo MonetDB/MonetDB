@@ -189,6 +189,9 @@ MATpackInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			case TYPE_int:
 			cnt = (BUN) *(int*) getArgReference(stk,p,2);
 		}
+		/* upper bound of slice is inclusive position counting from 0 */
+		if (cnt < BUN_MAX)
+			cnt++;
 	}
 @-
 The optimal case is when we need a slice from the first
