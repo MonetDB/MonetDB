@@ -544,7 +544,7 @@ OPTmapreduceImplementation(
 				copy = SINGLE_DUP;
 			} else if (getFunctionId(p) == bindRef) {
 				str schema = NULL;
-				VALformat(&schema, &getVar(mc, getArg(p, 1))->value);
+				VALformat(&schema, &getVar(mc, getArg(p, 2))->value);
 				/* check if this is a column from a mapreduce schema (mr_*) */
 				if (strncmp(schema, "mr_", 3) != 0) {
 					freeSymbol(new);
