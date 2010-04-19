@@ -104,7 +104,7 @@ monet_mod_path=@Xlibdir@@DIRSEP@MonetDB4@PATHSEP@@Xlibdir@@DIRSEP@MonetDB4@DIRSE
 # default port to address an Mserver for a MIL session
 #mapi_port=50000
 #allow mclient sessions from outside the server machine
-mapi_open=false                    
+#mapi_open=false                    
 # The number of concurrent clients can be set using mapi_clients
 # (smaller than 1 is not very useful)
 #mapi_clients=2

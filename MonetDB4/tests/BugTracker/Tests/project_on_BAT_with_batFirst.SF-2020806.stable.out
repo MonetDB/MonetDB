@@ -44,6 +44,7 @@ a.sort().project(1).print();
 [ "gdk_version",	  1		  ]
 [ "gdk_vmtrim",		  1		  ]
 [ "host",		  1		  ]
+[ "mapi_autosense",	  1		  ]
 [ "mapi_clients",	  1		  ]
 [ "mapi_open",		  1		  ]
 [ "mapi_port",		  1		  ]

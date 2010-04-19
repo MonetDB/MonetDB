@@ -268,6 +268,7 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "standoff_end",	  "end"																																																															  ]
 [ "config",		  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/conf/MonetDB.conf"																																																																																																																																												  ]
 [ "gdk_nr_threads",	  "1"																																																																																																																																																														  ]
+[ "mapi_autosense",	  "false"																																																			  ]
 [ "mapi_open",		  "true"																										  ]
 [ "xrpc_open",		  "true"																			  ]
 [ "xrpc_port",		  "47741"																																																																																																																																																													  ]

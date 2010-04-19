@@ -243,9 +243,9 @@ mero_controlport=50001
 # Monet Application Interface Section
 #====================================
 #mapi_port=50000      # default port to address an mserver
-mapi_autosense=false  # if set to 'true': automatically find a free port
+#mapi_autosense=false # if set to 'true': automatically find a free port
                       # starting the search at mapi_port and going up
-mapi_open=false       # should be set to 'true' to allow for
+#mapi_open=false      # should be set to 'true' to allow for
                       # remote access to a server
 #mapi_usock=${gdk_dbfarm}@DIRSEP@mapi_socket
                       # mapi_usock is ignored on platforms that do not
