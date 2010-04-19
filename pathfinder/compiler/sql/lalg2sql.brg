@@ -2586,11 +2586,17 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             Let's generate a pseudo-query whose result is an empty table:
             
             SELECT -1 AS iter_nat, -1 AS pos_nat, ... AS item_...
-            FROM sysibm.sysdummy1 AS a0000
+            FROM (VALUES (-1)) AS a0000(item1_int)
             WHERE 1 = 0;
             */
 
             PFsql_t *selectlist = NULL;
+            PFsql_t **list = NULL;
+            PFsql_t **l_list = NULL;
+            PFsql_aident_t newalias = new_alias ();
+
+            /* generate the selectlist based on the empty table's schema */
+            /* => SELECT -1 AS iter_nat, -1 AS pos_nat, ... AS item_...  */
             PFalg_schema_t schema = p->schema;
             int count = schema.count;
             for(int i = 0; i < count; i++)
@@ -2621,21 +2627,37 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
 
             }
 
-            /* call a helper function that does the 'real' job */
+            /* generate the fromlist based on a pseudo literal table */
+            /* => FROM (VALUES (-1)) AS a0000(item1_int)             */
+            list  = PFmalloc (sizeof (PFsql_t *));
+            l_list = PFmalloc (sizeof (PFsql_t *));
+
+            list[0] = lit_int (-1);
+            l_list[0] = PFsql_stmt_list_ (1, (const PFsql_t **) list);
+
+            col_env_add (COLMAP (p),
+                         col_item1,
+                         aat_int,
+                         ext_column_name (newalias,
+                                          new_col (col_item1, aat_int)));
+
+            from_list_add (FROMLIST(p),
+                           values (PFsql_list_list_(1, 
+                               (const PFsql_t **) l_list)),
+                           alias_def (newalias, column_list (
+                               NULL, column_name (
+                                   new_col (col_item1, aat_int)))));
+
+
+            /* generate the final query */
             PFsql_t* final_query = PFsql_select (
                 false,
                 selectlist,
-                from_list(
-                    alias_bind (
-                        schema_table_name (
-                            "sysibm",
-                            table_name (PF_SQL_TABLE_SYSDUMMY1)),
-                        alias (new_alias ()))),
+                transform_frommap (p),
                 where_list (
                     eq (lit_int (1), lit_int (0))),
                 NULL,
                 NULL);
-              
 
             sql_stmts = root (nil (), final_query);
         }
@@ -2887,6 +2909,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             }
 
             /* do not copy singleton relation */
+            /* todo: trigger the rewrite on cardinality instead of "sysibm" */
             {
                 PFsql_t *tbl = from_list_at (FROMLIST(R(p)), 0).table;
                 if (!(PFarray_last (FROMLIST(R(p))) == 1 &&
@@ -4821,6 +4844,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             item_expr = col_env_lookup (COLMAP(p), col, aat_str);
 
             /* throw away singleton relation */
+            /* todo: trigger the rewrite on cardinality instead of "sysibm" */
             if (PFarray_last (FROMLIST(p)) == 1) {
                 PFsql_t *tbl = from_list_at (FROMLIST(p), 0).table;
                 if (tbl->kind == sql_schema_tbl_name &&
