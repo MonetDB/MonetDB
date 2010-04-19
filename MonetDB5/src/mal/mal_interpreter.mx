@@ -2239,8 +2239,7 @@ registered.
 	if( !RECYCLEentry(cntxt, mb,stk,pci) )
 @= MALrecycleExit
 	if( pci->recycle > 0 ){
-		tcs = GDKusec() - @1->clk;
-		RECYCLEexit(cntxt, mb,stk,pci,tcs);
+		RECYCLEexit(cntxt, mb,stk,pci,@1->clk);
 	}
 @}
 @-

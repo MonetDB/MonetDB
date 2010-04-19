@@ -239,7 +239,7 @@ RECYCLEdump(stream *s)
 	incache = recycleBlk->stop;
 	stream_printf(s,"#recycled = "LLFMT" incache= %d executed = "LLFMT" memory(KB)= "LLFMT" PersBat memory="LLFMT"\n",
 		 recycled, incache,statements, recyclerUsedMemory, persmem);
-#ifdef _DEBUG_CACHE_
+#ifdef _DEBUG_CACHE_ 
 	stream_printf(s,"#RPremoved = %d RPactive= %d RPmisses = %d\n",
                  recycleRem, incache-recycleRem, recycleMiss);
 #endif
