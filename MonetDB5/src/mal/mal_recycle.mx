@@ -93,7 +93,7 @@ mal_export int admissionPolicy;
 
 #define NO_RECYCLING -1
 #define REC_NO_INTEREST 0
-#define REC_MAX_INTEREST 5
+#define REC_MAX_INTEREST 3
 #define REC_MIN_INTEREST 1
 
 mal_export lng recycleTime;		
@@ -501,7 +501,7 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q, bte *used){
 static
 int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 {
-	dbl *wben, ben, maxwb, tmp, ci_ben, tot_ben;
+	dbl *wben, ben = 0, maxwb, tmp, ci_ben, tot_ben;
 	int l, newtop, mpos, tmpl, ci = 0;
 	lng sz, totmem = 0, targmem, smem;
 
@@ -2558,6 +2558,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	static str sqlRef = 0, bindRef = 0, bind_idxRef = 0, bind_dbatRef = 0;
 	int bid;
 	BAT *bref = NULL;
+	lng t0 = GDKusec();
 
 	if (sqlRef == 0)
 		sqlRef = putName("sql",3);
@@ -2635,5 +2636,6 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		mal_unset_lock(recycleLock,"recycle");
 	}
 	GDKfree(b);
+	recycleTime = GDKusec() - t0;
 }
 @}
