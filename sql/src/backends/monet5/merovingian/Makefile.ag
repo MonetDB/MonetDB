@@ -58,7 +58,8 @@ bin_merovingian = {
 		$(MONETDB5_LIBS) -lmonetdb5 \
 		$(MONETDB_LIBS) -lbat -lstream \
 		$(SOCKET_LIBS) \
-		$(MALLOC_LIBS)
+		$(MALLOC_LIBS) \
+		$(PTHREAD_LIBS)
 }
 
 bin_monetdb = {
