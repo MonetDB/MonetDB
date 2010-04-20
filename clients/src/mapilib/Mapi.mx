@@ -1426,8 +1426,11 @@ mapi_explain(Mapi mid, FILE *fd)
 {
 	assert(mid);
 	if (mid->noexplain == NULL) {
-		fprintf(fd, "MAPI  = %s\@%s:%d\n",
-			mid->username, mid->hostname, mid->port);
+		if (mid->hostname[0] == '/')
+			fprintf(fd, "MAPI  = (%s) %s\n", mid->username, mid->hostname);
+		else
+			fprintf(fd, "MAPI  = %s\@%s:%d\n",
+				mid->username, mid->hostname, mid->port);
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
 		if (mid->errorstr)
@@ -1449,8 +1452,11 @@ mapi_explain_query(MapiHdl hdl, FILE *fd)
 	mid = hdl->mid;
 	assert(mid);
 	if (mid->noexplain == NULL) {
-		fprintf(fd, "MAPI  = %s\@%s:%d\n",
-			mid->username, mid->hostname, mid->port);
+		if (mid->hostname[0] == '/')
+			fprintf(fd, "MAPI  = (%s) %s\n", mid->username, mid->hostname);
+		else
+			fprintf(fd, "MAPI  = %s\@%s:%d\n",
+				mid->username, mid->hostname, mid->port);
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
 		if (hdl->query)
@@ -1480,8 +1486,11 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 	mid = hdl->mid;
 	assert(mid);
 	if (mid->noexplain == NULL) {
-		fprintf(fd, "MAPI  = %s\@%s:%d\n",
-			mid->username, mid->hostname, mid->port);
+		if (mid->hostname[0] == '/')
+			fprintf(fd, "MAPI  = (%s) %s\n", mid->username, mid->hostname);
+		else
+			fprintf(fd, "MAPI  = %s\@%s:%d\n",
+				mid->username, mid->hostname, mid->port);
 		if (mid->action)
 			fprintf(fd, "ACTION= %s\n", mid->action);
 		if (hdl->query)
