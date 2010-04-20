@@ -605,6 +605,8 @@ is returned.
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg) {
 	int i;
 
+	if ( flg == 0)
+		return;
 	if (mb == NULL) {
 		stream_printf(fd, "# function definition missing\n");
 		return;
