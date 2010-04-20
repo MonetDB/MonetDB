@@ -893,6 +893,9 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 		throw(MAL, "remote.register",
 				"function already exists at the remote site: %s.%s",
 				mod, fcn);
+	} else {
+		/* we basically hope/assume this is a "doesn't exist" error */
+		GDKfree(msg);
 	}
 	if (mhdl)
 		mapi_close_handle(mhdl);
@@ -930,7 +933,7 @@ remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
  * values.  It calls the function with the given arguments at the remote
  * site, and returns the handle which stores the return value of the
  * remotely executed function.  This return value can be retrieved using
- * a get call. It does not (yet) handle multiple return arguments.
+ * a get call. It handles multiple return arguments.
  */
 str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, tmp;
