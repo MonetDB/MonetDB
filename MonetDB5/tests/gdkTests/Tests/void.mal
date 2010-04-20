@@ -118,8 +118,8 @@ i:= bat.info(v3); z2:= algebra.find(i,"hseqbase"); io.print(z2);
 z2:= algebra.find(i,"hdense"); io.print(z2);
 bat.setWriteMode(v3);
 v3r:= bat.reverse(v3);
-bat.delete(v3r,2);
-i:= bat.info(v3); z2:= algebra.find(i,"hseqbase"); io.print(z2);
+z4:= bat.delete(v3r,2);
+i:= bat.info(z4); z2:= algebra.find(i,"hseqbase"); io.print(z2);
 z2:= algebra.find(i,"hdense"); io.print(z2);
 
 x := bat.new(:oid,:oid);

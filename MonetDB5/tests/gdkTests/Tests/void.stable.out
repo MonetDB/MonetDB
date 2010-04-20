@@ -134,8 +134,8 @@ function user.main():void;
     io.print(z2);
     bat.setWriteMode(v3);
     v3r := bat.reverse(v3);
-    bat.delete(v3r,2);
-    i := bat.info(v3);
+    z4 := bat.delete(v3r,2);
+    i := bat.info(z4);
     z2 := algebra.find(i,"hseqbase");
     io.print(z2);
     z2 := algebra.find(i,"hdense");
@@ -409,8 +409,8 @@ end main;
 [ 0@0,	  3	  ]
 [ "1@0" ]
 [ "1" ]
-[ "2@0" ]
-[ "1" ]
+[ "0@0" ]
+[ "0" ]
 #-----------------#
 # h	t	  # name
 # void	void	  # type
