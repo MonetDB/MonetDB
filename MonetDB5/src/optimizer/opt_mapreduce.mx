@@ -544,9 +544,12 @@ OPTmapreduceImplementation(
 				copy = SINGLE_DUP;
 			} else if (getFunctionId(p) == bindRef) {
 				str schema = NULL;
-				VALformat(&schema, &getVar(mc, getArg(p, 2))->value);
+				size_t l = VALformat(&schema, &getVar(mc, getArg(p, 2))->value);
+				/* chop off last quote */
+				if (l >= 1 && schema[l - 1] == '"')
+					schema[l - 1] = '\0';
 				/* check if this is a column from a mapreduce schema (mr_*) */
-				if (strncmp(schema, "mr_", 3) != 0) {
+				if (strncmp(schema, "\"mr_", 4) != 0) {
 					GDKfree(schema);
 					freeSymbol(new);
 					GDKfree(mb->stmt);
@@ -558,9 +561,9 @@ OPTmapreduceImplementation(
 				/* and that we don't mix 'n' match mapreduce schemas */
 				if (mrcluster[0] == '\0') {
 					snprintf(mrcluster, sizeof(mrcluster),
-							"%s", schema + 3);
+							"%s", schema + 4);
 				} else {
-					if (strcmp(mrcluster, schema + 3) != 0) {
+					if (strcmp(mrcluster, schema + 4) != 0) {
 						GDKfree(schema);
 						freeSymbol(new);
 						GDKfree(mb->stmt);
@@ -646,7 +649,8 @@ OPTmapreduceImplementation(
 			continue;
 
 		if (p == (InstrPtr)1) {
-			/* this is the moment the first sql.bind occurred set the
+			newComment(mb, "distributing work over columns selected for mapreduce");
+			/* this is the moment the first sql.bind occurred, set the
 			 * calling signature of the map program */
 			getArg(sig, 0) = -1; /* get rid of default retval */
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
@@ -658,6 +662,7 @@ OPTmapreduceImplementation(
 				}
 			}
 			MRdistributework(cntxt, mb, col, sig, mrcluster);
+			newComment(mb, "end distribution, optimisations may follow");
 			continue;
 		}
 
@@ -670,6 +675,8 @@ OPTmapreduceImplementation(
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->val1) {
 					copy = SINGLE_DUP;
+					newComment(mc, "ORDER BY [DESC] or LIMIT/OFFSET");
+					newComment(mb, "ORDER BY [DESC] or LIMIT/OFFSET");
 					/* fix return */
 					lastcol->val1 = getArg(old[i], 0);
 					break;
@@ -683,6 +690,8 @@ OPTmapreduceImplementation(
 			 * we already fixed the signature, so create a container BAT */
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->val1) {
+					newComment(mc, "MAX/MIN");
+					newComment(mb, "MAX/MIN");
 					/* basically perform a MAX over all MAXes */
 					pushInstruction(mc, old[i]);
 					lastcol->val2 = getArg(old[i], 0);
@@ -704,14 +713,36 @@ OPTmapreduceImplementation(
 					break;
 				}
 			}
+		} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
+			/* prepare for a count(*) where the aggr.count is leaded by
+			 * a bat.mirror */
+			if (getModuleId(orig[i + 1]) == aggrRef &&
+						getFunctionId(orig[i + 1]) == countRef &&
+						getArg(p, 0) == getArg(orig[i + 1], 1))
+			{
+				newComment(mc, "COUNT(*)");
+				pushInstruction(mc, old[i]);
+				copy = cNONE;
+				/* NOTE: rest is handled in case below */
+			}
 		} else if (getModuleId(p) == aggrRef && (
 					getFunctionId(p) == countRef ||
 					getFunctionId(p) == sumRef))
 		{
 			/* COUNT/SUM, push down, replace with SUM in REDUCE program,
 			 * fix up the return type */
+			if (getFunctionId(p) == countRef) {
+				/* The aggr.count will be prepended by a bat.mirror if
+				 * it came from a SELECT COUNT(*) ... */
+				if (getModuleId(orig[i - 1]) == batRef &&
+							getFunctionId(orig[i - 1]) == mirrorRef &&
+							getArg(orig[i - 1], 0) == getArg(p, 1))
+						getArg(p, 1) = getArg(orig[i - 1], 1);
+			}
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->val1) {
+					newComment(mc, "COUNT/SUM");
+					newComment(mb, "COUNT/SUM");
 					pushInstruction(mc, old[i]);
 					lastcol->val2 = getArg(old[i], 0);
 					/* BAT for return */
