@@ -338,6 +338,19 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.5-20100420
+- Rebuilt.
+
+* Thu Apr 15 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.5-20100420
+- Documented the database option in the DSN in the Perl interface.
+  Also incremented the version number of the Perl interface.
+- Fixed a problem in the PHP interface where under certain circumstances
+  not all data from the server was read, leading to a limited number of rows
+  being returned and other weird behavior.
+  This fixes SF bug 2975433.
+- If mclient is called with argument -? or --help, exit with exit code 0.
+  This fixes SF bug 2956574.
+
 * Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.3-20100322
 - Rebuilt.
 

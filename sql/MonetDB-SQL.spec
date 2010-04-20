@@ -156,6 +156,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so
 
 %changelog
+* Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.36.5-20100420
+- Rebuilt.
+
+* Thu Apr  8 2010 Stefan Manegold <manegold@cwi.nl> - 2.36.5-20100420
+- fixed bug #2983773 "SQL: minimal optimizer pipe unstable"
+  https://sourceforge.net/tracker/index.php?func=detail&aid=2983773&group_id=56967&atid=482468
+
 * Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.36.3-20100322
 - Rebuilt.
 

@@ -1,3 +1,9 @@
+monetdb5-server (5.18.5-20100420) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Apr 2010 10:46:45 +0200
+
 monetdb5-server (5.18.3-20100322) unstable; urgency=low
 
   * Rebuilt.

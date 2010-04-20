@@ -171,6 +171,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.16.5-20100420
+- Rebuilt.
+
 * Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.16.3-20100322
 - Rebuilt.
 

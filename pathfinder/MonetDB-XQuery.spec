@@ -138,6 +138,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/monetdb-xquery-config
 
 %changelog
+* Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.36.5-20100420
+- Rebuilt.
+
+* Fri Apr 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.36.5-20100420
+- Fixed a problem preventing the opening of remote documents in a
+  doc("http://...") query.
+
 * Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.36.3-20100322
 - Rebuilt.
 
