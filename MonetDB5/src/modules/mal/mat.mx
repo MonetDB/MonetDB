@@ -160,48 +160,14 @@ The slice over a mat helps to avoid constructing intermediates
 that are subsequently reduced.
 @c
 static str
-MATpackInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MATpackInternal(MalStkPtr stk, InstrPtr p)
 {
-	int i0, i,*ret = (int*) getArgReference(stk,p,0);
+	int i, *ret = (int*) getArgReference(stk,p,0);
 	BAT *b, *bn;
-	BUN cap=0, cnt = BUN_NONE;
+	BUN cap = 0;
 	int ht = TYPE_any, tt = TYPE_any;
 
-	/* check for the slice range upper bound */
-	if ( !isaBatType(getArgType(mb,p,2)) ){
-		switch getArgType(mb,p,2) {
-			case TYPE_wrd:
-			cnt = (BUN) *(wrd*) getArgReference(stk,p,2);
-			break;
-			case TYPE_lng:
-			cnt = (BUN) *(lng*) getArgReference(stk,p,2);
-			break;
-			case TYPE_int:
-			cnt = (BUN) *(int*) getArgReference(stk,p,2);
-		}
-		/* upper bound of slice is inclusive position counting from 0 */
-		if (cnt < BUN_MAX)
-			cnt++;
-@-
-The optimal case is when we need a slice from the first
-piece. In that case we can simply return the BAT.
-A pitty that we have calculated the other slices as well.
-@c
-		b= BATdescriptor(stk->stk[getArg(p,3)].val.ival);
-		assert(b);
-		if ( BATcount(b) >= cnt ){
-			BBPkeepref(*ret = b->batCacheid);
-			return MAL_SUCCEED;
-		}
-		BBPunfix(b->batCacheid);
-
-		i0 = 3;
-	} else {
-		i0 = 1;
-		cnt = BUN_MAX;
-	}
-
-	for( i = i0; i < p->argc && cap < cnt; i++) {
+	for (i = 1; i < p->argc; i++) {
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
@@ -212,10 +178,10 @@ A pitty that we have calculated the other slices as well.
 		cap += BATcount(b);
 		BBPunfix(b->batCacheid);
 	}
+	assert(ht != TYPE_any);
 
-	assert( ht != TYPE_any);
 	bn = BATnew(ht, tt, cap);
-	if( bn == NULL)
+	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 	/* must set seqbase or else BATins will not materialize column */
 	if (ht == TYPE_void)
@@ -223,14 +189,122 @@ A pitty that we have calculated the other slices as well.
 	if (tt == TYPE_void)
 		BATseqbase(BATmirror(bn), 0);
 
-	for( i = i0; i < p->argc && BATcount(bn) < cnt; i++) {
-		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+	for (i = 1; i < p->argc; i++) {
+		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL){
 			BBPreleaseref(bn->batCacheid);
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		}
 		/* use the right oid ranges, don't change the input */
 		BATins(bn,b,FALSE);
+		BBPunfix(b->batCacheid);
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i, i1 = -1, i2 = -1, *ret = (int*) getArgReference(stk,p,0);
+	BAT *b, *bn;
+	BUN cap = 0, fst, lst, cnt, c;
+	int ht = TYPE_any, tt = TYPE_any;
+
+	switch getArgType(mb,p,1) {
+	case TYPE_wrd:
+		fst = (BUN) *(wrd*) getArgReference(stk,p,1);
+		break;
+	case TYPE_lng:
+		fst = (BUN) *(lng*) getArgReference(stk,p,1);
+		break;
+	case TYPE_int:
+		fst = (BUN) *(int*) getArgReference(stk,p,1);
+		break;
+	default:
+		throw(MAL, "mat.packSlice", "wrong type for lower bound");
+	}
+	switch getArgType(mb,p,2) {
+	case TYPE_wrd:
+		lst = (BUN) *(wrd*) getArgReference(stk,p,2);
+		break;
+	case TYPE_lng:
+		lst = (BUN) *(lng*) getArgReference(stk,p,2);
+		break;
+	case TYPE_int:
+		lst = (BUN) *(int*) getArgReference(stk,p,2);
+		break;
+	default:
+		throw(MAL, "mat.packSlice", "wrong type for upper bound");
+	}
+	lst++; /* inclusive -> exclusive upper bound */
+	if (lst < fst)
+		lst = fst;
+	cnt = lst - fst;
+
+	for (i = 3; i < p->argc && cap < lst; i++) {
+		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if (b == NULL)
+			throw(MAL, "mat.packSlice", RUNTIME_OBJECT_MISSING);
+		if (ht == TYPE_any){
+			ht = b->htype;
+			tt = b->ttype;
+		}
+		c = BATcount(b);
+		if (cap <= fst) {
+			/* The optimal case is when the requested slice falls completely in one BAT.
+			 * In that case, we can simply return a slice (view) of that BAT.
+			 * (A pitty that we have calculated the other slices as well.)
+			 */
+			if (lst <= cap + c) {
+				bn = BATslice(b, fst - cap, lst - cap);
+				BBPunfix(b->batCacheid);
+				BBPkeepref(*ret = bn->batCacheid);
+				return MAL_SUCCEED;
+			}
+			if (fst < cap + c) {
+				i1 = i;
+				fst -= cap;
+				lst -= cap;
+				cap = 0;
+			}
+		}
+		cap += c;
+		BBPunfix(b->batCacheid);
+	}
+	i2 = i - 1;
+	assert(i1 < i2);
+	assert(ht != TYPE_any);
+
+	bn = BATnew(ht, tt, cnt);
+	if (bn == NULL)
+		throw(MAL, "mat.packSlice", MAL_MALLOC_FAIL);
+	/* must set seqbase or else BATins will not materialize column */
+	if (ht == TYPE_void)
+		BATseqbase(bn, 0);
+	if (tt == TYPE_void)
+		BATseqbase(BATmirror(bn), 0);
+
+	for (i = i1; i <= i2; i++) {
+		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if (b == NULL){
+			BBPreleaseref(bn->batCacheid);
+			throw(MAL, "mat.packSlice", RUNTIME_OBJECT_MISSING);
+		}
+		c = BATcount(b);
+		/* use the right oid ranges, don't change the input */
+		if (i == i1 && fst > 0) {
+			BAT *bb = b;
+			b = BATslice(bb, fst, c);
+			BBPunfix(bb->batCacheid);
+		} else
+		if (i == i2 && lst < c) {
+			BAT *bb = b;
+			b = BATslice(bb, 0, lst);
+			BBPunfix(bb->batCacheid);
+		}
+		BATins(bn,b,FALSE);
+		lst -= c;
 		BBPunfix(b->batCacheid);
 	}
 	BBPkeepref(*ret = bn->batCacheid);
@@ -288,7 +362,8 @@ str
 MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
-	return MATpackInternal(mb,stk,p);
+	(void) mb;
+	return MATpackInternal(stk,p);
 }
 
 str
@@ -318,7 +393,7 @@ str
 MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
-	return MATpackInternal(mb,stk,p);
+	return MATpackSliceInternal(mb,stk,p);
 }
 
 
