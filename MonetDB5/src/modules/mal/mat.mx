@@ -51,6 +51,10 @@ pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpack
 comment "Materialize the MAT into a BAT";
 
+pattern pack2(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpack2
+comment "Materialize the MAT into a BAT (by an append all)";
+
 pattern slice(first:wrd, last:wrd, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpackSlice
 comment "Materialize a sliced MAT into a BAT";

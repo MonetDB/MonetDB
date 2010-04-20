@@ -1250,6 +1250,7 @@ end main;
 [ "newIterator",		  "pattern",	  "mat",	  "(grp:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",											  "MATnewIterator;"					  ]
 [ "new",				  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",									  "MATpack;"						  ]
 [ "print",			  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):void ",													  "MATprint;"						  ]
+[ "pack2",			  "pattern",	  "mat",		  "(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",										  "MATpack2;"					  ]
 [ "pack",			  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",											  "MATpack;"						  ]
 [ "pack",				  "pattern",	  "mat",	  "(_1:any_2...):bat[:void,:any_2] ",											  "MATpackValues;"					  ]
 [ "slice",				  "pattern",	  "mat",	  "(first:lng,last:lng,b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",										  "MATpackSlice;"				  ]
