@@ -278,7 +278,8 @@ double recycleAlpha = 0.5;
 						(recycleBlk->profiler[X].counter -1) : 0.1 )	
 					
 #define recycleBen(X) (recycleCost(X)) * (recycleW(X))
-#define recycleProfit(X) (recycleCost(X) * recycleW(X)/ (GDKusec() - recycleBlk->profiler[X].rbytes))
+#define recycleLife(X) ((GDKusec() - recycleBlk->profiler[X].rbytes)/ 1000.0)
+#define recycleProfit(X) (recycleCost(X) * recycleW(X) / recycleLife(X))
 
 
 #define recycleCrdCPU(X) (recycleBlk->profiler[X].ticks) * (recycleW(X))
@@ -507,7 +508,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 
 	(void) cntxt;
 
-	wben = (dbl *)alloca(sizeof(dbl)*ltop);
+	wben = (dbl *)alloca(sizeof(dbl)*ltop); 
 	memset(wben,0, sizeof(dbl)*ltop);
 	for (l = 0; l < ltop; l++){
 		sz = recycleBlk->profiler[lvs[l]].wbytes;
@@ -518,7 +519,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 			case RCACHE_PROFIT:
 				ben = recycleProfit(lvs[l]);
 		}
-		wben[l] = sz? ben / sz :0;
+		wben[l] = sz? ben / sz : -1;
 		totmem += sz; 
 	} 
 	if (totmem <= wr) /* all leaves need to be dropped */
@@ -536,7 +537,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 		for(l = 0; l<newtop; l++){
 			if ((lng) recycleBlk->profiler[lvs[l]].wbytes > targmem - smem)
 				wben[l] = -1;
-			if (maxwb <= wben[l]){
+			if (maxwb < wben[l]){
 				maxwb = wben[l];
 				mpos = l;
 			}
@@ -694,22 +695,22 @@ newpass:
 	}
 
 
-#ifdef _DEBUG_CACHE_ 
-        stream_printf(cntxt->fdout,"RECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
+/*#ifdef _DEBUG_CACHE_ */
+        stream_printf(cntxt->fdout,"\nRECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
                 rcachePolicy,recycleMemory,recyclerUsedMemory);
 		stream_printf(cntxt->fdout,"Target memory "LLFMT"KB Available "LLFMT"KB\n", wr,memLimit-recyclerUsedMemory);
-        stream_printf(cntxt->fdout,"Candidates for eviction\n(# LRU\t\t\tTicks\tFirst\tSZ\t\tCnt\tWgt\tBen)\n");
+        stream_printf(cntxt->fdout,"Candidates for eviction\n(# LRU\t\tTicks\tLife\tSZ\tCnt\tWgt\tBen\tProf)\n");
 		for (l = 0; l < ltop; l++)
-        	stream_printf(cntxt->fdout,"%3d "LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t%4.2f\t%5.3f\n",
+        	stream_printf(cntxt->fdout,"%3d "LLFMT"\t"LLFMT"\t %5.2f\t "LLFMT"\t%3d\t%4.1f\t%5.1f\t%5.1f\n",
                 	lvs[l],recycleBlk->profiler[lvs[l]].clk,
 	                recycleBlk->profiler[lvs[l]].ticks,
-        	        recycleBlk->profiler[lvs[l]].rbytes,
+        	        recycleLife(lvs[l]),
                 	recycleBlk->profiler[lvs[l]].wbytes,
 	                recycleBlk->profiler[lvs[l]].counter,
         	        recycleW(lvs[l]),
-                	recycleBen(lvs[l]));
+                	recycleBen(lvs[l]),recycleProfit(lvs[l]));
 
-#endif 
+/*#endif */
 
 	/* find entries to evict */
 	mem = recyclerUsedMemory + wr > memLimit;
@@ -775,6 +776,13 @@ newpass:
 
 			case RCACHE_BENEFIT:
 			case RCACHE_PROFIT:
+				k = 0;	/* exclude binds that don't free memory */
+				for (l = 0; l < ltop; l++)
+					if ( recycleBlk->profiler[lvs[l]].wbytes > 0 )
+						lvs[k++] = lvs[l];
+/*				stream_printf(cntxt->fdout,"ltop %d k %d\n",ltop, k); */
+				if ( k > 0 ) 	
+					ltop = k;
 				vtop = chooseVictims(cntxt,lvs, ltop, recyclerUsedMemory + wr - memLimit);
 				for (v = 0; v < vtop; v++){
 					vm[v] = lvs[v];
@@ -788,13 +796,13 @@ newpass:
 	if (recyclerUsedMemory + wr > memLimit)
 		cont = 1;
 
-#ifdef _DEBUG_CACHE_ 
+/*#ifdef _DEBUG_CACHE_ */
 	stream_printf(cntxt->fdout,"\nEvicted %d instruction(s) \n ",vtop);
 	for(v=0; v<vtop;v++){
 		stream_printf(cntxt->fdout,"%d\t",vm[v]);
 		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
 	}
-#endif
+/* #endif */
 
 	GDKfree(lvs);
 	/* drop victims in one pass */
