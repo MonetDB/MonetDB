@@ -314,23 +314,22 @@ MRdistributework(
 		p = pushArgument(mb, p, q);
 	}
 
-	/* delay bat.inserts until out of the dataflow barrier */
-	for (i = 0; i < n; i++) {
-		/* bat.insert(b, y1) */
-		for (j = 0; j < retc; j++) {
-			p = newFcnCall(mb, batRef, insertRef);
-			p = pushArgument(mb, p, getArg(packs[j], 0));
-			if (!isaBatType(getArgType(mb, sig, j)))
+	/* delayed bat.inserts for easily creating an deterministic flow */
+	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
+		q = getArg(packs[j], 0);
+		/* p := bat.insert(b, y1) */
+		for (i = 0; i < n; i++) {
+			p = newStmt(mb, batRef, insertRef);
+			p = pushArgument(mb, p, q);
+			if (!isaBatType(lcol->val1type))
 				p = pushNil(mb, p, TYPE_void);
 			p = pushArgument(mb, p, gets[(i * retc) + j]);
+			q = getArg(p, 0);
 		}
-	}
-
-	/* markH all result bats such that further operations don't get
-	 * confused by possible duplicate ids */
-	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
+		/* markH all result bats such that further operations don't get
+		 * confused by possible duplicate ids */
 		p = newFcnCall(mb, algebraRef, markHRef);
-		p = pushArgument(mb, p, getArg(packs[j], 0));
+		p = pushArgument(mb, p, q);
 		getArg(p, 0) = lcol->val1;
 	}
 
@@ -628,6 +627,7 @@ OPTmapreduceImplementation(
 					p = pushArgument(mc, p, lastcol->val3);
 					p = pushNil(mc, p, getHeadType(lastcol->val1type));
 					p = pushArgument(mc, p, lastcol->val2);
+					lastcol->val3 = getArg(p, 0);
 
 					/* propagate type change */
 					for (j = 0; j < sig->retc; j++) {
@@ -637,14 +637,26 @@ OPTmapreduceImplementation(
 							 * errors, can't do better than scan
 							 * backwards and pick up what we need to fix */
 							int k;
+							int q = lastcol->val1;
 							p = NULL;
 							for (k = mb->stop - 1; k >= 0; k--) {
 								p = mb->stmt[k];
+								/* First find algebra.markH for the
+								 * target BAT, then traverse through the
+								 * chained bat.insert calls. */
+								if (getModuleId(p) == algebraRef &&
+										getFunctionId(p) == markHRef &&
+										getArg(p, 0) == q)
+								{
+									q = getArg(p, 1);
+									continue;
+								}
+
 								if (getModuleId(p) == batRef &&
 										getFunctionId(p) == insertRef &&
-										getArg(p, 1) == lastcol->val1)
+										getArg(p, 0) == q)
 								{
-#define FINDANDFIX(X, Y) { \
+#define FINDANDFIXBATNEW(X, Y) { \
 	int s; \
 	InstrPtr pt; \
 	for (s = 0; s < mb->stop; s++) { \
@@ -659,10 +671,11 @@ OPTmapreduceImplementation(
 		} \
 	} \
 }
-									FINDANDFIX(p, 2);
+									FINDANDFIXBATNEW(p, 2);
+									q = getArg(p, 1);
 								}
 							}
-							FINDANDFIX(sig, j);
+							FINDANDFIXBATNEW(sig, j);
 							/* fix return and sig in one go the same time */
 							getArg(sig, j) = lastcol->val1 = lastcol->val3;
 							break;
