@@ -238,24 +238,10 @@ MRdistributework(
 	w = (int *)alloca(retc * sizeof(int));
 
 	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
-#ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
-		/* x := mat.pack(...) */
-		packs[j] = p = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(p, matRef);
-		setFunctionId(p, packRef);
-		getArg(p, 0) = lcol->val1;
-
-		/* make return variable for mat.pack known upfront */
-		p = newFcnCall(mb, batRef, newRef);
-		p = pushType(mb, p, getHeadType(lcol->val1type));
-		p = pushType(mb, p, getTailType(lcol->val1type));
-		getArg(p, 0) = lcol->val1;
-#else /* it's not, do it manually */
 		packs[j] = p = newFcnCall(mb, batRef, newRef);
 		p = pushType(mb, p, getHeadType(lcol->val1type));
 		p = pushType(mb, p, getTailType(lcol->val1type));
 		getArg(p, 0) = lcol->val1;
-#endif
 
 		/* same for all sub results that we push into the mat.pack as
 		 * arguments at the same time */
@@ -265,9 +251,6 @@ MRdistributework(
 			p = pushType(mb, p, getTailType(lcol->val1type));
 			setArgType(mb, p, 0, lcol->val1type);
 			gets[(i * retc) + j] = getArg(p, 0);
-#ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
-			packs[j] = pushArgument(mb, packs[j], getArg(p, 0));
-#endif
 		}
 	}
 
@@ -318,16 +301,6 @@ MRdistributework(
 			p = pushArgument(mb, p, q);
 			p = pushArgument(mb, p, w[j]);
 			getArg(p, 0) = gets[(i * retc) + j];
-#ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
-			/* in case we work around mat.pack, insert the value in the bat */
-			if (!isaBatType(getArgType(mb, sig, j))) { /* too lazy to do it based on cols */
-				/* bat.insert(b, y1) */
-				p = newFcnCall(mb, batRef, insertRef);
-				p = pushArgument(mb, p, getArg(packs[j], 0));
-				p = pushNil(mb, p, TYPE_void);
-				p = pushArgument(mb, p, gets[(i * retc) + j]);
-			}
-#endif
 			/* bat.insert(b, y1) */
 			p = newFcnCall(mb, batRef, insertRef);
 			p = pushArgument(mb, p, getArg(packs[j], 0));
@@ -350,13 +323,9 @@ MRdistributework(
 	/* markH all result bats such that further operations don't get
 	 * confused by possible duplicate ids */
 	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
-#ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
-		pushInstruction(mb, packs[j]);
-#else
 		p = newFcnCall(mb, algebraRef, markHRef);
 		p = pushArgument(mb, p, getArg(packs[j], 0));
 		getArg(p, 0) = lcol->val1;
-#endif
 	}
 
 #ifdef _DEBUG_OPT_MAPREDUCE
