@@ -3178,42 +3178,6 @@ mapi_clear_params(MapiHdl hdl)
 	return MOK;
 }
 
-@-
-The routine mapi_check ensures that no 'false' newlines are sent to the server,
-because this may lead to a synchronization error easily.
-@-
-The query string could contain commentary lines, marked as starting
-with a '#'. They should be silently removed.
-Likewise for all end of line commentaries, provided '#' is not
-part of a string literal.
-@c
-static void
-mapi_check_query(MapiHdl hdl)
-{
-	char *c, bracket = 0, *comm = 0;
-
-	assert(hdl->query);
-	for (c = hdl->query; *c; c++) {
-		if (*c == '\'' || *c == '"') {
-			if (bracket == *c)
-				bracket = 0;
-			else if (bracket == 0)
-				bracket = *c;
-		}
-		if (*c == '#' && bracket == 0) {
-			comm = c;
-			while (*c && *c != '\n')
-				c++;
-		}
-	}
-	if (comm) {
-		/* remove comment and white space before comment start */
-		while (--comm >= hdl->query && isspace((int) (unsigned char) *comm))
-			;
-		*++comm = 0;
-	}
-}
-
 static MapiHdl
 prepareQuery(MapiHdl hdl, const char *cmd)
 {
@@ -3226,7 +3190,6 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 			free(hdl->template);
 			hdl->template = NULL;
 		}
-		mapi_check_query(hdl);
 	}
 	return hdl;
 }
