@@ -75,7 +75,6 @@ function user.s0_0():void;
     X168 := nil:bat[:oid,:bit];
     X191 := nil:bat[:oid,:sht];
     X201 := nil:bat[:oid,:bte];
-barrier _250 := language.dataflow();
     (_253,_254,_255,_256,_257,_258,_259,_260,_261) := mapreduce.exec(0,"user","s0_0mp");
     (_263,_264,_265,_266,_267,_268,_269,_270,_271) := mapreduce.exec(1,"user","s0_0mp");
     (_273,_274,_275,_276,_277,_278,_279,_280,_281) := mapreduce.exec(2,"user","s0_0mp");
@@ -198,6 +197,21 @@ MRcloudSize(str mrcluster)
 	return(mapcount);
 }
 
+static void
+MRcleanCloud(int mapcount)
+{
+	int i;
+
+	for (i = 0; i < mapcount; i++) {
+		if (mapnodes[mapcount].uri != NULL)
+			GDKfree(mapnodes[mapcount].uri);
+		if (mapnodes[mapcount].user != NULL)
+			GDKfree(mapnodes[mapcount].user);
+		if (mapnodes[mapcount].pass != NULL)
+			GDKfree(mapnodes[mapcount].pass);
+	}
+}
+
 typedef struct _mapcol {
 	int val1;
 	int val1type;
@@ -217,12 +231,12 @@ MRdistributework(
 		str mrcluster)
 {
 	InstrPtr o, p, *packs;
-	int i, n, j, q, barrier, v, retc;
+	int i, n, j, q, v, retc;
 	int *gets, *w;
 	mapcol *lcol;
 	(void)cntxt;
 
-	n = MRcloudSize(mrcluster); /* FIXME: free */
+	n = MRcloudSize(mrcluster);
 
 	assert(n);
 	assert(col);
@@ -253,14 +267,6 @@ MRdistributework(
 			gets[(i * retc) + j] = getArg(p, 0);
 		}
 	}
-
-	/* barrier language.dataflow */
-	p = newInstruction(mb, ASSIGNsymbol);
-	setModuleId(p, languageRef);
-	setFunctionId(p, dataflowRef);
-	p->barrier = BARRIERsymbol;
-	barrier = getArg(p, 0) = newTmpVariable(mb, TYPE_int);
-	pushInstruction(mb, p);
 
 	for (i = 0; i < n; i++) {
 		/* q := remote.connect("uri", "user", "pass"); */
@@ -301,12 +307,6 @@ MRdistributework(
 			p = pushArgument(mb, p, q);
 			p = pushArgument(mb, p, w[j]);
 			getArg(p, 0) = gets[(i * retc) + j];
-			/* bat.insert(b, y1) */
-			p = newFcnCall(mb, batRef, insertRef);
-			p = pushArgument(mb, p, getArg(packs[j], 0));
-			if (!isaBatType(getArgType(mb, sig, j)))
-				p = pushNil(mb, p, TYPE_void);
-			p = pushArgument(mb, p, gets[(i * retc) + j]);
 		}
 
 		/* remote.disconnect(q); */
@@ -314,11 +314,17 @@ MRdistributework(
 		p = pushArgument(mb, p, q);
 	}
 
-	/* end of dataflow barrier */
-	p = newInstruction(mb, ASSIGNsymbol);
-	p->barrier = EXITsymbol;
-	getArg(p, 0) = barrier;
-	pushInstruction(mb, p);
+	/* delay bat.inserts until out of the dataflow barrier */
+	for (i = 0; i < n; i++) {
+		/* bat.insert(b, y1) */
+		for (j = 0; j < retc; j++) {
+			p = newFcnCall(mb, batRef, insertRef);
+			p = pushArgument(mb, p, getArg(packs[j], 0));
+			if (!isaBatType(getArgType(mb, sig, j)))
+				p = pushNil(mb, p, TYPE_void);
+			p = pushArgument(mb, p, gets[(i * retc) + j]);
+		}
+	}
 
 	/* markH all result bats such that further operations don't get
 	 * confused by possible duplicate ids */
@@ -332,6 +338,8 @@ MRdistributework(
 	chkProgram(cntxt->nspace, mb);
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
+
+	MRcleanCloud(n);
 }
 
 enum copymode { cNONE, FREE, STICK, SINGLE_DUP, DUP, LEAVE };
