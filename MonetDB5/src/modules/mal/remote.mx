@@ -864,8 +864,6 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	MapiHdl mhdl = NULL;
 	Symbol sym;
 
-	(void)cntxt;
-
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
@@ -899,6 +897,15 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	}
 	if (mhdl)
 		mapi_close_handle(mhdl);
+
+	/* make sure the program is error free */
+	chkProgram(cntxt->nspace, sym->def);
+	if (sym->def->errors) {
+		mal_unset_lock(c->lock, "remote.register"); 
+		throw(MAL, "remote.register",
+				"function '%s.%s' contains syntax or type errors",
+				mod, fcn);
+	}
 
 	qry = function2str(sym->def, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
 #ifdef _DEBUG_REMOTE
