@@ -198,19 +198,7 @@ MRcloudSize(str mrcluster)
 	return(mapcount);
 }
 
-enum coltype {
-	NONE,
-	cBAT,
-	VAL,
-	COUNT,
-	SUM,
-	MIN,
-	MAX,
-	AVG
-};
-
 typedef struct _mapcol {
-	enum coltype type;
 	int val1;
 	int val1type;
 	int val2;
@@ -241,7 +229,7 @@ MRdistributework(
 
 	retc = 0;
 	for (lcol = col; lcol != NULL; lcol = lcol->next)
-		retc += lcol->type == AVG ? 2 : 1;
+		retc++;
 
 	assert(retc);
 
@@ -250,85 +238,36 @@ MRdistributework(
 	w = (int *)alloca(retc * sizeof(int));
 
 	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
-		if (lcol->type == cBAT) {
 #ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
-			/* x := mat.pack(...) */
-			packs[j] = p = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(p, matRef);
-			setFunctionId(p, packRef);
-			getArg(p, 0) = lcol->val1;
+		/* x := mat.pack(...) */
+		packs[j] = p = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(p, matRef);
+		setFunctionId(p, packRef);
+		getArg(p, 0) = lcol->val1;
 
-			/* make return variable for mat.pack known upfront */
-			p = newFcnCall(mb, batRef, newRef);
-			p = pushType(mb, p, getHeadType(lcol->val1type));
-			p = pushType(mb, p, getTailType(lcol->val1type));
-			getArg(p, 0) = lcol->val1;
+		/* make return variable for mat.pack known upfront */
+		p = newFcnCall(mb, batRef, newRef);
+		p = pushType(mb, p, getHeadType(lcol->val1type));
+		p = pushType(mb, p, getTailType(lcol->val1type));
+		getArg(p, 0) = lcol->val1;
 #else /* it's not, do it manually */
-			packs[j] = p = newFcnCall(mb, batRef, newRef);
-			p = pushType(mb, p, getHeadType(lcol->val1type));
-			p = pushType(mb, p, getTailType(lcol->val1type));
-			getArg(p, 0) = lcol->val1;
+		packs[j] = p = newFcnCall(mb, batRef, newRef);
+		p = pushType(mb, p, getHeadType(lcol->val1type));
+		p = pushType(mb, p, getTailType(lcol->val1type));
+		getArg(p, 0) = lcol->val1;
 #endif
-		} else if (lcol->type == AVG) {
-			/* basically 2 times the code below */
-			packs[j++] = p = newFcnCall(mb, batRef, newRef);
-			p = pushType(mb, p, TYPE_void);
-			p = pushType(mb, p, lcol->val2type);
-			packs[j] = p = newFcnCall(mb, batRef, newRef);
-			p = pushType(mb, p, TYPE_void);
-			p = pushType(mb, p, lcol->val3type);
-
-			p = newAssignment(mb);
-			p = pushNil(mb, p, lcol->val2type);
-			setArgType(mb, p, 0, lcol->val2type);
-			getArg(p, 0) = lcol->val2;
-			p = newAssignment(mb);
-			p = pushNil(mb, p, lcol->val3type);
-			setArgType(mb, p, 0, lcol->val3type);
-			getArg(p, 0) = lcol->val3;
-		} else {
-			/* it took me some time to figure out that mat doesn't
-			 * properly support operations performed on a pack of
-			 * values, so just create a bat containing the values */
-			packs[j] = p = newFcnCall(mb, batRef, newRef);
-			p = pushType(mb, p, TYPE_void);
-			p = pushType(mb, p, lcol->val1type);
-
-			/* this will hold the final result */
-			p = newAssignment(mb);
-			p = pushNil(mb, p, lcol->val1type);
-			setArgType(mb, p, 0, lcol->val1type);
-			getArg(p, 0) = lcol->val1;
-		}
 
 		/* same for all sub results that we push into the mat.pack as
 		 * arguments at the same time */
 		for (i = 0; i < n; i++) {
-			if (lcol->type == cBAT) {
-				p = newFcnCall(mb, batRef, newRef);
-				p = pushType(mb, p, getHeadType(lcol->val1type));
-				p = pushType(mb, p, getTailType(lcol->val1type));
-				setArgType(mb, p, 0, lcol->val1type);
-				gets[(i * retc) + j] = getArg(p, 0);
+			p = newFcnCall(mb, batRef, newRef);
+			p = pushType(mb, p, getHeadType(lcol->val1type));
+			p = pushType(mb, p, getTailType(lcol->val1type));
+			setArgType(mb, p, 0, lcol->val1type);
+			gets[(i * retc) + j] = getArg(p, 0);
 #ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
-				packs[j] = pushArgument(mb, packs[j], getArg(p, 0));
+			packs[j] = pushArgument(mb, packs[j], getArg(p, 0));
 #endif
-			} else if (lcol->type == AVG) {
-				/* 2x code from else case */
-				p = newAssignment(mb);
-				p = pushNil(mb, p, lcol->val2type);
-				setArgType(mb, p, 0, lcol->val2type);
-				gets[(i * retc) + j - 1] = getArg(p, 0);
-				p = newAssignment(mb);
-				p = pushNil(mb, p, lcol->val3type);
-				setArgType(mb, p, 0, lcol->val3type);
-				gets[(i * retc) + j] = getArg(p, 0);
-			} else {
-				p = newAssignment(mb);
-				p = pushNil(mb, p, lcol->val1type);
-				setArgType(mb, p, 0, lcol->val1type);
-				gets[(i * retc) + j] = getArg(p, 0);
-			}
 		}
 	}
 
@@ -408,55 +347,16 @@ MRdistributework(
 	getArg(p, 0) = barrier;
 	pushInstruction(mb, p);
 
-	/* perform the correct actions for aggregates */
+	/* markH all result bats such that further operations don't get
+	 * confused by possible duplicate ids */
 	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
-		switch (lcol->type) {
-			case cBAT:
 #ifdef MAT_MERGE_TABLE_IS_WORKING_PROPERLY
-				pushInstruction(mb, packs[j]);
+		pushInstruction(mb, packs[j]);
 #else
-				p = newFcnCall(mb, algebraRef, markHRef);
-				p = pushArgument(mb, p, getArg(packs[j], 0));
-				getArg(p, 0) = lcol->val1;
+		p = newFcnCall(mb, algebraRef, markHRef);
+		p = pushArgument(mb, p, getArg(packs[j], 0));
+		getArg(p, 0) = lcol->val1;
 #endif
-			break;
-			case AVG:
-				p = newFcnCall(mb, aggrRef, sumRef);
-				p = pushArgument(mb, p, getArg(packs[j], 0));
-				getArg(p, 0) = lcol->val2;
-				j++;
-				p = newFcnCall(mb, aggrRef, sumRef);
-				p = pushArgument(mb, p, getArg(packs[j], 0));
-				getArg(p, 0) = lcol->val3;
-				/* val1 := calc./(val2, val3); */
-				p = newFcnCall(mb, calcRef, divRef);
-				p = pushArgument(mb, p, lcol->val2);
-				p = pushArgument(mb, p, lcol->val3);
-				getArg(p, 0) = lcol->val1;
-			break;
-			case COUNT:
-				p = newFcnCall(mb, aggrRef, sumRef);
-				p = pushArgument(mb, p, getArg(packs[j], 0));
-				getArg(p, 0) = lcol->val1;
-			break;
-			case MAX:
-				p = newFcnCall(mb, aggrRef, maxRef);
-				p = pushArgument(mb, p, getArg(packs[j], 0));
-				getArg(p, 0) = lcol->val1;
-			break;
-			case MIN:
-				p = newFcnCall(mb, aggrRef, minRef);
-				p = pushArgument(mb, p, getArg(packs[j], 0));
-				getArg(p, 0) = lcol->val1;
-			break;
-			case SUM:
-				p = newFcnCall(mb, aggrRef, sumRef);
-				p = pushArgument(mb, p, getArg(packs[j], 0));
-				getArg(p, 0) = lcol->val1;
-			break;
-			default:
-				assert(0);
-		}
 	}
 
 #ifdef _DEBUG_OPT_MAPREDUCE
@@ -601,8 +501,6 @@ OPTmapreduceImplementation(
 				}
 				lastcol->val1 = getArg(p, 0);
 				lastcol->val1type = getArgType(mc, p, 0);
-				lastcol->type =
-					isaBatType(getArgType(mc, p, 0)) ? cBAT : VAL;
 				lastcol->next = NULL;
 				/* the rest is a reduce plan, but we need to inject a
 				 * return still if there isn't another column following */
@@ -653,14 +551,8 @@ OPTmapreduceImplementation(
 			/* this is the moment the first sql.bind occurred, set the
 			 * calling signature of the map program */
 			getArg(sig, 0) = -1; /* get rid of default retval */
-			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
-				if (lastcol->type == AVG) {
-					sig = pushReturn(mc, sig, lastcol->val2);
-					sig = pushReturn(mc, sig, lastcol->val3);
-				} else {
-					sig = pushReturn(mc, sig, lastcol->val1);
-				}
-			}
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
+				sig = pushReturn(mc, sig, lastcol->val1);
 			MRdistributework(cntxt, mb, col, sig, mrcluster);
 			newComment(mb, "end distribution, optimisations may follow");
 			continue;
@@ -820,12 +712,7 @@ OPTmapreduceImplementation(
 			if (col == NULL) {
 				getArg(ret, 0) = newTmpVariable(mc, TYPE_void);
 			} else for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
-				if (lastcol->type == AVG) {
-					ret = pushReturn(mc, ret, lastcol->val2);
-					ret = pushReturn(mc, ret, lastcol->val3);
-				} else {
-					ret = pushReturn(mc, ret, lastcol->val1);
-				}
+				ret = pushReturn(mc, ret, lastcol->val1);
 			}
 			pushInstruction(mc, ret);
 			copy = DUP;
