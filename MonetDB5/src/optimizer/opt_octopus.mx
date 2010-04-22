@@ -218,24 +218,25 @@ Beware, exceptions should be catched and thrown after the
 connection has been closed.
 @c
 static void
-OCTexitcode(MalBlkPtr mb, int conn,int varid){
+OCTexitcode(MalBlkPtr mb, int conn, int varid)
+{
 	InstrPtr p;
 
 	newCatchStmt(mb, "ANYexception");
-	p = newStmt(mb, remoteRef,disconnectRef);
-    pushArgument(mb,p,conn);
-	newRaiseStmt(mb,"ANYexception");
+	p = newStmt(mb, remoteRef, disconnectRef);
+	pushArgument(mb, p, conn);
+	newRaiseStmt(mb, "ANYexception");
 	newExitStmt(mb, "ANYexception");
 
-	p = newStmt(mb, remoteRef,disconnectRef);
-    pushArgument(mb,p,conn);
-	p= newAssignment(mb);
-	getArg(p,0) = getArg(getInstrPtr(mb,0), 0);
-	pushArgument(mb,p,varid);
-	p->barrier= RETURNsymbol;
+	p = newStmt(mb, remoteRef, disconnectRef);
+	pushArgument(mb, p, conn);
+	p = newAssignment(mb);
+	getArg(p, 0) = getArg(getInstrPtr(mb, 0), 0);
+	pushArgument(mb, p, varid);
+	p->barrier = RETURNsymbol;
 	pushEndInstruction(mb);
-	newStmt(mb,optimizerRef,putName("aliases",7));
-	newStmt(mb,optimizerRef,putName("deadcode",8));
+	newStmt(mb, optimizerRef, putName("aliases", 7));
+	newStmt(mb, optimizerRef, putName("deadcode", 8));
 }
 
 static MalBlkPtr 
@@ -656,16 +657,15 @@ when scheduled correctly, would not lead to duplicate work.
 
 			/* now finalize the exec operation */
 
-			if (isaBatType(mpArgType)){ 	/* exec_qry:= bat.new(:htp,:ttp); */
-                        	q = newFcnCall(sm,batRef,newRef);
-				q = pushType(sm,q, getHeadType(mpArgType));
-                                q = pushType(sm,q, getTailType(mpArgType));
-			}
-			else {				/* exec_qry:= nil:tp; */
+			if (isaBatType(mpArgType)) {                /* exec_qry:= bat.new(:htp,:ttp); */
+				q = newFcnCall(sm, batRef, newRef);
+				q = pushType(sm, q, getHeadType(mpArgType));
+				q = pushType(sm, q, getTailType(mpArgType));
+			}else  {                        /* exec_qry:= nil:tp; */
 				q = newAssignment(sm);
-				q = pushNil(sm,q, mpArgType);
+				q = pushNil(sm, q, mpArgType);
 			}
-			getArg(q,0) = getArg(getInstrPtr(sm,0),0);
+			getArg(q, 0) = getArg(getInstrPtr(sm, 0), 0);
 	
 			/* barrier cond:= calc.>(i,0); */
 			r = newFcnCall(sm,calcRef,putName(">",1));
@@ -768,32 +768,32 @@ when scheduled correctly, would not lead to duplicate work.
 Keep the remaining optimizers in the main program.
 The tentacle code should be optimized by the remaining optimizers too.
 @c
-	for (j=last+1; j< limit; j++)
-	if (old[j] )
-		pushInstruction(mb, old[j]);
+	for (j = last + 1; j < limit; j++)
+		if (old[j])
+			pushInstruction(mb, old[j]);
 
-	for (j=last+1; j< limit; j++)
-	for (i=0; i<tn; i++)
-	if ( old[j] && old[j]->token != REMsymbol){
-		tmb = tentacle[i];
-		if ( getModuleId(old[j]) == optimizerRef && 
-			getFunctionId(old[j]) == putName("reduce",6) ) {
-				q = newStmt(tmb, optimizerRef,putName("recycle",7));
-                q = pushStr(tmb, q, octopusRef);
-                q = pushStr(tmb, q, getFunctionId(getInstrPtr(tmb,0)));
-		}
-		q = newStmt(tmb, getModuleId(old[j]),getFunctionId(old[j]));
-		q = pushStr(tmb, q, octopusRef);
-		q = pushStr(tmb, q, getFunctionId(getInstrPtr(tmb,0)));
-	}
-	for (i=0; i<tn; i++){
+	for (j = last + 1; j < limit; j++)
+		for (i = 0; i < tn; i++)
+			if (old[j] && old[j]->token != REMsymbol) {
+				tmb = tentacle[i];
+				if (getModuleId(old[j]) == optimizerRef &&
+						getFunctionId(old[j]) == putName("reduce", 6)) {
+					q = newStmt(tmb, optimizerRef, putName("recycle", 7));
+					q = pushStr(tmb, q, octopusRef);
+					q = pushStr(tmb, q, getFunctionId(getInstrPtr(tmb, 0)));
+				}
+				q = newStmt(tmb, getModuleId(old[j]), getFunctionId(old[j]));
+				q = pushStr(tmb, q, octopusRef);
+				q = pushStr(tmb, q, getFunctionId(getInstrPtr(tmb, 0)));
+			}
+	for (i = 0; i < tn; i++) {
 		clrDeclarations(tentacle[i]);
-		chkProgram(cntxt->nspace,tentacle[i]);
+		chkProgram(cntxt->nspace, tentacle[i]);
 /*		optimizeMALBlock(cntxt,tentacle[i]); */
-		if ( tentacle[i]->errors ) 
+		if (tentacle[i]->errors)
 			mb->errors++;
 	}
-		chkDeclarations(mb);
+	chkDeclarations(mb);
 /*		chkProgram(cntxt->nspace,mb);  */
 #ifdef DEBUG_OPT_OCTOPUS
 	if (actions) {
