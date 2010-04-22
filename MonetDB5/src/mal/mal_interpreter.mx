@@ -376,7 +376,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 
 #ifdef DEBUG_CALLMAL
 	stream_printf(cntxt->fdout,"callMAL\n");
-	printInstruction(cntxt->fdout,mb,pci,LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,mb,0,pci,LIST_MAL_ALL);
 #endif
 	switch( pci->token){
 	case FUNCTIONsymbol:
