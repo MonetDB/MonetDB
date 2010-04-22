@@ -264,8 +264,8 @@ exception to a Factory?
 mal_export str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci);
 mal_export int yieldResult(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
-mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
-mal_export str shutdownFactory(MalBlkPtr mb, bit force);
+mal_export str finishFactory(Client cntxt, MalBlkPtr mb, InstrPtr pp, int pc);
+mal_export str shutdownFactory(Client cntxt, MalBlkPtr mb, bit force);
 mal_export str shutdownFactoryByName(Client cntxt, Module m,str nme);
 mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag);
 mal_export int factoryHasFreeSpace(void);
@@ -575,7 +575,7 @@ that are still running threads in parallel.
 @c
 
 str
-shutdownFactory(MalBlkPtr mb, bit force)
+shutdownFactory(Client cntxt, MalBlkPtr mb, bit force)
 {
 	Plant pl, plim;
 
@@ -588,8 +588,10 @@ shutdownFactory(MalBlkPtr mb, bit force)
 			pl->factory = 0;
 			if (pl->stk)
 				pl->stk->keepAlive = FALSE;
-			if ( force && pl->stk)
+			if ( force && pl->stk) {
+				garbageCollector(cntxt, mb, pl->stk,TRUE);
 				GDKfree(pl->stk);
+			}
 			pl->stk=0;
 			pl->pc = 0;
 			pl->inuse = 0;
@@ -626,7 +628,7 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 			}
 			stk = pl->stk;
 			MSresetVariables(cntxt, pl->factory, stk, 0);
-			shutdownFactory(pl->factory, 0);
+			shutdownFactory(cntxt, pl->factory, 0);
 			freeStack(stk);
 			deleteSymbol(m,s);
 			return MAL_SUCCEED;
@@ -634,11 +636,11 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 	return MAL_SUCCEED;
 }
 str
-finishFactory(MalBlkPtr mb, InstrPtr pp, int pc)
+finishFactory(Client cntxt, MalBlkPtr mb, InstrPtr pp, int pc)
 {
 	(void) pp;
 	(void) pc;
-	return shutdownFactory(mb,TRUE);
+	return shutdownFactory(cntxt, mb,TRUE);
 }
 
 @- Enquiry operations.
