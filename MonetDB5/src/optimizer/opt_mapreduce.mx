@@ -418,15 +418,12 @@ OPTmapreduceImplementation(
 			if (getFunctionId(p) == mvcRef) {
 				/* sql.mvc(): we need this statement everywhere */
 				copy = SINGLE_DUP;
-			} else if (getFunctionId(p) == bindRef) {
-				str schema = NULL;
-				size_t l = VALformat(&schema, &getVar(mc, getArg(p, 2))->value);
-				/* chop off last quote */
-				if (l >= 1 && schema[l - 1] == '"')
-					schema[l - 1] = '\0';
+			} else if (getFunctionId(p) == bindRef &&
+					*(int *)VALget(&getVar(mc, getArg(p, 5))->value) == 0)
+			{
+				str schema = VALget(&getVar(mc, getArg(p, 2))->value);
 				/* check if this is a column from a mapreduce schema (mr_*) */
-				if (strncmp(schema, "\"mr_", 4) != 0) {
-					GDKfree(schema);
+				if (strncmp(schema, "mr_", 3) != 0) {
 					freeSymbol(new);
 					GDKfree(mb->stmt);
 					mb->stmt = orig;
@@ -437,10 +434,9 @@ OPTmapreduceImplementation(
 				/* and that we don't mix 'n' match mapreduce schemas */
 				if (mrcluster[0] == '\0') {
 					snprintf(mrcluster, sizeof(mrcluster),
-							"%s", schema + 4);
+							"%s", schema + 3);
 				} else {
-					if (strcmp(mrcluster, schema + 4) != 0) {
-						GDKfree(schema);
+					if (strcmp(mrcluster, schema + 3) != 0) {
 						freeSymbol(new);
 						GDKfree(mb->stmt);
 						mb->stmt = orig;
@@ -449,10 +445,10 @@ OPTmapreduceImplementation(
 						return 0;
 					}
 				}
-				GDKfree(schema);
 
 				/* start of sql.bind, kdiff, kunion, etc. sequence */
 				copy = STICK;
+				newComment(mc, "{ sql.bind column");
 			} else if (getFunctionId(p) == binddbatRef) {
 				/* start tracking ... actually no, just blindly assume :) */
 				pushInstruction(mc, p);
@@ -480,6 +476,7 @@ OPTmapreduceImplementation(
 				lastcol->next = NULL;
 				/* the rest is a reduce plan, but we need to inject a
 				 * return still if there isn't another column following */
+				newComment(mc, "} sql.bind column");
 				copy = LEAVE;
 				/* TODO: we should do a forward search for calc./ and
 				 * then track the dependencies backwards to see if we
