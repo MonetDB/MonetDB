@@ -373,7 +373,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		stream_printf(s,"%3d\t %3d\t %3d\t ", mb->stop, potrec, nonbind);
 		stream_printf(s,"%3d\t %3d\t ", cntxt->rcc->recycled0, cntxt->rcc->recycled);
 		stream_printf(s,"|| %3d\t %3d\t ", cntxt->rcc->RPadded0, cntxt->rcc->RPreset0);
-		stream_printf(s,"%3d\t%5.2f", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0);
+		stream_printf(s,"%3d\t%5.2f\t"LLFMT"\t", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0,recyclerUsedMemory);
 	}
 
 	if ( monitorRecycler & 1) { /* RP stat */
@@ -493,7 +493,7 @@ RECYCLElog(int *ret, str *nm)
 		if ( monitorRecycler & 2) { /* Current query stat */
 			stream_printf(s,"InstrQ\t PotRecQ NonBind ");
 			stream_printf(s,"RecQ\t TotRec\t ");
-			stream_printf(s,"|| RPadded  RPreset RPtotal ResetTime(ms)");
+			stream_printf(s,"|| RPadded  RPreset RPtotal ResetTime(ms) RPMem(KB)");
 		}
 
 		if ( monitorRecycler & 1) { /* RP stat */
