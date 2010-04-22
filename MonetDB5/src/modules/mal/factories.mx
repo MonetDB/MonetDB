@@ -179,7 +179,7 @@ FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = findSymbol(cntxt->nspace, putName(mod,strlen(mod)), putName(fcn, strlen(fcn)));
 	if (s == NULL)
 		throw(MAL, "factories.shutdown", RUNTIME_OBJECT_MISSING);
-	shutdownFactory(s->def, TRUE);
+	shutdownFactory(cntxt,s->def, TRUE);
 	return MAL_SUCCEED;
 }
 @}
