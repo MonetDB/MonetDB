@@ -592,58 +592,57 @@ when scheduled correctly, would not lead to duplicate work.
 			getArg(r,0) = rexit;
 
 			/* Generate call to bid scheduling */
-			r = newStmt2(mb, schedulerRef, putName("makeSchedule",12));
-			setArgType(mb,r,0, TYPE_bte);
-			sch[0][0] = getArg(r,0);
-			setVarUDFtype(mb,getArg(r,0)); 
-			for ( j = 0; j < tcnt; j++)
-				for ( k = 0; k < tcnt; k++)
-					if ( j || k){
+			r = newStmt2(mb, schedulerRef, putName("makeSchedule", 12));
+			setArgType(mb, r, 0, TYPE_bte);
+			sch[0][0] = getArg(r, 0);
+			setVarUDFtype(mb, getArg(r, 0));
+			for (j = 0; j < tcnt; j++)
+				for (k = 0; k < tcnt; k++)
+					if (j || k) {
 						sch[j][k] = newTmpVariable(mb, TYPE_bte);
-						r = pushArgument(mb,r,sch[j][k]);
+						r = pushArgument(mb, r, sch[j][k]);
 					}
 			r->retc = tcnt * tcnt;
-			r = pushInt(mb,r,tcnt);
-			for ( j = 0; j < tcnt; j++)
-				for ( k = 0; k < tcnt; k++)
-					r = pushArgument(mb,r,bid[j][k]);
+			r = pushInt(mb, r, tcnt);
+			for (j = 0; j < tcnt; j++)
+				for (k = 0; k < tcnt; k++)
+					r = pushArgument(mb, r, bid[j][k]);
 
 			/* Execution block */
 			/* Initialize result variables */
-                        for ( j = 0; j < tcnt; j++)
-                                for ( k = 0; k < tcnt; k++){
-					if (isaBatType(mpArgType)){
-	                                        r = newFcnCall(mb,batRef,newRef);
-						r = pushType(mb,r, getHeadType(mpArgType));
-						r = pushType(mb,r, getTailType(mpArgType));
-					}
-					else {
+			for (j = 0; j < tcnt; j++)
+				for (k = 0; k < tcnt; k++) {
+					if (isaBatType(mpArgType)) {
+						r = newFcnCall(mb, batRef, newRef);
+						r = pushType(mb, r, getHeadType(mpArgType));
+						r = pushType(mb, r, getTailType(mpArgType));
+					} else {
 						r = newAssignment(mb);
-                        			r = pushNil(mb,r, mpArgType);
+						r = pushNil(mb, r, mpArgType);
 					}
-					setArgType(mb,r,0,mpArgType);
-                                        res[j][k] = getArg(r,0);
-                        }
+					setArgType(mb, r, 0, mpArgType);
+					res[j][k] = getArg(r, 0);
+				}
 
 			/* barrier (go,version):= scheduler.octopus(timeout); */
-			qq= q= newStmt(mb,schedulerRef,octopusRef);
-			setArgType(mb,q,0, TYPE_bit);
-			v2= newVariable(mb,GDKstrdup("version"),TYPE_int);
-			pushArgument(mb,q, v2);
+			qq = q = newStmt(mb, schedulerRef, octopusRef);
+			setArgType(mb, q, 0, TYPE_bit);
+			v2 = newVariable(mb, GDKstrdup("version"), TYPE_int);
+			pushArgument(mb, q, v2);
 			q->retc = 2;
-			q= pushInt(mb,q,10);
+			q = pushInt(mb, q, 10);
 			q->barrier = BARRIERsymbol;
 
-			for ( j= p->retc; j<p->argc; j++)
-				tentacle[tn++] = OPTtentacle(cntxt,mb,old,p,i-1,j,v2,tcnt,wnm,tnm,sch,res);
+			for (j = p->retc; j < p->argc; j++)
+				tentacle[tn++] = OPTtentacle(cntxt, mb, old, p, i - 1, j, v2, tcnt, wnm, tnm, sch, res);
 
-                        /* exit c; */
-                        q= newAssignment(mb);
-                        q->barrier= EXITsymbol;
-                        getArg(q,0)= getArg(qq,0);
-                        getArg(q,1)= v2;
-                        q->retc=2;
-                        q->argc=2;
+			/* exit c; */
+			q = newAssignment(mb);
+			q->barrier = EXITsymbol;
+			getArg(q, 0) = getArg(qq, 0);
+			getArg(q, 1) = v2;
+			q->retc = 2;
+			q->argc = 2;
 
 /*			pushInstruction(mb,p); */
 

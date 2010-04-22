@@ -115,12 +115,7 @@ pattern optimizer.mapreduce():str
 address OPTmapreduce;
 pattern optimizer.mapreduce(mod:str, fcn:str):str
 address OPTmapreduce
-comment "Modify the plan to exploit parallel processing on multiple cores using map-reduce";
-
-module mapreduce;
-pattern exec(conn:str, mod:str, fcn:str):any_1...
-address MRexec
-comment "Execute the function on a MR node. Upon failure use backup.";
+comment "Modify the plan to exploit parallel processing on multiple systems using map-reduce";
 @h
 #ifndef _OPT_MAPREDUCE_
 #define _OPT_MAPREDUCE_
@@ -520,14 +515,14 @@ OPTmapreduceImplementation(
 			continue;
 
 		if (p == (InstrPtr)1) {
-			newComment(mb, "distributing work over columns selected for mapreduce");
+			newComment(mb, "{ map");
 			/* this is the moment the first sql.bind occurred, set the
 			 * calling signature of the map program */
 			getArg(sig, 0) = -1; /* get rid of default retval */
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
 				sig = pushReturn(mc, sig, lastcol->val1);
 			MRdistributework(cntxt, mb, col, sig, mrcluster);
-			newComment(mb, "end distribution, optimisations may follow");
+			newComment(mb, "} map");
 			continue;
 		}
 
@@ -725,7 +720,7 @@ OPTmapreduceImplementation(
 		}
 	}
 
-#ifdef _DEBUG_OPT_MAPREDUCE
+#ifndef _DEBUG_OPT_MAPREDUCE
 	stream_printf(cntxt->fdout, "MAP program\n");
 	chkProgram(cntxt->nspace, mc);
 	printFunction(cntxt->fdout, mc, 0, LIST_MAL_STMT);
@@ -750,18 +745,4 @@ OPTmapreduceImplementation(
 #include "opt_statistics.h"
 @:wrapOptimizer(mapreduce,OPT_CHECK_ALL)@
 
-@-
-The runtime support for the map-reduce depends on the facilities provided
-by the remote module and merovingian. It should register the plan remotely,
-execute it and remove it at some point.
-[code can be taken from octopus]
-@c
-str
-MRexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void)mb;
-	(void)stk;
-	(void)pci;
-	return MAL_SUCCEED;
-}
 @}
