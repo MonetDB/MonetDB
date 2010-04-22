@@ -410,7 +410,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_alloc_map");
-	set[i].value = strdup("yes");
+	set[i].value = strdup("no");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_vmtrim");
