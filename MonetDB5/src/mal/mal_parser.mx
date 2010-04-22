@@ -1501,6 +1501,8 @@ parseAssign(Client cntxt, int cntrl)
 			/* we haven't seen a target variable */
 			/* flow of control statements may end here. */
 			/* shouldn;t allow for nameless controls todo*/
+			if ( i  && cst.vtype== TYPE_str)
+				GDKfree(cst.val.sval);
 			if( cntrl == LEAVEsymbol || cntrl == REDOsymbol ||
 				cntrl == RETURNsymbol || cntrl == EXITsymbol ){	
  				curInstr->argv[0]= getBarrierEnvelop(curBlk);
