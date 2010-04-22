@@ -668,6 +668,8 @@ setLogFile(stream *fd, Module mod, str fname)
 {
 	(void)mod;      /* still unused */
 	mal_set_lock(mal_profileLock, "profileLock");
+	if (eventstream )
+		throw(IO, "mal.profiler", "Log file already set");
 	if (strcmp(fname, "console") == 0)
 		eventstream = mal_clients[0].fdout;
 	else if (strcmp(fname, "stdout") == 0)
@@ -717,8 +719,10 @@ openProfilerStream(stream *fd)
 str
 closeProfilerStream(void)
 {
-	if (eventstream)
+	if (eventstream) {
 		(void)stream_close(eventstream);
+		(void)stream_destroy(eventstream);
+	}
 	eventstream = NULL;
 	malProfileMode = FALSE;
 	return MAL_SUCCEED;
