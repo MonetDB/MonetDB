@@ -189,7 +189,7 @@ authorization information, such as user name.
 
 @{
 The scheduleClient receives a challenge response consisting of
-BIG:user:password:lang:database:.
+endian:user:password:lang:database:
 @c
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
@@ -267,7 +267,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	}
 
 	if (!GDKembedded && database != NULL && database[0] != '\0' &&
-	    strcmp(database, GDKgetenv("gdk_dbname")) != 0)
+			strcmp(database, GDKgetenv("gdk_dbname")) != 0)
 	{
 		stream_printf(fout, "!request for database '%s', "
 				"but this is database '%s', "

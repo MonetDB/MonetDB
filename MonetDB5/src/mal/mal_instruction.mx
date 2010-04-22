@@ -2675,19 +2675,20 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	case FACcall:
 	case PATcall:
 	case CMDcall:
-	case ASSIGNsymbol:
-		for (i = 0; i < p->retc; i++) 
-			if( !getVarTmp(mb, getArg(p,i)) ||
-				isVarUsed(mb, getArg(p,i)) ) 	break;
+	case ASSIGNsymbol :
+		for (i = 0; i < p->retc; i++)
+			if (!getVarTmp(mb, getArg(p, i)) || isVarUsed(mb, getArg(p, i)))
+				break;
 
-		if( i == p->retc) break; 
+		if (i == p->retc)
+			break;
 
 		/* display multi-assignment */
 		if (p->retc > 1)
 			*t++ = '(';
 
-		for (i = 0; i < p->retc; i++){
-			if ( flg & LIST_MAL_STMT){
+		for (i = 0; i < p->retc; i++) {
+			if (flg & LIST_MAL_STMT) {
 				snprintf(t,(len-(t-base)),"%s", getArgName(mb, p, i));
 				advance(t,base,len);
 				@:showVariableProperties@

@@ -1537,7 +1537,7 @@ elements in the value stack.
 		break;
 	case ENDsymbol: 
 		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
-			ret= shutdownFactory(cntxt,mb, 0);
+			ret= shutdownFactory(mb, 0);
 #if @1
 		if( oldtimer)
 			cntxt->timer= oldtimer;
@@ -1659,7 +1659,7 @@ switch(pci->barrier){
 
 		if( getInstrPtr(mb,0)->token == FACTORYsymbol){
 			yieldResult(mb,pci,stkpc);
-			shutdownFactory(cntxt,mb, TRUE);
+			shutdownFactory(mb, TRUE);
 		} else
 			/* a fake multi-assignment */
 			if( env != NULL && pcicaller != NULL){
