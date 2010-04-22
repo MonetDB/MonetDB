@@ -26,6 +26,7 @@
 # but such client side configurations are better packed in their
 # own structure.
 
+# FIXME:  remove this notice for the installed monetdb5.conf  #
 # ----------------------------------------------------------- #
 # Please keep the comments below aligned with the defaults in #
 # MonetDB/src/common/monet_options.mx                         #
@@ -46,88 +47,6 @@ gdk_dbfarm=@localstatedir@@DIRSEP@MonetDB5@DIRSEP@dbfarm
 # mserver5 manually without specifying the database name yourself, the
 # following database name is used.
 #gdk_dbname=demo
-
-# The options below deal with various aspects of memory usage behaviour.
-# If you don't know what these values mean, you should leave them alone.
-
-# memory chunks of size >= gdk_mem_bigsize (in bytes) will be mmaped anonymously
-# default set in gdk_utils.mx: 1<<20 == 1024576 == 1 MiB
-#gdk_mem_bigsize=1024576
-# for 32 bit systems try to claim 3G of (virtual) memory;
-#gdk_vmtrim=yes
-# set to "no" to disable the vmtrim thread.
-
-# valgrind issues:
-# for 32 bit systems it tries claim 3G of (virtual) memory
-# set the alloc map to "no" to run mserver with valgrind;
-# also, you need to tell valgrind to use 8-byte alignment, hence:
-# "valgrind --alignment=8 mserver --set gdk_alloc_map=no ..."
-# By default this behaviour is enabled, but should be better disabled
-# for normal use, hence:
-gdk_alloc_map=no
-
-# You can enable debug for specific parts.  By default debug is
-# switched off.
-#gdk_debug=0
-# possible values: (can be a combination of)
-#       1 = thread-specific debug output
-#       2 = CHECKMASK    = property enforcing on new BATs
-#       4 = MEMMASK      = memory allocation
-#       8 = PROPMASK     = property checking on all values: tells about
-#                          wrongly set properties
-#      16 = IOMASK       = major IO activity
-#      32 = BATMASK      = BAT handling
-#      64 = PARSEMASK    = parser debugging
-#     128 = PARMASK      = Thread management
-#     256 = TRGMASK      = Event management
-#     512 = TMMASK       = Transaction management
-#    1024 = TEMMASK      = Locks and Triggers
-#    2048 = DLMASK       = Dynamic loading
-#    4096 = PERFMASK     = BBP Performance (?)
-#    8192 = DELTAMASK    = Delta debugging (?)
-#   16384 = LOADMASK     = Module loading
-#   32768 = YACCMASK     = Yacc specific error messages
-#   65536 = obsolete     = tcpip (??)
-#  131072 = obsolete     = monet_multiplex: setaggr debugging (??)
-#  262144 = obsolete     = \
-#  524288 = obsolete     =   ddbench (???)
-# 1048576 = obsolete     = /
-# 2097152 = ALGOMASK     = show join/select algorithm chosen
-# 4194304 = ESTIMASK     = show result size estimations (for join,select)
-# 8388608 = XPROPMASK    = extended property checking: tells also about
-#                          not set properties
-#16777216 = JOINPROPMASK = disable property checking with join & outerjoin
-#                          (e.g., for performance measurements)
-#33554432 = DEADBEEFMASK = disable "cleaning" of freed memory in GDKfree()
-#                          (e.g., for performance measurements)
-#67108864 = ALLOCMASK    = exhaustive GDK malloc & free tracing for debugging
-#                          (GDK developers, only)
-#134217728 = OPTMASK     = trace the actions, decisions and effects of MAL optimizers
-#
-# Mserver 5 recognizes a series of command line names instead:
-# --threads ( 1 | PARMASK)
-# --memory (MEMMASK )
-# --properties (CHECKMASK | PROPMASK | BATMASK )
-# --io (IOMASK | PERFMASK )
-# --transactions ( TMMASK | DELTAMASK | TEMMASK)
-# --modules (DLMASK | LOADMASK)
-# --algorithms (ALGOMASK | ESTIMASK)
-# --xproperties (XPROPMASK )
-# --performance (JOINPROPMASK | DEADBEEFMASK)
-# --optimizers (OPTMASK)
-#
-# You can enable the server listing the parsed MAL program for any
-# script parsed on the command line.  By default this is disabled.
-#mal_listing = 0
-# Legal values for mal_listing are:
-#    0 = Disable
-#    1 = List the original input
-#    2 = List the MAL instruction
-#    4 = List the MAL type information
-#    8 = List the MAL UDF type
-#   16 = List the MAL properties
-#   32 = List the hidden details
-#   64 = List the bat tuple count
 
 
 # Monet Section
@@ -319,8 +238,3 @@ dictionary_pipe=inline,remap,dictionary,evaluate,costModel,coercions,emptySet,al
 
 # The default + compression
 compression_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
-
-# ----------------------------------------------------------- #
-# Please keep the comments above aligned with the defaults in #
-# MonetDB/src/common/monet_options.mx                         #
-# ----------------------------------------------------------- #

@@ -15,7 +15,9 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-EXTRA_DIST = \
+man_MANS = monetdb5.conf.5
+
+EXTRA_DIST = $(man_MANS) \
 	config.guess config.sub \
 	install-sh missing \
 	ltmain.sh config.h.in \
