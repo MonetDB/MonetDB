@@ -186,6 +186,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.5-20100420
+- Rebuilt.
+
 * Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.3-20100322
 - Rebuilt.
 

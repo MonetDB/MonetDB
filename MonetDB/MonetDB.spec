@@ -106,6 +106,21 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libbat.so
 
 %changelog
+* Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.5-20100420
+- Rebuilt.
+
+* Thu Apr 15 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.5-20100420
+- Fixed a bug that could cause a crash when string BATs are combined.
+  (SF bug 2947763.)
+
+* Sun Apr 11 2010 Niels Nes <niels@cwi.nl> - 1.36.5-20100420
+- Fixed a potential file leak: under certain conditions, files in the
+  database might not get deleted when they should (they would be
+  deleted when the server restarts).
+
+* Mon Mar 29 2010 Fabian Groffen <fabian@cwi.nl> - 1.36.5-20100420
+- Fix regression introduced in Feb2010-SP1 causing UDP connections to malfunction, in particular affecting the stethoscope tool.
+
 * Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.3-20100322
 - Rebuilt.
 

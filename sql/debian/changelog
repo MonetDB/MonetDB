@@ -1,3 +1,16 @@
+monetdb-sql (2.36.5-20100420) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Apr 2010 10:48:19 +0200
+
+monetdb-sql (2.36.5-20100420) unstable; urgency=low
+
+  * fixed bug #2983773 "SQL: minimal optimizer pipe unstable"
+    https://sourceforge.net/tracker/index.php?func=detail&aid=2983773&group_id=56967&atid=482468
+
+ -- Stefan Manegold <manegold@cwi.nl>  Thu, 8 Apr 2010 10:48:19 +0200
+
 monetdb-sql (2.36.3-20100322) unstable; urgency=low
 
   * Rebuilt.

@@ -1,3 +1,30 @@
+monetdb (1.36.5-20100420) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Apr 2010 10:46:13 +0200
+
+monetdb (1.36.5-20100420) unstable; urgency=low
+
+  * Fixed a bug that could cause a crash when string BATs are combined.
+    (SF bug 2947763.)
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 15 Apr 2010 10:46:13 +0200
+
+monetdb (1.36.5-20100420) unstable; urgency=low
+
+  * Fixed a potential file leak: under certain conditions, files in the
+    database might not get deleted when they should (they would be
+    deleted when the server restarts).
+
+ -- Niels Nes <niels@cwi.nl>  Sun, 11 Apr 2010 10:46:13 +0200
+
+monetdb (1.36.5-20100420) unstable; urgency=low
+
+  * Fix regression introduced in Feb2010-SP1 causing UDP connections to malfunction, in particular affecting the stethoscope tool.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 29 Mar 2010 10:46:13 +0200
+
 monetdb (1.36.3-20100322) unstable; urgency=low
 
   * Rebuilt.

@@ -1,3 +1,9 @@
+monetdb-testing (1.36.5-20100420) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Apr 2010 10:49:07 +0200
+
 monetdb-testing (1.36.3-20100322) unstable; urgency=low
 
   * Rebuilt.
