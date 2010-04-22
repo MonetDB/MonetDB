@@ -3770,7 +3770,11 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         /* Rel:    num_gt (Rel) */
         case 27:
         {
-            PFsql_t * (*op) (const PFsql_t *, const PFsql_t *);
+            PFsql_t            *(*op) (const PFsql_t *, const PFsql_t *);
+            PFalg_simple_type_t lty = type_of (p, p->sem.binary.col1),
+                                rty = type_of (p, p->sem.binary.col2);
+            PFsql_t            *lcol,
+                               *rcol;
 
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
@@ -3780,16 +3784,27 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             else
                 op = PFsql_gt;
 
+            lcol = col_env_lookup (COLMAP(p), p->sem.binary.col1, lty);
+            rcol = col_env_lookup (COLMAP(p), p->sem.binary.col2, rty);
+
+            /* for databases without boolean types we have to fake the
+               comparison of boolean values (by using integers) */
+            if (lty == aat_bln) {
+                lcol = (lcol->kind == sql_column_name ||
+                        lcol->kind == sql_lit_int)
+                       ? lcol
+                       : case_ (when (lcol, TRUE_INT), else_ (FALSE_INT));
+                rcol = (rcol->kind == sql_column_name ||
+                        rcol->kind == sql_lit_int)
+                       ? rcol
+                       : case_ (when (rcol, TRUE_INT), else_ (FALSE_INT));
+            }
+                
             /* add the new column to the environment */
             col_env_add (COLMAP(p),
                          p->sem.binary.res,
                          type_of (p, p->sem.binary.res),
-                         op (col_env_lookup (COLMAP(p),
-                                             p->sem.binary.col1,
-                                             type_of (p, p->sem.binary.col1)),
-                             col_env_lookup (COLMAP(p),
-                                             p->sem.binary.col2,
-                                             type_of (p, p->sem.binary.col2))));
+                         op (lcol, rcol));
         }   break;
 
         /* Rel:    bool_and (Rel) */
