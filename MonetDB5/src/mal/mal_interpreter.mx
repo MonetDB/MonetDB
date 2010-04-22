@@ -695,6 +695,10 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *h
 			if (hotpotatoes[t].bid == h)
 				*hotclaim += hotpotatoes[t].claim;
 		}
+		/* make sure you can afford one hash when you have propCheck enabled */
+		if ( GDKdebug & 10 ){
+			total += cnt * sizeof(BUN);
+		}
 		*argclaim = total;
 	}
 	if ( retclaim  && *retclaim == 0)
@@ -1201,6 +1205,10 @@ DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
 	flow->blocked[getArg(p,j)] |= isOutputVar(p,getArg(p,j));
 	}
 
+	/* the target variables become blocked until this instruction is finished */
+	for ( j = 0; j< p->retc; j++)
+		flow->blocked[getArg(p,j)] = 1;
+
 	fs[i].status = DFLOWrunning;
 
 	PARDEBUG {
@@ -1214,7 +1222,7 @@ DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
 static str
 DFLOWscheduler( DataFlow flow )
 {
-	int queued = 0, candidates ;
+	int queued = 0, candidates;
 	int pc = 0, i, j, oa =0, ia;
 	int limit = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
@@ -1280,7 +1288,21 @@ DFLOWscheduler( DataFlow flow )
 			if ( fs[pc].status != DFLOWwrapup)
 				break;
 		/* first try to find all instructions that use the released target */
-		for(i = limit-1 ; i >= pc ; i--)
+		candidates = 0;
+		for(i = limit-1; i >= pc ; i--)
+		if (fs[i].status == DFLOWpending ) {
+			p = getInstrPtr(flow->mb, fs[i].pc);
+			for ( j= p->retc; j < p->argc; j++)
+			if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc)){
+				queued++;
+				candidates ++;
+				DFLOWactivate(flow,fs,i,p);
+				q_enqueue(flow->todo, fs+i);
+				break;
+			}
+		}
+		/* if all work done then inspect rest */
+		for(i = limit-1 ; i >= pc && (candidates == 0 && queued < flow->nway) ; i--)
 		if (fs[i].status == DFLOWpending ) {
 			p = getInstrPtr(flow->mb, fs[i].pc);
 			if ( DFLOWeligible(flow,fs,i,p,pc)){
@@ -1291,7 +1313,7 @@ DFLOWscheduler( DataFlow flow )
 		}
 	} 
 	PARDEBUG {
-		candidates = 0;
+		int candidates = 0;
 		stream_printf(GDKstdout,"#end of data flow %d %d\n",pc,limit);
 		for ( i =0 ; i<limit; i++)
 			if (fs[i].status != DFLOWwrapup  && fs[i].pc >=0) {
@@ -1515,7 +1537,7 @@ elements in the value stack.
 		break;
 	case ENDsymbol: 
 		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
-			ret= shutdownFactory(mb, 0);
+			ret= shutdownFactory(cntxt,mb, 0);
 #if @1
 		if( oldtimer)
 			cntxt->timer= oldtimer;
@@ -1637,7 +1659,7 @@ switch(pci->barrier){
 
 		if( getInstrPtr(mb,0)->token == FACTORYsymbol){
 			yieldResult(mb,pci,stkpc);
-			shutdownFactory(mb, TRUE);
+			shutdownFactory(cntxt,mb, TRUE);
 		} else
 			/* a fake multi-assignment */
 			if( env != NULL && pcicaller != NULL){
@@ -1771,7 +1793,7 @@ are identified. In the post-execution phase they are removed.
 		BAT *b;
 
 		for( i=0; i< pci->retc; i++)
-		if ( garbage[i] == 0 && stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
+		if ( garbage[i] == -1 && stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
 				stk->stk[getArg(pci,i)].val.bval ){
 			b= BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 			if( b == NULL){
@@ -1816,10 +1838,10 @@ are identified. In the post-execution phase they are removed.
 			} 
 			if ( garbage[i] >= 0){
 				bid = ABS(stk->stk[garbage[i]].val.bval);
-#ifdef DEBUG_GC
-				stream_printf(GDKstdout,"GC %d %s done %d\n",garbage[i], getVarName(mb,garbage[i]), BBP_lrefs(bid));
-#endif
 				BBPdecref( bid, TRUE);
+#ifdef DEBUG_GC
+				stream_printf(GDKstdout,"GC %d %d %s done %d\n",bid,garbage[i], getVarName(mb,garbage[i]), BBP_lrefs(bid));
+#endif
 				stk->stk[garbage[i]].val.bval = 0;
 			}
 		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
