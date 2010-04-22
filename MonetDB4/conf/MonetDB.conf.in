@@ -43,7 +43,7 @@ gdk_dbfarm=@Xlocalstatedir@@DIRSEP@MonetDB4@DIRSEP@dbfarm
 # set to "no" to run Mserver with valgrind.
 # also, you need to tell valgrind to use 8-byte alignment, hence:
 # "valgrind --alignment=8 Mserver --set gdk_alloc_map=no ..."
-gdk_alloc_map=no
+#gdk_alloc_map=no
 
 # the kernel can be used in embedded situations (don't set this yourself)
 gdk_embedded=no
