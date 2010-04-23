@@ -5,7 +5,7 @@ set -e
 case "$1" in
     configure)
 	mkdir -p /var/log/MonetDB /var/run/MonetDB
-	chown monetdb.monetdb /var/log/MonetDB /var/run/MonetDB
+	chown monetdb:monetdb /var/log/MonetDB /var/run/MonetDB
 	chmod ug=rwx,o= /var/log/MonetDB /var/run/MonetDB
     ;;
 

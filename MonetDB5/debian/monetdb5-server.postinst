@@ -11,7 +11,7 @@ case "$1" in
             adduser --system --home /var/lib/monetdb --disabled-password --shell /usr/sbin/nologin monetdb
         fi
 	mkdir -p /var/MonetDB5
-	chown monetdb.monetdb /var/MonetDB5
+	chown monetdb:monetdb /var/MonetDB5
 	chmod ug=rwx,o= /var/MonetDB5
     ;;
 
