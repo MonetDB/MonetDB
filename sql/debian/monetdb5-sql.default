@@ -1,6 +1,6 @@
-# Defaults for merovingian initscript
-# sourced by /etc/init.d/merovingian
-# installed at /etc/default/merovingian by the maintainer scripts
+# Defaults for monetdb5-sql initscript
+# sourced by /etc/init.d/monetdb5-sql
+# installed at /etc/default/monetdb5-sql by the maintainer scripts
 
 #
 # This is a POSIX shell fragment
@@ -8,3 +8,4 @@
 
 # Additional options that are passed to the Daemon.
 DAEMON_OPTS=""
+STARTUP="no"

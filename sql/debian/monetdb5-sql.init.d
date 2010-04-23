@@ -2,8 +2,8 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/bin/merovingian
-NAME=merovingian
-DESC=merovingian
+NAME=mserver5-sql
+DESC="MonetDB SQL server"
 
 test -x $DAEMON || exit 0
 
@@ -14,9 +14,9 @@ DODTIME=1                   # Time to wait for the server to die, in seconds
                             # let some servers to die gracefully and
                             # 'restart' will not work
 
-# Include merovingian defaults if available
-if [ -f /etc/default/merovingian ] ; then
-    . /etc/default/merovingian
+# Include mserver5-sql defaults if available
+if [ -f /etc/default/mserver5-sql ] ; then
+    . /etc/default/mserver5-sql
 fi
 
 set -e
