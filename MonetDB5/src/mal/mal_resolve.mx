@@ -398,9 +398,12 @@ to be garbage collected.
 @c
 	for(i=p->retc;i<p->argc;i++) 
 	if ( findGDKtype(getArgType(mb,p,i)) == TYPE_str ||
+		 getArgType(mb,p,i) == TYPE_bat ||
+		 isaBatType(getArgType(mb,p,i)) ||
 	    (!isPolyType(getArgType(mb,p,i)) && getArgType(mb,p,i)< TYPE_any && 
              getArgType(mb,p,i)>=0 && ATOMstorage(getArgType(mb,p,i)) == TYPE_str)){
 		getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
+		p->gc |= GARBAGECONTROL;
 	}
 @-
 It may happen that an argument was still untyped and as a result of
@@ -481,6 +484,7 @@ Since we now know the storage type of the receiving variable, we can
 set the garbage collection flag.
 @= prepostProcess
 	if (findGDKtype(@1) == TYPE_bat ||
+		 isaBatType(@1) ||
 		findGDKtype(@1) == TYPE_str ||
 	    (!isPolyType(@1) && @1< TYPE_any && 
              @1>=0 && ATOMstorage(@1) == TYPE_str)){
@@ -713,6 +717,7 @@ using the target type.
 			setVarType(mb,getArg(p,k),rhs);
 			setVarFixed(mb,getArg(p,k));
 		}
+		@:prepostProcess(s1,i,mb)@
 		@:prepostProcess(s1,k,mb)@
 	}
 	/* the case where we have no rhs */
