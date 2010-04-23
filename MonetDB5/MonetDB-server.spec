@@ -168,6 +168,7 @@ rm -fr $RPM_BUILD_ROOT
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB5
 
 %config(noreplace) %{_sysconfdir}/monetdb5.conf
+%{_mandir}/man5/monetdb5.conf.5.gz
 
 %files devel
 %defattr(-,root,root)
@@ -184,7 +185,6 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_includedir}/MonetDB5/tools
 %{_includedir}/MonetDB5/*/*.[hcm]
 %{_libdir}/*.so
-%{_mandir}/man5/monetdb5.conf.5.gz
 
 %changelog
 * Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.5-20100420
