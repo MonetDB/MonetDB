@@ -46,7 +46,7 @@ class Cursor:
 
         """This read/write attribute specifies the number of rows to
         fetch at a time with .fetchmany()"""
-        self.arraysize = 1
+        self.arraysize = 100
 
 
         """This read-only attribute specifies the number of rows that
