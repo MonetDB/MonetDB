@@ -695,7 +695,7 @@ newpass:
 	}
 
 
-/*#ifdef _DEBUG_CACHE_ */
+#ifdef _DEBUG_CACHE_ 
         stream_printf(cntxt->fdout,"\nRECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
                 rcachePolicy,recycleMemory,recyclerUsedMemory);
 		stream_printf(cntxt->fdout,"Target memory "LLFMT"KB Available "LLFMT"KB\n", wr,memLimit-recyclerUsedMemory);
@@ -710,7 +710,7 @@ newpass:
         	        recycleW(lvs[l]),
                 	recycleBen(lvs[l]),recycleProfit(lvs[l]));
 
-/*#endif */
+#endif
 
 	/* find entries to evict */
 	mem = recyclerUsedMemory + wr > memLimit;
@@ -796,13 +796,13 @@ newpass:
 	if (recyclerUsedMemory + wr > memLimit)
 		cont = 1;
 
-/*#ifdef _DEBUG_CACHE_ */
+#ifdef _DEBUG_CACHE_
 	stream_printf(cntxt->fdout,"\nEvicted %d instruction(s) \n ",vtop);
 	for(v=0; v<vtop;v++){
 		stream_printf(cntxt->fdout,"%d\t",vm[v]);
 		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
 	}
-/* #endif */
+#endif
 
 	GDKfree(lvs);
 	/* drop victims in one pass */
