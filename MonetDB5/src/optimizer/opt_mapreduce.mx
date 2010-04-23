@@ -336,7 +336,59 @@ MRdistributework(
 	MRcleanCloud(n);
 }
 
-enum copymode { cNONE, FREE, STICK, SINGLE_DUP, DUP, LEAVE };
+enum copymode { cNONE, FREE, STICK, SINGLE, SINGLE_DUP, DUP, LEAVE };
+
+struct stack {
+	int *stack;   /* array of ints */
+	size_t len;   /* max capacity of alloced array stack */
+	size_t cur;   /* current pointer */
+};
+
+static inline void
+trackstack_push(struct stack *stk, int val)
+{
+	if (stk->stack == NULL) {
+		stk->len = 10;
+		stk->cur = 0;
+		stk->stack = malloc(sizeof(int) * stk->len);
+	} else if (stk->cur == stk->len) {
+		stk->stack = realloc(stk->stack, sizeof(int) * stk->len * 2);
+	}
+
+	assert(stk->stack);
+
+	stk->stack[stk->cur++] = val;
+}
+
+static inline char
+trackstack_isempty(struct stack *stk)
+{
+	return(stk->stack == NULL || stk->cur == 0);
+}
+
+static inline char
+trackstack_contains(struct stack *stk, int val)
+{
+	size_t tsci;
+
+	if (trackstack_isempty(stk))
+		return(0);
+
+	for (tsci = stk->cur; tsci > 0; tsci--) {
+		if (stk->stack[tsci - 1] == val)
+			return(1);
+	}
+	return(0);
+}
+
+static inline void
+trackstack_destroy(struct stack *stk)
+{
+	if (!trackstack_isempty(stk)) {
+		free(stk->stack);
+		stk->stack = NULL;
+	}
+}
 
 static int
 OPTmapreduceImplementation(
@@ -346,6 +398,7 @@ OPTmapreduceImplementation(
 		InstrPtr pc)
 {
 	int i, j, limit;
+	int lastUnion = -1;
 	enum copymode copy;
 	InstrPtr p, *old, *orig, ret, sig;
 	MalBlkPtr mc;
@@ -353,6 +406,7 @@ OPTmapreduceImplementation(
 	char mrcluster[256];
 	Symbol new;
 	mapcol *col, *lastcol;
+	struct stack tracker = { NULL, 0, 0 };
 
 	(void)stk; /* useless, is NULL */
 	(void)pc;
@@ -413,25 +467,11 @@ OPTmapreduceImplementation(
 			if (getFunctionId(p) == mvcRef) {
 				/* sql.mvc(): we need this statement everywhere */
 				copy = SINGLE_DUP;
-			} else if (getFunctionId(p) == bindRef &&
-					*(int *)VALget(&getVar(mc, getArg(p, 5))->value) == 0)
-			{
-				str schema = VALget(&getVar(mc, getArg(p, 2))->value);
-				/* check if this is a column from a mapreduce schema (mr_*) */
-				if (strncmp(schema, "mr_", 3) != 0) {
-					freeSymbol(new);
-					GDKfree(mb->stmt);
-					mb->stmt = orig;
-					mb->stop = limit;
-					GDKfree(old);
-					return 0;
-				}
-				/* and that we don't mix 'n' match mapreduce schemas */
-				if (mrcluster[0] == '\0') {
-					snprintf(mrcluster, sizeof(mrcluster),
-							"%s", schema + 3);
-				} else {
-					if (strcmp(mrcluster, schema + 3) != 0) {
+			} else if (getFunctionId(p) == bindRef) {
+				if (*(int *)VALget(&getVar(mc, getArg(p, 5))->value) == 0) {
+					str schema = VALget(&getVar(mc, getArg(p, 2))->value);
+					/* check if this is a column from a mapreduce schema (mr_*) */
+					if (strncmp(schema, "mr_", 3) != 0) {
 						freeSymbol(new);
 						GDKfree(mb->stmt);
 						mb->stmt = orig;
@@ -439,45 +479,82 @@ OPTmapreduceImplementation(
 						GDKfree(old);
 						return 0;
 					}
+					/* and that we don't mix 'n' match mapreduce schemas */
+					if (mrcluster[0] == '\0') {
+						snprintf(mrcluster, sizeof(mrcluster),
+								"%s", schema + 3);
+					} else {
+						if (strcmp(mrcluster, schema + 3) != 0) {
+							freeSymbol(new);
+							GDKfree(mb->stmt);
+							mb->stmt = orig;
+							mb->stop = limit;
+							GDKfree(old);
+							return 0;
+						}
+					}
 				}
 
 				/* start of sql.bind, kdiff, kunion, etc. sequence */
-				copy = STICK;
-				newComment(mc, "{ sql.bind column");
+				trackstack_push(&tracker, getArg(p, 0));
+				copy = SINGLE;
 			} else if (getFunctionId(p) == binddbatRef) {
-				/* start tracking ... actually no, just blindly assume :) */
-				pushInstruction(mc, p);
-				freeInstruction(orig[i]);
-				orig[i] = NULL;
-				i++; /* bat.reverse */
-				pushInstruction(mc, old[i]);
-				freeInstruction(orig[i]);
-				orig[i] = NULL;
-				i++; /* algebra.kdifference */
-				p = old[i];
-				pushInstruction(mc, p);
-				freeInstruction(orig[i]);
-				orig[i] = NULL;
-				/* this is a column reference, keep it */
-				if (lastcol == NULL) {
-					col = lastcol = alloca(sizeof(mapcol));
-					/* this is the first one, leave a marker */
-					orig[i] = (InstrPtr)1; /* should leave some symbol */
-				} else {
-					lastcol = lastcol->next = alloca(sizeof(mapcol));
-				}
-				lastcol->val1 = getArg(p, 0);
-				lastcol->val1type = getArgType(mc, p, 0);
-				lastcol->next = NULL;
-				/* the rest is a reduce plan, but we need to inject a
-				 * return still if there isn't another column following */
-				newComment(mc, "} sql.bind column");
+				trackstack_push(&tracker, getArg(p, 0));
+				copy = SINGLE;
+			} else {
 				copy = LEAVE;
-				/* TODO: we should do a forward search for calc./ and
-				 * then track the dependencies backwards to see if we
-				 * end up with this column, if so, this will be a AVG,
-				 * and hence we have to set two returns for this column */
-				continue;
+			}
+		}
+
+		/* move over statement that depend (indirectly) on the sql.bind
+		 * calls */
+		if (!trackstack_isempty(&tracker)) for (j = p->retc; j < p->argc; j++) {
+			if (trackstack_contains(&tracker, getArg(p, j))) {
+				if (getModuleId(p) == algebraRef) {
+					if (getFunctionId(p) == kunionRef) {
+						/* store last seen kunion instruction for
+						 * comparison with kdifference later */
+						lastUnion = getArg(p, 0);
+					} else if (getFunctionId(p) == kdifferenceRef) {
+						/* a kdifference after a kunion results in the
+						 * final column result */
+						if (getArg(p, 1) == lastUnion) {
+							/* this is a column reference, keep it */
+							if (lastcol == NULL) {
+								col = lastcol = alloca(sizeof(mapcol));
+								/* this is the first one, leave a marker */
+								freeInstruction(orig[i]);
+								/* FIXME: should leave some symbol */
+								orig[i] = (InstrPtr)1;
+								pushInstruction(mc, p);
+								copy = LEAVE;
+							} else {
+								lastcol = lastcol->next =
+									alloca(sizeof(mapcol));
+								copy = SINGLE;
+							}
+							lastcol->val1 = getArg(p, 0);
+							lastcol->val1type = getArgType(mc, p, 0);
+							lastcol->next = NULL;
+							newComment(mc, "= sql column bat");
+							/* break to avoid tracking the return */
+							break;
+							/* TODO: we should do a forward search for
+							 * calc./ and then track the dependencies
+							 * backwards to see if we end up with this
+							 * column, if so, this will be a AVG, and
+							 * hence we have to set two returns for this
+							 * column */
+						}
+					}
+				}
+
+				/* track all returns */
+				for (j = 0; j < p->retc; j++)
+					trackstack_push(&tracker, getArg(p, j));
+
+				copy = SINGLE;
+				break;
 			}
 		}
 
@@ -496,17 +573,20 @@ OPTmapreduceImplementation(
 				copy = FREE;
 				pushInstruction(mc, p);
 			break;
-			case STICK:
+			case SINGLE:
+				copy = LEAVE;
 				pushInstruction(mc, p);
 				freeInstruction(orig[i]);
 				orig[i] = NULL;
 			break;
+			case STICK:
 			case DUP:
 			case cNONE:
 				assert(0); /* make GCC happy */
 			break;
 		}
 	}
+	trackstack_destroy(&tracker);
 
 	copy = STICK;
 	for (i = 0; i < limit; i++) { /* phase 2 */
@@ -713,6 +793,7 @@ OPTmapreduceImplementation(
 			case cNONE:
 				copy = STICK;
 			break;
+			case SINGLE:
 			case FREE:
 			case LEAVE:
 				assert(0); /* make GCC happy */
