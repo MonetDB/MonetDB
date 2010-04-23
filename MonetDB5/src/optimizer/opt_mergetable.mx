@@ -1728,25 +1728,26 @@ The slice operation can also be piggy backed onto the mat.pack using it
 as a property of the MAT. Pushing it through
 would be feasible as well, provided the start of the slice is a constant 0.
 @c
-		if (match > 0 && getModuleId(p) == algebraRef && 
-			getFunctionId(p) == sliceRef &&
-			(m=isMATalias(getArg(p,1), mat, mtop)) >= 0){
-				/* inject new mat.pack() operation */
-				MATpackAll2(mb, NULL, mat, m, &mtop);
-				q= getInstrPtr(mb, mb->stop-1);
-				/* rename mat.pack() to mat.slice() */
-				setFunctionId(q,sliceRef);
-				/* insert bounds from algebra.slice() into mat.slice() */
-				/* (setArgument() seems to shift the remaining arguments,
-				 *  i.e., insert a new argument, not overwrite an existing one) */
-				q= setArgument(mb,q,1,getArg(p,2));
-				q= setArgument(mb,q,2,getArg(p,3));
-				/* reuse result variable of algebra.slice() for mat.slice() */
-				/* (we do not explicitly keep, and thus drop, the original algebra.slice()) */
-				getArg(q,0) = getArg(p,0);
-				
-				actions++;
-				continue;
+		if (match > 0 && getModuleId(p) == algebraRef &&
+				getFunctionId(p) == sliceRef &&
+				(m = isMATalias(getArg(p, 1), mat, mtop)) >= 0)
+		{
+			/* inject new mat.pack() operation */
+			MATpackAll2(mb, NULL, mat, m, &mtop);
+			q = getInstrPtr(mb, mb->stop - 1);
+			/* rename mat.pack() to mat.slice() */
+			setFunctionId(q, sliceRef);
+			/* insert bounds from algebra.slice() into mat.slice() */
+			/* (setArgument() seems to shift the remaining arguments,
+			 *  i.e., insert a new argument, not overwrite an existing one) */
+			q = setArgument(mb, q, 1, getArg(p, 2));
+			q = setArgument(mb, q, 2, getArg(p, 3));
+			/* reuse result variable of algebra.slice() for mat.slice() */
+			/* (we do not explicitly keep, and thus drop, the original algebra.slice()) */
+			getArg(q, 0) = getArg(p, 0);
+
+			actions++;
+			continue;
 		}
 @-
 The mark operators are a special case of apply on parts as we need too
