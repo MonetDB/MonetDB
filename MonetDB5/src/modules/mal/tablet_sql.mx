@@ -448,11 +448,10 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	int res = 0;				/* < 0: error, > 0: success, == 0: continue processing */
 	int j;
 	BUN i;
-	char q=0;
 	size_t rseplen;
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[16];
-	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
+	int threads= (!maxrow || maxrow > (1<<16)) ? (GDKnr_threads < 16? GDKnr_threads: 16):1;
 	lng lio =0,  tio, t1 = 0, total=0, iototal=0;
 	int vmtrim = GDK_vm_trim; 
 
@@ -603,6 +602,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		   rethink the matter. */
 		e = s;
 		while (s < end && (maxrow < 0 || cnt < (BUN) maxrow) ) {
+			char q=0;
 			/* tokenize the record completely
 			   the format of the input should comply to
 			   the following grammar rule
@@ -617,55 +617,50 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			*/
 			if ( quote == 0) {
 				if (rseplen == 1)
-					for ( ; *e ; e++)
-					{
+					for ( ; *e ; e++) {
 						if ( *e == '\\' ){
 							e++;
 							continue;
 						}
 						if (*e == *rsep ) 
-								break;
+							break;
 					}
 				else
-				for ( ; *e ; e++)
-					{
+					for ( ; *e ; e++) {
 						if ( *e == '\\' ) {
 							e++;
 							continue;
 						}
 						if (*e == *rsep && strncmp(e, rsep, rseplen) == 0)
-								break;
+							break;
 					}
 				if ( *e == 0) 
 					e = 0;	/* nonterminated record, we need more */
-			} else
-			if ( rseplen == 1 ) {
-				for ( ; *e ; e++) 
-				{
+			} else if ( rseplen == 1 ) {
+				for ( ; *e ; e++) {
 					if (*e == q)
-                        q = 0;
-                    else if (*e == quote)
-                        q = *e;
-                    else if (*e == '\\') {
-                        if (e[1])
-                            e++;
-					} else if (*e == *rsep )
-							break;
+                        			q = 0;
+                    			else if (*e == quote)
+                        			q = *e;
+                    			else if (*e == '\\') {
+                        			if (e[1])
+                            				e++;
+					} else if (!q && *e == *rsep )
+						break;
 				}
 				if ( *e == 0) 
 					e = 0;	/* nonterminated record, we need more */
 			} else {
-				for ( ; *e ; e++) 
-				{
+				for ( ; *e ; e++) {
 					if (*e == q)
-                        q = 0;
-                    else if (*e == quote)
-                        q = *e;
-                    else if (*e == '\\') {
-                        if (e[1])
-                            e++;
-					} else if (*e == *rsep && strncmp(e, rsep, rseplen) == 0 ) 
-							break;
+                        			q = 0;
+                    			else if (*e == quote)
+                        			q = *e;
+                    			else if (*e == '\\') {
+                        			if (e[1])
+                            				e++;
+					} else if (!q && *e == *rsep && strncmp(e, rsep, rseplen) == 0 ) 
+						break;
 				}
 				if (*e == 0 )
 					e = 0;	/* nonterminated record, we need more */
