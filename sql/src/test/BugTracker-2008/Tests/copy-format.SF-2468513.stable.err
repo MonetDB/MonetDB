@@ -79,26 +79,26 @@ stderr of test 'copy-format.SF-2468513` in directory 'src/test/BugTracker-2008` 
 # 09:34:56 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=34345 
 # 09:34:56 >  
 
-MAPI  = monetdb@alf:31439
+MAPI  = monetdb@alf:30439
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
-ERROR = !SQLException:sql:value '1.01' from line 1 field 2 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:31439
+ERROR = !SQLException:importTable:value '1.01' from line 1 field 2 not inserted, expecting type int
+        !failed to import table
+MAPI  = monetdb@alf:30439
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
-ERROR = !SQLException:sql:value '.02' from line 1 field 2 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:31439
+ERROR = !SQLException:importTable:value '.02' from line 1 field 2 not inserted, expecting type int
+        !failed to import table
+MAPI  = monetdb@alf:30439
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
-ERROR = !SQLException:sql:value '2.03' from line 1 field 2 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:31439
+ERROR = !SQLException:importTable:value '2.03' from line 1 field 2 not inserted, expecting type int
+        !failed to import table
+MAPI  = monetdb@alf:30439
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
-ERROR = !SQLException:sql:value 'aaa' from line 1 field 4 not inserted, expecting type str
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:31439
+ERROR = !SQLException:importTable:value 'aaa' from line 1 field 4 not inserted, expecting type str
+        !failed to import table
+MAPI  = monetdb@alf:30439
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
-ERROR = !SQLException:sql:value 'bbb' from line 1 field 5 not inserted, expecting type str
-        !SQLException:importTable:failed to import table
+ERROR = !SQLException:importTable:value 'bbb' from line 1 field 5 not inserted, expecting type str
+        !failed to import table
 
 # 09:34:56 >  
 # 09:34:56 >  Done.

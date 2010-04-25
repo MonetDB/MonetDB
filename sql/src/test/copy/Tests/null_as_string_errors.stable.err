@@ -80,30 +80,30 @@ stderr of test 'null_as_string_errors` in directory 'src/test/copy` itself:
 # 21:02:57 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38808 
 # 21:02:57 >  
 
-MAPI  = monetdb@alf:32761
+MAPI  = monetdb@alf:30439
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
-ERROR = !SQLException:sql:value 'NULL' from line 1 field 1 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:32761
+ERROR = !SQLException:importTable:value 'NULL' from line 1 field 1 not inserted, expecting type int
+        !failed to import table
+MAPI  = monetdb@alf:30439
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
-ERROR = !SQLException:sql:value 'NULL' from line 1 field 1 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:32761
+ERROR = !SQLException:importTable:value 'NULL' from line 1 field 1 not inserted, expecting type int
+        !failed to import table
+MAPI  = monetdb@alf:30439
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
-ERROR = !SQLException:sql:value 'NULL' from line 1 field 3 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:32761
+ERROR = !SQLException:importTable:value 'NULL' from line 1 field 3 not inserted, expecting type int
+        !failed to import table
+MAPI  = monetdb@alf:30439
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-ERROR = !SQLException:sql:value '' from line 1 field 1 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:32761
+ERROR = !SQLException:importTable:value '' from line 1 field 1 not inserted, expecting type int
+        !failed to import table
+MAPI  = monetdb@alf:30439
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-ERROR = !SQLException:sql:value '' from line 1 field 1 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:32761
+ERROR = !SQLException:importTable:value '' from line 1 field 1 not inserted, expecting type int
+        !failed to import table
+MAPI  = monetdb@alf:30439
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-ERROR = !SQLException:sql:value '' from line 1 field 3 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
+ERROR = !SQLException:importTable:value '' from line 1 field 3 not inserted, expecting type int
+        !failed to import table
 
 # 21:02:58 >  
 # 21:02:58 >  Done.

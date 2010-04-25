@@ -2956,7 +2956,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(ssep);
 	GDKfree(ns);
 	if (!b)
-		throw(SQL, "importTable", "failed to import table");
+		throw(SQL, "importTable", "%sfailed to import table", m->errstr);
 	*res = b->batCacheid;
 	BBPincref( *res, TRUE);
 	BBPunfix(*res);

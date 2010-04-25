@@ -35,15 +35,15 @@ Over..
 % sys.event_metadata,	sys.event_metadata,	sys.event_metadata,	sys.event_metadata # table_name
 % event_metadata_id,	event_id,	metadata_name,	metadata_value # name
 % int,	int,	varchar,	varchar # type
-% 2,	1,	8,	9 # length
-[ 2,	1,	"artist",	"artist1"	]
-[ 3,	1,	"location",	"location1"	]
-[ 5,	2,	"artist",	"artist2"	]
-[ 6,	2,	"location",	"location2"	]
-[ 9,	4,	"artist",	"artist2"	]
-[ 10,	4,	"location",	"location3"	]
+% 1,	1,	8,	9 # length
+[ 1,	1,	"artist",	"artist1"	]
+[ 2,	1,	"location",	"location1"	]
+[ 3,	2,	"artist",	"artist2"	]
+[ 4,	2,	"location",	"location2"	]
+[ 5,	4,	"artist",	"artist2"	]
+[ 6,	4,	"location",	"location3"	]
 
-# 10:47:12 >  
-# 10:47:12 >  Done.
-# 10:47:12 >  
+# 16:19:00 >  
+# 16:19:00 >  Done.
+# 16:19:00 >  
 
