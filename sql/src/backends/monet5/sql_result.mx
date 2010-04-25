@@ -27,6 +27,7 @@
 #include <sql_mvc.h>
 #include <sql_catalog.h>
 #include <sql_qc.h>
+#include <sql_parser.h>		/* sql_error */
 #include "mal_client.h"
 
 extern int mvc_export_affrows(mvc *m, stream *s, lng val, str w);
@@ -429,24 +430,22 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 	Column *fmt;
 
 	if (!t) {
-		showException(SQL,"sql", "table %s not found", tname);
+		sql_error(m, 500, "table %s not found", tname);
 		m->type = -1;
 		return NULL;
 	}
 	if (!bs) {
-		showException(IO,"sql", "no stream (pointer) provided");
-
+		sql_error(m, 500, "no stream (pointer) provided");
 		m->type = -1;
 		return NULL;
 	}
 	if (stream_errnr(bs->s)) {
-		showException(IO,"sql", "stream not open %d", stream_errnr(bs->s));
-
+		sql_error(m, 500, "stream not open %d", stream_errnr(bs->s));
 		m->type = -1;
 		return NULL;
 	}
 	if (offset < 0 || offset > (lng) BUN_MAX) {
-		showException(SQL,"sql","offset out of range");
+		sql_error(m, 500, "offset out of range");
 		m->type = -1;
 		return NULL;
 	}
@@ -501,8 +500,8 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep?ssep[0]:0, offset, sz) != BUN_NONE && !as.error)
 				bats = TABLETcollect_bats(&as);
 		}
-		if (as.error)
-			showException(SQL, "sql", as.error);
+		if (as.error) 
+			sql_error(m, 500, "%s", as.error);
 		TABLETdestroy_format(&as);
 	}
 	return bats;

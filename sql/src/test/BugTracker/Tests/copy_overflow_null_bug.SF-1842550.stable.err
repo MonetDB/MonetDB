@@ -10,10 +10,10 @@ stderr of test 'copy_overflow_null_bug.SF-1842550` in directory 'src/test/BugTra
 # 08:13:34 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=38956 
 # 08:13:34 >  
 
-MAPI  = monetdb@pegasus:39457
+MAPI  = monetdb@alf:30439
 QUERY = COPY 2 RECORDS INTO bulk FROM stdin USING DELIMITERS '|', '\n', '''';
-ERROR = !SQLException:sql:value '53605' from line 2 field 1 not inserted, expecting type sht
-        !SQLException:importTable:failed to import table
+ERROR = !SQLException:importTable:value '53605' from line 2 field 1 not inserted, expecting type sht
+        !failed to import table
 
 # 08:13:34 >  
 # 08:13:34 >  Done.

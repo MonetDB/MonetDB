@@ -5,3 +5,4 @@ null_as_string_errors
 null_as_string_output
 int_parse
 load_stdin_incorrect_line_nr
+overflow_error

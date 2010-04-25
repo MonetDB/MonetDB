@@ -10,10 +10,10 @@ stderr of test 'copy_decimal.SF-1582957` in directory 'src/test/BugTracker` itse
 # 21:06:21 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32735  < copy_decimal.SF-1582957.sql
 # 21:06:21 >  
 
-MAPI  = monetdb@eir:31523
+MAPI  = monetdb@alf:30439
 QUERY = COPY 1 RECORDS INTO LINEITEM FROM stdin USING DELIMITERS '|','|\n';
-ERROR = !SQLException:sql:value '17.000' from line 1 field 5 not inserted, expecting type lng
-        !SQLException:importTable:failed to import table
+ERROR = !SQLException:importTable:value '17.000' from line 1 field 5 not inserted, expecting type lng
+        !failed to import table
 
 # 21:06:21 >  
 # 21:06:21 >  Done.
