@@ -1844,7 +1844,7 @@ are identified. In the post-execution phase they are removed.
 #endif
 				stk->stk[garbage[i]].val.bval = 0;
 			}
-		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
+		} else if( i < pci->retc && stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
 				if( backup[i] > 0) 
