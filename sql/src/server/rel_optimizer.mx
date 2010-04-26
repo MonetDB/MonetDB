@@ -1668,7 +1668,7 @@ exps_cse( list *oexps, list *l, list *r )
 
 
 static sql_rel *
-rel_cse(int *changes, mvc *sql, sql_rel *rel) 
+rel_select_cse(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)sql;
 	if (rel->op == op_select && !rel_is_ref(rel) && rel->exps) { 
@@ -1684,6 +1684,34 @@ rel_cse(int *changes, mvc *sql, sql_rel *rel)
 			} else {
 				e = exp_dup(e);
 				append(nexps, e);
+			}
+		}
+		list_destroy(rel->exps);
+		rel->exps = nexps;
+	}
+	return rel;
+}
+
+static sql_rel *
+rel_project_cse(int *changes, mvc *sql, sql_rel *rel) 
+{
+	(void)changes;
+	(void)sql;
+	if (rel->op == op_project && !rel_is_ref(rel) && rel->exps) { 
+		list *nexps = new_exp_list();
+		node *n, *m;
+
+		for (n=rel->exps->h; n; n = n->next) {
+			sql_exp *e1 = n->data;
+
+			if (e1->type != e_column) {
+				for (m=n->next; m; m = m->next){
+					sql_exp *e2 = n->data;
+				
+					if (exp_match_exp(e1, e2)) {
+						assert(0);
+					}
+				}
 			}
 		}
 		list_destroy(rel->exps);
@@ -3461,13 +3489,15 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	if (gp.cnt[op_union]) {
 		rel = rewrite(sql, rel, &rel_merge_union); 
-		rel = rewrite(sql, rel, &rel_cse); 
+		rel = rewrite(sql, rel, &rel_select_cse); 
 		rel = rewrite(sql, rel, &rel_merge_rse); 
 	}
 
 	/* Remove unused expressions */
-	if (gp.cnt[op_project])
+	if (gp.cnt[op_project]) {
 		rel = rel_dce(sql, rel);
+		//rel = rewrite(sql, rel, &rel_project_cse);
+	}
 
 	/* push (simple renaming) projections up */
 	if (gp.cnt[op_project])

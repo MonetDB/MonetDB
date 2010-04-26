@@ -33,6 +33,7 @@ extern sql_rel *rel_schemas(mvc *sql, symbol *sym);
 
 extern sql_rel *rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, symbol *table_elements_or_subquery, int commit_action);
 extern sql_rel *rel_list( sql_rel *l, sql_rel *r);
+extern sql_table * mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname, dlist *column_spec, int temp, int commit_action );
 
 #endif /*_REL_SCHEMA_H_*/
 @c
@@ -162,6 +163,23 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 	}
 	return NULL;
 }
+
+sql_table *
+mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname, dlist *column_spec, int temp, int commit_action )
+{
+	char *n;
+	int tt = (temp != SQL_STREAM)?tt_table:tt_stream;
+
+	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
+	if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
+		sql_error(sql, 01, "CREATE TABLE: duplicate column name %s", n);
+
+		table_destroy(t);
+		return NULL;
+	}
+	return t;
+}
+
 
 static char *
 table_constraint_name(symbol *s, sql_table *t)
@@ -756,7 +774,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE TABLE: no such schema '%s'", sname);
 
-	if (temp != SQL_PERSIST && commit_action == CA_COMMIT)
+	if (temp != SQL_PERSIST && temp != SQL_STREAM && commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 	
 	if (temp != SQL_DECLARED_TABLE) {
@@ -777,7 +795,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
-		sql_table *t = mvc_create_table(sql, s, name, 0, SQL_DECLARED_TABLE, commit_action, -1);
+		int tt = (temp != SQL_STREAM)?tt_table:tt_stream;
+		sql_table *t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
 
@@ -788,6 +807,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			if (res == SQL_ERR) 
 				return NULL;
 		}
+		temp = (temp == SQL_STREAM)?SQL_PERSIST:temp;
 		return rel_table( DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
@@ -803,18 +823,13 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 			return NULL;
 
 		/* create table */
-		if (create) {
-			char *n;
-
-			t = mvc_create_table(sql, s, name, 0, SQL_DECLARED_TABLE, commit_action, -1);
-			if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
-				sql_error(sql, 01, "CREATE TABLE: duplicate column name %s", n);
-				rel_destroy(sq);
-				return NULL;
-			}
+		if (create && (t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
+			rel_destroy(sq);
+			return NULL;
 		}
 
 		/* insert query result into this table */
+		temp = (temp == SQL_STREAM)?SQL_PERSIST:temp;
 		res = rel_table( DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
 			res = rel_insert(res, sq);

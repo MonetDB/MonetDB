@@ -250,6 +250,7 @@ SQLinit(void)
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack		= &monet5_freestack;
 	be_funcs.fcode		= &monet5_freecode;
+	be_funcs.fcreate_function	= &monet5_create_function;
 	monet5_user_init(&be_funcs);
 
 	MTIMEtimezone(&tz, &gmt);

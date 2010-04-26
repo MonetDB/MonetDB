@@ -439,6 +439,8 @@ static size_t
 count_col(sql_column *col)
 {
 	sql_delta *b = col->data;
+	if (!b)
+		return 0;
 	return b->cnt;
 }
 
@@ -446,6 +448,8 @@ static size_t
 count_idx(sql_idx *idx)
 {
 	sql_delta *b = idx->data;
+	if (!b)
+		return 0;
 	return b->cnt;
 }
 

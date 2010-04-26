@@ -102,7 +102,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			atom *a = e->l;
 			if (atom_type(a)->type->localtype == TYPE_ptr) {
 				sql_table *t = a->data.val.pval;
-				stream_printf(fout, "table(%s)", t->base.name);
+				stream_printf(fout, "%s(%s)", 
+					isStream(t)?"stream":"table",
+					t->base.name);
 			} else {
 				char *s = atom2string(a);
 				if (atom_type(a)->type->localtype == TYPE_str)
@@ -279,10 +281,13 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 		sql_table *t = rel->l;
 		print_indent(sql, fout, depth);
 		if (t->s)
-			stream_printf(fout, "table(%s.%s)", 
+			stream_printf(fout, "%s(%s.%s)", 
+				isStream(t)?"stream":"table",
 				t->s->base.name, t->base.name);
 		else
-			stream_printf(fout, "table(%s)", t->base.name);
+			stream_printf(fout, "%s(%s)", 
+				isStream(t)?"stream":"table",
+				t->base.name);
 		if (rel->exps) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 	} 	break;

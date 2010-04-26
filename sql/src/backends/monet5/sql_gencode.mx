@@ -51,6 +51,7 @@ sql5_export void backend_callinline(backend *be, Client c, stmt *s);
 sql5_export void backend_call(backend *be, Client c, cq *q);
 sql5_export void initSQLreferences(void);
 sql5_export str backend_name(cq *cq);
+sql5_export void monet5_create_function(ptr M, char *name, sql_rel *rel, sql_table *t);
 
 #endif /* _SQL2MAL_H */
 @c
@@ -63,7 +64,9 @@ sql5_export str backend_name(cq *cq);
 #include "mal_builder.h"
 
 #include <sql_rel2bin.h>
+#include <rel_optimizer.h>
 #include <rel_subquery.h>
+#include <rel_bin.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
 static void backend_create_func(backend *be, sql_func *f);
@@ -2199,6 +2202,67 @@ backend_call(backend *be, Client c, cq *cq)
 	}
 }
 
+void
+monet5_create_function(ptr M, char *name, sql_rel *rel, sql_table *t)
+{
+	sql_rel *r;
+	mvc *m = (mvc*)M;
+	Client c = mal_clients + m->clientid;
+	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
+	MalBlkPtr curBlk = 0;
+	InstrPtr curInstr = 0;
+	Symbol backup = NULL;
+	stmt *s, *opt;
+
+	(void)t;
+	r = rel_optimizer(m, rel);
+	s = rel_bin(m, r);
+/*
+	if (s && s->type == st_ordered) {
+		stmt *order = stmt_dup(s->op1.stval);
+		stmt *ns = stmt_dup(s->op2.stval);
+			
+		stmt_destroy(s);
+		s = sql_reorder(order, ns);
+	}
+*/
+	if (s->type == st_list && s->nrcols == 0 && s->key) {
+		/* row to columns */
+		node *n;
+		list *l = create_stmt_list();
+
+		for(n=s->op1.lval->h; n; n = n->next)
+			list_append(l, const_column(stmt_dup(n->data)));
+		stmt_destroy(s);
+		s = stmt_list(l);
+	}
+	s = stmt_table(s, 1);
+	s = stmt_return(s, 0);
+	opt = rel2bin(m, s);
+	stmt_destroy(s);
+	s = bin_optimizer(m, opt);
+	stmt_destroy(opt);
+
+	backup = c->curprg;
+	c->curprg = newFunction(userRef,putName(name,strlen(name)), FUNCTIONsymbol);
+
+	curBlk = c->curprg->def;
+	curInstr = getInstrPtr(curBlk, 0);
+
+	setVarType(curBlk, 0, newBatType(TYPE_str, TYPE_bat));
+	setVarUDFtype(curBlk,0);
+
+	/* no ops */
+
+	backend_dumpstmt(be, curBlk, s);
+	/* SQL function definitions meant for inlineing should not be optimized before */
+	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
+	stmt_destroy(s);
+	addQueryToCache(c);
+	if (backup) 
+		c->curprg = backup;
+}
+
 static void
 backend_create_func(backend *be, sql_func *f)
 {
@@ -2240,12 +2304,10 @@ backend_create_func(backend *be, sql_func *f)
 			setVarType(curBlk, 0, newBatType(TYPE_str, TYPE_bat));
 		else
 			setVarType(curBlk, 0, f->res.type->localtype);
-		setVarUDFtype(curBlk,0);
 	} else {
 		setVarType(curBlk, 0, TYPE_void);
-		setVarUDFtype(curBlk,0);
 	}
-	setModuleId(curInstr, putName("user",4));
+	setVarUDFtype(curBlk,0);
 
 	if (f->ops) {
 		int argc = 0;

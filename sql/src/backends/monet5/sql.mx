@@ -2756,7 +2756,7 @@ mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
 		throw(MAL,"sql.declared_table","Schema missing");
-	(void)mvc_create_table(m, s, *name, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
+	(void)mvc_create_table(m, s, *name, tt_table, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
 	*res_id = 0;
 	return MAL_SUCCEED;
 }
@@ -5116,7 +5116,7 @@ maps oids to strings (i.e., the lexical representation).
 
 @= crt_tbl
 sprintf(buff, "@2%d", @1);
-@2_tbl = mvc_create_table(m, sch, buff, 0, SQL_PERSIST, 0, 3);
+@2_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
 mvc_create_column(m, @2_tbl, "@3", &tpe);
 mvc_create_column(m, @2_tbl, "@4", &tpe);
 mvc_create_column(m, @2_tbl, "@5", &tpe);
@@ -5206,7 +5206,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif /* STORE */
 
 	sprintf(buff, "map%d", id);
-	map_tbl = mvc_create_table(m, sch, buff, 0, SQL_PERSIST, 0, 2);
+	map_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 2);
 	mvc_create_column(m, map_tbl, "sid", &tpe);
 	sql_find_subtype(&tpe, "varchar", 1024, 0);
 	mvc_create_column(m, map_tbl, "lexical", &tpe);

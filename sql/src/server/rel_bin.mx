@@ -2340,7 +2340,7 @@ join_idx_insert(mvc *sql, sql_idx * i, list *inserts)
 				n = stmt_unop(n, isnil);
 				n = stmt_uselect(n, stmt_bool(1), cmp_equal);
 				if (cur)
-					cur = stmt_semijoin(cur, n);
+					cur = stmt_union(stmt_diff(cur, stmt_dup(n)), n);
 				else
 					cur = n;
 			}

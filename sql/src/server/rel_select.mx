@@ -25,6 +25,7 @@
 
 #include "rel_semantic.h"
 #include "sql_semantic.h"
+#include "rel_subquery.h"
 
 extern sql_rel* rel_create(void);
 extern sql_rel* rel_setop(sql_rel *l, sql_rel *r, operator_type setop);
@@ -89,6 +90,7 @@ extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 #include "rel_xml.h"
 #include "rel_dump.h"
 #include "rel_prop.h"
+#include "rel_schema.h"
 #include "rel_sequence.h"
 
 #define rel_groupby_gbe(r,e) rel_groupby(r, append(new_exp_list(), e))
@@ -1269,9 +1271,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
 	return NULL;
 }
 
-
 static sql_rel *
-rel_table_func_named(mvc *sql, sql_rel *rel, symbol *query)
+rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 {
 	list *exps = NULL;
 	sql_subtype *st = NULL;
@@ -1295,6 +1296,75 @@ rel_table_func_named(mvc *sql, sql_rel *rel, symbol *query)
 	/* foreach column add table.column name */
 	exps = new_exp_list();
 	for (m = st->comp_type->columns.set->h; m; m = m->next) {
+		sql_column *c = m->data;
+		append(exps, exp_column(tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+	}
+	return rel_table_func(e, exps);
+}
+
+static sql_exp *
+rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
+{
+	sql_subfunc *f = NULL;
+
+	f = sql_bind_func(s, fname, NULL, NULL);
+	if (f && (ek.card == card_relation || !f->res.comp_type)) {
+		return exp_op(NULL, f);
+	} else {
+		return sql_error(sql, 02, 
+			"SELECT: no such operator '%s'", fname);
+	}
+}
+
+/* special class of table returning function, but with a table input as well */
+static sql_rel *
+rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
+{
+	exp_kind ek = {type_value, card_relation, TRUE};
+	sql_rel *sq = rel_subquery(sql, rel, query->data.lval->h->data.sym, ek);
+	sql_table *t;
+	sql_func *f;
+	sql_subfunc *sf;
+	sql_exp *e;
+	list *exps;
+	dlist *column_spec = NULL;
+	node *m;
+	int nr = ++sql->label;
+	char *tname = NULL, name[16], *nme;
+
+	nme = number2name(name, 16, nr);
+	
+	if (query->data.lval->h->next->data.sym) {
+		tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
+		column_spec = query->data.lval->h->next->data.sym->data.lval->h->next->data.lval;
+	}
+
+	if ((t = mvc_create_table_as_subquery(sql, sq, sql->session->schema, tname, column_spec, tt_stream, CA_COMMIT)) == NULL) {
+		rel_destroy(sq);
+		return NULL;
+	}
+	backend_create_function(sql, nme, sq, t);
+
+	f = NEW(sql_func);
+	base_init(&f->base, store_next_oid(), TR_OLD, nme);
+	f->mod = strdup("user");
+	f->imp = strdup(nme);
+	f->ops = NULL;
+	f->res = *sql_bind_localtype("bat");
+	f->res.comp_type = t;
+	f->nr = 0;
+	f->sql = 0;
+	f->aggr = 0;
+	f->side_effect = 0;
+	f->fix_scale = 0;
+	f->s = NULL;
+	sf = NEW(sql_subfunc);
+	sql_ref_init(&(sf->ref));
+	sf->func = f;
+	sf->res = f->res;
+	e = exp_op(NULL, sf);
+	exps = new_exp_list();
+	for (m = t->columns.set->h; m; m = m->next) {
 		sql_column *c = m->data;
 		append(exps, exp_column(tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
@@ -1432,7 +1502,9 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 	} else if (tableref->token == SQL_VALUES) {
 		return rel_values(sql, tableref);
 	} else if (tableref->token == SQL_TABLE) {
-		return rel_table_func_named(sql, rel, tableref);
+		return rel_named_table_function(sql, rel, tableref);
+	} else if (tableref->token == SQL_TABLE_OPERATOR) {
+		return rel_named_table_operator(sql, rel, tableref);
 	} else if (tableref->token == SQL_SELECT) {
 		return rel_subquery_optname(sql, rel, tableref);
 	} else {
@@ -2896,20 +2968,13 @@ static sql_exp *
 rel_op(mvc *sql, symbol *se, exp_kind ek )
 {
 	dnode *l = se->data.lval->h;
-	sql_subfunc *f = NULL;
 	char *fname = qname_fname(l->data.lval); 
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
 
 	if (sname) 
 		s = mvc_bind_schema(sql, sname);
-	f = sql_bind_func(s, fname, NULL, NULL);
-	if (f && (ek.card == card_relation || !f->res.comp_type)) {
-		return exp_op(NULL, f);
-	} else {
-		return sql_error(sql, 02, 
-			"SELECT: no such operator '%s'", fname);
-	}
+	return rel_op_(sql, s, fname, ek);
 }
 
 sql_exp *

@@ -634,7 +634,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 			} else {
 				char *fmod = qname_module(ext_name);
 				char *fnme = qname_fname(ext_name);
-				mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, is_aggr, fmod, fnme, is_func );
+				mvc_create_func(sql, sql->session->schema, fname, l, restype, FALSE, is_aggr, fmod, fnme, is_func);
 				sql_destroy_params(sql);
 				list_destroy(l);
 			}

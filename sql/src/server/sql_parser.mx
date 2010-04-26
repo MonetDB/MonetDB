@@ -73,6 +73,7 @@ typedef enum tokens {
 	SQL_CHARSET,
 	SQL_SCHEMA,
 	SQL_TABLE,
+	SQL_TABLE_OPERATOR,
 	SQL_TYPE,
 	SQL_CASE,
 	SQL_CAST,
@@ -777,7 +778,7 @@ sqlstmt:
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
-	sql SCOLON 	{ mvc *m = (mvc*)parm;
+   sql SCOLON 		{ mvc *m = (mvc*)parm;
 			  if (m->sym) {
 				append_symbol(m->sym->data.lval, $3);
 				$$ = m->sym;
@@ -1469,7 +1470,7 @@ opt_temp:
  ;
 
 opt_on_commit: /* only for temporary tables */
-    /* empty */			 { $$ = CA_DELETE; } 
+    /* empty */			 { $$ = CA_COMMIT; } 
  |  ON COMMIT sqlDELETE ROWS	 { $$ = CA_DELETE; }
  |  ON COMMIT PRESERVE ROWS	 { $$ = CA_PRESERVE; }
  |  ON COMMIT DROP	 	 { $$ = CA_DROP; }
@@ -3047,17 +3048,11 @@ table_ref:
 /* Basket expression, TODO window */
  |  '[' select_no_parens ']' table_name 	
 	{
-		dlist *basket_table_func = L();
-		dlist *basket_func = L();
-	  	dlist *basket_func_name = append_string(L(), "basket");
-		dlist *arg_list = L();
+		dlist *op = L();
 
-  	  	append_list(basket_func, basket_func_name);
- 	  	append_list(basket_func, append_symbol(arg_list, $2));
-
-		append_symbol(basket_table_func, _symbol_create_list( SQL_NOP, basket_func ));
-		append_symbol(basket_table_func, $4);
-		$$ = _symbol_create_list(SQL_TABLE, basket_table_func); 
+ 	  	append_symbol(op, $2);
+		append_symbol(op, $4);
+		$$ = _symbol_create_list(SQL_TABLE_OPERATOR, op); 
 	}
  ;
 
