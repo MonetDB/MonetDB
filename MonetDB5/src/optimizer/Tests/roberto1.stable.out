@@ -37,12 +37,12 @@ function user.f():void;                 #  0 f:void := user.f() {G}
     i := 0;                             #  3 i:int := _2:int 
 barrier go := true;                     #  4 go:bit := _4:bit {J14}
     a:bat[:oid,:dbl]  := bbp.bind("P_bat");#  5 a:bat[:oid,:dbl] := CMDbbpbind(_7:str) {G}
-    bat.setPersistent(a,false);         #  6 _8:void := BKCpersists(a:bat[:oid,:dbl], _9:bit) 
+    bat.setPersistent(a,false);         #  6 _8:void := BKCpersists(a:bat[:oid,:dbl], _9:bit) {G}
     transaction.commit();               #  7 _10:bit := TRNglobal_commit() 
     a:bat[:oid,:dbl]  := batcalc.+(a,1);#  8 a:bat[:oid,:dbl] := CMDbatADDcst_dbl_dbl_dbl(a:bat[:oid,:dbl], _12:dbl) {G}
 # store it to disk with the same name 
-    bat.setName(a,"P_bat");             # 10 _14:void := BKCsetName(a:bat[:oid,:dbl], _7:str) 
-    bat.setPersistent(a,true);          # 11 _15:void := BKCpersists(a:bat[:oid,:dbl], _4:bit) 
+    bat.setName(a,"P_bat");             # 10 _14:void := BKCsetName(a:bat[:oid,:dbl], _7:str) {G}
+    bat.setPersistent(a,true);          # 11 _15:void := BKCpersists(a:bat[:oid,:dbl], _4:bit) {G}
     transaction.commit();               # 12 _16:bit := TRNglobal_commit() 
     redo go := calc.<(i,2);             # 13 go:bit := CALCcompLTintint(i:int, _17:int) {J3}
 exit go;                                # 14 go:bit 

@@ -27,7 +27,7 @@ factory user.test(s:str):wrd;           #  0 test:wrd := user.test(s:str) {G}
     bat.insert(b,1,"hello");            #  2 _5:bat[:int,:str] := BKCinsert_bun(b:bat[:int,:str], _6:int, _7:str) {G}
 barrier always := true;                 #  3 always:bit := _11:bit {J8}
     z := algebra.select(b,s,s);         #  4 z:bat[:int,:str] := ALGselect(b:bat[:int,:str], s:str, s:str) {G}
-    i := aggr.count(z);                 #  5 i:wrd := ALGcount_bat(z:bat[:int,:str]) 
+    i := aggr.count(z);                 #  5 i:wrd := ALGcount_bat(z:bat[:int,:str]) {G}
     yield test := i;                    #  6 test:wrd := i:wrd 
     redo always;                        #  7 always:bit {J4}
 exit always;                            #  8 always:bit 

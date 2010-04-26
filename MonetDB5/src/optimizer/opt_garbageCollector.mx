@@ -176,6 +176,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = old[i];
+		p->gc &=  ~GARBAGECONTROL;
 
 		if (blockStart(p) )
 			depth++;

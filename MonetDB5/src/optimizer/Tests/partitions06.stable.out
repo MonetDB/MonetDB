@@ -45,10 +45,10 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x1:bat[:oid,:int] {notnil=true,rows=1:lng,bid=769} := sql.bind("sys","t","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _9:int) {G}
     x10:bat[:oid,:int] {notnil=true,rows=0:lng,bid=765} := sql.bind("sys","t","i",1);#  2 x10:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _13:int) {G}
     bpm10:bat[:oid,:int]  := bpm.unfold(x10{notnil=true,rows=0:lng,bid=765});#  3 bpm10:bat[:oid,:int] := BPMunfold(x10:bat[:oid,:int]) {G}
-    bpm.emptySet(bpm10);                #  4 _14:void := BPMemptySet(bpm10:bat[:oid,:int]) 
+    bpm.emptySet(bpm10);                #  4 _14:void := BPMemptySet(bpm10:bat[:oid,:int]) {G}
     x12:bat[:oid,:int] {notnil=true,rows=0:lng,bid=771} := sql.bind("sys","t","i",2);#  5 x12:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _17:int) {G}
     bpm15:bat[:oid,:int]  := bpm.unfold(x12{notnil=true,rows=0:lng,bid=771});#  6 bpm15:bat[:oid,:int] := BPMunfold(x12:bat[:oid,:int]) {G}
-    bpm.emptySet(bpm15);                #  7 _18:void := BPMemptySet(bpm15:bat[:oid,:int]) 
+    bpm.emptySet(bpm15);                #  7 _18:void := BPMemptySet(bpm15:bat[:oid,:int]) {G}
     x17:bat[:oid,:int] {notnil=true,rows=1:lng,bid=772} := sql.bind("sys","t","j",1);#  8 x17:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _21:str, _13:int) {G}
     bpm19:bat[:oid,:int]  := bpm.unfold(x17{notnil=true,rows=1:lng,bid=772});#  9 bpm19:bat[:oid,:int] := BPMunfold(x17:bat[:oid,:int]) {G}
     x7{rows=1:lng} := algebra.uselect(x1{notnil=true,rows=1:lng,bid=769},nil:int,2,false,false);# 10 x7:bat[:oid,:void] := ALGuselectInclusive(x1:bat[:oid,:int], _23:int, _17:int, _24:bit, _24:bit) {G}
@@ -59,24 +59,24 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x19{rows=1:lng} := nil:bat[:oid,:int];# 15 x19:bat[:oid,:int] := _49:bat[:oid,:int] {G}
 barrier x17:bat[:oid,:int] {notnil=true,rows=1:lng,bid=772} := bpm.newIterator(bpm19);# 16 x17:bat[:oid,:int] := BPMnewIterator(bpm19:bat[:oid,:int]) {GJ20}
     x19{rows=1:lng} := algebra.join(x15{rows=1:lng},x17{notnil=true,rows=1:lng,bid=772});# 17 x19:bat[:oid,:int] := ALGjoin(x15:bat[:oid,:oid], x17:bat[:oid,:int]) {G}
-    bpm.addPartition(_45,x19{rows=1:lng});# 18 _51:void := BPMaddPartition(_45:bat[:oid,:int], x19:bat[:oid,:int]) 
+    bpm.addPartition(_45,x19{rows=1:lng});# 18 _51:void := BPMaddPartition(_45:bat[:oid,:int], x19:bat[:oid,:int]) {G}
     redo x17:bat[:oid,:int] {notnil=true,rows=1:lng,bid=772} := bpm.hasMoreElements(bpm19);# 19 x17:bat[:oid,:int] := BPMhasMoreElements(bpm19:bat[:oid,:int]) {GJ17}
 exit x17:bat[:oid,:int] {notnil=true,rows=1:lng,bid=772};# 20 x17:bat[:oid,:int] 
     x19{rows=1:lng} := bpm.fold(_45);   # 21 x19:bat[:oid,:int] := BPMfold(_45:bat[:oid,:int]) {G}
     x20:bat[:oid,:int] {rows=1:lng} := batcalc.+(x16{rows=1:lng},x19{rows=1:lng});# 22 x20:bat[:oid,:int] := CMDbatADD_int_int_int(x16:bat[:oid,:int], x19:bat[:oid,:int]) {G}
     x20:bat[:oid,:int] {rows=1:lng} := batcalc.+(x20{rows=1:lng},x16{rows=1:lng});# 23 x20:bat[:oid,:int] := CMDbatADD_int_int_int(x20:bat[:oid,:int], x16:bat[:oid,:int]) {G}
-    x21 := sql.resultSet(1,1,x20{rows=1:lng});# 24 x21:void := MDBdummy(_13:int, _13:int, x20:bat[:oid,:int]) 
-    sql.rsColumn(x21,"sys.","sqlxaddxsqlxaddxi","int",32,0,x20{rows=1:lng});# 25 _32:void := MDBdummy(x21:void, _33:str, _34:str, _35:str, _36:int, _9:int, x20:bat[:oid,:int]) 
-    sql.exportResult(x21,"");           # 26 _37:void := MDBdummy(x21:void, _38:str) 
+    x21 := sql.resultSet(1,1,x20{rows=1:lng});# 24 x21:void := MDBdummy(_13:int, _13:int, x20:bat[:oid,:int]) {G}
+    sql.rsColumn(x21,"sys.","sqlxaddxsqlxaddxi","int",32,0,x20{rows=1:lng});# 25 _32:void := MDBdummy(x21:void, _33:str, _34:str, _35:str, _36:int, _9:int, x20:bat[:oid,:int]) {G}
+    sql.exportResult(x21,"");           # 26 _37:void := MDBdummy(x21:void, _38:str) {G}
 catch SQLexception;                     # 27 SQLexception:str {J32}
-    bpm.garbage(bpm10);                 # 28 _56:void := BPMgarbage(bpm10:bat[:oid,:int]) 
-    bpm.garbage(bpm15);                 # 29 _57:void := BPMgarbage(bpm15:bat[:oid,:int]) 
-    bpm.garbage(bpm19);                 # 30 _58:void := BPMgarbage(bpm19:bat[:oid,:int]) 
+    bpm.garbage(bpm10);                 # 28 _56:void := BPMgarbage(bpm10:bat[:oid,:int]) {G}
+    bpm.garbage(bpm15);                 # 29 _57:void := BPMgarbage(bpm15:bat[:oid,:int]) {G}
+    bpm.garbage(bpm19);                 # 30 _58:void := BPMgarbage(bpm19:bat[:oid,:int]) {G}
     raise SQLexception;                 # 31 SQLexception:str 
 exit SQLexception;                      # 32 SQLexception:str 
-    bpm.garbage(bpm10);                 # 33 _61:void := BPMgarbage(bpm10:bat[:oid,:int]) 
-    bpm.garbage(bpm15);                 # 34 _62:void := BPMgarbage(bpm15:bat[:oid,:int]) 
-    bpm.garbage(bpm19);                 # 35 _63:void := BPMgarbage(bpm19:bat[:oid,:int]) 
+    bpm.garbage(bpm10);                 # 33 _61:void := BPMgarbage(bpm10:bat[:oid,:int]) {G}
+    bpm.garbage(bpm15);                 # 34 _62:void := BPMgarbage(bpm15:bat[:oid,:int]) {G}
+    bpm.garbage(bpm19);                 # 35 _63:void := BPMgarbage(bpm19:bat[:oid,:int]) {G}
 end query;                              # 36  
 
 # 09:41:13 >  

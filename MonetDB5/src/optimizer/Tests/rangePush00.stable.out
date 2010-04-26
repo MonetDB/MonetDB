@@ -26,7 +26,7 @@ end main;
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:void,:int);           #  1 b:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
     s2 := algebra.select(b,1,75);       #  2 s2:bat[:void,:int] := ALGselect(b:bat[:void,:int], _6:int, _10:int) {G}
-    io.print(s2);                       #  3 _11:void := IOprint_val(s2:bat[:void,:int]) 
+    io.print(s2);                       #  3 _11:void := IOprint_val(s2:bat[:void,:int]) {G}
     mdb.List();                         #  4 _14:void := MDBlistDetail() 
 end main;                               #  5  
 

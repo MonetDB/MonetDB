@@ -177,7 +177,7 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V122 := aggr.avg(V62,V32,V34);      # 48 V122:bat[:oid,:dbl] := AX3aggrX3_avg3_flt(V62:bat[:oid,:flt], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
     V124:bat[:oid,:int]  := mal.multiplex("calc","round",V122,100);# 49 V124:bat[:oid,:int] := OPTremapMultiplex(_80:str, _123:str, V122:bat[:oid,:dbl], _69:int) {G}
     V130 := aggr.avg(V80,V32,V34);      # 50 V130:bat[:oid,:dbl] := AX3aggrX3_avg3_flt(V80:bat[:oid,:flt], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
-    V131 := mal.multiplex("calc","round",V130,100);# 51 V131:any := OPTremapMultiplex(_80:str, _123:str, V130:bat[:oid,:dbl], _69:int) 
+    V131 := mal.multiplex("calc","round",V130,100);# 51 V131:any := OPTremapMultiplex(_80:str, _123:str, V130:bat[:oid,:dbl], _69:int) {G}
     V132 := aggr.count(V32,V32,V34);    # 52 V132:bat[:oid,:wrd] := AX3aggrX3_count3Nils(V32:bat[:oid,:oid], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
 end qry1;                               # 53  
 #optimizer.aliases    actions= 0 time=18 usec 

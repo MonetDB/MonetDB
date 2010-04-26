@@ -37,10 +37,10 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     a:bat[:oid,:bit]  := batcalc.isnil(d);#  7 a:bat[:oid,:bit] := CMDunaryISNIL(d:bat[:oid,:str]) {G}
 # demonstrate an error 
     _18 := bat.new(nil:int,nil:int);    #  9 _18:bat[:int,:int] := CMDBATnew(_19:int, _19:int) {G}
-barrier (_21,_22,_23) := bat.newIterator(b);# 10 (_21:lng, _22:oid, _23:int) := CHPbunIterator(b:bat[:oid,:int]) 
+barrier (_21,_22,_23) := bat.newIterator(b);# 10 (_21:lng, _22:oid, _23:int) := CHPbunIterator(b:bat[:oid,:int]) {G}
     _25 := calc.+(_23,1);               # 11 _25:int := CALCbinaryADDintint(_23:int, _8:int) 
     bat.insert(_18,_22,_25);            # 12 _26:any := bat.insert(_18:bat[:int,:int], _22:oid, _25:int) {U}
-    redo (_21,_22,_23) := bat.hasMoreElements(b);# 13 (_21:lng, _22:oid, _23:int) := CHPbunHasMoreElements(b:bat[:oid,:int]) 
+    redo (_21,_22,_23) := bat.hasMoreElements(b);# 13 (_21:lng, _22:oid, _23:int) := CHPbunHasMoreElements(b:bat[:oid,:int]) {G}
 exit (_21,_22,_23);                     # 14 (_21:lng, _22:oid, _23:int) 
     y:bat[:int,:int]  := _18;           # 15 y:bat[:int,:int] := _18:bat[:int,:int] {G}
 end tst;                                # 16  

@@ -41,10 +41,10 @@ end main;
 [ 2 ]
 function user.main():void;              #  0 main:void := user.main() {G}
 # the first test for macro expansions and inversions 
-    io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) 
+    io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) {G}
     _13 := 0;                           #  3 _13:int := _14:int 
 barrier _15 := calc.<(_13,2);           #  4 _15:bit := CALCcompLTintint(_13:int, _8:int) {J8}
-    io.print("Welcome");                #  5 _16:void := IOprint_val(_17:str) 
+    io.print("Welcome");                #  5 _16:void := IOprint_val(_17:str) {G}
     _13 := calc.+(_13,1);               #  6 _13:int := CALCbinaryADDintint(_13:int, _18:int) 
     redo _15 := calc.<(_13,2);          #  7 _15:bit := CALCcompLTintint(_13:int, _8:int) {J5}
 exit _15;                               #  8 _15:bit 

@@ -30,7 +30,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     s1 := algebra.select(b,80,90);      #  2 s1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], _5:int, _6:int) {G}
     s2{rows=0:lng} := bat.new(:oid,:int);#  3 s2:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     s3{rows=0:lng} := bat.new(:oid,:int);#  4 s3:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    io.print(s3{rows=0:lng});           #  5 _9:void := IOprint_val(s3:bat[:oid,:int]) 
+    io.print(s3{rows=0:lng});           #  5 _9:void := IOprint_val(s3:bat[:oid,:int]) {G}
     mdb.List();                         #  6 _12:void := MDBlistDetail() 
 end main;                               #  7  
 

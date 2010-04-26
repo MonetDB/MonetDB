@@ -71,7 +71,7 @@ function user.f3():void;                #  0 f3:void := user.f3() {G}
     top := t22;                         # 23 top:bat[:oid,:lng] := t22:bat[:oid,:lng] {G}
     bat_0 := array.grid(64,64,1,0);     # 24 bat_0:bat[:oid,:int] := ARRAYgrid_int(_5:int, _5:int, _6:int, _7:int) {G}
     bat_1 := array.grid(1,64,64,0);     # 25 bat_1:bat[:oid,:int] := ARRAYgrid_int(_6:int, _5:int, _5:int, _7:int) {G}
-    io.table(bat_0,bat_1,top);          # 26 _32:void := IOttable(bat_0:bat[:oid,:int], bat_1:bat[:oid,:int], top:bat[:oid,:lng]) 
+    io.table(bat_0,bat_1,top);          # 26 _32:void := IOttable(bat_0:bat[:oid,:int], bat_1:bat[:oid,:int], top:bat[:oid,:lng]) {G}
 #       io.table(bat_0,bat_1,top); 
 end f3;                                 # 28  
 
