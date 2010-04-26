@@ -522,7 +522,7 @@ def CreateHtmlIndex (env, *body) :
         else:
             header = Element('span', {'class': 'black'},
                              Text(DISTVER))
-        tr = Element('tr', {},
+        tr = Element('tr', {'valign': 'top'},
                      Element('th', {'class': 'header'},
                              header))
         tr.addchildren(body)
