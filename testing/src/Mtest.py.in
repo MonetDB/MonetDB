@@ -3778,7 +3778,7 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
-        Failure = [0,0,0,0,0,0,0,0]
+        Failure = [0,0,0,0,0,0,0,0,0]
         for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
             fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+
                         "\t"+FAILURES[FtOut]+
