@@ -1,5 +1,5 @@
 %define name MonetDB5-server
-%define version 5.18.5
+%define version 5.18.6
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
