@@ -2518,26 +2518,46 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             orderbyITER = orderby;
 
             /* transform the POS order by statement into a sortkey list */
-            orderby = col_env_lookup (COLMAP(query), pos, pos_ty);
+            if (monomorphic (pos_ty)) {
+                orderby = col_env_lookup (COLMAP(query), pos, pos_ty);
 
-            /* unfold the sorting criteria of a numbering operator */
-            if (orderby->kind == sql_over &&
-                R(orderby)->kind == sql_wnd_clause) {
-                assert (L(orderby)->kind == sql_row_number ||
-                        L(orderby)->kind == sql_dense_rank);
-                assert (!RL(orderby));
-                /* orderby may become an empty list (aka. NULL) */
-                if (RR(orderby) &&
-                    RR(orderby)->kind == sql_order_by)
-                    orderby = RRL(orderby);
-                else
+                /* unfold the sorting criteria of a numbering operator */
+                if (orderby->kind == sql_over &&
+                    R(orderby)->kind == sql_wnd_clause) {
+                    assert (L(orderby)->kind == sql_row_number ||
+                            L(orderby)->kind == sql_dense_rank);
+                    assert (!RL(orderby));
+                    /* orderby may become an empty list (aka. NULL) */
+                    if (RR(orderby) &&
+                        RR(orderby)->kind == sql_order_by)
+                        orderby = RRL(orderby);
+                    else
+                        orderby = NULL;
+                } 
+                else if (IS_LITERAL(orderby))
                     orderby = NULL;
-            } 
-            else if (IS_LITERAL(orderby))
+                else
+                    orderby = sortkey_list (sortkey_item (orderby, true));
+            } else {
                 orderby = NULL;
-            else
-                orderby = sortkey_list (sortkey_item (orderby, true));
+                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                    if (t & TYPE_MASK (pos_ty)) {
+                        PFsql_t *expr = col_env_lookup (COLMAP(query), pos, t);
 
+                        orderby = sortkey_list (
+                                      sortkey_item (
+                                          /* different handling of boolean
+                                             types as search criterion */
+                                          (expr->kind == sql_column_name ||
+                                           expr->kind == sql_lit_int     ||
+                                           t != aat_bln)
+                                          ? expr
+                                          : case_ (when (expr, TRUE_INT),
+                                                   else_ (FALSE_INT)),
+                                          true),
+                                      orderby);
+                    }
+            }
             orderbyPOS = orderby;
 
             orderby = NULL;
