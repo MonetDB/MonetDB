@@ -488,6 +488,7 @@ mal_export void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 mal_export void mdbHelp(stream *f);
 mal_export void printBATelm(stream *f, int i, BUN cnt, BUN first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
+mal_export void printBatDetails(stream *f, int bid);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
 mal_export void printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
@@ -1307,7 +1308,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 			/* search the symbol */
 			i = findVariable(mb, b);
 			if (i < 0) {
-				stream_printf(out, "%s Symbol not found\n", "#mdb ");
+				/* could be the name of a BAT */
+				i = BBPindex(b);
+				if (i != 0)
+					printBatDetails(out, i);
+				else
+					stream_printf(out, "%s Symbol not found\n", "#mdb ");
 			} else {
 				printBatInfo(out, getVar(mb, i), stk->stk + i);
 			}
@@ -1846,29 +1852,28 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 }
 
 void
+printBatDetails(stream *f, int bid)
+{
+	BAT *b;
+	int ret;
+	MALfcn fcn;
+
+	stream_printf(f, "#Show info for %d\n", bid);
+	fcn = getAddress("bat","bat","BKCinfo", 0);
+	if (fcn)  {
+		(*fcn) (&ret, &bid);
+		b = BATdescriptor(ret);
+		if (b == NULL)
+			return;
+		BATmultiprintf(f, 2, &b, TRUE, 0, TRUE);
+		BBPunfix(b->batCacheid);
+	}
+}
+void
 printBatInfo(stream *f, VarPtr n, ValPtr v)
 {
-	if (isaBatType(n->type) && v->val.ival) {
-		int bid;
-		int ret;
-		MALfcn fcn;
-
-		fcn = getAddress("bat","bat","BKCinfo", 0);
-		if (fcn) {
-			BAT *b;
-
-			bid = v->val.ival;
-			stream_printf(f, "Show info for %d\n", bid);
-			(*fcn) (&ret, &bid);
-			b = BATdescriptor(ret);
-			if (b == NULL) {
-				stream_printf(f, "Could not access descriptor\n");
-				return;
-			}
-			BATmultiprintf(f, 2, &b, TRUE, 0, TRUE);
-			BBPunfix(b->batCacheid);
-		}
-	}
+	if (isaBatType(n->type) && v->val.ival) 
+		printBatDetails(f,v->val.ival);
 }
 
 void
