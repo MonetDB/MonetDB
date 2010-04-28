@@ -1692,6 +1692,10 @@ rel_select_cse(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+#if 0
+/Volumes/scratch/monet/monetdb-buildbot/slave-x86_64/x86_64-macosxleopard/build/
+sources/sql/src/server/rel_optimizer.mx:1697: warning: 'rel_project_cse' defined
+but not used
 static sql_rel *
 rel_project_cse(int *changes, mvc *sql, sql_rel *rel) 
 {
@@ -1719,6 +1723,7 @@ rel_project_cse(int *changes, mvc *sql, sql_rel *rel)
 	}
 	return rel;
 }
+#endif
 
 static list *
 exps_merge_rse( list *l, list *r )
