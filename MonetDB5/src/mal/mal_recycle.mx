@@ -131,7 +131,7 @@ typedef struct QRYSTAT {
 	int lreuse; /* number of local reuse in current execution only */
 	int *crd;   /* instructions credits */
 	int stop;
-	bte unlimited;
+	int wl;		/* waterline of globally reused instructions*/
 } QryStat, *QryStatPtr;
 
 typedef struct QRYPATTERN {
@@ -365,12 +365,9 @@ int RECYCLEnewQryStat(MalBlkPtr mb)
 		qstat->calls++;
         if ( qstat->calls >= recycleMaxInterest )
             if ( qstat->greuse  && admissionPolicy == ADM_ADAPT )
-				if ( !qstat->unlimited ) {
-                for (i = 0; i < qstat->stop; i++)
+				for (i = 0; i < qstat->wl; i++)
                    if ( qstat->crd[i] >= REC_MIN_INTEREST )
                         qstat->crd[i] = recycleMaxInterest;
-				qstat->unlimited = 1;
-        }
 		return idx;
 	}
     /* add new query pattern */       
@@ -388,7 +385,7 @@ int RECYCLEnewQryStat(MalBlkPtr mb)
 	return idx;
 }
 
-static void updateQryStat(int qidx, bit gluse)
+static void updateQryStat(int qidx, bit gluse, int i)
 {	
 	QryStatPtr qs;
 	
@@ -397,8 +394,10 @@ static void updateQryStat(int qidx, bit gluse)
 		return;
 	}		
 	qs = recycleQPat->ptrn[qidx];
-	if (gluse) 
+	if (gluse) {
 		qs->greuse++;
+		if ( qs->wl < i ) qs->wl = i;
+	}
 	else qs->lreuse++;
 }
 
@@ -1078,7 +1077,7 @@ compare by value.
 
 	i = getPC(mb,p);
 	if ( admissionPolicy == ADM_INTEREST ||
-		(admissionPolicy == ADM_ADAPT && !qsp->unlimited )){
+		(admissionPolicy == ADM_ADAPT && i > qsp->wl )){
 		if (i < qsp->stop ) 
 			qsp->crd[i]--;
 		else stream_printf(cntxt->fdout,"Mismatch of credit array\n");
@@ -2073,7 +2072,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
-    int i, j, ridx, idx, pc = -1, evicted=0;
+    int i, j, ridx, idx, qidx, pc = -1, evicted=0;
     bat bid= -1, nbid= -1;
     InstrPtr q;
     static str selectRef = 0, like_selectRef = 0, thetaselectRef = 0, 
@@ -2194,7 +2193,8 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
             recycleBlk->profiler[i].clk = GDKusec();
             if (!isBindInstr(q)){
                 cntxt->rcc->recycled0++;
-                updateQryStat(q->recycle,gluse);
+                qidx = *(int*)getVarValue(recycleBlk,q->argv[q->argc-1]);
+                updateQryStat(q->recycle,gluse,qidx);
             }
             cntxt->rcc->recent = i;
             mal_unset_lock(recycleLock,"recycle");
@@ -2237,8 +2237,9 @@ We execute it in place and safe the result upon need.
         cntxt->rcc->recycled0++;
         recycleBlk->profiler[pc].counter++;
         if ( recycleBlk->profiler[pc].clk < cntxt->rcc->time0 )
-                gluse = recycleBlk->profiler[pc].trace = TRUE;
-        updateQryStat(getInstrPtr(recycleBlk,pc)->recycle,gluse);
+			gluse = recycleBlk->profiler[pc].trace = TRUE;
+        qidx = *(int*)getVarValue(recycleBlk,q->argv[q->argc-1]);
+        updateQryStat(getInstrPtr(recycleBlk,pc)->recycle,gluse,qidx);
         recycleBlk->profiler[pc].clk = GDKusec();
         mal_unset_lock(recycleLock,"recycle");
         RECYCLEexit(cntxt, mb, s, p, ticks);
