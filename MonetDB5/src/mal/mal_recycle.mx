@@ -132,6 +132,7 @@ typedef struct QRYSTAT {
 	int *crd;   /* instructions credits */
 	int stop;
 	int wl;		/* waterline of globally reused instructions*/
+	bte *gl;	/* mask for globally reused instructions */
 } QryStat, *QryStatPtr;
 
 typedef struct QRYPATTERN {
@@ -365,8 +366,8 @@ int RECYCLEnewQryStat(MalBlkPtr mb)
 		qstat->calls++;
         if ( qstat->calls >= recycleMaxInterest )
             if ( qstat->greuse  && admissionPolicy == ADM_ADAPT )
-				for (i = 0; i < qstat->wl; i++)
-                   if ( qstat->crd[i] >= REC_MIN_INTEREST )
+				for (i = 0; i < qstat->stop; i++)
+                   if ( qstat->crd[i] >= REC_MIN_INTEREST && qstat->gl[i] )
                         qstat->crd[i] = recycleMaxInterest;
 		return idx;
 	}
@@ -378,6 +379,7 @@ int RECYCLEnewQryStat(MalBlkPtr mb)
 	qstat->crd = (int *) GDKzalloc(sizeof(int)* qstat->stop);
 	for (i=0; i<mb->stop; i++)
 		qstat->crd[i] = mb->stmt[i]->recycle;
+	qstat->gl = (bte *) GDKzalloc(sizeof(bte)* qstat->stop);
 	extendQPat();
 	idx = recycleQPat->cnt++;
 	recycleQPat->ptrn[idx] = qstat;
@@ -396,6 +398,7 @@ static void updateQryStat(int qidx, bit gluse, int i)
 	qs = recycleQPat->ptrn[qidx];
 	if (gluse) {
 		qs->greuse++;
+		qs->gl[i] = 1;
 		if ( qs->wl < i ) qs->wl = i;
 	}
 	else qs->lreuse++;
@@ -409,6 +412,7 @@ static void freeQPat(QryPatPtr q)
     for( i = 0; i < q->cnt; i++){
         qstat = q->ptrn[i];
         GDKfree(qstat->crd);
+		GDKfree(qstat->gl);
         GDKfree(qstat);
     }    
     GDKfree(q->ptrn);
@@ -1077,7 +1081,7 @@ compare by value.
 
 	i = getPC(mb,p);
 	if ( admissionPolicy == ADM_INTEREST ||
-		(admissionPolicy == ADM_ADAPT && i > qsp->wl )){
+		(admissionPolicy == ADM_ADAPT && !qsp->gl[i] )){
 		if (i < qsp->stop ) 
 			qsp->crd[i]--;
 		else stream_printf(cntxt->fdout,"Mismatch of credit array\n");
