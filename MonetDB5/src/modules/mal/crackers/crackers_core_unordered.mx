@@ -116,6 +116,7 @@ str CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, oid first, oid last, oid *pos
 str CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh);
 str CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh);
 str CRKcrackUnorderedThreeCopy_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, oid *posl, oid *posh, BAT *bc);
+str CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl, oid *posh, BAT *partition, BAT *result, oid resoffset);
 @
 
 @= operationsSideways
@@ -706,6 +707,62 @@ CRKcrackUnorderedThreeCopy_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last
 	}
 	*posl = (oid) (ft - t0);
 	*posh = (oid) (tmax - t0);
+
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl, oid *posh, BAT *partition, BAT *result, oid resoffset){
+
+        @1  *ft, *tmax, *t0;
+	oid fh; 
+	BUN firstBUN;
+
+        @1  *ft2, *tmax2; 
+	oid *fh2, *hmax2;
+	BUN firstBUN2;
+	@1 *last;
+
+	@1 *rest=(@1 *)Tloc(result,BUNfirst(result)+resoffset);	
+	oid *resh=(oid*)Hloc(result,BUNfirst(result)+resoffset);	
+
+        /* set bounds for the iterator */
+	firstBUN = BUNfirst(slice);
+        ft   = (@1*)Tloc(slice, firstBUN);
+        tmax = (@1 *)Tloc(slice, firstBUN + BATcount(slice)-1);
+        fh   = (oid)0;
+	last = tmax+1;
+
+	firstBUN2 = BUNfirst(partition);
+        t0    = (@1 *)Tloc(partition, firstBUN2);
+        ft2   = (@1 *)Tloc(partition, firstBUN2);
+        tmax2 = (@1 *)Tloc(partition, firstBUN2 + BATcount(partition)-1);
+        fh2   = (oid*)Hloc(partition, firstBUN2);
+        hmax2 = (oid*)Hloc(partition, firstBUN2 + BATcount(partition)-1);
+	
+	while (ft<last){
+		if (@8_@7(ft, &hgh,@9@1)){
+			*(@1*)tmax2=*(@1*)ft;
+	                *(oid*)hmax2=(oid)fh;
+			tmax2--;hmax2--;
+		}else 
+		if (@8_@5(ft, &low,@9@1)){
+			*(@1*)rest=*(@1*)ft;
+	                *(oid*)resh=(oid)fh;
+			rest++;resh++;
+		}else{
+			*(@1*)ft2=*(@1*)ft;
+	                *(oid*)fh2=(oid)fh;
+			ft2++;fh2++;
+		}
+	
+		ft++;
+		fh++;
+	}
+
+	if (ft2>t0) ft2--;
+	*posl = (oid) (ft2 - t0);
+	*posh = (oid) (tmax2 - t0);
 
 	return MAL_SUCCEED;
 }

@@ -53,7 +53,7 @@
 @- Exported signatures
 
 @= SelectFunctions_decl
-crackers_export str CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+crackers_export str CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *sliceSize, int *mode);
 @
 
 
@@ -79,13 +79,13 @@ crackers_export str CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh,
 
 @= SelectFunctions_impl
 str
-CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){		
+CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *sliceSize, int *mode){		
 	if (@2_EQ(low,ATOMnilptr(TYPE_@1),@3@1))
 		throw(MAL,"selectcm","only double bounded selectsare currently supported");
 	else if (@2_EQ(hgh,ATOMnilptr(TYPE_@1),@3@1))
 		throw(MAL,"selectcm","only double bounded selectsare currently supported");
 	else
-		return SelectCrackMergeBounds_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh);
+		return SelectCrackMergeBounds_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, sliceSize, mode);
 }
 @
 
@@ -104,48 +104,60 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 }
 @
 
-@= crkThreeTreeCopy
-        /*printf("crack in three pieces\n");*/
-	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
-		CRKcrackUnorderedThreeCopy_LE_RE_@1(slice,*low,*hgh, @2, @3, &vl, &vh,b);
-	if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE)
-		CRKcrackUnorderedThreeCopy_LE_RO_@1(slice,*low,*hgh, @2, @3, &vl, &vh,b);
-	if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE)
-		CRKcrackUnorderedThreeCopy_LO_RE_@1(slice,*low,*hgh, @2, @3, &vl, &vh,b);
-	if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
-		CRKcrackUnorderedThreeCopy_LO_RO_@1(slice,*low,*hgh, @2, @3, &vl, &vh,b);
-				
-	/*if (vl != -1 && vh != -1){*/
-		if (vl>0) _vl=vl-1; else _vl=vl;		
-		addCrackerIndex_@1(mslice,low,*inclusiveLow,_vl,c);
-		addCrackerIndex_@1(mslice,hgh,HBound,vh,c);
-	
-@
-
 @= crkThreeTree
         /*printf("crack in three pieces\n");*/
-	if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE)
-		CRKcrackUnorderedThree_LE_RE_@1(@4,*low,*hgh, @2, @3, &vl, &vh);
-	if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE)
-		CRKcrackUnorderedThree_LE_RO_@1(@4,*low,*hgh, @2, @3, &vl, &vh);
-	if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE)
-		CRKcrackUnorderedThree_LO_RE_@1(@4,*low,*hgh, @2, @3, &vl, &vh);
-	if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
-		CRKcrackUnorderedThree_LO_RO_@1(@4,*low,*hgh, @2, @3, &vl, &vh);
+	if (@7 == TRUE && @8 == TRUE)
+		CRKcrackUnorderedThree_LE_RE_@1(@2,@5,@6, cl1, ch2, &vl, &vh);
+	if (@7 == TRUE && @8 == FALSE)
+		CRKcrackUnorderedThree_LE_RO_@1(@2,@5,@6, cl1, ch2, &vl, &vh);
+	if (@7 == FALSE && @8 == TRUE)
+		CRKcrackUnorderedThree_LO_RE_@1(@2,@5,@6, cl1, ch2, &vl, &vh);
+	if (@7 == FALSE && @8 == FALSE)
+		CRKcrackUnorderedThree_LO_RO_@1(@2,@5,@6, cl1, ch2, &vl, &vh);
 				
 	/*if (vl != -1 && vh != -1){*/
 		if (vl>0) _vl=vl-1; else _vl=vl;		
-		addCrackerIndex_@1(@6,low,*inclusiveLow,_vl,@5);
-		addCrackerIndex_@1(@6,hgh,HBound,vh,@5);
-	
+		addCrackerIndex_@1(@4,&@5,@7,_vl,@3);
+		addCrackerIndex_@1(@4,&@6,!@8,vh,@3);
+@
+
+@= crkThreeTreeHybrid
+        /*printf("crack in three pieces\n");*/
+	if (@7 == TRUE && @8 == TRUE)
+		CRKcrackUnorderedThreeHybrid_LE_RE_@1(@2,@5,@6, &vl, &vh, b, br, offset);
+	if (@7 == TRUE && @8 == FALSE)
+		CRKcrackUnorderedThreeHybrid_LE_RO_@1(@2,@5,@6, &vl, &vh, b, br, offset);
+	if (@7 == FALSE && @8 == TRUE)
+		CRKcrackUnorderedThreeHybrid_LO_RE_@1(@2,@5,@6, &vl, &vh, b, br, offset);
+	if (@7 == FALSE && @8 == FALSE)
+		CRKcrackUnorderedThreeHybrid_LO_RO_@1(@2,@5,@6, &vl, &vh, b, br, offset);
+				
+	/*if (vl != -1 && vh != -1){*/
+		if (vl>0) _vl=vl-1; else _vl=vl;		
+		addCrackerIndex_@1(@4,&@5,@7,_vl,@3);
+		addCrackerIndex_@1(@4,&@6,!@8,vh,@3);
+		offset+=vh-vl;
+		if (vh==vl || vl==0) offset++;
+@
+
+@= crkThreeTree2
+        /*printf("crack in three pieces\n");*/
+	if (@7 == TRUE && @8 == TRUE)
+		CRKcrackUnorderedThree_LE_RE_@1(@2,@5,@6, cl1, ch2, &vl, &vh);
+	if (@7 == TRUE && @8 == FALSE)
+		CRKcrackUnorderedThree_LE_RO_@1(@2,@5,@6, cl1, ch2, &vl, &vh);
+	if (@7 == FALSE && @8 == TRUE)
+		CRKcrackUnorderedThree_LO_RE_@1(@2,@5,@6, cl1, ch2, &vl, &vh);
+	if (@7 == FALSE && @8 == FALSE)
+		CRKcrackUnorderedThree_LO_RO_@1(@2,@5,@6, cl1, ch2, &vl, &vh);
 @
 
 @= crkTwoLTree
 	/*CRACK in two pieces cl1-ch1 using >incLow bound*/
-	if (*inclusiveLow == TRUE)
-		CRKcrackUnorderedZero@2_RE_@1(@3,*low, cl1, ch1,&vl);
+	if (@4 == TRUE)
+		CRKcrackUnorderedZero_RE_@1(@2,@3, cl1, ch1,&vl);
 	else
-		CRKcrackUnorderedZero@2_LE_@1(@3,*low, cl1, ch1,&vl);
+		CRKcrackUnorderedZero_LE_@1(@2,@3, cl1, ch1,&vl);
 	if (vl < cl1){
 		/*then the left piece is empty*/
 		gapL = -1;
@@ -161,10 +173,10 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 
 @= crkTwoRTree
 	/*CRACK in two pieces cl2-ch2 using <incHgh bound*/
-	if (*inclusiveHgh == TRUE)
-		CRKcrackUnorderedZero@2_LE_@1(@3,*hgh, cl2, ch2,&vh);
+	if (@4 == TRUE)
+		CRKcrackUnorderedZero_LE_@1(@2,@3, cl2, ch2,&vh);
 	else
-		CRKcrackUnorderedZero@2_RE_@1(@3,*hgh, cl2, ch2,&vh);
+		CRKcrackUnorderedZero_RE_@1(@2,@3, cl2, ch2,&vh);
 
 	/*check for gaps*/
 	if (vh < cl2)
@@ -177,86 +189,369 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 	}
 @
 
-@= CreateResult
-createView:
-	view = BATslice(b, vl, vh+1);
+@= CrackAndCollectTuples
+	current=CrackerIndex[m].smNode;
+	resTuplesLocal=0;
+	br=BATnew(TYPE_oid, bo->ttype,BATcount(bo)/10);
+	BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+	br->batRestricted= BAT_READ;
+	while(current!=NULL){
 
-	if (!tail)
-		view = BATslice(VIEWhead_(b, BAT_READ), vl, vh+1);
-	
-	*vid = view->batCacheid;
-	BBPkeepref(*vid);
+		mslice = current->index;
+		b=BATdescriptor(current->batId);
+		if (b==NULL)
+			throw(MAL, "crackers.crackmerge", "Cannot access slice");
+		if ((c = BATdescriptor(CrackerIndex[mslice].cid)) == NULL)
+			throw(MAL, "crackers.crackRange", "Cannot access cracker index");
 
-	BBPunfix(b->batCacheid);
-	BBPunfix(c->batCacheid);
+		/* find out where in the index the low falls */
+		
+		foundLow = GetLow_@1(@2, @4, CrackerIndex[mslice].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
+
+		/* find out where in the index the high falls */
+		foundHgh = GetHgh_@1(@3, @5, CrackerIndex[mslice].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
+		if (cl1 != 0) cl1++;
+		if (cl2 != 0) cl2++;
+
+		/* If one or both of the result view bounds were not found using the
+		index then we have to crack */
+		if (foundLow == 0 || foundHgh == 0){
+			if (foundLow == 0 && foundHgh == 0){
+				/* If ch2 is right after cl1 in the index then we split this piece in three pieces*/
+				if (cl1 == cl2){
+					/*CRACK in three pieces cl1-ch2 */
+					@:crkThreeTree(@1,b,c,mslice,@2,@3,@4,@5)@
+				} else {
+					/* Else we have to do two cracks separatelly */
+		
+					/* For the cl bound and the next one in the index*/
+					@:crkTwoLTree(@1,b,@2,@4)@
+
+					/* For the ch bound and the previous one in the index*/
+					@:crkTwoRTree(@1,b,@3,@5)@
+
+					if (vl>0) _vl=vl-1; else _vl=vl;		
+					if (gapL>0) addCrackerIndex_@1(mslice,&@2,@4,_vl,c);
+					if (gapH>0) addCrackerIndex_@1(mslice,&@3,!@5,vh,c);
+				}
+			} else
+			if (foundLow == 0){
+				@:crkTwoLTree(@1,b,@2,@4)@
+
+				if (vl>0) _vl=vl-1; else _vl=vl;		
+				if (gapL>0) addCrackerIndex_@1(mslice,&@2,@4,_vl,c);
+				vh = ch2;
+			} else
+			if (foundHgh == 0){
+				@:crkTwoRTree(@1,b,@3,@5)@
+
+				if (gapH>0) addCrackerIndex_@1(mslice,&@3,@5,vh,c);
+				vl = cl1;
+			} 	
+		} else {
+			vl = cl1;
+			vh = ch2;
+		}
+
+		if (vh-vl>0 || (vh-vl==0 && vl==0)){
+			resslice=BATslice(b,vl,vh+1);
+			BATappend(br,resslice,TRUE);
+			BBPunfix(resslice->batCacheid);
+			resTuplesLocal+=vh-vl+1;
+			current->merged=vh-vl+1;
+		}
+
+		BBPunfix(b->batCacheid);
+		BBPunfix(c->batCacheid);
+		current=current->next;
+	}
 @
 
-@= RangeSelectBody
-	BAT *b,*bo,*br;
-	int  m;
-	oid vl=0, vh=0, posl, posh,_vl;
-	oid sliceSize;
-	struct sortMergeNode *current;
-	bit HBound;
+@= FullMergeFillGap
+	@:CrackAndCollectTuples(@1,@2,@3,@4,@5)@
 	
-	(void) vid;
-
-	if (@2_GT(low,hgh,@3@1))
-		throw(MAL, "crackers.crackmerge", "illegal range");
+	if (resTuplesLocal>0){
+		totalmergedTuples+=resTuplesLocal;
+		curNode->sliceSize=resTuplesLocal;
+		curNode->indexPosition=0;
+		curNode->pieceBAT=br->batCacheid;
+		BBPkeepref(br->batCacheid);
+	}else
+		BBPunfix(br->batCacheid);
 	
-	if (*inclusiveHgh == TRUE) HBound = FALSE;
-	else	HBound = TRUE; 				
+@
 
-	m = existsCrackerIndex(*bid);
+@= FullMergeFillLowGap
+	@:CrackAndCollectTuples(@1,@2,@3,@4,@5)@
 
-	/* if this is the first time we select something from this bat,
-	   we have to create the crack column, slice it and crack the slices. 
-           We also create the result column where the result values are merged */
-	if (m == -1){
-		oid endSlice,startSlice;
-		if ((bo = BATdescriptor(*bid)) == NULL)
-			throw(MAL, "crackers.crackmerge", "Cannot access descriptor");
+	if (resTuplesLocal>0){
+		totalmergedTuples+=resTuplesLocal;
+		resultNode=addCrackerIndexIncrementalSideways_@1(m,@2,@4,(oid)0,(oid)0,cr,FALSE,TRUE,br->batCacheid);
+		if(resultNode!=NULL){
+			resultNode->sliceSize=resTuplesLocal;
+			resultNode->contiguousArea=0;
+			curNode=resultNode;
+			curTuple = base + curNode->position;
+			curValue = (@1 *)Tloc(cr, curTuple);
+			curPos   = *(oid*)Hloc(cr, curTuple)+1;
+		}
+		BBPkeepref(br->batCacheid);
+	}else
+		BBPunfix(br->batCacheid);
 	
-		br=BATnew(TYPE_oid, bo->ttype,BATcount(bo));
-		BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
-		BATsetcount(br,BATcount(bo));
-		br->batRestricted= BAT_READ;
+@
 
-		m = newCrackerIndex_@1(*bid,br->batCacheid);
+@= FullMergeFillHghGap
+	@:CrackAndCollectTuples(@1,@2,@3,@4,@5)@
 
-		/*slicing*/
-		/*This is assuming 4 byte ints + 8 byte oids per value and a cache of 4MB*/
-		sliceSize=300000;
+	if (resTuplesLocal>0){
+		resTuples+=resTuplesLocal;
+		totalmergedTuples+=resTuplesLocal;
+		curNode->sliceSize=resTuplesLocal;
+		curNode->indexPosition=0;
+		curNode->pieceBAT=br->batCacheid;
+		resultNode=addCrackerIndexIncrementalSideways_@1(m,@3,!@5,resTuplesLocal-1,resTuplesLocal-1,cr,FALSE,FALSE,br->batCacheid);
+		if(resultNode!=NULL){
+			resultNode->sliceSize=0;
+			resultNode->contiguousArea=0;
+		}
+		BBPkeepref(br->batCacheid);
+	}else
+		BBPunfix(br->batCacheid);
+	
+@
 
-		current=NULL;
-		startSlice=0;
-		endSlice=sliceSize>BATcount(bo)?BATcount(bo):sliceSize;
+
+@= FullMerge
+	@:CrackAndCollectTuples(@1,@2,@3,@4,@5)@
+	if (resTuplesLocal>0){
+		resTuples+=resTuplesLocal;
+		totalmergedTuples+=resTuplesLocal;
+		resultNode=addCrackerIndexIncrementalSideways_@1(m,@2,@4,(oid)0,(oid)0,cr,FALSE,TRUE,br->batCacheid);
+		if(resultNode!=NULL){
+			resultNode->sliceSize=resTuplesLocal;
+			resultNode->contiguousArea=0;
+		}
+		resultNode=addCrackerIndexIncrementalSideways_@1(m,@3,!@5,resTuplesLocal-1,resTuplesLocal-1,cr,FALSE,FALSE,br->batCacheid);
+		if(resultNode!=NULL){
+			resultNode->sliceSize=0;
+			resultNode->contiguousArea=0;
+		}
+		BBPkeepref(br->batCacheid);
+	}else
+		BBPunfix(br->batCacheid);
+@
+
+@= CrackSearchBounds
+printf("\nsearch bounds \n");
+	markLow=markHgh=0;
+	b=BATdescriptor(curNode->pieceBAT);
+	if (b==NULL)
+		throw(MAL, "crackers.crackmerge", "Cannot access slice");
+
+	/* find out where in the index the low falls */
+	
+	foundLow = GetLow_@1(@2, @4, CrackerIndex[m].Tree, cr, BUNfirst(cr), &cl1, &ch1, 0, BUNlast(b)-(oid)1);
+
+	/* find out where in the index the high falls */
+	foundHgh = GetHgh_@1(@3, @5, CrackerIndex[m].Tree, cr, BUNfirst(cr), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
+	if (cl1 != 0) cl1++;
+	if (cl2 != 0) cl2++;
+
+	/* If one or both of the result view bounds were not found using the
+	index then we have to crack */
+	if (foundLow == 0 || foundHgh == 0){
+		if (foundLow == 0 && foundHgh == 0){
+			/* If ch2 is right after cl1 in the index then we split this piece in three pieces*/
+			if (cl1 == cl2){
+				/*CRACK in three pieces cl1-ch2 */
+				@:crkThreeTree2(@1,b,cr,m,@2,@3,@4,@5)@
+				if (vl>0) _vl=vl-1; else _vl=vl;		
+			} else {
+				/* Else we have to do two cracks separatelly */
+	
+				/* For the cl bound and the next one in the index*/
+				@:crkTwoLTree(@1,b,@2,@4)@
+
+				/* For the ch bound and the previous one in the index*/
+				@:crkTwoRTree(@1,b,@3,@5)@
+
+				if (vl>0) _vl=vl-1; else _vl=vl;		
+			}
+			markLow=markHgh=1;
+		} else
+		if (foundLow == 0){
+			@:crkTwoLTree(@1,b,@2,@4)@
+
+			if (vl>0) _vl=vl-1; else _vl=vl;		
+			vh = ch2;
+			markLow=1;
+		} else
+		if (foundHgh == 0){
+			@:crkTwoRTree(@1,b,@3,@5)@
+			vl = cl1;
+			markHgh=1;
+		} 	
+	} else {
+		vl = cl1;
+		vh = ch2;
+	}
+
+	if (vh-vl>0 || (vh-vl==0 && vl==0)){
+		resTuplesLocal=vh-vl+1;
+	}
+
+
+	if (resTuplesLocal>0){
+		if (markLow){
+			resultNode=addCrackerIndexIncrementalSideways_@1(m,@2,@4,_vl,_vl,cr,TRUE,FALSE,b->batCacheid);
+			if(resultNode!=NULL){
+				resultNode->sliceSize=resTuplesLocal;
+				resultNode->contiguousArea=0;
+			}
+		}
+		if (markHgh){
+			resultNode=addCrackerIndexIncrementalSideways_@1(m,@3,!@5,vh,vh,cr,TRUE,FALSE,b->batCacheid);
+			if(resultNode!=NULL){
+				resultNode->sliceSize=0;
+				resultNode->contiguousArea=0;
+			}
+		}
+	}
+	
+	BBPunfix(b->batCacheid);
+	resTuples+=resTuplesLocal;
+	printf("local result tuples are "OIDFMT"\n",resTuplesLocal);
+@
+
+@= CrackSearchLow
+	b=BATdescriptor(curNode->pieceBAT);
+	if (b==NULL)
+		throw(MAL, "crackers.crackmerge", "Cannot access slice");
+
+	vh= nexNode->pieceBAT!=curNode->pieceBAT?BATcount(b)-1:nexNode->indexPosition;
+
+	/* find out where in the index the low falls */
+	
+	cl1=curNode->indexPosition==0?0:curNode->indexPosition+1;
+	ch1=vh;
+
+	@:crkTwoLTree(@1,b,@2,@3)@
+
+	if (vl>0) _vl=vl-1; else _vl=vl;		
+	resultNode=addCrackerIndexIncrementalSideways_@1(m,@2,@3,_vl,_vl,cr,TRUE,FALSE,b->batCacheid);
+	if(resultNode!=NULL){
+		resultNode->sliceSize=vh-vl+1;
+		resultNode->contiguousArea=0;
+		curNode->sliceSize-=resultNode->sliceSize;
+		curNode=resultNode;
+	}
+	
+	if (vh-vl>0 || (vh-vl==0 && vl==0)){
+		resTuplesLocal=vh-vl+1;
+	}
+	BBPunfix(b->batCacheid);
+@
+
+@= CrackSearchHgh
+	b=BATdescriptor(curNode->pieceBAT);
+	if (b==NULL)
+		throw(MAL, "crackers.crackmerge", "Cannot access slice");
+
+	vh= curNode->indexPosition==0?0:curNode->indexPosition+1;
+
+	/* find out where in the index the low falls */
+	
+
+	cl1=vh;
+	ch1=nexNode->pieceBAT!=curNode->pieceBAT?BATcount(b)-1:nexNode->indexPosition;
+	@:crkTwoLTree(@1,b,@2,@3)@
+
+	if (vl>0) _vl=vl-1; else _vl=vl;		
+	resultNode=addCrackerIndexIncrementalSideways_@1(m,@2,@3,_vl,_vl,cr,TRUE,FALSE,b->batCacheid);
+	if(resultNode!=NULL){
+		resultNode->sliceSize=ch1-vl+1;
+		resultNode->contiguousArea=0;
+	}	
+
+	if (vl-vh>0){
+		resTuplesLocal=vl-vh;
+		curNode->sliceSize=resTuplesLocal;
+		resTuples+=resTuplesLocal;
+	}
+	BBPunfix(b->batCacheid);
+@
+
+@= NextPiece
+	notFound=TRUE;
+	/*jump over contiguous already merged pieces*/
+/*	if (nodeHgh2!=NULL){
+		if (curNode->contiguousArea >=(*(oid*)Hloc(cr,base + nodeHgh2->position))){
+			curNode=nodeLow2;
+			nexNode=nodeHgh2;
+			notFound=FALSE;
+		}
+	}
+
+	if(notFound){*/
+	if (1){
+		resTuples+=curNode->sliceSize;
+		curNode=nexNode;
+		nexNode=nexNode->nextValue;
+	}
+	if(nexNode!=NULL){
+		nexTuple = base + nexNode->position;
+		nexValue = (@1 *)Tloc(cr, nexTuple);
+		nexPos   = *(oid*)Hloc(cr, nexTuple);
+	}
+	curTuple = base + curNode->position;
+	curValue = (@1 *)Tloc(cr, curTuple);
+	curPos   = *(oid*)Hloc(cr, curTuple)+1;
+@
+
+@= printVarTypes
+{
+	str MyBuf = NULL;
+	int MyBufLen = 0;
+	(void)(*BATatoms[TYPE_@1].atomToStr) (&MyBuf, &MyBufLen, (ptr)(&@2));
+	printf("%s @3 \n", MyBuf);
+	GDKfree(MyBuf);
+}
+@
+
+@= firstQueryOriginalCrack
 		while (1){
-			int mslice;
-			BAT *c;
 			struct sortMergeNode *smNode;
 			BAT *slice;
+			
 			slice=BATslice(bo, startSlice, endSlice);
-			b = BATnew(TYPE_oid, bo->ttype,BATcount(slice));
-			b->hsorted = FALSE;
-			b->tsorted = FALSE;
-			b->hdense = FALSE;
-			b->tdense = FALSE;
-			BATkey(BATmirror(b),FALSE);
-			BATmode(b,PERSISTENT);
-			b->batRestricted= BAT_READ;
+			b = BATcopy(slice, bo->htype, bo->ttype, TRUE);
+			BBPunfix(slice->batCacheid);
+			if ( bo->htype == TYPE_void)
+				b = BATmaterializeh(b);
 
-			mslice = newCrackerIndexSlice_@1(b->batCacheid,b->batCacheid,1000);
+			mslice = newCrackerIndexSlice_@1(b->batCacheid,b->batCacheid,100);
 
 			if ((c = BATdescriptor(CrackerIndex[mslice].cid)) == NULL)
 				throw(MAL, "crackers.crackmerge", "Cannot access crack index");
 
-			posl = BUNfirst(b);
-			posh = BUNlast(b)-1;
-			@:crkThreeTreeCopy(@1,posl,posh)@
+			cl1 = BUNfirst(b);
+			ch2 = BUNlast(b)-1;
+			@:crkThreeTree(@1,b,c,mslice,*low,*hgh,*inclusiveLow,*inclusiveHgh)@
+			BBPunfix(c->batCacheid);
 
 			smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
+			smNode->merged=0;
+			if (vh-vl>0 || (vh-vl==0 && vl==0)){
+				resslice=BATslice(b,vl,vh+1);
+				BATappend(br,resslice,TRUE);
+				BBPunfix(resslice->batCacheid);
+				resTuples+=vh-vl+1;
+				smNode->merged=vh-vl+1;
+			}
+
 			smNode->batId=b->batCacheid;
+			BBPkeepref(b->batCacheid);
 			smNode->index=mslice;
 			smNode->next=NULL;
 			
@@ -269,28 +564,260 @@ createView:
 				current=smNode;
 			}
 			
-			BBPunfix(slice->batCacheid);
-			BBPunfix(c->batCacheid);
-			BBPkeepref(b->batCacheid);
 
 			if (endSlice==BATcount(bo))
 				break;
 			startSlice=endSlice;
 			endSlice=endSlice+sliceSize>BATcount(bo)?BATcount(bo):endSlice+sliceSize;
 		}
+@
+
+@= firstQueryHybridCrack
+		while (1){
+			struct sortMergeNode *smNode;
+			BAT *slice;
+			
+			slice=BATslice(bo, startSlice, endSlice);
+			b = BATnew(TYPE_oid, bo->ttype, BATcount(slice));
+			BATsetcount(b,BATcount(slice));
+
+			mslice = newCrackerIndexSlice_@1(b->batCacheid,b->batCacheid,100);
+
+			if ((c = BATdescriptor(CrackerIndex[mslice].cid)) == NULL)
+				throw(MAL, "crackers.crackmerge", "Cannot access crack index");
+
+			cl1 = BUNfirst(b);
+			ch2 = BUNlast(b)-1;
+			@:crkThreeTreeHybrid(@1,slice,c,mslice,*low,*hgh,*inclusiveLow,*inclusiveHgh)@
+			BBPunfix(c->batCacheid);
+			BBPunfix(slice->batCacheid);
+
+			smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
+			smNode->merged=0;
+			if (vh-vl>0 || (vh-vl==0 && vl==0)){
+				BATsetcount(br,offset);
+				smNode->merged=vh-vl+1;
+			}
+
+			smNode->batId=b->batCacheid;
+			BBPkeepref(b->batCacheid);
+			smNode->index=mslice;
+			smNode->next=NULL;
+			
+			if (CrackerIndex[m].smNode==NULL){
+				CrackerIndex[m].smNode=smNode;
+				current=CrackerIndex[m].smNode;
+			}
+			else{	
+				current->next = smNode;
+				current=smNode;
+			}
+			
+
+			if (endSlice==BATcount(bo))
+				break;
+			startSlice=endSlice;
+			endSlice=endSlice+sliceSize>BATcount(bo)?BATcount(bo):endSlice+sliceSize;
+		}
+		resTuples=offset;
+@
+
+@= RangeSelectBody
+	BAT *b,*bo,*br,*cr;
+	int  m;
+	oid vl=0, vh=0,_vl;
+	oid sliceSize=*psliceSize;
+	struct sortMergeNode *current;
+	bit foundLow=0, foundHgh=0, nexNodeInclusive, notFound;
+	oid resTuples=0, resTuplesLocal=0, totalmergedTuples=0;
+	oid cl1=0, ch1=0, cl2=0, ch2=0;
+	int mslice;
+	BAT *c,*resslice;
+	int gapL = 1;
+	int gapH = 1;
+	BUN curTuple,nexTuple,base;
+	oid curPos,nexPos;
+	@1 *curValue, *nexValue;
+	struct Node *curNode=NULL,*nexNode=NULL, *resultNode=NULL;
+	bit markLow,markHgh;
+
+	(void) vid;
+
+	if (@2_GT(low,hgh,@3@1))
+		throw(MAL, "crackers.crackmerge", "illegal range");
+	
+	m = existsCrackerIndex(*bid);
+
+	if ((bo = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "crackers.crackmerge", "Cannot access descriptor");
+
+	/* if this is the first time we select something from this bat,
+	   we have to create the crack column, slice it and crack the slices. 
+           We also create the result column where the result values are merged */
+	if (m == -1){
+		oid endSlice,startSlice;
+	
+		br=BATnew(TYPE_oid, bo->ttype,BATcount(bo)/10);
+		BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+		br->batRestricted= BAT_READ;
+
+		m = newCrackerIndexSlice_@1(*bid,br->batCacheid,1000000);
+		if ((cr = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+			throw(MAL, "crackers.crackmerge", "Cannot access crack index");
+
+		current=NULL;
+		startSlice=0;
+		endSlice=sliceSize>BATcount(bo)?BATcount(bo):sliceSize;
+		resTuples=0;
+		if (*mode==1){
+			@:firstQueryOriginalCrack(@1)@
+		}else
+		if (*mode==2){
+			oid offset=0;
+			@:firstQueryHybridCrack(@1)@
+		}
+
+		if (resTuples>0){
+			totalmergedTuples+=resTuples;
+			resultNode=addCrackerIndexIncrementalSideways_@1(m,*low,*inclusiveLow,(oid)0,(oid)0,cr,FALSE,TRUE,br->batCacheid);
+			if(resultNode!=NULL){
+				resultNode->sliceSize=resTuples;
+				resultNode->contiguousArea=0;
+			}
+			resultNode=addCrackerIndexIncrementalSideways_@1(m,*hgh,!*inclusiveHgh,resTuples-1,resTuples-1,cr,FALSE,FALSE,br->batCacheid);
+			if(resultNode!=NULL){
+				resultNode->sliceSize=0;
+				resultNode->contiguousArea=0;
+			}
+			BBPkeepref(br->batCacheid);
+		}else
+			BBPunfix(br->batCacheid);
 		
-		BBPincref(br->batCacheid,TRUE);
-		BBPunfix(bo->batCacheid);
+		goto done;		
+		
 	}
+
+	/*For every other query other than the first*/
+	if ((cr = BATdescriptor(CrackerIndex[m].cid)) == NULL)
+		throw(MAL, "crackers.crackmerge", "Cannot access crack index");
+
+	base      = BUNfirst(cr);
+	resTuples=0;
+	/*Empty merge column*/
+	if (CrackerIndex[m].Tree==NULL){
+		@:FullMerge(@1,*low,*hgh,*inclusiveLow,*inclusiveHgh)@
+	}
+	/*otherwise merge only the missing parts*/
+	else{
+		struct Node *nodeLow1=NULL,*nodeHgh1=NULL, *nodeLow2=NULL,*nodeHgh2=NULL;
+
+		GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, cr, BUNfirst(cr), &nodeLow1, &nodeHgh1, NULL, NULL);
+		GetHghNodes_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, cr, BUNfirst(cr), &nodeLow2, &nodeHgh2, NULL, NULL);
+
+		/*If the range falls outside existing areas we need a full merge*/
+		if ((nodeLow1==NULL && nodeLow2==NULL) || (nodeHgh1==NULL && nodeHgh2==NULL)){
+		printf("range outside leading to full merge\n");
+			if (nodeLow1!=NULL) curNode=nodeLow1;
+			if (nodeHgh2!=NULL) nexNode=nodeHgh2;
+			@:FullMerge(@1,*low,*hgh,*inclusiveLow,*inclusiveHgh)@
+			goto done;
+		}
+		printf("range inlcuded\n");
+		/*Low is either outside or inside the existing area*/
+		if (nodeLow1==NULL){
+			curNode  = nodeHgh1;
+			curTuple = base + curNode->position;
+			curValue = (@1 *)Tloc(cr, curTuple);
+			curPos   = *(oid*)Hloc(cr, curTuple)+1;
+			nexNodeInclusive=curNode->inclusive?FALSE:TRUE;
+			@:FullMergeFillLowGap(@1,*low,*curValue,*inclusiveLow,nexNodeInclusive)@
+			nexNode  = curNode->nextValue; 
+			nexTuple = base + nexNode->position;
+			nexValue = (@1 *)Tloc(cr, nexTuple);
+			nexPos   = *(oid*)Hloc(cr, nexTuple);
+		}else{
+			curNode  = nodeLow1;
+			curTuple = base + curNode->position;
+			curValue = (@1 *)Tloc(cr, curTuple);
+			curPos   = *(oid*)Hloc(cr, curTuple)+1;
+			nexNode  = curNode->nextValue; 
+			nexTuple = base + nexNode->position;
+			nexValue = (@1 *)Tloc(cr, nexTuple);
+			nexPos   = *(oid*)Hloc(cr, nexTuple);
+
+			while((@2_EQ(nexValue,low,@3@1 ))||(@2_LT(nexValue,low,@3@1))){
+				@:NextPiece(@1)@
+			}
+
+			/*Everything falls within one piece*/
+			if ((@2_EQ(nexValue,hgh,@3@1) && *inclusiveHgh == FALSE)||(@2_GT(nexValue,hgh,@3@1))){
+				/*Piece is merged. We only need to binary search this area*/
+				if(curNode->sliceSize>0){
+					@:CrackSearchBounds(@1,*low,*hgh,*inclusiveLow,*inclusiveHgh)@
+				}else{
+					@:FullMerge(@1,*low,*hgh,*inclusiveLow,*inclusiveHgh)@
+				}
+				goto done;
+			}
+
+			/*Otherwise only low bound is here*/
+			if(curNode->sliceSize>0){
+				if (@2_EQ(curValue,low,@3@1) && *inclusiveLow ==curNode->inclusive)
+					resTuples+=curNode->sliceSize;
+				else{	
+					@:CrackSearchLow(@1,*low,*inclusiveLow)@
+				}
+			}else{
+				nexNodeInclusive=nexNode->inclusive?FALSE:TRUE;
+				@:FullMergeFillLowGap(@1,*low,*nexValue,*inclusiveLow,nexNodeInclusive)@
+				nexNode  = curNode->nextValue; 
+				nexTuple = base + nexNode->position;
+				nexValue = (@1 *)Tloc(cr, nexTuple);
+				nexPos   = *(oid*)Hloc(cr, nexTuple);
+			}
+		}
+		@:NextPiece(@1)@
+		/*Traverse remaining pieces to fill in missing areas*/
+		while(nexNode!=NULL){
+			if ((@2_EQ(nexValue,hgh,@3@1) && *inclusiveHgh == TRUE)||(@2_LT(nexValue,hgh,@3@1))){
+				if(curNode->sliceSize==0){
+					nexNodeInclusive=nexNode->inclusive?FALSE:TRUE;
+					@:FullMergeFillGap(@1,*curValue,*nexValue,curNode->inclusive,nexNodeInclusive)@
+				}
+			}else{
+				/*This is the last one. High falls in this piece.*/
+				if(curNode->sliceSize>0){
+					/*exact hit*/
+					if (@2_EQ(nexValue,hgh,@3@1))
+						resTuples+=curNode->sliceSize;
+					else{
+						@:CrackSearchHgh(@1,*hgh,!*inclusiveHgh)@
+					}
+				}else{
+					@:FullMergeFillHghGap(@1,*curValue,*hgh,curNode->inclusive,*inclusiveHgh)@
+				}
+				goto done;
+			}
+			@:NextPiece(@1)@
+		}
+		
+		/*Hgh falls into an empty area in the end*/
+		@:FullMergeFillHghGap(@1,*curValue,*hgh,curNode->inclusive,*inclusiveHgh)@
+	}
+
+	done:;
+	BBPunfix(bo->batCacheid);
+	BBPunfix(cr->batCacheid);
+	printf("Merged "OIDFMT" tuples \n",totalmergedTuples);	
+	printf("result tuples are "OIDFMT"\n\n",resTuples);
 	return MAL_SUCCEED;
 @
 
 @= CrackMergeOperations
 static str
-SelectCrackMergeBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){	
+SelectCrackMergeBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *psliceSize, int *mode){	
 	@:RangeSelectBody(@1,@2,@3,@4,)@
 }
-
 @
 
 @}

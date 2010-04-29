@@ -71,6 +71,7 @@ struct sortMergeNode{
 	struct sortMergeNode *next;
 
 	/*Temp variables*/
+	BAT		*run;   /*full run*/
 	BAT		*slice;/*the slice*/
 	BAT		*tree; /*the slice*/
 	oid		tuples;/*qualifying tuples*/
@@ -422,7 +423,7 @@ newCrackerIndex_@1(int bid, int cbid){
 /*for sliced cracking*/
 int
 newCrackerIndexSlice_@1(int bid, int cbid, int IndexSize){
-	int i, j, freemap = -1, units = 500;
+	int i, j, freemap = -1, units = 500000;
         BAT *b;
 
         for (i = 0; i < maxCrackMap; i++){
@@ -602,6 +603,8 @@ addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexL
                 CrackerIndex[m].Tree->indexLocal = indexLocal;	
                 CrackerIndex[m].Tree->references = NULL;	
                 CrackerIndex[m].Tree->nextPiece = NULL;	
+                CrackerIndex[m].Tree->nextValue = NULL;	
+		CrackerIndex[m].Tree->indexPosition = index; 
 
                 return CrackerIndex[m].Tree;
         }
@@ -613,6 +616,9 @@ addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexL
 		@:insertIndexElement(@1, ph, pt, index, value)@
 		/* remove hash table since cracking has destroyed tuple posititioning */
 		prev = findPreviousPieceWalkingBack(newNode);
+		if (prev!= NULL) prev->nextValue = newNode;
+		newNode->nextValue = findNextPiece(newNode);
+		newNode->indexPosition = index;
 		if (prev != NULL){
 			if (prev->slice != -1){
 				BBPdecref(prev->slice,TRUE);

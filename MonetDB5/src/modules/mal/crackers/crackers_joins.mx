@@ -59,6 +59,7 @@ crackers_export str CRKcrackJoin_@1_@5(int *res, int *bidL1, int *bidL2, int *bi
 crackers_export str CRKcrackHashJoin_@1_@5(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2);
 crackers_export str CRKcacheConsciousCrackHashJoin_@1_@5(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold);
 crackers_export str CRKactiveCacheConsciousCrackHashJoin_@1_@5(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold, @1 *minLeft, @1 *maxLeft, @1 *minRight, @1 *maxRight, int *mode);
+crackers_export str CRKactiveCrackSortMergeJoin_@1_@5(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold, @1 *minLeft, @1 *maxLeft, @1 *minRight, @1 *maxRight, int *mode);
 crackers_export str CRKactiveJoin_@1_@5(int *res, int *bidLeft, bit *makeLeft, int *bidRight, bit *makeRight, lng *pieceSize);
 crackers_export str CRKcacheConsciousCrackHashJoinAlignOnly_@1_@5(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold);
 crackers_export str CRKFullAlignment_@1_@5(int *res, int *bidL, int *bidR1, int *bidR2);
@@ -80,8 +81,302 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 #include "mal_config.h"
 #include "crackers.h"
 #include "bat5.h"
+#define SAMPLE_TRESHOLD_LOG 17
+#define SAMPLE_SLICE_SIZE 1000
 
 /* Local support functions and macros */
+@= joinestimate
+	if (@3 == BUN_NONE) {
+		BUN _lcount = BATcount(l);
+		BUN _rcount = BATcount(r);
+		BUN _slices = 0;
+
+		/* limit estimate with simple bounds first; only spend effort if the join result might be big */
+		if (@1 == JOIN_EQ) {
+			if (l->tkey)
+				@3 = r->hkey ? MIN(_rcount, _lcount) : _rcount;
+			else if (r->hkey)
+				@3 = _lcount;
+		}
+		if (@3 == BUN_NONE) {
+			BUN _heuristic = MIN(_lcount, _rcount);
+
+			if (_heuristic <= BUN_MAX / 3) {
+				_heuristic *= 3;
+				if (_heuristic <= (1 << SAMPLE_TRESHOLD_LOG))
+					@3 = _heuristic;
+			}
+		}
+		if (@3 == BUN_NONE) {
+			BUN _idx;
+
+			for (_idx = _lcount; _idx > 0; _idx >>= 1)
+				_slices++;
+		}
+		if (_slices > SAMPLE_TRESHOLD_LOG) {
+			/* use cheapo sampling by taking a number of slices and joining those with the algo */
+			BUN _idx = 0, _tot = 0, _step, _lo, _avg, _sample, *_cnt;
+			BAT *_tmp1 = l, *_tmp2, *_tmp3 = NULL;
+
+			_step = _lcount / (_slices -= SAMPLE_TRESHOLD_LOG);
+			_sample = _slices * SAMPLE_SLICE_SIZE;
+			_cnt = (BUN *) alloca(_slices * sizeof(BUN));
+			for (_lo = 0; _idx < _slices; _lo += _step) {
+				BUN _size = 0, _hi = _lo + SAMPLE_SLICE_SIZE;
+
+				l = BATslice(_tmp1, _lo, _hi);	/* slice keeps all parent properties */
+				if (l == NULL)
+					return NULL;
+				_tmp2 = @2;	/* @2 = e.g. BATXjoin(l,r) */
+				if (_tmp2) {
+					_size = BATcount(_tmp2);
+					BBPreclaim(_tmp2);
+				}
+				_tot += (_cnt[_idx++] = _size);
+				BBPreclaim(l);
+			}
+			/* do outlier detection on sampling results; this guards against skew */
+			if (@1 == JOIN_EQ) {
+				for (_avg = _tot / _slices, _idx = 0; _idx < _slices; _idx++) {
+					BUN _diff = _cnt[_idx] - _avg;
+
+					if (_avg > _cnt[_idx])
+						_diff = _avg - _cnt[_idx];
+					if (_diff > MAX(SAMPLE_SLICE_SIZE, _avg))
+						break;
+				}
+				if (_idx < _slices) {
+					/* outliers detected, compute a real sample on at most 1% of the data */
+					_sample = MIN(_lcount / 100, (1 << SAMPLE_TRESHOLD_LOG) / 3);
+					_tmp2 = BATsample(_tmp1, _sample);
+					if (_tmp2) {
+						_tmp3 = BATjoin(_tmp2, r, BUN_NONE);	/* might be expensive */
+						if (_tmp3) {
+							_tot = BATcount(_tmp3);
+							BBPreclaim(_tmp3);
+						}
+						BBPreclaim(_tmp2);
+					}
+					if (_tmp3 == NULL)
+						return NULL;
+				}
+			}
+			/* overestimate always by 5% */
+			{
+				double _d = (double) (((lng) _tot) * ((lng) _lcount)) / (0.95 * (double) _sample);
+				if (_d < (double) BUN_MAX)
+					@3 = (BUN) _d;
+				else
+					@3 = BUN_MAX;
+			}
+			l = _tmp1;
+		} else {
+			BUN _m = MIN(_lcount,_rcount);
+			if (_m <= BUN_MAX / 32)
+				_m *= 32;
+			else
+				_m = BUN_MAX;
+			@3 = MIN(_m,MAX(_lcount,_rcount));
+		}
+	}
+@c
+#define BATPERC(lfirst,lcur,lend,rfirst,rcur,rend)\
+		((((dbl) (lend-lfirst))*((dbl) (rend-rfirst))) / \
+		 MAX(1,((lcur-lfirst)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst))))
+
+#define bunfastins_limit(b, h, t, limit, percdone) {			\
+                REGISTER BUN _p = BUNlast(b);				\
+		if (_p == BUN_MAX) /* reached maximum, can't do more */	\
+			goto bunins_done;				\
+                if (_p + 1 > BATcapacity(b)) {				\
+                        if (limit) {					\
+				*limit = (BUN) (b->batCount * (percdone)); \
+                              goto bunins_done;				\
+			}						\
+                        if (BATextend(b, BATgrows(b)) == NULL)		\
+                                goto bunins_failed;			\
+                }							\
+                hfastins_nocheck(b, _p, h, Hsize(b));			\
+                tfastins_nocheck(b, _p, t, Tsize(b));			\
+                (b)->batCount++;					\
+        }
+@= mergejoin
+	if (((!BATtvoid(l)) || l->tseqbase != oid_nil) &&
+	    ((!BAThvoid(r)) || r->hseqbase != oid_nil || nil_on_miss)) {
+		assert(r->htype != TYPE_void);
+		while (l_start < l_last) {
+			ptr v2, v1 = BUNt@2(li, l_start);
+			int neq = 1;
+
+			/* lookup range in l */
+			l_end = l_start;
+			if (l_key) {
+				l_end++;
+			} else
+				do {
+					if ((++l_end) >= l_last)
+						break;
+					v2 = BUNt@2(li, l_end);
+				} while (@1_EQ(v1, v2, @4));
+
+			/* lookup value in r (if not nil, that is) */
+			if (!@1_EQ(v1, nil, @4)) {
+				if (r_scan > 0) {
+					/* first try scanning; but give up after a while */
+					for (r_lim = MIN(r_last, r_end + r_scan); r_end < r_lim; r_end++) {
+						v2 = BUNh@3(ri, r_end);
+						neq = @1_CMP(v1, v2, @4);
+						if (neq <= 0)
+							break;
+					}
+					r_start = r_end;
+				}
+				if (neq == 1) {
+					/* use binary search after failed scan or if scanning is impossible (l not sorted) */
+					if (r_scan < 0 || r_start < r_last) {
+						/* if merge not ended (or if no merge at all) */
+						r_start = (BUN) SORTfndfirst_@4(rr, v1);
+					}
+					if (r_start < r_last) {
+						v2 = BUNh@3(ri, r_start);
+						neq = !@1_EQ(v1, v2, @4);
+					} else if (r_scan >= 0) {
+						/* r is already at end => break off merge join */
+						break;
+					}
+				}
+			}
+			if (neq == 0) {
+				/* lookup range in r */
+				r_end = r_start+1;
+				if (r_key == 0)
+					while (r_end < r_last) {
+						v2 = BUNh@3(ri, r_end);
+						if (!@1_EQ(v1, v2, @4))
+							break;
+						r_end++ ;
+					}
+				/* generate match-product as join result */
+				for (; l_start < l_end; l_start++)
+					for (r_cur = r_start; r_cur < r_end; r_cur++)
+						bunfastins_limit(bn, BUNhead(li, l_start), BUNtail(ri, r_cur), limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),r_start,r_cur,r_end));
+			} else if (nil_on_miss) {
+				/* outerjoin inserts nils on a miss */
+				hasnils = 1;
+				for (; l_start < l_end; l_start++)
+					bunfastins_limit(bn, BUNhead(li, l_start), nil_on_miss, limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),0,1,1));
+			} else {
+				l_start = l_end;	/* no match found in equi-join */
+			}
+		}
+	}
+@c
+/* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
+lng
+CRKmergejoin(BAT *bn,BAT *l, BAT *r){
+	ptr nil_on_miss=NULL;
+	BUN *limit =NULL;
+	lng T1=GDKusec(), T2;
+
+	ptr nil = ATOMnilptr(r->htype);
+	int r_scan = -1;	/* no scanning in r */
+	BAT *rr = BATmirror(r);
+	BUN l_last, r_last;	/* last BUN of the BAT */
+	BUN l_start, r_start;	/* start of current chunk  */
+	BUN l_end, r_end;	/* end of current chunk */
+	int l_key = l->tkey;
+	int r_key = r->hkey;
+	BUN r_cur, r_lim;
+	int loc, var, hasnils = 0;
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
+
+	if (BATtordered(l) & 1) {
+		BUN i;
+		int logr = 4;
+
+		/* 4*log2(r.count) = estimation of the cost of binary search in units of scan comparisons */
+		for (i = BATcount(r); i > 0; logr++)
+			i >>= 1;
+		r_scan = logr;	/* opportunistic scan window in r */
+	}
+
+	/* the algorithm */
+	loc = ATOMstorage(l->ttype);
+
+	l_last = BUNlast(l);
+	r_last = BUNlast(r);
+	l_start = l_end = BUNfirst(l);
+	r_start = r_end = BUNfirst(r);
+
+	switch (loc) {
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
+		@:mergejoin(simple,loc,loc,chr)@
+		break;
+#endif
+#ifndef NOEXPAND_BTE
+	case TYPE_bte:
+		@:mergejoin(simple,loc,loc,bte)@
+		break;
+#endif
+#ifndef NOEXPAND_SHT
+	case TYPE_sht:
+		@:mergejoin(simple,loc,loc,sht)@
+		break;
+#endif
+#ifndef NOEXPAND_INT
+	case TYPE_int:
+		@:mergejoin(simple,loc,loc,int)@
+		break;
+#endif
+#ifndef NOEXPAND_FLT
+	case TYPE_flt:
+		@:mergejoin(simple,loc,loc,flt)@
+		break;
+#endif
+#ifndef NOEXPAND_LNG
+	case TYPE_lng:
+		@:mergejoin(simple,loc,loc,lng)@
+		break;
+#endif
+#ifndef NOEXPAND_DBL
+	case TYPE_dbl:
+		@:mergejoin(simple,loc,loc,dbl)@
+		break;
+#endif
+	default:
+		/* watch it: l->tvarsized may be set due to void l */
+		if (l->tvarsized) {
+			var = ATOMstorage(l->ttype);
+
+			if (r->hvarsized) {
+				/* l and r both real varsized types */
+				@:mergejoin(atom,var,var,var)@
+			} else {
+				/* l is void, r is oid */
+				loc = ATOMstorage(r->htype);
+				@:mergejoin(atom,var,loc,loc)@
+			}
+		} else {
+			/* we can't handle void r anyway, so don't worry about it here */
+			loc = ATOMstorage(l->ttype);
+			@:mergejoin(atom,loc,loc,loc)@
+		}
+		break;
+	}
+
+	if (nil_on_miss && l_start < l_last) {
+		hasnils = 1;
+		for (; l_start < l_last; l_start++)
+			bunfastins_limit(bn, BUNhead(li, l_start), nil_on_miss, limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),0,1,1));
+	}
+	/* propagate properties */
+      bunins_done:
+      bunins_failed:
+	T2=GDKusec();
+	return T2-T1;
+}
 
 @= hashjoin
 	{
@@ -245,6 +540,51 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 			TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
 		}else{ 
 			TJtotal+=CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
+		}
+
+	}
+		BBPunfix(markedViewRight->batCacheid);
+		BBPunfix(markedViewLeft->batCacheid);
+
+#ifdef DEBUG_CRACKERS_JOIN
+	printf("\n Res \n");
+	BATprint(res);
+	@:dumpIndex(Index Left)@
+#endif
+@
+
+@= JoinTwoSuperPiecesReuseHashTablesSortMerge
+#ifdef TIMER_CRACKERS_JOIN
+		joinsDone++;
+#endif
+	tempT=GDKusec();
+        GDKqsort(Hloc(mapLeft,BUNfirst(mapLeft)+prevPosLeft), Tloc(mapLeft,BUNfirst(mapLeft)+prevPosLeft), (mapLeft->hheap)?mapLeft->H->vheap->base:NULL, curPosLeft +1-prevPosLeft, Hsize(mapLeft), Tsize(mapLeft), mapLeft->htype);
+        GDKqsort(Hloc(mapRight,BUNfirst(mapRight)+prevPosRight), Tloc(mapRight,BUNfirst(mapRight)+prevPosRight), (mapRight->hheap)?mapRight->H->vheap->base:NULL, curPosRight +1-prevPosRight, Hsize(mapRight), Tsize(mapRight), mapRight->htype);
+	Tsort+=GDKusec()-tempT;
+	markedViewLeft  = BATslice(mapLeft, prevPosLeft,  curPosLeft +1);
+	markedViewRight = BATslice(mapRight, prevPosRight, curPosRight+1);
+
+	markedViewLeft->hsorted = TRUE;
+	markedViewLeft->tsorted = FALSE;
+	markedViewRight->hsorted = TRUE;
+	markedViewRight->tsorted = FALSE;
+	
+
+#ifdef DEBUG_CRACKERS_JOIN
+	printf("\n Left \n");
+	BATprint(markedViewLeft);
+	printf("\n Right \n");
+	BATprint(markedViewRight);
+#endif
+	sizeLeft = curPosLeft - prevPosLeft + 1;
+	sizeRight = curPosRight - prevPosRight + 1;
+
+	if (sizeLeft > 0 && sizeRight > 0) {
+	(void) joinThreshold;
+		if  (sizeLeft < sizeRight){ 
+			TJtotal+=CRKmergejoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
+		}else{ 
+			TJtotal+=CRKmergejoin(res, BATmirror(markedViewLeft), markedViewRight);
 		}
 
 	}
@@ -951,6 +1291,53 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 		TCtotal+=TC2-TC1;
 @
 
+@= CreateCrackerMapMultiCrack
+		BAT *bo, *bp, *b, *c;
+                oid sizeM;
+		int m;
+
+		TC1=GDKusec();	
+                if ((bo = BATdescriptor(@3)) == NULL)
+                        throw(MAL, "crackers.create new map", "Cannot access descriptor of map head BAT");
+                if ((bp = BATdescriptor(@4)) == NULL)
+                        throw(MAL, "crackers.create new map", "Cannot access pdescriptor of map tail BAT");
+
+                sizeM = BATcount(bo);
+		b = BATnew(bo->ttype, bp->ttype, sizeM);
+                b->hsorted = FALSE;
+                b->tsorted = FALSE;
+                b->hdense = FALSE;
+                b->tdense = FALSE;
+
+                /*BATkey(b,TRUE);*/
+
+                BATkey(BATmirror(b),FALSE);
+                b->batRestricted= BAT_READ;
+                BATmode(b,PERSISTENT);
+	
+        	BATsetcount(b, sizeM);
+
+		c = BATnew(TYPE_oid, TYPE_@1, IndexEntries);	/* TODO: size */
+
+                m = newCrackerIndexSideways_@1(@3, b->batCacheid, @4, c->batCacheid);
+		CrackerIndex[m].creationTimestamp = GDKusec();
+		CrackerIndex[m].accesses = 1;
+		CrackerIndex[m].dropped = 0;
+		CrackerIndex[m].tuples = sizeM;
+
+		/* storage management should be here as in crackers.sideways*/
+
+		CrackPopulateSideways_@1(bo,bp,b,c,m,*minLeft,*maxLeft,4096);	
+
+                BBPunfix(bo->batCacheid);
+                BBPunfix(bp->batCacheid);
+                BBPkeepref(b->batCacheid);
+                BBPkeepref(c->batCacheid);
+
+		TC2=GDKusec();	
+		TCtotal+=TC2-TC1;
+@
+
 @= CreateCrackerMap
 		BAT *bo, *bp, *b, *c;
                 oid sizeM;
@@ -1056,8 +1443,8 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 
 	/*Mode 5. Sample based exhaustive cracking*/
 	/*Mode 6. Calculate average while cracking and reuse in next itteration*/
-	/*Mode 7. Single sided cracking with a dandom mid*/
-	/*Mode 8. Double sided cracking with a dandom range*/
+	/*Mode 7. Single sided cracking with a random mid*/
+	/*Mode 8. Double sided cracking with a random range*/
 
 	if (*mode==1 || *mode==2 || (*mode==3 && (size@3 < (oid)(3 * (*pieceSize)))) || (*mode==4 && positionOfPieceToCrack@3 == cprevPos@3) ){
 		if (size@3 > (oid)*pieceSize){
@@ -1673,6 +2060,7 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 
 	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
 			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapPosLeft].pieces + CrackerIndex[mapPosRight].pieces );
+	printf("result is "BUNFMT" \n", BATcount(res));
 @
 
 @= JoinFunctions_impl_1
@@ -2884,6 +3272,101 @@ str CRKcacheConsciousCrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int
 
 }	
 
+str CRKactiveCrackSortMergeJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold, @1 *minLeft, @1 *maxLeft, @1 *minRight, @1 *maxRight,int *mode){
+
+	lng T1=GDKusec(), TJtotal = 0, T2, TCtotal = 0, TC1, TC2, Tsort=0,tempT;
+	
+	int tapeLpos, mapPosLeft;
+	struct Node *curNodeLeft, *prevNodeLeft; 
+	BAT *indexLeft, *mapLeft, *markedViewLeft;
+	BUN baseLeft;
+	oid curPosLeft, prevPosLeft, cprevPosLeft;
+	@1  curValueLeft;
+	bit existsHashTableLeft;
+
+	int tapeRpos, mapPosRight;
+	struct Node *curNodeRight, *prevNodeRight; 
+	BAT *indexRight, *mapRight, *markedViewRight;
+	BUN baseRight;
+	oid curPosRight, prevPosRight, cprevPosRight;
+        @1  curValueRight;
+	bit existsHashTableRight;
+
+	BAT *res;
+	oid newPosition=0, newPosition2=0;
+	oid positionOfPieceToCrackLeft=0, positionOfPieceToCrackRight=0;
+
+	oid sizeLeft, sizeRight;
+	oid iterations = 0;
+
+	lng joinsDone = 0;
+
+	@1 mid, low, hgh;
+	@1 step, mid1, mid2;
+
+	bit true = TRUE;
+
+	/* Get the cracker tape for the set of the left map or create one if it does not exist */
+        tapeLpos = existsCrackerIndexSideways(*bidL1, -1);
+        if (tapeLpos == -1)
+                tapeLpos = CreateTape_@1(*bidL1);
+
+        /* Get the left map */
+        mapPosLeft = existsCrackerIndexSideways(*bidL1, *bidL2);
+	if (mapPosLeft == -1){
+		@:CreateCrackerMap(@1,@5,*bidL1, *bidL2)@		
+		mapPosLeft = m;
+	}
+
+	/* Align the map based on the position of its cursor in the cracker tape */
+        Sync_@1_@5(tapeLpos, mapPosLeft);
+
+	selectMergeInsertionsPart_@1_@5_Sideways(minLeft, &true, maxLeft, &true, mapPosLeft);
+
+        /* Take the index of the map */
+        if ((indexLeft = BATdescriptor(CrackerIndex[mapPosLeft].cid)) == NULL)
+                throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
+
+        /* Take the map */
+        if ((mapLeft = BATdescriptor(CrackerIndex[mapPosLeft].cbid)) == NULL)
+                throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
+
+	/* Get the piece that holds the lowest values */
+	curNodeLeft = getFirstNode(CrackerIndex[mapPosLeft].Tree);
+
+	baseLeft      = BUNfirst(indexLeft);
+
+	/* Get the cracker tape for the set of the right map or create one if it does not exist */
+        tapeRpos = existsCrackerIndexSideways(*bidR1, -1);
+        if (tapeRpos == -1)
+                tapeRpos = CreateTape_@1(*bidR1);
+
+        /* Get the right map */
+        mapPosRight = existsCrackerIndexSideways(*bidR1, *bidR2);
+	if (mapPosRight == -1){
+		@:CreateCrackerMap(@1,@5,*bidR1,*bidR2)@		
+		mapPosRight = m;
+	}
+
+        /* Align the map based on the position of its cursor in the cracker tape */
+        Sync_@1_@5(tapeRpos, mapPosRight);
+
+	selectMergeInsertionsPart_@1_@5_Sideways(minRight, &true, maxRight, &true, mapPosRight);
+
+        /* Take the index of the map */
+        if ((indexRight = BATdescriptor(CrackerIndex[mapPosRight].cid)) == NULL)
+                throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
+
+        /* Take the map */
+        if ((mapRight = BATdescriptor(CrackerIndex[mapPosRight].cbid)) == NULL)
+                throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
+	
+	@:ActiveJoinMainPart(@1,@5,SortMerge)@
+
+	printf("Sort time %lld \n",Tsort);
+	return MAL_SUCCEED;
+}	
+
 str CRKactiveCacheConsciousCrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold, @1 *minLeft, @1 *maxLeft, @1 *minRight, @1 *maxRight,int *mode){
 
 	lng T1=GDKusec(), TJtotal = 0, T2, TCtotal = 0, TC1, TC2;
@@ -2931,7 +3414,7 @@ str CRKactiveCacheConsciousCrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL
         /* Get the left map */
         mapPosLeft = existsCrackerIndexSideways(*bidL1, *bidL2);
 	if (mapPosLeft == -1){
-		@:CreateCrackerMap(@1,@5,*bidL1, *bidL2)@		
+		@:CreateCrackerMapMultiCrack(@1,@5,*bidL1, *bidL2)@		
 		mapPosLeft = m;
 	}
 
@@ -2961,7 +3444,7 @@ str CRKactiveCacheConsciousCrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL
         /* Get the right map */
         mapPosRight = existsCrackerIndexSideways(*bidR1, *bidR2);
 	if (mapPosRight == -1){
-		@:CreateCrackerMap(@1,@5,*bidR1,*bidR2)@		
+		@:CreateCrackerMapMultiCrack(@1,@5,*bidR1,*bidR2)@		
 		mapPosRight = m;
 	}
 

@@ -234,7 +234,7 @@ command selectsm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit, mode:int, rounding:bit
 address CRKselectSortMerge_@2
 comment "Slice and sort for the first query. Incrementally merge slices for the next ones.";
 
-command selectcm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:oid,:@2]
+command selectcm(b:bat[:oid,:@2],l:@2,h:@2,li:bit,hi:bit,sliceSize:int,mode:int):bat[:oid,:@2]
 address CRKselectCrackMerge_@2
 comment "Slice and crack for the first query. Incrementally crack+merge slices for the next ones.";
 
@@ -604,6 +604,10 @@ command activeCacheConsciousCrackHashJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@2],b3:b
 address CRKactiveCacheConsciousCrackHashJoin_@1_@2
 comment "Join two maps based on head values with active cracking. Align the maps to avoid overlapping pieces. Reuse hash tables";
 
+command activeCrackSortMergeJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@2],b3:bat[:oid,:@1],b4:bat[:oid,:@2],pieceSize:lng,joinThreshold:lng, minLeft:@1, maxLeft:@1, minRight:@1, maxRight:@1, mode:int):bat[:oid,:oid]
+address CRKactiveCrackSortMergeJoin_@1_@2
+comment "Join two maps based on head values with active cracking. Align the maps to avoid overlapping pieces. Sort small pieces and use merge join";
+
 command activeJoin(b1:bat[:@1,:@2], reuseLeft:bit, b3:bat[:@1,:@2],reuseRight:bit,pieceSize:lng):bat[:oid,:oid]
 address CRKactiveJoin_@1_@2
 comment "Join two maps based on head values with active cracking. Align the maps to avoid overlapping pieces. Reuse hash tables";
@@ -678,6 +682,7 @@ comment "Materialize the head of BAT b";
 #include "crackers_sortmerge.h"
 #include "crackers_crackmerge.h"
 #include "crackers_pq.h"
+#include "crackers_populate.h"
 
 #ifdef LIBCRACKERS 
 extern int maxCrackMap;
