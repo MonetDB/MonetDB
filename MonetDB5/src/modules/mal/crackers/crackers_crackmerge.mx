@@ -625,10 +625,10 @@ printf("\nsearch bounds \n");
 @= RangeSelectBody
 	BAT *b,*bo,*br,*cr;
 	int  m;
-	oid vl=0, vh=0,_vl;
+	oid vl=0, vh=0,_vl=0;
 	oid sliceSize=*psliceSize;
 	struct sortMergeNode *current;
-	bit foundLow=0, foundHgh=0, nexNodeInclusive, notFound;
+	bit foundLow=0, foundHgh=0, nexNodeInclusive;
 	oid resTuples=0, resTuplesLocal=0, totalmergedTuples=0;
 	oid cl1=0, ch1=0, cl2=0, ch2=0;
 	int mslice;
@@ -636,7 +636,6 @@ printf("\nsearch bounds \n");
 	int gapL = 1;
 	int gapH = 1;
 	BUN curTuple,nexTuple,base;
-	oid curPos,nexPos;
 	@1 *curValue, *nexValue;
 	struct Node *curNode=NULL,*nexNode=NULL, *resultNode=NULL;
 	bit markLow,markHgh;
@@ -709,6 +708,8 @@ printf("\nsearch bounds \n");
 	}
 	/*otherwise merge only the missing parts*/
 	else{
+		bit notFound;
+		oid curPos,nexPos;
 		struct Node *nodeLow1=NULL,*nodeHgh1=NULL, *nodeLow2=NULL,*nodeHgh2=NULL;
 
 		GetLowNodes_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, cr, BUNfirst(cr), &nodeLow1, &nodeHgh1, NULL, NULL);
@@ -716,13 +717,11 @@ printf("\nsearch bounds \n");
 
 		/*If the range falls outside existing areas we need a full merge*/
 		if ((nodeLow1==NULL && nodeLow2==NULL) || (nodeHgh1==NULL && nodeHgh2==NULL)){
-		printf("range outside leading to full merge\n");
 			if (nodeLow1!=NULL) curNode=nodeLow1;
 			if (nodeHgh2!=NULL) nexNode=nodeHgh2;
 			@:FullMerge(@1,*low,*hgh,*inclusiveLow,*inclusiveHgh)@
 			goto done;
 		}
-		printf("range inlcuded\n");
 		/*Low is either outside or inside the existing area*/
 		if (nodeLow1==NULL){
 			curNode  = nodeHgh1;

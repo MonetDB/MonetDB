@@ -262,7 +262,6 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 						bunfastins_limit(bn, BUNhead(li, l_start), BUNtail(ri, r_cur), limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),r_start,r_cur,r_end));
 			} else if (nil_on_miss) {
 				/* outerjoin inserts nils on a miss */
-				hasnils = 1;
 				for (; l_start < l_end; l_start++)
 					bunfastins_limit(bn, BUNhead(li, l_start), nil_on_miss, limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),0,1,1));
 			} else {
@@ -287,7 +286,7 @@ CRKmergejoin(BAT *bn,BAT *l, BAT *r){
 	int l_key = l->tkey;
 	int r_key = r->hkey;
 	BUN r_cur, r_lim;
-	int loc, var, hasnils = 0;
+	int loc, var;
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
@@ -367,7 +366,6 @@ CRKmergejoin(BAT *bn,BAT *l, BAT *r){
 	}
 
 	if (nil_on_miss && l_start < l_last) {
-		hasnils = 1;
 		for (; l_start < l_last; l_start++)
 			bunfastins_limit(bn, BUNhead(li, l_start), nil_on_miss, limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),0,1,1));
 	}
