@@ -376,7 +376,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		stream_printf(s,"%3d\t %3d\t %3d\t ", mb->stop, potrec, nonbind);
 		stream_printf(s,"%3d\t %3d\t ", cntxt->rcc->recycled0, cntxt->rcc->recycled);
 		stream_printf(s,"|| %3d\t %3d\t ", cntxt->rcc->RPadded0, cntxt->rcc->RPreset0);
-		stream_printf(s,"%3d\t%5.2f\t"LLFMT"\t", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0,recyclerUsedMemory);
+		stream_printf(s,"%3d\t%5.2f\t"LLFMT"\t"LLFMT"\t", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0,recyclerUsedMemory,reusedmem);
 	}
 
 	if ( monitorRecycler & 1) { /* RP stat */
