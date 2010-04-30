@@ -639,6 +639,7 @@ printf("\nsearch bounds \n");
 	@1 *curValue, *nexValue;
 	struct Node *curNode=NULL,*nexNode=NULL, *resultNode=NULL;
 	bit markLow,markHgh;
+	bit notFound;
 
 	(void) vid;
 
@@ -708,7 +709,6 @@ printf("\nsearch bounds \n");
 	}
 	/*otherwise merge only the missing parts*/
 	else{
-		bit notFound;
 		oid curPos,nexPos;
 		struct Node *nodeLow1=NULL,*nodeHgh1=NULL, *nodeLow2=NULL,*nodeHgh2=NULL;
 
@@ -809,6 +809,7 @@ printf("\nsearch bounds \n");
 	BBPunfix(cr->batCacheid);
 	printf("Merged "OIDFMT" tuples \n",totalmergedTuples);	
 	printf("result tuples are "OIDFMT"\n\n",resTuples);
+	(void)notFound;
 	return MAL_SUCCEED;
 @
 
