@@ -1160,7 +1160,6 @@ hasSideEffects(InstrPtr p, int strict)
 		if (getFunctionId(p) == columnBindRef) return FALSE;
 		if (getFunctionId(p) == copy_fromRef) return FALSE;
 		/* assertions are the end-point of a flow path */
-		if (getFunctionId(p) == assertRef) return FALSE;
 		if (getFunctionId(p) == not_uniqueRef) return FALSE;
 		if (isUpdateInstruction(p)) return FALSE;
 		return TRUE;
