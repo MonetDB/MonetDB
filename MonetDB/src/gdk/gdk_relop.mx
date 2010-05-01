@@ -1233,7 +1233,7 @@ This routine does the join optimization. TODO: it should be expressed in MIL.
 static BAT *
 batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 {
-	size_t lsize, rsize, mem_size = MT_npages() * MT_pagesize();
+	size_t lsize, rsize, mem_size = MT_npages() * MT_pagesize() / GDKnr_threads;
 	BUN i, lcount, rcount;
 	bit lfetch, rfetch, must_hash;
 	lng logr, logl;
