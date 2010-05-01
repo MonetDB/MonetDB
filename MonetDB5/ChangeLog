@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Sat May  1 2010 Stefan Manegold <manegold@cwi.nl>
+- fixed BUG #2994521 "mat.slice unable to cope with only empty BAT arguments"
+  https://sourceforge.net/tracker/index.php?func=detail&aid=2994521&group_id=56967&atid=482468
+  by makeing MATpackSliceInternal() handle empty input BATs correctly
+
 * Wed Mar 31 2010 Stefan Manegold <manegold@cwi.nl>
 - Made compilation of "testing" (and "java") independent of MonetDB.
   This is mainy for Windows, but also on other systems, "testing" can now be
