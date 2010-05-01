@@ -1,0 +1,52 @@
+stdout of test 'garbage1` in directory 'src/optimizer` itself:
+
+
+# 23:03:59 >  
+# 23:03:59 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=32278 --set xrpc_port=42613 --set monet_prompt= --set mal_listing=2 --trace  --dbname=mTests_src_optimizer  garbage1.mal
+# 23:03:59 >  
+
+# MonetDB server v5.19.0, based on kernel v1.37.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32278/
+function user.test():BAT;
+    b := bat.new(:str,:BAT);
+    return test := b;
+end test;
+function user.test2():void;
+    x := user.test();
+    io.print(x);
+end test2;
+function user.main():void;
+    mdb.List("user","test2");
+    mdb.List("user","test2");
+    mdb.List("user","test");
+    mdb.List("user","test2");
+    user.test2();
+end main;
+function user.test2():void;             #  0 test2:void := user.test2() {G}
+    x := user.test();                   #  1 x:BAT := user.test() {G}
+    io.print(x);                        #  2 _2:void := IOprint_val(x:BAT) {G}
+end test2;                              #  3  
+function user.test2():void;             #  0 test2:void := user.test2() {G}
+    x := user.test();                   #  1 x:BAT := user.test() {G}
+    io.print(x);                        #  2 _2:void := IOprint_val(x:BAT) {G}
+end test2;                              #  3  
+function user.test():BAT;               #  0 test:BAT := user.test() {G}
+    b := bat.new(:str,:BAT);            #  1 b:bat[:str,:BAT] := CMDBATnew(_2:str, _3:BAT) {G}
+    return test := b;                   #  2 test:BAT := b:bat[:str,:BAT] {G}
+end test;                               #  3  
+function user.test2():void;             #  0 test2:void := user.test2() {G}
+    x := user.test();                   #  1 x:BAT := user.test() {G}
+    io.print(x);                        #  2 _2:void := IOprint_val(x:BAT) {G}
+end test2;                              #  3  
+[ <tmp_17> ]
+
+# 23:03:59 >  
+# 23:03:59 >  Done.
+# 23:03:59 >  
+
