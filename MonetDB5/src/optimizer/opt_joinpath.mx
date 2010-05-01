@@ -417,7 +417,6 @@ For the time being we limit ourself to a default of 1Kelements
 @c
 /*#define SAMPLE_THRESHOLD_lOG 17*/
 #define SMALL_OPERAND	1024
-#define CLUSTER_THRESHOLD	(1<<21) /* 2M */
 BUN
 ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 {
@@ -451,25 +450,79 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		stream_printf(cntxt->fdout,"#orderedvoidfetchjoin ? %d\n",
 			BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) );
 	}
-	/* if either operand is very small, we should use that one */
-	if (rc < SMALL_OPERAND )
+
+	/* first use logical properties to estimate upper bound of result size */
+	if (l->tkey && r->hkey)
+		cost = MIN(lc,rc);
+	else
+	if (l->tkey)
 		cost = rc;
 	else
-	if (lc < SMALL_OPERAND )
+	if (r->hkey)
 		cost = lc;
-	else
-	/* foreign key joins are common */
-	if( l->ttype== TYPE_oid  && r->htype== TYPE_void)
-		cost = lc;
-	else
-    /* merge joins are cheap */
-	if (l->tsorted || r->hsorted || l->tkey || r->hkey)
-		cost = MIN(lc,rc);
 	else
 	if (lc * rc >= BUN_MAX)
 		cost = BUN_MAX;
 	else
 		cost = lc * rc;
+
+	/* then use physical properties to rank costs */
+	if (BATtdense(l) && BAThdense(r))
+		/* densefetchjoin -> sequential access */
+		cost /= 7;
+	else
+	if (BATtordered(l)&1 && BAThdense(r))
+		/* orderedfetchjoin > sequential access */
+		cost /= 6;
+	else
+	if (BATtdense(l) && BAThordered(r)&1 && flag != 0 /* no leftjoin */)
+		/* (reversed-) orderedfetchjoin -> sequential access */
+		cost /= 6;
+	else
+	if (BAThdense(r) && rc <= SMALL_OPERAND)
+		/* fetchjoin with random access in L1 */
+		cost /= 5;
+	else
+	if (BATtdense(l) && lc <= SMALL_OPERAND && flag != 0 /* no leftjoin */)
+		/* (reversed-) fetchjoin with random access in L1 */
+		cost /= 5;
+	else
+	if (BATtordered(l)&1 && BAThordered(r)&1)
+		/* mergejoin > sequential access */
+		cost /= 4;
+	else
+	if (BAThordered(r)&1 && rc <= SMALL_OPERAND)
+		/* binary-lookup-join with random access in L1 */
+		cost /= 3;
+	else
+	if (BATtordered(l)&1 && lc <= SMALL_OPERAND && flag != 0 /* no leftjoin */)
+		/* (reversed-) binary-lookup-join with random access in L1 */
+		cost /= 3;
+	else
+	if ((BAThordered(r)&1 && lc <= SMALL_OPERAND) || (BATtordered(l)&1 && rc <= SMALL_OPERAND))
+		/* sortmergejoin with sorting in L1 */
+		cost /= 3;
+	else
+	if (rc <= SMALL_OPERAND)
+		/* hashjoin with hashtable in L1 */
+		cost /= 3;
+	else
+	if (lc <= SMALL_OPERAND && flag != 0 /* no leftjoin */)
+		/* (reversed-) hashjoin with hashtable in L1 */
+		cost /= 3;
+	else
+	if (BAThdense(r))
+		/* fetchjoin with random access beyond L1 */
+		cost /= 2;
+	else
+	if (BATtdense(l) && flag != 0 /* no leftjoin */)
+		/* (reversed-) fetchjoin with random access beyond L1 */
+		cost /= 2;
+	else
+		/* hashjoin with hashtable larger than L1 */
+		/* sortmergejoin with sorting beyond L1 */
+		cost /= 1;
+
 	OPTDEBUG{
 		stream_printf(cntxt->fdout,"#batjoin cost ?"BUNFMT"\n",cost);
 	}
