@@ -206,11 +206,12 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 static str
 MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, i1 = -1, i2 = -1, *ret = (int*) getArgReference(stk,p,0);
+	int i, i1 = p->argc, i2 = -1, *ret = (int*) getArgReference(stk,p,0);
 	BAT *b, *bn;
 	BUN cap = 0, fst, lst, cnt, c;
 	int ht = TYPE_any, tt = TYPE_any;
 
+	assert(p->argc > 3);
 	switch getArgType(mb,p,1) {
 	case TYPE_wrd:
 		fst = (BUN) *(wrd*) getArgReference(stk,p,1);
@@ -263,6 +264,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				return MAL_SUCCEED;
 			}
 			if (fst < cap + c) {
+				/* fst falls in BAT i1 == i */
 				i1 = i;
 				fst -= cap;
 				lst -= cap;
@@ -272,9 +274,13 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		cap += c;
 		BBPunfix(b->batCacheid);
 	}
+	/* lst falls in BAT i2 == i-1 */
 	i2 = i - 1;
-	assert(i1 < i2);
-	assert(ht != TYPE_any);
+	if (cap <= fst) /* i.e., (i1 > i2) */
+		cap = 0;
+	else
+		cap -= fst;
+	cnt = MIN(cnt, cap);
 
 	bn = BATnew(ht, tt, cnt);
 	if (bn == NULL)
