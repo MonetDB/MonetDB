@@ -168,7 +168,10 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 	int ht = TYPE_any, tt = TYPE_any;
 
 	for (i = 1; i < p->argc; i++) {
-		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		int bid = stk->stk[getArg(p,i)].val.ival;
+		b = BBPquickdesc(ABS(bid),FALSE);
+		if (b && bid < 0)
+			b = BATmirror(b);
 		if( b == NULL)
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 		if (ht == TYPE_any){
@@ -176,7 +179,6 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 			tt = b->ttype;
 		}
 		cap += BATcount(b);
-		BBPunfix(b->batCacheid);
 	}
 	assert(ht != TYPE_any);
 
@@ -244,7 +246,10 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	cnt = lst - fst;
 
 	for (i = 3; i < p->argc && cap < lst; i++) {
-		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		int bid = stk->stk[getArg(p,i)].val.ival;
+		b = BBPquickdesc(ABS(bid),FALSE);
+		if (b && bid < 0)
+			b = BATmirror(b);
 		if (b == NULL)
 			throw(MAL, "mat.packSlice", RUNTIME_OBJECT_MISSING);
 		if (ht == TYPE_any){
@@ -258,6 +263,7 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * (A pitty that we have calculated the other slices as well.)
 			 */
 			if (lst <= cap + c) {
+				b = BATdescriptor(bid);
 				bn = BATslice(b, fst - cap, lst - cap);
 				BBPunfix(b->batCacheid);
 				BBPkeepref(*ret = bn->batCacheid);
@@ -272,7 +278,6 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 		}
 		cap += c;
-		BBPunfix(b->batCacheid);
 	}
 	/* lst falls in BAT i2 == i-1 */
 	i2 = i - 1;
