@@ -59,6 +59,7 @@ HAVE_LIBXML2?xml10
 
 cluster00
 tokenizer00
+zorder
 
 #HAVE_RAPTOR?rdf
 

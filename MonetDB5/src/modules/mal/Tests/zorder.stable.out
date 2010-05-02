@@ -1,0 +1,191 @@
+stdout of test 'zorder` in directory 'src/modules/mal` itself:
+
+
+# 08:41:27 >  
+# 08:41:27 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33081 --set xrpc_port=46016 --set monet_prompt= --set mal_listing=2 --trace  --dbname=mTests_src_modules_mal  zorder.mal
+# 08:41:27 >  
+
+# MonetDB server v5.19.0, based on kernel v1.37.0
+# Serving database 'mTests_src_modules_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33081/
+function user.main():void;
+#testing the z-order library 
+    z := zorder.encode(0,0);
+    io.print(z);
+    z := zorder.encode(1,0);
+    io.print(z);
+    z := zorder.encode(0,1);
+    io.print(z);
+    z := zorder.encode(1,1);
+    io.print(z);
+    z := zorder.encode(2,0);
+    io.print(z);
+    z := zorder.encode(3,0);
+    io.print(z);
+    z := zorder.encode(2,1);
+    io.print(z);
+    z := zorder.encode(3,1);
+    io.print(z);
+    z1 := zorder.encode(0,2);
+    io.print(z1);
+    z2 := zorder.encode(1,2);
+    io.print(z2);
+    z3 := zorder.encode(0,3);
+    io.print(z3);
+    z4 := zorder.encode(1,3);
+    io.print(z4);
+    (x,y) := zorder.decode(z1);
+    io.print(x,y);
+    (x,y) := zorder.decode(z2);
+    io.print(x,y);
+    (x,y) := zorder.decode(z3);
+    io.print(x,y);
+    (x,y) := zorder.decode(z4);
+    io.print(x,y);
+    bx := bat.new(:oid,:int);
+    bat.append(bx,0);
+    bat.append(bx,1);
+    bat.append(bx,0);
+    bat.append(bx,1);
+    bat.append(bx,2);
+    bat.append(bx,3);
+    bat.append(bx,2);
+    bat.append(bx,3);
+    bat.append(bx,0);
+    bat.append(bx,1);
+    bat.append(bx,0);
+    bat.append(bx,1);
+    bat.append(bx,2);
+    bat.append(bx,3);
+    bat.append(bx,2);
+    bat.append(bx,3);
+    by := bat.new(:oid,:int);
+    bat.append(by,0);
+    bat.append(by,0);
+    bat.append(by,1);
+    bat.append(by,1);
+    bat.append(by,0);
+    bat.append(by,0);
+    bat.append(by,1);
+    bat.append(by,1);
+    bat.append(by,2);
+    bat.append(by,2);
+    bat.append(by,3);
+    bat.append(by,3);
+    bat.append(by,2);
+    bat.append(by,2);
+    bat.append(by,3);
+    bat.append(by,3);
+    io.print(bx,by);
+    bz := zorder.encode(bx,by);
+    io.print(bz);
+    (cx,cy) := zorder.decode(bz);
+    io.print(cx,cy);
+# taking a slice 
+    bs := zorder.slice(1,1,3,3);
+    io.print(bs);
+    (dx,dy) := zorder.decode(bs);
+    io.print(dx,dy);
+end main;
+[ 0@0 ]
+[ 1@0 ]
+[ 2@0 ]
+[ 3@0 ]
+[ 4@0 ]
+[ 5@0 ]
+[ 6@0 ]
+[ 7@0 ]
+[ 8@0 ]
+[ 9@0 ]
+[ 10@0 ]
+[ 11@0 ]
+[ 0, 2]
+[ 1, 2]
+[ 0, 3]
+[ 1, 3]
+#-------------------------#
+# h	t	t	  # name
+# void	int	int	  # type
+#-------------------------#
+[ 0@0,	  0,	  0	  ]
+[ 1@0,	  1,	  0	  ]
+[ 2@0,	  0,	  1	  ]
+[ 3@0,	  1,	  1	  ]
+[ 4@0,	  2,	  0	  ]
+[ 5@0,	  3,	  0	  ]
+[ 6@0,	  2,	  1	  ]
+[ 7@0,	  3,	  1	  ]
+[ 8@0,	  0,	  2	  ]
+[ 9@0,	  1,	  2	  ]
+[ 10@0,	  0,	  3	  ]
+[ 11@0,	  1,	  3	  ]
+[ 12@0,	  2,	  2	  ]
+[ 13@0,	  3,	  2	  ]
+[ 14@0,	  2,	  3	  ]
+[ 15@0,	  3,	  3	  ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+[ 3@0,	  3@0	  ]
+[ 4@0,	  4@0	  ]
+[ 5@0,	  5@0	  ]
+[ 6@0,	  6@0	  ]
+[ 7@0,	  7@0	  ]
+[ 8@0,	  8@0	  ]
+[ 9@0,	  9@0	  ]
+[ 10@0,	  10@0	  ]
+[ 11@0,	  11@0	  ]
+[ 12@0,	  12@0	  ]
+[ 13@0,	  13@0	  ]
+[ 14@0,	  14@0	  ]
+[ 15@0,	  15@0	  ]
+#-------------------------#
+# h	t	t	  # name
+# void	int	int	  # type
+#-------------------------#
+[ 0@0,	  0,	  0	  ]
+[ 1@0,	  1,	  0	  ]
+[ 2@0,	  0,	  1	  ]
+[ 3@0,	  1,	  1	  ]
+[ 4@0,	  2,	  0	  ]
+[ 5@0,	  3,	  0	  ]
+[ 6@0,	  2,	  1	  ]
+[ 7@0,	  3,	  1	  ]
+[ 8@0,	  0,	  2	  ]
+[ 9@0,	  1,	  2	  ]
+[ 10@0,	  0,	  3	  ]
+[ 11@0,	  1,	  3	  ]
+[ 12@0,	  2,	  2	  ]
+[ 13@0,	  3,	  2	  ]
+[ 14@0,	  2,	  3	  ]
+[ 15@0,	  3,	  3	  ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  3@0	  ]
+[ 1@0,	  9@0	  ]
+[ 2@0,	  6@0	  ]
+[ 3@0,	  12@0	  ]
+#-------------------------#
+# h	t	t	  # name
+# void	int	int	  # type
+#-------------------------#
+[ 0@0,	  1,	  1	  ]
+[ 1@0,	  1,	  2	  ]
+[ 2@0,	  2,	  1	  ]
+[ 3@0,	  2,	  2	  ]
+
+# 08:41:28 >  
+# 08:41:28 >  Done.
+# 08:41:28 >  
+
