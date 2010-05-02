@@ -113,7 +113,6 @@ end main;
 [ "mal",	  nil	  ]
 [ "manual",	  nil	  ]
 [ "mapi",	  nil	  ]
-[ "mapreduce",	  nil	  ]
 [ "master",		  nil	  ]
 [ "mat",	  nil	  ]
 [ "mdb",	  nil	  ]
