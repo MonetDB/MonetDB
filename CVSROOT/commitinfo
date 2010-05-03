@@ -14,4 +14,15 @@
 # If the name "ALL" appears as a regular expression it is always used
 # in addition to the first matching regex or "DEFAULT".
 ^CVSROOT	/bin/true
+^buildtools	$CVSROOT/CVSROOT/repoclosed.sh
+^clients	$CVSROOT/CVSROOT/repoclosed.sh
+^geom		$CVSROOT/CVSROOT/repoclosed.sh
+^java		$CVSROOT/CVSROOT/repoclosed.sh
+^MonetDB4	$CVSROOT/CVSROOT/repoclosed.sh
+^MonetDB5	$CVSROOT/CVSROOT/repoclosed.sh
+^MonetDB	$CVSROOT/CVSROOT/repoclosed.sh
+^pathfinder	$CVSROOT/CVSROOT/repoclosed.sh
+^sql		$CVSROOT/CVSROOT/repoclosed.sh
+^template	$CVSROOT/CVSROOT/repoclosed.sh
+^testing	$CVSROOT/CVSROOT/repoclosed.sh
 DEFAULT		$CVSROOT/CVSROOT/testcheck.sh

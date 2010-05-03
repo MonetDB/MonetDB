@@ -11,6 +11,7 @@
 #	[<whitespace>]<filename><whitespace><error message><end-of-line>
 #
 # comment lines begin with '#'
+repoclosed.sh
 syncmail
 testcheck.sh
 warn
