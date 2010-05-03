@@ -5,6 +5,7 @@ echo $1
 shift
 echo $@
 
+
 for file; do
     if test ! -f "$file"; then
 	# you're always allowed to remove files
