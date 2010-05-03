@@ -1,10 +1,7 @@
 #!/bin/sh
 
-echo $1
 # we're not interested in the repository
 shift
-echo $@
-
 
 for file; do
     if test ! -f "$file"; then
