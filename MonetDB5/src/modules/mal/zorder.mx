@@ -81,7 +81,7 @@ zorder_export str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt);
 #include "zorder.h"
 
 @= Zcode
-static inline int Zencode_@1_@2(@1 x, @1 y)
+static inline @2 Zencode_@1_@2(@1 x, @1 y)
 {
 	@2 v = 0;
 	int i,mask=1;
