@@ -90,8 +90,8 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 	Node *list = (Node *) GDKzalloc(sizeof(Node) * mb->stop);
 	int *var = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	int i,j;
-	InstrPtr p;
-	int block=0;
+	InstrPtr p = NULL;
+	int block = 0;
 	
 	if (list == NULL || var == NULL){
 		if (list ) GDKfree(list);
@@ -100,9 +100,13 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 	}
 
 	for ( i=0; i< mb->stop; i++){
+		int cnt;
+		size_t slots;
 		p= getInstrPtr(mb,i);
+		cnt = p->argc;
+		slots = p->argc + i;
 		block |= p->barrier != 0;
-		list[i]= (Node) GDKzalloc(sizeof(NodeRecord) + sizeof(int) * p->maxarg);
+		list[i]= (Node) GDKzalloc(sizeof(NodeRecord) + sizeof(int) * slots);
 		if (list[i] == NULL){
 			for (i--; i>=0; i--)
 				GDKfree(list[i]);
@@ -111,6 +115,16 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 			return 0;
 		}
 		list[i]->cnt= p->argc;
+		if ( sqlRef == getModuleId(p) && isUpdateInstruction(p)) {
+			int storage_read;
+			for ( storage_read = 0; i > storage_read; storage_read++) {
+				InstrPtr reading = getInstrPtr(mb,storage_read);
+				if ( sqlRef == getModuleId(reading) && bindRef == getFunctionId(reading)) {
+					list[i]->stmt[cnt++] = storage_read;
+				}
+			}
+		}
+		list[i]->cnt= cnt;
 		for( j=p->retc; j<p->argc; j++)
 			list[i]->stmt[j]= var[getArg(p,j)];
 		/* keep the assignment order */
@@ -167,7 +181,7 @@ OPTdepthfirst(Client cntxt, MalBlkPtr mb, int pc, InstrPtr old[], Node dep[])
 	old[pc] = 0;
 	if( p == NULL)
 		return;
-	for (i= 0; i< p->argc; i++)
+	for (i= 0; i< dep[pc]->cnt; i++)
 		OPTdepthfirst(cntxt, mb,dep[pc]->stmt[i], old, dep);
 #ifdef DEBUG_OPT_REORDER
 			stream_printf(cntxt->fdout,"dump[%d]:",pc);
