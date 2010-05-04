@@ -317,7 +317,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   (assuming TSTSRCBASE=`<PACKAGE>-config --source`)
 
 	cd $TSTSRCBASE
-	run  cvs update
+	run  hg update
 	loop
 		loop
 			loop
@@ -350,8 +350,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	endloop
 	# approve "intended" impact of your changes on other tests' output
 	run  Mapprove.py <names...>
-	# checkin all correct new stuff to cvs
-	run  cvs ci
+	# checkin all correct new stuff to hg
+	run  hg ci
 
 
 --

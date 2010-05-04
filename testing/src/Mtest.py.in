@@ -3935,7 +3935,7 @@ VALUES (%s, '%s', '%s', '%s',
     if THISFILE == "Mapprove.py":
         print """\
 
- First, run 'cvs -q diff` to check what you have changed.
+ First, run 'hg diff` to check what you have changed.
 
  Then, re-run Mtest.py.
 """
