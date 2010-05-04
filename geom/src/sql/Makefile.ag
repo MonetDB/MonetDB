@@ -15,8 +15,8 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-scripts_sql = {
-	EXT = sql
+headers_sql = {
+	HEADERS = sql
 	DIR = datadir/MonetDB/sql
 	SOURCES = geom.sql
 }
