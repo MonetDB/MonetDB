@@ -1,0 +1,16 @@
+TAGS
+aclocal\.m4
+acout\.in
+autom4te\.cache
+config\.guess
+config\.sub
+install-sh
+ltmain\.sh
+missing
+install\.lst
+configure
+configure\.in
+doc\.lst
+config\.h\.in
+/\#
+/\.\#
