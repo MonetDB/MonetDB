@@ -2929,7 +2929,7 @@ par['PACKAGE'] = 'monetdb'
 # try to be "smart"
 repo = ''
 if os.path.exists(os.path.join('CVS', 'Repository')):
-    repo = open(os.path.join('CVS', 'Repository')).read().strip().lower()
+    repo = open(os.path.join('CVS', 'Repository')).read().strip()
     i = repo.find('/')
     if i > 0:
         repo = repo[:i]
@@ -2938,10 +2938,11 @@ elif os.path.exists(os.path.join('.svn', 'entries')):
     for l in open(os.path.join('.svn', 'entries')):
         fnd = svn.match(l)
         if fnd:
-            repo = fnd.group(1).strip().lower()
+            repo = fnd.group(1).strip()
 else:
     repo = os.getcwd().split(os.sep)[-1]
 if repo:
+    repo = repo.lower()
     if repo[:6] != 'monetdb':
         if _PackageDict.has_key(repo):
             repo = _PackageDict[repo]
