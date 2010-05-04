@@ -178,6 +178,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p = old[i];
 		p->gc &=  ~GARBAGECONTROL;
 
+		if ( p->barrier == RETURNsymbol){
+			pushInstruction(mb, p);
+			continue;
+		}
 		if (blockStart(p) )
 			depth++;
 		if ( p->token == ENDsymbol)

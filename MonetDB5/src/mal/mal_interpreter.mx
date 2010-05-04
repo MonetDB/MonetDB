@@ -341,7 +341,7 @@ we should first remove garbage.
 
 	/* pass the new debug mode to the caller */
 	if (stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
-	if ( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
+	if ( garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(cntxt, mb,stk, env != stk);
 	@:endProfile(stk)@
 	return ret;
@@ -372,8 +372,6 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 
 	/* pass the new debug mode to the caller */
 	if (env && stk->cmd!='f') env->cmd = stk->cmd;
-	if ( keepAlive == 0 && garbageControl(getInstrPtr(mb,0)) )
-		garbageCollector(cntxt, mb,stk,env!=stk);
 	return ret;
 }
 @-
@@ -1340,6 +1338,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 {   
 	DataFlow flow = NULL;
 	str ret = MAL_SUCCEED;
+	int keepalive;
 
 #ifdef DEBUG_FLOW
 	stream_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc,stoppc);
@@ -1390,6 +1389,9 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow->stop = stoppc;
 	flow->mb = mb;
 	flow->stk = stk;
+	/* avoid the garbage collection call at the end of interpreter loop */
+	keepalive = flow->stk->keepAlive;
+	flow->stk->keepAlive= TRUE;
 
 	flow->status = (char*) GDKzalloc((stoppc-startpc+1));
 	flow->blocked = (char*) GDKzalloc(sizeof(char)*mb->vtop);
@@ -1397,6 +1399,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	mal_unset_lock(mal_contextLock, "runMALdataflow");
 
 	ret = DFLOWscheduler(flow);
+	flow->stk->keepAlive= keepalive;
 	GDKfree(flow->status);
 	GDKfree(flow->blocked);
 	GDKfree(flow->inuse);
@@ -1763,7 +1766,7 @@ are identified. In the post-execution phase they are removed.
 			sbackup[i]= 0;  
 			backup[i]= 0;  
 			garbage[i]= -1;  
-			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && getEndOfLife(mb,getArg(pci,i)) == stkpc && isNotUsedIn(pci,i+1,getArg(pci,i)) ){
+			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && getEndOfLife(mb,getArg(pci,i)) == stkpc && isNotUsedIn(pci,i+1,getArg(pci,i)) && stk->keepAlive == 0){
 				garbage[i]= getArg(pci,i);
 #ifdef DEBUG_GC
 				stream_printf(GDKstdout,"GC %d %s prep\n",getArg(pci,i), getArgName(mb,pci,i));
@@ -2344,6 +2347,8 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	int k;
 	ValPtr v;
 
+	if ( stk->keepAlive)
+		return;
 #ifdef STACKTRACE
 	stream_printf(cntxt->fdout,"#--->stack before garbage collector\n");
 	printStack(cntxt->fdout,mb,stk,0);
