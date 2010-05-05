@@ -991,7 +991,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (e->type == e_func)
 			return exp_op(nl, sql_dup_func(e->f));
 		else 
-			return exp_aggr(nl, sql_dup_aggr(e->f), e->flag&1, (e->flag>>1), e->card, has_nil(e));
+			return exp_aggr(nl, sql_dup_aggr(e->f), need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 	}	
 	case e_atom:
 		return exp_dup(e);
@@ -1103,7 +1103,7 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (e->type == e_func)
 			return exp_op(nl, sql_dup_func(e->f));
 		else 
-			return exp_aggr(nl, sql_dup_aggr(e->f), e->flag&1, (e->flag>>1), e->card, has_nil(e));
+			return exp_aggr(nl, sql_dup_aggr(e->f), need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 	}	
 	case e_atom:
 		return exp_dup(e);
