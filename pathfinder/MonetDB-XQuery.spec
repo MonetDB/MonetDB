@@ -1,5 +1,5 @@
 %define name MonetDB4-XQuery
-%define version 0.37.0
+%define version 0.39.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
@@ -24,18 +24,18 @@ URL: http://monetdb.cwi.nl/
 Source: http://downloads.sourceforge.net/monetdb/MonetDB-XQuery-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-Requires: MonetDB4-server >= 4.36
+Requires: MonetDB4-server >= 4.38
 #                            ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 
 %{!?buildsystem: %define buildsystem 0}
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.36
+BuildRequires: MonetDB-devel >= 1.38
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB4-server-devel >= 4.36
+BuildRequires: MonetDB4-server-devel >= 4.38
 #                                       ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -54,11 +54,11 @@ This package contains the XQuery frontend.
 Summary: MonetDB XQuery development package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
-Requires: MonetDB-devel >= 1.36
+Requires: MonetDB-devel >= 1.38
 #                          ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-Requires: MonetDB4-server-devel >= 4.36
+Requires: MonetDB4-server-devel >= 4.38
 #                                  ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

@@ -1,4 +1,4 @@
-monetdb = major:1; minor:36; release:0;
-monetdb4 = major:4; minor:36; release:0;
-geom = major:0; minor:17; release:0;
-monetdb5 = major:5; minor:18; release:0;
+monetdb = major:1; minor:38; release:0;
+monetdb4 = major:4; minor:38; release:0;
+geom = major:0; minor:19; release:0;
+monetdb5 = major:5; minor:20; release:0;
