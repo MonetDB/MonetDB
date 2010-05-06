@@ -23,3 +23,8 @@ Makefile\.msc$
 \.rej$
 MANIFEST$
 ^TestTools/
+^buildtools/Mx/depcomp$
+^buildtools/burg/depcomp$
+^buildtools/burg/ylwrap$
+^buildtools/mel/depcomp$
+^pathfinder/conf/compile$
