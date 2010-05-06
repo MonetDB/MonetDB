@@ -307,10 +307,11 @@ void chkFlow(MalBlkPtr mb)
 			    if(ps->typechk == TYPE_RESOLVED)
 			    for(e=0;e<p->retc; e++){
 	                if( resolveType(getArgType(mb,ps,e),getArgType(mb,p,e)) <0 ){
+						str tpname= getTypeName(getArgType(mb,p,e));
 	                    showScriptException(mb,i,TYPE,
-							"%s type mismatch at type %d",
-	                        (p->barrier==RETURNsymbol?"RETURN":"YIELD"),
-			                                getArgType(mb,p,e));
+							"%s type mismatch at type '%s'",
+	                        (p->barrier==RETURNsymbol?"RETURN":"YIELD"), tpname);
+						GDKfree(tpname);
 	                    mb->errors++;
 	                }
 	            }

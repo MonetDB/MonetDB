@@ -873,12 +873,17 @@ str parseLibrary(Client cntxt)
 	str libnme = 0,s;
 	int l;
 	char *nxt;
+	ValRecord cst;
 
 	nxt= CURRENT(cntxt);
 	if ((l = idLength(cntxt)) <= 0){
-		return parseError(cntxt, "<library path> expected\n");
-	}
-	libnme = putName(nxt, l);
+		if ((l= cstToken(cntxt,&cst)) && cst.vtype== TYPE_str){
+			advance(cntxt,l);
+			libnme = putName(nxt+1, l-2);
+		} else
+			return parseError(cntxt, "<library name> or <library path> expected\n");
+	} else
+		libnme = putName(nxt, l);
 	s = loadLibrary(libnme,TRUE);
 	libnme = putName(nxt, l);
 	if (s)
@@ -929,6 +934,10 @@ be debugged upfront already.
 @tab | @sc{include} string_literal
 @end multitable
 
+Include files should be handled in line with parsing. This way we
+are ensured that any possible signature definition will be known
+afterwards. The effect is that errors in the include sequence are
+marked as warnings.
 @c
 str
 parseInclude(Client cntxt)
@@ -962,7 +971,7 @@ parseInclude(Client cntxt)
 	if (s)
 		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
 	if ( (s = malInclude(cntxt, modnme, 0)) ){
-		stream_printf(cntxt->fdout, "!%s\n", s);
+		stream_printf(cntxt->fdout, "#WARNING: %s\n", s);
 		GDKfree(s);
 	}
 	return "";

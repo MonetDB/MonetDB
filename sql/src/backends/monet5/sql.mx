@@ -919,7 +919,7 @@ function octopus.register(dbname:str, fn:str):void;
 end octopus.register;
 
 function octopus.getBid(dbname:str, fn:str, bidtype:sht):lng;
-res:lng := calc.lng(-1);
+res:lng := -1:lng;
 barrier remotewrk := calc.!=(dbname,"NOTworker");
 	conn := remote.connect(dbname,"monetdb", "monetdb", "msql");
     r_fn := remote.put(conn,fn);
