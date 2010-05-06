@@ -23,6 +23,7 @@ Makefile\.msc$
 \.rej$
 MANIFEST$
 ^TestTools/
+^buildtools/dummy.h.in$
 ^buildtools/Mx/depcomp$
 ^buildtools/burg/depcomp$
 ^buildtools/burg/ylwrap$
