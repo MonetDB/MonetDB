@@ -1,5 +1,5 @@
 %define name MonetDB-SQL
-%define version 2.37.0
+%define version 2.38.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
@@ -32,11 +32,11 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildRequires: e2fsprogs-devel
 
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.36
+BuildRequires: MonetDB-devel >= 1.38
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB-client-devel >= 1.36
+BuildRequires: MonetDB-client-devel >= 1.38
 #                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -53,12 +53,12 @@ This package contains some common files for the %{name}-server5 packages.
 %package server5
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
-Requires: MonetDB5-server >= 5.18
+Requires: MonetDB5-server >= 5.20
 #                            ^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB5-server-devel >= 5.18
+BuildRequires: MonetDB5-server-devel >= 5.20
 #                                       ^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

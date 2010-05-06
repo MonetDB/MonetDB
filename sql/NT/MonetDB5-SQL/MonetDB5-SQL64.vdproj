@@ -217,7 +217,7 @@
         {
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_273A3EC2EAC04E3F8B5C84BEA1F4A1B2"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.37.0\\dump-restore.txt"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.38.0\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_1B55E38277EF4B7CB785B94E760C8617"
@@ -237,7 +237,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_39C16F7BE2DF4660B15B55E9399704B2"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.37.0\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.38.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_1B55E38277EF4B7CB785B94E760C8617"
@@ -656,7 +656,7 @@
                                 {
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_1B55E38277EF4B7CB785B94E760C8617"
                                     {
-                                    "Name" = "8:MonetDB-SQL-2.37.0"
+                                    "Name" = "8:MonetDB-SQL-2.38.0"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
@@ -721,14 +721,14 @@
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_51126656D4214BA5A39FB99B90F06D71"
             {
             "Name" = "8:ClientsVersion"
-            "Condition" = "8:CLIENTSVERSION >= \"1.36.0\""
+            "Condition" = "8:CLIENTSVERSION >= \"1.38.0\""
             "Message" = "8:A newer version of MonetDB-Clients is needed."
             "InstallUrl" = "8:http://monetdb.cwi.nl/"
             }
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_9F424156C8744B5FBAB87DFF148B9813"
             {
             "Name" = "8:MonetDB5Version"
-            "Condition" = "8:MONETDB5VERSION >= \"5.18.0\""
+            "Condition" = "8:MONETDB5VERSION >= \"5.20.0\""
             "Message" = "8:A newer version of MonetDB5-Server is needed."
             "InstallUrl" = "8:http://monetdb.cwi.nl/"
             }
@@ -742,7 +742,7 @@
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_ECD039D30FAA45BDB4DF19C898EE337A"
             {
             "Name" = "8:CommonVersion"
-            "Condition" = "8:COMMONVERSION >= \"1.36.0\""
+            "Condition" = "8:COMMONVERSION >= \"1.38.0\""
             "Message" = "8:A newer version of MonetDB-Common is needed."
             "InstallUrl" = "8:http://monetdb.cwi.nl/"
             }
@@ -797,7 +797,7 @@
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:2.37.0"
+        "ProductVersion" = "8:2.38.0"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -858,7 +858,7 @@
                                             "Condition" = "8:"
                                             "Transitive" = "11:FALSE"
                                             "ValueTypes" = "3:1"
-                                            "Value" = "8:2.37.0"
+                                            "Value" = "8:2.38.0"
                                             }
                                         }
                                     }

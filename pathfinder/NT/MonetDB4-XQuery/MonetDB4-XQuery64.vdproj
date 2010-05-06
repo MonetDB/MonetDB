@@ -736,14 +736,14 @@
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_51126656D4214BA5A39FB99B90F06D71"
             {
             "Name" = "8:MonetDB Common"
-            "Condition" = "8:COMMONVERSION >= \"1.36.0\""
+            "Condition" = "8:COMMONVERSION >= \"1.38.0\""
             "Message" = "8:A newer version of MonetDB-Common is needed."
             "InstallUrl" = "8:http://monetdb.cwi.nl/"
             }
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_5541286D52514CC7B144403BE2465215"
             {
             "Name" = "8:MonetDB4 Server"
-            "Condition" = "8:MONETDB4VERSION >= \"4.36.0\""
+            "Condition" = "8:MONETDB4VERSION >= \"4.38.0\""
             "Message" = "8:A newer version of MonetDB4-Server is needed."
             "InstallUrl" = "8:http://monetdb.cwi.nl/"
             }
@@ -790,7 +790,7 @@
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:0.37.0"
+        "ProductVersion" = "8:0.38.0"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -851,7 +851,7 @@
                                             "Condition" = "8:"
                                             "Transitive" = "11:FALSE"
                                             "ValueTypes" = "3:1"
-                                            "Value" = "8:0.37.0"
+                                            "Value" = "8:0.38.0"
                                             }
                                         }
                                     }
