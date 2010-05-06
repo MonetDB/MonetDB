@@ -1,5 +1,5 @@
 %define name MonetDB-geom
-%define version 0.17.0
+%define version 0.19.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
@@ -33,7 +33,7 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 %{!?_with_monetdb5: %{!?_without_monetdb5: %define _with_monetdb5 --with-monetdb5}}
 
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.36
+BuildRequires: MonetDB-devel >= 1.38
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -53,12 +53,12 @@ Information System) extensions for MonetDB-SQL.
 %package MonetDB4
 Summary: MonetDB4 SQL GIS modules
 Group: Applications/Databases
-Requires: MonetDB4-server >= 4.36
+Requires: MonetDB4-server >= 4.38
 #                            ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB4-server-devel >= 4.36
+BuildRequires: MonetDB4-server-devel >= 4.38
 #                                       ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -79,12 +79,12 @@ extensions for MonetDB-SQL-server4.
 %package MonetDB5
 Summary: MonetDB5 SQL GIS modules
 Group: Applications/Databases
-Requires: MonetDB5-server >= 5.18
+Requires: MonetDB5-server >= 5.20
 #                            ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB5-server-devel >= 5.18
+BuildRequires: MonetDB5-server-devel >= 5.20
 #                                       ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

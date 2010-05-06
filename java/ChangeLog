@@ -1,25 +1,3 @@
 # ChangeLog file for java
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
-  16 Apr 2010; Fabian Groffen <fabian@cwi.nl> build.xml, configure.ag,
-  Makefile.ag:
-  Enable the merovingian control library for default distribution as it
-  has been in use for some time without problems now.
-
-  Wed Mar 31 2010 Stefan Manegold <manegold@cwi.nl> configure.ag:
-  Made compilation of "testing" (and "java") independent of MonetDB.
-  This is mainy for Windows, but also on other systems, "testing" can now be
-  built independently of (and hence before) "MonetDB".
-  Files that mimic configure functionality on Windows were moved from
-  "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
-  requiring a complete rebuild from scratch on Windows.
-  getopt() support in testing has changed; hence, (most probably) requiring a
-  rebuild from scratch of testing on other systems.
-
-  Wed Mar 24 2010 Stefan Manegold <manegold@cwi.nl> Makefile.ag:
-  Implemented build directory support for Windows,
-  i.e., like on Unix/Linux also on Windows we can now build in a separate
-  build directory as alternative to ...<package>NT, and thus keep the
-  latter clean from files generated during the build.
-  On Windows, the build directory must be a sibling of ...<package>NT .
-

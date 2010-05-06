@@ -1,0 +1,34 @@
+# ChangeLog file for clients
+# This file is updated with Maddlog
+
+* Thu Apr  8 2010 Sjoerd Mullender <sjoerd@acm.org>
+- The MonetDB ODBC driver now no longer depends on its own copy of the
+  standard ODBC include files but instead depends on system include files
+  (unixODBC on Linux and Microsoft SDK on Windows).
+
+* Wed Mar 31 2010 Stefan Manegold <manegold@cwi.nl>
+- Made compilation of "testing" (and "java") independent of MonetDB.
+  This is mainy for Windows, but also on other systems, "testing" can now be
+  built independently of (and hence before) "MonetDB".
+  Files that mimic configure functionality on Windows were moved from
+  "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
+  requiring a complete rebuild from scratch on Windows.
+  getopt() support in testing has changed; hence, (most probably) requiring a
+  rebuild from scratch of testing on other systems.
+
+* Wed Mar 24 2010 Stefan Manegold <manegold@cwi.nl>
+- Implemented build directory support for Windows,
+  i.e., like on Unix/Linux also on Windows we can now build in a separate
+  build directory as alternative to ...<package>NT, and thus keep the
+  latter clean from files generated during the build.
+  On Windows, the build directory must be a sibling of ...<package>NT .
+
+* Mon Mar 29 2010 Fabian Groffen <fabian@cwi.nl>
+- Changed \d output of mclient no longer to list (internal use only) system tables.  Administrator users who like to inspect these tables can use SELECT * FROM tables; instead
+
+* Wed Mar 17 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented the changes required for properly running ODBC on a 64-bit platform.
+
+* Mon Mar 01 2010 Fabian Groffen <fabian@cwi.nl>
+- Added stethoscope, an utility to profile MonetDB5 instances,
+  originally from the MonetDB5 repository.
