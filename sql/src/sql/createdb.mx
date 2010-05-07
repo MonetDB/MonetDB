@@ -20,8 +20,9 @@
 @a M.L. Kersten, N. Nes
 @+ Catalog initialization
 After a SQL database catalog has been created, we should run a series
-of SQL scripts to define auxillary functionality. This MX script
-merely pulls the files together.
+of SQL scripts to define auxillary functionality. We include all that
+is needed to run the tests.
+This MX script merely pulls the files together.
 @sql
 @include math.sql
 @include times.sql
