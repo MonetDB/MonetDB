@@ -119,16 +119,11 @@ buildtools (Mx, mel, autogen, and burg)
 	These tools are not needed when you start with the source
 	distribution.
 
-	Before building any of the other packages from the CVS
+	Before building any of the other packages from the Mercurial
 	sources, you first need to build and install the buildtools.
-	Check out buildtools with
-
-	::
-
-	 cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools
-
-	and follow the instructions in the README file, then proceed
-	with MonetDB.  For this step only you need the C++ compiler.
+	You can find them in the directory `buildtools`.
+	Follow the instructions in the README file, then proceed
+	with MonetDB.  Only for this step you need the C++ compiler.
 
 libxml2
 	The XML parsing library `libxml2`__ is only used by
