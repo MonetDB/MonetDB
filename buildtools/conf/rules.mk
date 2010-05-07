@@ -126,6 +126,9 @@ ifdef NEED_MX
 %.mal: %.mx
 	$(MX) $(MXFLAGS) -x mal $<
 
+%.sql: %.mx
+	$(MX) $(MXFLAGS) -x sql $<
+
 %: %.mx 
 	$(MX) $(MXFLAGS) -x sh $<
 	chmod a+x $@
