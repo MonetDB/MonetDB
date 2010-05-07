@@ -565,8 +565,7 @@ Reporting Problems
 
 Bugs and other problems with compiling or running MonetDB should be
 reported using our `bug tracking system`__ (preferred) or
-emailed to monet@cwi.nl; see also
-http://monetdb.cwi.nl/Development/Bugtracker/index.html.  Please make
-sure that you give a *detailed* description of your problem!
+emailed to monet@cwi.nl.  Please make sure that you give a *detailed*
+description of your problem!
 
 __ http://bugs.monetdb.org/
