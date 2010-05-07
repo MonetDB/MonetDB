@@ -20,7 +20,7 @@ AIX, Mac OS X/Darwin, or CYGWIN).  For compilation and installation on
 a native Windows system (NT, 2000, XP) see the instructions in the
 file `../buildtools/doc/windowsbuild.rst`__.
 
-__ http://sourceforge.net/project/showfiles.php?group_id=56967
+__ http://monetdb.cwi.nl/downloads/
 __ Windows-Installation.html
 
 The Suite
@@ -70,25 +70,24 @@ next.
 Prerequisites
 -------------
 
-CVS
-	You only need this if you are building from CVS.  If you start
-	with the source distribution from `SourceForge`__ you don't
-	need CVS.
+Mercurial
+	You only need this if you are building directly from our version
+	control system.  If you start with the source distribution from `our
+	download page`__ you don't need Mercurial.
 
-	You need to have a working CVS.  For instructions, see `the
-	SourceForge documentation`__ and look under the heading CVS
-	Instructions.
+	You need to have a working Mercurial (hg) and clone the main
+	repository from: http://dev.monetdb.org/hg
 
 Python
 	MonetDB uses Python (version 2.0.0 or better) during
 	configuration of the software.  See http://www.python.org/ for
 	more information.  (It must be admitted, version 2.0.0 is
 	ancient and has not recently been tested, we currently use
-	2.4 and newer.)
+	2.6 and newer.)
 
 autoconf/automake/libtool
-	MonetDB uses GNU autoconf__ (>= 2.57) and automake__ (>= 1.5)
-	during the Bootstrap_ phase, and libtool__ (>= 1.4) during the
+	MonetDB uses GNU autoconf__ (>= 2.60) and automake__ (>= 1.10)
+	during the Bootstrap_ phase, and libtool__ (>= 1.5) during the
 	Make_ phase.  autoconf and automake are not needed when you
 	start with the source distribution.
 
@@ -120,16 +119,11 @@ buildtools (Mx, mel, autogen, and burg)
 	These tools are not needed when you start with the source
 	distribution.
 
-	Before building any of the other packages from the CVS
+	Before building any of the other packages from the Mercurial
 	sources, you first need to build and install the buildtools.
-	Check out buildtools with
-
-	::
-
-	 cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools
-
-	and follow the instructions in the README file, then proceed
-	with MonetDB.  For this step only you need the C++ compiler.
+	You can find them in the directory `buildtools`.
+	Follow the instructions in the README file, then proceed
+	with MonetDB.  Only for this step you need the C++ compiler.
 
 libxml2
 	The XML parsing library `libxml2`__ is only used by
@@ -143,8 +137,7 @@ libxml2
 	document loader will not be compiled at all in that case.
 	Current Linux distributions all come with libxml2.
 
-__ http://sourceforge.net/project/showfiles.php?group_id=56967
-__ http://sourceforge.net/docman/?group_id=1
+__ http://monetdb.cwi.nl/downloads/sources/
 __ http://www.gnu.org/software/autoconf/
 __ http://www.gnu.org/software/automake/
 __ http://www.gnu.org/software/libtool/
@@ -178,41 +171,29 @@ There are two ways to get the source code:
 
 (1) checking it out from the CVS repository on SourceForge;
 (2) downloading the pre-packaged source distribution from
-    SourceForge__.
+    `our download page`__.
 
 The following instructions first describe how to check out the source
 code from the CVS repository on SourceForge; in case you downloaded
 the pre-packaged source distribution, you can skip this section and
 proceed to `Bootstrap, Configure and Make`_.
 
-__ http://sourceforge.net/project/showfiles.php?group_id=56967
+__ http://monetdb.cwi.nl/downloads/
 
-CVS checkout
-~~~~~~~~~~~~
+Mercurial clone
+~~~~~~~~~~~~~~~
 
-This command should be done once.  It records a password on the local
-machine to be used for all subsequent CVS accesses with this server.
+This command should be done once.  It makes an initial copy of the
+development sources on your computer.
 
 ::
 
- cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb login
+ hg clone http://dev.monetdb.org/hg/MonetDB
 
-Just type RETURN when asked for the password.
+This will create the directory MonetDB in your current working directory
+with underneath all subcomponents.  Then first follow the instructions
+in ``buildtools/README`` before continuing with the others.
 
-Then get the software by using the command::
-
- cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout \
- buildtools MonetDB clients MonetDB4 MonetDB5 pathfinder sql
-
-This will create the named directories in your current working
-directory.  Then first follow the instructions in
-``buildtools/README`` before continuing with the others.  Naturally,
-you don't need to check out packages you're not going to use.
-
-Also see `the SourceForge documentation`__ for more information about
-using CVS.
-
-__ http://sourceforge.net/cvs/?group_id=56967
 
 Bootstrap, Configure and Make
 -----------------------------
@@ -277,23 +258,11 @@ Some other useful ``configure`` options are:
 --enable-assert         enable assertions in the code default=[see `Configure defaults and recommendations`_ below]
 --enable-strict         enable strict compiler flags default=[see `Configure defaults and recommendations`_ below]
 --enable-warning        enable extended compiler warnings default=off
---enable-profile        enable profiling default=off
---enable-instrument     enable instrument default=off
---with-mx=<Mx>          which Mx binary to use (default: whichever
-                        Mx is found in your PATH)
---with-mel=<mel>        which mel binary to use (default: whichever
-                        mel is found in your PATH)
---enable-bits=<#bits>   specify number of bits (32 or 64)
-                        default is compiler default
---enable-oid32          use 32-bit OIDs on 64-bit systems default=off
 
 You can also add options such as ``CC=<compiler>`` to specify the
 compiler and compiler flags to use.
 
 Use ``configure --help`` to find out more about ``configure`` options.
-
-The ``--with-mx`` and ``--with-mel`` options are only used when
-configuring the sources as retrieved through CVS.
 
 Configure defaults and recommendations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -548,19 +517,9 @@ your machine.  ``configure`` then looks for the header files in
 <DIR>/include, and for the libraries in <DIR>/lib.
 
 In case one of ``bootstrap``, ``configure``, or ``make`` fails ---
-especially after a ``cvs update``, or after you changed some code
+especially after a ``hg pull -u``, or after you changed some code
 yourself --- try the following steps (in this order; if you are using
 the pre-packaged source distribution, you can skip steps 2 and 3):
-
-(In case you experience problems after a ``cvs update``, first make
-sure that you used ``cvs update -dP`` (or have a line ``update -dP``
-in your ``~/.cvsrc``); ``-d`` ensures that cvs checks out directories
-that have been added since your last ``cvs update``; ``-P`` removes
-directories that have become empty, because all their file have been
-removed from the cvs repository.  In case you did not use ``cvs update
--dP``, re-run ``cvs update -dP``, and remember to always use ``cvs
-update -dP`` from now on (or simply add a line ``update -dP`` to your
-``~/.cvsrc``)!)
 
 0) In case only ``make`` fails, you can try running::
 
@@ -589,7 +548,7 @@ update -dP`` from now on (or simply add a line ``update -dP`` to your
    Only do this with sources obtained through CVS.
 4) In the build-directory, re-run::
 
-	configure
+	/path/to/configure
 
    as described above.
 5) In the build-directory, re-run::
@@ -605,9 +564,8 @@ Reporting Problems
 ------------------
 
 Bugs and other problems with compiling or running MonetDB should be
-reported using the bug tracking system at SourceForge__ (preferred) or
-emailed to monet@cwi.nl; see also
-http://monetdb.cwi.nl/Development/Bugtracker/index.html.  Please make
-sure that you give a *detailed* description of your problem!
+reported using our `bug tracking system`__ (preferred) or
+emailed to monet@cwi.nl.  Please make sure that you give a *detailed*
+description of your problem!
 
-__ https://sourceforge.net/tracker/?group_id=56967&atid=482468
+__ http://bugs.monetdb.org/
