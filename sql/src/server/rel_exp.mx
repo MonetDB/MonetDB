@@ -367,11 +367,11 @@ exp_alias( char *arname, char *acname, char *org_rname, char *org_cname, sql_sub
 {
 	sql_exp *e = exp_create(e_column);
 
-	assert(acname && org_rname && org_cname);
+	assert(acname && org_cname);
 	e->card = card;
-	e->rname = (arname)?_strdup(arname):_strdup(org_rname);
+	e->rname = (arname)?_strdup(arname):(org_rname)?_strdup(org_rname):NULL;
 	e->name = _strdup(acname);
-	e->l = _strdup(org_rname);
+	e->l = (org_rname)?_strdup(org_rname):NULL;
 	e->r = _strdup(org_cname);
 	e->f = t;
 	if (!has_nils)
@@ -590,6 +590,8 @@ exp_match_list( list *l, list *r)
 	char *lu, *ru;
 	int lc = 0, rc = 0, match = 0;
 
+	if (!l || !r)
+		return l == r;
 	if (list_length(l) != list_length(r))
 		return 0;
 	lu = alloca(list_length(l));
@@ -640,6 +642,16 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			if (!subtype_cmp(exp_totype(e1), exp_totype(e2)) &&
 			    !subtype_cmp(exp_fromtype(e1), exp_fromtype(e2)) &&
 			    exp_match_exp(e1->l, e2->l))
+				return 1;
+			break;
+		case e_aggr:
+			if (!subaggr_cmp(e1->f, e2->f) && /* equal aggregation*/
+			    exp_match_list(e1->l, e2->l))
+				return 1;
+			break;
+		case e_func:
+			if (!subfunc_cmp(e1->f, e2->f) && /* equal functions */
+			    exp_match_list(e1->l, e2->l))
 				return 1;
 			break;
 		case e_atom:

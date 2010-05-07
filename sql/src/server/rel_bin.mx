@@ -1556,10 +1556,13 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	}
 
 	pl = create_stmt_list();
+	psub = stmt_list(pl);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
 
+		if (!s)
+			s = exp_bin(sql, exp, sub, psub, NULL, NULL);
 		if (!s) {
 			assert(0);
 			cond_stmt_destroy(sub);
@@ -1572,7 +1575,8 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		s = stmt_rename(rel, exp, s);
 		list_append(pl, s);
 	}
-	psub = stmt_list(pl);
+	stmt_set_nrcols(psub);
+
 	/* In case of a topn 
 		if both order by and distinct: then get first order by col early
 			do topn on it. Project all again! Then rest

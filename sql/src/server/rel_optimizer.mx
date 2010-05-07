@@ -1692,30 +1692,32 @@ rel_select_cse(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-#if 0
-/Volumes/scratch/monet/monetdb-buildbot/slave-x86_64/x86_64-macosxleopard/build/
-sources/sql/src/server/rel_optimizer.mx:1697: warning: 'rel_project_cse' defined
-but not used
 static sql_rel *
 rel_project_cse(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)changes;
 	(void)sql;
-	if (rel->op == op_project && !rel_is_ref(rel) && rel->exps) { 
+	if (is_project(rel->op) && !rel_is_ref(rel) && rel->exps) { 
 		list *nexps = new_exp_list();
 		node *n, *m;
 
 		for (n=rel->exps->h; n; n = n->next) {
-			sql_exp *e1 = n->data;
+			sql_exp *o, *e1 = n->data;
 
-			if (e1->type != e_column) {
-				for (m=n->next; m; m = m->next){
-					sql_exp *e2 = n->data;
+			o = e1;
+			if (e1->type != e_column && e1->type != e_atom && e1->name) {
+				for (m=nexps->h; m; m = m->next){
+					sql_exp *e2 = m->data;
 				
-					if (exp_match_exp(e1, e2)) {
-						assert(0);
+					if (exp_name(e2) && exp_match_exp(e1, e2)) {
+						sql_exp *ne = exp_alias(e1->rname, exp_name(e1), e2->rname, exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1));
+						e1 = ne;
+						break;
 					}
 				}
+				append(nexps, (o == e1)?exp_dup(e1):e1);
+			} else {
+				append(nexps, exp_dup(e1));
 			}
 		}
 		list_destroy(rel->exps);
@@ -1723,7 +1725,6 @@ rel_project_cse(int *changes, mvc *sql, sql_rel *rel)
 	}
 	return rel;
 }
-#endif
 
 static list *
 exps_merge_rse( list *l, list *r )
@@ -2272,6 +2273,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 	*changes = 0;
 	if (is_groupby(rel->op)) {
 		list *pexps, *nexps = new_exp_list(), *avgs = new_exp_list();
+		list *aexps = new_exp_list(); /* alias list */
 		node *m, *n;
 
 		/* Find all avg's */
@@ -2286,7 +2288,11 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 					continue; 
 				}
 			}
-			append(nexps, e);
+			/* alias for local aggr exp */
+			if (e->type == e_column && !rel_find_exp(rel->l, e))  
+				append(aexps, e);
+			else 
+				append(nexps, e);
 		}
 		if (!list_length(avgs)) {
 			list_destroy(avgs);
@@ -2358,7 +2364,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 		}
 		pexps = new_exp_list();
 		for (m = rel->exps->h, n = avgs->h; m; m = m->next) {
-			sql_exp *e = exp_dup(m->data);
+			sql_exp *e = m->data;
 
 			if (e->type == e_aggr) {
 				sql_subaggr *a = e->f;
@@ -2371,7 +2377,11 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 					continue; 
 				}
 			}
-			append(pexps, exp_column(exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e)));
+			/* alias for local aggr exp */
+			if (e->type == e_column && !rel_find_exp(rel->l, e))  
+				append(pexps, exp_dup(e));
+			else 
+				append(pexps, exp_column(exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e)));
 		}
 		rel->exps = nexps;
 		rel = rel_project(rel, pexps);
@@ -3501,7 +3511,7 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	/* Remove unused expressions */
 	if (gp.cnt[op_project]) {
 		rel = rel_dce(sql, rel);
-		//rel = rewrite(sql, rel, &rel_project_cse);
+		rel = rewrite(sql, rel, &rel_project_cse);
 	}
 
 	/* push (simple renaming) projections up */

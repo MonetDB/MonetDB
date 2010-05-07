@@ -722,8 +722,11 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 static sql_rel*
 rel_parent( sql_rel *rel )
 {
-	if (is_project(rel->op) || rel->op == op_topn)
-		return rel->l;
+	if (is_project(rel->op) || rel->op == op_topn) {
+		sql_rel *l = rel->l;
+		if (is_project(l->op))
+			return l;
+	}
 	return rel;
 }
 

@@ -174,7 +174,6 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname,
 	if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
 		sql_error(sql, 01, "CREATE TABLE: duplicate column name %s", n);
 
-		table_destroy(t);
 		return NULL;
 	}
 	return t;

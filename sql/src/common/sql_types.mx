@@ -106,7 +106,9 @@ extern sql_subaggr *sql_find_aggr(sql_schema *s, char *name);
 extern sql_func *sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res);
 extern sql_subaggr *sql_dup_aggr(sql_subaggr *a);
 extern void sql_subaggr_destroy(sql_subaggr *f);
+extern int subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2);
 
+extern int subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2);
 extern sql_subfunc *sql_find_func(sql_schema *s, char *name, int nrargs);
 extern sql_subfunc *sql_bind_member(sql_schema *s, char *name, sql_subtype *tp, int nrargs);
 extern sql_subfunc *sql_bind_func(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2);
@@ -505,6 +507,22 @@ subtype2string(sql_subtype *t)
 			snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
 	}
 	return _strdup(buf);
+}
+
+int 
+subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2)
+{
+	if (a1->aggr == a2->aggr) 
+	    return subtype_cmp(&a1->res, &a2->res);
+	return -1;
+}
+
+int 
+subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2)
+{
+	if (f1->func == f2->func) 
+	    return subtype_cmp(&f1->res, &f2->res);
+	return -1;
 }
 
 sql_subaggr *
