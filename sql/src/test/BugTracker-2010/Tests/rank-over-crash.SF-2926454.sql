@@ -12,14 +12,6 @@ insert into score_table values('bar','english',45);
 insert into score_table values('bar','history',75);
 
 -- this causes an assertion failure:
-plan 
-select
-s_name,
-sum(score) as totalscore,
-rank() over (order by sum(score) desc) -- cannot use alias 'totalscore' here
-from score_table
-group by s_name;
-
 select
 s_name,
 sum(score) as totalscore,
