@@ -15,14 +15,16 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
+MT_SAFE
+
 headers_sql = {
 	HEADERS = sql
-	DIR = datadir/MonetDB/sql
+	DIR = libdir/MonetDB5
 	SOURCES = \
-		admin.sql bbp.sql \
-		cache.sql clients.sql cluster.sql \
+		creatdb.mx \
+		clients.sql cluster.sql \
 		date.sql history.sql inet.sql \
 		math.sql mtime.sql \
-		stats.sql times.sql url.sql \
+		times.sql url.sql \
 		dependency_functions.sql skyserver.sql
 }

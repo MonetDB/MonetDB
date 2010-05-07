@@ -17,7 +17,7 @@
 create function curdate( ) returns date
 	external name mtime."current_date";
 
-create function "current_date"( ) returns date;
+create function "current_date"( ) returns date
 	external name mtime."current_date";
 
 create function curtime( ) returns TIMETZ
@@ -30,8 +30,10 @@ create function "current_timestamp"( ) returns TIMESTAMPTZ
 
 create function "localtime"( ) returns TIME
 	external name mtime."current_time";
-create function localtimestamp( ) returns TIMESTAMP
+create function "localtimestamp"( ) returns TIMESTAMP
 	external name mtime."current_timestamp";
+
+create type second_interval as interval day to sec;
 
 create function local_timezone( ) returns second_interval
 	external name mtime.local_timezone;

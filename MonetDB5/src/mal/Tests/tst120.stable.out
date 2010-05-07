@@ -1,32 +1,23 @@
 stdout of test 'tst120` in directory 'src/mal` itself:
 
 
-# 07:59:00 >  
-# 07:59:00 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst120.mal </dev/null
-# 07:59:00 >  
+# 14:40:25 >  
+# 14:40:25 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37254 --set xrpc_port=40461 --set monet_prompt= --set mal_listing=2 --trace  --dbname=mTests_src_mal  tst120.mal
+# 14:40:25 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-##define 2 modules and check location of routines
-#
-#include tst120a;	# lookup DBHOME/mal/tst120a.mal
-!MALException:malInclude:could not open file: tst120a
-#include tst120b;
-!MALException:malInclude:could not open file: tst120b
-#include tst120a;	# does not do anything
-!MALException:malInclude:could not open file: tst120a
-#
-#a:= bottom.second("hh");
-#b:= top.first(1);
-#c:= top.first(1:sht);
-#d:= bottom.first("hello world");
-#e:= top.first(2:sht);
-#
+# MonetDB server v5.21.0, based on kernel v1.39.0
+# Serving database 'mTests_src_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37254/
+# MonetDB/SQL module v2.39.0 loaded
+# MonetDB/GIS module v0.19.0 loaded
+#WARNING: MALException:malInclude:could not open file: tst120a
+#WARNING: MALException:malInclude:could not open file: tst120b
+#WARNING: MALException:malInclude:could not open file: tst120a
 !TypeException:user.main[4]:'bottom.second' undefined in: a:any := bottom.second(_5:str)
 
 !TypeException:user.main[5]:'top.first' undefined in: b:any := top.first(_7:int)

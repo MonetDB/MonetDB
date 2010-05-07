@@ -40,7 +40,6 @@ $SQL1 < Skyserver_views_v6.sql
 
 echo functions
 $SQL1 < ../../sql/math.sql
-$SQL1 < ../../sql/cache.sql
 $SQL1 < ../../sql/skyserver.sql
 $SQL1 < Skyserver_functions_v6.sql
 
@@ -49,7 +48,6 @@ echo Cleanup
 $SQL1 < Skyserver_dropFunctions_v6.sql
 $SQL1 < Skyserver_dropMs_functions.sql
 $SQL1 < Skyserver_dropMath.sql
-$SQL1 < Skyserver_dropCache.sql
 $SQL1 < Skyserver_dropViews_v6.sql
 $SQL1 < Skyserver_dropConstraints_v6.sql
 $SQL1 < Skyserver_dropTables_v6.sql
