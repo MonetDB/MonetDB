@@ -180,32 +180,20 @@ proceed to `Bootstrap, Configure and Make`_.
 
 __ http://monetdb.cwi.nl/downloads/
 
-CVS checkout
-~~~~~~~~~~~~
+Mercurial clone
+~~~~~~~~~~~~~~~
 
-This command should be done once.  It records a password on the local
-machine to be used for all subsequent CVS accesses with this server.
+This command should be done once.  It makes an initial copy of the
+development sources on your computer.
 
 ::
 
- cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb login
+ hg clone http://dev.monetdb.org/hg/MonetDB
 
-Just type RETURN when asked for the password.
+This will create the directory MonetDB in your current working directory
+with underneath all subcomponents.  Then first follow the instructions
+in ``buildtools/README`` before continuing with the others.
 
-Then get the software by using the command::
-
- cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout \
- buildtools MonetDB clients MonetDB4 MonetDB5 pathfinder sql
-
-This will create the named directories in your current working
-directory.  Then first follow the instructions in
-``buildtools/README`` before continuing with the others.  Naturally,
-you don't need to check out packages you're not going to use.
-
-Also see `the SourceForge documentation`__ for more information about
-using CVS.
-
-__ http://sourceforge.net/cvs/?group_id=56967
 
 Bootstrap, Configure and Make
 -----------------------------
@@ -270,23 +258,11 @@ Some other useful ``configure`` options are:
 --enable-assert         enable assertions in the code default=[see `Configure defaults and recommendations`_ below]
 --enable-strict         enable strict compiler flags default=[see `Configure defaults and recommendations`_ below]
 --enable-warning        enable extended compiler warnings default=off
---enable-profile        enable profiling default=off
---enable-instrument     enable instrument default=off
---with-mx=<Mx>          which Mx binary to use (default: whichever
-                        Mx is found in your PATH)
---with-mel=<mel>        which mel binary to use (default: whichever
-                        mel is found in your PATH)
---enable-bits=<#bits>   specify number of bits (32 or 64)
-                        default is compiler default
---enable-oid32          use 32-bit OIDs on 64-bit systems default=off
 
 You can also add options such as ``CC=<compiler>`` to specify the
 compiler and compiler flags to use.
 
 Use ``configure --help`` to find out more about ``configure`` options.
-
-The ``--with-mx`` and ``--with-mel`` options are only used when
-configuring the sources as retrieved through CVS.
 
 Configure defaults and recommendations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
