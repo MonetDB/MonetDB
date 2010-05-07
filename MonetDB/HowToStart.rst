@@ -517,19 +517,9 @@ your machine.  ``configure`` then looks for the header files in
 <DIR>/include, and for the libraries in <DIR>/lib.
 
 In case one of ``bootstrap``, ``configure``, or ``make`` fails ---
-especially after a ``cvs update``, or after you changed some code
+especially after a ``hg pull -u``, or after you changed some code
 yourself --- try the following steps (in this order; if you are using
 the pre-packaged source distribution, you can skip steps 2 and 3):
-
-(In case you experience problems after a ``cvs update``, first make
-sure that you used ``cvs update -dP`` (or have a line ``update -dP``
-in your ``~/.cvsrc``); ``-d`` ensures that cvs checks out directories
-that have been added since your last ``cvs update``; ``-P`` removes
-directories that have become empty, because all their file have been
-removed from the cvs repository.  In case you did not use ``cvs update
--dP``, re-run ``cvs update -dP``, and remember to always use ``cvs
-update -dP`` from now on (or simply add a line ``update -dP`` to your
-``~/.cvsrc``)!)
 
 0) In case only ``make`` fails, you can try running::
 
@@ -558,7 +548,7 @@ update -dP`` from now on (or simply add a line ``update -dP`` to your
    Only do this with sources obtained through CVS.
 4) In the build-directory, re-run::
 
-	configure
+	/path/to/configure
 
    as described above.
 5) In the build-directory, re-run::
