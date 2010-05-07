@@ -923,8 +923,30 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 			BAT *B = BATdescriptor(nbn);
 			BATins(histo, nhisto, FALSE);
 			BATappend(bn, B, FALSE);
-			BBPreleaseref(nh);
-			BBPreleaseref(nbn);
+			/* Stefan.Manegold@cwi.nl:
+			 * To prevent leaking BATs, we need to release not only
+			 * the physical reference of BATdescriptor() bu also
+			 * the logical reference of BBPkeepref() in GRPgroup().
+			 * However, simply calling BBPreleaselref() in addition
+			 * to BBPreleaseref() does not do the job, possibly
+			 * because they both merely do a plain "--BBP_refs(i);"
+			 * resp.  "--BBP_lrefs(i);" instead of calling
+			 * [BBP]decref() which triggers the free/reclaim of
+			 * BATs once the number of both physical & logical
+			 * references becomes 0.  Only if we call BBPunfix()
+			 * (and hence [BBP]decref(,FALSE)) instead of
+			 * BBPreleaseref() *after* BBPreleaselref(), the BATs
+			 * are indeed freed.  Alternatively, when also calling
+			 * BBPdecref(,TRUE) instead of BBPreleaselref(), either
+			 * order of BBPunfix(i) & BBPdecref(,TRUE) yield the
+			 * desired effect of freeing the BATs.
+			 * It remains open, whether similar situations that
+			 * need similar fixes exist elsewhere in the code base.
+			 */
+			BBPunfix(nh);
+			BBPunfix(nbn);
+			BBPdecref(nh, TRUE);
+			BBPdecref(nbn, TRUE);
 		} else {
 			if (msg != M5OutOfMemory)
 				GDKfree(msg);
