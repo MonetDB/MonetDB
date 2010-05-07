@@ -1,6 +1,9 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Fri May  7 2010 Fabian Groffen <fabian@cwi.nl>
+- Fixed Maddlog script to work under our new Mercurial setup.  The --email and --fullname options have disappeared as we can relibably get them from Mercurial now.
+
 * Thu Dec  6 2007 Fabian Groffen <fabian@cwi.nl>
 - Implemented rudimentary conditional support for ant targets
 
