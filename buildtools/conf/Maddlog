@@ -10,43 +10,27 @@ while [ ! -f $d/vertoo.data ]; do
     d=../$d
 done
 CL=$d/ChangeLog
-if [ -f $d/CVS/Tag ]; then
-    tag=$(< $d/CVS/Tag)
+if hg root >& /dev/null ; then
+    tag=$(hg branch)
     case $tag in
-    T*)	CL=$CL.${tag#?};;
+		default) : ;;
+		*)	CL=$CL.${tag} ;;
     esac
+	root=$(hg root)
+	root=$(cd $root && \pwd -P)
+	dir=$(cd $d && \pwd -P)
+	proj=${dir#${root}/}
+
+	PROJECT=${proj%%/*}
+	IDENTITY=$(hg showconfig ui.username)
+else
+	echo "Cannot use this script outside a Mercurial repository" > /dev/stder
+	exit -1
 fi
-PROJECT=$(< $d/CVS/Repository)
 
 nocommit=
 while [ $# -gt 0 ]; do
     case "$1" in
-    --email=*)
-	EMAIL=${1#--email=}
-	shift
-	;;
-    --email|-e)
-	EMAIL=$2
-	shift
-	shift
-	;;
-    -e*)
-	EMAIL=${1#-e}
-	shift
-	;;
-    --fullname=*)
-	FULLNAME=${1#--fullname=}
-	shift
-	;;
-    --fullname|-n)
-	FULLNAME=$2
-	shift
-	shift
-	;;
-    -n*)
-	FULLNAME=${1#-n}
-	shift
-	;;
     --logfile=*)
 	CL=${1#--logfile=}
 	shift
@@ -72,8 +56,6 @@ while [ $# -gt 0 ]; do
 	cat >&2 <<-EOF
 	$0: unknown option $1
 	Valid options are:
-	--email=user@domain (-e user@domain)
-	--fullname=FullName (-n FullName)
 	--logfile=filename (-f filename)
 	--nocommit
 	EOF
@@ -96,50 +78,6 @@ else
     done
 fi
 
-# figure out full name and email address
-# use $FULLNAME and $EMAIL if set in the environment, else find full
-# name using the finger command and regenerate an email address from
-# user name and domain
-: ${USER:=$(whoami)}
-
-if [ -z "$FULLNAME" ] ; then
-	# First try it the Python way, as that should work on the most
-	# platforms, except Windows, hence the try/except.
-	if [ -x $(type -P python) ] ; then
-		FULLNAME=$(python << EOF
-import os, pwd
-try:
-	print pwd.getpwuid(os.getuid())[4]
-except:
-	pass
-EOF
-		)
-	fi
-	if [ -z "$FULLNAME" ] ; then
-		# this matches Linux finger output (which is different from e.g. Solaris)
-		FULLNAME=$(finger -l $USER | sed -n "s/Login: $USER .*Name: \\(.*\\)/\\1/p")
-	fi
-	if [ -z "$FULLNAME" ] ; then
-		# warn
-		echo "could not determine your full name, please set FULLNAME in your environment" > /dev/stderr
-	fi
-fi
-
-# Try to find the mail domain from some files first, then resort to
-# domainname function
-if [ -z "$EMAIL" ] ; then
-	if [ -f /etc/mailname ] ; then
-		EMAIL=$USER@$(< /etc/mailname)
-	elif [ -f /etc/postfix ] ; then
-		EMAIL=$USER@$(postconf -h mydomain)
-	elif [ -n $(type -P domainname) ] ; then
-		EMAIL=$USER@$(domainname)
-	else
-		# warn
-		echo "could not determine your hostname, please set EMAIL in your environment" > /dev/stderr
-	fi
-fi
-
 file=ChangeLog.$RANDOM
 
 case "$CL" in
@@ -148,7 +86,6 @@ case "$CL" in
     CL=${CL##*/}
     ;;
 esac
-cvs update "$CL"
 
 if [ -f "$CL" ]; then
     sed 's/^/X/' "$CL" | {
@@ -162,11 +99,11 @@ if [ -f "$CL" ]; then
 	    if [ "$first" = true ]; then
 		date=$(expr "$line" : '\* \(... ... .. ....\) .*')
 		user=$(expr "$line" : '\* ... ... .. .... \(.*\)')
-		if [ "$date" = "$(date +'%a %b %_d %Y')" -a "$user" = "$FULLNAME <$EMAIL>" ]; then
+		if [ "$date" = "$(date +'%a %b %_d %Y')" -a "$user" = "$IDENTITY" ]; then
 		    echo "$line"
 		    echo "- $msg"
 		else
-		    echo "* $(date +'%a %b %_d %Y') $FULLNAME <$EMAIL>"
+		    echo "* $(date +'%a %b %_d %Y') $IDENTITY"
 		    echo "- $msg"
 		    echo
 		    echo "$line"
@@ -182,7 +119,7 @@ if [ -f "$CL" ]; then
 	esac
     done
     if [ "$first" = true ]; then
-	echo "* $(date +'%a %b %_d %Y') $FULLNAME <$EMAIL>"
+	echo "* $(date +'%a %b %_d %Y') $IDENTITY"
 	echo "- $msg"
 	echo
     fi
@@ -191,7 +128,7 @@ else
     echo "# ChangeLog file for $PROJECT"
     echo "# This file is updated with Maddlog"
     echo
-    echo "* $(date +'%a %b %_d %Y') $FULLNAME <$EMAIL>"
+    echo "* $(date +'%a %b %_d %Y') $IDENTITY"
     echo "- $msg"
     echo
 fi > $file
@@ -199,5 +136,6 @@ fi > $file
 mv $file "$CL"
 
 if [ ! "$nocommit" ]; then
-    cvs commit -m "  $msg" "$CL"
+    hg add "$CL" >& /dev/null
+	hg commit -m "  $msg" "$CL"
 fi
