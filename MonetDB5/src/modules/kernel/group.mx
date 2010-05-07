@@ -906,6 +906,67 @@ bunins_failed:
 	}
 @c
 
+#if 0
+/*
+Stefan.Manegold@cwi.nl:
+
+Disabled partion based sub-order derive as its performance benefits appear
+to be questionable.
+
+With many (small) groups that need to be sub-grouped, the overhead of
+calling GRPgroup for each (small) group appears to be significant.
+Even with few (large) groups, sub-group each one individually appears to be
+more expensive than a "normal" (apparently also clustered on sorted data)
+holistic derive.
+
+Here are the results for a scenario that Roberto (& Wouter) reported:
+Input are two tables (termID int, docID int, count double) with the
+following statistics:
+
+     count(*)  count(distinct termID)  count(distinct docID)
+T1:   5000000                     103                  92317
+T2:   5000000                 1014049                  85306
+
+Though of equal size, T1 has only 103 termID groups with an average size of
+almost 50000 tuples each, while T2 has 1014049 termID groups with an average
+size of harly 5 tuples each.
+There are 1321544 distinct (termID,docID) combination in T1.
+There are 3251714 distinct (termID,docID) combination in T2.
+
+The first column (termID) is sorted in both tables.
+
+Here are the timings (debug build of Feb2010 on 64-bit Fedora 12, 2.40GHz
+Core2 Quad, 8 GB RAM) for the following query (with Tx from {T1,T2}):
+
+CREATE TABLE TT AS
+SELECT termID, docID, sum(count) AS count
+FROM Tx
+GROUP BY termID, docID
+WITH DATA;
+
+OptPipe   CTderive_ordered()     T1          T2
+
+default   on                   2.69 sec   69.79 sec
+          off                  2.65 sec    6.15 sec
+
+nov2009   on                   2.18 sec   27.80 sec
+          off                  1.80 sec    3.42 sec
+
+I guess, the rough 10x improvement with many (small) groups, and up to 10%
+improvment with few (large) groups indeed makes the general benefits of
+partion based sub-order derive via CTderive_ordered() at least questionable.
+
+Once we are confident that CTderive_ordered() has no benefits at all in any
+cases, we should remove the code completely.
+
+Of course, with inputs that exceed main memory size, ordered data allows for
+rather straight forward partitioning into (few) large chunks that fit into
+main memory to perform the derive step of each chunk independintly in
+memory. These chunks can consist of multiple "outer" groups, provided each
+chunk contains only complete outer groups.
+I will prepare the respective code.
+*/
+
 /* partion based sub-order derive */
 int 
 CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto) 
@@ -943,8 +1004,30 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 			BAT *B = BATdescriptor(nbn);
 			BATins(histo, nhisto, FALSE);
 			BATappend(bn, B, FALSE);
-			BBPreleaseref(nh);
-			BBPreleaseref(nbn);
+			/* Stefan.Manegold@cwi.nl:
+			 * To prevent leaking BATs, we need to release not only
+			 * the physical reference of BATdescriptor() bu also
+			 * the logical reference of BBPkeepref() in GRPgroup().
+			 * However, simply calling BBPreleaselref() in addition
+			 * to BBPreleaseref() does not do the job, possibly
+			 * because they both merely do a plain "--BBP_refs(i);"
+			 * resp.  "--BBP_lrefs(i);" instead of calling
+			 * [BBP]decref() which triggers the free/reclaim of
+			 * BATs once the number of both physical & logical
+			 * references becomes 0.  Only if we call BBPunfix()
+			 * (and hence [BBP]decref(,FALSE)) instead of
+			 * BBPreleaseref() *after* BBPreleaselref(), the BATs
+			 * are indeed freed.  Alternatively, when also calling
+			 * BBPdecref(,TRUE) instead of BBPreleaselref(), either
+			 * order of BBPunfix(i) & BBPdecref(,TRUE) yield the
+			 * desired effect of freeing the BATs.
+			 * It remains open, whether similar situations that
+			 * need similar fixes exist elsewhere in the code base.
+			 */
+			BBPunfix(nh);
+			BBPunfix(nbn);
+			BBPdecref(nh, TRUE);
+			BBPdecref(nbn, TRUE);
 		} else {
 			if (msg != M5OutOfMemory)
 				GDKfree(msg);
@@ -974,6 +1057,7 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 	*reshisto = histo;
 	return 0;
 }
+#endif
 
 @c
 static int
@@ -986,6 +1070,8 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt, map_T *m)
 	int ht = (synced && BAThdense(b)) ? TYPE_void : TYPE_oid;
 
 	if (!ct_map->tkey) { /* cannot derive more groups */
+#if 0
+		/* see comment above */
 		if (!b->tkey && BATcount(b) > 1 && BATtordered(ct_map)&1 && 
 			BAThordered(ct_histo) &&
 	    		ATOMtype(b->htype) == TYPE_oid && 
@@ -999,6 +1085,7 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt, map_T *m)
 			}
 			return ret?GDK_FAIL:GDK_SUCCEED;
 		}
+#endif
 		bn = BATnew(ht, TYPE_oid, BATcount(b));
 		if (bn == NULL) 
 			return GDK_FAIL;
