@@ -4796,8 +4796,9 @@ sql_@1rank(bat *rid, bat *bid)
 
 	if( (b = BATdescriptor(*bid)) == NULL )
 		throw(SQL, "sql.@1rank", "Cannot access descriptor");
-	if (BATtordered(b) != GDK_SORTED)
+	if (!(BATtordered(b) & GDK_SORTED) && !(BATtordered(b) & GDK_SORTED_REV))
 		throw(SQL, "sql.@1rank", "bat not sorted");
+	
 	bi = bat_iterator(b);
 	cmp = BATatoms[b->ttype].atomCmp;
 	cur = BUNtail(bi, BUNfirst(b));
