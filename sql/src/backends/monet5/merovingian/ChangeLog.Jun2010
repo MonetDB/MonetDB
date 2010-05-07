@@ -1,6 +1,8 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+#*June2010
+
   07 Apr 2010; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Sort output returned by discover, status and get commands based on url
   or dbname.
@@ -19,8 +21,6 @@
   merovingian_forkmserver.c, merovingian_proxy.c:
   Use mserver5's UNIX domain socket support when Merovingian is supposed
   to proxy the connection to the database.
-
-*June2010
 
   16 Mar 2010; Fabian Groffen <fabian@cwi.nl>
   merovingian_controlrunner.c:
