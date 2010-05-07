@@ -2000,7 +2000,7 @@ insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 9949.9043,9638.1002,
 insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 8845.2051,2817.4110,7383.2817,2051.2817,4110.7383,1571.581,581.1571;
 insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 5723.4263,4263.9880,9456.4263,4263.4263,9880.9456,7472.5417,5417.7472;
 insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 2543.5363,9249.8762,9081.9249,5363.9249,8762.9081,8516.5131,5131.8516;
-select * from query_cache() cache;
+select * from queryCache() cache;
 
 drop table foo;
 commit;

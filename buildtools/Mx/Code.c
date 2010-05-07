@@ -378,6 +378,7 @@ CodeLine(void)
 			break;
 
 		case Haskell:
+		case SQL:
 			ofile_printf("\n-- %s:%d \n", mx_file, mx_line);
 			break;
 

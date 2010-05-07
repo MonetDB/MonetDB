@@ -30,7 +30,7 @@ create function "current_timestamp"( ) returns TIMESTAMPTZ
 
 create function "localtime"( ) returns TIME
 	external name mtime."current_time";
-create function localtimestamp( ) returns TIMESTAMP
+create function "localtimestamp"( ) returns TIMESTAMP
 	external name mtime."current_timestamp";
 
 create function local_timezone( ) returns second_interval

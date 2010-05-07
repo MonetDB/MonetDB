@@ -41,7 +41,6 @@ password=skyserver
 EOF
 
 $SQL < ../../sql/math.sql
-$SQL < ../../sql/cache.sql
 $SQL < ../../sql/skyserver.sql
 
 echo tables
@@ -63,7 +62,6 @@ echo Cleanup
 $SQL < Skyserver_dropFunctions.sql
 $SQL < Skyserver_dropMs_functions.sql
 $SQL < Skyserver_dropMath.sql
-$SQL < Skyserver_dropCache.sql
 $SQL < Skyserver_dropViews.sql
 $SQL < Skyserver_dropConstraints.sql
 $SQL < Skyserver_dropTables.sql

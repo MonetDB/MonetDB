@@ -34,6 +34,7 @@ a known location.
 #include "mal_utils.h"
 
 mal_export void slash_2_dir_sep(str fname);
+mal_export stream *openSourceFile(str fname);
 @-
 The import context is located. If the module already exists, 
 we should silently skip parsing the file. This is handled at the parser level.
@@ -61,8 +62,8 @@ slash_2_dir_sep(str fname)
 			*s = DIR_SEP;
 }
 
-static stream *
-malOpenSource(str fname)
+stream *
+openSourceFile(str fname)
 {
 	stream *fd = NULL;
 	char path[PATHLENGTH];
@@ -96,7 +97,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 {
 	stream *fd;
 
-	fd = malOpenSource(name);
+	fd = openSourceFile(name);
 	if (stream_errnr(fd) == OPEN_ERROR) {
 		stream_destroy(fd);
 		throw(MAL, "malInclude", "could not open file: %s", name);
@@ -237,7 +238,7 @@ evalFile(Client c, str fname, int listing){
 
 	c->fdin = NULL;
 	c->srcFile= fname;
-	fd = malOpenSource(fname);
+	fd = openSourceFile(fname);
 	if (stream_errnr(fd) == OPEN_ERROR) {
 		stream_destroy(fd);
 		stream_printf(c->fdout, "#WARNING: could not open file: %s\n", fname);
