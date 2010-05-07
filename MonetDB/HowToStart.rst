@@ -564,9 +564,9 @@ Reporting Problems
 ------------------
 
 Bugs and other problems with compiling or running MonetDB should be
-reported using the bug tracking system at SourceForge__ (preferred) or
+reported using our `bug tracking system`__ (preferred) or
 emailed to monet@cwi.nl; see also
 http://monetdb.cwi.nl/Development/Bugtracker/index.html.  Please make
 sure that you give a *detailed* description of your problem!
 
-__ https://sourceforge.net/tracker/?group_id=56967&atid=482468
+__ http://bugs.monetdb.org/
