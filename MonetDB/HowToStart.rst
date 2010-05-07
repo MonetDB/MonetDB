@@ -138,7 +138,6 @@ libxml2
 	Current Linux distributions all come with libxml2.
 
 __ http://monetdb.cwi.nl/downloads/sources/
-__ http://sourceforge.net/docman/?group_id=1
 __ http://www.gnu.org/software/autoconf/
 __ http://www.gnu.org/software/automake/
 __ http://www.gnu.org/software/libtool/
@@ -172,14 +171,14 @@ There are two ways to get the source code:
 
 (1) checking it out from the CVS repository on SourceForge;
 (2) downloading the pre-packaged source distribution from
-    SourceForge__.
+    `our download page`__.
 
 The following instructions first describe how to check out the source
 code from the CVS repository on SourceForge; in case you downloaded
 the pre-packaged source distribution, you can skip this section and
 proceed to `Bootstrap, Configure and Make`_.
 
-__ http://sourceforge.net/project/showfiles.php?group_id=56967
+__ http://monetdb.cwi.nl/downloads/
 
 CVS checkout
 ~~~~~~~~~~~~
