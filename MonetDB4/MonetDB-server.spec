@@ -1,5 +1,5 @@
 %define name MonetDB4-server
-%define version 4.37.0
+%define version 4.39.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
@@ -45,16 +45,16 @@ BuildRequires: pcre-devel
 
 %define builddoc 0
 
-Requires: MonetDB-client >= 1.36
+Requires: MonetDB-client >= 1.38
 #                           ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.36
+BuildRequires: MonetDB-devel >= 1.38
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB-client-devel >= 1.36
+BuildRequires: MonetDB-client-devel >= 1.38
 #                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -83,11 +83,11 @@ libraries.
 Summary: MonetDB development package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
-Requires: MonetDB-devel >= 1.36
+Requires: MonetDB-devel >= 1.38
 #                          ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-Requires: MonetDB-client-devel >= 1.36
+Requires: MonetDB-client-devel >= 1.38
 #                                 ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

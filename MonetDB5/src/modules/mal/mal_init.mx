@@ -29,8 +29,7 @@ It should be loaded after the bat module.
 The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
-The first part enumerates the libraries in
-their preferred loading sequence.
+The first part enumerates the libraries in their preferred loading sequence.
 @mal
 library mdb;
 library unix;
@@ -87,8 +86,6 @@ library remote;
 library profiler;
 library statistics;
 
-library optimizer;
-
 library chopper;
 library txtsim;
 
@@ -99,12 +96,16 @@ library logger;
 @mal
 library transaction;
 
-library run_isolate;	# experimental scheduler code
+library run_isolate;
 library run_memo;	
 library run_octopus;
 @-
-The remainder interprets the signatures and resolves the
-address bindings.
+The remainder interprets the signatures and resolves the address bindings.
+The signatures may exists without the corresponding function implementation
+to be loaded.  This way, MAL programs can be normally compiled, and only
+upon use of the function will it create the necessary exception.
+
+The order of the includes defines the dependencies.
 @mal
 include mdb;
 include unix;
@@ -178,6 +179,7 @@ include mal_mapi;
 include profiler;
 include statistics;	# experimental
 
+library optimizer; #contains all optimizers
 include optimizer;
 include opt_support;
 include opt_accumulators;
@@ -243,7 +245,7 @@ include run_memo;
 include run_octopus;
 
 @-
- Cracker schemes
+Cracker schemes
 @mal
 include opt_crack;
 include opt_selcrack;
@@ -253,15 +255,22 @@ include opt_remoteQueries;
 include crackers; 
 
 @-
+Experimental code can be in various degrees of development.
+Their ommission is not a show stopper for normal operation.
+@-
 The RDF module stuff
 @mal
 include tokenizer;
-# FIXME: !MALException:malInclude:could not open file: rdf
-#include rdf;
-
+include rdf;
 @-
-In practice, we have to introduce different startup for each
-client group or database.
-@c
-
+Functional enhancements to the MonetDB system are language
+compilers, such as sql. We attempt to load them if they exist.
+@mal
+include sql;
+@-
+Similar, SQL may be extended with modules to refine it, e.g.
+the geom module add GIS specific functionalty. Likewise, we attempt
+to load it.
+@mal
+include geom;
 @-

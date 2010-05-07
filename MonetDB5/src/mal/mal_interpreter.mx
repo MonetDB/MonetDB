@@ -361,11 +361,9 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	str ret;
-	int keepAlive;
 
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
-	keepAlive = stk->keepAlive;
 	if(env && stk && stk->cmd!='f') stk->cmd = env->cmd ;
 
 	ret = runMALsequence(cntxt, mb, startpc,  stoppc, stk, env, pcicaller);

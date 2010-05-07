@@ -188,7 +188,7 @@ MONETDB_MODS=""
 MONETDB_MOD_PATH=""
 MONETDB_PREFIX="."
 if test "x$1" = "x"; then
-  MONETDB_REQUIRED_VERSION="1.36.0"
+  MONETDB_REQUIRED_VERSION="1.38.0"
   #                         ^^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -261,7 +261,7 @@ CLIENTS_MODS=""
 CLIENTS_MOD_PATH=""
 CLIENTS_PREFIX="."
 if test "x$1" = "x"; then
-  CLIENTS_REQUIRED_VERSION="1.36.0"
+  CLIENTS_REQUIRED_VERSION="1.38.0"
   #                         ^^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -337,7 +337,7 @@ MONETDB4_MODS=""
 MONETDB4_MOD_PATH=""
 MONETDB4_PREFIX="."
 if test "x$1" = "x"; then
-  MONETDB4_REQUIRED_VERSION="4.36.0"
+  MONETDB4_REQUIRED_VERSION="4.38.0"
   #                          ^^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -430,7 +430,7 @@ MONETDB5_PREFIX="."
 MONETDB5_RDF_LIB=""
 MONETDB5_XML_LIB=""
 if test "x$1" = "x"; then
-  MONETDB5_REQUIRED_VERSION="5.18.0"
+  MONETDB5_REQUIRED_VERSION="5.20.0"
   #                          ^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

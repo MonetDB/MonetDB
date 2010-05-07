@@ -69,7 +69,7 @@ int
 malBootstrap()
 {
 	Client c;
-	str bootfile = "mal_init", bf, s;
+	str bootfile = "mal_init", s;
 
 	c = MCinitClient((oid)0, 0, 0);
 	c->nspace = newModule(NULL, putName("user", 4));
@@ -78,14 +78,11 @@ malBootstrap()
 		GDKerror("Failed to initialise default scenario");
 		return 0;
 	}
-	bf = GDKgetenv("mal_bootstrap");
-	if (bf)
-		bootfile = bf;
-	MSinitClientPrg(c,"user", "main");
-	(void) MCinitClientThread(c);
+	MSinitClientPrg(c, "user", "main");
+	(void)MCinitClientThread(c);
 	s = malInclude(c, bootfile, 0);
-	if( s != NULL){
-		stream_printf(GDKout,"!%s\n",s);
+	if (s != NULL) {
+		stream_printf(GDKout, "!%s\n", s);
 		GDKfree(s);
 		return 0;
 	}
