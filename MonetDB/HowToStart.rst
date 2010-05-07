@@ -20,7 +20,7 @@ AIX, Mac OS X/Darwin, or CYGWIN).  For compilation and installation on
 a native Windows system (NT, 2000, XP) see the instructions in the
 file `../buildtools/doc/windowsbuild.rst`__.
 
-__ http://sourceforge.net/project/showfiles.php?group_id=56967
+__ http://monetdb.cwi.nl/downloads/
 __ Windows-Installation.html
 
 The Suite
