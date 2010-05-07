@@ -70,25 +70,24 @@ next.
 Prerequisites
 -------------
 
-CVS
-	You only need this if you are building from CVS.  If you start
-	with the source distribution from `SourceForge`__ you don't
-	need CVS.
+Mercurial
+	You only need this if you are building directly from our version
+	control system.  If you start with the source distribution from `our
+	download page`__ you don't need Mercurial.
 
-	You need to have a working CVS.  For instructions, see `the
-	SourceForge documentation`__ and look under the heading CVS
-	Instructions.
+	You need to have a working Mercurial (hg) and clone the main
+	repository from: http://dev.monetdb.org/hg
 
 Python
 	MonetDB uses Python (version 2.0.0 or better) during
 	configuration of the software.  See http://www.python.org/ for
 	more information.  (It must be admitted, version 2.0.0 is
 	ancient and has not recently been tested, we currently use
-	2.4 and newer.)
+	2.6 and newer.)
 
 autoconf/automake/libtool
-	MonetDB uses GNU autoconf__ (>= 2.57) and automake__ (>= 1.5)
-	during the Bootstrap_ phase, and libtool__ (>= 1.4) during the
+	MonetDB uses GNU autoconf__ (>= 2.60) and automake__ (>= 1.10)
+	during the Bootstrap_ phase, and libtool__ (>= 1.5) during the
 	Make_ phase.  autoconf and automake are not needed when you
 	start with the source distribution.
 
@@ -143,7 +142,7 @@ libxml2
 	document loader will not be compiled at all in that case.
 	Current Linux distributions all come with libxml2.
 
-__ http://sourceforge.net/project/showfiles.php?group_id=56967
+__ http://monetdb.cwi.nl/downloads/sources/
 __ http://sourceforge.net/docman/?group_id=1
 __ http://www.gnu.org/software/autoconf/
 __ http://www.gnu.org/software/automake/
