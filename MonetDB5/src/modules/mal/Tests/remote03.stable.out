@@ -105,7 +105,9 @@ SyntaxException:parseError:                       ^'(' expected
 [ 27,	  "inet"	  ]
 [ 28,	  "identifier"	  ]
 [ 29,	  "pcre"	  ]
-[ 30,	  "mapentry"	  ]
+[ 30,	  "mbr"		  ]
+[ 31,	  "wkb"		  ]
+[ 32,	  "mapentry"	  ]
 [ "rmt2__8_void" ]
 [ nil ]
 

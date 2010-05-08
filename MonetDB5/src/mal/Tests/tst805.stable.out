@@ -25,7 +25,7 @@ end main;
 # h	t		  # name
 # str	BAT		  # type
 #-------------------------#
-[ "a",	  <tmp_7>	  ]
+[ "a",	  <tmp_647>	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type

@@ -72,7 +72,9 @@ end main;
 [ 27,	  "inet"	  ]
 [ 28,	  "identifier"	  ]
 [ 29,	  "pcre"	  ]
-[ 30,	  "mapentry"	  ]
+[ 30,	  "mbr"		  ]
+[ 31,	  "wkb"		  ]
+[ 32,	  "mapentry"	  ]
 #-------------------------#
 # t	h		  # name
 # oid	str		  # type
@@ -84,8 +86,10 @@ end main;
 [ "bat",	  nil	  ]
 [ "batcalc",	  nil	  ]
 [ "batcolor",	  nil	  ]
+[ "batgeom",	  nil	  ]
 [ "batmmath",	  nil	  ]
 [ "batmtime",	  nil	  ]
+[ "batsql",	  nil	  ]
 [ "batstr",	  nil	  ]
 [ "bbp",	  nil	  ]
 [ "blob",	  nil	  ]
@@ -103,6 +107,7 @@ end main;
 [ "daytime",	  nil	  ]
 [ "dictionary",	  nil	  ]
 [ "factories",	  nil	  ]
+[ "geom",	  nil	  ]
 [ "group",	  nil	  ]
 [ "identifier",	  nil	  ]
 [ "inet",	  nil	  ]
@@ -115,6 +120,7 @@ end main;
 [ "mapi",	  nil	  ]
 [ "master",		  nil	  ]
 [ "mat",	  nil	  ]
+[ "mbr",	  nil	  ]
 [ "mdb",	  nil	  ]
 [ "mkey",	  nil	  ]
 [ "mmath",	  nil	  ]
@@ -124,6 +130,7 @@ end main;
 [ "pcre",	  nil	  ]
 [ "pqueue",	  nil	  ]
 [ "profiler",	  nil	  ]
+[ "rdf",	  nil	  ]
 [ "recycle",	  nil	  ]
 [ "remote",	  nil	  ]
 [ "sabaoth",	  nil	  ]
@@ -146,6 +153,7 @@ end main;
 [ "unix",	  nil	  ]
 [ "url",	  nil	  ]
 [ "user",	  nil	  ]
+[ "wkb",	  nil	  ]
 [ "zrule",	  nil	  ]
 command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):bat[:any_1,:any_2] address BKCinsert_bun_force;
 #Insert one BUN[h,t] in a BAT.
@@ -517,6 +525,50 @@ command io.import(b:bat[:any_1,:any_2],filepath:str):bat[:any_1,:any_2] address 
 #Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 #parameter BAT. You have to create it! Its signature must match the dump,
 #else parsing errors will occur and FALSE is returned.
+
+pattern sql.append(mvc:ptr,sname:str,tname:str,cname:str,ins:any):ptr address mvc_append_wrap;
+#Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname (returns sequence number for order dependence)
+
+command sql.bind_dbat(clientid:int,schema:str,table:str,access:int,oldversion:lng,version:lng):bat[:oid,:oid] address mvc_diff_dbat_wrap;
+#Bind to 'schema.table' BAT with deleted objecs
+#nd with specific access kind:
+#0 - base table
+#1 - inserts
+#2 - updates
+
+pattern sql.bind(mvc:ptr,schema:str,table:str,column:str,access:int,low:oid,hgh:oid):bat[:oid,:any_1] address mvc_bind_wrap;
+#Bind the 'schema.table.column' BAT partition with access kind:
+#0 - base table
+#1 - inserts
+#2 - updates
+
+pattern sql.bind(mvc:ptr,schema:str,table:str,column:str,access:int):bat[:oid,:any_1] address mvc_bind_wrap;
+#Bind the 'schema.table.column' BAT with access kind:
+#0 - base table
+#1 - inserts
+#2 - updates
+
+pattern sql.bind_idxbat(mvc:ptr,schema:str,table:str,index:str,access:int,low:oid,hgh:oid):bat[:oid,:any_1] address mvc_bind_idxbat_wrap;
+#Bind the 'schema.table.index' BAT with access kind:
+#0 - base table
+#1 - inserts
+#2 - updates
+
+pattern sql.bind_idxbat(mvc:ptr,schema:str,table:str,index:str,access:int):bat[:oid,:any_1] address mvc_bind_idxbat_wrap;
+#Bind the 'schema.table.index' BAT with access kind:
+#0 - base table
+#1 - inserts
+#2 - updates
+
+pattern sql.bind_dbat(mvc:ptr,schema:str,table:str,access:int):bat[:oid,:oid] address mvc_bind_dbat_wrap;
+#Bind to 'schema.table' BAT with deleted objecs
+#nd with specific access kind:
+#0 - base table
+#1 - inserts
+#2 - updates
+
+pattern sql.update(mvc:ptr,sname:str,tname:str,cname:str,ins:any):ptr address mvc_update_wrap;
+#Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname (returns sequence number for order dependence)
 
 command str.insert(s:str,start:int,l:int,s2:str):str address STRinsert;
 #Insert a string into another
