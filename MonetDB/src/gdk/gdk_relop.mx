@@ -1272,23 +1272,30 @@ Inner input out of memory => sort-merge-join performs better than hash-join or e
 			 * left-order-preserving not required (i.e., re-order allowed) */
 			BAT *ls, *rs, *j;
 			
+			/* if not yet sorted on tail, sort left input on tail */
 			ls = BATtordered(l)&1 ? l : BATmirror(BATsort(BATmirror(l)));
 			ERRORcheck(ls == NULL, "BATjoin: BATmirror(BATsort(BATmirror(l))) failed");
+			/* if not yet sorted on head, sort right input on head */
 			rs = BAThordered(r)&1 ? r : BATsort(r);
 			ERRORcheck(rs == NULL, "BATjoin: BATsort(r) failed");
 			if (swap && rsize > lsize) {
+				/* left-order-preserving not required: user smaller input as inner (right) */
+				/* (not sure, though, whether this makes a difference with merge-join ...) */
 				ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BATmergejoin(BATmirror(BATsort(r)), BATsort(BATmirror(l)), " BUNFMT "));\n", estimate);
 				j = BATmirror(batmergejoin(BATmirror(rs), BATmirror(ls), estimate, swap, NULL));
 				ERRORcheck(j == NULL, "BATjoin: BATmirror(batmergejoin(BATmirror(rs), BATmirror(ls), estimate, swap, NULL)) failed");
 			} else {
+				/* left-order-preserving required, or inner (right) input is smaller one */
 				ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmergejoin(BATmirror(BATsort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
 				j = batmergejoin(ls, rs, estimate, swap, NULL);
 				ERRORcheck(j == NULL, "BATjoin: batmergejoin(ls, rs, estimate, swap, NULL) failed");
 			}
 			if (ls != l) {
+				/* release temp. tail-ordered copy of left input */
 				BBPunfix(ls->batCacheid);
 			}
 			if (rs != r) {
+				/* release temp. head-ordered copy of right input */
 				BBPunfix(rs->batCacheid);
 			}
 			return j;
@@ -1300,18 +1307,26 @@ Inner input out of memory => sort-merge-join performs better than hash-join or e
 			BAT *ls, *rs, *jj, *j;
 
 			ALGODEBUG THRprintf(GDKout, "#BATjoin: BAT[s]sort(BATmergejoin(BATmirror(BAT[s]sort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
+			/* sort left input on tail, use stable sort to maintain original order of duplicate head values */
 			ls = BAThkey(l) ? BATmirror(BATsort(BATmirror(l))) : BATmirror(BATssort(BATmirror(l)));
 			ERRORcheck(ls == NULL, "BATjoin: BATmirror(BAT[s]sort(BATmirror(l))) failed");
+			/* if not yet sorted on head, sort right input on head */
 			rs = BAThordered(r)&1 ? r : BATsort(r);
 			ERRORcheck(rs == NULL, "BATjoin: BATsort(r) failed");
+			/* perform merge join */
 			jj = batmergejoin(ls, rs, estimate, swap, NULL);
 			ERRORcheck(jj == NULL, "BATjoin: batmergejoin(ls, rs, estimate, swap, NULL) failed");
+			/* release temp. tail-ordered copy of left input */
 			BBPunfix(ls->batCacheid); ls = NULL;
 			if (rs != r) {
+				/* release temp. head-ordered copy of right input */
 				BBPunfix(rs->batCacheid); rs = NULL;
 			}
+			/* sort join result on head to restore physical left-input-order;
+			 * use stable sort to maintain original order of duplicate head values */
 			j = BAThkey(l) ? BATsort(jj) : BATssort(jj);
 			ERRORcheck(j == NULL, "BATjoin: BAT[s]sort(jj) failed");
+			/* release temp. unordered join result */
 			BBPunfix(jj->batCacheid); jj = NULL;
 			return j;
 		} else {
@@ -1325,27 +1340,39 @@ Inner input out of memory => sort-merge-join performs better than hash-join or e
 			BAT *lh, *lt, *ls, *rs, *jj, *js, *j;
 
 			ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(batfetchjoin(BATmirror(BATsort(BATmergejoin(BATmirror(BATsort(BATmark(BATmirror(l),0))), BATsort(r), " BUNFMT "))), BATmirror(BATmark(l,0))));\n", estimate);
+			/* separate left head & tail using BATmark */
 			lh = BATmark(l,0);
 			ERRORcheck(lh == NULL, "BATjoin: BATmark(l,0) failed");
 			lt = BATmirror(BATmark(BATmirror(l),0));
 			ERRORcheck(lt == NULL, "BATjoin: BATmirror(BATmark(BATmirror(l),0)) failed");
+			/* sort left tail */
 			ls = BATmirror(BATsort(BATmirror(lt)));
 			ERRORcheck(ls == NULL, "BATjoin: BATmirror(BATsort(BATmirror(lt))) failed");
+			/* release temp. unsorted left tail */
 			BBPunfix(lt->batCacheid); lt = NULL;
+			/* if not yet sorted on head, sort right input on head */
 			rs = BAThordered(r)&1 ? r : BATsort(r);
 			ERRORcheck(rs == NULL, "BATjoin: BATsort(r) failed");
+			/* perform merge join */
 			jj = batmergejoin(ls, rs, estimate, swap, NULL);
 			ERRORcheck(jj == NULL, "BATjoin: batmergejoin(ls, rs, estimate, swap, NULL) failed");
+			/* release temp. ordered copy of left tail */
 			BBPunfix(ls->batCacheid); ls = NULL;
 			if (rs != r) {
+				/* release temp. head-ordered copy of right input */
 				BBPunfix(rs->batCacheid); rs = NULL;
 			}
+			/* sort join result on head to restore physical left-input-order */
 			js = BATsort(jj);
 			ERRORcheck(js == NULL, "BATjoin: BATsort(jj) failed");
+			/* release temp. unordered join result */
 			BBPunfix(jj->batCacheid); jj = NULL;
+			/* restore original left head values */
 			j = BATmirror(batfetchjoin(BATmirror(js), BATmirror(lh), BATcount(js), swap, TRUE));
 			ERRORcheck(j == NULL, "BATjoin: BATmirror(batfetchjoin(BATmirror(js), BATmirror(lh), BATcount(js), swap, TRUE)) failed");
+			/* release temp.sorted join result */ 
 			BBPunfix(js->batCacheid); js = NULL;
+			/* release temp. copy of left head */
 			BBPunfix(lh->batCacheid); lh = NULL;
 			return j;
 		}
