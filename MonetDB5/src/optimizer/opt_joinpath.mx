@@ -102,18 +102,15 @@ comment "Join path constructor";
 
 pattern algebra.joinPath(l:bat[:any,:any]...):bat[:any,:any]
 address ALGjoinPath
-comment "internal routine to handle join paths.
-	The type analysis is rather tricky.";
+comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
 pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:any,:any]
 address ALGjoinPath
-comment "internal routine to handle join paths.
-	The type analysis is rather tricky.";
+comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
 pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any]
 address ALGjoinPath
-comment "internal routine to handle join paths.
-	The type analysis is rather tricky.";
+comment "Routine to handle join paths.  The type analysis is rather tricky.";
 @h
 #ifndef _OPT_JOINPATH_
 #define _OPT_JOINPATH_
@@ -577,11 +574,16 @@ BEWARE. you may not use a size estimation, because it
 may fire a BATproperty check in a few cases.
 In case a join fails, we may try another order first before 
 abandoning the task.
+
+A left-join sequence only requires the result to be sorted
+against the first operand. For all others operand pairs, the cheapest join suffice.
 @c
 		switch(flag){
 		case 0:
-			b = BATleftjoin(joins[j], joins[j + 1], BATcount(joins[j]));
-			break;
+			if ( j == 0) {
+				b = BATleftjoin(joins[j], joins[j + 1], BATcount(joins[j]));
+				break;
+			}
 		case 1:
 			b = BATjoin(joins[j], joins[j + 1], (BATcount(joins[j]) < BATcount(joins[j + 1])? BATcount(joins[j]):BATcount(joins[ j + 1])));
 			break;
