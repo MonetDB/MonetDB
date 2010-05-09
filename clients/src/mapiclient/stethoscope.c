@@ -63,8 +63,8 @@
  * Ideally, the stream of events should be piped into a
  * 2D graphical tool, like xosview (Linux).
  * 
- * A convenient way to watch most of the SQL interaction
- * you may use the command:
+ * For a convenient way to watch most of the SQL interaction you may use
+ * the command:
  * stethoscope -umonetdb -Pmonetdb -hhost +tis "algebra.*" "bat.*" "group.*" "sql.*" "aggr.*"
  */
 
