@@ -318,7 +318,7 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 	m->qc = NULL;
 	m->last = NULL;
 
-	m->cache = 0;
+	m->caching = 0;
 	m->emode = mode;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));

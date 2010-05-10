@@ -432,7 +432,7 @@ rel_parse_val(mvc *m, char *query, char emode)
 
 	m->qc = NULL;
 
-	m->cache = 0;
+	m->caching = 0;
 	m->emode = emode;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
@@ -501,7 +501,7 @@ rel_parse_value(mvc *m, char *query, char emode)
 
 	m->qc = NULL;
 
-	m->cache = 0;
+	m->caching = 0;
 	m->emode = emode;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));

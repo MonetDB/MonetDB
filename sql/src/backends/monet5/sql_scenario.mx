@@ -609,7 +609,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	sql = backend_create(m, c);
 	m->qc = NULL;
 	m->prepare_qc = NULL;
-	m->cache = 0;
+	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
@@ -1235,7 +1235,7 @@ produce code.
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
-		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && !m->caching && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
 			scanner_query_processed(&(m->scanner));
 			backend_callinline(be, c, s );
 			if( m->emode == m_inplace)
