@@ -143,7 +143,6 @@ void
 sql_add_arg(mvc *sql, atom *v)
 {
 	if (sql->argc == sql->argmax) {
-		assert(!sql->argfixed);
 		sql->argmax *= 2;
 		sql->args = RENEW_ARRAY(atom*,sql->args,sql->argmax);
 	}
