@@ -292,7 +292,6 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = _mero_mserver;
 		argv[c++] = conffile;
 		argv[c++] = dbname;
-		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
 		argv[c++] = "--set"; argv[c++] = muri;
 		if (mydoproxy == 1) {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=false";

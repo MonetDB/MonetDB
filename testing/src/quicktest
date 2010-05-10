@@ -224,10 +224,6 @@ start_server() {
 			--set mapi_port=${port}
 			--set monet_daemon=yes
 		)
-		[[ ${lang} == sql ]] && args=(
-			${args[@]}
-			--dbinit="include sql;"
-		)
 		echo "#" "${args[@]}" > "${p}"/stdout
 		echo "#" "${args[@]}" > "${p}"/stderr
 		"${args[@]}" \
