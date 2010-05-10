@@ -2709,7 +2709,7 @@ null:
 	 { 
 	   mvc *m = (mvc*)parm;
 
-	  if (m->emode == m_normal && m->caching && m->argc < MAXPARAMS-2) {
+	  if (m->emode == m_normal && m->caching) {
 		/* replace by argument */
 		atom *a = atom_general( sql_bind_localtype("str"), NULL, 0);
 
@@ -3672,7 +3672,7 @@ atom:
 	{ 
 	  mvc *m = (mvc*)parm;
 	
-	  if (m->emode == m_normal && m->caching && m->argc < MAXPARAMS-2) {
+	  if (m->emode == m_normal && m->caching) { 
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	
