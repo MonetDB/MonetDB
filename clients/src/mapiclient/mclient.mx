@@ -17,7 +17,7 @@
 
 @a Sjoerd Mullender, Martin Kersten, Peter Boncz, Niels Nes, Fabian Groffen
 @v 6
-@f MapiClient
+@f mclient
 @* The Mapi Client Interface
 A textual interface to the Monet server using the Mapi library,
 providing command-line access for its users. It is the preferred
