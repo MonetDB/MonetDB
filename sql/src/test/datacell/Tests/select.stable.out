@@ -1,0 +1,39 @@
+stdout of test 'select` in directory 'src/test/datacell` itself:
+
+
+# 12:42:54 >  
+# 12:42:54 >   mserver5 "--config=/ufs/niels/scratch/MonetDB/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/MonetDB/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/MonetDB/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/MonetDB/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/MonetDB/Linux-x86_64/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31795 --set xrpc_port=46538 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_datacell" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 12:42:54 >  
+
+# MonetDB server v5.21.0, based on kernel v1.39.0
+# Serving database 'mTests_src_test_datacell', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.754 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+#WARNING: MALException:malInclude:could not open file: geom
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31795/
+# MonetDB/SQL module v2.39.0 loaded
+# MonetDB/SQL module v2.39.0 loaded
+
+Ready.
+
+Over..
+
+# 12:42:55 >  
+# 12:42:55 >  mclient -lsql -ftest -i -e --host=alf --port=31795 
+# 12:42:55 >  
+
+[ 2	]
+#select * from [select * from basket12 where y >1] as t;
+% .t,	.t # table_name
+% x,	y # name
+% int,	int # type
+% 1,	1 # length
+[ 2,	3	]
+
+# 12:42:55 >  
+# 12:42:55 >  Done.
+# 12:42:55 >  
+
