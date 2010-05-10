@@ -226,7 +226,7 @@ forkMserver(str database, sabdb** stats, int force)
 		str master = NULL;
 		str slave = NULL;
 		str pipeline = NULL;
-		str argv[27];	/* for the exec arguments */
+		str argv[26];	/* for the exec arguments */
 		confkeyval *ckv, *kv;
 		int c = 0;
 
