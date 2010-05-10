@@ -48,6 +48,7 @@ For the time being we assume that all commands are statically linked.
 #include "mal_module.h"
 
 #define MAL_EXT ".mal"
+#define SQL_EXT ".sql"
 
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
@@ -378,7 +379,11 @@ locate_file(const char *basename, const char *ext)
 char *
 MSP_locate_script(const char *filename)
 {
-	return locate_file(filename, MAL_EXT);
+	char *f;
+	f= locate_file(filename, MAL_EXT);
+	if ( f == NULL)
+		f= locate_file(filename, SQL_EXT);
+	return f;
 }
 
 char *
