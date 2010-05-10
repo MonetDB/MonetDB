@@ -112,6 +112,8 @@ la_op_leaf (PFla_op_kind_t kind)
     ret->bit_in        = 0;
     ret->bit_out       = 0;
 
+    ret->msa_ann       = NULL;
+    
     return ret;
 }
 

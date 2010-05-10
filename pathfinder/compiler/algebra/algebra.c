@@ -809,7 +809,8 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
             else if (type & aat_docmgmt)
                 return "docmgmt";
             else
-                PFoops (OOPS_FATAL, "unknown column simple type (%i)", type);
+                /* PFoops (OOPS_FATAL, "unknown column simple type (%i)", type); */
+                return "unkwn";
     }
     return NULL;
 }
