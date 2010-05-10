@@ -2709,8 +2709,7 @@ null:
 	 { 
 	   mvc *m = (mvc*)parm;
 
-	   if (m->emode == m_normal && 
-	      (!m->argfixed || m->argc < MAXPARAMS-2) && m->cache){
+	  if (m->emode == m_normal && m->caching && m->argc < MAXPARAMS-2) {
 		/* replace by argument */
 		atom *a = atom_general( sql_bind_localtype("str"), NULL, 0);
 
@@ -3046,12 +3045,18 @@ table_ref:
 */
 
 /* Basket expression, TODO window */
- |  '[' select_no_parens ']' table_name 	
+ |  '[' 
+	{
+		mvc *m = (mvc*)parm;
+		
+		m->caching = 0;
+	}
+	select_no_parens ']' table_name 	
 	{
 		dlist *op = L();
 
- 	  	append_symbol(op, $2);
-		append_symbol(op, $4);
+ 	  	append_symbol(op, $3);
+		append_symbol(op, $5);
 		$$ = _symbol_create_list(SQL_TABLE_OPERATOR, op); 
 	}
  ;
@@ -3667,8 +3672,7 @@ atom:
 	{ 
 	  mvc *m = (mvc*)parm;
 	
-	  if (m->emode == m_normal && 
-	      (!m->argfixed || m->argc < MAXPARAMS-2) && m->cache){
+	  if (m->emode == m_normal && m->caching && m->argc < MAXPARAMS-2) {
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	

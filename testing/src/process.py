@@ -135,9 +135,7 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
                     '--set', 'xrpc_open=true', '--set', 'monet_prompt=',
                     '--trace'])
     if dbinit is None:
-        if lang == 'sql':
-            dbinit = 'include sql;'
-        elif lang == 'xquery':
+        if lang == 'xquery':
             dbinit = 'module(pathfinder);'
     if dbinit is not None:
         cmd.append('--dbinit')
