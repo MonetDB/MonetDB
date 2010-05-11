@@ -1377,19 +1377,22 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 			GDKfree(argrec);
 		throw(SQL, "sql.prepare", "wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
 	} else {
-		for (i = 0; i<m->argc; i++){
+		for (i = 0; i < m->argc; i++) {
 			atom *arg = m->args[i];
-			sql_subtype *pt = q->params+i;
+			sql_subtype *pt = q->params + i;
 
 			if (!atom_cast(arg, pt)) {
 				/*sql_error(c, 003, buf); */
-				if( pci->argc >= MAXARG)
+				if (pci->argc >= MAXARG)
 					GDKfree(argv);
-				if( pci->retc >= MAXARG)
+				if (pci->retc >= MAXARG)
 					GDKfree(argrec);
-				throw(SQL, "sql.prepare", "wrong argument for prepared statement (expected %s instead of %s)", pt->type->sqlname, atom_type(arg)->type->sqlname);
+				throw(SQL, "sql.prepare", "wrong type for argument %d of "
+						"prepared statement: %s, expected %s",
+						i + 1, atom_type(arg)->type->sqlname,
+						pt->type->sqlname);
 			}
-			argv[pci->retc+i]= &arg->data;
+			argv[pci->retc + i] = &arg->data;
 		}
 	}
 	glb = (MalStkPtr)(q->stk);
