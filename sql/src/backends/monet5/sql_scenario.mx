@@ -399,6 +399,8 @@ handle_error(mvc *m, stream *out, int pstatus)
 	return go;
 }
 
+static str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
+
 str
 SQLinitClient(Client c)
 {
@@ -417,29 +419,6 @@ SQLinitClient(Client c)
 Based on the initialization retun value we can prepare a SQLinit string with all information needed
 to initialize the catalog based on the mandatory scripts to be executed.
 @c
-	if ( SQLnewcatalog > 0  && sqlinit == NULL){
-		char path[PATHLENGTH];
-		str fullname;
-
-		snprintf(path,PATHLENGTH,"createdb.sql");
-		slash_2_dir_sep(path);
-		fullname = MSP_locate_script(path);
-		if (fullname) {
-			fd = open_rastream(fullname);
-			GDKfree(fullname);
-
-			if ( fd) {
-				bfd = bstream_create(fd, 128 * BLOCK);
-				stream_printf(c->fdout,"# SQL catalog created, load the sql scripts once\n");
-				if( bfd == 0 || bstream_next(bfd) < 0) {
-					sqlinit= bfd->buf;
-					SQLnewcatalog = INT_MAX;
-				}
-			}
-		} 
-		if ( SQLnewcatalog != INT_MAX)
-			stream_printf(c->fdout,"#WARNING: could not read createdb.sql\n");
-	}
 	if (sqlinit) { /* add sqlinit to the fdin stack */
 		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
@@ -450,11 +429,6 @@ to initialize the catalog based on the mandatory scripts to be executed.
 		bstream_next(fdin);
 		MCpushClientInput(c, fdin, 0, "");
 	}
-	if ( SQLnewcatalog == INT_MAX){
-		stream_close(fd);
-		stream_destroy(fd);
-	}
-	SQLnewcatalog = 0;
 	if (c->state[MAL_SCENARIO_PARSER] == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 		global_variables(m, "monetdb", "sys");
@@ -483,6 +457,32 @@ to initialize the catalog based on the mandatory scripts to be executed.
 	c->state[MAL_SCENARIO_OPTIMIZE] = m;
 
 	initSQLreferences();
+	/* initialize the database with predefined SQL functions */
+	if ( SQLnewcatalog > 0  ){
+		char path[PATHLENGTH];
+		str fullname;
+
+		SQLnewcatalog = 0;
+		snprintf(path,PATHLENGTH,"createdb");
+		slash_2_dir_sep(path);
+		fullname = MSP_locate_script(path);
+		if (fullname) {
+			fd = open_rastream(fullname);
+			GDKfree(fullname);
+
+			if ( fd) {
+				str msg = MAL_SUCCEED;
+				bfd = bstream_create(fd, 128 * BLOCK);
+				stream_printf(c->fdout,"# SQL catalog created, load the sql scripts once\n");
+				if( bfd && bstream_next(bfd) >= 0) 
+					msg= SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
+				stream_close(fd);
+				stream_destroy(fd);
+				return msg;
+			}
+		} 
+		stream_printf(c->fdout,"#WARNING: could not read createdb.sql\n");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -627,25 +627,27 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 
 	m->params = NULL;
 	m->argc = 0;
-	m->sym = NULL;
 	m->session->auto_commit = 0;
 
 @-
-System has been prepared to parse it and generate code
+System has been prepared to parse it and generate code.
+Scan the complete string for SQL statements, stop at the first error.
 @c
-	if ( (err = sqlparse(m)) ||
-	    /* Only forget old errors on transaction boundaries */
-	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
-		if (!err)
-			err = mvc_status(m);
-		if( m->errstr)
-			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-		 else 
-			msg = createException(PARSE, "SQLparser", "Parser errors");
-		*m->errstr = 0;
-		sqlcleanup(m, err);
-		goto endofcompile;
-	}
+	for( ;; ){
+		m->sym = NULL;
+		if ( (err = sqlparse(m)) ||
+			/* Only forget old errors on transaction boundaries */
+			(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
+			if (!err)
+				err = mvc_status(m);
+			if( m->errstr)
+				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+			else 
+				msg = createException(PARSE, "SQLparser", "Parser errors");
+			*m->errstr = 0;
+			sqlcleanup(m, err);
+			goto endofcompile;
+		}
 @-
 We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
@@ -653,51 +655,57 @@ Now is the time to also perform the semantic analysis,
 optimize and produce code.
 We don;t search the cache for a previous incarnation yet.
 @c
-	{	
-		Symbol oldsym= c->curprg;
-		stmt *s = sql_symbol2stmt(m, m->sym);
-
-		MSinitClientPrg(c,"user",nme); 
-		if (s==0 || (err = mvc_status(m))) {
-			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			handle_error(m, c->fdout, pstatus);
-			sqlcleanup(m, err);
-			/* restore the state */
-			freeSymbol(c->curprg);
-			c->curprg= oldsym;
-			goto endofcompile;
-		}
-		/* generate MAL code */
-		backend_callinline(sql, c, s );
-		addQueryToCache(c); 
-
-		if( c->curprg->def->errors){
-			/* restore the state */
-			freeSymbol(c->curprg);
-			c->curprg= oldsym;
-			goto endofcompile;
-		}
+#define _SQL_COMPILE
+		{	
+			Symbol oldsym= c->curprg;
+			stmt *s = sql_symbol2stmt(m, m->sym);
 
 #ifdef _SQL_COMPILE
-		stream_printf(c->fdout,"result of sql.eval()\n");
+		stream_printf(c->fdout,"#SQLstatement:\n");
+#endif
+			scanner_query_processed(&(m->scanner));
+			MSinitClientPrg(c,"user",nme); 
+			if (s==0 || (err = mvc_status(m))) {
+				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+				handle_error(m, c->fdout, pstatus);
+				sqlcleanup(m, err);
+				/* restore the state */
+				freeSymbol(c->curprg);
+				c->curprg= oldsym;
+				goto endofcompile;
+			}
+			/* generate MAL code */
+			backend_callinline(sql, c, s );
+			addQueryToCache(c); 
+
+			if( c->curprg->def->errors){
+				/* restore the state */
+				freeSymbol(c->curprg);
+				c->curprg= oldsym;
+				goto endofcompile;
+			}
+
+#ifdef _SQL_COMPILE
+		stream_printf(c->fdout,"#result of sql.eval()\n");
 		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 #endif
 
-		if ( execute) {
-			backend *be = c->state[MAL_SCENARIO_PARSER];
-			if (!output)
-				sql->out = NULL; /* no output */
-			c->state[MAL_SCENARIO_PARSER] = sql;
-			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
-			c->state[MAL_SCENARIO_PARSER] = be;
-			MSresetInstructions(c->curprg->def, 1);
-			freeVariables(c,c->curprg->def, 0, 0);
-			c->curprg= oldsym;
+			if ( execute) {
+				backend *be = c->state[MAL_SCENARIO_PARSER];
+				if (!output)
+					sql->out = NULL; /* no output */
+				c->state[MAL_SCENARIO_PARSER] = sql;
+				msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+				c->state[MAL_SCENARIO_PARSER] = be;
+				MSresetInstructions(c->curprg->def, 1);
+				freeVariables(c,c->curprg->def, 0, 0);
+				c->curprg= oldsym;
+			}
 		}
-	}
 #ifdef _SQL_COMPILE
 	stream_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif
+	}
 @-
 We are done; a MAL procedure recides in the cache.
 @c
