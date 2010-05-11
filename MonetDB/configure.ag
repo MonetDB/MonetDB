@@ -94,17 +94,16 @@ AC_COMPILE_IFELSE(AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }]),
 
 # Checks for library functions.
 
-# OSX 10.6 (Snow Leopard) somehow makes configure believe that fdatasync
-# exists, in reality however, it does not on this platform.
-AC_CACHE_CHECK([for fdatasync],[ac_cv_func_fdatasync],[
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include <unistd.h>
-  ]],[[
-fdatasync(4);
-  ]])],
-  [ac_cv_func_fdatasync=yes],
-  [ac_cv_func_fdatasync=no])
-])
+case $host in
+	*-darwin10*)
+		# OSX 10.6 (Snow Leopard) somehow makes configure believe that fdatasync
+		# exists, in reality however, it does not on this platform.
+		ac_cv_func_fdatasync=no
+	;;
+	*)
+		AC_CHECK_FUNCS([fdatasync])
+	;;
+esac
 AS_IF([test "x${ac_cv_func_fdatasync}" = "xyes"],
   [AC_DEFINE([HAVE_FDATASYNC],[1],[If the system has a working fdatasync])])
 
