@@ -59,10 +59,19 @@ comment "Compare a bat of @1 against a singleton";
 @:compareOp(@1,>,GT)@
 @:compareOp(@1,>=,GE)@
 
+@= unaryISNIL
+    command batcalc.isnil(b:bat[:any_1,:@1]):bat[:any_1,:bit]
+    address MTIMEunaryISNIL
+    comment "Unary check for nil over the tail of the bat";
+
 @mal
 @:compareGrp(date)@
 @:compareGrp(daytime)@
 @:compareGrp(timestamp)@
+
+@:unaryISNIL(date)@
+@:unaryISNIL(daytime)@
+@:unaryISNIL(timestamp)@
 
 @+ Implementation
 @h
@@ -100,6 +109,7 @@ batmtime_export str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l);
 batmtime_export str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r);
 batmtime_export str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst);
 batmtime_export str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l);
+batmtime_export str MTIMEunaryISNIL(int *ret, int *bid);
 
 @- Comparison operator implementation for temporal objects
 The structure of this code is copied from the arithmetic scheme.
@@ -464,5 +474,55 @@ The implementation section.
 @:implCmpOp(timestamp,<=,LE)@
 @:implCmpOp(timestamp,>,GT)@
 @:implCmpOp(timestamp,>=,GE)@
+
+@= accumUnaryISNIL
+{
+    @1 *p = (@1*)Tloc(b,BUNfirst(b));
+    @1 *q = (@1*)Tloc(b,BUNlast(b)); 
+    BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+    if (b->T->nonil){
+        for(; p<q; p++, o++ )
+            *o = FALSE;
+    } else
+        for(; p<q; p++, o++ )
+            *o = @1_isnil(*p);
+    BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
+}
+@c
+str MTIMEunaryISNIL(int *ret, int *bid)
+{
+    BAT *b,*bn;
+    bit *o;
+
+    @:getBATdescriptor(bid,b,"batcalc.isnil")@
+    @:voidresultBAT(TYPE_bit,"batcalc.isnil")@
+
+    o = (bit*)Tloc(bn,BUNfirst(bn));
+	if ( BATttype(b) == TYPE_date) {
+		@:accumUnaryISNIL(date)@ 
+	} else
+	if ( BATttype(b) == TYPE_daytime) {
+		@:accumUnaryISNIL(daytime)@ 
+	} else
+	if ( BATttype(b) == TYPE_timestamp) {
+		@:accumUnaryISNIL(timestamp)@ 
+	} 
+
+    BATsetcount(bn, BATcount(b));
+    bn->tsorted = 0;
+    BATkey(BATmirror(bn),FALSE);
+
+    if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+
+    if (b->htype != bn->htype) {
+        BAT *r = VIEWcreate(b,bn);
+
+        BBPreleaseref(bn->batCacheid);
+        bn = r;
+    }
+    BBPkeepref(*ret = bn->batCacheid);
+    BBPreleaseref(b->batCacheid);
+    return MAL_SUCCEED;
+}
 
 @}
