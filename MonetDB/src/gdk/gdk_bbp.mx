@@ -1907,6 +1907,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 
 		b = BBPquickdesc(i, TRUE);
 		if (b && destroy) {
+			BATaccessBegin(b, USE_HEAD | USE_TAIL, MMAP_DONTNEED);
 			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
 		} else if (b) {
 			BATDEBUG {
