@@ -59,6 +59,9 @@ For the time being we assume that all commands are statically linked.
 #define RTLD_NOW_REPORT_ERROR   8
 #endif
 
+#include <sys/types.h> /* opendir */
+#include <dirent.h> /* opendir */
+
 /* #define DEBUG_MAL_LINKER */
 #define MONET64 1
 mal_export MALfcn getAddress(str filename, str modnme, str fcnname,int silent);
@@ -71,7 +74,7 @@ mal_export int isPreloaded(str nme);
 mal_export int isLoaded(str modulename);
 #endif
 @-
-The MAL module should be compiled with -rdynamic and -ldl.
+The MAL module should be compiled with -rdynamic and -ldl (Linux).
 This enables loading the routines and finding out the address
 of a particular routine.
 The mapping from MAL module.function() identifier to an address is
@@ -83,7 +86,7 @@ a final attempt is made to locate the *.o file in
 the current directory.
 
 Note, however, that the libraries are reference counted. Although we
-do;t close them until end of session it seems prudent to maintain
+don't close them until end of session it seems prudent to maintain
 the consistency of this counter.
 
 @c
@@ -320,8 +323,14 @@ initLibraries()
 The plausible locations of the modules can be designated by
 an environment variable. 
 @c
+static int
+cmpstr(const void *p1, const void *p2)
+{
+	return strcmp(*(char* const*)p1, *(char* const*)p2);
+}
+
 static char *
-locate_file(const char *basename, const char *ext)
+locate_file(const char *basename, const char *ext, const bit recurse)
 {
 	char *mod_path = GDKgetenv("monet_mod_path");
 	char *fullname;
@@ -342,6 +351,7 @@ locate_file(const char *basename, const char *ext)
 		size_t i;
 		char *p;
 		int fd;
+		DIR *rdir;
 
 		if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
 			i = p - mod_path;
@@ -361,6 +371,44 @@ locate_file(const char *basename, const char *ext)
 		strncpy(fullname, mod_path, i);
 		fullname[i] = DIR_SEP;
 		strcpy(fullname + i + 1, basename);
+		/* see if this is a directory, if so, recurse */
+		if (recurse == 1 && (rdir = opendir(fullname)) != NULL) {
+			struct dirent *e;
+			str strs[48]; /* hardwired limit */
+			int lasts = 0;
+			int c;
+			/* list *ext, sort, return */
+			while ((e = readdir(rdir)) != NULL) {
+				if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
+					continue;
+				if (strcmp(e->d_name + strlen(e->d_name) - strlen(ext), ext) == 0) {
+					strs[lasts] = GDKmalloc(strlen(fullname) +
+							sizeof(DIR_SEP) + strlen(e->d_name) + 1);
+					sprintf(strs[lasts], "%s%c%s",
+							fullname, DIR_SEP, GDKstrdup(e->d_name));
+					lasts++;
+				}
+				if (lasts >= 48)
+					break;
+			}
+			(void)closedir(rdir);
+			if (lasts > 0) {
+				/* assure that an ordering such as 10_first, 20_second works */
+				qsort(strs, lasts, sizeof(char *), cmpstr);
+				i = 0;
+				for (c = 0; c < lasts; c++)
+					i += strlen(strs[c]) + 1; /* PATH_SEP or \0 */
+				fullname = GDKrealloc(fullname, i);
+				i = 0;
+				for (c = 0; c < lasts; c++) {
+					strcpy(fullname + i, strs[c]);
+					i += strlen(strs[c]);
+					fullname[i++] = PATH_SEP;
+				}
+				fullname[i - 1] = '\0';
+				return fullname;
+			}
+		}
 		strcat(fullname + i + 1, ext);
 		if ((fd = open(fullname, O_RDONLY)) >= 0) {
 			close(fd);
@@ -379,11 +427,7 @@ locate_file(const char *basename, const char *ext)
 char *
 MSP_locate_script(const char *filename)
 {
-	char *f;
-	f= locate_file(filename, MAL_EXT);
-	if ( f == NULL)
-		f= locate_file(filename, SQL_EXT);
-	return f;
+	return locate_file(filename, MAL_EXT, 1);
 }
 
 char *
@@ -395,7 +439,7 @@ MSP_locate_file(const char *filename)
 	strcpy(lib_name, SO_PREFIX);
 	strcpy(lib_name + strlen(SO_PREFIX), filename);
 
-	fullname = locate_file(lib_name, SO_EXT);
+	fullname = locate_file(lib_name, SO_EXT, 0);
 #ifdef _AIX
 	fullname = GDKrealloc(fullname, strlen(fullname) + strlen(lib_name) + 5);
 	strcat(fullname, "(");
