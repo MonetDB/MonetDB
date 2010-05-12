@@ -61,7 +61,7 @@ case "$1" in
         init
 
         echo -n "Starting $DESC: "
-        start-stop-daemon --start --exec $DAEMON -- $DAEMON_OPTS
+        start-stop-daemon --start --exec $DAEMON -c monetdb:monetdb -- $DAEMON_OPTS
         if running ; then
             echo "$NAME."
         else
