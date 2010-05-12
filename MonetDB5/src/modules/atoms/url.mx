@@ -59,6 +59,14 @@ command url(s:str) :url
 address URLnew
 comment "Create an URL from a string literal";
 
+command url(s:url) :url
+address URLnoop
+comment "Create an URL from a string literal";
+
+command calc.url(s:url) :url
+address URLnoop
+comment "Create an URL from a string literal";
+
 command getAnchor(u:url) :str
 address URLgetAnchor
 comment "Extract the URL anchor (reference)";
@@ -180,6 +188,7 @@ typedef str url;
 
 url_export str escape_str(str *retval, str s);
 url_export str unescape_str(str *retval, str s);
+url_export str URLnoop(str *url, str *val);
 url_export str URLnew(str *url, str *val);
 url_export str URLgetAnchor(str *retval, str *val);
 url_export str URLgetBasename(str *retval, str *t);
@@ -1103,4 +1112,9 @@ URLnew4(str *url, str *protocol, str *server, int *port, str *file)
 	return MAL_SUCCEED;
 }
 
+str URLnoop(str *url, str *val)
+{
+	*url = GDKstrdup(*val);
+	return MAL_SUCCEED;
+}
 @}
