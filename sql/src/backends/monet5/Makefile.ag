@@ -64,4 +64,11 @@ headers_mal = {
 	SOURCES = sql.mx sql_bpm.mx sql_emptyset.mx
 }
 
+headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 40_sql.mal
+}
+
+EXTRA_DIST = 40_sql.mal
 EXTRA_DIST_DIR = Tests

@@ -44,4 +44,11 @@ headers_mal = {
 	SOURCES = rdf.mx
 }
 
+headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 10_rdf.mal
+}
+
 #EXTRA_DIST_DIR = Tests
+EXTRA_DIST = 10_rdf.mal
