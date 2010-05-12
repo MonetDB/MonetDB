@@ -24,6 +24,8 @@ If you use python 3.* you should use mapi3.py
 import socket
 import logging
 import struct
+import hashlib
+import crypt
 
 from monetdb.monetdb_exceptions import *
 
@@ -169,22 +171,16 @@ class Server:
         if protocol == '9':
             algo = challenges[5]
             if algo == 'SHA512':
-                import hashlib
                 password = hashlib.sha512(password).hexdigest()
             elif algo == 'SHA384':
-                import hashlib
                 password = hashlib.sha384(password).hexdigest()
             elif algo == 'SHA256':
-                import hashlib
                 password = hashlib.sha256(password).hexdigest()
             elif algo == 'SHA224':
-                import hashlib
                 password = hashlib.sha224(password).hexdigest()
             elif algo == 'SHA1':
-                import hashlib
                 password = hashlib.sha1(password).hexdigest()
             elif algo == 'MD5':
-                import hashlib
                 password = hashlib.md5(password).hexdigest()
             else:
                 raise NotSupportedError("The %s hash algorithm is not " +
@@ -194,19 +190,16 @@ class Server:
 
         h = hashes.split(",")
         if "SHA1" in h:
-            import hashlib
             s = hashlib.sha1()
             s.update(password.encode())
             s.update(salt.encode())
             pwhash = "{SHA1}" + s.hexdigest()
         elif "MD5" in h:
-            import hashlib
             m = hashlib.md5()
             m.update(password.encode())
             m.update(salt.encode())
             pwhash = "{MD5}" + m.hexdigest()
         elif "crypt" in h:
-            import crypt
             pwhash = "{crypt}" + crypt.crypt((password+salt)[:8], salt[-2:])
         else:
             pwhash = "{plain}" + password + salt
@@ -229,7 +222,7 @@ class Server:
             unpacked = struct.unpack('<H', flag)[0]
             length = unpacked >> 1
             last = unpacked & 1
-            logger.debug("II: reading %i bytes" % length)
+            logger.debug("II: reading %i bytes, last: %s" % (length, bool(last)))
             if length > 0:
                 result.append(self.__getbytes(length))
 
@@ -257,7 +250,7 @@ class Server:
                 last = 1
             flag = struct.pack( '<H', ( length << 1 ) + last )
             try:
-                logger.debug("II: sending %i bytes, last: %s" % (length, last))
+                logger.debug("II: sending %i bytes, last: %s" % (length, bool(last)))
                 logger.debug("TX: %s" % data)
                 self.socket.send(flag)
                 self.socket.send(data)
