@@ -467,14 +467,6 @@ The implementation section.
 @:baselineCode(timestamp,GT)@
 @:baselineCode(timestamp,GE)@
 
-@-
-@:implCmpOp(timestamp,==,EQ)@
-@:implCmpOp(timestamp,!=,NEQ)@
-@:implCmpOp(timestamp,<,LT)@
-@:implCmpOp(timestamp,<=,LE)@
-@:implCmpOp(timestamp,>,GT)@
-@:implCmpOp(timestamp,>=,GE)@
-
 @= accumUnaryISNIL
 {
     @1 *p = (@1*)Tloc(b,BUNfirst(b));
@@ -497,7 +489,7 @@ str MTIMEunaryISNIL(int *ret, int *bid)
     @:getBATdescriptor(bid,b,"batcalc.isnil")@
     @:voidresultBAT(TYPE_bit,"batcalc.isnil")@
 
-    o = (bit*)Tloc(bn,BUNfirst(bn));
+	o = (bit*)Tloc(bn,BUNfirst(bn));
 	if ( BATttype(b) == TYPE_date) {
 		@:accumUnaryISNIL(date)@ 
 	} else
@@ -508,7 +500,7 @@ str MTIMEunaryISNIL(int *ret, int *bid)
 		@:accumUnaryISNIL(timestamp)@ 
 	} 
 
-    BATsetcount(bn, BATcount(b));
+	BATsetcount(bn, BATcount(b));
     bn->tsorted = 0;
     BATkey(BATmirror(bn),FALSE);
 

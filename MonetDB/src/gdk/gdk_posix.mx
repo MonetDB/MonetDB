@@ -954,6 +954,10 @@ MT_mmap_inform(void *base, size_t len, int preload, int advice, int writable)
 			MT_mmap_tab[i].writable = (writable > 0);
 		MT_mmap_tab[i].random += preload * (advice == MMAP_WILLNEED);	/* done as a counter to keep track of multiple threads */
 		MT_mmap_tab[i].usecnt += preload;	/* active thread count */
+		if ( advice == MMAP_DONTNEED){
+			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), MMAP_DONTNEED);
+			MT_mmap_tab[i].usecnt = 0;
+		} else
 		if (MT_mmap_tab[i].usecnt == 0)
 			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), MMAP_SEQUENTIAL);
 	}
