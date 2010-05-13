@@ -60,7 +60,6 @@ For the time being we assume that all commands are statically linked.
 #endif
 
 #include <sys/types.h> /* opendir */
-#include <dirent.h> /* opendir */
 
 /* #define DEBUG_MAL_LINKER */
 #define MONET64 1
