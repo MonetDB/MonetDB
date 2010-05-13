@@ -597,8 +597,6 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
  	ac = m->session->auto_commit;
 	SQLtrans(m);
 	pstatus = m->session->status;
-	if (!m->sa)
-		m->sa = sa_create();
 
 	o = NEW(mvc);
 	if (!o)
@@ -634,6 +632,8 @@ System has been prepared to parse it and generate code.
 Scan the complete string for SQL statements, stop at the first error.
 @c
 	for( ;; ){
+		if (!m->sa)
+			m->sa = sa_create();
 		m->sym = NULL;
 		if ( (err = sqlparse(m)) ||
 			/* Only forget old errors on transaction boundaries */
@@ -701,6 +701,7 @@ We don;t search the cache for a previous incarnation yet.
 				freeVariables(c,c->curprg->def, 0, 0);
 				c->curprg= oldsym;
 			}
+			sqlcleanup(m, 0);
 		}
 #ifdef _SQL_COMPILE
 	stream_printf(c->fdout, "#parse/execute result %d\n", err);
