@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -19,12 +18,15 @@
 # All Rights Reserved.
 
 import unittest
+import warnings
+import sys
 import os
 
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger('monetdb')
 
+import capabilities
 import dbapi20
 
 try:
@@ -34,6 +36,9 @@ except ImportError:
     parent = os.path.join(sys.path[0], '..')
     sys.path.append(parent)
     import monetdb.sql
+
+
+warnings.filterwarnings('error')
 
 
 class TextTestRunnerNoTime(unittest.TextTestRunner):
@@ -61,7 +66,28 @@ class TextTestRunnerNoTime(unittest.TextTestRunner):
         return result
 
 
-class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
+class Test_Capabilities(capabilities.DatabaseTest):
+    MAPIPORT = int(os.environ.get('MAPIPORT', 50000))
+    TSTDB = os.environ.get('TSTDB', 'demo')
+    db_module = monetdb.sql
+    connect_args = ()
+    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=False)
+    leak_test = False
+
+    def test_bigresult(self):
+        self.cursor.execute('select count(*) from tables')
+        r = self.cursor.fetchone()
+        n = r[0]
+        self.cursor.arraysize=1000
+        self.cursor.execute('select * from tables, tables')
+        r = self.cursor.fetchall()
+        self.assertEquals(len(r), n**2)
+
+
+
+
+
+class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
     MAPIPORT = int(os.environ.get('MAPIPORT', 50000))
     TSTDB = os.environ.get('TSTDB', 'demo')
 
@@ -217,8 +243,20 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(Test_Monetdb_Sql)
+
+    if Test_Capabilities.leak_test:
+        import gc
+        gc.enable()
+        gc.set_debug(gc.DEBUG_LEAK)
+
+    suite1 = unittest.TestLoader().loadTestsFromTestCase(Test_Capabilities)
     # if you want to run a single test:
     #suite = unittest.TestLoader().loadTestsFromName('test_newline', Test_Monetdb_Sql)
-    TextTestRunnerNoTime(verbosity=3).run(suite)
+
+    suite2 = unittest.TestLoader().loadTestsFromTestCase(Test_DBAPI20)
+    #suite = unittest.TestLoader().loadTestsFromName('test_REAL', Test_Monetdb_Sql)
+
+    TextTestRunnerNoTime(verbosity=3).run(suite1)
+    TextTestRunnerNoTime(verbosity=3).run(suite2)
+
 
