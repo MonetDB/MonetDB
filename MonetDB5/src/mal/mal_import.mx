@@ -75,6 +75,7 @@ static stream *
 malOpenSource(str file)
 {
 	stream *fd = NULL;
+
 	if (file)
 		fd = open_rastream(file);
 	return fd;
@@ -242,9 +243,9 @@ str
 evalFile(Client c, str fname, int listing){
 	@:restoreState@
 	stream *fd;
-	str msg= MAL_SUCCEED;
 	str p;
 	str filename;
+	str msg= MAL_SUCCEED;
 
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
 	c->promptlength = 0;

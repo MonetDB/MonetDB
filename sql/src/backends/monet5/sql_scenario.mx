@@ -417,30 +417,28 @@ SQLinitClient(Client c)
 Based on the initialization retun value we can prepare a SQLinit string with all information needed
 to initialize the catalog based on the mandatory scripts to be executed.
 @c
-	if ( SQLnewcatalog > 0  && sqlinit == NULL){
-		char path[PATHLENGTH];
+	if (SQLnewcatalog > 0 && sqlinit == NULL) {
 		str fullname;
 
-		snprintf(path,PATHLENGTH,"createdb.sql");
-		slash_2_dir_sep(path);
-		fullname = MSP_locate_script(path);
+		fullname = MSP_locate_sqlscript("createdb");
 		if (fullname) {
 			fd = open_rastream(fullname);
 			GDKfree(fullname);
 
-			if ( fd) {
+			if (fd) {
 				bfd = bstream_create(fd, 128 * BLOCK);
-				stream_printf(c->fdout,"# SQL catalog created, load the sql scripts once\n");
-				if( bfd == 0 || bstream_next(bfd) < 0) {
-					sqlinit= bfd->buf;
+				stream_printf(c->fdout, "# SQL catalog created, "
+						"initial load of sql scripts\n");
+				if (bfd == 0 || bstream_next(bfd) < 0) {
+					sqlinit = bfd->buf;
 					SQLnewcatalog = INT_MAX;
 				}
 			}
-		} 
-		if ( SQLnewcatalog != INT_MAX)
-			stream_printf(c->fdout,"#WARNING: could not read createdb.sql\n");
+		}
+		if (SQLnewcatalog != INT_MAX)
+			stream_printf(c->fdout, "#WARNING: could not read createdb.sql\n");
 	}
-	if (sqlinit) { /* add sqlinit to the fdin stack */
+	if (sqlinit) {     /* add sqlinit to the fdin stack */
 		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
 		bstream *fdin;
@@ -450,7 +448,7 @@ to initialize the catalog based on the mandatory scripts to be executed.
 		bstream_next(fdin);
 		MCpushClientInput(c, fdin, 0, "");
 	}
-	if ( SQLnewcatalog == INT_MAX){
+	if (SQLnewcatalog == INT_MAX) {
 		stream_close(fd);
 		stream_destroy(fd);
 	}
@@ -744,32 +742,6 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE);
 	if( msg == MAL_SUCCEED)
 		*ret= _strdup("SQLcompile");
-	return msg;
-}
-@-
-Locate a file with SQL commands to execution.
-@c
-str
-SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    stream *fd;
-	bstream *bfd;
-	str *name = (str *) getArgReference(stk,pci,1);
-	str msg = MAL_SUCCEED;
-	str *expr;
-
-    fd = openSourceFile(*name);
-    if (stream_errnr(fd) == OPEN_ERROR) {
-        stream_destroy(fd);
-        throw(MAL, "sql.include", "could not open file: %s\n", *name);
-    }
-    bfd = bstream_create(fd, 128 * BLOCK);
-    if( bstream_next(bfd) < 0)
-        throw(MAL,"sql.include","could not read %s\n", *name);
-
-	expr = &bfd->buf;
-	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE);
-	(void) mb;
 	return msg;
 }
 
