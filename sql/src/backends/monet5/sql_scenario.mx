@@ -79,6 +79,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_namespace.h"
 #include "mal_sabaoth.h"
 #include "mal_debugger.h"
+#include "mal_linker.h"
 #include "bat5.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -159,9 +160,6 @@ SQLprelude(void)
 	if (!s)
 		throw(MAL, "sql.start", "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
-	if (sqlinit == NULL) {
-		/* gather the database initialization scripts*/
-	}
 	s->name = "S_Q_L";
 	s->language = "sql";
 	s->initSystem = NULL;
@@ -407,6 +405,8 @@ SQLinitClient(Client c)
 	mvc *m;
 	str schema;
 	backend *be;
+	bstream *bfd = NULL;
+	stream *fd = NULL;
 
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLinitClient\n");
@@ -417,11 +417,28 @@ SQLinitClient(Client c)
 Based on the initialization retun value we can prepare a SQLinit string with all information needed
 to initialize the catalog based on the mandatory scripts to be executed.
 @c
-	if ( SQLnewcatalog > 0  && sqlinit == NULL){
-		stream_printf(GDKout,"# SQL catalog created, load the sql scripts once\n");
-		SQLnewcatalog = 0;
+	if (SQLnewcatalog > 0 && sqlinit == NULL) {
+		str fullname;
+
+		fullname = MSP_locate_sqlscript("createdb");
+		if (fullname) {
+			fd = open_rastream(fullname);
+			GDKfree(fullname);
+
+			if (fd) {
+				bfd = bstream_create(fd, 128 * BLOCK);
+				stream_printf(c->fdout, "# SQL catalog created, "
+						"initial load of sql scripts\n");
+				if (bfd == 0 || bstream_next(bfd) < 0) {
+					sqlinit = bfd->buf;
+					SQLnewcatalog = INT_MAX;
+				}
+			}
+		}
+		if (SQLnewcatalog != INT_MAX)
+			stream_printf(c->fdout, "#WARNING: could not read createdb.sql\n");
 	}
-	if (sqlinit) { /* add sqlinit to the fdin stack */
+	if (sqlinit) {     /* add sqlinit to the fdin stack */
 		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
 		bstream *fdin;
@@ -431,6 +448,11 @@ to initialize the catalog based on the mandatory scripts to be executed.
 		bstream_next(fdin);
 		MCpushClientInput(c, fdin, 0, "");
 	}
+	if (SQLnewcatalog == INT_MAX) {
+		stream_close(fd);
+		stream_destroy(fd);
+	}
+	SQLnewcatalog = 0;
 	if (c->state[MAL_SCENARIO_PARSER] == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 		global_variables(m, "monetdb", "sys");
