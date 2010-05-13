@@ -21,7 +21,7 @@ headers_sql = {
 	HEADERS = sql
 	DIR = libdir/MonetDB5
 	SOURCES = \
-		creatdb.mx \
+		createdb.mx \
 		clients.sql cluster.sql \
 		date.sql history.sql inet.sql \
 		math.sql mtime.sql \
