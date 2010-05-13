@@ -230,14 +230,16 @@ class Server:
 
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""
-        try:
-            recv = self.socket.recv(bytes)
-            if len(recv) != bytes:
-                raise OperationalError("expected %s bytes but received %s bytes" % bytes, len(recv))
-            return recv
-        except socket.error, error:
-            raise OperationalError(error[1])
-
+        count = bytes
+        result = ""
+        while count > 0:
+            try:
+                recv = self.socket.recv(bytes)
+            except socket.error, error:
+                raise OperationalError(error[1])
+            count -= len(recv)
+            result += recv
+        return result
 
     def __putblock(self, block):
         """ wrap the line in mapi format and put it into the socket """
