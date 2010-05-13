@@ -30,3 +30,11 @@ headers_mal = {
 	DIR = libdir/MonetDB5
 	SOURCES = geom.mx
 }
+
+headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 50_geom.mal
+}
+
+EXTRA_DIST = 50_geom.mal

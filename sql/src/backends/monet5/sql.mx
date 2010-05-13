@@ -68,11 +68,6 @@ pattern eval(cmd:str, output:bit):void
 address SQLstatement
 comment "Compile and execute a single sql statement (and optionaly send output on the output stream)";
 
-pattern include(fname:str):void 
-address SQLinclude
-comment "Load and execute the SQL script identified. A relatief path is resolved 
-from the lib/MonetDB5 installation directory.";
-
 pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";

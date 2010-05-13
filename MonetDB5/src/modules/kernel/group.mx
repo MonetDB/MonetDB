@@ -2804,7 +2804,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 
 	/* scan b, and add increment totals for true values */
 	if (range > SMALL_AGGR_MAX) {
-		if (*ignore_nils) {
+		if (*ignore_nils && !b->T->nonil) {
 			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" OIDFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", range, SMALL_AGGR_MAX);
 
 			@:large_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@
@@ -2814,7 +2814,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 			@:large_aggr_count()@
 		}
 	} else {
-		if (*ignore_nils) {
+		if (*ignore_nils && !b->T->nonil) {
 			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" OIDFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", range, SMALL_AGGR_MAX);
 
 			@:small_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@

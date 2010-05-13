@@ -15,10 +15,14 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-MTSAFE
+from distutils.core import setup
 
-headers_py = {
-	DIR = $(prefix)/$(PYTHON_LIBDIR)/monetdb/sql
-	HEADERS = py
-	SOURCES = __init__.py connections.py converters.py cursors.py type_codes.py
-}
+setup(name='python-monetdb',
+      version='1.0',
+      description='Native MonetDB client Python API',
+      author='Gijs Molenaar',
+      author_email='gijs.molenaar@cwi.nl',
+      url='http://www.monetdb.nl',
+      packages=['monetdb', 'monetdb.sql'],
+     )
+

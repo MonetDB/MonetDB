@@ -255,22 +255,9 @@ include opt_remoteQueries;
 include crackers; 
 
 @-
-Experimental code can be in various degrees of development.
-Their ommission is not a show stopper for normal operation.
-@-
-The RDF module stuff
 @mal
-include tokenizer;
-include rdf;
-@-
-Functional enhancements to the MonetDB system are language
-compilers, such as sql. We attempt to load them if they exist.
-@mal
-include sql;
-@-
-Similar, SQL may be extended with modules to refine it, e.g.
-the geom module add GIS specific functionalty. Likewise, we attempt
-to load it.
-@mal
-include geom;
+# Any extensions (MAL scripts) that should be automatically loaded upon
+# startup can be placed in the autoload directory.  One typically finds
+# the SQL module in here, but it can also be used to load custom scripts.
+include autoload;
 @-

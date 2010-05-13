@@ -582,10 +582,11 @@ class DatabaseAPI20Test(unittest.TestCase):
                 cur.execute(sql)
 
             cur.execute('select name from %sbooze' % self.table_prefix)
+            cur.arraysize=1
             r = cur.fetchmany()
             self.assertEqual(len(r),1,
                 'cursor.fetchmany retrieved incorrect number of rows, '
-                'default of arraysize is one.'
+                'should get 1 rows, received %s' % len(r)
                 )
             cur.arraysize=10
             r = cur.fetchmany(3) # Should get 3 rows

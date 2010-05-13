@@ -15,14 +15,5 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-from distutils.core import setup
-
-setup(name='monetdb.sql',
-      version='1.0',
-      description='Native MonetDB driver',
-      author='Gijs Molenaar',
-      author_email='gijs.molenaar@cwi.nl',
-      url='http://www.monetdb.nl',
-      packages=['monetdb', 'monetdb.sql'],
-     )
-
+# This loads the MonetDB/GIS module
+include geom;

@@ -24,57 +24,47 @@ To illustrate, consider
 @verbatim
 	(ext1,grp1) := group.new(b);
 	(ext2,grp2) := group.derive(ext1,grp1, c);
-	(ext3,grp3) := group.derive(ext2,grp2, d);
+	(ext3,grp3) := group.done(ext2,grp2, d);
 @end verbatim
 The result becomes.
 @verbatim
 	(ext3,grp3) := group.derivepath(b,c,d);
 @end verbatim
 
-Another example is where we are looking for distinct values.
-Then we don't need the extend and can fall back to a simple histogram
-trimming the count part. In the fragment below, the ext1 lifetime
-ends at the groups.new function.
-@verbatim
-	(ext1,grp1) := group.new(b);
-	d:= bat.mirror(ext1);
-	ext1 := nil;
-@end verbatim
+The implementation of this operator can freely re-order the BATs 
+for reduced intermediate results or as a basis for parallel scanning
+all BATs involved to derive their group id.
 
-@{
-Experiments on the airtraffic database gave the following results.
-@verbatim
-SELECT DISTINCT("AirlineID") FROM ontime 
-Looking at cold/hot run "AirlineID" decimal(8,2) DEFAULT NULL,
-cold Timer   15560.180 msec 
-hot Timer    6284.703 msec 
-After addition of the derivePath optimizer to turn it into kunique.
-cold Timer   15328.508 msec
-hot Timer    3713.352 msec
-
-a cold/hot "Year" smallint DEFAULT NULL,
-cold Timer    5517.951 msec 
-hot Timer    1288.417 msec 
-With deriverPath
-cold Timer    9961.625 msec
-hot Timer    3153.128 msec
-turning off derivePath optimizer again
-hot Timer    1318.827 msec
-
-conclusion (after a few more checks)
-perhaps kunique needs some techniques from group.new. 
-@end verbatim
-SELECT DISTINCT("year") FROM ontime 
+The collection can be extended to immediately aim for group counting
+or summation, avoiding the materialisation of the group id table.
 @mal
 pattern optimizer.derivePath():str
 address OPTderivePath;
 pattern optimizer.derivePath(mod:str, fcn:str):str
 address OPTderivePath
 comment "Join path constructor";
-pattern group.derivePath(l:bat[:oid,:any]...)(:bat[:oid,:any],:bat[:oid,:any])
+
+pattern group.derivePath(l:bat[:oid,:any]...)(grp:bat[:oid,:any],ext:bat[:oid,:any])
 address ALGderivePath
-comment "internal routine to handle derivation paths.
-	The type analysis is rather tricky.";
+comment "Derive a group index.";
+
+pattern group.deriveCount(l:bat[:oid,:any]...):bat[:oid,:wrd]
+address ALGderiveCount
+comment "Derive a group count.";
+
+pattern group.deriveSum(s:bat[:oid,:int],l:bat[:oid,:any]...):bat[:oid,:int]
+address ALGderiveSum
+comment "Derive a group sum.";
+pattern group.deriveSum(s:bat[:oid,:lng],l:bat[:oid,:any]...):bat[:oid,:lng]
+address ALGderiveSum
+comment "Derive a group sum.";
+pattern group.deriveSum(s:bat[:oid,:flt],l:bat[:oid,:any]...):bat[:oid,:flt]
+address ALGderiveSum
+comment "Derive a group sum.";
+pattern group.deriveSum(s:bat[:oid,:dbl],l:bat[:oid,:any]...):bat[:oid,:dbl]
+address ALGderiveSum
+comment "Derive a group sum.";
+@{
 @h
 #ifndef _OPT_DERIVEPATH_
 #define _OPT_DERIVEPATH_
@@ -82,17 +72,20 @@ comment "internal routine to handle derivation paths.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/* #define DEBUG_OPT_DERIVEPATH  */
+#define DEBUG_OPT_DERIVEPATH  /**/
+opt_export str ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str ALGderiveCount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str ALGderiveSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "mal_config.h"
 #include "opt_derivepath.h"
+#include "group.h"
 
 static int
 OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, actions=0;
+	int i, actions=0;
 	int *pc;
-	str derivePathRef = putName("derivePath",10);
 	InstrPtr q;
 	InstrPtr *old;
 	int limit,slimit;
@@ -121,57 +114,33 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if (getModuleId(p) == groupRef && p->argc == 3 &&
-		   (getFunctionId(p) == newRef || getFunctionId(p) == doneRef)){
-			if ( getEndLifespan(span,getArg(p,1)) == i  ){
-				/* we are only interested in the distinct values */
-				/* trafo:  (ext,grp):= group.new(B);
-				   becomes: br:= bat.reverse(B);
-							kb:= algebra.kunique(br);
-							ext:= bat.reverse(kb);
-				*/
-				q= newStmt(mb,batRef, reverseRef);
-				q= pushArgument(mb,q,getArg(p,2));
-				delArgument(p,1);
-				clrFunction(p);
-				setModuleId(p,algebraRef);
-				setFunctionId(p,kuniqueRef);
-				getArg(p,1) = getArg(q,0);
-				j = getArg(p,0);
-				pushInstruction(mb,p);
-				q= newStmt(mb,batRef, reverseRef);
-				pushArgument(mb,q,getArg(q,0));
-				getArg(p,0) = getArg(q,0);
-				getArg(q,0) = j;
-				clrVarUDFtype(mb,j);
-				clrVarFixed(mb,j);
-				setVarType(mb,j,TYPE_any);
-				actions++;
-				continue;
-			} else {
+		if (getModuleId(p) == groupRef && p->argc == 3 && getFunctionId(p) == newRef ){
+				setFunctionId(p,derivePathRef);
 				pc[getArg(p,0)] = i;
 				pc[getArg(p,1)] = i;
-			}
-		}
-		if (getModuleId(p) == groupRef && p->argc == 5 &&
-		   (getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef)){
-@-
-Try to expand its argument list with what we have found so far.
-This creates a series of join paths, many of which will be removed during deadcode elimination.
-@c
-			if (pc[getArg(p,2)]== pc[getArg(p,3)]){
-				q= copyInstruction(getInstrPtr(mb,pc[getArg(p,2)]));
-				q= pushArgument(mb,q, getArg(p,4));
-				getArg(q,0)= getArg(p,0);
-				getArg(q,1)= getArg(p,1);
-				pc[getArg(p,0)] = i;
-				pc[getArg(p,1)] = i;
-				setFunctionId(q,derivePathRef);
-				p= q;
 				actions++;
 #ifdef DEBUG_OPT_DERIVEPATH 
 				stream_printf(cntxt->fdout,"new derivePath instruction\n");
-				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+#endif
+		}
+		if (getModuleId(p) == groupRef && p->argc == 5 && (getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef)){
+@-
+Try to expand its argument list with what we have found so far.
+This creates a series of derive paths, many of which will be removed during deadcode elimination.
+@c
+			if (pc[getArg(p,2)] && pc[getArg(p,2)]== pc[getArg(p,3)]){
+				q= copyInstruction(getInstrPtr(mb,pc[getArg(p,2)]));
+				q= pushArgument(mb,q, getArg(p,4));
+				getArg(q,0) = getArg(p,0);
+				getArg(q,1) = getArg(p,1);
+				pc[getArg(q,0)] = i;
+				pc[getArg(q,1)] = i;
+				freeInstruction(p);
+				p= q;
+#ifdef DEBUG_OPT_DERIVEPATH 
+				stream_printf(cntxt->fdout,"new derivePath instruction extension\n");
+				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 #endif
 			}
 		} 
@@ -196,21 +165,68 @@ opt_export str ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 #include "opt_statistics.h"
 @:wrapOptimizer(derivePath,OPT_CHECK_ALL)@
 @-
-The derive path optimizer takes a derivation sequence and
-attempts to minimize the intermediate result.
-The choice depends on a good estimate of intermediate
-results using properties.
-For the time being, we use a simplistic model, based
-on the assumption that most joins are foreign key joins anyway.
+The derive path optimizer takes a derivation sequence and attempts to minimize the intermediate result.
+The choice depends on a good estimate of intermediate results using properties.
+For the time being, we use a simplistic model, based on the assumption that most joins are foreign key joins anyway.
 @c
+typedef struct{
+	int *arg;
+	BAT *b;
+} Elm;
 str
 ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *grp = (int*) getArgReference(stk,pci,0);
+	int *ext = (int*) getArgReference(stk,pci,1);
+	Elm *path = (Elm *) GDKzalloc(pci->argc * sizeof(Elm));
+	int i, newgrp, newext;
+	str msg = MAL_SUCCEED;
+
+	if ( path == NULL)
+		throw(MAL,"group.derivePath",MAL_MALLOC_FAIL);
+	/* collect the properties (histograms) for all columns */
+	for ( i = 2; i < pci->argc; i++){
+		path[i].arg = (int*) getArgReference(stk,pci,i);
+	}
+	/* determine an optimal order for derivation by reshuffling */
+
+	msg = GRPgroup(grp, ext, path[2].arg);
+	for ( i=3; msg == MAL_SUCCEED && i < pci->argc; i++){
+		msg = GRPderive(&newgrp, &newext, grp, ext, path[i].arg);
+		if ( msg == MAL_SUCCEED){
+			BBPreleaseref(*grp);
+			BBPreleaseref(*ext);
+			*grp = newgrp;
+			*ext = newext;
+		}
+	}
+	/* remove the histograms */
+	for ( i = 2; i < pci->argc; i++){
+	}
+	GDKfree(path);
+	(void) cntxt;
+	(void) mb;
+	return msg;
+}
+
+str
+ALGderiveCount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	throw(MAL,"group.derivePath",PROGRAM_NYI);
+	throw(MAL,"group.deriveCount",PROGRAM_NYI);
+}
+
+str
+ALGderiveSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw(MAL,"group.deriveSum",PROGRAM_NYI);
 }
 
 @}
