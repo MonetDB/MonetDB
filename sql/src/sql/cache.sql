@@ -16,9 +16,6 @@
 -- All Rights Reserved.
 
 -- The SQL query cache
-create function query_cache () 
+create function queryCache () 
 	returns table (query string, count int) 
 	external name sql.dump_cache;
-
---create function query_clear_cache()
---	external name sql.clear_cache;

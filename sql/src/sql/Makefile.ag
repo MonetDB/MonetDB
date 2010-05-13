@@ -19,10 +19,10 @@ headers_sql = {
 	HEADERS = sql
 	DIR = datadir/MonetDB/sql
 	SOURCES = \
-		admin.sql bbp.sql \
-		cache.sql clients.sql cluster.sql \
+		createdb.mx \
+		clients.sql cluster.sql \
 		date.sql history.sql inet.sql \
 		math.sql mtime.sql \
-		stats.sql times.sql url.sql \
+		times.sql url.sql \
 		dependency_functions.sql skyserver.sql
 }

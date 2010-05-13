@@ -88,6 +88,7 @@ we update its context descriptor to denote an SQL scenario.
 #include <unistd.h>
 
 static int SQLinitialized = 0;
+static int SQLnewcatalog = 0;
 static int SQLdebug = 0;
 static char *sqlinit = NULL;
 MT_Lock sql_contextLock;
@@ -158,6 +159,9 @@ SQLprelude(void)
 	if (!s)
 		throw(MAL, "sql.start", "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
+	if (sqlinit == NULL) {
+		/* gather the database initialization scripts*/
+	}
 	s->name = "S_Q_L";
 	s->language = "sql";
 	s->initSystem = NULL;
@@ -266,11 +270,11 @@ SQLinit(void)
 	if (readonly)
 		SQLdebug |= 32;
 	dbname = GDKgetenv("gdk_dbname");
-	if (((SQLdebug&16)==16 && mvc_init(dbname, FALSE, store_bpm, 0) < 0) ||
-			((SQLdebug&96)==96 && mvc_init(dbname, FALSE, store_suro, 0) < 0) ||
-			((SQLdebug&96)==64 && mvc_init(dbname, FALSE, store_su, 0) < 0) ||
-			((SQLdebug&96)==32 && mvc_init(dbname, FALSE, store_ro, 0) < 0) ||
-			((SQLdebug&112)==0 && mvc_init(dbname, FALSE, store_bat, 0) < 0))
+	if (((SQLdebug&16)==16 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bpm, 0)) < 0) ||
+			((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_suro, 0)) < 0) ||
+			((SQLdebug&96)==64 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_su, 0)) < 0) ||
+			((SQLdebug&96)==32 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_ro, 0)) < 0) ||
+			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bat, 0)) < 0))
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
 	mal_unset_lock(sql_contextLock,"SQL init");
@@ -409,7 +413,14 @@ SQLinitClient(Client c)
 #endif
 	if (SQLinitialized == 0 )
 		SQLprelude();
-
+@-
+Based on the initialization retun value we can prepare a SQLinit string with all information needed
+to initialize the catalog based on the mandatory scripts to be executed.
+@c
+	if ( SQLnewcatalog > 0  && sqlinit == NULL){
+		stream_printf(GDKout,"# SQL catalog created, load the sql scripts once\n");
+		SQLnewcatalog = 0;
+	}
 	if (sqlinit) { /* add sqlinit to the fdin stack */
 		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
@@ -586,7 +597,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	scanner_init( &m->scanner, 
 		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
 		NULL);
-	m->scanner.mode = LINE_1; 
+	m->scanner.mode = LINE_N; 
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
