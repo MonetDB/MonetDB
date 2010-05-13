@@ -38,6 +38,7 @@ mx2fgr = re.compile("^@fgr[ \t\r\n]+", re.MULTILINE)
 mx2cfg = re.compile("^@cfg[ \t\r\n]+", re.MULTILINE)
 mx2tcl = re.compile("^@tcl[ \t\r\n]+", re.MULTILINE)
 mx2swig = re.compile("^@swig[ \t\r\n]+", re.MULTILINE)
+mx2sql = re.compile("^@sql[ \t\r\n]+", re.MULTILINE)
 mx2java = re.compile("^@java[ \t\r\n]+", re.MULTILINE)
 mx2xsl = re.compile("^@xsl[ \t\r\n]+", re.MULTILINE)
 mx2sh = re.compile("^@sh[ \t\r\n]+", re.MULTILINE)
@@ -57,6 +58,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2cfg, '.cfg'),
                   (mx2fgr, '.fgr'),
                   (mx2tcl, '.tcl'),
+                  (mx2sql, '.sql'),
                   (mx2swig, '.i'),
                   (mx2java, '.java'),
                   (mx2xsl, '.xsl'),
@@ -76,6 +78,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2fgr, '.fgr'),
                   (mx2cfg, '.cfg'),
                   (mx2tcl, '.tcl'),
+                  (mx2sql, '.sql'),
                   (mx2swig, '.i'),
                   (mx2java, '.java'),
                   (mx2xsl, '.xsl'),
