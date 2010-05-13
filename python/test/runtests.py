@@ -32,6 +32,7 @@ import dbapi20
 try:
     import monetdb.sql
 except ImportError:
+    print "monetdb python API not found, using local monetdb python API"
     import sys
     parent = os.path.join(sys.path[0], '..')
     sys.path.append(parent)

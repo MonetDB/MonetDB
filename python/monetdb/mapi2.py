@@ -18,7 +18,7 @@
 """
 this is the python 2.* implementation of the mapi API.
 
-If you use python 3.* you should use mapi3.py
+the python 3.* implementation is in mapi3.py
 """
 
 import socket
@@ -214,9 +214,6 @@ class Server:
         last = 0
         while not last:
             flag = self.__getbytes(2)
-            if len(flag) != 2:
-                raise OperationalError("server returned %s bytes, I need 2" %
-                        len(flag))
 
             # unpack (little endian short)
             unpacked = struct.unpack('<H', flag)[0]
@@ -234,7 +231,10 @@ class Server:
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""
         try:
-            return self.socket.recv(bytes)
+            recv = self.socket.recv(bytes)
+            if len(recv) != bytes:
+                raise OperationalError("expected %s bytes but received %s bytes" % bytes, len(recv))
+            return recv
         except socket.error, error:
             raise OperationalError(error[1])
 
