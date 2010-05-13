@@ -17,9 +17,9 @@
 
 from distutils.core import setup
 
-setup(name='monetdb.sql',
+setup(name='python-monetdb',
       version='1.0',
-      description='Native MonetDB driver',
+      description='Native MonetDB client Python API',
       author='Gijs Molenaar',
       author_email='gijs.molenaar@cwi.nl',
       url='http://www.monetdb.nl',
