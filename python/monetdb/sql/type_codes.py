@@ -45,6 +45,7 @@ SHORTINT = 'shortint'
 MEDIUMINT = 'mediumint'
 LONGINT = 'longint'
 FLOAT = 'float'
+TIMESTAMPTZ = 'timestamptz'
 
 
 # full names and aliases, spaces are replaced with underscores
@@ -54,3 +55,4 @@ CHARACHTER_LARGE_OBJECT = CLOB
 BINARY_LARGE_OBJECT = BLOB
 NUMERIC = DECIMAL
 DOUBLE_PRECISION = DOUBLE
+

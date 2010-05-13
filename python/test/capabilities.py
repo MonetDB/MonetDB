@@ -300,6 +300,15 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIMESTAMP',),
                  generator)
 
+    def test_TIMESTAMPTZ(self):
+        ticks = time()
+        def generator(row,col):
+            return self.db_module.TimestampFromTicks(ticks+row*86400-col*1313)
+        self.check_data_integrity(
+                 ('col1 TIMESTAMPTZ',),
+                  generator)
+
+
 
     def test_fractional_TIMESTAMP(self):
         ticks = time()
