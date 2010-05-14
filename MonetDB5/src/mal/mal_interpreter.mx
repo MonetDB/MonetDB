@@ -1118,6 +1118,7 @@ runDFLOWworker(void *t)
 		if ( fs == oldfs){
 			MT_sleep_ms(10); 
 			q_requeue(task->todo,fs);
+			oldfs = 0;	/* don't escape it always */
 			continue;
 		}
 		oldfs = fs;
