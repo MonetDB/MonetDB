@@ -68,6 +68,10 @@ pattern eval(cmd:str, output:bit):void
 address SQLstatement
 comment "Compile and execute a single sql statement (and optionaly send output on the output stream)";
 
+pattern include(fname:str):void 
+address SQLinclude
+comment "Compile and execute a sql statements on the file";
+
 pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
@@ -793,8 +797,8 @@ function mmath.rand{inline}( v:int ) :int;
 	return rand := x;
 end mmath.rand;
 
-pattern cluster(sch:str, tbl:str)
-address SQLcluster
+pattern cluster1(sch:str, tbl:str)
+address SQLcluster1
 comment "Cluster the columns of a table on the (first) primary key";
 
 pattern cluster2(sch:str, tbl:str)
@@ -1079,7 +1083,7 @@ sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
 sql5_export str not_unique_oids(bat *ret, bat *bid);
-sql5_export str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -4845,7 +4849,7 @@ re-clustered on the hash value over the  primary key.
 Initially the first column
 @c
 
-str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_trans	*tr;

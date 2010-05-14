@@ -465,7 +465,7 @@ to initialize the catalog based on the mandatory scripts to be executed.
 		SQLnewcatalog = 0;
 		snprintf(path,PATHLENGTH,"createdb");
 		slash_2_dir_sep(path);
-		fullname = MSP_locate_script(path);
+		fullname = MSP_locate_sqlscript(path);
 		if (fullname) {
 			fd = open_rastream(fullname);
 			GDKfree(fullname);
@@ -655,7 +655,6 @@ Now is the time to also perform the semantic analysis,
 optimize and produce code.
 We don;t search the cache for a previous incarnation yet.
 @c
-#define _SQL_COMPILE
 		{	
 			Symbol oldsym= c->curprg;
 			stmt *s = sql_symbol2stmt(m, m->sym);
@@ -666,7 +665,9 @@ We don;t search the cache for a previous incarnation yet.
 			scanner_query_processed(&(m->scanner));
 			MSinitClientPrg(c,"user",nme); 
 			if (s==0 || (err = mvc_status(m))) {
-				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+				if ( m->errstr && *m->errstr)
+					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+				else	msg = MAL_SUCCEED; /* assume end of parse */
 				handle_error(m, c->fdout, pstatus);
 				sqlcleanup(m, err);
 				/* restore the state */
@@ -753,6 +754,38 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE);
 	if( msg == MAL_SUCCEED)
 		*ret= _strdup("SQLcompile");
+	return msg;
+}
+@-
+Locate a file with SQL commands and execute it. For the time being a 1MB
+file limit is implicitly imposed. If the file can not be located in the
+script library, we assume it is sufficiently self descriptive.
+(Respecting the file system context where the call is executed )
+@c
+str
+SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    stream *fd;
+	bstream *bfd;
+	str *name = (str *) getArgReference(stk,pci,1);
+	str msg = MAL_SUCCEED, fullname;
+	str *expr;
+
+    fullname= MSP_locate_sqlscript(*name);
+	if ( fullname == NULL)
+		fullname= *name;
+	fd = open_rastream(fullname);
+    if (stream_errnr(fd) == OPEN_ERROR) {
+        stream_destroy(fd);
+        throw(MAL, "sql.include", "could not open file: %s\n", *name);
+    }
+    bfd = bstream_create(fd, 128 * BLOCK);
+    if( bstream_next(bfd) < 0)
+        throw(MAL,"sql.include","could not read %s\n", *name);
+
+	expr = &bfd->buf;
+	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE);
+	(void) mb;
 	return msg;
 }
 

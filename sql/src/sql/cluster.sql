@@ -18,8 +18,11 @@
 -- For, the oid's are used in join-indices.
 
 -- Clustering of tables may improve IO performance
-create procedure cluster(sys string, tab string)
-	external name sql.cluster;
+-- The foreign key constraints should be dropped before
+-- and re-established after the cluster operation.
+
+create procedure cluster1(sys string, tab string)
+	external name sql.cluster1;
 
 create procedure cluster2(sys string, tab string)
 	external name sql.cluster2;
