@@ -65,10 +65,18 @@ static str
 malResolveFile(str fname)
 {
 	char path[PATHLENGTH];
+	str script;
 
 	snprintf(path, PATHLENGTH, "%s", fname);
 	slash_2_dir_sep(path);
-	return MSP_locate_script(path);
+	if ((script = MSP_locate_script(path)) == NULL) {
+		/* this function is also called for scripts that are not located
+		 * in the modpath, so if we can't find it, just default to
+		 * whatever was given, as it can be in current dir, or an
+		 * absolute location to somewhere */
+		script = GDKstrdup(fname);
+	}
+	return script;
 }
 
 static stream *
