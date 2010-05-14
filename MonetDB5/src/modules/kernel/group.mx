@@ -244,18 +244,16 @@ macros identical to file names.
 #define group_export extern
 #endif
 
-group_export int CTderive(BAT **B, BAT **H, BAT *ct_hist, BAT *ct_map, BAT *b);
-group_export int CTgroup(BAT **B, BAT **H, BAT *b);
-
+group_export str GRPprelude(void);
 group_export str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng);
 group_export str GRPgroup(int *rethisto, int *retbid, int *bid);
-
-group_export str GRPprelude(void);
 group_export str GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize);
 group_export str GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid);
-group_export str GRPsubhisto(int *retid, int *selid, int *grpid, int *domid);
 group_export str GRPrefine(int *retid, int *bid, int *aid);
 group_export str GRPrefine_rev(int *retid, int *bid, int *aid);
+
+/* used by rdf_shredder.mx */
+group_export int CTrefine(BAT **res, BAT *b, BAT *a);
 
 #endif /* _GROUP_H_ */
 @c
@@ -265,7 +263,7 @@ group_export str GRPrefine_rev(int *retid, int *bid, int *aid);
 static int TYPE_mapentry;
 
 
-int
+static int
 grp_new(BAT *b, BAT *h)
 {
 	if (h) {
@@ -471,7 +469,7 @@ settings differ significantly from the original datamining application.
 #define group_params_CUSTOM   BUN custom_MASK, BUN custom_rng,
 
 @= groupAll
-BAT *
+static BAT *
 CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 {
 	BATiter bi = bat_iterator(b), mapi;
@@ -591,7 +589,7 @@ tailtype(BAT *b, int str_trick)
 #define declare_mask_STANDARD	/* fixed */
 #define declare_mask_CUSTOM	BUN mask = (((BUN)1) << *N) - 1;
 
-int
+static int
 CTgroup(BAT **retval,		/* put pointer to BAT[oid,oid] record here. */
 	BAT **hbat,		/* put histogram BAT here */
 	BAT *b			/* pointer to BAT[oid,oid] record. */
@@ -600,7 +598,7 @@ CTgroup(BAT **retval,		/* put pointer to BAT[oid,oid] record here. */
 	@:CTgroupbody(STANDARD)@
 }
 
-int
+static int
 CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
    BAT **hbat,	/* put histogram BAT here */
    BAT *b,		/* pointer to BAT[oid,oid] record. */
@@ -718,8 +716,11 @@ bits(BUN i)
 	}
 
 @c
+static int
+CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b);
+
 #define SAMPLE_SIZE 	1024
-BUN
+static BUN
 derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 {
 	BUN cnt = BATcount(b);
@@ -948,7 +949,7 @@ I will prepare the respective code.
 */
 
 /* partion based sub-order derive */
-int 
+static int 
 CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto) 
 {
 	BAT *bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
@@ -1116,143 +1117,13 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt, map_T *m)
 	return grp_new(bn, histo);
 }
 
-int
+static int
 CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b)
 {
 	int ret;
 
 	ret = derive(H, M, ct_histo, ct_map, b, tailtype(b, TRUE), NULL);
 	return ret;
-}
-
-@-
-The routine CThistosum takes an grouping and a histogram and produces
-a new histogram by summing the old values within the same group.
-@c
-int
-CThistosum(
-	BAT**	retval,	/* put pointer to BAT[oid,wrd] record here. */
-	BAT*	b,	/* pointer to BAT[oid,oid] record. */
-	BAT*	c	/* pointer to BAT[oid,wrd] record. */
-)
-{
-	BATiter bi = bat_iterator(b), resi;
-	BAT *res = BATnew(TYPE_oid, TYPE_wrd, BATcount(b));
-	BUN p, q, qb;
-	wrd i, *z;
-	oid *ot, *oh;
-
-	(void) c;
-	if (res == NULL)
-		return GDK_FAIL;
-
-	resi = bat_iterator(res);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATloop(b, p, q) {
-		oh = (oid *) BUNhloc(bi, p);
-		i = *(wrd *) BUNtloc(bi, p);
-
-		BUNfndOID(qb, bi, oh);
-		if (qb == BUN_NONE) {
-			GDKerror("CThistosum: Matching count entry not found\n");
-			continue;
-		}
-		ot = (oid *) BUNtloc(bi, qb);
-
-		BUNfndOID(qb, resi, ot);
-		if (qb == BUN_NONE) {
-			BUNins(res, ot, &i, FALSE);
-		} else {
-			z = (wrd *) BUNtloc(resi, qb);
-			*z += i;
-		}
-	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	res->hsorted = res->tsorted = 0;
-	if (!(res->batDirty&2)) res = BATsetaccess(res, BAT_READ);
-	*retval = res;
-	return GDK_SUCCEED;
-}
-
-int
-CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
-{
-	BATiter seli = bat_iterator(sel);
-	bit *filter = (bit *) BUNtloc(seli, BUNfirst(sel));
-	BUN size = BATcount(dom);
-	BUN yy, mask, *hash = NULL;
-	BUN r, p, q;
-	BAT *bn, *lnk;
-	wrd *hcnt;
-	oid *hcur, *link, *hdom;
-
-	bn = BATnew(TYPE_oid, TYPE_wrd, size);
-	if (bn == NULL)
-		return GDK_FAIL;
-	lnk = BATnew(TYPE_oid, TYPE_void, size);
-	if (lnk == NULL)
-		return GDK_FAIL;
-	
-	hcnt = (wrd*)Tloc(bn, BUNfirst(bn));
-	hcur = (oid*)Hloc(bn, BUNfirst(bn));
-	link = (oid*)Hloc(lnk, BUNfirst(lnk));
-	hdom = (oid*)Hloc(dom, 0);
-
-	/* we know the domain; go for perfect hashing */
-	for (mask = 1; mask < size; mask <<= 1)
-		;
-	if (mask < 256)
-		mask = 256;
-	hash = (BUN *) GDKmalloc(sizeof(BUN) * mask);
-	if (hash == NULL) {
-		BBPreclaim(bn);
-		BBPreclaim(lnk);
-		return GDK_FAIL;
-	}
-	for (yy = 0; yy < mask; yy++) {
-		hash[yy] = BUN_NONE;
-	}
-	mask--;
-
-	/* insert all values in the hash table, and in bn with count zero */
-	r = 0;
-	yy = 0;
-	BATloop(dom, p, q) {
-		oid v = hdom[p];
-		BUN c = v & mask;
-
-		hcur[r] = v;
-		link[r] = hash[c];
-		hcnt[r] = 0;
-		r++;
-		hash[c] = yy;
-		yy++;
-	}
-	BATsetcount(bn, r);
-	bn->tsorted = 0;
-
-	/* add the counts for this selection using the hash table */
-	BATloop(grp, p, q) {
-		if (*filter == TRUE) {
-			oid v = *(oid *) Tloc(grp, p);
-			BUN c = v & mask;
-
-			for (yy = hash[c]; yy != BUN_NONE; yy = link[r]) {
-				r = yy;
-				if (hcur[r] == v) {
-					hcnt[r]++;
-					break;
-				}
-			}
-		}
-		filter++;
-
-	}
-	GDKfree(hash);
-	BBPreclaim(lnk);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-	*ret = bn;
-	return GDK_SUCCEED;
 }
 
 @+ Support for Order-by
@@ -1466,7 +1337,7 @@ CTrefine(BAT **res, BAT *b, BAT *a)
 	return refine(res, b, a, FALSE);
 }
 
-int
+static int
 CTrefine_rev(BAT **res, BAT *b, BAT *a)
 {
 	return refine(res, b, a, TRUE);
@@ -1513,7 +1384,7 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 }
 
 @= group_ordered
-BAT *
+static BAT *
 CTgroup_@1_ordered(BAT *b, BAT **res) 
 {
 	BAT *bn;
@@ -1730,38 +1601,6 @@ GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(ct_map->batCacheid);
 	BBPreleaseref(ct_histo->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-GRPsubhisto(int *retid, int *selid, int *grpid, int *domid)
-{
-	BAT *sel, *grp, *dom;
-	BAT *bn;
-
-	if ((sel = BATdescriptor(*selid)) == NULL) {
-		throw(MAL, "group.subhisto", RUNTIME_OBJECT_MISSING);
-	}
-	if ((grp = BATdescriptor(*grpid)) == NULL) {
-		BBPreleaseref(sel->batCacheid);
-		throw(MAL, "group.subhisto", RUNTIME_OBJECT_MISSING);
-	}
-	@:chkHeader(grp,GRPsubhisto)@
-	if ((dom = BATdescriptor(*domid)) == NULL) {
-		throw(MAL, "group.subhisto", RUNTIME_OBJECT_MISSING);
-	}
-
-	if ((dom = BATdescriptor(*domid)) == NULL) {
-		BBPreleaseref(sel->batCacheid);
-		BBPreleaseref(grp->batCacheid);
-		throw(MAL, "group.subhisto", RUNTIME_OBJECT_MISSING);
-	}
-	CTsubhisto(&bn, sel, grp, dom);
-	*retid = bn->batCacheid;
-	BBPkeepref(*retid);
-	BBPreleaseref(sel->batCacheid);
-	BBPreleaseref(grp->batCacheid);
-	BBPreleaseref(dom->batCacheid);
 	return MAL_SUCCEED;
 }
 
