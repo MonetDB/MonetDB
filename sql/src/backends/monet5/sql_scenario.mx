@@ -755,32 +755,6 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ret= _strdup("SQLcompile");
 	return msg;
 }
-@-
-Locate a file with SQL commands to execution.
-@c
-str
-SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    stream *fd;
-	bstream *bfd;
-	str *name = (str *) getArgReference(stk,pci,1);
-	str msg = MAL_SUCCEED;
-	str *expr;
-
-    fd = openSourceFile(*name);
-    if (stream_errnr(fd) == OPEN_ERROR) {
-        stream_destroy(fd);
-        throw(MAL, "sql.include", "could not open file: %s\n", *name);
-    }
-    bfd = bstream_create(fd, 128 * BLOCK);
-    if( bstream_next(bfd) < 0)
-        throw(MAL,"sql.include","could not read %s\n", *name);
-
-	expr = &bfd->buf;
-	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE);
-	(void) mb;
-	return msg;
-}
 
 @-
 The SQL reader collects a (sequence) of statements from the input
