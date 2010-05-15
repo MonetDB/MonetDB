@@ -49,8 +49,8 @@ create table callHistory(
 	id wrd references queryHistory(id), -- references query plan
 	ctime timestamp,	-- time the first statement was executed
 	arguments string,
-	xtime bigint,		-- time from the first statement until result export
-	rtime bigint,		-- time to ship the result to the client
+	exec bigint,		-- time from the first statement until result export
+	result bigint,		-- time to ship the result to the client
 	foot bigint, 		-- footprint for all bats in the plan
 	memory bigint,		-- storage size of intermediates created
 	tuples wrd,			-- number of tuples in the result set
