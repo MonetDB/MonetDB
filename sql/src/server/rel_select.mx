@@ -4091,7 +4091,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 	}
 	case SQL_TABLE: {
 		/* turn a subquery into a tabular result */
-		*rel = rel_subquery(sql, *rel, se->data.sym, ek);
+		*rel = rel_selects(sql, se->data.sym);// *rel, se->data.sym, ek);
 		if (*rel)
 			return rel_find_lastexp(*rel);
 		return NULL;

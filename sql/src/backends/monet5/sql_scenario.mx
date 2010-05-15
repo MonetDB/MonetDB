@@ -571,15 +571,16 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 static str
 SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 {
-	int pstatus = 0;
+	int status = 0;
 	int err = 0;
 	mvc *o, *m;
 	int ac, sizevars, topvars;
 	sql_var *vars;
 	buffer *b;
 	char *n;
+	stream *buf;
 	str msg = MAL_SUCCEED;
-	backend *sql = ((backend *) c->state[MAL_SCENARIO_PARSER]);
+	backend *be, *sql = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	size_t len = strlen(*expr);
 
 #ifdef _SQL_COMPILE
@@ -595,15 +596,16 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	initSQLreferences();
 	m = sql->mvc;
  	ac = m->session->auto_commit;
-	SQLtrans(m);
-	pstatus = m->session->status;
-
 	o = NEW(mvc);
 	if (!o)
 		throw(SQL, "SQLstatement", "Out of memory");
 	*o = *m;
 
+	SQLtrans(m);
+	status = m->session->status;
+
 	m->type= Q_PARSE;
+	be = sql;
 	sql = backend_create(m, c);
 	m->qc = NULL;
 	m->prepare_qc = NULL;
@@ -617,9 +619,8 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	n[len+1] = 0;
 	len++;
 	buffer_init(b, n, len);
-	scanner_init( &m->scanner, 
-		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
-		NULL);
+	buf = buffer_rastream(b, "sqlstatement");
+	scanner_init( &m->scanner, bstream_create(buf , b->len), NULL);
 	m->scanner.mode = LINE_N; 
 	bstream_next(m->scanner.rs);
 
@@ -627,11 +628,15 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	m->argc = 0;
 	m->session->auto_commit = 0;
 
+	/* create private allocator */
+	m->sa = sa_create();
+
 @-
 System has been prepared to parse it and generate code.
 Scan the complete string for SQL statements, stop at the first error.
 @c
-	for( ;; ){
+	c->state[MAL_SCENARIO_PARSER] = sql;
+	while( m->scanner.rs->pos < m->scanner.rs->len ){
 		if (!m->sa)
 			m->sa = sa_create();
 		m->sym = NULL;
@@ -640,12 +645,12 @@ Scan the complete string for SQL statements, stop at the first error.
 			(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 			if (!err)
 				err = mvc_status(m);
-			if( m->errstr)
+			if (m->errstr && *m->errstr)
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			else 
-				msg = createException(PARSE, "SQLparser", "Parser errors");
 			*m->errstr = 0;
 			sqlcleanup(m, err);
+			if (!err)
+				continue;
 			goto endofcompile;
 		}
 @-
@@ -656,7 +661,8 @@ optimize and produce code.
 We don;t search the cache for a previous incarnation yet.
 @c
 		{	
-			Symbol oldsym= c->curprg;
+			int oldvtop = c->curprg->def->vtop;
+			int oldstop = c->curprg->def->stop;
 			stmt *s = sql_symbol2stmt(m, m->sym);
 
 #ifdef _SQL_COMPILE
@@ -665,14 +671,13 @@ We don;t search the cache for a previous incarnation yet.
 			scanner_query_processed(&(m->scanner));
 			MSinitClientPrg(c,"user",nme); 
 			if (s==0 || (err = mvc_status(m))) {
-				if ( m->errstr && *m->errstr)
-					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-				else	msg = MAL_SUCCEED; /* assume end of parse */
-				handle_error(m, c->fdout, pstatus);
+				msg = createException(PARSE, "SQLparser", "%s", m->errstr?m->errstr:"");
+				handle_error(m, c->fdout, status);
 				sqlcleanup(m, err);
 				/* restore the state */
-				freeSymbol(c->curprg);
-				c->curprg= oldsym;
+				resetMalBlk(c->curprg->def, oldstop);
+				freeVariables(c,c->curprg->def, c->glb, oldvtop);
+				c->curprg->def->errors = 0;
 				goto endofcompile;
 			}
 			/* generate MAL code */
@@ -681,8 +686,9 @@ We don;t search the cache for a previous incarnation yet.
 
 			if( c->curprg->def->errors){
 				/* restore the state */
-				freeSymbol(c->curprg);
-				c->curprg= oldsym;
+				resetMalBlk(c->curprg->def, oldstop);
+				freeVariables(c,c->curprg->def, c->glb, oldvtop);
+				c->curprg->def->errors = 0;
 				goto endofcompile;
 			}
 
@@ -692,15 +698,13 @@ We don;t search the cache for a previous incarnation yet.
 #endif
 
 			if ( execute) {
-				backend *be = c->state[MAL_SCENARIO_PARSER];
 				if (!output)
 					sql->out = NULL; /* no output */
-				c->state[MAL_SCENARIO_PARSER] = sql;
 				msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
-				c->state[MAL_SCENARIO_PARSER] = be;
-				MSresetInstructions(c->curprg->def, 1);
-				freeVariables(c,c->curprg->def, 0, 0);
-				c->curprg= oldsym;
+				//MSresetInstructions(c->curprg->def, 1);
+				resetMalBlk(c->curprg->def, oldstop);
+				//freeVariables(c,c->curprg->def, 0, 0);
+				freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			}
 			sqlcleanup(m, 0);
 		}
@@ -712,11 +716,19 @@ We don;t search the cache for a previous incarnation yet.
 We are done; a MAL procedure recides in the cache.
 @c
 endofcompile:
+	MSresetInstructions(c->curprg->def, 1);
+
+	c->state[MAL_SCENARIO_PARSER] = be;
 	backend_destroy(sql);
 	GDKfree(n);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
+	stream_destroy(buf);
+	if (m->sa)
+		sa_destroy(m->sa);
+	m->sym = NULL;
 	/* variable stack maybe resized, ie we need to keep the new stack */
+	status = m->session->status;
 	sizevars = m->sizevars;
 	topvars = m->topvars;
 	vars = m->vars;
@@ -725,7 +737,9 @@ endofcompile:
 	m->sizevars = sizevars;
 	m->topvars = topvars;
 	m->vars = vars;
+	m->session->status = status;
 	m->session->auto_commit = ac;
+	m->last = NULL;
 	return msg;
 }
 

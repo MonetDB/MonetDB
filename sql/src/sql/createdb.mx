@@ -24,6 +24,7 @@ of SQL scripts to define auxillary functionality. We include all that
 is needed to run the tests.
 This MX script merely pulls the files together.
 @sql
+start transaction;
 @include math.sql
 @include times.sql
 @include url.sql
@@ -83,3 +84,4 @@ rdf.sql	-- depends on rdf module
 parts.sql	-- testing only
 replication.sql	-- testing only
 @sql
+commit;
