@@ -109,6 +109,8 @@ Prepare the call to the history manager.
 	@:arguments@
 	@:zeroCounter(memory,Lng,lng)@
 	@:zeroCounter(tuples,Wrd,wrd)@
+	newFcnCall(mb,"profiler","setFootprintFlag");
+	newFcnCall(mb,"profiler","setMemoryFlag");
 	q->argc--;
 	pushWrd(mb,q,1);
 	@:initCounter(inblock,profiler,getDiskReads,lng)@
