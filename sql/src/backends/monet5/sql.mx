@@ -4835,11 +4835,14 @@ sql_@1rank(bat *rid, bat *bid)
 @:rnk(dense_,nrank+=(c?1:0),2)@
 
 str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *ret;
+	str s, t, *ret;
 
 	(void) cntxt;
 	ret= (str *) getArgReference(stk,pci,0);
-	*ret = instruction2str(mb,stk,getInstrPtr(mb,0),LIST_MAL_VALUE);
+	s = instruction2str(mb,stk,getInstrPtr(mb,0),LIST_MAL_VALUE);
+	t= strchr(s,' ');
+	*ret = GDKstrdup(t ? t+1: s);
+	GDKfree(s);
 	return MAL_SUCCEED;
 }
 

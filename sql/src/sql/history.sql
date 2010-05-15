@@ -92,4 +92,10 @@ begin
 		foot, memory, tuples, inblock, oublock );
 end;
 
-set history=true;
+create procedure resetHistory()
+begin
+	delete from callHistory;
+	delete from queryHistory;
+end;
+
+-- set history=true;
