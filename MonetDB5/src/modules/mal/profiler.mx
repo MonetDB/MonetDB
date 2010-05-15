@@ -171,12 +171,19 @@ command getSystemTime():lng
 address CMDgetSystemTime
 comment "Obtain the user timing information.";
 
+pattern setFootprintFlag{unsafe}():void
+address CMDsetFootprintFlag
+comment "Trace memory footprint of BATs during query";
+pattern setMemoryFlag{unsafe}():void
+address CMDsetMemoryFlag
+comment "Trace memory accress";
+
 pattern getFootprint():lng
 address CMDgetFootprint
-comment "Get the memory footprint and reset it";
+comment "Get the memory footprint and reset the flag";
 pattern getMemory():lng
 address CMDgetMemory
-comment "Get the amount of memory claimed and reset it";
+comment "Get the amount of memory claimed and reset the flag";
 @{
 @-
 @+ Implementation
@@ -238,6 +245,8 @@ profiler_export str CMDgetDiskReads(lng *ret);
 profiler_export str CMDgetDiskWrites(lng *ret);
 profiler_export str CMDgetUserTime(lng *ret);
 profiler_export str CMDgetSystemTime(lng *ret);
+profiler_export str CMDsetFootprintFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDsetMemoryFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -523,21 +532,42 @@ CMDgetSystemTime(lng *ret)
 }
 
 str
+CMDsetFootprintFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	cntxt->flags |= bigfootFlag;
+	return MAL_SUCCEED;
+}
+
+str
 CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	lng *l= getArgReference(stk,pci,0);
 
 	(void) mb;
 	*l = cntxt->bigfoot;
+	cntxt->flags &= ~bigfootFlag;
 	cntxt->bigfoot= 0;
 	cntxt->vmfoot= 0;
 	return MAL_SUCCEED;
 }
+
+str
+CMDsetMemoryFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	cntxt->flags |= memoryFlag;
+	return MAL_SUCCEED;
+}
+
 str
 CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	lng *l= getArgReference(stk,pci,0);
 
 	(void) mb;
 	*l = cntxt->memory;
+	cntxt->flags &= ~memoryFlag;
 	cntxt->memory= 0;
 	return MAL_SUCCEED;
 }
