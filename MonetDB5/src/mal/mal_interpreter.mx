@@ -91,6 +91,10 @@ static struct{
 	int bid;
 } hotpotatoes[MAXHOT];
 static int hottop = 0;
+
+#define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
+#define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
+
 @-
 The struct alignment leads to 40% gain in simple instructions when set.
 @c
@@ -152,8 +156,8 @@ static INLINE void
 updateBigFoot(Client cntxt, int bid, int add)
 {
 	BAT *b;
-	lng memory;
-
+	lng total = 0,vol = 0;
+	
 	if (bid != bat_nil ){
 		BUN cnt = 0;
 		b= BBPquickdesc(ABS(bid),TRUE);
@@ -163,14 +167,17 @@ updateBigFoot(Client cntxt, int bid, int add)
 			return;
 		/* count it once ! */
 		cntxt->cnt = cnt = BATcount(b);
+		@:calcFootprint@
+		if ( b->H->hash )
+			total +=  cnt * sizeof(int);
+		if ( b->T->hash )
+			total +=  cnt * sizeof(int);
+		
 		if (add) {
-			memory = headsize(b,cnt) + tailsize(b,cnt);
-			cntxt->vmfoot += memory;
-			cntxt->memory += memory;
-		} else {
-			cntxt->vmfoot -= VIEWhparent(b)?0:headsize(b,cnt);
-			cntxt->vmfoot -= VIEWtparent(b)?0:tailsize(b,cnt);
-		}
+			cntxt->vmfoot += total;
+			cntxt->memory += total;
+		} else 
+			cntxt->vmfoot -= total;
 		/* correct for limitations by resetting */
 		if (cntxt->vmfoot < 0)
 			cntxt->vmfoot = 0;
@@ -644,12 +651,7 @@ all resource contention effects.
 
 Another option would be to maintain a priority queue of 
 suspended instructions.
-@= calcclaim
-t = total;
-if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-	b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-	if (b==NULL) 
-		continue;
+@= calcFootprint
 	heapinfo(&b->H->heap); total += vol;
 	heapinfo(b->H->vheap); total += vol;
 	hashinfo(b->H->hash); total += vol;
@@ -657,6 +659,13 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 	heapinfo(&b->T->heap); total += vol;
 	heapinfo(b->T->vheap); total += vol;
 	hashinfo(b->T->hash); total += vol;
+@= calcclaim
+t = total;
+if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+	b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+	if (b==NULL) 
+		continue;
+	@:calcFootprint@
 	/* prepare for hashes */
 	if ( b->H->hash == NULL && b->hsorted == 0  &&
 		 b->T->hash == NULL && b->tsorted == 0 ){
@@ -672,9 +681,6 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 	BBPunfix( h = b->batCacheid); 
 }
 @c
-#define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
-
 void
 getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *hotclaim)
 {
