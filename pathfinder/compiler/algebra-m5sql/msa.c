@@ -285,9 +285,7 @@ PFmsa_expr_func (PFmsa_expr_func_name name, PFmsa_exprlist_t *child_list,
     } 
     else if (elsize(child_list) > PFMSA_EXPR_MAXCHILD) 
     {
-        /* special cases */
-        
-        /* but for now, only show an error message */
+        /* show an error message */
         PFoops (OOPS_FATAL,
                 "MSA expression function: expression cannot have more "
                 "than %i children", PFMSA_EXPR_MAXCHILD);
@@ -328,7 +326,7 @@ PFmsa_expr_t * PFmsa_expr_num_gen (PFmsa_num_gen_kind_t kind, PFmsa_exprlist_t *
     } 
     else if (elsize(child_list) > PFMSA_EXPR_MAXCHILD) 
     {
-        /* special cases */
+        /* FIXME: special cases (expressions with more that 2 children) */
         
         /* but for now, only show an error message */
         PFoops (OOPS_FATAL,

@@ -854,9 +854,7 @@ alg2msa_worker(PFla_op_t *n)
                 memcpy(expr_cpy, expr, sizeof(PFmsa_expr_t));
                 
                 eladd(partlist) = expr_cpy;
-            } else 
-                /* otherwise, append col_NULL as partitioning column  */
-                eladd(partlist) = PFmsa_expr_column(col_NULL, aat_uA);
+            }
             
             for (i = 0; i < PFord_count (n->sem.sort.sortby); i++) {
                 curr_col = PFord_order_col_at (n->sem.sort.sortby, i);
@@ -930,11 +928,8 @@ alg2msa_worker(PFla_op_t *n)
             
             expr->sem.num_gen.sort_cols = elcopy(exprlist);
             
-            /* copy dummy partitioning column (col_NULL) into part_cols */
+            /* copy empty list into part_cols */
             exprlist = el(1);
-            
-            eladd(exprlist) = PFmsa_expr_column(col_NULL, aat_uA);
-            
             expr->sem.num_gen.part_cols = elcopy(exprlist);
             
             eladd(prj_list) = expr;
@@ -959,14 +954,12 @@ alg2msa_worker(PFla_op_t *n)
             
             /* rowid does not have partitioning or sort columns -> fill in dummy values*/
             
-            /* copy dummy partitioning column (col_NULL) into part_cols */
+            /* copy empty list into part_cols */
             exprlist = el(1);
-            eladd(exprlist) = PFmsa_expr_column(col_NULL, aat_uA);
             expr->sem.num_gen.part_cols = elcopy(exprlist);
             
-            /* copy dummy sort column (col_NULL) into sort_cols */
+            /* copy empty list into sort_cols */
             exprlist = el(1);
-            eladd(exprlist) = PFmsa_expr_column(col_NULL, aat_uA);
             expr->sem.num_gen.sort_cols = elcopy(exprlist);
             
             eladd(prj_list) = expr;

@@ -49,7 +49,6 @@
 
 #include "msa_mnemonic.h"
 
-
 /** Node names to print out for all the SQL algebra operator nodes. */
 static char *dot_op_id[]  = {
       [msa_op_serialize_rel]    = "REL SERIALIZE"
@@ -192,6 +191,8 @@ msa_atom_str(PFalg_atom_t atom)
     return ret;
 }
 
+/* --------------- Print operators and expressions --------------- */
+
 /**
  * Print SQL algebra expression in AT&T dot notation.
  * @param dot Array into which we print
@@ -202,7 +203,7 @@ msa_dot_expr (PFarray_t *dot, PFmsa_expr_t *n)
 {
     unsigned int c;
     assert(n->node_id);
-    printf("/* refctr here! %i */\n", n->refctr);
+    
     /* open up label */
     PFarray_printf (dot, "expr_%i [label=\"%s\\n", n->node_id, dot_expr_id[n->kind]);
     
@@ -228,15 +229,16 @@ msa_dot_expr (PFarray_t *dot, PFmsa_expr_t *n)
             PFarray_printf(dot, "%s\\n", dot_expr_num_gen_id[n->sem.num_gen.kind]);
             
             /* print partitioning columns */
+            
             if (n->sem.num_gen.kind == msa_num_gen_rownum)
             {
                 PFarray_printf(dot, "part cols: <");
-                for (c = 0; c < elsize(n->sem.num_gen.part_cols) - 1; c++) {
+                for (c = 0; c < elsize(n->sem.num_gen.part_cols); c++) {
                     expr = elat(n->sem.num_gen.part_cols, c);
                     PFarray_printf(dot, "%s, ", PFcol_str(expr->col));
                 }
-                expr = elat(n->sem.num_gen.part_cols, c);
-                PFarray_printf(dot, "%s>\\n", PFcol_str(expr->col));
+                PFarray_printf(dot, ">\\n");
+                
             }
             
             PFarray_printf(dot, "%s", PFcol_str(n->col));
@@ -302,7 +304,7 @@ msa_dot_op (PFarray_t *dot, PFarray_t *dot_expr, PFmsa_op_t *n)
 {
     unsigned int c, i, j;
     assert(n->node_id);
-    printf("/* refctr here! %i */\n", n->refctr);
+    
     /* open up label */
     PFarray_printf (dot, 
                     "node_%i [label=\"{ <op%i> %s\\n",
@@ -452,7 +454,7 @@ msa_dot_op (PFarray_t *dot, PFarray_t *dot_expr, PFmsa_op_t *n)
             
         case msa_op_table:
         {
-            PFarray_printf(dot, "%s\\n", n->sem.table.name);
+            PFarray_printf(dot, "| { table name: | %s}", n->sem.table.name);
             /* print original names of table */
             PFarray_printf(dot, "| { cols: ");
             for (i = 0; i < elsize(n->sem.table.expr_list); i++) {
@@ -579,221 +581,328 @@ msa_dot_op (PFarray_t *dot, PFarray_t *dot_expr, PFmsa_op_t *n)
     }
 }
 
-/* stub declaration */
-static unsigned int
-create_expr_id_in_list(PFmsa_exprlist_t *list, unsigned int i);
-
-static unsigned int
-create_expr_id_worker(PFmsa_expr_t *n, unsigned int i)
-{
-    if (n->bit_dag)
-        return i;
-    else
-        n->bit_dag = true;
-    
-    n->node_id = i++;
-    
-    /* If expression has expression list, set node id for expressions as well */
-    switch (n->kind) {
-        case msa_expr_num_gen:
-            i = create_expr_id_in_list(n->sem.num_gen.sort_cols, i);
-            i = create_expr_id_in_list(n->sem.num_gen.part_cols, i);
-            break;
-        default:
-            break;
-    }
-    
-    for (unsigned int c = 0; c < PFMSA_OP_MAXCHILD && n->child[c]; c++)
-        i = create_expr_id_worker (n->child[c], i);
-    
-    return i;
-}
-
-/* helper function to create node ids for
-   expressions in expression list */
-static unsigned int
-create_expr_id_in_list(PFmsa_exprlist_t *list, unsigned int i)
-{
-    unsigned int j;
-    for (j = 0; j < elsize(list); j++) {
-        PFmsa_expr_t *curr_expr = elat(list, j);
-        i = create_expr_id_worker(curr_expr, i);
-    }
-    return i;
-}
+/* --------------- DAG traversal functions --------------- */
 
 /* stub declaration */
-static unsigned int
-create_expr_id_in_list_(PFmsa_exprlist_t *list, unsigned int i);
+static unsigned int traverse_expr_list (PFmsa_exprlist_t *list, unsigned int node_id, 
+                                        unsigned int (*f) (PFmsa_expr_t *, unsigned int));
 
+/* Functions to perform the work */
+
+/* helper function that prepares the
+ DAG bit reset for expression nodes */
 static unsigned int
-create_expr_id_worker_(PFmsa_expr_t *n, unsigned int i)
+prepare_reset_expr(PFmsa_expr_t *n, unsigned int node_id)
+{
+    assert (n);
+    
+    /* no node_id used while preparing reset of bit_dag */
+    (void) node_id;
+    
+    if (n->bit_reset)
+        return 0;
+    else
+        n->bit_reset = true;
+    
+    return 0;
+}
+
+/* helper function that prepares the
+ DAG bit reset for expression nodes */
+static unsigned int
+prepare_reset_op(PFmsa_op_t *n, unsigned int node_id)
+{
+    assert (n);
+    
+    /* no node_id used while preparing reset of bit_dag */
+    (void) node_id;
+    
+    if (n->bit_reset)
+        return 0;
+    else
+        n->bit_reset = true;
+    
+    return 0;
+}
+
+/* helper function to reset the DAG bit in expressions */
+static unsigned int
+reset_expr (PFmsa_expr_t *n, unsigned int node_id)
+{
+    assert (n);
+    
+    /* no node_id used while resetting bit_dag */
+    (void) node_id;
+    
+    if (!n->bit_reset)
+        return 0;
+    
+    n->bit_reset = false;
+    n->bit_dag = false;
+    return 0;
+}
+
+/* helper function to reset the DAG bit in operators */
+static unsigned int
+reset_op (PFmsa_op_t *n, unsigned int node_id)
+{
+    assert (n);
+    
+    /* no node_id used while resetting bit_dag */
+    (void) node_id;
+    
+    if (!n->bit_reset)
+        return 0;;
+    
+    n->bit_reset = false;
+    n->bit_dag = false;
+    return 0;
+}
+
+/* helper function that sets the
+ node id for expression nodes */
+static unsigned int
+create_node_id_expr (PFmsa_expr_t *n, unsigned int node_id)
 {
     if (n->bit_dag)
-        return i;
+        return node_id;
     else
         n->bit_dag = true;
     
-    n->node_id = i++;
+    /* set node id */
+    n->node_id = node_id++;
     
-    /* If expression has expression list, set node id for expressions as well */
-    switch (n->kind) {
-        case msa_expr_num_gen:
-            i = create_expr_id_in_list_(n->sem.num_gen.sort_cols, i);
-            i = create_expr_id_in_list_(n->sem.num_gen.part_cols, i);
-            break;
-        default:
-            break;
-    }
-    
-    return i;
+    return node_id;
 }
 
-/* helper function to create node ids for
- expressions in expression list */
+/* helper function that sets the
+ node id for operators nodes */
 static unsigned int
-create_expr_id_in_list_(PFmsa_exprlist_t *list, unsigned int i)
-{
-    unsigned int j;
-    for (j = 0; j < elsize(list); j++) {
-        PFmsa_expr_t *curr_expr = elat(list, j);
-        i = create_expr_id_worker_(curr_expr, i);
-    }
-    return i;
-}
-
-static unsigned int
-create_node_id_worker (PFmsa_op_t *n, unsigned int i)
+create_node_id_op (PFmsa_op_t *n, unsigned int node_id)
 {
     if (n->bit_dag)
-        return i;
+        return node_id;
     else
         n->bit_dag = true;
-
-    n->node_id = i++;
     
-    /* If op has expression list, set node id for expressions as well */
+    /* set node id */
+    n->node_id = node_id++;
+    
+    return node_id;
+}
+
+/* helper function that resets the
+ node id for expression nodes */
+static unsigned int
+reset_node_id_expr(PFmsa_expr_t *n, unsigned int node_id)
+{
+    assert (n);
+    
+    /* no node_id used while preparing reset of bit_dag */
+    (void) node_id;
+    
+    /* reset node id */
+    n->node_id = 0;
+    
+    return 0;
+}
+
+/* helper function that resets the
+ node id for operator nodes */
+static unsigned int
+reset_node_id_op(PFmsa_op_t *n, unsigned int node_id)
+{
+    assert (n);
+    
+    /* no node_id used while preparing reset of bit_dag */
+    (void) node_id;
+    
+    /* reset node id */
+    n->node_id = 0;
+    
+    return 0;
+}
+
+/* helper function that infers the
+ reference counter for expression nodes */
+static unsigned int
+infer_refctr_expr(PFmsa_expr_t *n, unsigned int node_id)
+{
+    assert (n);
+    
+    /* no node_id used while preparing reset of bit_dag */
+    (void) node_id;
+    
+    /* count number of incoming edges */
+    n->refctr++;
+    
+    /* only descend once */
+    if (n->bit_dag)
+        return 0;
+    else {
+        n->bit_dag = true;
+        n->refctr = 1;
+    }
+    
+    return 0;
+}
+
+/* helper function that infers the
+ reference counter for operator nodes */
+static unsigned int
+infer_refctr_op(PFmsa_op_t *n, unsigned int node_id)
+{
+    assert (n);
+    
+    /* no node_id used while preparing reset of bit_dag */
+    (void) node_id;
+    
+    /* count number of incoming edges */
+    n->refctr++;
+    
+    /* only descend once */
+    if (n->bit_dag)
+        return 0;
+    else {
+        n->bit_dag = true;
+        n->refctr = 1;
+    }
+    
+    return 0;
+}
+
+/* Functions to traverse the DAG */
+
+/* Traverse an operator (and all of its children)
+ applying function f to its operators and function g
+ to its expressions */
+static unsigned int
+traverse_op (PFmsa_op_t *n, unsigned int node_id,
+             unsigned int (*f) (PFmsa_op_t *, unsigned int),
+             unsigned int (*g) (PFmsa_expr_t *, unsigned int))
+{
+    unsigned int i;
+    
+    /* do something with f */
+    node_id = f(n, node_id);
+    
+    /* In some operators, exressions have to be traversed as well,
+     applying function g */
     switch (n->kind) {
         case msa_op_project:
-            i = create_expr_id_in_list(n->sem.proj.expr_list, i);
+            node_id = traverse_expr_list(n->sem.proj.expr_list, node_id, g);
             break;
         case msa_op_select:
-            i = create_expr_id_in_list(n->sem.select.expr_list, i);
+            node_id = traverse_expr_list(n->sem.select.expr_list, node_id, g);
             break;
         case msa_op_table:
-            i = create_expr_id_in_list(n->sem.table.expr_list, i);
-            i = create_expr_id_in_list(n->sem.table.col_names, i);
+            node_id = traverse_expr_list(n->sem.table.expr_list, node_id, g);
+            node_id = traverse_expr_list(n->sem.table.col_names, node_id, g);
             break;
         case msa_op_groupby:
-            i = create_expr_id_in_list(n->sem.groupby.grp_list, i);
-            i = create_expr_id_in_list(n->sem.groupby.prj_list, i);
+            node_id = traverse_expr_list(n->sem.groupby.grp_list, node_id, g);
+            node_id = traverse_expr_list(n->sem.groupby.prj_list, node_id, g);
             break;
         case msa_op_join:
         case msa_op_semijoin:
-            i = create_expr_id_in_list(n->sem.join.expr_list, i);
+            node_id = traverse_expr_list(n->sem.join.expr_list, node_id, g);
             break;
         default:
             break;
     }
     
-
-    for (unsigned int c = 0; c < PFMSA_OP_MAXCHILD && n->child[c]; c++)
-        i = create_node_id_worker (n->child[c], i);
-
-    return i;
+    for (i = 0; i < PFMSA_OP_MAXCHILD && n->child[i]; i++)
+        node_id = traverse_op (n->child[i], node_id, f, g);
+    
+    return node_id;
 }
 
+/* Traverse an expression (and all of its children)
+ applying function f to it */
+static unsigned int
+traverse_expr (PFmsa_expr_t *n, unsigned int node_id,
+               unsigned int (*f) (PFmsa_expr_t *, unsigned int))
+{
+    unsigned int i;
+    
+    /* do something with f */
+    node_id = f(n, node_id);
+    
+    /* In some expressions, exression lists have to be traversed as well */
+    switch (n->kind) {
+        case msa_expr_num_gen:
+            node_id = traverse_expr_list(n->sem.num_gen.sort_cols, node_id, f);
+            node_id = traverse_expr_list(n->sem.num_gen.part_cols, node_id, f);
+            break;
+        default:
+            break;
+    }
+    
+    for (i = 0; i < PFMSA_EXPR_MAXCHILD && n->child[i]; i++)
+        node_id = traverse_expr (n->child[i], node_id, f);
+    
+    return node_id;
+}
+
+/* Traverse all expressions (and all of their children)
+ in a list applying function f to them */
+static unsigned int
+traverse_expr_list (PFmsa_exprlist_t *list, unsigned int node_id,
+                    unsigned int (*f) (PFmsa_expr_t *, unsigned int))
+{
+    unsigned int i;
+    PFmsa_expr_t *curr_expr;
+    
+    for (i = 0; i < elsize(list); i++) {
+        curr_expr = elat(list, i);
+        node_id = traverse_expr(curr_expr, node_id, f);
+    }
+    
+    return node_id;
+}
+
+/* Functions to start DAG traversal */
+
+/* Reset msa DAG to allow another traversal */
+static void
+msa_dag_reset(PFmsa_op_t *n)
+{
+    traverse_op(n, 0, prepare_reset_op, prepare_reset_expr);
+    traverse_op(n, 0, reset_op, reset_expr);
+    return;
+}
+
+/* Create node ids for all operators and
+ expressions in a msa DAG */
 static void
 create_node_id (PFmsa_op_t *n)
 {
-    (void) create_node_id_worker (n, 1);
-    PFmsa_dag_reset (n);
+    traverse_op(n, 1, create_node_id_op, create_node_id_expr);
+    msa_dag_reset (n);
+    return;
 }
 
-/* stub declaration */
-static void
-reset_expr_id_in_list(PFmsa_exprlist_t *list);
-
-static void
-reset_expr_id_worker (PFmsa_expr_t *n)
-{
-    if (n->bit_dag)
-        return;
-    else
-        n->bit_dag = true;
-    
-    n->node_id = 0;
-    
-    /* If expression has expression list, reset node id for expressions as well */
-    switch (n->kind) {
-        case msa_expr_num_gen:
-            reset_expr_id_in_list(n->sem.num_gen.sort_cols);
-            reset_expr_id_in_list(n->sem.num_gen.part_cols);
-            break;
-        default:
-            break;
-    }
-    
-    for (unsigned int c = 0; c < PFMSA_EXPR_MAXCHILD && n->child[c]; c++)
-        reset_expr_id_worker (n->child[c]);
-}
-
-/* helper function to reset node ids for
- expressions in expression list */
-static void
-reset_expr_id_in_list(PFmsa_exprlist_t *list)
-{
-    unsigned int j;
-    for (j = 0; j < elsize(list); j++) {
-        PFmsa_expr_t *curr_expr = elat(list, j);
-        reset_expr_id_worker(curr_expr);
-    }
-}
-
-static void
-reset_node_id_worker (PFmsa_op_t *n)
-{
-    if (n->bit_dag)
-        return;
-    else
-        n->bit_dag = true;
-
-    n->node_id = 0;
-
-    /* If op has expression list, reset node id for expressions as well */
-    switch (n->kind) {
-        case msa_op_project:
-            reset_expr_id_in_list(n->sem.proj.expr_list);
-            break;
-        case msa_op_select:
-            reset_expr_id_in_list(n->sem.select.expr_list);
-            break;
-        case msa_op_table:
-            reset_expr_id_in_list(n->sem.table.expr_list);
-            reset_expr_id_in_list(n->sem.table.col_names);
-            break;    
-        case msa_op_groupby:
-            reset_expr_id_in_list(n->sem.groupby.grp_list);
-            reset_expr_id_in_list(n->sem.groupby.prj_list);
-            break;
-        case msa_op_join:
-        case msa_op_semijoin:
-            reset_expr_id_in_list(n->sem.join.expr_list);
-            break;
-        default:
-            break;
-    }
-    
-    for (unsigned int c = 0; c < PFMSA_OP_MAXCHILD && n->child[c]; c++)
-        reset_node_id_worker (n->child[c]);
-}
-
+/* Reset node ids of all operators and
+ expressions in a msa DAG */
 static void
 reset_node_id (PFmsa_op_t *n)
 {
-    reset_node_id_worker (n);
-    PFmsa_dag_reset (n);
+    traverse_op(n, 1, reset_node_id_op, reset_node_id_expr);
+    msa_dag_reset (n);
+    return;
 }
+
+/* Infer reference counters in msa DAG */
+static void
+infer_refctr (PFmsa_op_t *n)
+{
+    msa_dag_reset (n);
+    traverse_op(n, 0, infer_refctr_op, infer_refctr_expr);
+    msa_dag_reset (n);
+    return;
+}
+
+/* --------------- Start dot output generation --------------- */
 
 /**
  * Dump SQL algebra tree initialization in AT&T dot format
@@ -825,11 +934,13 @@ msa_dot_internal (FILE *f, PFmsa_op_t *root)
     PFarray_t *dot = PFarray (sizeof (char), 32000);
     PFarray_t *dot_helper = PFarray (sizeof (char), 3200);
 
+    infer_refctr(root);
+    
     /* inside debugging we need to reset the dag bits first */
-    PFmsa_dag_reset (root);
+    msa_dag_reset (root);
     create_node_id (root);
     msa_dot_op (dot, dot_helper, root); // worker anstossen
-    PFmsa_dag_reset (root);
+    msa_dag_reset (root);
     reset_node_id (root);
 
     /* put content of array into file */

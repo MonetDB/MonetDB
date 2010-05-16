@@ -30,7 +30,7 @@
  * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
- * $Id$
+ * $Id: alg_dag.c,v 1.10 2010/01/07 15:24:27 sjoerd Exp $
  */
 
 #include "pf_config.h"
@@ -76,87 +76,6 @@ pa_prepare_reset (PFpa_op_t *n)
     n->bit_reset = true;
 }
 
-/* stub declaration */
-static void
-msa_prepare_reset_exprs_in_list(PFmsa_exprlist_t *list);
-
-/* helper function that prepares the
-   DAG bit reset for expression nodes */
-static void
-msa_prepare_reset_expr(PFmsa_expr_t *n)
-{
-    assert (n);
-    
-    if (n->bit_reset)
-        return;
-    
-    /* In some expressions, exression lists have to be traversed as well */
-    switch (n->kind) {
-        case msa_expr_num_gen:
-            msa_prepare_reset_exprs_in_list(n->sem.num_gen.sort_cols);
-            msa_prepare_reset_exprs_in_list(n->sem.num_gen.part_cols);
-            break;
-        default:
-            break;
-    }
-    
-    for (unsigned int i = 0; i < PFMSA_EXPR_MAXCHILD && n->child[i]; i++)
-        msa_prepare_reset_expr (n->child[i]);
-    
-    n->bit_reset = true;
-}
-
-/* helper function prepares the DAG bit reset
-   in expressions in a expression list */
-static void
-msa_prepare_reset_exprs_in_list(PFmsa_exprlist_t *list)
-{
-    unsigned int i;
-    for (i = 0; i < elsize(list); i++) {
-        PFmsa_expr_t *curr_expr = elat(list, i);
-        msa_prepare_reset_expr(curr_expr);
-    }
-}
-
-/* helper function that prepares the DAG bit reset */
-static void
-msa_prepare_reset (PFmsa_op_t *n)
-{
-    assert (n);
-    
-    if (n->bit_reset)
-        return;
-
-    /* In some operators, exressions have to be traversed as well */
-    switch (n->kind) {
-        case msa_op_project:
-            msa_prepare_reset_exprs_in_list(n->sem.proj.expr_list);
-            break;
-        case msa_op_select:
-            msa_prepare_reset_exprs_in_list(n->sem.select.expr_list);
-            break;
-        case msa_op_table:
-            msa_prepare_reset_exprs_in_list(n->sem.table.expr_list);
-            msa_prepare_reset_exprs_in_list(n->sem.table.col_names);
-            break;
-        case msa_op_groupby:
-            msa_prepare_reset_exprs_in_list(n->sem.groupby.grp_list);
-            msa_prepare_reset_exprs_in_list(n->sem.groupby.prj_list);
-            break;
-        case msa_op_join:
-        case msa_op_semijoin:
-            msa_prepare_reset_exprs_in_list(n->sem.join.expr_list);
-            break;
-        default:
-            break;
-    }
-    
-    for (unsigned int i = 0; i < PFMSA_OP_MAXCHILD && n->child[i]; i++)
-        msa_prepare_reset (n->child[i]);
-
-    n->bit_reset = true;
-}
-
 /* helper function that reset the DAG bit
    to allow another DAG traversal */
 static void
@@ -185,86 +104,6 @@ pa_dag_bit_reset (PFpa_op_t *n)
     for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
         pa_dag_bit_reset (n->child[i]);
 
-    n->bit_reset = false;
-    n->bit_dag = false;
-}
-
-/* stub declaration */
-static void
-msa_dag_bit_reset_exprs_in_list (PFmsa_exprlist_t *list);
-
-/* helper function to reset the DAG bit in expressions */
-static void
-msa_dag_bit_reset_expr (PFmsa_expr_t *n)
-{
-    assert (n);
-    if (!n->bit_reset)
-        return;
-    
-    /* In some expressions, exression lists have to be traversed as well */
-    switch (n->kind) {
-        case msa_expr_num_gen:
-            msa_dag_bit_reset_exprs_in_list(n->sem.num_gen.sort_cols);
-            msa_dag_bit_reset_exprs_in_list(n->sem.num_gen.part_cols);
-            break;
-        default:
-            break;
-    }
-    
-    for (unsigned int i = 0; i < PFMSA_EXPR_MAXCHILD && n->child[i]; i++)
-        msa_dag_bit_reset_expr (n->child[i]);
-    
-    n->bit_reset = false;
-    n->bit_dag = false;
-}
-
-/* helper function to reset all expressions in expression list */
-static void
-msa_dag_bit_reset_exprs_in_list (PFmsa_exprlist_t *list)
-{
-    unsigned int i;
-    for (i = 0; i < elsize(list); i++) {
-        PFmsa_expr_t *curr_expr = elat(list, i);
-        msa_dag_bit_reset_expr(curr_expr);
-    }
-}
-
-/* helper function that reset the DAG bit
-   to allow another DAG traversal */
-static void
-msa_dag_bit_reset (PFmsa_op_t *n)
-{
-    assert (n);
-    if (!n->bit_reset)
-        return;
-
-    for (unsigned int i = 0; i < PFMSA_OP_MAXCHILD && n->child[i]; i++)
-        msa_dag_bit_reset (n->child[i]);
-    
-    /* In some operators, exressions have to be traversed as well */
-    switch (n->kind) {
-        case msa_op_project:
-            msa_dag_bit_reset_exprs_in_list(n->sem.proj.expr_list);
-            break;
-        case msa_op_select:
-            msa_dag_bit_reset_exprs_in_list(n->sem.select.expr_list);
-            break;
-        case msa_op_table:
-            msa_dag_bit_reset_exprs_in_list(n->sem.table.expr_list);
-            msa_dag_bit_reset_exprs_in_list(n->sem.table.col_names);
-            break;
-        case msa_op_groupby:
-            msa_dag_bit_reset_exprs_in_list(n->sem.groupby.grp_list);
-            msa_dag_bit_reset_exprs_in_list(n->sem.groupby.prj_list);
-            break;
-        case msa_op_join:
-        case msa_op_semijoin:
-            msa_dag_bit_reset_exprs_in_list(n->sem.join.expr_list);
-            break;
-        default:
-            break;
-    }
-    
     n->bit_reset = false;
     n->bit_dag = false;
 }
@@ -354,17 +193,6 @@ void
 PFpa_dag_reset (PFpa_op_t *n) {
     pa_prepare_reset (n);
     pa_dag_bit_reset (n);
-}
-
-/*
- * Reset the DAG bit of the SQL algebra tree.
- * (it requires a clean reset bit to traverse
- *  the SQL algebra tree as DAG.)
- */
-void
-PFmsa_dag_reset (PFmsa_op_t *n) {
-    msa_prepare_reset (n);
-    msa_dag_bit_reset (n);
 }
 
 /*
