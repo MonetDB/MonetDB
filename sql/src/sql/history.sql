@@ -59,7 +59,7 @@ create table callHistory(
 );
 
 create view queryLog as
-select qd.*, ql.ctime, ql.arguments, ql.xtime, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryHistory qd, callHistory ql
+select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryHistory qd, callHistory ql
 where qd.id = ql.id;
 
 -- the signature is used in the kernel, don't change it
