@@ -242,7 +242,7 @@ main(int argc, char **argv)
 #endif
 #endif
 
-		stream_printf(out,"--msqldump %s %s\n", (functions? "functions":"tables"), buf);
+		stream_printf(out,"#msqldump %s %s\n", (functions? "functions":"tables"), buf);
 	}
 	if (functions)
 		c = dump_functions(mid, out, NULL);

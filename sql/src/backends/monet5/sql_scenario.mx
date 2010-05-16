@@ -637,6 +637,10 @@ Scan the complete string for SQL statements, stop at the first error.
 @c
 	c->state[MAL_SCENARIO_PARSER] = sql;
 	while( m->scanner.rs->pos < m->scanner.rs->len ){
+		int oldvtop = c->curprg->def->vtop;
+		int oldstop = c->curprg->def->stop;
+		MSinitClientPrg(c,"user",nme); 
+
 		if (!m->sa)
 			m->sa = sa_create();
 		m->sym = NULL;
@@ -649,6 +653,10 @@ Scan the complete string for SQL statements, stop at the first error.
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			*m->errstr = 0;
 			sqlcleanup(m, err);
+			/* restore the state */
+			resetMalBlk(c->curprg->def, oldstop);
+			freeVariables(c,c->curprg->def, c->glb, oldvtop);
+			c->curprg->def->errors = 0;
 			if (!err)
 				continue;
 			goto endofcompile;
@@ -661,15 +669,12 @@ optimize and produce code.
 We don;t search the cache for a previous incarnation yet.
 @c
 		{	
-			int oldvtop = c->curprg->def->vtop;
-			int oldstop = c->curprg->def->stop;
 			stmt *s = sql_symbol2stmt(m, m->sym);
 
 #ifdef _SQL_COMPILE
 		stream_printf(c->fdout,"#SQLstatement:\n");
 #endif
 			scanner_query_processed(&(m->scanner));
-			MSinitClientPrg(c,"user",nme); 
 			if (s==0 || (err = mvc_status(m))) {
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr?m->errstr:"");
 				handle_error(m, c->fdout, status);
