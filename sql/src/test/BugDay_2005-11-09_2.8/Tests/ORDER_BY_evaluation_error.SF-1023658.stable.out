@@ -29,12 +29,14 @@ Over..
 % sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
 % id,	table_id,	type,	name,	rkey,	action,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
 % int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
-% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
+% 4,	4,	1,	20,	2,	2,	4,	2,	1,	1,	4,	12,	4,	0,	1,	5,	1,	5,	1,	4,	3,	1,	1 # length
+[ 5222,	5229,	0,	"queryhistory_id_pkey",	-1,	-1,	5222,	"id",	0,	0,	5229,	"queryhistory",	2000,	NULL,	0,	false,	0,	false,	0,	2000,	"sys",	2,	3	]
 #SELECT *
 % sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	sys.keycolumns,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
 % id,	table_id,	type,	name,	rkey,	action,	id,	column,	trunc,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary,	id,	name,	authorization,	owner # name
 % int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	tinyint,	int,	varchar,	int,	int # type
-% 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	1,	0,	1,	0,	1,	5,	1,	5,	1,	1,	0,	1,	1 # length
+% 4,	4,	1,	20,	2,	2,	4,	2,	1,	1,	4,	12,	4,	0,	1,	5,	1,	5,	1,	4,	3,	1,	1 # length
+[ 5222,	5229,	0,	"queryhistory_id_pkey",	-1,	-1,	5222,	"id",	0,	0,	5229,	"queryhistory",	2000,	NULL,	0,	false,	0,	false,	0,	2000,	"sys",	2,	3	]
 
 # 19:37:26 >  
 # 19:37:26 >  Done.

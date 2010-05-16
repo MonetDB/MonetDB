@@ -28,7 +28,7 @@ Over..
 % sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2 # table_name
 % id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % int,	varchar,	varchar,	int,	int,	int,	int,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
-% 2,	9,	14,	2,	1,	2,	2,	1,	2,	9,	14,	2,	1,	2,	2,	1 # length
+% 4,	9,	14,	2,	1,	2,	2,	4,	4,	9,	14,	2,	1,	2,	2,	4 # length
 [ 0,	"any",	"any",	0,	0,	0,	0,	0,	0,	"any",	"any",	0,	0,	0,	0,	0	]
 [ 1,	"bat",	"table",	0,	0,	0,	1,	0,	1,	"bat",	"table",	0,	0,	0,	1,	0	]
 [ 2,	"ptr",	"ptr",	0,	0,	0,	1,	0,	2,	"ptr",	"ptr",	0,	0,	0,	1,	0	]
@@ -56,6 +56,8 @@ Over..
 [ 24,	"timestamp",	"timestamp",	7,	0,	0,	12,	0,	24,	"timestamp",	"timestamp",	7,	0,	0,	12,	0	]
 [ 25,	"timestamp",	"timestamptz",	7,	1,	0,	12,	0,	25,	"timestamp",	"timestamptz",	7,	1,	0,	12,	0	]
 [ 26,	"sqlblob",	"blob",	0,	0,	0,	5,	0,	26,	"sqlblob",	"blob",	0,	0,	0,	5,	0	]
+[ 5125,	"url",	"url",	0,	0,	0,	13,	2000,	5125,	"url",	"url",	0,	0,	0,	13,	2000	]
+[ 5191,	"inet",	"inet",	0,	0,	0,	13,	2000,	5191,	"inet",	"inet",	0,	0,	0,	13,	2000	]
 
 # 17:16:27 >  
 # 17:16:27 >  Done.

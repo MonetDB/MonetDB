@@ -32,7 +32,9 @@ Over..
 % .idxs,	.idxs,	.keys,	.keys # table_name
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
-% 27,	1,	10,	1 # length
+% 27,	1,	20,	1 # length
+[ "queryhistory_id_pkey",	0,	"queryhistory_id_pkey",	0	]
+[ "callhistory_id_fkey",	1,	"callhistory_id_fkey",	2	]
 [ "unique_key",	0,	"unique_key",	1	]
 [ "allnewtriples_subject_idx",	0,	NULL,	NULL	]
 [ "allnewtriples_predicate_idx",	0,	NULL,	NULL	]
@@ -40,7 +42,9 @@ Over..
 % sys.idxs,	sys.idxs,	sys.keys,	sys.keys # table_name
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
-% 10,	1,	10,	1 # length
+% 20,	1,	20,	1 # length
+[ "queryhistory_id_pkey",	0,	"queryhistory_id_pkey",	0	]
+[ "callhistory_id_fkey",	1,	"callhistory_id_fkey",	2	]
 [ "unique_key",	0,	"unique_key",	1	]
 
 # 12:37:07 >  

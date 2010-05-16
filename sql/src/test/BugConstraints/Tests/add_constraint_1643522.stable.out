@@ -22,14 +22,18 @@ Over..
 % sys.keys # table_name
 % name # name
 % varchar # type
-% 4 # length
+% 20 # length
+[ "queryhistory_id_pkey"	]
+[ "callhistory_id_fkey"	]
 [ "id_p"	]
 % sys.keys # table_name
 % name # name
 % varchar # type
-% 0 # length
+% 20 # length
+[ "queryhistory_id_pkey"	]
+[ "callhistory_id_fkey"	]
 
-# 16:28:34 >  
-# 16:28:34 >  Done.
-# 16:28:34 >  
+# 11:09:09 >  
+# 11:09:09 >  Done.
+# 11:09:09 >  
 
