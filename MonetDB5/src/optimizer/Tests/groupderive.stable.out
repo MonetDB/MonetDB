@@ -27,7 +27,7 @@ function user.tst():void;
     b := bat.new(:oid,:int);
     c := bat.new(:oid,:str);
     d := bat.new(:oid,:flt);
-    (ext1,grp1) := group.new(b);
+    (ext1,grp1) := group.derivePath(b);
     (ext2,grp2) := group.derivePath(b,c);
     (ext3,grp3) := group.derivePath(b,c,d);
 end tst;

@@ -72,7 +72,7 @@ comment "Derive a group sum.";
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-#define DEBUG_OPT_DERIVEPATH  /**/
+/* #define DEBUG_OPT_DERIVEPATH  */
 opt_export str ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str ALGderiveCount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str ALGderiveSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -120,7 +120,7 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				pc[getArg(p,1)] = i;
 				actions++;
 #ifdef DEBUG_OPT_DERIVEPATH 
-				stream_printf(cntxt->fdout,"new derivePath instruction\n");
+				stream_printf(cntxt->fdout,"#new derivePath instruction\n");
 				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 #endif
 		}
@@ -139,7 +139,7 @@ This creates a series of derive paths, many of which will be removed during dead
 				freeInstruction(p);
 				p= q;
 #ifdef DEBUG_OPT_DERIVEPATH 
-				stream_printf(cntxt->fdout,"new derivePath instruction extension\n");
+				stream_printf(cntxt->fdout,"#new derivePath instruction extension\n");
 				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 #endif
 			}

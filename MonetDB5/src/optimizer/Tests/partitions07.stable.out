@@ -58,7 +58,7 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x11{rows=1:lng} := algebra.markT(x1{notnil=true,rows=1:lng,bid=769},0@0);#  8 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _20:oid) {G}
     x12{rows=1:lng} := bat.reverse(x11{rows=1:lng});#  9 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
     x13{rows=1:lng} := algebra.join(x12{rows=1:lng},x1{notnil=true,rows=1:lng,bid=769});# 10 x13:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
-    x14{rows=1:lng} := batcalc.flt(x13{rows=1:lng});# 11 x14:bat[:oid,:flt] := CMDconvert_int_flt(x13:bat[:oid,:int]) {G}
+    x14{rows=1:lng} := batcalc.flt(x13{rows=1:lng});# 11 x14:bat[:oid,:flt] := batint_2_flt(x13:bat[:oid,:int]) {G}
     x31 := bat.new(nil:oid,nil:flt);    # 12 x31:bat[:oid,:flt] := CMDBATnew(_25:oid, _26:flt) {G}
 barrier (x35,x36,x37) := bat.newIterator(x14{rows=1:lng});# 13 (x35:lng, x36:oid, x37:flt) := CHPbunIterator(x14:bat[:oid,:flt]) {GJ20}
     x39 := mmath.sin(x37);              # 14 x39:flt := MATHunary_SINflt(x37:flt) 
