@@ -809,6 +809,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 			*hdst++ = *(oid*) BUNhead(bi,p);
 		*dst++ = e->use.gid;
 	}
+	bn->tsorted = 0;
 	BATsetcount(bn, (BUN) (dst - (oid *) bn->T->heap.base)); 
 	if (hash)
 		GDKfree(hash);
@@ -927,10 +928,10 @@ cases, we should remove the code completely.
 
 Of course, with inputs that exceed main memory size, ordered data allows for
 rather straight forward partitioning into (few) large chunks that fit into
-main memory to perform the derive step of each chunk independintly in
+main memory to perform the derive step of each chunk independently in
 memory. These chunks can consist of multiple "outer" groups, provided each
 chunk contains only complete outer groups.
-I will prepare the respective code.
+This is what "CTderive_clustered()" (see below) does.
 */
 
 /* partion based sub-order derive */
@@ -1027,8 +1028,123 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 
 @c
 static int
+derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt);
+
+/* break large (out-of-memory) derive over ordered outer groups into
+ * disjoint slices that fit into memory and perform in-memory derive step
+ * independently on each slice
+ */
+static int
+CTderive_clustered(BAT **H, BAT **M, BAT *_histo, BAT *_map, BAT *_b, int tt, wrd limit)
+{
+	wrd s0 = 0, s1 = 0, *t = 0;
+	BUN i0 = 0, i1 = 0, j = 0;
+	BAT *mn = 0, *hn = 0;
+
+	if (!_histo || !_map || !_b)
+		return GDK_FAIL;
+
+	/* complete result map */
+	mn = BATnew(TYPE_void, TYPE_oid, BATcount(_b));
+	if (!mn)
+		return GDK_FAIL;
+	/* complete result histo */
+	hn = BATnew(TYPE_oid, TYPE_wrd, BATcount(_b));
+	if (!mn) {
+		BBPreclaim(mn);
+		return GDK_FAIL;
+	}
+	/* outer group sizes */
+	t = (wrd*)Tloc(_histo, BUNfirst(_histo));
+	/* number of outer groups */
+	j = BATcount(_histo);
+
+	/* iterate over outer groups */
+	while (i1 < j) {
+		BAT *ct_histo, *ct_map, *b, *histo = 0, *bn = 0;
+
+		/* collect outer groups for large in-memory slice */
+		s1 = t[i1++];
+		while (i1 < j && s1 + t[i1] < limit)
+			s1 += t[i1++];
+		s1 += s0;
+
+		/* get disjoint slices of input */
+		b = BATslice(_b, (BUN)s0, (BUN)s1);
+		ct_map = BATslice(_map, (BUN)s0, (BUN)s1);
+		ct_histo = BATslice(_histo, (BUN)i0, (BUN)i1);
+		if (!b || !ct_map || !ct_histo) {
+			if (b)
+				BBPreleaseref(b->batCacheid);
+			if (ct_map)
+				BBPreleaseref(ct_map->batCacheid);
+			if (ct_histo)
+				BBPreleaseref(ct_histo->batCacheid);
+			BBPreclaim(mn);
+			BBPreclaim(hn);
+			return GDK_FAIL;
+		}
+		/* invest in scan to check tail-sortedness */
+		/* (net effect: make required data hot) */
+		(void)BATordered(BATmirror(b));
+
+		bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+		if (bn == NULL) {
+			BBPreleaseref(b->batCacheid);
+			BBPreleaseref(ct_map->batCacheid);
+			BBPreleaseref(ct_histo->batCacheid);
+			BBPreclaim(mn);
+			BBPreclaim(hn);
+			return GDK_FAIL;
+		}
+
+		/* perform derive on independent slice */
+		@:choosederive(sync,clustered)@
+		if (histo == NULL) {
+			BBPreleaseref(b->batCacheid);
+			BBPreleaseref(ct_map->batCacheid);
+			BBPreleaseref(ct_histo->batCacheid);
+			BBPreclaim(mn);
+			BBPreclaim(hn);
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(ct_map->batCacheid);
+		BBPreleaseref(ct_histo->batCacheid);
+
+		/* invest in scan to check tail-sortedness */
+		/* (data is still hot) */
+		(void)BATordered(BATmirror(bn));
+		/* append partial map to total map */
+		BATappend(mn, bn, FALSE);
+		BBPreclaim(bn);
+
+		/* invest in scan to check head- & tail-sortedness */
+		/* (data is still hot) */
+		(void)BATordered(histo);
+		(void)BATordered(BATmirror(histo));
+		/* append partial histo to total histo */
+		BATins(hn, histo, FALSE);
+		BBPreclaim(histo);
+
+		s0 = s1;
+		i0 = i1;
+	}
+
+	/* initialize map head */
+	ALIGNsetH(mn, _b);
+
+	*H = hn;
+	*M = mn;
+	return grp_new(mn, hn);;
+}
+
+static int
 derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 {
+	wrd limit = (wrd)((MT_npages() * MT_pagesize()) / (100 * GDKnr_threads));
 	BAT *histo = NULL, *bn = NULL;
 	int synced = ALIGNsynced(ct_map, b);
 
@@ -1036,6 +1152,19 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 	int ht = (synced && BAThdense(b)) ? TYPE_void : TYPE_oid;
 
 	if (!ct_map->tkey) { /* cannot derive more groups */
+		if (synced &&
+		    !BATtkey(b) &&
+	    	    BAThdense(b) &&
+		    BATtordered(ct_map)&1 &&
+		    BAThordered(ct_histo) &&
+		    (wrd)BATcount(b) > 2 * limit) {
+			/* break large (out-of-memory) derive over ordered
+			 * outer groups into disjoint slices that fit into
+			 * memory and perform in-memory derive step
+			 * independently on each slice
+			 */
+			return CTderive_clustered(H, M, ct_histo, ct_map, b, tt, limit);
+		}
 #if 0
 		/* see comment above */
 		if (!b->tkey && BATcount(b) > 1 && BATtordered(ct_map)&1 && 
@@ -1077,7 +1206,6 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 		}
 
 		/* postprocess the result bat 'bn' */
-		bn->tsorted = 0;
 		if (BATcount(bn) == BATcount(b)) {
 			ALIGNsetH(bn, b);
 		} else {
