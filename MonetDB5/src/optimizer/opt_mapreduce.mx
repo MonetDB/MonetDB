@@ -801,7 +801,8 @@ OPTmapreduceImplementation(
 		}
 	}
 
-#if _DEBUG_OPT_MAPREDUCE == 10
+
+#if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 10
 	stream_printf(cntxt->fdout, "MAP program\n");
 	chkProgram(cntxt->nspace, mc);
 	printFunction(cntxt->fdout, mc, 0, LIST_MAL_STMT);
