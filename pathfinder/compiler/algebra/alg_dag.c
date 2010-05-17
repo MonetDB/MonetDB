@@ -39,15 +39,6 @@
 
 #include "alg_dag.h"
 
-/* !!! */
-/** abbreviation for expression list constructor */
-#define el(s)       PFmsa_exprlist((s))
-/** abbreviation for expression list accessors */
-#define elat(el,i)  PFmsa_exprlist_at((el),(i))
-#define eltop(el)   PFmsa_exprlist_top((el))
-#define eladd(el)   PFmsa_exprlist_add((el))
-#define elsize(el)  PFmsa_exprlist_size((el))
-
 /* helper function that prepares the DAG bit reset */
 static void
 la_prepare_reset (PFla_op_t *n)
