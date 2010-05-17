@@ -25,7 +25,6 @@ Over..
 # 23:32:55 >  /usr/bin/python set_history_and_drop_table.SF-2607045.SQL.py set_history_and_drop_table.SF-2607045 
 # 23:32:55 >  
 
-Load history
 Run test
 % .tables # table_name
 % id # name
@@ -57,9 +56,10 @@ Run test
 [ 5105	]
 [ 5108	]
 [ 5112	]
-[ 5409	]
-[ 5423	]
-[ 5439	]
+[ 5129	]
+[ 5229	]
+[ 5243	]
+[ 5259	]
 Drop history
 
 # 23:32:55 >  
