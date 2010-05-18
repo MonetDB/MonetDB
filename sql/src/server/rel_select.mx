@@ -3280,6 +3280,11 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 	assert(l->h->next->type == type_int);
 	groupby = *rel;
 
+	if (!groupby) {
+		return sql_error(sql, 02, "%s: missing group by",
+				toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
+	}
+
 	if (f == sql_having && is_select(groupby->op)) 
 		groupby = groupby->l;
 
