@@ -2162,13 +2162,17 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		   	are correlations with the outer relation */
 			sql_rel *r = rel_subquery(sql, NULL, ro, ek);
 	
-			if (!r && sql->session->status != -ERR_AMBIGUOUS) { /* correlation, ie return new relation */
+			/* correlation, ie return new relation */
+			if (!r && sql->session->status != -ERR_AMBIGUOUS) {
+			 
+
 				sql_exp *e;
 
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
-				r = rel_subquery(sql, *rel, ro, ek);
+				if (!r)
+					r = rel_subquery(sql, *rel, ro, ek);
 
 				/* get inner queries result value, ie
 				   get last expression of r */
@@ -2185,7 +2189,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					rs = exp_atom_bool(0);
 					return rel_binop_(sql, ls, rs, NULL, "=", 0);
 				}
-			} else if (r) { 
+			} else if (r && f != sql_sel) { 
+				sql_rel *l = *rel;
 				rel_setsubquery(r);
 				rs = rel_lastexp(sql, r);
 				if (r->card > CARD_ATOM) {
@@ -2193,7 +2198,21 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 					rs = exp_aggr1(rs, zero_or_one, 0, 0, CARD_ATOM, 0);
 				}
-				*rel = rel_crossproduct(*rel, r, op_join);
+				*rel = rel_crossproduct(l, r, op_join);
+			} else if (r) {
+				sql_rel *l = *rel;
+				list *exps = rel_projections(sql, l, NULL, 0, 1);
+
+				rel_project_add_exp(sql, l, ls);
+				rel_setsubquery(r);
+				rs = rel_lastexp(sql, r);
+				if (r->card > CARD_ATOM) {
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", exp_subtype(rs));
+
+					rs = exp_aggr1(rs, zero_or_one, 0, 0, CARD_ATOM, 0);
+				}
+				*rel = rel_crossproduct(l, r, op_join);
+				*rel = rel_project(*rel, exps);
 			}
 			if (!rs) {
 				exp_destroy(ls);
