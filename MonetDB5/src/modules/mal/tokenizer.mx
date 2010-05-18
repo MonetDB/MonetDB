@@ -136,7 +136,7 @@ tokenizer_export str TKNZRgetCardinality   (int *r);
 #define INDEX MAX_TKNZR_DEPTH
 static int tokenDepth = 0;
 static BAT *tokenBAT[MAX_TKNZR_DEPTH+1];
-static BAT *TRANS = NULL;
+static BAT *TRANS = NULL;	/* the catalog of tokenizers */
 static char name[128];
 
 #if SIZEOF_OID == 4 /* 32-bit oid */
@@ -158,9 +158,14 @@ TKNZRopen(int *ret, str *in)
 	BAT *b;
 
 	(void) ret;
+	if (strlen(*in) > 127)
+		throw(MAL, "tokenizer.open",
+				ILLEGAL_ARGUMENT " tokenizer name too long");
 
+	mal_set_lock(mal_contextLock,"tokenizer");
 	if (TRANS != NULL) {
-		throw(MAL, "tokenizer.open", "another tokenizer is already open");
+		mal_unset_lock(mal_contextLock,"tokenizer");
+		throw(MAL, "tokenizer.open", "Another tokenizer is already open");
 	}
 
 	for (depth = 0; depth < MAX_TKNZR_DEPTH; depth++) {
@@ -170,13 +175,12 @@ TKNZRopen(int *ret, str *in)
 
 	TRANS = BATnew(TYPE_void, TYPE_str, MAX_TKNZR_DEPTH+1);
 	if (TRANS == NULL) {
+		mal_unset_lock(mal_contextLock,"tokenizer");
 		throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 	}
+	/* now we are sure that none overwrites the tokenizer table*/
+	mal_unset_lock(mal_contextLock,"tokenizer");
     BATseqbase(TRANS, 0);
-
-	if (strlen(*in) > 127)
-		throw(MAL, "tokenizer.open",
-				ILLEGAL_ARGUMENT " tokenizer name too long");
 
 	snprintf(name, 128, "%s", *in);
 	batname = (str) GDKmalloc(134*sizeof(char));
@@ -186,13 +190,12 @@ TKNZRopen(int *ret, str *in)
 	if (idx == 0) { /* new tokenizer */
 
 		b = BATnew(TYPE_void, TYPE_oid, 1024);
-		if (b == NULL)
+		if (b == NULL) 
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 		BATkey(b, FALSE);
 		BATseqbase(b,0);
 		tokenBAT[INDEX] = b;
-		if (BKCsetName(&r, (int *)&(b->batCacheid), (str *) &batname)
-				!= MAL_SUCCEED)
+		if (BKCsetName(&r, (int *)&(b->batCacheid), (str *) &batname) != MAL_SUCCEED) 
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
 		if (BKCsetPersistent(&r,(int *)&(b->batCacheid)) != MAL_SUCCEED)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
@@ -233,8 +236,6 @@ TKNZRclose(int *r)
 	@:init_check@
 
 	TMsubcommit(TRANS);
-	BBPreclaim(TRANS);
-	TRANS = NULL;
 
 	for (i = 0; i < tokenDepth; i++) {
 		BBPunfix(tokenBAT[i]->batCacheid);
@@ -243,11 +244,18 @@ TKNZRclose(int *r)
 
 	tokenDepth = 0;
 
+	BBPreclaim(TRANS);
+	TRANS = NULL;
 	return MAL_SUCCEED;
 }
 
 @- Tokenize operations
-
+The tokenizer operation assumes a private copy to mark the
+end of the token separators with a zero byte. Tokens are
+separated by a single character for simplicity.
+Might be a good scheme to assume that strings to be broken
+are properly ended with either 0 or nl, not both.
+It seems 0 can be assumed.
 @c
 int
 TKNZRtokenize(str in, str *parts, char tkn) {
@@ -257,16 +265,12 @@ TKNZRtokenize(str in, str *parts, char tkn) {
 	s = in;
 	while (*s && *s != '\n') {
 		t = s;
-		while (*t && *t != '\n' && *t != tkn) t++;
+		while (*t != tkn && *t != '\n' && *t) t++;
 		parts[depth++] = s;
-		if (*t) {
-			*t = 0;
-			s = t+1;
-		} else {
-			s = t;
-		}
+		s = t + ( *t != 0);
+		*t = 0;
 		if (depth > MAX_TKNZR_DEPTH)
-			return depth;
+			break;
 	}
 	return depth;
 }
