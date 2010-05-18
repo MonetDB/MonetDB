@@ -829,7 +829,7 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 	if (memorypool <= 0 && memoryclaims == 0)
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
 	
-	if ( argclaim + retclaim >= 0 ) {
+	if ( argclaim + retclaim > 0 ) {
 		if (memoryclaims == 0 || memorypool - memoryused > argclaim + retclaim -hotclaim){
 			memorypool -= (argclaim + retclaim);
 			memoryclaims ++;
@@ -1043,7 +1043,7 @@ with this property. Nor do we maintain such properties.
 					break;
 				}
 				/* if we claim only part of memory, then let's wait */
-				if (argclaim + retclaim -hotclaim <  (lng) (MEMORY_THRESHOLD * monet_memory / memoryclaims))
+				if (argclaim + retclaim -hotclaim <  (lng) (monet_memory / (memoryclaims+1)))
 					continue;
 				/* re-schedule instructions that require a lot of memory for postponed execution */
 				PARDEBUG {
@@ -1122,8 +1122,8 @@ runDFLOWworker(void *t)
 	while(task) {
 		fs = (FlowStep)q_dequeue(task->todo);
 		if ( fs == oldfs){
-			MT_sleep_ms(10); 
 			q_requeue(task->todo,fs);
+			MT_sleep_ms(10); 
 			oldfs = 0;	/* don't escape it always */
 			continue;
 		}
