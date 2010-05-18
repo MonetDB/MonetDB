@@ -234,8 +234,6 @@ alg2msa_worker(PFla_op_t *n)
                of atom expressions representing the original column
                names */
             
-            /* FIXME: NOT TESTED YET! */
-            
             char*               table_name;
             char*               org_name;
             PFmsa_exprlist_t    *exprlist;

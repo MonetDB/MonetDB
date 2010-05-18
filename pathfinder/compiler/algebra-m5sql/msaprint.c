@@ -229,16 +229,17 @@ msa_dot_expr (PFarray_t *dot, PFmsa_expr_t *n)
             PFarray_printf(dot, "%s\\n", dot_expr_num_gen_id[n->sem.num_gen.kind]);
             
             /* print partitioning columns */
-            
-            if (n->sem.num_gen.kind == msa_num_gen_rownum)
+            if (n->sem.num_gen.kind == msa_num_gen_rownum &&
+                elsize(n->sem.num_gen.part_cols) > 0)
             {
                 PFarray_printf(dot, "part cols: <");
-                for (c = 0; c < elsize(n->sem.num_gen.part_cols); c++) {
+                for (c = 0; c < elsize(n->sem.num_gen.part_cols) - 1; c++) {
                     expr = elat(n->sem.num_gen.part_cols, c);
                     PFarray_printf(dot, "%s, ", PFcol_str(expr->col));
                 }
-                PFarray_printf(dot, ">\\n");
-                
+                expr = elat(n->sem.num_gen.part_cols, 
+                            elsize(n->sem.num_gen.part_cols) - 1);
+                PFarray_printf(dot, "%s>\\n", PFcol_str(expr->col));
             }
             
             PFarray_printf(dot, "%s", PFcol_str(n->col));
@@ -592,71 +593,59 @@ static unsigned int traverse_expr_list (PFmsa_exprlist_t *list, unsigned int nod
 /* helper function that prepares the
  DAG bit reset for expression nodes */
 static unsigned int
-prepare_reset_expr(PFmsa_expr_t *n, unsigned int node_id)
+prepare_reset_expr(PFmsa_expr_t *n, unsigned int dummy)
 {
     assert (n);
     
-    /* no node_id used while preparing reset of bit_dag */
-    (void) node_id;
-    
     if (n->bit_reset)
-        return 0;
+        return dummy;
     else
         n->bit_reset = true;
     
-    return 0;
+    return dummy;
 }
 
 /* helper function that prepares the
  DAG bit reset for expression nodes */
 static unsigned int
-prepare_reset_op(PFmsa_op_t *n, unsigned int node_id)
+prepare_reset_op(PFmsa_op_t *n, unsigned int dummy)
 {
     assert (n);
     
-    /* no node_id used while preparing reset of bit_dag */
-    (void) node_id;
-    
     if (n->bit_reset)
-        return 0;
+        return dummy;
     else
         n->bit_reset = true;
     
-    return 0;
+    return dummy;
 }
 
 /* helper function to reset the DAG bit in expressions */
 static unsigned int
-reset_expr (PFmsa_expr_t *n, unsigned int node_id)
+reset_expr (PFmsa_expr_t *n, unsigned int dummy)
 {
     assert (n);
     
-    /* no node_id used while resetting bit_dag */
-    (void) node_id;
-    
     if (!n->bit_reset)
-        return 0;
+        return dummy;
     
     n->bit_reset = false;
     n->bit_dag = false;
-    return 0;
+    return dummy;
 }
 
 /* helper function to reset the DAG bit in operators */
 static unsigned int
-reset_op (PFmsa_op_t *n, unsigned int node_id)
+reset_op (PFmsa_op_t *n, unsigned int dummy)
 {
     assert (n);
     
-    /* no node_id used while resetting bit_dag */
-    (void) node_id;
-    
     if (!n->bit_reset)
-        return 0;;
+        return dummy;
     
     n->bit_reset = false;
     n->bit_dag = false;
-    return 0;
+    return dummy;
 }
 
 /* helper function that sets the
@@ -694,81 +683,69 @@ create_node_id_op (PFmsa_op_t *n, unsigned int node_id)
 /* helper function that resets the
  node id for expression nodes */
 static unsigned int
-reset_node_id_expr(PFmsa_expr_t *n, unsigned int node_id)
+reset_node_id_expr(PFmsa_expr_t *n, unsigned int dummy)
 {
     assert (n);
-    
-    /* no node_id used while preparing reset of bit_dag */
-    (void) node_id;
     
     /* reset node id */
     n->node_id = 0;
     
-    return 0;
+    return dummy;
 }
 
 /* helper function that resets the
  node id for operator nodes */
 static unsigned int
-reset_node_id_op(PFmsa_op_t *n, unsigned int node_id)
+reset_node_id_op(PFmsa_op_t *n, unsigned int dummy)
 {
     assert (n);
-    
-    /* no node_id used while preparing reset of bit_dag */
-    (void) node_id;
     
     /* reset node id */
     n->node_id = 0;
     
-    return 0;
+    return dummy;
 }
 
 /* helper function that infers the
  reference counter for expression nodes */
 static unsigned int
-infer_refctr_expr(PFmsa_expr_t *n, unsigned int node_id)
+infer_refctr_expr(PFmsa_expr_t *n, unsigned int dummy)
 {
     assert (n);
-    
-    /* no node_id used while preparing reset of bit_dag */
-    (void) node_id;
     
     /* count number of incoming edges */
     n->refctr++;
     
     /* only descend once */
     if (n->bit_dag)
-        return 0;
+        return dummy;
     else {
         n->bit_dag = true;
         n->refctr = 1;
     }
     
-    return 0;
+    return dummy;
 }
 
 /* helper function that infers the
  reference counter for operator nodes */
 static unsigned int
-infer_refctr_op(PFmsa_op_t *n, unsigned int node_id)
+infer_refctr_op(PFmsa_op_t *n, unsigned int dummy)
 {
     assert (n);
-    
-    /* no node_id used while preparing reset of bit_dag */
-    (void) node_id;
     
     /* count number of incoming edges */
     n->refctr++;
     
     /* only descend once */
     if (n->bit_dag)
-        return 0;
+        return dummy;
     else {
         n->bit_dag = true;
         n->refctr = 1;
     }
     
-    return 0;
+    return dummy;
 }
 
 /* Functions to traverse the DAG */
@@ -896,7 +873,6 @@ reset_node_id (PFmsa_op_t *n)
 static void
 infer_refctr (PFmsa_op_t *n)
 {
-    msa_dag_reset (n);
     traverse_op(n, 0, infer_refctr_op, infer_refctr_expr);
     msa_dag_reset (n);
     return;
@@ -933,12 +909,11 @@ msa_dot_internal (FILE *f, PFmsa_op_t *root)
     /* initialize array to hold dot output */
     PFarray_t *dot = PFarray (sizeof (char), 32000);
     PFarray_t *dot_helper = PFarray (sizeof (char), 3200);
-
-    infer_refctr(root);
     
     /* inside debugging we need to reset the dag bits first */
     msa_dag_reset (root);
     create_node_id (root);
+    infer_refctr(root);
     msa_dot_op (dot, dot_helper, root); // worker anstossen
     msa_dag_reset (root);
     reset_node_id (root);
