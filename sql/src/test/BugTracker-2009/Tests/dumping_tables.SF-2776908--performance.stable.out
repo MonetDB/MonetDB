@@ -25,6 +25,7 @@ Over..
 # 11:17:13 >  mclient -lsql -ftest -i -e --host=alf --port=39432 
 # 11:17:13 >  
 
+TABLE   sys.queryhistory
 TABLE   sys.url_test
 CREATE TABLE "sys"."triggers" (
 	"id" int,
