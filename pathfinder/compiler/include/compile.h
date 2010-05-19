@@ -53,6 +53,7 @@ enum PFoutput_format_t {
     , PFoutput_format_mil
     , PFoutput_format_sql
     , PFoutput_format_xml
+    , PFoutput_format_m5sql
 };
 
 /** componentes of global compiler state */
