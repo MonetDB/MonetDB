@@ -33,9 +33,6 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires(pre): shadow-utils
 BuildRequires: pcre-devel
-%if %{?_with_raptor:1}%{!?_with_raptor:0}
-BuildRequires: raptor-devel >= 1.4.16
-%endif
 BuildRequires: libxml2-devel
 
 # when we want MonetDB to run as system daemon, we need this
@@ -63,6 +60,14 @@ BuildRequires: MonetDB-client-devel >= 1.38
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %endif
 
+%if %{?_with_raptor:1}%{!?_with_raptor:0}
+%package rdf
+Summary: MonetDB RDF interface
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+BuildRequires: raptor-devel >= 1.4.16
+%endif
+
 %package devel
 Summary: MonetDB development package
 Group: Applications/Databases
@@ -81,6 +86,16 @@ This package contains the MonetDB5 server component.  You need this
 package if you want to work using the MAL language, or if you want to
 use the SQL frontend (in which case you need MonetDB-SQL-server5 as
 well).
+
+%if %{?_with_raptor:1}%{!?_with_raptor:0}
+%description rdf
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+
+This package contains the MonetDB5 RDF module.
+%endif
 
 %description devel
 MonetDB is a database management system that is developed from a
@@ -122,6 +137,8 @@ mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB5
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB5/Tests/*
 
+find $RPM_BUILD_ROOT%{_libdir}/MonetDB5 \( -name \*.mal -o -name \*.so\* \) ! -name '*rdf*' -print | sed "s|^$RPM_BUILD_ROOT||" > lib-files
+
 %pre
 getent group monetdb >/dev/null || groupadd -r monetdb
 getent passwd monetdb >/dev/null || \
@@ -153,7 +170,7 @@ exit 0
 %clean
 rm -fr $RPM_BUILD_ROOT
 
-%files
+%files -f lib-files
 %defattr(-,root,root)
 %{_bindir}/mserver5
 %{_bindir}/Mbeddedmal
@@ -161,14 +178,20 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so.*
 %dir %{_libdir}/MonetDB5
 %dir %{_libdir}/MonetDB5/lib
-%{_libdir}/MonetDB5/lib/*.so*
-%{_libdir}/MonetDB5/*.mal
+%dir %{_libdir}/MonetDB5/autoload
 
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB5
 
 %config(noreplace) %{_sysconfdir}/monetdb5.conf
 %{_mandir}/man5/monetdb5.conf.5.gz
+
+%if %{?_with_raptor:1}%{!?_with_raptor:0}
+%files rdf
+%{_libdir}/MonetDB5/rdf.mal
+%{_libdir}/MonetDB5/lib/lib_rdf.so*
+%{_libdir}/MonetDB5/autoload/*_rdf.mal
+%endif
 
 %files devel
 %defattr(-,root,root)
