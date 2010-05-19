@@ -89,6 +89,8 @@
 #include "lalg2sql.h"
 #include "sql_opt.h"
 #include "sqlprint.h"
+#include "lalg2msa.h"
+#include "msaprint.h"
 #include "load_stats.h"  /* to create the guide list */
 #include "alg_cl_mnemonic.h"
 
@@ -754,6 +756,39 @@ AFTER_CORE2ALG:
         /* plan bundle emits SQL code wrapped in XML tags */ 
         if (lapb)
             fprintf (pfout, "</query_plan_bundle>\n");
+
+        goto bailout;
+    }
+
+    if (status->output_format == PFoutput_format_m5sql) {
+        unsigned int i = 0;
+        /* If we have a plan bundle we have to generate
+           a M5 SQL algebra plan for each query plan. */
+        do {
+            if (lapb) {
+                laroot = PFla_pb_op_at (lapb, i);
+                assert (laroot->kind == la_serialize_rel);
+                i++;
+            }
+
+            /* generate the M5 SQL algebra plan */
+            tm = PFtimer_start ();
+            PFmsa_op_t *msaroot = PFlalg2msa(laroot);
+            tm = PFtimer_stop (tm);
+            if (status->timing)
+                PFlog ("Compilation to M5 SQL algebra:\t %s", PFtimer_str (tm));
+
+            STOP_POINT(19);
+
+            /* print the internal M5 SQL algebra plan */
+            tm = PFtimer_start ();
+            PFmsa_dot (pfout, msaroot);
+            tm = PFtimer_stop (tm);
+            if (status->timing)
+                PFlog ("M5 SQL algebra debug printing:\t %s", PFtimer_str (tm));
+
+        /* iterate over the plans in the plan bundle */
+        } while (lapb && i < PFla_pb_size (lapb));
 
         goto bailout;
     }
