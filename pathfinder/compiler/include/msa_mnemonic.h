@@ -35,7 +35,7 @@
  *
  * @endif COPYRIGHT
  *
- * $Id: child_mnemonic.h,v 1.3 2010/01/07 15:24:27 sjoerd Exp $
+ * $Id$
  */
 
 #ifndef MSA_MNEMONIC_H

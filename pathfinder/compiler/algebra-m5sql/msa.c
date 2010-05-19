@@ -32,7 +32,7 @@
  * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
- * $Id: $
+ * $Id$
  */
 
 /* always include pf_config.h first! */

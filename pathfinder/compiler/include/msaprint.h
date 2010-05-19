@@ -31,7 +31,7 @@
  * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
- * $Id: $
+ * $Id$
  */
 
 #ifndef MSAPRINT_H

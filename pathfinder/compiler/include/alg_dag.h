@@ -38,7 +38,6 @@
 
 #include "logical.h"
 #include "physical.h"
-#include "msa.h"
 
 /*
  * Mark the DAG bit of the logical algebra tree.
@@ -60,13 +59,6 @@ void PFla_dag_reset (PFla_op_t *n);
  *  the physical tree as DAG.)
  */
 void PFpa_dag_reset (PFpa_op_t *n);
-
-/**
- * Reset the DAG bit of the SQL algebra tree.
- * (it requires a clean reset bit to traverse
- *  the SQL algebra tree as DAG.)
- */
-void PFmsa_dag_reset (PFmsa_op_t *n);
 
 /*
  * Reset the IN and OUT bits of the logical algebra tree.
