@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed May 19 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Created a new RPM MonetDB5-server-rdf for the optional MonetDB/RDF module.
+
 * Sun May  2 2010 Martin Kersten <martin.kersten@cwi.nl>
 - Added the Z-order module to simplify future manipulation of arrays.
 
