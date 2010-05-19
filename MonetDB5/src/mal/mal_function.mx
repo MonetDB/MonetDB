@@ -72,7 +72,6 @@ typedef struct lifespan {
 /* #define DEBUG_CLONE */
 
 mal_export Symbol   newFunction(str mod, str nme,int kind);
-mal_export void	    clearFcn(MalBlkPtr m);
 mal_export int      getPC(MalBlkPtr mb, InstrPtr p);
 
 mal_export InstrPtr newCall(Module scope, str fcnname, int kind);

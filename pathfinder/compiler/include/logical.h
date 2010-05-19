@@ -49,6 +49,9 @@ typedef PFarray_t PFplanlist_t;
 /** A SQL annotation */
 typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
 
+/* A msa annotation */
+typedef struct PFmsa_ann_t PFmsa_ann_t;
+
 #include "load_stats.h"
 #include "properties.h"
 
@@ -519,6 +522,7 @@ struct PFla_op_t {
                                         this logical algebra subexpression. */
     PFsql_alg_ann_t   *sql_ann;    /**< SQL annotations used during SQL code
                                         generation. */
+    
     PFprop_t          *prop;       /**< Properties derived for this expression*/
 
     struct PFla_op_t  *child[PFLA_OP_MAXCHILD];
@@ -526,6 +530,9 @@ struct PFla_op_t {
     int                node_id;    /**< specifies the id of this operator
                                         node; required exclusively to
                                         create dot output. */
+    
+    PFmsa_ann_t       *msa_ann;     /* annotation filled while translating
+                                     from la to msa */
 };
 
 /**
