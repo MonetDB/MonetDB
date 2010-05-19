@@ -27,7 +27,7 @@
  * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
- * $Id: $
+ * $Id$
  */
 #ifndef LALG_2_MSA_H
 #define LALG_2_MSA_H

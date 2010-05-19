@@ -30,7 +30,7 @@
  * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
- * $Id: alg_dag.c,v 1.10 2010/01/07 15:24:27 sjoerd Exp $
+ * $Id$
  */
 
 #include "pf_config.h"
