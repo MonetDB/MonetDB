@@ -72,6 +72,9 @@ BuildRequires: raptor-devel >= 1.4.16
 Summary: MonetDB development package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
+%if %{?_with_raptor:1}%{!?_with_raptor:0}
+Requires: %{name}-rdf = %{version}-%{release}
+%endif
 Requires: MonetDB-devel
 Requires: MonetDB-client-devel
 Requires: libxml2-devel
