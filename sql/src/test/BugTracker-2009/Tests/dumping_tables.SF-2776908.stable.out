@@ -30,7 +30,6 @@ Over..
 # 11:17:12 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=alf --port=39432  -i < /net/alf.ins.cwi.nl/export/scratch1/niels/MonetDB/sql/src/test/BugTracker-2009/Tests/../dumping_tables.SF-2776908.sql
 # 11:17:12 >  
 
-TABLE   sys.queryhistory
 TABLE   sys.url_test
 CREATE TABLE "sys"."triggers" (
 	"id" int,
