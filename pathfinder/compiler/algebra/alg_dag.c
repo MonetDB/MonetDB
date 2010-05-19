@@ -30,7 +30,7 @@
  * 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
  * Rights Reserved.
  *
- * $Id$
+ * $Id: alg_dag.c,v 1.10 2010/01/07 15:24:27 sjoerd Exp $
  */
 
 #include "pf_config.h"
@@ -92,7 +92,7 @@ pa_dag_bit_reset (PFpa_op_t *n)
     if (!n->bit_reset)
         return;
 
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+    for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
         pa_dag_bit_reset (n->child[i]);
 
     n->bit_reset = false;
