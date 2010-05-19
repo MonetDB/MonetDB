@@ -736,23 +736,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		mvc_drop_column(sql, t, col, drop_action);
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
-	{
-		dlist *l = s->data.lval;
-		char *kname = l->h->data.sval;
-		int drop_action = l->h->next->data.i_val;
-		sql_key * key = NULL;
-
-		assert(l->h->next->type == type_int);
-		if ((key = mvc_bind_key(sql, ss, kname )) == NULL) {
-			sql_error(sql, 02, "ALTER TABLE: no such constraint '%s'\n", kname);
-			return SQL_ERR;
-		}
-		if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL)) {
-			sql_error(sql, 02, "ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it\n", key->base.name);
-			return SQL_ERR;
-		}
-		mvc_drop_key(sql, ss, key, drop_action);
-	} 	break;
+		assert(0);
 	}
 	if (res == SQL_ERR) {
 		sql_error(sql, 02, "unknown table element (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
@@ -925,7 +909,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 }
 
 static char *
-get_schema_name(dlist *name_auth)
+dlist_get_schema_name(dlist *name_auth)
 {
 	assert(name_auth && name_auth->h);
 	return name_auth->h->data.sval;
@@ -961,7 +945,7 @@ rel_schema(int cat_type, char *sname, char *auth, int nr)
 static sql_rel *
 rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 {
-	char *name = get_schema_name(auth_name);
+	char *name = dlist_get_schema_name(auth_name);
 	char *auth = schema_auth(auth_name);
 	int auth_id = sql->role_id;
 
@@ -982,7 +966,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		sql_rel *ret;
 
 		ret = rel_schema(DDL_CREATE_SCHEMA, 
-			   get_schema_name(auth_name),
+			   dlist_get_schema_name(auth_name),
 			   schema_auth(auth_name), 0);
 
 		ss->base.name = name;
@@ -1020,6 +1004,19 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 	}
 }
 
+static str
+get_schema_name( mvc *sql, char *sname, char *tname)
+{
+	if (!sname) {
+		sql_schema *ss = cur_schema(sql);
+		sql_table *t = mvc_bind_table(sql, ss, tname);
+		if (!t)
+			ss = tmp_schema(sql);
+		sname = ss->base.name;
+	}
+	return sname;
+}
+
 static sql_rel *
 rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 {
@@ -1041,6 +1038,16 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 		node *n;
 		sql_rel *res = NULL;
 		sql_table *nt = dup_sql_table(sql->sa, t);
+
+		if (nt && te->token == SQL_DROP_CONSTRAINT) {
+			dlist *l = te->data.lval;
+			char *kname = l->h->data.sval;
+			int drop_action = l->h->next->data.i_val;
+			
+			sname = get_schema_name(sql, sname, tname);
+			return rel_schema( DDL_DROP_CONSTRAINT, sname, kname, drop_action);
+		}
+
 		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
 			return NULL;
 
@@ -1113,7 +1120,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		ret = rel_schema(DDL_DROP_SCHEMA, 
-			   get_schema_name(auth_name),
+			   dlist_get_schema_name(auth_name),
 			   NULL,
 			   l->h->next->data.i_val);	/* drop_action */
 	} 	break;
@@ -1144,13 +1151,7 @@ rel_schemas(mvc *sql, symbol *s)
 		char *tname = qname_table(l->h->data.lval);
 
 		assert(l->h->next->type == type_int);
-		if (!sname) {
-			sql_schema *ss = cur_schema(sql);
-			sql_table *t = mvc_bind_table(sql, ss, tname);
-			if (!t)
-				ss = tmp_schema(sql);
-			sname = ss->base.name;
-		}
+		sname = get_schema_name(sql, sname, tname);
 		ret = rel_schema(DDL_DROP_TABLE, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_DROP_VIEW:
@@ -1160,13 +1161,7 @@ rel_schemas(mvc *sql, symbol *s)
 		char *tname = qname_table(l->h->data.lval);
 
 		assert(l->h->next->type == type_int);
-		if (!sname) {
-			sql_schema *ss = cur_schema(sql);
-			sql_table *t = mvc_bind_table(sql, ss, tname);
-			if (!t)
-				ss = tmp_schema(sql);
-			sname = ss->base.name;
-		}
+		sname = get_schema_name(sql, sname, tname);
 		ret = rel_schema(DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_ALTER_TABLE:

@@ -367,10 +367,10 @@ load_idxcolumn(sql_trans *tr, sql_idx * i, oid rid)
 
 	v = table_funcs.column_find_value(tr, find_sql_column(keycolumns, "column"), rid);
 	kc->c = find_sql_column(i->t, v); 	_DELETE(v);
+	assert(kc->c);
 	v = table_funcs.column_find_value(tr, find_sql_column(keycolumns, "trunc"), rid);
 	kc->trunc = *(int *)v;			_DELETE(v);
 	list_append(i->columns, kc);
-	assert(kc->c);
 	if (hash_index(i->type)) 
 		kc->c->unique = 1;
 }
@@ -3061,46 +3061,6 @@ sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc)
 }
 
 static void
-sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
-{
-	node *n;
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(k->t)?"sys":"tmp");
-	sql_table *syskey = find_sql_table(syss, "keys");
-	oid rid = table_funcs.column_find_row(tr, find_sql_column(syskey, "id"), &k->base.id, NULL);
-
-	assert(rid != oid_nil);
-	table_funcs.table_delete(tr, syskey, rid);
-
-	for (n = k->columns->h; n; n = n->next) {
-		sql_kc *kc = n->data;
-
-		sys_drop_kc(tr, k, kc);
-	}
-	/* remove key from schema */
-	list_remove_data(k->t->s->keys, k);
-	if (k->t->pkey == (sql_ukey*)k)
-		k->t->pkey = NULL;
-	if (k->type == fkey) {
-		sql_fkey *fk = (sql_fkey *) k;
-		
-		if (fk->rkey) {
-			n = list_find_name(fk->rkey->keys, fk->k.base.name);
-			list_remove_node(fk->rkey->keys, n);
-		}
-		fk->rkey = NULL;
-	}
-
-	if (isGlobalTable(k->t)) 
-		tr->schema_updates ++;
-
-	sql_trans_drop_dependencies(tr, k->base.id);
-
-	if (drop_action) 
-		sql_trans_drop_all_dependencies(tr, k->t->s, k->base.id, (k->type == fkey) ? FKEY_DEPENDENCY : KEY_DEPENDENCY);
-
-}
-
-static void
 sys_drop_ic(sql_trans *tr, sql_idx * i, sql_kc *kc)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(i->t)?"sys":"tmp");
@@ -3143,6 +3103,46 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 
 	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, i->t->s, i->base.id, INDEX_DEPENDENCY);
+}
+
+static void
+sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
+{
+	node *n;
+	sql_schema *syss = find_sql_schema(tr, isGlobalTable(k->t)?"sys":"tmp");
+	sql_table *syskey = find_sql_table(syss, "keys");
+	oid rid = table_funcs.column_find_row(tr, find_sql_column(syskey, "id"), &k->base.id, NULL);
+
+	assert(rid != oid_nil);
+	table_funcs.table_delete(tr, syskey, rid);
+
+	for (n = k->columns->h; n; n = n->next) {
+		sql_kc *kc = n->data;
+
+		sys_drop_kc(tr, k, kc);
+	}
+	/* remove key from schema */
+	list_remove_data(k->t->s->keys, k);
+	if (k->t->pkey == (sql_ukey*)k)
+		k->t->pkey = NULL;
+	if (k->type == fkey) {
+		sql_fkey *fk = (sql_fkey *) k;
+		
+		if (fk->rkey) {
+			n = list_find_name(fk->rkey->keys, fk->k.base.name);
+			list_remove_node(fk->rkey->keys, n);
+		}
+		fk->rkey = NULL;
+	}
+
+	if (isGlobalTable(k->t)) 
+		tr->schema_updates ++;
+
+	sql_trans_drop_dependencies(tr, k->base.id);
+
+	if (drop_action) 
+		sql_trans_drop_all_dependencies(tr, k->t->s, k->base.id, (k->type == fkey) ? FKEY_DEPENDENCY : KEY_DEPENDENCY);
+
 }
 
 static void
@@ -4212,27 +4212,22 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		*local_id = k->base.id;
 		list_append(tr->dropped, local_id);
 	}
-	
 
-	if (!isTempTable(k->t))
-		sys_drop_key(tr, k, drop_action);
-
-	k->base.wtime = k->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(k->t)) 
-		tr->schema_updates ++;
+	if (k->idx)
+		sql_trans_drop_idx(tr, s, k->idx->base.id, drop_action);
 
 	/*Clean the key from the keys*/
 	n = cs_find_name(&k->t->keys, k->base.name);
 	if (n)
 		cs_del(&k->t->keys, n, k->base.flag);
 
-	/* Clean the index of the key*/
-	if (k->type ==  fkey) {
-		n = cs_find_name(&k->t->idxs, k->base.name);
-		if (n)
-			cs_del(&k->t->idxs, n, k->base.flag);
-	}
-	
+	if (!isTempTable(k->t)) 
+		sys_drop_key(tr, k, drop_action);
+
+	k->base.wtime = k->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	if (isGlobalTable(k->t)) 
+		tr->schema_updates ++;
+
 	if (  drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
