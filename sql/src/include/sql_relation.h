@@ -87,7 +87,8 @@ typedef struct expression {
 #define DDL_DROP_TABLE 	 25
 #define DDL_CREATE_VIEW  26
 #define DDL_DROP_VIEW    27
-#define DDL_ALTER_TABLE  28
+#define DDL_DROP_CONSTRAINT    28
+#define DDL_ALTER_TABLE  29
 
 #define DDL_CREATE_INDEX  30
 #define DDL_DROP_INDEX    31
