@@ -1761,6 +1761,26 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action)
 }
 
 static str
+drop_key( mvc *sql, char *sname, char *kname, int drop_action )
+{
+	sql_key *key;
+	sql_schema *ss = NULL;
+
+	if (sname != NULL && (ss = mvc_bind_schema(sql, sname)) == NULL)
+		return sql_message("DROP VIEW: no such schema '%s'", sname);
+
+	if (ss == NULL)
+		ss = cur_schema(sql);
+
+	if ((key = mvc_bind_key(sql, ss, kname )) == NULL) 
+		return sql_message("ALTER TABLE: no such constraint '%s'", kname);
+	if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL)) 
+		return sql_message("ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it", key->base.name);
+	mvc_drop_key(sql, ss, key, drop_action);
+	return MAL_SUCCEED;
+}
+
+static str
 create_seq( mvc *sql, char *sname, sql_sequence *seq)
 {
 	sql_schema *s = NULL;
@@ -1917,6 +1937,12 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	{
 		sql_table *t = *(sql_table**) getArgReference(stk, pci, 3);
 		msg = alter_table(sql, sname, t);
+	} 	break;
+	case DDL_DROP_CONSTRAINT: {
+		int action = *(int*) getArgReference(stk, pci, 4);
+		str name = *(str*) getArgReference(stk, pci, 3);
+
+		msg = drop_key( sql, sname, name, action);
 	} 	break;
 	default:
 		throw(SQL, "sql.catalog", "catalog unknown type");
