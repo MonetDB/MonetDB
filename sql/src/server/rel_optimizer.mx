@@ -303,6 +303,10 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 	case e_atom:
 		*cnt += 10;
 		return 10;
+	case e_func:
+		/* functions are more expensive, depending on the number of columns involved. */ 
+		*cnt -= 5*list_length(e->l);
+		return 5*list_length(e->l);
 	default:
 		*cnt -= 5;
 		return -5;
