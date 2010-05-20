@@ -566,8 +566,7 @@ OPTmapreduceImplementation(
 			case SINGLE:
 				copy = LEAVE;
 				pushInstruction(mc, p);
-				freeInstruction(orig[i]);
-				orig[i] = NULL;
+				orig[i]->token = NOOPsymbol;
 			break;
 			case STICK:
 			case DUP:
@@ -590,8 +589,6 @@ OPTmapreduceImplementation(
 	copy = STICK;
 	for (i = 0; i < limit; i++) { /* phase 2 */
 		p = orig[i];
-		if (p == NULL)
-			continue;
 
 		if (p == (InstrPtr)1) {
 			newComment(mb, "{ map");
@@ -602,6 +599,13 @@ OPTmapreduceImplementation(
 				sig = pushReturn(mc, sig, lastcol->val1);
 			MRdistributework(cntxt, mb, col, sig, mrcluster);
 			newComment(mb, "} map");
+			/* bogus instruction to be able to set to NOOP */
+			orig[i] = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(orig[i], ioRef);
+			setFunctionId(orig[i], printRef);
+			orig[i] = pushReturn(mb, orig[i], 0);
+			orig[i] = pushArgument(mb, orig[i], 0);
+			orig[i]->token = NOOPsymbol;
 			continue;
 		}
 
