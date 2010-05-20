@@ -155,10 +155,10 @@ msa_atom_str(PFalg_atom_t atom)
     
     switch (atom.type) {
         case aat_nat:
-            sprintf(ret, "%i", atom.val.nat_);
+            sprintf(ret, "%u", atom.val.nat_);
             break;
         case aat_int:
-            sprintf(ret, "%lli", atom.val.int_);
+            sprintf(ret, LLFMT, atom.val.int_);
             break;
         case aat_str:
             if (strlen(atom.val.str) >= 10) {

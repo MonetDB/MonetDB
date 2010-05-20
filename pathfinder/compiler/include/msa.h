@@ -308,7 +308,7 @@ PFmsa_expr_t * PFmsa_expr_atom (PFalg_col_t res_col, PFalg_atom_t atom);
 /* --------------- Constructor stubs for operators --------------- */
 
 /* Constructor for nil node operator */
-PFmsa_op_t * PFmsa_op_nil_node ();
+PFmsa_op_t * PFmsa_op_nil_node (void);
 
 /* Contructor for serialize operator */
 PFmsa_op_t * PFmsa_op_serialize_rel (PFmsa_op_t *DAG, PFmsa_op_t *side_effects,
