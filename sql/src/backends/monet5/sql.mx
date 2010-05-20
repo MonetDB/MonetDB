@@ -5083,7 +5083,7 @@ str SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		d->ibid = bid; /* use the insert bat */
 		c->base.wtime = c->base.rtime = tr->stime;
 	}
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(del->batCacheid);
 	/* bat was cleared */
 	t->cleared = 1;
 	return MAL_SUCCEED;
