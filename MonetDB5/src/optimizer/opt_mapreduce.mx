@@ -129,8 +129,6 @@ opt_export str MRexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_interpreter.h"
 #include "remote.h"
 
-/* #define _DEBUG_OPT_MAPREDUCE*/
-
 @-
 The work distribution assumes that we know at compile time
 the number of nodes participating in the cloud setting.
@@ -328,7 +326,7 @@ MRdistributework(
 		getArg(p, 0) = lcol->val1;
 	}
 
-#ifdef _DEBUG_OPT_MAPREDUCE
+#if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
 	chkProgram(cntxt->nspace, mb);
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
@@ -350,9 +348,10 @@ trackstack_push(struct stack *stk, int val)
 	if (stk->stack == NULL) {
 		stk->len = 10;
 		stk->cur = 0;
-		stk->stack = malloc(sizeof(int) * stk->len);
+		stk->stack = GDKmalloc(sizeof(int) * stk->len);
 	} else if (stk->cur == stk->len) {
-		stk->stack = realloc(stk->stack, sizeof(int) * stk->len * 2);
+		stk->len *= 2;
+		stk->stack = GDKrealloc(stk->stack, sizeof(int) * stk->len);
 	}
 
 	assert(stk->stack);
@@ -385,7 +384,7 @@ static inline void
 trackstack_destroy(struct stack *stk)
 {
 	if (!trackstack_isempty(stk)) {
-		free(stk->stack);
+		GDKfree(stk->stack);
 		stk->stack = NULL;
 	}
 }
@@ -407,11 +406,12 @@ OPTmapreduceImplementation(
 	Symbol new;
 	mapcol *col, *lastcol;
 	struct stack tracker = { NULL, 0, 0 };
+	char hadBinds = 0;
 
 	(void)stk; /* useless, is NULL */
 	(void)pc;
 
-#ifdef _DEBUG_OPT_MAPREDUCE
+#if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 
@@ -471,28 +471,18 @@ OPTmapreduceImplementation(
 				if (*(int *)VALget(&getVar(mc, getArg(p, 5))->value) == 0) {
 					str schema = VALget(&getVar(mc, getArg(p, 2))->value);
 					/* check if this is a column from a mapreduce schema (mr_*) */
-					if (strncmp(schema, "mr_", 3) != 0) {
-						freeSymbol(new);
-						GDKfree(mb->stmt);
-						mb->stmt = orig;
-						mb->stop = limit;
-						GDKfree(old);
-						return 0;
-					}
+					if (strncmp(schema, "mr_", 3) != 0)
+						break;
+
 					/* and that we don't mix 'n' match mapreduce schemas */
 					if (mrcluster[0] == '\0') {
 						snprintf(mrcluster, sizeof(mrcluster),
 								"%s", schema + 3);
-					} else {
-						if (strcmp(mrcluster, schema + 3) != 0) {
-							freeSymbol(new);
-							GDKfree(mb->stmt);
-							mb->stmt = orig;
-							mb->stop = limit;
-							GDKfree(old);
-							return 0;
-						}
+					} else if (strcmp(mrcluster, schema + 3) != 0) {
+						break;
 					}
+
+					hadBinds = 1;
 				}
 
 				/* start of sql.bind, kdiff, kunion, etc. sequence */
@@ -576,8 +566,7 @@ OPTmapreduceImplementation(
 			case SINGLE:
 				copy = LEAVE;
 				pushInstruction(mc, p);
-				freeInstruction(orig[i]);
-				orig[i] = NULL;
+				orig[i]->token = NOOPsymbol;
 			break;
 			case STICK:
 			case DUP:
@@ -588,11 +577,18 @@ OPTmapreduceImplementation(
 	}
 	trackstack_destroy(&tracker);
 
+	if (hadBinds == 0) {
+		/* FIXME: how to free "new"? */
+		GDKfree(mb->stmt);
+		mb->stmt = orig;
+		mb->stop = limit;
+		GDKfree(old);
+		return 0;
+	}
+
 	copy = STICK;
 	for (i = 0; i < limit; i++) { /* phase 2 */
 		p = orig[i];
-		if (p == NULL)
-			continue;
 
 		if (p == (InstrPtr)1) {
 			newComment(mb, "{ map");
@@ -603,6 +599,13 @@ OPTmapreduceImplementation(
 				sig = pushReturn(mc, sig, lastcol->val1);
 			MRdistributework(cntxt, mb, col, sig, mrcluster);
 			newComment(mb, "} map");
+			/* bogus instruction to be able to set to NOOP */
+			orig[i] = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(orig[i], ioRef);
+			setFunctionId(orig[i], printRef);
+			orig[i] = pushReturn(mb, orig[i], 0);
+			orig[i] = pushArgument(mb, orig[i], 0);
+			orig[i]->token = NOOPsymbol;
 			continue;
 		}
 
@@ -744,6 +747,7 @@ OPTmapreduceImplementation(
 	} \
 }
 									FINDANDFIXBATNEW(p, 2);
+									setArgType(mb, p, 0, lastcol->val3type);
 									q = getArg(p, 1);
 								}
 							}
@@ -800,7 +804,6 @@ OPTmapreduceImplementation(
 			break;
 		}
 	}
-
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 10
 	stream_printf(cntxt->fdout, "MAP program\n");
