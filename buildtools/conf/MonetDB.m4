@@ -811,7 +811,7 @@ yes-*-*)
 		dnl  generates "X_CFLAGS =" in the generated Makefile.
 		NO_X_CFLAGS='X_CFLAGS'
 		;;
-	*-solaris*|*-darwin*|*-aix*)
+	*-solaris*|*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
