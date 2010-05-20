@@ -72,9 +72,10 @@ end main;
 [ 27,	  "inet"	  ]
 [ 28,	  "identifier"	  ]
 [ 29,	  "pcre"	  ]
-[ 30,	  "mbr"		  ]
-[ 31,	  "wkb"		  ]
-[ 32,	  "mapentry"	  ]
+[ 30,	  "xml"		  ]
+[ 31,	  "mbr"		  ]
+[ 32,	  "wkb"		  ]
+[ 33,	  "mapentry"	  ]
 #-------------------------#
 # t	h		  # name
 # oid	str		  # type
@@ -154,6 +155,7 @@ end main;
 [ "url",	  nil	  ]
 [ "user",	  nil	  ]
 [ "wkb",	  nil	  ]
+[ "xml",	  nil	  ]
 [ "zrule",	  nil	  ]
 command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):bat[:any_1,:any_2] address BKCinsert_bun_force;
 #Insert one BUN[h,t] in a BAT.

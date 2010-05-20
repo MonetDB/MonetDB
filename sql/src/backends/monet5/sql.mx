@@ -805,6 +805,14 @@ pattern cluster2(sch:str, tbl:str)
 address SQLcluster2
 comment "Cluster the columns of a table on the (first) primary key";
 
+pattern shrink(sch:str, tbl:str)
+address SQLshrink
+comment "Consolidate the deletion table over all columns using shrinking";
+
+pattern reuse(sch:str, tbl:str)
+address SQLreuse
+comment "Consolidate the deletion table over all columns reusing deleted slots";
+
 pattern newdictionary(sch:str, tbl:str):void
 address SQLnewDictionary
 comment "Perform dictionary compression on a table";
@@ -1084,6 +1092,8 @@ sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
 sql5_export str not_unique_oids(bat *ret, bat *bid);
 sql5_export str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -5021,6 +5031,66 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t->cleared = 1;
 	return MAL_SUCCEED;
 }
+@- Vacuum cleaning tables
+Shrinking and re-using space to vacuum clean the holes in the relations.
+@= vacuum
+str SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *sch = (str *) getArgReference(stk,pci,1);
+	str *tbl = (str *) getArgReference(stk,pci,2);
+	sql_trans	*tr;
+	sql_schema	*s;
+	sql_table 	*t;
+	sql_column	*c;
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	bat bid;
+	BAT *b, *del;
+	node *o;
+
+	if (msg)
+		return msg;
+   	s = mvc_bind_schema(m, *sch);
+	if ( s == NULL)
+		throw(MAL,"sql.@1","Schema missing");
+	t = mvc_bind_table(m, s, *tbl);
+	if ( t == NULL)
+		throw(MAL,"sql.@1","Table missing");
+	tr = m->session->tr;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
+
+	/* actually build the hash on the multi-column primary key */
+
+	/* get the deletions BAT*/
+	del = mvc_bind_dbat(m, *sch, *tbl, 2);
+
+	for (o = t->columns.set->h; o; o = o->next) {
+		sql_delta *d;
+		c = o->data;
+		b = store_funcs.bind_col(tr, c, 0);
+		if (b == NULL)
+			throw(MAL,"sql.@1","Can not access descriptor");
+		msg = BKC@1BAT(&bid, &(b->batCacheid), &(del->batCacheid));
+		BBPreleaseref(b->batCacheid);
+		if (msg){
+			BBPreleaseref(bid);
+			return msg;
+		}
+		BBPdecref(b->batCacheid, TRUE);
+		d = c->data;
+		d->bid = 0;
+		d->ibase = 0;
+		d->ibid = bid; /* use the insert bat */
+		c->base.wtime = c->base.rtime = tr->stime;
+	}
+	BBPreleaseref(d->batCacheid);
+	/* bat was cleared */
+	t->cleared = 1;
+	return MAL_SUCCEED;
+}
+@c
+@:vacuum(shrink)@
+@:vacuum(reuse)@
 
 @-
 Take a SQL table and compress its columns using the dictionary compression scheme.
