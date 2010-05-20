@@ -129,8 +129,6 @@ opt_export str MRexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_interpreter.h"
 #include "remote.h"
 
-/* #define _DEBUG_OPT_MAPREDUCE*/
-
 @-
 The work distribution assumes that we know at compile time
 the number of nodes participating in the cloud setting.
@@ -328,7 +326,7 @@ MRdistributework(
 		getArg(p, 0) = lcol->val1;
 	}
 
-#ifdef _DEBUG_OPT_MAPREDUCE
+#if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
 	chkProgram(cntxt->nspace, mb);
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
@@ -411,7 +409,7 @@ OPTmapreduceImplementation(
 	(void)stk; /* useless, is NULL */
 	(void)pc;
 
-#ifdef _DEBUG_OPT_MAPREDUCE
+#if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 
