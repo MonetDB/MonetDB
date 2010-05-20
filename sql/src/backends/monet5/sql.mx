@@ -813,6 +813,10 @@ pattern reuse(sch:str, tbl:str)
 address SQLreuse
 comment "Consolidate the deletion table over all columns reusing deleted slots";
 
+pattern vacuum(sch:str, tbl:str)
+address SQLvacuum
+comment "Choose an approach to consolidate the deletions";
+
 pattern newdictionary(sch:str, tbl:str):void
 address SQLnewDictionary
 comment "Perform dictionary compression on a table";
@@ -1094,6 +1098,7 @@ sql5_export str not_unique_oids(bat *ret, bat *bid);
 sql5_export str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -5034,7 +5039,8 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @- Vacuum cleaning tables
 Shrinking and re-using space to vacuum clean the holes in the relations.
 @= vacuum
-str SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_trans	*tr;
@@ -5059,8 +5065,6 @@ str SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 
-	/* actually build the hash on the multi-column primary key */
-
 	/* get the deletions BAT*/
 	del = mvc_bind_dbat(m, *sch, *tbl, 2);
 
@@ -5083,7 +5087,7 @@ str SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		d->ibid = bid; /* use the insert bat */
 		c->base.wtime = c->base.rtime = tr->stime;
 	}
-	BBPreleaseref(d->batCacheid);
+	BBPreleaseref(del->batCacheid);
 	/* bat was cleared */
 	t->cleared = 1;
 	return MAL_SUCCEED;
@@ -5092,6 +5096,61 @@ str SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @:vacuum(shrink)@
 @:vacuum(reuse)@
 
+@-
+The vacuum operation inspects the table for ordered properties and will keep them.
+To avoid expensive shuffles, the reorganisation is balanced by the number of outstanding deletions.
+@c
+str
+SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *sch = (str *) getArgReference(stk,pci,1);
+	str *tbl = (str *) getArgReference(stk,pci,2);
+	sql_trans	*tr;
+	sql_schema	*s;
+	sql_table 	*t;
+	sql_column	*c;
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	BAT *b, *del;
+	node *o;
+	int ordered = 0;
+	BUN cnt=0;
+
+	if (msg)
+		return msg;
+   	s = mvc_bind_schema(m, *sch);
+	if ( s == NULL)
+		throw(MAL,"sql.@1","Schema missing");
+	t = mvc_bind_table(m, s, *tbl);
+	if ( t == NULL)
+		throw(MAL,"sql.@1","Table missing");
+	tr = m->session->tr;
+
+	/* get the deletions BAT*/
+	del = mvc_bind_dbat(m, *sch, *tbl, 2);
+
+	for (o = t->columns.set->h; o && ordered == 0; o = o->next) {
+		c = o->data;
+		b = store_funcs.bind_col(tr, c, 0);
+		if (b == NULL)
+			throw(MAL,"sql.@1","Can not access descriptor");
+		ordered |= BATtordered(b);
+		cnt = BATcount(b);
+		BBPreleaseref(b->batCacheid);
+		if (msg){
+			BBPreleaseref(b->batCacheid);
+			return msg;
+		}
+		BBPdecref(b->batCacheid, TRUE);
+	}
+	/* now decide on the algorithm */
+	if ( ordered ){
+		if( BATcount(del) > cnt/20 )
+			SQLshrink(cntxt,mb,stk,pci);
+	} else
+		SQLreuse(cntxt,mb,stk,pci);
+
+	return MAL_SUCCEED;
+}
 @-
 Take a SQL table and compress its columns using the dictionary compression scheme.
 @= compression
