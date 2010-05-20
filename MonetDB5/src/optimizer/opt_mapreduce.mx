@@ -743,6 +743,7 @@ OPTmapreduceImplementation(
 	} \
 }
 									FINDANDFIXBATNEW(p, 2);
+									setArgType(mb, p, 0, lastcol->val3type);
 									q = getArg(p, 1);
 								}
 							}
