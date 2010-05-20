@@ -406,6 +406,7 @@ OPTmapreduceImplementation(
 	Symbol new;
 	mapcol *col, *lastcol;
 	struct stack tracker = { NULL, 0, 0 };
+	char hadBinds = 0;
 
 	(void)stk; /* useless, is NULL */
 	(void)pc;
@@ -470,26 +471,18 @@ OPTmapreduceImplementation(
 				if (*(int *)VALget(&getVar(mc, getArg(p, 5))->value) == 0) {
 					str schema = VALget(&getVar(mc, getArg(p, 2))->value);
 					/* check if this is a column from a mapreduce schema (mr_*) */
-					if (strncmp(schema, "mr_", 3) != 0) {
-						GDKfree(mb->stmt);
-						mb->stmt = orig;
-						mb->stop = limit;
-						GDKfree(old);
-						return 0;
-					}
+					if (strncmp(schema, "mr_", 3) != 0)
+						break;
+
 					/* and that we don't mix 'n' match mapreduce schemas */
 					if (mrcluster[0] == '\0') {
 						snprintf(mrcluster, sizeof(mrcluster),
 								"%s", schema + 3);
-					} else {
-						if (strcmp(mrcluster, schema + 3) != 0) {
-							GDKfree(mb->stmt);
-							mb->stmt = orig;
-							mb->stop = limit;
-							GDKfree(old);
-							return 0;
-						}
+					} else if (strcmp(mrcluster, schema + 3) != 0) {
+						break;
 					}
+
+					hadBinds = 1;
 				}
 
 				/* start of sql.bind, kdiff, kunion, etc. sequence */
@@ -584,6 +577,15 @@ OPTmapreduceImplementation(
 		}
 	}
 	trackstack_destroy(&tracker);
+
+	if (hadBinds == 0) {
+		/* FIXME: how to free "new"? */
+		GDKfree(mb->stmt);
+		mb->stmt = orig;
+		mb->stop = limit;
+		GDKfree(old);
+		return 0;
+	}
 
 	copy = STICK;
 	for (i = 0; i < limit; i++) { /* phase 2 */
