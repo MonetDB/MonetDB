@@ -10,9 +10,11 @@ stdout of test 'xml10` in directory 'src/modules/mal` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34949/
+# MonetDB/SQL module v2.39.0 loaded
+# MonetDB/GIS module v0.19.0 loaded
+
 function user.main():void;
-    xml.prelude();
 # produce a more complex structure 
 # such as  
 #<books> 

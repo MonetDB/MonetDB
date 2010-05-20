@@ -13,9 +13,11 @@ stdout of test 'xml01` in directory 'src/modules/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34949/
+# MonetDB/SQL module v2.39.0 loaded
+# MonetDB/GIS module v0.19.0 loaded
+
 function user.main():void;
-    xml.prelude();
     b := bat.new(:oid,:str);
     bat.insert(b,0@0,"Mary Ann Walker");
     bat.insert(b,1@0,"Annie Chapman");
