@@ -348,9 +348,10 @@ trackstack_push(struct stack *stk, int val)
 	if (stk->stack == NULL) {
 		stk->len = 10;
 		stk->cur = 0;
-		stk->stack = malloc(sizeof(int) * stk->len);
+		stk->stack = GDKmalloc(sizeof(int) * stk->len);
 	} else if (stk->cur == stk->len) {
-		stk->stack = realloc(stk->stack, sizeof(int) * stk->len * 2);
+		stk->len *= 2;
+		stk->stack = GDKrealloc(stk->stack, sizeof(int) * stk->len);
 	}
 
 	assert(stk->stack);
@@ -383,7 +384,7 @@ static inline void
 trackstack_destroy(struct stack *stk)
 {
 	if (!trackstack_isempty(stk)) {
-		free(stk->stack);
+		GDKfree(stk->stack);
 		stk->stack = NULL;
 	}
 }
@@ -470,7 +471,6 @@ OPTmapreduceImplementation(
 					str schema = VALget(&getVar(mc, getArg(p, 2))->value);
 					/* check if this is a column from a mapreduce schema (mr_*) */
 					if (strncmp(schema, "mr_", 3) != 0) {
-						freeSymbol(new);
 						GDKfree(mb->stmt);
 						mb->stmt = orig;
 						mb->stop = limit;
@@ -483,7 +483,6 @@ OPTmapreduceImplementation(
 								"%s", schema + 3);
 					} else {
 						if (strcmp(mrcluster, schema + 3) != 0) {
-							freeSymbol(new);
 							GDKfree(mb->stmt);
 							mb->stmt = orig;
 							mb->stop = limit;
@@ -798,7 +797,6 @@ OPTmapreduceImplementation(
 			break;
 		}
 	}
-
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 10
 	stream_printf(cntxt->fdout, "MAP program\n");
