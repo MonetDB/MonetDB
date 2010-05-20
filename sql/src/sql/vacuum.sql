@@ -27,3 +27,6 @@ create procedure shrink(sys string, tab string)
 create procedure reuse(sys string, tab string)
 	external name sql.reuse;
 
+create procedure vacuum(sys string, tab string)
+	external name sql.vacuum;
+
