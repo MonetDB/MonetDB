@@ -263,9 +263,9 @@ PFmsa_expr_t *
 PFmsa_expr_func (PFmsa_expr_func_name name, PFmsa_exprlist_t *child_list,
                  PFalg_col_t res_col)
 {
-    PFmsa_expr_t *ret;
-    PFmsa_expr_t *n1;
-    PFmsa_expr_t *n2;
+    PFmsa_expr_t *ret = NULL;
+    PFmsa_expr_t *n1 = NULL;
+    PFmsa_expr_t *n2 = NULL;
     
     /* Common cases */
     if (elsize(child_list) == 0) 
@@ -304,9 +304,9 @@ PFmsa_expr_func (PFmsa_expr_func_name name, PFmsa_exprlist_t *child_list,
 PFmsa_expr_t * PFmsa_expr_num_gen (PFmsa_num_gen_kind_t kind, PFmsa_exprlist_t *child_list,
                                    PFalg_col_t res_col)
 {
-    PFmsa_expr_t *ret;
-    PFmsa_expr_t *n1;
-    PFmsa_expr_t *n2;
+    PFmsa_expr_t *ret = NULL;
+    PFmsa_expr_t *n1 = NULL;
+    PFmsa_expr_t *n2 = NULL;
     
     /* Common cases */
     if (elsize(child_list) == 0) 

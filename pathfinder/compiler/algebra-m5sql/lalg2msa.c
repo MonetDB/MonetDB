@@ -140,9 +140,9 @@ alg2msa_worker(PFla_op_t *n)
     unsigned int i;
     /* declarations need for the translation: msa annotation and its contents */
     PFmsa_ann_t *msa_ann;
-    PFmsa_op_t *op;
-    PFmsa_exprlist_t *prj_list;
-    PFmsa_exprlist_t *sel_list;
+    PFmsa_op_t *op = NULL;
+    PFmsa_exprlist_t *prj_list = NULL;
+    PFmsa_exprlist_t *sel_list = NULL;
     
     /* traverse child operators recursively */
     for (i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++) {
@@ -360,7 +360,7 @@ alg2msa_worker(PFla_op_t *n)
              are preserved. */
             
             PFmsa_exprlist_t        *exprlist;
-            PFmsa_comp_kind_t       comp_kind;
+            PFmsa_comp_kind_t       comp_kind = msa_comp_equal;
             PFalg_sel_t             curr_pred;
             PFmsa_expr_t            *left_col;
             PFmsa_expr_t            *right_col;
@@ -636,7 +636,7 @@ alg2msa_worker(PFla_op_t *n)
             /* Append comparison expression representing gt/eq 
              to projection list. Operator and selection list
              stay unchanged. */
-            PFmsa_comp_kind_t           comp_kind;
+            PFmsa_comp_kind_t           comp_kind = msa_comp_equal;
             PFmsa_expr_t                *col1_expr;
             PFmsa_expr_t                *col2_expr;
             
@@ -698,7 +698,7 @@ alg2msa_worker(PFla_op_t *n)
                              n->sem.binary.col2);
             eladd(exprlist) = expr;
             
-            PFmsa_expr_func_name func_name;
+            PFmsa_expr_func_name func_name = msa_func_or;
             switch (n->kind) {
                 case la_bool_or:
                     func_name = msa_func_or;
@@ -887,7 +887,7 @@ alg2msa_worker(PFla_op_t *n)
             PFmsa_expr_t            *expr_cpy;
             PFalg_col_t             curr_col;
             bool                    curr_sortorder;
-            PFmsa_num_gen_kind_t    kind;
+            PFmsa_num_gen_kind_t    kind = msa_num_gen_rowrank;
             
             op = OP (L(n));
             prj_list = elcopy(PRJ_LIST (L(n)));
