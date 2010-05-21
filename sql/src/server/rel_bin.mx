@@ -2650,7 +2650,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 		}
 
 		/* 2e stage: find out if the updated are unique */
-		if (!updates || updates[updcol]->nrcols) {	/* update columns not atoms */
+		if (!updates || updates[updcol]->op2.stval->nrcols) {	/* update columns not atoms */
 			sql_subaggr *sum;
 			stmt *count_sum = NULL, *ssum;
 			group *g = NULL;
