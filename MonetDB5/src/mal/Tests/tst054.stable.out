@@ -1,0 +1,31 @@
+stdout of test 'tst054` in directory 'src/mal` itself:
+
+
+# 11:11:08 >  
+# 11:11:08 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31658 --set xrpc_port=44186 --set monet_prompt= --set mal_listing=2 --trace  --dbname=mTests_src_mal  tst054.mal
+# 11:11:08 >  
+
+# MonetDB server v5.21.0, based on kernel v1.39.0
+# Serving database 'mTests_src_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31658/
+# MonetDB/SQL module v2.39.0 loaded
+# MonetDB/GIS module v0.19.0 loaded
+!SyntaxException:parseError:return (1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0);
+!SyntaxException:parseError:       ^<identifier> expected
+function user.z() (_1:int,_2:int,_3:int,_4:int,_5:int,_6:int,_7:int,_8:int,_9:int,_10:int,_11:int,_12:int,_13:int,_14:int,_15:int,_16:int,_17:int,_18:int,_19:int,_20:int,_21:int,_22:int,_23:int,_24:int,_25:int,_26:int,_27:int,_28:int,_29:int,_30:int);
+    io.print("hello");
+end z;
+!TypeException:user.main[1]:'user.z' undefined in: _1:any := user.z()
+function user.main():void;
+    user.z();
+end main;
+
+# 11:11:08 >  
+# 11:11:08 >  Done.
+# 11:11:08 >  
+
