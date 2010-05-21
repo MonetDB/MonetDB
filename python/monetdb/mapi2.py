@@ -26,9 +26,14 @@ import logging
 import struct
 import hashlib
 import crypt
+import platform
 
 from monetdb.monetdb_exceptions import *
 
+# windows doesn't support MSG_WAITALL flag for recv
+flags = None
+if platform.system() != 'Windows':
+    flags = socket.MSG_WAITALL
 
 logger = logging.getLogger("monetdb")
 
@@ -234,7 +239,7 @@ class Server:
         result = ""
         while count > 0:
             try:
-                recv = self.socket.recv(bytes)
+                recv = self.socket.recv(bytes, flags)
             except socket.error, error:
                 raise OperationalError(error[1])
             count -= len(recv)
