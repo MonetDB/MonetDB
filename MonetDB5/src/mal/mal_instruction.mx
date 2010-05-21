@@ -2743,7 +2743,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			break;
 		}
 		return fcnDefinition(mb, p, s, flg, base, len);
-	case NOOPsymbol:
 	case REMsymbol:
 	case NOOPsymbol:
 		if(getVar(mb, getArg(p, 0))->value.val.sval) 
