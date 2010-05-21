@@ -30,8 +30,14 @@ import socket
 import logging
 import struct
 from io import BytesIO
+import platform
 
 from monetdb.monetdb_exceptions import *
+
+# windows doesn't support MSG_WAITALL flag for recv
+flags = None
+if platform.system() != 'Windows':
+        flags = socket.MSG_WAITALL
 
 
 logger = logging.getLogger("monetdb")
@@ -242,7 +248,11 @@ class Server:
             last = unpacked & 1
             logger.debug("II: reading %i bytes" % length)
             if length > 0:
-                result_bytes.write(self.__getbytes(length))
+                count = length
+                while count > 0:
+                    recv = self.__getbytes(length)
+                    result_bytes.write(recv)
+                    count -= len(recv)
 
         result = result_bytes.getvalue()
         logger.debug("RX: %s" % result)
@@ -252,7 +262,7 @@ class Server:
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""
         try:
-            return self.socket.recv(bytes)
+            return self.socket.recv(bytes, flags)
         except socket.error as error_str:
             raise OperationalError(error_str)
 
