@@ -69,6 +69,7 @@ EXTRA_DIST = \
 	milprint.h \
 	milprint_summer.h \
         msa.h \
+        msa_mnemonic.h \
         msaprint.h \
 	normalize.h \
 	ns.h \
