@@ -2065,7 +2065,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 		s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_wrd(0), ne);
 
 		/* 2e stage: find out if inserted are unique */
-		if (!idx_inserts || idx_inserts->nrcols) {	/* insert columns not atoms */
+		if ((!idx_inserts && nth(inserts,0)->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
 #if 0
 			sql_subtype *Oid = sql_bind_localtype("oid");
 			sql_subfunc *nu, *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
@@ -2090,10 +2090,9 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			/* combine results */
 			s = stmt_binop(s, ssum, or);
 #else
-			stmt *ss;
+			stmt *ss = NULL;
 			sql_subfunc *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
-			/* implementation uses sort,refine, keyed check */
-			ss = NULL;
+			/* implementation uses sort,refine, key check */
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 
