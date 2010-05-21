@@ -56,8 +56,8 @@ CREATE TABLE "sys"."callhistory" (
 	"id"        bigint,
 	"ctime"     TIMESTAMP,
 	"arguments" CHARACTER LARGE OBJECT,
-	"xtime"     bigint,
-	"rtime"     bigint,
+	"execute"   bigint,
+	"result"    bigint,
 	"foot"      bigint,
 	"memory"    bigint,
 	"tuples"    bigint,
@@ -65,7 +65,7 @@ CREATE TABLE "sys"."callhistory" (
 	"oublock"   bigint
 );
 create view querylog as
-select qd.*, ql.ctime, ql.arguments, ql.xtime, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql
+select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql
 where qd.id = ql.id;
 -- the signature is used in the kernel, don't change it
 create procedure keepquery(
@@ -94,6 +94,11 @@ begin
 	insert into callhistory
 	values( id, ctime, arguments, xtime, rtime, 
 		foot, memory, tuples, inblock, oublock );
+end;
+create procedure resethistory()
+begin
+	delete from callhistory;
+	delete from queryhistory;
 end;
 -- The contents of this file are subject to the MonetDB Public License
 -- Version 1.1 (the "License"); you may not use this file except in
