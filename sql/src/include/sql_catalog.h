@@ -263,11 +263,13 @@ typedef enum idx_type {
 	clustered,		/* ie has a clustered replica */
 	isclustered,		/* the table is (kept) clustered */
 	oph_idx,		/* order preserving hash */
+	no_idx,			/* no idx, ie no storage */
 	new_idx_types
 } idx_type;
 
 #define hash_index(t) 		(t == hash_idx || t == oph_idx )
-#define idx_is_column(t) 	(hash_index(t) || t == join_idx)
+#define idx_is_column(t) 	(hash_index(t) || t == join_idx || t == no_idx)
+#define idx_has_column(t) 	(hash_index(t) || t == join_idx)
 
 typedef struct sql_idx {
 	sql_base base;
@@ -373,6 +375,7 @@ typedef struct sql_column {
 	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
 	int drop_action;	/* only used for alter statements */
 	int storage_type;
+	int sorted;		/* for DECLARED (dupped tables) we keep order info */
 
 	struct sql_table *t;
 	void *data;
@@ -498,6 +501,7 @@ extern sql_column *find_sql_column(sql_table *t, char *cname);
 
 extern node *find_sql_table_node(sql_schema *s, char *tname, int id);
 extern sql_table *find_sql_table(sql_schema *s, char *tname);
+extern sql_table *find_sql_table_id(sql_schema *s, int id);
 
 extern node *find_sql_sequence_node(sql_schema *s, char *sname, int id);
 extern sql_sequence *find_sql_sequence(sql_schema *s, char *sname);

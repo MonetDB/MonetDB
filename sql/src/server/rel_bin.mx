@@ -2611,9 +2611,6 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne;
 
-	if (list_length(k->columns) > 1 && !idx_updates)
-		return NULL;
-
 	ne = sql_bind_func_result(sql->session->schema, "<>", wrd, wrd, bt);
 	if (list_length(k->columns) > 1) {
 		stmt *ts = stmt_basetable(k->t, k->t->base.name);
@@ -2654,7 +2651,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 		}
 
 		/* 2e stage: find out if the updated are unique */
-		if (idx_updates->nrcols) {	/* update columns not atoms */
+		if (!updates || updates[updcol]->nrcols) {	/* update columns not atoms */
 			sql_subaggr *sum;
 			stmt *count_sum = NULL, *ssum;
 			group *g = NULL;

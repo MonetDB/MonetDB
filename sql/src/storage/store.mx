@@ -397,7 +397,7 @@ load_idx(sql_trans *tr, sql_table *t, oid rid)
 	ni->t = t;
 	ni->key = NULL;
 
-	if (isTable(ni->t) && idx_is_column(ni->type))
+	if (isTable(ni->t) && idx_has_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 
 	if (ni->type == isclustered)
@@ -1141,6 +1141,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	col->t = t;
 	col->unique = c->unique;
 	col->storage_type = c->storage_type;
+	col->sorted = sql_trans_is_sorted(NULL, c);
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
 }
@@ -1747,7 +1748,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 	list_append(t->s->idxs, ni);
 	cs_add(&t->idxs, ni, TR_NEW);
 
-	if (!isDeclaredTable(t) && isTable(ni->t) && idx_is_column(ni->type))
+	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
@@ -2242,7 +2243,7 @@ static sql_idx *
 rollforward_create_idx(sql_trans *tr, sql_idx * i, int mode)
 {
 
-	if (isTable(i->t) && idx_is_column(i->type)) {
+	if (isTable(i->t) && idx_has_column(i->type)) {
 		int p = (tr->parent == gtrans && !isTempTable(i->t));
 
 		if ((p && mode == R_SNAPSHOT && store_funcs.snapshot_create_idx(tr, i) != LOG_OK) ||
@@ -3697,6 +3698,21 @@ create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c)
 	ic->c = c;
 	ic->trunc = 0;
 	list_append(i->columns, ic);
+
+	if (hash_index(i->type) && list_length(i->columns) > 1) {
+		/* Correct the unique flag of the keys first column */
+		c->unique = list_length(i->columns); 
+		if (c->unique == 2) {
+			sql_kc *ic1 = i->columns->h->data;
+			ic1->c->unique ++;
+		}
+	}
+
+	/* should we switch to oph_idx ? */
+	if (i->type == hash_idx && list_length(i->columns) == 1 && ic->c->sorted) 
+		//i->type = oph_idx;
+		i->type = no_idx;
+
 	return i;
 }
 
@@ -4261,7 +4277,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 	cs_add(&t->idxs, ni, TR_NEW);
 	list_append(t->s->idxs, ni);
 
-	if (!isDeclaredTable(t) && isTable(ni->t) && idx_is_column(ni->type))
+	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
@@ -4294,14 +4310,15 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 	}
 
 	/* should we switch to oph_idx ? */
-	if (0 && i->type == hash_idx && list_length(i->columns) == 1 &&
+	if (i->type == hash_idx && list_length(i->columns) == 1 &&
 	    store_funcs.count_col(ic->c) && store_funcs.sorted_col(tr, ic->c)) {
 		sql_table *sysidx = find_sql_table(syss, "idxs");
 		sql_column *sysidxid = find_sql_column(sysidx, "id");
 		sql_column *sysidxtype = find_sql_column(sysidx, "type");
 		oid rid = table_funcs.column_find_row(tr, sysidxid, &i->base.id, NULL);
 	
-		i->type = oph_idx;
+		//i->type = oph_idx;
+		i->type = no_idx;
 		table_funcs.column_update_value(tr, sysidxtype, rid, &i->type);
 	}
 

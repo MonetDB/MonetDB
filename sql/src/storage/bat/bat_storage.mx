@@ -136,7 +136,8 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 {
 	if (access == RD_UPD)
 		return bind_ucol(tr, c, access);
-	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+	if (tr)
+		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	return delta_bind_bat( c->data, access, isTemp(c));
 }
 
@@ -145,7 +146,8 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 {
 	if (access == RD_UPD)
 		return bind_uidx(tr, i, access);
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	if (tr)
+		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	return delta_bind_bat( i->data, access, isTemp(i));
 }
 
@@ -420,7 +422,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 			sql_idx *i = n->data;
 			sql_delta *bat = i->data;
 
-			if (bat->cached) {
+			if (bat && bat->cached) {
 				bat_destroy(bat->cached);
 				bat->cached = NULL;
 			}
@@ -440,7 +442,7 @@ count_col(sql_column *col)
 {
 	sql_delta *b = col->data;
 	if (!b)
-		return 0;
+		return 1;
 	return b->cnt;
 }
 
@@ -453,13 +455,40 @@ count_idx(sql_idx *idx)
 	return b->cnt;
 }
 
+
+sql_column *
+find_col( sql_trans *tr, char *sname, char *tname, char *cname )
+{
+	sql_schema *s = find_sql_schema(tr, sname);
+	sql_table *t;
+	sql_column *c = NULL;
+
+	if (s) 
+		t = find_sql_table(s, tname);
+	if (t) 
+		c = find_sql_column(t, cname);
+	return c;
+}
+
 static int
 sorted_col(sql_trans *tr, sql_column *col)
 {
-	BAT *b = bind_col(tr, col, RDONLY);
-	int sorted = BATtordered(b);
-	
-	bat_destroy(b);
+	int sorted = 0;
+
+	/* fallback to central bat */
+	if (tr && tr->parent && !col->data) {
+		col = find_col(tr->parent, 
+			col->t->s->base.name, 
+			col->t->base.name,
+			col->base.name);
+	}
+
+	if (col && col->data) {
+		BAT *b = bind_col(tr, col, RDONLY);
+
+		sorted = BATtordered(b);
+		bat_destroy(b);
+	}
 	return sorted;
 }
 

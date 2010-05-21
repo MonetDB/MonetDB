@@ -171,6 +171,16 @@ find_sql_table(sql_schema *s, char *tname)
 	return NULL;
 }
 
+sql_table *
+find_sql_table_id(sql_schema *s, int id)
+{
+	node *n = find_sql_table_node(s, NULL, id);
+
+	if (n)
+		return n->data;
+	return NULL;
+}
+
 node *
 find_sql_sequence_node(sql_schema *s, char *sname, int id)
 {
