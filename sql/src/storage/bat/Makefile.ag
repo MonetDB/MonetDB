@@ -17,7 +17,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = .. ../../include ../../common $(MONETDB_INCS)
+INCLUDES = .. ../../include ../../common $(MONETDB_INCS) $(MONETDB5_INCS)
 
 lib_batstore = {
 	NOINST

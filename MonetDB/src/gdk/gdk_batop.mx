@@ -2849,7 +2849,7 @@ PROPdestroy(PROPrec *p)
 	}
 }
 
-static PROPrec *
+PROPrec *
 BATgetprop(BAT *b, int idx)
 {
 	PROPrec *p = b->T->props;
@@ -2894,7 +2894,7 @@ BATgetprop_str(BAT *b, int idx)
 	return (p) ? p->v.val.pval : str_nil;
 }
 
-static void
+void
 BATsetprop(BAT *b, int idx, int type, void *v)
 {
 	ValRecord vr;

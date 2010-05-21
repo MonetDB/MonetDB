@@ -233,7 +233,7 @@ SQLepilogue(void)
 	return MAL_SUCCEED;
 }
 
-MT_Id sqllogthread;
+MT_Id sqllogthread, minmaxthread;
 
 static str
 SQLinit(void)
@@ -279,6 +279,10 @@ SQLinit(void)
 	if (!GDKembedded && MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL) < 0) {
 		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting log manager failed");
+	}
+	if (!GDKembedded && MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL) < 0) {
+		mal_unset_lock(sql_contextLock,"SQL init");
+		throw(SQL, "SQLinit", "Starting minmax manager failed");
 	}
 	return MAL_SUCCEED;
 }

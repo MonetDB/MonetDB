@@ -1522,6 +1522,18 @@ store_manager(void)
 	}
 }
 
+void
+minmax_manager(void)
+{
+	while (active) {
+		MT_sleep_ms(30000);
+		if (store_nr_active || !active) 
+			continue;
+		if (store_funcs.gtrans_minmax)
+			store_funcs.gtrans_minmax(gtrans);
+	}
+}
+
 
 void
 store_lock(void)

@@ -83,6 +83,7 @@ extern int tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared);
 #include "bat_storage.h"
 #include "bat_utils.h"
 #include <sql_string.h>
+#include <algebra.h>
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024)
 
@@ -1211,7 +1212,7 @@ gtr_update_table(sql_trans *tr, sql_table *t)
 
 		if (!c->base.wtime) 
 			continue;
-		gtr_update_delta(tr, c->data);
+		ok = gtr_update_delta(tr, c->data);
 	}
 	if (ok == LOG_OK && t->idxs.set) {
 		for (n = t->idxs.set->h; ok == LOG_OK && n; n = n->next) {
@@ -1221,31 +1222,90 @@ gtr_update_table(sql_trans *tr, sql_table *t)
 			if (!ci->base.wtime)
 				continue;
 
-			gtr_update_delta(tr, ci->data);
+			ok = gtr_update_delta(tr, ci->data);
 		}
 	}
 	return ok;
 }
 
+typedef int (*gtr_update_table_fptr)( sql_trans *tr, sql_table *t);
+
 static int
-gtr_update( sql_trans *tr )
+_gtr_update( sql_trans *tr, gtr_update_table_fptr gtr_update_table_f )
 {
+	int ok = LOG_OK;
 	node *sn;
 
-	for(sn = tr->schemas.set->h; sn; sn = sn->next) {
+	for(sn = tr->schemas.set->h; sn && ok == LOG_OK; sn = sn->next) {
 		sql_schema *s = sn->data;
 		
 		if (!isTempSchema(s) && s->tables.set) {
 			node *n;
-			for (n = s->tables.set->h; n; n = n->next) {
+			for (n = s->tables.set->h; n && ok == LOG_OK; n = n->next) {
 				sql_table *t = n->data;
 
 				if (isGlobalTable(t))
-					gtr_update_table(tr, t);
+					ok = gtr_update_table_f(tr, t);
 			}
 		}
 	}
 	return LOG_OK;
+}
+
+static int
+gtr_update( sql_trans *tr )
+{
+	return _gtr_update(tr, &gtr_update_table);
+}
+
+int 
+gtr_minmax_col( sql_trans *tr, sql_column *c)
+{
+	int ok = LOG_OK;
+	sql_delta *cbat = c->data;
+	BAT *cur;
+	lng val;
+
+	(void)tr;
+	if (store_nr_active > 0)
+		return LOG_ERR;
+
+	/* allready set */
+	if (!cbat || c->type.type->localtype >= TYPE_str || c->t->system)
+		return ok;
+
+	cur = temp_descriptor(cbat->bid);
+	if (BATgetprop(cur, GDK_MIN_VALUE)) {
+		bat_destroy(cur);
+		return ok;
+	}
+
+	BATmin(cur, &val);
+	BATsetprop(cur, GDK_MIN_VALUE, cur->ttype, &val);
+	BATmax(cur, &val);
+	BATsetprop(cur, GDK_MAX_VALUE, cur->ttype, &val);
+	bat_destroy(cur);
+	return ok;
+}
+
+static int
+gtr_minmax_table(sql_trans *tr, sql_table *t)
+{
+	int ok = LOG_OK;
+	node *n;
+
+	for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
+		sql_column *c = n->data;
+
+		ok = gtr_minmax_col(tr, c);
+	}
+	return ok;
+}
+
+static int
+gtr_minmax( sql_trans *tr )
+{
+	return _gtr_update(tr, &gtr_minmax_table);
 }
 
 int 
@@ -1618,6 +1678,7 @@ bat_storage_init( store_functions *sf)
 	sf->log_table = (update_table_fptr)&log_table;
 	sf->snapshot_table = (update_table_fptr)&snapshot_table;
 	sf->gtrans_update = (gtrans_update_fptr)&gtr_update;
+	sf->gtrans_minmax = (gtrans_update_fptr)&gtr_minmax;
 	return LOG_OK;
 }
 

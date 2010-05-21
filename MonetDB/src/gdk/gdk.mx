@@ -3361,8 +3361,12 @@ properties. They can be used to improve query processing at higher levels.
 
 #define GDK_AGGR_SIZE 1
 #define GDK_AGGR_CARD 2
+#define GDK_MIN_VALUE 3
+#define GDK_MAX_VALUE 4
 
 gdk_export void PROPdestroy(PROPrec *p);
+gdk_export PROPrec * BATgetprop(BAT *b, int idx);
+gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 gdk_export bit BATgetprop_bit(BAT *b, int idx);
 gdk_export int BATgetprop_int(BAT *b, int idx);
 gdk_export wrd BATgetprop_wrd(BAT *b, int idx);
