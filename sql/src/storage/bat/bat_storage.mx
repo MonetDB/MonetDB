@@ -1167,6 +1167,15 @@ clear_del(sql_trans *tr, sql_table *t)
 	return clear_dbat(tr, t->data);
 }
 
+void
+BATcleanProps( BAT *b )
+{
+	if (b->T->props) {
+		PROPdestroy(b->T->props);
+		b->T->props = NULL;
+	}
+}
+
 int 
 gtr_update_delta( sql_trans *tr, sql_delta *cbat)
 {
@@ -1184,6 +1193,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat)
        			BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     		}
 		BATappend(cur,ins,TRUE);
+		BATcleanProps(cur);
 		temp_destroy(cbat->ibid);
 		cbat->ibid = e_bat(cur->ttype);
 	}
@@ -1340,6 +1350,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 			}
 			assert(obat->ibase == cbat->ibase);
 			append_inserted(ci, ins);
+			BATcleanProps(ci);
 			bat_destroy(ci);
 		}
 		obat->cnt = cbat->cnt;
@@ -1362,6 +1373,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
        					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     				}
 				BATappend(cur,ins,TRUE);
+				BATcleanProps(cur);
 				temp_destroy(cbat->ibid);
 				cbat->ibid = e_bat(cur->ttype);
 			}
@@ -1391,6 +1403,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 			/* should be insert_inserted */
 			BATins(cu, ups, TRUE);
 			BATreplace(cu, ups, TRUE);
+			BATcleanProps(cu);
 			bat_destroy(cu);
 		}
 		if (store_nr_active == 1 && !cluster) { /* flush all */
