@@ -597,7 +597,7 @@ OPTmapreduceImplementation(
 			 * calling signature of the map program */
 			getArg(sig, 0) = -1; /* get rid of default retval */
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
-				sig = pushReturn(mc, sig, lastcol->val1);
+				mc->stmt[0] = sig = pushReturn(mc, sig, lastcol->val1);
 			MRdistributework(cntxt, mb, col, sig, mrcluster);
 			newComment(mb, "} map");
 			/* bogus instruction to be able to set to NOOP */
