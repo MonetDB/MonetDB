@@ -579,11 +579,11 @@ OPTmapreduceImplementation(
 	trackstack_destroy(&tracker);
 
 	if (hadBinds == 0) {
-		/* FIXME: how to free "new"? */
 		GDKfree(mb->stmt);
 		mb->stmt = orig;
 		mb->stop = limit;
 		GDKfree(old);
+		freeSymbol(new);
 		return 0;
 	}
 
