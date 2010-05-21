@@ -685,6 +685,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		sql_table *ot = mvc_bind_table(sql, ss, name);
 		node *n;
 
+		if (!ot)
+			return SQL_ERR;
 		for (n = ot->columns.set->h; n; n = n->next) {
 			sql_column *oc = n->data;
 
