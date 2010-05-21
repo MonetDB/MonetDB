@@ -458,7 +458,7 @@ OPTmapreduceImplementation(
 	 * sql.bind patterns (for columns) are possibly scattered over the
 	 * full plan.  We need them all first to determine the signature and
 	 * return correctly. */
-	copy = FREE;
+	copy = FREE; /* free original copied signature */
 	mrcluster[0] = '\0';
 	for (i = 0; i < limit; i++) { /* phase 1 */
 		p = old[i];
@@ -555,6 +555,7 @@ OPTmapreduceImplementation(
 		switch (copy) {
 			case FREE:
 				freeInstruction(p);
+				old[i] = NULL;
 			break;
 			case LEAVE:
 				/* make GCC happy */
@@ -596,7 +597,7 @@ OPTmapreduceImplementation(
 			 * calling signature of the map program */
 			getArg(sig, 0) = -1; /* get rid of default retval */
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
-				sig = pushReturn(mc, sig, lastcol->val1);
+				mc->stmt[0] = sig = pushReturn(mc, sig, lastcol->val1);
 			MRdistributework(cntxt, mb, col, sig, mrcluster);
 			newComment(mb, "} map");
 			/* bogus instruction to be able to set to NOOP */
