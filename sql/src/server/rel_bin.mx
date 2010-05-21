@@ -2065,7 +2065,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 		s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_wrd(0), ne);
 
 		/* 2e stage: find out if inserted are unique */
-		if (idx_inserts->nrcols) {	/* insert columns not atoms */
+		if (!idx_inserts || idx_inserts->nrcols) {	/* insert columns not atoms */
 #if 0
 			sql_subtype *Oid = sql_bind_localtype("oid");
 			sql_subfunc *nu, *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
