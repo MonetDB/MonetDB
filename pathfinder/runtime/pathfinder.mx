@@ -5703,7 +5703,7 @@ xquery_client_reset(xquery_client *ctx, char *err)
      * these persist accross sessions as the generated PROCs refer to them.
      * This mostly for leakage monitoring purposes, such that dir(); does
      * not show any tmp_X bats. Not doing this would not cause a leak; next 
-     * session the old values are overwritten (and cleant up in MIL).
+     * session the old values are overwritten (and cleaned up in MIL).
      */
     Variable v = monet_cntxt[ctx->stk].var;
     while(v && strcmp(v->name, "v_vid000")) {
