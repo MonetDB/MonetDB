@@ -17,3 +17,6 @@ bat.append(d,7@0);
 
 s:= bat.shrink(b,d);
 io.print(s);
+
+so:= bat.shrinkMap(b,d);
+io.print(so);

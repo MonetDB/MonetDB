@@ -18,3 +18,6 @@ io.print(d);
 
 s:= bat.reuse(b,d);
 io.print(s);
+
+so:= bat.reuseMap(b,d);
+io.print(so);
