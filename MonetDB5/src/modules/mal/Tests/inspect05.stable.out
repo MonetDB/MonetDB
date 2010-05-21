@@ -1009,6 +1009,7 @@ end main;
 [ "new",			  "command",	  "cluster",		  "(b:bat[:oid,:bte],bits:int,offset:int) (psum:bat[:oid,:wrd],map:bat[:oid,:wrd]) ",						  "CLS_create_bte;"				  ]
 [ "split",			  "pattern",	  "cluster",	  "(clustered:bat[:oid,:any_1],psum:bat[:oid,:wrd]):bat[:oid,:any_1]... ",														  "CLS_split;"					  ]
 [ "table",				  "pattern",	  "cluster",	  "(b:bat[:oid,:any]...):bat[:oid,:oid] ",										  "CLUSTER_table;"					  ]
+[ "getCloud",			  "command",	  "mapreduce",	  "(nme:str):bat[:oid,:str] ",														  "MRgetCloud;"						  ]
 [ "multiplex",			  "pattern",	  "mal",	  "(a:any...):any ",															  "OPTremapMultiplex;"					  ]
 [ "argRecord",			  "pattern",	  "sql",	  "(a:any...):str ",															  "SQLargRecord;"					  ]
 [ "argRecord",			  "pattern",	  "sql",	  "():str ",																  "SQLargRecord;"					  ]

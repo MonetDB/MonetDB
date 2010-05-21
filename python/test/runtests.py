@@ -32,7 +32,7 @@ import dbapi20
 try:
     import monetdb.sql
 except ImportError:
-    print "monetdb python API not found, using local monetdb python API"
+    print("monetdb python API not found, using local monetdb python API")
     import sys
     parent = os.path.join(sys.path[0], '..')
     sys.path.append(parent)
@@ -231,15 +231,15 @@ class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
 
     def test_Exceptions(self):
         # we override this since StandardError is depricated in python 3
-        self.failUnless(issubclass(self.driver.Warning,Exception))
-        self.failUnless(issubclass(self.driver.Error,Exception))
-        self.failUnless(issubclass(self.driver.InterfaceError, self.driver.Error))
-        self.failUnless(issubclass(self.driver.DatabaseError, self.driver.Error))
-        self.failUnless(issubclass(self.driver.OperationalError, self.driver.Error))
-        self.failUnless(issubclass(self.driver.IntegrityError, self.driver.Error))
-        self.failUnless(issubclass(self.driver.InternalError, self.driver.Error))
-        self.failUnless(issubclass(self.driver.ProgrammingError, self.driver.Error))
-        self.failUnless(issubclass(self.driver.NotSupportedError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.Warning,Exception))
+        self.assertTrue(issubclass(self.driver.Error,Exception))
+        self.assertTrue(issubclass(self.driver.InterfaceError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.DatabaseError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.OperationalError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.IntegrityError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.InternalError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.ProgrammingError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.NotSupportedError, self.driver.Error))
 
 
 

@@ -179,7 +179,7 @@ msa_atom_str(PFalg_atom_t atom)
             sprintf(ret, "%s", atom.val.bln ? "true" : "false");
             break;
         case aat_qname:
-            sprintf(ret, "%i", atom.val.qname);
+            sprintf(ret, "%s", PFqname_str (atom.val.qname));
             break;
         default:
             break;

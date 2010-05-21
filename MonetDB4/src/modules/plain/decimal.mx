@@ -1887,6 +1887,8 @@ decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 		return GDK_FAIL;
 	bm = BATmirror(bn);
 
+	memset(&hp, 0, sizeof hp);
+
 	/* create space for decimals */
 	if (prec) {
 		yy = MIN(PREC(dv) + MAX(1, *prec) - 1, PRECISION_MAX) + 1;

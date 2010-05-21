@@ -1484,7 +1484,7 @@ parseAssign(Client cntxt, int cntrl)
 			if( l==0 || i) {
 				 parseError(cntxt,"<identifier> expected\n"); 
 				 skipToEnd(cntxt);
-				 pushInstruction(curBlk,curInstr);
+				 freeInstruction(curInstr);
 				 return;
 			}
 			@:GETvariable@
