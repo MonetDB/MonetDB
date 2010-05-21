@@ -20,6 +20,11 @@
 @- Map-Reduce
 The Map-Reduce infrastructure requires a little optimizer to turn
 an arbitrary query into a plan to be executed on the elements of the Cloud.
+Each cloud consists of a series of named servers, managed by Merovingian
+with the pattern "*/Cloudname/node/*".
+
+Determining the clould is an expensive operation and for the time being
+performed each time when a query is compiled.
 
 In the first implementation we don't optimize the plan against the mapping scheme.
 We simply assume that the complete query can be executed and that only the
@@ -108,14 +113,20 @@ function mapreduce.exec_3(conn:str, mod:str, fcn:str):any_1...;
 	return (Y201,Y202,Y203);
 end exec;
 @end verbatim
-The code can be considered a refinement of the Octopus.
 @{
+The code can be considered a refinement of the Octopus.
+The mal primitives are meant for debugging.
 @mal
 pattern optimizer.mapreduce():str
 address OPTmapreduce;
 pattern optimizer.mapreduce(mod:str, fcn:str):str
 address OPTmapreduce
 comment "Modify the plan to exploit parallel processing on multiple systems using map-reduce";
+
+module mapreduce;
+command getCloud(nme:str):bat[:oid,:str]
+address MRgetCloud
+comment "Localize the elements of a named cloud";
 @h
 #ifndef _OPT_MAPREDUCE_
 #define _OPT_MAPREDUCE_
@@ -123,6 +134,7 @@ comment "Modify the plan to exploit parallel processing on multiple systems usin
 #include "opt_support.h"
 
 opt_export str MRexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str MRgetCloud(int *ret, str *nme);
 @c
 #include "mal_config.h"
 #include "opt_mapreduce.h"
@@ -134,6 +146,7 @@ The work distribution assumes that we know at compile time
 the number of nodes participating in the cloud setting.
 It calls the map-reduce executor to produce a result
 possible with the aid of a replica.
+The mapnode is an auxilary structure.
 @c
 
 typedef struct _mapnode {
@@ -142,68 +155,92 @@ typedef struct _mapnode {
 	str pass;
 } mapnode;
 
-#define MAXNODES 256
-static mapnode mapnodes[MAXNODES];
+static mapnode *mapnodes;
+static BAT *cloud;
 
-static int
-MRcloudSize(str mrcluster)
+static void
+MRcleanCloud()
+{
+	int i;
+
+	mal_set_lock(mal_contextLock,"mapreduce");
+	for (i = 0; mapnodes[i].uri; i++) {
+		if (mapnodes[i].uri != NULL)
+			GDKfree(mapnodes[i].uri);
+		if (mapnodes[i].user != NULL)
+			GDKfree(mapnodes[i].user);
+		if (mapnodes[i].pass != NULL)
+			GDKfree(mapnodes[i].pass);
+		mapnodes[i].uri = mapnodes[i].user = mapnodes[i].pass = 0;
+	}
+	if ( cloud)
+		BBPreleaseref(cloud->batCacheid);
+	cloud = 0;
+	mal_unset_lock(mal_contextLock,"mapreduce");
+}
+
+str
+MRgetCloud(int *ret, str *mrcluster)
 {
 	str msg;
-	bat bid = 0;
-	BAT *b;
 	BUN p, q;
 	BATiter bi;
-	int mapcount = 0;
-	char nodes[1024];
+	char nodes[BUFSIZ];
 	char *n = nodes;
+	int mapcount = 0;
 
-	snprintf(nodes, sizeof(nodes), "*/%s/node/*", mrcluster);
+	snprintf(nodes, sizeof(nodes), "*/%s/node/*", *mrcluster);
 	
-	msg = RMTresolve(&bid, &n);
-	if (msg != MAL_SUCCEED) {
-		if (msg != M5OutOfMemory)
-			GDKfree(msg);
-		return(0);
+	msg = RMTresolve(ret, &n);
+	if (msg ) 
+		return msg;
+
+	if ( cloud )
+		/* cleanup remains of previous call */
+		MRcleanCloud();
+	
+	mal_set_lock(mal_contextLock,"mapreduce");
+	cloud = BATdescriptor(*ret); /* should succeed */
+	BBPkeepref(*ret);	/* keep if during the session */
+
+	mapnodes = (mapnode*) GDKzalloc(sizeof(mapnode) * (BATcount(cloud) +1));
+	if ( mapnodes == 0){
+		BBPreleaseref(*ret);
+		throw(MAL,"mapreduce.getCloud", MAL_MALLOC_FAIL);
 	}
 
-	b = BATdescriptor(bid);
-	if (b == NULL)
-		return(0);
-
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
+	bi = bat_iterator(cloud);
+	BATloop(cloud, p, q) {
 		str t = (str)BUNtail(bi, p);
-
-		if (mapcount == MAXNODES)
-			break;
-
 		mapnodes[mapcount].uri = GDKstrdup(t);
 		mapnodes[mapcount].user = GDKstrdup("monetdb");
 		mapnodes[mapcount].pass = GDKstrdup("monetdb");
 		mapcount++;
 	}
-	BBPreleaseref(bid);
+	if (GDKnr_threads < (int) BATcount(cloud))
+		GDKnr_threads = (int) BATcount(cloud);
 
-	if (GDKnr_threads < mapcount)
-		GDKnr_threads = mapcount;
+	mal_unset_lock(mal_contextLock,"mapreduce");
+	BBPkeepref(*ret);	/* give it to the called */
 
-	return(mapcount);
+	return MAL_SUCCEED;
 }
 
-static void
-MRcleanCloud(int mapcount)
+static int
+MRcloudSize(str mrcluster)
 {
-	int i;
+	str msg;
+	int bid;
 
-	for (i = 0; i < mapcount; i++) {
-		if (mapnodes[mapcount].uri != NULL)
-			GDKfree(mapnodes[mapcount].uri);
-		if (mapnodes[mapcount].user != NULL)
-			GDKfree(mapnodes[mapcount].user);
-		if (mapnodes[mapcount].pass != NULL)
-			GDKfree(mapnodes[mapcount].pass);
+	msg = MRgetCloud(&bid, &mrcluster);
+	if ( msg ){
+		GDKfree(msg); /* bad programming */
+		return 0;
 	}
+	return (int) BATcount(cloud);
 }
+
+
 
 typedef struct _mapcol {
 	int val1;
@@ -331,7 +368,7 @@ MRdistributework(
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 
-	MRcleanCloud(n);
+	MRcleanCloud();
 }
 
 enum copymode { cNONE, FREE, STICK, SINGLE, SINGLE_DUP, DUP, LEAVE };
