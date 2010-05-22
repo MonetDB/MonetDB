@@ -42,6 +42,13 @@ except ImportError:
 warnings.filterwarnings('error')
 
 
+MAPIPORT = int(os.environ.get('MAPIPORT', 50000))
+TSTDB = os.environ.get('TSTDB', 'demo')
+TSTHOSTNAME = os.environ.get('TSTHOSTNAME', 'localhost')
+TSTUSERNAME = os.environ.get('TSTUSERNAME', 'monetdb')
+TSTPASSWORD = os.environ.get('TSTPASSWORD', 'monetdb')
+ 
+
 class TextTestRunnerNoTime(unittest.TextTestRunner):
     """A test runner class that displays results in textual form, but without time """
     def run(self, test):
@@ -68,14 +75,10 @@ class TextTestRunnerNoTime(unittest.TextTestRunner):
 
 
 class Test_Capabilities(capabilities.DatabaseTest):
-    MAPIPORT = int(os.environ.get('MAPIPORT', 50000))
-    TSTDB = os.environ.get('TSTDB', 'demo')
-    TSTHOSTNAME = os.environ.get('TSTHOSTNAME', 'localhost')
-    TSTUSERNAME = os.environ.get('TSTUSERNAME', 'monetdb')
-    TSTPASSWORD = os.environ.get('TSTPASSWORD', 'monetdb')
     db_module = monetdb.sql
     connect_args = ()
-    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=False)
+    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, hostname=TSTHOSTNAME,
+            username=TSTUSERNAME, password=TSTPASSWORD, autocommit=False)
     leak_test = False
 
     def test_bigresult(self):
@@ -97,8 +100,9 @@ class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
 
     driver = monetdb.sql
     connect_args = ()
-    connect_kw_args = {'database': TSTDB, 'port': MAPIPORT}
-
+    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, hostname=TSTHOSTNAME,
+            username=TSTUSERNAME, password=TSTPASSWORD, autocommit=False)
+ 
     lower_func = 'lower' # For stored procedure test
 
     def executeDDL1(self,cursor):
