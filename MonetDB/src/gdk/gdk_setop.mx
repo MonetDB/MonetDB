@@ -877,6 +877,8 @@ BATmaterialize_(BAT *b, BUN size)
 	if (bn == NULL)
 		return NULL;
 	base = b->hseqbase;
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(bn, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	if (base == oid_nil) {
 		BATloop(b, p, q) {
 			bunfastins(bn, &base, BUNtail(bi, p));
@@ -887,6 +889,8 @@ BATmaterialize_(BAT *b, BUN size)
 			base++;
 		}
 	}
+	BATaccessEnd(bn, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	ALIGNsetH(bn, b);
 	ALIGNsetT(bn, b);
 	return bn;
