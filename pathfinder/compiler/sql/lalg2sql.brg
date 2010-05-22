@@ -208,7 +208,7 @@ Query:  serialize_seq (
             roots_ (twig (Twig)))                    =   5 (10);
 Query:  serialize_seq (side_effects (Side, Frag),
                        empty_tbl)                    =   6 (10);
-Query:  serialize_rel (error (Side, Rel), Rel)       =   7 (10);
+Query:  serialize_rel (Side, Rel)                    =   7 (10);
 Query:  serialize_rel (nil, empty_tbl)               =   8 (10);
 Rel:    lit_tbl                                      =   9 (10);
 Rel:    ref_tbl                                      =  10 (10);
