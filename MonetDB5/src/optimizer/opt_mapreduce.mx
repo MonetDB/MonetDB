@@ -439,7 +439,7 @@ OPTmapreduceImplementation(
 	InstrPtr p, *old, *orig, ret, sig;
 	MalBlkPtr mc;
 	char nme[IDLENGTH];
-	char mrcluster[256];
+	char mrcluster[BUFSIZ];
 	Symbol new;
 	mapcol *col, *lastcol;
 	struct stack tracker = { NULL, 0, 0 };
@@ -478,10 +478,13 @@ OPTmapreduceImplementation(
 	snprintf(nme, IDLENGTH, "%smap", getFunctionId(getInstrPtr(mb, 0)));
 
 	/* zap */
-	if (newMalBlkStmt(mc, mc->ssize) < 0)
+	if (newMalBlkStmt(mc, mc->ssize) < 0){
 		return 0;
-	if (newMalBlkStmt(mb, mb->ssize) < 0)
+	}
+	if (newMalBlkStmt(mb, mb->ssize) < 0){
+		freeMalBlk(mc);
 		return 0;
+	}
 
 	new = newFunction(userRef, putName(nme, strlen(nme)), FUNCTIONsymbol);
 	sig = copyInstruction(getInstrPtr(new->def, 0));
@@ -535,7 +538,8 @@ OPTmapreduceImplementation(
 
 		/* move over statement that depend (indirectly) on the sql.bind
 		 * calls */
-		if (!trackstack_isempty(&tracker)) for (j = p->retc; j < p->argc; j++) {
+		if (!trackstack_isempty(&tracker))
+		for (j = p->retc; j < p->argc; j++) {
 			if (trackstack_contains(&tracker, getArg(p, j))) {
 				if (getModuleId(p) == algebraRef) {
 					if (getFunctionId(p) == kunionRef) {
