@@ -109,8 +109,8 @@ class Server:
         elif prompt.startswith(MSG_REDIRECT):
             # a redirect can contain multiple redirects, for now we only use
             # the first
-            response = prompt.split()[0][1:].split(':')
-            if response[1] == "merovingian":
+            redirect = prompt.split()[0][1:].split(':')
+            if redirect[1] == "merovingian":
                 logger.debug("II: merovingian proxy, restarting " +
                         "authenticatiton")
                 if iteration <= 10:
@@ -119,9 +119,9 @@ class Server:
                     raise OperationalError("maximal number of redirects " +
                     "reached (10)")
 
-            elif response[1] == "monetdb":
-                self.hostname = response[2][2:]
-                self.port, self.database = response[3].split('/')
+            elif redirect[1] == "monetdb":
+                self.hostname = redirect[2][2:]
+                self.port, self.database = redirect[3].split('/')
                 self.port = int(self.port)
                 logger.info("II: merovingian redirect to monetdb://%s:%s/%s" %
                         (self.hostname, self.port, self.database))

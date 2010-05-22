@@ -21,10 +21,7 @@ import unittest
 import warnings
 import sys
 import os
-
-#import logging
-#logging.basicConfig(level=logging.DEBUG)
-#logger = logging.getLogger('monetdb')
+import logging
 
 import capabilities
 import dbapi20
@@ -47,7 +44,10 @@ TSTDB = os.environ.get('TSTDB', 'demo')
 TSTHOSTNAME = os.environ.get('TSTHOSTNAME', 'localhost')
 TSTUSERNAME = os.environ.get('TSTUSERNAME', 'monetdb')
 TSTPASSWORD = os.environ.get('TSTPASSWORD', 'monetdb')
- 
+
+if os.environ.get("TSTDEBUG", "no") == "yes":
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger('monetdb')
 
 class TextTestRunnerNoTime(unittest.TextTestRunner):
     """A test runner class that displays results in textual form, but without time """
