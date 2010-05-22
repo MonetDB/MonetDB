@@ -1,4 +1,4 @@
 debian/tmp/etc/monetdb5.conf etc
 debian/tmp/usr/bin/Mbeddedmal usr/bin
 debian/tmp/usr/bin/mserver5 usr/bin
-#debian/tmp/usr/bin/stethoscope usr/bin
+debian/tmp/usr/bin/stethoscope usr/bin
