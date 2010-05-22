@@ -70,6 +70,9 @@ class TextTestRunnerNoTime(unittest.TextTestRunner):
 class Test_Capabilities(capabilities.DatabaseTest):
     MAPIPORT = int(os.environ.get('MAPIPORT', 50000))
     TSTDB = os.environ.get('TSTDB', 'demo')
+    TSTHOSTNAME = os.environ.get('TSTHOSTNAME', 'localhost')
+    TSTUSERNAME = os.environ.get('TSTUSERNAME', 'monetdb')
+    TSTPASSWORD = os.environ.get('TSTPASSWORD', 'monetdb')
     db_module = monetdb.sql
     connect_args = ()
     connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=False)

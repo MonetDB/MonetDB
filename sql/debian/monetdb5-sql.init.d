@@ -73,6 +73,7 @@ case "$1" in
         # TODO: this can be removed when fabian fixes the socket permission bug
         sleep 3
         chmod g+rw /var/MonetDB5/dbfarm/.merovingian_*
+        chmod g+rx /var/MonetDB5/dbfarm
 
         if [ "$START_ALL_DBS" = "yes" ]; then
              /bin/su -c "/usr/bin/monetdb start -a" -s /bin/bash monetdb
