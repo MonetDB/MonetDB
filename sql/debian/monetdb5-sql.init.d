@@ -7,6 +7,8 @@ DESC="MonetDB SQL server"
 
 test -x $DAEMON || exit 0
 
+umask 022
+
 LOGDIR=/var/log/MonetDB
 PIDFILE=/var/run/MonetDB/$NAME.pid
 
@@ -66,6 +68,14 @@ case "$1" in
             echo "$NAME."
         else
             echo " ERROR, $NAME didn't start"
+        fi
+
+        # TODO: this can be removed when fabian fixes the socket permission bug
+        sleep 3
+        chmod g+rw /var/MonetDB5/dbfarm/.merovingian_*
+
+        if [ "$START_ALL_DBS" = "yes" ]; then
+             /bin/su -c "/usr/bin/monetdb start -a" -s /bin/bash monetdb
         fi
         ;;
   stop)
