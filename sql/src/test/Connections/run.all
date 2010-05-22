@@ -28,8 +28,8 @@ fi
 #Generate Data...
 
 #Bulk-Load into SQL server...
-mserver5 --dbname=demo --set mapi_port=50000 --dbinit="include sql;" --daemon=yes &
-mserver5 --dbname=demo2 --set mapi_port=40000 --dbinit="include sql;" --daemon=yes &
+mserver5 --dbname=demo --set mapi_port=50000 --daemon=yes &
+mserver5 --dbname=demo2 --set mapi_port=40000 --daemon=yes &
 sleep 5
 
 echo syntax

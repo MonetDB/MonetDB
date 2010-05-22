@@ -404,12 +404,16 @@ To run MonetDB5 interactively, just run::
 The disadvantage of running the systems interactively is that you
 don't get readline support (if available on your system).  A more
 pleasant environment can be had by using the system as a server and
-using ``mclient`` to interact with the system.  For MonetDB4 use::
+using ``mclient`` to interact with the system.
+
+When MonetDB5 is started as above, it automatically starts the MAL
+server in addition to the interactive "console".  In case the
+MonetDB/SQL package is also installed, MonetDB5 does automatically
+load it and start the SQL server.
+
+In case of MonetDB4, to start only the MIL server use::
 
  Mserver --dbinit 'module(mapi); mil_start();'
-
-When MonetDB5 is started as above, it automatically starts the server
-in addition to the interactive "console".
 
 In order to use the XQuery back-end, which is only available with
 MonetDB4, start the server as follows::
@@ -420,18 +424,6 @@ If you want to have a MIL server in addition to the XQuery server,
 use::
 
  Mserver --dbinit 'module(pathfinder); mil_start();'
-
-In order to use the SQL back-end with MonetDB4, use::
-
- Mserver --dbinit 'module(sql_server);'
-
-If you want to have a MIL server in addition to the SQL server, use::
-
- Mserver --dbinit 'module(sql_server); mil_start();'
-
-In order to use the SQL back-end with MonetDB5, use::
-
- mserver5 --dbinit 'include sql;'
 
 Once the server is running, you can use ``mclient`` to interact
 with the server.  ``mclient`` needs to be told which language you

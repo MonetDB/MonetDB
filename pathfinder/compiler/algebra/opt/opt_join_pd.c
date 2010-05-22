@@ -1780,6 +1780,11 @@ PFalgopt_join_pd (PFla_op_t *root)
         remove_eqjoin_opt (root);
         PFla_dag_reset (root);
 
+        /* The eqjoin removal might result in very wide relations.
+           To speed up the unique name mapping we remove the superfluos
+           columns. */
+        root = PFalgopt_icol (root);
+
         /* make sure that column name splitting is removed */
         root = PFmap_unq_names (root);
     }

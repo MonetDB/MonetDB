@@ -15,7 +15,6 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = monetdb test
-
-EXTRA_DIST = setup.py COPYRIGHT README.rst
-EXTRA_DIST_DIR = examples debian
+# This loads the MonetDB/RDF module
+include tokenizer;
+include rdf;

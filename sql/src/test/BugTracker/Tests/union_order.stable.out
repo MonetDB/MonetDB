@@ -28,10 +28,7 @@ Over..
 % data # name
 % decimal # type
 % 6 # length
-% .tmp_one # table_name
-% data # name
-% decimal # type
-% 6 # length
+#select *
 % .foo # table_name
 % data # name
 % decimal # type

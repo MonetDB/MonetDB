@@ -1,6 +1,3 @@
-CREATE FUNCTION degrees(r double)
-RETURNS double
-RETURN r*180/pi();
 
 CREATE FUNCTION fHtm(x float, y float, z float, radius float)
 RETURNS TABLE (

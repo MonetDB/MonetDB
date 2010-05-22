@@ -40,8 +40,6 @@ BuildRequires: readline-devel, openssl-devel
 %{!?_with_rubygem: %{!?_without_rubygem: %define _with_rubygem --with-rubygem}}
 %{!?_with_unixODBC: %{!?_without_unixODBC: %define _with_unixODBC --with-unixodbc}}
 
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-
 %if %{?_with_rubygem:1}%{!?_with_rubygem:0}
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig -e 'puts Config::CONFIG["sitelibdir"] ')}
 %define gemdir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)
@@ -71,7 +69,6 @@ Requires: perl, swig
 Requires: perl-devel
 %endif
 %endif
-Requires: python
 %if %{?_with_rubygem:1}%{!?_with_rubygem:0}
 Requires: rubygems, ruby
 %endif
@@ -110,16 +107,6 @@ BuildRequires: perl, swig
 BuildRequires: perl-devel
 %endif
 %endif
-%endif
-
-%package python
-Summary: MonetDB python interface
-Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
-Requires: python
-BuildRequires: python
-%if 0%{?fedora} >= 10
-BuildArch: noarch
 %endif
 
 %if %{?_with_rubygem:1}%{!?_with_rubygem:0}
@@ -193,15 +180,6 @@ accelerators, SQL- and XML- frontends.
 This package contains the files needed to use MonetDB from a Perl
 program.
 %endif
-
-%description python
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the files needed to use MonetDB from a Python
-program.
 
 %if %{?_with_rubygem:1}%{!?_with_rubygem:0}
 %description ruby
@@ -305,16 +283,6 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_datadir}/MonetDB/perl
 %{_datadir}/MonetDB/perl/*
 %endif
-
-%files python
-%dir %{python_sitelib}/monetdb
-%{python_sitelib}/monetdb/*.py
-%{python_sitelib}/monetdb/*.pyc
-%{python_sitelib}/monetdb/*.pyo
-%dir %{python_sitelib}/monetdb/sql
-%{python_sitelib}/monetdb/sql/*.py
-%{python_sitelib}/monetdb/sql/*.pyc
-%{python_sitelib}/monetdb/sql/*.pyo
 
 %if %{?_with_rubygem:1}%{!?_with_rubygem:0}
 %files ruby

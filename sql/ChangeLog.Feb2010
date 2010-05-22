@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue May 11 2010 Fabian Groffen <fabian@cwi.nl>
+- Prepared statement and function calls now report which argument is of
+  the wrong type, bug #2533.
+
 * Sun Apr 25 2010 Niels Nes <niels@cwi.nl>
 - Fixed a bug when loading data from CSV files when separators occur
   in quoted fields.  (SourceForge bug #2991400).

@@ -112,6 +112,8 @@ la_op_leaf (PFla_op_kind_t kind)
     ret->bit_in        = 0;
     ret->bit_out       = 0;
 
+    ret->msa_ann       = NULL;
+    
     return ret;
 }
 
@@ -2504,7 +2506,7 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_col_t col,
 
     /* if we statically know that the type assertion would yield
        an empty type we can replace it by an empty table. This
-       is done in ope/opt_general.brg. Until then we however have
+       is done in opt/opt_general.brg. Until then we however have
        to provide the expected type (if we have given an exact type). */
     if (!assert_ty && pos) {
         assert_ty = ty;

@@ -99,6 +99,7 @@ lib__pathfinder = {
                 ../compiler/mil/libmil \
                 ../compiler/mem/libmem_embedded \
                 ../compiler/libcompiler2 \
+                ../compiler/algebra-m5sql/libmsa \
                 ../compiler/sql/libsql \
                 ../compiler/xmlimport/libxmlimport \
 				../compiler/utils/libstringutils \

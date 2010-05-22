@@ -72,7 +72,6 @@ typedef struct lifespan {
 /* #define DEBUG_CLONE */
 
 mal_export Symbol   newFunction(str mod, str nme,int kind);
-mal_export void	    clearFcn(MalBlkPtr m);
 mal_export int      getPC(MalBlkPtr mb, InstrPtr p);
 
 mal_export InstrPtr newCall(Module scope, str fcnname, int kind);
@@ -295,29 +294,29 @@ void chkFlow(MalBlkPtr mb)
 			yieldseen= TRUE;
 			 }
 		case RETURNsymbol:
-			{   InstrPtr ps= getInstrPtr(mb,0);
-			    int e;
+			{
+				InstrPtr ps = getInstrPtr(mb, 0);
+				int e;
 				if (p->barrier == RETURNsymbol)
-					yieldseen = FALSE; /* always end with a return */
-			    if( ps->retc != p->retc){
-			        showScriptException(mb,i,SYNTAX,
-						"invalid return target!");
-			        mb->errors++;
-			    } else
-			    if(ps->typechk == TYPE_RESOLVED)
-			    for(e=0;e<p->retc; e++){
-	                if( resolveType(getArgType(mb,ps,e),getArgType(mb,p,e)) <0 ){
-						str tpname= getTypeName(getArgType(mb,p,e));
-	                    showScriptException(mb,i,TYPE,
-							"%s type mismatch at type '%s'",
-	                        (p->barrier==RETURNsymbol?"RETURN":"YIELD"), tpname);
-						GDKfree(tpname);
-	                    mb->errors++;
-	                }
-	            }
-			    if(ps->typechk != TYPE_RESOLVED) fixed =0;
+					yieldseen = FALSE;    /* always end with a return */
+				if (ps->retc != p->retc) {
+					showScriptException(mb, i, SYNTAX,
+							"invalid return target!");
+					mb->errors++;
+				} else if (ps->typechk == TYPE_RESOLVED)
+					for (e = 0; e < p->retc; e++) {
+						if (resolveType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
+							str tpname = getTypeName(getArgType(mb, p, e));
+							showScriptException(mb, i, TYPE,
+									"%s type mismatch at type '%s'",
+									(p->barrier == RETURNsymbol ? "RETURN" : "YIELD"), tpname);
+							GDKfree(tpname);
+							mb->errors++;
+						}
+					}
+				if (ps->typechk != TYPE_RESOLVED) fixed = 0;
 			}
-			if (btop==0)
+			if (btop == 0)
 				retseen = 1;
 			break;
 	    case RAISEsymbol:

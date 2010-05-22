@@ -19,25 +19,29 @@ Over..
 # 18:18:00 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32098  < insert_delete-bug-sf-904025.sql
 # 18:18:00 >  
 
-[ 24	]
+[ 27	]
+#select count(*) from tmp;
 % sys.tmp # table_name
 % L1 # name
 % wrd # type
 % 2 # length
-[ 24	]
-[ 24	]
+[ 27	]
+[ 27	]
+#select count(*) from tmp;
 % sys.tmp # table_name
 % L2 # name
 % wrd # type
 % 1 # length
 [ 0	]
-[ 24	]
+[ 27	]
+#select count(*) from tmp;
 % sys.tmp # table_name
 % L3 # name
 % wrd # type
 % 2 # length
-[ 24	]
-[ 24	]
+[ 27	]
+[ 27	]
+#select count(*) from tmp;
 % sys.tmp # table_name
 % L4 # name
 % wrd # type

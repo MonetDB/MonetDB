@@ -732,7 +732,7 @@ static size_t
 access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int preload, int adv)
 {
 	size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0, v4 = 0, v5 = 0, v6 = 0, v7 = 0, page = MT_pagesize();
-	str advice = (adv == MMAP_WILLNEED) ? "WILLNEED" : (adv == MMAP_SEQUENTIAL) ? "SEQUENTIAL" : (adv == MMAP_RANDOM) ? "RANDOM" : (adv == MMAP_NORMAL) ? "NORMAL" : NULL;
+	str advice = (adv == MMAP_WILLNEED) ? "WILLNEED" : (adv == MMAP_SEQUENTIAL) ? "SEQUENTIAL" : (adv == MMAP_RANDOM) ? "RANDOM" : (adv == MMAP_NORMAL) ? "NORMAL" : (adv == MMAP_DONTNEED)? "DONTNEED":NULL;
 	int t = GDKms();
 	assert(advice);
 	/* ignore claims of pages beyond 1/4 the physical memory */

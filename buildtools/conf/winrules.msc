@@ -490,6 +490,12 @@ PHP_LIBS = "$(PHP_INSTDIR)\php5embed.lib"
 	if not exist .libs $(MKDIR) .libs
 	$(INSTALL) $@ .libs\$@
 
+{$(SRCDIR)}.mx.sql:
+	$(MX) $(MXFLAGS) -x sql $<
+
+.mx.sql:
+	$(MX) $(MXFLAGS) -x sql $<
+
 {$(SRCDIR)}.mx.y:
 	$(MX) $(MXFLAGS) -x y $<
 

@@ -130,6 +130,9 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 {
         sql_rel *r = sq;
 
+	if (!r)
+		return NULL;
+
         if (is_topn(r->op))
                 r = sq->l;
 

@@ -97,7 +97,6 @@ typedef struct mvc {
 	atom **args;
 	int argc;
 	int argmax;
-	int argfixed;
 	struct symbol *sym;
 
 	int user_id;
@@ -107,6 +106,7 @@ typedef struct mvc {
 	/* current session variables */
 	int timezone;		/* minutes west of UTC */
 	int cache;		/* some queries should not be cached ! */
+	int caching;		/* cache current query ? */
 	int history;	/* queries statistics are kept  */
 	int reply_size;		/* reply size */ 
 	int debug;
@@ -293,7 +293,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
 
 		/* disable caching */
-		m->cache = 0;
+		m->caching = 0;
 		/* disable history */
 		m->history = 0;
 		mvc_trans(m);
@@ -611,7 +611,6 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->argmax = MAXPARAMS;
 	m->args = NEW_ARRAY(atom*,m->argmax);
 	m->argc = 0;
-	m->argfixed = 0;
 	m->sym = NULL;
 
 	m->last_id = m->role_id = m->user_id = -1;
@@ -623,6 +622,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->reply_size = 100;
 	m->debug = debug;
 	m->cache = 1;
+	m->caching = m->cache;
 	m->history = 0;
 
 	m->label = 0;
@@ -692,6 +692,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	if (m->cache != 1)
 		stack_set_number(m, "cache", 1);
 	m->cache = 1;
+	m->caching = m->cache;
 	if (m->history != 0)
 		stack_set_number(m, "history", 0);
 	m->history = 0;

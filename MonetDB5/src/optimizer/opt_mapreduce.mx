@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @f opt_mapreduce
-@a M. Kersten, F. Groffen
+@a F. Groffen, M. Kersten
 @- Map-Reduce
 The Map-Reduce infrastructure requires a little optimizer to turn
 an arbitrary query into a plan to be executed on the elements of the Cloud.
@@ -801,7 +801,8 @@ OPTmapreduceImplementation(
 		}
 	}
 
-#ifndef _DEBUG_OPT_MAPREDUCE
+
+#if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 10
 	stream_printf(cntxt->fdout, "MAP program\n");
 	chkProgram(cntxt->nspace, mc);
 	printFunction(cntxt->fdout, mc, 0, LIST_MAL_STMT);

@@ -20,7 +20,7 @@
 PWD=`pwd`
 echo $PWD
 SQL='mclient -p$MAPIPORT -lsql -umonetdb -Pmonetdb'
-M5='mserver5 --dbname=demo --set mapi_port=$MAPIPORT --dbinit="include sql;"'
+M5='mserver5 --dbname=demo --set mapi_port=$MAPIPORT'
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi

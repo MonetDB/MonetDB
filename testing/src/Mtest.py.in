@@ -2324,7 +2324,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if SERVER == "SQL":
                 lang="sql"
                 if par['M5']:
-                    Srvr = '%s --set mal_listing=0 "--dbinit=%s include sql;"' % (Srvr, DBINIT)
+                    Srvr = '%s --set mal_listing=0' % Srvr
+                    if DBINIT:
+                        Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
                 if par['M4']:
                     Srvr = '%s "--dbinit=%s module(sql_server);"' % (Srvr, DBINIT)
             if SERVER == "XQUERY":
@@ -3660,14 +3662,11 @@ def main(argv) :
             MissingMods = CheckMods(env, '', 'SQL', '')
             if MissingMods:
                 ErrXit('Stopping SQL testing as modules "%s" are missing!' % str(MissingMods))
-            if par['M5']:
-                mod_name = 'sql'
-                mod_load = 'include %s;' % mod_name
             if par['M4']:
                 mod_name = 'sql_server'
                 mod_load = 'module(%s);' % mod_name
-            if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
-                ErrXit('Stopping SQL testing as module "%s" fails to load!' % mod_name)
+                if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
+                    ErrXit('Stopping SQL testing as module "%s" fails to load!' % mod_name)
 
         is_pf = par['PACKAGE'] == 'monetdb-xquery'
         if not is_pf:

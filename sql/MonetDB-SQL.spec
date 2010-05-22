@@ -48,7 +48,8 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
-This package contains some common files for the %{name}-server5 packages.
+This package contains some common files for the %{name}-server5 package.
+You really need to install %{name}-server5.
 
 %package server5
 Summary: MonetDB5 SQL server modules
@@ -129,8 +130,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%dir %{_datadir}/MonetDB/sql
-%{_datadir}/MonetDB/sql/*
 %dir %{_datadir}/doc/%{name}-%{version}
 %{_datadir}/doc/%{name}-%{version}/*
 
@@ -140,6 +139,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so.*
 %{_libdir}/MonetDB5/lib/lib_sql*
 %{_libdir}/MonetDB5/*.mal
+%{_libdir}/MonetDB5/*.sql
+%{_libdir}/MonetDB5/autoload/*_sql.mal
 %dir %{_includedir}/MonetDB5/sql
 %{_includedir}/MonetDB5/sql/embeddedclient.h
 %{_bindir}/merovingian

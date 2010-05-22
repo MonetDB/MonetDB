@@ -80,7 +80,7 @@ tst109
 tst110
 tst115
 tst1150
-tst120
+#tst120	files are not located in module and paths are runtime dependent
 tst1200
 tst1201
 tst1202

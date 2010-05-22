@@ -1,54 +1,20 @@
 stdout of test 'tst274` in directory 'src/mal` itself:
 
 
-# 08:46:49 >  
-# 08:46:49 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=38910 --set xrpc_port=45291 --set monet_prompt= --trace --dbname=mTests_src_mal  tst274.mal < /dev/null
-# 08:46:49 >  
+# 17:57:28 >  
+# 17:57:28 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38637 --set xrpc_port=40729 --set monet_prompt= --set mal_listing=2 --trace  --dbname=mTests_src_mal  tst274.mal
+# 17:57:28 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_mal
+# MonetDB server v5.21.0, based on kernel v1.39.0
+# Serving database 'mTests_src_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-## the multiplex code blocks.
-#
-#t0:= alarm.usec();
-#b:= bat.new(:oid,:lng);
-#barrier (go,i):= language.newRange(0:lng);
-#	k:= mmath.rand();
-#	l:= calc.lng(k);
-#	bat.insert(b,nil:oid,l);
-#	redo (go,i):= language.nextElement(1:lng,10000:lng);
-#exit (go,i);
-#
-#profiler.activate("ticks");
-#profiler.activate("statement");
-#profiler.activate("rdbytes");
-#profiler.activate("wrbytes");
-#profiler.activate("diskspace");
-#profiler.setAll();
-#
-#profiler.start();
-#io.printf("#monitor \n");
-#mx:= aggr.max(b); 
-#algebra.select(b,nil:lng,mx); 
-#algebra.select(b,mx,nil:lng); 
-#d:= mmath.sin(0.2:dbl);
-#profiler.stop();
-#
-#stmt:= profiler.getTrace("statement");
-#io.print(stmt);
-#ticks:= profiler.getTrace("ticks");
-##io.print(ticks);
-#rdbytes:= profiler.getTrace("rdbytes");
-#io.print(rdbytes);
-#wrbytes:= profiler.getTrace("wrbytes");
-##io.print(wrbytes);
-#diskspace:= profiler.getTrace("diskspace");
-##io.print(diskspace);
-#io.print(rdbytes,wrbytes,stmt);
-##io.print(ticks,rdbytes,wrbytes,diskspace,stmt);
-#
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38637/
+# MonetDB/SQL module v2.39.0 loaded
+# MonetDB/GIS module v0.19.0 loaded
 function user.main():void;
 # the multiplex code blocks. 
 #watch out, the random generator on SUN has a limited range. 
@@ -64,7 +30,6 @@ exit (go,i);
     profiler.activate("stmt");
     profiler.activate("rbytes");
     profiler.activate("wbytes");
-    profiler.activate("disk");
     profiler.setAll();
     profiler.start();
     io.printf("#monitor \n");
@@ -75,7 +40,7 @@ exit (go,i);
     k2 := algebra.select(b,mx,nil:lng);
     d := mmath.sin(0.20000000298023224:dbl);
     profiler.stop();
-#stmt:= profiler.getTrace("statement"); 
+#stmt:= profiler.getTrace("stmt"); 
 #io.print(stmt); 
     ticks := profiler.getTrace("ticks");
 #io.print(ticks); 
@@ -84,24 +49,21 @@ exit (go,i);
     wrbytes := profiler.getTrace("wbytes");
 #io.print(wrbytes); 
     io.print(rdbytes,wrbytes);
-#io.print(ticks,rdbytes,wrbytes,diskspace); 
 end main;
-# Start performance profiling
 #monitor 
-# Performance profiling stopped
 #-------------------------#
 # h	t	t	  # name
-# int	int	int	  # type
+# void	lng	lng	  # type
 #-------------------------#
 [ 0@0,	  0,	  0	  ]
-[ 1@0,	  0,	  120000  ]
+[ 1@0,	  0,	  160000  ]
 [ 2@0,	  0,	  0	  ]
 [ 3@0,	  0,	  0	  ]
-[ 4@0,	  120000, 120000  ]
-[ 5@0,	  0,	  120000  ]
+[ 4@0,	  160000, 160000  ]
+[ 5@0,	  0,	  160000  ]
 [ 6@0,	  0,	  0	  ]
 
-# 08:46:49 >  
-# 08:46:49 >  Done.
-# 08:46:49 >  
+# 17:57:29 >  
+# 17:57:29 >  Done.
+# 17:57:29 >  
 

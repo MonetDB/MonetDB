@@ -15,18 +15,5 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-MTSAFE
-
-SUBDIRS = sql
-
-scripts_py = {
-	DIR = $(prefix)/$(PYTHON_LIBDIR)/monetdb
-	HEADERS = py
-	SOURCES = mclient.py
-}
-
-headers_py = {
-	DIR = $(prefix)/$(PYTHON_LIBDIR)/monetdb
-	HEADERS = py
-	SOURCES = __init__.py mapi.py mapi2.py mapi3.py monetdb_exceptions.py
-}
+# This loads the MonetDB/SQL module
+include sql;

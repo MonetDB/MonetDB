@@ -68,6 +68,9 @@ EXTRA_DIST = \
 	mil_opt.h \
 	milprint.h \
 	milprint_summer.h \
+        msa.h \
+        msa_mnemonic.h \
+        msaprint.h \
 	normalize.h \
 	ns.h \
 	nsres.h \
@@ -104,6 +107,7 @@ EXTRA_DIST = \
 	sql_opt.h \
 	sql_mnemonic.h \
    	lalg2sql.h \
+   	lalg2msa.h \
    	sqlprint.h \
         load_stats.h
    

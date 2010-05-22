@@ -80,7 +80,7 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static void displayVolume(Client cntxt, lng vol);
 
-#define MEMORY_THRESHOLD  0.9
+#define MEMORY_THRESHOLD  0.8
 #define MAXHOT 16
 
 static lng memorypool;		/* memory claimed by concurrent threads */
@@ -91,6 +91,10 @@ static struct{
 	int bid;
 } hotpotatoes[MAXHOT];
 static int hottop = 0;
+
+#define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
+#define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
+
 @-
 The struct alignment leads to 40% gain in simple instructions when set.
 @c
@@ -152,8 +156,8 @@ static INLINE void
 updateBigFoot(Client cntxt, int bid, int add)
 {
 	BAT *b;
-	lng memory;
-
+	lng total = 0,vol = 0;
+	
 	if (bid != bat_nil ){
 		BUN cnt = 0;
 		b= BBPquickdesc(ABS(bid),TRUE);
@@ -163,14 +167,17 @@ updateBigFoot(Client cntxt, int bid, int add)
 			return;
 		/* count it once ! */
 		cntxt->cnt = cnt = BATcount(b);
+		@:calcFootprint@
+		if ( b->H->hash )
+			total +=  cnt * sizeof(int);
+		if ( b->T->hash )
+			total +=  cnt * sizeof(int);
+		
 		if (add) {
-			memory = headsize(b,cnt) + tailsize(b,cnt);
-			cntxt->vmfoot += memory;
-			cntxt->memory += memory;
-		} else {
-			cntxt->vmfoot -= VIEWhparent(b)?0:headsize(b,cnt);
-			cntxt->vmfoot -= VIEWtparent(b)?0:tailsize(b,cnt);
-		}
+			cntxt->vmfoot += total;
+			cntxt->memory += total;
+		} else 
+			cntxt->vmfoot -= total;
 		/* correct for limitations by resetting */
 		if (cntxt->vmfoot < 0)
 			cntxt->vmfoot = 0;
@@ -575,7 +582,6 @@ its input variables are not blocked.
 
 typedef struct queue {
 	int size;	/* size of queue */
-	int first;	/* first in the queue */
 	int last;	/* last element in the queue */
 	void **data;	
 	MT_Lock l;	/* its a shared resource, ie we need locks */
@@ -645,12 +651,7 @@ all resource contention effects.
 
 Another option would be to maintain a priority queue of 
 suspended instructions.
-@= calcclaim
-t = total;
-if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-	b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-	if (b==NULL) 
-		continue;
+@= calcFootprint
 	heapinfo(&b->H->heap); total += vol;
 	heapinfo(b->H->vheap); total += vol;
 	hashinfo(b->H->hash); total += vol;
@@ -658,18 +659,28 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 	heapinfo(&b->T->heap); total += vol;
 	heapinfo(b->T->vheap); total += vol;
 	hashinfo(b->T->hash); total += vol;
+@= calcclaim
+t = total;
+if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+	b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
+	if (b==NULL) 
+		continue;
+	@:calcFootprint@
 	/* prepare for hashes */
 	if ( b->H->hash == NULL && b->hsorted == 0  &&
 		 b->T->hash == NULL && b->tsorted == 0 ){
 		if ( BATcount(b)  > cnt)
 			cnt = BATcount(b);
 	} 
+	if ( (b->ttype == TYPE_oid && !BATtordered(b) && !BATtdense(b)) ||
+	   ( b->htype == TYPE_oid && !BAThordered(b) && !BAThdense(b)) ){
+		/* assume we may have to do random IO, punish it by increasing the claim  with cacheline size*/
+		total += 64* BATcount(b) ;
+		total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
+	}
 	BBPunfix( h = b->batCacheid); 
 }
 @c
-#define heapinfo(X) if((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if((X) && (X)->mask) vol = ((X)->mask+(X)->lim+1)*sizeof(int) + sizeof(*(X)); else vol = 0;
-
 void
 getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *hotclaim)
 {
@@ -721,12 +732,14 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 	
 	if ( hottop >= MAXHOT || memoryused > (lng) (MEMORY_THRESHOLD * monet_memory) ){
 		/* forget everything returning memory to pool */
+		mal_set_lock(mal_contextLock, "DFLOWdelay");
 		for ( i =0; i< MAXHOT; i++){
 			hotpotatoes[i].claim=0;
 			hotpotatoes[i].bid=0;
 		}
 		memoryused = 0;
 		hottop = 0; 
+		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 #ifdef DEBUG_MEMORY_CLAIM
 		stream_printf(GDKout,"#DFLOWhotpotatoes reset\n");
 #endif
@@ -736,6 +749,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 		/* not initialized */
 		return;
 	}
+	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	for ( i = start; i< stop; i++) 
 	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
 	{
@@ -761,6 +775,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 			argclaim -= hotpotatoes[j].claim;
 	else	hotpotatoes[h++]= hotpotatoes[j];
 	hottop = h; 
+	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 }
 
 void
@@ -771,7 +786,6 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 	BUN cnt = 0;
 	BAT *b;
 
-	mal_set_lock(mal_contextLock, "DFLOWdelay");
 
 	for ( i= 0; i< pci->retc && hottop < MAXHOT; i++) 
 	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
@@ -781,6 +795,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 		(void) t;
 		(void) h;
 		if ( total ) {
+			mal_set_lock(mal_contextLock, "DFLOWdelay");
 			hotpotatoes[hottop].bid = ABS(stk->stk[getArg(pci,i)].val.bval);
 			hotpotatoes[hottop].claim = total;
 #ifdef DEBUG_MEMORY_CLAIM
@@ -793,6 +808,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 #endif
 			hottop++;
 			action++;
+			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		}
 	}
 	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
@@ -800,7 +816,6 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 	if ( total && action )
 		stream_printf(GDKout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
 #endif
-	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 }
 
 int
@@ -814,7 +829,7 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 	if (memorypool <= 0 && memoryclaims == 0)
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
 	
-	if ( argclaim + retclaim > 0 ) {
+	if ( argclaim + retclaim >= 0 ) {
 		if (memoryclaims == 0 || memorypool - memoryused > argclaim + retclaim -hotclaim){
 			memorypool -= (argclaim + retclaim);
 			memoryclaims ++;
@@ -855,7 +870,6 @@ q_create( int sz )
 	if ( q == NULL)
 		return NULL;
 	q->size = ((sz<<1)>>1); /* we want a multiple of 2 */
-	q->first = -1;
 	q->last = 0;
 	q->data = (void*)GDKmalloc(sizeof(void*)*sz);
 	if ( q->data == NULL){
@@ -877,21 +891,37 @@ q_destroy( queue *q )
 }
 */
 
+/* keep a simple FIFO queue. It won't be a large one, so shuffles of requeue is possible */
 static void
 q_enqueue(queue *q, void *d)
 {
 	MT_set_lock(q->l, "q_enqueue");
-	if (q->last == q->first) {
+	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
 		q->data = GDKrealloc(q->data, q->size);
 	}
-	q->data[q->last] = d;
-	if (q->first < 0)
-		q->first = q->last;
-	q->last = (q->last+1)&(q->size-1);
+	q->data[q->last++] = d;
 	MT_unset_lock(q->l, "q_enqueue");
 	MT_up_sema(q->s, "q_enqueue");
+}
+
+static void
+q_requeue(queue *q, void *d)
+{
+	int i;
+	MT_set_lock(q->l, "q_requeue");
+	if (q->last == q->size) {
+		/* enlarge buffer */
+		q->size <<= 1;
+		q->data = GDKrealloc(q->data, q->size);
+	}
+	for ( i=q->last; i > 0; i--)
+		q->data[i]= q->data[i-1];
+	q->data[0] = d;
+	q->last++;
+	MT_unset_lock(q->l, "q_requeue");
+	MT_up_sema(q->s, "q_requeue");
 }
 
 static void *
@@ -901,20 +931,10 @@ q_dequeue(queue *q)
 
 	MT_down_sema(q->s, "q_dequeue");
 	MT_set_lock(q->l, "q_dequeue");
-	if (q->first < 0) 
-		assert(0); 	/* nothing to dequeue */
-
-#ifndef FIFO 
+	assert(q->last > 0);
 	/* LIFO favors garbage collection*/
 	r = q->data[--q->last];	
-#else
-	/* FIFO favors sub plan execution */
-	r = q->data[q->first];
-	q->first = (q->first+1)&(q->size-1); 
-#endif
 
-	if (q->first == q->last) /* empty */
-		q->first = -1;
 	MT_unset_lock(q->l, "q_dequeue");
 	return r;
 }
@@ -990,29 +1010,31 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		}
 	}
 
-	@:beginProfile(t,1)@
+	@:beginProfile(t,0)@
 	ret = MAL_SUCCEED;
 	@:MALrecycleStart(t)@ {
 @-
-Delay processing when we run out of memory and could not recycle.
+Delay processing when we run out of memory.  Push the instruction back
+on the end of queue, waiting for another attempt. Problem might become
+that all threads but one are cycling through the queue, each time
+finding an eligible instruction, but without enough space.
+Therefore, we wait for a few milliseconds as an initial punishment.
 
 The process could be refined by checking for cheap operations,
-i.e. those that would require memory at all (aggr.count)
+i.e. those that would require no memory at all (aggr.count)
 This, however, would lead to a dependency to the upper layers,
 because in the kernel we don't know what routines are available
-with this property.
-Note, al alternative scheme is to push the instruction back
-on the queue, searching for one that can be handled instead. [todo].
+with this property. Nor do we maintain such properties.
 @c
 		getMemoryClaim(stk, pci, &argclaim, &retclaim,&hotclaim);
 		if ( DFLOWadmission(argclaim,retclaim,hotclaim) ){
 			PARDEBUG {
-				stream_printf(GDKout,"#DFLOWdelay thread %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
+				stream_printf(GDKout,"#DFLOWdelay instruction %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
 				printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 			}
 			for ( ; ; )
 			{
-				MT_sleep_ms( 25);
+				MT_sleep_ms(3); /* enough to pass some cheap instructions */
 				if ( DFLOWadmission(argclaim,retclaim,hotclaim) == 0) {
 					PARDEBUG {
 						stream_printf(GDKout,"#DFLOWcont  thread %d delay " LLFMT " pool  " LLFMT" delayed " LLFMT " ms\n#", THRgettid(),  memorypool, argclaim+retclaim, (GDKusec()-stk->clk)/1000);
@@ -1020,11 +1042,20 @@ on the queue, searching for one that can be handled instead. [todo].
 					}
 					break;
 				}
+				/* if we claim only part of memory, then let's wait */
+				if (argclaim + retclaim -hotclaim <  (lng) (MEMORY_THRESHOLD * monet_memory / memoryclaims))
+					continue;
+				/* re-schedule instructions that require a lot of memory for postponed execution */
+				PARDEBUG {
+					stream_printf(GDKout,"#DFLOWrequeue instr  %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
+					printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
+				}
+				throw(MAL,"DFLOWadmission","failed");
 			}
 		}
 		/* remove all result hotpotatoes now */
 		updMemoryUsedPart(stk,pci,0,pci->retc,-1);
-		@:beginProfile(t,0)@
+		@:beginProfile(t,1)@
 @-
 To improve memory access behavior we could touch the pages of all BATs to enforce them to become memory resident.
 This won't work, because it is not selective enough. The advice should be selectively given in the kernel.
@@ -1082,7 +1113,7 @@ just produced. THis way it need not be saved on disk for a long time.
 static void
 runDFLOWworker(void *t)
 {
-	FlowStep fs;
+	FlowStep fs,oldfs =0;
 	FlowTask *task = (FlowTask*) t;
 	str err;
 	Thread thr;
@@ -1090,14 +1121,25 @@ runDFLOWworker(void *t)
 	thr = THRnew(MT_getpid(), "DFLOWworker");
 	while(task) {
 		fs = (FlowStep)q_dequeue(task->todo);
+		if ( fs == oldfs){
+			MT_sleep_ms(10); 
+			q_requeue(task->todo,fs);
+			oldfs = 0;	/* don't escape it always */
+			continue;
+		}
+		oldfs = fs;
 #ifdef DEBUG_FLOW
 		printInstruction(GDKstdout, fs->flow->mb, 0, getInstrPtr(fs->flow->mb,fs->pc), LIST_MAL_STMT);
 #endif
-		while ((fs->error = DFLOWstep(task, fs)) && (err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
-			/* restore the instruction and wait*/
-			THRprintf(GDKerr, "#Thread %d needs memory:%s\n",task->id,err);
-			break;
+		err = DFLOWstep(task, fs);
+		/* restore the instruction and wait in specific cases*/
+		if ( err != MAL_SUCCEED && strstr(err,"DFLOWadmission") != NULL && strstr(err,"failed") != NULL){
+			GDKfree(err);
+			fs->status = DFLOWrunning;
+			q_requeue(task->todo,fs);
+			continue;
 		}
+		fs->error = err;
 		q_enqueue(fs->flow->done, fs);
 	}
 	THRdel(thr);

@@ -10,6 +10,6 @@ set MONETDB=%MONETDB:~0,-1%
 
 rem start the real server
 
-"%MONETDB%\M5server.bat" --dbinit="include sql;" %*
+"%MONETDB%\M5server.bat" %*
 
 endlocal

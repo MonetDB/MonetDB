@@ -409,6 +409,11 @@ Client MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 	}
 	for (c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
 		if (c->mode == AWAITING && c->scenario == s->name) {
+			/* remove garbage from previous session */
+			if( c->nspace) {
+				freeModule(c->nspace);
+				c->nspace=0;
+			}
 			c->mode = CLAIMED;
 			break;
 		}
@@ -497,10 +502,6 @@ Client MCinitClient(oid user, bstream *fin, stream *fout)
 	if ((c = MCnewClient()) == NULL)
 		return NULL;
 
-	if( c->nspace) {
-		freeModule(c->nspace);
-		c->nspace=0;
-	}
 	c->user = user; 
 	c->scenario = NULL;
 	c->oldscenario = NULL;

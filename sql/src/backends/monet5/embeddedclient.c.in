@@ -101,7 +101,6 @@ start_sql_server(void *arg)
 	out = ((stream **) arg)[1];
 	free(arg);
 	snprintf(buf, sizeof(buf), 
-		"include sql;\n"
 		"in  := \"" PTRFMT "\":streams;\n"
 		"out := \"" PTRFMT "\":streams;\n"
 		"mapi.malclient(in, out);\n", PTRFMTCAST in, PTRFMTCAST out);

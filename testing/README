@@ -140,7 +140,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
          mclient -lsql < TST[_(s|p)XX].sql
      or  TST.SQL.(sh|exe|com|bat|cmd) TST
      or  python TST.SQL.py
-  * mserver5 --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5] include sql;" [TST.prologue5] &
+  * mserver5 --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5]" [TST.prologue5] &
          mclient -lsql < TST[_(s|p)XX].sql
      or  TST.SQL.(sh|exe|com|bat|cmd) TST
      or  python TST..SQL.py

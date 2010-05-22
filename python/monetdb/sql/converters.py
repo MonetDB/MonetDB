@@ -48,6 +48,7 @@ class Pythonizer:
             type_codes.DATE: self.__date,
             type_codes.TIME: self.__time,
             type_codes.TIMESTAMP: self.__timestamp,
+            type_codes.TIMESTAMPTZ: self.__timestamptz,
             type_codes.INTERVAL: self.__strip,
             type_codes.MONTH_INTERVAL: self.__strip,
             type_codes.SEC_INTERVAL: self.__strip,
@@ -121,6 +122,26 @@ class Pythonizer:
         time = [int(float(x)) for x in splitted[1].split(':')]
         return Timestamp(*date+time)
 
+    def __timestamptz(self, data):
+        if data.find('+')!= -1:
+            (dt, tz) = data.split("+")
+            (tzhour, tzmin) = [int(x) for x in tz.split(':')]
+        elif data.find('-')!= -1:
+            (dt, tz) = data.split("-")
+            (tzhour, tzmin) = [int(x) for x in tz.split(':')]
+            tzhour = tzhour * -1
+            tzmin = tzmin * -1
+        else:
+            raise ProgrammingError("no + or - in %s" % data)
+
+        (datestr, timestr) = dt.split(" ")
+        date = [int(float(x)) for x in datestr.split('-')]
+        time = [int(float(x)) for x in timestr.split(':')]
+        year, month, day = date
+        hour, minute, second = time
+        return Timestamp(year, month, day, hour+tzhour, minute+tzmin, second)
+
+
     def __blob(self, x):
         """ Converts a monetdb blob in string representation to a python string.
         The input is a string in the format: '(length: char char char char ... )'
@@ -135,7 +156,10 @@ class Pythonizer:
         if data == "NULL":
             return None
 
-        return self.mapping[type_code](data)
+        try:
+            return self.mapping[type_code](data)
+        except KeyError:
+            raise ProgrammingError("type %s is not supported by Python API" % type_code)
 
 
 class Monetizer:

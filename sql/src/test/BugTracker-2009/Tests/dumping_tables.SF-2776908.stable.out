@@ -21,30 +21,17 @@ Ready.
 
 Over..
 
-# 10:46:58 >  
-# 10:46:58 >  mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=36889 
-# 10:46:58 >  
+# 11:17:12 >  
+# 11:17:12 >  ./dumping_tables.SF-2776908.SQL.sh dumping_tables.SF-2776908 
+# 11:17:12 >  
 
-TABLE   sys._columns
-TABLE   sys._tables
-TABLE   sys.args
-TABLE   sys.auths
-VIEW    sys.columns
-TABLE   sys.connections
-TABLE   sys.db_user_info
-TABLE   sys.dependencies
-TABLE   sys.functions
-TABLE   sys.idxs
-TABLE   sys.keycolumns
-TABLE   sys.keys
-TABLE   sys.privileges
-TABLE   sys.schemas
-TABLE   sys.sequences
-VIEW    sys.tables
-TABLE   sys.triggers
-TABLE   sys.types
-TABLE   sys.user_role
-VIEW    sys.users
+
+# 11:17:12 >  
+# 11:17:12 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=alf --port=39432  -i < /net/alf.ins.cwi.nl/export/scratch1/niels/MonetDB/sql/src/test/BugTracker-2009/Tests/../dumping_tables.SF-2776908.sql
+# 11:17:12 >  
+
+TABLE   sys.queryhistory
+TABLE   sys.url_test
 CREATE TABLE "sys"."triggers" (
 	"id" int,
 	"name" varchar(1024),

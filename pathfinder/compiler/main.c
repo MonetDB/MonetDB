@@ -475,6 +475,7 @@
  * order of one-character option names.
  */
 static struct option long_options[] = {
+    { "m5-sql",                    no_argument,       NULL, '5' },
     { "mil",                       no_argument,       NULL, 'A' },
     { "dot",                       no_argument,       NULL, 'D' },
     { "fullhelp",                  no_argument,       NULL, 'H' },
@@ -684,14 +685,14 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHIMO::PTXabc"
+        c = getopt_long (argc, argv, "5ADHIMO::PTXabc"
 #ifndef NDEBUG
                                      "d:"
 #endif
                                      "e:f:Shlo:pqrs:t",
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHIMO::PTXabc"
+        c = getopt (argc, argv, "5ADHIMO::PTXabc"
 #ifndef NDEBUG
                                 "d:"
 #endif
@@ -701,6 +702,10 @@ main (int argc, char *argv[])
         if (c == -1)
             break;            /* end of command line */
         switch (c) {
+            case '5':
+                status->output_format = PFoutput_format_m5sql;
+                break;
+
             case 'A':
                 status->output_format = PFoutput_format_mil;
                 break;
@@ -722,6 +727,9 @@ main (int argc, char *argv[])
 #endif
                         "\n",
                         long_option (opt_buf, ", --%s", 'A'));
+                printf ("  -5%s: generate MIL code"
+                        "\n",
+                        long_option (opt_buf, ", --%s", '5'));
                 printf ("  -M%s: generate MIL code (directly from XQuery Core)"
 #if MILPRINT_SUMMER_IS_DEFAULT
                         " (default)"

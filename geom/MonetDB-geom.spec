@@ -163,6 +163,7 @@ rm -rf $RPM_BUILD_ROOT
 %files MonetDB5
 %{_libdir}/MonetDB5/lib/lib_geom.so*
 %{_libdir}/MonetDB5/geom.mal
+%{_libdir}/MonetDB5/autoload/*_geom.mal
 %endif
 
 %files devel

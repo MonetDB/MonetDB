@@ -2,27 +2,31 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/bin/merovingian
-NAME=mserver5-sql
+NAME=merovingian
 DESC="MonetDB SQL server"
 
 test -x $DAEMON || exit 0
 
 LOGDIR=/var/log/MonetDB
-PIDFILE=/var/run/$NAME.pid
-DODTIME=1                   # Time to wait for the server to die, in seconds
-                            # If this value is set too low you might not
-                            # let some servers to die gracefully and
-                            # 'restart' will not work
+PIDFILE=/var/run/MonetDB/$NAME.pid
 
-# Include mserver5-sql defaults if available
-if [ -f /etc/default/mserver5-sql ] ; then
-    . /etc/default/mserver5-sql
+# Include monetdb5-sql defaults if available
+if [ -f /etc/default/monetdb5-sql ] ; then
+    . /etc/default/monetdb5-sql
 fi
 
 set -e
 
-running_pid()
-{
+init() {
+    if [ ! -d /var/run/MonetDB ]; then
+        mkdir /var/run/MonetDB
+    fi
+    chown -R monetdb.monetdb /var/run/MonetDB
+    chmod 775 /var/run/MonetDB
+    rm -f /var/run/MonetDB/*
+}
+
+running_pid() {
     # Check if a given process pid's cmdline matches a given name
     pid=$1
     name=$2
@@ -34,12 +38,7 @@ running_pid()
     return 0
 }
 
-running()
-{
-# Check if the process is running looking at /proc
-# (works for all users)
-
-    # No pidfile, probably no daemon present
+running() {
     [ ! -f "$PIDFILE" ] && return 1
     # Obtain the pid and check it against the binary name
     pid=`cat $PIDFILE`
@@ -47,98 +46,49 @@ running()
     return 0
 }
 
-force_stop() {
-# Forcefully kill the process
-    [ ! -f "$PIDFILE" ] && return
-    if running ; then
-        kill -15 $pid
-        # Is it really dead?
-        [ -n "$DODTIME" ] && sleep "$DODTIME"s
-        if running ; then
-            kill -9 $pid
-            [ -n "$DODTIME" ] && sleep "$DODTIME"s
-            if running ; then
-                echo "Cannot kill $LABEL (pid=$pid)!"
-                exit 1
-            fi
-        fi
-    fi
-    rm -f $PIDFILE
-    return 0
-}
-
 case "$1" in
   start)
+        if [ "$STARTUP" != "yes" ]; then
+            echo "can't start, should be enabled first by change STARTUP to yes in /etc/default/monetdb5-sql"
+            exit 1
+        fi
+
+        if running; then
+            echo "$NAME is already running"
+            exit 1
+        fi
+
+        init
+
         echo -n "Starting $DESC: "
-        start-stop-daemon --start --quiet --pidfile $PIDFILE \
-            --exec $DAEMON -- $DAEMON_OPTS
+        start-stop-daemon --start --exec $DAEMON -c monetdb:monetdb -- $DAEMON_OPTS
         if running ; then
             echo "$NAME."
         else
-            echo " ERROR."
+            echo " ERROR, $NAME didn't start"
         fi
         ;;
   stop)
         echo -n "Stopping $DESC: "
-        start-stop-daemon --stop --quiet --pidfile $PIDFILE \
-            --exec $DAEMON
+        start-stop-daemon --stop --pidfile $PIDFILE --exec $DAEMON
         echo "$NAME."
-        ;;
-  force-stop)
-        echo -n "Forcefully stopping $DESC: "
-        force_stop
-        if ! running ; then
-            echo "$NAME."
-        else
-            echo " ERROR."
-        fi
-        ;;
-  #reload)
-        #
-        # If the daemon can reload its config files on the fly
-        # for example by sending it SIGHUP, do it here.
-        #
-        # If the daemon responds to changes in its config file
-        # directly anyway, make this a do-nothing entry.
-        #
-        # echo "Reloading $DESC configuration files."
-        # start-stop-daemon --stop --signal 1 --quiet --pidfile \
-        #       /var/run/$NAME.pid --exec $DAEMON
-  #;;
-  force-reload)
-        #
-        # If the "reload" option is implemented, move the "force-reload"
-        # option to the "reload" entry above. If not, "force-reload" is
-        # just the same as "restart" except that it does nothing if the
-        # daemon isn't already running.
-        # check wether $DAEMON is running. If so, restart
-        start-stop-daemon --stop --test --quiet --pidfile \
-            /var/run/$NAME.pid --exec $DAEMON \
-            && $0 restart \
-            || exit 0
         ;;
   restart)
-    echo -n "Restarting $DESC: "
-        start-stop-daemon --stop --quiet --pidfile \
-            /var/run/$NAME.pid --exec $DAEMON
-        [ -n "$DODTIME" ] && sleep $DODTIME
-        start-stop-daemon --start --quiet --pidfile \
-            /var/run/$NAME.pid --exec $DAEMON -- $DAEMON_OPTS
-        echo "$NAME."
+        $0 stop
+        sleep 5
+        $0 start
         ;;
   status)
-    echo -n "$LABEL is "
+    echo -n "$NAME is "
     if running ;  then
         echo "running"
     else
-        echo " not running."
+        echo "not running."
         exit 1
     fi
     ;;
   *)
-    N=/etc/init.d/$NAME
-    # echo "Usage: $N {start|stop|restart|reload|force-reload}" >&2
-    echo "Usage: $N {start|stop|restart|force-reload|status|force-stop}" >&2
+    echo "Usage: $0 {start|stop|restart|status}" >&2
     exit 1
     ;;
 esac

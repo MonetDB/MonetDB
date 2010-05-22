@@ -34,7 +34,6 @@ a known location.
 #include "mal_utils.h"
 
 mal_export void slash_2_dir_sep(str fname);
-mal_export stream *openSourceFile(str fname);
 @-
 The import context is located. If the module already exists, 
 we should silently skip parsing the file. This is handled at the parser level.
@@ -62,23 +61,31 @@ slash_2_dir_sep(str fname)
 			*s = DIR_SEP;
 }
 
-stream *
-openSourceFile(str fname)
+static str
+malResolveFile(str fname)
+{
+	char path[PATHLENGTH];
+	str script;
+
+	snprintf(path, PATHLENGTH, "%s", fname);
+	slash_2_dir_sep(path);
+	if ((script = MSP_locate_script(path)) == NULL) {
+		/* this function is also called for scripts that are not located
+		 * in the modpath, so if we can't find it, just default to
+		 * whatever was given, as it can be in current dir, or an
+		 * absolute location to somewhere */
+		script = GDKstrdup(fname);
+	}
+	return script;
+}
+
+static stream *
+malOpenSource(str file)
 {
 	stream *fd = NULL;
-	char path[PATHLENGTH];
-	str fullname;
 
-	snprintf(path,PATHLENGTH,"%s",fname);
-	slash_2_dir_sep(path);
-	fullname = MSP_locate_script(path);
-
-	if (fullname) {
-		fd = open_rastream(fullname);
-		GDKfree(fullname);
-	} else {
-		fd = open_rastream(path);
-	}
+	if (file)
+		fd = open_rastream(file);
 	return fd;
 }
 
@@ -97,14 +104,14 @@ malLoadScript(Client c, str name, bstream **fdin)
 {
 	stream *fd;
 
-	fd = openSourceFile(name);
+	fd = malOpenSource(name);
 	if (stream_errnr(fd) == OPEN_ERROR) {
 		stream_destroy(fd);
 		throw(MAL, "malInclude", "could not open file: %s", name);
 	}
 	*fdin = bstream_create(fd, 128 * BLOCK);
-	if( bstream_next(*fdin) < 0)	
-		stream_printf(c->fdout,"!WARNING: could not read %s\n",name);
+	if (bstream_next(*fdin) < 0)
+		stream_printf(c->fdout, "!WARNING: could not read %s\n", name);
 	return MAL_SUCCEED;
 }
 
@@ -175,6 +182,8 @@ str
 malInclude(Client c, str name, int listing)
 {
 	str s= MAL_SUCCEED;
+	str filename;
+	str p;
 
 	bstream *oldfdin = c->fdin;
 	int oldyycur = c->yycur;
@@ -189,16 +198,30 @@ malInclude(Client c, str name, int listing)
 	Module oldnspace = c->nspace;
 	Symbol oldprg = c->curprg;
 
-	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
-	c->bak = NULL;
 
 	c->fdin = NULL;
-	c->srcFile = name;
-	if ((s = malLoadScript(c, name, &c->fdin)) == 0) 
-		parseMAL(c,c->curprg);
+
+	if ((filename = malResolveFile(name)) != NULL) {
+		name = filename;
+		while ((p = strchr(filename, PATH_SEP)) != NULL) {
+			*p = '\0';
+			c->srcFile = filename;
+			c->yycur = 0;
+			c->bak = NULL;
+			if ((s = malLoadScript(c, filename, &c->fdin)) == 0) 
+				parseMAL(c, c->curprg);
+			filename = p + 1;
+		}
+		c->srcFile = filename;
+		c->yycur = 0;
+		c->bak = NULL;
+		if ((s = malLoadScript(c, filename, &c->fdin)) == 0) 
+			parseMAL(c, c->curprg);
+		GDKfree(name);
+	}
 
 	@:restoreClient()@
 	return s;
@@ -228,25 +251,56 @@ str
 evalFile(Client c, str fname, int listing){
 	@:restoreState@
 	stream *fd;
+	str p;
+	str filename;
 	str msg= MAL_SUCCEED;
 
-	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
-	c->bak = NULL;
 
 	c->fdin = NULL;
-	c->srcFile= fname;
-	fd = openSourceFile(fname);
+
+	filename = malResolveFile(fname);
+	if (filename == NULL) {
+		stream_printf(c->fdout, "#WARNING: could not open file: %s\n", fname);
+		@:restoreClient3()@
+		@:restoreClient()@
+		return msg;
+	}
+
+	fname = filename;
+	while ((p = strchr(filename, PATH_SEP)) != NULL) {
+		*p = '\0';
+		fd = malOpenSource(filename);
+		if (stream_errnr(fd) == OPEN_ERROR) {
+			stream_destroy(fd);
+			stream_printf(c->fdout, "#WARNING: could not open file: %s\n",
+					filename);
+		} else {
+			c->srcFile = filename;
+			c->yycur = 0;
+			c->bak = NULL;
+			MSinitClientPrg(c, "user", "main");     /* re-initialize context */
+			MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "");
+			msg = runScenario(c);
+		}
+		filename = p + 1;
+	}
+	fd = malOpenSource(filename);
 	if (stream_errnr(fd) == OPEN_ERROR) {
 		stream_destroy(fd);
-		stream_printf(c->fdout, "#WARNING: could not open file: %s\n", fname);
+		stream_printf(c->fdout, "#WARNING: could not open file: %s\n",
+				filename);
 	} else {
-		MSinitClientPrg(c,"user","main");	/* re-initialize context */
-		MCpushClientInput(c, bstream_create(fd, 128 * BLOCK),c->listing,"");
+		c->srcFile = filename;
+		c->yycur = 0;
+		c->bak = NULL;
+		MSinitClientPrg(c, "user", "main");     /* re-initialize context */
+		MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "");
 		msg = runScenario(c);
 	}
+	GDKfree(fname);
 
 	@:restoreClient3()@
 	@:restoreClient()@

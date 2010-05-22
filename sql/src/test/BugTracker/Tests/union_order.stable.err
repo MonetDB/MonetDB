@@ -10,6 +10,13 @@ stderr of test 'union_order` in directory 'src/test/BugTracker` itself:
 # 15:51:29 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36178 
 # 15:51:29 >  
 
+MAPI  = monetdb@alf:39432
+QUERY = select data from tmp_one
+ERROR = !ORDER BY: missing select operator in: "select data from tmp_one
+        !union
+        !select data from tmp_two
+        !order by data
+        !;"
 
 # 15:51:29 >  
 # 15:51:29 >  Done.

@@ -49,8 +49,8 @@ create table callHistory(
 	id wrd references queryHistory(id), -- references query plan
 	ctime timestamp,	-- time the first statement was executed
 	arguments string,
-	xtime bigint,		-- time from the first statement until result export
-	rtime bigint,		-- time to ship the result to the client
+	exec bigint,		-- time from the first statement until result export
+	result bigint,		-- time to ship the result to the client
 	foot bigint, 		-- footprint for all bats in the plan
 	memory bigint,		-- storage size of intermediates created
 	tuples wrd,			-- number of tuples in the result set
@@ -59,7 +59,7 @@ create table callHistory(
 );
 
 create view queryLog as
-select qd.*, ql.ctime, ql.arguments, ql.xtime, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryHistory qd, callHistory ql
+select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryHistory qd, callHistory ql
 where qd.id = ql.id;
 
 -- the signature is used in the kernel, don't change it
@@ -92,4 +92,10 @@ begin
 		foot, memory, tuples, inblock, oublock );
 end;
 
-set history=true;
+create procedure resetHistory()
+begin
+	delete from callHistory;
+	delete from queryHistory;
+end;
+
+-- set history=true;

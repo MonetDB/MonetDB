@@ -33,7 +33,9 @@ Over..
 % sys.keys # table_name
 % name # name
 % varchar # type
-% 10 # length
+% 20 # length
+[ "queryhistory_id_pkey"	]
+[ "callhistory_id_fkey"	]
 [ "t2_id_pkey"	]
 
 # 18:05:38 >  

@@ -2170,8 +2170,13 @@ mapi_mapi(const char *host, int port, const char *username,
 		free(mid->hostname);
 	mid->hostname = host ? strdup(host) : NULL;
 
-	if (port == 0)
+	if (port == 0) {
 		port = 50000;	/* hardwired default */
+	} else {
+		/* make sure we won't search for a unix socket first */
+		if (mid->hostname == NULL)
+			mid->hostname = strdup("localhost");
+	}
 
 	/* fill some defaults for user/pass, this should actually never happen */
 	if (username == NULL)

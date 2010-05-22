@@ -157,7 +157,7 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V61 := algebra.kdifference(V57,V9); # 28 V61:bat[:oid,:flt] := ALGkdiff(V57:bat[:oid,:flt], V9:bat[:oid,:oid]) {G}
     V62 := algebra.join(V18,V61);       # 29 V62:bat[:oid,:flt] := ALGjoin(V18:bat[:oid,:oid], V61:bat[:oid,:flt]) {G}
     V63 := aggr.sum(V62,V32,V34);       # 30 V63:bat[:oid,:dbl] := AX3aggrX3_sum3_flt_dbl(V62:bat[:oid,:flt], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
-    V69 := calc.lng(1);                 # 31 V69:lng := CALCint2lng(_67:int) 
+    V69 := calc.lng(1);                 # 31 V69:lng := int_2_lng(_67:int) 
     V71 := calc.*(V69,100);             # 32 V71:lng := CALCbinaryMULlngint(V69:lng, _69:int) 
     V72:bat[:oid,:flt]  := user.bind("sys","lineitem","l_discount",0);# 33 V72:bat[:oid,:flt] := user.bind(_2:str, _3:str, _71:str, _5:int) {G}
     V79 := algebra.kdifference(V72,V9); # 34 V79:bat[:oid,:flt] := ALGkdiff(V72:bat[:oid,:flt], V9:bat[:oid,:oid]) {G}

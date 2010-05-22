@@ -49,13 +49,13 @@ function user.main():void;
 end main;
 function user.getz(p:int):int;          #  0 getz:int := user.getz(p:int) 
     x := nil:int;                       #  1 x:int := _3:int 
-    V6 := calc.sht(10);                 #  2 V6:sht := CALCint2sht(_6:int) 
-    V9 := calc.int(V6);                 #  3 V9:int := CALCsht2int(V6:sht) 
+    V6 := calc.sht(10);                 #  2 V6:sht := int_2_sht(_6:int) 
+    V9 := calc.int(V6);                 #  3 V9:int := sht_2_int(V6:sht) 
     V11 := calc.>(p,V9);                #  4 V11:bit := CALCcompGTintint(p:int, V9:int) 
 barrier V12 := V11;                     #  5 V12:bit := V11:bit {J10}
-    V15 := calc.int(2);                 #  6 V15:int := CALCint2int(_12:int) 
+    V15 := calc.int(2);                 #  6 V15:int := int_2_int(_12:int) 
     V22 := calc.*(p,V15);               #  7 V22:int := CALCbinaryMULintint(p:int, V15:int) 
-    V24 := calc.int(V22);               #  8 V24:int := CALCint2int(V22:int) 
+    V24 := calc.int(V22);               #  8 V24:int := int_2_int(V22:int) 
     x := V24;                           #  9 x:int := V24:int 
 exit V12;                               # 10 V12:bit 
 barrier V27 := calc.not(V11);           # 11 V27:bit := CALCunarybitNOT(V11:bit) {J13}

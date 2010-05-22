@@ -31,6 +31,22 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <string.h>
+
+#ifdef HAVE_FTIME
+#include <sys/timeb.h>
+#endif
+
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
 #include "stream.h"
 #include "msqldump.h"
 #include "mprompt.h"
@@ -213,6 +229,21 @@ main(int argc, char **argv)
 	mapi_cache_limit(mid, 10000);
 
 	out = file_wastream(stdout, "stdout");
+	if ( out ) {
+		char buf[27]="unknown date";
+		time_t t = time(0);
+#ifdef HAVE_CTIME_R3
+        ctime_r(&t, buf, sizeof(buf));
+#else
+#ifdef HAVE_CTIME_R
+        ctime_r(&t, buf);
+#else
+        strncpy(buf, ctime(&t), sizeof(buf));
+#endif
+#endif
+
+		stream_printf(out,"#msqldump %s %s\n", (functions? "functions":"tables"), buf);
+	}
 	if (functions)
 		c = dump_functions(mid, out, NULL);
 	else

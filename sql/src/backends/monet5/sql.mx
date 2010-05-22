@@ -70,8 +70,7 @@ comment "Compile and execute a single sql statement (and optionaly send output o
 
 pattern include(fname:str):void 
 address SQLinclude
-comment "Load and execute the SQL script identified. A relatief path is resolved 
-from the lib/MonetDB5 installation directory.";
+comment "Compile and execute a sql statements on the file";
 
 pattern assert(b:bit,msg:str):void
 address SQLassert
@@ -798,8 +797,8 @@ function mmath.rand{inline}( v:int ) :int;
 	return rand := x;
 end mmath.rand;
 
-pattern cluster(sch:str, tbl:str)
-address SQLcluster
+pattern cluster1(sch:str, tbl:str)
+address SQLcluster1
 comment "Cluster the columns of a table on the (first) primary key";
 
 pattern cluster2(sch:str, tbl:str)
@@ -1084,7 +1083,7 @@ sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
 sql5_export str not_unique_oids(bat *ret, bat *bid);
-sql5_export str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -4836,11 +4835,14 @@ sql_@1rank(bat *rid, bat *bid)
 @:rnk(dense_,nrank+=(c?1:0),2)@
 
 str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *ret;
+	str s, t, *ret;
 
 	(void) cntxt;
 	ret= (str *) getArgReference(stk,pci,0);
-	*ret = instruction2str(mb,stk,getInstrPtr(mb,0),LIST_MAL_VALUE);
+	s = instruction2str(mb,stk,getInstrPtr(mb,0),LIST_MAL_VALUE);
+	t= strchr(s,' ');
+	*ret = GDKstrdup(t ? t+1: s);
+	GDKfree(s);
 	return MAL_SUCCEED;
 }
 
@@ -4850,7 +4852,7 @@ re-clustered on the hash value over the  primary key.
 Initially the first column
 @c
 
-str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_trans	*tr;

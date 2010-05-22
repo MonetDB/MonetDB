@@ -2007,7 +2007,7 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	be->mvc_var = getDestVar(q);
 	(void)_dumpstmt(be, mb, s);
 	be->mvc_var = old_mv;
-	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
+	if (c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt2(mb, sqlRef, exportOperationRef);
 		q = pushStr(mb, q, ""); /* warning */
 	}
@@ -2186,7 +2186,10 @@ backend_call(backend *be, Client c, cq *cq)
 			if (!atom_cast(a, pt)) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "wrong argument for function call (expected %s instead of %s)\n", pt->type->sqlname, atom_type(a)->type->sqlname);
+				snprintf(buf, BUFSIZ, "wrong type for argument %d of "
+					"function call: %s, expected %s\n",
+					i + 1, atom_type(a)->type->sqlname,
+					pt->type->sqlname);
 				sql_error(m, 003, buf);
 				break;
 			}

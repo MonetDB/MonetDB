@@ -84,7 +84,7 @@ stderr of test 'sql_command_kills_db.SF-2233677` in directory 'src/test/BugTrack
 
 MAPI  = monetdb@eir:36862
 QUERY = insert into t1 values ((select id, name from tables));
-ERROR = !SQLException:zero_or_one:cardinality violation (27>1)
+ERROR = !SQLException:zero_or_one:cardinality violation (31>1)
 
 # 16:15:09 >  
 # 16:15:09 >  Done.
