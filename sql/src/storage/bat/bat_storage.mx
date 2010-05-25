@@ -461,7 +461,7 @@ sql_column *
 find_col( sql_trans *tr, char *sname, char *tname, char *cname )
 {
 	sql_schema *s = find_sql_schema(tr, sname);
-	sql_table *t;
+	sql_table *t = NULL;
 	sql_column *c = NULL;
 
 	if (s) 
