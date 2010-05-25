@@ -125,8 +125,6 @@ MRgetCloud(int *ret, str *mrcluster)
 		mapnodes[mapcount].pass = GDKstrdup("monetdb");
 		mapcount++;
 	}
-	if (GDKnr_threads < (int) BATcount(cloud))
-		GDKnr_threads = (int) BATcount(cloud);
 
 	mal_unset_lock(mal_contextLock, "mapreduce");
 	BBPkeepref(*ret);	/* give it to the called */
@@ -558,6 +556,10 @@ OPTmapreduceImplementation(
 			oreduce[i]->token = NOOPsymbol;
 			continue;
 		}
+
+		/* skip all NOOPs */
+		if (p->token == NOOPsymbol)
+			continue;
 
 		if (getModuleId(p) == algebraRef && (
 					getFunctionId(p) == sortTailRef ||
