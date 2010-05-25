@@ -729,7 +729,14 @@ transform_expression (PFsql_t *n, PFsql_t *col)
     /* we have a different strategy when our item is boolean */
     if (col->sem.column.name->ty == aat_bln)
         n = (n->kind == sql_column_name ||
-             n->kind == sql_lit_int)?
+             n->kind == sql_lit_int ||
+             /* in case we have a max or min over a boolean
+              * value, we don't wrap it into another case
+              * statement, since in case of a condition
+              * we dump the statement before the aggregate
+              * is used. */
+             n->kind == sql_max ||
+             n->kind == sql_min)?
             n:
             case_ (when (n, TRUE_INT), else_ (FALSE_INT));
 
