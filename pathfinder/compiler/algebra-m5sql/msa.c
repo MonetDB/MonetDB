@@ -183,6 +183,7 @@ msa_op_wire2 (PFmsa_op_kind_t kind, const PFmsa_op_t *n1, const PFmsa_op_t *n2)
 
 /* -------------------- Auxiliary functions --------------------*/
 
+#ifndef NDEBUG
 /* Auxiliary function to determine if all
  columns that are referenced in expr are columns of schema
  */
@@ -216,6 +217,7 @@ expr_cols_in_schema(PFmsa_expr_t *expr, PFalg_schema_t schema)
         return true;
     }
 }
+#endif
 
 /* Auxiliary function to get schema from a list of expressions */
 PFalg_schema_t
