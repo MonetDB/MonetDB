@@ -163,7 +163,7 @@ typedef struct _mapcol {
 static void
 MRdistributework(
 		Client cntxt,
-		MalBlkPtr mb,
+		MalBlkPtr reduce,
 		mapcol *col,
 		InstrPtr sig,
 		str mrcluster)
@@ -190,66 +190,66 @@ MRdistributework(
 	w = (int *)alloca(retc * sizeof(int));
 
 	for (lcol = col, j = 0; lcol != NULL; lcol = lcol->next, j++) {
-		packs[j] = p = newFcnCall(mb, batRef, newRef);
-		p = pushType(mb, p, getHeadType(lcol->val1type));
-		p = pushType(mb, p, getTailType(lcol->val1type));
+		packs[j] = p = newFcnCall(reduce, batRef, newRef);
+		p = pushType(reduce, p, getHeadType(lcol->val1type));
+		p = pushType(reduce, p, getTailType(lcol->val1type));
 		getArg(p, 0) = lcol->val1;
 
 		/* same for all sub results that we push into the mat.pack as
 		 * arguments at the same time */
 		for (i = 0; i < n; i++) {
-			p = newFcnCall(mb, batRef, newRef);
-			p = pushType(mb, p, getHeadType(lcol->val1type));
-			p = pushType(mb, p, getTailType(lcol->val1type));
-			setArgType(mb, p, 0, lcol->val1type);
+			p = newFcnCall(reduce, batRef, newRef);
+			p = pushType(reduce, p, getHeadType(lcol->val1type));
+			p = pushType(reduce, p, getTailType(lcol->val1type));
+			setArgType(reduce, p, 0, lcol->val1type);
 			gets[(i * retc) + j] = getArg(p, 0);
 		}
 	}
 
 	for (i = 0; i < n; i++) {
 		/* q := remote.connect("uri", "user", "pass"); */
-		p = newStmt(mb, remoteRef, connectRef);
-		p = pushStr(mb, p, mapnodes[i].uri);
-		p = pushStr(mb, p, mapnodes[i].user);
-		p = pushStr(mb, p, mapnodes[i].pass);
-		p = pushStr(mb, p, "msql");
+		p = newStmt(reduce, remoteRef, connectRef);
+		p = pushStr(reduce, p, mapnodes[i].uri);
+		p = pushStr(reduce, p, mapnodes[i].user);
+		p = pushStr(reduce, p, mapnodes[i].pass);
+		p = pushStr(reduce, p, "msql");
 		q = getArg(p, 0);
 
 		/* remote.register(q, "mod", "fcn"); */
-		p = newStmt(mb, remoteRef, putName("register", 8));
-		p = pushArgument(mb, p, q);
-		p = pushStr(mb, p, getModuleId(sig));
-		p = pushStr(mb, p, getFunctionId(sig));
+		p = newStmt(reduce, remoteRef, putName("register", 8));
+		p = pushArgument(reduce, p, q);
+		p = pushStr(reduce, p, getModuleId(sig));
+		p = pushStr(reduce, p, getFunctionId(sig));
 
 		/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
-		p = newInstruction(mb, ASSIGNsymbol);
+		p = newInstruction(reduce, ASSIGNsymbol);
 		setModuleId(p, remoteRef);
 		setFunctionId(p, execRef);
-		p = pushArgument(mb, p, q);
-		p = pushStr(mb, p, getModuleId(sig));
-		p = pushStr(mb, p, getFunctionId(sig));
+		p = pushArgument(reduce, p, q);
+		p = pushStr(reduce, p, getModuleId(sig));
+		p = pushStr(reduce, p, getFunctionId(sig));
 		for (j = 0; j < retc; j++) {
 			/* x1 := remote.put(q, :type) */
-			o = newFcnCall(mb, remoteRef, putRef);
-			o = pushArgument(mb, o, q);
-			o = pushArgument(mb, o, gets[(i * retc) + j]);
+			o = newFcnCall(reduce, remoteRef, putRef);
+			o = pushArgument(reduce, o, q);
+			o = pushArgument(reduce, o, gets[(i * retc) + j]);
 			v = getArg(o, 0);
-			p = pushReturn(mb, p, v);
+			p = pushReturn(reduce, p, v);
 			w[j] = v;
 		}
-		pushInstruction(mb, p);
+		pushInstruction(reduce, p);
 
 		/* y1 := remote.get(q, x1); */
 		for (j = 0; j < retc; j++) {
-			p = newFcnCall(mb, remoteRef, getRef);
-			p = pushArgument(mb, p, q);
-			p = pushArgument(mb, p, w[j]);
+			p = newFcnCall(reduce, remoteRef, getRef);
+			p = pushArgument(reduce, p, q);
+			p = pushArgument(reduce, p, w[j]);
 			getArg(p, 0) = gets[(i * retc) + j];
 		}
 
 		/* remote.disconnect(q); */
-		p = newStmt(mb, remoteRef, disconnectRef);
-		p = pushArgument(mb, p, q);
+		p = newStmt(reduce, remoteRef, disconnectRef);
+		p = pushArgument(reduce, p, q);
 	}
 
 	/* delayed bat.inserts for easily creating an deterministic flow */
@@ -257,23 +257,23 @@ MRdistributework(
 		q = getArg(packs[j], 0);
 		/* p := bat.insert(b, y1) */
 		for (i = 0; i < n; i++) {
-			p = newStmt(mb, batRef, insertRef);
-			p = pushArgument(mb, p, q);
+			p = newStmt(reduce, batRef, insertRef);
+			p = pushArgument(reduce, p, q);
 			if (!isaBatType(lcol->val1type))
-				p = pushNil(mb, p, TYPE_void);
-			p = pushArgument(mb, p, gets[(i * retc) + j]);
+				p = pushNil(reduce, p, TYPE_void);
+			p = pushArgument(reduce, p, gets[(i * retc) + j]);
 			q = getArg(p, 0);
 		}
 		/* markH all result bats such that further operations don't get
 		 * confused by possible duplicate ids */
-		p = newFcnCall(mb, algebraRef, markHRef);
-		p = pushArgument(mb, p, q);
+		p = newFcnCall(reduce, algebraRef, markHRef);
+		p = pushArgument(reduce, p, q);
 		getArg(p, 0) = lcol->val1;
 	}
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
-	chkProgram(cntxt->nspace, mb);
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+	chkProgram(cntxt->nspace, reduce);
+	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT);
 #endif
 
 	MRcleanCloud();
@@ -337,15 +337,15 @@ trackstack_destroy(struct stack *stk)
 static int
 OPTmapreduceImplementation(
 		Client cntxt,
-		MalBlkPtr mb,
+		MalBlkPtr reduce,
 		MalStkPtr stk,
 		InstrPtr pc)
 {
 	int i, j, limit;
 	int lastUnion = -1;
 	enum copymode copy;
-	InstrPtr p, *old, *orig, ret, sig;
-	MalBlkPtr mc;
+	InstrPtr p, *omap, *oreduce, ret, sig;
+	MalBlkPtr map;
 	char nme[IDLENGTH];
 	char mrcluster[BUFSIZ];
 	Symbol new;
@@ -357,7 +357,7 @@ OPTmapreduceImplementation(
 	(void)pc;
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_ALL);
 #endif
 
 	/* For now we assume that the default ritual of the SQL compiler is
@@ -378,28 +378,28 @@ OPTmapreduceImplementation(
 
 	col = lastcol = NULL;
 
-	mc = copyMalBlk(mb); /* for the map-program */
-	old = mc->stmt;
-	orig = mb->stmt;
-	limit = mc->stop;
+	map = copyMalBlk(reduce); /* for the map-program */
+	omap = map->stmt;
+	oreduce = reduce->stmt;
+	limit = map->stop;
 
-	snprintf(nme, IDLENGTH, "%smap", getFunctionId(getInstrPtr(mb, 0)));
+	snprintf(nme, IDLENGTH, "%smap", getFunctionId(getInstrPtr(reduce, 0)));
 
 	/* zap */
-	if (newMalBlkStmt(mc, mc->ssize) < 0) {
+	if (newMalBlkStmt(map, map->ssize) < 0) {
 		return 0;
 	}
-	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		freeMalBlk(mc);
+	if (newMalBlkStmt(reduce, reduce->ssize) < 0) {
+		freeMalBlk(map);
 		return 0;
 	}
 
 	new = newFunction(userRef, putName(nme, strlen(nme)), FUNCTIONsymbol);
 	sig = copyInstruction(getInstrPtr(new->def, 0));
 	freeMalBlk(new->def);
-	new->def = mc;
-	mc->keephistory = mb->keephistory;
-	pushInstruction(mc, sig);
+	new->def = map;
+	map->keephistory = reduce->keephistory;
+	pushInstruction(map, sig);
 
 	/* We do a two-phase scan over the original plan to get a MAP and
 	 * REDUCE program.  We cannot do it in a single scan, because
@@ -409,15 +409,15 @@ OPTmapreduceImplementation(
 	copy = FREE; /* free original copied signature */
 	mrcluster[0] = '\0';
 	for (i = 0; i < limit; i++) { /* phase 1 */
-		p = old[i];
+		p = omap[i];
 
 		if (getModuleId(p) == sqlRef) {
 			if (getFunctionId(p) == mvcRef) {
 				/* sql.mvc(): we need this statement everywhere */
 				copy = SINGLE_DUP;
 			} else if (getFunctionId(p) == bindRef) {
-				if (*(int *)VALget(&getVar(mc, getArg(p, 5))->value) == 0) {
-					str schema = VALget(&getVar(mc, getArg(p, 2))->value);
+				if (*(int *)VALget(&getVar(map, getArg(p, 5))->value) == 0) {
+					str schema = VALget(&getVar(map, getArg(p, 2))->value);
 					/* check if this is a column from a mapreduce schema (mr_*) */
 					if (strncmp(schema, "mr_", 3) != 0)
 						break;
@@ -462,10 +462,10 @@ OPTmapreduceImplementation(
 							if (lastcol == NULL) {
 								col = lastcol = alloca(sizeof(mapcol));
 								/* this is the first one, leave a marker */
-								freeInstruction(orig[i]);
+								freeInstruction(oreduce[i]);
 								/* FIXME: should leave some symbol */
-								orig[i] = (InstrPtr)1;
-								pushInstruction(mc, p);
+								oreduce[i] = (InstrPtr)1;
+								pushInstruction(map, p);
 								copy = LEAVE;
 							} else {
 								lastcol = lastcol->next =
@@ -473,9 +473,9 @@ OPTmapreduceImplementation(
 								copy = SINGLE;
 							}
 							lastcol->val1 = getArg(p, 0);
-							lastcol->val1type = getArgType(mc, p, 0);
+							lastcol->val1type = getArgType(map, p, 0);
 							lastcol->next = NULL;
-							newComment(mc, "= sql column bat");
+							newComment(map, "= sql column bat");
 							/* break to avoid tracking the return */
 							break;
 							/* TODO: we should do a forward search for
@@ -504,19 +504,19 @@ OPTmapreduceImplementation(
 		switch (copy) {
 			case FREE:
 				freeInstruction(p);
-				old[i] = NULL;
+				omap[i] = NULL;
 			break;
 			case LEAVE:
 				/* make GCC happy */
 			break;
 			case SINGLE_DUP:
 				copy = FREE;
-				pushInstruction(mc, p);
+				pushInstruction(map, p);
 			break;
 			case SINGLE:
 				copy = LEAVE;
-				pushInstruction(mc, p);
-				orig[i]->token = NOOPsymbol;
+				pushInstruction(map, p);
+				oreduce[i]->token = NOOPsymbol;
 			break;
 			case STICK:
 			case DUP:
@@ -528,34 +528,34 @@ OPTmapreduceImplementation(
 	trackstack_destroy(&tracker);
 
 	if (hadBinds == 0) {
-		GDKfree(mb->stmt);
-		mb->stmt = orig;
-		mb->stop = limit;
-		GDKfree(old);
+		GDKfree(reduce->stmt);
+		reduce->stmt = oreduce;
+		reduce->stop = limit;
+		GDKfree(omap);
 		freeSymbol(new);
 		return 0;
 	}
 
 	copy = STICK;
 	for (i = 0; i < limit; i++) { /* phase 2 */
-		p = orig[i];
+		p = oreduce[i];
 
 		if (p == (InstrPtr)1) {
-			newComment(mb, "{ map");
+			newComment(reduce, "{ map");
 			/* this is the moment the first sql.bind occurred, set the
 			 * calling signature of the map program */
 			getArg(sig, 0) = -1; /* get rid of default retval */
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
-				mc->stmt[0] = sig = pushReturn(mc, sig, lastcol->val1);
-			MRdistributework(cntxt, mb, col, sig, mrcluster);
-			newComment(mb, "} map");
+				map->stmt[0] = sig = pushReturn(map, sig, lastcol->val1);
+			MRdistributework(cntxt, reduce, col, sig, mrcluster);
+			newComment(reduce, "} map");
 			/* bogus instruction to be able to set to NOOP */
-			orig[i] = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(orig[i], ioRef);
-			setFunctionId(orig[i], printRef);
-			orig[i] = pushReturn(mb, orig[i], 0);
-			orig[i] = pushArgument(mb, orig[i], 0);
-			orig[i]->token = NOOPsymbol;
+			oreduce[i] = newInstruction(reduce, ASSIGNsymbol);
+			setModuleId(oreduce[i], ioRef);
+			setFunctionId(oreduce[i], printRef);
+			oreduce[i] = pushReturn(reduce, oreduce[i], 0);
+			oreduce[i] = pushArgument(reduce, oreduce[i], 0);
+			oreduce[i]->token = NOOPsymbol;
 			continue;
 		}
 
@@ -568,10 +568,10 @@ OPTmapreduceImplementation(
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->val1) {
 					copy = SINGLE_DUP;
-					newComment(mc, "ORDER BY [DESC] or LIMIT/OFFSET");
-					newComment(mb, "ORDER BY [DESC] or LIMIT/OFFSET");
+					newComment(map, "ORDER BY [DESC] or LIMIT/OFFSET");
+					newComment(reduce, "ORDER BY [DESC] or LIMIT/OFFSET");
 					/* fix return */
-					lastcol->val1 = getArg(old[i], 0);
+					lastcol->val1 = getArg(omap[i], 0);
 					break;
 				}
 			}
@@ -583,38 +583,38 @@ OPTmapreduceImplementation(
 			 * we already fixed the signature, so create a container BAT */
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->val1) {
-					newComment(mc, "MAX/MIN");
-					newComment(mb, "MAX/MIN");
+					newComment(map, "MAX/MIN");
+					newComment(reduce, "MAX/MIN");
 					/* basically perform a MAX over all MAXes */
-					pushInstruction(mc, old[i]);
-					lastcol->val2 = getArg(old[i], 0);
+					pushInstruction(map, omap[i]);
+					lastcol->val2 = getArg(omap[i], 0);
 					/* BAT for return */
-					p = newFcnCall(mc, batRef, newRef);
-					p = pushType(mc, p, getHeadType(lastcol->val1type));
-					p = pushType(mc, p, getTailType(lastcol->val1type));
+					p = newFcnCall(map, batRef, newRef);
+					p = pushType(map, p, getHeadType(lastcol->val1type));
+					p = pushType(map, p, getTailType(lastcol->val1type));
 					lastcol->val3 = getArg(p, 0);
 					/* bat.insert */
-					p = newFcnCall(mc, batRef, insertRef);
-					p = pushArgument(mc, p, lastcol->val3);
-					p = pushNil(mc, p, getHeadType(lastcol->val1type));
-					p = pushArgument(mc, p, lastcol->val2);
+					p = newFcnCall(map, batRef, insertRef);
+					p = pushArgument(map, p, lastcol->val3);
+					p = pushNil(map, p, getHeadType(lastcol->val1type));
+					p = pushArgument(map, p, lastcol->val2);
 					/* fix return */
 					lastcol->val1 = lastcol->val3;
 					/* we already DUP_SINGLE'd */
 					copy = STICK;
-					p = orig[i];
+					p = oreduce[i];
 					break;
 				}
 			}
 		} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
 			/* prepare for a count(*) where the aggr.count is leaded by
 			 * a bat.mirror */
-			if (getModuleId(orig[i + 1]) == aggrRef &&
-						getFunctionId(orig[i + 1]) == countRef &&
-						getArg(p, 0) == getArg(orig[i + 1], 1))
+			if (getModuleId(oreduce[i + 1]) == aggrRef &&
+						getFunctionId(oreduce[i + 1]) == countRef &&
+						getArg(p, 0) == getArg(oreduce[i + 1], 1))
 			{
-				newComment(mc, "COUNT(*)");
-				pushInstruction(mc, old[i]);
+				newComment(map, "COUNT(*)");
+				pushInstruction(map, omap[i]);
 				copy = cNONE;
 				/* NOTE: rest is handled in case below */
 			}
@@ -627,31 +627,31 @@ OPTmapreduceImplementation(
 			if (getFunctionId(p) == countRef) {
 				/* The aggr.count will be prepended by a bat.mirror if
 				 * it came from a SELECT COUNT(*) ... */
-				if (getModuleId(orig[i - 1]) == batRef &&
-							getFunctionId(orig[i - 1]) == mirrorRef &&
-							getArg(orig[i - 1], 0) == getArg(p, 1))
-						getArg(p, 1) = getArg(orig[i - 1], 1);
+				if (getModuleId(oreduce[i - 1]) == batRef &&
+							getFunctionId(oreduce[i - 1]) == mirrorRef &&
+							getArg(oreduce[i - 1], 0) == getArg(p, 1))
+						getArg(p, 1) = getArg(oreduce[i - 1], 1);
 			}
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->val1) {
-					newComment(mc, "COUNT/SUM");
-					newComment(mb, "COUNT/SUM");
-					pushInstruction(mc, old[i]);
-					lastcol->val2 = getArg(old[i], 0);
+					newComment(map, "COUNT/SUM");
+					newComment(reduce, "COUNT/SUM");
+					pushInstruction(map, omap[i]);
+					lastcol->val2 = getArg(omap[i], 0);
 					/* BAT for return */
-					p = newFcnCall(mc, batRef, newRef);
-					p = pushType(mc, p, getHeadType(lastcol->val1type));
-					p = pushType(mc, p, getArgType(mc, old[i], 0));
-					setArgType(mc, p, 0,
+					p = newFcnCall(map, batRef, newRef);
+					p = pushType(map, p, getHeadType(lastcol->val1type));
+					p = pushType(map, p, getArgType(map, omap[i], 0));
+					setArgType(map, p, 0,
 							newBatType(getHeadType(lastcol->val1type),
-								getArgType(mc, old[i], 0)));
+								getArgType(map, omap[i], 0)));
 					lastcol->val3 = getArg(p, 0);
-					lastcol->val3type = getArgType(mc, p, 0);
+					lastcol->val3type = getArgType(map, p, 0);
 					/* bat.insert */
-					p = newFcnCall(mc, batRef, insertRef);
-					p = pushArgument(mc, p, lastcol->val3);
-					p = pushNil(mc, p, getHeadType(lastcol->val1type));
-					p = pushArgument(mc, p, lastcol->val2);
+					p = newFcnCall(map, batRef, insertRef);
+					p = pushArgument(map, p, lastcol->val3);
+					p = pushNil(map, p, getHeadType(lastcol->val1type));
+					p = pushArgument(map, p, lastcol->val2);
 					lastcol->val3 = getArg(p, 0);
 
 					/* propagate type change */
@@ -664,8 +664,8 @@ OPTmapreduceImplementation(
 							int k;
 							int q = lastcol->val1;
 							p = NULL;
-							for (k = mb->stop - 1; k >= 0; k--) {
-								p = mb->stmt[k];
+							for (k = reduce->stop - 1; k >= 0; k--) {
+								p = reduce->stmt[k];
 								/* First find algebra.markH for the
 								 * target BAT, then traverse through the
 								 * chained bat.insert calls. */
@@ -684,20 +684,20 @@ OPTmapreduceImplementation(
 #define FINDANDFIXBATNEW(X, Y) { \
 	int s; \
 	InstrPtr pt; \
-	for (s = 0; s < mb->stop; s++) { \
-		pt = mb->stmt[s]; \
+	for (s = 0; s < reduce->stop; s++) { \
+		pt = reduce->stmt[s]; \
 		if (getArg(pt, 0) == getArg(X, Y) && \
 				getModuleId(pt) == batRef && \
 				getFunctionId(pt) == newRef) \
 		{ \
-			setArgType(mb, pt, 2, getTailType(lastcol->val3type)); \
-			setArgType(mb, pt, 0, lastcol->val3type); \
+			setArgType(reduce, pt, 2, getTailType(lastcol->val3type)); \
+			setArgType(reduce, pt, 0, lastcol->val3type); \
 			break; \
 		} \
 	} \
 }
 									FINDANDFIXBATNEW(p, 2);
-									setArgType(mb, p, 0, lastcol->val3type);
+									setArgType(reduce, p, 0, lastcol->val3type);
 									q = getArg(p, 1);
 								}
 							}
@@ -708,9 +708,9 @@ OPTmapreduceImplementation(
 						}
 					}
 					/* now make a SUM on the REDUCE side */
-					p = newFcnCall(mb, aggrRef, sumRef);
-					p = pushArgument(mb, p, getArg(orig[i], 1));
-					getArg(p, 0) = getArg(orig[i], 0);
+					p = newFcnCall(reduce, aggrRef, sumRef);
+					p = pushArgument(reduce, p, getArg(oreduce[i], 1));
+					getArg(p, 0) = getArg(oreduce[i], 0);
 					/* we injected an alternative instruction */
 					copy = cNONE;
 					break;
@@ -723,26 +723,26 @@ OPTmapreduceImplementation(
 			/* make sure the return comes at the end, as we may have
 			 * added some stuff to the MAP program in this phase,
 			 * changing the actual return variable */
-			ret = newInstruction(mc, ASSIGNsymbol);
+			ret = newInstruction(map, ASSIGNsymbol);
 			ret->barrier = RETURNsymbol;
 			if (col == NULL) {
-				getArg(ret, 0) = newTmpVariable(mc, TYPE_void);
+				getArg(ret, 0) = newTmpVariable(map, TYPE_void);
 			} else for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
-				ret = pushReturn(mc, ret, lastcol->val1);
+				ret = pushReturn(map, ret, lastcol->val1);
 			}
-			pushInstruction(mc, ret);
+			pushInstruction(map, ret);
 			copy = DUP;
 		}
 
 		switch (copy) {
 			case STICK:
-				pushInstruction(mb, p);
+				pushInstruction(reduce, p);
 			break;
 			case SINGLE_DUP:
 				copy = STICK;
 			case DUP:
-				pushInstruction(mc, old[i]);
-				pushInstruction(mb, p);
+				pushInstruction(map, omap[i]);
+				pushInstruction(reduce, p);
 			break;
 			case cNONE:
 				copy = STICK;
@@ -757,16 +757,16 @@ OPTmapreduceImplementation(
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 10
 	stream_printf(cntxt->fdout, "MAP program\n");
-	chkProgram(cntxt->nspace, mc);
-	printFunction(cntxt->fdout, mc, 0, LIST_MAL_STMT);
+	chkProgram(cntxt->nspace, map);
+	printFunction(cntxt->fdout, map, 0, LIST_MAL_STMT);
 
 	stream_printf(cntxt->fdout, "REDUCE program\n");
-	chkProgram(cntxt->nspace, mb);
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+	chkProgram(cntxt->nspace, reduce);
+	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT);
 #endif
 
-	GDKfree(old);
-	GDKfree(orig);
+	GDKfree(omap);
+	GDKfree(oreduce);
 
 	insertSymbol(findModule(cntxt->nspace, userRef), new);
 	return 1;
