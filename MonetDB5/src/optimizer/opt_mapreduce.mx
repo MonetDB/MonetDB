@@ -127,7 +127,6 @@ MRgetCloud(int *ret, str *mrcluster)
 	}
 
 	mal_unset_lock(mal_contextLock, "mapreduce");
-	BBPkeepref(*ret);	/* give it to the called */
 
 	return MAL_SUCCEED;
 }
