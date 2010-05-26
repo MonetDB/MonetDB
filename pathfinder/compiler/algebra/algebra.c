@@ -812,7 +812,6 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
                 /* PFoops (OOPS_FATAL, "unknown column simple type (%i)", type); */
                 return "unkwn";
     }
-    return NULL;
 }
 
 static unsigned int highest_col_name_id;
