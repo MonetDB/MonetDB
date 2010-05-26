@@ -33,7 +33,8 @@ lib__sql = {
 		sql_emptyset.mx \
 		sql_bpm.mx
 	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_bbp -l_replication -l_mkey -l_str -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet -l_cluster -l_bpm -l_remote -l_run_octopus $(MONETDB5_RDF_LIB) $(MONETDB5_LIBS) -lmonetdb5 -l_mal_mapi \
+		$(MONETDB5_MODS) -l_bbp -l_replication -l_mkey -l_str -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet -l_cluster -l_bpm -l_remote -l_run_octopus -l_algebra \
+		$(MONETDB5_RDF_LIB) $(MONETDB5_LIBS) -lmonetdb5 -l_mal_mapi \
 		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
