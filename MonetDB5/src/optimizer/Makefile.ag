@@ -42,6 +42,7 @@ lib_optimizer = {
 	#SCRIPTS = mal
 	LIBS = ../modules/atoms/lib_mtime ../mal/libmonetdb5 \
 		../modules/mal/lib_bpm ../modules/mal/lib_remote ../modules/kernel/lib_algebra \
+		../modules/kernel/lib_group \
 		$(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
