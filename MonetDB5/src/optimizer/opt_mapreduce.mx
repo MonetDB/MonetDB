@@ -323,6 +323,13 @@ trackstack_contains(struct stack *stk, int val)
 }
 
 static inline void
+trackstack_clear(struct stack *stk)
+{
+	if (!trackstack_isempty(stk))
+		stk->cur = 0;
+}
+
+static inline void
 trackstack_destroy(struct stack *stk)
 {
 	if (!trackstack_isempty(stk)) {
@@ -348,6 +355,7 @@ OPTmapreduceImplementation(
 	Symbol new;
 	mapcol *col, *lastcol;
 	struct stack tracker = { NULL, 0, 0 };
+	struct stack avgtrack = { NULL, 0, 0 };
 	char hadBinds = 0;
 
 	(void)stk; /* useless, is NULL */
@@ -443,8 +451,7 @@ OPTmapreduceImplementation(
 
 		/* move over statement that depend (indirectly) on the sql.bind
 		 * calls */
-		if (!trackstack_isempty(&tracker))
-		for (j = p->retc; j < p->argc; j++) {
+		if (!trackstack_isempty(&tracker)) for (j = p->retc; j < p->argc; j++) {
 			if (trackstack_contains(&tracker, getArg(p, j))) {
 				if (getModuleId(p) == algebraRef) {
 					if (getFunctionId(p) == kunionRef) {
@@ -452,6 +459,7 @@ OPTmapreduceImplementation(
 						 * comparison with kdifference later */
 						lastUnion = getArg(p, 0);
 					} else if (getFunctionId(p) == kdifferenceRef) {
+						int k;
 						/* a kdifference after a kunion results in the
 						 * final column result */
 						if (getArg(p, 1) == lastUnion) {
@@ -471,16 +479,91 @@ OPTmapreduceImplementation(
 							}
 							lastcol->val1 = getArg(p, 0);
 							lastcol->val1type = getArgType(map, p, 0);
+							lastcol->val2 = -1;
 							lastcol->next = NULL;
 							newComment(map, "= sql column bat");
+
+							/* To push an AVG operation down to the map
+							 * nodes, we need two columns instead of one
+							 * to be returned.  We need to know if this
+							 * is the case now, hence we have to perform
+							 * a forward search for a calc./ operating
+							 * on a sum and count of the result column
+							 * we just found. */
+							/* _18 := batcalc.dbl(_17);
+							 * _19 := algebra.selectNotNil(_18);
+							 * _20:dbl  := aggr.sum(_19);
+							 * _22 := batcalc.dbl(_17);
+							 * _23 := algebra.selectNotNil(_22);
+							 * _24 := aggr.count(_23);
+							 * _27 := calc.==(_24,0:wrd);
+							 * _30 := calc.dbl(_24);
+							 * _31 := calc.ifthenelse(_27,nil,_30);
+							 * _32 := calc./(_20,_31); */
+							trackstack_push(&avgtrack, getArg(p, 0));
+							k = i;
+							i++;
+							for (; i < limit; i++) {
+								p = omap[i];
+								/* can stop when we see other sql.*
+								 * stuff */
+								if (getModuleId(p) == sqlRef)
+									break;
+								for (j = p->retc; j < p->argc; j++) {
+									if (trackstack_contains(
+												&avgtrack, getArg(p, j)))
+									{
+										if (getModuleId(p) == calcRef &&
+												getFunctionId(p) == divRef)
+										{
+											/* this is pretty dirty, we
+											 * basically assume that if
+											 * we find calc./ and both
+											 * arguments are in the
+											 * stack, then it's probably
+											 * an AVG originating from
+											 * the column (original sole
+											 * input) ... I can't find
+											 * counter cases */
+											if (trackstack_contains(
+														&avgtrack, getArg(p, j + 1)))
+											{
+												/* got it, time to copy
+												 * instructions */
+												lastcol->val1 = getArg(p, 1);
+												lastcol->val1type =
+													getArgType(map, p, 1);
+												lastcol->val2 = getArg(p, 2);
+												lastcol->val2type =
+													getArgType(map, p, 2);
+												j = i;
+												for (i = k + 1; i < j; i++) {
+													p = omap[i];
+													if (trackstack_contains(
+																&avgtrack,
+																getArg(p, 0)))
+													{
+														pushInstruction(map, p);
+														oreduce[i]->token =
+															NOOPsymbol;
+													}
+												}
+												newComment(map, "= AVG columns");
+												i = limit;
+												break;
+											}
+										}
+										trackstack_push(
+												&avgtrack, getArg(p, 0));
+									}
+								}
+							}
+							trackstack_clear(&avgtrack);
+
 							/* break to avoid tracking the return */
+							i = k;
+							p = omap[i];
 							break;
-							/* TODO: we should do a forward search for
-							 * calc./ and then track the dependencies
-							 * backwards to see if we end up with this
-							 * column, if so, this will be a AVG, and
-							 * hence we have to set two returns for this
-							 * column */
 						}
 					}
 				}
@@ -523,6 +606,7 @@ OPTmapreduceImplementation(
 		}
 	}
 	trackstack_destroy(&tracker);
+	trackstack_destroy(&avgtrack);
 
 	if (hadBinds == 0) {
 		GDKfree(reduce->stmt);
@@ -542,8 +626,12 @@ OPTmapreduceImplementation(
 			/* this is the moment the first sql.bind occurred, set the
 			 * calling signature of the map program */
 			getArg(sig, 0) = -1; /* get rid of default retval */
-			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
-				map->stmt[0] = sig = pushReturn(map, sig, lastcol->val1);
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {
+				sig = pushReturn(map, sig, lastcol->val1);
+				if (lastcol->val2 >= 0)
+					sig = pushReturn(map, sig, lastcol->val2);
+			}
+			map->stmt[0] = sig;
 			MRdistributework(cntxt, reduce, col, sig, mrcluster);
 			newComment(reduce, "} map");
 			/* bogus instruction to be able to set to NOOP */
@@ -604,6 +692,8 @@ OPTmapreduceImplementation(
 					/* we already DUP_SINGLE'd */
 					copy = STICK;
 					p = oreduce[i];
+					/* hide temp misuse */
+					lastcol->val2 = -1;
 					break;
 				}
 			}
@@ -712,9 +802,21 @@ OPTmapreduceImplementation(
 					p = newFcnCall(reduce, aggrRef, sumRef);
 					p = pushArgument(reduce, p, getArg(oreduce[i], 1));
 					getArg(p, 0) = getArg(oreduce[i], 0);
+					/* hide temp misuse */
+					lastcol->val2 = -1;
 					/* we injected an alternative instruction */
 					copy = cNONE;
 					break;
+				}
+			}
+		} else if (getModuleId(p) == calcRef && getFunctionId(p) == divRef)
+		{
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				if (getArg(p, 1) == lastcol->val1 &&
+						getArg(p, 2) == lastcol->val2)
+				{
+					newComment(reduce, "AVG");
+					copy = STICK;
 				}
 			}
 		}
@@ -730,6 +832,8 @@ OPTmapreduceImplementation(
 				getArg(ret, 0) = newTmpVariable(map, TYPE_void);
 			} else for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				ret = pushReturn(map, ret, lastcol->val1);
+				if (lastcol->val2 >= 0)
+					ret = pushReturn(map, ret, lastcol->val2);
 			}
 			pushInstruction(map, ret);
 			copy = DUP;
