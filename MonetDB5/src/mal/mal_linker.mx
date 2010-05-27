@@ -329,6 +329,7 @@ cmpstr(const void *p1, const void *p2)
 	return strcmp(*(char* const*)p1, *(char* const*)p2);
 }
 
+#define MAXMULTISCRIPT 48
 static char *
 locate_file(const char *basename, const char *ext, const bit recurse)
 {
@@ -336,6 +337,8 @@ locate_file(const char *basename, const char *ext, const bit recurse)
 	char *fullname;
 	size_t fullnamelen;
 	size_t filelen = strlen(basename) + strlen(ext);
+	str strs[MAXMULTISCRIPT]; /* hardwired limit */
+	int lasts = 0;
 
 	if (mod_path == NULL)
 		return NULL;
@@ -374,9 +377,7 @@ locate_file(const char *basename, const char *ext, const bit recurse)
 		/* see if this is a directory, if so, recurse */
 		if (recurse == 1 && (rdir = opendir(fullname)) != NULL) {
 			struct dirent *e;
-			str strs[48]; /* hardwired limit */
-			int lasts = 0;
-			int c;
+			int ps = lasts;
 			/* list *ext, sort, return */
 			while ((e = readdir(rdir)) != NULL) {
 				if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
@@ -394,37 +395,41 @@ locate_file(const char *basename, const char *ext, const bit recurse)
 							fullname, DIR_SEP, GDKstrdup(e->d_name));
 					lasts++;
 				}
-				if (lasts >= 48)
+				if (lasts >= MAXMULTISCRIPT)
 					break;
 			}
-			(void)closedir(rdir);
-			if (lasts > 0) {
+			if (lasts - ps > 0) {
 				/* assure that an ordering such as 10_first, 20_second works */
-				qsort(strs, lasts, sizeof(char *), cmpstr);
-				i = 0;
-				for (c = 0; c < lasts; c++)
-					i += strlen(strs[c]) + 1; /* PATH_SEP or \0 */
-				fullname = GDKrealloc(fullname, i);
-				i = 0;
-				for (c = 0; c < lasts; c++) {
-					strcpy(fullname + i, strs[c]);
-					i += strlen(strs[c]);
-					fullname[i++] = PATH_SEP;
-					GDKfree(strs[c]);
-				}
-				fullname[i - 1] = '\0';
-				return fullname;
+				qsort(strs + ps, lasts - ps, sizeof(char *), cmpstr);
 			}
-		}
-		strcat(fullname + i + 1, ext);
-		if ((fd = open(fullname, O_RDONLY)) >= 0) {
-			close(fd);
-			return GDKrealloc(fullname, strlen(fullname) + 1);
+			(void)closedir(rdir);
+		} else {
+			strcat(fullname + i + 1, ext);
+			if ((fd = open(fullname, O_RDONLY)) >= 0) {
+				close(fd);
+				return GDKrealloc(fullname, strlen(fullname) + 1);
+			}
 		}
 		if ((mod_path = p) == NULL)
 			break;
 		while (*mod_path == PATH_SEP)
 			mod_path++;
+	}
+	if (lasts > 0) {
+		int i = 0;
+		int c;
+		for (c = 0; c < lasts; c++)
+			i += strlen(strs[c]) + 1; /* PATH_SEP or \0 */
+		fullname = GDKrealloc(fullname, i);
+		i = 0;
+		for (c = 0; c < lasts; c++) {
+			strcpy(fullname + i, strs[c]);
+			i += strlen(strs[c]);
+			fullname[i++] = PATH_SEP;
+			GDKfree(strs[c]);
+		}
+		fullname[i - 1] = '\0';
+		return fullname;
 	}
 	/* not found */
 	GDKfree(fullname);
