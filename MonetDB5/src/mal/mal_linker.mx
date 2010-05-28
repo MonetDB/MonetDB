@@ -416,7 +416,7 @@ locate_file(const char *basename, const char *ext, const bit recurse)
 			mod_path++;
 	}
 	if (lasts > 0) {
-		int i = 0;
+		size_t i = 0;
 		int c;
 		for (c = 0; c < lasts; c++)
 			i += strlen(strs[c]) + 1; /* PATH_SEP or \0 */
