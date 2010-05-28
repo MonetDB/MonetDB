@@ -23,23 +23,50 @@
 #include <string.h>
 
 #include <limits.h>
+#include "Mx.h"
 #include "disclaimer.h"
 
-int disclaimer = 0;
+int disclaimer = 1;
 char *disclaimerfile;
 
-static const char defaultfile[] = "COPYRIGHT";
+static const char defaultfile[] = "license.txt";
 
 static FILE *
 openDisclaimerFile(const char *filename)
 {
-	FILE *fp;
+	FILE *fp = NULL;
 
 	if (!filename || strlen(filename) < 1)
 		filename = defaultfile;
 
-	if ((fp = fopen(filename, "r")) == 0)
-		fprintf(stderr, "Mx: can't open disclaimer file '%s' (skipping).\n", filename);
+	if (*filename == DIR_SEP) {
+		fp = fopen(filename, "r");
+	} else {
+		char buf[8096];
+		size_t len;
+		buf[0] = '\0';
+		strncat(buf, inputdir, 8096 - 1);
+		len = strlen(buf);
+		if (len < 8095 && buf[len - 1] != DIR_SEP)
+			buf[len++] = DIR_SEP;
+		/* search backwards, such that we can find the license.txt
+		 * file in the root of each module */
+		strncat(buf, filename, 8095 - len);
+		while (len > 0 && (fp = fopen(buf, "r")) == 0) {
+			/* remove last path */
+			len--; /* the trailing slash */
+			while (len > 0) {
+				if (buf[--len] == '/') {
+					buf[++len] = '\0';
+					break;
+				}
+			}
+			strncat(buf, filename, 8096 - len - 1);
+		}
+	}
+
+	if (fp == NULL)
+		fprintf(stderr, "Mx: can't open licence file '%s' (skipping).\n", filename);
 	return fp;
 }
 
@@ -104,8 +131,9 @@ static struct suffixes {
 	"c", "/*", " * ", " */",}, {
 	"h", "/*", " * ", " */",}, {
 	MX_CXX_SUFFIX, "/*", " * ", " */",}, {
-	"html", "<!--", " + ", " -->",}, {
+	"html", "<!--", "", " -->",}, {
 	"tex", "", "% ", "",}, {
+	"mal", "", "# ", "",}, {
 	"mil", "", "# ", "",}, {
 	"m", "", "# ", "",}, {
 	"mx", "", "@' ", ""}, {
