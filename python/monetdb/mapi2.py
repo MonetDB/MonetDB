@@ -28,6 +28,8 @@ import hashlib
 import crypt
 import platform
 
+from cStringIO import StringIO
+
 from monetdb.monetdb_exceptions import *
 
 # windows doesn't support MSG_WAITALL flag for recv
@@ -215,36 +217,33 @@ class Server:
 
     def __getblock(self):
         """ read one mapi encoded block """
-        result = []
+        result = StringIO()
         last = 0
         while not last:
             flag = self.__getbytes(2)
-
-            # unpack (little endian short)
-            unpacked = struct.unpack('<H', flag)[0]
+            unpacked = struct.unpack('<H', flag)[0] # unpack little endian short
             length = unpacked >> 1
             last = unpacked & 1
             logger.debug("II: reading %i bytes, last: %s" % (length, bool(last)))
-            if length > 0:
-                result.append(self.__getbytes(length))
-
-        result_str = "".join(result)
-        logger.debug("RX: %s" % result_str)
-        return result_str
+            result.write(self.__getbytes(length))
+        logger.debug("RX: %s" % result.getvalue())
+        return result.getvalue()
 
 
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""
+        result = StringIO()
         count = bytes
-        result = ""
         while count > 0:
             try:
                 recv = self.socket.recv(bytes, flags)
+                logging.debug("II: package size: %i payload: %s" % (len(recv), recv))
             except socket.error, error:
                 raise OperationalError(error[1])
             count -= len(recv)
-            result += recv
-        return result
+            result.write(recv)
+        return result.getvalue()
+
 
     def __putblock(self, block):
         """ wrap the line in mapi format and put it into the socket """
@@ -256,9 +255,9 @@ class Server:
             if length < MAX_PACKAGE_LENGTH:
                 last = 1
             flag = struct.pack( '<H', ( length << 1 ) + last )
+            logger.debug("II: sending %i bytes, last: %s" % (length, bool(last)))
+            logger.debug("TX: %s" % data)
             try:
-                logger.debug("II: sending %i bytes, last: %s" % (length, bool(last)))
-                logger.debug("TX: %s" % data)
                 self.socket.send(flag)
                 self.socket.send(data)
             except socket.error, error:

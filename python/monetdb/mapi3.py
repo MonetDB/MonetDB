@@ -18,27 +18,24 @@
 """
 This is the python 3 version of the mapi API.
 
-Main differences are:
-    * different try except syntax
-    * Changed IO handling
-    * strict seperation between bytes and strings
-
-If you use python 2.* you should use the normal mapi.py
+If you use python 2.* you should use mapi2.py
 """
 
 import socket
 import logging
 import struct
-from io import BytesIO
+import hashlib
+import crypt
 import platform
+
+from io import BytesIO
 
 from monetdb.monetdb_exceptions import *
 
 # windows doesn't support MSG_WAITALL flag for recv
 flags = None
 if platform.system() != 'Windows':
-        flags = socket.MSG_WAITALL
-
+    flags = socket.MSG_WAITALL
 
 logger = logging.getLogger("monetdb")
 
@@ -63,16 +60,12 @@ STATE_READY = 1
 
 
 class Server:
-    """ A connection to a MonetDB database server. This is a native driver
-        implementation that uses only python code """
-
     def __init__(self):
         self.state = STATE_INIT
         self._result = None
-        self.timeout = 5
 
     def connect(self, hostname, port, username, password, database, language):
-        """ connect to a MonetDB database"""
+        """ connect to a MonetDB database using the mapi protocol"""
 
         self.hostname = hostname
         self.port = port
@@ -86,9 +79,6 @@ class Server:
         # For performance, mirror MonetDB/src/common/stream.c socket settings.
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 0)
         self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-
-
-        self.settimeout(self.timeout)
 
         try:
             self.socket.connect((hostname, port))
@@ -107,7 +97,6 @@ class Server:
         response = self.__challenge_response(challenge)
         self.__putblock(response)
         prompt = self.__getblock().strip()
-        logger.debug(prompt)
 
         if len(prompt) == 0:
             # Empty response, server is happy
@@ -122,23 +111,22 @@ class Server:
         elif prompt.startswith(MSG_REDIRECT):
             # a redirect can contain multiple redirects, for now we only use
             # the first
-            response = prompt.split()[0][1:].split(':')
-
-            if response[1] == "merovingian":
+            redirect = prompt.split()[0][1:].split(':')
+            if redirect[1] == "merovingian":
                 logger.debug("II: merovingian proxy, restarting " +
-                "authenticatiton")
+                        "authenticatiton")
                 if iteration <= 10:
                     self.__login(iteration=iteration+1)
                 else:
                     raise OperationalError("maximal number of redirects " +
-                        "reached (10)")
+                    "reached (10)")
 
-            elif response[1] == "monetdb":
-                self.hostname = response[2][2:]
-                self.port, self.database = response[3].split('/')
+            elif redirect[1] == "monetdb":
+                self.hostname = redirect[2][2:]
+                self.port, self.database = redirect[3].split('/')
                 self.port = int(self.port)
-                logger.info("II: merovingian redirect to monetdb://%s:%s/%s"
-                        % (self.hostname, self.port, self.database))
+                logger.info("II: merovingian redirect to monetdb://%s:%s/%s" %
+                        (self.hostname, self.port, self.database))
                 self.socket.close()
                 self.connect(self.hostname, self.port, self.username,
                         self.password, self.database, self.language)
@@ -166,19 +154,18 @@ class Server:
         logger.debug("II: executing command %s" % operation)
 
         if self.state != STATE_READY:
-            raise ProgrammingError("Not connected")
+            raise ProgrammingError
 
         self.__putblock(operation)
         response = self.__getblock()
         if not len(response):
-            return ""
+            return
         if response[0] in [MSG_Q, MSG_HEADER, MSG_TUPLE]:
             return response
         elif response[0] == MSG_ERROR:
             raise OperationalError(response[1:])
         else:
             raise ProgrammingError("unknown state: %s" % response)
-
 
 
     def __challenge_response(self, challenge):
@@ -190,7 +177,6 @@ class Server:
 
         if protocol == '9':
             algo = challenges[5]
-            import hashlib
             if algo == 'SHA512':
                 password = hashlib.sha512(password.encode()).hexdigest()
             elif algo == 'SHA384':
@@ -211,19 +197,16 @@ class Server:
 
         h = hashes.split(",")
         if "SHA1" in h:
-            import hashlib
             s = hashlib.sha1()
             s.update(password.encode())
             s.update(salt.encode())
             pwhash = "{SHA1}" + s.hexdigest()
         elif "MD5" in h:
-            import hashlib
             m = hashlib.md5()
             m.update(password.encode())
             m.update(salt.encode())
             pwhash = "{MD5}" + m.hexdigest()
         elif "crypt" in h:
-            import crypt
             pwhash = "{crypt}" + crypt.crypt((password+salt)[:8], salt[-2:])
         else:
             pwhash = "{plain}" + password + salt
@@ -234,59 +217,51 @@ class Server:
 
     def __getblock(self):
         """ read one mapi encoded block """
-        result_bytes = BytesIO()
+        result = BytesIO()
         last = 0
         while not last:
             flag = self.__getbytes(2)
-            if len(flag) != 2:
-                raise OperationalError("server returned %s bytes, I need 2" %
-                        len(flag))
-
-            # unpack (little endian short)
-            unpacked = struct.unpack('<H', flag)[0]
+            unpacked = struct.unpack('<H', flag)[0] # unpack little endian short
             length = unpacked >> 1
             last = unpacked & 1
-            logger.debug("II: reading %i bytes" % length)
-            if length > 0:
-                count = length
-                while count > 0:
-                    recv = self.__getbytes(length)
-                    result_bytes.write(recv)
-                    count -= len(recv)
-
-        result = result_bytes.getvalue()
-        logger.debug("RX: %s" % result)
-        return result.decode()
+            logger.debug("II: reading %i bytes, last: %s" % (length, bool(last)))
+            result.write(self.__getbytes(length))
+        result_str = result.getvalue()
+        logger.debug("RX: length: %i payload: %s" % (len(result_str), result_str))
+        return result_str.decode()
 
 
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""
-        try:
-            return self.socket.recv(bytes, flags)
-        except socket.error as error_str:
-            raise OperationalError(error_str)
+        result = BytesIO()
+        count = bytes
+        while count > 0:
+            try:
+                recv = self.socket.recv(bytes, flags)
+                logging.debug("II: package size: %i payload: %s" % (len(recv), recv))
+            except socket.error as error:
+                raise OperationalError(error[1])
+            count -= len(recv)
+            result.write(recv)
+        return result.getvalue()
 
 
     def __putblock(self, block):
         """ wrap the line in mapi format and put it into the socket """
         pos = 0
         last = 0
-        logger.debug("TX: %s" % block)
         while not last:
             data = block[pos:pos+MAX_PACKAGE_LENGTH].encode()
-            if len(data) < MAX_PACKAGE_LENGTH:
+            length = len(data)
+            if length < MAX_PACKAGE_LENGTH:
                 last = 1
-            flag = struct.pack( '<H', ( len(data) << 1 ) + last )
+            flag = struct.pack( '<H', ( length << 1 ) + last )
+            logger.debug("II: sending %i bytes, last: %s" % (length, bool(last)))
+            logger.debug("TX: %s" % data)
             try:
                 self.socket.send(flag)
                 self.socket.send(data)
-            except socket.error as error_str:
-                raise OperationalError(error_str)
+            except socket.error as error:
+                raise OperationalError(error[1])
+            pos += length
 
-            pos += len(data)
-
-
-    def settimeout(self, timeout):
-        """ set the connection timeout (in seconds). Set to 0 for no timeout """
-        self.timeout = timeout
-        self.socket.settimeout(timeout)
