@@ -2618,10 +2618,11 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 				if ( ((getFunctionId(q) == bindRef ||
 					getFunctionId(q) == bind_idxRef ) && 
-					( getVarConstant(recycleBlk, getArg(q,5)).val.ival == 0 )) ||
+					( getVarConstant(recycleBlk, getArg(q,5)).val.ival <= 
+						getVarConstant(mb, getArg(p,1)).val.ival )) ||
 					( getFunctionId(q) == bind_dbatRef ) ){
-					for (j=p->retc; j<p->argc; j++)
-						if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j+1))))
+					for (j=p->retc+1; j<p->argc; j++)
+						if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 						break;
 					if (j == p->argc){
 						v = &getVarConstant(recycleBlk,getArg(q,0));

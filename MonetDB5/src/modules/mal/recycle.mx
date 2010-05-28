@@ -83,11 +83,15 @@ address RECYCLEgetCache;
 
 pattern reset(bid:bat):void
 address RECYCLEresetCMD
-comment "Reset off all recycled variables";
+comment "Reset a recycled bat variable";
 
-pattern reset(sname:str...):void
+pattern reset(delta:int,sname:str...):void
 address RECYCLEresetCMD
-comment "Reset off all recycled variables";
+comment "Reset off all recycled variables matching the arguments:
+delta:0 only the main bat, 2 including delta bats
+sname: schema name,
+tname: table name (optional)
+cname: column name (optional)";
 
 pattern shutdown():void
 address RECYCLEshutdownWrap
