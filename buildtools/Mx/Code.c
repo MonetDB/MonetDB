@@ -375,6 +375,7 @@ CodeLine(void)
 		case Clex:
 		case CCyacc:
 		case CClex:
+		case MALcode:
 			break;
 
 		case Haskell:
