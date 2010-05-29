@@ -36,6 +36,10 @@ set MOD_PATH=%builddir%\src\sql;%MOD_PATH%
 set MOD_PATH=%builddir%\src\monetdb%V%;%MOD_PATH%
 set MOD_PATH=%builddir%\src\monetdb%V%\.libs;%MOD_PATH%
 
+REM enable auto-loading of modules before `make install`
+if not exist %builddir%\src\monetdb%V%\autoload mkdir %builddir%\src\monetdb%V%\autoload
+copy /y %srcdir%\src\monetdb%V%\??_*.mal %builddir%\src\monetdb%V%\autoload
+
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\conf;%PATH%
 
