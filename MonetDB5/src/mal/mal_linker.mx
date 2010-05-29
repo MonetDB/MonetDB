@@ -324,9 +324,13 @@ The plausible locations of the modules can be designated by
 an environment variable. 
 @c
 static int
-cmpstr(const void *p1, const void *p2)
+cmpstr(const void *_p1, const void *_p2)
 {
-	return strcmp(*(char* const*)p1, *(char* const*)p2);
+	const char *p1 = *(char* const*)_p1;
+	const char *p2 = *(char* const*)_p2;
+	const char *f1 = strrchr(p1, (int) DIR_SEP);
+	const char *f2 = strrchr(p2, (int) DIR_SEP);
+	return strcmp(f1?f1:p1, f2?f2:p2);
 }
 
 #define MAXMULTISCRIPT 48
@@ -377,7 +381,6 @@ locate_file(const char *basename, const char *ext, const bit recurse)
 		/* see if this is a directory, if so, recurse */
 		if (recurse == 1 && (rdir = opendir(fullname)) != NULL) {
 			struct dirent *e;
-			int ps = lasts;
 			/* list *ext, sort, return */
 			while ((e = readdir(rdir)) != NULL) {
 				if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
@@ -398,10 +401,6 @@ locate_file(const char *basename, const char *ext, const bit recurse)
 				if (lasts >= MAXMULTISCRIPT)
 					break;
 			}
-			if (lasts - ps > 0) {
-				/* assure that an ordering such as 10_first, 20_second works */
-				qsort(strs + ps, lasts - ps, sizeof(char *), cmpstr);
-			}
 			(void)closedir(rdir);
 		} else {
 			strcat(fullname + i + 1, ext);
@@ -416,8 +415,10 @@ locate_file(const char *basename, const char *ext, const bit recurse)
 			mod_path++;
 	}
 	if (lasts > 0) {
-		int i = 0;
+		size_t i = 0;
 		int c;
+		/* assure that an ordering such as 10_first, 20_second works */
+		qsort(strs, lasts, sizeof(char *), cmpstr);
 		for (c = 0; c < lasts; c++)
 			i += strlen(strs[c]) + 1; /* PATH_SEP or \0 */
 		fullname = GDKrealloc(fullname, i);
