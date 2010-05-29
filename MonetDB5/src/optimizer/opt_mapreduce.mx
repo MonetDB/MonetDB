@@ -191,6 +191,7 @@ MRdistributework(
 		p = pushType(reduce, p, getHeadType(lcol->val1type));
 		p = pushType(reduce, p, getTailType(lcol->val1type));
 		getArg(p, 0) = lcol->val1;
+		setArgType(reduce, p, 0, lcol->val1type);
 
 		/* same for all sub results that we push into the mat.pack as
 		 * arguments at the same time */
@@ -338,6 +339,105 @@ trackstack_destroy(struct stack *stk)
 	}
 }
 
+/* Mx macro just for readability issues such that the indenting level
+ * isn't already halfway the screen. */
+@= dealWithAVG
+	/* To push an AVG operation down to the map nodes, we need two
+	 * columns instead of one to be returned.  We need to know if this
+	 * is the case now, hence we have to perform a forward search for a
+	 * calc./ operating on a sum and count of the result column we just
+	 * found. */
+	/* _18 := batcalc.dbl(_17);
+	 * _19 := algebra.selectNotNil(_18);
+	 * _20:dbl  := aggr.sum(_19);
+	 * _22 := batcalc.dbl(_17);
+	 * _23 := algebra.selectNotNil(_22);
+	 * _24 := aggr.count(_23);
+	 * _27 := calc.==(_24,0:wrd);
+	 * _30 := calc.dbl(_24);
+	 * _31 := calc.ifthenelse(_27,nil,_30);
+	 * _32 := calc./(_20,_31); */
+	trackstack_push(&avgtrack, getArg(p, 0));
+	k = i;
+	i++;
+	for (; i < limit; i++) {
+		p = omap[i];
+		/* can stop when we see other sql.*
+		 * stuff */
+		if (getModuleId(p) == sqlRef)
+			break;
+		for (j = p->retc; j < p->argc; j++) {
+			if (trackstack_contains(&avgtrack, getArg(p, j))) {
+				if (getModuleId(p) == calcRef && getFunctionId(p) == divRef) {
+					/* this is pretty dirty, we basically assume that if
+					 * we find calc./ and both arguments are in the
+					 * stack, then it's probably an AVG originating from
+					 * the column (original sole input) ... I can't find
+					 * counter cases */
+					if (trackstack_contains(&avgtrack, getArg(p, j + 1))) {
+						mapcol *sum, *count;
+						/* got it, time to copy instructions */
+						lastcol->val1 = getArg(p, 1);
+						lastcol->val1type = getArgType(map, p, 1);
+						sum = lastcol;
+						lastcol = lastcol->next = alloca(sizeof(mapcol));
+						lastcol->val1 = getArg(p, 2);
+						lastcol->val1type = getArgType(map, p, 2);
+						lastcol->next = NULL;
+						count = lastcol;
+						j = i;
+						for (i = k + 1; i < j; i++) {
+							p = omap[i];
+							if (trackstack_contains(&avgtrack, getArg(p, 0))) {
+								pushInstruction(map, p);
+								oreduce[i]->token = NOOPsymbol;
+							}
+						}
+						newComment(map, "= AVG columns");
+
+						/* BAT for return */
+						p = newFcnCall(map, batRef, newRef);
+						p = pushNil(map, p, TYPE_void);
+						p = pushType(map, p, sum->val1type);
+						sum->val3 = getArg(p, 0);
+						/* bat.insert */
+						p = newFcnCall(map, batRef, insertRef);
+						p = pushArgument(map, p, sum->val3);
+						p = pushNil(map, p, TYPE_void);
+						p = pushArgument(map, p, sum->val1);
+						/* fix return */
+						setArgType(map, p, 0,
+								newBatType(TYPE_void, sum->val1type));
+						sum->val3 = getArg(p, 0);
+
+						/* BAT for return */
+						p = newFcnCall(map, batRef, newRef);
+						p = pushNil(map, p, TYPE_void);
+						p = pushType(map, p, count->val1type);
+						count->val3 = getArg(p, 0);
+						/* bat.insert */
+						p = newFcnCall(map, batRef, insertRef);
+						p = pushArgument(map, p, count->val3);
+						p = pushNil(map, p, TYPE_void);
+						p = pushArgument(map, p, count->val1);
+						/* fix return */
+						setArgType(map, p, 0,
+								newBatType(TYPE_void, count->val1type));
+						count->val3 = getArg(p, 0);
+
+						i = limit;
+						break;
+					}
+				}
+				trackstack_push(&avgtrack, getArg(p, 0));
+			}
+		}
+	}
+	trackstack_clear(&avgtrack);
+	i = k;
+	p = omap[i];
+@c
+
 static int
 OPTmapreduceImplementation(
 		Client cntxt,
@@ -479,90 +579,13 @@ OPTmapreduceImplementation(
 							}
 							lastcol->val1 = getArg(p, 0);
 							lastcol->val1type = getArgType(map, p, 0);
-							lastcol->val2 = -1;
+							lastcol->val3 = lastcol->val1;
 							lastcol->next = NULL;
 							newComment(map, "= sql column bat");
 
-							/* To push an AVG operation down to the map
-							 * nodes, we need two columns instead of one
-							 * to be returned.  We need to know if this
-							 * is the case now, hence we have to perform
-							 * a forward search for a calc./ operating
-							 * on a sum and count of the result column
-							 * we just found. */
-							/* _18 := batcalc.dbl(_17);
-							 * _19 := algebra.selectNotNil(_18);
-							 * _20:dbl  := aggr.sum(_19);
-							 * _22 := batcalc.dbl(_17);
-							 * _23 := algebra.selectNotNil(_22);
-							 * _24 := aggr.count(_23);
-							 * _27 := calc.==(_24,0:wrd);
-							 * _30 := calc.dbl(_24);
-							 * _31 := calc.ifthenelse(_27,nil,_30);
-							 * _32 := calc./(_20,_31); */
-							trackstack_push(&avgtrack, getArg(p, 0));
-							k = i;
-							i++;
-							for (; i < limit; i++) {
-								p = omap[i];
-								/* can stop when we see other sql.*
-								 * stuff */
-								if (getModuleId(p) == sqlRef)
-									break;
-								for (j = p->retc; j < p->argc; j++) {
-									if (trackstack_contains(
-												&avgtrack, getArg(p, j)))
-									{
-										if (getModuleId(p) == calcRef &&
-												getFunctionId(p) == divRef)
-										{
-											/* this is pretty dirty, we
-											 * basically assume that if
-											 * we find calc./ and both
-											 * arguments are in the
-											 * stack, then it's probably
-											 * an AVG originating from
-											 * the column (original sole
-											 * input) ... I can't find
-											 * counter cases */
-											if (trackstack_contains(
-														&avgtrack, getArg(p, j + 1)))
-											{
-												/* got it, time to copy
-												 * instructions */
-												lastcol->val1 = getArg(p, 1);
-												lastcol->val1type =
-													getArgType(map, p, 1);
-												lastcol->val2 = getArg(p, 2);
-												lastcol->val2type =
-													getArgType(map, p, 2);
-												j = i;
-												for (i = k + 1; i < j; i++) {
-													p = omap[i];
-													if (trackstack_contains(
-																&avgtrack,
-																getArg(p, 0)))
-													{
-														pushInstruction(map, p);
-														oreduce[i]->token =
-															NOOPsymbol;
-													}
-												}
-												newComment(map, "= AVG columns");
-												i = limit;
-												break;
-											}
-										}
-										trackstack_push(
-												&avgtrack, getArg(p, 0));
-									}
-								}
-							}
-							trackstack_clear(&avgtrack);
+							@:dealWithAVG@
 
 							/* break to avoid tracking the return */
-							i = k;
-							p = omap[i];
 							break;
 						}
 					}
@@ -626,11 +649,8 @@ OPTmapreduceImplementation(
 			/* this is the moment the first sql.bind occurred, set the
 			 * calling signature of the map program */
 			getArg(sig, 0) = -1; /* get rid of default retval */
-			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {
-				sig = pushReturn(map, sig, lastcol->val1);
-				if (lastcol->val2 >= 0)
-					sig = pushReturn(map, sig, lastcol->val2);
-			}
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next)
+				sig = pushReturn(map, sig, lastcol->val3);
 			map->stmt[0] = sig;
 			MRdistributework(cntxt, reduce, col, sig, mrcluster);
 			newComment(reduce, "} map");
@@ -660,7 +680,8 @@ OPTmapreduceImplementation(
 					newComment(map, "ORDER BY [DESC] or LIMIT/OFFSET");
 					newComment(reduce, "ORDER BY [DESC] or LIMIT/OFFSET");
 					/* fix return */
-					lastcol->val1 = getArg(omap[i], 0);
+					lastcol->val3 = getArg(omap[i], 0);
+					lastcol->val1 = getArg(p, 0);
 					break;
 				}
 			}
@@ -672,6 +693,7 @@ OPTmapreduceImplementation(
 			 * we already fixed the signature, so create a container BAT */
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->val1) {
+					int t;
 					newComment(map, "MAX/MIN");
 					newComment(reduce, "MAX/MIN");
 					/* basically perform a MAX over all MAXes */
@@ -681,25 +703,23 @@ OPTmapreduceImplementation(
 					p = newFcnCall(map, batRef, newRef);
 					p = pushType(map, p, getHeadType(lastcol->val1type));
 					p = pushType(map, p, getTailType(lastcol->val1type));
-					lastcol->val3 = getArg(p, 0);
+					t = getArg(p, 0);
 					/* bat.insert */
 					p = newFcnCall(map, batRef, insertRef);
-					p = pushArgument(map, p, lastcol->val3);
+					p = pushArgument(map, p, t);
 					p = pushNil(map, p, getHeadType(lastcol->val1type));
 					p = pushArgument(map, p, lastcol->val2);
 					/* fix return */
-					lastcol->val1 = lastcol->val3;
+					lastcol->val1 = getArg(p, 0);
 					/* we already DUP_SINGLE'd */
 					copy = STICK;
 					p = oreduce[i];
-					/* hide temp misuse */
-					lastcol->val2 = -1;
 					break;
 				}
 			}
 		} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
-			/* prepare for a count(*) where the aggr.count is leaded by
-			 * a bat.mirror */
+			/* prepare for a count(*) where the aggr.count has a leading
+			 * bat.mirror */
 			if (getModuleId(oreduce[i + 1]) == aggrRef &&
 						getFunctionId(oreduce[i + 1]) == countRef &&
 						getArg(p, 0) == getArg(oreduce[i + 1], 1))
@@ -711,7 +731,7 @@ OPTmapreduceImplementation(
 			}
 		} else if (getModuleId(p) == aggrRef && (
 					getFunctionId(p) == countRef ||
-					getFunctionId(p) == sumRef))
+					getFunctionId(p) == sumRef)) 
 		{
 			/* COUNT/SUM, push down, replace with SUM in REDUCE program,
 			 * fix up the return type */
@@ -725,6 +745,7 @@ OPTmapreduceImplementation(
 			}
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->val1) {
+					int t, tt;
 					newComment(map, "COUNT/SUM");
 					newComment(reduce, "COUNT/SUM");
 					pushInstruction(map, omap[i]);
@@ -736,14 +757,14 @@ OPTmapreduceImplementation(
 					setArgType(map, p, 0,
 							newBatType(getHeadType(lastcol->val1type),
 								getArgType(map, omap[i], 0)));
-					lastcol->val3 = getArg(p, 0);
-					lastcol->val3type = getArgType(map, p, 0);
+					t = getArg(p, 0);
+					tt = getArgType(map, p, 0);
 					/* bat.insert */
 					p = newFcnCall(map, batRef, insertRef);
-					p = pushArgument(map, p, lastcol->val3);
+					p = pushArgument(map, p, t);
 					p = pushNil(map, p, getHeadType(lastcol->val1type));
 					p = pushArgument(map, p, lastcol->val2);
-					lastcol->val3 = getArg(p, 0);
+					t = getArg(p, 0);
 
 					/* propagate type change */
 					for (j = 0; j < sig->retc; j++) {
@@ -788,13 +809,13 @@ OPTmapreduceImplementation(
 	} \
 }
 									FINDANDFIXBATNEW(p, 2);
-									setArgType(reduce, p, 0, lastcol->val3type);
+									setArgType(reduce, p, 0, tt);
 									q = getArg(p, 1);
 								}
 							}
 							FINDANDFIXBATNEW(sig, j);
 							/* fix return and sig in one go the same time */
-							getArg(sig, j) = lastcol->val1 = lastcol->val3;
+							getArg(sig, j) = lastcol->val1 = t;
 							break;
 						}
 					}
@@ -802,21 +823,17 @@ OPTmapreduceImplementation(
 					p = newFcnCall(reduce, aggrRef, sumRef);
 					p = pushArgument(reduce, p, getArg(oreduce[i], 1));
 					getArg(p, 0) = getArg(oreduce[i], 0);
-					/* hide temp misuse */
-					lastcol->val2 = -1;
 					/* we injected an alternative instruction */
 					copy = cNONE;
 					break;
 				}
 			}
-		} else if (getModuleId(p) == calcRef && getFunctionId(p) == divRef)
-		{
-			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
-				if (getArg(p, 1) == lastcol->val1 &&
-						getArg(p, 2) == lastcol->val2)
+		} else if (getModuleId(p) == calcRef && getFunctionId(p) == divRef) {
+			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {
+				if (getArg(p, 1) == lastcol->val1 ||
+						getArg(p, 2) == lastcol->val1)
 				{
-					newComment(reduce, "AVG");
-					copy = STICK;
+					/* TODO */
 				}
 			}
 		}
@@ -831,9 +848,7 @@ OPTmapreduceImplementation(
 			if (col == NULL) {
 				getArg(ret, 0) = newTmpVariable(map, TYPE_void);
 			} else for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
-				ret = pushReturn(map, ret, lastcol->val1);
-				if (lastcol->val2 >= 0)
-					ret = pushReturn(map, ret, lastcol->val2);
+				ret = pushReturn(map, ret, lastcol->val3);
 			}
 			pushInstruction(map, ret);
 			copy = DUP;
