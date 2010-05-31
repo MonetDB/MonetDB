@@ -3850,9 +3850,11 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             sqlnode1 = col_env_lookup (COLMAP(p), p->sem.binary.col1, aat_bln);
             sqlnode2 = col_env_lookup (COLMAP(p), p->sem.binary.col2, aat_bln);
 
-            if (sqlnode1->kind == sql_column_name)
+            if (sqlnode1->kind == sql_column_name ||
+                sqlnode1->kind == sql_lit_int)
                 sqlnode1 = eq (sqlnode1, lit_int (1));
-            if (sqlnode2->kind == sql_column_name)
+            if (sqlnode2->kind == sql_column_name ||
+                sqlnode2->kind == sql_lit_int)
                 sqlnode2 = eq (sqlnode2, lit_int (1));
 
             switch (p->kind) {
