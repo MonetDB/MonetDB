@@ -122,10 +122,11 @@ static str exportResultRef;
 
 void initSQLreferences(void){
 	optimizerInit();
-	exportValueRef = putName("exportValue",11);
-	exportResultRef= putName("exportResult",12);
-	if( algebraRef==NULL || exportValueRef==NULL ||
-		exportResultRef==NULL )
+	if ( exportValueRef == NULL ) {
+		exportValueRef = putName("exportValue",11);
+		exportResultRef= putName("exportResult",12);
+	}
+	if( algebraRef==NULL || exportValueRef==NULL || exportResultRef==NULL )
 			GDKfatal("error initSQLreferences");
 }
 

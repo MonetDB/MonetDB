@@ -26,18 +26,7 @@ import logging
 import capabilities
 import dbapi20
 
-try:
-    import monetdb.sql
-except ImportError:
-    print("monetdb python API not found, using local monetdb python API")
-    import sys
-    parent = os.path.join(sys.path[0], '..')
-    sys.path.append(parent)
-    import monetdb.sql
-
-
 warnings.filterwarnings('error')
-
 
 MAPIPORT = int(os.environ.get('MAPIPORT', 50000))
 TSTDB = os.environ.get('TSTDB', 'demo')
@@ -48,6 +37,16 @@ TSTPASSWORD = os.environ.get('TSTPASSWORD', 'monetdb')
 if os.environ.get("TSTDEBUG", "no") == "yes":
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger('monetdb')
+
+try:
+    import monetdb.sql
+except ImportError:
+    logging.warning("monetdb python API not found, using local monetdb python API")
+    import sys
+    parent = os.path.join(sys.path[0], '..')
+    sys.path.append(parent)
+    import monetdb.sql
+
 
 class TextTestRunnerNoTime(unittest.TextTestRunner):
     """A test runner class that displays results in textual form, but without time """
@@ -95,9 +94,6 @@ class Test_Capabilities(capabilities.DatabaseTest):
 
 
 class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
-    MAPIPORT = int(os.environ.get('MAPIPORT', 50000))
-    TSTDB = os.environ.get('TSTDB', 'demo')
-
     driver = monetdb.sql
     connect_args = ()
     connect_kwargs = dict(database=TSTDB, port=MAPIPORT, hostname=TSTHOSTNAME,
@@ -125,12 +121,11 @@ class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
 
     def _connect(self):
         try:
-            con = self.driver.connect(
-                *self.connect_args,**self.connect_kw_args
-                )
-            return con
+            con = self.driver.connect( *self.connect_args, **self.connect_kwargs)
         except AttributeError:
             self.fail("No connect method found in self.driver module")
+        finally:
+            return con
 
 
     def tearDown(self):

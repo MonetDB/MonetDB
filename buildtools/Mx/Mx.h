@@ -83,6 +83,7 @@ typedef struct {
 	char *ext;
 } Directive;
 
+extern char *inputdir;
 extern char *outputdir;
 extern Directive str2dir[];
 

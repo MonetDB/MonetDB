@@ -1,6 +1,9 @@
 # ChangeLog file for pathfinder
 # This file is updated with Maddlog
 
+* Mon May 31 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Updated Vendor information.
+
 * Wed Mar 31 2010 Stefan Manegold <manegold@cwi.nl>
 - Made compilation of "testing" (and "java") independent of MonetDB.
   This is mainy for Windows, but also on other systems, "testing" can now be

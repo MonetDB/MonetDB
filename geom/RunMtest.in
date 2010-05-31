@@ -40,9 +40,12 @@ done
 for d in src/monetdb$V
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
+	# enable auto-loading of modules before `make install`
+	mkdir -p ${builddir}/$d/autoload
+	cp -f ${srcdir}/$d/[0-9][0-9]_*.mal ${builddir}/$d/autoload/
 done
+MOD_PATH="${MOD_PATH}`monetdb-sql-config --modpath$V`:"
 MOD_PATH="${MOD_PATH}`monetdb$V-config --modpath`"
-MOD_PATH="${MOD_PATH}:`monetdb-sql-config --modpath$V`"
 
 # make sure scripts are executable
 for x in "${builddir}/conf/${pkg}-config"
