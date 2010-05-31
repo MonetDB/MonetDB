@@ -109,13 +109,13 @@ static lng recycleSeq = 0;
 static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, cnt, actions = 0, marks = 0;
+	int i, j, cnt, tp, c, actions = 0, marks = 0, delta = 0;
 	Lifespan span;
 	InstrPtr *old, q;
 	int limit, updstmt = 0;
 	char *recycled;
 	short app_sc = -1, in = 0;
-
+	ValRecord cst;
 
 	(void) cntxt;
 	(void) stk;
@@ -176,13 +176,30 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 							continue;
 						else app_sc = getArg(p,2);
 					}
+					VALset(&cst,TYPE_int,&delta);
+					c = defConstant(mb, TYPE_int, &cst);
 					q = newFcnCall(mb,"recycle","reset");
+					pushArgument(mb,q,c);
 					pushArgument(mb,q, getArg(p,2));
 					pushArgument(mb,q, getArg(p,3));
 					if (getFunctionId(p) == updateRef)
 						pushArgument(mb,q, getArg(p,4));
+					actions++;
 				}
-				actions++;
+			}
+			if (getModuleId(p) == sqlRef && getFunctionId(p) == catalogRef ){
+				tp = *(int*) getVarValue(mb,getArg(p,1)); 
+				if (tp == 22 || tp == 25) {
+					delta = 2; 
+					VALset(&cst,TYPE_int,&delta);
+					c = defConstant(mb, TYPE_int, &cst);
+					q = newFcnCall(mb,"recycle","reset");
+					pushArgument(mb,q,c);
+					pushArgument(mb,q, getArg(p,2));
+					if ( tp == 25 )
+						pushArgument(mb,q, getArg(p,3));
+					actions++;
+				}
 			}
 			continue;
 		}
