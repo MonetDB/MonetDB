@@ -25,6 +25,6 @@ headers_sql = {
 		clients.sql cluster.sql \
 		date.sql history.sql inet.sql \
 		math.sql mtime.sql \
-		times.sql url.sql \
+		stats.sql times.sql url.sql \
 		dependency_functions.sql skyserver.sql
 }
