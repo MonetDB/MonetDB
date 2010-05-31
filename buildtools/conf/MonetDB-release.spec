@@ -1,6 +1,6 @@
 Name:		MonetDB-release
 Version:	1.0
-Release:	3%{?dist}
+Release:	4%{?dist}
 Summary:	MonetDB YUM Repository
 
 Group:		Applications/Databases
@@ -9,7 +9,7 @@ URL:		http://monetdb.cwi.nl/
 Source0:	http://monetdb.cwi.nl/downloads/sources/%{name}-%{version}.tar.gz
 BuildArch:	noarch
 
-Vendor:		MonetDB B.V.
+Vendor:		MonetDB BV <info@monetdb.org>
 
 Requires:	fedora-release
 
@@ -49,6 +49,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon May 31 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.0-4
+- Updated Vendor information.
+
 * Fri Dec 11 2009 Sjoerd Mullender <sjoerd@acm.org> - 1.0-3
 - Added a testing repository (for release candidates).
 
