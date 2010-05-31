@@ -2621,14 +2621,11 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 		BBPreleaseref(i->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		BBPreleaseref(b->batCacheid);
-		if( bn)
-			BBPreleaseref(bn->batCacheid);
 		throw(MAL, "bat.replace", OPERATION_FAILED);
 	}
 	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(i->batCacheid);
 	BBPreleaseref(s->batCacheid);
-	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2698,7 +2695,6 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 	if(bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.delete_bun", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2712,12 +2708,13 @@ BKCdelete(int *r, int *bid, ptr h)
 	}
 	@:derefStr(b,h,h)@
 	bn= BUNdelHead(b, h,FALSE);
-	if (bn == NULL)
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.delete", OPERATION_FAILED);
+	}
 	if (bn->batCacheid != b->batCacheid)
 		throw(MAL, "bat.delete", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2731,6 +2728,7 @@ BKCdelete_all(int *r, int *bid)
 	}
 	bn=BATclear(b);
 	if (bn == NULL){
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.delete_all", OPERATION_FAILED);
 	}
 	if(bn->batCacheid != b->batCacheid){
@@ -2765,7 +2763,6 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 		throw(MAL, "bat.delete_bat_bun", OPERATION_FAILED);
 	}
 	BBPkeepref(*r=bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(s->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2784,10 +2781,11 @@ BKCdelete_bat(int *r, int *bid, int *sid)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
-	if (BATdelHead(b, s,FALSE) != NULL) {
+	if (BATdelHead(b, s,FALSE) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(s->batCacheid);
-		return MAL_SUCCEED;
+		BBPreleaseref(i->batCacheid);
+		throw(MAL, "bat.delete", OPERATION_FAILED);
 	}
 	BBPkeepref(*r=b->batCacheid);
 	BBPreleaseref(s->batCacheid);

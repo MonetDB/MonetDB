@@ -370,7 +370,7 @@ simple: alloc and copy.
 int
 HEAPfree(Heap *h)
 {
-	if (h->base) {
+	if (h->base && h->parentid == 0) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
 			GDKfree(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
@@ -385,8 +385,8 @@ HEAPfree(Heap *h)
 					  PTRFMTCAST(void *)h->base,
 					  h->maxsize, ret);
 		}
-		h->base = NULL;
 	}
+	h->base = NULL;
 	if (h->filename) {
 		GDKfree(h->filename);
 		h->filename = NULL;

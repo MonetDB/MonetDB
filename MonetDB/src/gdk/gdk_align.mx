@@ -560,7 +560,7 @@ VIEWreset(BAT *b)
 	tp = VIEWtparent(b);
 	if (hp || tp) {
 		BAT *r = b;
-		BAT *n = b = BBP_cache(ABS(b->batCacheid));
+		BAT *n = b = BATdescriptor(ABS(b->batCacheid));
 		BAT *m = BATmirror(n);
 		BAT *v;
 		BATstore *bs = BBP_desc(b->batCacheid);
@@ -615,10 +615,14 @@ VIEWreset(BAT *b)
 
 		/* cut the link to your parents */
 		VIEWunlink(n);
-		if (hp)
+		if (hp) {
 			BBPunshare(hp);
-		if (tp)
+			BBPunfix(hp);
+		}
+		if (tp) {
 			BBPunshare(tp);
+			BBPunfix(tp);
+		}
 
 		/* make sure everything points there */
 		m->U = n->U = &bs->U;
@@ -679,10 +683,13 @@ VIEWreset(BAT *b)
 		/* insert all of v in b, and quit */
 		BATins(b, v, FALSE);
 		BBPreclaim(v);
+		BBPunfix(b->batCacheid);
 		b = r;
 	}
 	return b;
       bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
 	HEAPfree(&head);
 	HEAPfree(&tail);
 	HEAPfree(&hh);

@@ -2094,8 +2094,8 @@ gdk_export BBPrec *BBP;
 #define BBPname(i)	(BBPcheck((i),"BBPname")?((i) > 0 || BBP_logical(i))?BBP_logical(i):BBP_logical(-(i)):"")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
-#define BBPfix(i)	BBPincref(i, FALSE)
-#define BBPunfix(i)	BBPdecref(i, FALSE)
+#define BBPfix(i)	BBPincref((i), FALSE)
+#define BBPunfix(i)	BBPdecref((i), FALSE)
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)
