@@ -46,7 +46,7 @@ address ARRAYgridBAT_@1
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)";
 
 command grid(b:bat[:oid,:@1],i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:oid,:@1] 
-address ARRAYgridBAT_@1
+address ARRAYgridBATshift_@1
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elemenets with a factor s";
 
