@@ -2053,9 +2053,9 @@ decref(bat i, int logical, int releaseShare, int lock)
 
 		if (b && destroy) {
 			int flag = 0;
-			if (hp == 0)
+			if (b->H->heap.parentid == 0)
 				flag |= USE_HEAD;
-			if (tp == 0)
+			if (b->T->heap.parentid == 0)
 				flag |= USE_TAIL;
 			if (flag)
 				BATaccessBegin(b, flag, MMAP_DONTNEED);
