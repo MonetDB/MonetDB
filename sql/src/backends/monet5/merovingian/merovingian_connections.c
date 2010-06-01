@@ -142,10 +142,11 @@ openConnectionUDP(int *ret, unsigned short port)
 }
 
 static err
-openConnectionUNIX(int *ret, char *path, FILE *log)
+openConnectionUNIX(int *ret, char *path, int mode, FILE *log)
 {
 	struct sockaddr_un server;
 	int sock = -1;
+	int omask;
 
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0)
@@ -156,9 +157,15 @@ openConnectionUNIX(int *ret, char *path, FILE *log)
 	server.sun_family = AF_UNIX;
 	strncpy(server.sun_path, path, sizeof(server.sun_path) - 1);
 
-	if (bind(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) < 0)
+	/* have to use umask to restrict permissions to avoid a race
+	 * condition */
+	omask = umask(mode);
+	if (bind(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) < 0) {
+		umask(omask);
 		return(newErr("binding to UNIX stream socket at %s failed: %s",
 				path, strerror(errno)));
+	}
+	umask(omask);
 
 	/* keep queue of 5 */
 	listen(sock, 5);
