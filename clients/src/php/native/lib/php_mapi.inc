@@ -768,8 +768,10 @@
 		global $connection_pool;
 
 		$connections = array();
-		foreach($connection_pool as $conn) {
+		if ($connection_pool !== null) {
+		    foreach($connection_pool as $conn) {
 			$connections[] = $conn["id"];
+		    }
 		}
 
 		$id = hash("sha1", time());
