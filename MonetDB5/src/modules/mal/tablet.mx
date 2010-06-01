@@ -2180,8 +2180,9 @@ CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, in
 	tablet_load(&bn, names, seps, types, *filename, nr);
 	if (bn == NULL)
 		throw(MAL, "tablet.load", MAL_MALLOC_FAIL);
-	BBPincref(*ret, TRUE);
 	*ret = bn->batCacheid;
+	BBPincref(*ret, TRUE);
+	BBPunfix(*ret);
 	BBPunfix(names->batCacheid);
 	BBPunfix(seps->batCacheid);
 	BBPunfix(types->batCacheid);
@@ -2258,8 +2259,9 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 		BBPunfix(types->batCacheid);
 		throw(MAL, "tablet.load", OPERATION_FAILED);
 	}
-	BBPincref(*ret, TRUE);
 	*ret = bn->batCacheid;
+	BBPincref(*ret, TRUE);
+	BBPunfix(*ret);
 	BBPunfix(names->batCacheid);
 	BBPunfix(seps->batCacheid);
 	BBPunfix(types->batCacheid);
