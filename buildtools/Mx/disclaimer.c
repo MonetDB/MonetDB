@@ -47,8 +47,14 @@ openDisclaimerFile(const char *filename)
 		buf[0] = '\0';
 		strncat(buf, inputdir, 8096 - 1);
 		len = strlen(buf);
-		if (len < 8095 && buf[len - 1] != DIR_SEP)
+		if (len > 0 && len < 8095 && buf[len - 1] != DIR_SEP
+#ifdef WIN32
+		    && buf[len - 1] != '/'
+#endif
+			) {
 			buf[len++] = DIR_SEP;
+			buf[len] = 0;
+		}
 		/* search backwards, such that we can find the license.txt
 		 * file in the root of each module */
 		strncat(buf, filename, 8095 - len);
