@@ -29,6 +29,7 @@
 #include "sql_config.h"
 #include "utils.h"
 #include <stdio.h> /* fprintf, fgets */
+#include <unistd.h> /* unlink */
 #include <string.h> /* memcpy */
 #include <strings.h> /* strcasecmp */
 #include <gdk.h> /* GDKmalloc */
@@ -299,18 +300,33 @@ generateSalt(char *buf, unsigned int len)
 		buf[c] = '\0';
 }
 
+/**
+ * Creates a file path read/writable for the user only containing a
+ * random passphrase.
+ */
 char *
 generatePassphraseFile(char *path)
 {
+	int fd;
 	FILE *f;
 	unsigned int len = 48;
 	char buf[len];
 
-	generateSalt(buf, len);
-	if ((f = fopen(path, "w")) == NULL) {
+	/* delete such that we are sure we recreate the file with restricted
+	 * permissions */
+	unlink(path);
+	if ((fd = open(path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR)) == -1) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				path, strerror(errno));
+	}
+
+	generateSalt(buf, len);
+	if ((f = fdopen(fd, "w")) == NULL) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to open '%s': %s",
+				path, strerror(errno));
+		close(fd);
 		return(strdup(err));
 	}
 	if (fwrite(buf, 1, len, f) < len) {
@@ -318,9 +334,11 @@ generatePassphraseFile(char *path)
 		snprintf(err, sizeof(err), "cannot write secret: %s",
 				strerror(errno));
 		fclose(f);
+		close(fd);
 		return(strdup(err));
 	}
 	fclose(f);
+	close(fd);
 	return(NULL);
 }
 

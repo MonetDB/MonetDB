@@ -3,6 +3,21 @@
 
 #*June2010
 
+  01 Jun 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c, utils.c:
+  Fixed an issue where Merovingian's strict umask was applied too early
+  causing files to be inaccessible.  Now the .merovingian_control socket
+  file is accessible to both user and group of the merovingian process,
+  and the .mapi_socket file is accessible to everyone like a TCP socket
+  is.  Fixes bug #2550.
+
+  01 Jun 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c:
+  Properly clean up .merovingian_control file in dbfarm.
+
+  01 Jun 2010; Fabian Groffen <fabian@cwi.nl> merovingian.1.in,
+  merovingian.c:
+  Removed database pre-starting (mis-)feature, any argument to
+  merovingian now yields in a version message followed by a server exit.
+
   07 Apr 2010; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Sort output returned by discover, status and get commands based on url
   or dbname.

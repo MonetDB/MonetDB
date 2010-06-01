@@ -427,7 +427,6 @@ main(int argc, char *argv[])
 	FILE *cnf = NULL, *pidfile = NULL;
 	char buf[1024];
 	char bufu[1024];
-	sabdb* stats = NULL;
 	dpair d;
 	int pfd[2];
 	int retfd = -1;
@@ -501,10 +500,6 @@ main(int argc, char *argv[])
 	}
 #endif
 
-	/* Paranoia umask, but good, because why would people have to sniff
-	 * our private parts? */
-	umask(S_IRWXG | S_IRWXO);
-
 	/* hunt for the config file, and read it, allow the caller to
 	 * specify where to look using the MONETDB5CONF environment variable */
 	p = getenv("MONETDB5CONF");
@@ -518,13 +513,14 @@ main(int argc, char *argv[])
 	/* store this conffile for later use in forkMserver */
 	_mero_conffile = p;
 
-#define MERO_EXIT(status) \
-	buf[0] = status; \
-	if (write(retfd, &buf, 1) != 1 || close(retfd) != 0) { \
+#define MERO_EXIT(status) { \
+	char s = status; \
+	if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
 		Mfprintf(stderr, "could not write to parent\n"); \
 	} \
 	if (status != 0) \
-		return(status);
+		return(status); \
+}
 
 	readConfFile(ckv, cnf);
 	fclose(cnf);
@@ -664,6 +660,22 @@ main(int argc, char *argv[])
 	if (chdir(dbfarm) < 0) {
 		Mfprintf(stderr, "could not move to dbfarm '%s': %s\n",
 				dbfarm, strerror(errno));
+		MERO_EXIT(1);
+	}
+
+	/* figure out our hostname */
+	gethostname(_mero_hostname, 128);
+
+	if (argc > 1) {
+		Mfprintf(stderr, "Merovingian %s on host %s\n", MERO_VERSION,
+				_mero_hostname /*FIXME not yet set*/);
+		Mfprintf(stderr, "Using config file: %s\n", _mero_conffile);
+		Mfprintf(stderr, "  monitoring dbfarm: %s\n", dbfarm);
+		Mfprintf(stderr, "  forking mserver5: %s\n", _mero_mserver);
+		Mfprintf(stderr, "  allows remote control: %s\n",
+				(_mero_controlport != 0 ? "yes" : "no"));
+		Mfprintf(stderr, "  performs neighbour discovery: %s\n",
+				(discoveryport != 0 ? "yes" : "no"));
 		MERO_EXIT(1);
 	}
 
@@ -845,9 +857,6 @@ main(int argc, char *argv[])
 	d->dbname = "control";
 	d->next = NULL;
 
-	/* figure out our hostname */
-	gethostname(_mero_hostname, 128);
-
 	/* write out the pid */
 	Mfprintf(pidfile, "%d\n", (int)d->pid);
 	fclose(pidfile);
@@ -913,9 +922,9 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if (
 			(e = openConnectionTCP(&sock, _mero_port, stdout)) == NO_ERR &&
-			(e = openConnectionUNIX(&socku, bufu, stdout)) == NO_ERR &&
+			(e = openConnectionUNIX(&socku, bufu, 0, stdout)) == NO_ERR &&
 			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
-			(e = openConnectionUNIX(&unsock, buf, _mero_ctlout)) == NO_ERR &&
+			(e = openConnectionUNIX(&unsock, buf, S_IRWXO, _mero_ctlout)) == NO_ERR &&
 			(_mero_controlport == 0 || (e = openConnectionTCP(&csock, _mero_controlport, _mero_ctlout)) == NO_ERR)
 	   )
 	{
@@ -944,16 +953,9 @@ main(int argc, char *argv[])
 		 * start running, so flag the parent we will have fun. */
 		MERO_EXIT(0);
 
-		for (argp = 1; argp < argc; argp++) {
-			e = forkMserver(argv[argp], &stats, 0);
-			if (e != NO_ERR) {
-				Mfprintf(stderr, "failed to fork mserver: %s\n", getErrMsg(e));
-				freeErr(e);
-				stats = NULL;
-			}
-			if (stats != NULL)
-				SABAOTHfreeStatus(&stats);
-		}
+		/* Paranoia umask, but good, because why would people have to sniff
+		 * our private parts? */
+		umask(S_IRWXG | S_IRWXO);
 
 		/* handle control commands */
 		csocks[0] = unsock;
@@ -989,8 +991,12 @@ main(int argc, char *argv[])
 	}
 
 	/* control channel is already closed at this point */
-	unlink(buf);
-	unlink(bufu);
+	if (unlink(buf) == -1)
+		Mfprintf(stderr, "unable to unlink control socket '%s': %s\n",
+				buf, strerror(errno));
+	if (unlink(bufu) == -1)
+		Mfprintf(stderr, "unable to unlink mapi socket '%s': %s\n",
+				bufu, strerror(errno));
 
 	if (e != NO_ERR) {
 		/* console */

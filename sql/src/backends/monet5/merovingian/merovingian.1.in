@@ -1,12 +1,11 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MEROVINGIAN 1 "APRIL 2010" Application "MonetDB Applications"
+.TH MEROVINGIAN 1 "JUNE 2010" Application "MonetDB Applications"
 .SH NAME
 merovingian \- the MonetDB Database Server daemon
 .SH SYNOPSIS
 .B merovingian
-[database ...]
 .SH DESCRIPTION
 .B merovingian
 is the MonetDB Database Server daemon.  It is not meant to be used in
@@ -37,14 +36,11 @@ When started,
 .B merovingian
 runs in the background, sending log messages to
 .IR @MERO_LOG@ ,
-until being sent a stop, terminate or interrupt signal.  All arguments
+until being sent a stop, terminate or interrupt signal.  Any arguments
 given when starting
 .B merovingian
-are considered to be databases to be pre-started.  Pre-started databases
-are started as part of the startup of
-.BR merovingian ,
-which means their startup is not delayed until the first client
-requests for them.
+cause the version to be printed followed by a shutdown of
+.BR merovingian .
 .P
 .B merovingian
 uses a neighbour discovery scheme to detect other
