@@ -601,6 +601,7 @@ la_bat_create(logger *lg, logaction *la)
 		if (la->tt < 0)
 			BATseqbase(BATmirror(b), 0);
 
+		BATsetaccess(b, BAT_READ);
 		logger_add_bat(lg, b, la->name);
 		logbat_destroy(b);
 	}
@@ -1814,6 +1815,7 @@ bm_commit(logger *lg)
 		BAT *lb = BATdescriptor(bid);
 
 		BATmode(lb, PERSISTENT);
+assert(lb->P->restricted > BAT_WRITE);
 		if (BATcount(lb) > (BUN) REMAP_PAGE_MAXSIZE)
 			BATmmap(lb, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 		logbat_destroy(lb);
@@ -1834,6 +1836,7 @@ logger_add_bat(logger *lg, BAT *b, char *name)
 {
 	log_bid bid = logger_find_bat(lg, name);
 
+	assert(b->P->restricted > 0 || (b == lg->snapshots || b == lg->catalog || b == lg->seqs));
 	if (bid) {
 		if (bid != b->batCacheid) {
 			logger_del_bat(lg, bid);
@@ -1877,6 +1880,8 @@ logger_del_bat(logger *lg, log_bid bid)
 		BBPunfix(b->batCacheid);
 	}
 	BUNdelHead(lg->catalog, &bid, FALSE);
+
+//assert( BBP[bid].lrefs == 0 );
 }
 
 log_bid

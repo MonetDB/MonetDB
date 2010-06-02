@@ -69,6 +69,7 @@ typedef void *(*fmap) (void *data, void *clientdata);
 typedef int (*fkeyvalue) (void *data);
 
 extern node *list_find(list *l, void *key, fcmp cmp);
+extern int  list_position(list *l, void *val);
 extern void * list_fetch(list *l, int pos);
 extern list *list_select(list *l, void *key, fcmp cmp, fdup dup);
 extern list *list_order(list *l, fcmp cmp, fdup dup);

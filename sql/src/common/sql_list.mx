@@ -380,6 +380,17 @@ list_find2(list *l, void *data, void *key, fcmp2 cmp)
 	return NULL;
 }
 
+int
+list_position(list *l, void *val)
+{
+	node *n = NULL;
+	int i;
+
+	for (n = l->h, i=0; n && val != n->data; n = n->next, i++)
+		;
+	return i;
+}
+
 void *
 list_fetch(list *l, int pos)
 {

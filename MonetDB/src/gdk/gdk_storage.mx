@@ -815,7 +815,7 @@ BATaccess(BAT *b, int what, int advice, int preload)
 	/* vheaps next, as shared vheaps are not seq-correlated
 	   needing WILLNEED (use prefetch budget for this first) */
 	if (what & USE_HEAD) {
-		if (b->H->vheap && b->H->vheap->base) {
+		if (b->H->vheap && b->H->vheap->base && b->H->heap.base) {
 			char *lo = BUNhead(bi, BUNfirst(b)), *hi = BUNhead(bi, BUNlast(b) - 1);
 			int heap_advice = advice;
 			if (hi < lo || (preload > 0 && !heap_sequential(b))) {	/* not sequentially correlated! */
@@ -831,7 +831,7 @@ BATaccess(BAT *b, int what, int advice, int preload)
 		}
 	}
 	if (what & USE_TAIL) {
-		if (b->T->vheap && b->T->vheap->base) {
+		if (b->T->vheap && b->T->vheap->base && b->T->heap.base) {
 			char *lo = BUNtail(bi, BUNfirst(b)), *hi = BUNtail(bi, BUNlast(b) - 1);
 			int heap_advice = advice;
 			if (hi < lo || (preload > 0 && !heap_sequential(BATmirror(b)))) {	/* not sequentially correlated! */

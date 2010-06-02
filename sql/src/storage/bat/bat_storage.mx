@@ -311,6 +311,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		if (BATcount(b)+BATcount(i) > (BUN) REMAP_PAGE_MAXSIZE) { 
        			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     		}
+		assert(b->T->heap.storage != STORE_PRIV);
 		BATappend(b, i, TRUE);
 	} else {
 		temp_destroy(bat->ibid);
@@ -381,6 +382,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 			bat_destroy(b);
 			b = temp_descriptor(bat->dbid);
 		}
+		assert(b->T->heap.storage != STORE_PRIV);
 		BATappend(b, i, TRUE);
 	}
 	bat_destroy(b);
@@ -1192,6 +1194,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat)
 		if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
        			BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     		}
+		assert(cur->T->heap.storage != STORE_PRIV);
 		BATappend(cur,ins,TRUE);
 		BATcleanProps(cur);
 		temp_destroy(cbat->ibid);
@@ -1372,6 +1375,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 				if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
        					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     				}
+				assert(cur->T->heap.storage != STORE_PRIV);
 				BATappend(cur,ins,TRUE);
 				BATcleanProps(cur);
 				temp_destroy(cbat->ibid);
@@ -1599,6 +1603,7 @@ tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 			if (cbat->bid)
 				cur = temp_descriptor(cbat->bid);
 		        if ((!cur || !BATcount(cur)) && BATcount(ins) > SNAPSHOT_MINSIZE) {
+				bat_set_access(ins, BAT_READ);
 				BATmode(ins, PERSISTENT);
 				if (BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE)
        					BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);

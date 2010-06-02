@@ -1527,10 +1527,14 @@ minmax_manager(void)
 {
 	while (active) {
 		MT_sleep_ms(30000);
-		if (store_nr_active || !active) 
+		MT_set_lock(bs_lock, "store_manager");
+		if (store_nr_active || !active) {
+			MT_unset_lock(bs_lock, "store_manager");
 			continue;
+		}
 		if (store_funcs.gtrans_minmax)
 			store_funcs.gtrans_minmax(gtrans);
+		MT_unset_lock(bs_lock, "store_manager");
 	}
 }
 

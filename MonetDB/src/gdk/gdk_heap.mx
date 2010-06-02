@@ -509,6 +509,7 @@ HEAPsave_intern(Heap *h, str nme, str ext, str suffix)
 		return -1;
 	}
 	if (h->storage != STORE_MEM && store == STORE_PRIV) {
+assert(0);
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		strcpy(extension, ext);

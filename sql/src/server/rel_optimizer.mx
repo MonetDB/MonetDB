@@ -1880,6 +1880,151 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
 }
 
 /*
+ * Rewrite aggregations over union all.
+ *	groupby ([ union all (a, b) ], [gbe], [ count, sum ] )
+ *
+ * into
+ * 	groupby ( [ union all( groupby( a, [gbe], [ count, sum] ), [ groupby( b, [gbe], [ count, sum] )) , [gbe], [sum, sum] ) 
+ */
+static sql_rel *
+rel_push_aggr(int *changes, mvc *sql, sql_rel *rel) 
+{
+	sql_rel *u = rel->l;
+
+	/* TODO disjoint partitions don't need the last group by */
+	if (rel->op == op_groupby && /*(!rel->r || list_length(rel->r) == 0) &&*/
+	    u && is_union(u->op) && !need_distinct(u) && u->exps) {
+		sql_rel *g = rel;
+		sql_rel *l = u->l;
+		sql_rel *r = u->r;
+		list *lexps = l->exps;
+		list *rexps = r->exps;
+
+		/* make sure we don't create group by on group by's */
+		if (l->op != op_groupby && r->op != op_groupby) {
+			node *n, *m;
+			list *lgbe = NULL, *rgbe = NULL;
+
+			/* distinct should be done over the full result */
+			for (n = g->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				sql_subaggr *af = e->f;
+
+				/* TODO: constants should stay on top groupby */
+				if (e->type == e_atom || 
+				   (e->type == e_aggr && 
+				   ((strcmp(af->aggr->base.name, "sum") && 
+				     strcmp(af->aggr->base.name, "count") &&
+				     strcmp(af->aggr->base.name, "min") &&
+				     strcmp(af->aggr->base.name, "max")) ||
+				   need_distinct(e))))
+					return rel; 
+			}
+
+			if (g->r && list_length(g->r) > 0) {
+				list *gbe = g->r;
+				lgbe = new_exp_list();
+				rgbe = new_exp_list();
+
+				for (n = gbe->h; n; n = n->next) {
+					sql_exp *e = n->data, *ne;
+					int p = list_position(u->exps, rel_find_exp(u, e));
+					ne = list_fetch(lexps, p);
+					append(lgbe, ne=exp_column(exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne)));
+					exp_setname(ne, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
+					ne = list_fetch(rexps, p);
+					append(rgbe, ne= exp_column(exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne)));
+					exp_setname(ne, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
+				}
+			}
+			l = rel_groupby(rel_dup(l), NULL);
+			r = rel_groupby(rel_dup(r), NULL);
+			l->r = lgbe;
+			l->nrcols = g->nrcols;
+			l->card = g->card;
+			r->r = rgbe;
+			r->nrcols = g->nrcols;
+			r->card = g->card;
+			for (n = g->exps->h; n; n = n->next) {
+				sql_exp *e = n->data, *nle, *nre, *ne;
+				list *ol, *nll = NULL, *nlr = NULL; 
+				node *m;
+
+				/* recreate aggr expression, find base expressions on lower relation */
+				if (e->type == e_aggr) {
+				  ol = e->l;
+				  if (ol) {
+				    nll = new_exp_list(); 
+				    nlr = new_exp_list();
+				    for(m = ol->h; m; m = m->next){
+					sql_exp *oe = m->data;
+		
+					int p = list_position(u->exps, rel_find_exp(u, oe));
+					ne = list_fetch(lexps, p);
+					append(nll, exp_column(exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne)));
+					ne = list_fetch(rexps, p);
+					append(nlr, exp_column(exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne)));
+				    }
+				  }
+				  nle = exp_aggr(nll, sql_dup_aggr(e->f), need_distinct(e), need_no_nil(e), e->card, 0);
+				  nre = exp_aggr(nlr, sql_dup_aggr(e->f), need_distinct(e), need_no_nil(e), e->card, 0);
+				} else {
+				  int p = list_position(u->exps, rel_find_exp(u, e));
+				  ne = list_fetch(lexps, p);
+				  nle = exp_column(exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+				  ne = list_fetch(rexps, p);
+				  nre = exp_column(exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+				}
+				rel_groupby_add_aggr(sql, l, nle);
+				exp_setname(nle, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
+				rel_groupby_add_aggr(sql, r, nre);
+				exp_setname(nre, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
+			}
+			u = rel_setop(l, r, op_union);
+			u->exps = rel_projections(sql, r, NULL, 0, 1);
+			g = rel_groupby(u, NULL);
+			if (rel->r) {
+				list *gbe = new_exp_list(), *ogbe = rel->r;
+				
+				for (n = ogbe->h; n; n = n->next) {
+					sql_exp *e = n->data, *ne;
+
+					ne = exp_column(exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+					exp_setname(ne, e->rname?e->rname:exp_find_rel_name(e), exp_name(e));
+					append(gbe, ne);
+				}
+				g->r = gbe;
+			}
+			g->nrcols = rel->nrcols;
+			g->card = rel->card;
+			for (n = u->exps->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
+				sql_exp *ne, *e = n->data, *oa = m->data;
+				if (oa->type == e_aggr) {
+					sql_subaggr *f = oa->f;
+					int cnt = strcmp(f->aggr->base.name,"count")==0;
+					sql_subaggr *a = sql_bind_aggr(sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
+
+					assert(a);
+					/* union of aggr result may have nils 
+				   	because sum/count of empty set */
+					set_has_nil(e);
+					e = exp_column(exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+					ne = exp_aggr1(e, a, need_distinct(e), 1, e->card, 1);
+				} else {
+					ne = exp_column(exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				}
+				exp_setname(ne, oa->rname?oa->rname:exp_find_rel_name(oa), exp_name(oa));
+				rel_groupby_add_aggr(sql, g, ne);
+			}
+			rel_destroy(rel);
+			(*changes)++;
+			return g;
+		}
+	}
+	return rel;
+}
+
+/*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
  */
@@ -2669,7 +2814,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static void
+static int
 exp_mark_used(sql_rel *subrel, sql_exp *e)
 {
 	sql_exp *ne = NULL;
@@ -2679,8 +2824,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 		ne = rel_find_exp(subrel, e);
 		break;
 	case e_convert:
-		exp_mark_used(subrel, e->l);
-		break;
+		return exp_mark_used(subrel, e->l);
 	case e_aggr:
 	case e_func: {
 		if (e->l) {
@@ -2720,22 +2864,51 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 	case e_atom:
 		/* atoms are used in e_cmp */
 		e->used = 1;
-		break;
+		/* return 0 as constants may require a full column ! */
+		return 0;
 	}
-	if (ne)
+	if (ne) {
 		ne->used = 1;
+		return ne->used;
+	}
+	return 0;
+}
+
+static void
+positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
+{
+	if (!rel->exps) 
+		assert(0);
+
+	if (rel->exps && subrel->exps) {
+		node *n, *m;
+		for (n=rel->exps->h, m=subrel->exps->h; n && m; n = n->next, m = m->next) {
+			sql_exp *e = n->data;
+			sql_exp *se = m->data;
+
+			if (e->used)
+				se->used = 1;
+		}
+	}
 }
 
 static void
 exps_mark_used(sql_rel *rel, sql_rel *subrel)
 {
+	int nr = 0;
 	if (rel->exps) {
 		node *n;
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			exp_mark_used(subrel, e);
+			if (!is_project(rel->op) || e->used) 
+				nr += exp_mark_used(subrel, e);
 		}
+	}
+	/* for count/rank we need atleast one column */
+	if (!nr && (is_project(subrel->op) || is_base(subrel->op))) {
+		sql_exp *e = subrel->exps->h->data;
+		e->used = 1;
 	}
 	if (rel->r && (rel->op == op_project || rel->op  == op_groupby)) {
 		list *l = rel->r;
@@ -2768,7 +2941,7 @@ exps_used(list *l)
 static void
 rel_used(sql_rel *rel)
 {
-	if (is_join(rel->op) || is_union(rel->op)) {
+	if (is_join(rel->op) || is_set(rel->op)) {
 		if (rel->l) 
 			rel_used(rel->l);
 		if (rel->r) 
@@ -2786,6 +2959,10 @@ static void
 rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 {
 	(void)sql;
+
+	if (proj && (need_distinct(rel))) 
+		rel_used(rel);
+
 	switch(rel->op) {
 	case op_basetable:
 	case op_table:
@@ -2827,10 +3004,17 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		 * 
  		 * Project part of union is based on column position.
 		 */
-		if (proj) {
-			/* properly mark left/right based on exps list */
-			rel_used(rel->l);
-			rel_used(rel->r);
+		if (proj && (need_distinct(rel) || !rel->exps)) {
+			rel_used(rel);
+			if (!rel->exps) {
+				rel_used(rel->l);
+				rel_used(rel->r);
+			}
+			rel_mark_used(sql, rel->l, 0);
+			rel_mark_used(sql, rel->r, 0);
+		} else if (proj && !need_distinct(rel)) {
+			positional_exps_mark_used(rel, rel->l);
+			positional_exps_mark_used(rel, rel->r);
 			rel_mark_used(sql, rel->l, 0);
 			rel_mark_used(sql, rel->r, 0);
 		}
@@ -2871,11 +3055,8 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				if (e->used || is_intern(e))
 					append(exps, exp_dup(e));
 			}
-			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) ! */
-			if (list_length(exps) == 0) {
-				sql_exp *e = rel->exps->h->data;
-				append(exps, exp_dup(e));
-			}
+			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by exps_mark_used */
+			assert(list_length(exps) > 0);
 			list_destroy(rel->exps);
 			rel->exps = exps;
 		}
@@ -2890,6 +3071,10 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_project:
 	case op_groupby: 
 
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+
 		if (rel->l && rel->exps) {
 			node *n;
 			list *exps = new_exp_list();
@@ -2900,11 +3085,8 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				if (e->used || is_intern(e))
 					append(exps, exp_dup(e));
 			}
-			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) ! */
-			if (list_length(exps) == 0) {
-				sql_exp *e = rel->exps->h->data;
-				append(exps, exp_dup(e));
-			}
+			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by exps_mark_used */
+			assert(list_length(exps) > 0);
 			list_destroy(rel->exps);
 			rel->exps = exps;
 		}
@@ -2915,12 +3097,6 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_delete:
 
 	case op_select: 
-
-	case op_union: 
-	case op_inter: 
-	case op_except: 
-		/* We cannot remove here as set projection are based on column
-		   position */
 
 	case op_join: 
 	case op_left: 
@@ -3015,9 +3191,13 @@ rel_dce_sub(mvc *sql, sql_rel *rel)
 	if (!rel)
 		return rel;
 	
-	rel = rel_remove_unused(sql, rel);
-	/* mark used up until the next project */
+	/* 
+  	 * Mark used up until the next project 
+	 * For setops we need to first mark, then remove 
+         * because of positional dependency 
+ 	 */
 	rel_mark_used(sql, rel, 1);
+	rel = rel_remove_unused(sql, rel);
 	rel_dce_down(sql, rel, 1);
 	return rel;
 }
@@ -3553,6 +3733,7 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	if (gp.cnt[op_groupby]) {
 		rel = rewrite(sql, rel, &rel_avg2sum_count); 
+		rel = rewrite(sql, rel, &rel_push_aggr);
 		rel = rewrite(sql, rel, &rel_groupby_order); 
 		rel = rewrite(sql, rel, &rel_reduce_groupby_exps); 
 	}

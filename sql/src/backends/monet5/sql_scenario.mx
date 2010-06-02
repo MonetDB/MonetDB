@@ -280,12 +280,10 @@ SQLinit(void)
 		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
-/* Not thread safe yet
-	if (!GDKembedded && MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL) < 0) {
+	if (0 && !GDKembedded && MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL) < 0) {
 		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting minmax manager failed");
 	}
-*/
 	return MAL_SUCCEED;
 }
 
@@ -516,8 +514,16 @@ SQLexitClient(Client c)
 		res_tables_destroy(m->results);
 		m->results= NULL;
 
-		if (m->session->tr)
-			reset_functions(m->session->tr);
+	//	if (m->session->tr)
+	//		reset_functions(m->session->tr);
+		{
+			backend *be = c->state[MAL_SCENARIO_PARSER];
+
+			mvc_destroy(m);
+			backend_destroy(be);
+			c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
+			c->state[MAL_SCENARIO_PARSER] = NULL;
+		}
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
 	return MAL_SUCCEED;

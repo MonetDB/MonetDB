@@ -198,6 +198,7 @@ Dependencies between database objects
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 11,	35,	8 # length
+[ "id",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "id",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 [ "name",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "name",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
@@ -256,6 +257,7 @@ Dependencies between database objects
 [ "rkey",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
 [ "id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
+[ "id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "name",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
@@ -425,7 +427,8 @@ Cleanup
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
-% .t,	.t,	.L4 # table_name
+#(SELECT t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) UNION (SELECT t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
+% .t,	.tri,	.L4 # table_name
 % name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
@@ -506,6 +509,7 @@ Cleanup
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 11,	35,	8 # length
+[ "id",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "id",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 [ "name",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "name",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
@@ -564,6 +568,7 @@ Cleanup
 [ "rkey",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
 [ "id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
+[ "id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "name",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]

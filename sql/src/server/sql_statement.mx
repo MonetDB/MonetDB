@@ -1110,17 +1110,6 @@ stmt_temp(sql_subtype *t)
 }
 
 stmt *
-stmt_single(sql_subtype *t)
-{
-	stmt *s = stmt_create(st_single);
-
-	s->op4.typeval = *t;
-	s->nrcols = 1;
-	return s;
-}
-
-
-stmt *
 stmt_column(stmt *op1, stmt *table, sql_table *t)
 {
 	stmt *s = stmt_create(st_column);
@@ -3049,7 +3038,15 @@ Sprint(stmt *s)
 stmt *const_column(stmt *val ) 
 {
 	sql_subtype *ct = tail_type(val);
+/*
 	stmt *temp = stmt_temp(ct);
 	return stmt_append(temp, val);
+*/
+	stmt *s = stmt_create(st_single);
+
+	s->op1.stval = val;
+	s->op4.typeval = *ct;
+	s->nrcols = 1;
+	return s;
 }
 

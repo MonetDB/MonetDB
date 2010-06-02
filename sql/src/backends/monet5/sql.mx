@@ -273,8 +273,8 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
-function single(x:any_1):bat[:oid,:any_1];
-	b := bat.new(0:oid,x);
+function single(x:any_2):bat[:oid,:any_2];
+	b := bat.new(0:oid, x);
 	c := bat.append(b, x);
 	return c;
 end single;

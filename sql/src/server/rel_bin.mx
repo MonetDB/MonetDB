@@ -1149,15 +1149,15 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 	stmt_destroy(right);
 	sub = stmt_list(l);
 
-	/* TODO put in sep function !!!, and add to all is_project(op) */
-	/* union can be a projection too */
+	/* union exp list is a rename only */
 	if (rel->exps) {
-		node *en;
+		node *en, *n;
 		list *l = create_stmt_list();
 
-		for( en = rel->exps->h; en; en = en->next ) {
+		for( en = rel->exps->h, n = sub->op1.lval->h; en && n; en = en->next, n = n->next ) {
 			sql_exp *exp = en->data;
-			stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
+			stmt *s = stmt_dup(n->data);
+			//stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
 
 			if (!s) {
 				assert(0);

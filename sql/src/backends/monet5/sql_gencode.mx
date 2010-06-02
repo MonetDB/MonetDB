@@ -614,7 +614,31 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			s->nr = getDestVar(q);
 		} break;
-		case st_single:
+		case st_single: {
+			int ht = TYPE_oid;
+			int tt = s->op4.typeval.type->localtype;
+			int val = _dumpstmt(sql, mb, s->op1.stval);
+/*
+			int temp, val = _dumpstmt(sql, mb, s->op1.stval);
+
+			q = newStmt1(mb, batRef, "new");
+			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+			setVarUDFtype(mb,getArg(q,0));
+			q = pushType(mb, q, ht);
+			q = pushType(mb, q, tt);
+
+			temp = getDestVar(q);
+			q = newStmt2(mb, batRef, appendRef);
+			q = pushArgument(mb, q, temp);
+			q = pushArgument(mb, q, val);
+			q = pushBit(mb, q, TRUE);
+			s->nr = getDestVar(q);
+*/
+			q = newStmt1(mb, sqlRef, "single");
+			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+			q = pushArgument(mb, q, val);
+			s->nr = getDestVar(q);
+		} break;
 		case st_temp:{
 			int ht = TYPE_oid;
 			int tt = s->op4.typeval.type->localtype;
