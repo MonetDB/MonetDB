@@ -52,7 +52,7 @@ function RM () {
 		if [ "x$x" = 'xy' ]; then
 			( /bin/rm -f $R $*  &&  echo "$n files deleted." )  ||  echo "rm failed."
 		else
-			echo "rm canceled, no files/directories deleted."
+			echo "rm cancelled, no files/directories deleted."
 		fi
 	fi
 }
@@ -79,8 +79,16 @@ else
 	RM -rf autom4*.cache `find .[^.]* [^_]* -name Makefile.\* | egrep -v '(\.(|ag|standalone|rules|bsd|svr4|sun4|PL|inc|svn-base)|burg/Makefile.orig)$' ; find .[^.]* [^_]* -name \*.class -o -name \*.orig -o -name \*.rej -o -name .cache -o -name .incs.\* -o -name \*.pyc -o -name \*~ -o -name .\*~ -o -name .#\* -o -name \*.bak | grep -v 'burg/Makefile.orig$'` ./install.lst ./doc.lst ./acout.in ./configure.in ./aclocal.m4 ./configure ./stamp-h.in ./conf/depcomp ./conf/mkinstalldirs ./conf/stamp-h.in ./conf/config.h.in ./conf/install-sh ./conf/config.guess ./conf/config.sub ./conf/ltconfig ./conf/ltmain.sh ./conf/missing ./conf/compile ./acconfig.h ./*_config.h.in
 fi
 
-echo '
+if [ -d CVS ]; then
+    echo '
 It might be a good idea to run "cvs -q diff --brief", now,
-to check whether required files have been removed accidently.
+to check whether required files have been removed accidentally.
 If so, these files can be restored by "cvs update <file>".
 '
+else
+    echo '
+It might be a good idea to run "hg status -d", now,
+to check whether required files have been removed accidentally.
+If so, these files can be restored by "hg revert <file>".
+'
+fi
