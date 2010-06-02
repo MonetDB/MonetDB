@@ -48,6 +48,7 @@ TAGS$
 ^pathfinder/NT/modules/
 ^pathfinder/NT/runtime/
 ^pathfinder/conf/compile$
+^python/build/
 ^sql/NT/MonetDB-SQL\.pc$
 aclocal\.m4$
 acout\.in$
