@@ -3106,7 +3106,6 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		}
 		return exp_binop(l, r, f);
 	} else {
-		int digits = t1->digits + t2->digits;
 		sql_exp *ol = exp_dup(l);
 		sql_exp *or = exp_dup(r);
 
@@ -3153,7 +3152,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 				} else if (f->func->fix_scale == SCALE_MUL) {
 					l = exp_sum_scales(sql, f, l, r);
 				} else if (f->func->fix_scale == DIGITS_ADD) {
-					f->res.digits = digits;
+					f->res.digits = t1->digits + t2->digits;
 				}
 				exp_destroy(ol);
 				exp_destroy(or);
