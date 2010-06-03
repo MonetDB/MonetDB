@@ -1,4 +1,5 @@
 #                                               -*- Autoconf -*-
+#                                               vim: ft=config :
 
 dnl The contents of this file are subject to the MonetDB Public License
 dnl Version 1.1 (the "License"); you may not use this file except in
@@ -33,7 +34,7 @@ AC_ARG_ENABLE(mel,
 	[enable_mel=$enableval],[enable_mel="yes"])
 
 case $enable_mel in
-yes)	
+yes)
 	# HACK: because autoconf doesn't want to run configure with "added
 	# arguments", we just call it ourselves here.  Pretty dirty, I know.
 
@@ -42,6 +43,18 @@ yes)
 esac
 AM_CONDITIONAL([ENABLE_MEL], [test "$enable_mel" = yes])
 
+AC_ARG_ENABLE(burg,
+	AS_HELP_STRING([--enable-burg], 
+		[Burg is only needed for MonetDB/XQuery]),
+	[enable_burg=$enableval],[enable_burg="yes"])
+
+case $enable_burg in
+yes)
+	burg_subdir=burg
+	;;
+esac
+AM_CONDITIONAL([ENABLE_BURG], [test "$enable_burg" = yes])
+
 
 AC_CONFIG_FILES([Makefile autogen/Makefile conf/Makefile conf/Mbootstrap
                  conf/buildtools-config])
@@ -49,6 +62,6 @@ AM_CONFIG_HEADER([dummy.h])
 
 AC_SUBST([PYTHON])
 
-AC_CONFIG_SUBDIRS([Mx burg])
+AC_CONFIG_SUBDIRS([Mx $burg_subdir])
 
 AC_OUTPUT

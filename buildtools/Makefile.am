@@ -20,7 +20,11 @@
 AUTOMAKE_OPTIONS = foreign
 
 if ENABLE_MEL
-       OPT_MEL = mel
+OPT_MEL = mel
 endif
-SUBDIRS = autogen Mx $(OPT_MEL) burg conf
+if ENABLE_BURG
+OPT_BURG = burg
+endif
+
+SUBDIRS = autogen Mx $(OPT_MEL) $(OPT_BURG) conf
 DIST_SUBDIRS = autogen Mx mel burg conf
