@@ -48,11 +48,6 @@ AC_ARG_ENABLE(burg,
 		[Burg is only needed for MonetDB/XQuery]),
 	[enable_burg=$enableval],[enable_burg="yes"])
 
-case $enable_burg in
-yes)
-	burg_subdir=burg
-	;;
-esac
 AM_CONDITIONAL([ENABLE_BURG], [test "$enable_burg" = yes])
 
 
@@ -62,6 +57,9 @@ AM_CONFIG_HEADER([dummy.h])
 
 AC_SUBST([PYTHON])
 
-AC_CONFIG_SUBDIRS([Mx $burg_subdir])
+AC_CONFIG_SUBDIRS([Mx])
+if test x"$enable_burg" = x"yes" ; then
+	AC_CONFIG_SUBDIRS([burg])
+fi
 
 AC_OUTPUT
