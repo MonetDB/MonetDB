@@ -330,7 +330,11 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("current_schema", schema);
 	SQLglobal("current_user", user);
 	SQLglobal("current_role", user);
-	optimizer= GDKgetenv("sql_optimizer");
+	/* inherit the optimizer from the server */
+	if (optimizerpipe )
+		optimizer= optimizerpipe;
+	else
+		optimizer= GDKgetenv("sql_optimizer");
 	if (optimizer == NULL)
 		optimizer= "default_pipe";
 	SQLglobal("optimizer", GDKstrdup(setOptimizers(optimizer)));

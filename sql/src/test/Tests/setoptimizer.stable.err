@@ -80,13 +80,10 @@ stderr of test 'setoptimizer` in directory 'src/test` itself:
 # 12:49:31 >  mclient -lsql -i --host=eir --port=36907 
 # 12:49:31 >  
 
-MAPI  = monetdb@eir:35648
-QUERY = set optimizer='off';
-ERROR = !SQLException:optimizer: 'garbageCollector' should be used as the last one
-MAPI  = monetdb@eir:35648
+MAPI  = monetdb@eir:34547
 QUERY = set optimizer='default,costModel';
 ERROR = !SQLException:optimizer: 'inline' should be the first
-MAPI  = monetdb@eir:35648
+MAPI  = monetdb@eir:34547
 QUERY = set optimizer='myfamous_pipe';
 ERROR = !SQLException:optimizer:Optimizer 'myfamous_pipe' pipeline does not exist, use default pipe instead
 

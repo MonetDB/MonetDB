@@ -5,13 +5,13 @@
 select 'optimizer test:',optimizer;
 
 set optimizer='off';
-select 'optimizer test:',optimizer;
+select 'optimizer off test:',optimizer;
 
 set optimizer='on';
-select 'optimizer test:',optimizer;
+select 'optimizer on test:',optimizer;
 
 set optimizer='';
-select 'optimizer test:',optimizer;
+select 'optimizer <empty> test:',optimizer;
 
 set optimizer='costModel,coercions,emptySet,accessmode,aliases,commonTerms,accumulators,joinPath,deadcode,reduce,garbageCollector';
 

@@ -139,6 +139,7 @@ sql5_export void SQLsetAccessMode(Client c);
 sql5_export str SQLvalidatePipeline(void);
 sql5_export str setOptimizers(str optimizer);
 
+sql5_export str optimizerpipe;		/* the active pipeline */
 #endif /* _SQL_OPTIMIZER_H_ */
 
 @-
@@ -437,19 +438,26 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 	optimizerCheck(cntxt,mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
 }
 @-
-The optimizers applied are taken from a list managed with
-the SQL set optimizer statement. The default list has been
+Optimizers steps are identified by a list of identifiers and given
+a pipeline name. The default pipeline in the distribution has been
 tested extensively and should provide overall good performance.
 Additional pipelines are defined in the monetdb.conf file.
-The optimizers can be turned on/off, leaving the minimal plan
-active.
+The optimizers can be turned on/off, leaving a minimal plan active.
+
+A few optimizations are always needed. First, the multiplex
+code should be turned into a proper MAL blocks before
+other optimizations take place.
+And before we actually execute the program, we should
+expand the macros (unless this has already been taken
+care of.
+
 The first error in the optimizer string is shown.
 @c
-str minimalPlan= "inline,remap,deadcode,multiplex";
+str minimalPipe= "minimal_pipe";
 
-static str optimizers[256];	/* the optimizer pipeline */
-static str optimizerpipe;		/* reference to last pipeline string */
-static char *previouspipe = 0;
+static str optimizers[256];		/* the broken down optimizer pipeline */
+str optimizerpipe;		/* the active pipeline */
+static str previouspipe = 0;	/* fall back position */
 	
 str
 SQLvalidatePipeline(void){
@@ -520,12 +528,11 @@ is enabled.
 }
 
 @-
-A few optimizations are always needed. First, the multiplex
-code should be turned into a proper MAL blocks before
-other optimizations take place.
-And before we actually execute the program, we should
-expand the macros (unless this has already been taken
-care of.
+The prevalent optimizer pipeline is a global variable. All clients
+are affected. Clients can overrule the pipe-line setting temporarily,
+re-setting it to the previous one. Note, however, that no concurrency
+control is implemented to isolate the clients in playing with the
+optimizers.
 @c
 str
 setOptimizers(str optimizer)
@@ -538,20 +545,24 @@ setOptimizers(str optimizer)
 		return optimizerpipe;
 
 	/* catch  minimal pipes */
-	if (optimizer == NULL || *optimizer == 0 )
-		optimizer= minimalPlan;
-	else
+	if (optimizer == NULL || *optimizer == 0 ) {
+		pipe = GDKgetenv(minimalPipe);
+		if ( pipe )
+			optimizer = pipe;
+	} else
 	/* optimizers can be temporarily turned on/off */
 	if(strcmp(optimizer,"off")==0){
-		if( previouspipe == NULL)
-			previouspipe = optimizerpipe;
-		else return optimizerpipe;
-		optimizer= minimalPlan;
+		if( previouspipe )
+			return optimizerpipe;
+		previouspipe = optimizerpipe;
+		pipe = GDKgetenv(minimalPipe);
+		if ( pipe )
+			optimizer = pipe;
 	} else
 	if (strcmp(optimizer,"on")==0){
-		if (previouspipe)
-			optimizer= previouspipe;
-		else return optimizerpipe;
+		if (previouspipe == NULL)
+			return optimizerpipe;
+		optimizer= previouspipe;
 		previouspipe = 0;
 	} else {
 		/* the optimizer may be an environment alias */

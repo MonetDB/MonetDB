@@ -49,19 +49,20 @@ Over..
 % .,	. # table_name
 % single_value,	single_value # name
 % char,	varchar # type
-% 15,	175 # length
-[ "optimizer test:",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"	]
-#select 'optimizer test:',optimizer;
+% 19,	48 # length
+[ "optimizer off test:",	"inline,remap,deadcode,multiplex,garbageCollector"	]
+#select 'optimizer on test:',optimizer;
 % .,	. # table_name
 % single_value,	single_value # name
 % char,	varchar # type
-% 15,	2 # length
-[ "optimizer test:",	"on"	]
+% 19,	2 # length
+[ "optimizer on test:",	"on"	]
+#select 'optimizer <empty> test:',optimizer;
 % .,	. # table_name
 % single_value,	single_value # name
 % char,	varchar # type
-% 15,	175 # length
-[ "optimizer test:",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"	]
+% 23,	48 # length
+[ "optimizer <empty> test:",	"inline,remap,deadcode,multiplex,garbageCollector"	]
 #select 'done';
 % . # table_name
 % single_value # name
