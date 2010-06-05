@@ -31,15 +31,88 @@ extern int bat_logger_init( logger_functions *lf );
 @c
 #include "sql_config.h"
 #include "bat_logger.h"
+#include "bat_utils.h"
 
 logger *bat_logger = NULL;
+
+static int catalog_version = 0;
+
+static int
+bl_preversion( int oldversion, int newversion)
+{
+#define CATALOG_FEB2010 50000
+
+	(void)newversion;
+	if (oldversion == CATALOG_FEB2010) {
+		catalog_version = oldversion;
+		return 0;
+	}
+	return -1;
+}
+
+static void 
+bl_postversion( void *lg) 
+{
+	(void)lg;
+	if (catalog_version == CATALOG_FEB2010) {
+		BAT *o, *b;
+		fprintf(stderr, "Upgrading catalog from Feb2010\n");
+
+		o = temp_descriptor(logger_find_bat(lg, "sys__tables_id"));
+		/* no sys tables, easy upgrade */
+		if (!o)
+			return ;
+		b = bat_new( TYPE_void, TYPE_bit, BATcount(o));
+		memset(Tloc(b,BUNfirst(b)), 0, sizeof(bit)*BATcount(o));
+		BATsetcount(b, BATcount(o));
+		logger_add_bat(lg, b, "sys__tables_readonly");
+		//log_bat_persists(lg, b, "sys__tables_readonly");
+		bat_destroy(o);
+		bat_destroy(b);
+
+		o = temp_descriptor(logger_find_bat(lg, "sys__columns_id"));
+		if (!o)
+			return ;
+		b = bat_new( TYPE_void, TYPE_int, BATcount(o));
+		memset(Tloc(b,BUNfirst(b)), 0, sizeof(int)*BATcount(o));
+		BATsetcount(b, BATcount(o));
+		logger_add_bat(lg, b, "sys__columns_storage");
+		//log_bat_persists(lg, b, "sys__columns_storage");
+		bat_destroy(o);
+		bat_destroy(b);
+
+		o = temp_descriptor(logger_find_bat(lg, "tmp__tables_id"));
+		if (!o)
+			return ;
+		b = bat_new( TYPE_void, TYPE_bit, BATcount(o));
+		memset(Tloc(b,BUNfirst(b)), 0, sizeof(bit)*BATcount(o));
+		BATsetcount(b, BATcount(o));
+		logger_add_bat(lg, b, "tmp__tables_readonly");
+		//log_bat_persists(lg, b, "tmp__tables_readonly");
+		bat_destroy(o);
+		bat_destroy(b);
+
+		o = temp_descriptor(logger_find_bat(lg, "tmp__columns_id"));
+		if (!o)
+			return ;
+		b = bat_new( TYPE_void, TYPE_int, BATcount(o));
+		memset(Tloc(b,BUNfirst(b)), 0, sizeof(int)*BATcount(o));
+		BATsetcount(b, BATcount(o));
+		logger_add_bat(lg, b, "tmp__columns_storage");
+		//log_bat_persists(lg, b, "tmp__columns_storage");
+		bat_destroy(o);
+		bat_destroy(b);
+	
+		/* mark that the rest is fixed on sql level */
+	}
+}
 
 static int 
 bl_create(char *logdir, char *dbname, int catalog_version)
 {
 	if (bat_logger)
 		return LOG_ERR;
-	bat_logger = logger_create(0, "sql", logdir, dbname, catalog_version, NULL);
+	bat_logger = logger_create(0, "sql", logdir, dbname, catalog_version, NULL, bl_preversion, bl_postversion);
 	if (bat_logger)
 		return LOG_OK;
 	return LOG_ERR;
