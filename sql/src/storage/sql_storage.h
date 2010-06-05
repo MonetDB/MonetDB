@@ -34,6 +34,8 @@
 			  strcmp((x)->base.name, dt_schema) == 0)
 #define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
 
+extern int catalog_version;
+
 typedef enum store_type {
 	store_bat,	/* delta bats, ie multi user read/write */
 	store_su,	/* single user, read/write */

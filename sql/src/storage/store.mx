@@ -38,6 +38,7 @@
 
 /* version 05.10.00 of catalog */
 #define CATALOG_VERSION 51000
+int catalog_version = 0;
 
 static MT_Lock bs_lock;
 static int store_oid = 0;

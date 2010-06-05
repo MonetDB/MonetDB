@@ -35,8 +35,6 @@ extern int bat_logger_init( logger_functions *lf );
 
 logger *bat_logger = NULL;
 
-static int catalog_version = 0;
-
 static int
 bl_preversion( int oldversion, int newversion)
 {
@@ -66,7 +64,6 @@ bl_postversion( void *lg)
 		memset(Tloc(b,BUNfirst(b)), 0, sizeof(bit)*BATcount(o));
 		BATsetcount(b, BATcount(o));
 		logger_add_bat(lg, b, "sys__tables_readonly");
-		//log_bat_persists(lg, b, "sys__tables_readonly");
 		bat_destroy(o);
 		bat_destroy(b);
 
@@ -77,7 +74,6 @@ bl_postversion( void *lg)
 		memset(Tloc(b,BUNfirst(b)), 0, sizeof(int)*BATcount(o));
 		BATsetcount(b, BATcount(o));
 		logger_add_bat(lg, b, "sys__columns_storage");
-		//log_bat_persists(lg, b, "sys__columns_storage");
 		bat_destroy(o);
 		bat_destroy(b);
 
@@ -88,7 +84,6 @@ bl_postversion( void *lg)
 		memset(Tloc(b,BUNfirst(b)), 0, sizeof(bit)*BATcount(o));
 		BATsetcount(b, BATcount(o));
 		logger_add_bat(lg, b, "tmp__tables_readonly");
-		//log_bat_persists(lg, b, "tmp__tables_readonly");
 		bat_destroy(o);
 		bat_destroy(b);
 
@@ -99,7 +94,6 @@ bl_postversion( void *lg)
 		memset(Tloc(b,BUNfirst(b)), 0, sizeof(int)*BATcount(o));
 		BATsetcount(b, BATcount(o));
 		logger_add_bat(lg, b, "tmp__columns_storage");
-		//log_bat_persists(lg, b, "tmp__columns_storage");
 		bat_destroy(o);
 		bat_destroy(b);
 	
@@ -108,11 +102,11 @@ bl_postversion( void *lg)
 }
 
 static int 
-bl_create(char *logdir, char *dbname, int catalog_version)
+bl_create(char *logdir, char *dbname, int cat_version)
 {
 	if (bat_logger)
 		return LOG_ERR;
-	bat_logger = logger_create(0, "sql", logdir, dbname, catalog_version, NULL, bl_preversion, bl_postversion);
+	bat_logger = logger_create(0, "sql", logdir, dbname, cat_version, NULL, bl_preversion, bl_postversion);
 	if (bat_logger)
 		return LOG_OK;
 	return LOG_ERR;
