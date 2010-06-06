@@ -490,7 +490,7 @@ static sql_column *
 load_column(sql_trans *tr, sql_table *t, oid rid)
 {
 	void *v;
-	char *def, *tpe;
+	char *def, *tpe, *st;
 	int sz, d;
 	sql_column *c = ZNEW(sql_column);
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -521,8 +521,12 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "number"), rid);
 	c->colnr = *(int *)v;			_DELETE(v);
 	c->unique = 0;
-	v = table_funcs.column_find_value(tr, find_sql_column(columns, "storage"), rid);
-	c->storage_type = *(int *)v;		_DELETE(v);
+	c->storage_type = NULL;
+	st = table_funcs.column_find_value(tr, find_sql_column(columns, "storage"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), st) != 0)
+		c->storage_type = st;
+	else
+		_DELETE(st);
 	c->t = t;
 	if (isTable(c->t))
 		store_funcs.create_col(tr, c);
@@ -973,7 +977,7 @@ insert_schemas(sql_trans *tr)
 			for (o = t->columns.set->h; o; o = o->next) {
 				sql_column *c = o->data;
 
-				table_funcs.table_insert(tr, syscolumn, &c->base.id, c->base.name, c->type.type->sqlname, &c->type.digits, &c->type.scale, &t->base.id, (c->def) ? c->def : ATOMnilptr(TYPE_str), &c->null, &c->colnr, &c->storage_type);
+				table_funcs.table_insert(tr, syscolumn, &c->base.id, c->base.name, c->type.type->sqlname, &c->type.digits, &c->type.scale, &t->base.id, (c->def) ? c->def : ATOMnilptr(TYPE_str), &c->null, &c->colnr, (c->storage_type)? c->storage_type : ATOMnilptr(TYPE_str));
 			}
 		}
 	}
@@ -1100,7 +1104,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	col->colnr = table_next_column_nr(t);
 	col->t = t;
 	col->unique = 0;
-	col->storage_type = 0;
+	col->storage_type = NULL;
 	cs_add(&t->columns, col, TR_NEW);
 
 	if (isTable(col->t))
@@ -1150,7 +1154,9 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	col->colnr = c->colnr;
 	col->t = t;
 	col->unique = c->unique;
-	col->storage_type = c->storage_type;
+	col->storage_type = NULL;
+	if (c->storage_type)
+		col->storage_type = sa_strdup(sa, c->storage_type);
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
 }
@@ -1392,7 +1398,7 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		bootstrap_create_column(tr, t, "default", "varchar", 2048);
 		bootstrap_create_column(tr, t, "null", "boolean", 1);
 		bootstrap_create_column(tr, t, "number", "int", 32);
-		bootstrap_create_column(tr, t, "storage", "int", 32);
+		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
 
 		t = bootstrap_create_table(tr, s, "keys");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -1814,7 +1820,9 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	c->colnr = oc->colnr;
 	c->unique = oc->unique;
 	c->t = t;
-	c->storage_type = oc->storage_type;
+	c->storage_type = NULL;
+	if (oc->storage_type)
+		c->storage_type = _strdup(oc->storage_type);
 
 	if (isTable(c->t))
 		store_funcs.dup_col(tr, oc, c);
@@ -1839,14 +1847,16 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 	col->colnr = c->colnr;
 	col->unique = c->unique;
 	col->t = t;
-	col->storage_type = c->storage_type;
+	col->storage_type = NULL;
+	if (c->storage_type)
+		col->storage_type = _strdup(c->storage_type);
 
 	cs_add(&t->columns, col, TR_NEW);
 
 	if (isTable(t))
 		store_funcs.create_col(tr, col);
 	if (!isDeclaredTable(t))
-		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, &col->storage_type);
+		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
@@ -2776,7 +2786,11 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 
 			fc->null = pfc->null;
 			fc->unique = pfc->unique;
-			fc->storage_type = pfc->storage_type;
+			if (fc->storage_type) 
+				_DELETE(fc->storage_type);
+			fc->storage_type = NULL;
+			if (pfc->storage_type)
+				fc->storage_type = _strdup(pfc->storage_type);
 			if (fc->def) 
 				_DELETE(fc->def);
 			fc->def = NULL;
@@ -3736,7 +3750,7 @@ create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe)
 	col->colnr = table_next_column_nr(t);
 	col->t = t;
 	col->unique = 0;
-	col->storage_type = 0;
+	col->storage_type = NULL;
 
 	cs_add(&t->columns, col, TR_NEW);
 	return col;
@@ -3817,7 +3831,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 	if (isTable(col->t))
 		store_funcs.create_col(tr, col);
 	if (!isDeclaredTable(t))
-		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, &col->storage_type);
+		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(t)) 

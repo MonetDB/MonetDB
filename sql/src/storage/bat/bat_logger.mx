@@ -53,7 +53,9 @@ bl_postversion( void *lg)
 {
 	(void)lg;
 	if (catalog_version == CATALOG_FEB2010) {
+		size_t i;
 		BAT *o, *b;
+		char *s_nil = ATOMnilptr(TYPE_str);
 		fprintf(stderr, "Upgrading catalog from Feb2010\n");
 
 		o = temp_descriptor(logger_find_bat(lg, "sys__tables_id"));
@@ -70,9 +72,9 @@ bl_postversion( void *lg)
 		o = temp_descriptor(logger_find_bat(lg, "sys__columns_id"));
 		if (!o)
 			return ;
-		b = bat_new( TYPE_void, TYPE_int, BATcount(o));
-		memset(Tloc(b,BUNfirst(b)), 0, sizeof(int)*BATcount(o));
-		BATsetcount(b, BATcount(o));
+		b = bat_new( TYPE_void, TYPE_str, BATcount(o));
+		for(i=0; i< BATcount(o); i++) 
+			BUNappend(b, s_nil, TRUE);
 		logger_add_bat(lg, b, "sys__columns_storage");
 		bat_destroy(o);
 		bat_destroy(b);
@@ -90,9 +92,9 @@ bl_postversion( void *lg)
 		o = temp_descriptor(logger_find_bat(lg, "tmp__columns_id"));
 		if (!o)
 			return ;
-		b = bat_new( TYPE_void, TYPE_int, BATcount(o));
-		memset(Tloc(b,BUNfirst(b)), 0, sizeof(int)*BATcount(o));
-		BATsetcount(b, BATcount(o));
+		b = bat_new( TYPE_void, TYPE_str, BATcount(o));
+		for(i=0; i< BATcount(o); i++) 
+			BUNappend(b, s_nil, TRUE);
 		logger_add_bat(lg, b, "tmp__columns_storage");
 		bat_destroy(o);
 		bat_destroy(b);

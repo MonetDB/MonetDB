@@ -372,7 +372,7 @@ typedef struct sql_column {
 	char *def;
 	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
 	int drop_action;	/* only used for alter statements */
-	int storage_type;
+	char *storage_type;
 
 	struct sql_table *t;
 	void *data;
