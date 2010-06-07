@@ -1937,8 +1937,8 @@ decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 	bn->ttype = bm->htype = TYPE_decimal;
 	bn->tvarsized = bm->hvarsized = 1;
 
-	bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
-	*bn->theap = hp;
+	bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
+	*bn->T->vheap = hp;
 	ALIGNsetH(bn, b);
 
 	GDKfree(mult[0]);

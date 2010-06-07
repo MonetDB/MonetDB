@@ -459,13 +459,13 @@ DESCsetmodes(BAT *b)
 		ret |= b->T->heap.newstorage != m || b->T->heap.storage != m;
 		b->T->heap.newstorage = b->T->heap.storage = m;
 	}
-	if (b->hheap && b->batMaphheap) {
+	if (b->H->vheap && b->batMaphheap) {
 		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
 		int m = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing);
 		ret |= b->H->vheap->newstorage != m || b->H->vheap->storage != m;
 		b->H->vheap->newstorage = b->H->vheap->storage = m;
 	}
-	if (b->theap && b->batMaptheap) {
+	if (b->T->vheap && b->batMaptheap) {
 		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
 		int m = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing);
 		ret |= b->T->vheap->newstorage != m || b->T->vheap->storage != m;
@@ -531,20 +531,20 @@ BATsave(BAT *bd)
 	b->H = &bs.H;
 	b->T = &bs.T;
 
-	if (b->hheap) {
-		b->hheap = (Heap *) GDKmalloc(sizeof(Heap));
-		if (b->hheap == NULL)
+	if (b->H->vheap) {
+		b->H->vheap = (Heap *) GDKmalloc(sizeof(Heap));
+		if (b->H->vheap == NULL)
 			return NULL;
-		*b->hheap = *bd->hheap;
+		*b->H->vheap = *bd->H->vheap;
 	}
-	if (b->theap) {
-		b->theap = (Heap *) GDKmalloc(sizeof(Heap));
-		if (b->theap == NULL) {
-			if (b->hheap)
-				GDKfree(b->hheap);
+	if (b->T->vheap) {
+		b->T->vheap = (Heap *) GDKmalloc(sizeof(Heap));
+		if (b->T->vheap == NULL) {
+			if (b->H->vheap)
+				GDKfree(b->H->vheap);
 			return NULL;
 		}
-		*b->theap = *bd->theap;
+		*b->T->vheap = *bd->T->vheap;
 	}
 
 	/* start saving data */
@@ -555,21 +555,21 @@ BATsave(BAT *bd)
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->T->heap.dirty)
 		if (err == 0 && b->ttype)
 			err = HEAPsave(&b->T->heap, nme, "tail");
-	if (b->hheap && (b->batCopiedtodisk == 0 || b->batDirty || b->H->vheap->dirty))
+	if (b->H->vheap && (b->batCopiedtodisk == 0 || b->batDirty || b->H->vheap->dirty))
 		if (b->htype && b->hvarsized) {
 			if (err == 0)
-				err = HEAPsave(b->hheap, nme, "hheap");
+				err = HEAPsave(b->H->vheap, nme, "hheap");
 		}
-	if (b->theap && (b->batCopiedtodisk == 0 || b->batDirty || b->T->vheap->dirty))
+	if (b->T->vheap && (b->batCopiedtodisk == 0 || b->batDirty || b->T->vheap->dirty))
 		if (b->ttype && b->tvarsized) {
 			if (err == 0)
-				err = HEAPsave(b->theap, nme, "theap");
+				err = HEAPsave(b->T->vheap, nme, "theap");
 		}
 
-	if (b->hheap)
-		GDKfree(b->hheap);
-	if (b->theap)
-		GDKfree(b->theap);
+	if (b->H->vheap)
+		GDKfree(b->H->vheap);
+	if (b->T->vheap)
+		GDKfree(b->T->vheap);
 
 	if (err == 0) {
 		bd->batCopiedtodisk = 1;
@@ -635,31 +635,31 @@ BATload_intern(bat i)
 
 	/* LOAD head heap */
 	if (ATOMvarsized(b->htype)) {
-		if (HEAPload(b->hheap, nme, "hheap", b->batRestricted == BAT_READ) < 0) {
+		if (HEAPload(b->H->vheap, nme, "hheap", b->batRestricted == BAT_READ) < 0) {
 			HEAPfree(&b->H->heap);
 			HEAPfree(&b->T->heap);
 			return NULL;
 		}
 		if (BATatoms[b->htype].atomHeapCheck == HEAP_check) {
-			HEAP_init(b->hheap, b->htype);
+			HEAP_init(b->H->vheap, b->htype);
 		} else if (ATOMstorage(b->htype) == TYPE_str) {
-			strCleanHash(b->hheap, FALSE);	/* ensure consistency */
+			strCleanHash(b->H->vheap, FALSE);	/* ensure consistency */
 		}
 	}
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
-		if (HEAPload(b->theap, nme, "theap", b->batRestricted == BAT_READ) < 0) {
-			if (b->hheap)
-				HEAPfree(b->hheap);
+		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) < 0) {
+			if (b->H->vheap)
+				HEAPfree(b->H->vheap);
 			HEAPfree(&b->H->heap);
 			HEAPfree(&b->T->heap);
 			return NULL;
 		}
 		if (BATatoms[b->ttype].atomHeapCheck == HEAP_check) {
-			HEAP_init(b->theap, b->ttype);
+			HEAP_init(b->T->vheap, b->ttype);
 		} else if (ATOMstorage(b->ttype) == TYPE_str) {
-			strCleanHash(b->theap, FALSE);	/* ensure consistency */
+			strCleanHash(b->T->vheap, FALSE);	/* ensure consistency */
 		}
 	}
 
@@ -912,20 +912,20 @@ BATdelete(BAT *b)
 	} else if (b->T->heap.base) {
 		HEAPfree(&b->T->heap);
 	}
-	if (b->hheap) {
-		if (b->batCopiedtodisk || (b->hheap->storage != STORE_MEM)) {
-			if (HEAPdelete(b->hheap, o, "hheap") && b->batCopiedtodisk)
+	if (b->H->vheap) {
+		if (b->batCopiedtodisk || (b->H->vheap->storage != STORE_MEM)) {
+			if (HEAPdelete(b->H->vheap, o, "hheap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKout, "#BATdelete(%s): head heap\n", BATgetId(b));
 		} else {
-			HEAPfree(b->hheap);
+			HEAPfree(b->H->vheap);
 		}
 	}
-	if (b->theap) {
-		if (b->batCopiedtodisk || (b->theap->storage != STORE_MEM)) {
-			if (HEAPdelete(b->theap, o, "theap") && b->batCopiedtodisk)
+	if (b->T->vheap) {
+		if (b->batCopiedtodisk || (b->T->vheap->storage != STORE_MEM)) {
+			if (HEAPdelete(b->T->vheap, o, "theap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKout, "#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
-			HEAPfree(b->theap);
+			HEAPfree(b->T->vheap);
 		}
 	}
 	b->batCopiedtodisk = FALSE;

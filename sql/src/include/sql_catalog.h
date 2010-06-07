@@ -346,7 +346,7 @@ typedef struct sql_column {
 	char *def;
 	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
 	int drop_action;	/* only used for alter statements */
-	int storage_type;
+	char *storage_type;
 	int sorted;		/* for DECLARED (dupped tables) we keep order info */
 
 	struct sql_table *t;

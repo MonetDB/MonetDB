@@ -557,9 +557,9 @@ on-the-fly to the non-dense implementation.
 The aftermath -- property setting -- is relatively straightforward here.
 @{
 @c
-#define HLATOMput(bn, dst) ATOMput(bn->htype, bn->hheap, dst, BUNhloc(li,l_cur))
+#define HLATOMput(bn, dst) ATOMput(bn->htype, bn->H->vheap, dst, BUNhloc(li,l_cur))
 #define HVATOMput(bn, dst) Hputvalue(bn, dst, BUNhvar(li,l_cur), 1)
-#define TLATOMput(bn, dst) ATOMput(bn->ttype, bn->theap, dst, BUNtloc(ri,r_cur))
+#define TLATOMput(bn, dst) ATOMput(bn->ttype, bn->T->vheap, dst, BUNtloc(ri,r_cur))
 #define TVATOMput(bn, dst) Tputvalue(bn, dst, BUNtvar(ri,r_cur), 1)
 
 @= SIMPLEput
@@ -1049,17 +1049,17 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 				*bn->T->vheap = *r->T->vheap;
 				bn->T->vheap->parentid = parent;
 			} else {
-				if (bn->theap && r->theap->filename) {
+				if (bn->T->vheap && r->T->vheap->filename) {
 					char *nme = BBP_physical(bn->batCacheid);
 
-					bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
-					if (bn->theap->filename == NULL) {
+					bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+					if (bn->T->vheap->filename == NULL) {
 						BBPreclaim(bn);
 						goto ready;
 					}
-					GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+					GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 				}
-				if (HEAPcopy(bn->theap, r->theap) < 0) {
+				if (HEAPcopy(bn->T->vheap, r->T->vheap) < 0) {
 					BBPreclaim(bn);
 					goto ready;
 				}
@@ -1079,7 +1079,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
 
 		if (ATOMstorage(tpe) == TYPE_str && estimate > batcache_maxbuckets * BATTINY &&
-		    /* GDK_ELIMDOUBLES(r->theap) && */
+		    /* GDK_ELIMDOUBLES(r->T->vheap) && */
 		    (!rcount || (lcount << 3) > rcount)) {
 			/* insert double-eliminated strings as ints */
 			tpe = r->T->width == 1 ? TYPE_bte : (r->T->width == 2 ? TYPE_sht : (r->T->width == 4 ? TYPE_int : TYPE_lng));
@@ -1120,19 +1120,19 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		}
 		/* handle string trick */
 		if (tpe != r->ttype && ATOMstorage(r->ttype) == TYPE_str) {
-			bn->theap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (bn->theap && r->theap->filename) {
+			bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
+			if (bn->T->vheap && r->T->vheap->filename) {
 				char *nme = BBP_physical(bn->batCacheid);
 
-				bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
-				if (bn->theap->filename == NULL) {
+				bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+				if (bn->T->vheap->filename == NULL) {
 					BBPreclaim(bn);
 					ret = NULL;
 					goto ready;
 				}
-				GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+				GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 			}
-			if (HEAPcopy(bn->theap, r->theap) < 0) {
+			if (HEAPcopy(bn->T->vheap, r->T->vheap) < 0) {
 				BBPreclaim(bn);
 				ret = NULL;
 				goto ready;
@@ -1252,8 +1252,8 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 @-
 collect statistics that help us decide what to do
 @c
-	lsize = lcount * (Hsize(l) + Tsize(l)) + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0) + 2 * lcount * sizeof(BUN);
-	rsize = rcount * (Hsize(r) + Tsize(r)) + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0) + 2 * rcount * sizeof(BUN);
+	lsize = lcount * (Hsize(l) + Tsize(l)) + (l->H->vheap ? l->H->vheap->size : 0) + (l->T->vheap ? l->T->vheap->size : 0) + 2 * lcount * sizeof(BUN);
+	rsize = rcount * (Hsize(r) + Tsize(r)) + (r->H->vheap ? r->H->vheap->size : 0) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * rcount * sizeof(BUN);
 	for (logr = 4, i = rcount; i > 0; logr++)
 		i >>= 1;
 	for (logl = 4, i = lcount; i > 0; logl++)

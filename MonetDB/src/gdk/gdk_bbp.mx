@@ -3980,10 +3980,10 @@ BBPdiskscan(const char *parent)
 			delete = (b == NULL || !b->ttype || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "hheap", 5) == 0) {
 			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->hheap || b->batCopiedtodisk == 0);
+			delete = (b == NULL || !b->H->vheap || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "theap", 5) == 0) {
 			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->theap || b->batCopiedtodisk == 0);
+			delete = (b == NULL || !b->T->vheap || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "hhash", 5) == 0) {
 			BAT *b = getdesc(bid);
 			delete = (b == NULL || !b->H->hash);

@@ -1012,8 +1012,6 @@ typedef int (*GDKfcn) ();
 #define tsorted		T->sorted
 #define hdense		H->dense
 #define tdense		T->dense
-#define hheap		H->vheap
-#define theap		T->vheap
 #define hident		H->id
 #define tident		T->id
 #define halign		H->align
@@ -3209,7 +3207,7 @@ stored in the heap. You can check this with the macro @%strElimDoubles()@
 If so, we can just compare integer index numbers instead of strings:
 @h
 #define HASHloop_fstr(bi, h, hb, idx, v)				\
-	for (hb = h->hash[strHash(v)&h->mask], idx = strLocate((bi.b)->hheap,v); \
+	for (hb = h->hash[strHash(v)&h->mask], idx = strLocate((bi.b)->H->vheap,v); \
 	     hb != BUN_NONE; hb = h->link[hb])				\
 		if (VarHeapValRaw((bi).b->H->heap.base, hb, (bi).b->H->width) == idx)
 @

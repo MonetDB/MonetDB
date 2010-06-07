@@ -503,7 +503,7 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
     }
     newsize = sb->bat->T->heap.free & (REMAP_PAGE_MAXSIZE-1);
     if (oldsize > newsize) { /* try to use mmap() */
-        BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP, GDK_ELIMDOUBLES(sb->bat->theap)?STORE_MEM:STORE_MMAP);
+        BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP, GDK_ELIMDOUBLES(sb->bat->T->vheap)?STORE_MEM:STORE_MMAP);
     }
     return BATcount(sb->bat)-1;
 }
@@ -1585,13 +1585,13 @@ shredder_free(shredCtxStruct *shredCtx,
             } else if (status == -1) { /* abort */
                 if (sb->bat->ttype == TYPE_str) {
                      /* restore the heap to the state before shredding */
-                    sb->bat->theap->free = sb->heapSize; 
+                    sb->bat->T->vheap->free = sb->heapSize; 
                     if (sb->heapBackup) {
                         /* restore internal hash table to pre-state */
-                        memcpy(sb->bat->theap->base, sb->heapBackup, GDK_STRHASHTABLE*sizeof(stridx_t));
+                        memcpy(sb->bat->T->vheap->base, sb->heapBackup, GDK_STRHASHTABLE*sizeof(stridx_t));
                     } else {
                         /* zap internal hash table. is not critical */
-                        memset(sb->bat->theap->base, 0, GDK_STRHASHTABLE*sizeof(stridx_t));
+                        memset(sb->bat->T->vheap->base, 0, GDK_STRHASHTABLE*sizeof(stridx_t));
                     }
                 }
                 shredBAT_setcount(sb, sb->abortSize);
@@ -1717,14 +1717,14 @@ shredder_create(char *location,
             /* record information on the current size. To be used in case of aborts (shred errors) */ 
             sb->abortSize = BATcount(sb->bat);
             if (sb->def->tailType == TYPE_str) {
-                sb->heapSize = sb->bat->theap->free;
-                if (GDK_ELIMDOUBLES(sb->bat->theap)) {
+                sb->heapSize = sb->bat->T->vheap->free;
+                if (GDK_ELIMDOUBLES(sb->bat->T->vheap)) {
                     sb->heapBackup = GDKmalloc(GDK_STRHASHTABLE*sizeof(stridx_t));
                     if (!sb->heapBackup) {
                         GDKerror("shredder_create: malloc failure\n");
                         return shredder_free(shredCtx,0);
                     } 
-                    memcpy(sb->heapBackup, sb->bat->theap->base, GDK_STRHASHTABLE*sizeof(stridx_t));
+                    memcpy(sb->heapBackup, sb->bat->T->vheap->base, GDK_STRHASHTABLE*sizeof(stridx_t));
                 }
             }
         } else {

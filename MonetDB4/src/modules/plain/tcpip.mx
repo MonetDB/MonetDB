@@ -961,14 +961,14 @@ First stop to examine its type, and heap sizes.
 						BBPclear(b->batCacheid);
 						goto fail;
 					}
-					if (hsize && HEAPalloc(b->hheap, hsize, 1) < 0) {
+					if (hsize && HEAPalloc(b->H->vheap, hsize, 1) < 0) {
 						HEAPfree(b->batBuns);
 						BBPclear(b->batCacheid);
 						goto fail;
 					}
-					if (tsize && HEAPalloc(b->theap, tsize, 1) < 0) {;
+					if (tsize && HEAPalloc(b->T->vheap, tsize, 1) < 0) {;
 						HEAPfree(b->batBuns);
-						HEAPfree(b->hheap);
+						HEAPfree(b->H->vheap);
 						BBPclear(b->batCacheid);
 						goto fail;
 					}
@@ -992,19 +992,19 @@ First stop to examine its type, and heap sizes.
 Read the data for its heaps. A BAT at least consists of a BUN heap.
 For variable sized atoms, there may be a head and/or tail heap.
 @c
-					if ((!socket_read(fd, size * BUNsize(b), BUNfirst(b), "BUN heap")) || (b->hheap && !socket_read(fd, hsize, b->hheap->base, "head heap")) || (b->theap && !socket_read(fd, tsize, b->theap->base, "tail heap"))) {
+					if ((!socket_read(fd, size * BUNsize(b), BUNfirst(b), "BUN heap")) || (b->H->vheap && !socket_read(fd, hsize, b->H->vheap->base, "head heap")) || (b->T->vheap && !socket_read(fd, tsize, b->T->vheap->base, "tail heap"))) {
 						BBPreclaim(b);
 						goto fail;
 					}
 					b->batBuns->free = size * BUNsize(b);
 					BATsetcount(b, size);
 					if (hsize) {
-						b->hheap->free = hsize;
-						HEAP_init(b->hheap, b->htype);
+						b->H->vheap->free = hsize;
+						HEAP_init(b->H->vheap, b->htype);
 					}
 					if (tsize) {
-						b->theap->free = tsize;
-						HEAP_init(b->theap, b->ttype);
+						b->T->vheap->free = tsize;
+						HEAP_init(b->T->vheap, b->ttype);
 					}
 
 					if (b->htype == TYPE_void) {
@@ -1498,8 +1498,8 @@ TCPexport(int *conn_id,		/* pointer to integer. */
 			name, BATcount(b), BUNsize(b), atom_name(b->htype),
 			b->hloc, b->hsorted ? "+" : "", b->hkey ? "k" : "",
 			atom_name(b->ttype), b->tloc, b->tsorted ? "+" : "",
-			b->tkey ? "k" : "", b->hheap ? b->hheap->free : 0,
-			b->theap ? b->theap->free : 0);
+			b->tkey ? "k" : "", b->H->vheap ? b->H->vheap->free : 0,
+			b->T->vheap ? b->T->vheap->free : 0);
 
 		p = buf + strlen(buf);
 		p += OIDtoStr(&p, &len, &b->halign);
@@ -1520,17 +1520,17 @@ TCPexport(int *conn_id,		/* pointer to integer. */
 @-
 Small BATs are written in one go, large ones in parts.
 @c
-		if ((hdrlen + batlen + (b->hheap ? b->hheap->free : 0) + (b->theap ? b->theap->free : 0)) < BIG_MESSAGE) {
+		if ((hdrlen + batlen + (b->H->vheap ? b->H->vheap->free : 0) + (b->T->vheap ? b->T->vheap->free : 0)) < BIG_MESSAGE) {
 			int totlen = (int) (hdrlen + batlen);	/* < BIG_MESSAGE */
 
 			memcpy(buf + hdrlen, BUNfirst(b), batlen);
-			if (b->hheap) {
-				memcpy(buf + totlen, b->hheap->base, b->hheap->free);
-				totlen += (int) b->hheap->free;	/* < BIG_MESSAGE */
+			if (b->H->vheap) {
+				memcpy(buf + totlen, b->H->vheap->base, b->H->vheap->free);
+				totlen += (int) b->H->vheap->free;	/* < BIG_MESSAGE */
 			}
-			if (b->theap) {
-				memcpy(buf + totlen, b->theap->base, b->theap->free);
-				totlen += (int) b->theap->free;	/* < BIG_MESSAGE */
+			if (b->T->vheap) {
+				memcpy(buf + totlen, b->T->vheap->base, b->T->vheap->free);
+				totlen += (int) b->T->vheap->free;	/* < BIG_MESSAGE */
 			}
 			if (socket_write(fd, totlen, buf, "small BAT") == 0) {
 				ret = GDK_FAIL;
@@ -1538,8 +1538,8 @@ Small BATs are written in one go, large ones in parts.
 		} else if (socket_write(fd, (int) strlen(buf), buf, "meta info") == 0 ||
 			   /* 64bit: check for overflow of batlen and b->?heap->free */
 			   socket_write(fd, batlen, BUNfirst(b), "BUN heap") == 0 ||
-			   (b->hheap && socket_write(fd, b->hheap->free, b->hheap->base, "head heap") == 0) ||
-			   (b->theap && socket_write(fd, b->theap->free, b->theap->base, "tail heap") == 0)) {
+			   (b->H->vheap && socket_write(fd, b->H->vheap->free, b->H->vheap->base, "head heap") == 0) ||
+			   (b->T->vheap && socket_write(fd, b->T->vheap->free, b->T->vheap->base, "tail heap") == 0)) {
 			ret = GDK_FAIL;
 		}
 #ifndef WORDS_BIGENDIAN

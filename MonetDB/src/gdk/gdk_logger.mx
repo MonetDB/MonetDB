@@ -94,7 +94,9 @@ typedef struct trans {
 	struct trans *tr;
 } trans;
 
-typedef int (*precommit_fptr) (char *qid, char *cid);
+typedef int (*precommit_fptr)(char *qid, char *cid);
+typedef int (*preversionfix_fptr)(int oldversion, int newversion);
+typedef void (*postversionfix_fptr)(void *lg);
 
 typedef struct logger {
 	int debug;
@@ -105,6 +107,8 @@ typedef struct logger {
 	char *fn;
 	char *dir;
 	precommit_fptr phandler;
+	preversionfix_fptr prefuncp;
+	postversionfix_fptr postfuncp;
 	stream *log;
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */
@@ -137,7 +141,7 @@ etc. has a unique number.
 /* the sequence identifier for frontend objects */
 #define OBJ_SID	1
 
-gdk_export logger *logger_create(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler);
+gdk_export logger *logger_create(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
 gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);
@@ -980,13 +984,17 @@ check_version(logger *lg, FILE *fp)
 		return -1;
 	}
 	if (version != lg->version) {
-		GDKerror("Incompatible database version %06d, "
-			 "this server supports version %06d\n"
-			 "Please move away %s and its corresponding dbfarm.",
-			 version, lg->version, lg->dir);
+		if (lg->prefuncp == NULL ||
+		    (*lg->prefuncp)(version, lg->version) != 0) {
+			GDKerror("Incompatible database version %06d, "
+				 "this server supports version %06d\n"
+				 "Please move away %s and its corresponding dbfarm.",
+				 version, lg->version, lg->dir);
 
-		return -1;
-	}
+			return -1;
+		}
+	} else
+		lg->postfuncp = NULL;	 /* don't call */
 	fgetc(fp);		/* skip \n */
 	fgetc(fp);		/* skip \n */
 	return 0;
@@ -1059,7 +1067,7 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 }
 
 static logger *
-logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler)
+logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	int id = LOG_SID;
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
@@ -1090,6 +1098,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->phandler = phandler;
+	lg->prefuncp = prefuncp;
+	lg->postfuncp = postfuncp;
 	lg->log = NULL;
 	lg->end = 0;
 	lg->catalog = NULL;
@@ -1223,6 +1233,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 		logger_readlogs(lg, fp, filename);
 		fclose(fp);
 		fp = NULL;
+		if (lg->postfuncp)
+			(*lg->postfuncp)(lg);
 	}
 	return lg;
       error:
@@ -1234,9 +1246,9 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 }
 
 logger *
-logger_create(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler)
+logger_create(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, dbname, version, phandler);
+	logger *lg = logger_new(debug, fn, logdir, dbname, version, phandler, prefuncp, postfuncp);
 
 	if (!lg)
 		return NULL;

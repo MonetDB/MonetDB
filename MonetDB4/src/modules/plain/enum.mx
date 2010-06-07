@@ -925,7 +925,7 @@ enum_print_@1(str p, str q, BAT* b1, BAT* e1, BAT* b2)
 	int *p2 = (int*) Tloc(b2,BUNfirst(b2));
 	int *end = (int*) Tloc(b2,BUNlast(b2));
 	int *h1 = (int*) Hloc(e1,BUNfirst(e1));
-	str t1 = (str) e1->hheap->base;
+	str t1 = (str) e1->H->vheap->base;
 	str src, dst=p;
 
 	for(q -= 1000; p2<end; p1++, p2++) {
@@ -1007,8 +1007,8 @@ enum_print_@1_@2(str p, str q, BAT* b1, BAT* e1, BAT* b2, BAT* e2, BAT* b3)
 	int *end = (int*) Tloc(b3,BUNlast(b3));
 	int *h1 = (int*) Hloc(e1,BUNfirst(e1));
 	int *h2 = (int*) Hloc(e2,BUNfirst(e2));
-	str t1 = (str) e1->hheap->base;
-	str t2 = (str) e2->hheap->base;
+	str t1 = (str) e1->H->vheap->base;
+	str t2 = (str) e2->H->vheap->base;
 	str src, dst = p;
 
 	for (q -= 1000; p3<end; p1++, p2++, p3++) {

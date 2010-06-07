@@ -288,7 +288,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
-	if (first) {
+	if (first || catalog_version) {
 		sql_schema *s;
 		sql_table *t;
 		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
@@ -300,6 +300,13 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_trans(m);
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
+
+		if (catalog_version) {
+			t = mvc_bind_table(m, s, "tables");
+			mvc_drop_table(m, s, t, 0);
+			t = mvc_bind_table(m, s, "columns");
+			mvc_drop_table(m, s, t, 0);
+		}
 
 		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type < 2;", 1);
 		mvc_create_column_(m, t, "id", "int", 32);
@@ -324,8 +331,10 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage_type", "int", 32);
 
-		sql_create_env(m, s);
-		sql_create_privileges(m, s);
+		if (!catalog_version) {
+			sql_create_env(m, s);
+			sql_create_privileges(m, s);
+		}
 
 		s = m->session->schema = mvc_bind_schema(m, "tmp");
 		assert(m->session->schema != NULL);

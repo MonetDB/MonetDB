@@ -2175,7 +2175,7 @@ fetch(ptr ret, BAT *b, lng i)
 	assert(i <= (lng) BUN_MAX);
 	@:putTail((BUN)i)@
 @= putTail
-	if (b->ttype && b->theap) {
+	if (b->ttype && b->T->vheap) {
 		ptr _src = BUNtvar(bi,@1);
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);

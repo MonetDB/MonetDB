@@ -6490,7 +6490,7 @@ CMDxquery_logger_create( logger *L, int *debug, str fn, str dirname, str dbname,
 {
     /* TODO: instead of passing NULL, pass the real implementation of
      *       the XRPC PRE_COMMIT handler */
-	logger *l = logger_create(*debug, fn, dirname, dbname, *version, NULL); 
+	logger *l = logger_create(*debug, fn, dirname, dbname, *version, NULL, NULL, NULL);
 	
 	if (l) {
 		*(logger**)L = l;

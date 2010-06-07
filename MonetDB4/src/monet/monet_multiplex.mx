@@ -791,7 +791,7 @@ in this implementation.
 @= batinit
 	b@1 = BBPdescriptor(@2);
 	b@1i = bat_iterator(b@1);
-	a@1 = ATOMvarsized(b@1->ttype)?b@1->theap->base:0;
+	a@1 = ATOMvarsized(b@1->ttype)?b@1->T->vheap->base:0;
 	p@1 = Tloc(b@1,BUNfirst(b@1));
 	s@1 = Tsize(b@1);
 	if (htpe != TYPE_void)
@@ -877,16 +877,16 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 				Heap hhp;
 
 				memset(&hhp, 0, sizeof(Heap));
-			    	if (bh->hheap && HEAPcopy(&hhp, bh->hheap) < 0){
+			    	if (bh->H->vheap && HEAPcopy(&hhp, bh->H->vheap) < 0){
 					BBPreclaim(retb);
 					return GDK_FAIL;
 				}
 				if (hhp.filename == NULL) {
-					hhp.filename = retb->hheap->filename;
-					retb->hheap->filename = NULL;
+					hhp.filename = retb->H->vheap->filename;
+					retb->H->vheap->filename = NULL;
 				}
-				HEAPfree(retb->hheap);
-				*retb->hheap = hhp;
+				HEAPfree(retb->H->vheap);
+				*retb->H->vheap = hhp;
 			}
 		}
 		dst = Tloc(retb, BUNfirst(retb));
@@ -1538,8 +1538,8 @@ there are the {strings, polygons, images, etc}!
 	if (hidden_vartype) {
 		nested->htype = hidden_vartype;
 		nested->hvarsized = TRUE;
-		nested->hheap = (Heap*) alloca(sizeof(Heap));
-		*nested->hheap = *b->theap;
+		nested->H->vheap = (Heap*) alloca(sizeof(Heap));
+		*nested->H->vheap = *b->T->vheap;
 		nested->H->width = b->T->width;
 		nested->H->shift = b->T->shift;
 	}
