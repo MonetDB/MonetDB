@@ -1528,8 +1528,8 @@ get_mem_usage(BAT **ret, lng *minsize)
 		@:heap(mem,1,(&b->T->heap),tail)@
 		@:heap(mem,b->H->hash,b->H->hash->heap,hhsh)@
 		@:heap(mem,b->T->hash,b->T->hash->heap,thsh)@
-		@:heap(mem,b->hheap,b->hheap,head)@
-		@:heap(mem,b->theap,b->theap,tail)@
+		@:heap(mem,b->H->vheap,b->H->vheap,head)@
+		@:heap(mem,b->T->vheap,b->T->vheap,tail)@
 	}
 	/* totals per category */
 	BUNins(bn, "_tot/buns", &buns, FALSE);
@@ -1607,8 +1607,8 @@ get_vm_usage(BAT **ret, lng *minsize)
 		@:heap(vm,1,(&b->T->heap),tail)@
 		@:heap(vm,b->H->hash,b->H->hash->heap,hhsh)@
 		@:heap(vm,b->T->hash,b->T->hash->heap,thsh)@
-		@:heap(vm,b->hheap,b->hheap,head)@
-		@:heap(vm,b->theap,b->theap,tail)@
+		@:heap(vm,b->H->vheap,b->H->vheap,head)@
+		@:heap(vm,b->T->vheap,b->T->vheap,tail)@
 	}
 	/* totals per category */
 	BUNins(bn, "_tot/buns", &buns, FALSE);

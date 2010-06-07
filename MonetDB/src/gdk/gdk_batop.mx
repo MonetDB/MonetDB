@@ -906,7 +906,7 @@ through is the "isnil" predicate). So we implement it here.
 		q++;
 	}
 @= stringselect
-	if (strElimDoubles(b->hheap)) {
+	if (strElimDoubles(b->H->vheap)) {
 		BUN p;
 		size_t j;
 
@@ -1840,7 +1840,7 @@ BATordered@3(BAT* b)
 			@:chk_order(dbl,@3,@5)@
 		} else {
 			/* check sortedness tuple-by-tuple */
-			if (b->hheap) {
+			if (b->H->vheap) {
 				char *base = Hbase(b);
 				char *prv = base + BUNhvaroff(bi, cur);
 
@@ -1999,7 +1999,7 @@ BAT@6order@3(BAT *b)
 		b = BATrevert(b);
 		return b;
 	}
-	GDK@7sort@3(Hloc(b,BUNfirst(b)), Tloc(b,BUNfirst(b)), (b->hheap)?b->H->vheap->base:NULL, BATcount(b), Hsize(b), Tsize(b), b->htype);
+	GDK@7sort@3(Hloc(b,BUNfirst(b)), Tloc(b,BUNfirst(b)), (b->H->vheap)?b->H->vheap->base:NULL, BATcount(b), Hsize(b), Tsize(b), b->htype);
 	HASHdestroy(b);
 	ALIGNdel(b, "BATorder@3", FALSE);
 	b->hsorted = (bit) GDK_SORTED@2;
@@ -3054,7 +3054,7 @@ BAThistogram(BAT *b)
 
 	BATcheck(b, "BAThistogram");
 
-	tricky = (b->ttype == TYPE_str && strElimDoubles(b->theap));
+	tricky = (b->ttype == TYPE_str && strElimDoubles(b->T->vheap));
 	if (b->talign == 0) {
 		b->talign = OIDnew(1);
 	}
@@ -3069,8 +3069,8 @@ And now correct the interpretation of the values encountered
 by bulk copying the heap as well
 @c
 	if (tricky) {
-		bn->hheap = (Heap *) GDKzalloc(sizeof(Heap));
-		if (bn->hheap && b->T->vheap->filename) {
+		bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap));
+		if (bn->H->vheap && b->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 
 			bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
@@ -3078,7 +3078,7 @@ by bulk copying the heap as well
 				goto bunins_failed;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
 		}
-		if (HEAPcopy(bn->hheap, b->theap) < 0)
+		if (HEAPcopy(bn->H->vheap, b->T->vheap) < 0)
 			goto bunins_failed;
 		bn->htype = b->ttype;
 		bn->hvarsized = 1;

@@ -1955,7 +1955,7 @@ radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base,
 
 			if (cur[x] == lim[x])
 				break;
-			ATOMput(htpe, bn->hheap, BUNhloc(bn,dst), BUNhead(b,src));
+			ATOMput(htpe, bn->H->vheap, BUNhloc(bn,dst), BUNhead(b,src));
 			*(@1*) BUNtloc(bn,dst) = *(@1*) p;
 			cur[x] += dst_bunsize; src += src_bunsize;
 			@1_CHECK(*maxbits, p);
@@ -1996,7 +1996,7 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 			if (dst[x] == lim[x])
 				break;
 			integerCopy((int *) BUNhloc(bn, bun), b, src, width, distance);
-			ATOMput(ttpe, bn->theap, BUNtloc(bn, bun), BUNtail(b, src));
+			ATOMput(ttpe, bn->T->vheap, BUNtloc(bn, bun), BUNtail(b, src));
 			dst[x] += dst_bunsize;
 			src += src_bunsize;
 		}
@@ -2010,8 +2010,8 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 
 			if (dst[x] == lim[x])
 				break;
-			ATOMput(htpe, bn->hheap, BUNhloc(bn, bun), BUNhead(b, src));
-			ATOMput(ttpe, bn->theap, BUNtloc(bn, bun), BUNtail(b, src));
+			ATOMput(htpe, bn->H->vheap, BUNhloc(bn, bun), BUNhead(b, src));
+			ATOMput(ttpe, bn->T->vheap, BUNtloc(bn, bun), BUNtail(b, src));
 			dst[x] += dst_bunsize;
 			src += src_bunsize;
 		}
@@ -3035,7 +3035,7 @@ parameter is a radix_count BAT that must have been created with the radix_count 
 }
 @c
 #define simple_put(var,tpe,val) var = *(tpe*) val
-#define atom_put(var,tpe,val) ATOMput(any, bn->theap, &var, val)
+#define atom_put(var,tpe,val) ATOMput(any, bn->T->vheap, &var, val)
 
 typedef struct {
 	size_t cur, end;
@@ -3105,7 +3105,7 @@ M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(b->T->vheap)) {
 		tpe = any = b->T->width == 1 ? TYPE_bte : (b->T->width == 2 ? TYPE_sht : (b->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
@@ -3151,14 +3151,19 @@ M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	if (any != b->ttype && ATOMstorage(b->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
-		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
-		if (bn->theap && b->theap->filename) {
+		bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (bn->T->vheap == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		bn->T->vheap->parentid = bn->batCacheid;
+		if (b->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 			
-			bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
-			GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+			bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 		}
-		if (HEAPcopy(bn->theap, b->theap) < 0) {
+		if (HEAPcopy(bn->T->vheap, b->T->vheap) < 0) {
 			*res = NULL;
 		} else {
 			bm->htype = bn->ttype = b->ttype;
@@ -3377,7 +3382,7 @@ M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(a->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(a->T->vheap)) {
 		tpe = any = a->T->width == 1 ? TYPE_bte : (a->T->width == 2 ? TYPE_sht : (a->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
@@ -3425,14 +3430,19 @@ M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	if (any != a->ttype && ATOMstorage(a->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
-		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
-		if (bn->theap && a->theap->filename) {
+		bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (bn->T->vheap == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		bn->thead->parentid = bn->batCacheid;
+		if (a->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 			
-			bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
-			GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+			bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 		}
-		if (HEAPcopy(bn->theap, a->theap) < 0) {
+		if (HEAPcopy(bn->T->vheap, a->T->vheap) < 0) {
 			*res = NULL;
 		} else {
 			bm->htype = bn->ttype = a->ttype;
@@ -3520,7 +3530,7 @@ M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(a->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(a->T->vheap)) {
 		tpe = any = a->T->width == 1 ? TYPE_bte : (a->T->width == 2 ? TYPE_sht : (a->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
@@ -3567,14 +3577,19 @@ M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	if (any != a->ttype && ATOMstorage(a->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
-		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
-		if (bn->theap && a->theap->filename) {
+		bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (bn->T->vheap == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		bn->T->vheap->parentid = bn->batCacheid;
+		if (a->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 			
-			bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
-			GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+			bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 		}
-		if (HEAPcopy(bn->theap, a->theap) < 0) {
+		if (HEAPcopy(bn->T->vheap, a->T->vheap) < 0) {
 			*res = NULL;
 		} else {
 			bm->htype = bn->ttype = a->ttype;
@@ -3645,7 +3660,7 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(a->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(a->T->vheap)) {
 		tpe = any = a->T->width == 1 ? TYPE_bte : (a->T->width == 2 ? TYPE_sht : (a->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
@@ -3692,14 +3707,19 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	if (any != a->ttype && ATOMstorage(a->ttype) == TYPE_str) {
 		BAT *bm = BATmirror(bn);
 
-		bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
-		if (bn->theap && a->theap->filename) {
+		bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (bn->T->vheap == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		bn->T->vheap->parentid = bn->batCacheid;
+		if (a->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 			
-			bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
-			GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+			bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 		}
-		if (HEAPcopy(bn->theap, a->theap) < 0) {
+		if (HEAPcopy(bn->T->vheap, a->T->vheap) < 0) {
 			*res = NULL;
 		} else {
 			bm->htype = bn->ttype = a->ttype;
@@ -3765,7 +3785,7 @@ Its output is clustered inline on left head-oid in a single pass and consists of
 				r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
 				s = BUNptr(bn,cluster[clusterid]);
 				*(oid*) BUNhloc(bn,s) = *(oid*) BUNhloc(proj,p);
-				@2put(@1, bn->theap, BUNtloc(bn,s), @5);
+				@2put(@1, bn->T->vheap, BUNtloc(bn,s), @5);
 				cluster[clusterid]++;
 			}
 		} else {
@@ -3774,7 +3794,7 @@ Its output is clustered inline on left head-oid in a single pass and consists of
 				size_t clusterid = (curoid&yy) >> zz;
 				r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
 				s = BUNptr(bn,cluster[clusterid]);
-				@2put(@1, bn->theap, s, @5);
+				@2put(@1, bn->T->vheap, s, @5);
 				cluster[clusterid]++;
 			}
 		}
@@ -3873,7 +3893,7 @@ M4_RDX_jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, 
 			size_t clusterid = (curoid&yy) >> zz;
 			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
 			*(oid*) BUNptr(bo,cluster[clusterid]) = curoid;
-			@2put(@1, bn->theap, BUNptr(bn,cluster[clusterid]), @5);
+			@2put(@1, bn->T->vheap, BUNptr(bn,cluster[clusterid]), @5);
 			cluster[clusterid]++;
 		}
 		break;
@@ -4003,7 +4023,7 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 		ssize_t off = (ssize_t) (BUNindex(attr, BUNfirst(attr)) - attr->hseqbase);
 		BATloopFast(proj, p, q, xx) {
 			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
-			@2put(@1, bn->theap, BUNptr(bn, *(oid*) BUN@3(proj,p)), @5);
+			@2put(@1, bn->T->vheap, BUNptr(bn, *(oid*) BUN@3(proj,p)), @5);
 		}
 		break;
 	}

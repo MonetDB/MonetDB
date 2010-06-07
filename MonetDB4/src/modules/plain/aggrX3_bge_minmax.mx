@@ -125,7 +125,7 @@ structure to compute a group of common aggregates.
 		oid *h = (oid*)BUNh@4(bni,r);
 		ptr val = extremes[@8];
 		(void) h;	/* silence compiler about unused variable */
-		ATOMput(bn->ttype, bn->theap, BUNtloc(bni,r), val?val:nil);
+		ATOMput(bn->ttype, bn->T->vheap, BUNtloc(bni,r), val?val:nil);
 	}
 @c
 /*	aggrX3_minmax3_oid
@@ -222,7 +222,7 @@ structure to compute a group of common aggregates.
 		oid *h = (oid*)BUNh@4(bni,r);
 		oid val = hit[@8] ? extremes[@8] : *(oid*)nil;
 		(void) h;	/* silence compiler about unused variable */
-		ATOMput(bn->ttype, bn->theap, BUNtloc(bni,r), &val);
+		ATOMput(bn->ttype, bn->T->vheap, BUNtloc(bni,r), &val);
 	}
 @c
 

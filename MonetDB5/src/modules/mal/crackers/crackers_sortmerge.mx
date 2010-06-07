@@ -489,7 +489,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		totalTuples+=tup;
 	}
 	br=BATmirror(br);
-        GDKqsort(Hloc(br,BUNfirst(br)+totalLowerTuples), Tloc(br,BUNfirst(br)+totalLowerTuples), (br->hheap)?br->H->vheap->base:NULL, totalTuples, Hsize(br), Tsize(br), br->htype);
+        GDKqsort(Hloc(br,BUNfirst(br)+totalLowerTuples), Tloc(br,BUNfirst(br)+totalLowerTuples), (br->H->vheap)?br->H->vheap->base:NULL, totalTuples, Hsize(br), Tsize(br), br->htype);
 	br=BATmirror(br);
 
 @
@@ -1265,7 +1265,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 			}
 
 			br=BATmirror(br);
-			GDKqsort(Hloc(br,BUNfirst(br)+startSlice), Tloc(br,BUNfirst(br)+startSlice), (br->hheap)?br->H->vheap->base:NULL, endSlice-startSlice, Hsize(br), Tsize(br), br->htype);
+			GDKqsort(Hloc(br,BUNfirst(br)+startSlice), Tloc(br,BUNfirst(br)+startSlice), (br->H->vheap)?br->H->vheap->base:NULL, endSlice-startSlice, Hsize(br), Tsize(br), br->htype);
 			br=BATmirror(br);
 
 			BBPunfix(slice->batCacheid);

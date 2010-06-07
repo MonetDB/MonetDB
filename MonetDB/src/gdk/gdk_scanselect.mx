@@ -575,13 +575,13 @@ Adding test for v != nil for types where nil != MIN.
 #endif	/* NOEXPAND_LNG */
 #endif	/* SKIP_TYPE_EXPANSIONS */
 	if (b->tvarsized) {
-		if (equi && t == TYPE_str && strElimDoubles(b->theap)) {
+		if (equi && t == TYPE_str && strElimDoubles(b->T->vheap)) {
 			/* Single-valued sequential scans for strings are
 			 * optimized when double elemination is in effect,
 			 * by scanning for the correct integer index value.
 			 * This is an equi select, so we assemble the
 			 * predicate here and skip seqscanIF. */
-			str_idx = strLocate(b->theap, tl);
+			str_idx = strLocate(b->T->vheap, tl);
 			if (b->T->width <= 2)
 				str_idx -= GDK_VAROFFSET;
 			@:seqscanHTget(eq_str,var,tloc,if((b->T->width==1?(var_t)*(unsigned char*)v:(b->T->width==2?(var_t)*(unsigned short*)v:(b->T->width==4?(var_t)*(unsigned int*)v:*(var_t*)v)))==str_idx),tl)@

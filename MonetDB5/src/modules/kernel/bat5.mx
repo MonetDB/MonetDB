@@ -1457,10 +1457,10 @@ CMDinfo(BAT **retval, BAT *b)
 	infoHeap(bn, &b->T->heap, "tail.");
 
 	BUNins(bn, "H->vheap->dirty", (b->H->vheap && b->H->vheap->dirty) ? "dirty" : "clean",FALSE);
-	infoHeap(bn, b->hheap, "hheap.");
+	infoHeap(bn, b->H->vheap, "hheap.");
 
 	BUNins(bn, "T->vheap->dirty", (b->T->vheap && b->T->vheap->dirty) ? "dirty" : "clean",FALSE);
-	infoHeap(bn, b->theap, "theap.");
+	infoHeap(bn, b->T->vheap, "theap.");
 
 	/* dump index information */
 	if (b->H->hash) {
@@ -1483,10 +1483,10 @@ CMDbatdisksize(lng *tot, BAT *b)
 	if (!isVIEW(b)) {
 		size += ROUND_UP(b->H->heap.free, blksize);
 		size += ROUND_UP(b->T->heap.free, blksize);
-		if (b->hheap)
-			size += ROUND_UP(b->hheap->free, blksize);
-		if (b->theap)
-			size += ROUND_UP(b->theap->free, blksize);
+		if (b->H->vheap)
+			size += ROUND_UP(b->H->vheap->free, blksize);
+		if (b->T->vheap)
+			size += ROUND_UP(b->T->vheap->free, blksize);
 	}
 	*tot = size;
 	return GDK_SUCCEED;
@@ -1503,10 +1503,10 @@ CMDbatvmsize(lng *tot, BAT *b)
 
 		size += ROUND_UP(b->H->heap.size, blksize);
 		size += ROUND_UP(b->T->heap.size, blksize);
-		if (b->hheap)
-			size += ROUND_UP(b->hheap->size, blksize);
-		if (b->theap)
-			size += ROUND_UP(b->theap->size, blksize);
+		if (b->H->vheap)
+			size += ROUND_UP(b->H->vheap->size, blksize);
+		if (b->T->vheap)
+			size += ROUND_UP(b->T->vheap->size, blksize);
 		if (b->H->hash)
 			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		if (b->T->hash)
@@ -1526,10 +1526,10 @@ CMDbatsize(lng *tot, BAT *b, int force)
 
 		size += b->H->heap.size;
 		size += b->T->heap.size;
-		if (b->hheap)
-			size += b->hheap->size;
-		if (b->theap)
-			size += b->theap->size;
+		if (b->H->vheap)
+			size += b->H->vheap->size;
+		if (b->T->vheap)
+			size += b->T->vheap->size;
 		if (b->H->hash)
 			size += sizeof(BUN) * cnt;
 		if (b->T->hash)
@@ -1691,9 +1691,9 @@ CMDmmap(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 		*hbns = b->batMaphead;
 	if (*tbns == int_nil) 
 		*tbns = b->batMaptail;
-	if (b->hheap && *hhp == int_nil) 
+	if (b->H->vheap && *hhp == int_nil) 
 		*hhp = b->batMaphheap;
-	if (b->theap && *thp == int_nil) 
+	if (b->T->vheap && *thp == int_nil) 
 		*thp = b->batMaptheap;
 	if (BATmmap(*r = b, *hbns, *tbns, *hhp, *thp) == 0) {
 		BBPfix(b->batCacheid);
@@ -1958,8 +1958,8 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 
 	/* copy the entire tail heap (if present) */
 	if (ATOMvarsized(bn->ttype)) {
-		if (HEAPalloc(bn->theap, (size_t) (b->theap->free*BATMARGIN), 1) >= 0) {
-			memcpy(bn->theap->base, b->theap->base, bn->theap->free = b->theap->free);
+		if (HEAPalloc(bn->T->vheap, (size_t) (b->T->vheap->free*BATMARGIN), 1) >= 0) {
+			memcpy(bn->T->vheap->base, b->T->vheap->base, bn->T->vheap->free = b->T->vheap->free);
 		} else {
 			goto error;
 		}
@@ -2030,9 +2030,9 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
   error:
 	if (mmappath)
 		MT_mmap_close(&hdl);
-	if (bn->theap) {
-		HEAPfree(bn->theap);
-		GDKfree(bn->theap);
+	if (bn->T->vheap) {
+		HEAPfree(bn->T->vheap);
+		GDKfree(bn->T->vheap);
 	}
 	HEAPfree(&bn->T->heap);
 	BBPclear(bn->batCacheid);
@@ -2191,7 +2191,7 @@ CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 		GDKerror("isolate(%s): should be a unary column.\n", BBP_logical(b->batCacheid));
 		return GDK_FAIL;
 	}
-	if (b->theap && b->theap->base && b->theap->storage != STORE_MEM) {
+	if (b->T->vheap && b->T->vheap->base && b->T->vheap->storage != STORE_MEM) {
 		GDKerror("isolate(%s): cannot isolate tail heaps.\n", BBP_logical(b->batCacheid));
 		return GDK_FAIL;
 	}
@@ -2284,8 +2284,8 @@ CMDmsync(BAT **r, BAT *b, oid* lo, oid *hi, bit *async)
 			return GDK_FAIL;
 		}
 	}
-	if (b->theap && b->theap->storage == STORE_MMAP) { /* flush tail heaps fully */
-		if (MT_msync(b->theap->base, 0, b->theap->free, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) { 
+	if (b->T->vheap && b->T->vheap->storage == STORE_MMAP) { /* flush tail heaps fully */
+		if (MT_msync(b->T->vheap->base, 0, b->T->vheap->free, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) { 
 			GDKerror("msync(%s, " OIDFMT ", " OIDFMT "): tail sync failed.\n", BBP_logical(b->batCacheid), *lo, *hi);
 			return GDK_FAIL;
 		}
@@ -3446,10 +3446,10 @@ BKCgetSpaceUsed(lng *tot, int *bid)
 		size += headsize(b, cnt);
 		size += tailsize(b, cnt);
 		/* the upperbound is used for the heaps */
-		if (b->hheap)
-			size += b->hheap->size;
-		if (b->theap)
-			size += b->theap->size;
+		if (b->H->vheap)
+			size += b->H->vheap->size;
+		if (b->T->vheap)
+			size += b->T->vheap->size;
 		if (b->H->hash)
 			size += sizeof(BUN) * cnt;
 		if (b->T->hash)

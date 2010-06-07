@@ -1959,7 +1959,7 @@ BUNfnd(BAT *b, ptr v)
 	}	
 			    
 @= dohash
-        ATOMstorage(@1->@2type) != TYPE_chr && (ATOMstorage(@1->@2type) != TYPE_str || !GDK_ELIMDOUBLES(@1->@2heap)) 
+        ATOMstorage(@1->@2->type) != TYPE_chr && (ATOMstorage(@1->@2->type) != TYPE_str || !GDK_ELIMDOUBLES(@1->@2->vheap)) 
 @c
 BUN
 BUNlocate(BAT *b, ptr x, ptr y)
@@ -2034,16 +2034,16 @@ BUNlocate(BAT *b, ptr x, ptr y)
 		/* regrettably MonetDB support only single-column hashes 
 		 * strategy: create a hash on both columns, and select the column with the best distribution
 		 */
-		if ((b->T->hash && b->H->hash == NULL) || !(@:dohash(b,h)@))
+		if ((b->T->hash && b->H->hash == NULL) || !(@:dohash(b,H)@))
 			@:swap()@
 		if (b->H->hash == NULL && (v = VIEWcreate_(b, b, TRUE)) != NULL) {
 			/* As we are going to remove the worst hash table later, we must do everything 
 			 * in a view, as it is not permitted to remove a hash table from a read-only 
 			 * operation (like BUNlocate). Other threads might then crash. 
 			 */
-			if (@:dohash(v,h)@)
+			if (@:dohash(v,H)@)
 				(void) BATprepareHash(v);
-			if (@:dohash(v,t)@)
+			if (@:dohash(v,T)@)
 				(void) BATprepareHash(BATmirror(v));
 			if (v->H->hash && v->T->hash) {	/* we can choose between two hash tables */
 				BUN hcnt = 0, tcnt = 0;

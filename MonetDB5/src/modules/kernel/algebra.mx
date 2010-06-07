@@ -1941,7 +1941,7 @@ fetch(ptr ret, BAT *b, lng i)
 	assert(i <= (lng) BUN_MAX);
 	@:putTail((BUN)i)@
 @= putTail
-	if (b->ttype && b->theap) {
+	if (b->ttype && b->T->vheap) {
 		ptr _src = BUNtvar(bi,@1);
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
@@ -3872,8 +3872,8 @@ ALGhashjoin(int *result, int *lid, int *rid)
 		throw(MAL, "algebra.hashjoin", RUNTIME_OBJECT_MISSING);
 	}
 
-	lsize = left->H->heap.size + left->T->heap.size + (left->hheap ? left->hheap->size : 0) + (left->theap ? left->theap->size : 0);
-	rsize = right->H->heap.size + right->T->heap.size + (right->hheap ? right->hheap->size : 0) + (right->theap ? right->theap->size : 0);
+	lsize = left->H->heap.size + left->T->heap.size + (left->H->vheap ? left->H->vheap->size : 0) + (left->T->vheap ? left->T->vheap->size : 0);
+	rsize = right->H->heap.size + right->T->heap.size + (right->H->vheap ? right->H->vheap->size : 0) + (right->T->vheap ? right->T->vheap->size : 0);
 
 	if (rsize < lsize)
 		bn = BATmirror(BAThashjoin(BATmirror(right), BATmirror(left), BUN_NONE));

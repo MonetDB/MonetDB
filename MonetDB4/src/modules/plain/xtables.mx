@@ -555,7 +555,7 @@ tailtype(BAT *b, int str_trick)
 	case TYPE_dbl:
 		return TYPE_lng;
 	case TYPE_str:
-		if (str_trick && GDK_ELIMDOUBLES((b->theap))) {
+		if (str_trick && GDK_ELIMDOUBLES((b->T->vheap))) {
 			/* string offsets are identifying integers */
 			return b->T->width == 1 ? TYPE_bte : (b->T->width == 2 ? TYPE_sht : (b->T->width == 4? TYPE_int : TYPE_lng));
 		}
@@ -1144,7 +1144,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
 		BUN cnt = 0;
 		BUN p, q, r, last = BUNfirst(b);
-		char *base = a->theap ? NULL : a->T->heap.base, *this = NULL;
+		char *base = a->T->vheap ? NULL : a->T->heap.base, *this = NULL;
 		BUN cur, end, off;
 		var_t *offp;
 		oid *ids;
@@ -1219,7 +1219,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
 		BATloop(b, p, q) {
 			if ((*cmp) (BUNtail(bi, last), BUNtail(bi, p))) {
-				cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
+				cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->T->vheap->base, hdst, tdst, &id, rv);
 				hdst += cnt;
 				tdst += cnt;
 
@@ -1251,7 +1251,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 			this += sizeof(oid);
 		}
 @c
-		cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->theap->base, hdst, tdst, &id, rv);
+		cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->T->vheap->base, hdst, tdst, &id, rv);
 		hdst += cnt;
 		tdst += cnt;
 

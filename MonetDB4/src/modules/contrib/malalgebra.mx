@@ -183,8 +183,8 @@ BATmalleftfetchjoin(BAT *l, BAT *r)
 static BAT *
 BATmalhashjoin(BAT *l, BAT *r)
 {
-	size_t lsize = l->H->heap.size + l->T->heap.size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
-	size_t rsize = r->H->heap.size + r->T->heap.size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
+	size_t lsize = l->H->heap.size + l->T->heap.size + (l->H->vheap ? l->H->vheap->size : 0) + (l->T->vheap ? l->T->vheap->size : 0);
+	size_t rsize = r->H->heap.size + r->T->heap.size + (r->H->vheap ? r->H->vheap->size : 0) + (r->T->vheap ? r->T->vheap->size : 0);
 
 	if (rsize < lsize) {
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), BUN_NONE));

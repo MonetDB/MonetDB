@@ -430,7 +430,7 @@ xrpc_parse_message(
     attr_ownT  = (oid*)  Tloc(attr_own, BUNfirst(attr_own));
     attr_qnT   = (oid*)  Tloc(attr_qn, BUNfirst(attr_qn));
     attr_propT = (oid*)  Tloc(attr_prop, BUNfirst(attr_prop));
-    text_base  = prop_text->theap->base;
+    text_base  = prop_text->T->vheap->base;
 
     pre_level  = BATsetaccess(pre_level, BAT_WRITE);
     frag_root  = BATsetaccess(frag_root, BAT_APPEND);

@@ -616,10 +616,10 @@ URLBOXgetSize(int *r){
 
 			size += ROUND_UP(bn->H->heap.size, blksize);
 			size += ROUND_UP(bn->T->heap.size, blksize);
-			if (b->hheap)
-				size += ROUND_UP(bn->hheap->size, blksize);
-			if (b->theap)
-				size += ROUND_UP(bn->theap->size, blksize);
+			if (b->H->vheap)
+				size += ROUND_UP(bn->H->vheap->size, blksize);
+			if (b->T->vheap)
+				size += ROUND_UP(bn->T->vheap->size, blksize);
 			if (bn->H->hash)
 				size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 			if (bn->T->hash)

@@ -556,8 +556,8 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 		joinsDone++;
 #endif
 	tempT=GDKusec();
-        GDKqsort(Hloc(mapLeft,BUNfirst(mapLeft)+prevPosLeft), Tloc(mapLeft,BUNfirst(mapLeft)+prevPosLeft), (mapLeft->hheap)?mapLeft->H->vheap->base:NULL, curPosLeft +1-prevPosLeft, Hsize(mapLeft), Tsize(mapLeft), mapLeft->htype);
-        GDKqsort(Hloc(mapRight,BUNfirst(mapRight)+prevPosRight), Tloc(mapRight,BUNfirst(mapRight)+prevPosRight), (mapRight->hheap)?mapRight->H->vheap->base:NULL, curPosRight +1-prevPosRight, Hsize(mapRight), Tsize(mapRight), mapRight->htype);
+        GDKqsort(Hloc(mapLeft,BUNfirst(mapLeft)+prevPosLeft), Tloc(mapLeft,BUNfirst(mapLeft)+prevPosLeft), (mapLeft->H->vheap)?mapLeft->H->vheap->base:NULL, curPosLeft +1-prevPosLeft, Hsize(mapLeft), Tsize(mapLeft), mapLeft->htype);
+        GDKqsort(Hloc(mapRight,BUNfirst(mapRight)+prevPosRight), Tloc(mapRight,BUNfirst(mapRight)+prevPosRight), (mapRight->H->vheap)?mapRight->H->vheap->base:NULL, curPosRight +1-prevPosRight, Hsize(mapRight), Tsize(mapRight), mapRight->htype);
 	Tsort+=GDKusec()-tempT;
 	markedViewLeft  = BATslice(mapLeft, prevPosLeft,  curPosLeft +1);
 	markedViewRight = BATslice(mapRight, prevPosRight, curPosRight+1);
