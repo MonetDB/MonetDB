@@ -670,7 +670,7 @@ OPTmapreduceImplementation(
 					newComment(map, "ORDER BY [DESC] or LIMIT/OFFSET");
 					/* fix return */
 					lastcol->mapid = getArg(omap[i], 0);
-					lastcol->reduceid = getArg(p, 0);
+					lastcol->type = getArgType(map, p, 0);
 					break;
 				}
 			}
@@ -779,10 +779,12 @@ OPTmapreduceImplementation(
 		switch (copy) {
 			case STICK:
 				trackstack_push(&tracker, i);
-//				pushInstruction(reduce, p);
 			break;
 			case SINGLE_DUP:
 				copy = STICK;
+				pushInstruction(map, omap[i]);
+				trackstack_push(&tracker, i);
+			break;
 			case DUP:
 				pushInstruction(map, omap[i]);
 				pushInstruction(reduce, p);
