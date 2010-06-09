@@ -685,7 +685,7 @@ OPTmapreduceImplementation(
 					/* basically perform a MAX over all MAXes */
 					pushInstruction(map, omap[i]);
 					lastcol->mapid = getArg(omap[i], 0);
-					lastcol->reduceid = getArg(oreduce[i], 0);
+					lastcol->type = getArgType(map, p, 0);
 					/* we already DUP_SINGLE'd */
 					copy = STICK;
 					p = oreduce[i];
