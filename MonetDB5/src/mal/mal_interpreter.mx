@@ -2454,8 +2454,8 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		MT_set_lock(*lock, "timing");
 	stream_printf(cntxt->fdout,"= ");	/* single column rendering */
 	if( cntxt->flags & timerFlag){
-		char buf[BUFSIZ];
-		snprintf(buf,BUFSIZ,LLFMT,GDKusec()-cntxt->timer);
+		char buf[32];
+		snprintf(buf,sizeof(buf),LLFMT,GDKusec()-cntxt->timer);
 		stream_printf(cntxt->fdout, "%8s usec ",buf);
 	}
 	if( cntxt->flags & threadFlag)
@@ -2491,8 +2491,8 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		stream_printf(cntxt->fdout," ");
 	}
 	if (cntxt->flags & cntFlag){
-		char buf[BUFSIZ];
-		snprintf(buf, BUFSIZ, BUNFMT , cntxt->cnt);
+		char buf[32];
+		snprintf(buf, sizeof(buf), BUNFMT , cntxt->cnt);
 		stream_printf(cntxt->fdout,":%6s ", buf);
 	}
 	{str line;
@@ -2547,8 +2547,8 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 }
 
 void displayVolume(Client cntxt, lng vol){
-	char buf[BUFSIZ];
-	formatVolume(buf,BUFSIZ,vol);
+	char buf[32];
+	formatVolume(buf,(int)sizeof(buf),vol);
 	stream_printf(cntxt->fdout,"%s",buf);
 }
 @h
