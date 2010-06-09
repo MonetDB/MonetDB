@@ -64,7 +64,6 @@ typedef struct _mapnode {
 } mapnode;
 
 static mapnode *mapnodes;
-static BAT *cloud;
 
 static void
 MRcleanCloud()
@@ -81,9 +80,6 @@ MRcleanCloud()
 			GDKfree(mapnodes[i].pass);
 		mapnodes[i].uri = mapnodes[i].user = mapnodes[i].pass = 0;
 	}
-	if (cloud)
-		BBPreleaseref(cloud->batCacheid);
-	cloud = 0;
 	mal_unset_lock(mal_contextLock, "mapreduce");
 }
 
@@ -91,6 +87,7 @@ str
 MRgetCloud(int *ret, str *mrcluster)
 {
 	str msg;
+	BAT *cloud;
 	BUN p, q;
 	BATiter bi;
 	char nodes[BUFSIZ];
@@ -99,20 +96,14 @@ MRgetCloud(int *ret, str *mrcluster)
 
 	snprintf(nodes, sizeof(nodes), "*/%s/node/*", *mrcluster);
 	
-	msg = RMTresolve(ret, &n);
-	if (msg ) 
+	if ((msg = RMTresolve(ret, &n)) != MAL_SUCCEED)
 		return msg;
 
-	if (cloud)
-		/* cleanup remains of previous call */
-		MRcleanCloud();
-	
 	mal_set_lock(mal_contextLock, "mapreduce");
 	cloud = BATdescriptor(*ret); /* should succeed */
-	BBPkeepref(*ret);	/* keep if during the session */
 
 	mapnodes = (mapnode*)GDKzalloc(sizeof(mapnode) * (BATcount(cloud) + 1));
-	if (mapnodes == 0) {
+	if (mapnodes == NULL) {
 		BBPreleaseref(*ret);
 		throw(MAL, "mapreduce.getCloud", MAL_MALLOC_FAIL);
 	}
@@ -126,6 +117,8 @@ MRgetCloud(int *ret, str *mrcluster)
 		mapcount++;
 	}
 
+	BBPkeepref(*ret); /* we're done, keep for caller */
+	cloud = NULL;
 	mal_unset_lock(mal_contextLock, "mapreduce");
 
 	return MAL_SUCCEED;
@@ -136,13 +129,18 @@ MRcloudSize(str mrcluster)
 {
 	str msg;
 	int bid;
+	BAT *cloud;
+	int cnt;
 
 	msg = MRgetCloud(&bid, &mrcluster);
 	if (msg) {
 		GDKfree(msg); /* bad programming */
 		return 0;
 	}
-	return (int) BATcount(cloud);
+	cloud = BATdescriptor(bid);
+	cnt = BATcount(cloud);
+	BBPreleaseref(bid); /* we're done with it */
+	return(cnt);
 }
 
 
