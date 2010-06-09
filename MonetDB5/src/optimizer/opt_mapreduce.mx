@@ -724,6 +724,8 @@ OPTmapreduceImplementation(
 					pushInstruction(map, omap[i]);
 					lastcol->mapid = getArg(omap[i], 0);
 					lastcol->type = getArgType(map, p, 0);
+					/* always need a sum in the reduce plan */
+					setFunctionId(p, sumRef);
 				}
 			}
 		} else if (getModuleId(p) == calcRef && getFunctionId(p) == divRef) {
