@@ -285,11 +285,13 @@ MRdistributework(
 			getArg(p, 0) = lcol->mapbat;
 		} else {
 			lcol->mapbat = getArg(p, 0);
+			lcol->type = newBatType(TYPE_void, lcol->type);
 		}
 
 		p = newAssignment(reduce);
 		p = pushArgument(reduce, p, lcol->mapbat);
 		getArg(p, 0) = lcol->reduceid;
+		setArgType(reduce, p, 0, lcol->type);
 	}
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
@@ -721,7 +723,6 @@ OPTmapreduceImplementation(
 					newComment(map, "COUNT/SUM");
 					pushInstruction(map, omap[i]);
 					lastcol->mapid = getArg(omap[i], 0);
-					lastcol->reduceid = getArg(p, 0);
 					lastcol->type = getArgType(map, p, 0);
 
 #if 0
