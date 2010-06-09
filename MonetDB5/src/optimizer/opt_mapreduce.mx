@@ -552,6 +552,11 @@ OPTmapreduceImplementation(
 							/* this is a column reference, keep it */
 							if (lastcol == NULL) {
 								col = lastcol = alloca(sizeof(mapcol));
+								lastcol->mapid = getArg(p, 0);
+								lastcol->reduceid = getArg(oreduce[i], 0);
+								lastcol->type = getArgType(map, p, 0);
+								lastcol->mapbat = -1;
+								lastcol->next = NULL;
 								/* this is the first one, leave a marker */
 								freeInstruction(oreduce[i]);
 								/* FIXME: should leave some symbol */
@@ -561,13 +566,13 @@ OPTmapreduceImplementation(
 							} else {
 								lastcol = lastcol->next =
 									alloca(sizeof(mapcol));
+								lastcol->mapid = getArg(p, 0);
+								lastcol->reduceid = getArg(oreduce[i], 0);
+								lastcol->type = getArgType(map, p, 0);
+								lastcol->mapbat = -1;
+								lastcol->next = NULL;
 								copy = SINGLE;
 							}
-							lastcol->mapid = getArg(p, 0);
-							lastcol->reduceid = getArg(oreduce[i], 0);
-							lastcol->type = getArgType(map, p, 0);
-							lastcol->mapbat = -1;
-							lastcol->next = NULL;
 							newComment(map, "= sql column bat");
 
 							@:dealWithAVG@
