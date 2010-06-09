@@ -656,7 +656,6 @@ OPTmapreduceImplementation(
 				if (getArg(p, 1) == lastcol->reduceid) {
 					copy = SINGLE_DUP;
 					newComment(map, "ORDER BY [DESC] or LIMIT/OFFSET");
-					newComment(reduce, "ORDER BY [DESC] or LIMIT/OFFSET");
 					/* fix return */
 					lastcol->mapid = getArg(omap[i], 0);
 					lastcol->reduceid = getArg(p, 0);
@@ -671,7 +670,6 @@ OPTmapreduceImplementation(
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->reduceid) {
 					newComment(map, "MAX/MIN");
-					newComment(reduce, "MAX/MIN");
 					/* basically perform a MAX over all MAXes */
 					pushInstruction(map, omap[i]);
 					lastcol->mapid = getArg(omap[i], 0);
@@ -711,7 +709,6 @@ OPTmapreduceImplementation(
 			for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 				if (getArg(p, 1) == lastcol->reduceid) {
 					newComment(map, "COUNT/SUM");
-					newComment(reduce, "COUNT/SUM");
 					pushInstruction(map, omap[i]);
 					lastcol->mapid = getArg(omap[i], 0);
 
