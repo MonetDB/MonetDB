@@ -194,11 +194,12 @@ MRdistributework(
 		if (isaBatType(lcol->type)) {
 			p = pushType(reduce, p, getHeadType(lcol->type));
 			p = pushType(reduce, p, getTailType(lcol->type));
+			setArgType(reduce, p, 0, lcol->type);
 		} else {
 			p = pushNil(reduce, p, TYPE_void);
 			p = pushType(reduce, p, lcol->type);
+			setArgType(reduce, p, 0, newBatType(TYPE_void, lcol->type));
 		}
-		setArgType(reduce, p, 0, lcol->type);
 		lcol->mapbat = getArg(p, 0);
 
 		/* we need to declare the variables that we will use with put,
@@ -275,11 +276,20 @@ MRdistributework(
 			p = pushArgument(reduce, p, gets[(i * retc) + j]);
 			q = getArg(p, 0);
 		}
-		/* markH all result bats such that further operations don't get
-		 * confused by possible duplicate ids */
-		p = newFcnCall(reduce, algebraRef, markHRef);
-		p = pushArgument(reduce, p, q);
-		getArg(p, 0) = lcol->mapbat;
+
+		if (isaBatType(lcol->type)) {
+			/* markH all result bats such that further operations don't get
+			 * confused by possible duplicate ids */
+			p = newFcnCall(reduce, algebraRef, markHRef);
+			p = pushArgument(reduce, p, q);
+			getArg(p, 0) = lcol->mapbat;
+		} else {
+			lcol->mapbat = getArg(p, 0);
+		}
+
+		p = newAssignment(reduce);
+		p = pushArgument(reduce, p, lcol->mapbat);
+		getArg(p, 0) = lcol->reduceid;
 	}
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
@@ -711,6 +721,8 @@ OPTmapreduceImplementation(
 					newComment(map, "COUNT/SUM");
 					pushInstruction(map, omap[i]);
 					lastcol->mapid = getArg(omap[i], 0);
+					lastcol->reduceid = getArg(p, 0);
+					lastcol->type = getArgType(map, p, 0);
 
 #if 0
 					/* propagate type change */
