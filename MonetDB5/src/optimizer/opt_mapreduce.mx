@@ -724,69 +724,6 @@ OPTmapreduceImplementation(
 					pushInstruction(map, omap[i]);
 					lastcol->mapid = getArg(omap[i], 0);
 					lastcol->type = getArgType(map, p, 0);
-
-#if 0
-					/* propagate type change */
-					for (j = 0; j < sig->retc; j++) {
-						if (getArg(sig, j) == lastcol->val1) {
-							/* we have to fix all pre-registered BATs
-							 * that are necessary to avoid "undefined"
-							 * errors, can't do better than scan
-							 * backwards and pick up what we need to fix */
-							int k;
-							int q = lastcol->val1;
-							p = NULL;
-							for (k = reduce->stop - 1; k >= 0; k--) {
-								p = reduce->stmt[k];
-								/* First find algebra.markH for the
-								 * target BAT, then traverse through the
-								 * chained bat.insert calls. */
-								if (getModuleId(p) == algebraRef &&
-										getFunctionId(p) == markHRef &&
-										getArg(p, 0) == q)
-								{
-									q = getArg(p, 1);
-									continue;
-								}
-
-								if (getModuleId(p) == batRef &&
-										getFunctionId(p) == insertRef &&
-										getArg(p, 0) == q)
-								{
-#define FINDANDFIXBATNEW(X, Y) { \
-	int s; \
-	InstrPtr pt; \
-	for (s = 0; s < reduce->stop; s++) { \
-		pt = reduce->stmt[s]; \
-		if (getArg(pt, 0) == getArg(X, Y) && \
-				getModuleId(pt) == batRef && \
-				getFunctionId(pt) == newRef) \
-		{ \
-			setArgType(reduce, pt, 2, getTailType(lastcol->val3type)); \
-			setArgType(reduce, pt, 0, lastcol->val3type); \
-			break; \
-		} \
-	} \
-}
-									FINDANDFIXBATNEW(p, 2);
-									setArgType(reduce, p, 0, tt);
-									q = getArg(p, 1);
-								}
-							}
-							FINDANDFIXBATNEW(sig, j);
-							/* fix return and sig in one go the same time */
-							getArg(sig, j) = lastcol->val1 = t;
-							break;
-						}
-					}
-					/* now make a SUM on the REDUCE side */
-					p = newFcnCall(reduce, aggrRef, sumRef);
-					p = pushArgument(reduce, p, getArg(oreduce[i], 1));
-					getArg(p, 0) = getArg(oreduce[i], 0);
-					/* we injected an alternative instruction */
-					copy = cNONE;
-					break;
-#endif
 				}
 			}
 		} else if (getModuleId(p) == calcRef && getFunctionId(p) == divRef) {
