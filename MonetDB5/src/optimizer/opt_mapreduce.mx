@@ -454,6 +454,7 @@ OPTmapreduceImplementation(
 	struct stack tracker = { NULL, 0, 0 };
 	struct stack avgtrack = { NULL, 0, 0 };
 	char hadBinds = 0;
+	str mapreduceRef = putName("mapreduce", 9);
 
 	(void)stk; /* useless, is NULL */
 	(void)pc;
@@ -563,27 +564,21 @@ OPTmapreduceImplementation(
 							/* this is a column reference, keep it */
 							if (lastcol == NULL) {
 								col = lastcol = alloca(sizeof(mapcol));
-								lastcol->mapid = getArg(p, 0);
-								lastcol->reduceid = getArg(oreduce[i], 0);
-								lastcol->type = getArgType(map, p, 0);
-								lastcol->mapbat = -1;
-								lastcol->next = NULL;
 								/* this is the first one, leave a marker */
-								freeInstruction(oreduce[i]);
-								/* FIXME: should leave some symbol */
-								oreduce[i] = (InstrPtr)1;
+								oreduce[i]->token = REMsymbol;
+								setModuleId(oreduce[i], mapreduceRef);
 								pushInstruction(map, p);
 								copy = LEAVE;
 							} else {
 								lastcol = lastcol->next =
 									alloca(sizeof(mapcol));
-								lastcol->mapid = getArg(p, 0);
-								lastcol->reduceid = getArg(oreduce[i], 0);
-								lastcol->type = getArgType(map, p, 0);
-								lastcol->mapbat = -1;
-								lastcol->next = NULL;
 								copy = SINGLE;
 							}
+							lastcol->mapid = getArg(p, 0);
+							lastcol->reduceid = getArg(oreduce[i], 0);
+							lastcol->type = getArgType(map, p, 0);
+							lastcol->mapbat = -1;
+							lastcol->next = NULL;
 							newComment(map, "= sql column bat");
 
 							@:dealWithAVG@
@@ -648,7 +643,8 @@ OPTmapreduceImplementation(
 	for (i = 0; i < limit; i++) { /* phase 2 */
 		p = oreduce[i];
 
-		if (p == (InstrPtr)1) {
+		/* placeholder for MRdistributework */
+		if (p->token == REMsymbol && getModuleId(p) == mapreduceRef) {
 			trackstack_push(&tracker, -1);
 			continue;
 		}
