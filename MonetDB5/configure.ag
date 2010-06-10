@@ -333,7 +333,7 @@ if test "x$have_cfitsio" != xno; then
 
     if test "x$CFITSIO_CONFIG" != x; then
         CFITSIO_CFLAGS="`$CFITSIO_CONFIG cfitsio --cflags`"
-        #CFITSIO_LIBS="`$CFITSIO_CONFIG cfitsio --libs`"
+        CFITSIO_LIBS="`$CFITSIO_CONFIG cfitsio --libs`"
     else
 	case "$have_cfitsio" in
 	auto|yes)
