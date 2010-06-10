@@ -498,7 +498,8 @@ BATsave(BAT *bd)
 
 	BATcheck(b, "BATsave");
 
-	/* views cannot be saved, but make an exception for force-remapped views */
+	/* views cannot be saved, but make an exception for
+	   force-remapped views */
 	if (isVIEW(b) &&
 	    !(b->H->heap.copied && b->H->heap.storage == STORE_MMAP) &&
 	    !(b->T->heap.copied && b->T->heap.storage == STORE_MMAP)) {
@@ -518,8 +519,9 @@ BATsave(BAT *bd)
 	if (!b->talign)
 		b->talign = OIDnew(1);
 
-	/* copy the descriptor to a local variable in order to let our messing in
-	 * the BAT descriptor not affect other threads that only read it. */
+	/* copy the descriptor to a local variable in order to let our
+	   messing in the BAT descriptor not affect other threads that
+	   only read it. */
 	bs = *BBP_desc(b->batCacheid);
 	/* fix up internal pointers */
 	b = &bs.BM;		/* first the mirror */
@@ -900,19 +902,22 @@ BATdelete(BAT *b)
 	assert(!b->H->heap.base || !b->T->heap.base || b->H->heap.base != b->T->heap.base);
 	if (b->batCopiedtodisk || (b->H->heap.storage != STORE_MEM)) {
 		if (b->htype != TYPE_void &&
-		    HEAPdelete(&b->H->heap, o, "head") && b->batCopiedtodisk)
+		    HEAPdelete(&b->H->heap, o, "head") &&
+		    b->batCopiedtodisk)
 			IODEBUG THRprintf(GDKout, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->H->heap.base) {
 		HEAPfree(&b->H->heap);
 	}
 	if (b->batCopiedtodisk || (b->T->heap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
-		    HEAPdelete(&b->T->heap, o, "tail") && b->batCopiedtodisk)
+		    HEAPdelete(&b->T->heap, o, "tail") &&
+		    b->batCopiedtodisk)
 			IODEBUG THRprintf(GDKout, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->T->heap.base) {
 		HEAPfree(&b->T->heap);
 	}
 	if (b->H->vheap) {
+		assert(b->H->vheap->parentid == bid);
 		if (b->batCopiedtodisk || (b->H->vheap->storage != STORE_MEM)) {
 			if (HEAPdelete(b->H->vheap, o, "hheap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKout, "#BATdelete(%s): head heap\n", BATgetId(b));
@@ -921,6 +926,7 @@ BATdelete(BAT *b)
 		}
 	}
 	if (b->T->vheap) {
+		assert(b->T->vheap->parentid == bid);
 		if (b->batCopiedtodisk || (b->T->vheap->storage != STORE_MEM)) {
 			if (HEAPdelete(b->T->vheap, o, "theap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKout, "#BATdelete(%s): tail heap\n", BATgetId(b));

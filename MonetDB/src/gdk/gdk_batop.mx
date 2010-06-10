@@ -3070,7 +3070,10 @@ by bulk copying the heap as well
 @c
 	if (tricky) {
 		bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-		if (bn->H->vheap && b->T->vheap->filename) {
+		if (bn->H->vheap == NULL)
+			goto bunins_failed;
+		bn->H->vheap->parentid = bn->batCacheid;
+		if (b->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 
 			bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);

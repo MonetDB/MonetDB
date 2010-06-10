@@ -143,6 +143,7 @@ add to BBP
 @-
 fill in heap names, so HEAPallocs can resort to disk for very large writes.
 @c
+	assert(bn->batCacheid > 0);
 	bn->H->heap.filename = NULL;
 	bn->T->heap.filename = NULL;
 	bn->batMaphead = 0;
@@ -170,12 +171,14 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
+			bn->H->vheap->parentid = bn->batCacheid;
 		}
 
 		if (ATOMneedheap(tt)) {
 			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
+			bn->T->vheap->parentid = bn->batCacheid;
 		}
 	}
 	bn->batDirty = TRUE;
@@ -185,11 +188,11 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 		HEAPfree(&bn->H->heap);
 	if (tt)
 		HEAPfree(&bn->T->heap);
-	if (ht && bn->H->vheap) {
+	if (bn->H->vheap) {
 		HEAPfree(bn->H->vheap);
 		GDKfree(bn->H->vheap);
 	}
-	if (tt && bn->T->vheap) {
+	if (bn->T->vheap) {
 		HEAPfree(bn->T->vheap);
 		GDKfree(bn->T->vheap);
 	}
@@ -548,23 +551,29 @@ BATclear(BAT *b)
 		*/
 		size_t cap = 0;
 
-		hh.filename = th.filename = NULL;
-		hh.base = th.base = NULL;
-		hh.parentid = th.parentid = 0;
-		if (b->H->vheap && b->H->vheap->free > 0) {
-			if (ATOMheap(b->htype, &hh, cap) < 0)
-				return NULL;
+		memset(&hh, 0, sizeof(hh));
+		memset(&th, 0, sizeof(th));
+		if (b->H->vheap &&
+		    b->H->vheap->free > 0 &&
+		    ATOMheap(b->htype, &hh, cap) < 0) {
+			return NULL;
 		}
-		if (b->T->vheap && b->T->vheap->free > 0 && ATOMheap(b->ttype, &th, cap) < 0) {
+		if (b->T->vheap &&
+		    b->T->vheap->free > 0 &&
+		    ATOMheap(b->ttype, &th, cap) < 0) {
 			if (b->H->vheap && b->H->vheap->free > 0)
 				HEAPfree(&hh);
 			return NULL;
 		}
+		assert(b->H->vheap == NULL || b->H->vheap->parentid == ABS(b->batCacheid));
 		if (b->H->vheap && b->H->vheap->free > 0) {
+			hh.parentid = b->H->vheap->parentid;
 			HEAPfree(b->H->vheap);
 			*b->H->vheap = hh;
 		}
+		assert(b->T->vheap == NULL || b->T->vheap->parentid == ABS(b->batCacheid));
 		if (b->T->vheap && b->T->vheap->free > 0) {
+			th.parentid = b->T->vheap->parentid;
 			HEAPfree(b->T->vheap);
 			*b->T->vheap = th;
 		}
@@ -624,10 +633,14 @@ BATfree(BAT *b)
 		HEAPfree(&b->T->heap);
 	else
 		assert(!b->T->heap.base);
-	if (b->H->vheap) 
+	if (b->H->vheap) {
+		assert(b->H->vheap->parentid == b->batCacheid);
 		HEAPfree(b->H->vheap);
-	if (b->T->vheap) 
+	}
+	if (b->T->vheap) {
+		assert(b->T->vheap->parentid == b->batCacheid);
 		HEAPfree(b->T->vheap);
+	}
 
 	b = BBP_cache(-b->batCacheid);
 	if (b) {
@@ -892,6 +905,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			/* succeeded; replace dummy small heaps by the real ones */
 			heapfree(&bn->H->heap, &bhhp);
 			heapfree(&bn->T->heap, &bthp);
+			hhp.parentid = bn->batCacheid;
+			thp.parentid = bn->batCacheid;
 			if (bn->H->vheap)
 				heapfree(bn->H->vheap, &hhp);
 			if (bn->T->vheap)
@@ -2834,7 +2849,11 @@ BATcheckmodes(BAT *b, int existing)
 			return -1;
 
 		}
-		HEAPfree(@1);
+		hp.parentid = @3;
+		if (@1->parentid == @3)
+			HEAPfree(@1);
+		else
+			BBPunshare(@1->parentid);
 		* (@1) = hp;
 		@1->copied = 0;
 	}
@@ -2843,22 +2862,14 @@ static int
 batunshare(BAT *b, str fcn)
 {
 	if (b->H->heap.base)
-		@:heap_unshare((&b->H->heap),head)@
+		@:heap_unshare((&b->H->heap),head,0)@
 	if (b->T->heap.base)
-		@:heap_unshare((&b->T->heap),tail)@
+		@:heap_unshare((&b->T->heap),tail,0)@
 	if (b->H->vheap)
-		@:heap_unshare(b->H->vheap,H->vheap)@
+		@:heap_unshare(b->H->vheap,H->vheap,ABS(b->batCacheid))@
 	if (b->T->vheap)
-		@:heap_unshare(b->T->vheap,T->vheap)@
+		@:heap_unshare(b->T->vheap,T->vheap,ABS(b->batCacheid))@
 	b->P->lview = 0;
-	if (b->H->heap.parentid)
-		BBPunshare(b->H->heap.parentid);
-	if (b->T->heap.parentid)
-		BBPunshare(b->T->heap.parentid);
-	if (b->H->vheap && b->H->vheap->parentid)
-		BBPunshare(b->H->vheap->parentid);
-	if (b->T->vheap && b->T->vheap->parentid)
-		BBPunshare(b->T->vheap->parentid);
 	return 0;
 }
 

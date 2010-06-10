@@ -1939,6 +1939,7 @@ decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 
 	bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
 	*bn->T->vheap = hp;
+	bn->T->vheap->parentid = bn->batCacheid;
 	ALIGNsetH(bn, b);
 
 	GDKfree(mult[0]);

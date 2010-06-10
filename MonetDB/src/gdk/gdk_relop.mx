@@ -1037,19 +1037,18 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		}
 		/* handle string trick */
 		if (rtt != r->ttype && ATOMstorage(r->ttype) == TYPE_str) {
-			bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
 			if (r->batRestricted == BAT_READ) {
-				int parent = r->T->vheap->parentid;
-
-				if (!parent)
-					parent = r->T->heap.parentid;
-				if (!parent)
-					parent = -r->batCacheid;
-				BBPshare(parent);
-				*bn->T->vheap = *r->T->vheap;
-				bn->T->vheap->parentid = parent;
+				assert(r->T->vheap->parentid > 0);
+				BBPshare(r->T->vheap->parentid);
+				bn->T->vheap = r->T->vheap;
 			} else {
-				if (bn->T->vheap && r->T->vheap->filename) {
+				bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
+				if (bn->T->vheap == NULL) {
+					BBPreclaim(bn);
+					goto ready;
+				}
+				bn->T->vheap->parentid = bn->batCacheid;
+				if (r->T->vheap->filename) {
 					char *nme = BBP_physical(bn->batCacheid);
 
 					bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
@@ -1121,7 +1120,13 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		/* handle string trick */
 		if (tpe != r->ttype && ATOMstorage(r->ttype) == TYPE_str) {
 			bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (bn->T->vheap && r->T->vheap->filename) {
+			if (bn->T->vheap == NULL) {
+				BBPreclaim(bn);
+				ret = NULL;
+				goto ready;
+			}
+			bn->T->vheap->parentid = bn->batCacheid;
+			if (r->T->vheap->filename) {
 				char *nme = BBP_physical(bn->batCacheid);
 
 				bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);

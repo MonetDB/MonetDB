@@ -1852,8 +1852,10 @@ createView:
 				}
 				/* succeeded; replace dummy small heaps by the real ones */
 				heapfree(&b->T->heap, &bthp);
-				if (b->T->vheap)
+				if (b->T->vheap) {
+					thp.parentid = ABS(b->batCacheid);
 					heapfree(b->T->vheap, &thp);
+				}
 
 				/* make sure we use the correct capacity */
 				tcap = (BUN) (b->ttype?b->T->heap.size>>b->T->shift:0);

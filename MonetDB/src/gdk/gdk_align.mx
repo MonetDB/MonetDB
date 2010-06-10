@@ -229,6 +229,10 @@ VIEWhcreate(BAT *h)
 		BBPshare(hp);
 	*bn->H = *h->H;
 	*bn->U = *h->U;
+	if (bn->H->vheap) {
+		assert(bn->H->vheap->parentid != 0);
+		BBPshare(bn->H->vheap->parentid);
+	}
 
 	/* correct values after copy of head info */
 	bn->H->props = NULL;
@@ -275,8 +279,8 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	assert(t->ttype != TYPE_void || !tp);
 @-
 the H and T column descriptors are fully copied. We need copies
-because in case of a mark, we are going to override a column with 
-a void. Take care to zero the accelerator data, though. 
+because in case of a mark, we are going to override a column with
+a void. Take care to zero the accelerator data, though.
 @c
 	*bn->U = *h->U;
 	*bn->H = *h->H;
@@ -296,6 +300,15 @@ a void. Take care to zero the accelerator data, though.
 		BBPshare(hp);
 	if (tp)
 		BBPshare(tp);
+	if (bn->H->vheap) {
+		assert(bn->H->vheap->parentid > 0);
+		BBPshare(bn->H->vheap->parentid);
+	}
+	if (bn->T->vheap) {
+		assert(bn->T->vheap->parentid > 0);
+		BBPshare(bn->T->vheap->parentid);
+	}
+
 	/* note: H/T->heap's points into bs which was just overwritten 
 	   with a copy from the parent(s). Clear the copied flag since our 
 	   heap was not copied from our parent(s) even if our parent's heap 
@@ -317,9 +330,9 @@ The b->P structure cannot be shared and must be copied individually.
 	bn->batRestricted = BAT_READ;
 @-
 The U record may be shared with the parent; in that case, the
-search accelerators of the parent can be used. If, however, we 
-want to take a horizontal fragment (stable=false), this cannot 
-be done, and we need to put different information in U (so we can't 
+search accelerators of the parent can be used. If, however, we
+want to take a horizontal fragment (stable=false), this cannot
+be done, and we need to put different information in U (so we can't
 use a copy.
 @c
 	if (slice_view || !hp || isVIEW(h))
@@ -401,10 +414,16 @@ VIEWcombine(BAT *b)
 	if (bm == NULL)
 		return NULL;
 	if (bn->htype != TYPE_void) {
+		assert(bn->T->vheap == NULL);
 		bn->T = bn->H;
 		bm->H = bn->H;
 		if (bn->T->heap.parentid)
 			BBPshare(bn->T->heap.parentid);
+		if (bn->T->vheap) {
+			assert(bn->T->vheap->parentid != ABS(bn->batCacheid));
+			assert(bn->T->vheap->parentid > 0);
+			BBPshare(bn->T->vheap->parentid);
+		}
 		ALIGNsetH(bn, b);
 	} else {
 		BATseqbase(bm, bn->hseqbase);
@@ -504,7 +523,7 @@ VIEWunlink(BAT *b)
 {
 	if (b) {
 		bat hp = VIEWhparent(b), tp = VIEWtparent(b);
-		bat vhp = VIEWhparent(b), vtp = VIEWtparent(b);
+		bat vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
 		BAT *hpb = NULL, *tpb = NULL;
 		BAT *vhpb = NULL, *vtpb = NULL;
 
@@ -525,9 +544,11 @@ VIEWunlink(BAT *b)
 			return;
 
 		/* unlink heaps shared with parent */
-		if (vhpb && b->H->vheap && b->H->vheap == vhpb->H->vheap)
+		assert(b->H->vheap == NULL || b->H->vheap->parentid > 0);
+		assert(b->T->vheap == NULL || b->T->vheap->parentid > 0);
+		if (b->H->vheap && b->H->vheap->parentid != ABS(b->batCacheid))
 			b->H->vheap = NULL;
-		if (vtpb && b->T->vheap && b->T->vheap == vtpb->H->vheap)
+		if (b->T->vheap && b->T->vheap->parentid != ABS(b->batCacheid))
 			b->T->vheap = NULL;
 
 		/* unlink properties shared with parent */
@@ -551,31 +572,40 @@ want to reduce storage of the new BAT.
 BAT *
 VIEWreset(BAT *b)
 {
-	bat hp, tp;
+	bat hp, tp, hvp, tvp;
 	Heap head, tail, hh, th;
+	BAT *n = NULL, *v = NULL;
 
 	if (b == NULL)
 		return NULL;
 	hp = VIEWhparent(b);
 	tp = VIEWtparent(b);
+	hvp = VIEWvhparent(b);
+	tvp = VIEWvtparent(b);
 	if (hp || tp) {
-		BAT *r = b;
-		BAT *n = b = BATdescriptor(ABS(b->batCacheid));
-		BAT *m = BATmirror(n);
-		BAT *v;
-		BATstore *bs = BBP_desc(b->batCacheid);
-		BUN cnt = BATcount(b) + 1;
-		str nme = BBP_physical(n->batCacheid);
-
-		assert(b->batCacheid > 0);
-		assert(hp || !r->htype);
-		assert(tp || !r->ttype);
+		BAT *m;
+		BATstore *bs;
+		BUN cnt;
+		str nme;
 
 		/* alloc heaps */
 		memset(&head, 0, sizeof(Heap));
 		memset(&tail, 0, sizeof(Heap));
 		memset(&hh, 0, sizeof(Heap));
 		memset(&th, 0, sizeof(Heap));
+
+		n = BATdescriptor(ABS(b->batCacheid)); /* normalized */
+		if (n == NULL)
+			goto bailout;
+		m = BATmirror(n); /* mirror of normalized */
+		bs = BBP_desc(n->batCacheid);
+		cnt = BATcount(n) + 1;
+		nme = BBP_physical(n->batCacheid);
+
+		assert(n->batCacheid > 0);
+		assert(hp || !b->htype);
+		assert(tp || !b->ttype);
+
 		if (n->htype) {
 			head.filename = (str) GDKmalloc(strlen(nme) + 12);
 			if (head.filename == NULL)
@@ -609,7 +639,7 @@ VIEWreset(BAT *b)
 				goto bailout;
 		}
 
-		v = VIEWcreate(b, b);
+		v = VIEWcreate(n, n);
 		if (v == NULL)
 			goto bailout;
 
@@ -622,6 +652,14 @@ VIEWreset(BAT *b)
 		if (tp) {
 			BBPunshare(tp);
 			BBPunfix(tp);
+		}
+		if (hvp) {
+			BBPunshare(hvp);
+			BBPunfix(hvp);
+		}
+		if (tvp) {
+			BBPunshare(tvp);
+			BBPunfix(tvp);
 		}
 
 		/* make sure everything points there */
@@ -655,16 +693,20 @@ VIEWreset(BAT *b)
 
 		/* unshare from parents heap */
 		if (hh.base) {
+			assert(n->H->vheap == NULL);
 			n->H->vheap = (Heap *) GDKzalloc(sizeof(Heap));
 			if (n->H->vheap == NULL)
 				goto bailout;
 			*n->H->vheap = hh;
+			n->H->vheap->parentid = n->batCacheid;
 		}
 		if (th.base) {
+			assert(n->T->vheap == NULL);
 			n->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
 			if (n->T->vheap == NULL)
 				goto bailout;
 			*n->T->vheap = th;
+			n->T->vheap->parentid = n->batCacheid;
 		}
 
 		n->batSharecnt = 0;
@@ -680,16 +722,17 @@ VIEWreset(BAT *b)
 		/* reset capacity */
 		n->U->capacity = cnt;
 
-		/* insert all of v in b, and quit */
-		BATins(b, v, FALSE);
+		/* insert all of v in n, and quit */
+		BATins(n, v, FALSE);
 		BBPreclaim(v);
-		BBPunfix(b->batCacheid);
-		b = r;
+		BBPunfix(n->batCacheid);
 	}
 	return b;
       bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
+	if (v != NULL)
+		BBPreclaim(v);
+	if (n != NULL)
+		BBPunfix(n->batCacheid);
 	HEAPfree(&head);
 	HEAPfree(&tail);
 	HEAPfree(&hh);

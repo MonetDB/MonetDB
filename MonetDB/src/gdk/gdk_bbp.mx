@@ -559,6 +559,7 @@ fixstrheap(void)
 			GDKfilepath(b->@1->vheap->filename, NULL, nme, "@2heap");
 			if (ATOMheap(TYPE_str, b->@1->vheap, b->U->capacity))
 				GDKfatal("fixstrheap: initializing new string heap failed\n");
+			b->@1->vheap->parentid = b->batCacheid;
 
 			/* do the conversion */
 			b->@1->heap.dirty = TRUE;
@@ -848,6 +849,7 @@ BBPinit(void)
 			bs->@1.vheap->hashash = @1hashash != 0;
 			bs->@1.vheap->newstorage = (chr) storage;
 			bs->@1.vheap->dirty = 0;
+			bs->@1.vheap->parentid = bid;
 			nread += n;
 		}
 @c
@@ -1565,6 +1567,10 @@ BBPcacheit(BATstore *bs)
 		assert(i > 0);
 	} else {
 		i = BBPinsert(bs);	/* bat was not previously entered */
+		if (bs->H.vheap)
+			bs->H.vheap->parentid = i;
+		if (bs->T.vheap)
+			bs->T.vheap->parentid = i;
 	}
 	assert(bs->B.batCacheid > 0);
 	assert(bs->BM.batCacheid < 0);
@@ -1833,8 +1839,8 @@ incref(bat i, int logical, int lock)
 			/* parent BATs are not relevant for logical refs */
 			hp = logical ? 0 : bs->B.H->heap.parentid;
 			tp = logical ? 0 : bs->B.T->heap.parentid;
-			hvp = logical || bs->B.H->vheap == 0 ? 0 : bs->B.H->vheap->parentid;
-			tvp = logical || bs->B.T->vheap == 0 ? 0 : bs->B.T->vheap->parentid;
+			hvp = logical || bs->B.H->vheap == 0 || bs->B.H->vheap->parentid == i ? 0 : bs->B.H->vheap->parentid;
+			tvp = logical || bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
 
 			if (!lock)
 				break;
@@ -1888,9 +1894,9 @@ incref(bat i, int logical, int lock)
 			if (logical ||
 			    (hp == bs->B.H->heap.parentid &&
 			     tp == bs->B.T->heap.parentid &&
-			     ((hvp == 0 && bs->B.H->vheap == NULL) ||
+			     ((hvp == 0 && (bs->B.H->vheap == NULL || bs->B.H->vheap->parentid == i)) ||
 			      hvp == bs->B.H->vheap->parentid) &&
-			     ((tvp == 0 && bs->B.T->vheap == NULL) ||
+			     ((tvp == 0 && (bs->B.T->vheap == NULL || bs->B.T->vheap->parentid == i)) ||
 			      tvp == bs->B.T->vheap->parentid)))
 				break;  /* still the same, we can do the work */
 
@@ -1910,28 +1916,23 @@ incref(bat i, int logical, int lock)
 			if (refs == 1) {
 				if (hp) {
 					incref(hp, 0, 0);
-					b = getBBPdescriptor(hp, 0);
-					bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
+					if (!bs->P.lview) {
+						b = getBBPdescriptor(hp, 0);
+						bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
+					}
 				}
 				if (tp) {
 					incref(tp, 0, 0);
-					if (bs->B.H != bs->B.T) { /* mirror? */
+					if (!bs->P.lview &&
+					    bs->B.H != bs->B.T) { /* mirror? */
 						b = getBBPdescriptor(tp, 0);
 						bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
 					}
 				}
-				if (hvp) {
+				if (hvp)
 					incref(hvp, 0, 0);
-					b = getBBPdescriptor(hvp, 0);
-					bs->B.H->vheap->base = b->H->vheap->base + (size_t) bs->B.H->vheap->base;
-				}
-				if (tvp) {
+				if (tvp)
 					incref(tvp, 0, 0);
-					if (bs->B.H != bs->B.T) {  /* mirror? */
-						b = getBBPdescriptor(tvp, 0);
-						bs->B.T->vheap->base = b->H->vheap->base + (size_t) bs->B.T->vheap->base;
-					}
-				}
 			}
 		}
 		if (lock) {
@@ -2015,14 +2016,15 @@ decref(bat i, int logical, int releaseShare, int lock)
 			assert(b == NULL || b->T->vheap == NULL || b->T->vheap->parentid == 0 || BBP_refs(b->T->vheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
-				if ((hp = b->H->heap.parentid) != 0)
+				if ((hp = b->H->heap.parentid) != 0 &&
+				    !b->P->lview)
 					b->H->heap.base = (char *) (b->H->heap.base - BBP_cache(hp)->H->heap.base);
-				if ((tp = b->T->heap.parentid) != 0 && b->H != b->T)
+				if ((tp = b->T->heap.parentid) != 0 &&
+				    b->H != b->T &&
+				    !b->P->lview)
 					b->T->heap.base = (char *) (b->T->heap.base - BBP_cache(tp)->H->heap.base);
-				if (b->H->vheap && (hvp = b->H->vheap->parentid) != 0)
-					b->H->vheap->base = (char *) (b->H->vheap->base - BBP_cache(hvp)->H->vheap->base);
-				if (b->T->vheap && (tvp = b->T->vheap->parentid) != 0 && b->H != b->T)
-					b->T->vheap->base = (char *) (b->T->vheap->base - BBP_cache(tvp)->H->vheap->base);
+				hvp = VIEWvhparent(b);
+				tvp = VIEWvtparent(b);
 			}
 		}
 	}
@@ -2337,11 +2339,11 @@ BBPdestroy(BAT *b)
 	/* parent released when completely done with child */
 	if (hp)
 		GDKunshare(hp);
-	if (!hp && vhp)
+	if (vhp)
 		GDKunshare(vhp);
 	if (tp)
 		GDKunshare(tp);
-	if (!tp && vtp)
+	if (vtp)
 		GDKunshare(vtp);
 	return 0;
 }
@@ -3143,7 +3145,7 @@ static int
 BBPaddtobin(BAT *b)
 {
 	int bin = BATCACHE_BIN(b->htype, b->ttype);
-	bat bid = b->batCacheid, hp = VIEWhparent(b), tp = VIEWtparent(b), vhp = VIEWhparent(b), vtp = VIEWtparent(b);
+	bat bid = b->batCacheid, hp = VIEWhparent(b), tp = VIEWtparent(b);
 	char *s = BBP_logical(bid);
 	BAT *m = BBP_cache(-bid);
 
@@ -3151,15 +3153,16 @@ BBPaddtobin(BAT *b)
 	if (m == NULL ||
 	    batcache_maxbuckets == 0 ||
 	    b->batCopiedtodisk ||
-	    (b->H->heap.storage != STORE_MEM) ||
-	    (b->T->heap.storage != STORE_MEM) ||
+	    b->H->heap.storage != STORE_MEM ||
+	    b->T->heap.storage != STORE_MEM ||
 	    b->P->lview ||
 	    BBPtmpcheck(s) == 0 ||
 	    (b->htype == TYPE_str && b->H->width > 1) ||
 	    (b->ttype == TYPE_str && b->T->width > 1) ||
 	    b->htype > TYPE_str ||
 	    b->ttype > TYPE_str ||
-	    vhp || vtp) {
+	    VIEWvhparent(b) ||
+	    VIEWvtparent(b)) {
 		BATDEBUG THRprintf(GDKout, "#BBPaddtobin %d %d " BUNFMT " %d N1\n", b->htype, b->ttype, b->U->capacity, bin);
 		BATdelete(b);	/* handles persistent case also (file deletes) */
 		return 1;
@@ -3191,6 +3194,8 @@ BBPaddtobin(BAT *b)
 			GDKunshare(hp);
 		if (tp)
 			GDKunshare(tp);
+		assert(VIEWvhparent(b) == 0);
+		assert(VIEWvtparent(b) == 0);
 		b->H->heap.parentid = b->T->heap.parentid = 0;
 		b->batPersistence = TRANSIENT;
 

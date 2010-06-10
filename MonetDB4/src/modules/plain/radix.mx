@@ -2986,7 +2986,12 @@ M4_RDX_radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 		BAT *bm = BATmirror(bn);
 
 		bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
-		if (bn->T->vheap && b->T->vheap->filename) {
+		if (bn->T->vheap == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		bn->T->vheap->parentid = bn->batCacheid;
+		if (b->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 			
 			bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
@@ -3260,7 +3265,12 @@ M4_RDX_radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 		BAT *bm = BATmirror(bn);
 
 		bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
-		if (bn->T->vheap && a->T->vheap->filename) {
+		if (bn->T->vheap == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		bn->T->vheap->parentid = bn->batCacheid;
+		if (a->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 			
 			bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
@@ -3402,7 +3412,12 @@ M4_RDX_radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 		BAT *bm = BATmirror(bn);
 
 		bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
-		if (bn->T->vheap && a->T->vheap->filename) {
+		if (bn->T->vheap == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		bn->T->vheap->parentid = bn->batCacheid;
+		if (a->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 			
 			bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
@@ -3527,7 +3542,12 @@ M4_RDX_radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 		BAT *bm = BATmirror(bn);
 
 		bn->T->vheap = (Heap*)GDKzalloc(sizeof(Heap));
-		if (bn->T->vheap && a->T->vheap->filename) {
+		if (bn->T->vheap == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
+		bn->T->vheap->parentid = bn->batCacheid;
+		if (a->T->vheap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 			
 			bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12);
