@@ -397,18 +397,15 @@ trackstack_destroy(struct stack *stk)
 					 * the column (original sole input) ... I can't find
 					 * counter cases */
 					if (trackstack_contains(&avgtrack, getArg(p, j + 1))) {
-						mapcol *sum, *count;
 						/* go from a single to two columns */
 						lastcol->mapid = getArg(p, 1);
 						lastcol->reduceid = getArg(oreduce[i], 1);
 						lastcol->type = getArgType(map, p, 1);
-						sum = lastcol;
 						lastcol = lastcol->next = alloca(sizeof(mapcol));
 						lastcol->mapid = getArg(p, 2);
 						lastcol->reduceid = getArg(oreduce[i], 2);
 						lastcol->type = getArgType(map, p, 2);
 						lastcol->next = NULL;
-						count = lastcol;
 						/* got it, time to copy instructions */
 						j = i;
 						for (i = k + 1; i < j; i++) {
