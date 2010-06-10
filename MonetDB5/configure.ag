@@ -318,14 +318,32 @@ AC_ARG_WITH(cfitsio,
     AS_HELP_STRING([--with-cfitsio=DIR],[cfitsio library is installed in DIR]),
     [have_cfitsio="$withval"], [have_cfitsio="auto"])
 if test "x$have_cfitsio" != xno; then
+
+    CFITSIO_CONFIG=""
+    XPATH="$PATH"
+    case "$have_cfitsio" in
+    auto|yes)
+	;;
+    *)
+	XPATH="$have_cfitsio/bin"
+	;;
+    esac
+
+    AC_PATH_PROG(CFITSIO_CONFIG,pkg-config,,$XPATH)
+
+    if test "x$CFITSIO_CONFIG" != x; then
+        CFITSIO_CFLAGS="`$CFITSIO_CONFIG cfitsio --cflags`"
+        #CFITSIO_LIBS="`$CFITSIO_CONFIG cfitsio --libs`"
+    else
 	case "$have_cfitsio" in
 	auto|yes)
 	    ;;
 	*)
-	    CFITSIO_CFLAGS="-I$have_cfitsio/include"
+	    CFITSIO_CFLAGS="-I$have_cfitsio/include/cfitsio"
 	    CFITSIO_LIBS="-L$have_cfitsio/lib -lcfitsio"
 	    ;;
 	esac
+    fi
 
 	save_CPPFLAGS="$CPPFLAGS"
 	save_LDFLAGS="$LDFLAGS"
@@ -335,7 +353,7 @@ if test "x$have_cfitsio" != xno; then
 		AC_CHECK_LIB(cfitsio, ffopen,
 			AC_DEFINE(HAVE_CFITSIO, 1, [Define if you have the cfitsio library])
 			have_cfitsio=yes,
-			[ if test "x$have_cfitsio" != xauto; then AC_MSG_ERROR([-lcfitsio library not found]); fi; have_cfitsio=no ]),
+			[ if test "x$have_cfitsio" != xauto; then AC_MSG_ERROR([-lcfitsio library not found]); fi; have_cfitsio=no ], "-lm"),
 		[ if test "x$have_cfitsio" != xauto; then AC_MSG_ERROR([fitsio.h header not found]); fi; have_cfitsio=no ])
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
