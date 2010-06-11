@@ -627,7 +627,11 @@ OPTmapreduceImplementation(
 							} else {
 								lastcol = lastcol->next =
 									alloca(sizeof(mapcol));
-								copy = SINGLE;
+								/* push manually to get consistent
+								 * comment marking (after kdifference) */
+								pushInstruction(map, p);
+								oreduce[i]->token = NOOPsymbol;
+								copy = LEAVE;
 							}
 							lastcol->mapid = getArg(p, 0);
 							lastcol->reduceid = getArg(oreduce[i], 0);
