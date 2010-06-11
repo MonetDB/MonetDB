@@ -164,7 +164,7 @@ MRdistributework(
 		InstrPtr sig,
 		str mrcluster)
 {
-	InstrPtr o, p, *packs;
+	InstrPtr o, p = NULL, *packs;
 	int i, n, j, q, v, retc;
 	int *gets, *w;
 	mapcol *lcol;
