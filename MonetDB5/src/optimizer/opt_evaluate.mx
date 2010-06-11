@@ -66,73 +66,77 @@ comment "Evaluate constant expressions once.";
 #include "opt_aliases.h"
 
 static int
-OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p){
+OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
+{
 	int i;
-	(void) cntxt;
+	(void)cntxt;
 
-	if ( p->argc == p->retc )
+	if (p->argc == p->retc)
 		return FALSE;
-	for( i= p->retc; i < p->argc; i++)
-		if( isVarConstant(mb, getArg(p,i)) == FALSE)
+	for (i = p->retc; i < p->argc; i++)
+		if (isVarConstant(mb, getArg(p, i)) == FALSE)
 			return FALSE;
-	for( i=0; i<p->retc; i++)
-		if( isaBatType(getArgType(mb,p,i)))
+	for (i = 0; i < p->retc; i++)
+		if (isaBatType(getArgType(mb, p, i)))
 			return FALSE;
-	return ( getModuleId(p) == calcRef || 
-			 getModuleId(p) == strRef ||
-			 getModuleId(p) == mmathRef ||
-			p->token == ASSIGNsymbol);
+	return(getModuleId(p) == calcRef ||
+		   getModuleId(p) == strRef ||
+		   getModuleId(p) == mmathRef ||
+		   p->token == ASSIGNsymbol);
 }
 
 static int
-OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb){
+OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
+{
 	/* catch constant bounded blocks */
-	int i, j= 0, action=0, block=0, skip=0;
+	int i, j = 0, action = 0, block = 0, skip = 0;
 	InstrPtr p;
 
-	for( i = 0; i<mb->stop; i++){
-		p= mb->stmt[i];
-		if (blockStart(p)){
+	for (i = 0; i < mb->stop; i++) {
+		p = mb->stmt[i];
+		if (blockStart(p)) {
 			block++;
-			if ( p->argc == 2 && isVarConstant(mb, getArg(p,1))  &&
-				getArgType(mb,p,1) == TYPE_bit &&
-				getVarConstant(mb,getArg(p,1)).val.cval[0] == 0){
-				if ( skip == 0)
+			if (p->argc == 2 && isVarConstant(mb, getArg(p, 1)) &&
+					getArgType(mb, p, 1) == TYPE_bit &&
+					getVarConstant(mb, getArg(p, 1)).val.cval[0] == 0)
+			{
+				if (skip == 0)
 					skip = block;
 				action++;
 			}
 		}
-		if (blockExit(p)){
-			if( skip)
+		if (blockExit(p)) {
+			if (skip)
 				freeInstruction(p);
 			else
-				mb->stmt[j++] =p;
+				mb->stmt[j++] = p;
 			if (skip == block)
 				skip = 0;
 			block--;
-		} else
-		if( skip)
+		} else if (skip)
 			freeInstruction(p);
 		else
-			mb->stmt[j++] =p;
-		if( block == 0)
+			mb->stmt[j++] = p;
+		if (block == 0)
 			skip = 0;
 	}
 	mb->stop = j;
-	for( ; j<i; j++)
+	for (; j < i; j++)
 		mb->stmt[j] = NULL;
-	if (action){
-		chkTypes(cntxt->nspace,mb,TRUE);
-		return mb->errors?0:action;
+	if (action) {
+		chkTypes(cntxt->nspace, mb, TRUE);
+		return mb->errors ? 0 : action;
 	}
 	return action;
 }
+
 static int
-assignedOnce(MalBlkPtr mb, Lifespan span, int varid){
-	int i, cnt=0;
-	for( i= getBeginLifespan(span,varid) ; i<= getLastUpdate(span,varid); i++)
-		cnt += getArg(getInstrPtr(mb,i),0) == varid;
-	if ( getInstrPtr(mb,getLastUpdate(span,varid))->barrier == EXITsymbol)
+assignedOnce(MalBlkPtr mb, Lifespan span, int varid)
+{
+	int i, cnt = 0;
+	for (i = getBeginLifespan(span, varid); i <= getLastUpdate(span, varid); i++)
+		cnt += getArg(getInstrPtr(mb, i), 0) == varid;
+	if (getInstrPtr(mb, getLastUpdate(span, varid))->barrier == EXITsymbol)
 		cnt--;
 	return cnt == 1;
 }
@@ -144,95 +148,93 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int i, k, limit, *alias, barrier;
 	MalStkPtr env = NULL;
 	str msg;
-	int debugstate= cntxt->itrace, actions = 0;
+	int debugstate = cntxt->itrace, actions = 0;
 	Lifespan span;
 
-	cntxt->itrace= 0;
-	(void) stk;
-	(void) pci;
+	cntxt->itrace = 0;
+	(void)stk;
+	(void)pci;
 
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
 #ifdef DEBUG_OPT_CX
-	stream_printf(cntxt->fdout,"Constant expression optimizer started\n");
+	stream_printf(cntxt->fdout, "Constant expression optimizer started\n");
 #else
-	(void) cntxt;
+	(void)cntxt;
 #endif
-	
+
 	span = setLifespan(mb);
-	if ( span == NULL)
+	if (span == NULL)
 		return 0;
 
-	env= prepareMALstack(mb, 2 * mb->vsize);
-	env->keepAlive= TRUE;
-	alias = (int*) GDKzalloc(mb->vsize * sizeof(int) *2); /* we introduce more */
-	if ( alias == NULL)
+	env = prepareMALstack(mb, 2 * mb->vsize);
+	env->keepAlive = TRUE;
+	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
+	if (alias == NULL)
 		return 0;
 
 	limit = mb->stop;
-	for (i= 1 ; i < limit; i++) {
-		p = getInstrPtr(mb,i);
-		for (k=p->retc; k<p->argc; k++)
-		if (alias[getArg(p,k)] )
-			getArg(p,k) = alias[getArg(p,k)];
+	for (i = 1; i < limit; i++) {
+		p = getInstrPtr(mb, i);
+		for (k = p->retc; k < p->argc; k++)
+			if (alias[getArg(p, k)])
+				getArg(p, k) = alias[getArg(p, k)];
 #ifdef DEBUG_OPT_CX
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);	
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 		/* be aware that you only assign once to a variable */
-		if( p->retc == 1 && OPTallConstant(cntxt,mb,p) && !isUnsafeFunction(p) ){ 
-			if( assignedOnce(mb,span,getArg(p,0)) ==FALSE)
+		if (p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
+			if (assignedOnce(mb, span, getArg(p, 0)) == FALSE)
 				continue;
 			actions++;
 			barrier = p->barrier;
 			p->barrier = 0;
-			msg = reenterMAL(cntxt,mb,i,i+1,env,0,0);
+			msg = reenterMAL(cntxt, mb, i, i + 1, env, 0, 0);
 			p->barrier = barrier;
 #ifdef DEBUG_OPT_CX
-			stream_printf(cntxt->fdout,"retc var %s\n",getVarName(mb,getArg(p,0)));
-			stream_printf(cntxt->fdout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
+			stream_printf(cntxt->fdout, "retc var %s\n", getVarName(mb, getArg(p, 0)));
+			stream_printf(cntxt->fdout, "result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
 #endif
-			if (msg == MAL_SUCCEED){
+			if (msg == MAL_SUCCEED) {
 				ValRecord cst;
-				VALcopy(&cst,&env->stk[getArg(p,0)]);
-@-
-You may not overwrite constants. They may be used by other
-instructions 
-@c
-				getArg(p,1)= defConstant(mb, getArgType(mb,p,0), &cst);
+				VALcopy(&cst, &env->stk[getArg(p, 0)]);
+				/* You may not overwrite constants.  They may be used by
+				 * other instructions */
+				getArg(p, 1) = defConstant(mb, getArgType(mb, p, 0), &cst);
 				/* update the stack frame for next evaluations */
-				if ( getArgType(mb,p,1) == TYPE_str)
-					setVarCleanup(mb,getArg(p,1));
+				if (getArgType(mb, p, 1) == TYPE_str)
+					setVarCleanup(mb, getArg(p, 1));
 				else
-					clrVarCleanup(mb,getArg(p,1));
-				VALcopy(&env->stk[getArg(p,1)],&getVarConstant(mb,getArg(p,1)));
-				alias[getArg(p,0)]= getArg(p,1);
+					clrVarCleanup(mb, getArg(p, 1));
+				VALcopy(&env->stk[getArg(p, 1)], &getVarConstant(mb, getArg(p, 1)));
+				alias[getArg(p, 0)] = getArg(p, 1);
 				p->argc = 2;
 				p->token = ASSIGNsymbol;
 				clrFunction(p);
 #ifdef DEBUG_OPT_CX
-				stream_printf(cntxt->fdout,"Evaluated new constant=%d -> %d:%s\n",
-					getArg(p,0), getArg(p,1), getTypeName(getArgType(mb,p,1)));
+				stream_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
+					getArg(p, 0), getArg(p, 1), getTypeName(getArgType(mb, p, 1)));
 #endif
 			} else {
-			/* if there is an error, we should postpone message handling,
-				as the actual error (eg. division by zero ) may not happen) */
+				/* if there is an error, we should postpone message handling,
+					as the actual error (eg. division by zero ) may not happen) */
 #ifdef DEBUG_OPT_CX
-				stream_printf(cntxt->fdout,"Evaluated %s\n",msg);
+				stream_printf(cntxt->fdout, "Evaluated %s\n", msg);
 #endif
 				GDKfree(msg);
-				mb->errors= 0;
+				mb->errors = 0;
 			}
-		} 
+		}
 	}
-	actions += OPTremoveUnusedBlocks(cntxt,mb);
+	actions += OPTremoveUnusedBlocks(cntxt, mb);
 	OPTDEBUG
-	if ( actions)
-		stream_printf(cntxt->fdout,"#opt_evaluate: %d constant expressions\n",actions);
+	if (actions)
+		stream_printf(cntxt->fdout, "#opt_evaluate: %d constant expressions\n", actions);
 	GDKfree(span);
 	GDKfree(alias);
 	freeStack(env);
-	cntxt->itrace= debugstate;
+	cntxt->itrace = debugstate;
 	return actions;
 }
 @include optimizerWrapper.mx
