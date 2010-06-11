@@ -720,6 +720,7 @@ OPTmapreduceImplementation(
 				/* simple ORDER BY */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
+						pushInstruction(map, omap[i]);
 						newComment(map, "= ORDER BY");
 						/* fix return */
 						lastcol->mapid = getArg(omap[i], 0);
@@ -734,6 +735,7 @@ OPTmapreduceImplementation(
 				/* simple ORDER BY DESC*/
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
+						pushInstruction(map, omap[i]);
 						newComment(map, "= ORDER BY DESC");
 						/* fix return */
 						lastcol->mapid = getArg(omap[i], 0);
@@ -748,6 +750,7 @@ OPTmapreduceImplementation(
 				/* simple LIMIT/OFFSET */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
+						pushInstruction(map, omap[i]);
 						newComment(map, "= LIMIT/OFFSET");
 						/* fix return */
 						lastcol->mapid = getArg(omap[i], 0);
@@ -764,9 +767,9 @@ OPTmapreduceImplementation(
 				/* MAX aggregation */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
-						newComment(map, "= MAX");
 						/* basically perform a MAX over all MAXes */
 						pushInstruction(map, omap[i]);
+						newComment(map, "= MAX");
 						lastcol->mapid = getArg(omap[i], 0);
 						lastcol->type = getArgType(map, p, 0);
 						lastcol->reduceid = getArg(p, 0);
@@ -779,9 +782,9 @@ OPTmapreduceImplementation(
 				/* MIN aggregation */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
-						newComment(map, "= MIN");
 						/* basically perform a MIN over all MINs */
 						pushInstruction(map, omap[i]);
+						newComment(map, "= MIN");
 						lastcol->mapid = getArg(omap[i], 0);
 						lastcol->type = getArgType(map, p, 0);
 						lastcol->reduceid = getArg(p, 0);
@@ -798,8 +801,8 @@ OPTmapreduceImplementation(
 						getFunctionId(oreduce[i + 1]) == countRef &&
 						getArg(p, 0) == getArg(oreduce[i + 1], 1))
 			{
-				newComment(map, "= COUNT(*)");
 				pushInstruction(map, omap[i]);
+				newComment(map, "= COUNT(*)");
 				copy = cNONE;
 				/* NOTE: rest is handled in case below */
 			}
@@ -815,8 +818,8 @@ OPTmapreduceImplementation(
 						getArg(p, 1) = getArg(oreduce[i - 1], 1);
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
-						newComment(map, "= COUNT");
 						pushInstruction(map, omap[i]);
+						newComment(map, "= COUNT");
 						lastcol->mapid = getArg(omap[i], 0);
 						lastcol->type = getArgType(map, p, 0);
 						lastcol->reduceid = getArg(p, 0);
@@ -828,8 +831,8 @@ OPTmapreduceImplementation(
 			} else if (getFunctionId(p) == sumRef) {
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
-						newComment(map, "= SUM");
 						pushInstruction(map, omap[i]);
+						newComment(map, "= SUM");
 						lastcol->mapid = getArg(omap[i], 0);
 						lastcol->type = getArgType(map, p, 0);
 						lastcol->reduceid = getArg(p, 0);
