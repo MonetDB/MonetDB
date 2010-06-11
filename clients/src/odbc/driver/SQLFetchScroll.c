@@ -45,7 +45,7 @@
 SQLRETURN
 SQLFetchScroll_(ODBCStmt *stmt,
 		SQLSMALLINT FetchOrientation,
-		SQLLEN FetchOffset)
+		SQLROWOFFSET FetchOffset)
 {
 	assert(stmt->hdl);
 
@@ -62,7 +62,7 @@ SQLFetchScroll_(ODBCStmt *stmt,
 
 	switch (FetchOrientation) {
 	case SQL_FETCH_NEXT:
-		if (stmt->currentRow >= stmt->rowcount) {
+		if (stmt->currentRow >= (SQLROWOFFSET) stmt->rowcount) {
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;
 		}
@@ -84,7 +84,7 @@ SQLFetchScroll_(ODBCStmt *stmt,
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;
 		}
-		if (stmt->startRow < RowSetSize) {
+		if (stmt->startRow < (SQLROWOFFSET) RowSetSize) {
 			/* Attempt to fetch before the result set
 			   returned the first rowset */
 			addStmtError(stmt, "01S06", NULL, 0);
@@ -94,7 +94,7 @@ SQLFetchScroll_(ODBCStmt *stmt,
 		break;
 	case SQL_FETCH_RELATIVE:
 		if ((stmt->currentRow != 0 || FetchOffset <= 0) &&
-		    (stmt->currentRow != stmt->rowcount || FetchOffset >= 0)) {
+		    (stmt->currentRow != (SQLROWOFFSET) stmt->rowcount || FetchOffset >= 0)) {
 			if ((stmt->currentRow == 0 && FetchOffset <= 0) ||
 			    (stmt->startRow == 0 && FetchOffset < 0) ||
 			    (stmt->startRow > 0 &&
@@ -114,8 +114,8 @@ SQLFetchScroll_(ODBCStmt *stmt,
 				addStmtError(stmt, "01S06", NULL, 0);
 				break;
 			}
-			if (stmt->startRow + FetchOffset >= stmt->rowcount ||
-			    stmt->currentRow == stmt->rowcount) {
+			if (stmt->startRow + FetchOffset >= (SQLROWOFFSET) stmt->rowcount ||
+			    stmt->currentRow == (SQLROWOFFSET) stmt->rowcount) {
 				stmt->startRow = stmt->rowcount;
 				stmt->State = FETCHED;
 				return SQL_NO_DATA;
@@ -169,12 +169,12 @@ SQLFetchScroll_(ODBCStmt *stmt,
 SQLRETURN SQL_API
 SQLFetchScroll(SQLHSTMT hStmt,
 	       SQLSMALLINT FetchOrientation,
-	       SQLLEN FetchOffset)
+	       SQLROWOFFSET FetchOffset)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFetchScroll " PTRFMT " %d " LENFMT "\n", PTRFMTCAST hStmt, FetchOrientation, FetchOffset);
+	ODBCLOG("SQLFetchScroll " PTRFMT " %d " LENFMT "\n", PTRFMTCAST hStmt, FetchOrientation, (SQLLEN) FetchOffset);
 #endif
 
 	if (!isValidStmt(stmt))

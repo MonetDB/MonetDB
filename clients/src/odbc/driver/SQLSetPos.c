@@ -69,7 +69,7 @@ SQLSetPos(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	if (nRow > stmt->rowSetSize) {
+	if (nRow > (SQLSETPOSIROW) stmt->rowSetSize) {
 		/* Row value out of range */
 		addStmtError(stmt, "HY107", NULL, 0);
 		return SQL_ERROR;

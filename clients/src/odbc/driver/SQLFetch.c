@@ -77,7 +77,7 @@ SQLFetch_(ODBCStmt *stmt)
 		   updating the SQL_DESC_ARRAY_STATUS_PTR */
 		stmt->rowSetSize = desc->sql_desc_array_size;
 
-		if (stmt->startRow + stmt->rowSetSize > stmt->rowcount)
+		if (stmt->startRow + stmt->rowSetSize > (SQLROWOFFSET) stmt->rowcount)
 			stmt->rowSetSize = stmt->rowcount - stmt->startRow;
 
 		if (stmt->rowSetSize <= 0) {
@@ -85,7 +85,7 @@ SQLFetch_(ODBCStmt *stmt)
 			return SQL_NO_DATA;
 		}
 		if (statusp) {
-			for (row = 0; row < stmt->rowSetSize; row++)
+			for (row = 0; (SQLROWOFFSET) row < stmt->rowSetSize; row++)
 				*statusp++ = SQL_ROW_SUCCESS;
 			for (; row < desc->sql_desc_array_size; row++)
 				*statusp++ = SQL_ROW_NOROW;
