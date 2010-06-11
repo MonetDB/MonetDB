@@ -82,7 +82,7 @@ for use in profiling and recylcing instructions.
 #ifdef HAVE_TIMES
     struct tms timer;   /* timing information */
 #endif
-	time_t clock;		/* seconds since epoch */
+	struct timeval clock;		/* seconds + microsecs since epoch */
 	lng clk;			/* micro seconds */
 	char cmd;		/* debugger communication */
 	int pcup;		/* saved pc upon a recursive all */

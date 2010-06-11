@@ -383,7 +383,7 @@ typedef struct PERF {
 #ifdef HAVE_TIMES
 	struct tms timer;	/* timing information */
 #endif
-	time_t clock;		/* clock */
+	struct timeval clock;	/* clock */
 	lng clk;		/* microseconds clock */
 	int counter;
 	lng ticks;		/* micro seconds spent */

@@ -2446,7 +2446,7 @@ It simply skips the barrier block upon return.
 	}
 @= beginProfile
 	if ( stk) {
-		time(&stk->clock);
+		gettimeofday(&stk->clock, NULL);
 		if( mb->profiler != NULL ){
 			@1->clk= GDKusec();
 			mal_set_lock(mal_contextLock, "DFLOWdelay");
@@ -2485,7 +2485,7 @@ It simply skips the barrier block upon return.
 			profilerEvent(cntxt->idx,mb,stk,ppc);
 			ppc= -1;
 		}
-		if ( cntxt->qtimeout &&  time(NULL) - stk->clock > cntxt->qtimeout)
+		if ( cntxt->qtimeout &&  time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	}
 

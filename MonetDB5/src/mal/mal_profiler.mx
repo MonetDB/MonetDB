@@ -541,15 +541,15 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
 
-		tbuf = ctime(&mb->profiler[pc].clock);
+		tbuf = ctime(&mb->profiler[pc].clock.tv_sec);
 		if (tbuf) {
 			c = strchr(tbuf, '\n');
 			if (c) {
-				c[-5] = '"';
-				c[-4] = 0;
+				c[-5] = 0;
 			}
 			tbuf[10] = '"';
-			log("%s,\t", tbuf + 10);
+			log("%s", tbuf + 10);
+			log(".%06d\",\t", (int)mb->profiler[pc].clock.tv_usec);
 		} else
 			log("%s,\t", "nil");
 	}
@@ -1233,10 +1233,10 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	{
 		char *tbuf, *c;
 
-		tbuf = ctime(&mb->profiler[pc].clock);
+		tbuf = ctime(&mb->profiler[pc].clock.tv_sec);
 		c = strchr(tbuf, '\n');
 		if (c)
-			c[-5] = 0;
+			snprintf(c-5, 6, ".%03d", (int)mb->profiler[pc].clock.tv_usec / 1000);
 		TRACE_id_time = BUNappend(TRACE_id_time, tbuf, FALSE);
 	}
 
