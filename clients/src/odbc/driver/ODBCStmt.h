@@ -80,9 +80,9 @@ typedef struct tODBCDRIVERSTMT {
 	   set (0 based); rowSetSize is the number of rows in the
 	   current result set; currentRow is the row number of the
 	   current row within the current result set */
-	SQLULEN currentRow;
-	SQLULEN startRow;
-	SQLULEN rowSetSize;
+	SQLROWOFFSET currentRow;
+	SQLROWOFFSET startRow;
+	SQLROWOFFSET rowSetSize;
 
 	unsigned int currentCol; /* used by SQLGetData() */
 	SQLINTEGER retrieved;	/* amount of data retrieved */
