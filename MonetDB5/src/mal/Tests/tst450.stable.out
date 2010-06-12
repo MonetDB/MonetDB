@@ -124,6 +124,7 @@ end main;
 [ "pcre",	  nil	  ]
 [ "pqueue",	  nil	  ]
 [ "profiler",	  nil	  ]
+[ "rdf",	  nil	  ]
 [ "recycle",	  nil	  ]
 [ "remote",	  nil	  ]
 [ "sabaoth",	  nil	  ]
