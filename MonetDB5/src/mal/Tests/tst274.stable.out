@@ -64,7 +64,6 @@ exit (go,i);
     profiler.activate("stmt");
     profiler.activate("rbytes");
     profiler.activate("wbytes");
-    profiler.activate("disk");
     profiler.setAll();
     profiler.start();
     io.printf("#monitor \n");
