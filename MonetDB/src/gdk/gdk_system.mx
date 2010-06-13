@@ -54,12 +54,12 @@ the latest iteration of this layer.
 # include <io.h>
 #endif
 #ifdef HAVE_FCNTL_H
-#include <fcntl.h>
+# include <fcntl.h>
 #endif
-
-@- pthreads Includes and Definitions
-@h
 #include <sys/types.h>
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif
 #ifdef HAVE_SYS_SYSCTL_H
 # if defined(__OpenBSD__)
 #  include <sys/param.h>
@@ -69,7 +69,12 @@ the latest iteration of this layer.
 #ifdef HAVE_SIGNAL_H
 # include <signal.h>
 #endif
+#if !(defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)) && defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
+# include <sys/resource.h>
+#endif
 
+@- pthreads Includes and Definitions
+@h
 #ifdef HAVE_PTHREAD_H
 /* don't re-include config.h; on Windows, don't redefine pid_t in an
    incompatible way 
@@ -95,10 +100,6 @@ the latest iteration of this layer.
 /* new pthread interface, where the thread id changed to a struct */
 #ifdef PTW32_VERSION
 #define PTW32 1
-#endif
-
-#if !(defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)) && defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
-# include <sys/resource.h>
 #endif
 
 /* debug and errno integers */
