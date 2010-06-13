@@ -69,7 +69,7 @@ the latest iteration of this layer.
 #ifdef HAVE_SIGNAL_H
 # include <signal.h>
 #endif
-#if !(defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)) && defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
+#if defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
 # include <sys/resource.h>
 #endif
 
