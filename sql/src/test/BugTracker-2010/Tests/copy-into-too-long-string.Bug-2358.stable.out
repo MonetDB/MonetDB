@@ -1,0 +1,31 @@
+stdout of test 'copy-into-too-long-string.Bug-2358` in directory 'src/test/BugTracker-2010` itself:
+
+
+# 15:34:26 >  
+# 15:34:26 >   mserver5 "--config=/ufs/fabian/scratch/monetdb/Jun2010/program-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/Jun2010/program-x86_64/lib/MonetDB5:/ufs/fabian/scratch/monetdb/Jun2010/program-x86_64/lib/MonetDB5/lib:/ufs/fabian/scratch/monetdb/Jun2010/program-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Jun2010-volund.ins.cwi.nl/sql/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=32555 --set xrpc_port=45116 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
+# 15:34:26 >  
+
+# MonetDB server v5.20.0, based on kernel v1.38.0
+# Serving database 'mTests_src_test_BugTracker-2010', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:32555/
+# MonetDB/SQL module v2.38.0 loaded
+# MonetDB/GIS module v0.18.0 loaded
+
+Ready.
+
+Over..
+
+# 15:34:26 >  
+# 15:34:26 >  mclient -lsql -ftest -i -e --host=volund --port=32555 
+# 15:34:26 >  
+
+
+# 15:34:26 >  
+# 15:34:26 >  Done.
+# 15:34:26 >  
+

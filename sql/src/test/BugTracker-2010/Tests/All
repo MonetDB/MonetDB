@@ -10,3 +10,4 @@ mat.slice_on_empty_BATs.SF-2994521
 reorder.SF-2995671
 crashonschema
 connectto
+copy-into-too-long-string.Bug-2358
