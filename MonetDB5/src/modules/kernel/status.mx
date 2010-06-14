@@ -142,7 +142,7 @@ address SYSgetmem_maxsize
 comment "The maximum usable amount of physical swapspace in KB (target only).";
 
 command mem_maxsize(v:lng) :void 
-address set_mem_maxsize
+address SYSsetmem_maxsize
 comment "Set the maximum usable amount of physical swapspace in KB.";
 
 command vm_cursize() :lng 
@@ -179,9 +179,6 @@ comment "Produce a list of default ports for a specific language";
 #define status_export extern
 #endif
 
-status_export str SYSgetDatabases(int *ret);
-status_export str SYSgetPorts(int *ret, str *lang);
-status_export int set_mem_maxsize(lng *num);
 
 #endif
 @-
@@ -220,6 +217,19 @@ str
 SYSgetmem_maxsize(lng *num)
 {
 	*num = GDK_mem_maxsize;
+	return MAL_SUCCEED;
+}
+
+status_export str SYSsetmem_maxsize(int *ret, lng *num);
+str
+SYSsetmem_maxsize(int *ret, lng *num)
+{
+	size_t sze;
+	if (*num < 0)
+		throw(MAL, "status.mem_maxsize", "new size must not be < 0!");
+	if (sze < GDK_mem_bigsize)
+		set_mem_bigsize(num);
+	GDK_mem_maxsize = MAX(GDK_mem_bigsize, sze);
 	return MAL_SUCCEED;
 }
 
@@ -425,16 +435,6 @@ int
 get_mem_maxsize(lng *num)
 {
 	*num = GDK_mem_maxsize;
-	return GDK_SUCCEED;
-}
-
-int
-set_mem_maxsize(lng *num)
-{
-	@:num2sze(mem_maxsize)@
-	if (sze < GDK_mem_bigsize)
-		set_mem_bigsize(num);
-	GDK_mem_maxsize = MAX(GDK_mem_bigsize, sze);
 	return GDK_SUCCEED;
 }
 
@@ -786,6 +786,9 @@ Note, this code base should be changed for the Windows setting.
 #ifndef F_OK
 #define F_OK 0
 #endif
+@h
+status_export str SYSgetDatabases(int *ret);
+@c
 str SYSgetDatabases(int *ret)
 {
 	BAT *b;
@@ -829,6 +832,9 @@ str SYSgetDatabases(int *ret)
 	return MAL_SUCCEED;
 }
 
+@h
+status_export str SYSgetPorts(int *ret, str *lang);
+@c
 str SYSgetPorts(int *ret, str *lang)
 {
 	BAT *b;
