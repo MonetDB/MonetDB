@@ -81,12 +81,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_9D216440C0EC49B28059B475331A032B"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_B3D1BED489C34E2B85AA911052AFF215"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -106,6 +100,12 @@
         "Entry"
         {
         "MsmKey" = "8:_C455797FC66F47729CE65BC402A1C322"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_C7D344E4F69843279CC64D0836E5DF6C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -530,6 +530,26 @@
             "Tag" = "8:"
             "Folder" = "8:_ED24BDB93EAA443BAD558F124FE5E513"
             "Condition" = "8:INSTALLPERL"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C7D344E4F69843279CC64D0836E5DF6C"
+            {
+            "SourcePath" = "8:bin\\msqldump.exe"
+            "TargetName" = "8:msqldump.exe"
+            "Tag" = "8:"
+            "Folder" = "8:_53E9D8201DD04A5D99D4A3E072A0C0D8"
+            "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
             "ReadOnly" = "11:FALSE"
@@ -1709,20 +1729,6 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_9D216440C0EC49B28059B475331A032B"
-            {
-            "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_9_0_microsoft_vc90_crt_x86.msm"
-                "Properties"
-                {
-                }
-            "LanguageId" = "3:0"
-            "Exclude" = "11:FALSE"
-            "Folder" = "8:"
-            "Feature" = "8:"
-            "IsolateTo" = "8:"
-            }
             "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_F68A02B385C64980A45DD72D196AC354"
             {
             "UseDynamicProperties" = "11:TRUE"
