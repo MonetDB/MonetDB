@@ -1,6 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Jun 14 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Added msqldump to Windows installer.
+
 * Mon May 31 2010 Sjoerd Mullender <sjoerd@acm.org>
 - Updated Vendor information.
 

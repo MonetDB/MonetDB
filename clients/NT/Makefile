@@ -29,6 +29,7 @@ check: "$(SRCDIR)\Makefile.msc"
 install: targetdirs all $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\mclient.bat "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\msqldump.bat "$(prefix)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\$(INSTALLER)$(IBITS).vdproj"

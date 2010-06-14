@@ -57,12 +57,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_5F7A7A1587AD4E2FA02E81F1CD796DAD"
-        "OwnerKey" = "8:_E3BDB654F67F4FE5B754DA3EBBFAC891"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_69698A972465437496770253F469CB1E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -82,6 +76,18 @@
         "Entry"
         {
         "MsmKey" = "8:_8FCBDE7143844FA492E624824790B79C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_97F352092613440FAA98A6F1F88D20CE"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_9FE0772EC77A4A41B8D299F70653AB94"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -463,6 +469,46 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_97F352092613440FAA98A6F1F88D20CE"
+            {
+            "SourcePath" = "8:msqldump.bat"
+            "TargetName" = "8:msqldump.bat"
+            "Tag" = "8:"
+            "Folder" = "8:_A6BCFF56525E4430B611F8984E253A12"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9FE0772EC77A4A41B8D299F70653AB94"
+            {
+            "SourcePath" = "8:bin\\msqldump.exe"
+            "TargetName" = "8:msqldump.exe"
+            "Tag" = "8:"
+            "Folder" = "8:_53E9D8201DD04A5D99D4A3E072A0C0D8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B3D1BED489C34E2B85AA911052AFF215"
             {
             "SourcePath" = "8:share\\MonetDB\\perl\\DBD\\monetdb.pm"
@@ -805,6 +851,7 @@
         "MsiBootstrapper"
         {
         "LangId" = "3:1033"
+        "RequiresElevation" = "11:FALSE"
         }
         "Product"
         {
@@ -1708,20 +1755,6 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_5F7A7A1587AD4E2FA02E81F1CD796DAD"
-            {
-            "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_9_0_microsoft_vc90_crt_x86_x64.msm"
-                "Properties"
-                {
-                }
-            "LanguageId" = "3:0"
-            "Exclude" = "11:FALSE"
-            "Folder" = "8:"
-            "Feature" = "8:"
-            "IsolateTo" = "8:"
-            }
             "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_E3BDB654F67F4FE5B754DA3EBBFAC891"
             {
             "UseDynamicProperties" = "11:TRUE"
@@ -1738,9 +1771,6 @@
             }
         }
         "ProjectOutput"
-        {
-        }
-        "VJSharpPlugin"
         {
         }
     }
