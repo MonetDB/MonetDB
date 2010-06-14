@@ -31,7 +31,7 @@ the pseudo BAT to a variable.
 @mal
 module status;
 
-command cpuStatistics() :bat[:str,:int] 
+command cpuStatistics():bat[:str,:int] 
 address SYScpuStatistics
 comment "Global cpu usage information";
 command memStatistics():bat[:str,:wrd] 
@@ -40,53 +40,12 @@ comment "Global memory usage information";
 command ioStatistics():bat[:str,:int] 
 address SYSioStatistics
 comment "Global IO activity information";
-@-
-#command memMap() :void 
-#address SYSmemMap
-#comment "Print a map of all memory that is in use";
-@-
-
-For each 64KB block in the first 3GB of the virtual memory @emph{mem_printmap()} 
-prints a character:
-@multitable @columnfractions 0.05 0.7
-@item 0-9 
-@tab - thread stack space of thread <num>
-@item B 
-@tab - in use for a large BAT heap 
-   (i.e. anonymous virtual memory).
-@item b 
-@tab - free (last usage was B)
-@item S 
-@tab - in use for a malloc block
-@item s 
-@tab - free (last usage was S)
-@item P 
-@tab - in use for the BBP array 
-   (i.e. anonymous virtual memory)
-@item p 
-@tab - free (last usage was P)
-@item M 
-@tab - in use as memory mapped region
-@item m 
-@tab - free (last usage was M)
-@item C 
-@tab - in use as MIL context buffer 
-   (i.e. anonymous virtual memory)
-@item c 
-@tab - free (last usage was M)
-@end multitable
-
-On Linux, the malloc library appears to be using anonymous virtual memory, 
-which goes undetected.  If you want to see all your memory in the map, 
-lower the gdk_mmap threshold in monetdb5.conf to a low value (say 64KB).
-@-
-@mal
-command vmStatistics(minsize:lng) :bat[:str,:lng] 
+command vmStatistics(minsize:lng):bat[:str,:lng] 
 address SYSvm_usage
-comment "Get a split-up of how much virtual memory blocks are in use.";
-command memUsage(minsize:lng) :bat[:str,:lng] 
+comment "Get a split-up of how much virtual memory blocks are in use";
+command memUsage(minsize:lng):bat[:str,:lng] 
 address SYSmem_usage
-comment "Get a split-up of how much memory blocks are in use.";
+comment "Get a split-up of how much memory blocks are in use";
 @-
 Some explanation of what mem_usage() and vm_usage() display:
 @verbatim
@@ -126,44 +85,37 @@ Some explanation of what mem_usage() and vm_usage() display:
 @end verbatim
 @+ MAL runtime status 
 @mal
-command batStatistics( ):bat[:str,:str] 
+command batStatistics():bat[:str,:str] 
 address SYSgdkEnv
 comment "Show distribution of bats by kind";
-command getThreads( ):bat[:int,:str] 
+command getThreads():bat[:int,:str] 
 address SYSgdkThread
-comment "Produce overview of active threads.";
+comment "Produce overview of active threads";
 
-command mem_cursize() :lng 
+command mem_cursize():lng 
 address SYSgetmem_cursize
-comment "The amount of physical swapspace in KB that is currently in use.";
+comment "The amount of physical swapspace in KB that is currently in use";
 
-command mem_maxsize() :lng 
+command mem_maxsize():lng 
 address SYSgetmem_maxsize
-comment "The maximum usable amount of physical swapspace in KB (target only).";
+comment "The maximum usable amount of physical swapspace in KB (target only)";
 
-command mem_maxsize(v:lng) :void 
-address set_mem_maxsize
-comment "Set the maximum usable amount of physical swapspace in KB.";
+command mem_maxsize(v:lng):void 
+address SYSsetmem_maxsize
+comment "Set the maximum usable amount of physical swapspace in KB";
 
-command vm_cursize() :lng 
+command vm_cursize():lng 
 address SYSgetvm_cursize
-comment "the amount of logical VM space in KB that is currently in use";
+comment "The amount of logical VM space in KB that is currently in use";
 
-command vm_maxsize() :lng 
+command vm_maxsize():lng 
 address SYSgetvm_maxsize
-comment "the maximum usable amount of logical VM space in KB (target only)";
+comment "The maximum usable amount of logical VM space in KB (target only)";
 
-command vm_maxsize(v:lng) :void 
+command vm_maxsize(v:lng):void 
 address SYSsetvm_maxsize
-comment "set the maximum usable amount of physical swapspace in KB";
+comment "Set the maximum usable amount of physical swapspace in KB";
 
-command getDatabases():bat[:str,:str]
-address SYSgetDatabases
-comment "Produce a list of known databases in the current dbfarm";
-
-command getPorts(lang:str):bat[:str,:int]
-address SYSgetPorts
-comment "Produce a list of default ports for a specific language";
 @+ Implementation Code
 @h
 #ifndef _SYS_H_
@@ -179,9 +131,6 @@ comment "Produce a list of default ports for a specific language";
 #define status_export extern
 #endif
 
-status_export str SYSgetDatabases(int *ret);
-status_export str SYSgetPorts(int *ret, str *lang);
-status_export int set_mem_maxsize(lng *num);
 
 #endif
 @-
@@ -195,19 +144,20 @@ status_export int set_mem_maxsize(lng *num);
 #include "mal_exception.h"
 #include "status.h"
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+# include <unistd.h>
 #endif
 
 #ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
+# include <sys/times.h>
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#define access _access
+#ifdef HAVE_SYS_RESOURCE_H
+# include <sys/resource.h>
 #endif
 
-extern lng GDKcur_cursize(void);
+@h
 status_export str SYSgetmem_cursize(lng *num);
+@c
 str
 SYSgetmem_cursize(lng *num)
 {
@@ -215,7 +165,9 @@ SYSgetmem_cursize(lng *num)
 	return MAL_SUCCEED;
 }
 
+@h
 status_export str SYSgetmem_maxsize(lng *num);
+@c
 str
 SYSgetmem_maxsize(lng *num)
 {
@@ -223,8 +175,32 @@ SYSgetmem_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
+@h
+status_export str SYSsetmem_maxsize(int *ret, lng *num);
+@c
+str
+SYSsetmem_maxsize(int *ret, lng *num)
+{
+	size_t sze = 0;
+	*ret = 0;
+	if (*num < 0)
+		throw(ILLARG, "status.mem_maxsize", "new size must not be < 0");
+#if SIZEOF_SIZE_T == SIZEOF_INT
+	{
+		lng size_t_max = 2 * (lng)INT_MAX;
+		if (*num > size_t_max)
+			throw(ILLARG, "status.mem_maxsize", "new size must not be > " LLFMT, size_t_max);
+	}
+#endif
+	if (sze < GDK_mem_bigsize)
+		GDK_mem_bigsize = MAX(32768, sze);
+	GDK_mem_maxsize = MAX(GDK_mem_bigsize, sze);
+	return MAL_SUCCEED;
+}
 
+@h
 status_export str SYSgetvm_cursize(lng *num);
+@c
 str
 SYSgetvm_cursize(lng *num)
 {
@@ -232,7 +208,9 @@ SYSgetvm_cursize(lng *num)
 	return MAL_SUCCEED;
 }
 
+@h
 status_export str SYSgetvm_maxsize(lng *num);
+@c
 str
 SYSgetvm_maxsize(lng *num)
 {
@@ -240,7 +218,9 @@ SYSgetvm_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
+@h
 status_export str SYSsetvm_maxsize(lng *num);
+@c
 str
 SYSsetvm_maxsize(lng *num)
 {
@@ -248,12 +228,6 @@ SYSsetvm_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
-/*
-str memMap() {
-        MT_alloc_print();
-        return MAL_SUCCEED;
-}
-*/
 @- Performance
 To obtain a good impression of the Monet performance we need timing information.
 The most detailed information is best obtained with the system profiler.
@@ -272,7 +246,9 @@ static time_t clk = 0;
 static struct tms state;
 #endif
 
+@h
 status_export str SYScpuStatistics(int *ret);
+@c
 str
 SYScpuStatistics(int *ret)
 {
@@ -280,22 +256,22 @@ SYScpuStatistics(int *ret)
 	BAT *b;
 #ifdef HAVE_TIMES
 	struct tms newst;
-#ifndef HZ
+# ifndef HZ
 	static int HZ;
 
 	if (HZ == 0) {
-#if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
+#  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
 		HZ = sysconf(_SC_CLK_TCK);
-#else
+#  else
 		HZ = CLK_TCK;
-#endif
+#  endif
 	}
-#endif
+# endif
 #endif
 
 	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0)
-		throw(MAL, "catalog.gdkCpu",  MAL_MALLOC_FAIL);
+		throw(MAL, "status.cpuStatistics", MAL_MALLOC_FAIL);
 #ifdef HAVE_TIMES
 	if (clk == 0) {
 		clk = time(0);
@@ -328,11 +304,10 @@ SYScpuStatistics(int *ret)
 	return MAL_SUCCEED;
 }
 
-@-
-Same observations as to SYScpuStatistics()
+@h
+status_export str SYSmemStatistics(int *ret);
 @c
 static char *memincr = NULL;
-status_export str SYSmemStatistics(int *ret);
 str
 SYSmemStatistics(int *ret)
 {
@@ -344,12 +319,12 @@ SYSmemStatistics(int *ret)
 
 	b = BATnew(TYPE_str, TYPE_wrd, 32);
 	if (b == 0)
-		throw(MAL, "catalog.memStatistics",  MAL_MALLOC_FAIL);
+		throw(MAL, "status.memStatistics", MAL_MALLOC_FAIL);
 
 	/* store counters, ignore errors */
-	if (memincr == NULL) {
+	if (memincr == NULL)
 		memincr = MT_heapbase;
-	}
+
 	i = (wrd) (MT_heapcur() - memincr);
 
 	memincr = MT_heapcur();
@@ -377,90 +352,6 @@ SYSmemStatistics(int *ret)
 	return MAL_SUCCEED;
 }
 
-@-
-To avoid complaints about signed/unsigned comparisons between lng & size_t,
-we cast  lng *num  to  size_t sze,
-after checking that there is no under-/overflow.
-@c
-@= num2sze
-	size_t sze;
-	if (*num < 0) {
-		GDKerror("set_@1: new size must not be < 0!\n");
-		return GDK_FAIL;
-	}
-#if SIZEOF_SIZE_T == SIZEOF_INT
-{
-	lng size_t_max = 2 * (lng)INT_MAX;
-	if (*num > size_t_max) {
-		GDKerror("set_@1: new size must not be > " LLFMT "!\n", size_t_max);
-		return GDK_FAIL;
-	}
-}
-#endif
-	sze = (size_t)*num;
-@c
-int
-get_mem_bigsize(lng *num)
-{
-	*num = GDK_mem_bigsize;
-	return GDK_SUCCEED;
-}
-
-int
-set_mem_bigsize(lng *num)
-{
-	@:num2sze(mem_bigsize)@
-	GDK_mem_bigsize = MAX(32768, sze);
-	return GDK_SUCCEED;
-}
-
-int
-get_mem_cursize(lng *num)
-{
-	*num = GDKmem_cursize();
-	return GDK_SUCCEED;
-}
-
-int
-get_mem_maxsize(lng *num)
-{
-	*num = GDK_mem_maxsize;
-	return GDK_SUCCEED;
-}
-
-int
-set_mem_maxsize(lng *num)
-{
-	@:num2sze(mem_maxsize)@
-	if (sze < GDK_mem_bigsize)
-		set_mem_bigsize(num);
-	GDK_mem_maxsize = MAX(GDK_mem_bigsize, sze);
-	return GDK_SUCCEED;
-}
-
-int
-get_vm_cursize(lng *num)
-{
-	*num = GDKvm_cursize();
-	return GDK_SUCCEED;
-}
-
-int
-get_vm_maxsize(lng *num)
-{
-	*num = GDK_vm_maxsize;
-	return GDK_SUCCEED;
-}
-
-int
-set_vm_maxsize(lng *num)
-{
-	@:num2sze(vm_maxsize)@
-	GDK_vm_maxsize = MAX(REMAP_PAGE_MAXSIZE, sze);
-	return GDK_SUCCEED;
-}
-
-
 @= heap
 	if (@2) {
 		sz = HEAP@1size(@3);
@@ -472,7 +363,9 @@ set_vm_maxsize(lng *num)
 	}
 @c
 
+@h
 status_export str SYSmem_usage(int *ret, lng *minsize);
+@c
 str
 SYSmem_usage(int *ret, lng *minsize)
 {
@@ -483,7 +376,7 @@ SYSmem_usage(int *ret, lng *minsize)
 	bat i;
 
 	if (bn == NULL)
-		throw(MAL, "status.memory", MAL_MALLOC_FAIL);
+		throw(MAL, "status.memUsage", MAL_MALLOC_FAIL);
 	BBPlock("SYSmem_usage");
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b = BBP_cache(i);
@@ -540,8 +433,7 @@ SYSmem_usage(int *ret, lng *minsize)
 	tot += sz;
 	BUNins(bn, "_tot/found", &tot, FALSE);
 
-	/* now look at what the global statistics report (to see if it coincides)
-	 */
+	/* now look at what the global statistics report (to see if it coincides) */
 
 	/* how much *used* bytes in heap? */
 	m = MT_mallinfo();
@@ -568,8 +460,9 @@ SYSmem_usage(int *ret, lng *minsize)
 	return MAL_SUCCEED;
 }
 
-
+@h
 status_export str SYSvm_usage(int *ret, lng *minsize);
+@c
 str
 SYSvm_usage(int *ret, lng *minsize)
 {
@@ -579,7 +472,7 @@ SYSvm_usage(int *ret, lng *minsize)
 	bat i;
 
 	if (bn == NULL)
-		throw(MAL, "status.usage", MAL_MALLOC_FAIL);
+		throw(MAL, "status.vmStatistics", MAL_MALLOC_FAIL);
 	BBPlock("SYSvm_usage");
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b;
@@ -633,7 +526,7 @@ SYSvm_usage(int *ret, lng *minsize)
 
 @-
 Additional information on the process utilization is given by
-the io command. The following information is obtained.
+the ioStatistics command. The following information is obtained.
 
 @T
 \begin{tabular}{| l| l|}\hline
@@ -663,12 +556,9 @@ be queried. A default listing is produced by the command @%usagecmd@.
 (which should be moved to Monet)
 
 The BAT grows. It should be compacted.
-@c
-#ifdef HAVE_SYS_RESOURCE_H
-# include <sys/resource.h>
-#endif
-
+@h
 status_export str SYSioStatistics(int *ret);
+@c
 str
 SYSioStatistics(int *ret)
 {
@@ -683,7 +573,7 @@ SYSioStatistics(int *ret)
 #endif
 	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0)
-		throw(MAL, "catalog.ioStatistics",  MAL_MALLOC_FAIL);
+		throw(MAL, "status.ioStatistics", MAL_MALLOC_FAIL);
 
 #ifndef NATIVE_WIN32
 	/* store counters, ignore errors */
@@ -720,7 +610,9 @@ SYSioStatistics(int *ret)
 	return MAL_SUCCEED;
 }
 
+@h
 status_export str SYSgdkEnv(int *ret);
+@c
 str
 SYSgdkEnv(int *ret)
 {
@@ -733,7 +625,7 @@ SYSgdkEnv(int *ret)
 
 	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0)
-		throw(MAL, "status.gdkEnv", MAL_MALLOC_FAIL);
+		throw(MAL, "status.batStatistics", MAL_MALLOC_FAIL);
 
 	for (i = 1; i < BBPsize; i++) {
 		if (BBPvalid(i)) {
@@ -755,12 +647,14 @@ SYSgdkEnv(int *ret)
 	b = BUNins(b, "ondisk", &pdisk, FALSE);
 	b = BUNins(b, "todisk", &BBPout, FALSE);
 	b = BUNins(b, "fromdisk", &BBPin, FALSE);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	if (!(b->batDirty & 2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,env)@
 	return MAL_SUCCEED;
 }
 
+@h
 status_export str SYSgdkThread(int *ret);
+@c
 str
 SYSgdkThread(int *ret)
 {
@@ -769,105 +663,14 @@ SYSgdkThread(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_str, THREADS);
 	if (b == 0)
-		throw(MAL, "catalog.gdkThread",  MAL_MALLOC_FAIL);
+		throw(MAL, "status.getThreads", MAL_MALLOC_FAIL);
 
-	for (i = 0; i < THREADS; i++)
-		if (GDKthreads[i].pid) {
+	for (i = 0; i < THREADS; i++) {
+		if (GDKthreads[i].pid)
 			BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name, FALSE);
-		}
+	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,thread)@
-	return MAL_SUCCEED;
-}
-@-
-Collect the database and their access permissions for inspection.
-Note, this code base should be changed for the Windows setting.
-@c
-#ifndef F_OK
-#define F_OK 0
-#endif
-str SYSgetDatabases(int *ret)
-{
-	BAT *b;
-	DIR *d, *db;
-	struct dirent *e;
-	char buf[PATHLENGTH];
-	FILE *f;
-	int uid,pid;
-	
-	b = BATnew(TYPE_str, TYPE_str, 50);
-	/* scan the parent for directories */
-	d= opendir("..");
-	while ( (e=readdir(d)) != NULL){
-		if( *e->d_name == '.') continue;
-		snprintf(buf,PATHLENGTH,"..%c%s",DIR_SEP,e->d_name);
-		db= opendir(buf);
-		if( db != NULL) {
-			snprintf(buf,PATHLENGTH,"..%c%s%c.gdk_lock",DIR_SEP,e->d_name,DIR_SEP);
-			f= fopen(buf,"r");
-			if ( f == NULL)
-				snprintf(buf,PATHLENGTH,"..%c%s%c.mguardian.pid",DIR_SEP,e->d_name,DIR_SEP);
-			else
-			if( fgets(buf,PATHLENGTH,f) != NULL){
-				sscanf(buf,"USR=%d PID=%d %s", &uid,&pid,buf);
-				/* w00t! for platform independence! (NOT!) */
-				snprintf(buf,PATHLENGTH,"/proc/%d",pid);
-				fclose(f);
-			} else {
-				fclose(f);
-				snprintf(buf,PATHLENGTH,"..%c%s%c.mguardian.pid",DIR_SEP,e->d_name,DIR_SEP);
-			}
-			/* not water-proof, PID can exist, and be alive, but not an
-			   mserver, need to check process name */
-			BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"), FALSE);
-			closedir(db);
-		} 
-	}
-	(void) closedir(d);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(databases,mode)@
-	return MAL_SUCCEED;
-}
-
-str SYSgetPorts(int *ret, str *lang)
-{
-	BAT *b;
-	DIR *d, *db;
-	struct dirent *e;
-	char buf[PATHLENGTH];
-	FILE *f;
-	int port;
-	str llang;
-	
-	/* if lang is NULL, default to "mal" */
-	llang = (lang == NULL ? "mal" : *lang);
-	b = BATnew(TYPE_str, TYPE_int, 50);
-	/* scan the parent for directories */
-	d= opendir("..");
-	while ( (e=readdir(d)) != NULL){
-		if( *e->d_name == '.') continue;
-		snprintf(buf,PATHLENGTH,"..%c%s",DIR_SEP,e->d_name);
-		db= opendir(buf);
-		if( db != NULL) {
-			snprintf(buf,PATHLENGTH,"..%c%s%c.%s.port",DIR_SEP,e->d_name,DIR_SEP,llang);
-			f= fopen(buf,"r");
-			if ( f == NULL)
-				port = 0;
-			else
-			if( fgets(buf,PATHLENGTH,f) != NULL){
-				port= (int) strtol(buf,NULL,10);
-				fclose(f);
-			} else {
-				fclose(f);
-				port = 0;
-			}
-			BUNins(b, e->d_name, (ptr)(port==0? &int_nil: &port), FALSE);
-			closedir(db);
-		} 
-	}
-	(void) closedir(d);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(databases,port)@
 	return MAL_SUCCEED;
 }
 @}
