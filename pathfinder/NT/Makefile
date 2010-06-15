@@ -44,6 +44,7 @@ install: targetdirs all install-installer $(INSTALLER_PREREQ)
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\pf.bat "$(prefix)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
+	-if $(bits)==32 if exist "C:\Program Files (x86)" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
 	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
 	if exist "$(prefix)\Debug\$(INSTALLER)$(IBITS).msi" $(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
