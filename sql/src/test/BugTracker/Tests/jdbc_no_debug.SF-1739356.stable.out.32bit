@@ -30,107 +30,77 @@ Over..
 # 13:30:19 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h rig -p 39462 -d mTests_src_test_BugTracker -f "../../../../../source/sql/src/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
 # 13:30:19 >  
 
-+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | rel                                                                                                                                                                                                                                                                       |
-+===========================================================================================================================================================================================================================================================================+
++===========================================================================================================================================================================================================================================================================================================+
 | project (                                                                                                                                                                                                                                                                 |
 | | group by (                                                                                                                                                                                                                                                              |
 | | | project (                                                                                                                                                                                                                                                             |
 | | | | union (                                                                                                                                                                                                                                                             |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
-| | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.name as p.name, _tables.schema_id as p.schema_id, _tables.query as p.query, _tables.type as p.type, _tables.system as p.system, _tables.commit_action as p.commit_action, _tables.%TID% NOT NULL as p.%TID% ] |
+| | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.name as p.name, _tables.schema_id as p.schema_id, _tables.query as p.query, _tables.type as p.type, _tables.system as p.system, _tables.commit_action as p.commit_action, _tables.readonly as p.readonly, _tables.%TID% NOT NULL as p.%TID% ] |
 | | | | | | ) [ p.type < convert(2) ]                                                                                                                                                                                                                                       |
-| | | | | ) [ p.id, p.name, p.schema_id, p.query, p.type, p.system, p.commit_action, 0 as temporary ],                                                                                                                                                                      |
+| | | | | ) [ p.id, p.name, p.schema_id, p.query, p.type, p.system, p.commit_action, p.readonly, 0 as temporary ],                                                                                                                                                                                          |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
-| | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.name as t.name, _tables.schema_id as t.schema_id, _tables.query as t.query, _tables.type as t.type, _tables.system as t.system, _tables.commit_action as t.commit_action, _tables.%TID% NOT NULL as t.%TID% ] |
+| | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.name as t.name, _tables.schema_id as t.schema_id, _tables.query as t.query, _tables.type as t.type, _tables.system as t.system, _tables.commit_action as t.commit_action, _tables.readonly as t.readonly, _tables.%TID% NOT NULL as t.%TID% ] |
 | | | | | | ) [ t.type < convert(2) ]                                                                                                                                                                                                                                       |
-| | | | | ) [ t.id, t.name, t.schema_id, t.query, t.type, t.system, t.commit_action, 1 as temporary ]                                                                                                                                                                       |
-| | | | ) [ id as tables.id, name as tables.name, schema_id as tables.schema_id, query as tables.query, type as tables.type, system as tables.system, commit_action as tables.commit_action, temporary as tables.temporary ]                                                |
+| | | | | ) [ t.id, t.name, t.schema_id, t.query, t.type, t.system, t.commit_action, t.readonly, 1 as temporary ]                                                                                                                                                                                           |
+| | | | ) [ id as tables.id, name as tables.name, schema_id as tables.schema_id, query as tables.query, type as tables.type, system as tables.system, commit_action as tables.commit_action, readonly as tables.readonly, temporary as tables.temporary ]                                                   |
 | | | ) [ tables.id ]                                                                                                                                                                                                                                                       |
 | | ) [  ] [ count NOT NULL as L1 ]                                                                                                                                                                                                                                         |
 | ) [ L1 NOT NULL ]                                                                                                                                                                                                                                                         |
-+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 18 rows
 
 +--------+
 | mal    |
 +========+
 | function user.s2_1{autoCommit=true}():void; |
-| barrier _102 := language.dataflow(); |
-|     _2:bat[:oid,:sht]  := sql.bind("tmp","_tables","type",0); |
-|     _7:bat[:oid,:oid]  := sql.bind_dbat("tmp","_tables",1); |
-|     _9 := bat.reverse(_7); |
-|     _7:bat[:oid,:oid]  := nil:BAT; |
-|     _10 := algebra.kdifference(_2,_9); |
-|     _2:bat[:oid,:sht]  := nil:BAT; |
-|     _11 := algebra.thetauselect(_10,2:sht,"<"); |
-|     _10 := nil:BAT; |
-|     _14 := algebra.markT(_11,0@0); |
-|     _11 := nil:BAT; |
+|     _2 := sql.mvc(); |
+| barrier _70 := language.dataflow(); |
+|     _19:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0); |
+|     _21 := algebra.thetauselect(_19,2:sht,"<"); |
+|     _22:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",2); |
+|     _24 := algebra.kdifference(_21,_22); |
+|     _25 := algebra.thetauselect(_22,2:sht,"<"); |
+|     _26 := algebra.kunion(_24,_25); |
+|     _27:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",1); |
+|     _28 := algebra.thetauselect(_27,2:sht,"<"); |
+|     _29 := algebra.kunion(_26,_28); |
+|     _30:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","_tables",1); |
+|     _32 := bat.reverse(_30); |
+|     _33 := algebra.kdifference(_29,_32); |
+|     _34 := algebra.markT(_33,0@0); |
+|     _35 := bat.reverse(_34); |
+|     _36:bat[:oid,:int]  := sql.bind(_2,"sys","_tables","id",0); |
+|     _38:bat[:oid,:int]  := sql.bind(_2,"sys","_tables","id",2); |
+|     _39 := algebra.kdifference(_36,_38); |
+|     _40 := algebra.kunion(_39,_38); |
+|     _41:bat[:oid,:int]  := sql.bind(_2,"sys","_tables","id",1); |
+|     _43 := algebra.kunion(_40,_41); |
+|     _44 := algebra.leftjoin(_35,_43); |
+|     _3:bat[:oid,:sht]  := sql.bind(_2,"tmp","_tables","type",0); |
+|     _8 := algebra.thetauselect(_3,2:sht,"<"); |
+|     _10:bat[:oid,:oid]  := sql.bind_dbat(_2,"tmp","_tables",1); |
+|     _12 := bat.reverse(_10); |
+|     _13 := algebra.kdifference(_8,_12); |
+|     _14 := algebra.markT(_13,0@0); |
 |     _15 := bat.reverse(_14); |
-|     _14 := nil:BAT; |
-|     _16:bat[:oid,:int]  := sql.bind("tmp","_tables","id",0); |
-|     _18 := algebra.kdifference(_16,_9); |
-|     _16:bat[:oid,:int]  := nil:BAT; |
-|     _9 := nil:BAT; |
-|     _19 := algebra.leftjoin(_15,_18,nil:lng); |
-|     _15 := nil:BAT; |
-|     _18 := nil:BAT; |
-|     _21:bat[:oid,:sht]  := sql.bind("sys","_tables","type",0); |
-|     _23:bat[:oid,:sht]  := sql.bind("sys","_tables","type",2); |
-|     _25 := algebra.kdifference(_21,_23); |
-|     _21:bat[:oid,:sht]  := nil:BAT; |
-|     _26 := algebra.kunion(_25,_23); |
-|     _25 := nil:BAT; |
-|     _23:bat[:oid,:sht]  := nil:BAT; |
-|     _27:bat[:oid,:sht]  := sql.bind("sys","_tables","type",1); |
-|     _28 := algebra.kunion(_26,_27); |
-|     _26 := nil:BAT; |
-|     _27:bat[:oid,:sht]  := nil:BAT; |
-|     _29:bat[:oid,:oid]  := sql.bind_dbat("sys","_tables",1); |
-|     _30 := bat.reverse(_29); |
-|     _29:bat[:oid,:oid]  := nil:BAT; |
-|     _31 := algebra.kdifference(_28,_30); |
-|     _28 := nil:BAT; |
-|     _32 := algebra.thetauselect(_31,2:sht,"<"); |
-|     _31 := nil:BAT; |
-|     _33 := algebra.markT(_32,0@0); |
-|     _32 := nil:BAT; |
-|     _34 := bat.reverse(_33); |
-|     _33 := nil:BAT; |
-|     _35:bat[:oid,:int]  := sql.bind("sys","_tables","id",0); |
-|     _36:bat[:oid,:int]  := sql.bind("sys","_tables","id",2); |
-|     _37 := algebra.kdifference(_35,_36); |
-|     _35:bat[:oid,:int]  := nil:BAT; |
-|     _38 := algebra.kunion(_37,_36); |
-|     _37 := nil:BAT; |
-|     _36:bat[:oid,:int]  := nil:BAT; |
-|     _39:bat[:oid,:int]  := sql.bind("sys","_tables","id",1); |
-|     _40 := algebra.kunion(_38,_39); |
-|     _38 := nil:BAT; |
-|     _39:bat[:oid,:int]  := nil:BAT; |
-|     _41 := algebra.kdifference(_40,_30); |
-|     _40 := nil:BAT; |
-|     _30 := nil:BAT; |
-|     _42 := algebra.leftjoin(_34,_41,nil:lng); |
-|     _34 := nil:BAT; |
-|     _41 := nil:BAT; |
-| exit _102; |
-|     _43:bat[:oid,:int]  := bat.new(nil:oid,nil:int); |
-|     _46 := bat.append(_43,_42,true); |
-|     _43:bat[:oid,:int]  := nil:BAT; |
-|     _42 := nil:BAT; |
-|     _47 := bat.append(_46,_19,true); |
-|     _46 := nil:BAT; |
-|     _19 := nil:BAT; |
-|     _48 := aggr.count(_47); |
-|     _47 := nil:BAT; |
-|     sql.exportValue(1,".tables","L2","wrd",32,0,6,_48,""); |
+|     _16:bat[:oid,:int]  := sql.bind(_2,"tmp","_tables","id",0); |
+|     _18 := algebra.leftjoin(_15,_16); |
+| exit _70; |
+|     _45:bat[:oid,:int]  := bat.new(nil:oid,nil:int); |
+| barrier _73 := language.dataflow(); |
+|     _48 := bat.append(_45,_44,true); |
+|     _50 := bat.append(_48,_18,true); |
+|     _51 := aggr.count(_50); |
+| exit _73; |
+|     sql.exportValue(1,".tables","L2","wrd",32,0,6,_51,""); |
 | end s2_1; |
 +--------+
-72 rows
+42 rows
 
 
 # 13:30:20 >  
