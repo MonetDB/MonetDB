@@ -70,14 +70,16 @@
 RETSIGTYPE
 segfault_handler (int sig)
 {
-    (void) sig;
-    PFoops (OOPS_FATAL,
-            "Segmentation fault.\n"
-            "The Pathfinder module experienced an internal problem.\n"
-            "You may want to report this problem to the Pathfinder \n"
-            "development team (pathfinder@pathfinder-xquery.org).\n\n"
-            "When reporting problems, please attach your input query.\n\n"
-            "We apologize for the inconvenience...\n");
+    fprintf (stderr,
+             "!ERROR: Segmentation fault.\n"
+             "The Pathfinder module experienced an internal problem.\n"
+             "You may want to report this problem to the Pathfinder \n"
+             "development team (pathfinder@pathfinder-xquery.org).\n\n"
+             "When reporting problems, please attach your input query.\n\n"
+             "We apologize for the inconvenience...\n");
+
+    signal (sig, SIG_DFL);
+    raise (sig);
 }
 #endif
 
@@ -115,9 +117,9 @@ PFcompile_ferry_opt (char **res,
     }
 
  {
-    PFla_pb_t       *lapb   = NULL;
+    PFla_pb_t       *lapb = NULL;
     XML2LALGContext *ctx;
-    PFarray_t       *output = PFarray (sizeof (char), 4096);
+    PFarray_t       *output;
 
     /* setup the error buffer (needed for error handling and segfault trap) */
     PFerrbuf = err;
@@ -164,12 +166,17 @@ PFcompile_ferry_opt (char **res,
      * OUTPUT GENERATION
      */
 
+    output = PFarray (sizeof (char), 4096);
     /* Create the strings for the different output formats. */
     switch (format) {
         case PFoutput_format_sql:
         case PFoutput_format_xml:
         case PFoutput_format_dot:
-            PFarray_printf (output, "XML file successfully parsed and optimized.");
+            PFarray_printf (output, 
+                            "%s\n"
+                            "<!-- XML file successfully parsed "
+                            "and optimized. (More to come...) -->",
+                            xml);
     }
 
     /* Provide a new (malloced) copy of the output string as result. */
