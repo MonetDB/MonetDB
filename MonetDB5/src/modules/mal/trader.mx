@@ -69,15 +69,16 @@ Bidding described ...
 #include <mal_recycle.h>
 #include "trader.h"
 
-/*
-static lng estimateSavings0(MalBlkPtr mb)
+
+static lng estimateSavings0(MalBlkPtr mb,  sht bidtype)
 {
 	(void) mb;
+	(void) bidtype;
 	return (lng)100;
 }
-*/
 
-static lng estimateSavings(MalBlkPtr mb, sht bidtype)
+
+lng estimateSavings(MalBlkPtr mb, sht bidtype)
 {
 	MalStkPtr stk = NULL;
 	int i, j, k, marked = 0;
@@ -105,7 +106,7 @@ static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 	for(i= 1; i< mb->vtop; i++) {
 		lhs = &stk->stk[i];
 		if( isVarConstant(mb,i) > 0 ){
-			assert(!isVarCleanup(mb,i));
+/*			assert(!isVarCleanup(mb,i)); */
 			if( !isVarDisabled(mb,i)){
 				rhs = &getVarConstant(mb,i);
 				*lhs = *rhs;
@@ -194,7 +195,7 @@ str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     if ( sym == NULL)
         throw(MAL,"trader.makeBid", RUNTIME_SIGNATURE_MISSING "%s", fnname);
         
-    *c = estimateSavings(sym->def, bidtype);
+    *c = estimateSavings0(sym->def, bidtype);
 
 	return MAL_SUCCEED;
 }   

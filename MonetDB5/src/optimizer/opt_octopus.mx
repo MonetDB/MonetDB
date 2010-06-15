@@ -300,6 +300,10 @@ already have been handled and produce their target.
 	for (; i > 0; i--){
 /*		p= getInstrPtr(mb,i); */
 		p = old[i];
+
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef )
+			continue;
+
 		fnd = 0;
 		if ( p->barrier ){
 			for (j = 0; j < p->argc; j++)
@@ -315,21 +319,8 @@ already have been handled and produce their target.
 		}
 	}
 
-/*	snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
-		getFunctionId(getInstrPtr(mb,0)),varid); 
-
-	snprintf(buf,BUFSIZ,"tentacle_"LLFMT"_%d", mb->octid,varid); */
-	name = (str) getVarValue(mb, tnm[tidx]);
-	putName(name,strlen(name));
-
 	snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->octid);
 	name2 =  putName(buf,strlen(buf));
-
-/*	cst.vtype = TYPE_str;
-	snprintf(buf,BUFSIZ,"tbd_%d",varid); 
-	cst.val.sval= GDKstrdup(buf);
-	cst.len= (int) strlen(cst.val.sval);
-	tbd = defConstant(mb, TYPE_str, &cst); */
 
 /* generate tentacle CALLS: every tentacle is called once on each worker: tcnt times */
 	for ( k = 0; k < tcnt; k++ ){
@@ -345,7 +336,10 @@ already have been handled and produce their target.
 			q = pushArgument(mb,q,getArg(sig, j));
 	}
 	
-	/* create the TENTACLE procedure */
+	/* create the TENTACLE function */
+	name = (str) getVarValue(mb, tnm[tidx]);
+	putName(name,strlen(name));
+
 	s= newFunction(octopusRef,name,FUNCTIONsymbol);
 	tm= s->def;
 	tm->keephistory= mb->keephistory;
@@ -378,14 +372,16 @@ already have been handled and produce their target.
 			setModuleId(p, octopusRef);
 			setVarUDFtype(tm,getArg(p,0));
 			setArgType(tm,p,0, getArgType(mb,list[top],0));
-			p= setArgument(tm,p,1,conn);
+/*			p= setArgument(tm,p,1,conn); */
+			getArg(p,1) = conn;
 			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
 		} 
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == binddbatRef ){
 			setModuleId(p, octopusRef);
 			setVarUDFtype(tm,getArg(p,0));
 			setArgType(tm,p,0, getArgType(mb,list[top],0));
-			p= setArgument(tm,p,1,conn);
+/*			p= setArgument(tm,p,1,conn); */
+			getArg(p,1) = conn;
 			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
 		} 
 		pushInstruction(tm, p);
@@ -655,7 +651,7 @@ when scheduled correctly, would not lead to duplicate work.
 			}
 /*			freeInstruction(p); */
 
-			/* now finalize the exec operation */
+			/* finalize the exec function (mal block sm) */
 
 			if (isaBatType(mpArgType)) {                /* exec_qry:= bat.new(:htp,:ttp); */
 				q = newFcnCall(sm, batRef, newRef);
@@ -675,14 +671,14 @@ when scheduled correctly, would not lead to duplicate work.
 			r = pushArgument(sm,r,schvar);
 			r = pushBte(sm,r,0);
 
-			q = newStmt(sm, remoteRef,connectRef);
+			q = newStmt(sm, octopusRef,connectRef);
 			conn= getArg(q,0);
 			q = pushArgument(sm, q, dbvar);
+/*			q= pushStr(sm,q,"monetdb");
 			q= pushStr(sm,q,"monetdb");
-			q= pushStr(sm,q,"monetdb");
-			q= pushStr(sm,q,"msql");
+			q= pushStr(sm,q,"msql"); */
 
-			/* v:= remote.put(version) */
+			/* v:= remote.put(conn,version) */
 			q= newFcnCall(sm,remoteRef,putRef);
 			q= pushArgument(sm,q,conn);
 			q= pushArgument(sm,q,version);
@@ -727,14 +723,14 @@ when scheduled correctly, would not lead to duplicate work.
 
 			/* catch and propagate errors */
 			newCatchStmt(sm, "ANYexception");
-			q = newStmt(sm, remoteRef,disconnectRef);
-			pushArgument(sm,q,conn);
+/*			q = newStmt(sm, remoteRef,disconnectRef);
+			pushArgument(sm,q,conn); */
 			newRaiseStmt(sm,"ANYexception");
 			newExitStmt(sm, "ANYexception");
 
-			/* close connection */
+			/* close connection 
 			q = newStmt(sm, remoteRef,disconnectRef);
-			pushArgument(sm,q,conn);
+			pushArgument(sm,q,conn); */
 
 			/* exec_qry:= l; */
 			q= newAssignment(sm);
@@ -794,7 +790,7 @@ The tentacle code should be optimized by the remaining optimizers too.
 			mb->errors++;
 	}
 	chkDeclarations(mb);
-/*		chkProgram(cntxt->nspace,mb);  */
+		chkProgram(cntxt->nspace,mb);  
 #ifdef DEBUG_OPT_OCTOPUS
 	if (actions) {
 		stream_printf(cntxt->fdout, "DONE octopus \n");

@@ -63,6 +63,14 @@ pattern scheduler.register():bit
 address OCTOPUSdiscoverRegister
 comment "Discover workers and register tentacles.";
 
+pattern octopus.register(dbname:str,fname:str):void
+address OCTOPUSregister
+comment "Register mal function fname at server dbname.";
+
+command octopus.connect(dbname:str):str
+address OCTOPUSconnect
+comment "Returns the connection to the server dbname.";
+
 pattern scheduler.bidding():bit
 address OCTOPUSbidding
 comment "Collect bids from workers.";
@@ -78,7 +86,7 @@ comment "Make schedule based on bids.";
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-/* #define DEBUG_RUN_OCTOPUS 		 to trace processing */
+#define DEBUG_RUN_OCTOPUS 		/* to trace processing */
 
 #ifdef WIN32
 #ifndef LIBRUN_OCTOPUS
@@ -92,8 +100,10 @@ comment "Make schedule based on bids.";
 
 octopus_export str OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 octopus_export str OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+octopus_export str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 octopus_export str OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 octopus_export str OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+octopus_export str OCTOPUSconnect(str *c, str *dbname);
 #endif /* MAL_RUN_OCTOPUS */
 
 @+ Octopus scheduling implementation
@@ -115,22 +125,107 @@ typedef struct REGMAL{
 } *Registry;
 
 typedef struct {
-	str name;
 	str uri;
 	str usr;
 	str pwd;
+	Registry nxt; /* list of registered mal functions */
+	bte active;
+	str conn;
+} Peer;
+
+typedef struct {
+	int pnum;
+	str name;
+/*	str uri;
+	str usr;
+	str pwd;
 	lng *bids;
-	Registry nxt;	/* list of registered queries */
+	Registry nxt;*/	/* list of registered queries */
 } Worker;
 
 #define MAXSITES 2048	/* should become dynamic at some point */
-static Worker workers[MAXSITES];
-static int nroctopus = 0;
+static Peer peers[MAXSITES];	/* registry of peer servers */
+static Worker workers[MAXSITES];  /* registry of workers for the current query */
+static int nrworkers = 0;
+static int nrpeers=0;
 bte optTarget = 1; 
 /*sht bidStrategy = 1; 
 #define BID_TRANS	1
 #define BID_COVER	2
 */
+
+static int
+OCTOPUSfindPeer(str uri)
+{
+	int i;
+	for (i=0; i<nrpeers; i++){
+		if ( strcmp(uri, peers[i].uri) == 0 ){
+			return i;
+		}
+	}
+	return -1;
+}
+
+/* Look for and add a peer with uri in the registry. 
+Return index in registry */
+static int
+OCTOPUSgetPeer(str uri)
+{
+	int i;
+
+	i = OCTOPUSfindPeer(uri);
+	if ( i >=0 ) {
+		peers[i].active = 1;
+		return i;
+	}
+	i = nrpeers;
+	peers[i].usr = GDKstrdup("monetdb");
+	peers[i].uri = GDKstrdup(uri);
+	peers[i].pwd = GDKstrdup("monetdb");
+	peers[i].active = 1;
+	peers[i].nxt = NULL;		
+	nrpeers++;
+	return i;
+}
+
+/* Clean function registry of non-active peers */
+
+void OCTOPUScleanFunReg(int i)
+{	
+	Registry r, q;
+	r = peers[i].nxt;
+	while ( r ) {
+			q = r->nxt;
+			GDKfree(r->fcn);
+			GDKfree(r);
+			r = q;
+	}
+	peers[i].nxt = NULL;
+}
+
+str
+OCTOPUSconnect(str *c, str *dburi)
+{
+	int i;
+	str msg = MAL_SUCCEED;
+	str conn = NULL;
+
+	i = OCTOPUSfindPeer(*dburi);
+	if ( i < 0 ){
+		msg = createException(MAL, "octopus.connect", "Server %s is not registered", dburi);
+		*c = NULL;
+		return msg;
+	}
+	
+	if ( peers[i].conn == NULL ) {
+		msg = RMTconnect(&conn, &peers[i].uri, &peers[i].usr, &peers[i].pwd);
+		if ( msg == MAL_SUCCEED )
+			peers[i].conn = GDKstrdup(conn);
+	}
+
+	*c = GDKstrdup(peers[i].conn);
+	return msg;
+}
 
 static str
 OCTOPUSdiscover(Client cntxt){
@@ -140,25 +235,30 @@ OCTOPUSdiscover(Client cntxt){
 	str msg = MAL_SUCCEED;
 	BATiter bi;
 	char buf[BUFSIZ]= "*/octopus", *s= buf;
+	int i;
 
-	if (nroctopus ==MAXSITES) 
+	if (nrworkers ==MAXSITES) 
 		throw(MAL,"octopus.discover",OPERATION_FAILED "No octopus worker left");
+
+	nrworkers = 0;
+	for (i=0; i<nrpeers; i++)
+		peers[i].active = 0;
 
 	msg = RMTresolve(&bid,&s);
 	if ( msg != MAL_SUCCEED){
 		/* there is a last resort, yourself */
+		
 		SABAOTHgetLocalConnection(&s);
-		snprintf(buf,BUFSIZ,"worker_%d",nroctopus);
-		workers[nroctopus].name = GDKstrdup(buf);
-		workers[nroctopus].uri = s;
-		workers[nroctopus].usr = GDKstrdup("monetdb");
-		workers[nroctopus].pwd = GDKstrdup("monetdb");
+		workers[nrworkers].pnum = OCTOPUSgetPeer(s); /*ref to peers registry*/
+		snprintf(buf,BUFSIZ,"worker_%d",nrworkers);
+		workers[nrworkers].name = GDKstrdup(buf);
+	
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"Worker site %d %s\n", nroctopus, s);
+		stream_printf(cntxt->fdout,"Worker site %d %s\n", nrworkers, s);
 #else
 		(void) cntxt;
 #endif
-		nroctopus++;
+		nrworkers++;
 		return MAL_SUCCEED;
 	}
 	b = BATdescriptor(bid);
@@ -169,22 +269,24 @@ OCTOPUSdiscover(Client cntxt){
 	BATloop(b,p,q){
 		str t= (str) BUNtail(bi,p);
 
-		if (nroctopus ==MAXSITES) 
-			throw(MAL,"octopus.discover",OPERATION_FAILED "No octopus worker left");
-		snprintf(buf,BUFSIZ,"worker_%d",nroctopus);
-		workers[nroctopus].name = GDKstrdup(buf);
-		workers[nroctopus].usr = GDKstrdup("monetdb");
-		workers[nroctopus].uri = GDKstrdup(t);
-		workers[nroctopus].pwd = GDKstrdup("monetdb");
+		workers[nrworkers].pnum = OCTOPUSgetPeer(t); /*ref to peers registry*/
+		snprintf(buf,BUFSIZ,"worker_%d",nrworkers);
+		workers[nrworkers].name = GDKstrdup(buf);
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"Worker site %d %s\n", nroctopus, t);
+		stream_printf(cntxt->fdout,"Worker site %d %s\n", nrworkers, t);
 #endif
-		nroctopus++;
+		nrworkers++;
 	}
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"Octopus workers %d\n",nroctopus);
+		stream_printf(cntxt->fdout,"Octopus workers %d\n",nrworkers);
 #endif
+
 	BBPreleaseref(bid);
+
+	for (i=0; i<nrpeers; i++)
+		if ( !peers[i].active )
+			OCTOPUScleanFunReg(i);
+
 	return MAL_SUCCEED;
 }
 
@@ -193,102 +295,21 @@ We first register the tentacle code at all worker sites and keep
 a list of those already sent.
 @c
 static int
-OCTOPUSfind(Worker s, str qry){
+OCTOPUSfind(int i, str qry){
 	Registry r;
-	for ( r= s.nxt; r; r= r->nxt)
+	for ( r= peers[i].nxt; r; r= r->nxt)
 	if ( strcmp(qry, r->fcn)==0)
 		return 1;
 	return 0;
 }
 
-@-
-The functions called by the octopus.exec_qry are to be
-registered at all sites. We assume for the time being
-that all instructions registered are unique.
-@c
-static str
-OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
-{
-	int i,ret;
-	str conn, fname, msg = MAL_SUCCEED;
 
-	fname = getVarConstant(mb,getArg(p,2)).val.sval;
-	for ( i= 0; i< nroctopus; i++){
-#ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"connect to worker %s\n", workers[i].uri);
-#else
-		(void) cntxt;
-#endif
-		msg= RMTconnect(&conn, &workers[i].uri, &workers[i].usr, &workers[i].pwd);
-		if (msg ){
-			stream_printf(cntxt->fdout,"!%s\n",msg);
-			if (msg != M5OutOfMemory)
-				GDKfree(msg);
-			msg = NULL;
-			(void) RMTdisconnect(&ret,&conn);
-			continue;
-		}
-		if( !OCTOPUSfind(workers[i], fname) ){
-			msg = RMTregisterInternal(cntxt, conn, octopusRef, fname);
-
-#ifdef DEBUG_RUN_OCTOPUS
-			stream_printf(cntxt->fdout,"octopus.%s registered at site %s\n",
-				fname,workers[i].uri);
-			stream_printf(cntxt->fdout,"reply: %s\n",msg?msg:"ok");
-#endif
-			if ( msg == MAL_SUCCEED){
-				Registry r= (Registry) GDKzalloc(sizeof(struct REGMAL));
-				r->fcn = GDKstrdup(getFunctionId(p));
-				r->nxt = workers[i].nxt;
-				workers[i].nxt = r;
-			}
-		}
-		(void) RMTdisconnect(&ret,&conn);
-	}
-	GDKfree(conn);
-	return msg;
-}
 @-
 The work division looks at the system opportunities and
 replaces all null valued target site references in all instructions.
 The first policy is to simply perform round robin.
 The more advanced way is to negotiat with the remote sites.
 @c
-static str
-OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
-{
-	static int rr=0,i;
-	str msg = MAL_SUCCEED;
-	InstrPtr p;
-	ValPtr cst;
-
-	for (; pc< mb->stop && workers[rr].uri; pc++){
-		p= getInstrPtr(mb,pc);
-		if ( p->barrier == EXITsymbol || getFunctionId(p)== packRef)
-			break;
-		i = getArg(p,1);
-		assert( isVarConstant(mb, i) && getVarType(mb,i)== TYPE_str);
-		cst = &getVarConstant(mb, i);
-		if ( strncmp(cst->val.sval,"mapi:monetdb://",15) == 0){
-#ifdef DEBUG_RUN_OCTOPUS
-			stream_printf(cntxt->fdout,"reuse of worker %s\n",cst->val.sval);
-			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
-#endif
-			continue;
-		}
-		garbageElement(cntxt, &stk->stk[i]);
-		stk->stk[i].val.sval = GDKstrdup(workers[rr].uri);
-		stk->stk[i].len = (int) strlen(stk->stk[i].val.sval);
-#ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"octopus site selected %s %s\n",workers[rr].name, workers[rr].uri);
-		printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
-#else
-		(void) cntxt;
-#endif
-		rr= (rr+1) % nroctopus;
-	}
-	return msg;
-}
 
 
 @-
@@ -304,45 +325,6 @@ know when updates have been taken place.
 
 The time-out parameter is not used yet.
 @c
-str
-OCTOPUSrun_org(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *res = (bit*) getArgReference(stk,pci,0);
-	int *version = (int*) getArgReference(stk,pci,1);
-	int j, start, stop, threadcnt=0;
-	InstrPtr p;
-	str msg = MAL_SUCCEED;
-	*res = 0;	/* execute the block */
-	*version = 0;
-
-	msg= OCTOPUSdiscover(cntxt);
-	if ( msg )
-		return msg; 
-
-	start= getPC(mb,pci) + 1;
-	for (j= start; j<mb->stop ; j++){
-		p= getInstrPtr(mb,j);
-		if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef)
-			break;
-		if (nroctopus > 0) {
-			msg= OCTOPUSregister(cntxt,mb,p);
-			if ( msg && strstr(msg,"already defined on the remote site")==0 )
-				return msg;
-			threadcnt++;
-		}
-	}
-	stop =j;
-
-	msg= OCTOPUSworkdivision(cntxt,mb,stk,start);
-	if ( msg )
-		return msg;
-
-	/* *res =1;*/
-	/* if necessary increase the worker set */
-	/* DFLOWworkers(threadcnt); */
-	(void) threadcnt;
-	return runMALdataflow(cntxt,mb,start-1,stop+1,stk,0,pci);
-}
 
 @-
 Discover available workers and register tentacles on them
@@ -352,18 +334,23 @@ str
 OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *res = (bit*) getArgReference(stk,pci,0);
-	int j, start, stop, k, found, v;
+	int j, start, stop, k, found, v, pr;
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
 	ValPtr wname;
 
 	*res = 1;	/* execute the block */
 
+	/* Find available peers */
 	msg= OCTOPUSdiscover(cntxt);
 	if ( msg )
 		return msg; 
 
-	/* Associate logical names "worker_x" with discovered worker uri-s */
+	/* Logical names "worker_x" in the mal block are replaced with the
+	uri-s of the associated peers in the execution stack. Logical
+	workers that do not have a physical match are replaced with the
+	constant string "NOTworker" to mark the instructions on this
+	worker to be skipped. */
 
 	start= getPC(mb,pci);
 	for (j = start + 1; j<mb->stop ; j++){
@@ -374,14 +361,15 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wname = &getVarConstant(mb, v);
 
 		found = 0;
-		for ( k = 0; k < nroctopus; k++ )
+		for ( k = 0; k < nrworkers; k++ )
 			if ( strcmp(wname->val.sval, workers[k].name) == 0 ){
 				found = 1;
 				break;
 			}
 		if ( found ) {
 			garbageElement(cntxt, &stk->stk[v]);
-			stk->stk[v].val.sval = GDKstrdup(workers[k].uri);
+			pr = workers[k].pnum;
+			stk->stk[v].val.sval = GDKstrdup(peers[pr].uri);
 			stk->stk[v].len = (int) strlen(stk->stk[v].val.sval);
 		} else {	/* disable instaruction */
 			garbageElement(cntxt, &stk->stk[v]);
@@ -390,9 +378,51 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			p->token = NOOPsymbol;
 		}
 	}
+	
+	/* Register tentacle functions at peers */
 	stop = j;
 	msg = runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
 	*res = 0;
+	return msg;
+}
+
+str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	str conn, fname, dburi, msg = MAL_SUCCEED;
+
+	(void) cntxt;
+	(void) mb;
+	dburi = *(str*)getArgReference(stk,pci,1);
+	fname = *(str*)getArgReference(stk,pci,2);
+
+		
+#ifdef DEBUG_RUN_OCTOPUS
+		stream_printf(GDKout,"connect to  uri %s\n", dburi);
+#endif
+
+	msg = OCTOPUSconnect(&conn, &dburi);
+	if ( msg )
+		return msg;
+	
+	i =	OCTOPUSgetPeer(dburi);
+
+	if( !OCTOPUSfind(i, fname) ){
+		msg = RMTregisterInternal(cntxt, conn, octopusRef, fname);
+
+#ifdef DEBUG_RUN_OCTOPUS
+		stream_printf(GDKout,"octopus.%s registered at site %s\n",
+			fname,dburi);
+		stream_printf(GDKout,"reply: %s\n",msg?msg:"ok");
+#endif
+		if ( msg == MAL_SUCCEED){
+			Registry r= (Registry) GDKzalloc(sizeof(struct REGMAL));
+			r->fcn = GDKstrdup(fname);
+			r->nxt = peers[i].nxt;
+			peers[i].nxt = r;
+		}
+	}
+
 	return msg;
 }
 
@@ -525,6 +555,21 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+static str
+OCTOPUSdisconnect()
+{
+	int i, ret;
+	str msg = MAL_SUCCEED;
+
+	for ( i=0; i< nrpeers; i++)
+		if ( peers[i].active && peers[i].conn != NULL ) {
+		msg = RMTdisconnect(&ret,&peers[i].conn);
+		GDKfree(peers[i].conn);
+		peers[i].conn = NULL;
+	}
+	return msg;
+}
+
 str
 OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -547,7 +592,8 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg = runMALdataflow(cntxt,mb,start,j,stk,0,pci);
 	*res = 0; 	/* skip to the exit */
-        return msg;
+	OCTOPUSdisconnect();
+	return msg;
 
 }
 @}

@@ -273,6 +273,10 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
+pattern fitsView(fname :str):void
+address fits_view
+comment "Open a FITS file and return catalog of the table HDUs";
+
 function single(x:any_2):bat[:oid,:any_2];
 	b := bat.new(0:oid, x);
 	c := bat.append(b, x);
@@ -855,9 +859,12 @@ function octopus.bind(mvc:ptr, sch:str, tab:str,col:str,kind:int, version:int):b
 	return bind:= b;
 end bind;
 
-function octopus.bind(conn:str, mvc:ptr, sch:str, tab:str,col:str,kind:int, 
+function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, 
 low:oid, hgh:oid, version:int):bat[:oid,:any_1];
-	m := remote.exec(conn,"sql","mvc");
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
+	m := nil:ptr;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
 	t := remote.put(conn,tab);
 	c := remote.put(conn,col);
@@ -865,57 +872,61 @@ low:oid, hgh:oid, version:int):bat[:oid,:any_1];
 	v := remote.put(conn,version);
 	l := remote.put(conn,low);
 	h := remote.put(conn,hgh);
-	bh:= remote.put(conn,bind);
-	bh:= remote.exec(conn,"sql","bind",m,s,t,c,k,l,h);
-	b:bat[:oid,:any_1]:= remote.get(conn,bh);
+	rb:= remote.put(conn,b);
+	rb:= remote.exec(conn,"sql","bind",rm,s,t,c,k,l,h);
+	b:bat[:oid,:any_1]:= remote.get(conn,rb);
 	return bind:= b;
 end octopus.bind;
 
-function octopus.bind(conn:str, mvc:ptr, sch:str, tab:str,col:str,kind:int, 
+function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, 
 version:int):bat[:oid,:any_1];
-	m := remote.exec(conn,"sql","mvc");
+	m := nil:ptr;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
 	t := remote.put(conn,tab);
 	c := remote.put(conn,col);
 	k := remote.put(conn,kind);
 	bh:= remote.put(conn,bind);
-	bh:= remote.exec(conn,"sql","bind",m,s,t,c,k);
+	bh:= remote.exec(conn,"sql","bind",rm,s,t,c,k);
 	b:bat[:oid,:any_1]:= remote.get(conn,bh);
 	return bind:= b;
 end octopus.bind;
 
-function octopus.bind_dbat(mvc:ptr, sch:str, tab:str,access:int, version:int):bat[:oid,:any_1];
+function octopus.bind_dbat(mvc:ptr, sch:str, tab:str,access:int, version:int):bat[:oid,:oid];
 	b := sql.bind_dbat(mvc,sch,tab,access);
 	return bind_dbat:= b;
 end octopus.bind_dbat;
 
-function octopus.bind_dbat(conn:str, mvc:ptr, sch:str, tab:str, access:int, version:int):bat[:oid,:oid];
-	m := remote.exec(conn,"sql","mvc");
+function octopus.bind_dbat(conn:str, sch:str, tab:str, access:int, version:int):bat[:oid,:oid];
+	m := nil:ptr;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
 	t := remote.put(conn,tab);
 	a := remote.put(conn,access);
 	bh:= remote.put(conn,bind_dbat);
-	bh:= remote.exec(conn,"sql","bind_dbat",m,s,t,a);
+	bh:= remote.exec(conn,"sql","bind_dbat",rm,s,t,a);
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
-	
 	return bind_dbat:= b;
 end octopus.bind_dbat;
 
-function octopus.bind_idxbat(mvc:ptr, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:any_1];
+function octopus.bind_idxbat(mvc:ptr, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
 	b := sql.bind_idxbat(mvc,sch,tab,index,access);
 	return bind_idxbat:= b;
 end octopus.bind_idxbat;
 
-function octopus.bind_idxbat(conn:str, mvc:ptr, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
-	m := remote.exec(conn,"sql","mvc");
+function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
+	m := nil:ptr;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
 	t := remote.put(conn,tab);
 	i := remote.put(conn,index);
 	a := remote.put(conn,access);
 	bh:= remote.put(conn,bind_idxbat);
-	bh:= remote.exec(conn,"sql","bind_idxbat",m,s,t,i,a);
+	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a);
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
-	
 	return bind_idxbat:= b;
 end octopus.bind_idxbat;
 
@@ -926,28 +937,18 @@ function octopus.getVariable(conn:str,name:str):any_1;
 	return getVariable:= b;
 end octopus.getVariable;
 
-function octopus.register(dbname:str, fn:str):void;
-	conn := remote.connect(dbname,"monetdb", "monetdb", "msql");
-	remote.register(conn,"octopus",fn);
-	catch ANYexception:str ;
-	exit ANYexception:str ;
-    remote.disconnect(conn);
-end octopus.register;
-
 function octopus.getBid(dbname:str, fn:str, bidtype:sht):lng;
 res:lng := -1:lng;
 barrier remotewrk := calc.!=(dbname,"NOTworker");
-	conn := remote.connect(dbname,"monetdb", "monetdb", "msql");
+	conn := octopus.connect(dbname);
     r_fn := remote.put(conn,fn);
     r_bt := remote.put(conn,bidtype);
-    r_getBid := remote.put(conn,getBid);
+    r_getBid := remote.put(conn,res);
     r_getBid := remote.exec(conn,"trader","makeBid",r_fn,r_bt);
     res:lng  := remote.get(conn,r_getBid);
-  catch ANYexception:str ;
-    remote.disconnect(conn);
-    raise ANYexception:str ;
-  exit ANYexception:str ;
-    remote.disconnect(conn);
+    catch ANYexception:str;
+ 	   raise ANYexception:str ;
+	exit ANYexception:str ;
 exit remotewrk;
     return getBid:lng := res;
 end getBid;
@@ -1012,6 +1013,7 @@ include sql_bpm;
 #include "sql_emptyset.h"
 
 #include <bat/bat_storage.h>
+/* #include "fitsio.h" */
 
 @-
 The back-end structure collects the information needed to support
@@ -1252,6 +1254,7 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:numcastdown_export(wrd,lng)@
 
 sql5_export str getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
+sql5_export str fits_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_H */
 
@@ -5419,3 +5422,50 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.rdfShred", "RDF support is missing from Monet5");
 #endif /* RDF */
 }
+
+str fits_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	sql_schema *sch;
+	sql_table *fits_tbl,  *fits_col;
+	str msg = MAL_SUCCEED; 
+	str fname = *(str*) getArgReference(stk, pci, 1);
+	int id;
+	
+
+	msg = getContext(cntxt, mb, &m, NULL);
+	if (msg)
+		return msg;
+	sch = mvc_bind_schema(m,"sys");
+
+	fits_tbl = mvc_bind_table(m, sch, "fits_tables");
+	if ( fits_tbl == NULL ){
+		fits_tbl = mvc_create_table(m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 4);
+		mvc_create_column_(m, fits_tbl, "id","int",32);
+		mvc_create_column_(m, fits_tbl, "name","varchar",80);
+		mvc_create_column_(m, fits_tbl, "filename","varchar",80);
+		mvc_create_column_(m, fits_tbl, "hdu","int",32);
+	}
+	fits_col = mvc_bind_table(m, sch, "fits_col");
+	if ( fits_col == NULL ){
+		fits_col = mvc_create_table(m, sch, "fits_columns", tt_table, 0, SQL_PERSIST, 0, 6);
+		mvc_create_column_(m, fits_col, "id","int",32);
+		mvc_create_column_(m, fits_col, "name","varchar",80);
+		mvc_create_column_(m, fits_col, "type","varchar",80);
+		mvc_create_column_(m, fits_col, "type_digits","int",32);
+		mvc_create_column_(m, fits_col, "table_id","int",32);
+		mvc_create_column_(m, fits_col, "units","varchar",10);
+	}
+	
+	id = 1;
+	store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tbl, "id"), &id, TYPE_int);
+	store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tbl, "name"), fname, TYPE_str);
+	store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tbl, "filename"), "test.fit", TYPE_str);
+	id = 2;
+	store_funcs.append_col(m->session->tr,
+			mvc_bind_column(m, fits_tbl, "hdu"), &id, TYPE_int);
+	return MAL_SUCCEED;
+}   
