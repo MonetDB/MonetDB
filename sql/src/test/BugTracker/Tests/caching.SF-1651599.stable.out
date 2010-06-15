@@ -2355,7 +2355,7 @@ Over..
 % query,	count # name
 % clob,	int # type
 % 132,	3 # length
-[ "select * from query_cache() cache;",	1	]
+[ "select * from querycache() cache;",	1	]
 [ "insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 3769.6344,4831.4100,127.4831,6344.4831,4100.127,9773.3297,3297.9773;",	1	]
 [ "insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 18.770,4097.692,5233.4097,770.4097,692.5233,2938.1311,1311.2938;",	1	]
 [ "insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 3813.416,4163.2094,6180.4163,416.4163,2094.6180,106.86,86.106;",	1	]
