@@ -71,9 +71,9 @@ stderr of test 'copy-into-too-long-string.Bug-2358` in directory 'src/test/BugTr
 # 15:34:26 >  mclient -lsql -ftest -i -e --host=volund --port=32555 
 # 15:34:26 >  
 
-MAPI  = monetdb@volund:32555
+MAPI  = monetdb@rig:33094
 QUERY = COPY 1 RECORDS INTO t FROM STDIN USING DELIMITERS '|','
-
+ERROR = !SQLException:importTable:value 'abcd' from line 1 field 1 not inserted, expecting type str
         !failed to import table
 
 # 15:34:26 >  
