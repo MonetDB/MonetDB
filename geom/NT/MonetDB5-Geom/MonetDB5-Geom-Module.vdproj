@@ -27,8 +27,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_583D67AE948A4B7BB5F6223E05E88DCB"
-        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
+        "MsmKey" = "8:_4FC22BC37061413FA8B8F80F91330E61"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -189,6 +189,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4FC22BC37061413FA8B8F80F91330E61"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\50_geom.mal"
+            "TargetName" = "8:50_geom.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_8FBEE32B5DFA4DCEA7CA122FC483D244"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5BE7FE00E4D843E8BC2DBCFC75D469B4"
             {
             "SourcePath" = "8:share\\MonetDB\\sql\\geom.sql"
@@ -334,6 +354,17 @@
                             "Property" = "8:_E9DAA77BC0534BDAADC8952902DD6DDB"
                                 "Folders"
                                 {
+                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_8FBEE32B5DFA4DCEA7CA122FC483D244"
+                                    {
+                                    "Name" = "8:autoload"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "Condition" = "8:"
+                                    "Transitive" = "11:FALSE"
+                                    "Property" = "8:_22D3C6EBD46E4AE5A4080D955E209655"
+                                        "Folders"
+                                        {
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -410,19 +441,20 @@
         "MsiBootstrapper"
         {
         "LangId" = "3:1033"
+        "RequiresElevation" = "11:FALSE"
         }
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5 SQL GIS Module"
-        "ProductCode" = "8:{56000126-D74E-424C-9251-D971E34A1BF4}"
-        "PackageCode" = "8:{A41ADDF0-8605-4E9E-98D6-97DA850D856D}"
+        "ProductCode" = "8:{AEF80B43-0862-497C-9C8D-35F7DEBAAC80}"
+        "PackageCode" = "8:{7C765954-8240-4966-865A-7F54CDF829A7}"
         "UpgradeCode" = "8:{92C89C36-0E86-45E1-B3D8-0D6C91108F30}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:10.2.24"
+        "ProductVersion" = "8:10.6.14"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -978,20 +1010,6 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_583D67AE948A4B7BB5F6223E05E88DCB"
-            {
-            "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_9_0_microsoft_vc90_crt_x86.msm"
-                "Properties"
-                {
-                }
-            "LanguageId" = "3:0"
-            "Exclude" = "11:FALSE"
-            "Folder" = "8:"
-            "Feature" = "8:"
-            "IsolateTo" = "8:"
-            }
             "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_819BD8650A494CC68BD064E23EF621BB"
             {
             "UseDynamicProperties" = "11:TRUE"
@@ -1008,9 +1026,6 @@
             }
         }
         "ProjectOutput"
-        {
-        }
-        "VJSharpPlugin"
         {
         }
     }
