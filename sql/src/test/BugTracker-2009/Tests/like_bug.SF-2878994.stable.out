@@ -30,14 +30,14 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.a # table_name
+% sys.a2 # table_name
 % x # name
 % varchar # type
 % 3 # length
 [ "aaa"	]
 [ 2	]
 [ 2	]
-% sys.a,	sys.b # table_name
+% sys.a2,	sys.b2 # table_name
 % x,	y # name
 % varchar,	varchar # type
 % 1,	1 # length
