@@ -76,7 +76,7 @@ bin_pf = {
                 sql/libsql \
                 #
                 xmlimport/libxmlimport \
-		utils/libstringutils \
+                utils/libstringutils \
                 # 
                 $(LIBGC_LDADD) $(LIBGC_LIBS) \
                 $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
@@ -102,8 +102,9 @@ bin_pfopt = {
                 algebra/liblogical \
                 debug/liblogdebug \
                 libcompiler3 \
-		utils/libstringutils \
+                utils/libstringutils \
                 semantics/libns \
+                semantics/liboptions \
                 mem/libmem \
                 $(LIBGC_LDADD) $(LIBGC_LIBS) \
                 $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
@@ -129,8 +130,9 @@ bin_pfsql = {
                 sql/libsql \
                 debug/libprettyp \
                 libcompiler3 \
-		utils/libstringutils \
+                utils/libstringutils \
                 semantics/libns \
+                semantics/liboptions \
                 mem/libmem \
                 $(LIBGC_LDADD) $(LIBGC_LIBS) \
                 $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
@@ -138,6 +140,36 @@ bin_pfsql = {
                 
         SOURCES = \
              main_sql.c
+}
+
+# PF/Ferry library that reads in a Logical Algbra plan in XML format,
+# optimizes it, and provides various output formats (DOT, XML, SQL).
+#
+# (Note that the linker requires all used symbols to be listed
+#  before their definition, which makes e.g., libmem a good candidate
+#  for the last item of the list.)
+lib_pf_ferry = {
+        LIBS = \
+                ./algebra/liblogopt \
+                ./algebra/map/libmap \
+                ./algebra/opt/libopt \
+                ./algebra/prop/libprop \
+                ./xmlimport/libxmlimport \
+                ./algebra/liblogical \
+                ./sql/libsql \
+                ./debug/libprettyp \
+                ./debug/liblogdebug \
+                ./libcompiler3 \
+                ./utils/libstringutils \
+                ./semantics/libns \
+                ./semantics/liboptions \
+                ./mem/libmem_embedded \
+                $(LIBGC_LDADD) $(LIBGC_LIBS) \
+                $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
+                $(SOCKET_LIBS) $(DL_LIBS)
+                
+        SOURCES = \
+             pf_ferry.c
 }
 
 EXTRA_DIST = win32_getopt.c

@@ -56,4 +56,11 @@ lib_ns = {
 		ns.c
 }
 
+lib_options = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		options.c
+}
+
 EXTRA_DIST_DIR = tests
