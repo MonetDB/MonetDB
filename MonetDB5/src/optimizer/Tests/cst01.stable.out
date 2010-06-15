@@ -14,7 +14,7 @@ stdout of test 'cst01` in directory 'src/optimizer` itself:
 function user.main():void;
 # test constant expressions 
     X16 := mmath.pi();
-    X17 := calc./(180,X16);
+    X17 := calc./(180:dbl,X16);
     io.print(X17);
     mdb.List();
 end main;
@@ -22,7 +22,7 @@ end main;
 function user.main():void;              #  0 main:void := user.main() {G}
 # test constant expressions 
     X16 := mmath.pi();                  #  2 X16:dbl := MATHpi() 
-    X17 := calc./(180,X16);             #  3 X17:dbl := CALCbinarycheckDIVdbldbl(_14:dbl, X16:dbl) 
+    X17 := calc./(180:dbl,X16);         #  3 X17:dbl := CALCbinarycheckDIVdbldbl(_14:dbl, X16:dbl) 
     io.print(X17);                      #  4 _9:void := IOprint_val(X17:dbl) 
     mdb.List();                         #  5 _12:void := MDBlistDetail() 
 end main;                               #  6  

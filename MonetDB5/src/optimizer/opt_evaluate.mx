@@ -212,6 +212,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				p->argc = 2;
 				p->token = ASSIGNsymbol;
 				clrFunction(p);
+				/* freeze the type */
+				setVarFixed(mb,getArg(p,1));
+				setVarUDFtype(mb,getArg(p,1));
 #ifdef DEBUG_OPT_CX
 				stream_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
 					getArg(p, 0), getArg(p, 1), getTypeName(getArgType(mb, p, 1)));

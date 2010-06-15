@@ -1,0 +1,37 @@
+stdout of test 'cst02` in directory 'src/optimizer` itself:
+
+
+# 13:54:00 >  
+# 13:54:00 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35032 --set xrpc_port=47587 --set monet_prompt= --set mal_listing=2 --trace  --dbname=mTests_src_optimizer  cst02.mal
+# 13:54:00 >  
+
+# MonetDB server v5.21.0, based on kernel v1.39.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35032/
+# MonetDB/SQL module v2.39.0 loaded
+# MonetDB/GIS module v0.19.0 loaded
+function user.main():void;
+# test constant expressions with strong types 
+    X2 := nil:dbl;
+    X14 := nil:dbl;
+    io.print(nil:dbl);
+    mdb.List();
+end main;
+[ nil ]
+function user.main():void;              #  0 main:void := user.main() {G}
+# test constant expressions with strong types 
+    X2 := nil:dbl;                      #  2 X2:dbl := _9:dbl 
+    X14 := nil:dbl;                     #  3 X14:dbl := _9:dbl 
+    io.print(nil:dbl);                  #  4 _6:void := IOprint_val(_9:dbl) 
+    mdb.List();                         #  5 _8:void := MDBlistDetail() 
+end main;                               #  6  
+
+# 13:54:00 >  
+# 13:54:00 >  Done.
+# 13:54:00 >  
+

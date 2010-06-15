@@ -832,19 +832,22 @@ The tentacle code should be optimized by the remaining optimizers too.
 @:wrapOptimizer(octopus,OPT_CHECK_ALL)@
 @-
 The remainder contains the octopus support routines.
-The legAdvice function has to negotiate with merovingian to
+The legAdviceInternal function has to negotiate with merovingian to
 determine the number of legs to use for a specific query plan.
 This may involve the size and structure of the database tables 
 accessed as well.
+Furthermore, the advice should only be given when the octopus
+optimizer is enabled.
 @c
 int 
 OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
-	(void) mb;
 	(void) stk;
 	(void) pci;
-	return GDKnr_threads;
+	if ( isOptimizerEnabled(mb,octopusRef) )
+		return GDKnr_threads;
+	return 0;
 }
 
 str 
