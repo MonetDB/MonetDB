@@ -73,7 +73,8 @@ static int eligible(MalBlkPtr mb )
 	for (i=1; i< mb->stop; i++){
 		p = getInstrPtr(mb,i);
 		if ( getModuleId(p) == sqlRef && getFunctionId(p) == assertRef &&
-			getArgType(mb,p,2) == TYPE_str &&
+			p->argc > 2 && getArgType(mb,p,2) == TYPE_str &&
+			getVarConstant(mb, getArg(p,2)).val.sval != NULL &&
 			strstr(getVarConstant(mb, getArg(p,2)).val.sval, "PRIMARY KEY constraint") )
 		return 0;
 	}
