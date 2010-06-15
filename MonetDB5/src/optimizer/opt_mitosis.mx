@@ -66,6 +66,21 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 /* #define _DEBUG_OPT_MITOSIS*/
 #define PARTITION_THRESHOLD (BUN) GDKnr_threads	/* should be increased in production version */
 
+static int eligible(MalBlkPtr mb )
+{
+	InstrPtr p;
+	int i;
+	for (i=1; i< mb->stop; i++){
+		p = getInstrPtr(mb,i);
+		if ( getModuleId(p) == sqlRef && getFunctionId(p) == assertRef &&
+			p->argc > 2 && getArgType(mb,p,2) == TYPE_str &&
+			getVarConstant(mb, getArg(p,2)).val.sval != NULL &&
+			strstr(getVarConstant(mb, getArg(p,2)).val.sval, "PRIMARY KEY constraint") )
+		return 0;
+	}
+	return 1;
+}
+
 static int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -80,6 +95,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void)cntxt;
 	(void) stk;
+	if ( !eligible(mb))
+		return 0;
 	
 	/* locate the largest non-partitioned table */
 	for (i=1; i< mb->stop; i++){
