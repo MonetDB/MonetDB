@@ -359,7 +359,7 @@ MakeDefs(char *name)
 			 */
 		case Comment:
 			if (allTrue()) {
-				d = NwDef(lastdir, mod, sec, lino, file);
+				d = NwDef(dir, mod, sec, lino, file);
 				d->d_cmd = NULL;
 				d->d_blk = blk;
 			}
