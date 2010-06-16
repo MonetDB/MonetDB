@@ -38,7 +38,7 @@
 #ifndef PRETTYP_H
 #define PRETTYP_H
 
-#include <stdio.h>
+#include "array.h"
 
 /** Support for colored pretty printing */
 #define PFBLACK       '\xf0'
@@ -61,9 +61,11 @@
 void PFprettyprintf (const char *rep, ...)
   __attribute__ ((format (printf, 1, 2)));
 
-void PFprettyp (FILE *f);
+void PFprettyp (PFchar_array_t *a);
 
-void PFprettyp_extended (FILE *f, unsigned int width, unsigned int indent);
+void PFprettyp_extended (PFchar_array_t *a, 
+                         unsigned int width,
+                         unsigned int indent);
 
 #endif   /* PRETTYP_H */
 

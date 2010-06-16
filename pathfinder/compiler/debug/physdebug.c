@@ -47,7 +47,6 @@
 #include "alg_dag.h"
 #include "mem.h"
 /* #include "pfstrings.h" */
-#include "prettyp.h"
 #include "oops.h"
 #include "pfstrings.h"
 

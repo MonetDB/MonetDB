@@ -43,6 +43,6 @@
 
 #include "sql.h"
 
-void PFsql_print (FILE *f, PFsql_t *n);
+void PFsql_print (PFchar_array_t *f, PFsql_t *n);
 
 #endif /* SQLPRINT_H */

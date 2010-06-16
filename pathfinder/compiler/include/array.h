@@ -126,6 +126,9 @@ void *PFarray_at (PFarray_t *, unsigned int);
 
 void *PFarray_nadd (PFarray_t *, unsigned int);
 
+#define PFchar_array(size) PFarray (sizeof (char), (size))
+#define PFchar_array_t     PFarray_t
+
 int PFarray_printf (PFarray_t *, const char *, ...)
     __attribute__ ((format (printf, 2, 3)));
 

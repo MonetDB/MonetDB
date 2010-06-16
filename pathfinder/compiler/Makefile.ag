@@ -41,6 +41,7 @@ lib_compiler2 = {
              env.c \
              oops.c \
              pfstrings.c \
+             plan_bundle.c \
              qname.c \
              scope.c \
              timer.c \
@@ -53,6 +54,7 @@ lib_compiler3 = {
              env.c \
              oops.c \
              pfstrings.c \
+             plan_bundle.c \
              qname.c \
              timer.c
 }

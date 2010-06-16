@@ -46,7 +46,6 @@
 
 #include "alg_dag.h"
 #include "mem.h"
-#include "prettyp.h"
 #include "oops.h"
 #include "pfstrings.h"
 
@@ -211,7 +210,7 @@ static char *xml_id[]  = {
 static char *
 literal (PFalg_atom_t a)
 {
-    PFarray_t *s = PFarray (sizeof (char), 50);
+    PFchar_array_t *s = PFchar_array (50);
 
     switch (a.type) {
 
@@ -262,7 +261,7 @@ literal (PFalg_atom_t a)
 static char *
 xml_literal (PFalg_atom_t a)
 {
-    PFarray_t *s = PFarray (sizeof (char), 50);
+    PFchar_array_t *s = PFchar_array (50);
 
     if (a.type == aat_nat)
         PFarray_printf (
@@ -314,7 +313,7 @@ static char *
 xml_literal_list (PFalg_simple_type_t ty)
 {
     bool first = true;
-    PFarray_t *s = PFarray (sizeof (char), 50);
+    PFchar_array_t *s = PFchar_array (50);
 
     if (ty & aat_update)
         PFarray_printf (s, "update");
@@ -379,7 +378,7 @@ comp_str (PFalg_comp_t comp) {
  * @param n The current node to print (function is recursive)
  */
 static void
-la_dot (PFarray_t *dot, PFarray_t *side_effects,
+la_dot (PFchar_array_t *dot, PFchar_array_t *side_effects,
         PFla_op_t *n, bool print_frag_info, char *prop_args, int id)
 {
 #define DOT (n->bit_in ? dot : side_effects)
@@ -1592,7 +1591,7 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
  * @param n The current node to print (function is recursive)
  */
 static void
-la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
+la_xml (PFchar_array_t *xml, PFla_op_t *n, char *prop_args)
 {
     unsigned int c;
 
@@ -2574,29 +2573,29 @@ reset_node_id (PFla_op_t *n)
  * Dump algebra tree initialization in AT&T dot format
  */
 static void
-la_dot_init (FILE *f)
+la_dot_init (PFchar_array_t *a)
 {
-    fprintf (f, "digraph XQueryAlgebra {\n"
-                "ordering=out;\n"
-                "node [shape=box];\n"
-                "node [height=0.1];\n"
-                "node [width=0.2];\n"
-                "node [style=filled];\n"
-                "node [color=\"#C0C0C0\"];\n"
-                "node [fontsize=10];\n"
-                "edge [fontsize=9];\n"
-                "edge [dir=back];\n");
+    PFarray_printf (a, "digraph XQueryAlgebra {\n"
+                       "ordering=out;\n"
+                       "node [shape=box];\n"
+                       "node [height=0.1];\n"
+                       "node [width=0.2];\n"
+                       "node [style=filled];\n"
+                       "node [color=\"#C0C0C0\"];\n"
+                       "node [fontsize=10];\n"
+                       "edge [fontsize=9];\n"
+                       "edge [dir=back];\n");
 }
 
 /**
  * Worker for PFla_dot and PFla_dot_bundle
  */
 static unsigned int
-la_dot_internal (FILE *f, PFla_op_t *root, char *prop_args, int id)
+la_dot_internal (PFchar_array_t *a, PFla_op_t *root, char *prop_args, int id)
 {
     /* initialize array to hold dot output */
-    PFarray_t *dot          = PFarray (sizeof (char), 32000),
-              *side_effects = PFarray (sizeof (char),  4000);
+    PFchar_array_t *dot          = PFchar_array (32000),
+                   *side_effects = PFchar_array (4000);
     unsigned int root_id;
 
     /* inside debugging we need to reset the dag bits first */
@@ -2627,21 +2626,21 @@ la_dot_internal (FILE *f, PFla_op_t *root, char *prop_args, int id)
     }
 
     /* put content of array into file */
-    fprintf (f,
-             "subgraph clusterSideEffects%i {\n"
-             "label=\"SIDE EFFECTS\";\n"
-             "fontsize=10;\n"
-             "fontcolor=\"#808080\";\n"
-             "color=\"#C0C0C0\";\n"
-             "fillcolor=\"#F7F7F7\";\n"
-             "style=filled;\n"
-             "%s"
-             "}\n"
-             "%s"
-             "}\n", 
-             id,
-             (char *) side_effects->base,
-             (char *) dot->base);
+    PFarray_printf (a,
+                    "subgraph clusterSideEffects%i {\n"
+                    "label=\"SIDE EFFECTS\";\n"
+                    "fontsize=10;\n"
+                    "fontcolor=\"#808080\";\n"
+                    "color=\"#C0C0C0\";\n"
+                    "fillcolor=\"#F7F7F7\";\n"
+                    "style=filled;\n"
+                    "%s"
+                    "}\n"
+                    "%s"
+                    "}\n", 
+                    id,
+                    (char *) side_effects->base,
+                    (char *) dot->base);
 
     return root_id;
 }
@@ -2650,32 +2649,32 @@ la_dot_internal (FILE *f, PFla_op_t *root, char *prop_args, int id)
  * Dump algebra tree in AT&T dot format
  * (pipe the output through `dot -Tps' to produce a Postscript file).
  *
- * @param f file to dump into
+ * @param a array to dump into
  * @param root root of abstract syntax tree
  */
 void
-PFla_dot (FILE *f, PFla_op_t *root, char *prop_args)
+PFla_dot (PFchar_array_t *a, PFla_op_t *root, char *prop_args)
 {
     assert (root);
-    la_dot_init (f);
-    la_dot_internal (f, root, prop_args, 0);
+    la_dot_init (a);
+    la_dot_internal (a, root, prop_args, 0);
 }
 
 /**
  * Dump algebra plan bundle in AT&T dot format
  * (pipe the output through `dot -Tps' to produce a Postscript file).
  *
- * @param f file to dump into
+ * @param a array to dump into
  * @param root root of abstract syntax tree
  */
 void
-PFla_dot_bundle (FILE *f, PFla_pb_t *lapb, char *prop_args)
+PFla_dot_bundle (PFchar_array_t *a, PFla_pb_t *lapb, char *prop_args)
 {
     PFla_op_t *root;
     int        id, idref, colref, root_id;
     char      *color = "blue";
 
-    la_dot_init (f);
+    la_dot_init (a);
 
     for (unsigned int i = 0; i < PFla_pb_size(lapb); i++) {
         root   = PFla_pb_op_at (lapb, i);
@@ -2686,38 +2685,38 @@ PFla_dot_bundle (FILE *f, PFla_pb_t *lapb, char *prop_args)
         assert (root && root->kind == la_serialize_rel);
 
         /* print header box */
-        fprintf (f, "planHeader%i [shape=record, style=solid, "
-                    "color=%s, fontsize=11, fontcolor=%s, "
-                    "label=\"{<q> Q%i} | {<iter%i> %s | %s | {",
+        PFarray_printf (a, "planHeader%i [shape=record, style=solid, "
+                           "color=%s, fontsize=11, fontcolor=%s, "
+                           "label=\"{<q> Q%i} | {<iter%i> %s | %s | {",
                 id, color, color, id, id, 
                 PFcol_str (root->sem.ser_rel.iter),
                 PFcol_str (root->sem.ser_rel.pos));
         for (unsigned int j = 0; j < clsize (root->sem.ser_rel.items); j++)
-            fprintf (f, "%s <item%u> %s ",
-                     (j ? "|" : ""),
-                     j + 1,
-                     PFcol_str (clat (root->sem.ser_rel.items, j)));
-        fprintf (f, "}}}\"];\n"
-                    "subgraph clusterPlan%i {\n", id);
+            PFarray_printf (a, "%s <item%u> %s ",
+                            (j ? "|" : ""),
+                            j + 1,
+                            PFcol_str (clat (root->sem.ser_rel.items, j)));
+        PFarray_printf (a, "}}}\"];\n"
+                           "subgraph clusterPlan%i {\n", id);
 
         /* print query plan */
-        root_id = la_dot_internal (f, root, prop_args, id);
+        root_id = la_dot_internal (a, root, prop_args, id);
 
         /* link header box to plan */
-        fprintf (f, "planHeader%i:q -> node%i_%i"
-                    " [color=%s];\n",
-                 id, id, root_id, color);
+        PFarray_printf (a, "planHeader%i:q -> node%i_%i"
+                           " [color=%s];\n",
+                        id, id, root_id, color);
 
         if (idref != -1) {
             /* link header box to the surrogate column */
             assert (colref != -1);
-            fprintf (f, "planHeader%i:item%i -> planHeader%i:iter%i"
-                    " [color=%s];\n",
-                     idref, colref, id, id, color);
+            PFarray_printf (a, "planHeader%i:item%i -> planHeader%i:iter%i"
+                            " [color=%s];\n",
+                            idref, colref, id, id, color);
         }
     }
 
-    fprintf (f, "}\n");
+    PFarray_printf (a, "}\n");
 }
 
 
@@ -2725,12 +2724,9 @@ PFla_dot_bundle (FILE *f, PFla_pb_t *lapb, char *prop_args)
  * Worker for PFla_xml and PFla_xml_bundle
  */
 static void
-la_xml_internal (FILE *f, PFla_op_t *root, char *prop_args)
+la_xml_internal (PFchar_array_t *a, PFla_op_t *root, char *prop_args)
 {
-    /* initialize array to hold dot output */
-    PFarray_t *xml = PFarray (sizeof (char), 64000);
-
-    PFarray_printf (xml, "<logical_query_plan unique_names=\"%s\">\n",
+    PFarray_printf (a, "<logical_query_plan unique_names=\"%s\">\n",
                     PFcol_is_name_unq (root->schema.items[0].name)
                     ? "true" : "false");
 
@@ -2739,7 +2735,7 @@ la_xml_internal (FILE *f, PFla_op_t *root, char *prop_args)
         char *fmt = prop_args;
         while (*fmt) {
             if (*fmt == '+' || *fmt == 'D') {
-                    PFprop_write_dom_rel_xml (xml, root->prop);
+                    PFprop_write_dom_rel_xml (a, root->prop);
                     break;
             }
             fmt++;
@@ -2747,124 +2743,57 @@ la_xml_internal (FILE *f, PFla_op_t *root, char *prop_args)
     }
 
     create_node_id (root);
-    la_xml (xml, root, prop_args);
+    la_xml (a, root, prop_args);
     PFla_dag_reset (root);
     reset_node_id (root);
     PFla_dag_reset (root);
 
-    PFarray_printf (xml, "</logical_query_plan>\n");
-    /* put content of array into file */
-    fprintf (f, "%s", (char *) xml->base);
+    PFarray_printf (a, "</logical_query_plan>\n");
 }
 
 /**
  * Dump algebra tree in XML format
  *
- * @param f file to dump into
+ * @param a array to dump into
  * @param root root of logical algebra tree
  */
 void
-PFla_xml (FILE *f, PFla_op_t *root, char *prop_args)
+PFla_xml (PFchar_array_t *a, PFla_op_t *root, char *prop_args)
 {
     assert (root);
-    fprintf (f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    la_xml_internal (f, root, prop_args);
-}
-
-
-void
-PFla_xml_qp_property (
-	FILE *f, PFla_pb_item_property_t property, unsigned int nest)
-{
-
-	char *nestSpaces;
-	nestSpaces = (char *) PFmalloc (nest + 1);
-	for(unsigned int i = 0; i < nest; i++)
-	{
-		nestSpaces[i] = ' ';
-	}
-	nestSpaces[nest] = '\0';
-
-	fprintf (f, "%s<property name=\"%s\"",
-			nestSpaces, property.name);
-	if (property.value)
-	{
-	    fprintf (f, " value=\"%s\"",
-			property.value);
-	}
-	if (property.properties)
-	{
-		fprintf (f, ">\n");
-		for (unsigned int i = 0;
-			 i < PFarray_last (property.properties);
-	         i++)
-		{
-			PFla_pb_item_property_t subProperty =
-				*((PFla_pb_item_property_t*) PFarray_at (
-												property.properties, i));
-			PFla_xml_qp_property (f, subProperty, nest+2);
-		}
-		fprintf (f, "%s</property>\n", nestSpaces);
-	}
-	else
-	{
-		fprintf (f, "/>\n");
-	}
-
+    PFarray_printf (a, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    la_xml_internal (a, root, prop_args);
 }
 
 /**
  * Dump algebra plan bundle in XML format
  *
- * @param f file to dump into
+ * @param a array to dump into
  * @param root root of logical algebra tree
  */
 void
-PFla_xml_bundle (FILE *f, PFla_pb_t *lapb, char *prop_args)
+PFla_xml_bundle (PFchar_array_t *a, PFla_pb_t *lapb, char *prop_args)
 {
-    PFla_op_t *root;
-    int        id, idref, colref;
-    PFarray_t *properties;
-
-    fprintf (f, 
-             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-             "<query_plan_bundle>\n");
-
-    for (unsigned int i = 0; i < PFla_pb_size(lapb); i++) {
-        root       = PFla_pb_op_at (lapb, i);
-        id         = PFla_pb_id_at (lapb, i);
-        idref      = PFla_pb_idref_at (lapb, i);
-        colref     = PFla_pb_colref_at (lapb, i);
-        properties = PFla_pb_properties_at (lapb, i);
-        
-        fprintf (f, "<query_plan id=\"%i\"", id);
-        if (idref != -1)
-            fprintf (f, " idref=\"%i\" colref=\"%i\"", idref, colref);
-        fprintf (f, ">\n");
-
-        if (properties)
-        {
-        	fprintf (f, "  <properties>\n");
-        	for (unsigned int i = 0;
-        					i < PFarray_last (properties);
-        		            i++)
-			{
-				PFla_pb_item_property_t property =
-					*((PFla_pb_item_property_t*) PFarray_at (properties, i));
-				PFla_xml_qp_property (f, property, 4);
-			}
+    /**
+     * Iterate over the plan_bundle list lapb and bind every item to laroot.
+     *
+     * BEWARE: macro has to be used in combination with macro PFla_pb_end.
+     */
+    PFla_pb_foreach (a, laroot, lapb, NULL)
 
 
-        	fprintf (f, "  </properties>\n");
-        }
 
-        assert (root);
-        la_xml_internal (f, root, prop_args);
+        assert (laroot);
+        la_xml_internal (a, laroot, prop_args);
 
-        fprintf (f, "</query_plan>\n");
-    }
 
-    fprintf (f, "</query_plan_bundle>\n");
+
+    /**
+     * Iterate over the plan_bundle list lapb and bind every item to laroot.
+     *
+     * BEWARE: macro has to be used in combination with macro PFla_pb_foreach.
+     */
+    PFla_pb_foreach_end (a, lapb)
 }
 
 /* vim:set shiftwidth=4 expandtab: */

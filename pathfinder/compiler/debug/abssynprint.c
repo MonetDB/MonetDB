@@ -563,11 +563,14 @@ abssyn_pretty (PFpnode_t *n, bool qnames_resolved)
 void
 PFabssyn_pretty (FILE *f, PFpnode_t *t, bool qnames_resolved)
 {
+        PFchar_array_t *a = PFchar_array (500);
+
         PFprettyprintf ("%c", START_BLOCK);
         abssyn_pretty (t, qnames_resolved);
         PFprettyprintf ("%c", END_BLOCK);
 
-        (void) PFprettyp (f);
+        PFprettyp (a);
+        fputs (a->base, f);
 
         fputc ('\n', f);
 }

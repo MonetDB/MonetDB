@@ -47,19 +47,15 @@
 #include "mem.h"
 #include "array.h"
 #include "qname.h"        /* Pathfinder's QName handling */
-#include "ns.h"           /* namespaces */
 #include "nsres.h"        /* namespace resolution */
 /* include libxml2 library to parse module definitions from an URI */
 #include "libxml/xmlIO.h"
 #include "xml2lalg.h"     /* xml importer */
 #include "algopt.h"
 #include "logdebug.h"
-#include "map_names.h"
-#include "properties.h"
 #include "lalg2sql.h"
 #include "sql_opt.h"
 #include "sqlprint.h"
-#include "alg_cl_mnemonic.h"
 
 #if HAVE_SIGNAL_H
 /**
@@ -105,7 +101,6 @@ PFcompile_ferry_opt (char **res,
                      PFoutput_format_t format,
                      char *opt_args)
 {
-
 
     /* Call setjmp() before variables are declared;
      * otherwise, some compilers complain about clobbered variables.
@@ -170,13 +165,46 @@ PFcompile_ferry_opt (char **res,
     /* Create the strings for the different output formats. */
     switch (format) {
         case PFoutput_format_sql:
+            /**
+             * Iterate over the plan_bundle list lapb and bind every item to laroot.
+             *
+             * BEWARE: macro has to be used in combination with macro PFla_pb_end.
+             */
+            PFla_pb_foreach (output, laroot, lapb, NULL)
+
+
+
+                /* plan bundle emits SQL code wrapped in XML tags */ 
+                if (lapb)
+                    PFarray_printf (output, 
+                                    "    <query>"
+                                    "<![CDATA[\n");
+
+                PFsql_print (output, PFsql_opt (PFlalg2sql (laroot)));
+
+                /* plan bundle emits SQL code wrapped in XML tags */ 
+                if (lapb)
+                    PFarray_printf (output, 
+                                    "]]>"
+                                    "</query>\n");
+
+
+
+            /**
+             * Iterate over the plan_bundle list lapb and bind every item to laroot.
+             *
+             * BEWARE: macro has to be used in combination with macro PFla_pb_foreach.
+             */
+            PFla_pb_foreach_end (output, lapb)
+            break;
+
         case PFoutput_format_xml:
+            PFla_xml_bundle (output, lapb, "" /* no format */);
+            break;
+
         case PFoutput_format_dot:
-            PFarray_printf (output, 
-                            "%s\n"
-                            "<!-- XML file successfully parsed "
-                            "and optimized. (More to come...) -->",
-                            xml);
+            PFla_dot_bundle (output, lapb, "" /* no format */);
+            break;
     }
 
     /* Provide a new (malloced) copy of the output string as result. */
@@ -189,7 +217,7 @@ PFcompile_ferry_opt (char **res,
     /* Release the internally allocated memory. */
     PFmem_destroy ();
 
-    return ( 1 ); /* EXIT_SUCCESS */
+    return 0; /* EXIT_SUCCESS */
  }
 }
 
