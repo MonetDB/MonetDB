@@ -414,11 +414,13 @@ main (int argc, char *argv[])
         PFla_pb_op_at (lapb, i) 
             = PFalgopt (PFla_pb_op_at (lapb, i), false, NULL, opt_args);
 
+    PFchar_array_t *out_str = PFchar_array (4096);
     /* detect whether we have a plan bundle or only a single plan */
     if (PFla_pb_size (lapb) == 1 && PFla_pb_id_at (lapb, 0) == -1)
-        PFla_xml (stdout, PFla_pb_op_at (lapb, 0), prop_args);
+        PFla_xml (out_str, PFla_pb_op_at (lapb, 0), prop_args);
     else
-        PFla_xml_bundle (stdout, lapb, prop_args);
+        PFla_xml_bundle (out_str, lapb, prop_args);
+    fputs (out_str->base, stdout);
 
     PFmem_destroy ();
 

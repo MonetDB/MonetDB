@@ -41,6 +41,8 @@
 /**
  * Maximum length of error message strings (messages will be
  *  truncated if necessary)
+ *
+ * (This size should be aligned with the information in pf_ferry.h.)
  */
 #define OOPS_SIZE 4096
 extern char* PFmaxstack;

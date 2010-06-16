@@ -312,9 +312,10 @@ main (int argc, char *argv[])
 
     /* We either have a plan bundle in @a lapb
        or a logical query plan in @a laroot. */
-    PFla_pb_t  *lapb    = NULL;
-    PFla_op_t  *laroot  = NULL;
-    PFsql_t    *sqlroot = NULL;
+    PFla_pb_t      *lapb    = NULL;
+    PFla_op_t      *laroot  = NULL;
+    PFsql_t        *sqlroot = NULL;
+    PFchar_array_t *sql_str = PFchar_array (4096);
 
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
@@ -389,61 +390,23 @@ main (int argc, char *argv[])
        lapb = NULL;
     }
 
-    unsigned int i = 0, c;
-    /* plan bundle emits SQL code wrapped in XML tags */ 
-    if (lapb)
-        fprintf (stdout, "<query_plan_bundle>\n");
-    /* If we have a plan bundle we have to generate
-       a SQL query for each query plan. */
-    do {
-        /* plan bundle emits SQL code wrapped in XML tags
-           with additional column and linking information */ 
-        if (lapb) {
-            laroot = PFla_pb_op_at (lapb, i);
-            assert (laroot->kind == la_serialize_rel);
+    /**
+     * Iterate over the plan_bundle list lapb and bind every item to laroot.
+     *
+     * BEWARE: macro has to be used in combination with macro PFla_pb_end.
+     */
+    PFla_pb_foreach (sql_str, laroot_, lapb, laroot)
 
-            fprintf (stdout, "<query_plan id=\"%i\"",
-                     PFla_pb_id_at (lapb, i));
-            if (PFla_pb_idref_at (lapb, i) != -1)
-                fprintf (stdout, " idref=\"%i\" colref=\"%i\"",
-                         PFla_pb_idref_at (lapb, i),
-                         PFla_pb_colref_at (lapb, i));
-            fprintf (stdout, ">\n");
 
-            if (PFla_pb_properties_at (lapb, i))
-			{
-				fprintf (stdout, "  <properties>\n");
-				for (unsigned int propertyID = 0;
-					propertyID < PFarray_last (PFla_pb_properties_at (lapb, i));
-					propertyID++)
-				{
-					PFla_pb_item_property_t property =
-						*((PFla_pb_item_property_t*) PFarray_at
-								(PFla_pb_properties_at (lapb, i), propertyID));
-					print_property (property, 4);
-				}
-				fprintf (stdout, "  </properties>\n");
-			}
 
-            fprintf (stdout,
-                     "<schema>\n"
-                     "  <column name=\"%s\" function=\"iter\"/>\n",
-                     PFcol_str (laroot->sem.ser_rel.iter));
-            for (c = 0; c < clsize (laroot->sem.ser_rel.items); c++)
-                fprintf (stdout,
-                         "  <column name=\"%s\" new=\"false\""
-                                  " function=\"item\""
-                                  " position=\"%u\"/>\n",
-                         PFcol_str (clat (laroot->sem.ser_rel.items, c)),
-                         c);
-            fprintf (stdout, "</schema>\n"
-                             "<query>"
-                             "<![CDATA[\n");
-            i++;
-        }
+        /* plan bundle emits SQL code wrapped in XML tags */ 
+        if (lapb)
+            PFarray_printf (sql_str, 
+                            "    <query>"
+                            "<![CDATA[\n");
 
-        if (!PFcol_is_name_unq(laroot->schema.items[0].name))
-            laroot = PFmap_unq_names (laroot);
+        if (!PFcol_is_name_unq(laroot_->schema.items[0].name))
+            laroot_ = PFmap_unq_names (laroot_);
 
         /* Infer properties required by the SQL Code Generation and
            generate the SQL code. */
@@ -467,24 +430,29 @@ main (int argc, char *argv[])
                       false /* original names */,
                       true  /* unique names */,
                       true  /* name origin */,
-                      laroot, NULL);
+                      laroot_, NULL);
 
-        sqlroot = PFlalg2sql (laroot);
+        sqlroot = PFlalg2sql (laroot_);
         sqlroot = PFsql_opt (sqlroot);
-        PFsql_print (stdout, sqlroot);
+        PFsql_print (sql_str, sqlroot);
 
         /* plan bundle emits SQL code wrapped in XML tags */ 
         if (lapb)
-            fprintf (stdout, "]]>"
-                             "</query>\n"
-                             "</query_plan>\n");
+            PFarray_printf (sql_str, 
+                            "]]>"
+                            "</query>\n");
 
-    /* iterate over the plans in the plan bundle */
-    } while (lapb && i < PFla_pb_size (lapb));
 
-    /* plan bundle emits SQL code wrapped in XML tags */ 
-    if (lapb)
-        fprintf (stdout, "</query_plan_bundle>\n");
+
+    /**
+     * Iterate over the plan_bundle list lapb and bind every item to laroot_.
+     *
+     * BEWARE: macro has to be used in combination with macro PFla_pb_foreach.
+     */
+    PFla_pb_foreach_end (sql_str, lapb)
+
+    /* print the resulting string to the output stream */
+    fputs (sql_str->base, stdout);
 
     PFmem_destroy ();
 

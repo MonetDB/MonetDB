@@ -2,10 +2,8 @@
 
 /**
  * @file
- * 
- * Declarations for logdebug.c; dump Algebra
- * tree in AT&T dot or XML format.
  *
+ * Helper functions for the plan bundle treatment.
  *
  * Copyright Notice:
  * -----------------
@@ -36,21 +34,45 @@
  * $Id$
  */
 
-#ifndef LOGDEBUG_H
-#define LOGDEBUG_H
+/* always include pf_config.h first! */
+#include "pf_config.h"
+#include "pathfinder.h"
 
-#include "array.h"
-
-#include "logical.h"
 #include "plan_bundle.h"
 
-void PFla_dot (PFchar_array_t *, PFla_op_t *, char *prop_args);
-void PFla_xml (PFchar_array_t *, PFla_op_t *, char *prop_args);
+/**
+ * Helper function to print the property structure 
+ * to a an character array @a a.
+ */
+void
+PFla_pb_property_print (PFchar_array_t *a,
+                        PFla_pb_item_property_t property,
+                        unsigned int indent_size)
+{
+    unsigned int i;
+    char         indent[indent_size+1];
 
-/* Declaration for debug printing of plan bundles */
-void PFla_dot_bundle (PFchar_array_t *, PFla_pb_t *, char *prop_args);
-void PFla_xml_bundle (PFchar_array_t *, PFla_pb_t *, char *prop_args);
+    for (i = 0; i < indent_size; i++)
+        indent[i] = ' ';
+    indent[indent_size] = '\0';
 
-#endif  /* LOGDEBUG_H */
+    PFarray_printf (a, "%s<property name=\"%s\"", indent, property.name);
+
+    if (property.value)
+        PFarray_printf (a, " value=\"%s\"", property.value);
+
+    if (property.properties) {
+        PFarray_printf (a, ">\n");
+        for (i = 0; i < PFarray_last (property.properties); i++)
+            PFla_pb_property_print (
+                a, 
+                *(PFla_pb_item_property_t *) PFarray_at (property.properties,
+                                                         i),
+                indent_size + 2);
+        PFarray_printf (a, "%s</property>\n", indent);
+    }
+    else
+        PFarray_printf (a, "/>\n");
+}
 
 /* vim:set shiftwidth=4 expandtab: */

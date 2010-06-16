@@ -61,7 +61,6 @@
 #include "options.h"      /* extract option declarations from parse tree */
 #include "xquery_fo.h"    /* built-in XQuery F&O */
 #include "func_chk.h"     /* function resolution */
-#include "prettyp.h"
 #include "abssynprint.h"
 #include "coreprint.h"
 #include "logdebug.h"
@@ -301,17 +300,17 @@ void PFurlcache_flush(void) {
 int
 PFcompile (char *url, FILE *pfout, PFstate_t *status)
 {
-    PFpnode_t *proot  = NULL;
-    PFcnode_t *croot  = NULL;
+    PFpnode_t      *proot  = NULL;
+    PFcnode_t      *croot  = NULL;
     /* We either have a plan bundle in @a lapb
        or a logical query plan in @a laroot. */
-    PFla_pb_t *lapb   = NULL;
-    PFla_op_t *laroot = NULL;
-    PFpa_op_t *paroot = NULL;
-    PFmil_t   *mroot  = NULL;
-    PFarray_t *mil_program = NULL;
-    char      *xquery = NULL;
-    int        module_base;
+    PFla_pb_t      *lapb   = NULL;
+    PFla_op_t      *laroot = NULL;
+    PFpa_op_t      *paroot = NULL;
+    PFmil_t        *mroot  = NULL;
+    PFchar_array_t *mil_program = NULL;
+    char           *xquery = NULL;
+    int             module_base;
 
     /* elapsed time for compiler phase */
     long tm, tm_first = 0;
@@ -680,46 +679,26 @@ AFTER_CORE2ALG:
     /* Split Point: SQL Code Generation */
     /************************************/
     if (status->output_format == PFoutput_format_sql) {
-        unsigned int i = 0, c;
-        /* plan bundle emits SQL code wrapped in XML tags */ 
-        if (lapb)
-            fprintf (pfout, "<query_plan_bundle>\n");
-        /* If we have a plan bundle we have to generate
-           a SQL query for each query plan. */
-        do {
-            /* plan bundle emits SQL code wrapped in XML tags
-               with additional column and linking information */ 
-            if (lapb) {
-                laroot = PFla_pb_op_at (lapb, i);
-                assert (laroot->kind == la_serialize_rel);
+        PFchar_array_t *sql_str = PFchar_array (4096);
 
-                fprintf (pfout, "<query_plan id=\"%i\"",
-                         PFla_pb_id_at (lapb, i));
-                if (PFla_pb_idref_at (lapb, i) != -1)
-                    fprintf (pfout, " idref=\"%i\" colref=\"%i\"",
-                             PFla_pb_idref_at (lapb, i),
-                             PFla_pb_colref_at (lapb, i));
-                fprintf (pfout, ">\n");
-                fprintf (pfout,
-                         "<schema>\n"
-                         "  <column name=\"%s\" function=\"iter\"/>\n",
-                         PFcol_str (laroot->sem.ser_rel.iter));
-                for (c = 0; c < clsize (laroot->sem.ser_rel.items); c++)
-                    fprintf (pfout,
-                             "  <column name=\"%s\" new=\"false\""
-                                      " function=\"item\""
-                                      " position=\"%u\"/>\n",
-                             PFcol_str (clat (laroot->sem.ser_rel.items, c)),
-                             c);
-                fprintf (pfout, "</schema>\n"
-                                "<query>"
+        /**
+         * Iterate over the plan_bundle list lapb and bind every item to laroot_.
+         *
+         * BEWARE: macro has to be used in combination with macro PFla_pb_end.
+         */
+        PFla_pb_foreach (sql_str, laroot_, lapb, laroot)
+
+
+
+            /* plan bundle emits SQL code wrapped in XML tags */ 
+            if (lapb)
+                PFarray_printf (sql_str, 
+                                "    <query>"
                                 "<![CDATA[\n");
-                i++;
-            }
 
             /* generate the SQL code */
             tm = PFtimer_start ();
-            PFsql_t *sqlroot = PFlalg2sql(laroot);
+            PFsql_t *sqlroot = PFlalg2sql(laroot_);
             tm = PFtimer_stop (tm);
             if (status->timing)
                 PFlog ("Compilation to SQL:\t\t\t %s", PFtimer_str (tm));
@@ -739,23 +718,28 @@ AFTER_CORE2ALG:
 
             /* serialize the internal SQL query tree */
             tm = PFtimer_start ();
-            PFsql_print (pfout, sqlroot);
+            PFsql_print (sql_str, sqlroot);
             tm = PFtimer_stop (tm);
             if (status->timing)
                 PFlog ("SQL Code generation:\t\t\t %s", PFtimer_str (tm));
 
             /* plan bundle emits SQL code wrapped in XML tags */ 
             if (lapb)
-                fprintf (pfout, "]]>"
-                                "</query>\n"
-                                "</query_plan>\n");
+                PFarray_printf (sql_str, 
+                                "]]>"
+                                "</query>\n");
 
-        /* iterate over the plans in the plan bundle */
-        } while (lapb && i < PFla_pb_size (lapb));
 
-        /* plan bundle emits SQL code wrapped in XML tags */ 
-        if (lapb)
-            fprintf (pfout, "</query_plan_bundle>\n");
+
+        /**
+         * Iterate over the plan_bundle list lapb and bind every item to laroot_.
+         *
+         * BEWARE: macro has to be used in combination with macro PFla_pb_foreach.
+         */
+        PFla_pb_foreach_end (sql_str, lapb)
+
+        /* print the resulting string to the output stream */
+        fputs (sql_str->base, pfout);
 
         goto bailout;
     }
@@ -919,26 +903,28 @@ AFTER_CORE2ALG:
 
     /* print algebra tree if requested */
     if (status->print_la_tree) {
+        PFchar_array_t *out_str = PFchar_array (4096);
         if (laroot) {
             if (status->print_pretty) {
                 PFinfo (OOPS_WARNING,
                         "Cannot prettyprint logical algebra tree. Sorry.");
             }
             if (status->print_dot)
-                PFla_dot (pfout, laroot, status->format);
+                PFla_dot (out_str, laroot, status->format);
             if (status->print_xml)
-                PFla_xml (pfout, laroot, status->format);
+                PFla_xml (out_str, laroot, status->format);
         }
         else if (lapb) {
             if (status->print_dot)
-                PFla_dot_bundle (pfout, lapb, status->format);
+                PFla_dot_bundle (out_str, lapb, status->format);
             if (status->print_xml)
-                PFla_xml_bundle (pfout, lapb, status->format);
+                PFla_xml_bundle (out_str, lapb, status->format);
         }
         else
             PFinfo (OOPS_NOTICE,
                     "logical algebra tree not available "
                     "at this point of compilation");
+        fputs (out_str->base, pfout);
     }
 
     /* print MIL algebra tree if requested */
@@ -990,10 +976,10 @@ PFcompile_MonetDB (char *xquery, char* url,
         long timing;
         int module_base;
         /* for ALGEBRA (PFoutput_format_mil) & SQL (PFoutput_format_sql) */
-        PFla_op_t  *laroot = NULL;
-        PFpa_op_t  *paroot = NULL;
-        PFmil_t    *mroot  = NULL;
-        PFarray_t  *serialized_mil_code = NULL;
+        PFla_op_t      *laroot = NULL;
+        PFpa_op_t      *paroot = NULL;
+        PFmil_t        *mroot  = NULL;
+        PFchar_array_t *serialized_mil_code = NULL;
         PFguide_list_t *guide_list = NULL; /* guide list */
         /* for MILPRINT_SUMMER (PFoutput_format_milprint_summer) */
         char *intern_prologue = NULL,

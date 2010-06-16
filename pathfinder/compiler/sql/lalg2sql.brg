@@ -208,7 +208,7 @@ Query:  serialize_seq (
             roots_ (twig (Twig)))                    =   5 (10);
 Query:  serialize_seq (side_effects (Side, Frag),
                        empty_tbl)                    =   6 (10);
-Query:  serialize_rel (nil, Rel)                     =   7 (10);
+Query:  serialize_rel (Side, Rel)                    =   7 (10);
 Query:  serialize_rel (nil, empty_tbl)               =   8 (10);
 Rel:    lit_tbl                                      =   9 (10);
 Rel:    ref_tbl                                      =  10 (10);
@@ -729,7 +729,14 @@ transform_expression (PFsql_t *n, PFsql_t *col)
     /* we have a different strategy when our item is boolean */
     if (col->sem.column.name->ty == aat_bln)
         n = (n->kind == sql_column_name ||
-             n->kind == sql_lit_int)?
+             n->kind == sql_lit_int ||
+             /* in case we have a max or min over a boolean
+              * value, we don't wrap it into another case
+              * statement, since in case of a condition
+              * we dump the statement before the aggregate
+              * is used. */
+             n->kind == sql_max ||
+             n->kind == sql_min)?
             n:
             case_ (when (n, TRUE_INT), else_ (FALSE_INT));
 
@@ -3843,9 +3850,11 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             sqlnode1 = col_env_lookup (COLMAP(p), p->sem.binary.col1, aat_bln);
             sqlnode2 = col_env_lookup (COLMAP(p), p->sem.binary.col2, aat_bln);
 
-            if (sqlnode1->kind == sql_column_name)
+            if (sqlnode1->kind == sql_column_name ||
+                sqlnode1->kind == sql_lit_int)
                 sqlnode1 = eq (sqlnode1, lit_int (1));
-            if (sqlnode2->kind == sql_column_name)
+            if (sqlnode2->kind == sql_column_name ||
+                sqlnode2->kind == sql_lit_int)
                 sqlnode2 = eq (sqlnode2, lit_int (1));
 
             switch (p->kind) {

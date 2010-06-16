@@ -51,6 +51,10 @@
 /* PFarray_t */
 #include "array.h"
 
+/* shortcut for printing */
+#define aputc(c,a)       (*(char *) PFarray_add (a)) = c
+#define aprintf(a,...)   PFarray_printf (a, __VA_ARGS__)
+
 /**
  * buffer to collect material to be pretty-printed later
  */
@@ -98,7 +102,7 @@ static stack S;
 static stack S1;   /**< see #S */
 
 /* prototypes */
-static void indent (FILE *f, int indentation);
+static void indent (PFchar_array_t *a, int indentation);
 
 /**
  * @var left see #stream
@@ -119,7 +123,7 @@ static char eof         = '\0';         /**< see #start_block */
  * Send color switching codes (currently: X11 xterm).
  */
 static void
-switch_color (FILE *f, char color)
+switch_color (PFchar_array_t *a, char color)
 {
     switch (color)
         {
@@ -128,18 +132,18 @@ switch_color (FILE *f, char color)
              * (see md and me entries in /etc/termcap)
              * The others are color changing escape sequences for an xterm.
              */
-        case PFBLACK:       fprintf (f, "\033[m\017\033[30m"); break;
-        case PFBLUE:        fprintf (f, "\033[m\017\033[34m"); break;
-        case PFGREEN:       fprintf (f, "\033[m\017\033[32m"); break;
-        case PFPINK:        fprintf (f, "\033[m\017\033[35m"); break;
-        case PFRED:         fprintf (f, "\033[m\017\033[31m"); break;
-        case PFYELLOW:      fprintf (f, "\033[m\017\033[33m"); break;
-        case PFBOLD_BLACK:  fprintf (f, "\033[1m\033[30m");    break;
-        case PFBOLD_BLUE:   fprintf (f, "\033[1m\033[34m");    break;
-        case PFBOLD_GREEN:  fprintf (f, "\033[1m\033[32m");    break;
-        case PFBOLD_PINK:   fprintf (f, "\033[1m\033[35m");    break;
-        case PFBOLD_RED:    fprintf (f, "\033[1m\033[31m");    break;
-        case PFBOLD_YELLOW: fprintf (f ,"\033[1m\033[33m");
+        case PFBLACK:       aprintf (a, "\033[m\017\033[30m"); break;
+        case PFBLUE:        aprintf (a, "\033[m\017\033[34m"); break;
+        case PFGREEN:       aprintf (a, "\033[m\017\033[32m"); break;
+        case PFPINK:        aprintf (a, "\033[m\017\033[35m"); break;
+        case PFRED:         aprintf (a, "\033[m\017\033[31m"); break;
+        case PFYELLOW:      aprintf (a, "\033[m\017\033[33m"); break;
+        case PFBOLD_BLACK:  aprintf (a, "\033[1m\033[30m");    break;
+        case PFBOLD_BLUE:   aprintf (a, "\033[1m\033[34m");    break;
+        case PFBOLD_GREEN:  aprintf (a, "\033[1m\033[32m");    break;
+        case PFBOLD_PINK:   aprintf (a, "\033[1m\033[35m");    break;
+        case PFBOLD_RED:    aprintf (a, "\033[1m\033[31m");    break;
+        case PFBOLD_YELLOW: aprintf (a ,"\033[1m\033[33m");
         }
 }
 
@@ -210,32 +214,32 @@ push (stack *s, int n)
  * Break the current line and indent the next line
  * by @a ind characters.
  *
- * @param f file to print to
+ * @param a array to print to
  * @param ind indentation level
  */
 static void
-indent (FILE *f, int ind)
+indent (PFchar_array_t *a, int ind)
 {
-    fputc ('\n', f);
+    aputc ('\n', a);
 
     while (ind-- > 0)
-        fputc (' ', f);
+        aputc (' ', a);
 }
 
 
 /**
  * Print the next chunk of characters (pointed to by @a x) of length
- * @a l to the given file @a f.  Break and indent if the material does
+ * @a l to the given array @a a.  Break and indent if the material does
  * not fit on the current line.
  *
  * (This is the print () routine of [Oppen80].)
  *
- * @param f file to print to
+ * @param a array to print to
  * @param x characters to print
  * @param l length of string to print
  */
 static void
-print (FILE *f, char *x, int l)
+print (PFchar_array_t *a, char *x, int l)
 {
     switch (*x) {
     case START_BLOCK:
@@ -248,10 +252,10 @@ print (FILE *f, char *x, int l)
         if (isspace ((unsigned char) *x))
             if (l > space) {
                 space = top (&S) - indent_by;
-                indent (f, offset + margin - space);
+                indent (a, offset + margin - space);
             }
             else {
-                fputc (*x, f);
+                aputc (*x, a);
                 space = space - 1;
             }
         else {
@@ -259,9 +263,9 @@ print (FILE *f, char *x, int l)
             space = space - l;
             while (l--)
                 if ((*x & 0xf0) == 0xf0)
-                    switch_color (f, *(x++));
+                    switch_color (a, *(x++));
                 else
-                    fputc (*(x++), f);
+                    aputc (*(x++), a);
         }
     }
 }
@@ -316,10 +320,10 @@ receive (void)
  *
  * (This is the scan () routine from [Oppen80].)
  *
- * @param f file to print to
+ * @param a array to print to
  */
 static void
-scan (FILE *f)
+scan (PFchar_array_t *a)
 {
     char *x;
     int x1;
@@ -353,7 +357,7 @@ scan (FILE *f)
             }
             if (empty (&S1))
                 do {
-                    print (f, STREAM (left), SIZE (left));
+                    print (a, STREAM (left), SIZE (left));
                     left = left + 1;
                 } while (left <= right);
             break;
@@ -372,7 +376,7 @@ scan (FILE *f)
             else {
                 /* x: string */
                 if (empty (&S1))
-                    print (f, x, strlen (x));
+                    print (a, x, strlen (x));
                 else {
                     right = right + 1;
                     STREAM (right) = x;
@@ -437,13 +441,13 @@ PFprettyprintf (const char *rep, ...)
 }
 
 /**
- * Prettyprint temporary buffer to file @a f.
+ * Prettyprint temporary buffer to array @a a.
  * (You have to print to the buffer using PFprettyprintf () first.)
  *
- * @param f file to print to
+ * @param a array to print to
  */
 void
-PFprettyp (FILE *f)
+PFprettyp (PFchar_array_t *a)
 {
     /* has material been collected yet? */
     if (collect && PFarray_last (collect)) {
@@ -458,7 +462,7 @@ PFprettyp (FILE *f)
 
         /* scan the collected material from its beginning and prettyprint */
         PFarray_last (collect) = 0;
-        scan (f);
+        scan (a);
 
         /* collect buffer has been printed, re-initialize for next
          * prettyprint job
@@ -470,13 +474,13 @@ PFprettyp (FILE *f)
 }
 
 /**
- * Prettyprint temporary buffer to file @a f.
+ * Prettyprint temporary buffer to array @a a.
  * (You have to print to the buffer using PFprettyprintf () first.)
  *
- * @param f file to print to
+ * @param a array to print to
  */
 void
-PFprettyp_extended (FILE *f, unsigned int width, unsigned int indent)
+PFprettyp_extended (PFchar_array_t *a, unsigned int width, unsigned int indent)
 {
     /* has material been collected yet? */
     if (collect && PFarray_last (collect)) {
@@ -491,7 +495,7 @@ PFprettyp_extended (FILE *f, unsigned int width, unsigned int indent)
 
         /* scan the collected material from its beginning and prettyprint */
         PFarray_last (collect) = 0;
-        scan (f);
+        scan (a);
 
         /* collect buffer has been printed, re-initialize for next
          * prettyprint job

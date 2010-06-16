@@ -51,7 +51,6 @@
 /* PFesc_string */
 #include "pfstrings.h"
 
-#include "prettyp.h"
 #include <assert.h>
 
 /* Easily access subtree-parts */
@@ -348,9 +347,8 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl, bool print_types)
         fprintf (f, "%s", n->sem.tru ? "stable" : "unstable");
         break;
     case c_orderspecs:
-        fprintf (f, "%s,%c %c%s", n->sem.mode.dir == p_desc ?
+        fprintf (f, "%s, %s", n->sem.mode.dir == p_desc ?
                                       "descending" : "ascending",
-                                      END_BLOCK, START_BLOCK,
                                       n->sem.mode.empty == p_greatest ?
                                       "greatest" : "least");
         break;

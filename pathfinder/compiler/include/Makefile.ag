@@ -47,6 +47,7 @@ EXTRA_DIST = \
 	coreopt.h \
 	coreprint.h \
 	env.h \
+        ferry_lib.h \
 	fs.h \
 	fmt.h \
 	func_chk.h \
@@ -111,3 +112,9 @@ EXTRA_DIST = \
    	sqlprint.h \
         load_stats.h
    
+headers_pf_ferry = {
+        HEADERS = h
+        DIR = includedir
+        SOURCES = pf_ferry.h
+}
+
