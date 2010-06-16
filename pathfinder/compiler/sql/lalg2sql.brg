@@ -451,7 +451,7 @@ literal (PFalg_atom_t atom)
 }
 
 /* static variable that holds the actual table-number */
-static unsigned int table_varno = PF_SQL_RES_TABLE_COUNT;
+static unsigned int table_varno;
 
 /**
  * Returns a new table name.
@@ -463,7 +463,7 @@ new_table_name ()
 }
 
 /* static variable that holds the actual alias-number */
-static unsigned int alias_varno = PF_SQL_RES_ALIAS_COUNT;
+static unsigned int alias_varno;
 
 /**
  * Returns a new alias.
@@ -529,7 +529,7 @@ special_col (PFsql_special_t spc)
 
 
 /* static variable that holds the current col-number */
-static unsigned int col_varno = PF_SQL_RES_COLUMN_COUNT;
+static unsigned int col_varno;
 
 /**
  * Returns a new column name

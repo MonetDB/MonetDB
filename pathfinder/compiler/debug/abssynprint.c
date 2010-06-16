@@ -565,6 +565,9 @@ PFabssyn_pretty (FILE *f, PFpnode_t *t, bool qnames_resolved)
 {
         PFchar_array_t *a = PFchar_array (500);
 
+        /* Initialize the pretty-printing data structures */
+        PFprettyp_init ();
+
         PFprettyprintf ("%c", START_BLOCK);
         abssyn_pretty (t, qnames_resolved);
         PFprettyprintf ("%c", END_BLOCK);

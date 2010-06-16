@@ -58,7 +58,7 @@
 /**
  * buffer to collect material to be pretty-printed later
  */
-static PFarray_t *collect = 0;
+static PFarray_t *collect;
 
 /**
  * You'll find an explanation of the variables below in [Oppen80].
@@ -388,6 +388,17 @@ scan (PFchar_array_t *a)
     }
 }
 
+void
+PFprettyp_init (void)
+{
+    /* Initialize the collect, stream, and size arrays. */
+    collect = PFarray (sizeof (char), 512);
+    stream  = PFarray (sizeof (char *), 50);
+    size    = PFarray (sizeof (int), 50);
+
+    assert (collect && stream && size);
+}
+
 /**
  * Print a chunk of characters (with prettyprinting markup) to a
  * dynamically growing buffer.  You need to call this routine
@@ -420,17 +431,6 @@ void
 PFprettyprintf (const char *rep, ...)
 {
     va_list reps;
-
-    /* initialize the collect, stream, and size arrays if this is the
-     * first material to be printed
-     */
-    if (! collect) {
-        collect = PFarray (sizeof (char), 512);
-        stream  = PFarray (sizeof (char *), 50);
-        size    = PFarray (sizeof (int), 50);
-
-        assert (collect && stream && size);
-    }
 
     va_start (reps, rep);
 

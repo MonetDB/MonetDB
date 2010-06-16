@@ -58,6 +58,8 @@
 #define START_BLOCK   '\x01'
 #define END_BLOCK     '\x02'
 
+void PFprettyp_init (void);
+
 void PFprettyprintf (const char *rep, ...)
   __attribute__ ((format (printf, 1, 2)));
 

@@ -1085,6 +1085,9 @@ PFsql_print (PFchar_array_t *a, PFsql_t *n)
     assert (L(n)); /* serialize info */
     assert (R(n)); /* common table expression */   
 
+    /* Initialize the pretty-printing data structures */
+    PFprettyp_init ();
+
     /* first print all schema information */
     print_schema_information (a, L(n));
 
