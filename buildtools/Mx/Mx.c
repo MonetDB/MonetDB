@@ -273,30 +273,40 @@ static struct comments comments[] = {
 void
 WriteComment(char *fname, char *blk)
 {
-	int i;
+	int i, j;
 	struct comments *c;
 	char *s1, *s2;
+	Def *d;
 
+	/* for each type of file that we're extracting, if we know how
+	   comments are written, and if that particular file type is
+	   supposed to be generated from the source, write the comment
+	   in the appropriate way. */
 	for (i = 0; i < extcnt; i++) {
 		for (c = comments; c->code != Nop; c++) {
 			if (c->code == extens[i]) {
-				s1 = blk;
-				IoWriteFile(fname, extens[i]);
-				if (c->comment_pre)
-					ofile_printf("%s\n", c->comment_pre);
-				while ((s2 = strchr(s1, '\n')) != NULL) {
-					*s2 = '\0';
-					if (c->comment_start) {
-						ofile_printf("%s", c->comment_start);
-						if (*s1)
-							ofile_printf(" ");
+				for (j = 0; j < ndef; j++) {
+					if (defs[j].d_dir == extens[i]) {
+						s1 = blk;
+						IoWriteFile(fname, extens[i]);
+						if (c->comment_pre)
+							ofile_printf("%s\n", c->comment_pre);
+						while ((s2 = strchr(s1, '\n')) != NULL) {
+							*s2 = '\0';
+							if (c->comment_start) {
+								ofile_printf("%s", c->comment_start);
+								if (*s1)
+									ofile_printf(" ");
+							}
+							ofile_printf("%s\n", s1);
+							*s2++ = '\n';
+							s1 = s2;
+						}
+						if (c->comment_post)
+							ofile_printf("%s\n", c->comment_post);
+						break;
 					}
-					ofile_printf("%s\n", s1);
-					*s2++ = '\n';
-					s1 = s2;
 				}
-				if (c->comment_post)
-					ofile_printf("%s\n", c->comment_post);
 				break;
 			}
 		}
