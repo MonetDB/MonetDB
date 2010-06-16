@@ -16,7 +16,7 @@ Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 Copyright August 2008-2010 MonetDB B.V.
 All Rights Reserved.
 @
-
+@c
 /* core */
 @:install_load_module(builtin)@
 @:install_load_module(arith)@
