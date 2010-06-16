@@ -23,6 +23,7 @@ SELECT id,
 FROM (
       SELECT * FROM my_table1
      ) x
+ORDER BY id
 ;
 
 DROP   TABLE my_table1 ;
