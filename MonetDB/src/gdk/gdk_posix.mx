@@ -2101,8 +2101,8 @@ win_errno(void)
 
 #define MT_PAGESIZE(s)		((((s)-1)/MT_pagesize()+1)*MT_pagesize())
 
-#if defined(MAP_ANON)
-#define MMAP_FLAGS(f)		f|MAP_ANON
+#if defined(MAP_ANONYMOUS)
+#define MMAP_FLAGS(f)		f|MAP_ANONYMOUS
 #define MMAP_FD			-1
 #define MMAP_OPEN_DEV_ZERO	int fd = 1
 #define MMAP_CLOSE_DEV_ZERO	(void)fd
