@@ -47,7 +47,6 @@ EXTRA_DIST = \
 	coreopt.h \
 	coreprint.h \
 	env.h \
-        ferry_lib.h \
 	fs.h \
 	fmt.h \
 	func_chk.h \
@@ -81,6 +80,7 @@ EXTRA_DIST = \
 	parser.h \
 	pathfinder.h \
 	pfstrings.h \
+        pf_ferry.h \
         pf_xq.h \
 	physdebug.h \
 	physical.h \
