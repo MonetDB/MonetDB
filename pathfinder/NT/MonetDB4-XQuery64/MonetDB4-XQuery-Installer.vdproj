@@ -4339,7 +4339,7 @@
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_FADEF69B58784586806CF8E1826524B3"
             {
             "Name" = "8:MonetDB XQuery Client"
-            "Arguments" = "8:--language=xquery --user=monetdb --passwd=monetdb --encoding=cp437"
+            "Arguments" = "8:--language=xquery --encoding=cp437"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
