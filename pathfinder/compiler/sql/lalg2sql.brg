@@ -291,8 +291,9 @@ Twig:   content (Frag, Rel)                          =  88 (10);
 
 Constr: merge_adjacent (Frag, Rel)                   =  89 (10);
 
-Side:   error (Side, Rel)                            =  98 (10);
-Side:   nil                                          =  99 (10);
+Side:   error (Side, Rel)                            =  97 (10);
+Side:   nil                                          =  98 (10);
+Side:   cache (Side, Rel)                            =  99 (10);
 Side:   trace (Side, Trc)                            = 100 (10);
 Trc:    trace_items (Rel, Msg)                       = 101 (10);
 Msg:    trace_msg (Rel, Map)                         = 102 (10);
@@ -5456,7 +5457,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         /*                             ELSE 1 END               */
         /*                  FROM q2 AS err) AS foo;             */
         /********************************************************/
-        case 98: {
+        case 97: {
 #define ERR_SQLSTATE "70001"
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[1]);
@@ -5496,9 +5497,11 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         }   break;
 
         /* Side:   nil */
-        case 99:
+        case 98:
             break;
 
+	/* Side:   cache (Side, Rel) */
+	case 99:
         /* Side:   trace (Side, Trc) */
         case 100:
         /* Trc:    trace_items (Rel, Msg) */
