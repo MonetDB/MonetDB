@@ -19,7 +19,7 @@ IBITS =
 IBITS = 64
 !ENDIF
 
-all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) inttypes.h Runmclient.bat RunMtest.bat RunMapprove.bat
+all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) inttypes.h Runmclient.bat RunMtest.bat RunMapprove.bat .monetdb
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc"
@@ -30,6 +30,7 @@ install: targetdirs all $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\mclient.bat "$(prefix)"
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\msqldump.bat "$(prefix)"
+	$(INSTALL) .monetdb "$(sysconfdir)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
@@ -73,6 +74,10 @@ inttypes.h:
 	$(ECHO) typedef unsigned short uint16_t; >> inttypes.h
 	$(ECHO) typedef int int32_t; >> inttypes.h
 	$(ECHO) typedef unsigned int uint32_t; >> inttypes.h
+
+.monetdb:
+	$(ECHO) user=monetdb> .monetdb
+	$(ECHO) password=monetdb>> .monetdb
 
 Runmclient.bat: "$(SRCDIR)\Runmclient.bat.in"
 	$(CONFIGURE) "$(SRCDIR)\Runmclient.bat.in" > Runmclient.bat

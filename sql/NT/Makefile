@@ -18,7 +18,7 @@ IBITS =
 IBITS = 64
 !ENDIF
 
-all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h inttypes.h RunMserver.bat RunMtest.bat RunMapprove.bat .monetdb
+all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h inttypes.h RunMserver.bat RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
@@ -28,7 +28,6 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 install: targetdirs all install-m5installer $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) ..\NT\MSQLserver.bat "$(prefix)"
-	$(INSTALL) .monetdb "$(sysconfdir)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
 	$(INSTALL) ..\NT\$(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
 	-if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe -i "s/Program Files/Program Files (x86)/" "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
@@ -78,10 +77,6 @@ inttypes.h:
 	$(ECHO) typedef unsigned short uint16_t; >> inttypes.h
 	$(ECHO) typedef int int32_t; >> inttypes.h
 	$(ECHO) typedef unsigned int uint32_t; >> inttypes.h
-
-.monetdb:
-	$(ECHO) user=monetdb> .monetdb
-	$(ECHO) password=monetdb>> .monetdb
 
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
 	$(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
