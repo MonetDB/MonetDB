@@ -187,7 +187,7 @@ mero_controlport=50001
 # only.
 
 # Set and define the default pipeline
-sql_optimizer=default_pipe
+sql_optimizer=datacyclotron_pipe
 
 # The minimal pipeline necessary by the server to operate correctly
 minimal_pipe=inline,remap,deadcode,multiplex,garbageCollector

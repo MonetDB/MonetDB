@@ -29,6 +29,11 @@ pattern optimizer.datacyclotron(mod:str, fcn:str):str
 address OPTdatacyclotron
 comment "Datacyclotron code injection";
 
+
+pattern addReg(sch:str, tab:str, col:str, acc:int, f_bun:int, l_bun:int):int
+address addRegWrap
+comment "Add a regist for partition";
+
 @-
 
 The number of overloaded instructions is kept to a minimum.
@@ -73,6 +78,25 @@ opt_export str printRegists(void);
 #include "mal_config.h"
 #include "opt_datacyclotron.h"
 #include "mal_instruction.h"
+
+str
+addRegWrap (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc) {
+	int *res = (int*) getArgReference(stk,pc,0);
+	str *sch = (str*) getArgReference(stk,pc,1);
+	str *tab = (str*) getArgReference(stk,pc,2);
+	str *col = (str*) getArgReference(stk,pc,3);
+	int acc = *(int*) getArgReference(stk,pc,4);
+	int f_b = *(int*) getArgReference(stk,pc,5);
+	int l_b = *(int*) getArgReference(stk,pc,6);
+
+	(void) res;
+	(void) cntxt;
+	(void) mb;
+
+	addRegist(*sch, *tab, *col, acc, f_b, l_b);
+
+	return MAL_SUCCEED;
+}
 
 str
 printRegists(void) {
@@ -225,10 +249,10 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		if (getModuleId(p)== sqlRef && (getFunctionId(p) == bindRef) ) {
 
 			/*Check if the BAT is a datacyclotron BAT*/
-			str sch      = getVarConstant(mb, getArg(p,1)).val.sval;
-			str tab      = getVarConstant(mb, getArg(p,2)).val.sval;
-			str col      = getVarConstant(mb, getArg(p,3)).val.sval;
-			int acc      = getVarConstant(mb, getArg(p,4)).val.ival;
+			str sch      = getVarConstant(mb, getArg(p,2)).val.sval;
+			str tab      = getVarConstant(mb, getArg(p,3)).val.sval;
+			str col      = getVarConstant(mb, getArg(p,4)).val.sval;
+			int acc      = getVarConstant(mb, getArg(p,5)).val.ival;
 
 			regs[getArg(p,0)] = findRegist(sch, tab, col, acc);
 
