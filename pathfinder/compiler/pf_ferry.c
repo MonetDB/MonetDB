@@ -115,6 +115,7 @@ PFcompile_ferry_opt (char **res,
     PFla_pb_t       *lapb = NULL;
     XML2LALGContext *ctx;
     PFarray_t       *output;
+    char            *opt_args_local;
 
     /* setup the error buffer (needed for error handling and segfault trap) */
     PFerrbuf = err;
@@ -149,13 +150,15 @@ PFcompile_ferry_opt (char **res,
 
     /* Use the default optimization arguments 
        if no optimizations are available. */
-    if (!opt_args)
-        opt_args = PFopt_args;
+    if (opt_args)
+        opt_args_local = opt_args;
+    else
+        opt_args_local = PFopt_args;
 
     /* Rewrite/optimize the algebra plans. */
     for (unsigned int i = 0; i < PFla_pb_size(lapb); i++)
         PFla_pb_op_at (lapb, i) 
-            = PFalgopt (PFla_pb_op_at (lapb, i), false, NULL, opt_args);
+            = PFalgopt (PFla_pb_op_at (lapb, i), false, NULL, opt_args_local);
 
     /*
      * OUTPUT GENERATION
