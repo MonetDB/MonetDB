@@ -51,6 +51,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_0EF9137A18874950B2B979E4A3D14364"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_0F0962C21371457C8ABE0A563FC8A41A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1108,6 +1114,26 @@
             "TargetName" = "8:lib_malalgebra.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0EF9137A18874950B2B979E4A3D14364"
+            {
+            "SourcePath" = "8:etc\\.monetdb"
+            "TargetName" = "8:.monetdb"
+            "Tag" = "8:"
+            "Folder" = "8:_B5DFB5D13EE441F8B42616036AACB603"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4339,7 +4365,7 @@
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_FADEF69B58784586806CF8E1826524B3"
             {
             "Name" = "8:MonetDB XQuery Client"
-            "Arguments" = "8:--language=xquery --encoding=cp437"
+            "Arguments" = "8:/STARTED-FROM-MENU --language=xquery --encoding=cp437"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
