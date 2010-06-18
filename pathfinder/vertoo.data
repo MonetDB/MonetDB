@@ -1,5 +1,5 @@
 monetdb = major:1; minor:38; release:0;
 monetdb5 = major:5; minor:20; release:0;
-pathfinder = major:0; minor:38; release:0;
+pathfinder = major:0; minor:38; release:1;
 clients = major:1; minor:38; release:0;
 monetdb4 = major:4; minor:38; release:0;

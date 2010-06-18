@@ -2565,7 +2565,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_380F5AEC34A748AF9AE41F715472D526"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.38.0\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.38.1\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_4A91789AB7C84241A62C790D7B406FE0"
@@ -6505,7 +6505,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FED9A32D7B6B46688B21228940144BA6"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.38.0\\dump-restore.txt"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.38.1\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_4A91789AB7C84241A62C790D7B406FE0"
@@ -6636,7 +6636,7 @@
                                 {
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_4A91789AB7C84241A62C790D7B406FE0"
                                     {
-                                    "Name" = "8:MonetDB-SQL-2.38.0"
+                                    "Name" = "8:MonetDB-SQL-2.38.1"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
@@ -6678,14 +6678,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5"
-        "ProductCode" = "8:{F5FADC03-B77F-42AE-A618-11CFEFB0C6C5}"
-        "PackageCode" = "8:{8D6D9A71-0463-4034-88FD-A00A934CE8CE}"
+        "ProductCode" = "8:{9DF045E6-4F81-463D-86E5-FE83B44F0683}"
+        "PackageCode" = "8:{2F87B951-AEEA-4152-B865-6EF9F6F5A7DF}"
         "UpgradeCode" = "8:{839D3C90-B578-41E2-A004-431440F9E899}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:10.6.17"
+        "ProductVersion" = "8:10.6.18"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"

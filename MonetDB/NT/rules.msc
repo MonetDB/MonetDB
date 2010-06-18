@@ -29,7 +29,7 @@ RULESMSC = ToBeDefined
 
 pkg = MonetDB
 CONFIG_H=monetdb_config.h
-VERSION=1.38.0
+VERSION=1.38.1
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
