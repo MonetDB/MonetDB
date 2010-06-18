@@ -1,3 +1,132 @@
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 18 Jun 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Updated Vendor information.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 31 May 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Created a new RPM MonetDB5-server-rdf for the optional MonetDB/RDF module.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 19 May 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Added the Z-order module to simplify future manipulation of arrays.
+
+ -- Martin Kersten <martin.kersten@cwi.nl>  Sun, 2 May 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * fixed BUG #2994521 "mat.slice unable to cope with only empty BAT arguments"
+    https://sourceforge.net/tracker/index.php?func=detail&aid=2994521&group_id=56967&atid=482468
+    by makeing MATpackSliceInternal() handle empty input BATs correctly
+
+ -- Stefan Manegold <manegold@cwi.nl>  Sat, 1 May 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Select <col> from <t> limit <n> has been improved by introducing mat.slice().
+
+ -- Martin Kersten <martin.kersten@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Made compilation of "testing" (and "java") independent of MonetDB.
+    This is mainy for Windows, but also on other systems, "testing" can now be
+    built independently of (and hence before) "MonetDB".
+    Files that mimic configure functionality on Windows were moved from
+    "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
+    requiring a complete rebuild from scratch on Windows.
+    getopt() support in testing has changed; hence, (most probably) requiring a
+    rebuild from scratch of testing on other systems.
+
+ -- Stefan Manegold <manegold@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Implemented build directory support for Windows,
+    i.e., like on Unix/Linux also on Windows we can now build in a separate
+    build directory as alternative to ...<package>NT, and thus keep the
+    latter clean from files generated during the build.
+    On Windows, the build directory must be a sibling of ...<package>NT .
+
+ -- Stefan Manegold <manegold@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * The MAL debugger list command has been extended with
+    an optional hash '#', which produces line numbers for
+    each of reference and analysis of variable span.
+  * The dataflow scheduler has been revamped to allow for
+    more parellelism to be exploited.
+  * The garbage collection administration has been changed. Every variable record
+    now comes with an end-of-life field (eolife), which denotes the instruction whereafter
+    the BAT variable reference counter can be decremented. The garbage collector is
+    never called automagically on MAL functions, because there may be other
+    pressing needs to retain them. This means that MAL functions defined and
+    used in the context of SQL, and which are not inlined, may cause a leakage.
+    The garbage collection has become part of each interpreter step.
+    The new approach makes the SQL/MAL plans half te size as before.
+
+ -- Martin Kersten <martin.kersten@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Removed stethoscope from MonetDB5 sources.  New location is in the
+    clients repository.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Added the compression optimizer as an example of how to gain access to
+    foreign file formats deep down in the kernel and transfer them just
+    in time into a temporary BAT.
+
+ -- Martin Kersten <mk@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Renamed configure argument --with-console to --enable-console.
+    Default remains console being enabled.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * Fixed cleaning the user module context upon session end.
+    Fixes bug #2956664
+
+ -- Martin Kersten <mk@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * The config variable mapi_usock can now be used to instruct the server
+    to listen for connections on a local UNIX domain socket on UNIX-like
+    systems.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb5-server (5.20.1-20100618) unstable; urgency=low
+
+  * The MAL interpreter has been extended with an operation
+    admission policy to control the memory claims of all
+    concurrent running interpreters. Instructions are hold
+    up unto there is sufficient resource or the query plan
+    can not avoid its execution anymore.
+  * The join path optimizer has been extended with searching for
+    join*, semijoin*, and leftjoin* paths. Furthermore, it avoids
+    duplicate work by factoring out all common simple join paths.
+
+ -- Martin Kersten <mk@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
 monetdb5-server (5.18.5-20100420) unstable; urgency=low
 
   * Rebuilt.

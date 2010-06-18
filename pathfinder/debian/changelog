@@ -1,3 +1,38 @@
+monetdb-xquery (0.38.1-20100618) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 18 Jun 2010 10:58:37 +0200
+
+monetdb-xquery (0.38.1-20100618) unstable; urgency=low
+
+  * Updated Vendor information.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 31 May 2010 10:58:37 +0200
+
+monetdb-xquery (0.38.1-20100618) unstable; urgency=low
+
+  * Made compilation of "testing" (and "java") independent of MonetDB.
+    This is mainy for Windows, but also on other systems, "testing" can now be
+    built independently of (and hence before) "MonetDB".
+    Files that mimic configure functionality on Windows were moved from
+    "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
+    requiring a complete rebuild from scratch on Windows.
+    getopt() support in testing has changed; hence, (most probably) requiring a
+    rebuild from scratch of testing on other systems.
+
+ -- Stefan Manegold <manegold@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
+monetdb-xquery (0.38.1-20100618) unstable; urgency=low
+
+  * Implemented build directory support for Windows,
+    i.e., like on Unix/Linux also on Windows we can now build in a separate
+    build directory as alternative to ...<package>NT, and thus keep the
+    latter clean from files generated during the build.
+    On Windows, the build directory must be a sibling of ...<package>NT .
+
+ -- Stefan Manegold <manegold@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
+
 monetdb-xquery (0.36.5-20100420) unstable; urgency=low
 
   * Rebuilt.

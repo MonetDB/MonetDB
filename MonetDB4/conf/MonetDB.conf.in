@@ -4,10 +4,6 @@
 # system wide parameters.  It can reside in either the local directory
 # where Mserver is called, or the home directory of the MonetDB user. 
 
-# ----------------------------------------------------------- #
-# Please keep the comments below aligned with the defaults in #
-# MonetDB/src/common/monet_options.mx                         #
-# ----------------------------------------------------------- #
 
 # Where MonetDB is installed
 prefix=@Xprefix@
@@ -159,7 +155,3 @@ xrpc_trusted="http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;@Xexec_pre
 #standoff_start=start
 #standoff_end=end
 
-# ----------------------------------------------------------- #
-# Please keep the comments above aligned with the defaults in #
-# MonetDB/src/common/monet_options.mx                         #
-# ----------------------------------------------------------- #
