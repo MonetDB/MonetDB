@@ -2,6 +2,7 @@ debian/tmp/usr/bin/Mbeddedsql5 usr/bin
 debian/tmp/usr/bin/merovingian usr/bin
 debian/tmp/usr/bin/monetdb usr/bin
 debian/tmp/usr/lib/MonetDB5/*.mal usr/lib/MonetDB5
+debian/tmp/usr/lib/MonetDB5/*.sql usr/lib/MonetDB5
+debian/tmp/usr/lib/MonetDB5/autoload/*.mal usr/lib/MonetDB5/autoload
 debian/tmp/usr/share/man/man1/merovingian.1 usr/share/man/man1
 debian/tmp/usr/share/man/man1/monetdb.1 usr/share/man/man1
-debian/tmp/usr/share/MonetDB/sql/* usr/share/MonetDB/sql
