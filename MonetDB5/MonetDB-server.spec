@@ -213,6 +213,90 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Fri Jun 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100618
+- Rebuilt.
+
+* Mon May 31 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100618
+- Updated Vendor information.
+
+* Wed May 19 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100618
+- Created a new RPM MonetDB5-server-rdf for the optional MonetDB/RDF module.
+
+* Sun May  2 2010 Martin Kersten <martin.kersten@cwi.nl> - 5.20.1-20100618
+- Added the Z-order module to simplify future manipulation of arrays.
+
+* Sat May  1 2010 Stefan Manegold <manegold@cwi.nl> - 5.20.1-20100618
+- fixed BUG #2994521 "mat.slice unable to cope with only empty BAT arguments"
+  https://sourceforge.net/tracker/index.php?func=detail&aid=2994521&group_id=56967&atid=482468
+  by makeing MATpackSliceInternal() handle empty input BATs correctly
+
+* Tue Apr 20 2010 Martin Kersten <martin.kersten@cwi.nl> - 5.20.1-20100618
+- Select <col> from <t> limit <n> has been improved by introducing mat.slice().
+
+* Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 5.20.1-20100618
+- Made compilation of "testing" (and "java") independent of MonetDB.
+  This is mainy for Windows, but also on other systems, "testing" can now be
+  built independently of (and hence before) "MonetDB".
+  Files that mimic configure functionality on Windows were moved from
+  "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
+  requiring a complete rebuild from scratch on Windows.
+  getopt() support in testing has changed; hence, (most probably) requiring a
+  rebuild from scratch of testing on other systems.
+
+* Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 5.20.1-20100618
+- Implemented build directory support for Windows,
+  i.e., like on Unix/Linux also on Windows we can now build in a separate
+  build directory as alternative to ...<package>NT, and thus keep the
+  latter clean from files generated during the build.
+  On Windows, the build directory must be a sibling of ...<package>NT .
+
+* Tue Apr 20 2010 Martin Kersten <martin.kersten@cwi.nl> - 5.20.1-20100618
+- The MAL debugger list command has been extended with
+  an optional hash '#', which produces line numbers for
+  each of reference and analysis of variable span.
+- The dataflow scheduler has been revamped to allow for
+  more parellelism to be exploited.
+- The garbage collection administration has been changed. Every variable record
+  now comes with an end-of-life field (eolife), which denotes the instruction whereafter
+  the BAT variable reference counter can be decremented. The garbage collector is
+  never called automagically on MAL functions, because there may be other
+  pressing needs to retain them. This means that MAL functions defined and
+  used in the context of SQL, and which are not inlined, may cause a leakage.
+  The garbage collection has become part of each interpreter step.
+  The new approach makes the SQL/MAL plans half te size as before.
+
+* Tue Apr 20 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.1-20100618
+- Removed stethoscope from MonetDB5 sources.  New location is in the
+  clients repository.
+
+* Tue Apr 20 2010 Martin Kersten <mk@cwi.nl> - 5.20.1-20100618
+- Added the compression optimizer as an example of how to gain access to
+  foreign file formats deep down in the kernel and transfer them just
+  in time into a temporary BAT.
+
+* Tue Apr 20 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.1-20100618
+- Renamed configure argument --with-console to --enable-console.
+  Default remains console being enabled.
+
+* Tue Apr 20 2010 Martin Kersten <mk@cwi.nl> - 5.20.1-20100618
+- Fixed cleaning the user module context upon session end.
+  Fixes bug #2956664
+
+* Tue Apr 20 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.1-20100618
+- The config variable mapi_usock can now be used to instruct the server
+  to listen for connections on a local UNIX domain socket on UNIX-like
+  systems.
+
+* Tue Apr 20 2010 Martin Kersten <mk@cwi.nl> - 5.20.1-20100618
+- The MAL interpreter has been extended with an operation
+  admission policy to control the memory claims of all
+  concurrent running interpreters. Instructions are hold
+  up unto there is sufficient resource or the query plan
+  can not avoid its execution anymore.
+- The join path optimizer has been extended with searching for
+  join*, semijoin*, and leftjoin* paths. Furthermore, it avoids
+  duplicate work by factoring out all common simple join paths.
+
 * Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.5-20100420
 - Rebuilt.
 
