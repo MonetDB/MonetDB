@@ -1,0 +1,26 @@
+# This file is used in Mercurial 1.5.4 and newer.
+# If you're running such a version, enable the eol extension in your
+# .hgrc file (on Linux and Mac, as well as on Windows), and disable
+# the win32text extension.
+
+[patterns]
+# various binary files
+**.bmp = BIN
+**.bz2 = BIN
+**.dll = BIN
+**.gif = BIN
+**.gz  = BIN
+**.ico = BIN
+**.jpg = BIN
+**.pdf = BIN
+**.png = BIN
+**.zip = BIN
+
+# Windows specific files
+**.chm = BIN
+**.rtf = CRLF
+**.sln = CRLF
+**.vdproj = CRLF
+
+# all the rest is text
+** = native
