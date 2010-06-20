@@ -1943,29 +1943,16 @@ the BBP management actions, such as garbage collecting the bats.
 void
 BBPkeepref(bat i)
 {
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-
 	if (i == bat_nil)
 		return;
 	if (i < 0)
 		i = -i;
 	if (BBPcheck(i, "BBPkeepref")) {
-		if (lock)
-			gdk_set_lock(GDKswapLock(i), "BBPkeepref");
+		int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
-		while (BBP_status(i) & BBPUNLOADING) {
-			if (lock)
-				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
-			BBPspin(i, "BBPkeepref", BBPUNLOADING);
-			if (lock)
-				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
-		}
-		/* got the lock */
-		++BBP_lrefs(i);	/* incref(i, TRUE, FALSE); */
+		incref(i, TRUE, lock);
 		assert(BBP_refs(i));
-		--BBP_refs(i);	/* decref(i, FALSE, FALSE, FALSE); */
-		if (lock)
-			gdk_unset_lock(GDKswapLock(i), "BBPfix");
+		decref(i, FALSE, FALSE, lock);
 	}
 }
 
@@ -1974,55 +1961,25 @@ BBPreleaselref(bat i)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
-	if (i == bat_nil || BBP_lrefs(i) <= 0)
+	if (i == bat_nil)
 		return;
 	if (i < 0)
 		i = -i;
-	if (BBPcheck(i, "BBPreleaselref")) {
-		if (lock)
-			gdk_set_lock(GDKswapLock(i), "BBPreleaselref");
-
-		while (BBP_status(i) & BBPUNLOADING) {
-			if (lock)
-				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
-			BBPspin(i, "BBPreleaselref", BBPUNLOADING);
-			if (lock)
-				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
-		}
-		/* got the lock */
-		assert(BBP_lrefs(i));
-		--BBP_lrefs(i);	/* decref(i, TRUE, FALSE, FALSE); */
-		if (lock)
-			gdk_unset_lock(GDKswapLock(i), "BBPfix");
-	}
+	assert(BBP_refs(i) > 0);
+	decref(i, TRUE, FALSE, lock);
 }
 
 void
 BBPreleaseref(bat i)
 {
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+        int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
-	if (i == bat_nil || BBP_refs(i) <= 0)
-		return;
-	if (i < 0)
-		i = -i;
-	if (BBPcheck(i, "BBPreleaseref")) {
-		if (lock)
-			gdk_set_lock(GDKswapLock(i), "BBPreleaseref");
-
-		while (BBP_status(i) & BBPUNLOADING) {
-			if (lock)
-				gdk_unset_lock(GDKswapLock(i), "BBPincref spin wait");
-			BBPspin(i, "BBPreleaseref", BBPUNLOADING);
-			if (lock)
-				gdk_set_lock(GDKswapLock(i), "BBPincref spin wait");
-		}
-		/* got the lock */
-		assert(BBP_refs(i));	/* decref(i, FALSE, FALSE, FALSE); */
-		--BBP_refs(i);
-		if (lock)
-			gdk_unset_lock(GDKswapLock(i), "BBPfix");
-	}
+        if (i == bat_nil)
+                return;
+        if (i < 0)
+                i = -i;
+        assert(BBP_refs(i) > 0);
+        decref(i, FALSE, FALSE, lock);
 }
 
 static INLINE void
