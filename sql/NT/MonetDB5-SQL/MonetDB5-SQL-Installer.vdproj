@@ -45,6 +45,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_03431EDC85094776AD217020CB3E26D4"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_03CDCA9DB4134189B5E9A3C46EF9A721"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -58,6 +64,12 @@
         "Entry"
         {
         "MsmKey" = "8:_0550FF5F3BE14213947B465CF707CE60"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_0607DD25BFA34B92B0BF84584D3D8BCA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -106,6 +118,12 @@
         "Entry"
         {
         "MsmKey" = "8:_0D9CEA9924234593A2996DAFAAAA8A32"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_0E831CE731C4468083874EADDAAFE7EB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -184,6 +202,12 @@
         "Entry"
         {
         "MsmKey" = "8:_19AF4B88B77E4CD7825C16DECE01EEDB"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1AF238588D2D4EA5A416D48291406811"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -316,6 +340,12 @@
         "Entry"
         {
         "MsmKey" = "8:_2CA3CB676BC341B29AC6DDECF9B3AEBB"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2CC8B012C0CB4DFC8F2223F62310125F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -466,6 +496,12 @@
         "Entry"
         {
         "MsmKey" = "8:_4B863142F6504491BA5054891A1F04AA"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_510F78343E3A45E2A6AA55AE6D608E78"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -669,6 +705,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_75A080633F994EA59ED26A025CD34817"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_76A73E230821469D8E4041E5E53D110C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -784,6 +826,12 @@
         "Entry"
         {
         "MsmKey" = "8:_81E0ECF76B3243EB90B74D905EFF2B74"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_8229F1B1B1194A7683AA5E43B68C3229"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -975,6 +1023,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_A3D31DA50E0F4AE1873E390D5B7F1F33"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_A5161550D63E435591E71610B1975E8C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1054,6 +1108,12 @@
         "Entry"
         {
         "MsmKey" = "8:_B977D35E048440818ADD11B11C59380B"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BA22F04D137D421199EB04EE1D228A8F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1192,6 +1252,12 @@
         "Entry"
         {
         "MsmKey" = "8:_C9CA4CF6C09D491B85628D8769D8C441"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CA3CFDD1291E474EAE85329E4C5E5D45"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1420,6 +1486,12 @@
         "Entry"
         {
         "MsmKey" = "8:_EB07175FC26E43D4919BBDB78871ADF0"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EC51016BC5DF41DC910CAB27C8819B30"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1683,6 +1755,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_03431EDC85094776AD217020CB3E26D4"
+            {
+            "SourcePath" = "8:C:\\zlib-1.2.3.win32\\lib\\zlib1.lib"
+            "TargetName" = "8:zlib1.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_03CDCA9DB4134189B5E9A3C46EF9A721"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\chopper.mal"
@@ -1729,6 +1821,26 @@
             "TargetName" = "8:lib_const.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0607DD25BFA34B92B0BF84584D3D8BCA"
+            {
+            "SourcePath" = "8:C:\\openssl-0.9.8k.win32\\lib\\libeay32.lib"
+            "TargetName" = "8:libeay32.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1889,6 +2001,26 @@
             "TargetName" = "8:mal_mapi.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0E831CE731C4468083874EADDAAFE7EB"
+            {
+            "SourcePath" = "8:include\\MonetDB\\mapilib\\Mapi.h"
+            "TargetName" = "8:Mapi.h"
+            "Tag" = "8:"
+            "Folder" = "8:_65C69A604EBF47F9AFCB6FD19084ADC8"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2149,6 +2281,26 @@
             "TargetName" = "8:opt_strengthReduction.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1AF238588D2D4EA5A416D48291406811"
+            {
+            "SourcePath" = "8:C:\\iconv-1.11.1.win32\\lib\\iconv.lib"
+            "TargetName" = "8:iconv.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2589,6 +2741,26 @@
             "TargetName" = "8:website.html"
             "Tag" = "8:"
             "Folder" = "8:_562B007DB0FC4C0D8EBC256D71FF091B"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2CC8B012C0CB4DFC8F2223F62310125F"
+            {
+            "SourcePath" = "8:C:\\libxml2-2.6.32+.win32\\lib\\libxml2.lib"
+            "TargetName" = "8:libxml2.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3089,6 +3261,26 @@
             "TargetName" = "8:batcalc.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_510F78343E3A45E2A6AA55AE6D608E78"
+            {
+            "SourcePath" = "8:Lib\\libstream.lib"
+            "TargetName" = "8:libstream.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3763,6 +3955,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_75A080633F994EA59ED26A025CD34817"
+            {
+            "SourcePath" = "8:C:\\Pthreads\\lib\\pthreadVC2.lib"
+            "TargetName" = "8:pthreadVC2.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_76A73E230821469D8E4041E5E53D110C"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\opt_partitions.mal"
@@ -4129,6 +4341,26 @@
             "TargetName" = "8:lib_urlbox.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8229F1B1B1194A7683AA5E43B68C3229"
+            {
+            "SourcePath" = "8:Lib\\libmutils.lib"
+            "TargetName" = "8:libmutils.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4763,6 +4995,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A3D31DA50E0F4AE1873E390D5B7F1F33"
+            {
+            "SourcePath" = "8:C:\\Program Files\\PCRE\\lib\\pcre.lib"
+            "TargetName" = "8:pcre.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A5161550D63E435591E71610B1975E8C"
             {
             "SourcePath" = "8:monetdb.ico"
@@ -5029,6 +5281,26 @@
             "TargetName" = "8:times.sql"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BA22F04D137D421199EB04EE1D228A8F"
+            {
+            "SourcePath" = "8:C:\\openssl-0.9.8k.win32\\lib\\ssleay32.lib"
+            "TargetName" = "8:ssleay32.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -5489,6 +5761,26 @@
             "TargetName" = "8:lib_mmath.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CA3CFDD1291E474EAE85329E4C5E5D45"
+            {
+            "SourcePath" = "8:C:\\bzip2-1.0.5.win32\\lib\\libbz2.lib"
+            "TargetName" = "8:libbz2.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -6263,6 +6555,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EC51016BC5DF41DC910CAB27C8819B30"
+            {
+            "SourcePath" = "8:Lib\\libMapi.lib"
+            "TargetName" = "8:libMapi.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EEF98D12FDE24A649066728F6F52521C"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\cluster.mal"
@@ -6570,6 +6882,39 @@
                     "Property" = "8:_4A7784B62D3D4AE0A1BADE70E9BD16CA"
                         "Folders"
                         {
+                        }
+                    }
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_49500FFEB26648CCACDF15669F199500"
+                    {
+                    "Name" = "8:include"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_AEDA9FC2C8B74B8BA1B800C2513A103D"
+                        "Folders"
+                        {
+                            "{9EF0B969-E518-4E46-987F-47570745A589}:_8846EEB7C89145A8BA0C0F4E1C3D75BD"
+                            {
+                            "Name" = "8:MonetDB"
+                            "AlwaysCreate" = "11:FALSE"
+                            "Condition" = "8:"
+                            "Transitive" = "11:FALSE"
+                            "Property" = "8:_1F6A5455D9664EAA9ACA0BED42B57B63"
+                                "Folders"
+                                {
+                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_65C69A604EBF47F9AFCB6FD19084ADC8"
+                                    {
+                                    "Name" = "8:mapilib"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "Condition" = "8:"
+                                    "Transitive" = "11:FALSE"
+                                    "Property" = "8:_3FD90354CA0B46E4BC18FEA9B54D0743"
+                                        "Folders"
+                                        {
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     "{9EF0B969-E518-4E46-987F-47570745A589}:_A3C9BE5CA72B42628868618D180581DA"

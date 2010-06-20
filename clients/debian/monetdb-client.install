@@ -1,3 +1,4 @@
 debian/tmp/usr/bin/mclient usr/bin
 debian/tmp/usr/bin/msqldump usr/bin
+debian/tmp/usr/bin/stethoscope usr/bin
 debian/tmp/usr/share/man/man1/mclient.1 usr/share/man/man1
