@@ -734,8 +734,10 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
     }
 
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
+	if (right != bn)
+		BBPreleaseref(right->batCacheid);
 	return res;
 }
 
@@ -788,7 +790,8 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
         bn = r;
     }
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
 	return res;
 }
 
@@ -837,7 +840,8 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
         bn = r;
     }
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
 	return res;
 }
 @-
@@ -1017,8 +1021,10 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 	msg = bataccum@2_@3_@4_@5(bn,b,right);
 
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(right->batCacheid);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
+	if (right != bn)
+		BBPreleaseref(right->batCacheid);
 	return msg;
 }
 
@@ -1070,7 +1076,8 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1122,7 +1129,8 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @c
