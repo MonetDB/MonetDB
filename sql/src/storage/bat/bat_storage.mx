@@ -210,6 +210,7 @@ delta_update_bat( sql_delta *bat, BAT *upd, int is_new)
 		}
 		BATkey(b, BOUND2BTRUE);
 		BATins(b, u, TRUE);
+		BATreplace(b, u, TRUE);
 		if (upd != u)
 			bat_destroy(u);
 	} else if (is_new && bat->bid) { 
