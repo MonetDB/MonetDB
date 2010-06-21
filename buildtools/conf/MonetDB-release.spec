@@ -1,12 +1,12 @@
 Name:		MonetDB-release
-Version:	1.0
-Release:	4%{?dist}
+Version:	1.1
+Release:	1%{?dist}
 Summary:	MonetDB YUM Repository
 
 Group:		Applications/Databases
 License:	MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-URL:		http://monetdb.cwi.nl/
-Source0:	http://monetdb.cwi.nl/downloads/sources/%{name}-%{version}.tar.gz
+URL:		http://dev.monetdb.org/downloads/
+Source0:	http://dev.monetdb.org/downloads/sources/%{name}-%{version}.tar.gz
 BuildArch:	noarch
 
 Vendor:		MonetDB BV <info@monetdb.org>
@@ -49,6 +49,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Jun 21 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.1-1
+- Moved the repository to dev.monetdb.org.
+
 * Mon May 31 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.0-4
 - Updated Vendor information.
 
