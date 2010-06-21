@@ -1,41 +1,41 @@
 [monetdb]
 name=MonetDB $releasever - $basearch
-baseurl=http://monetdb.cwi.nl/downloads/Fedora/$releasever/$basearch/
+baseurl=http://dev.monetdb.org/downloads/Fedora/$releasever/$basearch/
 enabled=1
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-MonetDB
 
 [monetdb-debuginfo]
 name=MonetDB Debug $releasever - $basearch
-baseurl=http://monetdb.cwi.nl/downloads/Fedora/debug/$releasever/$basearch/
+baseurl=http://dev.monetdb.org/downloads/Fedora/debug/$releasever/$basearch/
 enabled=0
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-MonetDB
 
 [monetdb-source]
 name=MonetDB Source $releasever - $basearch
-baseurl=http://monetdb.cwi.nl/downloads/Fedora/source/
+baseurl=http://dev.monetdb.org/downloads/Fedora/source/
 enabled=0
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-MonetDB
 
 [monetdb-testing]
 name=MonetDB Testing $releasever - $basearch
-baseurl=http://monetdb.cwi.nl/downloads/testing/Fedora/$releasever/$basearch/
+baseurl=http://dev.monetdb.org/downloads/testing/Fedora/$releasever/$basearch/
 enabled=0
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-MonetDB
 
 [monetdb-testing-debuginfo]
 name=MonetDB Testing Debug $releasever - $basearch
-baseurl=http://monetdb.cwi.nl/downloads/testing/Fedora/debug/$releasever/$basearch/
+baseurl=http://dev.monetdb.org/downloads/testing/Fedora/debug/$releasever/$basearch/
 enabled=0
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-MonetDB
 
 [monetdb-testing-source]
 name=MonetDB Testing Source $releasever - $basearch
-baseurl=http://monetdb.cwi.nl/downloads/testing/Fedora/source/
+baseurl=http://dev.monetdb.org/downloads/testing/Fedora/source/
 enabled=0
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-MonetDB
