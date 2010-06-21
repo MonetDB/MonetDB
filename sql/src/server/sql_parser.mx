@@ -388,6 +388,9 @@ int yydebug=1;
 	ordering_spec
 	simple_table
 	table_ref
+	opt_limit
+	opt_offset
+	param
 	case_exp
 	case_scalar_exp
 	cast_exp
@@ -604,8 +607,6 @@ int yydebug=1;
 	wrdval
 	poswrd
 	nonzerowrd
-	opt_limit
-	opt_offset
 
 %type <l_val>
 	opt_start
@@ -2896,7 +2897,7 @@ simple_select:
 		$4->h->next->data.sym,
 		$4->h->next->next->data.sym,
 		$4->h->next->next->next->data.sym,
-		NULL, NULL, -1, -1);
+		NULL, NULL, NULL, NULL);
 	}
     ;
 
@@ -2907,7 +2908,7 @@ select_statement_single_row:
 		$6->h->next->data.sym,
 		$6->h->next->next->data.sym,
 		$6->h->next->next->next->data.sym,
-		NULL, NULL, -1, -1);
+		NULL, NULL, NULL, NULL);
 	}
     ;
 
@@ -2915,7 +2916,7 @@ select_no_parens_orderby:
      select_no_parens opt_order_by_clause opt_limit opt_offset
 	 { 
 	  $$ = $1;
-	  if ($2 || $3 != -1 || $4 != -1) {
+	  if ($2 || $3 || $4) {
 	  	if ($1 != NULL && $1->token == SQL_SELECT) {
 	 		SelectNode *s = (SelectNode*)$1;
 	
@@ -3150,13 +3151,21 @@ opt_order_by_clause:
  ;
 
 opt_limit:
-    /* empty */ 			{ $$ = -1; }
- |  LIMIT nonzerowrd			{ $$ = $2; }
+    /* empty */ 	{ $$ = NULL; }
+ |  LIMIT nonzerowrd	{ 
+		  	  sql_subtype *t = sql_bind_localtype("wrd");
+			  $$ = _newAtomNode( atom_int(t, (lng)$2)); 
+			}
+ |  LIMIT param		{ $$ = $2; }
  ;
 
 opt_offset:
-	/* empty */			{ $$ = -1; }
- |  OFFSET poswrd			{ $$ = $2; }
+	/* empty */	{ $$ = NULL; }
+ |  OFFSET poswrd	{ 
+		  	  sql_subtype *t = sql_bind_localtype("wrd");
+			  $$ = _newAtomNode( atom_int(t, (lng)$2)); 
+			}
+ |  OFFSET param	{ $$ = $2; }
  ;
 
 sort_specification_list:
@@ -3445,13 +3454,18 @@ value_exp:
  |  case_exp
  |  cast_exp
  |  XML_value_function
- |  '?'			
-	{ mvc *m = (mvc*)parm;
+ |  param
+ ;
+
+param:  
+   '?'			
+	{ 
+    	  mvc *m = (mvc*)parm;
 	  int nr = (m->params)?list_length(m->params):0;
 
 	  sql_add_param(m, NULL, NULL);
-	  $$ = _symbol_create_int( SQL_PARAMETER, nr ); }
- ;
+	  $$ = _symbol_create_int( SQL_PARAMETER, nr ); 
+	}
 
 /*
 <window function> ::= <window function type> OVER <window name or specification>

@@ -4649,12 +4649,31 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	if (!rel) 
 		return NULL;
 
-	if (sn->limit > 0 || sn->offset > 0) {
+	if (sn->limit || sn->offset) {
+		sql_subtype *wrd = sql_bind_localtype("wrd");
 		list *exps = new_exp_list();
 
-		append(exps, exp_atom_wrd(sn->limit));
-		if (sn->offset > 0)
-			append(exps, exp_atom_wrd(sn->offset));
+		if (sn->limit) {
+			sql_exp *l = rel_value_exp( sql, NULL, sn->limit, 0, ek);
+
+			if (!l || !(l=rel_check_type(sql, wrd, l, type_equal)))
+				return NULL;
+		if ((ek.card != card_relation && sn->limit) && 
+			(ek.card == card_value && sn->limit)) {
+			sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", exp_subtype(l));
+
+			l = exp_aggr1(l, zero_or_one, 0, 0, CARD_ATOM, 0);
+		}
+	//	return sql_error(sql, 01, "SELECT: LIMIT only allowed on outermost SELECT");
+			append(exps, l);
+		} else
+			append(exps, NULL);
+		if (sn->offset) {
+			sql_exp *o = rel_value_exp( sql, NULL, sn->offset, 0, ek);
+			if (!o || !(o=rel_check_type(sql, wrd, o, type_equal)))
+				return NULL;
+			append(exps, o);
+		}
 		rel = rel_topn(rel, exps);
 	}
 	return rel;
@@ -4674,10 +4693,6 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 	if (sn->s.token != SQL_SELECT)
 		return table_ref(sql, rel, sq);
 	assert(sn->s.token == SQL_SELECT);
-
-	if ((ek.card != card_relation && sn->limit >= 0) && 
-			(ek.card == card_value && sn->limit != 1))
-		return sql_error(sql, 01, "SELECT: LIMIT only allowed on outermost SELECT");
 
 	if (ek.card != card_relation && sn->orderby)
 		return sql_error(sql, 01, "SELECT: ORDER BY only allowed on outermost SELECT");
