@@ -94,7 +94,7 @@ function user.main():void;
 #inter-query commonality 
     recycle.setAdmPolicy(1);
     recycle.setReusePolicy(1);
-    recycle.setCachePolicy(3);
+    recycle.setCachePolicy(1);
     user.qry(2,8);
     user.qry1(10);
     user.qry1(10);

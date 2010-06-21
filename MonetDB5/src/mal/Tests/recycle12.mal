@@ -35,7 +35,7 @@ end qry1;
 
 recycle.setAdmPolicy(1);
 recycle.setReusePolicy(1);
-recycle.setCachePolicy(3);
+recycle.setCachePolicy(1);
 optimizer.recycle("user","qry");
 optimizer.recycle("user","qry1");
 
