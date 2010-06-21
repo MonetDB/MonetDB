@@ -11,3 +11,4 @@ reorder.SF-2995671
 crashonschema
 connectto
 copy-into-too-long-string.Bug-2358
+in_column_exp.Bug-2561
