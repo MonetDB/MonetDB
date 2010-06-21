@@ -291,7 +291,7 @@ RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 void
 RECYCLEdumpQPat(stream *s)
 {
-	int i, j;
+	int i;
 	QryStatPtr qs;
 
 	if (!recycleQPat) {
@@ -303,11 +303,8 @@ RECYCLEdumpQPat(stream *s)
 	stream_printf(s,"#RecID\tcalls\tglobRec\tlocRec\tCreditWL\n");
 	for(i=0; i< recycleQPat->cnt; i++){
 		qs = recycleQPat->ptrn[i];
-		stream_printf(s,"# "LLFMT"\t%2d\t%2d\t%2d\t%2d\n",
+		stream_printf(s,"# "LLFMT"\t\t%2d\t\t%2d\t\t%2d\t\t%2d\n",
 			qs->recid, qs->calls, qs->greuse, qs->lreuse, qs->wl);
-		for (j=0; j<qs->stop; j++)
-			stream_printf(s,"%2d(%1d) ",qs->crd[j],qs->gl[j]);
-		stream_printf(s,"\n");
 	}
 }
 
