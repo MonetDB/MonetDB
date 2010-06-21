@@ -276,7 +276,6 @@ WriteComment(char *fname, char *blk)
 	int i, j;
 	struct comments *c;
 	char *s1, *s2;
-	Def *d;
 
 	/* for each type of file that we're extracting, if we know how
 	   comments are written, and if that particular file type is
