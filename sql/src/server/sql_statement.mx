@@ -286,7 +286,7 @@ extern stmt *stmt_mirror(stmt *s);
 
 #define LIMIT_DIRECTION(dir,order,before_project) \
 		(dir<<2)+(before_project<<1)+(order)
-extern stmt *stmt_limit(stmt *s, wrd offset, wrd limit, int direction);
+extern stmt *stmt_limit(stmt *s, stmt *offset, stmt *limit, int direction);
 extern stmt *stmt_order(stmt *s, int direction);
 extern stmt *stmt_reorder(stmt *s, stmt *t, int direction);
 
@@ -1463,13 +1463,13 @@ stmt_mirror(stmt *s)
 }
 
 stmt *
-stmt_limit(stmt *s, wrd offset, wrd limit, int direction)
+stmt_limit(stmt *s, stmt *offset, stmt *limit, int direction)
 {
 	stmt *ns = stmt_create(st_limit);
 
 	ns->op1.stval = s;
-	ns->op2.stval = stmt_atom_wrd(offset);
-	ns->op3.stval = stmt_atom_wrd(limit);
+	ns->op2.stval = offset;
+	ns->op3.stval = limit;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;

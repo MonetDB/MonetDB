@@ -180,9 +180,8 @@ Dependencies between database objects
 % sys.f,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 6,	12,	11 # length
+% 5,	12,	11 # length
 [ "<>",	"trigger_test",	"DEP_TRIGGER"	]
-[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
 [ "count",	"trigger_test",	"DEP_TRIGGER"	]
 % sys.k,	sys.fk,	. # table_name
 % name,	name,	single_value # name

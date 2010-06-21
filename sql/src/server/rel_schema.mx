@@ -859,7 +859,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 		if (query->token == SQL_SELECT) {
 			SelectNode *sn = (SelectNode *) query;
 
-			if (sn->limit >= 0)
+			if (sn->limit)
 				return sql_error(sql, 01, "CREATE VIEW: LIMIT not supported");
 			if (sn->orderby)
 				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");

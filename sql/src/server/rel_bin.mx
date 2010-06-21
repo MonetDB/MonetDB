@@ -1478,32 +1478,26 @@ sql_reorder(stmt *order, stmt *s)
 	return stmt_list(l);
 }
 
-static wrd
+static sql_exp*
 topn_limit( sql_rel *rel )
 {
 	if (rel->exps) {
 		sql_exp *limit = rel->exps->h->data;
-		atom *a = limit->l;
 
-		return a->data.val.wval;
+		return limit;
 	}
-	return -1;
+	return NULL;
 }
 
-static wrd
+static sql_exp*
 topn_offset( sql_rel *rel )
 {
-	wrd o = 0;
-
 	if (rel->exps && list_length(rel->exps) > 1) {
 		sql_exp *offset = rel->exps->h->next->data;
-		atom *a = offset->l;
 
-		o = a->data.val.wval;
-		if (o <= 0)
-			o = 0;
+		return offset;
 	}
-	return o;
+	return NULL;
 }
 
 static sql_table *
@@ -1524,15 +1518,24 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	list *pl; 
 	node *en, *n;
 	stmt *sub = NULL, *psub = NULL;
-	wrd l = -1;
+	stmt *l = NULL;
 
 	if (topn) {
-		wrd o = topn_offset(topn);
-		l = topn_limit(topn);
-		if (l < 0) /* for now only handle topn 
+		sql_exp *le = topn_limit(topn);
+		sql_exp *oe = topn_offset(topn);
+
+		if (!le) { /* for now only handle topn 
 				including limit, ie not just offset */
 			topn = NULL;
-		l += o;
+		} else {
+			l = exp_bin(sql, le, NULL, NULL, NULL, NULL);
+			if (oe) {
+				sql_subtype *wrd = sql_bind_localtype("wrd");
+				sql_subfunc *add = sql_bind_func_result(sql->session->schema, "sql_add", wrd, wrd, wrd);
+				stmt *o = exp_bin(sql, oe, NULL, NULL, NULL, NULL);
+				l = stmt_binop(l, o, add);
+			}
+		}
 	}
 
 	if (!rel->exps) 
@@ -1591,7 +1594,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			stmt_destroy(sub);
 			return NULL;
 		}
-		limit = stmt_limit(orderbycols, 0, l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, before_project));
+		limit = stmt_limit(orderbycols, stmt_atom_wrd(0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, before_project));
 		for ( n=pl->h ; n; n = n->next) {
 			list_append(npl, 
 			 	stmt_semijoin(column(stmt_dup(n->data)), 
@@ -1902,8 +1905,8 @@ static stmt *
 rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *newl;
-	wrd l = -1, o = 0;
-	stmt *sub = NULL, *order = NULL;
+	sql_exp *oe = NULL, *le = NULL;
+	stmt *sub = NULL, *order = NULL, *l = NULL, *o = NULL;
 	node *n;
 
 	if (rel->l) { /* first construct the sub relation */
@@ -1918,8 +1921,8 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 	if (!sub) 
 		return NULL;	
 
-	l = topn_limit(rel);
-	o = topn_offset(rel);
+	le = topn_limit(rel);
+	oe = topn_offset(rel);
 
 	if (sub->type == st_ordered) {
 		stmt *s = stmt_dup(sub->op2.stval);
@@ -1932,18 +1935,25 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *limit = NULL, *p, *j;
-		wrd lmt = l;
+		sql_exp *lmt = le;
 
-		if (l < 0) {
+		if (le)
+			l = exp_bin(sql, le, NULL, NULL, NULL, NULL);
+		if (oe)
+			o = exp_bin(sql, oe, NULL, NULL, NULL, NULL);
+
+		if (!le) {
 			l = o;
-			o = 0;
+			o = stmt_atom_wrd(0);
 		}
+		if (!o)
+			o = stmt_atom_wrd(0);
 
 		if (order) {
 		 	limit = stmt_limit(stmt_dup(order), o, l, 0);
 		} else {
 			limit = stmt_limit(column(stmt_dup(n->data)), o, l, 0);
-			if (lmt >= 0) {
+			if (lmt) {
 				n = n->next;
 				list_append(newl, limit);
 			}
@@ -1953,7 +1963,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 		j = find_projection_join(limit);
 		if (j && 0) {
 			p = find_pivot(j);
-			if (lmt < 0)
+			if (!lmt)
 				p = stmt_diff(stmt_dup(p), stmt_dup(limit));
 			else
 				p = stmt_semijoin(stmt_dup(p), stmt_dup(limit));
@@ -1971,7 +1981,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			for ( ; n; n = n->next) {
 				stmt *s;
 		
-				if (lmt < 0)
+				if (!lmt)
 					s = stmt_diff(column(stmt_dup(n->data)), stmt_dup(limit));
 				else
 					s = stmt_semijoin(column(stmt_dup(n->data)), stmt_dup(limit));
@@ -1979,7 +1989,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			}
 		}
 		if (order) {
-			if (lmt < 0) {
+			if (!lmt) {
 		 		order = stmt_diff(order, limit);
 			} else {
 				stmt_destroy(order);
