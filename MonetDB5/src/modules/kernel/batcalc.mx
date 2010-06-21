@@ -724,9 +724,9 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
-    if (b->htype != bn->htype) {
-        bn = VIEWcreate(b,bn);
-    }
+	if (b->htype != bn->htype) {
+		bn = VIEWcreate(b,bn);
+	}
 
 	BBPkeepref(*ret = bn->batCacheid);
 	if (b != bn)
@@ -778,9 +778,9 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 	}
 	BATkey(BATmirror(bn),FALSE);
 
-    if (b->htype != bn->htype) {
-        bn = VIEWcreate(b,bn);
-    }
+	if (b->htype != bn->htype) {
+		bn = VIEWcreate(b,bn);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	if (b != bn)
 		BBPreleaseref(b->batCacheid);
@@ -825,9 +825,9 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rfl
 	}
 	BATkey(BATmirror(bn),FALSE);
 
-    if (b->htype != bn->htype) {
-        bn = VIEWcreate(b,bn);
-    }
+	if (b->htype != bn->htype) {
+		bn = VIEWcreate(b,bn);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	if (b != bn)
 		BBPreleaseref(b->batCacheid);
