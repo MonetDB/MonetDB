@@ -1665,7 +1665,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k )
 {
 	sql_key *nk = key_dup(tr, TR_NEW, k, t);
 	sql_fkey *fk = (sql_fkey*)nk;
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syskey = find_sql_table(syss, "keys");
 	sql_table *syskc = find_sql_table(syss, "keycolumns");
 	int neg = -1, action = -1, nr;
@@ -1695,7 +1695,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k )
 	}
 
 	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return nk;
 }
@@ -1735,7 +1735,7 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 sql_idx *
 sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 {
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *sysidx = find_sql_table(syss, "idxs");
 	sql_table *sysic = find_sql_table(syss, "keycolumns");
 	node *n;
@@ -1770,7 +1770,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i )
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
 	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return ni;
 }
@@ -1836,7 +1836,7 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 sql_column *
 sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 {
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	sql_column *col = ZNEW(sql_column);
 
@@ -1860,7 +1860,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return col;
 }
@@ -2338,7 +2338,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 	if (bs_debug) 
 		fprintf(stderr, "create table %s\n", t->base.name);
 
-	if (isTable(t) && isGlobalTable(t)) {
+	if (isTable(t) && isGlobal(t)) {
 		int p = (tr->parent == gtrans && !isTempTable(t));
 
 		/* only register columns without commit action tables */
@@ -2551,11 +2551,11 @@ conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	int p = (tr->parent == gtrans);
 
 	/* persistent columns need to be dupped */
-	if ((p && isGlobalTable(ot)) ||
+	if ((p && isGlobal(ot)) ||
 	    /* allways dup in recursive mode */
 	    tr->parent != gtrans)
 		return table_dup(tr, flag, ot, s);
-	else if (!isGlobalTable(ot)){/* is local temp, may need to be cleared */
+	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
 		} else if (ot->commit_action == CA_DROP) {
@@ -2578,7 +2578,7 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 				node *nxt = n->next;
 				sql_table *t = n->data;
 	
-				if ((isTable(t) && isGlobalTable(t) &&
+				if ((isTable(t) && isGlobal(t) &&
 				    t->commit_action != CA_PRESERVE) || 
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
@@ -2873,7 +2873,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				node *nxt = n->next;
 				sql_table *t = n->data;
 	
-				if ((isTable(t) && isGlobalTable(t) &&
+				if ((isTable(t) && isGlobal(t) &&
 				    t->commit_action != CA_PRESERVE) || 
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
@@ -3074,7 +3074,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 static void
 sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc)
 {
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(k->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(syss, "keycolumns");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(syskc, "id"), &k->base.id, NULL);
 
@@ -3082,14 +3082,14 @@ sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc)
 	assert(rid != oid_nil);
 	table_funcs.table_delete(tr, syskc, rid);
 
-	if (isGlobalTable(k->t)) 
+	if (isGlobal(k->t)) 
 		tr->schema_updates ++;
 }
 
 static void
 sys_drop_ic(sql_trans *tr, sql_idx * i, sql_kc *kc)
 {
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(i->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(syss, "keycolumns");
 	sql_column *kc_id = find_sql_column(syskc, "id");
 	oid rid = table_funcs.column_find_row(tr, kc_id, &i->base.id, NULL);
@@ -3098,7 +3098,7 @@ sys_drop_ic(sql_trans *tr, sql_idx * i, sql_kc *kc)
 	assert(rid != oid_nil);
 	table_funcs.table_delete(tr, syskc, rid);
 
-	if (isGlobalTable(i->t)) 
+	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 }
 
@@ -3106,7 +3106,7 @@ static void
 sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 {
 	node *n;
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(i->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
 	sql_table *sysidx = find_sql_table(syss, "idxs");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysidx, "id"), &i->base.id, NULL);
 
@@ -3124,7 +3124,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	if (i->t->cluster == i)
 		i->t->cluster = NULL;
 	sql_trans_drop_dependencies(tr, i->base.id);
-	if (isGlobalTable(i->t)) 
+	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 
 	if (drop_action)
@@ -3135,7 +3135,7 @@ static void
 sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 {
 	node *n;
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(k->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskey = find_sql_table(syss, "keys");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(syskey, "id"), &k->base.id, NULL);
 
@@ -3161,7 +3161,7 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 		fk->rkey = NULL;
 	}
 
-	if (isGlobalTable(k->t)) 
+	if (isGlobal(k->t)) 
 		tr->schema_updates ++;
 
 	sql_trans_drop_dependencies(tr, k->base.id);
@@ -3174,14 +3174,14 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 static void
 sys_drop_tc(sql_trans *tr, sql_trigger * i, sql_kc *kc)
 {
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(i->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(syss, "keycolumns");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(syskc, "id"), &i->base.id, NULL);
 
 	(void) kc;		/* Stefan: unused!? */
 	assert(rid != oid_nil);
 	table_funcs.table_delete(tr, syskc, rid);
-	if (isGlobalTable(i->t)) 
+	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 }
 
@@ -3189,7 +3189,7 @@ static void
 sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 {
 	node *n;
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(i->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
 	sql_table *systrigger = find_sql_table(syss, "triggers");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(systrigger, "id"), &i->base.id, NULL);
 
@@ -3204,7 +3204,7 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 	/* remove trigger from schema */
 	list_remove_data(i->t->s->triggers, i);
 	sql_trans_drop_dependencies(tr, i->base.id);
-	if (isGlobalTable(i->t)) 
+	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 }
 
@@ -3228,7 +3228,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 {
 	str seq_pos = NULL;
 	const char *next_value_for = "next value for \"sys\".\"seq_";
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(col->t)?"sys":"tmp"); 
+	sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp"); 
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
 				  &col->base.id, NULL);
@@ -3247,7 +3247,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		_DELETE(seq_name);
 	}
 	
-	if (isGlobalTable(col->t)) 
+	if (isGlobal(col->t)) 
 		tr->schema_updates ++;
 
 	if (drop_action)
@@ -3296,7 +3296,7 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 static void
 sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 {
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sql_column *syscol = find_sql_column(systable, "id");
 	oid rid = table_funcs.column_find_row(tr, syscol, &t->base.id, NULL);
@@ -3311,7 +3311,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	if (isTable(t))
 		sys_drop_columns(tr, t, drop_action);
 
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 
 	if (drop_action) 
@@ -3618,7 +3618,7 @@ sql_table *
 sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz)
 {
 	sql_table *t = create_sql_table(NULL, name, tt, system, persistence, commit_action);
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
 
@@ -3644,7 +3644,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 			&t->system, &ca, &t->readonly);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return t;
 }
@@ -3777,7 +3777,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		sys_drop_table(tr, t, drop_action);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t) || (t->commit_action != CA_DROP)) 
+	if (isGlobal(t) || (t->commit_action != CA_DROP)) 
 		tr->schema_updates ++;
 	cs_del(&s->tables, n, t->base.flag);
 	
@@ -3822,7 +3822,7 @@ sql_column *
 sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe)
 {
 	sql_column *col;
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 
 	if (!tpe)
@@ -3836,7 +3836,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return col;
 }
@@ -3891,7 +3891,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	cs_del(&t->columns, n, col->base.flag);
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
@@ -3904,7 +3904,7 @@ sql_column *
 sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 {
 	if (col->null != isnull) {
-		sql_schema *syss = find_sql_schema(tr, isGlobalTable(col->t)?"sys":"tmp"); 
+		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp"); 
 		sql_table *syscolumn = find_sql_table(syss, "_columns");
 		oid rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
 					  &col->base.id, NULL);
@@ -3913,7 +3913,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		table_funcs.column_update_value(tr, find_sql_column(syscolumn, "null"), rid, &isnull);
 		col->null = isnull;
 		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->stime;
-		if (isGlobalTable(col->t)) 
+		if (isGlobal(col->t)) 
 			tr->schema_updates ++;
 	}
 
@@ -3924,7 +3924,7 @@ sql_table *
 sql_trans_alter_readonly(sql_trans *tr, sql_table *t, int readonly)
 {
 	if (t->readonly != readonly) {
-		sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp"); 
+		sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp"); 
 		sql_table *systable = find_sql_table(syss, "_tables");
 		oid rid = table_funcs.column_find_row(tr, find_sql_column(systable, "id"),
 					  &t->base.id, NULL);
@@ -3933,7 +3933,7 @@ sql_trans_alter_readonly(sql_trans *tr, sql_table *t, int readonly)
 		table_funcs.column_update_value(tr, find_sql_column(systable, "readonly"), rid, &readonly);
 		t->readonly = readonly;
 		t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-		if (isGlobalTable(t)) 
+		if (isGlobal(t)) 
 			tr->schema_updates ++;
 	}
 	return t;
@@ -3947,7 +3947,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 
 	if (!col->def || !val || strcmp(col->def, val) != 0) {
 		void *p = val ? val : ATOMnilptr(TYPE_str);
-		sql_schema *syss = find_sql_schema(tr, isGlobalTable(col->t)?"sys":"tmp"); 
+		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp"); 
 		sql_table *syscolumn = find_sql_table(syss, "_columns");
 		sql_column *col_ids = find_sql_column(syscolumn, "id");
 		sql_column *col_dfs = find_sql_column(syscolumn, "default");
@@ -3961,7 +3961,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 		if (val)
 			col->def = _strdup(val);
 		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->stime;
-		if (isGlobalTable(col->t)) 
+		if (isGlobal(col->t)) 
 			tr->schema_updates ++;
 	}
 	return col;
@@ -3982,7 +3982,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, key_type kt)
 	int neg = -1;
 	int action = -1;
 	sql_key *nk;
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syskey = find_sql_table(syss, "keys");
 	sql_ukey *uk = NULL;
 
@@ -4012,7 +4012,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, key_type kt)
 	table_funcs.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey->k.base.id : &neg, &action );
 
 	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return nk;
 }
@@ -4024,7 +4024,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_
 	int neg = -1;
 	int action = (on_update<<8) + on_delete;
 	sql_key *nk;
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syskey = find_sql_table(syss, "keys");
 	sql_fkey *fk = NULL;
 	sql_ukey *uk = (sql_ukey *) rkey;
@@ -4061,7 +4061,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_
 	sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey->k.base.id, nk->base.id, FKEY_DEPENDENCY);
 
 	syskey->base.wtime = syskey->s->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return (sql_fkey*) nk;
 }
@@ -4072,7 +4072,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c /*, extra options s
 {
 	sql_kc *kc = ZNEW(sql_kc);
 	int nr = list_length(k->columns);
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(k->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(syss, "keycolumns");
 
 	assert(c);
@@ -4090,7 +4090,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c /*, extra options s
 	table_funcs.table_insert(tr, syskc, &k->base.id, kc->c->base.name, &kc->trunc, &nr);
 
 	syskc->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(k->t)) 
+	if (isGlobal(k->t)) 
 		tr->schema_updates ++;
 	return k;
 }
@@ -4102,7 +4102,7 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c /*, extra option
 	sql_key *k = (sql_key *) fk;
 	sql_kc *kc = ZNEW(sql_kc);
 	int nr = list_length(k->columns);
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(k->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(k->t)?"sys":"tmp");
 	sql_table *syskc = find_sql_table(syss, "keycolumns");
 
 	assert(c);
@@ -4117,7 +4117,7 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c /*, extra option
 	table_funcs.table_insert(tr, syskc, &k->base.id, kc->c->base.name, &kc->trunc, &nr);
 
 	syskc->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(k->t)) 
+	if (isGlobal(k->t)) 
 		tr->schema_updates ++;
 	return (sql_fkey*)k;
 }
@@ -4251,7 +4251,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		sys_drop_key(tr, k, drop_action);
 
 	k->base.wtime = k->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(k->t)) 
+	if (isGlobal(k->t)) 
 		tr->schema_updates ++;
 
 	if (  drop_action == DROP_CASCADE_START && tr->dropped) {
@@ -4266,7 +4266,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 {
 	/* can only have idxs between persistent tables */
 	sql_idx *ni = ZNEW(sql_idx);
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *sysidx = find_sql_table(syss, "idxs");
 
 	assert(name);
@@ -4292,7 +4292,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
 	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return ni;
 }
@@ -4302,7 +4302,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 {
 	sql_kc *ic = ZNEW(sql_kc);
 	int nr = list_length(i->columns);
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(i->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
 	sql_table *sysic = find_sql_table(syss, "keycolumns");
 
 	assert(c);
@@ -4333,7 +4333,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 
 	table_funcs.table_insert(tr, sysic, &i->base.id, ic->c->base.name, &ic->trunc, &nr);
 	sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(i->t)) 
+	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 	return i;
 }
@@ -4358,7 +4358,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		sys_drop_idx(tr, i, drop_action);
 
 	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(i->t)) 
+	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 	n = cs_find_name(&i->t->idxs, i->base.name);
 	if (n)
@@ -4376,7 +4376,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name,
 	char *condition, char *statement )
 {
 	sql_trigger *ni = ZNEW(sql_trigger);
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *systrigger = find_sql_table(syss, "triggers");
 	str nilptr = ATOMnilptr(TYPE_str);
 
@@ -4402,7 +4402,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name,
 	table_funcs.table_insert(tr, systrigger, &ni->base.id, ni->base.name, &t->base.id, &ni->time, &ni->orientation, &ni->event, (ni->old_name)?ni->old_name:nilptr, (ni->new_name)?ni->new_name:nilptr, (ni->condition)?ni->condition:nilptr, ni->statement);
 
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(t)) 
+	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return ni;
 }
@@ -4412,7 +4412,7 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra opti
 {
 	sql_kc *ic = ZNEW(sql_kc);
 	int nr = list_length(i->columns);
-	sql_schema *syss = find_sql_schema(tr, isGlobalTable(i->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
 	sql_table *sysic = find_sql_table(syss, "keycolumns");
 
 	assert(c);
@@ -4421,7 +4421,7 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra opti
 	list_append(i->columns, ic);
 	table_funcs.table_insert(tr, sysic, &i->base.id, ic->c->base.name, &ic->trunc, &nr);
 	sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(i->t)) 
+	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 	return i;
 }
@@ -4443,7 +4443,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	
 	sys_drop_trigger(tr, i);
 	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	if (isGlobalTable(i->t)) 
+	if (isGlobal(i->t)) 
 		tr->schema_updates ++;
 	n = cs_find_name(&i->t->triggers, i->base.name);
 	if (n)
@@ -4608,7 +4608,7 @@ sql_session_reset(sql_session *s, int ac)
 		for (n = tmp->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
 
-			if (isGlobalTable(t))
+			if (isGlobal(t) && isTable(t))
 				sql_trans_clear_table(s->tr, t);
 		}
 	}

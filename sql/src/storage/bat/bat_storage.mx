@@ -1213,7 +1213,7 @@ gtr_update( sql_trans *tr )
 			for (n = s->tables.set->h; n; n = n->next) {
 				sql_table *t = n->data;
 
-				if (isGlobalTable(t))
+				if (isTable(t) && isGlobal(t))
 					gtr_update_table(tr, t);
 			}
 		}
