@@ -10,3 +10,4 @@ mat.slice_on_empty_BATs.SF-2994521
 reorder.SF-2995671
 copy-into-too-long-string.Bug-2358
 in_column_exp.Bug-2561
+multiple-updates-in-transaction.Bug-2543
