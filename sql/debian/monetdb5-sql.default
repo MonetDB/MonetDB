@@ -2,10 +2,8 @@
 # sourced by /etc/init.d/monetdb5-sql
 # installed at /etc/default/monetdb5-sql by the maintainer scripts
 
-#
-# This is a POSIX shell fragment
-#
-
-# Additional options that are passed to the Daemon.
-DAEMON_OPTS=""
+# should merovingian be started at system startup (yes/no)
 STARTUP="no"
+
+# should all databases be started (yes/no)
+START_ALL_DBS="no"
