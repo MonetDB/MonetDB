@@ -21,7 +21,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/MonetDB-XQuery-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010/MonetDB-XQuery-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires: MonetDB4-server >= 4.38
@@ -138,6 +138,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/monetdb-xquery-config
 
 %changelog
+* Tue Jun 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.38.1-20100622
+- Rebuilt.
+
 * Fri Jun 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.38.1-20100618
 - Rebuilt.
 
