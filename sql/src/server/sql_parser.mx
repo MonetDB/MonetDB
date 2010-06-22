@@ -2914,11 +2914,20 @@ select_statement_single_row:
 
 select_no_parens_orderby:
      select_no_parens opt_order_by_clause opt_limit opt_offset
-	{ SelectNode *s = (SelectNode*)$1;
+	 { 
 	  $$ = $1;
-	  s -> orderby = $2;
-	  s -> limit = $3;
-	  s -> offset = $4;
+	  if ($2 || $3 != -1 || $4 != -1) {
+	  	if ($1 != NULL && $1->token == SQL_SELECT) {
+	 		SelectNode *s = (SelectNode*)$1;
+	
+	  		s -> orderby = $2;
+	  		s -> limit = $3;
+	  		s -> offset = $4;
+	  	} else {
+			yyerror("ORDER BY: missing select operator");
+			YYABORT;
+	  	}
+	 } 
 	}
     ;
 
