@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/MonetDB5-server-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010/MonetDB5-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_raptor: %{!?_without_raptor: %define _with_raptor --with-raptor}}
@@ -213,6 +213,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Tue Jun 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100622
+- Rebuilt.
+
 * Fri Jun 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100618
 - Rebuilt.
 

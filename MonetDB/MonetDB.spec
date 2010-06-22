@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/%{name}-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires: zlib-devel, bzip2-devel, openssl-devel
@@ -106,6 +106,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libbat.so
 
 %changelog
+* Tue Jun 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.1-20100622
+- Rebuilt.
+
 * Fri Jun 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.1-20100618
 - Rebuilt.
 
