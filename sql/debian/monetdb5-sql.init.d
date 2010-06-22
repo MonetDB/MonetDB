@@ -1,6 +1,15 @@
 #! /bin/sh
+### BEGIN INIT INFO
+# Provides:          mserver5-sql
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: MonetDB SQL service
+# Description:       MonetDB SQL service "merovingian".
+### END INIT INFO
 
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DAEMON=/usr/bin/merovingian
 NAME=mserver5-sql
 DESC="MonetDB SQL server"
@@ -8,18 +17,16 @@ DESC="MonetDB SQL server"
 test -x $DAEMON || exit 0
 
 LOGDIR=/var/log/MonetDB
-PIDFILE=/var/run/$NAME.pid
+PIDFILE=/var/run/MonetDB/merovingian.pid
 DODTIME=1                   # Time to wait for the server to die, in seconds
                             # If this value is set too low you might not
                             # let some servers to die gracefully and
                             # 'restart' will not work
 
 # Include mserver5-sql defaults if available
-if [ -f /etc/default/mserver5-sql ] ; then
-    . /etc/default/mserver5-sql
+if [ -f /etc/default/$NAME ] ; then
+    . /etc/default/$NAME
 fi
-
-set -e
 
 running_pid()
 {
@@ -58,7 +65,7 @@ force_stop() {
             kill -9 $pid
             [ -n "$DODTIME" ] && sleep "$DODTIME"s
             if running ; then
-                echo "Cannot kill $LABEL (pid=$pid)!"
+                echo "Cannot kill $NAME (pid=$pid)!"
                 exit 1
             fi
         fi
@@ -103,7 +110,7 @@ case "$1" in
         #
         # echo "Reloading $DESC configuration files."
         # start-stop-daemon --stop --signal 1 --quiet --pidfile \
-        #       /var/run/$NAME.pid --exec $DAEMON
+        #       $PIDFILE --exec $DAEMON
   #;;
   force-reload)
         #
@@ -113,25 +120,25 @@ case "$1" in
         # daemon isn't already running.
         # check wether $DAEMON is running. If so, restart
         start-stop-daemon --stop --test --quiet --pidfile \
-            /var/run/$NAME.pid --exec $DAEMON \
+            $PIDFILE --exec $DAEMON \
             && $0 restart \
             || exit 0
         ;;
   restart)
     echo -n "Restarting $DESC: "
         start-stop-daemon --stop --quiet --pidfile \
-            /var/run/$NAME.pid --exec $DAEMON
+            $PIDFILE --exec $DAEMON
         [ -n "$DODTIME" ] && sleep $DODTIME
         start-stop-daemon --start --quiet --pidfile \
-            /var/run/$NAME.pid --exec $DAEMON -- $DAEMON_OPTS
+            $PIDFILE --exec $DAEMON -- $DAEMON_OPTS
         echo "$NAME."
         ;;
   status)
-    echo -n "$LABEL is "
+    echo -n "$NAME is "
     if running ;  then
         echo "running"
     else
-        echo " not running."
+        echo "not running."
         exit 1
     fi
     ;;
