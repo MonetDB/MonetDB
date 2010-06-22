@@ -16,7 +16,7 @@ function user.main():void;
 #challenge the runtime stack protection 
     user.main();
 end main;
-!MALException:mal.interpreter:Recursive call limit reached.
+!MALException:mal.interpreter:Running out of stack space.
 
 # 14:45:52 >  
 # 14:45:52 >  Done.
