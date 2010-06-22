@@ -8,7 +8,7 @@ case "$1" in
 	    addgroup --system monetdb
 	fi
         if ! getent passwd monetdb > /dev/null; then
-            adduser --system --home /var/lib/monetdb --disabled-password --shell /usr/sbin/nologin monetdb
+            adduser --system --ingroup monetdb --home /var/lib/monetdb --disabled-password --shell /usr/sbin/nologin monetdb
         fi
 	mkdir -p /var/MonetDB5
 	chown monetdb:monetdb /var/MonetDB5
