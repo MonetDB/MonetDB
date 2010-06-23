@@ -3,7 +3,7 @@
 bat_reverse_named_ls_dir.SF-1216455
 void-outerjoin.SF-1216457
 stream_assert_quit.SF-1218291
-type_names_are_not_keywords.SF-1227464
+#type_names_are_not_keywords.SF-1227464
 assertion_on_bat_cast.SF-1230320
 bat_cast_makes_writable.SF-1238930
 pump_properties.SF-1267155
