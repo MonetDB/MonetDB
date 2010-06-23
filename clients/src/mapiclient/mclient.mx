@@ -855,6 +855,35 @@ TESTrenderer(MapiHdl hdl)
 					case '"':
 						stream_write(toConsole, "\\\"", 1, 2);
 						break;
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+						if (strcmp(tp, "curve") == 0 ||
+						    strcmp(tp, "geometry") == 0 ||
+						    strcmp(tp, "linestring") == 0 ||
+						    strcmp(tp, "mbr") == 0 ||
+						    strcmp(tp, "multilinestring") == 0 ||
+						    strcmp(tp, "point") == 0 ||
+						    strcmp(tp, "polygon") == 0 ||
+						    strcmp(tp, "surface") == 0) {
+							char *e;
+							double d;
+							d = strtod(s, &e);
+							if (s != e) {
+								stream_printf(toConsole, "%.10g", d);
+								l -= e - s;
+								s = e;
+								continue;
+							}
+						}
+						/* fall through */
 					default:
 						if ((unsigned char) *s < ' ')
 							stream_printf(toConsole,
