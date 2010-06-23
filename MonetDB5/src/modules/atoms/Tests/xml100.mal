@@ -1,5 +1,3 @@
-include xml;
-
 b:= "Mary Ann Walker";
 c:= "brown";
 

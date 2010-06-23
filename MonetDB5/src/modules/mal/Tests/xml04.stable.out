@@ -12,7 +12,6 @@ stdout of test 'xml04` in directory 'src/modules/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
 function user.main():void;
-    xml.prelude();
     b := bat.new(:oid,:str);
     bat.insert(b,0@0,"Mary Ann Walker");
     bat.insert(b,1@0,"Annie Chapman");

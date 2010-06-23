@@ -1,6 +1,3 @@
-include xml;
-include batxml;
-
 b:= bat.new(:oid,:str);
 bat.insert(b,0@0,"Mary Ann Walker");
 bat.insert(b,1@0,nil:str);

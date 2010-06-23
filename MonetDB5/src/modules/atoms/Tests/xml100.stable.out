@@ -12,7 +12,6 @@ stdout of test 'xml100` in directory 'src/modules/atoms` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
 function user.main():void;
-    xml.prelude();
     b := "Mary Ann Walker";
     c := "brown";
     n := nil:xml;
