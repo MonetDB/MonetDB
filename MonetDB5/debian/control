@@ -3,8 +3,8 @@ Section: misc
 Priority: extra
 Maintainer: MonetDB BV <monet@cwi.nl>
 Build-Depends: debhelper (>= 5), autotools-dev, libpcre3-dev, libssl-dev, libraptor1-dev, libxml2-dev, libmonetdb-dev, libmonetdb-client-dev, cdbs
-
 Standards-Version: 3.8.0
+
 Package: monetdb5-server
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb5-server5, adduser

@@ -75,6 +75,13 @@ lib_batxml = {
 		$(LIBXML2_LIBS) $(ICONV_LIBS)
 }
 
+headers_autoload = {
+	COND = HAVE_LIBXML2
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 30_xml.mal
+}
+
 lib_bpm = {
 	DIR = libdir/MonetDB5
 	SEP = _

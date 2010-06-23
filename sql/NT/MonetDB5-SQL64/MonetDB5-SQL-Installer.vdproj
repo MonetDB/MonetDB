@@ -1203,6 +1203,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_CAEBC4C88AD24AD5AE555E49284941B5"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_CB3C9EC9B4FF49E9815AC97E05BB8A46"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -5595,6 +5601,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CAEBC4C88AD24AD5AE555E49284941B5"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\30_xml.mal"
+            "TargetName" = "8:30_xml.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_CBC2B495BACD4CA8A55E11008F8B563D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CB3C9EC9B4FF49E9815AC97E05BB8A46"
             {
             "SourcePath" = "8:lib\\libmutils.dll"
@@ -7023,14 +7049,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5"
-        "ProductCode" = "8:{D5D0F43F-8638-4716-975B-ED4D6CEAC0FD}"
-        "PackageCode" = "8:{76AC7B72-8281-4588-8E1B-D6DEE18AB9E2}"
+        "ProductCode" = "8:{597F6819-3742-481D-925E-41E985B53128}"
+        "PackageCode" = "8:{8063A55A-782B-4A9F-A6EB-06A3141FA713}"
         "UpgradeCode" = "8:{839D3C90-B578-41E2-A004-431440F9E899}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:10.6.22"
+        "ProductVersion" = "8:10.6.23"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
