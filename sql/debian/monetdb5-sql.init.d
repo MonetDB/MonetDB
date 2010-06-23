@@ -61,7 +61,7 @@ case "$1" in
   start)
         if [ "$STARTUP" != "yes" ]; then
             echo "can't start, should be enabled first by change STARTUP to yes in /etc/default/monetdb5-sql"
-            exit 1
+            exit 0
         fi
 
         if running; then
