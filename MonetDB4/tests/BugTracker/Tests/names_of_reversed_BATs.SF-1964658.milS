@@ -1,11 +1,13 @@
 var x := new(void, int);
-x.bbpname().print();
+var nx := x.bbpname();
 x.rename("A");
 x.bbpname().print();
 x.info().find("batId").print(); # A
 var y := x.reverse();
-y.bbpname().print();
-y.info().find("batId").print(); # A
+var ny := y.bbpname();
+if (nx.substring(4) != ny.substring(5)) print("names don't match");
+var iy := y.info().find("batId");
+if (ny != iy) print("names don't match");
 y.rename("B");
 y.bbpname().print();
 y.info().find("batId").print(); # B
