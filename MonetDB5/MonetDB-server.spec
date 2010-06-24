@@ -182,7 +182,6 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_libdir}/MonetDB5
 %dir %{_libdir}/MonetDB5/lib
 %dir %{_libdir}/MonetDB5/autoload
-%{_libdir}/MonetDB5/autoload/*xml*.mal
 
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
 %attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB5
