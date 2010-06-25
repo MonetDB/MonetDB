@@ -157,6 +157,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so
 
 %changelog
+* Fri Jun 25 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100625
+- Rebuilt.
+
+* Thu Jun 24 2010 Niels Nes <niels@cwi.nl> - 2.38.1-20100625
+- make it possible to use '?' in offset and limit
+
 * Tue Jun 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100622
 - Rebuilt.
 

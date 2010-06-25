@@ -214,6 +214,12 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Fri Jun 25 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100625
+- Rebuilt.
+
+* Wed Jun 23 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100625
+- When libxml2 is available, the XML module is automatically loaded.
+
 * Tue Jun 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100622
 - Rebuilt.
 

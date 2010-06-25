@@ -1,3 +1,15 @@
+monetdb-sql (2.38.1-20100625) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jun 2010 17:41:35 +0200
+
+monetdb-sql (2.38.1-20100625) unstable; urgency=low
+
+  * make it possible to use '?' in offset and limit
+
+ -- Niels Nes <niels@cwi.nl>  Thu, 24 Jun 2010 17:41:35 +0200
+
 monetdb-sql (2.38.1-20100622) unstable; urgency=low
 
   * Rebuilt.
