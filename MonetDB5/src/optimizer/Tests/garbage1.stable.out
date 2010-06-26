@@ -44,7 +44,7 @@ function user.test2():void;             #  0 test2:void := user.test2() {G}
     x := user.test();                   #  1 x:BAT := user.test() {G}
     io.print(x);                        #  2 _2:void := IOprint_val(x:BAT) {G}
 end test2;                              #  3  
-[ <tmp_1072> ]
+[ <tmp_17> ]
 
 # 23:03:59 >  
 # 23:03:59 >  Done.

@@ -41,7 +41,7 @@ function user.main():void;
     tablet.display(b1,b2);
 end main;
 #-------------------------------#
-% tmp_647,tmp_566			# name
+% tmp_7,tmp_10			# name
 % int,	str			# type
 % false,false			# dense
 % true,	false			# sorted
