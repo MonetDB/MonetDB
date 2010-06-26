@@ -44,12 +44,12 @@ function user.main():void;
 end main;
 #result of inline
 function user.tst():void;
-barrier _1 := true;
+barrier _1 := true:bit;
 exit _1;
 end tst;
 #result of all optimizers
 function user.tst():void;
-barrier _1 := true;
+barrier _1 := true:bit;
 exit _1;
 end tst;
 
