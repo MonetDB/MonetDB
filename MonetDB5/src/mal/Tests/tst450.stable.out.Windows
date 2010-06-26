@@ -72,11 +72,12 @@ end main;
 [ 27,	  "inet"	  ]
 [ 28,	  "identifier"	  ]
 [ 29,	  "pcre"	  ]
-[ 30,	  "mapentry"	  ]
-#-------------------------#
-# t	h		  # name
-# oid	str		  # type
-#-------------------------#
+[ 30,	  "xml"		  ]
+[ 31,	  "mapentry"	  ]
+#---------------------------------#
+# h			t	  # name
+# str			void	  # type
+#---------------------------------#
 [ "aggr",	  nil	  ]
 [ "alarm",	  nil	  ]
 [ "algebra",	  nil	  ]
@@ -99,6 +100,7 @@ end main;
 [ "const",	  nil	  ]
 [ "constraints",  nil	  ]
 [ "crackers",	  nil	  ]
+[ "datacyclotron",	  nil	  ]
 [ "date",	  nil	  ]
 [ "daytime",	  nil	  ]
 [ "dictionary",	  nil	  ]
@@ -113,6 +115,7 @@ end main;
 [ "mal",	  nil	  ]
 [ "manual",	  nil	  ]
 [ "mapi",	  nil	  ]
+[ "mapreduce",	  nil	  ]
 [ "master",		  nil	  ]
 [ "mat",	  nil	  ]
 [ "mdb",	  nil	  ]
@@ -146,6 +149,7 @@ end main;
 [ "unix",	  nil	  ]
 [ "url",	  nil	  ]
 [ "user",	  nil	  ]
+[ "xml",	  nil	  ]
 [ "zrule",	  nil	  ]
 command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):bat[:any_1,:any_2] address BKCinsert_bun_force;
 #Insert one BUN[h,t] in a BAT.
