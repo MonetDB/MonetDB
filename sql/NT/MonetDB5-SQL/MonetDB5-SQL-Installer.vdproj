@@ -1269,6 +1269,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_D301CC5DC1BE412A900D7C90166AC804"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_D5C7D6567FD6463E846405B973A4AD8A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -5737,6 +5743,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D301CC5DC1BE412A900D7C90166AC804"
+            {
+            "SourcePath" = "8:etc\\.monetdb"
+            "TargetName" = "8:.monetdb"
+            "Tag" = "8:"
+            "Folder" = "8:_B5DFB5D13EE441F8B42616036AACB603"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D5C7D6567FD6463E846405B973A4AD8A"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\lib_inet.dll"
@@ -6652,14 +6678,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5"
-        "ProductCode" = "8:{02A20762-56A8-453B-9727-93D14EDF1C47}"
-        "PackageCode" = "8:{672C31AF-6395-492C-A1E9-536853913386}"
+        "ProductCode" = "8:{A13C217D-5A3C-4789-B22A-CC3909C75520}"
+        "PackageCode" = "8:{9A2AD82A-68DA-41C1-B004-9F650E0E5161}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:10.6.14"
+        "ProductVersion" = "8:10.6.17"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -6797,7 +6823,7 @@
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_105BC55B7EC843888BD574A95670DAA6"
             {
             "Name" = "8:MonetDB SQL Client"
-            "Arguments" = "8:-lsql -umonetdb -Pmonetdb -Ecp437"
+            "Arguments" = "8:/STARTED-FROM-MENU -lsql -Ecp437"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"

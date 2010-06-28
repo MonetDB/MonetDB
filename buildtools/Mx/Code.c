@@ -131,6 +131,7 @@ GenCode(void)
 			}
 			break;
 		case Comment:
+			WriteComment(fname, d->d_blk);
 			break;
 		default:
 			Fatal("GenCode", "Unknown directive:%c", d->d_dir);

@@ -116,6 +116,7 @@ extern int main(int, char **);
 extern int ModeDir(char);
 extern char *ExtMode(int);
 extern int extract(CmdCode);
+extern void WriteComment(char *, char *);
 
 
 /* Print.c

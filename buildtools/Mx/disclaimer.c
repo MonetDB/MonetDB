@@ -26,7 +26,7 @@
 #include "Mx.h"
 #include "disclaimer.h"
 
-int disclaimer = 1;
+int disclaimer = 0;
 char *disclaimerfile;
 
 static const char defaultfile[] = "license.txt";
