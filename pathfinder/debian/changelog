@@ -1,3 +1,9 @@
+monetdb-xquery (0.38.1-20100625) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 25 Jun 2010 17:41:35 +0200
+
 monetdb-xquery (0.38.1-20100622) unstable; urgency=low
 
   * Rebuilt.

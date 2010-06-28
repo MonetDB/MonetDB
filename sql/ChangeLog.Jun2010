@@ -1,6 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Thu Jun 24 2010 Niels Nes <niels@cwi.nl>
-- make it possible to use '?' in offset and limit
-
