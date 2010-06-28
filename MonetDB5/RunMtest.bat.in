@@ -30,6 +30,8 @@ set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\rdf\.libs
 set MOD_PATH=%MOD_PATH%;%builddir%\src\modules\mal\rdf
 
 REM enable auto-loading of modules before `make install`
+if not exist %builddir%\src\modules\mal\autoload mkdir %builddir%\src\modules\mal\autoload
+copy /y %srcdir%\src\modules\mal\??_*.mal %builddir%\src\modules\mal\autoload
 if not exist %builddir%\src\modules\mal\rdf\autoload mkdir %builddir%\src\modules\mal\rdf\autoload
 copy /y %srcdir%\src\modules\mal\rdf\??_*.mal %builddir%\src\modules\mal\rdf\autoload
 
