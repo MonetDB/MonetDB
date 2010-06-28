@@ -1,0 +1,1759 @@
+stdout of test 'casts` in directory 'tests/gdkTests` itself:
+
+
+# 23:39:53 >  
+# 23:39:53 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=38963 --set monet_prompt= --trace --dbname=mTests_tests_gdkTests  casts.mal < /dev/null
+# 23:39:53 >  
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_gdkTests
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
+    io.printf("# casting to int\n");
+    io.print(0:int);
+    io.print(1:int);
+    io.print(32767);
+    io.print(32768);
+    io.print(32769);
+    io.print(2147483647);
+    io.print(2147483648:lng);
+    io.print(2147483649:lng);
+    io.print(-2147483647);
+    io.print(-2147483648:lng);
+    io.print(-2147483649:lng);
+    io.printf("# int from bit\n");
+    bi := 1:int;
+    io.print(bi);
+    bi := 0:int;
+    io.print(bi);
+    io.printf("# int from chr\n");
+    io.print(97:int);
+    io.printf("# int from sht\n");
+    sh := 1:sht;
+    si := calc.int(sh);
+    io.print(si);
+    sh := 32767:sht;
+    si := calc.int(sh);
+    io.print(si);
+    io.printf("# int from int\n");
+    io.print(1:int);
+    io.print(32767:int);
+    io.print(32768:int);
+    io.print(2147483647:int);
+    io.print(-2147483647:int);
+    i := calc.+(2147483647:int,1:int);
+    io.print(i);
+    z := calc.-(-2147483647:int,1:int);
+    io.print(z);
+    io.printf("# should this produce nil (overflow)?\n");
+    z := calc.+(2147483647:int,2:int);
+    io.print(z);
+    io.printf("# should this produce nil (overflow)?\n");
+    z := calc.-(-2147483647:int,2:int);
+    io.print(z);
+    io.printf("# int from lng\n");
+    io.print(1:int);
+    io.print(2147483647:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.print(-2147483647:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.printf("# int from flt\n");
+    io.print(0:int);
+    io.print(0:int);
+    io.print(0:int);
+    io.print(0:int);
+    io.print(1:int);
+    io.print(0:int);
+    io.print(0:int);
+    io.print(0:int);
+    io.print(-1:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.printf("# int from dbl\n");
+    io.print(0:int);
+    io.print(0:int);
+    io.print(0:int);
+    io.print(0:int);
+    io.print(1:int);
+    io.print(0:int);
+    io.print(0:int);
+    io.print(0:int);
+    io.print(-1:int);
+    io.print(2147483647:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.print(-2147483647:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.printf("# int from oid\n");
+    io.print(2:int);
+    io.print(2:int);
+    io.print(2147483647:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.printf("# int from str\n");
+    io.print(0:int);
+    io.print(32767:int);
+    io.print(2147483647:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.print(-2147483647:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.print(nil:int);
+    io.printf("# to bit\n");
+    io.printf("# bit from bit\n");
+    io.print(true:bit);
+    io.print(false:bit);
+    io.printf("# bit from chr\n");
+    io.print(true:bit);
+    c := '\000':chr;
+    b := calc.bit(c);
+    io.print(b);
+    io.printf("# bit from sht\n");
+    j := 0:sht;
+    b := calc.bit(j);
+    io.print(b);
+    j := 1:sht;
+    b := calc.bit(j);
+    io.print(b);
+    j := -1:sht;
+    b := calc.bit(j);
+    io.print(b);
+    j := 4096:sht;
+    b := calc.bit(j);
+    io.print(b);
+    io.printf("# bit from int\n");
+    io.print(false:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.printf("# bit from lng\n");
+    io.print(false:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.printf("# bit from flt\n");
+    io.print(false:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.printf("# bit from dbl\n");
+    io.print(false:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.printf("# bit from oid\n");
+    io.print(false:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.print(true:bit);
+    io.printf("# bit from str\n");
+    io.print(true:bit);
+    io.print(false:bit);
+    io.print(false:bit);
+    io.print(true:bit);
+    io.print(nil:bit);
+    io.print(nil:bit);
+    io.printf("# to sht\n");
+    io.printf("# sht from bit\n");
+    io.print(1:sht);
+    io.print(0:sht);
+    io.printf("# sht from chr\n");
+    io.print(97:sht);
+    c := '\000':chr;
+    cs := calc.sht(c);
+    io.print(cs);
+    io.printf("# sht from int\n");
+    io.print(0:sht);
+    io.print(32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.print(-32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.printf("# sht from lng\n");
+    io.print(0:sht);
+    io.print(32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.print(-32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.printf("# sht from flt\n");
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(1:sht);
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(-1:sht);
+    io.print(32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.print(-32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.printf("# sht from dbl\n");
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(1:sht);
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(0:sht);
+    io.print(-1:sht);
+    io.print(32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.print(-32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.printf("# sht from oid\n");
+    io.print(0:sht);
+    io.print(1:sht);
+    io.print(4096:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.printf("# sht from str\n");
+    io.print(0:sht);
+    io.print(32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.print(-32767:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.print(nil:sht);
+    io.printf("# to long\n");
+    io.print(0:lng);
+    io.print(1:lng);
+    io.print(32767:lng);
+    io.print(32768:lng);
+    io.print(32769:lng);
+    io.print(2147483647:lng);
+    io.print(2147483648:lng);
+    io.print(2147483649:lng);
+    io.print(-2147483647:lng);
+    io.print(-2147483648:lng);
+    io.print(-2147483649:lng);
+    io.print(9223372036854775807:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.print(-9223372036854775807:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.printf("# lng from bit\n");
+    io.print(1:lng);
+    io.print(0:lng);
+    io.printf("# lng from chr\n");
+    io.print(97:lng);
+    io.printf("# lng from sht\n");
+    ls := 1:sht;
+    ll := calc.lng(ls);
+    io.print(ll);
+    lk := 32767:sht;
+    ll := calc.lng(lk);
+    io.print(ll);
+    io.printf("# lng from int\n");
+    io.print(1:lng);
+    io.print(32767:lng);
+    io.print(32768:lng);
+    io.print(2147483647:lng);
+    io.print(-2147483647:lng);
+    lz := calc.+(2147483647,1);
+    l := calc.lng(lz);
+    io.print(l);
+    lu := calc.-(-2147483647,1);
+    l := calc.lng(lu);
+    io.print(l);
+    io.printf("# should this produce nil (overflow)?\n");
+    la := calc.+(2147483647,2);
+    io.print(la);
+    io.printf("# should this produce nil (overflow)?\n");
+    lb := calc.-(-2147483647,2);
+    io.print(lb);
+    io.printf("# lng from lng\n");
+    io.printf("# lng from flt\n");
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(1:lng);
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(-1:lng);
+    io.print(2147483648:lng);
+    io.print(2147483648:lng);
+    io.print(2147483648:lng);
+    io.print(-2147483648:lng);
+    io.print(-2147483648:lng);
+    io.print(-2147483648:lng);
+    io.print(9223372036854775807:lng);
+    io.print(9223372036854775807:lng);
+    io.print(9223372036854775807:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.printf("# lng from dbl\n");
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(1:lng);
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(0:lng);
+    io.print(-1:lng);
+    io.print(2147483647:lng);
+    io.print(2147483648:lng);
+    io.print(2147483649:lng);
+    io.print(-2147483647:lng);
+    io.print(-2147483648:lng);
+    io.print(-2147483649:lng);
+    io.print(9223372036854775807:lng);
+    io.print(9223372036854775807:lng);
+    io.print(9223372036854775807:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.printf("# lng from oid\n");
+    io.print(2:lng);
+    io.print(2:lng);
+    io.print(2147483647:lng);
+    io.print(2147483648:lng);
+    io.print(2147483649:lng);
+    io.print(9223372036854775807:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.printf("# lng from str\n");
+    io.print(0:lng);
+    io.print(32767:lng);
+    io.print(2147483647:lng);
+    io.print(2147483648:lng);
+    io.print(2147483649:lng);
+    io.print(-2147483647:lng);
+    io.print(-2147483648:lng);
+    io.print(-2147483649:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.print(9223372036854775807:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.print(-9223372036854775807:lng);
+    io.print(nil:lng);
+    io.print(nil:lng);
+    io.printf("# to flt\n");
+    io.printf("# flt from bit\n");
+    io.print(1:flt);
+    io.print(0:flt);
+    io.printf("# flt from chr\n");
+    io.print(97:flt);
+    io.printf("# flt from sht\n");
+    s1 := 1:sht;
+    f1 := calc.flt(s1);
+    io.print(f1);
+    s1 := 32767:sht;
+    f1 := calc.flt(s1);
+    io.print(f1);
+    io.printf("# flt from int\n");
+    io.print(1:flt);
+    io.print(32767:flt);
+    io.print(32768:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    fl := calc.+(2147483647,1);
+    f := calc.flt(fl);
+    io.print(f);
+    fi := calc.-(-2147483647,1);
+    f := calc.flt(fi);
+    io.print(f);
+    io.printf("# should this produce nil (overflow)?\n");
+    ff := calc.+(2147483647,1);
+    f := calc.flt(ff);
+    io.print(f);
+    io.printf("# should this produce nil (overflow)?\n");
+    fg := calc.-(-2147483647,2);
+    f := calc.flt(fg);
+    io.print(f);
+    io.printf("# flt from lng\n");
+    io.print(1:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    io.print(9.22337204e+18:flt);
+    io.print(nil:flt);
+    io.print(nil:flt);
+    io.print(-9.22337204e+18:flt);
+    io.print(nil:flt);
+    io.print(nil:flt);
+    io.printf("# flt from dbl\n");
+    io.print(0:flt);
+    io.print(0.100000001:flt);
+    io.print(0.5:flt);
+    io.print(0.899999976:flt);
+    io.print(1:flt);
+    io.print(-0.100000001:flt);
+    io.print(-0.5:flt);
+    io.print(-0.899999976:flt);
+    io.print(-1:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    io.printf("# flt from oid\n");
+    io.print(2:flt);
+    io.print(2:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(2.14748365e+09:flt);
+    io.printf("# flt from str\n");
+    io.print(0:flt);
+    io.print(32767:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    io.print(-2.14748365e+09:flt);
+    io.print(0:flt);
+    io.print(0.100000001:flt);
+    io.print(1:flt);
+    io.print(1:flt);
+    io.print(10:flt);
+    io.print(1e+10:flt);
+    io.print(1e+10:flt);
+    io.print(1.00000001e-10:flt);
+    io.print(1:flt);
+    io.print(10:flt);
+    io.print(1e+10:flt);
+    io.print(1e+10:flt);
+    io.print(1.00000001e-10:flt);
+    io.print(1:flt);
+    io.print(10:flt);
+    io.print(1e+10:flt);
+    io.print(1e+10:flt);
+    io.print(1.00000001e-10:flt);
+    io.print(-0:flt);
+    io.print(-0.100000001:flt);
+    io.print(-1:flt);
+    io.print(-1:flt);
+    io.print(-10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1.00000001e-10:flt);
+    io.print(-1:flt);
+    io.print(-10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1.00000001e-10:flt);
+    io.print(-1:flt);
+    io.print(-10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1.00000001e-10:flt);
+    io.print(1:flt);
+    io.print(10:flt);
+    io.print(1e+10:flt);
+    io.print(1e+10:flt);
+    io.print(1.00000001e-10:flt);
+    io.print(1:flt);
+    io.print(10:flt);
+    io.print(1e+10:flt);
+    io.print(1e+10:flt);
+    io.print(1.00000001e-10:flt);
+    io.print(1:flt);
+    io.print(10:flt);
+    io.print(1e+10:flt);
+    io.print(1e+10:flt);
+    io.print(1.00000001e-10:flt);
+    io.print(-1:flt);
+    io.print(-10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1.00000001e-10:flt);
+    io.print(-1:flt);
+    io.print(-10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1.00000001e-10:flt);
+    io.print(-1:flt);
+    io.print(-10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1e+10:flt);
+    io.print(-1.00000001e-10:flt);
+    io.printf("# flt range is -3.402823466E+38F to 3.402823466E+38F which is\n");
+    io.printf("# -3.4028234663852886e+38 to 3.4028234663852886e+38 in double\n");
+    io.printf("# precission\n");
+    io.print(3.40282347e+38:flt);
+    io.print(3.40282347e+38:flt);
+    io.print(3.40282347e+38:flt);
+    io.print(nil:flt);
+    io.print(nil:flt);
+    io.print(3.40282347e+38:flt);
+    io.print(3.40282347e+38:flt);
+    io.print(3.40282347e+38:flt);
+    io.print(3.40282347e+38:flt);
+    io.print(nil:flt);
+    io.print(nil:flt);
+    io.print(nil:flt);
+    io.print(nil:flt);
+    io.print(nil:flt);
+    io.print(nil:flt);
+    io.printf("# to dbl\n");
+    io.printf("# dbl from bit\n");
+    io.print(1:dbl);
+    io.print(0:dbl);
+    io.printf("# dbl from chr\n");
+    io.print(97:dbl);
+    io.printf("# from sht\n");
+    a := 1:sht;
+    d1 := calc.dbl(a);
+    io.print(d1);
+    a := 32767:sht;
+    d1 := calc.dbl(a);
+    io.print(d1);
+    io.printf("# dbl from int\n");
+    io.print(1:dbl);
+    io.print(32767:dbl);
+    io.print(32768:dbl);
+    io.print(2147483647:dbl);
+    io.print(-2147483647:dbl);
+    zd := calc.+(2147483647,1);
+    ze := calc.dbl(zd);
+    io.print(zd);
+    zj := calc.-(-2147483647,1);
+    d := calc.dbl(zj);
+    io.print(d);
+    io.printf("# should this produce nil (overflow)?\n");
+    zn := calc.+(2147483647,2);
+    d := calc.dbl(zn);
+    io.print(d);
+    io.printf("# should this produce nil (overflow)?\n");
+    zk := calc.-(-2147483647,2);
+    d := calc.dbl(zk);
+    io.print(d);
+    io.printf("# dbl from lng\n");
+    io.print(1:dbl);
+    io.print(2147483647:dbl);
+    io.print(2147483648:dbl);
+    io.print(2147483649:dbl);
+    io.print(-2147483647:dbl);
+    io.print(-2147483648:dbl);
+    io.print(-2147483649:dbl);
+    io.print(9.2233720368547758e+18:dbl);
+    io.print(nil:dbl);
+    io.print(nil:dbl);
+    io.print(-9.2233720368547758e+18:dbl);
+    io.print(nil:dbl);
+    io.print(nil:dbl);
+    io.printf("# dbl from flt\n");
+    io.print(0:dbl);
+    io.print(0.10000000149011612:dbl);
+    io.print(0.5:dbl);
+    io.print(0.89999997615814209:dbl);
+    io.print(1:dbl);
+    io.print(-0.10000000149011612:dbl);
+    io.print(-0.5:dbl);
+    io.print(-0.89999997615814209:dbl);
+    io.print(-1:dbl);
+    io.print(2147483648:dbl);
+    io.print(2147483648:dbl);
+    io.print(2147483648:dbl);
+    io.print(-2147483648:dbl);
+    io.print(-2147483648:dbl);
+    io.print(-2147483648:dbl);
+    io.printf("# dbl from oid\n");
+    io.print(2:dbl);
+    io.print(2:dbl);
+    io.print(2147483647:dbl);
+    io.print(2147483648:dbl);
+    io.print(2147483649:dbl);
+    io.printf("# dbl from str\n");
+    io.print(0:dbl);
+    io.print(32767:dbl);
+    io.print(2147483647:dbl);
+    io.print(2147483648:dbl);
+    io.print(2147483649:dbl);
+    io.print(-2147483647:dbl);
+    io.print(-2147483648:dbl);
+    io.print(-2147483649:dbl);
+    io.print(0:dbl);
+    io.print(0.10000000000000001:dbl);
+    io.print(1:dbl);
+    io.print(1:dbl);
+    io.print(10:dbl);
+    io.print(10000000000:dbl);
+    io.print(10000000000:dbl);
+    io.print(1e-10:dbl);
+    io.print(1:dbl);
+    io.print(10:dbl);
+    io.print(10000000000:dbl);
+    io.print(10000000000:dbl);
+    io.print(1e-10:dbl);
+    io.print(1:dbl);
+    io.print(10:dbl);
+    io.print(10000000000:dbl);
+    io.print(10000000000:dbl);
+    io.print(1e-10:dbl);
+    io.print(-0:dbl);
+    io.print(-0.10000000000000001:dbl);
+    io.print(-1:dbl);
+    io.print(-1:dbl);
+    io.print(-10:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-1e-10:dbl);
+    io.print(-1:dbl);
+    io.print(-10:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-1e-10:dbl);
+    io.print(-1:dbl);
+    io.print(-10:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-1e-10:dbl);
+    io.print(1:dbl);
+    io.print(10:dbl);
+    io.print(10000000000:dbl);
+    io.print(10000000000:dbl);
+    io.print(1e-10:dbl);
+    io.print(1:dbl);
+    io.print(10:dbl);
+    io.print(10000000000:dbl);
+    io.print(10000000000:dbl);
+    io.print(1e-10:dbl);
+    io.print(1:dbl);
+    io.print(10:dbl);
+    io.print(10000000000:dbl);
+    io.print(10000000000:dbl);
+    io.print(1e-10:dbl);
+    io.print(-1:dbl);
+    io.print(-10:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-1e-10:dbl);
+    io.print(-1:dbl);
+    io.print(-10:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-1e-10:dbl);
+    io.print(-1:dbl);
+    io.print(-10:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-10000000000:dbl);
+    io.print(-1e-10:dbl);
+    io.print(3.4028234660000002e+38:dbl);
+    io.print(3.4028234670000002e+38:dbl);
+    io.print(-3.4028234660000002e+38:dbl);
+    io.print(-3.4028234670000002e+38:dbl);
+    io.print(3.4028234660000002e+38:dbl);
+    io.print(3.4028234670000002e+38:dbl);
+    io.print(3.4028234660000002e+38:dbl);
+    io.print(3.4028234660000002e+38:dbl);
+    io.print(-3.4028234660000002e+38:dbl);
+    io.print(-3.4028234670000002e+38:dbl);
+    io.print(-3.4028234660000002e+38:dbl);
+    io.print(-3.4028234660000002e+38:dbl);
+    io.printf("# dbl range is -1.7976931348623157E+308 to 1.7976931348623157E+308.\n");
+    io.print(1.7976931348623157e+308:dbl);
+    io.print(1.7976931348623157e+308:dbl);
+    io.print(nil:dbl);
+    io.print(nil:dbl);
+    io.print(1.7976931348623157e+308:dbl);
+    io.print(1.7976931348623157e+308:dbl);
+    io.print(1.7976931348623157e+308:dbl);
+    io.print(1.7976931348623157e+308:dbl);
+    io.print(nil:dbl);
+    io.print(nil:dbl);
+    io.print(nil:dbl);
+    io.print(nil:dbl);
+    io.print(nil:dbl);
+    io.print(nil:dbl);
+    io.printf("# to oid\n");
+    io.printf("# from bit\n");
+    io.print(1@0:oid);
+    io.print(0@0:oid);
+    io.printf("# from chr\n");
+    io.print(97@0:oid);
+    io.printf("# from sht\n");
+    o1 := 1:sht;
+    o2 := calc.oid(o1);
+    io.print(o2);
+    o1 := 32767:sht;
+    o2 := calc.oid(o1);
+    io.print(o2);
+    io.printf("# from int\n");
+    io.print(1@0:oid);
+    io.print(32767@0:oid);
+    io.print(32768@0:oid);
+    io.print(2147483647@0:oid);
+    o9 := -2147483647;
+    o := calc.oid(o9);
+    io.print(o);
+    o3 := calc.+(2147483647,1);
+    o := calc.oid(o3);
+    io.print(o);
+    o4 := calc.-(-2147483647,1);
+    o := calc.oid(o4);
+    io.print(o);
+    io.printf("# should this produce nil (overflow)?\n");
+    o5 := calc.+(2147483647,2);
+    o := calc.oid(o5);
+    io.print(o);
+    io.printf("# should this produce nil (overflow)?\n");
+    o6 := calc.-(-2147483647,2);
+    o := calc.oid(o6);
+    io.print(o);
+    io.printf("# from lng\n");
+    io.print(1@0:oid);
+    io.print(2147483647@0:oid);
+    ol3 := 2147483647:lng;
+    o := calc.oid(ol3);
+    io.print(o);
+    io.print(2147483648@0:oid);
+    ol3 := 2147483648:lng;
+    o := calc.oid(ol3);
+    io.print(o);
+    io.print(2147483649@0:oid);
+    ol3 := 2147483649:lng;
+    o := calc.oid(ol3);
+    io.print(o);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.printf("# from flt\n");
+    io.print(0@0:oid);
+    io.print(0@0:oid);
+    io.print(0@0:oid);
+    io.print(0@0:oid);
+    io.print(1@0:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(2147483648@0:oid);
+    io.print(2147483648@0:oid);
+    io.print(2147483648@0:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.printf("# from dbl\n");
+    io.print(0@0:oid);
+    io.print(0@0:oid);
+    io.print(0@0:oid);
+    io.print(0@0:oid);
+    io.print(1@0:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(2147483647@0:oid);
+    io.print(2147483648@0:oid);
+    io.print(2147483649@0:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.printf("# from oid\n");
+    io.print(2@0:oid);
+    io.print(2@0:oid);
+    io.print(2147483647@0:oid);
+    io.print(2147483648@0:oid);
+    io.print(2147483649@0:oid);
+    io.printf("# from str\n");
+    io.print(0@0:oid);
+    io.print(32767@0:oid);
+    io.print(2147483647@0:oid);
+    io.print(2147483648@0:oid);
+    io.print(2147483649@0:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.print(nil:oid);
+    io.printf("# to str\n");
+    io.printf("# from bit\n");
+    io.print("true":str);
+    io.print("false":str);
+    io.printf("# from chr\n");
+    io.print("a":str);
+    io.printf("# from sht\n");
+    s4 := 1:sht;
+    s5 := calc.str(s4);
+    io.print(s5);
+    s4 := 32767:sht;
+    s5 := calc.str(s4);
+    io.print(s5);
+    io.printf("# from int\n");
+    io.print("1":str);
+    io.print("32767":str);
+    io.print("32768":str);
+    io.print("2147483647":str);
+    io.print("-2147483647":str);
+    wd := calc.+(2147483647:int,1);
+    sv := calc.str(wd);
+    io.print(sv);
+    wc := calc.-(-2147483647,1);
+    sv := calc.str(wc);
+    io.print(sv);
+    io.printf("# should this produce nil (overflow)?\n");
+    we := calc.+(2147483647:int,2);
+    sv := calc.str(we);
+    io.print(sv);
+    io.printf("# should this produce nil (overflow)?\n");
+    wb := calc.-(-2147483647,2);
+    sv := calc.str(wb);
+    io.print(sv);
+    io.printf("# from lng\n");
+    io.print("1":str);
+    io.print("2147483647":str);
+    io.print("2147483648":str);
+    io.print("2147483649":str);
+    io.print("-2147483647":str);
+    io.print("-2147483648":str);
+    io.print("-2147483649":str);
+    io.printf("# from flt\n");
+    io.print("0":str);
+    io.print("0.100000001":str);
+    io.print("0.5":str);
+    io.print("0.899999976":str);
+    io.print("1":str);
+    io.print("-0.100000001":str);
+    io.print("-0.5":str);
+    io.print("-0.899999976":str);
+    io.print("-1":str);
+    io.print("2.14748365e+09":str);
+    io.print("2.14748365e+09":str);
+    io.print("2.14748365e+09":str);
+    io.print("-2.14748365e+09":str);
+    io.print("-2.14748365e+09":str);
+    io.print("-2.14748365e+09":str);
+    io.printf("# from dbl\n");
+    io.print("0":str);
+    io.print("0.10000000000000001":str);
+    io.print("0.5":str);
+    io.print("0.90000000000000002":str);
+    io.print("1":str);
+    io.print("-0.10000000000000001":str);
+    io.print("-0.5":str);
+    io.print("-0.90000000000000002":str);
+    io.print("-1":str);
+    io.print("2147483647":str);
+    io.print("2147483648":str);
+    io.print("2147483649":str);
+    io.print("-2147483647":str);
+    io.print("-2147483648":str);
+    io.print("-2147483649":str);
+    io.printf("# from oid\n");
+    io.print("2@0":str);
+    io.print("2@0":str);
+    io.print("2147483647@0":str);
+    io.print("2147483648@0":str);
+    io.print("2147483649@0":str);
+    io.printf("# from str\n");
+    io.print("0":str);
+    io.print("32767":str);
+    io.print("2147483647":str);
+    io.print("2147483648":str);
+    io.print("2147483649":str);
+    io.print("-2147483647":str);
+    io.print("-2147483648":str);
+    io.print("-2147483649":str);
+    io.print("":str);
+    io.print("random string":str);
+end main;
+# casting to int
+
+[ 0 ]
+[ 1 ]
+[ 32767 ]
+[ 32768 ]
+[ 32769 ]
+[ 2147483647 ]
+[ 2147483648 ]
+[ 2147483649 ]
+[ -2147483647 ]
+[ -2147483648 ]
+[ -2147483649 ]
+
+# from bit
+[ 1 ]
+[ 0 ]
+
+# from chr
+[ 97 ]
+
+# from sht
+[ 1 ]
+[ 32767 ]
+
+# from int
+[ 1 ]
+[ 32767 ]
+[ 32768 ]
+[ 2147483647 ]
+[ -2147483647 ]
+[ nil ]
+[ nil ]
+# should this produce nil (overflow)?
+[ -2147483647 ]
+# should this produce nil (overflow)?
+[ 2147483647 ]
+
+# from lng
+[ 1 ]
+[ 2147483647 ]
+[ nil ]
+[ nil ]
+[ -2147483647 ]
+[ nil ]
+[ nil ]
+
+# from flt
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 1 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ -1 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from dbl
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 1 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ -1 ]
+[ 2147483647 ]
+[ nil ]
+[ nil ]
+[ -2147483647 ]
+[ nil ]
+[ nil ]
+
+# from oid
+[ 2 ]
+[ 2 ]
+[ 2147483647 ]
+[ nil ]
+[ nil ]
+
+# from str
+[ 0 ]
+[ 32767 ]
+[ 2147483647 ]
+[ nil ]
+[ nil ]
+[ -2147483647 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+# to bit
+
+# from bit
+[ true ]
+[ false ]
+
+# from chr
+[ true ]
+[ false ]
+
+# from sht
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+
+# from int
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+
+# from lng
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+
+# from flt
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+
+# from dbl
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+
+# from oid
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+
+# from str
+[ true ]
+[ false ]
+[ false ]
+[ true ]
+[ nil ]
+[ nil ]
+# to sht
+
+# from bit
+[ 1 ]
+[ 0 ]
+
+# from chr
+[ 97 ]
+[ 0 ]
+
+# from int
+[ 0 ]
+[ 32767 ]
+[ nil ]
+[ nil ]
+[ -32767 ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from lng
+[ 0 ]
+[ 32767 ]
+[ nil ]
+[ nil ]
+[ -32767 ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from flt
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 1 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ -1 ]
+[ 32767 ]
+[ nil ]
+[ nil ]
+[ -32767 ]
+[ nil ]
+[ nil ]
+
+# from dbl
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 1 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ -1 ]
+[ 32767 ]
+[ nil ]
+[ nil ]
+[ -32767 ]
+[ nil ]
+[ nil ]
+
+# from oid
+[ 0 ]
+[ 1 ]
+[ 4096 ]
+[ nil ]
+[ nil ]
+
+# from str
+[ 0 ]
+[ 32767 ]
+[ nil ]
+[ nil ]
+[ -32767 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+# to long
+
+[ 0 ]
+[ 1 ]
+[ 32767 ]
+[ 32768 ]
+[ 32769 ]
+[ 2147483647 ]
+[ 2147483648 ]
+[ 2147483649 ]
+[ -2147483647 ]
+[ -2147483648 ]
+[ -2147483649 ]
+[ 9223372036854775807 ]
+[ nil ]
+[ nil ]
+[ -9223372036854775807 ]
+[ nil ]
+[ nil ]
+
+# from bit
+[ 1 ]
+[ 0 ]
+
+# from chr
+[ 97 ]
+
+# from sht
+[ 1 ]
+[ 32767 ]
+
+# from int
+[ 1 ]
+[ 32767 ]
+[ 32768 ]
+[ 2147483647 ]
+[ -2147483647 ]
+[ nil ]
+[ nil ]
+# should this produce nil (overflow)?
+[ -2147483647 ]
+# should this produce nil (overflow)?
+[ 2147483647 ]
+
+# from lng
+# from flt
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 1 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ -1 ]
+[ 2147483648 ]
+[ 2147483648 ]
+[ 2147483648 ]
+[ -2147483648 ]
+[ -2147483648 ]
+[ -2147483648 ]
+[ 9223372036854775807 ]
+[ 9223372036854775807 ]
+[ 9223372036854775807 ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from dbl
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 1 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ -1 ]
+[ 2147483647 ]
+[ 2147483648 ]
+[ 2147483649 ]
+[ -2147483647 ]
+[ -2147483648 ]
+[ -2147483649 ]
+[ 9223372036854775807 ]
+[ 9223372036854775807 ]
+[ 9223372036854775807 ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from oid
+[ 2 ]
+[ 2 ]
+[ 2147483647 ]
+[ 2147483648 ]
+[ 2147483649 ]
+[ 9223372036854775807 ]
+[ nil ]
+[ nil ]
+
+# from str
+[ 0 ]
+[ 32767 ]
+[ 2147483647 ]
+[ 2147483648 ]
+[ 2147483649 ]
+[ -2147483647 ]
+[ -2147483648 ]
+[ -2147483649 ]
+[ nil ]
+[ nil ]
+[ 9223372036854775807 ]
+[ nil ]
+[ nil ]
+[ -9223372036854775807 ]
+[ nil ]
+[ nil ]
+
+# to flt
+
+# from bit
+[ 1 ]
+[ 0 ]
+
+# from chr
+[ 97 ]
+
+# from sht
+[ 1 ]
+[ 32767 ]
+
+# from int
+[ 1 ]
+[ 32767 ]
+[ 32768 ]
+[ 2.14748365e+09 ]
+[ -2.14748365e+09 ]
+[ nil ]
+[ nil ]
+# should this produce nil (overflow)?
+[ nil ]
+# should this produce nil (overflow)?
+[ 2.14748365e+09 ]
+
+# from lng
+[ 1 ]
+[ 2.14748365e+09 ]
+[ 2.14748365e+09 ]
+[ 2.14748365e+09 ]
+[ -2.14748365e+09 ]
+[ -2.14748365e+09 ]
+[ -2.14748365e+09 ]
+[ 9.22337204e+18 ]
+[ nil ]
+[ nil ]
+[ -9.22337204e+18 ]
+[ nil ]
+[ nil ]
+
+# from dbl
+[ 0 ]
+[ 0.100000001 ]
+[ 0.5 ]
+[ 0.899999976 ]
+[ 1 ]
+[ -0.100000001 ]
+[ -0.5 ]
+[ -0.899999976 ]
+[ -1 ]
+[ 2.14748365e+09 ]
+[ 2.14748365e+09 ]
+[ 2.14748365e+09 ]
+[ -2.14748365e+09 ]
+[ -2.14748365e+09 ]
+[ -2.14748365e+09 ]
+
+# from oid
+[ 2 ]
+[ 2 ]
+[ 2.14748365e+09 ]
+[ 2.14748365e+09 ]
+[ 2.14748365e+09 ]
+
+# from str
+[ 0 ]
+[ 32767 ]
+[ 2.14748365e+09 ]
+[ 2.14748365e+09 ]
+[ 2.14748365e+09 ]
+[ -2.14748365e+09 ]
+[ -2.14748365e+09 ]
+[ -2.14748365e+09 ]
+[ 0 ]
+[ 0.100000001 ]
+[ 1 ]
+[ 1 ]
+[ 10 ]
+[ 1e+10 ]
+[ 1e+10 ]
+[ 1.00000001e-10 ]
+[ 1 ]
+[ 10 ]
+[ 1e+10 ]
+[ 1e+10 ]
+[ 1.00000001e-10 ]
+[ 1 ]
+[ 10 ]
+[ 1e+10 ]
+[ 1e+10 ]
+[ 1.00000001e-10 ]
+[ -0 ]
+[ -0.100000001 ]
+[ -1 ]
+[ -1 ]
+[ -10 ]
+[ -1e+10 ]
+[ -1e+10 ]
+[ -1.00000001e-10 ]
+[ -1 ]
+[ -10 ]
+[ -1e+10 ]
+[ -1e+10 ]
+[ -1.00000001e-10 ]
+[ -1 ]
+[ -10 ]
+[ -1e+10 ]
+[ -1e+10 ]
+[ -1.00000001e-10 ]
+[ 1 ]
+[ 10 ]
+[ 1e+10 ]
+[ 1e+10 ]
+[ 1.00000001e-10 ]
+[ 1 ]
+[ 10 ]
+[ 1e+10 ]
+[ 1e+10 ]
+[ 1.00000001e-10 ]
+[ 1 ]
+[ 10 ]
+[ 1e+10 ]
+[ 1e+10 ]
+[ 1.00000001e-10 ]
+[ -1 ]
+[ -10 ]
+[ -1e+10 ]
+[ -1e+10 ]
+[ -1.00000001e-10 ]
+[ -1 ]
+[ -10 ]
+[ -1e+10 ]
+[ -1e+10 ]
+[ -1.00000001e-10 ]
+[ -1 ]
+[ -10 ]
+[ -1e+10 ]
+[ -1e+10 ]
+[ -1.00000001e-10 ]
+# flt range is -3.402823466E+38F to 3.402823466E+38F which is
+# -3.4028234663852886e+38 to 3.4028234663852886e+38 in double
+# precission
+[ 3.40282347e+38 ]
+[ 3.40282347e+38 ]
+[ 3.40282347e+38 ]
+[ nil ]
+[ nil ]
+[ 3.40282347e+38 ]
+[ 3.40282347e+38 ]
+[ 3.40282347e+38 ]
+[ 3.40282347e+38 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# to dbl
+
+# from bit
+[ 1 ]
+[ 0 ]
+
+# from chr
+[ 97 ]
+
+# from sht
+[ 1 ]
+[ 32767 ]
+
+# from int
+[ 1 ]
+[ 32767 ]
+[ 32768 ]
+[ 2147483647 ]
+[ -2147483647 ]
+[ nil ]
+[ nil ]
+# should this produce nil (overflow)?
+[ -2147483647 ]
+# should this produce nil (overflow)?
+[ 2147483647 ]
+
+# from lng
+[ 1 ]
+[ 2147483647 ]
+[ 2147483648 ]
+[ 2147483649 ]
+[ -2147483647 ]
+[ -2147483648 ]
+[ -2147483649 ]
+[ 9.2233720368547758e+18 ]
+[ nil ]
+[ nil ]
+[ -9.2233720368547758e+18 ]
+[ nil ]
+[ nil ]
+
+# from flt
+[ 0 ]
+[ 0.10000000149011612 ]
+[ 0.5 ]
+[ 0.89999997615814209 ]
+[ 1 ]
+[ -0.10000000149011612 ]
+[ -0.5 ]
+[ -0.89999997615814209 ]
+[ -1 ]
+[ 2147483648 ]
+[ 2147483648 ]
+[ 2147483648 ]
+[ -2147483648 ]
+[ -2147483648 ]
+[ -2147483648 ]
+
+# from oid
+[ 2 ]
+[ 2 ]
+[ 2147483647 ]
+[ 2147483648 ]
+[ 2147483649 ]
+
+# from str
+[ 0 ]
+[ 32767 ]
+[ 2147483647 ]
+[ 2147483648 ]
+[ 2147483649 ]
+[ -2147483647 ]
+[ -2147483648 ]
+[ -2147483649 ]
+[ 0 ]
+[ 0.10000000000000001 ]
+[ 1 ]
+[ 1 ]
+[ 10 ]
+[ 10000000000 ]
+[ 10000000000 ]
+[ 1e-10 ]
+[ 1 ]
+[ 10 ]
+[ 10000000000 ]
+[ 10000000000 ]
+[ 1e-10 ]
+[ 1 ]
+[ 10 ]
+[ 10000000000 ]
+[ 10000000000 ]
+[ 1e-10 ]
+[ -0 ]
+[ -0.10000000000000001 ]
+[ -1 ]
+[ -1 ]
+[ -10 ]
+[ -10000000000 ]
+[ -10000000000 ]
+[ -1e-10 ]
+[ -1 ]
+[ -10 ]
+[ -10000000000 ]
+[ -10000000000 ]
+[ -1e-10 ]
+[ -1 ]
+[ -10 ]
+[ -10000000000 ]
+[ -10000000000 ]
+[ -1e-10 ]
+[ 1 ]
+[ 10 ]
+[ 10000000000 ]
+[ 10000000000 ]
+[ 1e-10 ]
+[ 1 ]
+[ 10 ]
+[ 10000000000 ]
+[ 10000000000 ]
+[ 1e-10 ]
+[ 1 ]
+[ 10 ]
+[ 10000000000 ]
+[ 10000000000 ]
+[ 1e-10 ]
+[ -1 ]
+[ -10 ]
+[ -10000000000 ]
+[ -10000000000 ]
+[ -1e-10 ]
+[ -1 ]
+[ -10 ]
+[ -10000000000 ]
+[ -10000000000 ]
+[ -1e-10 ]
+[ -1 ]
+[ -10 ]
+[ -10000000000 ]
+[ -10000000000 ]
+[ -1e-10 ]
+[ 3.4028234660000002e+38 ]
+[ 3.4028234670000002e+38 ]
+[ -3.4028234660000002e+38 ]
+[ -3.4028234670000002e+38 ]
+[ 3.4028234660000002e+38 ]
+[ 3.4028234670000002e+38 ]
+[ 3.4028234660000002e+38 ]
+[ 3.4028234660000002e+38 ]
+[ -3.4028234660000002e+38 ]
+[ -3.4028234670000002e+38 ]
+[ -3.4028234660000002e+38 ]
+[ -3.4028234660000002e+38 ]
+# dbl range is -1.7976931348623157E+308 to 1.7976931348623157E+308.
+[ 1.7976931348623157e+308 ]
+[ 1.7976931348623157e+308 ]
+[ nil ]
+[ nil ]
+[ 1.7976931348623157e+308 ]
+[ 1.7976931348623157e+308 ]
+[ 1.7976931348623157e+308 ]
+[ 1.7976931348623157e+308 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# to oid
+
+# from bit
+[ 1@0 ]
+[ 0@0 ]
+
+# from chr
+[ 97@0 ]
+
+# from sht
+[ 1@0 ]
+[ 32767@0 ]
+
+# from int
+[ 1@0 ]
+[ 32767@0 ]
+[ 32768@0 ]
+[ 2147483647@0 ]
+[ nil ]
+[ nil ]
+[ nil ]
+# should this produce nil (overflow)?
+[ nil ]
+# should this produce nil (overflow)?
+[ 2147483647@0 ]
+
+# from lng
+[ 1@0 ]
+[ 2147483647@0 ]
+[ 2147483647@0 ]
+[ 2147483648@0 ]
+[ 2147483648@0 ]
+[ 2147483649@0 ]
+[ 2147483649@0 ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from flt
+[ 0@0 ]
+[ 0@0 ]
+[ 0@0 ]
+[ 0@0 ]
+[ 1@0 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ 2147483648@0 ]
+[ 2147483648@0 ]
+[ 2147483648@0 ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from dbl
+[ 0@0 ]
+[ 0@0 ]
+[ 0@0 ]
+[ 0@0 ]
+[ 1@0 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ 2147483647@0 ]
+[ 2147483648@0 ]
+[ 2147483649@0 ]
+[ nil ]
+[ nil ]
+[ nil ]
+
+# from oid
+[ 2@0 ]
+[ 2@0 ]
+[ 2147483647@0 ]
+[ 2147483648@0 ]
+[ 2147483649@0 ]
+
+# from str
+[ 0@0 ]
+[ 32767@0 ]
+[ 2147483647@0 ]
+[ 2147483648@0 ]
+[ 2147483649@0 ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
+# to str
+
+# from bit
+[ "true" ]
+[ "false" ]
+
+# from chr
+[ "a" ]
+
+# from sht
+[ "1" ]
+[ "32767" ]
+
+# from int
+[ "1" ]
+[ "32767" ]
+[ "32768" ]
+[ "2147483647" ]
+[ "-2147483647" ]
+[ nil ]
+[ nil ]
+# should this produce nil (overflow)?
+[ "-2147483647" ]
+# should this produce nil (overflow)?
+[ "2147483647" ]
+
+# from lng
+[ "1" ]
+[ "2147483647" ]
+[ "2147483648" ]
+[ "2147483649" ]
+[ "-2147483647" ]
+[ "-2147483648" ]
+[ "-2147483649" ]
+
+# from flt
+[ "0" ]
+[ "0.100000001" ]
+[ "0.5" ]
+[ "0.899999976" ]
+[ "1" ]
+[ "-0.100000001" ]
+[ "-0.5" ]
+[ "-0.899999976" ]
+[ "-1" ]
+[ "2.14748365e+09" ]
+[ "2.14748365e+09" ]
+[ "2.14748365e+09" ]
+[ "-2.14748365e+09" ]
+[ "-2.14748365e+09" ]
+[ "-2.14748365e+09" ]
+
+# from dbl
+[ "0" ]
+[ "0.10000000000000001" ]
+[ "0.5" ]
+[ "0.90000000000000002" ]
+[ "1" ]
+[ "-0.10000000000000001" ]
+[ "-0.5" ]
+[ "-0.90000000000000002" ]
+[ "-1" ]
+[ "2147483647" ]
+[ "2147483648" ]
+[ "2147483649" ]
+[ "-2147483647" ]
+[ "-2147483648" ]
+[ "-2147483649" ]
+
+# from oid
+[ "2@0" ]
+[ "2@0" ]
+[ "2147483647@0" ]
+[ "2147483648@0" ]
+[ "2147483649@0" ]
+
+# from str
+[ "0" ]
+[ "32767" ]
+[ "2147483647" ]
+[ "2147483648" ]
+[ "2147483649" ]
+[ "-2147483647" ]
+[ "-2147483648" ]
+[ "-2147483649" ]
+[ "" ]
+[ "random string" ]
+
+# 14:56:01 >  
+# 14:56:01 >  Done.
+# 14:56:01 >  
+
