@@ -117,7 +117,7 @@ end main;
 [ 1,		2	]
 #-----------------------#
 #-------------------------------#
-% tmp_647,tmp_566			# name
+% tmp_7,tmp_10			# name
 % int,	str			# type
 % false,false			# dense
 % true,	false			# sorted
@@ -128,7 +128,7 @@ end main;
 [ 42,		"hello world"		]
 [ 49,		"goodbye world"		]
 #---------------------------------------#
-% tmp_647,	tmp_566			# name
+% tmp_7,	tmp_10			# name
 #---------------------------------------#
 [  4.2,		"hello world"		]
 [  4.9,		"goodbye world"		]
