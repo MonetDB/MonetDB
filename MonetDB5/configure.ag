@@ -332,8 +332,10 @@ if test "x$have_cfitsio" != xno; then
     AC_PATH_PROG(CFITSIO_CONFIG,pkg-config,,$XPATH)
 
     if test "x$CFITSIO_CONFIG" != x; then
-        CFITSIO_CFLAGS="`$CFITSIO_CONFIG cfitsio --cflags`"
-        CFITSIO_LIBS="`$CFITSIO_CONFIG cfitsio --libs`"
+		if `$CFITSIO_CONFIG --exists cfitsio` ; then
+			CFITSIO_CFLAGS="`$CFITSIO_CONFIG cfitsio --cflags`"
+			CFITSIO_LIBS="`$CFITSIO_CONFIG cfitsio --libs`"
+		fi
     else
 	case "$have_cfitsio" in
 	auto|yes)

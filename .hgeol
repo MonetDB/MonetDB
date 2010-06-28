@@ -7,6 +7,7 @@
 # various binary files
 **.bmp = BIN
 **.bz2 = BIN
+**.chm = BIN
 **.dll = BIN
 **.gif = BIN
 **.gz  = BIN
@@ -15,12 +16,6 @@
 **.pdf = BIN
 **.png = BIN
 **.zip = BIN
-
-# Windows specific files
-**.chm = BIN
-**.rtf = CRLF
-**.sln = CRLF
-**.vdproj = CRLF
 
 # all the rest is text
 ** = native

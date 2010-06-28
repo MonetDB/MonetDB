@@ -1,3 +1,4 @@
 debian/tmp/usr/lib/lib*.so.* usr/lib
 debian/tmp/usr/lib/MonetDB5/lib/lib*.so* usr/lib/MonetDB5/lib
 debian/tmp/usr/lib/MonetDB5/*.mal usr/lib/MonetDB5
+debian/tmp/usr/lib/MonetDB5/autoload/*.mal usr/lib/MonetDB5/autoload

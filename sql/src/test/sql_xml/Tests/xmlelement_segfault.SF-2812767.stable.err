@@ -2,7 +2,7 @@ stderr of test 'xmlelement_segfault.SF-2812767` in directory 'src/test/sql_xml` 
 
 
 # 17:58:04 >  
-# 17:58:04 >   mserver5 "--config=/ufs/sjoerd/Monet-virgin-stable/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/src/backends/monet5/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/src/backends/monet5:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB5:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB5/lib:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=37455 --set xrpc_port=42019 --set monet_prompt= --trace  "--dbname=mTests_src_test_sql_xml" --set mal_listing=0 "--dbinit=include xml; include batxml; include sql;" ; echo ; echo Over..
+# 17:58:04 >   mserver5 "--config=/ufs/sjoerd/Monet-virgin-stable/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/src/backends/monet5/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/src/backends/monet5:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB5:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB5/lib:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=37455 --set xrpc_port=42019 --set monet_prompt= --trace  "--dbname=mTests_src_test_sql_xml" --set mal_listing=0 "--dbinit=include sql;" ; echo ; echo Over..
 # 17:58:04 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu

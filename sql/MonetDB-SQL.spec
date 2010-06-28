@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/MonetDB-SQL-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010/MonetDB-SQL-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires: e2fsprogs-devel
@@ -157,6 +157,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so
 
 %changelog
+* Tue Jun 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100622
+- Rebuilt.
+
+* Fri Jun 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100622
+- Added include and .lib files to Windows installers that are needed to
+  compile client programs.
+
 * Fri Jun 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100618
 - Rebuilt.
 

@@ -1,6 +1,15 @@
 #! /bin/sh
+### BEGIN INIT INFO
+# Provides:          mserver5-sql
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: MonetDB SQL service
+# Description:       MonetDB SQL service "merovingian".
+### END INIT INFO
 
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DAEMON=/usr/bin/merovingian
 NAME=merovingian
 DESC="MonetDB SQL server"
@@ -52,7 +61,7 @@ case "$1" in
   start)
         if [ "$STARTUP" != "yes" ]; then
             echo "can't start, should be enabled first by change STARTUP to yes in /etc/default/monetdb5-sql"
-            exit 1
+            exit 0
         fi
 
         if running; then

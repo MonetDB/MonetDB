@@ -2207,9 +2207,9 @@ reverse(select(reverse(_MMcastnil_16),4@0)).print();
 # t	h	  # name
 # oid	void	  # type
 #-----------------#
-[ 4@0,	  1@0	  ]
+[ 4@0,	  0@0	  ]
 _MMjoin_20.find(1@0).print();
-[ 50 ]
+[ 30 ]
 reverse(select(reverse(_MMcastnil_16),3@0)).print();
 #-------------------------#
 # BAT:	  tmp_197	  #
@@ -2220,9 +2220,9 @@ reverse(select(reverse(_MMcastnil_16),2@0)).print();
 # t	h	  # name
 # oid	void	  # type
 #-----------------#
-[ 2@0,	  0@0	  ]
+[ 2@0,	  1@0	  ]
 _MMjoin_20.find(0@0).print();
-[ 30 ]
+[ 50 ]
 # [{ 50 }, {}, { 30 }]
 
 _MMreverse_2 := reverse(indexA);

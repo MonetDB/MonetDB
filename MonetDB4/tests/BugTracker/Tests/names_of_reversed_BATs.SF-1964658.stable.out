@@ -12,18 +12,17 @@ stdout of test 'names_of_reversed_BATs.SF-1964658` in directory 'tests/BugTracke
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 var x := new(void, int);
-x.bbpname().print();
-[ "tmp_64" ]
+var nx := x.bbpname();
 x.rename("A");
 x.bbpname().print();
 [ "A" ]
 x.info().find("batId").print(); # A
 [ "A" ]
 var y := x.reverse();
-y.bbpname().print();
-[ "tmpr_64" ]
-y.info().find("batId").print(); # A
-[ "tmpr_64" ]
+var ny := y.bbpname();
+if (nx.substring(4) != ny.substring(5)) print("names don't match");
+var iy := y.info().find("batId");
+if (ny != iy) print("names don't match");
 y.rename("B");
 y.bbpname().print();
 [ "B" ]

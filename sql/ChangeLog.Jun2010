@@ -1,7 +1,6 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Fri Jun 18 2010 Sjoerd Mullender <sjoerd@acm.org>
-- Added include and .lib files to Windows installers that are needed to
-  compile client programs.
+* Thu Jun 24 2010 Niels Nes <niels@cwi.nl>
+- make it possible to use '?' in offset and limit
 
