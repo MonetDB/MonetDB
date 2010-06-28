@@ -974,9 +974,9 @@ match (PFla_op_t *a, PFla_op_t *b)
         case la_bool_and:
         case la_bool_or:
         case la_to:
-            if ((ACTCOL (L(a), a->sem.binary.col1) &&
-                 ACTCOL (L(b), b->sem.binary.col1)) ==
-                (ACTCOL (L(a), a->sem.binary.col2) &&
+            if ((ACTCOL (L(a), a->sem.binary.col1) ==
+                 ACTCOL (L(b), b->sem.binary.col1)) &&
+                (ACTCOL (L(a), a->sem.binary.col2) ==
                  ACTCOL (L(b), b->sem.binary.col2)))
                 return true ;
 
