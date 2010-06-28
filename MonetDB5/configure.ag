@@ -364,6 +364,38 @@ AC_SUBST(CFITSIO_CFLAGS, $CFITSIO_CFLAGS)
 AC_SUBST(CFITSIO_LIBS, $CFITSIO_LIBS)
 AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
 
+have_mseed="auto"
+AC_ARG_WITH(mseed,
+    AS_HELP_STRING([--with-mseed=DIR],[mseed library is installed in DIR]),
+    [have_mseed="$withval"], [have_mseed="auto"])
+if test "x$have_mseed" != xno; then
+
+	case "$have_mseed" in
+	auto|yes)
+	    ;;
+	*)
+	    MSEED_CFLAGS="-I$have_mseed/include"
+	    MSEED_LIBS="-L$have_mseed/lib -lmseed"
+	    ;;
+	esac
+
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $MSEED_CFLAGS"
+	LDFLAGS="$LDFLAGS $MSEED_LIBS"
+	AC_CHECK_HEADER(libmseed.h,
+		AC_CHECK_LIB(mseed, msr_init,
+			AC_DEFINE(HAVE_MSEED, 1, [Define if you have the mseed library])
+			have_mseed=yes,
+			[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([-lmseed library not found]); fi; have_mseed=no ], "-lm"),
+		[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([libmseed.h header not found]); fi; have_mseed=no ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(MSEED_CFLAGS, $MSEED_CFLAGS)
+AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
+AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
+
 dnl RIPEMD160 is patent free, academic and European, but unfortunately
 dnl can't use it by default, as that would exclude JDBC usage (Java
 dnl doesn't natively support RIPEMD160).
