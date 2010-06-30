@@ -97,7 +97,8 @@ structure to compute a group of common aggregates.
 	bhsb = b->hseqbase;
 	if (!(@1 && sums))
 		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	if (b_use)
+		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
@@ -141,7 +142,8 @@ structure to compute a group of common aggregates.
 		}
 	}
 	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	if (b_use)
+		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
 	if (!(@1 && sums))
 		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	/* postprocess by dividing sums by counts */
@@ -205,6 +207,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	oid bhsb;
 	BUN base, end, w;
 	ssize_t offset;
+	int b_use = USE_TAIL;
 
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
@@ -237,6 +240,8 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
+	if (!BAThdense(b))
+		b_use |= USE_HEAD;
 	if (BAThdense(e)) {
 		/* void lookup */
 		if (BAThdense(b)) {

@@ -80,7 +80,8 @@ structure to compute a group of common aggregates.
 	offset = (ssize_t) base - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	if (b_use)
+		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
@@ -124,7 +125,8 @@ structure to compute a group of common aggregates.
 		}
 	}
 	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	if (b_use)
+		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
 	/* insert the extreme values into the result */
 	BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(bn, r, q) {
@@ -181,7 +183,8 @@ structure to compute a group of common aggregates.
 	offset = (ssize_t) base - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	if (b_use)
+		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
@@ -226,8 +229,9 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
+	if (b_use)
+		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
 	/* insert the extreme values into the result */
 	BATloop(bn, r, q) {
 		oid *h = (oid*)BUNh@4(bni,r);
@@ -266,6 +270,7 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 	oid bhsb;
 	BUN base, end, w;
 	ssize_t offset;
+	int b_use = USE_TAIL;
 
 	*ret = NULL;
 
@@ -303,6 +308,8 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
+	if (!BAThdense(b))
+		b_use |= USE_HEAD;
 	if (BAThdense(e)) {
 		/* void lookup */
 		if (BAThdense(b)) {

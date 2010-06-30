@@ -104,7 +104,8 @@ structure to compute a group of common aggregates.
 	bhsb = b->hseqbase;
 	if (!(@1 && prods))
 		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	if (b_use)
+		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
@@ -147,10 +148,11 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
+	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
+	if (b_use)
+		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
 	if (!(@1 && prods))
 		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (@1) {
 	    if (prods) {
 		/* copy prods array to final result */
@@ -208,6 +210,7 @@ aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range,
 	oid bhsb;
 	BUN base, end, w;
 	ssize_t offset;
+	int b_use = USE_TAIL;
 	BATiter bni = bat_iterator(bn), bi = bat_iterator(b), gi = bat_iterator(g);
 
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_prod3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" OIDFMT ",min=" OIDFMT ",max=" OIDFMT ");\n",
@@ -232,6 +235,7 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	oid bhsb;
 	BUN base, end, w;
 	ssize_t offset;
+	int b_use = USE_TAIL;
 
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_prod3_@1_@2(b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
@@ -265,6 +269,8 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
+	if (!BAThdense(b))
+		b_use |= USE_HEAD;
 	if (BAThdense(e)) {
 		/* void lookup */
 		if (BAThdense(b)) {
