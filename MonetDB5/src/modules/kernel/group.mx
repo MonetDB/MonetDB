@@ -758,19 +758,27 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 static BAT *
 CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn)
 {
+	lng _t_ = GDKusec();
 	BATiter bi = bat_iterator(b), mapi, ct_mapi = bat_iterator(ct_map);
 	oid *hdst = (oid*) Hloc(bn, BUNfirst(bn)), *dst = (oid*) Tloc(bn, BUNfirst(bn));
 	BUN zz, mapsize;
 	BUN *hash;
 	BUN p, q, r, cp = BUNfirst(ct_map) - 1;
 	mapentry_t entry, *e;
-	BAT *map;
+	BAT *map, *rtrn;
 	declare_@4
 	BUN mask = derive_mask(ct_map, ct_histo, b); 
 	BUN custom_rng = BATcount(ct_histo); /* expected number of groups */
 	BUN custom_MASK = mask;
 
 	map_init_CUSTOM(map,hash,mask,entry,mapsize);
+
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTderive_@1_@2_@5 <@3,@4> ( ct_map=#%d:[%s,%s]:"BUNFMT" , ct_histo=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" , bn=#%d:[%s,%s]:"BUNFMT" )\n",
+		ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+		ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+		bn->batCacheid, ATOMname(bn->htype), ATOMname(bn->ttype), BATcount(bn));
 
 	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
@@ -818,7 +826,27 @@ found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	BATaccessEnd(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	return map2histo(map);
+	rtrn = map2histo(map);
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTderive_@1_@2_@5 <@3,@4> ( ct_map=#%d:[%s,%s]:"BUNFMT" , ct_histo=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" , bn=#%d:[%s,%s]:"BUNFMT" ) -> ",
+		ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+		ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+		bn->batCacheid, ATOMname(bn->htype), ATOMname(bn->ttype), BATcount(bn));
+	if (rtrn) {
+		ALGODEBUG THRprintf(GDKout,
+			"rtrn=#%d:[%s,%s]:"BUNFMT" {%d.%06d s}\n",
+			rtrn->batCacheid, ATOMname(rtrn->htype), ATOMname(rtrn->ttype), BATcount(rtrn),
+			(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+	} else {
+		ALGODEBUG THRprintf(GDKout,
+			"NULL {%d.%06d s}\n",
+			(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+	}
+
+	return rtrn;
 bunins_failed:
 	BATaccessEnd(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
@@ -940,12 +968,18 @@ This is what "CTderive_clustered()" (see below) does.
 static int 
 CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto) 
 {
+	lng _t_ = GDKusec();
 	BAT *bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
 	BAT *histo = BATnew(TYPE_oid, TYPE_wrd, BATcount(b)); 
 	wrd prv=0, *t = (wrd*)Tloc(ohisto, BUNfirst(ohisto));
 	wrd *e = t + BATcount(ohisto);
 	bit ordered = 1;
 	str msg = NULL;
+
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTderive_ordered ( ohisto=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" )\n",
+		ohisto->batCacheid, ATOMname(ohisto->htype), ATOMname(ohisto->ttype), BATcount(ohisto),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
 	if (bn == NULL || histo == NULL) {
 		if (histo)
@@ -1024,6 +1058,16 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 		BATkey(bn, TRUE);
 	*res = bn;
 	*reshisto = histo;
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTderive_ordered ( ohisto=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" ) -> ( res=#%d:[%s,%s]:"BUNFMT" , reshisto=#%d:[%s,%s]:"BUNFMT" ) {%d.%06d s}\n",
+		ohisto->batCacheid, ATOMname(ohisto->htype), ATOMname(ohisto->ttype), BATcount(ohisto),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+		(*res)->batCacheid, ATOMname((*res)->htype), ATOMname((*res)->ttype), BATcount(*res),
+		(*reshisto)->batCacheid, ATOMname((*reshisto)->htype), ATOMname((*reshisto)->ttype), BATcount(*reshisto),
+		(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
 	return 0;
 }
 #endif
@@ -1039,9 +1083,18 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt);
 static int
 CTderive_clustered(BAT **H, BAT **M, BAT *_histo, BAT *_map, BAT *_b, int tt, wrd limit)
 {
+	lng _t0_ = GDKusec(), _t1_=0,_t2_=0,_t3_=0,_t4_=0,_t5_=0,_t6_=0,_T_;
 	wrd s0 = 0, s1 = 0, *t = 0;
 	BUN i0 = 0, i1 = 0, j = 0;
 	BAT *mn = 0, *hn = 0;
+	int rtrn;
+
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTderive_clustered ( _histo=#%d:[%s,%s]:"BUNFMT" , _map=#%d:[%s,%s]:"BUNFMT" , _b=#%d:[%s,%s]:"BUNFMT" , tt=%d , limit="LLFMT" )\n",
+		_histo->batCacheid, ATOMname(_histo->htype), ATOMname(_histo->ttype), BATcount(_histo),
+		_map->batCacheid, ATOMname(_map->htype), ATOMname(_map->ttype), BATcount(_map),
+		_b->batCacheid, ATOMname(_b->htype), ATOMname(_b->ttype), BATcount(_b),
+		tt, (lng)limit);
 
 	if (!_histo || !_map || !_b)
 		return GDK_FAIL;
@@ -1088,7 +1141,9 @@ CTderive_clustered(BAT **H, BAT **M, BAT *_histo, BAT *_map, BAT *_b, int tt, wr
 		}
 		/* invest in scan to check tail-sortedness */
 		/* (net effect: make required data hot) */
+		_T_ = GDKusec();
 		(void)BATordered(BATmirror(b));
+		_t1_ += GDKusec() - _T_;
 
 		bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
 		if (bn == NULL) {
@@ -1101,7 +1156,9 @@ CTderive_clustered(BAT **H, BAT **M, BAT *_histo, BAT *_map, BAT *_b, int tt, wr
 		}
 
 		/* perform derive on independent slice */
+		_T_ = GDKusec();
 		@:choosederive(sync,clustered)@
+		_t2_ += GDKusec() - _T_;
 		if (histo == NULL) {
 			BBPreleaseref(b->batCacheid);
 			BBPreleaseref(ct_map->batCacheid);
@@ -1118,17 +1175,25 @@ CTderive_clustered(BAT **H, BAT **M, BAT *_histo, BAT *_map, BAT *_b, int tt, wr
 
 		/* invest in scan to check tail-sortedness */
 		/* (data is still hot) */
+		_T_ = GDKusec();
 		(void)BATordered(BATmirror(bn));
+		_t3_ += GDKusec() - _T_;
 		/* append partial map to total map */
+		_T_ = GDKusec();
 		BATappend(mn, bn, FALSE);
+		_t4_ += GDKusec() - _T_;
 		BBPreclaim(bn);
 
 		/* invest in scan to check head- & tail-sortedness */
 		/* (data is still hot) */
+		_T_ = GDKusec();
 		(void)BATordered(histo);
 		(void)BATordered(BATmirror(histo));
+		_t5_ += GDKusec() - _T_;
 		/* append partial histo to total histo */
+		_T_ = GDKusec();
 		BATins(hn, histo, FALSE);
+		_t6_ += GDKusec() - _T_;
 		BBPreclaim(histo);
 
 		s0 = s1;
@@ -1140,18 +1205,54 @@ CTderive_clustered(BAT **H, BAT **M, BAT *_histo, BAT *_map, BAT *_b, int tt, wr
 
 	*H = hn;
 	*M = mn;
-	return grp_new(mn, hn);;
+	rtrn = grp_new(mn, hn);
+
+	ALGODEBUG THRprintf(GDKout, "#  CTderive_clustered: BATordered(BATmirror(b)): %d.%06d s\n", (int)(_t1_ / 1000000),(int)(_t1_ % 1000000));
+	ALGODEBUG THRprintf(GDKout, "#  CTderive_clustered: choosederive(sync,clustered): %d.%06d s\n", (int)(_t2_ / 1000000),(int)(_t2_ % 1000000));
+	ALGODEBUG THRprintf(GDKout, "#  CTderive_clustered: BATordered(BATmirror(bn)): %d.%06d s\n", (int)(_t3_ / 1000000),(int)(_t3_ % 1000000));
+	ALGODEBUG THRprintf(GDKout, "#  CTderive_clustered: BATappend(mn, bn, FALSE): %d.%06d s\n", (int)(_t4_ / 1000000),(int)(_t4_ % 1000000));
+	ALGODEBUG THRprintf(GDKout, "#  CTderive_clustered: BATordered(histo),BATordered(BATmirror(histo)): %d.%06d s\n", (int)(_t5_ / 1000000),(int)(_t5_ % 1000000));
+	ALGODEBUG THRprintf(GDKout, "#  CTderive_clustered: BATins(hn, histo, FALSE): %d.%06d s\n", (int)(_t6_ / 1000000),(int)(_t6_ % 1000000));
+
+	_t0_ = GDKusec() - _t0_;
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTderive_clustered ( _histo=#%d:[%s,%s]:"BUNFMT" , _map=#%d:[%s,%s]:"BUNFMT" , _b=#%d:[%s,%s]:"BUNFMT" , tt=%d , limit="LLFMT" ) -> ",
+		_histo->batCacheid, ATOMname(_histo->htype), ATOMname(_histo->ttype), BATcount(_histo),
+		_map->batCacheid, ATOMname(_map->htype), ATOMname(_map->ttype), BATcount(_map),
+		_b->batCacheid, ATOMname(_b->htype), ATOMname(_b->ttype), BATcount(_b),
+		tt, (lng)limit);
+	if (rtrn == GDK_SUCCEED) {
+		ALGODEBUG THRprintf(GDKout,
+			"( H=#%d:[%s,%s]:"BUNFMT" , M=#%d:[%s,%s]:"BUNFMT" ) {%d.%06d s}\n",
+			(*H)->batCacheid, ATOMname((*H)->htype), ATOMname((*H)->ttype), BATcount(*H),
+			(*M)->batCacheid, ATOMname((*M)->htype), ATOMname((*M)->ttype), BATcount(*M),
+			(int)(_t0_ / 1000000),(int)(_t0_ % 1000000));
+	} else {
+		ALGODEBUG THRprintf(GDKout,
+			"( NULL, NULL ) {%d.%06d s}\n",
+			(int)(_t0_ / 1000000),(int)(_t0_ % 1000000));
+	}
+
+	return rtrn;
 }
 
 static int
 derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 {
+	lng _t_ = GDKusec();
 	wrd limit = (wrd)((MT_npages() * MT_pagesize()) / (100 * GDKnr_threads));
 	BAT *histo = NULL, *bn = NULL;
-	int synced = ALIGNsynced(ct_map, b);
+	int synced = ALIGNsynced(ct_map, b), rtrn;
 
 	/* create the result bat 'bn' */
 	int ht = (synced && BAThdense(b)) ? TYPE_void : TYPE_oid;
+
+	ALGODEBUG THRprintf(GDKout,
+		"#    derive ( ct_histo=#%d:[%s,%s]:"BUNFMT" , ct_map=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" , tt=%d )\n",
+		ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+		ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+		tt);
 
 	if (!ct_map->tkey) { /* cannot derive more groups */
 		if (synced &&
@@ -1165,7 +1266,28 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 			 * memory and perform in-memory derive step
 			 * independently on each slice
 			 */
-			return CTderive_clustered(H, M, ct_histo, ct_map, b, tt, limit);
+			rtrn = CTderive_clustered(H, M, ct_histo, ct_map, b, tt, limit);
+
+			_t_ = GDKusec() - _t_;
+			ALGODEBUG THRprintf(GDKout,
+				"#    derive ( ct_histo=#%d:[%s,%s]:"BUNFMT" , ct_map=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" , tt=%d ) -> ",
+				ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+				ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+				b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+				tt);
+			if (rtrn == GDK_SUCCEED) {
+				ALGODEBUG THRprintf(GDKout,
+					"( H=#%d:[%s,%s]:"BUNFMT" , M=#%d:[%s,%s]:"BUNFMT" ) {%d.%06d s}\n",
+					(*H)->batCacheid, ATOMname((*H)->htype), ATOMname((*H)->ttype), BATcount(*H),
+					(*M)->batCacheid, ATOMname((*M)->htype), ATOMname((*M)->ttype), BATcount(*M),
+					(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+			} else {
+				ALGODEBUG THRprintf(GDKout,
+					"( NULL, NULL ) {%d.%06d s}\n",
+					(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+			}
+
+			return rtrn;
 		}
 #if 0
 		/* see comment above */
@@ -1180,7 +1302,28 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 				*H = histo;
 				*M = bn;
 			}
-			return ret?GDK_FAIL:GDK_SUCCEED;
+			rtrn = ret?GDK_FAIL:GDK_SUCCEED;
+
+			_t_ = GDKusec() - _t_;
+			ALGODEBUG THRprintf(GDKout,
+				"#    derive ( ct_histo=#%d:[%s,%s]:"BUNFMT" , ct_map=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" , tt=%d ) -> ",
+				ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+				ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+				b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+				tt);
+			if (rtrn == GDK_SUCCEED) {
+				ALGODEBUG THRprintf(GDKout,
+					"( H=#%d:[%s,%s]:"BUNFMT" , M=#%d:[%s,%s]:"BUNFMT" ) {%d.%06d s}\n",
+					(*H)->batCacheid, ATOMname((*H)->htype), ATOMname((*H)->ttype), BATcount(*H),
+					(*M)->batCacheid, ATOMname((*M)->htype), ATOMname((*M)->ttype), BATcount(*M),
+					(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+			} else {
+				ALGODEBUG THRprintf(GDKout,
+					"( NULL, NULL ) {%d.%06d s}\n",
+					(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+			}
+
+			return rtrn;
 		}
 #endif
 		bn = BATnew(ht, TYPE_oid, BATcount(b));
@@ -1229,15 +1372,62 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 	}
 	*M = bn;
 	*H = histo;
-	return grp_new(bn, histo);
+	rtrn =  grp_new(bn, histo);
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"#    derive ( ct_histo=#%d:[%s,%s]:"BUNFMT" , ct_map=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" , tt=%d ) -> ",
+		ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+		ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+		tt);
+	if (rtrn == GDK_SUCCEED) {
+		ALGODEBUG THRprintf(GDKout,
+			"( H=#%d:[%s,%s]:"BUNFMT" , M=#%d:[%s,%s]:"BUNFMT" ) {%d.%06d s}\n",
+			(*H)->batCacheid, ATOMname((*H)->htype), ATOMname((*H)->ttype), BATcount(*H),
+			(*M)->batCacheid, ATOMname((*M)->htype), ATOMname((*M)->ttype), BATcount(*M),
+			(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+	} else {
+		ALGODEBUG THRprintf(GDKout,
+			"( NULL, NULL ) {%d.%06d s}\n",
+			(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+	}
+
+	return rtrn;
 }
 
 static int
 CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b)
 {
+	lng _t_ = GDKusec();
 	int ret;
 
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTderive ( ct_histo=#%d:[%s,%s]:"BUNFMT" , ct_map=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" )\n",
+		ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+		ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+
 	ret = derive(H, M, ct_histo, ct_map, b, tailtype(b, TRUE));
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTderive ( ct_histo=#%d:[%s,%s]:"BUNFMT" , ct_map=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" ) -> ",
+		ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+		ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+	if (ret == GDK_SUCCEED) {
+		ALGODEBUG THRprintf(GDKout,
+			"( H=#%d:[%s,%s]:"BUNFMT" , M=#%d:[%s,%s]:"BUNFMT" ) {%d.%06d s}\n",
+			(*H)->batCacheid, ATOMname((*H)->htype), ATOMname((*H)->ttype), BATcount(*H),
+			(*M)->batCacheid, ATOMname((*M)->htype), ATOMname((*M)->ttype), BATcount(*M),
+			(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+	} else {
+		ALGODEBUG THRprintf(GDKout,
+			"( NULL, NULL ) {%d.%06d s}\n",
+			(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+	}
+
 	return ret;
 }
 
@@ -1684,8 +1874,13 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 str
 GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 {
+	lng _t_ = GDKusec();
 	BAT *ct_map, *ct_histo, *b;
 	BAT *bn = NULL, *histo = NULL;
+
+	ALGODEBUG THRprintf(GDKout,
+		"# GRPderive ( ct_histoid=%d , ct_mapid=%d , bid=%d )\n",
+		*ct_histoid, *ct_mapid, *bid);
 
 	if ((ct_map = BATdescriptor(*ct_mapid)) == NULL) {
 		throw(MAL, "group.derive", RUNTIME_OBJECT_MISSING);
@@ -1716,6 +1911,12 @@ GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(ct_map->batCacheid);
 	BBPreleaseref(ct_histo->batCacheid);
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"# GRPderive ( ct_histoid=%d , ct_mapid=%d , bid=%d ) -> ( hid=%d , mid=%d ) {%d.%06d s}\n",
+		*ct_histoid, *ct_mapid, *bid, *hid, *mid, (int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
 	return MAL_SUCCEED;
 }
 
