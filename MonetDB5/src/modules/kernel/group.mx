@@ -473,16 +473,22 @@ settings differ significantly from the original datamining application.
 static BAT *
 CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn)
 {
+	lng _t_ = GDKusec();
 	BATiter bi = bat_iterator(b), mapi;
 	oid *hdst = (oid*) Hloc(bn, BUNfirst(bn)), *dst = (oid*) Tloc(bn, BUNfirst(bn));
 	BUN *hash, mask;
 	BUN zz, mapsize;
 	mapentry_t entry, *e;
 	BUN p, q, r;
-	BAT *map = NULL;
+	BAT *map = NULL, *rtrn = NULL;
 	declare_@3
 
 	map_init_@5(map,hash,mask,entry,mapsize);
+
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTgroup_@1_@4_@5 <@2,@3> ( b=#%d:[%s,%s]:"BUNFMT" , bn=#%d:[%s,%s]:"BUNFMT" )\n",
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+		bn->batCacheid, ATOMname(bn->htype), ATOMname(bn->ttype), BATcount(bn));
 
 	mapi = bat_iterator(map);
 	/* core hash grouping algorithm */
@@ -526,7 +532,17 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		GDKfree(hash);
 	BATaccessEnd(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	return map2histo(map);
+	rtrn = map2histo(map);
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTgroup_@1_@4_@5 <@2,@3> ( b=#%d:[%s,%s]:"BUNFMT" , bn=#%d:[%s,%s]:"BUNFMT" ) -> rtrn=#%d:[%s,%s] {%d.%06d s}\n",
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+		bn->batCacheid, ATOMname(bn->htype), ATOMname(bn->ttype), BATcount(bn),
+		rtrn->batCacheid, ATOMname(rtrn->htype), ATOMname(rtrn->ttype), BATcount(rtrn),
+		(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
+	return rtrn;
 bunins_failed:
 	BATaccessEnd(map, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
@@ -718,8 +734,15 @@ CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b);
 static BUN
 derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 {
-	BUN cnt = BATcount(b);
+	lng _t_ = GDKusec();
+	BUN cnt = BATcount(b), rtrn = 0;
 	int n = bits(BATcount(ct_histo)), *N = &n;
+
+	ALGODEBUG THRprintf(GDKout,
+		"#    derive_mask ( ct_map=#%d:[%s,%s]:"BUNFMT" , ct_histo=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" )\n",
+		ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+		ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
 	if (BATcount(b) > SAMPLE_LIMIT) {
 		BAT *s = BATsample(b, SAMPLE_SIZE);
@@ -748,11 +771,34 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 			BBPreclaim(map);
 		if (r == 0)
 			r = BATcount(ct_histo);
-		if (bits(r) > *N)
-			return (((BUN)1)<<bits(r))-1;
+		if (bits(r) > *N) {
+			rtrn = (((BUN)1)<<bits(r))-1;
+
+			_t_ = GDKusec() - _t_;
+			ALGODEBUG THRprintf(GDKout,
+				"#    derive_mask ( ct_map=#%d:[%s,%s]:"BUNFMT" , ct_histo=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" ) -> rtrn="BUNFMT" {%d.%06d s}\n",
+				ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+				ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+				b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+				rtrn,
+				(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
+			return rtrn;
+		}
 	}
 	/* default to */
-	return (((BUN)1)<<*N) - 1;
+	rtrn = (((BUN)1)<<*N) - 1;
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"#    derive_mask ( ct_map=#%d:[%s,%s]:"BUNFMT" , ct_histo=#%d:[%s,%s]:"BUNFMT" , b=#%d:[%s,%s]:"BUNFMT" ) -> rtrn="BUNFMT" {%d.%06d s}\n",
+		ct_map->batCacheid, ATOMname(ct_map->htype), ATOMname(ct_map->ttype), BATcount(ct_map),
+		ct_histo->batCacheid, ATOMname(ct_histo->htype), ATOMname(ct_histo->ttype), BATcount(ct_histo),
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+		rtrn,
+		(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
+	return rtrn;
 }
 
 @= derive
@@ -1674,7 +1720,12 @@ GRPprelude(void)
 str
 GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 {
+	lng _t_ = GDKusec();
 	BAT *result, *b;
+
+	ALGODEBUG THRprintf(GDKout,
+		"# GRPgroup0 ( bid=%d , start=%d , incr=%d , grpsize=%d )\n",
+		*bid, *start, *incr, *grpsize);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.new", RUNTIME_OBJECT_MISSING);
@@ -1686,6 +1737,12 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 	*ret = result->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"# GRPgroup0 ( bid=%d , start=%d , incr=%d , grpsize=%d ) -> ret=%d {%d.%06d s}\n",
+		*bid, *ret, (int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
 	return MAL_SUCCEED;
 }
 
@@ -1693,11 +1750,16 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 static BAT *
 CTgroup_@1_ordered(BAT *b, BAT **res) 
 {
+	lng _t_ = GDKusec();
 	BAT *bn;
 	BAT *histo;
 	@1 *t, *e, cur;
 	wrd cnt = 0;
 	oid *rt, curid;
+
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTgroup_@1_ordered ( b=#%d:[%s,%s]:"BUNFMT" )\n",
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
 	bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
 	if (bn == NULL) 
@@ -1761,6 +1823,15 @@ CTgroup_@1_ordered(BAT *b, BAT **res)
 	if (b->hkey)
 		BATkey(bn, TRUE);
 	*res = bn;
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"#  CTgroup_@1_ordered ( b=#%d:[%s,%s]:"BUNFMT" ) -> ( res=#%d:[%s,%s]:"BUNFMT" , histo=#%d:[%s,%s]:"BUNFMT" ) {%d.%06d s}\n",
+		b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b),
+		(*res)->batCacheid, ATOMname((*res)->htype), ATOMname((*res)->ttype), BATcount(*res),
+		histo->batCacheid, ATOMname(histo->htype), ATOMname(histo->ttype), BATcount(histo),
+		(int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
 	return histo;
 }
 @c
@@ -1772,7 +1843,12 @@ CTgroup_@1_ordered(BAT *b, BAT **res)
 str
 GRPgroup(int *rethisto, int *retbid, int *bid)
 {
+	lng _t_ = GDKusec();
 	BAT *histo = 0, *b, *bn = 0;
+
+	ALGODEBUG THRprintf(GDKout,
+		"# GRPgroup ( bid=%d )\n",
+		*bid);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.new", RUNTIME_OBJECT_MISSING);
@@ -1802,11 +1878,18 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 		BBPkeepref(*rethisto = histo->batCacheid);
 		BBPkeepref(*retbid = bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
+
+		_t_ = GDKusec() - _t_;
+		ALGODEBUG THRprintf(GDKout,
+			"# GRPgroup ( bid=%d ) -> ( rethisto=%d , retbid=%d ) {%d.%06d s}\n",
+			*bid, *rethisto, *retbid, (int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
 		return MAL_SUCCEED;
 	}
 	if (BATcount(b) > 32*1024 &&
 	    (ATOMstorage(b->ttype) == TYPE_int || 
 	     ATOMstorage(b->ttype) == TYPE_lng)) { 
+		str rtrn;
 		BUN N = BATcount(b);
 		int B, one = 1;
 		assert(N);
@@ -1836,7 +1919,14 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 		B = bits(N);
 		assert(B);
 		BBPunfix(b->batCacheid);
-		return GRPgroup_custom(rethisto, retbid, bid, &B, &one);
+		rtrn = GRPgroup_custom(rethisto, retbid, bid, &B, &one);
+
+		_t_ = GDKusec() - _t_;
+		ALGODEBUG THRprintf(GDKout,
+			"# GRPgroup ( bid=%d ) -> ( rethisto=%d , retbid=%d ) {%d.%06d s}\n",
+			*bid, *rethisto, *retbid, (int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
+		return rtrn;
 	}
 	@:chkHeader(b,GRPgroup)@
 	if (CTgroup(&bn, &histo, b) == GDK_FAIL) {
@@ -1848,13 +1938,24 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	*rethisto = histo->batCacheid;
 	*retbid = bn->batCacheid;
 	BBPreleaseref(b->batCacheid);
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"# GRPgroup ( bid=%d ) -> ( rethisto=%d , retbid=%d ) {%d.%06d s}\n",
+		*bid, *rethisto, *retbid, (int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
 	return MAL_SUCCEED;
 }
 
 str
 GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 {
+	lng _t_ = GDKusec();
 	BAT *histo = 0, *b, *bn = 0;
+
+	ALGODEBUG THRprintf(GDKout,
+		"# GRPgroup ( bid=%d , N=%d , rng=%d )\n",
+		*bid, *N, *rng);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.new", RUNTIME_OBJECT_MISSING);
@@ -1869,6 +1970,12 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	*rethisto = histo->batCacheid;
 	*retbid = bn->batCacheid;
 	BBPreleaseref(b->batCacheid);
+
+	_t_ = GDKusec() - _t_;
+	ALGODEBUG THRprintf(GDKout,
+		"# GRPgroup ( bid=%d , N=%d , rng=%d ) -> ( rethisto=%d , retbid=%d ) {%d.%06d s}\n",
+		*bid, *N, *rng, *rethisto, *retbid, (int)(_t_ / 1000000),(int)(_t_ % 1000000));
+
 	return MAL_SUCCEED;
 }
 
