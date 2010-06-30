@@ -49,7 +49,7 @@ structure to compute a group of common aggregates.
 	@1:	0		1		0		0		use sums-array?
 	@2:	0		0		0		1		do BATprepareHash?
 	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
-	@4:	var		loc		loc		loc		e/bn-head-access
+	@4:	(oid)(bnhsb+p)	bnh[p]-min	bnh[p]-min	bnh[p]-min	e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -118,9 +118,20 @@ structure to compute a group of common aggregates.
 	if (@1) {
 	    if (sums) {
 		/* copy sums array to final result */
-		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+		int bn_use = USE_TAIL;
+		ssize_t bnhsb = 0;
+		oid *bnh = 0;
+		if (BAThdense(bn)) {
+			bnhsb = (ssize_t) bn->hseqbase - BUNfirst(bn) - min;
+			(void) bnh;
+		} else {
+			(void) bnhsb;
+			bnh = (oid*)Hloc(bn,0);
+			bn_use |= USE_HEAD;
+		}
+		BATaccessBegin(bn,bn_use,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
-			oid h = (*(oid*) BUNh@4(bni,p)) - min;
+			oid h = @4;
 			@9 *dst = (@9*)BUNtloc(bni, p);
 			if (hit[h] == 0) {
 				*dst = @9_nil;
@@ -128,7 +139,7 @@ structure to compute a group of common aggregates.
 				*dst = sums[h];
 			}
 		}
-		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+		BATaccessEnd(bn,bn_use,MMAP_SEQUENTIAL);
 		GDKfree(sums);
 	    }
 	} else {
@@ -226,7 +237,7 @@ aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, 
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" OIDFMT ",min=" OIDFMT ",max=" OIDFMT ");\n",
 					BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
 					range,min,max);
-	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],,@2,(*(oid*)h)-min)@
+	@:aggrX3_sum3(1,0,CHKrange,bnh[p]-min,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],,@2,(*(oid*)h)-min)@
 	return GDK_SUCCEED;
 }
 
@@ -284,12 +295,12 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		/* void lookup */
 		if (BAThdense(b)) {
 			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
+				@:aggrX3_sum3(0,0,BUNfndVOID,(oid)(bnhsb+p),&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
-				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+				@:aggrX3_sum3(0,0,BUNfndVOID,(oid)(bnhsb+p),&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 			}
 		} else {
-			@:aggrX3_sum3(0,0,BUNfndVOID,var,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+			@:aggrX3_sum3(0,0,BUNfndVOID,(oid)(bnhsb+p),BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 		}
 	/* e->htype == TYPE_oid */
 	} else if (range <= SMALL_AGGR_MAX) {
@@ -299,45 +310,45 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
 				return aggrX3_sum3_@1_@2_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
 			} else {
-				@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],if (w >= base && w < end),@2,(*(oid*)h)-min)@
+				@:aggrX3_sum3(1,0,CHKrange,bnh[p]-min,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],if (w >= base && w < end),@2,(*(oid*)h)-min)@
 			}
 		} else {
-			@:aggrX3_sum3(1,0,CHKrange,loc,BUNhloc(bi,p),@1,&sums[(*(oid*)h)-min],if (w >= base && w < end),@2,(*(oid*)h)-min)@
+			@:aggrX3_sum3(1,0,CHKrange,bnh[p]-min,BUNhloc(bi,p),@1,&sums[(*(oid*)h)-min],if (w >= base && w < end),@2,(*(oid*)h)-min)@
 		}
 	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
 		/* scan lookup */
 		SCAN_aggr_init;
 		if (BAThdense(b)) {
 			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_sum3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
+				@:aggrX3_sum3(0,0,SCANfndOID,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
-				@:aggrX3_sum3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+				@:aggrX3_sum3(0,0,SCANfndOID,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 			}
 		} else {
-			@:aggrX3_sum3(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+			@:aggrX3_sum3(0,0,SCANfndOID,bnh[p]-min,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 		}
 	} else if (BAThordered(e)&1) {
 		/* merge lookup */
 		MERGE_aggr_init;
 		if (BAThdense(b)) {
 			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_sum3(0,0,MERGEfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
+				@:aggrX3_sum3(0,0,MERGEfndOID,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
-				@:aggrX3_sum3(0,0,MERGEfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+				@:aggrX3_sum3(0,0,MERGEfndOID,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 			}
 		} else {
-			@:aggrX3_sum3(0,0,MERGEfndOID,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+			@:aggrX3_sum3(0,0,MERGEfndOID,bnh[p]-min,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 		}
 	} else {
 		/* hash lookup */
 		if (BAThdense(b)) {
 			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
+				@:aggrX3_sum3(0,1,HASHfnd_oid,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
-				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+				@:aggrX3_sum3(0,1,HASHfnd_oid,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 			}
 		} else {
-			@:aggrX3_sum3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+			@:aggrX3_sum3(0,1,HASHfnd_oid,bnh[p]-min,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 		}
 	}
 

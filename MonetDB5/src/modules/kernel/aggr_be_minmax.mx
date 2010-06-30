@@ -48,7 +48,7 @@ structure to compute a group of common aggregates.
 	@1:	</>		</>		</>		</>		compare operator: <(min) or >(max)
 	@2:	0		0		0		1		do BATprepareHash?
 	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
-	@4:	var		loc		loc		loc		e/bn-head-access
+	@4:	(oid)(bnhsb+r)	bnh[r]-min	bnh[r]-min	bnh[r]-min	e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -57,7 +57,7 @@ structure to compute a group of common aggregates.
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:		r-off		(*(oid*)h)-min	index in extremes array
+	@8:		r-off		(*(oid*)h)-min		index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_ptr
@@ -111,16 +111,27 @@ structure to compute a group of common aggregates.
 	}
 	if (b_use)
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
+{
 	/* insert the extreme values into the result */
-	BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	int bn_use = USE_TAIL;
+	ssize_t bnhsb = 0;
+	oid *bnh = 0;
+	if (BAThdense(bn)) {
+		bnhsb = (ssize_t) bn->hseqbase - BUNfirst(bn) - min;
+		(void) bnh;
+	} else {
+		(void) bnhsb;
+		bnh = (oid*)Hloc(bn,0);
+		bn_use |= USE_HEAD;
+	}
+	BATaccessBegin(bn,bn_use,MMAP_SEQUENTIAL);
 	BATloop(bn, r, q) {
-		oid *h = (oid*)BUNh@4(bni,r);
-		ptr val = extremes[@8];
-		(void) h;	/* silence compiler about unused variable */
+		ptr val = extremes[@4];
 		/* trick: using a void head-type, only the tail are (over)written */
 		ATOMput(bn->ttype, bn->T->vheap, BUNtloc(bni,r), val?val:nil);
 	}
-	BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	BATaccessEnd(bn,bn_use,MMAP_SEQUENTIAL);
+}
 @c
 /*	aggrX3_minmax_oid
 		e-void-head	e-oid-head	e-oid-head	e-oid-head
@@ -129,7 +140,7 @@ structure to compute a group of common aggregates.
 	@1:	</>		</>		</>		</>		compare operator: <(min) or >(max)
 	@2:	0		0		0		1		do BATprepareHash?
 	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
-	@4:	var		loc		loc		loc		e/bn-head-access
+	@4:	(oid)(bnhsb+r)	bnh[r]-min	bnh[r]-min	bnh[r]-min	e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -138,7 +149,7 @@ structure to compute a group of common aggregates.
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:		r-off		(*(oid*)h)-min	index in extremes array
+	@8:		r-off		(*(oid*)h)-min		index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_oid
@@ -202,16 +213,28 @@ structure to compute a group of common aggregates.
 	}
 	if (b_use)
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
+{
 	/* insert the extreme values into the result */
-	BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	int bn_use = USE_TAIL;
+	ssize_t bnhsb = 0;
+	oid *bnh = 0;
+	if (BAThdense(bn)) {
+		bnhsb = (ssize_t) bn->hseqbase - BUNfirst(bn) - min;
+		(void) bnh;
+	} else {
+		(void) bnhsb;
+		bnh = (oid*)Hloc(bn,0);
+		bn_use |= USE_HEAD;
+	}
+	BATaccessBegin(bn,bn_use,MMAP_SEQUENTIAL);
 	BATloop(bn, r, q) {
-		oid *h = (oid*)BUNh@4(bni,r);
-		oid val = hit[@8] ? extremes[@8] : *(oid*)nil;
-		(void) h;	/* silence compiler about unused variable */
+		oid h = @4;
+		oid val = hit[h] ? extremes[h] : *(oid*)nil;
 		/* trick: using a void head-type, only the tail are (over)written */
 		ATOMput(bn->ttype, bn->T->vheap, BUNtloc(bni,r), &val);
 	}
-	BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	BATaccessEnd(bn,bn_use,MMAP_SEQUENTIAL);
+}
 @c
 
 /*	extreme_typed
@@ -272,41 +295,41 @@ aggrX3_@1_@3_@4_@5(BAT **ret, BAT *b, BAT *e)
 	if (BAThdense(e)) {
 		/* void lookup */
 		if (BAThdense(b)) {
-			@:aggrX3_minmax_@5(@2,0,BUNfndVOID,var,&bhsb; bhsb++,@3,@4,r-off,@6)@
+			@:aggrX3_minmax_@5(@2,0,BUNfndVOID,(oid)(bnhsb+r),&bhsb; bhsb++,@3,@4,r-off,@6)@
 		} else {
-			@:aggrX3_minmax_@5(@2,0,BUNfndVOID,var,BUNhloc(bi,p),@3,@4,r-off,@6)@
+			@:aggrX3_minmax_@5(@2,0,BUNfndVOID,(oid)(bnhsb+r),BUNhloc(bi,p),@3,@4,r-off,@6)@
 		}
 	/* e->htype == TYPE_oid */
 	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		slots = range;
 		if (BAThdense(b)) {
-			@:aggrX3_minmax_@5(@2,0,CHKrange,loc,&bhsb; bhsb++,@3,@4,(*(oid*)h)-min,@6)@
+			@:aggrX3_minmax_@5(@2,0,CHKrange,bnh[r]-min,&bhsb; bhsb++,@3,@4,(*(oid*)h)-min,@6)@
 		} else {
-			@:aggrX3_minmax_@5(@2,0,CHKrange,loc,BUNhloc(bi,p),@3,@4,(*(oid*)h)-min,@6)@
+			@:aggrX3_minmax_@5(@2,0,CHKrange,bnh[r]-min,BUNhloc(bi,p),@3,@4,(*(oid*)h)-min,@6)@
 		}
 	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
 		/* scan lookup */
 		SCAN_aggr_init;
 		if (BAThdense(b)) {
-			@:aggrX3_minmax_@5(@2,0,SCANfndOID,loc,&bhsb;bhsb++,@3,@4,r-off,@6)@
+			@:aggrX3_minmax_@5(@2,0,SCANfndOID,bnh[r]-min,&bhsb;bhsb++,@3,@4,r-off,@6)@
 		} else {
-			@:aggrX3_minmax_@5(@2,0,SCANfndOID,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
+			@:aggrX3_minmax_@5(@2,0,SCANfndOID,bnh[r]-min,BUNhloc(bi,p),@3,@4,r-off,@6)@
 		}
 	} else if (BAThordered(e)&1) {
 		/* merge lookup */
 		MERGE_aggr_init;
 		if (BAThdense(b)) {
-			@:aggrX3_minmax_@5(@2,0,MERGEfndOID,loc,&bhsb;bhsb++,@3,@4,r-off,@6)@
+			@:aggrX3_minmax_@5(@2,0,MERGEfndOID,bnh[r]-min,&bhsb;bhsb++,@3,@4,r-off,@6)@
 		} else {
-			@:aggrX3_minmax_@5(@2,0,MERGEfndOID,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
+			@:aggrX3_minmax_@5(@2,0,MERGEfndOID,bnh[r]-min,BUNhloc(bi,p),@3,@4,r-off,@6)@
 		}
 	} else {
 		/* hash lookup */
 		if (BAThdense(b)) {
-			@:aggrX3_minmax_@5(@2,1,HASHfnd_oid,loc,&bhsb; bhsb++,@3,@4,r-off,@6)@
+			@:aggrX3_minmax_@5(@2,1,HASHfnd_oid,bnh[r]-min,&bhsb; bhsb++,@3,@4,r-off,@6)@
 		} else {
-			@:aggrX3_minmax_@5(@2,1,HASHfnd_oid,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
+			@:aggrX3_minmax_@5(@2,1,HASHfnd_oid,bnh[r]-min,BUNhloc(bi,p),@3,@4,r-off,@6)@
 		}
 	}
 	*ret = bn;
