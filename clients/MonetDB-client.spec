@@ -333,6 +333,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.1-20100630
+- Rebuilt.
+
 * Fri Jun 25 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.1-20100625
 - Rebuilt.
 
