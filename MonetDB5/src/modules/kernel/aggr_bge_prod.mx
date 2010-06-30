@@ -79,7 +79,7 @@ structure to compute a group of common aggregates.
 			return GDK_FAIL;
 		}
 		for (i = 0; i < range; i++)
-			prods[i] = zero;
+			prods[i] = (@9) 1;
 	}
 	if (@2 && BATprepareHash(bn)) {
 		GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9,@[10]): BATprepareHash(bn) failed");
@@ -216,7 +216,7 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e);
 static int
 aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, oid min, oid max)
 {
-	@2 zero = (@2) 1, *prods = NULL;
+	@2 *prods = NULL;
 	bit *hit = NULL;
 	BUN slots = range;
 	BUN p, q, r;

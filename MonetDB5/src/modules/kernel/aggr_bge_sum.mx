@@ -116,7 +116,7 @@ structure to compute a group of common aggregates.
 	if (!(@1 && sums))
 		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (@1) {
-	   if (sums) {
+	    if (sums) {
 		/* copy sums array to final result */
 		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
@@ -224,8 +224,8 @@ aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, 
 	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
 
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" OIDFMT ",min=" OIDFMT ",max=" OIDFMT ");\n",
-				BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
-				range,min,max);
+					BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
+					range,min,max);
 	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],,@2,(*(oid*)h)-min)@
 	return GDK_SUCCEED;
 }
@@ -247,7 +247,7 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	int b_use = USE_TAIL;
 
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_sum3_@1_@2(b=%s,g=%s,e=%s);\n",
-		BATgetId(b),BATgetId(g), BATgetId(e));
+		BATgetId(b),BATgetId(g),BATgetId(e));
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");
 
