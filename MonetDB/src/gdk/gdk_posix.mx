@@ -935,7 +935,7 @@ done:
 			}
 		}
 	}
-      bailout:
+bailout:
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	(void) pthread_mutex_unlock(&MT_mmap_relock);
 	return (worry);
