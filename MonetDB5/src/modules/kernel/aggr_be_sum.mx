@@ -48,14 +48,14 @@ structure to compute a group of common aggregates.
 	@1:	0		1		0		0		use sums-array?
 	@2:	0		0		0		1		do BATprepareHash?
 	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
-	@4:	var		loc		loc		loc		e/bn-head-access
+	@4:	(oid)(bnhsb+p)	bnh[p]-min	bnh[p]-min	bnh[p]-min	e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
 
-	@6:	bte / sht / int / wrd / lng / flt / dbl		b/bn-tail-type
-	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
-		"var" for varsized b/bn-tail-type		(only loc used currently)
+	@6:	bte / sht / int / wrd / lng / flt / dbl		b-tail-type
+	@7:	"loc" for fixsized b-tail-type,			b-tail-access
+		"var" for varsized b-tail-type			(only loc used currently)
 
 	@8:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(oid*)h)-min]
 								*dst: sum in-place or in sums-array ?
@@ -91,7 +91,10 @@ structure to compute a group of common aggregates.
 
 	/* scan b, and add values to sums in-place or in sums-array */
 	bhsb = b->hseqbase - 1;
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	if (!(@1 && sums))
+		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
+	if (b_use)
+		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			@6 *t = (@6*) BUNt@7(bi,p);
@@ -123,13 +126,27 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	if (b_use)
+		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
+	if (!(@1 && sums))
+		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (@1) {
 	    if (sums) {
 		/* copy sums array to final result */
-		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+		int bn_use = USE_TAIL;
+		ssize_t bnhsb = 0;
+		oid *bnh = 0;
+		if (BAThdense(bn)) {
+			bnhsb = (ssize_t) bn->hseqbase - BUNfirst(bn) - min;
+			(void) bnh;
+		} else {
+			(void) bnhsb;
+			bnh = (oid*)Hloc(bn,0);
+			bn_use |= USE_HEAD;
+		}
+		BATaccessBegin(bn,bn_use,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
-			oid h = (*(oid*) BUNh@4(bni,p)) - min;
+			oid h = @4;
 			@9 *dst = (@9*)BUNt@7(bni, p);
 			if (hit[h] == 0) {
 				*dst = @9_nil;
@@ -137,7 +154,7 @@ structure to compute a group of common aggregates.
 				*dst = sums[h];
 			}
 		}
-		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+		BATaccessEnd(bn,bn_use,MMAP_SEQUENTIAL);
 		GDKfree(sums);
 	    } 
 	} else {
@@ -158,9 +175,9 @@ structure to compute a group of common aggregates.
 @c
 
 /*	arithsum
-	@6:	bte / sht / int / wrd / lng / flt / dbl	b/bn-tail-type
-	@7:	"loc" for fixsized b/bn-tail-type,	b/bn-tail-access
-		"var" for varsized b/bn-tail-type	(only loc used currently)
+	@6:	bte / sht / int / wrd / lng / flt / dbl	b-tail-type
+	@7:	"loc" for fixsized b-tail-type,		b-tail-access
+		"var" for varsized b-tail-type		(only loc used currently)
 	@9:	result type
 */
 @= arithsum_h
@@ -170,8 +187,8 @@ CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e);
 int
 CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
+	BAT *bn = BATnew(TYPE_void, TYPE_@3, BATcount(e));
+	BATiter bni, bi = bat_iterator(b);
 	@3 zero = (@3) 0, *sums = NULL;
 	bit *hit = NULL;
 	BUN slots, off;
@@ -179,16 +196,18 @@ CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 	oid range;
 	oid min, max;
 	oid bhsb;
+	int b_use = USE_TAIL;
 
 	if( bn == NULL) {
 		GDKerror("CMDaggrX3_sum_@1_@3(): BATnew() failed");
 		return GDK_FAIL;
 	}
-	off = BUNfirst(bn);
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_sum_@1_@3[@2](b=%s,e=%s);\n",
 		BATgetId(b), BATgetId(e));
 	/* init: set all sums to zero and calculate min/max oid */
 	@:init_result(@3)@
+	bni = bat_iterator(bn);
+	off = BUNfirst(bn);
 	range = max - min + 1;
 
 	/* scan b, and calculate sums */
@@ -198,36 +217,46 @@ CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
-	if (e->htype == TYPE_void) {
+	if (!BAThdense(b))
+		b_use |= USE_HEAD;
+	if (BAThdense(e)) {
 		/* void lookup */
-		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3,r-off)@
+		if (BAThdense(b)) {
+			@:aggrX3_sum(0,0,BUNfndVOID,(oid)(bnhsb+p),&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3,r-off)@
 		} else {
-			@:aggrX3_sum(0,0,BUNfndVOID,var,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3,r-off)@
+			@:aggrX3_sum(0,0,BUNfndVOID,(oid)(bnhsb+p),BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3,r-off)@
 		}
 	/* e->htype == TYPE_oid */
 	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		slots = range;
-		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(1,0,CHKrange,loc,&bhsb;bhsb++,@1,@2,&sums[(*(oid*)h)-min],@3,(*(oid*)h)-min)@
+		if (BAThdense(b)) {
+			@:aggrX3_sum(1,0,CHKrange,bnh[p]-min,&bhsb;bhsb++,@1,@2,&sums[(*(oid*)h)-min],@3,(*(oid*)h)-min)@
 		} else {
-			@:aggrX3_sum(1,0,CHKrange,loc,BUNhloc(bi,p),@1,@2,&sums[(*(oid*)h)-min],@3,(*(oid*)h)-min)@
+			@:aggrX3_sum(1,0,CHKrange,bnh[p]-min,BUNhloc(bi,p),@1,@2,&sums[(*(oid*)h)-min],@3,(*(oid*)h)-min)@
 		}
 	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
 		/* scan lookup */
 		SCAN_aggr_init;
-		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3,r-off)@
+		if (BAThdense(b)) {
+			@:aggrX3_sum(0,0,SCANfndOID,bnh[p]-min,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3,r-off)@
 		} else {
-			@:aggrX3_sum(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3,r-off)@
+			@:aggrX3_sum(0,0,SCANfndOID,bnh[p]-min,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3,r-off)@
+		}
+	} else if (BAThordered(e)&1) {
+		/* merge lookup */
+		MERGE_aggr_init;
+		if (BAThdense(b)) {
+			@:aggrX3_sum(0,0,MERGEfndOID,bnh[p]-min,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3,r-off)@
+		} else {
+			@:aggrX3_sum(0,0,MERGEfndOID,bnh[p]-min,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3,r-off)@
 		}
 	} else {
 		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3,r-off)@
+		if (BAThdense(b)) {
+			@:aggrX3_sum(0,1,HASHfnd_oid,bnh[p]-min,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3,r-off)@
 		} else {
-			@:aggrX3_sum(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3,r-off)@
+			@:aggrX3_sum(0,1,HASHfnd_oid,bnh[p]-min,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3,r-off)@
 		}
 	}
 

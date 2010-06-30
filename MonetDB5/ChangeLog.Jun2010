@@ -1,3 +1,11 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
+- various performance fixes in grouping and grouped aggregation code
+  (MonetDB5/src/modules/kernel/group.mx, MonetDB5/src/modules/kernel/aggr*.mx)
+  to reduce the execution time the following query that mimics a two-column
+  primary key check over the ~5 billion tuple "neighbors" table of the
+  Skyserver database from 26 hours to 1.5 hours (on a 64 GB machine):
+  SELECT count(c), sum(c), min(c), max(c) FROM (SELECT count(*) AS c FROM "neighbors" GROUP BY "objID","NeighborObjID") AS t;
+

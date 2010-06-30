@@ -177,7 +177,7 @@ as the latter turned out to be rather expensive ...
 #define SCAN_aggr_init \
 	oid _h; \
 	BUN _j = BATcount(bn); \
-	oid *_bnh = (oid*) BUNhloc(bni, BUNfirst(bn)); \
+	oid *_bnh = (oid*) Hloc(bn, BUNfirst(bn)); \
 	BUN _r = BUNfirst(bn);
 
 #define SCANfndOID(r, bn, h)	\
@@ -193,6 +193,54 @@ as the latter turned out to be rather expensive ...
 	case 2: if (_bnh[1] == _h) { r = _r + 1; break; } \
 	case 1: if (_bnh[0] == _h) { r = _r + 0; break; } \
 	}
+
+@-
+In case the head of the group extend (e) is sorted, we assume that also the
+the tail of group map (g) "almost" sorted --- or at least clustered such
+that group IDs in cluster i are smaller than those in cluster i+1; this is
+the case if the first grouping attribute (column/BAT) is sorted --- and
+resorted to "local scanning" rather than (inherently random and expensive)
+hash-lookups.
+@h
+#define MERGE_aggr_init						\
+	BUN _i = 0, _j = BATcount(bn), _r = BUNfirst(bn);	\
+	oid _h, *_bnh = (oid*) Hloc(bn, _r);		\
+	if (_j > 0)						\
+		_j--;
+
+#define MERGEfndOID(r, bn, h)				\
+	_h = *(oid*)(h);				\
+	r = BUN_NONE;					\
+	if (min <= _h && _h <= max ) {			\
+		while ( _i < _j && _bnh[_i] < _h)	\
+			_i++;				\
+		while ( _i > 0 && _bnh[_i] > _h)	\
+			_i--;				\
+		if (_bnh[_i] == _h)			\
+			r = _i + _r;			\
+	}
+
+/*
+#define _MERGE_aggr_init					\
+	BUN _i = 0, _j = BATcount(bn), _r = BUNfirst(bn);	\
+	oid _h, *_bnh = (oid*) Hloc(bn, _r);		\
+	dbl s = (dbl)_j / (dbl)range;				\
+	if (_j > 0)						\
+		_j--;
+
+#define _MERGEfndOID(r, bn, h)				\
+	_h = *(oid*)(h);				\
+	r = BUN_NONE;					\
+	if (min <= _h && _h <= max ) {			\
+		_i = (BUN)((_h - min) * s);		\
+		while ( _i < _j && _bnh[_i] < _h)	\
+			_i++;				\
+		while ( _i > 0 && _bnh[_i] > _h)	\
+			_i--;				\
+		if (_bnh[_i] == _h)			\
+			r = _i + _r;			\
+	}
+*/
 
 @- Wrapper
 The remainder is a wrapper around the V4 code base.
@@ -230,8 +278,8 @@ The remainder is a wrapper around the V4 code base.
 
 @-
 @= AX3sum
-aggr_export str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid);
-str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
+aggr_export str AX3aggrX3_sum_@1_@2(int *retid, int *bid, int *eid);
+str AX3aggrX3_sum_@1_@2(int *retid, int *bid, int *eid){
 	BAT *b, *e;
 	BAT *bn;
 
@@ -242,7 +290,7 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "aggr.sum", RUNTIME_OBJECT_MISSING);
 	}
-	if( CMDaggrX3_sum_@1_@3(&bn,b,e) == GDK_SUCCEED){
+	if( CMDaggrX3_sum_@1_@2(&bn,b,e) == GDK_SUCCEED){
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
@@ -257,8 +305,8 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 @-
 
 @= AX3prod
-aggr_export str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid);
-str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
+aggr_export str AX3aggrX3_prod_@1_@2(int *retid, int *bid, int *eid);
+str AX3aggrX3_prod_@1_@2(int *retid, int *bid, int *eid){
 	BAT *b, *e, *bn;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
@@ -268,7 +316,7 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "aggr.prod", RUNTIME_OBJECT_MISSING);
 	}
-	if( CMDaggrX3_prod_@1_@3(&bn,b,e) == GDK_SUCCEED){
+	if( CMDaggrX3_prod_@1_@2(&bn,b,e) == GDK_SUCCEED){
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
@@ -282,30 +330,30 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 }
 @-
 @= AX3sumprod
-	@:AX3sum(@1,@2,@3)@
+	@:AX3sum(@1,@2)@
 	/* product here */
-	@:AX3prod(@1,@2,@3)@
+	@:AX3prod(@1,@2)@
 @c
 
-@:AX3sumprod(bte,tloc,bte)@
-@:AX3sumprod(bte,tloc,sht)@
-@:AX3sumprod(bte,tloc,int)@
-@:AX3sumprod(bte,tloc,wrd)@
-@:AX3sumprod(bte,tloc,lng)@
-@:AX3sumprod(sht,tloc,sht)@
-@:AX3sumprod(sht,tloc,int)@
-@:AX3sumprod(sht,tloc,wrd)@
-@:AX3sumprod(sht,tloc,lng)@
-@:AX3sumprod(int,tloc,int)@
-@:AX3sumprod(int,tloc,wrd)@
-@:AX3sumprod(int,tloc,lng)@
-@:AX3sumprod(wrd,tloc,wrd)@
-@:AX3sumprod(wrd,tloc,lng)@
-@:AX3sumprod(lng,tloc,wrd)@
-@:AX3sumprod(lng,tloc,lng)@
-@:AX3sumprod(flt,tloc,flt)@
-@:AX3sumprod(flt,tloc,dbl)@
-@:AX3sumprod(dbl,tloc,dbl)@
+@:AX3sumprod(bte,bte)@
+@:AX3sumprod(bte,sht)@
+@:AX3sumprod(bte,int)@
+@:AX3sumprod(bte,wrd)@
+@:AX3sumprod(bte,lng)@
+@:AX3sumprod(sht,sht)@
+@:AX3sumprod(sht,int)@
+@:AX3sumprod(sht,wrd)@
+@:AX3sumprod(sht,lng)@
+@:AX3sumprod(int,int)@
+@:AX3sumprod(int,wrd)@
+@:AX3sumprod(int,lng)@
+@:AX3sumprod(wrd,wrd)@
+@:AX3sumprod(wrd,lng)@
+@:AX3sumprod(lng,wrd)@
+@:AX3sumprod(lng,lng)@
+@:AX3sumprod(flt,flt)@
+@:AX3sumprod(flt,dbl)@
+@:AX3sumprod(dbl,dbl)@
 
 @-
 @= AX3arithavg
@@ -333,13 +381,13 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	throw(MAL, "aggrX3_avg.@1",GDK_EXCEPTION);
 }
 @c
-@:AX3arithavg(bte,loc)@
-@:AX3arithavg(sht,loc)@
-@:AX3arithavg(int,loc)@
-@:AX3arithavg(wrd,loc)@
-@:AX3arithavg(lng,loc)@
-@:AX3arithavg(flt,loc)@
-@:AX3arithavg(dbl,loc)@
+@:AX3arithavg(bte)@
+@:AX3arithavg(sht)@
+@:AX3arithavg(int)@
+@:AX3arithavg(wrd)@
+@:AX3arithavg(lng)@
+@:AX3arithavg(flt)@
+@:AX3arithavg(dbl)@
 
 
 @- "Extremes" (Min & Max)
@@ -553,13 +601,13 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	throw(MAL, "aggrX3_avg3",GDK_EXCEPTION);
 }
 @c
-@:AX3arithavg3(bte,loc)@
-@:AX3arithavg3(sht,loc)@
-@:AX3arithavg3(int,loc)@
-@:AX3arithavg3(wrd,loc)@
-@:AX3arithavg3(lng,loc)@
-@:AX3arithavg3(flt,loc)@
-@:AX3arithavg3(dbl,loc)@
+@:AX3arithavg3(bte)@
+@:AX3arithavg3(sht)@
+@:AX3arithavg3(int)@
+@:AX3arithavg3(wrd)@
+@:AX3arithavg3(lng)@
+@:AX3arithavg3(flt)@
+@:AX3arithavg3(dbl)@
 
 @- "Extremes" (Min & Max)
 @c

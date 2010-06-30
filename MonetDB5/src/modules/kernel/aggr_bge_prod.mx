@@ -49,16 +49,16 @@ structure to compute a group of common aggregates.
 	@1:	0		1		0		0		use prods-array?
 	@2:	0		0		0		1		do BATprepareHash?
 	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
-	@4:	var		loc		loc		loc		e/bn-head-access
+	@4:	(oid)(bnhsb+p)	bnh[p]-min	bnh[p]-min	bnh[p]-min	e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
 
-	@6:	bte / sht / int / wrd / lng / flt / dbl		b/bn-tail-type
+	@6:	bte / sht / int / wrd / lng / flt / dbl		b-tail-type
 
 #	not used any more as the result-type needs an argument
-#	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
-#		"var" for varsized b/bn-tail-type		(only loc used currently)
+#	@7:	"loc" for fixsized b-tail-type,			b-tail-access
+#		"var" for varsized b-tail-type			(only loc used currently)
 
 	@7:	BUNt@7(bn,r)	BUNt@7(bn,r)	&prods[(*(oid*)h)-min]
 								*dst: prod in-place or in prods-array ?
@@ -79,7 +79,7 @@ structure to compute a group of common aggregates.
 			return GDK_FAIL;
 		}
 		for (i = 0; i < range; i++)
-			prods[i] = zero;
+			prods[i] = (@9) 1;
 	}
 	if (@2 && BATprepareHash(bn)) {
 		GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9,@[10]): BATprepareHash(bn) failed");
@@ -98,61 +98,43 @@ structure to compute a group of common aggregates.
 	}
 	/* scan b & g, and add values to prods in-place or in prods-array */
 	base = BUNfirst(g);
-	offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gh_offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gt_offset = (ssize_t) g->tseqbase - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessBegin(g,USE_TAIL,MMAP_WILLNEED);
-	if (b->T->nonil) {
-		BATloop(b, p, q) {
-			@6 *t = (@6*) BUNtloc(bi,p);
-			oid v = *(oid*) @5;
-
-			w = (BUN) (offset + v);
-			@8 {
-				oid *h = (oid*) BUNtail(gi, w);
-
-				@3(r, bni, (oid*)h);
-				if (r != BUN_NONE) {
-					@9 *dst = (@9*) @7;
-					*dst *= (@9) *t;
-					hit[@[10]] = 1;
-				}
-			}
-		}
+	if (!(@1 && prods))
+		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
+	if (b_use)
+		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
+	if (BATtdense(g)) {
+		@:aggrX3_prod3_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],oid hh = (oid) (gt_offset + v); oid *h = &hh)@
 	} else {
-		BATloop(b, p, q) {
-			@6 *t = (@6*) BUNtloc(bi,p);
-			oid v = *(oid*) @5;
-
-			w = (BUN) (offset + v);
-			@8 {
-				oid *h = (oid*) BUNtail(gi, w);
-
-				@3(r, bni, (oid*)h);
-				if (r != BUN_NONE) {
-					@9 *dst = (@9*) @7;
-					if (*dst != @9_nil) {
-						if (*t == @6_nil) {
-							*dst = @9_nil;
-						} else {
-							*dst *= (@9) *t;
-							hit[@[10]] = 1;
-						}
-					}
-				}
-			}
-		}
+		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
+		@:aggrX3_prod3_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],oid *h = (oid*) Tloc(g, w))@
+		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(g,USE_TAIL,MMAP_WILLNEED);
+	if (b_use)
+		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
+	if (!(@1 && prods))
+		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (@1) {
 	    if (prods) {
 		/* copy prods array to final result */
-		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+		int bn_use = USE_TAIL;
+		ssize_t bnhsb = 0;
+		oid *bnh = 0;
+		if (BAThdense(bn)) {
+			bnhsb = (ssize_t) bn->hseqbase - BUNfirst(bn) - min;
+			(void) bnh;
+		} else {
+			(void) bnhsb;
+			bnh = (oid*)Hloc(bn,0);
+			bn_use |= USE_HEAD;
+		}
+		BATaccessBegin(bn,bn_use,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
-			oid h = (*(oid*) BUNh@4(bni,p)) - min;
+			oid h = @4;
 			@9 *dst = (@9*)BUNtloc(bni, p);
 			if (hit[h] == 0) {
 				*dst = @9_nil;
@@ -160,7 +142,7 @@ structure to compute a group of common aggregates.
 				*dst = prods[h];
 			}
 		}
-		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+		BATaccessEnd(bn,bn_use,MMAP_SEQUENTIAL);
 		GDKfree(prods);
 	    }
 	} else {
@@ -177,15 +159,63 @@ structure to compute a group of common aggregates.
 	}
 	if (hit)
 		GDKfree(hit);
+@c
+/*	aggrX3_prod3_body
+	@[11]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
+		oid *h = (oid*) Tloc(g, w)				g tail value lookup
+*/
+@= aggrX3_prod3_body
+	ALGODEBUG THRprintf(GDKout, "#aggrX3_prod3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],@[11]);\n");
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNtloc(bi,p);
+			oid v = *(oid*) @5;
+
+			w = (BUN) (gh_offset + v);
+			@8 {
+				@[11];
+
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					@9 *dst = (@9*) @7;
+					*dst *= (@9) *t;
+					hit[@[10]] = 1;
+				}
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNtloc(bi,p);
+			oid v = *(oid*) @5;
+
+			w = (BUN) (gh_offset + v);
+			@8 {
+				@[11];
+
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					@9 *dst = (@9*) @7;
+					if (*dst != @9_nil) {
+						if (*t == @6_nil) {
+							*dst = @9_nil;
+						} else {
+							*dst *= (@9) *t;
+							hit[@[10]] = 1;
+						}
+					}
+				}
+			}
+		}
+	}
 @
 @c
 
 /*	arithprod3
-	@6:	bte / sht / int / wrd / lng / flt / dbl		b/bn-tail-type
+	@6:	bte / sht / int / wrd / lng / flt / dbl		b-tail-type
 
 #	not used any more
-#	@7:	"loc" for fixsized b/bn-tail-type,	b/bn-tail-access
-#		"var" for varsized b/bn-tail-type	(only loc used currently)
+#	@7:	"loc" for fixsized b-tail-type,		b-tail-access
+#		"var" for varsized b-tail-type		(only loc used currently)
 
 	@9:	result type
 */
@@ -197,19 +227,20 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e);
 static int
 aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, oid min, oid max)
 {
-	@2 zero = (@2) 1, *prods = NULL;
+	@2 *prods = NULL;
 	bit *hit = NULL;
 	BUN slots = range;
 	BUN p, q, r;
 	oid bhsb;
 	BUN base, end, w;
-	ssize_t offset;
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b), gi = bat_iterator(g);
+	ssize_t gh_offset, gt_offset;
+	int b_use = USE_TAIL;
+	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
 
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_prod3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" OIDFMT ",min=" OIDFMT ",max=" OIDFMT ");\n",
 					BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
 					range,min,max);
-	@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&prods[(*(oid*)h)-min],,@2,(*(oid*)h)-min)@
+	@:aggrX3_prod3(1,0,CHKrange,bnh[p]-min,&bhsb;bhsb++,@1,&prods[(*(oid*)h)-min],,@2,(*(oid*)h)-min)@
 
 	return GDK_SUCCEED;
 }
@@ -218,7 +249,7 @@ int
 CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
 	BAT *bn;
-	BATiter bni, bi = bat_iterator(b), gi = bat_iterator(g);
+	BATiter bni, bi = bat_iterator(b);
 	@2 zero = (@2) 1, *prods = NULL;
 	bit *hit = NULL;
 	BUN slots, off;
@@ -227,7 +258,8 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	oid min, max;
 	oid bhsb;
 	BUN base, end, w;
-	ssize_t offset;
+	ssize_t gh_offset, gt_offset;
+	int b_use = USE_TAIL;
 
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_prod3_@1_@2(b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
@@ -241,17 +273,17 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		return rtrn;
 	}
 
-	bn = BATnew(e->htype, TYPE_@2, BATcount(e));
+	bn = BATnew(TYPE_void, TYPE_@2, BATcount(e));
 	if( bn == NULL) {
 		GDKerror("CMDaggrX3_prod3_@1_@2(): BATnew() failed");
 		return GDK_FAIL;
 	}
-	bni = bat_iterator(bn);
-	off = BUNfirst(bn);
-	*ret = bn;
 
 	/* init: set all prods to zero and calculate min/max oid */
 	@:init_result(@2)@
+	bni = bat_iterator(bn);
+	off = BUNfirst(bn);
+	*ret = bn;
 	range = max - min + 1;
 
 	/* scan b & g, and calculate prods */
@@ -261,52 +293,66 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
-	if (e->htype == TYPE_void) {
+	if (!BAThdense(b))
+		b_use |= USE_HEAD;
+	if (BAThdense(e)) {
 		/* void lookup */
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_prod3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+				@:aggrX3_prod3(0,0,BUNfndVOID,(oid)(bnhsb+p),&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
-				@:aggrX3_prod3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+				@:aggrX3_prod3(0,0,BUNfndVOID,(oid)(bnhsb+p),&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 			}
 		} else {
-			@:aggrX3_prod3(0,0,BUNfndVOID,var,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+			@:aggrX3_prod3(0,0,BUNfndVOID,(oid)(bnhsb+p),BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 		}
 	/* e->htype == TYPE_oid */
 	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		slots = range;
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
 				return aggrX3_prod3_@1_@2_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
 			} else {
-				@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2,(*(oid*)h)-min)@
+				@:aggrX3_prod3(1,0,CHKrange,bnh[p]-min,&bhsb;bhsb++,@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2,(*(oid*)h)-min)@
 			}
 		} else {
-			@:aggrX3_prod3(1,0,CHKrange,loc,BUNhloc(bi,p),@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2,(*(oid*)h)-min)@
+			@:aggrX3_prod3(1,0,CHKrange,bnh[p]-min,BUNhloc(bi,p),@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2,(*(oid*)h)-min)@
 		}
 	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
 		/* scan lookup */
 		SCAN_aggr_init;
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_prod3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+				@:aggrX3_prod3(0,0,SCANfndOID,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
-				@:aggrX3_prod3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+				@:aggrX3_prod3(0,0,SCANfndOID,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 			}
 		} else {
-			@:aggrX3_prod3(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+			@:aggrX3_prod3(0,0,SCANfndOID,bnh[p]-min,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+		}
+	} else if (BAThordered(e)&1) {
+		/* merge lookup */
+		MERGE_aggr_init;
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+				@:aggrX3_prod3(0,0,MERGEfndOID,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
+			} else {
+				@:aggrX3_prod3(0,0,MERGEfndOID,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+			}
+		} else {
+			@:aggrX3_prod3(0,0,MERGEfndOID,bnh[p]-min,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 		}
 	} else {
 		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+				@:aggrX3_prod3(0,1,HASHfnd_oid,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
-				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+				@:aggrX3_prod3(0,1,HASHfnd_oid,bnh[p]-min,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 			}
 		} else {
-			@:aggrX3_prod3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+			@:aggrX3_prod3(0,1,HASHfnd_oid,bnh[p]-min,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 		}
 	}
 
