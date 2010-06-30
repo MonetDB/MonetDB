@@ -20,7 +20,7 @@ AIX, Mac OS X/Darwin, or CYGWIN).  For compilation and installation on
 a native Windows system (NT, 2000, XP) see the instructions in the
 file `../buildtools/doc/windowsbuild.rst`__.
 
-__ http://monetdb.cwi.nl/downloads/
+__ http://dev.monetdb.org/downloads/
 __ Windows-Installation.html
 
 The Suite
@@ -137,7 +137,7 @@ libxml2
 	document loader will not be compiled at all in that case.
 	Current Linux distributions all come with libxml2.
 
-__ http://monetdb.cwi.nl/downloads/sources/
+__ http://dev.monetdb.org/downloads/sources/
 __ http://www.gnu.org/software/autoconf/
 __ http://www.gnu.org/software/automake/
 __ http://www.gnu.org/software/libtool/
@@ -178,7 +178,7 @@ code from the CVS repository on SourceForge; in case you downloaded
 the pre-packaged source distribution, you can skip this section and
 proceed to `Bootstrap, Configure and Make`_.
 
-__ http://monetdb.cwi.nl/downloads/
+__ http://dev.monetdb.org/downloads/
 
 Mercurial clone
 ~~~~~~~~~~~~~~~
