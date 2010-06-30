@@ -1,3 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
+- fixed bug 2564:
+  in case group by column is not found as alias in projection list,
+  fall back to check plain input columns
+  in order to find the underlying BAT and check its sortedness
+
