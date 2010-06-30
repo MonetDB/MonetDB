@@ -84,24 +84,24 @@ structure to compute a group of common aggregates.
 	if (*ignore_nils && !b->T->nonil) {
 		switch(ATOMstorage(btt)) {
 		case TYPE_chr:
-			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,chr)))@
+			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,chr)),|USE_TAIL)@
 		case TYPE_bte:
-			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,bte)))@
+			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,bte)),|USE_TAIL)@
 		case TYPE_sht:
-			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,sht)))@
+			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,sht)),|USE_TAIL)@
 		case TYPE_int:
-			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,int)))@
+			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,int)),|USE_TAIL)@
 		case TYPE_lng:
-			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,lng)))@
+			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,lng)),|USE_TAIL)@
 		case TYPE_flt:
-			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,flt)))@
+			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,flt)),|USE_TAIL)@
 		case TYPE_dbl:
-			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,dbl)))@
+			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,dbl)),|USE_TAIL)@
 		default:
 			if (b->tvarsized) {
-				@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtvar(bi,p),bt_nil,btt)))@
+				@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtvar(bi,p),bt_nil,btt)),|USE_TAIL)@
 			} else {
-				@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtloc(bi,p),bt_nil,btt)))@
+				@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtloc(bi,p),bt_nil,btt)),|USE_TAIL)@
 			}
 		}
 	} else {
@@ -142,11 +142,14 @@ structure to compute a group of common aggregates.
 /*	aggrX3_count3_loop
 	@7:	if (!atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt))		b-tail nil check
 		if (!simple_EQ(BUNtloc(b,p),bt_nil,{chr,bte,sht,int,flt,lng,dbl}))
+	@8:	|USE_TAIL						for b-tail nil check
 */
 @= aggrX3_count3_loop
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,@7);\n");
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessBegin(g,USE_TAIL,MMAP_WILLNEED);
+	ALGODEBUG THRprintf(GDKout, "#aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,@7,@8);\n");
+	if (!(@1 && cnt))
+		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
+	BATaccessBegin(b,USE_HEAD@8,MMAP_SEQUENTIAL);
+	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid v = *(oid*) @5;
 
@@ -163,8 +166,10 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
-	BATaccessEnd(g,USE_TAIL,MMAP_WILLNEED);
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD@8,MMAP_SEQUENTIAL);
+	if (!(@1 && cnt))
+		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	break;
 @h
 int

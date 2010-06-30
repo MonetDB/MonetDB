@@ -37,26 +37,24 @@ All Rights Reserved.
 	ALIGNsetH(bn, e);
 	/* set all sums/avgs/counts to zero; for prod, zero is 1 */
 	/* where necessary, calculate min/max oid with minimal effort */
+	BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
+	BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (e->htype == TYPE_void) {
 		oid onil = oid_nil;
 		(void) onil;	/* silence compiler about unused variable */
 		ALGODEBUG THRprintf(GDKout, "#init_result(@1): e->htype == TYPE_void, e->hseqbase=" OIDFMT "\n", e->hseqbase);
-		BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			void@1_bunfastins_nocheck_noinc(bn, _p, &onil, &zero);
 			_p++;
 		}
-		BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
 		BATseqbase(bn,e->hseqbase);
 	} else if (BAThordered(e)&1) {
 		if (_cnt)
 			min = *(oid*)BUNhloc(ei, BUNfirst(e));
-		BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(ei,p), &zero);
 			_p++;
 		}
-		BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
 		if (_cnt)
 			max = *(oid*)BUNhloc(ei, BUNlast(e)-1);
 		ALGODEBUG THRprintf(GDKout, "#init_result(@1): BAThordered(e)&1, min=" OIDFMT ", max=" OIDFMT "\n", min, max);
@@ -64,7 +62,6 @@ All Rights Reserved.
 		oid i;
 		if (_cnt)
 			min = max = *(oid*)BUNhloc(ei, BUNfirst(e));
-		BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
 			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(ei,p), &zero);
 			_p++;
@@ -74,9 +71,10 @@ All Rights Reserved.
 			else if (i > max)
 				max = i;
 		}
-		BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
 		ALGODEBUG THRprintf(GDKout, "#init_result(@1): min=" OIDFMT ", max=" OIDFMT "\n", min, max);
 	}
+	BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
 	BATsetcount(bn, _p);
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;

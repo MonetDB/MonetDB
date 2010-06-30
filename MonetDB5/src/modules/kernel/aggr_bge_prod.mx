@@ -102,8 +102,10 @@ structure to compute a group of common aggregates.
 	end = base + BATcount(g);
 	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
+	if (!(@1 && prods))
+		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessBegin(g,USE_TAIL,MMAP_WILLNEED);
+	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			@6 *t = (@6*) BUNtloc(bi,p);
@@ -145,8 +147,10 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
+	if (!(@1 && prods))
+		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(g,USE_TAIL,MMAP_WILLNEED);
+	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (@1) {
 	    if (prods) {
 		/* copy prods array to final result */

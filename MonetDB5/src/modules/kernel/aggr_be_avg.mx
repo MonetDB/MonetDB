@@ -90,6 +90,8 @@ structure to compute a group of common aggregates.
 	}
 	/* scan b, adding sums, and incrementing counts */
 	bhsb = b->hseqbase - 1;
+	if (!(@1 && sums))
+		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
@@ -123,6 +125,8 @@ structure to compute a group of common aggregates.
 		}
 	}
 	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	if (!(@1 && sums))
+		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	/* postprocess by dividing sums by counts */
 	if (@1) {
 	    if (sums) {

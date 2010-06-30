@@ -81,7 +81,7 @@ structure to compute a group of common aggregates.
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessBegin(g,USE_TAIL,MMAP_WILLNEED);
+	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			ptr t = BUNt@7(bi,p);
@@ -123,7 +123,7 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
-	BATaccessEnd(g,USE_TAIL,MMAP_WILLNEED);
+	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	/* insert the extreme values into the result */
 	BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
@@ -182,7 +182,7 @@ structure to compute a group of common aggregates.
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessBegin(g,USE_TAIL,MMAP_WILLNEED);
+	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			ptr t = BUNt@7(bi,p);
@@ -227,7 +227,7 @@ structure to compute a group of common aggregates.
 		}
 	}
 	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(g,USE_TAIL,MMAP_WILLNEED);
+	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	/* insert the extreme values into the result */
 	BATloop(bn, r, q) {
 		oid *h = (oid*)BUNh@4(bni,r);
