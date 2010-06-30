@@ -904,7 +904,8 @@ MT_mmap_trim(size_t target, void *fp)
 		}
 		rss = MT_getrss();
 	}
-      done:if (worry > 1) {
+done:
+	if (worry > 1) {
 		/* schedule background saves of tiles */
 		for (i = MT_mmap_next(MT_mmap_cur); i != MT_mmap_cur; i = MT_mmap_next(i)) {
 			assert(i >= 0);
@@ -934,7 +935,7 @@ MT_mmap_trim(size_t target, void *fp)
 			}
 		}
 	}
-      bailout:
+bailout:
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	(void) pthread_mutex_unlock(&MT_mmap_relock);
 	return (worry);

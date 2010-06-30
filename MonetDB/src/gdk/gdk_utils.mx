@@ -1232,7 +1232,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 		size_t oldmax = (size_t) s[-2];
 		size_t newmax = MAX(*maxsize, newsize);
 
-		s = (ssize_t *) GDKvmrealloc((ptr) (s - 2), (size_t) -oldsize, newsize, oldmax, &newmax, emergency);
+		s = (ssize_t *) GDKvmrealloc((ptr) (s - 2), (size_t) - oldsize, newsize, oldmax, &newmax, emergency);
 		if (s) {
 			s[0] = (ssize_t) newmax;
 			s[1] = -((ssize_t) newsize);
