@@ -194,6 +194,54 @@ as the latter turned out to be rather expensive ...
 	case 1: if (_bnh[0] == _h) { r = _r + 0; break; } \
 	}
 
+@-
+In case the head of the group extend (e) is sorted, we assume that also the
+the tail of group map (g) "almost" sorted --- or at least clustered such
+that group IDs in cluster i are smaller than those in cluster i+1; this is
+the case if the first grouping attribute (column/BAT) is sorted --- and
+resorted to "local scanning" rather than (inherently random and expensive)
+hash-lookups.
+@h
+#define MERGE_aggr_init						\
+	BUN _i = 0, _j = BATcount(bn), _r = BUNfirst(bn);	\
+	oid _h, *_bnh = (oid*) BUNhloc(bni, _r);		\
+	if (_j > 0)						\
+		_j--;
+
+#define MERGEfndOID(r, bn, h)				\
+	_h = *(oid*)(h);				\
+	r = BUN_NONE;					\
+	if (min <= _h && _h <= max ) {			\
+		while ( _i < _j && _bnh[_i] < _h)	\
+			_i++;				\
+		while ( _i > 0 && _bnh[_i] > _h)	\
+			_i--;				\
+		if (_bnh[_i] == _h)			\
+			r = _i + _r;			\
+	}
+
+/*
+#define _MERGE_aggr_init					\
+	BUN _i = 0, _j = BATcount(bn), _r = BUNfirst(bn);	\
+	oid _h, *_bnh = (oid*) BUNhloc(bni, _r);		\
+	dbl s = (dbl)_j / (dbl)range;				\
+	if (_j > 0)						\
+		_j--;
+
+#define _MERGEfndOID(r, bn, h)				\
+	_h = *(oid*)(h);				\
+	r = BUN_NONE;					\
+	if (min <= _h && _h <= max ) {			\
+		_i = (BUN)((_h - min) * s);		\
+		while ( _i < _j && _bnh[_i] < _h)	\
+			_i++;				\
+		while ( _i > 0 && _bnh[_i] > _h)	\
+			_i--;				\
+		if (_bnh[_i] == _h)			\
+			r = _i + _r;			\
+	}
+*/
+
 @- Wrapper
 The remainder is a wrapper around the V4 code base.
 

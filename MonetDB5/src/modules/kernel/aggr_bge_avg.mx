@@ -279,6 +279,14 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 		} else {
 			@:aggrX3_avg3(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
 		}
+	} else if (BAThordered(e)&1) {
+		/* merge lookup */
+		MERGE_aggr_init;
+		if (BAThdense(b)) {
+			@:aggrX3_avg3(0,0,MERGEfndOID,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@
+		} else {
+			@:aggrX3_avg3(0,0,MERGEfndOID,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
+		}
 	} else {
 		/* hash lookup */
 		if (BAThdense(b)) {

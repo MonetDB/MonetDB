@@ -320,6 +320,18 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		} else {
 			@:aggrX3_prod3(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 		}
+	} else if (BAThordered(e)&1) {
+		/* merge lookup */
+		MERGE_aggr_init;
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+				@:aggrX3_prod3(0,0,MERGEfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
+			} else {
+				@:aggrX3_prod3(0,0,MERGEfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+			}
+		} else {
+			@:aggrX3_prod3(0,0,MERGEfndOID,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
+		}
 	} else {
 		/* hash lookup */
 		if (BAThdense(b)) {
