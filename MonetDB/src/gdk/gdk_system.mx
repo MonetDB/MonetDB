@@ -372,22 +372,19 @@ MT_init(void)
 #  if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #  else
-#   if defined(HAVE_GETRLIMIT) && defined(RLIMIT_RSS)
+#   if defined(HAVE_SYS_SYSCTL_H) && defined(HW_USERMEM)
 	{
-		struct rlimit rl;
+		uint64_t size;
+		size_t len = sizeof(size);
 
-		/* Specifies the limit (in pages) of the process's resident set
-		 * (the number of virtual pages resident in RAM). This limit
-		 * only has effect in Linux 2.4.x, x < 30, and there only
-		 * affects calls to madvise() specifying MADV_WILLNEED */
-		/* FIXME: this looks like a total wrong thing to check in any
-		 * case to me */
-		getrlimit(RLIMIT_RSS, &rl);
-		_MT_npages = rl.rlim_cur / _MT_pagesize;
+		/* This is the 'non-kernel memory', e.g. what's left to a user
+		 * process to allocate. */
+		sysctlbyname("hw.usermem", &size, &len, NULL, 0);
+		_MT_npages = size / _MT_pagesize;
 	}
 #   else
 #    error "don't know how to get the amount of physical memory for your OS"
-#   endif /* getrlimit */
+#   endif /* sysctl */
 #  endif /* sysconf */
 # endif	/* GlobalMemoryStatus */
 #endif /* GlobalMemoryStatusEx */
