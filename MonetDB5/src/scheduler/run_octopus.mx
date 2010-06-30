@@ -431,23 +431,23 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-        bit *res = (bit*) getArgReference(stk,pci,0);
-        int j, start;
-        InstrPtr p;
+    bit *res = (bit*) getArgReference(stk,pci,0);
+    int j, start;
+    InstrPtr p;
 	str msg = MAL_SUCCEED;
 
-        *res = 1;       /* execute the block */
+    *res = 1;       /* execute the block */
 
-        start = getPC(mb,pci);
-        for (j = start + 1; j< mb->stop ; j++){
-                p = getInstrPtr(mb,j);
-                if ( p->barrier == EXITsymbol )
-                        break;
-        }
+    start = getPC(mb,pci);
+    for (j = start + 1; j< mb->stop ; j++){
+    	p = getInstrPtr(mb,j);
+    	if ( p->barrier == EXITsymbol )
+        	break;
+	}
 
-        msg = runMALdataflow(cntxt,mb,start,j,stk,0,pci);
+    msg = runMALdataflow(cntxt,mb,start,j,stk,0,pci);
 	*res = 0;
-        return msg;
+    return msg;
 
 }
 

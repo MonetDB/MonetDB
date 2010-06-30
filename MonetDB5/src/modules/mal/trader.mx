@@ -71,14 +71,14 @@ Bidding described ...
 #include <mal_recycle.h>
 #include "trader.h"
 
-
+/*
 static lng estimateSavings0(MalBlkPtr mb,  sht bidtype)
 {
 	(void) mb;
 	(void) bidtype;
 	return (lng)100;
 }
-
+*/
 
 lng estimateSavings(MalBlkPtr mb, sht bidtype)
 {
@@ -98,14 +98,13 @@ lng estimateSavings(MalBlkPtr mb, sht bidtype)
 		return 0;
 
 	/* Create a phony exec. stack */
-	newStack(stk,mb->vsize);
-	memset((char *) stk, 0, stackSize(mb->vtop));
-	stk->stktop = mb->vtop; 
-	stk->stksize = mb->vsize;
+	stk = newGlobalStack(mb->vsize);
+	stk->stktop = mb->vtop;
+	stk->stkbot = 0; 
 	stk->blk = mb;
 
 	/* Init symbol table of the phony stack */	
-	for(i= 1; i< mb->vtop; i++) {
+	for(i= 0; i< mb->vtop; i++) {
 		lhs = &stk->stk[i];
 		if( isVarConstant(mb,i) > 0 ){
 /*			assert(!isVarCleanup(mb,i)); */
@@ -159,7 +158,7 @@ lng estimateSavings(MalBlkPtr mb, sht bidtype)
 				for( j=0; j<p->retc; j++){
 					VALcopy(&stk->stk[getArg(p,j)],
 						&getVarConstant(recycleBlk,getArg(q,j)) );
-				}
+	            }
 
 				if ( bidtype == BID_TRANS )
 					savedKB += recycleBlk->profiler[i].wbytes;
@@ -178,7 +177,9 @@ lng estimateSavings(MalBlkPtr mb, sht bidtype)
 			continue;
 	}
 
+	/* clean up the phony stack */
 	freeStack(stk);
+
 	if ( bidtype == BID_TRANS )
 		return savedKB;
 	return (marked? (lng)100*savedInstr/marked: 0) ;
@@ -197,7 +198,7 @@ str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     if ( sym == NULL)
         throw(MAL,"trader.makeBid", RUNTIME_SIGNATURE_MISSING "%s", fnname);
         
-    *c = estimateSavings0(sym->def, bidtype);
+    *c = estimateSavings(sym->def, bidtype);
 
 	return MAL_SUCCEED;
 }   
