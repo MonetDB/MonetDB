@@ -116,6 +116,11 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 		if (!rel->exps)
 			break;
 		alias = exps_bind_column(rel->exps, name, NULL);
+		if (!alias) {
+			/* group by column not found as alias in projection list;
+			   fall back to check plain input columns */
+			return name_find_column( rel->l, rname, name);
+		}
 		break;
 	case op_insert:
 	case op_update:
