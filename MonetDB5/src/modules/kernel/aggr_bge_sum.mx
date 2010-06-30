@@ -54,11 +54,11 @@ structure to compute a group of common aggregates.
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
 
-	@6:	bte / sht / int / wrd / lng / flt / dbl		b/bn-tail-type
+	@6:	bte / sht / int / wrd / lng / flt / dbl		b-tail-type
 
 #	not used any more as the result-type needs an argument
-#	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
-#		"var" for varsized b/bn-tail-type		(only loc used currently)
+#	@7:	"loc" for fixsized b-tail-type,			b-tail-access
+#		"var" for varsized b-tail-type			(only loc used currently)
 
 	@7:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(oid*)h)-min]
 								*dst: sum in-place or in sums-array ?
@@ -197,11 +197,11 @@ structure to compute a group of common aggregates.
 @c
 
 /*	arithsum3
-	@6:	bte / sht / int / wrd / lng / flt / dbl		b/bn-tail-type
+	@6:	bte / sht / int / wrd / lng / flt / dbl		b-tail-type
 
 #	not used any more
-#	@7:	"loc" for fixsized b/bn-tail-type,	b/bn-tail-access
-#		"var" for varsized b/bn-tail-type	(only loc used currently)
+#	@7:	"loc" for fixsized b-tail-type,		b-tail-access
+#		"var" for varsized b-tail-type		(only loc used currently)
 
 	@9:	result type
 */
