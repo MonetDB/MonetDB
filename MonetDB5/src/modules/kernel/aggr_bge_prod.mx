@@ -111,7 +111,7 @@ structure to compute a group of common aggregates.
 		@:aggrX3_prod3_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],oid hh = (oid) (gt_offset + v); oid *h = &hh)@
 	} else {
 		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
-		@:aggrX3_prod3_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],oid *h = (oid*) BUNtloc(gi, w))@
+		@:aggrX3_prod3_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],oid *h = (oid*) Tloc(g, w))@
 		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	}
 	if (b_use)
@@ -151,7 +151,7 @@ structure to compute a group of common aggregates.
 @c
 /*	aggrX3_prod3_body
 	@[11]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
-		oid *h = (oid*) BUNtloc(gi, w)				g tail value lookup
+		oid *h = (oid*) Tloc(g, w)				g tail value lookup
 */
 @= aggrX3_prod3_body
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_prod3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],@[11]);\n");
@@ -224,7 +224,7 @@ aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range,
 	BUN base, end, w;
 	ssize_t gh_offset, gt_offset;
 	int b_use = USE_TAIL;
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b), gi = bat_iterator(g);
+	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
 
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_prod3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" OIDFMT ",min=" OIDFMT ",max=" OIDFMT ");\n",
 					BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
@@ -238,7 +238,7 @@ int
 CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
 	BAT *bn;
-	BATiter bni, bi = bat_iterator(b), gi = bat_iterator(g);
+	BATiter bni, bi = bat_iterator(b);
 	@2 zero = (@2) 1, *prods = NULL;
 	bit *hit = NULL;
 	BUN slots, off;

@@ -87,7 +87,7 @@ structure to compute a group of common aggregates.
 		@:aggrX3_minmax3_ptr_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid hh = (oid) (gt_offset + v); oid *h = &hh)@
 	} else {
 		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
-		@:aggrX3_minmax3_ptr_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid *h = (oid*) BUNtloc(gi, w))@
+		@:aggrX3_minmax3_ptr_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid *h = (oid*) Tloc(g, w))@
 		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	}
 	if (b_use)
@@ -104,7 +104,7 @@ structure to compute a group of common aggregates.
 @c
 /*	aggrX3_minmax3_ptr_body
 	@[10]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
-		oid *h = (oid*) BUNtloc(gi, w)				g tail value lookup
+		oid *h = (oid*) Tloc(g, w)				g tail value lookup
 */
 @= aggrX3_minmax3_ptr_body
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax3_ptr_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
@@ -203,13 +203,13 @@ structure to compute a group of common aggregates.
 		@:aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid hh = (oid) (gt_offset + v); oid *h = &hh)@
 	} else {
 		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
-		@:aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid *h = (oid*) BUNtloc(gi, w))@
+		@:aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid *h = (oid*) Tloc(g, w))@
 		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	}
 @c
 /*	aggrX3_minmax3_oid_body
 	@[10]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
-		oid *h = (oid*) BUNtloc(gi, w)				g tail value lookup
+		oid *h = (oid*) Tloc(g, w)				g tail value lookup
 */
 @= aggrX3_minmax3_oid_body
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
@@ -282,7 +282,7 @@ static int
 aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
 	BAT *bn;
-	BATiter bni, bi = bat_iterator(b), gi = bat_iterator(g);
+	BATiter bni, bi = bat_iterator(b);
 	int (*cmp)(ptr,ptr);
 	ptr nil;
 	BUN off;

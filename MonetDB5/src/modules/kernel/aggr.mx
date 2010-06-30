@@ -177,7 +177,7 @@ as the latter turned out to be rather expensive ...
 #define SCAN_aggr_init \
 	oid _h; \
 	BUN _j = BATcount(bn); \
-	oid *_bnh = (oid*) BUNhloc(bni, BUNfirst(bn)); \
+	oid *_bnh = (oid*) Hloc(bn, BUNfirst(bn)); \
 	BUN _r = BUNfirst(bn);
 
 #define SCANfndOID(r, bn, h)	\
@@ -204,7 +204,7 @@ hash-lookups.
 @h
 #define MERGE_aggr_init						\
 	BUN _i = 0, _j = BATcount(bn), _r = BUNfirst(bn);	\
-	oid _h, *_bnh = (oid*) BUNhloc(bni, _r);		\
+	oid _h, *_bnh = (oid*) Hloc(bn, _r);		\
 	if (_j > 0)						\
 		_j--;
 
@@ -223,7 +223,7 @@ hash-lookups.
 /*
 #define _MERGE_aggr_init					\
 	BUN _i = 0, _j = BATcount(bn), _r = BUNfirst(bn);	\
-	oid _h, *_bnh = (oid*) BUNhloc(bni, _r);		\
+	oid _h, *_bnh = (oid*) Hloc(bn, _r);		\
 	dbl s = (dbl)_j / (dbl)range;				\
 	if (_j > 0)						\
 		_j--;
