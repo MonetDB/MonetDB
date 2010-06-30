@@ -265,10 +265,10 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
-	if (e->htype == TYPE_void) {
+	if (BAThdense(e)) {
 		/* void lookup */
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
 				@:aggrX3_prod3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
 				@:aggrX3_prod3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
@@ -280,8 +280,8 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		slots = range;
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
 				return aggrX3_prod3_@1_@2_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
 			} else {
 				@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2,(*(oid*)h)-min)@
@@ -292,8 +292,8 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
 		/* scan lookup */
 		SCAN_aggr_init;
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
 				@:aggrX3_prod3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
 				@:aggrX3_prod3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
@@ -303,8 +303,8 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		}
 	} else {
 		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+		if (BAThdense(b)) {
+			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
 				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2,r-off)@
 			} else {
 				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
