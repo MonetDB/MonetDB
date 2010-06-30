@@ -1,0 +1,157 @@
+@/
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+Copyright August 2008-2010 MonetDB B.V.
+All Rights Reserved.
+@
+
+@f vault
+@a Martin Kersten
+@v 0.1
+@+ Data Vaults
+The Data Vault module provides the basic infrastructure to manage
+a repository with datafiles whose integrity and use is shared between
+MonetDB and a client. The module is developed solely for a Linux environment.
+
+Once a vault is created, the system administrator can manually add files to the catalog.
+A refresh() operation will fetch the files from the remote site.
+If they reside on the same file system then a symbolic link is sufficient.
+Alternatively, the vault can be populated by designation of the
+source directory of the files to be imported. Often, this involves
+semantic knowledge of the target repository and the vault kind.
+
+The SQL view on the vault merely describes the files being imported,
+their freshness and properties required to fetch them from a remote source.
+It is an ordinary SQL table, which can be the target for updates using SQL.
+See the source file for the script.
+@verbatim
+CREATE TABLE sys.vault (
+vid 			int PRIMARY KEY,-- Internal key
+kind			string,			-- vault kind (CSV, MSEED, FITS,..)
+source			string,			-- remote file name for cURL to access
+refresh			boolean,		-- refresh each time of access
+cached			timestamp,		-- copy stored locally
+target			string			-- file name of source file in vault
+);
+
+create function vaultDir(nme string)
+returns string
+external "vault.getDirectory";
+
+@end verbatim
+The vault root is a subdirectory of the dbfarm/<dbname>/vault/ and contains
+a subdirectory for each vault kind.
+@mal
+module vault;
+
+command getDirectory(i:int):str
+address VLTgetDirectory
+comment "Return the location of the vault directory";
+
+command refresh(id:str)
+address VLTrefresh
+comment "Refresh the objects in the vault identified";
+
+command refresh(id:int)
+address VLTrefreshObject
+comment "Refresh the content of the vault for a specific object";
+@{
+pattern prelude():void 
+address VLTprelude
+comment "Initialize the vault.";
+
+command epiloque():void 
+address VLTepilogue
+comment "Cleanup the vault.";
+
+@-
+@+ Implementation
+@h
+#ifndef _VAULT_H
+#define _VAULT_H
+#include "clients.h"
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+
+#ifdef WIN32
+#ifndef LIBVAULT
+#define vault_export extern __declspec(dllimport)
+#else
+#define vault_export extern __declspec(dllexport)
+#endif
+#else
+#define vault_export extern
+#endif
+
+vault_export str VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+vault_export str VLTgetDirectory(str *ret);
+vault_export str VLTrefresh(int *ret, str *nme);
+vault_export str VLTrefreshObject(int *ret, int *id);
+vault_export  str VLTepilogue(int *ret);
+#endif /* _VAULT_H */
+@- Module initializaton
+@c
+#include "sql_config.h"
+#include "vault.h"
+
+static char vaultpath[BUFSIZ];
+
+str
+VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	return MAL_SUCCEED;
+}
+
+str
+VLTepilogue(int *ret)
+{
+	(void)ret;
+	return MAL_SUCCEED;
+}
+@-
+@= initialize
+	if ( vaultpath[0] == 0){
+		snprintf(vaultpath, PATHLENGTH, "%s%c%s%cvault", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
+		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST) 
+			return createException(MAL,"vault.getDirectory", "can not access vault directory");
+	}
+@c
+str 
+VLTgetDirectory(str *ret){
+	@:initialize@
+	*ret= GDKstrdup(vaultpath);
+	return MAL_SUCCEED;
+}
+
+str 
+VLTrefresh(int *ret, str *nme){
+	@:initialize@
+	(void) ret;
+	(void) nme;
+	return MAL_SUCCEED;
+}
+str 
+VLTrefreshObject(int *ret, int *id){
+	@:initialize@
+	(void) ret;
+	(void) id;
+	return MAL_SUCCEED;
+}
+@}

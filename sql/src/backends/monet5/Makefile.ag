@@ -15,7 +15,7 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?merovingian
+SUBDIRS = NOT_WIN32?merovingian NOT_WIN32?vaults
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS)
