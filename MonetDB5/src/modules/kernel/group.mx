@@ -714,13 +714,14 @@ static int
 CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b);
 
 #define SAMPLE_SIZE 	1024
+#define SAMPLE_LIMIT	(SAMPLE_SIZE<<3)
 static BUN
 derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 {
 	BUN cnt = BATcount(b);
 	int n = bits(BATcount(ct_histo)), *N = &n;
 
-	if (BATcount(b) > (SAMPLE_SIZE<<3)) {
+	if (BATcount(b) > SAMPLE_LIMIT) {
 		BAT *s = BATsample(b, SAMPLE_SIZE);
 		BUN p, q;
 		BAT *histo, *map;
@@ -1240,7 +1241,7 @@ static int
 derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 {
 	lng _t_ = GDKusec();
-	wrd limit = (wrd)((MT_npages() * MT_pagesize()) / (100 * GDKnr_threads));
+	wrd limit = SAMPLE_LIMIT; /* fits well into L2 */
 	BAT *histo = NULL, *bn = NULL;
 	int synced = ALIGNsynced(ct_map, b), rtrn;
 
