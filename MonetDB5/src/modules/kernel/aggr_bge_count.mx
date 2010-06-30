@@ -155,11 +155,11 @@ structure to compute a group of common aggregates.
 
 		w = (BUN) (offset + v);
 		if (w >= base && w < end) {
-			oid *h = (oid*) BUNtail(gi, w);
+			@7 {
+				oid *h = (oid*) BUNtail(gi, w);
 
-			@3(r, bni, (oid*)h);
-			if (r != BUN_NONE) {
-				@7 {
+				@3(r, bni, h);
+				if (r != BUN_NONE) {
 					wrd *dst = (wrd*) @6;
 					(*dst)++;
 				}

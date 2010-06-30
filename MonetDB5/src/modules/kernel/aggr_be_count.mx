@@ -146,11 +146,11 @@ structure to compute a group of common aggregates.
 		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	BATaccessBegin(b,USE_HEAD@8,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
-		oid *h = (oid*) @5;
+		@7 {
+			oid *h = (oid*) @5;
 
-		@3(r, bni, h);
-		if (r != BUN_NONE) {
-			@7 {
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
 				wrd *dst = (wrd*) @6;
 				(*dst)++;
 			}
