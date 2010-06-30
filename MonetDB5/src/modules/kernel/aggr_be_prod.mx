@@ -178,8 +178,8 @@ CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e);
 int
 CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
+	BAT *bn = BATnew(TYPE_void, TYPE_@3, BATcount(e));
+	BATiter bni, bi = bat_iterator(b);
 	@3 zero = (@3) 1, *prods = NULL;
 	bit *hit = NULL;
 	BUN slots, off;
@@ -193,11 +193,12 @@ CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 		GDKerror("CMDaggrX3_prod_@1_@3(): BATnew() failed");
 		return GDK_FAIL;
 	}
-	off = BUNfirst(bn);
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_prod_@1_@3[@2](b=%s,e=%s);\n",
 		BATgetId(b), BATgetId(e));
 	/* init: set all prods to zero and calculate min/max oid */
 	@:init_result(@3)@
+	bni = bat_iterator(bn);
+	off = BUNfirst(bn);
 	range = max - min + 1;
 
 	/* scan b, and calculate prods */

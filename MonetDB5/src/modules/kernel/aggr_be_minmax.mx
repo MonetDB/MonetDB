@@ -227,8 +227,8 @@ structure to compute a group of common aggregates.
 static int
 aggrX3_@1_@3_@4_@5(BAT **ret, BAT *b, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
+	BAT *bn = BATnew(TYPE_void, BATttype(b), BATcount(e));
+	BATiter bni, bi = bat_iterator(b);
 	int (*cmp)(ptr,ptr);
 	ptr nil;
 	BUN off;
@@ -247,16 +247,17 @@ aggrX3_@1_@3_@4_@5(BAT **ret, BAT *b, BAT *e)
 		GDKerror("aggrX3_@1_@3_@4_@5(): BATnew() failed");
 		return GDK_FAIL;
 	}
-	cmp = BATatoms[bn->ttype].atomCmp;
-	nil =  ATOMnilptr(bn->ttype);
-	off =  BUNfirst(bn);
-	*ret = NULL;
 
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_@1_@3_@4_@5[@2,@6](b=%s,e=%s);\n",
 		BATgetId(b),BATgetId(e));
 	/* init: prepare the result bat;
 	 * trick: by using "tail-type" void, we only write the head column, here */
 	@:init_result(void)@
+	bni = bat_iterator(bn);
+	cmp = BATatoms[bn->ttype].atomCmp;
+	nil =  ATOMnilptr(bn->ttype);
+	off =  BUNfirst(bn);
+	*ret = NULL;
 	range = max - min + 1;
 
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */

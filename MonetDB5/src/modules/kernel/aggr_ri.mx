@@ -27,55 +27,52 @@ All Rights Reserved.
 */
 @= init_result
 {
-	REGISTER BUN _p = BUNlast(bn);
 	REGISTER BUN _cnt = BATcount(e);
-	BATiter ei = bat_iterator(e);
+	BAT *bm = 0;
 
-	bn->tsorted = bn->hsorted = 0;
+	bn->tsorted = 0;
 	bn->T->nonil = 0;
 	min = max = (oid) 0;
-	ALIGNsetH(bn, e);
-	/* set all sums/avgs/counts to zero; for prod, zero is 1 */
-	/* where necessary, calculate min/max oid with minimal effort */
-	BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
-	BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	if (e->htype == TYPE_void) {
-		oid onil = oid_nil;
-		(void) onil;	/* silence compiler about unused variable */
-		ALGODEBUG THRprintf(GDKout, "#init_result(@1): e->htype == TYPE_void, e->hseqbase=" OIDFMT "\n", e->hseqbase);
-		BATloop(e, p, q) {
-			void@1_bunfastins_nocheck_noinc(bn, _p, &onil, &zero);
-			_p++;
+	if (_cnt) {
+		if (BAThdense(e)) {
+			min = e->hseqbase;
+			max = min + _cnt - 1;
+		} else
+		if (BAThordered(e)) {
+			min = *(oid*) Hloc(e, BUNfirst(e));
+			max = *(oid*) Hloc(e, BUNlast(e) - 1);
+		} else {
+			BUN _i = 0;
+			oid *eh = (oid*)Hloc(e,BUNfirst(e));
+			min = max = eh[0];
+			BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
+			for (_i = 0; _i < _cnt; _i++) {
+				if (eh[_i] < min)
+					min = eh[_i];
+				else
+				if (eh[_i] > max)
+					max = eh[_i];
+			}
+			BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
 		}
-		BATseqbase(bn,e->hseqbase);
-	} else if (BAThordered(e)&1) {
-		if (_cnt)
-			min = *(oid*)BUNhloc(ei, BUNfirst(e));
-		BATloop(e, p, q) {
-			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(ei,p), &zero);
-			_p++;
-		}
-		if (_cnt)
-			max = *(oid*)BUNhloc(ei, BUNlast(e)-1);
-		ALGODEBUG THRprintf(GDKout, "#init_result(@1): BAThordered(e)&1, min=" OIDFMT ", max=" OIDFMT "\n", min, max);
-	} else {
-		oid i;
-		if (_cnt)
-			min = max = *(oid*)BUNhloc(ei, BUNfirst(e));
-		BATloop(e, p, q) {
-			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(ei,p), &zero);
-			_p++;
-			i = *(oid*)BUNhloc(ei, p);
-			if (i < min)
-				min = i;
-			else if (i > max)
-				max = i;
-		}
-		ALGODEBUG THRprintf(GDKout, "#init_result(@1): min=" OIDFMT ", max=" OIDFMT "\n", min, max);
 	}
-	BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
-	BATsetcount(bn, _p);
+#if TYPE_@1 != TYPE_void
+{
+	/* set all sums/avgs/counts to zero; for prod, zero is 1 */
+	BUN _i = 0;
+	@1 *bnt = (@1*)Tloc(bn,BUNfirst(bn));
+	BATaccessBegin(bn,USE_TAIL,MMAP_SEQUENTIAL);
+	for (_i = 0; _i < _cnt; _i++)
+		bnt[_i] = zero;
+	BATaccessEnd(bn,USE_TAIL,MMAP_SEQUENTIAL);
+}
+#endif
+	BATsetcount(bn, _cnt);
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
+	bm = VIEWcreate(e,bn);
+	BBPreleaseref(bn->batCacheid);
+	bn = bm;
+	bm = 0;
+	ALIGNsetH(bn, e);
 }

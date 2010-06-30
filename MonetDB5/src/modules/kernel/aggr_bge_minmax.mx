@@ -313,19 +313,19 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 		return rtrn;
 	}
 
-	bn = BATnew(e->htype, BATttype(b), BATcount(e));
+	bn = BATnew(TYPE_void, BATttype(b), BATcount(e));
 	if( bn == NULL) {
 		GDKerror("aggrX3_@13_@3_@4_@5(): BATnew() failed");
 		return GDK_FAIL;
 	}
-	bni = bat_iterator(bn);
-	cmp = BATatoms[bn->ttype].atomCmp;
-	nil = ATOMnilptr(bn->ttype);
-	off = BUNfirst(bn);
 
 	/* init: prepare the result bat;
 	 * trick: by using "tail-type" void, we only write the head column, here */
 	@:init_result(void)@
+	bni = bat_iterator(bn);
+	cmp = BATatoms[bn->ttype].atomCmp;
+	nil = ATOMnilptr(bn->ttype);
+	off = BUNfirst(bn);
 	range = max - min + 1;
 
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */

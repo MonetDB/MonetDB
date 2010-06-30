@@ -262,17 +262,17 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		return rtrn;
 	}
 
-	bn = BATnew(e->htype, TYPE_@2, BATcount(e));
+	bn = BATnew(TYPE_void, TYPE_@2, BATcount(e));
 	if( bn == NULL) {
 		GDKerror("CMDaggrX3_prod3_@1_@2(): BATnew() failed");
 		return GDK_FAIL;
 	}
-	bni = bat_iterator(bn);
-	off = BUNfirst(bn);
-	*ret = bn;
 
 	/* init: set all prods to zero and calculate min/max oid */
 	@:init_result(@2)@
+	bni = bat_iterator(bn);
+	off = BUNfirst(bn);
+	*ret = bn;
 	range = max - min + 1;
 
 	/* scan b & g, and calculate prods */

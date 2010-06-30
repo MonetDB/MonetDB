@@ -178,8 +178,8 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e);
 int
 CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
+	BAT *bn = BATnew(TYPE_void, TYPE_dbl, BATcount(e));
+	BATiter bni, bi = bat_iterator(b);
 	BUN off;
 	BUN *cnt = NULL;
 	BUN slots;
@@ -194,12 +194,13 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 		GDKerror("CMDaggrX3_avg_@1(): BATnew() failed");
 		return GDK_FAIL;
 	}
-	off = BUNfirst(bn);
 
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_avg_@1[@2](b=%s,e=%s);\n",
 		BATgetId(b),BATgetId(e));
 	/* init: set all sums & counts to zero and calculate min/max oid */
 	@:init_result(dbl)@
+	bni = bat_iterator(bn);
+	off = BUNfirst(bn);
 	range = max - min + 1;
 
 	/* scan b, calculate sums & counts, derive averages */

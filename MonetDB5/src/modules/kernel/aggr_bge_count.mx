@@ -230,8 +230,7 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
- 	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
-	bni = bat_iterator(bn);
+ 	bn = BATnew(TYPE_void, TYPE_wrd, BATcount(e));
 	if( bn == NULL) {
 		GDKerror("CMDaggrX3_count3(): BATnew() failed");
 		return GDK_FAIL;
@@ -239,6 +238,7 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 
 	/* init: set all counts to zero and calculate min/max oid */
 	@:init_result(wrd)@
+	bni = bat_iterator(bn);
 	bn->T->nonil = 1;
 	range = max - min + 1;
 

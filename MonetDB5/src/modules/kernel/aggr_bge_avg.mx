@@ -234,16 +234,16 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 		return rtrn;
 	}
 
-	bn = BATnew(e->htype, TYPE_dbl, BATcount(e));
+	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(e));
 	if( bn == NULL) {
 		GDKerror("CMDaggrX3_avg3_@1(): BATnew() failed");
 		return GDK_FAIL;
 	}
-	bni = bat_iterator(bn);
-	off = BUNfirst(bn);
 
 	/* init: set all sums & counts to zero and calculate min/max oid */
 	@:init_result(dbl)@
+	bni = bat_iterator(bn);
+	off = BUNfirst(bn);
 	range = max - min + 1;
 
 	/* scan b & g, calculate sums & counts, derive averages */
