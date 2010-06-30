@@ -77,7 +77,8 @@ structure to compute a group of common aggregates.
 	}
 	/* scan b & g, and increment counts in-place or in cnt-array */
 	base = BUNfirst(g);
-	offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gh_offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gt_offset = (ssize_t) g->tseqbase - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	btt = b->ttype;
@@ -145,19 +146,31 @@ structure to compute a group of common aggregates.
 		if (!simple_EQ(BUNtloc(b,p),bt_nil,{chr,bte,sht,int,flt,lng,dbl}))
 */
 @= aggrX3_count3_loop
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,@7);\n");
+	if (BATtdense(g)) {
+		@:aggrX3_count3_loop_body(@1,@2,@3,@4,@5,@6,@7,oid hh = (oid) (gt_offset + v); oid *h = &hh)@
+	} else {
+		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
+		@:aggrX3_count3_loop_body(@1,@2,@3,@4,@5,@6,@7,oid *h = (oid*) BUNtloc(gi, w))@
+		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
+	}
+@c
+/*	aggrX3_count3_loop_body
+	@8:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
+		oid *h = (oid*) BUNtloc(gi, w)				g tail value lookup
+*/
+@= aggrX3_count3_loop_body
+	ALGODEBUG THRprintf(GDKout, "#aggrX3_count3_loop_body(@1,@2,@3,@4,@5,@6,@7,@8);\n");
 	if (!(@1 && cnt))
 		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
-	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid v = *(oid*) @5;
 
-		w = (BUN) (offset + v);
+		w = (BUN) (gh_offset + v);
 		if (w >= base && w < end) {
 			@7 {
-				oid *h = (oid*) BUNtail(gi, w);
+				@8;
 
 				@3(r, bni, h);
 				if (r != BUN_NONE) {
@@ -167,7 +180,6 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
-	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b_use)
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
 	if (!(@1 && cnt))
@@ -188,7 +200,7 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	oid min, max;
 	oid bhsb;
 	BUN base, end, w;
-	ssize_t offset;
+	ssize_t gh_offset, gt_offset;
 	int b_use = 0;
 	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);

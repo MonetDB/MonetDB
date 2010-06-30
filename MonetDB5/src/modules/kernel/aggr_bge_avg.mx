@@ -91,7 +91,8 @@ structure to compute a group of common aggregates.
 	}
 	/* scan b & g, adding sums, and incrementing counts */
 	base = BUNfirst(g);
-	offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gh_offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gt_offset = (ssize_t) g->tseqbase - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
@@ -99,49 +100,13 @@ structure to compute a group of common aggregates.
 		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
-	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
-	if (b->T->nonil) {
-		BATloop(b, p, q) {
-			@6 *t = (@6*) BUNt@7(bi,p);
-			oid v = *(oid*) @5;
-
-			w = (BUN) (offset + v);
-			if (w >= base && w < end) {
-				oid *h = (oid*) BUNtail(gi, w);
-
-				@3(r, bni, (oid*)h);
-				if (r != BUN_NONE) {
-					dbl *dst = (dbl*) @8;
-					*dst += *t;
-					cnt[@9]++;
-				}
-			}
-		}
+	if (BATtdense(g)) {
+		@:aggrX3_avg3_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],oid hh = (oid) (gt_offset + v); oid *h = &hh)@
 	} else {
-		BATloop(b, p, q) {
-			@6 *t = (@6*) BUNt@7(bi,p);
-			oid v = *(oid*) @5;
-
-			w = (BUN) (offset + v);
-			if (w >= base && w < end) {
-				oid *h = (oid*) BUNtail(gi, w);
-
-				@3(r, bni, (oid*)h);
-				if (r != BUN_NONE) {
-					dbl *dst = (dbl*) @8;
-					if (*dst != dbl_nil) {
-						if (*t == @6_nil) {
-							*dst = dbl_nil;
-						} else {
-							*dst += *t;
-						}
-						cnt[@9]++;
-					}
-				}
-			}
-		}
+		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
+		@:aggrX3_avg3_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],oid *h = (oid*) BUNtloc(gi, w))@
+		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	}
-	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b_use)
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
 	if (!(@1 && sums))
@@ -182,6 +147,54 @@ structure to compute a group of common aggregates.
 	if (cnt)
 		GDKfree(cnt);
 @c
+/*	aggrX3_avg3_body
+	@[11]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
+		oid *h = (oid*) BUNtloc(gi, w)				g tail value lookup
+*/
+@= aggrX3_avg3_body
+	ALGODEBUG THRprintf(GDKout, "#aggrX3_avg3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],@[11]);\n");
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid v = *(oid*) @5;
+
+			w = (BUN) (gh_offset + v);
+			if (w >= base && w < end) {
+				@[11];
+
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					dbl *dst = (dbl*) @8;
+					*dst += *t;
+					cnt[@9]++;
+				}
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid v = *(oid*) @5;
+
+			w = (BUN) (gh_offset + v);
+			if (w >= base && w < end) {
+				@[11];
+
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					dbl *dst = (dbl*) @8;
+					if (*dst != dbl_nil) {
+						if (*t == @6_nil) {
+							*dst = dbl_nil;
+						} else {
+							*dst += *t;
+						}
+						cnt[@9]++;
+					}
+				}
+			}
+		}
+	}
+@c
 /*	arithavg3
 	@6:	bte / sht / int / wrd / lng / flt / dbl	b/bn-tail-type
 	@7:	"loc" for fixsized b/bn-tail-type,	b/bn-tail-access
@@ -206,7 +219,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	BUN p, q, r;
 	oid bhsb;
 	BUN base, end, w;
-	ssize_t offset;
+	ssize_t gh_offset, gt_offset;
 	int b_use = USE_TAIL;
 
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",

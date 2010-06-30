@@ -77,20 +77,45 @@ structure to compute a group of common aggregates.
 	}
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	base = BUNfirst(g);
-	offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gh_offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gt_offset = (ssize_t) g->tseqbase - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
-	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
+	if (BATtdense(g)) {
+		@:aggrX3_minmax3_ptr_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid hh = (oid) (gt_offset + v); oid *h = &hh)@
+	} else {
+		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
+		@:aggrX3_minmax3_ptr_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid *h = (oid*) BUNtloc(gi, w))@
+		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
+	}
+	if (b_use)
+		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
+	/* insert the extreme values into the result */
+	BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	BATloop(bn, r, q) {
+		oid *h = (oid*)BUNh@4(bni,r);
+		ptr val = extremes[@8];
+		(void) h;	/* silence compiler about unused variable */
+		ATOMput(bn->ttype, bn->T->vheap, BUNtloc(bni,r), val?val:nil);
+	}
+	BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+@c
+/*	aggrX3_minmax3_ptr_body
+	@[10]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
+		oid *h = (oid*) BUNtloc(gi, w)				g tail value lookup
+*/
+@= aggrX3_minmax3_ptr_body
+	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax3_ptr_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			ptr t = BUNt@7(bi,p);
 			oid v = *(oid*) @5;
 
-			w = (BUN) (offset + v);
+			w = (BUN) (gh_offset + v);
 			if (w >= base && w < end) {
-				oid *h = (oid*) BUNtail(gi, w);
+				@[10];
 
 				@3(r, bni, (oid*)h);
 				if (r != BUN_NONE) {
@@ -106,9 +131,9 @@ structure to compute a group of common aggregates.
 			ptr t = BUNt@7(bi,p);
 			oid v = *(oid*) @5;
 
-			w = (BUN) (offset + v);
+			w = (BUN) (gh_offset + v);
 			if (w >= base && w < end) {
-				oid *h = (oid*) BUNtail(gi, w);
+				@[10];
 
 				@3(r, bni, (oid*)h);
 				if (r != BUN_NONE) {
@@ -124,18 +149,6 @@ structure to compute a group of common aggregates.
 			}
 		}
 	}
-	BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
-	if (b_use)
-		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
-	/* insert the extreme values into the result */
-	BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATloop(bn, r, q) {
-		oid *h = (oid*)BUNh@4(bni,r);
-		ptr val = extremes[@8];
-		(void) h;	/* silence compiler about unused variable */
-		ATOMput(bn->ttype, bn->T->vheap, BUNtloc(bni,r), val?val:nil);
-	}
-	BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 @c
 /*	aggrX3_minmax3_oid
 		e-void-head	e-oid-head	e-oid-head	e-oid-head
@@ -180,20 +193,34 @@ structure to compute a group of common aggregates.
 	}
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	base = BUNfirst(g);
-	offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gh_offset = (ssize_t) base - (ssize_t) g->hseqbase;
+	gt_offset = (ssize_t) g->tseqbase - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
-	BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
+	if (BATtdense(g)) {
+		@:aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid hh = (oid) (gt_offset + v); oid *h = &hh)@
+	} else {
+		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
+		@:aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,oid *h = (oid*) BUNtloc(gi, w))@
+		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
+	}
+@c
+/*	aggrX3_minmax3_oid_body
+	@[10]:	oid hh = (oid) (gt_offset + v); oid *h = &hh		g tail value calculation
+		oid *h = (oid*) BUNtloc(gi, w)				g tail value lookup
+*/
+@= aggrX3_minmax3_oid_body
+	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			ptr t = BUNt@7(bi,p);
 			oid v = *(oid*) @5;
 
-			w = (BUN) (offset + v);
+			w = (BUN) (gh_offset + v);
 			if (w >= base && w < end) {
-				oid *h = (oid*) BUNtail(gi, w);
+				@[10];
 
 				@3(r, bni, (oid*)h);
 				if (r != BUN_NONE) {
@@ -210,9 +237,9 @@ structure to compute a group of common aggregates.
 			ptr t = BUNt@7(bi,p);
 			oid v = *(oid*) @5;
 
-			w = (BUN) (offset + v);
+			w = (BUN) (gh_offset + v);
 			if (w >= base && w < end) {
-				oid *h = (oid*) BUNtail(gi, w);
+				@[10];
 
 				@3(r, bni, (oid*)h);
 				if (r != BUN_NONE) {
@@ -269,7 +296,7 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 	oid min, max;
 	oid bhsb;
 	BUN base, end, w;
-	ssize_t offset;
+	ssize_t gh_offset, gt_offset;
 	int b_use = USE_TAIL;
 
 	*ret = NULL;
