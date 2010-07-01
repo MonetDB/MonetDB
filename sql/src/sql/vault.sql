@@ -26,9 +26,9 @@ target          string          -- file name of source file in vault
 
 create function getVaultDir(nme string)
 returns string
-external sql.getVaultDir;
+external name sql.getVaultDir;
 
 -- refresh the vault
 create procedure refreshVault(nme string)
-external sql.refreshVault;
+external name sql.refreshVault;
 
