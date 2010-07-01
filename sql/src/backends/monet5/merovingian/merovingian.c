@@ -1000,6 +1000,7 @@ main(int argc, char *argv[])
 
 	if (e != NO_ERR) {
 		/* console */
+		Mfprintf(stderr, "%s\n", argv[0], e);
 		Mfprintf(oerr, "%s: %s\n", argv[0], e);
 		MERO_EXIT(1);
 		/* logfile */
