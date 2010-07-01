@@ -44,7 +44,6 @@ start transaction;
 @include skyserver.sql
 @include clients.sql
 
-@include vault.sql
 @-
 The remaining functionality is considered for debugging.
 @sql

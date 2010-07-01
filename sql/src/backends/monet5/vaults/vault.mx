@@ -54,6 +54,7 @@ external "vault.getDirectory";
 The vault root is a subdirectory of the dbfarm/<dbname>/vault/ and contains
 a subdirectory for each vault kind.
 @mal
+library vault;
 module vault;
 
 command getDirectory(i:int):str
@@ -67,7 +68,6 @@ comment "Refresh the objects in the vault identified";
 command refresh(id:int)
 address VLTrefreshObject
 comment "Refresh the content of the vault for a specific object";
-@{
 pattern prelude():void 
 address VLTprelude
 comment "Initialize the vault.";
@@ -76,11 +76,13 @@ command epiloque():void
 address VLTepilogue
 comment "Cleanup the vault.";
 
+@{
 @-
 @+ Implementation
 @h
 #ifndef _VAULT_H
 #define _VAULT_H
+#include "sql_config.h"
 #include "clients.h"
 #include "mal.h"
 #include "mal_client.h"
@@ -104,7 +106,6 @@ vault_export  str VLTepilogue(int *ret);
 #endif /* _VAULT_H */
 @- Module initializaton
 @c
-#include "sql_config.h"
 #include "vault.h"
 
 static char vaultpath[BUFSIZ];
