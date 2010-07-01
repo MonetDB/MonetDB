@@ -1,7 +1,12 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-#*June2010
+  01 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c:
+  When a startup failure causes a shutdown, make sure we log this
+  incident in the logfile, together with a message that the deamon was
+  shut down due to this fatal condition.
+
+*Jun2010
 
   01 Jun 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c, utils.c:
   Fixed an issue where Merovingian's strict umask was applied too early
