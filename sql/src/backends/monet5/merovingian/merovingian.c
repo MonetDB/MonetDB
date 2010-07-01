@@ -427,7 +427,7 @@ main(int argc, char *argv[])
 	FILE *cnf = NULL, *pidfile = NULL;
 	char buf[1024];
 	char bufu[1024];
-	dpair d;
+	dpair d = NULL;
 	int pfd[2];
 	int retfd = -1;
 	pthread_t tid;
@@ -1010,14 +1010,13 @@ main(int argc, char *argv[])
 	}
 
 shutdown:
-
-	/* we don't need merovingian itself */
-	d = d->next;
-
 	/* stop started mservers */
-	if (_mero_exit_timeout > 0) {
+	if (d != NULL && _mero_exit_timeout > 0) {
 		dpair t;
 		threadlist tl = NULL, tlw = tl;
+
+		/* we don't need merovingian itself */
+		d = d->next;
 
 		pthread_mutex_lock(&_mero_topdp_lock);
 		t = d;
@@ -1073,8 +1072,10 @@ shutdown:
 
 	/* remove files that suggest our existence */
 	unlink(".merovingian_lock");
-	unlink(pidfilename);
-	GDKfree(pidfilename);
+	if (pidfilename != NULL) {
+		unlink(pidfilename);
+		GDKfree(pidfilename);
+	}
 
 	/* mostly for valgrind... */
 	freeConfFile(_mero_props);
