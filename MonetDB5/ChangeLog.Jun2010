@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thr Jul 01 2010 Fabian Groffen <fabian@cwi.nl>
+- Return a correct URI for local connection from Sabaoth when the
+  connection is a UNIX domain socket.  Partial fix for bug #2567.
+
 * Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
 - various performance fixes in grouping and grouped aggregation code
   (MonetDB5/src/modules/kernel/group.mx, MonetDB5/src/modules/kernel/aggr*.mx)
