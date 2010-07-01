@@ -518,8 +518,11 @@ main(int argc, char *argv[])
 	if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
 		Mfprintf(stderr, "could not write to parent\n"); \
 	} \
-	if (status != 0) \
-		return(status); \
+	if (status != 0) { \
+		Mfprintf(stderr, "fatal startup condition encountered, " \
+				"aborting startup\n"); \
+		goto shutdown; \
+	} \
 }
 
 	readConfFile(ckv, cnf);
@@ -1000,12 +1003,13 @@ main(int argc, char *argv[])
 
 	if (e != NO_ERR) {
 		/* console */
-		Mfprintf(stderr, "%s\n", argv[0], e);
 		Mfprintf(oerr, "%s: %s\n", argv[0], e);
-		MERO_EXIT(1);
 		/* logfile */
 		Mfprintf(stderr, "%s\n", e);
+		MERO_EXIT(1);
 	}
+
+shutdown:
 
 	/* we don't need merovingian itself */
 	d = d->next;
