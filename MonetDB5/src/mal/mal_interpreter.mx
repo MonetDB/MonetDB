@@ -1262,7 +1262,15 @@ DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
 		printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
 	}
 }
-
+@-
+Parallel processing is mostly driven by dataflow, but within this context
+there may be different schemes to take instructions into execution.
+The admission scheme (and wrapup) are the necessary scheduler hooks.
+A scheduler registers the functions needed and should release them
+at the end of the parallel block.
+They take effect after we have ensured that the basic properties for
+execution hold.
+@c
 static str
 DFLOWscheduler( DataFlow flow )
 {
@@ -1287,6 +1295,8 @@ DFLOWscheduler( DataFlow flow )
 	while(queued){
 		PARDEBUG stream_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
 		f = q_dequeue(flow->done);
+		if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
+			(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, f->pc));
 		f->status = DFLOWwrapup;
 		queued--;
 		if (f->pc < 0) {
@@ -1295,8 +1305,11 @@ DFLOWscheduler( DataFlow flow )
 			}
 			/* we have to wait for all threads to report back */
 			/* dequeue the remainders in case of an error */
-			while(queued-- > 0) 
-				(void)q_dequeue(flow->done);
+			while(queued-- > 0)  {
+					if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
+						(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, f->pc));
+					(void)q_dequeue(flow->done);
+			}
 			return f->error;
 		} else {
 			p = getInstrPtr(flow->mb, f->pc);
@@ -1337,7 +1350,9 @@ DFLOWscheduler( DataFlow flow )
 		if (fs[i].status == DFLOWpending ) {
 			p = getInstrPtr(flow->mb, fs[i].pc);
 			for ( j= p->retc; j < p->argc; j++)
-			if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc)){
+			if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc) &&
+				( f->flow->stk->admit == 0 || (*f->flow->stk->admit)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, f->pc)) )
+			){
 				queued++;
 				candidates ++;
 				DFLOWactivate(flow,fs,i,p);

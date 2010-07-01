@@ -68,6 +68,8 @@ ensure we are still within safe bounds.
 #define MAXGLOBALS  4 * STACKINCR
 #define MAXSHARES   8
 
+typedef str (*MALfcn) ();
+
 typedef struct MALSTK {
 	int stksize;
 	int stktop;
@@ -76,6 +78,13 @@ typedef struct MALSTK {
 	int calldepth;		/* to protect against runtime stack overflow */
 	short keepAlive;	/* do not garbage collect when set */
 	short garbageCollect; /* stack needs garbage collection */
+@-
+Parallel processing is mostly driven by dataflow, but within this context
+there may be different schemes to take instructions into execution.
+The admission scheme (and wrapup) are the necessary scheduler hooks.
+@h
+	MALfcn admit;
+	MALfcn wrapup;
 	MT_Lock stklock;	/* used for parallel processing */
 @-
 It is handy to administer the timing in the stack frame

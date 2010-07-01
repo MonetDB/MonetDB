@@ -350,7 +350,6 @@ typedef struct VARRECORD {
 #define VARRETS 2
 
 /* all functions return a string */
-typedef str (*MALfcn) ();
 
 typedef struct {
 	bit token;		/* instruction type */
