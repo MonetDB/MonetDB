@@ -349,7 +349,13 @@ str SABAOTHgetLocalConnection(str *ret) {
 	if (stats == NULL || stats->conns == NULL || stats->conns->val == NULL) {
 		*ret = GDKstrdup(str_nil);
 	} else {
-		snprintf(data, sizeof(data), "%s%s", stats->conns->val, stats->dbname);
+		if (stats->conns->val[15] == '/') {
+			snprintf(data, sizeof(data), "%s?database=%s",
+					stats->conns->val, stats->dbname);
+		} else {
+			snprintf(data, sizeof(data), "%s%s",
+					stats->conns->val, stats->dbname);
+		}
 		*ret = GDKstrdup(data);
 	}
 

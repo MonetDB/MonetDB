@@ -1,3 +1,6 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Thr Jul  1 2010 Fabian Groffen <fabian@cwi.nl>
+- Fix implementation of mapi_mapiuri to deal with UNIX socket urls
+  properly.  This fixes one part of Bug #2567.

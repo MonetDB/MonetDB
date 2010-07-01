@@ -39,6 +39,10 @@ remote99
 
 remote10
 
+# this will always return something else
+#sabaoth00
+sabaoth01
+
 partition
 printf
 #some remote related tests

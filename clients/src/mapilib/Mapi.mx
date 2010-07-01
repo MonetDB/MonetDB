@@ -1303,6 +1303,7 @@ static MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
 static int unquote(const char *msg, char **start, const char **next, int endchar, size_t *lenp);
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
+static void parse_uri_query(Mapi mid, char *uri);
 
 static int mapi_initialized = 0;
 
@@ -2093,39 +2094,43 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	}
 
 	/* copy to a writable working buffer */
-	snprintf(uri, 8096, "%s", url +sizeof("mapi:monetdb://") - 1);
+	snprintf(uri, 8096, "%s", url + sizeof("mapi:monetdb://") - 1);
 
-	if ((p = strchr(uri, ':')) == NULL) {
-		mapi_setError(mid, "URI must contain a port number after the hostname", "mapi_mapiuri", MERROR);
-		return mid;
-	}
-	*p++ = '\0';
-	host = uri;
-	dbname = p;		/* temp misuse */
-
-	if ((p = strchr(dbname, '/')) == NULL) {
-		p = dbname;
-		dbname = NULL;
-	} else {
+	if (uri[0] != '/') {
+		if ((p = strchr(uri, ':')) == NULL) {
+			mapi_setError(mid, "URI must contain a port number after "
+					"the hostname", "mapi_mapiuri", MERROR);
+			return mid;
+		}
 		*p++ = '\0';
-		if (*p == '\0') {
+		dbname = p;		/* temp misuse */
+		host = uri;
+		if ((p = strchr(dbname, '/')) == NULL) {
 			p = dbname;
 			dbname = NULL;
 		} else {
-			char *t = dbname;
-			dbname = p;
-			p = t;
+			*p++ = '\0';
+			if (*p == '\0') {
+				p = dbname;
+				dbname = NULL;
+			} else {
+				char *t = dbname;
+				dbname = p;
+				p = t;
+			}
 		}
-	}
-	port = atoi(p);
-	if (port <= 0) {
-		mapi_setError(mid, "URI contains invalid port", "mapi_mapiuri", MERROR);
-		return mid;
+		port = atoi(p);
+		if (port <= 0) {
+			mapi_setError(mid, "URI contains invalid port",
+					"mapi_mapiuri", MERROR);
+			return mid;
+		}
+	} else {
+		host = uri;
+		port = 0;
+		dbname = NULL;
 	}
 
-	if (mid->hostname)
-		free(mid->hostname);
-	mid->hostname = strdup(host);
 	mid->port = port;
 	if (mid->username != NULL)
 		free(mid->username);
@@ -2145,7 +2150,18 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		mid->languageId = LANG_XQUERY;
 	if (mid->database)
 		free(mid->database);
-	mid->database = dbname == NULL ? NULL : strdup(dbname);
+	mid->database = NULL;
+
+	/* this is in particular important for unix sockets */
+	parse_uri_query(mid, uri);
+
+	/* doing this here, because parse_uri_query will terminate the
+	 * string if a ? is in place */
+	if (mid->hostname)
+		free(mid->hostname);
+	mid->hostname = strdup(host);
+	if (mid->database == NULL && dbname != NULL)
+		mid->database = strdup(dbname);
 
 	return mid;
 }
@@ -2267,7 +2283,7 @@ parse_uri_query(Mapi mid, char *uri)
 	if ((uri = strchr(uri, '?')) == NULL)
 		return;
 
-	uri++;			/* skip '?' */
+	*uri++ = '\0';			/* skip '?' */
 
 	do {
 		if ((amp = strchr(uri, '&')) != NULL)
@@ -2281,6 +2297,14 @@ parse_uri_query(Mapi mid, char *uri)
 			} else if (strcmp("language", uri) == 0) {
 				free(mid->language);
 				mid->language = strdup(val);
+				if (strcmp(val, "mil") == 0)
+					mid->languageId = LANG_MIL;
+				else if (strcmp(val, "mal") == 0)
+					mid->languageId = LANG_MAL;
+				else if (strcmp(val, "sql") == 0)
+					mid->languageId = LANG_SQL;
+				else if (strcmp(val, "xquery") == 0)
+					mid->languageId = LANG_XQUERY;
 			} else if (strcmp("user", uri) == 0) {
 				/* until we figure out how this can be
 				   done safely wrt security, ignore */
