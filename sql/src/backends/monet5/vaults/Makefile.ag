@@ -18,7 +18,7 @@
 INCLUDES = ../../include ../../common ../../storage ../../server \
 	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS)
 
-lib__vaults = {
+lib__vault = {
 	DIR = libdir/MonetDB5/
 	SOURCES = vault.mx 
 #	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
