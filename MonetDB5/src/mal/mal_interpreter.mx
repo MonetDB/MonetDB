@@ -1278,7 +1278,7 @@ DFLOWscheduler( DataFlow flow )
 	int pc = 0, i, j, oa =0, ia;
 	int limit = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
-	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit), f;
+	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit), f = 0;
 	InstrPtr p;
 
 	if ( limit == 0)
@@ -1351,7 +1351,7 @@ DFLOWscheduler( DataFlow flow )
 			p = getInstrPtr(flow->mb, fs[i].pc);
 			for ( j= p->retc; j < p->argc; j++)
 			if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc) &&
-				( f->flow->stk->admit == 0 || (*f->flow->stk->admit)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, f->pc)) )
+				(f == 0 || f->flow->stk->admit == 0 || (*f->flow->stk->admit)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, f->pc)) )
 			){
 				queued++;
 				candidates ++;
