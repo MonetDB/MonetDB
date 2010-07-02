@@ -679,7 +679,7 @@ main(int argc, char *argv[])
 				(_mero_controlport != 0 ? "yes" : "no"));
 		Mfprintf(stderr, "  performs neighbour discovery: %s\n",
 				(discoveryport != 0 ? "yes" : "no"));
-		MERO_EXIT(1);
+		MERO_EXIT(0);
 	}
 
 	/* seed the randomiser for when we create a database, send responses
