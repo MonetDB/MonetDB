@@ -911,7 +911,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname)
 	const char functions[] = "SELECT \"f\".\"func\" "
 		"FROM \"sys\".\"schemas\" \"s\","
 		     "\"sys\".\"functions\" \"f\" "
-		"WHERE \"f\".\"sql\" = TRUE AND "
+		"WHERE \"f\".\"id\" > 2000 AND "
 		      "\"s\".\"id\" = \"f\".\"schema_id\""
 		      "%s%s%s "
 		"ORDER BY \"f\".\"id\"";
