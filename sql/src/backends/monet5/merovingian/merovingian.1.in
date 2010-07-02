@@ -9,8 +9,8 @@ merovingian \- the MonetDB Database Server daemon
 .SH DESCRIPTION
 .B merovingian
 is the MonetDB Database Server daemon.  It is not meant to be used in
-interactive environments, and hence has no help or version commands nor
-flags.  The typical use of
+interactive environments, and hence has no help command or flag.
+The typical use of
 .B merovingian
 is to be started from a startup script, such as from
 .I /etc/init.d/
@@ -304,7 +304,8 @@ will not reopen the associated filedescriptor.
 .B merovingian
 returns exit code
 .B 0
-if it was able to successfully launch the background process.  When an
+if it was able to successfully launch the background process or when the
+version information was printed.  When an
 error occurs during startup that prevents
 .B merovingian
 from functioning properly, an exit code
