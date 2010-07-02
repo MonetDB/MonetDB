@@ -846,6 +846,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 				GDKfatal("SQL schema missing or incompatible, rebuild from archive");
 		}
 		s = n->data;
+		s->base.id = sid;
 	} else {
 		s = ZNEW(sql_schema);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
