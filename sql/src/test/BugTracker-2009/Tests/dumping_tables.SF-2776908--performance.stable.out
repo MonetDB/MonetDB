@@ -21,30 +21,10 @@ Ready.
 
 Over..
 
-# 22:33:48 >  
-# 22:33:48 >  mclient -lsql -i -umonetdb -Pmonetdb --host=pegasus --port=30332 
-# 22:33:48 >  
+# 20:57:34 >  
+# 20:57:34 >  mclient -lsql -ftest -i -e --host=alf --port=32448 
+# 20:57:34 >  
 
-TABLE   sys._columns
-TABLE   sys._tables
-TABLE   sys.args
-TABLE   sys.auths
-VIEW    sys.columns
-TABLE   sys.connections
-TABLE   sys.db_user_info
-TABLE   sys.dependencies
-TABLE   sys.functions
-TABLE   sys.idxs
-TABLE   sys.keycolumns
-TABLE   sys.keys
-TABLE   sys.privileges
-TABLE   sys.schemas
-TABLE   sys.sequences
-VIEW    sys.tables
-TABLE   sys.triggers
-TABLE   sys.types
-TABLE   sys.user_role
-VIEW    sys.users
 CREATE TABLE "sys"."triggers" (
 	"id" int,
 	"name" varchar(1024),

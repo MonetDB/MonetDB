@@ -4198,11 +4198,15 @@ rel_table_exp(mvc *sql, sql_rel *rel, symbol *column_e )
 {
 	if (column_e->token == SQL_TABLE) {
 		char *tname = column_e->data.lval->h->data.sval;
-		list *exps = rel_table_projections(sql, rel, tname);
-		if (exps)
+		list *exps;
+ 	
+		if ((exps = rel_table_projections(sql, rel, tname)) != NULL)
 			return exps;
+		if (!tname)
+			return sql_error(sql, 02, 
+				"Table expression without table name");
 		return sql_error(sql, 02, 
-			"Column expression Table '%s' unknown", tname);
+				"Column expression Table '%s' unknown", tname);
 	}
 	return NULL;
 }

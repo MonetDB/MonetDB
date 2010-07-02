@@ -55,7 +55,8 @@ Over..
 [ "MAY",	"FRIDAY"	]
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
-% sys.day_name,	sys.flight_day,	sys.day_name # table_name
+#select day_name.day_name,flight_day.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by flight_day.day_code,day_name.day_name order by day_code;
+% sys.day_name,	sys.flight_day,	sys.flight_day # table_name
 % day_name,	day_code,	L3 # name
 % char,	decimal,	wrd # type
 % 9,	2,	2 # length
