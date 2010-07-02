@@ -1,5 +1,5 @@
 %define name MonetDB-SQL
-%define version 2.38.1
+%define version 2.38.2
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
