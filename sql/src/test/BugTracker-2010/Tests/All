@@ -12,3 +12,4 @@ copy-into-too-long-string.Bug-2358
 in_column_exp.Bug-2561
 multiple-updates-in-transaction.Bug-2543
 limit_in_prepare.Bug-2552
+select_star.Bug-2563

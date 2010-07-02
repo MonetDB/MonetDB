@@ -255,7 +255,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 		return NULL;
 
 	if (!tname) {
-		if (is_project(rel->op))
+		if (is_project(rel->op) && rel->l)
 			return rel_projections(sql, rel->l, NULL, 1, 0);
 		else	
 			return NULL;
