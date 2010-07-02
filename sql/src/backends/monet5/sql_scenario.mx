@@ -510,8 +510,16 @@ SQLexitClient(Client c)
 		res_tables_destroy(m->results);
 		m->results= NULL;
 
-		if (m->session->tr)
-			reset_functions(m->session->tr);
+	//	if (m->session->tr)
+	//		reset_functions(m->session->tr);
+		{
+			backend *be = c->state[MAL_SCENARIO_PARSER];
+
+			mvc_destroy(m);
+			backend_destroy(be);
+			c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
+			c->state[MAL_SCENARIO_PARSER] = NULL;
+		}
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
 	return MAL_SUCCEED;
