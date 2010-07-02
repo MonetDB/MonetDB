@@ -189,20 +189,18 @@ QOTupdateStatistics(str nme, int actions, lng val)
 void
 QOTstatisticsExit()
 {
-	BAT *names = BATnew(TYPE_void,TYPE_str, 4);
+	bat names[5];
 
-	if ( names == NULL)
-		return;
 	if( qotStat[QOTnames] == NULL) 
 		return;
 	mal_set_lock(qotlock,"QOT statistics");
-	BUNappend(names, BBPname(qotStat[QOTnames]->batCacheid), FALSE);
-	BUNappend(names, BBPname(qotStat[QOTcalls]->batCacheid), FALSE);
-	BUNappend(names, BBPname(qotStat[QOTactions]->batCacheid), FALSE);
-	BUNappend(names, BBPname(qotStat[QOTtimings]->batCacheid), FALSE);
+	names[0] = 0;
+	names[1] = ABS(qotStat[QOTnames]->batCacheid);
+	names[2] = ABS(qotStat[QOTcalls]->batCacheid);
+	names[3] = ABS(qotStat[QOTactions]->batCacheid);
+	names[4] = ABS(qotStat[QOTtimings]->batCacheid);
 
-	TMsubcommit(names);
-	BBPreclaim(names);
+	TMsubcommit_list(names, 5);
 	mal_unset_lock(qotlock,"QOT statistics");
 }
 

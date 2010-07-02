@@ -502,12 +502,12 @@ startProfiler(stream *o)
 static void 
 commitProfiler(void)
 {
-	BAT *b = BATnew(TYPE_void, TYPE_str, 3);
+	bat b[3];
 
-	BUNappend(b, BBPname(profilerCount->batCacheid), FALSE);
-	BUNappend(b, BBPname(profilerTicks->batCacheid), FALSE);
-	TMsubcommit(b);
-	BBPreclaim(b);
+	b[0] = 0;
+	b[1] = ABS(profilerCount->batCacheid);
+	b[2] = ABS(profilerTicks->batCacheid);
+	TMsubcommit_list(b, 3);
 }
 
 int

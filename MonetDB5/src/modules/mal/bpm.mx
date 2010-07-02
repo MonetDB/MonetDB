@@ -3001,16 +3001,18 @@ BPMmap@1dbl(int *ret)
 str
 BPMsaveCatalog(int *r)
 {	
-	int i;
+	int i, n;
 	bat bt,idx;
-	BAT *tr;
+	bat *tr;
 	str nm;
 	str msg=MAL_SUCCEED;
 
 
-	/* store bat names to be committed */
-	tr = BATnew(TYPE_void, TYPE_str, bpmcatsize+10);
-	BATseqbase(tr,0);
+	/* using alloca, since the old TMsubcommit interface also uses
+	   alloca */
+	tr = alloca((bpmcatsize+10) * sizeof(bat));
+	n = 0;
+	tr[n++] = 0;
 
 	for(i=1; i< bpmcatsize; i++)
 		if( bpmcat[i]){
@@ -3037,32 +3039,31 @@ BPMsaveCatalog(int *r)
 	
 			msg= BKCsetPersistent(r, (int *)&bt);
 			if( msg != MAL_SUCCEED) return msg;
-			BUNappend(tr, BBPname(bt), FALSE);
+			tr[n++] = ABS(bt);
 		}
 	
 	BPMmapname(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 	BPMmapalias(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 	BPMmapbid(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 	BPMmapnxt(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 	BPMmapprv(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 	BPMmapcnt(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 	BPMmaptlowlng(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 	BPMmaptlowdbl(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 	BPMmapthghlng(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 	BPMmapthghdbl(&bt);
-	BUNappend(tr, BBPname(bt), FALSE);
+	tr[n++] = ABS(bt);
 
-	TMsubcommit(tr);
-	BBPreclaim(tr);
+	TMsubcommit_list(tr, n);
 
 	return MAL_SUCCEED;
 }

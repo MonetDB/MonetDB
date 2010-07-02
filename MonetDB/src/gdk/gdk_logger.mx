@@ -1006,33 +1006,34 @@ static int
 bm_subcommit(BAT *list, BAT *catalog, BAT *extra, int debug)
 {
 	BUN p, q;
-	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(list) * 2 + (extra ? BATcount(extra) : 0));
+	/* using alloca, since the old TMsubcommit interface also uses
+	   alloca */
+	bat *n = alloca(sizeof(bat) * (1 + BATcount(list) * 2 + (extra ? BATcount(extra) : 0)));
+	int i = 0;
 	BAT *b = list;
 	BATiter bi = bat_iterator(b);
 	int res;
 
-	BATseqbase(n, 0);
+	n[i++] = 0;
 
 	/* first loop over deleted then over current and new */
 	for (p = b->batDeleted; p < b->batFirst; p++) {
 		bat col = *(log_bid *) BUNhead(bi, p);
-		str name = BBPname(col);
 
 		if (debug & 1)
 			fprintf(stderr, "commit deleted %s (%d) %s\n",
-				name, col,
+				BBPname(col), col,
 				(b == catalog) ? BUNtail(bi, p) : "snapshot");
-		BUNappend(n, name, FALSE);
+		n[i++] = ABS(col);
 	}
 	BATloop(b, p, q) {
 		bat col = *(log_bid *) BUNhead(bi, p);
-		str name = BBPname(col);
 
 		if (debug & 1)
 			fprintf(stderr, "commit new %s (%d) %s\n",
-				name, col,
+				BBPname(col), col,
 				(b == catalog) ? BUNtail(bi, p) : "snapshot");
-		BUNappend(n, name, FALSE);
+		n[i++] = ABS(col);
 	}
 	if (extra) {
 		bi = bat_iterator(extra);
@@ -1043,14 +1044,13 @@ bm_subcommit(BAT *list, BAT *catalog, BAT *extra, int debug)
 				fprintf(stderr, "commit extra %s %s\n",
 					name,
 					(b == catalog) ? BUNtail(bi, p) : "snapshot");
-			BUNappend(n, name, FALSE);
+			n[i++] = ABS(BBPindex(name));
 		}
 	}
 	/* now commit catalog, so it's also up to date on disk */
-	BUNappend(n, BBPname(catalog->batCacheid), FALSE);
+	n[i++] = ABS(catalog->batCacheid);
 	BATcommit(catalog);
-	res = TMsubcommit(n);
-	BBPreclaim(n);
+	res = TMsubcommit_list(n, i);
 	return res;
 }
 

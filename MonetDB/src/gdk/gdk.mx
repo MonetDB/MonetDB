@@ -2875,6 +2875,7 @@ rollback mechanism).
 gdk_export int TMcommit(void);
 gdk_export int TMabort(void);
 gdk_export int TMsubcommit(BAT *bl);
+gdk_export int TMsubcommit_list(bat *subcommit, int cnt);
 
 @
 @}

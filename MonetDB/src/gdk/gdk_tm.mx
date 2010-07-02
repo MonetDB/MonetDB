@@ -168,25 +168,17 @@ is exclusive), the concurrency impact of subcommit is also much lighter to
 ongoing concurrent query and update facilities than a real global TMcommit.
 @c
 int
-TMsubcommit(BAT *b)
+TMsubcommit_list(bat *subcommit, int cnt)
 {
-	int xx, ret = -1, cnt = 1;	/* BBP artifact: slot 0 in the array will be ignored */
-	bat *subcommit = (bat *) alloca((BATcount(b) + 1) * sizeof(bat));
-	BUN p, q;
-	BATiter bi = bat_iterator(b);
+	int xx, ret = -1;
 
-	/* collect the list and save the new bats outside any locking */
-	BATloop(b, p, q) {
-		bat bid = BBPindex((str) BUNtail(bi, p));
+	assert(cnt > 0);
+	assert(subcommit[0] == 0); /* BBP artifact: slot 0 in the array will be ignored */
 
-		if (bid < 0)
-			bid = -bid;
-		if (bid)
-			subcommit[cnt++] = bid;
-	}
 	/* sort the list on BAT id */
 	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat);
 
+	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
 	if (prelude(cnt, subcommit) == 0) {	/* save the new bats outside the lock */
 		/* lock just prevents BBPtrims, and other global (sub-)commits */
 		for (xx = 0; xx <= BBP_THREADMASK; xx++)
@@ -198,6 +190,28 @@ TMsubcommit(BAT *b)
 			gdk_unset_lock(GDKtrimLock(xx), "TMsubcommit");
 	}
 	return ret;
+}
+
+int
+TMsubcommit(BAT *b)
+{
+	int cnt = 1;
+	bat *subcommit = (bat *) alloca((BATcount(b) + 1) * sizeof(bat));
+	BUN p, q;
+	BATiter bi = bat_iterator(b);
+
+	subcommit[0] = 0;	/* BBP artifact: slot 0 in the array will be ignored */
+	/* collect the list and save the new bats outside any locking */
+	BATloop(b, p, q) {
+		bat bid = BBPindex((str) BUNtail(bi, p));
+
+		if (bid < 0)
+			bid = -bid;
+		if (bid)
+			subcommit[cnt++] = bid;
+	}
+
+	return TMsubcommit_list(subcommit, cnt);
 }
 
 @- TMabort

@@ -623,18 +623,19 @@ Dictionary implementation.
 void 
 DICTcommit(BAT *b1, BAT *b2, BAT *b3, BAT *b4 )
 {
-	BAT *bl = BATnew(TYPE_void, TYPE_str, 10);
-	BATseqbase(bl,0);
+	bat bl[5];
+	int i = 0;
+
+	bl[i++] = 0;
 	if (b1)
-		BUNappend(bl, BBPname(b1->batCacheid), FALSE);
+		bl[i++] = ABS(b1->batCacheid);
 	if (b2)
-		BUNappend(bl, BBPname(b2->batCacheid), FALSE);
+		bl[i++] = ABS(b2->batCacheid);
 	if (b3)
-		BUNappend(bl, BBPname(b3->batCacheid), FALSE);
+		bl[i++] = ABS(b3->batCacheid);
 	if (b4)
-		BUNappend(bl, BBPname(b4->batCacheid), FALSE);
-	TMsubcommit(bl);
-	BBPreclaim(bl);
+		bl[i++] = ABS(b4->batCacheid);
+	TMsubcommit_list(bl, i);
 }
 
 @-

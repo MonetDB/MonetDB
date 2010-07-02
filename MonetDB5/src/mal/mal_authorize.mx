@@ -160,18 +160,19 @@ AUTHrequireAdminOrUser(Client *c, str *username) {
 }
 
 void
-AUTHcommit() {
-	BAT *b = BATnew(TYPE_oid, TYPE_str, 3);
-	assert(b);
+AUTHcommit()
+{
+	bat blist[4];
+
+	blist[0] = 0;
 
 	assert(user);
-	BUNappend(b, BATgetId(user), FALSE);
+	blist[1] = ABS(user->batCacheid);
 	assert(pass);
-	BUNappend(b, BATgetId(pass), FALSE);
+	blist[2] = ABS(pass->batCacheid);
 	assert(pass);
-	BUNappend(b, BATgetId(scen), FALSE);
-	TMsubcommit(b);
-	BBPreclaim(b);
+	blist[3] = ABS(scen->batCacheid);
+	TMsubcommit_list(blist, 4);
 }
 
 @-
@@ -219,7 +220,7 @@ AUTHinitTables() {
 	bid = BBPindex("M5system_auth_passwd");
 	if (bid) {
 		BAT *n;
-		BAT *s;
+		bat s[3];
 
 		b = BATdescriptor(bid);
 		if (b == NULL)
@@ -271,12 +272,10 @@ AUTHinitTables() {
 		BBPreleaseref(b->batCacheid);
 
 		/* commit the new situation */
-		s = BATnew(TYPE_oid, TYPE_str, 2);
-		assert(s);
-		BUNappend(s, BATgetId(n), FALSE);
-		BUNappend(s, BATgetId(b), FALSE);
-		TMsubcommit(s);
-		BBPreclaim(s);
+		s[0] = 0;
+		s[1] = ABS(n->batCacheid);
+		s[2] = ABS(b->batCacheid);
+		TMsubcommit_list(s, 3);
 	}
 
 	/* load/create password BAT */

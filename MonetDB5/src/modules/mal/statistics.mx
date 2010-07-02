@@ -272,19 +272,19 @@ STAT_create(str hnme, str tnme, int ht, int tt)
 static void
 STATcommit()
 {
-	BAT *b = BATnew(TYPE_void, TYPE_str, 10);
-	BATseqbase(b,0);
-	BUNappend(b, BBPname(STAT_id_inuse->batCacheid), FALSE);
-	BUNappend(b, BBPname(STAT_id_nme->batCacheid), FALSE);
-	BUNappend(b, BBPname(STAT_id_expire->batCacheid), FALSE);
-	BUNappend(b, BBPname(STAT_id_stamp->batCacheid), FALSE);
-	BUNappend(b, BBPname(STAT_id_count->batCacheid), FALSE);
-	BUNappend(b, BBPname(STAT_id_size->batCacheid), FALSE);
-	BUNappend(b, BBPname(STAT_id_min_lng->batCacheid), FALSE);
-	BUNappend(b, BBPname(STAT_id_max_lng->batCacheid), FALSE);
-	BUNappend(b, BBPname(STAT_id_histogram->batCacheid), FALSE);
-	TMsubcommit(b);
-	BBPreclaim(b);
+	bat b[10];
+
+	b[0] = 0;
+	b[1] = ABS(STAT_id_inuse->batCacheid);
+	b[2] = ABS(STAT_id_nme->batCacheid);
+	b[3] = ABS(STAT_id_expire->batCacheid);
+	b[4] = ABS(STAT_id_stamp->batCacheid);
+	b[5] = ABS(STAT_id_count->batCacheid);
+	b[6] = ABS(STAT_id_size->batCacheid);
+	b[7] = ABS(STAT_id_min_lng->batCacheid);
+	b[8] = ABS(STAT_id_max_lng->batCacheid);
+	b[9] = ABS(STAT_id_histogram->batCacheid);
+	TMsubcommit_list(b, 10);
 }
 
 static void
