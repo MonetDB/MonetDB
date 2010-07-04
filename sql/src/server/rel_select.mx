@@ -724,8 +724,11 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 static sql_rel*
 rel_parent( sql_rel *rel )
 {
-	if (is_project(rel->op) || rel->op == op_topn)
-		return rel->l;
+	if (is_project(rel->op) || rel->op == op_topn) {
+		sql_rel *l = rel->l;
+		if (is_project(l->op))
+			return l;
+	}
 	return rel;
 }
 
@@ -1335,6 +1338,9 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 	char *tname = NULL, name[16], *nme;
 
 	nme = number2name(name, 16, nr);
+
+	if (!sq)
+		return NULL;
 	
 	if (query->data.lval->h->next->data.sym) {
 		tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
