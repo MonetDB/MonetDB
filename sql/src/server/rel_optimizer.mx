@@ -2666,7 +2666,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static void
+static int
 exp_mark_used(sql_rel *subrel, sql_exp *e)
 {
 	sql_exp *ne = NULL;
@@ -2676,8 +2676,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 		ne = rel_find_exp(subrel, e);
 		break;
 	case e_convert:
-		exp_mark_used(subrel, e->l);
-		break;
+		return exp_mark_used(subrel, e->l);
 	case e_aggr:
 	case e_func: {
 		if (e->l) {
@@ -2717,22 +2716,51 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 	case e_atom:
 		/* atoms are used in e_cmp */
 		e->used = 1;
-		break;
+		/* return 0 as constants may require a full column ! */
+		return 0;
 	}
-	if (ne)
+	if (ne) {
 		ne->used = 1;
+		return ne->used;
+	}
+	return 0;
+}
+
+static void
+positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
+{
+	if (!rel->exps) 
+		assert(0);
+
+	if (rel->exps && subrel->exps) {
+		node *n, *m;
+		for (n=rel->exps->h, m=subrel->exps->h; n && m; n = n->next, m = m->next) {
+			sql_exp *e = n->data;
+			sql_exp *se = m->data;
+
+			if (e->used)
+				se->used = 1;
+		}
+	}
 }
 
 static void
 exps_mark_used(sql_rel *rel, sql_rel *subrel)
 {
+	int nr = 0;
 	if (rel->exps) {
 		node *n;
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			exp_mark_used(subrel, e);
+			if (!is_project(rel->op) || e->used) 
+				nr += exp_mark_used(subrel, e);
 		}
+	}
+	/* for count/rank we need atleast one column */
+	if (!nr && (is_project(subrel->op) || is_base(subrel->op))) {
+		sql_exp *e = subrel->exps->h->data;
+		e->used = 1;
 	}
 	if (rel->r && (rel->op == op_project || rel->op  == op_groupby)) {
 		list *l = rel->r;
@@ -2765,7 +2793,7 @@ exps_used(list *l)
 static void
 rel_used(sql_rel *rel)
 {
-	if (is_join(rel->op) || is_union(rel->op)) {
+	if (is_join(rel->op) || is_set(rel->op)) {
 		if (rel->l) 
 			rel_used(rel->l);
 		if (rel->r) 
@@ -2783,6 +2811,10 @@ static void
 rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 {
 	(void)sql;
+
+	if (proj && (need_distinct(rel))) 
+		rel_used(rel);
+
 	switch(rel->op) {
 	case op_basetable:
 	case op_table:
@@ -2824,10 +2856,17 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		 * 
  		 * Project part of union is based on column position.
 		 */
-		if (proj) {
-			/* properly mark left/right based on exps list */
-			rel_used(rel->l);
-			rel_used(rel->r);
+		if (proj && (need_distinct(rel) || !rel->exps)) {
+			rel_used(rel);
+			if (!rel->exps) {
+				rel_used(rel->l);
+				rel_used(rel->r);
+			}
+			rel_mark_used(sql, rel->l, 0);
+			rel_mark_used(sql, rel->r, 0);
+		} else if (proj && !need_distinct(rel)) {
+			positional_exps_mark_used(rel, rel->l);
+			positional_exps_mark_used(rel, rel->r);
 			rel_mark_used(sql, rel->l, 0);
 			rel_mark_used(sql, rel->r, 0);
 		}
@@ -2868,11 +2907,8 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				if (e->used || is_intern(e))
 					append(exps, exp_dup(e));
 			}
-			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) ! */
-			if (list_length(exps) == 0) {
-				sql_exp *e = rel->exps->h->data;
-				append(exps, exp_dup(e));
-			}
+			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by exps_mark_used */
+			assert(list_length(exps) > 0);
 			list_destroy(rel->exps);
 			rel->exps = exps;
 		}
@@ -2887,6 +2923,10 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_project:
 	case op_groupby: 
 
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+
 		if (rel->l && rel->exps) {
 			node *n;
 			list *exps = new_exp_list();
@@ -2897,11 +2937,8 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				if (e->used || is_intern(e))
 					append(exps, exp_dup(e));
 			}
-			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) ! */
-			if (list_length(exps) == 0) {
-				sql_exp *e = rel->exps->h->data;
-				append(exps, exp_dup(e));
-			}
+			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by exps_mark_used */
+			assert(list_length(exps) > 0);
 			list_destroy(rel->exps);
 			rel->exps = exps;
 		}
@@ -2912,12 +2949,6 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_delete:
 
 	case op_select: 
-
-	case op_union: 
-	case op_inter: 
-	case op_except: 
-		/* We cannot remove here as set projection are based on column
-		   position */
 
 	case op_join: 
 	case op_left: 
@@ -3012,9 +3043,13 @@ rel_dce_sub(mvc *sql, sql_rel *rel)
 	if (!rel)
 		return rel;
 	
-	rel = rel_remove_unused(sql, rel);
-	/* mark used up until the next project */
+	/* 
+  	 * Mark used up until the next project 
+	 * For setops we need to first mark, then remove 
+         * because of positional dependency 
+ 	 */
 	rel_mark_used(sql, rel, 1);
+	rel = rel_remove_unused(sql, rel);
 	rel_dce_down(sql, rel, 1);
 	return rel;
 }

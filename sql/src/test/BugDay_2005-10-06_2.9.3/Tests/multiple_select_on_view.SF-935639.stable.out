@@ -26,12 +26,14 @@ Over..
 
 [ 1	]
 [ 1	]
-% sys.a # table_name
+#select count(*) from c;
+% sys.c # table_name
 % L2 # name
 % wrd # type
 % 1 # length
 [ 2	]
-% sys.a # table_name
+#select count(*) from c;
+% sys.c # table_name
 % L3 # name
 % wrd # type
 % 1 # length
