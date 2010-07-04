@@ -1,3 +1,4 @@
+set optimizer='minimal_pipe';
 
 select htype, ttype, count from bbp() as bbp 
 where kind like 'pers%'
