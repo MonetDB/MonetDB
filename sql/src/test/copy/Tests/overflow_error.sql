@@ -1,3 +1,4 @@
+set optimizer='minimal_pipe';
 CREATE TABLE QsoTarget( 
 	"targetObjID" bigint	NOT NULL,
 	"headObjID" bigint	NOT NULL,
