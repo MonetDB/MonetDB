@@ -600,7 +600,7 @@ newSymbol(str nme, int kind)
 	}
 	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
 	if (cur == NULL) {
-		GDKerror("@1:"MAL_MALLOC_FAIL);
+		GDKerror("newSymbol:"MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	cur->name = putName(nme,strlen(nme));
@@ -990,6 +990,8 @@ newInstruction(MalBlkPtr mb, int kind)
 	}
 	if (p == NULL) {
 		p = GDKzalloc(MAXARG * sizeof(p->maxarg) + sizeof(InstrRecord));
+		if (p == NULL)
+			return NULL;
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;

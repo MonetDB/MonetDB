@@ -102,6 +102,8 @@ Alloc space for the BAT and its dependent records.
 @c
 	BATstore *bs = (BATstore *) GDKzalloc(sizeof(BATstore));
 
+	if (bs == NULL)
+		return NULL;
 @-
 assert needed in the kernel to get symbol eprintf resolved.
 Else modules using assert fail to load.

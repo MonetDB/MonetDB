@@ -115,7 +115,11 @@ Symbol newFunction(str mod, str nme,int kind){
 	InstrPtr p;
 
 	s = newSymbol(nme,kind);
+	if (s == NULL)
+		return NULL;
 	p = newInstruction(NULL,kind);
+	if (p == NULL)
+		return NULL;
 	setModuleId(p, mod);  
 	setFunctionId(p, nme);  
 	setDestVar(p, newVariable(s->def,GDKstrdup(nme),TYPE_any));
@@ -125,6 +129,8 @@ Symbol newFunction(str mod, str nme,int kind){
 InstrPtr newCall(Module scope, str fcnname, int kind){
 	InstrPtr p;
 	p= newInstruction(NULL,kind);
+	if (p == NULL)
+		return NULL;
 	setModuleScope(p, scope);
 	setFunctionId(p, putName(fcnname,strlen(fcnname)));
 	return p;

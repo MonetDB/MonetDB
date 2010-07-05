@@ -1033,10 +1033,10 @@ TRACEcreate(str hnme, str tnme, int tt)
 	}
 
 	b = BATnew(TYPE_void, tt, 1 << 16);
-	BATseqbase(b, 0);
 	if (b == NULL)
 		return NULL;
 
+	BATseqbase(b, 0);
 	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
 	BATmode(b, PERSISTENT);
