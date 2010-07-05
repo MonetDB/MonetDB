@@ -787,13 +787,13 @@ function sql.zero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat
 	(e,g) := group.new(gp);
 	m := aggr.max(e);
 	c0 := calc.isnil(m);
-	c0 := calc.not(c0);
+	c01 := calc.not(c0);
 	c1 := calc.>(m,1:wrd);
-	c1 := calc.and(c0,c1);
+	c11 := calc.and(c01,c1);
 	ms := calc.str(m); 
 	msg := str.+("zero_or_one: cardinality violation (", ms);
-	msg := str.+(msg, ">1)");
-	sql.assert(c1, msg);
+	msg1 := str.+(msg, ">1)");
+	sql.assert(c11, msg1);
 	return zero_or_one := b;
 end sql.zero_or_one;
 
@@ -4848,7 +4848,7 @@ sql_@1rank(bat *rid, bat *bid)
 		throw(SQL, "sql.@1rank", "Cannot access descriptor");
 	if (!(BATtordered(b) & GDK_SORTED) && !(BATtordered(b) & GDK_SORTED_REV))
 		throw(SQL, "sql.@1rank", "bat not sorted");
-	
+
 	bi = bat_iterator(b);
 	cmp = BATatoms[b->ttype].atomCmp;
 	cur = BUNtail(bi, BUNfirst(b));

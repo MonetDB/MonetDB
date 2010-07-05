@@ -21,16 +21,15 @@ Ready.
 
 Over..
 
-# 11:17:12 >  
-# 11:17:12 >  ./dumping_tables.SF-2776908.SQL.sh dumping_tables.SF-2776908 
-# 11:17:12 >  
+# 20:57:34 >  
+# 20:57:34 >  ./dumping_tables.SF-2776908.SQL.sh dumping_tables.SF-2776908 
+# 20:57:34 >  
 
 
-# 11:17:12 >  
-# 11:17:12 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=alf --port=39432  -i < /net/alf.ins.cwi.nl/export/scratch1/niels/MonetDB/sql/src/test/BugTracker-2009/Tests/../dumping_tables.SF-2776908.sql
-# 11:17:12 >  
+# 20:57:34 >  
+# 20:57:34 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=alf --port=32448  -i < /net/alf.ins.cwi.nl/export/scratch1/niels/rc/MonetDB/sql/src/test/BugTracker-2009/Tests/../dumping_tables.SF-2776908.sql
+# 20:57:34 >  
 
-TABLE   sys.url_test
 CREATE TABLE "sys"."triggers" (
 	"id" int,
 	"name" varchar(1024),

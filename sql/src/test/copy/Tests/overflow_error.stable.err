@@ -80,7 +80,7 @@ stderr of test 'overflow_error` in directory 'src/test/copy` itself:
 # 16:09:14 >  mclient -lsql -ftest -i -e --host=alf --port=34301 
 # 16:09:14 >  
 
-MAPI  = monetdb@alf:39432
+MAPI  = monetdb@alf:33330
 QUERY = COPY 876 RECORDS INTO QsoTarget FROM STDIN USING DELIMITERS '|','\n';
 ERROR = !SQLException:importTable:value '8.4077908E-45' from line 876 field 8 not inserted, expecting type flt
         !failed to import table

@@ -21,11 +21,10 @@ Ready.
 
 Over..
 
-# 11:17:13 >  
-# 11:17:13 >  mclient -lsql -ftest -i -e --host=alf --port=39432 
-# 11:17:13 >  
+# 20:57:34 >  
+# 20:57:34 >  mclient -lsql -ftest -i -e --host=alf --port=32448 
+# 20:57:34 >  
 
-TABLE   sys.url_test
 CREATE TABLE "sys"."triggers" (
 	"id" int,
 	"name" varchar(1024),
