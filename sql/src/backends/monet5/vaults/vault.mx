@@ -23,14 +23,15 @@ All Rights Reserved.
 @+ Data Vaults
 The Data Vault module provides the basic infrastructure to manage
 a repository with datafiles whose integrity and use is shared between
-MonetDB and a client. The module is developed solely for a Linux environment.
+MonetDB and a client repository.
 
 Once a vault is created, the system administrator can manually add files to the catalog.
-A refresh() operation will fetch the files from the remote site.
-If they reside on the same file system then a symbolic link is sufficient.
-Alternatively, the vault can be populated by designation of the
-source directory of the files to be imported. Often, this involves
-semantic knowledge of the target repository and the vault kind.
+A refresh() operation will fetch the files from the remote site using a path
+to an (ftp) directory.
+Often, this involves semantic knowledge of the target repository and the vault kind.
+
+If source and target files reside on the same file system then a symbolic link is sufficient.
+Alternatively, the vault can be populated using normal updates to the vault catalog.
 
 The SQL view on the vault merely describes the files being imported,
 their freshness and properties required to fetch them from a remote source.
@@ -46,20 +47,22 @@ cached			timestamp,		-- copy stored locally
 target			string			-- file name of source file in vault
 );
 
-create function vaultDir(nme string)
+create function vaultDir()
 returns string
 external "vault.getDirectory";
-
 @end verbatim
+
+The module is developed solely for a Linux environment.
 The vault root is a subdirectory of the dbfarm/<dbname>/vault/ and contains
-a subdirectory for each vault kind.
+a subdirectory for each vault kind. In turn, each vault kind comes
+with a refinement of the catalog identified above using the vid
+to relate the two.
 @mal
-library vault;
 module vault;
 
-command getDirectory(i:int):str
+command getdirectory():str
 address VLTgetDirectory
-comment "Return the location of the vault directory";
+comment "Return the location of the root vault directory";
 
 command refresh(id:str)
 address VLTrefresh
@@ -68,6 +71,7 @@ comment "Refresh the objects in the vault identified";
 command refresh(id:int)
 address VLTrefreshObject
 comment "Refresh the content of the vault for a specific object";
+
 pattern prelude():void 
 address VLTprelude
 comment "Initialize the vault.";
@@ -76,6 +80,7 @@ command epiloque():void
 address VLTepilogue
 comment "Cleanup the vault.";
 
+vault.prelude();
 @{
 @-
 @+ Implementation
@@ -98,6 +103,8 @@ comment "Cleanup the vault.";
 #define vault_export extern
 #endif
 
+#define _VAULT_DEBUG_
+
 vault_export str VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 vault_export str VLTgetDirectory(str *ret);
 vault_export str VLTrefresh(int *ret, str *nme);
@@ -109,10 +116,19 @@ vault_export  str VLTepilogue(int *ret);
 #include "vault.h"
 
 static char vaultpath[BUFSIZ];
+@-
+@= initialize
+	if ( vaultpath[0] == 0){
+		snprintf(vaultpath, PATHLENGTH, "%s%c%s%cvault", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
+		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST) 
+			return createException(MAL,"vault.getDirectory", "can not access vault directory");
+	}
+@c
 
 str
 VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	@:initialize@
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
@@ -126,31 +142,20 @@ VLTepilogue(int *ret)
 	(void)ret;
 	return MAL_SUCCEED;
 }
-@-
-@= initialize
-	if ( vaultpath[0] == 0){
-		snprintf(vaultpath, PATHLENGTH, "%s%c%s%cvault", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
-		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST) 
-			return createException(MAL,"vault.getDirectory", "can not access vault directory");
-	}
-@c
 str 
 VLTgetDirectory(str *ret){
-	@:initialize@
 	*ret= GDKstrdup(vaultpath);
 	return MAL_SUCCEED;
 }
 
 str 
 VLTrefresh(int *ret, str *nme){
-	@:initialize@
 	(void) ret;
 	(void) nme;
 	return MAL_SUCCEED;
 }
 str 
 VLTrefreshObject(int *ret, int *id){
-	@:initialize@
 	(void) ret;
 	(void) id;
 	return MAL_SUCCEED;

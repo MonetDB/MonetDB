@@ -15,20 +15,23 @@
 -- All Rights Reserved.
 
 -- The data vault interface for SQL
+
+CREATE SEQUENCE sys.vaultid AS int;
+
 CREATE TABLE sys.vault (
-vid             int PRIMARY KEY,-- Internal key
+vid             int PRIMARY KEY DEFAULT NEXT VALUE FOR sys.vaultid ,
 kind            string,         -- vault kind (CSV, MSEED, FITS,..)
 source          string,         -- remote file name for cURL to access
+target          string,         -- location of source file in the local vault
 refresh         boolean,        -- refresh each time of access
-cached          timestamp,      -- copy stored locally
-target          string          -- file name of source file in vault
+cached          timestamp       -- if a copy was stored locally
 );
 
-create function getVaultDir(nme string)
+create function getVaultDir()
 returns string
-external name sql.getVaultDir;
+external name vault.getDirectory;
 
 -- refresh the vault
 create procedure refreshVault(nme string)
-external name sql.refreshVault;
+external name vault.refresh;
 
