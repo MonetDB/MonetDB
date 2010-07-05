@@ -377,7 +377,7 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 	if ( task->rounds > 8 )
 		return;
 	/* simple round robin the first time */
-	if ( task->rounds++ == 0){
+	if ( threads == 1 || task->rounds++ == 0){
 		for ( i=j=0; i < nr_attrs; i++, j++)
 			ptask[ j % threads].cols[i] = task->cols[i];
 		return;
