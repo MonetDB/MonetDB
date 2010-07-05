@@ -1349,10 +1349,10 @@ DFLOWscheduler( DataFlow flow )
 		for(i = limit-1; i >= pc ; i--)
 		if (fs[i].status == DFLOWpending ) {
 			p = getInstrPtr(flow->mb, fs[i].pc);
+			if(flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
+
 			for ( j= p->retc; j < p->argc; j++)
-			if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc) &&
-				(f == 0 || f->flow->stk->admit == 0 || (*f->flow->stk->admit)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, f->pc)) )
-			){
+			if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc) ){
 				queued++;
 				candidates ++;
 				DFLOWactivate(flow,fs,i,p);

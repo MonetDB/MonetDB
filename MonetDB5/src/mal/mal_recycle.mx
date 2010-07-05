@@ -1037,7 +1037,7 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, 
 	lng cacheLimit;
 	QryStatPtr qsp = recycleQPat->ptrn[cntxt->rcc->curQ];
 
-	(void) rd;	
+/*	(void) rd;	*/
 	RECYCLEspace();
 	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
 	if ( recycleSize >= cacheLimit)
@@ -1094,10 +1094,11 @@ compare by value.
 		/* use the field to refer to the query-owner index in the query pattern table */
 	pushInstruction(recycleBlk,q);
 	i = recycleBlk->stop-1;
-	recycleBlk->profiler[i].rbytes = recycleBlk->profiler[i].clk = GDKusec();
+/*	recycleBlk->profiler[i].rbytes = recycleBlk->profiler[i].clk = GDKusec(); */
+	recycleBlk->profiler[i].clk = GDKusec();
 	recycleBlk->profiler[i].counter =1;
 	recycleBlk->profiler[i].ticks = ticks;
-/*	recycleBlk->profiler[i].rbytes = rd; */
+	recycleBlk->profiler[i].rbytes = rd; 
 	recycleBlk->profiler[i].wbytes = wr;
 	recyclerUsedMemory += wr;
 	if (monitorRecycler == 1 ) 

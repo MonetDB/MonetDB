@@ -237,8 +237,9 @@ OCTexitcode(MalBlkPtr mb, int conn, int varid)
 	pushArgument(mb, p, varid);
 	p->barrier = RETURNsymbol;
 	pushEndInstruction(mb);
-	newStmt(mb, optimizerRef, putName("aliases", 7));
-	newStmt(mb, optimizerRef, putName("deadcode", 8));
+	p = newStmt(mb, optimizerRef, putName("aliases", 7));
+	p = pushStr(mb, p, octopusRef);
+	p = pushStr(mb, p, getFunctionId(getInstrPtr(mb, 0)));
 }
 
 static MalBlkPtr 
