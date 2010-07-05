@@ -69,6 +69,7 @@ ensure we are still within safe bounds.
 #define MAXSHARES   8
 
 typedef str (*MALfcn) ();
+typedef int (*DFhook) (void *, void *, void *, void *);
 
 typedef struct MALSTK {
 	int stksize;
@@ -83,8 +84,8 @@ Parallel processing is mostly driven by dataflow, but within this context
 there may be different schemes to take instructions into execution.
 The admission scheme (and wrapup) are the necessary scheduler hooks.
 @h
-	MALfcn admit;
-	MALfcn wrapup;
+	DFhook admit;
+	DFhook wrapup;
 	MT_Lock stklock;	/* used for parallel processing */
 @-
 It is handy to administer the timing in the stack frame
