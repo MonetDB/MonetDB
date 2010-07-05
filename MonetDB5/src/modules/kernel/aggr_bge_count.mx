@@ -268,7 +268,7 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 		} else {
 			@:aggrX3_count3(0,0,SCANfndOID,loc,BUNhloc(bi,p),BUNtloc(bni,r))@
 		}
-	} else if (BAThordered(e)&1) {
+	} else if (BATtordered(g)&BAThordered(e)&1) {
 		/* merge lookup */
 		MERGE_aggr_init;
 		if (BAThdense(b)) {

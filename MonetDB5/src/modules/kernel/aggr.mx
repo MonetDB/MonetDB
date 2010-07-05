@@ -196,11 +196,15 @@ as the latter turned out to be rather expensive ...
 
 @-
 In case the head of the group extend (e) is sorted, we assume that also the
-the tail of group map (g) "almost" sorted --- or at least clustered such
-that group IDs in cluster i are smaller than those in cluster i+1; this is
-the case if the first grouping attribute (column/BAT) is sorted --- and
-resorted to "local scanning" rather than (inherently random and expensive)
-hash-lookups.
+the tail of the group map (g) is "almost" sorted or "mostly ascending" ---
+or at least clustered such that group IDs in cluster i are smaller than
+those in cluster i+1; this is the case if the first grouping attribute
+(column/BAT) is sorted --- and resorted to "local scanning" rather than
+(inherently random and expensive) hash-lookups.
+Lacking a suitable and efficient way to detect that the tail of the group
+map (g) is "almost sorted" or "mostly ascending", we require that the tail
+of the group map (g) is sorted --- the "local scanning" performs much worse
+than hash-lookups in case the tail of the group map (g) is in random order.
 @h
 #define MERGE_aggr_init						\
 	BUN _i = 0, _j = BATcount(bn), _r = BUNfirst(bn);	\
