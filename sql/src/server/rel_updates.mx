@@ -391,25 +391,37 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				exp_kind ek = {type_value, card_column, FALSE};
 
 				v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
-				if (v) {
-					if (rel_val) {
-						list *exps = rel_projections(sql, r, NULL, 0, 1);
-						sql_rel *nr = rel_project(rel_crossproduct(rel_dup(r->l), rel_val, op_join), exps);
-						rel_destroy(r);
-						r = nr;
-					}
-				} else {
+
+				if (!v) {
 					sql->errstr[0] = 0;
 					sql->session->status = status;
 					v = rel_value_exp(sql, &r, a, sql_sel, ek);
+				}
+				if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
+					if (v)
+						exp_destroy(v);
+					rel_destroy(r);
+					return NULL;
+				}
+				if (rel_val) {
+					sql_rel *nr;
+					list *exps;
+
+					if (!exp_name(v))
+						exp_label(v, ++sql->label);
+					rel_val = rel_project(rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
+					rel_project_add_exp(sql, rel_val, v);
+					exps = rel_projections(sql, r, NULL, 0, 1);
+					nr = rel_project(rel_crossproduct(rel_dup(r->l), rel_val, op_join), exps);
+					rel_destroy(r);
+					r = nr;
+					v = exp_column(NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
 				}		
 			} else {
 				v = exp_atom(atom_general(&c->type, NULL, 0));
 			}
 
-			if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
-				if (v)
-					exp_destroy(v);
+			if (!v) {
 				rel_destroy(r);
 				return NULL;
 			}
