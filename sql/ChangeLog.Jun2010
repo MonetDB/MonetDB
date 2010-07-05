@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Mon Jul  5 2010 Niels Nes <niels@cwi.nl>
+- Fixed bug handling join with constant values on both sides (like group results and constants)
 - fixed bug in UPDATE TABLE when updating multiple rows
 
 * Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
