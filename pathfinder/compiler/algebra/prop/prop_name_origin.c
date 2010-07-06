@@ -227,7 +227,7 @@ infer_name_origin (PFla_op_t *n)
                 if (n->sem.aggr.aggr[i].kind == alg_aggr_dist &&
                     PFprop_name_origin (L(n)->prop, n->sem.aggr.aggr[i].col))
                     add_name (n->prop,
-                              n->sem.aggr.aggr[i].col,
+                              n->sem.aggr.aggr[i].res,
                               PFprop_name_origin (L(n)->prop, 
                                                   n->sem.aggr.aggr[i].col));
 
