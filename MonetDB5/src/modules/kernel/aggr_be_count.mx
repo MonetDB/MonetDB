@@ -209,7 +209,7 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	if (!BAThdense(b))
 		b_use |= USE_HEAD;
 	/* scan b, and calculate counts */
-	if (BAThdense(e)) {
+	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (BAThdense(b)) {
 			@:aggrX3_count(0,0,BUNfndVOID,var,&bhsb;bhsb++,BUNtloc(bni,r))@

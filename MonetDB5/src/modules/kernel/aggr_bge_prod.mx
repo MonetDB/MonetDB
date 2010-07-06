@@ -284,7 +284,7 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	}
 	if (!BAThdense(b))
 		b_use |= USE_HEAD;
-	if (BAThdense(e)) {
+	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (BAThdense(b)) {
 			if ((BAThdense(g))&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {

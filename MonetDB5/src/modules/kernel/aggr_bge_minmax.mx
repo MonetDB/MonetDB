@@ -337,7 +337,7 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 	}
 	if (!BAThdense(b))
 		b_use |= USE_HEAD;
-	if (BAThdense(e)) {
+	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (BAThdense(b)) {
 			@:aggrX3_minmax3_@5(@2,0,BUNfndVOID,var,&bhsb; bhsb++,@3,@4,r-off,@6)@
