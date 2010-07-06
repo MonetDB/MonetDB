@@ -224,7 +224,6 @@ CREATE TABLE "sys"."test_property" (
 	CONSTRAINT "test_property_subject_p1_unique" UNIQUE ("subject", "p1"),
 	CONSTRAINT "test_property_subject_p2_unique" UNIQUE ("subject", "p2")
 );
-SET SCHEMA "sys";
 ALTER TABLE "sys"."callhistory" ADD CONSTRAINT "callhistory_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."queryhistory" ("id");
 COMMIT;
 

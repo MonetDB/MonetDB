@@ -162,7 +162,6 @@ end;
 CREATE TABLE "sys"."tf" (
 	"a" int
 );
-SET SCHEMA "sys";
 COMMIT;
 
 # 18:43:35 >  
