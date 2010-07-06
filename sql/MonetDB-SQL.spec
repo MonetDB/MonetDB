@@ -157,24 +157,18 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so
 
 %changelog
-* Tue Jul 06 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100706
-- Rebuilt.
-
-* Tue Jul 06 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100706
-- Rebuilt.
-
 * Mon Jul  5 2010 Niels Nes <niels@cwi.nl> - 2.38.3-20100706
--- - Fixed bug in zero_or_one
--- - Fixed bug in dead code elimination for projections with distinct
--- - Fixed bug handling join with constant values on both sides (like group results and constants)
--- - fixed bug in UPDATE TABLE when updating multiple rows
--- 
+- Fixed bug in zero_or_one
+- Fixed bug in dead code elimination for projections with distinct
+- Fixed bug handling join with constant values on both sides (like group results and constants)
+- fixed bug in UPDATE TABLE when updating multiple rows
+
 * Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 2.38.3-20100706
--- - fixed bug 2564:
--- in case group by column is not found as alias in projection list,
--- fall back to check plain input columns
--- in order to find the underlying BAT and check its sortedness
--- 
+- fixed bug 2564:
+  in case group by column is not found as alias in projection list,
+  fall back to check plain input columns
+  in order to find the underlying BAT and check its sortedness
+
 * Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100630
 - Rebuilt.
 

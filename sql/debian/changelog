@@ -1,30 +1,18 @@
 monetdb-sql (2.38.3-20100706) unstable; urgency=low
 
-  * Rebuilt.
+  * Fixed bug in zero_or_one
+  * Fixed bug in dead code elimination for projections with distinct
+  * Fixed bug handling join with constant values on both sides (like group results and constants)
+  * fixed bug in UPDATE TABLE when updating multiple rows
 
- -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 06 Jul 2010 14:53:45 +0200
-
-monetdb-sql (2.38.3-20100706) unstable; urgency=low
-
-  * Rebuilt.
-
- -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 06 Jul 2010 14:06:18 +0200
-
-monetdb-sql (2.38.3-20100706) unstable; urgency=low
-
--- - Fixed bug in zero_or_one
--- - Fixed bug in dead code elimination for projections with distinct
--- - Fixed bug handling join with constant values on both sides (like group results and constants)
--- - fixed bug in UPDATE TABLE when updating multiple rows
--- 
  -- Niels Nes <niels@cwi.nl>  Mon, 5 Jul 2010 14:06:18 +0200
 
 monetdb-sql (2.38.3-20100706) unstable; urgency=low
 
--- - fixed bug 2564:
--- in case group by column is not found as alias in projection list,
--- fall back to check plain input columns
--- in order to find the underlying BAT and check its sortedness
+  * fixed bug 2564:
+    in case group by column is not found as alias in projection list,
+    fall back to check plain input columns
+    in order to find the underlying BAT and check its sortedness
 
  -- Stefan Manegold <Stefan.Manegold@cwi.nl>  Wed, 30 Jun 2010 14:06:18 +0200
 

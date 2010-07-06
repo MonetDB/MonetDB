@@ -1,17 +1,5 @@
 monetdb5-server (5.20.3-20100706) unstable; urgency=low
 
-  * Rebuilt.
-
- -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 06 Jul 2010 14:53:45 +0200
-
-monetdb5-server (5.20.3-20100706) unstable; urgency=low
-
-  * Rebuilt.
-
- -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 06 Jul 2010 14:06:18 +0200
-
-monetdb5-server (5.20.3-20100706) unstable; urgency=low
-
   * Return a correct URI for local connection from Sabaoth when the
     connection is a UNIX domain socket.  Partial fix for bug #2567.
 

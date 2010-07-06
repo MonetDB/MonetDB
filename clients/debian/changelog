@@ -1,27 +1,15 @@
 monetdb-client (1.38.3-20100706) unstable; urgency=low
 
-  * Rebuilt.
+  * Implemented dumping of GRANT statements.
+    This fixes bug 2574.
 
- -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 06 Jul 2010 14:53:45 +0200
-
-monetdb-client (1.38.3-20100706) unstable; urgency=low
-
-  * Rebuilt.
-
- -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 06 Jul 2010 14:06:18 +0200
-
-monetdb-client (1.38.3-20100706) unstable; urgency=low
-
--- - Implemented dumping of GRANT statements.
--- This fixes bug 2574.
--- 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 5 Jul 2010 14:06:18 +0200
 
 monetdb-client (1.38.3-20100706) unstable; urgency=low
 
--- - Fix implementation of mapi_mapiuri to deal with UNIX socket urls
+  * Fix implementation of mapi_mapiuri to deal with UNIX socket urls
 
- -- Fabian Groffen <fabian@cwi.nl>  Thr, 1 Jul 2010 14:06:18 +0200
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 1 Jul 2010 14:06:18 +0200
 
 monetdb-client (1.38.1-20100630) unstable; urgency=low
 

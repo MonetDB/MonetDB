@@ -333,19 +333,14 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
-* Tue Jul 06 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.3-20100706
-- Rebuilt.
-
-* Tue Jul 06 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.3-20100706
-- Rebuilt.
-
 * Mon Jul  5 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.3-20100706
--- - Implemented dumping of GRANT statements.
--- This fixes bug 2574.
--- 
-* Thr Jul  1 2010 Fabian Groffen <fabian@cwi.nl> - 1.38.3-20100706
--- - Fix implementation of mapi_mapiuri to deal with UNIX socket urls
--- properly.  This fixes one part of Bug #2567.
+- Implemented dumping of GRANT statements.
+  This fixes bug 2574.
+
+* Thu Jul  1 2010 Fabian Groffen <fabian@cwi.nl> - 1.38.3-20100706
+- Fix implementation of mapi_mapiuri to deal with UNIX socket urls
+  properly.  This fixes one part of Bug #2567.
+
 * Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.1-20100630
 - Rebuilt.
 
