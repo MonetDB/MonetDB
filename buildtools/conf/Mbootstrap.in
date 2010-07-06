@@ -111,7 +111,7 @@ if [ ! "`type -p $LIBTOOL`" ]; then
 	echo "Please get it at eg. http://www.gnu.org/software/libtool/." >&2
 	exit 1
 fi
-LT_VERSION=`$LIBTOOL --version 2>/dev/null | sed -n '/^ltmain\.sh/{s/([^)]*)//g;s/ltmain.sh//g;s/ //g;p;q;}'`
+LT_VERSION=`$LIBTOOL --version 2>/dev/null | sed -n '/^\(ltmain\.sh\|libtool\)/{s/([^)]*)//g;s/\(ltmain\.sh\|libtool\)//g;s/ //g;p;q;}'`
 _LT_VERSION=`echo $LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_LT_VERSION=`echo $REQ_LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
