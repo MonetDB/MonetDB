@@ -336,6 +336,9 @@ rm -fr $RPM_BUILD_ROOT
 * Tue Jul 06 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.3-20100706
 - Rebuilt.
 
+* Tue Jul 06 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.3-20100706
+- Rebuilt.
+
 * Mon Jul  5 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.3-20100706
 -- - Implemented dumping of GRANT statements.
 -- This fixes bug 2574.

@@ -160,6 +160,9 @@ rm -rf $RPM_BUILD_ROOT
 * Tue Jul 06 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100706
 - Rebuilt.
 
+* Tue Jul 06 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100706
+- Rebuilt.
+
 * Mon Jul  5 2010 Niels Nes <niels@cwi.nl> - 2.38.3-20100706
 -- - Fixed bug in zero_or_one
 -- - Fixed bug in dead code elimination for projections with distinct
