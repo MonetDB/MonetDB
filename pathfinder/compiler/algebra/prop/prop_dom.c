@@ -907,9 +907,11 @@ infer_dom (PFla_op_t *n)
                                         L(n)->schema.items[i].name),
                             dom);
 
-                add_disjdom (dom,
-                             PFprop_dom (R(n)->prop,
-                                         L(n)->schema.items[i].name));
+                /* we can only infer the disjointness for a single column */
+                if (n->schema.count == 1)
+                    add_disjdom (dom,
+                                 PFprop_dom (R(n)->prop,
+                                             L(n)->schema.items[i].name));
             }
             break;
 

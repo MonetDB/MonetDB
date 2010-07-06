@@ -2147,20 +2147,21 @@ opt_complex (PFla_op_t *p)
                 for (unsigned int i = 0; i < schema.count; i++)
                     schema.items[i].name =
                         PFord_order_col_at (p->sem.sort.sortby, i);
-                 if (PFprop_ckey (p->prop, schema)) {
-                     *p = *PFla_rowrank (
-                               L(p),
-                               p->sem.sort.res,
-                               p->sem.sort.sortby);
-                    modified = true;
-                    break;
-                 }
+                if (PFprop_ckey (p->prop, schema)) {
+                    *p = *PFla_rowrank (
+                              L(p),
+                              p->sem.sort.res,
+                              p->sem.sort.sortby);
+                   modified = true;
+                   break;
+                }
             }
 
             /* Replace the rownumber operator by a projection
                if only its value distribution (keys) are required
                instead of its real values. */
             if (!PFprop_req_value_col (p->prop, p->sem.sort.res) &&
+		!p->sem.sort.part &&
                 PFord_count (p->sem.sort.sortby) == 1 &&
                 PFprop_key (p->prop,
                             PFord_order_col_at (p->sem.sort.sortby, 0))) {
