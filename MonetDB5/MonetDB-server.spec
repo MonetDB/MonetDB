@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010/MonetDB5-server-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP1/MonetDB5-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_raptor: %{!?_without_raptor: %define _with_raptor --with-raptor}}
@@ -214,6 +214,21 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Tue Jul 06 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.3-20100706
+- Rebuilt.
+
+* Thr Jul 01 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.3-20100706
+-- - Return a correct URI for local connection from Sabaoth when the
+-- connection is a UNIX domain socket.  Partial fix for bug #2567.
+-- 
+* Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 5.20.3-20100706
+-- - various performance fixes in grouping and grouped aggregation code
+-- (MonetDB5/src/modules/kernel/group.mx, MonetDB5/src/modules/kernel/aggr*.mx)
+-- to reduce the execution time the following query that mimics a two-column
+-- primary key check over the ~5 billion tuple "neighbors" table of the
+-- Skyserver database from 26 hours to 1.5 hours (on a 64 GB machine):
+-- SELECT count(c), sum(c), min(c), max(c) FROM (SELECT count(*) AS c FROM "neighbors" GROUP BY "objID","NeighborObjID") AS t;
+-- 
 * Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100630
 - Rebuilt.
 
