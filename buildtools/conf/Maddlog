@@ -28,7 +28,7 @@ else
 	exit -1
 fi
 
-nocommit=
+nocommit=true
 while [ $# -gt 0 ]; do
     case "$1" in
     --logfile=*)
@@ -44,8 +44,8 @@ while [ $# -gt 0 ]; do
 	CL=${1#-f}
 	shift
 	;;
-    --nocommit)
-	nocommit=true
+    --commit)
+	nocommit=
 	shift
 	;;
     --)
@@ -57,7 +57,7 @@ while [ $# -gt 0 ]; do
 	$0: unknown option $1
 	Valid options are:
 	--logfile=filename (-f filename)
-	--nocommit
+	--commit
 	EOF
 	exit 1
 	;;
@@ -135,7 +135,12 @@ fi > $file
 
 mv $file "$CL"
 
+hg add "$CL" >& /dev/null
+
 if [ ! "$nocommit" ]; then
-    hg add "$CL" >& /dev/null
-	hg commit -m "  $msg" "$CL"
+    hg commit -m "  $msg" "$CL"
+else
+    hg diff "$CL"
+    echo "Don't forget to COMMIT."
 fi
+echo "Don't forget to PUSH."
