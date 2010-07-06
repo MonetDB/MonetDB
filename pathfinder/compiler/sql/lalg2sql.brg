@@ -4078,7 +4078,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                         }
                         /* In case the column did not exist in
                            the column list already ... */
-                        if (!found)
+                        if (!found && !IS_LITERAL(expr))
                             /* ... extend the group by list. */
                             groupbylist = column_list (groupbylist, expr);
                     }   break;
