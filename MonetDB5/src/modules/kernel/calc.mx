@@ -312,6 +312,7 @@ The coercions described below ensure that there is never any information loss.
 		address CALCbinaryMIN_NO_NIL@2;
 @-
 @mal
+	@:mal_binary_ops(bit,bit)@
 	@:mal_binary_ops(chr,chr)@
 	@:mal_binary_ops(bte,bte)@
 	@:mal_binary_ops(sht,sht)@
@@ -339,6 +340,7 @@ The unary operators include coercion routines for built-in types
 		address CALCunary@1SIGN 
 		comment "Returns +1, 0, -1 based on the sign of the given expression";
 @= unary_ops
+	@:@1_unary_ops(bit)@
 	@:@1_unary_ops(chr)@
 	@:@1_unary_ops(bte)@
 	@:@1_unary_ops(sht)@
@@ -667,6 +669,7 @@ str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b ) {
 @:calc_macrobinop_no_nil(MIN,calc_min_no_nil_@1,@1)@
 @c
 
+@:calc_min_max(bit)@
 @:calc_min_max(chr)@
 @:calc_min_max(bte)@
 @:calc_min_max(sht)@
