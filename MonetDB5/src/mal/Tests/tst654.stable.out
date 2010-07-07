@@ -31,6 +31,8 @@ stdout of test 'tst654` in directory 'src/mal` itself:
 #b2:= new(:void,:str);
 #insert(b2,"hello world");
 #insert(b2,"goodbye world");
+#bat.setName(b1,"BAT_b1");
+#bat.setName(b2,"BAT_b2");
 #
 #tablet.setProperties("name,type,dense,sorted,key,min,max");
 #tablet.display(b1,b2);
@@ -76,6 +78,8 @@ function user.main():void;
     b2 := bat.new(:oid,:str);
     bat.append(b2,"hello world");
     bat.append(b2,"goodbye world");
+    bat.setName(b1,"BAT_b1");
+    bat.setName(b2,"BAT_b2");
     tablet.setProperties("name,type,dense,sorted,key,min,max");
     tablet.display(b1,b2);
     in := calc.int(nil);
@@ -117,7 +121,7 @@ end main;
 [ 1,		2	]
 #-----------------------#
 #-------------------------------#
-% tmp_7,tmp_10			# name
+% BAT_b1,BAT_b2			# name
 % int,	str			# type
 % false,false			# dense
 % true,	false			# sorted
@@ -128,7 +132,7 @@ end main;
 [ 42,		"hello world"		]
 [ 49,		"goodbye world"		]
 #---------------------------------------#
-% tmp_7,	tmp_10			# name
+% BAT_b1,	BAT_b2			# name
 #---------------------------------------#
 [  4.2,		"hello world"		]
 [  4.9,		"goodbye world"		]

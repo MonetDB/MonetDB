@@ -14,6 +14,7 @@ stdout of test 'tst805` in directory 'src/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30168/
 function user.main():void;
     b := bat.new(:oid,:int);
+    bat.setName(b,"BAT_b");
     c := bat.new(:str,:BAT);
     bat.insert(c,"a",b);
     io.print(c);
@@ -25,7 +26,7 @@ end main;
 # h	t		  # name
 # str	BAT		  # type
 #-------------------------#
-[ "a",	  <tmp_7>	  ]
+[ "a",	  <BAT_b>	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
