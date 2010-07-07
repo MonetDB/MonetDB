@@ -182,9 +182,9 @@ static int
 are_equality_exps( list *exps ) 
 {
 	if (list_length(exps) == 1) {
-		sql_exp *e = exps->h->data, *re = e->r;
+		sql_exp *e = exps->h->data, *le = e->l, *re = e->r;
 
-		if (e->type == e_cmp && e->flag == cmp_equal && re->card == CARD_ATOM)
+		if (e->type == e_cmp && e->flag == cmp_equal && le->card != CARD_ATOM && re->card == CARD_ATOM)
 			return 1;
 		if (e->type == e_cmp && e->flag == cmp_or)
 			return (are_equality_exps(e->l) && 

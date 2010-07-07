@@ -52,7 +52,8 @@ GenForm(void)
 	char *getlogin();
 	char *dstbak = NULL;
 
-	for (d = defs; d < defs + ndef && (d->d_dir != Bfile); dirbak = d->d_dir, d++) ;
+	for (d = defs; d < defs + ndef && (d->d_dir != Bfile); dirbak = d->d_dir, d++)
+		;
 	for (; d < defs + ndef; dirbak = d->d_dir, d++) {
 		codeline = d->d_line;
 	      again:switch (d->d_dir) {

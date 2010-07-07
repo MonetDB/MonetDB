@@ -111,7 +111,8 @@ MakeDefs(char *name)
 	d = NwDef(Bfile, mod, sec, 0, mx_file);
 	d->d_cmd = name;
 
-	while ((line = NextLine()) && *line != '@') ;
+	while ((line = NextLine()) && *line != '@')
+		;
 	PrevLine();
 	while (!EofFile()) {
 		dir = DefDir();
