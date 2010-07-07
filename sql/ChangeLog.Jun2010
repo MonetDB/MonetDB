@@ -2,5 +2,6 @@
 # This file is updated with Maddlog
 
 * Wed Jul  7 2010 Niels Nes <niels@cwi.nl>
+- Fix bug 2582. Statements with 'constant in ( )' are now handled properly.
 - Fixed bug 2583 + added test. The assert was incorrect.
 
