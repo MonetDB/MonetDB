@@ -15,6 +15,7 @@ stdout of test 'garbage1` in directory 'src/optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32278/
 function user.test():BAT;
     b := bat.new(:str,:BAT);
+    bat.setName(b,"BAT_b");
     return test := b;
 end test;
 function user.test2():void;
@@ -38,13 +39,14 @@ function user.test2():void;             #  0 test2:void := user.test2() {G}
 end test2;                              #  3  
 function user.test():BAT;               #  0 test:BAT := user.test() {G}
     b := bat.new(:str,:BAT);            #  1 b:bat[:str,:BAT] := CMDBATnew(_2:str, _3:BAT) {G}
-    return test := b;                   #  2 test:BAT := b:bat[:str,:BAT] {G}
-end test;                               #  3  
+    bat.setName(b,"BAT_b");             #  2 _4:void := BKCsetName(b:bat[:str,:BAT], _5:str) {G}
+    return test := b;                   #  3 test:BAT := b:bat[:str,:BAT] {G}
+end test;                               #  4  
 function user.test2():void;             #  0 test2:void := user.test2() {G}
     x := user.test();                   #  1 x:BAT := user.test() {G}
     io.print(x);                        #  2 _2:void := IOprint_val(x:BAT) {G}
 end test2;                              #  3  
-[ <tmp_17> ]
+[ <BAT_b> ]
 
 # 23:03:59 >  
 # 23:03:59 >  Done.

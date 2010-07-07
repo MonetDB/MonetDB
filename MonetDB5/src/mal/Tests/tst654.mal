@@ -16,6 +16,8 @@ bat.append(b1,49);
 b2:= bat.new(:oid,:str);
 bat.append(b2,"hello world");
 bat.append(b2,"goodbye world");
+bat.setName(b1,"BAT_b1");
+bat.setName(b2,"BAT_b2");
 
 tablet.setProperties("name,type,dense,sorted,key,min,max");
 tablet.display(b1,b2);
