@@ -34,12 +34,14 @@ TAGS$
 ^buildtools/burg/gram\.[ch]$
 ^buildtools/burg/y\.tab\.h$
 ^buildtools/burg/ylwrap$
+^buildtools/depcomp$
 ^buildtools/dummy.h.in$
 ^buildtools/mel/.*\.[ch]$
 ^buildtools/mel/.*\.cxx$
 ^buildtools/mel/depcomp$
 ^buildtools/mel/mel\.ll$
 ^buildtools/mel/mel\.yy$
+^buildtools/ylwrap$
 ^clients/NT/Runmclient\.bat$
 ^java/NT/.*\.jar$
 ^java/NT/nl/
