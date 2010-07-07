@@ -981,7 +981,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #endif
 	@:performanceVariables@
 
-	if (stk == NULL)
+	if (stk == NULL || stkpc < 0)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		
 	pci = getInstrPtr(flow->mb, stkpc);
@@ -1131,7 +1131,8 @@ runDFLOWworker(void *t)
 		}
 		oldfs = fs;
 #ifdef DEBUG_FLOW
-		printInstruction(GDKstdout, fs->flow->mb, 0, getInstrPtr(fs->flow->mb,fs->pc), LIST_MAL_STMT);
+		if ( fs->pc >= 0)
+			printInstruction(GDKstdout, fs->flow->mb, 0, getInstrPtr(fs->flow->mb,fs->pc), LIST_MAL_STMT);
 #endif
 		err = DFLOWstep(task, fs);
 		/* restore the instruction and wait in specific cases*/

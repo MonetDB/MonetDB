@@ -13,14 +13,7 @@ stdout of test 'tst150` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
 command user.lookup(nme:str):bat[:str,:str] address CMDlookup;
-#function sample(nme:str, val:any_1):bit;
-#   b := user.lookup(nme); #find a bat
-#   h := algebra.select(b,val,val);
-#   t := aggr.count(h);
-#   x := io.print(t);
-#   y := io.print(val);
-#   return sample:=true;
-#end sample;
+!TypeException:user.sample[1]:Object code missing
 function user.sample(nme:str,val:any_1):bit;
     b := user.lookup(nme);
 #find a bat 
