@@ -3244,7 +3244,7 @@ def main(argv) :
     if par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
         clientsCONDS = {}
         GetCONDITIONALS(clientsCONDS, 'monetdb-clients')
-        for l in ('RUBYGEM', 'PYTHON', 'PERL_SWIG'):
+        for l in ('RUBYGEM', 'PYTHON', 'PERL_SWIG', 'ODBC'):
             c = 'HAVE_'+l
             if clientsCONDS.has_key(c):
                 CONDITIONALS[c] = clientsCONDS[c]
