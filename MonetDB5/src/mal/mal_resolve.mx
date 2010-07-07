@@ -448,8 +448,9 @@ This piece of code may be shared by the separate binder
 		switch(getSignature(s)->token){
 		case COMMANDsymbol: 
 			p->token = CMDcall; 
-			p->fcn = getSignature(s)->fcn;
+			p->fcn = getSignature(s)->fcn;	/* C implementation mandatory */
 			if( p->fcn == 0) {
+				showScriptException( mb, getPC(mb,p), TYPE, "Object code missing");
 				p->typechk= TYPE_UNKNOWN;
 				mb->errors++;
 				return -3;
@@ -457,16 +458,16 @@ This piece of code may be shared by the separate binder
 			break;
 		case PATTERNsymbol: 
 			p->token = PATcall; 
-			p->fcn = getSignature(s)->fcn;
+			p->fcn = getSignature(s)->fcn;	/* C implementation optional */
 			break;
 		case FACTORYsymbol:
 			p->token = FACcall; 
-			p->fcn = getSignature(s)->fcn;
+			p->fcn = getSignature(s)->fcn;	/* C implementation optional */
 			break;
 		case FUNCTIONsymbol: 
 			p->token = FCNcall; 
 			if( getSignature(s)->fcn)
-				p->fcn = getSignature(s)->fcn;
+				p->fcn = getSignature(s)->fcn;	/* C implementation optional */
 			break;
 		default: {
 			if (!silent)
