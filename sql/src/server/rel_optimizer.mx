@@ -1073,8 +1073,13 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		return e;
 	case e_cmp: 
 		if (e->flag == cmp_or) {
-			list *l = exps_push_down(sql, e->l, f, t);
-			list *r = exps_push_down(sql, e->r, f, t);
+			list *l;
+			list *r;
+			/* for SkyTec's query in bug #2595, allow to disable this */
+			if (mvc_debug_on(sql, 65536))
+				return NULL;
+			l = exps_push_down(sql, e->l, f, t);
+			r = exps_push_down(sql, e->r, f, t);
 			if (!l || !r) {
 				list_destroy(l);
 				list_destroy(r);

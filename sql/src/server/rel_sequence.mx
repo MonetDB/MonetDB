@@ -104,7 +104,8 @@ rel_create_seq(
 	lng min,
 	lng max,
 	lng cache,
-	int cycle)
+	int cycle,
+	int bedropped)
 {
 	sql_rel *res = NULL;
 	sql_sequence *seq = NULL;
@@ -135,6 +136,7 @@ rel_create_seq(
 	if (cache <= 0) cache = 1;
 
 	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, cycle);  
+	seq->bedropped = bedropped;
 	res = rel_seq(DDL_CREATE_SEQ, s->base.name, seq, NULL, NULL);
 	if (res)
 		stack_push_rel_view(sql, name, rel_dup(res));
@@ -229,6 +231,7 @@ rel_sequences(mvc *sql, symbol *s)
 			assert(h->h->next->next->next->type == type_lng);
 			assert(h->h->next->next->next->next->type == type_lng);
 			assert(h->h->next->next->next->next->next->type == type_int);
+			assert(h->h->next->next->next->next->next->next->type == type_int);
 			res = rel_create_seq(
 /* mvc* sql */		sql,
 /* sql_schema* s */	cur_schema(sql), 
@@ -239,7 +242,8 @@ rel_sequences(mvc *sql, symbol *s)
 /* lng min */		h->h->next->next->data.l_val, 
 /* lng max */		h->h->next->next->next->data.l_val,
 /* lng cache */		h->h->next->next->next->next->data.l_val,
-/* int cycle */		h->h->next->next->next->next->next->data.i_val);
+/* int cycle */		h->h->next->next->next->next->next->data.i_val,
+/* int bedropped */	h->h->next->next->next->next->next->next->data.i_val);
 		}
 		break;
 		case SQL_ALTER_SEQ:

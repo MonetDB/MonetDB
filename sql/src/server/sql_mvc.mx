@@ -1313,7 +1313,7 @@ mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type)
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
-	if (id != depend_id)
+	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
 	
 }

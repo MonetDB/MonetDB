@@ -1280,6 +1280,7 @@ opt_seq_params:
 	  append_lng(l, $4);
 	  append_lng(l, $5);
 	  append_int(l, $6);
+	  append_int(l, 0);	/* bedropped */
 	  $$ = l;
 	}
 ;
@@ -1556,6 +1557,7 @@ column_def:
 			append_lng(o, 0); /* max */
 			append_lng(o, 1); /* cache */
 			append_int(o, 0); /* cycle */
+			append_int(o, 1); /* bedropped */
 			append_list(l, o);
 
 			if (m->sym) {
@@ -1689,6 +1691,7 @@ generated_column:
 		append_lng(o, 0); /* max */
 		append_lng(o, 1); /* cache */
 		append_int(o, 0); /* cycle */
+		append_int(o, 0); /* bedropped */
 		append_list(l, o);
 		if (m->scanner.schema)
 			append_string(seqn2, m->scanner.schema);
@@ -1715,6 +1718,7 @@ serial_opt_params:
 	  append_lng($$, -1); /* max */
 	  append_lng($$, -1); /* cache */
 	  append_int($$, 0);  /* cycle */
+	  append_int($$, 0);  /* bedropped */
 	}
   |	'(' opt_seq_params ')'	{ $$ = $2; }
  ;
