@@ -144,7 +144,8 @@ PrPrelude(char *file)
 
 	/* find out the full name in 'full', the basename in 's', end in 't' */
 	strncpy(full, file, sizeof(full));
-	for (s = full; s[1]; s++) ;
+	for (s = full; s[1]; s++)
+		;
 	while (s >= full && *s != DIR_SEP
 #ifdef WIN32
 	       && *s != '/'

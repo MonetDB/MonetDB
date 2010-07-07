@@ -41,7 +41,8 @@ GenCode(void)
 			char *s;
 
 			fname = d->d_cmd;
-			for (s = fname; *s && !isspace((int) (*s)); s++) ;
+			for (s = fname; *s && !isspace((int) (*s)); s++)
+				;
 			if (isspace((int) (*s)))
 				*s = 0;
 			if (s == fname) {
