@@ -1,6 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Jul  7 2010 Fabian Groffen <fabian@cwi.nl>
+- Make TEXT a separate keyword, separating it from CLOB, such that we can sloppily allow TEXT to appear as a column name, since it seems not to be in the standard as reserved keyword.
+
 * Wed Jul  7 2010 Niels Nes <niels@cwi.nl>
 - Fixed bug 2581. Completed the implementation of handling boolean types in prepare statements.
 - Fix bug 2582. Statements with 'constant in ( )' are now handled properly.
