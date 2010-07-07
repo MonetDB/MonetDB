@@ -1,0 +1,90 @@
+stdout of test 'explain_gives_crash.SF-2741829` in directory 'src/test/BugTracker-2009` itself:
+
+
+# 22:45:54 >  
+# 22:45:54 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=35519 --set xrpc_port=48894 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 22:45:54 >  
+
+# MonetDB server v5.12.0, based on kernel v1.30.0
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35519/
+# MonetDB/SQL module v2.30.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 21:13:40 >  
+# 21:13:40 >  mclient -lsql -i --host=alf --port=39638 
+# 21:13:40 >  
+
+#~BeginVariableOutput~#
+function user.s1_1{autoCommit=true}():void;
+    _2 := sql.mvc();
+"    sql.catalog(29\,\"sys\"\,127543840\,0);"
+"    _7:bat[:oid\,:int]  := sql.bind(_2\,\"sys\"\,\"blabla\"\,\"id\"\,0);"
+    _10 := algebra.selectNotNil(_7);
+"    _11:bat[:oid\,:oid]  := sql.bind_dbat(_2\,\"sys\"\,\"blabla\"\,1);"
+    _13 := bat.reverse(_11);
+"    _14 := algebra.kdifference(_10\,_13);"
+"    (ext21\,grp19) := group.done(_14);"
+    _17 := bat.mirror(ext21);
+"    _18:bat[:oid\,:wrd]  := aggr.count(grp19\,grp19\,_17);"
+    _19 := aggr.count(_18);
+    _20:wrd  := aggr.sum(_18);
+    _21 := calc.isnil(_20);
+"    _23 := calc.ifthenelse(_21\,0:wrd\,_20);"
+"    _24 := calc.!=(_19\,_23);"
+"    sql.assert(_24\,\"UPDATE: UNIQUE constraint 'blabla.dada' violated\");"
+end s1_1;
+function user.s2_1{autoCommit=true}():void;
+    _2 := sql.mvc();
+"    sql.catalog(29\,\"sys\"\,127806048\,0);"
+"    _7:bat[:oid\,:int]  := sql.bind(_2\,\"sys\"\,\"blabla\"\,\"id\"\,0);"
+    _10 := algebra.selectNotNil(_7);
+"    _11:bat[:oid\,:oid]  := sql.bind_dbat(_2\,\"sys\"\,\"blabla\"\,1);"
+    _13 := bat.reverse(_11);
+"    _14 := algebra.kdifference(_10\,_13);"
+"    (ext21\,grp19) := group.done(_14);"
+    _17 := bat.mirror(ext21);
+"    _18:bat[:oid\,:wrd]  := aggr.count(grp19\,grp19\,_17);"
+    _19 := aggr.count(_18);
+    _20:wrd  := aggr.sum(_18);
+    _21 := calc.isnil(_20);
+"    _23 := calc.ifthenelse(_21\,0:wrd\,_20);"
+"    _24 := calc.!=(_19\,_23);"
+"    sql.assert(_24\,\"UPDATE: UNIQUE constraint 'blabla.dada' violated\");"
+end s2_1;
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+function user.s1_1{autoCommit=true}():void;
+    _2 := sql.mvc();
+"    sql.catalog(29\,\"sys\"\,128068256\,0);"
+"    _7:bat[:oid\,:int]  := sql.bind(_2\,\"sys\"\,\"blabla\"\,\"id\"\,0);"
+    _10 := algebra.selectNotNil(_7);
+"    _11:bat[:oid\,:oid]  := sql.bind_dbat(_2\,\"sys\"\,\"blabla\"\,1);"
+    _13 := bat.reverse(_11);
+"    _14 := algebra.kdifference(_10\,_13);"
+"    (ext21\,grp19) := group.done(_14);"
+    _17 := bat.mirror(ext21);
+"    _18:bat[:oid\,:wrd]  := aggr.count(grp19\,grp19\,_17);"
+    _19 := aggr.count(_18);
+    _20:wrd  := aggr.sum(_18);
+    _21 := calc.isnil(_20);
+"    _23 := calc.ifthenelse(_21\,0:wrd\,_20);"
+"    _24 := calc.!=(_19\,_23);"
+"    sql.assert(_24\,\"UPDATE: UNIQUE constraint 'blabla.dada' violated\");"
+end s1_1;
+#~EndVariableOutput~#
+
+# 11:37:28 >  
+# 11:37:28 >  Done.
+# 11:37:28 >  
+

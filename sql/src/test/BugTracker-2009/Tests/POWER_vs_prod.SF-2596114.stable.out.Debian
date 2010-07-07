@@ -1,0 +1,74 @@
+stdout of test 'POWER_vs_prod.SF-2596114` in directory 'src/test/BugTracker-2009` itself:
+
+
+# 23:02:29 >  
+# 23:02:29 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=33742 --set xrpc_port=44239 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 23:02:29 >  
+
+# MonetDB server v5.10.3, based on kernel v1.28.3
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33742/
+# MonetDB/SQL module v2.28.1 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 15:46:08 >  
+# 15:46:08 >  mclient -lsql -i -umonetdb -Pmonetdb --host=rig --port=35464 
+# 15:46:08 >  
+
+% .explain # table_name
+% mal # name
+% clob # type
+% 0 # length
+function user.s0_1{autoCommit=true}():void;
+    _2 := sql.mvc();
+    _3:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",0);
+    _8:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",2);
+    _10 := algebra.kdifference(_3,_8);
+    _11 := algebra.kunion(_10,_8);
+    _12:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",1);
+    _14 := algebra.kunion(_11,_12);
+    _15:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","sf_2596114",1);
+    _16 := bat.reverse(_15);
+    _17 := algebra.kdifference(_14,_16);
+    _18:bat[:oid,:dbl]  := batmmath.pow(_17,2);
+    _19 := sql.resultSet(1,1,_18);
+    sql.rsColumn(_19,"sys.","power_x","double",53,0,_18);
+    _25 := io.stdout();
+    sql.exportResult(_25,_19);
+end s0_1;
+% .explain # table_name
+% mal # name
+% clob # type
+% 0 # length
+function user.s1_1{autoCommit=true}():void;
+    _2 := sql.mvc();
+    _3:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",0);
+    _8:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",2);
+    _10 := algebra.kdifference(_3,_8);
+    _11 := algebra.kunion(_10,_8);
+    _12:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",1);
+    _14 := algebra.kunion(_11,_12);
+    _15:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","sf_2596114",1);
+    _16 := bat.reverse(_15);
+    _17 := algebra.kdifference(_14,_16);
+    _18:bat[:oid,:dbl]  := batcalc.*(_17,_17);
+    _19 := sql.resultSet(1,1,_18);
+    sql.rsColumn(_19,"sys.","sql_mul_x","double",53,0,_18);
+    _25 := io.stdout();
+    sql.exportResult(_25,_19);
+end s1_1;
+
+# 23:02:30 >  
+# 23:02:30 >  Done.
+# 23:02:30 >  
+
