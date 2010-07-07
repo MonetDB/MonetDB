@@ -583,24 +583,30 @@ connect_catalog(mvc *sql, dlist *qname)
 {
 	char *server, * db, *db_alias, *user, *lang, *passwd; 
 	int *id = GDKmalloc(sizeof(int)), *port = GDKmalloc(sizeof(int));
-	symbol *user_symb = qname->h->next->next->next->next->data.sym;
+	symbol *user_symb = NULL;
 	char *default_dbalias;
-	assert(qname->h->next->type == type_int);
-	*port = qname->h->next->data.i_val;
 	*id = -1;
-	server = GDKstrdup(qname->h->data.sval);
-	db = GDKstrdup(qname->h->next->next->data.sval);
-	user = GDKstrdup(user_symb->data.lval->h->data.sval);
-	passwd = GDKstrdup(user_symb->data.lval->h->next->data.sval);
 
-	if (qname->h->next->next->next->data.sval == NULL){
+	if (qname->cnt) {
+		user_symb = qname->h->next->next->next->next->data.sym;
+		assert(qname->h->next->type == type_int);
+		*port = qname->h->next->data.i_val;
+		server = GDKstrdup(qname->h->data.sval);
+		db = GDKstrdup(qname->h->next->next->data.sval);
+		user = GDKstrdup(user_symb->data.lval->h->data.sval);
+		passwd = GDKstrdup(user_symb->data.lval->h->next->data.sval);
+	} else {
+		return sql_error(sql, 02, "CONNECT TO: DEFAULT is not supported!");
+	}
+
+	if (!qname->cnt || qname->h->next->next->next->data.sval == NULL){
 		default_dbalias = sql_message( "%s_%s_%s", server, db, user);
 		db_alias = default_dbalias;
 	} else {
 		db_alias = GDKstrdup(qname->h->next->next->next->data.sval);
 	}
 
-	if (qname->h->next->next->next->next->next->data.sval == NULL){
+	if (!qname->cnt || qname->h->next->next->next->next->next->data.sval == NULL){
 		lang = GDKstrdup("sql");
 	}
 	else {
