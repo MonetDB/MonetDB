@@ -119,8 +119,8 @@ scanner_init_keywords(void)
 	keywords_insert("OBJECT", OBJECT);
 	keywords_insert("CLOB", CLOB);
 	keywords_insert("BLOB", sqlBLOB);
-	keywords_insert("TEXT", CLOB);
-	keywords_insert("TINYTEXT", CLOB);
+	keywords_insert("TEXT", sqlTEXT);
+	keywords_insert("TINYTEXT", sqlTEXT);
 	keywords_insert("STRING", CLOB);	/* ? */
 	keywords_insert("CHECK", CHECK);
 	keywords_insert("CONSTRAINT", CONSTRAINT);

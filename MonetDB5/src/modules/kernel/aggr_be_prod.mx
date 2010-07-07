@@ -210,7 +210,7 @@ CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 	}
 	if (!BAThdense(b))
 		b_use |= USE_HEAD;
-	if (BAThdense(e)) {
+	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (BAThdense(b)) {
 			@:aggrX3_prod(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3,r-off)@

@@ -244,7 +244,6 @@ CREATE TABLE "sys"."table_c" (
 	"value_c" int NOT NULL,
 	CONSTRAINT "pk_table_c_id" PRIMARY KEY ("table_c_id")
 );
-SET SCHEMA "sys";
 ALTER TABLE "sys"."callhistory" ADD CONSTRAINT "callhistory_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."queryhistory" ("id");
 ALTER TABLE "sys"."table_b" ADD CONSTRAINT "fk_table_a_id" FOREIGN KEY ("table_a_id") REFERENCES "sys"."table_a" ("table_a_id");
 ALTER TABLE "sys"."table_c" ADD CONSTRAINT "fk_table_c_table_a_id" FOREIGN KEY ("table_a_id") REFERENCES "sys"."table_a" ("table_a_id");

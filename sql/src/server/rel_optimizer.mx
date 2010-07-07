@@ -3315,7 +3315,6 @@ find_index(sql_rel *r, list **EXPS)
 						}
 					}
 				}
-				assert(list_length(exps) == list_length(es));
 				/* fix the destroy function */
 				cols->destroy = NULL;
 				list_destroy(cols);

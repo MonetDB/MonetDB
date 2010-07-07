@@ -1,3 +1,21 @@
+monetdb5-server (5.20.3-20100706) unstable; urgency=low
+
+  * Return a correct URI for local connection from Sabaoth when the
+    connection is a UNIX domain socket.  Partial fix for bug #2567.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 01 Jul 2010 14:06:18 +0200
+
+monetdb5-server (5.20.3-20100706) unstable; urgency=low
+
+  * various performance fixes in grouping and grouped aggregation code
+    (MonetDB5/src/modules/kernel/group.mx, MonetDB5/src/modules/kernel/aggr*.mx)
+    to reduce the execution time the following query that mimics a two-column
+    primary key check over the ~5 billion tuple "neighbors" table of the
+    Skyserver database from 26 hours to 1.5 hours (on a 64 GB machine):
+    SELECT count(c), sum(c), min(c), max(c) FROM (SELECT count(*) AS c FROM "neighbors" GROUP BY "objID","NeighborObjID") AS t;
+
+ -- Stefan Manegold <Stefan.Manegold@cwi.nl>  Wed, 30 Jun 2010 14:06:18 +0200
+
 monetdb5-server (5.20.1-20100630) unstable; urgency=low
 
   * Rebuilt.
@@ -50,7 +68,7 @@ monetdb5-server (5.20.1-20100618) unstable; urgency=low
 
   * fixed BUG #2994521 "mat.slice unable to cope with only empty BAT arguments"
     https://sourceforge.net/tracker/index.php?func=detail&aid=2994521&group_id=56967&atid=482468
-    by makeing MATpackSliceInternal() handle empty input BATs correctly
+    by making MATpackSliceInternal() handle empty input BATs correctly
 
  -- Stefan Manegold <manegold@cwi.nl>  Sat, 1 May 2010 10:58:37 +0200
 
@@ -63,7 +81,7 @@ monetdb5-server (5.20.1-20100618) unstable; urgency=low
 monetdb5-server (5.20.1-20100618) unstable; urgency=low
 
   * Made compilation of "testing" (and "java") independent of MonetDB.
-    This is mainy for Windows, but also on other systems, "testing" can now be
+    This is mainly for Windows, but also on other systems, "testing" can now be
     built independently of (and hence before) "MonetDB".
     Files that mimic configure functionality on Windows were moved from
     "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
@@ -89,7 +107,7 @@ monetdb5-server (5.20.1-20100618) unstable; urgency=low
     an optional hash '#', which produces line numbers for
     each of reference and analysis of variable span.
   * The dataflow scheduler has been revamped to allow for
-    more parellelism to be exploited.
+    more parallelism to be exploited.
   * The garbage collection administration has been changed. Every variable record
     now comes with an end-of-life field (eolife), which denotes the instruction whereafter
     the BAT variable reference counter can be decremented. The garbage collector is
@@ -97,7 +115,7 @@ monetdb5-server (5.20.1-20100618) unstable; urgency=low
     pressing needs to retain them. This means that MAL functions defined and
     used in the context of SQL, and which are not inlined, may cause a leakage.
     The garbage collection has become part of each interpreter step.
-    The new approach makes the SQL/MAL plans half te size as before.
+    The new approach makes the SQL/MAL plans half the size as before.
 
  -- Martin Kersten <martin.kersten@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
 

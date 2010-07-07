@@ -416,6 +416,10 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 	for (bc = basecols->h; bc; bc = bc->next) {
 		list *colsels = list_select(haveBasecol, bc->data, (fcmp) &cmp_sel_basecol, (fdup) &stmt_dup);
 		sql_subtype *tt = tail_type(((stmt *) (colsels->h->data))->op2.stval);
+		sql_subtype *tt2 = tt;
+
+		if (list_length(colsels) > 1)
+			tt2 = tail_type(((stmt *) (colsels->h->next->data))->op2.stval);
 
 		assert(tt);
 		if (list_length(colsels) == 1) {
@@ -426,7 +430,7 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 				list_prepend(newsels, s);
 			else
 				list_append(newsels, s);
-		} else if (tt->type->localtype == TYPE_str || !(min = sql_bind_func_result(sql->session->schema, "sql_min", tt, tt, tt)) || !(max = sql_bind_func_result(sql->session->schema, "sql_max", tt, tt, tt))) {
+		} else if (tt2 != tt ||  tt->type->localtype == TYPE_str || !(min = sql_bind_func_result(sql->session->schema, "sql_min", tt, tt, tt)) || !(max = sql_bind_func_result(sql->session->schema, "sql_max", tt, tt, tt))) {
 			/* no "min" and/or "max" available on this data type, hence, we cannot apply the following "tricks" */
 			list_merge(newsels, colsels, (fdup) &stmt_dup);
 		} else {

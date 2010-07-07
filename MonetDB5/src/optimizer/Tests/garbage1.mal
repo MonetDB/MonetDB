@@ -1,5 +1,6 @@
 function test():bat;
         b:= bat.new(:str,:bat);
+        bat.setName(b,"BAT_b");
         return test := b;
 end test;
 

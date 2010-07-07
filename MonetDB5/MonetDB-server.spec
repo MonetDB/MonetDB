@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010/MonetDB5-server-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP1/MonetDB5-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_raptor: %{!?_without_raptor: %define _with_raptor --with-raptor}}
@@ -213,6 +213,18 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Thu Jul 01 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.3-20100706
+- Return a correct URI for local connection from Sabaoth when the
+  connection is a UNIX domain socket.  Partial fix for bug #2567.
+
+* Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 5.20.3-20100706
+- various performance fixes in grouping and grouped aggregation code
+  (MonetDB5/src/modules/kernel/group.mx, MonetDB5/src/modules/kernel/aggr*.mx)
+  to reduce the execution time the following query that mimics a two-column
+  primary key check over the ~5 billion tuple "neighbors" table of the
+  Skyserver database from 26 hours to 1.5 hours (on a 64 GB machine):
+  SELECT count(c), sum(c), min(c), max(c) FROM (SELECT count(*) AS c FROM "neighbors" GROUP BY "objID","NeighborObjID") AS t;
+
 * Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100630
 - Rebuilt.
 
@@ -240,14 +252,14 @@ rm -fr $RPM_BUILD_ROOT
 * Sat May  1 2010 Stefan Manegold <manegold@cwi.nl> - 5.20.1-20100618
 - fixed BUG #2994521 "mat.slice unable to cope with only empty BAT arguments"
   https://sourceforge.net/tracker/index.php?func=detail&aid=2994521&group_id=56967&atid=482468
-  by makeing MATpackSliceInternal() handle empty input BATs correctly
+  by making MATpackSliceInternal() handle empty input BATs correctly
 
 * Tue Apr 20 2010 Martin Kersten <martin.kersten@cwi.nl> - 5.20.1-20100618
 - Select <col> from <t> limit <n> has been improved by introducing mat.slice().
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 5.20.1-20100618
 - Made compilation of "testing" (and "java") independent of MonetDB.
-  This is mainy for Windows, but also on other systems, "testing" can now be
+  This is mainly for Windows, but also on other systems, "testing" can now be
   built independently of (and hence before) "MonetDB".
   Files that mimic configure functionality on Windows were moved from
   "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
@@ -267,7 +279,7 @@ rm -fr $RPM_BUILD_ROOT
   an optional hash '#', which produces line numbers for
   each of reference and analysis of variable span.
 - The dataflow scheduler has been revamped to allow for
-  more parellelism to be exploited.
+  more parallelism to be exploited.
 - The garbage collection administration has been changed. Every variable record
   now comes with an end-of-life field (eolife), which denotes the instruction whereafter
   the BAT variable reference counter can be decremented. The garbage collector is
@@ -275,7 +287,7 @@ rm -fr $RPM_BUILD_ROOT
   pressing needs to retain them. This means that MAL functions defined and
   used in the context of SQL, and which are not inlined, may cause a leakage.
   The garbage collection has become part of each interpreter step.
-  The new approach makes the SQL/MAL plans half te size as before.
+  The new approach makes the SQL/MAL plans half the size as before.
 
 * Tue Apr 20 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.1-20100618
 - Removed stethoscope from MonetDB5 sources.  New location is in the

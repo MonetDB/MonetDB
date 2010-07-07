@@ -115,7 +115,6 @@ CREATE INDEX "triples_predicate_object_idx" ON "sys"."triples" ("predicate", "ob
 CREATE INDEX "triples_subject_idx" ON "sys"."triples" ("subject");
 CREATE INDEX "triples_subject_object_idx" ON "sys"."triples" ("subject", "object");
 CREATE INDEX "triples_subject_predicate_idx" ON "sys"."triples" ("subject", "predicate");
-SET SCHEMA "sys";
 ALTER TABLE "sys"."foreign" ADD CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."allnewtriples" ("id");
 ALTER TABLE "sys"."foreign" ADD CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "sys"."allnewtriples" ("subject", "predicate", "object");
 COMMIT;

@@ -212,7 +212,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	}
 	if (!BAThdense(b))
 		b_use |= USE_HEAD;
-	if (BAThdense(e)) {
+	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (BAThdense(b)) {
 			@:aggrX3_avg(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@

@@ -36,12 +36,14 @@ function user.main():void;
     b2 := bat.new(:oid,:str);
     bat.append(b2,"hello world");
     bat.append(b2,"goodbye world");
+    bat.setName(b1,"BAT_b1");
+    bat.setName(b2,"BAT_b2");
     tablet.setFormat(b1,b2);
     tablet.setProperties("name,type,dense,sorted,key,min,max");
     tablet.display(b1,b2);
 end main;
 #-------------------------------#
-% tmp_7,tmp_10			# name
+% BAT_b1,BAT_b2			# name
 % int,	str			# type
 % false,false			# dense
 % true,	false			# sorted

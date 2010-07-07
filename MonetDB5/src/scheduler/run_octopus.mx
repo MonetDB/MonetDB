@@ -88,7 +88,7 @@ comment "Make schedule based on bids.";
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-/*#define DEBUG_RUN_OCTOPUS 		to trace processing */
+/*#define DEBUG_RUN_OCTOPUS 	to trace processing */
 
 #ifdef WIN32
 #ifndef LIBRUN_OCTOPUS
@@ -346,19 +346,36 @@ static int admitSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 	(void) cntxt;
 	(void) mb;
 
+	if ( p->token == NOOPsymbol )
+		return 1;
 	if ( strncmp (getFunctionId(p), "exec", 4) == 0 ) 
 		dburi = *(str*)getArgReference(s, p,2);
 	else dburi = *(str*)getArgReference(s, p,1);
-	i = OCTOPUSfindPeer(dburi);
 
 	MT_set_lock(s->stklock,"serialConn");
-	if ( i >= 0 && !peers[i].inuse ) {
-		adm = peers[i].inuse = 1;
+	i = OCTOPUSfindPeer(dburi);
+	if ( i >= 0 ) {
+		if ( !peers[i].inuse ) {
+			adm = peers[i].inuse = 1;
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf( ((Client)cntxt)->fdout,"Conn. to peer %d (%s) in use\n", i, dburi);
+			stream_printf( ((Client)cntxt)->fdout,"USING conn. to peer %d (%s)\n", i, dburi);
+			printInstruction(((Client)cntxt)->fdout,(MalBlkPtr)mb,0, p, LIST_MAL_ALL);
+#endif
+		}
+		else {
+#ifdef DEBUG_RUN_OCTOPUS
+		 	stream_printf( ((Client)cntxt)->fdout,"Conn. to peer %d is BUSY\n", i);
+			printInstruction(((Client)cntxt)->fdout,(MalBlkPtr)mb,0, p, LIST_MAL_ALL);
+#endif
+		}
+	} 
+	else {
+#ifdef DEBUG_RUN_OCTOPUS
+		stream_printf( ((Client)cntxt)->fdout,"No peer %s\n", dburi);
 		printInstruction(((Client)cntxt)->fdout,(MalBlkPtr)mb,0, p, LIST_MAL_ALL);
 #endif
-	}
+	}	
+		
 	MT_unset_lock(s->stklock,"serialConn");
 
 	return adm;
@@ -374,6 +391,9 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 	(void) cntxt;
 	(void) mb;
 
+	if ( p->token == NOOPsymbol )
+		return 0;
+
 	if ( strncmp (getFunctionId(p), "exec", 4) == 0 ) 
 		dburi = *(str*)getArgReference(s, p,2);
 	else dburi = *(str*)getArgReference(s, p,1);
@@ -383,7 +403,7 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 	if ( i >= 0 ) {
 		peers[i].inuse = 0;
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf( ((Client)cntxt)->fdout,"Conn to peer %d (%s) released\n", i, dburi);
+		stream_printf( ((Client)cntxt)->fdout,"RELEASE conn to peer %d (%s)\n", i, dburi);
 		printInstruction(((Client)cntxt)->fdout,(MalBlkPtr)mb,0, p, LIST_MAL_ALL);
 #endif
 	}
@@ -678,7 +698,7 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		v = getArg(p,2);
 		if ( strcmp(stk->stk[v].val.sval, "NOTworker") == 0 )
-                        p->token = NOOPsymbol;
+			p->token = NOOPsymbol;
 
 	}
 

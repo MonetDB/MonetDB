@@ -182,9 +182,9 @@ static int
 are_equality_exps( list *exps ) 
 {
 	if (list_length(exps) == 1) {
-		sql_exp *e = exps->h->data, *re = e->r;
+		sql_exp *e = exps->h->data, *le = e->l, *re = e->r;
 
-		if (e->type == e_cmp && e->flag == cmp_equal && re->card == CARD_ATOM)
+		if (e->type == e_cmp && e->flag == cmp_equal && le->card != CARD_ATOM && re->card == CARD_ATOM)
 			return 1;
 		if (e->type == e_cmp && e->flag == cmp_or)
 			return (are_equality_exps(e->l) && 
@@ -590,7 +590,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
                         }
 			return stmt_likeselect(l, r, r2, (comp_type)e->flag);
 		}
-		if (left && right && re->card > CARD_ATOM && !is_select) {
+		if (left && right && !is_select &&
+		    (re->card > CARD_ATOM || (l->nrcols && r->nrcols))) {
 			if (l->nrcols == 0)
 				l = stmt_const(bin_first_column(swapped?right:left), l); 
 			if (r->nrcols == 0)
@@ -857,6 +858,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		return NULL;	
 	}
 	left = row2cols(left);
+	right = row2cols(right);
 	if (rel->exps) {
 		int idx = 0;
 		list *jns = create_stmt_list();

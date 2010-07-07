@@ -1109,32 +1109,20 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 	if (!describe)
 		stream_printf(toConsole, "START TRANSACTION;\n");
 
-	if ((hdl = mapi_query(mid, start)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
+	if ((hdl = mapi_query(mid, start)) == NULL || mapi_error(mid))
+		goto bailout;
 	mapi_close_handle(hdl);
 
 	sname = get_schema(mid);
 	if (sname == NULL)
-		return 1;
+		goto bailout2;
 	if (strcmp(sname, "sys") == 0 || strcmp(sname, "tmp") == 0) {
 		free(sname);
 		sname = NULL;
 
 		/* dump roles */
-		if ((hdl = mapi_query(mid, roles)) == NULL || mapi_error(mid)) {
-			if (hdl) {
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-			} else
-				mapi_explain(mid, stderr);
-			return 1;
-		}
+		if ((hdl = mapi_query(mid, roles)) == NULL || mapi_error(mid))
+			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
 			char *name = mapi_fetch_field(hdl, 0);
@@ -1143,46 +1131,26 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			quoted_print(toConsole, name);
 			stream_printf(toConsole, ";\n");
 		}
-		if (mapi_error(mid)) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			return 1;
-		}
+		if (mapi_error(mid))
+			goto bailout;
 		mapi_close_handle(hdl);
 
 
 		/* dump users, part 1 */
 		/* first make sure the password_hash function exists */
-		if ((hdl = mapi_query(mid, chkhash)) == NULL || mapi_error(mid)) {
-			if (hdl) {
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-			} else
-				mapi_explain(mid, stderr);
-			return 1;
-		}
+		if ((hdl = mapi_query(mid, chkhash)) == NULL || mapi_error(mid))
+			goto bailout;
 		create_hash_func = mapi_rows_affected(hdl) == 0;
 		mapi_close_handle(hdl);
 		if (create_hash_func) {
-			if ((hdl = mapi_query(mid, createhash)) == NULL || mapi_error(mid)) {
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-				} else
-					mapi_explain(mid, stderr);
-				return 1;
-			}
+			if ((hdl = mapi_query(mid, createhash)) == NULL ||
+			    mapi_error(mid))
+				goto bailout;
 			mapi_close_handle(hdl);
 		}
 
-		if ((hdl = mapi_query(mid, users1)) == NULL || mapi_error(mid)) {
-			if (hdl) {
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-			} else
-				mapi_explain(mid, stderr);
-			return 1;
-		}
+		if ((hdl = mapi_query(mid, users1)) == NULL || mapi_error(mid))
+			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
 			char *uname = mapi_fetch_field(hdl, 0);
@@ -1193,35 +1161,22 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			quoted_print(toConsole, uname);
 			stream_printf(toConsole, " WITH ENCRYPTED PASSWORD '%s' NAME '%s' SCHEMA \"sys\";\n", pwhash, fullname);
 		}
-		if (mapi_error(mid)) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			return 1;
-		}
+		if (mapi_error(mid))
+			goto bailout;
 		mapi_close_handle(hdl);
 
 		/* clean up -- not strictly necessary due to ROLLBACK */
 		if (create_hash_func) {
-			if ((hdl = mapi_query(mid, drophash)) == NULL || mapi_error(mid)) {
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-				} else
-					mapi_explain(mid, stderr);
-				return 1;
-			}
+			if ((hdl = mapi_query(mid, drophash)) == NULL ||
+			    mapi_error(mid))
+				goto bailout;
 			mapi_close_handle(hdl);
 		}
 
 		/* dump schemas */
-		if ((hdl = mapi_query(mid, schemas)) == NULL || mapi_error(mid)) {
-			if (hdl) {
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-			} else
-				mapi_explain(mid, stderr);
-			return 1;
-		}
+		if ((hdl = mapi_query(mid, schemas)) == NULL ||
+		    mapi_error(mid))
+			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
 			char *sname = mapi_fetch_field(hdl, 0);
@@ -1235,22 +1190,13 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			}
 			stream_printf(toConsole, ";\n");
 		}
-		if (mapi_error(mid)) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			return 1;
-		}
+		if (mapi_error(mid))
+			goto bailout;
 		mapi_close_handle(hdl);
 
 		/* dump users, part 2 */
-		if ((hdl = mapi_query(mid, users2)) == NULL || mapi_error(mid)) {
-			if (hdl) {
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-			} else
-				mapi_explain(mid, stderr);
-			return 1;
-		}
+		if ((hdl = mapi_query(mid, users2)) == NULL || mapi_error(mid))
+			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
 			char *uname = mapi_fetch_field(hdl, 0);
@@ -1262,22 +1208,13 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			quoted_print(toConsole, sname);
 			stream_printf(toConsole, ";\n");
 		}
-		if (mapi_error(mid)) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			return 1;
-		}
+		if (mapi_error(mid))
+			goto bailout;
 		mapi_close_handle(hdl);
 
 		/* grant user privileges */
-		if ((hdl = mapi_query(mid, grants)) == NULL || mapi_error(mid)) {
-			if (hdl) {
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-			} else
-				mapi_explain(mid, stderr);
-			return 1;
-		}
+		if ((hdl = mapi_query(mid, grants)) == NULL || mapi_error(mid))
+			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
 			char *uname = mapi_fetch_field(hdl, 0);
@@ -1292,11 +1229,8 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			   server, so we can't dump them */
 			stream_printf(toConsole, ";\n");
 		}
-		if (mapi_error(mid)) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			return 1;
-		}
+		if (mapi_error(mid))
+			goto bailout;
 		mapi_close_handle(hdl);
 	} else {
 		stream_printf(toConsole, "SET SCHEMA ");
@@ -1306,14 +1240,8 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 	}
 
 	/* dump sequences, part 1 */
-	if ((hdl = mapi_query(mid, sequences1)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
+	if ((hdl = mapi_query(mid, sequences1)) == NULL || mapi_error(mid))
+		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
 		char *schema = mapi_fetch_field(hdl, 0);
@@ -1327,22 +1255,14 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		quoted_print(toConsole, name);
 		stream_printf(toConsole, " AS INTEGER;\n");
 	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		return 1;
-	}
+	if (mapi_error(mid))
+		goto bailout;
 	mapi_close_handle(hdl);
 
 	/* dump tables */
-	if ((hdl = mapi_query(mid, tables_and_functions)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
+	if ((hdl = mapi_query(mid, tables_and_functions)) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
 
 	while (rc == 0 &&
 	       !stream_errnr(toConsole) &&
@@ -1354,7 +1274,7 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		if (mapi_error(mid)) {
 			mapi_explain(mid, stderr);
 			mapi_close_handle(hdl);
-			return 1;
+			goto bailout2;
 		}
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
@@ -1386,28 +1306,20 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		free(curschema);
 		curschema = strdup(sname ? sname : "sys");
 	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		return 1;
-	}
+	if (mapi_error(mid))
+		goto bailout;
 	mapi_close_handle(hdl);
 	if (stream_errnr(toConsole))
-		return 1;
+		goto bailout2;
 
 	if (!describe) {
 		if (dump_foreign_keys(mid, NULL, NULL, toConsole))
-			return 1;
+			goto bailout2;
 
 		/* dump sequences, part 2 */
-		if ((hdl = mapi_query(mid, sequences2)) == NULL || mapi_error(mid)) {
-			if (hdl) {
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-			} else
-				mapi_explain(mid, stderr);
-			return 1;
-		}
+		if ((hdl = mapi_query(mid, sequences2)) == NULL ||
+		    mapi_error(mid))
+			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
 			char *schema = mapi_fetch_field(hdl, 0);
@@ -1435,25 +1347,16 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			stream_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
 			if (stream_errnr(toConsole)) {
 				mapi_close_handle(hdl);
-				return 1;
+				goto bailout2;
 			}
 		}
-		if (mapi_error(mid)) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			return 1;
-		}
+		if (mapi_error(mid))
+			goto bailout;
 		mapi_close_handle(hdl);
 	}
 
-	if ((hdl = mapi_query(mid, table_grants)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
+	if ((hdl = mapi_query(mid, table_grants)) == NULL || mapi_error(mid))
+		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
 		char *schema = mapi_fetch_field(hdl, 0);
@@ -1480,21 +1383,12 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			stream_printf(toConsole, " WITH GRANT OPTION");
 		stream_printf(toConsole, ";\n");
 	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		return 1;
-	}
+	if (mapi_error(mid))
+		goto bailout;
 	mapi_close_handle(hdl);
 
-	if ((hdl = mapi_query(mid, column_grants)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
+	if ((hdl = mapi_query(mid, column_grants)) == NULL || mapi_error(mid))
+		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
 		char *schema = mapi_fetch_field(hdl, 0);
@@ -1524,11 +1418,8 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			stream_printf(toConsole, " WITH GRANT OPTION");
 		stream_printf(toConsole, ";\n");
 	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		return 1;
-	}
+	if (mapi_error(mid))
+		goto bailout;
 	mapi_close_handle(hdl);
 
 	if (curschema) {
@@ -1541,14 +1432,8 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		curschema = NULL;
 	}
 
-	if ((hdl = mapi_query(mid, end)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
+	if ((hdl = mapi_query(mid, end)) == NULL || mapi_error(mid))
+		goto bailout;
 	mapi_close_handle(hdl);
 
 	/* finally commit the whole transaction */
@@ -1556,4 +1441,17 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		stream_printf(toConsole, "COMMIT;\n");
 
 	return rc;
+
+  bailout:
+	if (hdl) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+
+  bailout2:
+	hdl = mapi_query(mid, end);
+	if (hdl)
+		mapi_close_handle(hdl);
+	return 1;
 }

@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010/MonetDB-client-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP1/MonetDB-client-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires: MonetDB >= 1.38
@@ -301,6 +301,14 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Mon Jul  5 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.3-20100706
+- Implemented dumping of GRANT statements.
+  This fixes bug 2574.
+
+* Thu Jul  1 2010 Fabian Groffen <fabian@cwi.nl> - 1.38.3-20100706
+- Fix implementation of mapi_mapiuri to deal with UNIX socket urls
+  properly.  This fixes one part of Bug #2567.
+
 * Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.1-20100630
 - Rebuilt.
 
@@ -323,7 +331,7 @@ rm -fr $RPM_BUILD_ROOT
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 1.38.1-20100618
 - Made compilation of "testing" (and "java") independent of MonetDB.
-  This is mainy for Windows, but also on other systems, "testing" can now be
+  This is mainly for Windows, but also on other systems, "testing" can now be
   built independently of (and hence before) "MonetDB".
   Files that mimic configure functionality on Windows were moved from
   "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
@@ -367,7 +375,7 @@ rm -fr $RPM_BUILD_ROOT
 - Rebuilt.
 
 * Wed Feb 17 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
-- Fixed a bug in the Mapi libary when sending very large queries to the server.
+- Fixed a bug in the Mapi library when sending very large queries to the server.
 - Implemented BLOB and CLOB support in ODBC driver.
 
 * Tue Feb 02 2010 Fabian Groffen <fabian@cwi.nl> - 1.36.1-20100223
@@ -381,7 +389,7 @@ rm -fr $RPM_BUILD_ROOT
 * Wed Jan 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
 - mclient timer information (-t option) is now written to standard error
   instead of standard output.  This makes getting timer information easier
-  when there is a large amout of regular output (which can be redirected to
+  when there is a large amount of regular output (which can be redirected to
   a file or /dev/null).
 
 * Tue Jan 19 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223

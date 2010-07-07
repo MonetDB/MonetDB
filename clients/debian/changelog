@@ -1,3 +1,16 @@
+monetdb-client (1.38.3-20100706) unstable; urgency=low
+
+  * Implemented dumping of GRANT statements.
+    This fixes bug 2574.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 5 Jul 2010 14:06:18 +0200
+
+monetdb-client (1.38.3-20100706) unstable; urgency=low
+
+  * Fix implementation of mapi_mapiuri to deal with UNIX socket urls
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 1 Jul 2010 14:06:18 +0200
+
 monetdb-client (1.38.1-20100630) unstable; urgency=low
 
   * Rebuilt.
@@ -39,7 +52,7 @@ monetdb-client (1.38.1-20100618) unstable; urgency=low
 monetdb-client (1.38.1-20100618) unstable; urgency=low
 
   * Made compilation of "testing" (and "java") independent of MonetDB.
-    This is mainy for Windows, but also on other systems, "testing" can now be
+    This is mainly for Windows, but also on other systems, "testing" can now be
     built independently of (and hence before) "MonetDB".
     Files that mimic configure functionality on Windows were moved from
     "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
@@ -110,7 +123,7 @@ monetdb-client (1.36.1-20100224) unstable; urgency=low
 
 monetdb-client (1.36.1-20100223) unstable; urgency=low
 
-  * Fixed a bug in the Mapi libary when sending very large queries to the server.
+  * Fixed a bug in the Mapi library when sending very large queries to the server.
   * Implemented BLOB and CLOB support in ODBC driver.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 17 Feb 2010 15:15:32 +0100
@@ -133,7 +146,7 @@ monetdb-client (1.36.1-20100223) unstable; urgency=low
 
   * mclient timer information (-t option) is now written to standard error
     instead of standard output.  This makes getting timer information easier
-    when there is a large amout of regular output (which can be redirected to
+    when there is a large amount of regular output (which can be redirected to
     a file or /dev/null).
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Jan 2010 15:15:32 +0100

@@ -64,11 +64,11 @@ Over..
 [ "oid",	"int",	4	]
 [ "oid",	"int",	4	]
 [ "oid",	"int",	4	]
-[ "oid",	"int",	14	]
-[ "oid",	"int",	14	]
-[ "oid",	"int",	14	]
-[ "oid",	"int",	14	]
-[ "oid",	"int",	14	]
+[ "oid",	"int",	18	]
+[ "oid",	"int",	18	]
+[ "oid",	"int",	18	]
+[ "oid",	"int",	18	]
+[ "oid",	"int",	18	]
 [ "oid",	"int",	18	]
 [ "oid",	"int",	18	]
 [ "oid",	"int",	29	]
@@ -186,7 +186,7 @@ Over..
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	181	]
+[ "transient",	177	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L3,	.bbp # table_name
 % L3,	L4 # name

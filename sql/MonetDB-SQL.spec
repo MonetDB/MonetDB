@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010/MonetDB-SQL-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP1/MonetDB-SQL-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires: e2fsprogs-devel
@@ -157,6 +157,18 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so
 
 %changelog
+* Mon Jul  5 2010 Niels Nes <niels@cwi.nl> - 2.38.3-20100706
+- Fixed bug in zero_or_one
+- Fixed bug in dead code elimination for projections with distinct
+- Fixed bug handling join with constant values on both sides (like group results and constants)
+- fixed bug in UPDATE TABLE when updating multiple rows
+
+* Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 2.38.3-20100706
+- fixed bug 2564:
+  in case group by column is not found as alias in projection list,
+  fall back to check plain input columns
+  in order to find the underlying BAT and check its sortedness
+
 * Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100630
 - Rebuilt.
 
@@ -181,7 +193,7 @@ rm -rf $RPM_BUILD_ROOT
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 2.38.1-20100618
 - Made compilation of "testing" (and "java") independent of MonetDB.
-  This is mainy for Windows, but also on other systems, "testing" can now be
+  This is mainly for Windows, but also on other systems, "testing" can now be
   built independently of (and hence before) "MonetDB".
   Files that mimic configure functionality on Windows were moved from
   "MonetDB" to "buildtools"; hence, this affects all packages on Windows,

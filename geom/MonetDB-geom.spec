@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010/MonetDB-geom-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP1/MonetDB-geom-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_monetdb4: %{!?_without_monetdb4: %define _without_monetdb4 --without-monetdb4}}
@@ -67,7 +67,7 @@ BuildRequires: MonetDB4-server-devel >= 4.38
 %description MonetDB4
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
-automaticautomatic index management, extensibility of data types and search
+automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
 This package contains the GIS (Geographic Information System)
@@ -93,7 +93,7 @@ BuildRequires: MonetDB5-server-devel >= 5.20
 %description MonetDB5
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
-automaticautomatic index management, extensibility of data types and search
+automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
 This package contains the GIS (Geographic Information System)
@@ -189,7 +189,7 @@ rm -rf $RPM_BUILD_ROOT
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 0.18.1-20100618
 - Made compilation of "testing" (and "java") independent of MonetDB.
-  This is mainy for Windows, but also on other systems, "testing" can now be
+  This is mainly for Windows, but also on other systems, "testing" can now be
   built independently of (and hence before) "MonetDB".
   Files that mimic configure functionality on Windows were moved from
   "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
