@@ -16,33 +16,32 @@
 # All Rights Reserved.
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
-	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS)
+	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS) $(MSEED_CFLAGS)
 
 lib__vault = {
 	DIR = libdir/MonetDB5/
-	SOURCES = vault.mx 
-#	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
+	SOURCES = vault.mx mseed.mx
 	LIBS = ../../../server/libsqlserver ../../../storage/libstore ../../../storage/bat/libbatstore ../../../storage/restrict/librestrictstore ../../../storage/bpm/libbpmstore ../../../common/libsqlcommon \
 		$(MONETDB5_MODS) -l_bbp -l_replication -l_mkey -l_str -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet -l_cluster -l_bpm -l_remote -l_run_octopus -l_algebra \
 		$(MONETDB5_RDF_LIB) $(MONETDB5_LIBS) -lmonetdb5 -l_mal_mapi \
-		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS) 
+		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS) $(MSEED_LIBS)
 }
 
 headers_h = {
 	HEADERS = h
 	DIR = includedir/MonetDB5/sql
-	SOURCES = vault.mx 
+	SOURCES = vault.mx mseed.mx
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = vault.mx 
+	SOURCES = vault.mx mseed.mx
 }
 headers_autoload = {
     HEADERS = mal
     DIR = libdir/MonetDB5/autoload
-    SOURCES = 70_vault.mal
+    SOURCES = 70_vault.mal 71_mseed.mal
 }
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal
+EXTRA_DIST = 70_vault.mal 71_mseed.mal

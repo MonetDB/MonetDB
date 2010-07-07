@@ -1,0 +1,151 @@
+@/
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ 
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+ 
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+Copyright August 2008-2010 MonetDB B.V.
+All Rights Reserved.
+@
+
+@f mseed
+@a Martin Kersten
+@v 0.1
+@+ Mseed
+These routines are meant to interpret mseed files.
+It is derived from the mseed library example.
+The code base assumes that libmseed has been installed on your system.
+@mal
+module mseed;
+command dump(fnme:str)
+address MSEdump
+comment "Dump the record content of an mseed file from the vault";
+@h
+#ifndef _MSEED_H
+#define _MSEED_H
+
+#include "sql_config.h"
+#include "clients.h"
+#include "mal.h" 
+#include "mal_client.h"
+#include "mal_interpreter.h"
+#include "mal_function.h"
+#ifdef HAVE_MSEED
+#include "libmseed.h"
+#endif
+
+#ifdef WIN32
+#ifndef LIBMSEED
+#define vault_export extern __declspec(dllimport)
+#else
+#define vault_export extern __declspec(dllexport)
+#endif
+#else
+#define vault_export extern
+#endif
+
+vault_export str MSEdump(int *ret, str *nme);
+
+#define _MSEED_DEBUG_
+
+#endif /* _MSEED_H */
+@c
+#include "mseed.h"
+#include "vault.h"
+
+str
+MSEdump(int *ret, str *inputfile)
+{
+	str msg = MAL_SUCCEED;
+#ifdef HAVE_MSEED
+	MSRecord *msr = 0;
+
+	int verbose   = 1;
+	int ppackets  = 2;
+	int reclen    = -1;
+	int dataflag  = 0;
+	int totalrecs = 0;
+	int totalsamps = 0;
+	int retcode;
+	int j;
+	time_t t;
+	char *s;
+	char buf[BUFSIZ];
+
+	*ret = 0;
+	if ( vaultpath[0] == 0)
+		throw(MAL,"mseed.dump","Vault not initialized");
+	snprintf(buf,BUFSIZ,"%s%c%s",vaultpath,DIR_SEP,*inputfile);
+
+	printf("Processing %s\n",buf);
+
+	/* Loop over the input file */
+	while ( (retcode = ms_readmsr (&msr, buf, reclen, NULL, NULL, 1, dataflag, verbose)) == MS_NOERROR )
+	{
+		totalrecs++;
+		totalsamps += msr->samplecnt;
+		msr_print(msr, ppackets);
+
+		printf("%s,%s,%s,%s,", msr->network, msr->station, msr->location, msr->channel);
+		//printf("%ld,",  msr->starttime);
+		t= MS_HPTIME2EPOCH(msr->starttime);
+		s= ctime(&t);
+		s[24]=0;
+		printf("%s,",s);
+		printf("%ld,",msr->starttime % HPTMODULUS);
+		printf("%d,", msr->sequence_number);
+		printf("%d,", msr->samplecnt);
+		printf("%f,", msr->samprate);
+		switch(msr->sampletype){
+			case 'a': printf("string,"); break;
+			case 'i': printf("int,"); break;
+			case 'f': printf("flt,"); break;
+			case 'd': printf("dbl,"); break;
+			default: printf("%d,",msr->sampletype);
+		}
+		printf("\n");
+
+		if (msr->datasamples)
+		for ( j=0;j< msr->samplecnt; j++){
+			switch(msr->sampletype){
+			case 'a':
+				printf("%s ", ((char**) msr->datasamples)[j]);
+				break;
+			case 'i':
+				printf("%8d ",((int*)msr->datasamples)[j]);
+				break;
+			case 'f':
+				printf("%f ",((float*)msr->datasamples)[j]);
+				break;
+			case 'd':
+				printf("%f ",((double*)msr->datasamples)[j]);
+				break;
+			default:
+				printf("undef %d",msr->encoding);
+			}
+			if ( j % 8 == 7)
+				printf("\n");
+		}
+	}
+
+	if ( retcode != MS_ENDOFFILE )
+		msg = createException(MAL, "mseed.dump", "Cannot read %s: %s\n", *inputfile, ms_errorstr(retcode));
+
+	/* Make sure everything is cleaned up */
+	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
+#else
+	(void) ret;
+	(void) inputfile;
+	throw(MAL,"mseed.dump","libmseed not available");
+#endif
+	return msg;
+}  

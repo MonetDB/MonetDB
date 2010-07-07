@@ -239,7 +239,7 @@ Use the search path provided in the configuration file
 		if (!errmsg) 
 			errmsg = "(no error from dlerror())";
 		GDKfree(fullname);
-		throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " '%s' in file '%s'", errmsg, filename);
+		throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " '%s' from within file '%s'", errmsg, filename);
 	}
 
 	mal_set_lock(mal_contextLock, "loadModule");
