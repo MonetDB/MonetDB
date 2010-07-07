@@ -410,14 +410,15 @@ static char linebuf[MAXLINE];
 char *
 NextLine(void)
 {
-	mx_line++;
 	if (fullbuf) {
+		mx_line++;
 		fullbuf = 0;
 		return linebuf;
 	} else {
 		char *s, *t;
 
 		do {
+			mx_line++;
 			s = fgets(linebuf, MAXLINE, ifile);
 		} while (s == NULL && !EofFile());
 
