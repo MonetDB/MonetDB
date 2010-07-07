@@ -642,7 +642,7 @@ int yydebug=1;
 	IDENT aTYPE ALIAS AGGR RANK sqlINT HEXADECIMAL INTNUM APPROXNUM 
 	USING 
 	ALL ANY SOME GLOBAL CAST CONVERT
-	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB BINARY sqlBLOB
+	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB TEXT BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
 	TINYINT SMALLINT BIGINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
@@ -4542,6 +4542,7 @@ varchar:
 
 clob:
 	CLOB				{ $$ = $1; }
+ |	TEXT				{ $$ = $1; }
  |	CHARACTER LARGE OBJECT		{ $$ = $1; }
 ;
 blob:
@@ -4605,6 +4606,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
+|  TEXT     	{ $$ = sa_strdup(SA, "text"); }
 |  AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 /* SQL/XML non reserved words */
 |  STRIP	{ $$ = sa_strdup(SA, "strip"); }

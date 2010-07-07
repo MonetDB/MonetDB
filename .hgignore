@@ -35,6 +35,10 @@ TAGS$
 ^buildtools/burg/y\.tab\.h$
 ^buildtools/burg/ylwrap$
 ^buildtools/depcomp$
+^buildtools/doc/HowToRelease\.html$
+^buildtools/doc/HowToRelease\.pdf$
+^buildtools/doc/windowsbuild\.html$
+^buildtools/doc/windowsbuild\.pdf$
 ^buildtools/dummy.h.in$
 ^buildtools/mel/.*\.[ch]$
 ^buildtools/mel/.*\.cxx$
