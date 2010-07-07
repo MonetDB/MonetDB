@@ -18,3 +18,4 @@ decimal_div_whole_nrs.Bug-2579
 SQLengine_error_on_join.Bug-2580
 keycheck_crash.Bug-2583
 in_query_with_constants_fails.Bug-2582
+prepare_on_boolean_bug.Bug-2581
