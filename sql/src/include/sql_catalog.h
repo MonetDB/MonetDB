@@ -60,6 +60,7 @@
 #define TYPE_DEPENDENCY 11
 #define SEQ_DEPENDENCY 12
 #define PROC_DEPENDENCY 13
+#define BEDROPPED_DEPENDENCY 14		/*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
@@ -326,6 +327,7 @@ typedef struct sql_sequence {
 	lng increment;
 	lng cacheinc;
 	bit cycle;
+	bit bedropped;		/*Drop the SEQUENCE if you are dropping the column, e.g., SERIAL COLUMN".*/
 	sql_schema *s;
 } sql_sequence;
 

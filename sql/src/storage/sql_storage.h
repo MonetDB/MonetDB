@@ -343,8 +343,8 @@ extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_col
 extern void sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action);
 
 extern sql_sequence *create_sql_sequence(sql_allocator *sa, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle );
-extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle );
-extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, char *name, int drop_action);
+extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle, bit bedropped );
+extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
 extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, lng cycle);
 extern lng sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
 
