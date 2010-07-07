@@ -1,2 +1,2 @@
-odbcsample1
-testgetinfo
+HAVE_ODBC?odbcsample1
+HAVE_ODBC?testgetinfo
