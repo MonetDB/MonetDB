@@ -12,12 +12,12 @@ stderr of test 'delete_restrict` in directory 'src/test/Update_Delete_action` it
 # 15:54:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38344 
 # 15:54:03 >  
 
-MAPI  = monetdb@localhost:31237
+MAPI  = monetdb@alf:35948
 QUERY = delete from t1;
-ERROR = !SQLException:assert:DELETE: FOREIGN KEY constraint 't1.t1_id_pkey' violated
-MAPI  = monetdb@localhost:31237
+ERROR = !SQLException:assert:DELETE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+MAPI  = monetdb@alf:35948
 QUERY = delete from t1 where id > 2 and id < 5;
-ERROR = !SQLException:assert:DELETE: FOREIGN KEY constraint 't1.t1_id_pkey' violated
+ERROR = !SQLException:assert:DELETE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
 
 # 15:54:05 >  
 # 15:54:05 >  Done.

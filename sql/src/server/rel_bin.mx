@@ -3536,7 +3536,7 @@ sql_delete_ukey(mvc *sql, stmt *deletes, sql_key *k, list *l)
 				default:	/*RESTRICT*/
 					/* The overlap between deleted primaries and foreign should be empty */
 		                        s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_wrd(0), ne);
-					msg = sql_message( "DELETE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
+					msg = sql_message( "DELETE: FOREIGN KEY constraint '%s.%s' violated", fk->t->base.name, fk->base.name);
 		                        s = stmt_exception(s, msg, 00001);
             			        list_prepend(l, s);
 			}

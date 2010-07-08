@@ -12,12 +12,12 @@ stderr of test 'delete_primarykey_1643845` in directory 'src/test/BugConstraints
 # 12:55:04 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33669  < delete_primarykey_1643845.sql
 # 12:55:04 >  
 
-MAPI  = monetdb@localhost:33669
+MAPI  = monetdb@alf:35948
 QUERY = insert into t2 values(2,33);
 ERROR = !SQLException:assert:INSERT INTO: PRIMARY KEY constraint 't2.age_p' violated
-MAPI  = monetdb@localhost:33669
+MAPI  = monetdb@alf:35948
 QUERY = delete from t1 where id = 1;
-ERROR = !SQLException:assert:DELETE: FOREIGN KEY constraint 't1.id_p' violated
+ERROR = !SQLException:assert:DELETE: FOREIGN KEY constraint 't2.t2_id_f_fkey' violated
 
 # 12:55:04 >  
 # 12:55:04 >  Done.

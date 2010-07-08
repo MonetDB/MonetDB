@@ -1721,7 +1721,7 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 		return NULL;
 
 	a = sql_bind_arg(sql, exp->flag);
-	if (atom_cast(a, t)) {
+	if (a && atom_cast(a, t)) {
 		sql_subtype *x = ZNEW(sql_subtype);
 		convert_arg(sql, exp->flag, t);
 		/* set new type */
@@ -3088,6 +3088,15 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 
 	if (!s)
 		s = sql->session->schema;
+
+	/* handle param's early */
+	if ((!t1 || !t2) && rel_convert_types(sql, &l, &r, 1/*fix scale*/, type_equal) >= 0) {
+		t1 = exp_subtype(l);
+		t2 = exp_subtype(r);
+	}
+	if (!t1 || !t2)
+		return sql_error(sql, 01, "Cannot have a parameter (?) on both sides of an expression");
+		
 	f = sql_bind_func(s, fname, t1, t2);
 	if (!f && is_commutative(fname)) {
 		f = sql_bind_func(s, fname, t2, t1);
