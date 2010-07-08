@@ -657,7 +657,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			if (!ATOMvarsized(t)) GDKfree(r);
 		}
 
-		->val.bval = b->batCacheid;
+		v->val.bval = b->batCacheid;
 		v->vtype = TYPE_bat;
 		BBPkeepref(b->batCacheid);
 	} else {
