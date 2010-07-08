@@ -7487,7 +7487,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             /* only used in assertions */
             PFalg_simple_type_t ty  = type_of (L(p), p->sem.doc_access.col);
 #endif
-            mvar_t             *str = new_var (p->refctr);
+            mvar_t             *str,
+                               *qname_id,
+                               *qname_cont;
 
             PFmil_t *frag = VAR (L(p)->env, col, aat_frag),
                     *pre  = VAR (L(p)->env, col, aat_pre),
@@ -7502,7 +7504,18 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             /* copy the complete environment of the argument */
             env_copy (p, L(p)->env);
 
-            env_add (p->env, p->sem.doc_access.res, aat_str, str);
+            if (p->sem.doc_access.doc_col != doc_qname) {
+                str = new_var (p->refctr);
+                env_add (p->env, p->sem.doc_access.res, aat_str, str);
+            }
+            else {
+                qname_id   = new_var (p->refctr);
+                qname_cont = new_var (p->refctr);
+                env_add (p->env, p->sem.doc_access.res,
+                         aat_qname_id, qname_id);
+                env_add (p->env, p->sem.doc_access.res,
+                         aat_qname_cont, qname_cont);
+            }
 
             /* lookup the values in the documents using mposjoin */
             switch (p->sem.doc_access.doc_col) {
@@ -7654,6 +7667,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     unpin (cont_res, 1);
                     unpin (item_str, 1);
                 }   break;
+                case (doc_qname):
+                    /* look up the correct QName references */
+                    fn_node_name (L(p), col, qname_id, qname_cont, false);
+                    break;
                 default:
                     PFoops (OOPS_FATAL,
                             "unexpected document column in doc_access (%i)",

@@ -908,7 +908,9 @@ infer_ocol (PFla_op_t *n)
         case la_doc_access:
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)) + 1);
             ocol_at (n, ocols_count (n)).name = n->sem.doc_access.res;
-            ocol_at (n, ocols_count (n)).type = aat_str;
+            ocol_at (n, ocols_count (n)).type = (n->sem.doc_access.doc_col
+                                                 != doc_qname)
+                                                ? aat_str : aat_qname;
             ocols_count (n)++;
             break;
 

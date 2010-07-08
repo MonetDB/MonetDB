@@ -2977,7 +2977,9 @@ PFpa_doc_access (const PFpa_op_t *alg,
         ret->schema.items[i] = alg->schema.items[i];
 
     ret->schema.items[i]
-        = (struct PFalg_schm_item_t) { .type = aat_str, .name = res };
+        = (struct PFalg_schm_item_t) { .type = (doc_col != doc_qname)
+                                               ? aat_str : aat_qname,
+                                       .name = res };
 
     ret->sem.doc_access.res = res;
     ret->sem.doc_access.col = col;
