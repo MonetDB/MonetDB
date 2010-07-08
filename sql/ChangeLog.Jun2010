@@ -1,6 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Jul  8 2010 Fabian Groffen <fabian@cwi.nl>
+- Improved error message for certain type-related problems by including the affected column name.
+
 * Wed Jul  7 2010 Fabian Groffen <fabian@cwi.nl>
 - Make TEXT a separate keyword, separating it from CLOB, such that we can sloppily allow TEXT to appear as a column name, since it seems not to be in the standard as reserved keyword.
 
