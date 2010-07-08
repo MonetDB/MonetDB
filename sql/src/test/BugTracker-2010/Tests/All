@@ -6,7 +6,7 @@ correlated_update_type_mismatch.SF-2947841
 heap_combine_crash.SF-2947763
 rank-over-crash.SF-2926454
 embedded_record_seperator.SF-2991400
-crash_with_prepare_statement.ID-2549
+crash_with_prepare_statement.Bug-2549
 mat.slice_on_empty_BATs.SF-2994521
 reorder.SF-2995671
 copy-into-too-long-string.Bug-2358
