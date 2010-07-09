@@ -7490,9 +7490,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             /* only used in assertions */
             PFalg_simple_type_t ty  = type_of (L(p), p->sem.doc_access.col);
 #endif
-            mvar_t             *str,
-                               *qname_id,
-                               *qname_cont;
+            mvar_t             *str = NULL,
+                               *qname_id = NULL,
+                               *qname_cont = NULL;
 
             PFmil_t *frag = VAR (L(p)->env, col, aat_frag),
                     *pre  = VAR (L(p)->env, col, aat_pre),
