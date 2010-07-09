@@ -138,6 +138,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/monetdb-xquery-config
 
 %changelog
+* Fri Jul 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.38.3-20100709
+- Rebuilt.
+
 * Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.38.1-20100630
 - Rebuilt.
 

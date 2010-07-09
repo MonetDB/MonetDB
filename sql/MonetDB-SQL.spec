@@ -157,6 +157,20 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so
 
 %changelog
+* Fri Jul 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100709
+- Rebuilt.
+
+* Thu Jul  8 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.3-20100709
+- Improved error message for certain type-related problems by including the affected column name.
+
+* Wed Jul  7 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.3-20100709
+- Make TEXT a separate keyword, separating it from CLOB, such that we can sloppily allow TEXT to appear as a column name, since it seems not to be in the standard as reserved keyword.
+
+* Wed Jul  7 2010 Niels Nes <niels@cwi.nl> - 2.38.3-20100709
+- Fixed bug 2581. Completed the implementation of handling boolean types in prepare statements.
+- Fix bug 2582. Statements with 'constant in ( )' are now handled properly.
+- Fixed bug 2583 + added test. The assert was incorrect.
+
 * Mon Jul  5 2010 Niels Nes <niels@cwi.nl> - 2.38.3-20100706
 - Fixed bug in zero_or_one
 - Fixed bug in dead code elimination for projections with distinct

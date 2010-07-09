@@ -11,8 +11,10 @@ stdout of test 'remote10` in directory 'src/modules/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38844/
-function octopus.qry(version:int):bat[:oid,:int];
+# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:37285/
+# MonetDB/SQL module v2.38.3 loaded
+# MonetDB/GIS module v0.18.0 loaded
+function user.qry(version:int):bat[:oid,:int];
     b := bat.new(:oid,:int);
     bat.append(b,23);
     return qry := b;
@@ -20,7 +22,7 @@ end qry;
 function user.main():void;
     uri := sabaoth.getLocalConnectionURI();
     conn:str  := remote.connect(uri,"monetdb","monetdb");
-    remote.register(conn,"octopus","qry");
+    remote.register(conn,"user","qry");
 end main;
 
 
