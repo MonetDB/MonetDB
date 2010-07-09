@@ -23,3 +23,4 @@ prepare_on_boolean_bug.Bug-2581
 prepare_statements_crash_server.Bug-2599
 and_not_broken.Bug-2602
 insert-into-except.Bug-2569
+not-in-union-except-union.Bug-2577
