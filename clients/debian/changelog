@@ -1,3 +1,9 @@
+monetdb-client (1.38.3-20100709) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 09 Jul 2010 11:44:10 +0200
+
 monetdb-client (1.38.3-20100706) unstable; urgency=low
 
   * Implemented dumping of GRANT statements.

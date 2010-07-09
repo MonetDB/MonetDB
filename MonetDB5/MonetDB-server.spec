@@ -214,6 +214,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Fri Jul 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.3-20100709
+- Rebuilt.
+
 * Thu Jul 01 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.3-20100706
 - Return a correct URI for local connection from Sabaoth when the
   connection is a UNIX domain socket.  Partial fix for bug #2567.

@@ -1,3 +1,29 @@
+monetdb-sql (2.38.3-20100709) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 09 Jul 2010 11:44:11 +0200
+
+monetdb-sql (2.38.3-20100709) unstable; urgency=low
+
+  * Improved error message for certain type-related problems by including the affected column name.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 8 Jul 2010 11:44:11 +0200
+
+monetdb-sql (2.38.3-20100709) unstable; urgency=low
+
+  * Make TEXT a separate keyword, separating it from CLOB, such that we can sloppily allow TEXT to appear as a column name, since it seems not to be in the standard as reserved keyword.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 7 Jul 2010 11:44:11 +0200
+
+monetdb-sql (2.38.3-20100709) unstable; urgency=low
+
+  * Fixed bug 2581. Completed the implementation of handling boolean types in prepare statements.
+  * Fix bug 2582. Statements with 'constant in ( )' are now handled properly.
+  * Fixed bug 2583 + added test. The assert was incorrect.
+
+ -- Niels Nes <niels@cwi.nl>  Wed, 7 Jul 2010 11:44:11 +0200
+
 monetdb-sql (2.38.3-20100706) unstable; urgency=low
 
   * Fixed bug in zero_or_one
