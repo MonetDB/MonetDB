@@ -927,7 +927,7 @@ AUTHgetPasswordHash(str *ret, Client *c, str *username) {
 	oid id;
 	BATiter i;
 	str tmp;
-	str passwd;
+	str passwd = NULL;
 
 	rethrow("getPasswordHash", tmp, AUTHrequireAdmin(c));
 
