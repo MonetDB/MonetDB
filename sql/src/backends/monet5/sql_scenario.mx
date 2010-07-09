@@ -407,7 +407,6 @@ SQLinitClient(Client c)
 	mvc *m;
 	str schema;
 	backend *be;
-	bstream *bfd = NULL;
 	stream *fd = NULL;
 
 #ifdef _SQL_SCENARIO_DEBUG
@@ -415,31 +414,6 @@ SQLinitClient(Client c)
 #endif
 	if (SQLinitialized == 0 )
 		SQLprelude();
-@-
-Based on the initialization retun value we can prepare a SQLinit string with all information needed
-to initialize the catalog based on the mandatory scripts to be executed.
-@c
-	if (SQLnewcatalog > 0 && sqlinit == NULL) {
-		str fullname;
-
-		fullname = MSP_locate_sqlscript("createdb");
-		if (fullname) {
-			fd = open_rastream(fullname);
-			GDKfree(fullname);
-
-			if (fd) {
-				bfd = bstream_create(fd, 128 * BLOCK);
-				stream_printf(c->fdout, "# SQL catalog created, "
-						"initial load of sql scripts\n");
-				if (bfd == 0 || bstream_next(bfd) < 0) {
-					sqlinit = bfd->buf;
-					SQLnewcatalog = INT_MAX;
-				}
-			}
-		}
-		if (SQLnewcatalog != INT_MAX)
-			stream_printf(c->fdout, "#WARNING: could not read createdb.sql\n");
-	}
 	if (sqlinit) {     /* add sqlinit to the fdin stack */
 		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
