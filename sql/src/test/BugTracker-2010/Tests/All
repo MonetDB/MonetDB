@@ -23,3 +23,4 @@ keycheck_crash.Bug-2583
 in_query_with_constants_fails.Bug-2582
 prepare_on_boolean_bug.Bug-2581
 prepare_statements_crash_server.Bug-2599
+and_not_broken.Bug-2602
