@@ -20,6 +20,9 @@
 # treat warnings as errors
 W_CFLAGS = -WX
 
+HAVE_ODBC = 1
+ODBC_LIBS = odbccp32.lib user32.lib
+
 !IFDEF NEED_MX
 RULESMSC = $(TOPDIR)\..\..\buildtools\conf\winrules.msc
 !ELSE
@@ -38,6 +41,3 @@ VERSION=1.38.3
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-
-HAVE_ODBC = 1
-ODBC_LIBS = odbccp32.lib user32.lib
