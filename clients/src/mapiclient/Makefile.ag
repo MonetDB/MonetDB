@@ -27,7 +27,7 @@ lib_mcutil = {
 
 #Name alignment of tools in M5 context. 
 bin_mclient = {
-	SOURCES = MapiClient.mx ReadlineTools.mx
+	SOURCES = mclient.mx ReadlineTools.mx
 	LIBS = libmcutil ../mapilib/libMapi $(MAPI_LIBS) $(READLINE_LIBS) \
 		$(MONETDB_LIBS) -lmutils -lstream \
 		$(ICONV_LIBS)
