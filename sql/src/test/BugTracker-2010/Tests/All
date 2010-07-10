@@ -28,3 +28,4 @@ insert-into-except.Bug-2569
 not-in-union-except-union.Bug-2577
 prepare_stmt.Bug-2533.Bug-2534
 predicate_in_select.Bug-2535
+subselect.Bug-2537
