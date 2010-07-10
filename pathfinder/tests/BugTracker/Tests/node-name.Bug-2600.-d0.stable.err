@@ -1,0 +1,17 @@
+stderr of test 'node-name.Bug-2600.-d0` in directory 'tests/BugTracker` itself:
+
+
+# 18:52:05 >  
+# 18:52:05 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/MonetDB.conf" --debug=0 --set gdk_nr_threads=1 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38866 --set xrpc_port=49469 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit=debugmask(and(debugmask(),xor(INT_MAX,8+2))); module(pathfinder);" ; echo ; echo Over..
+# 18:52:05 >  
+
+
+# 18:52:06 >  
+# 18:52:06 >  mclient -lxquery -fxml --host=rig --port=38866 node-name.Bug-2600.-d0.xq
+# 18:52:06 >  
+
+
+# 18:52:06 >  
+# 18:52:06 >  Done.
+# 18:52:06 >  
+
