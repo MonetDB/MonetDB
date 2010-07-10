@@ -499,26 +499,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A095E6625D794D4AA25BDDFC71B855D4"
-            {
-            "SourcePath" = "8:Lib\\MonetDB5\\createdb.sql"
-            "TargetName" = "8:createdb.sql"
-            "Tag" = "8:"
-            "Folder" = "8:_2ACFF9E534394C7DA2FC0E2D947C98CE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A83A85D1131B4E8E95AB48367C69141D"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\autoload\\40_sql.mal"

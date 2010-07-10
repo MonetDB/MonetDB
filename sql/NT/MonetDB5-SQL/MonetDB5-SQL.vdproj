@@ -299,26 +299,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4E285A2638A04D71AC11F06FA1EF0AA7"
-            {
-            "SourcePath" = "8:Lib\\MonetDB5\\createdb.sql"
-            "TargetName" = "8:createdb.sql"
-            "Tag" = "8:"
-            "Folder" = "8:_2ACFF9E534394C7DA2FC0E2D947C98CE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_60556A506BDF4F0A83013CA0B54EDC9E"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\times.sql"
