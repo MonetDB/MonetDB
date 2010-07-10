@@ -9,7 +9,7 @@ embedded_record_seperator.SF-2991400
 crash_with_prepare_statement.Bug-2549
 mat.slice_on_empty_BATs.SF-2994521
 reorder.SF-2995671
-crashonschema
+crashonschema.Bug-2547
 connectto.Bug-2548
 copy-into-too-long-string.Bug-2358
 in_column_exp.Bug-2561
