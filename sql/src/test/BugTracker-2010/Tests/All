@@ -26,3 +26,4 @@ prepare_statements_crash_server.Bug-2599
 and_not_broken.Bug-2602
 insert-into-except.Bug-2569
 not-in-union-except-union.Bug-2577
+prepare_stmt.Bug-2533.Bug-2534
