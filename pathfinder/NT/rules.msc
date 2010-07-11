@@ -25,6 +25,10 @@ W_CFLAGS = -WX -wd279
 W_CFLAGS = -WX
 !ENDIF
 
+# also see pf_config.h.in
+HAVE_PFTIJAH = 1
+# HAVE_PROBXML =
+
 !IFDEF NEED_MX
 RULESMSC = $(TOPDIR)\..\..\buildtools\conf\winrules.msc
 !ELSE
@@ -91,6 +95,3 @@ CFLAGS = $(CFLAGS) -DMILPRINT_SUMMER_IS_DEFAULT=0 -DALGEBRA_IS_DEFAULT=1 -DSQL_I
 !ENDIF
 !ENDIF
 !ENDIF
-
-# also see pf_config.h.in
-HAVE_PFTIJAH=yes
