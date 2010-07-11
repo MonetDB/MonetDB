@@ -2921,7 +2921,7 @@ select_no_parens_orderby:
 	 { 
 	  $$ = $1;
 	  if ($2 || $3 || $4) {
-	  	if ($1 != NULL && $1->token == SQL_SELECT) {
+	  	if ($1 != NULL && ($1->token == SQL_SELECT || $1->token == SQL_UNION)) {
 	 		SelectNode *s = (SelectNode*)$1;
 	
 	  		s -> orderby = $2;
