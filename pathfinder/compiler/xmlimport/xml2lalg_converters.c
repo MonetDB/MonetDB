@@ -241,6 +241,7 @@ PFxml2la_conv_2PFLA_atomType (char* typeString)
     else if (strcmp(typeString, "bool") == 0)	return aat_bln;
     else if (strcmp(typeString, "uA") == 0)	return aat_uA;
     else if (strcmp(typeString, "qname") == 0)	return aat_qname;
+    else if (strcmp(typeString, "date")== 0)	return aat_date;
     else if (strcmp(typeString, "node")== 0)	return aat_node;
     else if (strcmp(typeString, "attr")== 0)	return aat_anode;
     else if (strcmp(typeString, "pnode") == 0)	return aat_pnode;

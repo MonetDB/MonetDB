@@ -585,7 +585,8 @@ col_env_add_full (PFarray_t * env, PFalg_col_t col,
             ty == aat_dbl       || ty == aat_dec       ||
             ty == aat_str       || ty == aat_uA        ||
             ty == aat_bln       || ty == aat_pre       ||
-            ty == aat_qname_loc || ty == aat_qname_uri);
+            ty == aat_qname_loc || ty == aat_qname_uri ||
+            ty == aat_date);
 
     *(sql_column_env_t *) PFarray_add (env) =
         (sql_column_env_t) { .type = ty,
@@ -1848,6 +1849,7 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
                             (t == aat_uA))
     #define NUM_NOTEXPR(t) ((t == aat_int))
     #define BOOL_TYPE(t)    (t == aat_bln)
+    #define DATE_TYPE(t)    (t == aat_date)
 
     /* Since we handle untypedAtomic and Strings the same
      * way in SQL, its obvious we don't have to
@@ -1876,6 +1878,11 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
        and then to the less expressive type */
     else if (CHAR_TYPE (ty) && NUM_NOTEXPR (res_ty))
         expr = cast (expr, type (aat_dbl));
+
+    /* ensure that the cast to date only gets a string as input */
+    if (DATE_TYPE (res_ty) && !CHAR_TYPE (ty))
+        PFoops (OOPS_FATAL,
+                "can only cast values of type string to a date");
 
     return cast (expr, type (res_ty));
 }
