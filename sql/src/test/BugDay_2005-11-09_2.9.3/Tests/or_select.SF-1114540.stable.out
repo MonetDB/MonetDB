@@ -51,15 +51,15 @@ Over..
 % id # name
 % int # type
 % 2 # length
-[ 12	]
 [ 10	]
+[ 12	]
 % sys.t1114540 # table_name
 % id # name
 % int # type
 % 2 # length
+[ 10	]
 [ 11	]
 [ 12	]
-[ 10	]
 % sys.t1114540 # table_name
 % id # name
 % int # type
