@@ -1241,11 +1241,11 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
 }
 
 @-
-Used in the merge table optimizer. It is build incrementally
+Used in the merge table optimizer. It is built incrementally
 and should be conservative.
 @c
 int isMapOp(InstrPtr p){
-	return	(getModuleId(p)== batcalcRef) ||
+	return	(getModuleId(p)== batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		(getModuleId(p)== batmtimeRef) ||
 		(getModuleId(p)== batstrRef) ||
 		(getModuleId(p)== mkeyRef); 
