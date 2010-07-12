@@ -1,3 +1,25 @@
+monetdb-sql (2.38.3-20100712) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Jul 2010 12:00:28 +0200
+
+monetdb-sql (2.38.3-20100712) unstable; urgency=low
+
+  * Make queries like
+(SELECT ...) UNION ALL (SELECT ...) ORDER BY ...;
+work, again, that were broken since Jun 22 2010
+triggering errors like "ORDER BY: missing select operator"
+
+ -- Stefan Manegold <Stefan.Manegold@cwi.nl>  Mon, 12 Jul 2010 12:00:28 +0200
+
+monetdb-sql (2.38.3-20100712) unstable; urgency=low
+
+  * Removed false connection warning about missing SQL script ("could not
+read createdb.sql") received by the client upon first connect on a
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 9 Jul 2010 12:00:28 +0200
+
 monetdb-sql (2.38.3-20100709) unstable; urgency=low
 
   * Rebuilt.
