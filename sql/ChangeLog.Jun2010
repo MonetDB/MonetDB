@@ -5,6 +5,9 @@
 - Make queries like
   (SELECT ...) UNION ALL (SELECT ...) ORDER BY ...;
   work, again, that were broken since Jun 22 2010
-  triggering errors like
-  "!ORDER BY: missing select operator"
+  triggering errors like "ORDER BY: missing select operator"
 
+* Fri Jul  9 2010 Fabian Groffen <fabian@cwi.nl>
+- Removed false connection warning about missing SQL script ("could not
+  read createdb.sql") received by the client upon first connect on a
+  newly created database.  Bug #2591
