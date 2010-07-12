@@ -468,31 +468,33 @@ to initialize the catalog based on the mandatory scripts to be executed.
 
 	initSQLreferences();
 	/* initialize the database with predefined SQL functions */
-	if ( SQLnewcatalog > 0  ){
+	if (SQLnewcatalog > 0) {
 		char path[PATHLENGTH];
 		str fullname;
 
 		SQLnewcatalog = 0;
-		snprintf(path,PATHLENGTH,"createdb");
+		snprintf(path, PATHLENGTH, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path);
 		if (fullname) {
 			fd = open_rastream(fullname);
 			GDKfree(fullname);
 
-			if ( fd) {
+			if (fd) {
 				str msg = MAL_SUCCEED;
 				bfd = bstream_create(fd, 128 * BLOCK);
-				stream_printf(c->fdout,"# SQL catalog created, load the sql scripts once\n");
-				if( bfd && bstream_next(bfd) >= 0) 
-					msg= SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
+				fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
+				if (bfd && bstream_next(bfd) >= 0)
+					msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
 				stream_close(fd);
 				stream_destroy(fd);
 				return msg;
 			}
-		} 
-		stream_printf(c->fdout,"#WARNING: could not read createdb.sql\n");
+		}
+		fprintf(stderr, "!could not read createdb.sql\n");
 	}
+	fflush(stdout);
+	fflush(stderr);
 	return MAL_SUCCEED;
 }
 
