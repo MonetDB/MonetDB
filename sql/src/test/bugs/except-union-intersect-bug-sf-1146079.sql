@@ -73,7 +73,7 @@ ROLLBACK;
 -- now check the non-duplicate removing versions
 -- (they are very tricky, so be on your marks!)
 START TRANSACTION;
-SELECT class FROM a EXCEPT ALL SELECT 16; -- all but one 16 (will have 16 in output!)
+select * from ( SELECT class FROM a EXCEPT ALL SELECT 16 ) as t order by class; -- all but one 16 (will have 16 in output!)
 SELECT class FROM a UNION ALL SELECT 16; -- all plus 16
 SELECT class FROM a INTERSECT ALL SELECT 16; -- just one 16 (!)
 ROLLBACK;
@@ -83,7 +83,7 @@ ROLLBACK;
 -- would never be tested for tables)
 START TRANSACTION;
 SELECT * FROM a EXCEPT ALL SELECT * FROM b; -- last 50% of a
-SELECT class FROM a EXCEPT ALL SELECT class FROM b; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
+select * from ( SELECT class FROM a EXCEPT ALL SELECT class FROM b ) as t order by class; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
 SELECT * FROM a UNION ALL SELECT * FROM b; -- a + b
 SELECT * FROM a INTERSECT ALL SELECT * FROM b; -- first 50% of a
 SELECT class FROM a INTERSECT ALL SELECT class FROM b; -- only those that are both in a and b (min(count(a, x), count(b, x)) !!!
