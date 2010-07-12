@@ -157,6 +157,19 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so
 
 %changelog
+* Mon Jul 12 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100712
+- Rebuilt.
+
+* Mon Jul 12 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 2.38.3-20100712
+- Make queries like
+(SELECT ...) UNION ALL (SELECT ...) ORDER BY ...;
+work, again, that were broken since Jun 22 2010
+triggering errors like "ORDER BY: missing select operator"
+
+* Fri Jul  9 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.3-20100712
+- Removed false connection warning about missing SQL script ("could not
+read createdb.sql") received by the client upon first connect on a
+newly created database.  Bug #2591
 * Fri Jul 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100709
 - Rebuilt.
 
