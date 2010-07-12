@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Jul 12 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
+- Added "no_mitosis_pipe" SQL optimizer pipeline that is (and should be kept!)
+  identical to the default pipeline, except that optimizer mitosis is omitted.
+

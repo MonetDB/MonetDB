@@ -1,4 +1,4 @@
-set optimizer='nov2009_pipe';	-- disable mitosis to avoid different answers
+set optimizer='no_mitosis_pipe';	-- disable mitosis to avoid different answers
 set trace = 'none'; -- non-documented feature to not get any trace output
 
 create function tracelog() 
