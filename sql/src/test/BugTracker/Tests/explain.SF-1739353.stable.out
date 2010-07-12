@@ -34,96 +34,52 @@ Over..
 +--------+
 | mal    |
 +========+
-| function user.s1_1{autoCommit=true}():void; |
+| function user.s2_1{autoCommit=true}():void; |
 |     _2 := sql.mvc(); |
-| barrier _143 := language.dataflow(); |
-|     _23:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",1); |
-|     _24 := algebra.thetauselect(_23,2:sht,"<"); |
-|     _25:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","_tables",1); |
-|     _27 := bat.reverse(_25); |
-|     _97 := algebra.kdifference(_24,_27); |
-|     _110 := algebra.markT(_97,5,4); |
-|     _117 := bat.reverse(_110); |
-|     _30:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",1); |
-|     _142 := algebra.leftjoin(_117,_30); |
-|     _64:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0,78@0,nil:oid); |
-|     _72 := algebra.thetauselect(_64,2:sht,"<"); |
-|     _20:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",2); |
-|     _76 := algebra.kdifference(_72,_20); |
-|     _22 := algebra.thetauselect(_20,2:sht,"<"); |
-|     _80 := algebra.semijoin(_22,_64); |
-|     _85 := algebra.kunion(_76,_80); |
-|     _96 := algebra.kdifference(_85,_27); |
-|     _107 := algebra.markT(_96,5,3); |
-|     _116 := bat.reverse(_107); |
-|     _68:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",0,78@0,nil:oid); |
-|     _29:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",2); |
-|     _122 := algebra.kdifference(_68,_29); |
-|     _129 := algebra.semijoin(_29,_68); |
-|     _133 := algebra.kunion(_122,_129); |
-|     _140 := algebra.leftjoin(_116,_133); |
-|     _62:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0,52@0,78@0); |
-|     _71 := algebra.thetauselect(_62,2:sht,"<"); |
-|     _75 := algebra.kdifference(_71,_20); |
-|     _79 := algebra.semijoin(_22,_62); |
-|     _84 := algebra.kunion(_75,_79); |
-|     _94 := algebra.kdifference(_84,_27); |
-|     _104 := algebra.markT(_94,5,2); |
-|     _115 := bat.reverse(_104); |
-|     _67:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",0,52@0,78@0); |
-|     _121 := algebra.kdifference(_67,_29); |
-|     _127 := algebra.semijoin(_29,_67); |
-|     _132 := algebra.kunion(_121,_127); |
-|     _138 := algebra.leftjoin(_115,_132); |
-|     _60:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0,26@0,52@0); |
-|     _70 := algebra.thetauselect(_60,2:sht,"<"); |
-|     _74 := algebra.kdifference(_70,_20); |
-|     _78 := algebra.semijoin(_22,_60); |
-|     _83 := algebra.kunion(_74,_78); |
-|     _92 := algebra.kdifference(_83,_27); |
-|     _101 := algebra.markT(_92,5,1); |
-|     _114 := bat.reverse(_101); |
-|     _66:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",0,26@0,52@0); |
-|     _120 := algebra.kdifference(_66,_29); |
-|     _125 := algebra.semijoin(_29,_66); |
-|     _131 := algebra.kunion(_120,_125); |
-|     _136 := algebra.leftjoin(_114,_131); |
-|     _58:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0,0@0,26@0); |
-|     _69 := algebra.thetauselect(_58,2:sht,"<"); |
-|     _73 := algebra.kdifference(_69,_20); |
-|     _77 := algebra.semijoin(_22,_58); |
-|     _81 := algebra.kunion(_73,_77); |
-|     _90 := algebra.kdifference(_81,_27); |
-|     _98 := algebra.markT(_90,5,0); |
-|     _113 := bat.reverse(_98); |
-|     _65:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",0,0@0,26@0); |
-|     _118 := algebra.kdifference(_65,_29); |
-|     _123 := algebra.semijoin(_29,_65); |
-|     _130 := algebra.kunion(_118,_123); |
-|     _134 := algebra.leftjoin(_113,_130); |
+| barrier _66 := language.dataflow(); |
 |     _3:bat[:oid,:sht]  := sql.bind(_2,"tmp","_tables","type",0); |
 |     _8 := algebra.thetauselect(_3,2:sht,"<"); |
 |     _10:bat[:oid,:oid]  := sql.bind_dbat(_2,"tmp","_tables",1); |
 |     _12 := bat.reverse(_10); |
 |     _13 := algebra.kdifference(_8,_12); |
-|     _14 := algebra.markT(_13,0@0); |
-|     _15 := bat.reverse(_14); |
-|     _16:bat[:oid,:str]  := sql.bind(_2,"tmp","_tables","name",0); |
-|     _18 := algebra.leftjoin(_15,_16); |
-| exit _143; |
-|     _33:bat[:oid,:str]  := bat.new(nil:oid,nil:str); |
-| barrier _146 := language.dataflow(); |
-|     _32 := mat.pack(_134,_136,_138,_140,_142); |
-|     _36 := bat.append(_33,_32,true); |
-|     _38 := bat.append(_36,_18,true); |
-| exit _146; |
-|     _39 := sql.resultSet(1,1,_38); |
-|     sql.rsColumn(_39,".tables","name","varchar",1024,0,_38); |
-|     _45 := io.stdout(); |
-|     sql.exportResult(_45,_39); |
-| end s1_1; |
+|     _15 := algebra.markT(_13,0@0); |
+|     _16 := bat.reverse(_15); |
+|     _17:bat[:oid,:str]  := sql.bind(_2,"tmp","_tables","name",0); |
+|     _19 := algebra.leftjoin(_16,_17); |
+|     _20:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0); |
+|     _22 := algebra.thetauselect(_20,2:sht,"<"); |
+|     _23:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",2); |
+|     _25 := algebra.kdifference(_22,_23); |
+|     _26 := algebra.thetauselect(_23,2:sht,"<"); |
+|     _27 := algebra.kunion(_25,_26); |
+|     _28:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",1); |
+|     _29 := algebra.thetauselect(_28,2:sht,"<"); |
+|     _30 := algebra.kunion(_27,_29); |
+|     _31:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","_tables",1); |
+|     _32 := bat.reverse(_31); |
+|     _33 := algebra.kdifference(_30,_32); |
+|     _34 := algebra.markT(_33,0@0); |
+|     _35 := bat.reverse(_34); |
+|     _36:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",0); |
+|     _37:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",2); |
+|     _38 := algebra.kdifference(_36,_37); |
+|     _39 := algebra.kunion(_38,_37); |
+|     _40:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",1); |
+|     _41 := algebra.kunion(_39,_40); |
+|     _42 := algebra.leftjoin(_35,_41); |
+| exit _66; |
+|     _43:bat[:oid,:str]  := bat.new(nil:oid,nil:str); |
+| barrier _69 := language.dataflow(); |
+|     _46 := bat.append(_43,_42,true); |
+|     _47 := bat.append(_46,_19,true); |
+| exit _69; |
+|     _48 := sql.resultSet(1,1,_47); |
+|     sql.rsColumn(_48,".tables","name","varchar",1024,0,_47); |
+|     _53 := io.stdout(); |
+|     sql.exportResult(_53,_48); |
+| end s2_1; |
 +--------+
-88 rows
+44 rows
 
 
 # 15:15:37 >  
