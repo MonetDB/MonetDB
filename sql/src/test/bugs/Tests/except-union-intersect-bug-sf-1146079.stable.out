@@ -317,26 +317,26 @@ Operation successful
 START TRANSACTION;
 Operation successful
 
-SELECT class FROM a EXCEPT ALL SELECT 16; -- all but one 16 (will have 16 in output!)
-+-------+
-| class |
-+=======+
-|    17 |
-|    17 |
-|    17 |
-|    17 |
-|     2 |
-|    11 |
-|    18 |
-|    18 |
-|    16 |
-|    16 |
-|    16 |
-|    16 |
-|    16 |
-|    16 |
-|    16 |
-+-------+
+select * from ( SELECT class FROM a EXCEPT ALL SELECT 16 ) as t order by class; -- all but one 16 (will have 16 in output!)
++--------+
+|  class |
++========+
+|      2 |
+|     11 |
+|     16 |
+|     16 |
+|     16 |
+|     16 |
+|     16 |
+|     16 |
+|     16 |
+|     17 |
+|     17 |
+|     17 |
+|     17 |
+|     18 |
+|     18 |
++--------+
 15 rows
 
 SELECT class FROM a UNION ALL SELECT 16; -- all plus 16
@@ -396,19 +396,19 @@ SELECT * FROM a EXCEPT ALL SELECT * FROM b; -- last 50% of a
 +----------+-------+
 8 rows
 
-SELECT class FROM a EXCEPT ALL SELECT class FROM b; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
-+-------+
-| class |
-+=======+
-|    11 |
-|    18 |
-|    18 |
-|    16 |
-|    16 |
-|    16 |
-|    16 |
-|    16 |
-+-------+
+select * from ( SELECT class FROM a EXCEPT ALL SELECT class FROM b ) as t order by class; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
++--------+
+|  class |
++========+
+|     11 |
+|     16 |
+|     16 |
+|     16 |
+|     16 |
+|     16 |
+|     18 |
+|     18 |
++--------+
 8 rows
 
 SELECT * FROM a UNION ALL SELECT * FROM b; -- a + b
