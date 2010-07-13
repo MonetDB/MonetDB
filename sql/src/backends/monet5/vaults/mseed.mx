@@ -26,8 +26,8 @@ It is derived from the mseed library example.
 The code base assumes that libmseed has been installed on your system.
 @mal
 module mseed;
-command dump(fnme:str)
-address MSEdump
+pattern import(vid:int, fnme:str):str
+address MSEmseedImport
 comment "Dump the record content of an mseed file from the vault";
 @h
 #ifndef _MSEED_H
@@ -53,7 +53,7 @@ comment "Dump the record content of an mseed file from the vault";
 #define vault_export extern
 #endif
 
-vault_export str MSEdump(int *ret, str *nme);
+vault_export str MSEmseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define _MSEED_DEBUG_
 
@@ -61,91 +61,125 @@ vault_export str MSEdump(int *ret, str *nme);
 @c
 #include "mseed.h"
 #include "vault.h"
+str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
+
+#define QRYinsert "INSERT INTO mseedCatalog(mseed, seqno, dataquality, network, \
+	 station, location, channel, starttime , samplerate, samplecnt, sampletype) \
+	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,%s);"
 
 str
-MSEdump(int *ret, str *inputfile)
+MSEmseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *ret = (str*) getArgReference(stk,pci,0); 
+	int *vid = (int*) getArgReference(stk,pci,1); 
+	str *sourcefile = (str*) getArgReference(stk,pci,2); 
 	str msg = MAL_SUCCEED;
 #ifdef HAVE_MSEED
 	MSRecord *msr = 0;
 
 	int verbose   = 1;
-	int ppackets  = 2;
+	//int ppackets  = 2;
 	int reclen    = -1;
-	int dataflag  = 0;
+	int dataflag  = 1;
 	int totalrecs = 0;
 	int totalsamps = 0;
 	int retcode;
 	int j;
 	time_t t;
-	char *s;
+	struct tm *tm;
+	char *s,*kind;
+	char file[BUFSIZ];
 	char buf[BUFSIZ];
+	char starttime[BUFSIZ];
+	char stoptime[BUFSIZ];
+	int stepsize;
 
-	*ret = 0;
-	if ( vaultpath[0] == 0)
-		throw(MAL,"mseed.dump","Vault not initialized");
-	snprintf(buf,BUFSIZ,"%s%c%s",vaultpath,DIR_SEP,*inputfile);
+	(void) cntxt;
+	(void) mb;
+	if ( vaultpath[0] == 0){
+		msg= createException(MAL,"mseed.dump","Vault not initialized");
+		*ret = GDKstrdup(msg);
+		return msg;
+	}
+	snprintf(file,BUFSIZ,"%s%c%s",vaultpath, DIR_SEP,*sourcefile);
+	s= buf;
 
-	printf("Processing %s\n",buf);
+	printf("FTP Processing %s -> %s\n",*sourcefile,file);
 
 	/* Loop over the input file */
-	while ( (retcode = ms_readmsr (&msr, buf, reclen, NULL, NULL, 1, dataflag, verbose)) == MS_NOERROR )
+	while ( (retcode = ms_readmsr (&msr, file, reclen, NULL, NULL, 1, dataflag, verbose)) == MS_NOERROR )
 	{
 		totalrecs++;
 		totalsamps += msr->samplecnt;
-		msr_print(msr, ppackets);
+		//msr_print(msr, ppackets);
 
-		printf("%s,%s,%s,%s,", msr->network, msr->station, msr->location, msr->channel);
-		//printf("%ld,",  msr->starttime);
 		t= MS_HPTIME2EPOCH(msr->starttime);
-		s= ctime(&t);
-		s[24]=0;
-		printf("%s,",s);
-		printf("%ld,",msr->starttime % HPTMODULUS);
-		printf("%d,", msr->sequence_number);
-		printf("%d,", msr->samplecnt);
-		printf("%f,", msr->samprate);
-		switch(msr->sampletype){
-			case 'a': printf("string,"); break;
-			case 'i': printf("int,"); break;
-			case 'f': printf("flt,"); break;
-			case 'd': printf("dbl,"); break;
-			default: printf("%d,",msr->sampletype);
-		}
-		printf("\n");
+		tm = gmtime(&t);
+		snprintf(starttime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
 
+		switch(msr->sampletype){
+			case 'a': kind="'string'"; break;
+			case 'i': kind="'int'"; break;
+			case 'f': kind="'flt'"; break;
+			case 'd': kind="'dbl'"; break;
+			default : kind="null";
+		}
+		snprintf(buf,BUFSIZ,QRYinsert, *vid, msr->sequence_number,msr->dataquality,msr->network, msr->station, msr->location, msr->channel,
+		starttime,msr->samprate, msr->samplecnt,kind);
+		printf("%s\n",buf);
+		msg =SQLstatementIntern(cntxt,&s,"mseed.import",TRUE,FALSE);
+		if ( msg != MAL_SUCCEED){
+			break;
+		}
+
+		stepsize = 1000000/ msr->samprate;
+		if (msr->samplecnt) {
+			/* calculate end of series */
+			msr->starttime += msr->samplecnt * stepsize;
+			t= MS_HPTIME2EPOCH(msr->starttime);
+			tm = gmtime(&t);
+			snprintf(stoptime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
+			printf("%s\n",stoptime);
+		}
 		if (msr->datasamples)
 		for ( j=0;j< msr->samplecnt; j++){
+			t= MS_HPTIME2EPOCH(msr->starttime);
+			tm = gmtime(&t);
+			snprintf(stoptime,BUFSIZ,"%d-%02d-%02d %02d:%02d:%02d.%06ld", tm->tm_year +(tm->tm_year > 80?1900:2000), tm->tm_mon+1,tm->tm_mday, tm->tm_hour, tm->tm_min,tm->tm_sec, msr->starttime % HPTMODULUS);
+			msr->starttime += stepsize;
 			switch(msr->sampletype){
 			case 'a':
-				printf("%s ", ((char**) msr->datasamples)[j]);
+				snprintf(buf,BUFSIZ, "INSERT INTO mseedVolumn(time,adata) VALUES (%s, %d,%s);", stoptime, *vid, ((char**) msr->datasamples)[j]);
 				break;
 			case 'i':
-				printf("%8d ",((int*)msr->datasamples)[j]);
+				snprintf(buf,BUFSIZ, "INSERT INTO mseedVolumn(time,idata) VALUES (%s, %d,%d);", stoptime, *vid, ((int*) msr->datasamples)[j]);
 				break;
 			case 'f':
-				printf("%f ",((float*)msr->datasamples)[j]);
+				snprintf(buf,BUFSIZ, "INSERT INTO mseedVolumn(time,fdata) VALUES (%s, %d,%f);", stoptime, *vid, ((flt*) msr->datasamples)[j]);
 				break;
 			case 'd':
-				printf("%f ",((double*)msr->datasamples)[j]);
+				snprintf(buf,BUFSIZ, "INSERT INTO mseedVolumn(time,ddata) VALUES (%s, %d,%f);", stoptime, *vid, ((dbl*) msr->datasamples)[j]);
 				break;
 			default:
-				printf("undef %d",msr->encoding);
+				snprintf(buf,BUFSIZ,"undef %d",msr->encoding);
 			}
-			if ( j % 8 == 7)
-				printf("\n");
+			printf("%s\n",buf);
 		}
 	}
 
-	if ( retcode != MS_ENDOFFILE )
-		msg = createException(MAL, "mseed.dump", "Cannot read %s: %s\n", *inputfile, ms_errorstr(retcode));
+	if ( msg== MAL_SUCCEED && retcode != MS_ENDOFFILE )
+		msg = createException(MAL, "mseed.dump", "Cannot read %s: %s\n", file, ms_errorstr(retcode));
 
 	/* Make sure everything is cleaned up */
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
 #else
 	(void) ret;
-	(void) inputfile;
+	(void) sourcefile;
+	(void) vid;
 	throw(MAL,"mseed.dump","libmseed not available");
 #endif
+	if (msg )
+		*ret= GDKstrdup(msg);
+	else *ret= 0;
 	return msg;
 }  

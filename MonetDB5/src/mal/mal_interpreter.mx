@@ -1296,7 +1296,7 @@ DFLOWscheduler( DataFlow flow )
 	while(queued){
 		PARDEBUG stream_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
 		f = q_dequeue(flow->done);
-		if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
+		if ( f->flow->stk->wrapup && f->pc >= 0 ) /* clean up whatever is called for */
 			(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, f->pc));
 		f->status = DFLOWwrapup;
 		queued--;

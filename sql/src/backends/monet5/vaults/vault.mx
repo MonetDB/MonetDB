@@ -116,6 +116,7 @@ vault.prelude();
 #define _VAULT_DEBUG_
 
 vault_export str VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+vault_export str VLTftpget(int *ret, str *source, str *target);
 vault_export str VLTgetDirectory(str *ret);
 vault_export str VLTrefresh(int *ret, str *nme);
 vault_export str VLTrefreshObject(int *ret, int *id);
