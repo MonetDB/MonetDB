@@ -214,6 +214,13 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Tue Jul 13 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.3-20100713
+- Rebuilt.
+
+* Mon Jul 12 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.3-20100713
+- Fixed bug 2597: This bug manifested itself in rank queries in SQL but
+was a bug in the mergetable optimizer.
+
 * Mon Jul 12 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.3-20100712
 - Rebuilt.
 
