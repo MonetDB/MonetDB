@@ -45,7 +45,7 @@ The number of overloaded instructions is kept to a minimum.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/*#define DEBUG_DATACYCLOTRON_OPT*/
+/* #define DEBUG_DATACYCLOTRON_OPT */
 #define BIND_DATACYCLOTRON_OPT
 
 #define SCHEMA_LENG     32 
@@ -231,6 +231,11 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int *tpes= (int*) GDKmalloc((mb->vtop+1000) *sizeof(int));
 #endif
 
+#ifdef DEBUG_DATACYCLOTRON_OPT
+	stream_printf(cntxt->fdout,"ENTERING DATA CYCLOTRON \n");
+    printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+#endif
+
 	newArg = GDKmalloc(sizeof(*newArg) * (mb->vtop+1000));
 
 	if ( (used == NULL) && (newArg == NULL))
@@ -366,6 +371,11 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		
 	}
 
+#ifdef DEBUG_DATACYCLOTRON_OPT
+	stream_printf(cntxt->fdout,"LEAVING DATA CYCLOTRON \n");
+	chkProgram(cntxt->nspace,mb);
+    printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+#endif
 #ifdef BIND_DATACYCLOTRON_OPT
 	GDKfree(tpes);
 #endif
