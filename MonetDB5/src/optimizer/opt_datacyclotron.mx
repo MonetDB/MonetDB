@@ -278,14 +278,13 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				int tpe = TYPE_int;
 				reg = regs[getArg(p,0)];
 #ifndef BIND_DATACYCLOTRON_OPT
-
+				tpe = getArgType(mb,p,0);
 				matq= newInstruction(NULL,ASSIGNsymbol);
 				setModuleId(matq,matRef);
 				setFunctionId(matq,newRef);
 				getArg(matq,0)= getArg(p,0);
 				hgh.value.vtype= low.value.vtype= TYPE_oid;
 #else
-				tpe = getArgType(mb,p,0);
 				tpes[getArg(p,0)] = getArgType(mb,p,0);
 #endif
 
