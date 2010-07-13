@@ -30,3 +30,4 @@ prepare_stmt.Bug-2533.Bug-2534
 predicate_in_select.Bug-2535
 subselect.Bug-2537
 group-by_ordered_column.Bug-2564
+ORDER_BY_over_UNION_EXCET_INTERSECT.Bug-2606
