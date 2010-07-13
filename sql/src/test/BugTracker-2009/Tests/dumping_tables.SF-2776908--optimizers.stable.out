@@ -25,30 +25,6 @@ Over..
 # 12:59:51 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=33577 
 # 12:59:51 >  
 
-% .t # table_name
-% name # name
-% varchar # type
-% 12 # length
-[ "_columns"	]
-[ "_tables"	]
-[ "args"	]
-[ "auths"	]
-[ "columns"	]
-[ "connections"	]
-[ "db_user_info"	]
-[ "dependencies"	]
-[ "functions"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "keys"	]
-[ "privileges"	]
-[ "schemas"	]
-[ "sequences"	]
-[ "tables"	]
-[ "triggers"	]
-[ "types"	]
-[ "user_role"	]
-[ "users"	]
 CREATE TABLE "sys"."triggers" (
 	"id" int,
 	"name" varchar(1024),
