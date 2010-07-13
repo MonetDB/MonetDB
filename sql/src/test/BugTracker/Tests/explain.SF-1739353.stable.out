@@ -36,50 +36,46 @@ Over..
 +========+
 | function user.s2_1{autoCommit=true}():void; |
 |     _2 := sql.mvc(); |
-| barrier _66 := language.dataflow(); |
+|     _19:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0); |
+|     _21 := algebra.thetauselect(_19,2:sht,"<"); |
+|     _22:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",2); |
+|     _24 := algebra.kdifference(_21,_22); |
+|     _25 := algebra.thetauselect(_22,2:sht,"<"); |
+|     _26 := algebra.kunion(_24,_25); |
+|     _27:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",1); |
+|     _28 := algebra.thetauselect(_27,2:sht,"<"); |
+|     _29 := algebra.kunion(_26,_28); |
+|     _30:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","_tables",1); |
+|     _32 := bat.reverse(_30); |
+|     _33 := algebra.kdifference(_29,_32); |
+|     _34 := algebra.markT(_33,0@0); |
+|     _35 := bat.reverse(_34); |
+|     _36:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",0); |
+|     _38:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",2); |
+|     _39 := algebra.kdifference(_36,_38); |
+|     _40 := algebra.kunion(_39,_38); |
+|     _41:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",1); |
+|     _43 := algebra.kunion(_40,_41); |
+|     _44 := algebra.leftjoin(_35,_43); |
 |     _3:bat[:oid,:sht]  := sql.bind(_2,"tmp","_tables","type",0); |
 |     _8 := algebra.thetauselect(_3,2:sht,"<"); |
 |     _10:bat[:oid,:oid]  := sql.bind_dbat(_2,"tmp","_tables",1); |
 |     _12 := bat.reverse(_10); |
 |     _13 := algebra.kdifference(_8,_12); |
-|     _15 := algebra.markT(_13,0@0); |
-|     _16 := bat.reverse(_15); |
-|     _17:bat[:oid,:str]  := sql.bind(_2,"tmp","_tables","name",0); |
-|     _19 := algebra.leftjoin(_16,_17); |
-|     _20:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0); |
-|     _22 := algebra.thetauselect(_20,2:sht,"<"); |
-|     _23:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",2); |
-|     _25 := algebra.kdifference(_22,_23); |
-|     _26 := algebra.thetauselect(_23,2:sht,"<"); |
-|     _27 := algebra.kunion(_25,_26); |
-|     _28:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",1); |
-|     _29 := algebra.thetauselect(_28,2:sht,"<"); |
-|     _30 := algebra.kunion(_27,_29); |
-|     _31:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","_tables",1); |
-|     _32 := bat.reverse(_31); |
-|     _33 := algebra.kdifference(_30,_32); |
-|     _34 := algebra.markT(_33,0@0); |
-|     _35 := bat.reverse(_34); |
-|     _36:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",0); |
-|     _37:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",2); |
-|     _38 := algebra.kdifference(_36,_37); |
-|     _39 := algebra.kunion(_38,_37); |
-|     _40:bat[:oid,:str]  := sql.bind(_2,"sys","_tables","name",1); |
-|     _41 := algebra.kunion(_39,_40); |
-|     _42 := algebra.leftjoin(_35,_41); |
-| exit _66; |
-|     _43:bat[:oid,:str]  := bat.new(nil:oid,nil:str); |
-| barrier _69 := language.dataflow(); |
-|     _46 := bat.append(_43,_42,true); |
-|     _47 := bat.append(_46,_19,true); |
-| exit _69; |
-|     _48 := sql.resultSet(1,1,_47); |
-|     sql.rsColumn(_48,".tables","name","varchar",1024,0,_47); |
-|     _53 := io.stdout(); |
-|     sql.exportResult(_53,_48); |
+|     _14 := algebra.markT(_13,0@0); |
+|     _15 := bat.reverse(_14); |
+|     _16:bat[:oid,:str]  := sql.bind(_2,"tmp","_tables","name",0); |
+|     _18 := algebra.leftjoin(_15,_16); |
+|     _45:bat[:oid,:str]  := bat.new(nil:oid,nil:str); |
+|     _48 := bat.append(_45,_44,true); |
+|     _50 := bat.append(_48,_18,true); |
+|     _51 := sql.resultSet(1,1,_50); |
+|     sql.rsColumn(_51,".tables","name","varchar",1024,0,_50); |
+|     _57 := io.stdout(); |
+|     sql.exportResult(_57,_51); |
 | end s2_1; |
 +--------+
-44 rows
+40 rows
 
 
 # 15:15:37 >  
