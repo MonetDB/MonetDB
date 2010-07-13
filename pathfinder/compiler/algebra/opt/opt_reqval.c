@@ -123,10 +123,11 @@ opt_reqvals (PFla_op_t *p)
         PFprop_req_rank_col (p->prop, p->sem.sort.res))
         *p = *rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
     else if (p->kind == la_rowrank &&
-             PFprop_req_multi_col_col (p->prop, p->sem.sort.res) &&
+             (PFprop_req_bijective_col (p->prop, p->sem.sort.res) ||
+              (PFprop_req_multi_col_col (p->prop, p->sem.sort.res) &&
              /* single ascending order criterion */
+               PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_ASC)) &&
              PFord_count (p->sem.sort.sortby) == 1 &&
-             PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_ASC &&
              /* sort criterion should not stem from a rank operator */
              PFprop_type_of (p, PFord_order_col_at (p->sem.sort.sortby, 0))
              != aat_nat) {

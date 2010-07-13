@@ -652,10 +652,17 @@ print_statement (PFsql_t *n)
         case sql_cast:
             assert (R(n)->kind == sql_type);
 
-            PFprettyprintf ("CAST(");
-            print_statement (L(n));
-            PFprettyprintf (" AS %s)",
-                            PFsql_simple_type_str (R(n)->sem.type.t));
+            if (R(n)->sem.type.t == aat_date) {
+                PFprettyprintf ("date (");
+                print_statement (L(n));
+                PFprettyprintf (")");
+            }
+            else {
+                PFprettyprintf ("CAST(");
+                print_statement (L(n));
+                PFprettyprintf (" AS %s)",
+                                PFsql_simple_type_str (R(n)->sem.type.t));
+            }
             break;
 
         case sql_schema_tbl_name:

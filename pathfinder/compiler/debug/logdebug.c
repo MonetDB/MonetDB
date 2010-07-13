@@ -348,6 +348,7 @@ xml_literal_list (PFalg_simple_type_t ty)
                     case aat_bln:      PFarray_printf (s, "bool");  break;
                     case aat_uA:       PFarray_printf (s, "uA");    break;
                     case aat_qname_id: PFarray_printf (s, "qname"); break;
+                    case aat_date:     PFarray_printf (s, "date");  break;
                     case aat_attr:     PFarray_printf (s, "attr");  break;
                     case aat_nkind:    PFarray_printf (s, "pnode"); break;
                     default:                                        break;
