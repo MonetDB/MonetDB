@@ -1848,12 +1848,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						if ((hdl = mapi_query(mid,
 								      "SELECT \"t\".\"name\", \"t\".\"type\", "
 								      "\"s\".\"name\" "
-								      "FROM \"sys\".\"tables\" \"t\", "
+								      "FROM \"sys\".\"_tables\" \"t\", "
 								      "\"sys\".\"schemas\" \"s\" "
 								      "WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
 								      "AND \"s\".\"name\" = \"current_schema\" "
 								      "AND \"t\".\"system\" = false "
-								      "AND \"t\".\"temporary\" = 0 "
 								      "ORDER BY \"t\".\"name\"")) != NULL &&
 						    mapi_error(mid) == MOK) {
 							char *type, *name, *schema;
