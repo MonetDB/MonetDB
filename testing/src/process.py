@@ -35,9 +35,9 @@ def splitcommand(cmd):
         del command[0]
     return command
 
-_mil_client = splitcommand(os.getenv('MIL_CLIENT', 'mclient -lmil -i'))
-_mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal -i'))
-_sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql -i'))
+_mil_client = splitcommand(os.getenv('MIL_CLIENT', 'mclient -lmil'))
+_mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal'))
+_sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql'))
 _xquery_client = splitcommand(os.getenv('XQUERY_CLIENT', 'mclient -lxquery -fxml'))
 _sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump'))
 _server = splitcommand(os.getenv('MSERVER', ''))
