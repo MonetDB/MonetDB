@@ -31,7 +31,6 @@ Over..
 % 0 # length
 function user.s0_1{autoCommit=true}():void;
     _2 := sql.mvc();
-barrier _36 := language.dataflow();
     _3:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",0);
     _8:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",2);
     _10 := algebra.kdifference(_3,_8);
@@ -41,8 +40,7 @@ barrier _36 := language.dataflow();
     _15:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","sf_2596114",1);
     _16 := bat.reverse(_15);
     _17 := algebra.kdifference(_14,_16);
-    _18:bat[:oid,:dbl]  := batmmath.pow(_17,2);
-exit _36;
+    _18:bat[:oid,:dbl]  := batmmath.pow(_17,2:dbl);
     _19 := sql.resultSet(1,1,_18);
     sql.rsColumn(_19,"sys.","power_x","double",53,0,_18);
     _25 := io.stdout();
@@ -54,7 +52,6 @@ end s0_1;
 % 0 # length
 function user.s1_1{autoCommit=true}():void;
     _2 := sql.mvc();
-barrier _35 := language.dataflow();
     _3:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",0);
     _8:bat[:oid,:dbl]  := sql.bind(_2,"sys","sf_2596114","x",2);
     _10 := algebra.kdifference(_3,_8);
@@ -65,7 +62,6 @@ barrier _35 := language.dataflow();
     _16 := bat.reverse(_15);
     _17 := algebra.kdifference(_14,_16);
     _18:bat[:oid,:dbl]  := batcalc.*(_17,_17);
-exit _35;
     _19 := sql.resultSet(1,1,_18);
     sql.rsColumn(_19,"sys.","sql_mul_x","double",53,0,_18);
     _25 := io.stdout();

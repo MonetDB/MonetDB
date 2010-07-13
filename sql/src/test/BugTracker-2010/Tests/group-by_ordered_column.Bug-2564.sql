@@ -1,3 +1,5 @@
+-- disable parallelism (mitosis & dataflow) to avoid ambiguous results 
+set optimizer='inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,garbageCollector';
 create table t2564 (c1 int, c2 int, c3 int);
 insert into t2564 values (3,1,2);
 insert into t2564 values (1,2,1);

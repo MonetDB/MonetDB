@@ -36,7 +36,6 @@ Over..
 +========+
 | function user.s2_1{autoCommit=true}():void; |
 |     _2 := sql.mvc(); |
-| barrier _70 := language.dataflow(); |
 |     _19:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",0); |
 |     _21 := algebra.thetauselect(_19,2:sht,"<"); |
 |     _22:bat[:oid,:sht]  := sql.bind(_2,"sys","_tables","type",2); |
@@ -67,19 +66,16 @@ Over..
 |     _15 := bat.reverse(_14); |
 |     _16:bat[:oid,:str]  := sql.bind(_2,"tmp","_tables","name",0); |
 |     _18 := algebra.leftjoin(_15,_16); |
-| exit _70; |
 |     _45:bat[:oid,:str]  := bat.new(nil:oid,nil:str); |
-| barrier _73 := language.dataflow(); |
 |     _48 := bat.append(_45,_44,true); |
 |     _50 := bat.append(_48,_18,true); |
-| exit _73; |
 |     _51 := sql.resultSet(1,1,_50); |
 |     sql.rsColumn(_51,".tables","name","varchar",1024,0,_50); |
 |     _57 := io.stdout(); |
 |     sql.exportResult(_57,_51); |
 | end s2_1; |
 +--------+
-44 rows
+40 rows
 
 
 # 15:15:37 >  
