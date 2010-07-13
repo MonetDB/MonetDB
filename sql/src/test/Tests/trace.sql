@@ -1,5 +1,5 @@
 -- disable parallelism (mitosis & dataflow) to avoid ambiguous results 
-set optimizer='inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,garbageCollector';
+set optimizer='sequential_pipe';
 set trace = 'none'; -- non-documented feature to not get any trace output
 
 create function tracelog() 

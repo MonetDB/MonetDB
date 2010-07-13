@@ -1,5 +1,5 @@
 -- disable parallelism (mitosis & dataflow) to avoid ambiguous results 
-set optimizer='inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,garbageCollector';
+set optimizer='sequential_pipe';
 \f csv
 create table blabla(id integer);
 select '#~BeginVariableOutput~#';
