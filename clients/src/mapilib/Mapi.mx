@@ -1054,6 +1054,7 @@ struct MapiResultSet {
 	char *errorstr;		/* error from server */
 	struct MapiColumn *fields;
 	struct MapiRowBuf cache;
+	int commentonly;	/* only comments seen so far */
 };
 
 @h
@@ -1662,6 +1663,8 @@ new_result(MapiHdl hdl)
 	result->cache.first = 0;
 	result->cache.tuplecount = 0;
 	result->cache.line = NULL;
+
+	result->commentonly = 1;
 
 	return result;
 }
@@ -3850,9 +3853,10 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		nline++;	/* query type */
 		qt = (int) strtol(nline, &nline, 0);
 
-		if (qt != Q_BLOCK || result == NULL)
+		if (result == NULL || (qt != Q_BLOCK && !result->commentonly))
 			result = new_result(hdl);
 		result->querytype = qt;
+		result->commentonly = 0;
 
 		nline++;	/* skip space */
 		switch (qt) {
@@ -3907,6 +3911,8 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	}
 
 	n = slice_row(line, NULL, &anchors, &lens, 10, '#');
+
+	result->commentonly = 0;
 
 	tag = etag + 1;
 	while (*tag && isspace((int) (unsigned char) *tag))
