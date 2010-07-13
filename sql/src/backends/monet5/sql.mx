@@ -932,6 +932,22 @@ function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, 
 	return bind_idxbat:= b;
 end octopus.bind_idxbat;
 
+function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, low:oid, hgh:oid, version:int):bat[:oid,:oid];
+	m := nil:ptr;
+	rm := remote.put(conn,m);
+	rm := remote.exec(conn,"sql","mvc");
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	i := remote.put(conn,index);
+	a := remote.put(conn,access);
+	l := remote.put(conn,low);
+	h := remote.put(conn,hgh);
+	bh:= remote.put(conn,bind_idxbat);
+	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a,l,h);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	return bind_idxbat:= b;
+end octopus.bind_idxbat;
+
 function octopus.getVariable(conn:str,name:str):any_1;
 	s := remote.put(conn,name);
 	bh:= remote.exec(conn,"sql","getVariable",s);

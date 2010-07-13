@@ -2018,18 +2018,20 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 {
 	int i, j;
 	InstrPtr q;
-	static str octopusRef = 0, bindRef = 0;
+	static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
 
 	if (octopusRef == 0)
 		octopusRef = putName("octopus",7);
 	if (bindRef == 0)
         bindRef = putName("bind",4);
+	if (bindidxRef == 0)
+        bindidxRef = putName("bind_idxbat",11);
 
 	mal_set_lock(recycleLock,"recycle");
 	for (i = 0; i < recycleBlk->stop; i++){
     	q = getInstrPtr(recycleBlk,i);
 		if ( getModuleId(q) != octopusRef ||
-			 getFunctionId(q) != bindRef ) continue; 
+			 (getFunctionId(q) != bindRef && getFunctionId(q) != bindidxRef) ) continue; 
 
 		if (p->argc < q->argc-1) continue; 
 		/* sub-range instructions can be subsumed from entire table */
@@ -2083,7 +2085,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
     bat bid= -1, nbid= -1;
     InstrPtr q;
     static str selectRef = 0, like_selectRef = 0, thetaselectRef = 0, 
-		octopusRef = 0, bindRef = 0;
+		octopusRef = 0, bindRef = 0, bindidxRef = 0;
     bit gluse = FALSE;
 	lng ticks = GDKusec();
 
@@ -2097,12 +2099,15 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
         octopusRef = putName("octopus",7);
 	if (bindRef == 0)
         bindRef = putName("bind",4);
+	if (bindidxRef == 0)
+        bindidxRef = putName("bind_idxbat",11);
 
     if( recycleBlk == 0 || reusePolicy == 0)
         return -1;
 
-	/* separate matching of data transfer instructions: octopus.bind() */
-	if ( getModuleId(p) == octopusRef && getFunctionId(p) == bindRef )
+	/* separate matching of data transfer instructions: octopus.bind(), octopus.bind_idxbat() */
+	if ( getModuleId(p) == octopusRef && 
+		( getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef ))
 		return RECYCLEdataTransfer(cntxt, s, p);
 
     mal_set_lock(recycleLock,"recycle");

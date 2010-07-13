@@ -70,6 +70,7 @@ Bidding described ...
 #include <mal_module.h>
 #include <mal_recycle.h>
 #include "trader.h"
+#include <time.h>
 
 /*
 static lng estimateSavings0(MalBlkPtr mb,  sht bidtype)
@@ -88,6 +89,7 @@ lng estimateSavings(MalBlkPtr mb, sht bidtype)
 	InstrPtr p, q;
 	lng savedInstr = 0, savedKB = 0;
 	static str octopusRef = 0, bindRef = 0;
+
 
 	if (octopusRef == 0)
 		octopusRef = putName("octopus",7);
@@ -192,6 +194,12 @@ str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str fnname = *(str *) getArgReference(stk,pci,1);
 	sht bidtype = *(sht *) getArgReference(stk,pci,2);
 	Symbol sym;
+	static char fname[BUFSIZ] = "";
+	static str biddingLog = NULL;
+	stream *s;
+	time_t now;
+	struct tm *nowtm;
+	char timestr[20];
 
 	(void) mb;
     sym = findSymbol(cntxt->nspace, putName("octopus",7), fnname);
@@ -199,6 +207,24 @@ str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         throw(MAL,"trader.makeBid", RUNTIME_SIGNATURE_MISSING "%s", fnname);
         
     *c = estimateSavings(sym->def, bidtype);
+
+	/* log bidding */
+	if ( biddingLog == NULL) {
+		sprintf(fname,"%s/%s/bidding.log",GDKgetenv("gdk_dbfarm"),GDKgetenv("gdk_dbname"));
+		biddingLog = fname;
+	}
+	s = append_wastream(biddingLog);
+	if (s == NULL )
+			throw(MAL,"trader.makeBid", RUNTIME_FILE_NOT_FOUND "%s", biddingLog);
+	if (stream_errnr(s)) {
+			stream_close(s);
+			throw(MAL,"trader.makeBid", RUNTIME_FILE_NOT_FOUND "%s", biddingLog);
+	}
+	now = time(NULL);
+	nowtm = localtime(&now);
+	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", nowtm);
+	stream_printf(s,"%s\t%s\t%1d\t" LLFMT "\n",timestr, fnname, bidtype, *c);
+	close_stream(s);
 
 	return MAL_SUCCEED;
 }   

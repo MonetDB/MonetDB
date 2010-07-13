@@ -344,7 +344,7 @@ with the transaction commits.
 			}
 */
 		if (getModuleId(p) == octopusRef && 
-			 getFunctionId(p) == bindRef ) {
+			 ( getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef) ) {
 				recycled[getArg(p,0)] = 1;
 				p->recycle = recycleMaxInterest; 
 				marks++;

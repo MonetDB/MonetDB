@@ -1066,11 +1066,11 @@ The number of instructions allowed is severely limited.
 We don't allow sequential flow control here.
 @c
         switch (pci->token){
-		case ASSIGNsymbol: @:assignStmt(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case PATcall: @:patterncall(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case CMDcall: @:commandcall(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case FACcall: @:factorycall(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
-		case FCNcall: @:functioncall(FAST,fs->pc = -1; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case ASSIGNsymbol: @:assignStmt(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case PATcall: @:patterncall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case CMDcall: @:commandcall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case FACcall: @:factorycall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
+		case FCNcall: @:functioncall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
 		case NOOPsymbol:
 		case REMsymbol:
 			break;
@@ -1087,7 +1087,7 @@ We don't allow sequential flow control here.
 	}
 	@:endProfile(t)@
 	if (ret)
-		fs->pc = -1;
+		fs->pc = -fs->pc;
 	return ret;
 }
 
@@ -1296,8 +1296,8 @@ DFLOWscheduler( DataFlow flow )
 	while(queued){
 		PARDEBUG stream_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
 		f = q_dequeue(flow->done);
-		if ( f->flow->stk->wrapup && f->pc >= 0 ) /* clean up whatever is called for */
-			(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, f->pc));
+		if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
+			(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
 		f->status = DFLOWwrapup;
 		queued--;
 		if (f->pc < 0) {
@@ -1308,7 +1308,7 @@ DFLOWscheduler( DataFlow flow )
 			/* dequeue the remainders in case of an error */
 			while(queued-- > 0)  {
 					if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
-						(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, f->pc));
+						(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
 					(void)q_dequeue(flow->done);
 			}
 			return f->error;
