@@ -34,6 +34,19 @@ pattern addReg(sch:str, tab:str, col:str, acc:int, f_bun:int, l_bun:int):int
 address addRegWrap
 comment "Add a regist for partition";
 
+pattern bind(schema:str, table:str, column:str, access:int, partition:int, fbun:int, lbun:int):int
+address DCbind
+comment "Request a bat";
+
+pattern pin(req_id:int):bat[:any_1,:any_3]
+address DCpin
+comment "Pin a request for a query";
+
+pattern unpin(req_id:int):void
+address DCunpin
+comment "UnPin a request for a query";
+
+
 @-
 
 The number of overloaded instructions is kept to a minimum.
@@ -45,7 +58,7 @@ The number of overloaded instructions is kept to a minimum.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/* #define DEBUG_DATACYCLOTRON_OPT */
+/*#define DEBUG_DATACYCLOTRON_OPT*/
 #define BIND_DATACYCLOTRON_OPT
 
 #define SCHEMA_LENG     32 
@@ -265,7 +278,6 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				int tpe = TYPE_int;
 				reg = regs[getArg(p,0)];
 #ifndef BIND_DATACYCLOTRON_OPT
-				tpe = getArgType(mb,p,0);
 
 				matq= newInstruction(NULL,ASSIGNsymbol);
 				setModuleId(matq,matRef);
@@ -273,6 +285,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				getArg(matq,0)= getArg(p,0);
 				hgh.value.vtype= low.value.vtype= TYPE_oid;
 #else
+				tpe = getArgType(mb,p,0);
 				tpes[getArg(p,0)] = getArgType(mb,p,0);
 #endif
 
