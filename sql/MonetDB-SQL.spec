@@ -157,6 +157,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so
 
 %changelog
+* Tue Jul 13 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100713
+- Rebuilt.
+
 * Mon Jul 12 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100712
 - Rebuilt.
 
