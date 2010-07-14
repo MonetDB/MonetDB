@@ -32,17 +32,18 @@ Over..
 % city_name,	state_name,	city_code # name
 % char,	char,	char # type
 % 25,	25,	4 # length
-[ "OAKLAND",	"CALIFORNIA",	"OOAK"	]
-[ "SAN FRANCISCO",	"CALIFORNIA",	"SSFO"	]
-[ "DENVER",	"COLORADO",	"DDEN"	]
-[ "WASHINGTON",	"DISTRICT OF COLUMBIA",	"WWAS"	]
 [ "ATLANTA",	"GEORGIA",	"MATL"	]
-[ "BOSTON",	"MASSACHUSETTS",	"BBOS"	]
 [ "BALTIMORE",	"MARYLAND",	"BBWI"	]
-[ "PITTSBURGH",	"PENNSYLVANIA",	"PPIT"	]
-[ "PHILADELPHIA",	"PENNSYLVANIA",	"PPHL"	]
-[ "FORT WORTH",	"TEXAS",	"FDFW"	]
+[ "BOSTON",	"MASSACHUSETTS",	"BBOS"	]
 [ "DALLAS",	"TEXAS",	"DDFW"	]
+[ "DENVER",	"COLORADO",	"DDEN"	]
+[ "FORT WORTH",	"TEXAS",	"FDFW"	]
+[ "OAKLAND",	"CALIFORNIA",	"OOAK"	]
+[ "PHILADELPHIA",	"PENNSYLVANIA",	"PPHL"	]
+[ "PITTSBURGH",	"PENNSYLVANIA",	"PPIT"	]
+[ "SAN FRANCISCO",	"CALIFORNIA",	"SSFO"	]
+[ "WASHINGTON",	"DISTRICT OF COLUMBIA",	"WWAS"	]
+#select month_name.month_name,day_name.day_name from month_name,day_name where month_name.month_number=day_name.day_code;
 % sys.month_name,	sys.day_name # table_name
 % month_name,	day_name # name
 % char,	char # type
