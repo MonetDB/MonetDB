@@ -1052,8 +1052,8 @@ clrFunction(InstrPtr p)
 	p->fcn = 0;
 	p->blk = 0;
 	p->typechk= TYPE_UNKNOWN;
-	setModuleId(p, NULL);
-	setFunctionId(p, NULL);
+	p->modname = NULL;
+	p->fcnname = NULL;
 }
 
 void

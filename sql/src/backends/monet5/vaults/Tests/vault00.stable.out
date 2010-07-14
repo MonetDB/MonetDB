@@ -1,0 +1,27 @@
+stdout of test 'vault00` in directory 'src/backends/monet5/vaults` itself:
+
+
+# 13:40:11 >  
+# 13:40:11 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36604 --set xrpc_port=46940 --set monet_prompt= --set mal_listing=2 --trace  --dbname=mTests_src_backends_monet5_vaults  vault00.mal
+# 13:40:11 >  
+
+# MonetDB server v5.21.0, based on kernel v1.39.0
+# Serving database 'mTests_src_backends_monet5_vaults', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:36604/
+# MonetDB/SQL module v2.39.0 loaded
+# MonetDB/GIS module v0.19.0 loaded
+function user.main():void;
+    s := vault.getdirectory();
+    io.print(s);
+end main;
+[ "/ufs/mk/current//Linux/var/MonetDB5/dbfarm/mTests_src_backends_monet5_vaults/vault" ]
+
+# 13:40:12 >  
+# 13:40:12 >  Done.
+# 13:40:12 >  
+
