@@ -20,8 +20,8 @@ from distutils.core import setup
 setup(name='python-monetdb',
       version='1.0',
       description='Native MonetDB client Python API',
-      author='Gijs Molenaar',
-      author_email='gijs.molenaar@cwi.nl',
+      author='MonetDB developer team',
+      author_email='monet@cwi.nl',
       url='http://www.monetdb.nl',
       packages=['monetdb', 'monetdb.sql'],
      )

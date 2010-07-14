@@ -303,19 +303,20 @@ find_all_sql_func(sql_schema * s, char *name, int is_func)
 	list *l = s->funcs.set, *res = NULL;
 	node *n = NULL;
 
-        if (l)
-                for (n = l->h; n; n = n->next) {
-                        sql_base *b = n->data;
-                        sql_func *f = n->data;
+	if (l) {
+		for (n = l->h; n; n = n->next) {
+			sql_base *b = n->data;
+			sql_func *f = n->data;
 
-                        /* check if names match */
-                        if (f->is_func == is_func && name[0] == b->name[0] && strcmp(name, b->name) == 0) {
+			/* check if names match */
+			if (f->is_func == is_func && name[0] == b->name[0] && strcmp(name, b->name) == 0) {
 				if (!res)
-					res = list_create((fdestroy) NULL);
+					res = list_create((fdestroy)NULL);
 				list_append(res, n->data);
-                        }
-                }
-        return res;
+			}
+		}
+	}
+	return res;
 }
 
 sql_func *

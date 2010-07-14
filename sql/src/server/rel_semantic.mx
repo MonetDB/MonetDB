@@ -315,7 +315,7 @@ rel_semantic(mvc *sql, symbol *s)
 		}
 		stack_pop_frame(sql);
 		return r;
-	} 	
+	}
 	case SQL_PREP:
 	{
 		dnode *d = s->data.lval->h;

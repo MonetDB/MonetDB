@@ -35,15 +35,15 @@ address addRegWrap
 comment "Add a regist for partition";
 
 pattern bind(schema:str, table:str, column:str, access:int, partition:int, fbun:int, lbun:int):int
-address DCbind
+address DCYbindWrap
 comment "Request a bat";
 
 pattern pin(req_id:int):bat[:any_1,:any_3]
-address DCpin
+address DCYpinWrap
 comment "Pin a request for a query";
 
 pattern unpin(req_id:int):void
-address DCunpin
+address DCYunpinWrap
 comment "UnPin a request for a query";
 
 
@@ -282,6 +282,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				matq= newInstruction(NULL,ASSIGNsymbol);
 				setModuleId(matq,matRef);
 				setFunctionId(matq,newRef);
+				clrFunction(matq);
 				getArg(matq,0)= getArg(p,0);
 				hgh.value.vtype= low.value.vtype= TYPE_oid;
 #else
@@ -340,6 +341,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					matq= newInstruction(NULL,ASSIGNsymbol);
 					setModuleId(matq,matRef);
 					setFunctionId(matq,newRef);
+					clrFunction(matq);
 					getArg(matq,0)= getArg(p,j);
 					hgh.value.vtype= low.value.vtype= TYPE_oid;
 
@@ -414,7 +416,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 opt_export str DCbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
 @c
 str
-DCbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
+DCYbindWrap(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
 	(void) ret;
 	(void) sch;
 	(void) tab;
@@ -430,7 +432,7 @@ DCbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, 
 opt_export str DCpin(int *ret, int *bid);
 @c
 str
-DCpin(int *ret, int *bid){
+DCYpinWrap(int *ret, int *bid){
 	(void) ret;
 	(void) bid;
 	throw(MAL,"datacyclotron.pin",PROGRAM_NYI);
@@ -440,7 +442,7 @@ DCpin(int *ret, int *bid){
 opt_export str DCunpin(int *ret, int *bid);
 @c
 str
-DCunpin(int *ret, int *bid){
+DCYunpinWrap(int *ret, int *bid){
 	(void) ret;
 	(void) bid;
 	throw(MAL,"datacyclotron.unpin",PROGRAM_NYI);
@@ -450,7 +452,7 @@ DCunpin(int *ret, int *bid){
 opt_export str DCcopy(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
 @c
 str
-DCcopy(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
+DCYcopyWrap(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
 	(void) ret_id;
 	(void) ret_bat;
 	(void) sch;
