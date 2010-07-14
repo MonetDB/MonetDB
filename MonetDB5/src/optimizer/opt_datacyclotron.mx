@@ -282,6 +282,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				matq= newInstruction(NULL,ASSIGNsymbol);
 				setModuleId(matq,matRef);
 				setFunctionId(matq,newRef);
+				clrFunction(matq);
 				getArg(matq,0)= getArg(p,0);
 				hgh.value.vtype= low.value.vtype= TYPE_oid;
 #else
