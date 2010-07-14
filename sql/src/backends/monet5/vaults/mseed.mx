@@ -71,10 +71,10 @@ str
 MSEmseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret = (str*) getArgReference(stk,pci,0); 
-	int *vid = (int*) getArgReference(stk,pci,1); 
-	str *sourcefile = (str*) getArgReference(stk,pci,2); 
 	str msg = MAL_SUCCEED;
 #ifdef HAVE_MSEED
+	int *vid = (int*) getArgReference(stk,pci,1); 
+	str *sourcefile = (str*) getArgReference(stk,pci,2); 
 	MSRecord *msr = 0;
 
 	int verbose   = 1;
@@ -94,8 +94,6 @@ MSEmseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char stoptime[BUFSIZ];
 	int stepsize;
 
-	(void) cntxt;
-	(void) mb;
 	if ( vaultpath[0] == 0){
 		msg= createException(MAL,"mseed.dump","Vault not initialized");
 		*ret = GDKstrdup(msg);
@@ -173,11 +171,10 @@ MSEmseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Make sure everything is cleaned up */
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
 #else
-	(void) ret;
-	(void) sourcefile;
-	(void) vid;
+	(void) cntxt;
 	throw(MAL,"mseed.dump","libmseed not available");
 #endif
+	(void) mb;
 	if (msg )
 		*ret= GDKstrdup(msg);
 	else *ret= 0;
