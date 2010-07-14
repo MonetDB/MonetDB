@@ -81,8 +81,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			for( k= n-1; k>=0; k--){
 				y= cst[k];
 				if ( x->type == y->type &&
-					x->value.vtype == y->value.vtype &&
-					ATOMcmp(x->value.vtype, VALget(&x->value), VALget(&y->value)) == 0){
+					ATOMcmp(x->type, VALget(&x->value), VALget(&y->value)) == 0){
 #ifdef DEBUG_OPT_CONSTANTS 
 	stream_printf(cntxt->fdout,"matching elements %s %d %d ", getVarName(mb,i), i,k);
 	ATOMprint(x->value.vtype,VALget(&x->value),cntxt->fdout);
