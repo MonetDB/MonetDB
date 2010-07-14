@@ -164,12 +164,12 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 9,	8,	8 # length
 [ "id",	"querylog",	"DEP_VIEW"	]
-[ "id",	"querylog",	"DEP_VIEW"	]
 [ "defined",	"querylog",	"DEP_VIEW"	]
 [ "name",	"querylog",	"DEP_VIEW"	]
 [ "query",	"querylog",	"DEP_VIEW"	]
 [ "parse",	"querylog",	"DEP_VIEW"	]
 [ "optimize",	"querylog",	"DEP_VIEW"	]
+[ "id",	"querylog",	"DEP_VIEW"	]
 [ "ctime",	"querylog",	"DEP_VIEW"	]
 [ "arguments",	"querylog",	"DEP_VIEW"	]
 [ "execute",	"querylog",	"DEP_VIEW"	]
@@ -185,9 +185,8 @@ Dependencies between database objects
 % .c,	sys.k,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 3,	20,	7 # length
+% 2,	20,	7 # length
 [ "id",	"t1_id_pkey",	"DEP_KEY"	]
-[ "vid",	"vault_vid_pkey",	"DEP_KEY"	]
 [ "id",	"queryhistory_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, keycolumns as kc, idxs as i where kc."column" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 % .c,	.i,	. # table_name
@@ -344,8 +343,9 @@ Dependencies between database objects
 % sys.f,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 5,	12,	11 # length
+% 6,	12,	11 # length
 [ "<>",	"trigger_test",	"DEP_TRIGGER"	]
+[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
 [ "count",	"trigger_test",	"DEP_TRIGGER"	]
 % sys.k,	sys.fk,	. # table_name
 % name,	name,	single_value # name
@@ -498,8 +498,7 @@ Cleanup
 % .c,	sys.k,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 3,	20,	7 # length
-[ "vid",	"vault_vid_pkey",	"DEP_KEY"	]
+% 2,	20,	7 # length
 [ "id",	"queryhistory_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, keycolumns as kc, idxs as i where kc."column" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 % .c,	.i,	. # table_name

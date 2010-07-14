@@ -1,1 +1,3 @@
-s:= vault.getdirectory();
+
+s:= vault.getDirectory();
+io.print(s);
