@@ -2,7 +2,7 @@
 %_tmppath	%{_topdir}/tmp
 %__arch_install_post   /usr/lib/rpm/check-rpaths   /usr/lib/rpm/check-buildroot
 
-%packager	MonetDB Database System <monet@cwi.nl>
+%packager	MonetDB Database System <info@monetdb.org>
 %_signature	gpg
 %_gpg_name	0xC268D7F6
 

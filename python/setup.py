@@ -21,7 +21,7 @@ setup(name='python-monetdb',
       version='1.0',
       description='Native MonetDB client Python API',
       author='MonetDB developer team',
-      author_email='monet@cwi.nl',
+      author_email='info@monetdb.org',
       url='http://www.monetdb.nl',
       packages=['monetdb', 'monetdb.sql'],
      )

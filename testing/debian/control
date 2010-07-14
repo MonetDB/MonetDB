@@ -1,7 +1,7 @@
 Source: monetdb-testing
 Section: misc
 Priority: extra
-Maintainer: MonetDB BV <monet@cwi.nl>
+Maintainer: MonetDB BV <info@monetdb.org>
 Build-Depends: debhelper (>= 5), autotools-dev, python, cdbs, libmonetdb-dev
 Standards-Version: 3.8.0
 

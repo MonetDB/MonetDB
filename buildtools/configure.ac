@@ -21,7 +21,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB Buildtools], 1.0, monet@cwi.nl)
+AC_INIT([MonetDB Buildtools], 1.0, info@monetdb.org)
 AM_INIT_AUTOMAKE([MonetDB], [1.0])
 
 AC_PROG_INSTALL

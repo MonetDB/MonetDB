@@ -1,7 +1,7 @@
 Source: monetdb-xquery
 Section: misc
 Priority: extra
-Maintainer: MonetDB BV <monet@cwi.nl>
+Maintainer: MonetDB BV <info@monetdb.org>
 Build-Depends: debhelper (>= 5), autotools-dev, libmonetdb-dev, libxml2-dev, cdbs, monetdb4-server, libmonetdb-client-dev, libmonetdb4-server4, libmonetdb4-server-dev
 Standards-Version: 3.8.0
 

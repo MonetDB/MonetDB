@@ -20,7 +20,7 @@ dnl All Rights Reserved.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([Mx], [1.0], [monet@cwi.nl])
+AC_INIT([Mx], [1.0], [info@monetdb.org])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([Mx.c])
 AC_CONFIG_HEADER([mx_config.h])
