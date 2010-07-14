@@ -1,7 +1,7 @@
 Source: monetdb-client
 Section: misc
 Priority: extra
-Maintainer: MonetDB BV <monet@cwi.nl>
+Maintainer: MonetDB BV <info@monetdb.org>
 Build-Depends: debhelper (>= 5), autotools-dev, libmonetdb-dev, libreadline5-dev, swig, cdbs, libssl-dev, perl, unixodbc-dev, libperl-dev, python, ruby, rubygems
 
 Package: monetdb-client

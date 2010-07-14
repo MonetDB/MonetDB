@@ -129,7 +129,7 @@
 #define PACKAGE "mx"
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "monet@cwi.nl"
+#define PACKAGE_BUGREPORT "info@monetdb.org"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "Mx"

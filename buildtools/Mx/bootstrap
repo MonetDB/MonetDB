@@ -33,7 +33,7 @@ diff -u -r1.4 configure.ac
 @@ -3,9 +3,9 @@
  
  AC_PREREQ(2.57)
- AC_INIT([Mx], [1.0], [monet@cwi.nl])
+ AC_INIT([Mx], [1.0], [info@monetdb.org])
 -AM_INIT_AUTOMAKE
 +AM_INIT_AUTOMAKE([Mx], [1.0])
  AC_CONFIG_SRCDIR([Mx.c])

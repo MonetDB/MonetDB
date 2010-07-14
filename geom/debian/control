@@ -1,7 +1,7 @@
 Source: monetdb-geom
 Section: misc
 Priority: extra
-Maintainer: MonetDB BV <monet@cwi.nl>
+Maintainer: MonetDB BV <info@monetdb.org>
 Build-Depends: debhelper (>= 5), autotools-dev, libmonetdb-dev, cdbs, monetdb4-server, monetdb5-server, libgeos-dev, monetdb4-server, monetdb5-server, libmonetdb4-server-dev, libmonetdb5-server-dev
 Standards-Version: 3.8.0
 

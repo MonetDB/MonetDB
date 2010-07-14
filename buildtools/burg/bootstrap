@@ -16,7 +16,7 @@ diff -u -r1.2 configure.ac
 @@ -3,13 +3,12 @@
 
  AC_PREREQ(2.57)
- AC_INIT([burg], [1.0], [monet@cwi.nl])
+ AC_INIT([burg], [1.0], [info@monetdb.org])
 -AM_INIT_AUTOMAKE
 +AM_INIT_AUTOMAKE([burg], [1.0])
  AC_CONFIG_SRCDIR([burs.c])

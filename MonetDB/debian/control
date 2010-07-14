@@ -1,7 +1,7 @@
 Source: monetdb
 Section: misc
 Priority: extra
-Maintainer: MonetDB BV <monet@cwi.nl>
+Maintainer: MonetDB BV <info@monetdb.org>
 Build-Depends: debhelper (>= 5), autotools-dev, zlib1g-dev, libbz2-dev, libssl-dev, cdbs
 Standards-Version: 3.8.0
 
