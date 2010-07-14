@@ -100,7 +100,6 @@ CREATE TABLE "sys"."keytest2" (
 COPY 2 RECORDS INTO "sys"."keytest2" FROM stdin USING DELIMITERS '\t','\n','"';
 0	0
 0	1
-SET SCHEMA "sys";
 ALTER TABLE "sys"."keytest2" ADD CONSTRAINT "keytest2_key1_key2_fkey" FOREIGN KEY ("key1", "key2") REFERENCES "sys"."keytest1" ("key1", "key2");
 ALTER SEQUENCE "sys"."test_seq" RESTART WITH 8 INCREMENT BY 3 MINVALUE 5 MAXVALUE 10 CYCLE;
 COMMIT;
