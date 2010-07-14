@@ -31,3 +31,4 @@ predicate_in_select.Bug-2535
 subselect.Bug-2537
 group-by_ordered_column.Bug-2564
 ORDER_BY_over_UNION_EXCEPT_INTERSECT.Bug-2606
+second_function_existing_signature.Bug-2611
