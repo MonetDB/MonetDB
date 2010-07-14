@@ -35,7 +35,6 @@ Over..
 % 27,	1,	20,	1 # length
 [ "queryhistory_id_pkey",	0,	"queryhistory_id_pkey",	0	]
 [ "callhistory_id_fkey",	1,	"callhistory_id_fkey",	2	]
-[ "vault_vid_pkey",	0,	"vault_vid_pkey",	0	]
 [ "unique_key",	0,	"unique_key",	1	]
 [ "allnewtriples_subject_idx",	0,	NULL,	NULL	]
 [ "allnewtriples_predicate_idx",	0,	NULL,	NULL	]
@@ -46,7 +45,6 @@ Over..
 % 20,	1,	20,	1 # length
 [ "queryhistory_id_pkey",	0,	"queryhistory_id_pkey",	0	]
 [ "callhistory_id_fkey",	1,	"callhistory_id_fkey",	2	]
-[ "vault_vid_pkey",	0,	"vault_vid_pkey",	0	]
 [ "unique_key",	0,	"unique_key",	1	]
 
 # 12:37:07 >  
