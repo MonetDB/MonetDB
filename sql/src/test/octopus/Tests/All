@@ -1,4 +1,4 @@
-squid
+NOT_WIN32?squid
 # disable squid remote tests, will not be fixed in this release
-#squid00
-#squid01
+#NOT_WIN32?squid00
+#NOT_WIN32?squid01
