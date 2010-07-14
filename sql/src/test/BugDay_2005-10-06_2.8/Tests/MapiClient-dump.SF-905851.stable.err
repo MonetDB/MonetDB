@@ -11,46 +11,7 @@ stderr of test 'MapiClient-dump.SF-905851` in directory 'src/test/BugDay_2005-10
 # 15:55:37 >  
 
 
-# 13:42:19 >  sql
-
-
-# 13:42:20 >  sql
-
-MAPI  = monetdb@eir:36604
-QUERY = INSERT INTO "foreign" VALUES(1, 1, 1, 1);
-
-MAPI  = monetdb@eir:36604
-QUERY = INSERT INTO "foreign" VALUES(2, 2, 2, 2);
-
-MAPI  = monetdb@eir:36604
-QUERY = INSERT INTO "foreign" VALUES(3, 1, 2, 2);
-
-MAPI  = monetdb@eir:36604
-QUERY = INSERT INTO "foreign" VALUES(4, 2, 2, 1);
-
-MAPI  = monetdb@eir:36604
-QUERY = INSERT INTO "foreign" VALUES(5, 2, 1, 1);
-
-MAPI  = monetdb@eir:36604
-QUERY = INSERT INTO "foreign" VALUES(6, 1, 2, 1);
-
-MAPI  = monetdb@eir:36604
-QUERY = INSERT INTO "foreign" VALUES(7, 1, 1, 2);
-
-MAPI  = monetdb@eir:36604
-QUERY = SELECT * FROM allnewtriples;
-
-MAPI  = monetdb@eir:36604
-QUERY = SELECT * FROM "foreign";
-
-MAPI  = monetdb@eir:36604
-QUERY = COMMIT;
-
-
-# 13:42:20 >  sqldump
-
-
-# 13:42:20 >  
-# 13:42:20 >  Done.
-# 13:42:20 >  
+# 15:55:38 >  
+# 15:55:38 >  Done.
+# 15:55:38 >  
 

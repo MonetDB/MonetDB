@@ -62,8 +62,6 @@ Over..
 [ "sql_optimizer"	]
 [ "minimal_pipe"	]
 [ "default_pipe"	]
-[ "no_mitosis_pipe"	]
-[ "sequential_pipe"	]
 [ "nov2009_pipe"	]
 [ "replication_pipe"	]
 [ "accumulator_pipe"	]
