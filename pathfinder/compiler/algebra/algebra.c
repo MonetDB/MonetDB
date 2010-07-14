@@ -1196,6 +1196,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_lower_case:       return "fn:lower-case";
         case alg_fun_fn_translate:        return "fn:translate";
         case alg_fun_fn_contains:         return "fn:contains";
+        case alg_fun_fn_like:             return "fn:like";
         case alg_fun_fn_starts_with:      return "fn:starts-with";
         case alg_fun_fn_ends_with:        return "fn:ends-with";
         case alg_fun_fn_substring_before: return "fn:substring-before";

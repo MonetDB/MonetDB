@@ -391,6 +391,7 @@ infer_ocol (PFla_op_t *n)
                     break;
 
                 case alg_fun_fn_contains:
+                case alg_fun_fn_like:
                 case alg_fun_fn_starts_with:
                 case alg_fun_fn_ends_with:
                 case alg_fun_fn_matches:

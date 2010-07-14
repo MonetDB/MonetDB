@@ -391,6 +391,7 @@ enum PFalg_fun_t {
     , alg_fun_fn_lower_case       /**< fn:lower-case */
     , alg_fun_fn_translate        /**< fn:translate */
     , alg_fun_fn_contains         /**< fn:contains */
+    , alg_fun_fn_like             /**< fn:like */
     , alg_fun_fn_starts_with      /**< fn:starts-with */
     , alg_fun_fn_ends_with        /**< fn:ends-with */
     , alg_fun_fn_substring_before /**< fn:substring-before */

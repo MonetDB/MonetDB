@@ -484,7 +484,7 @@ print_condition (PFsql_t *n)
             
             print_statement (L(n));
             /* write the string without beginning and trailing ' */
-            PFprettyprintf (" LIKE  '%%%s%%'", R(n)->sem.atom.val.s);
+            PFprettyprintf (" LIKE  '%s'", R(n)->sem.atom.val.s);
             break;
     
         case sql_in:

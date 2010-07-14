@@ -1473,6 +1473,7 @@ PFla_fun_1to1 (const PFla_op_t *n,
             break;
 
         case alg_fun_fn_contains:
+        case alg_fun_fn_like:
         case alg_fun_fn_starts_with:
         case alg_fun_fn_ends_with:
         case alg_fun_fn_matches:
