@@ -1365,12 +1365,12 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	bootstrap_create_column(tr, t, "cacheinc", "bigint", 64);
 	bootstrap_create_column(tr, t, "cycle", "boolean", 1);
 
-        t = bootstrap_create_table(tr, s, "dependencies");
+	t = bootstrap_create_table(tr, s, "dependencies");
 	bootstrap_create_column(tr, t, "id", "int", 32);
 	bootstrap_create_column(tr, t, "depend_id", "int", 32);
 	bootstrap_create_column(tr, t, "depend_type", "smallint", 16);
 
-        t = bootstrap_create_table(tr, s, "connections");
+	t = bootstrap_create_table(tr, s, "connections");
 	bootstrap_create_column(tr, t, "id", "int", 32);
 	bootstrap_create_column(tr, t, "server", "char", 1024);
 	bootstrap_create_column(tr, t, "port", "int", 32);
