@@ -968,7 +968,7 @@ _MMjoin_10 := join(_MMnilcast_9,valuesA);
 var _MMreverse_11 := reverse(_MMjoin_10);
 var _MMnilcast_12 := _MMreverse_11.reverse().mark(0@0).reverse();
 var _MMjoin_13 := join(_MMnilcast_9,valuesD);
-var _MMnilcast_14 := _MMjoin_7.reverse().mark(0@0).reverse();
+var _MMnilcast_14 := _MMjoin_7s.reverse().mark(0@0).reverse();
 _MMnilcast_14.sort_ht().print();
 var _MMjoin_15 := join(_MMnilcast_14,indexB);
 _MMjoin_15.sort_ht().print();
