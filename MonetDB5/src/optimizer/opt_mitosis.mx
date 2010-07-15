@@ -144,7 +144,7 @@ To keep the threads working, we create more pieces then threads.
 
 The pieces to be used may be overruled by the octopus optimizer.
 @c
-	if ( (i = OPTlegAdviceInternal(mb,stk,p)) )
+	if ( (i = OPTlegAdviceInternal(mb,stk,p)) > 0 )
 		pieces = i;
 	else {
 		r= (BUN) (monet_memory /typewidth/GDKnr_threads); /* how much fits  */

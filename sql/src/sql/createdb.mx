@@ -45,7 +45,6 @@ start transaction;
 
 -- Scientific database section
 @include skyserver.sql
-@include vault.sql
 
 @-
 The remaining functionality is considered for debugging.

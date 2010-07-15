@@ -850,7 +850,7 @@ OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	if ( isOptimizerEnabled(mb,octopusRef) )
 		return GDKnr_threads;
-	return 0;
+	return -1;
 }
 
 str 

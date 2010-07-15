@@ -71,5 +71,5 @@ headers_autoload = {
 	SOURCES = 40_sql.mal
 }
 
-EXTRA_DIST = 40_sql.mal
+EXTRA_DIST = 40_sql.mal 
 EXTRA_DIST_DIR = Tests

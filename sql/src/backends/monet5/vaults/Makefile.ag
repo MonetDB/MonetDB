@@ -36,7 +36,7 @@ headers_h = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = vault.mx mseed.mx
+	SOURCES = vault.mx mseed.mx vault.sql
 }
 headers_autoload = {
     HEADERS = mal
@@ -44,4 +44,4 @@ headers_autoload = {
     SOURCES = 70_vault.mal 71_mseed.mal
 }
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal 71_mseed.mal
+EXTRA_DIST = 70_vault.mal 71_mseed.mal vault.sql
