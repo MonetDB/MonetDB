@@ -94,7 +94,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
 	VarPtr v;
-	size_t typewidth= 3 *sizeof(oid); /* 2 arguments and a result */
+	size_t typewidth= 3 *sizeof(lng); /* 2 arguments and a result */
 
 	(void)cntxt;
 	(void) stk;
