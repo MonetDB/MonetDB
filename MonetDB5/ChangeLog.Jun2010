@@ -1,3 +1,11 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu Jul 15 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
+- restored genuine original mitosis logic by disabling
+  incorrect octopus dominance (even when octopus was not
+  enabled); basically a selective back-port of changesets
+  http://dev.monetdb.org/hg/MonetDB/rev/2a358751a4b6
+  http://dev.monetdb.org/hg/MonetDB/rev/692eff15bea0 from the default
+  branch
+
