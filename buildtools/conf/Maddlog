@@ -178,7 +178,9 @@ mv $file "$CL"
 hg add "$CL" >& /dev/null
 
 if [ ! "$nocommit" ]; then
-    hg commit -m "  $msg" "$CL"
+    hg commit -m "${msg//
+  /
+}" "$CL"
 else
     hg diff "$CL"
     echo "Don't forget to COMMIT."
