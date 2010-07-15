@@ -33,4 +33,4 @@ group-by_ordered_column.Bug-2564
 ORDER_BY_over_UNION_EXCEPT_INTERSECT.Bug-2606
 second_function_existing_signature.Bug-2611
 update_statement_in_function_ignored.Bug-2614
-#error-truncated.Bug-2615
+error-truncated.Bug-2615
