@@ -1650,7 +1650,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in os.listdir(RELSRCDIR):
             if test.match(f):
-                SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
+                try:
+                    SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
+                except IOError, (IOerrNo, IOerrStr):
+                    ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
+                           % (os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f),os.getcwd(),IOerrNo, IOerrStr))
 
         # Check for available sockets and block them until we're ready to run the actual test
         MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
@@ -1666,7 +1670,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
             TSTSRC = expandvars(path(f.readline().strip()), env)
             f.close()
             if os.path.isfile(TSTSRC):
-                SymlinkOrCopy(TSTSRC,TST+EXT)
+                try:
+                    SymlinkOrCopy(TSTSRC,TST+EXT)
+                except IOError, (IOerrNo, IOerrStr):
+                    ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
+                           % (TSTSRC,TST+EXT,os.getcwd(),IOerrNo, IOerrStr))
             else:
                 elem = SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
                 # Release reserved sockets before bailing out
@@ -1682,7 +1690,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 TSTSRC = expandvars(path(f.readline().strip()), env)
                 f.close()
                 if os.path.isfile(TSTSRC):
-                    SymlinkOrCopy(TSTSRC,ff[:-4])
+                    try:
+                        SymlinkOrCopy(TSTSRC,ff[:-4])
+                    except IOError, (IOerrNo, IOerrStr):
+                        ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
+                               % (TSTSRC,ff[:-4],os.getcwd(),IOerrNo, IOerrStr))
                 else:
                     Warn("source file '"+TSTSRC+"` is missing.")
         test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*\.in$", re.MULTILINE)
