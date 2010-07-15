@@ -166,8 +166,12 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int col)
 		char *val;
 		val = *s ? GDKstrdup(s) : GDKstrdup("");
 		if ( *err == NULL){
-			snprintf(buf,BUFSIZ, "value '%s' from line "  BUNFMT
-				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c[0])+1, col, fmt->type);
+			snprintf(buf, BUFSIZ, "value '%.*s%s' from line "  BUNFMT
+					 " field %d not inserted, expecting type %s\n",
+					 BUFSIZ - 200, val,
+					 strlen(val) > (size_t) BUFSIZ - 200 ? "..." : "",
+					 BATcount(fmt->c[0])+1,
+					 col, fmt->type);
 			*err= GDKstrdup(buf);
 		}
 		GDKfree(val);
@@ -185,7 +189,9 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int col)
 	return ret;
 bunins_failed:
 	if (*err == NULL) {
-		snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c[0])+1, col);
+		snprintf(buf, BUFSIZ, "parsing error from line " BUNFMT
+				 " field %d not inserted\n",
+				 BATcount(fmt->c[0])+1, col);
 		*err= GDKstrdup(buf);
 	}
 	return -1;
