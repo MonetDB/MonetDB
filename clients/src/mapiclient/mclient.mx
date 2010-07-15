@@ -1359,16 +1359,18 @@ format_result(Mapi mid, MapiHdl hdl)
 				lid = mapi_get_last_id(hdl);
 				if (lid != -1) {
 					stream_printf(toConsole,
-						      LLFMT " affected row%s, "
-						      "last generated key: " LLFMT " (%s)\n",
-						      aff,
-						      (aff == 1 ? "" : "s"),
-						      lid, timerHuman());
+							LLFMT " affected row%s, "
+							"last generated key: " LLFMT " (%s)\n",
+							aff,
+							(aff == 1 ? "" : "s"),
+							lid,
+							timerHuman());
 				} else {
 					stream_printf(toConsole,
-						      LLFMT " affected row%s\n",
-						      aff,
-						      (aff == 1 ? "" : "s"));
+							LLFMT " affected row%s (%s)\n",
+							aff,
+							(aff == 1 ? "" : "s"),
+							timerHuman());
 				}
 			}
 			continue;
