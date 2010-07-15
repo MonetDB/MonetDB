@@ -342,6 +342,26 @@ timerEnd(void)
 	}
 }
 
+static char htimbuf[32];
+static char *
+timerHuman()
+{
+	long t = t1 - t0;
+
+	if (t / 1000 < 950) {
+		snprintf(htimbuf, 32, "%ld.%03ldms", t / 1000, t % 1000);
+		return(htimbuf);
+	}
+	t /= 1000;
+	if (t / 1000 < 60) {
+		snprintf(htimbuf, 32, "%ld.%02lds", t / 1000, t % 1000);
+		return(htimbuf);
+	}
+	t /= 1000;
+	snprintf(htimbuf, 32, "%ldm %lds", t / 60, t % 60);
+	return(htimbuf);
+}
+
 /* The Mapi library eats away the comment lines, which we need to
  * detect end of debugging. We overload the routine to our liking. */
 
@@ -1188,8 +1208,8 @@ SQLrenderer(MapiHdl hdl)
 		SQLseparator(hdr, oldfields, '-');
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
-	mark2 = strdup(buf);
-	printf(LLFMT " tuple%s\n", rows, rows != 1 ? "s" : "");
+	mark2 = strdup(buf); /* for the timer output */
+	printf(LLFMT " tuple%s (%s)\n", rows, rows != 1 ? "s" : "", timerHuman());
 	if (len)
 		free(len);
 	if (hdr)
@@ -1334,15 +1354,16 @@ format_result(Mapi mid, MapiHdl hdl)
 			    formatter == TESTformatter)
 				stream_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
 			else {
+				timerPause();
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				if (lid != -1) {
 					stream_printf(toConsole,
 						      LLFMT " affected row%s, "
-						      "last generated key: " LLFMT "\n",
+						      "last generated key: " LLFMT " (%s)\n",
 						      aff,
 						      (aff == 1 ? "" : "s"),
-						      lid);
+						      lid, timerHuman());
 				} else {
 					stream_printf(toConsole,
 						      LLFMT " affected row%s\n",
@@ -1369,6 +1390,7 @@ format_result(Mapi mid, MapiHdl hdl)
 					      "using: EXEC %d(...)\n",
 					      mapi_get_tableid(hdl));
 		case Q_TABLE:
+			timerPause();
 			break;
 		}
 
@@ -1554,6 +1576,7 @@ doFile(Mapi mid, const char *file)
 			hdl = mapi_query_prep(mid);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
+
 		if (first &&
 		    length >= UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0)
