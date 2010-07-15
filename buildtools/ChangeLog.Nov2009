@@ -5,6 +5,6 @@
 - Added Maddlog script to add ChangeLog entries.
 
 * Tue Dec  1 2009 Fabian Groffen <fabian@cwi.nl>
-- Added mchangelog script that I use to add ChangeLog entries. The script is a
-  highly modified version of Gentoo's echangelog script.
+- Added mchangelog script that I use to add ChangeLog entries. The
+  script is a highly modified version of Gentoo's echangelog script.
 

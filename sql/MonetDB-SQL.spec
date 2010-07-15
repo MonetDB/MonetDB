@@ -164,40 +164,45 @@ rm -rf $RPM_BUILD_ROOT
 - Rebuilt.
 
 * Mon Jul 12 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 2.38.3-20100712
-- Make queries like
-(SELECT ...) UNION ALL (SELECT ...) ORDER BY ...;
-work, again, that were broken since Jun 22 2010
-triggering errors like "ORDER BY: missing select operator"
+- Make queries like (SELECT ...) UNION ALL (SELECT ...) ORDER BY ...;
+  work, again, that were broken since Jun 22 2010 triggering errors
+  like "ORDER BY: missing select operator"
 
 * Fri Jul  9 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.3-20100712
-- Removed false connection warning about missing SQL script ("could not
-read createdb.sql") received by the client upon first connect on a
-newly created database.  Bug #2591
+- Removed false connection warning about missing SQL script ("could
+  not read createdb.sql") received by the client upon first connect on
+  a newly created database.  Bug #2591
+
 * Fri Jul 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100709
 - Rebuilt.
 
 * Thu Jul  8 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.3-20100709
-- Improved error message for certain type-related problems by including the affected column name.
+- Improved error message for certain type-related problems by
+  including the affected column name.
 
 * Wed Jul  7 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.3-20100709
-- Make TEXT a separate keyword, separating it from CLOB, such that we can sloppily allow TEXT to appear as a column name, since it seems not to be in the standard as reserved keyword.
+- Make TEXT a separate keyword, separating it from CLOB, such that we
+  can sloppily allow TEXT to appear as a column name, since it seems
+  not to be in the standard as reserved keyword.
 
 * Wed Jul  7 2010 Niels Nes <niels@cwi.nl> - 2.38.3-20100709
-- Fixed bug 2581. Completed the implementation of handling boolean types in prepare statements.
-- Fix bug 2582. Statements with 'constant in ( )' are now handled properly.
+- Fixed bug 2581. Completed the implementation of handling boolean
+  types in prepare statements.
+- Fix bug 2582. Statements with 'constant in ( )' are now handled
+  properly.
 - Fixed bug 2583 + added test. The assert was incorrect.
 
 * Mon Jul  5 2010 Niels Nes <niels@cwi.nl> - 2.38.3-20100706
 - Fixed bug in zero_or_one
 - Fixed bug in dead code elimination for projections with distinct
-- Fixed bug handling join with constant values on both sides (like group results and constants)
+- Fixed bug handling join with constant values on both sides (like
+  group results and constants)
 - fixed bug in UPDATE TABLE when updating multiple rows
 
 * Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 2.38.3-20100706
-- fixed bug 2564:
-  in case group by column is not found as alias in projection list,
-  fall back to check plain input columns
-  in order to find the underlying BAT and check its sortedness
+- fixed bug 2564: in case group by column is not found as alias in
+  projection list, fall back to check plain input columns in order to
+  find the underlying BAT and check its sortedness
 
 * Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100630
 - Rebuilt.
@@ -212,8 +217,8 @@ newly created database.  Bug #2591
 - Rebuilt.
 
 * Fri Jun 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100622
-- Added include and .lib files to Windows installers that are needed to
-  compile client programs.
+- Added include and .lib files to Windows installers that are needed
+  to compile client programs.
 
 * Fri Jun 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100618
 - Rebuilt.
@@ -223,27 +228,26 @@ newly created database.  Bug #2591
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 2.38.1-20100618
 - Made compilation of "testing" (and "java") independent of MonetDB.
-  This is mainly for Windows, but also on other systems, "testing" can now be
-  built independently of (and hence before) "MonetDB".
-  Files that mimic configure functionality on Windows were moved from
-  "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
-  requiring a complete rebuild from scratch on Windows.
-  getopt() support in testing has changed; hence, (most probably) requiring a
-  rebuild from scratch of testing on other systems.
+  This is mainly for Windows, but also on other systems, "testing" can
+  now be built independently of (and hence before) "MonetDB".  Files
+  that mimic configure functionality on Windows were moved from
+  "MonetDB" to "buildtools"; hence, this affects all packages on
+  Windows, requiring a complete rebuild from scratch on Windows.
+  getopt() support in testing has changed; hence, (most probably)
+  requiring a rebuild from scratch of testing on other systems.
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 2.38.1-20100618
-- Implemented build directory support for Windows,
-  i.e., like on Unix/Linux also on Windows we can now build in a separate
-  build directory as alternative to ...<package>NT, and thus keep the
-  latter clean from files generated during the build.
-  On Windows, the build directory must be a sibling of ...<package>NT .
+- Implemented build directory support for Windows, i.e., like on
+  Unix/Linux also on Windows we can now build in a separate build
+  directory as alternative to ...<package>NT, and thus keep the latter
+  clean from files generated during the build.  On Windows, the build
+  directory must be a sibling of ...<package>NT .
 
 * Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.36.5-20100420
 - Rebuilt.
 
 * Thu Apr  8 2010 Stefan Manegold <manegold@cwi.nl> - 2.36.5-20100420
 - fixed bug #2983773 "SQL: minimal optimizer pipe unstable"
-  https://sourceforge.net/tracker/index.php?func=detail&aid=2983773&group_id=56967&atid=482468
 
 * Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.36.3-20100322
 - Rebuilt.

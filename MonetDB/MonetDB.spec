@@ -132,20 +132,20 @@ rm -fr $RPM_BUILD_ROOT
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 1.38.1-20100618
 - Made compilation of "testing" (and "java") independent of MonetDB.
-  This is mainly for Windows, but also on other systems, "testing" can now be
-  built independently of (and hence before) "MonetDB".
-  Files that mimic configure functionality on Windows were moved from
-  "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
-  requiring a complete rebuild from scratch on Windows.
-  getopt() support in testing has changed; hence, (most probably) requiring a
-  rebuild from scratch of testing on other systems.
+  This is mainly for Windows, but also on other systems, "testing" can
+  now be built independently of (and hence before) "MonetDB".  Files
+  that mimic configure functionality on Windows were moved from
+  "MonetDB" to "buildtools"; hence, this affects all packages on
+  Windows, requiring a complete rebuild from scratch on Windows.
+  getopt() support in testing has changed; hence, (most probably)
+  requiring a rebuild from scratch of testing on other systems.
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 1.38.1-20100618
-- Implemented build directory support for Windows,
-  i.e., like on Unix/Linux also on Windows we can now build in a separate
-  build directory as alternative to ...<package>NT, and thus keep the
-  latter clean from files generated during the build.
-  On Windows, the build directory must be a sibling of ...<package>NT .
+- Implemented build directory support for Windows, i.e., like on
+  Unix/Linux also on Windows we can now build in a separate build
+  directory as alternative to ...<package>NT, and thus keep the latter
+  clean from files generated during the build.  On Windows, the build
+  directory must be a sibling of ...<package>NT .
 
 * Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.5-20100420
 - Rebuilt.
@@ -160,7 +160,8 @@ rm -fr $RPM_BUILD_ROOT
   deleted when the server restarts).
 
 * Mon Mar 29 2010 Fabian Groffen <fabian@cwi.nl> - 1.36.5-20100420
-- Fix regression introduced in Feb2010-SP1 causing UDP connections to malfunction, in particular affecting the stethoscope tool.
+- Fix regression introduced in Feb2010-SP1 causing UDP connections to
+  malfunction, in particular affecting the stethoscope tool.
 
 * Mon Mar 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.3-20100322
 - Rebuilt.
@@ -168,41 +169,41 @@ rm -fr $RPM_BUILD_ROOT
 * Mon Mar 01 2010 Fabian Groffen <fabian@cwi.nl> - 1.36.3-20100322
 - Fixed bug in UDP stream creation causing UDP connections to already
   bound ports to be reported as successful.
+
 * Wed Feb 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100224
 - Rebuilt.
 
 * Mon Feb 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
 - Various concurrency bugs were fixed.
-- Various changes were made to run better on systems that don't have enough
-  memory to keep everything in core that was touched during query processing.
-  This is done by having the higher layers giving hints to the database
-  kernel about future use, and the database kernel giving hings to the
-  operating system kernel about how (virtual) memory is going to be used.
+- Various changes were made to run better on systems that don't have
+  enough memory to keep everything in core that was touched during
+  query processing.  This is done by having the higher layers giving
+  hints to the database kernel about future use, and the database
+  kernel giving hings to the operating system kernel about how
+  (virtual) memory is going to be used.
 
 * Thu Feb 18 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 1.36.1-20100223
-- Fixed bug in mergejoin implementation.
-  This fixes bug  #2952191.
+- Fixed bug in mergejoin implementation.  This fixes bug #2952191.
 
 * Tue Feb  2 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
 - Added support for compiling on Windows using the Cygwin-provided
   version of flex.
 
 * Thu Jan 21 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.1-20100223
-- Fix compilation issue when configured with --with-curl.
-  This fixes bug #2924999.
+- Fix compilation issue when configured with --with-curl.  This fixes
+  bug #2924999.
 
 * Thu Jan 21 2010 Fabian Groffen <fabian@cwi.nl> - 1.36.1-20100223
 - Added implementation of MT_getrss() for Solaris.  This yields in the
   kernel knowing about its (approximate) memory usage to try and help
-  the operating system to free that memory that is best to free, instead
-  of a random page, e.g. the work of the vmtrim thread.
+  the operating system to free that memory that is best to free,
+  instead of a random page, e.g. the work of the vmtrim thread.
 
 * Wed Jan 20 2010 Sjoerd Mullender <sjoerd@cwi.nl> - 1.36.1-20100223
-- Implemented a "fast" string BAT append:
-  Under certain conditions, instead of inserting values one-by-one,
-  we now concatenate the string heap wholesale and just manipulate
-  the offsets.
-  This works both for BATins and BATappend.
+- Implemented a "fast" string BAT append: Under certain conditions,
+  instead of inserting values one-by-one, we now concatenate the
+  string heap wholesale and just manipulate the offsets.  This works
+  both for BATins and BATappend.
 
 * Wed Jan  6 2010 Sjoerd Mullender <sjoerd@cwi.nl> - 1.36.1-20100223
 - Changed the string heap implementation to also contain the hashes of
