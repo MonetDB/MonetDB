@@ -218,8 +218,8 @@ rm -fr $RPM_BUILD_ROOT
 - Rebuilt.
 
 * Mon Jul 12 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.3-20100713
-- Fixed bug 2597: This bug manifested itself in rank queries in SQL but
-was a bug in the mergetable optimizer.
+- Fixed bug 2597: This bug manifested itself in rank queries in SQL
+  but was a bug in the mergetable optimizer.
 
 * Mon Jul 12 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.3-20100712
 - Rebuilt.
@@ -233,11 +233,13 @@ was a bug in the mergetable optimizer.
 
 * Wed Jun 30 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 5.20.3-20100706
 - various performance fixes in grouping and grouped aggregation code
-  (MonetDB5/src/modules/kernel/group.mx, MonetDB5/src/modules/kernel/aggr*.mx)
-  to reduce the execution time the following query that mimics a two-column
-  primary key check over the ~5 billion tuple "neighbors" table of the
-  Skyserver database from 26 hours to 1.5 hours (on a 64 GB machine):
-  SELECT count(c), sum(c), min(c), max(c) FROM (SELECT count(*) AS c FROM "neighbors" GROUP BY "objID","NeighborObjID") AS t;
+  (MonetDB5/src/modules/kernel/group.mx,
+  MonetDB5/src/modules/kernel/aggr*.mx) to reduce the execution time
+  the following query that mimics a two-column primary key check over
+  the ~5 billion tuple "neighbors" table of the Skyserver database
+  from 26 hours to 1.5 hours (on a 64 GB machine): SELECT count(c),
+  sum(c), min(c), max(c) FROM (SELECT count(*) AS c FROM "neighbors"
+  GROUP BY "objID","NeighborObjID") AS t;
 
 * Wed Jun 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100630
 - Rebuilt.
@@ -258,59 +260,63 @@ was a bug in the mergetable optimizer.
 - Updated Vendor information.
 
 * Wed May 19 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.1-20100618
-- Created a new RPM MonetDB5-server-rdf for the optional MonetDB/RDF module.
+- Created a new RPM MonetDB5-server-rdf for the optional MonetDB/RDF
+  module.
 
 * Sun May  2 2010 Martin Kersten <martin.kersten@cwi.nl> - 5.20.1-20100618
 - Added the Z-order module to simplify future manipulation of arrays.
 
 * Sat May  1 2010 Stefan Manegold <manegold@cwi.nl> - 5.20.1-20100618
-- fixed BUG #2994521 "mat.slice unable to cope with only empty BAT arguments"
-  https://sourceforge.net/tracker/index.php?func=detail&aid=2994521&group_id=56967&atid=482468
-  by making MATpackSliceInternal() handle empty input BATs correctly
+- fixed BUG #2994521 "mat.slice unable to cope with only empty BAT
+  arguments" by making MATpackSliceInternal() handle empty input BATs
+  correctly
 
 * Tue Apr 20 2010 Martin Kersten <martin.kersten@cwi.nl> - 5.20.1-20100618
-- Select <col> from <t> limit <n> has been improved by introducing mat.slice().
+- Select <col> from <t> limit <n> has been improved by introducing
+  mat.slice().
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 5.20.1-20100618
 - Made compilation of "testing" (and "java") independent of MonetDB.
-  This is mainly for Windows, but also on other systems, "testing" can now be
-  built independently of (and hence before) "MonetDB".
-  Files that mimic configure functionality on Windows were moved from
-  "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
-  requiring a complete rebuild from scratch on Windows.
-  getopt() support in testing has changed; hence, (most probably) requiring a
-  rebuild from scratch of testing on other systems.
+  This is mainly for Windows, but also on other systems, "testing" can
+  now be built independently of (and hence before) "MonetDB".  Files
+  that mimic configure functionality on Windows were moved from
+  "MonetDB" to "buildtools"; hence, this affects all packages on
+  Windows, requiring a complete rebuild from scratch on Windows.
+  getopt() support in testing has changed; hence, (most probably)
+  requiring a rebuild from scratch of testing on other systems.
 
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 5.20.1-20100618
-- Implemented build directory support for Windows,
-  i.e., like on Unix/Linux also on Windows we can now build in a separate
-  build directory as alternative to ...<package>NT, and thus keep the
-  latter clean from files generated during the build.
-  On Windows, the build directory must be a sibling of ...<package>NT .
+- Implemented build directory support for Windows, i.e., like on
+  Unix/Linux also on Windows we can now build in a separate build
+  directory as alternative to ...<package>NT, and thus keep the latter
+  clean from files generated during the build.  On Windows, the build
+  directory must be a sibling of ...<package>NT .
 
 * Tue Apr 20 2010 Martin Kersten <martin.kersten@cwi.nl> - 5.20.1-20100618
-- The MAL debugger list command has been extended with
-  an optional hash '#', which produces line numbers for
-  each of reference and analysis of variable span.
-- The dataflow scheduler has been revamped to allow for
-  more parallelism to be exploited.
-- The garbage collection administration has been changed. Every variable record
-  now comes with an end-of-life field (eolife), which denotes the instruction whereafter
-  the BAT variable reference counter can be decremented. The garbage collector is
-  never called automagically on MAL functions, because there may be other
-  pressing needs to retain them. This means that MAL functions defined and
-  used in the context of SQL, and which are not inlined, may cause a leakage.
-  The garbage collection has become part of each interpreter step.
-  The new approach makes the SQL/MAL plans half the size as before.
+- The MAL debugger list command has been extended with an optional
+  hash '#', which produces line numbers for each of reference and
+  analysis of variable span.
+- The dataflow scheduler has been revamped to allow for more
+  parallelism to be exploited.
+- The garbage collection administration has been changed. Every
+  variable record now comes with an end-of-life field (eolife), which
+  denotes the instruction whereafter the BAT variable reference
+  counter can be decremented. The garbage collector is never called
+  automagically on MAL functions, because there may be other pressing
+  needs to retain them. This means that MAL functions defined and used
+  in the context of SQL, and which are not inlined, may cause a
+  leakage.  The garbage collection has become part of each interpreter
+  step.  The new approach makes the SQL/MAL plans half the size as
+  before.
 
 * Tue Apr 20 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.1-20100618
 - Removed stethoscope from MonetDB5 sources.  New location is in the
   clients repository.
 
 * Tue Apr 20 2010 Martin Kersten <mk@cwi.nl> - 5.20.1-20100618
-- Added the compression optimizer as an example of how to gain access to
-  foreign file formats deep down in the kernel and transfer them just
-  in time into a temporary BAT.
+- Added the compression optimizer as an example of how to gain access
+  to foreign file formats deep down in the kernel and transfer them
+  just in time into a temporary BAT.
 
 * Tue Apr 20 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.1-20100618
 - Renamed configure argument --with-console to --enable-console.
@@ -321,19 +327,18 @@ was a bug in the mergetable optimizer.
   Fixes bug #2956664
 
 * Tue Apr 20 2010 Fabian Groffen <fabian@cwi.nl> - 5.20.1-20100618
-- The config variable mapi_usock can now be used to instruct the server
-  to listen for connections on a local UNIX domain socket on UNIX-like
-  systems.
+- The config variable mapi_usock can now be used to instruct the
+  server to listen for connections on a local UNIX domain socket on
+  UNIX-like systems.
 
 * Tue Apr 20 2010 Martin Kersten <mk@cwi.nl> - 5.20.1-20100618
-- The MAL interpreter has been extended with an operation
-  admission policy to control the memory claims of all
-  concurrent running interpreters. Instructions are hold
-  up unto there is sufficient resource or the query plan
-  can not avoid its execution anymore.
-- The join path optimizer has been extended with searching for
-  join*, semijoin*, and leftjoin* paths. Furthermore, it avoids
-  duplicate work by factoring out all common simple join paths.
+- The MAL interpreter has been extended with an operation admission
+  policy to control the memory claims of all concurrent running
+  interpreters. Instructions are hold up unto there is sufficient
+  resource or the query plan can not avoid its execution anymore.
+- The join path optimizer has been extended with searching for join*,
+  semijoin*, and leftjoin* paths. Furthermore, it avoids duplicate
+  work by factoring out all common simple join paths.
 
 * Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.5-20100420
 - Rebuilt.
@@ -342,8 +347,8 @@ was a bug in the mergetable optimizer.
 - Rebuilt.
 
 * Thu Mar 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.3-20100322
-- Fixed a race condition that could occur if many clients were connecting
-  and disconnecting.
+- Fixed a race condition that could occur if many clients were
+  connecting and disconnecting.
 
 * Wed Feb 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.18.1-20100224
 - Rebuilt.
@@ -352,34 +357,39 @@ was a bug in the mergetable optimizer.
 - The MonetDB 5 code base underwent a series of small/medium changes:
   - Solving name conflicts with external libraries in mal_box.
   - Dependency graph generation in MAL debugger fixed.
-  - Code hardening against out of memory errors and based on Coverity checks.
+  - Code hardening against out of memory errors and based on Coverity
+    checks.
   - Recycler improved to deal with SQL plans from different sessions.
-  - Profiler extended to report the argument types, user, and thread id.
+  - Profiler extended to report the argument types, user, and thread
+    id.
   - MAL interpreter reports an event before and after the instruction.
   - Dataflow also allowed for updates on temporary BATs.
   - Reorder optimizer better respects the dataflow.
   - All update instructions return their target to mark the dataflow.
   - Clean up of (bat)calc module.
   - Packing pieces together simplified and speed up.
-- The MAL interpreter has been extended with an operator admission scheme, which is
-  active during parallel execution. It blocks threads if the total amount of memory
-  needed for the operator can not be claimed. Only if there is one operation
-  left to execute, it won't block. The admission level is controlled by
-  a threshold, which is set to 90% of the physical memory.
+- The MAL interpreter has been extended with an operator admission
+  scheme, which is active during parallel execution. It blocks threads
+  if the total amount of memory needed for the operator can not be
+  claimed. Only if there is one operation left to execute, it won't
+  block. The admission level is controlled by a threshold, which is
+  set to 90% of the physical memory.
 
 * Sun Jan 10 2010 Martin Kersten <mk@> - 5.18.1-20100223
 - The ilike[u]select operations has been included in the repertoire
-  recognized by the mergetable optimizer for push through of selections.
-- The joinpath optimizer has been extended with recognition of the leftjoin.
-  This way, series of leftjoin operations can be optimized by looking at
-  the smallest starting point.
+  recognized by the mergetable optimizer for push through of
+  selections.
+- The joinpath optimizer has been extended with recognition of the
+  leftjoin.  This way, series of leftjoin operations can be optimized
+  by looking at the smallest starting point.
 - Introduced a dictionary encoding option to the optimizer pipeline.
   Encoding is initiated with a SQL call compress(tablename).
 
 * Sun Nov 15 2009 Fabian Groffen <fabian@cwi.nl> - 5.18.1-20100223
-- Removed the ability to redirect to other running databases in the same
-  dbfarm.  This functionality has been taken over completely by
-  merovingian, and only results in confusement these days, bug #2891191.
+- Removed the ability to redirect to other running databases in the
+  same dbfarm.  This functionality has been taken over completely by
+  merovingian, and only results in confusement these days, bug
+  #2891191.
 - Added --enable-console configure argument, defaulting to 'yes' for
   now.  Disabling the server console increases security by avoiding
   local access exploits.  This is not the default since our Testing
