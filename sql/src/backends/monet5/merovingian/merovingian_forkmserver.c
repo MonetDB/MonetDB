@@ -223,10 +223,8 @@ forkMserver(str database, sabdb** stats, int force)
 		str usock = alloca(sizeof(char) * 512);
 		char mydoproxy;
 		str nthreads = NULL;
-		str master = NULL;
-		str slave = NULL;
 		str pipeline = NULL;
-		str argv[26];	/* for the exec arguments */
+		str argv[22];	/* for the exec arguments */
 		confkeyval *ckv, *kv;
 		int c = 0;
 
@@ -252,22 +250,6 @@ forkMserver(str database, sabdb** stats, int force)
 		if (kv->val != NULL) {
 			pipeline = alloca(sizeof(char) * 512);
 			snprintf(pipeline, 512, "sql_optimizer=%s", kv->val);
-		}
-
-		kv = findConfKey(ckv, "master");
-		/* can't have master configured by default */
-		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-			size_t len = 24 + strlen(kv->val);
-			master = alloca(sizeof(char) * len);
-			snprintf(master, len, "replication_master=%s", kv->val);
-		}
-
-		kv = findConfKey(ckv, "slave");
-		/* can't have slave configured by default */
-		if (kv->val != NULL) {
-			size_t len = 24 + strlen(kv->val);
-			slave = alloca(sizeof(char) * len);
-			snprintf(slave, len, "replication_slave=%s", kv->val);
 		}
 
 		freeConfFile(ckv);
@@ -317,12 +299,6 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 		if (pipeline != NULL) {
 			argv[c++] = "--set"; argv[c++] = pipeline;
-		}
-		if (master != NULL) {
-			argv[c++] = "--set"; argv[c++] = master;
-		}
-		if (slave != NULL) {
-			argv[c++] = "--set"; argv[c++] = slave;
 		}
 		/* keep this one last for easy copy/paste with gdb */
 		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";

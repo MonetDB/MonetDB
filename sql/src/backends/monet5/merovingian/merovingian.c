@@ -617,10 +617,6 @@ main(int argc, char *argv[])
 		snprintf(buf, sizeof(buf), "%d", ret);
 		kv->val = GDKstrdup(buf);
 	}
-	kv = findConfKey(_mero_props, "master");
-	kv->val = GDKstrdup("no");
-	kv = findConfKey(_mero_props, "slave");
-	kv->val = NULL; /* MURI */
 	kv = findConfKey(ckv, "sql_optimizer");
 	p = kv->val;
 	if (p != NULL) {
