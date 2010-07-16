@@ -417,7 +417,7 @@ static int fcnTag = 0;		/* unique labeling of the functions */
 static oid cutoffTag = 0;	/* to signal out of date slaves */
 static char logFile[PATHLENGTH]=""; 
 static stream *repFile = 0;
-static int sendLogs = 0;		/* permit forwarding of log records */
+static int sendLogs = FALSE;		/* permit forwarding of log records */
 
 /* slave synchronisation status */
 static BAT *slavetid = 0;
@@ -976,7 +976,7 @@ MASTERsend(void *arg)
 		}
 		if (mapi_ping(masterstatus[idx].m) != MOK)
 			break;  /* slave is gone */
-		if (sendLogs == 0) {
+		if (sendLogs == FALSE) {
 			/* suspend sending */
 			MT_sleep_ms(REPLICADELAY);
 			continue;
@@ -1042,7 +1042,7 @@ str
 MASTERstop(int *ret)
 {
 	(void)ret;
-	sendLogs = 0;
+	sendLogs = FALSE;
 	return MAL_SUCCEED;
 }
 
@@ -1077,7 +1077,7 @@ MASTERfreeze(int *ret)
 		stream_close(repFile);
 	repFile = NULL;
 
-	sendLogs = 0;
+	sendLogs = FALSE;
 	GDKremovedir(MASTER);
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
 	cutoffTag = startTag = endTag; /* the next one to expect */
