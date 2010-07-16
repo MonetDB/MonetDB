@@ -52,12 +52,14 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 {
 	int i, tag, limit, slimit, actions = 0;
 	InstrPtr q, p = 0, *old = mb->stmt;
+	str masterid = NULL;
 
 	(void)pci;
 	(void)stk;              /* to fool compilers */
 	(void)cntxt;
 
-	if (!GDKgetenv_istrue("replication_master"))
+	masterid = GDKgetenv("replication_master");
+	if (masterid == NULL || strcmp(masterid, "false") == 0)
 		return 0;
 
 	limit = mb->stop;
