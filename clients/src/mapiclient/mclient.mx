@@ -346,7 +346,7 @@ static char htimbuf[32];
 static char *
 timerHuman()
 {
-	long t = t1 - t0;
+	long t = (long)(t1 - t0);
 
 	if (t / 1000 < 950) {
 		snprintf(htimbuf, 32, "%ld.%03ldms", t / 1000, t % 1000);
