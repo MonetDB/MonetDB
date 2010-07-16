@@ -346,19 +346,19 @@ static char htimbuf[32];
 static char *
 timerHuman()
 {
-	long t = (long)(t1 - t0);
+	timertype t = t1 - t0;
 
 	if (t / 1000 < 950) {
-		snprintf(htimbuf, 32, "%ld.%03ldms", t / 1000, t % 1000);
+		snprintf(htimbuf, 32, "%ld.%03ldms", (long) (t / 1000), (long) (t % 1000));
 		return(htimbuf);
 	}
 	t /= 1000;
 	if (t / 1000 < 60) {
-		snprintf(htimbuf, 32, "%ld.%02lds", t / 1000, t % 1000);
+		snprintf(htimbuf, 32, "%ld.%02lds", (long) (t / 1000), (long) (t % 1000));
 		return(htimbuf);
 	}
 	t /= 1000;
-	snprintf(htimbuf, 32, "%ldm %lds", t / 60, t % 60);
+	snprintf(htimbuf, 32, "%ldm %lds", (long) (t / 60), (long) (t % 60));
 	return(htimbuf);
 }
 
