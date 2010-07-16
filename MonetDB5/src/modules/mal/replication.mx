@@ -56,7 +56,7 @@ step 3) To initiate a slave, simply load the master snapshot.
 
 step 4) Run monetdb(1) to turn the database into a slave by setting its "slave" property to the URI of the master. 
 The precise URI can be obtained issuing the command
-'mclient -lmal -d master -s "master.getURI();"' .
+'mclient -lmal -dmaster -s"u := master.getURI(); io.printf(\"%s\n\", u);"' on the master.
 The slave property is translated by merovingian(1) into the database variable "replication_slave" 
 and is set upon database (re)start.  Note that this setting can not be added to a running database. 
 
