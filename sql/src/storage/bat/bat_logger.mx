@@ -58,7 +58,8 @@ bl_postversion( void *lg)
 		size_t i;
 		BAT *o, *b;
 		char *s_nil = ATOMnilptr(TYPE_str);
-		fprintf(stderr, "Upgrading catalog from Feb2010\n");
+		fprintf(stdout, "# upgrading catalog from Feb2010\n");
+		fflush(stdout);
 
 		o = temp_descriptor(logger_find_bat(lg, "sys__tables_id"));
 		/* no sys tables, easy upgrade */
