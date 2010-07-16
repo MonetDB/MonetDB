@@ -427,8 +427,9 @@ static BAT *slaveerror = 0;
 static int acceptLogs = 0;
 
 static void
-SLAVEinitLog(){
-	if ( slavecommit == NULL){
+SLAVEinitLog()
+{
+	if (slavecommit == NULL) {
 		@:createBAT(slavetid,TYPE_oid)@
 		@:createBAT(slavecommit,TYPE_timestamp)@
 		@:createBAT(slavevalid,TYPE_timestamp)@
@@ -436,109 +437,109 @@ SLAVEinitLog(){
 	}
 }
 
-static int 
-MASTERfindLogFile(char logFile[PATHLENGTH], oid transactionid){
+static int
+MASTERfindLogFile(char logFile[PATHLENGTH], oid transactionid)
+{
 	oid btag, etag;
 	DIR *dirp;
 	struct dirent *dent;
 
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#find the log file containing %d\n", transactionid);
+	stream_printf(GDKout, "#find the log file containing %d\n", transactionid);
 #endif
 	if (repFile)
 		stream_close(repFile);
 	repFile = NULL;
-	dirp= opendir(MASTER);
+	dirp = opendir(MASTER);
 	if (dirp == NULL)
-		return  -1 ;
-	while ((dent = readdir(dirp)) != NULL) 
-		if ( sscanf(dent->d_name,"log" OIDFMT"-" OIDFMT,&btag,&etag) == 2 && btag <= transactionid && transactionid<etag  ){
-			snprintf(logFile, PATHLENGTH,"%s%s",MASTER, dent->d_name);
+		return -1;
+	while ((dent = readdir(dirp)) != NULL)
+		if (sscanf(dent->d_name, "log" OIDFMT "-" OIDFMT, &btag, &etag) == 2 && btag <= transactionid && transactionid < etag) {
+			snprintf(logFile, PATHLENGTH, "%s%s", MASTER, dent->d_name);
 			slash_2_dir_sep(logFile);
-			return (int) etag;
+			return (int)etag;
 		}
 	return -1;
 }
 
 /* The replication log file contains a number of log functions.
- * When the limit is reached, we switch to a new file
-*/
+ * When the limit is reached, we switch to a new file */
 static int
 MASTERincrement()
 {
 	char buf[PATHLENGTH];
 
-	endTag++;	/* assign a new transaction identifier */
+	endTag++;   /* assign a new transaction identifier */
 	snprintf(buf, PATHLENGTH, MASTER REPLICA, startTag, endTag);
 	slash_2_dir_sep(buf);
-	if (strcmp(logFile,buf) )
-		rename(logFile,buf);
-	strcpy(logFile,buf);
+	if (strcmp(logFile, buf))
+		rename(logFile, buf);
+	strcpy(logFile, buf);
 	/* once in a while we take a new log file */
-	if ( endTag - startTag >= REPLICABLOCK){
-		if ( repFile) 
+	if (endTag - startTag >= REPLICABLOCK) {
+		if (repFile)
 			stream_close(repFile);
 		repFile = NULL;
 	}
-	if ( repFile == NULL)
+	if (repFile == NULL)
 		repFile = open_wastream(buf);
 	return repFile == NULL;
 }
 
 str
-MASTERprelude(int *ret){
+MASTERprelude(int *ret)
+{
 	int master;
 	oid tag, etag;
 	DIR *dirp;
 	struct dirent *dent;
 
-	(void) ret;
-	MT_lock_init(&repLck, "replication");	/* we always need this */
+	(void)ret;
+	MT_lock_init(&repLck, "replication");   /* we always need this */
 	master = GDKgetenv_istrue("replication_master") &&
 			 GDKgetenv("replication_slave") == NULL;
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#Initialize the master role?%s\n", master?"yes":"no");
+	stream_printf(GDKout, "#Initialize the master role?%s\n", master ? "yes" : "no");
 #endif
 	mal_set_lock(repLck, "replication");
-	if( !master ){
+	if (!master) {
 		/* drop all remaining log files if master mode is switched off */
 		GDKremovedir(MASTER);
 		mal_unset_lock(repLck, "replication");
 		return MAL_SUCCEED;
 	}
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
-	stream_printf(GDKout,"# Replication mode enabled\n");
-	
+	stream_printf(GDKout, "# Replication mode enabled\n");
+
 	/* find the bounds for the last replication log file */
 	/* assume directory is sorted */
-	dirp= opendir(MASTER);
+	dirp = opendir(MASTER);
 	if (dirp == NULL) {
 		mal_unset_lock(repLck, "replication");
 		return MAL_SUCCEED;
 	}
 	cutoffTag = INT_MAX;
 	while ((dent = readdir(dirp)) != NULL) {
-		if ( sscanf(dent->d_name,"log"OIDFMT"-"OIDFMT,&tag,&etag) == 2 ){
-			if ( tag < cutoffTag)
+		if (sscanf(dent->d_name, "log" OIDFMT "-" OIDFMT, &tag, &etag) == 2) {
+			if (tag < cutoffTag)
 				cutoffTag = tag;
-			if ( tag >= startTag){
-				startTag= tag;
-				endTag= etag;
-				strcpy(logFile,dent->d_name);
+			if (tag >= startTag) {
+				startTag = tag;
+				endTag = etag;
+				strcpy(logFile, dent->d_name);
 			}
 		}
-    }
+	}
 	if (cutoffTag == INT_MAX)
 		cutoffTag = 0;
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#last log file log%05d-%05d\n", startTag,endTag);
+	stream_printf(GDKout, "#last log file log%05d-%05d\n", startTag, endTag);
 #endif
 	startTag = endTag;
 	sendLogs = TRUE;
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
-	
 
 str
 MASTERgetURI(str *ret)
@@ -554,8 +555,9 @@ MASTERgetURI(str *ret)
 }
 
 str
-MASTERgetCutOffTag(int *ret){
-	*ret = (int) cutoffTag;
+MASTERgetCutOffTag(int *ret)
+{
+	*ret = (int)cutoffTag;
 	return MAL_SUCCEED;
 }
 
@@ -565,7 +567,8 @@ MASTERroleEnabled(void)
 	return startTag > 0;
 }
 
-static int MASTERgetBuffer(oid tag)
+static int
+MASTERgetBuffer(oid tag)
 {
 	int i;
 
@@ -578,8 +581,7 @@ static int MASTERgetBuffer(oid tag)
 	if (i == 0) {
 		master = GDKzalloc(sizeof(struct MASTERRECORD) * (mlimit + 32));
 		mlimit = 32;
-	} else
-	if (i == mlimit) {
+	} else if (i == mlimit) {
 		master = GDKrealloc(master, sizeof(struct MASTERRECORD) * (mlimit + 32));
 		mlimit += 32;
 	}
@@ -592,12 +594,14 @@ static int MASTERgetBuffer(oid tag)
 	master[i].tag = tag;
 	return i;
 }
-@-
+
+/*
 For the time being, we assume that all chunks are kept in the
 master directory. A better scheme is to find the last chunk
 by reading the directory itself.
-@c
-str MASTERopen(oid *ret)
+*/
+str
+MASTERopen(oid *ret)
 {
 	int i, l, len;
 
@@ -609,12 +613,12 @@ str MASTERopen(oid *ret)
 	len = master[i].limit - master[i].top - 1;
 	master[i].fcn = fcnTag;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
-			     "function slave.tag_%d{unsafe}(tag:oid,stamp:timestamp);\n"
-			     "barrier doit:= slave.open(tag);\n"
-			     "sql.transaction();\n",
+				"function slave.tag_%d{unsafe}(tag:oid,stamp:timestamp);\n"
+				"barrier doit:= slave.open(tag);\n"
+				"sql.transaction();\n",
 				fcnTag)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if (master[i].buf == NULL){
+		if (master[i].buf == NULL) {
 			mal_unset_lock(repLck, "replication");
 			throw(MAL, "replication.open", MAL_MALLOC_FAIL);
 		}
@@ -629,11 +633,10 @@ str MASTERopen(oid *ret)
 	return MAL_SUCCEED;
 }
 
-/*
- * Upon closure of the transaction, we assign the transaction identifier
- * and reflect it in the log file name as well.
-*/
-str MASTERclose(int *ret, oid *tag)
+/* Upon closure of the transaction, we assign the transaction identifier
+ * and reflect it in the log file name as well. */
+str
+MASTERclose(int *ret, oid *tag)
 {
 	timestamp stamp = *timestamp_nil;
 	str val = NULL;
@@ -645,23 +648,22 @@ str MASTERclose(int *ret, oid *tag)
 	mal_set_lock(repLck, "replication");
 	MTIMEepoch(&stamp);
 	ATOMformat(TYPE_timestamp, (ptr) & stamp, &val);
-	snprintf(buf,BUFSIZ,"tag_"OIDFMT, *tag);
+	snprintf(buf, BUFSIZ, "tag_" OIDFMT, *tag);
 
 	/* the function name is returned by the slave to built
 	   a flow dependency. Otherwise the function could be
-	   destroyed while execution it.
-	*/
+	   destroyed while execution it. */
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len,
-			     "sql.commit();\n"
-			     "slave.close(tag,stamp);\n"
-				 "exit doit;\n"
-			     "end %s;\n"
-			     "slave.%s("OIDFMT":oid,\"%s\":timestamp);\n"
-			     "slave.drop(\"%s\");\n",
-			      buf,buf, endTag, val,buf)) == len) {
+				"sql.commit();\n"
+				"slave.close(tag,stamp);\n"
+				"exit doit;\n"
+				"end %s;\n"
+				"slave.%s(" OIDFMT ":oid,\"%s\":timestamp);\n"
+								   "slave.drop(\"%s\");\n",
+				buf, buf, endTag, val, buf)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
-		if (master[i].buf == NULL){
+		if (master[i].buf == NULL) {
 			mal_unset_lock(repLck, "replication");
 			throw(MAL, "replication.close", MAL_MALLOC_FAIL);
 		}
@@ -671,7 +673,7 @@ str MASTERclose(int *ret, oid *tag)
 	GDKfree(val);
 
 	MASTERincrement();
-	if (repFile == NULL ){
+	if (repFile == NULL) {
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "master.close", RUNTIME_FILE_NOT_FOUND);
 	}
@@ -681,7 +683,7 @@ str MASTERclose(int *ret, oid *tag)
 	master[i].top = 0;
 	master[i].tag = 0;
 	mal_unset_lock(repLck, "replication");
-	if (stream_errnr(repFile)) 
+	if (stream_errnr(repFile))
 		throw(MAL, "replication.close", RUNTIME_STREAM_FAILED);
 	return MAL_SUCCEED;
 }
@@ -698,37 +700,35 @@ MASTERdump(BAT *b, str buf, int type, int tag)
 
 	i = MASTERgetBuffer(tag);
 	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	BATaccessBegin(b, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q)
 	{
 		ATOMformat(getHeadType(type), BUNhead(bi, p), &headv);
 		ATOMformat(getTailType(type), BUNtail(bi, p), &tailv);
 		len = master[i].limit - master[i].top - 1;
 		if (getTailType(type) <= TYPE_str &&
-		    getHeadType(type) <= TYPE_str) {
+			getHeadType(type) <= TYPE_str) {
 			while ((l = snprintf(master[i].buf + master[i].top, len, "bat.insert(%s, %s:%s, %s:%s);\n",
-					     buf, headv, head, tailv, tail)) >= len) {
+						buf, headv, head, tailv, tail)) >= len) {
 				master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if (master[i].buf == NULL)
 					throw(MAL, "replication.dump", MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
 				len = master[i].limit - master[i].top - 1;
 			}
-		} else
-		if (getTailType(type) > TYPE_str &&
-		    getHeadType(type) > TYPE_str) {
+		} else if (getTailType(type) > TYPE_str &&
+				   getHeadType(type) > TYPE_str) {
 			while ((l = snprintf(master[i].buf + master[i].top, len, "bat.insert(%s, \"%s\":%s, \"%s\":%s);\n",
-					     buf, headv, head, tailv, tail)) >= len) {
+						buf, headv, head, tailv, tail)) >= len) {
 				master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if (master[i].buf == NULL)
 					throw(MAL, "replication.dump", MAL_MALLOC_FAIL);
 				master[i].limit += 1024;
 				len = master[i].limit - master[i].top - 1;
 			}
-		} else
-		if (getTailType(type) > TYPE_str) {
+		} else if (getTailType(type) > TYPE_str) {
 			while ((l = snprintf(master[i].buf + master[i].top, len, "bat.insert(%s, %s:%s, \"%s\":%s);\n",
-					     buf, headv, head, tailv, tail)) == len) {
+						buf, headv, head, tailv, tail)) == len) {
 				master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if (master[i].buf == NULL)
 					throw(MAL, "replication.dump", MAL_MALLOC_FAIL);
@@ -737,7 +737,7 @@ MASTERdump(BAT *b, str buf, int type, int tag)
 			}
 		} else{
 			while ((l = snprintf(master[i].buf + master[i].top, len, "bat.insert(%s, \"%s\":%s, %s:%s);\n",
-					     buf, headv, head, tailv, tail)) == len) {
+						buf, headv, head, tailv, tail)) == len) {
 				master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 				if (master[i].buf == NULL)
 					throw(MAL, "replication.dump", MAL_MALLOC_FAIL);
@@ -748,7 +748,7 @@ MASTERdump(BAT *b, str buf, int type, int tag)
 		master[i].top += l;
 		master[i].buf[master[i].top] = 0;
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
+	BATaccessEnd(b, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	GDKfree(tail);
 	GDKfree(head);
 	return MAL_SUCCEED;
@@ -810,7 +810,7 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* create the temporary bat */
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len, "tag_%d_%s:=bat.new(:%s,:%s);\n",
-			     tag, getArgName(mb, pci, 4), head, tail)) >= len) {
+				tag, getArgName(mb, pci, 4), head, tail)) >= len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL)
 			throw(MAL, "replication.append", MAL_MALLOC_FAIL);
@@ -829,7 +829,7 @@ MASTERappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* execute the original append */
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len, "sql.append(\"%s\",\"%s\",\"%s\",%s);\ntag_%d_%s := nil;\n",
-			     *schema, *table, *col, buf, tag, getArgName(mb, pci, 4))) >= len) {
+				*schema, *table, *col, buf, tag, getArgName(mb, pci, 4))) >= len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL)
 			throw(MAL, "replication.append", MAL_MALLOC_FAIL);
@@ -867,7 +867,7 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* create the temporary bat */
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len, "tag_%d_%s:=bat.new(:%s,:%s);\n",
-			     tag, getArgName(mb, pci, 3), head, tail)) == len) {
+				tag, getArgName(mb, pci, 3), head, tail)) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL)
 			throw(MAL, "replication.delete", MAL_MALLOC_FAIL);
@@ -886,7 +886,7 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* execute the original append */
 	len = master[i].limit - master[i].top - 1;
 	while ((l = snprintf(master[i].buf + master[i].top, len, "sql.delete(\"%s\",\"%s\",%s);\ntag_%d_%s := nil;\n",
-			     *schema, *table, buf, tag, getArgName(mb, pci, 4))) == len) {
+				*schema, *table, buf, tag, getArgName(mb, pci, 4))) == len) {
 		master[i].buf = (char*)GDKrealloc(master[i].buf, master[i].limit + 1024);
 		if (master[i].buf == NULL)
 			throw(MAL, "replication.delete", MAL_MALLOC_FAIL);
@@ -899,22 +899,24 @@ MASTERdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(tail);
 	return MAL_SUCCEED;
 }
-@-
+
+/*
 The input to the copy command comes from a stream, e.g. stdin. This makes
 forwarding the updates to the slave cumbersome at this point.
 Therefore, we simply freeze the version retained at the slave,
 requesting it to resynchronize from start.
-@c
+*/
 str
 MASTERcopy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	throw(MAL,"master.copy","Not yet implemented");
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
+	throw(MAL, "master.copy", "Not yet implemented");
 }
-@-
+
+/*
 Replaying the MAL logs is straightforward.  Each slave is represented 
 by a thread in the master, which looks for the pending updates and 
 issues it as a MAL program.
@@ -923,7 +925,7 @@ The last log file may be sent multiple times.
 The master has to assume that the slave has initialized its SQL environment properly.
 
 [todo:force a new file when it happens too often.]
-@c
+*/
 static struct MASTERrecord {
 	str uri;
 	oid tag;        /* next one to sent */
@@ -935,7 +937,7 @@ static struct MASTERrecord {
 static void
 MASTERsend(void *arg)
 {
-	int idx = * (int*) arg;
+	int idx = *(int*)arg;
 	int nxt, master;
 	stream *s;
 	bstream *bs;
@@ -943,135 +945,132 @@ MASTERsend(void *arg)
 	char logFile[PATHLENGTH];
 
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout,"#send the log file starting at transaction id %d\n", masterstatus[idx].tag);
+	stream_printf(GDKout, "#send the log file starting at transaction id %d\n", masterstatus[idx].tag);
 #endif
 	/* find the last replication log file */
 	master = GDKgetenv_istrue("replication_master") &&
 			 GDKgetenv("replication_slave") == NULL;
-@-
-If the slave starts from scratch, it will sent the 0 -tag.
-This can simply be replaced by the lowest number known.
-But, then the slave should use the BATmax option instead
-of the BATcount to determine the tag.
-@c
-	if ( masterstatus[idx].tag == 0)
-		masterstatus[idx].tag =  (oid) cutoffTag;
-	if (master == 0 || masterstatus[idx].tag < (oid)  cutoffTag) {
+	/* If the slave starts from scratch, it will sent the 0-tag.
+	 * This can simply be replaced by the lowest number known.  But,
+	 * then the slave should use the BATmax option instead of the
+	 * BATcount to determine the tag. */
+	if (masterstatus[idx].tag == 0)
+		masterstatus[idx].tag = (oid)cutoffTag;
+	if (master == 0 || masterstatus[idx].tag < (oid)cutoffTag) {
 		GDKfree(masterstatus[idx].uri);
-		masterstatus[idx].uri= NULL;
-		masterstatus[idx].tag= 0;
-		masterstatus[idx].m= 0;
+		masterstatus[idx].uri = NULL;
+		masterstatus[idx].tag = 0;
+		masterstatus[idx].m = 0;
 		return;
 	}
-@-
-Upon succesful transmission we wait for new stuff, this is
-recognized by checking the tags. It leads to re-sending the
-last log file. To avoid ever larger files to be resent,
-we should switch to a new log file once in a while.
-@c
-	for( ;; ){
-		nxt = MASTERfindLogFile(logFile,masterstatus[idx].tag);
-		if (nxt < 0){
+	/* Upon succesful transmission we wait for new stuff, this is
+	 * recognized by checking the tags. It leads to re-sending the last
+	 * log file. To avoid ever larger files to be resent, we should
+	 * switch to a new log file once in a while.  */
+	while (1) {
+		nxt = MASTERfindLogFile(logFile, masterstatus[idx].tag);
+		if (nxt < 0) {
 			/* wait for log file to become available */
 			MT_sleep_ms(REPLICADELAY);
 			continue;
 		}
-		if ( mapi_ping(masterstatus[idx].m) != MOK)
-			break; /* slave is gone */
-		if ( sendLogs == 0){
+		if (mapi_ping(masterstatus[idx].m) != MOK)
+			break;  /* slave is gone */
+		if (sendLogs == 0) {
 			/* suspend sending */
 			MT_sleep_ms(REPLICADELAY);
-			continue; 
+			continue;
 		}
 #ifdef _DEBUG_REPLICATION_
-		stream_printf(GDKout,"#sent log file %s\n",logFile);
+		stream_printf(GDKout, "#sent log file %s\n", logFile);
 #endif
 		s = open_rastream(logFile);
-		if (s == NULL )
+		if (s == NULL)
 			continue;
-		if (stream_errnr(s) ) {
+		if (stream_errnr(s)) {
 			stream_destroy(s);
 			continue;
 		}
 
 		/* avoid concurrent addition of log records */
 		/* but only on the last file */
-		if ( nxt == (int) endTag)
+		if (nxt == (int)endTag)
 			mal_set_lock(repLck, "replication");
 		if (repFile)
 			stream_flush(repFile);
-@-
-The tricky part of the block wise read is to ensure
-we sent proper newline terminated commands.
-Moreover, we would not like to block due to sending for old files.
-@c
+		/* The tricky part of the block wise read is to ensure we sent
+		 * proper newline terminated commands.  Moreover, we would not
+		 * like to block due to sending for old files.  */
 		/* read the complete file [now trimmed to 64KB]*/
 		/* need better sequence to deal with larger files */
 		bs = bstream_create(s, 128 * BLOCK);
 		if (bstream_next(bs) < 0) {
 			bstream_destroy(bs);
-			showException( MAL, "master.send", "read error");
+			showException(MAL, "master.send", "read error");
 			break;
 		}
 		hdl = mapi_query(masterstatus[idx].m, bs->buf);
 		masterstatus[idx].tag = nxt;
-		if ( nxt == (int) endTag)
+		if (nxt == (int)endTag)
 			mal_unset_lock(repLck, "replication");
 		close_stream(s);
-		if ( mapi_result_error(hdl) ){
-			showException( getExceptionType(mapi_result_error(hdl)),
-						"master.send",
-						"%s", getExceptionMessage(mapi_result_error(hdl)));
+		if (mapi_result_error(hdl)) {
+			showException(getExceptionType(mapi_result_error(hdl)),
+				"master.send",
+				"%s", getExceptionMessage(mapi_result_error(hdl)));
 			break; /* all errors are fatal */
 		}
-		if (hdl )
+		if (hdl)
 			mapi_close_handle(hdl);
-	} 
+	}
 
 	mal_unset_lock(repLck, "replication");
 #ifdef _DEBUG_REPLICATION_
 	printf("#replay thread finished \n");
 #endif
-	GDKfree( masterstatus[idx].uri );
-	masterstatus[idx].uri= NULL;
+	GDKfree(masterstatus[idx].uri);
+	masterstatus[idx].uri = NULL;
 	masterstatus[idx].m = NULL;
-	masterstatus[idx].tag= 0;
+	masterstatus[idx].tag = 0;
 }
-@-
+
+/*
 Stopping all slave synchronisation is needed before you perform
 administrative updates.
-@c
+*/
 str
 MASTERstop(int *ret)
 {
-	(void) ret;
+	(void)ret;
 	sendLogs = 0;
 	return MAL_SUCCEED;
 }
+
 str
 MASTERstart(int *ret)
 {
-	(void) ret;
+	(void)ret;
 	sendLogs = TRUE;
 	return MAL_SUCCEED;
 }
-@-
+
+/*
 The master may decide that all images held by the slaves have become invalid.
 This should cause a rebuilt from scratch when a slave attempts to synchronize.
 Invalidation of the snapshot has the side-effect of cleaning up the master
 log directory. This means, we can not simply inject an invalidation message
 in the log stream. Instead, we have to a snapshot marker somewhere, which
 is returned by the slave upon re-connection.
-@c
+*/
 str
 MASTERfreeze(int *ret)
 {
 	int i;
 
-	(void) ret;
+	(void)ret;
 	mal_set_lock(repLck, "replication");
-	for ( i = 0; i < MAL_MAXCLIENTS; i++)
-		if ( masterstatus[i].uri )
+	for (i = 0; i < MAL_MAXCLIENTS; i++)
+		if (masterstatus[i].uri)
 			mal_clients[ i].mode = FINISHING;
 
 	if (repFile)
@@ -1086,69 +1085,71 @@ MASTERfreeze(int *ret)
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
-@-
+
+/*
 The slave process sents a remote master.sync request with all
 the information needed for the master to set up and start a log forwarding thread.
-@c
-str MASTERsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
+*/
+str
+MASTERsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 {
 	Mapi mapi;
 	MT_Id tid;
-	int i, free=MAL_MAXCLIENTS, fnd=0;
+	int i, free = MAL_MAXCLIENTS, fnd = 0;
 	oid t = *tag;
 
 	(void)ret;
 
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout, "#replay the log from  %s %s %s %d\n",
-			*uri, *usr, *pw, *tag);
+		*uri, *usr, *pw, *tag);
 #endif
-	if ( t == 0)
+	if (t == 0)
 		t = cutoffTag;
-	else
-	if ( t < (oid) cutoffTag)
-		throw(MAL,"master.sync","Slave out of date");
+	else if (t < (oid)cutoffTag)
+		throw(MAL, "master.sync", "Slave out of date");
 
-	for ( i = 0; i < MAL_MAXCLIENTS; i++)
-		if ( masterstatus[i].uri == NULL){
-				if (free == MAL_MAXCLIENTS)
-					free = i;
+	for (i = 0; i < MAL_MAXCLIENTS; i++)
+		if (masterstatus[i].uri == NULL) {
+			if (free == MAL_MAXCLIENTS)
+				free = i;
 		} else
-			fnd |= strcmp(masterstatus[i].uri,*uri)== 0;
+			fnd |= strcmp(masterstatus[i].uri, *uri) == 0;
 
-	if ( fnd){
-		sendLogs = TRUE;	/* restart sending */
+	if (fnd) {
+		sendLogs = TRUE;    /* restart sending */
 		return MAL_SUCCEED; /* slave already known */
 	}
-	if ( free == MAL_MAXCLIENTS)
-		throw(MAL,"master.sync","Too many concurrent actions");
+	if (free == MAL_MAXCLIENTS)
+		throw(MAL, "master.sync", "Too many concurrent actions");
 
 	/* master makes a connection with the slave */
 	mapi = mapi_mapiuri(*uri, *usr, *pw, "msql");
 	if (mapi_error(mapi))
 		throw(MAL, "master.sync", "unable to connect to '%s': %s",
-				*uri, mapi_error_str(mapi));
+			*uri, mapi_error_str(mapi));
 
 	if (mapi_reconnect(mapi) != MOK)
 		throw(IO, "master.sync", "failed to connect to '%s': %s",
-				*uri, mapi_error_str(mapi));
+			*uri, mapi_error_str(mapi));
 
-	masterstatus[free].uri= GDKstrdup(*uri);
-	masterstatus[free].tag= t;
-	masterstatus[free].m= mapi;
-	if (MT_create_thread(&tid, MASTERsend, (void *) &free) < 0) 
+	masterstatus[free].uri = GDKstrdup(*uri);
+	masterstatus[free].tag = t;
+	masterstatus[free].m = mapi;
+	if (MT_create_thread(&tid, MASTERsend, (void *)&free) < 0)
 		throw(MAL, "master.sync", "cannot fork new client");
-	
+
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout, "#awaiting replay of the log \n");
 #endif
 	return MAL_SUCCEED;
 }
 
-@-
+/*
 Prepare the remote call to the master
-@c
-str SLAVEsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
+*/
+str
+SLAVEsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 {
 	Mapi mapi;
 	MapiHdl hdl;
@@ -1159,72 +1160,74 @@ str SLAVEsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout, "#request replay the log from  %s %s %s %d\n",
-			*uri, *usr, *pw, *tag);
+		*uri, *usr, *pw, *tag);
 #endif
 
 	mapi = mapi_mapiuri(*uri, *usr, *pw, "mal");
 	if (mapi_error(mapi))
 		throw(MAL, "slave.sync", "unable to connect to '%s': %s",
-				*uri, mapi_error_str(mapi));
+			*uri, mapi_error_str(mapi));
 
 	if (mapi_reconnect(mapi) != MOK)
 		throw(IO, "slave.sync", "failed to connect to '%s': %s",
-				*uri, mapi_error_str(mapi));
+			*uri, mapi_error_str(mapi));
 
 	SABgetLocalConnectionURI(&luri);
 	if (luri == NULL)
 		throw(MAL, "slave.sync", OPERATION_FAILED ": URI not found");
 
-	snprintf(buf,BUFSIZ,"master.sync(\"%s\",\"%s\",\"%s\","OIDFMT":oid);", luri, *usr, *pw, *tag);
+	snprintf(buf, BUFSIZ, "master.sync(\"%s\",\"%s\",\"%s\"," OIDFMT ":oid);", luri, *usr, *pw, *tag);
 	GDKfree(luri);
-	hdl = mapi_query(mapi,buf);
-	if (hdl == NULL){
-		if (mapi_error(mapi) != MOK) 
-            throw(IO, "slave.sync", OPERATION_FAILED ": an error occurred on connection: %s",
-                    mapi_error_str(mapi));
-        else 
-            throw(MAL, "slave.sync", OPERATION_FAILED ": remote function invocation didn't return a result");
+	hdl = mapi_query(mapi, buf);
+	if (hdl == NULL) {
+		if (mapi_error(mapi) != MOK)
+			throw(IO, "slave.sync", OPERATION_FAILED ": an error occurred on connection: %s",
+				mapi_error_str(mapi));
+		else
+			throw(MAL, "slave.sync", OPERATION_FAILED ": remote function invocation didn't return a result");
 	}
-	if ( mapi_result_error(hdl) ){
+	if (mapi_result_error(hdl)) {
 		str err = createException(
-                    getExceptionType(mapi_result_error(hdl)),
-                    "slave.sync",
-                    "%s", getExceptionMessage(mapi_result_error(hdl)));
+			getExceptionType(mapi_result_error(hdl)),
+			"slave.sync",
+			"%s", getExceptionMessage(mapi_result_error(hdl)));
 		mapi_close_handle(hdl);
 		return err;
 	}
-	acceptLogs= TRUE;
+	acceptLogs = TRUE;
 #ifdef _DEBUG_REPLICATION_
 	stream_printf(GDKout, "#slave awaiting replay of the log \n");
-	stream_printf(GDKout,"#%s\n",buf);
+	stream_printf(GDKout, "#%s\n", buf);
 #endif
 	return MAL_SUCCEED;
 }
 
-str SLAVEsyncURI(int *ret, str *uri)
+str
+SLAVEsyncURI(int *ret, str *uri)
 {
 	oid tag = 0;
 	str usr = "monetdb";
 	str pw = "monetdb";
 
 	(void)ret;
-	if ( GDKgetenv("replication_slave") == NULL)
+	if (GDKgetenv("replication_slave") == NULL)
 		throw(MAL, "master.sync", "Slave property not set");
 
 	/* get identity of next tag expected */
 	mal_set_lock(repLck, "replication");
 	SLAVEinitLog();
-	if ( slavecommit == NULL){
+	if (slavecommit == NULL) {
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "slave.sync", OPERATION_FAILED);
 	}
-	if ( BATcount(slavetid) )
-		BATmax(slavetid,&tag);
+	if (BATcount(slavetid))
+		BATmax(slavetid, &tag);
 	mal_unset_lock(repLck, "replication");
 	return SLAVEsync(ret, uri, &usr, &pw, &tag);
 }
 
-str SLAVEsyncDefault(int *ret)
+str
+SLAVEsyncDefault(int *ret)
 {
 	str uri;
 	uri = GDKgetenv("replication_slave");
@@ -1233,23 +1236,25 @@ str SLAVEsyncDefault(int *ret)
 	return SLAVEsyncURI(ret, &uri);
 }
 
-@-
+/*
 The master thread is stopped at the slave side by closing
 its client record. 
-@c
-str SLAVEstop(int *ret)
+*/
+str
+SLAVEstop(int *ret)
 {
 	str uri;
 	(void)ret;
 	uri = GDKgetenv("replication_slave");
 	if (uri == NULL)
 		throw(MAL, "slave.stop", "Slave property not set");
-	if ( acceptLogs == 0 )
+	if (acceptLogs == 0)
 		throw(MAL, "slave.stop", "Synchronisation not active");
 	acceptLogs = 0;
 	return MAL_SUCCEED;
 }
-@-
+
+/*
 To keep track of the transactions being replayed
 we use two BATs with timestamps of their completion
 in the master and the slave.
@@ -1258,7 +1263,7 @@ incorrect database state.
 The error BAT can be used to keep messages for offline
 inspection.
 The transaction identifier is used as an oid into this table.
-@c
+*/
 
 @= createBAT
     @1 = BATdescriptor(BBPindex("@1"));
@@ -1277,39 +1282,41 @@ The transaction identifier is used as an oid into this table.
 	}
 @c
 
-str SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str
+SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int*) getArgReference(stk,pci,0);
-	oid *tag = (oid*) getArgReference(stk,pci,1);
-	
-	(void) mb;
+	int *ret = (int*)getArgReference(stk, pci, 0);
+	oid *tag = (oid*)getArgReference(stk, pci, 1);
+
+	(void)mb;
 	SLAVEinitLog();
-	if ( slavecommit == NULL)
+	if (slavecommit == NULL)
 		throw(MAL, "slave.open", OPERATION_FAILED);
-	if ( acceptLogs == 0){
+	if (acceptLogs == 0) {
 		/* close this connection, synchronize later */
-		mal_clients[ cntxt->idx].mode = FINISHING;
+		mal_clients[cntxt->idx].mode = FINISHING;
 		throw(MAL, "slave.open", "No synchronisation allowed");
 	}
 	/* check if we have seen it before */
-	*ret= BUNfnd(BATmirror(slavetid),tag) == BUN_NONE;
+	*ret = BUNfnd(BATmirror(slavetid), tag) == BUN_NONE;
 	return MAL_SUCCEED;
 }
 
-str SLAVEclose(int *ret, oid *tag, timestamp *valid)
+str
+SLAVEclose(int *ret, oid *tag, timestamp *valid)
 {
 	timestamp stamp;
-	str err="";
+	str err = "";
 
 	(void)ret;
 	SLAVEinitLog();
-	if ( slavecommit == NULL)
+	if (slavecommit == NULL)
 		/* abort the transaction */
 		throw(MAL, "slave.clase", OPERATION_FAILED);
-	
-	if (BUNfnd(BATmirror(slavetid),tag) != BUN_NONE )
+
+	if (BUNfnd(BATmirror(slavetid), tag) != BUN_NONE)
 		throw(MAL, "slave.close", "Out of order execution");
-	
+
 	mal_set_lock(repLck, "replication");
 	MTIMEepoch(&stamp);
 	BUNappend(slavetid, tag, FALSE);
@@ -1319,6 +1326,7 @@ str SLAVEclose(int *ret, oid *tag, timestamp *valid)
 	mal_unset_lock(repLck, "replication");
 	return MAL_SUCCEED;
 }
+
 @-
 The slave status can be made visible through an SQL
 table producing function.
@@ -1330,19 +1338,20 @@ create function slavelog ()
 
 @c
 BAT *
-SLAVEtable(void){
+SLAVEtable(void)
+{
 	BAT *t;
-	t = BATnew(TYPE_str,TYPE_bat,3);
-	if ( t == NULL)
+	t = BATnew(TYPE_str, TYPE_bat, 3);
+	if (t == NULL)
 		return NULL;
-	if ( slavecommit == NULL ||
-		 slavevalid == NULL ||
-		 slaveerror == NULL)
+	if (slavecommit == NULL ||
+		slavevalid == NULL ||
+		slaveerror == NULL)
 		return t;
-	BUNins(t,"tid",&slavetid->batCacheid,FALSE);
-	BUNins(t,"commit",&slavecommit->batCacheid,FALSE);
-	BUNins(t,"valid",&slavevalid->batCacheid,FALSE);
-	BUNins(t,"error",&slaveerror->batCacheid,FALSE);
+	BUNins(t, "tid", &slavetid->batCacheid, FALSE);
+	BUNins(t, "commit", &slavecommit->batCacheid, FALSE);
+	BUNins(t, "valid", &slavevalid->batCacheid, FALSE);
+	BUNins(t, "error", &slaveerror->batCacheid, FALSE);
 	return t;
 }
 
@@ -1350,22 +1359,22 @@ str
 SLAVEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/*
-	str *schema = (str*)getArgReference(stk, pci, 1);
-	str *table = (str*)getArgReference(stk, pci, 2);
-	int *bid = (int*)getArgReference(stk, pci, 3);
-	int tag = *(int*)getArgReference(stk, pci, 4);
-	*/
+	   str *schema = (str*)getArgReference(stk, pci, 1);
+	   str *table = (str*)getArgReference(stk, pci, 2);
+	   int *bid = (int*)getArgReference(stk, pci, 3);
+	   int tag = *(int*)getArgReference(stk, pci, 4);
+	 */
 
 	(void)cntxt;
 	(void)mb;
 	(void)stk;
 	(void)pci;
 	/*
-	(void)schema;
-	(void)table;
-	(void)bid;
-	(void)tag;
-	*/
+	   (void)schema;
+	   (void)table;
+	   (void)bid;
+	   (void)tag;
+	 */
 	SLAVEinitLog();
 	return MAL_SUCCEED;
 }
@@ -1384,32 +1393,34 @@ SLAVEdrop(int *ret, str *tag)
 	(void)ret;
 	return MAL_SUCCEED;
 }
-@-
+
+/*
 We keep a list of all tables updated by the replication scheme.
 They become re-only accessible.
-@c
+*/
 static str *schemes;
 static str *tables; 
 static int top, limit;
 
-str SLAVEprotect(int *ret, str *schema, str *table)
+str
+SLAVEprotect(int *ret, str *schema, str *table)
 {
-	(void) ret;
-	if ( schemes == NULL ){
+	(void)ret;
+	if (schemes == NULL) {
 		limit = 1024;
 		top = 0;
 		schemes = GDKzalloc(limit * sizeof(str));
 		if (schemes == NULL)
-			throw(MAL,"slave.protect", MAL_MALLOC_FAIL);
+			throw(MAL, "slave.protect", MAL_MALLOC_FAIL);
 		tables = GDKzalloc(limit * sizeof(str));
 		if (tables == NULL)
-			throw(MAL,"slave.protect", MAL_MALLOC_FAIL);
+			throw(MAL, "slave.protect", MAL_MALLOC_FAIL);
 	}
-	if ( top == limit )
-			throw(MAL,"slave.protect", "Out of table slots");
+	if (top == limit)
+		throw(MAL, "slave.protect", "Out of table slots");
 	schemes[top] = GDKstrdup(*schema);
 	tables[top] = GDKstrdup(*table);
-	top ++;
+	top++;
 	return MAL_SUCCEED;
 }
 
@@ -1418,16 +1429,17 @@ SLAVEisprotectedInternal(str schema, str table)
 {
 	int i;
 
-	if ( schemes == NULL || tables == NULL)
+	if (schemes == NULL || tables == NULL)
 		return FALSE;
-	for ( i = 0; i < top ; i++)
-	if ( schemes[i] && strcmp(schemes[i], schema) == 0 &&
-		 tables[i] && strcmp( tables[i], table) == 0 )
-		return TRUE;
+	for (i = 0; i < top; i++)
+		if (schemes[i] && strcmp(schemes[i], schema) == 0 &&
+			tables[i] && strcmp(tables[i], table) == 0)
+			return TRUE;
 	return FALSE;
 }
 
-str SLAVEisprotected(int *ret, str *schema, str *table)
+str
+SLAVEisprotected(int *ret, str *schema, str *table)
 {
 	*ret = SLAVEisprotectedInternal(*schema, *table);
 	return MAL_SUCCEED;
@@ -1437,7 +1449,7 @@ str
 SLAVEprelude(int *ret)
 {
 	/* to be called after MASTERprelude  */
-	if ( GDKgetenv("replication_slave") != NULL) {
+	if (GDKgetenv("replication_slave") != NULL) {
 #ifdef _DEBUG_REPLICATION_
 		stream_printf(GDKout, "#initialize slave\n");
 #endif
@@ -1445,16 +1457,17 @@ SLAVEprelude(int *ret)
 		SLAVEinitLog();
 		acceptLogs = TRUE;
 		mal_unset_lock(repLck, "replication");
-	/*	SLAVEsyncDefault(ret);   
-	   can not work, because we are still in MAL initialization
-	   and this would require a running SQL environment.
-	   The replay must be started at the end of the SQL init */
+		/*	SLAVEsyncDefault(ret);
+		   can not work, because we are still in MAL initialization
+		   and this would require a running SQL environment.
+		   The replay must be started at the end of the SQL init */
 	}
 	(void)ret;
 	return MAL_SUCCEED;
 }
 
-str SLAVEsynchronizing(int *ret)
+str
+SLAVEsynchronizing(int *ret)
 {
 	*ret = acceptLogs != 0;
 	return MAL_SUCCEED;
