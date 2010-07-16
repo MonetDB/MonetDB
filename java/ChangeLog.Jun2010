@@ -23,3 +23,6 @@
   latter clean from files generated during the build.
   On Windows, the build directory must be a sibling of ...<package>NT .
 
+* Fri Jul 16 2010 Fabian Groffen <fabian@cwi.nl>
+- Fix problem when using the MAL language.  Any statement would return an error with a typo that was not typed in by the user, such as ioo.printf when io.printf was typed.
+

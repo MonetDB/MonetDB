@@ -254,7 +254,7 @@ public class MonetConnection implements Connection {
 			commandTempl[2] = "\nX";	// separator
 		} else if (lang == LANG_MIL || lang == LANG_MAL) {
 			queryTempl[0] = null;
-			queryTempl[1] = ";";
+			queryTempl[1] = ";\n";
 			queryTempl[2] = ";\n";
 
 			commandTempl[0] = null;		// pre
