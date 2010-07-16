@@ -238,11 +238,11 @@ command freeze():void
 address MASTERfreeze
 comment "Invalidate all copies maintained at slaves";
 
-pattern append(s:str, t:str, c:str, :any_1, tag:oid):void
+pattern append(mvc:ptr, s:str, t:str, c:str, :any_1, tag:oid):ptr
 address MASTERappendValue
 comment "Dump the scalar on the MAL log";
 
-pattern append(s:str, t:str, c:str, b:bat[:oid,:any_1], tag:oid):void
+pattern append(mvc:ptr, s:str, t:str, c:str, b:bat[:oid,:any_1], tag:oid):ptr
 address MASTERappend
 comment "Dump the BAT on the MAL log";
 
@@ -757,7 +757,9 @@ MASTERdump(BAT *b, str buf, int type, int tag)
 str
 MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tag = *(int*)getArgReference(stk, pci, 5);
+	int tag = *(int*)getArgReference(stk, pci, 6);
+	ptr *res = (ptr*)getArgReference(stk, pci, 0);
+	ptr *m = (ptr*)getArgReference(stk, pci, 1);
 	InstrPtr q;
 	str val = NULL;
 	int i, len;
@@ -770,6 +772,8 @@ MASTERappendValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	val = instruction2str(mb, stk, q, LIST_MAL_CALL);
 	freeInstruction(q);
+
+	*res = *m;
 
 	len = master[i].limit - master[i].top - 1;
 	while (snprintf(master[i].buf + master[i].top, len, "%s\n", val) >= len) {
