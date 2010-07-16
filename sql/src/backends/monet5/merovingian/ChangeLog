@@ -1,2 +1,6 @@
+2010-07-16  Arjen de Rijke  <arjen.de.rijke@cwi.nl>
+
+	* merovingian.c (main): Add get/set database readonly for monetdb/merovingian
+
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog

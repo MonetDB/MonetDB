@@ -209,6 +209,8 @@ the
 .I id
 is not required to be in the format of a UUID (see
 .BR uuid_generate (3)).
+.IP "  readonly=<yes|no>"
+Defines if the database has to be started readonly.
 .IP "inherit property database [database ...]"
 Like set, but unsets the database-local value, and reverts to inherit
 from the default again.

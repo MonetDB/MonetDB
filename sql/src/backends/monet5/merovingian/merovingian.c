@@ -621,6 +621,8 @@ main(int argc, char *argv[])
 	kv->val = GDKstrdup("no");
 	kv = findConfKey(_mero_props, "slave");
 	kv->val = NULL; /* MURI */
+	kv = findConfKey(_mero_props, "readonly");
+	kv->val = GDKstrdup("no");
 	kv = findConfKey(ckv, "sql_optimizer");
 	p = kv->val;
 	if (p != NULL) {
