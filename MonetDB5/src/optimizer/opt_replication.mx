@@ -62,13 +62,13 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if ( newMalBlkStmt(mb, (int)(mb->ssize * 1.2)) < 0 )
+	if (newMalBlkStmt(mb, (int)(mb->ssize * 1.2)) < 0)
 		return 0;
 
 	pushInstruction(mb, old[0]);
 	p = newAssignment(mb);
-	p = pushStr(mb,p, GDKgetenv("merovingian_uri"));
-	getArg(p,0)= newVariable(mb,GDKstrdup("master"),TYPE_str);
+	p = pushStr(mb, p, GDKgetenv("merovingian_uri"));
+	getArg(p, 0) = newVariable(mb, GDKstrdup("master"), TYPE_str);
 	p = newStmt(mb, putName("master", 6), openRef);
 	tag = getArg(p, 0);
 
@@ -116,7 +116,7 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		}
 
 		if (getModuleId(p) == sqlRef &&
-				strcmp(getFunctionId(p) ,"copy_from") == 0)
+				strcmp(getFunctionId(p), "copy_from") == 0)
 		{
 			/* copy into stuff */
 			q = copyInstruction(p);
