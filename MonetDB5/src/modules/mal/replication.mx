@@ -263,9 +263,9 @@ command sync(uri:str, usr:str, pw:str, tag:oid):void
 address MASTERsync
 comment "Login to slave with credentials to initiate submission of the log records";
 
-pattern getURI():str
+command getURI():str
 address MASTERgetURI
-comment "Display the URI for the master";
+comment "Return the URI for the master";
 
 command getCutOffTag():oid
 address MASTERgetCutOffTag
@@ -363,7 +363,7 @@ replication_export str SLAVEsync(int  *ret, str *uri, str *usr, str *pw, oid *ta
 replication_export str MASTERsync(int  *ret, str *uri, str *usr, str *pw, oid *tag);
 replication_export str SLAVEstop(int *ret);
 replication_export str MASTERprelude(int *ret);
-replication_export str MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replication_export str MASTERgetURI(str *ret);
 replication_export str MASTERgetCutOffTag(int *ret);
 
 replication_export str SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -541,16 +541,15 @@ MASTERprelude(int *ret){
 	
 
 str
-MASTERgetURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str mero;
+MASTERgetURI(str *ret)
+{
+	str mero = GDKgetenv("merovingian_uri");
 
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	mero = GDKgetenv("merovingian_uri");
-	if ( ! mero)
-		throw(MAL,"master.getURI","Database is not reachable");
-	stream_printf(cntxt->fdout,"%s\n",mero);
+	if (!mero)
+		throw(MAL, "master.getURI",
+				"this database is not running under merovingian");
+
+	*ret = GDKstrdup(mero);
 	return MAL_SUCCEED;
 }
 
