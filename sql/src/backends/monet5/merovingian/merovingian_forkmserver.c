@@ -272,11 +272,8 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 
 		kv = findConfKey(ckv, "readonly");
-		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-			size_t len = 11;
-			readonly = alloca(sizeof(char) * len);
-			snprintf(readonly, len, "--readonly");
-		}
+		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+			readonly = "--readonly";
 
 		freeConfFile(ckv);
 		GDKfree(ckv); /* can make ckv static and reuse it all the time */
@@ -300,11 +297,6 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = _mero_mserver;
 		argv[c++] = conffile;
 		argv[c++] = dbname;
-
-		if (readonly != NULL) {
-		  argv[c++] = readonly;
-		}
-
 		argv[c++] = "--set"; argv[c++] = muri;
 		if (mydoproxy == 1) {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=false";
@@ -336,6 +328,9 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 		if (slave != NULL) {
 			argv[c++] = "--set"; argv[c++] = slave;
+		}
+		if (readonly != NULL) {
+			argv[c++] = readonly;
 		}
 		/* keep this one last for easy copy/paste with gdb */
 		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
