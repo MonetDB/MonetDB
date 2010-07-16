@@ -1,6 +1,13 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+  16 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c,
+  merovingian_forkmserver.c, monetdb.1.in, properties.c:
+  Remove references to master/slave settings, since replication isn't yet
+  fully implemented in Jun2010 branch.
+
+*Jun2010-SP1
+
   01 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c:
   When a startup failure causes a shutdown, make sure we log this
   incident in the logfile, together with a message that the deamon was
