@@ -141,7 +141,7 @@ comment "Resolve the multi-table definitions";
 #include "mal_interpreter.h"
 #include "mal_builder.h"
 
-/* #define DEBUG_OPT_MERGETABLE     show partial result */
+#define OPTDEBUGmergetable  if ( optDebug & (1 <<DEBUG_OPT_MERGETABLE) )
 @c
 #include "mal_config.h"
 #include "opt_mergetable.h"
@@ -308,10 +308,10 @@ propagateProp(MalBlkPtr mb, InstrPtr q, int ivar)
 		if (tlb) varSetProp(mb, ovar, tlbProp, op_gte, &tlb->value);
 		if (tub) varSetProp(mb, ovar, tubProp, op_lt, &tub->value);
 	}
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, propageProp\n");
-	printInstruction(GDKout, mb, 0, q, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, propageProp\n");
+		printInstruction(GDKout, mb, 0, q, LIST_MAL_ALL);
+	}
 }
 
 static int
@@ -333,10 +333,10 @@ mat_pack_mat(MalBlkPtr mb, InstrPtr r, mat_t *mat, int m, int *mtop)
 	int l,k;
 
 	assert(mat[m].type != mat_grp);
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_pack_mat\n");
-	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_pack_mat\n");
+		printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
+	}
 
 	if( mat[m].mi->argc-mat[m].mi->retc == 1){
 		/* simple assignment is sufficient */
@@ -384,10 +384,11 @@ MATpackAll(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 {
 	InstrPtr r = NULL;
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_packAll\n");
-	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_packAll\n");
+		printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
+	}
+
 	if (mat[m].type == mat_none) {
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
 		pushInstruction(mb,r);
@@ -408,10 +409,11 @@ MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 {
 	InstrPtr r = NULL;
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_packAll2\n");
-	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_packAll2\n");
+		printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
+	}
+
 	if (mat[m].type == mat_none) {
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
 		pushInstruction(mb,r);
@@ -502,10 +504,10 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var, int reuse)
 	InstrPtr r = NULL, mi = mat[m].mi;
 
 	assert(reuse == 0);
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_apply1\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_apply1\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
 	(void)reuse;
 	if (var == 2 && isDiffOp(p)) {
 		tpe = getArgType(mb,p,0);
@@ -572,10 +574,11 @@ disjoint(mat_t *mat, int *mtop, int m, MalBlkPtr mb)
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 	int tpe = getVarType(mb,getArg(mat[m].mi, 0));
 	int vj, vi;
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_disjoint\n");
-	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
-#endif
+
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_disjoint\n");
+		printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
+	}
 
 	if (used == NULL)
 		return 0;
@@ -627,10 +630,10 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int *mtop, int a1, int a2, int 
 	int k,j,m,n,Am,An;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_apply2\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_apply2\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
 	if (reuse) {
 		if (a1 == a2) { 
 			a2 = -1;
@@ -724,10 +727,12 @@ mat_map(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop)
 	int m = -1, a, j, reuse = -1, reuse_var = -1;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_map\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_map\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
+
 	for(a=p->retc; a<p->argc && m < 0; a++) 
 		if (isaBatType(getArgType(mb,p,a))) 
 			m = isMATalias(getArg(p,a), mat, mtop);
@@ -777,10 +782,11 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	int j,k;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_join\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_join\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
+
 	setModuleId(r,matRef);
 	setFunctionId(r,newRef);
 	getArg(r,0) = getArg(p,0);
@@ -1013,10 +1019,12 @@ mat_pack_group_(MalBlkPtr mb, mat_t *mat, int g, int ext)
 
 	if ( attrs == NULL)
 		return NULL;
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_pack_group\n");
-	printInstruction(GDKout, mb, 0, mat[ext].mi, LIST_MAL_ALL);
-#endif
+
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_pack_group\n");
+		printInstruction(GDKout, mb, 0, mat[ext].mi, LIST_MAL_ALL);
+	}
+
 	for(k=1; k<mat[ext].mi->argc; k++) 
 		group_attrs(attrs+k*cnt, mb, getArg(mat[g].mi1, k), getArg(mat[ext].mi, k), mat[ext].type != mat_ext);
 	for(i=cnt-1; i>=0; i--) {
@@ -1077,10 +1085,11 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	int v = newTmpVariable(mb, newBatType(TYPE_void,tp));
 	InstrPtr r = NULL, s = NULL, q = NULL;
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_aggr\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_aggr\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
+
 	/* we pack the partitial result */
 	r = newInstruction(mb,ASSIGNsymbol);
 	setModuleId(r, matRef);
@@ -1125,10 +1134,11 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int g, int ext)
 	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), ai2, cur = NULL;
 	InstrPtr mi = mat[m].mi;
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_group_aggr\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_group_aggr\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
+
 	if (mat[m].type == mat_grp)
 		mi = mat[m].mi1;
 
@@ -1174,10 +1184,12 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 	InstrPtr r0 = newInstruction(mb, ASSIGNsymbol);
 	InstrPtr r1 = newInstruction(mb, ASSIGNsymbol);
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_group_new\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_group_new\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
+
 	setModuleId(r0,matRef);
 	setFunctionId(r0,newRef);
 	getArg(r0,0) = getArg(p,0);
@@ -1213,10 +1225,10 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int ext, int gr
 	InstrPtr r0 = newInstruction(mb, ASSIGNsymbol);
 	InstrPtr r1 = newInstruction(mb, ASSIGNsymbol);
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_group_derive\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_group_derive\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
 	setModuleId(r0,matRef);
 	setFunctionId(r0,newRef);
 	getArg(r0,0) = getArg(p,0);
@@ -1256,10 +1268,11 @@ mat_union(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	int k,j;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_group_union\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_group_union\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
+
 	setModuleId(r,matRef);
 	setFunctionId(r,newRef);
 	getArg(r,0) = getArg(p,0);
@@ -1315,10 +1328,12 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	InstrPtr q, r = newInstruction(mb, ASSIGNsymbol);
 	oid cur = 0;
 	
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_group_union\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_group_union\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
+
 	getArg(r,0) = o;
 	/* get the mark base id */
 	if (p->argc == 3)
@@ -1379,10 +1394,11 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	int k, tpe = getArgType(mb,p,0), nr = mat[m].mi->argc-1;
 	InstrPtr q, r = newInstruction(mb, ASSIGNsymbol);
 	
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"MAT optimizer, mat_group_union\n");
-	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
-#endif
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#MAT optimizer, mat_group_union\n");
+		printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+	}
+
 	/* We don't use the mark base id */
 	
 	r = newInstruction(mb, ASSIGNsymbol);
@@ -1546,12 +1562,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int oldtop, fm, i, k, m, mtop=0, slimit;
 	int size, match, actions=0, error=0;
 
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"Start MAT optimizer\n");
-	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
-#else
 	(void) cntxt;
-#endif
 	/* the number of MATs is limited to the variable stack*/
 	mat = (mat_t*) GDKzalloc(mb->vtop * sizeof(mat_t));
 	if ( mat == NULL)
@@ -1805,9 +1816,8 @@ group them and check for them individually.
 			int pack_mirror = 0;
 			InstrPtr r;
 
-#ifdef DEBUG_OPT_MERGETABLE
-			stream_printf(GDKout, "# %s.%s\n", getModuleId(p), getFunctionId(p));
-#endif
+			OPTDEBUGmergetable stream_printf(GDKout, "# %s.%s\n", getModuleId(p), getFunctionId(p));
+
 			if (getFunctionId(p) == mirrorRef && 
 	    			mat[m].type == mat_grp/* && mat[m].mm */) {
 				assert(mat[m].mm != NULL);
@@ -1838,9 +1848,8 @@ group them and check for them individually.
 All other instructions should be checked for remaining MAT dependencies.
 It requires MAT materialization. 
 @c
-#ifdef DEBUG_OPT_MERGETABLE
-		stream_printf(GDKout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
-#endif
+		OPTDEBUGmergetable stream_printf(GDKout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
+
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=isMATalias(getArg(p,k), mat, mtop)) >= 0){
 				MATpackAll2(mb, NULL, mat, m, &mtop);
@@ -1858,11 +1867,13 @@ For the time being, they are no-ops.
 @c
 	(void) stk; 
 	chkTypes(cntxt->nspace,mb, TRUE);
-#ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"Result of multi table optimizer\n");
-	(void) optimizerCheck(cntxt,mb,"merge test",1,0,0);
-	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
-#endif
+
+	OPTDEBUGmergetable {
+		stream_printf(GDKout,"#Result of multi table optimizer\n");
+		(void) optimizerCheck(cntxt,mb,"merge test",1,0,0);
+		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
+	}
+
 	if ( mb->errors == 0) {
 		for(i=0; i<slimit; i++)
 			if (old[i]) {
@@ -1875,9 +1886,8 @@ For the time being, they are no-ops.
 fail:
 	if( error || mb->errors){
 		actions= 0;
-#ifdef DEBUG_OPT_MERGETABLE
-		stream_printf(GDKout, "## %s.%s\n", getModuleId(p), getFunctionId(p));
-#endif
+		OPTDEBUGmergetable 
+			stream_printf(GDKout, "## %s.%s\n", getModuleId(p), getFunctionId(p));
 		for(i=0; i<mb->stop; i++)
 			if (mb->stmt[i])
 				freeInstruction(mb->stmt[i]);
@@ -1892,14 +1902,9 @@ fail:
 				p->token = NOOPsymbol;
 			}
 		}
-#ifdef DEBUG_OPT_MERGETABLE
-		stream_printf(GDKout,"Result of multi table optimizer FAILED\n");
-		(void) optimizerCheck(cntxt,mb,"merge test",1,0,0);
-		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
-#endif
+		OPTDEBUGmergetable stream_printf(GDKout,"Result of multi table optimizer FAILED\n");
 	}
-	OPTDEBUG
-	if( actions)
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_mergetable: %d merge actions\n",actions);
 	GDKfree(mat);
 	return actions;

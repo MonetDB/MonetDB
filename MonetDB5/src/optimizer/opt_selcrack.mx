@@ -32,11 +32,14 @@ comment "Selection cracking";
 @h
 #ifndef _OPT_SELCRACK_
 #define _OPT_SELCRACK_
-/* #define DEBUG_OPT_SELCRACK */
 #include "opt_support.h"
 
 #define maxTables 10
 
+@:exportOptimizer(selcrack)@
+#define OPTDEBUGselcrack  if ( optDebug & ((lng)1 <<DEBUG_OPT_SELCRACK) )
+
+#endif
 @c  
 #include "mal_config.h"
 #include "opt_selcrack.h"
@@ -62,9 +65,8 @@ OPTselcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for(j=0;j<maxTables;j++)
 		 tables[j] = NULL;	
 
-#ifdef DEBUG_OPT_SELCRACK
-	printf("Crack optimizer started\n");
-#endif
+	OPTDEBUGselcrack
+		printf("Crack optimizer started\n");
 	(void) cntxt;
 	(void) stk; 
 	(void) pci;
@@ -203,9 +205,6 @@ OPTselcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(selcrack)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(selcrack,OPT_CHECK_ALL)@

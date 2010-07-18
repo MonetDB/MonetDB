@@ -81,6 +81,7 @@ comment "Compiler for multiplexed instructions.";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
+#define OPTDEBUGmultiplex  if ( optDebug & ((lng)1 <<DEBUG_OPT_MULTIPLEX) )
 @+ Code generation
 The MAL block is replaced by a new one, with the multiplex
 code in place.
@@ -142,12 +143,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return createException(MAL, "optimizer.multiplex", 
 								"Iterator BAT type is missing");
 
-#ifdef DEBUG_OPT_MULTIPLEX
-	stream_printf(cntxt->fdout,"calling the optimize multiplex script routine\n");
-	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL );
-	stream_printf(cntxt->fdout,"multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
-	printInstruction(cntxt->fdout,mb, 0, pci,LIST_MAL_ALL);
-#endif
+	OPTDEBUGmultiplex {
+		stream_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
+		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL );
+		stream_printf(cntxt->fdout,"#multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
+		printInstruction(cntxt->fdout,mb, 0, pci,LIST_MAL_ALL);
+	}
 @-
 Beware, the operator constant (arg=1) is passed along as well,
 because in the end we issue a recursive function call that should
@@ -302,12 +303,11 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if( old[i])
 		freeInstruction(old[i]);
 	GDKfree(old);
-	OPTDEBUG
-	if (actions)
+	DEBUGoptimizers {
 		stream_printf(cntxt->fdout,"#opt_multiplex: %d expansions\n", actions);
-	OPTDEBUG
 		stream_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (%d K)\n",mb->stop,mb->vtop,
 		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
+	}
 	if (mb->errors){
 		/* rollback */
 	}

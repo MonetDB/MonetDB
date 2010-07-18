@@ -158,7 +158,6 @@ comment "Capitalize dictionary encodings ";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_DICTIONARY   */
 opt_export str DICTinitialize(int *ret);
 opt_export str DICTbind(int *idx, int *val, str * nme);
 opt_export str DICTexpand(int *rval, int *val, int *bid);
@@ -166,6 +165,8 @@ opt_export str DICTencode(int *ridx, int *val, int *bid);
 opt_export str DICTcompress(int *idx, str *nme, int *bid);
 opt_export str DICTdecompress(int *ret, str *nme);
 opt_export str DICTgroupid(int *ret, int *idx, int *val);
+
+#define OPTDEBUGdictionary  if ( optDebug & (1 <<DEBUG_OPT_DICTIONARY) )
 
 @c
 #include "mal_config.h"
@@ -217,10 +218,10 @@ OPTdictionaryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	limit = mb->stop;
 	old = mb->stmt;
 	
-#ifdef DEBUG_OPT_DICTIONARY 
-	stream_printf(cntxt->fdout,"#dictionary optimizer\n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG);
-#endif
+	OPTDEBUGdictionary{
+		stream_printf(cntxt->fdout,"#dictionary optimizer\n");
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG);
+	}
 
     if ( newMalBlkStmt(mb, mb->ssize) < 0)
         return 0;
@@ -261,9 +262,8 @@ of OID sizes. The same holds for idx bats.
 			if ( p != BUN_NONE ){
 				x = *(int*) BUNhead(bidx, p);
 				v = *(int*) BUNhead(bval, BUNfnd(BATmirror(dictValue), (ptr) buf ) );
-#ifdef DEBUG_OPT_DICTIONARY 
-				stream_printf(GDKout, "#Located a dictionary %s ? %s %d %d\n",buf, (p?"ok":"no"), x,v);
-#endif
+				OPTDEBUGdictionary
+					stream_printf(GDKout, "#Located a dictionary %s ? %s %d %d\n",buf, (p?"ok":"no"), x,v);
 				/* replace the sql.bind */
 				bi = BATdescriptor(x);
 				if ( bi == NULL){
@@ -288,9 +288,8 @@ of OID sizes. The same holds for idx bats.
 				/* let's remember them */
 				idx[getArg(q,0)] = getArg(qq,0);
 				val[getArg(q,0)] = getArg(qq,1);
-#ifdef DEBUG_OPT_DICTIONARY 
-				stream_printf(GDKout, "#Assigned %s to  %d %d\n",buf, idx[getArg(q,0)], val[getArg(q,0)]);
-#endif
+				OPTDEBUGdictionary
+					stream_printf(GDKout, "#Assigned %s to  %d %d\n",buf, idx[getArg(q,0)], val[getArg(q,0)]);
 				actions++;
 				continue;
 			} else  
@@ -346,9 +345,10 @@ reconstruction and introduce a new dictionary pair.
 					 isDiction(getArg(q,1)) ){
 						/* case : r:bat[:oid,:void] := algebra.uselect(dict,arg) */
 						/* become: k:= algebra.select(val,arg) ; v:= join(idx,k); r:= algebra.project(v);  */
-#ifdef DEBUG_OPT_DICTIONARY 
-						stream_printf(GDKout,"#uselect dictionary %d %s %s\n", getArg(q,1), getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
-#endif
+						OPTDEBUGdictionary{
+							stream_printf(GDKout,"#uselect dictionary %d %s %s\n", getArg(q,1), 
+								getTypeName(getVarType(mb, idx[getArg(q,1)])), getTypeName(getVarType(mb, val[getArg(q,1)])));
+						}
 						setFunctionId(q, (getFunctionId(q)== uselectRef?selectRef:putName("thetaselect",11)));
 						j = getArg(q,0);
 						pushInstruction(mb,q);
@@ -365,10 +365,10 @@ reconstruction and introduce a new dictionary pair.
 						q = newStmt(mb, algebraRef, projectRef);
 						q= pushArgument(mb,q, getArg(qq,0));
 						getArg(q,0) = j;
-#ifdef DEBUG_OPT_DICTIONARY 
-						stream_printf(GDKout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
-						stream_printf(GDKout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
-#endif
+						OPTDEBUGdictionary{
+							stream_printf(GDKout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
+							stream_printf(GDKout,"#dictionary %d %s %s\n", j, getTypeName(getVarType(mb, idx[j])), getTypeName(getVarType(mb, val[j])));
+						}
 						actions++;
 						continue;
 				}
@@ -427,9 +427,8 @@ This means we have to possibly expand the encoding table and derive an encoding 
 					idx[j] = getArg(q,0);
 					setVarUDFtype(mb,idx[j]);
 					setVarUDFtype(mb,val[j]);
-#ifdef DEBUG_OPT_DICTIONARY 
-					stream_printf(GDKout,"dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
-#endif
+					OPTDEBUGdictionary
+						stream_printf(GDKout,"#dictionary %d %s -> %d %d\n", j, getVarName(mb,j), idx[j],val[j]);
 					continue;
 				}
 @-
@@ -597,12 +596,6 @@ Derived paths are similar to the group new.
 			pushInstruction(mb,q);
 		}
 	}
-#ifdef DEBUG_OPT_DICTIONARY 
-	if (actions) {
-		chkTypes(cntxt->nspace, mb, TRUE);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG);
-	}
-#endif
 	GDKfree(idx);
 	GDKfree(val);
 	return actions;

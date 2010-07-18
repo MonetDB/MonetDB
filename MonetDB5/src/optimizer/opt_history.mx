@@ -90,7 +90,11 @@ comment "Collect SQL query statistics";
 #include "mal_function.h"
 
 opt_export str OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-/* #define _DEBUG_OPT_QUERYHISTORY_      trace its behavior */
+
+@:exportOptimizer(history)@
+
+#define OPTDEBUGhistory  if ( optDebug & ((lng)1 <<DEBUG_OPT_HISTORY) )
+#endif
 @-
 Prepare the call to the history manager.
 @= arguments
@@ -139,7 +143,7 @@ OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 static int 
 OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit,slimit;
+	int i, limit, slimit, actions = 1;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
 	int argc, inblock, oublock, arg, ctime;
 	int xtime=0, rtime = 0, foot=0, memory, tuples=0;
@@ -149,13 +153,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
-
-#ifdef _DEBUG_OPT_QUERYHISTORY_
-	stream_printf(cntxt->fdout,"ENTERING HISTORY OPTIMIZER CODE \n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#else
 	(void) cntxt;
-#endif
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
@@ -244,22 +242,15 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 	}
 
-#ifdef _DEBUG_OPT_QUERYHISTORY_
-	stream_printf(cntxt->fdout,"LEAVING QUERYHISTORY CODE INJECTION\n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#endif
 	for( ; i<slimit; i++)
 	if(old[i])
 		freeInstruction(old[i]);
 	GDKfree(old);
-	OPTDEBUG
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_history: code added\n");
 	return 1;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(history)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(history,OPT_CHECK_ALL)@

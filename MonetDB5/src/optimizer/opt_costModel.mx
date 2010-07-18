@@ -73,8 +73,6 @@ comment "Estimate the cost of a relational expression";
 #ifndef _OPT_COSTMODEL_H_
 #define _OPT_COSTMODEL_H_
 
-/* #define DEBUG_OPT_COSTMODEL*/
-
 #include "mal.h"
 #include <math.h>
 #include "mal_interpreter.h"
@@ -82,6 +80,11 @@ comment "Estimate the cost of a relational expression";
 #include "opt_support.h"
 #include "opt_prelude.h"
 
+@:exportOptimizer(costModel)@
+
+#define OPTDEBUGcostModel  if ( optDebug & (1 <<DEBUG_OPT_COSTMODEL) )
+
+#endif /* _OPT_COSTMODEL_H_ */
 @-
 @c
 #include "mal_config.h"
@@ -117,10 +120,10 @@ The cost formula are repetative
 			continue;
 		k = (@3);
 		varSetProp(mb, getArg(p,@4), rowsProp, op_eq, VALset(&v,TYPE_lng,&k));
-#ifdef DEBUG_OPT_COSTMODEL
-		stream_printf(cntxt->fdout,"COST of @1 @2 into @4: " LLFMT "\n",k);
-		printInstruction(cntxt->fdout,mb,0,p,0);
-#endif
+		OPTDEBUGcostModel {
+			stream_printf(cntxt->fdout,"COST of @1 @2 into @4: " LLFMT "\n",k);
+			printInstruction(cntxt->fdout,mb,0,p,0);
+		}
 }
 @= newRows1
 		@:newRows(@1,@1,@2,0)@
@@ -161,7 +164,7 @@ row count becomes non-deterministic.
 static int
 OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
+	int i, actions = 1;
 	lng k, c1, c2;
 	InstrPtr p;
 	str sortrevRef= putName("sortReverse",11);
@@ -281,14 +284,11 @@ an initially empty insertion BAT.
 			}
 		}
 	}
-	OPTDEBUG
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_costModel: processed\n");
 	return 1;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(costModel)@
-#endif /* _OPT_COSTMODEL_H_ */
 @-
 The costModel does not change the program properties,
 which means we can skip the expensive defensive tests.

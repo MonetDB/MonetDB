@@ -41,8 +41,11 @@ comment "Reduce the number of mode changes.";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_MODES     show partial result */
+@:exportOptimizer(accessmode)@
 
+#define OPTDEBUGaccessmode  if ( optDebug & (1 <<DEBUG_OPT_ACCESSMODE) )
+
+#endif
 @-
 The implementation strategy is currently quite simple.
 We make a scan to identify all setWriteModes and see if
@@ -107,20 +110,12 @@ OPTaccessmodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		p->fcn= NULL;
 		actions++;
 	} 
-#ifdef DEBUG_OPT_MODES
-	stream_printf(cntxt->fdout,"OPTIMIZE MODES\n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#else
 	(void) cntxt;
-#endif
 	GDKfree(candidate);
 	GDKfree(writeable);
 	return actions;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(accessmode)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(accessmode,OPT_CHECK_ALL)@

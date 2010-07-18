@@ -56,7 +56,8 @@ comment "Dataflow bracket code injection";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_DATAFLOW */
+#define OPTDEBUGdataflow  if ( optDebug & (1 <<DEBUG_OPT_DATAFLOW) )
+
 @-
 The statemens are all checked for being eligible for dataflow.
 @= flowblock
@@ -109,9 +110,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	span= setLifespan(mb);
 	if( span == NULL)
 		return 0;
-#ifdef DEBUG_DATAFLOW_OPT
-	printFunction(GDKstdout, mb,0, LIST_MAL_ALL);
-#endif
 	limit= mb->stop;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize+20) <0 ){
@@ -193,11 +191,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			pushInstruction(mb,old[i]);
 	GDKfree(old);
 	GDKfree(span);
-#ifdef DEBUG_DATAFLOW_OPT
-	printFunction(GDKstdout, mb, LIST_MAL_ALL);
-#endif
-	OPTDEBUG
-	if(actions)
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_dataflow: %d flow blocks created\n",actions);
 	return actions;
 }

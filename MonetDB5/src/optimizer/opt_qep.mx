@@ -93,7 +93,6 @@ comment "Produce an indented tree visualisation";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define DEBUG_OPT_QEP     /* show partial result */
 typedef struct QEPrecord {
 	MalBlkPtr mb;
 	InstrPtr p;
@@ -105,6 +104,10 @@ typedef struct QEPrecord {
 #define MAXPARENT 4
 #define MAXCHILD 8
 
+@:exportOptimizer(dumpQEP)@
+
+#define OPTDEBUGdumpQEP  if ( optDebug & (1 <<DEBUG_OPT_QEP) )
+#endif /* _OPT_QEP_ */
 @c
 #include "mal_config.h"
 #include "opt_qep.h"
@@ -304,9 +307,6 @@ OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return 1;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(dumpQEP)@
-#endif /* _OPT_QEP_ */
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(dumpQEP,OPT_CHECK_ALL)@

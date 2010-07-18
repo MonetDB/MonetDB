@@ -33,12 +33,15 @@ comment "Replace select with join select";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/*#define DEBUG_OPT_JOINSEL    show partial result*/ 
-
 #define match2(X,M,F) ( (X) && getFunctionId(X) && getFunctionId(X)==F && \
         getModuleId(X) && getModuleId(X)==M)
 #define match3(X,M) (getModuleId(X) && getModuleId(X)==M) 
 
+@:exportOptimizer(joinselect)@
+
+#define OPTDEBUGjoinselect  if ( optDebug & (1 <<DEBUG_OPT_JOINSELECT) )
+
+#endif
 @c
 @{
 #include "mal_config.h"
@@ -58,11 +61,8 @@ OPTjoinselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int xx = sizeof(int);
 	int pivot = -1;
 
-#ifdef DEBUG_OPT_JOINSEL
-	stream_printf(cntxt->fdou, "Joinselect optimizer started\n");
-#else
-	(void) cntxt;
-#endif
+	OPTDEBUGjoinselect
+		stream_printf(cntxt->fdout, "Joinselect optimizer started\n");
 
 	ps= scr_s = (int*) GDKmalloc(scr_size * sizeof(int));
 	pi= scr_i = (int*) GDKmalloc(scr_size * sizeof(int));
@@ -301,10 +301,9 @@ OPTjoinselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 end:
 
+	OPTDEBUGjoinselect
+		printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
 	GDKfree(old);
-#ifdef DEBUG_OPT_JOINSEL
-	printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
-#endif
 	GDKfree(ps);
 	GDKfree(pi);
 	GDKfree(pu);
@@ -312,9 +311,6 @@ end:
 	return 1;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(joinselect)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(joinselect,OPT_CHECK_ALL)@

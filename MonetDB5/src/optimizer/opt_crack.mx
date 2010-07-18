@@ -33,8 +33,9 @@ comment "Replace algebra select with crackers select";
 @h
 #ifndef _OPT_CRACK_
 #define _OPT_CRACK_
-/* #define DEBUG_OPT_CRACK */
 #include "opt_support.h"
+
+#define OPTDEBUGcrack  if ( optDebug & (1 <<DEBUG_OPT_CRACK) )
 
 @c  
 #include "mal_config.h"
@@ -53,9 +54,6 @@ OPTcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p, *old;
 	int i, limit, actions=0;
 
-#ifdef DEBUG_OPT_CRACK
-	printf("Crack optimizer started\n");
-#endif
 	(void) cntxt;
 	(void) stk; 
 	(void) pci;
@@ -65,10 +63,10 @@ OPTcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-#ifdef DEBUG_OPT_CRACK
-		printf("limit is at: %d and i is at: %d  ", limit, i);
+		OPTDEBUGcrack{
+			stream_printf(cntxt->fdout,"#limit is at: %d and i is at: %d  ", limit, i);
 	        printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);	
-#endif
+		}
 		/* find and replace algebra select commands with crack select ones*/
 
 		

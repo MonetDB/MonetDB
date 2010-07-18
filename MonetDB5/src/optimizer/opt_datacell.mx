@@ -121,7 +121,8 @@ comment "Basket expression optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_DATACELL         show partial result */
+#define OPTDEBUGdatacell  if ( optDebug & (1 <<DEBUG_OPT_DATACELL) )
+
 @-
 We keep a flow dependency table to detect.
 @c
@@ -172,20 +173,17 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	Symbol factory;
 	MalBlkPtr mf;
 
-#ifdef DEBUG_OPT_DATACELL
-	stream_printf(cntxt->fdout, "#Datacell optimizer started\n");
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
-#else
-	(void) cntxt;
-#endif
+	OPTDEBUGdatacell {
+		stream_printf(cntxt->fdout, "#Datacell optimizer started\n");
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+	}
 	(void) stk;
 	(void) pci;
 
 	while ( BASKETblock(cntxt, mb, &first, &last) ) {
 		actions++;
-#ifdef DEBUG_OPT_DATACELL
-		stream_printf(cntxt->fdout, "#Basket expression %d - %d\n", first,last);
-#endif
+		OPTDEBUGdatacell 
+			stream_printf(cntxt->fdout, "#Basket expression %d - %d\n", first,last);
 
 		/* bake a factory */
 		snprintf(buf,256,"bq%s", getArgName(mb,getInstrPtr(mb,0),0));
@@ -307,12 +305,12 @@ the incremental statements.
 		for (i = last+1; i < limit; i++) 
 			pushInstruction(mb,old[i]);
 
-#ifdef DEBUG_OPT_DATACELL
-		stream_printf(cntxt->fdout, "#Modified plan\n");
-		printFunction(cntxt->fdout,mb,0,0);
-		stream_printf(cntxt->fdout, "#Factory created\n");
-		printFunction(cntxt->fdout,mf,0,0);
-#endif
+		OPTDEBUGdatacell {
+			stream_printf(cntxt->fdout, "#Modified plan\n");
+			printFunction(cntxt->fdout,mb,0,0);
+			stream_printf(cntxt->fdout, "#Factory created\n");
+			printFunction(cntxt->fdout,mf,0,0);
+		}
 		GDKfree(old);
 	}
 	return actions;

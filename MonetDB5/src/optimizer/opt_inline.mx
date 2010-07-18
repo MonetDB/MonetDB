@@ -44,8 +44,11 @@ comment "Expand inline functions";
 #include "mal_interpreter.h"
 #include "opt_macro.h"
 
-/*#define DEBUG_OPT_INLINE      show partial result */
+@:exportOptimizer(inline)@
 
+#define OPTDEBUGinline  if ( optDebug & (1 <<DEBUG_OPT_INLINE) )
+
+#endif
 @c
 #include "mal_config.h"
 #include "opt_inline.h"
@@ -84,18 +87,21 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 Time for inlining functions that are used in multiplex operations.
 They are produced by SQL compiler.
 @c
-#ifdef DEBUG_OPT_INLINE
-			stream_printf(cntxt->fdout,"check inline statement\n");
-			printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
-			printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
-#endif
+			OPTDEBUGinline {
+				stream_printf(cntxt->fdout,"#check inline statement\n");
+				printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
+				printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
+			}
+
 			if( getModuleId(q) == malRef &&
 				getFunctionId(q)== multiplexRef &&
 				OPTinlineMultiplex(cntxt,mb,q)){
-#ifdef DEBUG_OPT_INLINE
-					stream_printf(cntxt->fdout,"multiplex inline function\n");
+
+				OPTDEBUGinline {
+					stream_printf(cntxt->fdout,"#multiplex inline function\n");
 					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
-#endif
+				}
+
 			    varSetProp(mb, getArg(q,0), inlineProp, op_eq, NULL);
 			} else
 @-
@@ -107,10 +113,10 @@ Check if the function definition is tagged as being inlined.
 				(void) inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;
-#ifdef DEBUG_OPT_INLINE
-				stream_printf(cntxt->fdout,"inline function at %d\n",i);
-				printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-#endif
+				OPTDEBUGinline {
+					stream_printf(cntxt->fdout,"#inline function at %d\n",i);
+					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+				}
 			} else 
 @-
 Check if the local call is tagged as being inlined.
@@ -119,19 +125,18 @@ Check if the local call is tagged as being inlined.
 				inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;
-#ifdef DEBUG_OPT_INLINE
-				stream_printf(cntxt->fdout,"inlined called at %d\n",i);
-				printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-#endif
+				OPTDEBUGinline {
+					stream_printf(cntxt->fdout,"#inlined called at %d\n",i);
+					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+				}
 			} 
 		}
 	}
 	(void)stk;
-	OPTDEBUG
+	OPTDEBUGinline
 		stream_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (%d K)\n",mb->stop,mb->vtop, 
 		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
-	OPTDEBUG
-	if (actions)
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_inline: actions %d MAL %d->%d\n",actions,limit,mb->stop);
 	return actions;
 }
@@ -157,16 +162,9 @@ In general, this is a hard problem. For now, we just expand.
 	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
 	res= varGetProp(s->def , getArg(getInstrPtr(s->def,0), 0),
 				inlineProp) != NULL;
-#ifdef DEBUG_OPT_INLINE
-	stream_printf(cntxt->fdout,"result of inline operation\n");
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-#endif
 	return res;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(inline)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(inline,OPT_CHECK_ALL)@

@@ -26,7 +26,7 @@ These definitions are handy to have around in the optimizer
 #include "opt_support.h"
 
 /* cf., MonetDB/src/gdk/gdk.mx */
-#define OPTDEBUG		if (GDKdebug & GRPoptimizers)
+#define DEBUGoptimizers		if (GDKdebug & GRPoptimizers && actions)
 
 opt_export  str affectedRowsRef;
 opt_export  str aggrRef;

@@ -79,7 +79,7 @@ comment "Push constant range selections through the program";
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-/* #define DEBUG_OPT_RANGEPUSH */
+#define OPTDEBUGpushranges  if ( optDebug & (1 <<DEBUG_OPT_PUSHRANGES) )
 @c  
 #include "mal_config.h"
 #include "opt_pushranges.h"
@@ -92,7 +92,6 @@ typedef struct RANGE{
 	int lastupdate, lastrange;
 }RangeRec, *Range;
 
-#ifdef DEBUG_OPT_RANGEPUSH
 static void 
 printRange(Client cntxt, MalBlkPtr mb, Range rng, int idx){
 	(void) rng;
@@ -105,7 +104,6 @@ printRange(Client cntxt, MalBlkPtr mb, Range rng, int idx){
 	stream_printf(cntxt->fdout,"\tlu=%d\tr=%d", rng[idx].lastupdate, rng[idx].lastrange);
 	stream_printf(cntxt->fdout,"\n");
 }
-#endif
 
 static int
 OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -121,11 +119,8 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	range= (Range) GDKzalloc(mb->vtop * sizeof(RangeRec));
 	if (range == NULL)
 		return 0;
-#ifdef DEBUG_OPT_RANGEPUSH
-	stream_printf(cntxt->fdout,"#Range select optimizer started\n");
-#else
-	(void) cntxt;
-#endif
+	OPTDEBUGpushranges
+		stream_printf(cntxt->fdout,"#Range select optimizer started\n");
 	(void) stk;
 	(void) pci;
 	
@@ -235,11 +230,10 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 			}
 		}
 	}
-#ifdef DEBUG_OPT_RANGEPUSH
+	OPTDEBUGpushranges
 		for(j=0; j< mb->vtop; j++)
 		if( range[j].used )
 			printRange(cntxt, mb,range,j);
-#endif
 @-
 Phase II, if we succeeded in pushing constants around and
 changing instructions, we might as well try once more to perform

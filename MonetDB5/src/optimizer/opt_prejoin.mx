@@ -46,8 +46,7 @@ comment "Recluster the table to reduce random access behavior.";
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-/* #define DEBUG_OPT_PREJOIN      trace its behavior */
-
+#define OPTDEBUGprejoin  if ( optDebug & (1 <<DEBUG_OPT_PREJOIN) )
 @c
 #include "mal_config.h"
 #include "opt_prejoin.h"
@@ -103,13 +102,6 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
-#ifdef DEBUG_OPT_PREJOIN
-	stream_printf(cntxt->fdout,"ENTERING prejoin injection\n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#else
-	(void) cntxt;
-#endif
-
 	limit= mb->stop;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
 		return 0;
@@ -132,15 +124,9 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		pushInstruction(mb,p);
 	}
 	/* we may have uncovered new use-less operations */
-	OPTDEBUG
-	if ( actions)
-		stream_printf(cntxt->fdout,"#opt_prejoin: %d statements removed\n",
-			actions);
-	chkProgram(cntxt->nspace,mb);
-#ifdef DEBUG_OPT_PREJOIN
-	stream_printf(cntxt->fdout,"LEAVING prejoin code injection\n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#endif
+	DEBUGoptimizers
+		stream_printf(cntxt->fdout,"#opt_prejoin: %d statements removed\n", actions);
+	//chkProgram(cntxt->nspace,mb);
 	GDKfree(old);
 	return actions;
 }

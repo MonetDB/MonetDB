@@ -61,8 +61,11 @@ comment "Replace calculations with accumulator model";
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/* #define DEBUG_OPT_OPTIMIZER      show partial result */
+@:exportOptimizer(accumulators)@
 
+#define OPTDEBUGaccumulators  if ( optDebug & ((lng)1 <<DEBUG_OPT_ACCUMULATORS) )
+
+#endif
 @c
 #include "mal_config.h"
 #include "opt_accumulators.h"
@@ -95,9 +98,8 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			pushInstruction(mb,p);
 			continue;
 		}
-#ifdef DEBUG_OPT_OPTIMIZER
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-#endif
+		OPTDEBUGaccumulators
+			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 		if (p->retc==1 && p->argc == 2) {
 			/* unary operation, avoid clash with binary */
 			pushInstruction(mb,p);
@@ -123,27 +125,26 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 			typeChecker(scope, mb, p, TRUE);
 			if (mb->errors || p->typechk == TYPE_UNKNOWN) {
-#ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(cntxt->fdout,"Failed typecheck");
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-#endif
+				OPTDEBUGaccumulators{
+					stream_printf(cntxt->fdout,"# Failed typecheck");
+					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+				}
 				/* reset instruction error buffer */
 				cntxt->errbuf[0]=0;
 				mb->errors = 0;
 				freeInstruction(p);
 				p=q; /* restore */
 			} else  {
-#ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(cntxt->fdout, "Found accumulation candidate ");
-				stream_printf(cntxt->fdout, "%d: %d(%d)\n", i, getArg(p,0),getArg(p,2));
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-#endif
+				OPTDEBUGaccumulators{
+					stream_printf(cntxt->fdout, "#Found accumulation candidate ");
+					stream_printf(cntxt->fdout, "%d: %d(%d)\n", i, getArg(p,0),getArg(p,2));
+					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+				}
 				freeInstruction(q);
 				actions++;  
 			}
-#ifdef DEBUG_OPT_OPTIMIZER
-			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-#endif
+			OPTDEBUGaccumulators
+				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 		}
 		pushInstruction(mb,p);
 	} 
@@ -152,16 +153,12 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(span);
-	OPTDEBUG
-	if ( actions)
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_accumulators:%d accumulations\n",actions);
 	return actions;
 }
 
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(accumulators)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(accumulators,OPT_CHECK_ALL)@

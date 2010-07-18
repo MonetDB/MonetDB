@@ -124,10 +124,15 @@ comment "Inverse macro, find pattern and replace with a function call.";
 #ifndef _MAL_MACRO_H_
 #define _MAL_MACRO_H_
 
-/* #define DEBUG_OPT_MACRO*/
-
 opt_export str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
 opt_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
+@:exportOptimizer(macro)@
+@:exportOptimizer(orcam)@
+
+#define OPTDEBUGmacro  if ( optDebug & (1 <<DEBUG_OPT_MACRO) )
+#define OPTDEBUGorcam  if ( optDebug & (1 <<DEBUG_OPT_ORCAM) )
+
+#endif /* _MAL_MACRO_H_ */
 @-
 @c
 #include "mal_config.h"
@@ -215,10 +220,7 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 			mvar[mtop++] = getArg(q, j);
 	}
 	assert(mtop == ctop);	/*shouldn;t happen */
-#ifdef DEBUG_OPT_MACRO
-	for (i = 0; i < ctop; i++)
-		printf("match %d %d\n", cvar[i], mvar[i]);
-#endif
+
 	for (i = 0; i < ctop; i++)
 		for (j = i + 1; j < ctop; j++)
 			if ((cvar[i] == cvar[j] && mvar[i] != mvar[j]) ||(mvar[i] == mvar[j] && cvar[i] != cvar[j])){
@@ -423,11 +425,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 	int i, cnt = 0, last = -1;
 	str msg = MAL_SUCCEED;
 
-#ifdef DEBUG_OPT_MACRO
-	stream_printf(cntxt->fdout,"calling the MACRO processor\n");
-#else
 	(void) cntxt;
-#endif
 	if (t == NULL)
 		return msg;
 	msg = MACROvalidate(t->def);
@@ -437,9 +435,6 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 		q = getInstrPtr(mb, i);
 		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 && 
 			getSignature(t)->token == FUNCTIONsymbol) {
-#ifdef DEBUG_OPT_MACRO
-			stream_printf(cntxt->fdout,"Hit, replace macro call %s\n", t->name);
-#endif
 			if (i == last)
 				throw(MAL, "optimizer.MACROoptimizer", MACRO_DUPLICATE);
 
@@ -493,10 +488,6 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			mvar[mtop++] = getArg(p, j);
 	}
 	assert(mtop == ctop);	/*shouldn;t happen */
-#ifdef DEBUG_OPT_MACRO
-	for (i = 0; i < ctop; i++)
-		printf("match %d %d\n", cvar[i], mvar[i]);
-#endif
 
 	p = getInstrPtr(mb, pc);
 	q = copyInstruction(getInstrPtr(mc, 0));	/* the signature */
@@ -550,15 +541,10 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 	mc = t->def;
 	if ( mc->stop < 3)
 		return msg;	/* ignore small call */
-#ifdef DEBUG_OPT_MACRO
-	printf("calling the ORCAM processor for %s\n", t->name);
-#endif
+
 	/* strip signature, return, and end statements */
 	for (i = 1; i < mb->stop - mc->stop + 3; i++)
 		if (malFcnMatch(mc, mb, i)) {
-#ifdef DEBUG_OPT_MACRO
-			printf("found match for %s at %d \n", t->name, i);
-#endif
 			msg = MACROvalidate(mc);
 			if (msg == MAL_SUCCEED)
 				replaceMALblock(mb, i, mc);
@@ -662,14 +648,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		actions= OPT@1Implementation(cntxt,mb,stk,p);
     return optimizerCheck(cntxt,mb, "optimizer.@1", actions, GDKusec() - clk, OPT_CHECK_ALL);
 }
-@h
-@:exportOptimizer(macro)@
 @c
-@:wrapOptimizer(macro)@
-@h
-@:exportOptimizer(orcam)@
-#endif /* _MAL_MACRO_H_ */
-@c
+@:wrapOptimizer(macro,OPT_CHECK_ALL)@
 @:wrapOptimizer(orcam,OPT_CHECK_ALL)@
-
 @}

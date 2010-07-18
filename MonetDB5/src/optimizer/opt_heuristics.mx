@@ -70,6 +70,11 @@ the opportunity to perform the select push through.
 #include "mal_interpreter.h"
 #include "opt_support.h"
 
+@:exportOptimizer(heuristics)@
+
+#define OPTDEBUGheuristics  if ( optDebug & ((lng)1 <<DEBUG_OPT_HEURISTIC) )
+
+#endif
 @c
 #include "mal_config.h"
 #include "opt_heuristics.h"
@@ -123,10 +128,6 @@ OPTheuristicsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 0; i < mb->stop - 1; i++) {
 		for (k = i + 1; k < mb->stop; k++)
 			if (SPcombi000(mb, i, k)) {
-#ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(cntxt->fdout, "Combinator found\n");
-				printInstructioncntxt->fdout, mb, 0, getInstrPtr(mb, i), LIST_MAL_ALL);
-#endif
 				combis++;
 				k--;	/* an instruction has been removed */
 			}
@@ -135,10 +136,6 @@ OPTheuristicsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 0; i < mb->stop - 1; i++) {
 		for (k = i + 1; k < mb->stop; k++)
 			if (SPsqueezer000(mb, i, k)) {
-#ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(cntxt->fdout, "Squeezer found\n");
-				printInstruction(cntxt->fdout, mb, 0, getInstrPtr(mb, i), LIST_MAL_ALL);
-#endif
 				squeeze++;
 				k--;	/* an instruction has been removed */
 			}
@@ -162,9 +159,6 @@ pushes down the selection through the semijoin.
 Should be done differently
 
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(heuristics)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(heuristics,OPT_CHECK_ALL)@

@@ -98,7 +98,11 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/*#define DEBUG_OPT_EMPTYSET	 show partial result */
+@:exportOptimizer(emptySet)@
+
+#define OPTDEBUGemptySet  if ( optDebug & (1 <<DEBUG_OPT_EMPTYSET) )
+
+#endif
 @c
 #include "mal_config.h"
 #include "opt_emptySet.h"
@@ -286,14 +290,10 @@ of removal of superflous constructions.
 		freeInstruction(old[i]);
 	GDKfree(old);
 	if( actions) {
-		OPTDEBUG
-			stream_printf(cntxt->fdout,"#opt_emptyset: %d empty sets statements removed\n",actions);
+		DEBUGoptimizers
+		stream_printf(cntxt->fdout,"#opt_emptyset: %d empty sets statements removed\n",actions);
 		clrAllTypes(mb);	 /* force a complete resolve */
 	}
-#ifdef DEBUG_OPT_EMPTYSET
-	printf("FINAL STAGE errors=%d\n", mb->errors);
-	printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
-#endif
 	GDKfree(constraints);
 	GDKfree(alias);
 	return actions;
@@ -315,32 +315,22 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return 0;
 	(void) stk;
 	(void) p;
-#ifdef DEBUG_OPT_EMPTYSET
-	printf("ESoptimizer called, collect empty sets and process them\n");
-	printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
-#endif
 	for (i = 0; i < mb->vtop; i++) {
 		VarPtr rowsp;
 		if ((rowsp = varGetProp(mb, i, rowsProp)) != NULL 
 		     && rowsp->value.val.lval == 0) {
-#ifdef DEBUG_OPT_EMPTYSET
-		stream_printf(cntxt->fdout, "START emptyset optimizer %d", i);
-#endif
+			OPTDEBUGemptySet
+				stream_printf(cntxt->fdout, "#START emptyset optimizer %d", i);
 			empty[i] = 1;
 		} 
 	}
-#ifdef DEBUG_OPT_EMPTYSET
-	stream_printf(cntxt->fdout, "\n");
-#endif
+	OPTDEBUGemptySet stream_printf(cntxt->fdout, "\n");
 	i= ESevaluate(cntxt, mb, empty);
 	GDKfree(empty);
 	return i;
 }
 
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(emptySet)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(emptySet,OPT_CHECK_ALL)@

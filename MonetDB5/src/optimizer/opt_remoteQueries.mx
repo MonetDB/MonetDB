@@ -107,8 +107,10 @@ comment "Resolve the multi-table definitions";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_REMOTE     show partial result */
-
+#define DEBUG_OPT_REMOTEQUERIES DEBUG_OPT_REMOTE
+@:exportOptimizer(remoteQueries)@
+#define OPTDEBUGremoteQueries  if ( optDebug & ((lng)1 <<DEBUG_OPT_REMOTEQUERIES) )
+#endif
 @c
 #include "mal_config.h"
 #include "opt_remoteQueries.h"
@@ -258,11 +260,9 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	cst.val.ival= 0;
 
 
-#ifdef DEBUG_OPT_REMOTE
+	OPTDEBUGremoteQueries
 	stream_printf(cntxt->fdout, "RemoteQueries optimizer started\n");
-#else
 	(void) cntxt;
-#endif
 	(void) stk;
 	(void) pci;
 
@@ -470,9 +470,6 @@ to be shipped should be simple.
 	return doit;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(remoteQueries)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(remoteQueries,OPT_CHECK_ALL)@

@@ -76,7 +76,9 @@ The number of overloaded instructions is kept to a minimum.
 #include "opt_support.h"
 #include "mal_recycle.h"
 
-/* #define DEBUG_OPT_RECYCLER */
+@:exportOptimizer(recycle)@
+#define OPTDEBUGrecycle  if ( optDebug & (1 <<DEBUG_OPT_RECYCLE) )
+#endif
 @-
 The variables are all checked for being eligible as a variable
 subject to recycling control. A variable may only be assigned
@@ -245,10 +247,10 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				|| ignoreVar(mb, getArg(p,j)) )
 				cnt++;
 		if (cnt == p->argc-p->retc) {
-#ifdef DEBUG_OPT_RECYCLER  
-			stream_printf(cntxt->fdout,"recycle instruction\n");
+		OPTDEBUGrecycle {
+			stream_printf(cntxt->fdout,"#recycle instruction\n");
 			printInstruction(cntxt->fdout,mb, 0, p,LIST_MAL_ALL);
-#endif
+		}
 			marks++;
 			p->recycle = recycleMaxInterest; /* this instruction is to be monitored */
 			for (j= 0; j < p->retc; j++)
@@ -359,9 +361,6 @@ with the transaction commits.
 	return actions + marks;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(recycle)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(recycle,OPT_CHECK_TYPES)@

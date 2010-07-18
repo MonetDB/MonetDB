@@ -491,6 +491,10 @@ pattern optimizer.heuristics(mod:str, fcn:str):str
 address OPTheuristics
 comment "Handle simple replacements";
 
+command mdb.traceOptimizer(flg:str)
+address OPTsetDebugStr
+comment "Otherwise it is considered a request to trace the optimizers,
+which requires a comma separated list or pipeline name.";
 @h
 #ifndef _OPT_SUPPORT_H
 #define _OPT_SUPPORT_H
@@ -501,8 +505,6 @@ comment "Handle simple replacements";
 #include "mal_builder.h"
 #include "mal_properties.h"
 
-/* #define DEBUG_OPT_OPTIMIZER     show partial result */
-
 #ifdef WIN32
 #ifndef LIBOPTIMIZER
 #define opt_export extern __declspec(dllimport)
@@ -512,6 +514,63 @@ comment "Handle simple replacements";
 #else
 #define opt_export extern
 #endif
+
+@-
+The optimizers should all be equiped with debugging code
+to easily trace their performance.
+@h
+#define DEBUG_OPT_ACCESSMODE		1
+#define DEBUG_OPT_OPTIMIZER			2
+#define DEBUG_OPT_ALIASES			3
+#define DEBUG_OPT_REDUCE			4
+#define DEBUG_OPT_COMMONTERMS		5
+#define DEBUG_OPT_COMPRESS			6
+#define DEBUG_OPT_CONSTANTS			7
+#define DEBUG_OPT_COSTMODEL			8
+#define DEBUG_OPT_CRACK				9
+#define DEBUG_OPT_DATACELL			10
+#define DEBUG_OPT_DATACYCLOTRON		11
+#define DEBUG_OPT_DATAFLOW			12
+#define DEBUG_OPT_DEADCODE     		13
+#define DEBUG_OPT_DERIVEPATH		14
+#define DEBUG_OPT_DICTIONARY		15
+#define DEBUG_OPT_EMPTYSET			16
+#define DEBUG_OPT_EVALUATE			17
+#define DEBUG_OPT_FACTORIZE			18
+#define DEBUG_OPT_GARBAGE			19
+#define DEBUG_OPT_INLINE			20
+#define DEBUG_OPT_JOINPATH			21
+#define DEBUG_OPT_JOINSELECT		22
+#define DEBUG_OPT_MACRO				23
+#define DEBUG_OPT_MERGETABLE		24
+#define DEBUG_OPT_OCTOPUS			25
+#define DEBUG_OPT_PARTITIONS		26
+#define DEBUG_OPT_PEEPHOLE			27
+#define DEBUG_OPT_PREJOIN      		28
+#define DEBUG_OPT_PUSHRANGES		29
+#define DEBUG_OPT_QEP				30
+#define DEBUG_OPT_RECYCLE			31
+#define DEBUG_OPT_REMAP       		32
+#define DEBUG_OPT_REMOTE			33
+#define DEBUG_OPT_REORDER			34
+#define DEBUG_OPT_REORDER_DETAILS	35
+#define DEBUG_OPT_REPLICATION      	36
+#define DEBUG_OPT_SINGLETON			37
+#define DEBUG_OPT_STRENGTHREDUCTION	38
+#define DEBUG_OPT_COERCION			39
+#define DEBUG_OPT_HISTORY			40
+#define DEBUG_OPT_MITOSIS			41
+#define DEBUG_OPT_MULTIPLEX			42
+#define DEBUG_OPT_ACCUMULATORS		43
+#define DEBUG_OPT_CLUSTER			44
+#define DEBUG_OPT_MAPREDUCE			45
+#define DEBUG_OPT_SELCRACK			46
+#define DEBUG_OPT_SIDCRACK			47
+#define DEBUG_OPT_TRACE				48
+#define DEBUG_OPT_HEURISTIC			49
+
+#define DEBUG_OPT(X) ( 1 << (X))
+opt_export lng optDebug;
 
 opt_export str MALoptimizer(Client c);
 opt_export str optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag);
@@ -541,6 +600,7 @@ opt_export int isMapOp(InstrPtr q);
 opt_export int isDiffOp(InstrPtr q);
 opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
+opt_export void optDebugFlag(str name);
 @}
 @-
 @node Framework, Lifespan Analysis, Building Blocks, The MAL Optimizer
@@ -616,7 +676,101 @@ for the future using an additional flag.
 #define OPT_CHECK_DECL 4
 
 #define OPT_CHECK_ALL (OPT_CHECK_FLOW | OPT_CHECK_TYPES | OPT_CHECK_DECL )
+@-
+Optimizer catalog with runtime statistics;
 @c
+struct OPTcatalog {
+	char *name;
+	int enabled;
+	int calls;
+	int actions;
+	int debug;
+} optcatalog[]= {
+{"accessmode",	0,	0,	0,	DEBUG_OPT_ACCESSMODE},
+{"accumulators",0,	0,	0,	DEBUG_OPT_ACCUMULATORS},
+{"aliases",		0,	0,	0,	DEBUG_OPT_ALIASES},
+{"cluster",		0,	0,	0,	DEBUG_OPT_CLUSTER},
+{"coercion",	0,	0,	0,	DEBUG_OPT_COERCION},
+{"commonTerms",	0,	0,	0,	DEBUG_OPT_COMMONTERMS},
+{"compress",	0,	0,	0,	DEBUG_OPT_COMPRESS},
+{"constants",	0,	0,	0,	DEBUG_OPT_CONSTANTS},
+{"costModel",	0,	0,	0,	DEBUG_OPT_COSTMODEL},
+{"crack",		0,	0,	0,	DEBUG_OPT_CRACK},
+{"datacell",	0,	0,	0,	DEBUG_OPT_DATACELL},
+{"datacyclotron",0,	0,	0,	DEBUG_OPT_DATACYCLOTRON},
+{"dataflow",	0,	0,	0,	DEBUG_OPT_DATAFLOW},
+{"deadcode",	0,	0,	0,	DEBUG_OPT_DEADCODE},
+{"derivePath",	0,	0,	0,	DEBUG_OPT_DERIVEPATH},
+{"dictionary",	0,	0,	0,	DEBUG_OPT_DICTIONARY},
+{"emptySet",	0,	0,	0,	DEBUG_OPT_EMPTYSET},
+{"evaluate",	0,	0,	0,	DEBUG_OPT_EVALUATE},
+{"factorize",	0,	0,	0,	DEBUG_OPT_FACTORIZE},
+{"garbage",		0,	0,	0,	DEBUG_OPT_GARBAGE},
+{"history",		0,	0,	0,	DEBUG_OPT_HISTORY},
+{"inline",		0,	0,	0,	DEBUG_OPT_INLINE},
+{"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
+{"joinselect",	0,	0,	0,	DEBUG_OPT_JOINSELECT},
+{"macro",		0,	0,	0,	DEBUG_OPT_MACRO},
+{"mapreduce",	0,	0,	0,	DEBUG_OPT_MAPREDUCE},
+{"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
+{"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
+{"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
+{"octopus",		0,	0,	0,	DEBUG_OPT_OCTOPUS},
+{"partitions",	0,	0,	0,	DEBUG_OPT_PARTITIONS},
+{"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
+{"prejoin",		0,	0,	0,	DEBUG_OPT_PREJOIN},
+{"pushranges",	0,	0,	0,	DEBUG_OPT_PUSHRANGES},
+{"recycler",	0,	0,	0,	DEBUG_OPT_RECYCLE},
+{"reduce",		0,	0,	0,	DEBUG_OPT_REDUCE},
+{"remap",		0,	0,	0,	DEBUG_OPT_REMAP},
+{"remote",		0,	0,	0,	DEBUG_OPT_REMOTE},
+{"reorder",		0,	0,	0,	DEBUG_OPT_REORDER},
+{"replication",	0,	0,	0,	DEBUG_OPT_REPLICATION},
+{"selcrack",	0,	0,	0,	DEBUG_OPT_SELCRACK},
+{"sidcrack",	0,	0,	0,	DEBUG_OPT_SIDCRACK},
+{"singleton",	0,	0,	0,	DEBUG_OPT_SINGLETON},
+{"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
+{"trace",		0,	0,	0,	DEBUG_OPT_TRACE},
+{ 0,	0,	0,	0,	0}
+};
+
+lng optDebug;
+
+@-
+Front-ends can set a collection of optimizers by name or their pipe alias.
+@c
+str
+OPTsetDebugStr(int *ret, str *nme)
+{
+	int i;
+	str name= *nme, t, s, env = 0;
+
+	(void) ret;
+	optDebug = 0;
+	if ( name == 0 || *name == 0)
+		return MAL_SUCCEED;
+	name = GDKstrdup(name);
+
+	if ( strstr(name,"_pipe") ){
+		env = GDKgetenv(name);
+		if ( env ) {
+			GDKfree(name);
+			name = GDKstrdup(env);
+		}
+	}
+	for ( t = s = name; t && *t ; t = s){
+		s = index(s,',');
+		if ( s ) *s++ = 0;
+		for ( i=0; optcatalog[i].name; i++)
+		if ( strcmp(t,optcatalog[i].name) == 0){
+			optDebug |= DEBUG_OPT(optcatalog[i].debug);
+			break;
+		}
+	}
+	GDKfree(name);
+	return MAL_SUCCEED;
+}
+
 str
 optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag)
 {

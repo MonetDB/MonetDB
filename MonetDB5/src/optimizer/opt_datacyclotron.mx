@@ -58,7 +58,6 @@ The number of overloaded instructions is kept to a minimum.
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/*#define DEBUG_DATACYCLOTRON_OPT*/
 #define BIND_DATACYCLOTRON_OPT
 
 #define SCHEMA_LENG     32 
@@ -85,6 +84,8 @@ opt_export DCYcatalog* findRegist( str sch, str tab, str col, int acc);
 opt_export DCYcatalog* removePartRegist( str sch, str tab, str col, int acc, int part);
 opt_export int dropRegist( str sch, str tab, str col, int acc );
 opt_export str printRegists(void);
+
+#define OPTDEBUGdatacyclotron  if ( optDebug & (1 <<DEBUG_OPT_DATACYCLOTRON) )
 
 @-
 @c
@@ -126,10 +127,6 @@ printRegists(void) {
         }
 
 	sprintf(res, "The catalog for the datacyclotron optimizer contains %d chunks and %d partitions.\n", chunks, parts);	
-
-#ifdef DEBUG_DATACYCLOTRON_OPT
-	printf("%s\n", res);
-#endif
 
 	return res;		
 }
@@ -244,10 +241,10 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int *tpes= (int*) GDKmalloc((mb->vtop+1000) *sizeof(int));
 #endif
 
-#ifdef DEBUG_DATACYCLOTRON_OPT
-	stream_printf(cntxt->fdout,"ENTERING DATA CYCLOTRON \n");
-    printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#endif
+	OPTDEBUGdatacyclotron {
+		stream_printf(cntxt->fdout,"ENTERING DATA CYCLOTRON \n");
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+	}
 
 	newArg = GDKmalloc(sizeof(*newArg) * (mb->vtop+1000));
 
@@ -385,11 +382,11 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		
 	}
 
-#ifdef DEBUG_DATACYCLOTRON_OPT
-	stream_printf(cntxt->fdout,"LEAVING DATA CYCLOTRON \n");
-	chkProgram(cntxt->nspace,mb);
-    printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#endif
+	OPTDEBUGdatacyclotron {
+		stream_printf(cntxt->fdout,"LEAVING DATA CYCLOTRON \n");
+		chkProgram(cntxt->nspace,mb);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+	}
 #ifdef BIND_DATACYCLOTRON_OPT
 	GDKfree(tpes);
 #endif
@@ -398,11 +395,6 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	GDKfree(regs);
 	GDKfree(old);
 
-#ifdef DEBUG_DATACYCLOTRON_OPT
-	clrDeclarations(mb);
-	chkTypes(cntxt->nspace,mb,TRUE);
-	printFunction(cntxt->fdout,mb, 0,LIST_MAL_ALL);
-#endif
 	return actions;
 }
 @include optimizerWrapper.mx

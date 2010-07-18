@@ -89,7 +89,8 @@ comment "Turn function into a factory";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_FACTORIZE     show partial result */
+#define OPTDEBUGfactorize  if ( optDebug & (1 <<DEBUG_OPT_FACTORIZE) )
+
 @c
 #include "mal_config.h"
 #include "opt_factorize.h"

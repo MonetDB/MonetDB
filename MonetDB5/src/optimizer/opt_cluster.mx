@@ -42,8 +42,9 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/*#define _DEBUG_OPT_CLUSTER*/
 #define CLUSTER_THRESHOLD (BUN)(64*1024)
+
+#define OPTDEBUGcluster  if ( optDebug & ((lng)1 <<DEBUG_OPT_CLUSTER) )
 
 @c
 #include "mal_config.h"
@@ -151,9 +152,6 @@ cluster_groupby(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	//if (lcnt && rcnt) {
 		/* lets cluster */
 	//}
-#ifdef _DEBUG_OPT_CLUSTER
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#endif
 	return 1;
 }
 #endif
@@ -666,9 +664,6 @@ OPTclusterImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	actions += cluster_join(mb);
 
 	(void)cntxt; (void)stk; (void)p;
-#ifdef _DEBUG_OPT_CLUSTER
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#endif
 	return actions;
 }
 

@@ -250,3 +250,11 @@ dictionary_pipe=inline,remap,dictionary,evaluate,costModel,coercions,emptySet,al
 
 # The default + compression
 compression_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
+
+#Debugging the optimizer pipeline
+# The best way is to use mdb and inspect the information gathered during the optimization phase.
+# Several optimizers produce more intermediate information, which may shed light on the details.
+# The opt_debug bitvector controls their output. It can be set to a pipeline or a comma separated
+# list of optimizers you would like to trace. It is a server wide property and can not be set 
+# dynamically, as it is intended for internal use.
+opt_debug=

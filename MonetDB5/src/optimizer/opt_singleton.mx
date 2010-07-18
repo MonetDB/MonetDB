@@ -63,7 +63,7 @@ comment "Perform singleton optimization";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_SINGLETON     show partial result */
+#define OPTDEBUGsingleton  if ( optDebug & ((lng)1 <<DEBUG_OPT_SINGLETON) )
 @c
 #include "mal_config.h"
 #include "opt_singleton.h"
@@ -165,14 +165,12 @@ variables on the stack.
 @c
 	for (i = 0; i < cnt; i++)
 		STnewTuple(mb, vars[i], &top, tuples);
-#ifdef DEBUG_OPT_SINGLETON
-	stream_printf(cntxt->fdout, "START SINGLETON OPTIMIZER %d:", cnt);
-	for (i = 0; i < top; i++)
-		stream_printf(cntxt->fdout, "[%d,%d,%d] ", vars[i], tuples[i].hidx, tuples[i].tidx);
-	stream_printf(cntxt->fdout, "\n");
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL );
-	stream_printf(cntxt->fdout, "START OPTIMIZER ");
-#endif
+	OPTDEBUGsingleton{
+		stream_printf(cntxt->fdout, "START SINGLETON OPTIMIZER %d:", cnt);
+		for (i = 0; i < top; i++)
+			stream_printf(cntxt->fdout, "[%d,%d,%d] ", vars[i], tuples[i].hidx, tuples[i].tidx);
+		stream_printf(cntxt->fdout, "\n");
+	}
 	if ( newMalBlkStmt(mb, mb->ssize) < 0){
 		GDKfree(tuples);
 		return 0;
@@ -323,20 +321,19 @@ variables on the stack.
 	if( old[i])
 		freeInstruction(old[i]);
 	GDKfree(old);
-#ifdef DEBUG_OPT_SINGLETON
+	OPTDEBUGsingleton
 	if (actions) {
 		printf("FINAL STAGE actions=%d\n", actions);
-		printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 		for (i = 0; i < top; i++)
 			stream_printf(cntxt->fdout, "[%d,%d:%s,%d:%s] ", tuples[i].vidx, tuples[i].hidx, getTypeName(tuples[i].htpe), tuples[i].tidx, getTypeName(tuples[i].ttpe));
 		stream_printf(cntxt->fdout, "\n");
 	}
-#endif
 
-#ifdef DEBUG_OPT_SINGLETON
-	printf("FINAL STAGE SINGLETON errors=%d\n", mb->errors);
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
-#endif
+	OPTDEBUGsingleton{
+		printf("FINAL STAGE SINGLETON errors=%d\n", mb->errors);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+	}
 	GDKfree(tuples);
 	return actions;
 }

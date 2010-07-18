@@ -49,7 +49,9 @@ They are marked as unsafe.
 #include "mal_interpreter.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_REDUCE     show partial result */
+@:exportOptimizer(coercion)@
+#define OPTDEBUGcoercion  if ( optDebug & ((lng)1 << DEBUG_OPT_COERCION) )
+#endif
 
 @c
 #include "mal_config.h"
@@ -103,15 +105,11 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 This optimizer affects the flow, but not the type and declaration
 structure. A cheaper optimizer is sufficient.
 @c
-	OPTDEBUG
-	if ( actions)
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_coercion: %d coersions applied\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(coercion)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(coercion,OPT_CHECK_FLOW)@

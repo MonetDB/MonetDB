@@ -65,7 +65,7 @@ comment "Experiment with partitioned databases";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_PARTITIONED	show partial result */
+#define OPTDEBUGpartitions  if ( optDebug & (1 <<DEBUG_OPT_PARTITIONS) )
 @c
 #include "mal_config.h"
 #include "opt_partitions.h"
@@ -114,9 +114,8 @@ OPTbarrierList(MalBlkPtr mb, InstrPtr p, int *alias){
 		q = newStmt(mb, bpmRef, "newIterator");
 		q->barrier= BARRIERsymbol;
 		q->argv[0]= getArg(p,j);
-#ifdef DEBUG_OPT_PARTITIONED
-		printf("barrier %d ->%d\n",getArg(p,j), alias[getArg(p,j)]);
-#endif
+		OPTDEBUGpartitions
+			printf("barrier %d ->%d\n",getArg(p,j), alias[getArg(p,j)]);
 		q= pushArgument(mb, q, 
 			(alias[getArg(p,j)]?alias[getArg(p,j)]:getArg(p,j)) );
 	}
@@ -253,9 +252,8 @@ Assume all bind operations are over partitioned bats.
 				localVar(mb,"bpm",getArg(p,0), getVarType(mb, getArg(p,0)));
 			setVarUDFtype(mb,q->argv[0]);
 			alias[getArg(p,0)]= getArg(q,0);
-#ifdef DEBUG_OPT_PARTITIONED
-		printf("1 alias[%d]=%d\n",getArg(p,0),getArg(q,0));
-#endif
+			OPTDEBUGpartitions
+				printf("1 alias[%d]=%d\n",getArg(p,0),getArg(q,0));
 /*
 			snprintf(name,1024,"%s_%s_%s",
 			getVarConstant(mb, getArg(p,1)).val.sval,
@@ -315,9 +313,8 @@ At this stage we first undo the partitioning.
 			q= pushArgument(mb,q,alias[getArg(p,j)]);
 			garbage[getArg(q,1)]=0;
 			alias[getArg(p,j)]= 0;
-#ifdef DEBUG_OPT_PARTITIONED
-			printf("alias[%d]=0\n",getArg(p,j));
-#endif
+			OPTDEBUGpartitions
+				printf("alias[%d]=0\n",getArg(p,j));
 		}
 		if( p->token == ENDsymbol)
 			break;

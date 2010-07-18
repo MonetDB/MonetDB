@@ -166,10 +166,10 @@ comment "Derive the number of legs to be used for query function";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/*#define DEBUG_OPT_OCTOPUS         show partial result */
-
 opt_export str OPTlegAdvice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export int OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#define OPTDEBUGoctopus  if ( optDebug & (1 <<DEBUG_OPT_OCTOPUS) )
 @c
 #include "mal_config.h"
 #include "opt_octopus.h"
@@ -268,12 +268,10 @@ int tcnt, int *wnm, int *tnm, int **sch, int **res){
 		return 0;
 	}
 
-#ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout,"#create tentacle for %d %d %d\n",start,idx,varid);
-	printInstruction(cntxt->fdout,mb,0,pci,0);
-#else
-	(void) cntxt;
-#endif
+	OPTDEBUGoctopus {
+		stream_printf(cntxt->fdout,"#create tentacle for %d %d %d\n",start,idx,varid);
+		printInstruction(cntxt->fdout,mb,0,pci,0);
+	}
 
 	/* locate the last assignment for varid */
 	fnd = -1;
@@ -394,11 +392,6 @@ already have been handled and produce their target.
 	OCTexitcode(tm, conn,varid);
 	clrDeclarations(tm);
 
-#ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout, "TENTACLE octopus \n");
-	chkDeclarations(tm);
-	printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
-#endif
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 	GDKfree(list);
 	GDKfree(alias);
@@ -426,12 +419,10 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	if ( tentacle == NULL)
 		return 0;
-#ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout, "#Octopus optimizer called\n");
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
-#else
-	(void) cntxt;
-#endif
+	OPTDEBUGoctopus{
+		stream_printf(cntxt->fdout, "#Octopus optimizer called\n");
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+	}
 	(void) stk;
 @-
 All octopus tentacle code is collected in a separate module
@@ -794,7 +785,7 @@ The tentacle code should be optimized by the remaining optimizers too.
 	}
 	chkDeclarations(mb);
 		chkProgram(cntxt->nspace,mb);  
-#ifdef DEBUG_OPT_OCTOPUS
+	OPTDEBUGoctopus
 	if (actions) {
 		stream_printf(cntxt->fdout, "DONE octopus \n");
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
@@ -805,7 +796,6 @@ The tentacle code should be optimized by the remaining optimizers too.
 			printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT);
 		}
 	}
-#endif
 /*	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
 

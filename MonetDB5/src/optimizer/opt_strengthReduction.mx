@@ -74,7 +74,7 @@ comment "Move constant expressions out of the loop";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_STRENGTHREDUCTION     show partial result */
+#define OPTDEBUGstrengthReduction  if ( optDebug & ((lng)1 <<DEBUG_OPT_STRENGTHREDUCTION) )
 @c
 #include "mal_config.h"
 #include "opt_strengthReduction.h"
@@ -159,9 +159,8 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 					blkbegin = i;
 					blkexit = getBlockExit(mb,i);
 				}
-#ifdef DEBUG_OPT_STRENGTHREDUCTION
-			stream_printf(cntxt->fdout, "check block %d-%d\n", blkbegin, blkexit);
-#endif
+				OPTDEBUGstrengthReduction
+					stream_printf(cntxt->fdout, "#check block %d-%d\n", blkbegin, blkexit);
 			}
 			within[ik++] = p;
 			blk++;
@@ -172,9 +171,8 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 			if (blk == 0)
 				blkexit= blkbegin = 0;
 			/* move the saved instruction into place */
-#ifdef DEBUG_OPT_STRENGTHREDUCTION
-			stream_printf(cntxt->fdout, "combine both %d %d\n", bk, ik);
-#endif
+			OPTDEBUGstrengthReduction
+				stream_printf(cntxt->fdout, "#combine both %d %d\n", bk, ik);
 			for (k = 0; k < ik; k++)
 				before[bk++] = within[k];
 			ik = 0;

@@ -388,6 +388,12 @@ Beware, this is not yet effectuated in the interpreter.
 	p->typechk= TYPE_RESOLVED;
 	for(i=0;i<p->retc;i++) {
 		int ts= returntype[i];
+		if( isVarConstant(mb, getArg(p,i)) ){
+			showScriptException( mb, getPC(mb,p), TYPE, "Assignment to constant");
+			p->typechk= TYPE_UNKNOWN;
+			mb->errors++;
+			return -3;
+		}
 		if( !isVarFixed(mb,getArg(p,i)) && ts>=0) {
 			setVarType(mb, getArg(p,i),ts);
 			setVarFixed(mb, getArg(p,i));

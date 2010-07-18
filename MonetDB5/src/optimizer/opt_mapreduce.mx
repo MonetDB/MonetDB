@@ -51,6 +51,12 @@ comment "Localize the elements of a named cloud";
 #include "opt_support.h"
 
 opt_export str MRgetCloud(int *ret, str *nme);
+
+@:exportOptimizer(mapreduce)@
+
+#define OPTDEBUGmapreduce  if ( optDebug & ((lng)1 <<DEBUG_OPT_MAPREDUCE) )
+
+#endif
 @c
 #include "mal_config.h"
 #include "opt_mapreduce.h"
@@ -922,9 +928,6 @@ OPTmapreduceImplementation(
 }
 
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(mapreduce)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(mapreduce,OPT_CHECK_ALL)@

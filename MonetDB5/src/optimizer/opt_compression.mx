@@ -74,7 +74,7 @@ comment "Compression code injection";
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/*#define DEBUG_COMPRESS_OPT*/
+#define OPTDEBUGcompress  if ( optDebug & ((lng)1 <<DEBUG_OPT_COMPRESS) )
 
 @-
 @c
@@ -122,10 +122,6 @@ OPTcompressImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	GDKfree(old);
 
-#ifdef DEBUG_COMPRESS_OPT
-	chkTypes(cntxt->nspace,mb,TRUE);
-	printFunction(cntxt->fdout,mb, 0,LIST_MAL_ALL);
-#endif
 	return actions;
 }
 @include optimizerWrapper.mx

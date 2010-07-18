@@ -129,7 +129,7 @@ command setDebug(flg:str):int
 address MDBsetDebugStr
 comment "Set the kernel debugging bit-set and return its previous value.
 The recognized options are: threads, memory, properties,
-io, transactions, modules, algorithms, estimates, xproperties";
+io, transactions, modules, algorithms, estimates, xproperties.";
 command setDebug(flg:int):int
 address MDBsetDebug
 comment "Set the kernel debugging bit-set and return its previous value.";
@@ -414,7 +414,7 @@ MDBsetDebug(int *ret, int *flg)
 str
 MDBsetDebugStr(int *ret, str *flg)
 {
-    *ret = GDKdebug;
+	*ret = GDKdebug;
 	if( strcmp("threads",*flg)==0)
 		GDKdebug |= GRPthreads;
 	if( strcmp("memory",*flg)==0)

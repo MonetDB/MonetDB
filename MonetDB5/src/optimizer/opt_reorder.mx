@@ -67,8 +67,7 @@ comment "Reorder by dataflow dependencies";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_REORDER  */
-/* #define DEBUG_OPT_REORDER_DETAILS */
+#define OPTDEBUGreorder  if ( optDebug & ((lng)1 <<DEBUG_OPT_REORDER) )
 @c
 #include "mal_config.h"
 #include "opt_reorder.h"
@@ -95,6 +94,8 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 	InstrPtr p = NULL;
 	int block = 0;
 	
+	(void) cntxt;
+
 	if (list == NULL || var == NULL){
 		if (list ) GDKfree(list);
 		if (var) GDKfree(var);
@@ -148,7 +149,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 			GDKfree(list[i]);
 		return NULL;
 	}
-#ifdef DEBUG_OPT_REORDER_DETAILS
+@-
 	stream_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
 	for(i=0;i<mb->stop; i++)
 	if( list[i]->cnt){
@@ -157,9 +158,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 			stream_printf(cntxt->fdout," %d",list[i]->stmt[j]);
 		stream_printf(cntxt->fdout,"\n");
 	}
-#else
-	(void) cntxt;
-#endif
+@c
 	GDKfree(var);
 	return list;
 }
@@ -185,10 +184,10 @@ OPTdepthfirst(Client cntxt, MalBlkPtr mb, int pc, InstrPtr old[], Node dep[])
 		return;
 	for (i= 0; i< dep[pc]->cnt; i++)
 		OPTdepthfirst(cntxt, mb,dep[pc]->stmt[i], old, dep);
-#ifdef DEBUG_OPT_REORDER
+		OPTDEBUGreorder{
 			stream_printf(cntxt->fdout,"dump[%d]:",pc);
 			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
-#endif
+		}
 	pushInstruction(mb, p);
 }
 
@@ -202,10 +201,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
-#ifdef DEBUG_OPT_REORDER
-	stream_printf(cntxt->fdout,"REORDER\n");
-	printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
-#endif
 	dep = OPTdependencies(cntxt,mb);
 	if ( dep == NULL)
 		return 0;
@@ -238,12 +233,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* collect all seen sofar by backward grouping */
 			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
-#ifdef DEBUG_OPT_REORDER
-			if( old[j]){
-				stream_printf(cntxt->fdout,"leftover: %d",start+1);
-				printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT);
-			}
-#endif
+				OPTDEBUGreorder if( old[j]){
+					stream_printf(cntxt->fdout,"leftover: %d",start+1);
+					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT);
+				}
 				OPTdepthfirst(cntxt, mb, j, old, dep);
 			}
 			pushInstruction(mb,p);
@@ -255,10 +248,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			pushInstruction(mb,old[i]);
 	OPTremoveDep(dep, limit);
 	GDKfree(old);
-#ifdef DEBUG_OPT_REORDER
-	stream_printf(cntxt->fdout,"REORDER DONE\n");
-	printFunction(cntxt->fdout, mb,0,  LIST_MAL_STMT);
-#endif
 	return 1;
 }
 @include optimizerWrapper.mx

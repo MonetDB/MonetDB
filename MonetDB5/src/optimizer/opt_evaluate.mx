@@ -61,7 +61,11 @@ comment "Evaluate constant expressions once.";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/*  #define DEBUG_OPT_CX  */
+@:exportOptimizer(evaluate)@
+
+#define OPTDEBUGevaluate  if ( optDebug & (1 <<DEBUG_OPT_EVALUATE) )
+
+#endif
 @c  
 #include "mal_config.h"
 #include "opt_evaluate.h"
@@ -160,11 +164,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
-#ifdef DEBUG_OPT_CX
-	stream_printf(cntxt->fdout, "Constant expression optimizer started\n");
-#else
 	(void)cntxt;
-#endif
+	OPTDEBUGevaluate stream_printf(cntxt->fdout, "Constant expression optimizer started\n");
 
 	span = setLifespan(mb);
 	if (span == NULL)
@@ -182,9 +183,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
-#ifdef DEBUG_OPT_CX
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-#endif
+		OPTDEBUGevaluate printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 		/* be aware that you only assign once to a variable */
 		if (p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			if (assignedOnce(mb, span, getArg(p, 0)) == FALSE)
@@ -194,10 +193,10 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			p->barrier = 0;
 			msg = reenterMAL(cntxt, mb, i, i + 1, env, 0, 0);
 			p->barrier = barrier;
-#ifdef DEBUG_OPT_CX
-			stream_printf(cntxt->fdout, "retc var %s\n", getVarName(mb, getArg(p, 0)));
-			stream_printf(cntxt->fdout, "result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
-#endif
+			OPTDEBUGevaluate {
+				stream_printf(cntxt->fdout, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
+				stream_printf(cntxt->fdout, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
+			}
 			if (msg == MAL_SUCCEED) {
 				ValRecord cst;
 				VALcopy(&cst, &env->stk[getArg(p, 0)]);
@@ -217,24 +216,21 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				/* freeze the type */
 				setVarFixed(mb,getArg(p,1));
 				setVarUDFtype(mb,getArg(p,1));
-#ifdef DEBUG_OPT_CX
-				stream_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
-					getArg(p, 0), getArg(p, 1), getTypeName(getArgType(mb, p, 1)));
-#endif
+				OPTDEBUGevaluate {
+					stream_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
+						getArg(p, 0), getArg(p, 1), getTypeName(getArgType(mb, p, 1)));
+				}
 			} else {
 				/* if there is an error, we should postpone message handling,
 					as the actual error (eg. division by zero ) may not happen) */
-#ifdef DEBUG_OPT_CX
-				stream_printf(cntxt->fdout, "Evaluated %s\n", msg);
-#endif
+				OPTDEBUGevaluate stream_printf(cntxt->fdout, "Evaluated %s\n", msg);
 				GDKfree(msg);
 				mb->errors = 0;
 			}
 		}
 	}
 	actions += OPTremoveUnusedBlocks(cntxt, mb);
-	OPTDEBUG
-	if (actions)
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout, "#opt_evaluate: %d constant expressions\n", actions);
 	GDKfree(span);
 	GDKfree(alias);
@@ -243,9 +239,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	return actions;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(evaluate)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(evaluate,OPT_CHECK_ALL)@

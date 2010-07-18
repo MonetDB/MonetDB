@@ -86,10 +86,11 @@ They are marked as unsafe.
 #include "opt_support.h"
 #include "mal_exception.h"
 
-/* #define DEBUG_OPT_ALIASES      show partial result */
-
 opt_export int OPTisAlias(InstrPtr p);
 opt_export void OPTaliasRemap(InstrPtr p, int *alias);
+
+#define OPTDEBUGaliases  if ( optDebug & (1 <<DEBUG_OPT_ALIASES) )
+
 @-
 When you propagate an alias through the program, the properties
 maintained should also be updated. In particular, the lifespan
@@ -166,8 +167,7 @@ The second phase is constant alias replacement should be implemented.
 @c
 	GDKfree(span);
 	GDKfree(alias);
-	OPTDEBUG
-	if (actions)
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_aliases: %d removed\n",actions);
 	return actions;
 }

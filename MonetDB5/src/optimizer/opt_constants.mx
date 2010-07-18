@@ -40,8 +40,12 @@ comment "Duplicate constant removal optimizer";
 #include "opt_support.h"
 #include "mal_exception.h"
 
-/* #define DEBUG_OPT_CONSTANTS        show partial result */
+@:exportOptimizer(constants)@
 
+#define OPTDEBUGconstants  if ( optDebug & (1 <<DEBUG_OPT_CONSTANTS) )
+
+
+#endif
 @-
 We have to keep an alias table to reorganize the program
 after the variable stack has changed.
@@ -56,9 +60,8 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int *alias, *index;
 	VarPtr x,y, *cst;
 
-#ifdef DEBUG_OPT_CONSTANTS 
-	stream_printf(cntxt->fdout,"matching constant elements \n");
-#endif
+	OPTDEBUGconstants stream_printf(cntxt->fdout,"#OPT_CONSTANTS: MATCHING CONSTANTS ELEMENTS\n");
+
 	alias= (int*) GDKmalloc(sizeof(int) * mb->vtop);
 	cst= (VarPtr*) GDKmalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKmalloc(sizeof(int) * mb->vtop);
@@ -80,13 +83,14 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			x= getVar(mb,i); fnd = 0;
 			for( k= n-1; k>=0; k--){
 				y= cst[k];
-				if ( x->type == y->type &&
-					ATOMcmp(x->type, VALget(&x->value), VALget(&y->value)) == 0){
-#ifdef DEBUG_OPT_CONSTANTS 
-	stream_printf(cntxt->fdout,"matching elements %s %d %d ", getVarName(mb,i), i,k);
-	ATOMprint(x->value.vtype,VALget(&x->value),cntxt->fdout);
-	stream_printf(cntxt->fdout,"\n");
-#endif
+				if ( x->type &&  x->type == y->type &&
+					 x->value.vtype && x->value.vtype == y->value.vtype &&
+					ATOMcmp(x->value.vtype, VALget(&x->value), VALget(&y->value)) == 0){
+					OPTDEBUGconstants {
+						stream_printf(cntxt->fdout,"#opt_constants: matching elements %s %d %d ", getVarName(mb,i), i,k);
+						ATOMprint(x->value.vtype,VALget(&x->value),cntxt->fdout);
+						stream_printf(cntxt->fdout,"\n");
+					}
 					/* re-use a constant */
 					alias[i]= index[k];
 					fnd=1;
@@ -94,11 +98,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				}
 			}
 			if ( fnd == 0){
-#ifdef DEBUG_OPT_CONSTANTS 
-				stream_printf(cntxt->fdout,"swith elements %d %d\n", i,n);
-#else
-				(void) cntxt;
-#endif
+				OPTDEBUGconstants stream_printf(cntxt->fdout,"swith elements %d %d\n", i,n);
 				cst[n]= x;
 				index[n]= i;
 				alias[i]= index[n];
@@ -112,15 +112,14 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		for (k=0; k < p->argc; k++)
 			getArg(p,k) = alias[getArg(p,k)];
 	}
+	DEBUGoptimizers
+		stream_printf(cntxt->fdout,"#opt_constants: %d constant duplicates removed\n", actions);
 	GDKfree(alias);
 	GDKfree(cst);
 	GDKfree(index);
 	return actions;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(constants)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(constants,OPT_CHECK_ALL)@

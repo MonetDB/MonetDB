@@ -74,10 +74,12 @@ comment "Derive a group sum.";
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-/* #define DEBUG_OPT_DERIVEPATH  */
 opt_export str ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str ALGderiveCount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str ALGderiveSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#define OPTDEBUGderivePath  if ( optDebug & ((lng)1 <<DEBUG_OPT_DERIVEPATH) )
+
 @c
 #include "mal_config.h"
 #include "opt_derivepath.h"
@@ -121,10 +123,10 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				pc[getArg(p,0)] = i;
 				pc[getArg(p,1)] = i;
 				actions++;
-#ifdef DEBUG_OPT_DERIVEPATH 
-				stream_printf(cntxt->fdout,"#new derivePath instruction\n");
-				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
-#endif
+				OPTDEBUGderivePath {
+					stream_printf(cntxt->fdout,"#new derivePath instruction\n");
+					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+				}
 		}
 		if (getModuleId(p) == groupRef && p->argc == 5 && (getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef)){
 @-
@@ -140,10 +142,10 @@ This creates a series of derive paths, many of which will be removed during dead
 				pc[getArg(q,1)] = i;
 				freeInstruction(p);
 				p= q;
-#ifdef DEBUG_OPT_DERIVEPATH 
-				stream_printf(cntxt->fdout,"#new derivePath instruction extension\n");
-				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
-#endif
+				OPTDEBUGderivePath{
+					stream_printf(cntxt->fdout,"#new derivePath instruction extension\n");
+					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+				}
 			}
 		} 
 		pushInstruction(mb,p);
@@ -153,8 +155,7 @@ This creates a series of derive paths, many of which will be removed during dead
 		freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(pc);
-	OPTDEBUG
-	if ( actions)
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_derivepath: %d statements glued\n",actions);
 	return actions;
 }

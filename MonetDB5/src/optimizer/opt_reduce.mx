@@ -51,8 +51,7 @@ comment "Reduce the stack space claims";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_REDUCE     show partial result */
-
+#define OPTDEBUGreduce  if ( optDebug & ((lng)1 <<DEBUG_OPT_REDUCE) )
 @c
 #include "mal_config.h"
 #include "opt_reduce.h"
@@ -70,8 +69,7 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	actions = mb->vtop;
 	trimMalVariables(mb);
 	actions = actions - mb->vtop;
-	OPTDEBUG
-	if (actions)
+	DEBUGoptimizers
 		stream_printf(cntxt->fdout,"#opt_reduce: %d variables removed\n",actions);
 	return actions;
 }

@@ -59,13 +59,15 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
+@:exportOptimizer(mitosis)@
+#define OPTDEBUGmitosis  if ( optDebug & ((lng)1 <<DEBUG_OPT_MITOSIS) )
+#endif
 @c
 #include "mal_config.h"
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
 #include "mal_interpreter.h"
 
-/* #define _DEBUG_OPT_MITOSIS*/
 #define PARTITION_THRESHOLD (BUN) GDKnr_threads	/* should be increased in production version */
 
 static int eligible(MalBlkPtr mb )
@@ -158,15 +160,12 @@ The pieces to be used may be overruled by the octopus optimizer.
 		if ( (size_t) rowcnt < (size_t) pieces || pieces <=1)
 			return 0;
 	}
-	OPTDEBUG
+	OPTDEBUGmitosis
 		stream_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
 			" with " BUNFMT " rows into " BUNFMT " rows/piece %d threads %d pieces\n",
 				getVarConstant(mb, getArg(target,2)).val.sval,
 				getVarConstant(mb, getArg(target,3)).val.sval,
 				rowcnt, r, GDKnr_threads,pieces);
-#ifdef _DEBUG_OPT_MITOSIS
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#endif
 
 	old = mb->stmt;
 	limit= mb->stop;
@@ -241,16 +240,9 @@ The pieces to be used may be overruled by the octopus optimizer.
 		}
 		pushInstruction(mb,matq);
 	}
-#ifdef _DEBUG_OPT_MITOSIS
-	stream_printf(cntxt->fdout,"DONE MITOSIS\n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT);
-#endif
 	return 1;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(mitosis)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(mitosis,OPT_CHECK_ALL)@

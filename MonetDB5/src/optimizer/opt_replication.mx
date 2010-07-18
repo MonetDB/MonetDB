@@ -40,7 +40,9 @@ comment "Replication optimizer";
 #include "mal_interpreter.h"
 #include "mal_instruction.h"
 
-/* #define DEBUG_REPLICATOR      trace its behavior */
+@:exportOptimizer(replication)@
+#define OPTDEBUGreplication  if ( optDebug & ((lng)1 <<DEBUG_OPT_REPLICATION) )
+#endif
 
 @c
 #include "mal_config.h"
@@ -145,9 +147,6 @@ OPTreplicationImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	return actions;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(replication)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(replication,OPT_CHECK_ALL)@

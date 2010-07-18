@@ -80,8 +80,11 @@ comment "Dead code optimizer";
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-/* #define DEBUG_OPT_DEAD       trace its behavior */
+@:exportOptimizer(deadcode)@
 
+#define OPTDEBUGdeadcode  if ( optDebug & (1 <<DEBUG_OPT_DEADCODE) )
+
+#endif
 @c
 #include "mal_config.h"
 #include "opt_deadcode.h"
@@ -98,13 +101,6 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
-
-#ifdef DEBUG_OPT_DEAD
-	stream_printf(cntxt->fdout,"ENTERING DEAD CODE ELIMINATION\n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#else
-	(void) cntxt;
-#endif
 
 	clrDeclarations(mb);
 	chkDeclarations(mb);
@@ -150,24 +146,15 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
-	OPTDEBUG
-	if ( actions)
-		stream_printf(cntxt->fdout,"#opt_deadcode: %d statements removed\n",
-			actions);
+	DEBUGoptimizers
+		stream_printf(cntxt->fdout,"#opt_deadcode: %d statements removed\n", actions);
 	GDKfree(old);
-#ifdef DEBUG_OPT_DEAD
-	stream_printf(cntxt->fdout,"LEAVING DEAD CODE ELIMINATION\n");
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
-#endif
 	/* we may have uncovered new use-less operations */
 	if (actions) 
 		actions += OPTdeadcodeImplementation(cntxt,mb, stk, pci);
 	return actions;
 }
 @include optimizerWrapper.mx
-@h
-@:exportOptimizer(deadcode)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(deadcode,OPT_CHECK_ALL)@

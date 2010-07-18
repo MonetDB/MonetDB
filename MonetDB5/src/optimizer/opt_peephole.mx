@@ -41,10 +41,10 @@ comment "Perform local rewrites";
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "opt_prelude.h"
 
-/* #define DEBUG_OPT_PEEPHOLE     show partial result */
-
 #define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
 	getModuleId(X) && strcmp(getModuleId(X),M)==0)
+
+#define OPTDEBUGpeephole  if ( optDebug & (1 <<DEBUG_OPT_PEEPHOLE) )
 @c
 #include "mal_config.h"
 #include "opt_peephole.h"
@@ -121,11 +121,6 @@ OPTpeepholeImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	Lifespan span;
 	InstrPtr *part= GDKzalloc(sizeof(InstrPtr)*mb->stop);
 
-#ifdef DEBUG_OPT_PEEPHOLE
-	stream_printf(cntxt->fdout, "Peephole optimizer started\n");
-#else
-	(void) cntxt;
-#endif
 	(void) stk;
 	(void) pci;
 	actions = 0;
@@ -158,11 +153,11 @@ OPTpeepholeImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 					match(q, batRef, reverseRef) && 
 					getArg(p, 0) == getArg(q, 1) && 
 					getEndLifespan(span,getArg(p,0)) == i + 1) {
-#ifdef DEBUG_OPT_PEEPHOLE
-			printf("PEEPHOLE reverse-reverse\n");
-			printInstruction(cntxt->fdout, mb, 0,  p, LIST_MAL_ALL);
-			printInstruction(cntxt->fdout, mb, 0,  q, LIST_MAL_ALL);
-#endif
+			OPTDEBUGpeephole {
+				printf("PEEPHOLE reverse-reverse\n");
+				printInstruction(cntxt->fdout, mb, 0,  p, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout, mb, 0,  q, LIST_MAL_ALL);
+			}
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r, 0) = getArg(q, 0);
 			r= pushArgument(mb, r, getArg(p, 1));
@@ -184,10 +179,6 @@ OPTpeepholeImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	GDKfree(part);
 	if (doit) {
 		chkProgram(cntxt->nspace, mb);
-#ifdef DEBUG_OPT_PEEPHOLE
-		stream_printf(cntxt->fdout, "PEEPHOLE %d\n", doit);
-		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_ALL );
-#endif
 	}
 	GDKfree(span);
 	return actions;
