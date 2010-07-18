@@ -15,5 +15,5 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-# This loads the MonetDB/SQL module
-include mseed;
+# delayed until it all works
+#include mseed;
