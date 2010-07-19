@@ -569,7 +569,7 @@ to easily trace their performance.
 #define DEBUG_OPT_TRACE				48
 #define DEBUG_OPT_HEURISTIC			49
 
-#define DEBUG_OPT(X) ( 1 << (X))
+#define DEBUG_OPT(X) ((lng) 1 << (X))
 opt_export lng optDebug;
 
 opt_export str MALoptimizer(Client c);
@@ -759,7 +759,7 @@ OPTsetDebugStr(int *ret, str *nme)
 		}
 	}
 	for ( t = s = name; t && *t ; t = s){
-		s = index(s,',');
+		s = strchr(s,',');
 		if ( s ) *s++ = 0;
 		for ( i=0; optcatalog[i].name; i++)
 		if ( strcmp(t,optcatalog[i].name) == 0){
