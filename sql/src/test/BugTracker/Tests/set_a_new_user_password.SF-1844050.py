@@ -4,27 +4,49 @@ from MonetDBtesting import process
 def server_start(lang):
     sys.stderr.write('#mserver\n')
     sys.stderr.flush()
-    srv = process.server(lang, stdin = process.PIPE)
+    srv = process.server(lang, stdin = process.PIPE,
+                         stdout = process.PIPE, stderr = process.PIPE)
     time.sleep(5)                      # give server time to start
     return srv
 
 def client(lang, file, user = 'monetdb', passwd = 'monetdb'):
     sys.stderr.write('#client\n')
     sys.stderr.flush()
-    clt = process.client(lang, user = user, passwd = passwd, stdin = open(file))
-    clt.communicate()
+    clt = process.client(lang, user = user, passwd = passwd,
+                         stdin = open(file),
+                         stdout = process.PIPE, stderr = process.PIPE)
+    return clt.communicate()
 
 def main():
     srv = server_start('sql')
-    client('sql' , os.path.join(os.getenv('RELSRCDIR'), 'set_a_new_user_password.SF-1844050_create_user.sql'))
-    srv.communicate()
+    out, err = client('sql',
+                      os.path.join(os.getenv('RELSRCDIR'),
+                                   'set_a_new_user_password.SF-1844050_create_user.sql'))
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+    out, err = srv.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
     srv = server_start('sql')
-    client('sql' , os.path.join(os.getenv('RELSRCDIR'), 'set_a_new_user_password.SF-1844050_select.sql'), "voc2", "new")
-    srv.communicate()
+    out, err = client('sql',
+                      os.path.join(os.getenv('RELSRCDIR'),
+                                   'set_a_new_user_password.SF-1844050_select.sql'),
+                      "voc2", "new")
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+    out, err = srv.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
     srv = server_start('sql')
-    client('sql' , os.path.join(os.getenv('RELSRCDIR'), 'set_a_new_user_password.SF-1844050_drop_user.sql'))
-    srv.communicate()
+    out, err = client('sql',
+                      os.path.join(os.getenv('RELSRCDIR'),
+                                   'set_a_new_user_password.SF-1844050_drop_user.sql'))
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+    out, err = srv.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 main()
