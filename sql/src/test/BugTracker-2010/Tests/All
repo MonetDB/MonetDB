@@ -35,3 +35,4 @@ second_function_existing_signature.Bug-2611
 update_statement_in_function_ignored.Bug-2614
 error-truncated.Bug-2615
 LIMIT_OFFSET_big-endian.Bug-2622
+decimal-function.BUG-2624
