@@ -42,8 +42,12 @@
 SQLRETURN SQL_API
 SQLExtendedFetch(SQLHSTMT hStmt,
 		 SQLUSMALLINT nOrientation,
-		 SQLROWOFFSET nOffset,
-		 SQLROWSETSIZE *pnRowCount,
+		 SQLLEN nOffset,
+#ifdef BUILD_REAL_64_BIT_MODE	/* note: only defined on Debian Lenny */
+		 SQLUINTEGER  *pnRowCount,
+#else
+		 SQLULEN *pnRowCount,
+#endif
 		 SQLUSMALLINT *pRowStatusArray)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
@@ -81,8 +85,13 @@ SQLExtendedFetch(SQLHSTMT hStmt,
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NO_DATA)
 		stmt->State = EXTENDEDFETCHED;
 
-	if (SQL_SUCCEEDED(rc) && pnRowCount)
+	if (SQL_SUCCEEDED(rc) && pnRowCount) {
+#ifdef BUILD_REAL_64_BIT_MODE	/* note: only defined on Debian Lenny */
+		*pnRowCount = (SQLUINTEGER) stmt->rowSetSize;
+#else
 		*pnRowCount = (SQLULEN) stmt->rowSetSize;
+#endif
+	}
 
 	return rc;
 }
