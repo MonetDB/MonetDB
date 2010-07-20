@@ -686,13 +686,12 @@ func_cmp(sql_func *f, char *name, int nrargs)
 {
 	if (strcmp(f->base.name, name) == 0) {
 		if (list_length(f->ops) == nrargs) {
-			int scale = 0;
 			sql_subfunc *fres = ZNEW(sql_subfunc);
 
 			sql_ref_init(&(fres->ref));
 			fres->func = f;
 			if (f->res.type)
-				sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+				sql_init_subtype(&fres->res, f->res.type, f->res.digits, f->res.scale);
 			if (f->res.comp_type) 
 				fres->res.comp_type = f->res.comp_type;
 			return fres;

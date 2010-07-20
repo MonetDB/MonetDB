@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Jul 20 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed bug 2624: function returning decimal returned result that was
+  scaled incorrectly.
+
 * Sun Jul 18 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
 - fixed bug 2622 "LIMIT & OFFSET ignored on 64-bit big-endian when
   combined with GROUP BY"
