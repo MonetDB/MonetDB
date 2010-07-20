@@ -49,6 +49,8 @@ TAGS$
 ^java/NT/.*\.jar$
 ^java/NT/nl/
 ^java/NT/tests/
+^java/build/
+^java/jars/
 ^pathfinder/NT/compiler/
 ^pathfinder/NT/modules/
 ^pathfinder/NT/runtime/
