@@ -30,7 +30,7 @@ def main():
                                    'set_sql_debug_64__breaking_the_DB.SF-1906287_drop.sql'))
     sys.stdout.write(out)
     sys.stderr.write(err)
-    srv.communicate()
+    out, err = srv.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
 
