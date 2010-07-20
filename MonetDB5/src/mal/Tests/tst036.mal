@@ -1,0 +1,8 @@
+# test for proper use of list assignments
+(z0,z1):= (1,"help");
+io.print(z0);
+io.print(z1);
+# all three are wrong
+ l1:= (1,2);
+(l2,l3):= 3;
+(l4,l5) := (4,5,6);
