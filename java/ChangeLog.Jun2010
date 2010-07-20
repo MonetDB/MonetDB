@@ -6,13 +6,15 @@
   src/nl/cwi/monetdb/jdbc/MonetResultSet.java:
   Implement missing Blob support (readonly), since getObject will blindly
   return a BLOB instance as String, which is causing applications to wrongly
-  believe a BLOB instance is a string.  Bump version to 1.17.
+  believe a BLOB instance is a string.
 
   16 Jul 2010; Fabian Groffen <fabian@cwi.nl>
   stc/nl/cwi/monetdb/jdbc/MonetConnection.java:
   Fix problem when using the MAL language.  Any statement would return
   an error with a typo that was not typed in by the user, such as
   ioo.printf when io.printf was typed.
+
+*Jun2010-SP1
 
   16 Apr 2010; Fabian Groffen <fabian@cwi.nl> build.xml, configure.ag,
   Makefile.ag:

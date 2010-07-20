@@ -1,5 +1,5 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.17 (Magnistipula/MCL-1.6)
+MonetDB JDBC driver version 1.16 (Magnistipula/MCL-1.6)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
 Release date: 2010-07-20
