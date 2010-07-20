@@ -32,6 +32,7 @@ tst032
 tst033
 tst034
 tst035
+tst036
 HAVE_PCRE?tst037
 tst038
 tst039
