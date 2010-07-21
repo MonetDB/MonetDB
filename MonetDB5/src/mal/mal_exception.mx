@@ -259,7 +259,7 @@ dumpToStream(stream *out, str whatever) {
 	size_t last = 0;
 	size_t len ;
 
-	if( whatever == NULL)
+	if (whatever == NULL)
 		return;
 	len = strlen(whatever);	
 	/* make sure each line starts with a ! */
@@ -290,13 +290,14 @@ showException(enum malexception type, str fcn, str format, ...)
 	str msg;
 
 	/* ignore an internal exception */
-	if( strcmp(fcn,"client.quit")==0)
+	if (strcmp(fcn, "client.quit") == 0)
 		return;
+
 	va_start(ap, format);
 	msg = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
 
-	dumpToStream(GDKout,msg);
+	dumpToStream(GDKout, msg);
 	GDKfree(msg);
 }
 
