@@ -411,6 +411,10 @@ monet_hello(stream *out)
 			out = GDKout;
 		stream_printf(out, "# MonetDB Server v%s\n", monet_version);
 		stream_printf(out, "# based on GDK   v%s\n", GDKversion());
+		if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
+			stream_printf(out, "# not released\n");
+		else
+			stream_printf(out, "# release %s\n", MONETDB_RELEASE);
 		stream_printf(out, "# Copyright (c) 1993-July 2008, CWI. "
 			      "All rights reserved.\n");
 		stream_printf(out, "# Copyright (c) August 2008-2010, MonetDB B.V.. "

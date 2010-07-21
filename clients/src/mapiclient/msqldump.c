@@ -56,7 +56,7 @@
 #endif
 
 static void
-usage(const char *prog)
+usage(const char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [ options ]\n", prog);
 	fprintf(stderr, "\nOptions are:\n");
@@ -69,7 +69,7 @@ usage(const char *prog)
 	fprintf(stderr, " -q          | --quiet            don't print welcome message\n");
 	fprintf(stderr, " -t          | --trace            trace mapi network interaction\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
-	exit(-1);
+	exit(xit);
 }
 
 /* hardwired defaults, only used if monet environment cannot be found */
@@ -195,9 +195,12 @@ main(int argc, char **argv)
 			trace = MAPI_TRACE;
 			break;
 		case '?':
-			usage(argv[0]);
+			/* a bit of a hack: look at the option that the
+			   current `c' is based on and see if we recognize
+			   it: if -? or --help, exit with 0, else with -1 */
+			usage(argv[0], strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
-			usage(argv[0]);
+			usage(argv[0], -1);
 		}
 	}
 

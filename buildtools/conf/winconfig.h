@@ -55,6 +55,9 @@
 #include <windows.h>
 #include <stddef.h>
 
+/* Release name or "unreleased" */
+#define MONETDB_RELEASE "unreleased"
+
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
 #define ALREADY_HAVE_WINDOWS_TYPE 1
