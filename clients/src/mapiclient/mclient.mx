@@ -2195,6 +2195,7 @@ main(int argc, char **argv)
 		{"statement", 1, 0, 's'},
 		{"time", 0, 0, 't'},
 		{"user", 1, 0, 'u'},
+		{"version", 0, 0, 'v'},
 		{"width", 1, 0, 'w'},
 		{"Xdebug", 0, 0, 'X'},
 		{0, 0, 0, 0}
@@ -2430,6 +2431,15 @@ main(int argc, char **argv)
 		case 'H':
 			save_history = 1;
 			break;
+		case 'v':
+			stream_printf(toConsole,
+					"mclient, the MonetDB interactive terminal (%s)\n",
+					MONETDB_RELEASE);
+#ifdef HAVE_LIBREADLINE
+			stream_printf(toConsole,
+					"support for command-line editing compiled-in\n");
+#endif
+			return(0);
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
