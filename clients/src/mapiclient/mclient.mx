@@ -2533,21 +2533,18 @@ main(int argc, char **argv)
 		mapi_setAlgebra(mid, algebra);
 	mapi_profile(mid, mark != NULL);
 	mapi_trace(mid, trace);
-	if (output)
+	if (output) {
 		setFormatter(mid, output);
+	} else {
+		if (mode == SQL) {
+			setFormatter(mid, "sql");
+		} else {
+			setFormatter(mid, "raw");
+		}
+	}
 
 	c = 0;
 	has_fileargs = optind != argc;
-
-	/* default formatter depends on whether we're interactive */
-	if (formatter == NOformatter) {
-		if ((interactive || (!has_fileargs && command == NULL)) &&
-		    interactive_stdin && mode != XQUERY && mode != MAL) {
-			formatter = TABLEformatter;
-		} else {
-			formatter = RAWformatter;
-		}
-	}
 
 	if (input != NULL && mode == XQUERY) {
 		/* stream xml document into the server */

@@ -1,6 +1,14 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Jul 21 2010 Fabian Groffen <fabian@cwi.nl>
+- In SQL mode, always use the table formatter, as there is no sense to
+  use raw (protocol debug) mode when reading from pipe or file really.
+  People likely prefer tab (-ftab) formatting in such case for easy
+  scripting.
+
 * Thu Jul 15 2010 Fabian Groffen <fabian@cwi.nl>
-- In SQL (rendering) mode, mclient now returns timings for SELECT and UPDATE/INSERT/DELETE queries next to the number of tuples returned or rows affected.
+- In SQL (rendering) mode, mclient now returns timings for SELECT and
+  UPDATE/INSERT/DELETE queries next to the number of tuples returned or
+  rows affected.
 
