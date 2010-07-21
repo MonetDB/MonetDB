@@ -666,8 +666,8 @@ main(int argc, char *argv[])
 	gethostname(_mero_hostname, 128);
 
 	if (argc > 1) {
-		Mfprintf(stderr, "Merovingian %s on host %s\n", MERO_VERSION,
-				_mero_hostname /*FIXME not yet set*/);
+		Mfprintf(stderr, "Merovingian %s (%s) on host %s\n", MERO_VERSION,
+				MONETDB_RELEASE, _mero_hostname);
 		Mfprintf(stderr, "Using config file: %s\n", _mero_conffile);
 		Mfprintf(stderr, "  monitoring dbfarm: %s\n", dbfarm);
 		Mfprintf(stderr, "  forking mserver5: %s\n", _mero_mserver);
@@ -676,6 +676,7 @@ main(int argc, char *argv[])
 		Mfprintf(stderr, "  performs neighbour discovery: %s\n",
 				(discoveryport != 0 ? "yes" : "no"));
 		MERO_EXIT(0);
+		return(0);
 	}
 
 	/* seed the randomiser for when we create a database, send responses
@@ -906,7 +907,8 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	Mfprintf(stdout, "Merovingian %s starting\n", MERO_VERSION);
+	Mfprintf(stdout, "Merovingian %s (%s) starting\n",
+			MERO_VERSION, MONETDB_RELEASE);
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	SABAOTHinit(dbfarm, NULL);
