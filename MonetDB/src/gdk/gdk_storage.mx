@@ -205,12 +205,11 @@ delete_file(str path)
 int
 GDKunlink(str dir, str nme, str ext)
 {
+	char path[PATHLENGTH];
+	struct stat st;
 	if (nme && *nme) {
-		char path[PATHLENGTH];
-		struct stat st;
-
 		GDKfilepath(path, dir, nme, ext);
-		if (stat(path, &st) == 0)
+		if (lstat(path, &st) == 0)
 			return delete_file(path);
 	}
 	return -1;
