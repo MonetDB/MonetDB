@@ -212,7 +212,7 @@ SQLprelude(void)
 	tmp = SABAOTHmarchScenario(&res, &ms->name);
 	/* if we are a slave, then inform the master to forward
 	   any pending updates. */
-	if ( tmp == MAL_SUCCEED && GDKgetenv("replication_slave"))
+	if (tmp == MAL_SUCCEED && GDKgetenv("replication_slave"))
 		return SLAVEsyncDefault(&res);
 	return tmp;
 }
@@ -363,24 +363,24 @@ error(stream *out, char *str)
 	if (!out)
 		out = GDKerr;
 
-	if ( str == NULL)
+	if (str == NULL)
 		return 0;
 
 	if (stream_errnr(out))
 		return -1;
 	while ((p = strchr(str, '\n')) != NULL) {
-		p++;		/* include newline */
-		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
+		p++;        /* include newline */
+		if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
 			return -1;
 		if (stream_write(out, str, p - str, 1) != 1)
-			 return -1;
+			return -1;
 		str = p;
 	}
-	if (str &&*str) {
-		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
+	if (str && *str) {
+		if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
 			return -1;
 		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
-			 return -1;
+			return -1;
 	}
 	return 0;
 }
