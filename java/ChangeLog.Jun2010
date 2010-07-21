@@ -1,6 +1,10 @@
 # ChangeLog file for java
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  21 Jul 2010; Fabian Groffen <fabian@cwi.nl> configure.ag:
+  merocontrol Java library requires Java 2 Platform 1.5 and up, due to enum
+  and boxing/unboxing. Bug #2627
+
   20 Jul 2010; Fabian Groffen <fabian@cwi.nl> Makefile.ag, NT/rules.msc,
   build.properties, release.txt, +src/nl/cwi/monetdb/jdbc/MonetBlob.java,
   src/nl/cwi/monetdb/jdbc/MonetResultSet.java:
