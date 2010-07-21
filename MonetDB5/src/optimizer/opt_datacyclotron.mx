@@ -277,9 +277,9 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #ifndef BIND_DATACYCLOTRON_OPT
 				tpe = getArgType(mb,p,0);
 				matq= newInstruction(NULL,ASSIGNsymbol);
+				clrFunction(matq);
 				setModuleId(matq,matRef);
 				setFunctionId(matq,newRef);
-				clrFunction(matq);
 				getArg(matq,0)= getArg(p,0);
 				hgh.value.vtype= low.value.vtype= TYPE_oid;
 #else
@@ -336,9 +336,9 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					used[getArg(p,j)] = 2;
 					reg = regs[getArg(p,j)];
 					matq= newInstruction(NULL,ASSIGNsymbol);
+					clrFunction(matq);
 					setModuleId(matq,matRef);
 					setFunctionId(matq,newRef);
-					clrFunction(matq);
 					getArg(matq,0)= getArg(p,j);
 					hgh.value.vtype= low.value.vtype= TYPE_oid;
 
