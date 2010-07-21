@@ -291,10 +291,42 @@ public class MonetResultSet implements ResultSet {
 	public InputStream getBinaryStream(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 	public InputStream getUnicodeStream(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 	public InputStream getUnicodeStream(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
-	public Blob getBlob(int i) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
-	public Blob getBlob(String colName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 	public Reader getCharacterStream(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 	public Reader getCharacterStream(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a Blob object in the Java programming
+	 * language.
+	 *
+	 * @param i the first column is 1, the second is 2, ...
+	 * @return a Blob object representing the SQL BLOB value in the
+	 *         specified column
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Blob getBlob(int i) throws SQLException {
+		String tmp = getString(i);
+		if (tmp == null) {
+			return(null);
+		} else {
+			return(new MonetBlob(tmp));
+		}
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a Blob object in the Java programming
+	 * language.
+	 *
+	 * @param colName the name of the column from which to retrieve
+	 *        the value
+	 * @return a Blob object representing the SQL BLOB value in the
+	 *         specified column
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Blob getBlob(String colName) throws SQLException {
+		return(getBlob(findColumn(colName)));
+	}
 
 	/**
 	 * Retrieves the value of the designated column in the current row
@@ -1240,6 +1272,10 @@ public class MonetResultSet implements ResultSet {
 			return(getTime(i));
 		} else if (type == Timestamp.class) {
 			return(getTimestamp(i));
+		} else if (type == Clob.class) {
+			return(getClob(i));
+		} else if (type == Blob.class) {
+			return(getBlob(i));
 		} else {
 			return(getString(i));
 		}
@@ -1285,19 +1321,21 @@ public class MonetResultSet implements ResultSet {
 				return(Time.class);
 			case Types.TIMESTAMP:
 				return(Timestamp.class);
+			case Types.CLOB:
+				return(Clob.class);
+			case Types.BLOB:
+				return(Blob.class);
 
 			// all below are currently not implemented and used
 			case Types.DISTINCT:
-			case Types.CLOB:
-			case Types.BLOB:
 			case Types.ARRAY:
 			case Types.STRUCT:
 			case Types.REF:
 			case Types.DATALINK:
-			case Types.OTHER:
 			case Types.BINARY:
 			case Types.VARBINARY:
 			case Types.LONGVARBINARY:
+			case Types.OTHER:
 			default:
 				return(String.class);
 		}

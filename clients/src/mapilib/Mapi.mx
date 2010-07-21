@@ -3541,13 +3541,18 @@ read_line(Mapi mid)
 			printf("got next block: length:" SSZFMT "\n", len);
 			printf("text:%s\n", mid->blk.buf + mid->blk.end);
 		}
-		if (!len) {	/* add prompt */
+		if (len == 0) {	/* add prompt */
+			if (mid->blk.end > mid->blk.nxt) {
+				/* add fake newline since newline was
+				 * missing from server */
+				nl = mid->blk.buf + mid->blk.end;
+				*nl = '\n';
+				mid->blk.end++;
+			}
 			len = 2;
 			mid->blk.buf[mid->blk.end] = PROMPTBEG;
 			mid->blk.buf[mid->blk.end + 1] = '\n';
 			mid->blk.buf[mid->blk.end + 2] = 0;
-			if (!nl)
-				nl = mid->blk.buf + mid->blk.end + 1;
 		}
 		mid->blk.end += (int) len;
 	}

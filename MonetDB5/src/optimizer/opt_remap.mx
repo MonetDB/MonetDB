@@ -163,7 +163,7 @@ static int
 OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 {
 	MalBlkPtr mq;
-	InstrPtr q,sig;
+	InstrPtr q = NULL, sig;
 	char buf[1024];
 	int i,j,k, actions=0;
 	int refbat=0;
@@ -317,7 +317,8 @@ an upgrade and resolve it afterwards.
 terminateMX:
 		OPTDEBUGremap {
 			stream_printf(cntxt->fdout,"Abort remap\n");
-			printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
+			if (q)
+				printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
 		}
 		freeMalBlk(mq);
 		GDKfree(upgrade);
