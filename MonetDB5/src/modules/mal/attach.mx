@@ -77,30 +77,30 @@ attach_export str ATTlocation(str *ret, int *bid);
 
 @= linkHeap
 	lstat(@2,&st);
-	GDKfilepath(path, BATDIR, bn->@1->heap.filename, "new");
+	GDKfilepath(path, BATDIR, bn->@1->heap.filename, 0);
 	GDKcreatedir(path);
 	printf("symlink %s ->%s\n",@2,path);
 	if (symlink(@2, path) < 0) {
-		msg = createException(MAL,"attach.bind","cannot link '%s' -> '@2' heapfile %s\n",path);
+		msg = createException(MAL,"attach.bind","cannot link '%s' -> '@2'\n",path);
 		HEAPfree(&bn->@1->heap);
 		GDKfree(bs);
 		return msg;
 	}
-	bn->@1->heap.size = (size_t) st.st_size;
+	bn->@1->heap.free = bn->@1->heap.size = (size_t) st.st_size;
 	bn->@1->heap.storage = (bn->@1->heap.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
 	HEAPload(&bn->@1->heap, BBP_physical(bn->batCacheid), "@3", TRUE);
 
 @= linkvHeap
 	lstat(@2,&st);
-	GDKfilepath(path, BATDIR, bn->@1->vheap->filename, "new");
+	GDKfilepath(path, BATDIR, bn->@1->vheap->filename, 0);
 	GDKcreatedir(path);
 	if (symlink(@2, path) < 0) {
-		msg = createException(MAL,"attach.bind","cannot link '%s' -> '@2' heapfile %s\n",path);
+		msg = createException(MAL,"attach.bind","cannot link '%s' -> '@2'\n",path);
 		HEAPfree(bn->@1->vheap);
 		GDKfree(bs);
 		return msg;
 	}
-	bn->@1->vheap->size = (size_t) st.st_size;
+	bn->@1->vheap->free = bn->@1->vheap->size = (size_t) st.st_size;
 	bn->@1->vheap->storage = (bn->@1->vheap->size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
 	HEAPload(bn->@1->vheap, BBP_physical(bn->batCacheid), "@3", TRUE);
 
@@ -157,8 +157,10 @@ ATTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bs =  BATcreatedesc(ht, tt, 1);
     if (bs == NULL)
 		throw(MAL,"attach.bind",MAL_MALLOC_FAIL);
-    bn = &bs->B;
-    BATsetdims(bn);
+	bn = &bs->B;
+	BATsetdims(bn);
+	BATmode(bn, TRANSIENT);
+	bn->batCopiedtodisk = 1;
 	bn->hsorted = 0;
 	bn->tsorted = 0;
 
