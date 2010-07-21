@@ -2564,11 +2564,8 @@ main(int argc, char **argv)
 
 		stream_printf(toConsole,
 			      "Welcome to mclient, the MonetDB%s "
-			      "interactive terminal\n", lang);
-		if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
-			stream_printf(toConsole, "Not released\n");
-		else
-			stream_printf(toConsole, "Release %s\n", MONETDB_RELEASE);
+			      "interactive terminal (%s)\n",
+			      lang, MONETDB_RELEASE);
 
 		if (mode == SQL &&
 		    (hdl = mapi_query(mid,
