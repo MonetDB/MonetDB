@@ -2318,7 +2318,7 @@ main(int argc, char **argv)
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:p:s:tXu:H?",
+				"w:r:p:s:tXu:vH?",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
