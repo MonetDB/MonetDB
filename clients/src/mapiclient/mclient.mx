@@ -1008,7 +1008,7 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 }
 
 static void
-SQLrenderer(MapiHdl hdl)
+SQLrenderer(MapiHdl hdl, char singleinstr)
 {
 	int i, total, vartotal, fields, oldfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
@@ -1201,7 +1201,10 @@ SQLrenderer(MapiHdl hdl)
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
 	mark2 = strdup(buf); /* for the timer output */
-	printf(LLFMT " tuple%s (%s)\n", rows, rows != 1 ? "s" : "", timerHuman());
+	printf(LLFMT " tuple%s%s%s%s\n", rows, rows != 1 ? "s" : "",
+			singleinstr ? " (" : "",
+			singleinstr ? timerHuman() : "",
+			singleinstr ? ")" : "");
 	if (len)
 		free(len);
 	if (hdr)
@@ -1307,7 +1310,7 @@ end_pager(stream *saveFD, stream *saveFD_raw)
 #endif
 
 static int
-format_result(Mapi mid, MapiHdl hdl)
+format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 {
 	MapiMsg rc = MERROR;
 	mapi_int64 aff, lid;
@@ -1352,17 +1355,21 @@ format_result(Mapi mid, MapiHdl hdl)
 				if (lid != -1) {
 					stream_printf(toConsole,
 							LLFMT " affected row%s, "
-							"last generated key: " LLFMT " (%s)\n",
+							"last generated key: " LLFMT "%s%s%s\n",
 							aff,
 							(aff == 1 ? "" : "s"),
 							lid,
-							timerHuman());
+							singleinstr ? " (" : "",
+							singleinstr ? timerHuman() : "",
+							singleinstr ? ")" : "");
 				} else {
 					stream_printf(toConsole,
-							LLFMT " affected row%s (%s)\n",
+							LLFMT " affected row%s%s%s%s\n",
 							aff,
 							(aff == 1 ? "" : "s"),
-							timerHuman());
+							singleinstr ? " (" : "",
+							singleinstr ? timerHuman() : "",
+							singleinstr ? ")" : "");
 				}
 			}
 			continue;
@@ -1425,7 +1432,7 @@ format_result(Mapi mid, MapiHdl hdl)
 					SQLdebugRendering(hdl);
 					break;
 				default:
-					SQLrenderer(hdl);
+					SQLrenderer(hdl, singleinstr);
 					break;
 				}
 				break;
@@ -1464,7 +1471,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 		return 1;
 	}
 
-	format_result(mid, hdl);
+	format_result(mid, hdl, 0);
 
 	if (mapi_get_active(mid) == NULL || !interactive)
 		mapi_close_handle(hdl);
@@ -1604,7 +1611,7 @@ doFile(Mapi mid, const char *file)
 
 		CHECK_RESULT(mid, hdl, buf + skip, continue);
 
-		rc = format_result(mid, hdl);
+		rc = format_result(mid, hdl, 0);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
@@ -2095,7 +2102,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		}
 		CHECK_RESULT(mid, hdl, buf, continue);
 
-		rc = format_result(mid, hdl);
+		rc = format_result(mid, hdl, 1);
 
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
