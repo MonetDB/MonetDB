@@ -39,6 +39,10 @@ monetdb4_version(void)
 			"based on kernel v%s (" SZFMT "-bit oids)\n",
 			(size_t) (sizeof(ptr) * 8), GDKversion(),
 			(size_t) (sizeof(oid) * 8));
+	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
+		printf("Not released\n");
+	else
+		printf("Release %s\n", MONETDB_RELEASE);
 	printf("Copyright (c) 1993-July 2008 CWI\nCopyright (c) August 2008-2010 MonetDB B.V., all rights reserved\n");
 	printf("Visit http://monetdb.cwi.nl/ for further information\n");
 	printf("Configured for prefix: " MONETDB4_PREFIX "\n");
