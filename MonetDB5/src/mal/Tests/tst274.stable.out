@@ -40,17 +40,45 @@ exit (go,i);
     k2 := algebra.select(b,mx,nil:lng);
     d := mmath.sin(0.20000000298023224:dbl);
     profiler.stop();
-#stmt:= profiler.getTrace("stmt"); 
+    stmt := profiler.getTrace("stmt");
 #io.print(stmt); 
+    c := aggr.count(stmt);
+    io.print(c);
     ticks := profiler.getTrace("ticks");
 #io.print(ticks); 
+    c := aggr.count(ticks);
+    io.print(c);
     rdbytes := profiler.getTrace("rbytes");
-#io.print(rdbytes); 
+    io.print(rdbytes);
     wrbytes := profiler.getTrace("wbytes");
-#io.print(wrbytes); 
+    io.print(wrbytes);
     io.print(rdbytes,wrbytes);
 end main;
 #monitor 
+[ 7 ]
+[ 7 ]
+#-----------------#
+# h	t	  # name
+# void	lng	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  0	  ]
+[ 2@0,	  0	  ]
+[ 3@0,	  0	  ]
+[ 4@0,	  120000  ]
+[ 5@0,	  0	  ]
+[ 6@0,	  0	  ]
+#-----------------#
+# h	t	  # name
+# void	lng	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  120000  ]
+[ 2@0,	  0	  ]
+[ 3@0,	  0	  ]
+[ 4@0,	  120000  ]
+[ 5@0,	  120000  ]
+[ 6@0,	  0	  ]
 #-------------------------#
 # h	t	t	  # name
 # void	lng	lng	  # type
