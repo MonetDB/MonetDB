@@ -182,4 +182,15 @@ public class MonetClob implements Clob {
 	public void truncate(long len) {
 		// this command is a no-op
 	}
+
+	/**
+	 * Returns the String behind this Clob.  This is a MonetClob
+	 * extension that does not violate nor is described in the Clob
+	 * interface.
+	 *
+	 * @return the String this Clob wraps.
+	 */
+	public String toString() {
+		return(buf.toString());
+	}
 }
