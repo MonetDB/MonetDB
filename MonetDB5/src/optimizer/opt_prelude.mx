@@ -149,6 +149,7 @@ opt_export  str reconnectRef;
 opt_export  str recycleRef;
 opt_export  str refineRef;
 opt_export  str refine_reverseRef;
+opt_export  str registerRef;
 opt_export  str remapRef;
 opt_export  str remoteRef;
 opt_export  str replaceRef;
@@ -181,6 +182,7 @@ opt_export  str sumRef;
 opt_export  str sunionRef;
 opt_export  str takeRef;
 opt_export  str tuniqueRef;
+opt_export  str tarantulaRef;
 opt_export  str not_uniqueRef;
 opt_export  str unionRef;
 opt_export  str unpackRef;
@@ -346,6 +348,7 @@ str reconnectRef;
 str recycleRef;
 str refineRef;
 str refine_reverseRef;
+str registerRef;
 str remapRef;
 str remoteRef;
 str replaceRef;
@@ -377,6 +380,7 @@ str strRef;
 str sumRef;
 str sunionRef;
 str takeRef;
+str tarantulaRef;
 str tuniqueRef;
 str not_uniqueRef;
 str unionRef;
@@ -539,6 +543,7 @@ void optimizerInit(){
 		recycleRef = putName("recycle",7);
 		refineRef = putName("refine",6);
 		refine_reverseRef = putName("refine_reverse",14);
+		registerRef = putName("register",8);
 		remapRef = putName("remap",5);
 		remoteRef = putName("remote",6);
 		replaceRef = putName("replace",7);
@@ -570,6 +575,7 @@ void optimizerInit(){
 		sumRef = putName("sum",3);
 		sunionRef= putName("sunion",6);
 		takeRef= putName("take",5);
+		tarantulaRef = putName("tarantula",9);
 		tuniqueRef = putName("tunique",7);
 		not_uniqueRef= putName("not_unique",10);
 		unionRef= putName("union",5);
@@ -608,5 +614,15 @@ void optimizerInit(){
 		hubProp = PropertyIndex("hub");
 		tlbProp = PropertyIndex("tlb");
 		tubProp = PropertyIndex("tub");
+@-
+Set the optimizer debugging flag
+@c
+		{
+			int ret;
+			str ref= GDKgetenv("opt_debug");
+			(void) ret;
+			if ( ref)
+				OPTsetDebugStr(&ret,&ref);
+		}
 	}
 }

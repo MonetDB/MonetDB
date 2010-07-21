@@ -690,7 +690,7 @@ This is achieved by propagation of the rhs types to the lhs
 variables.
 @c
 	if( getFunctionId(p) ) return;
-	if( p->retc > 1 && p->argc>p->retc && p->argc!= 2 * p->retc){
+	if( p->retc >= 1 && p->argc > p->retc && p->argc != 2 * p->retc){
 		if ( !silent)
 			showScriptException( mb, getPC(mb,p), TYPE,
 				"Multiple assignment mismatch");

@@ -770,7 +770,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				/* since both arguments of algebra.slice are 
 				   inclusive correct the LIMIT value by 
 				   substracting 1 */
-				if (s->op2.stval->op1.aval->data.val.ival) {
+				if (s->op2.stval->op1.aval->data.val.wval) {
 					q = newStmt1(mb, calcRef, "-");
 					q = pushArgument(mb, q, topn);
 					q = pushInt(mb, q, 1);

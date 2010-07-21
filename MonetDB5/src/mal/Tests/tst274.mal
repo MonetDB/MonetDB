@@ -34,8 +34,3 @@ rdbytes:= profiler.getTrace("rbytes");
 wrbytes:= profiler.getTrace("wbytes");
 #io.print(wrbytes);
 io.print(rdbytes,wrbytes);
-
-#on windows the output is not shown, lets do somewhat more
-k2:=algebra.slice(b,0:lng,5:lng);
-io.print(k2);
-
