@@ -620,7 +620,6 @@ Set the optimizer debugging flag
 		{
 			int ret;
 			str ref= GDKgetenv("opt_debug");
-			(void) ret;
 			if ( ref)
 				OPTsetDebugStr(&ret,&ref);
 		}
