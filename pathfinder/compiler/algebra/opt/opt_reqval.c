@@ -97,23 +97,6 @@ opt_reqvals (PFla_op_t *p)
     if (p->bit_dag)
         return;
 
-    /* Using the required values property as well as the constant
-       property we can replace every expression, where at least one
-       column has a constant value that differs its required value,
-       by an empty table. */
-    for (unsigned int i = 0; i < p->schema.count; i++) {
-        PFalg_col_t cur_col = p->schema.items[i].name;
-
-        if (PFprop_req_bool_val (p->prop, cur_col) &&
-            PFprop_const (p->prop, cur_col) &&
-            (PFprop_const_val (p->prop, cur_col)).val.bln !=
-             PFprop_req_bool_val_val (p->prop, cur_col)) {
-            /* create an empty table instead */
-            *p = *PFla_empty_tbl_ (p->schema);
-            return;
-        }
-    }
-
     /* Replace rowrank operators whose real values
        are not needed by rank operators.
        Note that we do not need to check for the order
@@ -185,6 +168,41 @@ opt_reqvals (PFla_op_t *p)
     p->bit_dag = true;
 }
 
+/* worker for PFalgopt_reqval */
+static void
+opt_req_bool_vals (PFla_op_t *p)
+{
+    assert (p);
+
+    /* nothing to do if we already visited that node */
+    if (p->bit_dag)
+        return;
+
+    /* Using the required values property as well as the constant
+       property we can replace every expression, where at least one
+       column has a constant value that differs its required value,
+       by an empty table. */
+    for (unsigned int i = 0; i < p->schema.count; i++) {
+        PFalg_col_t cur_col = p->schema.items[i].name;
+
+        if (PFprop_req_bool_val (p->prop, cur_col) &&
+            PFprop_const (p->prop, cur_col) &&
+            (PFprop_const_val (p->prop, cur_col)).val.bln !=
+             PFprop_req_bool_val_val (p->prop, cur_col)) {
+            /* create an empty table instead */
+            *p = *PFla_empty_tbl_ (p->schema);
+            return;
+        }
+    }
+
+    /* infer properties for children */
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        opt_req_bool_vals (p->child[i]);
+
+    /* mark node as visited */
+    p->bit_dag = true;
+}
+
 /**
  * Invoke algebra optimization.
  */
@@ -202,7 +220,10 @@ PFalgopt_reqval (PFla_op_t *root)
 
     schema_dirty = false;
 
-    /* Optimize algebra tree */
+    /* Optimize algebra tree. 
+       Note: the rewrites modifying the column types have to be performed
+       before empty tables are introduced in opt_req_bool_vals() to avoid
+       inconsistent types. */
     opt_reqvals (root);
     PFla_dag_reset (root);
 
@@ -211,6 +232,15 @@ PFalgopt_reqval (PFla_op_t *root)
        it up. */
     if (schema_dirty)
         PFprop_infer_ocol (root);
+
+    schema_dirty = false;
+
+    /* Get rid of superfluous branches.
+       Make sure to take the rewrites that might have changed column types
+       into account. */
+    opt_req_bool_vals (root);
+    PFla_dag_reset (root);
+    assert (!schema_dirty);
 
     return root;
 }
