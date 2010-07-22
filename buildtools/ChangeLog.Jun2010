@@ -1,6 +1,10 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Thu Jul 22 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Changed Maddlog to search up the directory tree to find a ChangeLog
+  file.
+
 * Wed Mar 31 2010 Stefan Manegold <manegold@cwi.nl>
 - Made compilation of "testing" (and "java") independent of MonetDB.
   This is mainly for Windows, but also on other systems, "testing" can

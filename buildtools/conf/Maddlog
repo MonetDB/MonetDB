@@ -1,49 +1,35 @@
 #!/usr/bin/env bash
 # -*-shell-script-*-
 
-d=.
-while [ ! -f $d/vertoo.data ]; do
-    if [ $d -ef / ]; then
-	echo "$0: cannot find top directory of package" >&2
-	exit 1
-    fi
-    d=../$d
-done
-CL=$d/ChangeLog
-if hg root >& /dev/null ; then
-    tag=$(hg branch)
-    case $tag in
-    default)
-	;;
-    *)
-	CL=$CL.${tag}
-	;;
-    esac
-    root=$(hg root)
-    root=$(cd $root && \pwd -P)
-    dir=$(cd $d && \pwd -P)
-    proj=${dir#${root}/}
+usage() {
+    cat >&2 <<-EOF
+	$0: unknown option $1
+	Usage: $0 [options] [log message]
+	Valid options are:
+	--logfile=filename (-f filename)
+	--commit
+	If no log message, one will be prompted for.
+	EOF
+    exit 1
+}
 
-    PROJECT=${proj%%/*}
-    IDENTITY=$(hg showconfig ui.username)
-else
-    echo "Cannot use this script outside a Mercurial repository" > /dev/stder
-    exit -1
-fi
-
+CL=
 nocommit=true
 while [ $# -gt 0 ]; do
     case "$1" in
-    --logfile=*)
+    --logfile=?*)
 	CL=${1#--logfile=}
 	shift
 	;;
     --logfile|-f)
+	if [ $# -lt 2 ]; then
+	    usage
+	fi
 	CL=$2
 	shift
 	shift
 	;;
-    -f*)
+    -f?*)
 	CL=${1#-f}
 	shift
 	;;
@@ -56,19 +42,51 @@ while [ $# -gt 0 ]; do
 	break
 	;;
     -*)
-	cat >&2 <<-EOF
-	$0: unknown option $1
-	Valid options are:
-	--logfile=filename (-f filename)
-	--commit
-	EOF
-	exit 1
+	usage
 	;;
     *)
 	break
 	;;
     esac
 done
+
+if ! hg root >& /dev/null ; then
+    echo "Cannot use this script outside a Mercurial repository" >&2
+    exit -1
+fi
+
+tag=$(hg branch)
+
+case "$CL" in
+'')
+    d=.
+    while [ ! -f $d/vertoo.data -a ! -f $d/ChangeLog -a ! -f $d/ChangeLog.$tag ]; do
+	if [ $d -ef / ]; then
+	    echo "$0: cannot find top directory of package" >&2
+	    exit 1
+	fi
+	d=../$d
+    done
+    CL=$d/ChangeLog
+    case $tag in
+    default)
+	;;
+    *)
+	CL=$CL.${tag}
+	;;
+    esac
+    dir=$(cd $d && \pwd -P)
+    ;;
+*/*)
+    dir=$(cd "${CL%/*}"; \pwd -P)
+    ;;
+*)
+    dir=$(\pwd -P)
+    ;;
+esac
+
+PROJECT=${dir##*/}
+IDENTITY=$(hg showconfig ui.username)
 
 if [ $# -gt 0 ]; then
     msg=$*
