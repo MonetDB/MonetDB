@@ -136,7 +136,7 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
 mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB
-mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB4
+mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB4/dbfarm
 # insert example db here!
 
 # cleanup stuff we don't want to install
@@ -190,8 +190,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB4/lib/*.so*
 %{_libdir}/MonetDB4/*.mil
 
-%attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
-%attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB4
+%attr(750,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
+%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB4
+%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB4/dbfarm
 
 %config(noreplace) %{_sysconfdir}/MonetDB.conf
 

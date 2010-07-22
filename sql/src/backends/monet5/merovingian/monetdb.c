@@ -185,7 +185,8 @@ command_help(int argc, char *argv[])
 static void
 command_version()
 {
-	printf("MonetDB Database Server Toolkit v%s\n", TOOLKIT_VERSION);
+	printf("MonetDB Database Server Toolkit v%s (%s)\n",
+			TOOLKIT_VERSION, MONETDB_RELEASE);
 }
 
 /**
@@ -1429,6 +1430,22 @@ main(int argc, char *argv[])
 					}
 				}
 			break;
+			case '-':
+				/* skip -- */
+				if (argv[i][2] == '\0')
+					break;
+				if (strcmp(&argv[i][2], "version") == 0) {
+					command_version();
+					return(0);
+				} else if (strcmp(&argv[i][2], "help") == 0) {
+					command_help(0, NULL);
+					return(0);
+				}
+			default:
+				fprintf(stderr, "monetdb: unknown option: %s\n", argv[i]);
+				command_help(0, NULL);
+				return(1);
+			break;
 		}
 	}
 
@@ -1453,7 +1470,7 @@ main(int argc, char *argv[])
 	}
 	
 	/* commands that do not need merovingian to be running */
-	if (strcmp(argv[i], "help") == 0 || strcmp(argv[i], "--help") == 0) {
+	if (strcmp(argv[i], "help") == 0) {
 		command_help(argc - i, &argv[i]);
 		return(0);
 	} else if (strcmp(argv[i], "version") == 0) {

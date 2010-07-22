@@ -1,6 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+  21 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c, monetdb.c:
+  Report MonetDB release on --version flags and in the logs.
+
   16 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c,
   merovingian_forkmserver.c, monetdb.1.in, properties.c:
   Remove references to master/slave settings, since replication isn't yet
