@@ -133,7 +133,7 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
 mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB
-mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB5
+mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/MonetDB5/dbfarm
 # insert example db here!
 
 # cleanup stuff we don't want to install
@@ -184,8 +184,9 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_libdir}/MonetDB5/autoload
 %{_libdir}/MonetDB5/autoload/*xml*.mal
 
-%attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
-%attr(770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB5
+%attr(750,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
+%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB5
+%attr(2770,monetdb,monetdb) %dir %{_localstatedir}/MonetDB5/dbfarm
 
 %config(noreplace) %{_sysconfdir}/monetdb5.conf
 %{_mandir}/man5/monetdb5.conf.5.gz
