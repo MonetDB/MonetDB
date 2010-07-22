@@ -222,7 +222,7 @@ pkgincludedir = $(includedir)\$(pkg)
 
 LIBC_INCS = $(PTHREAD_INCS)
 MATH_LIBS =
-SOCKET_LIBS = wsock32.lib
+SOCKET_LIBS = wsock32.lib Ws2_32.lib
 
 MEL=mel.exe
 MX=Mx.exe

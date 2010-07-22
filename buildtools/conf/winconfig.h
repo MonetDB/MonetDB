@@ -54,6 +54,7 @@
 #include <process.h>
 #include <windows.h>
 #include <stddef.h>
+#include <ws2tcpip.h>
 
 /* Release name or "unreleased" */
 #define MONETDB_RELEASE "unreleased"
