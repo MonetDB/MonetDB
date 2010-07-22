@@ -320,7 +320,7 @@ already have been handled and produce their target.
 		}
 	}
 
-	snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->octid);
+	snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->legid);
 	name2 =  putName(buf,strlen(buf));
 
 /* generate tentacle CALLS: every tentacle is called once on each worker: tcnt times */
@@ -465,7 +465,7 @@ when scheduled correctly, would not lead to duplicate work.
 		return 0;
 	}
 	pushInstruction(mb, old[0]);
-	mb->octid = octopusSeq++;
+	mb->legid = octopusSeq++;
 
 	sig= old[0];
 	for (i = 1; i < limit; i++) {
@@ -483,7 +483,7 @@ when scheduled correctly, would not lead to duplicate work.
 			tcnt = p->argc - p->retc;
 			resType = getVarType(mb, getArg(p,0));
 			/* prepare the exec_ procedure */
-			snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->octid);
+			snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->legid);
 			s2= newFunction(octopusRef, putName(buf,strlen(buf)), FUNCTIONsymbol);
 			sm= s2->def;
 			q= getInstrPtr(sm,0);
@@ -529,7 +529,7 @@ when scheduled correctly, would not lead to duplicate work.
 				cst.len= (int) strlen(cst.val.sval);
 				wnm[j] = defConstant(mb, TYPE_str, &cst);
 	
-				snprintf(buf,BUFSIZ,"tentacle_"LLFMT"_%d", mb->octid,p->argv[j+1]); 
+				snprintf(buf,BUFSIZ,"tentacle_"LLFMT"_%d", mb->legid,p->argv[j+1]); 
 				cst.val.sval= GDKstrdup(buf);
 				cst.len= (int) strlen(cst.val.sval);
 				tnm[j] = defConstant(mb, TYPE_str, &cst);

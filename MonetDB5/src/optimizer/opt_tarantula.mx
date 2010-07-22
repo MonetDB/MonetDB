@@ -50,24 +50,34 @@ The main part of the query becomes a three step procedure of
 1) remote registration of subplans, 2) obtaining bids and schedule design
 and 3) execute the subplans.
 @verbatim
-function user.qry():void;
-	_1 := sql.mvc();
+function reg_qry_0():void;
 barrier _2 := language.dataflow();
-	tarantula.register(0,"leg_0_90","leg_0_91");
-	tarantula.register(1,"leg_0_90","leg_0_91");
+	tarantula.register(0,"qry_0","qry_1");
+	tarantula.register(1,"qry_0","qry_1");
 exit _2;
+end reg_qry;
 
+function bid_qry()(:int,:int,:int,:int);
 barrier _9 := language.dataflow();
-	(_4,_5) := tarantula.getBid(0,"leg_0_90","leg_0_91");
-	(_6,_7) := tarantula.getBid(1,"leg_0_90","leg_0_91");
+	(_4,_5) := tarantula.getBid(0,"qry_0","qry_1");
+	(_6,_7) := tarantula.getBid(1,"qry_0","qry_1");
 exit _9;
-    (node0,node1) := scheduler.makeSchedule(2,_4,_5,_6,_7);
+end bid_qry;
 
-barrier (_100,version:int):= scheduler.tarantula(10);
-    _87 := tarantula.exec_qry(node_0,"leg0",version);
-    _88 := tarantula.exec_qry(node_1,"leg1",version);
+function run_qry(node_0:int,node_1:int):bat[:oid,:int]
+barrier _100:= scheduler.tarantula(10);
+    _87 := tarantula.exec_qry(node_0,"leg0");
+    _88 := tarantula.exec_qry(node_1,"leg1");
 exit (_100,version);
     _15 := mat.pack(_87,_88);
+	return run_qry := _15;
+end run_qry;
+
+function user.qry():void;
+	_3 := reg_qry_0();
+	(_4,_5,_6,_7):= bid_qry_0(_3);
+    (node0,node1) := scheduler.makeSchedule_0(2,_4,_5,_6,_7);
+	_15 := tarantula.run_qry(node0,node1);
     _16 := sql.resultSet(1,1,_15);
     sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
     _21 := io.stdout();
@@ -79,20 +89,16 @@ The number of subplans is derived by the Mitosis as the number of pieces to cons
 The tarantula may register the subplans to more nodes than pieces.
 
 @verbatim
-function tarantula.exec_qry(node:str,fcn:str, ver:int):bat[:oid,:int];
+function tarantula.exec_qry(node:str,fcn:str):bat[:oid,:int];
 	conn:= remote.connect(node,"monetdb","monetdb");
-	v:= remote.put(conn,ver);
-	r:= remote.exec(conn,"tarantula",fcn,v);
+	r:= remote.exec(conn,"tarantula",fcn);
 	b:bat[:oid,:int]:= remote.get(conn,r);
-catch REMOTEexception;
-	octopus.reschedule(srv);
-exit REMOTEexception;
 	return b;
 end exec_qry;
 @end verbatim
 
 @verbatim
-function tarantula.leg_0_90(version:int):bat[:oid,:int];
+function tarantula.qry_0(version:int):bat[:oid,:int];
     _53:bat[:oid,:int] := attach.bind("file://export/scratch/mk/dbfarm/demo/bat/01/001");
 	_54 := algebra.slice(_53,0@0,25@0);
     _63:bat[:oid,:int] := attach.bind("file://export/scratch/mk/dbfarm/demo/bat/01/002");
@@ -102,45 +108,31 @@ function tarantula.leg_0_90(version:int):bat[:oid,:int];
     _13:bat[:oid,:oid]  := attach.bind("file://export/scratch/mk/dbfarm/demo/bat/01/003");
     _14 := bat.reverse(_13);
     _85 := algebra.kdifference(_78,_14);
-	return leg_0_90 := _85;
-end tarantula.leg_0_90;
+	return qry_0 := _85;
+end tarantula.qry_0;
 
-function tarantula.leg_0_91(version:int):bat[:oid,:int];
+function tarantula.qry_1(version:int):bat[:oid,:int];
 	... use second slice ...
-end tarantula.leg_0_91;
+end tarantula.qry_1;
 
 @end verbatim
 
-[Versioning]
-The argument to the leg is the expected database version 
-to be used and optional arguments for the query.
-
-[Partition access]
-For a leg to work it needs access to its storage layer.
-It is encapsulated in the operation tarantula.bind(Conn,S,T,C,V,P,I),
-which performs an upcall to the tarantula head to deliver 
-a portion piece of the column S.T.C. Initial performance is critically
-dependent on being able to do this step quickly.
-
-[Shared disk]
-In a tarantula shared disk setup, we merely ensure that a
-possibly cached version is not out of date.
-This is different from the Octopus, where the head is
-the sole control over the persistent data. 
-In this setup, a complete copy of the BAT could be obained with a
-ftp- call from anywhere, or we can provide a NAS functionality
-over the database store that delivers the partitions of interest.
+[Stability]
+We assume that during a session, workers once started will remain alive.
+No fault tolerance techniques are included.
 
 [Recycling]
-The version argument passed during the leg call
-is used to enforce synchronisation of the recycler caches
-between the tarantula and its legs.
-If the version does not change between calls, the
-recylcer will simply step over the bind() calls,
-reusing with it already have instead.
-If for local resource management decisions the cache
-is cleared, then it will automatically trigger a
-re-execution of the bind().
+The legs contain registered functions and possible partial results in its recycler pool.
+In the first implementation we assume a read-only database, where all workers are
+restarted when changes to the underlying database affect the recycler pool.
+Alternative, the head can clear the recycler pool explicitly upon such state change.
+
+[Shared disk]
+For a leg to work it needs access to its storage layer, which is a NAS.
+It is encapsulated in the operation attach.bind("path",tuplecount).
+
+This approach is different from the Octopus, where the head is
+the sole control over the persistent data. 
 
 [Naming]
 The legs received from the tarantula should be ensured
@@ -148,7 +140,6 @@ not to clash with those already known. Therefore, we simply
 tag them by orginating site.
 
 [Caveats]
-Updates on the persistent tables are not handled yet. 
 Any update invalidates the request to distributed processing.
 In the same line, multi-statement SQL transactions and
 updates to global variables are ignored. 
@@ -162,16 +153,37 @@ passed through a relation.
 @mal
 module tarantula; 
 pattern optimizer.tarantula():str
-address TARtarantula;
+address OPTtarantula;
 pattern optimizer.tarantula(mod:str, fcn:str):str
-address TARtarantula
+address OPTtarantula
 comment "Map-execute-reduce parallelism optimizer";
+
+pattern tarantula.register(node:int,fname:str...):void
+address TARregister
+comment "Register mal functions at server indexed by node.";
+
+pattern tarantula.getBid(node:int,fname:str...)(:int...)
+address TARgetBid
+comment "Obtain a bid for mal functions at server indexed by node.";
 
 @h
 #ifndef _TAR_OCTOPUS_
 #define _TAR_OCTOPUS_
 #include "opt_prelude.h"
 #include "opt_support.h"
+
+#ifdef WIN32
+#ifndef LIBOPTIMIZER
+#define opt_export extern __declspec(dllimport)
+#else
+#define opt_export extern __declspec(dllexport)
+#endif
+#else
+#define opt_export extern
+#endif
+
+opt_export str TARregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str TARgetBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @:exportOptimizer(tarantula)@
 
@@ -197,7 +209,6 @@ Therefore, we recursively break a plan by looking for the
 pack instructions and collect all dependent instructions.
 The original block is trimmed as far as needed.
 @c
-static lng tarantulaSeq = 0;
 static sht bidStrategy = 1;
 
 static int
@@ -250,69 +261,36 @@ TARexitcode(MalBlkPtr mb, int conn, int varid)
 	p = pushStr(mb, p, tarantulaRef);
 	p = pushStr(mb, p, getFunctionId(getInstrPtr(mb, 0)));
 }
-
+@-
+The TARmakeleg walks through the MAL block and extracts the dependent structure for
+execution. Note that information van be recomputed in all legs. Possibly doing duplicate work.
+@c
 static MalBlkPtr 
-TARleg(Client cntxt,  MalBlkPtr mb, InstrPtr *old, InstrPtr pci, int start, int idx, int v2,
-int tcnt, int *wnm, int *tnm, int **sch, int **res){
+TARmakeleg(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int idx)
+{
 	MalBlkPtr tm = NULL;
-	InstrPtr p = NULL, q = NULL, sig = old[0];
-	int varid= pci->argv[idx],i,j,top=0, fnd, k;
+	InstrPtr p = NULL;
+	int varid, i, j, top=0, fnd;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
 	int *alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
-	str name= NULL, name2= NULL;
 	Symbol s;
-/*	ValRecord cst; */
-	int conn=0, tidx=idx-1;
 
-	/* check if the head is properly administered for Octopus */
-	SABAOTHgetLocalConnection(&name);
+	assert(old[pc]->fcnname == packRef);
 
-	if ( name == NULL || *name == 0 || list == NULL || needed == NULL){
-		if ( list ) GDKfree(list);
-		if ( needed) GDKfree(needed);
-		if ( alias) GDKfree(alias);
-		if ( name) GDKfree(name);
-		return 0;
-	}
-
+	varid = getArg(old[pc],idx);
+	needed[varid] = 1;
 	OPTDEBUGtarantula {
-		stream_printf(cntxt->fdout,"#create leg for %d %d %d\n",start,idx,varid);
-		printInstruction(cntxt->fdout,mb,0,pci,0);
+		stream_printf(cntxt->fdout,"#create leg for %d %d %d\n",pc,idx, varid);
 	}
 
-	/* locate the last assignment for varid */
-	fnd = -1;
-	for (i = start; i > 0; i--){
-/*		p= getInstrPtr(mb,i); */
-		p = old[i];
-		for (j=0; j<p->retc; j++)
-			if ( getArg(p,j) == varid){
-				fnd= j;
-				goto foundit;
-			}
-	}
-foundit:
-	if ( p == NULL) {
-		if ( list ) GDKfree(list);
-		if ( needed) GDKfree(needed);
-		if ( alias) GDKfree(alias);
-		return 0;	/* bail out, internal error */
-	}
-
-	for (j = 0; j < p->argc; j++)
-		needed[getArg(p,j)]= 1;
 @-
 Find the instructions needed. Beware pack operations
 already have been handled and produce their target.
 @c
-	for (; i > 0; i--){
-/*		p= getInstrPtr(mb,i); */
+	for (i = pc-1; i > 0; i--){
 		p = old[i];
-
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef )
-			continue;
 
 		fnd = 0;
 		if ( p->barrier ){
@@ -329,38 +307,14 @@ already have been handled and produce their target.
 		}
 	}
 
-	snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->octid);
-	name2 =  putName(buf,strlen(buf));
+	/* create the Leg function signature */
+	snprintf(buf,BUFSIZ,"%s_%d", getFunctionId(getInstrPtr(mb,0)), idx);
+	putName(buf,strlen(buf));
 
-/* generate leg CALLS: every leg is called once on each worker: tcnt times */
-	for ( k = 0; k < tcnt; k++ ){
-		q= newStmt2(mb,tarantulaRef, name2);
-		getArg(q,0) = res[tidx][k];
-		setVarUDFtype(mb,getArg(q,0));
-		q= pushArgument(mb,q,sch[tidx][k]);
-		q= pushArgument(mb,q,wnm[k]);
-		q= pushArgument(mb,q,tnm[tidx]);
-		q= pushArgument(mb,q,v2);
-		needed[varid]= 1;
-		for (j= sig->retc; j <  sig->argc; j++)
-			q = pushArgument(mb,q,getArg(sig, j));
-	}
-	
-	/* create the TENTACLE function */
-	name = (str) getVarValue(mb, tnm[tidx]);
-	putName(name,strlen(name));
-
-	s= newFunction(tarantulaRef,name,FUNCTIONsymbol);
+	s= newFunction(tarantulaRef, buf, FUNCTIONsymbol);
+	insertSymbol(findModule(cntxt->nspace,tarantulaRef),s);
 	tm= s->def;
-	tm->keephistory= mb->keephistory;
-	p= getInstrPtr(tm,0);
-	for(i=q->retc+3; i<q->argc; i++){
-		alias[getArg(q,i)] = cloneVariable(tm,mb,getArg(q,i));
-		p= pushArgument(tm,p, alias[getArg(q,i)]);
-	}
-	setVarType(tm,getArg(p,0),getVarType(mb,varid));
 
-	conn= TARinitcode(cntxt, tm);
 	for (top--; top >= 0; top--){
 		p = copyInstruction(list[top]);
 		for (i= 0; i< p->argc; i++){
@@ -370,57 +324,117 @@ already have been handled and produce their target.
 			getArg(p,i) = alias[a];
 		}
 		if (getModuleId(p) == sqlRef &&
-			strcmp(getFunctionId(p), "getVariable") == 0
-		){
-			getModuleId(p) = tarantulaRef;
-			p= setArgument(tm,p,1,conn);
-			setVarUDFtype(tm,getArg(p,0));
-		} else
-		if (getModuleId(p) == sqlRef &&
 			( getFunctionId(p) == bindRef ||
 			  getFunctionId(p) == bindidxRef)){
-			setModuleId(p, tarantulaRef);
+			setModuleId(p, attachRef);
 			setVarUDFtype(tm,getArg(p,0));
 			setArgType(tm,p,0, getArgType(mb,list[top],0));
-/*			p= setArgument(tm,p,1,conn); */
-			getArg(p,1) = conn;
-			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
+			/* construct the path */
 		} 
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == binddbatRef ){
 			setModuleId(p, tarantulaRef);
 			setVarUDFtype(tm,getArg(p,0));
 			setArgType(tm,p,0, getArgType(mb,list[top],0));
-/*			p= setArgument(tm,p,1,conn); */
-			getArg(p,1) = conn;
-			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
+			/* construct the path */
 		} 
 		pushInstruction(tm, p);
 	}
 
-	varid = alias[varid];
-	TARexitcode(tm, conn,varid);
+	p = newAssignment(tm);
+	p->barrier = RETURNsymbol;
+	p = pushArgument(tm,p,alias[varid]);
+	getArg(p,0) = getArg(getInstrPtr(tm,0),0);
+	pushEndInstruction(tm);
 	clrDeclarations(tm);
 
-	insertSymbol(findModule(cntxt->nspace,tarantulaRef),s);
+	OPTDEBUGtarantula 
+		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
 	GDKfree(list);
 	GDKfree(alias);
 	GDKfree(needed);
 	return tm;
 }
+
+static int
+TARmakeRegistration(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes)
+{
+	Symbol s;
+	MalBlkPtr tm;
+	InstrPtr p;
+	char buf[BUFSIZ];
+	int i,n;
+	str name;
+
+	snprintf(buf,BUFSIZ,"reg_%s_%d", name = getFunctionId(getInstrPtr(mb,0)), getArg(old[pc],0));
+	s= newFunction(tarantulaRef, buf, FUNCTIONsymbol);
+	insertSymbol(findModule(cntxt->nspace,tarantulaRef),s);
+	tm= s->def;
+	for ( n= 0; n < nodes; n++){
+		p= newStmt(tm,tarantulaRef,registerRef);
+		p= pushInt(tm, p,n);
+		for( i=old[pc]->retc; i< old[pc]->argc; i++){
+			snprintf(buf,BUFSIZ,"%s_%i",name,i);
+			p = pushStr(tm,p,buf);
+		}
+	}
+	pushEndInstruction(tm);
+
+	p = newStmt(mb,tarantulaRef,buf);
+	return getArg(p,0);
+}
+
+static int
+TARmakeBidding(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes)
+{
+	Symbol s;
+	MalBlkPtr tm;
+	InstrPtr p,r,sig;
+	char buf[BUFSIZ];
+	int i,n;
+	str name;
+
+	snprintf(buf,BUFSIZ,"bid_%s_%d", name = getFunctionId(getInstrPtr(mb,0)), getArg(old[pc],0));
+	s= newFunction(tarantulaRef, buf, FUNCTIONsymbol);
+	insertSymbol(findModule(cntxt->nspace,tarantulaRef),s);
+	tm= s->def;
+	sig = getInstrPtr(tm,0);
+	r= newInstruction(NULL,ASSIGNsymbol);
+	r->barrier = RETURNsymbol;
+	for( i=old[pc]->retc; i< old[pc]->argc; i++){
+		sig= pushReturn(tm, sig, n = newTmpVariable(tm,TYPE_int));
+		r = pushReturn(tm,r,n);
+	}
+
+	for ( n= 0; n < nodes; n++){
+		p= newStmt(tm,tarantulaRef,registerRef);
+		p= pushInt(tm, p,n);
+		for( i=old[pc]->retc; i< old[pc]->argc; i++){
+			snprintf(buf,BUFSIZ,"%s_%i",name,i);
+			p = pushStr(tm,p,buf);
+			p = pushReturn(tm,p, getArg(sig, i - old[pc]->retc));
+		}
+	}
+	pushInstruction(tm,r);
+	pushEndInstruction(tm);
+
+	p = newStmt(mb,tarantulaRef,buf);
+	return getArg(p,0);
+}
 @-
 The tarantula is only permitted for read only queries.
+The first blocking mat.pack determines the scope of the tarantula optimizer.
 @c
 static int
 TAReligible(MalBlkPtr mb){
 	int i, target = -1;
 	InstrPtr p;
 
-	if ( varGetProp(mb, getArg(getInstrPtr(mb,0),0), PropertyIndex("autoCommit")) != NULL )
-		return -1;
+	//if ( varGetProp(mb, getArg(getInstrPtr(mb,0),0), PropertyIndex("autoCommit")) != NULL )
+		//return -1;
 	for (i = 1; i < mb->stop; i++){
 		p = getInstrPtr(mb,i);
 		
-		if( getModuleId(p)== matRef && getFunctionId(p)== packRef)
+		if( getModuleId(p)== matRef && getFunctionId(p)== packRef && target == -1)
 			target = i;
 		if( getModuleId(p)== sqlRef ){
 			if (getFunctionId(p)== appendRef || getFunctionId(p)== deleteRef )
@@ -445,7 +459,7 @@ OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int tn=0, maxlegs= MAL_MAXCLIENTS -2;	/* should be relaxed */
 	MalBlkPtr *leg, sm = NULL, tmb;
 	Symbol s2;
-	int target= -1;
+	int nodes = 4;/* default */
 	int version,v2;
 	int k,l, rexit, bs, tcnt=0;
 	char buf[BUFSIZ];
@@ -454,11 +468,12 @@ OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int **bid=NULL;				/* array index to bid variables */
 	int **sch=NULL, **res=NULL;	/* array index to schedule variables and results */
 
-	if ( ( target = TAReligible(mb)) < 0 )
-		return 0;
-	(void) stk;
-	leg= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxlegs);
-	if ( leg == NULL)
+	if( cntxt == 0){
+		/* confuscate */
+		TARinitcode(cntxt, mb);
+		TARexitcode( mb,0,0);
+	}
+	if ( TAReligible(mb) < 0 )
 		return 0;
 @-
 All tarantula leg code is collected in a separate module
@@ -470,6 +485,10 @@ when scheduled correctly, would not lead to duplicate work.
 @c
 	(void) fixModule(cntxt->nspace,tarantulaRef);
 
+	leg= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxlegs);
+	if ( leg == NULL)
+		return 0;
+
 	limit = mb->stop;
 	old = mb->stmt;
 
@@ -478,7 +497,6 @@ when scheduled correctly, would not lead to duplicate work.
 		return 0;
 	}
 	pushInstruction(mb, old[0]);
-	mb->octid = tarantulaSeq++;
 
 	sig= old[0];
 	for (i = 1; i < limit; i++) {
@@ -488,15 +506,19 @@ when scheduled correctly, would not lead to duplicate work.
 			old[i]= 0;
 			continue;
 		}
-		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) && 
-			i == target && tn + p->argc - p->retc < maxlegs){
+		if( getModuleId(p)== matRef && getFunctionId(p)== packRef) {
 			InstrPtr qq, mp;
 			int conn,dbvar,qvar,schvar, resType, mpArgType;
 
+			TARmakeRegistration(cntxt,mb,old,i,nodes);
+			TARmakeBidding(cntxt,mb,old,i,nodes);
+			//TARmakeExecution(cntxt,mb,old,i);
+
 			tcnt = p->argc - p->retc;
 			resType = getVarType(mb, getArg(p,0));
-			/* prepare the exec_ procedure */
-			snprintf(buf,BUFSIZ,"exec_"LLFMT, mb->octid);
+
+			/* prepare the execution dispatcher procedure */
+			snprintf(buf,BUFSIZ,"x_%s", getFunctionId(getInstrPtr(mb,0)));
 			s2= newFunction(tarantulaRef, putName(buf,strlen(buf)), FUNCTIONsymbol);
 			sm= s2->def;
 			q= getInstrPtr(sm,0);
@@ -542,7 +564,7 @@ when scheduled correctly, would not lead to duplicate work.
 				cst.len= (int) strlen(cst.val.sval);
 				wnm[j] = defConstant(mb, TYPE_str, &cst);
 	
-				snprintf(buf,BUFSIZ,"leg_"LLFMT"_%d", mb->octid,p->argv[j+1]); 
+				snprintf(buf,BUFSIZ,"leg_"LLFMT"_%d", mb->legid,p->argv[j+1]); 
 				cst.val.sval= GDKstrdup(buf);
 				cst.len= (int) strlen(cst.val.sval);
 				tnm[j] = defConstant(mb, TYPE_str, &cst);
@@ -638,7 +660,7 @@ when scheduled correctly, would not lead to duplicate work.
 			q->barrier = BARRIERsymbol;
 
 			for (j = p->retc; j < p->argc; j++)
-				leg[tn++] = TARleg(cntxt, mb, old, p, i - 1, j, v2, tcnt, wnm, tnm, sch, res);
+				leg[tn++] = TARmakeleg(cntxt, mb, old, i, j);
 
 			/* exit c; */
 			q = newAssignment(mb);
@@ -827,10 +849,30 @@ The leg code should be optimized by the remaining optimizers too.
 	GDKfree(res);
 	GDKfree(old);
 	GDKfree(leg);
+	(void) stk;
 	return actions;
 }
 @include optimizerWrapper.mx
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(tarantula,OPT_CHECK_ALL)@
+@c
+str
+TARregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	return MAL_SUCCEED;
+}
+str
+TARgetBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	return MAL_SUCCEED;
+}
 @}
