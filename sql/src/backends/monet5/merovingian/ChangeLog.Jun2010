@@ -1,6 +1,11 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+  21 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c:
+  Really shutdown when an argument to merovingian was given, instead of
+  ending up in some inconsistent state.  This solves all weird behaviour
+  observed in bug #2628.
+
   21 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c, monetdb.c:
   Report MonetDB release on --version flags and in the logs.
 
