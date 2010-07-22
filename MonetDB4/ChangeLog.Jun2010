@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB4
 # This file is updated with Maddlog
 
+* Thu Jul 22 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Slight change to Fedora, Debian, Ubuntu installers: the database
+  directory now has the group setuid bit set so that new databases
+  inherit the group ownership (monetdb).
+
