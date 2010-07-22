@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu Jul 22 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Slight change to Fedora, Debian, Ubuntu installers: the database
+  directory now has the group setuid bit set so that new databases
+  inherit the group ownership (monetdb).
+
 * Thu Jul 15 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
 - restored genuine original mitosis logic by disabling
   incorrect octopus dominance (even when octopus was not
