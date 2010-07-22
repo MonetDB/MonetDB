@@ -216,7 +216,7 @@ str ATTlocation(str *ret, int *bid)
 
 	snprintf(path,BUFSIZ,"%s%c%s%c",GDKgetenv("gdk_dbfarm"),DIR_SEP,GDKgetenv("gdk_dbname"),DIR_SEP);
 	GDKfilepath(path+strlen(path), BATDIR, ( b->T->heap.filename ? b->T->heap.filename: b->H->heap.filename), 0);
-	s= rindex(path,'.');
+	s= strrchr(path,'.');
 	if( s) *s = 0;
 	*ret = GDKstrdup(path);
 	return MAL_SUCCEED;
