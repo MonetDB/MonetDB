@@ -2405,7 +2405,7 @@ connect_to_server(Mapi mid)
 			mid->hostname = strdup("localhost");
 
 		if ((hp = gethostbyname(mid->hostname)) == NULL) {
-			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s", strerror(errno));
+			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s", errno ? strerror(errno) : hstrerror(h_errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 		memset(&server, 0, sizeof(server));
