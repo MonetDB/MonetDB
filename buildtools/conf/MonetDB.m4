@@ -1240,7 +1240,7 @@ AC_CHECK_SIZEOF(__int64)
 AC_C_CHAR_UNSIGNED
 
 # Checks for library functions.
-AC_CHECK_FUNCS([ftruncate gettimeofday opendir sysconf times])
+AC_CHECK_FUNCS([ftruncate getaddrinfo gettimeofday opendir sysconf times])
 AC_CHECK_FUNCS([madvise posix_fadvise posix_madvise]) dnl gdk_posix.mx
 AC_FUNC_FSEEKO()
 

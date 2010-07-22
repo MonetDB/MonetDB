@@ -54,6 +54,7 @@
 #include <process.h>
 #include <windows.h>
 #include <stddef.h>
+#include <ws2tcpip.h>
 
 /* Release name or "unreleased" */
 #define MONETDB_RELEASE "unreleased"
@@ -162,6 +163,9 @@
 
 /* Does your compiler support function attributes (__attribute__)? */
 /* #undef HAVE_FUNCTION_ATTRIBUTES */
+
+/* Define to 1 if you have the `getaddrinfo' function. */
+#define HAVE_GETADDRINFO 1
 
 /* Define to 1 if you have the `getlogin' function. */
 /* #undef HAVE_GETLOGIN */

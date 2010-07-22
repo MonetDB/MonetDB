@@ -2329,13 +2329,6 @@ the initialization sequence.
 static MapiMsg
 connect_to_server(Mapi mid)
 {
-	struct sockaddr_in server;
-
-#ifdef HAVE_SYS_UN_H
-	struct sockaddr_un userver;
-#endif
-	struct sockaddr *serv;
-	socklen_t servsize;
 	SOCKET s;
 
 	char errbuf[8096];
@@ -2355,6 +2348,8 @@ connect_to_server(Mapi mid)
 		struct msghdr msg;
 		struct iovec vec;
 		char buf[1];
+		struct sockaddr_un userver;
+		struct sockaddr *serv = (struct sockaddr *) &userver;
 
 		if (strlen(mid->hostname) >= sizeof(userver.sun_path)) {
 			return mapi_setError(mid, "path name too long", "mapi_reconnect", MERROR);
@@ -2368,11 +2363,9 @@ connect_to_server(Mapi mid)
 		memset(&userver, 0, sizeof(struct sockaddr_un));
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
-		serv = (struct sockaddr *) &userver;
-		servsize = sizeof(struct sockaddr_un);
 		s = socket(PF_UNIX, SOCK_STREAM, 0);
 
-		if (connect(s, serv, servsize) < 0) {
+		if (connect(s, serv, sizeof(struct sockaddr_un)) < 0) {
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
 				 strerror(errno));
@@ -2399,7 +2392,39 @@ connect_to_server(Mapi mid)
 	} else
 #endif
 	{
+#ifdef HAVE_GETADDRINFO
+		struct addrinfo hints, *res, *rp;
+		char port[32];
+		int ret;
+
+		if (mid->hostname == NULL)
+			mid->hostname = strdup("localhost");
+		snprintf(port, sizeof(port), "%d", mid->port & 0xFFFF);
+
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_family = AF_UNSPEC;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_protocol = IPPROTO_TCP;
+		ret = getaddrinfo(mid->hostname, port, &hints, &res);
+		if (ret) {
+			snprintf(errbuf, sizeof(errbuf), "getaddrinfo failed: %s", gai_strerror(ret));
+			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
+		}
+		for (rp = res; rp; rp = rp->ai_next) {
+			s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+			if (s == INVALID_SOCKET)
+				continue;
+			if (connect(s, rp->ai_addr, rp->ai_addrlen) != -1)
+				break;  /* success */
+			close(s);
+		}
+		freeaddrinfo(res);
+		if (rp == NULL)
+			return mapi_setError(mid, "could not connect", "mapi_reconnect", MERROR);
+#else
+		struct sockaddr_in server;
 		struct hostent *hp;
+		struct sockaddr *serv = (struct sockaddr *) &server;
 
 		if (mid->hostname == NULL)
 			mid->hostname = strdup("localhost");
@@ -2412,8 +2437,6 @@ connect_to_server(Mapi mid)
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
 		server.sin_family = hp->h_addrtype;
 		server.sin_port = htons((unsigned short) (mid->port & 0xFFFF));
-		serv = (struct sockaddr *) &server;
-		servsize = sizeof(server);
 		s = socket(server.sin_family, SOCK_STREAM, IPPROTO_TCP);
 
 		if (s == INVALID_SOCKET) {
@@ -2421,12 +2444,13 @@ connect_to_server(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 
-		if (connect(s, serv, servsize) < 0) {
+		if (connect(s, serv, sizeof(server)) < 0) {
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
 				 strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
+#endif
 	}
 
 	mid->to = socket_wastream(s, "Mapi client write");
