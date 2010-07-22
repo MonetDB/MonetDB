@@ -39,7 +39,7 @@ public class MonetBlob implements Blob {
 		int len = in.length() / 2;
 		buf = new byte[len];
 		for (int i = 0; i < len; i++)
-			buf[i] = Byte.parseByte(in.substring(2 * i, (2 * i) + 2), 16);
+			buf[i] = (byte)Integer.parseInt(in.substring(2 * i, (2 * i) + 2), 16);
 	}
 
 	//== begin interface Blob
