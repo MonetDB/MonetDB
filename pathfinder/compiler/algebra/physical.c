@@ -1684,6 +1684,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         case alg_fun_fn_starts_with:
         case alg_fun_fn_ends_with:
         case alg_fun_fn_matches:
+        case alg_fun_fn_similar_to:
             assert (clsize (refs) == 2);
             /* make sure both columns are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&

@@ -870,6 +870,17 @@ PFsql_like (const PFsql_t *a, const PFsql_t *b)
 }
 
 /**
+ * Create a tree node representing the SQL99
+ * 'similar to' statement to compare a string with
+ * a certain pattern.
+ */
+PFsql_t *
+PFsql_similar_to (const PFsql_t *a, const PFsql_t *b)
+{
+    return wire2 (sql_similar_to, a, b);
+}
+
+/**
  * Create a SQL tree node representing the in operator
  */
 PFsql_t *

@@ -5535,6 +5535,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                               VAR (L(p)->env, col2, aat_str)),
                                           lit_int (-1)))));
                 }   break; /* fold) */
+                case alg_fun_fn_similar_to:
+                        PFoops (OOPS_FATAL,
+                                "fn:similar_to not implemented for MIL");
 #ifdef HAVE_GEOXML
                 case alg_fun_geo_wkb: /* fold( */
                 {

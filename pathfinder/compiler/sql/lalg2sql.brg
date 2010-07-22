@@ -3697,6 +3697,8 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                             "string expressions");
                     res_expr = like (expr[0], expr[1]);
                     break;
+		case alg_fun_fn_similar_to:
+                    res_expr = similar_to (expr[0], expr[1]); break;
                 /**< fn:ceiling */
                 case alg_fun_fn_ceiling:
                     res_expr = ceil (expr[0]); break;

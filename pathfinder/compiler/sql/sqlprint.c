@@ -70,7 +70,7 @@ indent (PFchar_array_t *a, int ind)
 }
 
 static char *ID[] = {
-      [sql_root]              = "root",
+     [sql_root]              = "root",
       [sql_ser_info]          = "ser_info",
       [sql_ser_comment]       = "ser_comment",
       [sql_ser_mapping]       = "ser_mapping",
@@ -121,6 +121,7 @@ static char *ID[] = {
       [sql_gteq]              = "gteq",
       [sql_between]           = "between",
       [sql_like]              = "like",
+      [sql_similar_to]        = "similar to",
       [sql_in]                = "in",
       [sql_stmt_list]         = "stmt_list",
       [sql_list_list]         = "list_list",
@@ -486,6 +487,12 @@ print_condition (PFsql_t *n)
             /* write the string without beginning and trailing ' */
             PFprettyprintf (" LIKE  '%s'", R(n)->sem.atom.val.s);
             break;
+
+        case sql_similar_to:
+            print_statement (L(n));
+            PFprettyprintf (" SIMILAR TO ");
+            print_statement (R(n));
+            break;
     
         case sql_in:
             print_statement (L(n));
@@ -721,6 +728,10 @@ print_statement (PFsql_t *n)
             PFprettyprintf (")");
             break;
         case sql_concat:
+            print_statement (L(n));
+            PFprettyprintf (" || ");
+            print_statement (R(n));
+            break;
         case sql_modulo:
             PFprettyprintf ("%s (", ID[n->kind]);
             print_statement (L(n));
