@@ -808,7 +808,7 @@ OPTmapreduceImplementation(
 					}
 				}
 			} else if (getFunctionId(p) == sortReverseTailRef) {
-				/* simple ORDER BY DESC*/
+				/* simple ORDER BY DESC */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
 						pushInstruction(map, omap[i]);
@@ -892,7 +892,7 @@ OPTmapreduceImplementation(
 							getFunctionId(oreduce[i - 1]) == mirrorRef &&
 							getArg(oreduce[i - 1], 0) == getArg(p, 1))
 						getArg(p, 1) = getArg(oreduce[i - 1], 1);
-				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {
 					if (getArg(p, 1) == lastcol->reduceid) {
 						pushInstruction(map, omap[i]);
 						newComment(map, "= COUNT");
