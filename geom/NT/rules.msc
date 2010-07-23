@@ -35,9 +35,15 @@ VERSION = 0.18.4
 pkg = geom
 CONFIG_H=geom_config.h
 
-GEOS = C:\geos-3.0.win$(bits)
-GEOS_LIBS = $(GEOS)\lib\geos_c_i$(DEBUGLIB).lib
-GEOS_INCS = -I$(GEOS)\include
+!IFNDEF LIBGEOS
+LIBGEOS = C:\geos-3.0.win$(bits)
+!ENDIF
+!IFDEF DEBUG
+GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i$(GEOSDEBUGLIB).lib
+!ELSE
+GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i.lib
+!ENDIF
+GEOS_INCS = -I$(LIBGEOS)\include
 
 MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include\MonetDB
 
