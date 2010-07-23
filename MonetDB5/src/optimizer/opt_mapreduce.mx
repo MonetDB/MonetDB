@@ -484,6 +484,7 @@ trackstack_destroy(struct stack *stk)
 						for (i = k + 1; i < j; i++) {
 							p = omap[i];
 							if (trackstack_contains(&avgtrack, getArg(p, 0))) {
+								MRaddDepInstrs(omap, limit, map, &instrp, p);
 								pushInstruction(map, p);
 								oreduce[i]->token = NOOPsymbol;
 							}
@@ -503,6 +504,50 @@ trackstack_destroy(struct stack *stk)
 	p = omap[i];
 @c
 
+static void
+MRaddDepInstrs(
+		InstrPtr *omb,    /* original stmts */
+		int limit,        /* the number of orig stmts */
+		MalBlkPtr mb,     /* the new malblock to append to */
+		struct stack *s,  /* trackstack with already inserted instrs */
+		InstrPtr p        /* current instruction to evaluate */
+) {
+	int i, j, k, c;
+	InstrPtr q = NULL;
+
+	/* did we include all dependencies? */
+	for (j = p->retc; j < p->argc; j++) {
+		c = getArg(p, j);
+		if (!isVarConstant(mb, c) && !trackstack_contains(s, c)) {
+			/* we need to inject the missing instruction first */
+			q = NULL;
+			for (k = 0; k < limit; k++) {
+				if (omb[k] == NULL)
+					continue;
+				for (i = 0; i < omb[k]->retc; i++) {
+					if (getArg(omb[k], i) == c) {
+						q = omb[k];
+						break;
+					}
+				}
+			}
+			/* not found. this could happen with argument variables (A0) */
+			if (q == NULL)
+				break;
+			/* make sure we don't add it multiple times */
+			for (i = 0; i < q->retc; i++)
+				trackstack_push(s, getArg(q, i));
+			/* recursively get instructions that are needed for this one */
+			MRaddDepInstrs(omb, limit, mb, s, q);
+			/* add the instruction */
+			pushInstruction(mb, q);
+		}
+	}
+	/* don't forget to add this instruction itself */
+	for (i = 0; i < p->retc; i++)
+		trackstack_push(s, getArg(p, i));
+}
+
 static int
 OPTmapreduceImplementation(
 		Client cntxt,
@@ -520,9 +565,10 @@ OPTmapreduceImplementation(
 	Symbol new;
 	mapcol *col, *lastcol;
 	struct stack tracker = { NULL, 0, 0, 0 };
+	struct stack instrp = { NULL, 0, 0, 0 };
 	struct stack avgtrack = { NULL, 0, 0, 0 };
 	char hadBinds = 0;
-	str mapreduceRef = putName("mapreduce", 9);
+	str mapreduceRef = putName("mapreduce", 9);/* move global when we're done */
 
 	(void)stk; /* useless, is NULL */
 	(void)pc;
@@ -639,6 +685,7 @@ OPTmapreduceImplementation(
 						 * final column result */
 						if (getArg(p, 1) == lastUnion) {
 							/* this is a column reference, keep it */
+							MRaddDepInstrs(omap, limit, map, &instrp, p);
 							if (lastcol == NULL) {
 								col = lastcol = alloca(sizeof(mapcol));
 								/* this is the first one, leave a marker */
@@ -694,10 +741,12 @@ OPTmapreduceImplementation(
 			break;
 			case SINGLE_DUP:
 				copy = FREE;
+				MRaddDepInstrs(omap, limit, map, &instrp, p);
 				pushInstruction(map, p);
 			break;
 			case SINGLE:
 				copy = LEAVE;
+				MRaddDepInstrs(omap, limit, map, &instrp, p);
 				pushInstruction(map, p);
 				oreduce[i]->token = NOOPsymbol;
 			break;
@@ -709,6 +758,7 @@ OPTmapreduceImplementation(
 		}
 	}
 	trackstack_clear(&avgtrack);
+	trackstack_destroy(&instrp);
 
 	if (hadBinds == 0) {
 		GDKfree(reduce->stmt);
