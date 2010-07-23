@@ -1240,7 +1240,7 @@ AC_CHECK_SIZEOF(__int64)
 AC_C_CHAR_UNSIGNED
 
 # Checks for library functions.
-AC_CHECK_FUNCS([ftruncate getaddrinfo gettimeofday opendir sysconf times])
+AC_CHECK_FUNCS([ftruncate gettimeofday opendir sysconf times])
 AC_CHECK_FUNCS([madvise posix_fadvise posix_madvise]) dnl gdk_posix.mx
 AC_FUNC_FSEEKO()
 
@@ -2346,13 +2346,14 @@ case "$host_os" in
 	;;
 esac
 
-
 if test "x$have_setsockopt" = xno; then
 	AC_CHECK_FUNC(setsockopt, [], 
 	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
 fi
 
 AC_CHECK_HEADERS([sys/socket.h winsock.h])
+
+AC_CHECK_FUNCS([getaddrinfo])
 
 dnl incase of windows we need to use try_link because windows uses the
 dnl pascal style of function calls and naming scheme. Therefore the 
