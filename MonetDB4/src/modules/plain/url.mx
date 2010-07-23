@@ -660,12 +660,12 @@ url_isaURL(bit *retval,		/* put return atom here. */
 static int
 needEscape(char c)
 {
-    if( isalnum((int)c) )
-        return 0;
-    if( c == '#' || c == '-' || c == '_' || c == '.' || c == '!' || 
-        c == '~' || c == '*' || c == '\'' || c == '(' || c == ')' )
-        return 0;
-    return 1;
+	if (isalnum((int) (unsigned char) c))
+		return 0;
+	if (c == '#' || c == '-' || c == '_' || c == '.' || c == '!' || 
+	    c == '~' || c == '*' || c == '\'' || c == '(' || c == ')')
+		return 0;
+	return 1;
 }
 
 /* COMMAND "escape": this function applies the URI escaping rules defined in

@@ -5086,7 +5086,7 @@ store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *ds
 			unsigned int fac = 1000000000;
 			unsigned int nsec = 0;
 
-			for (n++; isdigit((int) val[n]); n++) {
+			for (n++; isdigit((int) (unsigned char) val[n]); n++) {
 				fac /= 10;
 				nsec += (val[n] - '0') * fac;
 			}

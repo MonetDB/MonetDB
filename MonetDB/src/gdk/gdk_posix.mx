@@ -1727,7 +1727,7 @@ basename(const char *file_name)
 	if (base)
 		return base + 1;
 
-	if (isalpha(file_name[0]) && file_name[1] == ':')
+	if (isalpha((int) (unsigned char) file_name[0]) && file_name[1] == ':')
 		return (char *) file_name + 2;
 
 	return (char *) file_name;

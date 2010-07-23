@@ -648,7 +648,8 @@ readClient(Client c)
 				 * only handle ASCII, so check for
 				 * non-ASCII-ness separately */
 				if (!incomment &&
-				    ((*s & ~0x7F) != 0 || !isspace((int) *s)))
+				    ((*s & ~0x7F) != 0 ||
+				     !isspace((int) (unsigned char) *s)))
 					doflush = 0;
 				escaped = 0;
 				*p++ = *s;

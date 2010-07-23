@@ -586,7 +586,7 @@ setup_connection(str dst, int *port)
         }
     }
 
-    if (isdigit((int)dst[0])) {
+    if (isdigit((int) (unsigned char) dst[0])) {
         if ((i = inet_addr(dst)) < 0) {
             GDKerror("setup_connection: invalid IP address \"%s\"\n", dst);
             return -1;
@@ -618,8 +618,8 @@ setup_connection(str dst, int *port)
 
     if (ret < 0) {
         GDKerror("setup_connection: failed to setup connection with %s:%d\n", dst, p);
-        close(sock);
-        return -1;
+        closesocket(sock);
+        return INVALID_SOCKET;
     }
 
     *port = p;
