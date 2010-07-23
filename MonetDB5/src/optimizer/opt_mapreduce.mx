@@ -679,11 +679,15 @@ OPTmapreduceImplementation(
 						/* store last seen kunion instruction for
 						 * comparison with kdifference later */
 						lastUnion = getArg(p, 0);
-					} else if (getFunctionId(p) == kdifferenceRef) {
+					} else if (getFunctionId(p) == kdifferenceRef ||
+							getFunctionId(p) == leftjoinRef)
+					{
 						int k;
 						/* a kdifference after a kunion results in the
 						 * final column result */
-						if (getArg(p, 1) == lastUnion) {
+						if (getArg(p, 1) == lastUnion ||
+								getArg(p, 2) == lastUnion)
+						{
 							/* this is a column reference, keep it */
 							MRaddDepInstrs(omap, limit, map, &instrp, p);
 							if (lastcol == NULL) {
