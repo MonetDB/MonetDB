@@ -542,13 +542,14 @@ handle_error_msg(char *errmsg)
  *
  * Returns: a socket number if succeeded, -1 otherwise.
  */
-static int
+static SOCKET
 setup_connection(str dst, int *port)
 {
     struct in_addr      addr;
     struct sockaddr_in  sockaddr;
     struct hostent     *resolv = NULL;
-    int i, ret, sock = -1, p = 0;
+    int i, p = 0;
+    SOCKET ret, sock = INVALID_SOCKET;
     str strptr = NULL;
    
     /* remove whitespace characters at the beginning and the end of the
@@ -572,13 +573,13 @@ setup_connection(str dst, int *port)
         p = strtol(strptr, (char **)NULL, 10);
         if (p <= 0) {
             GDKerror("setup_connection: invalid port number: %s\n", strptr);
-            return -1;
+            return INVALID_SOCKET;
         }
     } else { /* find the default port number from "monet_environment" */
         if( !(strptr = GDKgetenv("xrpc_port")) || !(*strptr) ){
             if( !(strptr = GDKgetenv("mapi_port")) ){
                 GDKerror("setup_connection: could not find \"mapi_port\"\n");
-                return -1;
+                return INVALID_SOCKET;
             }
             p = atoi(strptr) + 1; 
         } else {
@@ -589,13 +590,13 @@ setup_connection(str dst, int *port)
     if (isdigit((int) (unsigned char) dst[0])) {
         if ((i = inet_addr(dst)) < 0) {
             GDKerror("setup_connection: invalid IP address \"%s\"\n", dst);
-            return -1;
+            return INVALID_SOCKET;
         }
         addr.s_addr = (unsigned) i;
     } else {
         if (!(resolv = gethostbyname(dst))) {
             GDKerror("setup_connection: invalid IP address \"%s\"\n", dst);
-            return -1;
+            return INVALID_SOCKET;
         }
         addr.s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
     }
@@ -605,18 +606,18 @@ setup_connection(str dst, int *port)
     sockaddr.sin_addr.s_addr = addr.s_addr;
     memset(&(sockaddr.sin_zero), '\0', 8);
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) != INVALID_SOCKET) {
         GDKerror("setup_connection: failed to create socket\n");
-        return -1;
+        return INVALID_SOCKET;
     }
 
     ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
-    for (i = NR_RETRIES; i > 0 && ret < 0; i--) {
+    for (i = NR_RETRIES; i > 0 && ret == INVALID_SOCKET; i--) {
         MT_sleep_ms(1);
         ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
     }
 
-    if (ret < 0) {
+    if (ret == INVALID_SOCKET) {
         GDKerror("setup_connection: failed to setup connection with %s:%d\n", dst, p);
         closesocket(sock);
         return INVALID_SOCKET;
@@ -1188,7 +1189,8 @@ CMDhttp_post(
         BAT *dec_values,
         BAT *str_values)
 {
-    int sock = -1, port = -1;
+    int port = -1;
+    SOCKET sock = INVALID_SOCKET;
     stream *in = NULL, *out = NULL;
     buffer *req = NULL;
     size_t bytes_sent = 0;
@@ -1211,7 +1213,7 @@ CMDhttp_post(
         return GDK_FAIL;
     if (!(out = socket_wastream(sock, "http_send"))) {
         GDKerror("do_simple_query: failed to create socket_wastream for sending XRPC request\n");
-        close(sock);
+        closesocket(sock);
         return GDK_FAIL;
     }
 
@@ -1239,7 +1241,7 @@ CMDhttp_post(
         GDKerror("do_simple_query: failed to send XRPC request.");
         stream_close(out); stream_destroy(out);
         buffer_destroy(req);
-        close(sock);
+        closesocket(sock);
         return GDK_FAIL;
     }
     /* Stop timing Network Send Client2Server */
@@ -1271,7 +1273,7 @@ CMDhttp_post(
 
 /* send a WSAT request */
 static int
-xrpc_2pc_send(int sock, char* dst, int port, str msg) { 
+xrpc_2pc_send(SOCKET sock, char* dst, int port, str msg) { 
     stream *out = NULL;
     
     if (!(out = socket_wastream(sock, "http_send"))) {
@@ -1301,7 +1303,7 @@ xrpc_2pc_send(int sock, char* dst, int port, str msg) {
 
 /* get a WSAT response */
 static int
-xrpc_2pc_recv(int sock, char* dst, int port, str msg) { 
+xrpc_2pc_recv(SOCKET sock, char* dst, int port, str msg) { 
     stream *in = NULL;
     BAT* shredBAT;
     int ret = GDK_FAIL;
@@ -1330,7 +1332,7 @@ CMDxrpc_2pc_commit(str qid, str mode, lng* xrpc_timeout, lng* time_start, BAT* p
     int i, j, ret=GDK_FAIL, cnt=0, npart = BATcount(participants);
     str *part = (str*) alloca(npart*sizeof(npart));
     int *port = (int*) alloca(npart*sizeof(int));
-    int *sock = (int*) alloca(npart*sizeof(int)), xrpc_updating;
+    SOCKET *sock = (SOCKET*) alloca(npart*sizeof(SOCKET)), xrpc_updating;
     char dst[1024], msg[1024], *r; 
     BATiter pi = bat_iterator(participants);
     BUN p,q;
@@ -1376,7 +1378,7 @@ CMDxrpc_2pc_commit(str qid, str mode, lng* xrpc_timeout, lng* time_start, BAT* p
 cleanup:
     for(i=0; i<cnt; i++) {
         if (part[i]) GDKfree(part[i]);
-        if (sock[i] >= 0) close(sock[i]);
+        if (sock[i] != INVALID_SOCKET) closesocket(sock[i]);
     }
     return ret;
 }

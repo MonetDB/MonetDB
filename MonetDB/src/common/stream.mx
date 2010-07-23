@@ -380,16 +380,10 @@ stream_init(void)
 
 #ifdef NATIVE_WIN32
 	{
-		int sockopt = SO_SYNCHRONOUS_NONALERT;
 		WSADATA w;
 
 		if (WSAStartup(0x0101, &w) != 0)
 			return -1;
-
-		if (setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (void *) &sockopt, sizeof(sockopt)) < 0) {
-			WSACleanup();
-			return -1;
-		}
 	}
 #endif
 	inited = 1;

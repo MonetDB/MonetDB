@@ -747,7 +747,7 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
-	SOCKET usock = -1;
+	SOCKET usock = INVALID_SOCKET;
 #endif
 	char *usockfile;
 	socklen_t length = 0;
@@ -859,7 +859,7 @@ Get the new information for the server socket and start listening.
 		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);
 #ifdef HAVE_SYS_UN_H
-		if (usock >= 0)
+		if (usock != INVALID_SOCKET)
 			FD_SET(usock, &fds);
 #endif
 		/* Wait up to 2 seconds. */

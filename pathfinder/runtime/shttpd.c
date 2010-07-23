@@ -3121,11 +3121,7 @@ shttpd_init(const char *fname)
 	/* Initialize winsock library */
 	{
 		WSADATA data;
-		int	opt = SO_SYNCHRONOUS_NONALERT;
 		WSAStartup(MAKEWORD(2,2), &data);
-		if (setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE,
-		    (void *)&opt,sizeof(opt)) < 0)
-			elog(ERR_FATAL, "setsockopt: %d", ERRNO);
 	}
 #endif /* _WIN32 */
 

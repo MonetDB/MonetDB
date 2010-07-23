@@ -554,7 +554,7 @@ SERVERlistenThread(SOCKET *Sock)
 
 			rv = recvmsg(msgsock, &msgh, 0);
 			if (rv == -1) {
-				close(msgsock);
+				closesocket(msgsock);
 				continue;
 			}
 
@@ -566,18 +566,18 @@ SERVERlistenThread(SOCKET *Sock)
 					/* filedescriptor, put it in place of msgsock */
 					cmsg = CMSG_FIRSTHDR(&msgh);
 					if (!cmsg->cmsg_type == SCM_RIGHTS) {
-						close(msgsock);
+						closesocket(msgsock);
 						fprintf(stderr, "!mal_mapi.listen: "
 								"expected filedescriptor, but "
 								"received something else\n");
 						continue;
 					}
-					close(msgsock);
+					closesocket(msgsock);
 					msgsock = *(int*)CMSG_DATA(cmsg);
 				break;
 				default:
 					/* some unknown state */
-					close(msgsock);
+					closesocket(msgsock);
 					fprintf(stderr, "!mal_mapi.listen: "
 							"unknown command type in first byte\n");
 					continue;
