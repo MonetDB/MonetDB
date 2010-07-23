@@ -870,19 +870,6 @@ OPTmapreduceImplementation(
 					}
 				}
 			}
-		} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
-			/* prepare for a count(*) where the aggr.count has a leading
-			 * bat.mirror */
-			if (getModuleId(oreduce[i + 1]) == aggrRef &&
-						getFunctionId(oreduce[i + 1]) == countRef &&
-						getArg(p, 0) == getArg(oreduce[i + 1], 1))
-			{
-				pushInstruction(map, omap[i]);
-				newComment(map, "= COUNT(*)");
-				copy = cNONE;
-				/* NOTE: rest is handled in case below */
-			}
-		} else if (getModuleId(p) == aggrRef) {
 			/* COUNT/SUM push down, replace with SUM in REDUCE program,
 			 * fix up the return type */
 			if (getFunctionId(p) == countRef) {
@@ -905,7 +892,7 @@ OPTmapreduceImplementation(
 					}
 				}
 			} else if (getFunctionId(p) == sumRef) {
-				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {
 					if (getArg(p, 1) == lastcol->reduceid) {
 						pushInstruction(map, omap[i]);
 						newComment(map, "= SUM");
@@ -917,6 +904,18 @@ OPTmapreduceImplementation(
 						break;
 					}
 				}
+			}
+		} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
+			/* prepare for a count(*) where the aggr.count has a leading
+			 * bat.mirror */
+			if (getModuleId(oreduce[i + 1]) == aggrRef &&
+						getFunctionId(oreduce[i + 1]) == countRef &&
+						getArg(p, 0) == getArg(oreduce[i + 1], 1))
+			{
+				pushInstruction(map, omap[i]);
+				newComment(map, "= COUNT(*)");
+				copy = cNONE;
+				/* NOTE: rest is handled in case below */
 			}
 		}
 
