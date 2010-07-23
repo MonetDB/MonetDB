@@ -174,7 +174,7 @@ scanner_init_keywords(void)
 	keywords_insert("CASCADE", CASCADE);
 	keywords_insert("RESTRICT", RESTRICT);
 	keywords_insert("GLOBAL", GLOBAL);
-	keywords_insert("GROUP", GROUP);
+	keywords_insert("GROUP", sqlGROUP);
 	keywords_insert("HAVING", HAVING);
 	keywords_insert("ILIKE", ILIKE);
 	keywords_insert("IN", sqlIN);
