@@ -57,7 +57,7 @@ extern "C" {
  * this structure keeps all per-socket global information.
  */  
 typedef struct {
-    int sock;
+    SOCKET sock;
     unsigned int    nrequests;      /* Requests made */
     unsigned int    kb_in, kb_out;      /* IN/OUT traffic counters */
     struct conn *connections;       /* List of connections */

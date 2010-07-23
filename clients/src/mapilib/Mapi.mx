@@ -2385,7 +2385,7 @@ connect_to_server(Mapi mid)
 		msg.msg_flags = 0;
 
 		if (sendmsg(s, &msg, 0) < 0) {
-			close(s);
+			closesocket(s);
 			snprintf(errbuf, sizeof(errbuf), "could not send initial byte: %s", strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
@@ -2416,7 +2416,7 @@ connect_to_server(Mapi mid)
 				continue;
 			if (connect(s, rp->ai_addr, rp->ai_addrlen) != -1)
 				break;  /* success */
-			close(s);
+			closesocket(s);
 		}
 		freeaddrinfo(res);
 		if (rp == NULL)
@@ -5086,7 +5086,7 @@ store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *ds
 			unsigned int fac = 1000000000;
 			unsigned int nsec = 0;
 
-			for (n++; isdigit((int) val[n]); n++) {
+			for (n++; isdigit((int) (unsigned char) val[n]); n++) {
 				fac /= 10;
 				nsec += (val[n] - '0') * fac;
 			}
