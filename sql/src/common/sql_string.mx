@@ -118,7 +118,7 @@ strip_extra_zeros(char *s)
 {
 	char *res = s;
 
-	for (; *s && isspace(*s); s++)
+	for (; *s > 0 && isspace(*s); s++)
 		;
 	for (; *s && *s == '0'; s++)
 		;
