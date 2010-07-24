@@ -2414,7 +2414,7 @@ connect_to_server(Mapi mid)
 			s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s == INVALID_SOCKET)
 				continue;
-			if (connect(s, rp->ai_addr, rp->ai_addrlen) != -1)
+			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != -1)
 				break;  /* success */
 			closesocket(s);
 		}
