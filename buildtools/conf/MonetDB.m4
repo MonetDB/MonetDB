@@ -2353,7 +2353,12 @@ fi
 
 AC_CHECK_HEADERS([sys/socket.h winsock.h])
 
-AC_CHECK_FUNCS([getaddrinfo])
+save_LIBS="$LIBS"
+LIBS="$LIBS $SOCKET_LIBS"
+AC_CHECK_FUNC(getaddrinfo, [], [
+  AC_CHECK_LIB(socket, getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lsocket" ],
+    AC_CHECK_LIB(nsl,  getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lnsl"    ] ))])
+LIBS="$save_LIBS"
 
 dnl incase of windows we need to use try_link because windows uses the
 dnl pascal style of function calls and naming scheme. Therefore the 
