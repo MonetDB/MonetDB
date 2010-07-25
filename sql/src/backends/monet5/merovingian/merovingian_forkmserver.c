@@ -398,7 +398,9 @@ forkMserver(str database, sabdb** stats, int force)
 						/* right, it's not there, but it's running */
 						return(newErr(
 									"database '%s' has inconsistent state "
-									"(running but dead), review merovingian's "
+									"(sabaoth administration reports running, "
+									"but process seems gone), "
+									"review merovingian's "
 									"logfile for any peculiarities", database));
 					case SABdbCrashed:
 						return(newErr(
