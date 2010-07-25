@@ -2360,7 +2360,7 @@ AC_CHECK_FUNC(getaddrinfo, [ have_getaddrinfo=yes ], [
   AC_CHECK_LIB(socket, getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lsocket"; have_getaddrinfo=yes ],
     AC_CHECK_LIB(nsl,  getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lnsl"   ; have_getaddrinfo=yes ] ))])
 LIBS="$save_LIBS"
-if test "x$have_getaddringo" = xyes; then
+if test "x$have_getaddrinfo" = xyes; then
 	AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if you have the `getaddrinfo' function.])
 fi
 
