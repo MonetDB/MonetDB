@@ -745,7 +745,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		length = (SOCKLEN) sizeof(userver);
 		unlink(usockfile);
-		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
+		if (bind(usock, (SOCKPTR) &userver, length) < 0) {
 			unlink(usockfile);
 			throw(IO, "mal_mapi.listen",
 					OPERATION_FAILED ": binding to UNIX socket file %s failed: %s",
