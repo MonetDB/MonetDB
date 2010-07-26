@@ -740,6 +740,14 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 					OPERATION_FAILED ": creation of UNIX socket failed: %s",
 					strerror(errno));
 		}
+
+		/* prevent silent truncation, sun_path is typically around 108
+		 * chars long :/ */
+		if (strlen(usockfile) > sizeof(userver.sun_path))
+			throw(MAL, "mal_mapi.listen",
+					OPERATION_FAILED ": UNIX socket path too long: %s",
+					usockfile);
+
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
 
