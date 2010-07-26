@@ -1486,7 +1486,11 @@ main(int argc, char *argv[])
 		/* avoid overrunning the sun_path buffer by moving into the
 		 * directory where the UNIX socket resides (sun_path is
 		 * typically around 108 chars long) */
-		chdir(dbfarm);
+		if (chdir(dbfarm) < 0) {
+			fprintf(stderr, "monetdb: could not move to dbfarm '%s': %s\n",
+					dbfarm, strerror(errno));
+			return(1);
+		}
 		mero_host = ".merovingian_control";
 	}
 
