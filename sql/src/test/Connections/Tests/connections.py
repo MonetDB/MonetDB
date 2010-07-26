@@ -68,6 +68,8 @@ def clients(x):
                                    'connections_syntax.sql'))
     sys.stdout.write(out)
     sys.stderr.write(err)
+    sys.stdout.flush()
+    sys.stderr.flush()
 
     c += 1
     out, err = client(x, s, c,
@@ -75,6 +77,8 @@ def clients(x):
                                    'connections_semantic.sql'))
     sys.stdout.write(out)
     sys.stderr.write(err)
+    sys.stdout.flush()
+    sys.stderr.flush()
 
     c += 1
     out, err = client(x, s, c,
@@ -82,14 +86,20 @@ def clients(x):
                                    'connections_default_values.sql'))
     sys.stdout.write(out)
     sys.stderr.write(err)
+    sys.stdout.flush()
+    sys.stderr.flush()
 
     out, err = server_stop(remote_srv)
     sys.stdout.write(out)
     sys.stderr.write(err)
+    sys.stdout.flush()
+    sys.stderr.flush()
 
     out, err = server_stop(srv)
     sys.stdout.write(out)
     sys.stderr.write(err)
+    sys.stdout.flush()
+    sys.stderr.flush()
 
 def main():
     x = 0
