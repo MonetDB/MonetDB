@@ -1,9 +1,12 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-  26 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c, monetdb.c:
+  26 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c,
+  merovingian_forkmserver.c, monetdb.c:
   On installs with (very) long prefixes, the UNIX domain sockets could get
   truncated, causing merovingian to become unavailable to monetdb and mclient.
+  Similarly, a fall back to a regular TCP socket for mapi connections is
+  used for forked mservers in this case.
 
   21 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c:
   Really shutdown when an argument to merovingian was given, instead of

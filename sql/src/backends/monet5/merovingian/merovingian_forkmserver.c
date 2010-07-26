@@ -299,11 +299,21 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = dbname;
 		argv[c++] = "--set"; argv[c++] = muri;
 		if (mydoproxy == 1) {
+			struct sockaddr_un s; /* only for sizeof(s.sun_path) :( */ (void)s;
 			argv[c++] = "--set"; argv[c++] = "mapi_open=false";
 			/* we "proxy", so we can just solely use UNIX domain sockets
-			 * internally */
-			snprintf(port, 24, "mapi_port=0");
-			snprintf(usock, 512, "mapi_usock=%s/.mapi.sock", (*stats)->path);
+			 * internally.  Before we hit our head, check if we can
+			 * actually use a UNIX socket (due to pathlength) */
+			if (strlen((*stats)->path) + 11 < sizeof(s.sun_path)) {
+				snprintf(port, 24, "mapi_port=0");
+				snprintf(usock, 512, "mapi_usock=%s/.mapi.sock",
+						(*stats)->path);
+			} else {
+				argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
+				/* for logic here, see comment below */
+				snprintf(port, 24, "mapi_port=%d", _mero_port + 1);
+				snprintf(usock, 512, "mapi_usock=");
+			}
 		} else {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
 			argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
