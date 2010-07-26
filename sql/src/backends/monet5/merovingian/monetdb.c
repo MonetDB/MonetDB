@@ -76,7 +76,6 @@ typedef char* err;
 
 static str dbfarm = NULL;
 static int mero_running = 0;
-static char mero_control[8096];
 static char *mero_host = NULL;
 static int mero_port = -1;
 static char *mero_pass = NULL;
@@ -1366,10 +1365,6 @@ main(int argc, char *argv[])
 		mero_running = 0;
 	}
 
-	/* set path to control channel */
-	snprintf(mero_control, sizeof(mero_control),
-			"%s/.merovingian_control", dbfarm);
-
 	/* Start handling the arguments.
 	 * monetdb [monetdb_options] command [options] [database [...]]
 	 * this means we first scout for monetdb_options which stops as soon
@@ -1487,8 +1482,13 @@ main(int argc, char *argv[])
 	}
 
 	/* use UNIX socket if no hostname given */
-	if (mero_host == NULL)
-		mero_host = mero_control;
+	if (mero_host == NULL) {
+		/* avoid overrunning the sun_path buffer by moving into the
+		 * directory where the UNIX socket resides (sun_path is
+		 * typically around 108 chars long) */
+		chdir(dbfarm);
+		mero_host = ".merovingian_control";
+	}
 
 	/* handle regular commands */
 	if (strcmp(argv[i], "create") == 0) {

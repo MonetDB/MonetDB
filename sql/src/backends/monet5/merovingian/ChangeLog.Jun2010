@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+  26 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c, monetdb.c:
+  On installs with (very) long prefixes, the UNIX domain sockets could get
+  truncated, causing merovingian to become unavailable to monetdb and mclient.
+
   21 Jul 2010; Fabian Groffen <fabian@cwi.nl> merovingian.c:
   Really shutdown when an argument to merovingian was given, instead of
   ending up in some inconsistent state.  This solves all weird behaviour
