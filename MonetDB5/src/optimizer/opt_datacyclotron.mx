@@ -35,15 +35,15 @@ address addRegWrap
 comment "Add a regist for partition";
 
 pattern bind(schema:str, table:str, column:str, access:int, partition:int, fbun:int, lbun:int):int
-address DCYbindWrap
+address DCYbind
 comment "Request a bat";
 
 pattern pin(req_id:int):bat[:any_1,:any_3]
-address DCYpinWrap
+address DCYpin
 comment "Pin a request for a query";
 
 pattern unpin(req_id:int):void
-address DCYunpinWrap
+address DCYunpin
 comment "UnPin a request for a query";
 
 
@@ -64,6 +64,7 @@ The number of overloaded instructions is kept to a minimum.
 #define TABLE_LENG      32 
 #define COLUMN_LENG     32 
 #define DCYPARTITIONS	200
+#define DCYREGS		1000
 
 typedef struct DCYCATALOG {
 	char    schema[SCHEMA_LENG],
@@ -229,16 +230,16 @@ findRegist( str sch, str tab, str col, int acc) {
 static int
 OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, actions=0, k = 0, z= 0, j = 0;
+	int i, actions=0, k = 0, z= 0, j = 0, num_regs = DCYREGS;
 	DCYcatalog **regs, *reg = NULL;
 	VarRecord low,hgh;
 	InstrPtr *old, new, matq;
 	int limit;
 	int (*newArg)[1000];
-	char *used= (char*) GDKzalloc((mb->vtop+1000) *sizeof(char));
+	char *used= (char*) GDKzalloc(num_regs * sizeof(char));
 
 #ifdef BIND_DATACYCLOTRON_OPT
-	int *tpes= (int*) GDKmalloc((mb->vtop+1000) *sizeof(int));
+	int *tpes= (int*) GDKmalloc(num_regs * sizeof(int));
 #endif
 
 	OPTDEBUGdatacyclotron {
@@ -246,14 +247,14 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 	}
 
-	newArg = GDKmalloc(sizeof(*newArg) * (mb->vtop+1000));
+	newArg = GDKmalloc(sizeof(*newArg) * num_regs);
 
 	if ( (used == NULL) && (newArg == NULL))
 		return 0;
 	(void) stk;
 	(void) cntxt;
 
-	regs = (DCYcatalog **) GDKmalloc(sizeof(*regs) * (mb->vtop+1000));
+	regs = (DCYcatalog **) GDKmalloc(sizeof(*regs) * num_regs);
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize);
@@ -261,6 +262,15 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 	for (i = 1; i<limit; i++) {
 		p = old[i];
+
+		if ( num_regs <= mb->vtop ) {
+			regs = GDKrealloc(regs, (num_regs + DCYREGS) * sizeof(regs));
+			used = GDKrealloc(used, (num_regs + DCYREGS) * sizeof(char));
+			tpes = GDKrealloc(tpes, (num_regs + DCYREGS) * sizeof(int));
+			newArg = GDKrealloc(newArg, (num_regs + DCYREGS) * sizeof(*newArg));
+			num_regs += DCYREGS;
+		}
+
 		if (getModuleId(p)== sqlRef && (getFunctionId(p) == bindRef) ) {
 
 			/*Check if the BAT is a datacyclotron BAT*/
@@ -317,12 +327,16 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 					low.value.val.oval= reg->f_bun[k];
 					hgh.value.val.oval= reg->l_bun[k];
-					z = getArg(new, 0);
+					if (!k)
+						varSetProp(mb, getArg(matq,0), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
 
+					z = getArg(new, 0);
 					varSetProp(mb, z, PropertyIndex("hlb"), op_gte, (ptr) &low.value);
 					varSetProp(mb, z, PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
+
 					matq= pushArgument(mb,matq,z);
 				}
+				varSetProp(mb, getArg(matq,0), PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
 				pushInstruction(mb,matq);
 #endif
 			} else 
@@ -354,12 +368,16 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 						pushInstruction(mb,new);
 						low.value.val.oval= reg->f_bun[k];
 						hgh.value.val.oval= reg->l_bun[k];
-						z = getArg(new, 0);
+						if (!k)
+							varSetProp(mb, getArg(matq,0), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
 
+						z = getArg(new, 0);
 						varSetProp(mb, z, PropertyIndex("hlb"), op_gte, (ptr) &low.value);
 						varSetProp(mb, z, PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
+
 						matq= pushArgument(mb,matq,z);
 					}
+					varSetProp(mb, getArg(matq,0), PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
 					pushInstruction(mb,matq);
 				}
 #endif
@@ -408,7 +426,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 opt_export str DCbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
 @c
 str
-DCYbindWrap(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
+DCYbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
 	(void) ret;
 	(void) sch;
 	(void) tab;
@@ -424,7 +442,7 @@ DCYbindWrap(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *f
 opt_export str DCpin(int *ret, int *bid);
 @c
 str
-DCYpinWrap(int *ret, int *bid){
+DCYpin(int *ret, int *bid){
 	(void) ret;
 	(void) bid;
 	throw(MAL,"datacyclotron.pin",PROGRAM_NYI);
@@ -434,7 +452,7 @@ DCYpinWrap(int *ret, int *bid){
 opt_export str DCunpin(int *ret, int *bid);
 @c
 str
-DCYunpinWrap(int *ret, int *bid){
+DCYunpin(int *ret, int *bid){
 	(void) ret;
 	(void) bid;
 	throw(MAL,"datacyclotron.unpin",PROGRAM_NYI);
@@ -444,7 +462,7 @@ DCYunpinWrap(int *ret, int *bid){
 opt_export str DCcopy(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
 @c
 str
-DCYcopyWrap(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
+DCYcopy(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
 	(void) ret_id;
 	(void) ret_bat;
 	(void) sch;
