@@ -988,7 +988,7 @@ First stop to examine its type, and heap sizes.
 					b->hsorted = hordered;
 					b->tsorted = tordered;
 					DELTAinit(b);
-					BBPcacheit(b);
+					BBPcacheit(b, 1);
 					dst.bval = b->batCacheid;
 @-
 Read the data for its heaps. A BAT at least consists of a BUN heap.

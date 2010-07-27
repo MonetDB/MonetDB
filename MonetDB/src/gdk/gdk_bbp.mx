@@ -115,7 +115,7 @@ gdk_export int BBPdir(int cnt, bat *subcommit);
 /* update interface */
 gdk_export void BBPclear(bat bid);
 gdk_export bat BBPinsert(BATstore *bs);
-gdk_export void BBPcacheit(BATstore *bs);
+gdk_export void BBPcacheit(BATstore *bs, int lock);
 gdk_export void BBPuncacheit(bat bid);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
@@ -1559,11 +1559,13 @@ BBPinsert(BATstore *bs)
 }
 
 void
-BBPcacheit(BATstore *bs)
+BBPcacheit(BATstore *bs, int lock)
 {
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 	bat i = bs->B.batCacheid;
 	int mode;
+
+	if (lock)
+		lock = locked_by ? BBP_getpid() != locked_by : 1;
 
 	if (i) {
 		assert(i > 0);
@@ -2224,7 +2226,7 @@ getBBPdescriptor(bat i, int lock)
 	if (load) {
 		IODEBUG THRprintf(GDKout, "#load %s\n", BBPname(i));
 
-		b = BATload_intern(i);
+		b = BATload_intern(i, lock);
 		BBPin++;
 
 		/* clearing bits can be done without the lock */
@@ -2859,7 +2861,7 @@ BBPquickdesc(bat bid, int delaccess)
 	if (b == NULL ||
 	    complexatom(b->htype, delaccess) ||
 	    complexatom(b->ttype, delaccess)) {
-		b = BATload_intern(bid);
+		b = BATload_intern(bid, 1);
 		BBPin++;
 	}
 	return b;

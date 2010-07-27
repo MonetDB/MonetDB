@@ -299,7 +299,7 @@ BATnewstorage(int ht, int tt, BUN cap)
 			return NULL;
 		}
 		DELTAinit(bn);
-		BBPcacheit(bs);
+		BBPcacheit(bs, 1);
 	}
 	return bs;
 }
@@ -373,7 +373,7 @@ BATattach(int tt, const char *heapfile)
 	bn->T->heap.size = (size_t) st.st_size;
 	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
 	HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE);
-	BBPcacheit(bs);
+	BBPcacheit(bs, 1);
 	return bn;
 }
 

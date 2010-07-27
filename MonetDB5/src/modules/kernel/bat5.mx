@@ -2047,7 +2047,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 			fix(BUNtail(bni, p));
 		}
 	}
-	BBPcacheit(bs);
+	BBPcacheit(bs, 1);
 	if (mmappath) {
 		/* if copy-on-write was used, make bn a logical view on b */
 		bn->P->lview = TRUE;

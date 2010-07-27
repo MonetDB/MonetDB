@@ -193,7 +193,7 @@ ATTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATkey(BATmirror(bn), TRUE);
 	}
 	assert(cap);
-    BBPcacheit(bs);
+    BBPcacheit(bs, 1);
     BATsetcapacity(bn, cap);
     BATsetcount(bn, cnt);
 	BATsetaccess(bn, BAT_READ);

@@ -252,7 +252,7 @@ The b->P structure cannot be shared and must be copied individually.
 	bn->batRestricted = BAT_READ;
 
 	if (recycled == NULL)
-		BBPcacheit(bs);	/* enter in BBP */
+		BBPcacheit(bs, 1);		     /* enter in BBP */
 	return bn;
 }
 
@@ -348,7 +348,7 @@ use a copy.
 	else
 		bn->T->hash = t->T->hash;
 	if (recycled == NULL)
-		BBPcacheit(bs);	/* enter in BBP */
+		BBPcacheit(bs, 1);	/* enter in BBP */
 	/* View of VIEW combine, ie we need to fix the head of the mirror */
 	if (vc) {
 		BAT *bm = BATmirror(bn);

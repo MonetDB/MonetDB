@@ -1830,7 +1830,7 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
 gdk_export BAT *BATload(str nme);
-gdk_export BAT *BATload_intern(bat bid);
+gdk_export BAT *BATload_intern(bat bid, int lock);
 #define BATaccessBegin(b,what,advice) BATaccess(b,what,advice,1)
 #define BATaccessEnd(b,what,advice) BATaccess(b,what,advice,-1)
 gdk_export size_t BATaccess(BAT *b, int what, int advice, int load);
