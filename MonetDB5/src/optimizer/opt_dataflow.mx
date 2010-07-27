@@ -90,6 +90,19 @@ The statemens are all checked for being eligible for dataflow.
 #include "mal_interpreter.h"
 
 static int
+dflowAssignTest(Lifespan span, InstrPtr p, int i)
+{
+	int j;
+	/* flow blocks should be closed (and not opened) when we reach a point
+	   where a variable is assigned that is not the last
+	*/
+	for(j=0; j<p->retc; j++)
+		if (getLastUpdate(span, getArg(p,j)) != i)
+			return 1;
+	return 0;
+}
+
+static int
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j, cnt, start=1,entries=0, actions=0;
@@ -141,7 +154,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p->token == ENDsymbol)
 			break;
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p))){
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p)) || dflowAssignTest(span,p,i) ){
 			@:flowblock@
 			pushInstruction(mb,p);
 			continue;
@@ -175,6 +188,9 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			for(j=p->retc; j<p->argc; j++)
 				if (getLastUpdate(span, getArg(p,j)) <= start)
 					cnt++;
+		if ( dflowAssignTest(span,p,i))
+			cnt = 0;
+
 		if (cnt && cnt == p->argc-p->retc)
 			entries++;
 	}
