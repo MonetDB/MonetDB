@@ -2339,10 +2339,9 @@ connect_to_server(Mapi mid)
 #ifdef HAVE_SYS_UN_H
 	if (mid->hostname == NULL) {
 		struct stat st;
-		struct sockaddr_un s; /* just for sizeof(s.sun_path) */
 		snprintf(errbuf, sizeof(errbuf),
 			 CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
-		if (strlen(errbuf) <= sizeof(s.sun_path) &&
+		if (strlen(errbuf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
 				stat(errbuf, &st) != 1 &&
 				S_ISSOCK(st.st_mode))
 			mid->hostname = strdup(errbuf);
