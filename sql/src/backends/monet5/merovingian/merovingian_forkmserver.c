@@ -276,7 +276,7 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = dbname;
 		argv[c++] = "--set"; argv[c++] = muri;
 		if (mydoproxy == 1) {
-			struct sockaddr_un s; /* only for sizeof(s.sun_path) :( */ (void)s;
+			struct sockaddr_un s; /* only for sizeof(s.sun_path) :( */
 			argv[c++] = "--set"; argv[c++] = "mapi_open=false";
 			/* we "proxy", so we can just solely use UNIX domain sockets
 			 * internally.  Before we hit our head, check if we can
