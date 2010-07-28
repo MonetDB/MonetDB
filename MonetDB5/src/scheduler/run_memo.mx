@@ -229,7 +229,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 #ifdef DEBUG_RUN_MEMORUN
-		stream_printf(cntxt->fdout,"#function target %s cost %d\n",getVarName(mb,target),mincost);
+		mnstr_printf(cntxt->fdout,"#function target %s cost %d\n",getVarName(mb,target),mincost);
 #else
 	(void) cntxt;
 #endif
@@ -241,7 +241,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	propagateNonTarget(mb,pc+1);
 #ifdef DEBUG_RUN_MEMORUN
-	stream_printf(cntxt->fdout,"#cost choice selected %s %d\n",
+	mnstr_printf(cntxt->fdout,"#cost choice selected %s %d\n",
 		getVarName(mb,target),mincost);
 	printFunction(cntxt->fdout,mb,1);
 #endif

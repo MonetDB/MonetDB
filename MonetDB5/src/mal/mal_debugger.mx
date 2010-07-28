@@ -578,7 +578,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	if( *request == '#' ){
 		i= atoi(request+1);
 		if( i<0 || i>= mb->stop)
-			stream_printf(cntxt->fdout, "breakpoint on #%d (<%d) not set\n", 
+			mnstr_printf(cntxt->fdout, "breakpoint on #%d (<%d) not set\n", 
 				i, mb->stop);
 		else  {
 			mdb->brkBlock[mdb->brkTop] = mb;
@@ -616,7 +616,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	/* the final step is to break on a variable */
 	i= findVariable(mb,request);
 	if( i< 0)
-		stream_printf(cntxt->fdout, "breakpoint on %s not set\n", request);
+		mnstr_printf(cntxt->fdout, "breakpoint on %s not set\n", request);
 	else {
 		mdb->brkBlock[mdb->brkTop] = mb;
 		mdb->brkPc[mdb->brkTop] = -1;
@@ -658,7 +658,7 @@ mdbShowBreakpoints(Client cntxt)
 	mdbState mdb = mdbTable + cntxt->idx;
 
 	for (i = 0; i < mdb->brkTop; i++)
-		stream_printf(cntxt->fdout, "breakpoint on '%s'\n", mdb->brkRequest[i]);
+		mnstr_printf(cntxt->fdout, "breakpoint on '%s'\n", mdb->brkRequest[i]);
 }
 
 void
@@ -730,7 +730,7 @@ printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
 	msg = instruction2str(mb, stk, getInstrPtr(mb,pc), LIST_MAL_DEBUG);
-	stream_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", msg, 
+	mnstr_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", msg, 
 		getModuleId(getInstrPtr(mb,0)),
 		getFunctionId(getInstrPtr(mb,0)),pc);
 	GDKfree(msg);
@@ -745,7 +745,7 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 
 	p= getInstrPtr(mb,pc);
 	msg = instruction2str(mb, stk, p, flags);
-	stream_printf(out, "#%s\n", msg);
+	mnstr_printf(out, "#%s\n", msg);
 	GDKfree(msg);
 }
 
@@ -795,7 +795,7 @@ BBPTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			if ( BBPtracePattern  && strstr(lbuf,BBPtracePattern) != NULL )
 				continue;
 			BBPphysical(i,pbuf);
-			stream_printf(cntxt->fdout, "#BBP state change of %s %s entry %d refs %d:\n", 
+			mnstr_printf(cntxt->fdout, "#BBP state change of %s %s entry %d refs %d:\n", 
 				 lbuf,pbuf,i, BBP_lrefs(i));
 			action = 1;
 		}
@@ -808,16 +808,16 @@ BBPTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 static void
 printBATproperties(stream *f, BAT *b){
-	stream_printf(f, " count=" BUNFMT " lrefs=%d ", 
+	mnstr_printf(f, " count=" BUNFMT " lrefs=%d ", 
 		BATcount(b), BBP_lrefs(ABS(b->batCacheid)));
 	if(  BBP_refs(ABS(b->batCacheid)) - 1)
-		stream_printf(f, " refs=%d ", BBP_refs(ABS(b->batCacheid)) );
+		mnstr_printf(f, " refs=%d ", BBP_refs(ABS(b->batCacheid)) );
 	if( b->batSharecnt)
-		stream_printf(f, " views=%d", b->batSharecnt);
+		mnstr_printf(f, " views=%d", b->batSharecnt);
 	if (b->H->heap.parentid)
-		stream_printf(f, "view on %s ", BBPname(b->H->heap.parentid));
+		mnstr_printf(f, "view on %s ", BBPname(b->H->heap.parentid));
 	if (b->T->heap.parentid)
-		stream_printf(f, "tail view on %s ", BBPname(b->T->heap.parentid));
+		mnstr_printf(f, "tail view on %s ", BBPname(b->T->heap.parentid));
 }
 @+ MAL debugger parser
 The debugger structure is inherited from GDB.
@@ -831,7 +831,7 @@ The history of the optimizers is maintained, which can be localized
 for inspection.
 @c
 #define MDBstatus(X) if(cntxt->fdout) \
-	stream_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
+	mnstr_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
 
 static MalBlkPtr
 mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out){
@@ -861,7 +861,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out){
 		*fcnname = '.';
 		if(h) *h='[';
 		if (fsym == 0) {
-			stream_printf(out, "'%s.%s' not found\n", b,fcnname+1);
+			mnstr_printf(out, "'%s.%s' not found\n", b,fcnname+1);
 			return NULL;
 		}
 		m= fsym->def;
@@ -887,7 +887,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 		if (p != NULL) {
 			if (cntxt != mal_clients) 
 				/* help mclients with fake prompt */
-				stream_printf(out,"mdb>");
+				mnstr_printf(out,"mdb>");
 			printTraceCall(out,mb,stk,pc,LIST_MAL_DEBUG);
 		}
 		if (cntxt == mal_clients) {
@@ -963,7 +963,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				su->cmd = 0;
 			cntxt->itrace = 0;
 			cntxt->flags = 0;
-			stream_printf(out,"mdb>#EOD\n");
+			mnstr_printf(out,"mdb>#EOD\n");
 			/* MDBstatus(0); */
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
@@ -997,7 +997,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 					struct Mallinfo memory;
 					cntxt->flags |= memoryFlag;
 					memory = MT_mallinfo();
-					stream_printf(out,"arena " SZFMT " ordblks " SZFMT " smblks " SZFMT " "
+					mnstr_printf(out,"arena " SZFMT " ordblks " SZFMT " smblks " SZFMT " "
 						" hblkhd " SZFMT " hblks " SZFMT " fsmblks " SZFMT " uordblks " SZFMT "\n",
 						(size_t) memory.arena,
 						(size_t) memory.ordblks,
@@ -1024,7 +1024,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 					cntxt->flags |=ioFlag ;
 #ifdef HAVE_SYS_RESOURCE_H
 					getrusage(RUSAGE_SELF, &resource);
-					stream_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" 
+					mnstr_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" 
 									" minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", 
 									resource.ru_maxrss, resource.ru_ixrss, 
 									resource.ru_idrss, resource.ru_isrss,
@@ -1061,7 +1061,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
 
 				if (fsym == cntxt->nspace && strcmp(modname,"user") ) {
-					stream_printf(out, "module '%s' not found\n", modname);
+					mnstr_printf(out, "module '%s' not found\n", modname);
 					continue;
 				}
 				for (i = 0; i < MAXSCOPE; i++) {
@@ -1100,7 +1100,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				fcn= b+1;
 				if ( (w= strchr(b+1, '\n')) )
 					*w = 0;
-				stream_printf(out,"#trap %s.%s\n",mod,fcn);
+				mnstr_printf(out,"#trap %s.%s\n",mod,fcn);
 			}
 			if (strncmp("trace", b, 5) == 0) {
 				char *w;
@@ -1125,7 +1125,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				if (fcnname == NULL) {
 					fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
 					if (fsym == 0) {
-						stream_printf(out, "%s module not found\n", modname);
+						mnstr_printf(out, "%s module not found\n", modname);
 						continue;
 					}
 					for (i = 0; i < MAXSCOPE; i++) {
@@ -1141,7 +1141,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				fcnname++;
 				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
 				if (fsym == 0) {
-					stream_printf(out, "%s module not found\n", modname);
+					mnstr_printf(out, "%s module not found\n", modname);
 					continue;
 				}
 				/* display the overloaded symbol definition */
@@ -1168,7 +1168,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 					BBPtraceEnabled = !BBPtraceEnabled;
 					if ( BBPtraceEnabled &&  *b )
 						BBPtracePattern = GDKstrdup(b);
-					stream_printf(out,"#bbp trace enabled %d\n", BBPtraceEnabled);
+					mnstr_printf(out,"#bbp trace enabled %d\n", BBPtraceEnabled);
 					stk->cmd = 'c';
 					break;
 				}
@@ -1181,38 +1181,38 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				}
 				/* the 'dense' qualification only shows entries with a hard ref */
 				/* watchout, you don't want to wait for locks by others */
-				stream_printf(out,"BBP contains %d entries\n",limit);
+				mnstr_printf(out,"BBP contains %d entries\n",limit);
 				for (; i < limit; i++)
 					if ( ( BBP[i].lrefs || BBP[i].refs) && BBP[i].b[0]){
-						stream_printf(out,"#[%d] %-15s",i,BBP[i].nme[0]);
+						mnstr_printf(out,"#[%d] %-15s",i,BBP[i].nme[0]);
 						if ( BBP[i].b[0])
 							printBATproperties(out,BBP[i].b[0]);
 						if( (*b=='d' && BBP_refs(i)==0)  || BBP_cache(i) == 0){
-							stream_printf(out,"\n");
+							mnstr_printf(out,"\n");
 							continue;
 						}
 						inuse++;
 						if (BATdirty(BBP_cache(i)) )
-							stream_printf(out, " dirty");
+							mnstr_printf(out, " dirty");
 						if( *BBP_logical(i) =='.')
-							stream_printf(out, " zombie ");
+							mnstr_printf(out, " zombie ");
 						if( BBPstatus(i) & BBPLOADED)
-							stream_printf(out, " loaded ");
+							mnstr_printf(out, " loaded ");
 						if( BBPstatus(i) & BBPSWAPPED)
-							stream_printf(out, " swapped ");
+							mnstr_printf(out, " swapped ");
 						if( BBPstatus(i) & BBPTMP)
-							stream_printf(out, " tmp ");
+							mnstr_printf(out, " tmp ");
 						if( BBPstatus(i) & BBPDELETED)
-							stream_printf(out, " deleted ");
+							mnstr_printf(out, " deleted ");
 						if( BBPstatus(i) & BBPEXISTING)
-							stream_printf(out, " existing ");
+							mnstr_printf(out, " existing ");
 						if( BBPstatus(i) & BBPNEW)
-							stream_printf(out, " new ");
+							mnstr_printf(out, " new ");
 						if( BBPstatus(i) & BBPPERSISTENT)
-							stream_printf(out, " persistent ");
-						stream_printf(out, "\n");
+							mnstr_printf(out, " persistent ");
+						mnstr_printf(out, "\n");
 					}
-				stream_printf(out,"Entries displayed %d\n",inuse);
+				mnstr_printf(out,"Entries displayed %d\n",inuse);
 				continue;
 			}
 			if (strncmp(b, "breakpoints",11) == 0) {
@@ -1236,7 +1236,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 			if( strncmp(b, "debug", 5) == 0){
 				skipWord(cntxt, b);
 				GDKdebug = atol(b);
-				stream_printf(out,"Set debug mask to %d\n",GDKdebug);
+				mnstr_printf(out,"Set debug mask to %d\n",GDKdebug);
 				break;
 			}
 			if (strncmp(b, "down", 4) == 0 ) {
@@ -1245,7 +1245,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				stk= stkbase;
 				while (stk != ref && stk->up && stk->up != ref)
 					stk= stk->up;
-				stream_printf(out, "%sgo down the stack\n", "#mdb ");
+				mnstr_printf(out, "%sgo down the stack\n", "#mdb ");
 				mb = stk->blk;
 				break;
 			}
@@ -1279,7 +1279,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 					strcat(fname,b);
 				
 				showFlowGraph(mdot,0,fname);
-				stream_printf(out,"#dot file '%s' created\n",fname);
+				mnstr_printf(out,"#dot file '%s' created\n",fname);
 				break;
 			}
 			skipWord(cntxt, b);
@@ -1315,7 +1315,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				if (i != 0)
 					printBatDetails(out, i);
 				else
-					stream_printf(out, "%s Symbol not found\n", "#mdb ");
+					mnstr_printf(out, "%s Symbol not found\n", "#mdb ");
 			} else {
 				printBatInfo(out, getVar(mb, i), stk->stk + i);
 			}
@@ -1349,7 +1349,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				if (i != 0){
 					printBATelm(out, i, size, first);
 				} else
-					stream_printf(out, "%s Symbol not found\n", "#mdb ");
+					mnstr_printf(out, "%s Symbol not found\n", "#mdb ");
 				continue;
 			}
 			if (isaBatType(getVarType(mb,i)) && upper =='p'){
@@ -1380,7 +1380,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 			}
 			if (stk->up == NULL)
 				break;
-			stream_printf(out, "%s go up the stack\n", "#mdb ");
+			mnstr_printf(out, "%s go up the stack\n", "#mdb ");
 			stk = stk->up;
 			mb = stk->blk;
 			printCall(cntxt, mb, stk, pc);
@@ -1420,7 +1420,7 @@ signatures satisfying the pattern.
 					/* optionally dump the complete module */
 					fsym = findModule(cntxt->nspace, putName(b, strlen(b)));
 					if (fsym == 0) {
-						stream_printf(out, "'%s' not found\n", b);
+						mnstr_printf(out, "'%s' not found\n", b);
 						continue;
 					}
 					for (i = 0; i < MAXSCOPE; i++) {
@@ -1462,11 +1462,11 @@ signatures satisfying the pattern.
 			break;
 		}
 		case 'r':	/* reset program counter */
-			stream_printf(out, "%s restart with current stack\n", "#mdb ");
+			mnstr_printf(out, "%s restart with current stack\n", "#mdb ");
 			stk->cmd = 'r';
 			break;
 		default:
-			stream_printf(out, "%s debugger command expected\n", "#mdb ");
+			mnstr_printf(out, "%s debugger command expected\n", "#mdb ");
 			mdbHelp(out);
 		}
 	} while (m);
@@ -1477,7 +1477,7 @@ signatures satisfying the pattern.
 void 
 mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i= getPC(mb,pci);
-	stream_printf(cntxt->fdout,"!MDB dump of instruction %d\n",i);
+	mnstr_printf(cntxt->fdout,"!MDB dump of instruction %d\n",i);
 	printFunction(cntxt->fdout, mb, stk, LIST_MAL_ALL);
 	mdbBacktrace(cntxt, stk, i);
 	printStack(cntxt->fdout,mb,stk);
@@ -1518,7 +1518,7 @@ mdbSanityCheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 				nmeOnStk = getTypeName(newBatType(b->htype, b->ttype));
 				if (strcmp(nme, nmeOnStk)) {
 					printTraceCall(cntxt->fdout,mb,stk,pc,cntxt->flags);
-					stream_printf(cntxt->fdout, "!ERROR: %s != :%s\n",
+					mnstr_printf(cntxt->fdout, "!ERROR: %s != :%s\n",
 						nme, nmeOnStk);
 					stk->cmd='n';
 				}
@@ -1537,14 +1537,14 @@ str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
 	InstrPtr p;
 	int cnt = 20;	/* total 10 sec delay */
 	p= getInstrPtr(mb,pc);
-	stream_printf(mal_clients[0].fdout,"#trapped %s.%s[%d]\n",
+	mnstr_printf(mal_clients[0].fdout,"#trapped %s.%s[%d]\n",
 		getModuleId(mb->stmt[0]), getFunctionId(mb->stmt[0]), pc);
 	printInstruction(mal_clients[0].fdout,mb,stk,p, LIST_MAL_DEBUG);
 	cntxt->itrace='W';
 	mal_set_lock(mal_contextLock,"trapped procedure");
 	if( trapped_mb){
-		stream_printf(mal_clients[0].fdout,"#registry not available\n");
-		stream_flush(cntxt->fdout);
+		mnstr_printf(mal_clients[0].fdout,"#registry not available\n");
+		mnstr_flush(cntxt->fdout);
 	}
 	while (trapped_mb && cnt -- > 0){
 		mal_unset_lock(mal_contextLock,"trapped procedure");
@@ -1578,12 +1578,12 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		state.p = getInstrPtr(mb,pc);
 		state.pc= pc;
 		cntxt->mdb= &state;
-		stream_printf(mal_clients[0].fdout,"#Process %d put to sleep\n",cntxt-mal_clients);
+		mnstr_printf(mal_clients[0].fdout,"#Process %d put to sleep\n",cntxt-mal_clients);
 		cntxt->itrace = 'W';
 		mdbTrap(cntxt,mb,stk,pc);
 		while(cntxt->itrace== 'W')
 			MT_sleep_ms(cntxt->delay);
-		stream_printf(mal_clients[0].fdout,"#Process %d woke up\n",cntxt-mal_clients);
+		mnstr_printf(mal_clients[0].fdout,"#Process %d woke up\n",cntxt-mal_clients);
 		return;
 	}
 	if (stk->cmd == 0)
@@ -1601,7 +1601,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		if( ch == 't'){
 			if (cntxt != mal_clients) 
 				/* help mclients with fake prompt */
-				stream_printf(out,"mdb>");
+				mnstr_printf(out,"mdb>");
 			printTraceCall(out,mb,stk,pc,cntxt->flags);
 		} else if( ch )
 			mdbCommand(cntxt, mb, stk, p, pc);
@@ -1622,7 +1622,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		/* return from this debugger */
 		for (su = stk; su; su = su->up)
 			su->cmd = 0;
-		stream_printf(out,"mdb>#EOD\n");
+		mnstr_printf(out,"mdb>#EOD\n");
 		stk->cmd = 'x';	/* will force a graceful termination */
 	}
 	if( mdbSessionActive== 0) return;
@@ -1650,7 +1650,7 @@ mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1){
 	/* get hold of a suspended plan and run debugger */
 	mal_set_lock(mal_contextLock,"trapped procedure");
 	if ( trapped_mb == 0){
-		stream_printf(cntxt->fdout,"#no trapped function\n");
+		mnstr_printf(cntxt->fdout,"#no trapped function\n");
 		mal_unset_lock(mal_contextLock,"trapped procedure");
 		return MAL_SUCCEED;
 	}
@@ -1663,8 +1663,8 @@ mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1){
 	trapped_stk = 0;
 	trapped_pc = 0;
 	mal_unset_lock(mal_contextLock,"trapped procedure");
-	stream_printf(cntxt->fdout,"#Debugging trapped function\n");
-	stream_flush(cntxt->fdout);
+	mnstr_printf(cntxt->fdout,"#Debugging trapped function\n");
+	mnstr_flush(cntxt->fdout);
 	sve= stk->cmd;
 	stk->cmd='n';
 	mdbCommand(cntxt, mb, stk, getInstrPtr(mb,pc), pc);
@@ -1685,8 +1685,8 @@ mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	c= mal_clients+id;
 
 	c->itrace = 'S';
-	stream_printf(cntxt->fdout,"#process %d requested to suspend\n",id);
-	stream_flush(cntxt->fdout);
+	mnstr_printf(cntxt->fdout,"#process %d requested to suspend\n",id);
+	mnstr_flush(cntxt->fdout);
 	return MAL_SUCCEED;
 }
 @-
@@ -1718,7 +1718,7 @@ printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 	int i = 0;
 
 	if (s) {
-		stream_printf(f, "#Stack '%s' size=%d top=%d\n",
+		mnstr_printf(f, "#Stack '%s' size=%d top=%d\n",
 				getInstrPtr(mb, 0)->fcnname, s->stksize, s->stktop);
 		for (; i < mb->vtop; i++)
 			printStackElm(f, mb, s->stk + i, i, 0, 0);
@@ -1736,22 +1736,22 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 	b = BATdescriptor(i);
 	if (b) {
 		tpe = getTypeName(newBatType(b->htype, b->ttype));
-		stream_printf(f, ":%s ",tpe);
+		mnstr_printf(f, ":%s ",tpe);
 		printBATproperties(f,b);
 		/* perform property checking */
 		if( b->H != b->T)
 			BATpropcheck(BATmirror(b),BATPROPS_QUICK);
 		BATpropcheck(b,BATPROPS_QUICK);
-		stream_printf(f,"\n");
+		mnstr_printf(f,"\n");
 		if( cnt && BATcount(b)>0){
 			if (cnt < BATcount(b)) {
-				stream_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
+				mnstr_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
 			}
 			/* cut out a portion of the BAT for display */
 			bs = BATslice(b, first, first + cnt);
 
 			if (bs == NULL)
-				stream_printf(f, "Failed to take chunk\n");
+				mnstr_printf(f, "Failed to take chunk\n");
 			else {
 				BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
 				BBPunfix(bs->batCacheid);
@@ -1761,7 +1761,7 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 		BBPunfix(b->batCacheid);
 		GDKfree(tpe);
 	} else
-		stream_printf(f,"\n");
+		mnstr_printf(f,"\n");
 }
 
 
@@ -1778,7 +1778,7 @@ printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index){
 		nme = nmebuf;
 	} else
 		nme = n->name;
-	stream_printf(f, "#[%d] %5s = ", index, nme);
+	mnstr_printf(f, "#[%d] %5s = ", index, nme);
 	if (v)
 		ATOMprint(v->vtype, VALptr(v), f);
 }
@@ -1800,33 +1800,33 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 			b = BATmirror(b);
 		if (b){
 			nme= getTypeName(newBatType(b->htype, b->ttype));
-			stream_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
+			mnstr_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
 		} else {
 			nme = getTypeName(n->type);
-			stream_printf(f, " :%s", nme);
+			mnstr_printf(f, " :%s", nme);
 		}
 	} else { 
 		nme = getTypeName(n->type);
-		stream_printf(f, " :%s", nme);
+		mnstr_printf(f, " :%s", nme);
 	}
 	nmeOnStk = v ? getTypeName(v->vtype) : GDKstrdup(nme);
 	/* check for type errors */
 	if (strcmp(nmeOnStk, nme) && strncmp(nmeOnStk,"BAT",3))
-		stream_printf(f,"!%s ",nmeOnStk);
-	stream_printf(f, " %s", (isVarConstant(mb,index)? " constant" : ""));
-	stream_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
-	stream_printf(f, " %s", (isVarTypedef(mb,index) ? " type variable" : ""));
+		mnstr_printf(f,"!%s ",nmeOnStk);
+	mnstr_printf(f, " %s", (isVarConstant(mb,index)? " constant" : ""));
+	mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
+	mnstr_printf(f, " %s", (isVarTypedef(mb,index) ? " type variable" : ""));
 	if ( getEndOfLife(mb,index))
-		stream_printf(f," eolife=%d ", getEndOfLife(mb,index));
+		mnstr_printf(f," eolife=%d ", getEndOfLife(mb,index));
 	GDKfree(nme);
 	if (n->propc){
 		nme = varGetPropStr(mb, index);
 		if (nme) {
-			stream_printf(f,"%s",nme);
+			mnstr_printf(f,"%s",nme);
 			GDKfree(nme);
 		}
 	}
-	stream_printf(f, "\n");
+	mnstr_printf(f, "\n");
 	GDKfree(nmeOnStk);
 
 	if (cnt && v && (isaBatType(n->type) || v->vtype== TYPE_bat) && v->val.ival) {
@@ -1834,17 +1834,17 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 		b = BATdescriptor(v->val.ival);
 		if (b == NULL) {
-			stream_printf(f, "Could not access descriptor\n");
+			mnstr_printf(f, "Could not access descriptor\n");
 			return;
 		}
 		if (cnt <= BATcount(b)) {
-			stream_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
+			mnstr_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
 		}
 		/* cut out a portion of the BAT for display */
 		bs = BATslice(b, first, first + cnt);
 
 		if (bs == NULL)
-			stream_printf(f, "Failed to take chunk\n");
+			mnstr_printf(f, "Failed to take chunk\n");
 		else
 			BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
 		BBPunfix(bs->batCacheid);
@@ -1860,7 +1860,7 @@ printBatDetails(stream *f, int bid)
 	int ret;
 	MALfcn fcn;
 
-	stream_printf(f, "#Show info for %d\n", bid);
+	mnstr_printf(f, "#Show info for %d\n", bid);
 	fcn = getAddress("bat","bat","BKCinfo", 0);
 	if (fcn)  {
 		(*fcn) (&ret, &bid);
@@ -1892,19 +1892,19 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 			BAT *b;
 
 			bid = v->val.ival;
-			stream_printf(f, "BAT %d %s= ", bid,props);
+			mnstr_printf(f, "BAT %d %s= ", bid,props);
 			(*fcn) (&ret, &bid);
 			b = BATdescriptor(ret);
 			if (b == NULL) {
-				stream_printf(f, "Could not access descriptor\n");
+				mnstr_printf(f, "Could not access descriptor\n");
 				return;
 			}
 			p= BUNfnd(b,props);
 			if (p != BUN_NONE) {
 				BATiter bi = bat_iterator(b);
-				stream_printf(f," %s\n", (str) BUNtail(bi,p));
+				mnstr_printf(f," %s\n", (str) BUNtail(bi,p));
 			} else {
-				stream_printf(f," not found\n");
+				mnstr_printf(f," not found\n");
 			}
 			BBPunfix(b->batCacheid);
 		}
@@ -1917,12 +1917,12 @@ asses for memory fragmentation.
 @= heapinfo
 hp= @1;
 if(hp && hp->base){
-	stream_printf(out,"\t@2=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST hp->base, hp->size);}
+	mnstr_printf(out,"\t@2=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST hp->base, hp->size);}
 @= hashinfo
 h= @1;
 if(h && h->mask){
-	    stream_printf(out,"\t@2=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST h, sizeof(*h));
-	    stream_printf(out,"\t@2link=" BUNFMT " size=" SZFMT "\n",h->link,
+	    mnstr_printf(out,"\t@2=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST h, sizeof(*h));
+	    mnstr_printf(out,"\t@2link=" BUNFMT " size=" SZFMT "\n",h->link,
 	            (h->mask+h->lim+1)*sizeof(int));
 }
 @-
@@ -1934,7 +1934,7 @@ More then 9 elements makes it full.
 @= setVector
 	start= (((long)@1)-min)/granule;
 	lim= (((long)@1)-min + @2)/granule;
-	stream_printf(out,"start %ld lim %ld\n",start,lim);
+	mnstr_printf(out,"start %ld lim %ld\n",start,lim);
 
 @c
 static str
@@ -1969,7 +1969,7 @@ memProfileVector(stream *out, int cells)
 			long start, lim;
 #endif
 
-			stream_printf(out, "\tdesc=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST b, sizeof(*b));
+			mnstr_printf(out, "\tdesc=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST b, sizeof(*b));
 			@:heapinfo(&b->H->heap,tail)@
 			@:heapinfo(&b->T->heap,head)@
 #ifdef HAVE_SBRK
@@ -1977,7 +1977,7 @@ memProfileVector(stream *out, int cells)
 				min = (long) b;
 				max = min + GDKmem_heapsize();
 				granule = (max - min) / cells;
-				stream_printf(out, "granule %ldK\n", granule / 1024);
+				mnstr_printf(out, "granule %ldK\n", granule / 1024);
 			}
 			@:setVector(b, sizeof(*b))@
 			@:setVector(hp->base, hp->size)@
@@ -1997,17 +1997,17 @@ printBBPinfo(stream *out)
 {
 	str v;
 
-	stream_printf(out, "#BBP memory layout\n");
-	stream_printf(out, "#heap maximum =" SZFMT "/M\n", GDKmem_heapsize() / (1024 * 1024));
+	mnstr_printf(out, "#BBP memory layout\n");
+	mnstr_printf(out, "#heap maximum =" SZFMT "/M\n", GDKmem_heapsize() / (1024 * 1024));
 	v = memProfileVector(out,32);
 	if (v) {
-		stream_printf(out, "#%s\n", v);
+		mnstr_printf(out, "#%s\n", v);
 		GDKfree(v);
 	}
 #ifdef GDK_VM_KEEPHISTO
-	stream_printf(out, "#BBP VM history available\n");
+	mnstr_printf(out, "#BBP VM history available\n");
 #else
-	stream_printf(out, "#BBP VM history not available\n");
+	mnstr_printf(out, "#BBP VM history not available\n");
 #endif
 }
 
@@ -2017,36 +2017,36 @@ Some utilities for the debugger
 void
 mdbHelp(stream *f)
 {
-	stream_printf(f, "next             -- Advance to next statement\n");
-	stream_printf(f, "continue         -- Continue program being debugged\n");
-	stream_printf(f, "catch            -- Catch the next exception \n");
-	stream_printf(f, "break [<var>]    -- set breakpoint on current instruction or <var>\n");
-	stream_printf(f, "delete [<var>]   -- remove break/trace point <var>\n");
-	stream_printf(f, "debug <int>      -- set kernel debugging mask\n");
-	stream_printf(f, "dot <obj> [<file>]  -- generate the dependency graph\n");
-	stream_printf(f, "step             -- advance to next MAL instruction\n");
-	stream_printf(f, "module           -- display a module signatures\n");
-	stream_printf(f, "atom             -- show atom list\n");
-	stream_printf(f, "finish           -- finish current call\n");
-	stream_printf(f, "exit             -- terminate executionr\n");
-	stream_printf(f, "quit             -- turn off debugging\n");
-	stream_printf(f, "list[#] <obj>       -- list current program block\n");
-	stream_printf(f, "List[#] <obj>       -- list with type information\n");
-	stream_printf(f, "list [<step>]    -- list program block after optimizer step\n");
-	stream_printf(f, "var  <obj>       -- print symbol table for module\n");
-	stream_printf(f, "optimizer <obj>  -- display optimizer steps\n");
-	stream_printf(f, "print <var>      -- display value of a variable\n");
-	stream_printf(f, "print <var> <cnt>[<first>] -- display BAT chunk\n");
-	stream_printf(f, "info <var>       -- display bat variable properties\n");
-	stream_printf(f, "run              -- restart current procedure\n");
-	stream_printf(f, "where            -- print stack trace\n");
-	stream_printf(f, "down             -- go down the stack\n");
-	stream_printf(f, "up               -- go up the stack\n");
-	stream_printf(f, "trace <var>      -- trace assignment to variables\n");
-	stream_printf(f, "trap <mod>.<fcn> -- catch MAL function call in console\n");
-	stream_printf(f, "set {timer,thread,flow,io,memory} -- set trace switches\n");
-	stream_printf(f, "unset            -- turn off switches\n");
-	stream_printf(f, "help             -- this message\n");
+	mnstr_printf(f, "next             -- Advance to next statement\n");
+	mnstr_printf(f, "continue         -- Continue program being debugged\n");
+	mnstr_printf(f, "catch            -- Catch the next exception \n");
+	mnstr_printf(f, "break [<var>]    -- set breakpoint on current instruction or <var>\n");
+	mnstr_printf(f, "delete [<var>]   -- remove break/trace point <var>\n");
+	mnstr_printf(f, "debug <int>      -- set kernel debugging mask\n");
+	mnstr_printf(f, "dot <obj> [<file>]  -- generate the dependency graph\n");
+	mnstr_printf(f, "step             -- advance to next MAL instruction\n");
+	mnstr_printf(f, "module           -- display a module signatures\n");
+	mnstr_printf(f, "atom             -- show atom list\n");
+	mnstr_printf(f, "finish           -- finish current call\n");
+	mnstr_printf(f, "exit             -- terminate executionr\n");
+	mnstr_printf(f, "quit             -- turn off debugging\n");
+	mnstr_printf(f, "list[#] <obj>       -- list current program block\n");
+	mnstr_printf(f, "List[#] <obj>       -- list with type information\n");
+	mnstr_printf(f, "list [<step>]    -- list program block after optimizer step\n");
+	mnstr_printf(f, "var  <obj>       -- print symbol table for module\n");
+	mnstr_printf(f, "optimizer <obj>  -- display optimizer steps\n");
+	mnstr_printf(f, "print <var>      -- display value of a variable\n");
+	mnstr_printf(f, "print <var> <cnt>[<first>] -- display BAT chunk\n");
+	mnstr_printf(f, "info <var>       -- display bat variable properties\n");
+	mnstr_printf(f, "run              -- restart current procedure\n");
+	mnstr_printf(f, "where            -- print stack trace\n");
+	mnstr_printf(f, "down             -- go down the stack\n");
+	mnstr_printf(f, "up               -- go up the stack\n");
+	mnstr_printf(f, "trace <var>      -- trace assignment to variables\n");
+	mnstr_printf(f, "trap <mod>.<fcn> -- catch MAL function call in console\n");
+	mnstr_printf(f, "set {timer,thread,flow,io,memory} -- set trace switches\n");
+	mnstr_printf(f, "unset            -- turn off switches\n");
+	mnstr_printf(f, "help             -- this message\n");
 }
 
 @+ Optimizer debugging
@@ -2085,15 +2085,15 @@ debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span)
 			snprintf(name,BUFSIZ,"%c%d ", TMPMARKER, getVar(mb,i)->tmpindex); 
 		else
 			snprintf(name,BUFSIZ,"%s ", getVar(mb,i)->name);
-		stream_printf(cntxt->fdout,"#%8s eolife=%4d range %4d - %4d  ", 
+		mnstr_printf(cntxt->fdout,"#%8s eolife=%4d range %4d - %4d  ", 
 			name,
 			mb->var[i]->eolife,
 			getBeginLifespan(span,i),
 			getEndLifespan(span,i));
 		if( getLastUpdate(span,i))
-			stream_printf(cntxt->fdout,"last update %d \n", getLastUpdate(span,i));
+			mnstr_printf(cntxt->fdout,"last update %d \n", getLastUpdate(span,i));
 		else
-			stream_printf(cntxt->fdout,"constant \n"); 
+			mnstr_printf(cntxt->fdout,"constant \n"); 
 	}
 }
 @}

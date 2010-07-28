@@ -405,18 +405,18 @@ typedef struct {
 	int dim;
 	size_t i;
 	for(i=0;i<sz;i++){
-		if (!stream_readInt(s,&dim))
+		if (!mnstr_readInt(s,&dim))
 			return NULL;
 	
         	if ((a = (@1s *)GDKmalloc(@1ssize(dim))) == NULL)
 			return NULL;
 		a->dimension = dim;
-		stream_read(s, (char*)a->data, 1, dim*sizeof(@1));
-		if (stream_errnr(s)) {
+		mnstr_read(s, (char*)a->data, 1, dim*sizeof(@1));
+		if (mnstr_errnr(s)) {
 			GDKfree(a);
 			return NULL;
 		}
-		if (stream_byteorder(s) != 1234){
+		if (mnstr_byteorder(s) != 1234){
 			int n;
 
 			for (n = 0; n < dim; n++) {
@@ -431,9 +431,9 @@ typedef struct {
     void atom_@1s_write(@1s* a, stream *s, size_t sz) {
 	size_t i;
 	for(i=0;i<sz;i++){
-		if (!stream_writeInt(s,a->dimension))
+		if (!mnstr_writeInt(s,a->dimension))
 			return;
-		if (stream_write(s, (char*)a->data, 1, a->dimension*sizeof(@1)) < 0)
+		if (mnstr_write(s, (char*)a->data, 1, a->dimension*sizeof(@1)) < 0)
 			return;
 	}
     }
@@ -1251,11 +1251,11 @@ dblv.print();
 
     @1_vector@2 *atom_@1_vector@2_read(@1_vector@2* a, stream *s, size_t sz) {
 	a->dimension = @2;
-	stream_read(s, (char*)a->data, sz, @2*sizeof(@1));
-	if (stream_errnr(s))
+	mnstr_read(s, (char*)a->data, sz, @2*sizeof(@1));
+	if (mnstr_errnr(s))
 		return NULL;
 	
-	if (stream_byteorder(s) != 1234){
+	if (mnstr_byteorder(s) != 1234){
 		int i;
 		size_t j;
 		for (j=0;j<sz;j++) 
@@ -1268,7 +1268,7 @@ dblv.print();
     }
 
     void atom_@1_vector@2_write(@1_vector@2* a, stream *s, size_t sz) {
-	stream_write(s, (char*)a->data, sz, @2*sizeof(@1));
+	mnstr_write(s, (char*)a->data, sz, @2*sizeof(@1));
     }
 
 

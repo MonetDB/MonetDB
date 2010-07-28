@@ -680,38 +680,38 @@ ATOMdump(void)
 	int t;
 
 	for (t = 0; t < GDKatomcnt; t++) {
-		stream_printf(GDKout, "%2d '%9s' (%3d) ", t, BATatoms[t].name, BATatoms[t].size);
+		mnstr_printf(GDKout, "%2d '%9s' (%3d) ", t, BATatoms[t].name, BATatoms[t].size);
 		if (BATatoms[t].atomFromStr) {
-			stream_printf(GDKout, "\"FromStr\" ");
+			mnstr_printf(GDKout, "\"FromStr\" ");
 		}
 		if (BATatoms[t].atomToStr) {
-			stream_printf(GDKout, "\"ToStr\" ");
+			mnstr_printf(GDKout, "\"ToStr\" ");
 		}
 		if (BATatoms[t].atomCmp) {
-			stream_printf(GDKout, "\"Cmp\" ");
+			mnstr_printf(GDKout, "\"Cmp\" ");
 		}
 		if (BATatoms[t].atomNull) {
-			stream_printf(GDKout, "\"Null\" ");
+			mnstr_printf(GDKout, "\"Null\" ");
 		}
 		if (BATatoms[t].atomHash) {
-			stream_printf(GDKout, "\"Hash\" ");
+			mnstr_printf(GDKout, "\"Hash\" ");
 		}
 		if (BATatoms[t].atomPut) {
-			stream_printf(GDKout, "\"Put\" ");
+			mnstr_printf(GDKout, "\"Put\" ");
 		}
 		if (BATatoms[t].atomDel) {
-			stream_printf(GDKout, "\"Del\" ");
+			mnstr_printf(GDKout, "\"Del\" ");
 		}
 		if (BATatoms[t].atomLen) {
-			stream_printf(GDKout, "\"Len\" ");
+			mnstr_printf(GDKout, "\"Len\" ");
 		}
 		if (BATatoms[t].atomConvert) {
-			stream_printf(GDKout, "\"Convert\" ");
+			mnstr_printf(GDKout, "\"Convert\" ");
 		}
 		if (BATatoms[t].atomHeap) {
-			stream_printf(GDKout, "\"NewHeap\" ");
+			mnstr_printf(GDKout, "\"NewHeap\" ");
 		}
-		stream_printf(GDKout, "\n");
+		mnstr_printf(GDKout, "\n");
 	}
 	return 0;
 }
@@ -1028,18 +1028,18 @@ ATOMprint(int t, ptr p, stream *s)
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 			int sz = dblStrlen, l = (*tostr) (&addr, &sz, p);
 
-			stream_write(s, buf, l, 1);
+			mnstr_write(s, buf, l, 1);
 			return l;
 		} else {
 			str buf = 0;
 			int sz = 0, l = (*tostr) (&buf, &sz, p);
 
-			l = (int) stream_write(s, buf, l, 1);
+			l = (int) mnstr_write(s, buf, l, 1);
 			GDKfree(buf);
 			return l;
 		}
 	}
-	return (int) stream_write(s, "nil", 1, 3);
+	return (int) mnstr_write(s, "nil", 1, 3);
 }
 
 
@@ -1374,20 +1374,20 @@ chrToStr(str *dst, int *len, chr *src)
 chr *
 chrRead(chr *a, stream *s, size_t cnt)
 {
-	stream_read(s, (char *) a, 1, cnt);
+	mnstr_read(s, (char *) a, 1, cnt);
 #ifdef ASCII_CHR
 	/* only accept ASCII characters */
-	return stream_errnr(s) ? NULL : (*a & 0x80 ? NULL : a);
+	return mnstr_errnr(s) ? NULL : (*a & 0x80 ? NULL : a);
 #else
 	/* effectively read latin-1 (ISO-8859-1) character data */
-	return stream_errnr(s) ? NULL : a;
+	return mnstr_errnr(s) ? NULL : a;
 #endif
 }
 
 int
 chrWrite(chr *a, stream *s, size_t cnt)
 {
-	if (stream_write(s, (char *) a, 1, cnt) == (ssize_t) cnt)
+	if (mnstr_write(s, (char *) a, 1, cnt) == (ssize_t) cnt)
 		return GDK_SUCCEED;
 	else
 		return GDK_FAIL;
@@ -1440,14 +1440,14 @@ bitToStr(char **dst, int *len, bit *src)
 bit *
 bitRead(bit *a, stream *s, size_t cnt)
 {
-	stream_read(s, (char *) a, 1, cnt);
-	return stream_errnr(s) ? NULL : a;
+	mnstr_read(s, (char *) a, 1, cnt);
+	return mnstr_errnr(s) ? NULL : a;
 }
 
 int
 bitWrite(bit *a, stream *s, size_t cnt)
 {
-	if (stream_write(s, (char *) a, 1, cnt) == (ssize_t) cnt)
+	if (mnstr_write(s, (char *) a, 1, cnt) == (ssize_t) cnt)
 		return GDK_SUCCEED;
 	else
 		return GDK_FAIL;
@@ -1502,15 +1502,15 @@ batToStr(char **dst, int *len, bat *src)
 bat *
 batRead(bat *a, stream *s, size_t cnt)
 {
-	stream_readIntArray(s, (int *) a, cnt);	/* bat==int */
-	return stream_errnr(s) ? NULL : a;
+	mnstr_readIntArray(s, (int *) a, cnt);	/* bat==int */
+	return mnstr_errnr(s) ? NULL : a;
 }
 
 int
 batWrite(bat *a, stream *s, size_t cnt)
 {
 	/* bat==int */
-	return stream_writeIntArray(s, (int *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_writeIntArray(s, (int *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @-
@@ -1569,12 +1569,12 @@ int
 @= atom_io
  @1 *@1Read(@1 *a, stream *s, size_t cnt)
 {
-	stream_read@2Array(s, (@3 *) a, cnt);
-	return stream_errnr(s) ? NULL : a;
+	mnstr_read@2Array(s, (@3 *) a, cnt);
+	return mnstr_errnr(s) ? NULL : a;
 }
 int @1Write(@1 *a, stream *s, size_t cnt)
 {
-	return stream_write@2Array(s, (@3 *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_write@2Array(s, (@3 *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 @c
 
@@ -2377,11 +2377,11 @@ strRead(str a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!stream_readInt(s, &len))
+	if (!mnstr_readInt(s, &len))
 		return NULL;
 	if ((a = GDKmalloc(len + 1)) == NULL)
 		return NULL;
-	if (len && stream_read(s, a, len, 1) != 1) {
+	if (len && mnstr_read(s, a, len, 1) != 1) {
 		GDKfree(a);
 		return NULL;
 	}
@@ -2396,7 +2396,7 @@ strWrite(str a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (stream_writeInt(s, (int) len) && stream_write(s, a, len, 1) == 1)
+	if (mnstr_writeInt(s, (int) len) && mnstr_write(s, a, len, 1) == 1)
 		return GDK_SUCCEED;
 	else
 		return GDK_FAIL;
@@ -2491,8 +2491,8 @@ OIDwrite(stream *s)
 	if (GDKoid) {
 		GDKflushed = GDKoid;
 		ATOMprint(TYPE_oid, &GDKflushed, s);
-		if (stream_errnr(s) ||
-		    stream_write(s, " ", 1, 1) <= 0)
+		if (mnstr_errnr(s) ||
+		    mnstr_write(s, " ", 1, 1) <= 0)
 			ret = -1;
 	}
 	gdk_unset_lock(MT_system_lock, "OIDwrite");

@@ -958,8 +958,8 @@ CMDquit(Cntxt stk, YYSTREE lt, ValPtr res)
 	}
 	monet_running = 0;
 	stopProfiler();
-	stream_flush(GDKout);
-	stream_destroy(GDKout);
+	mnstr_flush(GDKout);
+	mnstr_destroy(GDKout);
 	MT_global_exit(*statusp);
 	return 0;
 }
@@ -980,7 +980,7 @@ CMDprompt(Cntxt stk, YYSTREE lt, ValPtr res)
 			;
 		c = monet_clients + stk;
 		c->prompt = (char *) GDKstrdup(x);
-		stream_printf(GDKout, "# new prompt for %s (%d):%s\n", c->user, (int) stk, c->prompt);
+		mnstr_printf(GDKout, "# new prompt for %s (%d):%s\n", c->user, (int) stk, c->prompt);
 	} else {
 		GDKwarning("prompt: argument missing\n");
 	}
@@ -1187,12 +1187,12 @@ CMDprint_val(ptr val, int tpe)
 {
 	stream *fp = GDKout;
 
-	if (stream_write(fp, "[ ", 2, 1) != 1)
+	if (mnstr_write(fp, "[ ", 2, 1) != 1)
 		return GDK_FAIL;
 	ATOMprint(tpe, val, fp);
-	if (stream_errnr(fp))
+	if (mnstr_errnr(fp))
 		return GDK_FAIL;
-	return stream_write(fp, " ]\n", 3, 1) == 1 ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_write(fp, " ]\n", 3, 1) == 1 ? GDK_SUCCEED : GDK_FAIL;
 }
 
 static int
@@ -1280,7 +1280,7 @@ print_format(str format, ...)
 	if (ret == GDK_FAIL) {
 		return GDK_FAIL;
 	}
-	ret = (int) stream_write(GDKout, s, strlen(s), 1);
+	ret = (int) mnstr_write(GDKout, s, strlen(s), 1);
 	GDKfree(s);
 	if (ret < 0) {
 		GDKsyserror("printf():");

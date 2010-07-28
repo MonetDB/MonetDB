@@ -111,7 +111,7 @@ and to filter/replace calls with empty arguments.
 			setVarUDFtype(mb,getArg(p,0));
 			if (b && BATcount(b) == 0){
 #ifdef DEBUG_SQL_EMPTYSET
-				stream_printf(cntxt->fdout,"empty %d %s\n",
+				mnstr_printf(cntxt->fdout,"empty %d %s\n",
 					getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 				empty[getArg(p,0)] = 1;
@@ -137,7 +137,7 @@ and to filter/replace calls with empty arguments.
 			setVarUDFtype(mb,getArg(p,0));
 			if ( b && BATcount(b) == 0){
 #ifdef DEBUG_SQL_EMPTYSET
-				stream_printf(cntxt->fdout,"empty %d %s\n",
+				mnstr_printf(cntxt->fdout,"empty %d %s\n",
 					getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 				empty[getArg(p,0)] = 1;
@@ -207,7 +207,7 @@ and to filter/replace calls with empty arguments.
 						empty[getArg(p,0)]=1;
 						actions++;
 #ifdef DEBUG_SQL_EMPTYSET
-						stream_printf(cntxt->fdout,"empty %d %s\n",
+						mnstr_printf(cntxt->fdout,"empty %d %s\n",
 							getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 						break;
@@ -223,7 +223,7 @@ and to filter/replace calls with empty arguments.
 						empty[getArg(p,0)]=1;
 						actions++;
 #ifdef DEBUG_SQL_EMPTYSET
-						stream_printf(cntxt->fdout,"empty %d %s\n",
+						mnstr_printf(cntxt->fdout,"empty %d %s\n",
 							getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 						break;
@@ -249,7 +249,7 @@ and to filter/replace calls with empty arguments.
 							p->argc= 2;
 						}
 #ifdef DEBUG_SQL_EMPTYSET
-						stream_printf(cntxt->fdout,"empty %d %s\n",
+						mnstr_printf(cntxt->fdout,"empty %d %s\n",
 							getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 						break;
@@ -265,7 +265,7 @@ and to filter/replace calls with empty arguments.
 							empty[getArg(p,0)] = empty[getArg(p,1)];
 							actions++;
 #ifdef DEBUG_SQL_EMPTYSET
-						stream_printf(cntxt->fdout,"empty %d %s\n",
+						mnstr_printf(cntxt->fdout,"empty %d %s\n",
 							getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 						} else {
@@ -276,7 +276,7 @@ and to filter/replace calls with empty arguments.
 							empty[getArg(p,0)] = empty[getArg(p,1)];
 							actions++;
 #ifdef DEBUG_SQL_EMPTYSET
-						stream_printf(cntxt->fdout,"empty %d %s\n",
+						mnstr_printf(cntxt->fdout,"empty %d %s\n",
 							getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 						}
@@ -294,7 +294,7 @@ and to filter/replace calls with empty arguments.
 						actions++;
 						empty[getArg(p,0)]=1;
 #ifdef DEBUG_SQL_EMPTYSET
-						stream_printf(cntxt->fdout,"empty %d %s\n",
+						mnstr_printf(cntxt->fdout,"empty %d %s\n",
 							getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 						break;
@@ -329,7 +329,7 @@ and to filter/replace calls with empty arguments.
 			msg= reenterMAL(cntxt,mb,start+1,0,stk,0,0);
 		}
 #ifdef DEBUG_SQL_EMPTYSET
-		else stream_printf(cntxt->fdout,"#optimizer fails:%s\n",msg);
+		else mnstr_printf(cntxt->fdout,"#optimizer fails:%s\n",msg);
 #endif
 	} 
 	/* restore after execution */

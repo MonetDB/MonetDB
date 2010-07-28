@@ -38,18 +38,18 @@ proxyThread(void *d)
 	/* pass everything from in to out, until either reading from in, or
 	 * writing to out fails, then close in and its related out-stream
 	 * (not out!) to make sure the co-thread dies as well */
-	while ((len = stream_read(p->in, data, 1, sizeof(data))) >= 0) {
-		if (len > 0 && stream_write(p->out, data, len, 1) != 1)
+	while ((len = mnstr_read(p->in, data, 1, sizeof(data))) >= 0) {
+		if (len > 0 && mnstr_write(p->out, data, len, 1) != 1)
 			break;
-		if (len == 0 &&	stream_flush(p->out) == -1)
+		if (len == 0 &&	mnstr_flush(p->out) == -1)
 			break;
 	}
 
-	stream_close(p->co_out);  /* out towards target B */
-	stream_close(p->in);      /* related in from target B */
+	mnstr_close(p->co_out);  /* out towards target B */
+	mnstr_close(p->in);      /* related in from target B */
 
-	stream_close(p->out);     /* out towards target A */
-	stream_close(p->co_in);   /* related in from target A */
+	mnstr_close(p->out);     /* out towards target A */
+	mnstr_close(p->co_in);   /* related in from target A */
 
 	if (p->name != NULL) {
 		/* name is only set on the client-to-server thread */
@@ -65,10 +65,10 @@ proxyThread(void *d)
 		/* wait for the other thread to finish, after which we can
 		 * finally destroy the streams */
 		pthread_join(p->co_thr, NULL);
-		stream_destroy(p->co_out);
-		stream_destroy(p->in);
-		stream_destroy(p->out);
-		stream_destroy(p->co_in);
+		mnstr_destroy(p->co_out);
+		mnstr_destroy(p->in);
+		mnstr_destroy(p->out);
+		mnstr_destroy(p->co_in);
 	}
 
 	GDKfree(p);
@@ -304,7 +304,7 @@ handleMySQLClient(int sock)
 	*p = *(p + 1); p++;
 	*p = *(p + 1); p++;
 	*p = 0x00;   /* packet number */
-	stream_flush(fout);
+	mnstr_flush(fout);
 
 	return(NO_ERR);
 }

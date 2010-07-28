@@ -365,7 +365,7 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
-	stream_destroy(buf);
+	mnstr_destroy(buf);
 	if (m->sa && m->sa != sa)
 		sa_destroy(m->sa);
 	m->sym = NULL;

@@ -8864,7 +8864,7 @@ xquery_print_result_file (
                     }
                     BBPreclaim(i);
                 }
-                stream_destroy(s);
+                mnstr_destroy(s);
             } 
             fclose(fp);
         } else {

@@ -98,7 +98,7 @@ CREATE TABLE bridge_geom (
 	y1 INTEGER,
 	CONSTRAINT b_gid_pk PRIMARY KEY (gid, eseq, seq));
 -- Stream Geometry
-CREATE TABLE stream_geom (
+CREATE TABLE mnstr_geom (
 	gid INTEGER NOT NULL,
 	eseq INTEGER NOT NULL,
 	etype INTEGER NOT NULL,
@@ -283,9 +283,9 @@ INSERT INTO forests VALUES(109, 'Green Forest', 101);
 INSERT INTO bridge_geom VALUES(101, 1, 1, 1, 44, 31);
 INSERT INTO bridges VALUES(110, 'Cam Bridge', 101);
 -- Streams
-INSERT INTO stream_geom VALUES(101, 1, 3, 1, 38,48, 44,41, 41,36);
-INSERT INTO stream_geom VALUES(101, 1, 3, 2, 44,31, 52,18, NULL,NULL);
-INSERT INTO stream_geom VALUES(102, 1, 3, 1, 76,0, 78,4, 73,9 );
+INSERT INTO mnstr_geom VALUES(101, 1, 3, 1, 38,48, 44,41, 41,36);
+INSERT INTO mnstr_geom VALUES(101, 1, 3, 2, 44,31, 52,18, NULL,NULL);
+INSERT INTO mnstr_geom VALUES(102, 1, 3, 1, 76,0, 78,4, 73,9 );
 --
 INSERT INTO streams VALUES(111, 'Cam Stream', 101);
 INSERT INTO streams VALUES(112, 'Cam Stream', 102);
@@ -324,7 +324,7 @@ INSERT INTO geometry_columns VALUES ('forests', 'boundary_gid',
 INSERT INTO geometry_columns VALUES ('bridges', 'position_gid',
 'bridge_geom',0, 1, 2, 1, 101);
 INSERT INTO geometry_columns VALUES ('streams', 'centerline_gid',
-'stream_geom',0, 3, 2, 3, 101);
+'mnstr_geom',0, 3, 2, 3, 101);
 INSERT INTO geometry_columns VALUES ('buildings', 'position_gid',
 'building_pt_geom',0, 1, 2, 1, 101);
 INSERT INTO geometry_columns VALUES ('buildings', 'footprint_gid',

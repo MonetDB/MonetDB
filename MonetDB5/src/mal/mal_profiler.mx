@@ -404,13 +404,13 @@ The parameter of getEventStream is the return value of the enclosing function:
 The offline processing structure is the easiest. We merely have to
 produce a correct tuple format for the front-end.
 @c
-#define log(X, Y) if (eventstream) if (stream_printf(eventstream, X, Y) < 0) \
+#define log(X, Y) if (eventstream) if (mnstr_printf(eventstream, X, Y) < 0) \
 		{ closeProfilerStream(); }
-#define log0(X) if (eventstream) if (stream_printf(eventstream, X) < 0)	\
+#define log0(X) if (eventstream) if (mnstr_printf(eventstream, X) < 0)	\
 		{ closeProfilerStream(); }
-#define log2(X, Y, Z) if (eventstream) if (stream_printf(eventstream, X, Y, Z) < 0) \
+#define log2(X, Y, Z) if (eventstream) if (mnstr_printf(eventstream, X, Y, Z) < 0) \
 		{ closeProfilerStream(); }
-#define flushLog() if (eventstream) stream_flush(eventstream);
+#define flushLog() if (eventstream) mnstr_flush(eventstream);
 
 @- Event dispatching
 The profiler strategy is encapsulated here
@@ -726,8 +726,8 @@ str
 closeProfilerStream(void)
 {
 	if (eventstream) {
-		(void)stream_close(eventstream);
-		(void)stream_destroy(eventstream);
+		(void)mnstr_close(eventstream);
+		(void)mnstr_destroy(eventstream);
 	}
 	eventstream = NULL;
 	malProfileMode = FALSE;
@@ -741,7 +741,7 @@ setStartPoint(Module cntxt, str mod, str fcn)
 	(void)mod;
 	(void)fcn;      /* still unused */
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */)@
-	stream_printf(GDKout, "# start point not set\n");
+	mnstr_printf(GDKout, "# start point not set\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
@@ -754,7 +754,7 @@ setEndPoint(Module cntxt, str mod, str fcn)
 	(void)mod;
 	(void)fcn;      /* still unused */
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */)@
-	stream_printf(GDKout, "# end point not set\n");
+	mnstr_printf(GDKout, "# end point not set\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
 	return MAL_SUCCEED;

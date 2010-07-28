@@ -384,7 +384,7 @@ str RMTdisconnect(int *ret, str *conn) {
 	/* just make sure the return isn't garbage */
 	*ret = 0;
 #ifdef _DEBUG_REMOTE
-	stream_printf(cntxt->fdout, "#disconnect link %s\n", *conn);
+	mnstr_printf(cntxt->fdout, "#disconnect link %s\n", *conn);
 #endif
 
 	/* we need a lock because the same user can be handled by multiple
@@ -404,7 +404,7 @@ str RMTdisconnect(int *ret, str *conn) {
 
 			mal_set_lock(c->lock, "remote.disconnect"); /* shared connection */
 #ifdef _DEBUG_REMOTE
-			stream_printf(cntxt->fdout, "#disconnect link %s\n", c->name);
+			mnstr_printf(cntxt->fdout, "#disconnect link %s\n", c->name);
 #endif
 			mapi_disconnect(c->mconn);
 			mapi_destroy(c->mconn);
@@ -605,7 +605,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
 #ifdef _DEBUG_REMOTE
-		stream_printf(cntxt->fdout, "#remote.get:%s\n", qbuf);
+		mnstr_printf(cntxt->fdout, "#remote.get:%s\n", qbuf);
 #else 
 		(void) cntxt;
 #endif
@@ -613,13 +613,13 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mal_set_lock(c->lock, "remote.get"); 
 
 #ifdef _DEBUG_REMOTE
-		stream_printf(cntxt->fdout, "#remote:%s:%s\n", c->name, qbuf);
+		mnstr_printf(cntxt->fdout, "#remote:%s:%s\n", c->name, qbuf);
 #endif
 		if ((tmp = RMTquery(&mhdl, "remote.get", c->mconn, qbuf))
 				!= MAL_SUCCEED)
 		{
 #ifdef _DEBUG_REMOTE
-			stream_printf(cntxt->fdout, "#REMOTE GET error: %s\n%s\n",
+			mnstr_printf(cntxt->fdout, "#REMOTE GET error: %s\n%s\n",
 					qbuf, tmp);
 #endif
 			mal_unset_lock(c->lock, "remote.get"); 
@@ -667,7 +667,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
 #ifdef _DEBUG_REMOTE
-		stream_printf(cntxt->fdout, "#remote:%s:%s\n", c->name, qbuf);
+		mnstr_printf(cntxt->fdout, "#remote:%s:%s\n", c->name, qbuf);
 #endif
 		if ((tmp=RMTquery(&mhdl, "remote.get", c->mconn, qbuf)) != MAL_SUCCEED)
 		{
@@ -766,7 +766,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		snprintf(qbuf, BUFSIZ, "%s := bat.new(:%s, :%s, " BUNFMT ");",
 				ident, head, tail, (bid == 0 ? 0 : BATcount(b)));
 #ifdef _DEBUG_REMOTE
-		stream_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, qbuf);
+		mnstr_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, qbuf);
 #endif
 		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
 				!= MAL_SUCCEED)
@@ -800,7 +800,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				snprintf(qbuf, BUFSIZ, "bat.insert(%s, \"%s\":%s, %s:%s);",
 						ident, headv, head, tailv, tail);
 #ifdef _DEBUG_REMOTE
-				stream_printf(cntxt->fdout,
+				mnstr_printf(cntxt->fdout,
 						"#remote.put:%s:%s\n", c->name, qbuf);
 #endif
 				if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
@@ -831,7 +831,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		qbuf[BUFSIZ] = '\0';
 		GDKfree(val);
 #ifdef _DEBUG_REMOTE
-		stream_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, qbuf);
+		mnstr_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, qbuf);
 #endif
 		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
 				!= MAL_SUCCEED)
@@ -886,7 +886,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	/* check remote definition */
 	snprintf(buf, BUFSIZ, "inspect.getSignature(\"%s\",\"%s\");", mod, fcn);
 #ifdef _DEBUG_REMOTE
-	stream_printf(cntxt->fdout, "#remote.register:%s:%s\n", c->name, buf);
+	mnstr_printf(cntxt->fdout, "#remote.register:%s:%s\n", c->name, buf);
 #endif
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, buf);
 	if (msg == MAL_SUCCEED) {
@@ -912,7 +912,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 
 	qry = function2str(sym->def, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
 #ifdef _DEBUG_REMOTE
-	stream_printf(cntxt->fdout, "#remote.register:%s:%s\n", c->name, qry);
+	mnstr_printf(cntxt->fdout, "#remote.register:%s:%s\n", c->name, qry);
 #endif
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, qry);
 	if (mhdl)
@@ -1006,7 +1006,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* finish end execute the invocation string */
 	len += snprintf(&qbuf[len], BUFSIZ - len, ");");
 #ifdef _DEBUG_REMOTE
-	stream_printf(cntxt->fdout,"#remote.exec:%s:%s\n",c->name,qbuf);
+	mnstr_printf(cntxt->fdout,"#remote.exec:%s:%s\n",c->name,qbuf);
 #endif
 	tmp = RMTquery(&mhdl, "remote.exec", c->mconn, qbuf);
 	if (mhdl)

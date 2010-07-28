@@ -60,7 +60,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int *alias, *index;
 	VarPtr x,y, *cst;
 
-	OPTDEBUGconstants stream_printf(cntxt->fdout,"#OPT_CONSTANTS: MATCHING CONSTANTS ELEMENTS\n");
+	OPTDEBUGconstants mnstr_printf(cntxt->fdout,"#OPT_CONSTANTS: MATCHING CONSTANTS ELEMENTS\n");
 
 	alias= (int*) GDKmalloc(sizeof(int) * mb->vtop);
 	cst= (VarPtr*) GDKmalloc(sizeof(VarPtr) * mb->vtop);
@@ -87,9 +87,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					 x->value.vtype && x->value.vtype == y->value.vtype &&
 					ATOMcmp(x->value.vtype, VALget(&x->value), VALget(&y->value)) == 0){
 					OPTDEBUGconstants {
-						stream_printf(cntxt->fdout,"#opt_constants: matching elements %s %d %d ", getVarName(mb,i), i,k);
+						mnstr_printf(cntxt->fdout,"#opt_constants: matching elements %s %d %d ", getVarName(mb,i), i,k);
 						ATOMprint(x->value.vtype,VALget(&x->value),cntxt->fdout);
-						stream_printf(cntxt->fdout,"\n");
+						mnstr_printf(cntxt->fdout,"\n");
 					}
 					/* re-use a constant */
 					alias[i]= index[k];
@@ -98,7 +98,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				}
 			}
 			if ( fnd == 0){
-				OPTDEBUGconstants stream_printf(cntxt->fdout,"swith elements %d %d\n", i,n);
+				OPTDEBUGconstants mnstr_printf(cntxt->fdout,"swith elements %d %d\n", i,n);
 				cst[n]= x;
 				index[n]= i;
 				alias[i]= index[n];
@@ -113,7 +113,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			getArg(p,k) = alias[getArg(p,k)];
 	}
 	DEBUGoptimizers
-		stream_printf(cntxt->fdout,"#opt_constants: %d constant duplicates removed\n", actions);
+		mnstr_printf(cntxt->fdout,"#opt_constants: %d constant duplicates removed\n", actions);
 	GDKfree(alias);
 	GDKfree(cst);
 	GDKfree(index);

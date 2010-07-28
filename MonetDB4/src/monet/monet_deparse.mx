@@ -138,7 +138,7 @@ yytoProlog(YYSTREE t, int cnt)
 	yydeparse(monet_clients, t, yybuffer, yylim);
 	if (cnt < 4000)
 		yybuffer[cnt] = 0;
-	return (int) stream_write(out, yybuffer, 1, strlen(yybuffer));
+	return (int) mnstr_write(out, yybuffer, 1, strlen(yybuffer));
 }
 
 char *

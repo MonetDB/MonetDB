@@ -40,7 +40,7 @@ This module contains a simple interface for network connections.
 	.COMMAND mil_frontend() : ptr = mil_frontend;
 		"create/return the mil_frontend"
 
-	.COMMAND stream_until(Stream S,str stop) : str = stream_read_until;
+	.COMMAND stream_until(Stream S,str stop) : str = mnstr_read_until;
 		"read a string from <S> until the <stop> word"
 
 	.BUILTIN client(stream in, stream out) : void = client; 
@@ -289,7 +289,7 @@ mil_client_engine(mapi_client *fc )
 {
 	Client c = fc->c;
 	
-	while (c->mode != FINISHING && !stream_errnr(c->fdin) && readClient(c)){
+	while (c->mode != FINISHING && !mnstr_errnr(c->fdin) && readClient(c)){
 		if (parseClient(c, FALSE)) {
 			ValRecord res;
 			int i = interpret(c->stk, c->tree, &res);
@@ -351,13 +351,13 @@ mapi_client_end(mapi_client *fc)
 		VALset(&v->binding, v->binding.vtype, ATOMnilptr(v->binding.vtype)); /* -> typed-nil */
 	}
 	if (fc->c->fdout) {
-		stream_close(fc->c->fdout);
-		stream_destroy(fc->c->fdout);
+		mnstr_close(fc->c->fdout);
+		mnstr_destroy(fc->c->fdout);
 		fc->c->fdout = NULL;
 	}
 	if (fc->c->fdin) {
-		stream_close(fc->c->fdin);
-		stream_destroy(fc->c->fdin);
+		mnstr_close(fc->c->fdin);
+		mnstr_destroy(fc->c->fdin);
 		fc->c->fdin = NULL;
 	}
 }
@@ -400,8 +400,8 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 	mc->lastvar = monet_cntxt[mc->stk].var;
 	if ((err = f->f_alloc(mc)) != NULL){
 		if (s) {
-			stream_printf(s, "!ERROR: %s\n", err);
-			stream_flush(s);
+			mnstr_printf(s, "!ERROR: %s\n", err);
+			mnstr_flush(s);
 		}
 		mapi_client_end(mc); 
 		mapi_client_free(mc);
@@ -426,8 +426,8 @@ mapi_client_alloc(mapi_frontend *f, Client father, Cntxt stk, stream *s)
 	MT_unset_lock(mapi_cache_lock, "mapi_client_alloc");
 	if (c == 0) {
 		if (s) {
-			stream_printf(s, "!ERROR: failed to init client\n");
-			stream_flush(s);
+			mnstr_printf(s, "!ERROR: failed to init client\n");
+			mnstr_flush(s);
 		}
 		return NULL;
 	}
@@ -596,12 +596,12 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 			"LIT"
 #endif
 	;
-	stream_write(fdout, s, strlen(s), 1);
-	stream_flush(fdout);
+	mnstr_write(fdout, s, strlen(s), 1);
+	mnstr_flush(fdout);
 
 	/* get response */
 	s = buf;
-	len = stream_read_block(fdin, buf, 1, BLOCK);
+	len = mnstr_read_block(fdin, buf, 1, BLOCK);
 	assert(len <= BLOCK);
         if (len < 0) len=0;
 	buf[len] = 0;
@@ -613,12 +613,12 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	s = strchr(user, ':');
 	if (s) {
 		*s = 0;
-		stream_set_byteorder(fdin, strcmp(user, "BIG") == 0);
+		mnstr_set_byteorder(fdin, strcmp(user, "BIG") == 0);
 		user = s + 1;
 	} else {
 		/* no inspiration on how to signal this case properly */
-		stream_printf(fdout, "!incomplete challenge '%s'\n", user);
-		stream_flush(fdout);
+		mnstr_printf(fdout, "!incomplete challenge '%s'\n", user);
+		mnstr_flush(fdout);
 		return NULL;
 	}
 
@@ -629,27 +629,27 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 		passwd = s + 1;
 		/* decode algorithm, i.e. {plain}mypasswordchallenge */
 		if (*passwd != '{') {
-			stream_printf(fdout, "!invalid password entry\n");
-			stream_flush(fdout);
+			mnstr_printf(fdout, "!invalid password entry\n");
+			mnstr_flush(fdout);
 			return NULL;
 		}
 		algo = passwd + 1;
 		s = strchr(algo, '}');
 		if (!s) {
-			stream_printf(fdout, "!invalid password entry\n");
-			stream_flush(fdout);
+			mnstr_printf(fdout, "!invalid password entry\n");
+			mnstr_flush(fdout);
 			return NULL;
 		}
 		*s = 0;
 		if (strcmp(algo, "plain") != 0) {
-			stream_printf(fdout, "!algorithm %s not supported (client violated the protocol)\n", algo);
-			stream_flush(fdout);
+			mnstr_printf(fdout, "!algorithm %s not supported (client violated the protocol)\n", algo);
+			mnstr_flush(fdout);
 			return NULL;
 		}
 		passwd = s + 1;
 	} else {
-		stream_printf(fdout, "!incomplete challenge '%s'\n", user);
-		stream_flush(fdout);
+		mnstr_printf(fdout, "!incomplete challenge '%s'\n", user);
+		mnstr_flush(fdout);
 		return NULL;
 	}
 
@@ -659,8 +659,8 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 		*s = 0;
 		lang = s + 1;
 	} else {
-		stream_printf(fdout, "!incomplete challenge, missing language\n");
-		stream_flush(fdout);
+		mnstr_printf(fdout, "!incomplete challenge, missing language\n");
+		mnstr_flush(fdout);
 		return NULL;
 	}
 
@@ -675,7 +675,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 			*s = 0;
 		if (strlen(database) > 0 &&
 			strcmp(database, GDKgetenv("gdk_dbname")) != 0) {
-			stream_printf(fdout, "#MonetDB v4 doesn't have multiple database support, argument ignored\n");
+			mnstr_printf(fdout, "#MonetDB v4 doesn't have multiple database support, argument ignored\n");
 		}
 	}
 
@@ -683,9 +683,9 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	f = find_frontend(lang);
 
 	if (!f) {
-		stream_printf(fdout,
+		mnstr_printf(fdout,
 		 "!xchange_challenge: frontend %s not found\n", lang);
-		stream_flush(fdout);
+		mnstr_flush(fdout);
 		return NULL;
 	}
 
@@ -710,8 +710,8 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 
 	if ((err = f->f_init(fc)) != NULL) {
 		fc->inuse = 0; 
-		stream_printf(fdout, "!%s\n", err);
-		stream_flush(fdout);
+		mnstr_printf(fdout, "!%s\n", err);
+		mnstr_flush(fdout);
 		return NULL;
 	}
 	return fc;
@@ -910,22 +910,22 @@ Get the new information for the server socket and start listening.
 			mapi_client *fc = NULL;
 			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
 			stream *fdout = socket_wastream(msgsock, "Mserver mapi write");
-			if (fdin == 0 || stream_errnr(fdin)) {
+			if (fdin == 0 || mnstr_errnr(fdin)) {
 				GDKsyserror("MAPIlisten:fdin problems\n");
 				if (fdin) {
-					stream_close(fdin);
-					stream_destroy(fdin);
+					mnstr_close(fdin);
+					mnstr_destroy(fdin);
 				}
 				continue;
 			}
-			if (fdout == 0 || stream_errnr(fdout)) {
+			if (fdout == 0 || mnstr_errnr(fdout)) {
 				GDKsyserror("MAPIlisten:fdout problems\n");
 				if (fdout) {
-					stream_close(fdout);
-					stream_destroy(fdout);
+					mnstr_close(fdout);
+					mnstr_destroy(fdout);
 				}
-				stream_close(fdin);
-				stream_destroy(fdin);
+				mnstr_close(fdin);
+				mnstr_destroy(fdin);
 				continue;
 			}
 
@@ -935,10 +935,10 @@ Get the new information for the server socket and start listening.
 		 		 * as the related read- (in-) stream closes the shared
 		 	 	 * socket; see also src/common/stream.mx:socket_close .
 		 		 */
-				stream_close(fdout);
-				stream_destroy(fdout);
-				stream_close(fdin);
-				stream_destroy(fdin);
+				mnstr_close(fdout);
+				mnstr_destroy(fdout);
+				mnstr_close(fdin);
+				mnstr_destroy(fdin);
 				continue;
 			}
 
@@ -980,14 +980,14 @@ mapi_epilogue(void)
 }
 
 int
-stream_read_until(str *res, Stream *S, str stop)
+mnstr_read_until(str *res, Stream *S, str stop)
 {
 	stream *s = *(stream **) S;
 	ssize_t slen = strlen(stop);
 	ptrdiff_t len = 0;
 	char buf[BUFSIZ + 1], *start = buf;
 
-	while (stream_read(s, start, 1, 1) > 0) {
+	while (mnstr_read(s, start, 1, 1) > 0) {
 		if (start - buf >= slen - 1 && strncmp(start - slen + 1, stop, slen) == 0) {
 /*
 				start = start-slen+1;
@@ -998,7 +998,7 @@ stream_read_until(str *res, Stream *S, str stop)
 		start++;
 	}
 
-	if (stream_errnr(s))
+	if (mnstr_errnr(s))
 		return GDK_FAIL;
 
 	len = start - buf;

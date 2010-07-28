@@ -177,20 +177,20 @@ emit_escaped@1 (XqueryCtx* ctx, char* src) {
         if (isspecial_ch @2) {
             /* print all characters that were collected 
                since the last special character. */
-            stream_write (ctx->out, &src[start], end - start, 1);
+            mnstr_write (ctx->out, &src[start], end - start, 1);
             start = end + 1;
 
             if ( isspecial_ch == 1 ) { /* print character entity */
-                stream_printf(ctx->out,"&#%d;",(unsigned char)src[end]);
+                mnstr_printf(ctx->out,"&#%d;",(unsigned char)src[end]);
             } else {
                 char *emit_val = dflt_ws->special_val[(int)isspecial_ch];
                 int   emit_len = dflt_ws->special_len[(int)isspecial_ch];
-                stream_write (ctx->out, emit_val, emit_len, 1);
+                mnstr_write (ctx->out, emit_val, emit_len, 1);
             }
         }
     }
     if ( start < end )
-        stream_write (ctx->out, &src[start], end - start, 1);
+        mnstr_write (ctx->out, &src[start], end - start, 1);
 }
 
 @c
@@ -232,13 +232,13 @@ emit_escaped_comment (XqueryCtx* ctx, char* src) {
             /* print all characters that were collected 
                since the last special character. */
             if (start < end)
-                stream_write (ctx->out, &src[start], end - start, 1);
-            stream_printf(ctx->out,dflt_ws->newline);
+                mnstr_write (ctx->out, &src[start], end - start, 1);
+            mnstr_printf(ctx->out,dflt_ws->newline);
             start = end + 1;
         }
     }
     if ( start < end )
-        stream_write (ctx->out, &src[start], end - start, 1);
+        mnstr_write (ctx->out, &src[start], end - start, 1);
 }
 
 /**
@@ -341,16 +341,16 @@ dflt_handle_startDocument (XqueryCtx* ctx, oid pre)
     (void) pre;
     char *tmp;
     /* print string: <?xml version="1.0" encoding="utf-8"?> */ 
-    tmp = "<?xml version="; stream_write (ctx->out, tmp, strlen (tmp), 1);
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    tmp = "1.0";            stream_write (ctx->out, tmp, strlen (tmp), 1);
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    tmp = " encoding=";     stream_write (ctx->out, tmp, strlen (tmp), 1);
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    tmp = "utf-8";          stream_write (ctx->out, tmp, strlen (tmp), 1);
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    tmp = "?>";             stream_write (ctx->out, tmp, strlen (tmp), 1);
-    stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
+    tmp = "<?xml version="; mnstr_write (ctx->out, tmp, strlen (tmp), 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = "1.0";            mnstr_write (ctx->out, tmp, strlen (tmp), 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = " encoding=";     mnstr_write (ctx->out, tmp, strlen (tmp), 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = "utf-8";          mnstr_write (ctx->out, tmp, strlen (tmp), 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = "?>";             mnstr_write (ctx->out, tmp, strlen (tmp), 1);
+    mnstr_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
 
     return SUCCESS;
 }
@@ -361,7 +361,7 @@ dflt_handle_startDocument (XqueryCtx* ctx, oid pre)
 static bool
 dflt_handle_endDocument (XqueryCtx* ctx)
 {
-    stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
+    mnstr_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
 
     return SUCCESS;
 }
@@ -374,12 +374,12 @@ dflt_handle_startElement (XqueryCtx* ctx, str prefix, str name, oid pre)
 {
     (void)pre; /* the Pathfinder PRE number is not used by this fun */
 
-    stream_write (ctx->out, &le_, 1, 1); /* < */
+    mnstr_write (ctx->out, &le_, 1, 1); /* < */
     if ( prefix && *prefix ) {
-        stream_write (ctx->out, prefix, strlen(prefix), 1);
-        stream_write (ctx->out, &c_, 1, 1); /* : */
+        mnstr_write (ctx->out, prefix, strlen(prefix), 1);
+        mnstr_write (ctx->out, &c_, 1, 1); /* : */
     }
-    stream_write (ctx->out, name, strlen(name), 1);
+    mnstr_write (ctx->out, name, strlen(name), 1);
 
     return SUCCESS;
 }
@@ -390,14 +390,14 @@ dflt_handle_startElement (XqueryCtx* ctx, str prefix, str name, oid pre)
 static bool
 dflt_handle_endElement (XqueryCtx* ctx, str prefix, str name)
 {
-    stream_write (ctx->out, &le_, 1, 1); /* < */
-    stream_write (ctx->out, &sl_, 1, 1); /* / */
+    mnstr_write (ctx->out, &le_, 1, 1); /* < */
+    mnstr_write (ctx->out, &sl_, 1, 1); /* / */
     if ( prefix && *prefix ) {
-        stream_write (ctx->out, prefix, strlen(prefix), 1);
-        stream_write (ctx->out, &c_, 1, 1); /* : */
+        mnstr_write (ctx->out, prefix, strlen(prefix), 1);
+        mnstr_write (ctx->out, &c_, 1, 1); /* : */
     }
-    stream_write (ctx->out, name, strlen(name), 1);
-    stream_write (ctx->out, &ge_, 1, 1); /* > */
+    mnstr_write (ctx->out, name, strlen(name), 1);
+    mnstr_write (ctx->out, &ge_, 1, 1); /* > */
 
     return SUCCESS;
 }
@@ -442,9 +442,9 @@ dflt_handle_ignorableWhitespace (XqueryCtx* ctx, str chars)
 static bool
 dflt_handle_comment (XqueryCtx* ctx, str comm)
 {
-    stream_write (ctx->out, commentStart, cS_sz, 1);
+    mnstr_write (ctx->out, commentStart, cS_sz, 1);
     emit_escaped_comment (ctx, comm);
-    stream_write (ctx->out, commentEnd, cE_sz, 1);
+    mnstr_write (ctx->out, commentEnd, cE_sz, 1);
 
     return SUCCESS;
 }
@@ -456,18 +456,18 @@ dflt_handle_comment (XqueryCtx* ctx, str comm)
 static bool
 dflt_handle_processingInstruction (XqueryCtx* ctx, str target, str data)
 {
-    /* stream_printf(ctx->out,"<?%s %s?>",target,data); */
-    stream_write (ctx->out, &le_, 1, 1); /* < */
-    stream_write (ctx->out, &q_, 1, 1); /* ? */
+    /* mnstr_printf(ctx->out,"<?%s %s?>",target,data); */
+    mnstr_write (ctx->out, &le_, 1, 1); /* < */
+    mnstr_write (ctx->out, &q_, 1, 1); /* ? */
 
-    stream_write (ctx->out, target, strlen (target), 1);
+    mnstr_write (ctx->out, target, strlen (target), 1);
 
-    stream_write (ctx->out, &s_, 1, 1); /* ' ' */
+    mnstr_write (ctx->out, &s_, 1, 1); /* ' ' */
 
-    stream_write (ctx->out, data, strlen (data), 1);
+    mnstr_write (ctx->out, data, strlen (data), 1);
 
-    stream_write (ctx->out, &q_, 1, 1); /* ? */
-    stream_write (ctx->out, &ge_, 1, 1); /* > */
+    mnstr_write (ctx->out, &q_, 1, 1); /* ? */
+    mnstr_write (ctx->out, &ge_, 1, 1); /* > */
 
     return SUCCESS;
 }
@@ -478,7 +478,7 @@ dflt_handle_processingInstruction (XqueryCtx* ctx, str target, str data)
 static bool
 dflt_complete_startElement (XqueryCtx* ctx)
 {
-    stream_write (ctx->out, &ge_, 1, 1); /* > */
+    mnstr_write (ctx->out, &ge_, 1, 1); /* > */
 
     return SUCCESS;
 }
@@ -489,8 +489,8 @@ dflt_complete_startElement (XqueryCtx* ctx)
 static bool
 dflt_complete_startElementEmpty (XqueryCtx* ctx)
 {
-    stream_write (ctx->out, &sl_, 1, 1); /* / */
-    stream_write (ctx->out, &ge_, 1, 1); /* > */
+    mnstr_write (ctx->out, &sl_, 1, 1); /* / */
+    mnstr_write (ctx->out, &ge_, 1, 1); /* > */
 
     return SUCCESS;
 }
@@ -503,21 +503,21 @@ dflt_complete_startElementEmpty (XqueryCtx* ctx)
 static bool
 dflt_handle_attribute (XqueryCtx* ctx, str prefix, str loc, str value)
 {
-    stream_write (ctx->out, &s_, 1, 1); /* ' ' */
+    mnstr_write (ctx->out, &s_, 1, 1); /* ' ' */
 
     if ( prefix && *prefix && loc && *loc ) {
-        stream_write (ctx->out, prefix, strlen(prefix), 1);
-        stream_write (ctx->out, &c_, 1, 1); /* : */
-        stream_write (ctx->out, loc, strlen(loc), 1);
+        mnstr_write (ctx->out, prefix, strlen(prefix), 1);
+        mnstr_write (ctx->out, &c_, 1, 1); /* : */
+        mnstr_write (ctx->out, loc, strlen(loc), 1);
     } else if ( prefix && *prefix ) { /* default namespace */
-        stream_write (ctx->out, prefix, strlen(prefix), 1);
+        mnstr_write (ctx->out, prefix, strlen(prefix), 1);
     } else {
-        stream_write (ctx->out, loc, strlen(loc), 1);
+        mnstr_write (ctx->out, loc, strlen(loc), 1);
     }
-    stream_write (ctx->out, &e_, 1, 1); /* = */
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    mnstr_write (ctx->out, &e_, 1, 1); /* = */
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
     emit_escaped_all (ctx, value);
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
 
     return SUCCESS;
 }
@@ -531,7 +531,7 @@ dflt_seqEmitBool (XqueryCtx* ctx, int bv)
 {
     char *bool_str = (char*)(bv ? "true" : "false");
 
-    stream_write (ctx->out, bool_str, strlen (bool_str), 1);
+    mnstr_write (ctx->out, bool_str, strlen (bool_str), 1);
 
     return SUCCESS;
 }
@@ -542,7 +542,7 @@ dflt_seqEmitBool (XqueryCtx* ctx, int bv)
 static bool
 dflt_seqEmitInt (XqueryCtx* ctx, lng iv)
 {
-    stream_printf(ctx->out,LLFMT,iv);
+    mnstr_printf(ctx->out,LLFMT,iv);
 
     return SUCCESS;
 }
@@ -553,7 +553,7 @@ dflt_seqEmitInt (XqueryCtx* ctx, lng iv)
 static bool
 dflt_seqEmitDbl (XqueryCtx* ctx, dbl dv)
 {
-    stream_printf (ctx->out, "%f", dv);
+    mnstr_printf (ctx->out, "%f", dv);
 
     return SUCCESS;
 }
@@ -575,9 +575,9 @@ dflt_seqEmitStr (XqueryCtx* ctx, str sv)
 static bool
 esc_seqEmitStr (XqueryCtx* ctx, str sv)
 {
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
     emit_escaped_all (ctx, sv);
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
 
     return SUCCESS;
 }
@@ -599,21 +599,21 @@ text_seqEmitStr (XqueryCtx* ctx, str sv)
 static bool
 dflt_seqEmitAttribute (XqueryCtx* ctx, str prefix, str loc, str value)
 {
-    stream_write (ctx->out, attributeStart, aS_sz, 1);
+    mnstr_write (ctx->out, attributeStart, aS_sz, 1);
 
     if ( prefix && *prefix && loc && *loc ) {
-        stream_write (ctx->out, prefix, strlen(prefix), 1);
-        stream_write (ctx->out, &c_, 1, 1); /* : */
-        stream_write (ctx->out, loc, strlen(loc), 1);
+        mnstr_write (ctx->out, prefix, strlen(prefix), 1);
+        mnstr_write (ctx->out, &c_, 1, 1); /* : */
+        mnstr_write (ctx->out, loc, strlen(loc), 1);
     } else if ( prefix && *prefix ) { /* default namespace */
-        stream_write (ctx->out, prefix, strlen(prefix), 1);
+        mnstr_write (ctx->out, prefix, strlen(prefix), 1);
     } else {
-        stream_write (ctx->out, loc, strlen(loc), 1);
+        mnstr_write (ctx->out, loc, strlen(loc), 1);
     }
 
-    stream_write (ctx->out, attributeMid, aM_sz, 1);
+    mnstr_write (ctx->out, attributeMid, aM_sz, 1);
     emit_escaped_all (ctx, value);
-    stream_write (ctx->out, attributeEnd, aE_sz, 1);
+    mnstr_write (ctx->out, attributeEnd, aE_sz, 1);
 
     return SUCCESS;
 }
@@ -641,13 +641,13 @@ text_seqEmitAttribute (XqueryCtx* ctx, str prefix, str loc, str value)
 static bool
 dflt_seqEmitTextnode (XqueryCtx* ctx, str chars)
 {
-    stream_write (ctx->out, textnodeStart, tnS_sz, 1);
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    mnstr_write (ctx->out, textnodeStart, tnS_sz, 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
     
     emit_escaped_entities (ctx, chars);
 
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    stream_write (ctx->out, textnodeEnd, tnE_sz, 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    mnstr_write (ctx->out, textnodeEnd, tnE_sz, 1);
     
     return SUCCESS;
 }
@@ -658,13 +658,13 @@ dflt_seqEmitTextnode (XqueryCtx* ctx, str chars)
 static bool
 seq_seqEmitTextnode (XqueryCtx* ctx, str chars)
 {
-    stream_write (ctx->out, textnodeStart, tnS_sz, 1);
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    mnstr_write (ctx->out, textnodeStart, tnS_sz, 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
     
     emit_escaped_all (ctx, chars);
 
-    stream_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
-    stream_write (ctx->out, textnodeEnd, tnE_sz, 1);
+    mnstr_write (ctx->out, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    mnstr_write (ctx->out, textnodeEnd, tnE_sz, 1);
     
     return SUCCESS;
 }
@@ -690,7 +690,7 @@ dm_seqStart (XqueryCtx* ctx, int count)
        that we print one after each newline (encoded in
        newline string 'newline')->
        In addition we print one '=' at the beginning-> */
-        stream_write (ctx->out, &e_, 1, 1);
+        mnstr_write (ctx->out, &e_, 1, 1);
 
     return SUCCESS;
 }
@@ -701,7 +701,7 @@ dm_seqStart (XqueryCtx* ctx, int count)
 static bool
 dm_seqEnd (XqueryCtx* ctx)
 {
-    stream_write (ctx->out, "\n", 1, 1);
+    mnstr_write (ctx->out, "\n", 1, 1);
 
     return SUCCESS;
 }
@@ -712,8 +712,8 @@ dm_seqItemSeparator (XqueryCtx* ctx, int kind_before, int kind_after)
     (void)kind_before;
     (void)kind_after;
     
-    stream_write (ctx->out, &sep_, 1, 1); /* , */
-    stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
+    mnstr_write (ctx->out, &sep_, 1, 1); /* , */
+    mnstr_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
 
     return SUCCESS;
 }
@@ -737,12 +737,12 @@ xml_seqStart (XqueryCtx* ctx, int count)
        that we print one after each newline (encoded in
        newline string 'newline')->
        In addition we print one '=' at the beginning-> */
-        stream_write (ctx->out, &e_, 1, 1);
+        mnstr_write (ctx->out, &e_, 1, 1);
 
     if ( !(ctx->modes & MODE_NO_HEADER) ) {
         char *init = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
-        stream_write (ctx->out, init, strlen (init), 1);
-        stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
+        mnstr_write (ctx->out, init, strlen (init), 1);
+        mnstr_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
     }
     if ( !(ctx->modes & MODE_NO_ROOT) ) {
         dflt_handle_startElement (ctx, NULL, dflt_ws->restag, oid_nil);
@@ -757,7 +757,7 @@ static bool
 xml_complete_seqStart (XqueryCtx* ctx)
 {
     if ( !(ctx->modes & MODE_NO_ROOT) ) {
-        stream_write (ctx->out, &ge_, 1, 1); /* > */
+        mnstr_write (ctx->out, &ge_, 1, 1); /* > */
     }
 
     return SUCCESS;
@@ -771,7 +771,7 @@ xml_seqEnd (XqueryCtx* ctx)
 {
     if ( !(ctx->modes & MODE_NO_ROOT) ) {
         dflt_handle_endElement (ctx, NULL, dflt_ws->restag);
-        stream_write (ctx->out, "\n", 1, 1);
+        mnstr_write (ctx->out, "\n", 1, 1);
     }
 
     return SUCCESS;
@@ -787,7 +787,7 @@ xml_mapi_seqEnd (XqueryCtx* ctx)
         dflt_handle_endElement (ctx, NULL, dflt_ws->restag);
     }
     /* a result sequence in mclient always has to end with '\n' */
-    stream_write (ctx->out, "\n", 1, 1);
+    mnstr_write (ctx->out, "\n", 1, 1);
 
     return SUCCESS;
 }
@@ -797,7 +797,7 @@ xml_seqItemSeparator (XqueryCtx* ctx, int kind_before, int kind_after)
 {
     if ((XTRACT_KIND(kind_before) < ATOMIC) &&
         (XTRACT_KIND(kind_after) < ATOMIC))
-        stream_write (ctx->out, &s_, 1, 1); /* ' ' */
+        mnstr_write (ctx->out, &s_, 1, 1); /* ' ' */
 
     return SUCCESS;
 }
@@ -821,17 +821,17 @@ typed_xml_seqStart (XqueryCtx* ctx, int count)
        that we print one after each newline (encoded in
        newline string 'newline')->
        In addition we print one '=' at the beginning-> */
-       stream_write (ctx->out, &e_, 1, 1);
+       mnstr_write (ctx->out, &e_, 1, 1);
 
     if ( !(ctx->modes & MODE_NO_HEADER) ) {
-        stream_printf(ctx->out, "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        stream_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
+        mnstr_printf(ctx->out, "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        mnstr_write (ctx->out, dflt_ws->newline, dflt_ws->nl_sz, 1);
     }
 
     if (ctx->modes & MODE_XRPC) {
-        stream_printf(ctx->out, "<xrpc:sequence>");
+        mnstr_printf(ctx->out, "<xrpc:sequence>");
     } else {
-        stream_printf(ctx->out, "<%s:sequence "
+        mnstr_printf(ctx->out, "<%s:sequence "
                 "xmlns:%s=\"http://monetdb.cwi.nl/XQuery/results\" "
                 "xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" "
                 "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">",
@@ -847,9 +847,9 @@ typed_xml_seqStart (XqueryCtx* ctx, int count)
 static bool
 typed_xml_seqEnd (XqueryCtx* ctx)
 {
-    stream_printf (ctx->out, "</%s:sequence>", dflt_ws->resprefix);
+    mnstr_printf (ctx->out, "</%s:sequence>", dflt_ws->resprefix);
     if (!(ctx->modes & MODE_XRPC))
-        stream_write (ctx->out, "\n", 1, 1);
+        mnstr_write (ctx->out, "\n", 1, 1);
 
     return SUCCESS;
 }
@@ -859,32 +859,32 @@ typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
 {
     switch (XTRACT_KIND(kind)) {
         case BOOL:
-            stream_printf(ctx->out,
+            mnstr_printf(ctx->out,
                     "<%s:atomic-value xsi:type=\"xs:boolean\">",
                     dflt_ws->resprefix);
             break;
         case INT:
-            stream_printf(ctx->out,
+            mnstr_printf(ctx->out,
                     "<%s:atomic-value xsi:type=\"xs:integer\">",
                     dflt_ws->resprefix);
             break;
         case DEC:
-            stream_printf(ctx->out,
+            mnstr_printf(ctx->out,
                     "<%s:atomic-value xsi:type=\"xs:decimal\">",
                     dflt_ws->resprefix);
             break;
         case DBL:
-            stream_printf(ctx->out,
+            mnstr_printf(ctx->out,
                     "<%s:atomic-value xsi:type=\"xs:double\">",
                     dflt_ws->resprefix);
             break;
         case STR:
-            stream_printf(ctx->out,
+            mnstr_printf(ctx->out,
                     "<%s:atomic-value xsi:type=\"xs:string\">",
                     dflt_ws->resprefix);
             break;
         case U_A:
-            stream_printf(ctx->out,
+            mnstr_printf(ctx->out,
                     "<%s:atomic-value xmlns:xdt="
                     "\"http://www.w3.org/2005/xpath-datatypes\" "
                     "xsi:type=\"xdt:untypedAtomic\">",
@@ -895,23 +895,23 @@ typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
             /* extract node kind from overloaded kind */
             switch ((char) XTRACT_CONT(kind)) {
                 case 0 /* ELEMENT */:
-                    stream_printf(ctx->out, "<%s:element>",
+                    mnstr_printf(ctx->out, "<%s:element>",
                             dflt_ws->resprefix);
                     break;
                 case 1 /* TEXT */:
-                    stream_printf(ctx->out, "<%s:text>",
+                    mnstr_printf(ctx->out, "<%s:text>",
                             dflt_ws->resprefix);
                     break;
                 case 2 /* COMMENT */:
-                    stream_printf(ctx->out, "<%s:comment>",
+                    mnstr_printf(ctx->out, "<%s:comment>",
                             dflt_ws->resprefix);
                     break;
                 case 3 /* PI */:
-                    stream_printf(ctx->out, "<%s:processing-instruction>",
+                    mnstr_printf(ctx->out, "<%s:processing-instruction>",
                             dflt_ws->resprefix);
                     break;
                 case 4 /* DOCUMENT */:
-                    stream_printf(ctx->out, "<%s:document>",
+                    mnstr_printf(ctx->out, "<%s:document>",
                             dflt_ws->resprefix);
                     break;
                 case 5 /* COLLECTION */:
@@ -923,7 +923,7 @@ typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
             }
         }   break;
         case ATTR:
-            stream_printf(ctx->out, "<%s:attribute", dflt_ws->resprefix);
+            mnstr_printf(ctx->out, "<%s:attribute", dflt_ws->resprefix);
             break;
         default:
             return PROBLEM;
@@ -942,7 +942,7 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
         case DBL:
         case STR:
         case U_A:
-            stream_printf(ctx->out, "</%s:atomic-value>",
+            mnstr_printf(ctx->out, "</%s:atomic-value>",
                     dflt_ws->resprefix);
             break;
         case ELEM:
@@ -950,23 +950,23 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
             /* extract node kind from overloaded kind */
             switch (XTRACT_CONT(kind)) {
                 case 0 /* ELEMENT */:
-                    stream_printf(ctx->out, "</%s:element>",
+                    mnstr_printf(ctx->out, "</%s:element>",
                         dflt_ws->resprefix);
                     break;
                 case 1 /* TEXT */:
-                    stream_printf(ctx->out, "</%s:text>",
+                    mnstr_printf(ctx->out, "</%s:text>",
                         dflt_ws->resprefix);
                     break;
                 case 2 /* COMMENT */:
-                    stream_printf(ctx->out, "</%s:comment>",
+                    mnstr_printf(ctx->out, "</%s:comment>",
                         dflt_ws->resprefix);
                     break;
                 case 3 /* PI */:
-                    stream_printf(ctx->out, "</%s:processing-instruction>",
+                    mnstr_printf(ctx->out, "</%s:processing-instruction>",
                         dflt_ws->resprefix);
                     break;
                 case 4 /* DOCUMENT */:
-                    stream_printf(ctx->out, "</%s:document>",
+                    mnstr_printf(ctx->out, "</%s:document>",
                         dflt_ws->resprefix);
                     break;
                 case 5 /* COLLECTION */:
@@ -978,7 +978,7 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
             }
         }   break;
         case ATTR:
-            stream_write(ctx->out, "/>", 2, 1);
+            mnstr_write(ctx->out, "/>", 2, 1);
             break;
         default:
             return PROBLEM;
@@ -1003,11 +1003,11 @@ xrpc_startSerialize(XqueryCtx *ctx)
 
     /* HACK: we use GDKout and not ctx->stdout because the logger stream should see only the XML content */
     len = strlen(HTTP_200_OK);
-    ret = stream_write(GDKout, HTTP_200_OK, 1, len);
+    ret = mnstr_write(GDKout, HTTP_200_OK, 1, len);
     if(ret != len) return PROBLEM;
 
     len = strlen(SOAP_ENVELOPE);
-    ret = stream_write(ctx->out, SOAP_ENVELOPE, 1, len);
+    ret = mnstr_write(ctx->out, SOAP_ENVELOPE, 1, len);
     if(ret != len) return PROBLEM;
 
     if (ctx->xrpc_qid[0] || strstr(ctx->xrpc_mode,"trace")) {
@@ -1018,13 +1018,13 @@ xrpc_startSerialize(XqueryCtx *ctx)
 
         if (b == NULL) return PROBLEM;
 
-        ret = stream_printf(ctx->out, "<env:Header>\n");
+        ret = mnstr_printf(ctx->out, "<env:Header>\n");
         if (ret >= 0 && ctx->xrpc_qid[0])
-            ret = stream_printf(ctx->out, XRPC_WS_QID, ctx->xrpc_qid, ctx->xrpc_timeout);
+            ret = mnstr_printf(ctx->out, XRPC_WS_QID, ctx->xrpc_qid, ctx->xrpc_timeout);
 
         /* XRPC participants lists for nested transactions - append an extra item for this call */
         if(ret >= 0)
-            ret = stream_printf(ctx->out, 
+            ret = mnstr_printf(ctx->out, 
                 " <xrpc:participants>\n  <xrpc:participant>%s,%s:"LLFMT",%s,"LLFMT",%d</xrpc:participant>\n",
                 ctx->xrpc_caller, ctx->xrpc_hostport, ctx->xrpc_seqnr, ctx->xrpc_method, ctx->time_exec,
                 (int) ctx->xrpc_updating);
@@ -1033,15 +1033,15 @@ xrpc_startSerialize(XqueryCtx *ctx)
         bi = bat_iterator(b);
         BATloop(b,p,q) {
             if (ret < 0) break;
-            ret = stream_printf(ctx->out, "  <xrpc:participant>%s</xrpc:participant>\n", BUNtail(bi,p));
+            ret = mnstr_printf(ctx->out, "  <xrpc:participant>%s</xrpc:participant>\n", BUNtail(bi,p));
         }
         if (ret >= 0) 
-            ret = stream_printf(ctx->out, " </xrpc:participants>\n</env:Header>\n");
+            ret = mnstr_printf(ctx->out, " </xrpc:participants>\n</env:Header>\n");
 
         BBPunfix(bid);
         if (ret < 0) return PROBLEM;
     }
-    ret = stream_printf(ctx->out, XRPC_RES_BODY, ctx->xrpc_module, ctx->xrpc_method);
+    ret = mnstr_printf(ctx->out, XRPC_RES_BODY, ctx->xrpc_module, ctx->xrpc_method);
     return (ret < 0)?PROBLEM:SUCCESS;
 }
 
@@ -1051,7 +1051,7 @@ xrpc_startSerialize(XqueryCtx *ctx)
 static bool
 xrpc_endSerialize(XqueryCtx *ctx)
 {
-    stream_printf(ctx->out,
+    mnstr_printf(ctx->out,
             "</xrpc:response></env:Body></env:Envelope>\n");
     return SUCCESS;
 }
@@ -1069,12 +1069,12 @@ static bool
 seq_seqStart (XqueryCtx* ctx, int count)
 {
     /* write SQL-ish header */
-    stream_printf(ctx->out,"&1 %d %d 1 %d\n", 
+    mnstr_printf(ctx->out,"&1 %d %d 1 %d\n", 
                   dflt_ws->id_sequence_counter++, count, count);
-    stream_printf(ctx->out,"%% xquery.result\t# table_name\n");
-    stream_printf(ctx->out,"%% xml\t# name\n");
-    stream_printf(ctx->out,"%% varchar\t# type\n");
-    stream_printf(ctx->out,"%% %d\t# length\n", 60);
+    mnstr_printf(ctx->out,"%% xquery.result\t# table_name\n");
+    mnstr_printf(ctx->out,"%% xml\t# name\n");
+    mnstr_printf(ctx->out,"%% varchar\t# type\n");
+    mnstr_printf(ctx->out,"%% %d\t# length\n", 60);
 
     return SUCCESS;
 }
@@ -1085,7 +1085,7 @@ seq_seqItemStart (XqueryCtx* ctx, int kind)
     (void)kind;
     
     /* SQL-ish mode: write start of tuple and open string */
-    stream_write (ctx->out, "[ \"", 3, 1);
+    mnstr_write (ctx->out, "[ \"", 3, 1);
 
     return SUCCESS;
 }
@@ -1096,7 +1096,7 @@ seq_seqItemEnd (XqueryCtx* ctx, int kind)
     (void)kind;
     
     /* SQL-ish mode: write end of string and end of tuple */
-    stream_printf(ctx->out,"\"\t]\n");
+    mnstr_printf(ctx->out,"\"\t]\n");
 
     return SUCCESS;
 }

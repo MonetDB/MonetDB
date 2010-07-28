@@ -146,7 +146,7 @@ static void
 attrDB_init(idrefAttrDBStr* adb)
 {
 #ifdef ADB_DEBUG
-    stream_printf(GDKout, "[ADB] initialize database\n");
+    mnstr_printf(GDKout, "[ADB] initialize database\n");
 #endif
     adb->n_specAttr = adb->max_specAttr = 0;
     adb->specAttr   = 0;
@@ -169,7 +169,7 @@ attrDB_find(idrefAttrDBStr *adb,
         if ((strcmp(oTag, sas->ownerTag) == 0) &&
                (strcmp(aTag, sas->attrTag) == 0)) {
 #ifdef ADB_DEBUG
-            /* stream_printf(GDKout, "[ADB] found(%s, %s, %d)\n", sas->ownerTag, sas->attrTag, sas->type); */
+            /* mnstr_printf(GDKout, "[ADB] found(%s, %s, %d)\n", sas->ownerTag, sas->attrTag, sas->type); */
 #endif
             return sas;
         };
@@ -234,7 +234,7 @@ attrDB_insert(idrefAttrDBStr *adb,
     sas->ownerTag = GDKstrdup(oTag);
     sas->attrTag  = GDKstrdup(aTag);
 #ifdef ADB_DEBUG
-    stream_printf(GDKout, "[ADB] inserted(%s, %s, %d)\n", oTag, aTag, type);
+    mnstr_printf(GDKout, "[ADB] inserted(%s, %s, %d)\n", oTag, aTag, type);
 #endif
     return GDK_SUCCEED;
 error:
@@ -260,7 +260,7 @@ attrDB_free(idrefAttrDBStr *adb)
     adb->specAttr   = 0;
     adb->doCheck    = 0;
 #ifdef ADB_DEBUG
-    stream_printf(GDKout, "[ADB] disposed database\n");
+    mnstr_printf(GDKout, "[ADB] disposed database\n");
 #endif
 }
 
@@ -490,7 +490,7 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
         }
     }
 #ifdef DEBUG
-    stream_printf(GDKout, "APPEND-STR[%s](%s)\n", sb->def->name, v);
+    mnstr_printf(GDKout, "APPEND-STR[%s](%s)\n", sb->def->name, v);
 #endif
     if (sb->def->compress && BATcount(sb->bat) > 4 * sb->bat->T->hash->mask) {
         HASHdestroy(sb->bat); /* keeps hash performance in check */
@@ -592,12 +592,12 @@ createHole(shredCtxStruct *shredCtx)
     int cnt = REMAP_PAGE_SIZE -(shredCtx->nnode_pre & REMAP_PAGE_MASK) ;
 
 #ifdef DEBUG
-    stream_printf(GDKout, "CREATEHOLE: pre=%d\n", shredCtx->nnode_pre);
+    mnstr_printf(GDKout, "CREATEHOLE: pre=%d\n", shredCtx->nnode_pre);
 #endif
     while(cnt--) { 
        int sizefill = cnt |(1U<<31);
 #ifdef DEBUG
-       stream_printf(GDKout, "SHRHOLE: FILL HOLE[%d, rest=%d]\n", shredCtx->nnode_pre, cnt);
+       mnstr_printf(GDKout, "SHRHOLE: FILL HOLE[%d, rest=%d]\n", shredCtx->nnode_pre, cnt);
 #endif
        if (!emit_tuple(shredCtx, shredCtx->nnode_pre, sizefill, chr_nil, oid_nil, chr_nil, oid_nil))
            return GDK_FAIL;
@@ -610,7 +610,7 @@ createHole(shredCtxStruct *shredCtx)
                              (P->pageFree && (P->nnode_pre&REMAP_PAGE_MASK) == ((oid)P->pageFree) && !createHole(P)))\
                         {   GDKerror("shredder: failed inserting RID tuple " OIDFMT " \n", (P->nnode_pre-1)); 
 #ifdef DEBUG
-#define _NEXT_PRE_IF(P) { stream_printf(GDKout, "NEXT_PRE=" OIDFMT "\n", P->nnode_pre); _NEXT_PRE_IMP(P)
+#define _NEXT_PRE_IF(P) { mnstr_printf(GDKout, "NEXT_PRE=" OIDFMT "\n", P->nnode_pre); _NEXT_PRE_IMP(P)
 #else 
 #define _NEXT_PRE_IF(P) { _NEXT_PRE_IMP(P) 
 #endif
@@ -792,7 +792,7 @@ shred_start_document(void *xmlCtx)
 {
     shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
 #ifdef DEBUG
-    stream_printf(GDKout, "start_document()\n");
+    mnstr_printf(GDKout, "start_document()\n");
 #endif
     /* initialize some pre-post plane parameters. The nnode_pre and nnode_attr
      * parameters are initizalized in the shredder_create() initialization 
@@ -815,7 +815,7 @@ shred_start_document(void *xmlCtx)
 
     if (shredCtx->serFun) {
 #ifdef DEBUG
-        stream_printf(GDKout, "CALL %s:start_document()\n", shredCtx->serFun->name);
+        mnstr_printf(GDKout, "CALL %s:start_document()\n", shredCtx->serFun->name);
 #endif
             shredCtx->serFun->init(shredCtx->serCtx, "", NULL, NULL);
             shredCtx->serFun->handle_startDocument(shredCtx->serCtx,shredCtx->nnode_pre);
@@ -841,7 +841,7 @@ shred_end_document(void *xmlCtx)
     if (shredCtx->serFun)
             shredCtx->serFun->handle_endDocument(shredCtx->serCtx);
 #ifdef DEBUG
-    stream_printf(GDKout, "end_document()\n");
+    mnstr_printf(GDKout, "end_document()\n");
 #endif
 }
 
@@ -976,12 +976,12 @@ shred_start_element(void *xmlCtx,
         shredCtx->depth = shredCtx->level;
 
 #ifdef DEBUG
-    stream_printf(GDKout, " start_element(");
-    if (e_uri) stream_printf(GDKout, "uri=%s, ", e_uri);
-    if (e_pfx) stream_printf(GDKout, "pfx=%s, ", e_pfx);
-    stream_printf(GDKout, "lev=%d", node.level);
-    stream_printf(GDKout, "loc=%s", e_loc);
-    stream_printf(GDKout, ")\n");
+    mnstr_printf(GDKout, " start_element(");
+    if (e_uri) mnstr_printf(GDKout, "uri=%s, ", e_uri);
+    if (e_pfx) mnstr_printf(GDKout, "pfx=%s, ", e_pfx);
+    mnstr_printf(GDKout, "lev=%d", node.level);
+    mnstr_printf(GDKout, "loc=%s", e_loc);
+    mnstr_printf(GDKout, ")\n");
 #endif
     if ((node.prop = handle_pfx_uri_loc(shredCtx, (char*) e_pfx, (char*) e_uri, (char*) e_loc, NULL)) == oid_nil) {
         BAILOUT(shredCtx);
@@ -1004,12 +1004,12 @@ shred_start_element(void *xmlCtx,
         const xmlChar *a_end = atts[i+4];
 
 #ifdef DEBUG
-        stream_printf(GDKout, "  attr(");
-        if (a_uri) stream_printf(GDKout, "uri=%s, ", a_uri);
-        if (a_pfx) stream_printf(GDKout, "pfx=%s, ", a_pfx);
-        stream_printf(GDKout, "tag=%s", a_tag);
-        stream_printf(GDKout, ", val=\"%s\"", a_val);
-        stream_printf(GDKout, ")\n");
+        mnstr_printf(GDKout, "  attr(");
+        if (a_uri) mnstr_printf(GDKout, "uri=%s, ", a_uri);
+        if (a_pfx) mnstr_printf(GDKout, "pfx=%s, ", a_pfx);
+        mnstr_printf(GDKout, "tag=%s", a_tag);
+        mnstr_printf(GDKout, ", val=\"%s\"", a_val);
+        mnstr_printf(GDKout, ")\n");
 #endif
         if (!a_pfx && a_uri) { 
           a_uri = NULL; /* attribute without prefix cannot have a namespace */
@@ -1093,7 +1093,7 @@ shred_end_element(
             shredCtx->serFun->handle_endElement(shredCtx->serCtx,(str)"",(str)localname);
     }
 #ifdef DEBUG
-    stream_printf(GDKout, " end_element(%s)\n", localname);
+    mnstr_printf(GDKout, " end_element(%s)\n", localname);
 #endif
 }
 
@@ -1114,7 +1114,7 @@ shred_characters(void *xmlCtx,
     shredCtx->content += l;
 
     if (l < n)
-        stream_printf(GDKout, "!WARNING: shred_characters truncated text node > %d characters(starts with `%.16s...')\n",
+        mnstr_printf(GDKout, "!WARNING: shred_characters truncated text node > %d characters(starts with `%.16s...')\n",
         (int) PFSHRED_STRLEN_MAX, cs);
 #else
     shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
@@ -1242,7 +1242,7 @@ shred_error(void *ctx,
     va_end(args);
 
     *print_error_newline =(strchr(buf,(int)'\n') != NULL);
-    stream_printf(GDKerr, "%s", buf);
+    mnstr_printf(GDKerr, "%s", buf);
 }
 
 static void 
@@ -1275,7 +1275,7 @@ shred_warning(void *ctx,
     va_end(args);
 
     *print_error_newline =(strchr(buf,(int)'\n') != NULL);
-    stream_printf(GDKerr, "!WARNING: %s", buf);
+    mnstr_printf(GDKerr, "!WARNING: %s", buf);
 }
 
 /** 
@@ -1335,7 +1335,7 @@ shred_external_subset(void *xmlCtx,
     shredCtxStruct *shredCtx = (shredCtxStruct*)xmlCtx;
     xmlParserCtxtPtr ctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
 #ifdef ADB_DEBUG
-    stream_printf(GDKerr, "shred_external_subset(ctx, %s, %s, %s)\n", name, ExternalID, SystemID);
+    mnstr_printf(GDKerr, "shred_external_subset(ctx, %s, %s, %s)\n", name, ExternalID, SystemID);
 #endif
     if (ExternalID || SystemID) { /* ignore dummy calls */
         xmlDtdPtr dtd;
@@ -1369,7 +1369,7 @@ shred_external_subset(void *xmlCtx,
             }
 
             if (ctx->myDoc->extSubset) {
-                stream_printf(GDKout, "!WARNING: double external subset (\"%s\") may cause problems.\n", SystemID);
+                mnstr_printf(GDKout, "!WARNING: double external subset (\"%s\") may cause problems.\n", SystemID);
                 /* we have two different DTDs -- free one and replace it by the other */
                 xmlFreeDtd (dtd);
                 dtd = ctx->myDoc->extSubset;
@@ -1381,7 +1381,7 @@ shred_external_subset(void *xmlCtx,
             ctx->myDoc->extSubset = dtd;
 
             if (!handle_externalSubset(shredCtx, dtd))
-                stream_printf(GDKout, "!WARNING: xmlParseDTD(\"%s\") failed, skipping ID/IDREF information.\n", SystemID);
+                mnstr_printf(GDKout, "!WARNING: xmlParseDTD(\"%s\") failed, skipping ID/IDREF information.\n", SystemID);
 
         } else {
             GDKerror("shred_external_subset: WARNING: xmlParseDTD(\"%s\") FAILED, NO ID/IDREF QUERIES\n", SystemID);
@@ -1400,7 +1400,7 @@ shred_getEntity(void *xmlCtx, const xmlChar *name)
          * The functions used are defined in $LIBXML2INCLUDES/entities.h
          */
 #if 0
-        stream_printf(GDKerr,"shred_getEntity(ctx,\"%s\") CALLED\n",name);
+        mnstr_printf(GDKerr,"shred_getEntity(ctx,\"%s\") CALLED\n",name);
 #endif
         xmlParserCtxtPtr ctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
         /* lookup the entity in the document entity hash table */
@@ -1408,9 +1408,9 @@ shred_getEntity(void *xmlCtx, const xmlChar *name)
         xmlEntityPtr res = xmlGetDocEntity(ctx->myDoc,name);
 #if 0
         if ( res ) {
-            stream_printf(GDKout,"#!found ENTITY \"%s\"\n",name);
+            mnstr_printf(GDKout,"#!found ENTITY \"%s\"\n",name);
         } else {
-            stream_printf(GDKout,"#!cannot find ENTITY \"%s\"\n",name);
+            mnstr_printf(GDKout,"#!cannot find ENTITY \"%s\"\n",name);
         }
 #endif
         /* QUESTION: xmlGetDtdEntity() and xmlGetParameterEntity() were also
@@ -1534,9 +1534,9 @@ shredder_parse(shredCtxStruct *shredCtx,
     xmlSwitchEncoding(xmlCtx, XML_CHAR_ENCODING_UTF8);
     if (s) { 
         while(1) {
-            ssize_t len = stream_read(s, buf, 1, XMLCHUNK);
+            ssize_t len = mnstr_read(s, buf, 1, XMLCHUNK);
             if (len < 0) {
-                stream_printf(GDKout, "!WARNING: shredder_parse: read() returned " SSZFMT " -> bailing out\n", len);
+                mnstr_printf(GDKout, "!WARNING: shredder_parse: read() returned " SSZFMT " -> bailing out\n", len);
                 shredCtx->err = 1;
                 break;
             }
@@ -1776,7 +1776,7 @@ shredder_create(char *location,
             return shredder_free(shredCtx,0);
         }
         if (verbose && pageFree) {
-            stream_printf(GDKout, "!WARNING: cannot make a read-only collection writable (set pageFree to 0).\n");
+            mnstr_printf(GDKout, "!WARNING: cannot make a read-only collection writable (set pageFree to 0).\n");
             pageFree = 0;
         }
     }
@@ -1786,7 +1786,7 @@ shredder_create(char *location,
     }
     shredCtx->pageFree = pageFree;
     if (verbose && pageFree) {
-        stream_printf(GDKout, "# shredding with holes: pagesize=%d, #fillsize=%d\n", REMAP_PAGE_SIZE, pageFree);
+        mnstr_printf(GDKout, "# shredding with holes: pagesize=%d, #fillsize=%d\n", REMAP_PAGE_SIZE, pageFree);
     }
 
     if (!shredCtx->incremental) {
@@ -1864,24 +1864,24 @@ shredder_stats(shredCtxStruct *shredCtx)
 {
     int i;
 
-    stream_printf(GDKout, "############\n");
-    stream_printf(GDKout, "# STATISTICS of shredding \"%s\":\n", shredCtx->location);
+    mnstr_printf(GDKout, "############\n");
+    mnstr_printf(GDKout, "# STATISTICS of shredding \"%s\":\n", shredCtx->location);
     for(i=0; i<SHRED_BATS; i++) {
         shredBAT *sb = &shredCtx->dstBAT[i];
         BUN cnt = BATcount(sb->bat);
 
-        stream_printf(GDKout, "# [%9s, ", sb->def->name);
-        stream_printf(GDKout, "cnt=%d", cnt);
+        mnstr_printf(GDKout, "# [%9s, ", sb->def->name);
+        mnstr_printf(GDKout, "cnt=%d", cnt);
         if (sb->def->compress == 1) {
-            stream_printf(GDKout, ", dupl=%d(=%.f%%) ", sb->dupl,((sb->dupl+cnt)?100.0*(float)(cnt)/(float)(sb->dupl+cnt):100.0));
+            mnstr_printf(GDKout, ", dupl=%d(=%.f%%) ", sb->dupl,((sb->dupl+cnt)?100.0*(float)(cnt)/(float)(sb->dupl+cnt):100.0));
         }
         if (i == PRE_SIZE)
-            stream_printf(GDKout, ", eg. the number of document nodes");
+            mnstr_printf(GDKout, ", eg. the number of document nodes");
         if (i == QN_PREFIX)
-            stream_printf(GDKout, ", eg. the number of distinct tags");
+            mnstr_printf(GDKout, ", eg. the number of distinct tags");
         if (i == ATTR_OWN)
-            stream_printf(GDKout, ", eg. the number of attributes");
-        stream_printf(GDKout, "]\n");
+            mnstr_printf(GDKout, ", eg. the number of attributes");
+        mnstr_printf(GDKout, "]\n");
     }
 }
 
@@ -1955,7 +1955,7 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
         for(i=0; i<SHRED_BATS; i++) {
             shredBAT *sb = &shredCtx->dstBAT[i];
             if (sb->def->headType == TYPE_void && !BAThdense(sb->bat))
-                stream_printf(GDKout, "!WARNING: BAT[%s] not dense\n", sb->def->name);
+                mnstr_printf(GDKout, "!WARNING: BAT[%s] not dense\n", sb->def->name);
             sb->bat = BATsetaccess(sb->bat, BAT_READ);
             if (!BUNins(docBAT, sb->def->name, &sb->bat->batCacheid, TRUE)) {
                 GDKerror("shredder_finalize: copy2result fails\n");
@@ -2056,7 +2056,7 @@ shred(BAT *docBAT,
             if (verbose && res && !s && !buffer) {
                 char buf1[80], buf2[80];
                 stop = GDKusec();
-                stream_printf(GDKout, "# Elapsed time = %s [%s/node]\n", 
+                mnstr_printf(GDKout, "# Elapsed time = %s [%s/node]\n", 
                      timer_str(abs(stop - start), buf1), 
                      timer_str(abs(stop - start) / (shredCtx->nnode_pre - shredCtx->nnode_base), buf2));
 

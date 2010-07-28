@@ -279,9 +279,9 @@ The primary debugger controls
 @c
 #define MDBstatus(X) \
 	if( stk->cmd && X==0 ) \
-		stream_printf(cntxt->fdout,"#Monet Debugger off\n"); \
+		mnstr_printf(cntxt->fdout,"#Monet Debugger off\n"); \
 	else if(stk->cmd==0 && X) \
-		stream_printf(cntxt->fdout,"#Monet Debugger on\n");
+		mnstr_printf(cntxt->fdout,"#Monet Debugger on\n");
 
 str
 MDBtoggle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -352,7 +352,7 @@ MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	stk->cmd = 0;
 	cntxt->itrace = 0;
 	cntxt->debugOptimizer= FALSE;
-	stream_printf(cntxt->fdout,"mdb>#EOD\n");
+	mnstr_printf(cntxt->fdout,"mdb>#EOD\n");
 	(void) mb;
 	(void) p;
 	return MAL_SUCCEED;

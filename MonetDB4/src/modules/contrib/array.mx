@@ -273,7 +273,7 @@ print_array(BAT *val, ...)
 #ifdef EXCESSIVE_DEBUGGING
 				fprintf(stderr, ",");
 #endif
-				stream_printf(st, ",");
+				mnstr_printf(st, ",");
 				break;
 			}
 		}
@@ -282,7 +282,7 @@ print_array(BAT *val, ...)
 #ifdef EXCESSIVE_DEBUGGING
 			fprintf(stderr, "[");
 #endif
-			stream_printf(st, "[");
+			mnstr_printf(st, "[");
 			i++;
 		}
 		for (offset = idxvector[0], i = 1; i < dims; i++) {
@@ -299,7 +299,7 @@ print_array(BAT *val, ...)
 			fprintf(stderr, "%d\@0", arrayindex[offset]);
 #endif
 			ATOMprint(type_id, BUNtail(vali, p), st);
-			if (stream_errnr(st))
+			if (mnstr_errnr(st))
 				goto exit_err_full;
 		}
 		i = 0;
@@ -307,7 +307,7 @@ print_array(BAT *val, ...)
 #ifdef EXCESSIVE_DEBUGGING
 			fprintf(stderr, "]");
 #endif
-			stream_printf(st, "]");
+			mnstr_printf(st, "]");
 			if (i < dims - 1) {
 				idxvector[i] = 0;
 				i++;
@@ -317,7 +317,7 @@ print_array(BAT *val, ...)
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "\n");
 #endif
-	stream_printf(st, "\n");
+	mnstr_printf(st, "\n");
 
 	/* Exit strategies... */
 	GDKfree(arrayindex);

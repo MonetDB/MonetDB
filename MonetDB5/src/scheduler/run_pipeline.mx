@@ -239,7 +239,7 @@ schedulerMALBlock(Client cntxt, MalBlkPtr mb)
 		return MAL_SUCCEED;
 #ifdef DEBUG_MAL_SCHEDULER
 	if (cntxt->debugScheduler && oldstop != mb->stop) {
-		stream_printf(cntxt->fdout, "Scheduler effect %d -> %d instructions\n", oldstop, mb->stop);
+		mnstr_printf(cntxt->fdout, "Scheduler effect %d -> %d instructions\n", oldstop, mb->stop);
 	}
 #endif
 	if (cnt >= 64)
@@ -329,7 +329,7 @@ RUNsqlbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 #ifdef DEBUG_MAL_SCHEDULER
-	stream_printf(cntxt->fdout, "scheduler.sqlbind results\n");
+	mnstr_printf(cntxt->fdout, "scheduler.sqlbind results\n");
 	printFunction(cntxt->fdout, mb, stk, LIST_MAL_ALL);
 #endif
 	return msg;

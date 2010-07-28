@@ -326,7 +326,7 @@ timerResume(void)
 static void
 timerEnd(void)
 {
-	stream_flush(toConsole);
+	mnstr_flush(toConsole);
 	t1 = gettime();
 	if (mark && specials == NOmodifier) {
 		fprintf(stderr, "%s %7ld.%03ld msec %s\n", mark, (long) ((t1 - t0) / 1000), (long) ((t1 - t0) % 1000), mark2 ? mark2 : "");
@@ -457,7 +457,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 		more = 0;
 		for (i = 0; i < fields; i++) {
 			if (rest[i] == NULL || *rest[i] == 0)
-				stream_printf(toConsole, "%c %*s ",
+				mnstr_printf(toConsole, "%c %*s ",
 					      first ? '|' : ':', len[i], "");
 			else {
 				size_t ulen;
@@ -473,17 +473,17 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 							;
 					if (t == rest[i] && !isspace((int) *t))
 						t = utf8skip(rest[i], len[i]);
-					stream_printf(toConsole, "%c",
+					mnstr_printf(toConsole, "%c",
 						      first ? '|' : ':');
 					if (numeric[i])
-						stream_printf(toConsole, "%*s",
+						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - (ulen - utf8strlen(t))),
 							      "");
-					stream_printf(toConsole, " %.*s ",
+					mnstr_printf(toConsole, " %.*s ",
 						      (int) (t - rest[i]),
 						      rest[i]);
 					if (!numeric[i])
-						stream_printf(toConsole, "%*s",
+						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - (ulen - utf8strlen(t))),
 							      "");
 					while (isspace((int) *t))
@@ -492,23 +492,23 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 					if (rest[i])
 						more = 1;
 				} else {
-					stream_printf(toConsole, "%c",
+					mnstr_printf(toConsole, "%c",
 						      first ? '|' : ':');
 					if (numeric[i])
-						stream_printf(toConsole, "%*s",
+						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - ulen),
 							      "");
-					stream_printf(toConsole, " %s ",
+					mnstr_printf(toConsole, " %s ",
 						      rest[i]);
 					if (!numeric[i])
-						stream_printf(toConsole, "%*s",
+						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - ulen),
 							      "");
 					rest[i] = 0;
 				}
 			}
 		}
-		stream_printf(toConsole, "%c\n", first ? '|' : ':');
+		mnstr_printf(toConsole, "%c\n", first ? '|' : ':');
 		first = 0;
 		rows++;
 	} while (more);
@@ -522,17 +522,17 @@ XMLprdata(const char *val)
 		return;
 	while (*val) {
 		if (*val == '&')
-			stream_printf(toConsole_raw, "&amp;");
+			mnstr_printf(toConsole_raw, "&amp;");
 		else if (*val == '<')
-			stream_printf(toConsole_raw, "&lt;");
+			mnstr_printf(toConsole_raw, "&lt;");
 		else if (*val == '>')
-			stream_printf(toConsole_raw, "&gt;");
+			mnstr_printf(toConsole_raw, "&gt;");
 		else if (*val == '"')
-			stream_printf(toConsole_raw, "&quot;");
+			mnstr_printf(toConsole_raw, "&quot;");
 		else if (*val == '\'')
-			stream_printf(toConsole_raw, "&apos;");
+			mnstr_printf(toConsole_raw, "&apos;");
 		else if ((*val & 0xFF) < 0x20)	/* control character */
-			stream_printf(toConsole_raw, "&#%d;", *val & 0xFF);
+			mnstr_printf(toConsole_raw, "&#%d;", *val & 0xFF);
 		else if ((*val & 0x80) != 0 /* && encoding != NULL */ ) {
 			int n, m;
 			int c = *val & 0x7F;
@@ -541,9 +541,9 @@ XMLprdata(const char *val)
 				c &= ~m;
 			while (--n >= 0)
 				c = (c << 6) | (*++val & 0x3F);
-			stream_printf(toConsole_raw, "&#x%x;", c);
+			mnstr_printf(toConsole_raw, "&#x%x;", c);
 		} else
-			stream_write(toConsole_raw, val, 1, 1);
+			mnstr_write(toConsole_raw, val, 1, 1);
 		val++;
 	}
 }
@@ -551,9 +551,9 @@ XMLprdata(const char *val)
 static void
 XMLprattr(const char *name, const char *val)
 {
-	stream_printf(toConsole_raw, " %s=\"", name);
+	mnstr_printf(toConsole_raw, " %s=\"", name);
 	XMLprdata(val);
-	stream_write(toConsole_raw, "\"", 1, 1);
+	mnstr_write(toConsole_raw, "\"", 1, 1);
 }
 
 static void
@@ -563,9 +563,9 @@ XMLrenderer(MapiHdl hdl)
 	char *name;
 
 	/* we must use toConsole_raw since the XML file is encoded in UTF-8 */
-	stream_flush(toConsole);
-	stream_printf(toConsole_raw, "<?xml version='1.0' encoding='UTF-8'?>\n");
-	stream_printf(toConsole_raw,
+	mnstr_flush(toConsole);
+	mnstr_printf(toConsole_raw, "<?xml version='1.0' encoding='UTF-8'?>\n");
+	mnstr_printf(toConsole_raw,
 		      "<!DOCTYPE table [\n"
 		      " <!ELEMENT table (row)*>\n" /* a table consists of zero or more rows */
 		      " <!ELEMENT row (column)+>\n"	/* a row consists of one or more columns */
@@ -573,34 +573,34 @@ XMLrenderer(MapiHdl hdl)
 		      " <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
 		      " <!ATTLIST column name CDATA #IMPLIED\n"	/* a column may have a name */
 		      "                  isnull (true|false) 'false'>]>\n");
-	stream_printf(toConsole_raw, "<table");
+	mnstr_printf(toConsole_raw, "<table");
 	name = mapi_get_table(hdl, 0);
 	if (name != NULL && *name != 0)
 		XMLprattr("name", name);
-	stream_printf(toConsole_raw, ">\n");
-	while (!stream_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
-		stream_printf(toConsole_raw, "<row>");
+	mnstr_printf(toConsole_raw, ">\n");
+	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
+		mnstr_printf(toConsole_raw, "<row>");
 		for (i = 0; i < fields; i++) {
 			char *data = mapi_fetch_field(hdl, i);
 
-			stream_printf(toConsole_raw, "<column");
+			mnstr_printf(toConsole_raw, "<column");
 			name = mapi_get_name(hdl, i);
 			if (name != NULL && *name != 0)
 				XMLprattr("name", name);
 			if (data == NULL) {
 				XMLprattr("isnull", "true");
-				stream_write(toConsole_raw, "/", 1, 1);
+				mnstr_write(toConsole_raw, "/", 1, 1);
 			}
-			stream_write(toConsole_raw, ">", 1, 1);
+			mnstr_write(toConsole_raw, ">", 1, 1);
 			if (data) {
 				XMLprdata(data);
-				stream_printf(toConsole_raw, "</column>");
+				mnstr_printf(toConsole_raw, "</column>");
 			}
 		}
-		stream_printf(toConsole_raw, "</row>\n");
+		mnstr_printf(toConsole_raw, "</row>\n");
 	}
-	stream_printf(toConsole_raw, "</table>\n");
-	stream_flush(toConsole_raw);
+	mnstr_printf(toConsole_raw, "</table>\n");
+	mnstr_flush(toConsole_raw);
 }
 
 static void
@@ -611,45 +611,45 @@ CSVrenderer(MapiHdl hdl)
 	char *sep = formatter == CSVformatter ? "," : "\t";
 	int i;
 
-	while (!stream_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
+	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
 				s = nullstring == default_nullstring ? "" : nullstring;
 			if (strchr(s, *sep) != NULL || strchr(s, '\n') != NULL || strchr(s, '"') != NULL) {
-				stream_printf(toConsole, "%s\"",
+				mnstr_printf(toConsole, "%s\"",
 					      i == 0 ? "" : sep);
 				while (*s) {
 					switch (*s) {
 					case '\n':
-						stream_write(toConsole, "\\n", 1, 2);
+						mnstr_write(toConsole, "\\n", 1, 2);
 						break;
 					case '\t':
-						stream_write(toConsole, "\\t", 1, 2);
+						mnstr_write(toConsole, "\\t", 1, 2);
 						break;
 					case '\r':
-						stream_write(toConsole, "\\r", 1, 2);
+						mnstr_write(toConsole, "\\r", 1, 2);
 						break;
 					case '\\':
-						stream_write(toConsole, "\\\\", 1, 2);
+						mnstr_write(toConsole, "\\\\", 1, 2);
 						break;
 					case '"':
-						stream_write(toConsole, "\\\"", 1, 2);
+						mnstr_write(toConsole, "\\\"", 1, 2);
 						break;
 					default:
 						if (*s == *sep)
-							stream_write(toConsole, "\\", 1, 1);
-						stream_write(toConsole, s, 1, 1);
+							mnstr_write(toConsole, "\\", 1, 1);
+						mnstr_write(toConsole, s, 1, 1);
 						break;
 					}
 					s++;
 				}
-				stream_write(toConsole, "\"", 1, 1);
+				mnstr_write(toConsole, "\"", 1, 1);
 			} else
-				stream_printf(toConsole, "%s%s",
+				mnstr_printf(toConsole, "%s%s",
 					      i == 0 ? "" : sep, s ? s : "");
 		}
-		stream_printf(toConsole, "\n");
+		mnstr_printf(toConsole, "\n");
 	}
 }
 
@@ -658,14 +658,14 @@ SQLseparator(int *len, int fields, char sep)
 {
 	int i, j;
 
-	stream_printf(toConsole, "+");
+	mnstr_printf(toConsole, "+");
 	for (i = 0; i < fields; i++) {
-		stream_printf(toConsole, "%c", sep);
+		mnstr_printf(toConsole, "%c", sep);
 		for (j = 0; j < (len[i] < 0 ? -len[i] : len[i]); j++)
-			stream_printf(toConsole, "%c", sep);
-		stream_printf(toConsole, "%c+", sep);
+			mnstr_printf(toConsole, "%c", sep);
+		mnstr_printf(toConsole, "%c+", sep);
 	}
-	stream_printf(toConsole, "\n");
+	mnstr_printf(toConsole, "\n");
 }
 
 static void
@@ -681,11 +681,11 @@ SQLqueryEcho(MapiHdl hdl)
 				char *q = p;
 				while ((q = strchr(q, '\n')) != NULL) {
 					*q++ = '\0';
-					stream_printf(toConsole, "#%s\n", p);
+					mnstr_printf(toConsole, "#%s\n", p);
 					p = q;
 				}
 			} else {
-				stream_printf(toConsole, "%s", qry);
+				mnstr_printf(toConsole, "%s", qry);
 			}
 			free(qry);
 		}
@@ -812,11 +812,11 @@ TESTrenderer(MapiHdl hdl)
 	int i;
 
 	SQLqueryEcho(hdl);
-	while (!stream_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
+	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
 		if (*reply != '[') {
 			if (*reply == '=')
 				reply++;
-			stream_printf(toConsole, "%s\n", reply);
+			mnstr_printf(toConsole, "%s\n", reply);
 			continue;
 		}
 		fields = mapi_split_line(hdl);
@@ -827,10 +827,10 @@ TESTrenderer(MapiHdl hdl)
 			tp = mapi_get_type(hdl, i);
 			if (strcmp(tp, "unknown") == 0)
 				tp = classify(s, l);
-			stream_printf(toConsole, "%s", sep);
+			mnstr_printf(toConsole, "%s", sep);
 			sep = ",\t";
 			if (s == NULL)
-				stream_printf(toConsole, mode == SQL ? "NULL" : "nil");
+				mnstr_printf(toConsole, mode == SQL ? "NULL" : "nil");
 			else if (strcmp(tp, "varchar") == 0 ||
 				 strcmp(tp, "char") == 0 ||
 				 strcmp(tp, "clob") == 0 ||
@@ -849,23 +849,23 @@ TESTrenderer(MapiHdl hdl)
 				 strcmp(tp, "point") == 0 ||
 				 strcmp(tp, "polygon") == 0 ||
 				 strcmp(tp, "surface") == 0) {
-				stream_printf(toConsole, "\"");
+				mnstr_printf(toConsole, "\"");
 				while (l != 0) {
 					switch (*s) {
 					case '\n':
-						stream_write(toConsole, "\\n", 1, 2);
+						mnstr_write(toConsole, "\\n", 1, 2);
 						break;
 					case '\t':
-						stream_write(toConsole, "\\t", 1, 2);
+						mnstr_write(toConsole, "\\t", 1, 2);
 						break;
 					case '\r':
-						stream_write(toConsole, "\\r", 1, 2);
+						mnstr_write(toConsole, "\\r", 1, 2);
 						break;
 					case '\\':
-						stream_write(toConsole, "\\\\", 1, 2);
+						mnstr_write(toConsole, "\\\\", 1, 2);
 						break;
 					case '"':
-						stream_write(toConsole, "\\\"", 1, 2);
+						mnstr_write(toConsole, "\\\"", 1, 2);
 						break;
 					case '0':
 					case '1':
@@ -889,7 +889,7 @@ TESTrenderer(MapiHdl hdl)
 							double d;
 							d = strtod(s, &e);
 							if (s != e) {
-								stream_printf(toConsole, "%.10g", d);
+								mnstr_printf(toConsole, "%.10g", d);
 								l -= e - s;
 								s = e;
 								continue;
@@ -898,25 +898,25 @@ TESTrenderer(MapiHdl hdl)
 						/* fall through */
 					default:
 						if ((unsigned char) *s < ' ')
-							stream_printf(toConsole,
+							mnstr_printf(toConsole,
 								      "\\%03o",
 								      (int) (unsigned char) *s);
 						else
-							stream_write(toConsole, s, 1, 1);
+							mnstr_write(toConsole, s, 1, 1);
 						break;
 					}
 					s++;
 					l--;
 				}
-				stream_write(toConsole, "\"", 1, 1);
+				mnstr_write(toConsole, "\"", 1, 1);
 			} else if (strcmp(tp, "double") == 0 ||
 				   strcmp(tp, "dbl") == 0 ||
 				   strcmp(tp, "real") == 0)
-				stream_printf(toConsole, "%.10g", atof(s));
+				mnstr_printf(toConsole, "%.10g", atof(s));
 			else
-				stream_printf(toConsole, "%s", s);
+				mnstr_printf(toConsole, "%s", s);
 		}
-		stream_printf(toConsole, "\t]\n");
+		mnstr_printf(toConsole, "\t]\n");
 	}
 }
 
@@ -938,12 +938,12 @@ RAWrenderer(MapiHdl hdl)
 		     strncmp(line, "Query  ", 7) == 0 ||
 		     strncmp(line, "Print  ", 7) == 0 ||
 		     strncmp(line, "Update ", 7) == 0)) {
-			stream_flush(toConsole);
+			mnstr_flush(toConsole);
 			fprintf(stderr, "%s\n", line);
 		} else {
 			if (*line == '=')
 				line++;
-			stream_printf(toConsole, "%s\n", line);
+			mnstr_printf(toConsole, "%s\n", line);
 		}
 	}
 }
@@ -976,7 +976,7 @@ SQLdebugRendering(MapiHdl hdl)
 	sprintf(promptbuf, "mdb>");
 	while ((reply = fetch_line(hdl))) {
 		cnt++;
-		stream_printf(toConsole, "%s\n", reply);
+		mnstr_printf(toConsole, "%s\n", reply);
 		if (strncmp(reply, "mdb>#EOD", 8) == 0) {
 			cnt = 0;
 			break;
@@ -994,8 +994,8 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 	int c;
 
 	SQLseparator(len, fields, '-');
-	stream_printf(toConsole, "next page? (continue,quit,next)");
-	stream_flush(toConsole);
+	mnstr_printf(toConsole, "next page? (continue,quit,next)");
+	mnstr_flush(toConsole);
 	c = getc(fromConsole);
 	if (c == 'c')
 		*ps = 0;
@@ -1021,7 +1021,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	if (mark2)
 		free(mark2);
 	mark2 = NULL;
-	while (!stream_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
+	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		if (silent)
 			continue;
 		if (len == 0 || fields != oldfields) {
@@ -1245,7 +1245,7 @@ setFormatter(Mapi mid, char *s)
 #endif
 		formatter = TESTformatter;
 	} else
-		stream_printf(toConsole, "unsupported formatter\n");
+		mnstr_printf(toConsole, "unsupported formatter\n");
 }
 
 static void
@@ -1301,8 +1301,8 @@ static void
 end_pager(stream *saveFD, stream *saveFD_raw)
 {
 	if (saveFD) {
-		stream_close(toConsole);
-		stream_destroy(toConsole);
+		mnstr_close(toConsole);
+		mnstr_destroy(toConsole);
 		toConsole = saveFD;
 		toConsole_raw = saveFD_raw;
 	}
@@ -1332,7 +1332,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			    formatter == CSVformatter)
 				mapi_explain_result(hdl, stderr);
 			else
-				stream_printf(toConsole, "%s", reply);
+				mnstr_printf(toConsole, "%s", reply);
 			errseen = 1;
 			/* don't need to print something like '0 tuples' if we got
 			 * an error */
@@ -1347,13 +1347,13 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		case Q_UPDATE:
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
-				stream_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
+				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
 			else {
 				timerPause();
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				if (lid != -1) {
-					stream_printf(toConsole,
+					mnstr_printf(toConsole,
 							LLFMT " affected row%s, "
 							"last generated key: " LLFMT "%s%s%s\n",
 							aff,
@@ -1363,7 +1363,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 							singleinstr ? timerHuman() : "",
 							singleinstr ? ")" : "");
 				} else {
-					stream_printf(toConsole,
+					mnstr_printf(toConsole,
 							LLFMT " affected row%s%s%s%s\n",
 							aff,
 							(aff == 1 ? "" : "s"),
@@ -1375,18 +1375,18 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		case Q_SCHEMA:
 			if (formatter == TABLEformatter)
-				stream_printf(toConsole,
+				mnstr_printf(toConsole,
 					      "operation successful\n");
 			continue;
 		case Q_TRANS:
 			if (formatter == TABLEformatter)
-				stream_printf(toConsole,
+				mnstr_printf(toConsole,
 					      "auto commit mode: %s\n",
 					      mapi_get_autocommit(mid) ? "on" : "off");
 			continue;
 		case Q_PREPARE:
 			if (formatter == TABLEformatter)
-				stream_printf(toConsole,
+				mnstr_printf(toConsole,
 					      "execute prepared statement "
 					      "using: EXEC %d(...)\n",
 					      mapi_get_tableid(hdl));
@@ -1442,11 +1442,11 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			}
 		}
 		pagewidth = oldpagewidth;
-	} while (!stream_errnr(toConsole) &&
+	} while (!mnstr_errnr(toConsole) &&
 		 (rc = mapi_needmore(hdl)) == MOK &&
 		 (rc = mapi_next_result(hdl)) == 1);
-	if (stream_errnr(toConsole)) {
-		stream_clearerr(toConsole);
+	if (mnstr_errnr(toConsole)) {
+		mnstr_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
 		errseen = 1;
 	}
@@ -1630,7 +1630,7 @@ doFile(Mapi mid, const char *file)
 	free(buf);
 	if (file != NULL)
 		fclose(fp);
-	stream_flush(toConsole);
+	mnstr_flush(toConsole);
 	return errseen;
 }
 
@@ -1642,15 +1642,15 @@ showCommands(void)
 {
 	/* XQuery prelude */
 	if (mode == XQUERY) {
-		stream_printf(toConsole, "mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.\n");
-		stream_printf(toConsole, "\nSupported document-management XQuery extensions:\n");
-		stream_printf(toConsole, " pf:collections() as node()\n");
-		stream_printf(toConsole, " pf:documents($collectionName as xs:string) as node()\n");
-		stream_printf(toConsole, " pf:del-doc($documentName as xs:string)\n");
-		stream_printf(toConsole, " pf:add-doc($uri as xs:string, $documentName as xs:string\n");
-		stream_printf(toConsole, "     [,$collectionName as xs:string [,$freePercentage as xs:integer]])\n");
-		stream_printf(toConsole, "\nSession commands:\n");
-		stream_printf(toConsole, "<>      - send query to server (or %s)\n",
+		mnstr_printf(toConsole, "mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.\n");
+		mnstr_printf(toConsole, "\nSupported document-management XQuery extensions:\n");
+		mnstr_printf(toConsole, " pf:collections() as node()\n");
+		mnstr_printf(toConsole, " pf:documents($collectionName as xs:string) as node()\n");
+		mnstr_printf(toConsole, " pf:del-doc($documentName as xs:string)\n");
+		mnstr_printf(toConsole, " pf:add-doc($uri as xs:string, $documentName as xs:string\n");
+		mnstr_printf(toConsole, "     [,$collectionName as xs:string [,$freePercentage as xs:integer]])\n");
+		mnstr_printf(toConsole, "\nSession commands:\n");
+		mnstr_printf(toConsole, "<>      - send query to server (or %s)\n",
 #ifdef WIN32
 			      "CTRL-Z"
 #else
@@ -1660,37 +1660,37 @@ showCommands(void)
 	}
 
 	/* shared control options */
-	stream_printf(toConsole, "\\?      - show this message\n");
+	mnstr_printf(toConsole, "\\?      - show this message\n");
 	if (mode == MAL)
-		stream_printf(toConsole, "?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
-	stream_printf(toConsole, "\\<file  - read input from file\n");
-	stream_printf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
-	stream_printf(toConsole, "\\|cmd   - pipe result to process, or stop when no command is given\n");
+		mnstr_printf(toConsole, "?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
+	mnstr_printf(toConsole, "\\<file  - read input from file\n");
+	mnstr_printf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
+	mnstr_printf(toConsole, "\\|cmd   - pipe result to process, or stop when no command is given\n");
 #ifdef HAVE_LIBREADLINE
-	stream_printf(toConsole, "\\h      - show the readline history\n");
+	mnstr_printf(toConsole, "\\h      - show the readline history\n");
 #endif
-	stream_printf(toConsole, "\\t      - toggle timer\n");
+	mnstr_printf(toConsole, "\\t      - toggle timer\n");
 	if (mode == SQL) {
-		stream_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
-		stream_printf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
-		stream_printf(toConsole, "\\A      - enable auto commit\n");
-		stream_printf(toConsole, "\\a      - disable auto commit\n");
+		mnstr_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
+		mnstr_printf(toConsole, "\\d table- describe the table, or the complete database if none given.\n");
+		mnstr_printf(toConsole, "\\A      - enable auto commit\n");
+		mnstr_printf(toConsole, "\\a      - disable auto commit\n");
 	}
 	if (mode == XQUERY) {
-		stream_printf(toConsole, "\\G      - switch to algebra frontend\n");
-		stream_printf(toConsole, "\\g      - switch to old frontend\n");
+		mnstr_printf(toConsole, "\\G      - switch to algebra frontend\n");
+		mnstr_printf(toConsole, "\\g      - switch to old frontend\n");
 	}
 	if (mode == XQUERY) {
-		stream_printf(toConsole, "\\f      - result format: dm or xml[-noheader][-typed|-noroot|-root-FOOBAR]\n");
+		mnstr_printf(toConsole, "\\f      - result format: dm or xml[-noheader][-typed|-noroot|-root-FOOBAR]\n");
 	} else {
-		stream_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
-		stream_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml}\n");
-		stream_printf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
-		stream_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
+		mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
+		mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml}\n");
+		mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
+		mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
 	}
-	stream_printf(toConsole, "\\L file - save client/server interaction\n");
-	stream_printf(toConsole, "\\X      - trace mclient code\n");
-	stream_printf(toConsole, "\\q      - terminate session\n");
+	mnstr_printf(toConsole, "\\L file - save client/server interaction\n");
+	mnstr_printf(toConsole, "\\X      - trace mclient code\n");
+	mnstr_printf(toConsole, "\\q      - terminate session\n");
 }
 
 static int
@@ -1710,7 +1710,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		oldbuf = buf = malloc(BUFSIZ);
 
 	do {
-		stream_flush(toConsole);
+		mnstr_flush(toConsole);
 		timerPause();
 #ifdef HAVE_LIBREADLINE
 		if (prompt) {
@@ -1884,7 +1884,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								name = mapi_fetch_field(hdl, 0);
 								type = mapi_fetch_field(hdl, 1);
 								schema = mapi_fetch_field(hdl, 2);
-								stream_printf(toConsole,
+								mnstr_printf(toConsole,
 									      "%-6s  %s.%s\n",
 									      *type == '1' ? "VIEW" : "TABLE",
 									      schema, name);
@@ -1910,9 +1910,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					start_pager(&saveFD, &saveFD_raw);
 #endif
 					if (*line) {
-						stream_printf(toConsole, "START TRANSACTION;\n");
+						mnstr_printf(toConsole, "START TRANSACTION;\n");
 						dump_table(mid, NULL, line, toConsole, 0, 1);
-						stream_printf(toConsole, "COMMIT;\n");
+						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
 						dump_tables(mid, toConsole, 0);
 #ifdef HAVE_POPEN
@@ -1935,18 +1935,18 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
 					if (toConsole != stdout_stream && toConsole != stderr_stream) {
-						stream_close(toConsole);
-						stream_destroy(toConsole);
+						mnstr_close(toConsole);
+						mnstr_destroy(toConsole);
 					}
 					if (*line == 0 || strcmp(line, "stdout") == 0)
 						toConsole = stdout_stream;
 					else if (strcmp(line, "stderr") == 0)
 						toConsole = stderr_stream;
 					else if ((toConsole = open_wastream(line)) == NULL ||
-						 stream_errnr(toConsole)) {
+						 mnstr_errnr(toConsole)) {
 						if (toConsole != NULL) {
-							stream_close(toConsole);
-							stream_destroy(toConsole);
+							mnstr_close(toConsole);
+							mnstr_destroy(toConsole);
 						}
 						toConsole = stdout_stream;
 						fprintf(stderr, "Cannot open %s\n", line);
@@ -1995,7 +1995,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (h = 0; h < history_length; h++) {
 						nl = history_get(h) ? history_get(h)->line : 0;
 						if (nl)
-							stream_printf(toConsole, "%d %s\n", h, nl);
+							mnstr_printf(toConsole, "%d %s\n", h, nl);
 					}
 					continue;
 				}
@@ -2008,9 +2008,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					if (nl)
 						*nl = 0;
 					if (history_expand(line + 2, &nl)) {
-						stream_printf(toConsole, "%s\n", nl);
+						mnstr_printf(toConsole, "%s\n", nl);
 					}
-					stream_printf(toConsole, "Expansion needs work\n");
+					mnstr_printf(toConsole, "Expansion needs work\n");
 					continue;
 				}
 */
@@ -2024,31 +2024,31 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
 					if (*line == 0) {
-						stream_printf(toConsole, "Current formatter: ");
+						mnstr_printf(toConsole, "Current formatter: ");
 						if (mode == XQUERY)
-							stream_printf(toConsole, "%s\n", output == NULL ? "dm" : output);
+							mnstr_printf(toConsole, "%s\n", output == NULL ? "dm" : output);
 						else {
 							switch (formatter) {
 							case RAWformatter:
-								stream_printf(toConsole, "raw\n");
+								mnstr_printf(toConsole, "raw\n");
 								break;
 							case TABLEformatter:
-								stream_printf(toConsole, "sql\n");
+								mnstr_printf(toConsole, "sql\n");
 								break;
 							case CSVformatter:
-								stream_printf(toConsole, "csv\n");
+								mnstr_printf(toConsole, "csv\n");
 								break;
 							case TABformatter:
-								stream_printf(toConsole, "tab\n");
+								mnstr_printf(toConsole, "tab\n");
 								break;
 							case TESTformatter:
-								stream_printf(toConsole, "test\n");
+								mnstr_printf(toConsole, "test\n");
 								break;
 							case XMLformatter:
-								stream_printf(toConsole, "xml\n");
+								mnstr_printf(toConsole, "xml\n");
 								break;
 							default:
-								stream_printf(toConsole, "none\n");
+								mnstr_printf(toConsole, "none\n");
 								break;
 							}
 						}
@@ -2262,7 +2262,7 @@ main(int argc, char **argv)
 			if (stat(cfile, &statb) == 0) {
 				config = open_rastream(cfile);
 			} else {
-				stream_printf(stderr_stream,
+				mnstr_printf(stderr_stream,
 					      "failed to open file '%s': %s\n",
 					      cfile, strerror(errno));
 			}
@@ -2274,13 +2274,13 @@ main(int argc, char **argv)
 		char *q;
 		ssize_t len;
 		int line = 0;
-		while ((len = stream_readline(config, buf, sizeof(buf) - 1)) > 0) {
+		while ((len = mnstr_readline(config, buf, sizeof(buf) - 1)) > 0) {
 			line++;
 			buf[len - 1] = '\0';	/* drop newline */
 			if (buf[0] == '#' || buf[0] == '\0')
 				continue;
 			if ((q = strchr(buf, '=')) == NULL) {
-				stream_printf(stderr_stream, "%s:%d: syntax error: %s\n", stream_name(config), line, buf);
+				mnstr_printf(stderr_stream, "%s:%d: syntax error: %s\n", mnstr_name(config), line, buf);
 				continue;
 			}
 			*q++ = '\0';
@@ -2306,10 +2306,10 @@ main(int argc, char **argv)
 					q = NULL;
 				} else {
 					/* make sure we don't set garbage */
-					stream_printf(stderr_stream,
+					mnstr_printf(stderr_stream,
 						      "%s:%d: unsupported "
 						      "language: %s\n",
-						      stream_name(config),
+						      mnstr_name(config),
 						      line, q);
 					free(language);
 					language = NULL;
@@ -2327,11 +2327,11 @@ main(int argc, char **argv)
 				}
 			}
 			if (q != NULL)
-				stream_printf(stderr_stream,
+				mnstr_printf(stderr_stream,
 					      "%s:%d: unknown property: %s\n",
-					      stream_name(config), line, buf);
+					      mnstr_name(config), line, buf);
 		}
-		stream_destroy(config);
+		mnstr_destroy(config);
 	}
 
 	while ((c = getopt_long(argc, argv, "C:Dd:e"
@@ -2456,11 +2456,11 @@ main(int argc, char **argv)
 			save_history = 1;
 			break;
 		case 'v':
-			stream_printf(toConsole,
+			mnstr_printf(toConsole,
 					"mclient, the MonetDB interactive terminal (%s)\n",
 					MONETDB_RELEASE);
 #ifdef HAVE_LIBREADLINE
-			stream_printf(toConsole,
+			mnstr_printf(toConsole,
 					"support for command-line editing compiled-in\n");
 #endif
 			return(0);
@@ -2496,11 +2496,11 @@ main(int argc, char **argv)
 		encoding = NULL;
 	if (encoding != NULL) {
 		toConsole = iconv_wstream(toConsole, encoding, "stdout");
-		if (toConsole == NULL || stream_errnr(toConsole)) {
+		if (toConsole == NULL || mnstr_errnr(toConsole)) {
 			fprintf(stderr, "%s: warning: cannot convert local character set %s to UTF-8\n", argv[0], encoding);
 			if (toConsole != NULL) {
-				stream_close(toConsole);
-				stream_destroy(toConsole);
+				mnstr_close(toConsole);
+				mnstr_destroy(toConsole);
 			}
 			toConsole = toConsole_raw;
 		}
@@ -2593,7 +2593,7 @@ main(int argc, char **argv)
 			break;
 		}
 
-		stream_printf(toConsole,
+		mnstr_printf(toConsole,
 			      "Welcome to mclient, the MonetDB%s "
 			      "interactive terminal (%s)\n",
 			      lang, MONETDB_RELEASE);
@@ -2620,11 +2620,11 @@ main(int argc, char **argv)
 			}
 			mapi_close_handle(hdl);
 			if (dbname[0] != '\0' && m5ver[0] != '\0')
-				stream_printf(toConsole, "Database: MonetDB v%s, '%s'\n", m5ver, dbname);
+				mnstr_printf(toConsole, "Database: MonetDB v%s, '%s'\n", m5ver, dbname);
 		}
-		stream_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
+		mnstr_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)
-			stream_printf(toConsole, "auto commit mode: on\n");
+			mnstr_printf(toConsole, "auto commit mode: on\n");
 	}
 
 	if (command != NULL) {
@@ -2681,8 +2681,8 @@ main(int argc, char **argv)
 		c = doFile(mid, NULL);
 	}
 	mapi_destroy(mid);
-	stream_destroy(stdout_stream);
-	stream_destroy(stderr_stream);
+	mnstr_destroy(stdout_stream);
+	mnstr_destroy(stderr_stream);
 	return c;
 }
 

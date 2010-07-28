@@ -186,7 +186,7 @@ stopListening(int i)
 	/* kill all connections */
 	for (walk = thds; walk != NULL; walk = walk->next) {
 		if (walk->s != NULL)
-			stream_close(walk->s);
+			mnstr_close(walk->s);
 	}
 }
 
@@ -307,7 +307,7 @@ doProfile(void *d)
 	printf("-- %sprofiler.start();\n", id);
 	doQ("profiler.start();");
 
-	while (stream_read(wthr->s, buf, 1, BUFSIZ)) {
+	while (mnstr_read(wthr->s, buf, 1, BUFSIZ)) {
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;

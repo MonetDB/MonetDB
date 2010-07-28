@@ -150,13 +150,13 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 		return NULL;
 	}
 @-
-	stream_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
+	mnstr_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
 	for(i=0;i<mb->stop; i++)
 	if( list[i]->cnt){
-		stream_printf(cntxt->fdout,"[%d]",i);
+		mnstr_printf(cntxt->fdout,"[%d]",i);
 		for(j=p->retc; j< list[i]->cnt; j++)
-			stream_printf(cntxt->fdout," %d",list[i]->stmt[j]);
-		stream_printf(cntxt->fdout,"\n");
+			mnstr_printf(cntxt->fdout," %d",list[i]->stmt[j]);
+		mnstr_printf(cntxt->fdout,"\n");
 	}
 @c
 	GDKfree(var);
@@ -185,7 +185,7 @@ OPTdepthfirst(Client cntxt, MalBlkPtr mb, int pc, InstrPtr old[], Node dep[])
 	for (i= 0; i< dep[pc]->cnt; i++)
 		OPTdepthfirst(cntxt, mb,dep[pc]->stmt[i], old, dep);
 		OPTDEBUGreorder{
-			stream_printf(cntxt->fdout,"dump[%d]:",pc);
+			mnstr_printf(cntxt->fdout,"dump[%d]:",pc);
 			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
 		}
 	pushInstruction(mb, p);
@@ -234,7 +234,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
 				OPTDEBUGreorder if( old[j]){
-					stream_printf(cntxt->fdout,"leftover: %d",start+1);
+					mnstr_printf(cntxt->fdout,"leftover: %d",start+1);
 					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT);
 				}
 				OPTdepthfirst(cntxt, mb, j, old, dep);

@@ -240,10 +240,10 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		tpe = stk->stk[pci->argv[indx]].vtype;
 	if (val == NULL || tpe == TYPE_void) {
 		if (hd)
-			stream_printf(fp, "%s", hd);
-		stream_printf(fp, "nil");
+			mnstr_printf(fp, "%s", hd);
+		mnstr_printf(fp, "nil");
 		if (tl)
-			stream_printf(fp, "%s", tl);
+			mnstr_printf(fp, "%s", tl);
 		return MAL_SUCCEED;
 	}
 	if (isaBatType(tpe) ) {
@@ -251,10 +251,10 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 
 		if (*(int *) val == 0) {
 			if (hd)
-				stream_printf(fp, "%s", hd);
-			stream_printf(fp,"nil");
+				mnstr_printf(fp, "%s", hd);
+			mnstr_printf(fp,"nil");
 			if (tl)
-				stream_printf(fp, "%s", tl);
+				mnstr_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
 		}
 		b = BATdescriptor(*(int *) val);
@@ -263,17 +263,17 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		}
 		if (nobat) {
 			if (hd)
-				stream_printf(fp, "%s", hd);
-			stream_printf(fp, "<%s>", BBPname(b->batCacheid));
+				mnstr_printf(fp, "%s", hd);
+			mnstr_printf(fp, "<%s>", BBPname(b->batCacheid));
 			if (tl)
-				stream_printf(fp, "%s", tl);
+				mnstr_printf(fp, "%s", tl);
 		} else
 			BATmultiprintf(cntxt->fdout, 2, &b, TRUE, 0, TRUE);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	if (hd)
-		stream_printf(fp, "%s", hd);
+		mnstr_printf(fp, "%s", hd);
 
 	if (ATOMvarsized(tpe))
 		ATOMprint(tpe, *(str *) val, fp);
@@ -281,7 +281,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		ATOMprint(tpe, val, fp);
 
 	if (tl)
-		stream_printf(fp, "%s", tl);
+		mnstr_printf(fp, "%s", tl);
 	return MAL_SUCCEED;
 }
 
@@ -641,7 +641,7 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case 10: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6) G(7) G(8) G(9));
 	}
 	if (msg== MAL_SUCCEED) {
-		stream_printf(cntxt->fdout,"%s",fmt2);
+		mnstr_printf(cntxt->fdout,"%s",fmt2);
 		GDKfree(fmt2);
 	}
 	return msg;
@@ -675,7 +675,7 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	case 11: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7) G(8) G(9) G(10));
 	}
 	if (msg== MAL_SUCCEED){
-		stream_printf(f,"%s",fmt2);
+		mnstr_printf(f,"%s",fmt2);
 		GDKfree(fmt2);
 	}
 	return msg;
@@ -785,13 +785,13 @@ IOdatafile(str *ret, str *fnme){
 	if (s == NULL )
 		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
 	
-	if (stream_errnr(s)) {
-		stream_close(s);
+	if (mnstr_errnr(s)) {
+		mnstr_close(s);
 		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
 	}
 	*ret= GDKstrdup(*fnme);
-	stream_close(s);
-	stream_destroy(s);
+	mnstr_close(s);
+	mnstr_destroy(s);
 	return MAL_SUCCEED;
 }
 
@@ -810,14 +810,14 @@ IOexport(bit *ret, int *bid, str *fnme)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
 	}
-	if (stream_errnr(s)) {
-		stream_close(s);
+	if (mnstr_errnr(s)) {
+		mnstr_close(s);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
 	}
 	BATprintf(s, b);
-	stream_close(s);
-	stream_destroy(s);
+	mnstr_close(s);
+	mnstr_destroy(s);
 	*ret = TRUE;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

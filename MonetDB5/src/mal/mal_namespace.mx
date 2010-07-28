@@ -322,25 +322,25 @@ void dumpNamespaceStatistics(stream *f, int details)
 {
 	int i,l,cnt,hits,steps;
 
-	stream_printf(f,"Namespace statistics\n");
-	stream_printf(f,"nmetop = %d size= %d\n",
+	mnstr_printf(f,"Namespace statistics\n");
+	mnstr_printf(f,"nmetop = %d size= %d\n",
 	    namespace.nmetop, namespace.size);
 	for(i=0;i<256; i++)
 	if(namespace.nme[i]){
 	    hits= steps= cnt =0;
-	    stream_printf(f,"list %d ",i);
+	    mnstr_printf(f,"list %d ",i);
 	    for(l= i; l && namespace.nme[l]; l= namespace.link[l]){
 	        cnt++;
 	        if(details) {
-	            stream_printf(f,"(%s %d) ",
+	            mnstr_printf(f,"(%s %d) ",
 	            namespace.nme[l], namespace.hit[l]);
-	            if( i+1 % 5 == 0) stream_printf(f,"\n");
+	            if( i+1 % 5 == 0) mnstr_printf(f,"\n");
 				hits+= namespace.hit[l];
 				steps += namespace.hit[l]*cnt;
 	        }
 	    }
-	    if(cnt)  stream_printf(f," has %d elements, %d hits, %d steps",cnt,hits,steps/(hits+1));
-		stream_printf(f,"\n");
+	    if(cnt)  mnstr_printf(f," has %d elements, %d hits, %d steps",cnt,hits,steps/(hits+1));
+		mnstr_printf(f,"\n");
 	}
 }
 @}

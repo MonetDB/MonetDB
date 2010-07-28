@@ -140,9 +140,9 @@ void showErrors(Client cntxt) {
 	int i;
 	if (cntxt->errbuf && *cntxt->errbuf) {
 		i = (int)strlen(cntxt->errbuf);
-		stream_printf(cntxt->fdout, "%s", cntxt->errbuf);
+		mnstr_printf(cntxt->fdout, "%s", cntxt->errbuf);
 		if (cntxt->errbuf[i - 1] != '\n')
-			stream_printf(cntxt->fdout, "\n");
+			mnstr_printf(cntxt->fdout, "\n");
 		cntxt->errbuf[0] = '\0';
 	}
 }
@@ -403,7 +403,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	@:performanceVariables@
 
 #ifdef DEBUG_CALLMAL
-	stream_printf(cntxt->fdout,"callMAL\n");
+	mnstr_printf(cntxt->fdout,"callMAL\n");
 	printInstruction(cntxt->fdout,mb,0,pci,LIST_MAL_ALL);
 #endif
 	switch( pci->token){
@@ -718,7 +718,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *h
 		*retclaim = guess * pci->retc;
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total )
-		stream_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
+		mnstr_printf(GDKout,"#DFLOWgetMemoryClaim   pool " LLFMT " claims " LLFMT "," LLFMT "," LLFMT"\n", memorypool,total,(retclaim?*retclaim:0),(hotclaim?*hotclaim:0));
 #endif
 }
 @-
@@ -743,7 +743,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 		hottop = 0; 
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"#DFLOWhotpotatoes reset\n");
+		mnstr_printf(GDKout,"#DFLOWhotpotatoes reset\n");
 #endif
 	}
 
@@ -763,7 +763,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 				if ( hotpotatoes[j].claim){
 					str cv = NULL;
 					ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-					stream_printf(GDKout,"#DFLOWhotpotatoes[%d] drops  [%s]" LLFMT "\n", j, cv, hotpotatoes[j].claim);
+					mnstr_printf(GDKout,"#DFLOWhotpotatoes[%d] drops  [%s]" LLFMT "\n", j, cv, hotpotatoes[j].claim);
 					if (cv) GDKfree(cv);
 				}
 #endif
@@ -804,7 +804,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 			if ( total ) {
 				str cv = NULL;
 				ATOMformat(TYPE_bat, &hotpotatoes[hottop].bid, &cv);
-				stream_printf(GDKout,"#DFLOWhotpotatoes[%d] claims [%s]" LLFMT "\n", hottop, cv, total);
+				mnstr_printf(GDKout,"#DFLOWhotpotatoes[%d] claims [%s]" LLFMT "\n", hottop, cv, total);
 				GDKfree(cv);
 			}
 #endif
@@ -816,7 +816,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 	updMemoryUsedPart(stk,pci, pci->retc,pci->argc,argclaim);
 #ifdef DEBUG_MEMORY_CLAIM
 	if ( total && action )
-		stream_printf(GDKout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
+		mnstr_printf(GDKout,"#DFLOWhotpotatoes pool " LLFMT " used " LLFMT "\n", memorypool, memoryused);
 #endif
 }
 
@@ -836,7 +836,7 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 			memorypool -= (argclaim + retclaim);
 			memoryclaims ++;
 #ifdef DEBUG_MEMORY_CLAIM
-			stream_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
+			mnstr_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
 				memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -849,9 +849,9 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 	memorypool += -argclaim -retclaim ; 
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
-		stream_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
+		mnstr_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
 			memoryclaims, THRgettid(), memorypool, memoryused, argclaim, retclaim,hotclaim);
-		stream_flush(GDKout);
+		mnstr_flush(GDKout);
 #endif
 	assert(memoryclaims >= 0 );
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
@@ -1031,7 +1031,7 @@ with this property. Nor do we maintain such properties.
 		getMemoryClaim(stk, pci, &argclaim, &retclaim,&hotclaim);
 		if ( DFLOWadmission(argclaim,retclaim,hotclaim) ){
 			PARDEBUG {
-				stream_printf(GDKout,"#DFLOWdelay instruction %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
+				mnstr_printf(GDKout,"#DFLOWdelay instruction %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
 				printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 			}
 			for ( ; ; )
@@ -1039,7 +1039,7 @@ with this property. Nor do we maintain such properties.
 				MT_sleep_ms(3); /* enough to pass some cheap instructions */
 				if ( DFLOWadmission(argclaim,retclaim,hotclaim) == 0) {
 					PARDEBUG {
-						stream_printf(GDKout,"#DFLOWcont  thread %d delay " LLFMT " pool  " LLFMT" delayed " LLFMT " ms\n#", THRgettid(),  memorypool, argclaim+retclaim, (GDKusec()-stk->clk)/1000);
+						mnstr_printf(GDKout,"#DFLOWcont  thread %d delay " LLFMT " pool  " LLFMT" delayed " LLFMT " ms\n#", THRgettid(),  memorypool, argclaim+retclaim, (GDKusec()-stk->clk)/1000);
 						printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 					}
 					break;
@@ -1049,7 +1049,7 @@ with this property. Nor do we maintain such properties.
 					continue;
 				/* re-schedule instructions that require a lot of memory for postponed execution */
 				PARDEBUG {
-					stream_printf(GDKout,"#DFLOWrequeue instr  %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
+					mnstr_printf(GDKout,"#DFLOWrequeue instr  %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
 					printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT);
 				}
 				throw(MAL,"DFLOWadmission","failed");
@@ -1257,9 +1257,9 @@ DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
 	fs[i].status = DFLOWrunning;
 
 	PARDEBUG {
-		stream_printf(GDKstdout,"#enqueue %d", fs[i].pc);
+		mnstr_printf(GDKstdout,"#enqueue %d", fs[i].pc);
 		for(j=p->retc; j<p->argc; j++)
-			stream_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
+			mnstr_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
 		printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
 	}
 }
@@ -1294,7 +1294,7 @@ DFLOWscheduler( DataFlow flow )
 		goto firststep;	/* confuse static code analysers, i want a jump */
 
 	while(queued){
-		PARDEBUG stream_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
+		PARDEBUG mnstr_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
 		f = q_dequeue(flow->done);
 		if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
 			(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
@@ -1302,7 +1302,7 @@ DFLOWscheduler( DataFlow flow )
 		queued--;
 		if (f->pc < 0) {
 			PARDEBUG {
-				stream_printf(GDKstdout,"#errors encountered %s ", f->error);
+				mnstr_printf(GDKstdout,"#errors encountered %s ", f->error);
 			}
 			/* we have to wait for all threads to report back */
 			/* dequeue the remainders in case of an error */
@@ -1315,9 +1315,9 @@ DFLOWscheduler( DataFlow flow )
 		} else {
 			p = getInstrPtr(flow->mb, f->pc);
 			PARDEBUG{
-				stream_printf(GDKstdout,"#dequeue %d", f->pc);
+				mnstr_printf(GDKstdout,"#dequeue %d", f->pc);
 				for(j=p->retc; j<p->argc; j++)
-					stream_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
+					mnstr_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
 				printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
 			}
 
@@ -1340,7 +1340,7 @@ DFLOWscheduler( DataFlow flow )
 		}
 		firststep:
 		PARDEBUG if (queued)
-			stream_printf(GDKstdout,"#schedule new instructions, start from %d\n", pc);
+			mnstr_printf(GDKstdout,"#schedule new instructions, start from %d\n", pc);
 
 		for( ; pc < limit; pc++)
 			if ( fs[pc].status != DFLOWwrapup)
@@ -1374,10 +1374,10 @@ DFLOWscheduler( DataFlow flow )
 	} 
 	PARDEBUG {
 		int candidates = 0;
-		stream_printf(GDKstdout,"#end of data flow %d %d\n",pc,limit);
+		mnstr_printf(GDKstdout,"#end of data flow %d %d\n",pc,limit);
 		for ( i =0 ; i<limit; i++)
 			if (fs[i].status != DFLOWwrapup  && fs[i].pc >=0) {
-				stream_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].status, fs[i].pc);
+				mnstr_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].status, fs[i].pc);
 				printInstruction(GDKstdout, flow->mb, 0, getInstrPtr(flow->mb,fs[i].pc), LIST_MAL_STMT);
 				candidates++;
 			}
@@ -1402,7 +1402,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	str ret = MAL_SUCCEED;
 
 #ifdef DEBUG_FLOW
-	stream_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc,stoppc);
+	mnstr_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc,stoppc);
 	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT);
 #endif
 
@@ -1498,7 +1498,7 @@ runMALdetached(void *t){
 	str msg= MAL_SUCCEED;
 
 #ifdef DEBUG_DETACHED
-	stream_printf(cntxt->fdout,"start thread in background\n");
+	mnstr_printf(cntxt->fdout,"start thread in background\n");
 #endif
 	if (stk == NULL){
 		GDKerror("mal.interpreter: " MAL_STACK_FAIL);
@@ -1511,7 +1511,7 @@ runMALdetached(void *t){
 	if  ( msg != MAL_SUCCEED)
 		GDKerror(msg);		/* indirect way to pass an error */
 #ifdef DEBUG_DETACHED
-	stream_printf(cntxt->fdout,"finished thread in background\n");
+	mnstr_printf(cntxt->fdout,"finished thread in background\n");
 #endif
 }
 str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop)
@@ -1826,7 +1826,7 @@ are identified. In the post-execution phase they are removed.
 			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && getEndOfLife(mb,getArg(pci,i)) == stkpc && isNotUsedIn(pci,i+1,getArg(pci,i)) ){
 				garbage[i]= getArg(pci,i);
 #ifdef DEBUG_GC
-				stream_printf(GDKstdout,"GC %d %s prep\n",getArg(pci,i), getArgName(mb,pci,i));
+				mnstr_printf(GDKstdout,"GC %d %s prep\n",getArg(pci,i), getArgName(mb,pci,i));
 #endif
 			}
 
@@ -1900,7 +1900,7 @@ are identified. In the post-execution phase they are removed.
 				bid = ABS(stk->stk[garbage[i]].val.bval);
 				BBPdecref( bid, TRUE);
 #ifdef DEBUG_GC
-				stream_printf(GDKstdout,"GC %d %d %s done %d\n",bid,garbage[i], getVarName(mb,garbage[i]), BBP_lrefs(bid));
+				mnstr_printf(GDKstdout,"GC %d %d %s done %d\n",bid,garbage[i], getVarName(mb,garbage[i]), BBP_lrefs(bid));
 #endif
 				stk->stk[garbage[i]].val.bval = 0;
 			}
@@ -2248,7 +2248,7 @@ if( ret != MAL_SUCCEED ) {
 	str msg = 0;
 
 	if( stk->cmd || mb->trap  ) {
-		stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
+		mnstr_printf(cntxt->fdout,"!ERROR: %s\n",ret);
 		stk->cmd= '\n';	/* in debugging go to step mode */
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || stk->cmd == 'q'  || cntxt->mode == FINISHING) {
@@ -2301,7 +2301,7 @@ all.
 		v->len= (int)strlen(v->val.sval);
 		ret = 0;
 	} else {
-		stream_printf(cntxt->fdout,"%s",ret);
+		mnstr_printf(cntxt->fdout,"%s",ret);
 		if (ret != M5OutOfMemory)
 			GDKfree(ret);
 	}
@@ -2405,7 +2405,7 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	ValPtr v;
 
 #ifdef STACKTRACE
-	stream_printf(cntxt->fdout,"#--->stack before garbage collector\n");
+	mnstr_printf(cntxt->fdout,"#--->stack before garbage collector\n");
 	printStack(cntxt->fdout,mb,stk,0);
 #endif
 	for(k=0;k<mb->vtop; k++) {
@@ -2416,7 +2416,7 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 		}
 	}
 #ifdef STACKTRACE
-	stream_printf(cntxt->fdout,"#-->stack after garbage collector\n");
+	mnstr_printf(cntxt->fdout,"#-->stack after garbage collector\n");
 	printStack(cntxt->fdout,mb,stk,0);
 #else
 	(void) cntxt;
@@ -2512,21 +2512,21 @@ It simply skips the barrier block upon return.
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
 		MT_set_lock(*lock, "timing");
-	stream_printf(cntxt->fdout,"= ");	/* single column rendering */
+	mnstr_printf(cntxt->fdout,"= ");	/* single column rendering */
 	if( cntxt->flags & timerFlag){
 		char buf[32];
 		snprintf(buf,sizeof(buf),LLFMT,GDKusec()-cntxt->timer);
-		stream_printf(cntxt->fdout, "%8s usec ",buf);
+		mnstr_printf(cntxt->fdout, "%8s usec ",buf);
 	}
 	if( cntxt->flags & threadFlag)
-		stream_printf(cntxt->fdout,"\@%d ",tid);
+		mnstr_printf(cntxt->fdout,"\@%d ",tid);
 #ifdef HAVE_SYS_RESOURCE_H
 	if( cntxt-> flags & ioFlag){
 		struct  rusage resource;
 		getrusage(RUSAGE_SELF, &resource);
-		stream_printf(cntxt->fdout," %3d R",
+		mnstr_printf(cntxt->fdout," %3d R",
 			resource.ru_inblock- oldinblock);
-		stream_printf(cntxt->fdout," %3d W ",
+		mnstr_printf(cntxt->fdout," %3d W ",
 			resource.ru_oublock- oldoublock);
 	}
 #endif
@@ -2534,31 +2534,31 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		struct Mallinfo memory;
 		memory= MT_mallinfo();
 		if( memory.arena- oldMemory.arena > 0)
-			stream_printf(cntxt->fdout," " SZFMT " bytes ",
+			mnstr_printf(cntxt->fdout," " SZFMT " bytes ",
 				(size_t) (memory.arena-oldMemory.arena) );
 	}
 	if( cntxt->flags & flowFlag){
 		/* calculate the read/write byte flow */
 		displayVolume(cntxt, getVolume(stk,pci,0));
-		stream_printf(cntxt->fdout,"/");
+		mnstr_printf(cntxt->fdout,"/");
 		displayVolume(cntxt, getVolume(stk,pci,1));
-		stream_printf(cntxt->fdout," ");
+		mnstr_printf(cntxt->fdout," ");
 	}
 	if( cntxt->flags & bigfootFlag){
 		displayVolume(cntxt,cntxt->vmfoot);
-		stream_printf(cntxt->fdout,":");
+		mnstr_printf(cntxt->fdout,":");
 		displayVolume(cntxt,cntxt->bigfoot);
-		stream_printf(cntxt->fdout," ");
+		mnstr_printf(cntxt->fdout," ");
 	}
 	if (cntxt->flags & cntFlag){
 		char buf[32];
 		snprintf(buf, sizeof(buf), BUNFMT , cntxt->cnt);
-		stream_printf(cntxt->fdout,":%6s ", buf);
+		mnstr_printf(cntxt->fdout,":%6s ", buf);
 	}
 	{str line;
 	line= instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
 	if ( line) {
-		stream_printf(cntxt->fdout, " %s\n", line);
+		mnstr_printf(cntxt->fdout, " %s\n", line);
 		GDKfree(line);
 	}
 	}
@@ -2609,7 +2609,7 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 void displayVolume(Client cntxt, lng vol){
 	char buf[32];
 	formatVolume(buf,(int)sizeof(buf),vol);
-	stream_printf(cntxt->fdout,"%s",buf);
+	mnstr_printf(cntxt->fdout,"%s",buf);
 }
 @h
 #endif /*  _MAL_INTERPRET_H*/

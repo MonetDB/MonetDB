@@ -41,7 +41,7 @@
 #include "nexi_rewriter.h"
 
 #define LOGFILE   GDKout
-#define LOGPRINTF if ( 0 ) stream_printf
+#define LOGPRINTF if ( 0 ) mnstr_printf
 
 
 /* function for rewriting CO queries */

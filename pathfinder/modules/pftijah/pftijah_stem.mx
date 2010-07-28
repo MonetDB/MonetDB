@@ -488,7 +488,7 @@ NULL }
 const char* debugStem(void* ctx, const char* s) {
 	tjStemCtx* sctx = (tjStemCtx*)ctx;
 
-	stream_printf(GDKout,"stemmer(%s): stem(\"%s\")\n",sctx->name,s);
+	mnstr_printf(GDKout,"stemmer(%s): stem(\"%s\")\n",sctx->name,s);
 	return s;
 }
 
@@ -534,7 +534,7 @@ static const char* snb_porter_stem(void* ctx, const char* s) {
 	}
 	env->p[env->l] = 0;
 #ifdef STEMMING_DEBUG
-	stream_printf(GDKout,"+ stem-snowball-porter(%s)=\"%s\"\n",s,env->p);
+	mnstr_printf(GDKout,"+ stem-snowball-porter(%s)=\"%s\"\n",s,env->p);
 #endif
 	return (const char*)env->p;
 }
@@ -574,7 +574,7 @@ static const char* snb_english_stem(void* ctx, const char* s) {
 	}
 	env->p[env->l] = 0;
 #ifdef STEMMING_DEBUG
-	stream_printf(GDKout,"+ stem-snowball-english(%s)=\"%s\"\n",s,env->p);
+	mnstr_printf(GDKout,"+ stem-snowball-english(%s)=\"%s\"\n",s,env->p);
 #endif
 	return (const char*)env->p;
 }
@@ -614,7 +614,7 @@ static const char* snb_dutch_stem(void* ctx, const char* s) {
 	}
 	env->p[env->l] = 0;
 #ifdef STEMMING_DEBUG
-	stream_printf(GDKout,"+ stem-snowball-dutch(%s)=\"%s\"\n",s,env->p);
+	mnstr_printf(GDKout,"+ stem-snowball-dutch(%s)=\"%s\"\n",s,env->p);
 #endif
 	return (const char*)env->p;
 }
@@ -648,7 +648,7 @@ static const char* snb_french_stem(void* ctx, const char* s) {
 	}
 	env->p[env->l] = 0;
 #ifdef STEMMING_DEBUG
-	stream_printf(GDKout,"+ stem-snowball-french(%s)=\"%s\"\n",s,env->p);
+	mnstr_printf(GDKout,"+ stem-snowball-french(%s)=\"%s\"\n",s,env->p);
 #endif
 	return (const char*)env->p;
 }
@@ -682,7 +682,7 @@ static const char* snb_german_stem(void* ctx, const char* s) {
 	}
 	env->p[env->l] = 0;
 #ifdef STEMMING_DEBUG
-	stream_printf(GDKout,"+ stem-snowball-german(%s)=\"%s\"\n",s,env->p);
+	mnstr_printf(GDKout,"+ stem-snowball-german(%s)=\"%s\"\n",s,env->p);
 #endif
 	return (const char*)env->p;
 }
@@ -714,16 +714,16 @@ static int porter_english_init(void* ctx, char* s) {
 static const char* porter_english_stem(void* ctx, const char* s) {
 	(void)ctx;
 #ifdef STEMMING_DEBUG
-	stream_printf(GDKout,"+ stem-porter_english(%s)=",s);
+	mnstr_printf(GDKout,"+ stem-porter_english(%s)=",s);
 #endif
 	if ( Stem( (char *) s ) ) {
 #ifdef STEMMING_DEBUG
-	    stream_printf(GDKout,"\"%s\"\n",s);
+	    mnstr_printf(GDKout,"\"%s\"\n",s);
 #endif
 	    return s;
 	} else {
 #ifdef STEMMING_DEBUG
-	    stream_printf(GDKout,"\<FAIL>\"%s\"\n",s);
+	    mnstr_printf(GDKout,"\<FAIL>\"%s\"\n",s);
 #endif
 	    return s;
         }
@@ -747,11 +747,11 @@ static int porter_dutch_init(void* ctx, char* s) {
 static const char* porter_dutch_stem(void* ctx, const char* s) {
 	(void)ctx;
 #ifdef STEMMING_DEBUG
-	stream_printf(GDKout,"+ stem-porter_dutch(%s)=",s);
+	mnstr_printf(GDKout,"+ stem-porter_dutch(%s)=",s);
 #endif
 	dStem( (char *) s );
 #ifdef STEMMING_DEBUG
-	stream_printf(GDKout,"\"%s\"\n",s);
+	mnstr_printf(GDKout,"\"%s\"\n",s);
 #endif
 	return s;
 }
@@ -804,7 +804,7 @@ tjStemCtx* getStemmingContext(char* name) {
 	else if ( strcmp(name,"porter-dutch")==0 )
 	    res = & porter_dutch;
 	else {
-	    stream_printf(GDKerr,"# WARNING: stemmer \"%s\" unknown, using nostemming\n",name);
+	    mnstr_printf(GDKerr,"# WARNING: stemmer \"%s\" unknown, using nostemming\n",name);
 	    res = & nostemming;
 	}
 	return res;

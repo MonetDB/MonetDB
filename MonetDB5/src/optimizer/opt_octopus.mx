@@ -269,7 +269,7 @@ int tcnt, int *wnm, int *tnm, int **sch, int **res){
 	}
 
 	OPTDEBUGoctopus {
-		stream_printf(cntxt->fdout,"#create tentacle for %d %d %d\n",start,idx,varid);
+		mnstr_printf(cntxt->fdout,"#create tentacle for %d %d %d\n",start,idx,varid);
 		printInstruction(cntxt->fdout,mb,0,pci,0);
 	}
 
@@ -420,7 +420,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if ( tentacle == NULL)
 		return 0;
 	OPTDEBUGoctopus{
-		stream_printf(cntxt->fdout, "#Octopus optimizer called\n");
+		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	}
 	(void) stk;
@@ -787,7 +787,7 @@ The tentacle code should be optimized by the remaining optimizers too.
 		chkProgram(cntxt->nspace,mb);  
 	OPTDEBUGoctopus
 	if (actions) {
-		stream_printf(cntxt->fdout, "DONE octopus \n");
+		mnstr_printf(cntxt->fdout, "DONE octopus \n");
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
 		for (i=0; i<tn; i++){

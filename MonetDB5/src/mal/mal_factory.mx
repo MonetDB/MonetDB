@@ -328,7 +328,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	str msg;
 
 #ifdef DEBUG_MAL_FACTORY
-	stream_printf(cntxt->fdout, "#factoryMgr called\n");
+	mnstr_printf(cntxt->fdout, "#factoryMgr called\n");
 #endif
 	/* the lookup can be largely avoided by handing out the index
 	   upon factory definition. todo

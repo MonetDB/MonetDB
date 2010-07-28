@@ -291,7 +291,7 @@ of removal of superflous constructions.
 	GDKfree(old);
 	if( actions) {
 		DEBUGoptimizers
-		stream_printf(cntxt->fdout,"#opt_emptyset: %d empty sets statements removed\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_emptyset: %d empty sets statements removed\n",actions);
 		clrAllTypes(mb);	 /* force a complete resolve */
 	}
 	GDKfree(constraints);
@@ -320,11 +320,11 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if ((rowsp = varGetProp(mb, i, rowsProp)) != NULL 
 		     && rowsp->value.val.lval == 0) {
 			OPTDEBUGemptySet
-				stream_printf(cntxt->fdout, "#START emptyset optimizer %d", i);
+				mnstr_printf(cntxt->fdout, "#START emptyset optimizer %d", i);
 			empty[i] = 1;
 		} 
 	}
-	OPTDEBUGemptySet stream_printf(cntxt->fdout, "\n");
+	OPTDEBUGemptySet mnstr_printf(cntxt->fdout, "\n");
 	i= ESevaluate(cntxt, mb, empty);
 	GDKfree(empty);
 	return i;

@@ -84,7 +84,7 @@ malBootstrap()
 	(void)MCinitClientThread(c);
 	s = malInclude(c, bootfile, 0);
 	if (s != NULL) {
-		stream_printf(GDKout, "!%s\n", s);
+		mnstr_printf(GDKout, "!%s\n", s);
 		GDKfree(s);
 		return 0;
 	}
@@ -204,11 +204,11 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	s = strchr(user, ':');
 	if (s) {
 		*s = 0;
-		stream_set_byteorder(fin->s, strcmp(user, "BIG") == 0);
+		mnstr_set_byteorder(fin->s, strcmp(user, "BIG") == 0);
 		user = s + 1;
 	} else {
-		stream_printf(fout, "!incomplete challenge '%s'\n", user);
-		stream_flush(fout);
+		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
+		mnstr_flush(fout);
 		GDKfree(command);
 		return;
 	}
@@ -220,24 +220,24 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		passwd = s + 1;
 		/* decode algorithm, i.e. {plain}mypasswordchallenge */
 		if (*passwd != '{') {
-			stream_printf(fout, "!invalid password entry\n");
-			stream_flush(fout);
+			mnstr_printf(fout, "!invalid password entry\n");
+			mnstr_flush(fout);
 			GDKfree(command);
 			return;
 		}
 		algo = passwd + 1;
 		s = strchr(algo, '}');
 		if (!s) {
-			stream_printf(fout, "!invalid password entry\n");
-			stream_flush(fout);
+			mnstr_printf(fout, "!invalid password entry\n");
+			mnstr_flush(fout);
 			GDKfree(command);
 			return;
 		}
 		*s = 0;
 		passwd = s + 1;
 	} else {
-		stream_printf(fout, "!incomplete challenge '%s'\n", user);
-		stream_flush(fout);
+		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
+		mnstr_flush(fout);
 		GDKfree(command);
 		return;
 	}
@@ -248,8 +248,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		*s = 0;
 		lang = s + 1;
 	} else {
-		stream_printf(fout, "!incomplete challenge, missing language\n");
-		stream_flush(fout);
+		mnstr_printf(fout, "!incomplete challenge, missing language\n");
+		mnstr_flush(fout);
 		GDKfree(command);
 		return;
 	}
@@ -268,12 +268,12 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	if (!GDKembedded && database != NULL && database[0] != '\0' &&
 			strcmp(database, GDKgetenv("gdk_dbname")) != 0)
 	{
-		stream_printf(fout, "!request for database '%s', "
+		mnstr_printf(fout, "!request for database '%s', "
 				"but this is database '%s', "
 				"did you mean to connect to merovingian instead?\n",
 				database, GDKgetenv("gdk_dbname"));
 		/* flush the error to the client, and abort further execution */
-		stream_flush(fout);
+		mnstr_flush(fout);
 		GDKfree(command);
 		return;
 	} else {
@@ -288,8 +288,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		err = AUTHcheckCredentials(&uid, &root, &user, &passwd, &challenge, &algo, &lang);
 		assert(lang);			/* we expect it's still not NULL */
 		if (err != MAL_SUCCEED) {
-			stream_printf(fout, "!%s\n", err);
-			stream_flush(fout);
+			mnstr_printf(fout, "!%s\n", err);
+			mnstr_flush(fout);
 			GDKfree(command);
 			return;
 		}
@@ -307,12 +307,12 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			}
 			if (stats->locked == 1) {
 				if (uid == 0) {
-					stream_printf(fout, "#server is running in "
+					mnstr_printf(fout, "#server is running in "
 							"maintenance mode\n");
 				} else {
-					stream_printf(fout, "!server is running in "
+					mnstr_printf(fout, "!server is running in "
 							"maintenance mode, please try again later\n");
-					stream_flush(fout);
+					mnstr_flush(fout);
 					SABAOTHfreeStatus(&stats);
 					GDKfree(command);
 					return;
@@ -330,8 +330,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {
-			stream_printf(fout, "!Out of client slots\n");
-			stream_flush(fout);
+			mnstr_printf(fout, "!Out of client slots\n");
+			mnstr_flush(fout);
 			GDKfree(command);
 			return;
 		}
@@ -342,8 +342,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		}
 
 		if ((s = setScenario(c, lang)) != NULL) {
-			stream_printf(c->fdout, "!%s\n", s);
-			stream_flush(c->fdout);
+			mnstr_printf(c->fdout, "!%s\n", s);
+			mnstr_flush(c->fdout);
 			c->mode = FINISHING;
 		}
 	}
@@ -685,7 +685,7 @@ and marking all non-temporary variables as being (potentially) used.
 	}
 	prg->def->errors = 0;
 	if( c->itrace)
-		stream_printf(c->fdout,"mdb>#EOD\n");
+		mnstr_printf(c->fdout,"mdb>#EOD\n");
 	return msg;
 }
 

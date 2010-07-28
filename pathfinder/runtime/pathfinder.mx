@@ -4695,7 +4695,7 @@ xquery_mil_exec(xquery_client *ctx,
     YYSTREE t;
 
     if (ctx->mode&XQ_DEBUG)
-        stream_write(ctx->fderr, buf, strlen(buf), 1);
+        mnstr_write(ctx->fderr, buf, strlen(buf), 1);
 
     t = xquery_mil2tree(ctx, buf); 
     if (t) {
@@ -4854,7 +4854,7 @@ xquery_compile_exec(xquery_client *ctx,
     /* write errors and debug info on client stream, however, in case of
      * XRPC, we leave the error message to the XRPC receiver, so that it
      * can create correct SOAP Fault message. */
-    if ( !(ctx->mode&XQ_XRPC) && err && *err) stream_write(ctx->fderr, err, len, 1);
+    if ( !(ctx->mode&XQ_XRPC) && err && *err) mnstr_write(ctx->fderr, err, len, 1);
 
     /* execute the three MIL sections */
     if (ret && *prologue && **prologue)
@@ -5245,9 +5245,9 @@ xquery_function_call(xquery_client *ctx,
     /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
     if (mil) { 
         /* MIL corresponding to BUNins calls we made from C */
-        stream_write(ctx->fderr, mil, strlen(mil), 1);
+        mnstr_write(ctx->fderr, mil, strlen(mil), 1);
         /* MIL corresponding to UDF call sequence (even if we already have it cached) */
-        stream_write(ctx->fderr, fun->mil, strlen(fun->mil), 1);
+        mnstr_write(ctx->fderr, fun->mil, strlen(fun->mil), 1);
     }
 
     /* override some query-specific MIL runtime variables from here */
@@ -5410,7 +5410,7 @@ xquery_module_load(xquery_client *ctx,
         ctx->var_usage_size = BATcount(ctx->var_usage);
         ctx->proc_vid_size = BATcount(ctx->proc_vid);
     } else if (ctx->mode&XQ_DEBUG) {
-        stream_write(ctx->fderr, mod->def->prologue, strlen(mod->def->prologue), 1);
+        mnstr_write(ctx->fderr, mod->def->prologue, strlen(mod->def->prologue), 1);
     }
     mod->ns = ns;
     mod->nslen = nslen;
@@ -5999,9 +5999,9 @@ if (options != COMPILE_OPTION_ALGEBRA) {
     if (ctx->mode&XQ_DEBUG) {
         /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
         char *prologue = (char*) PFinitMIL();
-        stream_write(ctx->fderr, prologue, strlen(prologue), 1);
+        mnstr_write(ctx->fderr, prologue, strlen(prologue), 1);
         prologue = (char*) PFvarMIL();
-        stream_write(ctx->fderr, prologue, strlen(prologue), 1);
+        mnstr_write(ctx->fderr, prologue, strlen(prologue), 1);
     }
 
     /* handle optional xquery version string */
@@ -6248,13 +6248,13 @@ xquery_client_engine(mapi_client *mc)
         usec = GDKusec();
 
         /* use the MAPI protocol to read as much xquery buffer as possible */
-        if (stream_flush(out)) {
+        if (mnstr_flush(out)) {
             msg = "could not flush prompt"; 
             break;
         }
 
         for (p = ctx->buf, curlen = 0; p; ) {
-            n = stream_read(in, p + curlen, 1, ctx->buflen - curlen);
+            n = mnstr_read(in, p + curlen, 1, ctx->buflen - curlen);
             if (n <= 0 || p[curlen] == 0)
                 break;
 
@@ -6303,7 +6303,7 @@ xquery_client_engine(mapi_client *mc)
                         p += sizeof("copy ")-1;
 
                         /* start shredder (first character should be skipped) */
-                        if (stream_flush(out)) {
+                        if (mnstr_flush(out)) {
                                 msg = "could not flush prompt"; 
                                 break;
                         }
@@ -6337,14 +6337,14 @@ xquery_client_engine(mapi_client *mc)
             /* execute query */
             xquery = p+1;
 if (p[1] == '4' && p[2] == '2' && p[3] == '\n' && p[4] == 0 && genType == buf && output[2] == 0) { /* use '42' as latency query test */ 
-    stream_printf(GDKout, "42\n\nTrans       0.000 msec\nShred       0.000 msec\nQuery       0.000 msec\nPrint       0.000 msec\n"); 
+    mnstr_printf(GDKout, "42\n\nTrans       0.000 msec\nShred       0.000 msec\nQuery       0.000 msec\nPrint       0.000 msec\n"); 
 } else {
             err = xquery_change_genType(ctx, genType);
             if (err == NULL) 
                 err = xquery_prepare(ctx, usec, xquery);
             if (err && err != xquery_nondescriptive_error) {
                 /* report errors back to client */
-                stream_write(ctx->fderr, err, strlen(err), 1);
+                mnstr_write(ctx->fderr, err, strlen(err), 1);
             }
             if (ctx->mode&XQ_DEBUG) {
                 /* memory debugging */
@@ -6464,12 +6464,12 @@ CMDxquery(Cntxt stk,
                     }
                 }
                 THRsetdata(0,bak);
-                stream_close(s);
+                mnstr_close(s);
             } else {
                 err = "CMDxquery: failed to create stream";
             }
             buffer_destroy(b);
-            stream_destroy(s);
+            mnstr_destroy(s);
         } else {
             err = "CMDxquery: failed to allocate streambuffer";
         }
@@ -6482,7 +6482,7 @@ CMDxquery(Cntxt stk,
         VALclear(res);
         return GDK_FAIL;
     } 
-    /* stream_printf(GDKout,"RES = %s\n",res->val.sval); */
+    /* mnstr_printf(GDKout,"RES = %s\n",res->val.sval); */
     return GDK_SUCCEED;
 }
 
@@ -6553,7 +6553,7 @@ xquery_method(mapi_client *mc,
             ctx->fderr = s;
             ctx->mode |= XQ_DEBUG;
         }
-        stream_write(ctx->fderr, prologue, strlen(prologue), 1);
+        mnstr_write(ctx->fderr, prologue, strlen(prologue), 1);
     }
     if (err == NULL && module){
         err = xquery_module_load(ctx, ns="xrpc", module, location); 
@@ -6576,8 +6576,8 @@ xquery_method(mapi_client *mc,
     }
 
     if (s) {
-        stream_close(ctx->fderr);
-        stream_destroy(ctx->fderr);
+        mnstr_close(ctx->fderr);
+        mnstr_destroy(ctx->fderr);
         ctx->fderr = GDKerr;
     }
     return err;

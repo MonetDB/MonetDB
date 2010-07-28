@@ -441,8 +441,8 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 		m->type = -1;
 		return NULL;
 	}
-	if (stream_errnr(bs->s)) {
-		sql_error(m, 500, "stream not open %d", stream_errnr(bs->s));
+	if (mnstr_errnr(bs->s)) {
+		sql_error(m, 500, "stream not open %d", mnstr_errnr(bs->s));
 		m->type = -1;
 		return NULL;
 	}
@@ -521,7 +521,7 @@ mvc_export_warning(stream *s, str w) {
 	while (w != NULL && *w != '\0') {
 		if ((tmp = strchr(w, (int)'\n')) != NULL)
 			*tmp++ = '\0';
-		if (stream_printf(s, "#%s", w) < 0)
+		if (mnstr_printf(s, "#%s", w) < 0)
 			return(-1);
 		w = tmp;
 	}
@@ -538,7 +538,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		return 0;
 
 	/* write header, query type: Q_PREPARE */
-	if (stream_printf(out,
+	if (mnstr_printf(out,
 		"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
 		"%% .prepare,	.prepare,	.prepare # table_name\n"
 		"%% type,	digits,	scale # name\n"
@@ -558,7 +558,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			sql_subtype *t = &a->type;
 
 			if (t) {
-				if (stream_printf(out,
+				if (mnstr_printf(out,
 					"[ \"%s\",	%d,	%d	]\n",
 					t->type->sqlname,
 					t->digits,
@@ -595,7 +595,7 @@ mvc_send_@1(stream *s, @1 cnt){
 	if( neg) 
 		*b = '-'; 
 	else b++;
-	return stream_write(s, b, 50- (b-buf),1)==1;
+	return mnstr_write(s, b, 50- (b-buf),1)==1;
 }
 @c
 @:mvc_send(bte)@
@@ -655,11 +655,11 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 
 	if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
 		size_t ll = strlen(ns);
-		ok = (stream_write(s, ns, ll, 1) == 1);
+		ok = (mnstr_write(s, ns, ll, 1) == 1);
 	} else if (eclass == EC_DEC) {
 		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len,
 				  mtype, p);
-		ok = (stream_write(s, *buf, l, 1) == 1);
+		ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIME) {
 		struct time_res *ts_res = alloca(sizeof(struct time_res));
 		ts_res->has_tz = (strcmp(sqlname, "timetz") == 0);
@@ -667,7 +667,7 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 		ts_res->timezone = m->timezone;
 		l = sql_time_tostr( (void *) ts_res, buf, len, mtype, p);
 
-		ok = (stream_write(s, *buf, l, 1) == 1);
+		ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIMESTAMP) {
 		struct time_res *ts_res = alloca(sizeof(struct time_res));
 		ts_res->has_tz = (strcmp(sqlname, "timestamptz") == 0);
@@ -675,7 +675,7 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 		ts_res->timezone = m->timezone;
 		l = sql_timestamp_tostr((void *) ts_res, buf, len, mtype, p);
 
-		ok = (stream_write(s, *buf, l, 1) == 1);
+		ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else {
 		switch(mtype) {
 		case TYPE_bte:
@@ -692,7 +692,7 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 			break;
 		default: {
 			l = (*BATatoms[mtype].atomToStr) (buf, len, p);
-			ok = (stream_write(s, *buf, l, 1) == 1);
+			ok = (mnstr_write(s, *buf, l, 1) == 1);
 		}
 		}
 	}
@@ -713,12 +713,12 @@ mvc_export_row(mvc *m, stream *s, res_table *t, str btag, str sep, str rsep, str
 
 	(void)ssep;
 	if (btag[0])
-		ok = (stream_write(s, btag, strlen(btag), 1) == 1);
+		ok = (mnstr_write(s, btag, strlen(btag), 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 
 		if (i != 0) {
-			ok = (stream_write(s, sep, seplen, 1) == 1);
+			ok = (mnstr_write(s, sep, seplen, 1) == 1);
 			if (!ok)
 				break;
 		}
@@ -729,7 +729,7 @@ mvc_export_row(mvc *m, stream *s, res_table *t, str btag, str sep, str rsep, str
 	if (len)
 		_DELETE(buf);
 	if (ok)
-		ok = (stream_write(s, rsep, rseplen, 1) == 1);
+		ok = (mnstr_write(s, rsep, rseplen, 1) == 1);
 	m->results = res_tables_remove(m->results, t);
 	return (ok) ? 0 : -1;
 }
@@ -811,7 +811,7 @@ mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr
 		TABLEToutput_file(&as, order, s);
 	}
 	TABLETdestroy_format(&as);
-	if (stream_errnr(s))
+	if (mnstr_errnr(s))
 		return -1;
 	return 0;
 }
@@ -955,20 +955,20 @@ mvc_export_value(mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, 
 #endif
 	assert(qtype == Q_TABLE);
 
-	if (stream_write(s, "&1 0 1 1 1\n", 11, 1) == 1 &&
+	if (mnstr_write(s, "&1 0 1 1 1\n", 11, 1) == 1 &&
 	    /* fallback to default tuplecount (1) and id (0) */
 	    /* TODO first header name then values */
-	    stream_write(s, "% ", 2, 1) == 1 &&
-	    stream_write(s, tn, strlen(tn), 1) == 1 &&
-	    stream_write(s, " # table_name\n% ", 16, 1) == 1 &&
-	    stream_write(s, cn, strlen(cn), 1) == 1 &&
-	    stream_write(s, " # name\n% ", 10, 1) == 1 &&
-	    stream_write(s, type, strlen(type), 1) == 1 &&
-	    stream_write(s, " # type\n% ", 10, 1) == 1 &&
+	    mnstr_write(s, "% ", 2, 1) == 1 &&
+	    mnstr_write(s, tn, strlen(tn), 1) == 1 &&
+	    mnstr_write(s, " # table_name\n% ", 16, 1) == 1 &&
+	    mnstr_write(s, cn, strlen(cn), 1) == 1 &&
+	    mnstr_write(s, " # name\n% ", 10, 1) == 1 &&
+	    mnstr_write(s, type, strlen(type), 1) == 1 &&
+	    mnstr_write(s, " # type\n% ", 10, 1) == 1 &&
 	    export_length(s, mtype, eclass, d, sc, has_tz(eclass,type), 0, p) &&
-	    stream_write(s, " # length\n[ ", 12, 1) == 1 &&
+	    mnstr_write(s, " # length\n[ ", 12, 1) == 1 &&
 	    export_value( m, s, eclass, type, d, sc, p, mtype, &buf, &len, ns)) 
-		ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
+		ok = (mnstr_write(s, rsep, strlen(rsep), 1) == 1);
 	    
 	if (buf)
 		_DELETE(buf);
@@ -982,14 +982,14 @@ mvc_export_operation(mvc *m, stream *s, str w)
 {
 	assert(m->type == Q_SCHEMA || m->type == Q_TRANS);
 	if (m->type == Q_SCHEMA) {
-		if (!s || stream_write(s, "&3\n", 3, 1) != 1)
+		if (!s || mnstr_write(s, "&3\n", 3, 1) != 1)
 			return -1;
 	} else {
 		if (m->session->auto_commit) {
-			if (stream_write(s, "&4 t\n", 5, 1) != 1)
+			if (mnstr_write(s, "&4 t\n", 5, 1) != 1)
 				return -1;
 		} else {
-			if (stream_write(s, "&4 f\n", 5, 1) != 1)
+			if (mnstr_write(s, "&4 f\n", 5, 1) != 1)
 				return -1;
 		}
 	}
@@ -1010,11 +1010,11 @@ mvc_export_affrows(mvc *m, stream *s, lng val, str w)
 	 */
 	if (!s) return 0;
 	
-	if (stream_write(s, "&2 ", 3, 1) != 1 || 
+	if (mnstr_write(s, "&2 ", 3, 1) != 1 || 
 	   !mvc_send_lng(s, val) ||
-	    stream_write(s, " ", 1, 1) != 1 ||
+	    mnstr_write(s, " ", 1, 1) != 1 ||
 	   !mvc_send_lng(s, m->last_id) ||
-   	    stream_write(s, "\n", 1, 1) != 1)
+   	    mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
 		return -1;
@@ -1044,12 +1044,12 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 		return 0;
 
 	/* query type: Q_TABLE */
-	if (!(stream_write(s, "&1 ", 3, 1) == 1))
+	if (!(mnstr_write(s, "&1 ", 3, 1) == 1))
 		return -1;
 
 	/* id */
 	if (!mvc_send_int(s, t->id) ||
-			stream_write(s, " ", 1, 1) != 1)
+			mnstr_write(s, " ", 1, 1) != 1)
 		return -1;
 
 	/* tuple count */
@@ -1064,53 +1064,53 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 			count = 1;
 	}
 	if (!mvc_send_lng(s, (lng) count) ||
-			stream_write(s, " ", 1, 1) != 1)
+			mnstr_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
 	/* column count */
 	if (!mvc_send_int(s, t->nr_cols) ||
-			stream_write(s, " ", 1, 1) != 1)
+			mnstr_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
 	/* row count, min(count, reply_size) */
 	if (!mvc_send_int(s, (BUN) m->reply_size < count ? m->reply_size : (int) count)) 
 		return export_error(order);
 
-	if (stream_write(s, "\n% ", 3, 1) != 1)
+	if (mnstr_write(s, "\n% ", 3, 1) != 1)
 		return export_error(order);
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 		size_t len = strlen(c->tn);
 
-		if (len && stream_write(s, c->tn, len, 1) != 1)
+		if (len && mnstr_write(s, c->tn, len, 1) != 1)
 			return export_error(order);
-		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
+		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return export_error(order);
 	}
-	if (stream_write(s, " # table_name\n% ", 16, 1) != 1)
+	if (mnstr_write(s, " # table_name\n% ", 16, 1) != 1)
 		return export_error(order);
 
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		if (stream_write(s, c->name, strlen(c->name), 1) != 1)
+		if (mnstr_write(s, c->name, strlen(c->name), 1) != 1)
 			return export_error(order);
-		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
+		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return export_error(order);
 	}
-	if (stream_write(s, " # name\n% ", 10, 1) != 1)
+	if (mnstr_write(s, " # name\n% ", 10, 1) != 1)
 		return export_error(order);
 
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		if (stream_write(s, c->type.type->sqlname,
+		if (mnstr_write(s, c->type.type->sqlname,
 					strlen(c->type.type->sqlname), 1) != 1)
 			return export_error(order);
-		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
+		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return export_error(order);
 	}
-	if (stream_write(s, " # type\n% ", 10, 1) != 1)
+	if (mnstr_write(s, " # type\n% ", 10, 1) != 1)
 		return export_error(order);
 
 	for (i = 0; i < t->nr_cols; i++) {
@@ -1120,10 +1120,10 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 
 		if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
 			return export_error(order);
-		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
+		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return export_error(order);
 	}
-	if (stream_write(s, " # length\n", 10, 1) != 1)
+	if (mnstr_write(s, " # length\n", 10, 1) != 1)
 		return export_error(order);
 
 	if ( order)
@@ -1209,17 +1209,17 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr)
 
 
 	/* query type: Q_BLOCK */
-	if (!(stream_write(s, "&6 ", 3, 1) == 1))
+	if (!(mnstr_write(s, "&6 ", 3, 1) == 1))
 		return export_error(order);
 
 	/* result id */
 	if (!mvc_send_int(s, res_id) ||
-			stream_write(s, " ", 1, 1) != 1)
+			mnstr_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
 	/* column count */
 	if (!mvc_send_int(s, t->nr_cols) ||
-			stream_write(s, " ", 1, 1) != 1)
+			mnstr_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
 	order = BATdescriptor(t->order);
@@ -1235,14 +1235,14 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr)
 
 	/* row count */
 	if (!mvc_send_lng(s, (lng) cnt) || 
-			stream_write(s, " ", 1, 1) != 1)
+			mnstr_write(s, " ", 1, 1) != 1)
 		return export_error(order);
 
 	/* block offset */
 	if (!mvc_send_lng(s, (lng) offset)) 
 		return export_error(order);
 
-	if (stream_write(s, "\n", 1, 1) != 1)
+	if (mnstr_write(s, "\n", 1, 1) != 1)
 		return export_error(order);
 
 	res = mvc_export_table(m, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");

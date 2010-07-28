@@ -54,7 +54,7 @@ newXbackend(Client c)
 {
 	Xbackend xb;
 #ifdef _XQRY_BACKEND_DEBUG
-	stream_printf(GDKout,"#DEBUG newXbackend\n");
+	mnstr_printf(GDKout,"#DEBUG newXbackend\n");
 #endif
 	xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
 	memset((char*) xb, 0, sizeof(XbackendRec));

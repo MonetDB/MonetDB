@@ -693,31 +693,31 @@ static int bpmcatsize=0;
 static int BPMpiecesImpl(bat bid);
 
 static void BPMprintInfo(stream *f, Partition p){
-	stream_printf(f,"bits %d %d ", p->hbits,p->tbits);
-	stream_printf(f,"["); VALprint(f,&p->hlow);
-	stream_printf(f,":"); VALprint(f,&p->hhgh);
-	stream_printf(f,", "); VALprint(f,&p->tlow);
-	stream_printf(f,":"); VALprint(f,&p->thgh);
+	mnstr_printf(f,"bits %d %d ", p->hbits,p->tbits);
+	mnstr_printf(f,"["); VALprint(f,&p->hlow);
+	mnstr_printf(f,":"); VALprint(f,&p->hhgh);
+	mnstr_printf(f,", "); VALprint(f,&p->tlow);
+	mnstr_printf(f,":"); VALprint(f,&p->thgh);
 }
 
 static void BPMprintPartition(stream *f, Partition p){
-	stream_printf(f,"partition: %s alias %d bid %d ",
+	mnstr_printf(f,"partition: %s alias %d bid %d ",
 		bpmcat[p->alias]->name, (int) p->alias, (int) p->bid);
 	BPMprintInfo(f,p);
-	stream_printf(f,"] nxt %d prv %d cnt " BUNFMT "\n", p->nxt,p->prv,p->cnt);
+	mnstr_printf(f,"] nxt %d prv %d cnt " BUNFMT "\n", p->nxt,p->prv,p->cnt);
 }
 
 static void BPMprintRing(stream *f, Partition p){
 	int i, base;
 	if( p== 0) return;
-	stream_printf(f,"RING[%d] %s ", p->bid,BBPname(p->bid));
+	mnstr_printf(f,"RING[%d] %s ", p->bid,BBPname(p->bid));
 	BPMprintInfo(f,p);
-	stream_printf(f,"] cnt " BUNFMT "\n", p->cnt);
+	mnstr_printf(f,"] cnt " BUNFMT "\n", p->cnt);
 	base= p->alias;
 	for(i= p->nxt; bpmcat[i]->bid!= base; i= bpmcat[i]->nxt){
-		stream_printf(f,"[%d] %s ", bpmcat[i]->bid, BBPname(bpmcat[i]->bid));
+		mnstr_printf(f,"[%d] %s ", bpmcat[i]->bid, BBPname(bpmcat[i]->bid));
 		BPMprintInfo(f,p);
-		stream_printf(f,"] cnt " BUNFMT "\n", bpmcat[i]->cnt);
+		mnstr_printf(f,"] cnt " BUNFMT "\n", bpmcat[i]->cnt);
 	}
 }
 
@@ -773,7 +773,7 @@ static Partition newPartition(int i){
 		return NULL;
 #ifdef _DEBUG_BPM_
 	if( bpmcat[i]!= 0)
-		stream_printf(GDKout,"re-alloc of partition record %d\n",i);
+		mnstr_printf(GDKout,"re-alloc of partition record %d\n",i);
 #endif
 	if( bpmcat[i]== 0){
 		mal_set_lock(mal_contextLock, "bpm");
@@ -1059,7 +1059,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 	insertPartition(pa,p);
 	p->cnt= BATcount(b);
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"#Enter the partition '%s' at %d\n",
+	mnstr_printf(GDKout,"#Enter the partition '%s' at %d\n",
 		(nme?*nme:"tmp"),b->batCacheid);
 	BPMprintRing(GDKout, pa);
 #endif
@@ -1111,9 +1111,9 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 	BBPunfix(b->batCacheid);
 
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"reverse call?%d\n",*bid);
-	stream_printf(GDKout," break on "); VALprint(GDKout,val);
-	stream_printf(GDKout," \n"); 
+	mnstr_printf(GDKout,"reverse call?%d\n",*bid);
+	mnstr_printf(GDKout," break on "); VALprint(GDKout,val);
+	mnstr_printf(GDKout," \n"); 
 #endif
 	/* overlap by excluding outliers */
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
@@ -1180,10 +1180,10 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 
 		
 #ifdef _DEBUG_BPM_
-		stream_printf(GDKout,"Broke partition '%s' at %d\n", bpmcat[i]->name,i);
+		mnstr_printf(GDKout,"Broke partition '%s' at %d\n", bpmcat[i]->name,i);
 		BPMprintPartition(GDKout, bpmcat[i]);
 		BPMprintPartition(GDKout,p);
-		stream_printf(GDKout,"Finished partition\n");
+		mnstr_printf(GDKout,"Finished partition\n");
 #endif
 
 		BATdel(b,bn,FALSE); /* assume unique heads */
@@ -1502,7 +1502,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 	if(bpmcat[*src] ){
 		BAT *bb;
 #ifdef _DEBUG_BPM_
-		stream_printf(GDKout,"Attempt to share a ring segment");
+		mnstr_printf(GDKout,"Attempt to share a ring segment");
 		BPMprintRing(GDKout,bpmcat[*src]);
 #endif
 		bb= BATcopy(b, b->htype, b->ttype,TRUE);
@@ -1512,7 +1512,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 	if ((rngType(b->htype) !=rngType(ba->htype)) ||
 		 (rngType(b->ttype) != rngType(ba->ttype))) {
 #ifdef _DEBUG_BPM_
-		stream_printf(GDKout,"b: %d,%d alias: %d,%d\n", 
+		mnstr_printf(GDKout,"b: %d,%d alias: %d,%d\n", 
 		b->htype,b->ttype,ba->htype,ba->ttype);
 #endif
 		BBPunfix(ba->batCacheid); 
@@ -1668,7 +1668,7 @@ BPMsizePolicy( BAT *b, BAT *bs, int ov)
 	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
 	space1 = BATcount(bs)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
 
-/*	stream_printf(GDKout,"tuples " BUNFMT " size  " LLFMT " selection " LLFMT "\n", BATcount(b),space, space1); */
+/*	mnstr_printf(GDKout,"tuples " BUNFMT " size  " LLFMT " selection " LLFMT "\n", BATcount(b),space, space1); */
 	if(ov <3) {
 		space2 = space -space1;
 	}
@@ -1724,7 +1724,7 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 	 	space2 = (space -space1)/2; /* rough estimate of two remainders*/
 	}
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"Space1  " LLFMT " Space2 " LLFMT "\n",space1,space2);
+	mnstr_printf(GDKout,"Space1  " LLFMT " Space2 " LLFMT "\n",space1,space2);
 #endif
 
 	if ((space1 < Mmin) || (space2 < Mmin)) {
@@ -1732,7 +1732,7 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 		if (cnt ==0) or =0;
 		else or=BPMoraclePolicy(0.4, (double)BATcount(b)/(BPMpiecesCnt(b->batCacheid)*cnt));
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"Oracle %d \n",or);
+	mnstr_printf(GDKout,"Oracle %d \n",or);
 #endif
 		if (or) { 
 			/* little parts in large segment- split on median*/
@@ -1789,7 +1789,7 @@ spread( bat *ret, BUN *cnt, BAT *b, ValPtr sep, int n, int skip)
 			cnt[i]= BATcount(bs[i]);
 			BBPkeepref(bs[i]->batCacheid);
 		#ifdef _DEBUG_BPM_
-			stream_printf(GDKout,"New bat %d\n",ret[i]);
+			mnstr_printf(GDKout,"New bat %d\n",ret[i]);
 		#endif
 	}
 	return 0;
@@ -1844,13 +1844,13 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		else or=BPMoraclePolicy((double)BATcount(bs)/bcnt, (double)bcnt/cnt);
 	
 #ifdef _DEBUG_BPM_
-/*	stream_printf(GDKout,"Oracle %d bcnt " BUNFMT " cnt " BUNFMT " \n",or, bcnt,cnt);*/
+/*	mnstr_printf(GDKout,"Oracle %d bcnt " BUNFMT " cnt " BUNFMT " \n",or, bcnt,cnt);*/
 #endif
 		if (or) cs= ov; 
 	}
 	
 #ifdef _DEBUG_BPM_
-/*	stream_printf(GDKout,"Case %d policy %d\n",cs, policy); */
+/*	mnstr_printf(GDKout,"Case %d policy %d\n",cs, policy); */
 #endif
 
 	
@@ -1883,10 +1883,10 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	VALset(sep+n, tpe, &ps->thgh );n++;
 
 #ifdef _DEBUG_BPM_
-		stream_printf(GDKout,"Found separators ");
+		mnstr_printf(GDKout,"Found separators ");
 		for(i=0;i<n;i++)
 			VALprint(GDKout,&sep[i]);
-			stream_printf(GDKout,"\n");
+			mnstr_printf(GDKout,"\n");
 #endif	
 
 /* re-organize */
@@ -1919,9 +1919,9 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		
 		insertPartition(pprev,p);
 		#ifdef _DEBUG_BPM_
-			stream_printf(GDKout,"Inserted partition: \n ");
+			mnstr_printf(GDKout,"Inserted partition: \n ");
 			BPMprintPartition(GDKout,p);
-			stream_printf(GDKout,"Lrefs %d: refs %d\n ",BBP_lrefs(bb[i]),BBP_refs(bb[i]));
+			mnstr_printf(GDKout,"Lrefs %d: refs %d\n ",BBP_lrefs(bb[i]),BBP_refs(bb[i]));
 		#endif
 	}
 
@@ -1988,7 +1988,7 @@ We know that B and RS have the same signature, but it may be
 reversed. Let's prepare this partition and add it.
 @c
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"Oracle dictates split\n");
+	mnstr_printf(GDKout,"Oracle dictates split\n");
 #endif
 	if( *bid > 0)
 		bs1= BATcopy(bs, bs->htype, bs->ttype,1);
@@ -2510,7 +2510,7 @@ BPMnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pa->nxt= pa->prv= pa->bid;
 	@:defaultRange(pa,bn)@
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"new partitioned table: %d\n",*ret);
+	mnstr_printf(GDKout,"new partitioned table: %d\n",*ret);
 	BPMprintRing(GDKout,pa);
 #endif
 	BBPkeepref(*ret=bn->batCacheid);
@@ -2547,7 +2547,7 @@ BPMnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ret= 0;
 	else *ret = p->nxt;
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"new iterator %d: %d\n",*bid,*ret);
+	mnstr_printf(GDKout,"new iterator %d: %d\n",*bid,*ret);
 	BPMprintRing(GDKout, p);
 #endif
 	BBPincref(p->nxt,TRUE);
@@ -2640,7 +2640,7 @@ BPMnewIteratorRng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.range")@
 #ifdef _DEBUG_BPM_
-				stream_printf(GDKout, "got matching fragment %d\n",i);
+				mnstr_printf(GDKout, "got matching fragment %d\n",i);
 #endif
 		BBPkeepref(*ret= b->batCacheid);
 		return MAL_SUCCEED;
@@ -2691,7 +2691,7 @@ BPMhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPincref(*ret= bpmcat[idx]->nxt,TRUE);
 	}
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"hasmore : %d %d %d\n",idx, bid, *ret);
+	mnstr_printf(GDKout,"hasmore : %d %d %d\n",idx, bid, *ret);
 	BPMprintPartition(GDKout, p);
 #endif
 	return MAL_SUCCEED;
@@ -2747,7 +2747,7 @@ BPMhasMoreElementsRng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg; 
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.range")@
 #ifdef _DEBUG_BPM_
-				stream_printf(GDKout, "got matching fragment %d\n",i);
+				mnstr_printf(GDKout, "got matching fragment %d\n",i);
 #endif
 		BBPkeepref(*ret= b->batCacheid);
 		return MAL_SUCCEED;
@@ -3149,7 +3149,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 		if ((b->htype == TYPE_void) || (b->ttype == TYPE_void))
 			space += BATcount(b)* sizeof(oid);
 	#ifdef _DEBUG_BPM_
-		stream_printf(GDKout," partition '%d' size  " LLFMT "\n", i, space);
+		mnstr_printf(GDKout," partition '%d' size  " LLFMT "\n", i, space);
 	#endif
 		if (space <= msz) {
 	 		BBPunfix(b->batCacheid);
@@ -3175,7 +3175,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 		
 #ifdef _DEBUG_BPM_
 		for(k=0;k<n-1; k++) 
-			stream_printf(GDKout," spread to partition %d size  " BUNFMT "\n", bb[k], cnts[k]);
+			mnstr_printf(GDKout," spread to partition %d size  " BUNFMT "\n", bb[k], cnts[k]);
 #endif
 		pprev = getByNumber(bpmcat[i]->prv);
 		for(k=0; k<n-1; k++, pprev=p){

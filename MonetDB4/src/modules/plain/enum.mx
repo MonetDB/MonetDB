@@ -912,7 +912,7 @@ enum_print1(Stream *fp, BAT *b2, BAT *b1)
 	} else {
 		i = enum_print_short(dst, dst + i, b1, e1, b2);
 	}
-	if (stream_write(s, dst, i, 1) != 1 || stream_flush(s) != 0) {
+	if (mnstr_write(s, dst, i, 1) != 1 || mnstr_flush(s) != 0) {
 		GDKerror("enum_print: error writing data\n");
 		return GDK_FAIL;
 	}
@@ -992,7 +992,7 @@ enum_print2(Stream *fp, BAT *b3, BAT *b2, BAT *b1)
 			i = enum_print_short_short(dst, dst + i, b1, e1, b2, e2, b3);
 		}
 	}
-	if (stream_write(s, dst, i, 1) != 1 || stream_flush(s) != 0) {
+	if (mnstr_write(s, dst, i, 1) != 1 || mnstr_flush(s) != 0) {
 		GDKerror("enum_print: error writing data\n");
 		return GDK_FAIL;
 	}

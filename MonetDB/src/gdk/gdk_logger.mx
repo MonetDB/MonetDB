@@ -246,20 +246,20 @@ log_read_format(logger *l, logformat *data)
 {
 	int res = 1;
 
-	if (stream_read(l->log, &data->flag, 1, 1) != 1)
+	if (mnstr_read(l->log, &data->flag, 1, 1) != 1)
 		return 0;
-	res = stream_readInt(l->log, &data->nr);
+	res = mnstr_readInt(l->log, &data->nr);
 	if (res)
-		res = stream_readInt(l->log, &data->tid);
+		res = mnstr_readInt(l->log, &data->tid);
 	return res;
 }
 
 static int
 log_write_format(logger *l, logformat *data)
 {
-	if (stream_write(l->log, &data->flag, 1, 1) != 1 ||
-	    !stream_writeInt(l->log, data->nr) ||
-	    !stream_writeInt(l->log, data->tid))
+	if (mnstr_write(l->log, &data->flag, 1, 1) != 1 ||
+	    !mnstr_writeInt(l->log, data->nr) ||
+	    !mnstr_writeInt(l->log, data->tid))
 		return LOG_ERR;
 	return LOG_OK;
 }
@@ -271,7 +271,7 @@ log_read_string(logger *l)
 	ssize_t nr;
 	char *buf;
 
-	if (!stream_readInt(l->log, &len))
+	if (!mnstr_readInt(l->log, &len))
 		return NULL;
 	if (len == 0)
 		return NULL;
@@ -279,7 +279,7 @@ log_read_string(logger *l)
 	if (buf == NULL)
 		return NULL;
 
-	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t) len) {
+	if ((nr = mnstr_read(l->log, buf, 1, len)) != (ssize_t) len) {
 		buf[len - 1] = 0;
 		fprintf(stderr, "!ERROR: couldn't read name (%s) " SSZFMT "\n", buf, nr);
 		GDKfree(buf);
@@ -296,8 +296,8 @@ log_write_string(logger *l, char *n)
 
 	assert(len > 1);
 	assert(len <= INT_MAX);
-	if (!stream_writeInt(l->log, (int) len) ||
-	    stream_write(l->log, n, 1, len) != (ssize_t) len)
+	if (!mnstr_writeInt(l->log, (int) len) ||
+	    mnstr_write(l->log, n, 1, len) != (ssize_t) len)
 		return LOG_ERR;
 	return LOG_OK;
 }
@@ -350,7 +350,7 @@ log_read_seq(logger *lg, logformat *l)
 	int seq = l->nr;
 	lng id;
 
-	if (!stream_readLng(lg->log, &id))
+	if (!mnstr_readLng(lg->log, &id))
 		 return LOG_ERR;
 
 	if (BUNfnd(lg->seqs, &seq) != BUN_NONE) {
@@ -794,7 +794,7 @@ logger_open(logger *lg)
 	snprintf(filename, BUFSIZ, "%s%s." LLFMT, lg->dir, LOGFILE, lg->id);
 
 	lg->log = open_wstream(filename);
-	if (stream_errnr(lg->log))
+	if (mnstr_errnr(lg->log))
 		return LOG_ERR;
 
 	return LOG_OK;
@@ -806,8 +806,8 @@ logger_close(logger *lg)
 	stream *log = lg->log;
 
 	if (log) {
-		stream_close(log);
-		stream_destroy(log);
+		mnstr_close(log);
+		mnstr_destroy(log);
 	}
 	lg->log = NULL;
 }
@@ -822,9 +822,9 @@ logger_readlog(logger *lg, char *filename)
 	lg->log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
-	if (!lg->log || stream_errnr(lg->log)) {
+	if (!lg->log || mnstr_errnr(lg->log)) {
 		if (lg->log)
-			stream_destroy(lg->log);
+			mnstr_destroy(lg->log);
 
 		return 0;
 	}
@@ -1457,8 +1457,8 @@ log_bat_persists(logger *lg, BAT *b, char *name)
 	}
 	len = snprintf(buf, BUFSIZ, "%s,%s", ha, ta);
 	len++;			/* include EOS */
-	if (!stream_writeInt(lg->log, len) ||
-	    stream_write(lg->log, buf, 1, len) != (ssize_t) len)
+	if (!mnstr_writeInt(lg->log, len) ||
+	    mnstr_write(lg->log, buf, 1, len) != (ssize_t) len)
 		return LOG_ERR;
 
 	if (lg->debug & 1)
@@ -1659,7 +1659,7 @@ pre_allocate(logger *lg)
 {
 	lng p;
 
-	stream_fgetpos(lg->log, &p);
+	mnstr_fgetpos(lg->log, &p);
 	if (p + DBLKSZ > lg->end) {
 		lng s = p;
 
@@ -1670,13 +1670,13 @@ pre_allocate(logger *lg)
 		}
 		if (p < lg->end) {
 			p = (lg->end - p);
-			stream_write(lg->log, zeros, (size_t) p, 1);
+			mnstr_write(lg->log, zeros, (size_t) p, 1);
 			lg->end += p;
 			p = 0;
 		}
 		for (; p < SEGSZ; p += DBLKSZ, lg->end += DBLKSZ)
-			stream_write(lg->log, zeros, DBLKSZ, 1);
-		stream_fsetpos(lg->log, s);
+			mnstr_write(lg->log, zeros, DBLKSZ, 1);
+		mnstr_fsetpos(lg->log, s);
 	}
 }
 
@@ -1703,8 +1703,8 @@ log_tend_extra(logger *lg, BAT *extra)
 	l.nr = lg->tid;
 	if (res ||
 	    log_write_format(lg, &l) == LOG_ERR ||
-	    stream_flush(lg->log) ||
-	    stream_fsync(lg->log))
+	    mnstr_flush(lg->log) ||
+	    mnstr_fsync(lg->log))
 		return LOG_ERR;
 	pre_allocate(lg);
 	return LOG_OK;
@@ -1749,8 +1749,8 @@ log_precommit(logger *lg, char *qid, char *cid)
 	if (log_write_format(lg, &l) == LOG_ERR ||
 	    log_write_string(lg, qid) == LOG_ERR ||
 	    log_write_string(lg, cid) == LOG_ERR ||
-	    stream_flush(lg->log) ||
-	    stream_fsync(lg->log))
+	    mnstr_flush(lg->log) ||
+	    mnstr_fsync(lg->log))
 		return LOG_ERR;
 
 	return LOG_OK;
@@ -1775,9 +1775,9 @@ log_sequence(logger *lg, int seq, lng id)
 	BUNins(lg->seqs, &seq, &id, FALSE);
 
 	if (log_write_format(lg, &l) == LOG_ERR ||
-	    !stream_writeLng(lg->log, id) ||
-	    stream_flush(lg->log) ||
-	    stream_fsync(lg->log))
+	    !mnstr_writeLng(lg->log, id) ||
+	    mnstr_flush(lg->log) ||
+	    mnstr_fsync(lg->log))
 		 return LOG_ERR;
 
 	pre_allocate(lg);

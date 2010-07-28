@@ -518,8 +518,8 @@ HSTprint(stream *s, Histogram h){
 	int i;
 
 	for ( i = 0; i < h->bins;  i++)
-		stream_printf(s, "[%d] " LLFMT "\n", i, h->cnt[i]);
-	stream_printf(s, "\n");
+		mnstr_printf(s, "[%d] " LLFMT "\n", i, h->cnt[i]);
+	mnstr_printf(s, "\n");
 }
 
 void

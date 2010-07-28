@@ -399,7 +399,7 @@ moreClients(int reruns)
 			printf("#Client %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
 	}
 	if( reruns == 3){
-		stream_printf(mal_clients->fdout,"#MALexit: server forced exit"
+		mnstr_printf(mal_clients->fdout,"#MALexit: server forced exit"
 			" %d finishing %d claimed %d waiting\n", 
 				finishing,claimed,awaiting);
 		return 0;
@@ -424,7 +424,7 @@ Before continuing we should make sure that all clients
 		if ( (goon=moreClients(reruns)) )
 			MT_sleep_ms(1000);
 		if(reruns) 
-			stream_printf(mal_clients->fdout,"#MALexit: clients still active\n");
+			mnstr_printf(mal_clients->fdout,"#MALexit: clients still active\n");
 	} while (++reruns<3 && goon);
 }
 #endif
@@ -444,13 +444,13 @@ Before continuing we should make sure that all clients
 		GDKfree(mal_clients->bak);
 	if( mal_clients->fdin){
 		/* missing protection against closing stdin stream */
-		(void) stream_close(mal_clients->fdin->s);
-		(void) stream_destroy(mal_clients->fdin->s);
+		(void) mnstr_close(mal_clients->fdin->s);
+		(void) mnstr_destroy(mal_clients->fdin->s);
 		(void) bstream_destroy(mal_clients->fdin);
 	}
 	if( mal_clients->fdout && mal_clients->fdout != GDKstdout) {
-		(void) stream_close(mal_clients->fdout);
-		(void) stream_destroy(mal_clients->fdout);
+		(void) mnstr_close(mal_clients->fdout);
+		(void) mnstr_destroy(mal_clients->fdout);
 	}
 #endif
 	/* deregister everything that was registered, ignore errors */

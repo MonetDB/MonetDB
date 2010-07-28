@@ -33,37 +33,37 @@ module streams;
 atom streams:ptr;
 
 command openReadBytes{unsafe}( filename:str ) :streams
-address stream_open_rstreamwrap
+address mnstr_open_rstreamwrap
 comment "open a file stream for reading";
 command openWriteBytes{unsafe}( filename:str ) :streams
-address stream_open_wstreamwrap
+address mnstr_open_wstreamwrap
 comment "open a file stream for writing";
 
 command openRead{unsafe}( filename:str ) :streams
-address stream_open_rastreamwrap
+address mnstr_open_rastreamwrap
 comment "open ascii file stream for reading";
 command openWrite{unsafe}( filename:str ) :streams
-address stream_open_wastreamwrap
+address mnstr_open_wastreamwrap
 comment "open ascii file stream for writing";
 
 command openRead{unsafe}(s:streams):streams
-address stream_stream_rstreamwrap
+address mnstr_stream_rstreamwrap
 comment "convert an ascii stream to binary";
 command openWrite{unsafe}(s:streams):streams
-address stream_stream_wstreamwrap
+address mnstr_stream_wstreamwrap
 comment "convert an ascii stream to binary";
 
 command socketReadBytes{unsafe}(skt:int,name:str):streams
-address stream_socket_rstreamwrap
+address mnstr_socket_rstreamwrap
 comment "open a socket stream for reading";
 command socketWriteBytes{unsafe}(skt:int,name:str):streams
-address stream_socket_wstreamwrap
+address mnstr_socket_wstreamwrap
 comment "open a socket stream for writing";
 command socketRead{unsafe}(skt:int,name:str):streams
-address stream_socket_rastreamwrap
+address mnstr_socket_rastreamwrap
 comment "open ascii socket stream for reading";
 command socketWrite{unsafe}(skt:int,name:str):streams
-address stream_socket_wastreamwrap
+address mnstr_socket_wastreamwrap
 comment "open ascii socket stream for writing";
 
 command blocked{unsafe}( s:streams ) :streams
@@ -71,24 +71,24 @@ address open_block_streamwrap
 comment "open a block based stream";
 
 command writeStr{unsafe}( s:streams, data:str ):void
-address stream_write_stringwrap
+address mnstr_write_stringwrap
 comment "write data on the stream";
 command writeInt{unsafe}( s:streams, data:int ):void
-address stream_writeIntwrap
+address mnstr_writeIntwrap
 comment "write data on the stream";
 command readStr{unsafe}( s:streams):str
-address stream_read_stringwrap
+address mnstr_read_stringwrap
 comment "read string data from the stream";
 command readInt{unsafe}( s:streams):int
-address stream_readIntwrap
+address mnstr_readIntwrap
 comment "read integer data from the stream";
 
 command flush{unsafe}( s:streams )
-address stream_flush_streamwrap
+address mnstr_flush_streamwrap
 comment "flush the stream";
 
 command close{unsafe}( s:streams )
-address stream_close_streamwrap
+address mnstr_close_streamwrap
 comment "close and destroy the stream s";
 
 atom bstream:ptr;
@@ -135,40 +135,40 @@ typedef ptr Bstream;
 #define streams_export extern
 #endif
 
-streams_export int stream_write_string(Stream *S, str data);
-streams_export int stream_writeInt_wrap(Stream *S, int *data);
-streams_export int stream_readInt_wrap(int *data, Stream *S);
-streams_export int stream_read_string(str *res, Stream *S);
-streams_export int stream_flush_stream(Stream *S);
-streams_export int stream_close_stream(Stream *S);
+streams_export int mnstr_write_string(Stream *S, str data);
+streams_export int mnstr_writeInt_wrap(Stream *S, int *data);
+streams_export int mnstr_readInt_wrap(int *data, Stream *S);
+streams_export int mnstr_read_string(str *res, Stream *S);
+streams_export int mnstr_flush_stream(Stream *S);
+streams_export int mnstr_close_stream(Stream *S);
 streams_export int open_block_stream(Stream *S, Stream *is);
 streams_export int bstream_create_wrap(Bstream *BS, Stream *S, int *bufsize);
 streams_export int bstream_destroy_wrap(Bstream *BS);
 streams_export int bstream_read_wrap(int *res, Bstream *BS, int *size);
-streams_export str stream_write_stringwrap(int *ret, Stream *S, str *data);
-streams_export str stream_writeIntwrap(int *ret, Stream *S, int *data);
-streams_export str stream_readIntwrap(int *ret, Stream *S);
-streams_export str stream_read_stringwrap(str *res, Stream *s);
-streams_export str stream_flush_streamwrap(int *ret, Stream *s);
-streams_export str stream_close_streamwrap(int *ret, Stream *s);
+streams_export str mnstr_write_stringwrap(int *ret, Stream *S, str *data);
+streams_export str mnstr_writeIntwrap(int *ret, Stream *S, int *data);
+streams_export str mnstr_readIntwrap(int *ret, Stream *S);
+streams_export str mnstr_read_stringwrap(str *res, Stream *s);
+streams_export str mnstr_flush_streamwrap(int *ret, Stream *s);
+streams_export str mnstr_close_streamwrap(int *ret, Stream *s);
 streams_export str open_block_streamwrap(Stream *S, Stream *is);
 streams_export str bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize);
 streams_export str bstream_destroy_wrapwrap(int *ret, Bstream *BS);
 streams_export str bstream_read_wrapwrap(int *res, Bstream *BS, int *size);
-streams_export str stream_readIntwrap(int *ret, Stream *S);
-streams_export str stream_read_stringwrap(str *res, Stream *s);
+streams_export str mnstr_readIntwrap(int *ret, Stream *S);
+streams_export str mnstr_read_stringwrap(str *res, Stream *s);
 
 @= open_stream
-streams_export int stream_open_@1(Stream *S, str filename);
+streams_export int mnstr_open_@1(Stream *S, str filename);
 int
-stream_open_@1(Stream *S, str filename)
+mnstr_open_@1(Stream *S, str filename)
 {
 	stream *s;
 
-	if ((s = open_@1( filename )) == NULL || stream_errnr(s)) {
+	if ((s = open_@1( filename )) == NULL || mnstr_errnr(s)) {
 		if (s)
-			stream_destroy(s);
-		GDKerror("stream_open: could not open file '%s'\n", filename);
+			mnstr_destroy(s);
+		GDKerror("mnstr_open: could not open file '%s'\n", filename);
 		return GDK_FAIL;
 	} else {
 		*(stream**)S = s;
@@ -181,28 +181,28 @@ stream_open_@1(Stream *S, str filename)
 @:open_stream(rastream)@
 @:open_stream(wastream)@
 
-@= stream_stream
-streams_export int stream_stream_@1(Stream *Sout, Stream *Sin);
+@= mnstr_stream
+streams_export int mnstr_stream_@1(Stream *Sout, Stream *Sin);
 int
-stream_stream_@1(Stream *Sout, Stream *Sin)
+mnstr_stream_@1(Stream *Sout, Stream *Sin)
 {
-	*(stream**)Sout = stream_@1(*(stream**)Sin);
+	*(stream**)Sout = mnstr_@1(*(stream**)Sin);
 	return GDK_SUCCEED;
 }
 @c
-@:stream_stream(rstream)@
-@:stream_stream(wstream)@
+@:mnstr_stream(rstream)@
+@:mnstr_stream(wstream)@
 
 @= open_socket
-streams_export int stream_socket_@1(Stream *S, int *socket, str name);
+streams_export int mnstr_socket_@1(Stream *S, int *socket, str name);
 int
-stream_socket_@1(Stream *S, int *socket, str name)
+mnstr_socket_@1(Stream *S, int *socket, str name)
 {
 	stream *s;
 
-	if ((s = socket_@1( *socket, name )) == NULL || stream_errnr(s)) {
+	if ((s = socket_@1( *socket, name )) == NULL || mnstr_errnr(s)) {
 		if (s)
-			stream_destroy(s);
+			mnstr_destroy(s);
 		GDKerror("Could not open socket %s\n", name );
 		return GDK_FAIL;
 	} else {
@@ -218,39 +218,39 @@ stream_socket_@1(Stream *S, int *socket, str name)
 
 @c
 int
-stream_write_string(Stream *S, str data)
+mnstr_write_string(Stream *S, str data)
 {
 	stream *s = *(stream **) S;
 
-	return stream_write(s, data, 1, strlen(data)) < 0 ? GDK_FAIL : GDK_SUCCEED;
+	return mnstr_write(s, data, 1, strlen(data)) < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
 int
-stream_writeInt_wrap(Stream *S, int *data)
+mnstr_writeInt_wrap(Stream *S, int *data)
 {
 	stream *s = *(stream **) S;
 
-	return stream_writeInt(s, *data) ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_writeInt(s, *data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
-stream_readInt_wrap(int *data, Stream *S)
+mnstr_readInt_wrap(int *data, Stream *S)
 {
 	stream *s = *(stream **) S;
 
-	return stream_readInt(s, data) ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_readInt(s, data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 #define CHUNK (64*1024)
 int
-stream_read_string(str *res, Stream *S)
+mnstr_read_string(str *res, Stream *S)
 {
 	stream *s = *(stream **) S;
 	ssize_t len = 0;
 	size_t size = CHUNK +1;
 	char *buf = GDKmalloc(size), *start = buf;
 
-	while ((len = stream_read(s, start, 1, CHUNK)) > 0) {
+	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
 		size += len;
 		buf = GDKrealloc(buf, size);
 		start = buf + size - CHUNK -1;
@@ -266,17 +266,17 @@ stream_read_string(str *res, Stream *S)
 }
 
 int
-stream_flush_stream(Stream *S)
+mnstr_flush_stream(Stream *S)
 {
 	stream *s = *(stream **) S;
 
-	if (stream_flush(s))
+	if (mnstr_flush(s))
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
 int
-stream_close_stream(Stream *S)
+mnstr_close_stream(Stream *S)
 {
 	close_stream(*(stream **) S);
 	return GDK_SUCCEED;
@@ -319,9 +319,9 @@ bstream_read_wrap(int *res, Bstream *BS, int *size)
 @- Wrapper
 The remainder is the version 5 wrapper
 @= open_streamwrap
-streams_export str stream_open_@1wrap( Stream *S, str *filename );
-str stream_open_@1wrap( Stream *S, str *filename ){
-	if( stream_open_@1(S, *filename)== GDK_SUCCEED)
+streams_export str mnstr_open_@1wrap( Stream *S, str *filename );
+str mnstr_open_@1wrap( Stream *S, str *filename ){
+	if( mnstr_open_@1(S, *filename)== GDK_SUCCEED)
 		return MAL_SUCCEED;
 	throw(IO, "streams.open", "Could not open file");
 }
@@ -335,20 +335,20 @@ str stream_open_@1wrap( Stream *S, str *filename ){
 @:open_streamwrap(wastream)@
 
 @-
-@= stream_streamwrap
-streams_export str stream_stream_@1wrap(Stream *sout, Stream *sin);
-str stream_stream_@1wrap(Stream *sout, Stream *sin){
-	*(stream**)sout = stream_@1(*(stream**)sin);
+@= mnstr_streamwrap
+streams_export str mnstr_stream_@1wrap(Stream *sout, Stream *sin);
+str mnstr_stream_@1wrap(Stream *sout, Stream *sin){
+	*(stream**)sout = mnstr_@1(*(stream**)sin);
 	return MAL_SUCCEED;
 }
 @c
-@:stream_streamwrap(rstream)@
-@:stream_streamwrap(wstream)@
+@:mnstr_streamwrap(rstream)@
+@:mnstr_streamwrap(wstream)@
 @-
 @= open_socketwrap
-streams_export str stream_socket_@1wrap( Stream *S, int *socket, str *name );
-str stream_socket_@1wrap( Stream *S, int *socket, str *name ){
-	if( stream_socket_@1(S,socket,*name) == GDK_SUCCEED)
+streams_export str mnstr_socket_@1wrap( Stream *S, int *socket, str *name );
+str mnstr_socket_@1wrap( Stream *S, int *socket, str *name ){
+	if( mnstr_socket_@1(S,socket,*name) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	throw(IO, "streams.socket","Could not open socket");
 }
@@ -359,53 +359,53 @@ str stream_socket_@1wrap( Stream *S, int *socket, str *name ){
 @:open_socketwrap(wastream)@
 
 str
-stream_write_stringwrap(int *ret, Stream *S, str *data)
+mnstr_write_stringwrap(int *ret, Stream *S, str *data)
 {
 	(void) ret;
-	if (stream_write_string(S, *data) == GDK_SUCCEED)
+	if (mnstr_write_string(S, *data) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	throw(IO, "streams.writeStr", "Failed to write string");
 }
 
 str
-stream_writeIntwrap(int *ret, Stream *S, int *data)
+mnstr_writeIntwrap(int *ret, Stream *S, int *data)
 {
 	(void) ret;
-	if (stream_writeInt_wrap(S, data) == GDK_SUCCEED)
+	if (mnstr_writeInt_wrap(S, data) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	throw(IO, "streams.writeInt", "Failed to write int");
 }
 
 str
-stream_readIntwrap(int *ret, Stream *S)
+mnstr_readIntwrap(int *ret, Stream *S)
 {
-	if (stream_readInt_wrap(ret, S) == GDK_SUCCEED)
+	if (mnstr_readInt_wrap(ret, S) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	throw(IO, "streams.readInt", "Failed to read int");
 }
 
 str
-stream_read_stringwrap(str *res, Stream *s)
+mnstr_read_stringwrap(str *res, Stream *s)
 {
-	if (stream_read_string(res, s) == GDK_SUCCEED)
+	if (mnstr_read_string(res, s) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	throw(IO, "streams.readStr", "Failed to read string");
 }
 
 str
-stream_flush_streamwrap(int *ret, Stream *s)
+mnstr_flush_streamwrap(int *ret, Stream *s)
 {
 	(void) ret;
-	if (stream_flush_stream(s) == GDK_SUCCEED)
+	if (mnstr_flush_stream(s) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	throw(IO, "streams.flush", "Failed to flush a stream");
 }
 
 str
-stream_close_streamwrap(int *ret, Stream *s)
+mnstr_close_streamwrap(int *ret, Stream *s)
 {
 	(void) ret;
-	if (stream_close_stream(s) == GDK_SUCCEED)
+	if (mnstr_close_stream(s) == GDK_SUCCEED)
 		return MAL_SUCCEED;
 	throw(IO, "streams.close", "Failed to close a stream");
 }

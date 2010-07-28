@@ -269,7 +269,7 @@ are eligable for execution. Their state is set accordingly.
 		if (!is_kill) {
 			THRprintf(GDKerr, "Mput = ");
 			yytoProlog(op->ev_data, 30);
-			stream_printf(GDKerr, "\n");
+			mnstr_printf(GDKerr, "\n");
 			QMprint();
 		}
 	}
@@ -315,7 +315,7 @@ nxtRequest(Request p)
 	PARDEBUG {
 		THRprintf(GDKerr, "Mnxt = ");
 		yytoProlog(p->ev_data, 30);
-		stream_printf(GDKerr, "\n");
+		mnstr_printf(GDKerr, "\n");
 		QMprint();
 	}
 	monet_unset_lock(monet_critical, "nxtRequest");
@@ -519,7 +519,7 @@ handleRequest(Thread t, Request q, ValPtr res)
 
 	PARDEBUG THRprintf(GDKerr, "MIget = ");
 	PARDEBUG yytoProlog(lt, 30);
-	PARDEBUG stream_printf(GDKerr, "\n");
+	PARDEBUG mnstr_printf(GDKerr, "\n");
 
 	if (q->ev_client && monetSetChannel(t, q->ev_client->fdin, q->ev_client->fdout)) {
 		clrRequest(q);

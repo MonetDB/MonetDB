@@ -563,7 +563,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 					tot_ben += recycleProfit(tmpl);
 			}
 #ifdef _DEBUG_CACHE_
-		        stream_printf(cntxt->fdout,"Don't drop instruction %d, credit %f\n" , tmpl,tmp);
+		        mnstr_printf(cntxt->fdout,"Don't drop instruction %d, credit %f\n" , tmpl,tmp);
 #endif
 		}
 		else break;
@@ -591,7 +591,7 @@ int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 		lvs[ci] = lvs[newtop];
 		lvs[newtop] = tmpl;
 #ifdef _DEBUG_CACHE_
-		stream_printf(cntxt->fdout,"Don't drop critical item : instruction %d, credit %f\n" ,tmpl,ci_ben);
+		mnstr_printf(cntxt->fdout,"Don't drop critical item : instruction %d, credit %f\n" ,tmpl,ci_ben);
 #endif
 	}
 	return newtop;
@@ -684,12 +684,12 @@ newpass:
 		oldclk < cntxt->rcc->time0) {	
 
 #ifdef _DEBUG_CACHE_
-			stream_printf(cntxt->fdout,"Fresh-protected "LLFMT"\n", cntxt->rcc->time0);
-      			stream_printf(cntxt->fdout,"All leaves:");
+			mnstr_printf(cntxt->fdout,"Fresh-protected "LLFMT"\n", cntxt->rcc->time0);
+      			mnstr_printf(cntxt->fdout,"All leaves:");
 			for (l = 0; l < ltop; l++)
-                		stream_printf(cntxt->fdout,"%3d("LLFMT") \t",
+                		mnstr_printf(cntxt->fdout,"%3d("LLFMT") \t",
 	                		lvs[l],recycleBlk->profiler[lvs[l]].clk);
-			stream_printf(cntxt->fdout,"\n");
+			mnstr_printf(cntxt->fdout,"\n");
 #endif			
 		l = 0;
 		for (j = 0; j < ltop; j++){
@@ -701,12 +701,12 @@ newpass:
 
 
 #ifdef _DEBUG_CACHE_ 
-        stream_printf(cntxt->fdout,"\nRECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
+        mnstr_printf(cntxt->fdout,"\nRECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
                 rcachePolicy,recycleMemory,recyclerUsedMemory);
-		stream_printf(cntxt->fdout,"Target memory "LLFMT"KB Available "LLFMT"KB\n", wr,memLimit-recyclerUsedMemory);
-        stream_printf(cntxt->fdout,"Candidates for eviction\n(# LRU\t\tTicks\tLife\tSZ\tCnt\tWgt\tBen\tProf)\n");
+		mnstr_printf(cntxt->fdout,"Target memory "LLFMT"KB Available "LLFMT"KB\n", wr,memLimit-recyclerUsedMemory);
+        mnstr_printf(cntxt->fdout,"Candidates for eviction\n(# LRU\t\tTicks\tLife\tSZ\tCnt\tWgt\tBen\tProf)\n");
 		for (l = 0; l < ltop; l++)
-        	stream_printf(cntxt->fdout,"%3d "LLFMT"\t"LLFMT"\t %5.2f\t "LLFMT"\t%3d\t%4.1f\t%5.1f\t%5.1f\n",
+        	mnstr_printf(cntxt->fdout,"%3d "LLFMT"\t"LLFMT"\t %5.2f\t "LLFMT"\t%3d\t%4.1f\t%5.1f\t%5.1f\n",
                 	lvs[l],recycleBlk->profiler[lvs[l]].clk,
 	                recycleBlk->profiler[lvs[l]].ticks,
         	        recycleLife(lvs[l]),
@@ -785,7 +785,7 @@ newpass:
 				for (l = 0; l < ltop; l++)
 					if ( recycleBlk->profiler[lvs[l]].wbytes > 0 )
 						lvs[k++] = lvs[l];
-/*				stream_printf(cntxt->fdout,"ltop %d k %d\n",ltop, k); */
+/*				mnstr_printf(cntxt->fdout,"ltop %d k %d\n",ltop, k); */
 				if ( k > 0 ) 	
 					ltop = k;
 				vtop = chooseVictims(cntxt,lvs, ltop, recyclerUsedMemory + wr - memLimit);
@@ -802,9 +802,9 @@ newpass:
 		cont = 1;
 
 #ifdef _DEBUG_CACHE_
-	stream_printf(cntxt->fdout,"\nEvicted %d instruction(s) \n ",vtop);
+	mnstr_printf(cntxt->fdout,"\nEvicted %d instruction(s) \n ",vtop);
 	for(v=0; v<vtop;v++){
-		stream_printf(cntxt->fdout,"%d\t",vm[v]);
+		mnstr_printf(cntxt->fdout,"%d\t",vm[v]);
 		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
 	}
 #endif
@@ -1047,9 +1047,9 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, 
 		return ; /* no more caching */
 		
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(cntxt->fdout,"RECYCLE keep ");
+	mnstr_printf(cntxt->fdout,"RECYCLE keep ");
 	printTraceCall( cntxt->fdout,mb, s, getPC(mb,p),LIST_MAL_ALL);
-	stream_printf(cntxt->fdout,"Tolls %d\n",p->recycle);
+	mnstr_printf(cntxt->fdout,"Tolls %d\n",p->recycle);
 #else
 	(void) cntxt;
 	(void) mb;
@@ -1077,7 +1077,7 @@ compare by value.
 	 	setArg(q,i,c);
 	}
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(cntxt->fdout,"RECYCLE kept ");
+	mnstr_printf(cntxt->fdout,"RECYCLE kept ");
 	printInstruction( cntxt->fdout,recycleBlk, 0, q,LIST_MAL_ALL);
 #endif
 
@@ -1086,7 +1086,7 @@ compare by value.
 		(admissionPolicy == ADM_ADAPT && !qsp->gl[i] )){
 		if (i < qsp->stop ) 
 			qsp->crd[i]--;
-		else stream_printf(cntxt->fdout,"Mismatch of credit array\n");
+		else mnstr_printf(cntxt->fdout,"Mismatch of credit array\n");
 	}
 
 	setIPtr(q,i,cst,c);
@@ -1146,7 +1146,7 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		return -1;
 
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(cntxt->fdout,"search\n");
+	mnstr_printf(cntxt->fdout,"search\n");
 	printInstruction(cntxt->fdout,mb,0,p, LIST_MAL_ALL);
 #else 
 	(void) cntxt;
@@ -1168,7 +1168,7 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			return i;
 	}
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(cntxt->fdout,"not found\n");
+	mnstr_printf(cntxt->fdout,"not found\n");
 #endif
 	recycleSearchTime = GDKusec()-clk;
 	return -1;
@@ -2153,14 +2153,14 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 #ifdef _DEBUG_RECYCLE_
     b1 = BBPquickdesc(bid, FALSE);
-    stream_printf(cntxt->fdout,"counts A %d -> " BUNFMT " \n", bid,             BATcount(b1));
+    mnstr_printf(cntxt->fdout,"counts A %d -> " BUNFMT " \n", bid,             BATcount(b1));
 #endif
                     } else {
                         b1 = BBPquickdesc(bid, FALSE);
                         b2 = BBPquickdesc(nbid, FALSE);
 
 #ifdef _DEBUG_RECYCLE_
-    stream_printf(cntxt->fdout,"counts B %d -> " BUNFMT " %d -> " BUNFMT "\n",
+    mnstr_printf(cntxt->fdout,"counts B %d -> " BUNFMT " %d -> " BUNFMT "\n",
         bid, BATcount(b1), nbid, BATcount(b2));
 #endif
                         if (BATcount(b1) > BATcount(b2)){
@@ -2169,7 +2169,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
                         }
                     }
 #ifdef _DEBUG_RECYCLE_
-    stream_printf(cntxt->fdout,"Inclusive range bid=%d ", bid);
+    mnstr_printf(cntxt->fdout,"Inclusive range bid=%d ", bid);
     printInstruction(cntxt->fdout,recycleBlk,0,q, LIST_MAL_ALL);
 #endif
                 }
@@ -2183,7 +2183,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 #ifdef _DEBUG_CACHE_
                 if ( q->token == NOOPsymbol ){
                         evicted = 1;
-                stream_printf(cntxt->fdout,"Miss of evicted instruction %d\n",  i);
+                mnstr_printf(cntxt->fdout,"Miss of evicted instruction %d\n",  i);
                         goto notfound;
                 }
 #endif
@@ -2225,10 +2225,10 @@ We execute it in place and safe the result upon need.
         ticks = GDKusec();
         i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_REUSE
-    stream_printf(cntxt->fdout,"RECYCLEreuse subselect ");
+    mnstr_printf(cntxt->fdout,"RECYCLEreuse subselect ");
     printInstruction(cntxt->fdout, recycleBlk, 0,getInstrPtr(recycleBlk,pc),    LIST_MAL_ALL);
 
-    stream_printf(cntxt->fdout,">>>");
+    mnstr_printf(cntxt->fdout,">>>");
     printTraceCall(cntxt->fdout, mb, s,i, LIST_MAL_ALL);
 #endif
             nbid = s->stk[getArg(p,1)].val.bval;
@@ -2299,7 +2299,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return 0;
 	i = RECYCLEreuse(cntxt,mb,stk,p) >= 0;
 #ifdef _DEBUG_RECYCLE_
-        stream_printf(cntxt->fdout,"Reuse %d for ",i);
+        mnstr_printf(cntxt->fdout,"Reuse %d for ",i);
         printInstruction(cntxt->fdout,mb,0,p, LIST_MAL_ALL);
 #endif
 	return i;
@@ -2353,7 +2353,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 		cntxt->rcc->curQ = findQryStat(mb);
 
 	if ( cntxt->rcc->curQ < 0 ) {
-		stream_printf(cntxt->fdout,"The query pattern should exist before adding its instruction to the cache\n");
+		mnstr_printf(cntxt->fdout,"The query pattern should exist before adding its instruction to the cache\n");
 		return;
 	}
 
@@ -2413,7 +2413,7 @@ RECYCLEshutdown(Client cntxt){
 		return ;
 
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(cntxt->fdout,"RECYCLE shutdown\n");
+	mnstr_printf(cntxt->fdout,"RECYCLE shutdown\n");
 	printFunction(cntxt->fdout, recycleBlk,0,0);
 	printStack(cntxt->fdout,mb,0);
 #else
@@ -2457,7 +2457,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 		return;
 
 #ifdef _DEBUG_RECYCLE_ 
-	stream_printf(cntxt->fdout,"RECYCLE evict\n");
+	mnstr_printf(cntxt->fdout,"RECYCLE evict\n");
 	printFunction(cntxt->fdout, recycleBlk, 0,0);
 #else
 	(void) cntxt;
@@ -2591,7 +2591,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		bind_dbatRef = putName("bind_dbat",9);
 
 #ifdef _DEBUG_RESET_
-	stream_printf(cntxt->fdout,"RECYCLE reset\n");
+	mnstr_printf(cntxt->fdout,"RECYCLE reset\n");
 #else
 	(void) cntxt;
 	(void) bref;
@@ -2621,8 +2621,8 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef _DEBUG_RESET_
 				bid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
 				if ( (bref = BBPquickdesc(bid, FALSE)) )
-					stream_printf(cntxt->fdout,"Bid %d, count "LLFMT"\n", bid, BATcount(bref));
-				else stream_printf(cntxt->fdout,"Bid %d, NULL bat ref\n", bid);
+					mnstr_printf(cntxt->fdout,"Bid %d, count "LLFMT"\n", bid, BATcount(bref));
+				else mnstr_printf(cntxt->fdout,"Bid %d, NULL bat ref\n", bid);
 #endif
 				if ( ((getFunctionId(q) == bindRef ||
 					getFunctionId(q) == bind_idxRef ) && 
@@ -2641,9 +2641,9 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 							if ( k == btop ) {
 								b[btop++] = bid;
 #ifdef _DEBUG_RESET_
-							stream_printf(cntxt->fdout,"\nMarked for eviction due to update\n ");
+							mnstr_printf(cntxt->fdout,"\nMarked for eviction due to update\n ");
 							printInstruction(cntxt->fdout,recycleBlk,0,q, LIST_MAL_ALL);
-							stream_printf(cntxt->fdout,"Bid %d\n ", b[btop-1]);
+							mnstr_printf(cntxt->fdout,"Bid %d\n ", b[btop-1]);
 #endif
 							}
 						}

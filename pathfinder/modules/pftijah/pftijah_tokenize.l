@@ -193,11 +193,11 @@ int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx) {
   YY_BUFFER_STATE myBuf = yy_scan_buffer(buf, len+2);
 
   if ( !myBuf ) {
-      stream_printf(GDKout,"# tokenize_flex: unable to get setup non-copy buffer.");
+      mnstr_printf(GDKout,"# tokenize_flex: unable to get setup non-copy buffer.");
       return 0;
   }
   while ( pftijah_tokenizelex() ) {
-      /* stream_printf(GDKout,"# scan(%s).\n",pftijah_tokenizetext); */
+      /* mnstr_printf(GDKout,"# scan(%s).\n",pftijah_tokenizetext); */
       if ( !handleTijahTerm(tjCtx, pftijah_tokenizetext) )
           return 0;
   }
@@ -249,7 +249,7 @@ BAT* tokenize2bat(char* buf) {
 #ifdef TFDEBUG
 #define EMIT \
     tmpc=*s; *s=0; \
-    if (TFDEBUG) stream_printf(GDKout,"#[%s]\n",base); \
+    if (TFDEBUG) mnstr_printf(GDKout,"#[%s]\n",base); \
     if (!handleTijahTerm(tjctx,base)) \
         return 0; \
     *s=tmpc
@@ -298,7 +298,7 @@ int tokenize_fast(char* input, struct tijahContextStruct* tjctx)
     register char tmpc, *tmpp;
 
 #ifdef TFDEBUG
-    if (TFDEBUG) stream_printf(GDKout,"#[TOKENIZE-FAST:%s\n",s);
+    if (TFDEBUG) mnstr_printf(GDKout,"#[TOKENIZE-FAST:%s\n",s);
 #endif
     while ( 1 ) {
       while ( isspace( *s ) ) s++;
@@ -325,7 +325,7 @@ int tokenize_fast(char* input, struct tijahContextStruct* tjctx)
 	      }
 	  } else {
 #ifdef TFDEBUG
-	      if (TFDEBUG) stream_printf(GDKout,"#[SKIPPING:%c]\n",*s);
+	      if (TFDEBUG) mnstr_printf(GDKout,"#[SKIPPING:%c]\n",*s);
 #endif
 	      s++;
 	  }

@@ -207,12 +207,12 @@ RECYCLEdump(stream *s)
     lng statements=0, recycled=0, recycleMiss=0, recycleRem=0;
     lng ccCalls=0, ccInstr=0, crdInstr=0;
     
-	stream_printf(s,"#Recycler  catalog\n");
-        stream_printf(s,"#admission= %d time ="LLFMT" alpha= %4.3f\n",
+	mnstr_printf(s,"#Recycler  catalog\n");
+        mnstr_printf(s,"#admission= %d time ="LLFMT" alpha= %4.3f\n",
                 admissionPolicy, recycleTime, recycleAlpha);
-        stream_printf(s,"#reuse= %d\n", reusePolicy);
-        stream_printf(s,"#rcache= %d limit= %d memlimit="LLFMT"\n", rcachePolicy, recycleCacheLimit, recycleMemory);
-        stream_printf(s,"#hard stmt = %d hard var = %d hard mem="LLFMT"\n",
+        mnstr_printf(s,"#reuse= %d\n", reusePolicy);
+        mnstr_printf(s,"#rcache= %d limit= %d memlimit="LLFMT"\n", rcachePolicy, recycleCacheLimit, recycleMemory);
+        mnstr_printf(s,"#hard stmt = %d hard var = %d hard mem="LLFMT"\n",
                  HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
 
 	if (!recycleBlk) return;
@@ -243,21 +243,21 @@ RECYCLEdump(stream *s)
         };
 
 	incache = recycleBlk->stop;
-	stream_printf(s,"#recycled = "LLFMT" incache= %d executed = "LLFMT" memory(KB)= "LLFMT" PersBat memory="LLFMT"\n",
+	mnstr_printf(s,"#recycled = "LLFMT" incache= %d executed = "LLFMT" memory(KB)= "LLFMT" PersBat memory="LLFMT"\n",
 		 recycled, incache,statements, recyclerUsedMemory, persmem);
 #ifdef _DEBUG_CACHE_ 
-	stream_printf(s,"#RPremoved = %d RPactive= %d RPmisses = %d\n",
+	mnstr_printf(s,"#RPremoved = %d RPactive= %d RPmisses = %d\n",
                  recycleRem, incache-recycleRem, recycleMiss);
 #endif
-	stream_printf(s,"#Cache search time= "LLFMT"(usec) cleanCache: "LLFMT" calls evicted "LLFMT" instructions \t Discarded by CRD "LLFMT"\n",recycleSearchTime, ccCalls,ccInstr, crdInstr);
+	mnstr_printf(s,"#Cache search time= "LLFMT"(usec) cleanCache: "LLFMT" calls evicted "LLFMT" instructions \t Discarded by CRD "LLFMT"\n",recycleSearchTime, ccCalls,ccInstr, crdInstr);
 
 	/* and dump the statistics per instruction*/
-        stream_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
+        mnstr_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
 	for(i=0; i< recycleBlk->stop; i++){
 		if (getInstrPtr(recycleBlk,i)->token == NOOPsymbol)
-			stream_printf(s,"#NOOP ");
-		else stream_printf(s,"#     ");
-		stream_printf(s,"%4d\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%s\n", i,
+			mnstr_printf(s,"#NOOP ");
+		else mnstr_printf(s,"#     ");
+		mnstr_printf(s,"%4d\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,
@@ -281,8 +281,8 @@ RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = open_wastream(fname);
 		if (s == NULL )
 			throw(MAL,"recycle.dump", RUNTIME_FILE_NOT_FOUND "%s", fname);
-		if (stream_errnr(s)) {
-			stream_close(s);
+		if (mnstr_errnr(s)) {
+			mnstr_close(s);
 			throw(MAL,"recycle.dump", RUNTIME_FILE_NOT_FOUND "%s", fname);
 		}
 	}
@@ -299,15 +299,15 @@ RECYCLEdumpQPat(stream *s)
 	QryStatPtr qs;
 
 	if (!recycleQPat) {
-		stream_printf(s,"#No query patterns\n");
+		mnstr_printf(s,"#No query patterns\n");
 		return;
 	}
 
-	stream_printf(s,"#Query patterns %d\n",	recycleQPat->cnt);
-	stream_printf(s,"#RecID\tcalls\tglobRec\tlocRec\tCreditWL\n");
+	mnstr_printf(s,"#Query patterns %d\n",	recycleQPat->cnt);
+	mnstr_printf(s,"#RecID\tcalls\tglobRec\tlocRec\tCreditWL\n");
 	for(i=0; i< recycleQPat->cnt; i++){
 		qs = recycleQPat->ptrn[i];
-		stream_printf(s,"# "LLFMT"\t\t%2d\t\t%2d\t\t%2d\t\t%2d\n",
+		mnstr_printf(s,"# "LLFMT"\t\t%2d\t\t%2d\t\t%2d\t\t%2d\n",
 			qs->recid, qs->calls, qs->greuse, qs->lreuse, qs->wl);
 	}
 }
@@ -324,8 +324,8 @@ RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = open_wastream(fname);
 		if (s == NULL )
 			throw(MAL,"recycle.dumpQ", RUNTIME_FILE_NOT_FOUND" %s", fname);
-		if (stream_errnr(s)){
-			stream_close(s);
+		if (mnstr_errnr(s)){
+			mnstr_close(s);
 			throw(MAL,"recycle.dumpQ", RUNTIME_FILE_NOT_FOUND" %s", fname);
 		}
 	}
@@ -351,9 +351,9 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		s = cntxt->fdout;
 	else {
 		s = append_wastream(recycleLog);
-		if (s == NULL || stream_errnr(s)) {
+		if (s == NULL || mnstr_errnr(s)) {
 			if (s)
-				stream_destroy(s);
+				mnstr_destroy(s);
 			throw(MAL,"recycle", RUNTIME_FILE_NOT_FOUND ":%s", recycleLog);
 		}
 	}
@@ -374,30 +374,30 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		if ( recycleBlk->profiler[i].counter >1) 
 			reusedmem += recycleBlk->profiler[i].wbytes;
 
-	stream_printf(s,"%d\t %7.2f\t ", ++q, (GDKusec()-cntxt->rcc->time0)/1000.0);
+	mnstr_printf(s,"%d\t %7.2f\t ", ++q, (GDKusec()-cntxt->rcc->time0)/1000.0);
 	if ( monitorRecycler & 2) { /* Current query stat */
-		stream_printf(s,"%3d\t %3d\t %3d\t ", mb->stop, potrec, nonbind);
-		stream_printf(s,"%3d\t %3d\t ", cntxt->rcc->recycled0, cntxt->rcc->recycled);
-		stream_printf(s,"|| %3d\t %3d\t ", cntxt->rcc->RPadded0, cntxt->rcc->RPreset0);
-		stream_printf(s,"%3d\t%5.2f\t"LLFMT"\t"LLFMT"\t", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0,recyclerUsedMemory,reusedmem);
+		mnstr_printf(s,"%3d\t %3d\t %3d\t ", mb->stop, potrec, nonbind);
+		mnstr_printf(s,"%3d\t %3d\t ", cntxt->rcc->recycled0, cntxt->rcc->recycled);
+		mnstr_printf(s,"|| %3d\t %3d\t ", cntxt->rcc->RPadded0, cntxt->rcc->RPreset0);
+		mnstr_printf(s,"%3d\t%5.2f\t"LLFMT"\t"LLFMT"\t", recycleBlk?recycleBlk->stop:0, recycleTime/1000.0,recyclerUsedMemory,reusedmem);
 	}
 
 	if ( monitorRecycler & 1) { /* RP stat */
-		stream_printf(s,"| %4d\t %4d\t ",cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
-		stream_printf(s, LLFMT "\t" LLFMT "\t ", recyclerUsedMemory, reusedmem);
+		mnstr_printf(s,"| %4d\t %4d\t ",cntxt->rcc->statements,recycleBlk?recycleBlk->stop:0);
+		mnstr_printf(s, LLFMT "\t" LLFMT "\t ", recyclerUsedMemory, reusedmem);
 #ifdef _DEBUG_CACHE_
-		stream_printf(s,"%d\t %d\t ",cntxt->rcc->recycleRem,cntxt->rcc->recycleMiss);
+		mnstr_printf(s,"%d\t %d\t ",cntxt->rcc->recycleRem,cntxt->rcc->recycleMiss);
 #endif
 	}
 
 	if ( monitorRecycler & 4) { /* Data transfer stat */
-		stream_printf(s,"| %2d\t "LLFMT"\t ",cntxt->rcc->trans, cntxt->rcc->transKB);
-		stream_printf(s,"%2d\t "LLFMT"\t ",cntxt->rcc->recTrans, cntxt->rcc->recTransKB);
+		mnstr_printf(s,"| %2d\t "LLFMT"\t ",cntxt->rcc->trans, cntxt->rcc->transKB);
+		mnstr_printf(s,"%2d\t "LLFMT"\t ",cntxt->rcc->recTrans, cntxt->rcc->recTransKB);
 	}
 
 	if ( reusePolicy == REUSE_MULTI )
-		stream_printf(s, " \t%5.2f \t%5.2f\n", msFindTime/1000.0, msComputeTime/1000.0);
-	else stream_printf(s,"\n");
+		mnstr_printf(s, " \t%5.2f \t%5.2f\n", msFindTime/1000.0, msComputeTime/1000.0);
+	else mnstr_printf(s,"\n");
 
 	if( s != cntxt->fdout )
 		close_stream(s);
@@ -495,27 +495,27 @@ RECYCLElog(int *ret, str *nm)
 	s = open_wastream(recycleLog);
     if (s){
 
-		stream_printf(s,"# Q\t TimeQ(ms)\t");
+		mnstr_printf(s,"# Q\t TimeQ(ms)\t");
 		if ( monitorRecycler & 2) { /* Current query stat */
-			stream_printf(s,"InstrQ\t PotRecQ NonBind ");
-			stream_printf(s,"RecQ\t TotRec\t ");
-			stream_printf(s,"|| RPadded  RPreset RPtotal ResetTime(ms) RPMem(KB)");
+			mnstr_printf(s,"InstrQ\t PotRecQ NonBind ");
+			mnstr_printf(s,"RecQ\t TotRec\t ");
+			mnstr_printf(s,"|| RPadded  RPreset RPtotal ResetTime(ms) RPMem(KB)");
 		}
 
 		if ( monitorRecycler & 1) { /* RP stat */
-			stream_printf(s,"| TotExec\tTotCL\tMem(KB)\tReused\t ");
+			mnstr_printf(s,"| TotExec\tTotCL\tMem(KB)\tReused\t ");
 #ifdef _DEBUG_CACHE_
-			stream_printf(s,"RPRem\tRPMiss\t ");
+			mnstr_printf(s,"RPRem\tRPMiss\t ");
 #endif
 		}
 
 		if ( monitorRecycler & 4) { /* Data transfer stat */
-			stream_printf(s,"| Trans#\t Trans(KB)\t RecTrans#\t RecTrans(KB)\t ");
+			mnstr_printf(s,"| Trans#\t Trans(KB)\t RecTrans#\t RecTrans(KB)\t ");
 		}
 
 		if ( reusePolicy == REUSE_MULTI )
-			stream_printf(s, "MSFind\t MSCompute\n");
-		else stream_printf(s,"\n");
+			mnstr_printf(s, "MSFind\t MSCompute\n");
+		else mnstr_printf(s,"\n");
 
 		close_stream(s);
 	}

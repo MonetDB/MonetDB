@@ -97,7 +97,7 @@ get_val(Column * fmt, char *s, char quote, str *err, int c)
 	/* include testing on the terminating null byte !! */
 	if (fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length+1) == 0){
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
+		mnstr_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
 #endif
 		adt = fmt->nildata;
 		fmt->c[0]->T->nonil = 0;
@@ -128,7 +128,7 @@ get_val(Column * fmt, char *s, char quote, str *err, int c)
 	}
 	/* key maybe NULL but thats not a problem, as long as we have void */
 	if (fmt->raw){
-		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
+		mnstr_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
 	} 
 		
 	return adt;
@@ -1033,7 +1033,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 	/* include testing on the terminating null byte !! */
 	if (fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length+1) == 0){
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
+		mnstr_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
 #endif
 		adt = fmt->nildata;
 		fmt->c[0]->T->nonil = 0;
@@ -1065,7 +1065,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 	}
 	/* key maybe NULL but thats not a problem, as long as we have void */
 	if (fmt->raw){
-		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
+		mnstr_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
 	} else {
 		bunfastins(fmt->c[0], key, adt);
 	}
@@ -1092,7 +1092,7 @@ SQLworker_column(READERtask *task, int col)
 			if (task->as->error == NULL)
 				task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full");
 			mal_unset_lock(mal_contextLock,"tablet insert value");
-			stream_printf(GDKout,"Failed to extend the BAT, perhaps disk full");
+			mnstr_printf(GDKout,"Failed to extend the BAT, perhaps disk full");
 			return -1;
 		}
 	}
@@ -1167,13 +1167,13 @@ SQLworker(void *arg)
 	/* where to leave errors */
 	THRset_errbuf(THRget(THRgettid()), task->errbuf);  
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"SQLworker started\n");
+	mnstr_printf(GDKout,"SQLworker started\n");
 #endif
 	while(task->next >= 0 ){
 		MT_down_sema(task->sema,"SQLworker");
 		if ( task->next < 0 ){
 #ifdef _DEBUG_TABLET_
-			stream_printf(GDKout,"SQLworker terminated\n");
+			mnstr_printf(GDKout,"SQLworker terminated\n");
 #endif
 			MT_up_sema(task->reply,"SQLworker");
 			return;
@@ -1208,9 +1208,9 @@ SQLworker(void *arg)
 	}
 	MT_up_sema(task->reply,"SQLworker");
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"SQLworker exits\n");
+	mnstr_printf(GDKout,"SQLworker exits\n");
 #endif
-	stream_printf(GDKout,"##SQLworker exits %s\n",task->as->error);
+	mnstr_printf(GDKout,"##SQLworker exits %s\n",task->as->error);
 }
 @-
 The line is broken into pieces directly on their field separators. It assumes that we have
@@ -1395,7 +1395,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	}
 	task->limit = 10000;
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",threads,csep,rsep,quote);
+	mnstr_printf(GDKout,"Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",threads,csep,rsep,quote);
 #endif
 	for( j= 0; j < threads ; j++){
 		ptask[j]= *task;
@@ -1406,8 +1406,8 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	}
 
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"parallel bulk load "LLFMT " - " LLFMT"\n",skip, maxrow);
-	stream_printf(GDKout,"csep '%s' rsep '%s'\n",csep,rsep);
+	mnstr_printf(GDKout,"parallel bulk load "LLFMT " - " LLFMT"\n",skip, maxrow);
+	mnstr_printf(GDKout,"csep '%s' rsep '%s'\n",csep,rsep);
 #endif
 
 	while (!ateof && (b->pos < b->len || !b->eof) && cnt != (BUN) maxrow && res == 0) {
@@ -1418,7 +1418,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		askmore = 0;
 
 #ifdef _DEBUG_TABLET_
-	   	stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " eof=%d \n", b->pos, b->len, b->size, b->eof);
+	   	mnstr_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " eof=%d \n", b->pos, b->len, b->size, b->eof);
 #endif
 
 		/* now we fill the copy buffer with pointers to the record */
@@ -1482,7 +1482,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 					*e = '\0';
 					if ( SQLload_file_line(task, as, s, csep,rsep) < 0) {
 #ifdef _DEBUG_TABLET_
-						stream_printf(GDKout,"line failed:\n");
+						mnstr_printf(GDKout,"line failed:\n");
 #endif
 						res = -1;
 						if (ateof) {
@@ -1507,7 +1507,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		t0 = GDKusec() - t0;
 		total += t0;
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"fill the BATs %d  "BUNFMT" cap " BUNFMT"\n", task->next, cnt, BATcapacity(as->format[0].c[0]));
+		mnstr_printf(GDKout,"fill the BATs %d  "BUNFMT" cap " BUNFMT"\n", task->next, cnt, BATcapacity(as->format[0].c[0]));
 #endif
 		if ( task->next ){
 			SQLworkdivider(task, ptask, (int) as->nr_attrs, threads);
@@ -1527,7 +1527,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
 	/* close down the workers */
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"Close the workers\n");
+	mnstr_printf(GDKout,"Close the workers\n");
 #endif
 	for( j= 0; j < threads ; j++){
 		ptask[j].next = -1;
@@ -1536,20 +1536,20 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	if (GDKdebug & GRPalgorithms) {
 		if (cnt < (BUN) maxrow   && maxrow > 0) 
 			/* providing a precise count is not always easy, instead consider maxrow as an upperbound */
-			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c[0]));
-		stream_printf(GDKout,"# COPY reader time " LLFMT "\n#",total);
+			mnstr_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c[0]));
+		mnstr_printf(GDKout,"# COPY reader time " LLFMT "\n#",total);
 		for( i=0; i< as->nr_attrs; i++) 
-				stream_printf(GDKout,LLFMT " ", task->time[i]);
-		stream_printf(GDKout,"\n");
+				mnstr_printf(GDKout,LLFMT " ", task->time[i]);
+		mnstr_printf(GDKout,"\n");
 		for ( j=0; j< threads; j++)
-			stream_printf(GDKout,"# COPY thread time " LLFMT "\n",ptask[j].wtime);
+			mnstr_printf(GDKout,"# COPY thread time " LLFMT "\n",ptask[j].wtime);
 	}
 
 	/* wait for their death */
 	for ( j=0; j< threads; j++)
 		MT_down_sema(ptask[j].reply,"sqlreader");
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"Found " BUNFMT" tuples\n",cnt);
+		mnstr_printf(GDKout,"Found " BUNFMT" tuples\n",cnt);
 #endif
 	for( i=0; i< as->nr_attrs; i++) 
 		GDKfree(task->fields[i]);

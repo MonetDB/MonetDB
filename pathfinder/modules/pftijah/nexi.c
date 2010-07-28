@@ -81,7 +81,7 @@
 #include "pftijah_util.h"
 
 #define LOGFILE   GDKout
-#define LOGPRINTF if ( 0 ) stream_printf
+#define LOGPRINTF if ( 0 ) mnstr_printf
 
 static TijahParserContext parserCtxStruct;
 
@@ -95,7 +95,7 @@ char* tijahParse(BAT* optbat, char* startNodes_name, char** errBUFF) {
   /* setup TijahParserContext structure */
   BUN bun;
   if ( (bun = BUNfnd(optbat,"_query")) == BUN_NONE ) {
-      stream_printf(GDKerr,"Error: cannot find \"_query\" tag.\n");
+      mnstr_printf(GDKerr,"Error: cannot find \"_query\" tag.\n");
       return FALSE;
   }
   BATiter bi = bat_iterator(optbat);
@@ -200,7 +200,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     img_retr_model = GDKmalloc(MAX_QUERIES*sizeof(struct_RMI));
     rel_feedback   = GDKmalloc(MAX_QUERIES*sizeof(struct_RF));
     if ( !txt_retr_model || !img_retr_model || !rel_feedback ) {
-        stream_printf(GDKout,"nexi.c:old_main: GDKmalloc failed.\n");
+        mnstr_printf(GDKout,"nexi.c:old_main: GDKmalloc failed.\n");
         return 0;
     }
 
@@ -281,7 +281,7 @@ int old_main(BAT* optbat, char* startNodes_name)
 	        /* set in serialize options for now, is earlier */
 	        int v = atoi(optVal);
 	        SET_TDEBUG(v);
-	        if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting debug value to %d.\n",v);
+	        if (TDEBUG(1)) mnstr_printf(GDKout,"# old_main: setting debug value to %d.\n",v);
 	    }
         } else if (strcmp(optName, "_query") == 0) {
 	        /* OK, this is the regular query transfer option */
@@ -297,7 +297,7 @@ int old_main(BAT* optbat, char* startNodes_name)
 	} else if ( strcmp(optName,"ft-index") == 0 ) {
             parserCtx->collection = optVal;
 	} else if ( strcmp(optName,"fragments") == 0 ) {
-	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: ignoring fragmentation setting.\n");
+	      if (TDEBUG(1)) mnstr_printf(GDKout,"# old_main: ignoring fragmentation setting.\n");
 	} else if ( strcmp(optName,"background_collection") == 0 ) {
             strcpy(background_collection, optVal);
 #if 0
@@ -501,7 +501,7 @@ int old_main(BAT* optbat, char* startNodes_name)
                 qenv_fb_val = strdup(optVal);
         } else if (strcmp(optName, "newversion") == 0) {
         } else {
-            stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
+            mnstr_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
     }
     /*
@@ -510,7 +510,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     /* INCOMPLETE, ERROR HERE WITH REFCOUNTS IN HEAD */
     BAT* fb = pftu_lookup_bat(pftu_batname1("tj_%s_fragments",(char*)parserCtx->collection,0));
     if ( ! fb ) {
-           stream_printf(GDKerr,"Error: cannot find fragments bat for collection \"%s\".\n",parserCtx->collection);
+           mnstr_printf(GDKerr,"Error: cannot find fragments bat for collection \"%s\".\n",parserCtx->collection);
 	   if (qenv_prox_val)
 		   free(qenv_prox_val);
 	   if (qenv_fb_val)
@@ -518,12 +518,12 @@ int old_main(BAT* optbat, char* startNodes_name)
            return 0;
     }
     if ( BATcount(fb) > 1 ) {
-	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation ON.\n");
+	      if (TDEBUG(1)) mnstr_printf(GDKout,"# old_main: setting fragmentation ON.\n");
               parserCtx->useFragments = 1;
               parserCtx->ffPfx        = "_frag";
               parserCtx->flastPfx     = "";
     } else {
-	      if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting fragmentation OFF.\n");
+	      if (TDEBUG(1)) mnstr_printf(GDKout,"# old_main: setting fragmentation OFF.\n");
               parserCtx->useFragments = 0;
               parserCtx->ffPfx        = "";
               parserCtx->flastPfx     = ", str(1)";
@@ -736,7 +736,7 @@ int old_main(BAT* optbat, char* startNodes_name)
 
 int   tsl_init(TijahStringList* tsl, char* label, int max) {
 #ifdef DEBUG_LIST
-	stream_printf(GDKout,"# init LIST[%s].\n",label);
+	mnstr_printf(GDKout,"# init LIST[%s].\n",label);
 #endif
 	tsl->label = label;
 	tsl->cnt   = 0;
@@ -748,7 +748,7 @@ int   tsl_init(TijahStringList* tsl, char* label, int max) {
 
 int tsl_clear(TijahStringList* tsl) {
 #ifdef DEBUG_LIST
-	stream_printf(GDKout,"# clearing LIST[%s].\n",tsl->label);
+	mnstr_printf(GDKout,"# clearing LIST[%s].\n",tsl->label);
 #endif
 	for (int i=0; i<tsl->cnt; i++) {
 		GDKfree(tsl->val[i]);
@@ -759,7 +759,7 @@ int tsl_clear(TijahStringList* tsl) {
 
 int tsl_free(TijahStringList* tsl) {
 #ifdef DEBUG_LIST
-	stream_printf(GDKout,"# free string LIST[%s].\n",tsl->label);
+	mnstr_printf(GDKout,"# free string LIST[%s].\n",tsl->label);
 #endif
 	for (int i=0; i<tsl->cnt; i++) {
 		GDKfree(tsl->val[i]);
@@ -775,7 +775,7 @@ char* tsl_append(TijahStringList* tsl, char* v) {
 		assert(tsl->val);
 	}
 #ifdef DEBUG_LIST
-	stream_printf(GDKout,"# appending \"%s\" to LIST[%s].\n",v,tsl->label);
+	mnstr_printf(GDKout,"# appending \"%s\" to LIST[%s].\n",v,tsl->label);
 #endif
 	return (tsl->val[tsl->cnt++] = GDKstrdup(v));
 }
@@ -789,7 +789,7 @@ char* tsl_appendq(TijahStringList* tsl, char* v) {
 
 int   tnl_init(TijahNumberList* tnl, char* label, int max) {
 #ifdef DEBUG_LIST
-	stream_printf(GDKout,"# init LIST[%s].\n",label);
+	mnstr_printf(GDKout,"# init LIST[%s].\n",label);
 #endif
 	tnl->label = label;
 	tnl->cnt   = 0;
@@ -801,7 +801,7 @@ int   tnl_init(TijahNumberList* tnl, char* label, int max) {
 
 int tnl_clear(TijahNumberList* tnl) {
 #ifdef DEBUG_LIST
-	stream_printf(GDKout,"# clearing LIST[%s].\n",tnl->label);
+	mnstr_printf(GDKout,"# clearing LIST[%s].\n",tnl->label);
 #endif
 	tnl->cnt = 0;
 	return 1;
@@ -810,7 +810,7 @@ int tnl_clear(TijahNumberList* tnl) {
 int tnl_free(TijahNumberList* tnl) {
 	GDKfree(tnl->val);
 #ifdef DEBUG_LIST
-	stream_printf(GDKout,"# free number LIST[%s].\n",tnl->label);
+	mnstr_printf(GDKout,"# free number LIST[%s].\n",tnl->label);
 #endif
 	return 1;
 }
@@ -822,7 +822,7 @@ int tnl_append(TijahNumberList* tnl, int v) {
 		assert(tnl->val);
 	}
 #ifdef DEBUG_LIST
-	stream_printf(GDKout,"# appending (%d) to LIST[%s].\n",v,tnl->label);
+	mnstr_printf(GDKout,"# appending (%d) to LIST[%s].\n",v,tnl->label);
 #endif
 	tnl->val[tnl->cnt++] = v;
 	return 1;

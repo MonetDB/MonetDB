@@ -82,7 +82,7 @@ ALGprejoin(int *rl, int *rr, int *l, int *r){
 		return MAL_SUCCEED;
 	}
 	ALGODEBUG{
-	stream_printf(GDKout,"Prejoin tuples=" BUNFMT "pages" BUNFMT "," BUNFMT"\n",
+	mnstr_printf(GDKout,"Prejoin tuples=" BUNFMT "pages" BUNFMT "," BUNFMT"\n",
 		BATcount(bl), lpages, rpages);
 	}
 	bn= BATmirror(BATsort(BATmirror(bl)));
@@ -125,7 +125,7 @@ OPTprejoinImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	/* we may have uncovered new use-less operations */
 	DEBUGoptimizers
-		stream_printf(cntxt->fdout,"#opt_prejoin: %d statements removed\n", actions);
+		mnstr_printf(cntxt->fdout,"#opt_prejoin: %d statements removed\n", actions);
 	//chkProgram(cntxt->nspace,mb);
 	GDKfree(old);
 	return actions;

@@ -190,7 +190,7 @@ The former comes with readline functionality.
 		if (in->eof || !blocked) {
 			language = (be->console) ? 'S' : 0;
 
-			if (go && ((!blocked && stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || stream_flush(c->fdout))) {
+			if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
 				go = FALSE;
 				break;
 			}
@@ -198,7 +198,7 @@ The former comes with readline functionality.
 		}
 		if (go && (rd = bstream_next(in)) <= 0) {
 #ifdef _XQUERY_READER_DEBUG
-			stream_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
+			mnstr_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
 			if (rd == 0 && language != 0 && in->eof && !be->console) {
 				/* we hadn't seen the EOF before, so just try again
@@ -219,7 +219,7 @@ The former comes with readline functionality.
 		return NULL;
 	}
 #ifdef _XQUERY_READER_DEBUG
-	stream_printf(c->fdout, "#xquery: '%s'\n", in->buf+in->pos);
+	mnstr_printf(c->fdout, "#xquery: '%s'\n", in->buf+in->pos);
 #endif
 	return MAL_SUCCEED;
 }
@@ -231,7 +231,7 @@ XQUERYparser(Client c)
 	int err = 0, oldstop;
 
 #ifdef _XQUERY_SCENARIO_DEBUG
-	stream_printf(c->fdout,"#start the xquery parser\n");
+	mnstr_printf(c->fdout,"#start the xquery parser\n");
 #endif
 
 	xb = (Xbackend) c->state[MAL_SCENARIO_PARSER];
@@ -265,7 +265,7 @@ str
 XQUERYoptimizer(Client c)
 {	
 #ifdef _XQUERY_SCENARIO_DEBUG
-	stream_printf(c->fdout,"#start the xquery optimizer\n");
+	mnstr_printf(c->fdout,"#start the xquery optimizer\n");
 #endif
 	(void)c;
 	return MAL_SUCCEED;
@@ -277,7 +277,7 @@ XQUERYengine(Client c)
 	Xbackend xb;
 
 #ifdef _XQUERY_SCENARIO_DEBUG
-	stream_printf(c->fdout,"#start the xquery engine\n");
+	mnstr_printf(c->fdout,"#start the xquery engine\n");
 #endif
 	xb= (Xbackend) c->state[MAL_SCENARIO_PARSER];
 	if (xb == NULL || c->curprg->def== NULL|| c->curprg->def->errors)

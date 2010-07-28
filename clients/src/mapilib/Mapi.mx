@@ -1310,7 +1310,7 @@ static int mapi_initialized = 0;
 
 #define check_stream(mid,s,msg,f,e)					\
 	do {								\
-		if ((s) == NULL || stream_errnr(s)) {			\
+		if ((s) == NULL || mnstr_errnr(s)) {			\
 			mapi_log_record(mid,msg);			\
 			mapi_log_record(mid,f);			\
 			close_connection(mid);			\
@@ -1565,16 +1565,16 @@ mapi_log_header(Mapi mid, char *mark)
 	if (firstcall == 0)
 		firstcall = usec();
 	now = (usec() - firstcall) / 1000;
-	stream_printf(mid->tracelog, ":%ld[%d]:%s\n", now, mid->index, mark);
-	stream_flush(mid->tracelog);
+	mnstr_printf(mid->tracelog, ":%ld[%d]:%s\n", now, mid->index, mark);
+	mnstr_flush(mid->tracelog);
 }
 
 void
 mapi_log_record(Mapi mid, const char *msg)
 {
 	mapi_log_header(mid, "W");
-	stream_printf(mid->tracelog, "%s", msg);
-	stream_flush(mid->tracelog);
+	mnstr_printf(mid->tracelog, "%s", msg);
+	mnstr_flush(mid->tracelog);
 }
 
 MapiMsg
@@ -1582,16 +1582,16 @@ mapi_log(Mapi mid, const char *nme)
 {
 	mapi_clrError(mid);
 	if (mid->tracelog) {
-		stream_close(mid->tracelog);
-		stream_destroy(mid->tracelog);
+		mnstr_close(mid->tracelog);
+		mnstr_destroy(mid->tracelog);
 		mid->tracelog = NULL;
 	}
 	if (nme == NULL)
 		return MOK;
 	mid->tracelog = open_wastream(nme);
-	if (mid->tracelog == NULL || stream_errnr(mid->tracelog)) {
+	if (mid->tracelog == NULL || mnstr_errnr(mid->tracelog)) {
 		if (mid->tracelog)
-			stream_destroy(mid->tracelog);
+			mnstr_destroy(mid->tracelog);
 		mid->tracelog = NULL;
 		return mapi_setError(mid, "Could not create log file", "mapi_log", MERROR);
 	}
@@ -1707,10 +1707,10 @@ close_result(MapiHdl hdl)
 				snprintf(msg, sizeof(msg), "Xclose %d\n", hdl->pending_close[i]);
 				mapi_log_record(mid, msg);
 				mid->active = hdl;
-				if (stream_printf(mid->to, msg) < 0 ||
-				    stream_flush(mid->to)) {
+				if (mnstr_printf(mid->to, msg) < 0 ||
+				    mnstr_flush(mid->to)) {
 					close_connection(mid);
-					mapi_setError(mid, stream_error(mid->to), "mapi_close_handle", MTIMEOUT);
+					mapi_setError(mid, mnstr_error(mid->to), "mapi_close_handle", MTIMEOUT);
 					break;
 				}
 				read_into_cache(hdl, 0);
@@ -1725,10 +1725,10 @@ close_result(MapiHdl hdl)
 				snprintf(msg, sizeof(msg), "Xclose %d\n", result->tableid);
 				mapi_log_record(mid, msg);
 				mid->active = hdl;
-				if (stream_printf(mid->to, msg) < 0 ||
-				    stream_flush(mid->to)) {
+				if (mnstr_printf(mid->to, msg) < 0 ||
+				    mnstr_flush(mid->to)) {
 					close_connection(mid);
-					mapi_setError(mid, stream_error(mid->to), "mapi_close_handle", MTIMEOUT);
+					mapi_setError(mid, mnstr_error(mid->to), "mapi_close_handle", MTIMEOUT);
 				} else
 					read_into_cache(hdl, 0);
 			}
@@ -1916,7 +1916,7 @@ finish_handle(MapiHdl hdl)
 			assert(mid->active == NULL || mid->active == hdl);
 			hdl->needmore = 0;
 			mid->active = hdl;
-			stream_flush(mid->to);
+			mnstr_flush(mid->to);
 			check_stream(mid, mid->to, "write error on stream", "finish_handle", mid->error);
 			read_into_cache(hdl, 0);
 		}
@@ -1926,10 +1926,10 @@ finish_handle(MapiHdl hdl)
 			snprintf(msg, sizeof(msg), "Xclose %d\n", hdl->pending_close[i]);
 			mapi_log_record(mid, msg);
 			mid->active = hdl;
-			if (stream_printf(mid->to, msg) < 0 ||
-			    stream_flush(mid->to)) {
+			if (mnstr_printf(mid->to, msg) < 0 ||
+			    mnstr_flush(mid->to)) {
 				close_connection(mid);
-				mapi_setError(mid, stream_error(mid->to), "finish_handle", MTIMEOUT);
+				mapi_setError(mid, mnstr_error(mid->to), "finish_handle", MTIMEOUT);
 				break;
 			}
 			read_into_cache(hdl, 0);
@@ -1946,7 +1946,7 @@ finish_handle(MapiHdl hdl)
 			assert(mid->active == NULL || mid->active == hdl);
 			hdl->needmore = 0;
 			mid->active = hdl;
-			stream_flush(mid->to);
+			mnstr_flush(mid->to);
 			check_stream(mid, mid->to, "write error on stream", "finish_handle", mid->error);
 			read_into_cache(hdl, 0);
 		}
@@ -2063,7 +2063,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 
 	if (!mapi_initialized) {
 		mapi_initialized = 1;
-		if (stream_init() < 0)
+		if (mnstr_init() < 0)
 			return NULL;
 	}
 
@@ -2179,7 +2179,7 @@ mapi_mapi(const char *host, int port, const char *username,
 
 	if (!mapi_initialized) {
 		mapi_initialized = 1;
-		if (stream_init() < 0)
+		if (mnstr_init() < 0)
 			return NULL;
 	}
 
@@ -2481,14 +2481,14 @@ mapi_start_talking(Mapi mid)
 
 	if (!isa_block_stream(mid->to)) {
 		mid->to = block_stream(mid->to);
-		check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
+		check_stream(mid, mid->to, mnstr_error(mid->to), "mapi_start_talking", mid->error);
 
 		mid->from = block_stream(mid->from);
-		check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
+		check_stream(mid, mid->from, mnstr_error(mid->from), "mapi_start_talking", mid->error);
 	}
 
 	/* consume server challenge */
-	len = stream_read_block(mid->from, buf, 1, BLOCK);
+	len = mnstr_read_block(mid->from, buf, 1, BLOCK);
 
 	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
 
@@ -2785,7 +2785,7 @@ mapi_start_talking(Mapi mid)
 			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		}
 
-		stream_set_byteorder(mid->from, strcmp(byteo, "BIG") == 0);
+		mnstr_set_byteorder(mid->from, strcmp(byteo, "BIG") == 0);
 
 		/* note: if we make the database field an empty string, it
 		 * means we want the default.  However, it *should* be there. */
@@ -2812,10 +2812,10 @@ mapi_start_talking(Mapi mid)
 		fflush(stdout);
 	}
 	len = strlen(buf);
-	stream_write(mid->to, buf, 1, len);
+	mnstr_write(mid->to, buf, 1, len);
 	mapi_log_record(mid, buf);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
-	stream_flush(mid->to);
+	mnstr_flush(mid->to);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
 
 	/* consume the welcome message from the server */
@@ -3088,13 +3088,13 @@ close_connection(Mapi mid)
 	 * socket; see also src/common/stream.mx:socket_close .
 	 */
 	if (mid->to) {
-		stream_close(mid->to);
-		stream_destroy(mid->to);
+		mnstr_close(mid->to);
+		mnstr_destroy(mid->to);
 		mid->to = 0;
 	}
 	if (mid->from) {
-		stream_close(mid->from);
-		stream_destroy(mid->from);
+		mnstr_close(mid->from);
+		mnstr_destroy(mid->from);
 		mid->from = 0;
 	}
 	mapi_log_record(mid, "Connection closed\n");
@@ -3270,16 +3270,16 @@ mapi_Xcommand(Mapi mid, char *cmdname, char *cmdvalue)
 	MapiHdl hdl;
 
 	mapi_check(mid, "mapi_Xcommand");
-	if (stream_printf(mid->to, "X" "%s %s\n", cmdname, cmdvalue) < 0 ||
-	    stream_flush(mid->to)) {
+	if (mnstr_printf(mid->to, "X" "%s %s\n", cmdname, cmdvalue) < 0 ||
+	    mnstr_flush(mid->to)) {
 		close_connection(mid);
-		mapi_setError(mid, stream_error(mid->to), "mapi_Xcommand", MTIMEOUT);
+		mapi_setError(mid, mnstr_error(mid->to), "mapi_Xcommand", MTIMEOUT);
 		return MERROR;
 	}
 	if (mid->tracelog) {
 		mapi_log_header(mid, "W");
-		stream_printf(mid->tracelog, "X" "%s %s\n", cmdname, cmdvalue);
-		stream_flush(mid->tracelog);
+		mnstr_printf(mid->tracelog, "X" "%s %s\n", cmdname, cmdvalue);
+		mnstr_flush(mid->tracelog);
 	}
 	hdl = prepareQuery(mapi_new_handle(mid), "Xcommand");
 	if (hdl == NULL)
@@ -3555,11 +3555,11 @@ read_line(Mapi mid)
 		/* fetch one more block */
 		if (mid->trace == MAPI_TRACE)
 			printf("fetch next block: start at:%d\n", mid->blk.end);
-		len = stream_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
+		len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 		if (mid->tracelog) {
 			mapi_log_header(mid, "R");
-			stream_write(mid->tracelog, mid->blk.buf + mid->blk.end, 1, len);
-			stream_flush(mid->tracelog);
+			mnstr_write(mid->tracelog, mid->blk.buf + mid->blk.end, 1, len);
+			mnstr_flush(mid->tracelog);
 		}
 		check_stream(mid, mid->from, "Connection terminated", "read_line", (mid->blk.eos = 1, (char *) 0));
 		mid->blk.buf[mid->blk.end + len] = 0;
@@ -3651,10 +3651,10 @@ mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp)
 	if (rc != MOK)
 		return rc;
 	while ((length = fread(buf, 1, sizeof(buf), fp)) > 0) {
-		stream_write(mid->to, buf, 1, length);
+		mnstr_write(mid->to, buf, 1, length);
 		check_stream(mid, mid->to, "write error on stream", "mapi_stream_into", mid->error);
 	}
-	stream_flush(mid->to);
+	mnstr_flush(mid->to);
 	check_stream(mid, mid->to, "write error on stream", "mapi_stream_into", mid->error);
 	hdl = mapi_new_handle(mid);
 	if (hdl == NULL)
@@ -4027,7 +4027,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	assert(mid->active == hdl);
 	if (hdl->needmore) {
 		hdl->needmore = 0;
-		stream_flush(mid->to);
+		mnstr_flush(mid->to);
 		check_stream(mid, mid->to, "write error on stream", "read_into_cache", mid->error);
 	}
 	if ((result = hdl->active) == NULL)
@@ -4198,10 +4198,10 @@ mapi_execute_internal(MapiHdl hdl)
 
 			while (i < size) {
 				mid->active = hdl;
-				stream_write(mid->to, "S", 1, 1);
+				mnstr_write(mid->to, "S", 1, 1);
 				if (mid->tracelog) {
 					mapi_log_header(mid, "W");
-					stream_printf(mid->tracelog, "S");
+					mnstr_printf(mid->tracelog, "S");
 				}
 				check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 				do {
@@ -4210,36 +4210,36 @@ mapi_execute_internal(MapiHdl hdl)
 					hdl->needmore = 0;
 					if ((n = QUERYBLOCK) > size - i)
 						n = size - i;
-					stream_write(mid->to, cmd + i, 1, n);
+					mnstr_write(mid->to, cmd + i, 1, n);
 					if (mid->tracelog) {
-						stream_write(mid->tracelog, cmd + i, 1, n);
-						stream_flush(mid->tracelog);
+						mnstr_write(mid->tracelog, cmd + i, 1, n);
+						mnstr_flush(mid->tracelog);
 					}
 					check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 					i += n;
 					if (i == size) {
 						if (mid->languageId == LANG_SQL) {
-							stream_write(mid->to, ";", 1, 1);
+							mnstr_write(mid->to, ";", 1, 1);
 							check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 							if (mid->tracelog) {
-								stream_write(mid->tracelog, ";", 1, 1);
-								stream_flush(mid->tracelog);
+								mnstr_write(mid->tracelog, ";", 1, 1);
+								mnstr_flush(mid->tracelog);
 							}
 						}
-						stream_write(mid->to, "\n", 1, 1);
+						mnstr_write(mid->to, "\n", 1, 1);
 						if (mid->tracelog) {
-							stream_write(mid->tracelog, "\n", 1, 1);
-							stream_flush(mid->tracelog);
+							mnstr_write(mid->tracelog, "\n", 1, 1);
+							mnstr_flush(mid->tracelog);
 						}
 						check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 					}
-					stream_flush(mid->to);
+					mnstr_flush(mid->to);
 					check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 					if (read_into_cache(hdl, 0) != MOK)
 						return mid->error;
 					if (i >= size && hdl->needmore) {
 						hdl->needmore = 0;
-						stream_flush(mid->to);
+						mnstr_flush(mid->to);
 						check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 					}
 				} while (hdl->needmore);
@@ -4247,37 +4247,37 @@ mapi_execute_internal(MapiHdl hdl)
 			return MOK;
 		} else {
 			/* indicate to server this is a SQL command */
-			stream_write(mid->to, "s", 1, 1);
+			mnstr_write(mid->to, "s", 1, 1);
 			if (mid->tracelog) {
 				mapi_log_header(mid, "W");
-				stream_write(mid->tracelog, "s", 1, 1);
-				stream_flush(mid->tracelog);
+				mnstr_write(mid->tracelog, "s", 1, 1);
+				mnstr_flush(mid->tracelog);
 			}
 		}
 	}
-	stream_write(mid->to, cmd, 1, size);
+	mnstr_write(mid->to, cmd, 1, size);
 	if (mid->tracelog) {
-		stream_write(mid->tracelog, cmd, 1, size);
-		stream_flush(mid->tracelog);
+		mnstr_write(mid->tracelog, cmd, 1, size);
+		mnstr_flush(mid->tracelog);
 	}
 	check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 	/* all SQL statements should end with a semicolon */
 	/* for the other languages it is assumed that the statements are correct */
 	if (mid->languageId == LANG_SQL) {
-		stream_write(mid->to, ";", 1, 1);
+		mnstr_write(mid->to, ";", 1, 1);
 		check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 		if (mid->tracelog) {
-			stream_write(mid->tracelog, ";", 1, 1);
-			stream_flush(mid->tracelog);
+			mnstr_write(mid->tracelog, ";", 1, 1);
+			mnstr_flush(mid->tracelog);
 		}
 	}
-	stream_write(mid->to, "\n", 1, 1);
+	mnstr_write(mid->to, "\n", 1, 1);
 	if (mid->tracelog) {
-		stream_write(mid->tracelog, "\n", 1, 1);
-		stream_flush(mid->tracelog);
+		mnstr_write(mid->tracelog, "\n", 1, 1);
+		mnstr_flush(mid->tracelog);
 	}
 	check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
-	stream_flush(mid->to);
+	mnstr_flush(mid->to);
 	check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 	mid->active = hdl;
 	return read_into_cache(hdl, 1);
@@ -4363,11 +4363,11 @@ mapi_query_prep(Mapi mid)
 	assert(mid->active == NULL);
 	if (mid->languageId == LANG_SQL || mid->languageId == LANG_XQUERY) {
 		/* indicate to server this is a SQL command */
-		stream_write(mid->to, "S", 1, 1);
+		mnstr_write(mid->to, "S", 1, 1);
 		if (mid->tracelog) {
 			mapi_log_header(mid, "W");
-			stream_write(mid->tracelog, "S", 1, 1);
-			stream_flush(mid->tracelog);
+			mnstr_write(mid->tracelog, "S", 1, 1);
+			mnstr_flush(mid->tracelog);
 		}
 	}
 	return (mid->active = mapi_new_handle(mid));
@@ -4397,10 +4397,10 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		printf("mapi_query_part:" SZFMT ":%.*s\n", size, (int) size, query);
 	}
 	hdl->needmore = 0;
-	stream_write(mid->to, (char *) query, 1, size);
+	mnstr_write(mid->to, (char *) query, 1, size);
 	if (mid->tracelog) {
-		stream_write(mid->tracelog, (char *) query, 1, size);
-		stream_flush(mid->tracelog);
+		mnstr_write(mid->tracelog, (char *) query, 1, size);
+		mnstr_flush(mid->tracelog);
 	}
 	check_stream(mid, mid->to, "write error on stream", "mapi_query_part", mid->error);
 	return MOK;
@@ -4417,7 +4417,7 @@ mapi_query_done(MapiHdl hdl)
 	assert(mid->active == NULL || mid->active == hdl);
 	mid->active = hdl;
 	hdl->needmore = 0;
-	stream_flush(mid->to);
+	mnstr_flush(mid->to);
 	check_stream(mid, mid->to, "write error on stream", "mapi_query_done", mid->error);
 	ret = mid->error;
 	if (ret == MOK)
@@ -4523,13 +4523,13 @@ mapi_cache_limit(Mapi mid, int limit)
 
 		if (mid->tracelog) {
 			mapi_log_header(mid, "W");
-			stream_printf(mid->tracelog, "X" "reply_size %d\n", limit);
-			stream_flush(mid->tracelog);
+			mnstr_printf(mid->tracelog, "X" "reply_size %d\n", limit);
+			mnstr_flush(mid->tracelog);
 		}
-		if (stream_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
-		    stream_flush(mid->to)) {
+		if (mnstr_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
+		    mnstr_flush(mid->to)) {
 			close_connection(mid);
-			mapi_setError(mid, stream_error(mid->to), "mapi_cache_limit", MTIMEOUT);
+			mapi_setError(mid, mnstr_error(mid->to), "mapi_cache_limit", MTIMEOUT);
 			return MERROR;
 		}
 		hdl = prepareQuery(mapi_new_handle(mid), "reply_size");
@@ -4677,16 +4677,16 @@ mapi_fetch_line(MapiHdl hdl)
 		hdl->active = result;
 		if (hdl->mid->tracelog) {
 			mapi_log_header(hdl->mid, "W");
-			stream_printf(hdl->mid->tracelog, "X" "export %d " LLFMT "\n",
+			mnstr_printf(hdl->mid->tracelog, "X" "export %d " LLFMT "\n",
 				      result->tableid,
 				      result->cache.first + result->cache.tuplecount);
-			stream_flush(hdl->mid->tracelog);
+			mnstr_flush(hdl->mid->tracelog);
 		}
-		if (stream_printf(hdl->mid->to, "X" "export %d " LLFMT "\n",
+		if (mnstr_printf(hdl->mid->to, "X" "export %d " LLFMT "\n",
 				  result->tableid,
 				  result->cache.first + result->cache.tuplecount) < 0 ||
-		    stream_flush(hdl->mid->to))
-			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
+		    mnstr_flush(hdl->mid->to))
+			check_stream(hdl->mid, hdl->mid->to, mnstr_error(hdl->mid->to), "mapi_fetch_line", NULL);
 		reply = mapi_fetch_line_internal(hdl);
 	}
 	return reply;
@@ -5243,14 +5243,14 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			hdl->active = result;
 			if (mid->tracelog) {
 				mapi_log_header(mid, "W");
-				stream_printf(mid->tracelog, "X" "export %d " LLFMT "\n",
+				mnstr_printf(mid->tracelog, "X" "export %d " LLFMT "\n",
 					      result->tableid, result->cache.first + result->cache.tuplecount);
-				stream_flush(mid->tracelog);
+				mnstr_flush(mid->tracelog);
 			}
-			if (stream_printf(mid->to, "X" "export %d " LLFMT "\n",
+			if (mnstr_printf(mid->to, "X" "export %d " LLFMT "\n",
 					  result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
-			    stream_flush(mid->to))
-				check_stream(mid, mid->to, stream_error(mid->to), "mapi_fetch_line", 0);
+			    mnstr_flush(mid->to))
+				check_stream(mid, mid->to, mnstr_error(mid->to), "mapi_fetch_line", 0);
 		}
 		if (mid->active)
 			read_into_cache(mid->active, 0);

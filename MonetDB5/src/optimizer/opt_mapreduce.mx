@@ -978,11 +978,11 @@ OPTmapreduceImplementation(
 	}
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 10
-	stream_printf(cntxt->fdout, "MAP program\n");
+	mnstr_printf(cntxt->fdout, "MAP program\n");
 	chkProgram(cntxt->nspace, map);
 	printFunction(cntxt->fdout, map, 0, LIST_MAL_STMT);
 
-	stream_printf(cntxt->fdout, "REDUCE program\n");
+	mnstr_printf(cntxt->fdout, "REDUCE program\n");
 	chkProgram(cntxt->nspace, reduce);
 	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT);
 #endif

@@ -264,7 +264,7 @@ OCTOPUSdiscover(Client cntxt){
 				workers[nrworkers].name = GDKstrdup(buf);
 
 #ifdef DEBUG_RUN_OCTOPUS
-				stream_printf(cntxt->fdout,"Worker site %d %s\n", nrworkers, t);
+				mnstr_printf(cntxt->fdout,"Worker site %d %s\n", nrworkers, t);
 #endif
 				nrworkers++;
 			}
@@ -281,14 +281,14 @@ OCTOPUSdiscover(Client cntxt){
 		workers[nrworkers].name = GDKstrdup(buf);
 	
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"Worker site %d %s\n", nrworkers, s);
+		mnstr_printf(cntxt->fdout,"Worker site %d %s\n", nrworkers, s);
 #endif
 		nrworkers++;
 		octopusLocal = 1;
 	}
 
 #ifdef DEBUG_RUN_OCTOPUS
-	stream_printf(cntxt->fdout,"Octopus workers %d\n",nrworkers);
+	mnstr_printf(cntxt->fdout,"Octopus workers %d\n",nrworkers);
 #else
 		(void) cntxt;
 #endif
@@ -358,20 +358,20 @@ static int admitSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 		if ( !peers[i].inuse ) {
 			adm = peers[i].inuse = 1;
 #ifdef DEBUG_RUN_OCTOPUS
-			stream_printf( ((Client)cntxt)->fdout,"USING conn. to peer %d (%s)\n", i, dburi);
+			mnstr_printf( ((Client)cntxt)->fdout,"USING conn. to peer %d (%s)\n", i, dburi);
 			printInstruction(((Client)cntxt)->fdout,(MalBlkPtr)mb,0, p, LIST_MAL_ALL);
 #endif
 		}
 		else {
 #ifdef DEBUG_RUN_OCTOPUS
-		 	stream_printf( ((Client)cntxt)->fdout,"Conn. to peer %d is BUSY\n", i);
+		 	mnstr_printf( ((Client)cntxt)->fdout,"Conn. to peer %d is BUSY\n", i);
 			printInstruction(((Client)cntxt)->fdout,(MalBlkPtr)mb,0, p, LIST_MAL_ALL);
 #endif
 		}
 	} 
 	else {
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf( ((Client)cntxt)->fdout,"No peer %s\n", dburi);
+		mnstr_printf( ((Client)cntxt)->fdout,"No peer %s\n", dburi);
 		printInstruction(((Client)cntxt)->fdout,(MalBlkPtr)mb,0, p, LIST_MAL_ALL);
 #endif
 	}	
@@ -403,7 +403,7 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 	if ( i >= 0 ) {
 		peers[i].inuse = 0;
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf( ((Client)cntxt)->fdout,"RELEASE conn to peer %d (%s)\n", i, dburi);
+		mnstr_printf( ((Client)cntxt)->fdout,"RELEASE conn to peer %d (%s)\n", i, dburi);
 		printInstruction(((Client)cntxt)->fdout,(MalBlkPtr)mb,0, p, LIST_MAL_ALL);
 #endif
 	}
@@ -491,7 +491,7 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(GDKout,"connect to  uri %s\n", dburi);
+		mnstr_printf(GDKout,"connect to  uri %s\n", dburi);
 #endif
 
 	msg = OCTOPUSconnect(&conn, &dburi);
@@ -504,9 +504,9 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = RMTregisterInternal(cntxt, conn, octopusRef, fname);
 
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(GDKout,"octopus.%s registered at site %s\n",
+		mnstr_printf(GDKout,"octopus.%s registered at site %s\n",
 			fname,dburi);
-		stream_printf(GDKout,"reply: %s\n",msg?msg:"ok");
+		mnstr_printf(GDKout,"reply: %s\n",msg?msg:"ok");
 #endif
 		if ( msg == MAL_SUCCEED){
 			Registry r= (Registry) GDKzalloc(sizeof(struct REGMAL));

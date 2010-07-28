@@ -276,13 +276,13 @@ newBox(str name)
 
 	mal_set_lock(mal_contextLock, "newBox");
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "create new box '%s'\n", name);
+	mnstr_printf(GDKout, "create new box '%s'\n", name);
 #endif
 	for (i = 0; i < topbox; i++)
 		if (malbox[i] != NULL && idcmp(name, malbox[i]->name) == 0) {
 			mal_unset_lock(mal_contextLock, "newBox");
 #ifdef DEBUG_MAL_BOX
-			stream_printf(GDKout,"newBox:duplicate box definition\n");
+			mnstr_printf(GDKout,"newBox:duplicate box definition\n");
 #endif
 			return malbox[i];
 		}
@@ -301,7 +301,7 @@ newBox(str name)
 			return NULL;
 	}
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "succeeded at %d\n", i);
+	mnstr_printf(GDKout, "succeeded at %d\n", i);
 #endif
 	return obj;
 
@@ -337,14 +337,14 @@ findBox(str name)
 	for (i = 0; i < topbox; i++)
 		if (malbox[i] != NULL && name && idcmp(name, malbox[i]->name) == 0) {
 #ifdef DEBUG_MAL_BOX
-			stream_printf(GDKout, "found the box '%s' %d\n", name, i);
+			mnstr_printf(GDKout, "found the box '%s' %d\n", name, i);
 #endif
 			mal_unset_lock(mal_contextLock, "findBox");
 			return malbox[i];
 		}
 	mal_unset_lock(mal_contextLock, "findBox");
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "could not find the box '%s' \n", name);
+	mnstr_printf(GDKout, "could not find the box '%s' \n", name);
 #endif
 	return 0;
 
@@ -423,7 +423,7 @@ depositBox(Box box, str name, int type, ValPtr val)
 	VALcopy(v, val);
 	box->dirty= TRUE;
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "depositBox: entered '%s' at %d type %d\n", name, i, type);
+	mnstr_printf(GDKout, "depositBox: entered '%s' at %d type %d\n", name, i, type);
 #endif
 	return 0;
 }
@@ -454,14 +454,14 @@ takeBox(Box box, str name, ValPtr val, int tpe)
 		return 0;
 	
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "takeBox: found '%s' at %d\n", name, i);
+	mnstr_printf(GDKout, "takeBox: found '%s' at %d\n", name, i);
 #endif
 	if (i < 0)
 		return i;
 	v = &box->val->stk[i];
 	if (val->vtype != v->vtype && v->vtype != TYPE_any && tpe != TYPE_any) {
 #ifdef DEBUG_MAL_BOX
-		stream_printf(GDKout, "takeBox:type error %d,%d\n", val->vtype, box->val->stk[i].vtype);
+		mnstr_printf(GDKout, "takeBox:type error %d,%d\n", val->vtype, box->val->stk[i].vtype);
 #endif
 		return 0;
 	}
@@ -470,7 +470,7 @@ takeBox(Box box, str name, ValPtr val, int tpe)
 		BBPincref(val->val.bval, TRUE);
 
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "takeBox:'%s' from '%s'\n", name, box->name);
+	mnstr_printf(GDKout, "takeBox:'%s' from '%s'\n", name, box->name);
 #endif
 	return 0;
 }
@@ -500,7 +500,7 @@ bindBAT(Box box, str name, str location)
 		return -1;
 	v->vtype = TYPE_bat;
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "bindBox:'%s' to '%s' [%d] in '%s'\n", name, location, v->val.bval, box->name);
+	mnstr_printf(GDKout, "bindBox:'%s' to '%s' [%d] in '%s'\n", name, location, v->val.bval, box->name);
 #endif
 	return 0;
 }
@@ -511,7 +511,7 @@ releaseBox(Box box, str name)
 	int i;
 
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "releaseBox:%s from %s\n", name, box->name);
+	mnstr_printf(GDKout, "releaseBox:%s from %s\n", name, box->name);
 #endif
 	i = findVariable(box->sym, name);
 	if (i < 0)
@@ -523,7 +523,7 @@ int
 releaseAllBox(Box box)
 {
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "releaseAllBox:%s \n", box->name);
+	mnstr_printf(GDKout, "releaseAllBox:%s \n", box->name);
 #else
 	(void) box;
 #endif
@@ -536,7 +536,7 @@ discardBox(Box box, str name)
 	int i, j;
 
 #ifdef DEBUG_MAL_BOX
-	stream_printf(cntxt->fdout, "discardBox:%s from %s\n", name, box->name);
+	mnstr_printf(cntxt->fdout, "discardBox:%s from %s\n", name, box->name);
 #endif
 	i = findVariable(box->sym, name);
 	if (i < 0)
@@ -656,7 +656,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	if (access(*boxfile,R_OK)==0 &&
 		(unlink(*boxfilebak), rename(*boxfile, *boxfilebak) < 0)) {
 #ifdef DEBUG_MAL_BOX
-		stream_printf(GDKout, "saveBox:can not rename %s to %s\n", *boxfile, *boxfilebak);
+		mnstr_printf(GDKout, "saveBox:can not rename %s to %s\n", *boxfile, *boxfilebak);
 #endif
 		showException(MAL,"box.saveBox", "can not rename backup");
 		GDKfree(*boxfile); *boxfile = NULL;
@@ -700,7 +700,7 @@ saveBox(Box box, int flag)
 	if (f == NULL)
 		return 1;
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "saveBox:created %s\n", boxfile);
+	mnstr_printf(GDKout, "saveBox:created %s\n", boxfile);
 #endif
 	for (i = 0; i < box->sym->vtop; i++) {
 		str tnme; 
@@ -711,7 +711,7 @@ saveBox(Box box, int flag)
 				if (b->batPersistence == PERSISTENT){
 					str ht = getTypeName(getHeadType(getVarType(box->sym,i)));
 					str tt = getTypeName(getTailType(getVarType(box->sym,i)));
-					stream_printf(f, "%s:bat[:%s,:%s]:= %s.bind(%d);\n", 
+					mnstr_printf(f, "%s:bat[:%s,:%s]:= %s.bind(%d);\n", 
 						getVarName(box->sym, i),  ht, tt,
 						box->name, b->batCacheid);
 					GDKfree(ht);
@@ -722,10 +722,10 @@ saveBox(Box box, int flag)
 			}
 		} else {
 			tnme = getTypeName(getVarType(box->sym,i));
-			stream_printf(f, "%s := ", getVarName(box->sym, i));
+			mnstr_printf(f, "%s := ", getVarName(box->sym, i));
 			ATOMprint(v->vtype, VALptr(v), f);
-			stream_printf(f, ":%s;\n", tnme);
-			stream_printf(f, "%s.deposit(\"%s\",%s);\n", 
+			mnstr_printf(f, ":%s;\n", tnme);
+			mnstr_printf(f, "%s.deposit(\"%s\",%s);\n", 
 				box->name, getVarName(box->sym, i), getVarName(box->sym, i));
 			GDKfree(tnme);
 		}
@@ -751,7 +751,7 @@ loadBox(str name)
 	i = strlen(boxfile);
 	snprintf(boxfile + i, PATHLENGTH - i, "%c%s.box", DIR_SEP, name);
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "loadBox:start loading the file %s\n", boxfile);
+	mnstr_printf(GDKout, "loadBox:start loading the file %s\n", boxfile);
 #endif
 	if (access(boxfile, R_OK) == 0) {
 		Client child= MCforkClient(mal_clients);
@@ -760,7 +760,7 @@ loadBox(str name)
 			evalFile(child, boxfile, 0);
 			MCcloseClient(child);
 #ifdef DEBUG_MAL_BOX
-			stream_printf(GDKout, "loadBox:loaded the file %s\n", boxfile);
+			mnstr_printf(GDKout, "loadBox:loaded the file %s\n", boxfile);
 #endif
 		}
 	}

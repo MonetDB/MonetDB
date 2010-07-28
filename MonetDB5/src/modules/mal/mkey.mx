@@ -472,17 +472,17 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 
 	if (!ALIGNsynced(bn, b) && (BATcount(b) || BATcount(bn))) {
 #ifdef _DEBUG_MKEY_
-		stream_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", BATgetId(bn), *rotate, BATgetId(b));
+		mnstr_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", BATgetId(bn), *rotate, BATgetId(b));
 #endif
 		return " Operands not synced on head";
 	} else if (isVIEW(bn) || bn->batRestricted) {
 #ifdef _DEBUG_MKEY_
-		stream_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", BATgetId(bn), *rotate, BATgetId(b));
+		mnstr_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", BATgetId(bn), *rotate, BATgetId(b));
 #endif
 		return " Left operand not writeable";
 	} else if (*rotate < 0 || *rotate >= (int)(sizeof(wrd)*8)) {
 #ifdef _DEBUG_MKEY_
-		stream_printf(GDKout,"CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
+		mnstr_printf(GDKout,"CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
 #endif
 		return " Illegal number of rotate bits";
 	}
@@ -491,7 +491,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	br = BATnew(TYPE_void, TYPE_wrd, BATcount(bn));
 	if (br == NULL) {
 #ifdef _DEBUG_MKEY_
-		stream_printf(GDKout,"CMDbulk_rotate_xor_hash: fail to allocate result BAT[void,wrd] of "SZFMT" tuples.\n", BATcount(bn));
+		mnstr_printf(GDKout,"CMDbulk_rotate_xor_hash: fail to allocate result BAT[void,wrd] of "SZFMT" tuples.\n", BATcount(bn));
 #endif
 		return MAL_MALLOC_FAIL;
 	}

@@ -231,7 +231,7 @@ send_err(stream *out,
          char *err_reason)
 {
     if(out) {
-        stream_printf(out, "HTTP/1.1 %s\r\n"
+        mnstr_printf(out, "HTTP/1.1 %s\r\n"
                 "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n"
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 "<env:Envelope xmlns:env=\"%s\">\n"
@@ -247,7 +247,7 @@ send_err(stream *out,
                 " </env:Body>\n"
                 "</env:Envelope>\n",
                 http_err, SOAP_NS, soap_err, err_reason);
-        stream_flush(out);
+        mnstr_flush(out);
     } else {
         GDKerror("send_err: stream 'out' is null");
     }
@@ -469,12 +469,12 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     if (req->mode && strstr(req->mode,"trace")) {
         stream *logstream = xrpc_log_message("req", req->seqnr);
         if (logstream == NULL) return GDK_FAIL;
-        if (stream_errnr(logstream) || stream_write(logstream, msg, 1, strlen(msg)) <= 0) {
-            stream_destroy(logstream);
+        if (mnstr_errnr(logstream) || mnstr_write(logstream, msg, 1, strlen(msg)) <= 0) {
+            mnstr_destroy(logstream);
             return GDK_FAIL;
         }
-        stream_close(logstream);
-        stream_destroy(logstream);
+        mnstr_close(logstream);
+        mnstr_destroy(logstream);
 
     }
 
@@ -685,9 +685,9 @@ xrpc_handle_wsat_request(mapi_client *mc, struct shttpd_callback_arg *arg)
             if (mode && strstr(mode, "trace")) {
                 stream *logstream = xrpc_log_message("prepare", seqnr);
                 if (logstream) {
-                    stream_write(logstream, q, 1, strlen(q));
-                    stream_close(logstream);
-                    stream_destroy(logstream);
+                    mnstr_write(logstream, q, 1, strlen(q));
+                    mnstr_close(logstream);
+                    mnstr_destroy(logstream);
                 }
             }
         } else if (strcmp(xrpc_commit_active->qid,qid) == 0) {
@@ -743,9 +743,9 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
 
     /* get a MAPI thread from the xquery client pool */
     stream *fdin = socket_rastream(sock, "XRPC read");
-    if (fdin && stream_errnr(fdin) == 0) {
+    if (fdin && mnstr_errnr(fdin) == 0) {
         stream *fdout = wbstream(socket_wastream(sock, "XRPC write"), 8192);
-        if (fdout && stream_errnr(fdout) == 0) {
+        if (fdout && mnstr_errnr(fdout) == 0) {
             mapi_client *mc = MAPIclient(fdin, fdout, "xquery");
             if (mc) {
                 /* override xquery_client_engine (will be restored later) */ 
@@ -756,13 +756,13 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
             }
         }
         if (fdout) {
-            stream_close(fdout);
-            stream_destroy(fdout);
+            mnstr_close(fdout);
+            mnstr_destroy(fdout);
         }
     }
     if (fdin) {
-        stream_close(fdin);
-        stream_destroy(fdin);
+        mnstr_close(fdin);
+        mnstr_destroy(fdin);
     }
     shttpd_finish(arg);
     return -1;
@@ -779,7 +779,7 @@ CMDrpcd_start(int *port, bit *open, str options)
     assert(open);
     
     if (rpcd_running) {
-        stream_printf(GDKout,
+        mnstr_printf(GDKout,
                 "\nRPC receiver already running (on port %d)\n",
                 xrpc_port);
         return GDK_SUCCEED;
@@ -837,17 +837,17 @@ CMDxrpc_2pc_wait_for_commit(str qid, str caller, lng* seqnr, ptr* handle) {
     xrpc_commit_t *c = (xrpc_commit_t*) handle;
     long now = GDKusec();
 
-    stream_printf(c->s, HTTP_200_OK);
+    mnstr_printf(c->s, HTTP_200_OK);
 
     if (c->mode && strstr(c->mode,"trace")) {
         stream *logstream = xrpc_log_message("res", *seqnr);
         if (logstream) c->s = attach_teestream(c->s, logstream);   
     }
-    stream_printf(c->s, XRPC_WSAT_RES, c->mode?c->mode:"repeatable",
+    mnstr_printf(c->s, XRPC_WSAT_RES, c->mode?c->mode:"repeatable",
                   qid, 0LL, caller, xrpc_hostname, xrpc_port, "Prepare", now - c->start, 2, "Prepared");
-    stream_printf(c->s, HTTP_200_OK);
-    stream_close(c->s);
-    stream_destroy(c->s); 
+    mnstr_printf(c->s, HTTP_200_OK);
+    mnstr_close(c->s);
+    mnstr_destroy(c->s); 
 
     /* now start waiting for the commit request (handle_wsat_request deblocks us) */
     c->start = now;
@@ -868,24 +868,24 @@ CMDxrpc_2pc_confirm_commit(str qid, str caller, lng* seqnr, ptr* handle) {
     xrpc_commit_t *c = (xrpc_commit_t*) handle;
     long now = GDKusec();
 
-    stream_printf(c->s, HTTP_200_OK);
+    mnstr_printf(c->s, HTTP_200_OK);
 
     if (c->mode && strstr(c->mode,"trace")) {
         stream* logstream = xrpc_log_message("res", *seqnr);
         if (logstream) c->s = attach_teestream(c->s, logstream);   
     }
-    stream_printf(c->s, XRPC_WSAT_RES, c->mode?c->mode:"repeatable",
+    mnstr_printf(c->s, XRPC_WSAT_RES, c->mode?c->mode:"repeatable",
                   qid, 0LL, caller, xrpc_hostname, xrpc_port, "Commit", now - c->start, 3, "Committed");
-    stream_close(c->s);
-    stream_destroy(c->s); 
+    mnstr_close(c->s);
+    mnstr_destroy(c->s); 
 
     if (c->mode && strstr(c->mode,"trace")) {
         /* hack: we had put Commit msg in qid so we can log it now with the right seqnr */
         stream* logstream = xrpc_log_message("req", *seqnr);
         if (logstream) {
-            stream_write(logstream, c->qid, 1, strlen(c->qid));
-            stream_close(logstream);
-            stream_destroy(logstream);
+            mnstr_write(logstream, c->qid, 1, strlen(c->qid));
+            mnstr_close(logstream);
+            mnstr_destroy(logstream);
         }
     }
     return GDK_SUCCEED;

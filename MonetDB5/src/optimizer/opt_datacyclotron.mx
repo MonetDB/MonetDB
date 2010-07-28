@@ -242,7 +242,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #endif
 
 	OPTDEBUGdatacyclotron {
-		stream_printf(cntxt->fdout,"ENTERING DATA CYCLOTRON \n");
+		mnstr_printf(cntxt->fdout,"ENTERING DATA CYCLOTRON \n");
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 	}
 
@@ -383,7 +383,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	}
 
 	OPTDEBUGdatacyclotron {
-		stream_printf(cntxt->fdout,"LEAVING DATA CYCLOTRON \n");
+		mnstr_printf(cntxt->fdout,"LEAVING DATA CYCLOTRON \n");
 		chkProgram(cntxt->nspace,mb);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 	}

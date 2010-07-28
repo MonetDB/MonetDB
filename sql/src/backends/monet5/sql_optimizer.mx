@@ -176,7 +176,7 @@ FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKusec();
 
 #ifdef _SQL_OPTIMIZER_DEBUG
-	stream_printf(GDKout, "First call to FXoptimizer\n");
+	mnstr_printf(GDKout, "First call to FXoptimizer\n");
 	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
 	(void) cntxt;
@@ -634,7 +634,7 @@ addQueryToCache(Client c)
 	chkProgram(c->nspace, mb);
 	m = ((mvc *) c->state[MAL_SCENARIO_OPTIMIZE]);
 #ifdef _SQL_OPTIMIZER_DEBUG
-	stream_printf(GDKout, "ADD QUERY TO CACHE\n");
+	mnstr_printf(GDKout, "ADD QUERY TO CACHE\n");
 	printFunction(GDKout,mb,0,LIST_MAL_ALL);
 #endif
 @-
@@ -665,7 +665,7 @@ to allow inspection.
 	if( c->debug)
 		optimizerCheck(c,mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
 #ifdef _SQL_OPTIMIZER_DEBUG
-	stream_printf(GDKout, "ADD optimized QUERY TO CACHE\n");
+	mnstr_printf(GDKout, "ADD optimized QUERY TO CACHE\n");
 	printFunction(GDKout,mb,0,LIST_MAL_ALL);
 #endif
 }
@@ -690,9 +690,9 @@ SQLoptimizer(Client c)
 {
 	(void) c;
 #ifdef _SQL_OPTIMIZER_DEBUG
-	stream_printf(GDKout, "SQLoptimizer\n");
+	mnstr_printf(GDKout, "SQLoptimizer\n");
 	printFunction(c->fdout, c->curprg->def,0, LIST_MAL_STMT);
-	stream_printf(GDKout, "done\n");
+	mnstr_printf(GDKout, "done\n");
 #endif
 	return MAL_SUCCEED;
 }

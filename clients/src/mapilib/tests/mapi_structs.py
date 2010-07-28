@@ -552,8 +552,8 @@ bstream._fields_ = [
     ('mode', c_int),
 ]
 
-# values for enumeration 'stream_errors'
-stream_errors = c_int # enum
+# values for enumeration 'mnstr_errors'
+mnstr_errors = c_int # enum
 class _G_fpos_t(Structure):
     pass
 __off_t = c_long
@@ -1451,7 +1451,7 @@ __all__ = ['__uint16_t', '_SC_SYSTEM_DATABASE', '__int16_t', 'div_t',
            '_SC_XOPEN_REALTIME', 'sigcontext', 'pthread_once_t',
            'cookie_read_function_t', '_PC_PIPE_BUF', 'blkcnt64_t',
            '_SC_2_PBS_ACCOUNTING', '_SC_LEVEL2_CACHE_LINESIZE',
-           '_SC_FD_MGMT', 'ILL_ILLTRP', 'ILL_COPROC', 'stream_errors',
+           '_SC_FD_MGMT', 'ILL_ILLTRP', 'ILL_COPROC', 'mnstr_errors',
            '_SC_CHARCLASS_NAME_MAX', 'lldiv_t',
            '_SC_THREAD_ATTR_STACKSIZE', '_SC_REGEX_VERSION',
            '__u_quad_t', '__u_short', '_SC_2_VERSION', 'fsid_t',

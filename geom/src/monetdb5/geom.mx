@@ -488,10 +488,10 @@ mbrREAD(mbr *a, stream *s, size_t cnt)
 	int xmin, ymin, xmax, ymax;
 
 	for(i=0, c = a;i<cnt;i++, c++) {
-		if (!stream_readInt(s, &xmin) ||
-		    !stream_readInt(s, &ymin) ||
-		    !stream_readInt(s, &xmax) ||
-		    !stream_readInt(s, &ymax) ) 
+		if (!mnstr_readInt(s, &xmin) ||
+		    !mnstr_readInt(s, &ymin) ||
+		    !mnstr_readInt(s, &xmax) ||
+		    !mnstr_readInt(s, &ymax) ) 
 			return NULL;
 		c->xmin = (flt)xmin;
 		c->ymin = (flt)ymin;
@@ -513,10 +513,10 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 		/* use binary writeInt (as sizeof (flt) == sizeof(int)); */
 		/* We want to write nil's here too. 
 		   So no overflow checking needed */
-		if (!stream_writeInt(s, (int) c->xmin) ||
-		    !stream_writeInt(s, (int) c->ymin) ||
-		    !stream_writeInt(s, (int) c->xmax) ||
-		    !stream_writeInt(s, (int) c->ymax))
+		if (!mnstr_writeInt(s, (int) c->xmin) ||
+		    !mnstr_writeInt(s, (int) c->ymin) ||
+		    !mnstr_writeInt(s, (int) c->xmax) ||
+		    !mnstr_writeInt(s, (int) c->ymax))
 			break;
 	}
 }
@@ -825,12 +825,12 @@ wkbREAD(wkb *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!stream_readInt(s, &len))
+	if (!mnstr_readInt(s, &len))
 		return NULL;
 	if ((a = GDKmalloc(wkb_size(len))) == NULL)
 		return NULL;
 	a->len = len;
-	if (len > 0 && stream_read(s, (char *) a->data, len, 1) != 1) {
+	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
 		GDKfree(a);
 		return NULL;
 	}
@@ -847,8 +847,8 @@ wkbWRITE(wkb *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (stream_writeInt(s, len) && len > 0) /* 64bit: check for overflow */
-		stream_write(s, (char *) a->data, len, 1);
+	if (mnstr_writeInt(s, len) && len > 0) /* 64bit: check for overflow */
+		mnstr_write(s, (char *) a->data, len, 1);
 }
 
 geom_export void

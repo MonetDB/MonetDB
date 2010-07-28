@@ -27,8 +27,8 @@
 #define FAKE_V_STR(avg, sd, cnt) \
 	ADVANCE_STREAM(sd, \
 		(long)(Seed[sd].boundary*cnt))
-#define ADVANCE_STREAM(stream_id, num_calls) \
-        NthElement(num_calls, &Seed[stream_id].value)
+#define ADVANCE_STREAM(mnstr_id, num_calls) \
+        NthElement(num_calls, &Seed[mnstr_id].value)
 
 #define MAX_COLOR 92
 long name_bits[MAX_COLOR / BITS_PER_LONG];

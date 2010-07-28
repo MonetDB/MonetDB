@@ -225,15 +225,15 @@ void
 mccVar(stream *f, MalBlkPtr mb, int i)
 {
 	if (isTmpVar(mb, i))
-		stream_printf(f, "T%d", mb->var[i]->tmpindex);
+		mnstr_printf(f, "T%d", mb->var[i]->tmpindex);
 	else
-		stream_printf(f, "%s", mb->var[i]->name);
+		mnstr_printf(f, "%s", mb->var[i]->name);
 }
 
 void
 mccArg(stream *f, MalBlkPtr mb, int i)
 {
-	stream_printf(f, "&");
+	mnstr_printf(f, "&");
 	mccVar(f, mb, i);
 }
 
@@ -247,14 +247,14 @@ mccValue(stream *f, MalBlkPtr mb, int i)
 
 	val = &getVarConstant(mb, i);
 	if (val->vtype == TYPE_str) {
-		stream_printf(f, "\"%s\"", val->val.sval);
+		mnstr_printf(f, "\"%s\"", val->val.sval);
 	} else {
 		tostr = BATatoms[val->vtype].atomToStr;
 		(*tostr) (&buf, &sz, VALptr(val));
 		c = strchr(buf, '@');
 		if (c && *(c + 1) == '0')
 			*c = 0;
-		stream_printf(f, "%s", buf);
+		mnstr_printf(f, "%s", buf);
 		GDKfree(buf);
 	}
 }
@@ -266,11 +266,11 @@ mccType(stream *f, MalBlkPtr mb, int i)
 
 	tpe = getTypeName(getVarType(mb, i));
 	if (strcmp(tpe, "void") == 0) {
-		stream_printf(f, "void *");
+		mnstr_printf(f, "void *");
 	} else if (isaBatType(getVarType(mb, i))) {
-		stream_printf(f, "int *");
+		mnstr_printf(f, "int *");
 	} else {
-		stream_printf(f, "%s *", tpe);
+		mnstr_printf(f, "%s *", tpe);
 	}
 	GDKfree(tpe);
 }
@@ -284,9 +284,9 @@ mccInitUse(stream *f, MalBlkPtr mb)
 	p = getInstrPtr(mb, 0);
 	if (p->argc > 0) {
 		for (j = 0; j < p->argc; j++) {
-			stream_printf(f, "\t(void)");
+			mnstr_printf(f, "\t(void)");
 			mccVar(f, mb, getArg(p, j));
-			stream_printf(f,";\n");
+			mnstr_printf(f,";\n");
 		}
 	}
 }
@@ -297,19 +297,19 @@ mccInit(stream *f, MalBlkPtr mb)
 	InstrPtr p;
 
 	for (i = 0; mccPrelude[i]; i++)
-		stream_printf(f, "%s", mccPrelude[i]);
+		mnstr_printf(f, "%s", mccPrelude[i]);
 	p = getInstrPtr(mb, 0);
-	stream_printf(f, "str MCC%s_%s(", getModuleId(p), getFunctionId(p));
+	mnstr_printf(f, "str MCC%s_%s(", getModuleId(p), getFunctionId(p));
 	if (p->argc > 0) {
 		mccType(f, mb, 0);
 		mccVar(f, mb, getArg(p, 0));
 		for (j = 1; j < p->argc; j++) {
-			stream_printf(f, ",");
+			mnstr_printf(f, ",");
 			mccType(f, mb, i);
 			mccVar(f, mb, getArg(p, j));
 		}
 	}
-	stream_printf(f, ")\n{\n");
+	mnstr_printf(f, ")\n{\n");
 }
 
 void
@@ -336,27 +336,27 @@ mccVariables(stream *f, MalBlkPtr mb)
 		if (isTmpVar(mb, i))
 			*v = 'V';
 		if (getVarType(mb, i) == TYPE_void) {
-			stream_printf(f, "\tint ");
+			mnstr_printf(f, "\tint ");
 			mccVar(f, mb, i);
-			stream_printf(f, "= 0; /* %s */\n", tpe);
+			mnstr_printf(f, "= 0; /* %s */\n", tpe);
 		} else if (isaBatType(getVarType(mb, i))) {
-			stream_printf(f, "\tBID ");
+			mnstr_printf(f, "\tBID ");
 			mccVar(f, mb, i);
-			stream_printf(f, "= 0; /* %s */\n", tpe);
+			mnstr_printf(f, "= 0; /* %s */\n", tpe);
 		} else {
-			stream_printf(f, "\t%s ", tpe);
+			mnstr_printf(f, "\t%s ", tpe);
 			mccVar(f, mb, i);
-			stream_printf(f, " = ");
+			mnstr_printf(f, " = ");
 			mccValue(f, mb, i);
-			stream_printf(f, ";\n");
+			mnstr_printf(f, ";\n");
 		}
 		GDKfree(tpe);
 	}
 	/* if( isTmpVar(mb,i) ) GDKfree(v); */
-	stream_printf(f, "\tstr Xmsg = MAL_SUCCEED;\n");
+	mnstr_printf(f, "\tstr Xmsg = MAL_SUCCEED;\n");
 	/* reserve space for backups */
 	if(seenbat)
-		stream_printf(f,"\tBID *backup= (BID*) alloca(%d * sizeof(BID));\n",mb->maxarg);
+		mnstr_printf(f,"\tBID *backup= (BID*) alloca(%d * sizeof(BID));\n",mb->maxarg);
 }
 
 void
@@ -364,56 +364,56 @@ mccEntry(stream *f, MalBlkPtr mb, int i)
 {
 	switch (getVarType(mb, i)) {
 	case TYPE_void:
-		stream_printf(f, "1");
+		mnstr_printf(f, "1");
 		break;
 	case TYPE_bit:
 		mccVar(f, mb, i);
-		stream_printf(f, " == 0 ||");
+		mnstr_printf(f, " == 0 ||");
 		mccVar(f, mb, i);
-		stream_printf(f, "== bit_nil");
+		mnstr_printf(f, "== bit_nil");
 		break;
 	case TYPE_chr:
 		mccVar(f, mb, i);
-		stream_printf(f, "== chr_nil");
+		mnstr_printf(f, "== chr_nil");
 		break;
 	case TYPE_sht:
 		mccVar(f, mb, i);
-		stream_printf(f, " < 0 ||");
+		mnstr_printf(f, " < 0 ||");
 		mccVar(f, mb, i);
-		stream_printf(f, "== sht_nil");
+		mnstr_printf(f, "== sht_nil");
 		break;
 	case TYPE_int:
 		mccVar(f, mb, i);
-		stream_printf(f, " < 0 ||");
+		mnstr_printf(f, " < 0 ||");
 		mccVar(f, mb, i);
-		stream_printf(f, "== int_nil");
+		mnstr_printf(f, "== int_nil");
 		break;
 	case TYPE_lng:
 		mccVar(f, mb, i);
-		stream_printf(f, " < 0 ||");
+		mnstr_printf(f, " < 0 ||");
 		mccVar(f, mb, i);
-		stream_printf(f, "== lng_nil");
+		mnstr_printf(f, "== lng_nil");
 		break;
 	case TYPE_flt:
 	case TYPE_dbl:
 		mccVar(f, mb, i);
-		stream_printf(f, " < 0 ||");
+		mnstr_printf(f, " < 0 ||");
 		mccVar(f, mb, i);
-		stream_printf(f, "== dbl_nil");
+		mnstr_printf(f, "== dbl_nil");
 		break;
 	case TYPE_oid:
 		mccVar(f, mb, i);
-		stream_printf(f, "== oid_nil");
+		mnstr_printf(f, "== oid_nil");
 		break;
 	case TYPE_str:
-		stream_printf(f, " strlen(");
+		mnstr_printf(f, " strlen(");
 		mccVar(f, mb, i);
-		stream_printf(f, ") == 0 ||");
+		mnstr_printf(f, ") == 0 ||");
 		mccVar(f, mb, i);
-		stream_printf(f, "== str_nil");
+		mnstr_printf(f, "== str_nil");
 		break;
 	default:
-		stream_printf(f, "/* Unknown barrier :%d */", getVarType(mb, i));
+		mnstr_printf(f, "/* Unknown barrier :%d */", getVarType(mb, i));
 	}
 }
 
@@ -426,18 +426,18 @@ void
 mccCall(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	int j;
 	if (p->blk && p->blk->binding) {
-		stream_printf(f, "\tif( (Xmsg = ");
-		stream_printf(f, "%s(", p->blk->binding);
+		mnstr_printf(f, "\tif( (Xmsg = ");
+		mnstr_printf(f, "%s(", p->blk->binding);
 		mccArg(f, mb, getArg(p, 0));
 		for (j = 1; j < p->argc; j++) {
-			stream_printf(f, ",");
+			mnstr_printf(f, ",");
 			mccArg(f, mb, getArg(p, j));
 		}
-		stream_printf(f, ")) )");
+		mnstr_printf(f, ")) )");
 		if (*ctop > 0)
-			stream_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
+			mnstr_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
 		else
-			stream_printf(f, " goto wrapup;\n");
+			mnstr_printf(f, " goto wrapup;\n");
 	}
 }
 
@@ -447,12 +447,12 @@ mccAssignment(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	for(i=0; i<p->retc; i++)
 	if( p->retc+i <p->argc){
 		mccVar(f, mb, getArg(p, i));
-		stream_printf(f, " = ");
+		mnstr_printf(f, " = ");
 		if( isVarConstant(mb,getArg(p,p->retc+i-1)))
 			mccValue(f,mb, getArg(p,p->retc+i-1));
 		else
 			mccVar(f, mb, getArg(p, p->retc+i-1));
-		stream_printf(f, ";\n");
+		mnstr_printf(f, ";\n");
 	}
 	(void) catch;
 	(void) ctop;
@@ -464,17 +464,17 @@ mccSafeTarget(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	if( garbageControl(p)){
 		for(i=0;i<p->retc; i++){
 			if( isaBatType(getArgType(mb,p,i))){
-				stream_printf(f,"\tbackup[%d]=",i);
+				mnstr_printf(f,"\tbackup[%d]=",i);
 				mccVar(f,mb,getArg(p,i));
-				stream_printf(f,";\n");
+				mnstr_printf(f,";\n");
 			} else
 			if( getArgType(mb,p,i)== TYPE_str){
-				stream_printf(f,"\tbackup[%d]=strlen(",i);
+				mnstr_printf(f,"\tbackup[%d]=strlen(",i);
 				mccVar(f,mb,getArg(p,i));
-				stream_printf(f,");\n");
-				stream_printf(f,"\tsbackup[%d]=",i);
+				mnstr_printf(f,");\n");
+				mnstr_printf(f,"\tsbackup[%d]=",i);
 				mccVar(f,mb,getArg(p,i));
-				stream_printf(f,";\n");
+				mnstr_printf(f,";\n");
 			} 
 		}
 	}
@@ -488,15 +488,15 @@ mccRestoreTarget(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	if( garbageControl(p)){
 		for(i=0;i<p->retc; i++){
 			if( isaBatType(getArgType(mb,p,i))){
-				stream_printf(f,"\tif(backup[%d] == ",i);
+				mnstr_printf(f,"\tif(backup[%d] == ",i);
 				mccVar(f,mb,getArg(p,i));
-				stream_printf(f,") BBPreleaseref(backup[%d]);\n",i);
-				stream_printf(f,"\telse BBPdecref(backup[%d],TRUE);\n",i);
+				mnstr_printf(f,") BBPreleaseref(backup[%d]);\n",i);
+				mnstr_printf(f,"\telse BBPdecref(backup[%d],TRUE);\n",i);
 			} else
 			if( getArgType(mb,p,i)== TYPE_str){
-				stream_printf(f,"\tif(backup[%d] && sbackup[%d]!= ",i,i);
+				mnstr_printf(f,"\tif(backup[%d] && sbackup[%d]!= ",i,i);
 				mccVar(f,mb,getArg(p,i));
-				stream_printf(f,"\t) GDKfree(sbackup[%d]);\n");
+				mnstr_printf(f,"\t) GDKfree(sbackup[%d]);\n");
 			} 
 		}
 	}
@@ -512,19 +512,19 @@ mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop
 
 	mccSafeTarget(f,mb,p,catch,ctop);
 	if (p->barrier == EXITsymbol){
-		stream_printf(f, "EXIT_%d: ;\n", i);
+		mnstr_printf(f, "EXIT_%d: ;\n", i);
 		for (j = 0; j < p->retc; j++) {
-			stream_printf(f,"\t(void)");
+			mnstr_printf(f,"\t(void)");
 			mccVar(f,mb,getArg(p,j));
-			stream_printf(f,";\n");
+			mnstr_printf(f,";\n");
 		}
 	}
 
 	if (p->barrier == CATCHsymbol) {
-		stream_printf(f, "CATCH_%d:\n", i);
-		stream_printf(f, "if( ");
+		mnstr_printf(f, "CATCH_%d:\n", i);
+		mnstr_printf(f, "if( ");
 		mccVar(f, mb, getArg(p, 0));
-		stream_printf(f, " == MAL_SUCCEED) goto EXIT_%d;\n", p->jump);
+		mnstr_printf(f, " == MAL_SUCCEED) goto EXIT_%d;\n", p->jump);
 		return errors;
 	}
 
@@ -535,31 +535,31 @@ mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop
 	if (p->barrier)
 		switch (p->barrier) {
 		case BARRIERsymbol:
-			stream_printf(f, "\tif(  ");
+			mnstr_printf(f, "\tif(  ");
 			mccEntry(f, mb, getArg(p, 0));
-			stream_printf(f, " ) goto EXIT_%d;\n", p->jump);
-			stream_printf(f, "BARRIER_%d:\n", i + 1);
+			mnstr_printf(f, " ) goto EXIT_%d;\n", p->jump);
+			mnstr_printf(f, "BARRIER_%d:\n", i + 1);
 			break;
 		case RETURNsymbol:
 			for (j = 0; j < p->retc; j++) {
-				stream_printf(f, "\tVALcopy(&");
+				mnstr_printf(f, "\tVALcopy(&");
 				mccVar(f, mb, getArg(getInstrPtr(mb, 0), j));
-				stream_printf(f, ", &");
+				mnstr_printf(f, ", &");
 				mccVar(f, mb, getArg(p, j));
-				stream_printf(f, ");\n");
+				mnstr_printf(f, ");\n");
 			}
-			stream_printf(f, "\tgoto wrapup;\n");
+			mnstr_printf(f, "\tgoto wrapup;\n");
 		case CATCHsymbol:
 		case EXITsymbol:
 			break;
 		case LEAVEsymbol:
 		case REDOsymbol:
-			stream_printf(f, "\tif( !( ");
+			mnstr_printf(f, "\tif( !( ");
 			mccEntry(f, mb, getArg(p, 0));
-			stream_printf(f, ") ) goto BARRIER_%d;\n", p->jump);
+			mnstr_printf(f, ") ) goto BARRIER_%d;\n", p->jump);
 			break;
 		default:
-			stream_printf(f, "/* case not yet covered: %d */\n", p->barrier);
+			mnstr_printf(f, "/* case not yet covered: %d */\n", p->barrier);
 		}
 	mccRestoreTarget(f,mb,p,catch,ctop);
 	return errors;
@@ -584,13 +584,13 @@ mccMultiplex(Client cntxt, stream *f, MalBlkPtr mb, InstrPtr p)
 	delArgument(pn, pn->retc);
 	typeChecker(cntxt->nspace, mb, pn, TRUE);
 
-	stream_printf(f, "{\tlng mloop;\n\tptr h,t;\n");
-	stream_printf(f, "init todo\n");
-	stream_printf(f, "\tif(mloop>0)\n\tdo{\n");
-	stream_printf(f, "TODO\n");
+	mnstr_printf(f, "{\tlng mloop;\n\tptr h,t;\n");
+	mnstr_printf(f, "init todo\n");
+	mnstr_printf(f, "\tif(mloop>0)\n\tdo{\n");
+	mnstr_printf(f, "TODO\n");
 	mccInstruction(f, mb, pn, pc, 0, 0);
-	stream_printf(f, "\t} while(mloop > 0 );\n");
-	stream_printf(f, "}\n");
+	mnstr_printf(f, "\t} while(mloop > 0 );\n");
+	mnstr_printf(f, "}\n");
 
 	freeInstruction(pn);
 }
@@ -599,54 +599,54 @@ void
 mccJoinPath(stream *f, MalBlkPtr mb, InstrPtr p){
 	int i;
 	(void)mb;
-	stream_printf(f,"\t{ BID *j%d[]={",getArg(p,0));
+	mnstr_printf(f,"\t{ BID *j%d[]={",getArg(p,0));
 	mccArg(f, mb, getArg(p, p->retc));
 	for(i=p->retc+1;i<p->argc; i++){
-		stream_printf(f,",");
+		mnstr_printf(f,",");
 		mccArg(f, mb, getArg(p, i));
 	}
-	stream_printf(f,"};\t");
+	mnstr_printf(f,"};\t");
 	mccVar(f, mb, getArg(p,0));
-	stream_printf(f,"= ALGjoinPathBody(%d,&j%d); ", p->argc-p->retc, getArg(p,0));
-	stream_printf(f,"};\n");
+	mnstr_printf(f,"= ALGjoinPathBody(%d,&j%d); ", p->argc-p->retc, getArg(p,0));
+	mnstr_printf(f,"};\n");
 }
 
 void
 mccProject(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 	int j;
-	stream_printf(f, "\tif( (Xmsg = ALGprojectCstBody(");
+	mnstr_printf(f, "\tif( (Xmsg = ALGprojectCstBody(");
 	mccArg(f, mb, getArg(p, 0));
 	for (j = 1; j < p->argc; j++) {
-		stream_printf(f, ",");
+		mnstr_printf(f, ",");
 		mccArg(f, mb, getArg(p, j));
 	}
-	stream_printf(f,",%d",getArgType(mb,p,2));
-	stream_printf(f, ")) )");
+	mnstr_printf(f,",%d",getArgType(mb,p,2));
+	mnstr_printf(f, ")) )");
 	if (*ctop > 0)
-		stream_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
+		mnstr_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
 	else
-		stream_printf(f, " goto wrapup;\n");
+		mnstr_printf(f, " goto wrapup;\n");
 }
 void
 mccBATnew(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
-	stream_printf(f,"{");
-	stream_printf(f,"\tint ht=%d;\n",getVarType(mb,getArg(p,1)));
-	stream_printf(f,"\tint tt=%d;\n",getVarType(mb,getArg(p,2)));
+	mnstr_printf(f,"{");
+	mnstr_printf(f,"\tint ht=%d;\n",getVarType(mb,getArg(p,1)));
+	mnstr_printf(f,"\tint tt=%d;\n",getVarType(mb,getArg(p,2)));
 	if(p->argc==5){
-		stream_printf(f,"\tlng cap="); 
+		mnstr_printf(f,"\tlng cap="); 
 		mccVar(f,mb,getArg(p,4));
-		stream_printf(f,";\n");
-	} else stream_printf(f,"\tlng cap=0;\n");
+		mnstr_printf(f,";\n");
+	} else mnstr_printf(f,"\tlng cap=0;\n");
 	mccSafeTarget(f,mb,p,catch,ctop);
-	stream_printf(f, "\tif( (Xmsg = BKCnewBATlng(");
+	mnstr_printf(f, "\tif( (Xmsg = BKCnewBATlng(");
 	mccArg(f, mb, getArg(p, 0));
-	stream_printf(f, ", &ht, &tt, &cap)) )");
+	mnstr_printf(f, ", &ht, &tt, &cap)) )");
 	if (*ctop > 0)
-		stream_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
+		mnstr_printf(f, " goto CATCH_%d;\n", catch[--*ctop]);
 	else
-		stream_printf(f, " goto wrapup;\n");
+		mnstr_printf(f, " goto wrapup;\n");
 	mccRestoreTarget(f,mb,p,catch,ctop);
-	stream_printf(f,"}\n");
+	mnstr_printf(f,"}\n");
 }
 
 void
@@ -700,7 +700,7 @@ functions.
 				continue;
 			}
 #ifdef DEBUG_MAL_COMPILER
-			stream_printf(GDKout,"call to %s.%s can not be handled correctly\n", 
+			mnstr_printf(GDKout,"call to %s.%s can not be handled correctly\n", 
 				getModuleId(p), getFunctionId(p));
 #endif
 			errors++;
@@ -715,36 +715,36 @@ void
 mccExit(stream *f, MalBlkPtr mb)
 {
 	int i;
-	stream_printf(f,"wrapup:;\n");
+	mnstr_printf(f,"wrapup:;\n");
 	for(i=0; i< mb->vtop; i++)
 	if( isaBatType(getVarType(mb,i))
 	){
-		stream_printf(f,"\tif( ");
+		mnstr_printf(f,"\tif( ");
 		mccVar(f,mb,i);
-		stream_printf(f,"&& BBP_lrefs(");
+		mnstr_printf(f,"&& BBP_lrefs(");
 		mccVar(f,mb,i);
-		stream_printf(f,") ) BBPdecref(");
+		mnstr_printf(f,") ) BBPdecref(");
 		mccVar(f,mb,i);
-		stream_printf(f,",TRUE);\n");
+		mnstr_printf(f,",TRUE);\n");
 	} else
 	if( getVarType(mb,i)== TYPE_str){
-		stream_printf(f,"\tif(");
+		mnstr_printf(f,"\tif(");
 		mccVar(f,mb,i);
-		stream_printf(f,") GDKfree(");
+		mnstr_printf(f,") GDKfree(");
 		mccVar(f,mb,i);
-		stream_printf(f,");\n");
+		mnstr_printf(f,");\n");
 	}
 	/* handle all un-used variables 
 	for(i=0;i<mb->vtop; i++)
 	if( !isVarUsed(mb,i)){
-		stream_printf(f,"\t(void)");
+		mnstr_printf(f,"\t(void)");
 		mccVar(f,mb,i);
-		stream_printf(f,";\n");
+		mnstr_printf(f,";\n");
 	}
 	*/
-	stream_printf(f,"\treturn Xmsg;\n");
-	stream_printf(f, "}\n");
-	(void) stream_close(f);
+	mnstr_printf(f,"\treturn Xmsg;\n");
+	mnstr_printf(f, "}\n");
+	(void) mnstr_close(f);
 }
 
 @-

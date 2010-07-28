@@ -603,7 +603,7 @@ HASHlist(Hash *h, BUN i)
 		c++;
 		i = j;
 		if (i > h->lim) {
-			stream_printf(GDKout, "hash inconsistency link " BUNFMT "\n", i);
+			mnstr_printf(GDKout, "hash inconsistency link " BUNFMT "\n", i);
 			break;
 		}
 	}

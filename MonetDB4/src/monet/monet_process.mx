@@ -141,7 +141,7 @@ monetSetChannel(Thread t, stream *in, stream *out)
 	if (t->data[0] == 0 || t->data[1] == 0) {
 		return EOF;
 	}
-	PARDEBUG THRprintf(GDKerr, "setchannel %s %s\n", stream_name(in), stream_name(out));
+	PARDEBUG THRprintf(GDKerr, "setchannel %s %s\n", mnstr_name(in), mnstr_name(out));
 
 	t->data[1] = in;
 	t->data[0] = out;

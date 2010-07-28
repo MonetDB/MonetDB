@@ -73,7 +73,7 @@ pftijah_options_init(XqueryCtx* ctx, char* args, char *restag, char *resprefix) 
     ctx->driverWs		= GLOBAL_PTOS;
     GLOBAL_PTOS->errorMessage	= NULL;
 #ifdef DEBUG
-    stream_printf(GDKout,"pft_opt_deb: pftijah_options_init() called.\n");
+    mnstr_printf(GDKout,"pft_opt_deb: pftijah_options_init() called.\n");
 #endif
     return 1;
 }
@@ -90,17 +90,17 @@ pftijah_options_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
     if ( strcmp("TijahOptions",name) != 0 ) {
         /* error here */
 #ifdef DEBUG
-        stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_startElement(%s) FAILS[badname].\n",name);
+        mnstr_printf(GDKout,"pft_opt_deb: pftijah_options_handle_startElement(%s) FAILS[badname].\n",name);
 #endif
 	return 0;
     }
     if ( ++ptoctx->cnt != 1 ) {
         /* error here */
-        stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_startElement(%s) FAILS[badcount].\n",name);
+        mnstr_printf(GDKout,"pft_opt_deb: pftijah_options_handle_startElement(%s) FAILS[badcount].\n",name);
 	return 0;
     }
 #ifdef DEBUG
-    stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_startElement(%s) SUCCES.\n",name);
+    mnstr_printf(GDKout,"pft_opt_deb: pftijah_options_handle_startElement(%s) SUCCES.\n",name);
 #endif
     return 1;
 }
@@ -117,24 +117,24 @@ pftijah_options_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value)
     if ( strcmp(loc,"debug") == 0 ) {
 	int v = atoi(value);
 	SET_TDEBUG(v);
-	if (TDEBUG(1)) stream_printf(GDKout,"# pftijah_option_handler: setting debug value to %d.\n",v);
+	if (TDEBUG(1)) mnstr_printf(GDKout,"# pftijah_option_handler: setting debug value to %d.\n",v);
     } else if ( (strcmp(loc,"top")==0) || (strcmp(loc,"retNum")==0) ) {
     	// INCOMPLETE, check if it is a correct number
 	loc = (str)"returnNumber";
     } else if ( (strcmp(loc,"collection")==0) ) {
-        stream_printf(GDKout,"# WARNING: TijahOptions attr: \"collection\" is DEPRECATED, use \"ft-index\".\n");
+        mnstr_printf(GDKout,"# WARNING: TijahOptions attr: \"collection\" is DEPRECATED, use \"ft-index\".\n");
 	loc = (str)"ft-index"; /* TEMPORARY helping transition */
     } else if ( (strcmp(loc,"txtmodel_model")==0) ) {
-        stream_printf(GDKout,"# WARNING: TijahOptions attr: \"txtmodel_model\" is DEPRECATED, use \"ir-model\".\n");
+        mnstr_printf(GDKout,"# WARNING: TijahOptions attr: \"txtmodel_model\" is DEPRECATED, use \"ir-model\".\n");
 	loc = (str)"ir-model"; /* TEMPORARY helping transition */
     }
     if ( !BUNins(ptoctx->bat, loc, value, FALSE) ) {
-        stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_attribute(%s,%s) FAILS[BUNins].\n",loc,value);
+        mnstr_printf(GDKout,"pft_opt_deb: pftijah_options_handle_attribute(%s,%s) FAILS[BUNins].\n",loc,value);
         /* error message here */
 	return 0;
     }
 #ifdef DEBUG
-    stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_attribute(%s,%s) SUCCES.\n",loc,value);
+    mnstr_printf(GDKout,"pft_opt_deb: pftijah_options_handle_attribute(%s,%s) SUCCES.\n",loc,value);
 #endif
     return 1;
 }
@@ -200,7 +200,7 @@ int serialize_pftijah_options_DRIVER(
 	ptos.cnt = 0;
 	ptos.bat = BATnew(TYPE_str, TYPE_str, 32);
 #ifdef DEBUG
-	stream_printf(GDKout,"******** NITERS = %d\n",niters);
+	mnstr_printf(GDKout,"******** NITERS = %d\n",niters);
 	BATprintf(GDKout,loop);
 	BATprintf(GDKout,iter);
 	BATprintf(GDKout,item);
@@ -221,7 +221,7 @@ int serialize_pftijah_options_DRIVER(
         	dblVAL,
         	strVAL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 #ifdef DEBUG
-	stream_printf(GDKout,"CALLED xquery_print_result_DRIVER: res=%d\n",returnVal);
+	mnstr_printf(GDKout,"CALLED xquery_print_result_DRIVER: res=%d\n",returnVal);
 	BATprintf(GDKout,ptos.bat);
 #endif
 	*res = ptos.bat;

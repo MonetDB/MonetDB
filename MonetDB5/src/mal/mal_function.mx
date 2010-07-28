@@ -480,7 +480,7 @@ are handled by the underlying code fragments.
 void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
 #ifdef DEBUG_MAL_FCN
-	stream_printf(GDKout,"replace type _%d by type %s\n",v,
+	mnstr_printf(GDKout,"replace type _%d by type %s\n",v,
 		getTypeName(t));
 #endif
 	for(j=0; j<mb->stop; j++){
@@ -511,18 +511,18 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			setAnyTailIndex(y,tx);
 			setArgType(mb,p,i,y);
 #ifdef DEBUG_MAL_FCN
-		stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
+		mnstr_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
 #endif 
 		} else
 		if(getTailIndex(x) == v){
 #ifdef DEBUG_MAL_FCN
-		stream_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
+		mnstr_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
 #endif 
 			setArgType(mb,p,i,t);
 		} 
 #ifdef DEBUG_MAL_FCN
 		else 
-		stream_printf(GDKout," non x= %s %d\n",getTypeName(x),getTailIndex(x));
+		mnstr_printf(GDKout," non x= %s %d\n",getTypeName(x),getTailIndex(x));
 #endif 
 	}
 #ifdef DEBUG_MAL_FCN
@@ -540,7 +540,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	InstrPtr pp;
 
 #ifdef DEBUG_CLONE
-	stream_printf(GDKout,"clone the function %s to scope %s\n",
+	mnstr_printf(GDKout,"clone the function %s to scope %s\n",
 			proc->name,scope->name);
 	printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
 #endif
@@ -549,7 +549,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 #ifdef DEBUG_CLONE
-	stream_printf(GDKout,"CLONED VERSION\n");
+	mnstr_printf(GDKout,"CLONED VERSION\n");
 	printFunction(GDKout, new->def, 0, LIST_MAL_ALL);
 #endif
 	/* check for errors after fixation , TODO*/
@@ -569,7 +569,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 			replaceTypeVar(new->def, pp, getTailIndex(v), t);
 	} 
 #ifdef DEBUG_MAL_FCN
-	else stream_printf(GDKout,"%d remains %s\n",i, getTypeName(v));
+	else mnstr_printf(GDKout,"%d remains %s\n",i, getTypeName(v));
 #endif
 	/* include the function at the proper place in the scope */
 	insertSymbol(scope,new);
@@ -584,7 +584,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 		clrVarFixed(new->def,i);
 
 #ifdef DEBUG_MAL_FCN
-	stream_printf(GDKout,"FUNCTION TO BE CHECKED\n");
+	mnstr_printf(GDKout,"FUNCTION TO BE CHECKED\n");
 	printFunction(GDKout, new->def, 0, LIST_MAL_ALL);
 #endif
 
@@ -600,7 +600,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 		}
 	}
 #ifdef DEBUG_CLONE
-	stream_printf(GDKout,"newly cloned function added to %s %d \n",scope->name,i);
+	mnstr_printf(GDKout,"newly cloned function added to %s %d \n",scope->name,i);
 	printFunction(GDKout,new->def, 0, LIST_MAL_ALL);
 #endif
 	return new;
@@ -616,18 +616,18 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg) {
 	if ( flg == 0)
 		return;
 	if (mb == NULL) {
-		stream_printf(fd, "# function definition missing\n");
+		mnstr_printf(fd, "# function definition missing\n");
 		return;
 	}
 
 	if (flg & LIST_MAPI) {
 		/* a bit dirty, but only here we have the number of lines */
-		stream_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
+		mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
 				mb->stop, mb->stop);
-		stream_printf(fd, "%% .explain # table_name\n");
-		stream_printf(fd, "%% mal # name\n");
-		stream_printf(fd, "%% clob # type\n");
-		stream_printf(fd, "%% 0 # length\n");	/* unknown */
+		mnstr_printf(fd, "%% .explain # table_name\n");
+		mnstr_printf(fd, "%% mal # name\n");
+		mnstr_printf(fd, "%% clob # type\n");
+		mnstr_printf(fd, "%% 0 # length\n");	/* unknown */
 	}
 
 	for (i = 0; i < mb->stop; i++)
@@ -910,7 +910,7 @@ in the context of a global stack.
 				else
 					decl[l] = blks[top];
 #ifdef DEBUG_MAL_FCN
-				stream_printf(GDKout,"defined %s in block %d\n", 
+				mnstr_printf(GDKout,"defined %s in block %d\n", 
 					getVarName(mb,l),decl[l]);
 #endif
 			} else
@@ -935,7 +935,7 @@ in the context of a global stack.
 				if( top <MAXDEPTH-2){
 					blks[++top]= ++blkId;
 #ifdef DEBUG_MAL_FCN
-				stream_printf(GDKout,"new block %d at top %d\n",blks[top], top);
+				mnstr_printf(GDKout,"new block %d at top %d\n",blks[top], top);
 #endif
 				} else {
 					showScriptException(mb,pc,SYNTAX, "too deeply nested  MAL program");
@@ -947,7 +947,7 @@ in the context of a global stack.
 			if( blockExit(p) && top > 0 && 
 			varGetProp(mb, getArg(p,0), PropertyIndex("transparent")) == NULL){
 #ifdef DEBUG_MAL_FCN
-				stream_printf(GDKout,"leave block %d at top %d\n",blks[top], top);
+				mnstr_printf(GDKout,"leave block %d at top %d\n",blks[top], top);
 #endif
 @-
 At the end of the block we should reset the status of all variables
@@ -982,7 +982,7 @@ showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 		found=0;
 		for (k = p->retc; k < p->argc; k++) {
 			if (p->argv[k] == varid ) {
-				stream_printf(f, "n%d -> n%d\n", pc, i);
+				mnstr_printf(f, "n%d -> n%d\n", pc, i);
 				found++;
 			}
 		}
@@ -1007,7 +1007,7 @@ showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 		p = getInstrPtr(mb, i);
 		for (k = 0; k < p->argc; k++)
 			if (p->argv[k] == varid  ){
-				stream_printf(f, "n%d -> n%d\n",i, pc);
+				mnstr_printf(f, "n%d -> n%d\n",i, pc);
 				return;
 			}
 	}
@@ -1024,14 +1024,14 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 
 	(void) stk;		/* fool the compiler */
 	msg = instruction2str(mb,stk, p, LIST_MAL_DEBUG);
-	stream_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
+	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
 	for (s = msg; *s; s++)
 		if (*s == '"')
-			stream_printf(f, "\\\"");
+			mnstr_printf(f, "\\\"");
 		else
-			stream_printf(f, "%c", *s);
+			mnstr_printf(f, "%c", *s);
 	GDKfree(msg);
-	stream_printf(f, "\"];\n");
+	mnstr_printf(f, "\"];\n");
 }
 
 void
@@ -1048,7 +1048,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	else
 		f = open_wastream(fname);
 	p = getInstrPtr(mb, 0);
-	stream_printf(f, "digraph %s{\n", getFunctionId(p));
+	mnstr_printf(f, "digraph %s{\n", getFunctionId(p));
 	p = getInstrPtr(mb, 0);
 	showFlowDetails(mb, stk, p, 0, f);
 	for (k = p->retc; k < p->argc; k++) {
@@ -1075,9 +1075,9 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		if ( p->token == ENDsymbol)
 			break;
 	}
-	stream_printf(f, "}\n");
+	mnstr_printf(f, "}\n");
 	if (f != GDKout)
-		stream_close(f);
+		mnstr_close(f);
 }
 
 @}
