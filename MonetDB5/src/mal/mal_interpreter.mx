@@ -216,15 +216,6 @@ isNotUsedIn(InstrPtr p, int start, int a)
 			return 0;
 	return 1;
 }
-static int
-isOutputVar(InstrPtr p, int a)
-{
-	int k;
-	for (k=0; k <p->retc; k++)
-		if( getArg(p,k)== a) 
-			return 1;
-	return 0;
-}
 
 MalStkPtr
 prepareMALstack(MalBlkPtr mb, int size){
@@ -1178,9 +1169,14 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 	int i, n;
 	char *assign= (char*) GDKzalloc(sizeof(char) * flow->mb->vtop);
 
+	PARDEBUG
+		printf("Initialize dflow block\n");
 	for (n=0, i = flow->start; i<flow->stop; i++, n++) {
 		InstrPtr p = getInstrPtr(flow->mb, i);
 		int j, a;
+
+		PARDEBUG
+			printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
 
 		/* initial state, ie everything can run */
 		fs[n].pc = i;
@@ -1191,28 +1187,28 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 
 		for (j=0; j<p->argc; j++){
 			a = getArg(p, j);
-			if ( assign[a])
-				continue;
-			if (j<p->retc ){
+
+			if (j<p->retc && assign[a] == 0 ){
 				assign[a] = i;
-				if (!flow->inuse[a])
+				if ( isNotUsedIn(p, p->retc,a))
 					flow->blocked[a] = 1;
 			}
+
 			if (j>=p->retc  && !isVarConstant(flow->mb, a)  )
 				flow->inuse[a] += isNotUsedIn(p,j+1,a);
 		}
 	}
+
 	for( i=0; i<flow->mb->vtop; i++)
 		flow->inuse[i] = 0;
-#ifdef DEBUG_FLOW2
+	PARDEBUG
 	for (i=0; i < flow->mb->vtop; i++) 
 	if ( flow->blocked[i] || flow->inuse[i] || assign[i] ){
 		printf("%s %d [ %1d %2d ]\n", getVarName(flow->mb,i), 
 			getEndOfLife(flow->mb,i),
 			flow->blocked[i],
 			flow->inuse[i]);
-}
-#endif
+	}
 	GDKfree(assign);
 }
 
@@ -1245,9 +1241,8 @@ DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
 {
 	int j;
 	for(j=p->retc; j<p->argc; j++) {
-	if (!isVarConstant(flow->mb, getArg(p,j)))
-		flow->inuse[getArg(p,j)] += isNotUsedIn(p,j+1,getArg(p,j));
-	flow->blocked[getArg(p,j)] |= isOutputVar(p,getArg(p,j));
+		if (!isVarConstant(flow->mb, getArg(p,j)))
+			flow->inuse[getArg(p,j)] += isNotUsedIn(p,j+1,getArg(p,j));
 	}
 
 	/* the target variables become blocked until this instruction is finished */
@@ -1276,6 +1271,7 @@ static str
 DFLOWscheduler( DataFlow flow )
 {
 	int queued = 0, candidates;
+	int todo = 0, done = 0;
 	int pc = 0, i, j, oa =0, ia;
 	int limit = flow->stop - flow->start;
 	str ret = MAL_SUCCEED;
@@ -1293,23 +1289,24 @@ DFLOWscheduler( DataFlow flow )
 	if( limit)
 		goto firststep;	/* confuse static code analysers, i want a jump */
 
-	while(queued){
-		PARDEBUG mnstr_printf(GDKstdout,"#waiting for results, queued %d\n", queued);
+	while(queued || todo != done){
+		PARDEBUG mnstr_printf(GDKstdout,"#waiting for results, queued %d todo %d done %d\n", queued,todo,done);
 		f = q_dequeue(flow->done);
 		if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
 			(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
 		f->status = DFLOWwrapup;
+		done++;
 		queued--;
 		if (f->pc < 0) {
-			PARDEBUG {
+			PARDEBUG
 				mnstr_printf(GDKstdout,"#errors encountered %s ", f->error);
-			}
 			/* we have to wait for all threads to report back */
 			/* dequeue the remainders in case of an error */
-			while(queued-- > 0)  {
-					if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
-						(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
-					(void)q_dequeue(flow->done);
+			while(todo != done)  {
+				if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
+					(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
+				(void)q_dequeue(flow->done);
+				done++;
 			}
 			return f->error;
 		} else {
@@ -1354,6 +1351,7 @@ DFLOWscheduler( DataFlow flow )
 			if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc))
                 if(flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) ) {
 				queued++;
+				todo++;
 				candidates ++;
 				DFLOWactivate(flow,fs,i,p);
 				q_enqueue(flow->todo, fs+i);
@@ -1367,6 +1365,7 @@ DFLOWscheduler( DataFlow flow )
 			if ( DFLOWeligible(flow,fs,i,p,pc))
                 if(flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) ) {
 				queued++;
+				todo++;
 				DFLOWactivate(flow,fs,i,p);
 				q_enqueue(flow->todo, fs+i);
 			}
@@ -1374,7 +1373,7 @@ DFLOWscheduler( DataFlow flow )
 	} 
 	PARDEBUG {
 		int candidates = 0;
-		mnstr_printf(GDKstdout,"#end of data flow %d %d\n",pc,limit);
+		mnstr_printf(GDKstdout,"#end of data flow %d %d todo %d  done %d\n",pc,limit,todo,done);
 		for ( i =0 ; i<limit; i++)
 			if (fs[i].status != DFLOWwrapup  && fs[i].pc >=0) {
 				mnstr_printf(GDKstdout,"#missed %d %d %d ",  i, fs[i].status, fs[i].pc);
