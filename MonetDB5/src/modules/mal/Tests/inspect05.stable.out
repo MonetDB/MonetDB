@@ -1568,6 +1568,7 @@ end main;
 [ "search",			  "command",	  "batstr",	  "(s:bat[:oid,:str],c:bat[:oid,:str]):bat[:oid,:int] ",										  "STRbatstrSearch;"					  ]
 [ "startsWith",			  "command",	  "batstr",	  "(s:bat[:oid,:str],prefix:str):bat[:oid,:bit] ",											  "STRbatPrefixcst;"					  ]
 [ "startsWith",			  "command",	  "batstr",	  "(s:bat[:oid,:str],prefix:bat[:oid,:str]):bat[:oid,:bit] ",										  "STRbatPrefix;"					  ]
+[ "stringlength",		  "command",	  "batstr",	  "(s:bat[:oid,:str]):bat[:oid,:int] ",											  "STRbatstringLength;"				  ]
 [ "trim",			  "command",	  "batstr",	  "(s:bat[:oid,:str]):bat[:oid,:str] ",													  "STRbatStrip;"					  ]
 [ "toUpper",			  "command",	  "batstr",	  "(s:bat[:oid,:str]):bat[:oid,:str] ",													  "STRbatUpper;"					  ]
 [ "toLower",			  "command",	  "batstr",	  "(s:bat[:oid,:str]):bat[:oid,:str] ",													  "STRbatLower;"					  ]
