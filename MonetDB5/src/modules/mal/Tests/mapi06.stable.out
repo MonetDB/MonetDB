@@ -25,7 +25,7 @@ function user.main():void;
     io.print("done");
     mapi.disconnect(mid);
 end main;
-!MALException:mapi.query:operation failed Remote error: TypeException:user.main[1]:'d' may not be used before being initialized
+!MALException:mapi.query:operation failed: remote error: TypeException:user.main[1]:'d' may not be used before being initialized
 
 
 # 09:12:08 >  
