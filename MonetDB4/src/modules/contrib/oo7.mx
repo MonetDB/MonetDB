@@ -994,7 +994,7 @@ BATtraverse(BAT *b, BAT *dag)
 	ERRORcheck(TYPEerror(b->ttype, b->htype), "BATtraverse:type conflict\n");
 
 	delta = BATsunique(b);
-	BATcheck(delta, "BATtraverse: failed to create delta\n");
+	BATcheck(delta, "BATtraverse: failed to create delta");
 
 	if (b->ttype <= TYPE_sht || b->ttype >= TYPE_flt) {
 		GDKerror("BATtraverse: type not yet supported\n");

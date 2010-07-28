@@ -1039,8 +1039,8 @@ BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit pres
 	BAT *bn;
 	BUN p, q;
 
-	BATcheck(b, "BATselect: \n");
-	BATcheck(tl, "BATselect: tl value required\n");
+	BATcheck(b, "BATselect");
+	BATcheck(tl, "BATselect: tl value required");
 @-
 Examine type, and values for lower- and higher-bound.
 @c
@@ -1347,7 +1347,7 @@ BATsample(BAT *b, BUN size)
 	BATiter bi = bat_iterator(b);
 	BUN bun;
 
-	BATcheck(b, "BATsample: source BAT");
+	BATcheck(b, "BATsample: source BAT required");
 
 	assert(BATcount(b) <= BUN_MAX);
 
@@ -1360,7 +1360,7 @@ BATsample(BAT *b, BUN size)
 	n = (BUN) MIN(size, BATcount(b));
 
 	bn = BATnew(BAThtype(b), BATttype(b), n);
-	BATcheck(bn, "BATsample: dest BAT");
+	BATcheck(bn, "BATsample: dest BAT required");
 
 	if (n == 0)
 		return bn;
@@ -1458,7 +1458,7 @@ BATsample(BAT *b, BUN size)
 BAT *
 BATfragment(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 {
-	BATcheck(b, "BATfragment:BAT required\n");
+	BATcheck(b, "BATfragment");
 	if ((hl == NULL) && (hh == NULL)) {
 		return BATselect(b, tl, th);
 	}
@@ -1537,10 +1537,10 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	BUN s;
 	int t;
 
-	BATcheck(hl, "BATrestrict:hl is null");
-	BATcheck(hh, "BATrestrict:hh is null");
-	BATcheck(tl, "BATrestrict:tl is null");
-	BATcheck(th, "BATrestrict:th is null");
+	BATcheck(hl, "BATrestrict: hl is null");
+	BATcheck(hh, "BATrestrict: hh is null");
+	BATcheck(tl, "BATrestrict: tl is null");
+	BATcheck(th, "BATrestrict: th is null");
 	bn = BATnew(BAThtype(b), BATttype(b), BATguess(b));
 	ESTIDEBUG THRprintf(GDKout, "#BATrestrict: estimated resultsize: " BUNFMT "\n", BATguess(b));
 
@@ -1922,7 +1922,7 @@ BAT@6sort@3(BAT *b)
 	BAT *bn;
 	int tt = 0;
 
-	BATcheck(b, "BATsort@3: BAT");
+	BATcheck(b, "BATsort@3");
  	tt = b->ttype;
 	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
 		/* b's head is void-nil, hence we return a read-only copy/view of b */
@@ -1975,7 +1975,7 @@ BAT@6sort@3(BAT *b)
 BAT *
 BAT@6order@3(BAT *b)
 {
-	BATcheck(b, "BATorder@3: BAT");
+	BATcheck(b, "BATorder@3");
 	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
 		/* b's head is void-nil, hence we return b as is */
 		return BATcopy(b, b->htype, b->ttype, FALSE);
