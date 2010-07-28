@@ -228,8 +228,8 @@ BATins_kunique(BAT *bn, BAT *b)
 	BATiter bi = bat_iterator(b);
 	BATiter bni = bat_iterator(bn);
 
-	BATcheck(b, "BATins_kunique: src BAT");
-	BATcheck(bn, "BATins_kunique: dst BAT");
+	BATcheck(b, "BATins_kunique: src BAT required");
+	BATcheck(bn, "BATins_kunique: dst BAT required");
 	unique = (BATcount(bn) == 0);
 	@:elim_doubles(k)@
 	if (unique && bn->hkey == FALSE) {
@@ -253,8 +253,8 @@ BATins_sunique(BAT *bn, BAT *b)
 	BATiter bi = bat_iterator(b);
 	BATiter bni = bat_iterator(bn);
 
-	BATcheck(b, "BATins_sunique: src BAT");
-	BATcheck(bn, "BATins_sunique: dst BAT");
+	BATcheck(b, "BATins_sunique: src BAT required");
+	BATcheck(bn, "BATins_sunique: dst BAT required");
 
 	unique = (BATcount(bn) == 0);
 
@@ -313,7 +313,7 @@ BATkunique(BAT *b)
 {
 	BAT *bn;
 
-	BATcheck(b, "BATkunique:");
+	BATcheck(b, "BATkunique");
 
 	if (b->hkey) {
 		bn = BATcopy(b, b->htype, b->ttype, FALSE);
@@ -366,7 +366,7 @@ BATukunique(BAT *b)
 {
 	BAT *v, *bn;
 
-	BATcheck(b, "BATukunique:");
+	BATcheck(b, "BATukunique");
 	bn = BATkunique(v = VIEWhead(b));
 	BBPreclaim(v);
 	return bn;
@@ -377,7 +377,7 @@ BATsunique(BAT *b)
 {
 	BAT *bn;
 
-	BATcheck(b, "BATsunique:");
+	BATcheck(b, "BATsunique");
 
 	if (b->hkey || b->tkey || b->batSet) {
 		bn = BATcopy(b, b->htype, b->ttype, FALSE);

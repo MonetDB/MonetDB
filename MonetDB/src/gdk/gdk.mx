@@ -642,10 +642,13 @@ gdk_export int GDKsilent;	/* should GDK shut up? */
 #define FATALcheck(tst,	msg) if (tst) GDKfatal(msg);
 #define ERRORcheck(tst,	msg) if (tst) { GDKerror(msg); return 0; }
 #define WARNcheck(tst,	msg) if (tst) GDKwarning(msg)
-#define BATcheck(tst,	msg)				\
-	if (tst == NULL) {				\
-		GDKerror("%s: BAT required.\n",msg);	\
-		return 0;				\
+#define BATcheck(tst,	msg)					\
+	if (tst == NULL) {					\
+		if (strchr(msg, ':'))				\
+			GDKerror("%s.\n",msg);			\
+		else						\
+			GDKerror("%s: BAT required.\n",msg);	\
+		return 0;					\
 	}
 
 /* needed for mel */

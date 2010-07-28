@@ -883,8 +883,8 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
-	BATcheck(l, "BATfetchjoin: l");
-	BATcheck(r, "BATfetchjoin: r");
+	BATcheck(l, "BATfetchjoin: left BAT required");
+	BATcheck(r, "BATfetchjoin: right BAT required");
 
 	lcount = BATcount(l);
 	rcount = BATcount(r);
@@ -2254,8 +2254,8 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	BUN l_cur, l_end, r_cur;
 	BAT *bn;
 
-	BATcheck(l, "BATfetchsemijoin: l");
-	BATcheck(r, "BATfetchsemijoin: r");
+	BATcheck(l, "BATfetchsemijoin: left BAT required");
+	BATcheck(r, "BATfetchsemijoin: right BAT required");
 
 	if (denselookup) {
 		if (!BAThdense(r)) {

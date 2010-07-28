@@ -85,7 +85,7 @@ the same head-sequence as the other BATs in the sync group.
 int
 ALIGNcommit(BAT *b)
 {
-	BATcheck(b, "ALIGNcommit: bat required");
+	BATcheck(b, "ALIGNcommit");
 	if (!b->halign) {
 		b->halign = OIDnew(1);
 	}
@@ -98,7 +98,7 @@ ALIGNcommit(BAT *b)
 int
 ALIGNundo(BAT *b)
 {
-	BATcheck(b, "ALIGNundo: bat required");
+	BATcheck(b, "ALIGNundo");
 	return 0;
 }
 
@@ -214,7 +214,7 @@ VIEWhcreate(BAT *h)
 	BAT *bn;
 	bat hp;
 
-	BATcheck(h, "VIEWhcreate: bat required");
+	BATcheck(h, "VIEWhcreate");
 	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
 	if (bs == NULL)
 		bs = BATcreatedesc(h->htype, TYPE_void, FALSE);
@@ -260,8 +260,8 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	BAT *bn;
 	bat hp = 0, tp = 0, vc = 0;
 
-	BATcheck(h, "VIEWcreate_: bat required");
-	BATcheck(t, "VIEWcreate_: bat required");
+	BATcheck(h, "VIEWcreate_");
+	BATcheck(t, "VIEWcreate_");
 	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
 	if (!bs)
 		bs = BATcreatedesc(h->htype, t->ttype, FALSE);
@@ -430,7 +430,7 @@ BATmaterializeh(BAT *b)
 	oid h, *x;
 	chr tshift;
 
-	BATcheck(b, "BATmaterialize: bat required");
+	BATcheck(b, "BATmaterialize");
 	assert(!isVIEW(b));
 	ht = b->htype;
 	cnt = BATcapacity(b);

@@ -1134,7 +1134,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 	BAT *bm;
 
 	BATcheck(b, "BUNins");
-	BATcheck(h, "BUNins: head value is nil\n");
+	BATcheck(h, "BUNins: head value is nil");
 
 	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 	bm = BBP_cache(-b->batCacheid);
@@ -1702,7 +1702,7 @@ BUNdel(BAT *b, ptr x, ptr y, bit force)
 	BUN p;
 
 	BATcheck(b, "BUNdel");
-	BATcheck(x, "BUNdel: head value is nil\n");
+	BATcheck(x, "BUNdel: head value is nil");
 
 	if ((p = BUNlocate(b, x, y)) != BUN_NONE) {
 		ALIGNdel(b, "BUNdel", force);	/* zap alignment info */
@@ -1826,9 +1826,9 @@ BUNreplace(BAT *b, ptr h, ptr t, bit force)
 {
 	BUN p;
 
-	BATcheck(b, "BUNreplace\n");
-	BATcheck(h, "BUNreplace: head value is nil\n");
-	BATcheck(t, "BUNreplace: tail value is nil\n");
+	BATcheck(b, "BUNreplace");
+	BATcheck(h, "BUNreplace: head value is nil");
+	BATcheck(t, "BUNreplace: tail value is nil");
 
 	if ((p = BUNfnd(b, h)) == BUN_NONE)
 		return b;
@@ -1979,8 +1979,8 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	BUN p, q;
 	BAT *v = NULL;
 
-	BATcheck(b, "BUNlocate: BAT parameter");
-	BATcheck(x, "BUNlocate: value parameter");
+	BATcheck(b, "BUNlocate: BAT parameter required");
+	BATcheck(x, "BUNlocate: value parameter required");
 	hcmp = BATatoms[b->htype].atomCmp;
 	tcmp = BATatoms[b->ttype].atomCmp;
 	p = BUNfirst(b);
@@ -3071,7 +3071,7 @@ BATpropcheck(BAT *b, int mode)
 	bit isKey = FALSE;
 	BAT *parent;
 
-	BATcheck(b, "BATpropcheck: BAT parameter");
+	BATcheck(b, "BATpropcheck");
 	if (b->halign == 0) {
 		b->batDirtydesc = 1;
 		b->halign = OIDnew(1);
