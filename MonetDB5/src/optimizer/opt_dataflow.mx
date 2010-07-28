@@ -148,6 +148,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			old[i] = NULL;
 		}
 	}
+
+	/* inject new dataflow barriers */
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 
@@ -190,7 +192,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			for(j=p->retc; j<p->argc; j++)
 				if (getLastUpdate(span, getArg(p,j)) <= start)
 					cnt++;
-		if ( dflowAssignTest(span,p,i))
+		if (cnt && dflowAssignTest(span,p,i))
 			cnt = 0;
 
 		if (cnt && cnt == p->argc-p->retc)
