@@ -1500,8 +1500,10 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 					sql_exp *e = m->data;
 	
 					exp_setname(e, tname, c->base.name);
+/*
 					if (e->card == CARD_AGGR)
 						e->card = CARD_MULTI;
+*/
 				}
 			}
 			return rel;
