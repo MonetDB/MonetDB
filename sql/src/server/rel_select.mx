@@ -4024,6 +4024,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return sql_error(sql, 02, "SELECT: function '%s' not found", aggrstr );
 	/* now we need the gbe and obe lists */
 	e = exp_op(gbe, wf);
+	/* make sure the expression has the proper cardinality */
+	e->card = CARD_AGGR;
 	if (obe)
 		e->r = obe;
 	else	/* e->r specifies window expression */
