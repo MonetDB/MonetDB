@@ -71,8 +71,6 @@ stderr of test 'with_row_number_crash.Bug-2631` in directory 'src/test/BugTracke
 # 08:53:11 >  mclient -lsql -ftest -i -e --host=alf --port=38895 
 # 08:53:11 >  
 
-MAPI  = monetdb@alf:38895
-QUERY = WITH t (i) AS (SELECT ROW_NUMBER () OVER (ORDER BY id ASC) AS i FROM _tables) select i from t;
 
 
 # 08:53:11 >  

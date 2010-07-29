@@ -71,13 +71,13 @@ stderr of test 'connectto.Bug-2548` in directory 'src/test/BugTracker-2010` itse
 # 13:12:55 >  mclient -lsql -ftest -i -e --host=rig --port=39884 
 # 13:12:55 >  
 
-MAPI  = monetdb@alviss:31044
+MAPI  = monetdb@alf:30038
 QUERY = connect to default;
 ERROR = !CONNECT TO: DEFAULT is not supported!
-MAPI  = monetdb@alviss:31044
+MAPI  = monetdb@alf:30038
 QUERY = connect to 'whatever' port 50001 database 'nonexisting' USER 'monetdb' PASSWORD 'monetdb' LANGUAGE 'mal';
-ERROR = !IOException:mapi.connect:Could not connect: getaddrinfo failed: Name or service not known
-MAPI  = monetdb@alviss:31044
+ERROR = !IOException:mapi.connect:Could not connect: gethostbyname failed: Unknown host
+MAPI  = monetdb@alf:30038
 QUERY = disconnect 'whatever';
 ERROR = !DISCONNECT CATALOG: no such db_alias 'whatever'
 
