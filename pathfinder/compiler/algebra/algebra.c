@@ -1196,6 +1196,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_lower_case:       return "fn:lower-case";
         case alg_fun_fn_translate:        return "fn:translate";
         case alg_fun_fn_contains:         return "fn:contains";
+        case alg_fun_fn_like:             return "fn:like";
         case alg_fun_fn_starts_with:      return "fn:starts-with";
         case alg_fun_fn_ends_with:        return "fn:ends-with";
         case alg_fun_fn_substring_before: return "fn:substring-before";
@@ -1211,6 +1212,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_number_lax:       return "fn:number";
         case alg_fun_fn_qname:            return "fn:QName";
         case alg_fun_fn_doc_available:    return "fn:doc-available";
+        case alg_fun_fn_similar_to:       return "fn:similar_to";
         case alg_fun_pf_fragment:         return "#pf:fragment";
         case alg_fun_pf_supernode:        return "#pf:supernode";
         case alg_fun_pf_add_doc_str:      return "pf:add-doc";

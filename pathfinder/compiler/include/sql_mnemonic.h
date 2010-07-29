@@ -117,6 +117,7 @@
 #define gteq(a,b)                    PFsql_gteq(a,b)
 #define between(c,a,b)               PFsql_between(c,a,b)
 #define like(a,b)                    PFsql_like(a,b)
+#define similar_to(a,b)              PFsql_similar_to(a,b)
 #define in(a,b)                      PFsql_in(a,b)
 #define stmt_list(...)               PFsql_stmt_list(__VA_ARGS__)
 #define not_(a)                      PFsql_not(a)
