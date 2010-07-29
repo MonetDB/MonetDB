@@ -1114,6 +1114,8 @@ runDFLOWworker(void *t)
 	thr = THRnew(MT_getpid(), "DFLOWworker");
 	while(task) {
 		fs = (FlowStep)q_dequeue(task->todo);
+		PARDEBUG
+			mnstr_printf(GDKstdout,"#execute pc=%d thread =%d \n",fs->pc, task->id);
 		if ( fs == oldfs){
 			q_requeue(task->todo,fs);
 			MT_sleep_ms(10); 
@@ -1188,10 +1190,9 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 		for (j=0; j<p->argc; j++){
 			a = getArg(p, j);
 
-			if (j<p->retc && assign[a] == 0 ){
+			if (j<p->retc && assign[a] == 0 && flow->inuse[a] == 0) {
 				assign[a] = i;
-				if ( isNotUsedIn(p, p->retc,a))
-					flow->blocked[a] = 1;
+				flow->blocked[a] = isNotUsedIn(p,p->retc,a)?1:0;
 			}
 
 			if (j>=p->retc  && !isVarConstant(flow->mb, a)  )
@@ -1204,8 +1205,8 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 	PARDEBUG
 	for (i=0; i < flow->mb->vtop; i++) 
 	if ( flow->blocked[i] || flow->inuse[i] || assign[i] ){
-		printf("%s %d [ %1d %2d ]\n", getVarName(flow->mb,i), 
-			getEndOfLife(flow->mb,i),
+		printf("%s %d %d [ %1d %2d ]\n", getVarName(flow->mb,i), 
+			getEndOfLife(flow->mb,i), i,
 			flow->blocked[i],
 			flow->inuse[i]);
 	}
@@ -1219,8 +1220,10 @@ DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 	(void) pc;
 
 	for(j=0; j<p->argc && !blocked; j++) {
-		if (j>=p->retc && flow->blocked[getArg(p,j)] )
-				blocked++;
+		if ( j >= p->retc && flow->blocked[getArg(p,j)] )
+			blocked++;
+		if (j < p->retc && flow->inuse[getArg(p,j)] )
+			blocked++;
 		else
 		if ( getEndOfLife(flow->mb,getArg(p,j))  == fs[i].pc ) {
 			/* make sure all instructions interested have already been executed */
@@ -1252,10 +1255,11 @@ DFLOWactivate(DataFlow flow, FlowStep fs, int i,InstrPtr p)
 	fs[i].status = DFLOWrunning;
 
 	PARDEBUG {
-		mnstr_printf(GDKstdout,"#enqueue %d", fs[i].pc);
+		mnstr_printf(GDKstdout,"#enqueue pc=%d", fs[i].pc);
 		for(j=p->retc; j<p->argc; j++)
 			mnstr_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
 		printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
+		mnstr_printf(GDKstdout,"\n");
 	}
 }
 @-
@@ -1312,7 +1316,7 @@ DFLOWscheduler( DataFlow flow )
 		} else {
 			p = getInstrPtr(flow->mb, f->pc);
 			PARDEBUG{
-				mnstr_printf(GDKstdout,"#dequeue %d", f->pc);
+				mnstr_printf(GDKstdout,"#dequeue pc=%d", f->pc);
 				for(j=p->retc; j<p->argc; j++)
 					mnstr_printf(GDKstdout," %d ",flow->inuse[getArg(p,j)]);
 				printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
@@ -1898,9 +1902,7 @@ are identified. In the post-execution phase they are removed.
 			if ( garbage[i] >= 0){
 				bid = ABS(stk->stk[garbage[i]].val.bval);
 				BBPdecref( bid, TRUE);
-#ifdef DEBUG_GC
-				mnstr_printf(GDKstdout,"GC %d %d %s done %d\n",bid,garbage[i], getVarName(mb,garbage[i]), BBP_lrefs(bid));
-#endif
+				PARDEBUG mnstr_printf(GDKstdout,"#GC pc=%d bid=%d %s done\n",stkpc,bid,getVarName(mb,garbage[i]));
 				stk->stk[garbage[i]].val.bval = 0;
 			}
 		} else if( i < pci->retc && stk->stk[getArg(pci,i)].vtype == TYPE_str){
