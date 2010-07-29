@@ -102,8 +102,8 @@ OPTdependencies(Client cntxt, MalBlkPtr mb){
 	}
 
 	for ( i=0; i< mb->stop; i++){
-		size_t cnt;
-		size_t slots;
+		int cnt;
+		int slots;
 		p= getInstrPtr(mb,i);
 		slots = 2 * p->argc;
 		block |= p->barrier != 0;
