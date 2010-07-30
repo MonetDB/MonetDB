@@ -1965,7 +1965,12 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 		if (order) {
 		 	limit = stmt_limit(stmt_dup(order), o, l, 0);
 		} else {
-			limit = stmt_limit(column(stmt_dup(n->data)), o, l, 0);
+			stmt *sc = stmt_dup(n->data);
+			char *cname = column_name(sc);
+			char *tname = table_name(sc);
+
+			sc = column(sc);
+			limit = stmt_limit(stmt_alias(sc, tname, cname), o, l, 0);
 			if (lmt) {
 				n = n->next;
 				list_append(newl, limit);
