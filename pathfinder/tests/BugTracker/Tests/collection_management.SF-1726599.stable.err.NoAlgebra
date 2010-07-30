@@ -1,0 +1,42 @@
+stderr of test 'collection_management.SF-1726599` in directory 'tests/BugTracker` itself:
+
+
+# 10:21:41 >  
+# 10:21:41 >   Mserver "--config=/home/users/boncz/monet/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/home/users/boncz/monet/lib/MonetDB4:/home/users/boncz/monet/lib/MonetDB4/lib:/home/users/boncz/monet/lib/MonetDB4/bin" --set "gdk_dbfarm=/home/users/boncz/monet/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36105 --set xrpc_port=49287 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 10:21:41 >  
+
+
+# 10:22:13 >  
+# 10:22:13 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=tscan --port=36105 collection_management.SF-1726599_s00.xq
+# 10:22:13 >  
+
+MAPI  = monetdb@tscan:36105
+QUERY = pf:collection("collection_management.SF-1726599.xml")
+ERROR = !ERROR: xquery_print_result_loop: operation failed.
+
+# 10:22:15 >  
+# 10:22:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=tscan --port=36105 collection_management.SF-1726599_s01.xq
+# 10:22:15 >  
+
+MAPI  = monetdb@tscan:36105
+QUERY = pf:collection("collection_management.SF-1726599.xml")
+ERROR = !ERROR: err:FODC0004: collection 'collection_management.SF-1726599.xml' unknown (1 missing in total)
+MAPI  = monetdb@tscan:36105
+QUERY = doc("collection_management.SF-1726599.xml")
+ERROR = !ERROR: err:FODC0002, Error retrieving resource (no such document "collection_management.SF-1726599.xml").
+MAPI  = monetdb@tscan:36105
+QUERY = doc("collection_management.SF-1726599.xml")/aap
+ERROR = !ERROR: err:FODC0002, Error retrieving resource (no such document "collection_management.SF-1726599.xml").
+
+# 10:22:15 >  
+# 10:22:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=tscan --port=36105 collection_management.SF-1726599_s02.xq
+# 10:22:15 >  
+
+MAPI  = monetdb@tscan:36105
+QUERY = pf:collection("collection_management.SF-1726599.xml")
+ERROR = !ERROR: xquery_print_result_loop: operation failed.
+
+# 10:22:26 >  
+# 10:22:26 >  Done.
+# 10:22:26 >  
+
