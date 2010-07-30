@@ -630,8 +630,12 @@ MT_check_nr_cores(void)
 	 * http://ndevilla.free.fr/threads/ */
 
 #ifdef WIN32
-	ncpus = 1;
+	SYSTEM_INFO sysinfo;
+
+	GetSystemInfo( &sysinfo );
+	ncpus = sysinfo.dwNumberOfProcessors;
 #endif
+
 	if (ncpus <= 0)
 		return MT_check_nr_cores_();
 	return ncpus;

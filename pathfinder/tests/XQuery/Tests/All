@@ -223,7 +223,8 @@ fn_ceiling
 fn_floor
 fn_round
 fn_sum
-fn_number
+# pf:number
+WITH_ALGEBRA?fn_number
 fn_true_false
 # recursive function
 NOT_ALGEBRA?fun1

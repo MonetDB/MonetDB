@@ -12,10 +12,10 @@ stderr of test 'primary_key-bug-sf-975308` in directory 'src/test/bugs` itself:
 
 MAPI  = monetdb@localhost:35185
 QUERY = INSERT INTO test_pk values( 2,4 );
-ERROR = !ERROR: INSERT INTO: PRIMARY KEY constraint 'test_pk.test_pk_x_y_pkey' violated
+ERROR = !SQLException:assert:INSERT INTO: PRIMARY KEY constraint 'test_pk.test_pk_x_y_pkey' violated
 MAPI  = monetdb@localhost:35185
 QUERY = UPDATE test_pk SET x = 1;
-ERROR = !ERROR: UPDATE: PRIMARY KEY constraint 'test_pk.test_pk_x_y_pkey' violated
+ERROR = !SQLException:assert:UPDATE: PRIMARY KEY constraint 'test_pk.test_pk_x_y_pkey' violated
 
 # 16:06:04 >  
 # 16:06:04 >  Done.

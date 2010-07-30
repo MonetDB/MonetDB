@@ -1,13 +1,17 @@
 import_doc
 full_01
-full_02
-full_03
+# pf:number
+WITH_ALGEBRA?full_02
+WITH_ALGEBRA?full_03
 full_04
-full_05
+# pf:number
+WITH_ALGEBRA?full_05
 full_06
 limit_01
-limit_02
-limit_03
+# pf:number
+WITH_ALGEBRA?limit_02
+WITH_ALGEBRA?limit_03
 limit_04
-limit_05
+# pf:number
+WITH_ALGEBRA?limit_05
 limit_06

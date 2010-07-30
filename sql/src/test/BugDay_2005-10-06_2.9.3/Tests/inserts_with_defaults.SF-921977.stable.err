@@ -12,10 +12,10 @@ stderr of test 'inserts_with_defaults.SF-921977` in directory 'src/test/BugDay_2
 
 MAPI  = monetdb@localhost:35781
 QUERY = INSERT INTO null_1 (id) VALUES(1);
-ERROR = !ERROR: INSERT INTO: NOT NULL constraint violated for column null_1.text1
+ERROR = !SQLException:assert:INSERT INTO: NOT NULL constraint violated for column null_1.text1
 MAPI  = monetdb@localhost:35781
 QUERY = INSERT INTO null_1 (text1) VALUES('test');
-ERROR = !ERROR: INSERT INTO: NOT NULL constraint violated for column null_1.id
+ERROR = !SQLException:assert:INSERT INTO: NOT NULL constraint violated for column null_1.id
 
 # 14:29:04 >  
 # 14:29:04 >  Done.

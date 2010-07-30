@@ -1,17 +1,18 @@
 # Loading MIL modules was never supported with the Algebra back-end,
 # and now, also the automatic trasnparent fall-back to MPS has been
 # discontinued.
-NOT_ALGEBRA?xq2mil
-NOT_ALGEBRA?import_doc
-NOT_ALGEBRA?full_01
-NOT_ALGEBRA?full_02
-NOT_ALGEBRA?full_03
-NOT_ALGEBRA?full_04
-NOT_ALGEBRA?full_05
-NOT_ALGEBRA?full_06
-NOT_ALGEBRA?limit_01
-NOT_ALGEBRA?limit_02
-NOT_ALGEBRA?limit_03
-NOT_ALGEBRA?limit_04
-NOT_ALGEBRA?limit_05
-NOT_ALGEBRA?limit_06
+# Moreover, MPS now fails with "function pf:number not supported"
+NOT/WITH_ALGEBRA?xq2mil
+NOT/WITH_ALGEBRA?import_doc
+NOT/WITH_ALGEBRA?full_01
+NOT/WITH_ALGEBRA?full_02
+NOT/WITH_ALGEBRA?full_03
+NOT/WITH_ALGEBRA?full_04
+NOT/WITH_ALGEBRA?full_05
+NOT/WITH_ALGEBRA?full_06
+NOT/WITH_ALGEBRA?limit_01
+NOT/WITH_ALGEBRA?limit_02
+NOT/WITH_ALGEBRA?limit_03
+NOT/WITH_ALGEBRA?limit_04
+NOT/WITH_ALGEBRA?limit_05
+NOT/WITH_ALGEBRA?limit_06

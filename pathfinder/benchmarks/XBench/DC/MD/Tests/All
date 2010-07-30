@@ -7,15 +7,18 @@ shred_docs
 load_docs
 count_nodes
 q01
-q03
+# pf:number
+WITH_ALGEBRA?q03
 q04
 q05
-q06
-q07
+# pf:number
+WITH_ALGEBRA?q06
+WITH_ALGEBRA?q07
 q08
 q09
-q10
-q11
+# pf:number
+WITH_ALGEBRA?q10
+WITH_ALGEBRA?q11
 q12
 q14
 q16
