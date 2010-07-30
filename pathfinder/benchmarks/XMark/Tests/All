@@ -9,8 +9,9 @@ q07
 q08
 q09
 q10
-q11
-q12
+# pf:number
+WITH_ALGEBRA?q11
+WITH_ALGEBRA?q12
 q13
 q14
 q15
@@ -18,5 +19,6 @@ q16
 q17
 q18
 q19
-q20
+# pf:number
+WITH_ALGEBRA?q20
 upd

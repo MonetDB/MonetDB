@@ -2,7 +2,8 @@ shred_docs
 HAVE_fn:current-date?Q01
 Q01x
 Q02
-Q03
+# pf:number
+WITH_ALGEBRA?Q03
 Q04
 Q05o
 Q05u

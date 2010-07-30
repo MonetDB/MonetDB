@@ -1,3 +1,4 @@
 usage
 usageH
-pf_XMark
+# pf:number
+WITH_ALGEBRA?pf_XMark

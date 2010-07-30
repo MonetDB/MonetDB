@@ -1,17 +1,20 @@
 unpack_docs
 load_docs
 count_nodes
-q01
+# pf:number
+WITH_ALGEBRA?q01
 q02
-q03
+# pf:number
+WITH_ALGEBRA?q03
 q04
 q05
 q06
 q07
 q09
 q10
-q11
-q12
+# pf:number
+WITH_ALGEBRA?q11
+WITH_ALGEBRA?q12
 q13
 q14
 q15
@@ -22,4 +25,5 @@ q19
 q20
 q21
 q22
-q23
+# pf:number
+WITH_ALGEBRA?q23

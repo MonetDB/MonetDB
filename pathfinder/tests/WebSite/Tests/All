@@ -8,7 +8,8 @@ HelloWorld7
 HelloWorld8
 HelloWorld9
 HelloWorldA
-books1
+# pf:number
+WITH_ALGEBRA?books1
 # recursive function
 NOT_ALGEBRA?books2
 # recursive function

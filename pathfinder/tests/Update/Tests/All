@@ -4,7 +4,8 @@ insert-2
 symm
 replacevaluetest
 replacevaluetest2
-update
+# pf:number
+WITH_ALGEBRA?update
 illegal-insert
 illegal-delete
 insert_test_order

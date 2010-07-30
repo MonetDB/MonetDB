@@ -1,53 +1,62 @@
 unpack_docs
 load_docs
 count_nodes
-qr01
-qr02
-qr03
-qr04
+# pf:number
+WITH_ALGEBRA?qr01
+WITH_ALGEBRA?qr02
+WITH_ALGEBRA?qr03
+WITH_ALGEBRA?qr04
 qs01
 qs02
-qs03
-qs04
+# pf:number
+WITH_ALGEBRA?qs03
+WITH_ALGEBRA?qs04
 qs05
-qs06
-qs07
+# pf:number
+WITH_ALGEBRA?qs06
+WITH_ALGEBRA?qs07
 qs08
-qs09
-qs10
+# pf:number
+WITH_ALGEBRA?qs09
+WITH_ALGEBRA?qs10
 qs11
 qs12
-qs15
-qs16
-qs17
-qs18
-qs19
-qs20
-qs21
-qs22
-qs23
-qs24
-qs25
-qs26
-qs27
-qs28
-qs29
-qs30
-qs31
-qs32
-qs33
-qs34
+# pf:number
+WITH_ALGEBRA?qs15
+WITH_ALGEBRA?qs16
+WITH_ALGEBRA?qs17
+WITH_ALGEBRA?qs18
+WITH_ALGEBRA?qs19
+WITH_ALGEBRA?qs20
+WITH_ALGEBRA?qs21
+WITH_ALGEBRA?qs22
+WITH_ALGEBRA?qs23
+WITH_ALGEBRA?qs24
+WITH_ALGEBRA?qs25
+WITH_ALGEBRA?qs26
+WITH_ALGEBRA?qs27
+WITH_ALGEBRA?qs28
+WITH_ALGEBRA?qs29
+WITH_ALGEBRA?qs30
+WITH_ALGEBRA?qs31
+WITH_ALGEBRA?qs32
+WITH_ALGEBRA?qs33
+WITH_ALGEBRA?qs34
 qs35
-qa01
+# pf:number
+WITH_ALGEBRA?qa01
 # recursive function
 NOT_ALGEBRA?qa02
-qa04
-qa05
-# recursive function
-NOT_ALGEBRA?qa06
-qj01
+# pf:number
+WITH_ALGEBRA?qa04
+WITH_ALGEBRA?qa05
+# recursive function / pf:number
+NOT/WITH_ALGEBRA?qa06
+# pf:number
+WITH_ALGEBRA?qj01
 #_requires_8GB_&_runs_>5min_
 WITH_ALGEBRA?qj02
-qj03
+# pf:number
+WITH_ALGEBRA?qj03
 #_requires_7GB_&_runs_>3.4min_
 WITH_ALGEBRA?qj04
