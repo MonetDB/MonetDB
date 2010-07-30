@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Jul 30 2010 Niels Nes <niels@cwi.nl>
+- Fixed bug 2569 (except/union/intersect right after
+  insert/delete/update. We now correctly fallback to the more general
+  subquery case (not only simple selects (SQL_SELECT)).
+
 * Tue Jul 20 2010 Sjoerd Mullender <sjoerd@acm.org>
 - Fixed bug 2624: function returning decimal returned result that was
   scaled incorrectly.
