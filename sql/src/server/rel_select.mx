@@ -2752,6 +2752,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			}
 			if (l_is_value)
 				rel = rel_crossproduct(outer, rel, op_join);
+			rel = rel_project(rel, rel_projections(sql, outer, NULL, 1, 1));
+			set_processed(rel);
 			return rel;
 		}
 		return right;
