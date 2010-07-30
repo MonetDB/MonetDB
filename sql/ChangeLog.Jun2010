@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Fri Jul 30 2010 Niels Nes <niels@cwi.nl>
+- fix Bug 2611. Fixed check for multiple functions without parameters.
 - Fixed bug 2569 (except/union/intersect right after
   insert/delete/update. We now correctly fallback to the more general
   subquery case (not only simple selects (SQL_SELECT)).
