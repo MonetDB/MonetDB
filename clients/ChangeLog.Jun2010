@@ -8,3 +8,7 @@
 - In case of an incomplete line from the server, add a newline.
   This fixes bug 2619.
 
+* Mon Jul 19 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Avoid using SQLROWSETSIZE and SQLROWOFFSET.
+  This fixes bug 2558.
+
