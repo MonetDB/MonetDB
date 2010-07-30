@@ -1,14 +1,18 @@
 shred_docs
 Q1
 Q2
-Q3
+# pf:number
+WITH_ALGEBRA?Q3
 Q4
 Q4x
-Q5a
-Q5b
+# pf:number
+WITH_ALGEBRA?Q5a
+WITH_ALGEBRA?Q5b
 Q6a
 Q6b
-Q7
-Q7x
+# pf:number
+WITH_ALGEBRA?Q7
+WITH_ALGEBRA?Q7x
 Q8
-Q9
+# pf:number
+WITH_ALGEBRA?Q9

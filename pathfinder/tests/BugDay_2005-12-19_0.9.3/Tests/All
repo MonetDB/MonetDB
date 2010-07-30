@@ -14,7 +14,8 @@ cast_as_anyNode.SF-1280519
 type_error_in_cast.SF-1281176
 div_mod.SF-1284049
 non-existent_attribute.SF-1324219
-doc-order_in_attributes.SF-1328671
+# pf:number
+WITH_ALGEBRA?doc-order_in_attributes.SF-1328671
 empty.SF-1331808
 merged_union_and_join.SF-1337630
 parent_step_bug.SF-1339844
