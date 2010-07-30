@@ -390,15 +390,21 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				pushInstruction(mb,q);
 			}
 			if (part <= 1) {
+				int lowprop = hlbProp, highprop = hubProp;
 				oid low = 0, high = low + rows;
 				pushInstruction(mb, p);
 
 				if (mode == RD_INS) {
-					low = high;
+					if (f != binddbatRef)
+						low = high;
 					high += BPM_SPLIT;
 				}
-				varSetProp(mb, getArg(p,0), hlbProp, op_gte, VALset(&vr, TYPE_oid, &low));
-				varSetProp(mb, getArg(p,0), hubProp, op_lt, VALset(&vr, TYPE_oid, &high));
+				if (f == binddbatRef) {
+					lowprop = tlbProp;
+					highprop = tubProp;
+				}
+				varSetProp(mb, getArg(p,0), lowprop, op_gte, VALset(&vr, TYPE_oid, &low));
+				varSetProp(mb, getArg(p,0), highprop, op_lt, VALset(&vr, TYPE_oid, &high));
 			} else {
 				int i, v = getArg(p,0);
 				int tpe = getVarType(mb, v);

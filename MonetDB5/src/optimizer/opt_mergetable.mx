@@ -1654,6 +1654,16 @@ UNION(mirror().join()).
 			actions++;
 			continue;
 		}
+		if (match == 1 && getModuleId(p) == algebraRef && getFunctionId(p) == semijoinRef &&
+		   	((m=isMATalias(getArg(p,2), mat, mtop)) >= 0) &&
+			varGetProp(mb, getArg(p,1), hlbProp)) {
+			InstrPtr bc;
+
+			if ((bc = mat_semijoin(mb, p, mat, m)) != NULL) 
+				mtop = mat_add(mat, mtop, bc, NULL, mat_none );
+			actions++;
+			continue;
+		}
 @- 
 Now we handle group, derive and aggregation statements. 
 @c
