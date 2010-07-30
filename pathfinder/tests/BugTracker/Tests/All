@@ -206,7 +206,8 @@ non-existing_collection.SF-1991726
 root-node_of_constructed_element.SF-2456324
 ebv.SF-2474519
 ID_2124300?side-effects.SF-2124300.KO
-side-effects.SF-2124300.OK
+# fn:node-name
+WITH_ALGEBRA?side-effects.SF-2124300.OK
 query_compilation_item3.SF-2130051
 Parse_error_with_pf_collection.SF-2020631
 XML_document_cache_broken.SF-1414720
@@ -217,9 +218,11 @@ ancestor-or-self.SF-2636285.unpack_doc
 ancestor-or-self.SF-2636285.test
 ID_1975028?fn-root_fn-id_on_attribute_nodes.SF-1975028
 fn-collection_DOES-NOT-EXIST.SF-2664405
-unuseable_doc-available.SF-2791704
+# fn:doc-available
+WITH_ALGEBRA?unuseable_doc-available.SF-2791704
 stream-document.SF-2804823
-fn-trace.SF-2805513
+# fn:trace
+WITH_ALGEBRA?fn-trace.SF-2805513
 child-step-empty-node.SF-2815716
 nil-value-in-elem-construct.SF-2815820
 oidInDocMgmt.SF-2686121
@@ -231,5 +234,6 @@ compilation_error.SF-2860574_2
 compilation_error.SF-2860037_1
 compilation_error.SF-2860037_2
 slow_compilation.SF-2898944
-node-name.Bug-2600.-d10
-node-name.Bug-2600.-d0
+# fn:node-name
+WITH_ALGEBRA?node-name.Bug-2600.-d10
+WITH_ALGEBRA?node-name.Bug-2600.-d0

@@ -36,14 +36,19 @@ load_bug2831472
 test_bug2831472
 test_comp_tokenize
 options_test
-terms2
-terms3
-terms4
-tf1
-tf2
-tfall
-terms_tf
-fbterms
+# tijah:terms
+WITH_ALGEBRA?terms2
+WITH_ALGEBRA?terms3
+WITH_ALGEBRA?terms4
+# tijah:tf
+WITH_ALGEBRA?tf1
+WITH_ALGEBRA?tf2
+# tijah:tf-all
+WITH_ALGEBRA?tfall
+# tijah:terms
+WITH_ALGEBRA?terms_tf
+# tijah:fb-terms
+WITH_ALGEBRA?fbterms
 resultsize1
 resultsize2
 cleanup
