@@ -1604,6 +1604,17 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 		stmt_destroy(psub);
 		psub = stmt_list(npl);
+
+		/* also rebuild sub as multiple orderby expressions may use the sub table (ie aren't part of the result columns) */
+		pl = sub->op1.lval;
+		npl = create_stmt_list();
+		for ( n=pl->h ; n; n = n->next) {
+			list_append(npl, 
+			 	stmt_semijoin(column(stmt_dup(n->data)), 
+					stmt_dup(limit)));
+		}
+		stmt_destroy(sub);
+		sub = stmt_list(npl);
 	}
 	if (need_distinct(rel))
 		psub = rel2bin_distinct(psub);
