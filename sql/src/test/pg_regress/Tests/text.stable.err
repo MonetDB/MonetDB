@@ -76,10 +76,10 @@ stderr of test 'text` in directory 'src/test/pg_regress` itself:
 
 MAPI  = monetdb@pegasus:35864
 QUERY = SELECT text 'this is a text string' = text 'this is a text string' AS true;
-ERROR = !syntax error, unexpected CLOB in: "select text"
+ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select text 'this is a text string'"
 MAPI  = monetdb@pegasus:35864
 QUERY = SELECT text 'this is a text string' = text 'this is a text strin' AS false;
-ERROR = !syntax error, unexpected CLOB in: "select text"
+ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select text 'this is a text string'"
 
 # 22:26:27 >  
 # 22:26:27 >  Done.

@@ -819,11 +819,11 @@ exp_is_atom( sql_exp *e )
 	case e_func:
 	case e_aggr:
 	{	
-		int r = 1;
+		int r = (e->card == CARD_ATOM);
 		node *n;
 		list *l = e->l;
 
-		if (l)
+		if (r && l)
 			for (n = l->h; n; n = n->next) 
 				r &= exp_is_atom(n->data);
 		return r;

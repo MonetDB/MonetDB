@@ -37,3 +37,4 @@ error-truncated.Bug-2615
 LIMIT_OFFSET_big-endian.Bug-2622
 decimal-function.BUG-2624
 function_results_NULL.Bug-2626
+with_row_number_crash.Bug-2631

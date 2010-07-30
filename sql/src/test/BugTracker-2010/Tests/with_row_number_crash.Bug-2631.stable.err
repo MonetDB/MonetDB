@@ -1,13 +1,13 @@
-stderr of test 'connectto.Bug-2548` in directory 'src/test/BugTracker-2010` itself:
+stderr of test 'with_row_number_crash.Bug-2631` in directory 'src/test/BugTracker-2010` itself:
 
 
-# 13:12:55 >  
-# 13:12:55 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39884 --set xrpc_port=41478 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
-# 13:12:55 >  
+# 08:42:26 >  
+# 08:42:26 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31497 --set xrpc_port=46277 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
+# 08:42:26 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
-# builtin opt 	gdk_version = 1.38.1
-# builtin opt 	prefix = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.
+# builtin opt 	gdk_version = 1.38.2
+# builtin opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = demo
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
@@ -17,7 +17,7 @@ stderr of test 'connectto.Bug-2548` in directory 'src/test/BugTracker-2010` itse
 # builtin opt 	monet_admin = adm
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib64/MonetDB
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # builtin opt 	monet_daemon = no
 # builtin opt 	host = localhost
 # builtin opt 	mapi_port = 50000
@@ -28,12 +28,12 @@ stderr of test 'connectto.Bug-2548` in directory 'src/test/BugTracker-2010` itse
 # builtin opt 	standoff_ns = 
 # builtin opt 	standoff_start = start
 # builtin opt 	standoff_end = end
-# config opt 	prefix = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.
+# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # config opt 	config = ${prefix}/etc/monetdb5.conf
-# config opt 	prefix = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.
+# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
-# config opt 	monet_mod_path = ${exec_prefix}/lib64/MonetDB5:${exec_prefix}/lib64/MonetDB5/lib:${exec_prefix}/lib64/MonetDB5/bin
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB5:${exec_prefix}/lib/MonetDB5/lib:${exec_prefix}/lib/MonetDB5/bin
 # config opt 	mero_pidfile = ${prefix}/var/run/MonetDB/merovingian.pid
 # config opt 	mero_controlport = 50001
 # config opt 	sql_optimizer = default_pipe
@@ -52,36 +52,28 @@ stderr of test 'connectto.Bug-2548` in directory 'src/test/BugTracker-2010` itse
 # config opt 	derive_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,derivePath,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	dictionary_pipe = inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 # config opt 	compression_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
-# cmdline opt 	config = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./etc/monetdb5.conf
+# cmdline opt 	config = /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf
 # cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	monet_mod_path = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./lib64/MonetDB5/bin
-# cmdline opt 	gdk_dbfarm = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./var/MonetDB5/dbfarm
+# cmdline opt 	monet_mod_path = /ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm
 # cmdline opt 	mapi_open = true
 # cmdline opt 	xrpc_open = true
-# cmdline opt 	mapi_port = 39884
-# cmdline opt 	xrpc_port = 41478
+# cmdline opt 	mapi_port = 31497
+# cmdline opt 	xrpc_port = 46277
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbname = mTests_src_test_BugTracker-2010
 # cmdline opt 	mal_listing = 0
 #warning: please don't forget to set your vault key!
-#(see /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./etc/monetdb5.conf)
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
 
-# 13:12:55 >  
-# 13:12:55 >  mclient -lsql -ftest -i -e --host=rig --port=39884 
-# 13:12:55 >  
+# 08:53:11 >  
+# 08:53:11 >  mclient -lsql -ftest -i -e --host=alf --port=38895 
+# 08:53:11 >  
 
-MAPI  = monetdb@alf:30038
-QUERY = connect to default;
-ERROR = !CONNECT TO: DEFAULT is not supported!
-MAPI  = monetdb@alf:30038
-QUERY = connect to 'whatever' port 50001 database 'nonexisting' USER 'monetdb' PASSWORD 'monetdb' LANGUAGE 'mal';
-ERROR = !IOException:mapi.connect:Could not connect: getaddrinfo failed: Name or service not known
-MAPI  = monetdb@alf:30038
-QUERY = disconnect 'whatever';
-ERROR = !DISCONNECT CATALOG: no such db_alias 'whatever'
 
-# 13:12:55 >  
-# 13:12:55 >  Done.
-# 13:12:55 >  
+
+# 08:53:11 >  
+# 08:53:11 >  Done.
+# 08:53:11 >  
 

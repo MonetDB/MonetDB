@@ -174,6 +174,7 @@ enum PFsql_kind_t {
     , sql_gteq              /* >= comparison */
     , sql_between           /* range predicate */
     , sql_like              /* like comparison */
+    , sql_similar_to        /* similar to comparison */
     , sql_in                /* in comparison */
     , sql_stmt_list          /* an item of a list of statments 
                                (second argument of a sql_in operator) */
@@ -793,6 +794,14 @@ PFsql_t * PFsql_between(const PFsql_t *clmn, const PFsql_t *a, const PFsql_t *b)
  * with a certain pattern.
  */
 PFsql_t * PFsql_like (const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Create a tree node representing the SQL99
+ * 'similar to' statement to compare a string with
+ * a certain pattern.
+ */
+PFsql_t * PFsql_similar_to (const PFsql_t *a, const PFsql_t *b);
+
 /**
  * Create a SQL tree node representing the in operator
  */

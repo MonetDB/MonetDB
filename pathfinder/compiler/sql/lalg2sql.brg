@@ -3676,15 +3676,29 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 case alg_fun_num_divide:
                     res_expr = div (expr[0], expr[1]); break;
                 case alg_fun_fn_contains:
+                    {
+                        /* adding check for constant expression */
+                        if (!PFprop_const (L(p)->prop, col[1]) || 
+                            ty[1]         != aat_str           ||
+                            expr[1]->kind == sql_column_name)
+                            PFoops (OOPS_FATAL, "fn_contains works only with constant "
+                                                "string expressions");
+                        char *str = PFmalloc (strlen(expr[1]->sem.atom.val.s)+2);
+                        sprintf (str, "%%%s%%", expr[1]->sem.atom.val.s);
+                        res_expr = like (expr[0], PFsql_lit_str(str));
+                    }
+                    break;
+                case alg_fun_fn_like:
                     /* adding check for constant expression */
                     if (!PFprop_const (L(p)->prop, col[1]) || 
                         ty[1]         != aat_str           ||
                         expr[1]->kind == sql_column_name)
-                        PFoops (OOPS_FATAL, "fn_contains works only with constant "
+                        PFoops (OOPS_FATAL, "fn_like works only with constant "
                                             "string expressions");
-
                     res_expr = like (expr[0], expr[1]);
                     break;
+		case alg_fun_fn_similar_to:
+                    res_expr = similar_to (expr[0], expr[1]); break;
                 /**< fn:ceiling */
                 case alg_fun_fn_ceiling:
                     res_expr = ceil (expr[0]); break;
