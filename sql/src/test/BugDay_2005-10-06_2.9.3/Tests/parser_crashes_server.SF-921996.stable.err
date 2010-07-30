@@ -12,7 +12,7 @@ stderr of test 'parser_crashes_server.SF-921996` in directory 'src/test/BugDay_2
 
 MAPI  = monetdb@localhost:45579
 QUERY = CREATE TABLE bounds_test (
-ERROR = !syntax error, unexpected $end, expecting CHECK or FOREIGN or PRIMARY or UNIQUE in: "create table bounds_test (
+ERROR = !syntax error, unexpected $end, expecting FOREIGN or PRIMARY or UNIQUE in: "create table bounds_test (
         !id int not null auto_increment primary key,
         !"
 

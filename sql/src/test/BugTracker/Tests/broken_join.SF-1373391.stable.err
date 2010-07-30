@@ -12,7 +12,7 @@ stderr of test 'broken_join.SF-1373391` in directory 'src/test/BugTracker` itsel
 
 MAPI  = monetdb@localhost:31379
 QUERY = select urlid,clicktime from
-ERROR = !syntax error, unexpected ')', expecting INTERSECT or EXCEPT or UNION in: "select urlid,clicktime from
+ERROR = !syntax error, unexpected ')', expecting SCOLON in: "select urlid,clicktime from
         !(clicks left outer join urls on
         !urls.suburl0x0=clicks.suburl0x0 and
         !urls.suburl0x1=clicks.suburl0x1 and
