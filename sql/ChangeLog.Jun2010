@@ -6,6 +6,14 @@
   insert/delete/update. We now correctly fallback to the more general
   subquery case (not only simple selects (SQL_SELECT)).
 
+* Thu Jul 29 2010 Niels Nes <niels@cwi.nl>
+- Fixed ORdER BY over UNION etc. (bug 2606) by
+  automatically adding select * around select x union select y order by z.
+
+* Thu Jul 29 2010 Niels Nes <niels@cwi.nl>
+- Fixed bug in handling 'WITH' and row_number()  (Bug 2631).
+  The cardinality of the row_number expression was incorrect.
+
 * Tue Jul 20 2010 Sjoerd Mullender <sjoerd@acm.org>
 - Fixed bug 2624: function returning decimal returned result that was
   scaled incorrectly.
