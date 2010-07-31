@@ -12,7 +12,7 @@ stderr of test 'collection_management.SF-1726599` in directory 'tests/BugTracker
 
 MAPI  = monetdb@tscan:36105
 QUERY = pf:collection("collection_management.SF-1726599.xml")
-ERROR = !ERROR: xquery_print_result_main: operation failed.
+ERROR = !ERROR: xquery_print_result_loop: operation failed.
 
 # 10:22:15 >  
 # 10:22:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=tscan --port=36105 collection_management.SF-1726599_s01.xq
@@ -34,7 +34,7 @@ ERROR = !ERROR: err:FODC0002, Error retrieving resource (no such document "colle
 
 MAPI  = monetdb@tscan:36105
 QUERY = pf:collection("collection_management.SF-1726599.xml")
-ERROR = !ERROR: xquery_print_result_main: operation failed.
+ERROR = !ERROR: xquery_print_result_loop: operation failed.
 
 # 10:22:26 >  
 # 10:22:26 >  Done.

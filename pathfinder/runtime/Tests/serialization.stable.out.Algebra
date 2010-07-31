@@ -108,14 +108,14 @@ xquery("seq"            ,query , 0).print();
 #
 xquery("text"           ,query , 0).printf();
 !ERROR: 12.300000!ERROR: serialize_dflt.mx: unable to print top level attribute nodes in text mode
-!ERROR: xquery_print_result_loop: operation failed.
+!ERROR: xquery_print_result_main: operation failed.
 !ERROR: interpret: no matching MIL operator to 'printf(void)'.
 !MAYBE YOU MEAN:
 !	printf(str, ..any..) : void
 
 xquery("mapi-text"      ,query , 0).printf();
 !ERROR: =12.300000!ERROR: serialize_dflt.mx: unable to print top level attribute nodes in text mode
-!ERROR: xquery_print_result_loop: operation failed.
+!ERROR: xquery_print_result_main: operation failed.
 !ERROR: interpret: no matching MIL operator to 'printf(void)'.
 !MAYBE YOU MEAN:
 !	printf(str, ..any..) : void
