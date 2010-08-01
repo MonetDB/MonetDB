@@ -166,6 +166,8 @@ enum PFsql_kind_t {
     , sql_abs               /* abs expression */
 
     , sql_concat            /* string concatenation */
+    , sql_substring         /* substring search */
+    , sql_substring_length  /* substring search with length */
 
     , sql_is                /* IS predicate */
     , sql_is_not            /* IS NOT predicate */
@@ -736,6 +738,20 @@ PFsql_t * PFsql_abs (const PFsql_t *a);
  * concat operator.
  */
 PFsql_t * PFsql_concat (const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Create a SQL tree node representing the SQL
+ * substring operator.
+ */
+PFsql_t * PFsql_substring (const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Create a SQL tree node representing the SQL
+ * substring operator with length.
+ */
+PFsql_t * PFsql_substring_length (const PFsql_t *a,
+                                  const PFsql_t *b,
+                                  const PFsql_t *c);
 
 /* .......... Table Functions ........... */
 PFsql_t *PFsql_values (const PFsql_t *a);

@@ -114,6 +114,8 @@ static char *ID[] = {
       [sql_modulo] /* used */ = "MOD",
       [sql_abs]    /* used */ = "ABS",
       [sql_concat] /* used */ = "CONCAT",
+      [sql_substring] /* used */ = "SUBSTR",
+      [sql_substring_length] /* used */ = "SUBSTR",
       [sql_is]     /* used */ = "IS",
       [sql_is_not] /* used */ = "IS NOT",
       [sql_eq]                = "eq",
@@ -733,10 +735,20 @@ print_statement (PFsql_t *n)
             print_statement (R(n));
             break;
         case sql_modulo:
+        case sql_substring:
             PFprettyprintf ("%s (", ID[n->kind]);
             print_statement (L(n));
             PFprettyprintf (", ");
             print_statement (R(n));
+            PFprettyprintf(")");
+            break;
+        case sql_substring_length:
+            PFprettyprintf ("%s (", ID[n->kind]);
+            print_statement (L(n));
+            PFprettyprintf (", ");
+            print_statement (R(n));
+            PFprettyprintf (", ");
+            print_statement (n->child[2]);
             PFprettyprintf(")");
             break;
         default:

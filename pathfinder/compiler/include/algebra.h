@@ -384,7 +384,7 @@ enum PFalg_fun_t {
     , alg_fun_pf_sqrt             /**< pf:sqrt */
     , alg_fun_fn_concat           /**< fn:concat */
     , alg_fun_fn_substring        /**< fn:substring */
-    , alg_fun_fn_substring_dbl    /**< fn:substring with length specified*/
+    , alg_fun_fn_substring_len    /**< fn:substring with length specified */
     , alg_fun_fn_string_length    /**< fn:string-length */
     , alg_fun_fn_normalize_space  /**< fn:normalize-space */
     , alg_fun_fn_upper_case       /**< fn:upper-case */

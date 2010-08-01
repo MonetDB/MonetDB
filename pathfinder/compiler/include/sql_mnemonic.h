@@ -104,6 +104,8 @@
 
 /* .......... String Functions ........... */
 #define concat(a,b)                  PFsql_concat(a,b)
+#define substring(a,b)               PFsql_substring(a,b)
+#define substring_len(a,b,c)         PFsql_substring_length(a,b,c)
 
 /* .......... Table Functions ............ */
 #define values(a)                    PFsql_values(a)

@@ -725,7 +725,8 @@ PFsql_div (const PFsql_t *a, const PFsql_t *b)
  * Create a SQL tree node representing the SQL
  * floor operator.
  */
-PFsql_t * PFsql_floor (const PFsql_t *a)
+PFsql_t *
+PFsql_floor (const PFsql_t *a)
 {
     return wire1 (sql_floor, a);
 }
@@ -734,7 +735,8 @@ PFsql_t * PFsql_floor (const PFsql_t *a)
  * Create a SQL tree node representing the SQL
  * ceil operator.
  */
-PFsql_t * PFsql_ceil (const PFsql_t *a)
+PFsql_t *
+PFsql_ceil (const PFsql_t *a)
 {
     return wire1 (sql_ceil, a);
 }
@@ -743,7 +745,8 @@ PFsql_t * PFsql_ceil (const PFsql_t *a)
  * Create a SQL tree node representing the SQL
  * modulo operator.
  */
-PFsql_t * PFsql_modulo (const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_modulo (const PFsql_t *a, const PFsql_t *b)
 {
     return wire2 (sql_modulo, a, b);
 }
@@ -752,7 +755,8 @@ PFsql_t * PFsql_modulo (const PFsql_t *a, const PFsql_t *b)
  * Create a SQL tree node representing the SQL
  * abs operator.
  */
-PFsql_t * PFsql_abs (const PFsql_t *a)
+PFsql_t *
+PFsql_abs (const PFsql_t *a)
 {
     return wire1 (sql_abs, a);
 }
@@ -763,9 +767,30 @@ PFsql_t * PFsql_abs (const PFsql_t *a)
  * Create a SQL tree node representing the SQL
  * concat operator.
  */
-PFsql_t * PFsql_concat (const PFsql_t *a, const PFsql_t *b)
+PFsql_t *
+PFsql_concat (const PFsql_t *a, const PFsql_t *b)
 {
      return wire2 (sql_concat, a, b);
+}
+
+/**
+ * Create a SQL tree node representing the SQL
+ * substring operator.
+ */
+PFsql_t *
+PFsql_substring (const PFsql_t *a, const PFsql_t *b)
+{
+     return wire2 (sql_substring, a, b);
+}
+
+/**
+ * Create a SQL tree node representing the SQL
+ * substring operator with length.
+ */
+PFsql_t *
+PFsql_substring_length (const PFsql_t *a, const PFsql_t *b, const PFsql_t *c)
+{
+     return wire3 (sql_substring_length, a, b, c);
 }
 
 /* ......... Table Functions ........... */

@@ -3715,6 +3715,10 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 case alg_fun_fn_concat:
                     /* the algebra ensures that the expressions are strings */
                     res_expr = concat (expr[0], expr[1]); break;
+                case alg_fun_fn_substring:
+                    res_expr = substring (expr[0], expr[1]); break;
+                case alg_fun_fn_substring_len:
+                    res_expr = substring_len (expr[0], expr[1], expr[2]); break;
                 /**< fn:number */
                 case alg_fun_fn_number:
                 case alg_fun_fn_number_lax:
@@ -3743,8 +3747,6 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 case alg_fun_fn_matches_flag:
                 case alg_fun_fn_replace:
                 case alg_fun_fn_replace_flag:
-                case alg_fun_fn_substring:
-                case alg_fun_fn_substring_dbl:
                 case alg_fun_fn_normalize_space:
                     assert (!"missing");
                     break;

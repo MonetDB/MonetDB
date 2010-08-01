@@ -1428,18 +1428,18 @@ PFla_fun_1to1 (const PFla_op_t *n,
             assert (clsize (refs) == 2);
             /* make sure both columns are of type str & dbl */
             assert (n->schema.items[ix[0]].type == aat_str);
-            assert (n->schema.items[ix[1]].type == aat_dbl);
+            assert (n->schema.items[ix[1]].type == aat_int);
 
             res_type = aat_str;
             break;
 
-        case alg_fun_fn_substring_dbl:
+        case alg_fun_fn_substring_len:
             assert (clsize (refs) == 3);
 
             /* make sure columns are of type str & dbl */
             assert (n->schema.items[ix[0]].type == aat_str);
-            assert (n->schema.items[ix[1]].type == aat_dbl &&
-                    n->schema.items[ix[2]].type == aat_dbl );
+            assert (n->schema.items[ix[1]].type == aat_int &&
+                    n->schema.items[ix[2]].type == aat_int );
 
             res_type = aat_str;
             break;
