@@ -12,11 +12,7 @@ stdout of test 'ID.1267018.swallowed_error_messages-2` in directory 'tests/BugsV
 module(pathfinder);
 
 xquery("xml","doc(\"abcde.xml\")").printf();
-!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
-!ERROR: [shred_url]: first error was:
-!ERROR: shred: cannot stat `abcde.xml': No such file or directory
-!ERROR: CMDshred_url: operation failed.
-!ERROR: interpret_params: leftfetchjoin(param 2): evaluation error.
+!ERROR: err:FODC0002, Error retrieving resource (no such document "abcde.xml").
 !ERROR: interpret: no matching MIL operator to 'printf(void)'.
 !MAYBE YOU MEAN:
 !	printf(str, ..any..) : void
