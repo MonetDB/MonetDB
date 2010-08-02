@@ -64,7 +64,7 @@ The number of overloaded instructions is kept to a minimum.
 #define TABLE_LENG      32 
 #define COLUMN_LENG     32 
 #define DCYPARTITIONS	200
-#define DCYREGS		1000
+#define DCYREGS		10000
 
 typedef struct DCYCATALOG {
 	char    schema[SCHEMA_LENG],
@@ -263,10 +263,12 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 
-		if ( num_regs <= mb->vtop ) {
-			regs = GDKrealloc(regs, (num_regs + DCYREGS) * sizeof(regs));
+		if ( num_regs <= (mb->vtop + 1000) ) {
+			regs = GDKrealloc(regs, (num_regs + DCYREGS) * sizeof(*regs));
 			used = GDKrealloc(used, (num_regs + DCYREGS) * sizeof(char));
+#ifdef BIND_DATACYCLOTRON_OPT
 			tpes = GDKrealloc(tpes, (num_regs + DCYREGS) * sizeof(int));
+#endif
 			newArg = GDKrealloc(newArg, (num_regs + DCYREGS) * sizeof(*newArg));
 			num_regs += DCYREGS;
 		}
@@ -280,6 +282,8 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			int acc      = getVarConstant(mb, getArg(p,5)).val.ival;
 
 			regs[getArg(p,0)] = findRegist(sch, tab, col, acc);
+
+
 
 			if (regs[getArg(p,0)]) {
 				int tpe = TYPE_int;
@@ -349,6 +353,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				if ( used[getArg(p,j)] == 1 ) {
 					used[getArg(p,j)] = 2;
 					reg = regs[getArg(p,j)];
+
 					matq= newInstruction(NULL,ASSIGNsymbol);
 					clrFunction(matq);
 					setModuleId(matq,matRef);
@@ -382,7 +387,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				}
 #endif
 			if (functionExit(p))
-				for (j = 0; j< mb->vtop; j++) 
+				for (j = 0; j < mb->vtop; j++)
 #ifdef BIND_DATACYCLOTRON_OPT
 					if ( used[j] == 2) {
 #else
