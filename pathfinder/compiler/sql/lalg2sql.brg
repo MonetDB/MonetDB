@@ -176,7 +176,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term fun_call        = 90 /**< function application */
 %term fun_param       = 91 /**< function application parameter */
 %term fun_frag_param  = 92 /**< function application parameter */
-    
+
 %term proxy           = 96 /**< proxy operator that represents a group
                                 of operators */
 %term proxy_base      = 97 /**< completes the content of the proxy
@@ -303,13 +303,13 @@ Map:    nil                                          = 104 (10);
 Rel:    rec_base                                     = 105 (10);
 Rec:    nil                                          = 106 (10);
 Arg:    rec_arg (Rel, Rel)                           = 107 (10);
-Arg:    rec_arg (Rel, distinct (Rel))                = 108 (10); 
+Arg:    rec_arg (Rel, distinct (Rel))                = 108 (10);
 
 Rel:    rec_fix (
             side_effects (
                 nil,
                 rec_param (
-                   rec_arg (Rel, Rel), 
+                   rec_arg (Rel, Rel),
                    rec_param(Arg, nil))),
             Rel)                                     = 109 (10);
 Rel:    rec_fix (
@@ -716,7 +716,7 @@ column_eq (PFsql_col_t *a, PFsql_col_t *b)
         return (a->spec == b->spec);
     else
       return (a->col == b->col) &&
-             (a->ty  == b->ty); 
+             (a->ty  == b->ty);
 }
 
 /**
@@ -800,7 +800,7 @@ transform_colenv (PFarray_t *col_env, PFsql_aident_t ident)
                               ident,
                               colitem->expression->sem.column.name
                               );
-        } 
+        }
         else if (colitem->expression->kind == sql_ref_column_name) {
             colitem->expression =
                        ref_column_name (
@@ -986,7 +986,7 @@ substitute_aliases_helper (PFsql_t *sqlnode,
                 sqlnode->sem.ref_column_name.alias = map[i].new;
                 break;
             }
-    } 
+    }
 }
 
 /**
@@ -1213,11 +1213,11 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
 
         /* StandOff axis: select-narrow */
         case alg_so_select_narrow:
-	    /* FIXME (Wouter): implement */
+            /* FIXME (Wouter): implement */
             break;
         /* StandOff axis: select-wide */
         case alg_so_select_wide:
-	    /* FIXME (Wouter): implement */
+            /* FIXME (Wouter): implement */
             break;
 
         /* self axis */
@@ -1277,7 +1277,7 @@ step_kind (PFla_op_t *p, PFsql_aident_t step,
         case node_kind_text: sql_kind = PF_TEXT; break;
         case node_kind_pi:   sql_kind = PI;      break;
         case node_kind_comm: sql_kind = COMM;    break;
-        case node_kind_doc:  sql_kind = DOC;     break; 
+        case node_kind_doc:  sql_kind = DOC;     break;
         case node_kind_node:
             where_list_add (WHERELIST (p),
                             not_ (eq (KIND(step), lit_int (ATTR))));
@@ -1650,13 +1650,13 @@ collect_fragments (PFla_op_t * p)
 }
 
 /**
- * Cast from a boolean value 
+ * Cast from a boolean value
  */
 static PFsql_t *
 cast_from_bool (PFsql_t * expr, PFalg_simple_type_t res_ty)
 {
     switch (res_ty) {
-        case aat_uA:  
+        case aat_uA:
         case aat_str:
             if (expr->kind == sql_column_name)
                 expr = eq (expr, TRUE_INT);
@@ -1679,7 +1679,7 @@ cast_from_bool (PFsql_t * expr, PFalg_simple_type_t res_ty)
             PFoops (OOPS_FATAL, "This cast from a boolean"
                                 " value is not allowed");
     }
-    
+
     return NULL; /* satisfy picky compilers */
 }
 
@@ -1830,7 +1830,7 @@ cast_to_bool (PFsql_t *expr, PFalg_simple_type_t ty)
             PFoops (OOPS_FATAL, "This cast to a boolean"
                                 " boolean value is not allowed");
     }
-    
+
     return NULL; /* satisfy picky compilers */
 }
 
@@ -1964,7 +1964,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                        side_effects (
                            nil,
                            rec_param (
-                              rec_arg (Rel, Rel), 
+                              rec_arg (Rel, Rel),
                               rec_param(Arg, nil))),
                        Rel) */
         case 109:
@@ -2014,7 +2014,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             for (unsigned int i = 0; i < p->schema.count; i++) {
                 if (p->schema.items[i].name
                           == p->sem.ser_seq.item) {
-                    p->schema.items[i].name = item;  
+                    p->schema.items[i].name = item;
                 }
                 else if (p->schema.items[i].name
                           == p->sem.ser_seq.pos) {
@@ -2027,7 +2027,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             p->sem.ser_seq.pos  = pos;
 
         }   /* fall through */
-        
+
         /* Query:  serialize_seq (
                        side_effects (Side, Frag),
                        Rel) */
@@ -2053,7 +2053,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                *orderby    = NULL,
                                *ser_info,
                                *finalquery = NULL;
-            
+
             /* merge error checks into the query */
             from_list_copy (FROMLIST(query), FROMLIST(kids[0]));
 
@@ -2085,7 +2085,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     assert (!RL(orderby));
                     /* orderby may become an empty list (aka. NULL) */
                     orderby = RRL(orderby);
-                } 
+                }
                 else if (IS_LITERAL(orderby))
                     orderby = NULL;
                 else
@@ -2101,11 +2101,11 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 assert (R(p)->kind == la_project &&
                         RL(p)->kind == la_rank &&
                         pos == RL(p)->sem.sort.res);
-                
+
                 sortby = RL(p)->sem.sort.sortby;
                 for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
                     ord = PFord_order_col_at (sortby, i);
-            
+
                     asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
                     orderby = sortkey_list (
                                   sortkey_item (
@@ -2178,7 +2178,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                   colexpr:
                                   case_ (when (colexpr, TRUE_INT),
                                          else_ (FALSE_INT));
-                    
+
                     /* Generate a special column name DIST
                        that can be overloaded ... */
                     sername = DIST_;
@@ -2189,7 +2189,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                        during serialization. */
                     if (colexpr->kind != sql_column_assign)
                         colexpr = column_assign (colexpr, sername);
-                    
+
                     /* Add the column to the select list. */
                     selectlist = select_list (colexpr, selectlist);
                 }
@@ -2499,7 +2499,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         case 7:
         {
             PFla_op_t          *query       = R(p);
-                                            
+
             PFalg_col_t         iter        = p->sem.ser_rel.iter,
                                 pos         = p->sem.ser_rel.pos;
             PFalg_simple_type_t iter_ty     = type_of (p, iter),
@@ -2508,7 +2508,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                *orderbyITER,
                                *orderbyPOS,
                                *selectlist = NULL;
-            
+
             /* transform the ITER order by statement into a sortkey list */
             orderby = col_env_lookup (COLMAP(query), iter, iter_ty);
 
@@ -2524,7 +2524,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     orderby = RRL(orderby);
                 else
                     orderby = NULL;
-            } 
+            }
             else if (IS_LITERAL(orderby))
                 orderby = NULL;
             else
@@ -2548,7 +2548,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                         orderby = RRL(orderby);
                     else
                         orderby = NULL;
-                } 
+                }
                 else if (IS_LITERAL(orderby))
                     orderby = NULL;
                 else
@@ -2579,11 +2579,11 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             /* combine ITER and POS orders */
             if (orderbyITER && orderbyPOS)
                 orderby = sortkey_list (orderbyITER, orderbyPOS);
-            else if(orderbyPOS) 
+            else if(orderbyPOS)
                 orderby = orderbyPOS;
-            else if(orderbyITER) 
+            else if(orderbyITER)
                 orderby = orderbyITER;
-    
+
             /* Only include iter and item information in the result. */
             for (unsigned int i = 0; i < PFarray_last (COLMAP(query)); i++) {
                 sql_column_env_t entry = col_env_at (COLMAP(query), i);
@@ -2604,7 +2604,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                        transform_wheremap (query),
                                        orderby,
                                        NULL);
-                
+
             /* Check if there are already common-table expressions
                or we have a standalone query */
             if (sql_stmts)
@@ -2619,7 +2619,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         {
             /*
             Let's generate a pseudo-query whose result is an empty table:
-            
+
             SELECT -1 AS iter_nat, -1 AS pos_nat, ... AS item_...
             FROM (VALUES (-1)) AS a0000(item1_int)
             WHERE 1 = 0;
@@ -2650,14 +2650,14 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     default:        columnPseudoVal = lit_int (-1);   break;
                 }
 
-                selectlist = 
+                selectlist =
                     select_list (
                         selectlist,
                         column_assign (
-                            columnPseudoVal,  
+                            columnPseudoVal,
                             column_name(
                                 new_col (
-                                    columnName, 
+                                    columnName,
                                     columnType))));
 
             }
@@ -2677,7 +2677,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                           new_col (col_item1, aat_int)));
 
             from_list_add (FROMLIST(p),
-                           values (PFsql_list_list_(1, 
+                           values (PFsql_list_list_(1,
                                (const PFsql_t **) l_list)),
                            alias_def (newalias, column_list (
                                NULL, column_name (
@@ -2749,14 +2749,14 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                         if (t & TYPE_MASK (p->schema.items[col].type)) {
                             /* found another literal */
                             atom = p->sem.lit_tbl.tuples[row].atoms[col];
-                            
+
                             if (t & aat_qname_loc ||
                                 t & aat_qname_uri)
                                 atom = namespace_atom (atom, t);
 
                             list[colcount] = (t == atom.type)
                                              ? literal(atom)
-                                             : cast (null (), type (t)); 
+                                             : cast (null (), type (t));
                             /* increment the countvariable */
                             colcount++;
                         }
@@ -2787,10 +2787,10 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                            ref_table_name (p->sem.ref_tbl.name),
                            alias (tabalias));
 
-            /* lookup the "internal" column names (and types) in the 
+            /* lookup the "internal" column names (and types) in the
                schema info */
             PFalg_schema_t schema = p->schema;
-            /* lookup the "external"/"real" column names in the 
+            /* lookup the "external"/"real" column names in the
                semantical info */
             PFarray_t* externalCNames = p->sem.ref_tbl.tcols;
 
@@ -2802,7 +2802,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 PFalg_schm_item_t schemaItem = schema.items[i];
 
                 PFalg_col_t columnNameInternal = schemaItem.name;
-                char* columnNameExternal = 
+                char* columnNameExternal =
                     *(char**) PFarray_at (externalCNames, i);
                 PFalg_simple_type_t columnType = schemaItem.type;
 
@@ -2879,7 +2879,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     l_ty   = type_of (p, p->sem.thetajoin.pred[i].left);
 
                     assert (monomorphic (l_ty));
-                    
+
                     /* if the thetajoin joins over boolean values
                      * we have to bind the underlying node */
                     if (l_ty == aat_bln && !BOUND (L(p)))
@@ -2914,7 +2914,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     r_ty   = type_of (p, p->sem.thetajoin.pred[i].right);
 
                     assert (monomorphic (r_ty));
-                    
+
                     /* if the thetajoin joins over boolean values
                      * we have to bind the underlying node */
                     if (r_ty == aat_bln && !BOUND (R(p)))
@@ -3112,7 +3112,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                for (k = 0; k < PFarray_last (COLMAP(L(p))); k++) {
                    entry = col_env_at (COLMAP(L(p)), k);
                    if (p->sem.proj.items[i].old == entry.col)
-                       break; 
+                       break;
                }
 
                if (k >= PFarray_last(COLMAP(L(p))))
@@ -3157,7 +3157,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                       aat_bln);
 
             if (sqlnode->kind == sql_column_name ||
-                sqlnode->kind == sql_lit_int) 
+                sqlnode->kind == sql_lit_int)
                 /* we introduced a case expression before that produces
                    1 for all true values ... */
                 where_list_add (WHERELIST(p), eq (sqlnode, lit_int (1)));
@@ -3367,9 +3367,9 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
               PFsql_t *reckey  = NULL;
               PFsql_t *reccol2 = NULL;
 
-              PFsql_tident_t totbl   = new_table_name (); 
+              PFsql_tident_t totbl   = new_table_name ();
               PFsql_aident_t toalias = new_alias ();
-              
+
               rescol = new_col (
                            p->sem.binary.res,
                            type_of (p, p->sem.binary.res));
@@ -3389,7 +3389,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
               col1 = col_env_lookup (COLMAP(L(p)),
                          p->sem.binary.col1,
                          type_of (p, p->sem.binary.col1));
-             
+
               for (unsigned int i = 0;
                    i < PFarray_last (COLMAP(L(p))); i++) {
 
@@ -3405,11 +3405,11 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                        toalias,
                                        newcolumn));
               }
-              
+
               recfromlist = fromlist;
 
               /* if there is no key present, create an artificial key
-               * key with rownumber functionality */ 
+               * key with rownumber functionality */
               if (c >= L(p)->schema.count) {
                   PFsql_tident_t keytbl = new_table_name ();
                   PFsql_aident_t keyalias = new_alias ();
@@ -3459,7 +3459,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                   type_of (L(p), p->sem.binary.col1)));
 
                   key = SUR(keyalias);
-                              
+
 
                   recselectlist = select_list (
                                        recselectlist,
@@ -3488,7 +3488,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                columnlist,
                                column_name (rescol));
 
-              selectlist = select_list (selectlist, 
+              selectlist = select_list (selectlist,
                                  column_assign (
                                       col1,
                                       column_name (rescol)));
@@ -3524,9 +3524,9 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                               gt (reccol2,
                                   ext_column_name (
                                       toalias,rescol)))))));
-                         
-            col_env_add (COLMAP(p), 
-                         p->sem.binary.res, 
+
+            col_env_add (COLMAP(p),
+                         p->sem.binary.res,
                          type_of (p, p->sem.binary.res),
                          ext_column_name (
                              toalias, rescol));
@@ -3621,7 +3621,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 case la_intersect:  op = PFsql_intersect;  break;
                 default: assert(!"set operator expected");
             };
-                  
+
             /* dump the operator binding */
             execute (comment ("binding due to set operation"));
             execute (bind (table_def (newtable, columnlist),
@@ -3675,10 +3675,31 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     res_expr = mul (expr[0], expr[1]); break;
                 case alg_fun_num_divide:
                     res_expr = div (expr[0], expr[1]); break;
+                case alg_fun_num_modulo:
+                    res_expr = modulo (expr[0], expr[1]); break;
+                case alg_fun_fn_abs:
+                    res_expr = abs (expr[0]); break;
+                case alg_fun_fn_ceiling:
+                    res_expr = ceil (expr[0]); break;
+                case alg_fun_fn_floor:
+                    res_expr = floor (expr[0]); break;
+                case alg_fun_fn_concat:
+                    /* the algebra ensures that the expressions are strings */
+                    res_expr = concat (expr[0], expr[1]); break;
+                case alg_fun_fn_substring:
+                    res_expr = substring (expr[0], expr[1]); break;
+                case alg_fun_fn_substring_len:
+                    res_expr = substring_len (expr[0], expr[1], expr[2]); break;
+                case alg_fun_fn_string_length:
+                    res_expr = str_length (expr[0]); break;
+                case alg_fun_fn_upper_case:
+                    res_expr = str_upper (expr[0]); break;
+                case alg_fun_fn_lower_case:
+                    res_expr = str_lower (expr[0]); break;
                 case alg_fun_fn_contains:
                     {
                         /* adding check for constant expression */
-                        if (!PFprop_const (L(p)->prop, col[1]) || 
+                        if (!PFprop_const (L(p)->prop, col[1]) ||
                             ty[1]         != aat_str           ||
                             expr[1]->kind == sql_column_name)
                             PFoops (OOPS_FATAL, "fn_contains works only with constant "
@@ -3690,90 +3711,59 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     break;
                 case alg_fun_fn_like:
                     /* adding check for constant expression */
-                    if (!PFprop_const (L(p)->prop, col[1]) || 
+                    if (!PFprop_const (L(p)->prop, col[1]) ||
                         ty[1]         != aat_str           ||
                         expr[1]->kind == sql_column_name)
                         PFoops (OOPS_FATAL, "fn_like works only with constant "
                                             "string expressions");
                     res_expr = like (expr[0], expr[1]);
                     break;
-		case alg_fun_fn_similar_to:
-                    res_expr = similar_to (expr[0], expr[1]); break;
-                /**< fn:ceiling */
-                case alg_fun_fn_ceiling:
-                    res_expr = ceil (expr[0]); break;
-                /**< fn:floor */
-                case alg_fun_fn_floor:
-                    res_expr = floor (expr[0]); break;
-                /**< arithmetic modulo operator */
-                case alg_fun_num_modulo:
-                    res_expr = modulo (expr[0], expr[1]); break;
-                /**< fn:abs */
-                case alg_fun_fn_abs:
-                    res_expr = abs (expr[0]); break;
-                /**< fn:concat */
-                case alg_fun_fn_concat:
-                    /* the algebra ensures that the expressions are strings */
-                    res_expr = concat (expr[0], expr[1]); break;
-                case alg_fun_fn_substring:
-                    res_expr = substring (expr[0], expr[1]); break;
-                case alg_fun_fn_substring_len:
-                    res_expr = substring_len (expr[0], expr[1], expr[2]); break;
-                /**< fn:number */
                 case alg_fun_fn_number:
                 case alg_fun_fn_number_lax:
                     res_expr = cast_ (expr[0], ty[0], aat_dbl); break;
-                /**< fn:round */
+                case alg_fun_fn_similar_to:
+                    res_expr = similar_to (expr[0], expr[1]); break;
+                case alg_fun_fn_year_from_date:
+                    res_expr = year(expr[0]); break;
+                case alg_fun_fn_month_from_date:
+                    res_expr = month(expr[0]); break;
+                case alg_fun_fn_day_from_date:
+                    res_expr = day(expr[0]); break;
+
                 case alg_fun_fn_round:
-                /** string functions */
+                case alg_fun_pf_log:
+                case alg_fun_pf_sqrt:
+                case alg_fun_fn_normalize_space:
+                case alg_fun_fn_translate:
                 case alg_fun_fn_starts_with:
                 case alg_fun_fn_ends_with:
-                    assert (!"missing");
-                    break;
-                case alg_fun_fn_string_length:
-                    res_expr = str_length (expr[0]); break;
-                case alg_fun_fn_upper_case:
-                    res_expr = str_upper (expr[0]); break;
-                case alg_fun_fn_lower_case:
-                    res_expr = str_lower (expr[0]); break;
-                case alg_fun_fn_doc_available:
-                    PFoops (OOPS_FATAL,
-                            "Document availability check not implemented.");
-
-                case alg_fun_fn_translate:
                 case alg_fun_fn_substring_before:
                 case alg_fun_fn_substring_after:
                 case alg_fun_fn_matches:
                 case alg_fun_fn_matches_flag:
                 case alg_fun_fn_replace:
                 case alg_fun_fn_replace_flag:
-                case alg_fun_fn_normalize_space:
-                    assert (!"missing");
-                    break;
                 case alg_fun_fn_name:
-                /* Returns the name of a node, as an xs:string that is either the
-                 * zero length string or the lexical form of an xs:QName.
-                 * If the argument is the empty sequence, the function returns
-                 * the zero lenght-string.
-                 * If the target node has no name (that is, if it is a document node,
-                 * a comment a text node, or a namespace binding) the functions
-                 * returns the zero length string.
-                 */
                 case alg_fun_fn_local_name:
                 case alg_fun_fn_namespace_uri:
-
                 case alg_fun_fn_qname:
+                    assert (!"missing");
+                    break;
+
+                case alg_fun_fn_doc_available:
+                    res_expr = PFsql_eq (lit_int (1),lit_int (1));
+                    PFlog ("Document availability check not implemented.");
+                    break;
+
                 case alg_fun_pf_fragment:
                 case alg_fun_pf_supernode:
-
                 case alg_fun_pf_add_doc_str:
                 case alg_fun_pf_add_doc_str_int:
                 case alg_fun_pf_del_doc:
                 case alg_fun_pf_nid:
                 case alg_fun_pf_docname:
-
-                case alg_fun_upd_delete:
                 case alg_fun_upd_rename:
+                case alg_fun_upd_delete:
                 case alg_fun_upd_insert_into_as_first:
                 case alg_fun_upd_insert_into_as_last:
                 case alg_fun_upd_insert_before:
@@ -3788,9 +3778,6 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 case alg_fun_fn_hours_from_datetime:
                 case alg_fun_fn_minutes_from_datetime:
                 case alg_fun_fn_seconds_from_datetime:
-                case alg_fun_fn_year_from_date:
-                case alg_fun_fn_month_from_date:
-                case alg_fun_fn_day_from_date:
                 case alg_fun_fn_hours_from_time:
                 case alg_fun_fn_minutes_from_time:
                 case alg_fun_fn_seconds_from_time:
@@ -3806,10 +3793,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 case alg_fun_geo_relate:
                 case alg_fun_geo_intersection:
 #endif
-                case alg_fun_pf_log:
-                case alg_fun_pf_sqrt:
                     /* FIXME: implementation is missing */
-
                     assert (!"missing");
                     break;
             }
@@ -3850,7 +3834,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                        ? rcol
                        : case_ (when (rcol, TRUE_INT), else_ (FALSE_INT));
             }
-                
+
             /* add the new column to the environment */
             col_env_add (COLMAP(p),
                          p->sem.binary.res,
@@ -3865,7 +3849,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         {
             PFsql_t *sqlnode1;
             PFsql_t *sqlnode2;
-            
+
             PFsql_t * (*op) (const PFsql_t *a, const PFsql_t *b);
 
             /* copy all existing column, from and where lists */
@@ -4049,7 +4033,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
 
         /* Rel:    aggr (Rel) */
         case 35: /* reference to this rule also appears below */
-            
+
             /* Bind the input of the aggregate if the group by
                criterion is not a column reference. */
             if (p->sem.aggr.part &&
@@ -4151,7 +4135,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     expr = col_env_lookup (COLMAP(in_op),
                                            col,
                                            type_of (in_op, col));
-                
+
                 /* generate the aggregation */
                 switch (p->sem.aggr.aggr[i].kind) {
                     case alg_aggr_dist:
@@ -4176,7 +4160,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
 
                     case alg_aggr_min:   expr = min_ (expr);     break;
                     case alg_aggr_max:   expr = max_ (expr);     break;
-                    case alg_aggr_all: 
+                    case alg_aggr_all:
                         expr = min_ (((expr)->kind == sql_column_name)?
                                     expr:
                                     case_(
@@ -4188,7 +4172,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     case alg_aggr_avg:   expr = avg (expr);      break;
                     case alg_aggr_sum:   expr = sum (expr);      break;
                     case alg_aggr_seqty1:
-                    case alg_aggr_prod: 
+                    case alg_aggr_prod:
                         PFoops (OOPS_FATAL, "Unsupported aggregate.");
                         break;
                 }
@@ -4377,7 +4361,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             PFalg_col_t sep_iter = p->sem.string_join.iter_sep,
                         sep_item = p->sem.string_join.item_sep;
 
-            PFsql_t *srtbylist = NULL, 
+            PFsql_t *srtbylist = NULL,
                     *partlist = NULL;
 
             reduce (kids[0], nts[0]);
@@ -4423,7 +4407,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             execute (comment ("==== String-Join ===="));
             execute (comment ("====================="));
             execute (bind (table_def (numbering_tbl,
-                                      column_list (txt_iter_col, 
+                                      column_list (txt_iter_col,
                                                    txt_pos_col,
                                                    txt_item_col)),
                            select (
@@ -4461,8 +4445,8 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
 
             /* calculate the stringjoin in a recursion */
             execute (bind (table_def (
-                            strjoin_tbl, 
-                              column_list (txt_iter_col, 
+                            strjoin_tbl,
+                              column_list (txt_iter_col,
                                            txt_pos_col,
                                            txt_item_col,
                                            SEP_)),
@@ -4485,13 +4469,13 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                         from_list (transform_frommap (R(p)),
                                        alias_bind (table_name (numbering_tbl),
                                            alias (numbering_alias))),
-                        where_list (transform_wheremap (R(p)), 
+                        where_list (transform_wheremap (R(p)),
                                     eq (col_env_lookup (
                                                COLMAP (R(p)),
                                                sep_iter,
                                                type_of (R(p), sep_iter)),
                                         COL (numbering_alias, txt_iter)),
-                                    eq (txt_pos_col, lit_int (1))), 
+                                    eq (txt_pos_col, lit_int (1))),
                         NULL,
                         NULL),
                      PFsql_select (
@@ -4528,8 +4512,8 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             /* filter only relevant tuples, since the recursion returns more values
              * than we need for the final result */
             execute (bind (table_def (
-                            interm_tbl, 
-                              column_list (txt_iter_col, 
+                            interm_tbl,
+                              column_list (txt_iter_col,
                                            txt_pos_col)),
                      PFsql_select (
                          false,
@@ -4557,8 +4541,8 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                          type_of (p, p->sem.string_join.item_res),
                          COL (strjoin_alias, txt_item)
                         );
- 
-            from_list_add (FROMLIST(p), 
+
+            from_list_add (FROMLIST(p),
                            table_name (interm_tbl), alias (interm_alias));
             from_list_add (FROMLIST(p),
                            table_name (strjoin_tbl), alias (strjoin_alias));
@@ -4607,7 +4591,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                        type_of (L(p), p->sem.sort.part))));
 
             if (srtbylist) orderby = order_by (srtbylist);
-            
+
             col_env_add (COLMAP(p),
                          p->sem.sort.res,
                          aat_nat,
@@ -4849,8 +4833,8 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                     "SQLgen: Unknown access identifier in "
                                     "document access");
             }
-            
-            
+
+
         }   break;
 
         /* Rel:    roots_ (Constr) */
@@ -5465,7 +5449,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         /*             /    \                                   */
         /*            /      \                                  */
         /*           /\      /\                                 */
-        /*          /q1\    /q2\                                */      
+        /*          /q1\    /q2\                                */
         /*         ------  ------                               */
         /* We will translate this plan into the following       */
         /* SQL query.                                           */
@@ -5508,7 +5492,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                raise_error (lit_str (ERR_SQLSTATE),
                                             lit_str (msg))),
                          else_ (lit_int(42)));
-                                                           
+
             PFsql_aident_t nalias = new_alias ();
 
             from_list_add (FROMLIST (p),
@@ -5523,8 +5507,8 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         case 98:
             break;
 
-	/* Side:   cache (Side, Rel) */
-	case 99:
+        /* Side:   cache (Side, Rel) */
+        case 99:
         /* Side:   trace (Side, Trc) */
         case 100:
         /* Trc:    trace_items (Rel, Msg) */
@@ -5554,7 +5538,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                     PFlalg2sql_string[rule]);
             break;
         /* Arg:    rec_arg (Rel, Rel) */
-        case 107: 
+        case 107:
         /* Arg:    rec_arg (Rel, distinct (Rel)) */
         case 108: {
             /** TOPDOWN **/
@@ -5571,7 +5555,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             PFsql_t *rec_selectlist = NULL;
 
             PFsql_col_t *colname = NULL;
-            
+
             /* generate SQL code for the seed branch */
             reduce (kids[0], nts[0]);
 
@@ -5589,45 +5573,45 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                         colname = new_col (base->schema.items[i].name,
                                            t);
 
-                        /* prepare the column list */ 
+                        /* prepare the column list */
                         columnlist = column_list (
                                          columnlist,
                                          column_name (colname));
-                        
+
                         col_env_add (COLMAP(base),
                                      base->schema.items[i].name,
                                      t,
-                                     ext_column_name (basealias, colname));    
+                                     ext_column_name (basealias, colname));
                         col_env_add (COLMAP(p),
                                      base->schema.items[i].name,
                                      t,
-                                     ext_column_name (basealias, colname));    
+                                     ext_column_name (basealias, colname));
 
                     }
             }
 
             /* clear from and where list */
             PFarray_last (FROMLIST(base)) = 0;
-            PFarray_last (WHERELIST(base)) = 0; 
+            PFarray_last (WHERELIST(base)) = 0;
             PFarray_last (FROMLIST(p)) = 0;
             PFarray_last (WHERELIST(p)) = 0;
-            
+
             /* add the new binding to the fromlist */
-            from_list_add (FROMLIST (base), 
+            from_list_add (FROMLIST (base),
                            table_name (basetable),
                            alias (basealias));
 
             /* add the new binding to the fromlist */
-            from_list_add (FROMLIST (p), 
+            from_list_add (FROMLIST (p),
                            table_name (basetable),
                            alias (basealias));
 
 
-            /* generate SQL code for the recursion branch */ 
+            /* generate SQL code for the recursion branch */
             rec_branch = true;
             reduce (kids[1], nts[1]);
             rec_branch = false;
-            
+
             for (unsigned int i = 0; i < base->schema.count; i++) {
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & TYPE_MASK (p->schema.items[i].type)) {
@@ -5635,7 +5619,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                              rec_selectlist,
                                              col_env_lookup (COLMAP(recursion),
                                                              p->schema.items[i].name,
-                                                             t)); 
+                                                             t));
                     }
             }
 
@@ -5643,7 +5627,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             execute (comment ("= RECURSION ="));
             execute (comment ("============="));
             execute (bind (table_def (
-                            basetable, 
+                            basetable,
                             columnlist),
                      union_ (
                      PFsql_select (
@@ -5668,7 +5652,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                        side_effects (
                            nil,
                            rec_param (
-                              rec_arg (Rel, Rel), 
+                              rec_arg (Rel, Rel),
                               rec_param(Arg, nil))),
                        Rel) */
         case 109:
@@ -5682,7 +5666,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
 
             /* if we are sure, that the loop returns
              * results in any case, and the base is
-             * used only once, we can continue the 
+             * used only once, we can continue the
              * translation, since we are sure the
              * loop is not needed anywhere */
             if (!(PFprop_card(loop_param->prop)) ||
@@ -5914,7 +5898,7 @@ collect_numberings (PFla_op_t *p, PFarray_t *num_map)
 
         case la_rowid:
             /* Add the numbering operator. */
-            *(num_map_t *) PFarray_add (num_map) 
+            *(num_map_t *) PFarray_add (num_map)
                 = (num_map_t) { .col = p->sem.rowid.res, .op = p };
             break;
 
@@ -5923,9 +5907,9 @@ collect_numberings (PFla_op_t *p, PFarray_t *num_map)
         case la_rank:
             /* Add the numbering operators.
                Avoid partitioned variants as we don't know how to
-               fix the order by list for partitioned operators. */ 
+               fix the order by list for partitioned operators. */
             if (!p->sem.sort.part)
-                *(num_map_t *) PFarray_add (num_map) 
+                *(num_map_t *) PFarray_add (num_map)
                     = (num_map_t) { .col = p->sem.sort.res, .op = p };
             /* fall through */
 
@@ -6328,25 +6312,25 @@ assign_twig_info (PFla_op_t *n, unsigned int twig_pre, unsigned int level)
 }
 
 
-/* initializing global variables */    
-static void 
+/* initializing global variables */
+static void
 PFsql_init (void)
 {
     sql_stmts      = NULL;
     max_pre_frag   = NULL;
-    rec_branch     = false; 
+    rec_branch     = false;
     selectivity    = false;
     bind_multi_ref = false;
     table_varno    = PF_SQL_RES_TABLE_COUNT;
     alias_varno    = PF_SQL_RES_ALIAS_COUNT;
     col_varno      = PF_SQL_RES_COLUMN_COUNT;
 }
- 
+
 
 PFsql_t *
 PFlalg2sql (PFla_op_t * n)
 {
-    /* initializing global variables */    
+    /* initializing global variables */
     PFsql_init ();
 
     /* read in environment variables */
@@ -6359,22 +6343,22 @@ PFlalg2sql (PFla_op_t * n)
     bind_multi_ref = bind_str && !strcmp (bind_str, "1");
 
     assert (n);
- 
+
     if ((n->kind != la_serialize_seq) && (n->kind != la_serialize_rel))
         PFoops (OOPS_FATAL,
                 "SQL code generation can only "
                 "cope with result sequences.");
- 
+
     /* Set reference counters in algebra tree nodes. */
     PFprop_infer_refctr (n);
- 
+
     /* Set the initial fragment. */
     max_pre_frag = table_name (PF_SQL_TABLE_FRAG);
- 
+
     /* Label and annotate the complete DAG. */
     label (n);
     PFla_dag_reset (n);
- 
+
     /* Decide for all numbering operators (rownum, rank, rowrank, rowid)
        whether they need to be bound immediately or at the next binding. */
     decide_numbering_bind (n);
@@ -6392,15 +6376,15 @@ PFlalg2sql (PFla_op_t * n)
             PFla_dag_reset (n);
         }
     }
- 
+
     /* Assign the delta-pre, level, and size value for node constructors */
     assign_twig_info (n, 0, 0);
     PFla_dag_reset (n);
- 
+
     /* Traverse the tree and collect as a side effect
        the SQL code in the global variable @a sql_stmts. */
     reduce (n, 1);
- 
+
     return sql_stmts;
 }
 
