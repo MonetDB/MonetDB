@@ -31,7 +31,7 @@ Requires: MonetDB4-server >= 4.38
 
 %{!?buildsystem: %define buildsystem 0}
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.38
+BuildRequires: MonetDB-devel >= 1.39
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -54,7 +54,7 @@ This package contains the XQuery frontend.
 Summary: MonetDB XQuery development package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
-Requires: MonetDB-devel >= 1.38
+Requires: MonetDB-devel >= 1.39
 #                          ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
