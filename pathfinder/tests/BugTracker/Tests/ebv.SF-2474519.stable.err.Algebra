@@ -10,9 +10,9 @@ stderr of test 'ebv.SF-2474519` in directory 'tests/BugTracker` itself:
 # 15:48:47 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=join --port=38323 ebv.SF-2474519.xq
 # 15:48:47 >  
 
-MAPI  = monetdb@rig:34754
+MAPI  = monetdb@join:38452
 QUERY = element result { if (distinct-values(exactly-one(doc("hello.xml"))//*)) then 1 else 2 }
-ERROR = !ERROR: err:FORG0003: function fn:zero-or-one expects at most one value.
+ERROR = !ERROR: err:FORG0003, fn:zero-or-one called with a sequence containing more than one item.
 
 
 
