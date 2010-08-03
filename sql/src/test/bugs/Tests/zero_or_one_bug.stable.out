@@ -20,19 +20,46 @@ Ready.
 
 Over..
 
-# 12:37:52 >  
-# 12:37:52 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=35441 
-# 12:37:52 >  
+# 16:50:50 >  
+# 16:50:50 >  mclient -lsql -ftest -i -e --host=rig --port=33126 
+# 16:50:50 >  
 
+#CREATE TABLE my_table1 (
+#--
+#     id1    INT NOT NULL,
+#     col1a  VARCHAR(10),
+#     col1b  VARCHAR(1)
+#--
+#) ;
+#INSERT INTO my_table1 VALUES (1, 'a', '') ;
 [ 1	]
+#INSERT INTO my_table1 VALUES (2, 'b', '') ;
 [ 1	]
+#INSERT INTO my_table1 VALUES (3, 'c', '') ;
 [ 1	]
+#INSERT INTO my_table1 VALUES (4, 'd', '') ;
 [ 1	]
+#INSERT INTO my_table1 VALUES (5, 'e', '') ;
 [ 1	]
+#INSERT INTO my_table1 VALUES (6, 'f', '') ;
 [ 1	]
+#INSERT INTO my_table1 VALUES (7, 'g', '') ;
 [ 1	]
+#INSERT INTO my_table1 VALUES (8, 'h', '') ;
 [ 1	]
+#INSERT INTO my_table1 VALUES (9, 'i', '') ;
 [ 1	]
+#CREATE TABLE my_table2 (
+#--
+#     id2    INT NOT NULL,
+#     col2   VARCHAR(10)
+#
+#) ;
+#SELECT
+#      COALESCE(id1,0),
+#      (SELECT col2 FROM my_table2 WHERE col2 = col1a)
+#FROM  my_table1 x
+#;
 % .,	.L6 # table_name
 % isnull_not_isnull_id1,	L6 # name
 % int,	varchar # type
