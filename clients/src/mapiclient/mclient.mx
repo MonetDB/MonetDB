@@ -664,7 +664,7 @@ SQLqueryEcho(MapiHdl hdl)
 
 		qry = mapi_get_query(hdl);
 		if (qry) {
-			if (!interactive_stdin) {
+			if (formatter != TABLEformatter) {
 				char *p = qry;
 				char *q = p;
 				while ((q = strchr(q, '\n')) != NULL) {
