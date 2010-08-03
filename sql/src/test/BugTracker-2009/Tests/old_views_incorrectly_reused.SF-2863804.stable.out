@@ -21,27 +21,117 @@ Ready.
 
 Over..
 
-# 23:06:17 >  
-# 23:06:17 >  ./old_views_incorrectly_reused.SF-2863804.SQL.sh old_views_incorrectly_reused.SF-2863804 
-# 23:06:17 >  
+# 16:05:51 >  
+# 16:05:51 >  ./old_views_incorrectly_reused.SF-2863804.SQL.sh old_views_incorrectly_reused.SF-2863804 
+# 16:05:51 >  
 
 
-# 23:06:17 >  
-# 23:06:17 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=localhost --port=31419  /home/wouter/opt/MonetDB-Aug2009/mTests/src/test/BugTracker-2009/old_views_incorrectly_reused.SF-2863804.def.sql
-# 23:06:17 >  
+# 16:05:51 >  
+# 16:05:51 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=volund --port=35971  /net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Jun2010-volund.ins.cwi.nl/sql/mTests/src/test/BugTracker-2009/old_views_incorrectly_reused.SF-2863804.def.sql
+# 16:05:51 >  
 
+#START TRANSACTION;
+#CREATE TABLE docDict (docID integer, doc VARCHAR(1000), type VARCHAR(100), prob DOUBLE);
+#CREATE TABLE doc_string (docID integer, attribute VARCHAR(1000), value VARCHAR(100), prob DOUBLE);
+#INSERT INTO docDict VALUES (1, 'aap','a',1.0);
+#INSERT INTO docDict VALUES (2, 'beer','a',1.0);
+#INSERT INTO docDict VALUES (3, 'noot','a',1.0);
+#INSERT INTO doc_string VALUES (1, 'kind', 'A1',1.0);
+#INSERT INTO doc_string VALUES (2, 'date', '2000',1.0);
+#INSERT INTO doc_string VALUES (2, 'kind', 'A2',1.0);
+#START TRANSACTION;
+#CREATE TABLE docDict (docID integer, doc VARCHAR(1000), type VARCHAR(100), prob DOUBLE);
+#CREATE TABLE doc_string (docID integer, attribute VARCHAR(1000), value VARCHAR(100), prob DOUBLE);
+#INSERT INTO docDict VALUES (1, 'aap','a',1.0);
+#INSERT INTO docDict VALUES (2, 'beer','a',1.0);
+#INSERT INTO docDict VALUES (3, 'noot','a',1.0);
+#INSERT INTO doc_string VALUES (1, 'kind', 'A1',1.0);
+#INSERT INTO doc_string VALUES (2, 'date', '2000',1.0);
+#INSERT INTO doc_string VALUES (2, 'kind', 'A2',1.0);
 [ 1	]
+#START TRANSACTION;
+#CREATE TABLE docDict (docID integer, doc VARCHAR(1000), type VARCHAR(100), prob DOUBLE);
+#CREATE TABLE doc_string (docID integer, attribute VARCHAR(1000), value VARCHAR(100), prob DOUBLE);
+#INSERT INTO docDict VALUES (1, 'aap','a',1.0);
+#INSERT INTO docDict VALUES (2, 'beer','a',1.0);
+#INSERT INTO docDict VALUES (3, 'noot','a',1.0);
+#INSERT INTO doc_string VALUES (1, 'kind', 'A1',1.0);
+#INSERT INTO doc_string VALUES (2, 'date', '2000',1.0);
+#INSERT INTO doc_string VALUES (2, 'kind', 'A2',1.0);
 [ 1	]
+#START TRANSACTION;
+#CREATE TABLE docDict (docID integer, doc VARCHAR(1000), type VARCHAR(100), prob DOUBLE);
+#CREATE TABLE doc_string (docID integer, attribute VARCHAR(1000), value VARCHAR(100), prob DOUBLE);
+#INSERT INTO docDict VALUES (1, 'aap','a',1.0);
+#INSERT INTO docDict VALUES (2, 'beer','a',1.0);
+#INSERT INTO docDict VALUES (3, 'noot','a',1.0);
+#INSERT INTO doc_string VALUES (1, 'kind', 'A1',1.0);
+#INSERT INTO doc_string VALUES (2, 'date', '2000',1.0);
+#INSERT INTO doc_string VALUES (2, 'kind', 'A2',1.0);
 [ 1	]
+#START TRANSACTION;
+#CREATE TABLE docDict (docID integer, doc VARCHAR(1000), type VARCHAR(100), prob DOUBLE);
+#CREATE TABLE doc_string (docID integer, attribute VARCHAR(1000), value VARCHAR(100), prob DOUBLE);
+#INSERT INTO docDict VALUES (1, 'aap','a',1.0);
+#INSERT INTO docDict VALUES (2, 'beer','a',1.0);
+#INSERT INTO docDict VALUES (3, 'noot','a',1.0);
+#INSERT INTO doc_string VALUES (1, 'kind', 'A1',1.0);
+#INSERT INTO doc_string VALUES (2, 'date', '2000',1.0);
+#INSERT INTO doc_string VALUES (2, 'kind', 'A2',1.0);
 [ 1	]
+#START TRANSACTION;
+#CREATE TABLE docDict (docID integer, doc VARCHAR(1000), type VARCHAR(100), prob DOUBLE);
+#CREATE TABLE doc_string (docID integer, attribute VARCHAR(1000), value VARCHAR(100), prob DOUBLE);
+#INSERT INTO docDict VALUES (1, 'aap','a',1.0);
+#INSERT INTO docDict VALUES (2, 'beer','a',1.0);
+#INSERT INTO docDict VALUES (3, 'noot','a',1.0);
+#INSERT INTO doc_string VALUES (1, 'kind', 'A1',1.0);
+#INSERT INTO doc_string VALUES (2, 'date', '2000',1.0);
+#INSERT INTO doc_string VALUES (2, 'kind', 'A2',1.0);
 [ 1	]
+#START TRANSACTION;
+#CREATE TABLE docDict (docID integer, doc VARCHAR(1000), type VARCHAR(100), prob DOUBLE);
+#CREATE TABLE doc_string (docID integer, attribute VARCHAR(1000), value VARCHAR(100), prob DOUBLE);
+#INSERT INTO docDict VALUES (1, 'aap','a',1.0);
+#INSERT INTO docDict VALUES (2, 'beer','a',1.0);
+#INSERT INTO docDict VALUES (3, 'noot','a',1.0);
+#INSERT INTO doc_string VALUES (1, 'kind', 'A1',1.0);
+#INSERT INTO doc_string VALUES (2, 'date', '2000',1.0);
+#INSERT INTO doc_string VALUES (2, 'kind', 'A2',1.0);
 [ 1	]
+#START TRANSACTION;
+#CREATE TABLE docDict (docID integer, doc VARCHAR(1000), type VARCHAR(100), prob DOUBLE);
+#CREATE TABLE doc_string (docID integer, attribute VARCHAR(1000), value VARCHAR(100), prob DOUBLE);
+#INSERT INTO docDict VALUES (1, 'aap','a',1.0);
+#INSERT INTO docDict VALUES (2, 'beer','a',1.0);
+#INSERT INTO docDict VALUES (3, 'noot','a',1.0);
+#INSERT INTO doc_string VALUES (1, 'kind', 'A1',1.0);
+#INSERT INTO doc_string VALUES (2, 'date', '2000',1.0);
+#INSERT INTO doc_string VALUES (2, 'kind', 'A2',1.0);
 [ 1	]
 
-# 23:06:18 >  
-# 23:06:18 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=localhost --port=31419  /home/wouter/opt/MonetDB-Aug2009/mTests/src/test/BugTracker-2009/old_views_incorrectly_reused.SF-2863804.view1.sql
-# 23:06:18 >  
+# 16:05:51 >  
+# 16:05:51 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=volund --port=35971  /net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Jun2010-volund.ins.cwi.nl/sql/mTests/src/test/BugTracker-2009/old_views_incorrectly_reused.SF-2863804.view1.sql
+# 16:05:51 >  
 
+#START TRANSACTION;
+#
+#CREATE VIEW DATA_docDict AS SELECT ALL docID AS a1, doc AS a2, type AS a3, prob FROM docDict;
+#CREATE VIEW DATA_doc_string AS SELECT ALL docID AS a1, attribute AS a2, value AS a3, prob FROM doc_string;
+#CREATE VIEW DATA_result AS SELECT ALL a1, prob FROM DATA_docDict;
+#
+#CREATE VIEW find_TERM_from_DOC_attribute_1_RESULT_result_3 AS 
+#	SELECT ALL DATA_doc_string.a1 AS a1, DATA_doc_string.a2 AS a2, 
+#		DATA_doc_string.a3 AS a3, DATA_result.a1 AS a4, 
+#START TRANSACTION;
+#
+#CREATE VIEW DATA_docDict AS SELECT ALL docID AS a1, doc AS a2, type AS a3, prob FROM docDict;
+#CREATE VIEW DATA_doc_string AS SELECT ALL docID AS a1, attribute AS a2, value AS a3, prob FROM doc_string;
+#CREATE VIEW DATA_result AS SELECT ALL a1, prob FROM DATA_docDict;
+#
+#CREATE VIEW find_TERM_from_DOC_attribute_1_RESULT_result_3 AS 
+#	SELECT ALL DATA_doc_string.a1 AS a1, DATA_doc_string.a2 AS a2, 
+#		DATA_doc_string.a3 AS a3, DATA_result.a1 AS a4, 
 % sys.a,	.,	.a # table_name
 % value,	type,	prob # name
 % varchar,	char,	double # type

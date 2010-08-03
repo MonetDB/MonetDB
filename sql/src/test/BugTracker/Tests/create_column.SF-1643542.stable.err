@@ -12,7 +12,7 @@ stderr of test 'create_column.SF-1643542` in directory 'src/test/BugTracker` its
 # 12:47:21 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31435  < create_column.SF-1643542.sql
 # 12:47:21 >  
 
-MAPI  = monetdb@alf:38365
+MAPI  = monetdb@volund:35971
 QUERY = alter table t1 add col int;
 ERROR = !ALTER TABLE: a column named 'col' already exists
 

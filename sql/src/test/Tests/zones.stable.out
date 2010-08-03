@@ -20,23 +20,78 @@ Ready.
 
 Over..
 
-# 13:48:21 >  
-# 13:48:21 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36590  < zones.sql
-# 13:48:21 >  
+# 16:01:34 >  
+# 16:01:34 >  mclient -lsql -ftest -i -e --host=volund --port=35971 
+# 16:01:34 >  
 
+#create function Alpha(theta double, decl double) returns double
+#    begin
+#    if abs(decl)+theta > 89.9 then return cast(180.0 as double);
+#    else 
+#    return(degrees(abs(atan(sin(radians(theta)) /
+#                             sqrt(abs( cos(radians(decl-theta))
+#                                      * cos(radians(decl+theta))
+#           )       )   )   )     ));
+#	end if;
+#    end;
+#create table alphatest(expected double, computed double);
+#insert into alphatest values(1.1547200925865859,Alpha(cast(1.0 as double),cast(30.0 as double)));
 [ 1	]
+#insert into alphatest values(1.4142854109042293,Alpha(cast(1.0 as double),cast(45.0 as double)));
 [ 1	]
+#insert into alphatest values(2.0003048809350625,Alpha(cast(1.0 as double),cast(60.0 as double)));
 [ 1	]
+#select abs(expected - computed) as err
+#from alphatest 
+#where abs(expected - computed)>epsilon;
 % sys. # table_name
 % err # name
 % double # type
 % 22 # length
+#create table photoobj (
+#    objID       bigint      not null, -- object Identifier in table
+#    ra          float       not null, 
+#    "dec"       float       not null,
+#    mode        tinyint	    not null,
+#    primary key (objID)
+#    );
+#insert into photoobj
+#values( 687726014001184891,	193.754250579787,	1.4851688900683999,	0);
 [ 1	]
+#insert into photoobj
+#values( 687726014001184892,	193.755094586886,	1.4846298308572601,	0);
 [ 1	]
+#insert into photoobj
+#values( 687726014001184894,	193.75653243396599,	1.4825263586962001,	0);
 [ 1	]
+#insert into photoobj
+#values( 687726014001184895,	193.75663392621499,	1.61956881843685,	0);
 [ 1	]
+#insert into photoobj
+#values( 687726014001184896,	193.75664598583401,	1.6195802985663199,	0);
 [ 1	]
+#create table ZoneIndex (
+#    objID       bigint         not null, -- object Identifier in table
+#    zone        int         not null, -- zone number (using 10 arcminu
+#    ra          float       not null, -- sperical coordinates
+#    "dec"       float       not null,
+#    x           float       not null, -- cartesian coordinates
+#    y           float       not null,
+#    z           float       not null,
+#    mode        tinyint	    not null,       
+#    margin      int         not null, 
+#create table ZoneHeight( "value" double not null); -- zone height in degrees.
+#insert into ZoneHeight values(cast (0.1  as double));
 [ 1	]
+#insert into zoneindex
+#     select objID,
+#            cast(floor("dec"/zHeight) as int) as zone,
+#            ra, "dec",
+#              cos(radians("dec"))*cos(radians(ra)) as x,
+#              cos(radians("dec"))*sin(radians(ra)) as y,
+#              sin(radians("dec")) as z,
+#              mode, 0 as margin
+#      from photoobj;
 [ 5	]
 [ 5	]
 [ 0	]
