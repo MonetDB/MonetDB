@@ -12,6 +12,12 @@ stderr of test 'pathstep_on_incorrect_type.SF-2067585` in directory 'tests/BugTr
 
 MAPI  = monetdb@jarl:38758
 QUERY = let $r :=
+            (for $p in doc("auctionG.xml")//person
+                let $ca := doc("auctionG.xml")//closed_auction[./seller/@person=$p/@id]
+                    where not(empty($ca))
+                        order by sum($ca/price)
+                            return ($p, sum($ca/price)))
+            return ($r, $r/name)
 ERROR = !ERROR: err:XP0019: Argument to location step must be a node sequence.
 
 # 17:54:16 >  
