@@ -1330,6 +1330,7 @@ format_result(Mapi mid, MapiHdl hdl)
 			/* should never see these */
 			continue;
 		case Q_UPDATE:
+			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
 				stream_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
@@ -1352,17 +1353,20 @@ format_result(Mapi mid, MapiHdl hdl)
 			}
 			continue;
 		case Q_SCHEMA:
+			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter)
 				stream_printf(toConsole,
 					      "operation successful\n");
 			continue;
 		case Q_TRANS:
+			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter)
 				stream_printf(toConsole,
 					      "auto commit mode: %s\n",
 					      mapi_get_autocommit(mid) ? "on" : "off");
 			continue;
 		case Q_PREPARE:
+			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter)
 				stream_printf(toConsole,
 					      "execute prepared statement "
