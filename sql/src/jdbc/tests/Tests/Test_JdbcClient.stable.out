@@ -147,6 +147,32 @@ INSERT INTO "allnewtriples" VALUES (5, 1, 2, 2, false);
 INSERT INTO "allnewtriples" VALUES (6, 2, 2, 1, false);
 INSERT INTO "allnewtriples" VALUES (7, 2, 2, 2, false);
 
+CREATE TABLE "queryhistory" (
+	"id"       wrd      	NOT NULL,
+	"defined"  timestamp(6),
+	"name"     clob     ,
+	"query"    clob     ,
+	"parse"    bigint   ,
+	"optimize" bigint   ,
+	CONSTRAINT "queryhistory_id_pkey" PRIMARY KEY ("id")
+);
+
+
+CREATE TABLE "callhistory" (
+	"id"        wrd      ,
+	"ctime"     timestamp(6),
+	"arguments" clob     ,
+	"execute"   bigint   ,
+	"result"    bigint   ,
+	"foot"      bigint   ,
+	"memory"    bigint   ,
+	"tuples"    wrd      ,
+	"inblock"   bigint   ,
+	"oublock"   bigint   ,
+	CONSTRAINT "callhistory_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."queryhistory" ("id")
+);
+
+
 CREATE TABLE "foreign" (
 	"id"        int	NOT NULL,
 	"subject"   int	NOT NULL,
@@ -179,6 +205,15 @@ CREATE INDEX "triples_subject_idx" ON "triples" ("subject");
 CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object");
 CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate");
 
+
+CREATE TABLE "url_test" (
+	"theurl" url ,
+	"name"   clob
+);
+
+
+CREATE VIEW "querylog" AS select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql
+where qd.id = ql.id;
 
 COMMIT;
 
