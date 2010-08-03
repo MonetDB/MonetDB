@@ -10,8 +10,10 @@ stderr of test 'escaped_backslash.SF-1034927-c` in directory 'tests/BugDay_2005-
 # 11:06:46 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --host=localhost --port=30368 < escaped_backslash.SF-1034927-c.milC
 # 11:06:46 >  
 
-MAPI  = monetdb@localhost:30368
+MAPI  = monetdb@rig:33536
 QUERY = print("\" = "_");
+        
+        quit();
 ERROR = !ERROR: "print("\" = "_");"
         !                         ^
         ! can't help you here, sorry.
