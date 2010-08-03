@@ -109,6 +109,8 @@ ALTER TABLE "sysinf" ADD FOREIGN KEY ("disk_id")
 
 \d experiment
 \d tapestry_user
+\d config
+\d tapestry_table
 \d result
 \d target
 \d sysinf
@@ -117,3 +119,16 @@ ALTER TABLE "sysinf" ADD FOREIGN KEY ("disk_id")
 \d memory
 \d disk
 \d query_walk
+
+DROP TABLE "query_walk" CASCADE;
+DROP TABLE "disk" CASCADE;
+DROP TABLE "memory" CASCADE;
+DROP TABLE "cpu" CASCADE;
+DROP TABLE "platform" CASCADE;
+DROP TABLE "sysinf" CASCADE;
+DROP TABLE "target" CASCADE;
+DROP TABLE "result" CASCADE;
+DROP TABLE "tapestry_table" CASCADE;
+DROP TABLE "config" CASCADE;
+DROP TABLE "tapestry_user" CASCADE;
+DROP TABLE "experiment" CASCADE;

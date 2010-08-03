@@ -79,11 +79,32 @@ stderr of test 'insert_values.SF-1578838` in directory 'src/test/BugTracker` its
 # 19:33:23 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33470 
 # 19:33:23 >  
 
-MAPI  = monetdb@alf:33470
+MAPI  = monetdb@volund:35971
 QUERY = INSERT INTO "examines" ("docID", "vicID") VALUES
+        (
+        (
+        SELECT "docID"
+        FROM "doctors"
+        WHERE "name" LIKE 'Dr. doc%'
+        ),
+        (
+        SELECT "vicID"
+        FROM "victims"
+        WHERE "name" LIKE 'vic%'
+        )
+        );
 ERROR = !SQLException:zero_or_one:cardinality violation (2>1)
-MAPI  = monetdb@alf:33470
+MAPI  = monetdb@volund:35971
 QUERY = INSERT INTO "timelines" ("vicID", "time", "event") VALUES
+        (
+        (
+        SELECT "vicID"
+        FROM "victims"
+        WHERE "name" LIKE 'vic%'
+        ),
+        '11:00 PM',
+        'Polly is seen walking etc...'
+        );
 ERROR = !SQLException:zero_or_one:cardinality violation (2>1)
 
 # 19:33:23 >  

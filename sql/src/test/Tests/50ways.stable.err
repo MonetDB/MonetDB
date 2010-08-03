@@ -81,20 +81,30 @@ stderr of test '50ways` in directory 'src/test` itself:
 # 16:07:26 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36831  -G
 # 16:07:26 >  
 
-MAPI  = monetdb@localhost:31166
+MAPI  = monetdb@volund:35971
 QUERY = drop table s;
 ERROR = !SQLException:sql.catalog:DROP TABLE: no such table 's'
-MAPI  = monetdb@localhost:31166
+MAPI  = monetdb@volund:35971
 QUERY = drop table sp;
 ERROR = !SQLException:sql.catalog:DROP TABLE: no such table 'sp'
-MAPI  = monetdb@localhost:31166
+MAPI  = monetdb@volund:35971
 QUERY = commit;
 ERROR = !SQLException:sql.trans:COMMIT: not allowed in auto commit mode
-MAPI  = monetdb@localhost:31166
+MAPI  = monetdb@volund:35971
 QUERY = SELECT  DISTINCT S.SNAME
+              FROM  (  ( SELECT * FROM S )
+                               INTERSECT CORRESPONDING 
+                               (SELECT * FROM SP
+                                 WHERE SP.PNR = 'P2' ) ) AS POINTLESS
+                               NATURAL JOIN S;
 ERROR = !SELECT: no such column 's.sname'
-MAPI  = monetdb@localhost:31166
+MAPI  = monetdb@volund:35971
 QUERY = SELECT  DISTINCT S.SNAME
+              FROM  (  ( SELECT * FROM S )
+                               INTERSECT CORRESPONDING BY ( SNR )
+                               (SELECT * FROM SP
+                                 WHERE SP.PNR = 'P2' ) ) AS POINTLESS
+                               NATURAL JOIN S;
 ERROR = !SELECT: no such column 's.sname'
 
 # 16:07:26 >  

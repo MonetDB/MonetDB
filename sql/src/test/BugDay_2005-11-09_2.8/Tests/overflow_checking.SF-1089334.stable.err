@@ -10,8 +10,10 @@ stderr of test 'overflow_checking.SF-1089334` in directory 'src/test/BugDay_2005
 # 13:12:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41056  < overflow_checking.SF-1089334.sql
 # 13:12:25 >  
 
-MAPI  = monetdb@alf:38216
+MAPI  = monetdb@volund:35971
 QUERY = INSERT INTO rawtriples VALUES(1001, 1,
+        '100168990', 2, 'glossaryEntry', 0, '',
+        -5342185907394955428, NULL, 'adorning with mosaic', true);
 ERROR = !SQLException:convert:too many digits (19 > 10)
 
 # 13:12:25 >  

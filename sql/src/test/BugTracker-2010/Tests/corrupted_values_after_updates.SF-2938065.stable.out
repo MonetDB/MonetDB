@@ -22,20 +22,97 @@ Ready.
 
 Over..
 
-# 16:27:38 >  
-# 16:27:38 >  mclient -lsql -i --host=alf --port=33614 
-# 16:27:38 >  
+# 16:05:59 >  
+# 16:05:59 >  mclient -lsql -ftest -i -e --host=volund --port=35971 
+# 16:05:59 >  
 
+#CREATE TABLE change (
+#    new_value VARCHAR(32),
+#    old_value VARCHAR(32),
+#    name VARCHAR(32),
+#    PRIMARY KEY (name,old_value)
+#);
+#CREATE TABLE base (
+#    value VARCHAR(32),
+#    name VARCHAR(32),
+#    state INTEGER DEFAULT 0,
+#    PRIMARY KEY (name)
+#);
+#CREATE TABLE edit (
+#    value VARCHAR(32),
+#    name VARCHAR(32),
+#    state INTEGER DEFAULT 0,
+#    PRIMARY KEY (name)
+#);
+#INSERT
+#    INTO base (name,value)
+#    SELECT 'token1','initial';
 [ 1	]
+#INSERT
+#    INTO edit (value,name,state)
+#    SELECT value,name,-1
+#        FROM base
+#        WHERE state=0;
 [ 1	]
+#DELETE
+#    FROM base
+#    WHERE EXISTS (
+#        SELECT true
+#            FROM edit
+#            WHERE base.name=edit.name
+#    )
+#;
 [ 1	]
+#INSERT
+#    INTO base (value,name,state)
+#    SELECT value,name,state
+#    FROM edit;
 [ 1	]
+#DELETE
+#    FROM edit;
 [ 1	]
+#INSERT
+#    INTO change (new_value,old_value,name)
+#    SELECT 'modified','initial','token1';
 [ 1	]
+#INSERT
+#    INTO edit (value,name,state)
+#    SELECT max(
+#            new_value
+#        ),base.name,0
+#        FROM base,change
+#        WHERE base.name=change.name
+#        AND base.value=old_value
+#        AND NOT new_value='modified'
+#        GROUP BY base.name,state;
 [ 0	]
+#INSERT
+#    INTO edit (value,name,state)
+#    SELECT max(
+#            new_value
+#        ),base.name,state
+#        FROM base,change
+#        WHERE base.name=change.name
+#        AND base.value=old_value
+#        AND new_value='modified'
+#        GROUP BY base.name,state;
 [ 1	]
+#DELETE
+#    FROM base
+#    WHERE EXISTS (
+#        SELECT true
+#            FROM edit
+#            WHERE base.name=edit.name
+#    )
+#;
 [ 1	]
+#INSERT
+#    INTO base (value,name,state)
+#    SELECT value,name,state
+#        FROM edit;
 [ 1	]
+#SELECT *
+#    FROM base;
 % sys.base,	sys.base,	sys.base # table_name
 % value,	name,	state # name
 % varchar,	varchar,	int # type

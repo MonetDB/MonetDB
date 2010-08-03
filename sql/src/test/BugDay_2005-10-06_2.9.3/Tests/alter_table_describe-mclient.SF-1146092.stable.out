@@ -1,0 +1,273 @@
+stdout of test 'alter_table_describe-mclient.SF-1146092` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 15:55:29 >  
+# 15:55:29 >   mserver5 "--config=/ufs/fabian/scratch/monetdb/Jun2010/program-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/Jun2010/program-x86_64/lib/MonetDB5:/ufs/fabian/scratch/monetdb/Jun2010/program-x86_64/lib/MonetDB5/lib:/ufs/fabian/scratch/monetdb/Jun2010/program-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Jun2010-volund.ins.cwi.nl/sql/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39554 --set xrpc_port=49068 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --set mal_listing=0 ; echo ; echo Over..
+# 15:55:29 >  
+
+# MonetDB server v5.20.4, based on kernel v1.38.4
+# Not released
+# Serving database 'mTests_src_test_BugDay_2005-10-06_2.9.3', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:39554/
+# MonetDB/SQL module v2.38.4 loaded
+# MonetDB/GIS module v0.18.0 loaded
+
+Ready.
+
+Over..
+
+# 15:55:29 >  
+# 15:55:29 >  ./alter_table_describe-mclient.SF-1146092.SQL.sh alter_table_describe-mclient.SF-1146092 
+# 15:55:29 >  
+
+
+# 15:55:29 >  
+# 15:55:29 >  Mtimeout -timeout 60  mclient -lsql -ftest -hvolund -p39554 -dmTests_src_test_BugDay_2005-10-06_2.9.3 -fsql -i -e < "/net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Jun2010/hgrepo/sql/src/test/BugDay_2005-10-06_2.9.3/Tests/alter_table_describe.SF-1146092-src.sql"
+# 15:55:29 >  
+
+CREATE TABLE "experiment" (
+	"exp_id"    int PRIMARY KEY,
+	"user_id"   int,
+	"config_id" int,
+	"table_id"  int,
+	"result_id" int
+);
+operation successful
+CREATE TABLE "tapestry_user" (
+	"user_id"    int PRIMARY KEY,
+	"name"       varchar(25),
+	"email"      varchar(50),
+	"createdate" date,
+	"passwd"     varchar(50)
+);
+operation successful
+CREATE TABLE "config" (
+	"config_id" int PRIMARY KEY,
+	"name"      varchar(25),
+	"target_id" int,
+	"sysinf_id" int
+);
+operation successful
+CREATE TABLE "tapestry_table" (
+	"table_id" int PRIMARY KEY,
+	"nrrows"   int,
+	"nrcols"   int,
+	"seed"     int,
+	"fast"     int
+);
+operation successful
+CREATE TABLE "result" (
+	"result_id"   int PRIMARY KEY,
+	"type"        varchar(10),
+	"description" varchar(256)
+);
+operation successful
+CREATE TABLE "target" (
+	"target_id"  int PRIMARY KEY,
+	"name"       varchar(50),
+	"permission" varchar(10),
+	"comment"    varchar(256)
+);
+operation successful
+CREATE TABLE "sysinf" (
+	"sysinf_id"   int PRIMARY KEY,
+	"platform_id" int,
+	"cpu_id"      int,
+	"memory_id"   int,
+	"disk_id"     int
+);
+operation successful
+CREATE TABLE "platform" (
+	"platform_id" int PRIMARY KEY,
+	"name"        varchar(50),
+	"comment"     varchar(256)
+);
+operation successful
+CREATE TABLE "cpu" (
+	"cpu_id" int PRIMARY KEY,
+	"type"   varchar(50)
+);
+operation successful
+CREATE TABLE "memory" (
+	"memory_id" int PRIMARY KEY,
+	"type"      varchar(50),
+	"size"      int
+);
+operation successful
+CREATE TABLE "disk" (
+	"disk_id" int PRIMARY KEY,
+	"type"    varchar(50),
+	"size"    int
+);
+operation successful
+CREATE TABLE "query_walk" (
+	"walk_id"   int PRIMARY KEY,
+	"begin_x"   int,
+	"begin_y"   int,
+	"nr_runs"   int,
+	"nr_steps"  int,
+	"step_size" int,
+	"end_x"     int,
+	"end_y"     int
+);
+operation successful
+ALTER TABLE "experiment" ADD FOREIGN KEY ("user_id")
+	REFERENCES "tapestry_user" ("user_id");
+operation successful
+ALTER TABLE "experiment" ADD FOREIGN KEY ("config_id")
+	REFERENCES "config" ("config_id");
+operation successful
+ALTER TABLE "experiment" ADD FOREIGN KEY ("table_id")
+	REFERENCES "tapestry_table" ("table_id");
+operation successful
+ALTER TABLE "experiment" ADD FOREIGN KEY ("result_id")
+	REFERENCES "result" ("result_id");
+operation successful
+ALTER TABLE "config" ADD FOREIGN KEY ("target_id")
+	REFERENCES "target" ("target_id");
+operation successful
+ALTER TABLE "config" ADD FOREIGN KEY ("sysinf_id")
+	REFERENCES "sysinf" ("sysinf_id");
+operation successful
+ALTER TABLE "sysinf" ADD FOREIGN KEY ("platform_id")
+	REFERENCES "platform" ("platform_id");
+operation successful
+ALTER TABLE "sysinf" ADD FOREIGN KEY ("cpu_id")
+	REFERENCES "cpu" ("cpu_id");
+operation successful
+ALTER TABLE "sysinf" ADD FOREIGN KEY ("memory_id")
+	REFERENCES "memory" ("memory_id");
+operation successful
+ALTER TABLE "sysinf" ADD FOREIGN KEY ("disk_id")
+	REFERENCES "disk" ("disk_id");
+operation successful
+CREATE TABLE "sys"."experiment" (
+	"exp_id"    int           NOT NULL,
+	"user_id"   int,
+	"config_id" int,
+	"table_id"  int,
+	"result_id" int,
+	CONSTRAINT "experiment_exp_id_pkey" PRIMARY KEY ("exp_id"),
+	CONSTRAINT "experiment_config_id_fkey" FOREIGN KEY ("config_id") REFERENCES "sys"."config" ("config_id"),
+	CONSTRAINT "experiment_result_id_fkey" FOREIGN KEY ("result_id") REFERENCES "sys"."result" ("result_id"),
+	CONSTRAINT "experiment_table_id_fkey" FOREIGN KEY ("table_id") REFERENCES "sys"."tapestry_table" ("table_id"),
+	CONSTRAINT "experiment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "sys"."tapestry_user" ("user_id")
+);
+CREATE TABLE "sys"."tapestry_user" (
+	"user_id"    int           NOT NULL,
+	"name"       varchar(25),
+	"email"      varchar(50),
+	"createdate" date,
+	"passwd"     varchar(50),
+	CONSTRAINT "tapestry_user_user_id_pkey" PRIMARY KEY ("user_id")
+);
+CREATE TABLE "sys"."config" (
+	"config_id" int           NOT NULL,
+	"name"      varchar(25),
+	"target_id" int,
+	"sysinf_id" int,
+	CONSTRAINT "config_config_id_pkey" PRIMARY KEY ("config_id"),
+	CONSTRAINT "config_sysinf_id_fkey" FOREIGN KEY ("sysinf_id") REFERENCES "sys"."sysinf" ("sysinf_id"),
+	CONSTRAINT "config_target_id_fkey" FOREIGN KEY ("target_id") REFERENCES "sys"."target" ("target_id")
+);
+CREATE TABLE "sys"."tapestry_table" (
+	"table_id" int           NOT NULL,
+	"nrrows"   int,
+	"nrcols"   int,
+	"seed"     int,
+	"fast"     int,
+	CONSTRAINT "tapestry_table_table_id_pkey" PRIMARY KEY ("table_id")
+);
+CREATE TABLE "sys"."result" (
+	"result_id"   int           NOT NULL,
+	"type"        varchar(10),
+	"description" varchar(256),
+	CONSTRAINT "result_result_id_pkey" PRIMARY KEY ("result_id")
+);
+CREATE TABLE "sys"."target" (
+	"target_id"  int           NOT NULL,
+	"name"       varchar(50),
+	"permission" varchar(10),
+	"comment"    varchar(256),
+	CONSTRAINT "target_target_id_pkey" PRIMARY KEY ("target_id")
+);
+CREATE TABLE "sys"."sysinf" (
+	"sysinf_id"   int           NOT NULL,
+	"platform_id" int,
+	"cpu_id"      int,
+	"memory_id"   int,
+	"disk_id"     int,
+	CONSTRAINT "sysinf_sysinf_id_pkey" PRIMARY KEY ("sysinf_id"),
+	CONSTRAINT "sysinf_cpu_id_fkey" FOREIGN KEY ("cpu_id") REFERENCES "sys"."cpu" ("cpu_id"),
+	CONSTRAINT "sysinf_disk_id_fkey" FOREIGN KEY ("disk_id") REFERENCES "sys"."disk" ("disk_id"),
+	CONSTRAINT "sysinf_memory_id_fkey" FOREIGN KEY ("memory_id") REFERENCES "sys"."memory" ("memory_id"),
+	CONSTRAINT "sysinf_platform_id_fkey" FOREIGN KEY ("platform_id") REFERENCES "sys"."platform" ("platform_id")
+);
+CREATE TABLE "sys"."platform" (
+	"platform_id" int           NOT NULL,
+	"name"        varchar(50),
+	"comment"     varchar(256),
+	CONSTRAINT "platform_platform_id_pkey" PRIMARY KEY ("platform_id")
+);
+CREATE TABLE "sys"."cpu" (
+	"cpu_id" int           NOT NULL,
+	"type"   varchar(50),
+	CONSTRAINT "cpu_cpu_id_pkey" PRIMARY KEY ("cpu_id")
+);
+CREATE TABLE "sys"."memory" (
+	"memory_id" int           NOT NULL,
+	"type"      varchar(50),
+	"size"      int,
+	CONSTRAINT "memory_memory_id_pkey" PRIMARY KEY ("memory_id")
+);
+CREATE TABLE "sys"."disk" (
+	"disk_id" int           NOT NULL,
+	"type"    varchar(50),
+	"size"    int,
+	CONSTRAINT "disk_disk_id_pkey" PRIMARY KEY ("disk_id")
+);
+CREATE TABLE "sys"."query_walk" (
+	"walk_id"   int           NOT NULL,
+	"begin_x"   int,
+	"begin_y"   int,
+	"nr_runs"   int,
+	"nr_steps"  int,
+	"step_size" int,
+	"end_x"     int,
+	"end_y"     int,
+	CONSTRAINT "query_walk_walk_id_pkey" PRIMARY KEY ("walk_id")
+);
+DROP TABLE "query_walk" CASCADE;
+operation successful
+DROP TABLE "disk" CASCADE;
+operation successful
+DROP TABLE "memory" CASCADE;
+operation successful
+DROP TABLE "cpu" CASCADE;
+operation successful
+DROP TABLE "platform" CASCADE;
+operation successful
+DROP TABLE "sysinf" CASCADE;
+operation successful
+DROP TABLE "target" CASCADE;
+operation successful
+DROP TABLE "result" CASCADE;
+operation successful
+DROP TABLE "tapestry_table" CASCADE;
+operation successful
+DROP TABLE "config" CASCADE;
+operation successful
+DROP TABLE "tapestry_user" CASCADE;
+operation successful
+DROP TABLE "experiment" CASCADE;
+operation successful
+
+# 15:55:30 >  
+# 15:55:30 >  Done.
+# 15:55:30 >  
+

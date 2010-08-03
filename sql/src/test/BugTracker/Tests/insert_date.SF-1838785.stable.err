@@ -10,8 +10,9 @@ stderr of test 'insert_date.SF-1838785` in directory 'src/test/BugTracker` itsel
 # 00:53:56 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=35202 
 # 00:53:56 >  
 
-MAPI  = monetdb@volund:38056
+MAPI  = monetdb@volund:35971
 QUERY = insert into test1838785(id,name,date33)
+        values(669207071,'hlwP94fhemRqP7bpmvM5fbhlr855Q42yO5TTaafgMbm5pKiZskvclg3MkvcN2cpTOfOf1iOf0Wa98ddioVdU2xjdj47zYOpLbNagahw0v37Kjq0n5aOWKd1hc4jsQegTabzSZTfQlrUrSghmUrc7hj5znvk5glg06ht4jYbRPKcm4OxUzsVkP3iMa8SdZPgjsNPnTSP8eP2syaSWNldk0tshj4OyqwOcn5sgeNe7Qzcdeg4bv80NWneMi701eaamna2gXVhjitMQ5Zew9c4iVnSWV9P0ZgRoM8PjYaZP1M5u6qylYZL6dYa7Uj9qcgiZLqkkz8Z93udrN3ajahVughPqPTUZidP43f5RtiysbWimPXZx84TVcURZ52tWpYsc8oqnf0roQTVTjWO8viMR6o0mreQqMPcKhwr0LajKeb2PTgXufLijL3XvaaN0PVzudNzdwU
 ERROR = !types smallint(16,0) and date(0,0) are not equal
 
 # 00:53:56 >  

@@ -677,7 +677,7 @@ SQLqueryEcho(MapiHdl hdl)
 
 		qry = mapi_get_query(hdl);
 		if (qry) {
-			if (!interactive_stdin) {
+			if (formatter != TABLEformatter) {
 				char *p = qry;
 				char *q = p;
 				while ((q = strchr(q, '\n')) != NULL) {
@@ -1346,6 +1346,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			/* should never see these */
 			continue;
 		case Q_UPDATE:
+			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
@@ -1375,17 +1376,20 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			}
 			continue;
 		case Q_SCHEMA:
+			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter)
 				mnstr_printf(toConsole,
 					      "operation successful\n");
 			continue;
 		case Q_TRANS:
+			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter)
 				mnstr_printf(toConsole,
 					      "auto commit mode: %s\n",
 					      mapi_get_autocommit(mid) ? "on" : "off");
 			continue;
 		case Q_PREPARE:
+			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter)
 				mnstr_printf(toConsole,
 					      "execute prepared statement "
@@ -2406,6 +2410,8 @@ main(int argc, char **argv)
 			user_set_as_flag = 1;
 			break;
 		case 'f':
+			if (output != NULL)
+				free(output);
 			output = strdup(optarg);	/* output format */
 			break;
 		case 'I':

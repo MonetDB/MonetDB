@@ -3796,7 +3796,6 @@ rel2bin_ddl(mvc *sql, sql_rel *rel, list *refs)
 		sql->type = Q_TABLE;
 	} else if (rel->flag <= DDL_LIST) {
 		s = rel2bin_list(sql, rel, refs);
-		sql->type = Q_TABLE;
 	} else if (rel->flag <= DDL_ALTER_SEQ) {
 		s = rel2bin_seq(sql, rel, refs);
 		sql->type = Q_SCHEMA;
@@ -3883,15 +3882,18 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 		break;
 	case op_insert: 
 		s = rel2bin_insert(sql, rel, refs);
-		sql->type = Q_UPDATE;
+		if (sql->type == Q_TABLE)
+			sql->type = Q_UPDATE;
 		break;
 	case op_update: 
 		s = rel2bin_update(sql, rel, refs);
-		sql->type = Q_UPDATE;
+		if (sql->type == Q_TABLE)
+			sql->type = Q_UPDATE;
 		break;
 	case op_delete: 
 		s = rel2bin_delete(sql, rel, refs);
-		sql->type = Q_UPDATE;
+		if (sql->type == Q_TABLE)
+			sql->type = Q_UPDATE;
 		break;
 	case op_ddl:
 		s = rel2bin_ddl(sql, rel, refs);
