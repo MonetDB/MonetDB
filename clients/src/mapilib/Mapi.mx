@@ -2421,8 +2421,11 @@ connect_to_server(Mapi mid)
 			closesocket(s);
 		}
 		freeaddrinfo(res);
-		if (rp == NULL)
-			return mapi_setError(mid, "could not connect", "mapi_reconnect", MERROR);
+		if (rp == NULL) {
+			snprintf(errbuf, sizeof(errbuf), "could not connect to %s: %s",
+					mid->hostname, strerror(errno));
+			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
+		}
 #else
 		struct sockaddr_in server;
 		struct hostent *hp;
