@@ -24,7 +24,7 @@ srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # where compiled modules are to be found
-for d in src/backends/monet5
+for d in src/backends/monet5 src/sql
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 	# enable auto-loading of modules before `make install`
