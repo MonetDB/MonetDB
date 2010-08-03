@@ -9,5 +9,4 @@ HAVE_PERL_SWIG?perl_dbi
 HAVE_PYTHON?python_dbapi
 HAVE_PHP?php_monetdb
 utf8test
-python_test_monetdb_sql_dbapi20
-python_test_monetdb_sql_capabilities
+python_test_monetdb_sql
