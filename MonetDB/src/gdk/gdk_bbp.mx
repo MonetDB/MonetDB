@@ -2366,7 +2366,6 @@ BBPfree(BAT *b, str calledFrom)
 		if (isVIEW(b)) {	/* physical view */
 			VIEWdestroy(b);
 		} else {
-			assert(b->batSharecnt == 0);
 			if (BBP_cache(bid))
 				BATfree(b);	/* free memory */
 		}

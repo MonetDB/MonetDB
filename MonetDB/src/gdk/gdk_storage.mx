@@ -437,7 +437,6 @@ DESCload(int i)
 	/* reconstruct mode from BBP status (BATmode doesn't flush descriptor, so loaded mode may be stale) */
 	b->batPersistence = (BBP_status(b->batCacheid) & BBPTMP) ? TRANSIENT : (BBP_status(b->batCacheid) & (BBPNEW | BBPPERSISTENT)) ? PERSISTENT : SESSION;
 	b->batCopiedtodisk = 1;
-	b->batSharecnt = 0;
 	DESCclean(b);
 	return bs;
 }
@@ -669,7 +668,6 @@ BATload_intern(bat i, int lock)
 	/* initialize descriptor */
 	b->batDirtydesc = FALSE;
 	b->H->heap.parentid = b->T->heap.parentid = 0;
-	b->batSharecnt = 0;
 
 	/* load succeeded; register it in BBP */
 	BBPcacheit(bs, lock);
