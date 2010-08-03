@@ -2381,6 +2381,8 @@ main(int argc, char **argv)
 			user_set_as_flag = 1;
 			break;
 		case 'f':
+			if (output != NULL)
+				free(output);
 			output = strdup(optarg);	/* output format */
 			break;
 		case 'I':
