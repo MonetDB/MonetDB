@@ -2422,8 +2422,8 @@ connect_to_server(Mapi mid)
 		}
 		freeaddrinfo(res);
 		if (rp == NULL) {
-			snprintf(errbuf, sizeof(errbuf), "could not connect to %s: %s",
-					mid->hostname, strerror(errno));
+			snprintf(errbuf, sizeof(errbuf), "could not connect to %s:%s: %s",
+					mid->hostname, port, strerror(errno));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #else
