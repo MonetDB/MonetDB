@@ -12,6 +12,8 @@ stderr of test 'function_parameter_without_type.SF-1898518` in directory 'tests/
 
 MAPI  = monetdb@rig:37641
 QUERY = declare function getData1($d) { $d//data[@num="1"] };
+        let $d := <b><c><data num="1">211098</data></c></b>
+        return <result>{getData1($d)}</result>
 ERROR = !type error: no variant of function pf:attribute accepts the given argument type(s): item*; string; string; string; string; string
         !type error: maybe you meant:
         !type error:   pf:attribute (node*, string, string, string, string, string) as node*
