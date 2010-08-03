@@ -80,10 +80,6 @@ ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "create schema aut
 MAPI  = monetdb@volund:35971
 QUERY = drop schema intro2;
 ERROR = !SQLException:sql.catalog:DROP SCHEMA: name intro2 does not exist
-MAPI  = monetdb@volund:35971
-QUERY = create schema intro3 
-          grant insert on t2010 to monetdb;
-ERROR = !sql_stmt symbol(7fe594007a88)->token = CREATE_SCHEMA
 
 # 18:47:50 >  
 # 18:47:50 >  Done.
