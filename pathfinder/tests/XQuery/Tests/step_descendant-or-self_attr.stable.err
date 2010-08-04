@@ -12,6 +12,7 @@ stderr of test 'step_descendant-or-self_attr` in directory 'tests/XQuery` itself
 
 MAPI  = monetdb@rig:39583
 QUERY = (: check for attributes in the result :)
+        doc("foo.xml")//(@foo2|text())/descendant-or-self::node()
 ERROR = !ERROR: path steps are only supported starting from non-attribute nodes
 
 # 11:16:16 >  

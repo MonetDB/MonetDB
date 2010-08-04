@@ -12,6 +12,15 @@ stderr of test 'step_attr_nametest` in directory 'tests/XQuery` itself:
 
 MAPI  = monetdb@rig:39583
 QUERY = (: Check for correct namtests :)
+        
+                                            (: Owners :)
+        
+        ("&#13; 1 ", attribute line { "1"}, doc("foo.xml")//(@foo2)/parent::b
+        ,"&#13; 2 ", attribute line { "2"}, doc("foo.xml")//(@foo2)/parent::c
+        ,"&#13; 3 ", attribute line { "3"}, doc("foo.xml")//(@foo2|text())/parent::a
+        ,"&#13; 4 ", attribute line { "4"}, doc("foo.xml")//(@foo2|text())/parent::b
+        ,"&#13; 5 ", attribute line { "5"}, doc("foo.xml")//(@foo2|text())/parent::c
+        ,"&#13; 6 ", attribute line { "6"}, doc("foo.xml")//(@foo
 ERROR = !ERROR: path steps are only supported starting from non-attribute nodes
 
 # 16:12:16 >  

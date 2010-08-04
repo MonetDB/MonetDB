@@ -12,6 +12,7 @@ stderr of test 'empty_file.SF-2017862` in directory 'tests/BugTracker` itself:
 
 MAPI  = monetdb@build-x86-sol10:31064
 QUERY = 
+        pf:add-doc("/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Jun2010/source/pathfinder/tests/BugTracker/Tests/empty_file.SF-2017862-empty.xml","empty.xml")
 ERROR = !ERROR: Document is empty
         !ERROR: Start tag expected, '<' not found
         !ERROR: No such file or directory!ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
@@ -20,6 +21,7 @@ ERROR = !ERROR: Document is empty
         !ERROR: CMDshred_url: operation failed.
 MAPI  = monetdb@build-x86-sol10:31064
 QUERY = 
+        pf:add-doc("/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/HG/Jun2010/source/pathfinder/tests/BugTracker/Tests/empty_file.SF-2017862-comment.xml","comment.xml")
 ERROR = !ERROR: Start tag expected, '<' not found
         !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
         !ERROR: [shred_url]: first error was:
