@@ -561,7 +561,7 @@ OCTOPUSbidding(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 }
 
-lng
+static lng
 putJob(int t, int tcnt, lng **bid, bte *busy, bte **rsch)
 {
 	int k,r;
