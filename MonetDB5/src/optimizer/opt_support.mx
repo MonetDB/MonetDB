@@ -1344,6 +1344,7 @@ opt_export wrd getVarRows(MalBlkPtr mb, int v);
 #endif /* _OPT_SUPPORT_H */
 @}
 
+@c
 wrd 
 getVarRows(MalBlkPtr mb, int v)
 {
