@@ -459,7 +459,7 @@ list_merge(list *l, list *data, fdup dup)
 		node *n = data->h;
 
 		while (n) {
-			if (dup)
+			if (dup && n->data)
 				list_append(l, dup(n->data));
 			else
 				list_append(l, n->data);

@@ -51,30 +51,36 @@ top N (
 % .plan # table_name
 % rel # name
 % clob # type
-% 50 # length
+% 52 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
+| | top N (
+| | | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
+| | ) [ 2 ]
 | ) [ oblo.a ]
 ) [ 2 ]
 #PLAN select * from oblo LIMIT 1 OFFSET 2;
 % .plan # table_name
 % rel # name
 % clob # type
-% 50 # length
+% 52 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
+| | top N (
+| | | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
+| | ) [ 3 ]
 | ) [ oblo.a ]
 ) [ 1, 2 ]
 #PLAN select * from oblo LIMIT 2 OFFSET 1;
 % .plan # table_name
 % rel # name
 % clob # type
-% 50 # length
+% 52 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
+| | top N (
+| | | table(sys.oblo) [ oblo.a, oblo.%TID% NOT NULL ]
+| | ) [ 3 ]
 | ) [ oblo.a ]
 ) [ 2, 1 ]
 #PLAN select * from oblo ORDER BY a;
@@ -195,10 +201,15 @@ function user.s3_1{autoCommit=true}():void;
     _22 := calc.+(_18,_20);
     _23 := calc.-(_22,1);
     _24 := algebra.slice(_17,_18,_23);
-    _25 := sql.resultSet(1,1,_24);
-    sql.rsColumn(_25,"sys.oblo","a","int",32,0,_24);
-    _30 := io.stdout();
-    sql.exportResult(_30,_25);
+    _25 := calc.wrd(0:wrd);
+    _26 := calc.wrd(2:wrd);
+    _27 := calc.+(_25,_26);
+    _28 := calc.-(_27,1);
+    _29 := algebra.slice(_24,_25,_28);
+    _30 := sql.resultSet(1,1,_29);
+    sql.rsColumn(_30,"sys.oblo","a","int",32,0,_29);
+    _35 := io.stdout();
+    sql.exportResult(_35,_30);
 end s3_1;
 #EXPLAIN select * from oblo LIMIT 1 OFFSET 2;
 % .explain # table_name
@@ -216,15 +227,20 @@ function user.s4_1{autoCommit=true}():void;
     _15:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","oblo",1);
     _16 := bat.reverse(_15);
     _17 := algebra.kdifference(_14,_16);
-    _18 := calc.wrd(2:wrd);
-    _20 := calc.wrd(1:wrd);
+    _18 := calc.wrd(0:wrd);
+    _20 := calc.wrd(3:wrd);
     _22 := calc.+(_18,_20);
     _23 := calc.-(_22,1);
     _24 := algebra.slice(_17,_18,_23);
-    _25 := sql.resultSet(1,1,_24);
-    sql.rsColumn(_25,"sys.oblo","a","int",32,0,_24);
-    _30 := io.stdout();
-    sql.exportResult(_30,_25);
+    _25 := calc.wrd(2:wrd);
+    _27 := calc.wrd(1:wrd);
+    _29 := calc.+(_25,_27);
+    _30 := calc.-(_29,1);
+    _31 := algebra.slice(_24,_25,_30);
+    _32 := sql.resultSet(1,1,_31);
+    sql.rsColumn(_32,"sys.oblo","a","int",32,0,_31);
+    _37 := io.stdout();
+    sql.exportResult(_37,_32);
 end s4_1;
 #EXPLAIN select * from oblo LIMIT 2 OFFSET 1;
 % .explain # table_name
@@ -242,15 +258,20 @@ function user.s5_1{autoCommit=true}():void;
     _15:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","oblo",1);
     _16 := bat.reverse(_15);
     _17 := algebra.kdifference(_14,_16);
-    _18 := calc.wrd(1:wrd);
-    _20 := calc.wrd(2:wrd);
+    _18 := calc.wrd(0:wrd);
+    _20 := calc.wrd(3:wrd);
     _22 := calc.+(_18,_20);
     _23 := calc.-(_22,1);
     _24 := algebra.slice(_17,_18,_23);
-    _25 := sql.resultSet(1,1,_24);
-    sql.rsColumn(_25,"sys.oblo","a","int",32,0,_24);
-    _30 := io.stdout();
-    sql.exportResult(_30,_25);
+    _25 := calc.wrd(1:wrd);
+    _27 := calc.wrd(2:wrd);
+    _29 := calc.+(_25,_27);
+    _30 := calc.-(_29,1);
+    _31 := algebra.slice(_24,_25,_30);
+    _32 := sql.resultSet(1,1,_31);
+    sql.rsColumn(_32,"sys.oblo","a","int",32,0,_31);
+    _37 := io.stdout();
+    sql.exportResult(_37,_32);
 end s5_1;
 #EXPLAIN select * from oblo ORDER BY a;
 % .explain # table_name
