@@ -589,7 +589,7 @@ TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc)
 	MalBlkPtr tm;
 	char fcn[BUFSIZ];
 	InstrPtr sig2, sig, r, q;
-	int conn,j,k,l;
+	int conn,j,k = 0,l;
 	int arg[1024];
 
 	/* generate stubb code for the remote execution */
@@ -684,7 +684,7 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 	MalBlkPtr tm;
 	char buf[BUFSIZ], fcn[BUFSIZ];
 	InstrPtr sig, sig2, r, p,q;
-	int j,k,l,x;
+	int j,k,l,x=0;
 
 	snprintf(fcn,BUFSIZ,"exe_%s_%d", getFunctionId(getInstrPtr(mb,0)), getArg(old[pc],0));
 	s= newFunction(tarantulaRef, putName(fcn,strlen(fcn)), FUNCTIONsymbol);
