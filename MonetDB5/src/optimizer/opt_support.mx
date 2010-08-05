@@ -1352,7 +1352,7 @@ getVarRows(MalBlkPtr mb, int v)
 	
 	if (!p)
 		return -1;
-	if (p->value.vtype == TYPE_wrd
+	if (p->value.vtype == TYPE_wrd)
 		return p->value.val.wval;
 	if (p->value.vtype == TYPE_lng
 #if SIZEOF_BUN <= SIZEOF_INT
