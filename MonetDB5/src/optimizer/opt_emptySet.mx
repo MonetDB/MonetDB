@@ -320,7 +320,6 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
 #endif
 	for (i = 0; i < mb->vtop; i++) {
-		VarPtr rowsp;
 		if (getVarRows(mb, i) == 0) {
 #ifdef DEBUG_OPT_EMPTYSET
 		stream_printf(cntxt->fdout, "START emptyset optimizer %d", i);

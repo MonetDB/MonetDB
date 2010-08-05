@@ -66,7 +66,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "mal_interpreter.h"
 
 /* #define _DEBUG_OPT_MITOSIS*/
-#define PARTITION_THRESHOLD (BUN) GDKnr_threads	/* should be increased in production version */
+#define PARTITION_THRESHOLD (wrd) GDKnr_threads	/* should be increased in production version */
 
 static int eligible(MalBlkPtr mb )
 {
@@ -91,9 +91,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str schema=0, table=0;
 	VarRecord low,hgh;
 	oid slice;
-	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
+	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
-	VarPtr v;
 	size_t typewidth= 3 *sizeof(lng); /* 2 arguments and a result */
 
 	(void)cntxt;
@@ -123,6 +122,7 @@ All pieces for a single subplan should ideally fit together.
 			estimate++;
 			r = 0;
 		}
+	}
 	if (target == 0)
 		return 0;
 @-
