@@ -605,7 +605,7 @@ void optimizerInit(){
 		keepProp = PropertyIndex("keep");
 		notnilProp = PropertyIndex("notnil");
 		rowsProp = PropertyIndex("rows");
-		bidProp = PropertyIndex("rows");
+		bidProp = PropertyIndex("bid");
 		runonceProp = PropertyIndex("runonce");
 		singletonProp = PropertyIndex("singleton");
 		unsafeProp = PropertyIndex("unsafe");
