@@ -248,6 +248,7 @@ scheduler components
 include run_isolate;
 include run_memo;
 include run_octopus;
+include run_tarantula;
 
 @-
 Cracker schemes
