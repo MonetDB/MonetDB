@@ -306,7 +306,9 @@ str putName(str nme, size_t len)
 	backup.nmetop++;
 #endif
 	mal_unset_lock(mal_contextLock,"putName");
-	return putName(nme, len);	/* just to be sure */
+	if ( len)
+		return putName(nme, len);	/* just to be sure */
+	return NULL;
 }
 @-
 The namespace may become a bottleneck when the chain of identifiers grows.

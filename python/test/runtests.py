@@ -98,7 +98,7 @@ class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
     connect_args = ()
     connect_kwargs = dict(database=TSTDB, port=MAPIPORT, hostname=TSTHOSTNAME,
             username=TSTUSERNAME, password=TSTPASSWORD, autocommit=False)
- 
+
     lower_func = 'lower' # For stored procedure test
 
     def executeDDL1(self,cursor):

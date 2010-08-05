@@ -1246,16 +1246,61 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
  *     )[ n ]                         )[ n ]
  *
  *  (TODO: in case of n==1 we can omit the original top-level TopN)
+ *
+ * also push topn under (non reordering) projections.
  */
+
+static list *
+sum_limit_offset( list *exps )
+{
+	list *nexps = new_exp_list();
+	wrd l = 0;
+	node *n;
+
+	/* if the expression list only consists of a limit expression, 
+	 * we copy it */
+	if (list_length(exps) == 1 && exps->h->data)
+		return append(nexps, exp_dup(exps->h->data));
+	for (n = exps->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (e) {
+			atom *a = e->l;
+
+			assert(e->type == e_atom);
+			l += a->data.val.wval;
+		}
+	}
+	return append(nexps, exp_atom_wrd(l));
+}
+
+static int 
+topn_save_exps( list *exps )
+{
+	node *n;
+
+	/* Limit only expression lists are always save */
+	if (list_length(exps) == 1)
+		return 1;
+	for (n = exps->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (!e || e->type != e_atom) 
+			return 0;
+	}
+	return 1;
+}
+
 static sql_rel *
 rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel) 
 {
-	sql_rel *r = rel->l;
+	sql_rel *rl, *r = rel->l;
 
 	(void)sql;
-	if (rel->op == op_topn) {
+	if (rel->op == op_topn && topn_save_exps(rel->exps)) {
 		/* pass through projections */
-		while (r && is_project(r->op) && !(rel_is_ref(r))) {
+		while (r && is_project(r->op) && !(rel_is_ref(r)) &&
+		       !r->r && (rl = r->l) != NULL && is_project(rl->op)) {
 			/* ensure there is no order by */
 			if (!r->r) {
 				r = r->l;
@@ -1263,11 +1308,17 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 				r = NULL;
 			}
 		}
+		if (r && is_project(r->op) && !(rel_is_ref(r)) && !r->r && r->l) {
+			r->l = rel_topn( r->l, sum_limit_offset(rel->exps));
+			r = r->l; /* project */
+			r = r->l; /* topn */
+		}
+
 		/* push topn under crossproduct */
 		if (r && !r->exps && r->op == op_join && !(rel_is_ref(r)) &&
 		    ((sql_rel *)r->l)->op != op_topn && ((sql_rel *)r->r)->op != op_topn) {
-			r->l = rel_topn( r->l, list_dup(rel->exps, (fdup)&exp_dup) );
-			r->r = rel_topn( r->r, list_dup(rel->exps, (fdup)&exp_dup) );
+			r->l = rel_topn( r->l, sum_limit_offset(rel->exps));
+			r->r = rel_topn( r->r, sum_limit_offset(rel->exps));
 			(*changes)++;
 			return rel;
 		}

@@ -333,6 +333,11 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			int k = getArg(p,0);
 			sql_bpm *bpm = NULL;
 			sql_schema *s = mvc_bind_schema(m, sname);
+			mvc *m = NULL;
+			str msg = getContext(cntxt,mb, &m, NULL);
+			BAT *b;
+
+			assert(msg == MAL_SUCCEED);
 
 			if (!s || strcmp(s->base.name, dt_schema) == 0) {
 				pushInstruction(mb,p);
@@ -356,6 +361,12 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				}
 				cnt = store_funcs.count_idx(i);
 				assert(cnt <= (size_t) GDK_oid_max);
+				b = store_funcs.bind_idx(m->session->tr,i,0);
+				if ( b ) {
+					varSetProp(mb, k, bidProp, op_eq, VALset(&vr, TYPE_int, &b->batCacheid));
+					cnt = BATcount(b);
+					BBPreleaseref(b->batCacheid);
+				}
 				rows = (oid) cnt;
 			} else if (s && f == bindRef && cname) {
 				size_t cnt;
@@ -371,6 +382,12 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					}
 					cnt = store_funcs.count_col(c);
 					assert(cnt <= (size_t) GDK_oid_max);
+					b = store_funcs.bind_col(m->session->tr,c,0);
+					if ( b ){
+						varSetProp(mb, k, bidProp, op_eq, VALset(&vr, TYPE_int, &b->batCacheid));
+						cnt = BATcount(b);
+						BBPreleaseref(b->batCacheid);
+					}
 					rows = (oid) cnt;
 				}
 			}	

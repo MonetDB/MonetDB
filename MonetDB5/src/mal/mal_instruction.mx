@@ -417,7 +417,7 @@ typedef struct MALBLK {
 	ptr replica;		/* for the replicator tests */
 	sht recycle;		/* execution subject to recycler control */
 	lng recid;			/* ID given by recycler optimizer */
-	lng octid;
+	lng legid;
 	sht trap;			/* call debugger when called */
 } *MalBlkPtr, MalBlkRecord;
 

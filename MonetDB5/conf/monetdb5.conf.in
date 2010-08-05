@@ -231,9 +231,9 @@ sidcrack_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrac
 # The datacell pipeline
 datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
-# The Octopus pipeline for distributed processing (Merovingian enabled
-# platforms only)
+# The Octopus and tarantula pipelines for distributed processing (Merovingian enabled platforms only)
 octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+tarantula_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,tarantula,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 
 # The MapReduce pipeline for a different flavour of distributed
 # processing on Merovingian enabled platforms
@@ -257,4 +257,4 @@ compression_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,merg
 # The opt_debug bitvector controls their output. It can be set to a pipeline or a comma separated
 # list of optimizers you would like to trace. It is a server wide property and can not be set 
 # dynamically, as it is intended for internal use.
-opt_debug=
+opt_debug=tarantula

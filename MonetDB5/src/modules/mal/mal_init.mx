@@ -226,6 +226,7 @@ include opt_singleton;
 include opt_strengthReduction;
 include opt_statistics;
 include opt_trace;
+include opt_tarantula;
 include opt_mapreduce;
 
 include chopper;
@@ -247,6 +248,7 @@ scheduler components
 include run_isolate;
 include run_memo;
 include run_octopus;
+include run_tarantula;
 
 @-
 Cracker schemes

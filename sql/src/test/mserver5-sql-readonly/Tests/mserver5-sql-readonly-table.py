@@ -73,11 +73,11 @@ drop table t2;
 script6 = '''\
 create table t3 (a) as select * from t1 with data;
 '''
- 
+
 script7 = '''\
 create table t4 (a) as select * from t1 with no data;
 '''
- 
+
 script8 = '''\
 drop table t1;
 '''
