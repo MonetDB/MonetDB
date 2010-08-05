@@ -1743,12 +1743,12 @@ would be feasible as well, provided the start of the slice is a constant 0.
 Disabled as a slice is used also for offset where we need the oposite
 of the slice part. y= x.slice(). x.diff(y);
 @c
-		if (0 && match > 0 && getModuleId(p) == algebraRef &&
+		if (match > 0 && getModuleId(p) == algebraRef &&
 				getFunctionId(p) == sliceRef &&
 				(m = isMATalias(getArg(p, 1), mat, mtop)) >= 0)
 		{
 			/* inject new mat.pack() operation */
-			MATpackAll2(mb, NULL, mat, m, &mtop);
+			MATpackAll(mb, NULL, mat, m, &mtop);
 			q = getInstrPtr(mb, mb->stop - 1);
 			/* rename mat.pack() to mat.slice() */
 			setFunctionId(q, sliceRef);

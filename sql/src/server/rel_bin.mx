@@ -1948,17 +1948,22 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *limit = NULL, *p, *j;
-		sql_exp *lmt = le;
+		//sql_exp *lmt = le;
 
 		if (le)
 			l = exp_bin(sql, le, NULL, NULL, NULL, NULL);
 		if (oe)
 			o = exp_bin(sql, oe, NULL, NULL, NULL, NULL);
 
+/*
 		if (!le) {
 			l = o;
 			o = stmt_atom_wrd(0);
 		}
+*/
+
+		if (!le) 
+			l = stmt_atom_wrd_nil();
 		if (!o)
 			o = stmt_atom_wrd(0);
 
@@ -1971,19 +1976,21 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 			sc = column(sc);
 			limit = stmt_limit(stmt_alias(sc, tname, cname), o, l, 0);
-			if (lmt) {
+			//if (lmt) {
 				n = n->next;
 				list_append(newl, limit);
-			}
+			//}
 		}
 
 		/* reduce pivot */
 		j = find_projection_join(limit);
 		if (j && 0) {
 			p = find_pivot(j);
+/*
 			if (!lmt)
 				p = stmt_diff(stmt_dup(p), stmt_dup(limit));
 			else
+*/
 				p = stmt_semijoin(stmt_dup(p), stmt_dup(limit));
 			for ( ; n; n = n->next) {
 				stmt *s = column(stmt_dup(n->data));
@@ -1999,20 +2006,24 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			for ( ; n; n = n->next) {
 				stmt *s;
 		
+/*
 				if (!lmt)
 					s = stmt_diff(column(stmt_dup(n->data)), stmt_dup(limit));
 				else
+*/
 					s = stmt_semijoin(column(stmt_dup(n->data)), stmt_dup(limit));
 				list_append(newl, s);
 			}
 		}
 		if (order) {
+/*
 			if (!lmt) {
 		 		order = stmt_diff(order, limit);
 			} else {
+*/
 				stmt_destroy(order);
 		 		order = limit;
-			}
+//			}
 		}
 	}
 	stmt_destroy(sub);
