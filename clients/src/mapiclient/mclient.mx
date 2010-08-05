@@ -1055,8 +1055,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 					   available space (+1 so we
 					   always fully fill the
 					   terminal) */
-					len[i] =  (pagewidth - ((fields * 3) - 3)) / fields;
-				} 
+					len[i] = 1 + (pagewidth - 2 - ((fields * 3) - 1)) / fields;
+				}
 				if (len[i] < MINCOLSIZE)
 					len[i] = MINCOLSIZE;
 				s = mapi_get_name(hdl, i);
@@ -1256,7 +1256,7 @@ setWidth(void)
 		struct winsize ws;
 
 		if (ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
-			pagewidth = ws.ws_col - 10;  /* reserve some space for sliders et al */
+			pagewidth = ws.ws_col;
 		else
 #endif
 			pagewidth = DEFWIDTH;
