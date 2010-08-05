@@ -71,9 +71,16 @@ stderr of test 'second_function_existing_signature.Bug-2611` in directory 'src/t
 # 09:47:40 >  mclient -lsql -ftest -i -e --host=yngling --port=33720 
 # 09:47:40 >  
 
-MAPI  = monetdb@yngling:33720
-QUERY = create function next_a();
-ERROR = !CREATE FUNCTION: something like "function already exists"
+MAPI  = monetdb@volund:35971
+QUERY = create function next_a()
+        returns integer
+        begin
+            declare col_a integer;
+            set col_a = 1;
+        
+            return col_a;
+        end;
+ERROR = !CREATE FUNCTION: name 'next_a' already in use
 
 # 09:47:40 >  
 # 09:47:40 >  Done.

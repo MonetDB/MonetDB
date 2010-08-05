@@ -12,8 +12,9 @@ stderr of test 'creation_of_exeception_for_select.SF-1841749` in directory 'src/
 # 15:34:03 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=33472 
 # 15:34:03 >  
 
-MAPI  = monetdb@amelia:33472
+MAPI  = monetdb@volund:35971
 QUERY = SELECT '' AS one, i.* FROM INT2_TBL i WHERE (i.f1 % smallint '2') =
+        smallint '1';
 ERROR = !syntax error, unexpected SMALLINT in: "select '' as one, i.* from int2_tbl i where (i.f1 % smallint"
 
 # 15:34:04 >  

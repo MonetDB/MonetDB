@@ -279,11 +279,11 @@ blob_read(blob *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!stream_readInt(s, &len))
+	if (!mnstr_readInt(s, &len))
 		return NULL;
 	if ((a = GDKmalloc(len)) == NULL)
 		return NULL;
-	if (stream_read(s, (char *) a, len, 1) != 1) {
+	if (mnstr_read(s, (char *) a, len, 1) != 1) {
 		GDKfree(a);
 		return NULL;
 	}
@@ -297,8 +297,8 @@ blob_write(blob *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (stream_writeInt(s, (int) len)) /* 64bit: check for overflow */
-		stream_write(s, (char *) a, len, 1);
+	if (mnstr_writeInt(s, (int) len)) /* 64bit: check for overflow */
+		mnstr_write(s, (char *) a, len, 1);
 }
 
 #if SIZEOF_SIZE_T == SIZEOF_INT

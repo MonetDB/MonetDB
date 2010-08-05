@@ -660,7 +660,7 @@ int yydebug=1;
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER BY
 %token <sval> LIKE ILIKE BETWEEN
-%token <operation> sqlIN EXISTS ESCAPE HAVING GROUP sqlNULL
+%token <operation> sqlIN EXISTS ESCAPE HAVING sqlGROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
 %token <operation> EXTRACT
@@ -2926,11 +2926,18 @@ select_no_parens_orderby:
 		     $1->token == SQL_UNION  ||
 		     $1->token == SQL_EXCEPT ||
 		     $1->token == SQL_INTERSECT)) {
-	 		SelectNode *s = (SelectNode*)$1;
+			if ($1->token == SQL_SELECT) {
+	 			SelectNode *s = (SelectNode*)$1;
 	
-	  		s -> orderby = $2;
-	  		s -> limit = $3;
-	  		s -> offset = $4;
+	  			s -> orderby = $2;
+	  			s -> limit = $3;
+	  			s -> offset = $4;
+			} else { /* Add extra select * from .. in case of UNION, EXCEPT, INTERSECT */
+				$$ = newSelectNode( 
+					SA, 0, 
+					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4);
+			}
 	  	} else {
 			yyerror("ORDER BY: missing select operator");
 			YYABORT;
@@ -3106,7 +3113,7 @@ table_name:
 
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
- |  GROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
  ;
 
 column_ref_commalist:

@@ -86,7 +86,7 @@ serialize_geometry_init(XqueryCtx* ctx, char* args, char *restag, char *resprefi
     GLOBAL_GEOENV->bat = BATnew(TYPE_void, TYPE_str, 32);
     BATseqbase(GLOBAL_GEOENV->bat, 0);
 #ifdef DEBUG
-    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_init() called.\n");
+    mnstr_printf(GDKout,"pft_opt_deb: serialize_geometry_init() called.\n");
 #endif
     return 1;
 }
@@ -110,7 +110,7 @@ serialize_geometry_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre
     	geoenv->fill_wkb++;
     }
 #ifdef DEBUG
-    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_handle_startElement(%s) SUCCES.\n",name);
+    mnstr_printf(GDKout,"pft_opt_deb: serialize_geometry_handle_startElement(%s) SUCCES.\n",name);
 #endif
     return 1;
 }
@@ -157,11 +157,11 @@ static bool scan_for_points(struct GEOENV* geoenv, unsigned char* p) {
         if ( *p ) {
             unsigned char *lp = p;
     
-            // stream_printf(GDKout,"#! SP-1: %s\n",p);
+            // mnstr_printf(GDKout,"#! SP-1: %s\n",p);
 	    start_point(geoenv);
             while (*p && *p!=',') p++;
 	    if (*p==',') {
-                // stream_printf(GDKout,"#! SP-2: %s\n",p);
+                // mnstr_printf(GDKout,"#! SP-2: %s\n",p);
 	        // emit
 	        add_point2buff(geoenv,lp,p);
                 *geoenv->p++ = ' ';
@@ -173,7 +173,7 @@ static bool scan_for_points(struct GEOENV* geoenv, unsigned char* p) {
 	        add_point2buff(geoenv,lp,p);
 	    }
         }
-        // stream_printf(GDKout,"# %s\n",&geoenv->geobuff[0]);
+        // mnstr_printf(GDKout,"# %s\n",&geoenv->geobuff[0]);
     }
     return 1;
 }
@@ -205,7 +205,7 @@ serialize_geometry_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str val
     (void)loc;
     (void)value;
 #ifdef DEBUG
-    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_handle_attribute(%s,%s) SUCCES.\n",loc,value);
+    mnstr_printf(GDKout,"pft_opt_deb: serialize_geometry_handle_attribute(%s,%s) SUCCES.\n",loc,value);
 #endif
     return 1;
 }
@@ -226,7 +226,7 @@ bool serialize_geometry_seqItemStart (XqueryCtx* ctx, int kind) {
     geoenv->stop_filling = 0;
     geoenv->p          = &geoenv->geobuff[0];
 #ifdef DEBUG
-    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_seqItemStart() SUCCES.\n");
+    mnstr_printf(GDKout,"pft_opt_deb: serialize_geometry_seqItemStart() SUCCES.\n");
 #endif
     return 1;
 }
@@ -246,16 +246,16 @@ bool serialize_geometry_seqItemEnd (XqueryCtx* ctx, int kind) {
 	    fclose(f);
 	}
         if ( !BUNappend(geoenv->bat, (str)&geoenv->geobuff[0], FALSE) )
-            stream_printf(GDKout,"serialize_geometry: WRITE FAILS\n");
+            mnstr_printf(GDKout,"serialize_geometry: WRITE FAILS\n");
     } else {
     	str xxx = "POINT( 0 0 )";
         if ( !BUNappend(geoenv->bat, xxx, FALSE) )
-            stream_printf(GDKout,"serialize_geometry: WRITE FAILS\n");
-        // stream_printf(GDKout,"serialize_geometry: missed geobuff!!\n");
+            mnstr_printf(GDKout,"serialize_geometry: WRITE FAILS\n");
+        // mnstr_printf(GDKout,"serialize_geometry: missed geobuff!!\n");
     }
 
 #ifdef DEBUG
-    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_seqItemEnd() SUCCES.\n");
+    mnstr_printf(GDKout,"pft_opt_deb: serialize_geometry_seqItemEnd() SUCCES.\n");
 #endif
     return 1;
 }
@@ -321,7 +321,7 @@ int serialize_geometry_DRIVER(
 	ptos.cnt = 0;
 	ptos.bat = BATnew(TYPE_str, TYPE_str, 32);
 #ifdef FULLDEBUG
-	stream_printf(GDKout,"******** NITERS = %d\n",niters);
+	mnstr_printf(GDKout,"******** NITERS = %d\n",niters);
 	BATprintf(GDKout,loop);
 	BATprintf(GDKout,iter);
 	BATprintf(GDKout,item);
@@ -342,7 +342,7 @@ int serialize_geometry_DRIVER(
         	dblVAL,
         	strVAL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 #ifdef FULLDEBUG
-	stream_printf(GDKout,"CALLED xquery_print_result_DRIVER: res=%d\n",returnVal);
+	mnstr_printf(GDKout,"CALLED xquery_print_result_DRIVER: res=%d\n",returnVal);
 	BATprintf(GDKout,ptos.bat);
 #endif
 	*res = ptos.bat;

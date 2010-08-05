@@ -88,7 +88,7 @@ Time for inlining functions that are used in multiplex operations.
 They are produced by SQL compiler.
 @c
 			OPTDEBUGinline {
-				stream_printf(cntxt->fdout,"#check inline statement\n");
+				mnstr_printf(cntxt->fdout,"#check inline statement\n");
 				printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
 				printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
 			}
@@ -98,7 +98,7 @@ They are produced by SQL compiler.
 				OPTinlineMultiplex(cntxt,mb,q)){
 
 				OPTDEBUGinline {
-					stream_printf(cntxt->fdout,"#multiplex inline function\n");
+					mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
 					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
 				}
 
@@ -114,7 +114,7 @@ Check if the function definition is tagged as being inlined.
 				i--;
 				actions++;
 				OPTDEBUGinline {
-					stream_printf(cntxt->fdout,"#inline function at %d\n",i);
+					mnstr_printf(cntxt->fdout,"#inline function at %d\n",i);
 					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 				}
 			} else 
@@ -126,7 +126,7 @@ Check if the local call is tagged as being inlined.
 				i--;
 				actions++;
 				OPTDEBUGinline {
-					stream_printf(cntxt->fdout,"#inlined called at %d\n",i);
+					mnstr_printf(cntxt->fdout,"#inlined called at %d\n",i);
 					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 				}
 			} 
@@ -134,10 +134,10 @@ Check if the local call is tagged as being inlined.
 	}
 	(void)stk;
 	OPTDEBUGinline
-		stream_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (%d K)\n",mb->stop,mb->vtop, 
+		mnstr_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (%d K)\n",mb->stop,mb->vtop, 
 		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
 	DEBUGoptimizers
-		stream_printf(cntxt->fdout,"#opt_inline: actions %d MAL %d->%d\n",actions,limit,mb->stop);
+		mnstr_printf(cntxt->fdout,"#opt_inline: actions %d MAL %d->%d\n",actions,limit,mb->stop);
 	return actions;
 }
 

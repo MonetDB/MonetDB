@@ -320,7 +320,7 @@ URLBOXdepositFile(int *r, str *fnme){
 	fs= open_rastream(buf);
 	if( fs == NULL )
 		throw(MAL, "urlbox.deposit", RUNTIME_FILE_NOT_FOUND "%s",buf);
-	if( stream_errnr(fs) ) {
+	if( mnstr_errnr(fs) ) {
 		close_stream(fs);
 		throw(MAL, "urlbox.deposit", RUNTIME_FILE_NOT_FOUND "%s",buf);
 	}
@@ -328,7 +328,7 @@ URLBOXdepositFile(int *r, str *fnme){
 	if( bs == NULL) 
 		throw(MAL, "urlbox.deposit", MAL_MALLOC_FAIL);
 	while( bstream_read(bs,bs->size-(bs->len-bs->pos)) != 0 &&
-		!stream_errnr(bs->s) ){
+		!mnstr_errnr(bs->s) ){
 		s= bs->buf;
 		for( t=s; *t ; ){
 			while(t < bs->buf+bs->len && *t && *t != '\n') t++;
@@ -351,8 +351,8 @@ URLBOXdepositFile(int *r, str *fnme){
 	}
 
 	bstream_destroy(bs);
-	stream_close(fs);
-	stream_destroy(fs);
+	mnstr_close(fs);
+	mnstr_destroy(fs);
 	return MAL_SUCCEED;
 }
 str

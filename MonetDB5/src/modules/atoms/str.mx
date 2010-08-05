@@ -295,6 +295,7 @@ str_export str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g);
 
 str_export int strConcat(str *res, str s, ptr val, int t);
 str_export int strLength(int *res, str s);
+str_export int strSQLLength(int *res, str s);
 str_export int strBytes(int *res, str s);
 str_export int strTail(str *res, str s, int *offset);
 str_export int strSubString(str *res, str s, int *offset, int *length);
@@ -2183,6 +2184,16 @@ chrSplit(BAT **Res, str s)
 	*Res = res;
 	return GDK_SUCCEED;
 }
+int
+strSQLLength(int *res, str s)
+{
+	str r = NULL;
+	strRtrim(&r, s);
+	strLength(res, r);
+	GDKfree(r);
+	return GDK_SUCCEED;
+}
+
 @
 @- Wrappers
 Here you find the wrappers around the version 4 library code

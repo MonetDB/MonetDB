@@ -366,10 +366,10 @@ TARdiscover(Client cntxt)
 	}
 
 #ifdef DEBUG_RUN_TAR
-	stream_printf(cntxt->fdout,"Active peers discovered %d\n",nrworkers);
+	mnstr_printf(cntxt->fdout,"Active peers discovered %d\n",nrworkers);
 	for (i=0; i<TARnrpeers; i++)
 	if ( peers[i].uri )
-		stream_printf(cntxt->fdout,"%s\n", peers[i].uri);
+		mnstr_printf(cntxt->fdout,"%s\n", peers[i].uri);
 #else
 		(void) cntxt;
 #endif
@@ -400,7 +400,7 @@ TARmakeleg(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int idx)
 	retvar = getArg(old[pc],idx);
 
 	OPTDEBUGtarantula {
-		stream_printf(cntxt->fdout,"#create leg for %d %d %d\n",pc,idx -old[pc]->retc, getArg(old[pc],idx));
+		mnstr_printf(cntxt->fdout,"#create leg for %d %d %d\n",pc,idx -old[pc]->retc, getArg(old[pc],idx));
 	}
 
 @-

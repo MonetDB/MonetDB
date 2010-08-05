@@ -560,10 +560,10 @@ static int isBATVector(Tablet * t);
 static void TABshowPage(Tablet * t);
 static int setTabwidth(Column * c);
 
-#define LINE(s, X)     { int n=(int)(X)-1; stream_write(s, "#", 1, 1); while(--n>0) \
-	                            stream_write(s, "-", 1, 1); \
-	                            stream_printf(s, "#\n"); }
-#define TABS(s, X)     { int n=(int)(X); while(n-->0) stream_printf(s, "\t");  }
+#define LINE(s, X)     { int n=(int)(X)-1; mnstr_write(s, "#", 1, 1); while(--n>0) \
+	                            mnstr_write(s, "-", 1, 1); \
+	                            mnstr_printf(s, "#\n"); }
+#define TABS(s, X)     { int n=(int)(X); while(n-->0) mnstr_printf(s, "\t");  }
 @+
 The table formatting information is stored in a system wide table.
 Access is granted to a single client thread only.
@@ -654,7 +654,7 @@ TABdisplayRow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t->tbotbrk == 0) {
 		LINE(t->fd, t->rowwidth);
 	} else
-		stream_write(t->fd, t->tbotbrk, 1, strlen(t->tbotbrk));
+		mnstr_write(t->fd, t->tbotbrk, 1, strlen(t->tbotbrk));
 	return MAL_SUCCEED;
 }
 
@@ -669,7 +669,7 @@ TABpage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t->ttopbrk == 0) {
 		LINE(t->fd, t->rowwidth);
 	} else
-		stream_write(t->fd, t->ttopbrk, 1, strlen(t->ttopbrk));
+		mnstr_write(t->fd, t->ttopbrk, 1, strlen(t->ttopbrk));
 	if (!isBATVector(t))
 		throw(MAL, "tablet.print", ILLEGAL_ARGUMENT " Only aligned BATs expected");
 	else {
@@ -1156,7 +1156,7 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		memcpy(fmt[p].nildata, ATOMnilptr(fmt[p].adt), fmt[p].nillen);
 		fmt[p].nullstr = GDKstrdup("nil");
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKout, "#%s\n", fmt[p].name);
+		mnstr_printf(GDKout, "#%s\n", fmt[p].name);
 #endif
 		fmt[p].batfile = NULL;
 		fmt[p].rawfile = NULL;
@@ -1313,7 +1313,7 @@ TABLETcreate_bats(Tablet * as, BUN est)
 			snprintf(nme+len,BUFSIZ-len,"%cbat%c"BUNFMT".raw",DIR_SEP,DIR_SEP,i);
 			fmt[i].rawfile= GDKstrdup(nme);
 			fmt[i].raw= open_wastream(fmt[i].rawfile);
-			stream_printf(GDKout,"#mv %s %s\n",fmt[i].rawfile,fmt[i].batfile);
+			mnstr_printf(GDKout,"#mv %s %s\n",fmt[i].rawfile,fmt[i].batfile);
 		}
 	}
 	return 0;
@@ -1453,7 +1453,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 	}
 	/* key may be NULL but that's not a problem, as long as we have void */
 	if (fmt->raw){
-		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
+		mnstr_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
 	} else {
 		bunfastins(fmt->c[0], key, adt);
 	}
@@ -1566,10 +1566,10 @@ insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 )
 static int
 TABLET_error(stream *s)
 {
-	if (!stream_errnr(GDKerr)) {
-		char *err = stream_error(s);
+	if (!mnstr_errnr(GDKerr)) {
+		char *err = mnstr_error(s);
 
-		stream_printf(GDKout, "#Stream error %s\n", err);
+		mnstr_printf(GDKout, "#Stream error %s\n", err);
 		/* use free as stream allocates out side GDK */
 		if (err)
 			free(err);
@@ -1593,15 +1593,15 @@ dump_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
 				l = (int) strlen(f->nullstr);
-				if (stream_write(fd, f->nullstr, 1, l) != l)
+				if (mnstr_write(fd, f->nullstr, 1, l) != l)
 					return TABLET_error(fd);
 			} else {
 				l = f->tostr(f->extra, buf, len, f->adt, p);
-				if (stream_write(fd, *buf, 1, l) != l)
+				if (mnstr_write(fd, *buf, 1, l) != l)
 					return TABLET_error(fd);
 			}
 		}
-		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
+		if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return TABLET_error(fd);
 	}
 	return 0;
@@ -1632,15 +1632,15 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, ptr id
 
 				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
 					l = (int) strlen(f->nullstr);
-					if (stream_write(fd, f->nullstr, 1, l) != l)
+					if (mnstr_write(fd, f->nullstr, 1, l) != l)
 						return TABLET_error(fd);
 				} else {
 					l = f->tostr(f->extra, buf, len, f->adt, p);
-					if (stream_write(fd, *buf, 1, l) != l)
+					if (mnstr_write(fd, *buf, 1, l) != l)
 						return TABLET_error(fd);
 				}
 			}
-			if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
+			if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
 				return TABLET_error(fd);
 		}
 	}
@@ -1660,16 +1660,16 @@ output_line_dense(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs)
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
 				int l = (int) strlen(f->nullstr);
-				if (stream_write(fd, f->nullstr, 1, l) != l)
+				if (mnstr_write(fd, f->nullstr, 1, l) != l)
 					return TABLET_error(fd);
 			} else {
 				int l = f->tostr(f->extra, buf, len, f->adt, p);
-				if (stream_write(fd, *buf, 1, l) != l)
+				if (mnstr_write(fd, *buf, 1, l) != l)
 					return TABLET_error(fd);
 			}
 			f->p++;
 		}
-		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
+		if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return TABLET_error(fd);
 	}
 	return 0;
@@ -1688,16 +1688,16 @@ output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs,
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
 				size_t l = strlen(f->nullstr);
-				if (stream_write(fd, f->nullstr, 1, l) != (ssize_t) l)
+				if (mnstr_write(fd, f->nullstr, 1, l) != (ssize_t) l)
 					return TABLET_error(fd);
 			} else {
 				int l = f->tostr(f->extra, buf, len, f->adt, p);
 
-				if (stream_write(fd, *buf, 1, l) != l)
+				if (mnstr_write(fd, *buf, 1, l) != l)
 					return TABLET_error(fd);
 			}
 		}
-		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
+		if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return TABLET_error(fd);
 	}
 	return 0;
@@ -1713,8 +1713,8 @@ tablet_read_more(bstream *in, stream *out, size_t n)
 			if (bstream_next(in) < 0)
 				return EOF;
 			if (in->eof) {
-				if (out && stream_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
-					stream_flush(out);
+				if (out && mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
+					mnstr_flush(out);
 				in->eof = 0;
 				/* we need more query text */
 				if (bstream_next(in) <= 0)
@@ -1777,7 +1777,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 	int started = !start;
 
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"load_bulk %d\n",start);
+	mnstr_printf(GDKout,"load_bulk %d\n",start);
 #endif
 	while ((b->pos < b->len || !b->eof) && res == 0 && limit >= 0 && (nr == BUN_NONE || i < nr)) {
 		char *s, *e, *end;
@@ -1860,7 +1860,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 			started = 1;
 #ifdef _DEBUG_TABLET_
 			if ((i % 100000) == 0)
-				stream_printf(GDKout, "#inserted " BUNFMT "\n", i);
+				mnstr_printf(GDKout, "#inserted " BUNFMT "\n", i);
 #endif
 			if ( i && (i % 100000) == 0)
 				sync_bats(as);
@@ -1869,8 +1869,8 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 		}
 	}
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"#limit " LLFMT ", nr " BUNFMT " res %d offset " BUNFMT "\n",limit,i-offset,res,offset);
-	stream_printf(GDKout,"stream eof %d len " SZFMT " pos " SZFMT "\n", b->eof, b->len, b->pos);
+	mnstr_printf(GDKout,"#limit " LLFMT ", nr " BUNFMT " res %d offset " BUNFMT "\n",limit,i-offset,res,offset);
+	mnstr_printf(GDKout,"stream eof %d len " SZFMT " pos " SZFMT "\n", b->eof, b->len, b->pos);
 #endif
 	as->nr = i-offset;
 	sync_bats(as);
@@ -1892,7 +1892,7 @@ BUN
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"#starting file based load\n");
+	mnstr_printf(GDKout,"#starting file based load\n");
 #endif
 
 	return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, LLONG_MAX);
@@ -1914,7 +1914,7 @@ dump_file(Tablet * as, stream *fd)
 		}
 #ifdef _DEBUG_TABLET_
 		if ((i % 1000000) == 0)
-			stream_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
+			mnstr_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
 #endif
 	}
 	GDKfree(buf);
@@ -1943,7 +1943,7 @@ output_file_default(Tablet * as, BAT *order, stream *fd)
 		i++;
 #ifdef _DEBUG_TABLET_
 		if ((i % 1000000) == 0)
-			stream_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
+			mnstr_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
 #endif
 	}
 	GDKfree(buf);
@@ -1966,7 +1966,7 @@ output_file_dense(Tablet * as, stream *fd)
 		}
 #ifdef _DEBUG_TABLET_
 		if ((i % 1000000) == 0)
-			stream_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
+			mnstr_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
 #endif
 	}
 	GDKfree(buf);
@@ -1994,7 +1994,7 @@ output_file_ordered(Tablet * as, BAT *order, stream *fd, oid base)
 		}
 #ifdef _DEBUG_TABLET_
 		if ((i % 1000000) == 0)
-			stream_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
+			mnstr_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
 #endif
 	}
 	GDKfree(buf);
@@ -2042,9 +2042,9 @@ TABLETload(Tablet *as, char *datafile)
 		GDKerror("could not open file %s\n", datafile);
 		return NULL;
 	}
-	if (stream_errnr(s)) {
+	if (mnstr_errnr(s)) {
 		GDKerror("could not open file %s\n", datafile);
-		stream_destroy(s);
+		mnstr_destroy(s);
 		return NULL;
 	}
 	if (as->nr == BUN_NONE)
@@ -2056,8 +2056,8 @@ TABLETload(Tablet *as, char *datafile)
 				res = TABLETcollect_bats(as);
 		bstream_destroy(b);
 	}
-	stream_close(s);
-	stream_destroy(s);
+	mnstr_close(s);
+	mnstr_destroy(s);
 	TABLETdestroy_format(as);
 	return res;
 }
@@ -2072,15 +2072,15 @@ TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, BUN nr)
 	if (create_dumpformat(&as, names, seps, bats) != BUN_NONE && TABLETassign_BATs(&as, bats) != BUN_NONE) {
 		stream *s = open_wastream(datafile);
 
-		if (s != NULL && !stream_errnr(s) && dump_file(&as, s) >= 0) {
-			stream_printf(GDKout, "#saved in %s\n", datafile);
+		if (s != NULL && !mnstr_errnr(s) && dump_file(&as, s) >= 0) {
+			mnstr_printf(GDKout, "#saved in %s\n", datafile);
 		}
-		if (s == NULL || stream_errnr(s)) {
+		if (s == NULL || mnstr_errnr(s)) {
 			GDKerror("could not open file %s\n", datafile);
 		} else {
-			stream_close(s);
+			mnstr_close(s);
 		}
-		stream_destroy(s);
+		mnstr_destroy(s);
 	}
 	TABLETdestroy_format(&as);
 }
@@ -2476,7 +2476,7 @@ TABshowHeader(Tablet * t)
 	char *prop = "name", *p, *q;
 
 	if (t->title)
-		stream_write(t->fd, t->title, 1, strlen(t->title));
+		mnstr_write(t->fd, t->title, 1, strlen(t->title));
 	else {
 		LINE(t->fd, t->rowwidth);
 	}
@@ -2486,7 +2486,7 @@ TABshowHeader(Tablet * t)
 		q = strchr(p, ',');
 		if (q)
 			*q = 0;
-		stream_write(t->fd, "% ", 1, 2);
+		mnstr_write(t->fd, "% ", 1, 2);
 		for (i = 0; i < t->nr_attrs; i++) {
 			Column *c = t->columns + i;
 			unsigned int len;
@@ -2566,10 +2566,10 @@ break;
 			if (c->maxwidth && len > c->maxwidth)
 				len = c->maxwidth;
 			if (c->lbrk)
-				stream_write(t->fd, c->lbrk, 1, u = (int) strlen(c->lbrk));
-			stream_write(t->fd, prop, len, 1);
+				mnstr_write(t->fd, c->lbrk, 1, u = (int) strlen(c->lbrk));
+			mnstr_write(t->fd, prop, len, 1);
 			if (c->rbrk && i + 1 < t->nr_attrs)
-				stream_write(t->fd, c->rbrk, 1, v = (int) strlen(c->rbrk));
+				mnstr_write(t->fd, c->rbrk, 1, v = (int) strlen(c->rbrk));
 			if (c == t->columns)
 				len += t->rlbrk ? (int) strlen(t->rlbrk) : 0;
 			TABS(t->fd, c->tabs - ((len + u + v) / 8));
@@ -2579,9 +2579,9 @@ break;
 			}
 
 		}
-		stream_write(t->fd, "# ", 1, 2);
-		stream_write(t->fd, p, 1, (int) strlen(p));
-		stream_write(t->fd, "\n", 1, 1);
+		mnstr_write(t->fd, "# ", 1, 2);
+		mnstr_write(t->fd, p, 1, (int) strlen(p));
+		mnstr_write(t->fd, "\n", 1, 1);
 		if (q) {
 			*q = ',';
 			p = q + 1;
@@ -2592,7 +2592,7 @@ break;
 	if (t->tbotbrk == 0) {
 		LINE(t->fd, t->rowwidth);
 	} else
-		stream_write(t->fd, t->tbotbrk, 1, (int) strlen(t->tbotbrk));
+		mnstr_write(t->fd, t->tbotbrk, 1, (int) strlen(t->tbotbrk));
 }
 
 void
@@ -2611,7 +2611,7 @@ TABshowRow(Tablet * t)
 	if ( buf == NULL)
 		return ;
 	if (t->rlbrk)
-		stream_printf(t->fd, "%s", t->rlbrk);
+		mnstr_printf(t->fd, "%s", t->rlbrk);
 	for (i = 0; i < t->nr_attrs; i++) {
 		c = t->columns + i;
 		u = 0;
@@ -2643,14 +2643,14 @@ TABshowRow(Tablet * t)
 		if (c->maxwidth && len > c->maxwidth)
 			len = c->maxwidth;
 		if (c->lbrk)
-			stream_write(t->fd, c->lbrk, 1, u = (int) strlen(c->lbrk));
-		stream_write(t->fd, buf, 1, len);
+			mnstr_write(t->fd, c->lbrk, 1, u = (int) strlen(c->lbrk));
+		mnstr_write(t->fd, buf, 1, len);
 		if (c->rbrk) {
 			v = (int) strlen(c->rbrk);
 			if (i + 1 < t->nr_attrs) {
-				stream_write(t->fd, c->rbrk, 1, v);
+				mnstr_write(t->fd, c->rbrk, 1, v);
 			} else if (*c->rbrk != ',')
-				stream_write(t->fd, c->rbrk, 1, v);
+				mnstr_write(t->fd, c->rbrk, 1, v);
 		}
 
 		if (c == t->columns)
@@ -2658,7 +2658,7 @@ TABshowRow(Tablet * t)
 		TABS(t->fd, c->tabs - ((len + u + v - 1) / 8));
 	}
 	if (t->rrbrk)
-		stream_printf(t->fd, "%s\n", t->rrbrk);
+		mnstr_printf(t->fd, "%s\n", t->rrbrk);
 	GDKfree(buf);
 }
 
@@ -2694,12 +2694,12 @@ static void
 TABshowPage(Tablet * t)
 {
 	/* if( t->ttopbrk==0) { LINE(t->fd,t->rowwidth); }
-	   else stream_printf(t->fd, "%s\n", t->ttopbrk); */
+	   else mnstr_printf(t->fd, "%s\n", t->ttopbrk); */
 	TABshowRange(t, 0, -1);
 	if (t->tbotbrk == 0) {
 		LINE(t->fd, t->rowwidth);
 	} else
-		stream_printf(t->fd, "%s\n", t->tbotbrk);
+		mnstr_printf(t->fd, "%s\n", t->tbotbrk);
 }
 
 @+ V4 stuff

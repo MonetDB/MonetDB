@@ -56,7 +56,7 @@ print_indent(mvc *sql, stream *fout, int depth)
 			buf[i] = ' ';
 	}
 	buf[i] = 0;
-	stream_printf(fout, "\n=%s", buf);
+	mnstr_printf(fout, "\n=%s", buf);
 }
 
 static void
@@ -81,7 +81,7 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	default:
 		r = "";
 	}
-	stream_printf(fout, " %s ", r);
+	mnstr_printf(fout, " %s ", r);
 }
 
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, int alias, int brackets);
@@ -94,9 +94,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		return;
 	switch(e->type) {
 	case e_convert: {
-		stream_printf(fout, "convert(");
+		mnstr_printf(fout, "convert(");
 		exp_print(sql, fout, e->l, depth, 0, 0);
-		stream_printf(fout, ")");
+		mnstr_printf(fout, ")");
 	 	break;
 	}
 	case e_atom: {
@@ -104,46 +104,46 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			atom *a = e->l;
 			if (atom_type(a)->type->localtype == TYPE_ptr) {
 				sql_table *t = a->data.val.pval;
-				stream_printf(fout, "%s(%s)", 
+				mnstr_printf(fout, "%s(%s)", 
 					isStream(t)?"stream":"table",
 					t->base.name);
 			} else {
 				char *s = atom2string(a);
 				if (atom_type(a)->type->localtype == TYPE_str)
-					stream_printf(fout, "'%s'", s);
+					mnstr_printf(fout, "'%s'", s);
 				else
-					stream_printf(fout, "%s", s);
+					mnstr_printf(fout, "%s", s);
 				_DELETE(s);
 			}
 		} else { /* variables */
 			if (e->r) { /* named parameters */
 				char *name = e->r;
-				stream_printf(fout, "%s", name);
+				mnstr_printf(fout, "%s", name);
 			} else { /* numbered arguments */
-				stream_printf(fout, "A%d", e->flag);
+				mnstr_printf(fout, "A%d", e->flag);
 			}
 		}
 	} 	break;
 	case e_func: {
 		sql_subfunc *f = e->f;
-		stream_printf(fout, "%s", f->func->base.name );
+		mnstr_printf(fout, "%s", f->func->base.name );
 		exps_print(sql, fout, e->l, depth, alias, 1);
 		if (e->r)
 			exps_print(sql, fout, e->r, depth, alias, 1);
 	} 	break;
 	case e_aggr: {
 		sql_subaggr *a = e->f;
-		stream_printf(fout, "%s", a->aggr->base.name );
+		mnstr_printf(fout, "%s", a->aggr->base.name );
 		if (need_distinct(e))
-			stream_printf(fout, " unique ");
+			mnstr_printf(fout, " unique ");
 		if (need_no_nil(e))
-			stream_printf(fout, " no nil ");
+			mnstr_printf(fout, " no nil ");
 		exps_print(sql, fout, e->l, depth, alias, 1);
 	} 	break;
 	case e_column: 
 		if (e->l)
-			stream_printf(fout, "%s.", (char*)e->l);
-		stream_printf(fout, "%s", (char*)e->r);
+			mnstr_printf(fout, "%s.", (char*)e->l);
+		mnstr_printf(fout, "%s", (char*)e->r);
 		if (e->rname && e->name && e->l && e->r &&
 			strcmp(e->rname, e->l) == 0 &&
 			strcmp(e->name, e->r) == 0) 
@@ -159,17 +159,17 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		} else if (e->f) {
 			exp_print(sql, fout, e->r, depth+1, 0, 0);
 			if (is_anti(e))
-				stream_printf(fout, " ! ");
+				mnstr_printf(fout, " ! ");
 			cmp_print(sql, fout, swap_compare(range2lcompare(e->flag)) );
 			exp_print(sql, fout, e->l, depth+1, 0, 0);
 			if (is_anti(e))
-				stream_printf(fout, " ! ");
+				mnstr_printf(fout, " ! ");
 			cmp_print(sql, fout, range2rcompare(e->flag) );
 			exp_print(sql, fout, e->f, depth+1, 0, 0);
 		} else {
 			exp_print(sql, fout, e->l, depth+1, 0, 0);
 			if (is_anti(e))
-				stream_printf(fout, " ! ");
+				mnstr_printf(fout, " ! ");
 			cmp_print(sql, fout, e->flag );
 
 			exp_print(sql, fout, e->r, depth+1, 0, 0);
@@ -179,17 +179,17 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		;
 	}
 	if (e->type != e_atom && is_ascending(e))
-		stream_printf(fout, " ASC");
+		mnstr_printf(fout, " ASC");
 	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
-		stream_printf(fout, " NOT NULL");
+		mnstr_printf(fout, " NOT NULL");
 	if (e->name && alias) {
-		stream_printf(fout, " as ");
+		mnstr_printf(fout, " as ");
 		if (e->rname)
-			stream_printf(fout, "%s.", e->rname);
-		stream_printf(fout, "%s", e->name);
+			mnstr_printf(fout, "%s.", e->rname);
+		mnstr_printf(fout, "%s", e->name);
 	}
 	if (comma)
-		stream_printf(fout, ", ");
+		mnstr_printf(fout, ", ");
 }
 
 static void
@@ -201,15 +201,15 @@ exps_print(mvc *sql, stream *fout, list *exps, int depth, int alias, int bracket
 		return;
 
 	if (brackets)
-		stream_printf(fout, "(");
+		mnstr_printf(fout, "(");
 	else
-		stream_printf(fout, " [ ");
+		mnstr_printf(fout, " [ ");
 	for (en = exps->h; en; en = en->next) 
 		exp_print(sql, fout, en->data, depth+1, (en->next!=NULL), alias);
 	if (brackets)
-		stream_printf(fout, ")");
+		mnstr_printf(fout, ")");
 	else
-		stream_printf(fout, " ]");
+		mnstr_printf(fout, " ]");
 }
 
 const char *
@@ -275,7 +275,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	if (rel_is_ref(rel)) {
 		int nr = list_length(refs) + 1;
 		int cnt = rel->ref.refcnt;
-		stream_printf(fout, "\n= REF %d (%d)", nr, cnt);
+		mnstr_printf(fout, "\n= REF %d (%d)", nr, cnt);
 	}
 
 	switch (rel->op) {
@@ -283,11 +283,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 		sql_table *t = rel->l;
 		print_indent(sql, fout, depth);
 		if (t->s)
-			stream_printf(fout, "%s(%s.%s)", 
+			mnstr_printf(fout, "%s(%s.%s)", 
 				isStream(t)?"stream":"table",
 				t->s->base.name, t->base.name);
 		else
-			stream_printf(fout, "%s(%s)", 
+			mnstr_printf(fout, "%s(%s)", 
 				isStream(t)?"stream":"table",
 				t->base.name);
 		if (rel->exps) 
@@ -295,13 +295,13 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	} 	break;
 	case op_table:
 		print_indent(sql, fout, depth);
-		stream_printf(fout, "table");
+		mnstr_printf(fout, "table");
 		if (rel->exps) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 		break;
 	case op_ddl:
 		print_indent(sql, fout, depth);
-		stream_printf(fout, "ddl");
+		mnstr_printf(fout, "ddl");
 		if (rel->l)
 			rel_print_(sql, fout, rel->l, depth+1, refs);
 		if (rel->r)
@@ -339,21 +339,21 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 			r = "crossproduct";
 		print_indent(sql, fout, depth);
 		if (need_distinct(rel))
-			stream_printf(fout, "distinct ");
-		stream_printf(fout, "%s (", r);
+			mnstr_printf(fout, "distinct ");
+		mnstr_printf(fout, "%s (", r);
 		if (rel_is_ref(rel->l)) {
 			int nr = find_ref(refs, rel->l);
-			stream_printf(fout, " & REF %d ", nr);
+			mnstr_printf(fout, " & REF %d ", nr);
 		} else
 			rel_print_(sql, fout, rel->l, depth+1, refs);
-		stream_printf(fout, ",");
+		mnstr_printf(fout, ",");
 		if (rel_is_ref(rel->r)) {
 			int nr = find_ref(refs, rel->r);
-			stream_printf(fout, " & REF %d  ", nr);
+			mnstr_printf(fout, " & REF %d  ", nr);
 		} else
 			rel_print_(sql, fout, rel->r, depth+1, refs);
 		print_indent(sql, fout, depth);
-		stream_printf(fout, ")");
+		mnstr_printf(fout, ")");
 		exps_print(sql, fout, rel->exps, depth, 1, 0);
 		break;
 	case op_project:
@@ -370,15 +370,15 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 		print_indent(sql, fout, depth);
 		if (rel->l) {
 			if (need_distinct(rel))
-				stream_printf(fout, "distinct ");
-			stream_printf(fout, "%s (", r);
+				mnstr_printf(fout, "distinct ");
+			mnstr_printf(fout, "%s (", r);
 			if (rel_is_ref(rel->l)) {
 				int nr = find_ref(refs, rel->l);
-				stream_printf(fout, " & REF %d ", nr);
+				mnstr_printf(fout, " & REF %d ", nr);
 			} else
 				rel_print_(sql, fout, rel->l, depth+1, refs);
 			print_indent(sql, fout, depth);
-			stream_printf(fout, ")");
+			mnstr_printf(fout, ")");
 		}
 		if (rel->r && 
 	           (rel->op == op_groupby || rel->op == op_project)) { 
@@ -395,25 +395,25 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 
 		print_indent(sql, fout, depth);
 		if (rel->op == op_insert)
-			stream_printf(fout, "insert(");
+			mnstr_printf(fout, "insert(");
 		else if (rel->op == op_update)
-			stream_printf(fout, "update(");
+			mnstr_printf(fout, "update(");
 		else if (rel->op == op_delete)
-			stream_printf(fout, "delete(");
+			mnstr_printf(fout, "delete(");
 
 		if (rel_is_ref(rel->l)) {
 			int nr = find_ref(refs, rel->l);
-			stream_printf(fout, " & REF %d ", nr);
+			mnstr_printf(fout, " & REF %d ", nr);
 		} else
 			rel_print_(sql, fout, rel->l, depth+1, refs);
 
 		if (rel_is_ref(rel->r)) {
 			int nr = find_ref(refs, rel->r);
-			stream_printf(fout, " & REF %d ", nr);
+			mnstr_printf(fout, " & REF %d ", nr);
 		} else
 			rel_print_(sql, fout, rel->r, depth+1, refs);
 		print_indent(sql, fout, depth);
-		stream_printf(fout, ")");
+		mnstr_printf(fout, ")");
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 	} 	break;
@@ -485,7 +485,7 @@ _rel_print(mvc *sql, sql_rel *rel)
 	list *refs = list_create(NULL);
 	rel_print_refs(sql, THRdata[0], rel, 0, refs);
 	rel_print_(sql, THRdata[0], rel, 0, refs);
-	stream_printf(THRdata[0], "\n");
+	mnstr_printf(THRdata[0], "\n");
 	list_destroy(refs);
 }
 
@@ -509,7 +509,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 
 	rel_print_refs(sql, s, rel, depth, refs);
 	rel_print_(sql, s, rel, depth, refs);
-	stream_printf(s, "\n");
+	mnstr_printf(s, "\n");
 
 	/* count the number of lines in the output, skip the leading \n */
 	for (pos = 1; pos < b->pos; pos++) {
@@ -523,18 +523,18 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	b->buf[b->pos - 1] = '\0';  /* should always end with a \n, can overwrite */
 
 	/* craft a semi-professional header */
-	stream_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
+	mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
 			nl, nl);
-	stream_printf(fd, "%% .plan # table_name\n");
-	stream_printf(fd, "%% rel # name\n");
-	stream_printf(fd, "%% clob # type\n");
-	stream_printf(fd, "%% " SZFMT " # length\n", len - 2 /* remove = and \n */);
+	mnstr_printf(fd, "%% .plan # table_name\n");
+	mnstr_printf(fd, "%% rel # name\n");
+	mnstr_printf(fd, "%% clob # type\n");
+	mnstr_printf(fd, "%% " SZFMT " # length\n", len - 2 /* remove = and \n */);
 
 	/* output the data */
-	stream_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
+	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
 
-	stream_close(s);
-	stream_destroy(s);
+	mnstr_close(s);
+	mnstr_destroy(s);
 	buffer_destroy(b);
 
 	list_destroy(refs);

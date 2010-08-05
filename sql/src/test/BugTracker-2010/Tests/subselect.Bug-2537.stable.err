@@ -71,8 +71,12 @@ stderr of test 'subselect.Bug-2537` in directory 'src/test/BugTracker-2010` itse
 # 09:57:59 >  mclient -lsql -ftest -i -e --host=rig --port=38583 
 # 09:57:59 >  
 
-MAPI  = monetdb@rig:33005
+MAPI  = monetdb@volund:35971
 QUERY = INSERT INTO Image
+               (ImageId
+               ,imageBinaries)
+        VALUES
+               (MAX(ImageId)+1,'data');
 ERROR = !MAX: missing group by
 
 # 09:57:59 >  

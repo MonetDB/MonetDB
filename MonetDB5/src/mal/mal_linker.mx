@@ -317,7 +317,7 @@ initLibraries()
 	for(i=0;preloaded[i];i++) {
 	    msg = loadLibrary(preloaded[i],FALSE);
 		if ( msg )
-			stream_printf(GDKerr,"#%s\n",msg);
+			mnstr_printf(GDKerr,"#%s\n",msg);
 	}
 }
 

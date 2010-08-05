@@ -112,7 +112,7 @@ ATTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
-	(void) pcil
+	(void) pci;
 	throw(MAL, "attach.bind", "Not available on Windows");
 #else
 	int *ret = (int*) getArgReference(stk, pci, 0);
@@ -193,7 +193,7 @@ ATTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATkey(BATmirror(bn), TRUE);
 	}
 	assert(cap);
-    BBPcacheit(bs);
+    BBPcacheit(bs, 1);
     BATsetcapacity(bn, cap);
     BATsetcount(bn, cnt);
 	BATsetaccess(bn, BAT_READ);
@@ -216,7 +216,7 @@ str ATTlocation(str *ret, int *bid)
 
 	snprintf(path,BUFSIZ,"%s%c%s%c",GDKgetenv("gdk_dbfarm"),DIR_SEP,GDKgetenv("gdk_dbname"),DIR_SEP);
 	GDKfilepath(path+strlen(path), BATDIR, ( b->T->heap.filename ? b->T->heap.filename: b->H->heap.filename), 0);
-	s= rindex(path,'.');
+	s= strrchr(path,'.');
 	if( s) *s = 0;
 	*ret = GDKstrdup(path);
 	return MAL_SUCCEED;

@@ -184,7 +184,7 @@ command_tree **CAS_plan_gen(
   p_command_start = p_command_array;
   p_command = GDKmalloc(MAX_QUERIES*OPERAND_MAX * sizeof(command_tree));
   if ( !p_command_array || !p_command ) {
-      stream_printf(GDKout,"CAS_plan_gen: GDKmalloc failed.\n");
+      mnstr_printf(GDKout,"CAS_plan_gen: GDKmalloc failed.\n");
       goto error;
   }
 

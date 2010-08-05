@@ -398,7 +398,7 @@ diskblock.
 	bsize= (rng+N-1) / N;
 #ifdef _CLUSTER_DEBUG
 	N=2; /* for debugging only */
-	stream_printf(GDKout,"bucket pages %d size %d max %d  N %d\n", 
+	mnstr_printf(GDKout,"bucket pages %d size %d max %d  N %d\n", 
 		(int)MT_npages(), (int)bsize, (int)rng, (int)N);
 #endif
 	basket = (Basket*) alloca((N+1) * sizeof(Basket));

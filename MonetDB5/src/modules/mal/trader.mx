@@ -216,14 +216,14 @@ str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = append_wastream(biddingLog);
 	if (s == NULL )
 			throw(MAL,"trader.makeBid", RUNTIME_FILE_NOT_FOUND "%s", biddingLog);
-	if (stream_errnr(s)) {
-			stream_close(s);
+	if (mnstr_errnr(s)) {
+			mnstr_close(s);
 			throw(MAL,"trader.makeBid", RUNTIME_FILE_NOT_FOUND "%s", biddingLog);
 	}
 	now = time(NULL);
 	nowtm = localtime(&now);
 	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", nowtm);
-	stream_printf(s,"%s\t%s\t%1d\t" LLFMT "\n",timestr, fnname, bidtype, *c);
+	mnstr_printf(s,"%s\t%s\t%1d\t" LLFMT "\n",timestr, fnname, bidtype, *c);
 	close_stream(s);
 
 	return MAL_SUCCEED;

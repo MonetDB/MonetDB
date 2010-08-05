@@ -417,10 +417,10 @@ extern "C" {
 #define MIN(A,B)	((A)>(B)?(B):(A))
 
 /* defines from ctype with casts that allow passing char values */
-#define GDKisprint(c)	isprint((int) ((unsigned char) (c)))
-#define GDKisspace(c)	isspace((int) ((unsigned char) (c)))
-#define GDKisalnum(c)	isalnum((int) ((unsigned char) (c)))
-#define GDKisgraph(c)	isgraph((int) ((unsigned char) (c)))
+#define GDKisprint(c)	isprint((int) (unsigned char) (c))
+#define GDKisspace(c)	isspace((int) (unsigned char) (c))
+#define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
+#define GDKisgraph(c)	isgraph((int) (unsigned char) (c))
 #define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
 #define GDKisxcntrl(c)  (((unsigned char) (c)) >= 128 && ((unsigned char) (c)) <= 160)
 #define GDKisspecial(c) (((unsigned char) (c)) >= 161 && ((unsigned char) (c)) <= 191)
@@ -642,10 +642,13 @@ gdk_export int GDKsilent;	/* should GDK shut up? */
 #define FATALcheck(tst,	msg) if (tst) GDKfatal(msg);
 #define ERRORcheck(tst,	msg) if (tst) { GDKerror(msg); return 0; }
 #define WARNcheck(tst,	msg) if (tst) GDKwarning(msg)
-#define BATcheck(tst,	msg)				\
-	if (tst == NULL) {				\
-		GDKerror("%s: BAT required.\n",msg);	\
-		return 0;				\
+#define BATcheck(tst,	msg)					\
+	if (tst == NULL) {					\
+		if (strchr(msg, ':'))				\
+			GDKerror("%s.\n",msg);			\
+		else						\
+			GDKerror("%s: BAT required.\n",msg);	\
+		return 0;					\
 	}
 
 /* needed for mel */
@@ -1830,7 +1833,7 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
 gdk_export BAT *BATload(str nme);
-gdk_export BAT *BATload_intern(bat bid);
+gdk_export BAT *BATload_intern(bat bid, int lock);
 #define BATaccessBegin(b,what,advice) BATaccess(b,what,advice,1)
 #define BATaccessEnd(b,what,advice) BATaccess(b,what,advice,-1)
 gdk_export size_t BATaccess(BAT *b, int what, int advice, int load);

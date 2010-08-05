@@ -32,7 +32,7 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildRequires: e2fsprogs-devel
 
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.38
+BuildRequires: MonetDB-devel >= 1.39
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

@@ -1,0 +1,31 @@
+stderr of test 'pf_del-doc.SF-1617684` in directory 'tests/BugTracker` itself:
+
+
+# 20:24:58 >  
+# 20:24:58 >  Mtimeout -timeout 240 Mserver "--config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./PATHFINDER/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./PATHFINDER/lib64/MonetDB/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/lib64/MonetDB:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/lib64/MonetDB/lib:/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/lib64/MonetDB/bin" --set "gdk_dbfarm=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/var/MonetDB/sql_logs" --set "xquery_logdir=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/.GNU.64.64.d.--disable-debug_--enable-assert_--enable-optimize.PREFIX./MONETDB/var/MonetDB/xquery_logs" --set mapi_port=37952 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" pf_del-doc.SF-1617684.prologue ; echo ; echo Over..
+# 20:24:58 >  
+
+
+# 20:24:58 >  
+# 20:24:58 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37952 pf_del-doc.SF-1617684_s00.xq
+# 20:24:58 >  
+
+
+# 20:24:58 >  
+# 20:24:58 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37952 pf_del-doc.SF-1617684_s01.xq
+# 20:24:58 >  
+
+MAPI  = monetdb@join:34500
+QUERY = doc("pf_del-doc.SF-1617684a.xml")
+ERROR = !ERROR: err:FODC0002, Error retrieving resource (no such document "pf_del-doc.SF-1617684a.xml").
+
+
+
+MAPI  = monetdb@join:34500
+QUERY = doc("pf_del-doc.SF-1617684b.xml")
+ERROR = !ERROR: err:FODC0002, Error retrieving resource (no such document "pf_del-doc.SF-1617684b.xml").
+
+# 16:00:57 >  
+# 16:00:57 >  Done.
+# 16:00:57 >  
+

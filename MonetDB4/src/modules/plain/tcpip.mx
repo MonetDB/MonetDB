@@ -988,7 +988,7 @@ First stop to examine its type, and heap sizes.
 					b->hsorted = hordered;
 					b->tsorted = tordered;
 					DELTAinit(b);
-					BBPcacheit(b);
+					BBPcacheit(b, 1);
 					dst.bval = b->batCacheid;
 @-
 Read the data for its heaps. A BAT at least consists of a BUN heap.
@@ -1222,7 +1222,7 @@ int
 TCPlisten(int *port)
 {
 	struct sockaddr_in server, client;
-	SOCKET msgsock = -1;
+	SOCKET msgsock = INVALID_SOCKET;
 	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 	int port_no = 0, i, on = 1;
 	SOCKLEN server_len = (SOCKLEN) sizeof(server);

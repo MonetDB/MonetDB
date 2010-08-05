@@ -503,16 +503,18 @@ create_type_list(dlist *params, int param)
 	list * type_list = list_create((fdestroy) NULL);
 	dnode * n = NULL;
 	
-	for (n = params->h; n; n = n->next) {
-		dnode *an = n;
-
-		if (param) {
-			an = n->data.lval->h;
-			par_subtype = &an->next->data.typeval;
-			list_append(type_list, par_subtype);
-		} else { 
-			par_subtype = &an->data.typeval;
-			list_prepend(type_list, par_subtype);
+	if (params) {
+		for (n = params->h; n; n = n->next) {
+			dnode *an = n;
+	
+			if (param) {
+				an = n->data.lval->h;
+				par_subtype = &an->next->data.typeval;
+				list_append(type_list, par_subtype);
+			} else { 
+				par_subtype = &an->data.typeval;
+				list_prepend(type_list, par_subtype);
+			}
 		}
 	}
 	return type_list;
@@ -542,8 +544,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	if (res)
 		restype = result_type(sql, fname, res, instantiate);
 
-	if (params)
-		type_list = create_type_list(params, 1);
+	type_list = create_type_list(params, 1);
 	
 	if (create && sql_bind_func_(s, fname, type_list)) {
 		if (params) {

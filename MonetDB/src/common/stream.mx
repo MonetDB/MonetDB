@@ -86,55 +86,55 @@ the various underlying storage types.
 typedef struct stream stream;
 
 /* some os specific initialization */
-stream_export int stream_init(void);
+stream_export int mnstr_init(void);
 
-/* all stream_readX/stream_writeX 
+/* all mnstr_readX/mnstr_writeX 
    return 
 	0 on error 
        !0 on success
  */
-stream_export int stream_readBte(stream *s, signed char *val);
-stream_export int stream_writeBte(stream *s, signed char val);
-stream_export int stream_readSht(stream *s, short *val);
-stream_export int stream_writeSht(stream *s, short val);
-stream_export int stream_readInt(stream *s, int *val);
-stream_export int stream_writeInt(stream *s, int val);
+stream_export int mnstr_readBte(stream *s, signed char *val);
+stream_export int mnstr_writeBte(stream *s, signed char val);
+stream_export int mnstr_readSht(stream *s, short *val);
+stream_export int mnstr_writeSht(stream *s, short val);
+stream_export int mnstr_readInt(stream *s, int *val);
+stream_export int mnstr_writeInt(stream *s, int val);
 #ifdef SIZEOF_LNG
-stream_export int stream_readLng(stream *s, lng *val);
-stream_export int stream_writeLng(stream *s, lng val);
+stream_export int mnstr_readLng(stream *s, lng *val);
+stream_export int mnstr_writeLng(stream *s, lng val);
 #endif
 
-stream_export int stream_readBteArray(stream *s, signed char *val, size_t cnt);
-stream_export int stream_writeBteArray(stream *s, const signed char *val, size_t cnt);
-stream_export int stream_readShtArray(stream *s, short *val, size_t cnt);
-stream_export int stream_writeShtArray(stream *s, const short *val, size_t cnt);
-stream_export int stream_readIntArray(stream *s, int *val, size_t cnt);
-stream_export int stream_writeIntArray(stream *s, const int *val, size_t cnt);
+stream_export int mnstr_readBteArray(stream *s, signed char *val, size_t cnt);
+stream_export int mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt);
+stream_export int mnstr_readShtArray(stream *s, short *val, size_t cnt);
+stream_export int mnstr_writeShtArray(stream *s, const short *val, size_t cnt);
+stream_export int mnstr_readIntArray(stream *s, int *val, size_t cnt);
+stream_export int mnstr_writeIntArray(stream *s, const int *val, size_t cnt);
 #ifdef SIZEOF_LNG
-stream_export int stream_readLngArray(stream *s, lng *val, size_t cnt);
-stream_export int stream_writeLngArray(stream *s, const lng *val, size_t cnt);
+stream_export int mnstr_readLngArray(stream *s, lng *val, size_t cnt);
+stream_export int mnstr_writeLngArray(stream *s, const lng *val, size_t cnt);
 #endif
-stream_export int stream_printf(stream *s, const char *format, ...);
-stream_export ssize_t stream_read(stream *s, void *buf, size_t elmsize, size_t cnt);
-stream_export ssize_t stream_readline(stream *s, void *buf, size_t maxcnt);
-stream_export ssize_t stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt);
-stream_export void stream_close(stream *s);
-stream_export void stream_destroy(stream *s);
-stream_export char *stream_error(stream *s);
-stream_export int stream_flush(stream *s);
-stream_export int stream_fsync(stream *s);
+stream_export int mnstr_printf(stream *s, const char *format, ...);
+stream_export ssize_t mnstr_read(stream *s, void *buf, size_t elmsize, size_t cnt);
+stream_export ssize_t mnstr_readline(stream *s, void *buf, size_t maxcnt);
+stream_export ssize_t mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt);
+stream_export void mnstr_close(stream *s);
+stream_export void mnstr_destroy(stream *s);
+stream_export char *mnstr_error(stream *s);
+stream_export int mnstr_flush(stream *s);
+stream_export int mnstr_fsync(stream *s);
 #ifdef SIZEOF_LNG
-stream_export int stream_fgetpos(stream *s, lng *p);
-stream_export int stream_fsetpos(stream *s, lng p);
+stream_export int mnstr_fgetpos(stream *s, lng *p);
+stream_export int mnstr_fsetpos(stream *s, lng p);
 #endif
-stream_export char *stream_name(stream *s);
-stream_export int stream_errnr(stream *s);
-stream_export void stream_clearerr(stream *s);
-stream_export int stream_type(stream *s);
-stream_export int stream_byteorder(stream *s);
-stream_export void stream_set_byteorder(stream *s, char bigendian);
-stream_export stream *stream_rstream(stream *s);
-stream_export stream *stream_wstream(stream *s);
+stream_export char *mnstr_name(stream *s);
+stream_export int mnstr_errnr(stream *s);
+stream_export void mnstr_clearerr(stream *s);
+stream_export int mnstr_type(stream *s);
+stream_export int mnstr_byteorder(stream *s);
+stream_export void mnstr_set_byteorder(stream *s, char bigendian);
+stream_export stream *mnstr_rstream(stream *s);
+stream_export stream *mnstr_wstream(stream *s);
 
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);
@@ -202,7 +202,7 @@ stream_export void buffer_destroy(buffer *b);
 
 stream_export stream *buffer_rastream(buffer *b, const char *name);
 stream_export stream *buffer_wastream(buffer *b, const char *name);
-stream_export buffer *stream_get_buffer(stream *s);
+stream_export buffer *mnstr_get_buffer(stream *s);
 
 /* note, the size is fixed to 8K, you cannot simply change it to any
    value */
@@ -229,7 +229,7 @@ stream_export stream *block_stream(stream *s);
 stream_export ssize_t bs_read_next(stream *s, void *buf, size_t nbytes, int *last);
 stream_export int isa_block_stream(stream *s);
 /* read block of data including the end of block marker */
-stream_export ssize_t stream_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
+stream_export ssize_t mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
 
 @+ buffered streams
 
@@ -274,12 +274,12 @@ stream_export stream *attach_teestream(stream *orig, stream *log);
 stream_export void detach_teestream(stream *ts);
 
 
-typedef enum stream_errors {
+typedef enum mnstr_errors {
 	NO__ERROR = 0,
 	OPEN_ERROR,
 	READ_ERROR,
 	WRITE_ERROR
-} stream_errors;
+} mnstr_errors;
 
 #endif /*_STREAM_H_*/
 @c
@@ -371,7 +371,7 @@ extern char *strdup(const char *);
 #endif
 
 int
-stream_init(void)
+mnstr_init(void)
 {
 	static int inited = 0;
 
@@ -380,16 +380,10 @@ stream_init(void)
 
 #ifdef NATIVE_WIN32
 	{
-		int sockopt = SO_SYNCHRONOUS_NONALERT;
 		WSADATA w;
 
 		if (WSAStartup(0x0101, &w) != 0)
 			return -1;
-
-		if (setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (void *) &sockopt, sizeof(sockopt)) < 0) {
-			WSACleanup();
-			return -1;
-		}
 	}
 #endif
 	inited = 1;
@@ -442,7 +436,7 @@ stream_init(void)
 /* Read at most cnt elements of size elmsize from the stream.  Returns
    the number of elements actually read. */
 ssize_t
-stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
+mnstr_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 #ifdef STREAM_DEBUG
 	printf("read %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
@@ -456,7 +450,7 @@ stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 /* Read one line (seperated by \n) of atmost maxcnt characters from the stream. 
    Returns the number of characters actually read, includes the trailing \n */
 ssize_t
-stream_readline(stream *s, void *buf, size_t maxcnt)
+mnstr_readline(stream *s, void *buf, size_t maxcnt)
 {
 #ifdef STREAM_DEBUG
 	printf("readline %s " SZFMT "\n", s->name ? s->name : "<unnamed>", maxcnt);
@@ -482,7 +476,7 @@ stream_readline(stream *s, void *buf, size_t maxcnt)
    number of elements actually written.  If elmsize or cnt equals zero,
    returns cnt. */
 ssize_t
-stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
+mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 #ifdef STREAM_DEBUG
 	printf("write %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
@@ -494,7 +488,7 @@ stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 }
 
 void
-stream_close(stream *s)
+mnstr_close(stream *s)
 {
 #ifdef STREAM_DEBUG
 	printf("close %s\n", s->name ? s->name : "<unnamed>");
@@ -504,7 +498,7 @@ stream_close(stream *s)
 }
 
 void
-stream_destroy(stream *s)
+mnstr_destroy(stream *s)
 {
 #ifdef STREAM_DEBUG
 	printf("destroy %s\n", s->name ? s->name : "<unnamed>");
@@ -514,7 +508,7 @@ stream_destroy(stream *s)
 }
 
 char *
-stream_error(stream *s)
+mnstr_error(stream *s)
 {
 	if (s == 0)
 		return "Connection terminated";
@@ -522,7 +516,7 @@ stream_error(stream *s)
 }
 
 int
-stream_flush(stream *s)
+mnstr_flush(stream *s)
 {
 	if (!s)
 		return -1;
@@ -538,7 +532,7 @@ stream_flush(stream *s)
 }
 
 int
-stream_fsync(stream *s)
+mnstr_fsync(stream *s)
 {
 #ifdef STREAM_DEBUG
 	printf("fsync %s (%d)\n", s->name ? s->name : "<unnamed>", s->errnr);
@@ -554,7 +548,7 @@ stream_fsync(stream *s)
 }
 
 int
-stream_fgetpos(stream *s, lng *p)
+mnstr_fgetpos(stream *s, lng *p)
 {
 #ifdef STREAM_DEBUG
 	printf("fgetpos %s\n", s->name ? s->name : "<unnamed>");
@@ -570,7 +564,7 @@ stream_fgetpos(stream *s, lng *p)
 }
 
 int
-stream_fsetpos(stream *s, lng p)
+mnstr_fsetpos(stream *s, lng p)
 {
 #ifdef STREAM_DEBUG
 	printf("fsetpos %s\n", s->name ? s->name : "<unnamed>");
@@ -586,7 +580,7 @@ stream_fsetpos(stream *s, lng p)
 
 
 char *
-stream_name(stream *s)
+mnstr_name(stream *s)
 {
 	if (s == 0)
 		return "connection terminated";
@@ -594,7 +588,7 @@ stream_name(stream *s)
 }
 
 int
-stream_errnr(stream *s)
+mnstr_errnr(stream *s)
 {
 	if (s == 0)
 		return READ_ERROR;
@@ -602,14 +596,14 @@ stream_errnr(stream *s)
 }
 
 void
-stream_clearerr(stream *s)
+mnstr_clearerr(stream *s)
 {
 	if (s != NULL)
 		s->errnr = NO__ERROR;
 }
 
 int
-stream_type(stream *s)
+mnstr_type(stream *s)
 {
 	if (s == 0)
 		return 0;
@@ -617,7 +611,7 @@ stream_type(stream *s)
 }
 
 int
-stream_byteorder(stream *s)
+mnstr_byteorder(stream *s)
 {
 	if (s == 0)
 		return 0;
@@ -625,10 +619,10 @@ stream_byteorder(stream *s)
 }
 
 void
-stream_set_byteorder(stream *s, char bigendian)
+mnstr_set_byteorder(stream *s, char bigendian)
 {
 #ifdef STREAM_DEBUG
-	printf("stream_set_byteorder %s\n", s->name ? s->name : "<unnamed>");
+	printf("mnstr_set_byteorder %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_READ);
 	s->type = ST_BIN;
@@ -648,10 +642,10 @@ close_stream(stream *s)
 }
 
 stream *
-stream_rstream(stream *s)
+mnstr_rstream(stream *s)
 {
 #ifdef STREAM_DEBUG
-	printf("stream_rstream %s\n", s->name ? s->name : "<unnamed>");
+	printf("mnstr_rstream %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_READ);
 	s->type = ST_BIN;
@@ -661,10 +655,10 @@ stream_rstream(stream *s)
 }
 
 stream *
-stream_wstream(stream *s)
+mnstr_wstream(stream *s)
 {
 #ifdef STREAM_DEBUG
-	printf("stream_wstream %s\n", s->name ? s->name : "<unnamed>");
+	printf("mnstr_wstream %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_WRITE);
 	s->type = ST_BIN;
@@ -2112,7 +2106,7 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 				/* incomplete multibyte sequence encountered */
 				/* flush what has been converted */
 				if (outbytesleft < sizeof(ic->buffer))
-					stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
+					mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
 				/* remember what hasn't been converted */
 				if (inbytesleft > sizeof(ic->buffer)) {
 					/* ridiculously long multibyte sequence, so return error */
@@ -2131,7 +2125,7 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 				return -1;
 			}
 		}
-		stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
+		mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
 	}
 	return (ssize_t) cnt;
 }
@@ -2152,7 +2146,7 @@ ic_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 			return -1;
 		}
 
-		switch (stream_read(ic->s, ic->buffer +ic->buflen, 1, 1)) {
+		switch (mnstr_read(ic->s, ic->buffer +ic->buflen, 1, 1)) {
 		case 1:
 			/* expected: read one byte */
 			ic->buflen++;
@@ -2228,8 +2222,8 @@ ic_flush(stream *s)
 	}
 	iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft);
 	if (outbytesleft < sizeof(ic->buffer))
-		stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
-	return stream_flush(ic->s);
+		mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
+	return mnstr_flush(ic->s);
 }
 
 static void
@@ -2240,7 +2234,7 @@ ic_close(stream *s)
 	if (ic == NULL)
 		return;
 	ic_flush(s);
-	stream_close(ic->s);
+	mnstr_close(ic->s);
 	free(s->stream_data.p);
 	s->stream_data.p = NULL;
 }
@@ -2259,7 +2253,7 @@ ic_open(iconv_t cd, stream *ss, const char *name)
 	s->flush = ic_flush;
 	s->stream_data.p = malloc(sizeof(struct icstream));
 	if (s->stream_data.p == NULL) {
-		stream_destroy(s);
+		mnstr_destroy(s);
 		return NULL;
 	}
 	ic = (struct icstream *) s->stream_data.p;
@@ -2359,7 +2353,7 @@ buffer_destroy(buffer *b)
 }
 
 buffer *
-stream_get_buffer(stream *s)
+mnstr_get_buffer(stream *s)
 {
 	return (buffer *) s->stream_data.p;
 }
@@ -2544,7 +2538,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 #ifdef WORDS_BIGENDIAN
 			blksize = short_int_SWAP(blksize);
 #endif
-			if (!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
+			if (!mnstr_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				ss->errnr = WRITE_ERROR;
 				return -1;
 			}
@@ -2594,7 +2588,7 @@ bs_flush(stream *ss)
 #ifdef WORDS_BIGENDIAN
 		blksize = short_int_SWAP(blksize);
 #endif
-		if ((!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) {
+		if ((!mnstr_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) {
 			ss->errnr = WRITE_ERROR;
 			return -1;
 		}
@@ -2641,7 +2635,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 
 		/* There is nothing more to read in the current block,
 		   so read the count for the next block */
-		if (!stream_readSht(s->s, &blksize) || blksize < 0) {
+		if (!mnstr_readSht(s->s, &blksize) || blksize < 0) {
 			ss->errnr = READ_ERROR;
 			return -1;
 		}
@@ -2697,7 +2691,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			   previous was not the last one */
 			if (s->nr) {
 				break;
-			} else if (!stream_readSht(s->s, &blksize) || blksize < 0) {
+			} else if (!mnstr_readSht(s->s, &blksize) || blksize < 0) {
 				ss->errnr = READ_ERROR;
 				return -1;
 			}
@@ -2900,22 +2894,22 @@ attach_teestream(stream *orig, stream *log)
 /* ------------------------------------------------------------------ */
 
 ssize_t
-stream_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
+mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 	ssize_t len = 0;
 	char x = 0;
 
 	assert(s->read == bs_read || s->write == bs_write);
-	len = stream_read(s, buf, elmsize, cnt);
-	stream_read(s, &x, 0, 0);	/* read prompt */
+	len = mnstr_read(s, buf, elmsize, cnt);
+	mnstr_read(s, &x, 0, 0);	/* read prompt */
 	if (x > 0)
 		return -1;
 	return len;
 }
 
-@= stream_readVal
+@= mnstr_readVal
 int
-stream_read@1(stream *s, @2 *val)
+mnstr_read@1(stream *s, @2 *val)
 {
 	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
 	case 1:
@@ -2935,49 +2929,49 @@ stream_read@1(stream *s, @2 *val)
 
 #define no_SWAP(x) x
 
-@:stream_readVal(Bte,signed char,no)@
+@:mnstr_readVal(Bte,signed char,no)@
 
 int
-stream_writeBte(stream *s, signed char val)
+mnstr_writeBte(stream *s, signed char val)
 {
 	if (!s || s->errnr)
 		return (0);
 	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
 
-@:stream_readVal(Sht,short,short_int)@
+@:mnstr_readVal(Sht,short,short_int)@
 
 int
-stream_writeSht(stream *s, short val)
+mnstr_writeSht(stream *s, short val)
 {
 	if (!s || s->errnr)
 		return (0);
 	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
 
-@:stream_readVal(Int,int,normal_int)@
+@:mnstr_readVal(Int,int,normal_int)@
 
 int
-stream_writeInt(stream *s, int val)
+mnstr_writeInt(stream *s, int val)
 {
 	if (!s || s->errnr)
 		return (0);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
-@:stream_readVal(Lng,lng,long_long)@
+@:mnstr_readVal(Lng,lng,long_long)@
 
 int
-stream_writeLng(stream *s, lng val)
+mnstr_writeLng(stream *s, lng val)
 {
 	if (!s || s->errnr)
 		return (0);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
-@= stream_readArray
+@= mnstr_readArray
 int
-stream_read@1Array(stream *s, @2 *val, size_t cnt)
+mnstr_read@1Array(stream *s, @2 *val, size_t cnt)
 {
 	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
 		s->errnr = READ_ERROR;
@@ -2993,40 +2987,40 @@ stream_read@1Array(stream *s, @2 *val, size_t cnt)
 }
 @c
 
-@:stream_readArray(Bte,signed char,no)@
+@:mnstr_readArray(Bte,signed char,no)@
 
 int
-stream_writeBteArray(stream *s, const signed char *val, size_t cnt)
+mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt)
 {
 	if (!s || s->errnr)
 		return (0);
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
-@:stream_readArray(Sht,short,short_int)@
+@:mnstr_readArray(Sht,short,short_int)@
 
 int
-stream_writeShtArray(stream *s, const short *val, size_t cnt)
+mnstr_writeShtArray(stream *s, const short *val, size_t cnt)
 {
 	if (!s || s->errnr)
 		return (0);
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
-@:stream_readArray(Int,int,normal_int)@
+@:mnstr_readArray(Int,int,normal_int)@
 
 int
-stream_writeIntArray(stream *s, const int *val, size_t cnt)
+mnstr_writeIntArray(stream *s, const int *val, size_t cnt)
 {
 	if (!s || s->errnr)
 		return (0);
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
-@:stream_readArray(Lng,lng,long_long)@
+@:mnstr_readArray(Lng,lng,long_long)@
 
 int
-stream_writeLngArray(stream *s, const lng *val, size_t cnt)
+mnstr_writeLngArray(stream *s, const lng *val, size_t cnt)
 {
 	if (!s || s->errnr)
 		return (0);
@@ -3034,7 +3028,7 @@ stream_writeLngArray(stream *s, const lng *val, size_t cnt)
 }
 
 int
-stream_printf(stream *s, const char *format, ...)
+mnstr_printf(stream *s, const char *format, ...)
 {
 	char buf[BUFSIZ], *bf = buf;
 	int i = 0;
@@ -3043,12 +3037,12 @@ stream_printf(stream *s, const char *format, ...)
 	if (!s || s->errnr)
 		return (-1);
 
-@= stream_printf_va_vsnprintf
+@= mnstr_printf_va_vsnprintf
 	va_start(ap, format);
 	i = vsnprintf(bf, bfsz, format, ap);
 	va_end (ap);
 @c
-	@:stream_printf_va_vsnprintf@
+	@:mnstr_printf_va_vsnprintf@
 	while (i < 0 || (size_t) i >= bfsz) {
 		if (i >= 0)	/* glibc 2.1 */
 			bfsz = (size_t) i + 1;	/* precisely what is needed */
@@ -3061,7 +3055,7 @@ stream_printf(stream *s, const char *format, ...)
 			s->errnr = WRITE_ERROR;
 			return -1;
 		}
-		@:stream_printf_va_vsnprintf@
+		@:mnstr_printf_va_vsnprintf@
 	}
 	s->write(s, (void *) bf, (size_t) i, (size_t) 1);
 	if (bf != buf)
@@ -3292,7 +3286,7 @@ wbstream(stream *s, size_t buflen)
 			wbs->pos = 0;
 			wbs->len = buflen;
 		} else {
-			stream_destroy(ns);
+			mnstr_destroy(ns);
 			ns = NULL;
 		}
 	}

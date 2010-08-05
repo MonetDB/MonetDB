@@ -88,6 +88,23 @@ CREATE TABLE "sys"."tapestry_user" (
 	"passwd"     varchar(50),
 	CONSTRAINT "tapestry_user_user_id_pkey" PRIMARY KEY ("user_id")
 );
+CREATE TABLE "sys"."config" (
+	"config_id" int    	NOT NULL,
+	"name"      varchar(25),
+	"target_id" int    ,
+	"sysinf_id" int    ,
+	CONSTRAINT "config_config_id_pkey" PRIMARY KEY ("config_id"),
+	CONSTRAINT "config_sysinf_id_fkey" FOREIGN KEY ("sysinf_id") REFERENCES "sys"."sysinf" ("sysinf_id"),
+	CONSTRAINT "config_target_id_fkey" FOREIGN KEY ("target_id") REFERENCES "sys"."target" ("target_id")
+);
+CREATE TABLE "sys"."tapestry_table" (
+	"table_id" int	NOT NULL,
+	"nrrows"   int,
+	"nrcols"   int,
+	"seed"     int,
+	"fast"     int,
+	CONSTRAINT "tapestry_table_table_id_pkey" PRIMARY KEY ("table_id")
+);
 CREATE TABLE "sys"."result" (
 	"result_id"   int    	NOT NULL,
 	"type"        varchar(10),
@@ -147,6 +164,30 @@ CREATE TABLE "sys"."query_walk" (
 	"end_y"     int,
 	CONSTRAINT "query_walk_walk_id_pkey" PRIMARY KEY ("walk_id")
 );
+Operation successful
+
+Operation successful
+
+Operation successful
+
+Operation successful
+
+Operation successful
+
+Operation successful
+
+Operation successful
+
+Operation successful
+
+Operation successful
+
+Operation successful
+
+Operation successful
+
+Operation successful
+
 
 # 12:43:36 >  
 # 12:43:36 >  Done.

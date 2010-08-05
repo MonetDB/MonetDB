@@ -445,10 +445,10 @@ MASTERfindLogFile(char logFile[PATHLENGTH], oid transactionid)
 	struct dirent *dent;
 
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout, "#find the log file containing %d\n", transactionid);
+	mnstr_printf(GDKout, "#find the log file containing %d\n", transactionid);
 #endif
 	if (repFile)
-		stream_close(repFile);
+		mnstr_close(repFile);
 	repFile = NULL;
 	dirp = opendir(MASTER);
 	if (dirp == NULL)
@@ -478,7 +478,7 @@ MASTERincrement()
 	/* once in a while we take a new log file */
 	if (endTag - startTag >= REPLICABLOCK) {
 		if (repFile)
-			stream_close(repFile);
+			mnstr_close(repFile);
 		repFile = NULL;
 	}
 	if (repFile == NULL)
@@ -499,7 +499,7 @@ MASTERprelude(int *ret)
 	master = GDKgetenv_istrue("replication_master") &&
 			 GDKgetenv("replication_slave") == NULL;
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout, "#Initialize the master role?%s\n", master ? "yes" : "no");
+	mnstr_printf(GDKout, "#Initialize the master role?%s\n", master ? "yes" : "no");
 #endif
 	mal_set_lock(repLck, "replication");
 	if (!master) {
@@ -509,7 +509,7 @@ MASTERprelude(int *ret)
 		return MAL_SUCCEED;
 	}
 	mkdir(MASTER, 0755); /* ensure existance of the replica pool */
-	stream_printf(GDKout, "# Replication mode enabled\n");
+	mnstr_printf(GDKout, "# Replication mode enabled\n");
 
 	/* find the bounds for the last replication log file */
 	/* assume directory is sorted */
@@ -533,7 +533,7 @@ MASTERprelude(int *ret)
 	if (cutoffTag == INT_MAX)
 		cutoffTag = 0;
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout, "#last log file log%05d-%05d\n", startTag, endTag);
+	mnstr_printf(GDKout, "#last log file log%05d-%05d\n", startTag, endTag);
 #endif
 	startTag = endTag;
 	sendLogs = TRUE;
@@ -677,13 +677,13 @@ MASTERclose(int *ret, oid *tag)
 		mal_unset_lock(repLck, "replication");
 		throw(MAL, "master.close", RUNTIME_FILE_NOT_FOUND);
 	}
-	stream_printf(repFile, "%s", master[i].buf);
-	stream_flush(repFile);
+	mnstr_printf(repFile, "%s", master[i].buf);
+	mnstr_flush(repFile);
 	master[i].buf[0] = 0;
 	master[i].top = 0;
 	master[i].tag = 0;
 	mal_unset_lock(repLck, "replication");
-	if (stream_errnr(repFile))
+	if (mnstr_errnr(repFile))
 		throw(MAL, "replication.close", RUNTIME_STREAM_FAILED);
 	return MAL_SUCCEED;
 }
@@ -949,7 +949,7 @@ MASTERsend(void *arg)
 	char logFile[PATHLENGTH];
 
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout, "#send the log file starting at transaction id %d\n", masterstatus[idx].tag);
+	mnstr_printf(GDKout, "#send the log file starting at transaction id %d\n", masterstatus[idx].tag);
 #endif
 	/* find the last replication log file */
 	master = GDKgetenv_istrue("replication_master") &&
@@ -986,13 +986,13 @@ MASTERsend(void *arg)
 			continue;
 		}
 #ifdef _DEBUG_REPLICATION_
-		stream_printf(GDKout, "#sent log file %s\n", logFile);
+		mnstr_printf(GDKout, "#sent log file %s\n", logFile);
 #endif
 		s = open_rastream(logFile);
 		if (s == NULL)
 			continue;
-		if (stream_errnr(s)) {
-			stream_destroy(s);
+		if (mnstr_errnr(s)) {
+			mnstr_destroy(s);
 			continue;
 		}
 
@@ -1001,7 +1001,7 @@ MASTERsend(void *arg)
 		if (nxt == (int)endTag)
 			mal_set_lock(repLck, "replication");
 		if (repFile)
-			stream_flush(repFile);
+			mnstr_flush(repFile);
 		/* The tricky part of the block wise read is to ensure we sent
 		 * proper newline terminated commands.  Moreover, we would not
 		 * like to block due to sending for old files.  */
@@ -1078,7 +1078,7 @@ MASTERfreeze(int *ret)
 			mal_clients[ i].mode = FINISHING;
 
 	if (repFile)
-		stream_close(repFile);
+		mnstr_close(repFile);
 	repFile = NULL;
 
 	sendLogs = FALSE;
@@ -1105,7 +1105,7 @@ MASTERsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 	(void)ret;
 
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout, "#replay the log from  %s %s %s %d\n",
+	mnstr_printf(GDKout, "#replay the log from  %s %s %s %d\n",
 		*uri, *usr, *pw, *tag);
 #endif
 	if (t == 0)
@@ -1144,7 +1144,7 @@ MASTERsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 		throw(MAL, "master.sync", "cannot fork new client");
 
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout, "#awaiting replay of the log \n");
+	mnstr_printf(GDKout, "#awaiting replay of the log \n");
 #endif
 	return MAL_SUCCEED;
 }
@@ -1163,7 +1163,7 @@ SLAVEsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 	(void)ret;
 
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout, "#request replay the log from  %s %s %s %d\n",
+	mnstr_printf(GDKout, "#request replay the log from  %s %s %s %d\n",
 		*uri, *usr, *pw, *tag);
 #endif
 
@@ -1200,8 +1200,8 @@ SLAVEsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 	}
 	acceptLogs = TRUE;
 #ifdef _DEBUG_REPLICATION_
-	stream_printf(GDKout, "#slave awaiting replay of the log \n");
-	stream_printf(GDKout, "#%s\n", buf);
+	mnstr_printf(GDKout, "#slave awaiting replay of the log \n");
+	mnstr_printf(GDKout, "#%s\n", buf);
 #endif
 	return MAL_SUCCEED;
 }
@@ -1455,7 +1455,7 @@ SLAVEprelude(int *ret)
 	/* to be called after MASTERprelude  */
 	if (GDKgetenv("replication_slave") != NULL) {
 #ifdef _DEBUG_REPLICATION_
-		stream_printf(GDKout, "#initialize slave\n");
+		mnstr_printf(GDKout, "#initialize slave\n");
 #endif
 		mal_set_lock(repLck, "replication");
 		SLAVEinitLog();

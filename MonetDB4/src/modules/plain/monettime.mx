@@ -1957,7 +1957,8 @@ oldduration(int *ndays, str s)
 				v = v * 10 + (*snew) - '0';
 				snew++;
 			}
-		} else if (isupper((int) (*snew)) || islower((int) (*snew))) {
+		} else if (isupper((int) (unsigned char) *snew) ||
+			   islower((int) (unsigned char) *snew)) {
 			switch (*snew++) {
 			case 'y':
 			case 'Y':

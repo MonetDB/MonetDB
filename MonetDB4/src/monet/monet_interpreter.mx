@@ -2460,22 +2460,22 @@ As a soon as an error occurs on the event stream we should abandon
 any performance profiling.
 @c
 
-#define log(X,Y) if(eventstream && (stream_errnr(eventstream) \
-		||  stream_printf(eventstream,X,Y)<0)){ \
+#define log(X,Y) if(eventstream && (mnstr_errnr(eventstream) \
+		||  mnstr_printf(eventstream,X,Y)<0)){ \
 		eventstream=0;\
 		monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;}
-#define log0(X) if(eventstream && (stream_errnr(eventstream) \
-		|| stream_printf(eventstream,X)<0) ){ \
+#define log0(X) if(eventstream && (mnstr_errnr(eventstream) \
+		|| mnstr_printf(eventstream,X)<0) ){ \
 		eventstream=0;\
 		monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;}
-#define log2(X,Y,Z) if(eventstream && (stream_errnr(eventstream) \
-		|| stream_printf(eventstream,X,Y,Z)<0) ){ \
+#define log2(X,Y,Z) if(eventstream && (mnstr_errnr(eventstream) \
+		|| mnstr_printf(eventstream,X,Y,Z)<0) ){ \
 		eventstream=0;\
 		monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;}
-#define flushLog() if(eventstream && stream_errnr(eventstream)){eventstream=0;\
+#define flushLog() if(eventstream && mnstr_errnr(eventstream)){eventstream=0;\
 	monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;} \
-	else stream_flush(eventstream); \
-	if(eventstream && stream_errnr(eventstream)){eventstream=0;\
+	else mnstr_flush(eventstream); \
+	if(eventstream && mnstr_errnr(eventstream)){eventstream=0;\
 	monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;}
 
 void
@@ -2611,7 +2611,7 @@ onlineProfilerEvent(char *caller, lng clk, lng ticks, struct tms *timer, YYSTREE
 		onlineProfilerHeader();
 		showheader--;
 	}
-	if (eventstream == NULL || stream_errnr(eventstream)) {
+	if (eventstream == NULL || mnstr_errnr(eventstream)) {
 		monet_unset_lock(profilerLock, "onlineProfilerEvent");
 		eventstream = NULL;
 		return;
@@ -2671,7 +2671,7 @@ onlineProfilerEvent(char *caller, lng clk, lng ticks, struct tms *timer, YYSTREE
 
 	log(LLFMT " ]\n", (lng) (eventcounter));
 	eventcounter++;
-	if (eventstream && stream_flush(eventstream))
+	if (eventstream && mnstr_flush(eventstream))
 		eventstream = 0;
 	monet_unset_lock(profilerLock, "onlineProfilerEvent");
 }

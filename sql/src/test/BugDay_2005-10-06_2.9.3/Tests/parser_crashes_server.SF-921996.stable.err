@@ -10,9 +10,10 @@ stderr of test 'parser_crashes_server.SF-921996` in directory 'src/test/BugDay_2
 # 14:52:27 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49478  < parser_crashes_server.SF-921996.sql
 # 14:52:27 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@volund:39554
 QUERY = CREATE TABLE bounds_test (
-ERROR = !syntax error, unexpected $end, expecting CHECK or FOREIGN or PRIMARY or UNIQUE in: "create table bounds_test (
+        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ERROR = !syntax error, unexpected $end, expecting FOREIGN or PRIMARY or UNIQUE in: "create table bounds_test (
         !id int not null auto_increment primary key,
         !"
 

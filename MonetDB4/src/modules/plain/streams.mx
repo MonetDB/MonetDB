@@ -40,54 +40,54 @@ It encapsulates the corresponding library managed in
 .COMMAND stdout() : Stream = io_stdout;
 	"return the output stream for the database client"
 
-.COMMAND open_rstream( str filename ) : Stream = stream_open_rstream;
+.COMMAND open_rstream( str filename ) : Stream = mnstr_open_rstream;
 	"open a file stream for reading"
-.COMMAND open_wstream( str filename ) : Stream = stream_open_wstream;
+.COMMAND open_wstream( str filename ) : Stream = mnstr_open_wstream;
 	"open a file stream for writing"
-.COMMAND open_rastream( str filename ) : Stream = stream_open_rastream;
+.COMMAND open_rastream( str filename ) : Stream = mnstr_open_rastream;
 	"open ascii file stream for reading"
-.COMMAND open_wastream( str filename ) : Stream = stream_open_wastream;
+.COMMAND open_wastream( str filename ) : Stream = mnstr_open_wastream;
 	"open ascii file stream for writing"
 
-.COMMAND stream_rstream( Stream s ) : Stream = stream_stream_rstream;
+.COMMAND stream_rstream( Stream s ) : Stream = mnstr_stream_rstream;
 	"convert an ascii stream to binary"
-.COMMAND stream_wstream( Stream s ) : Stream = stream_stream_wstream;
+.COMMAND stream_wstream( Stream s ) : Stream = mnstr_stream_wstream;
 	"convert an ascii stream to binary"
 
 .COMMAND socket_rstream( int socket, str name ) : Stream =
-	stream_socket_rstream; "open a socket stream for reading"
+	mnstr_socket_rstream; "open a socket stream for reading"
 .COMMAND socket_wstream( int socket, str name ) : Stream =
-	stream_socket_wstream; "open a socket stream for writing"
+	mnstr_socket_wstream; "open a socket stream for writing"
 .COMMAND socket_rastream( int socket, str name ) : Stream =
-	stream_socket_rastream; "open ascii socket stream for reading"
+	mnstr_socket_rastream; "open ascii socket stream for reading"
 .COMMAND socket_wastream( int socket, str name ) : Stream =
-	stream_socket_wastream; "open ascii socket stream for writing"
+	mnstr_socket_wastream; "open ascii socket stream for writing"
 
 .COMMAND block_stream( Stream s ) : Stream =
 	open_block_stream; "open a block based stream"
 
-.COMMAND stream_write( Stream s, str data ) = stream_write_string;
+.COMMAND stream_write( Stream s, str data ) = mnstr_write_string;
 	"write data on the stream"
 
-.COMMAND stream_writeInt( Stream s, int data ) = stream_writeInt_wrap;
+.COMMAND stream_writeInt( Stream s, int data ) = mnstr_writeInt_wrap;
 	"write an integer on the stream"
 
-.COMMAND stream_readInt( Stream s ) : int = stream_readInt_wrap;
+.COMMAND stream_readInt( Stream s ) : int = mnstr_readInt_wrap;
 	"read an integer from the stream"
 
-.COMMAND stream_writeLng( Stream s, lng data ) = stream_writeLng_wrap;
+.COMMAND stream_writeLng( Stream s, lng data ) = mnstr_writeLng_wrap;
 	"write a long integer on the stream"
 
-.COMMAND stream_readLng( Stream s ) : lng = stream_readLng_wrap;
+.COMMAND stream_readLng( Stream s ) : lng = mnstr_readLng_wrap;
 	"read a long integer from the stream"
 
-.COMMAND stream_read( Stream s ) : str = stream_read_string;
+.COMMAND stream_read( Stream s ) : str = mnstr_read_string;
 	"read data from the stream"
 
-.COMMAND stream_flush( Stream s ) = stream_flush_stream;
+.COMMAND stream_flush( Stream s ) = mnstr_flush_stream;
 	"flush the stream"
 
-.COMMAND stream_close( Stream s ) = stream_close_stream;
+.COMMAND stream_close( Stream s ) = mnstr_close_stream;
 	"close and destroy the stream s"
 
     .ATOM Bstream = ptr;
@@ -184,14 +184,14 @@ io_stderr(Stream *ret)
 
 @= open_stream
 int
-stream_open_@1(Stream *S, str filename)
+mnstr_open_@1(Stream *S, str filename)
 {
 	stream *s;
 
-	if ((s = open_@1( filename )) == NULL || stream_errnr(s)) {
+	if ((s = open_@1( filename )) == NULL || mnstr_errnr(s)) {
 		if (s)
-			stream_destroy(s);
-		GDKerror("stream_open: could not open file '%s'\n", filename);
+			mnstr_destroy(s);
+		GDKerror("mnstr_open: could not open file '%s'\n", filename);
 		return GDK_FAIL;
 	} else {
 		*(stream**)S = s;
@@ -204,26 +204,26 @@ stream_open_@1(Stream *S, str filename)
 @:open_stream(rastream)@
 @:open_stream(wastream)@
 
-@= stream_stream
+@= mnstr_stream
 int
-stream_stream_@1(Stream *Sout, Stream *Sin)
+mnstr_stream_@1(Stream *Sout, Stream *Sin)
 {
-	*(stream**)Sout = stream_@1(*(stream**)Sin);
+	*(stream**)Sout = mnstr_@1(*(stream**)Sin);
 	return GDK_SUCCEED;
 }
 @c
-@:stream_stream(rstream)@
-@:stream_stream(wstream)@
+@:mnstr_stream(rstream)@
+@:mnstr_stream(wstream)@
 
 @= open_socket
 int
-stream_socket_@1(Stream *S, int *sockp, str name)
+mnstr_socket_@1(Stream *S, int *sockp, str name)
 {
 	stream *s;
 
-	if ((s = socket_@1( *sockp, name )) == NULL || stream_errnr(s)) {
+	if ((s = socket_@1( *sockp, name )) == NULL || mnstr_errnr(s)) {
 		if (s)
-			stream_destroy(s);
+			mnstr_destroy(s);
 		GDKerror("Could not open socket %s\n", name );
 		return GDK_FAIL;
 	} else {
@@ -239,55 +239,55 @@ stream_socket_@1(Stream *S, int *sockp, str name)
 
 @c
 int
-stream_write_string(Stream *S, str data)
+mnstr_write_string(Stream *S, str data)
 {
 	stream *s = *(stream **) S;
 
-	return stream_write(s, data, 1, strlen(data)) < 0 ? GDK_FAIL : GDK_SUCCEED;
+	return mnstr_write(s, data, 1, strlen(data)) < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
 int
-stream_writeInt_wrap(Stream *S, int *data)
+mnstr_writeInt_wrap(Stream *S, int *data)
 {
 	stream *s = *(stream **) S;
 
-	return stream_writeInt(s, *data) ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_writeInt(s, *data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
-stream_readInt_wrap(int *data, Stream *S)
+mnstr_readInt_wrap(int *data, Stream *S)
 {
 	stream *s = *(stream **) S;
 
-	return stream_readInt(s, data) ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_readInt(s, data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
-stream_writeLng_wrap(Stream *S, long long *data)
+mnstr_writeLng_wrap(Stream *S, long long *data)
 {
 	stream *s = *(stream **) S;
 
-	return stream_writeLng(s, *data) ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_writeLng(s, *data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
-stream_readLng_wrap(long long *data, Stream *S)
+mnstr_readLng_wrap(long long *data, Stream *S)
 {
 	stream *s = *(stream **) S;
 
-	return stream_readLng(s, data) ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_readLng(s, data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 #define CHUNK (64*1024)
 int
-stream_read_string(str *res, Stream *S)
+mnstr_read_string(str *res, Stream *S)
 {
 	stream *s = *(stream **) S;
 	ssize_t len = 0;
 	size_t size = CHUNK +1;
 	char *buf = GDKmalloc(size), *start = buf;
 
-	while ((len = stream_read(s, start, 1, CHUNK)) > 0) {
+	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
 		size += len;
 		buf = GDKrealloc(buf, size);
 		start = buf + size - CHUNK -1;
@@ -303,17 +303,17 @@ stream_read_string(str *res, Stream *S)
 }
 
 int
-stream_flush_stream(Stream *S)
+mnstr_flush_stream(Stream *S)
 {
 	stream *s = *(stream **) S;
 
-	if (stream_flush(s))
+	if (mnstr_flush(s))
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
 int
-stream_close_stream(Stream *S)
+mnstr_close_stream(Stream *S)
 {
 	close_stream(*(stream **) S);
 	return GDK_SUCCEED;
@@ -367,7 +367,7 @@ io_fprintf(Stream *filepp, str format, ...)
 	if (ret == GDK_FAIL) {
 		return GDK_FAIL;
 	}
-	if (stream_write(fp, s, ret, strlen(s)) <= 0) {
+	if (mnstr_write(fp, s, ret, strlen(s)) <= 0) {
 		GDKsyserror("io_fprintf():");
 		GDKfree(s);
 		return GDK_FAIL;
@@ -392,28 +392,28 @@ io_fprint(Stream *filepp, ...)
 	if (val) {
 		type = va_arg(ap, int);
 
-		if (ATOMstorage(type) != TYPE_str && stream_printf(fp, "%s(\"", ATOMname(type)) < 0)
+		if (ATOMstorage(type) != TYPE_str && mnstr_printf(fp, "%s(\"", ATOMname(type)) < 0)
 			return GDK_FAIL;
 		ATOMprint(type, val, fp);
-		if (stream_errnr(fp))
+		if (mnstr_errnr(fp))
 			return GDK_FAIL;
-		if (ATOMstorage(type) != TYPE_str && stream_printf(fp, "\")") < 0)
+		if (ATOMstorage(type) != TYPE_str && mnstr_printf(fp, "\")") < 0)
 			return GDK_FAIL;
 		val = va_arg(ap, ptr);
 		while (val) {
 			type = va_arg(ap, int);
 
 			if (ATOMstorage(type) != TYPE_str) {
-				if (stream_printf(fp, ", %s(\"", ATOMname(type)) < 0)
+				if (mnstr_printf(fp, ", %s(\"", ATOMname(type)) < 0)
 					return GDK_FAIL;
 			} else {
-				if (stream_printf(fp, ", ") < 0)
+				if (mnstr_printf(fp, ", ") < 0)
 					return GDK_FAIL;
 			}
 			ATOMprint(type, val, fp);
-			if (stream_errnr(fp))
+			if (mnstr_errnr(fp))
 				return GDK_FAIL;
-			if (ATOMstorage(type) != TYPE_str && stream_printf(fp, "\")") < 0)
+			if (ATOMstorage(type) != TYPE_str && mnstr_printf(fp, "\")") < 0)
 				return GDK_FAIL;
 			val = va_arg(ap, ptr);
 		}
@@ -463,12 +463,12 @@ io_fgetc(int *res, Stream *S)
 	stream *s = *(stream **) S;
 	char c;
 
-	if (stream_read(s, &c, 1, 1) == 1) {
+	if (mnstr_read(s, &c, 1, 1) == 1) {
 		*res = c;
 	} else {
 		*res = -1;	/* EOF */
 	}
-	return stream_errnr(s) ? GDK_FAIL : GDK_SUCCEED;
+	return mnstr_errnr(s) ? GDK_FAIL : GDK_SUCCEED;
 }
 
 int
@@ -480,7 +480,7 @@ io_fgets(str *res, Stream *S)
 
 	if (buf == NULL)
 		return GDK_FAIL;
-	for (size = 0; stream_read(s, buf + size, 1, 1) > 0; size++) {
+	for (size = 0; mnstr_read(s, buf + size, 1, 1) > 0; size++) {
 		if (buf[size] == 0 || buf[size] == '\n')
 			break;
 		if (size + 1 == len) {
@@ -491,7 +491,7 @@ io_fgets(str *res, Stream *S)
 	}
 	buf[size] = 0;
 	*res = buf;
-	return stream_errnr(s) ? GDK_FAIL : GDK_SUCCEED;
+	return mnstr_errnr(s) ? GDK_FAIL : GDK_SUCCEED;
 }
 
 #if 0
@@ -503,7 +503,7 @@ io_fputc(int *c, stream *S)
 
 	data[0] = (char) *c;
 	data[1] = 0;
-	return stream_write(s, data, 1, 1) == 1 ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_write(s, data, 1, 1) == 1 ? GDK_SUCCEED : GDK_FAIL;
 }
 #endif
 
@@ -512,7 +512,7 @@ io_fwrite(Stream *S, str buf, int *nbytes)
 {
 	stream *s = *(stream **) S;
 
-	return stream_write(s, buf, 1, *nbytes) == *nbytes ? GDK_SUCCEED : GDK_FAIL;
+	return mnstr_write(s, buf, 1, *nbytes) == *nbytes ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @}

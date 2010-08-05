@@ -393,12 +393,12 @@ doChallenge(stream *in, stream *out) {
 
 	if (buf == NULL || fdin == NULL || fdout == NULL){
 		if (fdin) {
-			stream_close(fdin);
-			stream_destroy(fdin);
+			mnstr_close(fdin);
+			mnstr_destroy(fdin);
 		}
 		if (fdout) {
-			stream_close(fdout);
-			stream_destroy(fdout);
+			mnstr_close(fdout);
+			mnstr_destroy(fdout);
 		}
 		if (buf)
 			GDKfree(buf);
@@ -411,7 +411,7 @@ doChallenge(stream *in, stream *out) {
 	generateChallenge(challenge, 8, 12);
 	if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert(0);
 	/* note that we claim to speak proto 9 here for hashed passwords */
-	stream_printf(fdout, "%s:mserver:9:%s:%s:%s:",
+	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
 			challenge,
 			algos,
 #ifdef WORDS_BIGENDIAN
@@ -422,17 +422,17 @@ doChallenge(stream *in, stream *out) {
 			MONETDB5_PASSWDHASH
 			);
 	GDKfree(algos);
-	stream_flush(fdout);
+	mnstr_flush(fdout);
 	/* get response */
-	if ((len = (int) stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
+	if ((len = (int) mnstr_read_block(fdin, buf, 1, BLOCK)) < 0 || 
 			/* in embedded mode we allow just one client */
 			(GDKembedded && MCcountClients() > 1))
 	{
 		/* FIXME: tell the client in a normal way! */
-		stream_close(fdin);
-		stream_destroy(fdin);
-		stream_close(fdout);
-		stream_destroy(fdout);
+		mnstr_close(fdin);
+		mnstr_destroy(fdin);
+		mnstr_close(fdout);
+		mnstr_destroy(fdout);
 		GDKfree(buf);
 		return;
 	}
@@ -441,8 +441,8 @@ doChallenge(stream *in, stream *out) {
 	printf("mal_mapi:Client accepted %s\n", buf);
 	fflush(stdout);
 
-	stream_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
-	stream_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
+	mnstr_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
+	mnstr_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
 #endif
 	bs = bstream_create(fdin, 128 * BLOCK);
 
@@ -554,7 +554,7 @@ SERVERlistenThread(SOCKET *Sock)
 
 			rv = recvmsg(msgsock, &msgh, 0);
 			if (rv == -1) {
-				close(msgsock);
+				closesocket(msgsock);
 				continue;
 			}
 
@@ -566,18 +566,18 @@ SERVERlistenThread(SOCKET *Sock)
 					/* filedescriptor, put it in place of msgsock */
 					cmsg = CMSG_FIRSTHDR(&msgh);
 					if (!cmsg->cmsg_type == SCM_RIGHTS) {
-						close(msgsock);
+						closesocket(msgsock);
 						fprintf(stderr, "!mal_mapi.listen: "
 								"expected filedescriptor, but "
 								"received something else\n");
 						continue;
 					}
-					close(msgsock);
+					closesocket(msgsock);
 					msgsock = *(int*)CMSG_DATA(cmsg);
 				break;
 				default:
 					/* some unknown state */
-					close(msgsock);
+					closesocket(msgsock);
 					fprintf(stderr, "!mal_mapi.listen: "
 							"unknown command type in first byte\n");
 					continue;
@@ -675,20 +675,20 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		usockfile = GDKstrdup(*Usockfile);
 #else
 		usockfile = NULL;
-		throw(IO, "mal_mapi.listen", OPERATION_FAILED " Unix domain sockets are not supported");
+		throw(IO, "mal_mapi.listen", OPERATION_FAILED ": UNIX domain sockets are not supported");
 #endif
 	}
 	maxusers = *Maxusers;
 	maxusers = (maxusers ? maxusers : SERVERMAXUSERS);
 
 	if (port <= 0 && usockfile == NULL)
-		throw(IO, "mal_mapi.listen", OPERATION_FAILED " No port or socket file specified");
+		throw(IO, "mal_mapi.listen", OPERATION_FAILED ": no port or socket file specified");
 
 	if (port > 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock == INVALID_SOCKET)
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED " Creation of stream socket failed: %s",
+					OPERATION_FAILED ": creation of stream socket failed: %s",
 					strerror(errno));
 
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
@@ -728,7 +728,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		if (getsockname(sock, (SOCKPTR) &server, &length) < 0)
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED " Failed getting socket name: %s",
+					OPERATION_FAILED ": failed getting socket name: %s",
 					strerror(errno));
 		listen(sock, maxusers);
 	}
@@ -737,18 +737,26 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock == INVALID_SOCKET ) {
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED " Creation of Unix socket failed: %s",
+					OPERATION_FAILED ": creation of UNIX socket failed: %s",
 					strerror(errno));
 		}
+
+		/* prevent silent truncation, sun_path is typically around 108
+		 * chars long :/ */
+		if (strlen(usockfile) > sizeof(userver.sun_path))
+			throw(MAL, "mal_mapi.listen",
+					OPERATION_FAILED ": UNIX socket path too long: %s",
+					usockfile);
+
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
 
 		length = (SOCKLEN) sizeof(userver);
 		unlink(usockfile);
-		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
+		if (bind(usock, (SOCKPTR) &userver, length) < 0) {
 			unlink(usockfile);
 			throw(IO, "mal_mapi.listen",
-					OPERATION_FAILED " Binding to Unix socket file %s failed: %s",
+					OPERATION_FAILED ": binding to UNIX socket file %s failed: %s",
 					usockfile, strerror(errno));
 		}
 		listen(usock, maxusers);
@@ -756,7 +764,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 
 #ifdef DEBUG_SERVER
-	stream_printf(cntxt->fdout, "#SERVERlisten:Network started at %d\n", port);
+	mnstr_printf(cntxt->fdout, "#SERVERlisten:Network started at %d\n", port);
 #endif
 	psock = GDKmalloc(sizeof(SOCKET) * 3);
 
@@ -771,12 +779,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	psock[2] = INVALID_SOCKET;
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, psock) < 0) {
 		GDKfree(psock);
-		throw(MAL, "mal_mapi.listen", OPERATION_FAILED " Starting thread failed");
+		throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": starting thread failed");
 	} 
 #ifdef DEBUG_SERVER
 	gethostname(host, (int) 512);
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
-	stream_printf(cntxt->fdout, "%s", msg);
+	mnstr_printf(cntxt->fdout, "%s", msg);
 #endif
 
 	/* seed the randomiser such that our challenges aren't
@@ -936,7 +944,7 @@ then a starting !. They are all stripped here.
 				l--;
 			}
 		*f=0;
-		throw(MAL, "@1", OPERATION_FAILED " Remote error: %s", newerr);
+		throw(MAL, "@1", OPERATION_FAILED ": remote error: %s", newerr);
 	}
 }
 @c
@@ -965,7 +973,7 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 
 	if( i==MAXSESSIONS){
 		mal_unset_lock(mal_contextLock,"SERVERconnect");
-		throw(IO, "mapi.connect", OPERATION_FAILED " Too many sessions");
+		throw(IO, "mapi.connect", OPERATION_FAILED ": too many sessions");
 	}
 	SERVERsessions[i].c= cntxt;
 	SERVERsessions[i].key= ++sessionkey;
@@ -987,7 +995,7 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 	}
 
 #ifdef MAPI_TEST
-	stream_printf(SERVERsessions[i].c->fdout,"Succeeded to establish session\n");
+	mnstr_printf(SERVERsessions[i].c->fdout,"Succeeded to establish session\n");
 #endif
 	SERVERsessions[i].mid= mid;
 	*key = SERVERsessions[i].key;
@@ -1003,7 +1011,7 @@ SERVERdisconnectALL(int *key){
 	for(i=1; i< MAXSESSIONS; i++)
 		if( SERVERsessions[i].c != 0 ) {
 #ifdef MAPI_TEST
-	stream_printf(SERVERsessions[i].c->fdout,"Close session %d\n",i);
+	mnstr_printf(SERVERsessions[i].c->fdout,"Close session %d\n",i);
 #endif
 			SERVERsessions[i].c = 0;
 			if( SERVERsessions[i].dbalias)
@@ -1616,7 +1624,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	key= * (int*) getArgReference(stk,pci,pci->retc);
 	@:accessTest(key,rpc)@
 #ifdef MAPI_TEST
-	stream_printf(cntxt->fdout,"about to send: %s\n",qry);
+	mnstr_printf(cntxt->fdout,"about to send: %s\n",qry);
 #endif
 	/* glue all strings together */
 	for(i= pci->retc+1; i<pci->argc; i++){
@@ -1644,7 +1652,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		for(j=0; j<pci->retc; j++){
 			fld= mapi_fetch_field(hdl,j);
 #ifdef MAPI_TEST
-			stream_printf(cntxt->fdout,"Got: %s\n",fld);
+			mnstr_printf(cntxt->fdout,"Got: %s\n",fld);
 #endif
 			switch(getVarType(mb,getArg(pci,j)) ){
 			case TYPE_void:

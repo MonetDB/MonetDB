@@ -174,7 +174,7 @@ scanner_init_keywords(void)
 	keywords_insert("CASCADE", CASCADE);
 	keywords_insert("RESTRICT", RESTRICT);
 	keywords_insert("GLOBAL", GLOBAL);
-	keywords_insert("GROUP", GROUP);
+	keywords_insert("GROUP", sqlGROUP);
 	keywords_insert("HAVING", HAVING);
 	keywords_insert("ILIKE", ILIKE);
 	keywords_insert("IN", sqlIN);
@@ -509,8 +509,8 @@ scanner_read_more(struct scanner *lc, int n)
 
 		/* query is not finished ask for more */
 		if (b->eof || !isa_block_stream(b->s)) {
-			if (stream_write(lc->ws, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
-				stream_flush(lc->ws);
+			if (mnstr_write(lc->ws, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
+				mnstr_flush(lc->ws);
 			b->eof = 0;
 			more = 1;
 		}
@@ -1043,7 +1043,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 	}
 
 	if (lc->log) 
-		stream_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
+		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	/* Don't include literals in the calculation of the key */
 	if (token != STRING && token != sqlINT && token != INTNUM && token != APPROXNUM && token != sqlNULL)

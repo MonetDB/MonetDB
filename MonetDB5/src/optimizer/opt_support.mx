@@ -797,7 +797,7 @@ optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int 
 	if( fd == NULL)
 		printf("Error in %s\n",nme);
 	printFunction(fd,mb,0,LIST_MAL_ALL);
-	stream_close(fd);
+	mnstr_close(fd);
 	}
 	*/
 	return MAL_SUCCEED;

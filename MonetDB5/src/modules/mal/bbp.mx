@@ -539,12 +539,12 @@ CMDtruncateheap(Heap *h,str fnme)
 	/* reduce disk footprint */
 	snprintf(buf, PATHLENGTH, "%s/%s.%s", BATDIR, fnme, (strrchr(h->filename,'.')? strrchr(h->filename,'.')+1:""));
 	if ((f = fopen(buf, "w")) == NULL) {
-		IODEBUG stream_printf(GDKstdout, "#failed to truncate: %s\n",
+		IODEBUG mnstr_printf(GDKstdout, "#failed to truncate: %s\n",
 				strerror(errno));
 	} else {
 		fclose(f);
 	}
-	IODEBUG stream_printf(GDKstdout, "#truncate %s file\n", fnme);
+	IODEBUG mnstr_printf(GDKstdout, "#truncate %s file\n", fnme);
 }
 
 static str
@@ -560,11 +560,11 @@ CMDcompressheap(Heap *h, str fnme)
 		GDKfilepath(buf, BATDIR, buf2, "gz");
 		fp = open_gzwstream(buf);
 		if ( fp ) {
-			if ( (ssize_t) h->size != stream_write(fp,(void*)h->base,1,h->size) ){
+			if ( (ssize_t) h->size != mnstr_write(fp,(void*)h->base,1,h->size) ){
 				close_stream(fp);
 				throw(MAL,"bbp.compress","compress write error");
 			}
-			IODEBUG stream_printf(GDKstdout,"#compress %s size " SZFMT" is now compressed\n", buf,h->size);
+			IODEBUG mnstr_printf(GDKstdout,"#compress %s size " SZFMT" is now compressed\n", buf,h->size);
 			close_stream(fp);
 		}
 	}
@@ -591,11 +591,11 @@ CMDdecompressheap(Heap *h, Heap *hn, str fnme)
 	snprintf(buf2,PATHLENGTH,"%s.%s",fnme,(strrchr(h->filename,'.')? strrchr(h->filename,'.')+1:""));
 	GDKfilepath(buf, BATDIR, buf2, "gz");
 	fp = open_gzrstream(buf);
-	if ( fp && !stream_errnr(fp)){
+	if ( fp && !mnstr_errnr(fp)){
 		if ( HEAPextend(hn,h->size) < 0)
 			return -999;
 		/* skip header */
-		if ((ssize_t) h->size != stream_read(fp, (void*) hn->base,1, h->size))
+		if ((ssize_t) h->size != mnstr_read(fp, (void*) hn->base,1, h->size))
 			return -999;
 		hn->free = h->free;
 		if (h->parentid)
@@ -604,7 +604,7 @@ CMDdecompressheap(Heap *h, Heap *hn, str fnme)
 		hn->newstorage = h->newstorage;
 		hn->hashash = h->hashash;
 		assert(h->copied == 0);
-		IODEBUG stream_printf(GDKstdout,"#decompress %s size " SZFMT" \n", buf, h->size);
+		IODEBUG mnstr_printf(GDKstdout,"#decompress %s size " SZFMT" \n", buf, h->size);
 		close_stream(fp);
 		return 1;
 	}
@@ -625,7 +625,7 @@ CMDbbpcompress(int *ret, int *bid, str *fnme)
 	if (b == 0)
 		throw(MAL, "bbp.compress", INTERNAL_BAT_ACCESS);
 	if ( BATcount(b) ){
-		IODEBUG stream_printf(GDKstdout,"#compress BAT %d %s %s \n", *bid, BBP_physical(*bid), *fnme);
+		IODEBUG mnstr_printf(GDKstdout,"#compress BAT %d %s %s \n", *bid, BBP_physical(*bid), *fnme);
 		if ( (msg = CMDcompressheap(&b->H->heap, *fnme))  )
 			return msg;
 		if ( (msg = CMDcompressheap(b->H->vheap, *fnme))  )
@@ -678,7 +678,7 @@ CMDbbpdecompress(int *ret, int *bid, str *fnme)
 			decomp += CMDdecompressheap(&b->T->heap,&bn->T->heap,*fnme);
 		if (b->T->type)
 			decomp += CMDdecompressheap(b->T->vheap,bn->T->vheap,*fnme);
-		IODEBUG	stream_printf(GDKstdout,"#decompressed BAT %d %s decomp %d \n", *bid, BBP_physical(*bid),decomp);
+		IODEBUG	mnstr_printf(GDKstdout,"#decompressed BAT %d %s decomp %d \n", *bid, BBP_physical(*bid),decomp);
 		if (decomp < -800) {
 			BBPreleaseref(bn->batCacheid);
 			BBPreleaseref(b->batCacheid);
@@ -706,7 +706,7 @@ CMDbbptruncate(int *ret, int *bid, str *fnme)
 	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
 		throw(MAL, "bbp.truncate", INTERNAL_BAT_ACCESS);
-	IODEBUG stream_printf(GDKstdout,"#truncate BAT %d %s \n", *bid, BBP_physical(*bid));
+	IODEBUG mnstr_printf(GDKstdout,"#truncate BAT %d %s \n", *bid, BBP_physical(*bid));
 	CMDtruncateheap(&b->H->heap,*fnme);
 	CMDtruncateheap(b->H->vheap,*fnme);
 	CMDtruncateheap(&b->T->heap,*fnme);

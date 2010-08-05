@@ -409,21 +409,21 @@ monet_hello(stream *out)
 
 		if (out == NULL)
 			out = GDKout;
-		stream_printf(out, "# MonetDB Server v%s\n", monet_version);
-		stream_printf(out, "# based on GDK   v%s\n", GDKversion());
+		mnstr_printf(out, "# MonetDB Server v%s\n", monet_version);
+		mnstr_printf(out, "# based on GDK   v%s\n", GDKversion());
 		if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
-			stream_printf(out, "# not released\n");
+			mnstr_printf(out, "# not released\n");
 		else
-			stream_printf(out, "# release %s\n", MONETDB_RELEASE);
-		stream_printf(out, "# Copyright (c) 1993-July 2008, CWI. "
+			mnstr_printf(out, "# release %s\n", MONETDB_RELEASE);
+		mnstr_printf(out, "# Copyright (c) 1993-July 2008, CWI. "
 			      "All rights reserved.\n");
-		stream_printf(out, "# Copyright (c) August 2008-2010, MonetDB B.V.. "
+		mnstr_printf(out, "# Copyright (c) August 2008-2010, MonetDB B.V.. "
 			      "All rights reserved.\n");
-		stream_printf(out, "# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
+		mnstr_printf(out, "# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
 		                   monet_arch, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
-		stream_printf(out, "# Detected %.3f %ciB (" SZFMT " bytes) main-memory.\n", 
+		mnstr_printf(out, "# Detected %.3f %ciB (" SZFMT " bytes) main-memory.\n", 
 		                   sz_mem_h, qc[qi], sz_mem_b);
-		stream_printf(out, "# Visit http://monetdb.cwi.nl/ for further information.\n");
+		mnstr_printf(out, "# Visit http://monetdb.cwi.nl/ for further information.\n");
 	}
 }
 

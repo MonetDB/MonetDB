@@ -489,8 +489,8 @@ clean_up(stream *bs, lng **argcnt, lng iterc)
 {
     lng i = 0;
     if(bs){
-        buffer_destroy(stream_get_buffer(bs));
-        stream_close(bs); stream_destroy(bs);
+        buffer_destroy(mnstr_get_buffer(bs));
+        mnstr_close(bs); mnstr_destroy(bs);
     }
     if(argcnt) {
         for(i = 0; i < iterc; i++) GDKfree(argcnt[i]);
@@ -542,13 +542,14 @@ handle_error_msg(char *errmsg)
  *
  * Returns: a socket number if succeeded, -1 otherwise.
  */
-static int
+static SOCKET
 setup_connection(str dst, int *port)
 {
     struct in_addr      addr;
     struct sockaddr_in  sockaddr;
     struct hostent     *resolv = NULL;
-    int i, ret, sock = -1, p = 0;
+    int i, p = 0;
+    SOCKET ret, sock = INVALID_SOCKET;
     str strptr = NULL;
    
     /* remove whitespace characters at the beginning and the end of the
@@ -572,13 +573,13 @@ setup_connection(str dst, int *port)
         p = strtol(strptr, (char **)NULL, 10);
         if (p <= 0) {
             GDKerror("setup_connection: invalid port number: %s\n", strptr);
-            return -1;
+            return INVALID_SOCKET;
         }
     } else { /* find the default port number from "monet_environment" */
         if( !(strptr = GDKgetenv("xrpc_port")) || !(*strptr) ){
             if( !(strptr = GDKgetenv("mapi_port")) ){
                 GDKerror("setup_connection: could not find \"mapi_port\"\n");
-                return -1;
+                return INVALID_SOCKET;
             }
             p = atoi(strptr) + 1; 
         } else {
@@ -586,16 +587,16 @@ setup_connection(str dst, int *port)
         }
     }
 
-    if (isdigit((int)dst[0])) {
+    if (isdigit((int) (unsigned char) dst[0])) {
         if ((i = inet_addr(dst)) < 0) {
             GDKerror("setup_connection: invalid IP address \"%s\"\n", dst);
-            return -1;
+            return INVALID_SOCKET;
         }
         addr.s_addr = (unsigned) i;
     } else {
         if (!(resolv = gethostbyname(dst))) {
             GDKerror("setup_connection: invalid IP address \"%s\"\n", dst);
-            return -1;
+            return INVALID_SOCKET;
         }
         addr.s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
     }
@@ -605,21 +606,21 @@ setup_connection(str dst, int *port)
     sockaddr.sin_addr.s_addr = addr.s_addr;
     memset(&(sockaddr.sin_zero), '\0', 8);
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) != INVALID_SOCKET) {
         GDKerror("setup_connection: failed to create socket\n");
-        return -1;
+        return INVALID_SOCKET;
     }
 
     ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
-    for (i = NR_RETRIES; i > 0 && ret < 0; i--) {
+    for (i = NR_RETRIES; i > 0 && ret == INVALID_SOCKET; i--) {
         MT_sleep_ms(1);
         ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
     }
 
-    if (ret < 0) {
+    if (ret == INVALID_SOCKET) {
         GDKerror("setup_connection: failed to setup connection with %s:%d\n", dst, p);
-        close(sock);
-        return -1;
+        closesocket(sock);
+        return INVALID_SOCKET;
     }
 
     *port = p;
@@ -739,7 +740,7 @@ response2bat(
         goto error;
     }
 
-    if( !(ret = stream_readline(in, respStatus, 1024)) ){
+    if( !(ret = mnstr_readline(in, respStatus, 1024)) ){
         GDKerror("response2bat: failed to receive response from %s:%d", host, port);
         goto error;
     }
@@ -755,14 +756,14 @@ response2bat(
             if(respStatus[ret-2] == '\r')
                 respStatus[ret -2] = '\0'; /* overwrite '\r' */
             GDKerror("%s\n", respStatus);
-            ret = stream_readline(in, respStatus, 1024);
+            ret = mnstr_readline(in, respStatus, 1024);
         } while (ret > 0);
         goto error;
     }
     respStatus[ret -2] = '\0';
 
     do{ /* read the HTTP header and throw it away */
-        ret = stream_readline(in, resp->buf, 1024);
+        ret = mnstr_readline(in, resp->buf, 1024);
         if(ret == 2 && resp->buf[0] == '\r')
             ret = 0; /* end-of-HTTP-header found */
     } while (ret > 0);
@@ -777,7 +778,7 @@ response2bat(
 
         resp->pos = 0;
         do{ /* read the SOAP Fault message */
-            ret = stream_read(in, (resp->buf + resp->pos), 1, (resp->len - resp->pos));
+            ret = mnstr_read(in, (resp->buf + resp->pos), 1, (resp->len - resp->pos));
             if (ret > 0) resp->pos += ret;
         } while (ret > 0);
         if (ret < 0) {
@@ -804,7 +805,7 @@ response2bat(
     /* Stop timing Client DeSerialisation */
     time_xrpcClntDeSeria = GDKusec() - time_xrpcClntDeSeria;
     if (timing) {
-        stream_printf(GDKout,
+        mnstr_printf(GDKout,
                 "XRPC_Client_DeSerialisation (response2bat):   " LLFMT " microsec\n",
                 time_xrpcClntDeSeria);
     }
@@ -925,22 +926,22 @@ byvalue_request(
     }
 
     /* soap env header and xrpc request header */
-    ret = stream_printf(bs, SOAP_ENVELOPE);
+    ret = mnstr_printf(bs, SOAP_ENVELOPE);
     if (ret < 0) 
         return clean_up(bs, argcnt, iterc);
 
     if(qid && *qid) { /* an XRPC query that requires 2PC */
-        ret = stream_printf(bs, "<env:Header>" XRPC_WS_QID "</env:Header>" , qid, timeout, rpc_mode);
+        ret = mnstr_printf(bs, "<env:Header>" XRPC_WS_QID "</env:Header>" , qid, timeout, rpc_mode);
         if (ret < 0) 
             return clean_up(bs, argcnt, iterc);
     }
 
     if(firstCaller) {
-        ret = stream_printf(bs, XRPC_REQ_BODY_FIRST_CALLER,
+        ret = mnstr_printf(bs, XRPC_REQ_BODY_FIRST_CALLER,
                 rpc_module, rpc_uri, rpc_method, arity, iterc,
                 updCall?"true":"false");
     } else {
-        ret = stream_printf(bs, XRPC_REQ_BODY, rpc_module, rpc_uri,
+        ret = mnstr_printf(bs, XRPC_REQ_BODY, rpc_module, rpc_uri,
                 rpc_method, arity, iterc, updCall?"true":"false",
                 xrpc_hostport, seqnr);
     }
@@ -949,16 +950,16 @@ byvalue_request(
 
     for (my_iter = 0; my_iter < iterc; my_iter++) {
         if (arity == 0) {
-            ret = stream_write(bs, "<xrpc:call/>", 1, 12);
+            ret = mnstr_write(bs, "<xrpc:call/>", 1, 12);
             if (ret != 12) return clean_up(bs, argcnt, iterc);
             continue;
         }
 
-        ret = stream_write(bs, "<xrpc:call>", 1, 11); /* start an iteration */
+        ret = mnstr_write(bs, "<xrpc:call>", 1, 11); /* start an iteration */
         if (ret != 11) return clean_up(bs, argcnt, iterc);
         for (my_argc = 0; my_argc < arity; my_argc++) {
             if (argcnt[my_iter][my_argc] == 0) {
-                ret = stream_write(bs, "<xrpc:sequence/>", 1, 16);
+                ret = mnstr_write(bs, "<xrpc:sequence/>", 1, 16);
                 if (ret != 16) return clean_up(bs, argcnt, iterc);
                 continue;
             }
@@ -975,7 +976,7 @@ byvalue_request(
             /* now 'arg_offset' contains the start position of the
              * values of my_iter and my_argc in the fun_* BATs */
 
-            ret = stream_write(bs, "<xrpc:sequence>", 1, 15); /* start a parameter */
+            ret = mnstr_write(bs, "<xrpc:sequence>", 1, 15); /* start a parameter */
             if (ret != 15) return clean_up(bs, argcnt, iterc);
             int k;
             chr elem_kind = 0;
@@ -991,32 +992,32 @@ byvalue_request(
 
                 switch (cur_kind) {
                     case BOOL:
-                        ret = stream_printf(bs,
+                        ret = mnstr_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:boolean\">%s</xrpc:atomic-value>",
                                 intVals[item] == TRUE ? "true" : "false");
                         if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     case INT:
-                        ret = stream_printf(bs,
+                        ret = mnstr_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:integer\">%lld</xrpc:atomic-value>",
                                 intVals[item]);
                         if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     case DEC:
-                        ret = stream_printf(bs,
+                        ret = mnstr_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:decimal\">%f</xrpc:atomic-value>",
                                 dblVals[item]);
                         if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     case DBL:
-                        ret = stream_printf(bs,
+                        ret = mnstr_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:double\">%f</xrpc:atomic-value>",
                                 dblVals[item]);
                         if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     case STR:
                     case U_A:
-                        ret = stream_printf(bs,
+                        ret = mnstr_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:string\">%s</xrpc:atomic-value>",
                                 (char*)BUNtail(strValsi, item));
                         if (ret <= 0) return clean_up(bs, argcnt, iterc);
@@ -1048,13 +1049,13 @@ byvalue_request(
                         a = *(oid*)BUNtail(attr_propi, i);
                         char *attr_val = (char*)BUNtail(prop_vali, a);
 
-                        ret = stream_write(bs, "<xrpc:attribute ", 1, 16);
+                        ret = mnstr_write(bs, "<xrpc:attribute ", 1, 16);
                         if (ret != 16) return clean_up(bs, argcnt, iterc);
                         if (prefix && *prefix){
-                            ret = stream_printf(bs, "%s:", prefix);
+                            ret = mnstr_printf(bs, "%s:", prefix);
                             if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         }
-                        ret = stream_printf(bs, "%s=\"%s\"/>", loc, attr_val);
+                        ret = mnstr_printf(bs, "%s=\"%s\"/>", loc, attr_val);
                         if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     }
@@ -1066,19 +1067,19 @@ byvalue_request(
                             return clean_up(bs, argcnt, iterc);
                         }
                         switch(elem_kind) {
-                            case 0: ret = stream_write(bs, "<xrpc:element>", 1, 14);
+                            case 0: ret = mnstr_write(bs, "<xrpc:element>", 1, 14);
                                     if (ret != 14) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 1: ret = stream_write(bs, "<xrpc:text>", 1, 11);
+                            case 1: ret = mnstr_write(bs, "<xrpc:text>", 1, 11);
                                     if (ret != 11) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 2: ret = stream_write(bs, "<xrpc:comment>", 1, 14);
+                            case 2: ret = mnstr_write(bs, "<xrpc:comment>", 1, 14);
                                     if (ret != 14) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 3: ret = stream_write(bs, "<xrpc:processing-instruction>", 1, 29);
+                            case 3: ret = mnstr_write(bs, "<xrpc:processing-instruction>", 1, 29);
                                     if (ret != 29) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 4: ret = stream_write(bs, "<xrpc:document>", 1, 15);
+                            case 4: ret = mnstr_write(bs, "<xrpc:document>", 1, 15);
                                     if (ret != 15) return clean_up(bs, argcnt, iterc);
                                     break;
                             case 5: /* COLLECTION: nothing to be done, here */   break;
@@ -1115,19 +1116,19 @@ byvalue_request(
                         }
 
                         switch(elem_kind) {
-                            case 0: ret = stream_write(bs, "</xrpc:element>", 1, 15);
+                            case 0: ret = mnstr_write(bs, "</xrpc:element>", 1, 15);
                                     if (ret != 15) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 1: ret = stream_write(bs, "</xrpc:text>", 1, 12);
+                            case 1: ret = mnstr_write(bs, "</xrpc:text>", 1, 12);
                                     if (ret != 12) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 2: ret = stream_write(bs, "</xrpc:comment>", 1, 15);
+                            case 2: ret = mnstr_write(bs, "</xrpc:comment>", 1, 15);
                                     if (ret != 15) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 3: ret = stream_write(bs, "</xrpc:processing-instruction>", 1, 30);
+                            case 3: ret = mnstr_write(bs, "</xrpc:processing-instruction>", 1, 30);
                                     if (ret != 30) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 4: ret = stream_write(bs, "</xrpc:document>", 1, 16);
+                            case 4: ret = mnstr_write(bs, "</xrpc:document>", 1, 16);
                                     if (ret != 16) return clean_up(bs, argcnt, iterc);
                                     break;
                             case 5: /* COLLECTION: nothing to be done, here */    break;
@@ -1142,23 +1143,23 @@ byvalue_request(
                         return clean_up(bs, argcnt, iterc);
                 }
             }
-            ret = stream_write(bs, "</xrpc:sequence>", 1, 16);
+            ret = mnstr_write(bs, "</xrpc:sequence>", 1, 16);
             if (ret != 16) return clean_up(bs, argcnt, iterc);
         }
-        ret = stream_write(bs, "</xrpc:call>", 1, 12);
+        ret = mnstr_write(bs, "</xrpc:call>", 1, 12);
         if (ret != 12) return clean_up(bs, argcnt, iterc);
     }
-    ret = stream_write(bs, "</xrpc:request></env:Body></env:Envelope>\n", 1, 42);
+    ret = mnstr_write(bs, "</xrpc:request></env:Body></env:Envelope>\n", 1, 42);
     if (ret != 42) return clean_up(bs, argcnt, iterc);
     /* Stop timing Client Serialisation */
     time_xrpcClntSeria = GDKusec() - time_xrpcClntSeria;
     if (timing) {
-        stream_printf(GDKout,
+        mnstr_printf(GDKout,
                 "XRPC_Client_Serialisation (create_req_msg):   " LLFMT " microsec\n",
                 time_xrpcClntSeria);
     }
 
-    return stream_get_buffer(bs);
+    return mnstr_get_buffer(bs);
 }
 
 int
@@ -1188,7 +1189,8 @@ CMDhttp_post(
         BAT *dec_values,
         BAT *str_values)
 {
-    int sock = -1, port = -1;
+    int port = -1;
+    SOCKET sock = INVALID_SOCKET;
     stream *in = NULL, *out = NULL;
     buffer *req = NULL;
     size_t bytes_sent = 0;
@@ -1211,7 +1213,7 @@ CMDhttp_post(
         return GDK_FAIL;
     if (!(out = socket_wastream(sock, "http_send"))) {
         GDKerror("do_simple_query: failed to create socket_wastream for sending XRPC request\n");
-        close(sock);
+        closesocket(sock);
         return GDK_FAIL;
     }
 
@@ -1219,14 +1221,14 @@ CMDhttp_post(
                     *updCall, *arity, *itercnt, ws, fun_vid, fun_iter,
                     fun_item, fun_kind, int_values, dbl_values,
                     dec_values, str_values))){
-        stream_close(out); stream_destroy(out);
+        mnstr_close(out); mnstr_destroy(out);
         return GDK_FAIL;
     }
     req->buf[req->pos] = '\0';
 
     /* Start timing Network Send Client2Server */
     lng time_xrpcClnt2Serv = GDKusec();
-    bytes_sent = stream_printf(out,
+    bytes_sent = mnstr_printf(out,
             "POST %s HTTP/1.1\r\n"
             "Host: %s:%d\r\n"
             "Accept: text/html, text/xml, application/soap+xml\r\n"
@@ -1237,15 +1239,15 @@ CMDhttp_post(
             XRPC_REQ_CALLBACK, dst, port, req->pos, req->buf);
     if (bytes_sent < req->pos) {
         GDKerror("do_simple_query: failed to send XRPC request.");
-        stream_close(out); stream_destroy(out);
+        mnstr_close(out); mnstr_destroy(out);
         buffer_destroy(req);
-        close(sock);
+        closesocket(sock);
         return GDK_FAIL;
     }
     /* Stop timing Network Send Client2Server */
     time_xrpcClnt2Serv= GDKusec() - time_xrpcClnt2Serv;
     if (timing) {
-        stream_printf(GDKout,
+        mnstr_printf(GDKout,
                 "XRPC_Network_Client_2_Server:  " LLFMT " microsec\n"
                 "XRPC_Data_Sent:                " SZFMT " bytes\n\n",
                 time_xrpcClnt2Serv,
@@ -1258,8 +1260,8 @@ CMDhttp_post(
     }
     shredBAT = response2bat(timing, in, dst, port, *updCall);
 
-    stream_close(out); stream_destroy(out);
-    stream_close(in); stream_destroy(in);
+    mnstr_close(out); mnstr_destroy(out);
+    mnstr_close(in); mnstr_destroy(in);
     buffer_destroy(req);
 
     if(!shredBAT) return GDK_FAIL;
@@ -1271,14 +1273,14 @@ CMDhttp_post(
 
 /* send a WSAT request */
 static int
-xrpc_2pc_send(int sock, char* dst, int port, str msg) { 
+xrpc_2pc_send(SOCKET sock, char* dst, int port, str msg) { 
     stream *out = NULL;
     
     if (!(out = socket_wastream(sock, "http_send"))) {
         GDKerror("xrpc_2pc_commit: failed to create socket_wastream for sending XRPC request\n");
         return GDK_FAIL;
     }
-    if (stream_printf(out,
+    if (mnstr_printf(out,
             "POST %s HTTP/1.1\r\n"
             "Host: %s:%d\r\n"
             "Accept: text/html, text/xml, application/soap+xml\r\n"
@@ -1290,18 +1292,18 @@ xrpc_2pc_send(int sock, char* dst, int port, str msg) {
         GDKerror("xrpc_2pc_commit: failed to send XRPC request header.");
         return GDK_FAIL;
     }
-    if (stream_write(out, msg, 1, strlen(msg)) < 0) {
+    if (mnstr_write(out, msg, 1, strlen(msg)) < 0) {
         GDKerror("xrpc_2pc_commit: failed to send XRPC request.");
         return GDK_FAIL;
     }
-    stream_close(out);
-    stream_destroy(out);
+    mnstr_close(out);
+    mnstr_destroy(out);
     return GDK_SUCCEED;
 }
 
 /* get a WSAT response */
 static int
-xrpc_2pc_recv(int sock, char* dst, int port, str msg) { 
+xrpc_2pc_recv(SOCKET sock, char* dst, int port, str msg) { 
     stream *in = NULL;
     BAT* shredBAT;
     int ret = GDK_FAIL;
@@ -1320,8 +1322,8 @@ xrpc_2pc_recv(int sock, char* dst, int port, str msg) {
         }
     }
     BBPreclaim(shredBAT);
-    stream_close(in);
-    stream_destroy(in);
+    mnstr_close(in);
+    mnstr_destroy(in);
     return ret;
 }
     
@@ -1330,7 +1332,7 @@ CMDxrpc_2pc_commit(str qid, str mode, lng* xrpc_timeout, lng* time_start, BAT* p
     int i, j, ret=GDK_FAIL, cnt=0, npart = BATcount(participants);
     str *part = (str*) alloca(npart*sizeof(npart));
     int *port = (int*) alloca(npart*sizeof(int));
-    int *sock = (int*) alloca(npart*sizeof(int)), xrpc_updating;
+    SOCKET *sock = (SOCKET*) alloca(npart*sizeof(SOCKET)), xrpc_updating;
     char dst[1024], msg[1024], *r; 
     BATiter pi = bat_iterator(participants);
     BUN p,q;
@@ -1376,7 +1378,7 @@ CMDxrpc_2pc_commit(str qid, str mode, lng* xrpc_timeout, lng* time_start, BAT* p
 cleanup:
     for(i=0; i<cnt; i++) {
         if (part[i]) GDKfree(part[i]);
-        if (sock[i] >= 0) close(sock[i]);
+        if (sock[i] != INVALID_SOCKET) closesocket(sock[i]);
     }
     return ret;
 }

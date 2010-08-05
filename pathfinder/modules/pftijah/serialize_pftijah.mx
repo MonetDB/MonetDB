@@ -91,11 +91,11 @@ int dbat_init(const char* name, dbat* dbat, BAT* b) {
 	dbat->name = name;
 	dbat->bat  = b;
 	if ( dbat->bat->htype != TYPE_void ) {
-	    stream_printf(GDKerr,"ERROR: dbat_init(%s) non void BAT\n",dbat->name);
+	    mnstr_printf(GDKerr,"ERROR: dbat_init(%s) non void BAT\n",dbat->name);
 	    return 0;
 	}
 	if ( !((dbat->bat->ttype == TYPE_oid) || (dbat->bat->ttype == TYPE_int)) ) {
-	    stream_printf(GDKerr,"ERROR: dbat_init(%s) unknown ttype(%d)\n",dbat->name,dbat->bat->ttype);
+	    mnstr_printf(GDKerr,"ERROR: dbat_init(%s) unknown ttype(%d)\n",dbat->name,dbat->bat->ttype);
 	    return 0;
 	}
         dbat->seqbase = (oid)b->hseqbase;
@@ -169,7 +169,7 @@ dbat_extend(dbat* dbat, oid min_i /*raw-index*/, BUN forced_size) {
 #endif
 
 #if 0
-    stream_printf(GDKout,"dbat_extend[%s](" BUNFMT " -> " BUNFMT ")\n",dbat->name,dbat->raw_max,newsize);
+    mnstr_printf(GDKout,"dbat_extend[%s](" BUNFMT " -> " BUNFMT ")\n",dbat->name,dbat->raw_max,newsize);
 #endif
 
     dbat->raw_max = newsize;
@@ -199,9 +199,9 @@ dbat_sizeHint(dbat* dbat, int sizeHint_mark) {
 #if 0
 static void
 dbat_int_debug(char* t, dbat* dbat) {
-	stream_printf(GDKout,"+ DEBUGGING INT DBAT[sz=%d]@=[%s]:\n",dbat->seq_max,t);
+	mnstr_printf(GDKout,"+ DEBUGGING INT DBAT[sz=%d]@=[%s]:\n",dbat->seq_max,t);
 	for(int i=0; i<10; i++) {
-	     stream_printf(GDKout,"+ dbat[%d] = %d\n",i,dbat->cast.intCAST[i]);
+	     mnstr_printf(GDKout,"+ dbat[%d] = %d\n",i,dbat->cast.intCAST[i]);
 	}
 }
 #endif
@@ -279,13 +279,13 @@ static IpgBase* ipg_init(BAT* b_path, BAT* b_no) {
 		return NULL;
 	res->pathbuff = (char*)GDKmalloc( IPG_INIT_PATHSZ );
 	res->pathnobuff = (char*)GDKmalloc( IPG_INIT_PATHSZ );
-	if (0) stream_printf(GDKout,"-IPG[ipg_init() called.]\n");
+	if (0) mnstr_printf(GDKout,"-IPG[ipg_init() called.]\n");
 	return res;
 }
 
 /* function used for starting a new document */
 static int ipg_startdoc(IpgBase* base, str doc) {
-	if (0) stream_printf(GDKout,"-IPG[start: doc=%s]\n",doc);
+	if (0) mnstr_printf(GDKout,"-IPG[start: doc=%s]\n",doc);
 	base->top				= 0;
 	base->stack[base->top].level.ntags	= 0;
 	base->stack[base->top].level.prev_frame	= -1;
@@ -304,7 +304,7 @@ static INLINE int ipg_frame_alloc(IpgBase* base) {
 	int newtop = base->top+base->stack[base->top].level.ntags + 1;
 
 	if ( newtop >= base->max ) {
-		if (1) stream_printf(GDKout,"-IPG[ipg_frame_alloc() extending.]\n");
+		if (1) mnstr_printf(GDKout,"-IPG[ipg_frame_alloc() extending.]\n");
 		base->max = 2 * base->max;
 		base->stack = (IpgFrame*)GDKrealloc(base->stack, 
 				base->max * sizeof(IpgFrame) );
@@ -363,7 +363,7 @@ static int ipg_pushtag(IpgBase* base, str tag, oid o) {
 	        return -1;
 	}
 
-	if (0) stream_printf(GDKout,"-IPG[tijah(" OIDFMT "@0) = %s]\n",o,base->pathbuff);
+	if (0) mnstr_printf(GDKout,"-IPG[tijah(" OIDFMT "@0) = %s]\n",o,base->pathbuff);
 
 	return 1;
 }
@@ -371,7 +371,7 @@ static int ipg_pushtag(IpgBase* base, str tag, oid o) {
 static INLINE int ipg_poptag(IpgBase* base) {
 	base->top = base->stack[base->top].level.prev_frame;
 
-	/* stream_printf(GDKout,"-IPG[pop: path=%s]\n",base->pathbuff); */
+	/* mnstr_printf(GDKout,"-IPG[pop: path=%s]\n",base->pathbuff); */
 	return 1;
 }
 
@@ -380,7 +380,7 @@ static int ipg_destroy(IpgBase* base) {
 	GDKfree(base->pathbuff);
 	GDKfree(base->pathnobuff);
 	GDKfree(base);
-	if (0) stream_printf(GDKout,"-IPG[ipg_destroy() called.]\n");
+	if (0) mnstr_printf(GDKout,"-IPG[ipg_destroy() called.]\n");
 	return 1;
 }
 
@@ -507,15 +507,15 @@ tj_tagOid(tjCtx* tjctx, str t) {
 #else
     BUN bun;
 
-    // stream_printf(GDKout,"tj_tagOid(\"%s\"): start\n",t);
+    // mnstr_printf(GDKout,"tj_tagOid(\"%s\"): start\n",t);
     BATiter bi = bat_iterator(tjctx->hm_globalTag);
     HASHfnd_str(bun, bi, (str)t);
     if ( bun != BUN_NONE ) {
-        // stream_printf(GDKout,"tj_tagOid(\"%s\"): bun found @ %d\n",t,bun);
+        // mnstr_printf(GDKout,"tj_tagOid(\"%s\"): bun found @ %d\n",t,bun);
         return (oid)bun;
         // return *(oid*)BUNtail(tjctx->hm_globalTag,bun);
     } else {
-        // stream_printf(GDKout,"tj_tagOid(\"%s\"): bun not found\n",t);
+        // mnstr_printf(GDKout,"tj_tagOid(\"%s\"): bun not found\n",t);
     	// if ( BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t, FALSE) ) {
     	if ( BUNappend(tjctx->b_globalTag, (str)t, FALSE) ) {
 	    /* check if the recursive tagswitcher still is large enough */
@@ -528,7 +528,7 @@ tj_tagOid(tjCtx* tjctx, str t) {
             }
     	    return tjctx->n_globalTag++;
         } else {
-            stream_printf(GDKout,"tj_tagOid(\"%s\"): insert error\n",t);
+            mnstr_printf(GDKout,"tj_tagOid(\"%s\"): insert error\n",t);
     	    GDKerror("INSERT OF \"%s\" in globalTag fails.\n");
     	    return oid_nil;
         }
@@ -562,12 +562,12 @@ tj_termOid(tjCtx* tjctx, char *t) {
     if ( bun != BUN_NONE ) {
         oid res = (oid)bun;
 
-	if ( 0 && res < tjctx->lastStopWord ) stream_printf(GDKout,"SKIP STOPWORD[\"%s\"]\n",t);
+	if ( 0 && res < tjctx->lastStopWord ) mnstr_printf(GDKout,"SKIP STOPWORD[\"%s\"]\n",t);
 	return (res < tjctx->lastStopWord) ? 0 : res;
     } else {
     	// if ( BUNins(tjctx->b_globalTerm, &tjctx->n_globalTerm, (str)t, FALSE)){
     	if ( BUNappend(tjctx->b_globalTerm, (str)t, FALSE)){
-	    if (0) stream_printf(GDKout,"N-WORD[\"%s\"]=%d@0\n",t,tjctx->n_globalTerm);
+	    if (0) mnstr_printf(GDKout,"N-WORD[\"%s\"]=%d@0\n",t,tjctx->n_globalTerm);
     	    return tjctx->n_globalTerm++;
         } else { 
     	    GDKerror("INSERT OF \"%s\" in globalTerm fails.\n");
@@ -619,11 +619,11 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
             dbat_set_oid(&tjctx->dbat_collPre, tjPre, termOid);
             dbat_set_int(&tjctx->dbat_collSize,tjPre,0);
 #ifdef TJ_TRACE
-            if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:TERM: \"%s\", termoid=%d, tjPre=%d\n",tjctx->name,term,termOid,tjPre);
+            if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:TERM: \"%s\", termoid=%d, tjPre=%d\n",tjctx->name,term,termOid,tjPre);
 #endif
          } else {
 #ifdef TJ_TRACE
-            if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:STOPWORD: \"%s\"\n",tjctx->name,term);
+            if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:STOPWORD: \"%s\"\n",tjctx->name,term);
 #endif
 	 }
      }
@@ -718,13 +718,13 @@ static BAT*
 getBAT(BAT* batbat, str bname) {
 	BUN bun;
 	if ( (bun=BUNfnd(batbat,bname)) == BUN_NONE ) {
-	    stream_printf(GDKerr,"getBAT:BUNfnd(%s) failed.\n",bname);
+	    mnstr_printf(GDKerr,"getBAT:BUNfnd(%s) failed.\n",bname);
 	    return NULL;
 	}
         BATiter batbati = bat_iterator(batbat);
 	BAT* res = BATdescriptor( *(bat*)BUNtail(batbati,bun));
 	if ( !res )
-	    stream_printf(GDKerr,"getBAT:BATdescriptor() for %s failed.\n",bname);
+	    mnstr_printf(GDKerr,"getBAT:BATdescriptor() for %s failed.\n",bname);
 	return res;
 }
 
@@ -741,7 +741,7 @@ static oid getPreSize(tjCtx* tjCtx) {
 	if ( 0 /* CHECK */ ) {
             oid chk = (oid)BATcount(tjCtx->b_collPre) + 1; 
 	    if ( par_tijahPre != chk ) {
-		stream_printf(GDKerr,"ERROR: getPreSize: oid out of sync: %d <-> %d.\n",par_tijahPre,chk);
+		mnstr_printf(GDKerr,"ERROR: getPreSize: oid out of sync: %d <-> %d.\n",par_tijahPre,chk);
 	        return oid_nil;
 	    }
 	}
@@ -762,7 +762,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	tjCtx* res;
 
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[]: start loadTijahContext\n");
+	if ( TJ_TRACE ) mnstr_printf(GDKout,"C[]: start loadTijahContext\n");
 #endif
 	if ( !(res = (tjCtx*)GDKmalloc( sizeof(tjCtx) )) )
 		return NULL;
@@ -855,9 +855,9 @@ loadTijahContext(BAT* tjCtx_BAT) {
 
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) {
-	   stream_printf(GDKout,"C[%s]: loadTijahContext() options read\n",res->name);
+	   mnstr_printf(GDKout,"C[%s]: loadTijahContext() options read\n",res->name);
 	   if ( res->fragmentSize )
-	       stream_printf(GDKout,"C[%s]: loadTijahContext() fragmentSize = %d\n",res->name, res->fragmentSize);
+	       mnstr_printf(GDKout,"C[%s]: loadTijahContext() fragmentSize = %d\n",res->name, res->fragmentSize);
         }
 #endif
 	/*
@@ -896,7 +896,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	if ( res->fragmentSize ) {
 	    if ( (BATcount(res->b_collPre) > res->fragmentSize) ) {
 #ifdef TJ_TRACE
-	        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]: loadTijahContext() [b_collPre|b_collSize] too big(%d), create new fragment\n",res->name,BATcount(res->b_collPre));
+	        if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]: loadTijahContext() [b_collPre|b_collSize] too big(%d), create new fragment\n",res->name,BATcount(res->b_collPre));
 #endif
 		BAT* fragments;
 	        if ( !(fragments = getBAT(tjCtx_BAT,"fragments")) )
@@ -926,7 +926,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 		bat sizebat = BBPcacheid(res->b_collSize);
 		if ( !BUNreplace(tjCtx_BAT,sizetag,&sizebat,0) ) { return NULL; }
 #ifdef TJ_TRACE
-	        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]: loadTijahContext() finished creating new fragments\n",res->name);
+	        if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]: loadTijahContext() finished creating new fragments\n",res->name);
 #endif
 	    }
 	}
@@ -963,7 +963,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	     res->n_globalTerm++;
 
 #ifdef TJ_TRACE
-	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:INSERTED STOPWORDMARKER IN GLOBALTERM\n",res->name);
+	     if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:INSERTED STOPWORDMARKER IN GLOBALTERM\n",res->name);
 #endif
 	     if ( res->checkStopWords ) {
 		 for(int i=0; res->stemCtx->stopWords[i]; i++) {
@@ -980,7 +980,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	             }
 	             res->n_globalTerm++;
 #ifdef TJ_TRACE
-	             if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:ADDED STOPWORD \"%s\" to GLOBALTERM\n",res->name,sw);
+	             if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:ADDED STOPWORD \"%s\" to GLOBALTERM\n",res->name,sw);
 #endif
 		     }
 		 res->lastStopWord = res->n_globalTerm; 
@@ -993,7 +993,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	}
 	if ( res->b_globalTerm->T->hash == NULL ) {
 #ifdef TJ_TRACE
-	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CREATE NEW HASHTABLE ON GLOBALTERM\n",res->name);
+	     if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:CREATE NEW HASHTABLE ON GLOBALTERM\n",res->name);
 #endif
 	     if ( !BAThash(BATmirror(res->b_globalTerm),0) ) {
                  GDKerror("loadTijahContext: adding hashtable to globalTerm fails\n");
@@ -1003,7 +1003,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	res->hm_globalTag = BATmirror(res->b_globalTag);
 	if ( res->b_globalTag->T->hash == NULL ) {
 #ifdef TJ_TRACE
-	     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CREATE NEW HASHTABLE ON GLOBALTAG\n",res->name);
+	     if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:CREATE NEW HASHTABLE ON GLOBALTAG\n",res->name);
 #endif
 	     if ( !BAThash(BATmirror(res->b_globalTag),0) ) {
                  GDKerror("loadTijahContext: adding hashtable to globalTag fails\n");
@@ -1012,7 +1012,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	}
 
 	if ( ! (res->hm_globalTerm->H->hash && res->hm_globalTag->H->hash) )
-	   stream_printf(GDKout,"# WARNING: MISSING HASH ON TAG/TERM DICTIONARY\n");
+	   mnstr_printf(GDKout,"# WARNING: MISSING HASH ON TAG/TERM DICTIONARY\n");
 #ifdef USE_INEX_PATH
 	if ( !(res->ipg = ipg_init(res->b_collPath, res->b_collPathNo)) )
 		return NULL;
@@ -1091,7 +1091,7 @@ freeTijahContext(tjCtx* tjctx) {
 #endif
 	GDKfree(tjctx);
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:FINISH: add2collection_handler()\n");
+	if ( TJ_TRACE ) mnstr_printf(GDKout,"C[{}]:FINISH: add2collection_handler()\n");
 #endif
 	return GDK_SUCCEED;
 }
@@ -1129,7 +1129,7 @@ pftijah_init(XqueryCtx* ctx, char* args, char* restag, char* resprefix) {
 
     ctx->driverWs = GLOBAL_TJCTX;
 #ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:pftijah_init()\n",GLOBAL_TJCTX->name);
+    if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:pftijah_init()\n",GLOBAL_TJCTX->name);
 #endif
     return 1;
 }
@@ -1162,7 +1162,7 @@ pftijah_handle_startDocument(XqueryCtx* ctx, oid pre) {
 #endif
 
 #ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startDocument()\n",tjctx->name);
+    if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:startDocument()\n",tjctx->name);
 #endif
     return 1;
 }
@@ -1184,7 +1184,7 @@ pftijah_handle_endDocument(XqueryCtx* ctx) {
 #endif
 
 #ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:endDocument()\n",tjctx->name);
+    if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:endDocument()\n",tjctx->name);
 #endif
     return 1;
 }
@@ -1268,7 +1268,7 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
         if ( tj_pushTag(tjctx,tjPre,termOid) < 0 ) return 0;
         tjctx->level_pre[tjctx->doc_height] = tjPre;
 #ifdef TJ_TRACE
-        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
+        if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #endif
         if ( !BUNins(tjctx->b_collPfPre, &tjPre, &pre, FALSE) ) return 0;
 #ifdef USE_INEX_PATH
@@ -1340,7 +1340,7 @@ pftijah_complete_startElementEmpty(XqueryCtx* ctx) {
         dbat_set_int(&tjctx->dbat_collSize,start,size);
     };
 #ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:empty_endElement: \"%s\"\n", tjctx->name,"");
+    if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:empty_endElement: \"%s\"\n", tjctx->name,"");
 #endif
     if ( tjctx->filterDepth ) {
         /* a filter is currently 'on' */
@@ -1374,7 +1374,7 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
         int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
 	dbat_set_int(&tjctx->dbat_collSize,start,size);
 #ifdef TJ_TRACE
-        if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:endElement: \"%s\"\n", tjctx->name,name);
+        if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:endElement: \"%s\"\n", tjctx->name,name);
 #endif
     }
     if ( tjctx->filterDepth ) {
@@ -1406,7 +1406,7 @@ pftijah_handle_characters(XqueryCtx* ctx, str ch) {
     if ( !*p )
         return 1;
 #ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters(%s) start\n",tjctx->name, p);
+    if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:handle_characters(%s) start\n",tjctx->name, p);
 #endif
 
     if ( DOEMIT(tjctx) ) {
@@ -1443,7 +1443,7 @@ int CMDtj_normalizeTerm(char** res, char *term, char *stemmer) {
             //if (*res) GDKfree(*res);
             *res = GDKstrdup( stemmed );
 	    if ( !*res ) {
-	        stream_printf(GDKout,"CMDtj_normalizeTerm: GDKmalloc() failed.\n");
+	        mnstr_printf(GDKout,"CMDtj_normalizeTerm: GDKmalloc() failed.\n");
 		return GDK_FAIL;
 	    }
         }
@@ -1452,7 +1452,7 @@ int CMDtj_normalizeTerm(char** res, char *term, char *stemmer) {
         //if (*res) GDKfree(*res);
         *res = GDKstrdup( term );
 	if ( !*res ) {
-	    stream_printf(GDKout,"CMDtj_normalizeTerm: GDKmalloc() failed.\n");
+	    mnstr_printf(GDKout,"CMDtj_normalizeTerm: GDKmalloc() failed.\n");
 	    return GDK_FAIL;
 	}
     }
@@ -1519,7 +1519,7 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
 	tjCtx* tjctx;
 
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:START: add2collection_handler(%s)\n",docName);
+	if ( TJ_TRACE ) mnstr_printf(GDKout,"C[{}]:START: add2collection_handler(%s)\n",docName);
 #endif
 	if ( !(tjctx = loadTijahContext(tjCtx_BAT)) )
 		return GDK_FAIL;
@@ -1528,7 +1528,7 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
 	 * has changed and this one should be added.
 	 */ 
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:LOADED CONTEXT\n",tjctx->name);
+	if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:LOADED CONTEXT\n",tjctx->name);
 #endif
 
 #ifdef USE_INEX_PATH
@@ -1537,22 +1537,22 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
 #endif
 
 	if ( tijahDocIndex(tjctx,docName) != oid_nil ) {
-	    stream_printf(GDKerr,"add2collection_handler(CTX,%s) already in collection\n",docName);
+	    mnstr_printf(GDKerr,"add2collection_handler(CTX,%s) already in collection\n",docName);
 	    return GDK_FAIL;
 	}
 	oid start_oid = tjctx->tijahPre;
 
 	if ( !BUNappend(tjctx->b_docName, docName, 0) ||
 	     !BUNappend(tjctx->b_docFirstPre, &start_oid, 0) )
-	   stream_printf(GDKerr,"Error writing Tijah document record\n");;
+	   mnstr_printf(GDKerr,"Error writing Tijah document record\n");;
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:START INDEXING\n",tjctx->name);
+	if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:START INDEXING\n",tjctx->name);
 #endif
 
 	GLOBAL_TJCTX = tjctx;
 	if ( justIndex ) {
 #ifdef TJ_TRACE
-	    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CALL INDEXING SHREDDER\n",tjctx->name);
+	    if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:CALL INDEXING SHREDDER\n",tjctx->name);
 #endif
 	    XqueryCtx xqctx;
 	    /* StM:
@@ -1565,13 +1565,13 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
 	    	 return GDK_FAIL;
 	} else {
 #ifdef TJ_TRACE
-	    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CALL INDEXING SERIALIZER\n",tjctx->name);
+	    if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:CALL INDEXING SERIALIZER\n",tjctx->name);
 #endif
 	    if ( xquery_print_doc_DRIVER("",&pftijahSerializeFun,NULL,ws,docName) == GDK_FAIL)
 	        return GDK_FAIL;
 	}
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINISH INDEXING\n",tjctx->name);
+	if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:FINISH INDEXING\n",tjctx->name);
 #endif
 	if ( dbat_finalize(&tjctx->dbat_collPre, tjctx->tijahPre) < 0 )
 		return GDK_FAIL;
@@ -1588,18 +1588,18 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
             tjctx->b_concept_score->batDirty = TRUE;
 	}
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINALIZED DIRECT BATS\n",tjctx->name);
+	if ( TJ_TRACE ) mnstr_printf(GDKout,"C[%s]:FINALIZED DIRECT BATS\n",tjctx->name);
 #endif
 	/* read elapsed time */
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) {
-		stream_printf(GDKout,"C[%s]:SIZES\n",tjctx->name);
-		stream_printf(GDKout,"C[%s]:size( b_globalTerm ) = %d\n",tjctx->name, BATcount(tjctx->b_globalTerm));
-		stream_printf(GDKout,"C[%s]:size( b_globalTag )  = %d\n",tjctx->name, BATcount(tjctx->b_globalTag));
-		stream_printf(GDKout,"C[%s]:size( b_globalRTag )  = %d\n",tjctx->name, BATcount(tjctx->b_globalRTag));
-		stream_printf(GDKout,"C[%s]:size( b_collPre )    = %d\n",tjctx->name, BATcount(tjctx->b_collPre));
-		stream_printf(GDKout,"C[%s]:size( b_collSize )   = %d\n",tjctx->name, BATcount(tjctx->b_collSize));
-		stream_printf(GDKout,"C[%s]:size( b_collPfPre )  = %d\n",tjctx->name, BATcount(tjctx->b_collPfPre));
+		mnstr_printf(GDKout,"C[%s]:SIZES\n",tjctx->name);
+		mnstr_printf(GDKout,"C[%s]:size( b_globalTerm ) = %d\n",tjctx->name, BATcount(tjctx->b_globalTerm));
+		mnstr_printf(GDKout,"C[%s]:size( b_globalTag )  = %d\n",tjctx->name, BATcount(tjctx->b_globalTag));
+		mnstr_printf(GDKout,"C[%s]:size( b_globalRTag )  = %d\n",tjctx->name, BATcount(tjctx->b_globalRTag));
+		mnstr_printf(GDKout,"C[%s]:size( b_collPre )    = %d\n",tjctx->name, BATcount(tjctx->b_collPre));
+		mnstr_printf(GDKout,"C[%s]:size( b_collSize )   = %d\n",tjctx->name, BATcount(tjctx->b_collSize));
+		mnstr_printf(GDKout,"C[%s]:size( b_collPfPre )  = %d\n",tjctx->name, BATcount(tjctx->b_collPfPre));
 
 	}
 #endif
@@ -1610,7 +1610,7 @@ static int
 add2collection_bathandler(BAT* tjCtx_BAT, BAT* ws, BAT* docs) {
 	tjCtx* tjctx;
 
-	if (0) stream_printf(GDKout,"#! a2c_bat: start.\n");
+	if (0) mnstr_printf(GDKout,"#! a2c_bat: start.\n");
 	if ( !(tjctx = loadTijahContext(tjCtx_BAT)) )
 		return GDK_FAIL;
 
@@ -1625,9 +1625,9 @@ add2collection_bathandler(BAT* tjCtx_BAT, BAT* ws, BAT* docs) {
 	    ptr docsTAIL = BUNtail(doci, p);
 	    str docName    = (str) docsTAIL;
 
-	    if (0) stream_printf(GDKout,"#! a2c_bat: indexing doc(%s).\n",docName);
+	    if (0) mnstr_printf(GDKout,"#! a2c_bat: indexing doc(%s).\n",docName);
 	    if ( tijahDocIndex(tjctx,docName) != oid_nil ) {
-	        stream_printf(GDKerr,"add2collection_handler(CTX,%s) already in collection\n",docName);
+	        mnstr_printf(GDKerr,"add2collection_handler(CTX,%s) already in collection\n",docName);
 	        return GDK_FAIL;
 	    }
 	    oid start_oid = tjctx->tijahPre;
@@ -1639,7 +1639,7 @@ add2collection_bathandler(BAT* tjCtx_BAT, BAT* ws, BAT* docs) {
     
 	    if ( !BUNappend(tjctx->b_docName, docName, 0) ||
 	         !BUNappend(tjctx->b_docFirstPre, &start_oid, 0) )
-	       stream_printf(GDKerr,"Error writing Tijah document record\n");;
+	       mnstr_printf(GDKerr,"Error writing Tijah document record\n");;
     
 	    GLOBAL_TJCTX = tjctx;
 	    if ( xquery_print_doc_DRIVER("",&pftijahSerializeFun,NULL,ws,docName) == GDK_FAIL)
@@ -1659,7 +1659,7 @@ add2collection_bathandler(BAT* tjCtx_BAT, BAT* ws, BAT* docs) {
            tjctx->b_concept_elem->batDirty  = TRUE;
            tjctx->b_concept_score->batDirty = TRUE;
         }
-	if (0) stream_printf(GDKout,"#! a2c_bat: finish.\n");
+	if (0) mnstr_printf(GDKout,"#! a2c_bat: finish.\n");
         return freeTijahContext(tjctx);
 }   
 

@@ -359,15 +359,15 @@ freeClient(Client c)
 		if (c->fdout != GDKstdout) {
 			if (GDKout == c->fdout)
 				t->data[0] = GDKstdout;
-			stream_close(c->fdout);
-			stream_destroy(c->fdout);
+			mnstr_close(c->fdout);
+			mnstr_destroy(c->fdout);
 			c->fdout = NULL;
 		} 
 		if (c->fdin != GDKstdin) {
 			if (GDKin == c->fdin) 
 				t->data[1] = GDKstdin;
-			stream_close(c->fdin);
-			stream_destroy(c->fdin);
+			mnstr_close(c->fdin);
+			mnstr_destroy(c->fdin);
 			c->fdin = NULL;
 		} 
 	}
@@ -514,25 +514,25 @@ readClient(Client c)
 	int blocked;
 	size_t offset = 0;
 
-	PARSEDEBUG THRprintf(GDKerr, "accept client " PDFMT " input %s buffer:\n#%s\n", c - monet_clients, stream_name(c->fdin), c->top);
+	PARSEDEBUG THRprintf(GDKerr, "accept client " PDFMT " input %s buffer:\n#%s\n", c - monet_clients, mnstr_name(c->fdin), c->top);
 
 	c->top = c->input;
 
-	if (stream_errnr(fd) || stream_errnr(c->fdin))
+	if (mnstr_errnr(fd) || mnstr_errnr(c->fdin))
 		return 0;
 	blocked = isa_block_stream(c->fdin);
 	do {
 		if (c == monet_clients) {
-			if (!blocked && instring != '"' && c->prompt && *c->prompt && stream_write(fd, c->prompt, strlen(c->prompt), 1) != 1)
+			if (!blocked && instring != '"' && c->prompt && *c->prompt && mnstr_write(fd, c->prompt, strlen(c->prompt), 1) != 1)
 				return 0;
 		} else if (c->top == c->input) {
-			if (!blocked && stream_write(fd, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1)
+			if (!blocked && mnstr_write(fd, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1)
 				return 0;
 		} else {
-			if (stream_write(fd, PROMPT2, sizeof(PROMPT2) - 1, 1) != 1)
+			if (mnstr_write(fd, PROMPT2, sizeof(PROMPT2) - 1, 1) != 1)
 				return 0;
 		}
-		if (stream_flush(fd))
+		if (mnstr_flush(fd))
 			return 0;
 		if (blocked) {
 			/* read to end of block (recognized by an
@@ -541,8 +541,8 @@ readClient(Client c)
 
 			do {
 				nsize = (ssize_t) (c->limit - c->top);
-				i = stream_read(c->fdin, c->top, 1, nsize);
-				if (stream_errnr(c->fdin) || i < 0)
+				i = mnstr_read(c->fdin, c->top, 1, nsize);
+				if (mnstr_errnr(c->fdin) || i < 0)
 					return 0;
 				c->top += i;
 				if (c->limit - c->top <= 1)
@@ -553,7 +553,7 @@ readClient(Client c)
 			do {
 				if (c->limit - c->top <= 1)
 					enlargebuffer(c);
-				i = stream_read(c->fdin, c->top, 1, 1);
+				i = mnstr_read(c->fdin, c->top, 1, 1);
 				if (i == 0) {
 					/* simulate quit command at EOF */
 					if (c->top != c->input)
@@ -648,7 +648,8 @@ readClient(Client c)
 				 * only handle ASCII, so check for
 				 * non-ASCII-ness separately */
 				if (!incomment &&
-				    ((*s & ~0x7F) != 0 || !isspace((int) *s)))
+				    ((*s & ~0x7F) != 0 ||
+				     !isspace((int) (unsigned char) *s)))
 					doflush = 0;
 				escaped = 0;
 				*p++ = *s;

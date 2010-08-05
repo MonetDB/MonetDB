@@ -468,7 +468,7 @@ create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].data = GDKmalloc(fmt[p].len);
 		fmt[p].nullstr = GDKstrdup("nil");
 		if (ascii_io_debug)
-			stream_printf(GDKerr, "%s\n", fmt[p].name);
+			mnstr_printf(GDKerr, "%s\n", fmt[p].name);
 	}
 	return as->nr_attrs;
 }
@@ -784,10 +784,10 @@ insert_line(ascii * as, char *line)
 static int
 ascii_io_error(stream *s)
 {
-	if (!stream_errnr(GDKerr)) {
-		char *err = stream_error(s);
+	if (!mnstr_errnr(GDKerr)) {
+		char *err = mnstr_error(s);
 
-		stream_printf(GDKerr, "Stream error %s\n", err);
+		mnstr_printf(GDKerr, "Stream error %s\n", err);
 		/* use free as stream allocates out side GDK */
 		if (err)
 			free(err);
@@ -811,15 +811,15 @@ dump_line(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs, BUN id)
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
 				size_t l = strlen(f->nullstr);
 				assert(l <= GDK_int_max);
-				if (stream_write(fd, f->nullstr, 1, (int) l) != (int) l)
+				if (mnstr_write(fd, f->nullstr, 1, (int) l) != (int) l)
 					return ascii_io_error(fd);
 			} else {
 				int l = f->tostr(f->extra, buf, len, f->adt, p);
-				if (stream_write(fd, *buf, 1, l) != l)
+				if (mnstr_write(fd, *buf, 1, l) != l)
 					return ascii_io_error(fd);
 			}
 		}
-		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
+		if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return ascii_io_error(fd);
 	}
 	return 0;
@@ -850,15 +850,15 @@ output_line(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs, ptr i
 				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
 					size_t l = strlen(f->nullstr);
 					assert(l <= GDK_int_max);
-					if (stream_write(fd, f->nullstr, 1, (int) l) != (int) l)
+					if (mnstr_write(fd, f->nullstr, 1, (int) l) != (int) l)
 						return ascii_io_error(fd);
 				} else {
 					int l = f->tostr(f->extra, buf, len, f->adt, p);
-					if (stream_write(fd, *buf, 1, l) != l)
+					if (mnstr_write(fd, *buf, 1, l) != l)
 						return ascii_io_error(fd);
 				}
 			}
-			if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
+			if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
 				return ascii_io_error(fd);
 		}
 	}
@@ -879,16 +879,16 @@ output_line_dense(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs)
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
 				size_t l = strlen(f->nullstr);
 				assert(l <= GDK_int_max);
-				if (stream_write(fd, f->nullstr, 1, (int) l) != (int) l)
+				if (mnstr_write(fd, f->nullstr, 1, (int) l) != (int) l)
 					return ascii_io_error(fd);
 			} else {
 				int l = f->tostr(f->extra, buf, len, f->adt, p);
-				if (stream_write(fd, *buf, 1, l) != l)
+				if (mnstr_write(fd, *buf, 1, l) != l)
 					return ascii_io_error(fd);
 			}
 			f->p++;
 		}
-		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
+		if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return ascii_io_error(fd);
 	}
 	return 0;
@@ -907,16 +907,16 @@ output_line_lookup(char **buf, int *len, ascii_io *fmt, stream *fd, BUN nr_attrs
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
 				ssize_t l = (ssize_t) strlen(f->nullstr);
-				if (stream_write(fd, f->nullstr, 1, l) != l)
+				if (mnstr_write(fd, f->nullstr, 1, l) != l)
 					return ascii_io_error(fd);
 			} else {
 				int l = f->tostr(f->extra, buf, len, f->adt, p);
 
-				if (stream_write(fd, *buf, 1, l) != l)
+				if (mnstr_write(fd, *buf, 1, l) != l)
 					return ascii_io_error(fd);
 			}
 		}
-		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
+		if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return ascii_io_error(fd);
 	}
 	return 0;
@@ -932,8 +932,8 @@ read_more(bstream *in, stream *out, size_t n)
 			if (bstream_next(in) < 0)
 				return EOF;
 			if (in->eof) {
-				if (out && stream_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
-					stream_flush(out);
+				if (out && mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
+					mnstr_flush(out);
 				in->eof = 0;
 				/* we need more query text */
 				if (bstream_next(in) < 0)
@@ -958,7 +958,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 	BUN nr = offset + as->nr;
 
 	if (ascii_io_debug)
-		stream_printf(GDKerr, "ASCIIload_file\n");
+		mnstr_printf(GDKerr, "ASCIIload_file\n");
 
 	while ((b->pos < b->len || !b->eof) && res == 0 && (nr == BUN_NONE || i < nr)) {
 		char *s, *end;
@@ -1019,7 +1019,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 			b->pos = (s - b->buf);
 			i++;
 			if (ascii_io_debug && (i % 100000) == 0)
-				stream_printf(GDKerr, "inserted " BUNFMT "\n", i);
+				mnstr_printf(GDKerr, "inserted " BUNFMT "\n", i);
 			if (nr != BUN_NONE && i >= nr)
 				break;
 		}
@@ -1043,7 +1043,7 @@ dump_file(ascii *as, stream *fd)
 			return -1;
 		}
 		if (ascii_io_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
+			mnstr_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(buf);
 	return 0;
@@ -1068,7 +1068,7 @@ output_file_default(ascii *as, BAT *order, stream *fd)
 		}
 		i++;
 		if (ascii_io_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
+			mnstr_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(buf);
 	return res;
@@ -1087,7 +1087,7 @@ output_file_dense(ascii *as, stream *fd)
 			return res;
 		}
 		if (ascii_io_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
+			mnstr_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(buf);
 	return res;
@@ -1111,7 +1111,7 @@ output_file_ordered(ascii *as, BAT *order, stream *fd, oid base)
 			return res;
 		}
 		if (ascii_io_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
+			mnstr_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(buf);
 	return res;
@@ -1126,17 +1126,17 @@ ASCIIload(BAT *names, BAT *seps, BAT *types, char *datafile, BUN nr)
 	stream *s = open_rastream(datafile);
 	bstream *b = NULL;
 
-	if (s == NULL || stream_errnr(s)) {
+	if (s == NULL || mnstr_errnr(s)) {
 		GDKerror("could not open file %s\n", datafile);
 		if (s) {
-			stream_destroy(s);
+			mnstr_destroy(s);
 		}
 		return NULL;
 	}
 	res = ASCIIinput(names, seps, types, b = bstream_create(s, SIZE), NULL, nr);
 	bstream_destroy(b);
-	stream_close(s);
-	stream_destroy(s);
+	mnstr_close(s);
+	mnstr_destroy(s);
 	return res;
 }
 
@@ -1166,15 +1166,15 @@ ASCIIdump(BAT *names, BAT *seps, BAT *bats, char *datafile, BUN nr)
 	if (create_dumpformat(&as, names, seps, bats) != BUN_NONE && ASCIIassign_BATs(&as, bats) != BUN_NONE) {
 		stream *s = open_wastream(datafile);
 
-		if (s != NULL && !stream_errnr(s) && dump_file(&as, s) >= 0) {
-			stream_printf(GDKerr, "saved in %s\n", datafile);
+		if (s != NULL && !mnstr_errnr(s) && dump_file(&as, s) >= 0) {
+			mnstr_printf(GDKerr, "saved in %s\n", datafile);
 		}
-		if (s == NULL || stream_errnr(s)) {
+		if (s == NULL || mnstr_errnr(s)) {
 			GDKerror("could not open file %s\n", datafile);
 		} else {
-			stream_close(s);
+			mnstr_close(s);
 		}
-		stream_destroy(s);
+		mnstr_destroy(s);
 	}
 	ASCIIdestroy_format(&as);
 }

@@ -213,7 +213,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
   term_cut = GDKmalloc(TERM_LENGTH * sizeof(char));
   unq_term = GDKmalloc(ADJ_TERM_MAX * TERM_LENGTH* sizeof(char));
   if ( !argument1 || !term_cut || !unq_term ) {
-      stream_printf(GDKout,"SRA_to_MIL: GDKmalloc failed.\n");
+      mnstr_printf(GDKout,"SRA_to_MIL: GDKmalloc failed.\n");
       return 0;
   }
 

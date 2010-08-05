@@ -1,0 +1,22 @@
+stderr of test 'ebv.SF-2474519` in directory 'tests/BugTracker` itself:
+
+
+# 15:48:47 >  
+# 15:48:47 >   Mserver "--config=/Users/rittinge/Pathfinder/Stable/MonetDB4/Darwin/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/Users/rittinge/Pathfinder/Stable/pathfinder/Darwin/lib/MonetDB4:/Users/rittinge/Pathfinder/Stable/pathfinder/Darwin/lib/MonetDB4/lib:/Users/rittinge/Pathfinder/Stable/MonetDB4/Darwin/lib/MonetDB4:/Users/rittinge/Pathfinder/Stable/MonetDB4/Darwin/lib/MonetDB4/lib:/Users/rittinge/Pathfinder/Stable/MonetDB4/Darwin/lib/MonetDB4/bin" --set "gdk_dbfarm=/Users/rittinge/Pathfinder/Stable/MonetDB4/Darwin/var/MonetDB4/dbfarm" --set "sql_logdir=/Users/rittinge/Pathfinder/Stable/MonetDB4/Darwin/var/MonetDB4/sql_logs" --set "xquery_logdir=/Users/rittinge/Pathfinder/Stable/MonetDB4/Darwin/var/MonetDB4/xquery_logs" --set "xrpc_docroot=/Users/rittinge/Pathfinder/Stable/MonetDB4/Darwin/share/MonetDB/xrpc" --set mapi_open=true --set xrpc_open=true --set mapi_port=38323 --set xrpc_port=43487 --set xrpc_docroot=/Users/rittinge/Pathfinder/Stable/pathfinder --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 15:48:47 >  
+
+
+# 15:48:47 >  
+# 15:48:47 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=join --port=38323 ebv.SF-2474519.xq
+# 15:48:47 >  
+
+MAPI  = monetdb@join:38452
+QUERY = element result { if (distinct-values(exactly-one(doc("hello.xml"))//*)) then 1 else 2 }
+ERROR = !ERROR: err:FORG0003, fn:zero-or-one called with a sequence containing more than one item.
+
+
+
+# 15:48:48 >  
+# 15:48:48 >  Done.
+# 15:48:48 >  
+

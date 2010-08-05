@@ -391,6 +391,7 @@ enum PFalg_fun_t {
     , alg_fun_fn_lower_case       /**< fn:lower-case */
     , alg_fun_fn_translate        /**< fn:translate */
     , alg_fun_fn_contains         /**< fn:contains */
+    , alg_fun_fn_like             /**< fn:like */
     , alg_fun_fn_starts_with      /**< fn:starts-with */
     , alg_fun_fn_ends_with        /**< fn:ends-with */
     , alg_fun_fn_substring_before /**< fn:substring-before */
@@ -406,6 +407,7 @@ enum PFalg_fun_t {
     , alg_fun_fn_number_lax       /**< fn:number (ignoring NaN) */
     , alg_fun_fn_qname            /**< fn:QName */
     , alg_fun_fn_doc_available    /**< fn:doc-available */
+    , alg_fun_fn_similar_to       /**< fn:similar_to */
     , alg_fun_pf_fragment         /**< #pf:fragment */
     , alg_fun_pf_supernode        /**< #pf:supernode */
     , alg_fun_pf_add_doc_str      /**< pf:add-doc */

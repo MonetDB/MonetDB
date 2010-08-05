@@ -176,7 +176,7 @@ FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKusec();
 
 #ifdef _SQL_OPTIMIZER_DEBUG
-	stream_printf(GDKout, "First call to FXoptimizer\n");
+	mnstr_printf(GDKout, "First call to FXoptimizer\n");
 	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
 	(void) cntxt;
@@ -407,15 +407,21 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				pushInstruction(mb,q);
 			}
 			if (part <= 1) {
+				int lowprop = hlbProp, highprop = hubProp;
 				oid low = 0, high = low + rows;
 				pushInstruction(mb, p);
 
 				if (mode == RD_INS) {
-					low = high;
+					if (f != binddbatRef)
+						low = high;
 					high += BPM_SPLIT;
 				}
-				varSetProp(mb, getArg(p,0), hlbProp, op_gte, VALset(&vr, TYPE_oid, &low));
-				varSetProp(mb, getArg(p,0), hubProp, op_lt, VALset(&vr, TYPE_oid, &high));
+				if (f == binddbatRef) {
+					lowprop = tlbProp;
+					highprop = tubProp;
+				}
+				varSetProp(mb, getArg(p,0), lowprop, op_gte, VALset(&vr, TYPE_oid, &low));
+				varSetProp(mb, getArg(p,0), highprop, op_lt, VALset(&vr, TYPE_oid, &high));
 			} else {
 				int i, v = getArg(p,0);
 				int tpe = getVarType(mb, v);
@@ -651,7 +657,7 @@ addQueryToCache(Client c)
 	chkProgram(c->nspace, mb);
 	m = ((mvc *) c->state[MAL_SCENARIO_OPTIMIZE]);
 #ifdef _SQL_OPTIMIZER_DEBUG
-	stream_printf(GDKout, "ADD QUERY TO CACHE\n");
+	mnstr_printf(GDKout, "ADD QUERY TO CACHE\n");
 	printFunction(GDKout,mb,0,LIST_MAL_ALL);
 #endif
 @-
@@ -682,7 +688,7 @@ to allow inspection.
 	if( c->debug)
 		optimizerCheck(c,mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
 #ifdef _SQL_OPTIMIZER_DEBUG
-	stream_printf(GDKout, "ADD optimized QUERY TO CACHE\n");
+	mnstr_printf(GDKout, "ADD optimized QUERY TO CACHE\n");
 	printFunction(GDKout,mb,0,LIST_MAL_ALL);
 #endif
 }
@@ -707,9 +713,9 @@ SQLoptimizer(Client c)
 {
 	(void) c;
 #ifdef _SQL_OPTIMIZER_DEBUG
-	stream_printf(GDKout, "SQLoptimizer\n");
+	mnstr_printf(GDKout, "SQLoptimizer\n");
 	printFunction(c->fdout, c->curprg->def,0, LIST_MAL_STMT);
-	stream_printf(GDKout, "done\n");
+	mnstr_printf(GDKout, "done\n");
 #endif
 	return MAL_SUCCEED;
 }

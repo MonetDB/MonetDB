@@ -425,8 +425,9 @@ main(int argc, char *argv[])
 	str dbfarm, pidfilename;
 	str p, prefix;
 	FILE *cnf = NULL, *pidfile = NULL;
+	char *control_usock;
+	char *mapi_usock;
 	char buf[1024];
-	char bufu[1024];
 	dpair d = NULL;
 	int pfd[2];
 	int retfd = -1;
@@ -593,7 +594,7 @@ main(int argc, char *argv[])
 	}
 
 	/* where is the mserver5 binary we fork on demand? */
-	snprintf(buf, 1023, "%s/bin/mserver5", prefix);
+	snprintf(buf, sizeof(buf), "%s/bin/mserver5", prefix);
 	_mero_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
 	memcpy(_mero_mserver, buf, strlen(buf) + 1);
 	/* exit early if this is not going to work well */
@@ -918,20 +919,20 @@ main(int argc, char *argv[])
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	SABAOTHinit(dbfarm, NULL);
+	GDKfree(dbfarm);
 
 	/* set up control channel path */
-	snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
-	unlink(buf);
-	snprintf(bufu, 1024, "%s/mapi_socket", dbfarm);
-	unlink(bufu);
-	GDKfree(dbfarm);
+	control_usock = ".merovingian_control";
+	unlink(control_usock);
+	mapi_usock = "mapi_socket";
+	unlink(mapi_usock);
 
 	/* open up connections */
 	if (
 			(e = openConnectionTCP(&sock, _mero_port, stdout)) == NO_ERR &&
-			(e = openConnectionUNIX(&socku, bufu, 0, stdout)) == NO_ERR &&
+			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
 			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
-			(e = openConnectionUNIX(&unsock, buf, S_IRWXO, _mero_ctlout)) == NO_ERR &&
+			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR &&
 			(_mero_controlport == 0 || (e = openConnectionTCP(&csock, _mero_controlport, _mero_ctlout)) == NO_ERR)
 	   )
 	{
@@ -998,12 +999,12 @@ main(int argc, char *argv[])
 	}
 
 	/* control channel is already closed at this point */
-	if (unlink(buf) == -1)
+	if (unlink(control_usock) == -1)
 		Mfprintf(stderr, "unable to unlink control socket '%s': %s\n",
-				buf, strerror(errno));
-	if (unlink(bufu) == -1)
+				control_usock, strerror(errno));
+	if (unlink(mapi_usock) == -1)
 		Mfprintf(stderr, "unable to unlink mapi socket '%s': %s\n",
-				bufu, strerror(errno));
+				mapi_usock, strerror(errno));
 
 	if (e != NO_ERR) {
 		/* console */

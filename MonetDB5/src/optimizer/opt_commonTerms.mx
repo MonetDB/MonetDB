@@ -195,12 +195,12 @@ Like all optimizer decisions, it is safe to stop.
 		for (j = i - 1; j >= last; j--) 
 			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn && !hasSideEffects(q, TRUE) && !isUpdateInstruction(p)){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-				stream_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
+				mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
 					hasSameSignature(mb, p, q), 
 					hasSameArguments(mb, p, q), last);
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-				stream_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
+				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d %d %d\n", 
 					q->token != ASSIGNsymbol ,
 					lastassigned[getArg(q,0)],i,
 					!hasCommonResults(p, q), 
@@ -211,7 +211,7 @@ Like all optimizer decisions, it is safe to stop.
 #endif
 				if (safetyBarrier(p, q) ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-					stream_printf(cntxt->fdout,"#safetybarrier reached\n");
+					mnstr_printf(cntxt->fdout,"#safetybarrier reached\n");
 #endif
 					break;
 				}
@@ -227,7 +227,7 @@ be assigned their value before instruction p.
 					isLinearFlow(q)  
 				   ) {
 					OPTDEBUGcommonTerms{
-						stream_printf(cntxt->fdout, "Found a common expression " "%d <-> %d\n", j, i);
+						mnstr_printf(cntxt->fdout, "Found a common expression " "%d <-> %d\n", j, i);
 						printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 					}
 					clrFunction(p);
@@ -238,7 +238,7 @@ be assigned their value before instruction p.
 						p= pushArgument(mb,p, alias[getArg(q,k)]);
 					}
 					OPTDEBUGcommonTerms{
-						stream_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION\n");
+						mnstr_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION\n");
 						printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 					}
 					actions++;
@@ -253,7 +253,7 @@ be assigned their value before instruction p.
 	GDKfree(alias);
 	GDKfree(lastassigned);
 	DEBUGoptimizers
-		stream_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
 	return actions;
 }
 

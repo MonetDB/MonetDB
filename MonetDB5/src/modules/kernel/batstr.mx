@@ -37,6 +37,10 @@ command batstr.length( s:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatLength
 comment "Return the length of a string.";
 
+command batstr.stringlength( s:bat[:oid,:str] ) :bat[:oid,:int]
+address STRbatstringLength
+comment "Return the length of a right trimed string.";
+
 command batstr.nbytes( s:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
@@ -264,6 +268,7 @@ bunins_failed:
 
 @c
 @:BATint(Length,strLength,str)@
+@:BATint(stringLength,strSQLLength,str)@
 @:BATint(Bytes,strBytes,str)@
 
 @= BATstr

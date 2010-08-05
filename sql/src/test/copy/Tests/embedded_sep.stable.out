@@ -22,14 +22,30 @@ Ready.
 
 Over..
 
-# 19:57:42 >  
-# 19:57:42 >  mclient -lsql -i --host=alf --port=30207 
-# 19:57:42 >  
+# 16:08:51 >  
+# 16:08:51 >  mclient -lsql -ftest -i -e --host=volund --port=35971 
+# 16:08:51 >  
 
+#create table t_str(s string, t string);
+#copy 1 records into t_str from stdin delimiters ',','\n';
+#hello,world
+#
 [ 1	]
+#copy 1 records into t_str from stdin delimiters ',','\n','"';
+#hello,world
+#
 [ 1	]
+#copy 1 records into t_str from stdin delimiters ',','\n','"';
+#"hello","world"
+#
 [ 1	]
+#copy 1 records into t_str from stdin delimiters ',','\n','"';
+#"hello,world","all"
+#
 [ 1	]
+#copy 1 records into t_str from stdin delimiters ',','\n','"';
+#"hello\nworld","all"
+#
 [ 1	]
 % sys.t_str,	sys.t_str # table_name
 % s,	t # name

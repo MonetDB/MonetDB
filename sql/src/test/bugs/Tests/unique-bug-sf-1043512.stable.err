@@ -12,10 +12,10 @@ stderr of test 'unique-bug-sf-1043512` in directory 'src/test/bugs` itself:
 
 MAPI  = monetdb@localhost:45579
 QUERY = insert into unique_test values (1);
-ERROR = !ERROR: INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
+ERROR = !SQLException:assert:INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
 MAPI  = monetdb@localhost:45579
 QUERY = insert into unique_test values (1);
-ERROR = !ERROR: INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
+ERROR = !SQLException:assert:INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
 
 # 17:24:53 >  
 # 17:24:53 >  Done.

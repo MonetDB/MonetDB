@@ -354,9 +354,9 @@ int malAtomArray(int tpe, int size){
 void showAtoms(stream *fd){
 	int i;
 	for(i=0;BATatoms[i].name[0] && i<TYPE_any; i++){
-		stream_printf(fd,"%s", BATatoms[i].name);
-		if( BATatoms[i+1].name[0]) stream_printf(fd,",");
+		mnstr_printf(fd,"%s", BATatoms[i].name);
+		if( BATatoms[i+1].name[0]) mnstr_printf(fd,",");
 	}
-	stream_printf(fd,"\n");
+	mnstr_printf(fd,"\n");
 }
 @}

@@ -974,7 +974,7 @@ printCrackerDeletions(int bid){
 		BAT *b;
 		b=BATdescriptor(CrackerIndex[i].did);
 		if (b == NULL){
-                	stream_printf(GDKout,"\n crack print deletions", "Failed to access deletions.");
+                	mnstr_printf(GDKout,"\n crack print deletions", "Failed to access deletions.");
 			return;
 		}
 		BATprint(b);
@@ -991,7 +991,7 @@ printCrackerInsertions(int bid){
 		BAT *b;
 		b=BATdescriptor(CrackerIndex[i].iid);
 		if (b == NULL){
-                	stream_printf(GDKout,"\n crack print insertions", "Failed to access insertions.");
+                	mnstr_printf(GDKout,"\n crack print insertions", "Failed to access insertions.");
 			return;
 		}
 		BATprint(b);
@@ -1009,7 +1009,7 @@ sizeCrackerDeletions(int bid){
         if (CrackerIndex[i].did > 0){
                 u = BATdescriptor(CrackerIndex[i].did);
 		if (u == NULL){
-                	stream_printf(GDKout,"\n crack print deletions", "Failed to access deletions.");
+                	mnstr_printf(GDKout,"\n crack print deletions", "Failed to access deletions.");
 			return;
 		}
                 printf("\n pending deletions size: "BUNFMT"\n",BATcount(u));
@@ -1029,7 +1029,7 @@ sizeCrackerInsertions(int bid){
 	if (CrackerIndex[i].iid > 0){
 		u = BATdescriptor(CrackerIndex[i].iid);
 		if (u == NULL){
-                	stream_printf(GDKout,"\n crack print insertions", "Failed to access insertions.");
+                	mnstr_printf(GDKout,"\n crack print insertions", "Failed to access insertions.");
 			return;
 		}
 		printf("\n pending insertions size: "BUNFMT" \n",BATcount(u));

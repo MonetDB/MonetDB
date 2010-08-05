@@ -529,7 +529,7 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
 	base = BUNfirst(b);
 	res = InsertTree_@1(m, count, *value, inclusive, index, CrackerIndex[m].Tree, b, base, &newNode);
 	if (newNode==NULL){
-		stream_printf(GDKout,"\n Inserting into the Tree failed: possibly node existed already or a malloc failed \n");
+		mnstr_printf(GDKout,"\n Inserting into the Tree failed: possibly node existed already or a malloc failed \n");
 		return NULL;
 	}
 	CrackerIndex[m].pieces++;

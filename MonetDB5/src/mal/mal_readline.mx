@@ -157,7 +157,7 @@ static void mal_help_display(char **msg, int a, int b){
 	int i;
 	(void) msg; (void) a; (void) b;
 	for(i=0;i<a; i++)
-		stream_printf(GDKout,"%s\n",msg[i]);
+		mnstr_printf(GDKout,"%s\n",msg[i]);
 }
 @-
 @= tst
@@ -425,7 +425,7 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 					c->fdout = GDKerr;
 				else if ((c->fdout = open_wastream(line)) == NULL) {
 					c->fdout = GDKout;
-					stream_printf(GDKerr, "Cannot open %s\n", line);
+					mnstr_printf(GDKerr, "Cannot open %s\n", line);
 				} 
 				line = NULL;
 				continue;
@@ -451,12 +451,12 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 						for(i=0; i< history_length; i++){
 							nl= history_get(i)? history_get(i)->line:0;
 							if( nl)
-							stream_printf(c->fdout, "%d %s\n", i, nl);
+							mnstr_printf(c->fdout, "%d %s\n", i, nl);
 						}
 						line = NULL;
 					} else
 					if( history_expand(line,&nl) ==1  ) {
-						stream_printf(c->fdout,"#%s",nl);
+						mnstr_printf(c->fdout,"#%s",nl);
 						line= nl;
 					} else line= NULL;
 				}

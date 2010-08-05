@@ -106,7 +106,7 @@ monet5_freestack(int clientid, backend_stack stk)
 	if (p != NULL)
 		GDKfree(p);
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#monet5_freestack\n");
+	mnstr_printf(GDKout, "#monet5_freestack\n");
 #endif
 }
 
@@ -120,7 +120,7 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 	SQLCacheRemove(mal_clients+clientid, name);
 
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#monet5_free:%d\n", nr);
+	mnstr_printf(GDKout, "#monet5_free:%d\n", nr);
 #endif
 }
 
@@ -248,7 +248,7 @@ SQLinit(void)
 	tzone tz;
 
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#SQLinit Monet 5\n");
+	mnstr_printf(GDKout, "#SQLinit Monet 5\n");
 #endif
 	if (SQLinitialized)
 		return MAL_SUCCEED;
@@ -294,7 +294,7 @@ str
 SQLexit(Client c)
 {
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#SQLexit\n");
+	mnstr_printf(GDKout, "#SQLexit\n");
 #endif
 	(void) c;		/* not used */
 	if( SQLinitialized == FALSE)
@@ -366,20 +366,20 @@ error(stream *out, char *str)
 	if (str == NULL)
 		return 0;
 
-	if (stream_errnr(out))
+	if (mnstr_errnr(out))
 		return -1;
 	while ((p = strchr(str, '\n')) != NULL) {
 		p++;        /* include newline */
-		if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
+		if (*str != '!' && mnstr_write(out, "!", 1, 1) != 1)
 			return -1;
-		if (stream_write(out, str, p - str, 1) != 1)
+		if (mnstr_write(out, str, p - str, 1) != 1)
 			return -1;
 		str = p;
 	}
 	if (str && *str) {
-		if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
+		if (*str != '!' && mnstr_write(out, "!", 1, 1) != 1)
 			return -1;
-		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
+		if (mnstr_write(out, str, strlen(str), 1) != 1 || mnstr_write(out, "\n", 1, 1) != 1)
 			return -1;
 	}
 	return 0;
@@ -395,7 +395,7 @@ handle_error(mvc *m, stream *out, int pstatus)
 
 	/* transaction already broken */
 	if (m->type != Q_TRANS && pstatus < 0) {
-		if (stream_write(out, TRANS_ABORTED, sizeof(TRANS_ABORTED) - 1, 1) != 1) {
+		if (mnstr_write(out, TRANS_ABORTED, sizeof(TRANS_ABORTED) - 1, 1) != 1) {
 			go = !go;
 		}
 	} else {
@@ -421,7 +421,7 @@ SQLinitClient(Client c)
 	stream *fd = NULL;
 
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#SQLinitClient\n");
+	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
 	if (SQLinitialized == 0 )
 		SQLprelude();
@@ -486,8 +486,8 @@ to initialize the catalog based on the mandatory scripts to be executed.
 				fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
 				if (bfd && bstream_next(bfd) >= 0)
 					msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE);
-				stream_close(fd);
-				stream_destroy(fd);
+				mnstr_close(fd);
+				mnstr_destroy(fd);
 				return msg;
 			}
 		}
@@ -502,7 +502,7 @@ str
 SQLexitClient(Client c)
 {
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#SQLexitClient\n");
+	mnstr_printf(GDKout, "#SQLexitClient\n");
 #endif
 	if (SQLinitialized == FALSE) 
 		throw(SQL, "SQLexitClient", "Catalogue not available");
@@ -604,7 +604,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	size_t len = strlen(*expr);
 
 #ifdef _SQL_COMPILE
-	stream_printf(c->fdout, "#SQLstatement:%s\n", *expr);
+	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
 #endif
 	if (!sql) {
 		msg = SQLinitEnvironment(c);
@@ -692,7 +692,7 @@ We don;t search the cache for a previous incarnation yet.
 			stmt *s = sql_symbol2stmt(m, m->sym);
 
 #ifdef _SQL_COMPILE
-		stream_printf(c->fdout,"#SQLstatement:\n");
+		mnstr_printf(c->fdout,"#SQLstatement:\n");
 #endif
 			scanner_query_processed(&(m->scanner));
 			if (s==0 || (err = mvc_status(m))) {
@@ -718,7 +718,7 @@ We don;t search the cache for a previous incarnation yet.
 			}
 
 #ifdef _SQL_COMPILE
-		stream_printf(c->fdout,"#result of sql.eval()\n");
+		mnstr_printf(c->fdout,"#result of sql.eval()\n");
 		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 #endif
 
@@ -734,7 +734,7 @@ We don;t search the cache for a previous incarnation yet.
 			sqlcleanup(m, 0);
 		}
 #ifdef _SQL_COMPILE
-	stream_printf(c->fdout, "#parse/execute result %d\n", err);
+	mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif
 	}
 @-
@@ -748,7 +748,7 @@ endofcompile:
 	GDKfree(n);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
-	stream_destroy(buf);
+	mnstr_destroy(buf);
 	if (m->sa)
 		sa_destroy(m->sa);
 	m->sym = NULL;
@@ -814,8 +814,8 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( fullname == NULL)
 		fullname= *name;
 	fd = open_rastream(fullname);
-    if (stream_errnr(fd) == OPEN_ERROR) {
-        stream_destroy(fd);
+    if (mnstr_errnr(fd) == OPEN_ERROR) {
+        mnstr_destroy(fd);
         throw(MAL, "sql.include", "could not open file: %s\n", *name);
     }
     bfd = bstream_create(fd, 128 * BLOCK);
@@ -871,13 +871,13 @@ SQLreader(Client c)
 	}
 	if (!be || c->mode <= FINISHING) {
 #ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout, "SQL client finished\n");
+	mnstr_printf(GDKout, "SQL client finished\n");
 #endif
 		c->mode = FINISHING;
 		return NULL;
 	}
 #ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout, "#SQLparser: start reading SQL %s %s\n",
+	mnstr_printf(GDKout, "#SQLparser: start reading SQL %s %s\n",
 		(be->console?" from console":""), 
 		(blocked? "Blocked read":""));
 #endif
@@ -889,7 +889,7 @@ Continue processing any left-over input from the previous round.
 @c
 
 #ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout, "#pos %d len %d eof %d \n",
+	mnstr_printf(GDKout, "#pos %d len %d eof %d \n",
 		in->pos, in->len, in->eof);
 #endif
 @-
@@ -915,7 +915,7 @@ The former comes with readline functionality.
 
 		if (c->bak) {
 #ifdef _SQL_READER_DEBUG
-			stream_printf(GDKout, "Switch to backup stream\n");
+			mnstr_printf(GDKout, "Switch to backup stream\n");
 #endif
 			in = c->fdin;
 			blocked = isa_block_stream(in->s);
@@ -931,7 +931,7 @@ The former comes with readline functionality.
 			if (!(m->emod & mod_debug))
 				go = SQLautocommit(c,m);
 
-			if (go && ((!blocked && stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || stream_flush(c->fdout))) {
+			if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
 				go = FALSE;
 				break;
 			}
@@ -942,7 +942,7 @@ The former comes with readline functionality.
 			go = FALSE;
 		} else if (go && (rd = bstream_next(in)) <= 0) {
 #ifdef _SQL_READER_DEBUG
-			stream_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
+			mnstr_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
 			if (be->language == 'D' && in->eof == 0) 
 				return 0;
@@ -965,7 +965,7 @@ The former comes with readline functionality.
 			}
 		}
 #ifdef _SQL_READER_DEBUG
-		stream_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
+		mnstr_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
 #endif
 		}
 	}
@@ -1156,7 +1156,7 @@ SQLparser(Client c)
 	oldstop = c->curprg->def->stop;
 	be->vtop = oldvtop;
 #ifdef _SQL_PARSER_DEBUG
-	stream_printf(GDKout, "#SQL compilation \n");
+	mnstr_printf(GDKout, "#SQL compilation \n");
 	printf("debugger? %d(%d)\n", (int)be->mvc->emode, (int)be->mvc->emod);
 #endif
 	m = be->mvc;
@@ -1399,7 +1399,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 	str ret;
 
 #ifdef DEBUG_CALLMAL
-	stream_printf(GDKout,"SQLexecute\n");
+	mnstr_printf(GDKout,"SQLexecute\n");
 	printFunction(GDKout, ((Symbol)q->code)->def, 0, LIST_MAL_ALL);
 #endif
 	mb = ((Symbol)q->code)->def;
@@ -1496,7 +1496,7 @@ SQLengineIntern(Client c, backend *be)
 		throw(SQL, "SQLengine", "Program contains errors");
 	}
 #ifdef SQL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#Ready to execute SQL statement\n");
+	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
 
 	if( c->curprg->def->stop == 1 ){
@@ -1680,7 +1680,7 @@ SQLCacheRemove(Client c, str nme)
 	Symbol s;
 
 #ifdef _SQL_CACHE_DEBUG
-	stream_printf(GDKout, "SQLCacheRemove %s\n", nme);
+	mnstr_printf(GDKout, "SQLCacheRemove %s\n", nme);
 #endif
 
 	s= findSymbolInModule(c->nspace, nme);

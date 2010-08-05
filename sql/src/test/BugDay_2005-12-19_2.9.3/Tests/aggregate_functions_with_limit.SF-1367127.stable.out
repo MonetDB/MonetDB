@@ -74,8 +74,9 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% . # table_name
-% single_value # name
+#select count(*) from test_aggre_limit limit 1;
+% .test_aggre_limit # table_name
+% L4 # name
 % wrd # type
 % 2 # length
 [ 50	]

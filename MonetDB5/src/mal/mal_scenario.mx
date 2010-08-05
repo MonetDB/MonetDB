@@ -306,15 +306,15 @@ static void
 print_scenarioCommand(stream *f, str cmd, MALfcn funcptr)
 {
     if (cmd) 
-	stream_printf(f," \"%s%s\",", cmd, (funcptr?"":"?"));
+	mnstr_printf(f," \"%s%s\",", cmd, (funcptr?"":"?"));
     else 
-	stream_printf(f," nil,");
+	mnstr_printf(f," nil,");
 }
 
 void
 showScenario(stream *f, Scenario scen)
 {
-	stream_printf(f, "[ \"%s\",", scen->name);
+	mnstr_printf(f, "[ \"%s\",", scen->name);
 	print_scenarioCommand(f, scen->initSystem, scen->initSystemCmd);
 	print_scenarioCommand(f, scen->exitSystem, scen->exitSystemCmd);
 	print_scenarioCommand(f, scen->initClient, scen->initClientCmd);
@@ -323,7 +323,7 @@ showScenario(stream *f, Scenario scen)
 	print_scenarioCommand(f, scen->optimizer, scen->optimizerCmd);
 	print_scenarioCommand(f, scen->tactics, scen->tacticsCmd);
 	print_scenarioCommand(f, scen->engine, scen->engineCmd);
-	stream_printf(f, "]\n");
+	mnstr_printf(f, "]\n");
 }
 
 Scenario
@@ -628,7 +628,7 @@ runScenarioBody(Client c)
 	while (c->mode > FINISHING || msg != MAL_SUCCEED) {
 		if (msg != MAL_SUCCEED){
 /* we should actually show it [postponed]
-			stream_printf(c->fdout,"!%s\n",msg);
+			mnstr_printf(c->fdout,"!%s\n",msg);
 */
 			if (msg != M5OutOfMemory)
 				GDKfree(msg);
@@ -682,7 +682,7 @@ runScenario(Client c)
 	msg = runScenarioBody(c);
 	if (msg != MAL_SUCCEED && 
 	    strcmp(msg,"MALException:client.quit:Server stopped."))
-		stream_printf(c->fdout,"!%s\n",msg);
+		mnstr_printf(c->fdout,"!%s\n",msg);
 	return msg;
 }
 

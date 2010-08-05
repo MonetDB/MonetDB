@@ -193,7 +193,7 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
            if (strcasecmp(optVal, "TRUE") == 0) 
                 tjc_c->rmoverlap = 1;
         } else {
-            stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
+            mnstr_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
     }
     return 1;
@@ -203,7 +203,7 @@ int save2file(char* name, char *content) {
 	FILE *f;
 
 	if ( !(f = fopen(name,"w")) ) {
-	    stream_printf(GDKerr,"#! WARNING: cannot open output file: %s.\n",name);
+	    mnstr_printf(GDKerr,"#! WARNING: cannot open output file: %s.\n",name);
 	    return 0;
 	}
 	fprintf(f,"%s",content);
@@ -224,8 +224,8 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
     TJatree_t *atree;
   
     if (DEBUG) {
-	stream_printf(GDKout,"#!tjc interpreting options\n");
-	stream_printf(GDKout,"NEXI query: %s\n", query);
+	mnstr_printf(GDKout,"#!tjc interpreting options\n");
+	mnstr_printf(GDKout,"NEXI query: %s\n", query);
     }
     if ( !interpret_options(tjc_c,optbat) ) {
     	TJCfree(tjc_c);
@@ -234,28 +234,28 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
     }
 
     int status = tjc_parser(query,&ptree);
-    if (DEBUG) stream_printf(GDKout,"#!tjc parser status = %d\n",status);
+    if (DEBUG) mnstr_printf(GDKout,"#!tjc parser status = %d\n",status);
     if (use_sn && (ptree->is_rel_path_exp == 0)) {
 	*errBUFF = GDKstrdup("Error (new NEXI syntax): A query with startnodes should start with a relative path expression");
-        if (DEBUG) stream_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
+        if (DEBUG) mnstr_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
 	return NULL;
     }
     if ((use_sn == 0) && ptree->is_rel_path_exp) {
 	*errBUFF = GDKstrdup("Error (new NEXI syntax): A query without startnodes should start with an absolute path expression");
-        if (DEBUG) stream_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
+        if (DEBUG) mnstr_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
 	return NULL;
     }
     if (!status) {
 	root = &ptree->node[ptree->length - 1];
-        if (DEBUG) stream_printf(GDKout,"#!tjc start normalize\n");
+        if (DEBUG) mnstr_printf(GDKout,"#!tjc start normalize\n");
 	normalize(ptree);
-        if (DEBUG) stream_printf(GDKout,"#!tjc start optimize\n");
+        if (DEBUG) mnstr_printf(GDKout,"#!tjc start optimize\n");
 	optimize(ptree);
-        if (DEBUG) stream_printf(GDKout,"#!tjc start normalize query\n");
+        if (DEBUG) mnstr_printf(GDKout,"#!tjc start normalize query\n");
         normalize_query(tjc_c, ptree);
-        if (DEBUG) stream_printf(GDKout,"#!tjc start physical optimization\n");
+        if (DEBUG) mnstr_printf(GDKout,"#!tjc start physical optimization\n");
 	atree = phys_optimize (tjc_c, ptree, root, rtagbat);
-        if (DEBUG) stream_printf(GDKout,"#!tjc start mil generation\n");
+        if (DEBUG) mnstr_printf(GDKout,"#!tjc start mil generation\n");
 	milres = milprint (tjc_c, atree);
         
 	// optional parse tree dot output
@@ -280,18 +280,18 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
 	    milres = milprint_empty (tjc_c);
 	}
 	milres = GDKstrdup(milres); // INCOMPLETE, check free
-	if (DEBUG) stream_printf(GDKout,"#!tjc start of mil:\n%s",milres);
-	if (DEBUG) stream_printf(GDKout,"#!tjc end of mil\n");
+	if (DEBUG) mnstr_printf(GDKout,"#!tjc start of mil:\n%s",milres);
+	if (DEBUG) mnstr_printf(GDKout,"#!tjc end of mil\n");
 	
 	free_atree (atree);
 	tjcp_freetree (ptree);
     }
     else {
 	*errBUFF = GDKstrdup(tjc_c->errBUFF);
-        if (DEBUG) stream_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
+        if (DEBUG) mnstr_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
 	return NULL;
     }
-    if (DEBUG) stream_printf(GDKout,"#!tjc succesfull end \n");
+    if (DEBUG) mnstr_printf(GDKout,"#!tjc succesfull end \n");
 
 
     TJCfree(tjc_c);

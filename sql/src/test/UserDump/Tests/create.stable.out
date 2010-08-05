@@ -185,6 +185,7 @@ return table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, trigge
 create function dependencies_keys_on_foreignkeys()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);
+-- Scientific database section
 -- The contents of this file are subject to the MonetDB Public License
 -- Version 1.1 (the "License"); you may not use this file except in
 -- compliance with the License. You may obtain a copy of the License at

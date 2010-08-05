@@ -257,6 +257,13 @@ MRdistributework(
 			p = pushReturn(reduce, p, v);
 			w[j] = v;
 		}
+		for (j = sig->retc; j < sig->argc; j++) {
+			/* x1 := remote.put(q, A0); */
+			o = newStmt(reduce, remoteRef, putRef);
+			o = pushArgument(reduce, o, q);
+			o = pushArgument(reduce, o, getArg(sig, j));
+			p = pushArgument(reduce, p, getArg(o, 0));
+		}
 		pushInstruction(reduce, p);
 
 		/* y1 := remote.get(q, x1); */
@@ -477,6 +484,7 @@ trackstack_destroy(struct stack *stk)
 						for (i = k + 1; i < j; i++) {
 							p = omap[i];
 							if (trackstack_contains(&avgtrack, getArg(p, 0))) {
+								MRaddDepInstrs(omap, limit, map, &instrp, p);
 								pushInstruction(map, p);
 								oreduce[i]->token = NOOPsymbol;
 							}
@@ -496,6 +504,50 @@ trackstack_destroy(struct stack *stk)
 	p = omap[i];
 @c
 
+static void
+MRaddDepInstrs(
+		InstrPtr *omb,    /* original stmts */
+		int limit,        /* the number of orig stmts */
+		MalBlkPtr mb,     /* the new malblock to append to */
+		struct stack *s,  /* trackstack with already inserted instrs */
+		InstrPtr p        /* current instruction to evaluate */
+) {
+	int i, j, k, c;
+	InstrPtr q = NULL;
+
+	/* did we include all dependencies? */
+	for (j = p->retc; j < p->argc; j++) {
+		c = getArg(p, j);
+		if (!isVarConstant(mb, c) && !trackstack_contains(s, c)) {
+			/* we need to inject the missing instruction first */
+			q = NULL;
+			for (k = 0; k < limit; k++) {
+				if (omb[k] == NULL)
+					continue;
+				for (i = 0; i < omb[k]->retc; i++) {
+					if (getArg(omb[k], i) == c) {
+						q = omb[k];
+						break;
+					}
+				}
+			}
+			/* not found. this could happen with argument variables (A0) */
+			if (q == NULL)
+				break;
+			/* make sure we don't add it multiple times */
+			for (i = 0; i < q->retc; i++)
+				trackstack_push(s, getArg(q, i));
+			/* recursively get instructions that are needed for this one */
+			MRaddDepInstrs(omb, limit, mb, s, q);
+			/* add the instruction */
+			pushInstruction(mb, q);
+		}
+	}
+	/* don't forget to add this instruction itself */
+	for (i = 0; i < p->retc; i++)
+		trackstack_push(s, getArg(p, i));
+}
+
 static int
 OPTmapreduceImplementation(
 		Client cntxt,
@@ -513,9 +565,10 @@ OPTmapreduceImplementation(
 	Symbol new;
 	mapcol *col, *lastcol;
 	struct stack tracker = { NULL, 0, 0, 0 };
+	struct stack instrp = { NULL, 0, 0, 0 };
 	struct stack avgtrack = { NULL, 0, 0, 0 };
 	char hadBinds = 0;
-	str mapreduceRef = putName("mapreduce", 9);
+	str mapreduceRef = putName("mapreduce", 9);/* move global when we're done */
 
 	(void)stk; /* useless, is NULL */
 	(void)pc;
@@ -564,6 +617,15 @@ OPTmapreduceImplementation(
 	new->def = map;
 	map->keephistory = reduce->keephistory;
 	pushInstruction(map, sig);
+
+	/* SQL uses canned queries, such as a WHERE a > X clause, where the
+	 * X is factored out in a variable and used as argument to the
+	 * original function.  We will simply copy them and pass them on to
+	 * the map function. */
+	p = oreduce[0];
+	for (j = p->retc; j < p->argc; j++)
+		sig = pushArgument(map, sig, getArg(p, j));
+	map->stmt[0] = sig; /* many args realloc sig, so reset it */
 
 	/* We do a two-phase scan over the original plan to get a MAP and
 	 * REDUCE program.  We cannot do it in a single scan, because
@@ -617,12 +679,17 @@ OPTmapreduceImplementation(
 						/* store last seen kunion instruction for
 						 * comparison with kdifference later */
 						lastUnion = getArg(p, 0);
-					} else if (getFunctionId(p) == kdifferenceRef) {
+					} else if (getFunctionId(p) == kdifferenceRef ||
+							getFunctionId(p) == leftjoinRef)
+					{
 						int k;
 						/* a kdifference after a kunion results in the
 						 * final column result */
-						if (getArg(p, 1) == lastUnion) {
+						if (getArg(p, 1) == lastUnion ||
+								getArg(p, 2) == lastUnion)
+						{
 							/* this is a column reference, keep it */
+							MRaddDepInstrs(omap, limit, map, &instrp, p);
 							if (lastcol == NULL) {
 								col = lastcol = alloca(sizeof(mapcol));
 								/* this is the first one, leave a marker */
@@ -678,10 +745,12 @@ OPTmapreduceImplementation(
 			break;
 			case SINGLE_DUP:
 				copy = FREE;
+				MRaddDepInstrs(omap, limit, map, &instrp, p);
 				pushInstruction(map, p);
 			break;
 			case SINGLE:
 				copy = LEAVE;
+				MRaddDepInstrs(omap, limit, map, &instrp, p);
 				pushInstruction(map, p);
 				oreduce[i]->token = NOOPsymbol;
 			break;
@@ -693,6 +762,7 @@ OPTmapreduceImplementation(
 		}
 	}
 	trackstack_clear(&avgtrack);
+	trackstack_destroy(&instrp);
 
 	if (hadBinds == 0) {
 		GDKfree(reduce->stmt);
@@ -738,7 +808,7 @@ OPTmapreduceImplementation(
 					}
 				}
 			} else if (getFunctionId(p) == sortReverseTailRef) {
-				/* simple ORDER BY DESC*/
+				/* simple ORDER BY DESC */
 				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
 					if (getArg(p, 1) == lastcol->reduceid) {
 						pushInstruction(map, omap[i]);
@@ -800,19 +870,6 @@ OPTmapreduceImplementation(
 					}
 				}
 			}
-		} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
-			/* prepare for a count(*) where the aggr.count has a leading
-			 * bat.mirror */
-			if (getModuleId(oreduce[i + 1]) == aggrRef &&
-						getFunctionId(oreduce[i + 1]) == countRef &&
-						getArg(p, 0) == getArg(oreduce[i + 1], 1))
-			{
-				pushInstruction(map, omap[i]);
-				newComment(map, "= COUNT(*)");
-				copy = cNONE;
-				/* NOTE: rest is handled in case below */
-			}
-		} else if (getModuleId(p) == aggrRef) {
 			/* COUNT/SUM push down, replace with SUM in REDUCE program,
 			 * fix up the return type */
 			if (getFunctionId(p) == countRef) {
@@ -822,7 +879,7 @@ OPTmapreduceImplementation(
 							getFunctionId(oreduce[i - 1]) == mirrorRef &&
 							getArg(oreduce[i - 1], 0) == getArg(p, 1))
 						getArg(p, 1) = getArg(oreduce[i - 1], 1);
-				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {
 					if (getArg(p, 1) == lastcol->reduceid) {
 						pushInstruction(map, omap[i]);
 						newComment(map, "= COUNT");
@@ -835,7 +892,7 @@ OPTmapreduceImplementation(
 					}
 				}
 			} else if (getFunctionId(p) == sumRef) {
-				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {	
+				for (lastcol = col; lastcol != NULL; lastcol = lastcol->next) {
 					if (getArg(p, 1) == lastcol->reduceid) {
 						pushInstruction(map, omap[i]);
 						newComment(map, "= SUM");
@@ -847,6 +904,18 @@ OPTmapreduceImplementation(
 						break;
 					}
 				}
+			}
+		} else if (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) {
+			/* prepare for a count(*) where the aggr.count has a leading
+			 * bat.mirror */
+			if (getModuleId(oreduce[i + 1]) == aggrRef &&
+						getFunctionId(oreduce[i + 1]) == countRef &&
+						getArg(p, 0) == getArg(oreduce[i + 1], 1))
+			{
+				pushInstruction(map, omap[i]);
+				newComment(map, "= COUNT(*)");
+				copy = cNONE;
+				/* NOTE: rest is handled in case below */
 			}
 		}
 
@@ -909,11 +978,11 @@ OPTmapreduceImplementation(
 	}
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 10
-	stream_printf(cntxt->fdout, "MAP program\n");
+	mnstr_printf(cntxt->fdout, "MAP program\n");
 	chkProgram(cntxt->nspace, map);
 	printFunction(cntxt->fdout, map, 0, LIST_MAL_STMT);
 
-	stream_printf(cntxt->fdout, "REDUCE program\n");
+	mnstr_printf(cntxt->fdout, "REDUCE program\n");
 	chkProgram(cntxt->nspace, reduce);
 	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT);
 #endif

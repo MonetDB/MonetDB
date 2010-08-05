@@ -13,6 +13,7 @@ stdout of test 'interleave_PUT_GET_crashes_Mserver.SF-1676443` in directory 'tes
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 

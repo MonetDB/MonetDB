@@ -174,7 +174,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	MalBlkPtr mf;
 
 	OPTDEBUGdatacell {
-		stream_printf(cntxt->fdout, "#Datacell optimizer started\n");
+		mnstr_printf(cntxt->fdout, "#Datacell optimizer started\n");
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	}
 	(void) stk;
@@ -183,7 +183,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	while ( BASKETblock(cntxt, mb, &first, &last) ) {
 		actions++;
 		OPTDEBUGdatacell 
-			stream_printf(cntxt->fdout, "#Basket expression %d - %d\n", first,last);
+			mnstr_printf(cntxt->fdout, "#Basket expression %d - %d\n", first,last);
 
 		/* bake a factory */
 		snprintf(buf,256,"bq%s", getArgName(mb,getInstrPtr(mb,0),0));
@@ -306,9 +306,9 @@ the incremental statements.
 			pushInstruction(mb,old[i]);
 
 		OPTDEBUGdatacell {
-			stream_printf(cntxt->fdout, "#Modified plan\n");
+			mnstr_printf(cntxt->fdout, "#Modified plan\n");
 			printFunction(cntxt->fdout,mb,0,0);
-			stream_printf(cntxt->fdout, "#Factory created\n");
+			mnstr_printf(cntxt->fdout, "#Factory created\n");
 			printFunction(cntxt->fdout,mf,0,0);
 		}
 		GDKfree(old);

@@ -480,7 +480,7 @@ static void
 xmlNsInit (XmlNsFrame** top)
 {
 #ifdef DEBUGNS
-    stream_printf(GDKerr,"+NS:xmlNsInit()\n");
+    mnstr_printf(GDKerr,"+NS:xmlNsInit()\n");
 #endif
 
     *top = NULL;
@@ -493,7 +493,7 @@ xmlNsPush (XmlNsFrame** top, char* prefix, char* uri)
 
     if ( fp ) {
 #ifdef DEBUGNS
-        stream_printf (GDKerr, "+NS:xmlNsPush(\"%s\",\"%s\")\n", prefix ? prefix : "", uri ? uri : "");
+        mnstr_printf (GDKerr, "+NS:xmlNsPush(\"%s\",\"%s\")\n", prefix ? prefix : "", uri ? uri : "");
 #endif
         fp->prefix = NULL;
         fp->uri    = NULL;
@@ -519,14 +519,14 @@ xmlNsPop2 (XmlNsFrame** top, XmlNsFrame* newTop)
     XmlNsFrame* fp = (*top);
 
 #ifdef DEBUGNS
-    stream_printf(GDKerr,"+NS:xmlNsPop2(%d)\n",(int)newTop);
+    mnstr_printf(GDKerr,"+NS:xmlNsPop2(%d)\n",(int)newTop);
 #endif
 
     while (fp != newTop ) {
         XmlNsFrame* old = fp;
         fp = fp->prev;
 #ifdef DEBUGNS
-        stream_printf(GDKerr,
+        mnstr_printf(GDKerr,
                       "+NS:-popping(\"%s\",\"%s\")\n",
                       old->prefix, old->uri);
 #endif
@@ -557,7 +557,7 @@ xmlNsPrefixFind (XmlNsFrame** top, char* uri)
         if (fp->uri != NULL &&
             !strcmp (uri, fp->uri)) {
 #ifdef DEBUGNS
-            stream_printf (GDKerr,
+            mnstr_printf (GDKerr,
                            "+NS:xmlNsPrefixFind(\"%s\")=\"%s\")\n",
                            uri, fp->uri);
 #endif
@@ -577,7 +577,7 @@ xmlNsUriFind (XmlNsFrame** top, char* prefix)
         if (fp->prefix != NULL &&
             !strcmp (prefix, fp->prefix)) {
 #ifdef DEBUGNS
-            stream_printf (GDKerr,
+            mnstr_printf (GDKerr,
                            "+NS:xmlNsUriFind(\"%s\")=\"%s\")\n",
                            prefix, fp->prefix);
 #endif
@@ -831,7 +831,7 @@ initWsMatrix(XqueryCtx* ctx)
         }
     }
 #ifdef DEBUGWS
-    stream_printf(GDKerr, "+ initWsMatrix(wsConts=%d, wsBats=%d).\n",
+    mnstr_printf(GDKerr, "+ initWsMatrix(wsConts=%d, wsBats=%d).\n",
                   ctx->wsConts, ctx->wsBats);
 #endif
 
@@ -848,7 +848,7 @@ disposeWsMatrix(XqueryCtx* ctx)
 
          if ( bd->bat ) {
 #ifdef DEBUGWS
-          stream_printf(GDKerr,
+          mnstr_printf(GDKerr,
                               "+ disposeWsMatrix(close(cont=%d,bats=%d))\n",
                               i, j);
 #endif
@@ -858,7 +858,7 @@ disposeWsMatrix(XqueryCtx* ctx)
         }
     }
 #ifdef DEBUGWS
-    stream_printf(GDKerr,"+ disposeWsMatrix() finished.\n");
+    mnstr_printf(GDKerr,"+ disposeWsMatrix() finished.\n");
 #endif
     return SUCCESS;
 }
@@ -941,7 +941,7 @@ getMatrixBATrecord (XqueryCtx* ctx, int contID, int batID)
     if ( !bd->bat ) {
         if ( !(bd->bat = fetchWsContextBAT(ctx,ctx->ws,contID,batID)) ) {
 #ifdef DEBUGWS
-         stream_printf(GDKerr,
+         mnstr_printf(GDKerr,
                           "+ getMatrixBAT(open(cont=%d,bats=%d)) = FAIL\n",
                           contID, batID);
 #endif
@@ -954,7 +954,7 @@ getMatrixBATrecord (XqueryCtx* ctx, int contID, int batID)
              bd->fake_prj = 0;
      
 #ifdef DEBUGWS
-     stream_printf(GDKerr,
+     mnstr_printf(GDKerr,
                       "+ getMatrixBAT(open(cont=%d,bats=%d)) = SUCCES\n",
                       contID, batID);
 #endif
@@ -1635,7 +1635,7 @@ xquery_print_doc_DRIVER (
     TIMER_START();
     oid docIndex	= ws_documentIndex(ws,docName);
     oid docContainer	= ws_documentContainer(ws,docName);
-    if (0) stream_printf(GDKout,"ws_[documentIndex,container](%s) = " OIDFMT "," OIDFMT "," OIDFMT "\n",docName,docIndex,docContainer);
+    if (0) mnstr_printf(GDKout,"ws_[documentIndex,container](%s) = " OIDFMT "," OIDFMT "," OIDFMT "\n",docName,docIndex,docContainer);
     int res = GDK_FAIL;
     if (!docIndex) {
         GDKerror("serialize.mx: unable to find document \"%s\" in working set!\n", docName);
@@ -1643,7 +1643,7 @@ xquery_print_doc_DRIVER (
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
         if (createWsContext(ctx,ws,mode,driverFun,driverArg,GDKout)) {
 	    oid start_oid = doc_startOid(ctx,docIndex, docContainer);
-            if (0) stream_printf(GDKout,"ws_[documentIndex,container,startOid](%s) = " OIDFMT "," OIDFMT "," OIDFMT "\n",docName,docIndex,docContainer,start_oid);
+            if (0) mnstr_printf(GDKout,"ws_[documentIndex,container,startOid](%s) = " OIDFMT "," OIDFMT "," OIDFMT "\n",docName,docIndex,docContainer,start_oid);
 	    if ( start_oid == oid_nil )
 	        return GDK_FAIL;
             if (ctx->driverFun->handle_startDocument(ctx,start_oid)) {
@@ -2057,7 +2057,7 @@ draw_queryflow(
     }
 
     if(!(s = open_wastream(dotFile))) return GDK_FAIL;
-    ret = stream_printf(s,
+    ret = mnstr_printf(s,
             "digraph G {\n"
             " ratio=2\n"
             " node [style=filled, color=\".7 .3 1.0\"];\n"
@@ -2081,13 +2081,13 @@ draw_queryflow(
     BATloop(participants, p, q) {
         if (sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%s,%d", caller, dst, fcn, time, &xrpc_updating) != 5) {
             GDKerror("draw_queryflow: sscanf failed");
-            stream_destroy(s);
+            mnstr_destroy(s);
             return GDK_FAIL;
         }
         seqnr = strrchr(dst, ':');
         if(!seqnr) {
             GDKerror("draw_queryflow: invalid value of participant: %s.", dst);
-            stream_destroy(s);
+            mnstr_destroy(s);
             return GDK_FAIL;
         }
         seqnr[0] = '\0'; /* cut off the seqnr from the dst string */
@@ -2100,7 +2100,7 @@ draw_queryflow(
         ptr = dstNID;
         do { if(!isalnum(ptr[0])) ptr[0] = '_'; ptr++; } while (ptr[0]);
 
-        ret = ret || (stream_printf(s,
+        ret = ret || (mnstr_printf(s,
                 " subgraph cluster_%s {\n"
                 "   node [style=filled,color=\"%s\"];\n"
                 "   style=filled;\n"
@@ -2117,9 +2117,9 @@ draw_queryflow(
                 caller, dstNID, seqnr, dst, seqnr,
                 dstNID, seqnr, caller, time, dst, seqnr) < 0);
     }
-    ret = ret || (stream_write(s, "}", 1, 1) < 0);
-    stream_close(s);
-    stream_destroy(s);
+    ret = ret || (mnstr_write(s, "}", 1, 1) < 0);
+    mnstr_close(s);
+    mnstr_destroy(s);
     
     snprintf(dotcmd, 1024, "dot -Tcmapx -o%s.xml -Tgif -o%s.gif %s 2> %s.err", base_name, base_name, dotFile, dotFile);
     if (ret || system(dotcmd) < 0) {
@@ -2155,9 +2155,9 @@ xrpc_log_message(str msg, lng xrpc_seqnr) {
         snprintf(logfile, 1024, "%s%s_" LLFMT ".xml", logdir, msg, xrpc_seqnr);
         fp = open_wastream(logfile);
     }
-    if (!fp || stream_errnr(fp)) {
+    if (!fp || mnstr_errnr(fp)) {
         GDKerror("print_result: could not open logfile for writing\n");
-        if (fp) stream_destroy(fp);
+        if (fp) mnstr_destroy(fp);
         return NULL;
     }
     return fp;
@@ -2308,7 +2308,7 @@ dach_finish_check(struct DuplAttrChk* dach) {
     if ( dach->equal ) { /* still equal */
 	for(int i=0; i<dach->alist_cur; i++) {
 	    if (dach->alist[i] ) {
-    	        if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: no corresponding left attr: <%s ... %s\n",dach->elname, dach->alist[i]);
+    	        if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: no corresponding left attr: <%s ... %s\n",dach->elname, dach->alist[i]);
 	        dach->equal = 0; /* not deep equal */
 	    }
         }
@@ -2370,12 +2370,12 @@ dach_handle_attribute (XqueryCtx* ctx, str prefix, str loc, str value)
 	}
 	if ( (i==dach->alist_cur) && dach->equal) {
 	    /* did not find attr, so not deep equal */
-    	    if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: no corresponding right attr: <%s ... %s\n",dach->elname, newattr);
+    	    if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: no corresponding right attr: <%s ... %s\n",dach->elname, newattr);
 	    dach->equal = 0;
 	}
 	dach->abuff_cur = start; /* reclaim string space */
     }
-    if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: dach_handle_attribute[%s](%s)\n",(dach->building?"build":"check"),newattr);
+    if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: dach_handle_attribute[%s](%s)\n",(dach->building?"build":"check"),newattr);
     return SUCCESS;
 }
 
@@ -2471,11 +2471,11 @@ fn_deep_eq_range(
         int rkind = fn_deep_eq_scan(ctx,&rpre,rto,rpre_cont,rcont,&rvCONT);
 
 	if ( lkind != rkind ) {
-    	    if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: not eq range_king(%d,%d).\n",lkind,rkind);
+    	    if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: not eq range_king(%d,%d).\n",lkind,rkind);
 	    return 0;
 	}
 	if ( lkind == 9999 ) {
-    	    if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: end of range for both sides.\n");
+    	    if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: end of range for both sides.\n");
 	    return 1; /* end of range, equal */
 	} else {
             getWsValue(res,ctx,lcont,PRE_PROP,lpre);
@@ -2496,17 +2496,17 @@ fn_deep_eq_range(
                 getWsValue (res, ctx, rvCONT, QN_LOC, rprop);
                 str rname   = (str) res;
 		/* */
-    	        if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>).\n",lname,rname);
+    	        if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>).\n",lname,rname);
 		if ( strcmp(lname,rname) != 0 ) {
-    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>) FAILS.\n",lname,rname);
+    	            if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>) FAILS.\n",lname,rname);
 	 	    return 0;
 		}
 		if ( ((luri && ruri) && strcmp(luri,ruri) != 0) || (luri && !ruri) || (!luri && ruri) )  {
-    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) URI(%s,%s) FAILS.\n",lname,luri,ruri);
+    	            if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) URI(%s,%s) FAILS.\n",lname,luri,ruri);
 		    return 0;
 		}
 		if ( ((lprefix && rprefix) && strcmp(lprefix,rprefix) != 0) || (lprefix && !rprefix) || (!lprefix && rprefix) )  {
-    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) PREFIX(%s,%s) FAILS.\n",lname,lprefix,rprefix);
+    	            if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) PREFIX(%s,%s) FAILS.\n",lname,lprefix,rprefix);
 		    return 0;
 		}
 		/* now handle the attributes of the node */
@@ -2523,9 +2523,9 @@ fn_deep_eq_range(
 		str lstr = (str)res;
                 getWsValue(res,ctx,rvCONT,PROP_TEXT,rprop);
 		str rstr = (str)res;
-    	        if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing STR(\"%s\",\"%s\").\n",lstr,rstr);
+    	        if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: comparing STR(\"%s\",\"%s\").\n",lstr,rstr);
 		if ( strcmp(lstr,rstr) != 0 ) {
-    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: deep-equal STR(\"%s\",\"%s\") == FALSE.\n",lstr,rstr);
+    	            if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: deep-equal STR(\"%s\",\"%s\") == FALSE.\n",lstr,rstr);
 	 	    return 0;
 	        }
 	     } else if (lkind == 2 ) { /* COMMENT */
@@ -2534,7 +2534,7 @@ fn_deep_eq_range(
                 getWsValue(res,ctx,rvCONT,PROP_COM,rprop);
 		str rcom = (str)res;
 		if ( strcmp(lcom,rcom) != 0 ) {
-    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: deep-equal COMMENT(\"%s\",\"%s\") == FALSE.\n",lcom,rcom);
+    	            if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: deep-equal COMMENT(\"%s\",\"%s\") == FALSE.\n",lcom,rcom);
 	 	    return 0;
 		}
 	     } else if (lkind == 3 ) { /* PI */
@@ -2547,11 +2547,11 @@ fn_deep_eq_range(
                     getWsValue(res,ctx,rvCONT,PROP_INS,rprop);
                     str rdata = (str) res;
 		if ( strcmp(ltarget,rtarget) != 0 || strcmp(ldata,rdata) != 0) {
-    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: deep-equal PI(%s,%s),PI(%s,%s) == FALSE.\n",ltarget,ldata,rtarget,rdata);
+    	            if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: deep-equal PI(%s,%s),PI(%s,%s) == FALSE.\n",ltarget,ldata,rtarget,rdata);
 	 	    return 0;
 		}
 	     } else {
-		stream_printf(GDKout,"#eqdebug: unknown kind: %d\n",lkind);
+		mnstr_printf(GDKout,"#eqdebug: unknown kind: %d\n",lkind);
 	        return 0;
 	     }
 	}
@@ -2594,7 +2594,7 @@ fn_deep_eq_node(XqueryCtx* ctx, int lcont, oid loid, int rcont, oid roid) {
 	    str rstr = (str)res;
 	    /* */
 	    if ( strcmp(lstr,rstr) != 0 ) {
-    	        if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: not eq STR(%s,%s).\n",lstr,rstr);
+    	        if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: not eq STR(%s,%s).\n",lstr,rstr);
 		return 0;
 	    }
 	} else {
@@ -2619,7 +2619,7 @@ fn_deep_eq_node(XqueryCtx* ctx, int lcont, oid loid, int rcont, oid roid) {
 		   );
 	}
     } else {
-    	if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: kind not equal.\n");
+    	if (FNDEEPEQTRACE) mnstr_printf(GDKout,"#eqdebug: kind not equal.\n");
 	return 0;
     }
     return 1;

@@ -6285,9 +6285,9 @@ int CMDtj_log(str format, int* i) {
 int CMDtj_chk_dict_hash(BAT* b_tag, BAT* b_term)
 {
 	if ( b_tag->T->hash == NULL ) {
-	     // stream_printf(GDKout,"C[]: ADD HASHTABLE TO TAG DICTIONARY\n");
+	     // mnstr_printf(GDKout,"C[]: ADD HASHTABLE TO TAG DICTIONARY\n");
 #ifdef TJ_TRACE
-	     if ( TJ_TRACE ) stream_printf(GDKout,"C[]: CREATE NEW HASHTABLE ON TAG DICTIONARY\n");
+	     if ( TJ_TRACE ) mnstr_printf(GDKout,"C[]: CREATE NEW HASHTABLE ON TAG DICTIONARY\n");
 #endif
 	     if ( !BAThash(BATmirror(b_tag),0) ) {
                  GDKerror("CMDtj_chk_dict_hash: adding hashtable to Tag fails\n");
@@ -6295,9 +6295,9 @@ int CMDtj_chk_dict_hash(BAT* b_tag, BAT* b_term)
 	     }
 	}
 	if ( b_term->T->hash == NULL ) {
-	     // stream_printf(GDKout,"C[]: ADD HASHTABLE TO TERM DICTIONARY\n");
+	     // mnstr_printf(GDKout,"C[]: ADD HASHTABLE TO TERM DICTIONARY\n");
 #ifdef TJ_TRACE
-	     if ( TJ_TRACE ) stream_printf(GDKout,"C[]: CREATE NEW HASHTABLE ON TERM DICTIONARY\n");
+	     if ( TJ_TRACE ) mnstr_printf(GDKout,"C[]: CREATE NEW HASHTABLE ON TERM DICTIONARY\n");
 #endif
 	     if ( !BAThash(BATmirror(b_term),0) ) {
                  GDKerror("CMDtj_chk_dict_hash: adding hashtable to Term fails\n");
@@ -6314,10 +6314,10 @@ extern char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, c
 int CMDcheckHashTable(BAT* b) {
     if ( b->H->hash == NULL ) {
          if ( !BAThash(b,0) ) {
-                 stream_printf(GDKout,"#termdb:tdb_checkHashTable: fail to creat hashtable on [oid,str] bat.\n");
+                 mnstr_printf(GDKout,"#termdb:tdb_checkHashTable: fail to creat hashtable on [oid,str] bat.\n");
              return GDK_FAIL;
          } else {
-            if(0) stream_printf(GDKout,"#termdb:tdb_checkHashTable(): created hashtable on [oid,str] bat.\n");
+            if(0) mnstr_printf(GDKout,"#termdb:tdb_checkHashTable(): created hashtable on [oid,str] bat.\n");
 	}
     }
     return GDK_SUCCEED;
@@ -6331,7 +6331,7 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes) {
         int parser_timing = 0;
 	lng time_start = GDKusec();
 
-	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: start.\n");
+	if (TDEBUG(1)) mnstr_printf(GDKout,"# CMDtijah_query: start.\n");
 
 	use_sn = 0;
         if (*use_startnodes) use_sn = 1;
@@ -6340,7 +6340,7 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes) {
             GDKerror("CMDtijah_query: missing option bat.\n");
 	    return GDK_FAIL;
 	}
-	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: call tijahParse.\n");
+	if (TDEBUG(2)) mnstr_printf(GDKout,"# CMDtijah_query: call tijahParse.\n");
 
         int newversion = 1;
         BUN bun;
@@ -6358,7 +6358,7 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes) {
             BATiter bi = bat_iterator(optbat);
             query_text = (str)BUNtail(bi,bun);
         } else
-	    stream_printf(GDKerr,"Error: cannot find \"_query\" tag.\n");
+	    mnstr_printf(GDKerr,"Error: cannot find \"_query\" tag.\n");
 
 
 	lng time_parse_start = GDKusec();
@@ -6373,14 +6373,14 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes) {
 	        return GDK_FAIL;
 	    }
 	}
-	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: finish tijahParse.\n");
-	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: start MIL script.\n");
+	if (TDEBUG(2)) mnstr_printf(GDKout,"# CMDtijah_query: finish tijahParse.\n");
+	if (TDEBUG(2)) mnstr_printf(GDKout,"# CMDtijah_query: start MIL script.\n");
 	if (TDEBUG(9)) {
-		stream_printf(GDKout,"# CMDtijah_query: generated MIL script:\n");
-		stream_printf(GDKout,"%s",mil);
-		stream_printf(GDKout,"# CMDtijah_query: end of MIL script:\n");
+		mnstr_printf(GDKout,"# CMDtijah_query: generated MIL script:\n");
+		mnstr_printf(GDKout,"%s",mil);
+		mnstr_printf(GDKout,"# CMDtijah_query: end of MIL script:\n");
 	}
-	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: start executing MIL script.\n");
+	if (TDEBUG(2)) mnstr_printf(GDKout,"# CMDtijah_query: start executing MIL script.\n");
 	lng time_mil_start = GDKusec();
         if ( executeMIL(mil)<0 ) {
             GDKerror("CMDtijah_query: execute MIL failed.\n");
@@ -6388,16 +6388,16 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes) {
 	}
 	if ( newversion )
 		GDKfree(mil);
-	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: finish MIL script.\n");
+	if (TDEBUG(2)) mnstr_printf(GDKout,"# CMDtijah_query: finish MIL script.\n");
 	lng time_end = GDKusec();
 
-	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: finish.\n");
+	if (TDEBUG(1)) mnstr_printf(GDKout,"# CMDtijah_query: finish.\n");
 
 	if ( parser_timing ) {
 		long time_total = (time_end - time_start);
 		long time_parse = (time_mil_start - time_parse_start);
 		long time_mil   = (time_end - time_mil_start);
-	        stream_printf(GDKout,"#! Tijah query timing: [total/parse/mil] = [ " "%ld" "us/" "%ld"  "us/" "%ld" "us]\n",time_total,time_parse,time_mil);
+	        mnstr_printf(GDKout,"#! Tijah query timing: [total/parse/mil] = [ " "%ld" "us/" "%ld"  "us/" "%ld" "us]\n",time_total,time_parse,time_mil);
 	}
         return GDK_SUCCEED;
 }
@@ -6637,21 +6637,21 @@ int CMDpf2tijah_node(BAT** res, bit* preserve_head, BAT* doc_name, BAT* doc_firs
 	else
 	    *res = BATnew(TYPE_void, TYPE_oid, BATcount(item));
 
-        if ( debug ) stream_printf(GDKout,"* Start of CMDpf2tijah_node():\n");
+        if ( debug ) mnstr_printf(GDKout,"* Start of CMDpf2tijah_node():\n");
 	if ( 1 && debug ) {
-	    stream_printf(GDKout,"#!BAT: item\n");
+	    mnstr_printf(GDKout,"#!BAT: item\n");
 	    BATprintf(GDKout,item);
-	    stream_printf(GDKout,"#!BAT: kind\n");
+	    mnstr_printf(GDKout,"#!BAT: kind\n");
 	    BATprintf(GDKout,kind);
-	    stream_printf(GDKout,"#!BAT: doc_loaded\n");
+	    mnstr_printf(GDKout,"#!BAT: doc_loaded\n");
 	    BATprintf(GDKout,doc_loaded);
 	}
 	if ( 1 && debug ) {
-	    stream_printf(GDKout,"#!BAT: tijah:doc_name\n");
+	    mnstr_printf(GDKout,"#!BAT: tijah:doc_name\n");
 	    BATprintf(GDKout,doc_name);
-	    stream_printf(GDKout,"#!BAT: tijah:doc_firstpre\n");
+	    mnstr_printf(GDKout,"#!BAT: tijah:doc_firstpre\n");
 	    BATprintf(GDKout,doc_firstpre);
-	    stream_printf(GDKout,"#!BAT: tijah:doc_pfpre\n");
+	    mnstr_printf(GDKout,"#!BAT: tijah:doc_pfpre\n");
 	    BATprintf(GDKout,doc_pfpre);
 	}
 
@@ -6664,17 +6664,17 @@ int CMDpf2tijah_node(BAT** res, bit* preserve_head, BAT* doc_name, BAT* doc_firs
 
 	    BUN kindBUN = BUNfnd(kind,&idx);
 	    if ( kindBUN == BUN_NONE ) {
-	        stream_printf(GDKout,"READ KIND failed\n");
+	        mnstr_printf(GDKout,"READ KIND failed\n");
 		return GDK_FAIL;
 	    }
 	    int kval = *(int*)Tloc(kind, kindBUN);
 	    // ALGEBRA NODES ONLY CONTAIN THE FRAG
 	    oid container;
 	    if ( XTRACT_KIND(kval) != ELEM ) {
-	        // stream_printf(GDKout,"CMDpf2tijah_node: startNodes: no node\n");
+	        // mnstr_printf(GDKout,"CMDpf2tijah_node: startNodes: no node\n");
 		// return GDK_FAIL;
 		container = (oid)kval;
-		if ( debug ) stream_printf(GDKout,"* container = %d.\n",container);
+		if ( debug ) mnstr_printf(GDKout,"* container = %d.\n",container);
             } else {
 	    	container = (oid)XTRACT_CONT(kval);
 	    }
@@ -6696,13 +6696,13 @@ int CMDpf2tijah_node(BAT** res, bit* preserve_head, BAT* doc_name, BAT* doc_firs
 	        BUN yy = BUNfnd(b,docname);
 		if ( yy != BUN_NONE ) {
                     BATiter bi = bat_iterator(b);
-		    if ( debug ) stream_printf(GDKout,"* pf2tijah_index: preparing doc(%s)[] nodes for translation\n",docname);	
+		    if ( debug ) mnstr_printf(GDKout,"* pf2tijah_index: preparing doc(%s)[] nodes for translation\n",docname);	
 		    oid tj_docIndex = *(oid*)BUNtail(bi,yy);
 
 		    BUN r;
 		    r = BUNfnd(doc_firstpre,&tj_docIndex);
 		    if ( r == BUN_NONE ) {
-	    	        stream_printf(GDKout,"Cannot find tijah-firstpre @  %d.\n",tj_docIndex);
+	    	        mnstr_printf(GDKout,"Cannot find tijah-firstpre @  %d.\n",tj_docIndex);
 		        return GDK_FAIL;
 		    }
 
@@ -6712,7 +6712,7 @@ int CMDpf2tijah_node(BAT** res, bit* preserve_head, BAT* doc_name, BAT* doc_firs
 		    if ( BATcount(doc_firstpre) > tj_nextIndex ) {
 		        r = BUNfnd(doc_firstpre,&tj_nextIndex);
 			if ( r == BUN_NONE ) {
-	    	            stream_printf(GDKout,"Cannot do range for tijah-firstpre @  %d.\n",tj_docIndex);
+	    	            mnstr_printf(GDKout,"Cannot do range for tijah-firstpre @  %d.\n",tj_docIndex);
 			    return GDK_FAIL;
 			}
 	                doc_end = *(oid*)BUNtail(bi,r) - 1;
@@ -6726,7 +6726,7 @@ int CMDpf2tijah_node(BAT** res, bit* preserve_head, BAT* doc_name, BAT* doc_firs
 			// BBPfix(BBPcacheid(rangeBAT[myindex]));
 		    } 
 		    if ( !BATins(rangeBAT[myindex],ds,1) ) {
-	    	       stream_printf(GDKout,"CMDpf2tijah_node: BATins in rangeBAT fails.\n");
+	    	       mnstr_printf(GDKout,"CMDpf2tijah_node: BATins in rangeBAT fails.\n");
 		       return GDK_FAIL;
 		    }
 	            BBPunfix(BBPcacheid(ds));
@@ -6744,13 +6744,13 @@ int CMDpf2tijah_node(BAT** res, bit* preserve_head, BAT* doc_name, BAT* doc_firs
 			    BUNins(*res,&idx,&tj_index,FALSE);
 			else
 			    BUNappend(*res,&tj_index,1);
-			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = tijah(%d@0).\n", pfpre, container,tj_index);
+			if ( debug ) mnstr_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = tijah(%d@0).\n", pfpre, container,tj_index);
 		    } else {
-		        if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = NOT INDEXED.\n", pfpre, container);
+		        if ( debug ) mnstr_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = NOT INDEXED.\n", pfpre, container);
 		    }
 		    
 	      } else {
-			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = NOT INDEXED.\n", pfpre, container);
+			if ( debug ) mnstr_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = NOT INDEXED.\n", pfpre, container);
 	      }
 	}
 	/* cleanup BAT's */

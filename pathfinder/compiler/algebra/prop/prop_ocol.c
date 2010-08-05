@@ -391,9 +391,11 @@ infer_ocol (PFla_op_t *n)
                     break;
 
                 case alg_fun_fn_contains:
+                case alg_fun_fn_like:
                 case alg_fun_fn_starts_with:
                 case alg_fun_fn_ends_with:
                 case alg_fun_fn_matches:
+         	case alg_fun_fn_similar_to:
                     assert (clsize (n->sem.fun_1to1.refs) == 2);
                     /* make sure both columns are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&

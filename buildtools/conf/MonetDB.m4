@@ -189,7 +189,7 @@ MONETDB_MODS=""
 MONETDB_MOD_PATH=""
 MONETDB_PREFIX="."
 if test "x$1" = "x"; then
-  MONETDB_REQUIRED_VERSION="1.38.0"
+  MONETDB_REQUIRED_VERSION="1.39.0"
   #                         ^^^^^^
   # Maintained via vertoo. Please don't modify by hand!
   # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -2346,13 +2346,23 @@ case "$host_os" in
 	;;
 esac
 
-
 if test "x$have_setsockopt" = xno; then
 	AC_CHECK_FUNC(setsockopt, [], 
 	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
 fi
 
 AC_CHECK_HEADERS([sys/socket.h winsock.h])
+
+have_getaddrinfo=no
+save_LIBS="$LIBS"
+LIBS="$LIBS $SOCKET_LIBS"
+AC_CHECK_FUNC(getaddrinfo, [ have_getaddrinfo=yes ], [
+  AC_CHECK_LIB(socket, getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lsocket"; have_getaddrinfo=yes ],
+    AC_CHECK_LIB(nsl,  getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lnsl"   ; have_getaddrinfo=yes ] ))])
+LIBS="$save_LIBS"
+if test "x$have_getaddrinfo" = xyes; then
+	AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if you have the `getaddrinfo' function.])
+fi
 
 dnl incase of windows we need to use try_link because windows uses the
 dnl pascal style of function calls and naming scheme. Therefore the 

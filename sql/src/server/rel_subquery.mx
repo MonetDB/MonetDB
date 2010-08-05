@@ -473,7 +473,7 @@ rel_parse_val(mvc *m, char *query, char emode)
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
-	stream_destroy(s);
+	mnstr_destroy(s);
 
 	m->sym = NULL;
 	if (m->session->status || m->errstr[0]) {
@@ -539,7 +539,7 @@ rel_parse_value(mvc *m, char *query, char emode)
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
-	stream_destroy(sr);
+	mnstr_destroy(sr);
 
 	m->sym = NULL;
 	if (m->session->status || m->errstr[0]) {

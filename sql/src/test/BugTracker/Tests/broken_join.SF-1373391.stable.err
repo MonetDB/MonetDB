@@ -10,9 +10,23 @@ stderr of test 'broken_join.SF-1373391` in directory 'src/test/BugTracker` itsel
 # 14:15:47 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41952  < broken_join.SF-1373391.sql
 # 14:15:47 >  
 
-MAPI  = monetdb@localhost:31379
+MAPI  = monetdb@volund:35971
 QUERY = select urlid,clicktime from
-ERROR = !syntax error, unexpected ')', expecting INTERSECT or EXCEPT or UNION in: "select urlid,clicktime from
+        (clicks left outer join urls on
+        urls.suburl0x0=clicks.suburl0x0 and
+        urls.suburl0x1=clicks.suburl0x1 and
+        urls.suburl1x0=clicks.suburl1x0 and
+        urls.suburl1x1=clicks.suburl1x1 and
+        urls.suburl2x0=clicks.suburl2x0 and
+        urls.suburl2x1=clicks.suburl2x1 and
+        urls.suburl3x0=clicks.suburl3x0 and
+        urls.suburl3x1=clicks.suburl3x1 and
+        urls.suburl4x0=clicks.suburl4x0 and
+        urls.suburl4x1=clicks.suburl4x1 and
+        urls.suburl5x0=clicks.suburl5x0 and
+        urls.suburl5x1=clicks.suburl5x1 and
+        urls.suburl6x0=click
+ERROR = !syntax error, unexpected ')', expecting SCOLON in: "select urlid,clicktime from
         !(clicks left outer join urls on
         !urls.suburl0x0=clicks.suburl0x0 and
         !urls.suburl0x1=clicks.suburl0x1 and

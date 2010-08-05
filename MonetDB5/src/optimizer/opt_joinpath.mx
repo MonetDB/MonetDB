@@ -218,7 +218,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 					}
 					actions ++;
 					OPTDEBUGjoinPath {
-						stream_printf(cntxt->fdout,"re-use pair\n");
+						mnstr_printf(cntxt->fdout,"re-use pair\n");
 						printInstruction(cntxt->fdout,mb,0,candidate[k].p,0);
 						printInstruction(cntxt->fdout,mb,0,p,0);
 					}
@@ -294,13 +294,13 @@ Don't inject a pattern when it is used more then once.
 @c
 				if (r && varcnt[getArg(p,j)] > 1){
 					OPTDEBUGjoinPath {
-						stream_printf(cntxt->fdout,"#double use %d %d\n", getArg(p,j), varcnt[getArg(p,j)]);
+						mnstr_printf(cntxt->fdout,"#double use %d %d\n", getArg(p,j), varcnt[getArg(p,j)]);
 						printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 					}
 					r = 0;
 				}
 				OPTDEBUGjoinPath {
-					stream_printf(cntxt->fdout,"#expand list \n");
+					mnstr_printf(cntxt->fdout,"#expand list \n");
 					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 					printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 				}
@@ -328,7 +328,7 @@ Don't inject a pattern when it is used more then once.
 			}
 			OPTDEBUGjoinPath {
 				chkTypes(cntxt->nspace,mb,TRUE);
-				stream_printf(cntxt->fdout,"#new [left]joinPath instruction\n");
+				mnstr_printf(cntxt->fdout,"#new [left]joinPath instruction\n");
 				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 			}
 			if(q->argc<= p->argc){
@@ -376,7 +376,7 @@ Final type check.
 	GDKfree(old);
 	GDKfree(pc);
 	DEBUGoptimizers
-		stream_printf(cntxt->fdout,"#opt_joinpath: %d statements glued\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_joinpath: %d statements glued\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx
@@ -512,7 +512,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		cost /= 1;
 
 	DEBUGoptimizers
-		stream_printf(cntxt->fdout,"#batjoin cost ?"BUNFMT"\n",cost);
+		mnstr_printf(cntxt->fdout,"#batjoin cost ?"BUNFMT"\n",cost);
 	return cost;
 }
 @-
@@ -543,12 +543,12 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		j = 0;
 		estimate = ALGjoinCost(cntxt,joins[0],joins[1],flag);
 		OPTDEBUGjoinPath
-			stream_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
+			mnstr_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
 				joins[1]->batCacheid,(int)estimate);
 		for (i = 1; i < top - 1; i++) {
 			e = ALGjoinCost(cntxt,joins[i], joins[i + 1],flag);
 			OPTDEBUGjoinPath
-				stream_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
+				mnstr_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
 					joins[i+1]->batCacheid,(int)e);
 			if (e < estimate &&  ( !(postpone[i] && postpone[i+1]) || postponed<top)) {
 				estimate = e;
@@ -599,7 +599,7 @@ against the first operand. For all others operand pairs, the cheapest join suffi
 		}
 		OPTDEBUGjoinPath
 			if (b )
-				stream_printf(cntxt->fdout, "#joinPath %d:= join(%d,%d)\n", 
+				mnstr_printf(cntxt->fdout, "#joinPath %d:= join(%d,%d)\n", 
 					b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 
 		BBPdecref(joins[j]->batCacheid, FALSE);

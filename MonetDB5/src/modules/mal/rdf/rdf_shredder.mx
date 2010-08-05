@@ -109,7 +109,7 @@ static void
 {
 	parserData *pdata = (parserData *) user_data;
 	pdata->@1Msg = GDKstrdup(message);
-	stream_printf(GDKout, "rdflib: @1:%s\n", pdata->@1Msg);
+	mnstr_printf(GDKout, "rdflib: @1:%s\n", pdata->@1Msg);
 	pdata->@1++;
 
 	/* check for a valid locator object and only then use it */

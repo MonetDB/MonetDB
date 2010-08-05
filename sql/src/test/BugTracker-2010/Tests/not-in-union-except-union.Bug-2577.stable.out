@@ -29,7 +29,7 @@ Over..
 [ 1	]
 [ 1	]
 #select kvk from kvk where kvk not in (
-% .L53 # table_name
+% .kvk # table_name
 % kvk # name
 % bigint # type
 % 1 # length

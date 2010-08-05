@@ -90,6 +90,19 @@ The statemens are all checked for being eligible for dataflow.
 #include "mal_interpreter.h"
 
 static int
+dflowAssignTest(Lifespan span, InstrPtr p, int i)
+{
+	int j;
+	/* flow blocks should be closed (and not opened) when we reach a point
+	   where a variable is assigned that is not the last
+	*/
+	for(j=0; j<p->retc; j++)
+		if (getLastUpdate(span, getArg(p,j)) != i)
+			return 1;
+	return 0;
+}
+
+static int
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j, cnt, start=1,entries=0, actions=0;
@@ -133,6 +146,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			old[i] = NULL;
 		}
 	}
+
+	/* inject new dataflow barriers */
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 
@@ -141,7 +156,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p->token == ENDsymbol)
 			break;
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p))){
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p)) || dflowAssignTest(span,p,i) ){
 			@:flowblock@
 			pushInstruction(mb,p);
 			continue;
@@ -175,6 +190,9 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			for(j=p->retc; j<p->argc; j++)
 				if (getLastUpdate(span, getArg(p,j)) <= start)
 					cnt++;
+		if (cnt && dflowAssignTest(span,p,i))
+			cnt = 0;
+
 		if (cnt && cnt == p->argc-p->retc)
 			entries++;
 	}
@@ -192,7 +210,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(old);
 	GDKfree(span);
 	DEBUGoptimizers
-		stream_printf(cntxt->fdout,"#opt_dataflow: %d flow blocks created\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_dataflow: %d flow blocks created\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

@@ -48,7 +48,7 @@ handleClient(int sock, char isusock)
 	fout = block_stream(fout);
 
 	/* note that we claim to speak proto 8 here */
-	stream_printf(fout, "%s:merovingian:8:%s:%s:",
+	mnstr_printf(fout, "%s:merovingian:8:%s:%s:",
 			"void",  /* some bs */
 			"md5,plain", /* we actually don't look at the password */
 #ifdef WORDS_BIGENDIAN
@@ -57,15 +57,15 @@ handleClient(int sock, char isusock)
 			"LIT"
 #endif
 			);
-	stream_flush(fout);
+	mnstr_flush(fout);
 
 	/* get response */
 	buf[0] = '\0';
-	if (stream_read_block(fdin, buf, 8095, 1) < 0) {
+	if (mnstr_read_block(fdin, buf, 8095, 1) < 0) {
 		/* we didn't get a terminated block :/ */
 		e = newErr("client sent challenge in incomplete block: %s", buf);
-		stream_printf(fout, "!merovingian: client sent something this server could not understand, sorry\n", user);
-		stream_flush(fout);
+		mnstr_printf(fout, "!merovingian: client sent something this server could not understand, sorry\n", user);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		return(e);
@@ -80,12 +80,12 @@ handleClient(int sock, char isusock)
 	if (s) {
 		*s = 0;
 		/* we don't use this in merovingian */
-		/* stream_set_byteorder(fin->s, strcmp(user, "BIG") == 0); */
+		/* mnstr_set_byteorder(fin->s, strcmp(user, "BIG") == 0); */
 		user = s + 1;
 	} else {
 		e = newErr("client challenge error: %s", buf);
-		stream_printf(fout, "!merovingian: incomplete challenge '%s'\n", user);
-		stream_flush(fout);
+		mnstr_printf(fout, "!merovingian: incomplete challenge '%s'\n", user);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		return(e);
@@ -99,8 +99,8 @@ handleClient(int sock, char isusock)
 		/* decode algorithm, i.e. {plain}mypasswordchallenge */
 		if (*passwd != '{') {
 			e = newErr("client challenge error: %s", buf);
-			stream_printf(fout, "!merovingian: invalid password entry\n");
-			stream_flush(fout);
+			mnstr_printf(fout, "!merovingian: invalid password entry\n");
+			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
 			return(e);
@@ -109,8 +109,8 @@ handleClient(int sock, char isusock)
 		s = strchr(algo, '}');
 		if (!s) {
 			e = newErr("client challenge error: %s", buf);
-			stream_printf(fout, "!merovingian: invalid password entry\n");
-			stream_flush(fout);
+			mnstr_printf(fout, "!merovingian: invalid password entry\n");
+			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
 			return(e);
@@ -119,8 +119,8 @@ handleClient(int sock, char isusock)
 		passwd = s + 1;
 	} else {
 		e = newErr("client challenge error: %s", buf);
-		stream_printf(fout, "!merovingian: incomplete challenge '%s'\n", user);
-		stream_flush(fout);
+		mnstr_printf(fout, "!merovingian: incomplete challenge '%s'\n", user);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		return(e);
@@ -133,8 +133,8 @@ handleClient(int sock, char isusock)
 		lang = s + 1;
 	} else {
 		e = newErr("client challenge error: %s", buf);
-		stream_printf(fout, "!merovingian: incomplete challenge, missing language\n");
-		stream_flush(fout);
+		mnstr_printf(fout, "!merovingian: incomplete challenge, missing language\n");
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		return(e);
@@ -150,8 +150,8 @@ handleClient(int sock, char isusock)
 		s = strchr(database, ':');
 		if (s == NULL) {
 			e = newErr("client challenge error: %s", buf);
-			stream_printf(fout, "!merovingian: incomplete challenge, missing trailing colon\n");
-			stream_flush(fout);
+			mnstr_printf(fout, "!merovingian: incomplete challenge, missing trailing colon\n");
+			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
 			return(e);
@@ -163,8 +163,8 @@ handleClient(int sock, char isusock)
 	if (*database == '\0') {
 		/* we need to have a database, if we haven't gotten one,
 		 * complain */
-		stream_printf(fout, "!merovingian: please specify a database\n");
-		stream_flush(fout);
+		mnstr_printf(fout, "!merovingian: please specify a database\n");
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		return(newErr("no database specified"));
@@ -187,11 +187,11 @@ handleClient(int sock, char isusock)
 		}
 		if ((e = forkMserver(database, &top, 0)) != NO_ERR) {
 			if (top == NULL) {
-				stream_printf(fout, "!merovingian: no such database '%s', please create it first\n", database);
+				mnstr_printf(fout, "!merovingian: no such database '%s', please create it first\n", database);
 			} else {
-				stream_printf(fout, "!merovingian: internal error while starting mserver, please refer to the logs\n");
+				mnstr_printf(fout, "!merovingian: internal error while starting mserver, please refer to the logs\n");
 			}
-			stream_flush(fout);
+			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
 			return(e);
@@ -215,8 +215,8 @@ handleClient(int sock, char isusock)
 	/* if we can't redirect, our mission ends here */
 	if (r == 0) {
 		e = newErr("there are no available connections for '%s'", database);
-		stream_printf(fout, "!merovingian: %s\n", e);
-		stream_flush(fout);
+		mnstr_printf(fout, "!merovingian: %s\n", e);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		SABAOTHfreeStatus(&top);
@@ -283,22 +283,22 @@ handleClient(int sock, char isusock)
 		while (--r >= 0) {
 			fprintf(stdout, " %s%s",
 					redirs[r].conns->val, redirs[r].dbname);
-			stream_printf(fout, "^%s%s\n",
+			mnstr_printf(fout, "^%s%s\n",
 					redirs[r].conns->val, redirs[r].dbname);
 		}
 		/* flush redirect */
 		fprintf(stdout, "\n");
 		fflush(stdout);
-		stream_flush(fout);
+		mnstr_flush(fout);
 	} else {
 		Mfprintf(stdout, "proxying client %s for database '%s' to "
 				"%s?database=%s\n",
 				host, database, redirs[0].conns->val, redirs[0].dbname);
 		/* merovingian is in control, only consider the first redirect */
-		stream_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
+		mnstr_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
 				redirs[0].dbname);
 		/* flush redirect */
-		stream_flush(fout);
+		mnstr_flush(fout);
 
 		/* wait for input, or disconnect in a proxy runner */
 		if ((e = startProxy(sock, fdin, fout,
@@ -306,11 +306,11 @@ handleClient(int sock, char isusock)
 		{
 			/* we need to let the client login in order not to violate
 			 * the protocol */
-			stream_printf(fout, "void:merovingian:8:plain:BIG");
-			stream_flush(fout);
-			stream_read_block(fdin, buf, 8095, 1); /* eat away client response */
-			stream_printf(fout, "!merovingian: an internal error has occurred, refer to the logs for details, please try again later\n");
-			stream_flush(fout);
+			mnstr_printf(fout, "void:merovingian:8:plain:BIG");
+			mnstr_flush(fout);
+			mnstr_read_block(fdin, buf, 8095, 1); /* eat away client response */
+			mnstr_printf(fout, "!merovingian: an internal error has occurred, refer to the logs for details, please try again later\n");
+			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
 			Mfprintf(stdout, "starting a proxy failed: %s\n", e);

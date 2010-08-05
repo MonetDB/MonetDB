@@ -121,7 +121,7 @@ The cost formula are repetative
 		k = (@3);
 		varSetProp(mb, getArg(p,@4), rowsProp, op_eq, VALset(&v,TYPE_lng,&k));
 		OPTDEBUGcostModel {
-			stream_printf(cntxt->fdout,"COST of @1 @2 into @4: " LLFMT "\n",k);
+			mnstr_printf(cntxt->fdout,"COST of @1 @2 into @4: " LLFMT "\n",k);
 			printInstruction(cntxt->fdout,mb,0,p,0);
 		}
 }
@@ -285,7 +285,7 @@ an initially empty insertion BAT.
 		}
 	}
 	DEBUGoptimizers
-		stream_printf(cntxt->fdout,"#opt_costModel: processed\n");
+		mnstr_printf(cntxt->fdout,"#opt_costModel: processed\n");
 	return 1;
 }
 @include optimizerWrapper.mx

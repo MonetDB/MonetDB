@@ -1098,6 +1098,7 @@ rel_subquery_optname(mvc *sql, sql_rel *rel, symbol *query)
 	exp_kind ek = {type_value, card_relation, TRUE};
 	sql_rel *sq = rel_subquery(sql, rel, query, ek);
 
+	assert(query->token == SQL_SELECT);
 	if (!sq)
 		return NULL;
 
@@ -1500,8 +1501,10 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 					sql_exp *e = m->data;
 	
 					exp_setname(e, tname, c->base.name);
+/*
 					if (e->card == CARD_AGGR)
 						e->card = CARD_MULTI;
+*/
 				}
 			}
 			return rel;
@@ -2749,6 +2752,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			}
 			if (l_is_value)
 				rel = rel_crossproduct(outer, rel, op_join);
+			rel = rel_project(rel, rel_projections(sql, outer, NULL, 1, 1));
+			set_processed(rel);
 			return rel;
 		}
 		return right;
@@ -4024,6 +4029,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return sql_error(sql, 02, "SELECT: function '%s' not found", aggrstr );
 	/* now we need the gbe and obe lists */
 	e = exp_op(gbe, wf);
+	/* make sure the expression has the proper cardinality */
+	e->card = CARD_AGGR;
 	if (obe)
 		e->r = obe;
 	else	/* e->r specifies window expression */
@@ -4401,6 +4408,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	sql_rel *inner = NULL;
 	int decorrelated = 0;
 
+	assert(sn->s.token == SQL_SELECT);
 	if (!sn->selection)
 		return sql_error(sql, 02, "SELECT: the selection or from part is missing");
 
@@ -4698,15 +4706,15 @@ sql_rel *
 rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 {
 	sql_rel *res = NULL;
-	SelectNode *sn = (SelectNode *) sq;
+	SelectNode *sn = NULL;
+
+	if (sq->token != SQL_SELECT)
+		return table_ref(sql, rel, sq);
 
 	/* select ... into is currently not handled here ! */
+ 	sn = (SelectNode *) sq;
 	if (sn->into)
 		return NULL;
-
-	if (sn->s.token != SQL_SELECT)
-		return table_ref(sql, rel, sq);
-	assert(sn->s.token == SQL_SELECT);
 
 	if (ek.card != card_relation && sn->orderby)
 		return sql_error(sql, 01, "SELECT: ORDER BY only allowed on outermost SELECT");

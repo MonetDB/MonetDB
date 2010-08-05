@@ -107,13 +107,13 @@ malLoadScript(Client c, str name, bstream **fdin)
 	stream *fd;
 
 	fd = malOpenSource(name);
-	if (stream_errnr(fd) == OPEN_ERROR) {
-		stream_destroy(fd);
+	if (mnstr_errnr(fd) == OPEN_ERROR) {
+		mnstr_destroy(fd);
 		throw(MAL, "malInclude", "could not open file: %s", name);
 	}
 	*fdin = bstream_create(fd, 128 * BLOCK);
 	if (bstream_next(*fdin) < 0)
-		stream_printf(c->fdout, "!WARNING: could not read %s\n", name);
+		mnstr_printf(c->fdout, "!WARNING: could not read %s\n", name);
 	return MAL_SUCCEED;
 }
 
@@ -147,8 +147,8 @@ It should be reset before continuing.
 
 @= restoreClient1
 	if (c->fdin) {
-		(void) stream_close(c->fdin->s);
-		(void) stream_destroy(c->fdin->s);
+		(void) mnstr_close(c->fdin->s);
+		(void) mnstr_destroy(c->fdin->s);
 		(void) bstream_destroy(c->fdin);
 	}
 	c->fdin = oldfdin; 
@@ -265,7 +265,7 @@ evalFile(Client c, str fname, int listing){
 
 	filename = malResolveFile(fname);
 	if (filename == NULL) {
-		stream_printf(c->fdout, "#WARNING: could not open file: %s\n", fname);
+		mnstr_printf(c->fdout, "#WARNING: could not open file: %s\n", fname);
 		@:restoreClient3()@
 		@:restoreClient()@
 		return msg;
@@ -275,9 +275,9 @@ evalFile(Client c, str fname, int listing){
 	while ((p = strchr(filename, PATH_SEP)) != NULL) {
 		*p = '\0';
 		fd = malOpenSource(filename);
-		if (stream_errnr(fd) == OPEN_ERROR) {
-			stream_destroy(fd);
-			stream_printf(c->fdout, "#WARNING: could not open file: %s\n",
+		if (mnstr_errnr(fd) == OPEN_ERROR) {
+			mnstr_destroy(fd);
+			mnstr_printf(c->fdout, "#WARNING: could not open file: %s\n",
 					filename);
 		} else {
 			c->srcFile = filename;
@@ -290,9 +290,9 @@ evalFile(Client c, str fname, int listing){
 		filename = p + 1;
 	}
 	fd = malOpenSource(filename);
-	if (stream_errnr(fd) == OPEN_ERROR) {
-		stream_destroy(fd);
-		stream_printf(c->fdout, "#WARNING: could not open file: %s\n",
+	if (mnstr_errnr(fd) == OPEN_ERROR) {
+		mnstr_destroy(fd);
+		mnstr_printf(c->fdout, "#WARNING: could not open file: %s\n",
 				filename);
 	} else {
 		c->srcFile = filename;

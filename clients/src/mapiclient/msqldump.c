@@ -133,14 +133,14 @@ main(int argc, char **argv)
 		char *q;
 		ssize_t len;
 		int line = 0;
-		while ((len = stream_readline(config, buf, sizeof(buf) - 1)) > 0) {
+		while ((len = mnstr_readline(config, buf, sizeof(buf) - 1)) > 0) {
 			line++;
 			buf[len - 1] = '\0'; /* drop newline */
 			if (buf[0] == '#' || buf[0] == '\0')
 				continue;
 			if ((q = strchr(buf, '=')) == NULL) {
 				fprintf(stderr, "%s:%d: syntax error: %s\n",
-						stream_name(config), line, buf);
+						mnstr_name(config), line, buf);
 				continue;
 			}
 			*q++ = '\0';
@@ -162,9 +162,9 @@ main(int argc, char **argv)
 			}
 			if (q != NULL)
 				fprintf(stderr, "%s:%d: unknown property: %s\n",
-						stream_name(config), line, buf);
+						mnstr_name(config), line, buf);
 		}
-		stream_destroy(config);
+		mnstr_destroy(config);
 	}
 
 	while ((c = getopt_long(argc, argv, "u:p:d:Dfqh:t::?", long_options, NULL)) != -1) {
@@ -245,17 +245,17 @@ main(int argc, char **argv)
 #endif
 #endif
 
-		stream_printf(out,"#msqldump %s %s\n", (functions? "functions":"tables"), buf);
+		mnstr_printf(out,"#msqldump %s %s\n", (functions? "functions":"tables"), buf);
 	}
 	if (functions)
 		c = dump_functions(mid, out, NULL);
 	else
 		c = dump_tables(mid, out, describe);
-	stream_flush(out);
+	mnstr_flush(out);
 
 	mapi_disconnect(mid);
-	if (stream_errnr(out)) {
-		fprintf(stderr, "%s: %s", argv[0], stream_error(out));
+	if (mnstr_errnr(out)) {
+		fprintf(stderr, "%s: %s", argv[0], mnstr_error(out));
 		return 1;
 	}
 

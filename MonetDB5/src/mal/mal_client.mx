@@ -343,8 +343,8 @@ void MCpopClientInput(Client c)
 	ClientInput *x = c->bak;
 	if (c->fdin) {
 		/* missing protection against closing stdin stream */
-		(void) stream_close(c->fdin->s);
-		(void) stream_destroy(c->fdin->s);
+		(void) mnstr_close(c->fdin->s);
+		(void) mnstr_destroy(c->fdin->s);
 		(void) bstream_destroy(c->fdin);
 	}
 	GDKfree(c->prompt);
@@ -457,14 +457,14 @@ MCexitClient(Client c)
 	if (c->father == NULL) { /* normal client */
 		if( c->fdout && c->fdout != GDKstdout){
 			MPresetProfiler(c->fdout);
-			(void) stream_close(c->fdout);
-			(void) stream_destroy(c->fdout);
+			(void) mnstr_close(c->fdout);
+			(void) mnstr_destroy(c->fdout);
 		}
 		assert(c->bak==NULL);
 		if(c->fdin){
 			/* missing protection against closing stdin stream */
-			(void) stream_close(c->fdin->s);
-			(void) stream_destroy(c->fdin->s);
+			(void) mnstr_close(c->fdin->s);
+			(void) mnstr_destroy(c->fdin->s);
 			(void) bstream_destroy(c->fdin);
 		}
 		c->fdout = NULL;
@@ -483,11 +483,11 @@ MCwait(Client c)
 		/* wait for work */
 		mal_unset_lock(mal_contextLock, "wait");
 #ifdef MAL_DEBUG_CLIENT
-		stream_printf(c->fdout,"Put client into pool %d\n",c->idx);
+		mnstr_printf(c->fdout,"Put client into pool %d\n",c->idx);
 #endif
 		MT_down_sema(c->s, "MSserveClient");
 #ifdef MAL_DEBUG_CLIENT
-		stream_printf(c->fdout,"Awake client in pool %d\n",c->idx);
+		mnstr_printf(c->fdout,"Awake client in pool %d\n",c->idx);
 #endif
 		c->mythread->data[1] = c->fdin;
 		c->mythread->data[0] = c->fdout;
@@ -809,8 +809,8 @@ The next statement block is to be read. Send a prompt to warn
 the front-end to issue the request.
 @= sendPrompt
 	if (!isa_block_stream(c->fdout) && c->promptlength>0)
-		stream_write(c->fdout,c->prompt,c->promptlength,1); 
-	stream_flush(c->fdout);
+		mnstr_write(c->fdout,c->prompt,c->promptlength,1); 
+	mnstr_flush(c->fdout);
 @c
 
 int MCreadClient(Client c){

@@ -20,20 +20,68 @@ Ready.
 
 Over..
 
-# 15:55:37 >  
-# 15:55:37 >  Mtimeout -timeout 240 ./MapiClient-dump.SF-905851.SQL MapiClient-dump.SF-905851 
-# 15:55:37 >  
+# 16:44:38 >  
+# 16:44:38 >  /usr/bin/python MapiClient-dump.SF-905851.SQL.py MapiClient-dump.SF-905851 
+# 16:44:38 >  
 
+#START TRANSACTION;
+#CREATE TABLE allnewtriples (
+#	id integer NOT NULL,
+#	subject integer NOT NULL,
+#	predicate integer NOT NULL,
+#	object integer NOT NULL,
+#	explicit boolean NOT NULL,
+#	PRIMARY KEY(id),
+#	CONSTRAINT unique_key UNIQUE(subject, predicate, object)
+#);
+#CREATE INDEX allnewtriples_subject_idx ON allnewtriples (subject);
+#CREATE INDEX allnewtriples_predicate_idx ON allnewtriples (predicate);
+#CREATE INDEX allnewtriples_object_idx ON allnewtriples (object);
+#CREATE TABLE "foreign" (
+#	id integer NOT NULL,
+#	subject integer NOT NULL,
+#	predicate integer NOT NULL,
+#	object integer NOT NULL,
+#	FOREIGN KEY (id) REFERENCES allnewtriples (id),
+#	FOREIGN KEY (subject, predicate, object) REFERENCES allnewtriples (subject, predicate, object)
+#);
+#CREATE TABLE "triples" (
+#	"id"        int NOT NULL,
+#	"subject"   int NOT NULL,
+#	"predicate" int NOT NULL,
+#	"object"    int NOT NULL,
+#	"explicit"  boolean     NOT NULL,
+#	CONSTRAINT "triples_subject_predicate_object_unique" UNIQUE ("subject", "predicate", "object")
+#);
+#CREATE INDEX "triples_object_idx" ON "triples" ("object");
+#CREATE INDEX "triples_predicate_idx" ON "triples" ("predicate");
+#CREATE INDEX "triples_predicate_object_idx" ON "triples" ("predicate", "object");
+#CREATE INDEX "triples_subject_idx" ON "triples" ("subject");
+#CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object");
+#CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate");
+#COMMIT;
+#START TRANSACTION;
+#INSERT INTO allnewtriples VALUES(1, 1, 1, 1, false);
 [ 1	]
+#INSERT INTO allnewtriples VALUES(2, 1, 1, 2, false);
 [ 1	]
+#INSERT INTO allnewtriples VALUES(3, 1, 2, 1, false);
 [ 1	]
+#INSERT INTO allnewtriples VALUES(4, 2, 1, 1, false);
 [ 1	]
+#INSERT INTO allnewtriples VALUES(5, 1, 2, 2, false);
 [ 1	]
+#INSERT INTO allnewtriples VALUES(6, 2, 2, 1, false);
 [ 1	]
+#INSERT INTO allnewtriples VALUES(7, 2, 2, 2, false);
 [ 1	]
+#INSERT INTO "foreign" VALUES(1, 1, 1, 1);
 [ 1	]
+#INSERT INTO "foreign" VALUES(2, 2, 2, 2);
 [ 1	]
+#INSERT INTO "foreign" VALUES(3, 1, 2, 2);
 [ 1	]
+#INSERT INTO "foreign" VALUES(4, 2, 2, 1);
 [ 1	]
 [ 1	]
 [ 1	]

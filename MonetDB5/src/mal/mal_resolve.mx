@@ -178,11 +178,11 @@ from Bi (or type(Bi)==type(Xi)).
 
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
-	stream_printf(GDKout,"-->resolving\n");
+	mnstr_printf(GDKout,"-->resolving\n");
 	printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
-	stream_printf(GDKout,"++> test against signature\n");
+	mnstr_printf(GDKout,"++> test against signature\n");
 	printInstruction(GDKout,s->def,0,getSignature(s),LIST_MAL_ALL);
-	stream_printf(GDKout," %s \n", sig->polymorphic?"polymorphic":"");
+	mnstr_printf(GDKout," %s \n", sig->polymorphic?"polymorphic":"");
 	}
 #endif
 @-
@@ -293,7 +293,7 @@ possible match for the non-polymorphic case.
 			int formal = getArgType(s->def,sig,i);
 			if( resolveType(formal,actual) == -1 ){
 #ifdef DEBUG_MAL_RESOLVE
-			stream_printf(GDKout,"unmatched %d formal %s actual %s\n",
+			mnstr_printf(GDKout,"unmatched %d formal %s actual %s\n",
 				i, getTypeName(formal), getTypeName(actual));
 #endif
 				unmatched= i;
@@ -310,19 +310,19 @@ An optimizer may at a later stage automatically insert such coercion requests.
 @c
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
-		 stream_printf(GDKout,"finished %s.%s unmatched=%d polymorphic=%d %d\n",
+		 mnstr_printf(GDKout,"finished %s.%s unmatched=%d polymorphic=%d %d\n",
 			getModuleId(sig), getFunctionId(sig), unmatched, sig->polymorphic,p==sig);
 		if( sig->polymorphic){
 			int l;
 			for(l=0;l<2*p->argc;l++) 
 			if( polytype[l] != TYPE_any)
-			stream_printf(GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
+			mnstr_printf(GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
 		}
-		stream_printf(GDKout,"-->resolving\n");
+		mnstr_printf(GDKout,"-->resolving\n");
 		printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
-		stream_printf(GDKout,"++> test against signature\n");
+		mnstr_printf(GDKout,"++> test against signature\n");
 		printInstruction(GDKout,s->def,0,getSignature(s),LIST_MAL_ALL);
-		stream_printf(GDKout,"\nmismatch unmatched %d test %s poly %s\n",
+		mnstr_printf(GDKout,"\nmismatch unmatched %d test %s poly %s\n",
 			unmatched, getTypeName(getArgType(mb,p,unmatched)),
 			getTypeName(getArgType(s->def,sig,unmatched)));
 	}
@@ -505,7 +505,7 @@ set the garbage collection flag.
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
 		printInstruction(GDKout,mb,0mp,LIST_MAL_ALL);
-		stream_printf(GDKout,"Finished matching\n");
+		mnstr_printf(GDKout,"Finished matching\n");
 	}
 #endif
 	return s1;
@@ -537,7 +537,7 @@ mal_export int resolveType(int dsttype, int srctype);
 int resolveType(int dsttype, int srctype){  
 #ifdef DEBUG_MAL_RESOLVE
 	if( tracefcn){
-		stream_printf(GDKout,"resolveType dst %s (%d) %s(%d)\n",
+		mnstr_printf(GDKout,"resolveType dst %s (%d) %s(%d)\n",
 			getTypeName(dsttype), dsttype,
 			getTypeName(srctype),srctype);
 	}
@@ -559,7 +559,7 @@ A bat reference can be coerced to bat type.
 		if( h2 == TYPE_any) h3= h1; 
 		else {
 #ifdef DEBUG_MAL_RESOLVE
-			if(tracefcn) stream_printf(GDKout,"Head can not be resolved \n");
+			if(tracefcn) mnstr_printf(GDKout,"Head can not be resolved \n");
 #endif
 			return -1;
 		}
@@ -570,7 +570,7 @@ A bat reference can be coerced to bat type.
 		if( t2 == TYPE_any) t3= t1;
 		else {
 #ifdef DEBUG_MAL_RESOLVE
-			if(tracefcn) stream_printf(GDKout,"Tail can not be resolved \n");
+			if(tracefcn) mnstr_printf(GDKout,"Tail can not be resolved \n");
 #endif
 			return -1;
 		}
@@ -578,7 +578,7 @@ A bat reference can be coerced to bat type.
 		if( tracefcn){
 			int i1=getHeadIndex(dsttype);
 			int i2= getTailIndex(dsttype);
-		stream_printf(GDKout,"resolved to bat[:%s,:%s] bat[:%s,:%s]->bat[%s:%d,%s:%d]\n",
+		mnstr_printf(GDKout,"resolved to bat[:%s,:%s] bat[:%s,:%s]->bat[%s:%d,%s:%d]\n",
 			getTypeName(h1),getTypeName(t1),
 			getTypeName(h2),getTypeName(t2),
 			getTypeName(h3),i1,getTypeName(t3),i2
@@ -588,7 +588,7 @@ A bat reference can be coerced to bat type.
 		return newBatType(h3,t3);
 	}
 #ifdef DEBUG_MAL_RESOLVE
-	if(tracefcn) stream_printf(GDKout,"Can not be resolved \n");
+	if(tracefcn) mnstr_printf(GDKout,"Can not be resolved \n");
 #endif
 	return -1;
 }
@@ -754,7 +754,7 @@ InstrPtr dynamicTypeChecker(Module scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr pci;
 	int i;
 
-	stream_printf(GDKout,"Start dynamic type check on:\n");
+	mnstr_printf(GDKout,"Start dynamic type check on:\n");
 	printInstruction(GDKout, mb, 0, p,LIST_MAL_ALL);
 
 	pci = copyInstruction(p);
@@ -774,7 +774,7 @@ InstrPtr dynamicTypeChecker(Module scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 	typeChecker(scope, mb,pci,FALSE);
 #ifdef DEBUG_MAL_RESOLVE
-	stream_printf(GDKout,"type checked version:\n");
+	mnstr_printf(GDKout,"type checked version:\n");
 	printInstruction(GDKout, mb, 0, pci,LIST_MAL_ALL);
 #endif
 
@@ -908,9 +908,9 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 
 	if( formal== TYPE_bat && isaBatType(actual) ) return 0;
 #ifdef DEBUG_MAL_RESOLVE
-	stream_printf(GDKout,"updateTypeMap:");
-	stream_printf(GDKout,"formal %s ", getTypeName(formal));
-	stream_printf(GDKout,"actual %s\n", getTypeName(actual));
+	mnstr_printf(GDKout,"updateTypeMap:");
+	mnstr_printf(GDKout,"formal %s ", getTypeName(formal));
+	mnstr_printf(GDKout,"actual %s\n", getTypeName(actual));
 #endif
 
 	if( (h=getTailIndex(formal))  ){
@@ -947,7 +947,7 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 	} 
 updLabel:
 #ifdef DEBUG_MAL_RESOLVE
-	stream_printf(GDKout,"updateTypeMap returns: %d\n",ret);
+	mnstr_printf(GDKout,"updateTypeMap returns: %d\n",ret);
 #endif
 	return ret;
 }

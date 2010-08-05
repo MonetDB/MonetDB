@@ -285,9 +285,9 @@ QEPdump(stream *f, QEP qep, int indent){
 	int i,inc = 0;
 	str s;
 	if( qep->p){
-		for(i=0;i<indent; i++) stream_printf(f," ");
+		for(i=0;i<indent; i++) mnstr_printf(f," ");
 		s= instruction2str(qep->mb, 0,qep->p, LIST_MAL_STMT);
-		stream_printf(f,"%s\n",s);
+		mnstr_printf(f,"%s\n",s);
 		GDKfree(s);
 		inc = 4;
 	}

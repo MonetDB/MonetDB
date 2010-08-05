@@ -486,10 +486,10 @@ oo7_create(str par)
 			par1 = par + strlen(par);
 
 		if ((val = strchr(par, '=')) == (char *) NULL) {
-			stream_printf(out, "oo7_create({Parameter=Value}*)\n");
-			stream_printf(out, "Default parameter values:\n\n");
+			mnstr_printf(out, "oo7_create({Parameter=Value}*)\n");
+			mnstr_printf(out, "Default parameter values:\n\n");
 			for (j = 0; params[j].val != (int *) NULL; j++)
-				stream_printf(out, "%-20s: %d\n", params[j].name, params[j].def);
+				mnstr_printf(out, "%-20s: %d\n", params[j].name, params[j].def);
 			return 0;
 		}
 		val[0] = '\0';
@@ -500,9 +500,9 @@ oo7_create(str par)
 				break;
 			}
 		if (params[j].val == (int *) NULL) {
-			stream_printf(out, "oo7_create: unknown parameter: %s, default parameter values:\n\n", par);
+			mnstr_printf(out, "oo7_create: unknown parameter: %s, default parameter values:\n\n", par);
 			for (j = 0; params[j].val != (int *) NULL; j++)
-				stream_printf(out, "oo7_create: %-20s: %d\n", params[j].name, params[j].def);
+				mnstr_printf(out, "oo7_create: %-20s: %d\n", params[j].name, params[j].def);
 			return 0;
 		}
 	};
@@ -994,7 +994,7 @@ BATtraverse(BAT *b, BAT *dag)
 	ERRORcheck(TYPEerror(b->ttype, b->htype), "BATtraverse:type conflict\n");
 
 	delta = BATsunique(b);
-	BATcheck(delta, "BATtraverse: failed to create delta\n");
+	BATcheck(delta, "BATtraverse: failed to create delta");
 
 	if (b->ttype <= TYPE_sht || b->ttype >= TYPE_flt) {
 		GDKerror("BATtraverse: type not yet supported\n");
