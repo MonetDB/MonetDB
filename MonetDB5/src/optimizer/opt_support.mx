@@ -1338,5 +1338,32 @@ isOptimizerEnabled(MalBlkPtr mb, str opt)
 	return 0;
 }
 @h
+
+opt_export wrd getVarRows(MalBlkPtr mb, int v);
+
 #endif /* _OPT_SUPPORT_H */
 @}
+
+wrd 
+getVarRows(MalBlkPtr mb, int v)
+{
+	VarPtr p = varGetProp(mb, v, rowsProp);
+	
+	if (!p)
+		return -1;
+	if (p->value.vtype == TYPE_wrd
+		return p->value.val.wval;
+	if (p->value.vtype == TYPE_lng
+#if SIZEOF_BUN <= SIZEOF_INT
+		    && p->value.val.lval <= BUN_MAX)
+#endif
+		return (wrd)p->value.val.lval;
+	if (p->value.vtype == TYPE_int)
+		return p->value.val.ival;
+	if (p->value.vtype == TYPE_sht)
+		return p->value.val.shval;
+	if (p->value.vtype == TYPE_bte)
+		return p->value.val.btval;
+	return -1;
+}
+

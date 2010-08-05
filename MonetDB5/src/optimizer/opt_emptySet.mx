@@ -321,8 +321,7 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	for (i = 0; i < mb->vtop; i++) {
 		VarPtr rowsp;
-		if ((rowsp = varGetProp(mb, i, rowsProp)) != NULL 
-		     && rowsp->value.val.lval == 0) {
+		if (getVarRows(mb, i) == 0) {
 #ifdef DEBUG_OPT_EMPTYSET
 		stream_printf(cntxt->fdout, "START emptyset optimizer %d", i);
 #endif
