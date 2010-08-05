@@ -202,8 +202,8 @@ The pieces to be used may be overruled by the octopus optimizer.
 		}
 		/* we keep the original bind operation, because it allows
 			for easy undo when the mergtable can not do something
-		*/
 		pushInstruction(mb,p);
+		*/
 		
 		slice= (BUN) (rowcnt/pieces);
 		hgh.value.vtype= low.value.vtype= TYPE_oid;
