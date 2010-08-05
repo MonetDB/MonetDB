@@ -334,7 +334,9 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			sql_bpm *bpm = NULL;
 			sql_schema *s = mvc_bind_schema(m, sname);
 			mvc *m = NULL;
+#ifndef NDEBUG
 			str msg = getContext(cntxt,mb, &m, NULL);
+#endif
 			BAT *b;
 
 			assert(msg == MAL_SUCCEED);
