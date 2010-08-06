@@ -317,7 +317,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   (assuming TSTSRCBASE=`<PACKAGE>-config --source`)
 
 	cd $TSTSRCBASE
-	run  hg update
+	run  hg pull --update
 	loop
 		loop
 			loop
@@ -351,7 +351,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	# approve "intended" impact of your changes on other tests' output
 	run  Mapprove.py <names...>
 	# checkin all correct new stuff to hg
-	run  hg ci
+	run  hg commit
+	run  hg push
 
 
 --
