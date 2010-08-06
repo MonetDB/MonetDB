@@ -15,7 +15,7 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../mal -I../modules/atoms -I../modules/mal -I../modules/kernel $(MONETDB_INCS) \
+INCLUDES = -I../mal -I../modules/atoms -I../modules/mal -I../modules/kernel $(CLIENTS_INCS) $(MONETDB_INCS) \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS)
 
 
