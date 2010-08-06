@@ -390,7 +390,8 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			}
 			if (part <= 1) {
 				int lowprop = hlbProp, highprop = hubProp;
-				oid low = 0, high = low + rows;
+				/* rows == cnt has been checked above to be <= GDK_oid_max */
+				oid low = 0, high = low + (oid)rows;
 				pushInstruction(mb, p);
 
 				if (mode == RD_INS) {
