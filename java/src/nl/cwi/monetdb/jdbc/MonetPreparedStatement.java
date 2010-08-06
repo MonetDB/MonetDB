@@ -567,6 +567,7 @@ public class MonetPreparedStatement
 		setValue(parameterIndex, "" + x);
 	}
 
+	static final String HEXES = "0123456789ABCDEF";
 	/**
 	 * Sets the designated parameter to the given Java array of bytes. The
 	 * driver converts this to an SQL VARBINARY or LONGVARBINARY (depending
@@ -578,12 +579,19 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setBytes(int parameterIndex, byte[] x) throws SQLException {
-		try {
-			setString(parameterIndex, new String(x, "UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			// this should never happen
-			throw new AssertionError(e.toString());
+		if (x == null) {
+			setNull(parameterIndex, -1);
+			return;
 		}
+
+		StringBuffer hex = new StringBuffer(x.length * 2);
+		byte b;
+		for (int i = 0; i < x.length; i++) {
+			b = x[i];
+			hex.append(HEXES.charAt((b & 0xF0) >> 4))
+				.append(HEXES.charAt((b & 0x0F)));
+		}
+		setString(parameterIndex, hex.toString());
 	}
 
 	/**
