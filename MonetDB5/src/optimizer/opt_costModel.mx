@@ -90,24 +90,6 @@ comment "Estimate the cost of a relational expression";
 #include "mal_config.h"
 #include "opt_costModel.h"
 
-static lng 
-getVarRows(MalBlkPtr mb, int v)
-{
-	VarPtr p = varGetProp(mb, v, rowsProp);
-	
-	if (!p)
-		return -1;
-	if (p->value.vtype == TYPE_lng)
-		return p->value.val.lval;
-	if (p->value.vtype == TYPE_int)
-		return p->value.val.ival;
-	if (p->value.vtype == TYPE_sht)
-		return p->value.val.shval;
-	if (p->value.vtype == TYPE_bte)
-		return p->value.val.btval;
-	return -1;
-}
-
 @-
 The cost formula are repetative
 @= newRows
@@ -119,7 +101,7 @@ The cost formula are repetative
 		if (c1 == -1 || c2 == -1) 
 			continue;
 		k = (@3);
-		varSetProp(mb, getArg(p,@4), rowsProp, op_eq, VALset(&v,TYPE_lng,&k));
+		varSetProp(mb, getArg(p,@4), rowsProp, op_eq, VALset(&v,TYPE_wrd,&k));
 		OPTDEBUGcostModel {
 			mnstr_printf(cntxt->fdout,"COST of @1 @2 into @4: " LLFMT "\n",k);
 			printInstruction(cntxt->fdout,mb,0,p,0);
@@ -135,7 +117,7 @@ the empty-set optimizer to through away a BAT we need.
 @c
 static void
 OPTbackpropagate(MalBlkPtr mb, int i, int idx){
-	lng rows;
+	wrd rows;
 	InstrPtr p;
 
         rows = getVarRows(mb, idx);
@@ -145,7 +127,7 @@ OPTbackpropagate(MalBlkPtr mb, int i, int idx){
 		p = getInstrPtr(mb,i);
 		if (getFunctionId(p) == setWriteModeRef){
 			if (getVarRows(mb, getArg(p,1)) == 0) {
-				ValRecord v, *vp = VALset(&v, TYPE_lng, &rows);
+				ValRecord v, *vp = VALset(&v, TYPE_wrd, &rows);
 				varSetProp(mb, getArg(p,1), rowsProp, op_eq, vp);
 			}
 		} 
@@ -165,7 +147,7 @@ static int
 OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, actions = 1;
-	lng k, c1, c2;
+	wrd k, c1, c2;
 	InstrPtr p;
 	str sortrevRef= putName("sortReverse",11);
 	str sortrevTailRef= putName("sortReverseTail",15);
@@ -280,7 +262,7 @@ an initially empty insertion BAT.
 			if (c1 != -1) {
 				ValRecord v;
 				
-				varSetProp(mb, getArg(p,0), rowsProp, op_eq, VALset(&v, TYPE_lng, &c1));
+				varSetProp(mb, getArg(p,0), rowsProp, op_eq, VALset(&v, TYPE_wrd, &c1));
 			}
 		}
 	}

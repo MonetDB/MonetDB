@@ -327,7 +327,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			char *tname = getVarConstant(mb, getArg(p,3)).val.sval;
 			char *cname = NULL;
 			int not_null = 0;
-			oid rows = 1; /* default to cope with delta bats */
+			wrd rows = 1; /* default to cope with delta bats */
 			int mode = 0;
 			int part = 0;
 			int k = getArg(p,0);
@@ -369,7 +369,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					cnt = BATcount(b);
 					BBPreleaseref(b->batCacheid);
 				}
-				rows = (oid) cnt;
+				rows = (wrd) cnt;
 			} else if (s && f == bindRef && cname) {
 				size_t cnt;
 				sql_table *t = mvc_bind_table(m, s, tname);
@@ -390,11 +390,11 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						cnt = BATcount(b);
 						BBPreleaseref(b->batCacheid);
 					}
-					rows = (oid) cnt;
+					rows = (wrd) cnt;
 				}
 			}	
 			if (rows > 1 && mode != RD_INS)
-				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_oid, &rows));
+				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 			if (not_null)
 				varSetProp(mb, k, notnilProp, op_eq, NULL);
 			if (0 && active_store_type == store_bpm && part && 
@@ -410,7 +410,8 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			}
 			if (part <= 1) {
 				int lowprop = hlbProp, highprop = hubProp;
-				oid low = 0, high = low + rows;
+				/* rows == cnt has been checked above to be <= GDK_oid_max */
+				oid low = 0, high = low + (oid)rows;
 				pushInstruction(mb, p);
 
 				if (mode == RD_INS) {

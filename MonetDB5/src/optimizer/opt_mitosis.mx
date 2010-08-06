@@ -68,7 +68,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_octopus.h"
 #include "mal_interpreter.h"
 
-#define PARTITION_THRESHOLD (BUN) GDKnr_threads	/* should be increased in production version */
+#define PARTITION_THRESHOLD (wrd) GDKnr_threads	/* should be increased in production version */
 
 static int eligible(MalBlkPtr mb )
 {
@@ -93,9 +93,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str schema=0, table=0;
 	VarRecord low,hgh;
 	oid slice;
-	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
+	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
-	VarPtr v;
 	size_t typewidth= 3 *sizeof(lng); /* 2 arguments and a result */
 
 	(void)cntxt;
@@ -118,20 +117,14 @@ The SQL optimizer already collects the counts of the
 base table and passes them on as a row property.
 All pieces for a single subplan should ideally fit together.
 @c
-		v= varGetProp(mb, getArg(q,0), rowsProp);
-		if (v && v->value.val.lval >= 0
-#if SIZEOF_BUN <= SIZEOF_INT
-		    && v->value.val.lval <= BUN_MAX
-#endif
-		   )
-			r= (BUN) v->value.val.lval;
-			if (r >= rowcnt && r > PARTITION_THRESHOLD){
-				rowcnt = r;
-				target = q;
-				estimate++;
-				r = 0;
-			}
+		r = getVarRows(mb, getArg(q, 0));
+		if (r >= 0 && r >= rowcnt && r > PARTITION_THRESHOLD){
+			rowcnt = r;
+			target = q;
+			estimate++;
+			r = 0;
 		}
+	}
 	if (target == 0)
 		return 0;
 @-
@@ -202,8 +195,8 @@ The pieces to be used may be overruled by the octopus optimizer.
 		}
 		/* we keep the original bind operation, because it allows
 			for easy undo when the mergtable can not do something
-		pushInstruction(mb,p);
 		*/
+		pushInstruction(mb,p);
 		
 		slice= (BUN) (rowcnt/pieces);
 		hgh.value.vtype= low.value.vtype= TYPE_oid;
