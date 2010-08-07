@@ -1871,7 +1871,7 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 		GDKerror("CMDslice: start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
-	if (end == wrd_nil) 
+	if (end == lng_nil) 
 		end = BATcount(b);
 	if (start > (lng) BUN_MAX || end >= (lng) BUN_MAX) {
 		GDKerror("CMDslice: argument out of range\n");
@@ -3648,7 +3648,7 @@ str
 ALGslice_int(int *ret, bat *bid, int *start, int *end)
 {
 	lng s = *start;
-	lng e = *end;
+	lng e = (*end == int_nil ? lng_nil : *end);
 
 	return ALGslice(ret, bid, &s, &e);
 }
@@ -3657,7 +3657,7 @@ str
 ALGslice_wrd(int *ret, bat *bid, wrd *start, wrd *end)
 {
 	lng s = *start;
-	lng e = *end;
+	lng e = (*end == wrd_nil ? lng_nil : *end);
 
 	return ALGslice(ret, bid, &s, &e);
 }
