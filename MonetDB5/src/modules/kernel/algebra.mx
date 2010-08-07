@@ -1881,20 +1881,8 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 	return (*retval = BATslice(b, (BUN) start, (BUN) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int
+static int
 CMDslice(BAT **retval, BAT *b, lng *start, lng *end)
-{
-	return slice(retval, b, *start, *end);
-}
-
-int
-CMDslice_wrd(BAT **retval, BAT *b, wrd *start, wrd *end)
-{
-	return slice(retval, b, *start, *end);
-}
-
-int
-CMDslice_int(BAT **retval, BAT *b, int *start, int *end)
 {
 	return slice(retval, b, *start, *end);
 }
