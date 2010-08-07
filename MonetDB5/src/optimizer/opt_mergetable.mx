@@ -1739,9 +1739,6 @@ And the min/max is as easy
 The slice operation can also be piggy backed onto the mat.pack using it
 as a property of the MAT. Pushing it through
 would be feasible as well, provided the start of the slice is a constant 0.
-
-Disabled as a slice is used also for offset where we need the oposite
-of the slice part. y= x.slice(). x.diff(y);
 @c
 		if (match > 0 && getModuleId(p) == algebraRef &&
 				getFunctionId(p) == sliceRef &&
