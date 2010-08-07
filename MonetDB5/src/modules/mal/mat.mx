@@ -230,19 +230,35 @@ MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mat.packSlice", "wrong type for lower bound");
 	}
 	switch getArgType(mb,p,2) {
-	case TYPE_wrd:
-		lst = (BUN) *(wrd*) getArgReference(stk,p,2);
+	case TYPE_wrd: {
+		wrd l = *(wrd*) getArgReference(stk,p,2);
+		if (l == wrd_nil)
+			lst = BUN_MAX; /* no upper bound */
+		else
+			lst = (BUN) l;
 		break;
-	case TYPE_lng:
-		lst = (BUN) *(lng*) getArgReference(stk,p,2);
+	}
+	case TYPE_lng: {
+		lng l = *(lng*) getArgReference(stk,p,2);
+		if (l == lng_nil)
+			lst = BUN_MAX; /* no upper bound */
+		else
+			lst = (BUN) l;
 		break;
-	case TYPE_int:
-		lst = (BUN) *(int*) getArgReference(stk,p,2);
+	}
+	case TYPE_int: {
+		int l = *(int*) getArgReference(stk,p,2);
+		if (l == int_nil)
+			lst = BUN_MAX; /* no upper bound */
+		else
+			lst = (BUN) l;
 		break;
+	}
 	default:
 		throw(MAL, "mat.packSlice", "wrong type for upper bound");
 	}
-	lst++; /* inclusive -> exclusive upper bound */
+	if (lst < BUN_MAX)
+		lst++; /* inclusive -> exclusive upper bound */
 	if (lst < fst)
 		lst = fst;
 	cnt = lst - fst;
