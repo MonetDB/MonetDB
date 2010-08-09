@@ -630,10 +630,21 @@ MT_check_nr_cores(void)
 	 * http://ndevilla.free.fr/threads/ */
 
 #ifdef WIN32
+	/* Detection of number of cores works like this on Windows,
+	 * however, multi-threaded execution of MonetDB does not 
+	 * work reliably on Windows, most probably as the Windows-
+	 * implementaion of pthreads and semaphors are not (yet?)
+	 * up to the task.
+	 * Hence, we stick to single-threaded execution on Windows
+	 * for now.
+	 */
+/*
 	SYSTEM_INFO sysinfo;
 
 	GetSystemInfo( &sysinfo );
 	ncpus = sysinfo.dwNumberOfProcessors;
+*/
+	ncpus = 1;
 #endif
 
 	if (ncpus <= 0)

@@ -1,14 +1,19 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug  6 2010 Fabian Groffen <fabian@cwi.nl>
+- Fixed bug #2641,  The SQL server now handles Unicode BOM sequences
+  occurring in any place.  Previously an "unexpected character (U+FEFF)"
+  error would be returned.
+
 * Fri Jul 30 2010 Niels Nes <niels@cwi.nl>
-- fix Bug 2611. Fixed check for multiple functions without parameters.
+- Fix Bug 2611. Fixed check for multiple functions without parameters.
 - Fixed bug 2569 (except/union/intersect right after
   insert/delete/update. We now correctly fallback to the more general
   subquery case (not only simple selects (SQL_SELECT)).
 
 * Thu Jul 29 2010 Niels Nes <niels@cwi.nl>
-- Fixed ORdER BY over UNION etc. (bug 2606) by
+- Fixed ORDER BY over UNION etc. (bug 2606) by
   automatically adding select * around select x union select y order by z.
 
 * Thu Jul 29 2010 Niels Nes <niels@cwi.nl>

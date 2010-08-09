@@ -1756,8 +1756,7 @@ would be feasible as well, provided the start of the slice is a constant 0.
 				(m = isMATalias(getArg(p, 1), mat, mtop)) >= 0)
 		{
 			/* inject new mat.pack() operation */
-			MATpackAll(mb, NULL, mat, m, &mtop);
-			q = getInstrPtr(mb, mb->stop - 1);
+			q = MATpackAll(mb, NULL, mat, m, &mtop);
 			/* rename mat.pack() to mat.slice() */
 			setFunctionId(q, sliceRef);
 			/* insert bounds from algebra.slice() into mat.slice() */
