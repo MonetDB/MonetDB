@@ -47,6 +47,18 @@ function user.main():void;
     io.print(x,y);
     (x,y) := zorder.decode(z4);
     io.print(x,y);
+    x := zorder.decode_x(z1);
+    y := zorder.decode_y(z1);
+    io.print(x,y);
+    x := zorder.decode_x(z2);
+    y := zorder.decode_y(z2);
+    io.print(x,y);
+    x := zorder.decode_x(z3);
+    y := zorder.decode_y(z3);
+    io.print(x,y);
+    x := zorder.decode_x(z4);
+    y := zorder.decode_y(z4);
+    io.print(x,y);
     bx := bat.new(:oid,:int);
     bat.append(bx,0);
     bat.append(bx,1);
@@ -86,6 +98,9 @@ function user.main():void;
     io.print(bz);
     (cx,cy) := zorder.decode(bz);
     io.print(cx,cy);
+    dx := zorder.decode_x(bz);
+    dy := zorder.decode_y(bz);
+    io.print(dx,dy);
 # taking a slice 
     bs := zorder.slice(1,1,3,3);
     io.print(bs);
@@ -104,6 +119,10 @@ end main;
 [ 9@0 ]
 [ 10@0 ]
 [ 11@0 ]
+[ 0, 2]
+[ 1, 2]
+[ 0, 3]
+[ 1, 3]
 [ 0, 2]
 [ 1, 2]
 [ 0, 3]
@@ -148,6 +167,26 @@ end main;
 [ 13@0,	  13@0	  ]
 [ 14@0,	  14@0	  ]
 [ 15@0,	  15@0	  ]
+#-------------------------#
+# h	t	t	  # name
+# void	int	int	  # type
+#-------------------------#
+[ 0@0,	  0,	  0	  ]
+[ 1@0,	  1,	  0	  ]
+[ 2@0,	  0,	  1	  ]
+[ 3@0,	  1,	  1	  ]
+[ 4@0,	  2,	  0	  ]
+[ 5@0,	  3,	  0	  ]
+[ 6@0,	  2,	  1	  ]
+[ 7@0,	  3,	  1	  ]
+[ 8@0,	  0,	  2	  ]
+[ 9@0,	  1,	  2	  ]
+[ 10@0,	  0,	  3	  ]
+[ 11@0,	  1,	  3	  ]
+[ 12@0,	  2,	  2	  ]
+[ 13@0,	  3,	  2	  ]
+[ 14@0,	  2,	  3	  ]
+[ 15@0,	  3,	  3	  ]
 #-------------------------#
 # h	t	t	  # name
 # void	int	int	  # type
