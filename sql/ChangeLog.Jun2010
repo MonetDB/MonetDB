@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Aug  9 2010 Jennie Zhang <y.zhang@cwi.nl>
+- Fixed bug 2645: mat.pack+algebra.slice should be replaced by mat.slice
+  for 'limit 1' (when the default_pipe is used)
+
 * Fri Aug  6 2010 Fabian Groffen <fabian@cwi.nl>
 - Fixed bug #2641,  The SQL server now handles Unicode BOM sequences
   occurring in any place.  Previously an "unexpected character (U+FEFF)"
