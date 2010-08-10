@@ -343,27 +343,28 @@ so to get the software, you will have to get the source and build it
 yourself.
 
 Get the source tar ball from http://trac.osgeo.org/geos/#Download and
-extract somewhere.  All the versions I have tried (up to 3.1.1) miss
-one essential file to build on Windows, so in addition get the file
-``nmake.opt`` from http://svn.osgeo.org/geos/branches/3.1/ and copy it
-to the top of the extracted source directory.  Then build using::
+extract somewhere.  You can follow the instructions in e.g. `Building
+on Windows with NMake`__.  I did find one problem with this procedure:
+you will need to remove the file ``source/headers/geos/platform.h``
+before starting the build so that it gets created from the correct
+(Windows) source.
 
- nmake /f makefile.vc
+After this, install the library somewhere, e.g. in
+``C:\geos-3.2.2.win32``::
 
-Then install the library somewhere, e.g. in ``C:\geos-3.1.win32``::
-
- mkdir C:\geos-3.1.win32
- mkdir C:\geos-3.1.win32\lib
- mkdir C:\geos-3.1.win32\bin
- mkdir C:\geos-3.1.win32\include
- mkdir C:\geos-3.1.win32\include\geos
- copy source\geos_c_i.lib C:\geos-3.1.win32\lib
- copy source\geos_c.dll C:\geos-3.1.win32\bin
- copy source\headers C:\geos-3.1.win32\include
- copy source\headers\geos C:\geos-3.1.win32\include\geos
- copy capi\geos_c.h C:\geos-3.1.win32\include
+ mkdir C:\geos-3.2.2.win32
+ mkdir C:\geos-3.2.2.win32\lib
+ mkdir C:\geos-3.2.2.win32\bin
+ mkdir C:\geos-3.2.2.win32\include
+ mkdir C:\geos-3.2.2.win32\include\geos
+ copy source\geos_c_i.lib C:\geos-3.2.2.win32\lib
+ copy source\geos_c.dll C:\geos-3.2.2.win32\bin
+ copy source\headers C:\geos-3.2.2.win32\include
+ copy source\headers\geos C:\geos-3.2.2.win32\include\geos
+ copy capi\geos_c.h C:\geos-3.2.2.win32\include
 
 __ http://geos.refractions.net/
+__ http://trac.osgeo.org/geos/wiki/BuildingOnWindowsWithNMake
 
 Optional Packages
 =================
