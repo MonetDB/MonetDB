@@ -761,25 +761,31 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 		   view and heap.base of views are not necessarily
 		   aligned */
 		size_t *lo = (size_t *) (((size_t) base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-		size_t *hi = (size_t *) (base + touch);
+		size_t *hi = (size_t *) (base + touch), *hi8 = NULL, hi1 = NULL;
 		/* page size: [bytes] -> [sizeof(size_t)]
 		 * to make sure we touch each page,
 		 * not only 1 in sizeof(size_t) pages */
 		page /= sizeof(size_t);
-		for (hi -= 8 * page; lo <= hi; lo += 8 * page) {
-			/* try to trigger loading of multiple pages
-			   without blocking */
-			v0 += lo[0 * page];
-			v1 += lo[1 * page];
-			v2 += lo[2 * page];
-			v3 += lo[3 * page];
-			v4 += lo[4 * page];
-			v5 += lo[5 * page];
-			v6 += lo[6 * page];
-			v7 += lo[7 * page];
-		}
-		for (hi += 7 * page; lo <= hi; lo += page)
-			v0 += *lo;
+		hi8 = hi - 8 * page;
+		hi1 = hi - page;
+		/* detect address underrun */
+		if (hi8 < hi)
+			for (; lo <= hi8; lo += 8 * page) {
+				/* try to trigger loading of multiple pages
+				   without blocking */
+				v0 += lo[0 * page];
+				v1 += lo[1 * page];
+				v2 += lo[2 * page];
+				v3 += lo[3 * page];
+				v4 += lo[4 * page];
+				v5 += lo[5 * page];
+				v6 += lo[6 * page];
+				v7 += lo[7 * page];
+			}
+		/* detect address underrun */
+		if (hi1 < hi)
+			for (; lo <= hi1; lo += page)
+				v0 += *lo;
 	}
 	IODEBUG THRprintf(GDKout,
 			  "#BATpreload(%s->%s,preload=%d,sz=%dMB,touch=%dMB,%s) = %dms \n",
