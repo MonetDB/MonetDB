@@ -761,7 +761,7 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 		   view and heap.base of views are not necessarily
 		   aligned */
 		size_t *lo = (size_t *) (((size_t) base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-		size_t *hi = (size_t *) (base + touch), *hi8 = NULL, hi1 = NULL;
+		size_t *hi = (size_t *) (base + touch), *hi8 = NULL, *hi1 = NULL;
 		/* page size: [bytes] -> [sizeof(size_t)]
 		 * to make sure we touch each page,
 		 * not only 1 in sizeof(size_t) pages */
