@@ -28,7 +28,7 @@ Over..
 % .env # table_name
 % name # name
 % varchar # type
-% 18 # length
+% 16 # length
 [ "gdk_arch"	]
 [ "gdk_version"	]
 [ "prefix"	]
@@ -63,18 +63,6 @@ Over..
 [ "minimal_pipe"	]
 [ "default_pipe"	]
 [ "nov2009_pipe"	]
-[ "replication_pipe"	]
-[ "accumulator_pipe"	]
-[ "recycler_pipe"	]
-[ "cracker_pipe"	]
-[ "sidcrack_pipe"	]
-[ "datacell_pipe"	]
-[ "octopus_pipe"	]
-[ "mapreduce_pipe"	]
-[ "datacyclotron_pipe"	]
-[ "derive_pipe"	]
-[ "dictionary_pipe"	]
-[ "compression_pipe"	]
 [ "gdk_mem_pagebits"	]
 [ "gdk_mem_bigsize"	]
 [ "monet_pid"	]
