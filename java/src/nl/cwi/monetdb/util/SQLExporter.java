@@ -67,10 +67,17 @@ public class SQLExporter extends Exporter {
 			if (!tbl.next()) throw new SQLException("Whoops no data for " + name);
 
 			// This will probably only work for MonetDB
-			out.print("CREATE " + type + " " +
-				(!useSchema ? dq(schema) + "." : "") + dq(name));
-			out.print(" AS ");
-		 	out.println(tbl.getString("REMARKS").replaceFirst("create view [^ ]+ as", "").trim());
+			String remarks = tbl.getString("REMARKS");
+			if (remarks == null) {
+				out.println("-- invalid " + type + " " +
+						(!useSchema ? dq(schema) + "." : "") + dq(name) +
+						": no definition found");
+			} else {
+				out.print("CREATE " + type + " " +
+					(!useSchema ? dq(schema) + "." : "") + dq(name));
+				out.print(" AS ");
+				out.println(remarks.replaceFirst("create view [^ ]+ as", "").trim());
+			}
 			return;
 		}
 
