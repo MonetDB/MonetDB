@@ -291,8 +291,37 @@ public class MonetResultSet implements ResultSet {
 	public InputStream getBinaryStream(String columnName) throws SQLException { throw new SQLException("Method getBinaryStream not implemented yet, sorry!"); }
 	public InputStream getUnicodeStream(int columnIndex) throws SQLException { throw new SQLException("Method getUnicodeStream not implemented yet, sorry!"); }
 	public InputStream getUnicodeStream(String columnName) throws SQLException { throw new SQLException("Method getUnicodeStream not implemented yet, sorry!"); }
-	public Reader getCharacterStream(int columnIndex) throws SQLException { throw new SQLException("Method getCharacterStream not implemented yet, sorry!"); }
-	public Reader getCharacterStream(String columnName) throws SQLException { throw new SQLException("Method getCharacterStream not implemented yet, sorry!"); }
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a java.io.Reader object.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return a java.io.Reader object that contains the column value;
+	 *         if the value is SQL NULL, the value returned is null in
+	 *         the Java programming language. 
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Reader getCharacterStream(int columnIndex) throws SQLException {
+		String tmp = getString(columnIndex);
+		if (tmp == null)
+			return(null);
+		return new StringReader(tmp);
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a java.io.Reader object.
+	 *
+	 * @param columnName the name of the column
+	 * @return a java.io.Reader object that contains the column value;
+	 *         if the value is SQL NULL, the value returned is null in
+	 *         the Java programming language. 
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Reader getCharacterStream(String columnName) throws SQLException {
+		return(getCharacterStream(findColumn(columnName)));
+	}
 
 	/**
 	 * Retrieves the value of the designated column in the current row
