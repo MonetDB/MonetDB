@@ -935,7 +935,6 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
-		//stmt *s = stmt_join(stmt_dup(jl), column(c), cmp_equal);
 		stmt *s = stmt_project(stmt_dup(jl), column(c) );
 
 		/* as append isn't save, we append to a new copy */
@@ -955,7 +954,6 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
-		//stmt *s = stmt_join(stmt_dup(jr), column(c), cmp_equal);
 		stmt *s = stmt_project(stmt_dup(jr), column(c) );
 
 		/* as append isn't save, we append to a new copy */
@@ -1060,7 +1058,6 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
-		//stmt *s = stmt_join(stmt_dup(join), column(c), cmp_equal);
 		stmt *s = stmt_project(stmt_dup(join), column(c));
 
 		s = stmt_alias(s, rnme, nme);
@@ -1789,7 +1786,6 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 			if (col->nrcols == 0) /* constant */
 				col = stmt_const(sel, col);
 			else
-				//col = stmt_join(sel, col, cmp_equal);
 				col = stmt_project(sel, col);
 			list_append(l, col);
 		}
@@ -1952,19 +1948,11 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *limit = NULL, *p, *j;
-		//sql_exp *lmt = le;
 
 		if (le)
 			l = exp_bin(sql, le, NULL, NULL, NULL, NULL);
 		if (oe)
 			o = exp_bin(sql, oe, NULL, NULL, NULL, NULL);
-
-/*
-		if (!le) {
-			l = o;
-			o = stmt_atom_wrd(0);
-		}
-*/
 
 		if (!le) 
 			l = stmt_atom_wrd_nil();
@@ -1980,22 +1968,15 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 			sc = column(sc);
 			limit = stmt_limit(stmt_alias(sc, tname, cname), o, l, 0);
-			//if (lmt) {
-				n = n->next;
-				list_append(newl, limit);
-			//}
+			n = n->next;
+			list_append(newl, limit);
 		}
 
 		/* reduce pivot */
 		j = find_projection_join(limit);
 		if (j && 0) {
 			p = find_pivot(j);
-/*
-			if (!lmt)
-				p = stmt_diff(stmt_dup(p), stmt_dup(limit));
-			else
-*/
-				p = stmt_semijoin(stmt_dup(p), stmt_dup(limit));
+			p = stmt_semijoin(stmt_dup(p), stmt_dup(limit));
 			for ( ; n; n = n->next) {
 				stmt *s = column(stmt_dup(n->data));
 				stmt *prj = find_projection_join(s);
@@ -2010,24 +1991,13 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			for ( ; n; n = n->next) {
 				stmt *s;
 		
-/*
-				if (!lmt)
-					s = stmt_diff(column(stmt_dup(n->data)), stmt_dup(limit));
-				else
-*/
-					s = stmt_semijoin(column(stmt_dup(n->data)), stmt_dup(limit));
+				s = stmt_semijoin(column(stmt_dup(n->data)), stmt_dup(limit));
 				list_append(newl, s);
 			}
 		}
 		if (order) {
-/*
-			if (!lmt) {
-		 		order = stmt_diff(order, limit);
-			} else {
-*/
-				stmt_destroy(order);
-		 		order = limit;
-//			}
+			stmt_destroy(order);
+			order = limit;
 		}
 	}
 	stmt_destroy(sub);
