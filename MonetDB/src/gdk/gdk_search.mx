@@ -394,6 +394,10 @@ BAThash(BAT *b, BUN masksize)
 			cnt = BATcapacity(b);
 
 		if (b->htype == TYPE_void) {
+			if (b->hseqbase == oid_nil) {
+				ALGODEBUG THRprintf(GDKout, "#BAThash: cannot create hash-table on void column.\n");
+				return NULL;
+			}
 			ALGODEBUG THRprintf(GDKout, "#BAThash: creating hash-table on void column..\n");
 
 			tpe = TYPE_void;
