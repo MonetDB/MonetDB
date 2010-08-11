@@ -315,11 +315,16 @@ static void
 timerPause(void)
 {
 	t1 = gettime();
+	if ( t0 == 0 ) 
+		t0 = t1;
 }
 
 static void
 timerResume(void)
 {
+	if ( t1 == 0)
+		t1= gettime();
+	assert(t1 >= t0);
 	t0 = gettime() - (t1 - t0);
 }
 
@@ -328,6 +333,7 @@ timerEnd(void)
 {
 	mnstr_flush(toConsole);
 	t1 = gettime();
+	assert( t1 >= t0);
 	if (mark && specials == NOmodifier) {
 		fprintf(stderr, "%s %7ld.%03ld msec %s\n", mark, (long) ((t1 - t0) / 1000), (long) ((t1 - t0) % 1000), mark2 ? mark2 : "");
 		fflush(stderr);
@@ -338,8 +344,11 @@ static char htimbuf[32];
 static char *
 timerHuman()
 {
-	timertype t = t1 - t0;
+	timertype t;
+	t1 = gettime();
+	t = t1 - t0;
 
+	assert( t1 >= t0);
 	if (t / 1000 < 950) {
 		snprintf(htimbuf, 32, "%ld.%03ldms", (long) (t / 1000), (long) (t % 1000));
 		return(htimbuf);
