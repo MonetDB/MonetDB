@@ -1246,10 +1246,12 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 	lcount = BATcount(l);
 	rcount = BATcount(r);
 
-	if (lcount == 0 || rcount == 0) {
+	if (lcount == 0 || rcount == 0 ||
+	    (l->ttype == TYPE_void && l->tseqbase == oid_nil) ||
+	    (r->htype == TYPE_void && r->hseqbase == oid_nil)) {
 		BAT *bn;
 
-		@:return_empty_join_result(l,r, BATjoin: |l|==0 or |r|==0,0)@
+		@:return_empty_join_result(l,r, BATjoin: |l|==0 or |r|==0 or tail(l)==NIL or head(r)==NIL,0)@
 	}
 @-
 collect statistics that help us decide what to do
