@@ -41,3 +41,4 @@ with_row_number_crash.Bug-2631
 complex_query_crash.Bug-2633
 unicode-bom.Bug-2641
 mat.slice_limit1.Bug-2645
+shift_with_cast.Bug-2638
