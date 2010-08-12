@@ -40,13 +40,13 @@ although some components can be compiled and installed in a different
 order.  Unless you know the inter-component dependencies, it is better
 to stick to this order.  Also note that before the next component is
 built, the previous ones need to be installed.  The section names are
-the names of the CVS modules on SourceForge.
+the names of the top-level directories in the Mercurial clone.
 
 buildtools
 ----------
 
 The buildtools component is required in order to build the sources
-from the CVS repository.  If you get the pre-packaged sources
+from the Mercurial repository.  If you get the pre-packaged sources
 (i.e. the one in tar balls), you don't need the buildtools component
 (although this has not been tested on Windows).
 
@@ -124,15 +124,32 @@ features.  The required programs and libraries are listed in this
 section, the following section lists the optional programs and
 libraries.
 
-CVS (Concurrent Version System)
--------------------------------
+Mercurial (a.k.a. HG)
+---------------------
 
-All sources of the MonetDB suite of programs are stored using CVS__ at
-SourceForge__.  You will need CVS to get the sources.  We use CVS
-under Cygwin__, but any other version will do as well.
+All sources of the MonetDB suite of programs are stored using
+Mercurial__ at our server__.  You will need Mercurial to get the
+sources.  We use Mercurial under Cygwin__, but any other version will
+do as well.
 
-__ http://www.cvshome.org/
-__ http://sourceforge.net/projects/monetdb/
+Once Mercurial is installed and configured, you can get the sources
+using the command
+
+::
+
+ hg clone http://dev.monetdb.org/hg/MonetDB/
+
+This will create a directory ``MonetDB`` that contains everything.
+
+You can update the sources using (from within the above-mentioned
+``MonetDB`` directory)
+
+::
+
+ hg pull -u
+
+__ http://mercurial.selenic.com/
+__ http://dev.monetdb.org/hg/MonetDB/
 __ http://www.cygwin.com/
 
 Compiler
