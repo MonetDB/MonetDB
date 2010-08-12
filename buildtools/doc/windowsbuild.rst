@@ -40,7 +40,7 @@ although some components can be compiled and installed in a different
 order.  Unless you know the inter-component dependencies, it is better
 to stick to this order.  Also note that before the next component is
 built, the previous ones need to be installed.  The section names are
-the names of the top-level directories in the Mercurial clone.
+the names of the top-level folders in the Mercurial clone.
 
 buildtools
 ----------
@@ -119,10 +119,9 @@ Prerequisites
 
 In order to compile the MonetDB suite of programs, several other
 programs and libraries need to be installed.  Some further programs
-and libraries can be optionally installed to enable optional
-features.  The required programs and libraries are listed in this
-section, the following section lists the optional programs and
-libraries.
+and libraries can be optionally installed to enable optional features.
+The required programs and libraries are listed in this section, the
+following section lists the optional programs and libraries.
 
 Mercurial (a.k.a. HG)
 ---------------------
@@ -139,10 +138,10 @@ using the command
 
  hg clone http://dev.monetdb.org/hg/MonetDB/
 
-This will create a directory ``MonetDB`` that contains everything.
+This will create a folder ``MonetDB`` that contains everything.
 
 You can update the sources using (from within the above-mentioned
-``MonetDB`` directory)
+``MonetDB`` folder)
 
 ::
 
@@ -205,9 +204,8 @@ Flex
 Flex is a fast lexical analyzer generator.
 
 A version of Flex for Windows can be gotten from the GnuWin32 project
-at http://gnuwin32.sourceforge.net/.  Click on the Packages
-link on the left and then on Flex, and get the Setup file and install
-it.
+at http://gnuwin32.sourceforge.net/.  Click on the Packages link on
+the left and then on Flex, and get the Setup file and install it.
 
 Pthreads
 --------
@@ -216,8 +214,8 @@ Get a Windows port of pthreads from
 ftp://sources.redhat.com/pub/pthreads-win32/.  You can download the
 latest pthreads-\*-release.exe which is a self-extracting archive.
 Extract it, and move or copy the contents of the Pre-built.2 folder to
-``C:\Pthreads`` (so that you end up with folders ``C:\Pthreads\lib`` and
-``C:\Pthreads\include``).
+``C:\Pthreads`` (so that you end up with folders ``C:\Pthreads\lib``
+and ``C:\Pthreads\include``).
 
 On Windows64, in a command interpreter, run ``nmake clean VC`` in the
 extracted ``pthreads.2`` folder with the Visual Studio environment set
@@ -235,9 +233,9 @@ differences.  This program is not used during the build process, but
 only during testing.  As such it is not a strict prerequisite.
 
 A version of Diff for Windows can be gotten from the GnuWin32 project
-at http://gnuwin32.sourceforge.net/.  Click on the Packages
-link on the left and then on DiffUtils (note the name), and get the
-Setup file and install it.
+at http://gnuwin32.sourceforge.net/.  Click on the Packages link on
+the left and then on DiffUtils (note the name), and get the Setup file
+and install it.
 
 Patch
 -----
@@ -277,16 +275,16 @@ download from http://www.cmake.org/.  Follow the Download link and get
 the Win32 Installer, install it, and run it.  It will come up with a
 window where you have to fill in the location of the source code and
 where to build the binaries.  Fill in where you extracted the PCRE
-sources, and some other directory (I used a ``build`` directory which
-I created within the PCRE source tree).  You need to configure some
-PCRE build options.  I chose to do build shared libs, to match
-newlines with the ``ANYCRLF`` option, and to do have UTF-8 support and
-support for Unicode properties.  When you're satisfied with the
-options, click on Configure, and then on Generate.  Then in the build
-directory you've chosen, open the PCRE.sln file with Visual Studio,
-and build and install.  Make sure you set the Solution Configuration
-to Release if you want to build a releasable version of the MonetDB
-suite.  The library will be installed in ``C:\Program Files\PCRE``.
+sources, and some other folder (I used a ``build`` folder which I
+created within the PCRE source tree).  You need to configure some PCRE
+build options.  I chose to do build shared libs, to match newlines
+with the ``ANYCRLF`` option, and to do have UTF-8 support and support
+for Unicode properties.  When you're satisfied with the options, click
+on Configure, and then on Generate.  Then in the build folder you've
+chosen, open the PCRE.sln file with Visual Studio, and build and
+install.  Make sure you set the Solution Configuration to Release if
+you want to build a releasable version of the MonetDB suite.  The
+library will be installed in ``C:\Program Files\PCRE``.
 
 For Windows64, select the correct compiler (``Visual Studio 9 2008
 Win64``) and proceed normally.  When building the 32 bit version on
@@ -307,9 +305,9 @@ Download the source from http://www.openssl.org/.  We used the latest
 stable version (0.9.8k).  Follow the instructions in the file
 ``INSTALL.W32`` or ``INSTALL.W64``.
 
-Fix the ``OPENSSL`` definitions in ``buildtools\conf\winrules.msc`` so that
-they refer to the location where you installed the library and call
-``nmake`` with the extra parameter ``HAVE_OPENSSL=1``.
+Fix the ``OPENSSL`` definitions in ``buildtools\conf\winrules.msc`` so
+that they refer to the location where you installed the library and
+call ``nmake`` with the extra parameter ``HAVE_OPENSSL=1``.
 
 __ http://www.openssl.org/
 
@@ -334,7 +332,7 @@ optional prerequisites iconv_ and zlib_, for which see below).
 
 Edit the file ``win32\Makefile.msvc`` and change the one occurrence of
 ``zdll.lib`` to ``zlib1.lib``, and then run the following commands in
-the ``win32`` subdirectory, substituting the correct locations for the
+the ``win32`` subfolder, substituting the correct locations for the
 iconv and zlib libraries::
 
  cscript configure.js compiler=msvc prefix=C:\libxml2-2.6.30.win64 ^
@@ -344,7 +342,7 @@ iconv and zlib libraries::
  nmake /f Makefile.msvc install
 
 After this, you may want to move the file ``libxml2.dll`` from the
-``lib`` directory to the ``bin`` directory.
+``lib`` folder to the ``bin`` folder.
 
 __ http://xmlsoft.org/
 __ https://sourceforge.net/tracker/index.php?func=detail&aid=1899258&group_id=56967&atid=482468
@@ -363,7 +361,7 @@ Get the source tar ball from http://trac.osgeo.org/geos/#Download and
 extract somewhere.  All the versions I have tried (up to 3.1.1) miss
 one essential file to build on Windows, so in addition get the file
 ``nmake.opt`` from http://svn.osgeo.org/geos/branches/3.1/ and copy it
-to the top of the extracted source directory.  Then build using::
+to the top of the extracted source folder.  Then build using::
 
  nmake /f makefile.vc
 
@@ -404,16 +402,17 @@ On Windows64 you will have to compile iconv yourself.  Get the source
 from the `iconv website`__ and extract somewhere.  Note that with the
 1.12 release, the libiconv developers removed support for building
 with Visual Studio but require MinGW instead, which means that there
-is no support for Windows64.  In other words, get the latest 1.11 release.
+is no support for Windows64.  In other words, get the latest 1.11
+release.
 
 Build using the commands::
 
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64 install
 
-Fix the ``ICONV`` definitions in ``buildtools\conf\winrules.msc`` so that
-they refer to the location where you installed the library and call
-``nmake`` with the extra parameter ``HAVE_ICONV=1``.
+Fix the ``ICONV`` definitions in ``buildtools\conf\winrules.msc`` so
+that they refer to the location where you installed the library and
+call ``nmake`` with the extra parameter ``HAVE_ICONV=1``.
 
 __ http://www.gnu.org/software/libiconv/
 __ http://www.gnu.org/software/libiconv/#downloading
@@ -440,19 +439,18 @@ under ``Active solution platform:`` select ``<New...>``.  In the pop
 up window select ``x64`` for the new platform, copying the settings
 from ``Win32`` and click on ``OK``.  Set the ``Active solution
 configuration`` to ``DLL Release`` and click on ``Close``.  Then build
-by selecting ``Build`` -> ``Build Solution``.  Create the directory
-where you want to install the binaries, e.g. ``C:\zlib-1.2.3.win64``,
-and the subdirectories ``bin``, ``include``, and ``lib``.  Copy the
-files ``zconf.h`` and ``zlib.h`` to the newly created ``include``
-directory.  Copy the file
-``projects\visualc6\win32_dll_release\zlib1.lib`` to the new ``lib``
-directory, and copy the file
+by selecting ``Build`` -> ``Build Solution``.  Create the folder where
+you want to install the binaries, e.g. ``C:\zlib-1.2.3.win64``, and
+the subfolders ``bin``, ``include``, and ``lib``.  Copy the files
+``zconf.h`` and ``zlib.h`` to the newly created ``include`` folder.
+Copy the file ``projects\visualc6\win32_dll_release\zlib1.lib`` to the
+new ``lib`` folder, and copy the file
 ``projects\visualc6\win32_dll_release\zlib1.dll`` to the new ``bin``
-directory.
+folder.
 
-Fix the ``LIBZ`` definitions in ``buildtools\conf\winrules.msc`` so that
-they refer to the location where you installed the library and call
-``nmake`` with the extra parameter ``HAVE_LIBZ=1``.
+Fix the ``LIBZ`` definitions in ``buildtools\conf\winrules.msc`` so
+that they refer to the location where you installed the library and
+call ``nmake`` with the extra parameter ``HAVE_LIBZ=1``.
 
 __ http://www.zlib.net/
 __ http://www.zlib.net/
@@ -522,9 +520,9 @@ After this, compile using ``nmake -f makefile.msc`` and copy the files
 the MonetDB build process can find them,
 e.g. ``C:\bzip2-1.0.5.win32``.
 
-Fix the ``LIBBZ2`` definitions in ``buildtools\conf\winrules.msc`` so that
-they refer to the location where you installed the library and call
-``nmake`` with the extra parameter ``HAVE_LIBBZ2=1``.
+Fix the ``LIBBZ2`` definitions in ``buildtools\conf\winrules.msc`` so
+that they refer to the location where you installed the library and
+call ``nmake`` with the extra parameter ``HAVE_LIBBZ2=1``.
 
 __ http://www.bzip.org/
 
@@ -537,8 +535,8 @@ Perl program to communicate with a MonetDB server.
 We have used ActiveState__'s ActivePerl__ distribution (release
 5.10.0.1003).  Just install the 32 or 64 bit version and compile the
 clients component with the additional ``nmake`` flags ``HAVE_PERL=1
-HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if SWIG_
-is also installed).
+HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if SWIG_ is
+also installed).
 
 __ http://www.perl.org/
 __ http://www.activestate.com/
@@ -547,13 +545,13 @@ __ http://www.activestate.com/Products/activeperl/
 PHP
 ---
 
-PHP__ is only needed to create an interface that can be used from a PHP
-program to communicate with a MonetDB server.
+PHP__ is only needed to create an interface that can be used from a
+PHP program to communicate with a MonetDB server.
 
 Download the Windows installer and source
 package of PHP 5 from http://www.php.net/.
 Install the binary package and extract the sources somewhere (e.g. as
-a subdirectory of the binary installation).
+a subfolder of the binary installation).
 
 In order to get MonetDB to compile with these sources a few changes
 had to be made to the sources:
@@ -632,9 +630,9 @@ Optionally:
 
 Apart from buildtools, all packages contain a subfolder ``NT`` which
 contains a few Windows-specific source files.  Like on Unix/Linux, we
-recommend to build in a new directory which is not part of the original
-source tree.  On Windows, this build directory must be a sibling of the
-aforementioned ``NT`` directory.
+recommend to build in a new folder which is not part of the original
+source tree.  On Windows, this build folder must be a sibling of the
+aforementioned ``NT`` folder.
 
 Build Process
 -------------
@@ -740,8 +738,8 @@ is an example: version numbers may differ)::
 In addition, during the build process we need to execute some programs
 that were built and installed earlier in the process, so we need to
 add those to the ``Path`` as well.  In addition, we use Python to
-execute some Python programs which use Python modules that were
-also installed earlier in the process, so we need to add those to the
+execute some Python programs which use Python modules that were also
+installed earlier in the process, so we need to add those to the
 ``PYTHONPATH`` variable::
 
  set Path=%BUILDTOOLS_PREFIX%\bin;%Path%
@@ -872,10 +870,9 @@ Installers can be built either using the full-blown Visual Studio user
 interface or on the command line.  To use the user interface, open one
 or more of the files ``MonetDB4-XQuery-Installer.sln``,
 ``MonetDB5-SQL-Installer.sln``, ``MonetDB-ODBC-Driver.sln``, and
-``MonetDB5-Geom-Module.sln`` in the
-installation folder and select ``Build`` -> ``Build Solution``.  To
-use the command line, execute one or more of the commands in the
-installation folder::
+``MonetDB5-Geom-Module.sln`` in the installation folder and select
+``Build`` -> ``Build Solution``.  To use the command line, execute one
+or more of the commands in the installation folder::
 
  devenv MonetDB4-XQuery-Installer.sln /build
  devenv MonetDB5-SQL-Installer.sln /build
