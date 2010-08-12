@@ -45,3 +45,4 @@ shift_with_cast.Bug-2638
 concat_type_check_problem.Bug-2354
 crash_on_where_in.Bug-2333
 assert_on_type_mismatch.Bug-2319
+crash_on_in_1.Bug-2352
