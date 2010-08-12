@@ -685,7 +685,10 @@ exp_is_join_exp(sql_exp *e)
 int
 exp_is_join(sql_exp *e)
 {
-	if (e->type == e_cmp && e->flag != cmp_or && e->l && e->r && e->card >= CARD_AGGR)
+	/* only simple compare expressions, ie not or lists
+		or range expressions (e->f)
+	 */ 
+	if (e->type == e_cmp && e->flag != cmp_or && e->l && e->r && !e->f && e->card >= CARD_AGGR)
 		return 0;
 	return -1;
 }
