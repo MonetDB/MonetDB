@@ -3192,6 +3192,36 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		r = or;
 		ol = exp_dup(l);
 		or = exp_dup(r);
+		t1 = exp_subtype(l);
+		t2 = exp_subtype(r);
+
+		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL &&
+		   (table_func || !f->res.comp_type)) {
+			/* try finding function based on first argument */
+			node *m = f->func->ops->h;
+			sql_arg *a = m->data;
+
+			l = rel_check_type(sql, &a->type, l, type_equal);
+			a = m->next->data;
+			r = rel_check_type(sql, &a->type, r, type_equal);
+			if (l && r) {
+				exp_destroy(ol);
+				exp_destroy(or);
+				return exp_binop(l, r, f);
+			}
+		}
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+
+		if (l)
+			exp_destroy(l);
+		if (r)
+			exp_destroy(r);
+		l = ol;
+		r = or;
+		ol = exp_dup(l);
+		or = exp_dup(r);
 
 		/* everything failed, fall back to bind on function name only */
 		if ((f = sql_find_func(s, fname, 2)) != NULL &&
