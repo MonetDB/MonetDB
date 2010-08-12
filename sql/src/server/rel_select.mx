@@ -2733,7 +2733,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				list_destroy(vals);
 			}
 			r = rel_lastexp(sql, right);
-			rel_setsubquery(right);
 			rel = rel_crossproduct(left, right, op_join);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
 				exp_destroy(l);
