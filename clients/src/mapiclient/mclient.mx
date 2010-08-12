@@ -315,15 +315,15 @@ static void
 timerPause(void)
 {
 	t1 = gettime();
-	if ( t0 == 0 ) 
+	if (t0 == 0)
 		t0 = t1;
 }
 
 static void
 timerResume(void)
 {
-	if ( t1 == 0)
-		t1= gettime();
+	if (t1 == 0)
+		t1 = gettime();
 	assert(t1 >= t0);
 	t0 = gettime() - (t1 - t0);
 }
@@ -344,11 +344,9 @@ static char htimbuf[32];
 static char *
 timerHuman()
 {
-	timertype t;
-	t1 = gettime();
-	t = t1 - t0;
+	timertype t = t1 - t0;
 
-	assert( t1 >= t0);
+	assert(t1 >= t0);
 	if (t / 1000 < 950) {
 		snprintf(htimbuf, 32, "%ld.%03ldms", (long) (t / 1000), (long) (t % 1000));
 		return(htimbuf);
