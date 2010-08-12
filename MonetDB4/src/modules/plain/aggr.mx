@@ -649,7 +649,7 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 	}
 
 	/* scan b, adding sums, and incrementing counts */
-	if (BATprepareHash(bn)) {
+	if (BATprepareHash(e)) {
 		BBPreclaim(bn);
 		GDKfree(cnt);
 		GDKfree(sum);
