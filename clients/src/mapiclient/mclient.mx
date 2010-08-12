@@ -333,20 +333,28 @@ timerEnd(void)
 {
 	mnstr_flush(toConsole);
 	t1 = gettime();
-	assert( t1 >= t0);
+	assert(t1 >= t0);
 	if (mark && specials == NOmodifier) {
 		fprintf(stderr, "%s %7ld.%03ld msec %s\n", mark, (long) ((t1 - t0) / 1000), (long) ((t1 - t0) % 1000), mark2 ? mark2 : "");
 		fflush(stderr);
 	}
 }
 
+static timertype th = 0;
+static void
+timerHumanStop()
+{
+	th = gettime();
+}
+
 static char htimbuf[32];
 static char *
 timerHuman()
 {
-	timertype t = t1 - t0;
+	timertype t = th - t0;
 
-	assert(t1 >= t0);
+	assert(th >= t0);
+
 	if (t / 1000 < 950) {
 		snprintf(htimbuf, 32, "%ld.%03ldms", (long) (t / 1000), (long) (t % 1000));
 		return(htimbuf);
@@ -1358,7 +1366,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
 			else {
-				timerPause();
+				timerHumanStop();
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				if (lid != -1) {
@@ -1403,8 +1411,21 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					      "using: EXEC %d(...)\n",
 					      mapi_get_tableid(hdl));
 		case Q_TABLE:
-			timerPause();
+			timerHumanStop();
 			break;
+		default:
+			if (formatter == TABLEformatter) {
+				mnstr_printf(stderr_stream,
+						"invalid/unknown response from server, "
+						"ignoring output\n");
+				/* skip over the unknown/invalid stuff, otherwise
+				 * mapi_next_result call will assert in close_result
+				 * because the logic there doesn't expect random unread
+				 * garbage somehow */
+				while (fetch_line(hdl) != 0)
+					;
+				continue;
+			}
 		}
 
 		oldpagewidth = pagewidth;
