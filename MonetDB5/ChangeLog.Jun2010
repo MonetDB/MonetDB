@@ -3,7 +3,7 @@
 
 * Fri Jul 30 2010 Niels Nes <niels@cwi.nl>
 - Fixed bug 2557. There was a bug in the mergetable optimizer which was
-  triggered by multi column (atleast 32 columns).
+  triggered by multi column (at least 32 columns).
 
 * Wed Jul 28 2010 Martin Kersten <mk@cwi.nl>
 - Added missing multiplex version of MAL str.stringlength().

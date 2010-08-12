@@ -768,12 +768,7 @@ sql_bind_member(sql_schema *s, char *sqlfname, sql_subtype *tp, int nrargs)
 			if (list_length(f->ops) == nrargs && is_subtype(tp, &((sql_arg *) f->ops->h->data)->type)) {
 
 				unsigned int scale = 0;
-				sql_subfunc *fres;
-
-				/* member functions should not match binary operators */
-				if (nrargs == 2 && subtype_cmp( &((sql_arg *) f->ops->h->data)->type, &((sql_arg *) f->ops->h->next->data)->type) == 0)
-					continue;
-				fres = ZNEW(sql_subfunc);
+				sql_subfunc *fres = ZNEW(sql_subfunc);
 
 				sql_ref_init(&(fres->ref));
 				fres->func = f;
