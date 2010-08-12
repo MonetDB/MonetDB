@@ -8,7 +8,7 @@
 * Thu Aug 12 2010 Niels Nes <niels@cwi.nl>
 - Fixed bug 2652. Correctly list all columns of a 'IN' query with 'EXCEPT'
 - Fixed bug 2353. The relational optimizer didn't handle range join
-  expressions prperly.
+  expressions properly.
 - fixed bug 2354. Improved function resolution.
 
 * Mon Aug  9 2010 Jennie Zhang <y.zhang@cwi.nl>
