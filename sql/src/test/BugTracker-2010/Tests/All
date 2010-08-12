@@ -47,4 +47,5 @@ crash_on_where_in.Bug-2333
 assert_on_type_mismatch.Bug-2319
 crash_on_in_1.Bug-2352
 crash_on_complex_join_exp.Bug-2353
+crash_in_dce.Bug-2651
 in_query_missing_columns.Bug-2652

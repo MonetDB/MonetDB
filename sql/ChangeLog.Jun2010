@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug 13 2010 Niels Nes <niels@cwi.nl>
+- Fixed bug 2651 properly handle dead code elimination with
+  op_semi/op_anti and references
+
 * Thu Aug 12 2010 Niels Nes <niels@cwi.nl>
 - Fixed bug 2652. Correctly list all columns of a 'IN' query with 'EXCEPT'
 - Fixed bug 2353. The relational optimizer didn't handle range join
