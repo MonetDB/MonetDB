@@ -185,7 +185,7 @@ rel_alter_seq(
 	/* first alter the known values */
 	seq = create_sql_sequence(sql->sa, s, name, seq->start, min, max, inc, cache, cycle);  
 
-	/* restart maybe a query, ie we create a statement 
+	/* restart may be a query, i.e. we create a statement 
 	   restart(ssname,seqname,value) */ 
 
 	if (start_type == 0) {
