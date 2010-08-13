@@ -999,7 +999,7 @@ aggr_phase2(char *aggr)
 {
 	if (aggr == countRef || aggr == count_no_nilRef)
 		return sumRef;
-	/* min/max/sum are fine */
+	/* min/max/sum/prod are fine */
 	return aggr;
 }
 
@@ -1108,10 +1108,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 
 	s = newInstruction(mb,ASSIGNsymbol);
 	setModuleId(s,aggrRef);
-	if (getFunctionId(p) == minRef || getFunctionId(p) == maxRef)
-		setFunctionId(s, getFunctionId(p));
-	else 	
-		setFunctionId(s, sumRef);
+	setFunctionId(s, aggr_phase2(getFunctionId(p)));
 	getArg(s,0) = getArg(p,0);
 	s = pushArgument(mb, s, getArg(r,0));
 	pushInstruction(mb, s);
@@ -1609,7 +1606,8 @@ Also we should translate the mirror().join() (a groupby attribute) into
 UNION(mirror().join()).
 @c
 
-		if (match > 0 && isMatJoinOp(p)) {
+		/* only handle simple joins, ie not range/band joins */
+		if (match > 0 && match <= 2 && isMatJoinOp(p)) {
 		   	m = isMATalias(getArg(p,1), mat, mtop);
 		   	n = isMATalias(getArg(p,2), mat, mtop);
 			if ((m = mat_join(mb, p, mat, mtop, m, n)) < 0)
@@ -1696,7 +1694,8 @@ Now we handle group, derive and aggregation statements.
 		    getFunctionId(p) == count_no_nilRef ||
 		    getFunctionId(p) == minRef ||
 		    getFunctionId(p) == maxRef ||
-		    getFunctionId(p) == sumRef) &&
+		    getFunctionId(p) == sumRef ||
+		    getFunctionId(p) == prodRef) &&
 		   ((m=isMATalias(getArg(p,1), mat, mtop)) >= 0) &&
 		   ((n=isMATalias(getArg(p,2), mat, mtop)) >= 0) &&
 		   ((o=isMATalias(getArg(p,3), mat, mtop)) >= 0)) {
@@ -1720,7 +1719,8 @@ And the min/max is as easy
 			 getFunctionId(p)== count_no_nilRef || 
 			 getFunctionId(p)== minRef ||
 			 getFunctionId(p)== maxRef ||
-			 getFunctionId(p)== sumRef) &&
+			 getFunctionId(p)== sumRef ||
+		    	 getFunctionId(p) == prodRef) &&
 			(m=isMATalias(getArg(p,1), mat, mtop)) >= 0){
 			mat_aggr(mb, p, mat, m);
 			actions++;
