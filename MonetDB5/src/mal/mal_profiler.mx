@@ -997,6 +997,7 @@ TRACEtable(void)
 	t = BATnew(TYPE_str, TYPE_bat, 9);
 	if (t == NULL)
 		return NULL;
+	mal_set_lock(mal_profileLock, "profileLock");
 	BUNins(t, "event", &TRACE_id_event->batCacheid, FALSE);
 	BUNins(t, "clk", &TRACE_id_time->batCacheid, FALSE);
 	BUNins(t, "pc", &TRACE_id_pc->batCacheid, FALSE);
@@ -1009,6 +1010,7 @@ TRACEtable(void)
 	BUNins(t, "wbytes", &TRACE_id_wbytes->batCacheid, FALSE);
 	BUNins(t, "type", &TRACE_id_type->batCacheid, FALSE);
 	BUNins(t, "stmt", &TRACE_id_stmt->batCacheid, FALSE);
+	mal_unset_lock(mal_profileLock, "profileLock");
 	return t;
 }
 
@@ -1045,6 +1047,7 @@ initTrace(void)
 {
 	if (TRACE_init)
 		return 0;       /* already initialized */
+	mal_set_lock(mal_profileLock, "profileLock");
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
@@ -1073,6 +1076,7 @@ initTrace(void)
 		cleanupProfiler();
 	else
 		TRACE_init = 1;
+	mal_unset_lock(mal_profileLock, "profileLock");
 	return TRACE_init ? 0 : -1;
 }
 
