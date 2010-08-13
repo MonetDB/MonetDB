@@ -2611,8 +2611,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_34F7F173BA0E45B088AF2C4005405F4A"
             {
-            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win64\\lib\\zlib1.lib"
-            "TargetName" = "8:zlib1.lib"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win64\\lib\\zdll.lib"
+            "TargetName" = "8:zdll.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
@@ -4911,7 +4911,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A457E16E007645849E9E2B6FD6F5FC11"
             {
-            "SourcePath" = "8:C:\\Libraries\Pthreads\\lib64\\pthreadVC2.dll"
+            "SourcePath" = "8:C:\\Libraries\\Pthreads\\lib64\\pthreadVC2.dll"
             "TargetName" = "8:pthreadVC2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -6511,7 +6511,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F000CF8886F54AA687844B835C659183"
             {
-            "SourcePath" = "8:C:\\Libraries\Pthreads\\lib64\\pthreadVC2.lib"
+            "SourcePath" = "8:C:\\Libraries\\Pthreads\\lib64\\pthreadVC2.lib"
             "TargetName" = "8:pthreadVC2.lib"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
