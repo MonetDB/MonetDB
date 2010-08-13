@@ -2282,7 +2282,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_778EBECF7BCE467FB89B54CB42701480"
             {
-            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.7.win32\\bin\\libxml2.dll"
+            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.7.win32\\lib\\libxml2.dll"
             "TargetName" = "8:libxml2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
