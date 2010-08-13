@@ -2639,23 +2639,25 @@ main(int argc, char **argv)
 				      "FROM sys.env() AS env "
 				      "WHERE \"name\" IN ('gdk_dbname', 'monet_version')")) != NULL &&
 		    mapi_error(mid) == MOK) {
-			char dbname[24], m5ver[24];
+			char *dbname = NULL, m5ver[24];
 			char *name, *val;
-			dbname[0] = m5ver[0] = '\0';
+			m5ver[0] = '\0';
 			while (fetch_row(hdl) == 2) {
 				name = mapi_fetch_field(hdl, 0);
 				val = mapi_fetch_field(hdl, 1);
 				if (name != NULL && val != NULL) {
 					if (strcmp(name, "gdk_dbname") == 0) {
-						snprintf(dbname, sizeof(dbname), "%s", val);
+						dbname = strdup(val);
 					} else if (strcmp(name, "monet_version") == 0) {
 						snprintf(m5ver, sizeof(m5ver), "%s", val);
 					}
 				}
 			}
 			mapi_close_handle(hdl);
-			if (dbname[0] != '\0' && m5ver[0] != '\0')
+			if (dbname != NULL && *dbname != '\0' && m5ver[0] != '\0')
 				mnstr_printf(toConsole, "Database: MonetDB v%s, '%s'\n", m5ver, dbname);
+			if (dbname != NULL)
+				free(dbname);
 		}
 		mnstr_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)
