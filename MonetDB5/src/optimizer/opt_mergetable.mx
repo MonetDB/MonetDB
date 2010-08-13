@@ -177,20 +177,20 @@ int overlap( MalBlkPtr mb, int lv, int rv)
 		return 1;
 	}
 	/* perfect match */
-	if (lub->value.val.lval == rub->value.val.lval &&
-	    llb->value.val.lval == rlb->value.val.lval) 
+	if (lub->value.val.oval == rub->value.val.oval &&
+	    llb->value.val.oval == rlb->value.val.oval) 
 		return 1;
 
-	if ((rub->value.val.lval != (lng)oid_nil && 
-	      rub->value.val.lval <= llb->value.val.lval) || 
- 	     (lub->value.val.lval != (lng)oid_nil &&
-	      lub->value.val.lval <= rlb->value.val.lval))
+	if ((rub->value.val.oval != oid_nil && 
+	      rub->value.val.oval <= llb->value.val.oval) || 
+ 	     (lub->value.val.oval != oid_nil &&
+	      lub->value.val.oval <= rlb->value.val.oval))
 		return 0;
 
-	if ((rub->value.val.lval == (lng)oid_nil && 
-	     rlb->value.val.lval > lub->value.val.lval) || 
-	    (lub->value.val.lval == (lng)oid_nil &&
-	     llb->value.val.lval > rub->value.val.lval)) {
+	if ((rub->value.val.oval == oid_nil && 
+	     rlb->value.val.oval > lub->value.val.oval) || 
+	    (lub->value.val.oval == oid_nil &&
+	     llb->value.val.oval > rub->value.val.oval)) {
                 return 0;
 	}
 	return 1;
@@ -207,20 +207,20 @@ int Hoverlap( MalBlkPtr mb, int lv, int rv)
 		return 1;
 	}
 	/* perfect match */
-	if (lub->value.val.lval == rub->value.val.lval &&
-	    llb->value.val.lval == rlb->value.val.lval) 
+	if (lub->value.val.oval == rub->value.val.oval &&
+	    llb->value.val.oval == rlb->value.val.oval) 
 		return 1;
 
-	if ((rub->value.val.lval != (lng)oid_nil && 
-	      rub->value.val.lval <= llb->value.val.lval) || 
- 	     (lub->value.val.lval != (lng)oid_nil &&
-	      lub->value.val.lval <= rlb->value.val.lval))
+	if ((rub->value.val.oval != oid_nil && 
+	      rub->value.val.oval <= llb->value.val.oval) || 
+ 	     (lub->value.val.oval != oid_nil &&
+	      lub->value.val.oval <= rlb->value.val.oval))
 		return 0;
 
-	if ((rub->value.val.lval == (lng)oid_nil && 
-	      rlb->value.val.lval > lub->value.val.lval) || 
- 	     (lub->value.val.lval == (lng)oid_nil &&
-	      llb->value.val.lval > rub->value.val.lval)) {
+	if ((rub->value.val.oval == oid_nil && 
+	      rlb->value.val.oval > lub->value.val.oval) || 
+ 	     (lub->value.val.oval == oid_nil &&
+	      llb->value.val.oval > rub->value.val.oval)) {
 		return 0;
 	}
 	return 1;
