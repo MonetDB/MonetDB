@@ -287,7 +287,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BB4791ABAA4349E4A0DE1EDA0772E622"
             {
-            "SourcePath" = "8:C:\\pthreads\\lib64\\pthreadVC2.dll"
+            "SourcePath" = "8:C:\\Libraries\\Pthreads\\lib64\\pthreadVC2.dll"
             "TargetName" = "8:pthreadVC2.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
