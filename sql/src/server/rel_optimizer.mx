@@ -3004,13 +3004,15 @@ exps_used(list *l)
 static void
 rel_used(sql_rel *rel)
 {
-	if (is_join(rel->op) || is_set(rel->op)) {
+	if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op)) {
 		if (rel->l) 
 			rel_used(rel->l);
 		if (rel->r) 
 			rel_used(rel->r);
-	} else if (is_topn(rel->op) || is_select(rel->op))
+	} else if (is_topn(rel->op) || is_select(rel->op)) {
+		rel_used(rel->l);
 		rel = rel->l;
+	}
 	if (rel->exps) {
 		exps_used(rel->exps);
 		if (rel->r && (rel->op == op_project || rel->op  == op_groupby))
