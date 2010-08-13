@@ -96,17 +96,25 @@ engine on top of a relational database.  You can store XML documents
 in the database and query these documents using XQuery.  This
 component is required if you need XML/XQuery support.
 
+geom
+----
+
+The geom component provides a module for the MonetDB SQL frontend.
+This component is optional.
+
 java
 ----
 
 Also known as MonetDB Java, this component provides both the MonetDB
 JDBC driver and the XRPC wrapper.  This component is optional.
 
-geom
-----
+python
+------
 
-The geom component provides a module for the MonetDB SQL frontend.
-This component is optional.
+This component provides a Python module that can be used to
+communicate with the server.  The module is compatible with Python
+DBAPI 2.0 and has support for Python version 2.5 and up (including
+3.X).  This component is optional.
 
 testing
 -------
