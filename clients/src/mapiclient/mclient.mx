@@ -1026,7 +1026,8 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 static void
 SQLrenderer(MapiHdl hdl, char singleinstr)
 {
-	int i, total, vartotal, fields, oldfields = 0, max = 1, graphwaste = 0;
+	int i, total, lentotal, vartotal;
+	int fields, oldfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
@@ -1061,6 +1062,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			memset(numeric, 0, sizeof(int) * fields);
 
 			total = 0;
+			lentotal = 0;
+			vartotal = 0;
 			for (i = 0; i < fields; i++) {
 				char *s;
 
@@ -1083,9 +1086,6 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 				} else {
 					hdr[i] = 0;
 				}
-				if (hdr[i] < len[i])
-					hdr[i] = len[i];
-				total += hdr[i];
 				s = mapi_get_type(hdl, i);
 				numeric[i] = s != NULL &&
 					(strcmp(s, "int") == 0 ||
@@ -1095,43 +1095,18 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 					 strcmp(s, "smallint") == 0 ||
 					 strcmp(s, "double") == 0 ||
 					 strcmp(s, "float") == 0);
+
+				if (!numeric[i])
+					vartotal += len[i];
+				total += len[i];
+				lentotal += (hdr[i] > len[i] ? hdr[i] : len[i]);
 			}
+
 			/* what we waste on space on the display is
 			 * the column separators ' | ', but the edges
 			 * lack the edgespace of course */
 			graphwaste = ((fields * 3) - 1) + 2;
-			/* punish the column headers first until you
-			 * cannot squeeze */
-			while (graphwaste + total > pagewidth) {
-				/* pick the column where the header is
-				 * longest compared to its content */
-				max = -1;
-				for (i = 0; i < fields; i++) {
-					if (hdr[i] > len[i]) {
-						if (max == -1 ||
-						    hdr[max] - len[max] < hdr[i] - len[i])
-							max = i;
-					}
-				}
-				if (max == -1)
-					break;
-				hdr[max]--;
-				total--;
-			}
-			total = 0;
-			vartotal = 0;
-			/* punish fields that are longer than the
-			 * terminal width, can't display them as a
-			 * whole anyway */
-			for (i = 0; i < fields; i++) {
-				if (!numeric[i]) {
-					/* 4 = left and right borders */
-					if (hdr[i] >= pagewidth - 4)
-						hdr[i] = pagewidth - 4;
-					vartotal += hdr[i];
-				}
-				total += hdr[i];
-			}
+
 			/* Punishing the value fields is done based on
 			 * how much squeezing will result in.  The
 			 * objective is to have at most a single
@@ -1153,11 +1128,41 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 					mypagewidth += pagewidth;
 				}
 			}
-			/* finetune the long value fields */
+
+			/* punish the column headers first until you
+			 * cannot squeeze */
+			while (graphwaste + lentotal > mypagewidth) {
+				/* pick the column where the header is
+				 * longest compared to its content */
+				max = -1;
+				for (i = 0; i < fields; i++) {
+					if (hdr[i] > len[i]) {
+						if (max == -1 ||
+						    hdr[max] - len[max] < hdr[i] - len[i])
+							max = i;
+					}
+				}
+				if (max == -1)
+					break;
+				hdr[max]--;
+				lentotal--;
+			}
+
+			/* correct the lengths in case only the headers were
+			 * squeezed, if the content itself is wider, the headers
+			 * will be squeezed to their size (see below) */
+			if (lentotal == total) {
+				for (i = 0; i < fields; i++)
+					if (len[i] < hdr[i])
+						len[i] = hdr[i];
+			}
+
+			/* worst case: lentotal = total, which means it still
+			 * doesn't fit, values will be squeezed next */
 			while (graphwaste + total > mypagewidth) {
 				max = -1;
 				for (i = 0; i < fields; i++) {
-					if (!numeric[i] && (max == -1 || hdr[i] > hdr[max]))
+					if (!numeric[i] && (max == -1 || len[i] > len[max]))
 						max = i;
 				}
 
@@ -1165,14 +1170,14 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 				if (max == -1)
 					break;
 				/* penalty for largest field */
-				hdr[max]--;
+				len[max]--;
 				total--;
 				/* no more squeezing possible */
-				if (hdr[max] == 1)
+				if (len[max] == 1)
 					break;
 			}
 
-			SQLheader(hdl, hdr, fields);
+			SQLheader(hdl, len, fields);
 			oldfields = fields;
 		}
 
@@ -1204,16 +1209,16 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		}
 
 		if (ps > 0 && rows >= ps && fromConsole != NULL) {
-			SQLpagemove(hdr, fields, &ps, &silent);
+			SQLpagemove(len, fields, &ps, &silent);
 			rows = 0;
 			if (silent)
 				continue;
 		}
 
-		rows += SQLrow(hdr, numeric, rest, fields, 1);
+		rows += SQLrow(len, numeric, rest, fields, 1);
 	}
 	if (oldfields)
-		SQLseparator(hdr, oldfields, '-');
+		SQLseparator(len, oldfields, '-');
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
 	mark2 = strdup(buf); /* for the timer output */
