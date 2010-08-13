@@ -24,11 +24,11 @@ Building MonetDB On Windows
 
 In this document we describe how to build the MonetDB suite of
 programs on Windows using the sources from our source repository at
-SourceForge__.  This document is mainly targeted at building on
+`our server`__.  This document is mainly targeted at building on
 Windows XP on a 32-bit architecture, but there are notes throughout
 about building on Windows XP x64 which is indicated with Windows64.
 
-__ http://sourceforge.net/projects/monetdb/
+__ http://dev.monetdb.org/hg/MonetDB/
 
 Introduction
 ============
@@ -158,8 +158,10 @@ The suite can be compiled using one of the following compilers:
 
 - Microsoft Visual Studio .NET 2003 (also known as Microsoft Visual Studio 7);
 - Microsoft Visual Studio 2005 (also known as Microsoft Visual Studio 8);
+- Microsoft Visual Studio 2008 (also known as Microsoft Visual Studio 9.0);
 - Intel(R) C++ Compiler 9.1 (which actually needs one of the above);
-- Intel(R) C++ Compiler 10.1 (which also needs one of the Microsoft compilers).
+- Intel(R) C++ Compiler 10.1 (which also needs one of the Microsoft compilers);
+- Intel(R) C++ Compiler 11.1 (which also needs one of the Microsoft compilers).
 
 Note that the pathfinder component can currently not be compiled with
 any of the Microsoft compilers.  It can be compiled with the Intel
@@ -170,6 +172,9 @@ Compiler gcc under Cygwin__.  Using that, it (probably still) is
 possible to build a version that runs using the Cygwin DLLs, but also
 a version that uses the MinGW__ (Minimalist GNU for Windows) package.
 This is not supported and not further described here.
+
+We currently use Microsoft Visual Studio 2008 and Intel(R) C++
+Compiler Professional 11.1.046.
 
 __ http://www.cygwin.com/
 __ http://www.mingw.org/
@@ -198,6 +203,10 @@ at http://gnuwin32.sourceforge.net/.  Click on the Packages
 link on the left and then on Bison, and get the Setup file and install
 it.
 
+However, we use the version of bison that comes with Cygwin__.
+
+__ http://www.cygwin.com/
+
 Flex
 ----
 
@@ -206,6 +215,10 @@ Flex is a fast lexical analyzer generator.
 A version of Flex for Windows can be gotten from the GnuWin32 project
 at http://gnuwin32.sourceforge.net/.  Click on the Packages link on
 the left and then on Flex, and get the Setup file and install it.
+
+However, we use the version of bison that comes with Cygwin__.
+
+__ http://www.cygwin.com/
 
 Pthreads
 --------
@@ -302,8 +315,9 @@ required for the MonetDB5 component, and hence implicitly required for
 the clients component when it needs to talk to a MonetDB5 server.
 
 Download the source from http://www.openssl.org/.  We used the latest
-stable version (0.9.8k).  Follow the instructions in the file
-``INSTALL.W32`` or ``INSTALL.W64``.
+stable version (1.0.0a).  Follow the instructions in the file
+``INSTALL.W32`` or ``INSTALL.W64``.  We used the option
+``enable-static-engine`` as described in the instructions.
 
 Fix the ``OPENSSL`` definitions in ``buildtools\conf\winrules.msc`` so
 that they refer to the location where you installed the library and
@@ -325,19 +339,17 @@ Win32 Binaries on the right, and download libxml2, iconv, and zlib.
 Install these in e.g. ``C:\``.
 
 Note that we hit a bug in version 2.6.31 of libxml2.  See the
-bugreport__.  Use version 2.6.30 or 2.6.32.
+bugreport__.  Use version 2.6.30 or 2.6.32 or later.
 
 On Windows64 you will have to compile libxml2 yourself (with its
 optional prerequisites iconv_ and zlib_, for which see below).
 
-Edit the file ``win32\Makefile.msvc`` and change the one occurrence of
-``zdll.lib`` to ``zlib1.lib``, and then run the following commands in
-the ``win32`` subfolder, substituting the correct locations for the
-iconv and zlib libraries::
+Run the following commands in the ``win32`` subfolder, substituting
+the correct locations for the iconv and zlib libraries::
 
- cscript configure.js compiler=msvc prefix=C:\libxml2-2.6.30.win64 ^
-  include=C:\iconv-1.11.win64\include;C:\zlib-1.2.3.win64\include ^
-  lib=C:\iconv-1.11.win64\lib;C:\zlib-1.2.3.win64\lib iconv=yes zlib=yes
+ cscript configure.js compiler=msvc prefix=C:\libxml2-2.7.7.win64 ^
+  include=C:\iconv-1.11.win64\include;C:\zlib-1.2.5.win64\include ^
+  lib=C:\iconv-1.11.win64\lib;C:\zlib-1.2.5.win64\lib iconv=yes zlib=yes
  nmake /f Makefile.msvc
  nmake /f Makefile.msvc install
 
@@ -345,7 +357,7 @@ After this, you may want to move the file ``libxml2.dll`` from the
 ``lib`` folder to the ``bin`` folder.
 
 __ http://xmlsoft.org/
-__ https://sourceforge.net/tracker/index.php?func=detail&aid=1899258&group_id=56967&atid=482468
+__ http://bugs.monetdb.org/1600
 
 geos (Geometry Engine Open Souce)
 ---------------------------------
@@ -428,25 +440,24 @@ MonetDB and the iconv library.  The home of zlib is
 http://www.zlib.net/, but Windows binaries can be gotten from the same
 site as the libxml2 library: http://www.zlatkovic.com/libxml.en.html.
 Click on Win32 Binaries on the right, and download zlib.  Install in
-e.g. ``C:\``.
+e.g. ``C:\``.  Note that the at the time of writing, the precompiled
+version lags behind: it is version 1.2.3, whereas 1.2.5 is current.
 
 On Windows64 you will have to compile zlib yourself.  Get the source
-from the `zlib website`__ and extract somewhere.  Open the Visual
-Studio 6 project file ``projects\visualc6\zlib.dsw`` and click on
-``Yes To All`` to convert to the version of Visual Studio which you
-are using.  Then add a x64 Solution Platform by selecting ``Build`` ->
-``Confguration Manager...``, in the new window, in the pull down menu
-under ``Active solution platform:`` select ``<New...>``.  In the pop
-up window select ``x64`` for the new platform, copying the settings
-from ``Win32`` and click on ``OK``.  Set the ``Active solution
-configuration`` to ``DLL Release`` and click on ``Close``.  Then build
-by selecting ``Build`` -> ``Build Solution``.  Create the folder where
-you want to install the binaries, e.g. ``C:\zlib-1.2.3.win64``, and
-the subfolders ``bin``, ``include``, and ``lib``.  Copy the files
-``zconf.h`` and ``zlib.h`` to the newly created ``include`` folder.
-Copy the file ``projects\visualc6\win32_dll_release\zlib1.lib`` to the
-new ``lib`` folder, and copy the file
-``projects\visualc6\win32_dll_release\zlib1.dll`` to the new ``bin``
+from the `zlib website`__ and extract somewhere.  Then compile using
+(skip the first line if you have already set up your 64 bit build
+environment for Visual Studio)
+
+::
+
+ call "C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\bin\amd64\vcvarsamd64.bat"
+ nmake /f win32\Makefile.msc
+
+Create the folder where you want to install the binaries,
+e.g. ``C:\zlib-1.2.5.win64``, and the subfolders ``bin``, ``include``,
+and ``lib``.  Copy the files ``zconf.h`` and ``zlib.h`` to the newly
+created ``include`` folder.  Copy the file ``zdll.lib`` to the new
+``lib`` folder, and copy the file ``zlib1.dll`` to the new ``bin``
 folder.
 
 Fix the ``LIBZ`` definitions in ``buildtools\conf\winrules.msc`` so
@@ -534,7 +545,7 @@ Perl__ is only needed to create an interface that can be used from a
 Perl program to communicate with a MonetDB server.
 
 We have used ActiveState__'s ActivePerl__ distribution (release
-5.10.0.1003).  Just install the 32 or 64 bit version and compile the
+5.12.1.1201).  Just install the 32 or 64 bit version and compile the
 clients component with the additional ``nmake`` flags ``HAVE_PERL=1
 HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if SWIG_ is
 also installed).
@@ -856,13 +867,13 @@ parameter may contain something like::
  bits=32
  PTHREAD_INCS=-IC:\Pthreads\include
  PTHREAD_LIBS=C:\Pthreads\lib\pthreadVC2.lib
- PHP_SRCDIR=C:\Program Files\PHP\php-5.2.6
+ PHP_SRCDIR=C:\Program Files\PHP\php-5.3.3
  PHP_INSTDIR=C:\Program Files\PHP
  LIBPERL=C:\Perl
  LIBPCRE=C:\Program Files\PCRE
  LIBICONV=C:\iconv-1.11.win32
- LIBZLIB=C:\zlib-1.2.3.win32
- LIBXML2=C:\libxml2-2.6.32+.win32
+ LIBZLIB=C:\zlib-1.2.5.win32
+ LIBXML2=C:\libxml2-2.7.7.win32
 
 Building Installers
 ~~~~~~~~~~~~~~~~~~~
