@@ -657,7 +657,7 @@ TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, MalBlkPtr le
 
 	/* get addition arguments needed in a leg */
 	/* k:= remote.put(conn,kvar) */
-	for (j= 0; j < sig->retc; j++)
+	for (j= 0; j < sig->argc; j++)
 	if ( j != sig->retc && j != sig->retc+1 ){
 		q= newFcnCall(tm,remoteRef,putRef);
 		setVarType(tm, getArg(q,0), TYPE_str);
@@ -724,7 +724,7 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 	Symbol s;
 	MalBlkPtr tm;
 	char buf[BUFSIZ], fcn[BUFSIZ];
-	InstrPtr lsig, sig, sig2, r, p,q;
+	InstrPtr lsig, sig, r, p,q;
 	int j,k,l,x=0;
 
 	snprintf(fcn,BUFSIZ,"exe_%s_%d", getFunctionId(getInstrPtr(mb,0)), getArg(old[pc],0));
@@ -767,7 +767,6 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 	r= newInstruction(tm,ASSIGNsymbol);
 	setModuleId(r,matRef);
 	setFunctionId(r,packRef);
-	sig2= getInstrPtr(mb,0);
 	for( l=k=0; l<legs; l++, k=(k+1)%nodes){
 		p = newStmt(tm,tarantulaRef,GDKstrdup(fcn));
 		p = pushArgument(tm,p, getArg(sig, k + sig->retc));
