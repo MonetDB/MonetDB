@@ -606,7 +606,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 		if (flags[i] == 'e') {
 			exec_options -= PCRE_NOTEMPTY;
 /*
-			stream_printf(GDKout, "exec_options %d, PCRE_NOTEMPTY %d\n",
+			mnstr_printf(GDKout, "exec_options %d, PCRE_NOTEMPTY %d\n",
 					exec_options, PCRE_NOTEMPTY);
 */
 		} else if (flags[i] == 'i') {
@@ -975,10 +975,13 @@ sql2pcre(str *r, str pat, str esc_str)
 {
 	int escaped = 0;
 	int hasWildcard = 0;
-	char *ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
+	char *ppat;
 	int esc = esc_str[0]; /* should change to utf8_convert() */
 	int specials = 0;
 
+	if (pat == NULL )
+		return GDK_FAIL; 
+	ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
 	if (ppat == NULL)
 		return GDK_FAIL; 
 
@@ -1492,6 +1495,8 @@ re_simple(char *pat)
 	if (*s++ != '%') 
 		return 0;
 #endif
+	if (s == 0)
+		return 0;
 	if (*s == '%') 
 		s++;
 	while(*s) {
@@ -1535,7 +1540,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 		
 	r = PCREsql2pcre(&ppat, pat, esc);
 
-	if (!r) {
+	if (!r && ppat) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			/* there is no pattern or escape involved, fall back to
 			 * simple (no PCRE) match */
