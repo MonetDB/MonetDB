@@ -210,10 +210,8 @@ none of the arguments is assigned a value.
 			for (k = 0; k < q->retc; k++)
 				if (SRoverwritten(p, getArg(q, k))) {
 					se = TRUE;
-#ifdef DEBUG_OPT_STRENGTHREDUCTION
-					mnstr_printf(cntxt->fdout, "variable is set in loop %d\n", 
-						getArg(p, k));
-#endif
+					OPTDEBUGstrengthReduction
+						mnstr_printf(cntxt->fdout, "variable is set in loop %d\n", getArg(p, k));
 					goto noreduction;
 				}
 		}
@@ -225,18 +223,17 @@ after the loop, because then you may not simple move an expression.
 			if ( getBeginLifespan(span, getArg(p, k))<= blkbegin ||
 				 getEndLifespan(span, getArg(p, k))> blkexit) {
 				se = TRUE;
-#ifdef DEBUG_OPT_STRENGTHREDUCTION
-				mnstr_printf(cntxt->fdout, "variable %d may not be moved %d-%d\n",
-				getArg(p, k),getBeginLifespan(span, getArg(p, k)), getEndLifespan(span, getArg(p, k)));
-#endif
+				OPTDEBUGstrengthReduction
+					mnstr_printf(cntxt->fdout, "variable %d may not be moved %d-%d\n",
+					getArg(p, k),getBeginLifespan(span, getArg(p, k)), getEndLifespan(span, getArg(p, k)));
 				goto noreduction;
 			}
 
   noreduction:
-#ifdef DEBUG_OPT_STRENGTHREDUCTION
-		mnstr_printf(cntxt->fdout,"move %d to stack %s\n", i, (se ?"within":"before"));
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-#endif
+		OPTDEBUGstrengthReduction{
+			mnstr_printf(cntxt->fdout,"move %d to stack %s\n", i, (se ?"within":"before"));
+			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		}
 		if (blkexit && se == FALSE && !hasSideEffects(p, TRUE) && !isUpdateInstruction(p) )
 			before[bk++] = p;
 		else
@@ -257,9 +254,9 @@ after the loop, because then you may not simple move an expression.
 	}
 	mb->stop = 0;
 
-#ifdef DEBUG_OPT_STRENGTHREDUCTION
-	mnstr_printf(cntxt->fdout,"stop= %d bk=%d\n",mb->stop,bk);
-#endif
+	OPTDEBUGstrengthReduction
+		mnstr_printf(cntxt->fdout,"stop= %d bk=%d\n",mb->stop,bk);
+
 	for (i = 0; i < bk; i++)
 	if( before[i])
 		pushInstruction(mb, before[i]);

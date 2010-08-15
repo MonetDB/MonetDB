@@ -421,7 +421,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		return 0;
 	OPTDEBUGoctopus{
 		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 	}
 	(void) stk;
 @-
@@ -788,19 +788,19 @@ The tentacle code should be optimized by the remaining optimizers too.
 	OPTDEBUGoctopus
 	if (actions) {
 		mnstr_printf(cntxt->fdout, "DONE octopus \n");
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
-		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
+		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAPI);
 		for (i=0; i<tn; i++){
 			chkDeclarations(tentacle[i]);
 			chkFlow(tentacle[i]);
-			printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT);
+			printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT | LIST_MAPI);
 		}
 	}
-/*	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
-	printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
+/*	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
+	printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAPI);
 
 	for (i=0; i<tn; i++)
-		printFunction(GDKout, tentacle[i], 0, LIST_MAL_STMT);
+		printFunction(GDKout, tentacle[i], 0, LIST_MAL_STMT | LIST_MAPI);
 */
 	GDKfree(wnm);
 	GDKfree(tnm);

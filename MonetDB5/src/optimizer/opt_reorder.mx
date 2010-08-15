@@ -189,7 +189,7 @@ OPTdepthfirst(Client cntxt, MalBlkPtr mb, int pc, InstrPtr old[], Node dep[])
 		OPTdepthfirst(cntxt, mb,dep[pc]->stmt[i], old, dep);
 		OPTDEBUGreorder{
 			mnstr_printf(cntxt->fdout,"dump[%d]:",pc);
-			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
+			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT | LIST_MAPI);
 		}
 	pushInstruction(mb, p);
 }
@@ -238,7 +238,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			for(j=i-1; j>=start;j--) {
 				OPTDEBUGreorder if( old[j]){
 					mnstr_printf(cntxt->fdout,"leftover: %d",start+1);
-					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT);
+					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT | LIST_MAPI);
 				}
 				OPTdepthfirst(cntxt, mb, j, old, dep);
 			}

@@ -559,7 +559,7 @@ TARmakeRegistration(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
 	OPTDEBUGtarantula
-		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT | LIST_MAPI);
 }
 
 @-
@@ -612,7 +612,7 @@ TARmakeBidding(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes)
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
 	OPTDEBUGtarantula
-		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT | LIST_MAPI);
 }
 @-
 The executor gets node assignments for each of the legs and
@@ -713,7 +713,7 @@ TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, MalBlkPtr le
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
 	OPTDEBUGtarantula
-		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT | LIST_MAPI);
 }
 @-
 The legs of the tarantula can be executed in parallel.
@@ -798,7 +798,7 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
 	OPTDEBUGtarantula
-		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT | LIST_MAPI);
 
 }
 @-
@@ -946,7 +946,7 @@ when scheduled correctly, would not lead to duplicate work.
 					if (old[j] && old[j]->token != REMsymbol)
 						q =newStmt(leg[k], getModuleId(old[j]), getFunctionId(old[j]));
 			OPTDEBUGtarantula for (k = 0; k < tn; k++)
-				printFunction(cntxt->fdout, leg[k], 0, LIST_MAL_STMT);
+				printFunction(cntxt->fdout, leg[k], 0, LIST_MAL_STMT | LIST_MAPI);
 			continue;
 		} 
 		wrapup:
