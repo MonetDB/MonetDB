@@ -1068,7 +1068,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 				char *s;
 
 				len[i] = mapi_get_len(hdl, i);
-				if (len[i] == 0) {
+				if (len[i] == 0 || len[i]> pagewidth -2 - 2 * fields) {
 					/* no table width known, give
 					   a fair share of the
 					   available space (+1 so we
