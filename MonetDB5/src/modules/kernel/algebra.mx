@@ -3388,20 +3388,17 @@ ALGtmark_default(int *result, int *bid)
 str 
 ALGtmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 {
-	int nr = *nr_parts;
 #if SIZEOF_OID == 4
-	int bits = 32;
+	int bits = 31;
 #else
-	int bits = 64;
+	int bits = 63;
 #endif
 	oid base = 0;
 	
 	assert(*part_nr < *nr_parts);
-        while(nr > 0) {
-		nr >>= 1;
-		bits--;
-	}
-	base = (*part_nr)<<bits;
+	base = ((oid)1)<<bits;
+	base /= *nr_parts;
+	base *= *part_nr;
 	return ALGtmark(result, bid, &base);
 }
 
@@ -3437,20 +3434,17 @@ ALGmarkHead_default(int *result, int *bid)
 str 
 ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 {
-	int nr = *nr_parts;
 #if SIZEOF_OID == 4
-	int bits = 32;
+	int bits = 31;
 #else
-	int bits = 64;
+	int bits = 63;
 #endif
 	oid base = 0;
 	
 	assert(*part_nr < *nr_parts);
-        while(nr > 0) {
-		nr >>= 1;
-		bits--;
-	}
-	base = (*part_nr)<<bits;
+	base = ((oid)1)<<bits;
+	base /= *nr_parts;
+	base *= *part_nr;
 	return ALGmarkHead(result, bid, &base);
 }
 
