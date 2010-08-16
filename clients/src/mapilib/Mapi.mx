@@ -2342,7 +2342,7 @@ connect_to_server(Mapi mid)
 		snprintf(errbuf, sizeof(errbuf),
 			 CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
 		if (strlen(errbuf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
-				stat(errbuf, &st) != 1 &&
+				stat(errbuf, &st) != -1 &&
 				S_ISSOCK(st.st_mode))
 			mid->hostname = strdup(errbuf);
 	}
