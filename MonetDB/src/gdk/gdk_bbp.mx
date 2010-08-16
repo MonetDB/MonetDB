@@ -3096,7 +3096,7 @@ static INLINE bat
 batcache_get(batcache_t * bc, int bin)
 {
 	batcache_int i;
-	int bid = 0;
+	bat bid = 0;
 
 	MT_set_lock(bc->lock, "batcache_get");
 
@@ -3921,7 +3921,7 @@ persistent_bat(bat bid)
 }
 
 static BAT *
-getdesc(int bid)
+getdesc(bat bid)
 {
 	BATstore *bs = BBPgetdesc(bid);
 
