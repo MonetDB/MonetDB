@@ -114,7 +114,9 @@ gdk_export int BBPdir(int cnt, bat *subcommit);
 
 /* update interface */
 gdk_export void BBPclear(bat bid);
-gdk_export bat BBPinsert(BATstore *bs);
+#ifdef LIBGDK			/* only used within GDK */
+extern bat BBPinsert(BATstore *bs);
+#endif
 gdk_export void BBPcacheit(BATstore *bs, int lock);
 gdk_export void BBPuncacheit(bat bid);
 gdk_export int BBPreclaim(BAT *b);
