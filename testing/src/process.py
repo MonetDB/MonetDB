@@ -10,6 +10,13 @@ from subprocess import PIPE
 
 verbose = False
 
+if os.name == 'nt':
+    # Windows: default is (fully) buffered
+    default_bufsize = -1
+else:
+    # other: default is unbuffered
+    default_bufsize = 0
+
 def splitcommand(cmd):
     '''Like string.split, except take quotes into account.'''
     q = None
@@ -123,7 +130,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
 
 def server(lang, args = [], stdin = None, stdout = None, stderr = None,
            mapiport = None, xrpcport = None, dbname = os.getenv('TSTDB'),
-           dbfarm = None, dbinit = None, bufsize = 0):
+           dbfarm = None, dbinit = None, bufsize = default_bufsize):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
