@@ -12,6 +12,12 @@ stderr of test 'Skyserver_v6` in directory 'src/test/Skyserver` itself:
 # 16:41:17 >  /usr/bin/python Skyserver_v6.SQL.py Skyserver_v6 
 # 16:41:17 >  
 
+Create User
+tables
+views
+functions
+Cleanup
+Remove User
 
 # 16:41:20 >  
 # 16:41:20 >  Done.
