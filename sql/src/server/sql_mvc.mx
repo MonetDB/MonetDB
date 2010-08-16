@@ -1481,6 +1481,7 @@ stack_push_var(mvc *sql, char *name, stmt *var, sql_subtype *type)
 	sql->vars[sql->topvars].name = _strdup(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].type = *type;
+	assert(sql->vars[sql->topvars].type.comp_type == NULL);
 	sql->vars[sql->topvars].view = 0;
 	sql->topvars++;
 }
@@ -1496,6 +1497,7 @@ stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type)
 	sql->vars[sql->topvars].name = _strdup(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].type = *type;
+	assert(sql->vars[sql->topvars].type.comp_type != NULL);
 	sql->vars[sql->topvars].view = 0;
 	sql->topvars++;
 }
@@ -1552,6 +1554,8 @@ stack_push_frame(mvc *sql, char *name)
 	sql->vars[sql->topvars].s = NULL;
 	sql->vars[sql->topvars].name = NULL;
 	sql->vars[sql->topvars].value.vtype = 0;
+	sql->vars[sql->topvars].view = 0;
+	sql->vars[sql->topvars].type.comp_type = NULL;
 	if (name)
 		sql->vars[sql->topvars].name = _strdup(name);
 	sql->topvars++;

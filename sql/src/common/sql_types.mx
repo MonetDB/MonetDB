@@ -376,7 +376,7 @@ sql_find_subtype(sql_subtype *res, char *name, unsigned int digits, unsigned int
 sql_subtype *
 sql_bind_subtype(char *name, unsigned int digits, unsigned int scale)
 {
-	sql_subtype *res = NEW(sql_subtype);
+	sql_subtype *res = ZNEW(sql_subtype);
 	
 	if (!sql_find_subtype(res, name, digits, scale)) {
 		_DELETE(res);

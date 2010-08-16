@@ -566,7 +566,7 @@ find_fk(list *rels, list *exps)
 			list *lexps = list_map(eje, lr, (fmap) &joinexp_col);
 			list *rexps = list_map(eje, rr, (fmap) &joinexp_col);
 			list *lcols, *rcols;
-
+			
 			lr = find_basetable(lr);
 			rr = find_basetable(rr);
 			if (!lr || !rr) {
