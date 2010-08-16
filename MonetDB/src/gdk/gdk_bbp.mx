@@ -153,16 +153,16 @@ gdk_export int BBPbackup(BAT *b, bit subcommit);
 #include "gdk_storage.h"
 @}
 @-
-The BBP has now a fixed address, so re-allocation due to a growing BBP 
+The BBP has a fixed address, so re-allocation due to a growing BBP 
 caused by one thread does not disturb reads to the old entries by another.
 This is implemented using anonymous virtual memory; extensions on the same 
 address are guaranteed because a large non-committed VM area is requested 
-initially. New slots in the BBP are found at O(1) by keeping a freelist
+initially. New slots in the BBP are found in O(1) by keeping a freelist
 that uses the 'next' field in the BBPrec records.
 @{
 @c
 BBPrec *BBP = NULL;		/* fixed base VM address of BBP array */
-bat BBPmaxsize = BBPMAXSIZE;	/* size of non-commited VM BBP array */
+bat BBPmaxsize = BBPMAXSIZE;	/* size of non-committed VM BBP array */
 bat BBPlimit = 0;		/* current committed VM BBP array */
 bat BBPsize = 0;		/* current used size of BBP array */
 
@@ -478,7 +478,7 @@ static int
 recover_dir(int direxists)
 {
 	if (direxists) {
-		/* just try; don't care about these nonvital files */
+		/* just try; don't care about these non-vital files */
 		GDKunlink(BATDIR, "BBP", "bak");
 		GDKmove(BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
 	}
@@ -492,7 +492,7 @@ static int BBPdiskscan(const char *);
 /* Convert the old-style string heap to the new style.
    This function must be called at the end of BBPinit(), just before
    "normal processing" starts.  All errors that happen during the
-   conversion are fatal.  This function is "save" in the sense that
+   conversion are fatal.  This function is "safe" in the sense that
    when it is interrupted, recovery will just start over.  No
    permanent changes are made to the database until all string heaps
    have been converted, and then the changes are made atomically.
