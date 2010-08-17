@@ -1123,11 +1123,9 @@ SQLrenderer(MapiHdl hdl)
 			/* correct the lengths in case only the headers were
 			 * squeezed, if the content itself is wider, the headers
 			 * will be squeezed to their size (see below) */
-			if (lentotal == total) {
-				for (i = 0; i < fields; i++)
-					if (len[i] < hdr[i])
-						len[i] = hdr[i];
-			}
+			for (i = 0; i < fields; i++)
+				if (len[i] < hdr[i])
+					len[i] = hdr[i];
 
 			/* worst case: lentotal = total, which means it still
 			 * doesn't fit, values will be squeezed next */
