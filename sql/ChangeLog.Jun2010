@@ -2,8 +2,8 @@
 # This file is updated with Maddlog
 
 * Fri Aug 16 2010 Niels Nes <niels@cwi.nl>
-- Fixed bug 2657 by fixing initialization and problem with joins of single
-  value subqueries.
+- Fixed bug 2657, a regression after the fix for bug 2353. A join with a
+  single value subquery resulted in an assertion failure.
 
 * Fri Aug 13 2010 Niels Nes <niels@cwi.nl>
 - Fixed bug 2643 added more defensive code, when an aggregation function
