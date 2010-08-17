@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+import time
 import string
 import tempfile
 import copy
@@ -70,7 +71,7 @@ class Popen(subprocess.Popen):
 
 def client(lang, args = [], stdin = None, stdout = None, stderr = None,
            port = os.getenv('MAPIPORT'), host = None,
-           user = 'monetdb', passwd = 'monetdb'):
+           user = 'monetdb', passwd = 'monetdb', log = False):
     '''Start a client process.'''
     if lang == 'mil':
         cmd = _mil_client[:]
@@ -111,6 +112,23 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
     if verbose:
         print 'Executing', ' '.join(cmd +  args)
         sys.stdout.flush()
+    if log:
+        prompt = time.strftime('# %H:%M:%S >  ')
+        cmdstr = ' '.join(cmd +  args)
+        if hasattr(stdin, 'name'):
+            cmdstr += ' < "%s"' % stdin.name
+        print
+        print prompt
+        print '%s%s' % (prompt, cmdstr)
+        print prompt
+        print
+        sys.stdout.flush()
+        print >> sys.stderr
+        print >> sys.stderr, prompt
+        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
+        print >> sys.stderr, prompt
+        print >> sys.stderr
+        sys.stderr.flush()
     p = Popen(cmd + args,
               stdin = stdin,
               stdout = stdout,
@@ -123,7 +141,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
 
 def server(lang, args = [], stdin = None, stdout = None, stderr = None,
            mapiport = None, xrpcport = None, dbname = os.getenv('TSTDB'),
-           dbfarm = None, dbinit = None, bufsize = 0):
+           dbfarm = None, dbinit = None, bufsize = 0, log = False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
@@ -170,6 +188,23 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
     if verbose:
         print 'Executing', ' '.join(cmd +  args)
         sys.stdout.flush()
+    if log:
+        prompt = time.strftime('# %H:%M:%S >  ')
+        cmdstr = ' '.join(cmd +  args)
+        if hasattr(stdin, 'name'):
+            cmdstr += ' < "%s"' % stdin.name
+        print
+        print prompt
+        print '%s%s' % (prompt, cmdstr)
+        print prompt
+        print
+        sys.stdout.flush()
+        print >> sys.stderr
+        print >> sys.stderr, prompt
+        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
+        print >> sys.stderr, prompt
+        print >> sys.stderr
+        sys.stderr.flush()
     return Popen(cmd + args,
                  stdin = stdin,
                  stdout = stdout,
