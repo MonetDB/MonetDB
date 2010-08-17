@@ -1263,7 +1263,8 @@ int isMatJoinOp(InstrPtr p){
 //               getFunctionId(p) == antijoinRef || is not mat save
                  getFunctionId(p) == leftjoinRef ||
                  getFunctionId(p) == thetajoinRef ||
-                 getFunctionId(p) == bandjoinRef));
+                 getFunctionId(p) == bandjoinRef)
+		);
 }
  
 int isFragmentGroup(InstrPtr p){
