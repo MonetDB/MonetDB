@@ -86,167 +86,52 @@ Over..
 [ 1	]
 #insert into slice_test values ( 3, 5, 89439);
 [ 1	]
-#explain select x,y from slice_test limit 1;
-% .explain # table_name
-% mal # name
+#create function tracelog()
+#	returns table (
+#		event integer,		-- event counter
+#		clk varchar(20), 	-- wallclock, no mtime in kernel
+#		pc varchar(50), 	-- module.function[nr]
+#		thread int, 		-- thread identifier
+#		ticks integer, 		-- time in microseconds
+#		reads integer, 		-- number of blocks read
+#		writes integer, 	-- number of blocks written
+#		rbytes integer,		-- amount of bytes touched
+#		wbytes integer,		-- amount of bytes written
+#		type string,		-- return types
+#TRACE select x,y from slice_test limit 1;
+% sys.slice_test,	sys.slice_test # table_name
+% x,	y # name
+% int,	int # type
+% 1,	1 # length
+[ 0,	1	]
+#SELECT count(*) FROM
+#( SELECT count(*) AS mat       FROM tracelog() WHERE stmt LIKE '% := mat.%'       ) as m,
+#( SELECT count(*) AS mat_slice FROM tracelog() WHERE stmt LIKE '% := mat.slice(%' ) as ms
+#WHERE ( mat = 0 AND mat_slice = 0 ) OR ( mat > 0 AND mat_slice > 0 );
+% .m # table_name
+% L6 # name
+% wrd # type
+% 1 # length
+[ 1	]
+#TRACE select cast(x as string)||'-bla-'||cast(y as string) from slice_test limit 1;
+% sys. # table_name
+% concat_concat_x # name
 % clob # type
-% 0 # length
-function user.s1_1{autoCommit=true}():void;
-    _2 := sql.mvc();
-barrier _113 := language.dataflow();
-    _48:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",0,0@0,7@0);
-    _7:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",2);
-    _59 := algebra.kdifference(_48,_7);
-    _63 := algebra.semijoin(_7,_48);
-    _67 := algebra.kunion(_59,_63);
-    _11:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","slice_test",1);
-    _12 := bat.reverse(_11);
-    _71 := algebra.kdifference(_67,_12);
-    _50:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",0,7@0,14@0);
-    _60 := algebra.kdifference(_50,_7);
-    _64 := algebra.semijoin(_7,_50);
-    _68 := algebra.kunion(_60,_64);
-    _73 := algebra.kdifference(_68,_12);
-    _52:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",0,14@0,21@0);
-    _61 := algebra.kdifference(_52,_7);
-    _65 := algebra.semijoin(_7,_52);
-    _69 := algebra.kunion(_61,_65);
-    _74 := algebra.kdifference(_69,_12);
-    _54:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",0,21@0,nil:oid);
-    _62 := algebra.kdifference(_54,_7);
-    _66 := algebra.semijoin(_7,_54);
-    _70 := algebra.kunion(_62,_66);
-    _75 := algebra.kdifference(_70,_12);
-    _9:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",1);
-    _76 := algebra.kdifference(_9,_12);
-    _13 := mat.slice(0:wrd,0:wrd,_71,_73,_74,_75,_76);
-    _14 := algebra.slice(_13,0:wrd,0:wrd);
-    _17:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",1);
-    _18:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","slice_test",1);
-    _21 := bat.reverse(_18);
-    _99 := algebra.kdifference(_17,_21);
-    _104 := algebra.semijoin(_99,_13);
-    _110 := algebra.semijoin(_104,_14);
-    _58:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",0,21@0,nil:oid);
-    _16:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",2);
-    _85 := algebra.kdifference(_58,_16);
-    _89 := algebra.semijoin(_16,_58);
-    _93 := algebra.kunion(_85,_89);
-    _98 := algebra.kdifference(_93,_21);
-    _103 := algebra.semijoin(_98,_13);
-    _109 := algebra.semijoin(_103,_14);
-    _57:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",0,14@0,21@0);
-    _83 := algebra.kdifference(_57,_16);
-    _88 := algebra.semijoin(_16,_57);
-    _92 := algebra.kunion(_83,_88);
-    _97 := algebra.kdifference(_92,_21);
-    _102 := algebra.semijoin(_97,_13);
-    _108 := algebra.semijoin(_102,_14);
-    _56:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",0,7@0,14@0);
-    _81 := algebra.kdifference(_56,_16);
-    _87 := algebra.semijoin(_16,_56);
-    _91 := algebra.kunion(_81,_87);
-    _96 := algebra.kdifference(_91,_21);
-    _101 := algebra.semijoin(_96,_13);
-    _107 := algebra.semijoin(_101,_14);
-    _55:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",0,0@0,7@0);
-    _79 := algebra.kdifference(_55,_16);
-    _86 := algebra.semijoin(_16,_55);
-    _90 := algebra.kunion(_79,_86);
-    _95 := algebra.kdifference(_90,_21);
-    _100 := algebra.semijoin(_95,_13);
-    _105 := algebra.semijoin(_100,_14);
-exit _113;
-    _23 := sql.resultSet(2,1,_14);
-    sql.rsColumn(_23,"sys.slice_test","x","int",32,0,_14);
-    _22 := mat.pack(_105,_107,_108,_109,_110);
-    sql.rsColumn(_23,"sys.slice_test","y","int",32,0,_22);
-    _33 := io.stdout();
-    sql.exportResult(_33,_23);
-end s1_1;
-#explain select cast(x as string)||'-bla-'||cast(y as string) from slice_test limit 1;
-% .explain # table_name
-% mal # name
-% clob # type
-% 0 # length
-function user.s2_1{autoCommit=true}():void;
-    _2 := sql.mvc();
-barrier _117 := language.dataflow();
-    _52:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",0,0@0,7@0);
-    _7:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",2);
-    _63 := algebra.kdifference(_52,_7);
-    _67 := algebra.semijoin(_7,_52);
-    _71 := algebra.kunion(_63,_67);
-    _11:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","slice_test",1);
-    _12 := bat.reverse(_11);
-    _76 := algebra.kdifference(_71,_12);
-    _54:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",0,7@0,14@0);
-    _64 := algebra.kdifference(_54,_7);
-    _68 := algebra.semijoin(_7,_54);
-    _72 := algebra.kunion(_64,_68);
-    _77 := algebra.kdifference(_72,_12);
-    _56:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",0,14@0,21@0);
-    _65 := algebra.kdifference(_56,_7);
-    _69 := algebra.semijoin(_7,_56);
-    _73 := algebra.kunion(_65,_69);
-    _78 := algebra.kdifference(_73,_12);
-    _58:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",0,21@0,nil:oid);
-    _66 := algebra.kdifference(_58,_7);
-    _70 := algebra.semijoin(_7,_58);
-    _74 := algebra.kunion(_66,_70);
-    _79 := algebra.kdifference(_74,_12);
-    _9:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","x",1);
-    _80 := algebra.kdifference(_9,_12);
-    _13 := mat.slice(0:wrd,0:wrd,_76,_77,_78,_79,_80);
-    _14:bat[:oid,:str]  := batcalc.str(6,32,0,0,_13,0);
-    _17:bat[:oid,:str]  := batcalc.+(_14,"-bla-");
-    _59:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",0,0@0,7@0);
-    _22:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",2);
-    _83 := algebra.kdifference(_59,_22);
-    _90 := algebra.semijoin(_22,_59);
-    _94 := algebra.kunion(_83,_90);
-    _26:bat[:oid,:oid]  := sql.bind_dbat(_2,"sys","slice_test",1);
-    _27 := bat.reverse(_26);
-    _99 := algebra.kdifference(_94,_27);
-    _104 := algebra.semijoin(_99,_13);
-    _109 := batcalc.str(6,32,0,0,_104,0);
-    _60:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",0,7@0,14@0);
-    _85 := algebra.kdifference(_60,_22);
-    _91 := algebra.semijoin(_22,_60);
-    _95 := algebra.kunion(_85,_91);
-    _100 := algebra.kdifference(_95,_27);
-    _105 := algebra.semijoin(_100,_13);
-    _111 := batcalc.str(6,32,0,0,_105,0);
-    _61:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",0,14@0,21@0);
-    _87 := algebra.kdifference(_61,_22);
-    _92 := algebra.semijoin(_22,_61);
-    _96 := algebra.kunion(_87,_92);
-    _101 := algebra.kdifference(_96,_27);
-    _106 := algebra.semijoin(_101,_13);
-    _112 := batcalc.str(6,32,0,0,_106,0);
-    _62:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",0,21@0,nil:oid);
-    _89 := algebra.kdifference(_62,_22);
-    _93 := algebra.semijoin(_22,_62);
-    _97 := algebra.kunion(_89,_93);
-    _102 := algebra.kdifference(_97,_27);
-    _107 := algebra.semijoin(_102,_13);
-    _113 := batcalc.str(6,32,0,0,_107,0);
-    _24:bat[:oid,:int]  := sql.bind(_2,"sys","slice_test","y",1);
-    _103 := algebra.kdifference(_24,_27);
-    _108 := algebra.semijoin(_103,_13);
-    _114 := batcalc.str(6,32,0,0,_108,0);
-    _28:bat[:oid,:str]  := mat.pack(_109,_111,_112,_113,_114);
-    _29:bat[:oid,:str]  := batcalc.+(_17,_28);
-    _30 := algebra.slice(_29,0:wrd,0:wrd);
-exit _117;
-    _31 := sql.resultSet(1,1,_30);
-    sql.rsColumn(_31,"sys.","concat_concat_x","clob",0,0,_30);
-    _36 := io.stdout();
-    sql.exportResult(_36,_31);
-end s2_1;
+% 7 # length
+[ "0-bla-1"	]
+#SELECT count(*) FROM
+#( SELECT count(*) AS mat       FROM tracelog() WHERE stmt LIKE '% := mat.%'       ) as m,
+#( SELECT count(*) AS mat_slice FROM tracelog() WHERE stmt LIKE '% := mat.slice(%' ) as ms
+#WHERE ( mat = 0 AND mat_slice = 0 ) OR ( mat > 0 AND mat_slice > 0 );
+% .m # table_name
+% L6 # name
+% wrd # type
+% 1 # length
+[ 1	]
+#drop function tracelog;
 #drop table slice_test;
 
-# 15:04:12 >  
-# 15:04:12 >  Done.
-# 15:04:12 >  
+# 10:54:05 >  
+# 10:54:05 >  Done.
+# 10:54:05 >  
 
