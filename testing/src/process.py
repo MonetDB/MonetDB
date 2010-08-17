@@ -6,6 +6,8 @@ import string
 import tempfile
 import copy
 import atexit
+import threading
+import Queue
 
 from subprocess import PIPE
 
@@ -54,6 +56,58 @@ def _delfiles():
 
 atexit.register(_delfiles)
 
+class _BufferedPipe:
+    def __init__(self, fd):
+        self._pipe = fd
+        self._queue = Queue.Queue()
+        self._eof = False
+        self._thread = threading.Thread(target = self._readerthread,
+                                        args = (fd, self._queue))
+        self._thread.setDaemon(True)
+        self._thread.start()
+
+    def _readerthread(self, fh, queue):
+        while True:
+            c = fh.read(1)
+            queue.put(c)                # put '' if at EOF
+            if not c:
+                break
+
+    def close(self):
+        if self._thread:
+            self._thread.join()
+        self._thread = None
+
+    def read(self, size = -1):
+        if self._eof:
+            return ''
+        if size < 0:
+            self.close()
+        ret = []
+        while size != 0:
+            c = self._queue.get()
+            if c == '\r':
+                c = self._queue.get()   # just ignore \r
+            ret.append(c)
+            if size > 0:
+                size -= 1
+            self._queue.task_done()
+            if not c:
+                self._eof = True
+                break                   # EOF
+        return ''.join(ret)
+
+    def readline(self, size = -1):
+        ret = []
+        while size != 0:
+            c = self.read(1)
+            ret.append(c)
+            if size > 0:
+                size -= 1
+            if c == '\n' or c == '':
+                break
+        return ''.join(ret)
+
 class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
@@ -68,6 +122,23 @@ class Popen(subprocess.Popen):
             except ValueError:
                 pass
         return ret
+
+    def communicate(self, input = None):
+        # since we always use threads for stdout/stderr, we can just read()
+        stdout = None
+        stderr = None
+        if self.stdin:
+            if input:
+                self.stdin.write(input)
+            self.stdin.close()
+        if self.stdout:
+            stdout = self.stdout.read()
+            self.stdout.close()
+        if self.stderr:
+            stderr = self.stderr.read()
+            self.stderr.close()
+        self.wait()
+        return stdout, stderr
 
 def client(lang, args = [], stdin = None, stdout = None, stderr = None,
            port = os.getenv('MAPIPORT'), host = None,
@@ -137,6 +208,10 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
               env = env,
               universal_newlines = True)
     p.dotmonetdbfile = fnam
+    if stdout == PIPE:
+        p.stdout = _BufferedPipe(p.stdout)
+    if stderr == PIPE:
+        p.stderr = _BufferedPipe(p.stderr)
     return p
 
 def server(lang, args = [], stdin = None, stdout = None, stderr = None,
@@ -205,10 +280,15 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
         print >> sys.stderr, prompt
         print >> sys.stderr
         sys.stderr.flush()
-    return Popen(cmd + args,
-                 stdin = stdin,
-                 stdout = stdout,
-                 stderr = stderr,
-                 shell = False,
-                 universal_newlines = True,
-                 bufsize = bufsize)
+    p = Popen(cmd + args,
+              stdin = stdin,
+              stdout = stdout,
+              stderr = stderr,
+              shell = False,
+              universal_newlines = True,
+              bufsize = bufsize)
+    if stdout == PIPE:
+        p.stdout = _BufferedPipe(p.stdout)
+    if stderr == PIPE:
+        p.stderr = _BufferedPipe(p.stderr)
+    return p
