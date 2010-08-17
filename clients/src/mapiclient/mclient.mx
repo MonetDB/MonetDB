@@ -1420,15 +1420,22 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			break;
 		default:
 			if (formatter == TABLEformatter) {
+				int i;
 				mnstr_printf(stderr_stream,
 						"invalid/unknown response from server, "
 						"ignoring output\n");
-				/* skip over the unknown/invalid stuff, otherwise
-				 * mapi_next_result call will assert in close_result
-				 * because the logic there doesn't expect random unread
-				 * garbage somehow */
-				while (fetch_line(hdl) != 0)
-					;
+				for (i = 0; i < 5 && (reply = fetch_line(hdl)) != 0; i++)
+					mnstr_printf(stderr_stream, "? %s\n", reply);
+				if (i == 5 && fetch_line(hdl) != 0) {
+					mnstr_printf(stderr_stream, "(remaining output omitted, "
+							"use \\fraw to examine in detail)\n");
+					/* skip over the unknown/invalid stuff, otherwise
+					 * mapi_next_result call will assert in close_result
+					 * because the logic there doesn't expect random unread
+					 * garbage somehow */
+					while (fetch_line(hdl) != 0)
+						;
+				}
 				continue;
 			}
 		}
