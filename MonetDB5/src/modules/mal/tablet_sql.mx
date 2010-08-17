@@ -29,7 +29,7 @@ possible variable length of the input, and the original sort order
 that should preferable be maintained.
 
 The code below consists of a file reader, which breaks up the
-file into chunks of distinct lines. Then multiple parallel threads 
+file into chunks of distinct lines. Then multiple parallel threads
 grab them, and break them on the field boundaries.
 After all fields are identified this way, the columns are converted
 and stored in the BATs.
@@ -39,7 +39,7 @@ It includes a list of columns they should handle. This is a basis
 to distributed cheap and expensive columns over threads.
 
 The file reader overlaps IO with updates of the BAT.
-Also the buffer size of the block stream might be a little small for 
+Also the buffer size of the block stream might be a little small for
 this task (1MB). It has been increased to 8MB, which indeed improved.
 
 The work divider allocates subtasks to threads based on the
@@ -67,7 +67,7 @@ typedef struct{
 	int next;
 	int limit;
 	lng *time, wtime;	/* time per col + time per thread */
-	int rounds; 	/* how often did we divide the work */
+	int rounds;	/* how often did we divide the work */
 	MT_Id tid;
 	MT_Sema producer;	/* reader waits for call */
 	MT_Sema consumer;	/* data available */
@@ -89,7 +89,7 @@ typedef struct{
 
 @-
 The line is broken into pieces directly on their field separators. It assumes that we have
-the record in the cache already, so we can do most work quickly. 
+the record in the cache already, so we can do most work quickly.
 Furthermore, it assume a uniform (SQL) pattern, without whitespace skipping, but with quote and separator.
 @c
 
@@ -122,7 +122,7 @@ SQLload_error(READERtask *task, int idx)
 
 @-
 The parsing of the individual values is straightforward. If the value represents
-the null-replacement string then we grab the underlying nil. 
+the null-replacement string then we grab the underlying nil.
 If the string starts with the quote identified from SQL, we locate the tail
 and interpret the body.
 @c
@@ -144,14 +144,14 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int col)
 	} else
 	if ( quote && *s == quote ) {
 		/* strip the quotes when present */
-		s++;	
+		s++;
 		for ( t = e = s; *t ; t++)
 			if ( *t == quote) e = t;
 		*e = 0;
 		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
 		/* The user might have specified a null string escape
 		  e.g. NULL as '', which should be tested */
-		if (adt == NULL && s == e && fmt->nullstr && 
+		if (adt == NULL && s == e && fmt->nullstr &&
 			strncasecmp(s, fmt->nullstr, fmt->null_length+1) == 0){
 			adt = fmt->nildata;
 			fmt->c[0]->T->nonil = 0;
@@ -274,8 +274,8 @@ SQLload_file_line(READERtask *task, int idx)
 					GDKerror(errmsg);
 				GDKfree(errline);
 				goto errors;
-			} 
-		} 
+			}
+		}
 
 		/* eat away the column separator */
 		for ( ; *line ; line++)
@@ -292,7 +292,7 @@ SQLload_file_line(READERtask *task, int idx)
 			}
 		/* not enough fields */
 		if ( i < as->nr_attrs-1)  {
-			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
+			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n",
 					 fmt->sep, BATcount(fmt->c[0]) + 1 + task->next, i);
 		errors:
 			/* we save all errors detected */
@@ -306,7 +306,7 @@ SQLload_file_line(READERtask *task, int idx)
 			}
 			as->error = GDKstrdup(errmsg);
 			mal_unset_lock(mal_contextLock,"tablet line break");
-			for (i = 0; i < as->nr_attrs ; i++) 
+			for (i = 0; i < as->nr_attrs ; i++)
 				task->fields[i][idx] = NULL ;
 			break;
 		}
@@ -435,7 +435,7 @@ SQLloader(void *p){
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"SQLloader started\n");
 #endif
-	while( task->ateof == 0) 
+	while( task->ateof == 0)
 	{
 		MT_down_sema(task->producer, "tablet loader");
 #ifdef _DEBUG_TABLET_
@@ -461,7 +461,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	READERtask ptask[16];
 	int threads= (!maxrow || maxrow > (1<<16)) ? (GDKnr_threads < 16? GDKnr_threads: 16):1;
 	lng lio =0,  tio, t1 = 0, total=0, iototal=0;
-	int vmtrim = GDK_vm_trim; 
+	int vmtrim = GDK_vm_trim;
 
 	for (i = 0; i < 16; i++)
 		ptask[i].cols = 0;
@@ -482,7 +482,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	task->fields =  (char***) GDKzalloc(as->nr_attrs * sizeof(char*));
 	task->cols =  (int*) GDKzalloc(as->nr_attrs * sizeof(int));
 	task->time =  (lng*) GDKzalloc(as->nr_attrs * sizeof(lng));
-	task->base = GDKzalloc(b->size+2);	
+	task->base = GDKzalloc(b->size+2);
 
 	if ( task->fields == 0 ||
 		 task->cols == 0 ||
@@ -581,7 +581,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		memcpy(task->input, task->b->buf, task->b->size);
 
 #ifdef _DEBUG_TABLET_
-	   	stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " eof=%d \n", 
+		stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " eof=%d \n",
 			task->b->pos, task->b->len, task->b->size, task->b->eof);
 #endif
 
@@ -616,7 +616,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			   character within the quoted fields a
 			   character may be escaped with a backslash
 			   The user should supply the correct number
-			   of fields.  
+			   of fields.
 			   In the first phase we simply break the lines
 				at the record boundary.
 			*/
@@ -627,7 +627,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 							e++;
 							continue;
 						}
-						if (*e == *rsep ) 
+						if (*e == *rsep )
 							break;
 					}
 				else
@@ -639,36 +639,36 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 						if (*e == *rsep && strncmp(e, rsep, rseplen) == 0)
 							break;
 					}
-				if ( *e == 0) 
+				if ( *e == 0)
 					e = 0;	/* nonterminated record, we need more */
 			} else if ( rseplen == 1 ) {
 				for ( ; *e ; e++) {
 					if (*e == q)
-                        			q = 0;
-                    			else if (*e == quote)
-                        			q = *e;
-                    			else if (*e == '\\') {
-                        			if (e[1])
-                            				e++;
+						q = 0;
+					else if (*e == quote)
+						q = *e;
+					else if (*e == '\\') {
+						if (e[1])
+							e++;
 					} else if (!q && *e == *rsep )
 						break;
 				}
-				if ( *e == 0) 
-					e = 0;	/* nonterminated record, we need more */
+				if ( *e == 0)
+					e = 0;	  /* nonterminated record, we need more */
 			} else {
 				for ( ; *e ; e++) {
 					if (*e == q)
-                        			q = 0;
-                    			else if (*e == quote)
-                        			q = *e;
-                    			else if (*e == '\\') {
-                        			if (e[1])
-                            				e++;
-					} else if (!q && *e == *rsep && strncmp(e, rsep, rseplen) == 0 ) 
+						q = 0;
+					else if (*e == quote)
+						q = *e;
+					else if (*e == '\\') {
+						if (e[1])
+							e++;
+					} else if (!q && *e == *rsep && strncmp(e, rsep, rseplen) == 0 )
 						break;
 				}
 				if (*e == 0 )
-					e = 0;	/* nonterminated record, we need more */
+					e = 0;	  /* nonterminated record, we need more */
 			}
 
 			/* check for incomplete line and end of buffer condition*/
@@ -720,7 +720,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		if ( task->next ){
 			if ( res == 0){
 				SQLworkdivider(task, ptask, (int) as->nr_attrs, threads);
-				
+
 				/* activate the workers to update the BATs */
 				for( j= 0; j < threads ; j++) {
 					/* stage two, update the BATs */
@@ -748,12 +748,12 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	}
 
 	if (GDKdebug & GRPalgorithms) {
-		if (cnt < (BUN) maxrow   && maxrow > 0) 
+		if (cnt < (BUN) maxrow   && maxrow > 0)
 			/* providing a precise count is not always easy, instead consider maxrow as an upper bound */
 			stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c[0]));
 		stream_printf(GDKout,"# COPY reader time "LLFMT " line break " LLFMT " io " LLFMT "\n", total, lio, iototal);
 #ifdef _DEBUG_TABLET_
-		for( i=0; i< as->nr_attrs; i++) 
+		for( i=0; i< as->nr_attrs; i++)
 				stream_printf(GDKout,LLFMT " ", task->time[i]);
 		stream_printf(GDKout,"\n");
 #endif
@@ -782,7 +782,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"Found " BUNFMT" tuples\n",cnt);
 #endif
-	for( i=0; i< as->nr_attrs; i++) 
+	for( i=0; i< as->nr_attrs; i++)
 		GDKfree(task->fields[i]);
 	GDKfree(task->fields);
 	GDKfree(task->cols);
@@ -799,7 +799,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 
   bailout:
 	if (task) {
-		for( i=0; i< as->nr_attrs; i++) 
+		for( i=0; i< as->nr_attrs; i++)
 			if (task->fields[i])
 				GDKfree(task->fields[i]);
 		if (task->fields)
