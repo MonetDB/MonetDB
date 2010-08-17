@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug 16 2010 Niels Nes <niels@cwi.nl>
+- Fixed bug 2657 by fixing initialization and problem with joins of single
+  value subqueries.
+
 * Fri Aug 13 2010 Niels Nes <niels@cwi.nl>
 - Fixed bug 2643 added more defensive code, when an aggregation function
   doesn't exist
