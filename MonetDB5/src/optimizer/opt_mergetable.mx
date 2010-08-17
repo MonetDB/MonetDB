@@ -766,7 +766,6 @@ mat_map(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop)
 	return mtop;
 }
 
-
 /* join, also handles the case that mat[m].mm is set, ie that we
    have the extend available.
 */
@@ -1607,7 +1606,11 @@ UNION(mirror().join()).
 @c
 
 		/* only handle simple joins, ie not range/band joins */
-		if (match > 0 && match <= 2 && isMatJoinOp(p)) {
+		/* For range/band joins (argc == 4), the propagation of oids
+		   is different, ie result-head equals head-1st arg, 	
+				    result-tail equals head-2nd/3rd arg */
+		  
+		if (match > 0 && match <= 2 && isMatJoinOp(p) && p->argc == 3) {
 		   	m = isMATalias(getArg(p,1), mat, mtop);
 		   	n = isMATalias(getArg(p,2), mat, mtop);
 			if ((m = mat_join(mb, p, mat, mtop, m, n)) < 0)
@@ -1731,9 +1734,16 @@ And the min/max is as easy
 		    getModuleId(p) == aggrRef || 
 		   (getModuleId(p) == algebraRef && 
 			(getFunctionId(p) == sortTailRef ||
-			 getFunctionId(p) == sortReverseTailRef)))) { 
+			 getFunctionId(p) == sortReverseTailRef)) ||
+		   (getModuleId(p) == pqueueRef && 
+			(getFunctionId(p) == topn_minRef ||
+			 getFunctionId(p) == topn_maxRef)))) { 
 			error++;
 			goto fail;
+			/* For order (and order related topn) 
+		           we need a similar 2 phase model as used for group
+			   by 
+			 */
 		}
 @-
 The slice operation can also be piggy backed onto the mat.pack using it
