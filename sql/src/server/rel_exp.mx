@@ -694,13 +694,52 @@ exp_is_join_exp(sql_exp *e)
 	return -1;
 }
 
+static int
+exp_is_complex( sql_exp *e )
+{
+	switch (e->type) {
+	case e_atom:
+		return 0;
+	case e_convert:
+		return exp_is_complex(e->l);
+	case e_func:
+	case e_aggr:
+	{	
+		int r = (e->card != CARD_ATOM);
+		node *n;
+		list *l = e->l;
+
+		if (r && l)
+			for (n = l->h; n; n = n->next) 
+				r |= exp_is_complex(n->data);
+		return r;
+	}
+	case e_column:
+	case e_cmp:
+		return 0;
+	}
+	return 0;
+}
+
+static int
+complex_select(sql_exp *e)
+{
+	sql_exp *l = e->l, *r = e->r;
+
+	if (l->card == CARD_ATOM || r->card == CARD_ATOM) 
+		return 1;
+	if (exp_is_complex(l) || exp_is_complex(r))
+		return 1;
+	return 0;
+}
+
 int
 exp_is_join(sql_exp *e)
 {
 	/* only simple compare expressions, ie not or lists
 		or range expressions (e->f)
 	 */ 
-	if (e->type == e_cmp && e->flag != cmp_or && e->l && e->r && !e->f && e->card >= CARD_AGGR)
+	if (e->type == e_cmp && e->flag != cmp_or && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
 		return 0;
 	return -1;
 }
