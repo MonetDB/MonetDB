@@ -1621,7 +1621,8 @@ UNION(mirror().join()).
 		   is different, ie result-head equals head-1st arg, 	
 				    result-tail equals head-2nd/3rd arg */
 		  
-		if (match > 0 && match <= 2 && isMatJoinOp(p) && p->argc == 3) {
+		if (match > 0 && match <= 2 && isMatJoinOp(p) && 
+		   (p->argc == 3 || (p->argc == 4 && getFunctionId(p) == thetajoinRef))) {
 		   	m = isMATalias(getArg(p,1), mat, mtop);
 		   	n = isMATalias(getArg(p,2), mat, mtop);
 			if ((m = mat_join(mb, p, mat, mtop, m, n)) < 0)
