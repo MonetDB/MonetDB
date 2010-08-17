@@ -40,7 +40,7 @@ insert into slice_test values ( 1, 1, 28323);
 insert into slice_test values ( 3, 5, 89439);
 
 set trace = 'none'; -- non-documented feature to not get any trace output
-create function tracelog()
+create function GetTrace()
 	returns table (
 		event integer,		-- event counter
 		clk varchar(20), 	-- wallclock, no mtime in kernel
@@ -60,19 +60,19 @@ TRACE select x,y from slice_test limit 1;
 -- When mitosis was activated (i.e., the MAL plan contains mat.*() statements,
 -- then there sould also be at least one mat.slice() statement.
 SELECT count(*) FROM
-( SELECT count(*) AS mat       FROM tracelog() WHERE stmt LIKE '% := mat.%'       ) as m,
-( SELECT count(*) AS mat_slice FROM tracelog() WHERE stmt LIKE '% := mat.slice(%' ) as ms
+( SELECT count(*) AS mat       FROM GetTrace() WHERE stmt LIKE '% := mat.%'       ) as m,
+( SELECT count(*) AS mat_slice FROM GetTrace() WHERE stmt LIKE '% := mat.slice(%' ) as ms
 WHERE ( mat = 0 AND mat_slice = 0 ) OR ( mat > 0 AND mat_slice > 0 );
 
 TRACE select cast(x as string)||'-bla-'||cast(y as string) from slice_test limit 1;
 -- When mitosis was activated (i.e., the MAL plan contains mat.*() statements,
 -- then there sould also be at least one mat.slice() statement.
 SELECT count(*) FROM
-( SELECT count(*) AS mat       FROM tracelog() WHERE stmt LIKE '% := mat.%'       ) as m,
-( SELECT count(*) AS mat_slice FROM tracelog() WHERE stmt LIKE '% := mat.slice(%' ) as ms
+( SELECT count(*) AS mat       FROM GetTrace() WHERE stmt LIKE '% := mat.%'       ) as m,
+( SELECT count(*) AS mat_slice FROM GetTrace() WHERE stmt LIKE '% := mat.slice(%' ) as ms
 WHERE ( mat = 0 AND mat_slice = 0 ) OR ( mat > 0 AND mat_slice > 0 );
 
-drop function tracelog;
+drop function GetTrace;
 
 drop table slice_test;
 
