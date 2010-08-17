@@ -1061,6 +1061,11 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			memset(rest, 0, sizeof(char *) * fields);
 			memset(numeric, 0, sizeof(int) * fields);
 
+			/* what we waste on space on the display is
+			 * the column separators ' | ', but the edges
+			 * lack the edgespace of course */
+			graphwaste = ((fields * 3) - 1) + 2;
+
 			total = 0;
 			lentotal = 0;
 			vartotal = 0;
@@ -1068,13 +1073,14 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 				char *s;
 
 				len[i] = mapi_get_len(hdl, i);
-				if (len[i] == 0 || len[i]> pagewidth -2 - 2 * fields) {
+				/* TODO: Replace Martin's extension by something more sensible
+				 * also cut fields that are bigger than what could
+				 * possibly be displayed to "fair share" width */
+				if (len[i] == 0 || len[i] > pagewidth - graphwaste) {
 					/* no table width known, give
-					   a fair share of the
-					   available space (+1 so we
-					   always fully fill the
-					   terminal) */
-					len[i] = 1 + (pagewidth - 2 - ((fields * 3) - 1)) / fields;
+					   a fair share of the available space (+1 so we
+					   always fully fill the terminal) */
+					len[i] = 1 + (pagewidth - graphwaste) / fields;
 				}
 				if (len[i] < MINCOLSIZE)
 					len[i] = MINCOLSIZE;
@@ -1102,11 +1108,6 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 				lentotal += (hdr[i] > len[i] ? hdr[i] : len[i]);
 			}
 
-			/* what we waste on space on the display is
-			 * the column separators ' | ', but the edges
-			 * lack the edgespace of course */
-			graphwaste = ((fields * 3) - 1) + 2;
-
 			/* Punishing the value fields is done based on
 			 * how much squeezing will result in.  The
 			 * objective is to have at most a single
@@ -1119,6 +1120,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			 * are unreadable.  Basically, the only fields
 			 * that we want to break are non-numerical
 			 * fields. */
+			/* TODO: this must go in favour of more aggressive string
+			 * truncation */
 			if (graphwaste + total > mypagewidth) {
 				while (total > mypagewidth ||
 				       (vartotal + 1) / 2 < total - mypagewidth) {
