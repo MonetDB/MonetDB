@@ -10,4 +10,4 @@ set PYTHONPATH=%testpath%;%PYTHONPATH%
 prompt # $t $g  
 echo on
 
-python %testpath%/dbapi20_monetdb.py
+python "%testpath%\dbapi20_monetdb.py"
