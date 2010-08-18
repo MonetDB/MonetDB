@@ -217,6 +217,7 @@ static int pagewidth = -1;	/* -1: take whatever is necessary, >0: limit */
 static int pagewidthset = 0;	/* whether the user set the width explicitly */
 static int interactive_stdin = 0;
 static int croppedfields = 0;  /* whatever got cropped/truncated */
+static char firstcrop = 1;     /* first time we see cropping/truncation */
 
 enum modifiers {
 	NOmodifier,
@@ -1271,15 +1272,28 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			singleinstr ? " (" : "",
 			singleinstr ? timerHuman() : "",
 			singleinstr ? ")" : "");
+
+	if (oldfields != printfields || croppedfields > 0)
+		printf(" !");
 	if (oldfields != printfields) {
 		rows = oldfields - printfields;
-		printf(" !" LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
-		if (croppedfields > 0)
-			printf(", %d field%s truncated",
-					croppedfields, croppedfields != 1 ? "s" : "");
+		printf(LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
+	}
+	if (oldfields != printfields && croppedfields > 0)
+		printf(", ");
+	if (croppedfields > 0)
+		printf("%d field%s truncated",
+				croppedfields, croppedfields != 1 ? "s" : "");
+	if (oldfields != printfields || croppedfields > 0) {
 		printf("!");
+		if (firstcrop == 1) {
+			firstcrop = 0;
+			printf("\nnote: to disable dropping columns and/or truncating fields use \\w-1");
+		}
 	}
 	printf("\n");
+
+
 	if (len)
 		free(len);
 	if (hdr)
