@@ -1420,7 +1420,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			timerHumanStop();
 			break;
 		default:
-			if (formatter == TABLEformatter) {
+			if (formatter == TABLEformatter && specials != DEBUGmodifier) {
 				int i;
 				mnstr_printf(stderr_stream,
 						"invalid/unknown response from server, "
