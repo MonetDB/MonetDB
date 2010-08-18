@@ -213,7 +213,7 @@ static char *pager = 0;		/* use external pager */
 #include <signal.h>		/* to block SIGPIPE */
 #endif
 static int rowsperpage = 0;	/* for SQL pagination */
-static int pagewidth = -1;	/* use raw mode for file input, tabular format in stdin */
+static int pagewidth = -1;	/* -1: take whatever is necessary, >0: limit */
 static int pagewidthset = 0;	/* whether the user set the width explicitly */
 static int interactive_stdin = 0;
 static int croppedfields = 0;  /* whatever got cropped/truncated */
@@ -1770,7 +1770,7 @@ showCommands(void)
 	} else {
 		mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
 		mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml}\n");
-		mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=raw,0=no limit, >0 max char)\n");
+		mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 		mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
 	}
 	mnstr_printf(toConsole, "\\L file - save client/server interaction\n");
@@ -1930,7 +1930,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					continue;
 				case 'w':
 					pagewidth = atoi(line + 2);
-					pagewidthset = pagewidth > 0;
+					pagewidthset = pagewidth != 0;
 					continue;
 				case 'r':
 					rowsperpage = atoi(line + 2);
@@ -2523,7 +2523,7 @@ main(int argc, char **argv)
 			break;
 		case 'w':
 			pagewidth = atoi(optarg);
-			pagewidthset = pagewidth > 0;
+			pagewidthset = pagewidth != 0;
 			break;
 		case 'r':
 			rowsperpage = atoi(optarg);
