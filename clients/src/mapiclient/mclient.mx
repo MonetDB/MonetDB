@@ -2402,14 +2402,21 @@ main(int argc, char **argv)
 				}
 			} else if (strcmp(buf, "save_history") == 0) {
 				if (strcmp(q, "true") == 0 ||
-				    strcmp(q, "on") == 0) {
+				    strcmp(q, "on") == 0)
+				{
 					save_history = 1;
 					q = NULL;
 				} else if (strcmp(q, "false") == 0 ||
-					   strcmp(q, "off") == 0) {
+					   strcmp(q, "off") == 0)
+				{
 					save_history = 0;
 					q = NULL;
 				}
+			} else if (strcmp(buf, "format") == 0) {
+				output = strdup(q);
+			} else if (strcmp(buf, "width") == 0) {
+				pagewidth = atoi(q);
+				pagewidthset = pagewidth != 0;
 			}
 			if (q != NULL)
 				mnstr_printf(stderr_stream,
