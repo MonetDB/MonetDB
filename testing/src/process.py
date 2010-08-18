@@ -91,7 +91,12 @@ class _BufferedPipe:
             ret.append(c)
             if size > 0:
                 size -= 1
-            self._queue.task_done()
+            try:
+                # only available as of Python 2.5
+                self._queue.task_done()
+            except AttributeError:
+                # not essential, if not available
+                pass
             if not c:
                 self._eof = True
                 break                   # EOF
