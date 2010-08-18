@@ -1,6 +1,14 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Aug 18 2010 Fabian Groffen <fabian@cwi.nl>
+- Rendering of mclient's tabular mode (when using SQL) has been changed
+  considerably to get improved output.  Most importantly it now omits
+  parts of field values or even full columns when the used terminal width
+  is insufficient to display the result.  To disable this behaviour,
+  simply set width to -1 (via -w option or \w in mclient), or chose
+  another rendering mode.
+
 * Wed Jul 21 2010 Fabian Groffen <fabian@cwi.nl>
 - In SQL mode, always use the table formatter, as there is no sense to
   use raw (protocol debug) mode when reading from pipe or file really.

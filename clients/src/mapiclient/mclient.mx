@@ -216,6 +216,7 @@ static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* use raw mode for file input, tabular format in stdin */
 static int pagewidthset = 0;	/* whether the user set the width explicitly */
 static int interactive_stdin = 0;
+static int croppedfields = 0;  /* whatever got cropped/truncated */
 
 enum modifiers {
 	NOmodifier,
@@ -230,6 +231,9 @@ static enum modifiers specials = NOmodifier;
 #define MINCOLSIZE 4
 static char default_nullstring[] = "null";
 static char *nullstring = default_nullstring;
+/* this is the minimum size (that still makes some sense) for writing
+ * variable length columns */
+#define MINVARCOLSIZE 10
 
 /* stolen piece */
 #ifdef HAVE_FTIME
@@ -451,17 +455,21 @@ utf8skip(char *s, size_t i)
 }
 
 static int
-SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
+SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 {
 	int i, more, first = 1;
 	char *t;
 	int rows = 0;		/* return number of output lines printed */
+	size_t ulen;
+	int cutafter[fields];
 
 	/* trim the text if needed */
-	if (trim) {
+	if (trim == 1) {
 		for (i = 0; i < fields; i++) {
 			if ((t = rest[i]) != NULL &&
-			    utf8strlen(t) > (size_t) len[i]) {
+					utf8strlen(t) > (size_t) len[i])
+			{
+				/* eat leading whitespace */
 				while (*t != 0 && isspace((int) *t))
 					t++;
 				rest[i] = t;
@@ -469,47 +477,81 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 		}
 	}
 
+	for (i = 0; i < fields; i++)
+		cutafter[i] = -1;
+
 	do {
 		more = 0;
 		for (i = 0; i < fields; i++) {
-			if (rest[i] == NULL || *rest[i] == 0)
+			if (rest[i] == NULL || *rest[i] == 0) {
 				mnstr_printf(toConsole, "%c %*s ",
-					      first ? '|' : ':', len[i], "");
-			else {
-				size_t ulen;
+						first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':',
+						len[i], "");
+			} else {
+				ulen = utf8strlen(rest[i]);
+
+				if (first && trim == 2) {
+					/* calculate the height of this field according to
+					 * the golden ratio, with a correction for a
+					 * terminal screen (1.62 * 2 -> 3 : 9.72~10) */
+					if (ulen > (size_t) len[i])
+						cutafter[i] = 3 * len[i] / 10;
+				}
+
+				/* on each cycle we get closer to the limit */
+				if (cutafter[i] >= 0)
+					cutafter[i]--;
 
 				/* break the string into pieces and
 				 * left-adjust them in the column */
-				ulen = utf8strlen(rest[i]);
 				t = strchr(rest[i], '\n');
 				if (ulen > (size_t) len[i] || t) {
 					t = utf8skip(rest[i], len[i]);
-					while (t > rest[i] && !isspace((int) *t))
-						while ((*--t & 0xC0) == 0x80)
-							;
-					if (t == rest[i] && !isspace((int) *t))
-						t = utf8skip(rest[i], len[i]);
+					if (trim == 1) {
+						while (t > rest[i] && !isspace((int) *t))
+							while ((*--t & 0xC0) == 0x80)
+								;
+						if (t == rest[i] && !isspace((int) *t))
+							t = utf8skip(rest[i], len[i]);
+					}
 					mnstr_printf(toConsole, "%c",
-						      first ? '|' : ':');
+						      first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
 					if (numeric[i])
 						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - (ulen - utf8strlen(t))),
 							      "");
-					mnstr_printf(toConsole, " %.*s ",
-						      (int) (t - rest[i]),
-						      rest[i]);
-					if (!numeric[i])
-						mnstr_printf(toConsole, "%*s",
-							      (int) (len[i] - (ulen - utf8strlen(t))),
-							      "");
-					while (isspace((int) *t))
-						t++;
+					if ((int)(ulen - utf8strlen(t)) >= len[i] - 2 &&
+							cutafter[i] == 0)
+					{
+						t = utf8skip(rest[i], len[i] - 2);
+						mnstr_printf(toConsole, " %.*s...",
+								  (int) (t - rest[i]),
+								  rest[i]);
+						croppedfields++;
+					} else {
+						mnstr_printf(toConsole, " %.*s ",
+								  (int) (t - rest[i]),
+								  rest[i]);
+						if (!numeric[i])
+							mnstr_printf(toConsole, "%*s",
+									  (int) (len[i] - (ulen - utf8strlen(t))),
+									  "");
+						/* avoid > as border marker if everything
+						 * actually just fits */
+						if (cutafter[i] == 0)
+							cutafter[i] = -1;
+					}
+					if (trim == 1)
+						while (isspace((int) *t))
+							t++;
 					rest[i] = *t ? t : 0;
+					if (cutafter[i] == 0)
+						rest[i] = NULL;
 					if (rest[i])
 						more = 1;
 				} else {
 					mnstr_printf(toConsole, "%c",
-						      first ? '|' : ':');
+							first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
 					if (numeric[i])
 						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - ulen),
@@ -521,10 +563,16 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 							      (int) (len[i] - ulen),
 							      "");
 					rest[i] = 0;
+					/* avoid > as border marker if everything
+					 * actually just fits */
+					if (cutafter[i] == 0)
+						cutafter[i] = -1;
 				}
 			}
 		}
-		mnstr_printf(toConsole, "%c\n", first ? '|' : ':');
+		mnstr_printf(toConsole, "%c%s\n",
+				first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':',
+				wm ? ">" : "");
 		first = 0;
 		rows++;
 	} while (more);
@@ -965,7 +1013,7 @@ RAWrenderer(MapiHdl hdl)
 }
 
 static void
-SQLheader(MapiHdl hdl, int *len, int fields)
+SQLheader(MapiHdl hdl, int *len, int fields, char more)
 {
 	SQLqueryEcho(hdl);
 	SQLseparator(len, fields, '-');
@@ -978,7 +1026,7 @@ SQLheader(MapiHdl hdl, int *len, int fields)
 			names[i] = mapi_get_name(hdl, i);
 			numeric[i] = 0;
 		}
-		SQLrow(len, numeric, names, fields, 1);
+		SQLrow(len, numeric, names, fields, 1, more);
 		SQLseparator(len, fields, '=');
 	}
 }
@@ -1026,13 +1074,12 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 static void
 SQLrenderer(MapiHdl hdl, char singleinstr)
 {
-	int i, total, lentotal, vartotal;
-	int fields, oldfields = 0, max = 1, graphwaste = 0;
+	int i, total, lentotal, vartotal, minvartotal;
+	int fields, oldfields = 0, printfields, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
 	int ps = rowsperpage, silent = 0;
-	int mypagewidth = pagewidth;
 	mapi_int64 rows = 0;
 
 	if (mark2)
@@ -1061,26 +1108,19 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			memset(rest, 0, sizeof(char *) * fields);
 			memset(numeric, 0, sizeof(int) * fields);
 
-			/* what we waste on space on the display is
-			 * the column separators ' | ', but the edges
-			 * lack the edgespace of course */
-			graphwaste = ((fields * 3) - 1) + 2;
-
 			total = 0;
 			lentotal = 0;
 			vartotal = 0;
+			printfields = 0;
 			for (i = 0; i < fields; i++) {
 				char *s;
 
 				len[i] = mapi_get_len(hdl, i);
-				/* TODO: Replace Martin's extension by something more sensible
-				 * also cut fields that are bigger than what could
-				 * possibly be displayed to "fair share" width */
-				if (len[i] == 0 || len[i] > pagewidth - graphwaste) {
-					/* no table width known, give
-					   a fair share of the available space (+1 so we
-					   always fully fill the terminal) */
-					len[i] = 1 + (pagewidth - graphwaste) / fields;
+				if (len[i] == 0) {
+					/* no table width known, use maximum, rely on
+					 * squeezing lateron to fix it to whatever is
+					 * available */
+					len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
 				}
 				if (len[i] < MINCOLSIZE)
 					len[i] = MINCOLSIZE;
@@ -1102,43 +1142,44 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 					 strcmp(s, "double") == 0 ||
 					 strcmp(s, "float") == 0);
 
-				if (!numeric[i])
+				if (!numeric[i]) {
 					vartotal += len[i];
+					minvartotal += MINVARCOLSIZE;
+				}
 				total += len[i];
+
+				/* do a very pessimistic calculation to determine if
+				 * more columns would actually fit on the screen */
+				if (pagewidth > 0 &&
+						((((printfields + 1) * 3) - 1) + 2) + /* graphwaste */
+						(total - vartotal) + minvartotal > pagewidth)
+				{
+					/* this last column was too much */
+					total -= len[i];
+					if (!numeric[i])
+						vartotal -= len[i];
+					break;
+				}
+
 				lentotal += (hdr[i] > len[i] ? hdr[i] : len[i]);
+				printfields++;
 			}
 
-			/* Punishing the value fields is done based on
-			 * how much squeezing will result in.  The
-			 * objective is to have at most a single
-			 * break, but this is impossible to achieve in
-			 * case of a very long string, of course.
-			 * However, in case of many columns it may be
-			 * more useful to write 2x as many columns as
-			 * the terminal width, then to condense the
-			 * columns into 3-char wide tall fields that
-			 * are unreadable.  Basically, the only fields
-			 * that we want to break are non-numerical
-			 * fields. */
-			/* TODO: this must go in favour of more aggressive string
-			 * truncation */
-			if (graphwaste + total > mypagewidth) {
-				while (total > mypagewidth ||
-				       (vartotal + 1) / 2 < total - mypagewidth) {
-					/* double terminal size to
-					 * avoid breaking a line
-					 * multiple times */
-					mypagewidth += pagewidth;
-				}
-			}
+			/* what we waste on space on the display is
+			 * the column separators ' | ', but the edges
+			 * lack the edgespace of course */
+			graphwaste = ((printfields * 3) - 1) + 2;
+			/* make sure we can indicate we dropped columns */
+			if (fields != printfields)
+				graphwaste++;
 
 			/* punish the column headers first until you
-			 * cannot squeeze */
-			while (graphwaste + lentotal > mypagewidth) {
+			 * cannot squeeze any further */
+			while (pagewidth > 0 && graphwaste + lentotal > pagewidth) {
 				/* pick the column where the header is
 				 * longest compared to its content */
 				max = -1;
-				for (i = 0; i < fields; i++) {
+				for (i = 0; i < printfields; i++) {
 					if (hdr[i] > len[i]) {
 						if (max == -1 ||
 						    hdr[max] - len[max] < hdr[i] - len[i])
@@ -1151,18 +1192,20 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 				lentotal--;
 			}
 
-			/* correct the lengths in case only the headers were
-			 * squeezed, if the content itself is wider, the headers
-			 * will be squeezed to their size (see below) */
-			for (i = 0; i < fields; i++)
+			/* correct the lengths if the headers are wider than the
+			 * content, since the headers are maximally squeezed to the
+			 * content above, if a header is larger than its content, it
+			 * means there was space enough.  If not, the content will
+			 * be squeezed below. */
+			for (i = 0; i < printfields; i++)
 				if (len[i] < hdr[i])
 					len[i] = hdr[i];
 
 			/* worst case: lentotal = total, which means it still
 			 * doesn't fit, values will be squeezed next */
-			while (graphwaste + total > mypagewidth) {
+			while (pagewidth > 0 && graphwaste + total > pagewidth) {
 				max = -1;
-				for (i = 0; i < fields; i++) {
+				for (i = 0; i < printfields; i++) {
 					if (!numeric[i] && (max == -1 || len[i] > len[max]))
 						max = i;
 				}
@@ -1178,11 +1221,12 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 					break;
 			}
 
-			SQLheader(hdl, len, fields);
+			SQLheader(hdl, len, printfields, fields != printfields);
 			oldfields = fields;
+			croppedfields = 0;
 		}
 
-		for (i = 0; i < fields; i++) {
+		for (i = 0; i < printfields; i++) {
 			rest[i] = mapi_fetch_field(hdl, i);
 			if (rest[i] == NULL)
 				rest[i] = nullstring;
@@ -1210,23 +1254,32 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		}
 
 		if (ps > 0 && rows >= ps && fromConsole != NULL) {
-			SQLpagemove(len, fields, &ps, &silent);
+			SQLpagemove(len, printfields, &ps, &silent);
 			rows = 0;
 			if (silent)
 				continue;
 		}
 
-		rows += SQLrow(len, numeric, rest, fields, 1);
+		rows += SQLrow(len, numeric, rest, printfields, 2, 0);
 	}
 	if (oldfields)
-		SQLseparator(len, oldfields, '-');
+		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
 	mark2 = strdup(buf); /* for the timer output */
-	printf(LLFMT " tuple%s%s%s%s\n", rows, rows != 1 ? "s" : "",
+	printf(LLFMT " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
 			singleinstr ? " (" : "",
 			singleinstr ? timerHuman() : "",
 			singleinstr ? ")" : "");
+	if (oldfields != printfields) {
+		rows = oldfields - printfields;
+		printf(" !" LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
+		if (croppedfields > 0)
+			printf(", %d field%s truncated",
+					croppedfields, croppedfields != 1 ? "s" : "");
+		printf("!");
+	}
+	printf("\n");
 	if (len)
 		free(len);
 	if (hdr)
@@ -1277,11 +1330,11 @@ setWidth(void)
 #ifdef TIOCGWINSZ
 		struct winsize ws;
 
-		if (ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
+		if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
 			pagewidth = ws.ws_col;
 		else
 #endif
-			pagewidth = DEFWIDTH;
+			pagewidth = -1;
 	}
 }
 
@@ -1337,7 +1390,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 	MapiMsg rc = MERROR;
 	mapi_int64 aff, lid;
 	char *reply;
-	int oldpagewidth;
 #ifdef HAVE_POPEN
 	stream *saveFD, *saveFD_raw;
 
@@ -1441,18 +1493,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			}
 		}
 
-		oldpagewidth = pagewidth;
-
-		if (pagewidth <= 0) {
-			int i, n = mapi_get_field_count(hdl);
-
-			pagewidth = 2 * n + 4;
-			for (i = 0; i < n; i++) {
-				int len = mapi_get_len(hdl, i);
-
-				pagewidth += len < MINCOLSIZE ? MINCOLSIZE : len;
-			}
-		}
 		/* note: specials != NOmodifier implies mode == SQL */
 		if (specials != NOmodifier && debugMode()) {
 			SQLdebugRendering(hdl);
@@ -1487,7 +1527,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				break;
 			}
 		}
-		pagewidth = oldpagewidth;
 	} while (!mnstr_errnr(toConsole) &&
 		 (rc = mapi_needmore(hdl)) == MOK &&
 		 (rc = mapi_next_result(hdl)) == 1);
