@@ -394,7 +394,7 @@ static MalBlkPtr
 TARmakeleg(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int idx, Lifespan span, int *map)
 {
 	MalBlkPtr tm = NULL;
-	InstrPtr p = NULL;
+	InstrPtr p = NULL, sig;
 	int i, j, top=0, fnd, block = 0;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
@@ -449,7 +449,7 @@ Build the variable admin table.
 @-
 The leg should have enough instructions to warrant a distributed execution. This should involve
 a careful analysis of the instructions assembled. For the time being, we only allow for a leg 
-if at least a sql.bind operation belongs to the list
+if at least a sql.bind operation belongs to the list and the leg has a minimimal number of statements.
 @c
 	fnd = 0;
 	for( i=0; i<top; i++) {
@@ -475,20 +475,20 @@ Create the leg function.
 	s= newFunction(tarantulaRef, putName(buf,strlen(buf)), FUNCTIONsymbol);
 	insertSymbol(findModule(cntxt->nspace,tarantulaRef),s);
 	tm= s->def;
-	p = getInstrPtr(tm,0);
+	sig= getInstrPtr(tm,0);
+	setVarType(tm,getArg(sig,0), getArgType(mb,old[pc],idx));
+	setVarUDFtype(tm,getArg(sig,0));
 
 	/* add the return variables */
-	p->retc = 0;
-	p->argc = 0;
-	for ( i = 0; i< otop; i++){
+	for ( i = 1; i< otop; i++){
 		alias[output[i]] = cloneVariable(tm,mb,output[i]);
-		p = pushReturn(tm, p, alias[output[i]]);
-		setVarUDFtype(tm,getArg(p,i));
+		sig = pushReturn(tm, sig, alias[output[i]]);
+		setVarUDFtype(tm,getArg(sig,i));
 	}
 	/* add the arguments from the query template */
 	for ( i = 0; i< itop; i++){
 		alias[input[i]] = cloneVariable(tm,mb,input[i]);
-		p = pushArgument(tm, p, alias[input[i]]);
+		sig = pushArgument(tm, sig, alias[input[i]]);
 	}
 
 	/* include the necessary functions */
@@ -508,8 +508,10 @@ Create the leg function.
 	p->barrier = RETURNsymbol;
 	p->retc= 0;
 	p->argc= 0;
+	for ( i = 0; i < sig->retc; i++)
+		p = pushReturn(tm,p, getArg(sig,i));
 	for ( i = 0; i < otop; i++)
-		p = pushReturn(tm,p, alias[output[i]]);
+		p = pushArgument(tm,p, alias[output[i]]);
 	pushEndInstruction(tm);
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
@@ -594,13 +596,13 @@ TARmakeBidding(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes)
 	}
 	sig = pushArgument(tm, sig, newTmpVariable(tm,TYPE_int));
 
-	for (n= 0; n < nodes; n++, k = 0){
+	for (n= 0; n < nodes; n++){
 		p= newInstruction(tm,ASSIGNsymbol);
 		setModuleId(p, tarantulaRef);
 		setFunctionId(p, getBidRef);
 		p= pushInt(tm, p,n);
-		for( i=old[pc]->retc; i< old[pc]->argc; i++){
-			snprintf(buf,BUFSIZ,"%s_%d_%d",name,getArg(old[pc],0),k++);
+		for(k=0, i=old[pc]->retc; i< old[pc]->argc; k++, i++){
+			snprintf(buf,BUFSIZ,"%s_%d_%d",name,getArg(old[pc],0),k);
 			p = pushStr(tm,p,buf);
 			p = pushReturn(tm, p, tmp = newTmpVariable(tm,TYPE_int));
 			r = pushArgument(tm,r,tmp);
@@ -684,6 +686,8 @@ TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, MalBlkPtr le
 	r= newInstruction(tm, ASSIGNsymbol);
 	r->barrier= RETURNsymbol;
 	r->retc= r->argc= 0;
+	for ( j=0; j< sig->retc; j++)
+		r= pushReturn(tm,r, getArg(sig,j));
 
 	/* l:=remote.get(conn,k) */
 	for ( j=0; j< sig->retc; j++){
@@ -693,7 +697,7 @@ TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, MalBlkPtr le
 		l= getArg(q,0);
 		setVarType(tm,l, getArgType(tm,sig,j));
 		setVarUDFtype(tm, l);
-		r= pushReturn(tm,r,l);
+		r= pushArgument(tm,r,l);
 	}
 
 	/* catch and propagate errors */
@@ -717,6 +721,7 @@ TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, MalBlkPtr le
 }
 @-
 The legs of the tarantula can be executed in parallel.
+Watch out, the arguments should occupy the head of the stack.
 @c
 static void
 TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int legs, MalBlkPtr leg)
@@ -732,18 +737,14 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 	insertSymbol(findModule(cntxt->nspace,tarantulaRef),s);
 	tm= s->def;
 
-	/* include the return variables */
 	sig = getInstrPtr(tm,0);
 	lsig= getInstrPtr(leg,0);
-	sig->retc = 0;
-	sig->argc = 0;
-	for ( j=0;j < lsig->retc; j++){
+	/* the result is a mat.pack whose type comes from mb */
+	setVarType(tm,getArg(sig,0), getArgType(mb,old[pc],0));
+
+	/* include the remaining return variables */
+	for ( j=1;j < lsig->retc; j++)
 		sig= pushReturn(tm, sig, cloneVariable(tm, leg, getArg(lsig,j)));
-		/* initialize returns */
-		r= newAssignment(tm);
-		getArg(r,0)= getArg(lsig,j);
-		pushNil(tm,r,getArgType(tm,lsig,j));
-	}
 
 	/* add the execution nodes */
 	for( k=0 ; k<nodes; k++){
@@ -754,6 +755,16 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 	for( j =lsig->retc; j<lsig->argc; j++){
 		int a= getArg(lsig,j);
 		sig = pushArgument(tm, sig, cloneVariable(tm,leg,a));
+	}
+
+	/* initialize the return variables */
+	r= newAssignment(tm);
+	getArg(r,0)= getArg(sig,0);
+	pushNil(tm,r,getArgType(tm,sig,0));
+	for ( j=1;j < lsig->retc; j++){
+		r= newAssignment(tm);
+		getArg(r,0)= getArg(lsig,j);
+		pushNil(tm,r,getArgType(tm,lsig,j));
 	}
 
 	if ( tarantulaLocal == 0){
@@ -780,7 +791,7 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 		r= pushArgument(tm,r, getArg(p,0));
 	}
 
-	getArg(r,0)= getArg(sig,0);
+	k =getArg(r,0)= getArg(sig,0);
 	pushInstruction(tm,r);
 
 	if ( tarantulaLocal == 0){
@@ -792,6 +803,7 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 	r= newInstruction(tm,ASSIGNsymbol);
 	r->barrier = RETURNsymbol;
 	getArg(r,0)= getArg(sig,0);
+	/* r = pushArgument(tm,r,k);*/
 	pushInstruction(tm,r);
 
 	pushEndInstruction(tm);
