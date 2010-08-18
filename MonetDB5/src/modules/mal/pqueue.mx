@@ -315,7 +315,7 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, wrd *N)
   BUN i, n = BATcount(t);
   oid idx = t->hseqbase;
 
-  if ((BUN) *N < n)
+  if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
 	  n = (BUN) *N;
   if (do_pqueue_init(H,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
@@ -337,7 +337,7 @@ int pqueue_topn_@1@2(BAT **H, BAT *t, wrd *N)
   BUN i, n = BATcount(t);
   BUN p = BUNfirst(t);
 
-  if ((BUN) *N < n)
+  if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
 	  n = (BUN) *N;
   if (do_pqueue_init(H,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
@@ -362,7 +362,9 @@ int pqueue_utopn_void@1@2(BAT **H, BAT *t, wrd *N)
   BUN i, j, n, cnt = BATcount(t), p;
   oid idx = t->hseqbase;
 
-  n = (BUN) *N;
+  n = cnt;
+  if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX)
+          n = (BUN) *N;
   if (do_pqueue_init(H,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
   duplicates = BATnew(TYPE_oid, TYPE_oid, n);
@@ -410,7 +412,9 @@ int pqueue_utopn_@1@2(BAT **H, BAT *t, wrd *N)
   BUN i, j, n, cnt = BATcount(t), p;
   oid *idx;
 
-  n = (BUN) *N;
+  n = cnt;
+  if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX)
+          n = (BUN) *N;
   if (do_pqueue_init(H,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
   duplicates = BATnew(TYPE_oid, TYPE_oid, n);
@@ -596,7 +600,7 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, wrd *N)
   BUN p = BUNfirst(t);
   int tpe = BATttype(t);
 
-  if ((BUN) *N < n)
+  if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
    	n = (BUN) *N;
   if (do_pqueue_init(H,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
@@ -618,7 +622,7 @@ int pqueue_topn_any@1(BAT **H, BAT *t, wrd *N)
   BUN p = BUNfirst(t);
   int tpe = BATttype(t);
 
-  if ((BUN) *N < n)
+  if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
    	n = (BUN) *N;
   if (do_pqueue_init(H,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
@@ -643,7 +647,9 @@ int pqueue_utopn_voidany@1(BAT **H, BAT *t, wrd *N)
   oid idx = t->hseqbase;
   int tpe = BATttype(t);
 
-  n = (BUN) *N;
+  n = cnt;
+  if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX)
+          n = (BUN) *N;
   if (do_pqueue_init(H,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
   duplicates = BATnew(TYPE_oid, TYPE_oid, n);
@@ -695,7 +701,9 @@ int pqueue_utopn_any@1(BAT **H, BAT *t, wrd *N)
   ptr v;
   int tpe = BATttype(t);
 
-  n = (BUN) *N;
+  n = cnt;
+  if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX)
+          n = (BUN) *N;
   if (do_pqueue_init(H,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
   duplicates = BATnew(TYPE_oid, TYPE_oid, n);
