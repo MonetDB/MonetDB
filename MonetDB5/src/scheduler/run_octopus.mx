@@ -65,7 +65,7 @@ pattern scheduler.register():bit
 address OCTOPUSdiscoverRegister
 comment "Discover workers and register tentacles.";
 
-pattern octopus.register(dbname:str,fname:str):void
+pattern octopus.register(dbname:str,fname:str...):void
 address OCTOPUSregister
 comment "Register mal function fname at server dbname.";
 
@@ -77,7 +77,7 @@ pattern scheduler.bidding():bit
 address OCTOPUSbidding
 comment "Collect bids from workers.";
 
-pattern scheduler.makeSchedule(:int,:lng...):bte...
+pattern scheduler.makeSchedule(:int,:lng...):str...
 address OCTOPUSmakeSchedule
 comment "Make schedule based on bids.";
 
@@ -348,9 +348,11 @@ static int admitSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 
 	if ( p->token == NOOPsymbol )
 		return 1;
-	if ( strncmp (getFunctionId(p), "exec", 4) == 0 ) 
+/*	if ( strncmp (getFunctionId(p), "exec", 4) == 0 ) 
 		dburi = *(str*)getArgReference(s, p,2);
 	else dburi = *(str*)getArgReference(s, p,1);
+*/
+	dburi = *(str*)getArgReference(s, p,1);
 
 	MT_set_lock(s->stklock,"serialConn");
 	i = OCTOPUSfindPeer(dburi);
@@ -394,9 +396,10 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 	if ( p->token == NOOPsymbol )
 		return 0;
 
-	if ( strncmp (getFunctionId(p), "exec", 4) == 0 ) 
+/*	if ( strncmp (getFunctionId(p), "exec", 4) == 0 ) 
 		dburi = *(str*)getArgReference(s, p,2);
-	else dburi = *(str*)getArgReference(s, p,1);
+	else dburi = *(str*)getArgReference(s, p,1); */
+	dburi = *(str*)getArgReference(s, p,1);
 	i = OCTOPUSfindPeer(dburi);
 
 	MT_set_lock(s->stklock,"serialConn");
@@ -481,15 +484,13 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
+	int i, k;
 	str conn, fname, dburi, msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
 	dburi = *(str*)getArgReference(stk,pci,1);
-	fname = *(str*)getArgReference(stk,pci,2);
 
-		
 #ifdef DEBUG_RUN_OCTOPUS
 		mnstr_printf(GDKout,"connect to  uri %s\n", dburi);
 #endif
@@ -500,19 +501,25 @@ str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	i =	OCTOPUSgetPeer(dburi);
 
-	if( !OCTOPUSfind(i, fname) ){
-		msg = RMTregisterInternal(cntxt, conn, octopusRef, fname);
+	for (k = 2;	k < pci->argc; k++) {
+		fname = *(str*)getArgReference(stk,pci,k);
+
+		if( !OCTOPUSfind(i, fname) ){
+			msg = RMTregisterInternal(cntxt, conn, octopusRef, fname);
 
 #ifdef DEBUG_RUN_OCTOPUS
-		mnstr_printf(GDKout,"octopus.%s registered at site %s\n",
-			fname,dburi);
-		mnstr_printf(GDKout,"reply: %s\n",msg?msg:"ok");
+			mnstr_printf(GDKout,"octopus.%s registered at site %s\n",
+				fname,dburi);
+			mnstr_printf(GDKout,"reply: %s\n",msg?msg:"ok");
 #endif
-		if ( msg == MAL_SUCCEED){
-			Registry r= (Registry) GDKzalloc(sizeof(struct REGMAL));
-			r->fcn = GDKstrdup(fname);
-			r->nxt = peers[i].nxt;
-			peers[i].nxt = r;
+			if ( msg == MAL_SUCCEED){
+				Registry r= (Registry) GDKzalloc(sizeof(struct REGMAL));
+				r->fcn = GDKstrdup(fname);
+				r->nxt = peers[i].nxt;
+				peers[i].nxt = r;
+			}
+			else 
+				return msg;
 		}
 	}
 
@@ -616,18 +623,18 @@ putJob(int t, int tcnt, lng **bid, bte *busy, bte **rsch)
 str
 OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tcnt=1, offset, i, j, k, idx;
+	int tcnt=1, offset, i, j, k, pr, v;
 	str msg = MAL_SUCCEED;
 	lng **bid=NULL;	
-	bte *sch=NULL, *s, *busy;
+	bte *sch=NULL, *busy;
 
 	(void) mb;
 	(void) cntxt;
 
 	tcnt = *(int*) getArgReference(stk,pci,pci->retc);
-	if ( pci->argc != 2*tcnt*tcnt + 1 )
+	if ( pci->argc != tcnt*tcnt + tcnt + 1 )
 		return "Wrong argument number of makeSchedule";
-	offset = tcnt * tcnt + 1;
+	offset = tcnt + 1;
 	bid = (lng**) GDKzalloc(sizeof(lng*) * tcnt);
 	sch = (bte*) GDKzalloc(sizeof(bte) * tcnt);
 	busy = (bte*) GDKzalloc(sizeof(bte) * tcnt);
@@ -650,13 +657,11 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	putJob(0,tcnt,bid,busy,&sch);
 		
 	/* set returned schedule variables */
-	for ( j = 0; j < tcnt; j++)
-		for ( k = 0; k < tcnt; k++){
-			idx = j * tcnt + k;
-			s = (bte*) getArgReference(stk,pci,idx);
-			if ( sch[j] == k)
-				*s = 1;
-			else *s = 0;
+	for ( j = 0; j < tcnt; j++){
+		v = getArg(pci,j);
+		pr = workers[sch[j]].pnum;
+		stk->stk[v].val.sval = GDKstrdup(peers[pr].uri);
+		stk->stk[v].len = (int) strlen(stk->stk[v].val.sval);
 	}
 
 	for ( j= 0; j < tcnt; j++)
@@ -686,7 +691,7 @@ str
 OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *res = (bit*) getArgReference(stk,pci,0);
-	int j, start, v;
+	int j, start;
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
 
@@ -696,10 +701,6 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getInstrPtr(mb,j);
 		if ( p->barrier == EXITsymbol )
 			break;
-		v = getArg(p,2);
-		if ( strcmp(stk->stk[v].val.sval, "NOTworker") == 0 )
-			p->token = NOOPsymbol;
-
 	}
 
 	stk->admit = &admitSerialConn;
