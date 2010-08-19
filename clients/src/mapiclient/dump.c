@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "msqldump.h"
 
 #ifdef NATIVE_WIN32
@@ -276,6 +277,20 @@ dump_foreign_keys(Mapi mid, char *schema, char *tname, stream *toConsole)
 	return 1;
 }
 
+static char _toupperbuf[64];
+static char *
+toUpper(const char *s)
+{
+	size_t i;
+	size_t len = strlen(s);
+	if (len > 63)
+		len = 63;
+	for (i = 0; i < len; i++)
+		_toupperbuf[i] = toupper((int)s[i]);
+	_toupperbuf[i] = '\0';
+	return(_toupperbuf);
+}
+
 int
 describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int foreign)
 {
@@ -399,13 +414,18 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 			else
 				c_type = "bigint";
 		}
-		if (strcmp(c_type, "boolean") == 0 ||
-		    strcmp(c_type, "int") == 0 ||
-		    strcmp(c_type, "smallint") == 0 ||
-		    strcmp(c_type, "tinyint") == 0 ||
-		    strcmp(c_type, "bigint") == 0 ||
-		    strcmp(c_type, "date") == 0) {
-			space = mnstr_printf(toConsole, "%s", c_type);
+		if (strcmp(c_type, "boolean") == 0) {
+			space = mnstr_printf(toConsole, "BOOLEAN");
+		} else if (strcmp(c_type, "int") == 0) {
+			space = mnstr_printf(toConsole, "INTEGER");
+		} else if (strcmp(c_type, "smallint") == 0) {
+			space = mnstr_printf(toConsole, "SMALLINT");
+		} else if (strcmp(c_type, "tinyint") == 0) {
+			space = mnstr_printf(toConsole, "TINYINT");
+		} else if (strcmp(c_type, "bigint") == 0) {
+			space = mnstr_printf(toConsole, "BIGINT");
+		} else if (strcmp(c_type, "date") == 0) {
+			space = mnstr_printf(toConsole, "DATE");
 		} else if (strcmp(c_type, "month_interval") == 0) {
 			if (strcmp(c_type_digits, "1") == 0)
 				space = mnstr_printf(toConsole, "INTERVAL YEAR");
@@ -463,32 +483,33 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		} else if (strcmp(c_type, "real") == 0) {
 			if (strcmp(c_type_digits, "24") == 0 &&
 			    strcmp(c_type_scale, "0") == 0)
-				space = mnstr_printf(toConsole, "real");
+				space = mnstr_printf(toConsole, "REAL");
 			else if (strcmp(c_type_scale, "0") == 0)
-				space = mnstr_printf(toConsole, "float(%s)", c_type_digits);
+				space = mnstr_printf(toConsole, "FLOAT(%s)", c_type_digits);
 			else
-				space = mnstr_printf(toConsole, "float(%s,%s)",
+				space = mnstr_printf(toConsole, "FLOAT(%s,%s)",
 						c_type_digits, c_type_scale);
 		} else if (strcmp(c_type, "double") == 0) {
 			if (strcmp(c_type_digits, "53") == 0 &&
 			    strcmp(c_type_scale, "0") == 0)
-				space = mnstr_printf(toConsole, "double");
+				space = mnstr_printf(toConsole, "DOUBLE");
 			else if (strcmp(c_type_scale, "0") == 0)
-				space = mnstr_printf(toConsole, "float(%s)", c_type_digits);
+				space = mnstr_printf(toConsole, "FLOAT(%s)", c_type_digits);
 			else
-				space = mnstr_printf(toConsole, "float(%s,%s)",
+				space = mnstr_printf(toConsole, "FLOAT(%s,%s)",
 						c_type_digits, c_type_scale);
 		} else if (strcmp(c_type, "decimal") == 0 &&
 			   strcmp(c_type_digits, "1") == 0 &&
 			   strcmp(c_type_scale, "0") == 0) {
-			space = mnstr_printf(toConsole, "decimal");
+			space = mnstr_printf(toConsole, "DECIMAL");
 		} else if (strcmp(c_type_digits, "0") == 0) {
-			space = mnstr_printf(toConsole, "%s", c_type);
+			space = mnstr_printf(toConsole, "%s", toUpper(c_type));
 		} else if (strcmp(c_type_scale, "0") == 0) {
-			space = mnstr_printf(toConsole, "%s(%s)", c_type, c_type_digits);
+			space = mnstr_printf(toConsole, "%s(%s)",
+					toUpper(c_type), c_type_digits);
 		} else {
 			space = mnstr_printf(toConsole, "%s(%s,%s)",
-					c_type, c_type_digits, c_type_scale);
+					toUpper(c_type), c_type_digits, c_type_scale);
 		}
 		if (strcmp(c_null, "false") == 0)
 			mnstr_printf(toConsole, "%*s NOT NULL",

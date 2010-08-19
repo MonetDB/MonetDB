@@ -112,7 +112,7 @@ deep_copy_expr(PFmsa_expr_t *n)
    Put a selection and projection operator on top of the current
    operator to 'materialize' changes in schema and predicates */
 static void
-bind(PFla_op_t *n)
+bindop(PFla_op_t *n)
 {
     PFmsa_op_t *sel = PFmsa_op_select (OP(n), SEL_LIST(n));
     PFmsa_op_t *prj = PFmsa_op_project (sel, false, PRJ_LIST(n));
@@ -157,7 +157,7 @@ alg2msa_worker(PFla_op_t *n)
             PFalg_collist_t         *collist;
             
             /* bind node containing la DAG */
-            bind(R(n));
+            bindop(R(n));
             
             /* la_side_effects node will not be bound */
             
@@ -180,7 +180,7 @@ alg2msa_worker(PFla_op_t *n)
             /* FIXME: NOT TESTED YET! */
             
             /* bind node with la DAG */
-            bind(R(n));
+            bindop(R(n));
             
             /* la_side_effects node will not be bound */
             
@@ -280,8 +280,8 @@ alg2msa_worker(PFla_op_t *n)
             
         case la_cross:
             
-            bind(L(n));
-            bind(R(n));
+            bindop(L(n));
+            bindop(R(n));
             
             /* build operator and lists */
             op = PFmsa_op_cross(OP(L(n)), OP(R(n)));
@@ -495,8 +495,8 @@ alg2msa_worker(PFla_op_t *n)
             
         case la_disjunion:
             
-            bind(L(n));
-            bind(R(n));
+            bindop(L(n));
+            bindop(R(n));
             
             /* build operator and lists */
             op = PFmsa_op_union(OP (L(n)), OP (R(n)));
@@ -518,8 +518,8 @@ alg2msa_worker(PFla_op_t *n)
             PFmsa_exprlist_t        *exprlist;
             PFmsa_expr_t            *expr;
             
-            bind(L(n));
-            bind(R(n));
+            bindop(L(n));
+            bindop(R(n));
             
             exprlist = el(n->schema.count);
             
@@ -549,8 +549,8 @@ alg2msa_worker(PFla_op_t *n)
             
         case la_difference:
             
-            bind(L(n));
-            bind(R(n));
+            bindop(L(n));
+            bindop(R(n));
             
             /* build operator and lists */
             op = PFmsa_op_except(OP (L(n)), OP (R(n)));

@@ -12,17 +12,17 @@ monetdb-sql (2.38.3-20100712) unstable; urgency=low
 
 monetdb-sql (2.38.3-20100712) unstable; urgency=low
 
-  * Make queries like
-(SELECT ...) UNION ALL (SELECT ...) ORDER BY ...;
-work, again, that were broken since Jun 22 2010
-triggering errors like "ORDER BY: missing select operator"
+  * Make queries like (SELECT ...) UNION ALL (SELECT ...) ORDER BY
+    ...; work, again, that were broken since Jun 22 2010 triggering
+    errors like "ORDER BY: missing select operator"
 
  -- Stefan Manegold <Stefan.Manegold@cwi.nl>  Mon, 12 Jul 2010 12:00:28 +0200
 
 monetdb-sql (2.38.3-20100712) unstable; urgency=low
 
   * Removed false connection warning about missing SQL script ("could not
-read createdb.sql") received by the client upon first connect on a
+    read createdb.sql") received by the client upon first connect on a
+    newly created database.  Bug #2591
 
  -- Fabian Groffen <fabian@cwi.nl>  Fri, 9 Jul 2010 12:00:28 +0200
 
@@ -34,19 +34,23 @@ monetdb-sql (2.38.3-20100709) unstable; urgency=low
 
 monetdb-sql (2.38.3-20100709) unstable; urgency=low
 
-  * Improved error message for certain type-related problems by including the affected column name.
+  * Improved error message for certain type-related problems by
+    including the affected column name.
 
  -- Fabian Groffen <fabian@cwi.nl>  Thu, 8 Jul 2010 11:44:11 +0200
 
 monetdb-sql (2.38.3-20100709) unstable; urgency=low
 
-  * Make TEXT a separate keyword, separating it from CLOB, such that we can sloppily allow TEXT to appear as a column name, since it seems not to be in the standard as reserved keyword.
+  * Make TEXT a separate keyword, separating it from CLOB, such that
+    we can sloppily allow TEXT to appear as a column name, since it
+    seems not to be in the standard as reserved keyword.
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 7 Jul 2010 11:44:11 +0200
 
 monetdb-sql (2.38.3-20100709) unstable; urgency=low
 
-  * Fixed bug 2581. Completed the implementation of handling boolean types in prepare statements.
+  * Fixed bug 2581. Completed the implementation of handling Boolean
+    types in prepare statements.
   * Fix bug 2582. Statements with 'constant in ( )' are now handled properly.
   * Fixed bug 2583 + added test. The assert was incorrect.
 
@@ -56,17 +60,17 @@ monetdb-sql (2.38.3-20100706) unstable; urgency=low
 
   * Fixed bug in zero_or_one
   * Fixed bug in dead code elimination for projections with distinct
-  * Fixed bug handling join with constant values on both sides (like group results and constants)
+  * Fixed bug handling join with constant values on both sides (like
+    group results and constants)
   * fixed bug in UPDATE TABLE when updating multiple rows
 
  -- Niels Nes <niels@cwi.nl>  Mon, 5 Jul 2010 14:06:18 +0200
 
 monetdb-sql (2.38.3-20100706) unstable; urgency=low
 
-  * fixed bug 2564:
-    in case group by column is not found as alias in projection list,
-    fall back to check plain input columns
-    in order to find the underlying BAT and check its sortedness
+  * fixed bug 2564: in case group by column is not found as alias in
+    projection list, fall back to check plain input columns in order
+    to find the underlying BAT and check its sortedness
 
  -- Stefan Manegold <Stefan.Manegold@cwi.nl>  Wed, 30 Jun 2010 14:06:18 +0200
 
@@ -116,23 +120,23 @@ monetdb-sql (2.38.1-20100618) unstable; urgency=low
 monetdb-sql (2.38.1-20100618) unstable; urgency=low
 
   * Made compilation of "testing" (and "java") independent of MonetDB.
-    This is mainly for Windows, but also on other systems, "testing" can now be
-    built independently of (and hence before) "MonetDB".
-    Files that mimic configure functionality on Windows were moved from
-    "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
-    requiring a complete rebuild from scratch on Windows.
-    getopt() support in testing has changed; hence, (most probably) requiring a
-    rebuild from scratch of testing on other systems.
+    This is mainly for Windows, but also on other systems, "testing"
+    can now be built independently of (and hence before) "MonetDB".
+    Files that mimic configure functionality on Windows were moved
+    from "MonetDB" to "buildtools"; hence, this affects all packages
+    on Windows, requiring a complete rebuild from scratch on Windows.
+    getopt() support in testing has changed; hence, (most probably)
+    requiring a rebuild from scratch of testing on other systems.
 
  -- Stefan Manegold <manegold@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
 
 monetdb-sql (2.38.1-20100618) unstable; urgency=low
 
-  * Implemented build directory support for Windows,
-    i.e., like on Unix/Linux also on Windows we can now build in a separate
-    build directory as alternative to ...<package>NT, and thus keep the
-    latter clean from files generated during the build.
-    On Windows, the build directory must be a sibling of ...<package>NT .
+  * Implemented build directory support for Windows, i.e., like on
+    Unix/Linux also on Windows we can now build in a separate build
+    directory as alternative to ...<package>NT, and thus keep the
+    latter clean from files generated during the build.  On Windows,
+    the build directory must be a sibling of ...<package>NT .
 
  -- Stefan Manegold <manegold@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
 
@@ -145,7 +149,6 @@ monetdb-sql (2.36.5-20100420) unstable; urgency=low
 monetdb-sql (2.36.5-20100420) unstable; urgency=low
 
   * fixed bug #2983773 "SQL: minimal optimizer pipe unstable"
-    https://sourceforge.net/tracker/index.php?func=detail&aid=2983773&group_id=56967&atid=482468
 
  -- Stefan Manegold <manegold@cwi.nl>  Thu, 8 Apr 2010 10:48:19 +0200
 

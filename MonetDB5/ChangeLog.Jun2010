@@ -1,9 +1,13 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org>
+- If extensions such as SQL and GEOM are properly installed, they are
+  loaded automatically when mserver5 starts.  This fixes bug 2522.
+
 * Fri Jul 30 2010 Niels Nes <niels@cwi.nl>
 - Fixed bug 2557. There was a bug in the mergetable optimizer which was
-  triggered by multi column (atleast 32 columns).
+  triggered by multi column (at least 32 columns).
 
 * Wed Jul 28 2010 Martin Kersten <mk@cwi.nl>
 - Added missing multiplex version of MAL str.stringlength().

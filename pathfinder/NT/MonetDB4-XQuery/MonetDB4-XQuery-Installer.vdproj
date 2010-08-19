@@ -1042,7 +1042,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_039D616D2FE84FF495B8F9DCBC94DEA7"
             {
-            "SourcePath" = "8:C:\\Program Files\\Intel\\Compiler\\C++\\10.1.022\\IA32\\Bin\\libmmd.dll"
+            "SourcePath" = "8:C:\\Program Files\\Intel\\Compiler\\11.1\\046\\bin\\ia32\\libmmd.dll"
             "TargetName" = "8:libmmd.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -2282,7 +2282,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_778EBECF7BCE467FB89B54CB42701480"
             {
-            "SourcePath" = "8:C:\\libxml2-2.6.32+.win32\\bin\\libxml2.dll"
+            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.7.win32\\lib\\libxml2.dll"
             "TargetName" = "8:libxml2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3222,7 +3222,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C464E85622B641E5A8EEA48F39228B0C"
             {
-            "SourcePath" = "8:C:\\Pthreads\\lib\\pthreadVC2.dll"
+            "SourcePath" = "8:C:\\Libraries\\Pthreads\\lib\\pthreadVC2.dll"
             "TargetName" = "8:pthreadVC2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3482,7 +3482,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DAB1358F0AA74CC8839012A6B71EF76B"
             {
-            "SourcePath" = "8:C:\\openssl-0.9.8k.win32\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3622,7 +3622,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E0C6DFAFFAA944FCA4FFA7C25D796B02"
             {
-            "SourcePath" = "8:C:\\bzip2-1.0.5.win32\\bin\\libbz2.dll"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win32\\bin\\libbz2.dll"
             "TargetName" = "8:libbz2.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3682,7 +3682,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E4A29EC2213B4C99B49B7AC34E99F880"
             {
-            "SourcePath" = "8:C:\\iconv-1.11.1.win32\\bin\\iconv.dll"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win32\\bin\\iconv.dll"
             "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3802,7 +3802,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F2475BA1CBF34E1AB3C0B377601747D4"
             {
-            "SourcePath" = "8:C:\\openssl-0.9.8k.win32\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
@@ -3902,7 +3902,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FA7195B4D61549B2B006D7B3CB22838E"
             {
-            "SourcePath" = "8:C:\\zlib-1.2.3.win32\\bin\\zlib1.dll"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win32\\bin\\zlib1.dll"
             "TargetName" = "8:zlib1.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"

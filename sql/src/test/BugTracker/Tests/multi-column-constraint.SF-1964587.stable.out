@@ -35,29 +35,29 @@ create function radians(d double)
 returns double
 	return d*pi()/180;
 CREATE TABLE "sys"."url_test" (
-	"theurl" url,
+	"theurl" URL,
 	"name"   CHARACTER LARGE OBJECT
 );
 CREATE TABLE "sys"."queryhistory" (
-	"id"       bigint        NOT NULL,
+	"id"       BIGINT        NOT NULL,
 	"defined"  TIMESTAMP,
 	"name"     CHARACTER LARGE OBJECT,
 	"query"    CHARACTER LARGE OBJECT,
-	"parse"    bigint,
-	"optimize" bigint,
+	"parse"    BIGINT,
+	"optimize" BIGINT,
 	CONSTRAINT "queryhistory_id_pkey" PRIMARY KEY ("id")
 );
 CREATE TABLE "sys"."callhistory" (
-	"id"        bigint,
+	"id"        BIGINT,
 	"ctime"     TIMESTAMP,
 	"arguments" CHARACTER LARGE OBJECT,
-	"execute"   bigint,
-	"result"    bigint,
-	"foot"      bigint,
-	"memory"    bigint,
-	"tuples"    bigint,
-	"inblock"   bigint,
-	"oublock"   bigint
+	"execute"   BIGINT,
+	"result"    BIGINT,
+	"foot"      BIGINT,
+	"memory"    BIGINT,
+	"tuples"    BIGINT,
+	"inblock"   BIGINT,
+	"oublock"   BIGINT
 );
 create view querylog as
 select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql
@@ -219,9 +219,9 @@ begin
         end if;
 end;
 CREATE TABLE "sys"."test_property" (
-	"subject" int,
-	"p1" int,
-	"p2" int,
+	"subject" INTEGER,
+	"p1"      INTEGER,
+	"p2"      INTEGER,
 	CONSTRAINT "test_property_subject_p1_unique" UNIQUE ("subject", "p1"),
 	CONSTRAINT "test_property_subject_p2_unique" UNIQUE ("subject", "p2")
 );

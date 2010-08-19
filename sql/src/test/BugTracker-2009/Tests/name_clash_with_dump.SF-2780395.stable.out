@@ -34,7 +34,7 @@ create function radians(d double)
 returns double
 	return d*pi()/180;
 CREATE TABLE "sys"."url_test" (
-	"theurl" url,
+	"theurl" URL,
 	"name"   CHARACTER LARGE OBJECT
 );
 -- The contents of this file are subject to the MonetDB Public License
@@ -161,7 +161,7 @@ begin
         end if;
 end;
 CREATE TABLE "sys"."tf" (
-	"a" int
+	"a" INTEGER
 );
 COMMIT;
 

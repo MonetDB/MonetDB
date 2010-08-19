@@ -37,8 +37,11 @@ based on the head and propagate the effect through the plan.
 
 The tarantula untangles the resulting plan into a controlling head
 function and a series of plans, one for each leg to execute concurrently.
-The allocation of subplan to leg depends on the same bidding scheme
-as the Octopus.
+The allocation of a subplan to leg depends on a bidding scheme. 
+Bidding can not depend on BAT arguments, because that would cause 
+significant communication overhead. Scalar values could be used and
+would function well in terms of using the recycler to get involved into
+precise bidding. 
 
 The Tarantula optimizer differs from the Octopus optimizer in performing
 a recursive divide and conquer method to deal with blocking operations.
@@ -191,6 +194,7 @@ typedef struct {
 
 opt_export int TARgetPeer(str uri);
 
+#define MINLEGSIZE 5	/* number of MAL instructions to consider for a leg */
 #define MAXSITES 2048   /* should become dynamic at some point */
 Peer peers[MAXSITES];    /* registry of peer servers */
 int TARnrpeers=0;
@@ -383,31 +387,37 @@ TARdiscover(Client cntxt)
 @-
 The TARmakeleg walks through the MAL block and extracts the dependent structure for
 execution. Note that information van be recomputed in all legs. Possibly doing duplicate work.
+Keep track of the variables that will be used outside the leg. They have to be exported.
+Likewise, look for variables that are produced by other legs and will become input parameters.
 @c
 static MalBlkPtr 
-TARmakeleg(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int idx)
+TARmakeleg(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int idx, Lifespan span, int *map)
 {
 	MalBlkPtr tm = NULL;
-	InstrPtr p = NULL,sig;
-	int varid, i, j, top=0, fnd, block = 0, retvar;
+	InstrPtr p = NULL, sig;
+	int i, j, top=0, fnd, block = 0;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
 	int *alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
+	int itop = 0, *input = ( int*) GDKzalloc(mb->vtop * sizeof(int));
+	int otop = 0, *output = ( int*) GDKzalloc(mb->vtop * sizeof(int));
 	Symbol s;
 
 	assert(old[pc]->fcnname == packRef);
-	retvar = getArg(old[pc],idx);
 
 	OPTDEBUGtarantula {
 		mnstr_printf(cntxt->fdout,"#create leg for %d %d %d\n",pc,idx -old[pc]->retc, getArg(old[pc],idx));
 	}
-
 @-
 Find the instructions needed. Beware pack operations
 already have been handled and produce their target.
+Build the variable admin table.
 @c
 	needed[getArg(old[pc],idx)]=1;
+	output[otop++]= getArg(old[pc],idx);
+	for ( j = old[0]->retc; j< old[0]->argc; j++)
+		input[itop++]= getArg(old[0],j);
 	for (i = pc-1; i > 0; i--){
 		p = old[i];
 
@@ -424,57 +434,84 @@ already have been handled and produce their target.
 		}
 		for (j = 0; j < p->retc; j++)
 			fnd += needed[getArg(p,j)];
-		if ( fnd) {
-			for (j = 0; j < p->argc; j++)
+		if ( fnd) { /* instruction is needed */
+			for (j = 0; j < p->argc; j++){
+				assert(getArg(p,j) >=0);
 				needed[getArg(p,j)]= 1;
+				if ( getEndLifespan(span, getArg(p,j)) > pc)
+					output[otop++]= getArg(p,j);
+				if ( map[getArg(p,j)] != getArg(p,j) )
+					input[itop++] = getArg(p,j);
+			}
 			list[top++] = p;
 		}
 	}
+@-
+The leg should have enough instructions to warrant a distributed execution. This should involve
+a careful analysis of the instructions assembled. For the time being, we only allow for a leg 
+if at least a sql.bind operation belongs to the list and the leg has a minimimal number of statements.
+@c
+	fnd = 0;
+	for( i=0; i<top; i++) {
+	 fnd += getModuleId(list[i]) == sqlRef && getFunctionId(list[i]) == bindRef;
+	 fnd += getModuleId(list[i]) == sqlRef && getFunctionId(list[i]) == bindidxRef;
+	 fnd += getModuleId(list[i]) == sqlRef && getFunctionId(list[i]) == binddbatRef;
+	}
 
-	/* create the Leg function signature */
+	if ( top - fnd <= MINLEGSIZE) {
+		GDKfree(list);
+		GDKfree(alias);
+		GDKfree(needed);
+		GDKfree(input);
+		GDKfree(output);
+		return 0;
+	}
+@-
+Create the leg function.
+@c
 	snprintf(buf,BUFSIZ,"%s_%d_%d", getFunctionId(getInstrPtr(mb,0)), getArg(old[pc],0), idx-old[pc]->retc);
 	putName(buf,strlen(buf));
 
 	s= newFunction(tarantulaRef, putName(buf,strlen(buf)), FUNCTIONsymbol);
 	insertSymbol(findModule(cntxt->nspace,tarantulaRef),s);
 	tm= s->def;
-	p = getInstrPtr(tm,0);
-	setVarType(tm, getArg(p,0), getVarType(mb,retvar));
-	setVarUDFtype(tm,getArg(p,0));
-	alias[retvar] = getArg(p,0);
-	/* add the arguments from the query template */
-	sig= getInstrPtr(mb,0);
-	for( j =sig->retc; j<sig->argc; j++){
-		int a= getArg(sig,j);
-		alias[a] = cloneVariable(tm,mb,a);
-		p = pushArgument(tm, p, alias[a]);
-	}
-	varid = alias[getArg(old[pc],idx)] = cloneVariable(tm,mb,getArg(old[pc],idx));
+	sig= getInstrPtr(tm,0);
+	setVarType(tm,getArg(sig,0), getArgType(mb,old[pc],idx));
+	setVarUDFtype(tm,getArg(sig,0));
 
+	/* add the return variables */
+	for ( i = 1; i< otop; i++){
+		alias[output[i]] = cloneVariable(tm,mb,output[i]);
+		sig = pushReturn(tm, sig, alias[output[i]]);
+		setVarUDFtype(tm,getArg(sig,i));
+	}
+	/* add the arguments from the query template */
+	for ( i = 0; i< itop; i++){
+		alias[input[i]] = cloneVariable(tm,mb,input[i]);
+		sig = pushArgument(tm, sig, alias[input[i]]);
+	}
+
+	/* include the necessary functions */
 	for (top--; top >= 0; top--){
 		p = copyInstruction(list[top]);
 		for (i= 0; i< p->argc; i++){
-			int a= getArg(list[top],i);
+			int a= getArg(p,i);
 			if (alias[a]==0) 
 				alias[a] = cloneVariable(tm,mb,a);
 			getArg(p,i) = alias[a];
 		}
-		if (getModuleId(p) == sqlRef &&
-			( getFunctionId(p) == bindRef ||
-			  getFunctionId(p) == binddbatRef ||
-			  getFunctionId(p) == bindidxRef)){
-			/* construct the path 
-			setModuleId(p, attachRef);
-			*/
-			setVarUDFtype(tm,getArg(p,0));
-		} 
 		pushInstruction(tm, p);
 	}
 
+	/* return all variables of interest */
 	p = newAssignment(tm);
 	p->barrier = RETURNsymbol;
-	p = pushArgument(tm,p,alias[retvar]);
-	getArg(p,0) = alias[varid];
+	p->retc= 0;
+	p->argc= 0;
+	for ( i = 0; i < sig->retc; i++)
+		p = pushReturn(tm,p, getArg(sig,i));
+	for ( i = 0; i < otop; i++)
+		p = pushArgument(tm,p, alias[output[i]]);
 	pushEndInstruction(tm);
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
@@ -484,6 +521,8 @@ already have been handled and produce their target.
 	GDKfree(list);
 	GDKfree(alias);
 	GDKfree(needed);
+	GDKfree(input);
+	GDKfree(output);
 	return tm;
 }
 
@@ -522,7 +561,7 @@ TARmakeRegistration(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
 	OPTDEBUGtarantula
-		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT | LIST_MAPI);
 }
 
 @-
@@ -557,13 +596,13 @@ TARmakeBidding(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes)
 	}
 	sig = pushArgument(tm, sig, newTmpVariable(tm,TYPE_int));
 
-	for (n= 0; n < nodes; n++, k = 0){
+	for (n= 0; n < nodes; n++){
 		p= newInstruction(tm,ASSIGNsymbol);
 		setModuleId(p, tarantulaRef);
 		setFunctionId(p, getBidRef);
 		p= pushInt(tm, p,n);
-		for( i=old[pc]->retc; i< old[pc]->argc; i++){
-			snprintf(buf,BUFSIZ,"%s_%d_%d",name,getArg(old[pc],0),k++);
+		for(k=0, i=old[pc]->retc; i< old[pc]->argc; k++, i++){
+			snprintf(buf,BUFSIZ,"%s_%d_%d",name,getArg(old[pc],0),k);
 			p = pushStr(tm,p,buf);
 			p = pushReturn(tm, p, tmp = newTmpVariable(tm,TYPE_int));
 			r = pushArgument(tm,r,tmp);
@@ -575,7 +614,7 @@ TARmakeBidding(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes)
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
 	OPTDEBUGtarantula
-		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT | LIST_MAPI);
 }
 @-
 The executor gets node assignments for each of the legs and
@@ -583,13 +622,13 @@ performs a remote operation on the subplan. The results are
 assembled using a pack and returned to the caller.
 @c
 static void
-TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc)
+TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, MalBlkPtr leg)
 {
 	Symbol s;
 	MalBlkPtr tm;
 	char fcn[BUFSIZ];
-	InstrPtr sig2, sig, r, q;
-	int conn,j,k = 0,l;
+	InstrPtr lsig,sig, r, q;
+	int conn,j,l;
 	int arg[1024];
 
 	/* generate stubb code for the remote execution */
@@ -598,14 +637,19 @@ TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc)
 	insertSymbol(findModule(cntxt->nspace,tarantulaRef),s);
 	tm= s->def;
 	sig = getInstrPtr(tm,0);
-	setVarType(tm,getArg(sig,0), getArgType(mb, old[pc],0));
+
+	/* add the return values */
+	lsig= getInstrPtr(leg,0);
+	setVarType(tm, getArg(sig,0), getVarType(leg,getArg(lsig,0)));
+	for ( j=1;j < lsig->retc; j++)
+		sig= pushReturn(tm, sig, cloneVariable(tm, leg, getArg(lsig,j)));
+
+	/* get the input arguments */
 	sig = pushArgument(tm,sig,newVariable(tm,GDKstrdup("node"),TYPE_int));
 	sig = pushArgument(tm,sig,newVariable(tm,GDKstrdup("fcn"),TYPE_str));
-	sig2 = getInstrPtr(mb,0);
 	/* copy the query arguments */
-	for( j =sig2->retc; j<sig2->argc; j++){
-		sig = pushArgument(tm,sig,cloneVariable(tm,mb,getArg(sig2,j)));
-	}
+	for ( j=lsig->retc; j < lsig->argc; j++)
+		sig= pushArgument(tm, sig, cloneVariable(tm, leg, getArg(lsig,j)));
 
 
 	/* conn := tarantula.connect(node); */
@@ -614,29 +658,25 @@ TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc)
 	q = pushArgument(tm, q, getArg(sig,1));
 
 	/* get addition arguments needed in a leg */
-	for (j= sig->retc+2; j<  sig->argc; j++){
-		l= newTmpVariable(tm,TYPE_str);
-		q= newFcnCall(tm,remoteRef,putRef);
-		arg[j]= getArg(q,0)= l;
-		q = pushArgument(tm,q, conn);
-		q = pushArgument(tm,q,findVariable(tm,getArgName(mb,sig2,j-2)));
-	}
-
 	/* k:= remote.put(conn,kvar) */
-	for (j= 0; j < sig->retc; j++){
+	for (j= 0; j < sig->argc; j++)
+	if ( j != sig->retc && j != sig->retc+1 ){
 		q= newFcnCall(tm,remoteRef,putRef);
+		setVarType(tm, getArg(q,0), TYPE_str);
+		setVarUDFtype(tm, getArg(q,0));
 		q= pushArgument(tm,q,conn);
-		q= pushArgument(tm,q, getArg(getInstrPtr(tm,0),j));
-		setVarUDFtype(tm,getArg(q,q->argc-1));
-		k= getArg(q,0);
+		q= pushArgument(tm,q,getArg(sig,j));
+		arg[j]= getArg(q,0);
 	}
 
-	/* k:= remote.exec(conn,tarantula,qry,version....) */
+	/* (k1,...kn):= remote.exec(conn,tarantula,qry,version....) */
 	q= newFcnCall(tm,remoteRef,execRef);
-	getArg(q,0) = k;
+	q->retc=  q->argc= 0;
+	for (j=0; j < sig->retc; j++)
+		q = pushReturn(tm,q,arg[j]);
 	q= pushArgument(tm,q,conn);
 	q= pushStr(tm,q,tarantulaRef);
-	q= pushArgument(tm,q,getArg(sig,2));
+	q= pushArgument(tm,q,getArg(sig,sig->retc+1));
 	/* deal with all arguments ! */
 	for (j=sig->retc+2; j < sig->argc; j++)
 		q = pushArgument(tm,q,arg[j]);
@@ -645,67 +685,87 @@ TARmakeExecution(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc)
 	/* return exec_qry; */
 	r= newInstruction(tm, ASSIGNsymbol);
 	r->barrier= RETURNsymbol;
+	r->retc= r->argc= 0;
+	for ( j=0; j< sig->retc; j++)
+		r= pushReturn(tm,r, getArg(sig,j));
 
 	/* l:=remote.get(conn,k) */
-	q= newFcnCall(tm,remoteRef,getRef);
-	q= pushArgument(tm,q,conn);
-	q= pushArgument(tm,q,k);
-	l= getArg(q,0);
-	setVarType(tm,l, getArgType(tm,getInstrPtr(tm,0),0));
-	setVarUDFtype(tm,l);
-	r= pushArgument(tm,r,l);
+	for ( j=0; j< sig->retc; j++){
+		q= newFcnCall(tm,remoteRef,getRef);
+		q= pushArgument(tm,q,conn);
+		q= pushArgument(tm,q,arg[j]);
+		l= getArg(q,0);
+		setVarType(tm,l, getArgType(tm,sig,j));
+		setVarUDFtype(tm, l);
+		r= pushArgument(tm,r,l);
+	}
 
 	/* catch and propagate errors */
 	newCatchStmt(tm, "ANYexception");
-/*			q = newStmt(tm, remoteRef,disconnectRef);
-	pushArgument(tm,q,conn); */
+	/* q = newStmt(tm, remoteRef,disconnectRef);
+	pushArgument(tm, q, conn); */
 	newRaiseStmt(tm,"ANYexception");
 	newExitStmt(tm, "ANYexception");
 
 	/* close connection 
-	q = newStmt(tm, remoteRef,disconnectRef);
+	q = newStmt(tm, remoteRef, disconnectRef);
 	pushArgument(tm,q,conn); */
 
-	for (j=0; j < sig->retc; j++)
-		r = pushReturn(tm,r, getArg(getInstrPtr(tm,0),0));
 	pushInstruction(tm,r);
 
 	pushEndInstruction(tm);
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
 	OPTDEBUGtarantula
-		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT | LIST_MAPI);
 }
-
+@-
+The legs of the tarantula can be executed in parallel.
+Watch out, the arguments should occupy the head of the stack.
+@c
 static void
-TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int legs)
+TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int legs, MalBlkPtr leg)
 {
 	Symbol s;
 	MalBlkPtr tm;
 	char buf[BUFSIZ], fcn[BUFSIZ];
-	InstrPtr sig, sig2, r, p,q;
+	InstrPtr lsig, sig, r, p,q;
 	int j,k,l,x=0;
 
 	snprintf(fcn,BUFSIZ,"exe_%s_%d", getFunctionId(getInstrPtr(mb,0)), getArg(old[pc],0));
 	s= newFunction(tarantulaRef, putName(fcn,strlen(fcn)), FUNCTIONsymbol);
 	insertSymbol(findModule(cntxt->nspace,tarantulaRef),s);
 	tm= s->def;
-	sig = getInstrPtr(tm,0);
-	setVarType(tm,getArg(sig,0), getArgType(mb, old[pc],0));
 
+	sig = getInstrPtr(tm,0);
+	lsig= getInstrPtr(leg,0);
+	/* the result is a mat.pack whose type comes from mb */
+	setVarType(tm,getArg(sig,0), getArgType(mb,old[pc],0));
+
+	/* include the remaining return variables */
+	for ( j=1;j < lsig->retc; j++)
+		sig= pushReturn(tm, sig, cloneVariable(tm, leg, getArg(lsig,j)));
+
+	/* add the execution nodes */
 	for( k=0 ; k<nodes; k++){
 		snprintf(buf,BUFSIZ,"node%d",k++);
 		sig= pushArgument(tm, sig, newVariable(tm, GDKstrdup(buf), TYPE_int));
 	}
-	sig2= getInstrPtr(mb,0);
-	for( j =sig2->retc; j<sig2->argc; j++){
-		int a= getArg(sig,j);
-		sig = pushArgument(tm, sig, cloneVariable(tm,mb,a));
+	/* input arguments */
+	for( j =lsig->retc; j<lsig->argc; j++){
+		int a= getArg(lsig,j);
+		sig = pushArgument(tm, sig, cloneVariable(tm,leg,a));
 	}
-	
+
+	/* initialize the return variables */
 	r= newAssignment(tm);
 	getArg(r,0)= getArg(sig,0);
 	pushNil(tm,r,getArgType(tm,sig,0));
+	for ( j=1;j < lsig->retc; j++){
+		r= newAssignment(tm);
+		getArg(r,0)= getArg(lsig,j);
+		pushNil(tm,r,getArgType(tm,lsig,j));
+	}
 
 	if ( tarantulaLocal == 0){
 		q= newFcnCall(tm,languageRef,dataflowRef);
@@ -718,7 +778,6 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 	r= newInstruction(tm,ASSIGNsymbol);
 	setModuleId(r,matRef);
 	setFunctionId(r,packRef);
-	sig2= getInstrPtr(mb,0);
 	for( l=k=0; l<legs; l++, k=(k+1)%nodes){
 		p = newStmt(tm,tarantulaRef,GDKstrdup(fcn));
 		p = pushArgument(tm,p, getArg(sig, k + sig->retc));
@@ -732,7 +791,7 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 		r= pushArgument(tm,r, getArg(p,0));
 	}
 
-	getArg(r,0)= getArg(sig,0);
+	k =getArg(r,0)= getArg(sig,0);
 	pushInstruction(tm,r);
 
 	if ( tarantulaLocal == 0){
@@ -744,13 +803,14 @@ TARmakeRun(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes, int leg
 	r= newInstruction(tm,ASSIGNsymbol);
 	r->barrier = RETURNsymbol;
 	getArg(r,0)= getArg(sig,0);
+	/* r = pushArgument(tm,r,k);*/
 	pushInstruction(tm,r);
 
 	pushEndInstruction(tm);
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
 	OPTDEBUGtarantula
-		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT | LIST_MAPI);
 
 }
 @-
@@ -792,9 +852,11 @@ OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int tn=0;
 	MalBlkPtr *leg;
 	char fcn[BUFSIZ];
+	Lifespan span;
+	int *map;
 
 	if( cntxt == 0){
-		/* confuscate */
+		/* confuscate, delay for later activation */
 		TARinitcode(cntxt, mb);
 		TARexitcode( mb,0,0);
 	}
@@ -804,6 +866,22 @@ OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     if ( TARnrpeers == 0 )
         TARdiscover(cntxt);
     mal_unset_lock(mal_contextLock,"tarantula.register");
+@-
+Test the use of the variables and show them.
+Debugging code
+{
+	int *alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
+	old = mb->stmt;
+	for (i = 1; i < mb->stop; i++){
+		p = old[i];
+		for( j = p->retc; j< p->argc; j++)
+			alias[getArg(p,j)]++;
+	}
+	for(i=0;i<mb->vtop;i++)
+	if ( alias[i]>1)
+		mnstr_printf(cntxt->fdout,"%s %d\n",getVarName(mb,i),alias[i]);
+	GDKfree(alias);
+}
 @-
 All tarantula leg code is collected in a separate module
 to ease future distribution and scheduling.
@@ -827,6 +905,11 @@ when scheduled correctly, would not lead to duplicate work.
 	}
 	pushInstruction(mb, old[0]);
 
+	span = newLifespan(mb);
+	map= (int*) GDKzalloc(mb->vtop * sizeof(int));
+	for ( i = 0; i < mb->vtop; i++)
+		map[i] = i;
+
 	sig= old[0];
 	for (i = 1; i < limit; i++) {
 		p = old[i];
@@ -836,13 +919,16 @@ when scheduled correctly, would not lead to duplicate work.
 			continue;
 		}
 		if( getModuleId(p)== matRef && getFunctionId(p)== packRef) {
-
-            for (tn =0, j = p->retc; j < p->argc; j++)
-                leg[tn++] = TARmakeleg(cntxt, mb, old, i, j);
+			for (tn =0, j = p->retc; j < p->argc; j++) {
+				leg[tn] = TARmakeleg(cntxt, mb, old, i, j,span,map);
+				if ( leg[tn] == 0)
+					goto wrapup;
+				tn++;
+			}
 			TARmakeRegistration(cntxt,mb,old,i,TARnrpeers);
 			TARmakeBidding(cntxt,mb,old,i,TARnrpeers);
-			TARmakeExecution(cntxt,mb,old,i);
-			TARmakeRun(cntxt,mb,old,i,TARnrpeers,tn);
+			TARmakeExecution(cntxt,mb,old,i,leg[0]);
+			TARmakeRun(cntxt,mb,old,i,TARnrpeers,tn,leg[0]);
 
 			/* update masterplan */
 			snprintf(fcn,BUFSIZ,"reg_%s_%d", getFunctionId(getInstrPtr(mb,0)), getArg(old[i],0));
@@ -872,9 +958,12 @@ when scheduled correctly, would not lead to duplicate work.
 					if (old[j] && old[j]->token != REMsymbol)
 						q =newStmt(leg[k], getModuleId(old[j]), getFunctionId(old[j]));
 			OPTDEBUGtarantula for (k = 0; k < tn; k++)
-				printFunction(cntxt->fdout, leg[k], 0, LIST_MAL_STMT);
+				printFunction(cntxt->fdout, leg[k], 0, LIST_MAL_STMT | LIST_MAPI);
 			continue;
 		} 
+		wrapup:
+		for ( j=0; j< p->argc; j++)
+			getArg(p,j)= map[getArg(p,j)];
 		pushInstruction(mb,p);
 		if (p->token == ENDsymbol){
 			last= i;
@@ -892,6 +981,7 @@ The leg code should be optimized by the remaining optimizers too.
 
 	GDKfree(old);
 	GDKfree(leg);
+	GDKfree(map);
 	(void) stk;
 	return actions;
 }

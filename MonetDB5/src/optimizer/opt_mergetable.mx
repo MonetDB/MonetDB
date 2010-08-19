@@ -177,20 +177,20 @@ int overlap( MalBlkPtr mb, int lv, int rv)
 		return 1;
 	}
 	/* perfect match */
-	if (lub->value.val.lval == rub->value.val.lval &&
-	    llb->value.val.lval == rlb->value.val.lval) 
+	if (lub->value.val.oval == rub->value.val.oval &&
+	    llb->value.val.oval == rlb->value.val.oval) 
 		return 1;
 
-	if ((rub->value.val.lval != (lng)oid_nil && 
-	      rub->value.val.lval <= llb->value.val.lval) || 
- 	     (lub->value.val.lval != (lng)oid_nil &&
-	      lub->value.val.lval <= rlb->value.val.lval))
+	if ((rub->value.val.oval != oid_nil && 
+	      rub->value.val.oval <= llb->value.val.oval) || 
+ 	     (lub->value.val.oval != oid_nil &&
+	      lub->value.val.oval <= rlb->value.val.oval))
 		return 0;
 
-	if ((rub->value.val.lval == (lng)oid_nil && 
-	     rlb->value.val.lval > lub->value.val.lval) || 
-	    (lub->value.val.lval == (lng)oid_nil &&
-	     llb->value.val.lval > rub->value.val.lval)) {
+	if ((rub->value.val.oval == oid_nil && 
+	     rlb->value.val.oval > lub->value.val.oval) || 
+	    (lub->value.val.oval == oid_nil &&
+	     llb->value.val.oval > rub->value.val.oval)) {
                 return 0;
 	}
 	return 1;
@@ -207,20 +207,20 @@ int Hoverlap( MalBlkPtr mb, int lv, int rv)
 		return 1;
 	}
 	/* perfect match */
-	if (lub->value.val.lval == rub->value.val.lval &&
-	    llb->value.val.lval == rlb->value.val.lval) 
+	if (lub->value.val.oval == rub->value.val.oval &&
+	    llb->value.val.oval == rlb->value.val.oval) 
 		return 1;
 
-	if ((rub->value.val.lval != (lng)oid_nil && 
-	      rub->value.val.lval <= llb->value.val.lval) || 
- 	     (lub->value.val.lval != (lng)oid_nil &&
-	      lub->value.val.lval <= rlb->value.val.lval))
+	if ((rub->value.val.oval != oid_nil && 
+	      rub->value.val.oval <= llb->value.val.oval) || 
+ 	     (lub->value.val.oval != oid_nil &&
+	      lub->value.val.oval <= rlb->value.val.oval))
 		return 0;
 
-	if ((rub->value.val.lval == (lng)oid_nil && 
-	      rlb->value.val.lval > lub->value.val.lval) || 
- 	     (lub->value.val.lval == (lng)oid_nil &&
-	      llb->value.val.lval > rub->value.val.lval)) {
+	if ((rub->value.val.oval == oid_nil && 
+	      rlb->value.val.oval > lub->value.val.oval) || 
+ 	     (lub->value.val.oval == oid_nil &&
+	      llb->value.val.oval > rub->value.val.oval)) {
 		return 0;
 	}
 	return 1;
@@ -771,7 +771,6 @@ mat_map(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop)
 	return mtop;
 }
 
-
 /* join, also handles the case that mat[m].mm is set, ie that we
    have the extend available.
 */
@@ -1005,7 +1004,7 @@ aggr_phase2(char *aggr)
 {
 	if (aggr == countRef || aggr == count_no_nilRef)
 		return sumRef;
-	/* min/max/sum are fine */
+	/* min/max/sum/prod are fine */
 	return aggr;
 }
 
@@ -1117,10 +1116,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 
 	s = newInstruction(mb,ASSIGNsymbol);
 	setModuleId(s,aggrRef);
-	if (getFunctionId(p) == minRef || getFunctionId(p) == maxRef)
-		setFunctionId(s, getFunctionId(p));
-	else 	
-		setFunctionId(s, sumRef);
+	setFunctionId(s, aggr_phase2(getFunctionId(p)));
 	getArg(s,0) = getArg(p,0);
 	s = pushArgument(mb, s, getArg(r,0));
 	pushInstruction(mb, s);
@@ -1620,7 +1616,13 @@ Also we should translate the mirror().join() (a groupby attribute) into
 UNION(mirror().join()).
 @c
 
-		if (match > 0 && isMatJoinOp(p)) {
+		/* only handle simple joins, ie not range/band joins */
+		/* For range/band joins (argc == 4), the propagation of oids
+		   is different, ie result-head equals head-1st arg, 	
+				    result-tail equals head-2nd/3rd arg */
+		  
+		if (match > 0 && match <= 2 && isMatJoinOp(p) && 
+		   (p->argc == 3 || (p->argc == 4 && getFunctionId(p) == thetajoinRef))) {
 		   	m = isMATalias(getArg(p,1), mat, mtop);
 		   	n = isMATalias(getArg(p,2), mat, mtop);
 			if ((m = mat_join(mb, p, mat, mtop, m, n)) < 0)
@@ -1707,7 +1709,8 @@ Now we handle group, derive and aggregation statements.
 		    getFunctionId(p) == count_no_nilRef ||
 		    getFunctionId(p) == minRef ||
 		    getFunctionId(p) == maxRef ||
-		    getFunctionId(p) == sumRef) &&
+		    getFunctionId(p) == sumRef ||
+		    getFunctionId(p) == prodRef) &&
 		   ((m=isMATalias(getArg(p,1), mat, mtop)) >= 0) &&
 		   ((n=isMATalias(getArg(p,2), mat, mtop)) >= 0) &&
 		   ((o=isMATalias(getArg(p,3), mat, mtop)) >= 0)) {
@@ -1731,7 +1734,8 @@ And the min/max is as easy
 			 getFunctionId(p)== count_no_nilRef || 
 			 getFunctionId(p)== minRef ||
 			 getFunctionId(p)== maxRef ||
-			 getFunctionId(p)== sumRef) &&
+			 getFunctionId(p)== sumRef ||
+		    	 getFunctionId(p) == prodRef) &&
 			(m=isMATalias(getArg(p,1), mat, mtop)) >= 0){
 			mat_aggr(mb, p, mat, m);
 			actions++;
@@ -1742,9 +1746,16 @@ And the min/max is as easy
 		    getModuleId(p) == aggrRef || 
 		   (getModuleId(p) == algebraRef && 
 			(getFunctionId(p) == sortTailRef ||
-			 getFunctionId(p) == sortReverseTailRef)))) { 
+			 getFunctionId(p) == sortReverseTailRef)) ||
+		   (getModuleId(p) == pqueueRef && 
+			(getFunctionId(p) == topn_minRef ||
+			 getFunctionId(p) == topn_maxRef)))) { 
 			error++;
 			goto fail;
+			/* For order (and order related topn) 
+		           we need a similar 2 phase model as used for group
+			   by 
+			 */
 		}
 @-
 The slice operation can also be piggy backed onto the mat.pack using it

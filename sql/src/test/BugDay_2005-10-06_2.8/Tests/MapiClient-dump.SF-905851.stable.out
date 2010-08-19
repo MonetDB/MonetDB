@@ -116,11 +116,11 @@ Over..
 START TRANSACTION;
 SET SCHEMA "sys";
 CREATE TABLE "sys"."allnewtriples" (
-	"id" int NOT NULL,
-	"subject" int NOT NULL,
-	"predicate" int NOT NULL,
-	"object" int NOT NULL,
-	"explicit" boolean NOT NULL,
+	"id" INTEGER NOT NULL,
+	"subject" INTEGER NOT NULL,
+	"predicate" INTEGER NOT NULL,
+	"object" INTEGER NOT NULL,
+	"explicit" BOOLEAN NOT NULL,
 	CONSTRAINT "allnewtriples_id_pkey" PRIMARY KEY ("id"),
 	CONSTRAINT "unique_key" UNIQUE ("subject", "predicate", "object")
 );
@@ -136,10 +136,10 @@ COPY 7 RECORDS INTO "sys"."allnewtriples" FROM stdin USING DELIMITERS '\t','\n',
 6	2	2	1	false
 7	2	2	2	false
 CREATE TABLE "sys"."foreign" (
-	"id" int NOT NULL,
-	"subject" int NOT NULL,
-	"predicate" int NOT NULL,
-	"object" int NOT NULL
+	"id" INTEGER NOT NULL,
+	"subject" INTEGER NOT NULL,
+	"predicate" INTEGER NOT NULL,
+	"object" INTEGER NOT NULL
 );
 COPY 7 RECORDS INTO "sys"."foreign" FROM stdin USING DELIMITERS '\t','\n','"';
 1	1	1	1
@@ -150,11 +150,11 @@ COPY 7 RECORDS INTO "sys"."foreign" FROM stdin USING DELIMITERS '\t','\n','"';
 6	1	2	1
 7	1	1	2
 CREATE TABLE "sys"."triples" (
-	"id" int NOT NULL,
-	"subject" int NOT NULL,
-	"predicate" int NOT NULL,
-	"object" int NOT NULL,
-	"explicit" boolean NOT NULL,
+	"id" INTEGER NOT NULL,
+	"subject" INTEGER NOT NULL,
+	"predicate" INTEGER NOT NULL,
+	"object" INTEGER NOT NULL,
+	"explicit" BOOLEAN NOT NULL,
 	CONSTRAINT "triples_subject_predicate_object_unique" UNIQUE ("subject", "predicate", "object")
 );
 CREATE INDEX "triples_object_idx" ON "sys"."triples" ("object");

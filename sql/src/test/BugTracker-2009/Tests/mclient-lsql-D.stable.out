@@ -39,29 +39,29 @@ create function radians(d double)
 returns double
 	return d*pi()/180;
 CREATE TABLE "sys"."url_test" (
-	"theurl" url,
+	"theurl" URL,
 	"name"   CHARACTER LARGE OBJECT
 );
 CREATE TABLE "sys"."queryhistory" (
-	"id"       bigint        NOT NULL,
+	"id"       BIGINT        NOT NULL,
 	"defined"  TIMESTAMP,
 	"name"     CHARACTER LARGE OBJECT,
 	"query"    CHARACTER LARGE OBJECT,
-	"parse"    bigint,
-	"optimize" bigint,
+	"parse"    BIGINT,
+	"optimize" BIGINT,
 	CONSTRAINT "queryhistory_id_pkey" PRIMARY KEY ("id")
 );
 CREATE TABLE "sys"."callhistory" (
-	"id"        bigint,
+	"id"        BIGINT,
 	"ctime"     TIMESTAMP,
 	"arguments" CHARACTER LARGE OBJECT,
-	"execute"   bigint,
-	"result"    bigint,
-	"foot"      bigint,
-	"memory"    bigint,
-	"tuples"    bigint,
-	"inblock"   bigint,
-	"oublock"   bigint
+	"execute"   BIGINT,
+	"result"    BIGINT,
+	"foot"      BIGINT,
+	"memory"    BIGINT,
+	"tuples"    BIGINT,
+	"inblock"   BIGINT,
+	"oublock"   BIGINT
 );
 create view querylog as
 select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql
@@ -223,26 +223,26 @@ begin
         end if;
 end;
 CREATE TABLE "sys"."table_a" (
-	"table_a_id" int NOT NULL,
-	"value_a" int NOT NULL,
+	"table_a_id" INTEGER       NOT NULL,
+	"value_a"    INTEGER       NOT NULL,
 	CONSTRAINT "pk_table_a_id" PRIMARY KEY ("table_a_id")
 );
 CREATE TABLE "sys"."table_b" (
-	"table_b_id" int NOT NULL,
-	"table_a_id" int NOT NULL,
+	"table_b_id" INTEGER       NOT NULL,
+	"table_a_id" INTEGER       NOT NULL,
 	CONSTRAINT "pk_table_b_id" PRIMARY KEY ("table_b_id")
 );
 CREATE TABLE "sys"."table_d" (
-	"table_d_id" int NOT NULL,
-	"table_a_id" int NOT NULL,
+	"table_d_id" INTEGER       NOT NULL,
+	"table_a_id" INTEGER       NOT NULL,
 	CONSTRAINT "pk_table_d_id" PRIMARY KEY ("table_d_id")
 );
 CREATE TABLE "sys"."table_c" (
-	"table_c_id" int NOT NULL,
-	"table_a_id" int NOT NULL,
-	"table_b_id" int NOT NULL,
-	"table_d_id" int NOT NULL,
-	"value_c" int NOT NULL,
+	"table_c_id" INTEGER       NOT NULL,
+	"table_a_id" INTEGER       NOT NULL,
+	"table_b_id" INTEGER       NOT NULL,
+	"table_d_id" INTEGER       NOT NULL,
+	"value_c"    INTEGER       NOT NULL,
 	CONSTRAINT "pk_table_c_id" PRIMARY KEY ("table_c_id")
 );
 ALTER TABLE "sys"."callhistory" ADD CONSTRAINT "callhistory_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."queryhistory" ("id");

@@ -187,7 +187,7 @@
         {
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0F567DEF0CA64069BF1409C4AC7228E3"
             {
-            "SourcePath" = "8:C:\\bzip2-1.0.5.win32\\bin\\libbz2.dll"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win32\\bin\\libbz2.dll"
             "TargetName" = "8:libbz2.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
@@ -227,7 +227,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_29FE781523A94CBDA5CD53F7A319B4D8"
             {
-            "SourcePath" = "8:C:\\openssl-0.9.8k.win32\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
@@ -267,7 +267,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_61B2E04FDCD84F34A63853B93B1DCD7B"
             {
-            "SourcePath" = "8:C:\\zlib-1.2.3.win32\\bin\\zlib1.dll"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win32\\bin\\zlib1.dll"
             "TargetName" = "8:zlib1.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
@@ -287,7 +287,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_926BCA1A727C4F29B3DA99D425D895EA"
             {
-            "SourcePath" = "8:C:\\openssl-0.9.8k.win32\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
@@ -307,7 +307,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BB4791ABAA4349E4A0DE1EDA0772E622"
             {
-            "SourcePath" = "8:C:\\pthreads\\lib\\pthreadVC2.dll"
+            "SourcePath" = "8:C:\\Libraries\\Pthreads\\lib\\pthreadVC2.dll"
             "TargetName" = "8:pthreadVC2.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
@@ -447,7 +447,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DE40D199E1B2498F84A1EB70CBD21614"
             {
-            "SourcePath" = "8:C:\\iconv-1.11.1.win32\\bin\\iconv.dll"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win32\\bin\\iconv.dll"
             "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"

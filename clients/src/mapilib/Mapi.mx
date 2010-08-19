@@ -1693,8 +1693,9 @@ close_result(MapiHdl hdl)
 		assert(hdl->npending_close == 0 ||
 		       (hdl->npending_close > 0 && hdl->pending_close != NULL));
 		if (mid->active &&
-		    (mid->active->active != result ||
-		     result->cache.tuplecount < result->row_count)) {
+				mid->active->active != result &&
+				result->cache.tuplecount < result->row_count)
+		{
 			/* can't write "X" commands now, so save for later */
 			REALLOC(hdl->pending_close, hdl->npending_close + 1);
 			hdl->pending_close[hdl->npending_close] = result->tableid;
@@ -2342,7 +2343,7 @@ connect_to_server(Mapi mid)
 		snprintf(errbuf, sizeof(errbuf),
 			 CLIENTS_PREFIX "/var/MonetDB5/dbfarm/mapi_socket");
 		if (strlen(errbuf) <= sizeof(((struct sockaddr_un *) 0)->sun_path) &&
-				stat(errbuf, &st) != 1 &&
+				stat(errbuf, &st) != -1 &&
 				S_ISSOCK(st.st_mode))
 			mid->hostname = strdup(errbuf);
 	}

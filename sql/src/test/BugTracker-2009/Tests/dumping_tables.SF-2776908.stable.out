@@ -31,25 +31,25 @@ Over..
 # 20:57:34 >  
 
 CREATE TABLE "sys"."triggers" (
-	"id" int,
-	"name" varchar(1024),
-	"table_id" int,
-	"time" smallint,
-	"orientation" smallint,
-	"event" smallint,
-	"old_name" varchar(1024),
-	"new_name" varchar(1024),
-	"condition" varchar(2048),
-	"statement" varchar(2048)
+	"id"          INTEGER,
+	"name"        VARCHAR(1024),
+	"table_id"    INTEGER,
+	"time"        SMALLINT,
+	"orientation" SMALLINT,
+	"event"       SMALLINT,
+	"old_name"    VARCHAR(1024),
+	"new_name"    VARCHAR(1024),
+	"condition"   VARCHAR(2048),
+	"statement"   VARCHAR(2048)
 );
 CREATE TABLE "sys"."args" (
-	"id" int,
-	"func_id" int,
-	"name" varchar(256),
-	"type" varchar(1024),
-	"type_digits" int,
-	"type_scale" int,
-	"number" int
+	"id"          INTEGER,
+	"func_id"     INTEGER,
+	"name"        VARCHAR(256),
+	"type"        VARCHAR(1024),
+	"type_digits" INTEGER,
+	"type_scale"  INTEGER,
+	"number"      INTEGER
 );
 % sys.node_tags # table_name
 % id # name

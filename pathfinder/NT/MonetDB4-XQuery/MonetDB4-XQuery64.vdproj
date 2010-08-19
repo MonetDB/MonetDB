@@ -289,7 +289,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_21A2DD174AEE4F2394F2CFFC465BCAF0"
             {
-            "SourcePath" = "8:C:\\Program Files (x86)\\Intel\\Compiler\\C++\\10.1.022\\EM64T\\Bin\\libmmd.dll"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Intel\\Compiler\\11.1\\046\\bin\\intel64\\libmmd.dll"
             "TargetName" = "8:libmmd.dll"
             "Tag" = "8:"
             "Folder" = "8:_D262855B92DE4EC89E4AAE66EAE05B3C"
@@ -509,7 +509,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AF81C046F1BC492D8D2287A71D2B9980"
             {
-            "SourcePath" = "8:C:\\libxml2-2.6.32+.win64\\bin\\libxml2.dll"
+            "SourcePath" = "8:C:\\Libraries\\libxml2-2.7.7.win64\\lib\\libxml2.dll"
             "TargetName" = "8:libxml2.dll"
             "Tag" = "8:"
             "Folder" = "8:_D262855B92DE4EC89E4AAE66EAE05B3C"

@@ -40,29 +40,29 @@ create function radians(d double)
 returns double
 	return d*pi()/180;
 CREATE TABLE "sys"."url_test" (
-	"theurl" url,
+	"theurl" URL,
 	"name"   CHARACTER LARGE OBJECT
 );
 CREATE TABLE "sys"."queryhistory" (
-	"id"       bigint        NOT NULL,
+	"id"       BIGINT        NOT NULL,
 	"defined"  TIMESTAMP,
 	"name"     CHARACTER LARGE OBJECT,
 	"query"    CHARACTER LARGE OBJECT,
-	"parse"    bigint,
-	"optimize" bigint,
+	"parse"    BIGINT,
+	"optimize" BIGINT,
 	CONSTRAINT "queryhistory_id_pkey" PRIMARY KEY ("id")
 );
 CREATE TABLE "sys"."callhistory" (
-	"id"        bigint,
+	"id"        BIGINT,
 	"ctime"     TIMESTAMP,
 	"arguments" CHARACTER LARGE OBJECT,
-	"execute"   bigint,
-	"result"    bigint,
-	"foot"      bigint,
-	"memory"    bigint,
-	"tuples"    bigint,
-	"inblock"   bigint,
-	"oublock"   bigint
+	"execute"   BIGINT,
+	"result"    BIGINT,
+	"foot"      BIGINT,
+	"memory"    BIGINT,
+	"tuples"    BIGINT,
+	"inblock"   BIGINT,
+	"oublock"   BIGINT
 );
 create view querylog as
 select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql
@@ -225,26 +225,26 @@ begin
 end;
 SET SCHEMA "voc";
 CREATE TABLE "voc"."foo" (
-	"id" int NOT NULL,
-	"v" int,
+	"id" INTEGER       NOT NULL,
+	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
 create view bar as select * from foo;
 create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "voc"."a" (
-	"id" int
+	"id" INTEGER
 );
 create trigger a after insert on foo insert into a values (1);
 SET SCHEMA "test";
 CREATE TABLE "test"."foo" (
-	"id" int NOT NULL,
-	"v" int,
+	"id" INTEGER       NOT NULL,
+	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
 create view bar as select * from foo;
 create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "test"."a" (
-	"id" int
+	"id" INTEGER
 );
 create trigger a after insert on foo insert into a values (1);
 create trigger test.x after insert on foo insert into a values (1);
@@ -255,14 +255,14 @@ COMMIT;
 START TRANSACTION;
 SET SCHEMA "voc";
 CREATE TABLE "voc"."foo" (
-	"id" int NOT NULL,
-	"v" int,
+	"id" INTEGER       NOT NULL,
+	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
 create view bar as select * from foo;
 create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "voc"."a" (
-	"id" int
+	"id" INTEGER
 );
 create trigger a after insert on foo insert into a values (1);
 ALTER TABLE "sys"."callhistory" ADD CONSTRAINT "callhistory_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."queryhistory" ("id");
@@ -270,14 +270,14 @@ COMMIT;
 START TRANSACTION;
 SET SCHEMA "test";
 CREATE TABLE "test"."foo" (
-	"id" int NOT NULL,
-	"v" int,
+	"id" INTEGER       NOT NULL,
+	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
 create view bar as select * from foo;
 create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "test"."a" (
-	"id" int
+	"id" INTEGER
 );
 create trigger a after insert on foo insert into a values (1);
 create trigger test.x after insert on foo insert into a values (1);

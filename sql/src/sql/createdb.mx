@@ -45,6 +45,7 @@ start transaction;
 
 -- Scientific database section
 @include skyserver.sql
+@include zorder.sql
 
 @-
 The remaining functionality is considered for debugging.

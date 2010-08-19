@@ -236,7 +236,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_384504E5D4D445A293780227B8A5F5A9"
             {
-            "SourcePath" = "8:C:\\bzip2-1.0.5.win64\\bin\\libbz2.dll"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.5.win64\\bin\\libbz2.dll"
             "TargetName" = "8:libbz2.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -256,7 +256,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3E644A6D208A478BA418B7C7A75E1306"
             {
-            "SourcePath" = "8:C:\\openssl-0.9.8k.win64\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win64\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -276,7 +276,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3FE349BC355F467887AC63E16F3818BC"
             {
-            "SourcePath" = "8:C:\\iconv-1.11.1.win64\\bin\\iconv.dll"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64\\bin\\iconv.dll"
             "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -316,7 +316,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_53E87680864A4C9DB17A3856539DC3C5"
             {
-            "SourcePath" = "8:C:\\zlib-1.2.3.win64\\bin\\zlib1.dll"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.5.win64\\bin\\zlib1.dll"
             "TargetName" = "8:zlib1.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -456,7 +456,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DABB0525FFE244EBAA33222279A6056C"
             {
-            "SourcePath" = "8:C:\\openssl-0.9.8k.win64\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win64\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"

@@ -84,7 +84,7 @@ SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	empty= (char*) GDKzalloc(mb->vtop);
 #ifdef DEBUG_SQL_EMPTYSET
 	printf("SQL_EMPTYSET \n");
-	printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
+	printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 
 	limit = mb->stop;
@@ -324,7 +324,7 @@ and to filter/replace calls with empty arguments.
 #ifdef DEBUG_SQL_EMPTYSET
 			printf("FINAL STAGE actions %d errors=%d restart= %d\n",
 				actions, mb->errors,start+1);
-			printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
+			printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 			msg= reenterMAL(cntxt,mb,start+1,0,stk,0,0);
 		}

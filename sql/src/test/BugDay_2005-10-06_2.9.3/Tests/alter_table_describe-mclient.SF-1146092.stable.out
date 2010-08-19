@@ -147,11 +147,11 @@ ALTER TABLE "sysinf" ADD FOREIGN KEY ("disk_id")
 	REFERENCES "disk" ("disk_id");
 operation successful
 CREATE TABLE "sys"."experiment" (
-	"exp_id"    int           NOT NULL,
-	"user_id"   int,
-	"config_id" int,
-	"table_id"  int,
-	"result_id" int,
+	"exp_id"    INTEGER       NOT NULL,
+	"user_id"   INTEGER,
+	"config_id" INTEGER,
+	"table_id"  INTEGER,
+	"result_id" INTEGER,
 	CONSTRAINT "experiment_exp_id_pkey" PRIMARY KEY ("exp_id"),
 	CONSTRAINT "experiment_config_id_fkey" FOREIGN KEY ("config_id") REFERENCES "sys"."config" ("config_id"),
 	CONSTRAINT "experiment_result_id_fkey" FOREIGN KEY ("result_id") REFERENCES "sys"."result" ("result_id"),
@@ -159,49 +159,49 @@ CREATE TABLE "sys"."experiment" (
 	CONSTRAINT "experiment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "sys"."tapestry_user" ("user_id")
 );
 CREATE TABLE "sys"."tapestry_user" (
-	"user_id"    int           NOT NULL,
-	"name"       varchar(25),
-	"email"      varchar(50),
-	"createdate" date,
-	"passwd"     varchar(50),
+	"user_id"    INTEGER       NOT NULL,
+	"name"       VARCHAR(25),
+	"email"      VARCHAR(50),
+	"createdate" DATE,
+	"passwd"     VARCHAR(50),
 	CONSTRAINT "tapestry_user_user_id_pkey" PRIMARY KEY ("user_id")
 );
 CREATE TABLE "sys"."config" (
-	"config_id" int           NOT NULL,
-	"name"      varchar(25),
-	"target_id" int,
-	"sysinf_id" int,
+	"config_id" INTEGER       NOT NULL,
+	"name"      VARCHAR(25),
+	"target_id" INTEGER,
+	"sysinf_id" INTEGER,
 	CONSTRAINT "config_config_id_pkey" PRIMARY KEY ("config_id"),
 	CONSTRAINT "config_sysinf_id_fkey" FOREIGN KEY ("sysinf_id") REFERENCES "sys"."sysinf" ("sysinf_id"),
 	CONSTRAINT "config_target_id_fkey" FOREIGN KEY ("target_id") REFERENCES "sys"."target" ("target_id")
 );
 CREATE TABLE "sys"."tapestry_table" (
-	"table_id" int           NOT NULL,
-	"nrrows"   int,
-	"nrcols"   int,
-	"seed"     int,
-	"fast"     int,
+	"table_id" INTEGER       NOT NULL,
+	"nrrows"   INTEGER,
+	"nrcols"   INTEGER,
+	"seed"     INTEGER,
+	"fast"     INTEGER,
 	CONSTRAINT "tapestry_table_table_id_pkey" PRIMARY KEY ("table_id")
 );
 CREATE TABLE "sys"."result" (
-	"result_id"   int           NOT NULL,
-	"type"        varchar(10),
-	"description" varchar(256),
+	"result_id"   INTEGER       NOT NULL,
+	"type"        VARCHAR(10),
+	"description" VARCHAR(256),
 	CONSTRAINT "result_result_id_pkey" PRIMARY KEY ("result_id")
 );
 CREATE TABLE "sys"."target" (
-	"target_id"  int           NOT NULL,
-	"name"       varchar(50),
-	"permission" varchar(10),
-	"comment"    varchar(256),
+	"target_id"  INTEGER       NOT NULL,
+	"name"       VARCHAR(50),
+	"permission" VARCHAR(10),
+	"comment"    VARCHAR(256),
 	CONSTRAINT "target_target_id_pkey" PRIMARY KEY ("target_id")
 );
 CREATE TABLE "sys"."sysinf" (
-	"sysinf_id"   int           NOT NULL,
-	"platform_id" int,
-	"cpu_id"      int,
-	"memory_id"   int,
-	"disk_id"     int,
+	"sysinf_id"   INTEGER       NOT NULL,
+	"platform_id" INTEGER,
+	"cpu_id"      INTEGER,
+	"memory_id"   INTEGER,
+	"disk_id"     INTEGER,
 	CONSTRAINT "sysinf_sysinf_id_pkey" PRIMARY KEY ("sysinf_id"),
 	CONSTRAINT "sysinf_cpu_id_fkey" FOREIGN KEY ("cpu_id") REFERENCES "sys"."cpu" ("cpu_id"),
 	CONSTRAINT "sysinf_disk_id_fkey" FOREIGN KEY ("disk_id") REFERENCES "sys"."disk" ("disk_id"),
@@ -209,37 +209,37 @@ CREATE TABLE "sys"."sysinf" (
 	CONSTRAINT "sysinf_platform_id_fkey" FOREIGN KEY ("platform_id") REFERENCES "sys"."platform" ("platform_id")
 );
 CREATE TABLE "sys"."platform" (
-	"platform_id" int           NOT NULL,
-	"name"        varchar(50),
-	"comment"     varchar(256),
+	"platform_id" INTEGER       NOT NULL,
+	"name"        VARCHAR(50),
+	"comment"     VARCHAR(256),
 	CONSTRAINT "platform_platform_id_pkey" PRIMARY KEY ("platform_id")
 );
 CREATE TABLE "sys"."cpu" (
-	"cpu_id" int           NOT NULL,
-	"type"   varchar(50),
+	"cpu_id" INTEGER       NOT NULL,
+	"type"   VARCHAR(50),
 	CONSTRAINT "cpu_cpu_id_pkey" PRIMARY KEY ("cpu_id")
 );
 CREATE TABLE "sys"."memory" (
-	"memory_id" int           NOT NULL,
-	"type"      varchar(50),
-	"size"      int,
+	"memory_id" INTEGER       NOT NULL,
+	"type"      VARCHAR(50),
+	"size"      INTEGER,
 	CONSTRAINT "memory_memory_id_pkey" PRIMARY KEY ("memory_id")
 );
 CREATE TABLE "sys"."disk" (
-	"disk_id" int           NOT NULL,
-	"type"    varchar(50),
-	"size"    int,
+	"disk_id" INTEGER       NOT NULL,
+	"type"    VARCHAR(50),
+	"size"    INTEGER,
 	CONSTRAINT "disk_disk_id_pkey" PRIMARY KEY ("disk_id")
 );
 CREATE TABLE "sys"."query_walk" (
-	"walk_id"   int           NOT NULL,
-	"begin_x"   int,
-	"begin_y"   int,
-	"nr_runs"   int,
-	"nr_steps"  int,
-	"step_size" int,
-	"end_x"     int,
-	"end_y"     int,
+	"walk_id"   INTEGER       NOT NULL,
+	"begin_x"   INTEGER,
+	"begin_y"   INTEGER,
+	"nr_runs"   INTEGER,
+	"nr_steps"  INTEGER,
+	"step_size" INTEGER,
+	"end_x"     INTEGER,
+	"end_y"     INTEGER,
 	CONSTRAINT "query_walk_walk_id_pkey" PRIMARY KEY ("walk_id")
 );
 DROP TABLE "query_walk" CASCADE;

@@ -65,6 +65,10 @@ command decode_y(z:bat[:oid,:oid]):bat[:oid,:int]
 address ZORDbatdecode_int_oid_y
 comment "Derive the z-order y-coordinate";
 
+command sql_slice(xb:int, yb:int, xt:int, yt:int ):bat[:str,:bat]
+address ZORDsql_slice_int
+comment "Wrapper of the function zorder.slice() for SQL function";
+
 command slice(xb:int, yb:int, xt:int, yt:int ):bat[:oid,:oid]
 address ZORDslice_int
 comment "Extract the Z-order indices between two points";
@@ -93,6 +97,7 @@ zorder_export str ZORDbatdecode_int_oid(int *x, int *y, int *z);
 zorder_export str ZORDbatdecode_int_oid_x(int *x, int *z);
 zorder_export str ZORDbatdecode_int_oid_y(int *y, int *z);
 zorder_export str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt);
+zorder_export str ZORDsql_slice_int(int *r, int *xb, int *yb, int *xt, int *yt);
 
 #endif /* _ZORDER_H */
 
@@ -483,6 +488,23 @@ str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt)
 	if (!(bn->batDirty&2)) 
 		bn = BATsetaccess(bn, BAT_READ);
 	BBPkeepref(*r = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+zorder_export 
+str ZORDsql_slice_int(int *r, int *xb, int *yb, int *xt, int *yt)
+{
+    int slice_ret;
+	BAT *t = BATnew(TYPE_str, TYPE_bat, 1);
+    str bla;
+
+    rethrow("ZORDsql_slice_int", bla, 
+            ZORDslice_int(&slice_ret, xb, yb, xt, yt));
+
+	BUNins(t, "z", &slice_ret, FALSE);
+    BBPdecref(slice_ret, TRUE);
+	*r = t->batCacheid;
+	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
 @}

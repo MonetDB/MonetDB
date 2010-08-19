@@ -1,10 +1,13 @@
 import subprocess
 import os
 import sys
+import time
 import string
 import tempfile
 import copy
 import atexit
+import threading
+import Queue
 
 from subprocess import PIPE
 
@@ -53,6 +56,63 @@ def _delfiles():
 
 atexit.register(_delfiles)
 
+class _BufferedPipe:
+    def __init__(self, fd):
+        self._pipe = fd
+        self._queue = Queue.Queue()
+        self._eof = False
+        self._thread = threading.Thread(target = self._readerthread,
+                                        args = (fd, self._queue))
+        self._thread.setDaemon(True)
+        self._thread.start()
+
+    def _readerthread(self, fh, queue):
+        while True:
+            c = fh.read(1)
+            queue.put(c)                # put '' if at EOF
+            if not c:
+                break
+
+    def close(self):
+        if self._thread:
+            self._thread.join()
+        self._thread = None
+
+    def read(self, size = -1):
+        if self._eof:
+            return ''
+        if size < 0:
+            self.close()
+        ret = []
+        while size != 0:
+            c = self._queue.get()
+            if c == '\r':
+                c = self._queue.get()   # just ignore \r
+            ret.append(c)
+            if size > 0:
+                size -= 1
+            try:
+                # only available as of Python 2.5
+                self._queue.task_done()
+            except AttributeError:
+                # not essential, if not available
+                pass
+            if not c:
+                self._eof = True
+                break                   # EOF
+        return ''.join(ret)
+
+    def readline(self, size = -1):
+        ret = []
+        while size != 0:
+            c = self.read(1)
+            ret.append(c)
+            if size > 0:
+                size -= 1
+            if c == '\n' or c == '':
+                break
+        return ''.join(ret)
+
 class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
@@ -68,9 +128,26 @@ class Popen(subprocess.Popen):
                 pass
         return ret
 
+    def communicate(self, input = None):
+        # since we always use threads for stdout/stderr, we can just read()
+        stdout = None
+        stderr = None
+        if self.stdin:
+            if input:
+                self.stdin.write(input)
+            self.stdin.close()
+        if self.stdout:
+            stdout = self.stdout.read()
+            self.stdout.close()
+        if self.stderr:
+            stderr = self.stderr.read()
+            self.stderr.close()
+        self.wait()
+        return stdout, stderr
+
 def client(lang, args = [], stdin = None, stdout = None, stderr = None,
            port = os.getenv('MAPIPORT'), host = None,
-           user = 'monetdb', passwd = 'monetdb'):
+           user = 'monetdb', passwd = 'monetdb', log = False):
     '''Start a client process.'''
     if lang == 'mil':
         cmd = _mil_client[:]
@@ -111,6 +188,23 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
     if verbose:
         print 'Executing', ' '.join(cmd +  args)
         sys.stdout.flush()
+    if log:
+        prompt = time.strftime('# %H:%M:%S >  ')
+        cmdstr = ' '.join(cmd +  args)
+        if hasattr(stdin, 'name'):
+            cmdstr += ' < "%s"' % stdin.name
+        print
+        print prompt
+        print '%s%s' % (prompt, cmdstr)
+        print prompt
+        print
+        sys.stdout.flush()
+        print >> sys.stderr
+        print >> sys.stderr, prompt
+        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
+        print >> sys.stderr, prompt
+        print >> sys.stderr
+        sys.stderr.flush()
     p = Popen(cmd + args,
               stdin = stdin,
               stdout = stdout,
@@ -119,11 +213,15 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
               env = env,
               universal_newlines = True)
     p.dotmonetdbfile = fnam
+    if stdout == PIPE:
+        p.stdout = _BufferedPipe(p.stdout)
+    if stderr == PIPE:
+        p.stderr = _BufferedPipe(p.stderr)
     return p
 
 def server(lang, args = [], stdin = None, stdout = None, stderr = None,
            mapiport = None, xrpcport = None, dbname = os.getenv('TSTDB'),
-           dbfarm = None, dbinit = None, bufsize = 0):
+           dbfarm = None, dbinit = None, bufsize = 0, log = False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
@@ -170,10 +268,32 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
     if verbose:
         print 'Executing', ' '.join(cmd +  args)
         sys.stdout.flush()
-    return Popen(cmd + args,
-                 stdin = stdin,
-                 stdout = stdout,
-                 stderr = stderr,
-                 shell = False,
-                 universal_newlines = True,
-                 bufsize = bufsize)
+    if log:
+        prompt = time.strftime('# %H:%M:%S >  ')
+        cmdstr = ' '.join(cmd +  args)
+        if hasattr(stdin, 'name'):
+            cmdstr += ' < "%s"' % stdin.name
+        print
+        print prompt
+        print '%s%s' % (prompt, cmdstr)
+        print prompt
+        print
+        sys.stdout.flush()
+        print >> sys.stderr
+        print >> sys.stderr, prompt
+        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
+        print >> sys.stderr, prompt
+        print >> sys.stderr
+        sys.stderr.flush()
+    p = Popen(cmd + args,
+              stdin = stdin,
+              stdout = stdout,
+              stderr = stderr,
+              shell = False,
+              universal_newlines = True,
+              bufsize = bufsize)
+    if stdout == PIPE:
+        p.stdout = _BufferedPipe(p.stdout)
+    if stderr == PIPE:
+        p.stderr = _BufferedPipe(p.stderr)
+    return p

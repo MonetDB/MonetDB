@@ -29,8 +29,8 @@ START TRANSACTION;
 CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
 SET SCHEMA "sys";
 CREATE TABLE "sys"."test" (
-	"id" int,
-	"i" smallint DEFAULT next value for "sys"."test_seq"
+	"id" INTEGER,
+	"i"  SMALLINT      DEFAULT next value for "sys"."test_seq"
 );
 COPY 5 RECORDS INTO "sys"."test" FROM stdin USING DELIMITERS '\t','\n','"';
 0	7
@@ -39,21 +39,21 @@ COPY 5 RECORDS INTO "sys"."test" FROM stdin USING DELIMITERS '\t','\n','"';
 3	8
 4	5
 CREATE TABLE "sys"."typestest" (
-	"boolean" boolean,
-	"tinyint" tinyint,
-	"smallint" smallint,
-	"int" int,
-	"wrd" bigint,
-	"bigint" bigint,
-	"double" double,
-	"real" real,
-	"decimal" decimal,
-	"decimal9" decimal(9),
-	"decimal83" decimal(8,3),
-	"float" double,
-	"float9" float(9),
-	"float83" float(8,3),
-	"date" date,
+	"boolean"        BOOLEAN,
+	"tinyint"        TINYINT,
+	"smallint"       SMALLINT,
+	"int"            INTEGER,
+	"wrd"            BIGINT,
+	"bigint"         BIGINT,
+	"double"         DOUBLE,
+	"real"           REAL,
+	"decimal"        DECIMAL,
+	"decimal9"       DECIMAL(9),
+	"decimal83"      DECIMAL(8,3),
+	"float"          DOUBLE,
+	"float9"         FLOAT(9),
+	"float83"        FLOAT(8,3),
+	"date"           DATE,
 	"iY" INTERVAL YEAR,
 	"iYM" INTERVAL YEAR TO MONTH,
 	"iM" INTERVAL MONTH,

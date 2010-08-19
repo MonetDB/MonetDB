@@ -1,6 +1,28 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org>
+- A bug was fixed where updates were missing in large transaction.
+  This fixes bug 2543.
+- A memory leak was fixed which caused the server to grow when loading
+  and emptying a table.  This was bug 2539.
+
+* Fri Aug 13 2010 Niels Nes <niels@cwi.nl>
+- Fixed bug 2643 added more defensive code, when an aggregation function
+  doesn't exist
+- Fixed bug 2651 properly handle dead code elimination with
+  op_semi/op_anti and references
+
+* Thu Aug 12 2010 Niels Nes <niels@cwi.nl>
+- Fixed bug 2652. Correctly list all columns of a 'IN' query with 'EXCEPT'
+- Fixed bug 2353. The relational optimizer didn't handle range join
+  expressions properly.
+- fixed bug 2354. Improved function resolution.
+
+* Mon Aug  9 2010 Jennie Zhang <y.zhang@cwi.nl>
+- Fixed bug 2645: mat.pack+algebra.slice should be replaced by mat.slice
+  for 'limit 1' (when the default_pipe is used)
+
 * Fri Aug  6 2010 Fabian Groffen <fabian@cwi.nl>
 - Fixed bug #2641,  The SQL server now handles Unicode BOM sequences
   occurring in any place.  Previously an "unexpected character (U+FEFF)"

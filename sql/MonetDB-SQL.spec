@@ -186,7 +186,7 @@ rm -rf $RPM_BUILD_ROOT
   not to be in the standard as reserved keyword.
 
 * Wed Jul  7 2010 Niels Nes <niels@cwi.nl> - 2.38.3-20100709
-- Fixed bug 2581. Completed the implementation of handling boolean
+- Fixed bug 2581. Completed the implementation of handling Boolean
   types in prepare statements.
 - Fix bug 2582. Statements with 'constant in ( )' are now handled
   properly.

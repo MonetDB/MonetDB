@@ -2732,7 +2732,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				list_destroy(vals);
 			}
 			r = rel_lastexp(sql, right);
-			rel_setsubquery(right);
 			rel = rel_crossproduct(left, right, op_join);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
 				exp_destroy(l);
@@ -3192,6 +3191,36 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		r = or;
 		ol = exp_dup(l);
 		or = exp_dup(r);
+		t1 = exp_subtype(l);
+		t2 = exp_subtype(r);
+
+		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL &&
+		   (table_func || !f->res.comp_type)) {
+			/* try finding function based on first argument */
+			node *m = f->func->ops->h;
+			sql_arg *a = m->data;
+
+			l = rel_check_type(sql, &a->type, l, type_equal);
+			a = m->next->data;
+			r = rel_check_type(sql, &a->type, r, type_equal);
+			if (l && r) {
+				exp_destroy(ol);
+				exp_destroy(or);
+				return exp_binop(l, r, f);
+			}
+		}
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+
+		if (l)
+			exp_destroy(l);
+		if (r)
+			exp_destroy(r);
+		l = ol;
+		r = or;
+		ol = exp_dup(l);
+		or = exp_dup(r);
 
 		/* everything failed, fall back to bind on function name only */
 		if ((f = sql_find_func(s, fname, 2)) != NULL &&
@@ -3464,9 +3493,12 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 		return exp_fix_scale(sql, t, exp, 1,
 					(t->type->scale == SCALE_FIX));
 	} else {
-		char *type = exp_subtype(e)->type->sqlname;
+		char *type = "unknown";
 
-		exp_destroy(e);
+		if (e) {
+			type = exp_subtype(e)->type->sqlname;
+			exp_destroy(e);
+		}
 		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
 	}
 }

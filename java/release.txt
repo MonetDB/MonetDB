@@ -62,10 +62,10 @@ Currently implemented:
   * java.sql.ResultSet interface
     The next features are not implemented:
     - getArray
-    - getAsciiStream, getBinaryStream, getUnicodeStream, getCharacterStream
+    - getAsciiStream, getBinaryStream, getUnicodeStream
     - getRef, getURL
     - all methods related to updateable result sets
-    * java.sql.ResultSetMetaData interface
+  * java.sql.ResultSetMetaData interface
   * java.sql.DatabaseMetaData interface
   * java.sql.SavePoint interface
 

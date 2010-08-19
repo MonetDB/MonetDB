@@ -275,7 +275,7 @@ This all works under the assumption that the SQL layer properly invalidates
 the cache when the underlying table is changed.
 @c
 #ifdef _SQL_OPTIMIZER_DEBUG
-	printFunction(GDKout, mb, 0, LIST_MAL_STMT);
+	printFunction(GDKout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 	return MAL_SUCCEED;
 }
@@ -711,7 +711,7 @@ SQLoptimizer(Client c)
 	(void) c;
 #ifdef _SQL_OPTIMIZER_DEBUG
 	mnstr_printf(GDKout, "SQLoptimizer\n");
-	printFunction(c->fdout, c->curprg->def,0, LIST_MAL_STMT);
+	printFunction(c->fdout, c->curprg->def,0, LIST_MAL_STMT | LIST_MAPI);
 	mnstr_printf(GDKout, "done\n");
 #endif
 	return MAL_SUCCEED;

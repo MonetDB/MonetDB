@@ -1001,6 +1001,7 @@ TRACEtable(void)
 	t = BATnew(TYPE_str, TYPE_bat, 9);
 	if (t == NULL)
 		return NULL;
+	mal_set_lock(mal_profileLock, "profileLock");
 	BUNins(t, "event", &TRACE_id_event->batCacheid, FALSE);
 	BUNins(t, "clk", &TRACE_id_time->batCacheid, FALSE);
 	BUNins(t, "pc", &TRACE_id_pc->batCacheid, FALSE);
@@ -1013,6 +1014,7 @@ TRACEtable(void)
 	BUNins(t, "wbytes", &TRACE_id_wbytes->batCacheid, FALSE);
 	BUNins(t, "type", &TRACE_id_type->batCacheid, FALSE);
 	BUNins(t, "stmt", &TRACE_id_stmt->batCacheid, FALSE);
+	mal_unset_lock(mal_profileLock, "profileLock");
 	return t;
 }
 
@@ -1044,11 +1046,29 @@ TRACEcreate(str hnme, str tnme, int tt)
 	return b;
 }
 
-int
-initTrace(void)
+
+#define CLEANUPprofile(X)  if (X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence = TRANSIENT; } (X) = NULL;
+
+void
+_cleanupProfiler(void)
 {
-	if (TRACE_init)
-		return 0;       /* already initialized */
+	CLEANUPprofile(TRACE_id_event);
+	CLEANUPprofile(TRACE_id_time);
+	CLEANUPprofile(TRACE_id_pc);
+	CLEANUPprofile(TRACE_id_stmt);
+	CLEANUPprofile(TRACE_id_type);
+	CLEANUPprofile(TRACE_id_rbytes);
+	CLEANUPprofile(TRACE_id_wbytes);
+	CLEANUPprofile(TRACE_id_reads);
+	CLEANUPprofile(TRACE_id_writes);
+	CLEANUPprofile(TRACE_id_thread);
+	CLEANUPprofile(TRACE_id_user);
+	TRACE_init = 0;
+}
+
+void
+_initTrace(void)
+{
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
 	TRACE_id_ticks = TRACEcreate("id", "ticks", TYPE_lng);
@@ -1073,30 +1093,29 @@ initTrace(void)
 		TRACE_id_writes == NULL ||
 		TRACE_id_thread == NULL ||
 		TRACE_id_user == NULL
-		)
-		cleanupProfiler();
-	else
+		) {
+		_cleanupProfiler();
+	} else {
 		TRACE_init = 1;
+	}
+}
+
+int
+initTrace(void)
+{
+	if (TRACE_init)
+		return 0;       /* already initialized */
+	mal_set_lock(mal_contextLock, "profileLock");
+	_initTrace();
+	mal_unset_lock(mal_contextLock, "profileLock");
 	return TRACE_init ? 0 : -1;
 }
 
-#define CLEANUPprofile(X)  if (X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence = TRANSIENT; } (X) = NULL;
 str
-cleanupProfiler()
+cleanupProfiler(void)
 {
 	mal_set_lock(mal_contextLock, "cleanup");
-	CLEANUPprofile(TRACE_id_event);
-	CLEANUPprofile(TRACE_id_time);
-	CLEANUPprofile(TRACE_id_pc);
-	CLEANUPprofile(TRACE_id_stmt);
-	CLEANUPprofile(TRACE_id_type);
-	CLEANUPprofile(TRACE_id_rbytes);
-	CLEANUPprofile(TRACE_id_wbytes);
-	CLEANUPprofile(TRACE_id_reads);
-	CLEANUPprofile(TRACE_id_writes);
-	CLEANUPprofile(TRACE_id_thread);
-	CLEANUPprofile(TRACE_id_user);
-	TRACE_init = 0;
+	_cleanupProfiler();
 	mal_unset_lock(mal_contextLock, "cleanup");
 	return MAL_SUCCEED;
 }
@@ -1119,7 +1138,7 @@ clearTrace(void)
 	BBPclear(TRACE_id_reads->batCacheid);
 	BBPclear(TRACE_id_writes->batCacheid);
 	TRACE_init = 0;
-	initTrace();
+	_initTrace();
 	mal_unset_lock(mal_contextLock, "cleanup");
 }
 
