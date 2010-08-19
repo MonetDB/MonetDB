@@ -1076,7 +1076,7 @@ static void
 SQLrenderer(MapiHdl hdl, char singleinstr)
 {
 	int i, total, lentotal, vartotal, minvartotal;
-	int fields, oldfields = 0, printfields, max = 1, graphwaste = 0;
+	int fields, oldfields = 0, printfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
@@ -1113,7 +1113,6 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			lentotal = 0;
 			vartotal = 0;
 			minvartotal = 0;
-			printfields = 0;
 			for (i = 0; i < fields; i++) {
 				char *s;
 
