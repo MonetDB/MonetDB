@@ -3735,6 +3735,15 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 }
 #endif
 
+	/* TODO
+		expensive (functions) in select and/or join expressions should
+		be push-up into new projections after (ie executed when the
+		tables are reduced allready).
+
+		select bla = true/false should be rewriten into select bla.
+		and not(bla).
+		(were bla is an compare expression)
+	*/
 	/* make parts conditional (via debug flag) */
 
 	/* simple merging of projects */
