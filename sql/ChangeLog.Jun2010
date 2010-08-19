@@ -1,6 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org>
+- A bug was fixed where updates were missing in large transaction.
+  This fixes bug 2543.
+- A memory leak was fixed which caused the server to grow when loading
+  and emptying a table.  This was bug 2539.
+
 * Fri Aug 13 2010 Niels Nes <niels@cwi.nl>
 - Fixed bug 2643 added more defensive code, when an aggregation function
   doesn't exist
