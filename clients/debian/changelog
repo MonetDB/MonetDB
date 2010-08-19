@@ -18,8 +18,7 @@ monetdb-client (1.38.3-20100709) unstable; urgency=low
 
 monetdb-client (1.38.3-20100706) unstable; urgency=low
 
-  * Implemented dumping of GRANT statements.
-    This fixes bug 2574.
+  * Implemented dumping of GRANT statements.  This fixes bug 2574.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 5 Jul 2010 14:06:18 +0200
 
@@ -61,50 +60,53 @@ monetdb-client (1.38.1-20100618) unstable; urgency=low
 
 monetdb-client (1.38.1-20100618) unstable; urgency=low
 
-  * The MonetDB ODBC driver now no longer depends on its own copy of the
-    standard ODBC include files but instead depends on system include files
-    (unixODBC on Linux and Microsoft SDK on Windows).
+  * The MonetDB ODBC driver now no longer depends on its own copy of
+    the standard ODBC include files but instead depends on system
+    include files (unixODBC on Linux and Microsoft SDK on Windows).
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Apr 2010 10:58:37 +0200
 
 monetdb-client (1.38.1-20100618) unstable; urgency=low
 
   * Made compilation of "testing" (and "java") independent of MonetDB.
-    This is mainly for Windows, but also on other systems, "testing" can now be
-    built independently of (and hence before) "MonetDB".
-    Files that mimic configure functionality on Windows were moved from
-    "MonetDB" to "buildtools"; hence, this affects all packages on Windows,
-    requiring a complete rebuild from scratch on Windows.
-    getopt() support in testing has changed; hence, (most probably) requiring a
-    rebuild from scratch of testing on other systems.
+    This is mainly for Windows, but also on other systems, "testing"
+    can now be built independently of (and hence before) "MonetDB".
+    Files that mimic configure functionality on Windows were moved
+    from "MonetDB" to "buildtools"; hence, this affects all packages
+    on Windows, requiring a complete rebuild from scratch on Windows.
+    getopt() support in testing has changed; hence, (most probably)
+    requiring a rebuild from scratch of testing on other systems.
 
  -- Stefan Manegold <manegold@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
 
 monetdb-client (1.38.1-20100618) unstable; urgency=low
 
-  * Implemented build directory support for Windows,
-    i.e., like on Unix/Linux also on Windows we can now build in a separate
-    build directory as alternative to ...<package>NT, and thus keep the
-    latter clean from files generated during the build.
-    On Windows, the build directory must be a sibling of ...<package>NT .
+  * Implemented build directory support for Windows, i.e., like on
+    Unix/Linux also on Windows we can now build in a separate build
+    directory as alternative to ...<package>NT, and thus keep the
+    latter clean from files generated during the build.  On Windows,
+    the build directory must be a sibling of ...<package>NT .
 
  -- Stefan Manegold <manegold@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
 
 monetdb-client (1.38.1-20100618) unstable; urgency=low
 
-  * Changed d output of mclient no longer to list (internal use only) system tables.  Administrator users who like to inspect these tables can use SELECT * FROM tables; instead
+  * Changed \d output of mclient no longer to list (internal use only)
+    system tables.  Administrator users who like to inspect these
+    tables can use SELECT * FROM tables; instead
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
 
 monetdb-client (1.38.1-20100618) unstable; urgency=low
 
-  * Implemented the changes required for properly running ODBC on a 64-bit platform.
+  * Implemented the changes required for properly running ODBC on a
+    64-bit platform.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Apr 2010 10:58:37 +0200
 
 monetdb-client (1.38.1-20100618) unstable; urgency=low
 
-  * Added stethoscope, an utility to profile MonetDB5 instances,
+  * Added stethoscope, a utility to profile MonetDB5 instances,
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
 
@@ -118,12 +120,12 @@ monetdb-client (1.36.5-20100420) unstable; urgency=low
 
   * Documented the database option in the DSN in the Perl interface.
     Also incremented the version number of the Perl interface.
-  * Fixed a problem in the PHP interface where under certain circumstances
-    not all data from the server was read, leading to a limited number of rows
-    being returned and other weird behavior.
+  * Fixed a problem in the PHP interface where under certain
+    circumstances not all data from the server was read, leading to a
+    limited number of rows being returned and other weird behavior.
     This fixes SF bug 2975433.
-  * If mclient is called with argument -? or --help, exit with exit code 0.
-    This fixes SF bug 2956574.
+  * If mclient is called with argument -? or --help, exit with exit
+    code 0.  This fixes SF bug 2956574.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 15 Apr 2010 10:47:15 +0200
 
@@ -141,31 +143,33 @@ monetdb-client (1.36.1-20100224) unstable; urgency=low
 
 monetdb-client (1.36.1-20100223) unstable; urgency=low
 
-  * Fixed a bug in the Mapi library when sending very large queries to the server.
+  * Fixed a bug in the Mapi library when sending very large queries to
+    the server.
   * Implemented BLOB and CLOB support in ODBC driver.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 17 Feb 2010 15:15:32 +0100
 
 monetdb-client (1.36.1-20100223) unstable; urgency=low
 
-  * Fixed crash upon connect to a server that is under maintenance but has
-    the requested language (scenario) not loaded.
+  * Fixed crash upon connect to a server that is under maintenance but
+    has the requested language (scenario) not loaded.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 02 Feb 2010 15:15:32 +0100
 
 monetdb-client (1.36.1-20100223) unstable; urgency=low
 
-  * Fixed bug in the ODBC driver where a non-ASCII character at the end of a
-    string caused an error when the string was converted to wide characters.
+  * Fixed bug in the ODBC driver where a non-ASCII character at the
+    end of a string caused an error when the string was converted to
+    wide characters.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 27 Jan 2010 15:15:32 +0100
 
 monetdb-client (1.36.1-20100223) unstable; urgency=low
 
-  * mclient timer information (-t option) is now written to standard error
-    instead of standard output.  This makes getting timer information easier
-    when there is a large amount of regular output (which can be redirected to
-    a file or /dev/null).
+  * mclient timer information (-t option) is now written to standard
+    error instead of standard output.  This makes getting timer
+    information easier when there is a large amount of regular output
+    (which can be redirected to a file or /dev/null).
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 20 Jan 2010 15:15:32 +0100
 
