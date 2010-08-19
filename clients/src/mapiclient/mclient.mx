@@ -462,7 +462,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 	char *t;
 	int rows = 0;		/* return number of output lines printed */
 	size_t ulen;
-	int cutafter[fields];
+	int *cutafter = alloca(sizeof(int) * fields);
 
 	/* trim the text if needed */
 	if (trim == 1) {
