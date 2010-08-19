@@ -397,7 +397,7 @@ rm -fr $RPM_BUILD_ROOT
   64-bit platform.
 
 * Tue Apr 20 2010 Fabian Groffen <fabian@cwi.nl> - 1.38.1-20100618
-- Added stethoscope, an utility to profile MonetDB5 instances,
+- Added stethoscope, a utility to profile MonetDB5 instances,
   originally from the MonetDB5 repository.
 
 * Tue Apr 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.36.5-20100420
