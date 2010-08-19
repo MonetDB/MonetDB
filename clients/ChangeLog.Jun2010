@@ -1,9 +1,16 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org>
+- mclient now complains about NULL bytes in the input when in interactive
+  mode.
+
 * Fri Aug 13 2010 Fabian Groffen <fabian@cwi.nl>
-- Slight rendering improvements to mclient's tabular output when rendering results larger than the available screen width, headers were previously unnecessarily squeezed.
-- Fix bug #2650, a too small buffer caused the active database as reported by mclient's welcome message to be truncated
+- Slight rendering improvements to mclient's tabular output when
+  rendering results larger than the available screen width, headers
+  were previously unnecessarily squeezed.
+- Fix bug #2650, a too small buffer caused the active database as
+  reported by mclient's welcome message to be truncated
 
 * Wed Jul 21 2010 Fabian Groffen <fabian@cwi.nl>
 - Add --version option to mclient.
