@@ -1801,7 +1801,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	int sent = 0;		/* whether we sent any data to the server */
-	int first = 1;		/* first line processing */
+	int lineno = 1;
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -1809,6 +1809,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		oldbuf = buf = malloc(BUFSIZ);
 
 	do {
+		if (prompt) {
+			/* clear errors when interactive */
+			errseen = 0;
+		}
 		mnstr_flush(toConsole);
 		timerPause();
 #ifdef HAVE_LIBREADLINE
@@ -1837,6 +1841,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		} else
 #endif
 		{
+			int c = 0;
+
 #ifndef HAVE_LIBREADLINE
 			if (prompt) {
 				fputs(hdl ? "more>" : prompt, stdout);
@@ -1846,11 +1852,35 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			if (buf != oldbuf)
 				free(buf);
 			buf = oldbuf;
-			line = fgets(buf, BUFSIZ, fp);
-		}
-		if (prompt) {
-			/* clear errors when interactive */
-			errseen = 0;
+			line = buf;
+			while (line < buf + BUFSIZ - 1 &&
+			       (c = getc(fp)) != EOF) {
+				if (c == 0) {
+					fprintf(stderr, "NULL byte in input on line %d of input\n", lineno);
+					/* read away rest of line */
+					while ((c = getc(fp)) != EOF &&
+					       c != '\n')
+						;
+					errseen = 1;
+					c = 0x1234; /* indicate error */
+					if (hdl) {
+						mapi_close_handle(hdl);
+						hdl = NULL;
+					}
+					break;
+				}
+				*line++ = c;
+				if (c == '\n')
+					break;
+			}
+			if (c == 0x1234)
+				continue;
+			if (line == buf)
+				line = NULL;
+			else {
+				*line = 0;
+				line = buf;
+			}
 		}
 #ifdef HAVE_ICONV
 		if (line != NULL && encoding != NULL && cd_in != (iconv_t) -1) {
@@ -1871,10 +1901,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #ifdef HAVE_ICONV
 			    encoding == NULL &&
 #endif
-			    first &&
+			    lineno == 1 &&
 			    strncmp(line, UTF8BOM, UTF8BOMLENGTH) == 0)
 			line += UTF8BOMLENGTH;	/* skip Byte Order Mark (BOM) */
-		first = 0;
+		lineno++;
 		if (line == NULL ||
 		    (mode == XQUERY && line[0] == '<' && line[1] == '>')) {
 			/* end of file */
