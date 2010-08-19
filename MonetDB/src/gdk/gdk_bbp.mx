@@ -2136,7 +2136,7 @@ static int
 BBPdestroy(BAT *b)
 {
 	int clear = 1;
-	bat hp = VIEWhparent(b), tp = VIEWtparent(b);
+	bat hp = b->H->heap.parentid, tp = b->T->heap.parentid;
 	bat vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
 
 	if (isVIEW(b)) {	/* a physical view */
