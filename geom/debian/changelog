@@ -63,9 +63,9 @@ monetdb-geom (0.18.1-20100618) unstable; urgency=low
 
   * Implemented build directory support for Windows, i.e., like on
     Unix/Linux also on Windows we can now build in a separate build
-    directory as alternative to ...<package>NT, and thus keep the
+    directory as alternative to ...\<package>\NT, and thus keep the
     latter clean from files generated during the build.  On Windows,
-    the build directory must be a sibling of ...<package>NT .
+    the build directory must be a sibling of ...\<package>\NT .
 
  -- Stefan Manegold <manegold@cwi.nl>  Tue, 20 Apr 2010 10:58:37 +0200
 

@@ -351,9 +351,9 @@ rm -fr $RPM_BUILD_ROOT
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 1.38.1-20100618
 - Implemented build directory support for Windows, i.e., like on
   Unix/Linux also on Windows we can now build in a separate build
-  directory as alternative to ...<package>NT, and thus keep the latter
+  directory as alternative to ...\<package>\NT, and thus keep the latter
   clean from files generated during the build.  On Windows, the build
-  directory must be a sibling of ...<package>NT .
+  directory must be a sibling of ...\<package>\NT .
 
 * Tue Apr 20 2010 Fabian Groffen <fabian@cwi.nl> - 1.38.1-20100618
 - Changed \d output of mclient no longer to list (internal use only)

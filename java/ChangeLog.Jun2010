@@ -48,7 +48,7 @@
   24 Mar 2010; Stefan Manegold <manegold@cwi.nl> Makefile.ag:
   Implemented build directory support for Windows,
   i.e., like on Unix/Linux also on Windows we can now build in a separate
-  build directory as alternative to ...<package>NT, and thus keep the
+  build directory as alternative to ...\<package>\NT, and thus keep the
   latter clean from files generated during the build.
-  On Windows, the build directory must be a sibling of ...<package>NT .
+  On Windows, the build directory must be a sibling of ...\<package>\NT .
 

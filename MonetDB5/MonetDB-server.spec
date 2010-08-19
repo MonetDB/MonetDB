@@ -288,9 +288,9 @@ rm -fr $RPM_BUILD_ROOT
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 5.20.1-20100618
 - Implemented build directory support for Windows, i.e., like on
   Unix/Linux also on Windows we can now build in a separate build
-  directory as alternative to ...<package>NT, and thus keep the latter
+  directory as alternative to ...\<package>\NT, and thus keep the latter
   clean from files generated during the build.  On Windows, the build
-  directory must be a sibling of ...<package>NT .
+  directory must be a sibling of ...\<package>\NT .
 
 * Tue Apr 20 2010 Martin Kersten <martin.kersten@cwi.nl> - 5.20.1-20100618
 - The MAL debugger list command has been extended with an optional
