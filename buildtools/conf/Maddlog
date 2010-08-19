@@ -89,7 +89,8 @@ PROJECT=${dir##*/}
 IDENTITY=$(hg showconfig ui.username)
 
 if [ $# -gt 0 ]; then
-    msg=$*
+    msg=$(echo "  $*" | fmt)
+    mst=${msg#  }
 else
     nl=$'\n  '
     echo "Log message (end with ^D or empty line):"
