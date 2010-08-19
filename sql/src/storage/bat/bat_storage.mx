@@ -1316,10 +1316,12 @@ gtr_minmax_table(sql_trans *tr, sql_table *t)
 	int ok = LOG_OK;
 	node *n;
 
-	for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
-		sql_column *c = n->data;
-
-		ok = gtr_minmax_col(tr, c);
+	if (t->readonly) {
+		for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
+			sql_column *c = n->data;
+	
+			ok = gtr_minmax_col(tr, c);
+		}
 	}
 	return ok;
 }
