@@ -1141,7 +1141,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 					 strcmp(s, "wrd") == 0 ||
 					 strcmp(s, "smallint") == 0 ||
 					 strcmp(s, "double") == 0 ||
-					 strcmp(s, "float") == 0);
+					 strcmp(s, "float") == 0 ||
+					 strcmp(s, "decimal") == 0);
 
 				if (!numeric[i]) {
 					vartotal += len[i];
