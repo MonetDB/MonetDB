@@ -6,3 +6,6 @@ c = process.client('sql',
                                              os.path.pardir,
                                              'insert-null-byte.sql')))
 c.communicate()
+
+c = process.client('sql', stdin = process.PIPE)
+c.communicate('drop table strings2233581;')
