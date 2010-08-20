@@ -75,7 +75,7 @@ MAPI  = monetdb@volund:35971
 QUERY = COPY 1 RECORDS INTO t FROM STDIN USING DELIMITERS '|','
         ','"' NULL AS '';"abcd"
         
-ERROR = !SQLException:importTable:value 'abcd' from line 1 field 1 not inserted, expecting type str
+ERROR = !SQLException:importTable:value 'abcd' from line 1 field 1 not inserted, value too long for type (var)char(3)
         !failed to import table
 
 # 15:34:26 >  
