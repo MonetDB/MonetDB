@@ -1,6 +1,20 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug 20 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a case where the optimizer incorrectly removed an expression.
+  This fixes bu 2602.
+- Fix a crash in prepared statements when a parameter is on the left-hand
+  side of a binary operator.  This fixes bug 2599.
+- Fixed reporting of a violated foreign key constraint.  This fixes
+  bug 2598.
+- Certain schema altering queries didn't report success, even though
+  they did succeed.  This fixes bug 2589.
+- Fixed a crash when a non-existing table was used in an IN clause.
+  Fixes bug 2604.
+- Fixed bug 2633.  Adding a LIMIT clause could, in certain conditions,
+  cause a crash.
+
 * Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org>
 - A bug was fixed where updates were missing in large transaction.
   This fixes bug 2543.
