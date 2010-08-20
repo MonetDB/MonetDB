@@ -16,10 +16,6 @@
 
 CREATE TYPE url EXTERNAL NAME url;
 
-CREATE table url_test ( theUrl url, name string );
---INSERT into url_test values ( url 'http://monetdb.cwi.nl/', 'MonetDB');
---select * from url_test;
-
 CREATE function getAnchor( theUrl url ) RETURNS STRING 
 	EXTERNAL NAME url."getAnchor";
 CREATE function getBasename(theUrl url) RETURNS STRING       
