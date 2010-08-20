@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Fri Aug 20 2010 Sjoerd Mullender <sjoerd@acm.org>
+- A bug was fixed where on 32 bit systems (or 64 bit systems using 32 bit
+  OIDs), values where sometimes written as 32 bits but read as 64 bits.
+  This fixes bugs 2644 and 2654.
+
 * Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org>
 - If extensions such as SQL and GEOM are properly installed, they are
   loaded automatically when mserver5 starts.  This fixes bug 2522.
