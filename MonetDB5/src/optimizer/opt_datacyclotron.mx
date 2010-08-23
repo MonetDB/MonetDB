@@ -130,7 +130,7 @@ printRegists(void) {
 
 	printf("The catalog for the datacyclotron optimizer contains %d chunks and %d partitions.\n", chunks, parts);
 
-	return res;		
+	return MAL_SUCCEED;
 }
 
 DCYcatalog*
