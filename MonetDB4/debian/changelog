@@ -1,3 +1,17 @@
+monetdb4-server (4.38.5-20100823) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 23 Aug 2010 10:13:12 +0200
+
+monetdb4-server (4.38.5-20100823) unstable; urgency=low
+
+  * Slight change to Fedora, Debian, Ubuntu installers: the database
+    directory now has the group setuid bit set so that new databases
+    inherit the group ownership (monetdb).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 22 Jul 2010 10:13:12 +0200
+
 monetdb4-server (4.38.3-20100713) unstable; urgency=low
 
   * Rebuilt.

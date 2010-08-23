@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP1/%{name}-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires: zlib-devel, bzip2-devel, openssl-devel
@@ -106,6 +106,14 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libbat.so
 
 %changelog
+* Mon Aug 23 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.5-20100823
+- Rebuilt.
+
+* Fri Aug 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.5-20100823
+- Fixed a bug where some internal reference counting was done incorrectly,
+  causing an infinite loop when exiting the server due to it being killed.
+  This bug probably only manifested itself in MonetDB/XQuery.  Bug 2658.
+
 * Tue Jul 13 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.3-20100713
 - Rebuilt.
 

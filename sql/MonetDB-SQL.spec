@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP1/MonetDB-SQL-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/MonetDB-SQL-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires: e2fsprogs-devel
@@ -157,6 +157,88 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libembeddedsql5.so
 
 %changelog
+* Mon Aug 23 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.5-20100823
+- Rebuilt.
+
+* Fri Aug 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.5-20100823
+- Fixed a case where the optimizer incorrectly removed an expression.
+  This fixes bu 2602.
+- Fix a crash in prepared statements when a parameter is on the left-hand
+  side of a binary operator.  This fixes bug 2599.
+- Fixed reporting of a violated foreign key constraint.  This fixes
+  bug 2598.
+- Certain schema altering queries didn't report success, even though
+  they did succeed.  This fixes bug 2589.
+- Fixed a crash when a non-existing table was used in an IN clause.
+  Fixes bug 2604.
+- Fixed bug 2633.  Adding a LIMIT clause could, in certain conditions,
+  cause a crash.
+
+* Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.5-20100823
+- A bug was fixed where updates were missing in large transaction.
+  This fixes bug 2543.
+- A memory leak was fixed which caused the server to grow when loading
+  and emptying a table.  This was bug 2539.
+
+* Fri Aug 13 2010 Niels Nes <niels@cwi.nl> - 2.38.5-20100823
+- Fixed bug 2643 added more defensive code, when an aggregation function
+  doesn't exist
+- Fixed bug 2651 properly handle dead code elimination with
+  op_semi/op_anti and references
+
+* Thu Aug 12 2010 Niels Nes <niels@cwi.nl> - 2.38.5-20100823
+- Fixed bug 2652. Correctly list all columns of a 'IN' query with 'EXCEPT'
+- Fixed bug 2353. The relational optimizer didn't handle range join
+  expressions properly.
+- fixed bug 2354. Improved function resolution.
+
+* Mon Aug  9 2010 Jennie Zhang <y.zhang@cwi.nl> - 2.38.5-20100823
+- Fixed bug 2645: mat.pack+algebra.slice should be replaced by mat.slice
+  for 'limit 1' (when the default_pipe is used)
+
+* Fri Aug  6 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.5-20100823
+- Fixed bug #2641,  The SQL server now handles Unicode BOM sequences
+  occurring in any place.  Previously an "unexpected character (U+FEFF)"
+  error would be returned.
+
+* Fri Jul 30 2010 Niels Nes <niels@cwi.nl> - 2.38.5-20100823
+- Fix Bug 2611. Fixed check for multiple functions without parameters.
+- Fixed bug 2569 (except/union/intersect right after
+  insert/delete/update. We now correctly fallback to the more general
+  subquery case (not only simple selects (SQL_SELECT)).
+
+* Thu Jul 29 2010 Niels Nes <niels@cwi.nl> - 2.38.5-20100823
+- Fixed bug in handling 'WITH' and row_number()  (Bug 2631).
+  The cardinality of the row_number expression was incorrect.
+
+* Thu Jul 29 2010 Niels Nes <niels@cwi.nl> - 2.38.5-20100823
+- Fixed ORDER BY over UNION etc. (bug 2606) by
+  automatically adding select * around select x union select y order by z.
+
+* Mon Jul 26 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.5-20100823
+- On installs with (very) long prefixes, the UNIX domain sockets could get
+  truncated, causing merovingian to become unavailable to monetdb and mclient.
+  Similarly, a fall back to a regular TCP socket for mapi connections is
+  used for forked mservers in this case.
+
+* Wed Jul 21 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.5-20100823
+- Really shutdown when an argument to merovingian was given, instead of
+  ending up in some inconsistent state.  This solves all weird behaviour
+  observed in bug #2628.
+- Report MonetDB release on --version flags and in the logs.
+
+* Tue Jul 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.5-20100823
+- Fixed bug 2624: function returning decimal returned result that was
+  scaled incorrectly.
+
+* Sun Jul 18 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 2.38.5-20100823
+- fixed bug 2622 "LIMIT & OFFSET ignored on 64-bit big-endian when
+  combined with GROUP BY"
+
+* Fri Jul 16 2010 Fabian Groffen <fabian@cwi.nl> - 2.38.5-20100823
+- Remove references to master/slave settings, since replication isn't yet
+  fully implemented in Jun2010 branch.
+
 * Tue Jul 13 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.3-20100713
 - Rebuilt.
 
