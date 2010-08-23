@@ -30,7 +30,7 @@ address OPTdatacyclotron
 comment "Datacyclotron code injection";
 
 
-pattern addReg(sch:str, tab:str, col:str, acc:int, f_bun:int, l_bun:int):int
+pattern addReg(sch:str, tab:str, col:str, acc:int, part:int, f_bun:int, l_bun:int):int
 address addRegWrap
 comment "Add a regist for partition";
 
@@ -72,6 +72,7 @@ typedef struct DCYCATALOG {
                 column[COLUMN_LENG];
 	int 	access;
 	int 	partitions;
+	int 	*part_id;
 	int 	*f_bun;
 	int 	*l_bun;
 	
@@ -80,7 +81,7 @@ typedef struct DCYCATALOG {
 
 DCYcatalog *catalog;
 
-opt_export DCYcatalog* addRegist( str sch, str tab, str col, int acc, int f_bun, int l_bun );
+opt_export DCYcatalog* addRegist( str sch, str tab, str col, int acc, int part, int f_bun, int l_bun );
 opt_export DCYcatalog* findRegist( str sch, str tab, str col, int acc);
 opt_export DCYcatalog* removePartRegist( str sch, str tab, str col, int acc, int part);
 opt_export int dropRegist( str sch, str tab, str col, int acc );
@@ -101,14 +102,15 @@ addRegWrap (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc) {
 	str *tab = (str*) getArgReference(stk,pc,2);
 	str *col = (str*) getArgReference(stk,pc,3);
 	int acc = *(int*) getArgReference(stk,pc,4);
-	int f_b = *(int*) getArgReference(stk,pc,5);
-	int l_b = *(int*) getArgReference(stk,pc,6);
+	int part = *(int*) getArgReference(stk,pc,5);
+	int f_b = *(int*) getArgReference(stk,pc,6);
+	int l_b = *(int*) getArgReference(stk,pc,7);
 
 	(void) res;
 	(void) cntxt;
 	(void) mb;
 
-	addRegist(*sch, *tab, *col, acc, f_b, l_b);
+	addRegist(*sch, *tab, *col, acc, part, f_b, l_b);
 
 	return MAL_SUCCEED;
 }
@@ -116,24 +118,23 @@ addRegWrap (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc) {
 str
 printRegists(void) {
 	DCYcatalog *reg = NULL;
-	int chunks = 0, parts = 0;
-	char *res = NULL;
+	int chunks = 0, parts = 0, j = 0;
 
-	reg = catalog;
-	
 	while(reg) {
 		chunks++;
+		for (j = 0; j < reg->partitions; j++)
+			printf("X1 := datacyclotron.addReg(\"%s\",\"%s\",\"%s\",%d,%d,%d,%d);\n", reg->schema, reg->column, reg->column, reg->access, reg->part_id[j], reg->f_bun[j], reg->l_bun[j]);
 		parts += reg->partitions;
                 reg = reg->next;
         }
 
-	sprintf(res, "The catalog for the datacyclotron optimizer contains %d chunks and %d partitions.\n", chunks, parts);	
+	printf("The catalog for the datacyclotron optimizer contains %d chunks and %d partitions.\n", chunks, parts);
 
 	return res;		
 }
 
 DCYcatalog*
-addRegist( str sch, str tab, str col, int acc, int f_bun, int l_bun ) {
+addRegist( str sch, str tab, str col, int acc, int part, int f_bun, int l_bun ) {
 	DCYcatalog *reg = NULL;
 
 	if (!(reg = findRegist(sch, tab, col, acc))) {
@@ -146,15 +147,18 @@ addRegist( str sch, str tab, str col, int acc, int f_bun, int l_bun ) {
 		reg->next = catalog;
 		catalog = reg;
 
+		reg->part_id = GDKmalloc(DCYPARTITIONS*sizeof(int));
 		reg->f_bun = GDKmalloc(DCYPARTITIONS*sizeof(int));
 		reg->l_bun = GDKmalloc(DCYPARTITIONS*sizeof(int));
 	}
 
 	if ( reg->partitions && !(reg->partitions%DCYPARTITIONS) ) {
+		reg->part_id = GDKrealloc(reg->part_id, (reg->partitions + DCYPARTITIONS) *sizeof(int));
 		reg->f_bun = GDKrealloc(reg->f_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
 		reg->l_bun = GDKrealloc(reg->l_bun, (reg->partitions + DCYPARTITIONS) *sizeof(int));
 	}
 
+	reg->part_id[reg->partitions] = part;
 	reg->f_bun[reg->partitions] = f_bun;
 	reg->l_bun[reg->partitions] = l_bun;
 	reg->partitions++;
@@ -171,6 +175,7 @@ removePartRegist( str sch, str tab, str col, int acc, int part) {
 		return NULL;
 
 	for (i = part; i < (reg->partitions-1); i++) {
+		reg->part_id[i] = reg->part_id[i+1];
 		reg->f_bun[i] = reg->f_bun[i+1];
 		reg->l_bun[i] = reg->l_bun[i+1];
 	}
@@ -200,6 +205,8 @@ dropRegist( str sch, str tab, str col, int acc ) {
 		prev_reg->next = reg->next;
 	else
 		catalog = reg->next;
+	if (reg->part_id)
+		GDKfree(reg->part_id);
 	if (reg->f_bun)
 		GDKfree(reg->f_bun);
 	if (reg->l_bun)
@@ -316,7 +323,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					new = pushStr(mb,new,reg->table);
 					new = pushStr(mb,new,reg->column);
 					new = pushInt(mb,new,reg->access);
-					new = pushInt(mb,new,k);
+					new = pushInt(mb,new,reg->part_id[k]);
 					new = pushInt(mb,new,reg->f_bun[k]);
 					new = pushInt(mb,new,reg->l_bun[k]);
 					pushInstruction(mb,new);
