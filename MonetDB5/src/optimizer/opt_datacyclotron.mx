@@ -123,7 +123,7 @@ printRegists(void) {
 	while(reg) {
 		chunks++;
 		for (j = 0; j < reg->partitions; j++)
-			printf("X1 := datacyclotron.addReg(\"%s\",\"%s\",\"%s\",%d,%d,%d,%d);\n", reg->schema, reg->column, reg->column, reg->access, reg->part_id[j], reg->f_bun[j], reg->l_bun[j]);
+			printf("X1 := datacyclotron.addReg(\"%s\",\"%s\",\"%s\",%d,%d,%d,%d);\n", reg->schema, reg->table, reg->column, reg->access, reg->part_id[j], reg->f_bun[j], reg->l_bun[j]);
 		parts += reg->partitions;
                 reg = reg->next;
         }
