@@ -120,6 +120,8 @@ printRegists(void) {
 	DCYcatalog *reg = NULL;
 	int chunks = 0, parts = 0, j = 0;
 
+	reg = catalog;
+
 	while(reg) {
 		chunks++;
 		for (j = 0; j < reg->partitions; j++)
