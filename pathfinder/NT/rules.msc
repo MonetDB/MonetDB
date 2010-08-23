@@ -36,7 +36,7 @@ RULESMSC = ToBeDefined
 !ENDIF
 !INCLUDE $(RULESMSC)
 
-VERSION = 0.38.4
+VERSION = 0.38.5
 #         ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
