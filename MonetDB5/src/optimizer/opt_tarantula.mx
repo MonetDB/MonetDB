@@ -428,7 +428,7 @@ if at least a sql.bind operation belongs to the list and the leg has a minimimal
 			mnstr_printf(cntxt->fdout,"%d, ", output[i]);
 		mnstr_printf(cntxt->fdout,"\n");
 	}
-	alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
+	alias= (int*) GDKzalloc(2 * mb->vtop * sizeof(int));
 
 	snprintf(buf,BUFSIZ,"%s_%d_%d", getFunctionId(getInstrPtr(mb,0)), getArg(old[pc],0), idx-old[pc]->retc);
 	putName(buf,strlen(buf));
@@ -808,8 +808,7 @@ OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int tn=0, ta =0, vtop=0;
 	MalBlkPtr *leg;
 	char fcn[BUFSIZ];
-	Lifespan span;
-	int *map, top;
+	int *map, *used, top;
 	int itop = 0, *input;
 	int otop = 0, *output;
 	InstrPtr *list;
@@ -826,6 +825,8 @@ OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     if ( TARnrpeers == 0 )
         TARdiscover(cntxt);
     mal_unset_lock(mal_contextLock,"tarantula.register");
+	OPTDEBUGtarantula
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 @-
 All tarantula leg code is collected in a separate module
 to ease future distribution and scheduling.
@@ -842,6 +843,7 @@ when scheduled correctly, would not lead to duplicate work.
 
 	limit = mb->stop;
 	old = mb->stmt;
+	vtop= mb->vtop;
 
 	if ( newMalBlkStmt(mb, mb->ssize) < 0){
 		GDKfree(leg);
@@ -849,11 +851,19 @@ when scheduled correctly, would not lead to duplicate work.
 	}
 	pushInstruction(mb, old[0]);
 
-	span = newLifespan(mb);
-	map= (int*) GDKzalloc(2 * mb->vtop * sizeof(int));
-	vtop= mb->vtop;
-	for ( i = 0; i < mb->vtop; i++)
+	map= (int*) GDKzalloc(2 * vtop * sizeof(int));
+	used= (int*) GDKzalloc(2 * vtop * sizeof(int));
+	for ( i = 0; i <2 * vtop; i++)
 		map[i] = i;
+	for (i = 1; i < limit; i++) {
+		p = old[i];
+		if ( getModuleId(p) != sqlRef)
+		for( j= p->retc; j<p->argc; j++){
+			int a= getArg(p,j);
+			assert(a < vtop);
+			used[a]++;
+		}
+	}
 
 	sig= old[0];
 	for (i = 1; i < limit; i++) {
@@ -912,11 +922,19 @@ in subsequent calls.
 								input[itop++] = getArg(pp,j);
 							if (getArg(pp,j) >= vtop ) /* new variables are never re-assigned */
 								continue;
-							if ( getEndLifespan(span, getArg(pp,j)) > i)
-								output[otop++]= getArg(pp,j);
 						}
 						list[top++] = pp;
 					}
+				}
+				/* for all variables assigned, check if they are needed outside */
+				for ( l=0; l< top; l++){
+					pp = list[l];
+					if ( getModuleId(pp) != sqlRef)
+					for ( j = 0; j<pp->retc; j++){
+						if (used[getArg(pp,j)] > 1)
+							output[otop++]= getArg(pp,j);
+					}
+					assert(otop < vtop);
 				}
 @-
 All legs should have the same input/output variable sequence.
@@ -968,8 +986,6 @@ All legs should have the same input/output variable sequence.
 				for (k = 0; k < tn; k++)
 					if (old[j] && old[j]->token != REMsymbol)
 						q =newStmt(leg[k], getModuleId(old[j]), getFunctionId(old[j]));
-			OPTDEBUGtarantula for (k = 0; k < tn; k++)
-				printFunction(cntxt->fdout, leg[k], 0, LIST_MAL_STMT | LIST_MAPI);
 			GDKfree(input);
 			GDKfree(output);
 			GDKfree(list);
@@ -977,8 +993,13 @@ All legs should have the same input/output variable sequence.
 			continue;
 		} 
 		wrapup:
-		for ( j=0; j< p->argc; j++)
+		if ( getModuleId(p) != sqlRef)
+		for ( j=0; j< p->argc; j++){
+			int a= getArg(p,j);
+			assert(a<vtop);
+			used[a]--;
 			getArg(p,j)= map[getArg(p,j)];
+		}
 		pushInstruction(mb,p);
 		if (p->token == ENDsymbol){
 			last= i;
@@ -997,6 +1018,7 @@ The leg code should be optimized by the remaining optimizers too.
 	GDKfree(old);
 	GDKfree(leg);
 	GDKfree(map);
+	GDKfree(used);
 	(void) stk;
 	return actions;
 }
