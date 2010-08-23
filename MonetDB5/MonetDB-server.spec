@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP1/MonetDB5-server-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/MonetDB5-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_raptor: %{!?_without_raptor: %define _with_raptor --with-raptor}}
@@ -215,6 +215,43 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/*.so
 
 %changelog
+* Mon Aug 23 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.5-20100823
+- Rebuilt.
+
+* Fri Aug 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.5-20100823
+- A bug was fixed where on 32 bit systems (or 64 bit systems using 32 bit
+  OIDs), values where sometimes written as 32 bits but read as 64 bits.
+  This fixes bugs 2644 and 2654.
+
+* Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.5-20100823
+- If extensions such as SQL and GEOM are properly installed, they are
+  loaded automatically when mserver5 starts.  This fixes bug 2522.
+
+* Fri Jul 30 2010 Niels Nes <niels@cwi.nl> - 5.20.5-20100823
+- Fixed bug 2557. There was a bug in the mergetable optimizer which was
+  triggered by multi column (at least 32 columns).
+
+* Wed Jul 28 2010 Martin Kersten <mk@cwi.nl> - 5.20.5-20100823
+- Added missing multiplex version of MAL str.stringlength().
+  This improves performance of SQL length().
+
+* Tue Jul 27 2010 Martin Kersten <mk@cwi.nl> - 5.20.5-20100823
+- Protect dataflow against multi-assignments.
+  This fixes bugs 2626 & 2614.
+
+* Thu Jul 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.5-20100823
+- Slight change to Fedora, Debian, Ubuntu installers: the database
+  directory now has the group setuid bit set so that new databases
+  inherit the group ownership (monetdb).
+
+* Thu Jul 15 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 5.20.5-20100823
+- Restored genuine original mitosis logic by disabling
+  incorrect octopus dominance (even when octopus was not
+  enabled); basically a selective back-port of changesets
+  http://dev.monetdb.org/hg/MonetDB/rev/2a358751a4b6
+  http://dev.monetdb.org/hg/MonetDB/rev/692eff15bea0 from the default
+  branch. This fixes bug 2596.
+
 * Tue Jul 13 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.3-20100713
 - Rebuilt.
 

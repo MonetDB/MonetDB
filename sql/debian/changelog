@@ -1,3 +1,130 @@
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 23 Aug 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Fixed a case where the optimizer incorrectly removed an expression.
+    This fixes bu 2602.
+  * Fix a crash in prepared statements when a parameter is on the left-hand
+    side of a binary operator.  This fixes bug 2599.
+  * Fixed reporting of a violated foreign key constraint.  This fixes
+    bug 2598.
+  * Certain schema altering queries didn't report success, even though
+    they did succeed.  This fixes bug 2589.
+  * Fixed a crash when a non-existing table was used in an IN clause.
+    Fixes bug 2604.
+  * Fixed bug 2633.  Adding a LIMIT clause could, in certain conditions,
+    cause a crash.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 20 Aug 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * A bug was fixed where updates were missing in large transaction.
+    This fixes bug 2543.
+  * A memory leak was fixed which caused the server to grow when loading
+    and emptying a table.  This was bug 2539.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 19 Aug 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Fixed bug 2643 added more defensive code, when an aggregation function
+    doesn't exist
+  * Fixed bug 2651 properly handle dead code elimination with
+    op_semi/op_anti and references
+
+ -- Niels Nes <niels@cwi.nl>  Fri, 13 Aug 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Fixed bug 2652. Correctly list all columns of a 'IN' query with 'EXCEPT'
+  * Fixed bug 2353. The relational optimizer didn't handle range join
+    expressions properly.
+  * fixed bug 2354. Improved function resolution.
+
+ -- Niels Nes <niels@cwi.nl>  Thu, 12 Aug 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Fixed bug 2645: mat.pack+algebra.slice should be replaced by mat.slice
+    for 'limit 1' (when the default_pipe is used)
+
+ -- Jennie Zhang <y.zhang@cwi.nl>  Mon, 9 Aug 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Fixed bug #2641,  The SQL server now handles Unicode BOM sequences
+    occurring in any place.  Previously an "unexpected character (U+FEFF)"
+    error would be returned.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 6 Aug 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Fix Bug 2611. Fixed check for multiple functions without parameters.
+  * Fixed bug 2569 (except/union/intersect right after
+    insert/delete/update. We now correctly fallback to the more general
+    subquery case (not only simple selects (SQL_SELECT)).
+
+ -- Niels Nes <niels@cwi.nl>  Fri, 30 Jul 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Fixed bug in handling 'WITH' and row_number()  (Bug 2631).
+    The cardinality of the row_number expression was incorrect.
+
+ -- Niels Nes <niels@cwi.nl>  Thu, 29 Jul 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Fixed ORDER BY over UNION etc. (bug 2606) by
+    automatically adding select * around select x union select y order by z.
+
+ -- Niels Nes <niels@cwi.nl>  Thu, 29 Jul 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * On installs with (very) long prefixes, the UNIX domain sockets could get
+    truncated, causing merovingian to become unavailable to monetdb and mclient.
+    Similarly, a fall back to a regular TCP socket for mapi connections is
+    used for forked mservers in this case.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 26 Jul 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Really shutdown when an argument to merovingian was given, instead of
+    ending up in some inconsistent state.  This solves all weird behaviour
+    observed in bug #2628.
+  * Report MonetDB release on --version flags and in the logs.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 21 Jul 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Fixed bug 2624: function returning decimal returned result that was
+    scaled incorrectly.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Jul 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * fixed bug 2622 "LIMIT & OFFSET ignored on 64-bit big-endian when
+    combined with GROUP BY"
+
+ -- Stefan Manegold <Stefan.Manegold@cwi.nl>  Sun, 18 Jul 2010 10:13:14 +0200
+
+monetdb-sql (2.38.5-20100823) unstable; urgency=low
+
+  * Remove references to master/slave settings, since replication isn't yet
+    fully implemented in Jun2010 branch.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 16 Jul 2010 10:13:14 +0200
+
 monetdb-sql (2.38.3-20100713) unstable; urgency=low
 
   * Rebuilt.

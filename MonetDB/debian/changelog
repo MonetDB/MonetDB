@@ -1,3 +1,17 @@
+monetdb (1.38.5-20100823) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 23 Aug 2010 10:13:12 +0200
+
+monetdb (1.38.5-20100823) unstable; urgency=low
+
+  * Fixed a bug where some internal reference counting was done incorrectly,
+    causing an infinite loop when exiting the server due to it being killed.
+    This bug probably only manifested itself in MonetDB/XQuery.  Bug 2658.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 20 Aug 2010 10:13:11 +0200
+
 monetdb (1.38.3-20100713) unstable; urgency=low
 
   * Rebuilt.

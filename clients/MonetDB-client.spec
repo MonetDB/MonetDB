@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP1/MonetDB-client-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/MonetDB-client-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires: MonetDB >= 1.38
@@ -333,6 +333,31 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Mon Aug 23 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.5-20100823
+- Rebuilt.
+
+* Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.5-20100823
+- mclient now complains about NULL bytes in the input when in interactive
+  mode.
+
+* Fri Aug 13 2010 Fabian Groffen <fabian@cwi.nl> - 1.38.5-20100823
+- Slight rendering improvements to mclient's tabular output when
+  rendering results larger than the available screen width, headers
+  were previously unnecessarily squeezed.
+- Fix bug #2650, a too small buffer caused the active database as
+  reported by mclient's welcome message to be truncated
+
+* Wed Jul 21 2010 Fabian Groffen <fabian@cwi.nl> - 1.38.5-20100823
+- Add --version option to mclient.
+
+* Tue Jul 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.5-20100823
+- In case of an incomplete line from the server, add a newline.
+  This fixes bug 2619.
+
+* Mon Jul 19 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.5-20100823
+- Avoid using SQLROWSETSIZE and SQLROWOFFSET.
+  This fixes bug 2558.
+
 * Tue Jul 13 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.3-20100713
 - Rebuilt.
 
