@@ -1,3 +1,16 @@
+monetdb5-server (5.20.5-20100824) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 24 Aug 2010 09:30:18 +0200
+
+monetdb5-server (5.20.5-20100824) unstable; urgency=low
+
+  * Fixed a crash when calculating certain aggregates on platforms where
+    non-aligned data access is not allowed (e.g. Sparc).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 24 Aug 2010 09:30:18 +0200
+
 monetdb5-server (5.20.5-20100823) unstable; urgency=low
 
   * Rebuilt.
