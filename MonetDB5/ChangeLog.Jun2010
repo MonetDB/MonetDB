@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a crash when calculating certain aggregates on platforms where
+  non-aligned data access is not allowed (e.g. Sparc).
+
