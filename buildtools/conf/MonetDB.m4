@@ -54,7 +54,7 @@ case "$CC" in
 	;;
 esac
 
-AC_DEFINE(MONETDB_RELEASE, "unreleased", [Release name or "unreleased"])
+AC_DEFINE(MONETDB_RELEASE, "Jun2010-SP2", [Release name or "unreleased"])
 ])
 
 

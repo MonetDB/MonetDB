@@ -217,6 +217,13 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libembeddedmil.so
 
 %changelog
+* Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 4.38.5-20100824
+- Rebuilt.
+
+* Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 4.38.5-20100824
+- Fixed a crash when calculating certain aggregates on platforms where
+  non-aligned data access is not allowed (e.g. Sparc).
+
 * Mon Aug 23 2010 Sjoerd Mullender <sjoerd@acm.org> - 4.38.5-20100823
 - Rebuilt.
 
