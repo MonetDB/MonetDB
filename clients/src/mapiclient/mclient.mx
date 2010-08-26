@@ -1088,6 +1088,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	if (mark2)
 		free(mark2);
 	mark2 = NULL;
+	croppedfields = 0;
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		if (silent)
 			continue;
@@ -1227,7 +1228,6 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 
 			SQLheader(hdl, len, printfields, fields != printfields);
 			oldfields = fields;
-			croppedfields = 0;
 		}
 
 		for (i = 0; i < printfields; i++) {
