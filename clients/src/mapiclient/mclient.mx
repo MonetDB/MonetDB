@@ -447,7 +447,7 @@ utf8skip(char *s, size_t i)
 			while ((*s & 0xC0) == 0x80)
 				s++;
 		} else if (*s == '\n')
-			return s + 1;
+			return s;
 		else
 			s++;
 		i--;
@@ -545,6 +545,8 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					if (trim == 1)
 						while (isspace((int) *t))
 							t++;
+					if (trim == 2 && *t == '\n')
+						t++;
 					rest[i] = *t ? t : 0;
 					if (cutafter[i] == 0)
 						rest[i] = NULL;
