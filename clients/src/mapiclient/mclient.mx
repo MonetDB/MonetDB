@@ -1078,7 +1078,7 @@ static void
 SQLrenderer(MapiHdl hdl, char singleinstr)
 {
 	int i, total, lentotal, vartotal, minvartotal;
-	int fields, oldfields = 0, printfields = 0, max = 1, graphwaste = 0;
+	int fields, rfields, printfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
@@ -1088,148 +1088,149 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	if (mark2)
 		free(mark2);
 	mark2 = NULL;
+
 	croppedfields = 0;
-	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
-		if (silent)
-			continue;
-		if (len == 0 || fields != oldfields) {
-			if (oldfields != fields) {
-				if (len)
-					free(len);
-				if (hdr)
-					free(hdr);
-				if (rest)
-					free(rest);
-				if (numeric)
-					free(numeric);
-				len = (int *) malloc(sizeof(int) * fields);
-				hdr = (int *) malloc(sizeof(int) * fields);
-				rest = (char **) malloc(sizeof(char *) * fields);
-				numeric = (int *) malloc(sizeof(int) * fields);
-			}
-			memset(len, 0, sizeof(int) * fields);
-			memset(hdr, 0, sizeof(int) * fields);
-			memset(rest, 0, sizeof(char *) * fields);
-			memset(numeric, 0, sizeof(int) * fields);
+	fields = mapi_get_field_count(hdl);
+	rows = mapi_get_row_count(hdl);
 
-			total = 0;
-			lentotal = 0;
-			vartotal = 0;
-			minvartotal = 0;
-			for (i = 0; i < fields; i++) {
-				char *s;
+	len = (int *) malloc(sizeof(int) * fields);
+	hdr = (int *) malloc(sizeof(int) * fields);
+	rest = (char **) malloc(sizeof(char *) * fields);
+	numeric = (int *) malloc(sizeof(int) * fields);
 
-				len[i] = mapi_get_len(hdl, i);
-				if (len[i] == 0) {
-					/* no table width known, use maximum, rely on
-					 * squeezing lateron to fix it to whatever is
-					 * available */
-					len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
-				}
-				if (len[i] < MINCOLSIZE)
-					len[i] = MINCOLSIZE;
-				s = mapi_get_name(hdl, i);
-				if (s != NULL) {
-					size_t l = strlen(s);
-					assert(l <= INT_MAX);
-					hdr[i] = (int) l;
-				} else {
-					hdr[i] = 0;
-				}
-				s = mapi_get_type(hdl, i);
-				numeric[i] = s != NULL &&
-					(strcmp(s, "int") == 0 ||
-					 strcmp(s, "tinyint") == 0 ||
-					 strcmp(s, "bigint") == 0 ||
-					 strcmp(s, "wrd") == 0 ||
-					 strcmp(s, "smallint") == 0 ||
-					 strcmp(s, "double") == 0 ||
-					 strcmp(s, "float") == 0 ||
-					 strcmp(s, "decimal") == 0);
+	memset(len, 0, sizeof(int) * fields);
+	memset(hdr, 0, sizeof(int) * fields);
+	memset(rest, 0, sizeof(char *) * fields);
+	memset(numeric, 0, sizeof(int) * fields);
 
-				if (!numeric[i]) {
-					vartotal += len[i];
-					minvartotal += MINVARCOLSIZE;
-				}
-				total += len[i];
+	total = 0;
+	lentotal = 0;
+	vartotal = 0;
+	minvartotal = 0;
+	for (i = 0; i < fields; i++) {
+		char *s;
 
-				/* do a very pessimistic calculation to determine if
-				 * more columns would actually fit on the screen */
-				if (pagewidth > 0 &&
-						((((printfields + 1) * 3) - 1) + 2) + /* graphwaste */
-						(total - vartotal) + minvartotal > pagewidth)
-				{
-					/* this last column was too much */
-					total -= len[i];
-					if (!numeric[i])
-						vartotal -= len[i];
-					break;
-				}
+		len[i] = mapi_get_len(hdl, i);
+		if (len[i] == 0) {
+			/* no table width known, use maximum, rely on squeezing
+			 * lateron to fix it to whatever is available */
+			len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
+		}
+		if (len[i] < MINCOLSIZE)
+			len[i] = MINCOLSIZE;
+		s = mapi_get_name(hdl, i);
+		if (s != NULL) {
+			size_t l = strlen(s);
+			assert(l <= INT_MAX);
+			hdr[i] = (int) l;
+		} else {
+			hdr[i] = 0;
+		}
+		/* if no rows, just try to draw headers nicely */
+		if (rows == 0)
+			len[i] = hdr[i];
+		s = mapi_get_type(hdl, i);
+		numeric[i] = s != NULL &&
+			(strcmp(s, "int") == 0 ||
+			 strcmp(s, "tinyint") == 0 ||
+			 strcmp(s, "bigint") == 0 ||
+			 strcmp(s, "wrd") == 0 ||
+			 strcmp(s, "smallint") == 0 ||
+			 strcmp(s, "double") == 0 ||
+			 strcmp(s, "float") == 0 ||
+			 strcmp(s, "decimal") == 0);
 
-				lentotal += (hdr[i] > len[i] ? hdr[i] : len[i]);
-				printfields++;
-			}
+		if (rows == 0) {
+			vartotal += len[i];
+			minvartotal += MINCOLSIZE;
+		} else if (!numeric[i]) {
+			vartotal += len[i];
+			minvartotal += len[i] > MINVARCOLSIZE ? MINVARCOLSIZE : len[i];
+		}
+		total += len[i];
 
-			/* what we waste on space on the display is
-			 * the column separators ' | ', but the edges
-			 * lack the edgespace of course */
-			graphwaste = ((printfields * 3) - 1) + 2;
-			/* make sure we can indicate we dropped columns */
-			if (fields != printfields)
-				graphwaste++;
-
-			/* punish the column headers first until you
-			 * cannot squeeze any further */
-			while (pagewidth > 0 && graphwaste + lentotal > pagewidth) {
-				/* pick the column where the header is
-				 * longest compared to its content */
-				max = -1;
-				for (i = 0; i < printfields; i++) {
-					if (hdr[i] > len[i]) {
-						if (max == -1 ||
-						    hdr[max] - len[max] < hdr[i] - len[i])
-							max = i;
-					}
-				}
-				if (max == -1)
-					break;
-				hdr[max]--;
-				lentotal--;
-			}
-
-			/* correct the lengths if the headers are wider than the
-			 * content, since the headers are maximally squeezed to the
-			 * content above, if a header is larger than its content, it
-			 * means there was space enough.  If not, the content will
-			 * be squeezed below. */
-			for (i = 0; i < printfields; i++)
-				if (len[i] < hdr[i])
-					len[i] = hdr[i];
-
-			/* worst case: lentotal = total, which means it still
-			 * doesn't fit, values will be squeezed next */
-			while (pagewidth > 0 && graphwaste + total > pagewidth) {
-				max = -1;
-				for (i = 0; i < printfields; i++) {
-					if (!numeric[i] && (max == -1 || len[i] > len[max]))
-						max = i;
-				}
-
-				/* no varsized fields that we can squeeze */
-				if (max == -1)
-					break;
-				/* penalty for largest field */
-				len[max]--;
-				total--;
-				/* no more squeezing possible */
-				if (len[max] == 1)
-					break;
-			}
-
-			SQLheader(hdl, len, printfields, fields != printfields);
-			oldfields = fields;
+		/* do a very pessimistic calculation to determine if more
+		 * columns would actually fit on the screen */
+		if (pagewidth > 0 &&
+				((((printfields + 1) * 3) - 1) + 2) + /* graphwaste */
+				(total - vartotal) + minvartotal > pagewidth)
+		{
+			/* this last column was too much */
+			total -= len[i];
+			if (!numeric[i])
+				vartotal -= len[i];
+			break;
 		}
 
+		lentotal += (hdr[i] > len[i] ? hdr[i] : len[i]);
+		printfields++;
+	}
+
+	/* what we waste on space on the display is the column separators '
+	 * | ', but the edges lack the edgespace of course */
+	graphwaste = ((printfields * 3) - 1) + 2;
+	/* make sure we can indicate we dropped columns */
+	if (fields != printfields)
+		graphwaste++;
+
+	/* punish the column headers first until you cannot squeeze any
+	 * further */
+	while (pagewidth > 0 && graphwaste + lentotal > pagewidth) {
+		/* pick the column where the header is longest compared to its
+		 * content */
+		max = -1;
+		for (i = 0; i < printfields; i++) {
+			if (hdr[i] > len[i]) {
+				if (max == -1 ||
+						hdr[max] - len[max] < hdr[i] - len[i])
+					max = i;
+			}
+		}
+		if (max == -1)
+			break;
+		hdr[max]--;
+		lentotal--;
+	}
+
+	/* correct the lengths if the headers are wider than the content,
+	 * since the headers are maximally squeezed to the content above, if
+	 * a header is larger than its content, it means there was space
+	 * enough.  If not, the content will be squeezed below. */
+	for (i = 0; i < printfields; i++)
+		if (len[i] < hdr[i])
+			len[i] = hdr[i];
+
+	/* worst case: lentotal = total, which means it still doesn't fit,
+	 * values will be squeezed next */
+	while (pagewidth > 0 && graphwaste + total > pagewidth) {
+		max = -1;
+		for (i = 0; i < printfields; i++) {
+			if (!numeric[i] && (max == -1 || len[i] > len[max]))
+				max = i;
+		}
+
+		/* no varsized fields that we can squeeze */
+		if (max == -1)
+			break;
+		/* penalty for largest field */
+		len[max]--;
+		total--;
+		/* no more squeezing possible */
+		if (len[max] == 1)
+			break;
+	}
+
+	SQLheader(hdl, len, printfields, fields != printfields);
+
+	while (!mnstr_errnr(toConsole) && (rfields = fetch_row(hdl)) != 0) {
+		if (rfields != fields) {
+			mnstr_printf(stderr_stream,
+					"invalid tuple received from server, "
+					"got %d columns, expected %d, ignoring\n", rfields, fields);
+			continue;
+		}
+		if (silent)
+			continue;
 		for (i = 0; i < printfields; i++) {
 			rest[i] = mapi_fetch_field(hdl, i);
 			if (rest[i] == NULL)
@@ -1266,7 +1267,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 
 		rows += SQLrow(len, numeric, rest, printfields, 2, 0);
 	}
-	if (oldfields)
+	if (fields)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
@@ -1276,18 +1277,18 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			singleinstr ? timerHuman() : "",
 			singleinstr ? ")" : "");
 
-	if (oldfields != printfields || croppedfields > 0)
+	if (fields != printfields || croppedfields > 0)
 		printf(" !");
-	if (oldfields != printfields) {
-		rows = oldfields - printfields;
+	if (fields != printfields) {
+		rows = fields - printfields;
 		printf(LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
 	}
-	if (oldfields != printfields && croppedfields > 0)
+	if (fields != printfields && croppedfields > 0)
 		printf(", ");
 	if (croppedfields > 0)
 		printf("%d field%s truncated",
 				croppedfields, croppedfields != 1 ? "s" : "");
-	if (oldfields != printfields || croppedfields > 0) {
+	if (fields != printfields || croppedfields > 0) {
 		printf("!");
 		if (firstcrop == 1) {
 			firstcrop = 0;
@@ -1296,15 +1297,10 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	}
 	printf("\n");
 
-
-	if (len)
-		free(len);
-	if (hdr)
-		free(hdr);
-	if (rest)
-		free(rest);
-	if (numeric)
-		free(numeric);
+	free(len);
+	free(hdr);
+	free(rest);
+	free(numeric);
 }
 
 static void
