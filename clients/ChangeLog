@@ -2,7 +2,7 @@
 # This file is updated with Maddlog
 
 * Thu Aug 26 2010 Fabian Groffen <fabian@cwi.nl>
--   Empty resultsets now show a header in mclient using SQL mode.
+- Empty resultsets now show a header in mclient using SQL mode.
 
 * Wed Aug 18 2010 Fabian Groffen <fabian@cwi.nl>
 - Allow users to specify their own default formatter (using format=), or
