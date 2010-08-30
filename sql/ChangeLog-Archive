@@ -3,7 +3,7 @@
 
 * Fri Aug 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.5-20100823
 - Fixed a case where the optimizer incorrectly removed an expression.
-  This fixes bu 2602.
+  This fixes bug 2602.
 - Fix a crash in prepared statements when a parameter is on the left-hand
   side of a binary operator.  This fixes bug 2599.
 - Fixed reporting of a violated foreign key constraint.  This fixes
