@@ -235,7 +235,7 @@ str CMDconvert_@1_str(int *ret, int *bid)
 		@1 *v = (@1*)BUNtail(bi,p);
 
 		@1ToStr(&dst,&len, (ptr) v);
-		ATOMput(TYPE_@1, bn->T->vheap, Tloc(bn,r), dst);
+		Tputvalue(bn, Tloc(bn,r), dst, 1);
 		if (dst) 
 			GDKfree(dst);
 	}
@@ -260,7 +260,7 @@ str CMDconvert_str_@1(int *ret, int *bid)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ATOMfromstr(TYPE_@1, &v, &len, (char *) BUNtvar(bi, p));
-		ATOMput(TYPE_@1, bn->T->vheap, Tloc(bn, r), v);
+		Tputvalue(bn, Tloc(bn,r), v, 1);
 		r++;
 	}
 	GDKfree(v);

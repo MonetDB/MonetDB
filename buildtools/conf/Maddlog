@@ -90,7 +90,7 @@ IDENTITY=$(hg showconfig ui.username)
 
 if [ $# -gt 0 ]; then
     msg=$(echo "  $*" | fmt)
-    mst=${msg#  }
+    msg=${msg#  }
 else
     nl=$'\n  '
     echo "Log message (end with ^D or empty line):"
