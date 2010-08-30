@@ -1206,6 +1206,10 @@ produce code.
 					  m->type,/* the type of the statement */
 					  sql_escape_str(QUERY(m->scanner)));
 
+			/* passed over to query cache */
+			m->sa = NULL; 
+			m->sym = NULL;
+
 			scanner_query_processed(&(m->scanner));
 			be->q->code = 
 				(backend_code)backend_dumpproc(be, c, be->q, s);
@@ -1214,8 +1218,6 @@ produce code.
 			be->q->name = putName(be->q->name, strlen(be->q->name));
 			if (m->emode == m_normal && m->emod == mod_none)
 				m->emode = m_inplace; 
-			m->sa = NULL;
-			m->sym = NULL;
 		} 
 		stmt_destroy(s);
 	}
