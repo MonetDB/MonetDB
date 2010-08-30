@@ -226,7 +226,7 @@ rm -fr $RPM_BUILD_ROOT
 
 * Fri Aug 20 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.5-20100823
 - A bug was fixed where on 32 bit systems (or 64 bit systems using 32 bit
-  OIDs), values where sometimes written as 32 bits but read as 64 bits.
+  OIDs), values were sometimes written as 32 bits but read as 64 bits.
   This fixes bugs 2644 and 2654.
 
 * Thu Aug 19 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.5-20100823
