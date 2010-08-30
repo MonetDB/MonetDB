@@ -20,7 +20,7 @@ monetdb5-server (5.20.5-20100823) unstable; urgency=low
 monetdb5-server (5.20.5-20100823) unstable; urgency=low
 
   * A bug was fixed where on 32 bit systems (or 64 bit systems using 32 bit
-    OIDs), values where sometimes written as 32 bits but read as 64 bits.
+    OIDs), values were sometimes written as 32 bits but read as 64 bits.
     This fixes bugs 2644 and 2654.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 20 Aug 2010 10:13:12 +0200
