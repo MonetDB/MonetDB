@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Aug 30 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a crash of the server when an extremely complex query is
+  attempted.  This is the latest incarnation of bug 104.
+
