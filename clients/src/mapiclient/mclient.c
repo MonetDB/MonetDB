@@ -1,90 +1,29 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2010 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
+/* The Mapi Client Interface
+ * A textual interface to the Monet server using the Mapi library,
+ * providing command-line access for its users. It is the preferred
+ * interface for non-DBAs.
+ * See mclient.1 for usage information.
+ */
 
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
-All Rights Reserved.
-@
-
-@a Sjoerd Mullender, Martin Kersten, Peter Boncz, Niels Nes, Fabian Groffen
-@v 6
-@f mclient
-@* The Mapi Client Interface
-A textual interface to the Monet server using the Mapi library,
-providing command-line access for its users. It is the preferred
-interface for non-DBAs.
-
-@+ Manual Page
-The @code{mclient} program provides a textual
-interface to the MonetDB server. Unlike the Mserver console, the
-@code{mclient} program is intended not only for the database
-administrator, but for all users. It is more comfortable than the
-console, since it provides a command history and automatic file name
-completion. 
-
-@verbatim
-mclient [options] [inputfile+]
-@end verbatim
-
-The following options are supported:
-
-@multitable @columnfractions .25 .25 .25 
-@item -h hostname 
-@tab --host=hostname  
-@tab host to connect to 
-@item -l language 
-@tab --language=lang  
-@tab @{mal,sql,mil@} 
-@item -P[passwd]
-@tab --passwd[=passwd]
-@tab password 
-@item -p portnr   
-@tab --port=portnr    
-@tab port to connect to 
-@item -s stmt     
-@tab --statement=stmt 
-@tab run single statement 
-@item -X          
-@tab --Xdebug
-@tab trace mapi network interaction
-@item -t          
-@tab --time           
-@tab time commands 
-@item -u[user]
-@tab --user[=user]
-@tab user id 
-@item -H          
-@tab --history        
-@tab load/save cmdline history (default off) 
-@item -?          
-@tab --help           
-@tab show this usage message 
-@end multitable
-
-Calling "mclient -lsql" establishes a SQL connection with a
-MonetDB server running on the local machine.
-
-In the SQL mode, a few more convenient commands are available.
-@multitable @columnfractions .25 .75
-@item --rows
-@tab to control the pagination behavior
-@item --width
-@tab to control the maximum column width (default=80)
-@end multitable
-@{
-@+ Implementation
-@c
 #include "clients_config.h"
 #include "monet_utils.h"
 #ifndef HAVE_GETOPT_LONG
@@ -2824,5 +2763,3 @@ main(int argc, char **argv)
 	mnstr_destroy(stderr_stream);
 	return c;
 }
-
-@}
