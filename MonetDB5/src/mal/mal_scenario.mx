@@ -623,7 +623,7 @@ runScenarioBody(Client c)
 	if (setjmp( c->exception_buf) < 0) 
 		c->mode = FINISHING;
 #ifdef HAVE_TIMES
-		times(&t0);
+	times(&t0);
 #endif
 	while (c->mode > FINISHING || msg != MAL_SUCCEED) {
 		if (msg != MAL_SUCCEED){
