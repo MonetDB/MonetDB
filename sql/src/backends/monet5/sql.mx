@@ -1431,8 +1431,6 @@ the transaction as well, e.g. commit or rollback.
 int
 sqlcleanup(mvc *c, int err)
 {
-	if ( c->sym == NULL)
-		return err;
 	sql_destroy_params(c);
 	sql_destroy_args(c);
 
