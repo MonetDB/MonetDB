@@ -1,0 +1,17 @@
+stderr of test 'tijah-tokenize-concat.Bug-2009` in directory 'tests/BugTracker` itself:
+
+
+# 13:33:08 >  
+# 13:33:08 >   Mserver "--config=/ufs/sjoerd/Monet-stable/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/ufs/sjoerd/Monet-stable/lib64/MonetDB4:/ufs/sjoerd/Monet-stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37473 --set xrpc_port=48309 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 13:33:08 >  
+
+
+# 13:33:10 >  
+# 13:33:10 >  mclient -lxquery -fxml --host=ottar --port=37473 tijah-tokenize-concat.Bug-2009.xq
+# 13:33:10 >  
+
+
+# 13:33:10 >  
+# 13:33:10 >  Done.
+# 13:33:10 >  
+
