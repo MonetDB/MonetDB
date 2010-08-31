@@ -237,3 +237,4 @@ slow_compilation.SF-2898944
 # fn:node-name
 WITH_ALGEBRA?node-name.Bug-2600.-d10
 WITH_ALGEBRA?node-name.Bug-2600.-d0
+tijah-tokenize-concat.Bug-2009
