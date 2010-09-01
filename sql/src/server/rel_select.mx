@@ -39,6 +39,7 @@ extern sql_exp * rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int 
 extern sql_rel * rel_project(sql_rel *l, list *e);
 extern void rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
 extern list * rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname , int intern);
+extern sql_exp *rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f);
 
 extern void rel_add_intern(mvc *sql, sql_rel *rel);
 
@@ -4266,7 +4267,7 @@ rel_table_exp(mvc *sql, sql_rel *rel, symbol *column_e )
 	return NULL;
 }
 
-static sql_exp *
+sql_exp *
 rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f)
 {
 	if (column_e->token == SQL_COLUMN) {
