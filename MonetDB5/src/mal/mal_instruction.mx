@@ -1475,7 +1475,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	if ( isTmpVar(mb,x))
 		res = newTmpVariable(tm, getVarType(mb,x));
 	else
-		res = newVariable(tm,getVarName(mb,x), getVarType(mb,x));
+		res = newVariable(tm,GDKstrdup(getVarName(mb,x)), getVarType(mb,x));
 	if (isVarFixed(mb, x) )
 		setVarFixed(tm,res);
 	if (isVarUsed(mb, x) )
