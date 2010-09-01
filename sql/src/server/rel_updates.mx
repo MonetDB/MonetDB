@@ -377,14 +377,14 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			symbol *a = NULL;
 			sql_exp *v = NULL;
 			dlist *assignment = n->data.sym->data.lval;
-			char *cname = assignment->h->data.sval;
+			char *cname = assignment->h->next->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, cname);
 
 			if (!c) {
 				rel_destroy(r);
-				return sql_error(sql, 02, "UPDATE: no such column '%s.%s'", t->base.name, assignment->h->data.sval);
+				return sql_error(sql, 02, "UPDATE: no such column '%s.%s'", t->base.name, cname);
 			}
-			a = assignment->h->next->data.sym;
+			a = assignment->h->data.sym;
 			if (a) {
 				int status = sql->session->status;
 				sql_rel *rel_val = NULL;
@@ -393,9 +393,12 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
 
 				if (!v) {
+					symbol *s = n->data.sym;
 					sql->errstr[0] = 0;
 					sql->session->status = status;
-					v = rel_value_exp(sql, &r, a, sql_sel, ek);
+					//v = rel_value_exp(sql, &r, a, sql_sel, ek);
+					s->token = SQL_COLUMN;
+					v = rel_column_exp(sql, &r, s, sql_sel);
 				}
 				if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
 					if (v)
