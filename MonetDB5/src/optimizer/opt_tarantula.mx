@@ -211,7 +211,7 @@ typedef struct {
 } Peer;
 
 #include "opt_mitosis.h"
-#define MINLEGSIZE 0	/* number of MAL instructions to consider for a leg */
+#define MINLEGSIZE 5	/* number of MAL instructions to consider for a leg */
 #define MAXSHARE 64		/* number of input output arguments to consider */
 #define MAXSITES MAXSLICES   /* should become dynamic at some point */
 Peer peers[MAXSITES];    /* registry of peer servers */
@@ -386,7 +386,7 @@ TARdiscover(Client cntxt)
 		SABAOTHgetLocalConnection(&s);
 	
 		nrworkers += TARgetPeer(s) >= 0;
-		tarantulaLocal = 1;
+		/* tarantulaLocal = 1; just do everything in parallel */
 	}
 
 #ifdef DEBUG_RUN_TAR
@@ -407,8 +407,8 @@ TARdiscover(Client cntxt)
 @-
 The TARmakeLeg walks through the MAL block and extracts the dependent structure for
 execution. Note that information van be recomputed in all legs. Possibly doing duplicate work.
-Keep track of the variables that will be used outside the leg. They have to be exported.
-Likewise, look for variables that are produced by other legs and will become input parameters.
+Therefore we start with an analysis to determine the 'level' at which a variable is needed indirectly.
+They have to be exported.
 @c
 static MalBlkPtr 
 TARmakeLeg(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int last, int limit, int idx, int leg, int input[MAXSLICES][MAXSHARE], int output[MAXSLICES][MAXSHARE], InstrPtr *list,int *map)
@@ -436,7 +436,7 @@ if at least a sql.bind operation belongs to the list and the leg has a minimimal
 	}
 	top = i;
 
-	if ( top - fnd <= MINLEGSIZE)
+	if (fnd == 0 || top - fnd <= MINLEGSIZE)
 		return 0;
 
 	OPTDEBUGtarantula{
@@ -447,8 +447,6 @@ if at least a sql.bind operation belongs to the list and the leg has a minimimal
 		for(i=0; output[leg][i]; i++)
 			mnstr_printf(cntxt->fdout,"%d(%d), ", output[leg][i], map[output[leg][i]]);
 		mnstr_printf(cntxt->fdout,"\n");
-		for(i=top -1;i>=0; i--)
-		printInstruction(cntxt->fdout,mb,0,list[i], LIST_MAL_STMT);
 	}
 	alias= (int*) GDKzalloc(2 * mb->vtop * sizeof(int));
 
@@ -854,6 +852,8 @@ TAReligible(MalBlkPtr mb){
 @-
 The core of the optimizer. It will repeatedly optimize the program given until all
 blocking operations have been handled.
+Therefore we start with an analysis to determine the 'level' at which a variable is needed indirectly.
+They have to be exported.
 @c
 static int
 OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -863,13 +863,12 @@ OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int leg=0, ta =0, vtop=0;
 	MalBlkPtr tm;
 	char fcn[BUFSIZ];
-	int *map, *used, top;
+	int *map, *level, top,lev = 0;
 	int itop[MAXSLICES], input[MAXSLICES][MAXSHARE];
 	int otop[MAXSLICES], output[MAXSLICES][MAXSHARE];
 	InstrPtr *list;
 	int *needed;
 	char *done;
-	Lifespan span;
 
 	if( cntxt == 0){
 		/* confuscate, delay for later activation */
@@ -888,13 +887,39 @@ OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 All tarantula leg code is collected in a separate module
 to ease future distribution and scheduling.
 The optimizer works by looking only to the mat.pack statement.
+
+Loop through the program and determine for each variable
+the lev at which it would be indirectly input.
 @c
 	(void) fixModule(cntxt->nspace,tarantulaRef);
-	span= newLifespan(mb);
 
 	limit = mb->stop;
 	old = mb->stmt;
 	vtop= mb->vtop;
+	lev = limit;
+	level= (int*) GDKzalloc(2 * vtop * sizeof(int));
+	for (i = limit; i >=0 ; i--) {
+		p = old[i];
+		if( getModuleId(p)== matRef && getFunctionId(p)== packRef)
+			lev=i;
+		if ( getModuleId(p) != sqlRef){
+			for (j=p->retc; j< p->argc; j++)
+			if ( level[getArg(p,j)] < lev )
+				level[getArg(p,j)] = lev;
+			for (j=0; j<p->retc; j++)
+			if ( level[getArg(p,j)] < lev )
+				level[getArg(p,j)] = lev;
+		}
+	}
+@-
+	OPTDEBUGtarantula{
+		for( i=0; i< vtop; i++){
+			if( i % 7 == 6) mnstr_printf(cntxt->fdout,"\n");
+			mnstr_printf(cntxt->fdout,"[%3d]%3s %d\t", i, getVarName(mb,i),level[i]);
+		}
+		mnstr_printf(cntxt->fdout,"\n");
+	}
+@c
 
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
@@ -902,19 +927,9 @@ The optimizer works by looking only to the mat.pack statement.
 
 
 	map= (int*) GDKzalloc(2 * vtop * sizeof(int));
-	used= (int*) GDKzalloc(2 * vtop * sizeof(int));
 
 	for ( i = 0; i <2 * vtop; i++)
 		map[i] = i;
-	for (i = 1; i < limit; i++) {
-		p = old[i];
-		if ( getModuleId(p) != sqlRef)
-		for( j= p->retc; j<p->argc; j++){
-			int a= getArg(p,j);
-			assert(a < vtop);
-			used[a]++;
-		}
-	}
 
 	sig= old[0];
 	for (i = 1; i < limit; i++) {
@@ -927,9 +942,10 @@ The optimizer works by looking only to the mat.pack statement.
 		if( getModuleId(p)== matRef && getFunctionId(p)== packRef) {
 @-
 The critical part is to determine the input/output variable set
-for this pack function. Some variables may have to be re-used
+for this pack function. Some variables may have to be re-level
 in subsequent calls.
 @c
+			lev = i;
 			memset((char*) itop, 0, sizeof(int)* MAXSLICES);
 			memset((char*) input, 0, sizeof(int)* MAXSLICES * MAXSHARE);
 			memset((char*) otop, 0, sizeof(int)* MAXSLICES);
@@ -945,7 +961,7 @@ in subsequent calls.
 				needed[map[getArg(p,ta)]] = 1;
 				output[leg][otop[leg]++]= getArg(p,ta);
 
-				/* find variables used outside leg scope */
+				/* find variables level outside leg scope */
 				/* find variables defined before by legs */
 				for (l = i-1; l > 0; l--){
 					pp = old[l];
@@ -974,12 +990,8 @@ in subsequent calls.
 				}
 				/* for all variables assigned, check if they are needed outside */
 				/* each variable is produced only once */
-				OPTDEBUGtarantula
-					mnstr_printf(cntxt->fdout,"Start collecting \n");
 				for ( l=top-1; l >= 0; l--){
 					pp = list[l];
-					OPTDEBUGtarantula
-						printInstruction(cntxt->fdout, mb, 0, pp, LIST_MAL_STMT );
 					for (j = pp->retc; j < pp->argc; j++) {
 					if (needed[getArg(pp,j)] ){
 						/* variables should appear once in the argument list */
@@ -993,23 +1005,27 @@ in subsequent calls.
 						needed[getArg(pp,j)]= 0;
 					}
 @-
-The variables that are statically used more then once beyond the mat.pack 
+The variables that are statically level more then once beyond the mat.pack 
 are a target for retention. All variable re-use within the same flow partition
 are re-calculated upon need. The ratio is that legs will make such recalcs
 cheap using the recycler.
 @c
 					for ( j = 0; j<pp->retc; j++){
-						if (getEndLifespan(span,getArg(pp,j)) > i && map[getArg(pp,j)] == getArg(pp,j)){
+						if (level[getArg(pp,j)] > lev && map[getArg(pp,j)] == getArg(pp,j)){
 							assert(mb->vtop < 2 *vtop);
 							map[output[leg][otop[leg]]] = cloneVariable(mb,mb, getArg(pp,j));
+							level[map[output[leg][otop[leg]]]] = level[getArg(pp,j)];
 							output[leg][otop[leg]++]= getArg(pp,j);
 						}
 						/* no need to get it once more */
 						needed[getArg(pp,j)]= 0;
 					}
 				}
+@-
 				OPTDEBUGtarantula{
 					int x;
+					mnstr_printf(cntxt->fdout,"Start collecting lev %d \n",lev);
+					printInstruction(cntxt->fdout, mb, 0, pp, LIST_MAL_STMT );
 					mnstr_printf(cntxt->fdout,"input list ");
 					for( x=0; x < itop[leg]; x++)
 						mnstr_printf(cntxt->fdout,"%d,", input[leg][x]);
@@ -1019,7 +1035,6 @@ cheap using the recycler.
 						mnstr_printf(cntxt->fdout,"%d,", output[leg][x]);
 					mnstr_printf(cntxt->fdout,"\n");
 					}
-@-
 Create the remote function and its local stub.
 @c
 				tm = TARmakeLeg(cntxt, mb, old, i, last, limit, ta, leg, input, output, list,map);
@@ -1051,13 +1066,16 @@ Create the remote function and its local stub.
 			/* call the function to replace mat.pack */
 			snprintf(fcn,BUFSIZ,"exe_%s_%d", getFunctionId(getInstrPtr(mb,0)), getArg(old[i],0));
 			p = newStmt(mb,tarantulaRef, putName(fcn,strlen(fcn)));
+			map[getArg(old[i],0)]= getArg(p,0);
+			setVarType(mb,getArg(p,0), getArgType(mb,old[i],0));
 
 			/* safe the new variables */
 			for ( l=0; l < leg; l++)
 			for ( k= 1; k< output[l][k]; k++){
 				if ( map[output[l][k]]  == output[l][k]) {
 					map[output[l][k]] = cloneVariable(mb,mb, output[l][k]);
-					p= pushReturn(mb, p, output[l][k]);
+					level[map[output[l][k]]] = level[output[l][k]];
+					p= pushReturn(mb, p, map[output[l][k]]);
 					setVarUDFtype(mb,getArg(p,p->retc-1));
 				}
 			}
@@ -1074,18 +1092,13 @@ Create the remote function and its local stub.
 			}
 			GDKfree(done);
 			
-			map[getArg(old[i],0)]= getArg(p,0);
-			setVarType(mb,getArg(p,0), getArgType(mb,old[i],0));
 			actions++;
 			continue;
 		} 
 		wrapup:
-		if ( getModuleId(p) != sqlRef)
-		for ( j=0; j< p->argc; j++){
-			int a= getArg(p,j);
-			if (used[a]> 0) used[a]--;
+		for ( j=0; j< p->argc; j++)
 			getArg(p,j)= map[getArg(p,j)];
-		}
+
 		pushInstruction(mb,p);
 		if (p->token == ENDsymbol){
 			last= i;
@@ -1103,7 +1116,7 @@ The leg code should be optimized by the remaining optimizers too.
 
 	GDKfree(old);
 	GDKfree(map);
-	GDKfree(used);
+	GDKfree(level);
 	(void) stk;
 	return actions;
 }
