@@ -1741,6 +1741,19 @@ And the min/max is as easy
 			actions++;
 			continue;
 		} 
+		/* 
+			topn( project (a,b,c) [ x,y,z ])
+			# phase 1 per part
+			a1 = topn_x(a);
+			b1 = topn_x(b1.semijoin(a1));
+			c1 = topn_x(c1.semijoin(b1));
+			x1 = semijoin(x1,c1);
+			y1 = semijoin(y1,c1);
+			z1 = semijoin(z1,c1);
+			# phase 2 (first pack then execute)
+			a = topn_x(pack (a1,a2,a3,an))
+			# incase of sort we need an merge sort operator
+ 		 */
 		if (match > 0 && (
 		    getModuleId(p) == groupRef || 
 		    getModuleId(p) == aggrRef || 
