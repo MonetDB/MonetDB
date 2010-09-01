@@ -1,90 +1,29 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2010 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
+/* The Mapi Client Interface
+ * A textual interface to the Monet server using the Mapi library,
+ * providing command-line access for its users. It is the preferred
+ * interface for non-DBAs.
+ * See mclient.1 for usage information.
+ */
 
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2010 MonetDB B.V.
-All Rights Reserved.
-@
-
-@a Sjoerd Mullender, Martin Kersten, Peter Boncz, Niels Nes, Fabian Groffen
-@v 6
-@f mclient
-@* The Mapi Client Interface
-A textual interface to the Monet server using the Mapi library,
-providing command-line access for its users. It is the preferred
-interface for non-DBAs.
-
-@+ Manual Page
-The @code{mclient} program provides a textual
-interface to the MonetDB server. Unlike the Mserver console, the
-@code{mclient} program is intended not only for the database
-administrator, but for all users. It is more comfortable than the
-console, since it provides a command history and automatic file name
-completion. 
-
-@verbatim
-mclient [options] [inputfile+]
-@end verbatim
-
-The following options are supported:
-
-@multitable @columnfractions .25 .25 .25 
-@item -h hostname 
-@tab --host=hostname  
-@tab host to connect to 
-@item -l language 
-@tab --language=lang  
-@tab @{mal,sql,mil@} 
-@item -P[passwd]
-@tab --passwd[=passwd]
-@tab password 
-@item -p portnr   
-@tab --port=portnr    
-@tab port to connect to 
-@item -s stmt     
-@tab --statement=stmt 
-@tab run single statement 
-@item -X          
-@tab --Xdebug
-@tab trace mapi network interaction
-@item -t          
-@tab --time           
-@tab time commands 
-@item -u[user]
-@tab --user[=user]
-@tab user id 
-@item -H          
-@tab --history        
-@tab load/save cmdline history (default off) 
-@item -?          
-@tab --help           
-@tab show this usage message 
-@end multitable
-
-Calling "mclient -lsql" establishes a SQL connection with a
-MonetDB server running on the local machine.
-
-In the SQL mode, a few more convenient commands are available.
-@multitable @columnfractions .25 .75
-@item --rows
-@tab to control the pagination behavior
-@item --width
-@tab to control the maximum column width (default=80)
-@end multitable
-@{
-@+ Implementation
-@c
 #include "clients_config.h"
 #include "monet_utils.h"
 #ifndef HAVE_GETOPT_LONG
@@ -447,7 +386,7 @@ utf8skip(char *s, size_t i)
 			while ((*s & 0xC0) == 0x80)
 				s++;
 		} else if (*s == '\n')
-			return s + 1;
+			return s;
 		else
 			s++;
 		i--;
@@ -545,6 +484,8 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					if (trim == 1)
 						while (isspace((int) *t))
 							t++;
+					if (trim == 2 && *t == '\n')
+						t++;
 					rest[i] = *t ? t : 0;
 					if (cutafter[i] == 0)
 						rest[i] = NULL;
@@ -1076,7 +1017,7 @@ static void
 SQLrenderer(MapiHdl hdl, char singleinstr)
 {
 	int i, total, lentotal, vartotal, minvartotal;
-	int fields, oldfields = 0, printfields = 0, max = 1, graphwaste = 0;
+	int fields, rfields, printfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
@@ -1086,148 +1027,149 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	if (mark2)
 		free(mark2);
 	mark2 = NULL;
-	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
-		if (silent)
-			continue;
-		if (len == 0 || fields != oldfields) {
-			if (oldfields != fields) {
-				if (len)
-					free(len);
-				if (hdr)
-					free(hdr);
-				if (rest)
-					free(rest);
-				if (numeric)
-					free(numeric);
-				len = (int *) malloc(sizeof(int) * fields);
-				hdr = (int *) malloc(sizeof(int) * fields);
-				rest = (char **) malloc(sizeof(char *) * fields);
-				numeric = (int *) malloc(sizeof(int) * fields);
-			}
-			memset(len, 0, sizeof(int) * fields);
-			memset(hdr, 0, sizeof(int) * fields);
-			memset(rest, 0, sizeof(char *) * fields);
-			memset(numeric, 0, sizeof(int) * fields);
 
-			total = 0;
-			lentotal = 0;
-			vartotal = 0;
-			minvartotal = 0;
-			for (i = 0; i < fields; i++) {
-				char *s;
+	croppedfields = 0;
+	fields = mapi_get_field_count(hdl);
+	rows = mapi_get_row_count(hdl);
 
-				len[i] = mapi_get_len(hdl, i);
-				if (len[i] == 0) {
-					/* no table width known, use maximum, rely on
-					 * squeezing lateron to fix it to whatever is
-					 * available */
-					len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
-				}
-				if (len[i] < MINCOLSIZE)
-					len[i] = MINCOLSIZE;
-				s = mapi_get_name(hdl, i);
-				if (s != NULL) {
-					size_t l = strlen(s);
-					assert(l <= INT_MAX);
-					hdr[i] = (int) l;
-				} else {
-					hdr[i] = 0;
-				}
-				s = mapi_get_type(hdl, i);
-				numeric[i] = s != NULL &&
-					(strcmp(s, "int") == 0 ||
-					 strcmp(s, "tinyint") == 0 ||
-					 strcmp(s, "bigint") == 0 ||
-					 strcmp(s, "wrd") == 0 ||
-					 strcmp(s, "smallint") == 0 ||
-					 strcmp(s, "double") == 0 ||
-					 strcmp(s, "float") == 0 ||
-					 strcmp(s, "decimal") == 0);
+	len = (int *) malloc(sizeof(int) * fields);
+	hdr = (int *) malloc(sizeof(int) * fields);
+	rest = (char **) malloc(sizeof(char *) * fields);
+	numeric = (int *) malloc(sizeof(int) * fields);
 
-				if (!numeric[i]) {
-					vartotal += len[i];
-					minvartotal += MINVARCOLSIZE;
-				}
-				total += len[i];
+	memset(len, 0, sizeof(int) * fields);
+	memset(hdr, 0, sizeof(int) * fields);
+	memset(rest, 0, sizeof(char *) * fields);
+	memset(numeric, 0, sizeof(int) * fields);
 
-				/* do a very pessimistic calculation to determine if
-				 * more columns would actually fit on the screen */
-				if (pagewidth > 0 &&
-						((((printfields + 1) * 3) - 1) + 2) + /* graphwaste */
-						(total - vartotal) + minvartotal > pagewidth)
-				{
-					/* this last column was too much */
-					total -= len[i];
-					if (!numeric[i])
-						vartotal -= len[i];
-					break;
-				}
+	total = 0;
+	lentotal = 0;
+	vartotal = 0;
+	minvartotal = 0;
+	for (i = 0; i < fields; i++) {
+		char *s;
 
-				lentotal += (hdr[i] > len[i] ? hdr[i] : len[i]);
-				printfields++;
-			}
+		len[i] = mapi_get_len(hdl, i);
+		if (len[i] == 0) {
+			/* no table width known, use maximum, rely on squeezing
+			 * lateron to fix it to whatever is available */
+			len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
+		}
+		if (len[i] < MINCOLSIZE)
+			len[i] = MINCOLSIZE;
+		s = mapi_get_name(hdl, i);
+		if (s != NULL) {
+			size_t l = strlen(s);
+			assert(l <= INT_MAX);
+			hdr[i] = (int) l;
+		} else {
+			hdr[i] = 0;
+		}
+		/* if no rows, just try to draw headers nicely */
+		if (rows == 0)
+			len[i] = hdr[i];
+		s = mapi_get_type(hdl, i);
+		numeric[i] = s != NULL &&
+			(strcmp(s, "int") == 0 ||
+			 strcmp(s, "tinyint") == 0 ||
+			 strcmp(s, "bigint") == 0 ||
+			 strcmp(s, "wrd") == 0 ||
+			 strcmp(s, "smallint") == 0 ||
+			 strcmp(s, "double") == 0 ||
+			 strcmp(s, "float") == 0 ||
+			 strcmp(s, "decimal") == 0);
 
-			/* what we waste on space on the display is
-			 * the column separators ' | ', but the edges
-			 * lack the edgespace of course */
-			graphwaste = ((printfields * 3) - 1) + 2;
-			/* make sure we can indicate we dropped columns */
-			if (fields != printfields)
-				graphwaste++;
+		if (rows == 0) {
+			vartotal += len[i];
+			minvartotal += MINCOLSIZE;
+		} else if (!numeric[i]) {
+			vartotal += len[i];
+			minvartotal += len[i] > MINVARCOLSIZE ? MINVARCOLSIZE : len[i];
+		}
+		total += len[i];
 
-			/* punish the column headers first until you
-			 * cannot squeeze any further */
-			while (pagewidth > 0 && graphwaste + lentotal > pagewidth) {
-				/* pick the column where the header is
-				 * longest compared to its content */
-				max = -1;
-				for (i = 0; i < printfields; i++) {
-					if (hdr[i] > len[i]) {
-						if (max == -1 ||
-						    hdr[max] - len[max] < hdr[i] - len[i])
-							max = i;
-					}
-				}
-				if (max == -1)
-					break;
-				hdr[max]--;
-				lentotal--;
-			}
-
-			/* correct the lengths if the headers are wider than the
-			 * content, since the headers are maximally squeezed to the
-			 * content above, if a header is larger than its content, it
-			 * means there was space enough.  If not, the content will
-			 * be squeezed below. */
-			for (i = 0; i < printfields; i++)
-				if (len[i] < hdr[i])
-					len[i] = hdr[i];
-
-			/* worst case: lentotal = total, which means it still
-			 * doesn't fit, values will be squeezed next */
-			while (pagewidth > 0 && graphwaste + total > pagewidth) {
-				max = -1;
-				for (i = 0; i < printfields; i++) {
-					if (!numeric[i] && (max == -1 || len[i] > len[max]))
-						max = i;
-				}
-
-				/* no varsized fields that we can squeeze */
-				if (max == -1)
-					break;
-				/* penalty for largest field */
-				len[max]--;
-				total--;
-				/* no more squeezing possible */
-				if (len[max] == 1)
-					break;
-			}
-
-			SQLheader(hdl, len, printfields, fields != printfields);
-			oldfields = fields;
-			croppedfields = 0;
+		/* do a very pessimistic calculation to determine if more
+		 * columns would actually fit on the screen */
+		if (pagewidth > 0 &&
+				((((printfields + 1) * 3) - 1) + 2) + /* graphwaste */
+				(total - vartotal) + minvartotal > pagewidth)
+		{
+			/* this last column was too much */
+			total -= len[i];
+			if (!numeric[i])
+				vartotal -= len[i];
+			break;
 		}
 
+		lentotal += (hdr[i] > len[i] ? hdr[i] : len[i]);
+		printfields++;
+	}
+
+	/* what we waste on space on the display is the column separators '
+	 * | ', but the edges lack the edgespace of course */
+	graphwaste = ((printfields * 3) - 1) + 2;
+	/* make sure we can indicate we dropped columns */
+	if (fields != printfields)
+		graphwaste++;
+
+	/* punish the column headers first until you cannot squeeze any
+	 * further */
+	while (pagewidth > 0 && graphwaste + lentotal > pagewidth) {
+		/* pick the column where the header is longest compared to its
+		 * content */
+		max = -1;
+		for (i = 0; i < printfields; i++) {
+			if (hdr[i] > len[i]) {
+				if (max == -1 ||
+						hdr[max] - len[max] < hdr[i] - len[i])
+					max = i;
+			}
+		}
+		if (max == -1)
+			break;
+		hdr[max]--;
+		lentotal--;
+	}
+
+	/* correct the lengths if the headers are wider than the content,
+	 * since the headers are maximally squeezed to the content above, if
+	 * a header is larger than its content, it means there was space
+	 * enough.  If not, the content will be squeezed below. */
+	for (i = 0; i < printfields; i++)
+		if (len[i] < hdr[i])
+			len[i] = hdr[i];
+
+	/* worst case: lentotal = total, which means it still doesn't fit,
+	 * values will be squeezed next */
+	while (pagewidth > 0 && graphwaste + total > pagewidth) {
+		max = -1;
+		for (i = 0; i < printfields; i++) {
+			if (!numeric[i] && (max == -1 || len[i] > len[max]))
+				max = i;
+		}
+
+		/* no varsized fields that we can squeeze */
+		if (max == -1)
+			break;
+		/* penalty for largest field */
+		len[max]--;
+		total--;
+		/* no more squeezing possible */
+		if (len[max] == 1)
+			break;
+	}
+
+	SQLheader(hdl, len, printfields, fields != printfields);
+
+	while (!mnstr_errnr(toConsole) && (rfields = fetch_row(hdl)) != 0) {
+		if (rfields != fields) {
+			mnstr_printf(stderr_stream,
+					"invalid tuple received from server, "
+					"got %d columns, expected %d, ignoring\n", rfields, fields);
+			continue;
+		}
+		if (silent)
+			continue;
 		for (i = 0; i < printfields; i++) {
 			rest[i] = mapi_fetch_field(hdl, i);
 			if (rest[i] == NULL)
@@ -1264,7 +1206,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 
 		rows += SQLrow(len, numeric, rest, printfields, 2, 0);
 	}
-	if (oldfields)
+	if (fields)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
@@ -1274,18 +1216,18 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			singleinstr ? timerHuman() : "",
 			singleinstr ? ")" : "");
 
-	if (oldfields != printfields || croppedfields > 0)
+	if (fields != printfields || croppedfields > 0)
 		printf(" !");
-	if (oldfields != printfields) {
-		rows = oldfields - printfields;
+	if (fields != printfields) {
+		rows = fields - printfields;
 		printf(LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
 	}
-	if (oldfields != printfields && croppedfields > 0)
+	if (fields != printfields && croppedfields > 0)
 		printf(", ");
 	if (croppedfields > 0)
 		printf("%d field%s truncated",
 				croppedfields, croppedfields != 1 ? "s" : "");
-	if (oldfields != printfields || croppedfields > 0) {
+	if (fields != printfields || croppedfields > 0) {
 		printf("!");
 		if (firstcrop == 1) {
 			firstcrop = 0;
@@ -1294,15 +1236,10 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	}
 	printf("\n");
 
-
-	if (len)
-		free(len);
-	if (hdr)
-		free(hdr);
-	if (rest)
-		free(rest);
-	if (numeric)
-		free(numeric);
+	free(len);
+	free(hdr);
+	free(rest);
+	free(numeric);
 }
 
 static void
@@ -2826,5 +2763,3 @@ main(int argc, char **argv)
 	mnstr_destroy(stderr_stream);
 	return c;
 }
-
-@}

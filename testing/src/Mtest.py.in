@@ -3799,13 +3799,13 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
-        Failure = [0,0,0,0,0,0,0,0,0]
+        Failure = [[],[],[],[],[],[],[],[],[]]
         for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
             fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+
                         "\t"+FAILURES[FtOut]+
                         "\t"+FAILURES[FtErr]+"\t\n")
             if TST != '':
-                Failure[max(FtOut,FtErr)] += 1
+                Failure[max(FtOut,FtErr)].append(os.path.join(TSTDIR,TST))
         fl.write(":\t%7.3f\t\n" % t_)
         fl.close()
 
@@ -3894,35 +3894,27 @@ VALUES (%s, '%s', '%s', '%s',
 
         Failed = 0
         for f in Failure[1:]:
-            Failed += f
+            Failed += len(f)
         num_tests = 0
         for f in Failure:
-            num_tests += f
+            num_tests += len(f)
         how = ""
         what = ""
-        if Failure[F_SKIP]:
-            what += "  %3d out of %3d tests could not be executed\n" % (Failure[F_SKIP],num_tests)
-        if Failure[F_WARN]:
-            how = "slightly"
-            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[F_WARN],num_tests,how)
-        if Failure[F_SOCK]:
-            how = "SIGNIFICANTLY"
-            what += "  %3d out of %3d tests did not properly release socket(s)\n" % (Failure[F_SOCK],num_tests)
-        if Failure[F_TIME]:
-            how = "SIGNIFICANTLY"
-            what += "  %3d out of %3d tests ran into timeout\n" % (Failure[F_TIME],num_tests)
-        if Failure[F_KILL]:
-            how = "SIGNIFICANTLY"
-            what += "  %3d out of %3d tests had orphan processes killed\n" % (Failure[F_KILL],num_tests)
-        if Failure[F_SEGV]:
-            how = "SIGNIFICANTLY"
-            what += "  %3d out of %3d tests resulted in a crash\n" % (Failure[F_SEGV],num_tests)
-        if Failure[F_RECU]:
-            how = "SIGNIFICANTLY"
-            what += "  %3d out of %3d tests ran into too deep recursion\n" % (Failure[F_RECU],num_tests)
-        if Failure[F_ERROR]:
-            how = "SIGNIFICANTLY"
-            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[F_ERROR],num_tests,how)
+        for x, y, z in [(F_SKIP, "could not be executed", ""),
+                        (F_WARN, "produced slightly different output", "slightly"),
+                        (F_SOCK, "tests did not properly release socket(s)", "SIGNIFICANTLY"),
+                        (F_TIME, "tests ran into timeout", "SIGNIFICANTLY"),
+                        (F_KILL, "tests had orphan processes killed", "SIGNIFICANTLY"),
+                        (F_SEGV, "tests resulted in a crash", "SIGNIFICANTLY"),
+                        (F_RECU, "tests ran into too deep recursion", "SIGNIFICANTLY"),
+                        (F_ERROR, "tests produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
+            if Failure[x]:
+                how = z
+                what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
+                # only report failed tests if there aren't too many
+                if Failed < 30:
+                    for f in Failure[x]:
+                        what += "        %s\n" % f
         STDERR.flush()
         if Failed:
             print """\
