@@ -1212,11 +1212,27 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 	}
 	GDKfree(assign);
 }
-
+@-
+The liberal use of MAL to construct programs complicate proper dataflow
+dependency analysis. For example, consider the following fragment of
+a remote execution
+@verbatim
+barrier go:=language.dataflow()
+con:= remote.connect(...)
+res:= remote.put(con, v:int)
+inp:= remote.put(con, i:int)
+res:= remote.exe(con,m,f,inp);
+ans:= remote.get(con,res)
+exit go
+@end verbatim
+Naive interpretation could lead to execution of either 'res:=' operation in non-determined order.
+Moreover, the result 'ans:' should be obtained after the corresponding 'res:=' has been executed.
+@c
 static int
 DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 {
-	int j, blocked = 0;
+	int j, k, l, blocked = 0;
+	InstrPtr q;
 	(void) pc;
 
 	for(j=0; j<p->argc && !blocked; j++) {
@@ -1228,12 +1244,22 @@ DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 		if ( getEndOfLife(flow->mb,getArg(p,j))  == fs[i].pc ) {
 			/* make sure all instructions interested have already been executed */
 			/* and the eoscope variables are not used anymore */
-			int k;
 
 			blocked += flow->inuse[getArg(p,j)] != 0;
 			for ( k=0; k < i && !blocked; k++)
 			if (fs[k].status != DFLOWwrapup && fs[k].pc >= 0 ) /* pc = -1 could be the case before wrapup is set*/
 				blocked += !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, getArg(p,j));
+		} else {
+			/* handle the dependencies sketched above */
+			/* search the statement that assigns a value to the argument or target */
+			/* it should have been finished already */
+			for (l = i-1 ; l >= 0 && !blocked; l--)
+			if ( fs[l].status != DFLOWwrapup){
+				q= getInstrPtr(flow->mb, fs[l].pc);
+				for ( k=0; k < q->retc && !blocked; k++)
+				if ( getArg(q,k) == getArg(p,j) )
+					blocked = 1;
+			}
 		}
 	}
 	return blocked == 0;
