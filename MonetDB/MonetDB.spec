@@ -190,7 +190,7 @@ rm -fr $RPM_BUILD_ROOT
   enough memory to keep everything in core that was touched during
   query processing.  This is done by having the higher layers giving
   hints to the database kernel about future use, and the database
-  kernel giving hings to the operating system kernel about how
+  kernel giving hints to the operating system kernel about how
   (virtual) memory is going to be used.
 
 * Thu Feb 18 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 1.36.1-20100223
