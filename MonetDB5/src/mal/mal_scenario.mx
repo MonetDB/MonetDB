@@ -681,7 +681,7 @@ runScenario(Client c)
 		return msg;
 	msg = runScenarioBody(c);
 	if (msg != MAL_SUCCEED && 
-	    strcmp(msg,"MALException:client.quit:Server stopped."))
+			strcmp(msg,"MALException:client.quit:Server stopped."))
 		mnstr_printf(c->fdout,"!%s\n",msg);
 	return msg;
 }
