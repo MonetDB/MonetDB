@@ -1,29 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Thu Aug 26 2010 Fabian Groffen <fabian@cwi.nl>
-- Empty resultsets now show a header in mclient using SQL mode.
-
-* Wed Aug 18 2010 Fabian Groffen <fabian@cwi.nl>
-- Allow users to specify their own default formatter (using format=), or
-  their default formatting width (using width=) in their .monetdb file.
-  Setting the latter option is mostly useful when using the sql
-  formatter, such that truncation can be disabled by setting width=-1.
-- Rendering of mclient's tabular mode (when using SQL) has been changed
-  considerably to get improved output.  Most importantly it now omits
-  parts of field values or even full columns when the used terminal width
-  is insufficient to display the result.  To disable this behaviour,
-  simply set width to -1 (via -w option or \w in mclient), or chose
-  another rendering mode.
-
-* Wed Jul 21 2010 Fabian Groffen <fabian@cwi.nl>
-- In SQL mode, always use the table formatter, as there is no sense to
-  use raw (protocol debug) mode when reading from pipe or file really.
-  People likely prefer tab (-ftab) formatting in such case for easy
-  scripting.
-
-* Thu Jul 15 2010 Fabian Groffen <fabian@cwi.nl>
-- In SQL (rendering) mode, mclient now returns timings for SELECT and
-  UPDATE/INSERT/DELETE queries next to the number of tuples returned or
-  rows affected.
-

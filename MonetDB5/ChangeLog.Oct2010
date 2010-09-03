@@ -1,0 +1,21 @@
+# ChangeLog file for MonetDB5
+# This file is updated with Maddlog
+
+* Sat Jul 17 2010 mk@cwi.nl
+- Debugging the optimizer pipeline The best way is to use mdb.traceOptimizer(str)
+  and inspect the information gathered during the optimization phase.
+  Several optimizers produce more intermediate information, which may
+  shed light on the details.  The optDebug bitvector controls their
+  output. It can be set to a pipeline or a comma separated list of
+  optimizers you would like to trace. It is a server wide property and
+  can not be set dynamically, as it is intended for internal use.
+
+* Tue Jul 13 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
+- Added "sequential_pipe" SQL optimizer pipeline that is (and should be kept!)
+  identical to the default pipeline, except that optimizers mitosis & dataflow
+  are omitted.
+
+* Mon Jul 12 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
+- Added "no_mitosis_pipe" SQL optimizer pipeline that is (and should be kept!)
+  identical to the default pipeline, except that optimizer mitosis is omitted.
+

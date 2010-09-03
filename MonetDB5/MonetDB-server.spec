@@ -1,5 +1,5 @@
 %define name MonetDB5-server
-%define version 5.21.0
+%define version 5.23.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
@@ -45,16 +45,16 @@ BuildRequires: libxml2-devel
 
 %define builddoc 0
 
-Requires: MonetDB-client >= 1.38
+Requires: MonetDB-client >= 1.40
 #                           ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.39
+BuildRequires: MonetDB-devel >= 1.40
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB-client-devel >= 1.38
+BuildRequires: MonetDB-client-devel >= 1.40
 #                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
