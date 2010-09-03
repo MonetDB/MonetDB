@@ -367,20 +367,21 @@ BBPinithash(void)
 
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
-	BBP_hash = (bat *) GDKmalloc(BBP_mask * sizeof(bat));
+	BBP_hash = (bat *) GDKzalloc(BBP_mask * sizeof(bat));
 	if (BBP_hash == NULL)
 		GDKfatal("BBPinithash: cannot allocate memory\n");
-	memset(BBP_hash, 0, BBP_mask * sizeof(bat));
 	BBP_mask--;
 
 	while (--i > 0) {
 		str s = BBP_logical(i);
 
 		if (s) {
+			str sm = BBP_logical(-i);
+
 			if (*s != '.' && BBPtmpcheck(s) == 0) {
 				BBP_insert(i);
 			}
-			if (BBP_logical(-i)) {
+			if (sm && *sm != '.' && BBPtmpcheck(sm) == 0) {
 				BBP_insert(-i);
 			}
 		} else {
@@ -1657,18 +1658,18 @@ bbpclear(bat i, int idx, str lock)
 		BBP_delete(i);
 		gdk_unset_lock(GDKnameLock, "bbpclear");
 	}
-	if (BBP_logical(-i)) {
+	if (BBPtmpcheck(BBP_logical(-i)) == 0) {
 		gdk_set_lock(GDKnameLock, "bbpclear");
 		BBP_delete(-i);
 		gdk_unset_lock(GDKnameLock, "bbpclear");
-		if (BBP_logical(-i) != BBP[ABS(i)].bak[(-i) < 0])
-			GDKfree(BBP_logical(-i));
-		BBP_logical(-i) = NULL;
 	}
 	if (BBP_logical(i) != BBP[ABS(i)].bak[(i) < 0])
 		GDKfree(BBP_logical(i));
+	if (BBP_logical(-i) != BBP[ABS(i)].bak[(-i) < 0])
+		GDKfree(BBP_logical(-i));
 	BBP_status_set(i, 0, "BBPclear");
 	BBP_logical(i) = NULL;
+	BBP_logical(-i) = NULL;
 	BBP_next(i) = BBP_free(idx);
 	BBP_free(idx) = i;
 	if (lock)
@@ -3085,7 +3086,10 @@ batcache_put(batcache_t * bc, int bin, bat bid)
 		bc->elt[bc->last].fifo_next = i;
 	bc->last = i;
 
-	*BBP_logical(bid) = '.';	/* make the bat a zombie */
+	/* make the bat a zombie */
+	*BBP_logical(bid) = '.';
+	*BBP_logical(-bid) = '.';
+
 	MT_unset_lock(bc->lock, "batcache_put");
 
 	return i;
@@ -3130,6 +3134,7 @@ batcache_get(batcache_t * bc, int bin)
 
 		/* revive the bat */
 		*BBP_logical(bid) = 't';
+		*BBP_logical(-bid) = 't';
 		BBP_refs(bid)++;
 
 		BATDEBUG {
@@ -3152,6 +3157,7 @@ BBPaddtobin(BAT *b)
 	int bin = BATCACHE_BIN(b->htype, b->ttype);
 	bat bid = b->batCacheid, hp = VIEWhparent(b), tp = VIEWtparent(b);
 	char *s = BBP_logical(bid);
+	char *sm = BBP_logical(-bid);
 	BAT *m = BBP_cache(-bid);
 
 	/* only cache simple non-saved non-renamed transient bats */
@@ -3162,6 +3168,7 @@ BBPaddtobin(BAT *b)
 	    b->T->heap.storage != STORE_MEM ||
 	    b->P->lview ||
 	    BBPtmpcheck(s) == 0 ||
+	    BBPtmpcheck(sm) == 0 ||
 	    (b->htype == TYPE_str && b->H->width > 1) ||
 	    (b->ttype == TYPE_str && b->T->width > 1) ||
 	    b->htype > TYPE_str ||
