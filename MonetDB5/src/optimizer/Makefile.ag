@@ -37,7 +37,7 @@ lib_optimizer = {
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_cluster.mx  opt_replication.mx opt_dictionary.mx opt_mapreduce.mx \
-		opt_mitosis.mx opt_octopus.mx opt_tarantula.mx  opt_history.mx opt_selcrack.mx opt_sidcrack.mx
+		opt_mitosis.mx opt_octopus.mx opt_history.mx opt_selcrack.mx opt_sidcrack.mx
 
 	#SCRIPTS = mal
 	LIBS = ../modules/atoms/lib_mtime ../mal/libmonetdb5 \
@@ -63,7 +63,7 @@ headers_optimizer = {
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_cluster.mx  opt_replication.mx opt_dictionary.mx opt_mapreduce.mx \
-		opt_mitosis.mx opt_octopus.mx opt_tarantula.mx  opt_history.mx opt_selcrack.mx opt_sidcrack.mx
+		opt_mitosis.mx opt_octopus.mx opt_history.mx opt_selcrack.mx opt_sidcrack.mx
 
 	HEADERS = h 
 }
@@ -84,7 +84,7 @@ headers_mal = {
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_cluster.mx  opt_replication.mx opt_dictionary.mx opt_mapreduce.mx \
-		opt_mitosis.mx opt_octopus.mx opt_tarantula.mx  opt_history.mx opt_selcrack.mx opt_sidcrack.mx
+		opt_mitosis.mx opt_octopus.mx opt_history.mx opt_selcrack.mx opt_sidcrack.mx
 }
 
 EXTRA_DIST_DIR = Tests

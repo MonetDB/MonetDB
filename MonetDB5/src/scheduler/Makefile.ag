@@ -36,7 +36,7 @@ LIBS = {
 lib_run_octopus = {
 	DIR = libdir/MonetDB5
 	SEP = _
-	SOURCES = run_octopus.mx run_tarantula.mx
+	SOURCES = run_octopus.mx
 
 	LIBS = ../modules/mal/lib_remote ../modules/mal/lib_mat ../mal/libmonetdb5 ../optimizer/lib_optimizer $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -45,14 +45,14 @@ lib_run_octopus = {
 
 headers_h = {
 	DIR = includedir/MonetDB5/scheduler
-	SOURCES = run_adder.mx run_isolate.mx run_pipeline.mx run_memo.mx run_octopus.mx run_tarantula.mx
+	SOURCES = run_adder.mx run_isolate.mx run_pipeline.mx run_memo.mx run_octopus.mx
 	HEADERS = h 
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = run_adder.mx run_isolate.mx run_pipeline.mx run_memo.mx run_octopus.mx run_tarantula.mx
+	SOURCES = run_adder.mx run_isolate.mx run_pipeline.mx run_memo.mx run_octopus.mx
 }
 
 EXTRA_DIST_DIR = Tests
