@@ -595,8 +595,11 @@ opt_export int isBlocking(InstrPtr p);
 opt_export int isAllScalar(MalBlkPtr mb, InstrPtr p);
 opt_export int isFragmentGroup(InstrPtr q);
 opt_export int isSelect(InstrPtr p);
+opt_export int isProjection(InstrPtr p);
 opt_export int isMatJoinOp(InstrPtr q);
 opt_export int isMapOp(InstrPtr q);
+opt_export int isTopn(InstrPtr q);
+opt_export int isSlice(InstrPtr q);
 opt_export int isDiffOp(InstrPtr q);
 opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
@@ -1405,12 +1408,31 @@ int isMapOp(InstrPtr p){
 		(getModuleId(p)== mkeyRef); 
 }
 
+int isTopn(InstrPtr p){
+	return ((getModuleId(p) == pqueueRef && 
+		(getFunctionId(p) == topn_minRef ||
+		 getFunctionId(p) == topn_maxRef ||
+		 getFunctionId(p) == utopn_minRef ||
+		 getFunctionId(p) == utopn_maxRef)) || isSlice(p)); 
+}
+
+int isSlice(InstrPtr p){
+	return (getModuleId(p) == algebraRef &&
+		getFunctionId(p) == sliceRef);
+}
+
 int isDiffOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
 	    	(getFunctionId(p) == semijoinRef || 
  	     	 getFunctionId(p) == kdifferenceRef));
 }
  
+int isProjection(InstrPtr p){
+	return (getModuleId(p) == algebraRef && 
+                 getFunctionId(p) == leftjoinRef 
+		);
+}
+
 int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef && 
                 (getFunctionId(p) == joinRef || 
