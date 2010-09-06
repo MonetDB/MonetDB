@@ -1582,28 +1582,44 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		list_append(pl, s);
 	}
 	psub = stmt_list(pl);
+
 	/* In case of a topn 
 		if both order by and distinct: then get first order by col early
 			do topn on it. Project all again! Then rest
          */
 	if (topn && rel->r) {
 		list *oexps = rel->r, *npl = create_stmt_list();
-		int before_project = need_distinct(rel) || (list_length(oexps) > 1);
-		sql_exp *orderbycole = oexps->h->data; 
+		/* including bounds, topn returns atleast N */
+		int including = need_distinct(rel);
+		stmt *limit = NULL; 
 
-		stmt *limit, *orderbycols = exp_bin(sql, orderbycole, sub, psub, NULL, NULL); 
+		for (n=oexps->h; n; n = n->next) {
+			sql_exp *orderbycole = n->data; 
+ 			int inc = including || n->next;
 
-		if (!orderbycols) {
-			assert(0);
-			stmt_destroy(sub);
-			return NULL;
+			stmt *orderbycolstmt = exp_bin(sql, orderbycole, sub, psub, NULL, NULL); 
+
+			if (!orderbycolstmt) {
+				stmt_destroy(sub);
+				stmt_destroy(limit);
+				return NULL;
+			}
+			
+			if (!limit) {	/* topn based on a single column */
+				limit = stmt_limit(orderbycolstmt, stmt_atom_wrd(0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
+			} else { 	/* topn based on 2 columns */
+				stmt *obc = stmt_project(stmt_mirror(limit), orderbycolstmt);
+				limit = stmt_limit2(limit, obc, stmt_atom_wrd(0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, inc));
+			}
+			if (!limit) {
+				stmt_destroy(sub);
+				return NULL;
+			}
 		}
-		limit = stmt_limit(orderbycols, stmt_atom_wrd(0), l, LIMIT_DIRECTION(is_ascending(orderbycole), 1, before_project));
-		for ( n=pl->h ; n; n = n->next) {
-			list_append(npl, 
-			 	stmt_semijoin(column(stmt_dup(n->data)), 
-					stmt_dup(limit)));
-		}
+
+		limit = stmt_mirror(limit);
+		for ( n=pl->h ; n; n = n->next) 
+			list_append(npl, stmt_project(stmt_dup(limit), column(stmt_dup(n->data))));
 		stmt_destroy(psub);
 		psub = stmt_list(npl);
 
@@ -1611,41 +1627,40 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		pl = sub->op1.lval;
 		npl = create_stmt_list();
 		for ( n=pl->h ; n; n = n->next) {
-			list_append(npl, 
-			 	stmt_semijoin(column(stmt_dup(n->data)), 
-					stmt_dup(limit)));
+			list_append(npl, stmt_project(stmt_dup(limit), column(stmt_dup(n->data)))); 
 		}
 		stmt_destroy(sub);
+		stmt_destroy(limit);
 		sub = stmt_list(npl);
 	}
 	if (need_distinct(rel))
 		psub = rel2bin_distinct(psub);
-	if (rel->r) {
+	if (!topn && rel->r) {
 		list *oexps = rel->r;
 		stmt *orderby = NULL;
 
 		for (en = oexps->h; en; en = en->next) {
 			sql_exp *orderbycole = en->data; 
-			stmt *orderbycols = exp_bin(sql, orderbycole, sub, psub, NULL, NULL); 
+			stmt *orderbycolstmt = exp_bin(sql, orderbycole, sub, psub, NULL, NULL); 
 
-			if (!orderbycols) {
+			if (!orderbycolstmt) {
 				assert(0);
 				stmt_destroy(sub);
 				cond_stmt_destroy(orderby);
 				return NULL;
 			}
 			/* single values don't need sorting */
-			if (orderbycols->nrcols == 0) {
-				stmt_destroy(orderbycols);
+			if (orderbycolstmt->nrcols == 0) {
+				stmt_destroy(orderbycolstmt);
 				if (orderby)
 					stmt_destroy(orderby);
 				orderby = NULL;
 				break;
 			}
 			if (orderby)
-				orderby = stmt_reorder(orderby, orderbycols, is_ascending(orderbycole));
+				orderby = stmt_reorder(orderby, orderbycolstmt, is_ascending(orderbycole));
 			else
-				orderby = stmt_order(orderbycols, is_ascending(orderbycole));
+				orderby = stmt_order(orderbycolstmt, is_ascending(orderbycole));
 		}
 		if (orderby)
 			psub = stmt_ordered(orderby, psub);
@@ -1948,7 +1963,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 	newl = create_stmt_list();
 
 	if (n) {
-		stmt *limit = NULL, *p, *j;
+		stmt *limit = NULL;
 
 		if (le)
 			l = exp_bin(sql, le, NULL, NULL, NULL, NULL);
@@ -1961,45 +1976,28 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			o = stmt_atom_wrd(0);
 
 		if (order) {
-		 	limit = stmt_limit(stmt_dup(order), o, l, 0);
+		 	limit = stmt_limit(stmt_dup(order), o, l, LIMIT_DIRECTION(0,0,need_including(rel)));
 		} else {
 			stmt *sc = stmt_dup(n->data);
 			char *cname = column_name(sc);
 			char *tname = table_name(sc);
 
 			sc = column(sc);
-			limit = stmt_limit(stmt_alias(sc, tname, cname), o, l, 0);
-			n = n->next;
-			list_append(newl, limit);
+			limit = stmt_limit(stmt_alias(sc, tname, cname), o, l, LIMIT_DIRECTION(0,0,need_including(rel)));
 		}
 
-		/* reduce pivot */
-		j = find_projection_join(limit);
-		if (j && 0) {
-			p = find_pivot(j);
-			p = stmt_semijoin(stmt_dup(p), stmt_dup(limit));
-			for ( ; n; n = n->next) {
-				stmt *s = column(stmt_dup(n->data));
-				stmt *prj = find_projection_join(s);
+		limit = stmt_mirror(limit);
+		for ( ; n; n = n->next) {
+			stmt *sc = stmt_dup(n->data);
+			char *cname = column_name(sc);
+			char *tname = table_name(sc);
 		
-				/* for all but the order column we can reduce */
-				if (prj && prj != j) 
-					prj->op1.stval = stmt_semijoin(prj->op1.stval, stmt_dup(p));
-				list_append(newl, s);
-			}
-			stmt_destroy(p);
-		} else {
-			for ( ; n; n = n->next) {
-				stmt *s;
-		
-				s = stmt_semijoin(column(stmt_dup(n->data)), stmt_dup(limit));
-				list_append(newl, s);
-			}
+			sc = column(sc);
+			sc = stmt_project(stmt_dup(limit), sc);
+			list_append(newl, stmt_alias(sc, tname, cname));
 		}
-		if (order) {
-			stmt_destroy(order);
-			order = limit;
-		}
+		if (order) 
+			order = stmt_project(stmt_dup(limit), order);
 	}
 	stmt_destroy(sub);
 	sub = stmt_list(newl);

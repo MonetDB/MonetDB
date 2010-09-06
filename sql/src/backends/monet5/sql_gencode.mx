@@ -702,6 +702,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int offset = _dumpstmt(sql, mb, s->op2.stval);
 			int len = _dumpstmt(sql, mb, s->op3.stval);
+			int la = (s->op4.stval)?_dumpstmt(sql, mb, s->op4.stval):0;
 
 			/* first insert single value into a bat */
 			assert(s->nrcols);
@@ -738,6 +739,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				topn = getDestVar(q);
 				 
 				q = newStmt(mb, "pqueue", name);
+				if (la)
+					q = pushArgument(mb, q, la);
 				q = pushArgument(mb,q, l);
 				q = pushArgument(mb, q, topn);
 				l = getDestVar(q);
@@ -751,6 +754,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushInt(mb, q, 1);
 					len = getDestVar(q);
 
+/*
 					if ((s->flag-1) > 0) {
 						q = newStmt2(mb, algebraRef, sortTailRef);
 					} else {
@@ -758,6 +762,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					}
 					q = pushArgument(mb, q, l);
 					l = getDestVar(q);
+*/
 
 					q = newStmt1(mb, algebraRef, "slice");
 					q = pushArgument(mb, q, l);

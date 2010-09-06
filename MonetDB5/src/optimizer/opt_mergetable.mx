@@ -152,17 +152,24 @@ typedef enum mat_type {
 	mat_grp = 1,	/* result of phase one of a mat - group.new/derive */
 	mat_ext = 2,	/* after mat_grp the extend gets a mat.mirror */
 	mat_tpn = 3,	/* Phase one of topn on a mat */
-	mat_srt = 4	/* Phase one of sorting, ie sorted the parts sofar */
+	mat_slc = 4,	/* Phase one of topn on a mat */
+	mat_rdr = 5	/* Phase one of sorting, ie sorted the parts sofar */
 } mat_type;
 
 typedef struct mat {
 	InstrPtr mi;	/* mat instruction */
 	InstrPtr mi1;	/* second result, mat instruction */
-	InstrPtr mm;	/* mat merge statement (needed for group by's) */
+	InstrPtr mm;	/* mat merge statement (needed for group/order by's and topn ) */
 	int mv;		/* mat variable */
 	int mv1;	/* second result variable */
 	mat_type type;	/* type of operation */
 } mat_t;
+
+static int
+mat_is_topn( mat_type t)
+{
+	return (t == mat_tpn || t == mat_slc);
+}
 
 static mat_type
 useMatType( mat_t *mat, int n) 
@@ -310,7 +317,7 @@ propagateProp(MalBlkPtr mb, InstrPtr q, int ivar)
 		if (hub) varSetProp(mb, ovar, hubProp, op_lt, &hub->value);
 		if (hlb) varSetProp(mb, ovar, tlbProp, op_gte, &hlb->value);
 		if (hub) varSetProp(mb, ovar, tubProp, op_lt, &hub->value);
-	} else if (isMapOp(q) || isDiffOp(q) || isFragmentGroup(q)) {
+	} else if (isMapOp(q) || isDiffOp(q) || isFragmentGroup(q) || isTopn(q)) {
 		if (hlb) varSetProp(mb, ovar, hlbProp, op_gte, &hlb->value);
 		if (hub) varSetProp(mb, ovar, hubProp, op_lt, &hub->value);
 		if (tlb) varSetProp(mb, ovar, tlbProp, op_gte, &tlb->value);
@@ -396,7 +403,8 @@ MATpackAll(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 	stream_printf(GDKout,"MAT optimizer, mat_packAll\n");
 	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
 #endif
-	if (mat[m].type == mat_none || mat[m].type == mat_tpn) {
+
+	if (mat[m].type == mat_none || mat_is_topn(mat[m].type)) {
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
 		pushInstruction(mb,r);
 	} else if (mat[m].type == mat_ext) {
@@ -420,7 +428,7 @@ MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 	stream_printf(GDKout,"MAT optimizer, mat_packAll2\n");
 	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
 #endif
-	if (mat[m].type == mat_none || mat[m].type == mat_tpn) {
+	if (mat[m].type == mat_none || mat_is_topn(mat[m].type)) {
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
 		pushInstruction(mb,r);
 		MATshift(mat,m,mtop);
@@ -558,8 +566,9 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var, int reuse)
 			else if (!inout)
 				propagateProp(mb, q, getArg(mi, k));
 			pushInstruction(mb,q);
-			if (r)
+			if (r) {
 				r = pushArgument(mb,r,getArg(q,0));
+			}
 			used = 1;
 		}
 		if (r && !used && 
@@ -580,6 +589,7 @@ disjoint(mat_t *mat, int *mtop, int m, MalBlkPtr mb)
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 	int tpe = getVarType(mb,getArg(mat[m].mi, 0));
 	int vj, vi;
+
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"MAT optimizer, mat_disjoint\n");
 	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
@@ -736,6 +746,7 @@ mat_map(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop)
 	stream_printf(GDKout,"MAT optimizer, mat_map\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
+
 	for(a=p->retc; a<p->argc && m < 0; a++) 
 		if (isaBatType(getArgType(mb,p,a))) 
 			m = isMATalias(getArg(p,a), mat, mtop);
@@ -788,12 +799,13 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	stream_printf(GDKout,"MAT optimizer, mat_join\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
+
 	setModuleId(r,matRef);
 	setFunctionId(r,newRef);
 	getArg(r,0) = getArg(p,0);
 	
 	assert(m>=0 || n>=0);
-	if (m >= 0 && mat[m].mm) {
+	if (m >= 0 && mat[m].mm && !mat_is_topn(mat[m].type)) {
 		InstrPtr q;
 
 		if (mat[m].type != mat_ext)
@@ -902,7 +914,7 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 		    }
 		}
 	}
-	mtop = mat_add(mat, mtop, r, NULL, mat_none);
+	mtop = mat_add(mat, mtop, r, NULL, (m>=0)?useMatType(mat, m):mat_none);
 	if (m >= 0 && mat[m].type == mat_ext)
 		(void)MATpackAll2(mb, NULL, mat, mtop-1, &mtop); 
 	return mtop;
@@ -1020,10 +1032,12 @@ mat_pack_group_(MalBlkPtr mb, mat_t *mat, int g, int ext)
 
 	if ( attrs == NULL)
 		return NULL;
+
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"MAT optimizer, mat_pack_group\n");
 	printInstruction(GDKout, mb, 0, mat[ext].mi, LIST_MAL_ALL);
 #endif
+
 	for(k=1; k<mat[ext].mi->argc; k++) 
 		group_attrs(attrs+k*cnt, mb, getArg(mat[g].mi1, k), getArg(mat[ext].mi, k), mat[ext].type != mat_ext);
 	for(i=cnt-1; i>=0; i--) {
@@ -1077,6 +1091,160 @@ mat_pack_group(MalBlkPtr mb, mat_t *mat, int g, int ext)
 	return pgrp;
 }
 
+static int
+topn_find_mirror(MalBlkPtr mb, int var, int topstmt)
+{
+	int s = resultof(mb, var, topstmt);
+	InstrPtr p = mb->stmt[s];
+
+	if (s && p->argc == 2 && 
+	    getModuleId(p) == batRef && getFunctionId(p) == mirrorRef)
+		return getArg(p, 1);
+	return 0;
+}
+
+static int
+topn_chain_list_length(MalBlkPtr mb, int var)
+{
+	int cnt = 0;
+
+	var = topn_find_mirror(mb, var, mb->stop);
+	while(var) {
+		int s = resultof(mb, var, mb->stop);
+		InstrPtr p = mb->stmt[s];
+
+		var = 0;
+		if (s == 0)
+			return 0;
+		if ((p->argc == 3 || p->argc == 4) && isTopn(p)) {
+			var = getArg(p, 1);
+			cnt++;
+		}
+	}
+	return cnt;
+}
+
+static void
+topn_stmt(int *stmt, MalBlkPtr mb, int var)
+{
+	int cnt = 0;
+
+	var = topn_find_mirror(mb, var, mb->stop);
+	while(var) {
+		int s = resultof(mb, var, mb->stop);
+		InstrPtr p = mb->stmt[s];
+
+		assert(s!=0);
+		var = 0;
+		if ((p->argc == 3 || p->argc == 4) && isTopn(p)) {
+			var = getArg(p, 1);
+			stmt[cnt++] = s;
+		}
+	}
+}
+
+static int
+mat_pack_topn_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid)
+{
+	int k, a = mtop - 1;
+	mat_t *mirror = mat+mirror_mid;
+	InstrPtr pck, q = copyInstruction(p);
+
+	/* 2 cases, 
+		1) first time we need to merge
+		2) second simply use result of first an repeat projection
+	*/
+	assert(mirror->mm);
+
+	pck = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(pck,matRef);
+	setFunctionId(pck,packRef);
+	getArg(pck,0) = newTmpVariable(mb, getVarType(mb, getArg(mat[a].mi,1)));
+	for(k=1; k<mat[a].mi->argc; k++) 
+		pck = pushArgument(mb, pck, getArg(mat[a].mi,k) );
+	pushInstruction(mb, pck);
+	MATshift(mat, mtop-1, &mtop);
+
+	getArg(q,0) = getArg(p,0);	
+	getArg(q,1) = getArg(mirror->mm, 0);	/* use result of 1 */
+	getArg(q,2) = getArg(pck, 0);		/* result of merge */
+	pushInstruction(mb, q);
+	return mtop;
+}
+
+static int
+pushWrdVar(MalBlkPtr mb, wrd val)
+{
+        ValRecord cst;
+
+        cst.vtype= TYPE_wrd;
+        cst.val.wval= val;
+        return defConstant(mb, TYPE_wrd,&cst);
+}
+
+static int
+mat_pack_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid)
+{
+	/* find chain of topn's */
+	mat_t *mirror = mat+mirror_mid;
+	int cur_topn = 0, k, i;
+	int cnt = topn_chain_list_length(mb, getArg(mirror->mi,1));
+	int *stmt = (int*) alloca( cnt * sizeof(int) * mirror->mi->argc );
+
+	for(k=1; k < mirror->mi->argc; k++) 
+		topn_stmt(stmt+k*cnt, mb, getArg(mirror->mi, k));
+	for(i=cnt-1; i>=0; i--) {
+		InstrPtr q, s = mb->stmt[stmt[cnt+i]];
+		InstrPtr tpn = copyInstruction(s);
+		int slc = isSlice(s);
+		InstrPtr pck = newInstruction(mb, ASSIGNsymbol);
+		/* get attribute of topn instruction */
+		int var = (s->argc == 3 || slc)?1:2; /* topn with 1 or 2 args*/
+		int arg = 0, tpe = getVarType(mb, getArg(s, var));
+		int zero = 0;
+
+		if (slc)
+			zero = pushWrdVar(mb, 0);
+		tpe = newBatType(TYPE_oid,tpe);
+		setModuleId(pck,matRef);
+		setFunctionId(pck,packRef);
+		getArg(pck,0) = newTmpVariable(mb, tpe);
+		/* topn(m.join(attr), n); */
+		for(k=1; k < mirror->mi->argc; k++) {
+			s = mb->stmt[stmt[k*cnt+i]];
+
+			/* no offset */
+			if (slc) 
+				getArg(s, 2) = zero; 
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, leftjoinRef);
+			getArg(q, 0) = newTmpVariable(mb, tpe);
+			q = pushArgument(mb, q, getArg(mirror->mi, k));
+			q = pushArgument(mb, q, getArg(s, var));
+			pushInstruction(mb, q);
+			pck = pushArgument(mb, pck, getArg(q,0));
+		}
+		pushInstruction(mb, pck);
+
+		/* re-do the topn */
+		if (!slc)
+			tpe = newBatType(TYPE_oid, TYPE_oid);
+		getArg(tpn, arg++) = newTmpVariable(mb, tpe);
+		if (cur_topn)
+			getArg(tpn, arg++) = cur_topn;
+		getArg(tpn, arg) = getArg(pck, 0);
+			
+		pushInstruction(mb, tpn);
+		cur_topn = getArg(tpn, 0);
+	}
+	/* all topn's done, mirror keep in mm */
+	mirror->mm = bat_mirror(mb, cur_topn);
+
+	/* now project */
+	return mat_pack_topn_project(mb, p, mat, mtop, mirror_mid);
+}
+
 static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
@@ -1088,6 +1256,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	stream_printf(GDKout,"MAT optimizer, mat_aggr\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
+
 	/* we pack the partitial result */
 	r = newInstruction(mb,ASSIGNsymbol);
 	setModuleId(r, matRef);
@@ -1133,6 +1302,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int g, int ext)
 	stream_printf(GDKout,"MAT optimizer, mat_group_aggr\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
+
 	if (mat[m].type == mat_grp)
 		mi = mat[m].mi1;
 
@@ -1182,6 +1352,7 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 	stream_printf(GDKout,"MAT optimizer, mat_group_new\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
+
 	setModuleId(r0,matRef);
 	setFunctionId(r0,newRef);
 	getArg(r0,0) = getArg(p,0);
@@ -1265,14 +1436,6 @@ mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 	stream_printf(GDKout,"MAT optimizer, mat_topn\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
-	/* second topn, ie lets pack */
-	if (mat[m].type == mat_tpn) {
-		MATpackAll2(mb, NULL, mat, m, &mtop);
-		q = copyInstruction(p);
-		pushInstruction(mb, q);
-		return mtop;
-	}
-
 	/* we pack the partitial result */
 	pck = newInstruction(mb,ASSIGNsymbol);
 	setModuleId(pck, matRef);
@@ -1285,6 +1448,38 @@ mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 		pushInstruction(mb,q);
 		
 		/* pack result */
+		propagateProp(mb, q, getArg(q,1));
+		pck = pushArgument(mb,pck,getArg(q,0));
+	}
+	return mat_add(mat, mtop, pck, NULL, isSlice(p)?mat_slc:mat_tpn);
+}
+
+/* could use mat_unop ?? */
+static int
+mat_topn2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
+{
+	int tpe = getArgType(mb,p,0), k;
+	InstrPtr pck = NULL, q = NULL;
+
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_topn\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+#endif
+	/* we pack the partitial result */
+	pck = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(pck, matRef);
+	setFunctionId(pck, packRef);
+	getArg(pck,0) = getArg(p,0);
+	assert (mat[m].mi->argc == mat[n].mi->argc);
+	for(k=1; k< mat[m].mi->argc; k++) {
+		q = copyInstruction(p);
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		getArg(q,1) = getArg(mat[m].mi,k);
+		getArg(q,2) = getArg(mat[n].mi,k);
+		pushInstruction(mb,q);
+		
+		/* pack result */
+		propagateProp(mb, q, getArg(q,1));
 		pck = pushArgument(mb,pck,getArg(q,0));
 	}
 	return mat_add(mat, mtop, pck, NULL, mat_tpn);
@@ -1316,7 +1511,7 @@ mat_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 		/* pack result */
 		pck = pushArgument(mb,pck,getArg(q,0));
 	}
-	return mat_add(mat, mtop, pck, NULL, mat_srt);
+	return mat_add(mat, mtop, pck, NULL, mat_rdr);
 }
 #endif
 
@@ -1330,6 +1525,7 @@ mat_union(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	stream_printf(GDKout,"MAT optimizer, mat_group_union\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
+
 	setModuleId(r,matRef);
 	setFunctionId(r,newRef);
 	getArg(r,0) = getArg(p,0);
@@ -1389,6 +1585,7 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	stream_printf(GDKout,"MAT optimizer, mat_group_union\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
+
 	getArg(r,0) = o;
 	/* get the mark base id */
 	if (p->argc == 3)
@@ -1453,6 +1650,7 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	stream_printf(GDKout,"MAT optimizer, mat_group_union\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
+
 	/* We don't use the mark base id */
 	
 	r = newInstruction(mb, ASSIGNsymbol);
@@ -1693,12 +1891,22 @@ UNION(mirror().join()).
                  */
 		if (match > 0 && match <= 2 && isMatJoinOp(p) && 
 		   (p->argc == 3 || (p->argc == 4 && getFunctionId(p) == thetajoinRef))) {
-		   	m = isMATalias(getArg(p,1), mat, mtop);
+			int om, tpe = mat_none;
+		
+		   	om = m = isMATalias(getArg(p,1), mat, mtop);
 		   	n = isMATalias(getArg(p,2), mat, mtop);
+			if (isProjection(p) && m >= 0 && mat_is_topn(mat[m].type))
+				tpe = mat_tpn;
 			if ((m = mat_join(mb, p, mat, mtop, m, n)) < 0)
 				mtop = pack_all_mats(mat, mtop, mb);
 			else
 				mtop = m;
+			/* after topn projection we should merge */
+			/* slice marks the end of a sequence of topn's */
+			if (tpe == mat_tpn && (getFunctionId(old[i+1]) == sliceRef || mat[om].type == mat_slc))
+				mtop = mat_pack_topn(mb, p, mat, mtop, om);
+			else if (tpe == mat_tpn && mat[om].mm) 
+				mtop = mat_pack_topn_project(mb, p, mat, mtop, om);
 			actions++;
 			continue;
 		}
@@ -1811,42 +2019,54 @@ And the min/max is as easy
 			actions++;
 			continue;
 		} 
-		if (match > 0 &&
-		   (m=isMATalias(getArg(p,1), mat, mtop)) >= 0 &&
-		   p->argc == 3 &&
-		   (getModuleId(p) == pqueueRef && 
-			(getFunctionId(p) == topn_minRef ||
-			 getFunctionId(p) == topn_maxRef ||
-			 getFunctionId(p) == utopn_minRef ||
-			 getFunctionId(p) == utopn_maxRef))) { 
+		if (match == 1 && p->argc == 3 && isTopn(p) &&
+		   (m=isMATalias(getArg(p,1), mat, mtop)) >= 0) { 
 			mtop = mat_topn(mb, p, mat, mtop, m);
 			actions++;
 			continue;
 		}
-/*
-		if (match > 0 &&
+		if (match == 2 && p->argc == 4 && isTopn(p) &&
 		   (m=isMATalias(getArg(p,1), mat, mtop)) >= 0 &&
-		   mat[m].type == type_topn &&
-		   p->argc == 2 &&
-		   (getModuleId(p) == algebraRef && 
-			(getFunctionId(p) == sortTailRef ||
-			 getFunctionId(p) == sortReverseTailRef))) { 
-			mtop = mat_sort(mb, p, mat, mtop, m);
+		   (n=isMATalias(getArg(p,2), mat, mtop)) >= 0) { 
+			mtop = mat_topn2(mb, p, mat, mtop, m, n);
 			actions++;
 			continue;
 		}
-*/
+		if (match == 1 && p->argc == 4 && isSlice(p) &&
+		   (m=isMATalias(getArg(p,1), mat, mtop)) >= 0) { 
+			/* TODO check for start from 0 */
+			mtop = mat_topn(mb, p, mat, mtop, m);
+			actions++;
+			continue;
+		}
+		/* Only handle sorting after a topn */
+		if (match == 1 && (
+		   (getModuleId(p) == groupRef) || (
+		   (m=isMATalias(getArg(p,1), mat, mtop)) >=0 &&
+		   mat[m].type == mat_tpn && 
+		//	mtop = mat_sort(mb, p, mat, mtop, m);
+		   p->argc == 2 && 
+		   (getModuleId(p) == algebraRef && 
+			(getFunctionId(p) == sortTailRef ||
+			 getFunctionId(p) == sortReverseTailRef))))) { 
+		   	m=isMATalias(getArg(p,1), mat, mtop);
+			if (m<0)
+		   		m=isMATalias(getArg(p,2), mat, mtop);
+			if (m>=0)
+				MATpackAll2(mb, NULL, mat, m, &mtop);
+			assert(m>=0);
+			/* after pack we can call sort/refine */
+			pushInstruction(mb, copyInstruction(p));
+			actions++;
+			continue;
+		}
 		if (match > 0 && (
 		    getModuleId(p) == groupRef || 
 		    getModuleId(p) == aggrRef || 
 		   (getModuleId(p) == algebraRef && 
 			(getFunctionId(p) == sortTailRef ||
 			 getFunctionId(p) == sortReverseTailRef)) ||
-		   (getModuleId(p) == pqueueRef && 
-			(getFunctionId(p) == topn_minRef ||
-			 getFunctionId(p) == topn_maxRef ||
-			 getFunctionId(p) == utopn_minRef ||
-			 getFunctionId(p) == utopn_maxRef)))) { 
+			 isTopn(p))) { 
 			error++;
 			goto fail;
 			/* For order (and order related topn) 
@@ -1945,7 +2165,7 @@ group them and check for them individually.
 			}
 
 			if ((r = mat_apply1(mb, p, mat, m, fm, 0)) != NULL)
-				mtop = mat_add(mat, mtop, r, NULL, mat_none);
+				mtop = mat_add(mat, mtop, r, NULL, useMatType(mat, m));
 
 			/* packed group should include the mirror statement */
 			if (pack_mirror) {
@@ -1983,11 +2203,13 @@ For the time being, they are no-ops.
 @c
 	(void) stk; 
 	chkTypes(cntxt->nspace,mb, TRUE);
+
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"Result of multi table optimizer\n");
 	(void) optimizerCheck(cntxt,mb,"merge test",1,0,0);
 	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
+
 	if ( mb->errors == 0) {
 		for(i=0; i<slimit; i++)
 			if (old[i]) {

@@ -281,7 +281,8 @@ bin_optimizer(mvc *c, stmt *s)
 		j = s->op1.stval;
 
 		/* push through the projection joins */
-		if (s->flag == 0 &&
+		if (!s->op4.stval &&
+		    s->flag == 0 &&
 		    isEqJoin(j) &&
 		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) {
 			stmt *l = stmt_dup(j->op1.stval);
@@ -301,7 +302,8 @@ bin_optimizer(mvc *c, stmt *s)
 		} else
 		/* incase there is no reduction on the left, push
 		   the topn into the right part */
-		if (s->flag != 0 /* topn, ie limit and orderby */ &&
+		if (!s->op4.stval && 
+		    s->flag != 0 /* topn, ie limit and orderby */ &&
 		    j->type == st_join && 
 		  ((isEqJoin(j) &&
 		    !is_reduced(j) &&
@@ -323,7 +325,7 @@ bin_optimizer(mvc *c, stmt *s)
 			return ns;
 		}
 		/* try to push the limit through the order */
-		if (j->type == st_order) {
+		if (!s->op4.stval && j->type == st_order) {
 			s = stmt_order(stmt_limit(stmt_dup(j->op1.stval),
 				stmt_dup(s->op2.stval),
 				stmt_dup(s->op3.stval),
@@ -336,7 +338,7 @@ bin_optimizer(mvc *c, stmt *s)
 			return ns;
 		}
 		/* try to push the limit through the reverse */
-		if (!s->flag && j->type == st_reverse) {
+		if (!s->op4.stval && !s->flag && j->type == st_reverse) {
 			s = stmt_reverse(stmt_limit(stmt_dup(j->op1.stval),
 				stmt_dup(s->op2.stval),
 				stmt_dup(s->op3.stval),
@@ -349,7 +351,7 @@ bin_optimizer(mvc *c, stmt *s)
 			return ns;
 		}
 		/* try to push the limit through the mark (only if there is no offset) */
-		if (!s->op2.stval->op1.aval->data.val.wval && j->type == st_mark) {
+		if (!s->op4.stval && !s->op2.stval->op1.aval->data.val.wval && j->type == st_mark) {
 			s = stmt_mark_tail(stmt_limit(stmt_dup(j->op1.stval),
 				stmt_dup(s->op2.stval),
 				stmt_dup(s->op3.stval),
