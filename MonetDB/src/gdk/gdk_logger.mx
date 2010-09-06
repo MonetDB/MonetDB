@@ -1008,13 +1008,13 @@ bm_subcommit(BAT *list, BAT *catalog, BAT *extra, int debug)
 	BUN p, q;
 	/* using alloca, since the old TMsubcommit interface also uses
 	   alloca */
-	bat *n = alloca(sizeof(bat) * (1 + BATcount(list) * 2 + (extra ? BATcount(extra) : 0)));
+	bat *n = alloca(sizeof(bat) * (2 + BATcount(list) * 2 + (extra ? BATcount(extra) : 0)));
 	int i = 0;
 	BAT *b = list;
 	BATiter bi = bat_iterator(b);
 	int res;
 
-	n[i++] = 0;
+	n[i++] = 0;		/* n[0] is not used */
 
 	/* first loop over deleted then over current and new */
 	for (p = b->batDeleted; p < b->batFirst; p++) {
