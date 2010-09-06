@@ -1659,7 +1659,7 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 	InstrPtr q;
 	int actions;
 
-	vars= (int *) alloca(mb->vtop * sizeof(int));
+	vars= (int *) GDKmalloc(mb->vtop * sizeof(int));
 	memset((char*) vars, 0, mb->vtop * sizeof(int));
 
 	/* build the alias table */
@@ -1714,6 +1714,8 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 	mnstr_printf(GDKout, "After reduction \n");
 	printFunction(GDKout,mb,0,0);
 #endif
+	if (vars)
+		GDKfree(vars);
 	mb->vtop = cnt;
 }
 void
