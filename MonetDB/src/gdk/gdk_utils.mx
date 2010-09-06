@@ -1451,7 +1451,7 @@ Their value is turned into a blanc space.
 gdk_export int GDKrecovery;
 
 @c
-int GDKtime_startsec, GDKrecovery = 0;
+int GDKrecovery = 0;
 
 @h
 gdk_export int GDKinit(opt *set, int setlen);
@@ -1592,24 +1592,6 @@ GDKinit(opt *set, int setlen)
 #endif
 	GDKlockHome();
 
-	/* init time */
-#ifdef HAVE_GETTIMEOFDAY
-	{
-		struct timeval tp;
-
-		gettimeofday(&tp, NULL);
-		GDKtime_startsec = tp.tv_sec;
-	}
-#else
-#ifdef HAVE_FTIME
-	{
-		struct timeb tb;
-
-		ftime(&tb);
-		GDKtime_startsec = (int) tb.time;
-	}
-#endif
-#endif
 	/* Mserver by default takes 80% of all memory as a default */
 	GDK_mem_maxsize_max = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	GDK_mmap_minsize = GDK_mem_maxsize = GDK_mem_maxsize_max;
@@ -2175,17 +2157,44 @@ Note that they may consume recognizable overhead.
 lng
 GDKusec(void)
 {
-#ifdef HAVE_GETTIMEOFDAY
-	struct timeval tp;
+	/* Return the time in milliseconds since an epoch.  The epoch
+	   is roughly the time this program started. */
+#ifdef HAVE_QUERYPERFORMANCECOUNTER
+	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */
+	LARGE_INTEGER ctr;
 
-	gettimeofday(&tp, NULL);
-	return ((lng) (tp.tv_sec - GDKtime_startsec)) * LL_CONSTANT(1000000) + (lng) tp.tv_usec;
+	if (start.QuadPart == 0 &&
+	    (!QueryPerformanceFrequency(&freq) ||
+	     !QueryPerformanceCounter(&start)))
+		start.QuadPart = -1;
+	if (start.QuadPart > 0) {
+		QueryPerformanceCounter(&ctr);
+		return (lng) (((ctr.QuadPart - start.QuadPart) * 1000000) / freq.QuadPart);
+	}
+#endif
+#ifdef HAVE_GETTIMEOFDAY
+	{
+		static struct timeval tpbase;	/* automatically initialized to 0 */
+		struct timeval tp;
+
+		if (tpbase.tv_sec == 0)
+			gettimeofday(&tpbase, NULL);
+		gettimeofday(&tp, NULL);
+		tp.tv_sec -= tpbase.tv_sec;
+		return (lng) tp.tv_sec * 1000000 + (lng) tp.tv_usec;
+	}
 #else
 #ifdef HAVE_FTIME
-	struct timeb tb;
+	{
+		static struct timeb tbbase;	/* automatically initialized to 0 */
+		struct timeb tb;
 
-	ftime(&tb);
-	return ((lng) (tb.time - GDKtime_startsec)) * LL_CONSTANT(1000000) + ((lng) tb.millitm) * LL_CONSTANT(1000);
+		if (tbbase.time == 0)
+			ftime(&tbbase);
+		ftime(&tb);
+		tb.time -= tbbase.time;
+		return (lng) tb.time * 1000000 + (lng) tb.millitm * 1000;
+	}
 #endif
 #endif
 }
@@ -2194,19 +2203,7 @@ GDKusec(void)
 int
 GDKms(void)
 {
-#ifdef HAVE_GETTIMEOFDAY
-	struct timeval tp;
-
-	gettimeofday(&tp, NULL);
-	return (tp.tv_sec - GDKtime_startsec) * 1000 + tp.tv_usec / 1000;
-#else
-#ifdef HAVE_FTIME
-	struct timeb tb;
-
-	ftime(&tb);
-	return (int) ((tb.time - GDKtime_startsec) * 1000 + tb.millitm);
-#endif
-#endif
+	return (int) (GDKusec() / 1000);
 }
 
 @}
