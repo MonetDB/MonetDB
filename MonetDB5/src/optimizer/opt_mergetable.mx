@@ -175,7 +175,7 @@ static mat_type
 useMatType( mat_t *mat, int n) 
 {
 	mat_type type = mat_none;
-	if (n >= 0)
+	if (n >= 0 && mat_is_topn(mat[n].type))
 		type = mat[n].type;
 	return type;
 }
