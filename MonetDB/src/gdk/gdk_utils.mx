@@ -39,7 +39,6 @@ gdk_export int GDKgetHome(void);
 gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
 
-gdk_export int gdk_alloc_map;
 gdk_export BAT *GDKenv;
 
 @c
@@ -47,9 +46,9 @@ gdk_export BAT *GDKenv;
 
 #include "gdk.h"
 
-int gdk_alloc_map = 0;
-char GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
-char GDKdbnameStr[PATHLENGTH] = { 0 };
+static int gdk_alloc_map = 0;
+static char GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
+static char GDKdbnameStr[PATHLENGTH] = { 0 };
 
 BAT *GDKenv = NULL;
 
