@@ -1000,10 +1000,10 @@ group_attrs(int *attrs, MalBlkPtr mb, int var, int ext, int ishist )
 			q = bat_mirror(mb, ext);
 			ext = getArg(q, 0);
 		}
-		/* ext.join(attr); */
+		/* ext.leftjoin(attr); */
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, algebraRef);
-		setFunctionId(q, joinRef);
+		setFunctionId(q, leftjoinRef);
 		getArg(q, 0) = newTmpVariable(mb, getVarType(mb,attr));
 		q = pushArgument(mb, q, ext);
 		q = pushArgument(mb, q, attr);
@@ -1209,7 +1209,7 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid)
 		setModuleId(pck,matRef);
 		setFunctionId(pck,packRef);
 		getArg(pck,0) = newTmpVariable(mb, tpe);
-		/* topn(m.join(attr), n); */
+		/* topn(m.leftjoin(attr), n); */
 		for(k=1; k < mirror->mi->argc; k++) {
 			s = mb->stmt[stmt[k*cnt+i]];
 
