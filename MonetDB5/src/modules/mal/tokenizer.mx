@@ -148,7 +148,7 @@ static char name[128];
 #endif
 
 #define COMP(h, d) ((h<<8)|(d&255))
-#define GET_d(x) ((x)&255)
+#define GET_d(x) ((sht)((x)&255))
 #define GET_h(x) ((x)>>8)
 
 str
