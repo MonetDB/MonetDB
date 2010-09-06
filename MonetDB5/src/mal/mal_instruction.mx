@@ -1659,8 +1659,7 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 	InstrPtr q;
 	int actions;
 
-	vars= (int *) GDKmalloc(mb->vtop * sizeof(int));
-	memset((char*) vars, 0, mb->vtop * sizeof(int));
+	vars= (int *) GDKzalloc(mb->vtop * sizeof(int));
 
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
