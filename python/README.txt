@@ -1,3 +1,7 @@
+.. This document is written in reStructuredText (see
+   http://docutils.sourceforge.net/ for more information).
+   Use ``rst2html.py`` to convert this file to HTML.
+
 ==========================================
 The MonetDB MAPI and SQL client python API
 ==========================================
@@ -5,16 +9,17 @@ The MonetDB MAPI and SQL client python API
 
 Introduction
 ============
-This is  the new native python client API. This API is cross-platform, and
-doesn't depend on any monetdb libraries. It has support for python 2.5, 2.6 and
-3.0 and is Python DBAPI 2.0 compatible. 
+
+This is the new native python client API.  This API is cross-platform,
+and doesn't depend on any monetdb libraries.  It has support for
+python 2.5, 2.6 and 3.0 and is Python DBAPI 2.0 compatible.
 
 
 Changes
 =======
 
-A number of things are different compared to the old version that uses the mapi
-library:
+A number of things are different compared to the old version that uses
+the mapi library:
 
 * No dependecies on MonetDB libraries anymore
 * MAPI protocol is now implemented in pure python
@@ -22,15 +27,16 @@ library:
 * The MAPI module is now named monetdb.mapi
 * The SQL module is now named monetdb.sql
 * Small changes in argument names for functions
-* Type conversion is working (for example a monetdb int becomes a python int)
+* Type conversion is working (for example a monetdb int becomes a
+  python int)
 * Dropped support for the dictionary based cursor
 
 
 Installation
 ============
 
-To install the MonetDB python API run the following command from the python
-source directory::
+To install the MonetDB python API run the following command from the
+python source directory::
 
  # python setup.py install
 
@@ -40,16 +46,17 @@ That's all, now you are ready to start using the API.
 Documentation
 =============
 
-The python code is well documented, so if you need to find documentation you
-should have a look at the source code. Below is an interactive example on how
-to use the monetdb SQL API which should get you started quite fast.
+The python code is well documented, so if you need to find
+documentation you should have a look at the source code.  Below is an
+interactive example on how to use the monetdb SQL API which should get
+you started quite fast.
 
 
 Examples
 ========
 
-There are some examples in the 'examples' folder, but here are is a line by
-line example of the SQL API::
+There are some examples in the 'examples' folder, but here are is a
+line by line example of the SQL API::
 
  > # import the SQL module
  > import monetdb.sql
@@ -97,8 +104,8 @@ line example of the SQL API::
   ('temporary', 'tinyint', 1, 1, None, None, None)]
 
  
-If you would like to communicate with the database at a lower level you can use
-the MAPI library::
+If you would like to communicate with the database at a lower level
+you can use the MAPI library::
 
  > from monetdb import mapi
  > server = mapi.Server()
