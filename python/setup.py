@@ -20,9 +20,19 @@ from distutils.core import setup
 setup(name='python-monetdb',
       version='1.0',
       description='Native MonetDB client Python API',
-      author='MonetDB developer team',
+      long_description='''\
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+
+This package contains the files needed to use MonetDB from a Python
+program.
+''',
+      author='MonetDB BV',
       author_email='info@monetdb.org',
-      url='http://www.monetdb.nl',
+      url='http://monetdb.cwi.nl/',
       packages=['monetdb', 'monetdb.sql'],
+      download_url='<will be filled in before a release>/python-monetdb-1.0.tar.gz',
      )
 
