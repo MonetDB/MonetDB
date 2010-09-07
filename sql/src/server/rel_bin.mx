@@ -1911,26 +1911,6 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 }
 
 static stmt *
-find_projection_join( stmt *s )
-{
-	while(s && (s->type == st_alias || s->type == st_order || s->type == st_limit)) 
-		s = s->op1.stval;	
-	if (s && s->type == st_join)
-		return s;
-	return NULL;
-}
-
-static stmt *
-find_pivot( stmt *s)
-{
-	stmt *j = find_projection_join(s);
-
-	if (j)
-		return j->op1.stval;
-	return NULL;
-}
-
-static stmt *
 rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *newl;
