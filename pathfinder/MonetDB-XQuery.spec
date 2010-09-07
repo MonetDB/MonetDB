@@ -50,10 +50,24 @@ accelerators, SQL- and XQuery- frontends.
 
 This package contains the XQuery frontend.
 
+%package ferry
+Summary: MonetDB XQuery Ferry library
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+
+%description ferry
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XQuery- frontends.
+
+This package contains the pf_ferry library.
+
 %package devel
 Summary: MonetDB XQuery development package
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
+Requires: %{name}-ferry = %{version}-%{release}
 Requires: MonetDB-devel >= 1.40
 #                          ^^^^
 # Maintained via vertoo. Please don't modify by hand!
@@ -131,11 +145,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/MonetDB/xrpc/export/*
 %{_datadir}/MonetDB/xrpc/demo/*
 
+%files ferry
+%{_libdir}/libpf_ferry.so.*
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/libembeddedxq.so
+%{_libdir}/lib*.so
 %{_bindir}/monetdb-xquery-config
+%{_includedir}/pf_ferry.h
 
 %changelog
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.38.5-20100824
