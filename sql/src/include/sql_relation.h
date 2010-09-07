@@ -61,6 +61,7 @@ typedef struct expression {
 
 #define EXP_DISTINCT	1
 #define NO_NIL		2
+#define TOPN_INCLUDING	4
 /* ASCENDING > 8 else we have problems with cmp types */
 #define ASCENDING	16
 #define ANTISEL	32
@@ -206,6 +207,14 @@ typedef enum operator_type {
 	e->flag |= EXP_DISTINCT
 #define set_nodistinct(e) \
 	e->flag &= (~EXP_DISTINCT)
+
+/* limit including or excluding bounds (relations only) */
+#define need_including(r) \
+	((r->flag&TOPN_INCLUDING))
+#define set_including(e) \
+	r->flag |= TOPN_INCLUDING
+#define set_excluding(e) \
+	r->flag &= (~TOPN_INCLUDING)
 
 /* used for expressions and relations */
 #define is_intern(e) \

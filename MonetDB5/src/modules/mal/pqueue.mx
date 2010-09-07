@@ -54,19 +54,19 @@ command dequeue_@2(h:bat[:oid,:@1])
 address PQdequeue_@1@2
 comment "Removes top element of the @2-pqueue and updates it";
 
-command topn_@2(t:bat[:oid,:@1], n:wrd) :bat[:oid,:@1] 
+command topn_@2(t:bat[:oid,:@1], n:wrd) :bat[:oid,:oid] 
 address PQtopn_@1@2
 comment "Return the topn elements of the bat t using a @2-pqueue";
 
-command topn_@2(t:bat[:void,:@1], n:wrd) :bat[:oid,:@1] 
+command topn_@2(t:bat[:void,:@1], n:wrd) :bat[:oid,:oid] 
 address PQtopn_@1@2
 comment "Return the topn elements of the bat t using a @2-pqueue";
 
-command utopn_@2(t:bat[:oid,:@1], n:wrd) :bat[:oid,:@1] 
+command utopn_@2(t:bat[:oid,:@1], n:wrd) :bat[:oid,:oid] 
 address PQutopn_@1@2
 comment "Return the unique topn elements of the bat t using a @2-pqueue";
 
-command utopn_@2(t:bat[:void,:@1], n:wrd) :bat[:oid,:@1] 
+command utopn_@2(t:bat[:void,:@1], n:wrd) :bat[:oid,:oid] 
 address PQutopn_@1@2
 comment "Return the unique topn elements of the bat t using a @2-pqueue";
 
@@ -83,20 +83,36 @@ command dequeue_@1(h:bat[:oid,:any_1])
 address PQdequeue_any@1
 comment "Removes top element of the @1-pqueue and updates it";
 
-command topn_@1(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:any_1] 
+command topn_@1(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
 address PQtopn_any@1
 comment "Return the topn elements of the bat t using a @1-pqueue";
 
-command topn_@1(t:bat[:void,:any_1], n:wrd) :bat[:oid,:any_1] 
+command topn_@1(t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
 address PQtopn_any@1
 comment "Return the topn elements of the bat t using a @1-pqueue";
 
-command utopn_@1(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:any_1] 
+command utopn_@1(t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
 address PQutopn_any@1
 comment "Return the unique topn elements of the bat t using a @1-pqueue";
 
-command utopn_@1(t:bat[:void,:any_1], n:wrd) :bat[:oid,:any_1] 
+command utopn_@1(t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
 address PQutopn_any@1
+comment "Return the unique topn elements of the bat t using a @1-pqueue";
+
+command topn_@1(a:bat[:oid,:oid], t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
+address PQtopn2_any@1
+comment "Return the topn elements of the bat t using a @1-pqueue";
+
+command topn_@1(a:bat[:oid,:oid], t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
+address PQtopn2_any@1
+comment "Return the topn elements of the bat t using a @1-pqueue";
+
+command utopn_@1(a:bat[:oid,:oid], t:bat[:oid,:any_1], n:wrd) :bat[:oid,:oid] 
+address PQutopn2_any@1
+comment "Return the unique topn elements of the bat t using a @1-pqueue";
+
+command utopn_@1(a:bat[:oid,:oid], t:bat[:void,:any_1], n:wrd) :bat[:oid,:oid] 
+address PQutopn2_any@1
 comment "Return the unique topn elements of the bat t using a @1-pqueue";
 
 @= mel_pqueue_any
@@ -308,8 +324,31 @@ int pqueue_topreplace_@1@2(BAT *h,
 
 /* TopN, based on @2-pqueue */
 
+static BAT *
+heap2bat_@1@2( BAT *h )
+{
+	BAT *r, *n = BATnew(TYPE_oid, TYPE_oid, BATcount(h));
+	BUN f = BUNfirst(h);
+	oid *o = (oid*)Hloc(h, f), oo = *o;
+	@1 *v = (@1*)Tloc(h, f), ov = *v;
+	
+	for(f = BUNfirst(h); f < BUNlast(h); f = BUNfirst(h)) {
+		o = (oid*)Hloc(h, f);
+		v = (@1*)Tloc(h, f);
+		if (ov != *v) {
+			oo = *o;
+			ov = *v;
+		}
+		BUNins(n, o, &oo, FALSE);
+  		pqueue_dequeue_@1@2(h);
+	}
+	r = BATrevert(n);
+	return r;
+}
+
 int pqueue_topn_void@1@2(BAT **H, BAT *t, wrd *N)
 {
+  BAT *h = NULL;
   BATiter ti = bat_iterator(t);
   @1 *v;
   BUN i, n = BATcount(t);
@@ -317,38 +356,43 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, wrd *N)
 
   if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
 	  n = (BUN) *N;
-  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+  if (do_pqueue_init(&h,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
   v = (@1*)BUNtail(ti,BUNfirst(t));
 
   for(i=0; i<n; i++, idx++, v++) {
-	pqueue_enqueue_@1@2(*H, &idx, v); 
+	pqueue_enqueue_@1@2(h, &idx, v); 
   }
   n = BATcount(t);
   for(; i<n; i++, idx++, v++) {
-	pqueue_topreplace_@1@2(*H, &idx, v); 
+	pqueue_topreplace_@1@2(h, &idx, v); 
   }
+  *H = heap2bat_@1@2(h);
+  BBPunfix(h->batCacheid);
   return GDK_SUCCEED;
 }
 
 int pqueue_topn_@1@2(BAT **H, BAT *t, wrd *N)
 {
+  BAT *h = NULL;
   BATiter ti = bat_iterator(t);
   BUN i, n = BATcount(t);
   BUN p = BUNfirst(t);
 
   if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
 	  n = (BUN) *N;
-  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+  if (do_pqueue_init(&h,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
 
   for(i=0; i<n; i++, p++) {
-	pqueue_enqueue_@1@2(*H, (oid*)BUNhloc(ti,p), (@1*)BUNtloc(ti,p)); 
+	pqueue_enqueue_@1@2(h, (oid*)BUNhloc(ti,p), (@1*)BUNtloc(ti,p)); 
   }
   n = BATcount(t);
   for(; i<n; i++, p++) {
-	pqueue_topreplace_@1@2(*H, (oid*)BUNhloc(ti,p), (@1*)BUNtloc(ti,p)); 
+	pqueue_topreplace_@1@2(h, (oid*)BUNhloc(ti,p), (@1*)BUNtloc(ti,p)); 
   }
+  *H = heap2bat_@1@2(h);
+  BBPunfix(h->batCacheid);
   return GDK_SUCCEED;
 }
 
@@ -397,10 +441,14 @@ int pqueue_utopn_void@1@2(BAT **H, BAT *t, wrd *N)
 		}
 	}
   }
-  b = BATjoin(BATmirror(duplicates), *H, BATcount(duplicates));
+  b = heap2bat_@1@2(*H);
+  BBPunfix((*H)->batCacheid); *H = b;
+  b = VIEWcombine(*H);
+  BBPunfix((*H)->batCacheid); *H = b;
+  b = BATleftjoin(*H, duplicates, BATcount(duplicates));
   BBPunfix((*H)->batCacheid);
   BBPunfix(duplicates->batCacheid);
-  *H = b;
+  *H = BATmirror(b);
   return GDK_SUCCEED;
 }
 
@@ -448,10 +496,14 @@ int pqueue_utopn_@1@2(BAT **H, BAT *t, wrd *N)
 		}
 	}
   }
-  b = BATjoin(BATmirror(duplicates), *H, BATcount(duplicates));
-  BBPunfix((*H)->batCacheid);
+  b = heap2bat_@1@2(*H);
+  BBPunfix((*H)->batCacheid); *H = b;
+  b = VIEWcombine(*H);
+  BBPunfix((*H)->batCacheid); *H = b;
+  b = BATleftjoin(*H, duplicates, BATcount(duplicates));
+  BBPunfix((*H)->batCacheid); 
   BBPunfix(duplicates->batCacheid);
-  *H = b;
+  *H = BATmirror(b);
   return GDK_SUCCEED;
 }
 @c
@@ -480,12 +532,13 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
   BUN hbase;
   BUN ins,cur;
   BUN p, posel;
-  unsigned short ts = Tsize(h);
+  unsigned short ts;
 
   hbase = BUNfirst(h);
 
   posel = BATcount(h); /*last position*/
   BUNins(h, (ptr)idx, (ptr)el, FALSE);
+  ts = Tsize(h);
   ins = hbase+posel;
   
   while(posel >0) {
@@ -592,8 +645,33 @@ int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
   return GDK_SUCCEED;
 }
 
+static BAT *
+heap2bat_any@1( BAT *h )
+{
+  	BATiter hi = bat_iterator(h);
+	BAT *r, *n = BATnew(TYPE_oid, TYPE_oid, BATcount(h));
+	BUN f = BUNfirst(h);
+	oid *o = (oid*)Hloc(h, f), oo = *o;
+	ptr v = (ptr)BUNtail(hi, f), ov = v;
+	int tpe = h->ttype;
+	
+	for(f = BUNfirst(h); f < BUNlast(h); f = BUNfirst(h)) {
+		o = (oid*)Hloc(h, f);
+		v = (ptr)BUNtail(hi, f);
+		if (atom_CMP(ov,v, tpe) != 0) {
+			oo = *o;
+			ov = v;
+		}
+		BUNins(n, o, &oo, FALSE);
+  		pqueue_dequeue_any@1(h);
+	}
+	r = BATrevert(n);
+	return r;
+}
+
 int pqueue_topn_voidany@1(BAT **H, BAT *t, wrd *N)
 {
+  BAT *h = NULL;
   BATiter ti = bat_iterator(t);
   BUN i, n = BATcount(t);
   oid idx = t->hseqbase;
@@ -602,21 +680,24 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, wrd *N)
 
   if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
    	n = (BUN) *N;
-  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+  if (do_pqueue_init(&h,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
 
   for(i=0; i<n; i++, idx++, p++) {
-	pqueue_enqueue_any@1(*H, &idx, BUNtail(ti,p), tpe); 
+	pqueue_enqueue_any@1(h, &idx, BUNtail(ti,p), tpe); 
   }
   n = BATcount(t);
   for(; i<n; i++, idx++, p++) {
-	pqueue_topreplace_any@1(*H, &idx, BUNtail(ti,p), tpe); 
+	pqueue_topreplace_any@1(h, &idx, BUNtail(ti,p), tpe); 
   }
+  *H = heap2bat_any@1(h);
+  BBPunfix(h->batCacheid);
   return GDK_SUCCEED;
 }
 
 int pqueue_topn_any@1(BAT **H, BAT *t, wrd *N)
 {
+  BAT *h = NULL;
   BATiter ti = bat_iterator(t);
   BUN i, n = BATcount(t);
   BUN p = BUNfirst(t);
@@ -624,16 +705,18 @@ int pqueue_topn_any@1(BAT **H, BAT *t, wrd *N)
 
   if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
    	n = (BUN) *N;
-  if (do_pqueue_init(H,t,n) == GDK_FAIL)
+  if (do_pqueue_init(&h,t,n) == GDK_FAIL)
 	  return GDK_FAIL;
 
   for(i=0; i<n; i++, p++) {
-	pqueue_enqueue_any@1(*H, (oid*)BUNhloc(ti,p), BUNtail(ti,p), tpe); 
+	pqueue_enqueue_any@1(h, (oid*)BUNhloc(ti,p), BUNtail(ti,p), tpe); 
   }
   n = BATcount(t);
   for(; i<n; i++, p++) {
-	pqueue_topreplace_any@1(*H, (oid*)BUNhloc(ti,p), BUNtail(ti,p), tpe); 
+	pqueue_topreplace_any@1(h, (oid*)BUNhloc(ti,p), BUNtail(ti,p), tpe); 
   }
+  *H = heap2bat_any@1(h);
+  BBPunfix(h->batCacheid);
   return GDK_SUCCEED;
 }
 
@@ -684,10 +767,14 @@ int pqueue_utopn_voidany@1(BAT **H, BAT *t, wrd *N)
 		}
 	}
   }
-  b = BATjoin(BATmirror(duplicates), *H, BATcount(duplicates));
-  BBPunfix((*H)->batCacheid);
+  b = heap2bat_any@1(*H);
+  BBPunfix((*H)->batCacheid); *H = b;
+  b = VIEWcombine(*H);
+  BBPunfix((*H)->batCacheid); *H = b;
+  b = BATleftjoin(*H, duplicates, BATcount(duplicates));
+  BBPunfix((*H)->batCacheid); 
   BBPunfix(duplicates->batCacheid);
-  *H = b;
+  *H = BATmirror(b);
   return GDK_SUCCEED;
 }
 
@@ -739,10 +826,14 @@ int pqueue_utopn_any@1(BAT **H, BAT *t, wrd *N)
 		}
 	}
   }
-  b = BATjoin(BATmirror(duplicates), *H, BATcount(duplicates));
-  BBPunfix((*H)->batCacheid);
+  b = heap2bat_any@1(*H);
+  BBPunfix((*H)->batCacheid); *H = b;
+  b = VIEWcombine(*H);
+  BBPunfix((*H)->batCacheid); *H = b;
+  b = BATleftjoin(*H, duplicates, BATcount(duplicates));
+  BBPunfix((*H)->batCacheid); 
   BBPunfix(duplicates->batCacheid);
-  *H = b;
+  *H = BATmirror(b);
   return GDK_SUCCEED;
 }
 
@@ -750,101 +841,6 @@ int pqueue_utopn_any@1(BAT **H, BAT *t, wrd *N)
 @:pqueueimpl_any(min,<)@
 @:pqueueimpl_any(max,>)@
 
-@-
-old stuff
-
-proc pqueue_peek( BAT[oid,any] h ) : any {
-	return h.fetch(0);
-}
-
-proc pqueue_topn( BAT[oid,any] t, wrd n, int direction ) : BAT[oid,any] {
-	if (direction > 0) {
-		return pqueue_topn_max(t,n);
-	} else {
-		return pqueue_topn_min(t,n);
-	}
-}
-
-PROC test_pqueue_str() : void {
-	#
-	# Simple example of using the heap
-	# A min-heap is used to find the k-largest elements 
-	# in an (oid,str) BAT with m random values.
-	#
-
-	module("alarm");
-
-	# table t has m elements
-	var m := 100;
-	var t := new(void,str,m);
-	t.seqbase(oid(1));
-
-	# We want the k largest elements of t
-	var k := 10; 
-
-	var h := pqueue_init(t, k); 
-
-	srand(time());
-
-	var i := 1;
-	while (i<=k) {
-		var val := str(rand()%1000);
-		t.insert(oid(i), val);
-		pqueue_enqueue_min(h, oid(i), val);
-		i :+= 1;
-	}
-	while (i<=m) {
-		var val := str(rand()%1000);
-		t.insert(oid(i), val);
-		pqueue_topreplace_min(h, oid(i), val);
-		i :+= 1;
-	}
-
-	var s := sort_rev(t.reverse()).reverse().slice(0,k); # topn the old way
-	var tpn := pqueue_topn(t,k,0);
-	print([=](s,h));
-	print([=](s,tpn));
-}
-PROC test_pqueue() : void {
-	#
-	# Simple example of using the heap
-	# A min-heap is used to find the k-largest elements 
-	# in an (oid,int) BAT with m random values.
-	#
-
-	module("alarm");
-
-	# table t has m elements
-	var m := 100;
-	var t := new(void,int,m);
-	t.seqbase(oid(1));
-
-	# We want the k largest elements of t
-	var k := 10; 
-
-	var h := pqueue_init(t, k); 
-
-	srand(time());
-
-	var i := 1;
-	while (i<=k) {
-		var val := int(rand()%1000);
-		t.insert(oid(i), val);
-		pqueue_enqueue_min(h, oid(i), val);
-		i :+= 1;
-	}
-	while (i<=m) {
-		var val := int(rand()%1000);
-		t.insert(oid(i), val);
-		pqueue_topreplace_min(h, oid(i), val);
-		i :+= 1;
-	}
-
-	var s := sort_rev(t.reverse()).reverse().slice(0,k); # topn the old way
-	var tpn := pqueue_topn(t,k,0);
-	print([=](s,h));
-	print([=](s,tpn));
-}
 @-
 The M5 wrapper code
 @c
@@ -936,6 +932,109 @@ PQutopn_@1@2(int *ret, int *bid, wrd *N){
 	}
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "pqueue.topN", MAL_MALLOC_FAIL);
+}
+pqueue_export str PQtopn2_@1@2(int *ret, int *aid, int *bid, wrd *N);
+str
+PQtopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
+{
+	BUN n, i,j;
+	BAT *a, *b,*bn = NULL;
+	if ((a=BATdescriptor(*aid)) == NULL || (b=BATdescriptor(*bid)) == NULL)
+		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);
+
+	n = BATcount(a);
+  	if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
+		  n = (BUN) *N;
+	if (n >= BATcount(a)) {
+		*ret= a->batCacheid;
+		BBPkeepref(*ret);
+		BBPreleaseref(b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	bn = BATnew(TYPE_oid, TYPE_oid, n);
+	for(i=0; i<n; ) {
+		oid *v = (oid*)Tloc(a,i), ov = *v; 
+		for( j=i; j<n; j++) {
+			v = (oid*)Tloc(a,j);
+			if (*v != ov) 
+				break;
+		}
+		if (j == i+1) {
+			BUNins(bn, Hloc(a,i), &ov, FALSE);
+		} else {
+			BAT *s = BATslice(b, i, j), *sbn = NULL;
+			wrd nn = n-j;
+
+			if ((b->htype == TYPE_void ? pqueue_topn_void@1@2(&sbn,s,&nn) : pqueue_topn_@1@2(&sbn,s,&nn)) == GDK_SUCCEED && sbn) {
+				BATins(bn, sbn, FALSE);
+				BBPunfix(sbn->batCacheid);
+				BBPunfix(s->batCacheid);
+			}
+		}
+		i = j;
+	}
+	if (bn) {
+		*ret= bn->batCacheid;
+		BBPkeepref(*ret);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(a->batCacheid);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(a->batCacheid);
+	throw(MAL, "pqueue.topN", MAL_MALLOC_FAIL);
+}
+
+pqueue_export str PQutopn2_@1@2(int *ret, int *aid, int *bid, wrd *N);
+str
+PQutopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
+{
+	BUN n, i,j;
+	BAT *a, *b,*bn = NULL;
+
+	if ((a=BATdescriptor(*aid)) == NULL || (b=BATdescriptor(*bid)) == NULL)
+		throw(MAL, "pqueue.topN", RUNTIME_OBJECT_MISSING);
+	n = BATcount(a);
+  	if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
+		  n = (BUN) *N;
+	if (n >= BATcount(a)) {
+		*ret= a->batCacheid;
+		BBPkeepref(*ret);
+		BBPreleaseref(b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	bn = BATnew(TYPE_oid, TYPE_oid, n);
+	for(i=0; i<n; ) {
+		oid *v = (oid*)Tloc(a,i), ov = *v; 
+		for( j=i; j<n; j++) {
+			v = (oid*)Tloc(a,j);
+			if (*v != ov) 
+				break;
+		}
+		if (j == i+1) {
+			BUNins(bn, Hloc(a,i), &ov, FALSE);
+		} else {
+			BAT *s = BATslice(b, i, j), *sbn = NULL;
+			wrd nn = n-j;
+
+			if ((b->htype == TYPE_void ? pqueue_utopn_void@1@2(&sbn,s,&nn) : pqueue_utopn_@1@2(&sbn,s,&nn)) == GDK_SUCCEED && sbn) {
+				BATins(bn, sbn, FALSE);
+				BBPunfix(sbn->batCacheid);
+				BBPunfix(s->batCacheid);
+			}
+		}
+		i = j;
+	}
+	if (bn) {
+		*ret= bn->batCacheid;
+		BBPkeepref(*ret);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(a->batCacheid);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(a->batCacheid);
+	throw(MAL, "pqueue.utopN", MAL_MALLOC_FAIL);
 }
 @= PQminmax1
  @:PQimpl1(@1,min)@
