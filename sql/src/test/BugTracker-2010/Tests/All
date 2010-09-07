@@ -52,3 +52,5 @@ crash_in_dce.Bug-2651
 in_query_missing_columns.Bug-2652
 sum_on_date_crash.Bug-2643
 crash_on_in_2.Bug-2604
+count-and-not.Bug-2663
+multiple-common-table-expressions.Bug-2664
