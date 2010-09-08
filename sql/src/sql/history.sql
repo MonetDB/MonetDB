@@ -31,6 +31,10 @@ create table queryHistory(
 	parse bigint,		-- time in usec
 	optimize bigint 	-- time in usec
 );
+update _tables
+	set system = true
+	where name = 'queryhistory'
+		and schema_id = (select id from schemas where name = 'sys');
 
 -- Each query call is stored in the table callHistory using 'keepCall'.
 -- At regular intervals the query history table should be cleaned.
@@ -57,10 +61,18 @@ create table callHistory(
 	inblock bigint,		-- number of physical blocks read
 	oublock bigint		-- number of physical blocks written
 );
+update _tables
+	set system = true
+	where name = 'callhistory'
+		and schema_id = (select id from schemas where name = 'sys');
 
 create view queryLog as
 select qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryHistory qd, callHistory ql
 where qd.id = ql.id;
+update _tables
+	set system = true
+	where name = 'querylog'
+		and schema_id = (select id from schemas where name = 'sys');
 
 -- the signature is used in the kernel, don't change it
 create procedure keepQuery(
