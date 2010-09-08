@@ -22,13 +22,13 @@
 prefix = $(MAKEDIR)\NT
 
 all:
-	cd autogen && python setup.py build
+	cd autogen && setup.py build
 	cd Mx && $(MAKE) /nologo /f Makefile.msc
 	cd mel && $(MAKE) /nologo /f Makefile.msc
 	cd burg && $(MAKE) /nologo /f Makefile.msc
 
 install:
-	cd autogen && python setup.py install "--prefix=$(prefix)"
+	cd autogen && setup.py install "--prefix=$(prefix)"
 	cd Mx && $(MAKE) /nologo /f Makefile.msc "prefix=$(prefix)" install
 	cd mel && $(MAKE) /nologo /f Makefile.msc "prefix=$(prefix)" install
 	cd burg && $(MAKE) /nologo /f Makefile.msc "prefix=$(prefix)" install
