@@ -196,7 +196,10 @@ downloaded from http://www.python.org/.  Just download and install the
 Windows binary distribution.
 
 On Windows64 you can use either the 32-bit or 64-bit version of
-Python.
+Python.  However, if you're going to create an installer for the
+python component using ``python setup.py bdist_msi`` or ``python
+setup.py bdist_wininst``, you should use the version of Python for
+which you're creating the installer.
 
 __ http://www.python.org/
 
