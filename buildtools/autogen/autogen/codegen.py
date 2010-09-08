@@ -197,7 +197,7 @@ def readfilepart(f,ext):
     buf = src.read()
     src.close()
     buf2 = ""
-    if code_extract.has_key(fext):
+    if ext != 'mx' and code_extract.has_key(fext):
         epat = end_code_extract[fext]
         for pat,newext in code_extract[fext]:
             if newext == "." + ext:
