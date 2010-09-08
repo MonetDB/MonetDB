@@ -1245,6 +1245,141 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid)
 	return mat_pack_topn_project(mb, p, mat, mtop, mirror_mid);
 }
 
+static int
+sort_find_mirror(MalBlkPtr mb, int var, int topstmt)
+{
+	int s = resultof(mb, var, topstmt);
+	InstrPtr p = mb->stmt[s];
+
+	if (s && p->argc == 2 && 
+	    getModuleId(p) == batRef && getFunctionId(p) == mirrorRef)
+		return getArg(p, 1);
+	return 0;
+}
+
+static int
+sort_chain_list_length(MalBlkPtr mb, int var)
+{
+	int cnt = 0;
+
+	var = sort_find_mirror(mb, var, mb->stop);
+	while(var) {
+		int s = resultof(mb, var, mb->stop);
+		InstrPtr p = mb->stmt[s];
+
+		var = 0;
+		if (s == 0)
+			return 0;
+		if ((p->argc == 3 || p->argc == 4) && isOrderby(p)) {
+			var = getArg(p, 1);
+			cnt++;
+		}
+	}
+	return cnt;
+}
+
+static void
+sort_stmt(int *stmt, MalBlkPtr mb, int var)
+{
+	int cnt = 0;
+
+	var = sort_find_mirror(mb, var, mb->stop);
+	while(var) {
+		int s = resultof(mb, var, mb->stop);
+		InstrPtr p = mb->stmt[s];
+
+		assert(s!=0);
+		var = 0;
+		if ((p->argc == 3 || p->argc == 4) && isOrderby(p)) {
+			var = getArg(p, 1);
+			stmt[cnt++] = s;
+		}
+	}
+}
+
+static int
+mat_pack_sort_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int merged_orderby_mid)
+{
+	int k, a = mtop - 1;
+	mat_t *merged_orderby = mat+merged_orderby_mid;
+	InstrPtr pck = copyInstruction(p);
+
+	/* 2 cases, 
+		1) first time we need to merge
+		2) second simply use result of first an repeat projection
+	*/
+	assert(merged_orderby->mm);
+
+	/* replace leftjoin by mat.project */
+	pck = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(pck,matRef);
+	setFunctionId(pck,"project");
+	getArg(pck,0) = newTmpVariable(mb, getVarType(mb, getArg(mat[a].mi,1)));
+
+	pck = pushArgument(mb, pck, getArg(merged_orderby->mm,1));
+	for(k=1; k<mat[a].mi->argc; k++) 
+		pck = pushArgument(mb, pck, getArg(mat[a].mi,k) );
+	pushInstruction(mb, pck);
+	MATshift(mat, mtop-1, &mtop);
+	return mtop;
+}
+
+static int
+mat_pack_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid)
+{
+	/* find chain of orderby's */
+	mat_t *mirror = mat+mirror_mid;
+	int k, i;
+	int cnt = sort_chain_list_length(mb, getArg(mirror->mi,1));
+	int *stmt = (int*) alloca( cnt * sizeof(int) * mirror->mi->argc );
+	InstrPtr cur_sort = NULL;
+
+	for(k=1; k < mirror->mi->argc; k++) 
+		sort_stmt(stmt+k*cnt, mb, getArg(mirror->mi, k));
+	for(i=cnt-1; i>=0; i--) {
+		InstrPtr q, s = mb->stmt[stmt[cnt+i]];
+		InstrPtr pck = newInstruction(mb, ASSIGNsymbol);
+		/* get attribute of sort instruction */
+		int var = (s->argc == 3)?1:2; /* sort with 1 or 2 args*/
+		int tpe = getVarType(mb, getArg(s, var));
+
+		/* double outputs (sorted values and map) */
+		tpe = newBatType(TYPE_oid,tpe);
+
+		/* mat sort/sortReverse and refine/refineReverse */
+		setModuleId(pck,matRef);
+		setFunctionId(pck,getFunctionId(s)); 
+		getArg(pck,0) = newTmpVariable(mb, tpe);
+		getArg(pck,1) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_bte));
+		if (cur_sort) { 
+			pck = pushArgument(mb, pck, getArg(cur_sort,0));
+			pck = pushArgument(mb, pck, getArg(cur_sort,1));
+		}
+
+		/* merge sort(m.leftjoin(attr)); */
+		for(k=1; k < mirror->mi->argc; k++) {
+			s = mb->stmt[stmt[k*cnt+i]];
+
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, leftjoinRef);
+			getArg(q, 0) = newTmpVariable(mb, tpe);
+			q = pushArgument(mb, q, getArg(mirror->mi, k));
+			q = pushArgument(mb, q, getArg(s, var));
+			pushInstruction(mb, q);
+
+			pck = pushArgument(mb, pck, getArg(q,0));
+		}
+		pushInstruction(mb, pck);
+		cur_sort = pck;
+	}
+	/* all sort's done, keep 'which bat order' in mm */
+	mirror->mm = bat_mirror(mb, getArg(cur_sort,1));
+
+	/* now project */
+	return mat_pack_sort_project(mb, p, mat, mtop, mirror_mid);
+}
+
 static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
@@ -1425,7 +1560,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int ext, int gr
 	return mtop;
 }
 
-/* could use mat_unop ?? */
+/* TODO cleanup mat_topn and mat_sort using mat_unop */
 static int
 mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 {
@@ -1450,7 +1585,6 @@ mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 	return mat_add(mat, mtop, pck, NULL, isSlice(p)?mat_slc:mat_tpn);
 }
 
-/* could use mat_unop ?? */
 static int
 mat_topn2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 {
@@ -1477,7 +1611,6 @@ mat_topn2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	return mat_add(mat, mtop, pck, NULL, mat_tpn);
 }
 
-#if 0
 static int
 mat_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 {
@@ -1496,11 +1629,37 @@ mat_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
 		pushInstruction(mb,q);
 		
 		/* pack result */
+		propagateProp(mb, q, getArg(q,1));
 		pck = pushArgument(mb,pck,getArg(q,0));
 	}
 	return mat_add(mat, mtop, pck, NULL, mat_rdr);
 }
-#endif
+
+static int
+mat_sort2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
+{
+	int tpe = getArgType(mb,p,0), k;
+	InstrPtr pck = NULL, q = NULL;
+
+	/* we pack the partitial result */
+	pck = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(pck, matRef);
+	setFunctionId(pck, packRef);
+	getArg(pck,0) = getArg(p,0);
+	assert (mat[m].mi->argc == mat[n].mi->argc);
+	for(k=1; k< mat[m].mi->argc; k++) {
+		q = copyInstruction(p);
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		getArg(q,1) = getArg(mat[m].mi,k);
+		getArg(q,2) = getArg(mat[n].mi,k);
+		pushInstruction(mb,q);
+		
+		/* pack result */
+		propagateProp(mb, q, getArg(q,1));
+		pck = pushArgument(mb,pck,getArg(q,0));
+	}
+	return mat_add(mat, mtop, pck, NULL, mat_rdr);
+}
 
 static int
 mat_union(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
@@ -1889,6 +2048,12 @@ UNION(mirror().join()).
 				mtop = mat_pack_topn(mb, p, mat, mtop, om);
 			else if (tpe == mat_tpn && mat[om].mm) 
 				mtop = mat_pack_topn_project(mb, p, mat, mtop, om);
+
+			/* after sort projection we should mat.merge */
+			if (tpe == mat_rdr && !mat[om].mm)
+				mtop = mat_pack_sort(mb, p, mat, mtop, om);
+			else if (tpe == mat_tpn && mat[om].mm) 
+				mtop = mat_pack_sort_project(mb, p, mat, mtop, om);
 			actions++;
 			continue;
 		}
@@ -2016,45 +2181,23 @@ And the min/max is as easy
 		}
 		if (match == 1 && p->argc == 4 && isSlice(p) &&
 		   (m=isMATalias(getArg(p,1), mat, mtop)) >= 0) { 
-			/* TODO check for start from 0 */
 			mtop = mat_topn(mb, p, mat, mtop, m);
 			actions++;
 			continue;
 		}
 		/* Only handle sorting after a topn */
-		if (match == 1 && (
-		   (getModuleId(p) == groupRef) || (
-		   (m=isMATalias(getArg(p,1), mat, mtop)) >=0 &&
-		   mat[m].type == mat_tpn && 
-		//	mtop = mat_sort(mb, p, mat, mtop, m);
-		   p->argc == 2 && 
-		   (getModuleId(p) == algebraRef && 
-			(getFunctionId(p) == sortTailRef ||
-			 getFunctionId(p) == sortReverseTailRef))))) { 
-		   	m=isMATalias(getArg(p,1), mat, mtop);
-			if (m<0)
-		   		m=isMATalias(getArg(p,2), mat, mtop);
-			if (m>=0)
-				MATpackAll2(mb, NULL, mat, m, &mtop);
-			assert(m>=0);
-			/* after pack we can call sort/refine */
-			pushInstruction(mb, copyInstruction(p));
+		if (match == 1 && p->argc == 1 && isOrderby(p) &&
+		   (m=isMATalias(getArg(p,1), mat, mtop)) >=0) {
+			mtop = mat_sort(mb, p, mat, mtop, m);
 			actions++;
 			continue;
 		}
-		if (match > 0 && (
-		    getModuleId(p) == groupRef || 
-		    getModuleId(p) == aggrRef || 
-		   (getModuleId(p) == algebraRef && 
-			(getFunctionId(p) == sortTailRef ||
-			 getFunctionId(p) == sortReverseTailRef)) ||
-			 isTopn(p))) { 
-			error++;
-			goto fail;
-			/* For order (and order related topn) 
-		           we need a similar 2 phase model as used for group
-			   by 
-			 */
+		if (match == 2 && p->argc == 2 && isOrderby(p) &&
+		   (m=isMATalias(getArg(p,1), mat, mtop)) >= 0 &&
+		   (n=isMATalias(getArg(p,2), mat, mtop)) >= 0) { 
+			mtop = mat_sort2(mb, p, mat, mtop, m, n);
+			actions++;
+			continue;
 		}
 @-
 The slice operation can also be piggy backed onto the mat.pack using it
@@ -2065,6 +2208,7 @@ would be feasible as well, provided the start of the slice is a constant 0.
 				getFunctionId(p) == sliceRef &&
 				(m = isMATalias(getArg(p, 1), mat, mtop)) >= 0)
 		{
+			assert(0);
 			/* inject new mat.pack() operation */
 			q = MATpackAll(mb, NULL, mat, m, &mtop);
 			/* rename mat.pack() to mat.slice() */
