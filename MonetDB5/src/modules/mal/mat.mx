@@ -69,38 +69,6 @@ pattern slice(first:lng, last:lng, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpackSlice
 comment "Materialize a sliced MAT into a BAT";
 
-pattern project(map:bat[:void,:bte], b:bat[:any_1,:any_2]...):bat[:void,:any_2]
-address MATpack
-comment "project using the map bat (contains which bat to use in scan order)";
-
-pattern sort(b:bat[:any_1,:any_2]...)
-	(sorted:bat[:any_1,:any_2], map:bat[:void,:bte]) 
-address MATpack
-comment "Returns a BAT copy sorted on the head column.";
-
-pattern sortReverse(b:bat[:any_1,:any_2]...)
-	(sorted:bat[:any_1,:any_2], map:bat[:void,:bte]) 
-address MATpack
-comment "Returns a BAT copy sorted on the head column.";
-
-pattern refine(sorted:bat[:any_1,:any_3], map:bat[:any_1,:bte], a:bat[:any_1,:any_2]...)
-	(rsorted:bat[:any_1,:any_2], rmap:bat[:void,:bte]) 
-address MATpack
-comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
-	values of a second mat 'a' (where the heads of a and b match 1-1).
-	The effect of this is similar to (hash-based) GRPderive, with the 
-	distinction that the group ids respect the ordering of the group 
-	values.";
-
-pattern refine_reverse(sorted:bat[:any_1,:any_3], map:bat[:any_1,:bte], a:bat[:any_1,:any_2]...)
-	(rsorted:bat[:any_1,:any_2], rmap:bat[:void,:bte]) 
-address MATpack
-comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
-	values of a second mat 'a' (where the heads of a and b match 1-1).
-	The effect of this is similar to (hash-based) GRPderive, with the 
-	distinction that the group ids respect the ordering of the group 
-	values.";
-
 pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;
 
