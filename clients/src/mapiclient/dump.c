@@ -113,7 +113,8 @@ has_systemfunctions(Mapi mid)
 
 	if ((hdl = mapi_query(mid,
 			      "SELECT \"t\".\"id\" "
-			      "FROM \"_tables\" \"t\", \"schemas\" \"s\" "
+			      "FROM \"sys\".\"_tables\" \"t\","
+			           "\"sys\".\"schemas\" \"s\" "
 			      "WHERE \"t\".\"name\" = 'systemfunctions' AND "
 			            "\"t\".\"schema_id\" = \"s\".\"id\" AND "
 			            "\"s\".\"name\" = 'sys'")) == NULL ||
