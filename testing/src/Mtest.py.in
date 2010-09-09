@@ -3008,7 +3008,7 @@ def main(argv) :
         dft['MILCLIENT']      = "'mclient -lmil -ftest'"
         dft['MALCLIENT']      = "'mclient -lmal -ftest'"
         dft['SQLCLIENT']      = "'mclient -lsql -ftest'"
-        dft['SQLDUMP']        = "'msqldump'"
+        dft['SQLDUMP']        = "'msqldump -q'"
         dft['XQUERYCLIENT']   = "'mclient -lxquery -fxml'"
 
     #par = {}

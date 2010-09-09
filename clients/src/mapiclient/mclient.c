@@ -2654,7 +2654,6 @@ main(int argc, char **argv)
 
 	/* give the user a welcome message with some general info */
 	if ((interactive || (!has_fileargs && command == NULL)) && interactive_stdin) {
-		MapiHdl hdl;
 		char *lang;
 
 		switch (mode) {
@@ -2674,32 +2673,9 @@ main(int argc, char **argv)
 			      "interactive terminal (%s)\n",
 			      lang, MONETDB_RELEASE);
 
-		if (mode == SQL &&
-		    (hdl = mapi_query(mid,
-				      "SELECT \"name\", \"value\" "
-				      "FROM sys.env() AS env "
-				      "WHERE \"name\" IN ('gdk_dbname', 'monet_version')")) != NULL &&
-		    mapi_error(mid) == MOK) {
-			char *dbname = NULL, m5ver[24];
-			char *name, *val;
-			m5ver[0] = '\0';
-			while (fetch_row(hdl) == 2) {
-				name = mapi_fetch_field(hdl, 0);
-				val = mapi_fetch_field(hdl, 1);
-				if (name != NULL && val != NULL) {
-					if (strcmp(name, "gdk_dbname") == 0) {
-						dbname = strdup(val);
-					} else if (strcmp(name, "monet_version") == 0) {
-						snprintf(m5ver, sizeof(m5ver), "%s", val);
-					}
-				}
-			}
-			mapi_close_handle(hdl);
-			if (dbname != NULL && *dbname != '\0' && m5ver[0] != '\0')
-				mnstr_printf(toConsole, "Database: MonetDB v%s, '%s'\n", m5ver, dbname);
-			if (dbname != NULL)
-				free(dbname);
-		}
+		if (mode == SQL)
+			dump_version(mid, toConsole, "Database:");
+
 		mnstr_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)
 			mnstr_printf(toConsole, "auto commit mode: on\n");

@@ -42,7 +42,7 @@ _mil_client = splitcommand(os.getenv('MIL_CLIENT', 'mclient -lmil'))
 _mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal'))
 _sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql'))
 _xquery_client = splitcommand(os.getenv('XQUERY_CLIENT', 'mclient -lxquery -fxml'))
-_sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump'))
+_sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump -q'))
 _server = splitcommand(os.getenv('MSERVER', ''))
 
 _dotmonetdbfile = []

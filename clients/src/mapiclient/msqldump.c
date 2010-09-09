@@ -232,20 +232,25 @@ main(int argc, char **argv)
 	mapi_cache_limit(mid, 10000);
 
 	out = file_wastream(stdout, "stdout");
-	if ( out ) {
-		char buf[27]="unknown date";
+	if (!quiet) {
+		char buf[27];
 		time_t t = time(0);
+		char *p;
+
 #ifdef HAVE_CTIME_R3
-        ctime_r(&t, buf, sizeof(buf));
+		ctime_r(&t, buf, sizeof(buf));
 #else
 #ifdef HAVE_CTIME_R
-        ctime_r(&t, buf);
+		ctime_r(&t, buf);
 #else
-        strncpy(buf, ctime(&t), sizeof(buf));
+		strncpy(buf, ctime(&t), sizeof(buf));
 #endif
 #endif
-
-		mnstr_printf(out,"#msqldump %s %s\n", (functions? "functions":"tables"), buf);
+		if ((p = strrchr(buf, '\n')) != NULL)
+			*p = 0;
+		mnstr_printf(out,"-- msqldump %s %s\n",
+			     functions ? "functions" : "tables", buf);
+		dump_version(mid, out, "--");
 	}
 	if (functions)
 		c = dump_functions(mid, out, NULL);
