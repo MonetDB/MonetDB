@@ -1,25 +1,25 @@
 start transaction;
-create table test (val int );
-insert into test values (10);
-insert into test values (20);
-insert into test values (30);
-insert into test values (10);
-insert into test values (20);
-insert into test values (NULL);
-select count(*) from test;
+create table counttest (val int );
+insert into counttest values (10);
+insert into counttest values (20);
+insert into counttest values (30);
+insert into counttest values (10);
+insert into counttest values (20);
+insert into counttest values (NULL);
+select count(*) from counttest;
 -- 6
-select count(val) from test;
+select count(val) from counttest;
 -- 5
-select count(*) as count_x from test group by val order by count_x;
+select count(*) as count_x from counttest group by val order by count_x;
 --        1 
 --        1 
 --        2 
 --        2 
-select count(val) as count_val from test group by val order by count_val;
+select count(val) as count_val from counttest group by val order by count_val;
 --        0 
 --        1 
 --        2 
 --        2 
-drop table test;
+drop table counttest;
 
 commit;

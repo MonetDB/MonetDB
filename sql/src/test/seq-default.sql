@@ -1,19 +1,19 @@
 START TRANSACTION;
 
 create sequence test_seq as integer;
-create table test (ts timestamp, i integer default next value for test_seq);
-insert into test(ts) values ('2005-09-23 12:34:26.736');
-insert into test(ts) values ('2005-09-23 12:34:26.736');
-insert into test(ts) values ('2005-09-23 12:34:26.736');
-insert into test(ts) values ('2005-09-23 12:34:26.736');
-insert into test(ts) values ('2005-09-23 12:34:26.736');
-insert into test(ts) values ('2005-09-23 12:34:26.736');
-select * from test;
+create table seqdeftest (ts timestamp, i integer default next value for test_seq);
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736');
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736');
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736');
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736');
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736');
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736');
+select * from seqdeftest;
 
 drop sequence test_seq;
-drop table test;
+drop table seqdeftest;
 
-create table test (
+create table seqdeftest (
 	d date,
 	id serial,
 	count int auto_increment,
@@ -21,12 +21,12 @@ create table test (
 		start with 100 increment by 2 no minvalue maxvalue 1000
 		cache 2 cycle)
 );
-insert into test(d) values ('2005-10-01');
-insert into test(d) values ('2005-10-01');
-insert into test(d) values ('2005-10-01');
-insert into test(d) values ('2005-10-01');
-insert into test(d) values ('2005-10-01');
-insert into test(d) values ('2005-10-01');
-select * from test;
+insert into seqdeftest(d) values ('2005-10-01');
+insert into seqdeftest(d) values ('2005-10-01');
+insert into seqdeftest(d) values ('2005-10-01');
+insert into seqdeftest(d) values ('2005-10-01');
+insert into seqdeftest(d) values ('2005-10-01');
+insert into seqdeftest(d) values ('2005-10-01');
+select * from seqdeftest;
 
 ROLLBACK;

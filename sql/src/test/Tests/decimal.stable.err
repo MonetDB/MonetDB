@@ -80,16 +80,16 @@ stderr of test 'decimal` in directory 'src/test` itself:
 # 20:30:39 >  
 
 MAPI  = monetdb@alf:39627
-QUERY = insert into test values (1234);
+QUERY = insert into decimaltest values (1234);
 ERROR = !SQLException:convert:too many digits (6 > 5)
 MAPI  = monetdb@alf:39627
-QUERY = insert into test values (-1234);
+QUERY = insert into decimaltest values (-1234);
 ERROR = !SQLException:convert:too many digits (6 > 5)
 MAPI  = monetdb@alf:39627
-QUERY = insert into test values (1234.1);
+QUERY = insert into decimaltest values (1234.1);
 ERROR = !SQLException:convert:too many digits (6 > 5)
 MAPI  = monetdb@alf:39627
-QUERY = insert into test values (-1234.1);
+QUERY = insert into decimaltest values (-1234.1);
 ERROR = !SQLException:convert:too many digits (6 > 5)
 
 # 20:30:39 >  

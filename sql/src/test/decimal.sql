@@ -24,35 +24,35 @@
 
 start transaction;
 
-create table test ( t1 dec(5,2) );
+create table decimaltest ( t1 dec(5,2) );
 
 -- these should succeed
-insert into test values (1.1);
-insert into test values (-1.1);
-insert into test values (12.12);
-insert into test values (-12.12);
-insert into test values (123.12);
-insert into test values (-123.12);
+insert into decimaltest values (1.1);
+insert into decimaltest values (-1.1);
+insert into decimaltest values (12.12);
+insert into decimaltest values (-12.12);
+insert into decimaltest values (123.12);
+insert into decimaltest values (-123.12);
       -- next value should be rounded to 123.12
-insert into test values (123.123);
+insert into decimaltest values (123.123);
       -- next value should be rounded to -123.12
-insert into test values (-123.123);
+insert into decimaltest values (-123.123);
       -- next value should be rounded to 123.13
-insert into test values (123.128);
+insert into decimaltest values (123.128);
      -- next value should be rounded to -123.13
-insert into test values (-123.128);
+insert into decimaltest values (-123.128);
 commit;
 
 -- these should fail
-insert into test values (1234);
+insert into decimaltest values (1234);
       -- a '.00' decimal part is assumed for the next value 
-insert into test values (-1234);
+insert into decimaltest values (-1234);
       -- a '.00' decimal part is assumed for the next value 
-insert into test values (1234.1);
-insert into test values (-1234.1);
+insert into decimaltest values (1234.1);
+insert into decimaltest values (-1234.1);
 
 
-select * from test;
+select * from decimaltest;
 
-drop table test;
+drop table decimaltest;
 
