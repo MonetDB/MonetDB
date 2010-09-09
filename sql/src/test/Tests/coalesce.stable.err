@@ -80,10 +80,10 @@ stderr of test 'coalesce` in directory 'src/test` itself:
 # 20:30:43 >  
 
 MAPI  = monetdb@alf:39627
-QUERY = select id, coalesce(age,'age unknown') from test;
+QUERY = select id, coalesce(age,'age unknown') from coalescetest;
 ERROR = !SQLException:int:conversion of string 'age unknown' failed
 MAPI  = monetdb@alf:39627
-QUERY = select id, coalesce(name, age, 'unknown') from test;
+QUERY = select id, coalesce(name, age, 'unknown') from coalescetest;
 ERROR = !SQLException:int:conversion of string 'unknown' failed
 
 # 20:30:44 >  

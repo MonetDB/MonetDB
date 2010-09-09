@@ -51,7 +51,7 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.test # table_name
+% sys.decimaltest # table_name
 % t1 # name
 % decimal # type
 % 7 # length
