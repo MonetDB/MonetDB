@@ -232,6 +232,10 @@ main(int argc, char **argv)
 	mapi_cache_limit(mid, 10000);
 
 	out = file_wastream(stdout, "stdout");
+	if (out == NULL) {
+		fprintf(stderr, "failed to allocate stream\n");
+		exit(2);
+	}
 	if (!quiet) {
 		char buf[27];
 		time_t t = time(0);
@@ -248,7 +252,7 @@ main(int argc, char **argv)
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)
 			*p = 0;
-		mnstr_printf(out,"-- msqldump %s %s\n",
+		mnstr_printf(out, "-- msqldump %s %s\n",
 			     functions ? "functions" : "tables", buf);
 		dump_version(mid, out, "--");
 	}
