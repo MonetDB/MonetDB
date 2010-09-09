@@ -1427,3 +1427,43 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		mapi_close_handle(hdl);
 	return 1;
 }
+
+void
+dump_version(Mapi mid, stream *toConsole, const char *prefix)
+{
+	MapiHdl hdl;
+	char *dbname = NULL, m5ver[24];
+	char *name, *val;
+
+	if ((hdl = mapi_query(mid,
+			      "SELECT \"name\", \"value\" "
+			      "FROM sys.env() AS env "
+			      "WHERE \"name\" IN ('gdk_dbname', 'monet_version')")) == NULL ||
+	    mapi_error(mid))
+		goto cleanup;
+
+	m5ver[0] = '\0';
+	while ((mapi_fetch_row(hdl)) != 0) {
+		name = mapi_fetch_field(hdl, 0);
+		val = mapi_fetch_field(hdl, 1);
+
+		if (mapi_error(mid))
+			goto cleanup;
+
+		if (name != NULL && val != NULL) {
+			if (strcmp(name, "gdk_dbname") == 0)
+				dbname = strdup(val);
+			else if (strcmp(name, "monet_version") == 0)
+				snprintf(m5ver, sizeof(m5ver), "%s", val);
+		}
+	}
+	if (dbname != NULL && *dbname != '\0' && m5ver[0] != '\0')
+		mnstr_printf(toConsole, "%s MonetDB v%s, '%s'\n",
+			     prefix, m5ver, dbname);
+
+  cleanup:
+	if (dbname != NULL)
+		free(dbname);
+	if (hdl)
+		mapi_close_handle(hdl);
+}
