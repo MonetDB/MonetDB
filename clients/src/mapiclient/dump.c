@@ -170,7 +170,8 @@ dump_foreign_keys(Mapi mid, char *schema, char *tname, stream *toConsole)
 			      "\"fkk\".\"rkey\" = \"pkk\".\"id\" AND "
 			      "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" AND "
 			      "\"pkt\".\"schema_id\" = \"ps\".\"id\" AND "
-			      "\"fkt\".\"schema_id\" = \"fs\".\"id\" "
+			      "\"fkt\".\"schema_id\" = \"fs\".\"id\" AND "
+			      "\"fkt\".\"system\" = FALSE "
 			"ORDER BY \"fs\".\"name\",\"fkt\".\"name\","
 			      "\"fkk\".\"name\", \"nr\"";
 	}
