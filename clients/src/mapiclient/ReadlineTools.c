@@ -74,7 +74,7 @@ sql_tablename_generator(const char *text, int state)
 	if (!state) {
 		seekpos = 0;
 		len = strlen(text);
-		if ((table_hdl = mapi_query(_mid, "SELECT name FROM tables")) == NULL || mapi_error(_mid)) {
+		if ((table_hdl = mapi_query(_mid, "SELECT \"name\" FROM \"sys\".\"tables\"")) == NULL || mapi_error(_mid)) {
 			if (table_hdl) {
 				mapi_explain_query(table_hdl, stderr);
 				mapi_close_handle(table_hdl);
