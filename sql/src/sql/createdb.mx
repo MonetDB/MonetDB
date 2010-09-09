@@ -90,4 +90,6 @@ rdf.sql	-- depends on rdf module
 parts.sql	-- testing only
 replication.sql	-- testing only
 @sql
+@include system.sql
+
 commit;

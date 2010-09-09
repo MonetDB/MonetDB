@@ -106,6 +106,42 @@ get_schema(Mapi mid)
 }
 
 static int
+has_systemfunctions(Mapi mid)
+{
+	MapiHdl hdl;
+	int ret;
+
+	if ((hdl = mapi_query(mid,
+			      "SELECT \"t\".\"id\" "
+			      "FROM \"_tables\" \"t\", \"schemas\" \"s\" "
+			      "WHERE \"t\".\"name\" = 'systemfunctions' AND "
+			            "\"t\".\"schema_id\" = \"s\".\"id\" AND "
+			            "\"s\".\"name\" = 'sys'")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	return ret;
+
+  bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return 0;
+}
+
+static int
 dump_foreign_keys(Mapi mid, char *schema, char *tname, stream *toConsole)
 {
 	MapiHdl hdl = NULL;
@@ -880,20 +916,19 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname)
 		     "\"sys\".\"functions\" \"f\" "
 		"WHERE \"f\".\"id\" > 2000 AND "
 		      "\"s\".\"id\" = \"f\".\"schema_id\""
-		      "%s%s%s "
+		      "%s%s%s%s "
 		"ORDER BY \"f\".\"id\"";
 	MapiHdl hdl;
 	char *q;
+	size_t l;
 
-	if (sname != NULL) {
-		size_t l = sizeof(functions) + strlen(sname) + 20;
-
-		q = malloc(l);
-		snprintf(q, l, functions, " AND \"s\".\"name\" = '", sname, "'");
-	} else {
-		q = malloc(sizeof(functions));
-		snprintf(q, sizeof(functions), functions, "", "", "");
-	}
+	l = sizeof(functions) + (sname ? strlen(sname) : 0) + 100;
+	q = malloc(l);
+	snprintf(q, l, functions,
+		 sname ? " AND \"s\".\"name\" = '" : "",
+		 sname ? sname : "",
+		 sname ? "'" : "",
+		 has_systemfunctions(mid) ? " AND \"f\".\"id\" NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" : "");
 	hdl = mapi_query(mid, q);
 	free(q);
 	if (hdl == NULL || mapi_error(mid))
@@ -1046,6 +1081,7 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			     "\"sys\".\"functions\" \"f\" "
 			"WHERE \"f\".\"sql\" = TRUE AND "
 			      "\"s\".\"id\" = \"f\".\"schema_id\" "
+			      "%s"
 			"UNION "
 			"SELECT \"s\".\"name\" AS \"sname\", "
 			       "\"t\".\"name\" AS \"name\", "
@@ -1073,6 +1109,7 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 	MapiHdl hdl;
 	int create_hash_func = 0;
 	int rc = 0;
+	char query[1024];
 
 	/* start a transaction for the dump */
 	if (!describe)
@@ -1230,7 +1267,9 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 	mapi_close_handle(hdl);
 
 	/* dump tables */
-	if ((hdl = mapi_query(mid, tables_and_functions)) == NULL ||
+	snprintf(query, sizeof(query), tables_and_functions,
+		 has_systemfunctions(mid) ? "AND \"f\".\"id\" NOT IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\") " : "");
+	if ((hdl = mapi_query(mid, query)) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 
