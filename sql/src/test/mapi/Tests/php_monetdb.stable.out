@@ -56,10 +56,10 @@ users
 user_role
 auths
 privileges
-url_test
 queryhistory
 callhistory
 querylog
+systemfunctions
 id	name	schema_id	query	type	system	commit_action	readonly	temporary 	
 2001	schemas	2000		0	true	0	false	0	
 2006	types	2000		0	true	0	false	0	
@@ -87,12 +87,12 @@ id	name	schema_id	query	type	system	commit_action	readonly	temporary
 5105	user_role	2000		0	true	0	false	0	
 5108	auths	2000		0	true	0	false	0	
 5112	privileges	2000		0	true	0	false	0	
-5129	url_test	2000		0	false	0	false	0	
-5229	queryhistory	2000		0	false	0	false	0	
-5243	callhistory	2000		0	false	0	false	0	
-5260	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	false	0	false	0	
+5225	queryhistory	2000		0	true	0	false	0	
+5239	callhistory	2000		0	true	0	false	0	
+5256	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	true	0	false	0	
+5489	systemfunctions	2000		0	true	0	false	0	
 
-# 11:20:58 >  
-# 11:20:58 >  Done.
-# 11:20:58 >  
+# 14:28:54 >  
+# 14:28:54 >  Done.
+# 14:28:54 >  
 
