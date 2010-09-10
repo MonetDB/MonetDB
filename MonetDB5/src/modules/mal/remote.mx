@@ -125,6 +125,13 @@ pattern exec(conn:str, mod:str, func:str, :str...):str...
 address RMTexec
 comment "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
 
+
+# helper functions not primilarily intended for normal use
+
+pattern batload(ht:any_1, tt:any_2, size:int):bat[:any_1,:any_2]
+address RMTbatload
+comment "create a BAT of the given type and size, and load values from the input stream";
+
 @{
 @h
 
@@ -747,11 +754,12 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *head, *tail;
-		char qbuf[BUFSIZ + 1]; /* FIXME: this should be dynamic */
+		char qbuf[BUFSIZ];
 		int bid;
 		BAT *b = NULL;
 		BUN p, q;
 		str headv, tailv;
+		stream *sout;
 
 		head = getTypeIdentifier(getHeadType(type));
 		tail = getTypeIdentifier(getTailType(type));
@@ -762,59 +770,51 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
 		}
 
-		qbuf[BUFSIZ] = '\0'; /* ensure a terminated string */
-		snprintf(qbuf, BUFSIZ, "%s := bat.new(:%s, :%s, " BUNFMT ");",
+		/* bypass Mapi from this point to efficiently write all data to
+		 * the server */
+		sout = mapi_get_to(c->mconn);
+
+		/* call our remote helper to do this more efficiently */
+		mnstr_printf(sout,
+				"%s := remote.batload(:%s, :%s, " BUNFMT ");\n",
 				ident, head, tail, (bid == 0 ? 0 : BATcount(b)));
-#ifdef _DEBUG_REMOTE
-		mnstr_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, qbuf);
-#endif
-		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
-				!= MAL_SUCCEED)
-		{
-			mal_unset_lock(c->lock, "remote.put");
-			return tmp;
-		}
-		mapi_close_handle(mhdl);
+		mnstr_flush(sout);
 
 		/* b can be NULL if bid == 0 (only type given, ugh) */
 		if (b) {
-			headv = tailv = NULL;
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
+				headv = tailv = NULL;
 				ATOMformat(getHeadType(type), BUNhead(bi, p), &headv);
 				ATOMformat(getTailType(type), BUNtail(bi, p), &tailv);
-				if ( getTailType(type) <=TYPE_str &&
-					 getHeadType(type) <= TYPE_str)
-				snprintf(qbuf, BUFSIZ, "bat.insert(%s, %s:%s, %s:%s);",
-						ident, headv, head, tailv, tail);
-				else
-				if ( getTailType(type) >TYPE_str  &&
-					 getHeadType(type) > TYPE_str)
-				snprintf(qbuf, BUFSIZ, "bat.insert(%s, \"%s\":%s, \"%s\":%s);",
-						ident, headv, head, tailv, tail);
-				else
-				if ( getTailType(type) >TYPE_str )
-				snprintf(qbuf, BUFSIZ, "bat.insert(%s, %s:%s, \"%s\":%s);",
-						ident, headv, head, tailv, tail);
-				else
-				snprintf(qbuf, BUFSIZ, "bat.insert(%s, \"%s\":%s, %s:%s);",
-						ident, headv, head, tailv, tail);
-#ifdef _DEBUG_REMOTE
-				mnstr_printf(cntxt->fdout,
-						"#remote.put:%s:%s\n", c->name, qbuf);
-#endif
-				if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
-						!= MAL_SUCCEED)
+				if (getTailType(type) <= TYPE_str &&
+						getHeadType(type) <= TYPE_str)
 				{
-					mal_unset_lock(c->lock, "remote.put"); 
-					return tmp;
+					mnstr_printf(sout, "%s,%s\n", headv, tailv);
+				} else if (getTailType(type) > TYPE_str &&
+						getHeadType(type) > TYPE_str)
+				{
+					mnstr_printf(sout, "\"%s\",\"%s\"\n", headv, tailv);
+				} else if (getTailType(type) > TYPE_str) {
+					mnstr_printf(sout, "%s,\"%s\"\n", headv, tailv);
+				} else {
+					mnstr_printf(sout, "\"%s\",%s\n", headv, tailv);
 				}
-				/* we leak headv and tailv here if an exception is thrown */
-				mapi_close_handle(mhdl);
+				GDKfree(headv);
+				GDKfree(tailv);
 			}
-			GDKfree(headv);
-			GDKfree(tailv);
 			BBPunfix(b->batCacheid);
+
+			/* write the empty line the server is waiting for, handles
+			 * all errors at the same time, if any */
+			qbuf[0] = '\0';
+			if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
+					!= MAL_SUCCEED)
+			{
+				mal_unset_lock(c->lock, "remote.put");
+				return tmp;
+			}
+			mapi_close_handle(mhdl);
 		}
 	} else {
 		str val = NULL;
@@ -824,10 +824,10 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		} else {
 			ATOMformat(type, value, &val);
 		}
-		if( type <= TYPE_str)
-		snprintf(qbuf, BUFSIZ, "%s := %s:%s;\n", ident, val, getTypeIdentifier(type));
+		if (type <= TYPE_str)
+			snprintf(qbuf, BUFSIZ, "%s := %s:%s;\n", ident, val, getTypeIdentifier(type));
 		else
-		snprintf(qbuf, BUFSIZ, "%s := \"%s\":%s;\n", ident, val, getTypeIdentifier(type));
+			snprintf(qbuf, BUFSIZ, "%s := \"%s\":%s;\n", ident, val, getTypeIdentifier(type));
 		qbuf[BUFSIZ] = '\0';
 		GDKfree(val);
 #ifdef _DEBUG_REMOTE
@@ -1014,6 +1014,112 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	mal_unset_lock(c->lock,"remote.exec"); 
 	return tmp;
 }
+
+@h
+remote_export str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+/**
+ * batload is a helper function to make transferring a BAT with RMTput
+ * more efficient.  It works by creating a BAT, and loading it with the
+ * data as comma separated values from the input stream, until an empty
+ * line is read.  The given size argument is taken as a hint only, and
+ * is not enforced to match the number of rows read.
+ */
+str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	ValPtr v;
+	int h, t;
+	int size;
+	ptr l, r;
+	int s;
+	BAT *b;
+	size_t len;
+	size_t pos;
+	char *val, *var;
+	bit escaped = 0, instr = 0;
+	bstream *fdin = cntxt->fdin;
+
+	v = getArgReference(stk, pci, 0); /* return */
+	h = getArgType(mb, pci, 1); /* head type */
+	t = getArgType(mb, pci, 2); /* tail type */
+	size = *(int *)getArgReference(stk, pci, 3); /* size */
+
+	b = BATnew(h, t, size);
+
+	/* grab the input stream and start reading */
+	fdin->eof = 0;
+	len = fdin->pos;
+	while (len < fdin->len || bstream_next(fdin) > 0) {
+		/* newline hunting (how spartan) */
+		for (len = fdin->pos; len < fdin->len && fdin->buf[len] != '\n'; len++)
+			;
+		/* unterminated line, request more */
+		if (fdin->buf[len] != '\n')
+			continue;
+		/* empty line, end of input */
+		if (fdin->pos == len)
+			break;
+		fdin->buf[len] = '\0'; /* kill \n */
+		/* we need to slice and dice here, bah */
+		var = val = NULL;
+		for (pos = fdin->pos; pos < len; pos++) {
+			switch (fdin->buf[pos]) {
+				case '"':
+					if (!escaped)
+						instr = !instr;
+				break;
+				case '\\':
+					escaped = !escaped;
+				break;
+				case ',':
+					if (!instr) {
+						/* we know it's only two values, so end here */
+						val = &fdin->buf[fdin->pos];
+						var = &fdin->buf[pos + 1];
+						pos = len; /* break out of the for-loop */
+					}
+				break;
+			}
+		}
+		/* skip over this line */
+		fdin->pos = ++len;
+
+		if (val == NULL || var == NULL) {
+			/* now what? */
+			assert(0); /* FIXME */
+		}
+
+		if (ATOMvarsized(h)) {
+			l = (ptr)(val == NULL ? str_nil : val);
+		} else {
+			s = 0;
+			l = NULL;
+			if (val == NULL)
+				val = "nil";
+			ATOMfromstr(h, &l, &s, val);
+		}
+		if (ATOMvarsized(t)) {
+			r = (ptr)(var == NULL ? str_nil : var);
+		} else {
+			s = 0;
+			r = NULL;
+			if (var == NULL)
+				var = "nil";
+			ATOMfromstr(t, &r, &s, var);
+		}
+
+		BUNins(b, l, r, FALSE);
+
+		if (!ATOMvarsized(h)) GDKfree(l);
+		if (!ATOMvarsized(t)) GDKfree(r);
+	}
+
+	v->val.bval = b->batCacheid;
+	v->vtype = TYPE_bat;
+	BBPkeepref(b->batCacheid);
+
+	return(MAL_SUCCEED);
+}
+
 @h /* _REMOTE_DEF */
 #endif
 @}
