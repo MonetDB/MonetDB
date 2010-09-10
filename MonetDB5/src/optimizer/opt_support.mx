@@ -563,7 +563,6 @@ to easily trace their performance.
 #define DEBUG_OPT_MULTIPLEX			42
 #define DEBUG_OPT_ACCUMULATORS		43
 #define DEBUG_OPT_CLUSTER			44
-#define DEBUG_OPT_MAPREDUCE			45
 #define DEBUG_OPT_SELCRACK			46
 #define DEBUG_OPT_SIDCRACK			47
 #define DEBUG_OPT_TRACE				48
@@ -714,7 +713,6 @@ struct OPTcatalog {
 {"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
 {"joinselect",	0,	0,	0,	DEBUG_OPT_JOINSELECT},
 {"macro",		0,	0,	0,	DEBUG_OPT_MACRO},
-{"mapreduce",	0,	0,	0,	DEBUG_OPT_MAPREDUCE},
 {"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},

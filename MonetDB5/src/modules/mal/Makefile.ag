@@ -28,7 +28,7 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		chopper.mx constraints.mx language.mx box.mx \
-		profiler.mx const.mx attach.mx algebraExtensions.mx \
+		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx pqueue.mx mkey.mx \
 		factories.mx groupby.mx mdb.mx  \
 		urlbox.mx mat.mx histogram.mx \
@@ -170,7 +170,7 @@ headers_h = {
 	SOURCES = batExtensions.mx bpm.mx mal_mapi.mx mal_io.mx clients.mx \
 		pcre.mx bbp.mx tablet.mx transaction.mx statistics.mx \
 		chopper.mx constraints.mx language.mx box.mx \
-		profiler.mx const.mx attach.mx algebraExtensions.mx \
+		profiler.mx const.mx algebraExtensions.mx \
 		inspect.mx manual.mx pqueue.mx mkey.mx \
 		factories.mx groupby.mx mdb.mx  \
 		urlbox.mx mat.mx histogram.mx \
@@ -186,7 +186,7 @@ headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
 	SOURCES = language.mx constraints.mx mal_init.mx box.mx bbp.mx \
-		profiler.mx const.mx attach.mx batExtensions.mx algebraExtensions.mx \
+		profiler.mx const.mx batExtensions.mx algebraExtensions.mx \
 		inspect.mx manual.mx mal_io.mx pqueue.mx mkey.mx \
 		chopper.mx clients.mx \
 		factories.mx groupby.mx mdb.mx pcre.mx  tablet.mx mat.mx histogram.mx \
