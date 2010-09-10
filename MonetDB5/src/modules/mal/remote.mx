@@ -1089,29 +1089,20 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			assert(0); /* FIXME */
 		}
 
-		if (ATOMvarsized(h)) {
-			l = (ptr)(val == NULL ? str_nil : val);
-		} else {
-			s = 0;
-			l = NULL;
-			if (val == NULL)
-				val = "nil";
-			ATOMfromstr(h, &l, &s, val);
-		}
-		if (ATOMvarsized(t)) {
-			r = (ptr)(var == NULL ? str_nil : var);
-		} else {
-			s = 0;
-			r = NULL;
-			if (var == NULL)
-				var = "nil";
-			ATOMfromstr(t, &r, &s, var);
-		}
+		s = 0;
+		l = NULL;
+		ATOMfromstr(h, &l, &s, val);
+
+		s = 0;
+		r = NULL;
+		ATOMfromstr(t, &r, &s, var);
 
 		BUNins(b, l, r, FALSE);
 
-		if (!ATOMvarsized(h)) GDKfree(l);
-		if (!ATOMvarsized(t)) GDKfree(r);
+		if (!ATOMvarsized(h))
+			GDKfree(l);
+		if (!ATOMvarsized(t))
+			GDKfree(r);
 	}
 
 	v->val.bval = b->batCacheid;
