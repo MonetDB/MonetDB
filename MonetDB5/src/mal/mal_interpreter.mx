@@ -1254,7 +1254,7 @@ DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 			/* search the statement that assigns a value to the argument or target */
 			/* it should have been finished already */
 			for (l = i-1 ; l >= 0 && !blocked; l--)
-			if ( fs[l].status != DFLOWwrapup){
+			if ( fs[l].status != DFLOWwrapup && fs[l].pc >= 0){
 				q= getInstrPtr(flow->mb, fs[l].pc);
 				for ( k=0; k < q->retc && !blocked; k++)
 				if ( getArg(q,k) == getArg(p,j) )
