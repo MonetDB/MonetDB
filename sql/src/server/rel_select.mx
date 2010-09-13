@@ -179,6 +179,16 @@ rel_setsubquery(sql_rel*r)
 	set_subquery(r);
 }
 
+static int
+rel_issubquery(sql_rel*r)
+{
+	if (!r->subquery) {
+		if (is_select(r->op))
+			return rel_issubquery(r->l);
+	}	
+	return r->subquery;
+}
+
 /* we don't name relations directly, but sometimes we need the relation
    name. So we look it up in the first expression
  */
@@ -1165,14 +1175,16 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 		*p = rel;
 		r = rel_bind_column_(sql, p, rel->r, cname);
 
-		if (!r || !is_subquery(right)) {
+		if (!r || !rel_issubquery(right)) {
 			*p = rel;
 			l = rel_bind_column_(sql, p, rel->l, cname);
-			if (l && r && !is_subquery(r)) {
+			if (l && r && !rel_issubquery(r)) {
 				(void) sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", cname);
 				return NULL;
 			}
 		}
+		if (sql->session->status == -ERR_AMBIGUOUS) 
+			return NULL;
 		if (l && !r)
 			return l;
 		return r;
