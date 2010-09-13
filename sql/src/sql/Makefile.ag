@@ -22,10 +22,6 @@ headers_sql = {
 	DIR = libdir/MonetDB5
 	SOURCES = \
 		createdb.mx \
-		clients.sql cluster.sql \
-		date.sql history.sql inet.sql \
-		math.sql mtime.sql \
-		times.sql url.sql \
-		zorder.sql \
-		dependency_functions.sql skyserver.sql
+		cache.sql octopus.sql parts.sql rdf.sql \
+		replication.sql temporal.sql vacuum.sql
 }
