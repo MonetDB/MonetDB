@@ -2,6 +2,10 @@
 # This file is updated with Maddlog
 
 * Tue Sep 14 2010 Sjoerd Mullender <sjoerd@acm.org>
+- The \d and \D commands now require a space if they are followed by a
+  table name.  This is to accomodate future expansion where \d and \D
+  could be immediately followed by another letter to indicate the type
+  of object of interest.
 - Implemented dumping of "external" functions.  This fixes bug 2546.
 
 * Thu Aug 26 2010 Fabian Groffen <fabian@cwi.nl>

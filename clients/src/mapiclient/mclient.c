@@ -1922,6 +1922,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						break;
 					while (isspace((int) line[length - 1]))
 						line[--length] = 0;
+					if (line[2] && !isspace(line[2])) {
+						fprintf(stderr, "space required after \\d\n");
+						continue;
+					}
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
 					if (*line) {
@@ -1971,6 +1975,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						break;
 					while (isspace((int) line[length - 1]))
 						line[--length] = 0;
+					if (line[2] && !isspace(line[2])) {
+						fprintf(stderr, "space required after \\D\n");
+						continue;
+					}
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
 #ifdef HAVE_POPEN
