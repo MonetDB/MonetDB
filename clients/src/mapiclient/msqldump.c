@@ -252,14 +252,15 @@ main(int argc, char **argv)
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)
 			*p = 0;
-		mnstr_printf(out, "-- msqldump %s %s\n",
-			     functions ? "functions" : "tables", buf);
+		mnstr_printf(out, "-- msqldump %s %s %s\n",
+			     describe ? "describe" : "dump",
+			     functions ? "functions" : "database", buf);
 		dump_version(mid, out, "--");
 	}
 	if (functions)
 		c = dump_functions(mid, out, NULL);
 	else
-		c = dump_tables(mid, out, describe);
+		c = dump_database(mid, out, describe);
 	mnstr_flush(out);
 
 	mapi_disconnect(mid);

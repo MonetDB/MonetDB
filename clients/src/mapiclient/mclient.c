@@ -1981,7 +1981,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						dump_table(mid, NULL, line, toConsole, 0, 1);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
-						dump_tables(mid, toConsole, 0);
+						dump_database(mid, toConsole, 0);
 #ifdef HAVE_POPEN
 					end_pager(saveFD, saveFD_raw);
 #endif
@@ -2612,7 +2612,7 @@ main(int argc, char **argv)
 	mapi_cache_limit(mid, -1);
 	if (dump) {
 		if (mode == SQL) {
-			exit(dump_tables(mid, toConsole, 0));
+			exit(dump_database(mid, toConsole, 0));
 		} else {
 			fprintf(stderr, "Dump only supported for SQL\n");
 			exit(1);
