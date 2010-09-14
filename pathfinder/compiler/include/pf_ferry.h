@@ -36,6 +36,16 @@
 #ifndef FERRY_LIB_H
 #define FERRY_LIB_H
 
+#ifdef WIN32
+#ifndef LIBPF_FERRY
+#define pf_ferry_export extern __declspec(dllimport)
+#else
+#define pf_ferry_export extern __declspec(dllexport)
+#endif
+#else
+#define pf_ferry_export extern
+#endif
+
 /* the maximum size of the initialized error buffer */
 #define ERR_SIZE 4096
 
@@ -65,6 +75,7 @@ typedef enum PFoutput_format_t PFoutput_format_t;
  * @param format the output format (see definition of PFoutput_format_t)
  * @return       the return code
  */
+pf_ferry_export
 int PFcompile_ferry (char **res,
                      char *err,
                      char *xml,
@@ -83,6 +94,7 @@ int PFcompile_ferry (char **res,
  * @param opt_args the optimization arguments (see pf option -o)
  * @return         the return code
  */
+pf_ferry_export
 int PFcompile_ferry_opt (char **res, 
                          char *err,
                          char *xml,
