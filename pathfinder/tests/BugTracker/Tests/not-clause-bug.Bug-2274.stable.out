@@ -1,0 +1,39 @@
+stdout of test 'not-clause-bug.Bug-2274` in directory 'tests/BugTracker` itself:
+
+
+# 14:10:43 >  
+# 14:10:43 >   Mserver "--config=/ufs/sjoerd/Monet-candidate/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/ufs/sjoerd/Monet-candidate/lib64/MonetDB4:/ufs/sjoerd/Monet-candidate/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-candidate/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/Monet-candidate/var/MonetDB4/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30225 --set xrpc_port=44763 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 14:10:43 >  
+
+# MonetDB Server v4.40.0
+# based on GDK   v1.40.0
+# not released
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-2010, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Detected 7.751 GiB (8322707456 bytes) main-memory.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.13.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.40.0 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:44763/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 14:10:43 >  
+# 14:10:43 >  mclient -lxquery -fxml --host=ottar --port=30225 not-clause-bug.Bug-2274.xq
+# 14:10:43 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a xid="5"><p><x xx="5"/></p></a><a xid="6"><p><x xx="6"/></p></a></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a xid="5"><p><x xx="5"/></p></a><a xid="6"><p><x xx="6"/></p></a></XQueryResult>
+
+# 14:10:43 >  
+# 14:10:43 >  Done.
+# 14:10:43 >  
+
