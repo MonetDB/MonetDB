@@ -954,16 +954,13 @@ PQtopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
 	bn = BATnew(TYPE_oid, TYPE_oid, n);
 	for(i=0; i<n; ) {
 		oid *v = (oid*)Tloc(a,i), ov = *v; 
-		for( j=i; j<n; j++) {
-			v = (oid*)Tloc(a,j);
-			if (*v != ov) 
-				break;
-		}
+		for( j=i; *v == ov; j++, v = (oid*)Tloc(a,j))
+			;
 		if (j == i+1) {
 			BUNins(bn, Hloc(a,i), &ov, FALSE);
 		} else {
 			BAT *s = BATslice(b, i, j), *sbn = NULL;
-			wrd nn = n-j;
+			wrd nn = n-i;
 
 			if ((b->htype == TYPE_void ? pqueue_topn_void@1@2(&sbn,s,&nn) : pqueue_topn_@1@2(&sbn,s,&nn)) == GDK_SUCCEED && sbn) {
 				BATins(bn, sbn, FALSE);
@@ -1006,16 +1003,13 @@ PQutopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
 	bn = BATnew(TYPE_oid, TYPE_oid, n);
 	for(i=0; i<n; ) {
 		oid *v = (oid*)Tloc(a,i), ov = *v; 
-		for( j=i; j<n; j++) {
-			v = (oid*)Tloc(a,j);
-			if (*v != ov) 
-				break;
-		}
+		for( j=i; *v == ov; j++, v = (oid*)Tloc(a,j))
+			;
 		if (j == i+1) {
 			BUNins(bn, Hloc(a,i), &ov, FALSE);
 		} else {
 			BAT *s = BATslice(b, i, j), *sbn = NULL;
-			wrd nn = n-j;
+			wrd nn = n-i;
 
 			if ((b->htype == TYPE_void ? pqueue_utopn_void@1@2(&sbn,s,&nn) : pqueue_utopn_@1@2(&sbn,s,&nn)) == GDK_SUCCEED && sbn) {
 				BATins(bn, sbn, FALSE);
