@@ -21,5 +21,5 @@ extern int describe_table(Mapi mid, char *schema, char *tname, stream *toConsole
 extern int dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole);
 extern int dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign);
 extern int dump_functions(Mapi mid, stream *toConsole, const char *sname);
-extern int dump_tables(Mapi mid, stream *toConsole, int describe);
+extern int dump_database(Mapi mid, stream *toConsole, int describe);
 extern void dump_version(Mapi mid, stream *toConsole, const char *prefix);

@@ -1,3 +1,5 @@
+# do this one first since we want an empty database:
+slow-query.Bug-2671
 corrupted_values_after_updates.SF-2938065
 tableDataLimit.SF-2944504
 order_by_on_single_row_view.SF-2950453
@@ -54,3 +56,4 @@ sum_on_date_crash.Bug-2643
 crash_on_in_2.Bug-2604
 count-and-not.Bug-2663
 multiple-common-table-expressions.Bug-2664
+duplicate-key.Bug-2667
