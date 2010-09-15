@@ -263,9 +263,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			atom *a = e->l;
 			s = stmt_atom(atom_dup(a));
 		} else if (e->r) { 		/* parameters */
-			s = stmt_var(_strdup(e->r), e->f, 0, e->flag);
+			s = stmt_var(_strdup(e->r), &e->tpe, 0, e->flag);
 		} else { 			/* arguments */
-			s = stmt_varnr(e->flag, e->f);
+			s = stmt_varnr(e->flag, &e->tpe);
 		}
 	}	break;
 	case e_convert: {
@@ -419,7 +419,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			s = bin_find_column(right, e->l, e->r);
 		if (!s && left) {
 			if (left->type == st_Nop && tail_type(left)->comp_type ) { /* table function */
-				s = stmt_rs_column(stmt_dup(left), stmt_atom_string(_strdup(e->r)), e->f/*subtype*/);
+				s = stmt_rs_column(stmt_dup(left), stmt_atom_string(_strdup(e->r)), &e->tpe);
 			} else {
 				s = bin_find_column(left, e->l, e->r);
 			}

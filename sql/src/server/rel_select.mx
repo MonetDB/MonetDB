@@ -1694,7 +1694,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param)
 		return -1;
 
 	if (set_type_param(sql, type, param->flag) == 0) {
-		param->f = type;
+		param->tpe = *type;
 		return 0;
 	}
 	return -1;
@@ -1738,11 +1738,8 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 
 	a = sql_bind_arg(sql, exp->flag);
 	if (a && atom_cast(a, t)) {
-		sql_subtype *x = ZNEW(sql_subtype);
 		convert_arg(sql, exp->flag, t);
-		/* set new type */
-		*x = *t;
-		exp->f = x;
+		exp->tpe = *t;
 		return exp;
 	}
 	return NULL;
@@ -3359,7 +3356,7 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			sql_exp *e = exp_dup(n->data);
 
 			if (a->type.type->eclass == EC_ANY) {
-				sql_subtype *st = e->f;
+				sql_subtype *st = &e->tpe;
 				sql_init_subtype(&a->type, st->type, st->digits, st->scale);
 			}
 			e = rel_check_type(sql, &a->type, e, type_equal);
@@ -3974,7 +3971,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 			if (col->token == SQL_COLUMN) {
 				e = rel_column_ref(sql, &rel, col, f);
 				if (e && e->card <= CARD_ATOM) {
-					sql_subtype *tpe = e->f;
+					sql_subtype *tpe = &e->tpe;
 					/* integer atom on the stack */
 					if (e->type == e_atom &&
 					    tpe->type->eclass == EC_NUM) {

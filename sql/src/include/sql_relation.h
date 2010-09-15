@@ -46,7 +46,7 @@ typedef struct expression {
 	char *rname;
 	void *l;
 	void *r;
-	void *f; 	/* func's and aggr's and column type */
+	void *f; 	/* func's and aggr's */
 			/* e_cmp may have have 2 arguments */
 	int  flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, cmp types */
 	char card;	/* card 
@@ -55,6 +55,7 @@ typedef struct expression {
 				(2 aggr)
 				(3 multi value)
 			*/
+	sql_subtype 	tpe;
 	int used;	/* used for quick dead code removal */
 	void *p;	/* properties for the optimizer */
 } sql_exp;
