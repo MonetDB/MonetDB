@@ -22,9 +22,9 @@ bindir = $(prefix)\bin
 srcdir = .
 
 !IFDEF DEBUG
-CFLAGS = -I$(srcdir) -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1
+CFLAGS = -I$(srcdir) -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1
 !ELSE
-CFLAGS = -I$(srcdir) -GF -W3 -MD -nologo
+CFLAGS = -I$(srcdir) -I. -GF -W3 -MD -nologo
 !ENDIF
 
 MV=copy
