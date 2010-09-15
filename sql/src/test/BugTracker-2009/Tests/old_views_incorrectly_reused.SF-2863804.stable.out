@@ -136,8 +136,8 @@ Over..
 % value,	type,	prob # name
 % varchar,	char,	double # type
 % 2,	4,	22 # length
-[ "A1",	"term",	1	]
 [ "A2",	"term",	1	]
+[ "A1",	"term",	1	]
 
 # 23:06:18 >  
 # 23:06:18 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=localhost --port=31419  /home/wouter/opt/MonetDB-Aug2009/mTests/src/test/BugTracker-2009/old_views_incorrectly_reused.SF-2863804.view2.sql
@@ -147,8 +147,8 @@ Over..
 % value,	type,	prob # name
 % varchar,	char,	double # type
 % 4,	4,	22 # length
-[ "2000",	"term",	1	]
 [ "2001",	"term",	1	]
+[ "2000",	"term",	1	]
 
 # 23:06:18 >  
 # 23:06:18 >  Done.
