@@ -1105,7 +1105,7 @@ rel2bin_distinct(stmt *s)
 	for (n = s->op1.lval->h; n; n = n->next) {
 		stmt *t = n->data;
 
-		list_append(rl, stmt_join(stmt_dup(grp->ext), stmt_dup(t), cmp_equal));
+		list_append(rl, stmt_project(stmt_dup(grp->ext), stmt_dup(t)));
 	}
 
 	if (grp)
@@ -1638,7 +1638,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	}
 	if (need_distinct(rel))
 		psub = rel2bin_distinct(psub);
-	if (!topn && rel->r) {
+	if ((!topn || need_distinct(rel)) && rel->r) {
 		list *oexps = rel->r;
 		stmt *orderby = NULL;
 
