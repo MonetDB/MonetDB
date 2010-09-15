@@ -342,18 +342,19 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 	return 1;
 }
 
-static char _toupperbuf[64];
-static char *
+static const char *
 toUpper(const char *s)
 {
+	static char toupperbuf[64];
 	size_t i;
 	size_t len = strlen(s);
-	if (len > 63)
-		len = 63;
+
+	if (len >= sizeof(toupperbuf))
+		return s;	/* too long: it's not *that* important */
 	for (i = 0; i < len; i++)
-		_toupperbuf[i] = toupper((int)s[i]);
-	_toupperbuf[i] = '\0';
-	return(_toupperbuf);
+		toupperbuf[i] = toupper((int)s[i]);
+	toupperbuf[i] = '\0';
+	return toupperbuf;
 }
 
 static int dump_column_definition(

@@ -19,16 +19,20 @@
 
 prefix = ..\NT
 bindir = $(prefix)\bin
+srcdir = .
 
 !IFDEF DEBUG
-CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1
+CFLAGS = -I$(srcdir) -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1
 !ELSE
-CFLAGS = -I. -GF -W3 -MD -nologo
+CFLAGS = -I$(srcdir) -I. -GF -W3 -MD -nologo
 !ENDIF
 
 COPY=copy
 MKDIR=mkdir
 MT=mt -nologo
+
+{$(srcdir)\}.c{}.obj::
+	$(CC) $(CFLAGS) /Fd.\ /c $<
 
 all: Mx.exe
 
@@ -41,11 +45,12 @@ clean:
 
 MX_OBJS = Mx.obj Def.obj Form.obj Tok.obj Code.obj Display.obj \
 	  Print.obj Io.obj Sys.obj disclaimer.obj getopt.obj
+
 Mx.exe: $(MX_OBJS)
 	$(CC) $(CFLAGS) /FeMx.exe $(MX_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
 	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1
 
 $(MX_OBJS): mx_config.h
 
-mx_config.h: winconfig.h
-	$(COPY) winconfig.h mx_config.h
+mx_config.h: $(srcdir)\winconfig.h
+	$(COPY) $(srcdir)\winconfig.h mx_config.h

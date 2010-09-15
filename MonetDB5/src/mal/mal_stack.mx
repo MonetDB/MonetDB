@@ -104,7 +104,7 @@ for use in profiling and recylcing instructions.
 } MalStack, *MalStkPtr;
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
-#define newStack(S,CNT) S= (MalStkPtr) alloca(stackSize(CNT));\
+#define newStack(S,CNT) S= (MalStkPtr) GDKzalloc(stackSize(CNT));\
 		(S)->stksize=CNT;
 
 
