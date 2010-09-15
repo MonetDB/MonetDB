@@ -19,6 +19,7 @@
 
 prefix = ..\NT
 bindir = $(prefix)\bin
+srcdir = .
 
 MX = ..\Mx\Mx.exe
 !IFDEF DEBUG
@@ -65,10 +66,10 @@ mel.exe: $(MEL_OBJS)
 	$(CC) $(CFLAGS) /Femel.exe $(MEL_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
 	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1
 
-mel_config.h: winconfig.h
-	copy winconfig.h mel_config.h
+mel_config.h: $(srcdir)\winconfig.h
+	copy $(srcdir)\winconfig.h mel_config.h
 
-unistd.h: Makefile.msc
+unistd.h: $(srcdir)\Makefile.msc
 	$(ECHO) #ifndef UNISTD_H > unistd.h
 	$(ECHO) #define UNISTD_H >> unistd.h
 	$(ECHO) #include "io.h" >> unistd.h
@@ -77,86 +78,86 @@ unistd.h: Makefile.msc
 
 .SUFFIXES: .mx .cxx
 
-.mx.h:
+{$(srcdir)}.mx{}.h:
 	$(MX) $(MXFLAGS) -x h $<
 
-.mx.c:
+{$(srcdir)}.mx{}.c:
 	$(MX) $(MXFLAGS) -x c $<
 
-.mx.cxx:
+{$(srcdir)}.mx{}.cxx:
 	$(MX) $(MXFLAGS) -x C $<
 
-.mx.y:
+{$(srcdir)}.mx{}.y:
 	$(MX) $(MXFLAGS) -x y $<
 
-.mx.l:
+{$(srcdir)}.mx{}.l:
 	$(MX) $(MXFLAGS) -x l $<
 
-.mx.yy:
+{$(srcdir)}.mx{}.yy:
 	$(MX) $(MXFLAGS) -x Y $<
 
-.mx.ll:
+{$(srcdir)}.mx{}.ll:
 	$(MX) $(MXFLAGS) -x L $<
 
 .cxx.obj:
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
 
-any_arg.cxx: any_arg.mx
-any_arg.h: any_arg.mx
+any_arg.cxx: $(srcdir)\any_arg.mx
+any_arg.h: $(srcdir)\any_arg.mx
 any_arg.obj: any_arg.cxx any_arg.h symbol.h list.h ListIterator.h type_arg.h language.h symtable.h module.h dependency.h atom.h ops.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h prelude.h epilogue.h mel_config.h
-atom_arg.cxx: atom_arg.mx
-atom_arg.h: atom_arg.mx
+atom_arg.cxx: $(srcdir)\atom_arg.mx
+atom_arg.h: $(srcdir)\atom_arg.mx
 atom_arg.obj: atom_arg.cxx atom_arg.h symbol.h list.h ListIterator.h atom.h ops.h type_arg.h language.h symtable.h module.h dependency.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-atom.cxx: atom.mx
-atom.h: atom.mx
+atom.cxx: $(srcdir)\atom.mx
+atom.h: $(srcdir)\atom.mx
 atom.obj: atom.cxx atom.h ops.h symbol.h list.h ListIterator.h type_arg.h language.h symtable.h module.h dependency.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-atomops.cxx: atomops.mx
-atomops.h: atomops.mx
+atomops.cxx: $(srcdir)\atomops.mx
+atomops.h: $(srcdir)\atomops.mx
 atomops.obj: atomops.cxx atomops.h ops.h symbol.h list.h ListIterator.h language.h symtable.h module.h dependency.h atom.h type_arg.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-bat_arg.cxx: bat_arg.mx
-bat_arg.h: bat_arg.mx
+bat_arg.cxx: $(srcdir)\bat_arg.mx
+bat_arg.h: $(srcdir)\bat_arg.mx
 bat_arg.obj: bat_arg.cxx bat_arg.h symbol.h list.h ListIterator.h type_arg.h language.h symtable.h module.h dependency.h atom.h ops.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-builtin.cxx: builtin.mx
-builtin.h: builtin.mx
+builtin.cxx: $(srcdir)\builtin.mx
+builtin.h: $(srcdir)\builtin.mx
 builtin.obj: builtin.cxx builtin.h symbol.h list.h ListIterator.h language.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-command.cxx: command.mx
-command.h: command.mx
+command.cxx: $(srcdir)\command.mx
+command.h: $(srcdir)\command.mx
 command.obj: command.cxx command.h symbol.h list.h ListIterator.h mel.h symtable.h FileInfo.h ops.h atomops.h type_arg.h mel.tab.h language.h module.h dependency.h atom.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-debug.cxx: debug.mx
-debug.h: debug.mx
+debug.cxx: $(srcdir)\debug.mx
+debug.h: $(srcdir)\debug.mx
 debug.obj: debug.cxx debug.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-depend.cxx: depend.mx
-dependency.cxx: dependency.mx
-dependency.h: dependency.mx
+depend.cxx: $(srcdir)\depend.mx
+dependency.cxx: $(srcdir)\dependency.mx
+dependency.h: $(srcdir)\dependency.mx
 dependency.obj: dependency.cxx dependency.h symbol.h list.h ListIterator.h language.h symtable.h module.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-depend.h: depend.mx
+depend.h: $(srcdir)\depend.mx
 depend.obj: depend.cxx depend.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-epilogue.cxx: epilogue.mx
-epilogue.h: epilogue.mx
+epilogue.cxx: $(srcdir)\epilogue.mx
+epilogue.h: $(srcdir)\epilogue.mx
 epilogue.obj: epilogue.cxx epilogue.h symbol.h list.h ListIterator.h language.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h mel_config.h
-FileInfo.cxx: FileInfo.mx
-FileInfo.h: FileInfo.mx
+FileInfo.cxx: $(srcdir)\FileInfo.mx
+FileInfo.h: $(srcdir)\FileInfo.mx
 FileInfo.obj: FileInfo.cxx FileInfo.h list.h ListIterator.h language.h symbol.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-glue.cxx: glue.mx
-glue.h: glue.mx
+glue.cxx: $(srcdir)\glue.mx
+glue.h: $(srcdir)\glue.mx
 glue.obj: glue.cxx glue.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-html.cxx: html.mx
-html.h: html.mx
+html.cxx: $(srcdir)\html.mx
+html.h: $(srcdir)\html.mx
 html.obj: html.cxx html.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-iterator.cxx: iterator.mx
-iterator.h: iterator.mx
+iterator.cxx: $(srcdir)\iterator.mx
+iterator.h: $(srcdir)\iterator.mx
 iterator.obj: iterator.cxx iterator.h command.h symbol.h list.h ListIterator.h mel.h symtable.h FileInfo.h ops.h atomops.h type_arg.h mel.tab.h language.h module.h dependency.h atom.h operator.h builtin.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-language.h: language.mx
-link.cxx: link.mx
-link.h: link.mx
+language.h: $(srcdir)\language.mx
+link.cxx: $(srcdir)\link.mx
+link.h: $(srcdir)\link.mx
 link.obj: link.cxx link.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-list.h: list.mx
-ListIterator.cxx: ListIterator.mx
-ListIterator.h: ListIterator.mx
+list.h: $(srcdir)\list.mx
+ListIterator.cxx: $(srcdir)\ListIterator.mx
+ListIterator.h: $(srcdir)\ListIterator.mx
 ListIterator.obj: ListIterator.cxx ListIterator.h
-mel.cxx: mel.mx
-mel.h: mel.mx
-mel.ll: mel.mx
+mel.cxx: $(srcdir)\mel.mx
+mel.h: $(srcdir)\mel.mx
+mel.ll: $(srcdir)\mel.mx
 mel.obj: mel.cxx mel.h symtable.h symbol.h list.h ListIterator.h FileInfo.h ops.h atomops.h type_arg.h mel.tab.h use.h language.h module.h dependency.h atom.h command.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h link.h depend.h proto.h html.h glue.h mil.h mel_config.h
 mel.tab.cxx: mel.yy mel.h symtable.h symbol.h list.h ListIterator.h FileInfo.h ops.h atomops.h type_arg.h module.h dependency.h atom.h command.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h
 	$(YACC) $(YFLAGS) "mel.yy"
@@ -174,40 +175,40 @@ mel.yy.cxx: mel.ll mel.h symtable.h symbol.h list.h ListIterator.h FileInfo.h op
 # if LEX is the Cygwin flex, it produces an extra \r which VS doesn't like
 	-sed -i "s/\r//" "mel.yy.cxx"
 mel.yy.obj: mel.yy.cxx mel_config.h
-mel.yy: mel.mx
-mil.cxx: mil.mx
-mil.h: mil.mx
+mel.yy: $(srcdir)\mel.mx
+mil.cxx: $(srcdir)\mil.mx
+mil.h: $(srcdir)\mil.mx
 mil.obj: mil.cxx mil.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-module.cxx: module.mx
-module.h: module.mx
+module.cxx: $(srcdir)\module.mx
+module.h: $(srcdir)\module.mx
 module.obj: module.cxx module.h symbol.h list.h ListIterator.h language.h symtable.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-object.cxx: object.mx
-object.h: object.mx
+object.cxx: $(srcdir)\object.mx
+object.h: $(srcdir)\object.mx
 object.obj: object.cxx object.h symbol.h list.h ListIterator.h language.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-operator.cxx: operator.mx
-operator.h: operator.mx
+operator.cxx: $(srcdir)\operator.mx
+operator.h: $(srcdir)\operator.mx
 operator.obj: operator.cxx operator.h command.h symbol.h list.h ListIterator.h mel.h symtable.h FileInfo.h ops.h atomops.h type_arg.h mel.tab.h language.h module.h dependency.h atom.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-ops.cxx: ops.mx
-ops.h: ops.mx
+ops.cxx: $(srcdir)\ops.mx
+ops.h: $(srcdir)\ops.mx
 ops.obj: ops.cxx ops.h symbol.h list.h ListIterator.h language.h symtable.h module.h dependency.h atom.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-prelude.cxx: prelude.mx
-prelude.h: prelude.mx
+prelude.cxx: $(srcdir)\prelude.mx
+prelude.h: $(srcdir)\prelude.mx
 prelude.obj: prelude.cxx prelude.h symbol.h list.h ListIterator.h language.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h epilogue.h mel_config.h
-proto.cxx: proto.mx
-proto.h: proto.mx
+proto.cxx: $(srcdir)\proto.mx
+proto.h: $(srcdir)\proto.mx
 proto.obj: proto.cxx proto.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-symbol.cxx: symbol.mx
-symbol.h: symbol.mx
+symbol.cxx: $(srcdir)\symbol.mx
+symbol.h: $(srcdir)\symbol.mx
 symbol.obj: symbol.cxx symbol.h list.h ListIterator.h mel.h symtable.h FileInfo.h ops.h atomops.h type_arg.h language.h module.h dependency.h atom.h command.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-symtable.cxx: symtable.mx
-symtable.h: symtable.mx
+symtable.cxx: $(srcdir)\symtable.mx
+symtable.h: $(srcdir)\symtable.mx
 symtable.obj: symtable.cxx symtable.h symbol.h list.h ListIterator.h mel_config.h
-type_arg.cxx: type_arg.mx
-type_arg.h: type_arg.mx
+type_arg.cxx: $(srcdir)\type_arg.mx
+type_arg.h: $(srcdir)\type_arg.mx
 type_arg.obj: type_arg.cxx type_arg.h symbol.h list.h ListIterator.h language.h symtable.h module.h dependency.h atom.h ops.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-use.cxx: use.mx
-use.h: use.mx
+use.cxx: $(srcdir)\use.mx
+use.h: $(srcdir)\use.mx
 use.obj: use.cxx use.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
-var_arg.cxx: var_arg.mx
-var_arg.h: var_arg.mx
+var_arg.cxx: $(srcdir)\var_arg.mx
+var_arg.h: $(srcdir)\var_arg.mx
 var_arg.obj: var_arg.cxx var_arg.h symbol.h list.h ListIterator.h type_arg.h iterator.h command.h mel.h symtable.h FileInfo.h ops.h atomops.h mel.tab.h language.h module.h dependency.h atom.h operator.h builtin.h object.h atom_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
