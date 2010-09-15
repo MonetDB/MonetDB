@@ -324,19 +324,6 @@ bin_optimizer(mvc *c, stmt *s)
 			os->optimized = ns->optimized = 3;
 			return ns;
 		}
-		/* try to push the limit through the order */
-		if (!s->op4.stval && j->type == st_order) {
-			s = stmt_order(stmt_limit(stmt_dup(j->op1.stval),
-				stmt_dup(s->op2.stval),
-				stmt_dup(s->op3.stval),
-				LIMIT_DIRECTION(j->flag,1,0)), j->flag);
-			ns = bin_optimizer(c, s);
-			stmt_destroy(s);
-			assert(os->rewritten==NULL);
-			os->rewritten = stmt_dup(ns);
-			os->optimized = ns->optimized = 3;
-			return ns;
-		}
 		/* try to push the limit through the reverse */
 		if (!s->op4.stval && !s->flag && j->type == st_reverse) {
 			s = stmt_reverse(stmt_limit(stmt_dup(j->op1.stval),
