@@ -104,7 +104,8 @@ Dependencies between database objects
 [ "callhistory",	"querylog",	"DEP_VIEW"	]
 [ "t1",	"v1",	"DEP_VIEW"	]
 [ "v1",	"v2",	"DEP_VIEW"	]
-% .t,	.i,	. # table_name
+#SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0;
+% .t,	sys.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
@@ -189,7 +190,7 @@ Dependencies between database objects
 [ "id",	"t1_id_pkey",	"DEP_KEY"	]
 [ "id",	"queryhistory_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, keycolumns as kc, idxs as i where kc."column" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
-% .c,	.i,	. # table_name
+% .c,	sys.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
@@ -307,7 +308,8 @@ Dependencies between database objects
 [ "tables",	"dependencies_views_on_functions",	"DEP_FUNC"	]
 [ "tables",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 [ "v1",	"f2",	"DEP_FUNC"	]
-% .v,	.i,	. # table_name
+#SELECT v.name, i.name, 'DEP_INDEX' from tables as v, idxs as i where i.table_id = v.id and i.name not in (select name from keys) and v.type = 1;
+% .v,	sys.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
@@ -422,7 +424,7 @@ Cleanup
 [ "queryhistory",	"querylog",	"DEP_VIEW"	]
 [ "callhistory",	"querylog",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0;
-% .t,	.i,	. # table_name
+% .t,	sys.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
@@ -500,7 +502,7 @@ Cleanup
 % 2,	20,	7 # length
 [ "id",	"queryhistory_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, keycolumns as kc, idxs as i where kc."column" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
-% .c,	.i,	. # table_name
+% .c,	sys.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
@@ -611,7 +613,7 @@ Cleanup
 [ "tables",	"dependencies_views_on_functions",	"DEP_FUNC"	]
 [ "tables",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 #SELECT v.name, i.name, 'DEP_INDEX' from tables as v, idxs as i where i.table_id = v.id and i.name not in (select name from keys) and v.type = 1;
-% .v,	.i,	. # table_name
+% .v,	sys.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length

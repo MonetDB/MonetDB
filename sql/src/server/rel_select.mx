@@ -172,6 +172,8 @@ rel_create(void)
 static void
 rel_setsubquery(sql_rel*r)
 {
+	if (rel_is_ref(r))
+		return;
 	if (r->l && !is_base(r->op))
 		rel_setsubquery(r->l);
 	if (r->r && is_join(r->op))
@@ -2616,7 +2618,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		sql_exp *l = rel_value_exp(sql, &left, lo, f, ek), *e, *r = NULL;
 		list *vals = NULL;
 		int correlated = 0, vals_only = 1;
-		int l_is_value = 1;
+		int l_is_value = 1, r_is_rel = 0;
 
 		if (!l && sql->session->status != -ERR_AMBIGUOUS) {
 			l_is_value = 0;
@@ -2658,6 +2660,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				sql_rel *rl;
 
 				r = rel_value_exp(sql, &z, sval, f, ek);
+				if (z)
+					r_is_rel = 1;
 				if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 					/* reset error */
 					sql->session->status = 0;
@@ -2750,7 +2754,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			}
 			e = exp_compare( l, r, cmp_equal );
 			rel_join_add_exp(rel, e);
-			if (correlated || l_is_value) {
+			if (correlated || l_is_value || r_is_rel) {
 				rel->op = (sc->token == SQL_IN)?op_semi:op_anti;
 			} else if (sc->token == SQL_NOT_IN) {
 				rel->op = op_left;

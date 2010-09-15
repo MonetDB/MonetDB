@@ -256,7 +256,7 @@ rel_semantic(mvc *sql, symbol *s)
 			dnode *dn = sym->data.lval->h;
 			dnode *cn = sym->data.lval->h->next;
 			char *name = qname_table(dn->data.lval);
-			sql_rel *rel, *nrel;
+			sql_rel *nrel;
 			list *exps = NULL;
 
 			if (frame_find_var(sql, name)) {
@@ -272,10 +272,8 @@ rel_semantic(mvc *sql, symbol *s)
 					append(exps, exp_column(name, cname, NULL, CARD_MULTI, 0 /* null? */, 0));
 				}
 			}
-			rel = rel_recursive_func(exps);
-			stack_push_rel_view(sql, name, rel);
-
 			nrel = rel_semantic(sql, sym);
+			stack_push_rel_view(sql, name, nrel);
 			if (!nrel) {  
 				stack_pop_frame(sql);
 				return NULL;
@@ -287,9 +285,6 @@ rel_semantic(mvc *sql, symbol *s)
 				for (; ne; ne = ne->next) 
 					exp_setname( ne->data, name, NULL );
 			}
-			if (!rel_is_ref(rel))
-				stack_set_rel_view(sql, name, nrel);
-			rel_destroy(nrel);
 		}
 		rel = rel_semantic(sql, select);
 		stack_pop_frame(sql);
@@ -297,7 +292,6 @@ rel_semantic(mvc *sql, symbol *s)
 	}
 
 	case SQL_MULSTMT: {
-		//assert(0); /* handled before rel_semantic */
 		dnode *d;
 		sql_rel *r = NULL;
 

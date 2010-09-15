@@ -1637,6 +1637,18 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 		return sql_message("ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
+	/* First check if all the changes are allowed */
+	if (t->idxs.set) {
+		/* only one pkey */
+		if (nt->pkey) {
+			for (n = t->idxs.nelm; n; n = n->next) {
+				sql_idx *i = n->data;
+				if (i->key->type == pkey)
+					return sql_message("CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+			}
+		}
+	}
+
 	if (t->readonly != nt->readonly) 
 		mvc_readonly( sql, nt, t->readonly);
 

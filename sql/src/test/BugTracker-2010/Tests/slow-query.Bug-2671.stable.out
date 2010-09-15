@@ -41,7 +41,7 @@ Over..
 #      "f"."sql" = FALSE AND
 #      "a"."func_id" = "f"."id"
 #ORDER BY "f"."id", "a"."number";
-% .f,	.f,	.f,	.f,	.a,	.a,	.a,	.a,	.a # table_name
+% sys.f,	sys.f,	sys.f,	sys.f,	sys.a,	sys.a,	sys.a,	sys.a,	sys.a # table_name
 % id,	name,	mod,	func,	name,	type,	type_digits,	type_scale,	number # name
 % int,	varchar,	varchar,	varchar,	varchar,	varchar,	int,	int,	int # type
 % 1,	0,	0,	0,	0,	0,	1,	1,	1 # length
