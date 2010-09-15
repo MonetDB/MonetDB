@@ -531,6 +531,7 @@ TARmakeRegistration(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes
 	sig = getInstrPtr(tm,0);
 
 	setVarType(tm, getArg(getInstrPtr(tm,0),0), TYPE_int);
+	if ( tarantulaLocal == 0)
 	for ( n= 0; n < nodes; n++, k = 0){
 		p= newStmt(tm,tarantulaRef,registerRef);
 		p= pushInt(tm, p,n);
