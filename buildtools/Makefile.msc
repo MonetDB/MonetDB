@@ -20,21 +20,22 @@
 # Meta-Makefile.msc for buildtools
 
 prefix = $(MAKEDIR)\NT
+srcdir = .
 
 all:
-	cd autogen && setup.py build
-	cd Mx && $(MAKE) /nologo /f Makefile.msc
-	cd mel && $(MAKE) /nologo /f Makefile.msc
-	cd burg && $(MAKE) /nologo /f Makefile.msc
+	cd $(srcdir)\autogen && setup.py build
+	cd Mx && $(MAKE) /nologo /f ..\$(srcdir)\Mx\Makefile.msc srcdir=..\$(srcdir)\Mx
+	cd mel && $(MAKE) /nologo /f ..\$(srcdir)\mel\Makefile.msc srcdir=..\$(srcdir)\mel
+	cd burg && $(MAKE) /nologo /f ..\$(srcdir)\burg\Makefile.msc srcdir=..\$(srcdir)\burg
 
 install:
-	cd autogen && setup.py install "--prefix=$(prefix)"
-	cd Mx && $(MAKE) /nologo /f Makefile.msc "prefix=$(prefix)" install
-	cd mel && $(MAKE) /nologo /f Makefile.msc "prefix=$(prefix)" install
-	cd burg && $(MAKE) /nologo /f Makefile.msc "prefix=$(prefix)" install
+	cd $(srcdir)\autogen && setup.py install "--prefix=$(prefix)"
+	cd Mx && $(MAKE) /nologo /f ..\$(srcdir)\Mx\Makefile.msc srcdir=..\$(srcdir)\Mx "prefix=$(prefix)" install
+	cd mel && $(MAKE) /nologo /f ..\$(srcdir)\mel\Makefile.msc srcdir=..\$(srcdir)\mel "prefix=$(prefix)" install
+	cd burg && $(MAKE) /nologo /f ..\$(srcdir)\burg\Makefile.msc srcdir=..\$(srcdir)\burg "prefix=$(prefix)" install
 
 clean:
-	cd autogen && del /q build
-	cd Mx && $(MAKE) /nologo /f Makefile.msc clean
-	cd mel && $(MAKE) /nologo /f Makefile.msc clean
-	cd burg && $(MAKE) /nologo /f Makefile.msc clean
+	cd $(srcdir)\autogen && del /q build
+	cd Mx && $(MAKE) /nologo /f ..\$(srcdir)\Mx\Makefile srcdir=..\$(srcdir)\Mx.msc clean
+	cd mel && $(MAKE) /nologo /f ..\$(srcdir)\mel\Makefile.msc srcdir=..\$(srcdir)\mel clean
+	cd burg && $(MAKE) /nologo /f ..\$(srcdir)\burg\Makefile.msc srcdir=..\$(srcdir)\burg clean
