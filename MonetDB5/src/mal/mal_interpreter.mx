@@ -343,7 +343,7 @@ we should first remove garbage.
 	if ( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(cntxt, mb,stk, env != stk);
 	@:endProfile(stk)@
-	if (stk)
+	if (stk && stk != env)
 		GDKfree(stk);
 	return ret;
 }
