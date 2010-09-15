@@ -1,9 +1,4 @@
 
-TODO
-	select and join ops should allow for and/or of expressions	
-	ie we should alway only have a single exp which is and-ed and
-	or-ed together.
-
 BASETABLE
 	(card MULTI)
 	-> exps		is list of column expressions (also used for aliases)
@@ -72,9 +67,9 @@ Expressions
 e_atom 	(card ATOM)
 	-> l	literal (-> l = atom)
 	or
-	-> r	parameter ( ->r = varname, ->f = subtype, ->flag = level)
+	-> r	parameter ( ->r = varname, ->type = subtype, ->flag = level)
 	or
-	-> 	numbered variable ( ->flag = nr, ->f = subtype)
+	-> 	numbered variable ( ->flag = nr, ->type = subtype)
 
 e_convert
 	-> l	sub expression
@@ -82,7 +77,7 @@ e_convert
 
 e_cmp
 	-> l	left sub expression
-	-> r	right sub expression
+	-> r	right sub expression (f second arg for range expressions)
 	-> flag compare type		
 		(       cmp_gt = 0,
         		cmp_gte = 1,
@@ -109,5 +104,6 @@ e_column
 		l,r names of refered expression
 	-> l 	optional relation name 
 	-> r	expression name
+	-> type 
 
 	

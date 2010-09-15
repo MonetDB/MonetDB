@@ -292,8 +292,6 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		mnstr_printf(toConsole, ") REFERENCES \"%s\".\"%s\" (",
 			     c_psname, c_ptname);
 		for (i = 0; i < nkeys; i++) {
-			if (i > 0)
-				mnstr_printf(toConsole, ", ");
 			mnstr_printf(toConsole, "%s\"%s\"",
 				     i > 0 ? ", " : "", pkeys[i]);
 		}

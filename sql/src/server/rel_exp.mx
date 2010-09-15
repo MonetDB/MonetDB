@@ -118,6 +118,9 @@ exp_create( int type )
 	e->f = NULL;
 	e->p = NULL;
 	e->used = 0;
+	e->tpe.type = NULL;
+	e->tpe.comp_type = NULL;
+	e->tpe.digits = e->tpe.scale = 0;
 	return e;
 }
 
@@ -240,8 +243,7 @@ exp_convert( sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype )
 	totype = dup_subtype(totype);
 	e->r = append(append(new_subtype_list(),
 			dup_subtype(fromtype)),totype);
-	e->f = totype; /* keep a pointer to the copied type, the original may
-			  disappear */
+	e->tpe = *totype; 
 	return e;
 }
 
@@ -349,7 +351,7 @@ exp_atom_ref(int i, sql_subtype *tpe)
 	sql_exp *e = exp_create(e_atom);
 	e->card = CARD_ATOM;
 	e->flag = i;
-	e->f = tpe;
+	e->tpe = *tpe;
 	return e;
 }
 
@@ -359,8 +361,8 @@ exp_param(char *name, sql_subtype *tpe, int frame)
 	sql_exp *e = exp_create(e_atom);
 	e->r = _strdup(name);
 	e->card = CARD_ATOM;
-	e->f = tpe;
 	e->flag = frame;
+	e->tpe = *tpe;
 	return e;
 }
 
@@ -375,7 +377,7 @@ exp_alias( char *arname, char *acname, char *org_rname, char *org_cname, sql_sub
 	e->name = _strdup(acname);
 	e->l = (org_rname)?_strdup(org_rname):NULL;
 	e->r = _strdup(org_cname);
-	e->f = t;
+	e->tpe = *t;
 	if (!has_nils)
 		set_has_no_nil(e);
 	if (intern)
@@ -393,7 +395,7 @@ exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils, in
 	e->name = _strdup(cname);
 	e->l = (rname)?_strdup(rname):NULL;
 	e->r = _strdup(cname);
-	e->f = t;
+	e->tpe = *t;
 	if (!has_nils)
 		set_has_no_nil(e);
 	if (intern)
@@ -459,12 +461,12 @@ exp_subtype( sql_exp *e )
 			atom *a = e->l;
 			return atom_type(a);
 		} else { /* atom reference */
-			return e->f;
+			return &e->tpe;
 		}
 	}
 	case e_convert:
 	case e_column:
-		return e->f;
+		return &e->tpe;
 	case e_aggr: {
 		sql_subaggr *a = e->f;
 		return &a->res;
