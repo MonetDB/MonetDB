@@ -26,8 +26,8 @@ Over..
 # 22:42:43 >  
 
 #SELECT COUNT (*) AS c1, COUNT (*) AS c2 FROM t2 limit 100;
-% .t2,	. # table_name
-% c1,	single_value # name
+% .t2,	.t2 # table_name
+% c1,	c2 # name
 % wrd,	wrd # type
 % 1,	1 # length
 [ 0,	0	]

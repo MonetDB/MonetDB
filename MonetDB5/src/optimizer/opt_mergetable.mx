@@ -1227,13 +1227,29 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid)
 		}
 		pushInstruction(mb, pck);
 
+		/* first project using the current topn as the next topn
+		 * operators need aligned bats 
+		 */
+		var = getArg(pck,0);
+		if (cur_topn) {
+			InstrPtr mi = bat_mirror(mb, cur_topn);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, leftjoinRef);
+			getArg(q, 0) = newTmpVariable(mb, tpe);
+			q = pushArgument(mb, q, getArg(mi, 0));
+			q = pushArgument(mb, q, var);
+			pushInstruction(mb, q);
+			var = getArg(q,0);
+		}
+
 		/* re-do the topn */
 		if (!slc)
 			tpe = newBatType(TYPE_oid, TYPE_oid);
 		getArg(tpn, arg++) = newTmpVariable(mb, tpe);
 		if (cur_topn)
 			getArg(tpn, arg++) = cur_topn;
-		getArg(tpn, arg) = getArg(pck, 0);
+		getArg(tpn, arg) = var;
 			
 		pushInstruction(mb, tpn);
 		cur_topn = getArg(tpn, 0);

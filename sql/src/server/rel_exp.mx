@@ -351,7 +351,8 @@ exp_atom_ref(int i, sql_subtype *tpe)
 	sql_exp *e = exp_create(e_atom);
 	e->card = CARD_ATOM;
 	e->flag = i;
-	e->tpe = *tpe;
+	if (tpe)
+		e->tpe = *tpe;
 	return e;
 }
 
@@ -362,7 +363,8 @@ exp_param(char *name, sql_subtype *tpe, int frame)
 	e->r = _strdup(name);
 	e->card = CARD_ATOM;
 	e->flag = frame;
-	e->tpe = *tpe;
+	if (tpe)
+		e->tpe = *tpe;
 	return e;
 }
 
@@ -377,7 +379,8 @@ exp_alias( char *arname, char *acname, char *org_rname, char *org_cname, sql_sub
 	e->name = _strdup(acname);
 	e->l = (org_rname)?_strdup(org_rname):NULL;
 	e->r = _strdup(org_cname);
-	e->tpe = *t;
+	if (t)
+		e->tpe = *t;
 	if (!has_nils)
 		set_has_no_nil(e);
 	if (intern)
@@ -395,7 +398,8 @@ exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils, in
 	e->name = _strdup(cname);
 	e->l = (rname)?_strdup(rname):NULL;
 	e->r = _strdup(cname);
-	e->tpe = *t;
+	if (t)
+		e->tpe = *t;
 	if (!has_nils)
 		set_has_no_nil(e);
 	if (intern)
@@ -460,13 +464,16 @@ exp_subtype( sql_exp *e )
 		if (e->l) {
 			atom *a = e->l;
 			return atom_type(a);
-		} else { /* atom reference */
+		} else if (e->tpe.type) { /* atom reference */
 			return &e->tpe;
 		}
+		break;
 	}
 	case e_convert:
 	case e_column:
-		return &e->tpe;
+		if (e->tpe.type)
+			return &e->tpe;
+		break;
 	case e_aggr: {
 		sql_subaggr *a = e->f;
 		return &a->res;
@@ -483,6 +490,7 @@ exp_subtype( sql_exp *e )
 	default:
 		return NULL;
 	}
+	return NULL;
 }
 
 char *

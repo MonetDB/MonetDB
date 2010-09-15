@@ -40,10 +40,10 @@ Over..
 % test # name
 % varchar # type
 % 7 # length
-[ "mytest3"	]
-[ "mytest2"	]
 [ "mytest1"	]
+[ "mytest2"	]
 [ "mytest4"	]
+[ "mytest3"	]
 [ "mytest2"	]
 [ "mytest1"	]
 [ "mytest3"	]
@@ -51,8 +51,8 @@ Over..
 % dir # name
 % varchar # type
 % 7 # length
-[ "mydir1/"	]
 [ "mydir2/"	]
+[ "mydir1/"	]
 [ "mydir2/"	]
 [ "mydir1/"	]
 [ "mydir2/"	]

@@ -77,7 +77,6 @@ Over..
 [ "derive_pipe"	]
 [ "dictionary_pipe"	]
 [ "compression_pipe"	]
-[ "opt_debug"	]
 [ "gdk_mem_pagebits"	]
 [ "gdk_mem_bigsize"	]
 [ "monet_pid"	]
