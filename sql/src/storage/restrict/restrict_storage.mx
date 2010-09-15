@@ -376,7 +376,8 @@ snapshot_new_persistent_bat(sql_trans *tr, sql_bat *bat)
 
 	(void)tr;
 	/* snapshot large bats */
-	if (BATcount(b) > SNAPSHOT_MINSIZE) 
+	bat_set_access(b, BAT_READ);
+	if (BATcount(b) > SNAPSHOT_MINSIZE)
 		BATmode(b, PERSISTENT);
 	if (BATcount(b) > (BUN) REMAP_PAGE_MAXSIZE)
        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
@@ -390,6 +391,7 @@ new_persistent_bat(sql_trans *tr, sql_bat *bat)
 	BAT *b = temp_descriptor(bat->bid);
 
 	(void)tr;
+	bat_set_access(b, BAT_READ);
 	BATcommit(b);
 	bat_destroy(b);
 	return LOG_OK;
@@ -524,6 +526,7 @@ create_del(sql_trans *tr, sql_table *t)
 		bat_destroy(b);
 	} else if (!bat->bid) {
 		b = bat_new(TYPE_void, TYPE_oid, t->sz);
+		bat_set_access(b, BAT_READ);
 		bat->bid = temp_create(b);
 		bat_destroy(b);
 	}
@@ -553,6 +556,7 @@ snapshot_create_del(sql_trans *tr, sql_table *t)
 
 	(void)tr;
 	/* snapshot large bats */
+	bat_set_access(b, BAT_READ);
 	if (BATcount(b) > SNAPSHOT_MINSIZE) 
 		BATmode(b, PERSISTENT);
 	if (BATcount(b) > (BUN) REMAP_PAGE_MAXSIZE)
