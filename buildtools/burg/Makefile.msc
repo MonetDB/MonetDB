@@ -19,11 +19,12 @@
 
 prefix = ..\NT
 bindir = $(prefix)\bin
+srcdir = .
 
 !IFDEF DEBUG
-CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1
+CFLAGS = -I$(srcdir) -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1
 !ELSE
-CFLAGS = -I. -GF -W3 -MD -nologo
+CFLAGS = -I$(srcdir) -GF -W3 -MD -nologo
 !ENDIF
 
 MV=copy
@@ -35,6 +36,9 @@ FILTER=findstr /v /l
 FILTERPREF=/c:
 YACC=bison -b y -y
 YFLAGS=-d
+
+{$(srcdir)\}.c{}.obj::
+	$(CC) $(CFLAGS) /Fd.\ /c $<
 
 all: burg.exe
 
@@ -54,18 +58,18 @@ burg.exe: $(BURG_OBJS)
 	$(CC) $(CFLAGS) /Feburg.exe $(BURG_OBJS) /link /subsystem:console 
 	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1
 
-burg_config.h: winconfig.h
-	copy winconfig.h burg_config.h
+burg_config.h: $(srcdir)\winconfig.h
+	copy $(srcdir)\winconfig.h burg_config.h
 
 $(BURG_OBJS): burg_config.h
 
 gram.obj: gram.c gram.h
 
-gram.h: gram.y
-	$(YACC) $(YFLAGS) gram.y
+gram.h: $(srcdir)\gram.y
+	$(YACC) $(YFLAGS) $(srcdir)\gram.y
 	$(DEL) y.tab.c
 	$(MV) y.tab.h gram.h
 
-gram.c: gram.y
-	$(YACC) $(YFLAGS) gram.y
+gram.c: $(srcdir)\gram.y
+	$(YACC) $(YFLAGS) $(srcdir)\gram.y
         $(FILTER) $(FILTERPREF)"    ;" y.tab.c > gram.c
