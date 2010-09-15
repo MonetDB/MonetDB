@@ -1741,10 +1741,10 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 @:baselineCode(&&,AND,bit)@
 @:baselineCode(||,OR,bit)@
 
-@:operatorCstImpl(>=,GE,LT)@
-@:operatorCstImpl(<,LT,GE)@
-@:operatorCstImpl(>,GT,LE)@
-@:operatorCstImpl(<=,LE,GT)@
+@:operatorCstImpl(>=,GE,LE)@
+@:operatorCstImpl(<,LT,GT)@
+@:operatorCstImpl(>,GT,LT)@
+@:operatorCstImpl(<=,LE,GE)@
 @:operatorCstImpl(==,EQ,EQ)@
 @:operatorCstImpl(!=,NEQ,NEQ)@
 @:baselineCstCode(&&,AND,bit,AND)@
