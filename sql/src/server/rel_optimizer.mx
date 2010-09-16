@@ -2969,7 +2969,7 @@ exps_mark_used(sql_rel *rel, sql_rel *subrel)
 		}
 	}
 	/* for count/rank we need atleast one column */
-	if (!nr && (is_project(subrel->op) || is_base(subrel->op))) {
+	if (!nr && (is_project(subrel->op) || is_base(subrel->op)) && subrel->exps->h) {
 		sql_exp *e = subrel->exps->h->data;
 		e->used = 1;
 	}

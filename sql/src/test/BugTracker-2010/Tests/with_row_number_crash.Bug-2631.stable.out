@@ -68,7 +68,6 @@ Over..
 [ 37	]
 [ 38	]
 [ 39	]
-[ 40	]
 #WITH t1 (i) AS (SELECT ROW_NUMBER () OVER (ORDER BY id ASC) AS i FROM _tables) select i from t1;
 % .t1 # table_name
 % i # name
@@ -140,7 +139,6 @@ Over..
 [ 64	]
 [ 65	]
 [ 66	]
-[ 67	]
 
 # 15:00:28 >  
 # 15:00:28 >  Done.

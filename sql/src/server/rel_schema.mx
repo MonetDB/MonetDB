@@ -263,13 +263,6 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		key_type kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
 		sql_key *k;
 
-/*
-		if (isTempTable(t)) {
-			(void) sql_error(sql, 02, "CONSTRAINT: constraints on temporary tables are not supported\n");
-			return res;
-		}
-*/
-
 		if (kt == pkey && t->pkey) {
 			(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return res;
