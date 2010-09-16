@@ -386,7 +386,7 @@ TARdiscover(Client cntxt)
 		SABAOTHgetLocalConnection(&s);
 	
 		nrworkers += TARgetPeer(s) >= 0;
-		/* tarantulaLocal = 1; just do everything in parallel */
+		tarantulaLocal = 1; 
 	}
 
 #ifdef DEBUG_RUN_TAR
