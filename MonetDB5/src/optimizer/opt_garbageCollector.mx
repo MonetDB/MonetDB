@@ -224,7 +224,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		pushInstruction(mb, old[i]);
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 	GDKfree(old);
-	GDKfree(span);
 	OPTDEBUGgarbageCollector{ 
 		int k;
 		mnstr_printf(cntxt->fdout, "#Garbage collected BAT variables \n");
@@ -234,6 +233,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			getBeginLifespan(span,k), getLastUpdate(span,k), getEndLifespan(span,k));
 		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
+	GDKfree(span);
 
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_garbagecollector: %d variables reset\n",actions);
