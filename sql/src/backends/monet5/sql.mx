@@ -882,6 +882,7 @@ end octopus.bind;
 
 function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, 
 version:int):bat[:oid,:any_1];
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
 	m := nil:ptr;
 	rm := remote.put(conn,m);
 	rm := remote.exec(conn,"sql","mvc");
@@ -889,7 +890,7 @@ version:int):bat[:oid,:any_1];
 	t := remote.put(conn,tab);
 	c := remote.put(conn,col);
 	k := remote.put(conn,kind);
-	bh:= remote.put(conn,bind);
+	bh:= remote.put(conn,b);
 	bh:= remote.exec(conn,"sql","bind",rm,s,t,c,k);
 	b:bat[:oid,:any_1]:= remote.get(conn,bh);
 	return bind:= b;
@@ -901,13 +902,14 @@ function octopus.bind_dbat(mvc:ptr, sch:str, tab:str,access:int, version:int):ba
 end octopus.bind_dbat;
 
 function octopus.bind_dbat(conn:str, sch:str, tab:str, access:int, version:int):bat[:oid,:oid];
+	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
 	m := nil:ptr;
 	rm := remote.put(conn,m);
 	rm := remote.exec(conn,"sql","mvc");
 	s := remote.put(conn,sch);
 	t := remote.put(conn,tab);
 	a := remote.put(conn,access);
-	bh:= remote.put(conn,bind_dbat);
+	bh:= remote.put(conn,b);
 	bh:= remote.exec(conn,"sql","bind_dbat",rm,s,t,a);
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
 	return bind_dbat:= b;
@@ -919,6 +921,7 @@ function octopus.bind_idxbat(mvc:ptr, sch:str, tab:str, index:str, access:int, v
 end octopus.bind_idxbat;
 
 function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
+	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
 	m := nil:ptr;
 	rm := remote.put(conn,m);
 	rm := remote.exec(conn,"sql","mvc");
@@ -926,13 +929,14 @@ function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, 
 	t := remote.put(conn,tab);
 	i := remote.put(conn,index);
 	a := remote.put(conn,access);
-	bh:= remote.put(conn,bind_idxbat);
+	bh:= remote.put(conn,b);
 	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a);
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
 	return bind_idxbat:= b;
 end octopus.bind_idxbat;
 
 function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, low:oid, hgh:oid, version:int):bat[:oid,:oid];
+	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
 	m := nil:ptr;
 	rm := remote.put(conn,m);
 	rm := remote.exec(conn,"sql","mvc");
@@ -942,7 +946,7 @@ function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, 
 	a := remote.put(conn,access);
 	l := remote.put(conn,low);
 	h := remote.put(conn,hgh);
-	bh:= remote.put(conn,bind_idxbat);
+	bh:= remote.put(conn,b);
 	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a,l,h);
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
 	return bind_idxbat:= b;
@@ -5478,7 +5482,7 @@ str fits_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mvc_create_column_(m, fits_tbl, "filename","varchar",80);
 		mvc_create_column_(m, fits_tbl, "hdu","int",32);
 	}
-	fits_col = mvc_bind_table(m, sch, "fits_col");
+	fits_col = mvc_bind_table(m, sch, "fits_columns");
 	if ( fits_col == NULL ){
 		fits_col = mvc_create_table(m, sch, "fits_columns", tt_table, 0, SQL_PERSIST, 0, 6);
 		mvc_create_column_(m, fits_col, "id","int",32);

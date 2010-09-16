@@ -36,6 +36,10 @@ pattern makeBid(fnname:str, bidtype:sht):lng
 address TRADERmakeBid
 comment "Make a bid for execution of function octopus.<fnname>";
 
+pattern makeBids(bidtype:sht, fnname1:str...):lng...
+address TRADERmakeBids
+comment "Make execution bids for functions octopus.<fnname1>, ...";
+
 @h
 #ifndef _TRADER_
 #define _TRADER_
@@ -225,6 +229,35 @@ str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", nowtm);
 	mnstr_printf(s,"%s\t%s\t%1d\t" LLFMT "\n",timestr, fnname, bidtype, *c);
 	close_stream(s);
+
+	return MAL_SUCCEED;
+}   
+
+str TRADERmakeBids(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng *bid;
+	str fnname;
+	sht bidtype;
+	Symbol sym;
+	static str octopusRef = NULL;
+	int n = pci->argc - pci->retc -1;
+	int i;
+
+	(void) mb;
+
+	if (octopusRef == 0)
+		octopusRef = putName("octopus",7);
+
+	bidtype = *(sht *) getArgReference(stk,pci,pci->retc);
+	for ( i = 0; i < n ; i++){
+		fnname = *(str *) getArgReference(stk,pci,i + pci->retc + 1);
+		bid = (lng *) getArgReference(stk,pci,i);
+	    sym = findSymbol(cntxt->nspace, octopusRef, fnname);
+	    if ( sym == NULL)
+    	    throw(MAL,"trader.makeBids", RUNTIME_SIGNATURE_MISSING "%s", fnname);
+        
+    	*bid = estimateSavings(sym->def, bidtype);
+	}
 
 	return MAL_SUCCEED;
 }   
