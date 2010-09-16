@@ -462,6 +462,9 @@ main(int argc, char **argv)
 				walk = walk->next = malloc(sizeof(wthread));
 			}
 			walk->next = NULL;
+		} else {
+			fprintf(stderr, "%s: no databases found for '%s'\n",
+					argv[0], dbname);
 		}
 		free(oalts);
 		for (walk = thds; walk != NULL; walk = walk->next) {
