@@ -122,6 +122,12 @@ typedef __int64 ssize_t;
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 #define PTRFMT		"%p"
 #define PTRFMTCAST		/* no cast needed */
+#elif defined(_MSC_VER)
+/* On Windows, always use 64 bit integers (even on 32-bit architectures)
+ * to not get the warning C4311: 'type cast' : pointer truncation from
+ * 'void *' to 'unsigned int' */
+#define PTRFMT		"%I64x"
+#define PTRFMTCAST	(unsigned __int64)
 #elif SIZEOF_VOID_P == SIZEOF_INT
 #define PTRFMT		"%x"
 #define PTRFMTCAST	(unsigned int)
@@ -131,9 +137,6 @@ typedef __int64 ssize_t;
 #elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
 #define PTRFMT		"%llx"
 #define PTRFMTCAST	(unsigned long long)
-#elif SIZEOF_VOID_P == SIZEOF___INT64
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
 #else
 #error no definition for PTRFMT
 #endif
