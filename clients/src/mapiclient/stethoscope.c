@@ -461,8 +461,8 @@ main(int argc, char **argv)
 					break;
 				walk = walk->next = malloc(sizeof(wthread));
 			}
+			walk->next = NULL;
 		}
-		walk->next = NULL;
 		free(oalts);
 		for (walk = thds; walk != NULL; walk = walk->next) {
 			pthread_join(walk->id, NULL);
