@@ -1,4 +1,3 @@
-set history='true';
-select id from tables where id > 0;
+set history = true;
 create table t1 (id int);
 drop table t1;
