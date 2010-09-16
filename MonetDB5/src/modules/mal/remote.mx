@@ -804,18 +804,18 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				GDKfree(tailv);
 			}
 			BBPunfix(b->batCacheid);
-
-			/* write the empty line the server is waiting for, handles
-			 * all errors at the same time, if any */
-			qbuf[0] = '\0';
-			if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
-					!= MAL_SUCCEED)
-			{
-				mal_unset_lock(c->lock, "remote.put");
-				return tmp;
-			}
-			mapi_close_handle(mhdl);
 		}
+
+		/* write the empty line the server is waiting for, handles
+		 * all errors at the same time, if any */
+		qbuf[0] = '\0';
+		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
+				!= MAL_SUCCEED)
+		{
+			mal_unset_lock(c->lock, "remote.put");
+			return tmp;
+		}
+		mapi_close_handle(mhdl);
 	} else {
 		str val = NULL;
 		char qbuf[BUFSIZ + 1]; /* FIXME: this should be dynamic */
