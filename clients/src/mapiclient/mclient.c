@@ -690,8 +690,18 @@ SQLqueryEcho(MapiHdl hdl)
 					mnstr_printf(toConsole, "#%s\n", p);
 					p = q;
 				}
+				if (*p) {
+					/* query does not end in \n */
+					mnstr_printf(toConsole, "#%s\n", p);
+				}
 			} else {
+				size_t qrylen = strlen(qry);
+
 				mnstr_printf(toConsole, "%s", qry);
+				if (qrylen > 0 && qry[qrylen - 1] != '\n') {
+					/* query does not end in \n */
+					mnstr_printf(toConsole, "\n");
+				}
 			}
 			free(qry);
 		}
@@ -1161,7 +1171,9 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 
 	SQLheader(hdl, len, printfields, fields != printfields);
 
-	while (!mnstr_errnr(toConsole) && (rfields = fetch_row(hdl)) != 0) {
+	while ((rfields = fetch_row(hdl)) != 0) {
+		if (mnstr_errnr(toConsole))
+			continue
 		if (rfields != fields) {
 			mnstr_printf(stderr_stream,
 					"invalid tuple received from server, "
