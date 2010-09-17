@@ -474,8 +474,8 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].name = col->base.name;
 			fmt[i].sep = (n->next) ? _strdup(sep) : _strdup(rsep);
 			fmt[i].seplen = _strlen(fmt[i].sep);
-			fmt[i].type = col->type.type->base.name;
-			fmt[i].adt = ATOMindex(fmt[i].type);
+			fmt[i].type = sql_subtype_string(&col->type);
+			fmt[i].adt = ATOMindex(col->type.type->base.name);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;

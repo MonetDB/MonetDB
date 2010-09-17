@@ -2268,12 +2268,12 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 		if (!BAThdense(r)) {
 			GDKerror("BATfetchsemijoin: left column must be dense.\n");
 			return NULL;
-		} else if (ATOMstorage(l->htype) != ATOMstorage(TYPE_oid)) {
+		} else if (BATcount(l) && ATOMstorage(l->htype) != ATOMstorage(TYPE_oid)) {
 			GDKerror("BATfetchsemijoin: illegal index type %s.\n", ATOMname(l->htype));
 			return NULL;
 		}
 	}
-	if (BAThvoid(l)) {
+	if (BATcount(l) && BAThvoid(l)) {
 		/* redirect semijoin on two dense regions to a select (and hence to BATslice) */
 		oid min = l->hseqbase, max = min;
 

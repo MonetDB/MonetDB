@@ -80,41 +80,41 @@ stderr of test 'null_as_string_errors` in directory 'src/test/copy` itself:
 # 21:02:57 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38808 
 # 21:02:57 >  
 
-MAPI  = monetdb@volund:35971
+MAPI  = monetdb@alf:34882
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,NULL,NULL
         
 ERROR = !SQLException:importTable:value 'NULL' from line 1 field 1 not inserted, expecting type int
         !failed to import table
-MAPI  = monetdb@volund:35971
+MAPI  = monetdb@alf:34882
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,zero,0
         
 ERROR = !SQLException:importTable:value 'NULL' from line 1 field 1 not inserted, expecting type int
         !failed to import table
-MAPI  = monetdb@volund:35971
+MAPI  = monetdb@alf:34882
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         2,two,NULL
         
-ERROR = !SQLException:importTable:value 'NULL' from line 1 field 3 not inserted, expecting type int
+ERROR = !SQLException:importTable:value 'NULL' from line 1 field 3 not inserted, expecting type decimal(5,2)
         !failed to import table
-MAPI  = monetdb@volund:35971
+MAPI  = monetdb@alf:34882
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
         ,,
         
 ERROR = !SQLException:importTable:value '' from line 1 field 1 not inserted, expecting type int
         !failed to import table
-MAPI  = monetdb@volund:35971
+MAPI  = monetdb@alf:34882
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
         ,zero,0
         
 ERROR = !SQLException:importTable:value '' from line 1 field 1 not inserted, expecting type int
         !failed to import table
-MAPI  = monetdb@volund:35971
+MAPI  = monetdb@alf:34882
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
         2,two,
         
-ERROR = !SQLException:importTable:value '' from line 1 field 3 not inserted, expecting type int
+ERROR = !SQLException:importTable:value '' from line 1 field 3 not inserted, expecting type decimal(5,2)
         !failed to import table
 
 # 21:02:58 >  
