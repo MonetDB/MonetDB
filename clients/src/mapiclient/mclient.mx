@@ -672,8 +672,18 @@ SQLqueryEcho(MapiHdl hdl)
 					stream_printf(toConsole, "#%s\n", p);
 					p = q;
 				}
+				if (*p) {
+					/* query does not end in \n */
+					stream_printf(toConsole, "#%s\n", p);
+				}
 			} else {
+				size_t qrylen = strlen(qry);
+
 				stream_printf(toConsole, "%s", qry);
+				if (qrylen > 0 && qry[qrylen - 1] != '\n') {
+					/* query does not end in \n */
+					stream_printf(toConsole, "\n");
+				}
 			}
 			free(qry);
 		}
