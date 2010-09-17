@@ -1010,8 +1010,8 @@ SQLrenderer(MapiHdl hdl)
 	if (mark2)
 		free(mark2);
 	mark2 = NULL;
-	while (!stream_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
-		if (silent)
+	while ((fields = fetch_row(hdl)) != 0) {
+		if (silent || stream_errnr(toConsole))
 			continue;
 		if (len == 0 || fields != oldfields) {
 			if (oldfields != fields) {
