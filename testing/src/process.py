@@ -160,6 +160,10 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
     elif lang == 'sqldump':
         cmd = _sql_dump[:]
 
+    # no -i if input from -s or /dev/null
+    if '-i' in cmd and ('-s' in args or stdin is None):
+        cmd.remove('-i')
+
     env = None
 
     if port is not None:
@@ -205,6 +209,9 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         print >> sys.stderr, prompt
         print >> sys.stderr
         sys.stderr.flush()
+    if stdin is None:
+        # if no input provided, use /dev/null as input
+        stdin = open(os.devnull)
     p = Popen(cmd + args,
               stdin = stdin,
               stdout = stdout,
