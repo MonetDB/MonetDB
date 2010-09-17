@@ -945,12 +945,6 @@ PQtopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
 	n = BATcount(a);
   	if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
 		  n = (BUN) *N;
-	if (n >= BATcount(a)) {
-		*ret= a->batCacheid;
-		BBPkeepref(*ret);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
 	bn = BATnew(TYPE_oid, TYPE_oid, n);
 	for(i=0; i<n; ) {
 		oid *v = (oid*)Tloc(a,i), ov = *v; 
@@ -994,12 +988,6 @@ PQutopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
 	n = BATcount(a);
   	if (*N != wrd_nil && *N >= 0 && *N <= (wrd) BUN_MAX && (BUN) *N < n)
 		  n = (BUN) *N;
-	if (n >= BATcount(a)) {
-		*ret= a->batCacheid;
-		BBPkeepref(*ret);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
 	bn = BATnew(TYPE_oid, TYPE_oid, n);
 	for(i=0; i<n; ) {
 		oid *v = (oid*)Tloc(a,i), ov = *v; 
