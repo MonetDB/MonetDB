@@ -1,8 +1,8 @@
-import os, sys
+import sys
 from MonetDBtesting import process
 
 def client(args):
-    clt = process.client('sql', args = args,
+    clt = process.client('sql', args = args, stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
     out, err = clt.communicate()
     sys.stdout.write(out)
