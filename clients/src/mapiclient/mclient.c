@@ -1173,7 +1173,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 
 	while ((rfields = fetch_row(hdl)) != 0) {
 		if (mnstr_errnr(toConsole))
-			continue
+			continue;
 		if (rfields != fields) {
 			mnstr_printf(stderr_stream,
 					"invalid tuple received from server, "
