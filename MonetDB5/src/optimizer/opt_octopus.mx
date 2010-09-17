@@ -1013,6 +1013,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	pushInstruction(mb, sig); 
 
+	last = limit;
 	for (i = 1; i < limit; i++) {	/* copy all instructions of cluster 0 and -1 */	
 		p = old[i];
 		if (p->token == ENDsymbol){
