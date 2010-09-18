@@ -3902,7 +3902,7 @@ VALUES (%s, '%s', '%s', '%s',
         CreateHtmlIndex(env, *body)
 
         Failed = 0
-        for f in Failure[1:]:
+        for f in Failure[1:-1]:
             Failed += len(f)
         num_tests = 0
         for f in Failure:
@@ -3921,7 +3921,8 @@ VALUES (%s, '%s', '%s', '%s',
                 how = z
                 what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
                 # only report failed tests if there aren't too many
-                if Failed < 30:
+                if Failed < 30 and \
+                       (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
                     for f in Failure[x]:
                         what += "        %s\n" % f
         STDERR.flush()

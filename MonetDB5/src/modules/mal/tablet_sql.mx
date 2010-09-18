@@ -470,15 +470,16 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	for (i = 0; i < 16; i++)
 		ptask[i].cols = 0;
 
+	if ( task == 0){
+		as->error = M5OutOfMemory;
+		return BUN_NONE;
+	}
+
 	/* trimming process should not be active during this process. */
 	/* on sf10 experiments it showed a slowdown of a factor 2 on */
 	/* large tables. Instead rely on madvise */
 	GDK_vm_trim = 0;
 
-	if ( task == 0){
-		as->error = M5OutOfMemory;
-		return BUN_NONE;
-	}
 	assert(rsep);
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
@@ -622,7 +623,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			   The user should supply the correct number
 			   of fields.
 			   In the first phase we simply break the lines
-				at the record boundary.
+			   at the record boundary.
 			*/
 			if ( quote == 0) {
 				if (rseplen == 1)
@@ -720,7 +721,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 					res = -1;
 			}
 		}
-		lio += GDKusec() -t1;	/* line bread done */
+		lio += GDKusec() -t1;	/* line break done */
 		if ( task->next ){
 			if ( res == 0){
 				SQLworkdivider(task, ptask, (int) as->nr_attrs, threads);
@@ -749,6 +750,14 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		if ( task->ateof)
 			break;
 		MT_down_sema(task->consumer, "tablet loader");
+	}
+
+	if (task->b->pos < task->b->len && cnt < (BUN) maxrow && task->ateof) {
+		GDKerror("Incomplete record at end of file.\n");
+		/* indicate that we did read everything (even if we couldn't
+		   deal with it */
+		task->b->pos = task->b->len;
+		res = -1;
 	}
 
 	if (GDKdebug & GRPalgorithms) {
@@ -822,6 +831,8 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 #ifdef MLOCK_TST
 	munlockall();
 #endif
+	/* restore system setting */
+	GDK_vm_trim = vmtrim;
 	return BUN_NONE;
 }
 

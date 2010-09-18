@@ -1,4 +1,4 @@
-import os, sys
+import sys
 from MonetDBtesting import process
 
 def client(args):

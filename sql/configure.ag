@@ -155,6 +155,57 @@ AC_SUBST(MSEED_CFLAGS, $MSEED_CFLAGS)
 AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
+have_cfitsio="auto"
+AC_ARG_WITH(cfitsio,
+    AS_HELP_STRING([--with-cfitsio=DIR],[cfitsio library is installed in DIR]),
+    [have_cfitsio="$withval"], [have_cfitsio="auto"])
+if test "x$have_cfitsio" != xno; then
+
+    CFITSIO_CONFIG=""
+    XPATH="$PATH"
+    case "$have_cfitsio" in
+    auto|yes)
+	;;
+    *)
+	XPATH="$have_cfitsio/bin"
+	;;
+    esac
+
+    AC_PATH_PROG(CFITSIO_CONFIG,pkg-config,,$XPATH)
+
+    if test "x$CFITSIO_CONFIG" != x; then
+		if `$CFITSIO_CONFIG --exists cfitsio` ; then
+			CFITSIO_CFLAGS="`$CFITSIO_CONFIG cfitsio --cflags`"
+			CFITSIO_LIBS="`$CFITSIO_CONFIG cfitsio --libs`"
+		fi
+    else
+	case "$have_cfitsio" in
+	auto|yes)
+	    ;;
+	*)
+	    CFITSIO_CFLAGS="-I$have_cfitsio/include/cfitsio"
+	    CFITSIO_LIBS="-L$have_cfitsio/lib -lcfitsio"
+	    ;;
+	esac
+    fi
+
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
+	LDFLAGS="$LDFLAGS $CFITSIO_LIBS"
+	AC_CHECK_HEADER(fitsio.h,
+		AC_CHECK_LIB(cfitsio, ffopen,
+			AC_DEFINE(HAVE_CFITSIO, 1, [Define if you have the cfitsio library])
+			have_cfitsio=yes,
+			[ if test "x$have_cfitsio" != xauto; then AC_MSG_ERROR([-lcfitsio library not found]); fi; have_cfitsio=no ], "-lm"),
+		[ if test "x$have_cfitsio" != xauto; then AC_MSG_ERROR([fitsio.h header not found]); fi; have_cfitsio=no ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(CFITSIO_CFLAGS, $CFITSIO_CFLAGS)
+AC_SUBST(CFITSIO_LIBS, $CFITSIO_LIBS)
+AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
+
 dnl  stuff required for merovingian and monetdb
 AC_CHECK_HEADERS([fcntl.h stropts.h sys/ioctl.h sys/un.h termios.h])
 AC_CHECK_HEADERS([uuid/uuid.h])

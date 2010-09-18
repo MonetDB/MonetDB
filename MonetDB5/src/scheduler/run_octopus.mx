@@ -352,7 +352,8 @@ static int admitSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 		dburi = *(str*)getArgReference(s, p,2);
 	else dburi = *(str*)getArgReference(s, p,1);
 */
-	dburi = *(str*)getArgReference(s, p,1);
+	/* peer uri is the first argument */
+	dburi = *(str*)getArgReference(s, p,p->retc);
 
 	MT_set_lock(s->stklock,"serialConn");
 	i = OCTOPUSfindPeer(dburi);
@@ -399,7 +400,7 @@ static int wrapupSerialConn(void *cntxt, void *mb, void *stk, void *pci)
 /*	if ( strncmp (getFunctionId(p), "exec", 4) == 0 ) 
 		dburi = *(str*)getArgReference(s, p,2);
 	else dburi = *(str*)getArgReference(s, p,1); */
-	dburi = *(str*)getArgReference(s, p,1);
+	dburi = *(str*)getArgReference(s, p,p->retc);
 	i = OCTOPUSfindPeer(dburi);
 
 	MT_set_lock(s->stklock,"serialConn");
@@ -461,7 +462,7 @@ OCTOPUSdiscoverRegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pr = workers[k].pnum;
 			stk->stk[v].val.sval = GDKstrdup(peers[pr].uri);
 			stk->stk[v].len = (int) strlen(stk->stk[v].val.sval);
-		} else {	/* disable instaruction */
+		} else {	/* disable instruction */
 			garbageElement(cntxt, &stk->stk[v]);
 			stk->stk[v].val.sval = GDKstrdup("NOTworker");
 			stk->stk[v].len = (int) strlen(stk->stk[v].val.sval);

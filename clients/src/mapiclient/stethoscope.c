@@ -444,23 +444,28 @@ main(int argc, char **argv)
 		free(walk);
 	} else {
 		/* fork runner threads for all alternatives */
-		walk = thds = malloc(sizeof(wthread));
 		i = 1;
-		if (*alts != NULL) while (1) {
-			walk->tid = i++;
-			walk->uri = *alts;
-			walk->user = user;
-			walk->pass = password;
-			walk->argc = argc - a;
-			walk->argv = &argv[a];
-			walk->s = NULL;
-			pthread_create(&walk->id, NULL, &doProfile, walk);
-			alts++;
-			if (*alts == NULL)
-				break;
-			walk = walk->next = malloc(sizeof(wthread));
+		if (*alts != NULL) {
+			walk = thds = malloc(sizeof(wthread));
+			while (1) {
+				walk->tid = i++;
+				walk->uri = *alts;
+				walk->user = user;
+				walk->pass = password;
+				walk->argc = argc - a;
+				walk->argv = &argv[a];
+				walk->s = NULL;
+				pthread_create(&walk->id, NULL, &doProfile, walk);
+				alts++;
+				if (*alts == NULL)
+					break;
+				walk = walk->next = malloc(sizeof(wthread));
+			}
+			walk->next = NULL;
+		} else {
+			fprintf(stderr, "%s: no databases found for '%s'\n",
+					argv[0], dbname);
 		}
-		walk->next = NULL;
 		free(oalts);
 		for (walk = thds; walk != NULL; walk = walk->next) {
 			pthread_join(walk->id, NULL);

@@ -67,11 +67,11 @@ stderr of test 'incomplete-utf8-sequence.Bug-2575` in directory 'src/test/BugTra
 # 14:47:29 >  mclient -lsql -ftest -i -e --host=ottar --port=36476 
 # 14:47:29 >  
 
-MAPI  = monetdb@ottar:36476
+MAPI  = monetdb@alf:34882
 QUERY = copy 2 records into tbl_bug2575 from stdin using delimiters '\t','\n','';
         10001160000	29	.v.
                 
-ERROR = !SQLException:importTable:value from line 2 field 3 not inserted, expecting type str
+ERROR = !SQLException:importTable:value from line 2 field 3 not inserted, expecting type char(3)
         !failed to import table
 
 # 14:47:29 >  
