@@ -93,6 +93,7 @@ mal_export Lifespan setLifespan(MalBlkPtr mb);
 mal_export void malGarbageCollector(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
+mal_export void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 
 #include "mal_exception.h"
@@ -610,16 +611,16 @@ For commands we do not have to clone the routine. We merely have to
 assure that the type-constraints are obeyed. The resulting type
 is returned.
 @c
-void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg) {
+void 
+listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
+{
 	int i;
-
 	if ( flg == 0)
 		return;
 	if (mb == NULL) {
 		mnstr_printf(fd, "# function definition missing\n");
 		return;
 	}
-
 	if (flg & LIST_MAPI) {
 		/* a bit dirty, but only here we have the number of lines */
 		mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
@@ -629,9 +630,18 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg) {
 		mnstr_printf(fd, "%% clob # type\n");
 		mnstr_printf(fd, "%% 0 # length\n");	/* unknown */
 	}
-
-	for (i = 0; i < mb->stop; i++)
+	first = first<0?0:first;
+	size = size < 0?-size:size;
+	for (i = first; i < first +size && i < mb->stop; i++)
 		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
+}
+void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg) 
+{
+	if (mb == NULL) {
+		mnstr_printf(fd, "# function definition missing\n");
+		return;
+	}
+	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 
 @- Lifespan analysis

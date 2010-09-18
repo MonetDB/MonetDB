@@ -157,6 +157,7 @@ usage patterns.
 #define bigfootFlag	16
 #define cntFlag		32
 #define threadFlag	64
+#define bbpFlag		128
 @-
 @}
 @-

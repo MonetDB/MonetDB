@@ -448,8 +448,8 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 {   
 	ValPtr lhs,rhs,v;
 	int i,k; 
-	InstrPtr pci=0; 
-	int exceptionVar;
+	InstrPtr pci=0;
+	int exceptionVar,prevpc=0;
 	str ret=0;
 #if FAST
 	int stamp= -1;
@@ -520,6 +520,9 @@ workslow:
 				stk->cmd= cntxt->itrace;
 			if( oldtimer)
 				t= GDKusec();
+			if( cntxt->flags & bbpFlag)
+				BBPTraceCall(cntxt,mb,stk,prevpc);
+			prevpc = stkpc;
 			mdbStep(cntxt,mb,stk,stkpc);
 			if( stk->cmd == 'x' || cntxt->mode == FINISHING) {
 				stk->cmd = 0;
@@ -2535,8 +2538,9 @@ It simply skips the barrier block upon return.
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	}
 
-@= timingHndlr
+@-
 #if @1
+@= timingHndlr
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
 		MT_set_lock(*lock, "timing");
@@ -2595,8 +2599,8 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
 		MT_unset_lock(*lock, "timing");
 }
-#endif
 @-
+#endif
 For performance evaluation it is handy to know the 
 maximal amount of bytes read/written. The actual
 amount is harder to guess, because it too much
