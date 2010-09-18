@@ -966,7 +966,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	lng oldtimer=0;
 	struct Mallinfo oldMemory = MT_mallinfo();
 	MT_Lock *lock = &flow->done->l;
-	int tid = t->id;
+	int tid = t->id, prevpc= 0;
 	lng argclaim,retclaim,hotclaim;
     
 #ifdef HAVE_SYS_RESOURCE_H
@@ -989,6 +989,9 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		lng tm = 0;
 		if( oldtimer)
 			tm = GDKusec();
+		if( cntxt->flags & bbpFlag)
+			BBPTraceCall(cntxt,mb,stk,prevpc);
+		prevpc = stkpc;
 		mdbStep(cntxt,mb,stk, getPC(mb,pci));
 		if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			/* need a way to skip */
@@ -2169,6 +2172,9 @@ reaching end of function block.
 @= skipToCatch
 	if( stk->cmd == 'C' || mb->trap) {
 		stk->cmd = 'n';
+		if( cntxt->flags & bbpFlag)
+			BBPTraceCall(cntxt,mb,stk,prevpc);
+		prevpc = stkpc;
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || cntxt->mode == FINISHING) {
 			stkpc = mb->stop;

@@ -778,8 +778,6 @@ BBPTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	int i, action;
 	(void) mb;
 
-	if ( BBPtraceEnabled == 0)
-		return 0;
 	if (BBPmirror == NULL ){
 		bbpsize= BBPsize;
 		BBPmirror = (int*) GDKzalloc(sizeof(int) * BBPsize);
@@ -801,8 +799,9 @@ BBPTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			if ( BBPtracePattern  && strstr(lbuf,BBPtracePattern) != NULL )
 				continue;
 			BBPphysical(i,pbuf);
-			mnstr_printf(cntxt->fdout, "#BBP [%d] state change of %s %s refs %d rows " BUNFMT"\n", 
-				 i,lbuf,pbuf, BBP_lrefs(i), BATcount(b));
+			if ( BBPmirror[i] )
+				mnstr_printf(cntxt->fdout, "#BBP [%d] state change of %s %s refs %d rows " BUNFMT"\n", 
+					 i,lbuf,pbuf, BBP_lrefs(i), BATcount(b));
 			action = 1;
 		}
 		BBPmirror[i] = BBP_lrefs(i);
