@@ -216,7 +216,7 @@ opt_export int inlineProp;		/* binary */
 opt_export int keepProp;		/* binary */
 opt_export int notnilProp;		/* binary */
 opt_export int rowsProp;		/* long */
-opt_export int bidProp;			/* int */
+opt_export int fileProp;			/* str */
 opt_export int runonceProp;		/* binary */
 opt_export int singletonProp;		/* binary */
 opt_export int unsafeProp;		/* binary */
@@ -425,7 +425,7 @@ int inlineProp;
 int keepProp;
 int notnilProp;
 int rowsProp;
-int bidProp;
+int fileProp;
 int runonceProp;
 int singletonProp;
 int unsafeProp;
@@ -625,11 +625,11 @@ void optimizerInit(){
 		removeProp = PropertyIndex("remove");
 		tableProp = PropertyIndex("table");
 
+		fileProp = PropertyIndex("file");
 		inlineProp = PropertyIndex("inline");
 		keepProp = PropertyIndex("keep");
 		notnilProp = PropertyIndex("notnil");
 		rowsProp = PropertyIndex("rows");
-		bidProp = PropertyIndex("bid");
 		runonceProp = PropertyIndex("runonce");
 		singletonProp = PropertyIndex("singleton");
 		unsafeProp = PropertyIndex("unsafe");

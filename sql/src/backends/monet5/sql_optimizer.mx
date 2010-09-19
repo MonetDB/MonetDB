@@ -158,6 +158,7 @@ factory structures.
 #include "mal_builder.h"
 #include "mal_debugger.h"
 #include "opt_prelude.h"
+#include "attach.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
@@ -293,9 +294,6 @@ purpose is to fill them during the query. Therefore, we keep track
 of all bound tables and mark them not-empty when a direct update
 takes place using append().
 
-The bind operations are also moved into the front to ensure
-binding errors and assertions to be tested quickly.
-
 We also reduce the number of bind operations by keeping track
 of those seen already.  This can not be handled by the
 common term optimizer, because the first bind has a side-effect.
@@ -359,7 +357,9 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				assert(cnt <= (size_t) GDK_oid_max);
 				b = store_funcs.bind_idx(m->session->tr,i,0);
 				if ( b ) {
-					varSetProp(mb, k, bidProp, op_eq, VALset(&vr, TYPE_int, &b->batCacheid));
+					str loc;
+					if ( ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc) 
+						varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 					cnt = BATcount(b);
 					BBPreleaseref(b->batCacheid);
 				}
@@ -380,7 +380,9 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					assert(cnt <= (size_t) GDK_oid_max);
 					b = store_funcs.bind_col(m->session->tr,c,0);
 					if ( b ){
-						varSetProp(mb, k, bidProp, op_eq, VALset(&vr, TYPE_int, &b->batCacheid));
+						str loc;
+						if ( ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc)
+							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
 						BBPreleaseref(b->batCacheid);
 					}

@@ -405,6 +405,17 @@ TARdiscover(Client cntxt)
 	return MAL_SUCCEED;
 }
 @-
+The push instruction routine is overloaded to check for easy exchange operations of
+BATs between leg, head, and persistent store. First target is to attempt sharing
+of the base tables.
+@c
+void pushTARinstruction(MalBlkPtr tm, InstrPtr p){
+	if ( getModuleId(p) == sqlRef && ( getFunctionId(p) == bindRef || getFunctionId(p) ==binddbatRef || getFunctionId(p) == bindidxRef )){
+	}
+	pushInstruction(tm,p);
+}
+
+@-
 The TARmakeLeg walks through the MAL block and extracts the dependent structure for
 execution. Note that information van be recomputed in all legs. Possibly doing duplicate work.
 Therefore we start with an analysis to determine the 'level' at which a variable is needed indirectly.
@@ -485,7 +496,7 @@ if at least a sql.bind operation belongs to the list and the leg has a minimimal
 			}
 			getArg(p,i) = alias[a];
 		}
-		pushInstruction(tm, p);
+		pushTARinstruction(tm, p);
 	}
 
 	/* return all variables of interest */
@@ -595,9 +606,9 @@ TARmakeBidding(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int nodes)
 			p = pushReturn(tm, p, tmp = newTmpVariable(tm,TYPE_int));
 			r = pushArgument(tm,r,tmp);
 		}
-		pushInstruction(tm,p);
+		pushTARinstruction(tm,p);
 	}
-	pushInstruction(tm,r);
+	pushTARinstruction(tm,r);
 	pushEndInstruction(tm);
 	clrDeclarations(tm);
 	chkProgram(cntxt->nspace,tm);
@@ -698,7 +709,7 @@ TARmakeStub(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int idx, int leg,
 	q = newStmt(tm, remoteRef, disconnectRef);
 	pushArgument(tm,q,conn); */
 
-	pushInstruction(tm,r);
+	pushTARinstruction(tm,r);
 
 	pushEndInstruction(tm);
 	clrDeclarations(tm);
@@ -802,11 +813,11 @@ Build a consolidated map for all input/output variables
 		for ( j=0; input[l][j]; j++)
 			p = pushArgument(tm,p, lmap[input[l][j]]);
 		r= pushArgument(tm,r, getArg(p,0));
-		pushInstruction(tm,p);
+		pushTARinstruction(tm,p);
 	}
 
 	k =getArg(r,0)= getArg(sig,0);
-	pushInstruction(tm,r);
+	pushTARinstruction(tm,r);
 
 	if ( tarantulaLocal == 0){
 		q= newAssignment(tm);
@@ -814,7 +825,7 @@ Build a consolidated map for all input/output variables
 		getArg(q,0)= x;
 	}
 
-	pushInstruction(tm,ret);
+	pushTARinstruction(tm,ret);
 
 	pushEndInstruction(tm);
 	clrDeclarations(tm);
@@ -924,7 +935,7 @@ the lev at which it would be indirectly input.
 
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
-	pushInstruction(mb, old[0]);
+	pushTARinstruction(mb, old[0]);
 
 
 	map= (int*) GDKzalloc(2 * vtop * sizeof(int));
@@ -1061,7 +1072,7 @@ Create the remote function and its local stub.
 			for( k=0; k<TARnrpeers; k++)
 				q= pushReturn(mb, q, newTmpVariable(mb,TYPE_int));
 			q = pushArgument(mb,q, getArg(p,0));
-			pushInstruction(mb,q);
+			pushTARinstruction(mb,q);
 
 			/* call the function to replace mat.pack */
 			snprintf(fcn,BUFSIZ,"exe_%s_%d", getFunctionId(getInstrPtr(mb,0)), getArg(old[i],0));
@@ -1099,7 +1110,7 @@ Create the remote function and its local stub.
 		for ( j=0; j< p->argc; j++)
 			getArg(p,j)= map[getArg(p,j)];
 
-		pushInstruction(mb,p);
+		pushTARinstruction(mb,p);
 		if (p->token == ENDsymbol){
 			last= i;
 			break;
@@ -1112,7 +1123,7 @@ The leg code should be optimized by the remaining optimizers too.
 @c
 	for (j = last + 1; j < limit; j++)
 		if (old[j])
-			pushInstruction(mb, old[j]);
+			pushTARinstruction(mb, old[j]);
 
 	GDKfree(old);
 	GDKfree(map);
