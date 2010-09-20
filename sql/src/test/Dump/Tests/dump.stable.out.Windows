@@ -79,23 +79,23 @@ CREATE TABLE "sys"."typestest" (
 	"blob100" BINARY LARGE OBJECT(100),
 	"clob" CHARACTER LARGE OBJECT,
 	"clob100" CHARACTER LARGE OBJECT(100),
-	"character" char(1),
-	"varchar100" varchar(100),
-	"character10" char(10)
+	"character"      CHAR(1),
+	"varchar100"     VARCHAR(100),
+	"character10"    CHAR(10)
 );
 COPY 1 RECORDS INTO "sys"."typestest" FROM stdin USING DELIMITERS '\t','\n','"';
 true	10	10000	1000000	1000000	10000000000	1e+030	1.00000002e+020	1	123456789	12345.678	3.1415000000000002	3.1415	3.1415	2009-04-15	24	18	3	1728000	108000	120000	100000	36000	6000	2000	600	100	10	1995-07-15 07:30:00.000000	1995-07-15 07:30:00.00000	1995-07-15 07:30:00.000000+00:00	1995-07-15 07:30:00.00000+00:00	07:30:00	07:30:00.00000	07:30:00+00:00	07:30:00.00000+00:00	123456	123456	"123456"	"123456"	"x"	"varchar"	"0123456789"
 CREATE TABLE "sys"."keytest1" (
-	"key1" int NOT NULL,
-	"key2" int NOT NULL,
+	"key1" INTEGER       NOT NULL,
+	"key2" INTEGER       NOT NULL,
 	CONSTRAINT "keytest1_key1_key2_pkey" PRIMARY KEY ("key1", "key2")
 );
 COPY 2 RECORDS INTO "sys"."keytest1" FROM stdin USING DELIMITERS '\t','\n','"';
 0	0
 0	1
 CREATE TABLE "sys"."keytest2" (
-	"key1" int,
-	"key2" int
+	"key1" INTEGER,
+	"key2" INTEGER
 );
 COPY 2 RECORDS INTO "sys"."keytest2" FROM stdin USING DELIMITERS '\t','\n','"';
 0	0
