@@ -412,9 +412,9 @@ sql_subtype_string(sql_subtype *t)
 	char buf[BUFSIZ];
 
 	if (t->digits && t->scale)
-		snprintf(buf, BUFSIZ, "%s(%d,%d)", t->type->sqlname, t->digits, t->scale);
+		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->sqlname, t->digits, t->scale);
 	else if (t->digits && t->type->radix != 2)
-		snprintf(buf, BUFSIZ, "%s(%d)", t->type->sqlname, t->digits);
+		snprintf(buf, BUFSIZ, "%s(%u)", t->type->sqlname, t->digits);
 
 	else
 		snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
