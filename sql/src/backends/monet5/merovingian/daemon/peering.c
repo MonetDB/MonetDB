@@ -74,20 +74,32 @@ peeringServerThread(void *d)
 		masquerade = GDKstrdup(data + 7);
 		snprintf(data, sizeof(data),
 				"tunnel %s:%hu\n", _mero_hostname, _mero_port);
-		write(s, data, strlen(data));
+		if (write(s, data, strlen(data)) == -1) {
+			close(s);
+			return;
+		}
 	} else if (len > 0 && strcmp(data, "proxy") == 0) {
 		/* proxy mode */
 		snprintf(data, sizeof(data),
 				"proxy %s:%hu\n", _mero_hostname, _mero_port);
-		write(s, data, strlen(data));
+		if (write(s, data, strlen(data)) == -1) {
+			close(s);
+			return;
+		}
 	} else if (len > 0 && strcmp(data, "direct") == 0) {
 		/* direct mode */
 		snprintf(data, sizeof(data), "direct\n");
-		write(s, data, strlen(data));
+		if (write(s, data, strlen(data)) == -1) {
+			close(s);
+			return;
+		}
 	} else {
 		/* invalid, abort here */
 		snprintf(data, sizeof(data), "invalid request\n");
-		write(s, data, strlen(data));
+		if (write(s, data, strlen(data)) == -1) {
+			/* next thing we do is closing anyway, so just keep this
+			 * condition to keep fortification warnings off */
+		}
 		close(s);
 		return;
 	}
