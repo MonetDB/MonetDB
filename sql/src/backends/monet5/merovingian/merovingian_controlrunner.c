@@ -241,13 +241,16 @@ controlRunner(void *d)
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send(msgsock, buf2, len, 0);
 			} else if (strcmp(q, "peer") == 0) {
-				Mfprintf(_mero_ctlout, "%s: peering not yet implemented\n",
-						origin);
-				len = snprintf(buf2, sizeof(buf2),
-						"peering not yet implemented\n");
+				pthread_t ptid; /* FIXME: register global */
+				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send(msgsock, buf2, len, 0);
-				close(msgsock);
-				continue;
+				/* start a separate thread to handle the peering */
+				if (pthread_create(&ptid, NULL,
+							(void *(*)(void *))peeringServerThread,
+							(void *)&msgsock) < 0)
+				{
+					/* FAIL */
+				}
 			} else {
 				Mfprintf(_mero_ctlout, "%s: invalid mode "
 						"(%s)\n", origin, q);

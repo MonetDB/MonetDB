@@ -109,6 +109,54 @@ addRemoteDB(const char *dbname, const char *conn, const int ttl) {
 	return(1);
 }
 
+typedef struct _disc_message_tap {
+	int fd;
+	struct _disc_message_tap *next;
+} *disc_message_tap;
+
+/* list of hooks for incoming messages */
+static disc_message_tap _mero_disc_msg_taps = NULL;
+
+void
+registerMessageTap(int fd)
+{
+	disc_message_tap h = _mero_disc_msg_taps;
+	/* make sure we never block in the main loop below because we can't
+	 * write to the pipe */
+	fcntl(fd, F_SETFD, O_NONBLOCK);
+	pthread_mutex_lock(&_mero_remotedb_lock);
+	if (h == NULL) {
+		h = GDKmalloc(sizeof(struct _disc_message_tap));
+	} else {
+		for (; h->next != NULL; h = h->next)
+			;
+		h = h->next = GDKmalloc(sizeof(struct _disc_message_tap));
+	}
+	h->next = NULL;
+	h->fd = fd;
+	pthread_mutex_unlock(&_mero_remotedb_lock);
+}
+
+void
+unregisterMessageTap(int fd)
+{
+	disc_message_tap h = _mero_disc_msg_taps;
+	disc_message_tap lasth;
+	pthread_mutex_lock(&_mero_remotedb_lock);
+	for (lasth = NULL; h != NULL; lasth = h, h = h->next) {
+		if (h->fd == fd) {
+			if (lasth == NULL) {
+				_mero_disc_msg_taps = h->next;
+			} else {
+				lasth->next = h->next;
+			}
+			GDKfree(h);
+			break;
+		}
+	}
+	pthread_mutex_unlock(&_mero_remotedb_lock);
+}
+
 static void
 discoveryRunner(void *d)
 {
@@ -252,6 +300,13 @@ discoveryRunner(void *d)
 		/* ignore messages from broadcast interface */
 		if (strcmp(host, "0.0.0.0") == 0)
 			continue;
+		/* forward messages not coming from ourself to all routes that
+		 * are active */
+		if (strcmp(host, _mero_hostname) != 0) {
+			disc_message_tap h = _mero_disc_msg_taps;
+			for (; h != NULL; h = h->next)
+				write(h->fd, buf, nread);
+		}
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */

@@ -38,6 +38,7 @@ EXTRA_DIST = $(man_MANS) \
 	glob.h \
 	database.h \
 	control.h \
+	merovingian_peering.h \
 	$(MEROVINGIAN_SUBS)
 
 lib_meroutil = {
@@ -50,11 +51,19 @@ lib_meroutil = {
 		control.c
 }
 
+lib_merodaemon = {
+	NOINST
+	SOURCES = \
+		merovingian.c \
+		merovingian_peering.c
+}
+
 bin_merovingian = {
 	# hack: include merovingian.1.in here to get it expanded
-	SOURCES = merovingian.c merovingian.1.in
+	SOURCES = merovingian.1.in
 	LIBS = \
 		libmeroutil \
+		libmerodaemon \
 		$(MONETDB5_LIBS) -lmonetdb5 \
 		$(MONETDB_LIBS) -lbat -lstream \
 		$(SOCKET_LIBS) \

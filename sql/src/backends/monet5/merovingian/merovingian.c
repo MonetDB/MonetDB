@@ -409,6 +409,8 @@ newErr(str fmt, ...)
 	return(ret);
 }
 
+#include "merovingian_peering.h"
+
 #include "merovingian_forkmserver.c"
 #include "merovingian_proxy.c"
 #include "merovingian_client.c"
