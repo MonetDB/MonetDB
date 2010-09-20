@@ -17,9 +17,12 @@
 
 man_MANS = monetdb.1
 
-# MONETDB:  GDKmalloc, stream
+# MONETDB5: Sabaoth
+# MONETDB:  GDKmalloc, stream, sysdefs.h
 INCLUDES = \
-	$(MONETDB_INCS)
+	$(MONETDB5_INCS) \
+	$(MONETDB_INCS) \
+	-I../utils
 
 EXTRA_DIST = $(man_MANS)
 
@@ -28,6 +31,7 @@ bin_monetdb = {
 	SOURCES = monetdb.c monetdb.1.in
 	LIBS = \
 		../utils/libmeroutil \
+		$(MONETDB5_LIBS) -lmonetdb5 \
 		$(MONETDB_LIBS) -lbat -lstream \
 		$(SOCKET_LIBS) \
 		$(MALLOC_LIBS)

@@ -21,7 +21,8 @@ man_MANS = monetdbd.1
 # MONETDB:  GDKmalloc, stream
 INCLUDES = \
 	$(MONETDB5_INCS) \
-	$(MONETDB_INCS)
+	$(MONETDB_INCS) \
+	-I../utils
 
 MEROVINGIAN_SUBS = \
 	merovingian_client.c \
