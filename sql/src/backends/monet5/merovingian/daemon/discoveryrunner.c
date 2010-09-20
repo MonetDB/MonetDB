@@ -350,8 +350,13 @@ discoveryRunner(void *d)
 		 * are active */
 		if (strcmp(host, _mero_hostname) != 0) {
 			disc_message_tap h = _mero_disc_msg_taps;
-			for (; h != NULL; h = h->next)
-				write(h->fd, buf, nread);
+			for (; h != NULL; h = h->next) {
+				if (write(h->fd, buf, nread) == -1) {
+					/* really nothing to be done here, since this is
+					 * best effort stuff, keep the condition to keep
+					 * fortification warnings off */
+				}
+			}
 		}
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
