@@ -15,7 +15,7 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-man_MANS = merovingian.1
+man_MANS = monetdbd.1
 
 # MONETDB5: Sabaoth
 # MONETDB:  GDKmalloc, stream
@@ -43,9 +43,9 @@ lib_merodaemon = {
 		merovingian_peering.c
 }
 
-bin_merovingian = {
+bin_monetdbd = {
 	# hack: include merovingian.1.in here to get it expanded
-	SOURCES = merovingian.1.in
+	SOURCES = monetdbd.1.in
 	LIBS = \
 		../utils/libmeroutil \
 		libmerodaemon \

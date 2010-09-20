@@ -1,58 +1,68 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MEROVINGIAN 1 "JUNE 2010" Application "MonetDB Applications"
+.TH MONETDBD 1 "SEP 2010" Application "MonetDB Applications"
 .SH NAME
-merovingian \- the MonetDB Database Server daemon
+monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
-.B merovingian
+.B monetdbd
 .SH DESCRIPTION
-.B merovingian
+.B monetdbd
 is the MonetDB Database Server daemon.  It is not meant to be used in
 interactive environments, and hence has no help command or flag.
 The typical use of
-.B merovingian
+.B monetdbd
 is to be started from a startup script, such as from
 .I /etc/init.d/
 on Linux systems or
 .BR smf (5)
 on Solaris systems, as part of a system startup.
 .P
+.B monetdbd
+was formerly known as
+.BR merovingian .
+Internally,
+.B monetdbd
+keeps on using the name
+.BR merovingian ,
+but it was renamed to better match the expectations of the product to
+regular end-users.
+.P
 A
-.B merovingian
+.B monetdbd
 instance manages one local cluster based on the dbfarm specified in the
 .I @MONETDB5_CONFFILE@
 config file.  Within this local cluster
-.B merovingian
+.B monetdbd
 takes care of starting up databases when necessary, and stopping them
 either upon request via
 .BR monetdb (1)
 or when being shut down.  Client connections initially are made against
-.B merovingian
+.B monetdbd
 which redirects or proxies the client to the appropriate database
 process, started on the fly when necessary.
 .P
 When started,
-.B merovingian
+.B monetdbd
 runs in the background, sending log messages to
 .IR @MERO_LOG@ ,
 until being sent a stop, terminate or interrupt signal.  Any arguments
 given when starting
-.B merovingian
+.B monetdbd
 cause the version to be printed followed by a shutdown of
-.BR merovingian .
+.BR monetdbd .
 .P
-.B merovingian
+.B monetdbd
 uses a neighbour discovery scheme to detect other
-.B merovingian
+.B monetdbd
 processes running in the local network.  Databases from those remote
 instances are made available to a locally connecting client.  Remote
 databases never override local databases, and their availability is
 controlled by the remote
-.B merovingian
+.B monetdbd
 process.
 .SH CONFIGURATION
-.B merovingian
+.B monetdbd
 defaults to use the configuration file
 .I @MONETDB5_CONFFILE@
 that was placed in the file
@@ -60,7 +70,7 @@ system during installation to control its behaviour.  If the environment
 variable
 .I MONETDB5CONF
 is set,
-.B merovingian
+.B monetdbd
 uses the value of this variable as configuration file to load instead.
 In the configuration file the following options can be specified.  Most
 are typically to be found under the
@@ -68,12 +78,12 @@ are typically to be found under the
 section in the default configuration file.
 .IP gdk_dbfarm
 The value of this setting determines which local cluster
-.B merovingian
+.B monetdbd
 will monitor.
 .IP mero_msglog
 .IP mero_errlog
 When both options are set to an empty string,
-.B merovingian
+.B monetdbd
 logs messages and errors to the stdout and stderr channels on the
 caller's console.  By setting one or both of the
 .B mero_msglog
@@ -88,68 +98,68 @@ pointing to the same file, which is the default
 .RI ( @MERO_LOG@ ).
 .IP mero_pidfile
 Location pointing to the pidfile used by
-.B merovingian
+.B monetdbd
 to write the process id of the daemon process that was started in the
 background.  This pid can be used to stop
-.B merovingian
-again by send a termination signal to the process id found in the file.
+.B monetdbd
+again by sending a termination signal to the process id found in the file.
 .IP mero_port
 The port
-.B merovingian
+.B monetdbd
 will open up and listen to connections for.  When unset, the default
 port
 .I 50000
 is used, which should be fine for most setups.
 .IP mero_exittimeout
 All database servers that were started by
-.B merovingian
+.B monetdbd
 are shut down when
-.B merovingian
+.B monetdbd
 is shut down.  This behaviour is desirable if the
-.B merovingian
+.B monetdbd
 process is ran from a start script that represents the MonetDB Database
 Server.  Setting the
 .B mero_exittimeout
 option to a positive
 non-zero value, causes each started database server to be shut down by
-.B merovingian
+.B monetdbd
 when it shuts down itself with a given time-out in seconds.  If the
 time-out expires, the database server is killed using the SIGKILL
 signal.  A time-out value of
 .B 0
 means that no attempt is made to shut down started database servers.  As
 a result, database servers will remain active after
-.B merovingian
+.B monetdbd
 has stopped.  The default value for
 .B mero_exittimeout
 is
 .B 60
 seconds.  If your databases are rather large and find your databases
 consistently being killed by
-.B merovingian
+.B monetdbd
 upon shutdown, you may have to increase this timeout.
 .IP mero_doproxy
-.B merovingian
+.B monetdbd
 has two ways in which it can "attach" a connecting client to the target
 database.  The first method uses a redirect to the responsible mserver
 process, the second method proxies the client to the mserver over
-.BR merovingian .
+.BR monetdbd .
 While the first is more efficient, it requires the connecting client
 to be able to connect to the mserver.  In many settings this may be
 undesirable or even impossible, since a wide range of open ports and
 routing are necessary for this.  In such case the proxy behaviour of
-.B merovingian
+.B monetdbd
 is a good solution, which also allows a
-.B merovingian
+.B monetdbd
 on the border of a network to serve requests to nodes in the local
 (unreachable) network.
 .IP mero_discoveryttl
 Neighbour discovery allows
-.B merovingian
+.B monetdbd
 to discover other running
-.B merovingian
+.B monetdbd
 processes in the local network.
-.B merovingian
+.B monetdbd
 publishes locally available databases to others periodically.  The
 interval used here depends on the time-to-live of the databases before
 they need to get refreshed.  The default is 10 minutes, which should
@@ -159,31 +169,31 @@ option is expressed in seconds.
 .IP mero_discoveryport
 The neighbour discovery service uses UDP broadcasting to announce
 itself.  For this
-.B merovingian
+.B monetdbd
 listens to the given port, which defaults to the setting of
 .BR mero_port .
 If the port is set to 0, the neighbour discovery service is disabled and
 hence no announcements will be made, nor received.
 .IP mero_controlport
 Each
-.B merovingian
+.B monetdbd
 can possibly be controlled from a remote site, using
 .BR monetdb (1).
 The port to use can be set via this option.  If unset,
-.B merovingian
+.B monetdbd
 cannot be controlled remotely, but only via the local system by means of
 a UNIX domain socket.  Remote control requests are required to be
 authenticated using a password.  The password for this is stored in
 the .merovingian_pass file in the dbfarm.  If it doesn't exist,
-.B merovingian
+.B monetdbd
 will create one to protect itself in case remote control is enabled.
 One can set a password in this file.  Note that
-.B merovingian
+.B monetdbd
 needs to be restarted in order to pick up changes in
 the .merovingian_pass file.
 .P
 Next to these global settings,
-.B merovingian
+.B monetdbd
 respects per-database settings that are managed via
 .BR monetdb (1).
 The properties 
@@ -193,7 +203,7 @@ overrule the defaults from
 To obtain a list of properties, use `monetdb get all`.
 .SH "REMOTE DATABASES"
 The neighbour discovery capabilities of
-.B merovingian
+.B monetdbd
 allow a user to contact a remote database transparently, as if it were a
 local database.  By default, all local databases are announced in the
 network, such that neighbours can pick them up to make them available
@@ -207,12 +217,12 @@ in a cluster, it is limited in expressiveness.  For instance, database
 names are assumed to be unique throughout the entire system.  This means
 local databases overshadow remote ones, and duplicate remote entries
 cannot be distinguished.  To compensate for this,
-.B merovingian
+.B monetdbd
 allows to adds a
 .I tag
 to each database that is being shared.  This tag is sent in addition to
 the database name, and only understood by other
-.BR merovingian s.
+.BR monetdbd s.
 .P
 Tags are arbitrary ASCII-strings matching the pattern [A\-Za\-z0\-9./]+.
 There are no assumed semantics in the tag, which allows for multiple
@@ -220,7 +230,7 @@ approaches when using the tag.  The tag is always used in combination
 with the database name.  For this, the `/' character is used as
 separator, which hence suggests the user to use that character as
 separator for multilevel tags.
-.B merovingian
+.B monetdbd
 allows common path globbing using `*' on tags, which allows for many
 use-cases.  Consider for instance the following three databases with their
 tag:
@@ -253,7 +263,7 @@ In contrast, a database connect for
 .I */slave/tableQ
 matches with either
 .IR dbY " or " dbZ .
-.B merovingian
+.B monetdbd
 returns the two options to the client in a round-robin fashion, such
 that subsequent connects for the same pattern result in a load-balanced
 connect to either of both databases.
@@ -274,7 +284,7 @@ Connecting to
 would now return either of both databases even though they are not
 unique (apart from the host they are located on, which is not shown in
 the example).  While being confusing for humans, for
-.B merovingian
+.B monetdbd
 it is the same situation as in the previous example.  However, because
 globbing allows to make things easier to understand, tags for both
 slaves could be changed to
@@ -282,32 +292,32 @@ slaves could be changed to
 and use the necessary pattern to match them.  It is up to the user to
 decide how to use the tags.
 .SH SIGNALS
-.B merovingian
+.B monetdbd
 acts upon a number of signals as is common for a daemon.
 .IP "SIGINT, SIGTERM, SIGQUIT"
 Any of these signals make
-.B merovingian
+.B monetdbd
 enter the shutdown sequence.  This sequence involves cleanly shutting
 down listener sockets, shutting down all started databases and finally
 terminating itself.
 .IP SIGHUP
 When this signal is received by
-.B merovingian
+.B monetdbd
 it will reopen the logfiles as pointed to by
 .B mero_msglog
 and
 .BR mero_errlog .
 When these two are unset or point to a file attached to a terminal,
-.B merovingian
+.B monetdbd
 will not reopen the associated filedescriptor.
 .SH "RETURN VALUE"
-.B merovingian
+.B monetdbd
 returns exit code
 .B 0
 if it was able to successfully launch the background process or when the
 version information was printed.  When an
 error occurs during startup that prevents
-.B merovingian
+.B monetdbd
 from functioning properly, an exit code
 .B 1
 is returned.
