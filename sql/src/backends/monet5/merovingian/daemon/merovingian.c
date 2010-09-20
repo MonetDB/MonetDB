@@ -108,7 +108,7 @@ pthread_mutex_t _mero_topdp_lock;
 /* for the logger, when set to 0, the logger terminates */
 int _mero_keep_logging = 1;
 /* for accepting connections, when set to 0, listening socket terminates */
-int _mero_keep_listening = 1;
+char _mero_keep_listening = 1;
 /* stream to the stdout output device (tty or file) */
 FILE *_mero_streamout = NULL;
 /* stream to the stderr output device (tty or file) */

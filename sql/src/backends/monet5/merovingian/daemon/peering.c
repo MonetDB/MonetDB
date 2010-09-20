@@ -24,9 +24,8 @@
 #include <string.h>
 #include <gdk.h>
 
-extern void broadcast(char *);
-extern void registerMessageTap(int);
-extern void unregisterMessageTap(int);
+#include "discoveryrunner.h"
+
 extern char *_mero_hostname;
 extern unsigned short _mero_port;
 extern char _mero_keep_listening;
