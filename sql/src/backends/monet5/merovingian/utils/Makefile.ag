@@ -15,4 +15,19 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = utils client daemon
+EXTRA_DIST =
+	control.h \
+	database.h \
+	glob.h \
+	properties.h \
+	utils.h
+
+lib_meroutil = {
+	NOINST
+	SOURCES = \
+		control.c \
+		database.c \
+		glob.c \
+		properties.c \
+		utils.c
+}

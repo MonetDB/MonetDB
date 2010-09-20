@@ -15,4 +15,20 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = utils client daemon
+man_MANS = monetdb.1
+
+# MONETDB:  GDKmalloc, stream
+INCLUDES = \
+	$(MONETDB_INCS)
+
+EXTRA_DIST = $(man_MANS)
+
+bin_monetdb = {
+	# hack: include monetdb.1.in here to get it expanded
+	SOURCES = monetdb.c monetdb.1.in
+	LIBS = \
+		../utils/libmeroutil \
+		$(MONETDB_LIBS) -lbat -lstream \
+		$(SOCKET_LIBS) \
+		$(MALLOC_LIBS)
+}
