@@ -93,6 +93,7 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 				destination[length++] = c;
 		}
 		destination[length] = 0;
+		_cputs("\r\n");
 	}
 	if (length == 0 && def)
 		strcpy(destination, def);
