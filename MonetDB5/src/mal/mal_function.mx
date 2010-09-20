@@ -63,7 +63,7 @@ be geared towards fast execution and to ease symbolic debugging.
 #include "mal_resolve.h"
 
 typedef struct lifespan {
-	short beginLifespan, endLifespan, lastUpdate;
+	int beginLifespan, endLifespan, lastUpdate;
 } *Lifespan, LifespanRecord;
 
 #define getLastUpdate(L,I)	(L[I].lastUpdate)
