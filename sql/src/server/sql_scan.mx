@@ -432,7 +432,7 @@ scanner_query_processed(struct scanner *s)
 	s->rs->pos += s->yycur;
 	/* completely eat the query including white space after the ; */
 	while (s->rs->pos < s->rs->len &&
-	       (cur = s->rs->buf[s->rs->pos], isspace(cur))) {
+	       (cur = s->rs->buf[s->rs->pos], isascii(cur) && isspace(cur))) {
 		s->rs->pos++;
 	}
 	/*assert(s->rs->pos <= s->rs->len);*/
