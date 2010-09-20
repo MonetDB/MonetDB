@@ -106,13 +106,20 @@ public class Control {
 
 		/* login ritual, step 1: get challenge from server */
 		response = in.readLine();
-		if (!response.startsWith("merovingian:1:"))
+		if (!response.startsWith("merovingian:1:") &&
+				!response.startsWith("merovingian:2:"))
 			throw new MerovingianException("unsupported merovingian server");
 		String[] tokens = response.split(":");
+		String version = tokens[1];
 		String token = tokens[2];
 
 		response = controlHash(passphrase, token);
-		out.print(response + "\n");
+		if (version.equals("1")) {
+			out.print(response + "\n");
+		} else if (version.equals("2")) {
+			// we only support control mode for now
+			out.print(response + ":control\n");
+		}
 
 		response = in.readLine();
 		if (response == null) {

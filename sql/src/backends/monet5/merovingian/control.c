@@ -74,6 +74,7 @@ char* control_send(
 	} else {
 		struct sockaddr_in server;
 		struct hostent *hp;
+		char ver = '\0';
 
 		/* TCP socket connect */
 		if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
@@ -101,8 +102,10 @@ char* control_send(
 			snprintf(sbuf, sizeof(sbuf), "no response from merovingian");
 			return(strdup(sbuf));
 		}
-		/* we only understand merovingian:1 */
-		if (strncmp(sbuf, "merovingian:1:", strlen("merovingian:1:")) != 0) {
+		/* we only understand merovingian:1 and :2 */
+		if (strncmp(sbuf, "merovingian:1:", strlen("merovingian:1:")) != 0 &&
+				strncmp(sbuf, "merovingian:2:", strlen("merovingian:2:")) != 0)
+		{
 			if (len > 2 &&
 					(strstr(sbuf + 2, ":BIG:") != NULL ||
 					 strstr(sbuf + 2, ":LIT:") != NULL))
@@ -121,10 +124,19 @@ char* control_send(
 		if (buf != NULL)
 			*buf = '\0';
 		buf = sbuf + strlen("merovingian:1:");
+		ver = buf[-2]; /* store the version for later */
 
 		buf = control_hash(pass, buf);
 
-		len = snprintf(sbuf, sizeof(sbuf), "%s\n", buf);
+		switch (ver) {
+			case '1':
+				len = snprintf(sbuf, sizeof(sbuf), "%s\n", buf);
+			break;
+			case '2':
+				/* in the library we only support control mode for now */
+				len = snprintf(sbuf, sizeof(sbuf), "%s:control\n", buf);
+			break;
+		}
 		free(buf);
 		send(sock, sbuf, len, 0);
 

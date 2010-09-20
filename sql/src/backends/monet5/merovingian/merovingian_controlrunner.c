@@ -195,7 +195,7 @@ controlRunner(void *d)
 			p = buf;
 			generateSalt(p, 32);
 			len = snprintf(buf2, sizeof(buf2),
-					"merovingian:1:%s:\n", p);
+					"merovingian:2:%s:\n", p);
 			send(msgsock, buf2, len, 0);
 			if ((pos = recvWithTimeout(msgsock, buf2, sizeof(buf2))) == 0) {
 				close(msgsock);
@@ -213,6 +213,19 @@ controlRunner(void *d)
 			}
 			buf2[pos - 1] = '\0';
 			pos = 0;
+
+			q = strchr(buf2, ':');
+			if (q == NULL) {
+				Mfprintf(_mero_ctlout, "%s: invalid response "
+						"(missing mode)\n", origin);
+				len = snprintf(buf2, sizeof(buf2),
+						"invalid response\n");
+				send(msgsock, buf2, len, 0);
+				close(msgsock);
+				continue;
+			}
+			*q++ = '\0';
+
 			p = control_hash(_mero_controlpass, p);
 			if (strcmp(buf2, p) != 0) {
 				Mfprintf(_mero_ctlout, "%s: permission denied "
@@ -224,8 +237,26 @@ controlRunner(void *d)
 				continue;
 			}
 
-			len = snprintf(buf2, sizeof(buf2), "OK\n");
-			send(msgsock, buf2, len, 0);
+			if (strcmp(q, "control") == 0) {
+				len = snprintf(buf2, sizeof(buf2), "OK\n");
+				send(msgsock, buf2, len, 0);
+			} else if (strcmp(q, "peer") == 0) {
+				Mfprintf(_mero_ctlout, "%s: peering not yet implemented\n",
+						origin);
+				len = snprintf(buf2, sizeof(buf2),
+						"peering not yet implemented\n");
+				send(msgsock, buf2, len, 0);
+				close(msgsock);
+				continue;
+			} else {
+				Mfprintf(_mero_ctlout, "%s: invalid mode "
+						"(%s)\n", origin, q);
+				len = snprintf(buf2, sizeof(buf2),
+						"invalid mode: %s\n", q);
+				send(msgsock, buf2, len, 0);
+				close(msgsock);
+				continue;
+			}
 		}
 
 		while (_mero_keep_listening) {
