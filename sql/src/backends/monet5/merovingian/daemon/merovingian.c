@@ -52,12 +52,12 @@
 
 #include "sql_config.h"
 #include "mal_sabaoth.h"
-#include "utils.h"
-#include "properties.h"
-#include "glob.h"
-#include "database.h"
-#include "utils.h"
-#include "control.h"
+#include <utils/utils.h>
+#include <utils/properties.h>
+#include <utils/glob.h>
+#include <utils/database.h>
+#include <utils/control.h>
+
 #include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
@@ -78,46 +78,16 @@
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <pthread.h>
 #include <time.h>
-#include <stream.h>
-#include <stream_socket.h>
 
-#define SOCKPTR struct sockaddr *
-#ifdef HAVE_SOCKLEN_T
-#define SOCKLEN socklen_t
-#else
-#define SOCKLEN int
-#endif
-
-typedef char* err;
-
-#define freeErr(X) GDKfree(X)
-#define getErrMsg(X) X
-#define NO_ERR (err)0
-
-/* when not writing to stderr, one has to flush, make it easy to do so */
-#define Mfprintf(S, ...) \
-	fprintf(S, __VA_ARGS__); \
-	fflush(S);
+#include "merovingian.h"
+#include "client.h"
+#include "connections.h"
+#include "controlrunner.h"
+#include "discoveryrunner.h"
+#include "handlers.h"
 
 
 /* private structs */
-
-typedef struct _dpair {
-	int out;          /* where to read stdout messages from */
-	int err;          /* where to read stderr messages from */
-	pid_t pid;        /* this process' id */
-	str dbname;       /* the database that this server serves */
-	struct _dpair* next;
-}* dpair;
-
-typedef struct _remotedb {
-	str dbname;       /* remote database name */
-	str tag;          /* database tag, if any, default = "" */
-	str fullname;     /* dbname + tag */
-	str conn;         /* remote connection, use in redirect */
-	int ttl;          /* time-to-live in seconds */
-	struct _remotedb* next;
-}* remotedb;
 
 typedef struct _threadlist {
 	pthread_t tid;    /* thread id */
@@ -128,60 +98,56 @@ typedef struct _threadlist {
 /* globals */
 
 /* full path to the mserver5 binary */
-static str _mero_mserver = NULL;
+char *_mero_mserver = NULL;
 /* full path to the monetdb5 config file */
-static str _mero_conffile = NULL;
+char *_mero_conffile = NULL;
 /* list of databases that we have started */
-static dpair _mero_topdp = NULL;
+dpair _mero_topdp = NULL;
 /* lock to _mero_topdp, initialised as recursive lateron */
-static pthread_mutex_t _mero_topdp_lock;
-/* list of remote databases as discovered */
-static remotedb _mero_remotedbs = NULL;
-/* lock to _mero_remotedbs */
-static pthread_mutex_t _mero_remotedb_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t _mero_topdp_lock;
 /* for the logger, when set to 0, the logger terminates */
-static int _mero_keep_logging = 1;
+int _mero_keep_logging = 1;
 /* for accepting connections, when set to 0, listening socket terminates */
-static int _mero_keep_listening = 1;
+int _mero_keep_listening = 1;
 /* stream to the stdout output device (tty or file) */
-static FILE *_mero_streamout = NULL;
+FILE *_mero_streamout = NULL;
 /* stream to the stderr output device (tty or file) */
-static FILE *_mero_streamerr = NULL;
+FILE *_mero_streamerr = NULL;
 /* timeout when waiting for a database to shutdown (seconds) */
-static int _mero_exit_timeout = 60;
+int _mero_exit_timeout = 60;
 /* the port merovingian listens on for client connections */
-static unsigned short _mero_port = MERO_PORT;
+unsigned short _mero_port = MERO_PORT;
 /* the time-to-live to announce for each shared database (seconds) */
-static int _mero_discoveryttl = 600;
+int _mero_discoveryttl = 600;
 /* stream to the stdout for the neighbour discovery service */
-static FILE *_mero_discout = NULL;
+FILE *_mero_discout = NULL;
 /* stream to the stderr for the neighbour discovery service */
-static FILE *_mero_discerr = NULL;
+FILE *_mero_discerr = NULL;
 /* the port merovingian listens for TCP control commands */
-static unsigned short _mero_controlport = 0;
+unsigned short _mero_controlport = 0;
 /* stream to the stdout for the control runner */
-static FILE *_mero_ctlout = NULL;
+FILE *_mero_ctlout = NULL;
 /* stream to the stderr for the control runner */
-static FILE *_mero_ctlerr = NULL;
+FILE *_mero_ctlerr = NULL;
 /* broadcast socket for announcements */
-static int _mero_broadcastsock;
+int _mero_broadcastsock;
 /* broadcast address/port */
-static struct sockaddr_in _mero_broadcastaddr;
+struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
-static char _mero_hostname[128];
+char _mero_hostname[128];
 /* control channel passphrase */
-static char _mero_controlpass[128];
+char _mero_controlpass[128];
 /* full path to logfile for stdout messages, or NULL if tty */
-static str _mero_msglogfile = NULL;
+char *_mero_msglogfile = NULL;
 /* full path to logfile for stderr messages, or NULL if tty */
-static str _mero_errlogfile = NULL;
+char *_mero_errlogfile = NULL;
 /* default options read from config file */
-static confkeyval *_mero_props = NULL;
+confkeyval *_mero_props = NULL;
 
 
 /* funcs */
 
-inline static void
+inline void
 logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 {
 	time_t now;
@@ -294,12 +260,12 @@ logListener(void *x)
  * shut down gracefully within a given time-out.  If that fails, it
  * sends the deadly SIGKILL signal to the mserver process and returns.
  */
-static void
+void
 terminateProcess(void *p)
 {
 	dpair d = (dpair)p;
 	sabdb *stats;
-	str er;
+	char *er;
 	int i;
 	/* make local copies since d will disappear when killed */
 	pid_t pid = d->pid;
@@ -390,12 +356,12 @@ terminateProcess(void *p)
  * Creates a new error, allocated with malloc.  The error should be
  * freed using freeErr().
  */
-static str
-newErr(str fmt, ...)
+char *
+newErr(char *fmt, ...)
 {
 	va_list ap;
 	char message[4096];
-	str ret;
+	char *ret;
 	int len;
 
 	va_start(ap, fmt);
@@ -409,23 +375,16 @@ newErr(str fmt, ...)
 	return(ret);
 }
 
-#include "merovingian_peering.h"
-
-#include "merovingian_forkmserver.c"
-#include "merovingian_proxy.c"
-#include "merovingian_client.c"
-#include "merovingian_connections.c"
-#include "merovingian_controlrunner.c"
-#include "merovingian_discoveryrunner.c"
-#include "merovingian_handlers.c"
 
 int
 main(int argc, char *argv[])
 {
 	err e;
 	int argp;
-	str dbfarm, pidfilename;
-	str p, prefix;
+	char *dbfarm;
+	char *pidfilename;
+	char *p;
+	char *prefix;
 	FILE *cnf = NULL, *pidfile = NULL;
 	char *control_usock;
 	char *mapi_usock;

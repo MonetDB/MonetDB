@@ -17,6 +17,48 @@
  * All Rights Reserved.
  */
 
+#include "sql_config.h"
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <time.h>
+#include <unistd.h>  /* select */
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+#include <errno.h>
+#include <pthread.h>
+
+#include <gdk.h> /* GDKfree */
+#include <mal_sabaoth.h>
+#include <utils/utils.h>
+#include <utils/properties.h>
+#include <utils/database.h>
+#include <utils/control.h>
+
+#include "merovingian.h"
+#include "discoveryrunner.h" /* broadcast, remotedb */
+#include "peering.h"
+#include "forkmserver.h"
+
+extern char *_mero_hostname;
+extern unsigned short _mero_port;
+extern int _mero_discoveryttl;
+extern char _mero_keep_listening;
+extern FILE *_mero_ctlout;
+extern FILE *_mero_ctlerr;
+extern dpair _mero_topdp;
+extern pthread_mutex_t _mero_topdp_lock;
+extern confkeyval *_mero_props;
+extern pthread_mutex_t _mero_remotedb_lock;
+extern remotedb _mero_remotedbs;
+extern char *_mero_controlpass;
+extern char *_mero_conffile;
+
 static void
 leavedb(char *name)
 {
@@ -83,7 +125,7 @@ recvWithTimeout(int msgsock, char *buf, size_t buflen)
 	return(recv(msgsock, buf, buflen, 0));
 }
 
-static void
+void
 controlRunner(void *d)
 {
 	int *socks = (int *)d;
@@ -249,7 +291,7 @@ controlRunner(void *d)
 							(void *(*)(void *))peeringServerThread,
 							(void *)&msgsock) < 0)
 				{
-					/* FAIL */
+					/* FIXME: FAIL */
 				}
 			} else {
 				Mfprintf(_mero_ctlout, "%s: invalid mode "
@@ -747,3 +789,4 @@ controlRunner(void *d)
 	Mfprintf(_mero_ctlout, "control channel closed\n");
 }
 
+/* vim:set ts=4 sw=4 noexpandtab: */

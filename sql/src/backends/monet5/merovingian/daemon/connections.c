@@ -17,7 +17,31 @@
  * All Rights Reserved.
  */
 
-static err
+#include "sql_config.h"
+#include <stdio.h> /* fprintf */
+#include <sys/types.h>
+#include <sys/stat.h> /* stat */
+#include <sys/wait.h> /* wait */
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <string.h> /* strerror */
+#include <errno.h>
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
+#include <stream.h>
+#include <stream_socket.h>
+
+#include "merovingian.h"
+
+extern FILE *_mero_discout;
+extern FILE *_mero_discerr;
+
+err
 openConnectionTCP(int *ret, unsigned short port, FILE *log)
 {
 	struct sockaddr_in server;
@@ -81,7 +105,7 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 	return(NO_ERR);
 }
 
-static err
+err
 openConnectionUDP(int *ret, unsigned short port)
 {
 	struct addrinfo hints;
@@ -141,7 +165,7 @@ openConnectionUDP(int *ret, unsigned short port)
 	return(NO_ERR);
 }
 
-static err
+err
 openConnectionUNIX(int *ret, char *path, int mode, FILE *log)
 {
 	struct sockaddr_un server;
@@ -176,14 +200,4 @@ openConnectionUNIX(int *ret, char *path, int mode, FILE *log)
 	return(NO_ERR);
 }
 
-static void
-broadcast(char *msg)
-{
-	int len = strlen(msg) + 1;
-	if (sendto(_mero_broadcastsock, msg, len, 0,
-				(struct sockaddr *)&_mero_broadcastaddr,
-				sizeof(_mero_broadcastaddr)) != len)
-		Mfprintf(_mero_discerr, "error while sending broadcast "
-				"message: %s\n", strerror(errno));
-}
-
+/* vim:set ts=4 sw=4 noexpandtab: */

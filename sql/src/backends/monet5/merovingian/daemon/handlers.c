@@ -17,6 +17,32 @@
  * All Rights Reserved.
  */
 
+#include "sql_config.h"
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h> /* isatty */
+#include <time.h> /* time, localtime */
+#include <string.h> /* str* */
+#include <sys/types.h> /* open */
+#include <sys/wait.h> /* wait */
+#include <sys/stat.h> /* open */
+#include <fcntl.h> /* open */
+#include <errno.h>
+#include <pthread.h>
+
+#include <gdk.h>
+
+#include "merovingian.h"
+
+extern char _mero_keep_listening;
+extern char *_mero_msglogfile;
+extern char *_mero_errlogfile;
+extern FILE *_mero_streamout;
+extern FILE *_mero_streamerr;
+extern pthread_mutex_t _mero_topdp_lock;
+extern dpair _mero_topdp;
+
+
 static char *sigint  = "SIGINT";
 static char *sigterm = "SIGTERM";
 static char *sigquit = "SIGQUIT";
@@ -51,7 +77,7 @@ sigtostr(int sig)
  * Handler for SIGINT, SIGTERM and SIGQUIT.  This starts a graceful
  * shutdown of merovingian.
  */
-static void
+void
 handler(int sig)
 {
 	char *signame = sigtostr(sig);
@@ -67,7 +93,7 @@ handler(int sig)
  * Handler for SIGHUP, causes logfiles to be reopened, if not attached
  * to a terminal.
  */
-static void
+void
 huphandler(int sig)
 {
 	(void)sig;
@@ -137,12 +163,12 @@ huphandler(int sig)
 }
 
 /**
- * Handles SIGCHLD signals, that is, signals that a parent recieves
+ * Handles SIGCHLD signals, that is, signals that a parent receives
  * about its children.  This handler deals with terminated children, by
  * deregistering them from the internal administration (_mero_topdp)
  * with the necessary cleanup.
  */
-static void
+void
 childhandler(int sig, siginfo_t *si, void *unused)
 {
 	dpair p, q;
@@ -212,3 +238,4 @@ childhandler(int sig, siginfo_t *si, void *unused)
 			(long long int)si->si_pid);
 }
 
+/* vim:set ts=4 sw=4 noexpandtab: */

@@ -135,3 +135,5 @@ peeringServerThread(void *d)
 	close(discreader[1]);
 	close(s);
 }
+
+/* vim:set ts=4 sw=4 noexpandtab: */

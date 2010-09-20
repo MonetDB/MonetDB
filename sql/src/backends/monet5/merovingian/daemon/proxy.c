@@ -17,6 +17,29 @@
  * All Rights Reserved.
  */
 
+#include "sql_config.h"
+#include <stdio.h> /* fprintf */
+#include <sys/types.h>
+#include <sys/stat.h> /* stat */
+#include <sys/wait.h> /* wait */
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <string.h> /* strerror */
+#include <pthread.h>
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
+#include <gdk.h>
+#include <stream.h>
+#include <stream_socket.h>
+
+#include "merovingian.h"
+
+
 typedef struct _merovingian_proxy {
 	stream *in;      /* the input to read from and to dispatch to out */
 	stream *out;     /* where to write the read input to */
@@ -74,7 +97,7 @@ proxyThread(void *d)
 	GDKfree(p);
 }
 
-static err
+err
 startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 {
 	struct hostent *hp;
@@ -309,3 +332,5 @@ handleMySQLClient(int sock)
 	return(NO_ERR);
 }
 #endif
+
+/* vim:set ts=4 sw=4 noexpandtab: */

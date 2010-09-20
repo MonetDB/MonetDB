@@ -17,6 +17,33 @@
  * All Rights Reserved.
  */
 
+#include "sql_config.h"
+
+#include <stdio.h>
+#include <string.h>  /* strerror, strchr, strcmp */
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
+#include <stream.h>
+#include <stream_socket.h>
+#include <mal_sabaoth.h>
+#include <utils/utils.h> /* freeConfFile */
+#include <utils/properties.h> /* readProps */
+
+#include "merovingian.h"
+#include "forkmserver.h"
+#include "proxy.h"
+
+extern char _mero_keep_listening;
+extern confkeyval *_mero_props;
+
 static err
 handleClient(int sock, char isusock)
 {
@@ -323,7 +350,7 @@ handleClient(int sock, char isusock)
 	return(NO_ERR);
 }
 
-static str
+str
 acceptConnections(int sock, int usock)
 {
 	str msg;
@@ -445,3 +472,4 @@ error:
 	return(newErr("accept connection: %s", msg));
 }
 
+/* vim:set ts=4 sw=4 noexpandtab: */

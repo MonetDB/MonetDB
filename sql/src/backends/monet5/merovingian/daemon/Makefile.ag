@@ -22,34 +22,33 @@ man_MANS = monetdbd.1
 INCLUDES = \
 	$(MONETDB5_INCS) \
 	$(MONETDB_INCS) \
-	-I../utils
-
-MEROVINGIAN_SUBS = \
-	merovingian_client.c \
-	merovingian_connections.c \
-	merovingian_controlrunner.c \
-	merovingian_discoveryrunner.c \
-	merovingian_forkmserver.c \
-	merovingian_handlers.c \
-	merovingian_proxy.c
+	-I..
 
 EXTRA_DIST = $(man_MANS) \
-	merovingian_peering.h \
-	$(MEROVINGIAN_SUBS)
-
-lib_merodaemon = {
-	NOINST
-	SOURCES = \
-		merovingian.c \
-		merovingian_peering.c
-}
+	merovingian.h \
+	client.h \
+	connections.h \
+	controlrunner.h \
+	discoveryrunner.h \
+	forkmserver.h \
+	handlers.h \
+	peering.h \
+	proxy.c
 
 bin_monetdbd = {
 	# hack: include merovingian.1.in here to get it expanded
-	SOURCES = monetdbd.1.in
+	SOURCES = monetdbd.1.in \
+		merovingian.c \
+		client.c \
+		connections.c \
+		controlrunner.c \
+		discoveryrunner.c \
+		forkmserver.c \
+		handlers.c \
+		peering.c \
+		proxy.c
 	LIBS = \
 		../utils/libmeroutil \
-		libmerodaemon \
 		$(MONETDB5_LIBS) -lmonetdb5 \
 		$(MONETDB_LIBS) -lbat -lstream \
 		$(SOCKET_LIBS) \

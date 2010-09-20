@@ -17,12 +17,46 @@
  * All Rights Reserved.
  */
 
+#include "sql_config.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <string.h> /* str* */
+#include <time.h> /* localtime */
+#include <errno.h>
+#include <pthread.h>
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+
+#include <gdk.h>
+#include <mal_sabaoth.h>
+#include <utils/utils.h>
+#include <utils/glob.h>
+#include <utils/properties.h>
+
+#include "merovingian.h"
+#include "discoveryrunner.h" /* remotedb */
+
+extern pthread_mutex_t _mero_remotedb_lock;
+extern remotedb _mero_remotedbs;
+extern pthread_mutex_t _mero_topdp_lock;
+extern dpair _mero_topdp;
+extern char *_mero_mserver;
+extern confkeyval *_mero_props;
+extern char *_mero_conffile;
+extern char *_mero_hostname;
+extern unsigned short _mero_port;
+
+
 /**
  * Fork an Mserver and detach.  Before forking off, Sabaoth is consulted
  * to see if forking makes sense, or whether it is necessary at all, or
  * forbidden by restart policy, e.g. when in maintenance.
  */
-static err
+err
 forkMserver(str database, sabdb** stats, int force)
 {
 	pid_t pid;
@@ -510,3 +544,5 @@ forkMserver(str database, sabdb** stats, int force)
 	close(pfde[1]);
 	return(newErr(strerror(errno)));
 }
+
+/* vim:set ts=4 sw=4 noexpandtab: */

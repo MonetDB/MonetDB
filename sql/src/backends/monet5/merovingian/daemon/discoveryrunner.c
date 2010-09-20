@@ -17,6 +17,52 @@
  * All Rights Reserved.
  */
 
+#include "sql_config.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h> /* str* */
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <fcntl.h>
+#include <time.h>
+
+#include <gdk.h>
+#include <mal_sabaoth.h>
+#include <utils/utils.h>
+#include <utils/properties.h>
+
+#include "merovingian.h"
+#include "discoveryrunner.h"
+
+
+extern FILE *_mero_discout;
+extern FILE *_mero_discerr;
+extern int _mero_broadcastsock;
+extern struct sockaddr_in _mero_broadcastaddr;
+extern int _mero_discoveryttl;
+extern char *_mero_hostname;
+extern unsigned short _mero_port;
+extern unsigned short _mero_controlport;
+extern char _mero_keep_listening;
+
+
+/* list of remote databases as discovered */
+remotedb _mero_remotedbs = NULL;
+/* lock to _mero_remotedbs */
+pthread_mutex_t _mero_remotedb_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void
+broadcast(char *msg)
+{
+	int len = strlen(msg) + 1;
+	if (sendto(_mero_broadcastsock, msg, len, 0,
+				(struct sockaddr *)&_mero_broadcastaddr,
+				sizeof(_mero_broadcastaddr)) != len)
+		Mfprintf(_mero_discerr, "error while sending broadcast "
+				"message: %s\n", strerror(errno));
+}
+
 static int
 removeRemoteDB(const char *dbname, const char *conn)
 {
@@ -157,7 +203,7 @@ unregisterMessageTap(int fd)
 	pthread_mutex_unlock(&_mero_remotedb_lock);
 }
 
-static void
+void
 discoveryRunner(void *d)
 {
 	int sock = *(int *)d;
@@ -405,3 +451,4 @@ discoveryRunner(void *d)
 	GDKfree(ckv);
 }
 
+/* vim:set ts=4 sw=4 noexpandtab: */

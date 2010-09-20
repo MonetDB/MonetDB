@@ -17,4 +17,23 @@
  * All Rights Reserved.
  */
 
-void peeringServerThread(void *d);
+#ifndef _DISCOVERYRUNNER_H
+#define _DISCOVERYRUNNER_H 1
+
+void broadcast(char *msg);
+void registerMessageTap(int fd);
+void unregisterMessageTap(int fd);
+void discoveryRunner(void *d);
+
+typedef struct _remotedb {
+	str dbname;       /* remote database name */
+	str tag;          /* database tag, if any, default = "" */
+	str fullname;     /* dbname + tag */
+	str conn;         /* remote connection, use in redirect */
+	int ttl;          /* time-to-live in seconds */
+	struct _remotedb* next;
+}* remotedb;
+
+#endif
+
+/* vim:set ts=4 sw=4 noexpandtab: */
