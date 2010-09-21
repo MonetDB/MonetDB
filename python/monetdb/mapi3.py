@@ -25,7 +25,6 @@ import socket
 import logging
 import struct
 import hashlib
-import crypt
 import platform
 
 from io import BytesIO
@@ -207,6 +206,7 @@ class Server:
             m.update(salt.encode())
             pwhash = "{MD5}" + m.hexdigest()
         elif "crypt" in h:
+            import crypt
             pwhash = "{crypt}" + crypt.crypt((password+salt)[:8], salt[-2:])
         else:
             pwhash = "{plain}" + password + salt
