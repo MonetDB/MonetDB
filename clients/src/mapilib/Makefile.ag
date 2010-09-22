@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = $(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS)
+INCLUDES = $(MONETDB_INCS) $(OPENSSL_INCS)
 
 MAPI_LIBS = $(SOCKET_LIBS) $(OPENSSL_LIBS)
 
@@ -29,4 +29,11 @@ headers_mapi = {
 	DIR = includedir/MonetDB/mapilib
 	HEADERS = h
 	SOURCES = Mapi.mx
+}
+
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-mapi.pc.in
 }

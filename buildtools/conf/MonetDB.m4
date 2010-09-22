@@ -196,6 +196,7 @@ if test "x$1" = "x"; then
 else
   MONETDB_REQUIRED_VERSION="$1"
 fi
+AC_SUBST(MONETDB_REQUIRED_VERSION)
 AC_ARG_WITH(monetdb,
 	AS_HELP_STRING([--with-monetdb=DIR], [MonetDB Common is installed in DIR]),
 	have_monetdb="$withval")
@@ -269,6 +270,7 @@ if test "x$1" = "x"; then
 else
   CLIENTS_REQUIRED_VERSION="$1"
 fi
+AC_SUBST(CLIENTS_REQUIRED_VERSION)
 AC_ARG_WITH(clients,
 	AS_HELP_STRING([--with-clients=DIR], [MonetDB Clients is installed in DIR]),
 	have_clients="$withval")
