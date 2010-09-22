@@ -213,7 +213,8 @@ OCTOPUSconnect(str *c, str *dburi)
 {
 	int i;
 	str msg = MAL_SUCCEED;
-	str conn = NULL;
+	str conn = NULL, scen = "msql";
+
 
 	i = OCTOPUSfindPeer(*dburi);
 	if ( i < 0 ){
@@ -223,7 +224,7 @@ OCTOPUSconnect(str *c, str *dburi)
 	}
 	
 	if ( peers[i].conn == NULL ) {
-		msg = RMTconnect(&conn, &peers[i].uri, &peers[i].usr, &peers[i].pwd);
+		msg = RMTconnectScen(&conn, &peers[i].uri, &peers[i].usr, &peers[i].pwd, &scen);
 		if ( msg == MAL_SUCCEED )
 			peers[i].conn = GDKstrdup(conn);
 		else {

@@ -239,7 +239,7 @@ datacell_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcod
 #
 # The Octopus pipeline for distributed processing (Merovingian enabled
 # platforms only)
-octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+octopus_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,octopus,reduce,dataflow,history,multiplex,garbageCollector
 tarantula_pipe=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,tarantula,deadcode,reduce,dataflow,history,multiplex,garbageCollector
 #
 # The MapReduce pipeline for a different flavour of distributed
