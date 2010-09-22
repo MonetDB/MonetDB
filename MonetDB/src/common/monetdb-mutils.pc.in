@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: monetdb-mutils
+Description: MonetDB misc utils library
+Version: @PACKAGE_VERSION@
+
+Libs: -L${libdir} -lmutils 
+Cflags: -I${includedir}/MonetDB/common

@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: monetdb-gdk
+Description: MonetDB GDK BAT-kernel library
+Version: @PACKAGE_VERSION@
+Requires: monetdb-mutils = @PACKAGE_VERSION@ monetdb-stream = @PACKAGE_VERSION@
+
+Libs: -L${libdir} -lbat
+Cflags: -I${includedir}/MonetDB/gdk

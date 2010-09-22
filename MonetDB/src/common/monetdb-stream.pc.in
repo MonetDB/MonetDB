@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: monetdb-stream
+Description: MonetDB streams libary
+Version: @PACKAGE_VERSION@
+
+Libs: -L${libdir} -lstream
+Cflags: -I${includedir}/MonetDB/common

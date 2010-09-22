@@ -23,12 +23,6 @@ EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		rpm.mk.in RunMserver.bat.in
 EXTRA_DIST_DIR = NT debian
 
-headers_pc = {
-	HEADERS = pc
-	SOURCES	= MonetDB-SQL.pc.in
-	DIR = libdir/pkgconfig
-}
-
 headers_txt = {
 	HEADERS = txt
 	SOURCES = dump-restore.txt 

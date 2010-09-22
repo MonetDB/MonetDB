@@ -56,4 +56,11 @@ headers_mal = {
 	HEADERS = h 
 }
 
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-mal.pc.in
+}
+
 EXTRA_DIST_DIR = Tests

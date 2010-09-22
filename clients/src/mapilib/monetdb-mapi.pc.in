@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: monetdb-mapi
+Description: MonetDB MAPI C-client libary
+Version: @PACKAGE_VERSION@
+
+Libs: -L${libdir} -lMapi 
+Cflags: -I${includedir}/MonetDB/mapilib

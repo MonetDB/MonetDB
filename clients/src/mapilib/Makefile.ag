@@ -30,3 +30,10 @@ headers_mapi = {
 	HEADERS = h
 	SOURCES = Mapi.mx
 }
+
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-mapi.pc.in
+}

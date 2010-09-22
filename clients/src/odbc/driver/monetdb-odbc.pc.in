@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: monetdb-odbc
+Description: MonetDB ODBC driver
+Version: @PACKAGE_VERSION@
+
+Libs: -L${libdir} -lMonetODBC

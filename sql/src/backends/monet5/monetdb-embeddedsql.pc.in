@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: monetdb-embeddedsql
+Description: MonetDB5 SQL embedded library
+Version: @PACKAGE_VERSION@
+Requires: monetdb-mutils = @MONETDB_REQUIRED_VERSION@ monetdb-stream = @MONETDB_REQUIRED_VERSION@ monetdb-mapi = @CLIENTS_REQUIRED_VERSION@
+
+Libs: -L${libdir} -lembeddedsql5
+Cflags: -I${includedir}/MonetDB5/sql
