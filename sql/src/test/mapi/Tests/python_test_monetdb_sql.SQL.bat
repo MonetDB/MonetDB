@@ -10,4 +10,4 @@ set PYTHONPATH=%testpath%;%PYTHONPATH%
 prompt # $t $g  
 echo on
 
-python %testpath%/runtests.py
+python "%testpath%/runtests.py"
