@@ -131,6 +131,7 @@ peeringServerThread(void *d)
 				break;
 			data[len] = '\0';
 			/* FIXME: simple form, no masquerading */
+			(void)masquerade;
 			broadcast(data);
 		} else if (FD_ISSET(discreader[1], &fds)) {
 			/* from our network, forward to client */
