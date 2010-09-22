@@ -208,8 +208,9 @@ AM_CONDITIONAL(HAVE_CFITSIO, test x"$have_cfitsio" != xno)
 
 dnl  stuff required for merovingian and monetdb
 AC_CHECK_HEADERS([fcntl.h stropts.h sys/ioctl.h sys/un.h termios.h])
-AC_CHECK_HEADERS([uuid/uuid.h])
-AC_SEARCH_LIBS([uuid_generate], [uuid])
+AC_CHECK_HEADERS([uuid/uuid.h],
+				  AC_SEARCH_LIBS([uuid_generate], [uuid],
+								 [AC_DEFINE([HAVE_UUID], 1, [Define when uuid_* is available and linkable on this system])]))
 AC_SUBST([MONETDB5_CONFFILE])
 AC_SUBST([MERO_LOG], [$MONETDB5_LOGDIR/merovingian.log])
 AC_DEFINE_UNQUOTED([MERO_LOG], ["$MONETDB5_LOGDIR/merovingian.log"], [where Merovingian will store its logs by default])

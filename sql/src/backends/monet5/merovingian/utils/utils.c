@@ -33,7 +33,7 @@
 #include <string.h> /* memcpy */
 #include <strings.h> /* strcasecmp */
 #include <gdk.h> /* GDKmalloc */
-#ifdef HAVE_UUID_UUID_H
+#ifdef HAVE_UUID
 #include <uuid/uuid.h>
 #endif
 
@@ -345,7 +345,7 @@ generatePassphraseFile(char *path)
 char *
 generateUUID(void)
 {
-#ifdef HAVE_UUID_UUID_H
+#ifdef HAVE_UUID
 # ifdef UUID_PRINTABLE_STRING_LENGTH
 	/* Solaris */
 	char out[UUID_PRINTABLE_STRING_LENGTH];
