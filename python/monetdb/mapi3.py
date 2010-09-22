@@ -31,9 +31,9 @@ from io import BytesIO
 
 from monetdb.monetdb_exceptions import *
 
-# windows doesn't support MSG_WAITALL flag for recv
-flags = None
-if platform.system() != 'Windows':
+# Windows doesn't support MSG_WAITALL flag for recv
+flags = 0
+if hasattr(socket, 'MSG_WAITALL'):
     flags = socket.MSG_WAITALL
 
 logger = logging.getLogger("monetdb")
