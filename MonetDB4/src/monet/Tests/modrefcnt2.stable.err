@@ -10,10 +10,10 @@ stderr of test 'modrefcnt2` in directory 'src/monet` itself:
 # 00:53:04 >  Mtimeout -timeout 60 MapiClient -u monetdb -P monetdb "--config=/var/tmp/monet.GNU_32-d.14598/MonetDB/Linux2.4.20-31.9smp/conf/MonetDB.conf" --host=draco --port=42778 < modrefcnt2_s00.milC
 # 00:53:04 >  
 
-MAPI  = monetdb@localhost:30185
+MAPI  = monetdb@ottar:35656
 QUERY = bat("test").print();
 ERROR = !ERROR: interpret: MIL operator invocation of 'print(BAT[int,lock])' with illegal types.
-MAPI  = monetdb@localhost:30185
+MAPI  = monetdb@ottar:35656
 QUERY = bat("test").count().print();
 ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
         !ERROR: interpret_params: print(param 1): evaluation error.
@@ -27,14 +27,14 @@ ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' wit
 # 00:53:05 >  Mtimeout -timeout 60 MapiClient -u monetdb -P monetdb "--config=/var/tmp/monet.GNU_32-d.14598/MonetDB/Linux2.4.20-31.9smp/conf/MonetDB.conf" --host=draco --port=42778 < modrefcnt2_s02.milC
 # 00:53:05 >  
 
-MAPI  = monetdb@localhost:30185
+MAPI  = monetdb@ottar:35656
 QUERY = bat("test").print();
 ERROR = !ERROR: interpret: MIL operator invocation of 'print(BAT[int,lock])' with illegal types.
-MAPI  = monetdb@localhost:30185
+MAPI  = monetdb@ottar:35656
 QUERY = bat("test").count().print();
 ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
         !ERROR: interpret_params: print(param 1): evaluation error.
-MAPI  = monetdb@localhost:30185
+MAPI  = monetdb@ottar:35656
 QUERY = drop("lock");
 ERROR = !ERROR: TBL_unloadmod: lock was not loaded.
 

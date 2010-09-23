@@ -262,6 +262,8 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libMapi.so
 %dir %{_includedir}/MonetDB/mapilib
 %{_includedir}/MonetDB/mapilib/Mapi.h
+%{_libdir}/pkgconfig/monetdb-mapi.pc
+%{_libdir}/pkgconfig/monetdb-odbc.pc
 
 # todo odbc-devel package ?
 %files odbc

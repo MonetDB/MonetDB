@@ -58,10 +58,12 @@ test.count().print();
 [ 0 ]
 
 drop("lock");
+!ERROR: unloadmod_check_use: drop(_lock) failed: tmp_32[int,lock] has 1 reference.
 loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "_lock",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
@@ -72,10 +74,12 @@ loaded();
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 test.print();
-!ERROR: DESCload: atom 'lock' unknown, in BAT '32'.
+#-----------------#
+# h	t	  # name
+# int	lock	  # type
+#-----------------#
 test.count().print();
-!ERROR: DESCload: atom 'lock' unknown, in BAT '32'.
-!ERROR: interpret_params: print(param 1): evaluation error.
+[ 0 ]
 
 quit();
 

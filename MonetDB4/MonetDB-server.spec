@@ -207,7 +207,6 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/monetdb4-config
 %{_bindir}/calibrator
-%{_libdir}/pkgconfig/MonetDB.pc
 %dir %{_includedir}/MonetDB4
 %{_includedir}/MonetDB4/*/*.[hcm]
 %if %{?_with_netcdf:1}%{!?_with_netcdf:0}

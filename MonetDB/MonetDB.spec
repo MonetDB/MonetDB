@@ -96,6 +96,9 @@ rm -fr $RPM_BUILD_ROOT
 %files devel
 %defattr(-,root,root)
 %{_bindir}/monetdb-config
+%{_libdir}/pkgconfig/monetdb-stream.pc
+%{_libdir}/pkgconfig/monetdb-mutils.pc
+%{_libdir}/pkgconfig/monetdb-gdk.pc
 
 %dir %{_includedir}/%{name}
 %dir %{_includedir}/%{name}/*

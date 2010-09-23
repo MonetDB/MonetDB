@@ -152,9 +152,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/pkgconfig/MonetDB-SQL.pc
 %{_bindir}/monetdb-sql-config
 %{_libdir}/libembeddedsql5.so
+%{_libdir}/pkgconfig/monetdb-embeddedsql.pc
 
 %changelog
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.5-20100824

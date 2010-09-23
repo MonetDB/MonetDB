@@ -1904,7 +1904,7 @@ static int
 unloadmod_bat(BAT *b, oid mid)
 {
 	int yy = 0;
-	int refs = BBP_refs(b->batCacheid);
+	int refs = BBP_refs(b->batCacheid) + BBP_lrefs(b->batCacheid);
 
 	if (refs > 0) {
 		BUN p, q;
