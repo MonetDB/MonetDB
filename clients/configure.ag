@@ -39,6 +39,10 @@ AC_SUBST(CONFIG_H)
 HOST=[$target]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
+PKG_PROG_PKG_CONFIG()
+# extend search path with current prefix
+PKG_CONFIG_PATH=${libdir}/pkgconfig:$PKG_CONFIG_PATH
+
 if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
 fi
@@ -66,14 +70,10 @@ req_monetdb_ver='1.40.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-AM_MONETDB_COMMON($req_monetdb_ver)
-if test "x$have_monetdb" != xyes; then
-	if test "x$MONETDB_VERSION" = "x"; then
-		AC_MSG_ERROR([MonetDB was not found. Clients requires at least version $req_monetdb_ver of MonetDB.])
-	else
-		AC_MSG_ERROR([Clients requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDB_VERSION was found.])
-	fi
-fi
+
+PKG_CHECK_MODULES([monetdbtools], [monetdb-stream >= $req_monetdb_ver
+				   monetdb-mutils >= $req_monetdb_ver])
+
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()

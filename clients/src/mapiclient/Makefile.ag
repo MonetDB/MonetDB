@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = -I.. $(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS) $(ICONV_CFLAGS)
+INCLUDES = -I.. $(monetdbtools_CFLAGS) $(READLINE_INCS) $(OPENSSL_INCS) $(ICONV_CFLAGS)
 
 MAPI_LIBS = $(SOCKET_LIBS) $(OPENSSL_LIBS) $(ICONV_LIBS)
 
@@ -29,23 +29,20 @@ lib_mcutil = {
 bin_mclient = {
 	SOURCES = mclient.c ReadlineTools.c ReadlineTools.h
 	LIBS = libmcutil ../mapilib/libMapi $(MAPI_LIBS) $(READLINE_LIBS) \
-		$(MONETDB_LIBS) -lmutils -lstream \
-		$(ICONV_LIBS)
+		$(monetdbtools_LIBS) $(ICONV_LIBS)
 }
 
 bin_msqldump = {
 	SOURCES = msqldump.c
 	LIBS = libmcutil ../mapilib/libMapi $(MAPI_LIBS) \
-		$(MONETDB_LIBS) -lmutils -lstream \
-		$(ICONV_LIBS)
+		$(monetdbtools_LIBS) $(ICONV_LIBS)
 }
 
 bin_stethoscope = {
 	SOURCES = stethoscope.c
 	LIBS = libmcutil \
 		   ../mapilib/libMapi $(MAPI_LIBS) \
-		   $(MONETDB_LIBS) -lmutils -lstream \
-		   $(MALLOC_LIBS) $(PTHREAD_LIBS)
+		   $(monetdbtools_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 
 man_MANS = mclient.1
