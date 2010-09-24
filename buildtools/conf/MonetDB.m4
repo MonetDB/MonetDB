@@ -1175,11 +1175,369 @@ dnl following simple implementation for now.
 
 case $host in
 	*-solaris*)
-        dnl Solaris needs this to get msg_control and msg_controllen
+		dnl Solaris needs this to get msg_control and msg_controllen
 		AC_DEFINE(_XOPEN_SOURCE, 500, [for msg_control and msg_controllen])
 	;;
 esac
 ]) dnl AM_MONETDB_MSG_CONTROL
+
+AC_DEFUN([AM_MONETDB_PROG_FLEX],[
+
+	dnl Pathfinder's and MEL's lexer code do not work properly with flex 2.5.31;
+	dnl they work fine with both flex 2.5.4 and 2.5.33.
+	dnl To avoid any problems, we refuse to work with flex 2.5.31 "everywhre",
+	dnl not only with Pathfider & MEL.
+
+	AM_PROG_LEX()
+
+	dnl flex found on the system?
+	if test "x$LEX" != "x"; then
+
+		AC_MSG_CHECKING([for flex version])
+		flex_ver="`$LEX -V | head -n1`"
+		AC_MSG_RESULT($flex_ver)
+
+		case "$flex_ver" in
+			*2.5.31*)
+				AC_MSG_ERROR([MonetDB's lexer code does not work properly with flex 2.5.31;
+						please install/use flex 2.5.4 or flex >=2.5.33 instead.])
+				;;
+		esac
+
+	fi
+
+]) dnl AM_MONETDB_PROG_FLEX
+
+AC_DEFUN([AM_MONETDB_PROG_SWIG],[
+
+	AC_ARG_WITH(swig,
+		AS_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
+		SWIG="$withval",
+		SWIG=swig)
+
+	case "$SWIG" in
+		yes|auto)
+			SWIG=swig
+			;;
+	esac
+
+	case "$SWIG" in
+		no) ;;
+		/*)
+			AC_MSG_CHECKING(whether $SWIG exists and is executable)
+			if test -x "$SWIG"; then
+				AC_MSG_RESULT(yes)
+			else
+				AC_MSG_RESULT(no)
+				SWIG=no
+			fi
+			;;
+		*)  AC_PATH_PROG(SWIG,$SWIG,no,$PATH);;
+	esac
+
+	if test "x$SWIG" != xno; then
+		# we want the right version...
+		req_swig_ver="1.3.20"
+		AC_MSG_CHECKING(whether $SWIG is >= $req_swig_ver)
+		swig_ver="`"$SWIG" -version 2>&1 | grep Version | sed -e 's|^[[^0-9]]*||' -e 's|[[^0-9]]*$||'`"
+		if test MONETDB_VERSION_TO_NUMBER(echo $swig_ver) -ge MONETDB_VERSION_TO_NUMBER(echo $req_swig_ver); then
+			AC_MSG_RESULT(yes: $swig_ver)
+		else
+			AC_MSG_RESULT(no: $swig_ver)
+			SWIG=no
+		fi
+	fi
+
+	if test "x$SWIG" != xno; then
+		# ...and it must support -outdir
+		AC_MSG_CHECKING(whether $SWIG supports "-outdir")
+		case `$SWIG -help 2>&1` in
+			*-outdir*)
+				AC_MSG_RESULT(yes)
+				;;
+			*)
+				AC_MSG_RESULT(no)
+				SWIG=no
+				;;
+		esac
+	fi
+	AC_SUBST(SWIG)
+	AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
+
+]) dnl AM_MONETDB_PROG_SWIG
+
+AC_DEFUN([AM_MONETDB_PROG_PYTHON],[
+
+	have_python=auto
+	PYTHON=python
+
+	AC_ARG_WITH(python,
+		AS_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
+		have_python="$withval")
+
+	case "$have_python" in
+		yes|no|auto) ;;
+		*)
+			PYTHON="$have_python"
+			have_python=yes
+			;;
+	esac
+
+	if test "x$have_python" != xno; then
+		if test x$cross_compiling != xyes; then
+			AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
+			if test "x$PYTHON" = xno; then
+				if test "x$have_python" != xauto; then
+					AC_MSG_ERROR([No Python executable found])
+				fi
+				have_python=no
+			fi
+		fi
+	fi
+
+	if test "x$have_python" != xno; then
+		have_python_libdir=auto
+
+		AC_ARG_WITH(python-libdir,
+			AS_HELP_STRING([--with-python-libdir=DIR],
+				[relative path for Python library directory (where Python modules should be installed)]),
+			have_python_libdir="$withval")
+
+		case "$have_python_libdir" in
+			yes|auto)
+				if test x$cross_compiling = xyes; then
+					AC_MSG_ERROR([Must specify --with-python-libdir when cross compiling])
+				fi
+				case "$host_os-`"$PYTHON" -V 2>&1`" in
+					darwin9*-*2.5.1)
+						PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
+					*)
+						PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
+				esac
+				;;
+			no)	;;
+			$Qprefix/*) dnl dubious
+				PYTHON_LIBDIR=`echo "$have_python_libdir" | sed "s|^$Qprefix/||"`
+				have_python_libdir=yes
+				;;
+			*)	PYTHON_LIBDIR="$have_python_libdir"
+				have_python_libdir=yes
+				;;
+		esac
+	else
+		# no Python implies no Python libraries
+		have_python_libdir=no
+		PYTHON_LIBDIR=""
+		# and no interpreter
+		PYTHON=`type -P false`
+	fi
+
+	AC_SUBST(PYTHON)
+	AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
+	AC_SUBST(PYTHON_LIBDIR)
+
+]) dnl AM_MONETDB_PROG_PYTHON
+
+AC_DEFUN([AM_MONETDB_PROG_PERL],[
+
+	have_perl=auto
+	PERL=perl
+	PERL_INCS=
+	PERL_LIBS=
+	AC_ARG_WITH(perl,
+		AS_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
+		have_perl="$withval")
+
+	case "$have_perl" in
+		yes|no|auto) ;;
+		*)
+			PERL="$have_perl"
+			have_perl=yes
+			;;
+	esac
+
+	if test "x$have_perl" != xno; then
+		if test x$cross_compiling != xyes; then
+			AC_PATH_PROG(PERL,$PERL,no,$PATH)
+			if test "x$PERL" = xno; then
+				if test "x$have_perl" != xauto; then
+					AC_MSG_ERROR([No Perl executable found])
+				fi
+				have_perl=no
+			fi
+		fi
+	fi
+
+	if test "x$have_perl" != xno; then
+		have_perl_incdir=auto
+		AC_ARG_WITH(perl-incdir,
+			AS_HELP_STRING([--with-perl-incdir=DIR],
+				[Perl include directory]),
+			have_perl_incdir="$withval")
+		case "$have_perl_incdir" in
+			yes|auto)
+				if test x$cross_compiling = xyes; then
+					AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+				fi
+				PERL_INCS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
+				;;
+			no)	;;
+			*)
+				PERL_INCS="$have_perl_incdir"
+				have_perl_incdir=yes
+				;;
+		esac
+
+		if test "x$have_perl_incdir" != xno; then
+			PERL_INCS="-I$PERL_INCS"
+			save_CPPFLAGS="$CPPFLAGS"
+			CPPFLAGS="$CPPFLAGS $PERL_INCS"
+			AC_CHECK_HEADER(perl.h, :, [
+				if test "x$have_perl_incdir" = xyes; then
+					AC_MSG_ERROR([No perl.h found, is Perl installed properly?]);
+				fi;
+				have_perl_incdir=no
+			])
+			CPPFLAGS="$save_CPPFLAGS"
+		fi
+
+		have_perl_library=auto
+		AC_ARG_WITH(perl-library,
+			AS_HELP_STRING([--with-perl-library=DIR],
+				[Perl library directory (where -lperl can be found)]),
+			have_perl_library="$withval")
+		case "$have_perl_library" in
+			yes|auto)
+				if test x$cross_compiling = xyes; then
+					AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+				fi
+				PERL_LIBS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
+				;;
+			no)	;;
+			*)
+				PERL_LIBS="$have_perl_library"
+				have_perl_library=yes
+				;;
+		esac
+
+		if test "x$have_perl_library" != xno; then
+			PERL_LIBS="-L$PERL_LIBS -lperl"
+		fi
+
+		have_perl_libdir=auto
+		AC_ARG_WITH(perl-libdir,
+			AS_HELP_STRING([--with-perl-libdir=DIR],
+				[relative path for Perl library directory (where Perl modules should be installed)]),
+			have_perl_libdir="$withval")
+
+		case "$have_perl_libdir" in
+			yes|auto)
+				if test x$cross_compiling = xyes; then
+					AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+				fi
+				PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
+				;;
+			no)	;;
+			*)
+				PERL_LIBDIR="$have_perl_libdir"
+				have_perl_libdir=yes
+				;;
+		esac
+	else
+		# no Perl implies no Perl includes or libraries
+		have_perl_incdir=no
+		have_perl_libdir=no
+		# and no interpreter
+		PERL=`type -P false`
+	fi
+
+	if test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno; then
+		save_CPPFLAGS="$CPPFLAGS"
+		save_LIBS="$LIBS"
+		CPPFLAGS="$CPPFLAGS $PERL_INCS"
+		LIBS="$LIBS $PERL_LIBS"
+		AC_MSG_CHECKING([whether we can compile with Perl])
+		AC_TRY_LINK([#include <EXTERN.h>
+#include <perl.h>], [], [AC_MSG_RESULT(yes)],
+			[ AC_MSG_RESULT(no); if test "x$have_perl_incdir" != xauto -o "x$have_perl_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Perl]); fi; have_perl_incdir=no have_perl_libdir=no ])
+		CPPFLAGS="$save_CPPFLAGS"
+		LIBS="$save_LIBS"
+	fi
+
+	AC_SUBST(PERL)
+	AM_CONDITIONAL(HAVE_PERL, test x"$have_perl" != xno)
+	AC_SUBST(PERL_INCS)
+	AC_SUBST(PERL_LIBS)
+	AC_SUBST(PERL_LIBDIR)
+	AM_CONDITIONAL(HAVE_PERL_DEVEL, test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
+
+]) dnl AM_MONETDB_PROG_PERL
+
+AC_DEFUN([AM_MONETDB_PROG_RUBY],[
+
+	RUBY=ruby
+	have_rubygem_dir=auto
+	AC_ARG_WITH(rubygem-dir,
+		AS_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
+		have_rubygem_dir="$withval")
+
+	case "$have_rubygem_dir" in
+		yes|no|auto) ;;
+		*)
+			RUBY_DIR="$have_rubygem_dir"
+			;;
+	esac
+
+	case "$have_rubygem_dir" in
+		yes|auto)
+			AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
+			if test "x$RUBY" = xno; then
+				if test "x$have_rubygem_dir" != xauto; then
+					AC_MSG_ERROR([No Ruby executable found, specify --with-rubygem-dir explicitly])
+				fi
+				have_rubygem_dir=no
+			else
+				d=`which "$RUBY"`
+				d=`dirname "$d"`
+				d=`dirname "$d"`
+				RUBY_DIR=`$RUBY -rubygems -e 'puts Gem::dir' 2>/dev/null | sed "s|^$d/||"`
+			fi
+			;;
+		no) ;;
+		*)
+			RUBY_DIR=$have_rubygem_dir
+			;;
+	esac
+	AC_SUBST(RUBY_DIR)
+
+	RUBYGEM=gem
+	have_rubygem=auto
+	AC_ARG_WITH(rubygem,
+		AS_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
+		have_rubygem="$withval")
+
+	case "$have_rubygem" in
+		yes|no|auto)
+			;;
+		*)
+			RUBYGEM="$have_rubygem"
+			have_rubygem=yes
+			;;
+	esac
+
+	if test "x$have_rubygem" != xno; then
+		AC_PATH_PROG(RUBYGEM,$RUBYGEM,no,$PATH)
+		if test "x$RUBYGEM" = xno; then
+			if test "x$have_rubygem" != xauto; then
+				AC_MSG_ERROR([No rubygem executable found])
+			fi
+			have_rubygem=no
+		fi
+	fi
+	AC_SUBST(RUBYGEM)
+	AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
+
+]) dnl AM_MONETDB_PROG_RUBY
 
 AC_DEFUN([AM_MONETDB_TOOLS],[
 
@@ -1247,13 +1605,6 @@ AC_CHECK_FUNCS([madvise posix_fadvise posix_madvise]) dnl gdk_posix.mx
 AC_FUNC_FSEEKO()
 
 dnl AC_PROG_CC_STDC()
-if test -f "$srcdir"/vertoo.data; then
-AM_PROG_LEX()
-AC_PROG_YACC()
-else
-LEX=''
-YACC=''
-fi
 AC_PROG_LN_S()
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
@@ -1310,315 +1661,21 @@ AC_DEFINE_UNQUOTED([SO_EXT], "$SOEXT", [Shared Object extension])
 AC_C_CONST()
 AC_C_INLINE()
 
-dnl Pathfinder's and MEL's lexer code do not work properly with flex 2.5.31;
-dnl they work fine with both flex 2.5.4 and 2.5.33.
-dnl To avoid any problems, we refuse to work with flex 2.5.31 "everywhre",
-dnl not only with Pathfider & MEL.
-
-if test "x$LEX" != "x"; then    dnl flex found on the system?
-
-AC_MSG_CHECKING([for flex version])
-flex_ver="`$LEX -V | head -n1`"
-AC_MSG_RESULT($flex_ver)
-
-case "$flex_ver" in
-*2.5.31*)
-  AC_MSG_ERROR([MonetDB's lexer code does not work properly with flex 2.5.31;
-               please install/use flex 2.5.4 or flex 2.5.33 instead.])
-esac
-
-fi   dnl flex found on the system?
-
+AM_MONETDB_PROG_PERL()
+AM_MONETDB_PROG_RUBY()
 if test -f "$srcdir"/vertoo.data; then
-        AC_ARG_WITH(swig,
-                AS_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
-                SWIG="$withval",
-                SWIG=swig)
-        case "$SWIG" in
-        yes|auto)
-          SWIG=swig;;
-        esac
-        case "$SWIG" in
-        no) ;;
-        /*) AC_MSG_CHECKING(whether $SWIG exists and is executable)
-            if test -x "$SWIG"; then
-              AC_MSG_RESULT(yes)
-            else
-              AC_MSG_RESULT(no)
-              SWIG=no
-            fi;;
-        *)  AC_PATH_PROG(SWIG,$SWIG,no,$PATH);;
-        esac
-        if test "x$SWIG" != xno; then
-          # we want the right version...
-          req_swig_ver="1.3.20"
-          AC_MSG_CHECKING(whether $SWIG is >= $req_swig_ver)
-          swig_ver="`"$SWIG" -version 2>&1 | grep Version | sed -e 's|^[[^0-9]]*||' -e 's|[[^0-9]]*$||'`"
-          if test MONETDB_VERSION_TO_NUMBER(echo $swig_ver) -ge MONETDB_VERSION_TO_NUMBER(echo $req_swig_ver); then
-              AC_MSG_RESULT(yes: $swig_ver)
-          else
-              AC_MSG_RESULT(no: $swig_ver)
-              SWIG=no
-          fi
-        fi
-        if test "x$SWIG" != xno; then
-          # ...and it must support -outdir
-          AC_MSG_CHECKING(whether $SWIG supports "-outdir")
-          case `$SWIG -help 2>&1` in
-          *-outdir*) 
-              AC_MSG_RESULT(yes);;
-          *)  AC_MSG_RESULT(no)
-              SWIG=no;;
-          esac
-        fi
-        AC_SUBST(SWIG)
-        AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
-else
-        AM_CONDITIONAL(HAVE_SWIG, false)
-fi
+	AM_MONETDB_PROG_FLEX()
+	AC_PROG_YACC()
+	AM_MONETDB_PROG_PYTHON()
+	AM_MONETDB_PROG_SWIG()
 
-have_python=auto
-PYTHON=python
-AC_ARG_WITH(python,
-	AS_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	have_python="$withval")
-case "$have_python" in
-yes|no|auto)
-	;;
-*)
-	PYTHON="$have_python"
-	have_python=yes
-	;;
-esac
-if test "x$have_python" != xno; then
-	if test x$cross_compiling != xyes; then
-		AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
-		if test "x$PYTHON" = xno; then
-			if test "x$have_python" != xauto; then
-				AC_MSG_ERROR([No Python executable found])
-			fi
-			have_python=no
-		fi
-	fi
-fi
-if test "x$have_python" != xno; then
-	have_python_libdir=auto
-	AC_ARG_WITH(python-libdir,
-		AS_HELP_STRING([--with-python-libdir=DIR],
-			[relative path for Python library directory (where Python modules should be installed)]),
-		have_python_libdir="$withval")
-	case "$have_python_libdir" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-python-libdir when cross compiling])
-		fi
-		case "$host_os-`"$PYTHON" -V 2>&1`" in
-		darwin9*-*2.5.1)
-			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
-		*)
-			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
-		esac
-		;;
-	no)	;;
-	$Qprefix/*)
-		PYTHON_LIBDIR=`echo "$have_python_libdir" | sed "s|^$Qprefix/||"`
-		have_python_libdir=yes
-		;;
-	*)	PYTHON_LIBDIR="$have_python_libdir"
-		have_python_libdir=yes
-		;;
-	esac
-else
-	# no Python implies no Python libraries
-	have_python_libdir=no
-fi
-AC_SUBST(PYTHON)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
-AC_SUBST(PYTHON_LIBDIR)
-
-have_perl=auto
-PERL=perl
-PERL_INCS=
-PERL_LIBS=
-AC_ARG_WITH(perl,
-	AS_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
-	have_perl="$withval")
-case "$have_perl" in
-yes|no|auto)
-	;;
-*)
-	PERL="$have_perl"
-	have_perl=yes
-	;;
-esac
-if test "x$have_perl" != xno; then
-	if test x$cross_compiling != xyes; then
-		AC_PATH_PROG(PERL,$PERL,no,$PATH)
-		if test "x$PERL" = xno; then
-			if test "x$have_perl" != xauto; then
-				AC_MSG_ERROR([No Perl executable found])
-			fi
-			have_perl=no
-		fi
-	fi
-fi
-if test "x$have_perl" != xno; then
-	have_perl_incdir=auto
-	AC_ARG_WITH(perl-incdir,
-		AS_HELP_STRING([--with-perl-incdir=DIR],
-			[Perl include directory]),
-		have_perl_incdir="$withval")
-	case "$have_perl_incdir" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
-		fi
-		PERL_INCS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
-		;;
-	no)	;;
-	*)	PERL_INCS="$have_perl_incdir"
-		have_perl_incdir=yes
-		;;
-	esac
-	if test "x$have_perl_incdir" != xno; then
-		PERL_INCS="-I$PERL_INCS"
-		save_CPPFLAGS="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $PERL_INCS"
-		AC_CHECK_HEADER(perl.h, :, [
-			if test "x$have_perl_incdir" = xyes; then
-				AC_MSG_ERROR([No perl.h found, is Perl installed properly?]);
-			fi;
-			have_perl_incdir=no
-		])
-        	CPPFLAGS="$save_CPPFLAGS"
-        fi
-
-	have_perl_library=auto
-	AC_ARG_WITH(perl-library,
-		AS_HELP_STRING([--with-perl-library=DIR],
-			[Perl library directory (where -lperl can be found)]),
-		have_perl_library="$withval")
-	case "$have_perl_library" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
-		fi
-		PERL_LIBS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
-		;;
-	no)	;;
-	*)	PERL_LIBS="$have_perl_library"
-		have_perl_library=yes
-		;;
-	esac
-	if test "x$have_perl_library" != xno; then
-		PERL_LIBS="-L$PERL_LIBS -lperl"
-	fi
-
-	have_perl_libdir=auto
-	AC_ARG_WITH(perl-libdir,
-		AS_HELP_STRING([--with-perl-libdir=DIR],
-			[relative path for Perl library directory (where Perl modules should be installed)]),
-		have_perl_libdir="$withval")
-	case "$have_perl_libdir" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
-		fi
-		PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
-		;;
-	no)	;;
-	*)	PERL_LIBDIR="$have_perl_libdir"
-		have_perl_libdir=yes
-		;;
-	esac
-else
-	# no Perl implies no Perl includes or libraries
-	have_perl_incdir=no
-	have_perl_libdir=no
-fi
-if test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LIBS="$LIBS"
-	CPPFLAGS="$CPPFLAGS $PERL_INCS"
-	LIBS="$LIBS $PERL_LIBS"
-	AC_MSG_CHECKING([whether we can compile with Perl])
-	AC_TRY_LINK([#include <EXTERN.h>
-#include <perl.h>], [], [AC_MSG_RESULT(yes)],
-		[ AC_MSG_RESULT(no); if test "x$have_perl_incdir" != xauto -o "x$have_perl_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Perl]); fi; have_perl_incdir=no have_perl_libdir=no ])
-	CPPFLAGS="$save_CPPFLAGS"
-	LIBS="$save_LIBS"
-fi
-AC_SUBST(PERL)
-AM_CONDITIONAL(HAVE_PERL, test x"$have_perl" != xno)
-AC_SUBST(PERL_INCS)
-AC_SUBST(PERL_LIBS)
-AC_SUBST(PERL_LIBDIR)
-AM_CONDITIONAL(HAVE_PERL_DEVEL, test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
-if test -f "$srcdir"/vertoo.data; then
 	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno -a x"$SWIG" != xno)
 else
+	LEX=''
+	YACC=''
+	AM_CONDITIONAL(HAVE_SWIG, false)
 	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
 fi
-
-RUBY=ruby
-have_rubygem_dir=auto
-AC_ARG_WITH(rubygem-dir,
-	AS_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
-	have_rubygem_dir="$withval")
-case "$have_rubygem_dir" in
-yes|no|auto)
-	;;
-*)
-	RUBY_DIR="$have_rubygem_dir"
-	;;
-esac
-case "$have_rubygem_dir" in
-yes|auto)
-	AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
-	if test "x$RUBY" = xno; then
-		if test "x$have_rubygem_dir" != xauto; then
-			AC_MSG_ERROR([No Ruby executable found, specify --with-rubygem-dir explicitly])
-		fi
-		have_rubygem_dir=no
-	else
-		d=`which "$RUBY"`
-		d=`dirname "$d"`
-		d=`dirname "$d"`
-		RUBY_DIR=`$RUBY -rubygems -e 'puts Gem::dir' 2>/dev/null | sed "s|^$d/||"`
-	fi
-	;;
-no)
-	;;
-*)
-	RUBY_DIR=$have_rubygem_dir
-	;;
-esac
-AC_SUBST(RUBY_DIR)
-
-RUBYGEM=gem
-have_rubygem=auto
-AC_ARG_WITH(rubygem,
-	AS_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
-	have_rubygem="$withval")
-case "$have_rubygem" in
-yes|no|auto)
-	;;
-*)
-	RUBYGEM="$have_rubygem"
-	have_rubygem=yes
-	;;
-esac
-if test "x$have_rubygem" != xno; then
-	AC_PATH_PROG(RUBYGEM,$RUBYGEM,no,$PATH)
-	if test "x$RUBYGEM" = xno; then
-		if test "x$have_rubygem" != xauto; then
-			AC_MSG_ERROR([No Ruby gem executable found])
-		fi
-		have_rubygem=no
-	fi
-fi
-AC_SUBST(RUBYGEM)
-AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
 
 
 dnl to shut up automake (.m files are used for mel not for objc)
@@ -2930,4 +2987,4 @@ fi
 
 ]) dnl AC_DEFUN AM_MONETDB_MEL
 
-dnl vim: set expandtab :
+dnl vim: set noexpandtab :
