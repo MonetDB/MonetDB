@@ -1740,61 +1740,95 @@ AM_MONETDB_TRANSLATEPATH()
 dnl --enable-noexpand
 AC_ARG_ENABLE(noexpand,
 	AS_HELP_STRING([--enable-noexpand],
-		[do not expand the comma-separated list of MIL types given as argument, or "all" if no expansion should be done (default=)]),
+		[do not expand the comma-separated list of GDK types given as argument, or "all" if no expansion should be done (default=)]),
 	enable_noexpand=$enableval,
 	enable_noexpand=)
+
+AC_MSG_CHECKING([for --enable-noexpand])
+noexpand=
 case $enable_noexpand in
 bat|bat,*|*,bat|*,bat,*|all)
-	AC_DEFINE(NOEXPAND_BAT, 1, [Define if you don't want to expand the bat type]);;
+	AC_DEFINE(NOEXPAND_BAT, 1, [Define if you don't want to expand the bat type])
+	noexpand="$noexpand bat"
+	;;
 esac
 case $enable_noexpand in
 bit|bit,*|*,bit|*,bit,*|all)
-	AC_DEFINE(NOEXPAND_BIT, 1, [Define if you don't want to expand the bit type]);;
+	AC_DEFINE(NOEXPAND_BIT, 1, [Define if you don't want to expand the bit type])
+	noexpand="$noexpand bit"
+	;;
 esac
 case $enable_noexpand in
 bte|bte,*|*,bte|*,bte,*|all)
-	AC_DEFINE(NOEXPAND_BTE, 1, [Define if you don't want to expand the bte type]);;
+	AC_DEFINE(NOEXPAND_BTE, 1, [Define if you don't want to expand the bte type])
+	noexpand="$noexpand bte"
+	;;
 esac
 case $enable_noexpand in
 chr|chr,*|*,chr|*,chr,*|all)
-	AC_DEFINE(NOEXPAND_CHR, 1, [Define if you don't want to expand the chr type]);;
+	AC_DEFINE(NOEXPAND_CHR, 1, [Define if you don't want to expand the chr type])
+	noexpand="$noexpand chr"
+	;;
 esac
 case $enable_noexpand in
 dbl|dbl,*|*,dbl|*,dbl,*|all)
-	AC_DEFINE(NOEXPAND_DBL, 1, [Define if you don't want to expand the dbl type]);;
+	AC_DEFINE(NOEXPAND_DBL, 1, [Define if you don't want to expand the dbl type])
+	noexpand="$noexpand dbl"
+	;;
 esac
 case $enable_noexpand in
 flt|flt,*|*,flt|*,flt,*|all)
-	AC_DEFINE(NOEXPAND_FLT, 1, [Define if you don't want to expand the flt type]);;
+	AC_DEFINE(NOEXPAND_FLT, 1, [Define if you don't want to expand the flt type])
+	noexpand="$noexpand flt"
+	;;
 esac
 case $enable_noexpand in
 int|int,*|*,int|*,int,*|all)
-	AC_DEFINE(NOEXPAND_INT, 1, [Define if you don't want to expand the int type]);;
+	AC_DEFINE(NOEXPAND_INT, 1, [Define if you don't want to expand the int type])
+	noexpand="$noexpand int"
+	;;
 esac
 case $enable_noexpand in
 lng|lng,*|*,lng|*,lng,*|all)
-	AC_DEFINE(NOEXPAND_LNG, 1, [Define if you don't want to expand the lng type]);;
+	AC_DEFINE(NOEXPAND_LNG, 1, [Define if you don't want to expand the lng type])
+	noexpand="$noexpand lng"
+	;;
 esac
 case $enable_noexpand in
 oid|oid,*|*,oid|*,oid,*|all)
-	AC_DEFINE(NOEXPAND_OID, 1, [Define if you don't want to expand the oid type]);;
+	AC_DEFINE(NOEXPAND_OID, 1, [Define if you don't want to expand the oid type])
+	noexpand="$noexpand oid"
+	;;
 esac
 case $enable_noexpand in
 ptr|ptr,*|*,ptr|*,ptr,*|all)
-	AC_DEFINE(NOEXPAND_PTR, 1, [Define if you don't want to expand the ptr type]);;
+	AC_DEFINE(NOEXPAND_PTR, 1, [Define if you don't want to expand the ptr type])
+	noexpand="$noexpand ptr"
+	;;
 esac
 case $enable_noexpand in
 sht|sht,*|*,sht|*,sht,*|all)
-	AC_DEFINE(NOEXPAND_SHT, 1, [Define if you don't want to expand the sht type]);;
+	AC_DEFINE(NOEXPAND_SHT, 1, [Define if you don't want to expand the sht type])
+	noexpand="$noexpand sht"
+	;;
 esac
 case $enable_noexpand in
 str|str,*|*,str|*,str,*|all)
-	AC_DEFINE(NOEXPAND_STR, 1, [Define if you don't want to expand the str type]);;
+	AC_DEFINE(NOEXPAND_STR, 1, [Define if you don't want to expand the str type])
+	noexpand="$noexpand str"
+	;;
 esac
 case $enable_noexpand in
 wrd|wrd,*|*,wrd|*,wrd,*|all)
-	AC_DEFINE(NOEXPAND_WRD, 1, [Define if you don't want to expand the wrd type]);;
+	AC_DEFINE(NOEXPAND_WRD, 1, [Define if you don't want to expand the wrd type])
+	noexpand="$noexpand wrd"
+	;;
 esac
+if test -z "$noexpand" ; then
+	AC_MSG_RESULT([none])
+else
+	AC_MSG_RESULT([$noexpand])
+fi
 
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
@@ -1802,6 +1836,9 @@ AC_ARG_ENABLE(debug,
 		[enable full debugging (default=$dft_debug)]),
 	enable_debug=$enableval,
 	enable_debug=$dft_debug)
+
+AC_MSG_CHECKING([for --enable-debug])
+origCFLAGS=$CFLAGS
 if test "x$enable_debug" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -1831,14 +1868,36 @@ elif test "x$enable_debug" = xno; then
     JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
 fi
 
+changedCFLAGS=
+for flag in $origCFLAGS ; do
+	case " $CFLAGS " in
+		*" $flag "*) ;;
+		*) changedCFLAGS="$changedCFLAGS, removed $flag";;
+	esac
+done
+for flag in $CFLAGS $SUN_NOOPT_CFLAGS ; do
+	case " $origCFLAGS " in
+		*" $flag "*) ;;
+		*) changedCFLAGS="$changedCFLAGS, added $flag";;
+	esac
+done
+changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
+AC_MSG_RESULT([$enable_debug: $changedCFLAGS])
+AC_SUBST(SUN_NOOPT_CFLAGS)
+
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
 	AS_HELP_STRING([--enable-assert],
 		[enable assertions in the code (default=$dft_assert)]),
 	enable_assert=$enableval,
 	enable_assert=$dft_assert)
+
+AC_MSG_CHECKING([for --enable-assert])
 if test "x$enable_assert" = xno; then
-  AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
+	AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
+	AC_MSG_RESULT([no])
+else
+	AC_MSG_RESULT([yes])
 fi
 
 dnl --enable-optimize
@@ -1846,6 +1905,8 @@ AC_ARG_ENABLE(optimize,
 	AS_HELP_STRING([--enable-optimize],
 		[enable extra optimization (default=$dft_optimi)]),
 	enable_optim=$enableval, enable_optim=$dft_optimi)
+
+AC_MSG_CHECKING([for --enable-optimize])
 if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -1854,6 +1915,7 @@ if test "x$enable_optim" = xyes; then
   elif test "x$enable_instrument" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
   else
+	origCFLAGS="$CFLAGS"
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
     CFLAGS=" $CFLAGS "
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
@@ -1991,7 +2053,24 @@ if test "x$enable_optim" = xyes; then
                        ;;
       esac   
     fi
+	changedCFLAGS=
+	for flag in $origCFLAGS ; do
+		case " $CFLAGS " in
+			*" $flag "*) ;;
+			*) changedCFLAGS="$changedCFLAGS, removed $flag";;
+		esac
+	done
+	for flag in $CFLAGS ; do
+		case " $origCFLAGS " in
+			*" $flag "*) ;;
+			*) changedCFLAGS="$changedCFLAGS, added $flag";;
+		esac
+	done
+	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
+	AC_MSG_RESULT([yes: $changedCFLAGS])
   fi
+else
+	AC_MSG_RESULT([no])
 fi
 AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
@@ -2001,7 +2080,6 @@ AC_SUBST(ICC_BISONFLAGS)
 AC_SUBST(GCC_SWIG_CFLAGS)
 AC_SUBST(ICC_SWIG_CFLAGS)
 AC_SUBST(SUN_NOERR_CFLAGS)
-AC_SUBST(SUN_NOOPT_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,
