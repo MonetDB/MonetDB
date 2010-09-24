@@ -41,8 +41,6 @@
 #include "forkmserver.h"
 #include "proxy.h"
 
-extern char _mero_keep_listening;
-extern confkeyval *_mero_props;
 
 static err
 handleClient(int sock, char isusock)

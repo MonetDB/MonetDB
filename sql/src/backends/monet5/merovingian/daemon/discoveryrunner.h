@@ -20,6 +20,9 @@
 #ifndef _DISCOVERYRUNNER_H
 #define _DISCOVERYRUNNER_H 1
 
+#include "sql_config.h"
+#include <pthread.h>
+
 void broadcast(char *msg);
 void registerMessageTap(int fd);
 void unregisterMessageTap(int fd);
@@ -33,6 +36,9 @@ typedef struct _remotedb {
 	int ttl;          /* time-to-live in seconds */
 	struct _remotedb* next;
 }* remotedb;
+
+extern remotedb _mero_remotedbs;
+extern pthread_mutex_t _mero_remotedb_lock;
 
 #endif
 

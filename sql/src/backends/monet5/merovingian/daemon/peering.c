@@ -24,11 +24,9 @@
 #include <string.h>
 #include <gdk.h>
 
+#include "merovingian.h"
 #include "discoveryrunner.h"
 
-extern char *_mero_hostname;
-extern unsigned short _mero_port;
-extern char _mero_keep_listening;
 
 void
 peeringServerThread(void *d)

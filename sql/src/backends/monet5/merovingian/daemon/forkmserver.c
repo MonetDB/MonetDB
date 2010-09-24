@@ -40,16 +40,6 @@
 #include "merovingian.h"
 #include "discoveryrunner.h" /* remotedb */
 
-extern pthread_mutex_t _mero_remotedb_lock;
-extern remotedb _mero_remotedbs;
-extern pthread_mutex_t _mero_topdp_lock;
-extern dpair _mero_topdp;
-extern char *_mero_mserver;
-extern confkeyval *_mero_props;
-extern char *_mero_conffile;
-extern char *_mero_hostname;
-extern unsigned short _mero_port;
-
 
 /**
  * Fork an Mserver and detach.  Before forking off, Sabaoth is consulted

@@ -34,14 +34,6 @@
 
 #include "merovingian.h"
 
-extern char _mero_keep_listening;
-extern char *_mero_msglogfile;
-extern char *_mero_errlogfile;
-extern FILE *_mero_streamout;
-extern FILE *_mero_streamerr;
-extern pthread_mutex_t _mero_topdp_lock;
-extern dpair _mero_topdp;
-
 
 static char *sigint  = "SIGINT";
 static char *sigterm = "SIGTERM";

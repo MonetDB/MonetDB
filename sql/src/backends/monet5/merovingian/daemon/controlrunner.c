@@ -45,19 +45,6 @@
 #include "peering.h"
 #include "forkmserver.h"
 
-extern char *_mero_hostname;
-extern unsigned short _mero_port;
-extern int _mero_discoveryttl;
-extern char _mero_keep_listening;
-extern FILE *_mero_ctlout;
-extern FILE *_mero_ctlerr;
-extern dpair _mero_topdp;
-extern pthread_mutex_t _mero_topdp_lock;
-extern confkeyval *_mero_props;
-extern pthread_mutex_t _mero_remotedb_lock;
-extern remotedb _mero_remotedbs;
-extern char *_mero_controlpass;
-extern char *_mero_conffile;
 
 static void
 leavedb(char *name)

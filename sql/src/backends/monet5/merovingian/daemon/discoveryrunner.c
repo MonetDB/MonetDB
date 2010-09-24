@@ -36,17 +36,6 @@
 #include "discoveryrunner.h"
 
 
-extern FILE *_mero_discout;
-extern FILE *_mero_discerr;
-extern int _mero_broadcastsock;
-extern struct sockaddr_in _mero_broadcastaddr;
-extern int _mero_discoveryttl;
-extern char *_mero_hostname;
-extern unsigned short _mero_port;
-extern unsigned short _mero_controlport;
-extern char _mero_keep_listening;
-
-
 /* list of remote databases as discovered */
 remotedb _mero_remotedbs = NULL;
 /* lock to _mero_remotedbs */

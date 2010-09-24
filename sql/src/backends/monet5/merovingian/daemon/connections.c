@@ -38,8 +38,6 @@
 
 #include "merovingian.h"
 
-extern FILE *_mero_discout;
-extern FILE *_mero_discerr;
 
 err
 openConnectionTCP(int *ret, unsigned short port, FILE *log)
