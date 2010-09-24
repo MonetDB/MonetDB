@@ -177,34 +177,5 @@ AC_DEFINE_UNQUOTED(CLIENTS_LIBDIR,"$QXlibdir",[object code libraries])
 AC_DEFINE_UNQUOTED(CLIENTS_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 
 
-case "$host_os" in
-mac*)	DIRSEP=':'
-	QDIRSEP=':'
-	AC_ERROR([mac not supported])
-	;;
-*mingw*)
-	DIRSEP='\'
-	QDIRSEP='\\'
-	PATHSEP=';'
-	SOEXT='-0.dll'
-	;;
-*darwin*)
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
-	SOEXT='.dylib'
-	;;
-*)
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
-	SOEXT='.so'
-	;;
-esac
-AC_SUBST(DIRSEP)
-AC_SUBST(QDIRSEP)
-AC_SUBST(PATHSEP)
-AC_SUBST(SOEXT)
-
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
