@@ -79,17 +79,12 @@ PKG_CHECK_MODULES([monetdbtools], [monetdb-stream >= $req_monetdb_ver
 
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
-#AM_MONETDB_TOOLS()
+AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
 
 AC_PROG_LIBTOOL
-
-AM_MONETDB_PROG_SWIG()
-AM_MONETDB_PROG_PERL()
-AM_MONETDB_PROG_RUBY()
-AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno -a x"$SWIG" != xno)
 
 # Checks for libraries.
 dnl unixODBC
