@@ -2087,6 +2087,8 @@ AC_ARG_ENABLE(warning,
 		[enable extended compiler warnings (default=$dft_warning)]),
 	enable_warning=$enableval,
 	enable_warning=$dft_warning)
+
+AC_MSG_CHECKING([for --enable-warning])
 if test "x$enable_warning" = xyes; then
   dnl  Basically, we disable/overule X_CFLAGS, i.e., "-Werror" and some "-Wno-*".
   dnl  All warnings should be on by default (see above).
@@ -2100,6 +2102,9 @@ if test "x$enable_warning" = xyes; then
 	X_CFLAGS=""
 	;;
   esac
+  AC_MSG_RESULT([yes: ${X_CFLAGS}])
+else
+  AC_MSG_RESULT([no])
 fi
 
 dnl --enable-profile
@@ -2108,6 +2113,8 @@ AC_ARG_ENABLE(profile,
 	AS_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
 	enable_prof=$enableval,
 	enable_prof=no)
+
+AC_MSG_CHECKING([for --enable-profile])
 if test "x$enable_prof" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
@@ -2116,8 +2123,13 @@ if test "x$enable_prof" = xyes; then
     need_profiling=yes
     if test "x$GCC" = xyes; then
       CFLAGS="$CFLAGS -pg"
+	  AC_MSG_RESULT([yes: -pg])
+    else
+	  AC_MSG_RESULT([no])
     fi
   fi
+else
+  AC_MSG_RESULT([no])
 fi
 AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
 
@@ -2128,6 +2140,8 @@ AC_ARG_ENABLE(instrument,
 		[enable instrument (default=no)]),
 	enable_instrument=$enableval,
 	enable_instrument=no)
+
+AC_MSG_CHECKING([for --enable-instrument])
 if test "x$enable_instrument" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
@@ -2136,35 +2150,41 @@ if test "x$enable_instrument" = xyes; then
     need_instrument=yes
     if test "x$GCC" = xyes; then
       CFLAGS="$CFLAGS -finstrument-functions -g"
+	  AC_MSG_RESULT([yes: -finstrument-functions -g])
+    else
+	  AC_MSG_RESULT([no])
     fi
   fi
+else
+  AC_MSG_RESULT([no])
 fi
 
 dnl static or shared linking
 SHARED_LIBS=''
-[
-if [ "$enable_static" = "yes" ]; then
+AC_MSG_CHECKING([for --enable-static])
+if test "$enable_static" = "yes" ; then
 	CFLAGS="$CFLAGS -DMONETDB_STATIC"
 	SHARED_LIBS='$(STATIC_LIBS) $(smallTOC_SHARED_LIBS) $(largeTOC_SHARED_LIBS)'
 	case "$host_os" in
-	aix*)	
-		if test "x$GCC" = xyes; then
-			LDFLAGS="$LDFLAGS -Xlinker"
-		fi
-		LDFLAGS="$LDFLAGS -bbigtoc"
-		;;
-	irix*)
-		if test "x$GCC" != xyes; then
-			SHARED_LIBS="$SHARED_LIBS -lm"
-		fi
-		;;
+		aix*)	
+			if test "x$GCC" = xyes; then
+				LDFLAGS="$LDFLAGS -Xlinker"
+			fi
+			LDFLAGS="$LDFLAGS -bbigtoc"
+			;;
+		irix*)
+			if test "x$GCC" != xyes; then
+				SHARED_LIBS="$SHARED_LIBS -lm"
+			fi
+			;;
 	esac
+	AC_MSG_RESULT([yes])
 else
 	case "$host_os" in
-	aix*)	LDFLAGS="$LDFLAGS -Wl,-brtl";;
+		aix*)	LDFLAGS="$LDFLAGS -Wl,-brtl";;
 	esac
+	AC_MSG_RESULT([no])
 fi
-]
 AC_SUBST(SHARED_LIBS)
 AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
