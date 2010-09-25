@@ -2201,6 +2201,7 @@ AC_ARG_WITH(pthread,
 	AS_HELP_STRING([--with-pthread=DIR],
 		[pthread library is installed in DIR]), 
 	have_pthread="$withval")
+
 case "$have_pthread" in
 yes|no|auto)
 	;;
@@ -2209,71 +2210,94 @@ yes|no|auto)
 	PTHREAD_INCS="-I$withval/include"
 	;;
 esac
-case $host_os in
-*mingw*)
-	PTHREAD_EXTRA="-D_DDL"
-	;;
-esac
-if test "x$have_pthread" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
 
-case $host_os in
-*mingw*)
-	CPPFLAGS="$CPPFLAGS $PTHREAD_INCS/pthread $PTHREAD_EXTRA"
-	AC_CHECK_HEADER(pthread.h,[AC_DEFINE(HAVE_PTHREAD_H, 1,
-                        [Define if you have the pthread.h])
+if test "x$have_pthread" != xno; then
+
+	save_CPPFLAGS="$CPPFLAGS"
+	case $host_os in
+		*mingw*)
+			PTHREAD_EXTRA="-D_DDL"
+			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS/pthread $PTHREAD_EXTRA"
+			AC_CHECK_HEADER(pthread.h,[AC_DEFINE(HAVE_PTHREAD_H, 1,
+								[Define if you have the pthread.h])
+					AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
+					PTHREAD_INCS="$PTHREAD_INCS/pthread"]) 
+			;;
+		*)
+			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS $PTHREAD_EXTRA"
 			AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
-			PTHREAD_INCS="$PTHREAD_INCS/pthread"]) 
-	;;
-*)
-	CPPFLAGS="$save_CPPFLAGS $PTHREAD_INCS $PTHREAD_EXTRA"
-	AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
-	;;
-esac
+			;;
+	esac
 	CPPFLAGS="$save_CPPFLAGS"
 
 	save_LIBS="$LIBS"
-	LIBS="$LIBS $PTHREAD_LIBS"
-	AC_CHECK_LIB(pthreadGC2, sem_init,
-		pthread=pthreadGC2 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC2",
-		AC_CHECK_LIB(pthreadGC1, sem_init,
-			pthread=pthreadGC1 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC1",
-			AC_CHECK_LIB(pthreadGC, sem_init,
-				pthread=pthreadGC PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC",
-				AC_CHECK_LIB(pthread, sem_init, 
-					pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread", 
-					dnl sun
-					AC_CHECK_LIB(pthread, sem_post,
-						pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
-						dnl hp-ux
-						AC_CHECK_LIB(pthread, sem_wait, 
-							pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt",
-							[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
-																										"-lrt"),
-					"-lposix4")))))
-	AC_CHECK_LIB($pthread, pthread_kill,
+	case $GCC in
+		yes)
+			# use GCC's knowledge about the target platform, sets flags
+			# for both the preprocessor as well as the linker
+			PTHREAD_INCS="$PTHREAD_INCS -pthread"
+			PTHREAD_LIBS="$PTHREAD_LIBS -pthread"
+			CPPFLAGS="$CPPFLAGS -pthread"
+			LIBS="$LIBS -pthread"
+		;;
+		*)
+			# ok, do old-fashioned stuff
+			LIBS="$LIBS $PTHREAD_LIBS" # in case user did --with-pthreads
+			pthread_found=yes
+			AC_SEARCH_LIBS([sem_init], [pthreadGC2 pthreadGC1 pthreadGC pthread],
+				[PTHREAD_LIBS="$PTHREAD_LIBS $ac_cv_search_sem_init"],
+				[pthread_found=no])
+			if test x"$pthread_found" = xno ; then
+				pthread_found=yes
+				dnl sun
+				AC_SEARCH_LIBS([sem_post], [pthread],
+					[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4"],
+					[pthread_found=no],
+					"-lposix4")
+			fi
+			if test x"$pthread_found" = xno ; then
+				pthread_found=yes
+				dnl hp-ux
+				AC_SEARCH_LIBS([sem_post], [pthread],
+					[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt"],
+					[pthread_found=no],
+					"-lrt")
+			fi
+			if test x"$pthread_found" = xno ; then
+				if test "x$have_pthread" != xauto ; then
+					AC_MSG_ERROR([pthread library not found])
+				fi
+				have_pthread=no
+			fi
+		;;
+	esac
+
+	AC_SEARCH_LIBS(pthread_kill, , 
 		AC_DEFINE(HAVE_PTHREAD_KILL, 1,
 			[Define if you have the pthread_kill function]))
-	AC_CHECK_LIB($pthread, pthread_sigmask,
+	AC_SEARCH_LIBS(pthread_sigmask, , 
 		AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
 			[Define if you have the pthread_sigmask function]))
-	AC_CHECK_LIB($pthread, pthread_kill_other_threads_np,
+	AC_SEARCH_LIBS(pthread_kill_other_threads_np, , 
 		AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1,
 			[Define if you have the pthread_kill_other_threads_np function]))
-	AC_CHECK_LIB($pthread, pthread_setschedprio,
+	AC_SEARCH_LIBS(pthread_setschedprio, , 
 		AC_DEFINE(HAVE_PTHREAD_SETSCHEDPRIO, 1,
 			[Define if you have the pthread_setschedprio function]))
 	LIBS="$save_LIBS"
 	CPPFLAGS="$save_CPPFLAGS"
 
 fi
+AC_MSG_CHECKING([whether we have pthread support])
 if test "x$have_pthread" != xno; then
 	AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library])
 	PTHREAD_INCS="$PTHREAD_INCS $PTHREAD_EXTRA"
 	dnl CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
+	AC_MSG_RESULT([yes: $PTHREAD_INCS $PTHREAD_LIBS])
 else
 	PTHREAD_LIBS=""
 	PTHREAD_INCS=""
+	AC_MSG_RESULT([no])
 fi
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_INCS)
