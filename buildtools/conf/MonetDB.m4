@@ -1539,6 +1539,51 @@ AC_DEFUN([AM_MONETDB_PROG_RUBY],[
 
 ]) dnl AM_MONETDB_PROG_RUBY
 
+AC_DEFUN([AM_MONETDB_TYPES],[
+
+	AC_TYPE_SIZE_T
+	AC_CHECK_TYPES([ptrdiff_t, ssize_t],,,[#include <stddef.h>
+#include <sys/types.h>])
+	AC_CHECK_TYPES([__int64, long long])
+	case $host_os in
+		*mingw*)
+			AC_DEFINE([LLFMT],["%I64d"],[Format to print 64 bit signed integers.])
+			AC_DEFINE([ULLFMT],["%I64u"],[Format to print 64 bit unsigned integers.])
+			;;
+		*)
+			AC_DEFINE([LLFMT],["%lld"],[Format to print 64 bit signed integers.])
+			AC_DEFINE([ULLFMT],["%llu"],[Format to print 64 bit unsigned integers.])
+			;;
+	esac
+	AC_CHECK_SIZEOF(char)
+	AC_CHECK_SIZEOF(short)
+	AC_CHECK_SIZEOF(int)
+	AC_CHECK_SIZEOF(long)
+	AC_CHECK_SIZEOF(void *)
+	AC_CHECK_SIZEOF(size_t)
+	AC_CHECK_SIZEOF(ssize_t,,[#include <stddef.h>
+#include <sys/types.h>])
+	AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
+#include <sys/types.h>])
+	AC_CHECK_SIZEOF(long long)
+	AC_CHECK_SIZEOF(__int64)
+	AC_C_CHAR_UNSIGNED
+
+]) dnl AM_MONETDB_TYPES
+
+AC_DEFUN([AM_MONETDB_FUNC_GETOPT],[
+
+	dnl check for getopt in standard library
+	AC_CHECK_HEADERS([getopt.h])
+	AC_CHECK_FUNCS(getopt_long , need_getopt=, need_getopt=getopt; need_getopt=getopt1)
+	if test x$need_getopt = xgetopt; then
+		AC_LIBOBJ(getopt)
+	elif test x$need_getopt = xgetopt1; then
+		AC_LIBOBJ(getopt1)
+	fi
+
+]) dnl AM_MONETDB_FUNC_GETOPT
+
 AC_DEFUN([AM_MONETDB_TOOLS],[
 
 dnl AM_PROG_LIBTOOL has loads of required macros, when those are not satisfied within
@@ -1563,41 +1608,15 @@ AM_PROG_LIBTOOL()
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS([alloca.h getopt.h netdb.h sys/types.h sys/times.h])
+AC_CHECK_HEADERS([alloca.h netdb.h sys/types.h sys/times.h])
 AC_CHECK_HEADERS([sys/mman.h]) dnl gdk_posix.mx
 
 AC_SYS_LARGEFILE()
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
-AC_TYPE_SIZE_T
 AC_TYPE_SIGNAL()
-AC_CHECK_TYPES([ptrdiff_t, ssize_t],,,[#include <stddef.h>
-#include <sys/types.h>])
-AC_CHECK_TYPES([__int64, long long])
-case $host_os in
-*mingw*)
-	AC_DEFINE([LLFMT],["%I64d"],[Format to print 64 bit signed integers.])
-	AC_DEFINE([ULLFMT],["%I64u"],[Format to print 64 bit unsigned integers.])
-	;;
-*)
-	AC_DEFINE([LLFMT],["%lld"],[Format to print 64 bit signed integers.])
-	AC_DEFINE([ULLFMT],["%llu"],[Format to print 64 bit unsigned integers.])
-	;;
-esac
-AC_CHECK_SIZEOF(char)
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(void *)
-AC_CHECK_SIZEOF(size_t)
-AC_CHECK_SIZEOF(ssize_t,,[#include <stddef.h>
-#include <sys/types.h>])
-AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
-#include <sys/types.h>])
-AC_CHECK_SIZEOF(long long)
-AC_CHECK_SIZEOF(__int64)
-AC_C_CHAR_UNSIGNED
+AM_MONETDB_TYPES()
 
 # Checks for library functions.
 AC_CHECK_FUNCS([ftruncate gettimeofday opendir sysconf times])
@@ -2190,302 +2209,508 @@ AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
 ]) dnl AC_DEFUN AM_MONETDB_OPTIONS
 
-AC_DEFUN([AM_MONETDB_LIBS],
-[
-dnl libpthread
-have_pthread=auto
-PTHREAD_LIBS=""
-PTHREAD_INCS=""
-PTHREAD_EXTRA=""
-AC_ARG_WITH(pthread,
-	AS_HELP_STRING([--with-pthread=DIR],
-		[pthread library is installed in DIR]), 
-	have_pthread="$withval")
+AC_DEFUN([AM_MONETDB_LIB_PTHREAD],[
 
-case "$have_pthread" in
-yes|no|auto)
-	;;
-*)
-	PTHREAD_LIBS="-L$withval/lib"
-	PTHREAD_INCS="-I$withval/include"
-	;;
-esac
-
-if test "x$have_pthread" != xno; then
-
-	save_CPPFLAGS="$CPPFLAGS"
-	case $host_os in
-		*mingw*)
-			PTHREAD_EXTRA="-D_DDL"
-			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS/pthread $PTHREAD_EXTRA"
-			AC_CHECK_HEADER(pthread.h,[AC_DEFINE(HAVE_PTHREAD_H, 1,
-								[Define if you have the pthread.h])
-					AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
-					PTHREAD_INCS="$PTHREAD_INCS/pthread"]) 
-			;;
-		*)
-			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS $PTHREAD_EXTRA"
-			AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
-			;;
-	esac
-	CPPFLAGS="$save_CPPFLAGS"
-
-	save_LIBS="$LIBS"
-	case $GCC in
-		yes)
-			# use GCC's knowledge about the target platform, sets flags
-			# for both the preprocessor as well as the linker
-			PTHREAD_INCS="$PTHREAD_INCS -pthread"
-			PTHREAD_LIBS="$PTHREAD_LIBS -pthread"
-			CPPFLAGS="$CPPFLAGS -pthread"
-			LIBS="$LIBS -pthread"
-		;;
-		*)
-			# ok, do old-fashioned stuff
-			LIBS="$LIBS $PTHREAD_LIBS" # in case user did --with-pthreads
-			pthread_found=yes
-			AC_SEARCH_LIBS([sem_init], [pthreadGC2 pthreadGC1 pthreadGC pthread],
-				[PTHREAD_LIBS="$PTHREAD_LIBS $ac_cv_search_sem_init"],
-				[pthread_found=no])
-			if test x"$pthread_found" = xno ; then
-				pthread_found=yes
-				dnl sun
-				AC_SEARCH_LIBS([sem_post], [pthread],
-					[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4"],
-					[pthread_found=no],
-					"-lposix4")
-			fi
-			if test x"$pthread_found" = xno ; then
-				pthread_found=yes
-				dnl hp-ux
-				AC_SEARCH_LIBS([sem_post], [pthread],
-					[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt"],
-					[pthread_found=no],
-					"-lrt")
-			fi
-			if test x"$pthread_found" = xno ; then
-				if test "x$have_pthread" != xauto ; then
-					AC_MSG_ERROR([pthread library not found])
-				fi
-				have_pthread=no
-			fi
-		;;
-	esac
-
-	AC_SEARCH_LIBS(pthread_kill, , 
-		AC_DEFINE(HAVE_PTHREAD_KILL, 1,
-			[Define if you have the pthread_kill function]))
-	AC_SEARCH_LIBS(pthread_sigmask, , 
-		AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
-			[Define if you have the pthread_sigmask function]))
-	AC_SEARCH_LIBS(pthread_kill_other_threads_np, , 
-		AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1,
-			[Define if you have the pthread_kill_other_threads_np function]))
-	AC_SEARCH_LIBS(pthread_setschedprio, , 
-		AC_DEFINE(HAVE_PTHREAD_SETSCHEDPRIO, 1,
-			[Define if you have the pthread_setschedprio function]))
-	LIBS="$save_LIBS"
-	CPPFLAGS="$save_CPPFLAGS"
-
-fi
-AC_MSG_CHECKING([whether we have pthread support])
-if test "x$have_pthread" != xno; then
-	AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library])
-	PTHREAD_INCS="$PTHREAD_INCS $PTHREAD_EXTRA"
-	dnl CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
-	AC_MSG_RESULT([yes: $PTHREAD_INCS $PTHREAD_LIBS])
-else
+	dnl libpthread
+	have_pthread=auto
 	PTHREAD_LIBS=""
 	PTHREAD_INCS=""
-	AC_MSG_RESULT([no])
-fi
-AC_SUBST(PTHREAD_LIBS)
-AC_SUBST(PTHREAD_INCS)
+	PTHREAD_EXTRA=""
+	AC_ARG_WITH(pthread,
+		AS_HELP_STRING([--with-pthread=DIR],
+			[pthread library is installed in DIR]), 
+		have_pthread="$withval")
 
-dnl libreadline
-have_readline=auto
-READLINE_LIBS=""
-READLINE_INCS=""
-AC_ARG_WITH(readline,
-	AS_HELP_STRING([--with-readline=DIR],
-		[readline library is installed in DIR]), 
-	have_readline="$withval")
-case "$have_readline" in
-yes|no|auto)
-	;;
-*)
-	READLINE_LIBS="-L$have_readline/lib"
-	READLINE_INCS="-I$have_readline/include"
-	;;
-esac
-save_LIBS="$LIBS"
-LIBS="$LIBS $READLINE_LIBS"
-save_CPPFLAGS="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS $READLINE_INCS"
-if test "x$have_readline" != xno; then
-	dnl use different functions in the cascade of AC_CHECK_LIB
-	dnl calls since configure may cache the results
-	AC_CHECK_HEADER(readline/readline.h,
-		AC_CHECK_LIB(readline, readline,
-			READLINE_LIBS="$READLINE_LIBS -lreadline",
-			[ AC_CHECK_LIB(readline, rl_history_search_forward,
-				READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap",
-				[ AC_CHECK_LIB(readline, rl_reverse_search_history,
-					READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses",
-					[ if test "x$have_readline" = xyes; then
-						AC_MSG_ERROR([readline library not found])
-					  fi; have_readline=no ],
-					-lncurses)],
-				-ltermcap)],
-			),
-		[ if test "x$have_readline" = xyes; then
-			AC_MSG_ERROR([readline header file not found])
-		  fi; have_readline=no ])
-fi
-if test "x$have_readline" != xno; then
-	dnl provide an ACTION-IF-FOUND, or else all subsequent checks
-	dnl that involve linking will fail!
-	AC_CHECK_LIB(readline, rl_completion_matches,
-		[AC_MSG_CHECKING([whether rl_completion_func_t exists])
-		 AC_TRY_COMPILE([$ac_includes_default
-#include <readline/readline.h>],[
-	rl_completion_func_t *func = NULL;],
-			[AC_MSG_RESULT([yes])],
-			[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?]); else AC_MSG_RESULT([no]); fi; have_readline=no ])],
-		[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
-	      $READLINE_LIBS)
-fi
-CPPFLAGS="$save_CPPFLAGS"
-LIBS="$save_LIBS"
-if test "x$have_readline" != xno; then
-	AC_DEFINE(HAVE_LIBREADLINE, 1,
-		[Define if you have the readline library])
-else
+	case "$have_pthread" in
+	yes|no|auto)
+		;;
+	*)
+		PTHREAD_LIBS="-L$withval/lib"
+		PTHREAD_INCS="-I$withval/include"
+		;;
+	esac
+
+	if test "x$have_pthread" != xno; then
+
+		save_CPPFLAGS="$CPPFLAGS"
+		case $host_os in
+			*mingw*)
+				PTHREAD_EXTRA="-D_DDL"
+				CPPFLAGS="$CPPFLAGS $PTHREAD_INCS/pthread $PTHREAD_EXTRA"
+				AC_CHECK_HEADER(pthread.h,[AC_DEFINE(HAVE_PTHREAD_H, 1,
+									[Define if you have the pthread.h])
+						AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
+						PTHREAD_INCS="$PTHREAD_INCS/pthread"]) 
+				;;
+			*)
+				CPPFLAGS="$CPPFLAGS $PTHREAD_INCS $PTHREAD_EXTRA"
+				AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
+				;;
+		esac
+		CPPFLAGS="$save_CPPFLAGS"
+
+		save_LIBS="$LIBS"
+		case $GCC in
+			yes)
+				# use GCC's knowledge about the target platform, sets flags
+				# for both the preprocessor as well as the linker
+				PTHREAD_INCS="$PTHREAD_INCS -pthread"
+				PTHREAD_LIBS="$PTHREAD_LIBS -pthread"
+				CPPFLAGS="$CPPFLAGS -pthread"
+				LIBS="$LIBS -pthread"
+			;;
+			*)
+				# ok, do old-fashioned stuff
+				LIBS="$LIBS $PTHREAD_LIBS" # in case user did --with-pthreads
+				pthread_found=yes
+				AC_SEARCH_LIBS([sem_init], [pthreadGC2 pthreadGC1 pthreadGC pthread],
+					[PTHREAD_LIBS="$PTHREAD_LIBS $ac_cv_search_sem_init"],
+					[pthread_found=no])
+				if test x"$pthread_found" = xno ; then
+					pthread_found=yes
+					dnl sun
+					AC_SEARCH_LIBS([sem_post], [pthread],
+						[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4"],
+						[pthread_found=no],
+						"-lposix4")
+				fi
+				if test x"$pthread_found" = xno ; then
+					pthread_found=yes
+					dnl hp-ux
+					AC_SEARCH_LIBS([sem_post], [pthread],
+						[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt"],
+						[pthread_found=no],
+						"-lrt")
+				fi
+				if test x"$pthread_found" = xno ; then
+					if test "x$have_pthread" != xauto ; then
+						AC_MSG_ERROR([pthread library not found])
+					fi
+					have_pthread=no
+				fi
+			;;
+		esac
+
+		AC_SEARCH_LIBS(pthread_kill, , 
+			AC_DEFINE(HAVE_PTHREAD_KILL, 1,
+				[Define if you have the pthread_kill function]))
+		AC_SEARCH_LIBS(pthread_sigmask, , 
+			AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
+				[Define if you have the pthread_sigmask function]))
+		AC_SEARCH_LIBS(pthread_kill_other_threads_np, , 
+			AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1,
+				[Define if you have the pthread_kill_other_threads_np function]))
+		AC_SEARCH_LIBS(pthread_setschedprio, , 
+			AC_DEFINE(HAVE_PTHREAD_SETSCHEDPRIO, 1,
+				[Define if you have the pthread_setschedprio function]))
+		LIBS="$save_LIBS"
+		CPPFLAGS="$save_CPPFLAGS"
+
+	fi
+	AC_MSG_CHECKING([whether we have pthread support])
+	if test "x$have_pthread" != xno; then
+		AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library])
+		PTHREAD_INCS="$PTHREAD_INCS $PTHREAD_EXTRA"
+		dnl CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
+		AC_MSG_RESULT([yes: $PTHREAD_INCS $PTHREAD_LIBS])
+	else
+		PTHREAD_LIBS=""
+		PTHREAD_INCS=""
+		AC_MSG_RESULT([no])
+	fi
+	AC_SUBST(PTHREAD_LIBS)
+	AC_SUBST(PTHREAD_INCS)
+
+]) dnl AM_MONETDB_LIB_PTHREAD
+
+AC_DEFUN([AM_MONETDB_LIB_READLINE],[
+
+	dnl libreadline
+	have_readline=auto
 	READLINE_LIBS=""
 	READLINE_INCS=""
-fi
-AC_SUBST(READLINE_LIBS)
-AC_SUBST(READLINE_INCS)
+	AC_ARG_WITH(readline,
+		AS_HELP_STRING([--with-readline=DIR],
+			[readline library is installed in DIR]), 
+		have_readline="$withval")
 
-dnl OpenSSL
-dnl change "auto" in the next line to "no" to disable OpenSSL by default
-have_openssl=auto
-OPENSSL_LIBS=""
-OPENSSL_INCS=""
-AC_ARG_WITH(openssl,
-	AS_HELP_STRING([--with-openssl=DIR],
-		[OpenSSL library is installed in DIR]), 
-	have_openssl="$withval")
-case "$have_openssl" in
-yes|no|auto)
-	;;
-*)
-	OPENSSL_LIBS="-L$withval/lib"
-	OPENSSL_INCS="-I$withval/include"
-	;;
-esac
-if test "x$have_openssl" != xno; then
+	case "$have_readline" in
+		yes|no|auto) ;;
+		*)
+			READLINE_LIBS="-L$have_readline/lib"
+			READLINE_INCS="-I$have_readline/include"
+			;;
+	esac
+
 	save_LIBS="$LIBS"
-	LIBS="$LIBS $OPENSSL_LIBS"
-	AC_CHECK_LIB(ssl, SSL_read,
-		OPENSSL_LIBS="$OPENSSL_LIBS -lssl",
-		[ why_no_openssl="OpenSSL library not found"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ],
-		[-lcrypto])
-	dnl on some systems, -lcrypto needs to be passed as well
-	AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
+	LIBS="$LIBS $READLINE_LIBS"
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $READLINE_INCS"
+	if test "x$have_readline" != xno; then
+		dnl use different functions in the cascade of AC_CHECK_LIB
+		dnl calls since configure may cache the results
+		AC_CHECK_HEADER(readline/readline.h,
+			AC_CHECK_LIB(readline, readline,
+				READLINE_LIBS="$READLINE_LIBS -lreadline",
+				[ AC_CHECK_LIB(readline, rl_history_search_forward,
+					READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap",
+					[ AC_CHECK_LIB(readline, rl_reverse_search_history,
+						READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses",
+						[ if test "x$have_readline" = xyes; then
+							AC_MSG_ERROR([readline library not found])
+						  fi; have_readline=no ],
+						-lncurses)],
+					-ltermcap)],
+				),
+			[ if test "x$have_readline" = xyes; then
+				AC_MSG_ERROR([readline header file not found])
+			  fi; have_readline=no ])
+	fi
+
+	if test "x$have_readline" != xno; then
+		dnl provide an ACTION-IF-FOUND, or else all subsequent checks
+		dnl that involve linking will fail!
+		AC_CHECK_LIB(readline, rl_completion_matches,
+			[AC_MSG_CHECKING([whether rl_completion_func_t exists])
+			 AC_TRY_COMPILE([$ac_includes_default
+#include <readline/readline.h>],[
+		rl_completion_func_t *func = NULL;],
+				[AC_MSG_RESULT([yes])],
+				[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?]); else AC_MSG_RESULT([no]); fi; have_readline=no ])],
+			[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
+			  $READLINE_LIBS)
+	fi
+	CPPFLAGS="$save_CPPFLAGS"
 	LIBS="$save_LIBS"
-else
-	why_no_openssl="configure called with --with-openssl=no"
-fi
-save_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS $OPENSSL_INCS"
-if test "x$have_openssl" != xno; then
-	AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), , [
-		save_CPPFLAGS="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
-		AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
-			AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
-			[ why_no_openssl="OpenSSL library not usable"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ])
-		CPPFLAGS="$save_CPPFLAGS"])
-fi
-if test "x$have_openssl" != xno; then
-	dnl SHA-2 is implemented starting from version 0.9.8
-	req_openssl_ver=0x0090800f
-	AC_MSG_CHECKING([for OpenSSL >= $req_openssl_ver])
-	AC_TRY_COMPILE([#include <openssl/opensslv.h>],[
+
+	if test "x$have_readline" != xno; then
+		AC_DEFINE(HAVE_LIBREADLINE, 1,
+			[Define if you have the readline library])
+	else
+		READLINE_LIBS=""
+		READLINE_INCS=""
+	fi
+	AC_SUBST(READLINE_LIBS)
+	AC_SUBST(READLINE_INCS)
+
+]) dnl AM_MONETDB_LIB_READLINE
+
+AC_DEFUN([AM_MONETDB_LIB_OPENSSL],[
+
+	dnl OpenSSL (we could rely on pkg-config here)
+	have_openssl=auto
+	OPENSSL_LIBS=""
+	OPENSSL_INCS=""
+	AC_ARG_WITH(openssl,
+		AS_HELP_STRING([--with-openssl=DIR],
+			[OpenSSL library is installed in DIR]), 
+		have_openssl="$withval")
+
+	case "$have_openssl" in
+		yes|auto) ;;
+			# pkg config macro call here
+		no) ;;
+		*)
+			OPENSSL_LIBS="-L$withval/lib"
+			OPENSSL_INCS="-I$withval/include"
+			;;
+	esac
+
+	if test "x$have_openssl" != xno; then
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $OPENSSL_LIBS"
+		AC_CHECK_LIB(ssl, SSL_read,
+			OPENSSL_LIBS="$OPENSSL_LIBS -lssl",
+			[ why_no_openssl="OpenSSL library not found"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ],
+			[-lcrypto])
+		dnl on some systems, -lcrypto needs to be passed as well
+		AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
+		LIBS="$save_LIBS"
+	else
+		why_no_openssl="configure called with --with-openssl=no"
+	fi
+
+	save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS $OPENSSL_INCS"
+	if test "x$have_openssl" != xno; then
+		AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), , [
+			save_CPPFLAGS="$CPPFLAGS"
+			CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
+			AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
+				AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
+				[ why_no_openssl="OpenSSL library not usable"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ])
+			CPPFLAGS="$save_CPPFLAGS"])
+	fi
+
+	if test "x$have_openssl" != xno; then
+		dnl SHA-2 is implemented starting from version 0.9.8f
+		req_openssl_ver=0x0090800f
+		AC_MSG_CHECKING([for OpenSSL >= $req_openssl_ver])
+		AC_TRY_COMPILE([#include <openssl/opensslv.h>],[
 #if !defined(OPENSSL_VERSION_NUMBER)
 #error "Hmmm no OpenSSL version?"
 #endif
 #if (OPENSSL_VERSION_NUMBER < ${req_openssl_ver}L)
 #error "Need more recent version than " OPENSSL_VERSION_TEXT
 #endif],
-	 [AC_MSG_RESULT([yes])],
-	 [
-	  why_no_openssl="you need a more recent version of OpenSSL"
-	  if test "x$have_openssl" != "xauto" ; then
-		  AC_MSG_ERROR([no, $why_no_openssl])
-	  else
-		  AC_MSG_RESULT([no])
-	  fi
-	  have_openssl=no
-	 ]
-	)
-fi
-CFLAGS="$save_CFLAGS"
-if test "x$have_openssl" != xno; then
-	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
-else
-	OPENSSL_LIBS=""
-	OPENSSL_INCS=""
-fi
-AC_SUBST(OPENSSL_LIBS)
-AC_SUBST(OPENSSL_INCS)
-
-dnl cURL
-have_curl=no
-CURL_PATH="$PATH"
-CURL_CONFIG=''
-CURL_CFLAGS=''
-CURL_LIBS=''
-AC_ARG_WITH(curl,
-	AS_HELP_STRING([--with-curl=DIR],
-		[cURL library is installed in DIR]),
-	have_curl="$withval")
-case "$have_curl" in
-yes|no|auto)
-	;;
-*)
-	CURL_PATH="$withval/bin:$PATH"
-	;;
-esac
-if test "x$have_curl" != xno; then
-	AC_PATH_PROG(CURL_CONFIG,curl-config,,$CURL_PATH)
-	if test "x$CURL_CONFIG" = x; then
-		if test "x$have_curl" = xyes; then
-			AC_MSG_ERROR([curl-config not found; use --with-curl=<path>])
-		fi
-		have_curl=no
+		 [AC_MSG_RESULT([yes])],
+		 [
+		  why_no_openssl="you need a more recent version of OpenSSL"
+		  if test "x$have_openssl" != "xauto" ; then
+			  AC_MSG_ERROR([no, $why_no_openssl])
+		  else
+			  AC_MSG_RESULT([no])
+		  fi
+		  have_openssl=no
+		 ]
+		)
 	fi
-fi
-if test "x$have_curl" != xno; then
-	CURL_CFLAGS="`$CURL_CONFIG --cflags`"
-	CURL_LIBS="`$CURL_CONFIG --libs`"
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $CURL_CFLAGS"
-	AC_CHECK_HEADER(curl/curl.h, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([curl/curl.h not found]); fi; have_curl=no])
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_curl" != xno; then
+	CFLAGS="$save_CFLAGS"
+
+	if test "x$have_openssl" != xno; then
+		AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
+	else
+		OPENSSL_LIBS=""
+		OPENSSL_INCS=""
+	fi
+	AC_SUBST(OPENSSL_LIBS)
+	AC_SUBST(OPENSSL_INCS)
+
+]) dnl AM_MONETDB_LIB_OPENSSL
+
+AC_DEFUN([AM_MONETDB_LIB_CURL],[
+
+	dnl cURL
+	have_curl=no
+	CURL_PATH="$PATH"
+	CURL_CONFIG=''
+	CURL_CFLAGS=''
+	CURL_LIBS=''
+	AC_ARG_WITH(curl,
+		AS_HELP_STRING([--with-curl=DIR],
+			[cURL library is installed in DIR]),
+		have_curl="$withval")
+
+	case "$have_curl" in
+		yes|no|auto) ;;
+		*)
+			CURL_PATH="$withval/bin:$PATH"
+			;;
+	esac
+
+	if test "x$have_curl" != xno; then
+		AC_PATH_PROG(CURL_CONFIG,curl-config,,$CURL_PATH)
+		if test "x$CURL_CONFIG" = x; then
+			if test "x$have_curl" = xyes; then
+				AC_MSG_ERROR([curl-config not found; use --with-curl=<path>])
+			fi
+			have_curl=no
+		fi
+	fi
+
+	if test "x$have_curl" != xno; then
+		CURL_CFLAGS="`$CURL_CONFIG --cflags`"
+		CURL_LIBS="`$CURL_CONFIG --libs`"
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $CURL_CFLAGS"
+		AC_CHECK_HEADER(curl/curl.h, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([curl/curl.h not found]); fi; have_curl=no])
+		CPPFLAGS="$save_CPPFLAGS"
+	fi
+
+	if test "x$have_curl" != xno; then
+		save_LIBS="$LIBS"
+			LIBS="$LIBS $CURL_LIBS"
+			AC_CHECK_LIB(curl, curl_easy_init, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([-lcurl not found]); fi; have_curl=no])
+			LIBS="$save_LIBS"
+	fi
+
+	if test "x$have_curl" != xno; then
+		AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
+	fi
+	AC_SUBST(CURL_CFLAGS)
+	AC_SUBST(CURL_LIBS)
+
+]) dnl AM_MONETDB_LIB_CURL
+
+AC_DEFUN([AM_MONETDB_LIB_SOCKET],[
+
+	SOCKET_LIBS=""
+	have_setsockopt=no
+
+	case "$host_os" in
+		*mingw*)
+			AC_CHECK_HEADERS([winsock2.h],[have_winsock2=yes],[have_winsock2=no])
+			save_LIBS="$LIBS"
+			LIBS="$LIBS -lws2_32"
+			AC_MSG_CHECKING(for setsockopt in winsock2)
+			AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif],[setsockopt(0,0,0,NULL,0);],[SOCKET_LIBS="-lws2_32"; have_setsockopt=yes;],[])
+			AC_MSG_RESULT($have_setsockopt)
+			LIBS="$save_LIBS"
+			;;
+		*)
+			AC_CHECK_FUNC(gethostbyname_r, [], [
+			  AC_CHECK_LIB(nsl_r, gethostbyname_r, [ SOCKET_LIBS="-lnsl_r" ],
+				AC_CHECK_LIB(nsl, gethostbyname_r, [ SOCKET_LIBS="-lnsl"   ] ))])
+			;;
+	esac
+
+	if test "x$have_setsockopt" = xno; then
+		AC_CHECK_FUNC(setsockopt, [], 
+		  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
+	fi
+
+	AC_CHECK_HEADERS([sys/socket.h winsock.h])
+
+	have_getaddrinfo=no
 	save_LIBS="$LIBS"
-    	LIBS="$LIBS $CURL_LIBS"
-    	AC_CHECK_LIB(curl, curl_easy_init, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([-lcurl not found]); fi; have_curl=no])
-    	LIBS="$save_LIBS"
-fi
-if test "x$have_curl" != xno; then
-	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
-fi
-AC_SUBST(CURL_CFLAGS)
-AC_SUBST(CURL_LIBS)
+	LIBS="$LIBS $SOCKET_LIBS"
+
+	AC_CHECK_FUNC(getaddrinfo, [ have_getaddrinfo=yes ], [
+	  AC_CHECK_LIB(socket, getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lsocket"; have_getaddrinfo=yes ],
+		AC_CHECK_LIB(nsl,  getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lnsl"   ; have_getaddrinfo=yes ] ))])
+	LIBS="$save_LIBS"
+
+	if test "x$have_getaddrinfo" = xyes; then
+		AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if you have the `getaddrinfo' function.])
+	fi
+
+	dnl incase of windows we need to use try_link because windows uses the
+	dnl pascal style of function calls and naming scheme. Therefore the 
+	dnl function needs to be compiled with the correct header
+	AC_CHECK_TYPE(SOCKET, , AC_DEFINE(SOCKET,int,[type used for sockets]), [#ifdef HAVE_WINSOCK_H
+#include <winsock.h>
+#endif])
+	AC_CHECK_TYPE(socklen_t,
+		AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define to 1 if the system has the type `socklen_t'.]),
+		AC_DEFINE(socklen_t,int,[type used by connect]),
+		[#include <sys/types.h>
+#include <sys/socket.h>])
+
+	case $host_os in
+		*mingw*)
+			save_LIBS="$LIBS"
+			LIBS="$LIBS $SOCKET_LIBS"
+			AC_MSG_CHECKING(for closesocket)
+			AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif],[closesocket((SOCKET)0);], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no);AC_DEFINE(closesocket,close,[function to close a socket])])
+			LIBS="$save_LIBS"
+			;;
+		*)
+			dnl don't check for closesocket on Cygwin: it'll be found but we don't want to use it
+			AC_DEFINE(closesocket,close,[function to close a socket])
+			;;
+	esac
+
+	AC_SUBST(SOCKET_LIBS)
+
+]) dnl AM_MONETDB_LIB_SOCKET
+
+AC_DEFUN([AM_MONETDB_LIB_Z],[
+
+	dnl check for z (de)compression library
+	have_z=auto
+	Z_CFLAGS=""
+	Z_LIBS=""
+	AC_ARG_WITH(z,
+		AS_HELP_STRING([--with-z=DIR],
+			[z library is installed in DIR]),
+		have_z="$withval")
+
+	case "$have_z" in
+		yes|no|auto) ;;
+		*)
+			Z_CFLAGS="-I$withval/include"
+			Z_LIBS="-L$withval/lib"
+			;;
+	esac
+
+	AC_MSG_CHECKING([for libz])
+	if test "x$have_z" != xno; then
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $Z_CFLAGS"
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $Z_LIBS -lz"
+		AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <zlib.h>], [(void) gzopen("","");]),
+			Z_LIBS="$Z_LIBS -lz",
+			[ if test "x$have_z" != xauto; then AC_MSG_ERROR([z library not found]); fi; have_z=no ])
+		LIBS="$save_LIBS"
+		CPPFLAGS="$save_CPPFLAGS"
+	fi
+
+	if test "x$have_z" != xno; then
+		AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
+		AC_MSG_RESULT([yes: $Z_LIBS])
+	else
+		Z_CFLAGS=""
+		Z_LIBS=""
+		AC_MSG_RESULT([no])
+	fi
+
+	AC_SUBST(Z_CFLAGS)
+	AC_SUBST(Z_LIBS)
+	AM_CONDITIONAL(HAVE_LIBZ,test x$have_z != xno)
+
+]) dnl AM_MONETDB_LIB_Z
+
+AC_DEFUN([AM_MONETDB_LIB_BZIP2],[
+
+	dnl check for bz2 (de)compression library
+	have_bz2=auto
+	BZ_CFLAGS=""
+	BZ_LIBS=""
+	AC_ARG_WITH(bz2,
+		AS_HELP_STRING([--with-bz2=DIR],
+			[bz2 library is installed in DIR]),
+		have_bz2="$withval")
+
+	case "$have_bz2" in
+		yes|no|auto) ;;
+		*)
+			BZ_CFLAGS="-I$withval/include"
+			BZ_LIBS="-L$withval/lib"
+			;;
+	esac
+
+	AC_MSG_CHECKING(for bzip2) 
+	if test "x$have_bz2" != xno; then
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $BZ_LIBS -lbz2"
+		AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <stdio.h>
+#include <bzlib.h>], [(void)BZ2_bzopen("","");]),
+			BZ_LIBS="$BZ_LIBS -lbz2",
+			[ if test "x$have_bz2" != xauto; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
+		LIBS="$save_LIBS"
+		CPPFLAGS="$save_CPPFLAGS"
+	fi
+
+	if test "x$have_bz2" != xno; then
+		AC_DEFINE(HAVE_LIBBZ2, 1, [Define if you have the bz2 library])
+		AC_MSG_RESULT([yes: $BZ_LIBS])
+	else
+		BZ_CFLAGS=""
+		BZ_LIBS=""
+		AC_MSG_RESULT([no])
+	fi
+
+	AC_SUBST(BZ_CFLAGS)
+	AC_SUBST(BZ_LIBS)
+	AM_CONDITIONAL(HAVE_LIBBZ2,test x$have_bz2 != xno)
+
+]) dnl AM_MONETDB_LIB_BZIP2
+
+AC_DEFUN([AM_MONETDB_LIBS],
+[
+
+AM_MONETDB_LIB_READLINE()
+AM_MONETDB_LIB_OPENSSL()
+AM_MONETDB_LIB_CURL()
+AM_MONETDB_LIB_PTHREAD()
+AM_MONETDB_LIB_SOCKET()
 
 DL_LIBS=""
 AC_CHECK_LIB(dl, dlopen, [ DL_LIBS="-ldl" ] )
@@ -2506,163 +2731,9 @@ MATH_LIBS=""
 AC_CHECK_LIB(m, sqrt, [ MATH_LIBS="-lm" ] )
 AC_SUBST(MATH_LIBS)
 
-SOCKET_LIBS=""
-have_setsockopt=no
-case "$host_os" in
-*mingw*)
-	AC_CHECK_HEADERS([winsock2.h],[have_winsock2=yes],[have_winsock2=no])
-	save_LIBS="$LIBS"
-	LIBS="$LIBS -lws2_32"
-	AC_MSG_CHECKING(for setsockopt in winsock2)
-	AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#endif],[setsockopt(0,0,0,NULL,0);],[SOCKET_LIBS="-lws2_32"; have_setsockopt=yes;],[])
-	AC_MSG_RESULT($have_setsockopt)
-	LIBS="$save_LIBS"
-	;;
-*)
-	AC_CHECK_FUNC(gethostbyname_r, [], [
-	  AC_CHECK_LIB(nsl_r, gethostbyname_r, [ SOCKET_LIBS="-lnsl_r" ],
-	    AC_CHECK_LIB(nsl, gethostbyname_r, [ SOCKET_LIBS="-lnsl"   ] ))])
-	;;
-esac
-
-if test "x$have_setsockopt" = xno; then
-	AC_CHECK_FUNC(setsockopt, [], 
-	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
-fi
-
-AC_CHECK_HEADERS([sys/socket.h winsock.h])
-
-have_getaddrinfo=no
-save_LIBS="$LIBS"
-LIBS="$LIBS $SOCKET_LIBS"
-AC_CHECK_FUNC(getaddrinfo, [ have_getaddrinfo=yes ], [
-  AC_CHECK_LIB(socket, getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lsocket"; have_getaddrinfo=yes ],
-    AC_CHECK_LIB(nsl,  getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lnsl"   ; have_getaddrinfo=yes ] ))])
-LIBS="$save_LIBS"
-if test "x$have_getaddrinfo" = xyes; then
-	AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if you have the `getaddrinfo' function.])
-fi
-
-dnl incase of windows we need to use try_link because windows uses the
-dnl pascal style of function calls and naming scheme. Therefore the 
-dnl function needs to be compiled with the correct header
-AC_CHECK_TYPE(SOCKET, , AC_DEFINE(SOCKET,int,[type used for sockets]), [#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif])
-AC_CHECK_TYPE(socklen_t,
-	AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define to 1 if the system has the type `socklen_t'.]),
-	AC_DEFINE(socklen_t,int,[type used by connect]),
-	[#include <sys/types.h>
-#include <sys/socket.h>])
-
-case $host_os in
-*mingw*)
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $SOCKET_LIBS"
-	AC_MSG_CHECKING(for closesocket)
-	AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#endif],[closesocket((SOCKET)0);], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no);AC_DEFINE(closesocket,close,[function to close a socket])])
-	LIBS="$save_LIBS"
-	;;
-*)
-	dnl don't check for closesocket on Cygwin: it'll be found but we don't want to use it
-	AC_DEFINE(closesocket,close,[function to close a socket])
-	;;
-esac
-
-AC_SUBST(SOCKET_LIBS)
-
-dnl check for z (de)compression library (default /usr and /usr/local)
-have_z=auto
-Z_CFLAGS=""
-Z_LIBS=""
-AC_ARG_WITH(z,
-	AS_HELP_STRING([--with-z=DIR],
-		[z library is installed in DIR]),
-	have_z="$withval")
-AC_MSG_CHECKING(for libz)
-case "$have_z" in
-yes|no|auto)
-	;;
-*)
-	Z_CFLAGS="-I$withval/include"
-	Z_LIBS="-L$withval/lib"
-        AC_MSG_CHECKING(in $withval) 
-	;;
-esac
-if test "x$have_z" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $Z_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $Z_LIBS -lz"
-	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <zlib.h>], [(void) gzopen("","");]),
-		Z_LIBS="$Z_LIBS -lz",
-		[ if test "x$have_z" != xauto; then AC_MSG_ERROR([z library not found]); fi; have_z=no ])
-	LIBS="$save_LIBS"
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_z" != xno; then
-	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
-else
-	Z_CFLAGS=""
-	Z_LIBS=""
-fi
-AC_MSG_RESULT($have_z)
-AC_SUBST(Z_CFLAGS)
-AC_SUBST(Z_LIBS)
-AM_CONDITIONAL(HAVE_LIBZ,test x$have_z != xno)
-
-dnl check for bz2 (de)compression library (default /usr and /usr/local)
-have_bz2=auto
-BZ_CFLAGS=""
-BZ_LIBS=""
-AC_ARG_WITH(bz2,
-	AS_HELP_STRING([--with-bz2=DIR],
-		[bz2 library is installed in DIR]),
-	have_bz2="$withval")
-AC_MSG_CHECKING(for libbz2) 
-case "$have_bz2" in
-yes|no|auto)
-	;;
-*)
-	BZ_CFLAGS="-I$withval/include"
-	BZ_LIBS="-L$withval/lib"
-        AC_MSG_CHECKING(in $withval) 
-	;;
-esac
-if test "x$have_bz2" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $BZ_LIBS -lbz2"
-	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <stdio.h>
-#include <bzlib.h>], [(void)BZ2_bzopen("","");]),
-		BZ_LIBS="$BZ_LIBS -lbz2",
-		[ if test "x$have_bz2" != xauto; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
-	LIBS="$save_LIBS"
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_bz2" != xno; then
-	AC_DEFINE(HAVE_LIBBZ2, 1, [Define if you have the bz2 library])
-else
-	BZ_CFLAGS=""
-	BZ_LIBS=""
-fi
-AC_MSG_RESULT($have_bz2)
-AC_SUBST(BZ_CFLAGS)
-AC_SUBST(BZ_LIBS)
-AM_CONDITIONAL(HAVE_LIBBZ2,test x$have_bz2 != xno)
-
-dnl check for getopt in standard library
-AC_CHECK_FUNCS(getopt_long , need_getopt=, need_getopt=getopt; need_getopt=getopt1)
-if test x$need_getopt = xgetopt; then
-  AC_LIBOBJ(getopt)
-elif test x$need_getopt = xgetopt1; then
-  AC_LIBOBJ(getopt1)
-fi
+AM_MONETDB_LIB_Z()
+AM_MONETDB_LIB_BZIP2()
+AM_MONETDB_FUNC_GETOPT()
 
 dnl hwcounters
 have_hwcounters=auto
