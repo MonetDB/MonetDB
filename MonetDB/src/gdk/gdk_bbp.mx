@@ -1960,7 +1960,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 		gdk_set_lock(GDKswapLock(i), "BBPdecref");
 	assert(!BBP_cache(i) || BBP_cache(i)->batSharecnt >= releaseShare);
 	if (releaseShare) {
-		--BBP_cache(i)->batSharecnt;
+		--BBP_desc(i)->P.sharecnt;
 		if (lock)
 			gdk_unset_lock(GDKswapLock(i), "BBPdecref");
 		return refs;
