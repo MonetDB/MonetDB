@@ -16,9 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = -I.. $(monetdbtools_CFLAGS) $(READLINE_INCS) $(ICONV_CFLAGS)
-
-MAPI_LIBS = $(SOCKET_LIBS) $(ICONV_LIBS)
+INCLUDES = -I.. $(monetdbtools_CFLAGS) $(READLINE_INCS)
 
 lib_mcutil = {
 	NOINST
@@ -28,20 +26,18 @@ lib_mcutil = {
 #Name alignment of tools in M5 context. 
 bin_mclient = {
 	SOURCES = mclient.c ReadlineTools.c ReadlineTools.h
-	LIBS = libmcutil ../mapilib/libMapi $(MAPI_LIBS) $(READLINE_LIBS) \
-		$(monetdbtools_LIBS) $(ICONV_LIBS)
+	LIBS = libmcutil ../mapilib/libMapi $(READLINE_LIBS) \
+		$(monetdbtools_LIBS) $(LTLIBICONV)
 }
 
 bin_msqldump = {
 	SOURCES = msqldump.c
-	LIBS = libmcutil ../mapilib/libMapi $(MAPI_LIBS) \
-		$(monetdbtools_LIBS) $(ICONV_LIBS)
+	LIBS = libmcutil ../mapilib/libMapi $(monetdbtools_LIBS)
 }
 
 bin_stethoscope = {
 	SOURCES = stethoscope.c
-	LIBS = libmcutil \
-		   ../mapilib/libMapi $(MAPI_LIBS) \
+	LIBS = libmcutil ../mapilib/libMapi \
 		   $(monetdbtools_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 
