@@ -1838,147 +1838,87 @@ BBPspin(bat i, str s, int event)
 static INLINE int
 incref(bat i, int logical, int lock)
 {
-	int refs = 0;
-	bat hp = 0, tp = 0, hvp = 0, tvp = 0;
-	BATstore *bs = NULL;
+	int refs;
+	bat hp, tp, hvp, tvp;
+	BATstore *bs;
 	BAT *b;
+	int load = 0;
 
 	if (i == bat_nil) {
 		/* Stefan: May this happen? Or should we better call GDKerror(), here? */
 		/* GDKerror("BBPincref() called with bat_nil!\n"); */
-		return refs;
+		return 0;
 	}
 	if (i < 0)
 		i = -i;
-	if (BBPcheck(i, "BBPincref")) {
-		int locks[5];
-		int x;
 
-		/* In case we're dealing with a view, we need to lock
-		   both the view and its parent(s).  This is
-		   complicated by the fact that we need to lock the
-		   various BATs in the correct order, since otherwise
-		   we may get into a deadlock with BBPlock, and since
-		   BATs share locks.
+	if (!BBPcheck(i, "BBPincref"))
+		return 0;
 
-		   Another complication is that we only really know
-		   whether we're dealing with a view *after* we've
-		   locked it.  I.e., a catch-22 situation.  What we do
-		   to resolve the issue is tentatively look at which
-		   are the parent BATs, and lock all of them, then
-		   check again, and if something changed, unlock
-		   everything and try again.  This process is very
-		   likely to end.  Only a concurrently running thread
-		   that keeps changing the parent(s) of our BAT can
-		   cause this loop to not terminate.
-		*/
-
+	if (lock) {
 		for (;;) {
-			bs = BBP_desc(i);
-			/* parent BATs are not relevant for logical refs */
-			hp = logical ? 0 : bs->B.H->heap.parentid;
-			tp = logical ? 0 : bs->B.T->heap.parentid;
-			hvp = logical || bs->B.H->vheap == 0 || bs->B.H->vheap->parentid == i ? 0 : bs->B.H->vheap->parentid;
-			tvp = logical || bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
-
-			if (!lock)
+			gdk_set_lock(GDKswapLock(i), "BBPincref");
+			if (!(BBP_status(i) & (BBPUNSTABLE|BBPLOADING)))
 				break;
-
-			/* we're going to collect lock IDs into locks,
-			   BBP_BATMASK+1 cannot be an ID and is larger
-			   than any valid ID (i.e. sorts to the end) */
-			x = 0;
-			locks[x++] = i & BBP_BATMASK;
-			if (hp)
-				locks[x++] = ABS(hp) & BBP_BATMASK;
-			if (tp)
-				locks[x++] = ABS(tp) & BBP_BATMASK;
-			if (hvp)
-				locks[x++] = ABS(hvp) & BBP_BATMASK;
-			if (tvp)
-				locks[x++] = ABS(tvp) & BBP_BATMASK;
-			while (x < 5)
-				locks[x++] = BBP_BATMASK + 1;
-			/* sort locks and remove duplicates */
-			for (x = 0; x < 4; x++) {
-				int y;
-				for (y = x + 1; y < 5; y++)
-					if (locks[x] > locks[y]) {
-						int t = locks[x];
-						locks[x] = locks[y];
-						locks[y] = t;
-					} else if (locks[x] == locks[y])
-						locks[y] = BBP_BATMASK + 1;
-			}
-			/* lock in sorted order */
-			for (;;) {
-				for (x = 0; x < 5 && locks[x] <= BBP_BATMASK; x++)
-					gdk_set_lock(GDKswapLock(locks[x]),
-						     "BBPincref view loop");
-				if (!(BBP_status(i) & BBPUNSTABLE) &&
-				    !(hp && BBP_status(hp) & BBPUNSTABLE) &&
-				    !(tp && BBP_status(tp) & BBPUNSTABLE) &&
-				    !(hvp && BBP_status(hvp) & BBPUNSTABLE) &&
-				    !(tvp && BBP_status(tvp) & BBPUNSTABLE))
-					break;
-				/* one of the BATs is "unstable", try again */
-				for (x = 0; x < 5 && locks[x] <= BBP_BATMASK; x++)
-					gdk_unset_lock(GDKswapLock(locks[x]),
-						       "BBPincref view loop");
-				MT_sleep_ms(1);
-			}
-
-			/* check again, now that we hold all locks */
-			bs = BBP_desc(i);
-			if (logical ||
-			    (hp == bs->B.H->heap.parentid &&
-			     tp == bs->B.T->heap.parentid &&
-			     ((hvp == 0 && (bs->B.H->vheap == NULL || bs->B.H->vheap->parentid == i)) ||
-			      hvp == bs->B.H->vheap->parentid) &&
-			     ((tvp == 0 && (bs->B.T->vheap == NULL || bs->B.T->vheap->parentid == i)) ||
-			      tvp == bs->B.T->vheap->parentid)))
-				break;  /* still the same, we can do the work */
-
-			/* try again, unlock the locks */
-			for (x = 0; x < 5 && locks[x] <= BBP_BATMASK; x++)
-				gdk_unset_lock(GDKswapLock(locks[x]),
-					       "BBPincref view loop");
+			/* the BATs is "unstable", try again */
+			gdk_unset_lock(GDKswapLock(i), "BBPincref");
+			MT_sleep_ms(1);
 		}
+	}
+	/* we have the lock */
 
-		/* we have all relevant locks */
-		assert(BBP_refs(i) + BBP_lrefs(i) ||
-		       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
-		if (logical)
-			refs = ++BBP_lrefs(i);
-		else {
-			refs = ++BBP_refs(i);
-			if (refs == 1) {
-				if (hp) {
-					incref(hp, 0, 0);
-					if (!bs->P.lview) {
-						b = getBBPdescriptor(hp, 0);
-						bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
-					}
-				}
-				if (tp) {
-					incref(tp, 0, 0);
-					if (!bs->P.lview &&
-					    bs->B.H != bs->B.T) { /* mirror? */
-						b = getBBPdescriptor(tp, 0);
-						bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
-					}
-				}
-				if (hvp)
-					incref(hvp, 0, 0);
-				if (tvp)
-					incref(tvp, 0, 0);
+	bs = BBP_desc(i);
+
+	/* parent BATs are not relevant for logical refs */
+	hp = logical ? 0 : bs->B.H->heap.parentid;
+	tp = logical ? 0 : bs->B.T->heap.parentid;
+	hvp = logical || bs->B.H->vheap == 0 || bs->B.H->vheap->parentid == i ? 0 : bs->B.H->vheap->parentid;
+	tvp = logical || bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
+
+	assert(BBP_refs(i) + BBP_lrefs(i) ||
+	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
+	if (logical)
+		refs = ++BBP_lrefs(i);
+	else {
+		refs = ++BBP_refs(i);
+		if (refs == 1 && (hp || tp || hvp || tvp)) {
+			/* If this is a view, we must load the parent
+			   BATs, but we must do that outside of the
+			   lock.  Set the BBPLOADING flag so that
+			   other threads will wait until we're
+			   done. */
+			BBP_status_on(i, BBPLOADING, "BBPincref");
+			load = 1;
+		}
+	}
+	if (lock)
+		gdk_unset_lock(GDKswapLock(i), "BBPincref");
+
+	if (load) {
+		/* load the parent BATs and set the heap base
+		   pointers to the correct values */
+		assert(!logical);
+		if (hp) {
+			incref(hp, 0, lock);
+			if (!bs->P.lview) {
+				b = getBBPdescriptor(hp, lock);
+				bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
 			}
 		}
-		if (lock) {
-			for (x = 0; x < 5 && locks[x] <= BBP_BATMASK; x++)
-				gdk_unset_lock(GDKswapLock(locks[x]),
-					       "BBPincref view loop");
+		if (tp) {
+			incref(tp, 0, lock);
+			if (!bs->P.lview &&
+			    bs->B.H != bs->B.T) {  /* mirror? */
+				b = getBBPdescriptor(tp, lock);
+				bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
+			}
 		}
+		if (hvp)
+			incref(hvp, 0, lock);
+		if (tvp)
+			incref(tvp, 0, lock);
+		/* done loading, release descriptor */
+		BBP_status_off(i, BBPLOADING, "BBPincref");
 	}
 	return refs;
 }
