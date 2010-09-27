@@ -1489,7 +1489,7 @@ if test "x$have_perl" != xno; then
 				AC_MSG_ERROR([No perl.h found, is Perl installed properly?]);
 			fi;
 			have_perl_incdir=no
-		])
+		], [#include <EXTERN.h>])
         	CPPFLAGS="$save_CPPFLAGS"
         fi
 
