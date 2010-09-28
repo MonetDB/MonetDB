@@ -34,6 +34,8 @@ MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include\MonetDB
 
 monetdbtools_CFLAGS=-I"$(MONETDB_INCLUDEDIR)\common"
 monetdbtools_LIBS=/libpath:"$(MONETDB_PREFIX)\lib" libstream.lib libmutils.lib
+openssl_CFLAGS=$(OPENSSL_INCS)
+openssl_LIBS=$(OPENSSL_LIBS)
 
 pkg = clients
 CONFIG_H=clients_config.h
