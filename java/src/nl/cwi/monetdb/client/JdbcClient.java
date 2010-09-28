@@ -358,7 +358,10 @@ copts.produceHelpMessage()
 
 					// should not be possible to happen
 					if (fk == null || pk == null)
-						throw new AssertionError("Illegal table; table not found in list");
+						throw new AssertionError("Illegal table '" +
+								tbl.getString("FKTABLE_SCHEM") + "." +
+								tbl.getString("FKTABLE_NAME") +
+								"': table not found in list");
 
 					// add PK table dependancy to FK table
 					fk.addDependancy(pk);
