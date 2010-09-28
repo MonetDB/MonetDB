@@ -1365,7 +1365,11 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 	do {
 		/* handle errors first */
 		if ((reply = mapi_result_error(hdl)) != NULL) {
-			mapi_explain_result(hdl, stderr);
+			if (formatter == TABLEformatter) {
+				mnstr_printf(toConsole, "%s", reply);
+			} else {
+				mapi_explain_result(hdl, stderr);
+			}
 			errseen = 1;
 			/* don't need to print something like '0
 			 * tuples' if we got an error */
