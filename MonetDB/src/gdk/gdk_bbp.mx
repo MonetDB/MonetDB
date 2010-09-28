@@ -163,6 +163,7 @@ that uses the 'next' field in the BBPrec records.
 @{
 @c
 */
+@c
 BBPrec *BBP = NULL;		/* fixed base VM address of BBP array */
 bat BBPmaxsize = BBPMAXSIZE;	/* size of non-committed VM BBP array */
 bat BBPlimit = 0;		/* current committed VM BBP array */
@@ -407,6 +408,7 @@ BBPextend must take the trimlock, as it is called when other BBP locks are
 held and it will allocate memory. This could trigger a BBPtrim, causing deadlock.
 @c
 */
+@c
 void
 BBPextend(dbl factor, int buildhash)
 {
@@ -951,6 +953,7 @@ it may lead to interference in a parallel session.
 @{
 @c
 */
+@c
 
 void
 BBPexit(void)
@@ -1035,6 +1038,7 @@ The tail of non-used entries is reclaimed as well.
 @{
 @c
 */
+@c
 static int
 new_bbpentry(stream *s, bat i)
 {
@@ -1373,6 +1377,7 @@ is modifying that BAT, therefore such functions do not need locking.
 BBP index lookup by BAT name:
 @c
 */
+@c
 static INLINE bat
 BBP_find(str nme, int lock)
 {
@@ -1457,6 +1462,7 @@ Create the shadow version (reversed) of a bat.
 An existing BAT is inserted into the BBP 
 @c
 */
+@c
 static INLINE str
 BBPsubdir_recursive(str s, bat i)
 {
@@ -1624,6 +1630,7 @@ BBPcacheit(BATstore *bs, int lock)
 used in BBPfree (bat swapped out) and BBPclear (bat destroyed forever).
 @c
 */
+@c
 
 void
 BBPuncacheit(bat i)
@@ -1661,6 +1668,7 @@ BBPuncacheit_(bat i, int unloaddesc)
 @%BBPclear@ removes a BAT from the BBP directory forever.
 @c
 */
+@c
 static INLINE void
 bbpclear(bat i, int idx, str lock)
 {
@@ -1734,6 +1742,7 @@ old repositories (you won't see them anymore in new repositories).
 @{
 @c
 */
+@c
 int
 BBPrename(bat bid, str nme)
 {
@@ -2086,6 +2095,7 @@ the BBP management actions, such as garbage collecting the bats.
 [first step, initiate code change]
 @c
 */
+@c
 void
 BBPkeepref(bat i)
 {
@@ -2153,6 +2163,7 @@ Return values:
  1 = unload failed (due to write-to-disk failure)
 @c
 */
+@c
 int
 BBPreclaim(BAT *b)
 {
@@ -2174,6 +2185,7 @@ BBPdescriptor checks whether BAT needs loading and does so if necessary. You mus
 have at least one fix on the BAT before calling this.
 @c
 */
+@c
 static BAT *
 getBBPdescriptor(bat i, int lock)
 {
@@ -2235,6 +2247,7 @@ In BBPsave executes unlocked; it just marks the BBP_status of the BAT to BBPsavi
 that want to save or unload this BAT must spin lock on the BBP_status field.
 @c
 */
+@c
 int
 BBPsave(BAT *b)
 {
@@ -2290,6 +2303,7 @@ TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
 @c
 */
+@c
 static int BBPaddtobin(BAT *b);
 static int
 BBPdestroy(BAT *b)
@@ -2440,6 +2454,7 @@ need it anymore.
 @{
 @c
 */
+@c
 #define BBPMAXTRIM 40000
 #define BBPSMALLBAT 1000
 
@@ -2827,6 +2842,7 @@ is parametrized.
 @{
 @c
 */
+@c
 static int
 complexatom(int t, int delaccess)
 {
@@ -2895,6 +2911,7 @@ though I expect the gains to be smaller in general.
 @{
 @c
 */
+@c
 #define BATCACHE_NOTYPE(t) 	(ATOMstorage(t) > TYPE_str || BATatoms[t].atomFix != NULL)
 #define BATCACHE_SIZE 		1023	/* max size: 32767 */
 #define BATCACHE_DIMS 		6	/* 0,1,2,4,8 byte types + str */
@@ -3362,6 +3379,7 @@ BBPrecycle_minsize(wrd val)
 @{
 @c
 */
+@c
 static BAT *
 dirty_bat(bat *i, int subcommit)
 {
@@ -3394,6 +3412,7 @@ can thus always roll back.
 @{
 @c
 */
+@c
 static int
 file_move(str srcdir, str dstdir, str name, str e)
 {
@@ -3488,6 +3507,7 @@ backup_dir == 2 => BBP.dir saved in SUBCOMMIT/
 @{
 @c
 */
+@c
 static int backup_files = 0, backup_dir = 0, backup_subdir = 0;
 
 static int
@@ -3620,6 +3640,7 @@ The BBP.dir is also moved into the BAKDIR.
 @{
 @c
 */
+@c
 int
 BBPsync(int cnt, bat *subcommit)
 {
@@ -3725,6 +3746,7 @@ The recovery process can resume later with the left over files.
 @{
 @c
 */
+@c
 static int
 force_move(str srcdir, str dstdir, str name)
 {
@@ -3869,6 +3891,7 @@ SUBDIR recovery is quite mindlessly moving all files back to the parent (BAKDIR)
 We do recognize moving back BBP.dir and set backed_up_subdir accordingly.
 @c
 */
+@c
 int
 BBPrecover_subdir(void)
 {
@@ -3920,6 +3943,7 @@ the number of bytes of space freed.
 @{
 @c
 */
+@c
 static int
 persistent_bat(bat bid)
 {
