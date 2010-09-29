@@ -11,6 +11,8 @@ import Queue
 
 from subprocess import PIPE
 
+__all__ = ['PIPE', 'Popen', 'client', 'pf', 'server']
+
 verbose = False
 
 def splitcommand(cmd):
@@ -43,6 +45,7 @@ _mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal'))
 _sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql'))
 _xquery_client = splitcommand(os.getenv('XQUERY_CLIENT', 'mclient -lxquery -fxml'))
 _sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump -q'))
+_pf_compiler = splitcommand(os.getenv('PF', 'pf'))
 _server = splitcommand(os.getenv('MSERVER', ''))
 
 _dotmonetdbfile = []
@@ -134,7 +137,10 @@ class Popen(subprocess.Popen):
         stderr = None
         if self.stdin:
             if input:
-                self.stdin.write(input)
+                try:
+                    self.stdin.write(input)
+                except IOError:
+                    pass
             self.stdin.close()
         if self.stdout:
             stdout = self.stdout.read()
@@ -226,9 +232,51 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         p.stderr = _BufferedPipe(p.stderr)
     return p
 
+def pf(args = [], stdin = None, stdout = None, stderr = None, log = False):
+    '''Start the pathfinder compiler.'''
+    cmd = _pf_compiler[:]
+    if verbose:
+        print 'Executing', ' '.join(cmd +  args)
+        sys.stdout.flush()
+    if log:
+        prompt = time.strftime('# %H:%M:%S >  ')
+        cmdstr = ' '.join(cmd +  args)
+        if hasattr(stdin, 'name'):
+            cmdstr += ' < "%s"' % stdin.name
+        print
+        print prompt
+        print '%s%s' % (prompt, cmdstr)
+        print prompt
+        print
+        sys.stdout.flush()
+        print >> sys.stderr
+        print >> sys.stderr, prompt
+        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
+        print >> sys.stderr, prompt
+        print >> sys.stderr
+        sys.stderr.flush()
+    if stdin is None:
+        # if no input provided, use /dev/null as input
+        stdin = open(os.devnull)
+    p = Popen(cmd + args,
+              stdin = stdin,
+              stdout = stdout,
+              stderr = stderr,
+              shell = False,
+              universal_newlines = True)
+## don't use the asynchronous _BufferedPipe since when pf is
+## called with a PIPE as stdout, it is to create an actual pipe
+## to a server
+##     if stdout == PIPE:
+##         p.stdout = _BufferedPipe(p.stdout)
+##     if stderr == PIPE:
+##         p.stderr = _BufferedPipe(p.stderr)
+    return p
+
 def server(lang, args = [], stdin = None, stdout = None, stderr = None,
            mapiport = None, xrpcport = None, dbname = os.getenv('TSTDB'),
-           dbfarm = None, dbinit = None, bufsize = 0, log = False):
+           dbfarm = None, dbinit = None, bufsize = 0, log = False,
+           notrace = False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
@@ -239,6 +287,8 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
         cmd.extend(['--set', 'mapi_open=true', '--set', 'gdk_nr_threads=1',
                     '--set', 'xrpc_open=true', '--set', 'monet_prompt=',
                     '--trace'])
+    if notrace and '--trace' in cmd:
+        cmd.remove('--trace')
     if dbinit is None:
         if lang == 'xquery':
             dbinit = 'module(pathfinder);'

@@ -1,11 +1,8 @@
 import os
-import string
+from MonetDBtesting import process
 
-TST = os.environ['TST']
-TSTSRCDIR = os.environ['TSTSRCDIR']
-PF = os.environ['PF']
-
-CALL = '%s -b -s1 "%s.xq"' % (PF,os.path.join(TSTSRCDIR,TST))
-
-ret = os.system(CALL)
-print ret
+c = process.pf(args = ['-b', '-s1',
+                       '%s.xq' % os.path.join(os.environ['TSTSRCDIR'],
+                                              os.environ['TST'])])
+c.communicate()
+print c.returncode
