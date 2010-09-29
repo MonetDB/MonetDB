@@ -1,4 +1,4 @@
-import os, sys, socket
+import os, sys, socket, time
 from MonetDBtesting import process
 
 def prog(dbinit, input):
@@ -8,13 +8,12 @@ def prog(dbinit, input):
                         stdin = process.PIPE,
                         stdout = process.PIPE,
                         stderr = process.PIPE)
+    time.sleep(2)
     out, err = srv.communicate(input)
     sys.stdout.write(out)
     sys.stderr.write(err)
 
 def main():
-    mserver = os.getenv('MSERVER')
-
     # test mapi and pathfinder modules with MAPIPORT busy
     sys.stdout.write("MAPIPORT\n")
     sys.stderr.write("MAPIPORT\n")
