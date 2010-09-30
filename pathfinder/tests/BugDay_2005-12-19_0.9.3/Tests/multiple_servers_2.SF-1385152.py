@@ -1,4 +1,4 @@
-import os, time, sys
+import os, sys
 from MonetDBtesting import process
 
 def server_start(x,s,dbinit):
@@ -6,20 +6,25 @@ def server_start(x,s,dbinit):
     sys.stderr.write('\nserver %d%d : "%s"\n' % (x,s,dbinit))
     sys.stdout.flush()
     sys.stderr.flush()
-    srv = process.server('mil', dbinit = dbinit, stdin = process.PIPE)
-    time.sleep(5)                      # give server time to start
+    srv = process.server('mil', dbinit = dbinit, stdin = process.PIPE,
+                         stdout = process.PIPE, stderr = process.PIPE)
     return srv
 
 def server_stop(srv):
-    srv.communicate()
+    out, err = srv.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 def client(x,s, c, dbinit, lang, cmd, h):
     sys.stdout.write('\nserver %d%d : "%s", client %d: %s%s\n' % (x,s,dbinit,c,h,lang))
     sys.stderr.write('\nserver %d%d : "%s", client %d: %s%s\n' % (x,s,dbinit,c,h,lang))
     sys.stdout.flush()
     sys.stderr.flush()
-    clt = process.client(lang, stdin = process.PIPE)
-    clt.communicate(cmd)
+    clt = process.client(lang, stdin = process.PIPE,
+                         stdout = process.PIPE, stderr = process.PIPE)
+    out, err = clt.communicate(cmd)
+    sys.stdout.write(out)
+    sys.stderr.write(err)
     return '%s(%s) ' % (h,lang)
 
 def clients(x,dbinit):

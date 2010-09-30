@@ -43,7 +43,7 @@ try:
 except ImportError:
     logging.warning("monetdb python API not found, using local monetdb python API")
     import sys
-    parent = os.path.join(sys.path[0], '..')
+    parent = os.path.join(sys.path[0], os.pardir)
     sys.path.append(parent)
     import monetdb.sql
 

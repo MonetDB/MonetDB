@@ -30,7 +30,7 @@ except ImportError:
     # running examples from development tree
     import sys
     import os
-    parent = os.path.join(sys.path[0], '..')
+    parent = os.path.join(sys.path[0], os.pardir)
     sys.path.append(parent)
     import monetdb.sql
 

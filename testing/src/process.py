@@ -60,21 +60,58 @@ def _delfiles():
 atexit.register(_delfiles)
 
 class _BufferedPipe:
-    def __init__(self, fd):
+    def __init__(self, fd, waitfor = None):
         self._pipe = fd
         self._queue = Queue.Queue()
         self._eof = False
+        if waitfor is not None:
+            self._wfq = Queue.Queue()
+        else:
+            self._wfq = None
         self._thread = threading.Thread(target = self._readerthread,
-                                        args = (fd, self._queue))
+                                        args = (fd, self._queue, waitfor, self._wfq))
         self._thread.setDaemon(True)
         self._thread.start()
 
-    def _readerthread(self, fh, queue):
+    def _readerthread(self, fh, queue, waitfor, wfq):
+        i = 0
         while True:
             c = fh.read(1)
+            if waitfor is not None and c:
+                if c == waitfor[i]:
+                    i += 1
+                    if i == len(waitfor):
+                        waitfor = None
+                        wfq.put('ready')
+                        wfq = None
+                else:
+                    j = 0
+                    while j < i:
+                        if waitfor[j:i] + c != waitfor[:i-j+1]:
+                            queue.put(waitfor[j])
+                            j += 1
+                        else:
+                            i = i-j+1
+                            break
+                    else:
+                        if c == waitfor[0]:
+                            i = 1
+                        else:
+                            queue.put(c)
+                            i = 0
+                continue
             queue.put(c)                # put '' if at EOF
             if not c:
+                if waitfor is not None:
+                    # if at EOF and still waiting for string, signal EOF
+                    wfq.put('eof')
+                    waitfor = None
+                    wfq = None
                 break
+
+    def _waitfor(self):
+        rdy = self._wfq.get()
+        self._wfq = None
 
     def close(self):
         if self._thread:
@@ -350,7 +387,21 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
               universal_newlines = True,
               bufsize = bufsize)
     if stdout == PIPE:
-        p.stdout = _BufferedPipe(p.stdout)
+        if stdin == PIPE:
+            # If both stdin and stdout are pipes, we wait until the
+            # server is ready.  This is done by sending a print
+            # command and waiting for the result to appear.
+            rdy = '\nServer Ready.\n'
+            p.stdout = _BufferedPipe(p.stdout, rdy)
+            if lang in ('mil', 'xquery'):
+                cmd = 'printf'
+            else:
+                cmd = 'io.printf'
+            p.stdin.write('%s("%s");\n' % (cmd, rdy.replace('\n', '\\n')))
+            p.stdin.flush()
+            p.stdout._waitfor()
+        else:
+            p.stdout = _BufferedPipe(p.stdout)
     if stderr == PIPE:
         p.stderr = _BufferedPipe(p.stderr)
     return p

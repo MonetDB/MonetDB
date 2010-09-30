@@ -10,14 +10,13 @@ def client(lang, user = 'monetdb', passwd = 'monetdb', input = None):
     sys.stdout.write(out)
     sys.stderr.write(err)
 
-def main():
-    sql_client = os.getenv('SQL_CLIENT')
-    client('sql', input = """\
+sql_client = os.getenv('SQL_CLIENT')
+client('sql', input = """\
 create user voc with password 'voc' name 'VOC Explorer' schema sys;
 create schema voc authorization voc;
 alter user voc set schema voc;
 """)
-    client('sql', user = 'voc', passwd = 'voc', input = """\
+client('sql', user = 'voc', passwd = 'voc', input = """\
 create table foo (
         id int,
         v int,
@@ -30,12 +29,12 @@ create table a (
 );
 create trigger a after insert on foo insert into a values (1);
 """)
-    client('sql', input = """\
+client('sql', input = """\
 create user test with password 'test' name 'Test User' schema sys;
 create schema test authorization test;
 alter user test set schema test;
 """)
-    client('sql', user = 'test', passwd = 'test', input = '''\
+client('sql', user = 'test', passwd = 'test', input = '''\
 create table foo (
         id int,
         v int,
@@ -50,8 +49,6 @@ create trigger a after insert on foo insert into a values (1);
 create trigger test.x after insert on foo insert into a values (1);
 create trigger "test"."z" after insert on "foo" insert into a values (1);
 ''')
-    client('sqldump')
-    client('sqldump', user = 'voc', passwd = 'voc')
-    client('sqldump', user = 'test', passwd = 'test')
-
-main()
+client('sqldump')
+client('sqldump', user = 'voc', passwd = 'voc')
+client('sqldump', user = 'test', passwd = 'test')

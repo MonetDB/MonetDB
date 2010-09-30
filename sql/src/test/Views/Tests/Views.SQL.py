@@ -9,7 +9,7 @@ def client(lang, infile):
 
 def main():
     sys.stdout.write('Views Restrictions\n')
-    client('sql', os.path.join(os.getenv('RELSRCDIR'), '..',
+    client('sql', os.path.join(os.getenv('RELSRCDIR'), os.pardir,
                                'views_restrictions.sql'))
     sys.stdout.write('step 1\n')
     sys.stdout.write('Cleanup\n')
