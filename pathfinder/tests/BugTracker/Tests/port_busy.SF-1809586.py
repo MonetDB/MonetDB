@@ -1,4 +1,4 @@
-import os, sys, socket, time
+import os, sys, socket
 from MonetDBtesting import process
 
 def prog(dbinit, input):
@@ -8,7 +8,6 @@ def prog(dbinit, input):
                         stdin = process.PIPE,
                         stdout = process.PIPE,
                         stderr = process.PIPE)
-    time.sleep(2)
     out, err = srv.communicate(input)
     sys.stdout.write(out)
     sys.stderr.write(err)

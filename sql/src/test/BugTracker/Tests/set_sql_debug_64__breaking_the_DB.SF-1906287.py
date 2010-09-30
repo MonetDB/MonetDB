@@ -1,4 +1,4 @@
-import os, time, sys
+import os, sys
 from MonetDBtesting import process
 
 def server_start(args = []):
@@ -6,7 +6,6 @@ def server_start(args = []):
     sys.stderr.flush()
     srv = process.server('sql', args = args, stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
-    time.sleep(5)                      # give server time to start
     return srv
 
 def client(file):

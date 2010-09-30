@@ -1,20 +1,19 @@
-import os, sys, time
+import os, sys
 from MonetDBtesting import process
-
 
 def client(cmd, infile = None):
     if infile is not None:
         f = open(infile)
     else:
         f = None
-    Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), cmd)
-    sys.stdout.write(Mlog)
-    sys.stderr.write(Mlog)
-    clt = process.client(cmd, stdin = f)
+    clt = process.client(cmd, stdin = f,
+                         stdout = process.PIPE, stderr = process.PIPE,
+                         log = True)
     if f is not None:
         f.close()
-    clt.wait()
-
+    out, err = clt.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 def main():
     client('sql',

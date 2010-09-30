@@ -1,4 +1,4 @@
-import os, time, sys
+import os, sys
 from MonetDBtesting import process
 
 def remote_server_start(x,s):
@@ -13,7 +13,6 @@ def remote_server_start(x,s):
                          dbname = '%s_test1' % os.getenv('TSTDB'),
                          stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
-    time.sleep(5)                      # give server time to start
     return srv
 
 def server_start(x,s):
@@ -25,7 +24,6 @@ def server_start(x,s):
     sys.stderr.flush()
     srv = process.server('sql', stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
-    time.sleep(5)                      # give server time to start
     return srv
 
 def server_stop(srv):
@@ -64,7 +62,7 @@ def clients(x):
 
     c += 1
     out, err = client(x, s, c,
-                      os.path.join(os.getenv('RELSRCDIR'), '..',
+                      os.path.join(os.getenv('RELSRCDIR'), os.pardir,
                                    'connections_syntax.sql'))
     sys.stdout.write(out)
     sys.stderr.write(err)
@@ -73,7 +71,7 @@ def clients(x):
 
     c += 1
     out, err = client(x, s, c,
-                      os.path.join(os.getenv('RELSRCDIR'), '..',
+                      os.path.join(os.getenv('RELSRCDIR'), os.pardir,
                                    'connections_semantic.sql'))
     sys.stdout.write(out)
     sys.stderr.write(err)
@@ -82,7 +80,7 @@ def clients(x):
 
     c += 1
     out, err = client(x, s, c,
-                      os.path.join(os.getenv('RELSRCDIR'), '..',
+                      os.path.join(os.getenv('RELSRCDIR'), os.pardir,
                                    'connections_default_values.sql'))
     sys.stdout.write(out)
     sys.stderr.write(err)

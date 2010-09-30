@@ -1,11 +1,13 @@
-import os, time
+import os, sys
 from MonetDBtesting import process
 
-def main():
-    srv = process.server('sql', stdin = process.PIPE)
-    time.sleep(10)                      # give server time to start
-    clt = process.client('sql', stdin = process.PIPE)
-    clt.communicate('select 1;\n')
-    srv.communicate()
+srv = process.server('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-main()
+clt = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+out, err = clt.communicate('select 1;\n')
+sys.stdout.write(out)
+sys.stderr.write(err)
+
+out, err = srv.communicate()
+sys.stdout.write(out)
+sys.stderr.write(err)

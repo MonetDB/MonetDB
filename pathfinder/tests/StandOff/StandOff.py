@@ -21,13 +21,19 @@
 # 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 
-import os
+import os, sys
 from MonetDBtesting import process
 
 pf = process.pf(args = ['-b', '%s.xq' % os.path.join(os.environ['TSTSRCDIR'],
                                                      os.environ['TST'])],
-                stdout = process.PIPE, log = True)
+                stdout = process.PIPE, stderr = process.PIPE, log = True)
 srv = process.server(lang = 'xquery', args = ['--set', 'standoff=enabled'],
-                     stdin = pf.stdout, log = True, notrace = True)
-pf.communicate()
-srv.communicate()
+                     stdin = pf.stdout,
+                     stdout = process.PIPE, stderr = process.PIPE,
+                     log = True, notrace = True)
+pf.stdout = None                        # given away
+out, err = pf.communicate()
+sys.stderr.write(err)
+out, err = srv.communicate()
+sys.stdout.write(out)
+sys.stderr.write(err)
