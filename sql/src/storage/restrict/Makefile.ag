@@ -23,5 +23,5 @@ lib_restrictstore = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		restrict_table.mx restrict_storage.mx restrict_logger.mx 
+		restrict_table.c restrict_storage.c restrict_logger.c 
 }

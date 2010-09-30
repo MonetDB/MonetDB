@@ -29,6 +29,6 @@ lib_store = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		store_dependency.mx store_connections.mx store_sequence.mx \
-		store.mx sql_catalog.mx 
+		store_dependency.c store_connections.c store_sequence.c \
+		store.c sql_catalog.c 
 }

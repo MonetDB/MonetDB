@@ -23,6 +23,6 @@ lib_batstore = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		bat_table.mx bat_storage.mx bat_logger.mx bat_utils.mx \
-		res_table.mx 
+		bat_table.c bat_storage.c bat_logger.c bat_utils.c \
+		res_table.c 
 }
