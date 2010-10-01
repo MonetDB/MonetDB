@@ -668,7 +668,7 @@ MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, int cnt_i1, BAT *i2, bte map
 static BAT *
 MATsort_any( BAT **map, BAT **bats, unsigned int len, BUN cnt, int rev )
 {
-	BAT *res, *in;
+	BAT *res = 0, *in;
 	BUN i;
 	bte *mapT;
 	int len1, len2;
