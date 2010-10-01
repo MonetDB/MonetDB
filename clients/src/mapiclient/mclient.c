@@ -1781,7 +1781,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			if (buf) {
 				length = strlen(buf);
 				if (length > 1)
-					add_history(buf);
+					save_line(buf);
 				buf = realloc(buf, length + 2);
 				buf[length++] = '\n';
 				buf[length] = 0;
