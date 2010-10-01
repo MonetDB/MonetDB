@@ -2292,7 +2292,7 @@ would be feasible as well, provided the start of the slice is a constant 0.
 			continue;
 		}
 @-
-The mark operators are a special case of apply on parts as we need too
+The mark operators are a special case of apply on parts as we need to
 correct the mark base oid's 
 @c
 		if (match == 1 && 
