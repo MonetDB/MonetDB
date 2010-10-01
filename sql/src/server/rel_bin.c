@@ -1649,7 +1649,8 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 				orderby = stmt_order(orderbycolstmt, is_ascending(orderbycole));
 		}
 		if (orderby)
-			psub = stmt_ordered(orderby, psub);
+			//psub = stmt_ordered(orderby, psub);
+			psub = sql_reorder(orderby, psub);
 	}
 	if (sub) 
 		stmt_destroy(sub);

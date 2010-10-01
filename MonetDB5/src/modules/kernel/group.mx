@@ -276,6 +276,7 @@ group_export str GRPrefine_rev(int *retid, int *bid, int *aid);
 
 /* used by rdf_shredder.mx */
 group_export int CTrefine(BAT **res, BAT *b, BAT *a);
+group_export int CTrefine_rev(BAT **res, BAT *b, BAT *a);
 
 #endif /* _GROUP_H_ */
 @c
@@ -1689,7 +1690,7 @@ CTrefine(BAT **res, BAT *b, BAT *a)
 	return refine(res, b, a, FALSE);
 }
 
-static int
+int
 CTrefine_rev(BAT **res, BAT *b, BAT *a)
 {
 	return refine(res, b, a, TRUE);
