@@ -3218,6 +3218,8 @@ BBPaddtobin(BAT *b)
 		assert(VIEWvhparent(b) == 0);
 		assert(VIEWvtparent(b) == 0);
 		b->H->heap.parentid = b->T->heap.parentid = 0;
+		b->H->heap.forcemap = 0;
+		b->T->heap.forcemap = 0;
 		b->batPersistence = TRANSIENT;
 
 		/* take care of mirror views */

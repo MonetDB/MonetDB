@@ -1660,7 +1660,7 @@ CMDmmap(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 		*hhp = b->batMaphheap;
 	if (b->T->vheap && *thp == int_nil) 
 		*thp = b->batMaptheap;
-	if (BATmmap(*r = b, *hbns, *tbns, *hhp, *thp) == 0) {
+	if (BATmmap(*r = b, *hbns, *tbns, *hhp, *thp, 0) == 0) {
 		BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
 	}

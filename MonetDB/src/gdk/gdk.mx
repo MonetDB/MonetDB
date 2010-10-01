@@ -701,7 +701,8 @@ typedef struct {
 
 	char storage;		/* storage mode (mmap/malloc). */
 	unsigned char copied:1,	/* a copy of an existing map. */
-		      hashash:1; /* the string heap contains hash values */
+		      hashash:1,/* the string heap contains hash values */
+		      forcemap:1;  /* force STORE_MMAP even if heap exists */
 	chr newstorage;		/* new desired storage mode at re-allocation. */
 	chr dirty;		/* specific heap dirty marker */
 	bat parentid;		/* cache id of VIEW parent bat */
@@ -1799,7 +1800,7 @@ gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
 @item BAT *
 @tab BATsave (BAT *b)
 @item int
-@tab BATmmap (BAT *b, int hb, int tb, int hh, int th )
+@tab BATmmap (BAT *b, int hb, int tb, int hh, int th, int force )
 @item int
 @tab BATmadvise (BAT *b, int hb, int tb, int hh, int th )
 @item int
@@ -1862,7 +1863,7 @@ gdk_export BAT *BATload_intern(bat bid, int lock);
 #define BATaccessEnd(b,what,advice) BATaccess(b,what,advice,-1)
 gdk_export size_t BATaccess(BAT *b, int what, int advice, int load);
 gdk_export BAT *BATsave(BAT *b);
-gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th);
+gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATvmsize(BAT *b, int dirty);
