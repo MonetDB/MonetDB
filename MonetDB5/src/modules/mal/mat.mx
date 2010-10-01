@@ -69,6 +69,34 @@ pattern slice(first:lng, last:lng, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpackSlice
 comment "Materialize a sliced MAT into a BAT";
 
+pattern project(map:bat[:void,:bte], b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATproject
+comment "project using the map bat (contains which bat to use in scan order)";
+
+pattern project(map:bat[:void,:bte], b:bat[:any_1,:any_2]...):bat[:void,:any_2]
+address MATproject
+comment "project using the map bat (contains which bat to use in scan order)";
+
+pattern sortTail(b:bat[:any_1,:any_2]...)
+	(sorted:bat[:void,:any_2], map:bat[:void,:bte]) 
+address MATsortTail
+comment "Returns a BAT copy sorted on the head column.";
+
+pattern sortReverseTail(b:bat[:any_1,:any_2]...)
+	(sorted:bat[:void,:any_2], map:bat[:void,:bte]) 
+address MATsortReverseTail
+comment "Returns a BAT copy sorted on the head column.";
+
+pattern refine(sorted:bat[:void,:any_2], map:bat[:void,:bte], b:bat[:any_1,:any_3]...)
+	(rsorted:bat[:void,:oid], rmap:bat[:void,:bte]) 
+address MATrefine
+comment "refine map.";
+
+pattern refine_rev(sorted:bat[:void,:any_2], map:bat[:void,:bte], b:bat[:any_1,:any_3]...)
+	(rsorted:bat[:void,:oid], rmap:bat[:void,:bte]) 
+address MATrefineReverse
+comment "refine map.";
+
 pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;
 
@@ -120,6 +148,7 @@ Mal symbol table and environment analysis.
 @c
 #include "mal_config.h"
 #include "mat.h"
+#include "group.h"
 
 str
 MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -442,6 +471,478 @@ str
 MATinfo(int *ret, str *grp, str *elm){
 	(void) grp; (void) elm; (void) ret;
 	return MAL_SUCCEED;
+}
+
+static BAT *
+MATproject_any( BAT *map, BAT **bats, unsigned int len )
+{
+	BAT *res;
+	BUN i, cnt = BATcount(map);
+	BATiter *bats_i;
+	BUN *batsT;
+	bte *mapT;
+
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	BATseqbase(res, map->hseqbase);
+	mapT = (bte*)Tloc(map, 0);
+	batsT = (BUN*)GDKmalloc(sizeof(BUN) * len);
+	bats_i = (BATiter*)GDKmalloc(sizeof(BATiter) * len);
+	for (i=0; i<len; i++) {
+		batsT[i] = 0;
+		bats_i[i] = bat_iterator(bats[i]);
+	}
+	for (i=0; i<cnt; i++)
+		BUNappend(res, BUNtail(bats_i[mapT[i]], batsT[mapT[i]]++), FALSE);
+	GDKfree(batsT);
+	return res;
+}
+
+@= project
+static BAT *
+MATproject_@1( BAT *map, BAT **bats, unsigned int len )
+{
+	BAT *res;
+	BUN i, cnt = BATcount(map);
+	@1 *resT, **batsT;
+	bte *mapT;
+
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	BATseqbase(res, map->hseqbase);
+	resT = (@1*)Tloc(res, 0);
+	mapT = (bte*)Tloc(map, 0);
+	batsT = (@1**)GDKmalloc(sizeof(@1*) * len);
+	for (i=0; i<len; i++)
+		batsT[i] = (@1*)Tloc(bats[i], 0);
+	for (i=0; i<cnt; i++)
+		resT[i] = *batsT[mapT[i]]++;
+	BATsetcount(res, i);
+	GDKfree(batsT);
+	return res;
+}
+@c
+@:project(bte)@
+@:project(sht)@
+@:project(int)@
+@:project(lng)@
+
+static int
+MATnonil( BAT **bats, int len)
+{
+	int i, nonil = 1;
+
+	for (i=0; i<len && nonil; i++) {
+		nonil &= bats[i]->T->nonil;
+	}
+	return nonil;
+}
+
+BAT *
+MATproject_( BAT *map, BAT **bats, int len ) 
+{
+	BAT *res = NULL;
+
+	if (ATOMstorage(bats[0]->ttype) <= TYPE_void) {
+		//error
+	} else if (ATOMstorage(bats[0]->ttype) <= TYPE_bte) {
+		res = MATproject_bte(map, bats, len);
+	} else if (ATOMstorage(bats[0]->ttype) <= TYPE_sht) {
+		res = MATproject_sht(map, bats, len);
+	} else if (ATOMstorage(bats[0]->ttype) <= TYPE_int) {
+		res = MATproject_int(map, bats, len);
+	} else if (ATOMstorage(bats[0]->ttype) <= TYPE_lng) {
+		res = MATproject_lng(map, bats, len);
+	} else {
+		res = MATproject_any(map, bats, len);
+	}
+	res->tsorted = 0;
+	res->T->nonil = MATnonil(bats, len);
+	return res;
+}
+
+str
+MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *res_id = (bat*) getArgReference(stk,pci,0);
+	bat map_id = *(bat*) getArgReference(stk,pci,1);
+	BAT *res = NULL, *map;
+	/* rest of the args are parts, (excluding result and map) */
+	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 2);
+	BUN i, cnt = 0, bcnt = 0; 
+	unsigned int len = pci->argc-2, sorted = 1;
+
+	(void) cntxt; (void) mb; (void) stk; 
+	map = BATdescriptor(map_id);
+	if (!map)
+		goto error;
+	cnt = BATcount(map);
+	for (i=2; i<(unsigned int)pci->argc; i++) {
+		bat id = *(bat*) getArgReference(stk,pci,i);
+		bats[i-2] = BATdescriptor(id);
+		if (!bats[i-2])
+			goto error;
+		bcnt += BATcount(bats[i-2]);
+		if (bats[i-2]->T->sorted != GDK_SORTED)
+			sorted = 0;
+	}
+	assert(bcnt == cnt);
+
+	res = MATproject_(map, bats, len );
+	if (sorted && res)
+		BATordered(BATmirror(res));
+error:
+	if (map) BBPunfix(map->batCacheid);
+	if (bats) {
+		for (i=0; i<len && bats[i]; i++)
+			BBPunfix(bats[i]->batCacheid);
+		GDKfree(bats);
+	}
+	if (res) {
+		BATsettrivprop(res);
+		BBPkeepref( *res_id = res->batCacheid);
+		return MAL_SUCCEED;
+	}
+	throw(SQL, "mat.project","Cannot access descriptor");
+}
+
+@= sort_any2
+static BAT*
+MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, int cnt_i1, BAT *i2, bte map_i2, int cnt_i2) 
+{
+	int c;
+	BUN val_i1 = BUNfirst(i1);
+	BUN val_i2 = BUNfirst(i2);
+	BUN end_i1 = val_i1 + cnt_i1;
+	BUN end_i2 = val_i2 + cnt_i2;
+	BATiter bi_i1 = bat_iterator(i1); 
+	BATiter bi_i2 = bat_iterator(i2);
+	int (*cmp) (ptr, ptr) = BATatoms[i1->ttype].atomCmp;
+	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2);
+
+	BATseqbase(res, 0);
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if ((c = cmp(BUNtail(bi_i1,val_i1),BUNtail(bi_i2,val_i2))) @2 0) {
+				BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
+				*map_res++ = 0;
+				val_i1++;
+			} else if (c @3 0) {
+				BUNappend(res, BUNtail(bi_i2,val_i2), FALSE);
+				*map_res++ = map_i2;
+				val_i2++;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
+			*map_res++ = 0;
+			val_i1++;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if ((c = cmp(BUNtail(bi_i1,val_i1),BUNtail(bi_i2,val_i2))) @2 0) {
+				BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
+				*map_res++ = *map_i1++;
+				val_i1++;
+			} else if (c @3 0) {
+				BUNappend(res, BUNtail(bi_i2,val_i2), FALSE);
+				*map_res++ = map_i2;
+				val_i2++;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
+			*map_res++ = *map_i1++;
+			val_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		BUNappend(res, BUNtail(bi_i2,val_i2), FALSE);
+		*map_res++ = map_i2;
+		val_i2++;
+	}
+	return res;
+}
+@c
+
+@:sort_any2(rev,>=,<)@
+@:sort_any2(,<=,>)@
+static BAT *
+MATsort_any( BAT **map, BAT **bats, unsigned int len, BUN cnt, int rev )
+{
+	BAT *res, *in;
+	BUN i;
+	bte *mapT;
+	int len1, len2;
+	bte *map_in = NULL;
+
+	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	BATseqbase(*map, 0);
+	mapT = (bte*)Tloc(*map, 0);
+	/* merge */
+	/* TODO: change into a tree version */
+	in = bats[0];
+	len1 = BATcount(in);
+	for (i=1; i<len; i++) {
+		len2 = BATcount(bats[i]);
+		if (rev) {
+			res = MATsortloop_rev( 
+				mapT+cnt-len1-len2, 
+		        	in, map_in, len1, 
+				bats[i], i, len2);
+		} else {
+			res = MATsortloop_( 
+				mapT+cnt-len1-len2, 
+		        	in, map_in, len1, 
+				bats[i], i, len2);
+		}
+		if (i != 1)
+			BBPunfix(in->batCacheid);
+		in = res;
+		map_in = mapT+cnt-len1-len2;
+		len1 += len2;
+	}
+	BATsetcount(*map, len1);
+	return res;
+}
+@c
+
+@= sort2
+static int
+MATsortloop_@1_@2( @1 *val_res, bte *map_res, @1 *val_i1, bte *map_i1, int cnt_i1, @1 *val_i2, bte map_i2, int cnt_i2 ) {
+
+	@1 *end_i1 = val_i1 + cnt_i1;
+	@1 *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 @3 *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 @4 *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 @3 *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 @4 *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+@c
+
+@= sort
+@:sort2(@1,rev,>=,<)@
+@:sort2(@1,,<=,>)@
+static BAT *
+MATsort_@1( BAT **map, BAT **bats, unsigned int len, BUN cnt, int rev )
+{
+	BAT *res;
+	BUN i;
+	@1 *resT, **batsT, *in;
+	bte *mapT;
+	int len1, len2;
+	bte *map_in = NULL;
+
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	BATseqbase(res, 0);
+	BATseqbase(*map, 0);
+	resT = (@1*)Tloc(res, 0);
+	mapT = (bte*)Tloc(*map, 0);
+	batsT = (@1**)GDKmalloc(sizeof(@1*) * len);
+	for (i=0; i<len; i++)
+		batsT[i] = (@1*)Tloc(bats[i], 0);
+	/* merge */
+	in = batsT[0];
+	len1 = BATcount(bats[0]);
+	map_in = NULL;
+	/* TODO: change into a tree version */
+	for (i=1; i<len; i++) {
+		len2 = BATcount(bats[i]);
+		if (rev) {
+			MATsortloop_@1_rev( resT+cnt-len1-len2, 
+					mapT+cnt-len1-len2, 
+				        in, map_in, len1, 
+					batsT[i], i, len2);
+		} else {
+			MATsortloop_@1_( resT+cnt-len1-len2, 
+					mapT+cnt-len1-len2, 
+				        in, map_in, len1, 
+					batsT[i], i, len2);
+		}
+		in = resT+cnt-len1-len2;
+		map_in = mapT+cnt-len1-len2;
+		len1 += len2;
+	}
+	BATsetcount(res, len1);
+	BATsetcount(*map, len1);
+	GDKfree(batsT);
+	return res;
+}
+@c
+@:sort(bte)@
+@:sort(sht)@
+@:sort(int)@
+@:sort(lng)@
+
+static str
+MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
+{
+	bat *res_id = (bat*) getArgReference(stk,pci,0); /* result sorted */
+	bat *map_id = (bat*) getArgReference(stk,pci,1); /* result map */
+	BAT *res = NULL, *map = NULL;
+	/* rest of the args are sorted parts, (excluding sorted and map) */
+	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 2);
+	BUN i, pcnt = 0; 
+	unsigned int len = pci->argc-2;
+
+	(void) cntxt; (void) mb; (void) stk; 
+	for (i=2; i<(unsigned int)pci->argc; i++) {
+		bat id = *(bat*) getArgReference(stk,pci,i);
+		bats[i-2] = BATdescriptor(id);
+		if (!bats[i-2])
+			goto error;
+		pcnt += BATcount(bats[i-2]);
+	}
+
+	if (ATOMstorage(bats[0]->ttype) <= TYPE_void) {
+		//error
+	} else if (ATOMstorage(bats[0]->ttype) <= TYPE_bte) {
+		res = MATsort_bte(&map, bats, len, pcnt, rev);
+	} else if (ATOMstorage(bats[0]->ttype) <= TYPE_sht) {
+		res = MATsort_sht(&map, bats, len, pcnt, rev);
+	} else if (ATOMstorage(bats[0]->ttype) <= TYPE_int) {
+		res = MATsort_int(&map, bats, len, pcnt, rev);
+	} else if (ATOMstorage(bats[0]->ttype) <= TYPE_lng) {
+		res = MATsort_lng(&map, bats, len, pcnt, rev);
+	} else {
+		res = MATsort_any(&map, bats, len, pcnt, rev);
+	}
+	if (res) 
+		res->T->nonil = MATnonil(bats, len);
+	if (res && rev)
+		res->T->sorted = GDK_SORTED_REV;
+error:
+	if (bats) {
+		for (i=0; i<len && bats[i]; i++)
+			BBPunfix(bats[i]->batCacheid);
+	}
+	GDKfree(bats);
+	if (map && res) {
+		map->tsorted = 0;
+		BBPkeepref( *map_id = map->batCacheid);
+		BBPkeepref( *res_id = res->batCacheid);
+		return MAL_SUCCEED;
+	}
+	if (map) BBPunfix(map->batCacheid);
+	throw(SQL, "mat.sortTail","Cannot access descriptor");
+}
+
+str
+MATsortTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return MATsort( cntxt, mb, stk, pci, 0);
+}
+
+str
+MATsortReverseTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return MATsort( cntxt, mb, stk, pci, 1);
+}
+
+str
+MATrefine_(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
+{
+	bat *rval_id = (bat*) getArgReference(stk,pci,0); /* result sorted */
+	bat *rmap_id = (bat*) getArgReference(stk,pci,1); /* result map */
+	bat val_id = *(bat*) getArgReference(stk,pci,2); /* sorted */
+	bat map_id = *(bat*) getArgReference(stk,pci,3); /* map */
+	BAT *res = NULL, *val = NULL, *map = NULL, *rmap = NULL, *r = NULL;
+	/* rest of the args are sorted parts, (excluding sorted and map) */
+	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 4);
+	BUN i, pcnt = 0; 
+	unsigned int len = pci->argc-4;
+
+	(void) cntxt; (void) mb; (void) stk; 
+	map = BATdescriptor(map_id);
+	val = BATdescriptor(val_id);
+	if (!map || !val)
+		goto error;
+	for (i=4; i<(unsigned int)pci->argc; i++) {
+		bat id = *(bat*) getArgReference(stk,pci,i);
+		bats[i-4] = BATdescriptor(id);
+		if (!bats[i-4])
+			goto error;
+		pcnt += BATcount(bats[i-4]);
+	}
+
+	res = MATproject_( map, bats, len); 
+	/* rmap = leftjoin(nres=refine(val, res), map); */
+	if (rev) {
+		rev = CTrefine_rev(&r, val, res); 
+	} else {
+		rev = CTrefine(&r, val, res); 
+	}
+	if (rev == GDK_SUCCEED) {
+		BAT *ores = res;
+		BAT *rr = BATmark(r, 0);
+		rmap = BATleftjoin(BATmirror(rr), map, BATcount(map));
+		res = BATmirror(BATmark(BATmirror(r), 0));
+		BBPunfix(ores->batCacheid);
+		BBPunfix(r->batCacheid);
+		BBPunfix(rr->batCacheid);
+	}
+error:
+	if (map)
+		BBPunfix(map->batCacheid);
+	if (val)
+		BBPunfix(val->batCacheid);
+	if (bats) {
+		for (i=0; i<len && bats[i]; i++)
+			BBPunfix(bats[i]->batCacheid);
+		GDKfree(bats);
+	}
+	if (rmap && res) {
+		BBPkeepref( *rmap_id = rmap->batCacheid);
+		BBPkeepref( *rval_id = res->batCacheid);
+		return MAL_SUCCEED;
+	}
+	if (rmap) BBPunfix(rmap->batCacheid);
+	if (res) BBPunfix(res->batCacheid);
+	throw(SQL, "mat.refine","Cannot access descriptor");
+}
+
+str
+MATrefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return MATrefine_( cntxt, mb, stk, pci, 0);
+}
+
+str
+MATrefineReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return MATrefine_( cntxt, mb, stk, pci, 1);
 }
 
 @}

@@ -100,6 +100,7 @@ typedef struct mvc {
 	int argc;
 	int argmax;
 	struct symbol *sym;
+	int point_query;	/* */
 
 	int user_id;
 	int role_id;
@@ -109,7 +110,7 @@ typedef struct mvc {
 	int timezone;		/* minutes west of UTC */
 	int cache;		/* some queries should not be cached ! */
 	int caching;		/* cache current query ? */
-	int history;	/* queries statistics are kept  */
+	int history;		/* queries statistics are kept  */
 	int reply_size;		/* reply size */ 
 	int debug;
 

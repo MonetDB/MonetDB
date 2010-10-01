@@ -599,6 +599,7 @@ opt_export int isMatJoinOp(InstrPtr q);
 opt_export int isMapOp(InstrPtr q);
 opt_export int isTopn(InstrPtr q);
 opt_export int isSlice(InstrPtr q);
+opt_export int isOrderby(InstrPtr q);
 opt_export int isDiffOp(InstrPtr q);
 opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 opt_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
@@ -1417,6 +1418,15 @@ int isTopn(InstrPtr p){
 int isSlice(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
 		getFunctionId(p) == sliceRef);
+}
+
+int isOrderby(InstrPtr p){
+	return ((getModuleId(p) == algebraRef && 
+		(getFunctionId(p) == sortTailRef ||
+		 getFunctionId(p) == sortReverseTailRef)) ||
+		(getModuleId(p) == groupRef && 
+		(getFunctionId(p) == refineRef ||
+		 getFunctionId(p) == refine_reverseRef)));
 }
 
 int isDiffOp(InstrPtr p){

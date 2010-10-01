@@ -44,27 +44,29 @@ Over..
 % int,	int # type
 % 1,	1 # length
 [ 2,	NULL	]
-[ NULL,	NULL	]
 [ 1,	NULL	]
-[ 1,	5	]
+[ NULL,	NULL	]
 [ 2,	5	]
+[ 1,	5	]
 [ NULL,	5	]
+[ 2,	6	]
 [ 1,	6	]
 [ NULL,	6	]
-[ 2,	6	]
+#select * from t3 order by id;
 % sys.t3,	sys.t3 # table_name
 % id,	val # name
 % int,	int # type
 % 1,	1 # length
-[ NULL,	NULL	]
-[ NULL,	6	]
 [ NULL,	5	]
-[ 1,	6	]
-[ 1,	5	]
+[ NULL,	6	]
+[ NULL,	NULL	]
 [ 1,	NULL	]
-[ 2,	5	]
-[ 2,	NULL	]
+[ 1,	5	]
+[ 1,	6	]
 [ 2,	6	]
+[ 2,	NULL	]
+[ 2,	5	]
+#select * from t3 order by val,id;
 % sys.t3,	sys.t3 # table_name
 % id,	val # name
 % int,	int # type
