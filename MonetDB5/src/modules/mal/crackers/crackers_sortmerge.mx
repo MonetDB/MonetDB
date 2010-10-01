@@ -936,7 +936,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 			BATmirror(BATorder(BATmirror(b)));
 			timeSort+=GDKusec()-t1;
 
-			if (BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0)
+			if (BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0) != 0)
 				throw(MAL, "crackers.sortmerge", "Cannot mmap BAT");
 			smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));
 			smNode->batId=b->batCacheid;
@@ -1394,7 +1394,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		b->batRestricted= BAT_WRITE;
 		BATmirror(BATorder(BATmirror(b)));
 
-		if (BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0)
+		if (BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0) != 0)
 			throw(MAL, "crackers.sortmerge", "Cannot mmap BAT");
 
 		smNode=(struct sortMergeNode *)GDKmalloc(sizeof(struct sortMergeNode));

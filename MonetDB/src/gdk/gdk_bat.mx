@@ -2503,34 +2503,42 @@ that are used when the BAT descriptor is saved.
 @{
 @c
 /* TODO niels: merge with BATsetmodes in gdk_storage */
-#define STORE_MODE(m,r,e,s) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e))||(s)==STORE_PRIV?STORE_PRIV:STORE_MMAP)
+#define STORE_MODE(m,r,e,s,f) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e)&&!(f))||(s)==STORE_PRIV?STORE_PRIV:STORE_MMAP)
 static void
-HEAPnewstorage(BAT *b)
+HEAPnewstorage(BAT *b, int force)
 {
 	int existing = (BBPstatus(b->batCacheid) & BBPEXISTING);
 	int brestrict = (b->batRestricted == BAT_WRITE);
 
 	if (b->batMaphead) {
-		b->H->heap.newstorage = STORE_MODE(b->batMaphead, brestrict, existing, b->H->heap.storage);
+		b->H->heap.newstorage = STORE_MODE(b->batMaphead, brestrict, existing, b->H->heap.storage, force);
+		if (force)
+			b->H->heap.forcemap = 1;
 	}
 	if (b->batMaptail) {
-		b->T->heap.newstorage = STORE_MODE(b->batMaptail, brestrict, existing, b->T->heap.storage);
+		b->T->heap.newstorage = STORE_MODE(b->batMaptail, brestrict, existing, b->T->heap.storage, force);
+		if (force)
+			b->T->heap.forcemap = 1;
 	}
 	if (b->H->vheap && b->batMaphheap) {
 		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		b->H->vheap->newstorage = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing, b->H->vheap->storage);
+		b->H->vheap->newstorage = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing, b->H->vheap->storage, force);
+		if (force)
+			b->H->vheap->forcemap = 1;
 	}
 	if (b->T->vheap && b->batMaptheap) {
 		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
-		b->T->vheap->newstorage = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing, b->T->vheap->storage);
+		b->T->vheap->newstorage = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing, b->T->vheap->storage, force);
+		if (force)
+			b->T->vheap->forcemap = 1;
 	}
 }
 
 int
-BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
+BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 {
 	BATcheck(b, "BATmmap");
-	IODEBUG THRprintf(GDKout, "#BATmmap(%s,%d,%d,%d,%d)\n", BATgetId(b), hb, tb, hhp, thp);
+	IODEBUG THRprintf(GDKout, "#BATmmap(%s,%d,%d,%d,%d%s)\n", BATgetId(b), hb, tb, hhp, thp, force ? ",force" : "");
 
 	/* Reverse back if required, as this determines which heap is saved in the 
 	 * "hheap" file and which in the "theap" file.
@@ -2548,7 +2556,7 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
 	b->batMaptail = tb;
 	b->batMaphheap = hhp;
 	b->batMaptheap = thp;
-	HEAPnewstorage(b);
+	HEAPnewstorage(b, force);
 	b->batDirtydesc = 1;
 	return 0;
 }

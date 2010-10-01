@@ -254,7 +254,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 	} else if (!isEbat(b)){
 		/* try to use mmap() */
 		if (BATcount(b)+BATcount(i) > (BUN) REMAP_PAGE_MAXSIZE) { 
-       			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+       			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
     		}
 		assert(b->T->heap.storage != STORE_PRIV);
 		BATappend(b, i, TRUE);
@@ -496,7 +496,7 @@ snapshot_new_persistent_bat(sql_trans *tr, sql_delta *bat)
 	if (BATcount(b) > SNAPSHOT_MINSIZE)
 		BATmode(b, PERSISTENT);
 	if (BATcount(b) > (BUN) REMAP_PAGE_MAXSIZE)
-       		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+       		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 	bat_destroy(b);
 	return ok;
 }
@@ -788,7 +788,7 @@ snapshot_create_del(sql_trans *tr, sql_table *t)
 	if (BATcount(b) > SNAPSHOT_MINSIZE) 
 		BATmode(b, PERSISTENT);
 	if (BATcount(b) > (BUN) REMAP_PAGE_MAXSIZE)
-       		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+       		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 	bat_destroy(b);
 	return LOG_OK;
 }
@@ -1137,7 +1137,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat)
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins)) {
 		if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
-       			BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+       			BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
     		}
 		assert(cur->T->heap.storage != STORE_PRIV);
 		BATappend(cur,ins,TRUE);
@@ -1320,7 +1320,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 				cur = newcur;
 			} else {
 				if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
-       					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+       					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
     				}
 				assert(cur->T->heap.storage != STORE_PRIV);
 				BATappend(cur,ins,TRUE);
@@ -1553,7 +1553,7 @@ tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 				bat_set_access(ins, BAT_READ);
 				BATmode(ins, PERSISTENT);
 				if (BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE)
-       					BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+       					BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 			}
 			if (cur)
 				bat_destroy(cur);

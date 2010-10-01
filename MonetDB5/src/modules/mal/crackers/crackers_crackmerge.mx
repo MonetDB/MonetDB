@@ -195,7 +195,7 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
 	current=CrackerIndex[m].smNode;
 	resTuplesLocal=0;
 	br=BATnew(TYPE_oid, bo->ttype,BATcount(bo)/10);
-	BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+	BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 	br->batRestricted= BAT_READ;
 	while(current!=NULL){
 
@@ -661,7 +661,7 @@ printf("\nsearch bounds \n");
 		oid endSlice,startSlice;
 	
 		br=BATnew(TYPE_oid, bo->ttype,BATcount(bo)/10);
-		BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+		BATmmap(br, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 0);
 		br->batRestricted= BAT_READ;
 
 		m = newCrackerIndexSlice_@1(*bid,br->batCacheid,1000000);
