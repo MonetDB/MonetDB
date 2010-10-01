@@ -567,14 +567,13 @@ MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *res = NULL, *map;
 	/* rest of the args are parts, (excluding result and map) */
 	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 2);
-	BUN i, cnt = 0, bcnt = 0; 
+	BUN i, bcnt = 0; 
 	unsigned int len = pci->argc-2, sorted = 1;
 
 	(void) cntxt; (void) mb; (void) stk; 
 	map = BATdescriptor(map_id);
 	if (!map)
 		goto error;
-	cnt = BATcount(map);
 	for (i=2; i<(unsigned int)pci->argc; i++) {
 		bat id = *(bat*) getArgReference(stk,pci,i);
 		bats[i-2] = BATdescriptor(id);
@@ -584,7 +583,7 @@ MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (bats[i-2]->T->sorted != GDK_SORTED)
 			sorted = 0;
 	}
-	assert(bcnt == cnt);
+	assert(bcnt == BATcount(map));
 
 	res = MATproject_(map, bats, len );
 	if (sorted && res)
