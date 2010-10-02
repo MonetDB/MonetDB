@@ -31,7 +31,7 @@ LIBS = {
 		profiler.mx const.mx attach.mx algebraExtensions.mx \
 		inspect.mx manual.mx pqueue.mx mkey.mx \
 		factories.mx groupby.mx mdb.mx  \
-		urlbox.mx mat.mx histogram.mx \
+		urlbox.mx histogram.mx \
 		sabaoth.mx remote.mx txtsim.mx recycle.mx \
 		cluster.mx trader.mx pma.mx \
 		tokenizer.mx zorder.mx
@@ -41,6 +41,17 @@ LIBS = {
                 $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+lib_mat = {
+	DIR = libdir/MonetDB5
+	SEP = _
+	SOURCES = mat.mx
+	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 ../kernel/lib_group $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
+                $(CLIENTS_LIBS) -lMapi \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+		$(LIBXML2_LIBS) $(ICONV_LIBS)
 }
 
 lib_batExtensions = {
