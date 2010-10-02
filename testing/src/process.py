@@ -60,7 +60,7 @@ def _delfiles():
 atexit.register(_delfiles)
 
 class _BufferedPipe:
-    def __init__(self, fd, waitfor = None):
+    def __init__(self, fd, waitfor = None, skip = None):
         self._pipe = fd
         self._queue = Queue.Queue()
         self._eof = False
@@ -69,36 +69,67 @@ class _BufferedPipe:
         else:
             self._wfq = None
         self._thread = threading.Thread(target = self._readerthread,
-                                        args = (fd, self._queue, waitfor, self._wfq))
+                                        args = (fd, self._queue, waitfor, self._wfq, skip))
         self._thread.setDaemon(True)
         self._thread.start()
 
-    def _readerthread(self, fh, queue, waitfor, wfq):
-        i = 0
+    def _readerthread(self, fh, queue, waitfor, wfq, skip):
+        # If `skip' has a value, don't pass it through the first time
+        # we encounter it.
+        # If `waitfor' has a value, put something into the wfq queue
+        # when we've seen it.
+        s = 0
+        w = 0
+        skipqueue = []
         while True:
-            c = fh.read(1)
-            if waitfor is not None and c:
-                if c == waitfor[i]:
-                    i += 1
-                    if i == len(waitfor):
+            if skipqueue:
+                c = skipqueue[0]
+                del skipqueue[0]
+            else:
+                c = fh.read(1)
+                if skip and c:
+                    if c == skip[s]:
+                        s += 1
+                        if s == len(skip):
+                            skip = None
+                    else:
+                        j = 0
+                        while j < s:
+                            if skip[j:s] + c != skip[:s-j+1]:
+                                skipqueue.append(skip[j])
+                                j += 1
+                            else:
+                                s = s-j+1
+                                break
+                        else:
+                            if c == skip[0]:
+                                s = 1
+                            else:
+                                skipqueue.append(c)
+                                s = 0
+                    continue
+            if waitfor and c:
+                if c == waitfor[w]:
+                    w += 1
+                    if w == len(waitfor):
                         waitfor = None
                         wfq.put('ready')
                         wfq = None
                 else:
                     j = 0
-                    while j < i:
-                        if waitfor[j:i] + c != waitfor[:i-j+1]:
+                    while j < w:
+                        if waitfor[j:w] + c != waitfor[:w-j+1]:
                             queue.put(waitfor[j])
                             j += 1
                         else:
-                            i = i-j+1
+                            w = w-j+1
                             break
                     else:
                         if c == waitfor[0]:
-                            i = 1
+                            w = 1
                         else:
                             queue.put(c)
-                            i = 0
+                            w = 0
                 continue
             queue.put(c)                # put '' if at EOF
             if not c:
@@ -392,12 +423,13 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
             # server is ready.  This is done by sending a print
             # command and waiting for the result to appear.
             rdy = '\nServer Ready.\n'
-            p.stdout = _BufferedPipe(p.stdout, rdy)
             if lang in ('mil', 'xquery'):
                 cmd = 'printf'
             else:
                 cmd = 'io.printf'
-            p.stdin.write('%s("%s");\n' % (cmd, rdy.replace('\n', '\\n')))
+            cmd = '%s("%s");\n' % (cmd, rdy.replace('\n', '\\n'))
+            p.stdout = _BufferedPipe(p.stdout, rdy, cmd)
+            p.stdin.write(cmd)
             p.stdin.flush()
             p.stdout._waitfor()
         else:
