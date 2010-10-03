@@ -21,30 +21,21 @@ function user.main():void;
     b := bat.new(:oid,:int);
     bat.append(b,1);
     bat.append(b,2);
+    bat.setPersistent(b,true);
     bat.save(b);
 #essential to flush to disk 
-    s := attach.location(b);
-    io.print(s);
-    c:bat[:oid,:int]  := attach.bind(s,2:lng);
-    io.print(c);
-    io.print(b);
+    bbp.commit(b);
+# to make entry visible for others 
+    fnme := attach.location(b);
+    io.print(fnme);
+    c:bat[:oid,:int]  := attach.bind(fnme);
+#io.print(c); 
+#io.print(b); 
 #z:= bat.info(b); io.print(z); 
 #z:= bat.info(c); io.print(z); 
+    bat.setPersistent(b,false);
 end main;
 [ "/ufs/mk/current//Linux/var/MonetDB5/dbfarm/mTests_src_modules_mal/bat/10/1061" ]
-symlink /ufs/mk/current//Linux/var/MonetDB5/dbfarm/mTests_src_modules_mal/bat/10/1061.tail ->bat/10/1062.tail
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  2	  ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  2	  ]
 
 # 11:25:03 >  
 # 11:25:03 >  Done.
