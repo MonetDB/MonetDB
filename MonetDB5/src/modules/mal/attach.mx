@@ -38,11 +38,11 @@ file structure itself.
 @mal
 module attach;
 
-pattern bind(nme:str,cnt:lng,low:oid,hgh:oid):bat[:any_1,:any_2]
+pattern bind(nme:str,low:oid,hgh:oid):bat[:any_1,:any_2]
 address ATTbindPartition
 comment "Find a cheap way to make a BAT partition accessible locally";
 
-pattern bind(nme:str,cnt:lng):bat[:any_1,:any_2]
+pattern bind(nme:str):bat[:any_1,:any_2]
 address ATTbind
 comment "Find a cheap way to make the BAT nme accessible locally";
 
@@ -71,7 +71,7 @@ comment "Locate the base of a particulat BAT in the dbfarm";
 
 attach_export str ATTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 attach_export str ATTbindPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-attach_export str ATTlocation(str *ret, int *bid);
+attach_export str ATTlocation(str *fnme, int *bid);
 #endif /* _ATTACH_H */
 @- Module initializaton
 @c
@@ -79,39 +79,6 @@ attach_export str ATTlocation(str *ret, int *bid);
 #include "attach.h"
 
 @- Operator implementation
-
-@= linkHeap
-	lstat(@3,&st);
-	GDKfilepath(path, BATDIR, BBP_physical(bn->batCacheid), "@4");
-	GDKcreatedir(path);
-	mnstr_printf( GDKerr,"#symlink %s ->%s\n",@3,path);
-	if (symlink(@3, path) < 0) {
-		msg = createException(MAL,"attach.bind","cannot link '%s' -> '%s'\n",path,@3);
-		HEAPfree(&bn->@1->@2);
-		GDKfree(bs);
-		return msg;
-	}
-	bn->@1->@2.free = bn->@1->@2.size = (size_t) st.st_size;
-	bn->@1->@2.storage = (bn->@1->@2.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
-	HEAPload(&bn->@1->@2, BBP_physical(bn->batCacheid), "@4", TRUE);
-
-@= linkvHeap
-	lstat(@2,&st);
-	GDKfilepath(path, BATDIR, BBP_physical(bn->batCacheid), "@3");
-	GDKcreatedir(path);
-	mnstr_printf( GDKerr,"#symlink %s ->%s\n",@2,path);
-	if (symlink(@2, path) < 0) {
-		msg = createException(MAL,"attach.bind","cannot link '%s' -> '%s'\n",path,@2);
-		HEAPfree(bn->@1->vheap);
-		GDKfree(bs);
-		return msg;
-	}
-	if (bn->@1->vheap == 0)
-		bn->@1->vheap = (Heap*) GDKzalloc(sizeof(Heap));
-	bn->@1->vheap->parentid = bn->batCacheid;
-	bn->@1->vheap->free = bn->@1->vheap->size = (size_t) st.st_size;
-	bn->@1->vheap->storage = (bn->@1->vheap->size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
-	HEAPload(bn->@1->vheap, BBP_physical(bn->batCacheid), "@3", TRUE);
 
 @c
 str
@@ -125,106 +92,17 @@ ATTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "attach.bind", "Not available on Windows");
 #else
 	int *ret = (int*) getArgReference(stk, pci, 0);
-	str nme = *(str*) getArgReference(stk, pci, 1);
-	BUN cap = 0, cnt = (BUN) *(lng*) getArgReference(stk, pci, 2);
-	char bufhead[BUFSIZ];
-	char buftail[BUFSIZ];
-	char bufhheap[BUFSIZ];
-	char buftheap[BUFSIZ];
-	char path[BUFSIZ];
-	int ht,tt;
-	BAT *bn = 0;
-	BATstore *bs;
-	struct stat st;
-	str msg= MAL_SUCCEED;
+	str fnme = *(str*) getArgReference(stk, pci, 1);
+	int bid;
 
 	(void) cntxt;
-	/* more protocols for the future */
-	if ( strncmp(nme,"file:/",6) ) {
-		// throw(MAL, "attach.bind", "Protocol unknown");
-	} else nme += 6;
-	
-	ht = getHeadType(getArgType(mb,pci,0));
-	tt = getTailType(getArgType(mb,pci,0));
-
-	snprintf(bufhead,BUFSIZ,"%s.head", nme);
-	if (ht != TYPE_void && lstat(bufhead, &st) < 0) {
-		if ( ht == TYPE_oid){
-			ht= TYPE_void;
-		} else{
-			IODEBUG{
-				mnstr_printf(GDKerr,"#attach.bind:Heap %s not found\n",nme);
-			}
-			throw(MAL,"attach.bind","head heap not found:%s",nme);
-		}
+	(void) mb;
+	bid = BBPimportEntry(fnme);
+	if (bid ){
+		BBPkeepref(*ret= bid);
+		return MAL_SUCCEED;
 	}
-
-	snprintf(buftail,BUFSIZ,"%s.tail", nme);
-	if (tt != TYPE_void && lstat(buftail, &st) < 0){
-		if ( ht == TYPE_oid){
-			tt= TYPE_void;
-		} else
-			throw(MAL,"attach.bind","tail heap not found");
-	}
-
-	bs =  BATcreatedesc(ht, tt, cnt);
-    if (bs == NULL)
-		throw(MAL,"attach.bind",MAL_MALLOC_FAIL);
-	bn = &bs->B;
-	BATsetdims(bn);
-	BATmode(bn, TRANSIENT);
-	bn->batCopiedtodisk = 1;
-	bn->hsorted = 0;
-	bn->tsorted = 0;
-
-	snprintf(bufhheap,BUFSIZ,"%s.hheap", nme);
-	if (ht != TYPE_void && bn->hvarsized && lstat(bufhheap, &st) < 0)
-		throw(MAL,"attach.bind","hhead heap not found");
-
-	snprintf(buftheap,BUFSIZ,"%s.theap", nme);
-	if (tt != TYPE_void && bn->tvarsized && lstat(buftheap, &st) < 0)
-		throw(MAL,"attach.bind","theap heap not found");
-
-	if (ht != TYPE_void ) {
-		@:linkHeap(H,heap,bufhead,head)@
-		cap = ((BUN) st.st_size / ATOMsize(ht));
-		if( cap){
-			/* strings may be variable with references.
-			   this may lead to underspecified capacity.
-			*/
-			BATsetcapacity(bn, cap<cnt? cnt:cap);
-			BATsetcount(bn, cnt);
-		}
-		if ( bn->tvarsized){
-			@:linkvHeap(T,bufhheap,hheap)@
-		}
-	} else {
-		bn->hseqbase = 0;
-		BATkey(bn, TRUE);
-	}
-	if (tt != TYPE_void ) {
-		@:linkHeap(T,heap,buftail,tail)@
-		cap = ((BUN) st.st_size / ATOMsize(tt));
-		if( cap){
-			BATsetcapacity(bn, cap<cnt? cnt:cap);
-			BATsetcount(bn, cnt);
-		}
-		if ( bn->tvarsized){
-			@:linkvHeap(T,buftheap,theap)@
-		}
-	} else {
-		bn->tseqbase = 0;
-		BATkey(BATmirror(bn), TRUE);
-	}
-    BBPcacheit(bs, 1);
-	BATsetaccess(bn, BAT_READ);
-    if (cap > 1) {
-        BATpropcheck(bn, BATPROPS_ALL);
-        BATpropcheck(BATmirror(bn), BATPROPS_ALL);
-	}
-
-	BBPkeepref(*ret= bn->batCacheid);
-	return MAL_SUCCEED;
+	throw(MAL, "attach.bind", INTERNAL_BAT_ACCESS);
 #endif
 }
 
@@ -240,8 +118,8 @@ ATTbindPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( msg == MAL_SUCCEED){
 		ret = getArgReference(stk,pci,0);
 		bid = *(int*) getArgReference(stk,pci,0);
-		low = (BUN) *(oid*) getArgReference(stk,pci,3);
-		hgh = (BUN) *(oid*) getArgReference(stk,pci,4);
+		low = (BUN) *(oid*) getArgReference(stk,pci,2);
+		hgh = (BUN) *(oid*) getArgReference(stk,pci,3);
 
 		if ((b = BATdescriptor(bid)) == NULL)
 			throw(MAL, "attach.bind", INTERNAL_BAT_ACCESS);
@@ -254,7 +132,7 @@ ATTbindPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str ATTlocation(str *ret, int *bid)
+str ATTlocation(str *fnme, int *bid)
 {
 	BAT *b = BBPquickdesc(*bid, FALSE);
 	char path[BUFSIZ], *s;
@@ -262,11 +140,11 @@ str ATTlocation(str *ret, int *bid)
 	if ( b == NULL )
 		throw(MAL,"attach.location",RUNTIME_OBJECT_UNDEFINED);
 
-	snprintf(path,BUFSIZ,"%s%c%s%c",GDKgetenv("gdk_dbfarm"),DIR_SEP,GDKgetenv("gdk_dbname"),DIR_SEP);
+	snprintf(path,BUFSIZ,"%s%c%s%c",GDKgetenv("gdk_dbfarm"),DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
 	GDKfilepath(path+strlen(path), BATDIR, ( b->T->heap.filename ? b->T->heap.filename: b->H->heap.filename), 0);
 	s= strrchr(path,'.');
 	if( s) *s = 0;
-	*ret = GDKstrdup(path);
+	*fnme = GDKstrdup(path);
 	return MAL_SUCCEED;
 }
 
