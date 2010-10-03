@@ -156,6 +156,9 @@ typedef enum mat_type {
 	mat_rdr = 5	/* Phase one of sorting, ie sorted the parts sofar */
 } mat_type;
 
+/* TODO have a seperate mat_variable list, ie old_var, mat instruction */
+/* including first or second result */
+
 typedef struct mat {
 	InstrPtr mi;	/* mat instruction */
 	InstrPtr mi1;	/* second result, mat instruction */
@@ -2247,6 +2250,14 @@ And the min/max is as easy
 			mtop = mat_sort(mb, p, mat, mtop, m);
 			actions++;
 			continue;
+		}
+		/* TODO: grp before sorting, isn't handled */
+		if (match == 1 && p->argc == 2 && isOrderby(p) &&
+		   (m=isMATalias(getArg(p,1), mat, mtop)) >=0 &&
+		   mat[m].type == mat_grp) {
+			assert(mat[m].mm); // should be packed 
+			error++;
+			goto fail;
 		}
 		if (match == 2 && p->argc == 3 && isOrderby(p) &&
 		   (m=isMATalias(getArg(p,1), mat, mtop)) >= 0 &&
