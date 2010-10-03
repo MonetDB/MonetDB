@@ -339,6 +339,9 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			}
 			if (f == binddbatRef) {
 				mode = getVarConstant(mb, getArg(p,4)).val.ival;
+			} else
+			if (f == bindidxRef ) {
+				cname = getVarConstant(mb, getArg(p,4)).val.sval;
 			} else {
 				cname = getVarConstant(mb, getArg(p,4)).val.sval;
 				mode = getVarConstant(mb, getArg(p,5)).val.ival;
@@ -361,6 +364,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					if ( ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc) 
 						varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 					cnt = BATcount(b);
+					BATsave(b); /* make sure it is visible elsewhere */
 					BBPreleaseref(b->batCacheid);
 				}
 				rows = (wrd) cnt;
@@ -384,6 +388,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						if ( ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc)
 							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
+						BATsave(b); /* make sure it is visible elsewhere */
 						BBPreleaseref(b->batCacheid);
 					}
 					rows = (wrd) cnt;
