@@ -61,6 +61,9 @@ comment "Enter a new bat into the bbp box.";
 pattern deposit(name:str,loc:str) :bat[:any_1,:any_2]
 address CMDbbpbindDefinition
 comment "Relate a logical name to a physical BAT in the buffer pool.";
+command commit(b:bat[:any_1,:any_2]):void 	
+address CMDbbpSubCommit
+comment "Commit updates for single BAT.";
 pattern commit():void 	
 address CMDbbpReleaseAll
 comment "Commit updates for this client.";
@@ -146,6 +149,9 @@ The following list of operations permits inspection of the
 buffer pool
 @}
 @mal
+command getIndex(b:bat[:any_1,:any_2]):int
+address CMDbbpgetIndex
+comment "Retrieve the index in the BBP";
 command getHeadType() :bat[:int,:str]		
 address CMDbbpHeadType
 comment "Map a BAT into its head type";
@@ -248,6 +254,7 @@ bbp_export str CMDbbprelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 bbp_export str CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpdestroyBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpdestroyBAT1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpSubCommit(int *ret, int *bid);
 bbp_export str CMDbbpReleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -268,6 +275,7 @@ bbp_export str CMDbbpStatus(int *ret);
 bbp_export str CMDbbpKind(int *ret);
 bbp_export str CMDbbpRefCount(int *ret);
 bbp_export str CMDbbpLRefCount(int *ret);
+bbp_export str CMDbbpgetIndex(int *res, int *bid);
 bbp_export str CMDgetBATrefcnt(int *res, int *bid);
 bbp_export str CMDgetBATlrefcnt(int *res, int *bid);
 bbp_export str CMDbbpcompress(int *ret, int *bid, str *fnme);
@@ -891,6 +899,17 @@ CMDbbpdestroyBAT1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+CMDbbpSubCommit(int *ret, int *bid)
+{
+	bat list[2];
+	list[0] = 0;	/* dummy */
+	list[1] = *bid;
+	BBPdir(2,list);
+	(void) ret;
+	return MAL_SUCCEED;
+}
+
+str
 CMDbbpReleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
@@ -1297,6 +1316,13 @@ CMDbbpLRefCount(int *ret)
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLRefCount");
 	@:Pseudo2(bbp,lrefcnt)@
+	return MAL_SUCCEED;
+}
+
+str
+CMDbbpgetIndex(int *res, int *bid)
+{
+	*res= *bid;
 	return MAL_SUCCEED;
 }
 
