@@ -69,6 +69,7 @@ stderr of test 'attach00` in directory 'src/modules/mal` itself:
 #warning: please don't forget to set your vault key!
 #(see /ufs/mk/current//Linux/etc/monetdb5.conf)
 
+
 # 11:25:03 >  
 # 11:25:03 >  Done.
 # 11:25:03 >  

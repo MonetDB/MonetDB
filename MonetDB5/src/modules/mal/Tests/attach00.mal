@@ -3,14 +3,17 @@
 b:= bat.new(:oid,:int);
 bat.append(b,1);
 bat.append(b,2);
+bat.setPersistent(b,true);
 bat.save(b); #essential to flush to disk
+bbp.commit(b); # to make entry visible for others
 
-s:= attach.location(b);
-io.print(s);
+fnme:= attach.location(b);
+io.print(fnme);
 
-c:bat[:oid,:int]:= attach.bind(s,2:lng);
-io.print(c);
-io.print(b);
+c:bat[:oid,:int]:= attach.bind(fnme);
+#io.print(c);
+#io.print(b);
 
 #z:= bat.info(b); io.print(z);
 #z:= bat.info(c); io.print(z);
+bat.setPersistent(b,false);
