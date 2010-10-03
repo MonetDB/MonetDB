@@ -432,8 +432,7 @@ address BKCpersists
 comment "Backward compatibility";
 command setPersistent( b:bat[:any_1,:any_2]) :void
 address BKCsetPersistent
-comment "Make the BAT persistent.  Returns boolean which indicates 
-        if the BAT administration has indeed changed.";
+comment "Make the BAT persistent.";
 
 command save(nme:bat[:any_1,:any_2]) :void
 address BKCsave2;
