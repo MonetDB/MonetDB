@@ -97,6 +97,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
 	size_t typewidth= 3 *sizeof(lng); /* 2 arguments and a result */
+	VarPtr loc= 0, rows = 0;
+	ValRecord vr;
 
 	(void)cntxt;
 	(void) stk;
@@ -215,12 +217,28 @@ The pieces to be used may be overruled by the octopus optimizer.
 			if (j+1 < pieces){
 				hgh.value.val.oval= low.value.val.oval+slice;
 				q= pushOid(mb,q,hgh.value.val.oval);
-			} else
+			} else{
+				hgh.value.val.oval= oid_nil;
 				q= pushNil(mb,q, TYPE_oid);
+			}
 
 			k= getArg(q,0)= newTmpVariable(mb,tpe);
 			setVarUDFtype(mb,k);
 			setVarUsed(mb,k);
+@-
+The target variable should inherit file location and row count for the tarantula.
+@c
+			loc = varGetProp(mb, getArg(p,0), fileProp);
+			if ( loc ){
+				memset((char*) &vr, 0, sizeof(vr));
+				varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, GDKstrdup(loc->value.val.sval)));
+			}
+			rows = varGetProp(mb, getArg(p,0), rowsProp);
+			if ( rows){
+				memset((char*) &vr, 0, sizeof(vr));
+				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows->value.val.wval));
+			}
+
 			if (getFunctionId(p) == binddbatRef) {
 				varSetProp(mb, k, PropertyIndex("tlb"), op_gte, (ptr) &low.value);
 				varSetProp(mb, k, PropertyIndex("tub"), op_lt, (ptr) &hgh.value);
