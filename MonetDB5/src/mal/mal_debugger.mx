@@ -1093,7 +1093,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 					while (fs != NULL) {
 						if (fcnname == NULL)
 							printSignature(out, fs, 0);
-						else if (strcmp(fcnname, getFcnName(fs->def)) == 0)
+						else if (fs->def && strcmp(fcnname, getFcnName(fs->def)) == 0)
 							printSignature(out, fs, 0);
 						fs = fs->peer;
 					}
