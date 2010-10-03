@@ -1,6 +1,5 @@
 import sys
 import os
-import time
 from MonetDBtesting import process
 
 def server():

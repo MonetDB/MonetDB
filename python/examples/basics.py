@@ -16,7 +16,6 @@
 # All Rights Reserved.
 
 import logging
-import time
 
 #configure the logger, so we can see what is happening
 logging.basicConfig(level=logging.DEBUG)
@@ -28,7 +27,7 @@ except ImportError:
     # running examples from development tree
     import sys
     import os
-    parent = os.path.join(sys.path[0], '..')
+    parent = os.path.join(sys.path[0], os.pardir)
     sys.path.append(parent)
     import monetdb.sql
 

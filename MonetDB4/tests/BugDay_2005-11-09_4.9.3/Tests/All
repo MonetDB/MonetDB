@@ -8,4 +8,3 @@ tcpip_rpc_hang.SF-1042381
 tcpip_rpc_crash_bat.SF-1049942
 append_bat_bat.SF-1054499
 tcpip_hangs_on_close.SF-1070569
-double_load_double_drop.SF-1082293

@@ -23,5 +23,5 @@ lib_m4store = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		bpm.mx 
+		bpm.c 
 }

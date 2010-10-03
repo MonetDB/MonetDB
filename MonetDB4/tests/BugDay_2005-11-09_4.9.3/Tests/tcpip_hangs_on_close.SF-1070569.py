@@ -1,4 +1,4 @@
-import os, time, sys
+import os, sys
 from MonetDBtesting import process
 
 def server_start(dbname):
@@ -54,7 +54,6 @@ def main():
     x = 0
     x += 1; srv1 = server_start("db" + str(x))
     x += 1; srv2 = server_start("db" + str(x))
-    time.sleep(1)                      # give servers time to start
 
     srv1.stdin.write(prelude_1)
     srv2.stdin.write(prelude_2)

@@ -348,6 +348,8 @@ copts.produceHelpMessage()
 					}
 				}
 			} else {
+				/* this returns everything, so including SYSTEM TABLE
+				 * constraints */
 				tbl = dbmd.getImportedKeys(null, null, null);
 				while (tbl.next()) {
 					// find FK table object
@@ -356,9 +358,10 @@ copts.produceHelpMessage()
 					// find PK table object
 					Table pk = Table.findTable(tbl.getString("PKTABLE_SCHEM") + "." + tbl.getString("PKTABLE_NAME"), tables);
 
-					// should not be possible to happen
+					// this happens when a system table has referential
+					// constraints
 					if (fk == null || pk == null)
-						throw new AssertionError("Illegal table; table not found in list");
+						continue;
 
 					// add PK table dependancy to FK table
 					fk.addDependancy(pk);

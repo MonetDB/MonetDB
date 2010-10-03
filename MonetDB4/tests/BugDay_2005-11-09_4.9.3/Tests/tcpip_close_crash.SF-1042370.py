@@ -1,4 +1,4 @@
-import os, time, sys
+import os, sys
 from MonetDBtesting import process
 
 def server_start(dbname):

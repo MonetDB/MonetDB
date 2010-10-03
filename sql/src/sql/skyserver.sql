@@ -36,3 +36,9 @@ BEGIN
                 ELSE RETURN ROUND(FLOOR(num), precision);
         END IF;
 END;
+
+CREATE FUNCTION MS_STR(num float, precision int, truncat int)
+RETURNS string
+BEGIN
+        RETURN CAST(num as string);
+END;

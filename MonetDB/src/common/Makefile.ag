@@ -19,7 +19,8 @@
 
 MTSAFE
 
-EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c stream_socket.h valgrind.h
+EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c \
+			 stream_socket.h valgrind.h
 
 lib_mutils = { 
 	NAME = mutils
@@ -39,4 +40,12 @@ headers_common = {
 	SOURCES = stream_socket.h \
 	          monet_utils.mx monet_options.mx monet_getopt.h \
 	          stream.mx dummy_gdk_utils.mx
+}
+
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-stream.pc.in \
+			  monetdb-mutils.pc.in
 }

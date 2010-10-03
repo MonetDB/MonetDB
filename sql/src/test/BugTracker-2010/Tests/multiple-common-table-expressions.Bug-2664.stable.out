@@ -21,15 +21,39 @@ Ready.
 
 Over..
 
-# 23:46:21 >  
-# 23:46:21 >  mclient -lsql -ftest -i -e --host=alf --port=39748 
-# 23:46:21 >  
+# 14:25:13 >  
+# 14:25:13 >  mclient -lsql -ftest -i -e --host=ottar --port=34782 
+# 14:25:13 >  
 
-#with t(id) as (select id from tables)
-#select id from tables 
+#CREATE TABLE "t2664" (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"schema_id"     INTEGER,
+#	"query"         VARCHAR(2048),
+#	"type"          SMALLINT,
+#	"system"        BOOLEAN,
+#	"commit_action" SMALLINT,
+#	"readonly"      BOOLEAN
+#);
+#COPY 30 RECORDS INTO "t2664" FROM stdin USING DELIMITERS '\t','\n','"';
+#2001	"schemas"	2000	NULL	0	true	0	false
+#2006	"types"	2000	NULL	0	true	0	false
+#2015	"functions"	2000	NULL	0	true	0	false
+#2024	"args"	2000	NULL	0	true	0	false
+#2032	"sequences"	2000	NULL	0	true	0	false
+#2042	"dependencies"	2000	NULL	0	true	0	false
+#2046	"connections"	2000	NULL	0	true	0	false
+#2055	"_tables"	2000	NULL	0	true	0	false
+#2064	"_columns"	2000	NULL	0	true	0	false
+#2075	"keys"	2000	NULL	0	true	0	false
+#2082	"idxs"	2000	NULL	0	true	0	fal
+[ 30	]
+#with t(id) as (select id from "t2664")
+#select id from "t2664" 
 # where id in (select id from t) 
-#   and id in (select id from t);
-% .tables # table_name
+#   and id in (select id from t)
+# order by id;
+% sys.t2664 # table_name
 % id # name
 % int # type
 % 4 # length
@@ -52,30 +76,22 @@ Over..
 [ 2131	]
 [ 2136	]
 [ 2147	]
-[ 5063	]
-[ 5073	]
-[ 5093	]
-[ 5101	]
-[ 5105	]
-[ 5108	]
-[ 5112	]
-[ 5225	]
-[ 5239	]
-[ 5256	]
-[ 5489	]
-[ 5496	]
-[ 5503	]
-[ 5510	]
-[ 5559	]
-[ 5604	]
-[ 5642	]
-[ 5800	]
-[ 5806	]
-[ 5829	]
-#with t(id) as (select id from tables),
-#     x(id) as (select id from tables where id in (select id from t))
-#select * from t;
-% .t # table_name
+[ 5039	]
+[ 5049	]
+[ 5069	]
+[ 5077	]
+[ 5081	]
+[ 5084	]
+[ 5088	]
+[ 5201	]
+[ 5215	]
+[ 5232	]
+[ 5465	]
+#with t(id) as (select id from "t2664"),
+#     x(id) as (select id from "t2664" where id in (select id from t))
+#select * from t
+#order by id;
+% sys.t # table_name
 % id # name
 % int # type
 % 4 # length
@@ -98,28 +114,20 @@ Over..
 [ 2131	]
 [ 2136	]
 [ 2147	]
-[ 5063	]
-[ 5073	]
-[ 5093	]
-[ 5101	]
-[ 5105	]
-[ 5108	]
-[ 5112	]
-[ 5225	]
-[ 5239	]
-[ 5256	]
-[ 5489	]
-[ 5496	]
-[ 5503	]
-[ 5510	]
-[ 5559	]
-[ 5604	]
-[ 5642	]
-[ 5800	]
-[ 5806	]
-[ 5829	]
+[ 5039	]
+[ 5049	]
+[ 5069	]
+[ 5077	]
+[ 5081	]
+[ 5084	]
+[ 5088	]
+[ 5201	]
+[ 5215	]
+[ 5232	]
+[ 5465	]
+#drop table "t2664";
 
-# 23:46:21 >  
-# 23:46:21 >  Done.
-# 23:46:21 >  
+# 14:25:13 >  
+# 14:25:13 >  Done.
+# 14:25:13 >  
 

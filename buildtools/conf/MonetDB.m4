@@ -196,6 +196,7 @@ if test "x$1" = "x"; then
 else
   MONETDB_REQUIRED_VERSION="$1"
 fi
+AC_SUBST(MONETDB_REQUIRED_VERSION)
 AC_ARG_WITH(monetdb,
 	AS_HELP_STRING([--with-monetdb=DIR], [MonetDB Common is installed in DIR]),
 	have_monetdb="$withval")
@@ -269,6 +270,7 @@ if test "x$1" = "x"; then
 else
   CLIENTS_REQUIRED_VERSION="$1"
 fi
+AC_SUBST(CLIENTS_REQUIRED_VERSION)
 AC_ARG_WITH(clients,
 	AS_HELP_STRING([--with-clients=DIR], [MonetDB Clients is installed in DIR]),
 	have_clients="$withval")
@@ -1173,11 +1175,414 @@ dnl following simple implementation for now.
 
 case $host in
 	*-solaris*)
-        dnl Solaris needs this to get msg_control and msg_controllen
+		dnl Solaris needs this to get msg_control and msg_controllen
 		AC_DEFINE(_XOPEN_SOURCE, 500, [for msg_control and msg_controllen])
 	;;
 esac
 ]) dnl AM_MONETDB_MSG_CONTROL
+
+AC_DEFUN([AM_MONETDB_PROG_FLEX],[
+
+	dnl Pathfinder's and MEL's lexer code do not work properly with flex 2.5.31;
+	dnl they work fine with both flex 2.5.4 and 2.5.33.
+	dnl To avoid any problems, we refuse to work with flex 2.5.31 "everywhre",
+	dnl not only with Pathfider & MEL.
+
+	AM_PROG_LEX()
+
+	dnl flex found on the system?
+	if test "x$LEX" != "x"; then
+
+		AC_MSG_CHECKING([for flex version])
+		flex_ver="`$LEX -V | head -n1`"
+		AC_MSG_RESULT($flex_ver)
+
+		case "$flex_ver" in
+			*2.5.31*)
+				AC_MSG_ERROR([MonetDB's lexer code does not work properly with flex 2.5.31;
+						please install/use flex 2.5.4 or flex >=2.5.33 instead.])
+				;;
+		esac
+
+	fi
+
+]) dnl AM_MONETDB_PROG_FLEX
+
+AC_DEFUN([AM_MONETDB_PROG_SWIG],[
+
+	AC_ARG_WITH(swig,
+		AS_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
+		SWIG="$withval",
+		SWIG=swig)
+
+	case "$SWIG" in
+		yes|auto)
+			SWIG=swig
+			;;
+	esac
+
+	case "$SWIG" in
+		no) ;;
+		/*)
+			AC_MSG_CHECKING(whether $SWIG exists and is executable)
+			if test -x "$SWIG"; then
+				AC_MSG_RESULT(yes)
+			else
+				AC_MSG_RESULT(no)
+				SWIG=no
+			fi
+			;;
+		*)  AC_PATH_PROG(SWIG,$SWIG,no,$PATH);;
+	esac
+
+	if test "x$SWIG" != xno; then
+		# we want the right version...
+		req_swig_ver="1.3.20"
+		AC_MSG_CHECKING(whether $SWIG is >= $req_swig_ver)
+		swig_ver="`"$SWIG" -version 2>&1 | grep Version | sed -e 's|^[[^0-9]]*||' -e 's|[[^0-9]]*$||'`"
+		if test MONETDB_VERSION_TO_NUMBER(echo $swig_ver) -ge MONETDB_VERSION_TO_NUMBER(echo $req_swig_ver); then
+			AC_MSG_RESULT(yes: $swig_ver)
+		else
+			AC_MSG_RESULT(no: $swig_ver)
+			SWIG=no
+		fi
+	fi
+
+	if test "x$SWIG" != xno; then
+		# ...and it must support -outdir
+		AC_MSG_CHECKING(whether $SWIG supports "-outdir")
+		case `$SWIG -help 2>&1` in
+			*-outdir*)
+				AC_MSG_RESULT(yes)
+				;;
+			*)
+				AC_MSG_RESULT(no)
+				SWIG=no
+				;;
+		esac
+	fi
+	AC_SUBST(SWIG)
+	AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
+
+]) dnl AM_MONETDB_PROG_SWIG
+
+AC_DEFUN([AM_MONETDB_PROG_PYTHON],[
+
+	have_python=auto
+	PYTHON=python
+
+	AC_ARG_WITH(python,
+		AS_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
+		have_python="$withval")
+
+	case "$have_python" in
+		yes|no|auto) ;;
+		*)
+			PYTHON="$have_python"
+			have_python=yes
+			;;
+	esac
+
+	if test "x$have_python" != xno; then
+		if test x$cross_compiling != xyes; then
+			AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
+			if test "x$PYTHON" = xno; then
+				if test "x$have_python" != xauto; then
+					AC_MSG_ERROR([No Python executable found])
+				fi
+				have_python=no
+			fi
+		fi
+	fi
+
+	if test "x$have_python" != xno; then
+		have_python_libdir=auto
+
+		AC_ARG_WITH(python-libdir,
+			AS_HELP_STRING([--with-python-libdir=DIR],
+				[relative path for Python library directory (where Python modules should be installed)]),
+			have_python_libdir="$withval")
+
+		case "$have_python_libdir" in
+			yes|auto)
+				if test x$cross_compiling = xyes; then
+					AC_MSG_ERROR([Must specify --with-python-libdir when cross compiling])
+				fi
+				case "$host_os-`"$PYTHON" -V 2>&1`" in
+					darwin9*-*2.5.1)
+						PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
+					*)
+						PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
+				esac
+				;;
+			no)	;;
+			$Qprefix/*) dnl dubious
+				PYTHON_LIBDIR=`echo "$have_python_libdir" | sed "s|^$Qprefix/||"`
+				have_python_libdir=yes
+				;;
+			*)	PYTHON_LIBDIR="$have_python_libdir"
+				have_python_libdir=yes
+				;;
+		esac
+	else
+		# no Python implies no Python libraries
+		have_python_libdir=no
+		PYTHON_LIBDIR=""
+		# and no interpreter
+		PYTHON=`type -P false`
+	fi
+
+	AC_SUBST(PYTHON)
+	AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
+	AC_SUBST(PYTHON_LIBDIR)
+
+]) dnl AM_MONETDB_PROG_PYTHON
+
+AC_DEFUN([AM_MONETDB_PROG_PERL],[
+
+	have_perl=auto
+	PERL=perl
+	PERL_INCS=
+	PERL_LIBS=
+	AC_ARG_WITH(perl,
+		AS_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
+		have_perl="$withval")
+
+	case "$have_perl" in
+		yes|no|auto) ;;
+		*)
+			PERL="$have_perl"
+			have_perl=yes
+			;;
+	esac
+
+	if test "x$have_perl" != xno; then
+		if test x$cross_compiling != xyes; then
+			AC_PATH_PROG(PERL,$PERL,no,$PATH)
+			if test "x$PERL" = xno; then
+				if test "x$have_perl" != xauto; then
+					AC_MSG_ERROR([No Perl executable found])
+				fi
+				have_perl=no
+			fi
+		fi
+	fi
+
+	if test "x$have_perl" != xno; then
+		have_perl_incdir=auto
+		AC_ARG_WITH(perl-incdir,
+			AS_HELP_STRING([--with-perl-incdir=DIR],
+				[Perl include directory]),
+			have_perl_incdir="$withval")
+		case "$have_perl_incdir" in
+			yes|auto)
+				if test x$cross_compiling = xyes; then
+					AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+				fi
+				PERL_INCS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
+				;;
+			no)	;;
+			*)
+				PERL_INCS="$have_perl_incdir"
+				have_perl_incdir=yes
+				;;
+		esac
+
+		if test "x$have_perl_incdir" != xno; then
+			PERL_INCS="-I$PERL_INCS"
+			save_CPPFLAGS="$CPPFLAGS"
+			CPPFLAGS="$CPPFLAGS $PERL_INCS"
+			AC_CHECK_HEADER(perl.h, :, [
+				if test "x$have_perl_incdir" = xyes; then
+					AC_MSG_ERROR([No perl.h found, is Perl installed properly?]);
+				fi;
+				have_perl_incdir=no
+			], [#include <EXTERN.h>])
+			CPPFLAGS="$save_CPPFLAGS"
+		fi
+
+		have_perl_library=auto
+		AC_ARG_WITH(perl-library,
+			AS_HELP_STRING([--with-perl-library=DIR],
+				[Perl library directory (where -lperl can be found)]),
+			have_perl_library="$withval")
+		case "$have_perl_library" in
+			yes|auto)
+				if test x$cross_compiling = xyes; then
+					AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+				fi
+				PERL_LIBS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
+				;;
+			no)	;;
+			*)
+				PERL_LIBS="$have_perl_library"
+				have_perl_library=yes
+				;;
+		esac
+
+		if test "x$have_perl_library" != xno; then
+			PERL_LIBS="-L$PERL_LIBS -lperl"
+		fi
+
+		have_perl_libdir=auto
+		AC_ARG_WITH(perl-libdir,
+			AS_HELP_STRING([--with-perl-libdir=DIR],
+				[relative path for Perl library directory (where Perl modules should be installed)]),
+			have_perl_libdir="$withval")
+
+		case "$have_perl_libdir" in
+			yes|auto)
+				if test x$cross_compiling = xyes; then
+					AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
+				fi
+				PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
+				;;
+			no)	;;
+			*)
+				PERL_LIBDIR="$have_perl_libdir"
+				have_perl_libdir=yes
+				;;
+		esac
+	else
+		# no Perl implies no Perl includes or libraries
+		have_perl_incdir=no
+		have_perl_libdir=no
+		# and no interpreter
+		PERL=`type -P false`
+	fi
+
+	if test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno; then
+		save_CPPFLAGS="$CPPFLAGS"
+		save_LIBS="$LIBS"
+		CPPFLAGS="$CPPFLAGS $PERL_INCS"
+		LIBS="$LIBS $PERL_LIBS"
+		AC_MSG_CHECKING([whether we can compile with Perl])
+		AC_TRY_LINK([#include <EXTERN.h>
+#include <perl.h>], [], [AC_MSG_RESULT(yes)],
+			[ AC_MSG_RESULT(no); if test "x$have_perl_incdir" != xauto -o "x$have_perl_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Perl]); fi; have_perl_incdir=no have_perl_libdir=no ])
+		CPPFLAGS="$save_CPPFLAGS"
+		LIBS="$save_LIBS"
+	fi
+
+	AC_SUBST(PERL)
+	AM_CONDITIONAL(HAVE_PERL, test x"$have_perl" != xno)
+	AC_SUBST(PERL_INCS)
+	AC_SUBST(PERL_LIBS)
+	AC_SUBST(PERL_LIBDIR)
+	AM_CONDITIONAL(HAVE_PERL_DEVEL, test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
+
+]) dnl AM_MONETDB_PROG_PERL
+
+AC_DEFUN([AM_MONETDB_PROG_RUBY],[
+
+	RUBY=ruby
+	have_rubygem_dir=auto
+	AC_ARG_WITH(rubygem-dir,
+		AS_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
+		have_rubygem_dir="$withval")
+
+	case "$have_rubygem_dir" in
+		yes|no|auto) ;;
+		*)
+			RUBY_DIR="$have_rubygem_dir"
+			;;
+	esac
+
+	case "$have_rubygem_dir" in
+		yes|auto)
+			AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
+			if test "x$RUBY" = xno; then
+				if test "x$have_rubygem_dir" != xauto; then
+					AC_MSG_ERROR([No Ruby executable found, specify --with-rubygem-dir explicitly])
+				fi
+				have_rubygem_dir=no
+			else
+				d=`which "$RUBY"`
+				d=`dirname "$d"`
+				d=`dirname "$d"`
+				RUBY_DIR=`$RUBY -rubygems -e 'puts Gem::dir' 2>/dev/null | sed "s|^$d/||"`
+			fi
+			;;
+		no) ;;
+		*)
+			RUBY_DIR=$have_rubygem_dir
+			;;
+	esac
+	AC_SUBST(RUBY_DIR)
+
+	RUBYGEM=gem
+	have_rubygem=auto
+	AC_ARG_WITH(rubygem,
+		AS_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
+		have_rubygem="$withval")
+
+	case "$have_rubygem" in
+		yes|no|auto)
+			;;
+		*)
+			RUBYGEM="$have_rubygem"
+			have_rubygem=yes
+			;;
+	esac
+
+	if test "x$have_rubygem" != xno; then
+		AC_PATH_PROG(RUBYGEM,$RUBYGEM,no,$PATH)
+		if test "x$RUBYGEM" = xno; then
+			if test "x$have_rubygem" != xauto; then
+				AC_MSG_ERROR([No rubygem executable found])
+			fi
+			have_rubygem=no
+		fi
+	fi
+	AC_SUBST(RUBYGEM)
+	AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
+
+]) dnl AM_MONETDB_PROG_RUBY
+
+AC_DEFUN([AM_MONETDB_TYPES],[
+
+	AC_TYPE_SIZE_T
+	AC_CHECK_TYPES([ptrdiff_t, ssize_t],,,[#include <stddef.h>
+#include <sys/types.h>])
+	AC_CHECK_TYPES([__int64, long long])
+	case $host_os in
+		*mingw*)
+			AC_DEFINE([LLFMT],["%I64d"],[Format to print 64 bit signed integers.])
+			AC_DEFINE([ULLFMT],["%I64u"],[Format to print 64 bit unsigned integers.])
+			;;
+		*)
+			AC_DEFINE([LLFMT],["%lld"],[Format to print 64 bit signed integers.])
+			AC_DEFINE([ULLFMT],["%llu"],[Format to print 64 bit unsigned integers.])
+			;;
+	esac
+	AC_CHECK_SIZEOF(char)
+	AC_CHECK_SIZEOF(short)
+	AC_CHECK_SIZEOF(int)
+	AC_CHECK_SIZEOF(long)
+	AC_CHECK_SIZEOF(void *)
+	AC_CHECK_SIZEOF(size_t)
+	AC_CHECK_SIZEOF(ssize_t,,[#include <stddef.h>
+#include <sys/types.h>])
+	AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
+#include <sys/types.h>])
+	AC_CHECK_SIZEOF(long long)
+	AC_CHECK_SIZEOF(__int64)
+	AC_C_CHAR_UNSIGNED
+
+]) dnl AM_MONETDB_TYPES
+
+AC_DEFUN([AM_MONETDB_FUNC_GETOPT],[
+
+	dnl check for getopt in standard library
+	AC_CHECK_HEADERS([getopt.h])
+	AC_CHECK_FUNCS(getopt_long , need_getopt=, need_getopt=getopt; need_getopt=getopt1)
+	if test x$need_getopt = xgetopt; then
+		AC_LIBOBJ(getopt)
+	elif test x$need_getopt = xgetopt1; then
+		AC_LIBOBJ(getopt1)
+	fi
+
+]) dnl AM_MONETDB_FUNC_GETOPT
 
 AC_DEFUN([AM_MONETDB_TOOLS],[
 
@@ -1203,41 +1608,15 @@ AM_PROG_LIBTOOL()
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS([alloca.h getopt.h netdb.h sys/types.h sys/times.h])
+AC_CHECK_HEADERS([alloca.h netdb.h sys/types.h sys/times.h])
 AC_CHECK_HEADERS([sys/mman.h]) dnl gdk_posix.mx
 
 AC_SYS_LARGEFILE()
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
-AC_TYPE_SIZE_T
 AC_TYPE_SIGNAL()
-AC_CHECK_TYPES([ptrdiff_t, ssize_t],,,[#include <stddef.h>
-#include <sys/types.h>])
-AC_CHECK_TYPES([__int64, long long])
-case $host_os in
-*mingw*)
-	AC_DEFINE([LLFMT],["%I64d"],[Format to print 64 bit signed integers.])
-	AC_DEFINE([ULLFMT],["%I64u"],[Format to print 64 bit unsigned integers.])
-	;;
-*)
-	AC_DEFINE([LLFMT],["%lld"],[Format to print 64 bit signed integers.])
-	AC_DEFINE([ULLFMT],["%llu"],[Format to print 64 bit unsigned integers.])
-	;;
-esac
-AC_CHECK_SIZEOF(char)
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(void *)
-AC_CHECK_SIZEOF(size_t)
-AC_CHECK_SIZEOF(ssize_t,,[#include <stddef.h>
-#include <sys/types.h>])
-AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
-#include <sys/types.h>])
-AC_CHECK_SIZEOF(long long)
-AC_CHECK_SIZEOF(__int64)
-AC_C_CHAR_UNSIGNED
+AM_MONETDB_TYPES()
 
 # Checks for library functions.
 AC_CHECK_FUNCS([ftruncate gettimeofday opendir sysconf times])
@@ -1245,13 +1624,6 @@ AC_CHECK_FUNCS([madvise posix_fadvise posix_madvise]) dnl gdk_posix.mx
 AC_FUNC_FSEEKO()
 
 dnl AC_PROG_CC_STDC()
-if test -f "$srcdir"/vertoo.data; then
-AM_PROG_LEX()
-AC_PROG_YACC()
-else
-LEX=''
-YACC=''
-fi
 AC_PROG_LN_S()
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
@@ -1308,315 +1680,21 @@ AC_DEFINE_UNQUOTED([SO_EXT], "$SOEXT", [Shared Object extension])
 AC_C_CONST()
 AC_C_INLINE()
 
-dnl Pathfinder's and MEL's lexer code do not work properly with flex 2.5.31;
-dnl they work fine with both flex 2.5.4 and 2.5.33.
-dnl To avoid any problems, we refuse to work with flex 2.5.31 "everywhre",
-dnl not only with Pathfider & MEL.
-
-if test "x$LEX" != "x"; then    dnl flex found on the system?
-
-AC_MSG_CHECKING([for flex version])
-flex_ver="`$LEX -V | head -n1`"
-AC_MSG_RESULT($flex_ver)
-
-case "$flex_ver" in
-*2.5.31*)
-  AC_MSG_ERROR([MonetDB's lexer code does not work properly with flex 2.5.31;
-               please install/use flex 2.5.4 or flex 2.5.33 instead.])
-esac
-
-fi   dnl flex found on the system?
-
+AM_MONETDB_PROG_PERL()
+AM_MONETDB_PROG_RUBY()
 if test -f "$srcdir"/vertoo.data; then
-        AC_ARG_WITH(swig,
-                AS_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
-                SWIG="$withval",
-                SWIG=swig)
-        case "$SWIG" in
-        yes|auto)
-          SWIG=swig;;
-        esac
-        case "$SWIG" in
-        no) ;;
-        /*) AC_MSG_CHECKING(whether $SWIG exists and is executable)
-            if test -x "$SWIG"; then
-              AC_MSG_RESULT(yes)
-            else
-              AC_MSG_RESULT(no)
-              SWIG=no
-            fi;;
-        *)  AC_PATH_PROG(SWIG,$SWIG,no,$PATH);;
-        esac
-        if test "x$SWIG" != xno; then
-          # we want the right version...
-          req_swig_ver="1.3.20"
-          AC_MSG_CHECKING(whether $SWIG is >= $req_swig_ver)
-          swig_ver="`"$SWIG" -version 2>&1 | grep Version | sed -e 's|^[[^0-9]]*||' -e 's|[[^0-9]]*$||'`"
-          if test MONETDB_VERSION_TO_NUMBER(echo $swig_ver) -ge MONETDB_VERSION_TO_NUMBER(echo $req_swig_ver); then
-              AC_MSG_RESULT(yes: $swig_ver)
-          else
-              AC_MSG_RESULT(no: $swig_ver)
-              SWIG=no
-          fi
-        fi
-        if test "x$SWIG" != xno; then
-          # ...and it must support -outdir
-          AC_MSG_CHECKING(whether $SWIG supports "-outdir")
-          case `$SWIG -help 2>&1` in
-          *-outdir*) 
-              AC_MSG_RESULT(yes);;
-          *)  AC_MSG_RESULT(no)
-              SWIG=no;;
-          esac
-        fi
-        AC_SUBST(SWIG)
-        AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
-else
-        AM_CONDITIONAL(HAVE_SWIG, false)
-fi
+	AM_MONETDB_PROG_FLEX()
+	AC_PROG_YACC()
+	AM_MONETDB_PROG_PYTHON()
+	AM_MONETDB_PROG_SWIG()
 
-have_python=auto
-PYTHON=python
-AC_ARG_WITH(python,
-	AS_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	have_python="$withval")
-case "$have_python" in
-yes|no|auto)
-	;;
-*)
-	PYTHON="$have_python"
-	have_python=yes
-	;;
-esac
-if test "x$have_python" != xno; then
-	if test x$cross_compiling != xyes; then
-		AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
-		if test "x$PYTHON" = xno; then
-			if test "x$have_python" != xauto; then
-				AC_MSG_ERROR([No Python executable found])
-			fi
-			have_python=no
-		fi
-	fi
-fi
-if test "x$have_python" != xno; then
-	have_python_libdir=auto
-	AC_ARG_WITH(python-libdir,
-		AS_HELP_STRING([--with-python-libdir=DIR],
-			[relative path for Python library directory (where Python modules should be installed)]),
-		have_python_libdir="$withval")
-	case "$have_python_libdir" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-python-libdir when cross compiling])
-		fi
-		case "$host_os-`"$PYTHON" -V 2>&1`" in
-		darwin9*-*2.5.1)
-			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
-		*)
-			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
-		esac
-		;;
-	no)	;;
-	$Qprefix/*)
-		PYTHON_LIBDIR=`echo "$have_python_libdir" | sed "s|^$Qprefix/||"`
-		have_python_libdir=yes
-		;;
-	*)	PYTHON_LIBDIR="$have_python_libdir"
-		have_python_libdir=yes
-		;;
-	esac
-else
-	# no Python implies no Python libraries
-	have_python_libdir=no
-fi
-AC_SUBST(PYTHON)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
-AC_SUBST(PYTHON_LIBDIR)
-
-have_perl=auto
-PERL=perl
-PERL_INCS=
-PERL_LIBS=
-AC_ARG_WITH(perl,
-	AS_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
-	have_perl="$withval")
-case "$have_perl" in
-yes|no|auto)
-	;;
-*)
-	PERL="$have_perl"
-	have_perl=yes
-	;;
-esac
-if test "x$have_perl" != xno; then
-	if test x$cross_compiling != xyes; then
-		AC_PATH_PROG(PERL,$PERL,no,$PATH)
-		if test "x$PERL" = xno; then
-			if test "x$have_perl" != xauto; then
-				AC_MSG_ERROR([No Perl executable found])
-			fi
-			have_perl=no
-		fi
-	fi
-fi
-if test "x$have_perl" != xno; then
-	have_perl_incdir=auto
-	AC_ARG_WITH(perl-incdir,
-		AS_HELP_STRING([--with-perl-incdir=DIR],
-			[Perl include directory]),
-		have_perl_incdir="$withval")
-	case "$have_perl_incdir" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
-		fi
-		PERL_INCS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
-		;;
-	no)	;;
-	*)	PERL_INCS="$have_perl_incdir"
-		have_perl_incdir=yes
-		;;
-	esac
-	if test "x$have_perl_incdir" != xno; then
-		PERL_INCS="-I$PERL_INCS"
-		save_CPPFLAGS="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $PERL_INCS"
-		AC_CHECK_HEADER(perl.h, :, [
-			if test "x$have_perl_incdir" = xyes; then
-				AC_MSG_ERROR([No perl.h found, is Perl installed properly?]);
-			fi;
-			have_perl_incdir=no
-		])
-        	CPPFLAGS="$save_CPPFLAGS"
-        fi
-
-	have_perl_library=auto
-	AC_ARG_WITH(perl-library,
-		AS_HELP_STRING([--with-perl-library=DIR],
-			[Perl library directory (where -lperl can be found)]),
-		have_perl_library="$withval")
-	case "$have_perl_library" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
-		fi
-		PERL_LIBS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
-		;;
-	no)	;;
-	*)	PERL_LIBS="$have_perl_library"
-		have_perl_library=yes
-		;;
-	esac
-	if test "x$have_perl_library" != xno; then
-		PERL_LIBS="-L$PERL_LIBS -lperl"
-	fi
-
-	have_perl_libdir=auto
-	AC_ARG_WITH(perl-libdir,
-		AS_HELP_STRING([--with-perl-libdir=DIR],
-			[relative path for Perl library directory (where Perl modules should be installed)]),
-		have_perl_libdir="$withval")
-	case "$have_perl_libdir" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
-		fi
-		PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
-		;;
-	no)	;;
-	*)	PERL_LIBDIR="$have_perl_libdir"
-		have_perl_libdir=yes
-		;;
-	esac
-else
-	# no Perl implies no Perl includes or libraries
-	have_perl_incdir=no
-	have_perl_libdir=no
-fi
-if test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LIBS="$LIBS"
-	CPPFLAGS="$CPPFLAGS $PERL_INCS"
-	LIBS="$LIBS $PERL_LIBS"
-	AC_MSG_CHECKING([whether we can compile with Perl])
-	AC_TRY_LINK([#include <EXTERN.h>
-#include <perl.h>], [], [AC_MSG_RESULT(yes)],
-		[ AC_MSG_RESULT(no); if test "x$have_perl_incdir" != xauto -o "x$have_perl_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Perl]); fi; have_perl_incdir=no have_perl_libdir=no ])
-	CPPFLAGS="$save_CPPFLAGS"
-	LIBS="$save_LIBS"
-fi
-AC_SUBST(PERL)
-AM_CONDITIONAL(HAVE_PERL, test x"$have_perl" != xno)
-AC_SUBST(PERL_INCS)
-AC_SUBST(PERL_LIBS)
-AC_SUBST(PERL_LIBDIR)
-AM_CONDITIONAL(HAVE_PERL_DEVEL, test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
-if test -f "$srcdir"/vertoo.data; then
 	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno -a x"$SWIG" != xno)
 else
+	LEX=''
+	YACC=''
+	AM_CONDITIONAL(HAVE_SWIG, false)
 	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
 fi
-
-RUBY=ruby
-have_rubygem_dir=auto
-AC_ARG_WITH(rubygem-dir,
-	AS_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
-	have_rubygem_dir="$withval")
-case "$have_rubygem_dir" in
-yes|no|auto)
-	;;
-*)
-	RUBY_DIR="$have_rubygem_dir"
-	;;
-esac
-case "$have_rubygem_dir" in
-yes|auto)
-	AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
-	if test "x$RUBY" = xno; then
-		if test "x$have_rubygem_dir" != xauto; then
-			AC_MSG_ERROR([No Ruby executable found, specify --with-rubygem-dir explicitly])
-		fi
-		have_rubygem_dir=no
-	else
-		d=`which "$RUBY"`
-		d=`dirname "$d"`
-		d=`dirname "$d"`
-		RUBY_DIR=`$RUBY -rubygems -e 'puts Gem::dir' 2>/dev/null | sed "s|^$d/||"`
-	fi
-	;;
-no)
-	;;
-*)
-	RUBY_DIR=$have_rubygem_dir
-	;;
-esac
-AC_SUBST(RUBY_DIR)
-
-RUBYGEM=gem
-have_rubygem=auto
-AC_ARG_WITH(rubygem,
-	AS_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
-	have_rubygem="$withval")
-case "$have_rubygem" in
-yes|no|auto)
-	;;
-*)
-	RUBYGEM="$have_rubygem"
-	have_rubygem=yes
-	;;
-esac
-if test "x$have_rubygem" != xno; then
-	AC_PATH_PROG(RUBYGEM,$RUBYGEM,no,$PATH)
-	if test "x$RUBYGEM" = xno; then
-		if test "x$have_rubygem" != xauto; then
-			AC_MSG_ERROR([No Ruby gem executable found])
-		fi
-		have_rubygem=no
-	fi
-fi
-AC_SUBST(RUBYGEM)
-AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
 
 
 dnl to shut up automake (.m files are used for mel not for objc)
@@ -1681,61 +1759,95 @@ AM_MONETDB_TRANSLATEPATH()
 dnl --enable-noexpand
 AC_ARG_ENABLE(noexpand,
 	AS_HELP_STRING([--enable-noexpand],
-		[do not expand the comma-separated list of MIL types given as argument, or "all" if no expansion should be done (default=)]),
+		[do not expand the comma-separated list of GDK types given as argument, or "all" if no expansion should be done (default=)]),
 	enable_noexpand=$enableval,
 	enable_noexpand=)
+
+AC_MSG_CHECKING([for --enable-noexpand])
+noexpand=
 case $enable_noexpand in
 bat|bat,*|*,bat|*,bat,*|all)
-	AC_DEFINE(NOEXPAND_BAT, 1, [Define if you don't want to expand the bat type]);;
+	AC_DEFINE(NOEXPAND_BAT, 1, [Define if you don't want to expand the bat type])
+	noexpand="$noexpand bat"
+	;;
 esac
 case $enable_noexpand in
 bit|bit,*|*,bit|*,bit,*|all)
-	AC_DEFINE(NOEXPAND_BIT, 1, [Define if you don't want to expand the bit type]);;
+	AC_DEFINE(NOEXPAND_BIT, 1, [Define if you don't want to expand the bit type])
+	noexpand="$noexpand bit"
+	;;
 esac
 case $enable_noexpand in
 bte|bte,*|*,bte|*,bte,*|all)
-	AC_DEFINE(NOEXPAND_BTE, 1, [Define if you don't want to expand the bte type]);;
+	AC_DEFINE(NOEXPAND_BTE, 1, [Define if you don't want to expand the bte type])
+	noexpand="$noexpand bte"
+	;;
 esac
 case $enable_noexpand in
 chr|chr,*|*,chr|*,chr,*|all)
-	AC_DEFINE(NOEXPAND_CHR, 1, [Define if you don't want to expand the chr type]);;
+	AC_DEFINE(NOEXPAND_CHR, 1, [Define if you don't want to expand the chr type])
+	noexpand="$noexpand chr"
+	;;
 esac
 case $enable_noexpand in
 dbl|dbl,*|*,dbl|*,dbl,*|all)
-	AC_DEFINE(NOEXPAND_DBL, 1, [Define if you don't want to expand the dbl type]);;
+	AC_DEFINE(NOEXPAND_DBL, 1, [Define if you don't want to expand the dbl type])
+	noexpand="$noexpand dbl"
+	;;
 esac
 case $enable_noexpand in
 flt|flt,*|*,flt|*,flt,*|all)
-	AC_DEFINE(NOEXPAND_FLT, 1, [Define if you don't want to expand the flt type]);;
+	AC_DEFINE(NOEXPAND_FLT, 1, [Define if you don't want to expand the flt type])
+	noexpand="$noexpand flt"
+	;;
 esac
 case $enable_noexpand in
 int|int,*|*,int|*,int,*|all)
-	AC_DEFINE(NOEXPAND_INT, 1, [Define if you don't want to expand the int type]);;
+	AC_DEFINE(NOEXPAND_INT, 1, [Define if you don't want to expand the int type])
+	noexpand="$noexpand int"
+	;;
 esac
 case $enable_noexpand in
 lng|lng,*|*,lng|*,lng,*|all)
-	AC_DEFINE(NOEXPAND_LNG, 1, [Define if you don't want to expand the lng type]);;
+	AC_DEFINE(NOEXPAND_LNG, 1, [Define if you don't want to expand the lng type])
+	noexpand="$noexpand lng"
+	;;
 esac
 case $enable_noexpand in
 oid|oid,*|*,oid|*,oid,*|all)
-	AC_DEFINE(NOEXPAND_OID, 1, [Define if you don't want to expand the oid type]);;
+	AC_DEFINE(NOEXPAND_OID, 1, [Define if you don't want to expand the oid type])
+	noexpand="$noexpand oid"
+	;;
 esac
 case $enable_noexpand in
 ptr|ptr,*|*,ptr|*,ptr,*|all)
-	AC_DEFINE(NOEXPAND_PTR, 1, [Define if you don't want to expand the ptr type]);;
+	AC_DEFINE(NOEXPAND_PTR, 1, [Define if you don't want to expand the ptr type])
+	noexpand="$noexpand ptr"
+	;;
 esac
 case $enable_noexpand in
 sht|sht,*|*,sht|*,sht,*|all)
-	AC_DEFINE(NOEXPAND_SHT, 1, [Define if you don't want to expand the sht type]);;
+	AC_DEFINE(NOEXPAND_SHT, 1, [Define if you don't want to expand the sht type])
+	noexpand="$noexpand sht"
+	;;
 esac
 case $enable_noexpand in
 str|str,*|*,str|*,str,*|all)
-	AC_DEFINE(NOEXPAND_STR, 1, [Define if you don't want to expand the str type]);;
+	AC_DEFINE(NOEXPAND_STR, 1, [Define if you don't want to expand the str type])
+	noexpand="$noexpand str"
+	;;
 esac
 case $enable_noexpand in
 wrd|wrd,*|*,wrd|*,wrd,*|all)
-	AC_DEFINE(NOEXPAND_WRD, 1, [Define if you don't want to expand the wrd type]);;
+	AC_DEFINE(NOEXPAND_WRD, 1, [Define if you don't want to expand the wrd type])
+	noexpand="$noexpand wrd"
+	;;
 esac
+if test -z "$noexpand" ; then
+	AC_MSG_RESULT([none])
+else
+	AC_MSG_RESULT([$noexpand])
+fi
 
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
@@ -1743,6 +1855,9 @@ AC_ARG_ENABLE(debug,
 		[enable full debugging (default=$dft_debug)]),
 	enable_debug=$enableval,
 	enable_debug=$dft_debug)
+
+AC_MSG_CHECKING([for --enable-debug])
+origCFLAGS=$CFLAGS
 if test "x$enable_debug" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -1772,14 +1887,36 @@ elif test "x$enable_debug" = xno; then
     JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
 fi
 
+changedCFLAGS=
+for flag in $origCFLAGS ; do
+	case " $CFLAGS " in
+		*" $flag "*) ;;
+		*) changedCFLAGS="$changedCFLAGS, removed $flag";;
+	esac
+done
+for flag in $CFLAGS $SUN_NOOPT_CFLAGS ; do
+	case " $origCFLAGS " in
+		*" $flag "*) ;;
+		*) changedCFLAGS="$changedCFLAGS, added $flag";;
+	esac
+done
+changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
+AC_MSG_RESULT([$enable_debug: $changedCFLAGS])
+AC_SUBST(SUN_NOOPT_CFLAGS)
+
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
 	AS_HELP_STRING([--enable-assert],
 		[enable assertions in the code (default=$dft_assert)]),
 	enable_assert=$enableval,
 	enable_assert=$dft_assert)
+
+AC_MSG_CHECKING([for --enable-assert])
 if test "x$enable_assert" = xno; then
-  AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
+	AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
+	AC_MSG_RESULT([no])
+else
+	AC_MSG_RESULT([yes])
 fi
 
 dnl --enable-optimize
@@ -1787,6 +1924,8 @@ AC_ARG_ENABLE(optimize,
 	AS_HELP_STRING([--enable-optimize],
 		[enable extra optimization (default=$dft_optimi)]),
 	enable_optim=$enableval, enable_optim=$dft_optimi)
+
+AC_MSG_CHECKING([for --enable-optimize])
 if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
@@ -1795,6 +1934,7 @@ if test "x$enable_optim" = xyes; then
   elif test "x$enable_instrument" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
   else
+	origCFLAGS="$CFLAGS"
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
     CFLAGS=" $CFLAGS "
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
@@ -1932,7 +2072,24 @@ if test "x$enable_optim" = xyes; then
                        ;;
       esac   
     fi
+	changedCFLAGS=
+	for flag in $origCFLAGS ; do
+		case " $CFLAGS " in
+			*" $flag "*) ;;
+			*) changedCFLAGS="$changedCFLAGS, removed $flag";;
+		esac
+	done
+	for flag in $CFLAGS ; do
+		case " $origCFLAGS " in
+			*" $flag "*) ;;
+			*) changedCFLAGS="$changedCFLAGS, added $flag";;
+		esac
+	done
+	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
+	AC_MSG_RESULT([yes: $changedCFLAGS])
   fi
+else
+	AC_MSG_RESULT([no])
 fi
 AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
@@ -1942,7 +2099,6 @@ AC_SUBST(ICC_BISONFLAGS)
 AC_SUBST(GCC_SWIG_CFLAGS)
 AC_SUBST(ICC_SWIG_CFLAGS)
 AC_SUBST(SUN_NOERR_CFLAGS)
-AC_SUBST(SUN_NOOPT_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,
@@ -1950,6 +2106,8 @@ AC_ARG_ENABLE(warning,
 		[enable extended compiler warnings (default=$dft_warning)]),
 	enable_warning=$enableval,
 	enable_warning=$dft_warning)
+
+AC_MSG_CHECKING([for --enable-warning])
 if test "x$enable_warning" = xyes; then
   dnl  Basically, we disable/overule X_CFLAGS, i.e., "-Werror" and some "-Wno-*".
   dnl  All warnings should be on by default (see above).
@@ -1963,6 +2121,9 @@ if test "x$enable_warning" = xyes; then
 	X_CFLAGS=""
 	;;
   esac
+  AC_MSG_RESULT([yes: ${X_CFLAGS}])
+else
+  AC_MSG_RESULT([no])
 fi
 
 dnl --enable-profile
@@ -1971,6 +2132,8 @@ AC_ARG_ENABLE(profile,
 	AS_HELP_STRING([--enable-profile], [enable profiling (default=no)]),
 	enable_prof=$enableval,
 	enable_prof=no)
+
+AC_MSG_CHECKING([for --enable-profile])
 if test "x$enable_prof" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
@@ -1979,8 +2142,13 @@ if test "x$enable_prof" = xyes; then
     need_profiling=yes
     if test "x$GCC" = xyes; then
       CFLAGS="$CFLAGS -pg"
+	  AC_MSG_RESULT([yes: -pg])
+    else
+	  AC_MSG_RESULT([no])
     fi
   fi
+else
+  AC_MSG_RESULT([no])
 fi
 AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
 
@@ -1991,6 +2159,8 @@ AC_ARG_ENABLE(instrument,
 		[enable instrument (default=no)]),
 	enable_instrument=$enableval,
 	enable_instrument=no)
+
+AC_MSG_CHECKING([for --enable-instrument])
 if test "x$enable_instrument" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
@@ -1999,312 +2169,548 @@ if test "x$enable_instrument" = xyes; then
     need_instrument=yes
     if test "x$GCC" = xyes; then
       CFLAGS="$CFLAGS -finstrument-functions -g"
+	  AC_MSG_RESULT([yes: -finstrument-functions -g])
+    else
+	  AC_MSG_RESULT([no])
     fi
   fi
+else
+  AC_MSG_RESULT([no])
 fi
 
 dnl static or shared linking
 SHARED_LIBS=''
-[
-if [ "$enable_static" = "yes" ]; then
+AC_MSG_CHECKING([for --enable-static])
+if test "$enable_static" = "yes" ; then
 	CFLAGS="$CFLAGS -DMONETDB_STATIC"
 	SHARED_LIBS='$(STATIC_LIBS) $(smallTOC_SHARED_LIBS) $(largeTOC_SHARED_LIBS)'
 	case "$host_os" in
-	aix*)	
-		if test "x$GCC" = xyes; then
-			LDFLAGS="$LDFLAGS -Xlinker"
-		fi
-		LDFLAGS="$LDFLAGS -bbigtoc"
-		;;
-	irix*)
-		if test "x$GCC" != xyes; then
-			SHARED_LIBS="$SHARED_LIBS -lm"
-		fi
-		;;
+		aix*)	
+			if test "x$GCC" = xyes; then
+				LDFLAGS="$LDFLAGS -Xlinker"
+			fi
+			LDFLAGS="$LDFLAGS -bbigtoc"
+			;;
+		irix*)
+			if test "x$GCC" != xyes; then
+				SHARED_LIBS="$SHARED_LIBS -lm"
+			fi
+			;;
 	esac
+	AC_MSG_RESULT([yes])
 else
 	case "$host_os" in
-	aix*)	LDFLAGS="$LDFLAGS -Wl,-brtl";;
+		aix*)	LDFLAGS="$LDFLAGS -Wl,-brtl";;
 	esac
+	AC_MSG_RESULT([no])
 fi
-]
 AC_SUBST(SHARED_LIBS)
 AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
 ]) dnl AC_DEFUN AM_MONETDB_OPTIONS
 
-AC_DEFUN([AM_MONETDB_LIBS],
-[
-dnl libpthread
-have_pthread=auto
-PTHREAD_LIBS=""
-PTHREAD_INCS=""
-PTHREAD_EXTRA=""
-AC_ARG_WITH(pthread,
-	AS_HELP_STRING([--with-pthread=DIR],
-		[pthread library is installed in DIR]), 
-	have_pthread="$withval")
-case "$have_pthread" in
-yes|no|auto)
-	;;
-*)
-	PTHREAD_LIBS="-L$withval/lib"
-	PTHREAD_INCS="-I$withval/include"
-	;;
-esac
-case $host_os in
-*mingw*)
-	PTHREAD_EXTRA="-D_DDL"
-	;;
-esac
-if test "x$have_pthread" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
+AC_DEFUN([AM_MONETDB_LIB_PTHREAD],[
 
-case $host_os in
-*mingw*)
-	CPPFLAGS="$CPPFLAGS $PTHREAD_INCS/pthread $PTHREAD_EXTRA"
-	AC_CHECK_HEADER(pthread.h,[AC_DEFINE(HAVE_PTHREAD_H, 1,
-                        [Define if you have the pthread.h])
-			AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
-			PTHREAD_INCS="$PTHREAD_INCS/pthread"]) 
-	;;
-*)
-	CPPFLAGS="$save_CPPFLAGS $PTHREAD_INCS $PTHREAD_EXTRA"
-	AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
-	;;
-esac
-	CPPFLAGS="$save_CPPFLAGS"
-
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $PTHREAD_LIBS"
-	AC_CHECK_LIB(pthreadGC2, sem_init,
-		pthread=pthreadGC2 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC2",
-		AC_CHECK_LIB(pthreadGC1, sem_init,
-			pthread=pthreadGC1 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC1",
-			AC_CHECK_LIB(pthreadGC, sem_init,
-				pthread=pthreadGC PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC",
-				AC_CHECK_LIB(pthread, sem_init, 
-					pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread", 
-					dnl sun
-					AC_CHECK_LIB(pthread, sem_post,
-						pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
-						dnl hp-ux
-						AC_CHECK_LIB(pthread, sem_wait, 
-							pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt",
-							[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
-																										"-lrt"),
-					"-lposix4")))))
-	AC_CHECK_LIB($pthread, pthread_kill,
-		AC_DEFINE(HAVE_PTHREAD_KILL, 1,
-			[Define if you have the pthread_kill function]))
-	AC_CHECK_LIB($pthread, pthread_sigmask,
-		AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
-			[Define if you have the pthread_sigmask function]))
-	AC_CHECK_LIB($pthread, pthread_kill_other_threads_np,
-		AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1,
-			[Define if you have the pthread_kill_other_threads_np function]))
-	AC_CHECK_LIB($pthread, pthread_setschedprio,
-		AC_DEFINE(HAVE_PTHREAD_SETSCHEDPRIO, 1,
-			[Define if you have the pthread_setschedprio function]))
-	LIBS="$save_LIBS"
-	CPPFLAGS="$save_CPPFLAGS"
-
-fi
-if test "x$have_pthread" != xno; then
-	AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library])
-	PTHREAD_INCS="$PTHREAD_INCS $PTHREAD_EXTRA"
-	dnl CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
-else
+	dnl libpthread
+	have_pthread=auto
 	PTHREAD_LIBS=""
 	PTHREAD_INCS=""
-fi
-AC_SUBST(PTHREAD_LIBS)
-AC_SUBST(PTHREAD_INCS)
+	PTHREAD_EXTRA=""
+	AC_ARG_WITH(pthread,
+		AS_HELP_STRING([--with-pthread=DIR],
+			[pthread library is installed in DIR]), 
+		have_pthread="$withval")
 
-dnl libreadline
-have_readline=auto
-READLINE_LIBS=""
-READLINE_INCS=""
-AC_ARG_WITH(readline,
-	AS_HELP_STRING([--with-readline=DIR],
-		[readline library is installed in DIR]), 
-	have_readline="$withval")
-case "$have_readline" in
-yes|no|auto)
-	;;
-*)
-	READLINE_LIBS="-L$have_readline/lib"
-	READLINE_INCS="-I$have_readline/include"
-	;;
-esac
-save_LIBS="$LIBS"
-LIBS="$LIBS $READLINE_LIBS"
-save_CPPFLAGS="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS $READLINE_INCS"
-if test "x$have_readline" != xno; then
-	dnl use different functions in the cascade of AC_CHECK_LIB
-	dnl calls since configure may cache the results
-	AC_CHECK_HEADER(readline/readline.h,
-		AC_CHECK_LIB(readline, readline,
-			READLINE_LIBS="$READLINE_LIBS -lreadline",
-			[ AC_CHECK_LIB(readline, rl_history_search_forward,
-				READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap",
-				[ AC_CHECK_LIB(readline, rl_reverse_search_history,
-					READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses",
-					[ if test "x$have_readline" = xyes; then
-						AC_MSG_ERROR([readline library not found])
-					  fi; have_readline=no ],
-					-lncurses)],
-				-ltermcap)],
-			),
-		[ if test "x$have_readline" = xyes; then
-			AC_MSG_ERROR([readline header file not found])
-		  fi; have_readline=no ])
-fi
-if test "x$have_readline" != xno; then
-	dnl provide an ACTION-IF-FOUND, or else all subsequent checks
-	dnl that involve linking will fail!
-	AC_CHECK_LIB(readline, rl_completion_matches,
-		[AC_MSG_CHECKING([whether rl_completion_func_t exists])
-		 AC_TRY_COMPILE([$ac_includes_default
-#include <readline/readline.h>],[
-	rl_completion_func_t *func = NULL;],
-			[AC_MSG_RESULT([yes])],
-			[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?]); else AC_MSG_RESULT([no]); fi; have_readline=no ])],
-		[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
-	      $READLINE_LIBS)
-fi
-CPPFLAGS="$save_CPPFLAGS"
-LIBS="$save_LIBS"
-if test "x$have_readline" != xno; then
-	AC_DEFINE(HAVE_LIBREADLINE, 1,
-		[Define if you have the readline library])
-else
+	case "$have_pthread" in
+	yes|no|auto)
+		;;
+	*)
+		PTHREAD_LIBS="-L$withval/lib"
+		PTHREAD_INCS="-I$withval/include"
+		;;
+	esac
+
+	if test "x$have_pthread" != xno; then
+
+		save_CPPFLAGS="$CPPFLAGS"
+		case $host_os in
+			*mingw*)
+				PTHREAD_EXTRA="-D_DDL"
+				CPPFLAGS="$CPPFLAGS $PTHREAD_INCS/pthread $PTHREAD_EXTRA"
+				AC_CHECK_HEADER(pthread.h,[AC_DEFINE(HAVE_PTHREAD_H, 1,
+									[Define if you have the pthread.h])
+						AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
+						PTHREAD_INCS="$PTHREAD_INCS/pthread"]) 
+				;;
+			*)
+				CPPFLAGS="$CPPFLAGS $PTHREAD_INCS $PTHREAD_EXTRA"
+				AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
+				;;
+		esac
+		CPPFLAGS="$save_CPPFLAGS"
+
+		save_LIBS="$LIBS"
+		case $GCC in
+			yes)
+				# use GCC's knowledge about the target platform, sets flags
+				# for both the preprocessor as well as the linker
+				PTHREAD_INCS="$PTHREAD_INCS -pthread"
+				PTHREAD_LIBS="$PTHREAD_LIBS -pthread"
+				CPPFLAGS="$CPPFLAGS -pthread"
+				LIBS="$LIBS -pthread"
+			;;
+			*)
+				# ok, do old-fashioned stuff
+				LIBS="$LIBS $PTHREAD_LIBS" # in case user did --with-pthreads
+				pthread_found=yes
+				AC_SEARCH_LIBS([sem_init], [pthreadGC2 pthreadGC1 pthreadGC pthread],
+					[PTHREAD_LIBS="$PTHREAD_LIBS $ac_cv_search_sem_init"],
+					[pthread_found=no])
+				if test x"$pthread_found" = xno ; then
+					pthread_found=yes
+					dnl sun
+					AC_SEARCH_LIBS([sem_post], [pthread],
+						[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4"],
+						[pthread_found=no],
+						"-lposix4")
+				fi
+				if test x"$pthread_found" = xno ; then
+					pthread_found=yes
+					dnl hp-ux
+					AC_SEARCH_LIBS([sem_post], [pthread],
+						[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt"],
+						[pthread_found=no],
+						"-lrt")
+				fi
+				if test x"$pthread_found" = xno ; then
+					if test "x$have_pthread" != xauto ; then
+						AC_MSG_ERROR([pthread library not found])
+					fi
+					have_pthread=no
+				fi
+			;;
+		esac
+
+		AC_SEARCH_LIBS(pthread_kill, , 
+			AC_DEFINE(HAVE_PTHREAD_KILL, 1,
+				[Define if you have the pthread_kill function]))
+		AC_SEARCH_LIBS(pthread_sigmask, , 
+			AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
+				[Define if you have the pthread_sigmask function]))
+		AC_SEARCH_LIBS(pthread_kill_other_threads_np, , 
+			AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1,
+				[Define if you have the pthread_kill_other_threads_np function]))
+		AC_SEARCH_LIBS(pthread_setschedprio, , 
+			AC_DEFINE(HAVE_PTHREAD_SETSCHEDPRIO, 1,
+				[Define if you have the pthread_setschedprio function]))
+		LIBS="$save_LIBS"
+		CPPFLAGS="$save_CPPFLAGS"
+
+	fi
+	AC_MSG_CHECKING([whether we have pthread support])
+	if test "x$have_pthread" != xno; then
+		AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library])
+		PTHREAD_INCS="$PTHREAD_INCS $PTHREAD_EXTRA"
+		dnl CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
+		AC_MSG_RESULT([yes: $PTHREAD_INCS $PTHREAD_LIBS])
+	else
+		PTHREAD_LIBS=""
+		PTHREAD_INCS=""
+		AC_MSG_RESULT([no])
+	fi
+	AC_SUBST(PTHREAD_LIBS)
+	AC_SUBST(PTHREAD_INCS)
+
+]) dnl AM_MONETDB_LIB_PTHREAD
+
+AC_DEFUN([AM_MONETDB_LIB_READLINE],[
+
+	dnl libreadline
+	have_readline=auto
 	READLINE_LIBS=""
 	READLINE_INCS=""
-fi
-AC_SUBST(READLINE_LIBS)
-AC_SUBST(READLINE_INCS)
+	AC_ARG_WITH(readline,
+		AS_HELP_STRING([--with-readline=DIR],
+			[readline library is installed in DIR]), 
+		have_readline="$withval")
 
-dnl OpenSSL
-dnl change "auto" in the next line to "no" to disable OpenSSL by default
-have_openssl=auto
-OPENSSL_LIBS=""
-OPENSSL_INCS=""
-AC_ARG_WITH(openssl,
-	AS_HELP_STRING([--with-openssl=DIR],
-		[OpenSSL library is installed in DIR]), 
-	have_openssl="$withval")
-case "$have_openssl" in
-yes|no|auto)
-	;;
-*)
-	OPENSSL_LIBS="-L$withval/lib"
-	OPENSSL_INCS="-I$withval/include"
-	;;
-esac
-if test "x$have_openssl" != xno; then
+	case "$have_readline" in
+		yes|no|auto) ;;
+		*)
+			READLINE_LIBS="-L$have_readline/lib"
+			READLINE_INCS="-I$have_readline/include"
+			;;
+	esac
+
 	save_LIBS="$LIBS"
-	LIBS="$LIBS $OPENSSL_LIBS"
-	AC_CHECK_LIB(ssl, SSL_read,
-		OPENSSL_LIBS="$OPENSSL_LIBS -lssl",
-		[ why_no_openssl="OpenSSL library not found"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ],
-		[-lcrypto])
-	dnl on some systems, -lcrypto needs to be passed as well
-	AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
+	LIBS="$LIBS $READLINE_LIBS"
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $READLINE_INCS"
+	if test "x$have_readline" != xno; then
+		dnl use different functions in the cascade of AC_CHECK_LIB
+		dnl calls since configure may cache the results
+		AC_CHECK_HEADER(readline/readline.h,
+			AC_CHECK_LIB(readline, readline,
+				READLINE_LIBS="$READLINE_LIBS -lreadline",
+				[ AC_CHECK_LIB(readline, rl_history_search_forward,
+					READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap",
+					[ AC_CHECK_LIB(readline, rl_reverse_search_history,
+						READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses",
+						[ if test "x$have_readline" = xyes; then
+							AC_MSG_ERROR([readline library not found])
+						  fi; have_readline=no ],
+						-lncurses)],
+					-ltermcap)],
+				),
+			[ if test "x$have_readline" = xyes; then
+				AC_MSG_ERROR([readline header file not found])
+			  fi; have_readline=no ])
+	fi
+
+	if test "x$have_readline" != xno; then
+		dnl provide an ACTION-IF-FOUND, or else all subsequent checks
+		dnl that involve linking will fail!
+		AC_CHECK_LIB(readline, rl_completion_matches,
+			[AC_MSG_CHECKING([whether rl_completion_func_t exists])
+			 AC_TRY_COMPILE([$ac_includes_default
+#include <readline/readline.h>],[
+		rl_completion_func_t *func = NULL;],
+				[AC_MSG_RESULT([yes])],
+				[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?]); else AC_MSG_RESULT([no]); fi; have_readline=no ])],
+			[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
+			  $READLINE_LIBS)
+	fi
+	CPPFLAGS="$save_CPPFLAGS"
 	LIBS="$save_LIBS"
-else
-	why_no_openssl="configure called with --with-openssl=no"
-fi
-save_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS $OPENSSL_INCS"
-if test "x$have_openssl" != xno; then
-	AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), , [
-		save_CPPFLAGS="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
-		AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
-			AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
-			[ why_no_openssl="OpenSSL library not usable"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ])
-		CPPFLAGS="$save_CPPFLAGS"])
-fi
-if test "x$have_openssl" != xno; then
-	dnl SHA-2 is implemented starting from version 0.9.8
-	req_openssl_ver=0x0090800f
-	AC_MSG_CHECKING([for OpenSSL >= $req_openssl_ver])
-	AC_TRY_COMPILE([#include <openssl/opensslv.h>],[
+
+	if test "x$have_readline" != xno; then
+		AC_DEFINE(HAVE_LIBREADLINE, 1,
+			[Define if you have the readline library])
+	else
+		READLINE_LIBS=""
+		READLINE_INCS=""
+	fi
+	AC_SUBST(READLINE_LIBS)
+	AC_SUBST(READLINE_INCS)
+
+]) dnl AM_MONETDB_LIB_READLINE
+
+AC_DEFUN([AM_MONETDB_LIB_OPENSSL],[
+
+	dnl OpenSSL (we could rely on pkg-config here)
+	have_openssl=auto
+	OPENSSL_LIBS=""
+	OPENSSL_INCS=""
+	AC_ARG_WITH(openssl,
+		AS_HELP_STRING([--with-openssl=DIR],
+			[OpenSSL library is installed in DIR]), 
+		have_openssl="$withval")
+
+	case "$have_openssl" in
+		yes|auto) ;;
+			# pkg config macro call here
+		no) ;;
+		*)
+			OPENSSL_LIBS="-L$withval/lib"
+			OPENSSL_INCS="-I$withval/include"
+			;;
+	esac
+
+	if test "x$have_openssl" != xno; then
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $OPENSSL_LIBS"
+		AC_CHECK_LIB(ssl, SSL_read,
+			OPENSSL_LIBS="$OPENSSL_LIBS -lssl",
+			[ why_no_openssl="OpenSSL library not found"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ],
+			[-lcrypto])
+		dnl on some systems, -lcrypto needs to be passed as well
+		AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
+		LIBS="$save_LIBS"
+	else
+		why_no_openssl="configure called with --with-openssl=no"
+	fi
+
+	save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS $OPENSSL_INCS"
+	if test "x$have_openssl" != xno; then
+		AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), , [
+			save_CPPFLAGS="$CPPFLAGS"
+			CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
+			AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
+				AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
+				[ why_no_openssl="OpenSSL library not usable"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ])
+			CPPFLAGS="$save_CPPFLAGS"])
+	fi
+
+	if test "x$have_openssl" != xno; then
+		dnl SHA-2 is implemented starting from version 0.9.8f
+		req_openssl_ver=0x0090800f
+		AC_MSG_CHECKING([for OpenSSL >= $req_openssl_ver])
+		AC_TRY_COMPILE([#include <openssl/opensslv.h>],[
 #if !defined(OPENSSL_VERSION_NUMBER)
 #error "Hmmm no OpenSSL version?"
 #endif
 #if (OPENSSL_VERSION_NUMBER < ${req_openssl_ver}L)
 #error "Need more recent version than " OPENSSL_VERSION_TEXT
 #endif],
-	 [AC_MSG_RESULT([yes])],
-	 [
-	  why_no_openssl="you need a more recent version of OpenSSL"
-	  if test "x$have_openssl" != "xauto" ; then
-		  AC_MSG_ERROR([no, $why_no_openssl])
-	  else
-		  AC_MSG_RESULT([no])
-	  fi
-	  have_openssl=no
-	 ]
-	)
-fi
-CFLAGS="$save_CFLAGS"
-if test "x$have_openssl" != xno; then
-	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
-else
-	OPENSSL_LIBS=""
-	OPENSSL_INCS=""
-fi
-AC_SUBST(OPENSSL_LIBS)
-AC_SUBST(OPENSSL_INCS)
-
-dnl cURL
-have_curl=no
-CURL_PATH="$PATH"
-CURL_CONFIG=''
-CURL_CFLAGS=''
-CURL_LIBS=''
-AC_ARG_WITH(curl,
-	AS_HELP_STRING([--with-curl=DIR],
-		[cURL library is installed in DIR]),
-	have_curl="$withval")
-case "$have_curl" in
-yes|no|auto)
-	;;
-*)
-	CURL_PATH="$withval/bin:$PATH"
-	;;
-esac
-if test "x$have_curl" != xno; then
-	AC_PATH_PROG(CURL_CONFIG,curl-config,,$CURL_PATH)
-	if test "x$CURL_CONFIG" = x; then
-		if test "x$have_curl" = xyes; then
-			AC_MSG_ERROR([curl-config not found; use --with-curl=<path>])
-		fi
-		have_curl=no
+		 [AC_MSG_RESULT([yes])],
+		 [
+		  why_no_openssl="you need a more recent version of OpenSSL"
+		  if test "x$have_openssl" != "xauto" ; then
+			  AC_MSG_ERROR([no, $why_no_openssl])
+		  else
+			  AC_MSG_RESULT([no])
+		  fi
+		  have_openssl=no
+		 ]
+		)
 	fi
-fi
-if test "x$have_curl" != xno; then
-	CURL_CFLAGS="`$CURL_CONFIG --cflags`"
-	CURL_LIBS="`$CURL_CONFIG --libs`"
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $CURL_CFLAGS"
-	AC_CHECK_HEADER(curl/curl.h, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([curl/curl.h not found]); fi; have_curl=no])
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_curl" != xno; then
+	CFLAGS="$save_CFLAGS"
+
+	if test "x$have_openssl" != xno; then
+		AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
+	else
+		OPENSSL_LIBS=""
+		OPENSSL_INCS=""
+	fi
+	AC_SUBST(OPENSSL_LIBS)
+	AC_SUBST(OPENSSL_INCS)
+
+]) dnl AM_MONETDB_LIB_OPENSSL
+
+AC_DEFUN([AM_MONETDB_LIB_CURL],[
+
+	dnl cURL
+	have_curl=no
+	CURL_PATH="$PATH"
+	CURL_CONFIG=''
+	CURL_CFLAGS=''
+	CURL_LIBS=''
+	AC_ARG_WITH(curl,
+		AS_HELP_STRING([--with-curl=DIR],
+			[cURL library is installed in DIR]),
+		have_curl="$withval")
+
+	case "$have_curl" in
+		yes|no|auto) ;;
+		*)
+			CURL_PATH="$withval/bin:$PATH"
+			;;
+	esac
+
+	if test "x$have_curl" != xno; then
+		AC_PATH_PROG(CURL_CONFIG,curl-config,,$CURL_PATH)
+		if test "x$CURL_CONFIG" = x; then
+			if test "x$have_curl" = xyes; then
+				AC_MSG_ERROR([curl-config not found; use --with-curl=<path>])
+			fi
+			have_curl=no
+		fi
+	fi
+
+	if test "x$have_curl" != xno; then
+		CURL_CFLAGS="`$CURL_CONFIG --cflags`"
+		CURL_LIBS="`$CURL_CONFIG --libs`"
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $CURL_CFLAGS"
+		AC_CHECK_HEADER(curl/curl.h, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([curl/curl.h not found]); fi; have_curl=no])
+		CPPFLAGS="$save_CPPFLAGS"
+	fi
+
+	if test "x$have_curl" != xno; then
+		save_LIBS="$LIBS"
+			LIBS="$LIBS $CURL_LIBS"
+			AC_CHECK_LIB(curl, curl_easy_init, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([-lcurl not found]); fi; have_curl=no])
+			LIBS="$save_LIBS"
+	fi
+
+	if test "x$have_curl" != xno; then
+		AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
+	fi
+	AC_SUBST(CURL_CFLAGS)
+	AC_SUBST(CURL_LIBS)
+
+]) dnl AM_MONETDB_LIB_CURL
+
+AC_DEFUN([AM_MONETDB_LIB_SOCKET],[
+
+	SOCKET_LIBS=""
+	have_setsockopt=no
+
+	case "$host_os" in
+		*mingw*)
+			AC_CHECK_HEADERS([winsock2.h],[have_winsock2=yes],[have_winsock2=no])
+			save_LIBS="$LIBS"
+			LIBS="$LIBS -lws2_32"
+			AC_MSG_CHECKING(for setsockopt in winsock2)
+			AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif],[setsockopt(0,0,0,NULL,0);],[SOCKET_LIBS="-lws2_32"; have_setsockopt=yes;],[])
+			AC_MSG_RESULT($have_setsockopt)
+			LIBS="$save_LIBS"
+			;;
+		*)
+			AC_CHECK_FUNC(gethostbyname_r, [], [
+			  AC_CHECK_LIB(nsl_r, gethostbyname_r, [ SOCKET_LIBS="-lnsl_r" ],
+				AC_CHECK_LIB(nsl, gethostbyname_r, [ SOCKET_LIBS="-lnsl"   ] ))])
+			;;
+	esac
+
+	if test "x$have_setsockopt" = xno; then
+		AC_CHECK_FUNC(setsockopt, [], 
+		  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
+	fi
+
+	AC_CHECK_HEADERS([sys/socket.h winsock.h])
+
+	have_getaddrinfo=no
 	save_LIBS="$LIBS"
-    	LIBS="$LIBS $CURL_LIBS"
-    	AC_CHECK_LIB(curl, curl_easy_init, :, [if test "x$have_curl" != xauto; then AC_MSG_ERROR([-lcurl not found]); fi; have_curl=no])
-    	LIBS="$save_LIBS"
-fi
-if test "x$have_curl" != xno; then
-	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
-fi
-AC_SUBST(CURL_CFLAGS)
-AC_SUBST(CURL_LIBS)
+	LIBS="$LIBS $SOCKET_LIBS"
+
+	AC_CHECK_FUNC(getaddrinfo, [ have_getaddrinfo=yes ], [
+	  AC_CHECK_LIB(socket, getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lsocket"; have_getaddrinfo=yes ],
+		AC_CHECK_LIB(nsl,  getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lnsl"   ; have_getaddrinfo=yes ] ))])
+	LIBS="$save_LIBS"
+
+	if test "x$have_getaddrinfo" = xyes; then
+		AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if you have the `getaddrinfo' function.])
+	fi
+
+	dnl incase of windows we need to use try_link because windows uses the
+	dnl pascal style of function calls and naming scheme. Therefore the 
+	dnl function needs to be compiled with the correct header
+	AC_CHECK_TYPE(SOCKET, , AC_DEFINE(SOCKET,int,[type used for sockets]), [#ifdef HAVE_WINSOCK_H
+#include <winsock.h>
+#endif])
+	AC_CHECK_TYPE(socklen_t,
+		AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define to 1 if the system has the type `socklen_t'.]),
+		AC_DEFINE(socklen_t,int,[type used by connect]),
+		[#include <sys/types.h>
+#include <sys/socket.h>])
+
+	case $host_os in
+		*mingw*)
+			save_LIBS="$LIBS"
+			LIBS="$LIBS $SOCKET_LIBS"
+			AC_MSG_CHECKING(for closesocket)
+			AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif],[closesocket((SOCKET)0);], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no);AC_DEFINE(closesocket,close,[function to close a socket])])
+			LIBS="$save_LIBS"
+			;;
+		*)
+			dnl don't check for closesocket on Cygwin: it'll be found but we don't want to use it
+			AC_DEFINE(closesocket,close,[function to close a socket])
+			;;
+	esac
+
+	AC_SUBST(SOCKET_LIBS)
+
+]) dnl AM_MONETDB_LIB_SOCKET
+
+AC_DEFUN([AM_MONETDB_LIB_Z],[
+
+	dnl check for z (de)compression library
+	have_z=auto
+	Z_CFLAGS=""
+	Z_LIBS=""
+	AC_ARG_WITH(z,
+		AS_HELP_STRING([--with-z=DIR],
+			[z library is installed in DIR]),
+		have_z="$withval")
+
+	case "$have_z" in
+		yes|no|auto) ;;
+		*)
+			Z_CFLAGS="-I$withval/include"
+			Z_LIBS="-L$withval/lib"
+			;;
+	esac
+
+	AC_MSG_CHECKING([for libz])
+	if test "x$have_z" != xno; then
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $Z_CFLAGS"
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $Z_LIBS -lz"
+		AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <zlib.h>], [(void) gzopen("","");]),
+			Z_LIBS="$Z_LIBS -lz",
+			[ if test "x$have_z" != xauto; then AC_MSG_ERROR([z library not found]); fi; have_z=no ])
+		LIBS="$save_LIBS"
+		CPPFLAGS="$save_CPPFLAGS"
+	fi
+
+	if test "x$have_z" != xno; then
+		AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
+		AC_MSG_RESULT([yes: $Z_LIBS])
+	else
+		Z_CFLAGS=""
+		Z_LIBS=""
+		AC_MSG_RESULT([no])
+	fi
+
+	AC_SUBST(Z_CFLAGS)
+	AC_SUBST(Z_LIBS)
+	AM_CONDITIONAL(HAVE_LIBZ,test x$have_z != xno)
+
+]) dnl AM_MONETDB_LIB_Z
+
+AC_DEFUN([AM_MONETDB_LIB_BZIP2],[
+
+	dnl check for bz2 (de)compression library
+	have_bz2=auto
+	BZ_CFLAGS=""
+	BZ_LIBS=""
+	AC_ARG_WITH(bz2,
+		AS_HELP_STRING([--with-bz2=DIR],
+			[bz2 library is installed in DIR]),
+		have_bz2="$withval")
+
+	case "$have_bz2" in
+		yes|no|auto) ;;
+		*)
+			BZ_CFLAGS="-I$withval/include"
+			BZ_LIBS="-L$withval/lib"
+			;;
+	esac
+
+	AC_MSG_CHECKING(for bzip2) 
+	if test "x$have_bz2" != xno; then
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $BZ_LIBS -lbz2"
+		AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <stdio.h>
+#include <bzlib.h>], [(void)BZ2_bzopen("","");]),
+			BZ_LIBS="$BZ_LIBS -lbz2",
+			[ if test "x$have_bz2" != xauto; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
+		LIBS="$save_LIBS"
+		CPPFLAGS="$save_CPPFLAGS"
+	fi
+
+	if test "x$have_bz2" != xno; then
+		AC_DEFINE(HAVE_LIBBZ2, 1, [Define if you have the bz2 library])
+		AC_MSG_RESULT([yes: $BZ_LIBS])
+	else
+		BZ_CFLAGS=""
+		BZ_LIBS=""
+		AC_MSG_RESULT([no])
+	fi
+
+	AC_SUBST(BZ_CFLAGS)
+	AC_SUBST(BZ_LIBS)
+	AM_CONDITIONAL(HAVE_LIBBZ2,test x$have_bz2 != xno)
+
+]) dnl AM_MONETDB_LIB_BZIP2
+
+AC_DEFUN([AM_MONETDB_LIBS],
+[
+
+AM_MONETDB_LIB_READLINE()
+AM_MONETDB_LIB_OPENSSL()
+AM_MONETDB_LIB_CURL()
+AM_MONETDB_LIB_PTHREAD()
+AM_MONETDB_LIB_SOCKET()
 
 DL_LIBS=""
 AC_CHECK_LIB(dl, dlopen, [ DL_LIBS="-ldl" ] )
@@ -2325,163 +2731,9 @@ MATH_LIBS=""
 AC_CHECK_LIB(m, sqrt, [ MATH_LIBS="-lm" ] )
 AC_SUBST(MATH_LIBS)
 
-SOCKET_LIBS=""
-have_setsockopt=no
-case "$host_os" in
-*mingw*)
-	AC_CHECK_HEADERS([winsock2.h],[have_winsock2=yes],[have_winsock2=no])
-	save_LIBS="$LIBS"
-	LIBS="$LIBS -lws2_32"
-	AC_MSG_CHECKING(for setsockopt in winsock2)
-	AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#endif],[setsockopt(0,0,0,NULL,0);],[SOCKET_LIBS="-lws2_32"; have_setsockopt=yes;],[])
-	AC_MSG_RESULT($have_setsockopt)
-	LIBS="$save_LIBS"
-	;;
-*)
-	AC_CHECK_FUNC(gethostbyname_r, [], [
-	  AC_CHECK_LIB(nsl_r, gethostbyname_r, [ SOCKET_LIBS="-lnsl_r" ],
-	    AC_CHECK_LIB(nsl, gethostbyname_r, [ SOCKET_LIBS="-lnsl"   ] ))])
-	;;
-esac
-
-if test "x$have_setsockopt" = xno; then
-	AC_CHECK_FUNC(setsockopt, [], 
-	  AC_CHECK_LIB(socket, setsockopt, [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))
-fi
-
-AC_CHECK_HEADERS([sys/socket.h winsock.h])
-
-have_getaddrinfo=no
-save_LIBS="$LIBS"
-LIBS="$LIBS $SOCKET_LIBS"
-AC_CHECK_FUNC(getaddrinfo, [ have_getaddrinfo=yes ], [
-  AC_CHECK_LIB(socket, getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lsocket"; have_getaddrinfo=yes ],
-    AC_CHECK_LIB(nsl,  getaddrinfo, [ SOCKET_LIBS="$SOCKET_LIBS -lnsl"   ; have_getaddrinfo=yes ] ))])
-LIBS="$save_LIBS"
-if test "x$have_getaddrinfo" = xyes; then
-	AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if you have the `getaddrinfo' function.])
-fi
-
-dnl incase of windows we need to use try_link because windows uses the
-dnl pascal style of function calls and naming scheme. Therefore the 
-dnl function needs to be compiled with the correct header
-AC_CHECK_TYPE(SOCKET, , AC_DEFINE(SOCKET,int,[type used for sockets]), [#ifdef HAVE_WINSOCK_H
-#include <winsock.h>
-#endif])
-AC_CHECK_TYPE(socklen_t,
-	AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define to 1 if the system has the type `socklen_t'.]),
-	AC_DEFINE(socklen_t,int,[type used by connect]),
-	[#include <sys/types.h>
-#include <sys/socket.h>])
-
-case $host_os in
-*mingw*)
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $SOCKET_LIBS"
-	AC_MSG_CHECKING(for closesocket)
-	AC_TRY_LINK([#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#endif],[closesocket((SOCKET)0);], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no);AC_DEFINE(closesocket,close,[function to close a socket])])
-	LIBS="$save_LIBS"
-	;;
-*)
-	dnl don't check for closesocket on Cygwin: it'll be found but we don't want to use it
-	AC_DEFINE(closesocket,close,[function to close a socket])
-	;;
-esac
-
-AC_SUBST(SOCKET_LIBS)
-
-dnl check for z (de)compression library (default /usr and /usr/local)
-have_z=auto
-Z_CFLAGS=""
-Z_LIBS=""
-AC_ARG_WITH(z,
-	AS_HELP_STRING([--with-z=DIR],
-		[z library is installed in DIR]),
-	have_z="$withval")
-AC_MSG_CHECKING(for libz)
-case "$have_z" in
-yes|no|auto)
-	;;
-*)
-	Z_CFLAGS="-I$withval/include"
-	Z_LIBS="-L$withval/lib"
-        AC_MSG_CHECKING(in $withval) 
-	;;
-esac
-if test "x$have_z" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $Z_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $Z_LIBS -lz"
-	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <zlib.h>], [(void) gzopen("","");]),
-		Z_LIBS="$Z_LIBS -lz",
-		[ if test "x$have_z" != xauto; then AC_MSG_ERROR([z library not found]); fi; have_z=no ])
-	LIBS="$save_LIBS"
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_z" != xno; then
-	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
-else
-	Z_CFLAGS=""
-	Z_LIBS=""
-fi
-AC_MSG_RESULT($have_z)
-AC_SUBST(Z_CFLAGS)
-AC_SUBST(Z_LIBS)
-AM_CONDITIONAL(HAVE_LIBZ,test x$have_z != xno)
-
-dnl check for bz2 (de)compression library (default /usr and /usr/local)
-have_bz2=auto
-BZ_CFLAGS=""
-BZ_LIBS=""
-AC_ARG_WITH(bz2,
-	AS_HELP_STRING([--with-bz2=DIR],
-		[bz2 library is installed in DIR]),
-	have_bz2="$withval")
-AC_MSG_CHECKING(for libbz2) 
-case "$have_bz2" in
-yes|no|auto)
-	;;
-*)
-	BZ_CFLAGS="-I$withval/include"
-	BZ_LIBS="-L$withval/lib"
-        AC_MSG_CHECKING(in $withval) 
-	;;
-esac
-if test "x$have_bz2" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $BZ_LIBS -lbz2"
-	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <stdio.h>
-#include <bzlib.h>], [(void)BZ2_bzopen("","");]),
-		BZ_LIBS="$BZ_LIBS -lbz2",
-		[ if test "x$have_bz2" != xauto; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
-	LIBS="$save_LIBS"
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_bz2" != xno; then
-	AC_DEFINE(HAVE_LIBBZ2, 1, [Define if you have the bz2 library])
-else
-	BZ_CFLAGS=""
-	BZ_LIBS=""
-fi
-AC_MSG_RESULT($have_bz2)
-AC_SUBST(BZ_CFLAGS)
-AC_SUBST(BZ_LIBS)
-AM_CONDITIONAL(HAVE_LIBBZ2,test x$have_bz2 != xno)
-
-dnl check for getopt in standard library
-AC_CHECK_FUNCS(getopt_long , need_getopt=, need_getopt=getopt; need_getopt=getopt1)
-if test x$need_getopt = xgetopt; then
-  AC_LIBOBJ(getopt)
-elif test x$need_getopt = xgetopt1; then
-  AC_LIBOBJ(getopt1)
-fi
+AM_MONETDB_LIB_Z()
+AM_MONETDB_LIB_BZIP2()
+AM_MONETDB_FUNC_GETOPT()
 
 dnl hwcounters
 have_hwcounters=auto
@@ -2928,4 +3180,4 @@ fi
 
 ]) dnl AC_DEFUN AM_MONETDB_MEL
 
-dnl vim: set expandtab :
+dnl vim: set noexpandtab :

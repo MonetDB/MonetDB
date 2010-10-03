@@ -390,9 +390,15 @@ init_readline(Mapi mid, char *lang, int save_history)
 void
 deinit_readline(void)
 {
-	if (_save_history) {
-		write_history(_history_file);
-	}
+	/* nothing to do since we use append_history() */
+}
+
+void
+save_line(const char *s)
+{
+	add_history(s);
+	if (_save_history)
+		append_history(1, _history_file);
 }
 
 

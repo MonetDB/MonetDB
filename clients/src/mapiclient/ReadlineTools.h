@@ -24,6 +24,7 @@
 
 void init_readline(Mapi mid, char *language, int save_history);
 void deinit_readline(void);
+void save_line(const char *s);
 rl_completion_func_t *suspend_completion(void);
 void continue_completion(rl_completion_func_t * func);
 

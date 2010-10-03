@@ -21,10 +21,40 @@ Ready.
 
 Over..
 
-# 22:07:50 >  
-# 22:07:50 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=31814 
-# 22:07:50 >  
+# 16:10:39 >  
+# 16:10:39 >  mclient -lsql -ftest -i -e --host=ottar --port=36062 
+# 16:10:39 >  
 
+#create table t2770608 (
+#	"id"         INTEGER,
+#	"systemname" VARCHAR(256),
+#	"sqlname"    VARCHAR(1024),
+#	"digits"     INTEGER,
+#	"scale"      INTEGER,
+#	"radix"      INTEGER,
+#	"eclass"     INTEGER,
+#	"schema_id"  INTEGER
+#);
+#COPY 29 RECORDS INTO t2770608 FROM stdin USING DELIMITERS '\t','\n','"';
+#0	"any"	"any"	0	0	0	0	0
+#1	"bat"	"table"	0	0	0	1	0
+#2	"ptr"	"ptr"	0	0	0	1	0
+#3	"bit"	"boolean"	1	0	2	2	0
+#4	"str"	"char"	0	0	0	3	0
+#5	"str"	"varchar"	0	0	0	4	0
+#6	"str"	"clob"	0	0	0	4	0
+#7	"bte"	"tinyint"	8	1	2	6	0
+#8	"sht"	"smallint"	16	1	2	6	0
+#9	"oid"	"oid"	31	0	2	6	0
+#10	"int"	"int"	32	1	2	6	0
+#11	"lng"	"bigint"	64	1	2	6	0
+#12	"wrd"	"wrd"	64	1	2	6	0
+#13	"bte"	"decimal"	2	1	10	8	0
+#14	"sht"	"decimal"	4	1	10	8	0
+#15	"int"	"decimal"	9	1	10	8	0
+#16	"l
+[ 29	]
+#select * from t2770608 t1, t2770608 t2 where t1.id = t2.id;
 % sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t1,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2 # table_name
 % id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % int,	varchar,	varchar,	int,	int,	int,	int,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type

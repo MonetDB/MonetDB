@@ -13,8 +13,6 @@ def prog(dbinit, input):
     sys.stderr.write(err)
 
 def main():
-    mserver = os.getenv('MSERVER')
-
     # test mapi and pathfinder modules with MAPIPORT busy
     sys.stdout.write("MAPIPORT\n")
     sys.stderr.write("MAPIPORT\n")

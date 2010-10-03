@@ -859,11 +859,9 @@ _CRTIMP char *__cdecl crypt(const char *key, const char *salt);
 # endif
 #endif
 
-#ifdef HAVE_OPENSSL
-# include <openssl/md5.h>
-# include <openssl/sha.h>
-# include <openssl/ripemd.h>
-#endif
+#include <openssl/md5.h>
+#include <openssl/sha.h>
+#include <openssl/ripemd.h>
 
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET (-1)
@@ -2572,14 +2570,6 @@ mapi_start_talking(Mapi mid)
 				rest = hash + 1;
 			}
 			hash = NULL;
-#ifndef HAVE_OPENSSL
-			/* can't hash the password as required (no algorithms available) */
-			snprintf(buf, BLOCK, "server requires '%s' hash, "
-				 "but client support was not compiled in",
-				 serverhash);
-			close_connection(mid);
-			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
-#else
 			/* hash password, if not already */
 			if (mid->password[0] != '\1') {
 				unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
@@ -2645,14 +2635,11 @@ mapi_start_talking(Mapi mid)
 					md[60], md[61], md[62], md[63]);
 				mid->password[1 + len] = '\0';
 			}
-#endif
 		}
 
 		/* TODO: make this actually obey the separation by commas, and
 		 * only allow full matches */
-		if (1 == 0) {	/* language construct issue */
-#ifdef HAVE_OPENSSL
-		} else if (strstr(hashes, "RIPEMD160") != NULL) {
+		if (strstr(hashes, "RIPEMD160") != NULL) {
 			/* The RIPEMD160 hash algorithm is a 160 bit hash.  In order to
 			 * use in a string, a hexadecimal representation of the bit
 			 * sequence is used.
@@ -2729,7 +2716,6 @@ mapi_start_talking(Mapi mid)
 				md[4], md[5], md[6], md[7],
 				md[8], md[9], md[10], md[11],
 				md[12], md[13], md[14], md[15]);
-#endif
 #ifdef HAVE_CRYPT
 		} else if (pversion == 8 && strstr(hashes, "crypt") != NULL) {
 			/* The crypt hash algorithm uses UNIX crypt, a modification of

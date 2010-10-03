@@ -11,6 +11,8 @@ import Queue
 
 from subprocess import PIPE
 
+__all__ = ['PIPE', 'Popen', 'client', 'pf', 'server']
+
 verbose = False
 
 def splitcommand(cmd):
@@ -43,6 +45,7 @@ _mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal'))
 _sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql'))
 _xquery_client = splitcommand(os.getenv('XQUERY_CLIENT', 'mclient -lxquery -fxml'))
 _sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump -q'))
+_pf_compiler = splitcommand(os.getenv('PF', 'pf'))
 _server = splitcommand(os.getenv('MSERVER', ''))
 
 _dotmonetdbfile = []
@@ -57,21 +60,89 @@ def _delfiles():
 atexit.register(_delfiles)
 
 class _BufferedPipe:
-    def __init__(self, fd):
+    def __init__(self, fd, waitfor = None, skip = None):
         self._pipe = fd
         self._queue = Queue.Queue()
         self._eof = False
+        if waitfor is not None:
+            self._wfq = Queue.Queue()
+        else:
+            self._wfq = None
         self._thread = threading.Thread(target = self._readerthread,
-                                        args = (fd, self._queue))
+                                        args = (fd, self._queue, waitfor, self._wfq, skip))
         self._thread.setDaemon(True)
         self._thread.start()
 
-    def _readerthread(self, fh, queue):
+    def _readerthread(self, fh, queue, waitfor, wfq, skip):
+        # If `skip' has a value, don't pass it through the first time
+        # we encounter it.
+        # If `waitfor' has a value, put something into the wfq queue
+        # when we've seen it.
+        s = 0
+        w = 0
+        skipqueue = []
         while True:
-            c = fh.read(1)
+            if skipqueue:
+                c = skipqueue[0]
+                del skipqueue[0]
+            else:
+                c = fh.read(1)
+                if skip and c:
+                    if c == skip[s]:
+                        s += 1
+                        if s == len(skip):
+                            skip = None
+                    else:
+                        j = 0
+                        while j < s:
+                            if skip[j:s] + c != skip[:s-j+1]:
+                                skipqueue.append(skip[j])
+                                j += 1
+                            else:
+                                s = s-j+1
+                                break
+                        else:
+                            if c == skip[0]:
+                                s = 1
+                            else:
+                                skipqueue.append(c)
+                                s = 0
+                    continue
+            if waitfor and c:
+                if c == waitfor[w]:
+                    w += 1
+                    if w == len(waitfor):
+                        waitfor = None
+                        wfq.put('ready')
+                        wfq = None
+                else:
+                    j = 0
+                    while j < w:
+                        if waitfor[j:w] + c != waitfor[:w-j+1]:
+                            queue.put(waitfor[j])
+                            j += 1
+                        else:
+                            w = w-j+1
+                            break
+                    else:
+                        if c == waitfor[0]:
+                            w = 1
+                        else:
+                            queue.put(c)
+                            w = 0
+                continue
             queue.put(c)                # put '' if at EOF
             if not c:
+                if waitfor is not None:
+                    # if at EOF and still waiting for string, signal EOF
+                    wfq.put('eof')
+                    waitfor = None
+                    wfq = None
                 break
+
+    def _waitfor(self):
+        rdy = self._wfq.get()
+        self._wfq = None
 
     def close(self):
         if self._thread:
@@ -134,7 +205,10 @@ class Popen(subprocess.Popen):
         stderr = None
         if self.stdin:
             if input:
-                self.stdin.write(input)
+                try:
+                    self.stdin.write(input)
+                except IOError:
+                    pass
             self.stdin.close()
         if self.stdout:
             stdout = self.stdout.read()
@@ -226,9 +300,51 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         p.stderr = _BufferedPipe(p.stderr)
     return p
 
+def pf(args = [], stdin = None, stdout = None, stderr = None, log = False):
+    '''Start the pathfinder compiler.'''
+    cmd = _pf_compiler[:]
+    if verbose:
+        print 'Executing', ' '.join(cmd +  args)
+        sys.stdout.flush()
+    if log:
+        prompt = time.strftime('# %H:%M:%S >  ')
+        cmdstr = ' '.join(cmd +  args)
+        if hasattr(stdin, 'name'):
+            cmdstr += ' < "%s"' % stdin.name
+        print
+        print prompt
+        print '%s%s' % (prompt, cmdstr)
+        print prompt
+        print
+        sys.stdout.flush()
+        print >> sys.stderr
+        print >> sys.stderr, prompt
+        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
+        print >> sys.stderr, prompt
+        print >> sys.stderr
+        sys.stderr.flush()
+    if stdin is None:
+        # if no input provided, use /dev/null as input
+        stdin = open(os.devnull)
+    p = Popen(cmd + args,
+              stdin = stdin,
+              stdout = stdout,
+              stderr = stderr,
+              shell = False,
+              universal_newlines = True)
+## don't use the asynchronous _BufferedPipe since when pf is
+## called with a PIPE as stdout, it is to create an actual pipe
+## to a server
+##     if stdout == PIPE:
+##         p.stdout = _BufferedPipe(p.stdout)
+##     if stderr == PIPE:
+##         p.stderr = _BufferedPipe(p.stderr)
+    return p
+
 def server(lang, args = [], stdin = None, stdout = None, stderr = None,
            mapiport = None, xrpcport = None, dbname = os.getenv('TSTDB'),
-           dbfarm = None, dbinit = None, bufsize = 0, log = False):
+           dbfarm = None, dbinit = None, bufsize = 0, log = False,
+           notrace = False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
@@ -239,6 +355,8 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
         cmd.extend(['--set', 'mapi_open=true', '--set', 'gdk_nr_threads=1',
                     '--set', 'xrpc_open=true', '--set', 'monet_prompt=',
                     '--trace'])
+    if notrace and '--trace' in cmd:
+        cmd.remove('--trace')
     if dbinit is None:
         if lang == 'xquery':
             dbinit = 'module(pathfinder);'
@@ -300,7 +418,22 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
               universal_newlines = True,
               bufsize = bufsize)
     if stdout == PIPE:
-        p.stdout = _BufferedPipe(p.stdout)
+        if stdin == PIPE:
+            # If both stdin and stdout are pipes, we wait until the
+            # server is ready.  This is done by sending a print
+            # command and waiting for the result to appear.
+            rdy = '\nServer Ready.\n'
+            if lang in ('mil', 'xquery'):
+                cmd = 'printf'
+            else:
+                cmd = 'io.printf'
+            cmd = '%s("%s");\n' % (cmd, rdy.replace('\n', '\\n'))
+            p.stdout = _BufferedPipe(p.stdout, rdy, cmd)
+            p.stdin.write(cmd)
+            p.stdin.flush()
+            p.stdout._waitfor()
+        else:
+            p.stdout = _BufferedPipe(p.stdout)
     if stderr == PIPE:
         p.stderr = _BufferedPipe(p.stderr)
     return p

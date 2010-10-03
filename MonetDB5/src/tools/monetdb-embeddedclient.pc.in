@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: monetdb-embeddedclient
+Description: MonetDB5 MAL kernel embedded library
+Version: @PACKAGE_VERSION@
+Requires: monetdb-gdk = @MONETDB_REQUIRED_VERSION@ monetdb-mutils = @MONETDB_REQUIRED_VERSION@ monetdb-stream = @MONETDB_REQUIRED_VERSION@ monetdb-mapi = @CLIENTS_REQUIRED_VERSION@
+
+Libs: -L${libdir} -lembeddedmal
+Cflags: -I${includedir}/MonetDB5/tools

@@ -212,6 +212,8 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_includedir}/MonetDB5/tools
 %{_includedir}/MonetDB5/*/*.[hcm]
 %{_libdir}/*.so
+%{_libdir}/pkgconfig/monetdb-embeddedclient.pc
+%{_libdir}/pkgconfig/monetdb-mal.pc
 
 %changelog
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.5-20100824

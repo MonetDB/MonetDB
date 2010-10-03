@@ -8,15 +8,10 @@ def client(infile, user = 'monetdb', passwd = 'monetdb'):
     sys.stdout.write(out)
     sys.stderr.write(err)
 
-
-
-def main():
-    relsrcdir = os.getenv('RELSRCDIR')
-    sys.stdout.write('trigger owner\n')
-    client(os.path.join(relsrcdir, '..', 'trigger_owner_create.sql'))
-    client(os.path.join(relsrcdir, '..', 'trigger_owner.sql'),
-           user='user_test', passwd='pass')
-    client(os.path.join(relsrcdir, '..', 'trigger_owner_drop.sql'))
-    sys.stdout.write('done\n')
-
-main()
+relsrcdir = os.getenv('RELSRCDIR')
+sys.stdout.write('trigger owner\n')
+client(os.path.join(relsrcdir, os.pardir, 'trigger_owner_create.sql'))
+client(os.path.join(relsrcdir, os.pardir, 'trigger_owner.sql'),
+       user='user_test', passwd='pass')
+client(os.path.join(relsrcdir, os.pardir, 'trigger_owner_drop.sql'))
+sys.stdout.write('done\n')

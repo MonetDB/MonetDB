@@ -152,6 +152,7 @@ gdk_export int BBPbackup(BAT *b, bit subcommit);
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_storage.h"
+/*
 @}
 @-
 The BBP has a fixed address, so re-allocation due to a growing BBP 
@@ -162,18 +163,23 @@ initially. New slots in the BBP are found in O(1) by keeping a freelist
 that uses the 'next' field in the BBPrec records.
 @{
 @c
+*/
+@c
 BBPrec *BBP = NULL;		/* fixed base VM address of BBP array */
 bat BBPmaxsize = BBPMAXSIZE;	/* size of non-committed VM BBP array */
 bat BBPlimit = 0;		/* current committed VM BBP array */
 bat BBPsize = 0;		/* current used size of BBP array */
 
 #define BBPNONAME "."		/* filler for no name in BBP.dir */
+/*
 @}
 @-
 The hash index uses a bucket index (int array) of size mask that is
 tuned for perfect hashing (1 lookup). The bucket chain uses the 'next'
 field in the BBPrec records.
 @{
+@c
+*/
 @h
 #define BBPtmpcheck(s) ((s)[0] == 't' && (s)[1] == 'm' && (s)[2] == 'p' && ((s)[3] == '_' || ((s)[3] == 'r' && (s)[4] == '_')))	/* (strncmp((s), "tmp_", 4) == 0) */
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
@@ -238,6 +244,7 @@ int BBP_dirty = 0;		/* BBP structures modified? */
 int BBPin = 0;			/* bats loaded statistic */
 int BBPout = 0;			/* bats saved statistic */
 
+/*
 @}
 
 @+ BBP Consistency and Concurrency
@@ -289,27 +296,31 @@ array called BBP, that is allocated in anonymous VM space, so we can reallocate
 this structure without changing the base address (a crucial feature if read 
 actions are to go on unlocked while other entries in the BBP may be modified). 
 @{
+@c
+*/
 @h
-#define BBP_status_set(bid, mode, nme) {				\
-		BBP_status(bid) = mode;					\
+#define BBP_status_set(bid, mode, nme) {	\
+		BBP_status(bid) = mode;		\
 }
 
-#define BBP_status_on(bid, flags, nme) \
+#define BBP_status_on(bid, flags, nme)					\
 		BBP_status_set(bid, BBP_status(bid) | flags, nme);
 
-#define BBP_status_off(bid, flags, nme) \
+#define BBP_status_off(bid, flags, nme)					\
 		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme);
 
-#define BBP_unload_inc(bid, nme) {						\
-		gdk_set_lock(GDKunloadLock, nme);				\
-		BBPunloadCnt++;							\
-		gdk_unset_lock(GDKunloadLock, nme); 				}
+#define BBP_unload_inc(bid, nme) {			\
+		gdk_set_lock(GDKunloadLock, nme);	\
+		BBPunloadCnt++;				\
+		gdk_unset_lock(GDKunloadLock, nme);	\
+ 	}
 
-#define BBP_unload_dec(bid, nme) {						\
-		gdk_set_lock(GDKunloadLock, nme);				\
-		if (--BBPunloadCnt == 0) gdk_signal_cond(GDKunloadCond, nme);	\
-		assert(BBPunloadCnt >= 0);					\
-		gdk_unset_lock(GDKunloadLock, nme);				}
+#define BBP_unload_dec(bid, nme) {					\
+		gdk_set_lock(GDKunloadLock, nme);			\
+		if (--BBPunloadCnt == 0) gdk_signal_cond(GDKunloadCond, nme); \
+		assert(BBPunloadCnt >= 0);				\
+		gdk_unset_lock(GDKunloadLock, nme);			\
+	}
 @c
 static MT_Id locked_by = 0;
 
@@ -392,9 +403,12 @@ BBPinithash(void)
 	}
 }
 
+/*
 @-
 BBPextend must take the trimlock, as it is called when other BBP locks are
 held and it will allocate memory. This could trigger a BBPtrim, causing deadlock.
+@c
+*/
 @c
 void
 BBPextend(dbl factor, int buildhash)
@@ -1113,6 +1127,7 @@ BBPinit(void)
 	GDKfatal("BBPinit: could not write %s%cBBP.dir", BATDIR, DIR_SEP);
 }
 
+/*
 @}
 @- 
 During the exit phase all non-persistent BATs are removed.
@@ -1121,6 +1136,8 @@ This function is called once and during the shutdown of the
 server. Since shutdown may be issued from any thread (dangerous)
 it may lead to interference in a parallel session.
 @{
+@c
+*/
 @c
 
 void
@@ -1195,6 +1212,7 @@ BBPexit(void)
 	BBP_hash = 0;
 }
 
+/*
 @}
 @-
 The routine @%BBPdir@ creates the BAT pool dictionary file. 
@@ -1203,6 +1221,8 @@ The location in the buffer pool is saved for later use as well.
 This is merely done for ease of debugging and of no importance to front-ends.
 The tail of non-used entries is reclaimed as well. 
 @{
+@c
+*/
 @c
 static int
 new_bbpentry(stream *s, bat i)
@@ -1530,6 +1550,7 @@ BBPdump()
 		  n, mem, vm, nc, cmem, cvm);
 }
 
+/*
 @}
 @+ BBP Readonly Interface
 
@@ -1539,6 +1560,8 @@ is modifying that BAT, therefore such functions do not need locking.
 @{
 @- 
 BBP index lookup by BAT name:
+@c
+*/
 @c
 static INLINE bat
 BBP_find(str nme, int lock)
@@ -1611,6 +1634,7 @@ BBPphysical(bat bid, str buf)
 	return buf;
 }
 
+/*
 @}
 @+ BBP Update Interface
 Operations to insert, delete, clear, and modify BBP entries.
@@ -1621,6 +1645,8 @@ speed, but still write operations have to be locked.
 Create the shadow version (reversed) of a bat.
 @- 
 An existing BAT is inserted into the BBP 
+@c
+*/
 @c
 static INLINE str
 BBPsubdir_recursive(str s, bat i)
@@ -1783,9 +1809,12 @@ BBPcacheit(BATstore *bs, int lock)
 		gdk_unset_lock(GDKswapLock(i), "BBPcacheit");
 }
 
+/*
 @-
 @%BBPuncacheit@ changes the BBP status to swapped out.  Currently only 
 used in BBPfree (bat swapped out) and BBPclear (bat destroyed forever).
+@c
+*/
 @c
 
 void
@@ -1819,8 +1848,11 @@ BBPuncacheit_(bat i, int unloaddesc)
 	}
 }
 
+/*
 @- BBPclear
 @%BBPclear@ removes a BAT from the BBP directory forever.
+@c
+*/
 @c
 static INLINE void
 bbpclear(bat i, int idx, str lock)
@@ -1872,6 +1904,7 @@ BBPclear(bat i)
 	}
 }
 
+/*
 @}
 @- BBP rename
 
@@ -1892,6 +1925,8 @@ a whole lot of trouble, as bat_X is always unique and no conflicts can occur.
 Other suffixes are only supported in order just for backward compatibility with 
 old repositories (you won't see them anymore in new repositories).
 @{
+@c
+*/
 @c
 int
 BBPrename(bat bid, str nme)
@@ -1954,6 +1989,7 @@ BBPrename(bat bid, str nme)
 	return 0;
 }
 
+/*
 @}
 
 @+ BBP swapping Policy
@@ -1966,13 +2002,18 @@ later on, which may include reading them in again.
 BBPswappable: may this bat be unloaded?
 Only real bats without memory references can be unloaded.
 @{
+@c
+*/
 @h
 #define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && b->P->lview == 0 && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
+/*
 @- 
 The @%BBP_ref@ contains the amount of live references to a BAT.
 These might be in recursive BATs, C or MIL variables.  The count is 
 incremented with @%BBPfix@ and decremented with @%BBPunfix@.
+@h
+*/
 @c
 static INLINE void
 BBPspin(bat i, str s, int event)
@@ -1991,147 +2032,87 @@ BBPspin(bat i, str s, int event)
 static INLINE int
 incref(bat i, int logical, int lock)
 {
-	int refs = 0;
-	bat hp = 0, tp = 0, hvp = 0, tvp = 0;
-	BATstore *bs = NULL;
+	int refs;
+	bat hp, tp, hvp, tvp;
+	BATstore *bs;
 	BAT *b;
+	int load = 0;
 
 	if (i == bat_nil) {
 		/* Stefan: May this happen? Or should we better call GDKerror(), here? */
 		/* GDKerror("BBPincref() called with bat_nil!\n"); */
-		return refs;
+		return 0;
 	}
 	if (i < 0)
 		i = -i;
-	if (BBPcheck(i, "BBPincref")) {
-		int locks[5];
-		int x;
 
-		/* In case we're dealing with a view, we need to lock
-		   both the view and its parent(s).  This is
-		   complicated by the fact that we need to lock the
-		   various BATs in the correct order, since otherwise
-		   we may get into a deadlock with BBPlock, and since
-		   BATs share locks.
+	if (!BBPcheck(i, "BBPincref"))
+		return 0;
 
-		   Another complication is that we only really know
-		   whether we're dealing with a view *after* we've
-		   locked it.  I.e., a catch-22 situation.  What we do
-		   to resolve the issue is tentatively look at which
-		   are the parent BATs, and lock all of them, then
-		   check again, and if something changed, unlock
-		   everything and try again.  This process is very
-		   likely to end.  Only a concurrently running thread
-		   that keeps changing the parent(s) of our BAT can
-		   cause this loop to not terminate.
-		*/
-
+	if (lock) {
 		for (;;) {
-			bs = BBP_desc(i);
-			/* parent BATs are not relevant for logical refs */
-			hp = logical ? 0 : bs->B.H->heap.parentid;
-			tp = logical ? 0 : bs->B.T->heap.parentid;
-			hvp = logical || bs->B.H->vheap == 0 || bs->B.H->vheap->parentid == i ? 0 : bs->B.H->vheap->parentid;
-			tvp = logical || bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
-
-			if (!lock)
+			gdk_set_lock(GDKswapLock(i), "BBPincref");
+			if (!(BBP_status(i) & (BBPUNSTABLE|BBPLOADING)))
 				break;
-
-			/* we're going to collect lock IDs into locks,
-			   BBP_BATMASK+1 cannot be an ID and is larger
-			   than any valid ID (i.e. sorts to the end) */
-			x = 0;
-			locks[x++] = i & BBP_BATMASK;
-			if (hp)
-				locks[x++] = ABS(hp) & BBP_BATMASK;
-			if (tp)
-				locks[x++] = ABS(tp) & BBP_BATMASK;
-			if (hvp)
-				locks[x++] = ABS(hvp) & BBP_BATMASK;
-			if (tvp)
-				locks[x++] = ABS(tvp) & BBP_BATMASK;
-			while (x < 5)
-				locks[x++] = BBP_BATMASK + 1;
-			/* sort locks and remove duplicates */
-			for (x = 0; x < 4; x++) {
-				int y;
-				for (y = x + 1; y < 5; y++)
-					if (locks[x] > locks[y]) {
-						int t = locks[x];
-						locks[x] = locks[y];
-						locks[y] = t;
-					} else if (locks[x] == locks[y])
-						locks[y] = BBP_BATMASK + 1;
-			}
-			/* lock in sorted order */
-			for (;;) {
-				for (x = 0; x < 5 && locks[x] <= BBP_BATMASK; x++)
-					gdk_set_lock(GDKswapLock(locks[x]),
-						     "BBPincref view loop");
-				if (!(BBP_status(i) & BBPUNSTABLE) &&
-				    !(hp && BBP_status(hp) & BBPUNSTABLE) &&
-				    !(tp && BBP_status(tp) & BBPUNSTABLE) &&
-				    !(hvp && BBP_status(hvp) & BBPUNSTABLE) &&
-				    !(tvp && BBP_status(tvp) & BBPUNSTABLE))
-					break;
-				/* one of the BATs is "unstable", try again */
-				for (x = 0; x < 5 && locks[x] <= BBP_BATMASK; x++)
-					gdk_unset_lock(GDKswapLock(locks[x]),
-						       "BBPincref view loop");
-				MT_sleep_ms(1);
-			}
-
-			/* check again, now that we hold all locks */
-			bs = BBP_desc(i);
-			if (logical ||
-			    (hp == bs->B.H->heap.parentid &&
-			     tp == bs->B.T->heap.parentid &&
-			     ((hvp == 0 && (bs->B.H->vheap == NULL || bs->B.H->vheap->parentid == i)) ||
-			      hvp == bs->B.H->vheap->parentid) &&
-			     ((tvp == 0 && (bs->B.T->vheap == NULL || bs->B.T->vheap->parentid == i)) ||
-			      tvp == bs->B.T->vheap->parentid)))
-				break;  /* still the same, we can do the work */
-
-			/* try again, unlock the locks */
-			for (x = 0; x < 5 && locks[x] <= BBP_BATMASK; x++)
-				gdk_unset_lock(GDKswapLock(locks[x]),
-					       "BBPincref view loop");
+			/* the BATs is "unstable", try again */
+			gdk_unset_lock(GDKswapLock(i), "BBPincref");
+			MT_sleep_ms(1);
 		}
+	}
+	/* we have the lock */
 
-		/* we have all relevant locks */
-		assert(BBP_refs(i) + BBP_lrefs(i) ||
-		       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
-		if (logical)
-			refs = ++BBP_lrefs(i);
-		else {
-			refs = ++BBP_refs(i);
-			if (refs == 1) {
-				if (hp) {
-					incref(hp, 0, 0);
-					if (!bs->P.lview) {
-						b = getBBPdescriptor(hp, 0);
-						bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
-					}
-				}
-				if (tp) {
-					incref(tp, 0, 0);
-					if (!bs->P.lview &&
-					    bs->B.H != bs->B.T) { /* mirror? */
-						b = getBBPdescriptor(tp, 0);
-						bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
-					}
-				}
-				if (hvp)
-					incref(hvp, 0, 0);
-				if (tvp)
-					incref(tvp, 0, 0);
+	bs = BBP_desc(i);
+
+	/* parent BATs are not relevant for logical refs */
+	hp = logical ? 0 : bs->B.H->heap.parentid;
+	tp = logical ? 0 : bs->B.T->heap.parentid;
+	hvp = logical || bs->B.H->vheap == 0 || bs->B.H->vheap->parentid == i ? 0 : bs->B.H->vheap->parentid;
+	tvp = logical || bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
+
+	assert(BBP_refs(i) + BBP_lrefs(i) ||
+	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
+	if (logical)
+		refs = ++BBP_lrefs(i);
+	else {
+		refs = ++BBP_refs(i);
+		if (refs == 1 && (hp || tp || hvp || tvp)) {
+			/* If this is a view, we must load the parent
+			   BATs, but we must do that outside of the
+			   lock.  Set the BBPLOADING flag so that
+			   other threads will wait until we're
+			   done. */
+			BBP_status_on(i, BBPLOADING, "BBPincref");
+			load = 1;
+		}
+	}
+	if (lock)
+		gdk_unset_lock(GDKswapLock(i), "BBPincref");
+
+	if (load) {
+		/* load the parent BATs and set the heap base
+		   pointers to the correct values */
+		assert(!logical);
+		if (hp) {
+			incref(hp, 0, lock);
+			if (!bs->P.lview) {
+				b = getBBPdescriptor(hp, lock);
+				bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
 			}
 		}
-		if (lock) {
-			for (x = 0; x < 5 && locks[x] <= BBP_BATMASK; x++)
-				gdk_unset_lock(GDKswapLock(locks[x]),
-					       "BBPincref view loop");
+		if (tp) {
+			incref(tp, 0, lock);
+			if (!bs->P.lview &&
+			    bs->B.H != bs->B.T) {  /* mirror? */
+				b = getBBPdescriptor(tp, lock);
+				bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
+			}
 		}
+		if (hvp)
+			incref(hvp, 0, lock);
+		if (tvp)
+			incref(tvp, 0, lock);
+		/* done loading, release descriptor */
+		BBP_status_off(i, BBPLOADING, "BBPincref");
 	}
 	return refs;
 }
@@ -2173,7 +2154,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 		gdk_set_lock(GDKswapLock(i), "BBPdecref");
 	assert(!BBP_cache(i) || BBP_cache(i)->batSharecnt >= releaseShare);
 	if (releaseShare) {
-		--BBP_cache(i)->batSharecnt;
+		--BBP_desc(i)->P.sharecnt;
 		if (lock)
 			gdk_unset_lock(GDKswapLock(i), "BBPdecref");
 		return refs;
@@ -2221,15 +2202,19 @@ decref(bat i, int logical, int releaseShare, int lock)
 		}
 	}
 
-	/* we destroy transients asap and unload persistent bats only if they have been made cold */
+	/* we destroy transients asap and unload persistent bats only
+	   if they have been made cold */
 	if (BBP_refs(i) > 0 || (BBP_lrefs(i) > 0 && BBP_lastused(i) != 0)) {
-		/* bat cannot be swapped out. renew its last usage stamp for the BBP LRU policy */
+		/* bat cannot be swapped out. renew its last usage
+		   stamp for the BBP LRU policy */
 		int sec = BBPLASTUSED(BBPstamp());
 
 		if (sec > BBPLASTUSED(BBP_lastused(i)))
 			BBP_lastused(i) = sec;
 	} else if (b || (BBP_status(i) & BBPTMP)) {
-		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
+		/* bat will be unloaded now. set the UNLOADING bit
+		   while locked so no other thread thinks its
+		   available anymore */
 		assert((BBP_status(i) & BBPUNLOADING) == 0);
 		BATDEBUG {
 			mnstr_printf(GDKout, "#BBPdecref set to unloading BAT %d\n", i);
@@ -2238,7 +2223,8 @@ decref(bat i, int logical, int releaseShare, int lock)
 		swap = TRUE;
 	}
 
-	/* unlock before re-locking in unload; as saving a dirty persistent bat may take a long time */
+	/* unlock before re-locking in unload; as saving a dirty
+	   persistent bat may take a long time */
 	if (lock)
 		gdk_unset_lock(GDKswapLock(i), "BBPdecref");
 
@@ -2285,12 +2271,15 @@ BBPdecref(bat i, int logical)
 	return decref(i, logical, FALSE, TRUE);
 }
 
+/*
 @-
 M5 often changes the physical ref into a logical reference.
 This state change consist of the sequence BBPincref(b,TRUE);BBPunfix(b).
 A faster solution is given below, because it does not trigger
 the BBP management actions, such as garbage collecting the bats.
 [first step, initiate code change]
+@c
+*/
 @c
 void
 BBPkeepref(bat i)
@@ -2349,6 +2338,7 @@ BBPunshare(bat parent)
 	GDKunshare(parent);
 }
 
+/*
 @- 
 BBPreclaim is a user-exported function; the common way to destroy a BAT the hard way. 
 
@@ -2356,6 +2346,8 @@ Return values:
 -1 = bat cannot be unloaded (it has more than your own memory fix)
  0 = unloaded successfully
  1 = unload failed (due to write-to-disk failure)
+@c
+*/
 @c
 int
 BBPreclaim(BAT *b)
@@ -2372,9 +2364,12 @@ BBPreclaim(BAT *b)
 	return decref(i, 0, 0, lock) <0;
 }
 
+/*
 @-
 BBPdescriptor checks whether BAT needs loading and does so if necessary. You must
 have at least one fix on the BAT before calling this.
+@c
+*/
 @c
 static BAT *
 getBBPdescriptor(bat i, int lock)
@@ -2431,9 +2426,12 @@ BBPdescriptor(bat i)
 	return getBBPdescriptor(i, lock);
 }
 
+/*
 @-
 In BBPsave executes unlocked; it just marks the BBP_status of the BAT to BBPsaving, so others
 that want to save or unload this BAT must spin lock on the BBP_status field.
+@c
+*/
 @c
 int
 BBPsave(BAT *b)
@@ -2484,10 +2482,12 @@ BBPsave(BAT *b)
 	return ret;
 }
 
-
+/*
 @-
 TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
+@c
+*/
 @c
 static int BBPaddtobin(BAT *b);
 static int
@@ -2578,6 +2578,7 @@ BBPfree(BAT *b, str calledFrom)
 	return ret;
 }
 
+/*
 @}
 @- Storage trimming
 BBPtrim unloads the least recently used BATs to free memory resources.
@@ -2636,6 +2637,8 @@ field where the candidates are sorted on.
 BBPtrim is abandoned when the application has indicated that it does not
 need it anymore.
 @{
+@c
+*/
 @c
 #define BBPMAXTRIM 40000
 #define BBPSMALLBAT 1000
@@ -3007,6 +3010,7 @@ BBPcold(bat i)
 	}
 }
 
+/*
 @}
 @-
 BBPquickdesc loads a BAT descriptor without loading the entire BAT, of which the
@@ -3021,6 +3025,8 @@ columns are those of which the type has a fix/unfix method, or those that have H
 methods. The HeapDelete actions are not always required and therefore the BBPquickdesc
 is parametrized.
 @{
+@c
+*/
 @c
 static int
 complexatom(int t, int delaccess)
@@ -3054,6 +3060,7 @@ BBPquickdesc(bat bid, int delaccess)
 	return b;
 }
 
+/*
 @}
 
 @+ Small BAT Cache
@@ -3087,6 +3094,8 @@ and then benchmark it (missing in the previous exercise) :
 so with caching *some* MIL programs can be nearly twice as fast (optimized compile),
 though I expect the gains to be smaller in general.
 @{
+@c
+*/
 @c
 #define BATCACHE_NOTYPE(t) 	(ATOMstorage(t) > TYPE_str || BATatoms[t].atomFix != NULL)
 #define BATCACHE_SIZE 		1023	/* max size: 32767 */
@@ -3394,6 +3403,8 @@ BBPaddtobin(BAT *b)
 		assert(VIEWvhparent(b) == 0);
 		assert(VIEWvtparent(b) == 0);
 		b->H->heap.parentid = b->T->heap.parentid = 0;
+		b->H->heap.forcemap = 0;
+		b->T->heap.forcemap = 0;
 		b->batPersistence = TRANSIENT;
 
 		/* take care of mirror views */
@@ -3547,11 +3558,14 @@ BBPrecycle_minsize(wrd val)
 	return val;
 }
 
+/*
 @}
 
 @+ Global Commit
 
 @{
+@c
+*/
 @c
 static BAT *
 dirty_bat(bat *i, int subcommit)
@@ -3575,6 +3589,7 @@ dirty_bat(bat *i, int subcommit)
 	return NULL;
 }
 
+/*
 @}
 
 @- backup-bat
@@ -3582,6 +3597,8 @@ Backup-bat moves all files of a BAT to a backup directory. Only after this
 succeeds, it may be saved. If some failure occurs halfway saving, we
 can thus always roll back.
 @{
+@c
+*/
 @c
 static int
 file_move(str srcdir, str dstdir, str name, str e)
@@ -3660,6 +3677,7 @@ heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 	return file_move(srcdir, dstdir, nme, ext);
 }
 
+/*
 @}
 
 @- BBPprepare
@@ -3674,6 +3692,8 @@ backup_dir == 0 => no backup BBP.dir
 backup_dir == 1 => BBP.dir saved in BACKUP/
 backup_dir == 2 => BBP.dir saved in SUBCOMMIT/
 @{
+@c
+*/
 @c
 static int backup_files = 0, backup_dir = 0, backup_subdir = 0;
 
@@ -3791,6 +3811,7 @@ BBPbackup(BAT *b, bit subcommit)
 	return 0;
 }
 
+/*
 @}
 
 @+ Atomic Write
@@ -3804,6 +3825,8 @@ back all backed up files; this is done by BBPrecover().
 The BBP.dir is also moved into the BAKDIR.
 
 @{
+@c
+*/
 @c
 int
 BBPsync(int cnt, bat *subcommit)
@@ -3901,12 +3924,15 @@ BBPsync(int cnt, bat *subcommit)
 	return ret;
 }
 
+/*
 @}
 @-
 Recovery just moves all files back to their original location. this is an incremental
 process: if something fails, just stop with still files left for moving in BACKUP/. 
 The recovery process can resume later with the left over files.
 @{
+@c
+*/
 @c
 static int
 force_move(str srcdir, str dstdir, str name)
@@ -4046,9 +4072,12 @@ BBPrecover(void)
 	return ret;
 }
 
+/*
 @
 SUBDIR recovery is quite mindlessly moving all files back to the parent (BAKDIR).
 We do recognize moving back BBP.dir and set backed_up_subdir accordingly.
+@c
+*/
 @c
 int
 BBPrecover_subdir(void)
@@ -4089,6 +4118,7 @@ BBPrecover_subdir(void)
 	return ret;
 }
 
+/*
 @}
 @- The diskscan
 The BBPdiskscan routine walks through the BAT dir, cleans up leftovers, and measures disk occupancy. 
@@ -4098,6 +4128,8 @@ the BAT descriptor is loaded in order to determine whether these files are still
 The routine gathers all bat sizes in a bat that contains bat-ids and bytesizes. The return value is
 the number of bytes of space freed.
 @{
+@c
+*/
 @c
 static int
 persistent_bat(bat bid)

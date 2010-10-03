@@ -25,16 +25,15 @@ import socket
 import logging
 import struct
 import hashlib
-import crypt
 import platform
 
 from io import BytesIO
 
 from monetdb.monetdb_exceptions import *
 
-# windows doesn't support MSG_WAITALL flag for recv
-flags = None
-if platform.system() != 'Windows':
+# Windows doesn't support MSG_WAITALL flag for recv
+flags = 0
+if hasattr(socket, 'MSG_WAITALL'):
     flags = socket.MSG_WAITALL
 
 logger = logging.getLogger("monetdb")
@@ -207,6 +206,7 @@ class Server:
             m.update(salt.encode())
             pwhash = "{MD5}" + m.hexdigest()
         elif "crypt" in h:
+            import crypt
             pwhash = "{crypt}" + crypt.crypt((password+salt)[:8], salt[-2:])
         else:
             pwhash = "{plain}" + password + salt

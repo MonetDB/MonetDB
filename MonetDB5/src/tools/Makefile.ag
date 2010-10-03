@@ -47,4 +47,11 @@ headers_h = {
 	SOURCES = embeddedclient.h
 }
 
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-embeddedclient.pc.in
+}
+
 EXTRA_DIST_DIR = Tests

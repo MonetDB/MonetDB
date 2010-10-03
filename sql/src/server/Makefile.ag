@@ -30,7 +30,7 @@ YFLAGS = -d -p sql -v
 #
 #  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 #  that icc does not like; since the problem only occurs with
-#  sql/src/server/sql_parser.mx,
+#  sql/src/server/sql_parser.y,
 #  we use ICC_BISON_CFLAGS
 #  to disable the respective warning as locally as possible
 #  via "-wd592" (#592: variable "." is used before its value is set)
@@ -41,34 +41,34 @@ lib_sqlserver = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		sql_atom.mx \
-		sql_datetime.mx \
-		sql_decimal.mx \
-		sql_statement.mx \
-		sql_schema.mx \
-		sql_semantic.mx \
-		sql_rel2bin.mx \
-		bin_optimizer.mx \
-		sql_qc.mx \
-		sql_symbol.mx \
-		sql_scan.mx \   
-		sql_parser.mx \  
-		sql_mvc.mx \    
-		sql_env.mx \    
-		sql_privileges.mx \  
-		sql_psm.mx \  
-		rel_semantic.mx \
-		rel_select.mx \
-		rel_updates.mx \
-		rel_trans.mx \
-		rel_schema.mx \
-		rel_sequence.mx \
-		rel_subquery.mx \
-		rel_prop.mx \
-		rel_exp.mx \
-		rel_optimizer.mx \
-		rel_bin.mx \
-		rel_xml.mx \
-		rel_dump.mx
+		sql_atom.c \
+		sql_datetime.c \
+		sql_decimal.c \
+		sql_statement.c \
+		sql_schema.c \
+		sql_semantic.c \
+		sql_rel2bin.c \
+		bin_optimizer.c \
+		sql_qc.c \
+		sql_symbol.c \
+		sql_scan.c \   
+		sql_parser.y \  
+		sql_mvc.c \    
+		sql_env.c \    
+		sql_privileges.c \  
+		sql_psm.c \  
+		rel_semantic.c \
+		rel_select.c \
+		rel_updates.c \
+		rel_trans.c \
+		rel_schema.c \
+		rel_sequence.c \
+		rel_subquery.c \
+		rel_prop.c \
+		rel_exp.c \
+		rel_optimizer.c \
+		rel_bin.c \
+		rel_xml.c \
+		rel_dump.c
 }
 

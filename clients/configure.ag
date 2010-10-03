@@ -39,6 +39,8 @@ AC_SUBST(CONFIG_H)
 HOST=[$target]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
+PKG_PROG_PKG_CONFIG()
+
 if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
 fi
@@ -66,22 +68,23 @@ req_monetdb_ver='1.40.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-AM_MONETDB_COMMON($req_monetdb_ver)
-if test "x$have_monetdb" != xyes; then
-	if test "x$MONETDB_VERSION" = "x"; then
-		AC_MSG_ERROR([MonetDB was not found. Clients requires at least version $req_monetdb_ver of MonetDB.])
-	else
-		AC_MSG_ERROR([Clients requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDB_VERSION was found.])
-	fi
-fi
+
+PKG_CHECK_MODULES([monetdbtools], [monetdb-stream >= $req_monetdb_ver
+				   monetdb-mutils >= $req_monetdb_ver])
+
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
-AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
-AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
 
 AC_PROG_LIBTOOL
+
+AM_MONETDB_PROG_SWIG()
+AM_MONETDB_PROG_PERL()
+AM_MONETDB_PROG_RUBY()
+AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno -a x"$SWIG" != xno)
+
+AM_MONETDB_TYPES()
 
 # Checks for libraries.
 dnl unixODBC
@@ -146,12 +149,25 @@ AM_CONDITIONAL(HAVE_ODBC, test x$have_unixodbc != xno)
 # Checks for header files.
 AC_HEADER_TIME
 AC_CHECK_HEADERS([crypt.h pwd.h sys/ioctl.h sys/un.h termios.h])
+AC_CHECK_HEADERS([unistd.h netdb.h alloca.h malloc.h string.h])
+AC_CHECK_HEADERS([strings.h locale.h iconv.h langinfo.h])
 
 # Checks for library functions.
 AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r popen strcasecmp strncasecmp strtod strtof strtoll strtoull])
+
+AM_MONETDB_FUNC_GETOPT()
+
 AC_CHECK_DECLS([strtof, strtoll, strtoull])
 
 AM_MONETDB_MSG_CONTROL()
+AM_ICONV()
+
+PKG_CHECK_MODULES([openssl], [openssl >= 0.9.8f])
+#PKG_CHECK_MODULES([curl], [libcurl])
+#PKG_CHECK_MODULES([zlib], [zlib])
+AM_MONETDB_LIB_READLINE()
+AM_MONETDB_LIB_PTHREAD()
+AM_MONETDB_LIB_SOCKET()
 
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()
@@ -173,35 +189,6 @@ AC_DEFINE_UNQUOTED(CLIENTS_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-m
 AC_DEFINE_UNQUOTED(CLIENTS_LIBDIR,"$QXlibdir",[object code libraries])
 AC_DEFINE_UNQUOTED(CLIENTS_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 
-
-case "$host_os" in
-mac*)	DIRSEP=':'
-	QDIRSEP=':'
-	AC_ERROR([mac not supported])
-	;;
-*mingw*)
-	DIRSEP='\'
-	QDIRSEP='\\'
-	PATHSEP=';'
-	SOEXT='-0.dll'
-	;;
-*darwin*)
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
-	SOEXT='.dylib'
-	;;
-*)
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
-	SOEXT='.so'
-	;;
-esac
-AC_SUBST(DIRSEP)
-AC_SUBST(QDIRSEP)
-AC_SUBST(PATHSEP)
-AC_SUBST(SOEXT)
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"

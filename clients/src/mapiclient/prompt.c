@@ -24,13 +24,16 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#ifndef _MSC_VER
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
+#endif
 #endif
 #include "mprompt.h"
 
 #ifdef _MSC_VER
 #define fileno _fileno
+#include <conio.h>
 #endif
 
 #ifndef HAVE_GETLOGIN
@@ -56,6 +59,47 @@ prompt_getlogin(void)
 #endif
 }
 
+#ifdef _MSC_VER
+char *
+simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
+{
+	size_t length = 0;
+	char *destination = NULL;
+
+	destination = (char *) malloc(maxlen + 2);
+	if (!destination)
+		return NULL;
+
+	if (prompt) {
+		_cputs(prompt);
+		if (def) {
+			_cputs("(");
+			_cputs(def);
+			_cputs(")");
+		}
+		_cputs(":");
+	}
+	if (echo) {
+		_cgets_s(destination, maxlen, &length);
+		while (length > 0 &&
+		       (destination[length - 1] == '\n' ||
+			destination[length - 1] == '\r'))
+			destination[--length] = 0;
+	} else {
+		int c;
+
+		while ((c = _getch()) != '\r' && c != '\n') {
+			if (length < (size_t) maxlen)
+				destination[length++] = c;
+		}
+		destination[length] = 0;
+		_cputs("\r\n");
+	}
+	if (length == 0 && def)
+		strcpy(destination, def);
+	return destination;
+}
+#else
 char *
 simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 {
@@ -132,3 +176,4 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 		strcpy(destination, def);
 	return destination;
 }
+#endif /* _MSC_VER */

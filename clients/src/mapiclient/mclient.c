@@ -1365,15 +1365,14 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 	do {
 		/* handle errors first */
 		if ((reply = mapi_result_error(hdl)) != NULL) {
-			if (formatter == RAWformatter ||
-			    formatter == TESTformatter ||
-			    formatter == CSVformatter)
-				mapi_explain_result(hdl, stderr);
-			else
+			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "%s", reply);
+			} else {
+				mapi_explain_result(hdl, stderr);
+			}
 			errseen = 1;
-			/* don't need to print something like '0 tuples' if we got
-			 * an error */
+			/* don't need to print something like '0
+			 * tuples' if we got an error */
 			continue;
 		}
 
@@ -1782,7 +1781,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			if (buf) {
 				length = strlen(buf);
 				if (length > 1)
-					add_history(buf);
+					save_line(buf);
 				buf = realloc(buf, length + 2);
 				buf[length++] = '\n';
 				buf[length] = 0;

@@ -74,3 +74,9 @@ headers_gdk = {
 		#gdk_posix.mx logger.mx bat.feps bat1.feps bat2.feps
 #}
 
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-gdk.pc.in
+}

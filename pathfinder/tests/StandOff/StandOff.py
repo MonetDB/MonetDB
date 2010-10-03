@@ -21,20 +21,19 @@
 # 2008-2010 Eberhard Karls Universitaet Tuebingen, respectively.  All
 # Rights Reserved.
 
-import os
-import string
+import os, sys
+from MonetDBtesting import process
 
-TST = os.environ['TST']
-TSTDB = os.environ['TSTDB']
-MSERVER = os.environ['MSERVER'].replace('--trace','')
-TSTSRCDIR = os.environ['TSTSRCDIR']
-PF =  os.environ['PF']
-
-CALL = '%s -b "%s.xq" | %s --set standoff=enabled --dbname=%s "--dbinit=module(pathfinder);"' % (PF,os.path.join(TSTSRCDIR,TST),MSERVER,TSTDB)
-
-import sys, time
-Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), CALL)
-sys.stdout.write(Mlog)
-sys.stderr.write(Mlog)
-
-os.system(CALL)
+pf = process.pf(args = ['-b', '%s.xq' % os.path.join(os.environ['TSTSRCDIR'],
+                                                     os.environ['TST'])],
+                stdout = process.PIPE, stderr = process.PIPE, log = True)
+srv = process.server(lang = 'xquery', args = ['--set', 'standoff=enabled'],
+                     stdin = pf.stdout,
+                     stdout = process.PIPE, stderr = process.PIPE,
+                     log = True, notrace = True)
+pf.stdout = None                        # given away
+out, err = pf.communicate()
+sys.stderr.write(err)
+out, err = srv.communicate()
+sys.stdout.write(out)
+sys.stderr.write(err)

@@ -1137,6 +1137,8 @@ sql5_export str month_interval_str( int *ret, str *s, int *ek, int *sk );
 sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dump_slave(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_rank(bat *rid, bat *bid);
@@ -1339,32 +1341,48 @@ backend_destroy(backend *b)
 	_DELETE(b);
 }
 
-@-
-Stuff copied from the Monet 4 back end
-Lookup the statement associated with a specific identifier
-from the statement cache. Compile and optimize it for later
-consumption, e.g. display
-@c
-/*
-static stmt *
-sql_symbols2stmt(mvc *c, symbol *s) 
+static int
+rel_is_table( sql_rel *rel )
 {
-	dnode *d;
-	list *l = create_stmt_list();
-
-	for (d = s->data.lval->h; d; d = d->next) {
-		symbol *sym = d->data.sym;
-		stmt *st = sql_symbol2stmt(c, sym);
-
-		if (!st) {
-			list_destroy(l);
-			return NULL;
-		}
-		list_append(l, st);
-	}
-	return stmt_list(l);
+	if (!rel || is_base(rel->op))
+		return 1;
+	return 0;
 }
-*/
+
+static int
+exp_is_point_select( sql_exp * e) 
+{
+	if (!e)
+		return 1;
+	if (e->type == e_cmp && !e->f && e->flag == (int)cmp_equal) {
+		sql_exp *r = e->r;
+
+		if (r->card <= CARD_AGGR) 
+			return 1;
+	}
+	return 0;
+}
+
+static int
+rel_is_point_query( sql_rel *rel)
+{
+	int is_point = 0;
+
+	if (!rel)
+		return 1;
+	if (is_project(rel->op))
+		return rel_is_point_query(rel->l);
+	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
+		node *n;
+		is_point = 1;
+		for (n=rel->exps->h; n && is_point; n = n->next) {
+			if (!exp_is_point_select(n->data))
+				is_point = 0;
+		}
+	}
+	return is_point;
+}
+
 
 stmt *
 sql_symbol2stmt(mvc *c, symbol *sym)
@@ -1389,7 +1407,9 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 			s = output_semantic(c, sym);
 		}
 	} else {
+		int pq;
 		r = rel_optimizer(c, r);
+		pq = rel_is_point_query(r);
 		if (c->emode == m_plan) {
 			rel_print(c, r, 0);
 		} else {
@@ -1404,6 +1424,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 			stmt_destroy(s);
 			s = bin_optimizer(c, opt);
 			stmt_destroy(opt);
+			c->point_query = pq;
 			return s;
 		}
 	}

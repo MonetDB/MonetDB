@@ -1226,6 +1226,17 @@ Create the result BAT and execute the select algorithm.
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
 
 			bn = BAT_hashselect(b, bn, tl);
+		} else if (!preserve_order
+				&& equi
+				&& b->batPersistence == PERSISTENT
+				&& (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4
+				&& estimate < batcnt / 100
+				&& batcnt * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < (GDK_mem_maxsize / 2) /* MT_npages() * MT_pagesize() / GDKnr_threads */ ) {
+			/* Build a hash-table on the fly for equi-select on persistent BAT
+			 * if tail-type is large (wide) and selectivity is low and BAT + hash-table fit in memory */
+			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
+
+			bn = BAT_hashselect(b, bn, tl);
 		} else {
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_scanselect(b=%s, bn=%s, tl, th, equi=%d, nequi=%d, lval=%d, hval=%d, nocheck=%d);\n", BATgetId(b), BATgetId(b), BATgetId(bn), equi, nequi, lval, hval, nocheck);
 

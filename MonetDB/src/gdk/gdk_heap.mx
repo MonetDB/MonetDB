@@ -233,11 +233,12 @@ HEAPextend(Heap *h, size_t size)
 			if (fp != NULL) {
 				fclose(fp);
 				if (h->storage == STORE_MEM) {
-					int newmode = h->newstorage == STORE_MMAP && existing ? STORE_PRIV : h->newstorage;
+					int newmode = h->newstorage == STORE_MMAP && existing && !h->forcemap ? STORE_PRIV : h->newstorage;
 					/* make sure we really MMAP */
 					if (must_mmap && h->newstorage == STORE_MEM)
 						newmode = STORE_MMAP;
 					h->newstorage = h->storage = newmode;
+					h->forcemap = 0;
 				}
 				h->base = NULL;
 				EXTENDDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");

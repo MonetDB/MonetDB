@@ -1,3 +1,6 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Wed Sep 22 2010 Fabian Groffen <fabian@cwi.nl>
+- We now provide pkg-config files (*.pc) for libraries.
+
