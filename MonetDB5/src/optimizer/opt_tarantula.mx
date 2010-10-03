@@ -222,7 +222,7 @@ opt_export int TARgetPeer(str uri);
 
 #define SHAREDDISK		1	/* assume a shared file system */
 #define SHAREDINTERMEDIATES	2	/* propagate intermediates to head */
-int strategy = SHAREDDISK;	
+int strategy = SHAREDDISK | SHAREDINTERMEDIATES;	
 
 @:exportOptimizer(tarantula)@
 

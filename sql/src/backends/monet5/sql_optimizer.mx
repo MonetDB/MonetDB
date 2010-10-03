@@ -361,15 +361,9 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				b = store_funcs.bind_idx(m->session->tr,i,0);
 				if ( b ) {
 					str loc;
-					if ( ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc) 
+					if (b->batPersistence == PERSISTENT && ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc) 
 						varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 					cnt = BATcount(b);
-					BATsave(b); /* make sure it is visible elsewhere */
-					{	bat list[2];
-						list[0] = 0;    /* dummy */
-						list[1] = b->batCacheid;
-						BBPdir(2,list);
-					}
 					BBPreleaseref(b->batCacheid);
 				}
 				rows = (wrd) cnt;
@@ -390,15 +384,9 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					b = store_funcs.bind_col(m->session->tr,c,0);
 					if ( b ){
 						str loc;
-						if ( ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc)
+						if (b->batPersistence == PERSISTENT &&  ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc)
 							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
-						BATsave(b); /* make sure it is visible elsewhere */
-						{	bat list[2];
-							list[0] = 0;    /* dummy */
-							list[1] = b->batCacheid;
-							BBPdir(2,list);
-						}
 						BBPreleaseref(b->batCacheid);
 					}
 					rows = (wrd) cnt;
