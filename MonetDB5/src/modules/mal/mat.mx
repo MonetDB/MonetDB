@@ -474,10 +474,11 @@ MATinfo(int *ret, str *grp, str *elm){
 }
 
 static BAT *
-MATproject_any( BAT *map, BAT **bats, unsigned int len )
+MATproject_any( BAT *map, BAT **bats, int len )
 {
 	BAT *res;
-	BUN i, cnt = BATcount(map);
+	int i;
+	BUN j, cnt = BATcount(map);
 	BATiter *bats_i;
 	BUN *batsT;
 	bte *mapT;
@@ -491,18 +492,19 @@ MATproject_any( BAT *map, BAT **bats, unsigned int len )
 		batsT[i] = 0;
 		bats_i[i] = bat_iterator(bats[i]);
 	}
-	for (i=0; i<cnt; i++)
-		BUNappend(res, BUNtail(bats_i[mapT[i]], batsT[mapT[i]]++), FALSE);
+	for (j=0; j<cnt; j++)
+		BUNappend(res, BUNtail(bats_i[mapT[j]], batsT[mapT[j]]++), FALSE);
 	GDKfree(batsT);
 	return res;
 }
 
 @= project
 static BAT *
-MATproject_@1( BAT *map, BAT **bats, unsigned int len )
+MATproject_@1( BAT *map, BAT **bats, int len )
 {
 	BAT *res;
-	BUN i, cnt = BATcount(map);
+	int i;
+	BUN j, cnt = BATcount(map);
 	@1 *resT, **batsT;
 	bte *mapT;
 
@@ -513,9 +515,9 @@ MATproject_@1( BAT *map, BAT **bats, unsigned int len )
 	batsT = (@1**)GDKmalloc(sizeof(@1*) * len);
 	for (i=0; i<len; i++)
 		batsT[i] = (@1*)Tloc(bats[i], 0);
-	for (i=0; i<cnt; i++)
-		resT[i] = *batsT[mapT[i]]++;
-	BATsetcount(res, i);
+	for (j=0; j<cnt; j++)
+		resT[j] = *batsT[mapT[j]]++;
+	BATsetcount(res, j);
 	GDKfree(batsT);
 	return res;
 }
@@ -567,14 +569,14 @@ MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *res = NULL, *map;
 	/* rest of the args are parts, (excluding result and map) */
 	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 2);
-	BUN i, bcnt = 0; 
-	unsigned int len = pci->argc-2, sorted = 1;
+	BUN bcnt = 0; 
+	int i, len = pci->argc-2, sorted = 1;
 
 	(void) cntxt; (void) mb; (void) stk; 
 	map = BATdescriptor(map_id);
 	if (!map)
 		goto error;
-	for (i=2; i<(unsigned int)pci->argc; i++) {
+	for (i=2; i<pci->argc; i++) {
 		bat id = *(bat*) getArgReference(stk,pci,i);
 		bats[i-2] = BATdescriptor(id);
 		if (!bats[i-2])
@@ -605,7 +607,7 @@ error:
 
 @= sort_any2
 static BAT*
-MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, int cnt_i1, BAT *i2, bte map_i2, int cnt_i2) 
+MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map_i2, BUN cnt_i2) 
 {
 	int c;
 	BUN val_i1 = BUNfirst(i1);
@@ -666,12 +668,12 @@ MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, int cnt_i1, BAT *i2, bte map
 @:sort_any2(rev,>=,<)@
 @:sort_any2(,<=,>)@
 static BAT *
-MATsort_any( BAT **map, BAT **bats, unsigned int len, BUN cnt, int rev )
+MATsort_any( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 {
 	BAT *res = 0, *in;
-	BUN i;
+	int i;
 	bte *mapT;
-	int len1, len2;
+	BUN len1, len2;
 	bte *map_in = NULL;
 
 	*map = BATnew(TYPE_void, TYPE_bte, cnt);
@@ -707,7 +709,7 @@ MATsort_any( BAT **map, BAT **bats, unsigned int len, BUN cnt, int rev )
 
 @= sort2
 static int
-MATsortloop_@1_@2( @1 *val_res, bte *map_res, @1 *val_i1, bte *map_i1, int cnt_i1, @1 *val_i2, bte map_i2, int cnt_i2 ) {
+MATsortloop_@1_@2( @1 *val_res, bte *map_res, @1 *val_i1, bte *map_i1, BUN cnt_i1, @1 *val_i2, bte map_i2, BUN cnt_i2 ) {
 
 	@1 *end_i1 = val_i1 + cnt_i1;
 	@1 *end_i2 = val_i2 + cnt_i2;
@@ -754,13 +756,13 @@ MATsortloop_@1_@2( @1 *val_res, bte *map_res, @1 *val_i1, bte *map_i1, int cnt_i
 @:sort2(@1,rev,>=,<)@
 @:sort2(@1,,<=,>)@
 static BAT *
-MATsort_@1( BAT **map, BAT **bats, unsigned int len, BUN cnt, int rev )
+MATsort_@1( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 {
 	BAT *res;
-	BUN i;
+	int i;
 	@1 *resT, **batsT, *in;
 	bte *mapT;
-	int len1, len2;
+	BUN len1, len2;
 	bte *map_in = NULL;
 
 	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
@@ -813,11 +815,11 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 	BAT *res = NULL, *map = NULL;
 	/* rest of the args are sorted parts, (excluding sorted and map) */
 	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 2);
-	BUN i, pcnt = 0; 
-	unsigned int len = pci->argc-2;
+	BUN pcnt = 0; 
+	int i, len = pci->argc-2;
 
 	(void) cntxt; (void) mb; (void) stk; 
-	for (i=2; i<(unsigned int)pci->argc; i++) {
+	for (i=2; i<pci->argc; i++) {
 		bat id = *(bat*) getArgReference(stk,pci,i);
 		bats[i-2] = BATdescriptor(id);
 		if (!bats[i-2])
@@ -880,15 +882,15 @@ MATrefine_(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 	BAT *res = NULL, *val = NULL, *map = NULL, *rmap = NULL, *r = NULL;
 	/* rest of the args are sorted parts, (excluding sorted and map) */
 	BAT **bats = GDKzalloc(sizeof(BAT*) * pci->argc - 4);
-	BUN i, pcnt = 0; 
-	unsigned int len = pci->argc-4;
+	BUN pcnt = 0; 
+	int i, len = pci->argc-4;
 
 	(void) cntxt; (void) mb; (void) stk; 
 	map = BATdescriptor(map_id);
 	val = BATdescriptor(val_id);
 	if (!map || !val)
 		goto error;
-	for (i=4; i<(unsigned int)pci->argc; i++) {
+	for (i=4; i<pci->argc; i++) {
 		bat id = *(bat*) getArgReference(stk,pci,i);
 		bats[i-4] = BATdescriptor(id);
 		if (!bats[i-4])
