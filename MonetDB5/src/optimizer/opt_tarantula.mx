@@ -416,7 +416,7 @@ of the base tables only.
 Second stage would be to transport intermediates throught the file system as well.
 @c
 void pushTARinstruction(MalBlkPtr tm, InstrPtr p){
-	VarPtr loc,rows,low,hgh;
+	VarPtr loc,low,hgh;
 	InstrPtr q;
 
 	if (strategy & SHAREDDISK &&

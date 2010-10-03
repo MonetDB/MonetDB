@@ -365,6 +365,11 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 					cnt = BATcount(b);
 					BATsave(b); /* make sure it is visible elsewhere */
+					{	bat list[2];
+						list[0] = 0;    /* dummy */
+						list[1] = b->batCacheid;
+						BBPdir(2,list);
+					}
 					BBPreleaseref(b->batCacheid);
 				}
 				rows = (wrd) cnt;
@@ -389,6 +394,11 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
 						BATsave(b); /* make sure it is visible elsewhere */
+						{	bat list[2];
+							list[0] = 0;    /* dummy */
+							list[1] = b->batCacheid;
+							BBPdir(2,list);
+						}
 						BBPreleaseref(b->batCacheid);
 					}
 					rows = (wrd) cnt;
