@@ -146,7 +146,7 @@ Alternative, the head can clear the recycler pool explicitly upon such state cha
 
 [Shared disk]
 For a leg to work it needs access to its storage layer, which is a NAS.
-It is encapsulated in the operation attach.bind("path",tuplecount).
+It is encapsulated in the operation attach.bind("path",tuplecount,low_oid,high_oid).
 
 The code generation for the legs currently relies on a conceptual full replication of
 the database over the servers. The next version should use the attach() functionality
@@ -213,11 +213,16 @@ typedef struct {
 #include "opt_mitosis.h"
 #define MINLEGSIZE 5	/* number of MAL instructions to consider for a leg */
 #define MAXSHARE 64		/* number of input output arguments to consider */
+#define VTOP 2			/* multiplier margin */
 #define MAXSITES MAXSLICES   /* should become dynamic at some point */
 Peer peers[MAXSITES];    /* registry of peer servers */
 int TARnrpeers=0;
 bte tarantulaLocal=0;
 opt_export int TARgetPeer(str uri);
+
+#define SHAREDDISK		1	/* assume a shared file system */
+#define SHAREDINTERMEDIATES	2	/* propagate intermediates to head */
+int strategy = SHAREDDISK;	
 
 @:exportOptimizer(tarantula)@
 
@@ -407,19 +412,43 @@ TARdiscover(Client cntxt)
 @-
 The push instruction routine is overloaded to check for easy exchange operations of
 BATs between leg, head, and persistent store. First target is to attempt sharing
-of the base tables.
+of the base tables only.
+Second stage would be to transport intermediates throught the file system as well.
 @c
 void pushTARinstruction(MalBlkPtr tm, InstrPtr p){
-	if ( getModuleId(p) == sqlRef && ( getFunctionId(p) == bindRef || getFunctionId(p) ==binddbatRef || getFunctionId(p) == bindidxRef )){
+	VarPtr loc,rows,low,hgh;
+	InstrPtr q;
+
+	if (strategy & SHAREDDISK &&
+		 getModuleId(p) == sqlRef && ( getFunctionId(p) == bindRef || getFunctionId(p) ==binddbatRef || getFunctionId(p) == bindidxRef )){
+		loc = varGetProp(tm, getArg(p,0), fileProp);
+		low = varGetProp(tm, getArg(p,0), PropertyIndex("hlb"));
+		hgh = varGetProp(tm, getArg(p,0), PropertyIndex("hub"));
+		if ( loc ) {
+			q = newStmt(tm,attachRef,bindRef);
+			getArg(q,0)= getArg(p,0);
+			q = pushStr(tm,q, loc->value.val.sval);
+			if ( low && hgh){
+				q= pushOid(tm,q,low->value.val.oval);
+				setVarUDFtype(tm,getArg(q,q->argc-1));
+				q= pushOid(tm,q,hgh->value.val.oval);
+				setVarUDFtype(tm,getArg(q,q->argc-1));
+			}
+			return;
+		}
 	}
 	pushInstruction(tm,p);
 }
-
 @-
 The TARmakeLeg walks through the MAL block and extracts the dependent structure for
-execution. Note that information van be recomputed in all legs. Possibly doing duplicate work.
-Therefore we start with an analysis to determine the 'level' at which a variable is needed indirectly.
-They have to be exported.
+execution.  A few strategies apply.
+To exchange intermediates the flag SHAREDINTERMEDIATES should be set in the strategy.
+If it is not set then the legs will be doing duplicate work, as the mitosis
+will generate identical plans for side-ways projects over the fragmented table.
+
+The alternative is to determine the 'level' at which a variable is needed indirectly.
+They then can be exported by the leg. This, however, will cause a lot of communication,
+because statically we can not see if a result is represented as a cheap view over another.
 @c
 static MalBlkPtr 
 TARmakeLeg(Client cntxt, MalBlkPtr mb, InstrPtr *old, int pc, int last, int limit, int idx, int leg, int input[MAXSLICES][MAXSHARE], int output[MAXSLICES][MAXSHARE], InstrPtr *list,int *map)
@@ -459,7 +488,8 @@ if at least a sql.bind operation belongs to the list and the leg has a minimimal
 			mnstr_printf(cntxt->fdout,"%d(%d), ", output[leg][i], map[output[leg][i]]);
 		mnstr_printf(cntxt->fdout,"\n");
 	}
-	alias= (int*) GDKzalloc(2 * mb->vtop * sizeof(int));
+	alias= (int*) GDKzalloc(VTOP * mb->vtop * sizeof(int));
+	assert(alias);
 
 	snprintf(buf,BUFSIZ,"%s_%d_%d", getFunctionId(getInstrPtr(mb,0)), getArg(old[pc],0), idx-old[pc]->retc);
 	putName(buf,strlen(buf));
@@ -865,8 +895,9 @@ TAReligible(MalBlkPtr mb){
 The core of the optimizer. It will repeatedly optimize the program given until all
 blocking operations have been handled.
 Therefore we start with an analysis to determine the 'level' at which a variable is needed indirectly.
-They have to be exported.
+They have to be exported when SHAREDINTERMEDIATES is set.
 @c
+
 static int
 OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -901,7 +932,7 @@ to ease future distribution and scheduling.
 The optimizer works by looking only to the mat.pack statement.
 
 Loop through the program and determine for each variable
-the lev at which it would be indirectly input.
+the level at which it would be indirectly needed as input.
 @c
 	(void) fixModule(cntxt->nspace,tarantulaRef);
 
@@ -909,17 +940,14 @@ the lev at which it would be indirectly input.
 	old = mb->stmt;
 	vtop= mb->vtop;
 	lev = limit;
-	level= (int*) GDKzalloc(2 * vtop * sizeof(int));
+	level= (int*) GDKzalloc(VTOP * vtop * sizeof(int));
 	for (i = limit; i >=0 ; i--) {
 		p = old[i];
 		if( getModuleId(p)== matRef && getFunctionId(p)== packRef)
 			lev=i;
 		if ( getModuleId(p) != sqlRef){
-			for (j=p->retc; j< p->argc; j++)
-			if ( level[getArg(p,j)] < lev )
-				level[getArg(p,j)] = lev;
-			for (j=0; j<p->retc; j++)
-			if ( level[getArg(p,j)] < lev )
+			for (j=0; j<p->argc; j++)
+			if (level[getArg(p,j)] < lev )
 				level[getArg(p,j)] = lev;
 		}
 	}
@@ -932,15 +960,14 @@ the lev at which it would be indirectly input.
 		mnstr_printf(cntxt->fdout,"\n");
 	}
 @c
-
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
 	pushTARinstruction(mb, old[0]);
 
+	map= (int*) GDKzalloc(VTOP * vtop * sizeof(int));
+	assert(map);
 
-	map= (int*) GDKzalloc(2 * vtop * sizeof(int));
-
-	for ( i = 0; i <2 * vtop; i++)
+	for ( i = 0; i < VTOP * vtop; i++)
 		map[i] = i;
 
 	for (i = 1; i < limit; i++) {
@@ -953,7 +980,7 @@ the lev at which it would be indirectly input.
 		if( getModuleId(p)== matRef && getFunctionId(p)== packRef) {
 @-
 The critical part is to determine the input/output variable set
-for this pack function. Some variables may have to be re-level
+for this pack function. Some variables may have to be re-used
 in subsequent calls.
 @c
 			lev = i;
@@ -963,7 +990,7 @@ in subsequent calls.
 			memset((char*) output, 0, sizeof(int)* MAXSLICES * MAXSHARE);
 			for (leg =0, ta = p->retc; leg < MAXSLICES &&  ta < p->argc; ta++,leg++) {
 				list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
-				needed= (int*) GDKzalloc(mb->vtop*2 * sizeof(int));
+				needed= (int*) GDKzalloc(VTOP * mb->vtop * sizeof(int));
 				
 				assert(list);
 				assert(needed);
@@ -972,7 +999,7 @@ in subsequent calls.
 				needed[map[getArg(p,ta)]] = 1;
 				output[leg][otop[leg]++]= getArg(p,ta);
 
-				/* find variables level outside leg scope */
+				/* find variables used outside leg scope */
 				/* find variables defined before by legs */
 				for (l = i-1; l > 0; l--){
 					pp = old[l];
@@ -1016,14 +1043,16 @@ in subsequent calls.
 						needed[getArg(pp,j)]= 0;
 					}
 @-
-The variables that are statically level more then once beyond the mat.pack 
-are a target for retention. All variable re-use within the same flow partition
-are re-calculated upon need. The ratio is that legs will make such recalcs
-cheap using the recycler.
+The variables that are statically used more then once beyond the mat.pack 
+are a target for re-use. It is controlled by SHAREDINTERMEDIATES.
+Otherwise, all variable re-use within the same flow partition
+are re-calculated upon need. 
+Recalculations may be cheaper compared to exchange, certainly
+in the face of using the recycler.
 @c
 					for ( j = 0; j<pp->retc; j++){
-						if (level[getArg(pp,j)] > lev && map[getArg(pp,j)] == getArg(pp,j)){
-							assert(mb->vtop < 2 *vtop);
+						if ( strategy & SHAREDINTERMEDIATES && level[getArg(pp,j)] > lev && map[getArg(pp,j)] == getArg(pp,j)){
+							assert(mb->vtop < VTOP *vtop);
 							map[output[leg][otop[leg]]] = cloneVariable(mb,mb, getArg(pp,j));
 							level[map[output[leg][otop[leg]]]] = level[getArg(pp,j)];
 							output[leg][otop[leg]++]= getArg(pp,j);
@@ -1094,7 +1123,8 @@ Create the remote function and its local stub.
 				p= pushArgument(mb, p, getArg(q, k++));
 
 			/* identify the other arguments that should be passed around */
-			done = (char*) GDKzalloc( 2 * mb->vtop);
+			done = (char*) GDKzalloc( VTOP * mb->vtop);
+			assert(done);
 			for ( l=0; l < leg; l++)
 			for ( k=0; k < itop[l]; k++){
 				if ( done[input[l][k]]  == 0)
