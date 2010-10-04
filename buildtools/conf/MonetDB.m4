@@ -1694,6 +1694,7 @@ else
 	YACC=''
 	AM_CONDITIONAL(HAVE_SWIG, false)
 	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
+	AM_CONDITIONAL(HAVE_PYTHON, false)
 fi
 
 

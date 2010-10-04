@@ -101,7 +101,8 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/monetdb-gdk.pc
 
 %dir %{_includedir}/%{name}
-%dir %{_includedir}/%{name}/*
+%dir %{_includedir}/%{name}/common
+%dir %{_includedir}/%{name}/gdk
 %{_includedir}/%{name}/*.h
 %{_includedir}/%{name}/*/*.[hcm]
 %{_libdir}/libmutils.so
