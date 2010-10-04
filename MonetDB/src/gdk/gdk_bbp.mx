@@ -895,7 +895,7 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int silent)
 		if (sz > *BBPlimit)
 			*BBPlimit = sz;
 	}
-	return 0;
+	return bbpversion;
 }
 @-
 In a distributed version of MonetDB, it would be nice to easily share the BATs
@@ -1034,6 +1034,7 @@ BBPinit(void)
 	struct stat st;
 	int min_stamp = 0x7fffffff, max_stamp = 0;
 	bat bid;
+	int bbpversion;
 	oid BBPoid;
 
 	/* first move everything from SUBDIR to BAKDIR (its parent) */
@@ -1070,7 +1071,7 @@ BBPinit(void)
 	BBPlimit = BBPINIT;
 	BBPsize = 1;
 
-	(void) BBPheader(fp, &BBPlimit, &BBPoid,FALSE);
+	bbpversion = BBPheader(fp, &BBPlimit, &BBPoid,FALSE);
 
 	/* allocate structures: try to reserve as much space as
 	   possible */
@@ -1119,6 +1120,8 @@ BBPinit(void)
 #if GDK_VARSHIFT != 0
 	if (bbpversion == GDKLIBRARY_PRE_VARSHIFT)
 		fixstrheap();
+#else
+	(void) bbpversion;
 #endif
 
 	return;
