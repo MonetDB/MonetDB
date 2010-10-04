@@ -823,8 +823,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp)
 		BBP[bid].refs = 0;
 		BBP[bid].lrefs = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 	}
-	fclose(fp);
-	return bs;
+	return NULL;
 }
 
 static int 
@@ -985,6 +984,7 @@ BBPimportEntry(char *nme)
 	if ( BBPheader(fd, &BBPlimit, &BBPoid, TRUE) )
 		return 0;
 	bs = BBPreadEntries(fd, nme, &min_stamp, &max_stamp);
+	fclose(fd);
 	if (bs == 0)
 		return 0;
 	bs->B.batCacheid = 0;
@@ -1093,6 +1093,7 @@ BBPinit(void)
 	memset(BBP, 0, BBPlimit * sizeof(BBPrec));
 
 	(void) BBPreadEntries(fp, 0, &min_stamp, &max_stamp);
+	fclose(fp);
 
 	/* normalize saved LRU stamps */
 	if (min_stamp <= max_stamp) {
