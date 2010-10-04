@@ -1869,7 +1869,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			length = 0;
 		} else
 			length = strlen(line);
-		if (hdl == NULL && length > 0 && line[length - 1] == '\n') {
+		/* the fp == stdin test is so that we don't treat '\\'
+		   special for files that were passed on the command
+		   line with -e in effect (see near the bottom of
+		   main()) */
+		if (hdl == NULL && length > 0 && line[length - 1] == '\n' && fp == stdin) {
 			/* test for special commands */
 			if (mode != MAL)
 				while (length > 0 &&
@@ -2723,7 +2727,26 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			c |= doFile(mid, argv[optind]);
+			if (echoquery) {
+				/* a bit of a hack: process file
+				   line-by-line if using -e (--echo)
+				   so that the queries that are echoed
+				   have something to do with the
+				   output that follows (otherwise we
+				   just echo the start of the file for
+				   each query) */
+				FILE *fp;
+				if ((fp = fopen(argv[optind], "r")) == NULL) {
+					fprintf(stderr, "%s: cannot open\n", argv[optind]);
+					c |= 1;
+				} else {
+					/* note that since fp != stdin,
+					   we don't treat \ special */
+					c |= doFileByLines(mid, fp, NULL);
+					fclose(fp);
+				}
+			} else
+				c |= doFile(mid, argv[optind]);
 			optind++;
 		}
 	}
