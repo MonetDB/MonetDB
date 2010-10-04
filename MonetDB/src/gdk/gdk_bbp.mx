@@ -976,13 +976,17 @@ BBPimportEntry(char *nme)
 	snprintf(path, BUFSIZ, "%s%c%s/BBP.dir", bbpdir, DIR_SEP, BATDIR);
 	fd = fopen(path,"r");
 	if (fd == 0) {
-		snprintf(path, BUFSIZ, "%s%c%s%cBACKUP/BBP.dir", bbpdir, DIR_SEP, BATDIR, DIR_SEP);
+		snprintf(path, BUFSIZ, "%s%c%s%c/BBP.bak", bbpdir, DIR_SEP, BATDIR, DIR_SEP);
 		fd = fopen(path,"r");
-		if (fd == 0)
-			return 0;
+		if (fd == 0) {
+			snprintf(path, BUFSIZ, "%s%c%s%cBACKUP/BBP.dir", bbpdir, DIR_SEP, BATDIR, DIR_SEP);
+			fd = fopen(path,"r");
+			if (fd == 0)
+				return 0;
+		}
 	}
 
-	if (BBPheader(fd, &BBPlimit, &BBPoid, TRUE))
+	if (BBPheader(fd, &BBPlimit, &BBPoid, TRUE) < 0)
 		return 0;
 	bs = BBPreadEntries(fd, nme, &min_stamp, &max_stamp);
 	fclose(fd);
