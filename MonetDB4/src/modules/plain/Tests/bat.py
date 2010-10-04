@@ -1,5 +1,7 @@
-import os
-MSERVER =  os.environ['MSERVER']
-TSTDB = os.environ['TSTDB']
-TST = os.environ['TST']
-os.system("%s --dbname=%s --set gdk_mem_pagebits=16 < %s.milS" % (MSERVER, TSTDB, TST))
+from MonetDBtesting import process
+s = process.server(lang = 'mil', args = ['--set', 'gdk_mem_pagebits=16'],
+                   stdin = open('%s.mil' % os.environ['TST']),
+                   stdout = process.PIPE, stderr = process.PIPE)
+out, err = s.communicate()
+sys.stdout.write(out)
+sys.stderr.write(err)
