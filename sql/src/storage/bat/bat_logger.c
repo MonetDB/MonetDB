@@ -54,6 +54,7 @@ bl_postversion( void *lg)
 		b = bat_new( TYPE_void, TYPE_bit, BATcount(o));
 		memset(Tloc(b,BUNfirst(b)), 0, sizeof(bit)*BATcount(o));
 		BATsetcount(b, BATcount(o));
+		BATsetaccess(b, BAT_READ);
 		logger_add_bat(lg, b, "sys__tables_readonly");
 		bat_destroy(o);
 		bat_destroy(b);
@@ -64,6 +65,7 @@ bl_postversion( void *lg)
 		b = bat_new( TYPE_void, TYPE_str, BATcount(o));
 		for(i=0; i< BATcount(o); i++) 
 			BUNappend(b, s_nil, TRUE);
+		BATsetaccess(b, BAT_READ);
 		logger_add_bat(lg, b, "sys__columns_storage");
 		bat_destroy(o);
 		bat_destroy(b);
@@ -74,6 +76,7 @@ bl_postversion( void *lg)
 		b = bat_new( TYPE_void, TYPE_bit, BATcount(o));
 		memset(Tloc(b,BUNfirst(b)), 0, sizeof(bit)*BATcount(o));
 		BATsetcount(b, BATcount(o));
+		BATsetaccess(b, BAT_READ);
 		logger_add_bat(lg, b, "tmp__tables_readonly");
 		bat_destroy(o);
 		bat_destroy(b);
@@ -84,6 +87,7 @@ bl_postversion( void *lg)
 		b = bat_new( TYPE_void, TYPE_str, BATcount(o));
 		for(i=0; i< BATcount(o); i++) 
 			BUNappend(b, s_nil, TRUE);
+		BATsetaccess(b, BAT_READ);
 		logger_add_bat(lg, b, "tmp__columns_storage");
 		bat_destroy(o);
 		bat_destroy(b);
