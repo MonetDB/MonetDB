@@ -42,7 +42,7 @@
  * to handle collisions.
  */
 struct bucket_t {
-    xmlChar  *key;      /**< key (elem/attr name or namespace URI) */
+    char     *key;      /**< key (elem/attr name or namespace URI) */
     int       id;       /**< name_id */
     bucket_t *next;     /**< next bucket in overflow chain */
 };
@@ -54,14 +54,14 @@ struct bucket_t {
  * Lookup an id in a given bucket using its associated key.
  */
 static int
-find_id (bucket_t *bucket, const xmlChar *key)
+find_id (bucket_t *bucket, const char *key)
 {
     bucket_t *cur_bucket = bucket;
     
     assert (key);
 
     while (cur_bucket)
-        if (xmlStrcmp (cur_bucket->key, key) == 0)
+        if (strcmp (cur_bucket->key, key) == 0)
             return cur_bucket->id;
         else
             cur_bucket = cur_bucket->next;
@@ -73,7 +73,7 @@ find_id (bucket_t *bucket, const xmlChar *key)
  * Attach an (id, key) pair to a given bucket list.
  */
 static bucket_t *
-bucket_insert (bucket_t *bucket, const xmlChar *key, int id)
+bucket_insert (bucket_t *bucket, const char *key, int id)
 {
     int ident = find_id (bucket, key);
     
@@ -82,7 +82,7 @@ bucket_insert (bucket_t *bucket, const xmlChar *key, int id)
         bucket_t *newbucket = (bucket_t*) malloc (sizeof (bucket_t));
 
         newbucket->id = id;
-        newbucket->key = xmlStrdup (key);
+        newbucket->key = strdup (key);
 
         /* add new bucket to the front of list */
         newbucket->next = bucket;
@@ -96,11 +96,11 @@ bucket_insert (bucket_t *bucket, const xmlChar *key, int id)
  * Create the hash value for a given key.
  */
 static int
-find_hash_bucket (const xmlChar *key)
+find_hash_bucket (const char *key)
 {   
     assert (key);
     
-    size_t len = xmlStrlen (key);
+    size_t len = strlen (key);
 
     /* build a hash out of the first and the last character
        and the length of the key */
@@ -128,7 +128,7 @@ new_hashtable (void)
  * Insert key and id into hashtable.
  */
 void
-hashtable_insert (hashtable_t hash_table, const xmlChar *key, int id)
+hashtable_insert (hashtable_t hash_table, const char *key, int id)
 {
     int hashkey;
     
@@ -143,7 +143,7 @@ hashtable_insert (hashtable_t hash_table, const xmlChar *key, int id)
  * Find element in hashtable. 
  */
 int
-hashtable_find (hashtable_t hash_table, const xmlChar *key)
+hashtable_find (hashtable_t hash_table, const char *key)
 {
     assert (key); 
     
@@ -168,7 +168,7 @@ free_hashtable (hashtable_t hash_table)
             bucket = bucket->next;
             /* free the copied hash key */
             if (free_bucket->key) 
-                xmlFree (free_bucket->key);
+                free (free_bucket->key);
             free (free_bucket);
         }
    }

@@ -68,12 +68,14 @@
 static struct option long_options[] = {
     { "format",              required_argument, NULL, 'F' },
     { "attributes-separate", no_argument,       NULL, 'a' },
+    { "doc-name",            required_argument, NULL, 'd' },
     { "in-file",             required_argument, NULL, 'f' },
     { "help",                no_argument,       NULL, 'h' },
     { "names-inline",        no_argument,       NULL, 'n' },
     { "out-file",            required_argument, NULL, 'o' },
     { "quiet",               no_argument,       NULL, 'q' },
     { "strip-values",        required_argument, NULL, 's' },
+    { "table",               no_argument,       NULL, 't' },
     { NULL,                  no_argument,       NULL, 0   }
 };
 /* also see definition of OPT_STRING below */
@@ -136,7 +138,7 @@ static const char
 
 #endif
 
-#define OPT_STRING "F:af:hno:qs:"
+#define OPT_STRING "F:ad:f:hno:qs:t"
                                   
 /** 
  * Default format (for SQL-based XQuery processing)
@@ -158,6 +160,8 @@ print_help (char *progname)
             long_option (opt_buf, ", --%s=filename", 'f'));
     printf ("  -o prefix%s: writes encoding to file PREFIX.csv\n",
             long_option (opt_buf, ", --%s=prefix", 'o'));
+    printf ("  -d docname%s: assign document name to document(s)\n",
+            long_option (opt_buf, ", --%s=docname", 'd'));
     printf ("  -F format%s: format selected encoding components\n"
             "\t(default: '%s')\n"
             "\t%%e: node preorder rank\n"
@@ -186,6 +190,8 @@ print_help (char *progname)
             long_option (opt_buf, ", --%s", 'h'));
     printf ("  -s n%s: strip values to n characters\n",
             long_option (opt_buf, ", --%s=n", 's'));
+    printf ("  -t%s: interpret input as table of document references\n",
+            long_option (opt_buf, ", --%s", 't'));
     printf ("  -q%s: don't report warnings\n",
             long_option (opt_buf, ", --%s", 'q'));
 }
@@ -204,12 +210,14 @@ main (int argc, char **argv)
 {
     shred_state_t status;  
     char *progname   = NULL;
+    char *doc_name   = NULL;
 
     FILE *shout      = NULL;
     FILE *attout     = NULL;
     FILE *namesout   = NULL;
     FILE *urisout    = NULL;
     FILE *guideout   = NULL;
+    FILE *tableout   = NULL;
 
     /*
      * Determine basename(argv[0]) and dirname(argv[0]) on
@@ -225,6 +233,7 @@ main (int argc, char **argv)
     status.attributes_separate = false;
     status.quiet = false;
     status.strip_values = 100; 
+    status.table = false;
 
     /* parse command line using getopt library */
     while (true) {
@@ -249,6 +258,7 @@ main (int argc, char **argv)
                 status.names_separate = false;
                 break;
             case 'F':
+                free (status.format);
                 status.format = strdup (optarg);
                 status.statistics = (strstr (status.format, "%g")) != NULL;
                 break;
@@ -262,6 +272,9 @@ main (int argc, char **argv)
                 else
                     status.doc_name = "";
                 break;
+            case 'd':
+                doc_name = strndup (optarg, FILENAME_MAX);
+                break;
             case 'q':
                 status.quiet = true;
                 break;
@@ -272,6 +285,9 @@ main (int argc, char **argv)
                 if (!sscanf (optarg, "%u", &status.strip_values))
                     SHoops (SH_FATAL, "option -s requires numeric argument\n");
                 break;
+            case 't':
+                status.table = true;
+                break;
             case 'h':
                 print_help (progname);
                 exit (0);
@@ -279,6 +295,9 @@ main (int argc, char **argv)
                 SHoops (SH_FATAL, "try `%s -h'\n", progname);
         }
     }
+
+    if (doc_name)
+        status.doc_name = doc_name;
 
     /* we can only print to standard out
        if the output ends up in a single 'file' */
@@ -319,6 +338,14 @@ main (int argc, char **argv)
             guideout = SHopen_write (guideoutfile);
         }
 
+        if (status.table) {
+            /* table file */
+            char tableoutfile[FILENAME_MAX];
+            snprintf (tableoutfile, FILENAME_MAX, "%s_table.xml", status.outfile);
+            tableoutfile[sizeof(tableoutfile) - 1] = 0;
+            tableout = SHopen_write (tableoutfile);
+        }
+
         /* encoding file */
         char outfile[FILENAME_MAX];
         snprintf (outfile, FILENAME_MAX, "%s.csv", status.outfile);
@@ -332,10 +359,16 @@ main (int argc, char **argv)
     if (!status.infile)
         SHoops (SH_FATAL, "input XML filename required (-f)\n");
     
-    /* shred the XML input file */
-    SHshredder (status.infile,
-                shout, attout, namesout, urisout, guideout,
-                &status);
+    if (status.table)
+        /* shred the XML input file */
+        SHshredder_table (status.infile,
+                          shout, attout, namesout, urisout, guideout, tableout,
+                          &status);
+    else
+        /* shred the XML input file */
+        SHshredder (status.infile,
+                    shout, attout, namesout, urisout, guideout,
+                    &status);
 
     if (status.outfile)             
         fclose (shout);
@@ -347,6 +380,8 @@ main (int argc, char **argv)
     }
     if (status.statistics)          
         fclose (guideout);
+    if (status.table)          
+        fclose (tableout);
 
     MAIN_EXIT (EXIT_SUCCESS);
 }

@@ -31,9 +31,6 @@
 #ifndef HASH_H__
 #define HASH_H__
 
-/* needed xmlChar */
-#include "libxml/parser.h"
-
 /* code for no key */
 #define NO_KEY -1 
 
@@ -54,12 +51,12 @@ hashtable_t new_hashtable (void);
 /**
  * Find element in hashtable.
  */
-int hashtable_find (hashtable_t, const xmlChar*);
+int hashtable_find (hashtable_t, const char*);
 
 /**
  * Insert key and id to hashtable.
  */
-void hashtable_insert (hashtable_t, const xmlChar*, int);
+void hashtable_insert (hashtable_t, const char*, int);
 
 /**
  * Free memory assigned to hash_table.
