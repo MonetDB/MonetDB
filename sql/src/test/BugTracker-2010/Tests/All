@@ -59,4 +59,5 @@ count-and-not.Bug-2663
 multiple-common-table-expressions.Bug-2664
 duplicate-key.Bug-2667
 between-crash.Bug-2672
+select-view-key.Bug-2673
 select-distinct-limit.Bug-2676
