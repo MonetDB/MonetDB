@@ -67,9 +67,10 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "mal_config.h"
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
+#include "opt_tarantula.h"
 #include "mal_interpreter.h"
 
-#define PARTITION_THRESHOLD (wrd) GDKnr_threads	/* should be increased in production version */
+#define PARTITION_THRESHOLD (wrd) (monet_memory /typewidth/GDKnr_threads)
 
 static int eligible(MalBlkPtr mb )
 {
@@ -121,7 +122,7 @@ base table and passes them on as a row property.
 All pieces for a single subplan should ideally fit together.
 @c
 		r = getVarRows(mb, getArg(q, 0));
-		if (r >= 0 && r >= rowcnt && r > PARTITION_THRESHOLD){
+		if (r >= rowcnt && r > PARTITION_THRESHOLD){
 			rowcnt = r;
 			target = q;
 			estimate++;
@@ -140,16 +141,18 @@ at least all threads.
 Experience shows that the pieces should not be too small.
 To keep the threads working, we create more pieces than threads.
 
-The pieces to be used may be overruled by the octopus optimizer.
+The pieces to be used may be overruled by the octopus and
+tarantula optimizer.
 @c
 	if ( (i = OPTlegAdviceInternal(mb,stk,p)) > 0 )
 		pieces = i;
+	else
+	if ( (i = OPTtarantulaAdviceInternal(mb,stk,p)) > 0 )
+		pieces = i;
 	else {
-		r= (BUN) (monet_memory /typewidth/GDKnr_threads); /* how much fits  */
-		if (rowcnt > r )
-			pieces = (int) (rowcnt /r+1);
-		if (pieces < GDKnr_threads )
-			pieces = GDKnr_threads;	 /* split up anyway when testing */
+		pieces = (int) (rowcnt /PARTITION_THRESHOLD) + 1;
+		if (pieces < GDKnr_threads  && GDKdebug)
+			pieces = GDKnr_threads;	 /* split up anyway when debugging */
 		if (pieces > MAXSLICES)
 			pieces = MAXSLICES; /* cut off potential plan explosion */
 

@@ -213,16 +213,15 @@ typedef struct {
 #include "opt_mitosis.h"
 #define MINLEGSIZE 5	/* number of MAL instructions to consider for a leg */
 #define MAXSHARE 64		/* number of input output arguments to consider */
-#define VTOP 2			/* multiplier margin */
+#define VTOP 2			/* multiplier margin, theoretical each variable can be replaced by a new one */
 #define MAXSITES MAXSLICES   /* should become dynamic at some point */
-Peer peers[MAXSITES];    /* registry of peer servers */
-int TARnrpeers=0;
-bte tarantulaLocal=0;
-opt_export int TARgetPeer(str uri);
 
-#define SHAREDDISK		1	/* assume a shared file system */
-#define SHAREDINTERMEDIATES	2	/* propagate intermediates to head */
-int strategy = SHAREDDISK | SHAREDINTERMEDIATES;	
+opt_export Peer peers[MAXSITES];    /* registry of peer servers */
+opt_export int TARnrpeers;
+opt_export bte tarantulaLocal;
+
+opt_export int TARgetPeer(str uri);
+opt_export int OPTtarantulaAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @:exportOptimizer(tarantula)@
 
@@ -231,14 +230,22 @@ int strategy = SHAREDDISK | SHAREDINTERMEDIATES;
 #endif
 @c
 #include "mal_config.h"
-#include "opt_tarantula.h"
-#include "opt_deadcode.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 #include <mapilib/Mapi.h>
 #include "remote.h"
 #include "mal_sabaoth.h"
+#include "opt_tarantula.h"
+#include "opt_deadcode.h"
 
+
+Peer peers[MAXSITES];    /* registry of peer servers */
+int TARnrpeers=0;
+bte tarantulaLocal=0;
+
+#define SHAREDDISK		1	/* assume a shared file system */
+#define SHAREDINTERMEDIATES	2	/* propagate intermediates to head */
+int strategy = SHAREDDISK ;	
 @-
 The algorithm consists of several steps. The first one
 replaces the original query and creates the leg functions.
@@ -250,7 +257,20 @@ It indicates a blocking operation.
 Therefore, we recursively break a plan by looking for the
 pack instructions and collect all dependent instructions.
 The original block is trimmed as far as needed.
+
+During the development we take the default number of pieces
+to be equal to the thread count.
 @c
+int 
+OPTtarantulaAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+
+	(void) stk;
+	(void) pci;
+	if ( isOptimizerEnabled(mb,tarantulaRef) )
+		return GDKnr_threads;
+	return -1;
+}
 static int
 TARinitcode(Client cntxt, MalBlkPtr mb){
 	InstrPtr p;
@@ -981,7 +1001,11 @@ the level at which it would be indirectly needed as input.
 @-
 The critical part is to determine the input/output variable set
 for this pack function. Some variables may have to be re-used
-in subsequent calls.
+in subsequent calls. They are gathered when the SHAREDINTERMEDIATE 
+flag is set.
+
+After this pack operation has been finished, the original target variable
+has been replaced with a new one. 
 @c
 			lev = i;
 			memset((char*) itop, 0, sizeof(int)* MAXSLICES);
@@ -999,14 +1023,23 @@ in subsequent calls.
 				needed[map[getArg(p,ta)]] = 1;
 				output[leg][otop[leg]++]= getArg(p,ta);
 
-				/* find variables used outside leg scope */
-				/* find variables defined before by legs */
+@-
+All instructions that flow into the target variable are copied
+to a list. It stops at remapped target variables, because there
+the underlying tarantula leg has produced it.
+In shared intermediate mode, we also keep track of other variables
+delivered by the leg to the head. This class should be severely be
+limited, as communication overhead may be more expensive then
+recalculation in the individual legs.
+@c
+#define Mapped(P,J) (map[getArg(P,J)] != getArg(P,J))
+
 				for (l = i-1; l > 0; l--){
 					pp = old[l];
 					/* find variables needed and not mapped already */
 					fnd = 0;
 					for (j = 0; j < pp->retc; j++)
-						fnd += needed[getArg(pp,j)] && map[getArg(pp,j)] == getArg(pp,j);
+						fnd += needed[getArg(pp,j)] && !Mapped(pp,j);
 
 					/* blocks are copied as is */
 					switch( pp->barrier ){
@@ -1026,8 +1059,7 @@ in subsequent calls.
 						list[top++] = pp;
 					}
 				}
-				/* for all variables assigned, check if they are needed outside */
-				/* each variable is produced only once */
+				/* built the argument list by collecting all variables */
 				for ( l=top-1; l >= 0; l--){
 					pp = list[l];
 					for (j = pp->retc; j < pp->argc; j++) {
@@ -1050,16 +1082,20 @@ are re-calculated upon need.
 Recalculations may be cheaper compared to exchange, certainly
 in the face of using the recycler.
 @c
-					for ( j = 0; j<pp->retc; j++){
-						if ( strategy & SHAREDINTERMEDIATES && level[getArg(pp,j)] > lev && map[getArg(pp,j)] == getArg(pp,j)){
-							assert(mb->vtop < VTOP *vtop);
-							map[output[leg][otop[leg]]] = cloneVariable(mb,mb, getArg(pp,j));
-							level[map[output[leg][otop[leg]]]] = level[getArg(pp,j)];
-							output[leg][otop[leg]++]= getArg(pp,j);
+					if ( strategy & SHAREDINTERMEDIATES ) {
+						for ( j = 0; j<pp->retc; j++){
+							if ( level[getArg(pp,j)] > lev && !Mapped(pp,j) ){ 
+								assert(mb->vtop < VTOP *vtop);
+								map[output[leg][otop[leg]]] = cloneVariable(mb,mb, getArg(pp,j));
+								level[map[output[leg][otop[leg]]]] = level[getArg(pp,j)];
+								output[leg][otop[leg]++]= getArg(pp,j);
+							}
+							/* no need to get it once more */
+							needed[getArg(pp,j)]= 0;
 						}
-						/* no need to get it once more */
-						needed[getArg(pp,j)]= 0;
-					}
+					} else
+						for ( j = 0; j<pp->retc; j++)
+							needed[getArg(pp,j)]= 0;
 				}
 @-
 				OPTDEBUGtarantula{
