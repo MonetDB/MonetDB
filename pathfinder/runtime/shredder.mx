@@ -1527,6 +1527,10 @@ shredder_parse(shredCtxStruct *shredCtx,
         GDKerror("shredder_parse: libxml2 could not initialize a parser.\n");
         return GDK_FAIL;
     }
+    /* Avoid memory leak */
+    if (xmlCtx->sax)
+        xmlFree (xmlCtx->sax);
+
     xmlCtx->sax      = &shredder;
     xmlCtx->userData = shredCtx; /* set the SHREDCTX() value */
     shredCtx->started = 0; /* used to detext empty xml docs */
