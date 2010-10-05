@@ -671,8 +671,8 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 	} 
 	if ( (b->ttype == TYPE_oid && !BATtordered(b) && !BATtdense(b)) ||
 	   ( b->htype == TYPE_oid && !BAThordered(b) && !BAThdense(b)) ){
-		/* assume we may have to do random IO, punish it by increasing the claim  with cacheline size*/
-		total += 64* BATcount(b) ;
+		/* assume we may have to do random IO, punish it by increasing the claim  with hash elem size*/
+		total += 4 * BATcount(b) ;
 		total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
 	}
 	BBPunfix( h = b->batCacheid); 
