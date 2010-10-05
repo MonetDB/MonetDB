@@ -1693,9 +1693,8 @@ close_result(MapiHdl hdl)
 		assert(hdl->npending_close == 0 ||
 		       (hdl->npending_close > 0 && hdl->pending_close != NULL));
 		if (mid->active &&
-				mid->active->active != result &&
-				result->cache.tuplecount < result->row_count)
-		{
+		    (mid->active->active != result ||
+		     result->cache.tuplecount < result->row_count)) {
 			/* can't write "X" commands now, so save for later */
 			REALLOC(hdl->pending_close, hdl->npending_close + 1);
 			hdl->pending_close[hdl->npending_close] = result->tableid;
