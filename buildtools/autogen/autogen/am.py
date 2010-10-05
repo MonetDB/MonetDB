@@ -440,7 +440,7 @@ def am_headers(fd, var, headers, am):
         fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
         am['INSTALL'].append(h)
         am['UNINSTALL'].append(h)
-        if h not in headers['SOURCES']:
+        if header not in headers['SOURCES']:
             am['BUILT_SOURCES'].append(h)
         am['InstallList'].append("\t"+sd+"/"+header+cond+"\n")
 
