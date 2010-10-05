@@ -58,3 +58,4 @@ crash-with-huge-query.Bug-2647
 count-and-not.Bug-2663
 multiple-common-table-expressions.Bug-2664
 duplicate-key.Bug-2667
+between-crash.Bug-2672
