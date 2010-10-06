@@ -327,19 +327,23 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		/* find and reactivate client */
 		c = MCfindClient(uid, lang, fin, fout); 
 		if (c != NULL) {
+			mnstr_printf(fout, "!internal server error (findClient), "
+					"please try again later\n");
+			mnstr_flush(fout);
 			GDKfree(command);
 			return;
 		}
 
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {
-			mnstr_printf(fout, "!Out of client slots\n");
+			mnstr_printf(fout, "!internal server error (out of client slots), "
+					"please try again later\n");
 			mnstr_flush(fout);
 			GDKfree(command);
 			return;
 		}
 		/* move this back !! */
-		if ( c->nspace == 0) {
+		if (c->nspace == 0) {
 			c->nspace = newModule(NULL, putName("user", 4));
 			c->nspace->outer = mal_clients[0].nspace->outer;
 		}
