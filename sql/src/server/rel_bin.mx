@@ -3875,7 +3875,11 @@ rel_bin(mvc *sql, sql_rel *rel)
 {
 	node *n;
 	list *refs = list_create(NULL);
+	int sqltype = sql->type;
 	stmt *s = subrel_bin( sql, rel, refs);
+
+	if (sqltype == Q_SCHEMA)
+		sql->type = sqltype;  /* reset */
 
 	/* clean stmts properly (but don't touch the rels) ! */
 	for (n = refs->h; n; n = n->next->next) 
@@ -3894,7 +3898,11 @@ stmt *
 output_rel_bin(mvc *sql, sql_rel *rel ) 
 {
 	list *refs = list_create(NULL);
+	int sqltype = sql->type;
 	stmt *s = subrel_bin( sql, rel, refs);
+
+	if (sqltype == Q_SCHEMA)
+		sql->type = sqltype;  /* reset */
 
 	if (!is_ddl(rel->op) && s && s->type != st_none && sql->type == Q_TABLE)
 		s = stmt_output(s);
