@@ -256,8 +256,6 @@ include opt_joinselect;
 include opt_remoteQueries;
 include crackers; 
 
-include xml;
-include batxml;
 @-
 @mal
 # Any extensions (MAL scripts) that should be automatically loaded upon

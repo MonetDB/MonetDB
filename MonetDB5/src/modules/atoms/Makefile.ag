@@ -67,6 +67,13 @@ lib__xml = {
 		$(LIBXML2_LIBS) $(ICONV_LIBS) ../../mal/libmonetdb5
 }
 
+headers_xml_autoload = {
+	COND = HAVE_LIBXML2
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 05_xml.mal
+}
+
 headers_xml_h = {
 	COND = HAVE_LIBXML2
 	DIR = includedir/MonetDB5/atoms
