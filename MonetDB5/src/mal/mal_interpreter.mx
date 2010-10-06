@@ -598,9 +598,10 @@ typedef struct DataFlow {
 	MalBlkPtr mb;		/* carry the context */
 	MalStkPtr stk;
 	int start, stop;	/* guarded block under consideration*/
-	char *status;	/* statements can be blocked on other statements */
+	char *status;		/* statements can be blocked on other statements */
 	char *blocked;		/* blocked, should be created first */
-	int *inuse;			/* inuse in parallel threads reference count */
+	int *assign;		/* first assignment of variable */ 
+	int *inuse;		/* inuse in parallel threads reference count */
 	queue *done;		/* work finished */
 	queue *todo;		/* pending actions for this client */
 	int    nway;		/* number of workers */
@@ -1176,7 +1177,6 @@ static void
 DFLOWinit(DataFlow flow, FlowStep fs)
 {
 	int i, n;
-	char *assign= (char*) GDKzalloc(sizeof(char) * flow->mb->vtop);
 
 	PARDEBUG
 		printf("Initialize dflow block\n");
@@ -1197,8 +1197,11 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 		for (j=0; j<p->argc; j++){
 			a = getArg(p, j);
 
-			if (j<p->retc && assign[a] == 0 && flow->inuse[a] == 0) {
-				assign[a] = i;
+			if (j<p->retc && flow->assign[a] != 0) 
+				assert(0);
+
+			if (j<p->retc && flow->assign[a] == 0 && flow->inuse[a] == 0) {
+				flow->assign[a] = i;
 				flow->blocked[a] = isNotUsedIn(p,p->retc,a)?1:0;
 			}
 
@@ -1211,13 +1214,12 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 		flow->inuse[i] = 0;
 	PARDEBUG
 	for (i=0; i < flow->mb->vtop; i++) 
-	if ( flow->blocked[i] || flow->inuse[i] || assign[i] ){
+	if ( flow->blocked[i] || flow->inuse[i] || flow->assign[i] ){
 		printf("%s %d %d [ %1d %2d ]\n", getVarName(flow->mb,i), 
 			getEndOfLife(flow->mb,i), i,
 			flow->blocked[i],
 			flow->inuse[i]);
 	}
-	GDKfree(assign);
 }
 @-
 The liberal use of MAL to construct programs complicate proper dataflow
@@ -1243,28 +1245,29 @@ DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 	(void) pc;
 
 	for(j=0; j<p->argc && !blocked; j++) {
-		if ( j >= p->retc && flow->blocked[getArg(p,j)] )
+		int var = getArg(p,j);
+		if ( j >= p->retc && flow->blocked[var] )
 			blocked++;
-		if (j < p->retc && flow->inuse[getArg(p,j)] )
+		if (j < p->retc && flow->inuse[var] )
 			blocked++;
 		else
-		if ( getEndOfLife(flow->mb,getArg(p,j))  == fs[i].pc ) {
+		if ( getEndOfLife(flow->mb,var)  == fs[i].pc ) {
 			/* make sure all instructions interested have already been executed */
 			/* and the eoscope variables are not used anymore */
 
-			blocked += flow->inuse[getArg(p,j)] != 0;
+			blocked += flow->inuse[var] != 0;
 			for ( k=0; k < i && !blocked; k++)
 			if (fs[k].status != DFLOWwrapup && fs[k].pc >= 0 ) /* pc = -1 could be the case before wrapup is set*/
-				blocked += !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, getArg(p,j));
+				blocked += !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, var);
 		} else {
 			/* handle the dependencies sketched above */
 			/* search the statement that assigns a value to the argument or target */
 			/* it should have been finished already */
-			for (l = i-1 ; l >= 0 && !blocked; l--)
+			for (l = i-1 ; l >= flow->assign[var] && !blocked; l--)
 			if ( fs[l].status != DFLOWwrapup && fs[l].pc >= 0){
 				q= getInstrPtr(flow->mb, fs[l].pc);
 				for ( k=0; k < q->retc && !blocked; k++)
-				if ( getArg(q,k) == getArg(p,j) )
+				if ( getArg(q,k) == var )
 					blocked = 1;
 			}
 		}
@@ -1489,12 +1492,14 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 
 	flow->status = (char*) GDKzalloc((stoppc-startpc+1));
 	flow->blocked = (char*) GDKzalloc(sizeof(char)*mb->vtop);
+	flow->assign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
 	flow->inuse = (int*) GDKzalloc(sizeof(int)*mb->vtop);
 	mal_unset_lock(mal_contextLock, "runMALdataflow");
 
 	ret = DFLOWscheduler(flow);
 	GDKfree(flow->status);
 	GDKfree(flow->blocked);
+	GDKfree(flow->assign);
 	GDKfree(flow->inuse);
 	mal_set_lock(mal_contextLock, "runMALdataflow");
 	flow->free = flows;
