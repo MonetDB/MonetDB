@@ -302,6 +302,9 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 				fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
 				if (err != M5OutOfMemory)
 					GDKfree(err);
+				mnstr_printf(fout, "!internal server error, "
+						"please try again later\n");
+				mnstr_flush(fout);
 				GDKfree(command);
 				return;
 			}
