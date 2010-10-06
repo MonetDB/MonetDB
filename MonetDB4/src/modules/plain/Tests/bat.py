@@ -1,7 +1,7 @@
 import os, sys
 from MonetDBtesting import process
 s = process.server(lang = 'mil', args = ['--set', 'gdk_mem_pagebits=16'],
-                   stdin = open('%s.mil' % os.environ['TST']),
+                   stdin = open('%s.milS' % os.environ['TST']),
                    stdout = process.PIPE, stderr = process.PIPE)
 out, err = s.communicate()
 sys.stdout.write(out)
