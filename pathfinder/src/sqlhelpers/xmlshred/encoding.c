@@ -930,7 +930,7 @@ SHshredder_table (const char *s,
 
     /* table handling initialization */
     FILE *table_file,
-         *xml_file;
+         *xml_file = NULL;
     int len = 1024,
         length,
         num = 0;
