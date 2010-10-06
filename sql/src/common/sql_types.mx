@@ -497,16 +497,16 @@ subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 }
 
 int
-is_subtype(sql_subtype *t1, sql_subtype *t2)
-/* returns true if t1 is a sub type of t2 */
+is_subtype(sql_subtype *sub, sql_subtype *super)
+/* returns true if sub is a sub type of super */
 {
-	if (!t1 || !t2)
+	if (!sub || !super)
 		return 0;
-	if (t2->digits > 0 && t1->digits > t2->digits) 
+	if (super->digits > 0 && sub->digits > super->digits) 
 		return 0;
 	/* subtypes are only equal iff
 	   they map onto the same systemtype */
-	return (type_cmp(t1->type, t2->type) == 0);
+	return (type_cmp(sub->type, super->type) == 0);
 }
 
 char *
@@ -783,7 +783,7 @@ sql_bind_member(sql_schema *s, char *sqlfname, sql_subtype *tp, int nrargs)
 		if (strcmp(f->base.name, sqlfname) == 0) {
 			if (list_length(f->ops) == nrargs && is_subtype(tp, &((sql_arg *) f->ops->h->data)->type)) {
 
-				unsigned int scale = 0;
+				unsigned int scale = 0, digits;
 				sql_subfunc *fres = ZNEW(sql_subfunc);
 
 				sql_ref_init(&(fres->ref));
@@ -791,7 +791,10 @@ sql_bind_member(sql_schema *s, char *sqlfname, sql_subtype *tp, int nrargs)
 				/* same scale as the input */
 				if (tp && tp->scale > scale)
 					scale = tp->scale;
-				sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+				digits = f->res.digits;
+				if (tp && f->fix_scale == INOUT)
+					digits = tp->digits;
+				sql_init_subtype(&fres->res, f->res.type, digits, scale);
 				return fres;
 			}
 		}
@@ -854,12 +857,13 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 			continue;
 		if (strcmp(f->base.name, sqlfname) == 0) {
 			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
-				unsigned int scale = 0;
+				unsigned int scale = 0, digits;
 				sql_subfunc *fres = ZNEW(sql_subfunc);
 
 				sql_ref_init(&(fres->ref));
 				fres->func = f;
 				/* fix the scale */
+				digits = f->res.digits;
 				if (f->fix_scale > SCALE_NONE) {
 					for (n = ops->h; n; n = n->next) {
 						sql_subtype *a = n->data;
@@ -867,6 +871,8 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 						/* same scale as the input */
 						if (a && a->scale > scale)
 							scale = a->scale;
+						if (a && f->fix_scale == INOUT)
+							digits = a->digits;
 					}
 				} else if (f->res.scale) 
 					scale = f->res.scale;
@@ -880,9 +886,9 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 							a = n->data;
 						}
 					}
-					sql_init_subtype(&fres->res, a->type, f->res.digits, scale);
+					sql_init_subtype(&fres->res, a->type, digits, scale);
 				} else {
-					sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
+					sql_init_subtype(&fres->res, f->res.type, digits, scale);
 				}
 				return fres;
 			}
@@ -1627,8 +1633,8 @@ sqltypeinit(void)
 	for (t = strings; t < numerical; t++) {
 		sql_create_func("locate", "str", "locate", *t, *t, INT, SCALE_NONE);
 		sql_create_func3("locate", "str", "locate", *t, *t, INT, INT, SCALE_NONE);
-		sql_create_func("substring", "str", "substring", *t, INT, *t, SCALE_NONE);
-		sql_create_func3("substring", "str", "substring", *t, INT, INT, *t, SCALE_NONE);
+		sql_create_func("substring", "str", "substring", *t, INT, *t, INOUT);
+		sql_create_func3("substring", "str", "substring", *t, INT, INT, *t, INOUT);
 		sql_create_func("like", "str", "like", *t, *t, BIT, SCALE_NONE);
 		sql_create_func3("like", "str", "like", *t, *t, *t, BIT, SCALE_NONE);
 		sql_create_func("ilike", "str", "ilike", *t, *t, BIT, SCALE_NONE);
