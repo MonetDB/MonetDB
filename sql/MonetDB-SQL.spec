@@ -137,16 +137,14 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/Mbeddedsql5
 %{_libdir}/libembeddedsql5.so.*
-%{_libdir}/MonetDB5/lib/lib_sql*
+%{_libdir}/MonetDB5/lib/lib_*.so.*
 %{_libdir}/MonetDB5/*.mal
 %{_libdir}/MonetDB5/*.sql
-%{_libdir}/MonetDB5/autoload/*_sql.mal
-%dir %{_includedir}/MonetDB5/sql
-%{_includedir}/MonetDB5/sql/embeddedclient.h
-%{_bindir}/merovingian
+%{_libdir}/MonetDB5/autoload/*.mal
+%{_bindir}/monetdbd
 %{_bindir}/monetdb
 %{_mandir}/man1/monetdb.1.gz
-%{_mandir}/man1/merovingian.1.gz
+%{_mandir}/man1/monetdbd.1.gz
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/MonetDB
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/MonetDB
 
@@ -154,7 +152,10 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/monetdb-sql-config
 %{_libdir}/libembeddedsql5.so
+%{_libdir}/MonetDB5/lib/lib_*.so
 %{_libdir}/pkgconfig/monetdb-embeddedsql.pc
+%dir %{_includedir}/MonetDB5/sql
+%{_includedir}/MonetDB5/sql/*.h
 
 %changelog
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.5-20100824

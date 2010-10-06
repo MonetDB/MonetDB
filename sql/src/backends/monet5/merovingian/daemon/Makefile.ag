@@ -33,7 +33,7 @@ EXTRA_DIST = $(man_MANS) \
 	forkmserver.h \
 	handlers.h \
 	peering.h \
-	proxy.c
+	proxy.h
 
 bin_monetdbd = {
 	# hack: include merovingian.1.in here to get it expanded

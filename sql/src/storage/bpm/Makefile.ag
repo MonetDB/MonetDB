@@ -25,3 +25,5 @@ lib_bpmstore = {
 	SOURCES = \
 		bpm_table.c bpm_storage.c bpm_distribution.c
 }
+
+EXTRA_DIST = bpm_distribution.h bpm_logger.h bpm_storage.h bpm_table.h

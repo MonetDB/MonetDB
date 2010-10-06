@@ -25,3 +25,5 @@ lib_restrictstore = {
 	SOURCES = \
 		restrict_table.c restrict_storage.c restrict_logger.c 
 }
+
+EXTRA_DIST = restrict_logger.h restrict_storage.h restrict_table.h

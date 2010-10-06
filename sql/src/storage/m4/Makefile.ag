@@ -25,3 +25,5 @@ lib_m4store = {
 	SOURCES = \
 		bpm.c 
 }
+
+EXTRA_DIST = bpm.h
