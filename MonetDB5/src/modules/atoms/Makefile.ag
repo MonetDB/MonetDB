@@ -67,19 +67,32 @@ lib__xml = {
 		$(LIBXML2_LIBS) $(ICONV_LIBS) ../../mal/libmonetdb5
 }
 
-headers_h = {
+headers_xml_h = {
+	COND = HAVE_LIBXML2
 	DIR = includedir/MonetDB5/atoms
-	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
-			  xml.mx str.mx identifier.mx
+	SOURCES = xml.mx
 	HEADERS = h 
 }
 
+headers_xml_mal = {
+	COND = HAVE_LIBXML2
+	HEADERS = mal
+	DIR = libdir/MonetDB5
+	SOURCES = xml.mx
+}
+
+headers_h = {
+	DIR = includedir/MonetDB5/atoms
+	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
+			  str.mx identifier.mx
+	HEADERS = h 
+}
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
 	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
-			  xml.mx identifier.mx
+			  identifier.mx
 }
 
 EXTRA_DIST_DIR = Tests
