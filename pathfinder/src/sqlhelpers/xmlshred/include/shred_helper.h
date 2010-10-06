@@ -112,6 +112,7 @@ struct shred_state_t {
     char *format;              /** < format string                            */
     unsigned int strip_values; /** < only store strip_values characters in the
                                      value column                             */
+    bool  table;               /** < indicates the input file format          */
 };
 typedef struct shred_state_t shred_state_t;
 

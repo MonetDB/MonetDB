@@ -34,9 +34,6 @@
 #include "shred_helper.h"
 #include "encoding.h"
 
-/* SAX parser interface (libxml2) */
-#include "libxml/parser.h"
-
 typedef struct child_list_t child_list_t;
 
 struct child_list_t {
@@ -50,8 +47,8 @@ struct child_list_t {
  * (3) path to document node.
  */
 struct guide_tree_t {
-    xmlChar      *uri;
-    xmlChar      *localname;
+    char         *uri;
+    char         *localname;
     nat           count;
     nat           occur;
     nat           min_occur;
@@ -64,7 +61,7 @@ struct guide_tree_t {
 };
 
 /* Insert an XML node into the guide tree */
-guide_tree_t* insert_guide_node(const xmlChar*, const xmlChar*, 
+guide_tree_t* insert_guide_node(const char*, const char*, 
                                 guide_tree_t*, kind_t);
 
 /* Adjust minimum and maximum occurrence of guide nodes */

@@ -406,7 +406,7 @@ struct PFla_pair_t PFbui_fn_substring (const PFla_op_t *loop,
                                        bool ordering,
                                        PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_fn_substring_dbl (const PFla_op_t *loop,
+struct PFla_pair_t PFbui_fn_substring_len (const PFla_op_t *loop,
                                            bool ordering,
                                            PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);

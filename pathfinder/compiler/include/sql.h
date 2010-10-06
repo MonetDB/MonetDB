@@ -103,7 +103,7 @@ typedef struct PFsql_col_t PFsql_col_t;
  */
 enum PFsql_kind_t {
       sql_root              /* The root of the SQL operator tree:
-                               it combines the schema information 
+                               it combines the schema information
                                with the query operators */
 
     , sql_ser_info          /* an item of a sequence of schema information
@@ -125,7 +125,7 @@ enum PFsql_kind_t {
     , sql_column_name       /* SQL column name (a column reference) */
     , sql_star              /* a SQL wildcard '*' */
 
-    , sql_with              /* WITH operator 
+    , sql_with              /* WITH operator
                                (second child of the sql_root operator) */
     , sql_cmmn_tbl_expr     /* common table expression */
     , sql_comment           /* comment */
@@ -166,6 +166,8 @@ enum PFsql_kind_t {
     , sql_abs               /* abs expression */
 
     , sql_concat            /* string concatenation */
+    , sql_substring         /* substring search */
+    , sql_substring_length  /* substring search with length */
 
     , sql_is                /* IS predicate */
     , sql_is_not            /* IS NOT predicate */
@@ -176,7 +178,7 @@ enum PFsql_kind_t {
     , sql_like              /* like comparison */
     , sql_similar_to        /* similar to comparison */
     , sql_in                /* in comparison */
-    , sql_stmt_list          /* an item of a list of statments 
+    , sql_stmt_list          /* an item of a list of statments
                                (second argument of a sql_in operator) */
     , sql_list_list         /* list of lists */
     , sql_not               /* negation */
@@ -210,6 +212,10 @@ enum PFsql_kind_t {
     , sql_cast              /* CAST expression */
     , sql_type              /* a SQL type */
 
+    , sql_year              /* sql year function */
+    , sql_month             /* sql month function */
+    , sql_day               /* sql day function */
+
     , sql_coalesce          /* COALESCE () function */
 
     , sql_case              /* case operator */
@@ -241,11 +247,11 @@ union PFsql_sem_t {
     struct {
         char *str;           /**< Comment. */
     } comment;
- 
+
     struct {
         char *str;             /**< Schema name */
     } schema;
- 
+
     struct {
         PFsql_tident_t name;    /**< Table name. */
     } tbl;
@@ -258,21 +264,21 @@ union PFsql_sem_t {
         PFsql_aident_t alias;   /**< Alias name. */
         char* name;             /**< name of a column of an ext. relation. */
     } ref_column_name;
- 
+
     struct {
         bool distinct;         /**< Boolean indicating if elimination
                                     of equal tuples is required. */
     } select;
- 
+
     struct {
         PFsql_aident_t alias;   /**< Alias name. */
         PFsql_col_t   *name;    /**< Column name. */
     } column;
- 
+
     struct {
         PFsql_aident_t name;    /**< Alias name. */
     } alias;
- 
+
     /* semantic content for literal values */
     struct {
         union {
@@ -283,12 +289,12 @@ union PFsql_sem_t {
             double dec;          /**< Decimal value. */
         } val;
     } atom;
-    
+
     struct {
         bool dir_asc;        /**< Boolean indicating if the sort criterion
                                   has to be ordered ascending or descending. */
     } sortkey;
- 
+
     struct {
         PFalg_simple_type_t t; /**< semantic information for type */
     } type;
@@ -316,7 +322,7 @@ typedef struct PFsql_t PFsql_t;
  */
 struct PFsql_alg_ann_t {
     unsigned        bound:1;       /**< indicates if the operator has been bound */
-                    
+
     PFarray_t       *colmap;       /**< Mapping table that maps (logical)
                                         column/type  pairs to their
                                         SQL expression or in case of
@@ -325,11 +331,11 @@ struct PFsql_alg_ann_t {
     PFarray_t       *frommap;      /**< table--alias mappings */
     PFarray_t       *wheremap;     /**< contains references to the boolean
                                         in colmap */
-    
+
     /* annotations needed to translate twig constructors (and path steps) */
     PFsql_t         *fragment;     /**< a fragment reference */
     PFsql_t         *content_size; /**< a reference to a content-size binding */
-                    
+
     unsigned int     twig_pre;     /**< local pre value for constructions
                                         with the twig-constructor */
     int              twig_size;    /**< local size value for constructions
@@ -344,8 +350,8 @@ struct PFsql_alg_ann_t {
                                         constraints */
     bool             bind;         /**< a boolean indicating if a numbering
                                         operator needs to be bound */
-};                                 
-                                   
+};
+
 /* .......... General .......... */
 
 #define PFsql_generic_list(fun,...)                                         \
@@ -420,7 +426,7 @@ PFsql_t * PFsql_serialization_info_item (const PFsql_t *info,
 
 /**
  * Some specific schema information used by the serializer.
- * We communicate the special columns, the serializer needs. 
+ * We communicate the special columns, the serializer needs.
  */
 PFsql_t * PFsql_serialization_name_mapping (const PFsql_t *column,
                                             const PFsql_t *name);
@@ -454,14 +460,14 @@ PFsql_t * PFsql_schema_table_name (const char *schema,
 PFsql_t * PFsql_table_name (PFsql_tident_t name);
 
 /**
- * Construct a SQL tree node representing a reference to a 
- * column of an external relation. 
+ * Construct a SQL tree node representing a reference to a
+ * column of an external relation.
  */
 PFsql_t * PFsql_ref_column_name (PFsql_aident_t alias, char* name);
 
 /**
- * Construct a SQL tree node representing a reference to an 
- * external relation. 
+ * Construct a SQL tree node representing a reference to an
+ * external relation.
  */
 PFsql_t * PFsql_ref_table_name (char* name);
 
@@ -737,6 +743,20 @@ PFsql_t * PFsql_abs (const PFsql_t *a);
  */
 PFsql_t * PFsql_concat (const PFsql_t *a, const PFsql_t *b);
 
+/**
+ * Create a SQL tree node representing the SQL
+ * substring operator.
+ */
+PFsql_t * PFsql_substring (const PFsql_t *a, const PFsql_t *b);
+
+/**
+ * Create a SQL tree node representing the SQL
+ * substring operator with length.
+ */
+PFsql_t * PFsql_substring_length (const PFsql_t *a,
+                                  const PFsql_t *b,
+                                  const PFsql_t *c);
+
 /* .......... Table Functions ........... */
 PFsql_t *PFsql_values (const PFsql_t *a);
 PFsql_t *PFsql_list_list_ (unsigned int count, const PFsql_t **list);
@@ -783,7 +803,7 @@ PFsql_t * PFsql_gt (const PFsql_t *a, const PFsql_t *b);
 PFsql_t * PFsql_gteq (const PFsql_t *a, const PFsql_t *b);
 
 /*
- * Create a SQL tree node representing a 
+ * Create a SQL tree node representing a
  * `between' predicate.
  */
 PFsql_t * PFsql_between(const PFsql_t *clmn, const PFsql_t *a, const PFsql_t *b);
@@ -806,7 +826,7 @@ PFsql_t * PFsql_similar_to (const PFsql_t *a, const PFsql_t *b);
  * Create a SQL tree node representing the in operator
  */
 PFsql_t * PFsql_in (const PFsql_t *column, const PFsql_t *list);
-PFsql_t * PFsql_stmt_list_ (unsigned int count, const PFsql_t **list); 
+PFsql_t * PFsql_stmt_list_ (unsigned int count, const PFsql_t **list);
 
 /**
  * Create a SQL tree node representing a boolean
@@ -931,6 +951,7 @@ PFsql_t * PFsql_partition (const PFsql_t *partition_list);
  * @param   t  The type.
  */
 PFsql_t * PFsql_type (PFalg_simple_type_t t);
+
 /**
  * Construct a SQL tree representing a SQL
  * `CAST' operator.
@@ -939,6 +960,24 @@ PFsql_t * PFsql_type (PFalg_simple_type_t t);
  * @param   t     Type.
  */
 PFsql_t * PFsql_cast (const PFsql_t *expr, const PFsql_t *t);
+
+/**
+ * Create a tree node representing the SQL
+ * 'year' statement.
+ */
+PFsql_t * PFsql_year (const PFsql_t *a);
+
+/**
+ * Create a tree node representing the SQL
+ * 'month' statement.
+ */
+PFsql_t * PFsql_month (const PFsql_t *a);
+/**
+ * Create a tree node representing the SQL
+ * 'day' statement.
+ */
+PFsql_t * PFsql_day (const PFsql_t *a);
+
 /**
  * Create a tree node representing the SQL
  * `COALESCE' function.

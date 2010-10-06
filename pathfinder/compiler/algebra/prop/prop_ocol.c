@@ -346,17 +346,17 @@ infer_ocol (PFla_op_t *n)
 
                     /* make sure both columns are of type str & dbl */
                     assert (ocol_at (L(n), ix[0]).type == aat_str);
-                    assert (ocol_at (L(n), ix[1]).type == aat_dbl);
+                    assert (ocol_at (L(n), ix[1]).type == aat_int);
 
                     res_type = aat_str;
                     break;
 
-                case alg_fun_fn_substring_dbl:
+                case alg_fun_fn_substring_len:
                     assert (clsize (n->sem.fun_1to1.refs) == 3);
                     /* make sure both columns are of type str & dbl */
                     assert (ocol_at (L(n), ix[0]).type == aat_str);
-                    assert (ocol_at (L(n), ix[1]).type == aat_dbl &&
-                            ocol_at (L(n), ix[2]).type == aat_dbl);
+                    assert (ocol_at (L(n), ix[1]).type == aat_int &&
+                            ocol_at (L(n), ix[2]).type == aat_int);
 
                     res_type = aat_str;
                     break;

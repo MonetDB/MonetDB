@@ -5432,13 +5432,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                mstring (
                                    VAR (L(p)->env, col1, aat_str),
                                    mmax( msub( mcast (type (mty_int),
-                                                      mround_up( VAR (L(p)->env,
-                                                                 col2,
-                                                                 aat_dbl))),
+                                                      VAR (L(p)->env,
+                                                           col2,
+                                                           aat_int)),
                                               lit_int(1)),
                                          lit_int(0)))));
                 }   break; /* fold) */
-                case alg_fun_fn_substring_dbl: /* fold( */
+                case alg_fun_fn_substring_len: /* fold( */
                 {
                     PFalg_col_t col1, col2, col3;
 
@@ -5452,15 +5452,15 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                mstring2 (
                                    VAR (L(p)->env, col1, aat_str),
                                    mmax( msub( mcast (type (mty_int),
-                                                      mround_up( VAR (L(p)->env,
-                                                                 col2,
-                                                                 aat_dbl))),
+                                                      VAR (L(p)->env,
+                                                           col2,
+                                                           aat_int)),
                                               lit_int(1)),
                                          lit_int(0)),
                                    mcast (type (mty_int),
-                                          mround_up( VAR (L(p)->env,
-                                                     col3,
-                                                     aat_dbl))))));
+                                          VAR (L(p)->env,
+                                               col3,
+                                               aat_int)))));
                 }   break; /* fold) */
 
                 case alg_fun_fn_string_length: /* fold( */

@@ -62,6 +62,7 @@ typedef struct guide_tree_t guide_tree_t;
 typedef struct node_t node_t;
 
 struct node_t {
+    nat           root;                 /* root preorder rank */
     nat           pre;                  /* preorder rank */
     nat           post;                 /* postorder rank */
     nat           pre_stretched;        /* preorder in stretched plane */
@@ -71,11 +72,11 @@ struct node_t {
     nat           children;             /* # of children nodes collected so far */
     int           level;                /* length of path from node to root */
     kind_t        kind;                 /* XML node kind */
-    xmlChar      *localname;            /* localname of element/attribute */
+    char         *localname;            /* localname of element/attribute */
     int           localname_id;         /* unique ID of localname */
-    xmlChar      *uri;                  /* namespace URI of element/attribute */
+    char         *uri;                  /* namespace URI of element/attribute */
     int           uri_id;               /* unique ID of namespace URI */
-    xmlChar      *value;                /* node content (text, value) */
+    char         *value;                /* node content (text, value) */
     guide_tree_t *guide;                /* pointer to this node's guide entry */
 };
 
@@ -96,5 +97,17 @@ void SHshredder (const char *s,
                  FILE *urisout,
                  FILE *guideout, 
                  shred_state_t *status);
+
+/**
+ * Table shredding procedure 
+ */
+void SHshredder_table (const char *s, 
+                       FILE *shout, 
+                       FILE *attout, 
+                       FILE *namesout, 
+                       FILE *urisout,
+                       FILE *guideout, 
+                       FILE *tableout, 
+                       shred_state_t *status);
 
 #endif

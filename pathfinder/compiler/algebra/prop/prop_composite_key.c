@@ -319,19 +319,31 @@ infer_ckey (PFla_op_t *n)
             unsigned int i, j;
             /* combine all keys of the left argument
                with all keys of the right argument */
-            for (i = 0; i < llsize (LCKEYS); i++)
+            for (i = 0; i < llsize (LCKEYS); i++) {
                 for (j = 0; j < llsize (RCKEYS); j++) {
                     union_ (CKEYS,
                             clconcat (llat (LCKEYS, i),
                                       llat (RCKEYS, j)));
                 }
+                for (j = 0; j < clsize (R(n)->prop->keys); j++) {
+                    union_ (CKEYS,
+                            clconcat (llat (LCKEYS, i),
+                                      collist (clat (R(n)->prop->keys, j))));
+                }
+            }
 
-            for (i = 0; i < clsize (L(n)->prop->keys); i++)
+            for (i = 0; i < clsize (L(n)->prop->keys); i++) {
+                for (j = 0; j < llsize (RCKEYS); j++) {
+                    union_ (CKEYS,
+                            clconcat (collist (clat (L(n)->prop->keys, i)),
+                                      llat (RCKEYS, j)));
+                }
                 for (j = 0; j < clsize (R(n)->prop->keys); j++) {
                     union_ (CKEYS,
                             collist (clat (L(n)->prop->keys, i),
                                      clat (R(n)->prop->keys, j)));
                 }
+            }
         }   break;
 
         case la_eqjoin:

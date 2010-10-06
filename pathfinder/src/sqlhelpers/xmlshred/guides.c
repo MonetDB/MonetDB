@@ -40,7 +40,7 @@
  * Insert an XML node into the guide tree 
  */
 guide_tree_t * 
-insert_guide_node (const xmlChar *URI, const xmlChar *localname, 
+insert_guide_node (const char *URI, const char *localname, 
                    guide_tree_t *parent, kind_t kind)
 {
     static nat    guide_count    = 1;
@@ -68,14 +68,14 @@ insert_guide_node (const xmlChar *URI, const xmlChar *localname,
              case attr:
                 assert (guide_node->uri);
                 assert (URI);
-                if (xmlStrcmp (guide_node->uri, URI) != 0)
+                if (strcmp (guide_node->uri, URI) != 0)
                     continue; 
                 /* fall through */    
              case doc:
              case pi:
                 assert (guide_node->localname);
                 assert (localname);
-                if (xmlStrcmp (guide_node->localname, localname) != 0)
+                if (strcmp (guide_node->localname, localname) != 0)
                     continue;
              default:
                 ;
@@ -93,8 +93,8 @@ insert_guide_node (const xmlChar *URI, const xmlChar *localname,
     guide_node = (guide_tree_t *) malloc (sizeof (guide_tree_t));
 
     *guide_node = (guide_tree_t) {
-        .uri        = xmlStrdup (URI)
-      , .localname  = xmlStrdup (localname)
+        .uri        = URI ? strdup (URI) : NULL
+      , .localname  = localname ? strdup (localname) : NULL
       , .count      = 1
       , .occur      = 1
       , .parent     = parent
@@ -241,9 +241,9 @@ free_guide_tree (guide_tree_t *guide)
 
     /* free the copied URI and localname */
     if (guide->uri) 
-        xmlFree (guide->uri);
+        free (guide->uri);
     if (guide->localname) 
-        xmlFree (guide->localname);
+        free (guide->localname);
     /* free the current guide node */
     free (guide);
 }

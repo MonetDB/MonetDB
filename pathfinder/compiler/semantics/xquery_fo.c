@@ -1048,7 +1048,7 @@ PFfun_xquery_fo (void)
                                 PFty_xs_double (),
                                 PFty_xs_double () },
             .ret_ty = PFty_xs_string () } },
-        .alg = PFbui_fn_substring_dbl }
+        .alg = PFbui_fn_substring_len }
     , /* fn:string-length () as integer */
       { .ns = PFns_fn, .loc = "string-length",
         .arity = 0, .sig_count = 1, .sigs = { {

@@ -89,7 +89,7 @@
 #define lit_str(s)                   PFsql_lit_str(s)
 #define lit_dec(d)                   PFsql_lit_dec(d)
 #define null()                       PFsql_null()
-                                     
+
 /* .......... Arithmetic Operators .......... */
 #define add(a,b)                     PFsql_add(a,b)
 #define sub(a,b)                     PFsql_sub(a,b)
@@ -104,11 +104,13 @@
 
 /* .......... String Functions ........... */
 #define concat(a,b)                  PFsql_concat(a,b)
+#define substring(a,b)               PFsql_substring(a,b)
+#define substring_len(a,b,c)         PFsql_substring_length(a,b,c)
 
 /* .......... Table Functions ............ */
 #define values(a)                    PFsql_values(a)
 #define list_list(...)               PFsql_list_list(__VA_ARGS__)
-                                     
+
 /* .......... Boolean Operators .......... */
 #define is(a, b)                     PFsql_is(a, b)
 #define is_not(a, b)                 PFsql_is_not(a, b)
@@ -123,7 +125,7 @@
 #define not_(a)                      PFsql_not(a)
 #define and_(a,b)                    PFsql_and(a,b)
 #define or_(a,b)                     PFsql_or(a,b)
-                                     
+
 /* .......... Aggregate Functions .......... */
 #define count(c)                     PFsql_count(c)
 #define max_(c)                      PFsql_max(c)
@@ -136,7 +138,7 @@
 #define str_length(a)                PFsql_str_length(a)
 #define str_upper(a)                 PFsql_str_upper(a)
 #define str_lower(a)                 PFsql_str_lower(a)
-                                     
+
 /* .......... OLAP Functionality .......... */
 #define over(a,b)                    PFsql_over(a,b)
 #define row_number()                 PFsql_row_number()
@@ -147,10 +149,13 @@
 #define sortkey_list(...)            PFsql_sortkey_list(__VA_ARGS__)
 #define sortkey_item(i,d)            PFsql_sortkey_item(i,d)
 #define partition(cl)                PFsql_partition(cl)
-                                     
+
 /* .......... Remaining Operators .......... */
 #define type(t)                      PFsql_type(t)
 #define cast(e,t)                    PFsql_cast(e,t)
+#define year(a)                      PFsql_year(a)
+#define month(a)                     PFsql_month(a)
+#define day(a)                       PFsql_day(a)
 #define coalesce(e1,e2)              PFsql_coalesce(e1,e2)
 #define case_(...)                   PFsql_case(__VA_ARGS__)
 #define when(be,e)                   PFsql_when(be,e)
