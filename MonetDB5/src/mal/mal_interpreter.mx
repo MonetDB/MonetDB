@@ -1240,29 +1240,43 @@ DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 
 	for(j=0; j<p->argc && !blocked; j++) {
 		int var = getArg(p,j);
-		if ( j >= p->retc && flow->blocked[var] )
-			blocked++;
-		if (j < p->retc && flow->inuse[var] )
-			blocked++;
+		if ( j >= p->retc && flow->blocked[var] ) {
+			blocked = 1;
+			break;
+		}
+		else
+		if ( j < p->retc && flow->inuse[var] ) {
+			blocked = 1;
+			break;
+		}
 		else
 		if ( getEndOfLife(flow->mb,var)  == fs[i].pc ) {
 			/* make sure all instructions interested have already been executed */
 			/* and the eoscope variables are not used anymore */
 
-			blocked += flow->inuse[var] != 0;
-			for ( k=0; k < i && !blocked; k++)
-				if (fs[k].status != DFLOWwrapup && fs[k].pc >= 0 ) /* pc = -1 could be the case before wrapup is set*/
-					blocked += !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, var);
+			if (flow->inuse[var] != 0) {
+				blocked = 1;
+				break;
+			}
+			else
+                                for ( k=0; k < i ; k++)
+                                        if ( fs[k].status != DFLOWwrapup && fs[k].pc >= 0  /* pc = -1 could be the case before wrapup is set*/
+                                	     && !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, var) ) {
+                                		blocked = 1;
+                                		break;
+                                	}
 		} else {
 			/* handle the dependencies sketched above */
 			/* search the statement that assigns a value to the argument or target */
 			/* it should have been finished already */
-			for (l = i-1 ; l >= flow->assign[var] && !blocked; l--)
+			for (l = flow->assign[var]; l < i && !blocked; l++)
 				if ( fs[l].status != DFLOWwrapup && fs[l].pc >= 0){
 					q= getInstrPtr(flow->mb, fs[l].pc);
-					for ( k=0; k < q->retc && !blocked; k++)
-						if ( getArg(q,k) == var )
+					for ( k=0; k < q->retc; k++)
+						if ( getArg(q,k) == var ) {
 							blocked = 1;
+							break;
+						}
 				}
 		}
 	}
