@@ -1390,6 +1390,12 @@ DFLOWscheduler( DataFlow flow )
 		for( ; pc < limit; pc++)
 			if ( fs[pc].status != DFLOWwrapup)
 				break;
+		if (flow->stk->admit == 0) {
+			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) )@
+		} else {
+			@:DFLOWscheduler_body( (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) && DFLOWeligible(flow,fs,i,p,pc) )@
+		}
+@= DFLOWscheduler_body
 		/* first try to find all instructions that use the released target */
 		candidates = 0;
 		for(i = pc; i < limit ; i++)
@@ -1397,14 +1403,13 @@ DFLOWscheduler( DataFlow flow )
 				p = getInstrPtr(flow->mb, fs[i].pc);
 				for ( j= p->retc; j < p->argc; j++)
 					if ( getArg(p,j)== oa ) {
-						if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
-							if ( DFLOWeligible(flow,fs,i,p,pc) ) {
-								queued++;
-								todo++;
-								candidates = 1;
-								DFLOWactivate(flow,fs,i,p);
-								q_enqueue(flow->todo, fs+i);
-							}
+						if ( @1 ) {
+							queued++;
+							todo++;
+							candidates = 1;
+							DFLOWactivate(flow,fs,i,p);
+							q_enqueue(flow->todo, fs+i);
+						}
 						break;
 					}
 			}
@@ -1413,14 +1418,14 @@ DFLOWscheduler( DataFlow flow )
 			for(i = pc ; i < limit && queued < flow->nway ; i++)
 				if (fs[i].status == DFLOWpending ) {
 					p = getInstrPtr(flow->mb, fs[i].pc);
-					if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
-						if ( DFLOWeligible(flow,fs,i,p,pc) ) {
-							queued++;
-							todo++;
-							DFLOWactivate(flow,fs,i,p);
-							q_enqueue(flow->todo, fs+i);
-						}
+					if ( @1 ) {
+						queued++;
+						todo++;
+						DFLOWactivate(flow,fs,i,p);
+						q_enqueue(flow->todo, fs+i);
+					}
 				}
+@c
 	}
 	PARDEBUG {
 		int candidates = 0;
