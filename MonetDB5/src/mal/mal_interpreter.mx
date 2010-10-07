@@ -1393,7 +1393,7 @@ DFLOWscheduler( DataFlow flow )
 		if (flow->stk->admit == 0) {
 			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) )@
 		} else {
-			@:DFLOWscheduler_body( (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) && DFLOWeligible(flow,fs,i,p,pc) )@
+			@:DFLOWscheduler_body( DFLOWeligible(flow,fs,i,p,pc) && (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )@
 		}
 @= DFLOWscheduler_body
 		/* first try to find all instructions that use the released target */
