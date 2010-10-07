@@ -1401,24 +1401,25 @@ DFLOWscheduler( DataFlow flow )
 					if ( DFLOWeligible(flow,fs,i,p,pc) ) {
 						queued++;
 						todo++;
-						candidates ++;
+						candidates = 1;
 						DFLOWactivate(flow,fs,i,p);
 						q_enqueue(flow->todo, fs+i);
 						break;
 					}
 			}
 		/* if all work done then inspect rest */
-		for(i = limit-1 ; i >= pc && (candidates == 0 && queued < flow->nway) ; i--)
-			if (fs[i].status == DFLOWpending ) {
-				p = getInstrPtr(flow->mb, fs[i].pc);
-				if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
-					if ( DFLOWeligible(flow,fs,i,p,pc) ) {
-						queued++;
-						todo++;
-						DFLOWactivate(flow,fs,i,p);
-						q_enqueue(flow->todo, fs+i);
-					}
-			}
+		if (candidates == 0)
+                        for(i = limit-1 ; i >= pc && queued < flow->nway ; i--)
+                                if (fs[i].status == DFLOWpending ) {
+                                        p = getInstrPtr(flow->mb, fs[i].pc);
+                                        if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
+                                                if ( DFLOWeligible(flow,fs,i,p,pc) ) {
+                                                        queued++;
+                                                        todo++;
+                                                        DFLOWactivate(flow,fs,i,p);
+                                                        q_enqueue(flow->todo, fs+i);
+                                                }
+                                }
 	} 
 	PARDEBUG {
 		int candidates = 0;
