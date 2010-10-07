@@ -1392,7 +1392,7 @@ DFLOWscheduler( DataFlow flow )
 				break;
 		/* first try to find all instructions that use the released target */
 		candidates = 0;
-		for(i = limit-1; i >= pc ; i--)
+		for(i = pc; i < limit ; i++)
 			if (fs[i].status == DFLOWpending ) {
 				p = getInstrPtr(flow->mb, fs[i].pc);
 				for ( j= p->retc; j < p->argc; j++)
@@ -1410,7 +1410,7 @@ DFLOWscheduler( DataFlow flow )
 			}
 		/* if all work done then inspect rest */
 		if (candidates == 0)
-                        for(i = limit-1 ; i >= pc && queued < flow->nway ; i--)
+                        for(i = pc ; i < limit && queued < flow->nway ; i++)
                                 if (fs[i].status == DFLOWpending ) {
                                         p = getInstrPtr(flow->mb, fs[i].pc);
                                         if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
