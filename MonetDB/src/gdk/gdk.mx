@@ -2709,6 +2709,9 @@ gdk_export MT_Lock GDKtmLock;
 #define EXTENDMASK	(1<<28)
 #define EXTENDDEBUG	if (GDKdebug & EXTENDMASK)
 
+#define FORCEMITOMASK	(1<<29)
+#define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
+
 gdk_export int GDKnrofthreads;
 gdk_export int GDKembedded;
 gdk_export int GDKprotected;

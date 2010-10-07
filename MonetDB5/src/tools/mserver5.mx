@@ -154,6 +154,7 @@ usage(char *prog)
 	fprintf(stderr,"     --xproperties\n");
 	fprintf(stderr,"     --performance\n");
 	fprintf(stderr,"     --optimizers\n");
+	fprintf(stderr,"     --forcemito\n");
 	fprintf(stderr,"     --debug=<bitmask>\n");
 
 	exit(0);
@@ -309,6 +310,7 @@ main(int argc, char **av)
 		{"optimizers",0,0,0},
 		{"performance",0,0,0},
 		{"xproperties",0,0,0},
+		{"forcemito",0,0,0},
 		{0, 0, 0, 0}
 	};
 
@@ -421,6 +423,10 @@ faster system start.
 			}
 			if (strcmp(long_options[option_index].name, "xproperties") == 0) {
 				grpdebug |= GRPxproperties;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
+				grpdebug |= GRPforcemito;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "performance") == 0) {

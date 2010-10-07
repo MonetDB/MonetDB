@@ -146,8 +146,9 @@ The pieces to be used may be overruled by the octopus optimizer.
 		r= (BUN) (monet_memory /typewidth/GDKnr_threads); /* how much fits  */
 		if (rowcnt > r )
 			pieces = (int) (rowcnt /r+1);
-		if (GDK_testing && pieces < GDKnr_threads )
-			pieces = GDKnr_threads;	 /* split up anyway when testing */
+		FORCEMITODEBUG
+			if (pieces < GDKnr_threads )
+				pieces = GDKnr_threads; /* split up anyway when testing */
 		if (pieces > MAXSLICES)
 			pieces = MAXSLICES; /* cut off potential plan explosion */
 
