@@ -10,7 +10,7 @@ stderr of test 'null-byte-hang` in directory 'src/test` itself:
 # 12:54:19 >  Mtimeout -timeout 60 ./null-byte-hang.SQL null-byte-hang 
 # 12:54:19 >  
 
-NULL byte in input
+NULL byte in input on line 1 of input
 
 # 12:54:19 >  
 # 12:54:19 >  Done.
