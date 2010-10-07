@@ -1204,8 +1204,8 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 		}
 	}
 
-	for( i=0; i<flow->mb->vtop; i++)
-		flow->inuse[i] = 0;
+	memset(flow->inuse, 0, flow->mb->vtop * sizeof(flow->inuse[0]));
+
 	PARDEBUG
 	for (i=0; i < flow->mb->vtop; i++) 
 	if ( flow->blocked[i] || flow->inuse[i] || flow->assign[i] ){
