@@ -54,11 +54,11 @@ mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
 mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
 			MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
-mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
+mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 	int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, 
+mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb,
 	ValPtr argv[], char debug);
 mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
@@ -78,7 +78,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define SLOW 1
 #define FAST 0
 
-static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
+static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static void displayVolume(Client cntxt, lng vol);
 
@@ -129,11 +129,11 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	case TYPE_lng: ret= (ptr) & v->val.lval; break;
 	case TYPE_str: ret= (ptr) & v->val.sval; break;
 	default:
-		ret= (ptr) & v->val.pval; 
+		ret= (ptr) & v->val.pval;
 	}
 	return ret;
 #endif
-} 
+}
 
 /* code is obsolete, because all should be handled as exceptions */
 void showErrors(Client cntxt) {
@@ -147,19 +147,19 @@ void showErrors(Client cntxt) {
 	}
 }
 @-
-The bigfoot memory tracker keeps track on the space occupancy of BATs. 
+The bigfoot memory tracker keeps track on the space occupancy of BATs.
 The property 'memory' illustrates the total amount of memory claimed.
 It ignores for the time being the heaps for the variable sized atoms.
 Moreover, it is not thread safe and it can not correctly handle
 aliases embedded in MAL assignments.
 This means that the footprint is only to be used as indicative.
 @c
-static INLINE void 
+static INLINE void
 updateBigFoot(Client cntxt, int bid, int add)
 {
 	BAT *b;
 	lng total = 0,vol = 0;
-	
+
 	if (bid != bat_nil ){
 		BUN cnt = 0;
 		b= BBPquickdesc(ABS(bid),TRUE);
@@ -174,11 +174,11 @@ updateBigFoot(Client cntxt, int bid, int add)
 			total +=  cnt * sizeof(int);
 		if ( b->T->hash )
 			total +=  cnt * sizeof(int);
-		
+
 		if (add) {
 			cntxt->vmfoot += total;
 			cntxt->memory += total;
-		} else 
+		} else
 			cntxt->vmfoot -= total;
 		/* correct for limitations by resetting */
 		if (cntxt->vmfoot < 0)
@@ -189,7 +189,7 @@ updateBigFoot(Client cntxt, int bid, int add)
 }
 @-
 Copy the constant values onto the stack frame
-Also we cannot overwrite values on the stack as this maybe part of a 
+Also we cannot overwrite values on the stack as this maybe part of a
 sequence of factory calls.
 BEWARE WE ASSUME THAT FIRST VARIABLES ON THE STACK ALIGN WITH THE SIGNATURE.
 @= initStack
@@ -212,7 +212,7 @@ isNotUsedIn(InstrPtr p, int start, int a)
 {
 	int k;
 	for (k=start; k<p->argc; k++)
-		if( getArg(p,k)== a) 
+		if( getArg(p,k)== a)
 			return 0;
 	return 1;
 }
@@ -226,7 +226,7 @@ prepareMALstack(MalBlkPtr mb, int size){
 	assert(size >= mb->vsize);
 	stk= newGlobalStack(size);
 	memset((char *) stk, 0, stackSize(size));
-	stk->stktop= mb->vtop; 
+	stk->stktop= mb->vtop;
 	stk->stksize= size;
 	stk->blk= mb;
 
@@ -234,7 +234,7 @@ prepareMALstack(MalBlkPtr mb, int size){
 	return stk;
 }
 
-str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller, 
+str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	   MalStkPtr env, InstrPtr pcicaller){
 	MalStkPtr stk= NULL;
 	int i;
@@ -264,14 +264,14 @@ being called.
 	/* the global stack should be large enough */
 	if( mbcaller== NULL && env != NULL){
 		stk = env;
-		if( mb != stk->blk) 
+		if( mb != stk->blk)
 			showScriptException(mb,0,MAL,"runMAL:misalignment of symbols\n");
 		if( mb->vtop > stk->stksize)
 			showScriptException(mb,0,MAL,"stack too small\n");
 		pci= pcicaller;
 	} else {
 		newStack(stk,mb->vsize);
-		stk->stktop= mb->vtop; 
+		stk->stktop= mb->vtop;
 		stk->stksize= mb->vsize;
 		stk->blk= mb;
 		stk->cmd= cntxt->itrace; /* set debug mode */
@@ -285,14 +285,14 @@ being called.
 				/* we are running low on stack space */
 				throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		}
-	} 
+	}
 
 	if( env && mbcaller){
 		InstrPtr pp;
 		int k;
 @-
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
-the symbol table and stackframe contains the sequence 
+the symbol table and stackframe contains the sequence
 f,a1..an,b1..bn. This slightly complicates the implementation
 of the return statement.
 @c
@@ -306,7 +306,7 @@ of the return statement.
 		for(k=pp->retc; i<pci->argc; i++,k++){
 			lhs = &stk->stk[pp->argv[k]];
 			/* variable arguments ? */
-			if( k== pp->argc-1) k--; 
+			if( k== pp->argc-1) k--;
 
 			rhs = &env->stk[pci->argv[i]];
 			VALcopy(lhs,rhs);
@@ -314,18 +314,18 @@ of the return statement.
 				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->up = env;
-	} 
+	}
 @-
 An optimization is to copy all constant variables used in functions immediately
 onto the value stack. Then we do not have to check for their location
 later on any more. At some point, the effect is optimal, if at least several
-constants are referenced in a function (a gain on tst400a of 20% has been 
+constants are referenced in a function (a gain on tst400a of 20% has been
 observed due the small size of the function).
 
 Moreover, we have to copy the result types to the stack for later
 use. The stack value is cleared to avoid misinterpretation of left-over
 information. Since a stack frame may contain values of a previous call,
-we should first remove garbage. 
+we should first remove garbage.
 @c
 	if (env && mbcaller) {
 		@:initStack(pci->argc)@
@@ -339,7 +339,7 @@ we should first remove garbage.
 	ret = runMALsequence(cntxt, mb, startpc,  0, stk, env, pcicaller);
 
 	/* pass the new debug mode to the caller */
-	if (stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
+	if (stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd;
 	if ( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(cntxt, mb,stk, env != stk);
 	@:endProfile(stk)@
@@ -354,7 +354,7 @@ It is possible to re-enter the interpreter at a specific place.
 This is used in the area where we need to support co-routines.
 
 A special case for MAL interpretation is to execute just one instruction.
-This is typically used by optimizers and schedulers that need part of the 
+This is typically used by optimizers and schedulers that need part of the
 answer to direct their actions. Or, a dataflow scheduler could step in
 to enforce a completely different execution order.
 @c
@@ -382,10 +382,10 @@ Front ends may benefit from a more direct call to any of the MAL
 procedural abstractions. The argument list points to the arguments
 for the block to be executed. An old stack frame may be re-used,
 but it is then up to the caller to ensure it is properly
-initialized. 
+initialized.
 The call does not return values, they are ignored.
 @c
-str 
+str
 callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	MalStkPtr stk= NULL;
 	str ret= MAL_SUCCEED;
@@ -409,7 +409,7 @@ all arguments and return values.
 		if( *env==NULL){
 			stk=newGlobalStack(mb->vsize);
 			memset((char *) stk, 0, stackSize(mb->vtop));
-			stk->stktop= mb->vtop; 
+			stk->stktop= mb->vtop;
 			stk->stksize= mb->vsize;
 			stk->blk= mb;
 			stk->up = 0;
@@ -443,12 +443,12 @@ The core of the interpreter is presented next. It takes the context information
 and starts the interpretation at the designated instruction.
 Note that the stack frame is aligned and initialized in the enclosing routine.
 @c
-str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
+str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
-{   
+{
 	ValPtr lhs,rhs,v;
-	int i,k; 
-	InstrPtr pci=0; 
+	int i,k;
+	InstrPtr pci=0;
 	int exceptionVar;
 	str ret=0;
 #if FAST
@@ -475,7 +475,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	if( cntxt->flags & timerFlag)
 		oldtimer= cntxt->timer= GDKusec();
 	oldMemory.arena= 0;
-		
+
 	stkpc = startpc;
 	exceptionVar = -1;
 @-
@@ -487,13 +487,13 @@ The code currently does not statically checks the mode change.
 Preferrably we should introduce a itrace flag PROFILE
 We rely on optimizing compilers to remove the redundant code.
 @c
-	if (mb->recycle ==  TRUE && malProfileMode == 0 && 
+	if (mb->recycle ==  TRUE && malProfileMode == 0 &&
 		cntxt->itrace==0 && cntxt->flags == 0 && GDKdebug == 0) {
 		while(stkpc < mb->stop && stkpc != stoppc ){
 			pci = getInstrPtr(mb,stkpc);
 			if (malProfileMode + cntxt->itrace)
 				goto workslow;
-            
+
 				@:MALrecycleStart(stk)@ {
 				@:MALinterpret(FAST)@
 			}
@@ -505,7 +505,7 @@ We rely on optimizing compilers to remove the redundant code.
 			pci = getInstrPtr(mb,stkpc);
 			if (malProfileMode + cntxt->itrace + mb->trap)
 				goto workslow;
-            
+
 				@:MALinterpret(FAST)@
 			@:MALflowofcontrol(FAST,continue)@
 		}
@@ -539,7 +539,7 @@ workslow:
 
 		@:beginProfile(stk,1)@
 		@:MALrecycleStart(stk)@ {
-            @:MALinterpret(FAST)@
+			@:MALinterpret(FAST)@
 		}
 		@:MALflowofcontrol(FAST,continue)@
 		@:endProfile(stk)@
@@ -561,7 +561,7 @@ whose entry is controlled by the function language.dataflow();
 This way the function can inform the caller to skip the block
 when dataflow execution was performed.
 @h
-mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
+mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 @-
 The flow graphs should be organized such that parallel threads can
@@ -577,7 +577,7 @@ its input variables are not blocked.
 typedef struct queue {
 	int size;	/* size of queue */
 	int last;	/* last element in the queue */
-	void **data;	
+	void **data;
 	MT_Lock l;	/* its a shared resource, ie we need locks */
 	MT_Sema s;	/* threads wait on empty queues */
 } queue;
@@ -587,7 +587,7 @@ typedef struct {
 	MT_Id tid;
 	int id;
 	queue *todo;		/* pending actions for this client */
-    lng clk;
+	lng clk;
 } FlowTask;
 
 typedef struct DataFlow {
@@ -597,7 +597,7 @@ typedef struct DataFlow {
 	int start, stop;	/* guarded block under consideration*/
 	char *status;		/* statements can be blocked on other statements */
 	char *blocked;		/* blocked, should be created first */
-	int *assign;		/* first assignment of variable */ 
+	int *assign;		/* first assignment of variable */
 	int *inuse;		/* inuse in parallel threads reference count */
 	queue *done;		/* work finished */
 	queue *todo;		/* pending actions for this client */
@@ -636,7 +636,7 @@ the high-watermark or it is the single expensive
 instruction being started.
 
 When we run out of memory, the instruction is delayed.
-How long depends on the other instructions to free up 
+How long depends on the other instructions to free up
 resources. The current policy simple takes a local
 decision by delaying the instruction based on its
 past and the size of the memory pool size.
@@ -644,7 +644,7 @@ The waiting penalty decreases with each step to ensure
 it will ultimately taken into execution, with possibly
 all resource contention effects.
 
-Another option would be to maintain a priority queue of 
+Another option would be to maintain a priority queue of
 suspended instructions.
 @= calcFootprint
 	heapinfo(&b->H->heap); total += vol;
@@ -658,7 +658,7 @@ suspended instructions.
 t = total;
 if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 	b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
-	if (b==NULL) 
+	if (b==NULL)
 		continue;
 	@:calcFootprint@
 	/* prepare for hashes */
@@ -666,14 +666,14 @@ if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 		 b->T->hash == NULL && b->tsorted == 0 ){
 		if ( BATcount(b)  > cnt)
 			cnt = BATcount(b);
-	} 
+	}
 	if ( (b->ttype == TYPE_oid && !BATtordered(b) && !BATtdense(b)) ||
 	   ( b->htype == TYPE_oid && !BAThordered(b) && !BAThdense(b)) ){
 		/* assume we may have to do random IO, punish it by increasing the claim  with cacheline size*/
 		total += 64* BATcount(b) ;
 		total = total >(lng) (MEMORY_THRESHOLD * monet_memory)? (lng) (MEMORY_THRESHOLD * monet_memory):total;
 	}
-	BBPunfix( h = b->batCacheid); 
+	BBPunfix( h = b->batCacheid);
 }
 @c
 void
@@ -683,7 +683,7 @@ getMemoryClaim(MalStkPtr stk, InstrPtr pci, lng *argclaim, lng *retclaim, lng *h
 	lng guess=0, t=0, total = 0, vol=0;
 	BUN cnt = 0;
 	BAT *b;
-	
+
 	total = 0;
 	if (retclaim)
 		*retclaim =0;
@@ -724,7 +724,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 {
 	/* remove the result arguments from the hot set */
 	int i,j,h,bid;
-	
+
 	if ( hottop >= MAXHOT || memoryused > (lng) (MEMORY_THRESHOLD * monet_memory) ){
 		/* forget everything returning memory to pool */
 		mal_set_lock(mal_contextLock, "DFLOWdelay");
@@ -733,7 +733,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 			hotpotatoes[i].bid=0;
 		}
 		memoryused = 0;
-		hottop = 0; 
+		hottop = 0;
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 #ifdef DEBUG_MEMORY_CLAIM
 		mnstr_printf(GDKout,"#DFLOWhotpotatoes reset\n");
@@ -745,7 +745,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 		return;
 	}
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
-	for ( i = start; i< stop; i++) 
+	for ( i = start; i< stop; i++)
 	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
 	{
 		for ( h = j= 0; j< hottop; j++)
@@ -769,7 +769,7 @@ updMemoryUsedPart(MalStkPtr stk, InstrPtr pci, int start, int stop, lng argclaim
 	if ( argclaim > 0)
 			argclaim -= hotpotatoes[j].claim;
 	else	hotpotatoes[h++]= hotpotatoes[j];
-	hottop = h; 
+	hottop = h;
 	mal_unset_lock(mal_contextLock, "DFLOWdelay");
 }
 
@@ -782,7 +782,7 @@ updMemoryUsed(MalStkPtr stk, InstrPtr pci, lng argclaim)
 	BAT *b;
 
 
-	for ( i= 0; i< pci->retc && hottop < MAXHOT; i++) 
+	for ( i= 0; i< pci->retc && hottop < MAXHOT; i++)
 	if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && (bid = stk->stk[getArg(pci,i)].val.bval) && bid)
 	{
 		total = 0;
@@ -823,7 +823,7 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
 	if (memorypool <= 0 && memoryclaims == 0)
 			memorypool = (lng) (MEMORY_THRESHOLD * monet_memory);
-	
+
 	if ( argclaim + retclaim > 0 ) {
 		if (memoryclaims == 0 || memorypool - memoryused > argclaim + retclaim -hotclaim){
 			memorypool -= (argclaim + retclaim);
@@ -834,12 +834,12 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 #endif
 			mal_unset_lock(mal_contextLock, "DFLOWdelay");
 			return 0;
-		} 
+		}
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		return -1;
-	} 
+	}
 	/* release memory claimed before */
-	memorypool += -argclaim -retclaim ; 
+	memorypool += -argclaim -retclaim ;
 	memoryclaims --;
 #ifdef DEBUG_MEMORY_CLAIM
 		mnstr_printf(GDKout,"#DFLOWadmit %3d thread %d pool " LLFMT","LLFMT " claims " LLFMT "," LLFMT"," LLFMT"\n",
@@ -852,7 +852,7 @@ DFLOWadmission(lng argclaim, lng retclaim, lng hotclaim)
 }
 
 @-
-The dataflow execution is confined to a barrier block. 
+The dataflow execution is confined to a barrier block.
 Within the block there are multiple flows, which, in principle,
 can be executed in parallel.
 @c
@@ -871,7 +871,7 @@ q_create( int sz )
 		GDKfree(q);
 		return NULL;
 	}
-	
+
 	MT_init_lock(q->l, "q_create");
 	MT_init_sema(q->s, 0, "q_create");
 	return q;
@@ -920,7 +920,7 @@ q_requeue(queue *q, void *d)
 }
 
 static void *
-q_dequeue(queue *q) 
+q_dequeue(queue *q)
 {
 	void *r = NULL;
 
@@ -928,7 +928,7 @@ q_dequeue(queue *q)
 	MT_set_lock(q->l, "q_dequeue");
 	assert(q->last > 0);
 	/* LIFO favors garbage collection*/
-	r = q->data[--q->last];	
+	r = q->data[--q->last];
 
 	MT_unset_lock(q->l, "q_dequeue");
 	return r;
@@ -941,7 +941,7 @@ the order may really create errors.
 The order of the instructions should be retained as long as possible.
 @c
 static str
-DFLOWstep(FlowTask *t, FlowStep fs) 
+DFLOWstep(FlowTask *t, FlowStep fs)
 {
 	DataFlow flow = fs->flow;
 	int stkpc = fs->pc;
@@ -966,7 +966,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	MT_Lock *lock = &flow->done->l;
 	int tid = t->id;
 	lng argclaim,retclaim,hotclaim;
-    
+
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
 	int oldoublock=0;
@@ -976,7 +976,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 
 	if (stk == NULL || stkpc < 0)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
-		
+
 	pci = getInstrPtr(flow->mb, stkpc);
 #ifdef DEBUG_FLOW
 	printf("#EXECUTE THREAD %d \n", tid);
@@ -1058,7 +1058,7 @@ This won't work, because it is not selective enough. The advice should be select
 The number of instructions allowed is severely limited.
 We don't allow sequential flow control here.
 @c
-        switch (pci->token){
+		switch (pci->token){
 		case ASSIGNsymbol: @:assignStmt(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
 		case PATcall: @:patterncall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
 		case CMDcall: @:commandcall(FAST,fs->pc = -fs->pc; updMemoryUsed(stk,pci,argclaim); DFLOWadmission(-argclaim,-retclaim,-hotclaim); return ret,t)@ break;
@@ -1120,7 +1120,7 @@ runDFLOWworker(void *t)
 			mnstr_printf(GDKstdout,"#execute pc=%d thread =%d \n",fs->pc, task->id);
 		if ( fs == oldfs){
 			q_requeue(task->todo,fs);
-			MT_sleep_ms(10); 
+			MT_sleep_ms(10);
 			oldfs = 0;	/* don't escape it always */
 			continue;
 		}
@@ -1183,15 +1183,15 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 
 		/* initial state, ie everything can run */
 		fs[n].pc = i;
-		fs[n].status = DFLOWpending; 
-		fs[n].flow = flow; 
-		fs[n].cost = -1; 
-		fs[n].error = NULL; 
+		fs[n].status = DFLOWpending;
+		fs[n].flow = flow;
+		fs[n].cost = -1;
+		fs[n].error = NULL;
 
 		for (j=0; j<p->argc; j++){
 			a = getArg(p, j);
 
-			if (j<p->retc && flow->assign[a] != 0) 
+			if (j<p->retc && flow->assign[a] != 0)
 				assert(0);
 
 			if (j<p->retc && flow->assign[a] == 0 && flow->inuse[a] == 0) {
@@ -1207,9 +1207,9 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 	memset(flow->inuse, 0, flow->mb->vtop * sizeof(flow->inuse[0]));
 
 	PARDEBUG
-	for (i=0; i < flow->mb->vtop; i++) 
+	for (i=0; i < flow->mb->vtop; i++)
 	if ( flow->blocked[i] || flow->inuse[i] || flow->assign[i] ){
-		printf("%s %d %d [ %1d %2d ]\n", getVarName(flow->mb,i), 
+		printf("%s %d %d [ %1d %2d ]\n", getVarName(flow->mb,i),
 			getEndOfLife(flow->mb,i), i,
 			flow->blocked[i],
 			flow->inuse[i]);
@@ -1259,12 +1259,12 @@ DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 				break;
 			}
 			else
-                                for ( k=0; k < i ; k++)
-                                        if ( fs[k].status != DFLOWwrapup && fs[k].pc >= 0  /* pc = -1 could be the case before wrapup is set*/
-                                	     && !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, var) ) {
-                                		blocked = 1;
-                                		break;
-                                	}
+				for ( k=0; k < i ; k++)
+					if ( fs[k].status != DFLOWwrapup && fs[k].pc >= 0/* pc = -1 could be the case before wrapup is set*/
+						 && !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, var) ) {
+						blocked = 1;
+						break;
+					}
 		} else {
 			/* handle the dependencies sketched above */
 			/* search the statement that assigns a value to the argument or target */
@@ -1333,7 +1333,7 @@ DFLOWscheduler( DataFlow flow )
 
 	if (flow->cntxt->flags & timerFlag)
 		flow->cntxt->timer = GDKusec();
-	
+
 	if( limit)
 		goto firststep;	/* confuse static code analysers, i want a jump */
 
@@ -1396,32 +1396,32 @@ DFLOWscheduler( DataFlow flow )
 			if (fs[i].status == DFLOWpending ) {
 				p = getInstrPtr(flow->mb, fs[i].pc);
 				for ( j= p->retc; j < p->argc; j++)
-                                        if ( getArg(p,j)== oa ) {
-                                                if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
-                                                        if ( DFLOWeligible(flow,fs,i,p,pc) ) {
-                                                                queued++;
-                                                                todo++;
-                                                                candidates = 1;
-                                                                DFLOWactivate(flow,fs,i,p);
-                                                                q_enqueue(flow->todo, fs+i);
-                                                        }
-                                                break;
-                                        }
+					if ( getArg(p,j)== oa ) {
+						if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
+							if ( DFLOWeligible(flow,fs,i,p,pc) ) {
+								queued++;
+								todo++;
+								candidates = 1;
+								DFLOWactivate(flow,fs,i,p);
+								q_enqueue(flow->todo, fs+i);
+							}
+						break;
+					}
 			}
 		/* if all work done then inspect rest */
 		if (candidates == 0)
-                        for(i = pc ; i < limit && queued < flow->nway ; i++)
-                                if (fs[i].status == DFLOWpending ) {
-                                        p = getInstrPtr(flow->mb, fs[i].pc);
-                                        if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
-                                                if ( DFLOWeligible(flow,fs,i,p,pc) ) {
-                                                        queued++;
-                                                        todo++;
-                                                        DFLOWactivate(flow,fs,i,p);
-                                                        q_enqueue(flow->todo, fs+i);
-                                                }
-                                }
-	} 
+			for(i = pc ; i < limit && queued < flow->nway ; i++)
+				if (fs[i].status == DFLOWpending ) {
+					p = getInstrPtr(flow->mb, fs[i].pc);
+					if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
+						if ( DFLOWeligible(flow,fs,i,p,pc) ) {
+							queued++;
+							todo++;
+							DFLOWactivate(flow,fs,i,p);
+							q_enqueue(flow->todo, fs+i);
+						}
+				}
+	}
 	PARDEBUG {
 		int candidates = 0;
 		mnstr_printf(GDKstdout,"#end of data flow %d %d todo %d  done %d\n",pc,limit,todo,done);
@@ -1432,9 +1432,9 @@ DFLOWscheduler( DataFlow flow )
 				candidates++;
 			}
 		if ( candidates)
-		for (i=0; i < flow->mb->vtop; i++) 
+		for (i=0; i < flow->mb->vtop; i++)
 		if ( flow->blocked[i] || flow->inuse[i] )
-			printf("%s %d [ %1d %2d ]\n", getVarName(flow->mb,i), 
+			printf("%s %d [ %1d %2d ]\n", getVarName(flow->mb,i),
 				getEndOfLife(flow->mb,i),
 				flow->blocked[i],
 				flow->inuse[i]);
@@ -1445,9 +1445,9 @@ DFLOWscheduler( DataFlow flow )
 static DataFlow flows = NULL;
 static int workerid = 0;
 
-str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
+str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
-{   
+{
 	DataFlow flow = NULL;
 	str ret = MAL_SUCCEED;
 
@@ -1477,7 +1477,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 
 		/* seems enough for the time being */
 		flow->done = q_create(2048);
-		flow->todo = q_create(2048); 
+		flow->todo = q_create(2048);
 
 		/* queues are available? */
 		if ( flow->done == NULL || flow->todo == NULL) {
@@ -1516,7 +1516,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow->free = flows;
 	flows = flow;
 	mal_unset_lock(mal_contextLock, "runMALdataflow");
-	return ret; 
+	return ret;
 }
 @+ Independent threads
 Distributed execution calls for asynchronous execution of MAL
@@ -1623,7 +1623,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 @+ The interpreter loop
 The interpreter is geared towards execution a MAL procedure together
-with all its decendant invocations. As such, it provides the 
+with all its decendant invocations. As such, it provides the
 MAL abtract machine processor.
 
 The value-stack frame of the surrounding scope is needed to resolve
@@ -1647,7 +1647,7 @@ elements in the value stack.
 	case NOOPsymbol:
 	case REMsymbol:
 		break;
-	case ENDsymbol: 
+	case ENDsymbol:
 		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
 			ret= shutdownFactory(cntxt,mb, 0);
 #if @1
@@ -1676,7 +1676,7 @@ elements in the value stack.
 	}
 @-
 After the expression has been evaluated we should check for a
-possible change in the control flow. 
+possible change in the control flow.
 @= MALflowofcontrol
 switch(pci->barrier){
 	case BARRIERsymbol:
@@ -1689,66 +1689,66 @@ switch(pci->barrier){
 		switch(v->vtype){
 			case TYPE_bit:
 				if( v->val.cval[0] == TRUE && v->val.cval[0] != bit_nil)
-					stkpc= pci->jump; 
+					stkpc= pci->jump;
 				else stkpc++;
 				break;
 			case TYPE_chr:
 				if( v->val.cval[0] )
-					stkpc= pci->jump; 
+					stkpc= pci->jump;
 				else stkpc++;
 				break;
 			case TYPE_str:
 				if( v->len > 0 && v->val.sval!= str_nil )
-					stkpc= pci->jump; 
+					stkpc= pci->jump;
 				else stkpc++;
 				break;
 			case TYPE_sht:
 				if( v->val.shval >= 0 && v->val.shval!= sht_nil )
-					stkpc= pci->jump; 
+					stkpc= pci->jump;
 				else stkpc++;
 				break;
 			case TYPE_bat:
 				if( v->val.bval > 0 )
-					stkpc= pci->jump; 
+					stkpc= pci->jump;
 				else stkpc++;
 				break;
 			case TYPE_int:
 				if( v->val.ival >= 0 && v->val.ival!= int_nil )
-					stkpc= pci->jump; 
+					stkpc= pci->jump;
 				else stkpc++;
 				break;
 			case TYPE_wrd:
 				if( v->val.wval >= 0 && v->val.wval!= wrd_nil )
-					stkpc= pci->jump; 
+					stkpc= pci->jump;
 				else stkpc++;
 				break;
 			case TYPE_bte:
 				if( v->val.btval >= 0 && v->val.btval!= bte_nil )
-					stkpc= pci->jump; 
+					stkpc= pci->jump;
 				else stkpc++;
 				break;
 			case TYPE_lng:
 				if( v->val.lval >= 0 && v->val.lval!= lng_nil)
-					stkpc= pci->jump; 
-				else 
+					stkpc= pci->jump;
+				else
 			default:
 					stkpc++;
 		}
 		break;
 	case CATCHsymbol:
-		/* catch blocks are skipped unless 
+		/* catch blocks are skipped unless
 		   searched for explicitly*/
-		if(exceptionVar < 0) { 
-			stkpc= pci->jump; 
+		if(exceptionVar < 0) {
+			stkpc= pci->jump;
 			break;
 		}
 		exceptionVar = -1;
-		stkpc++; 
+		stkpc++;
 		break;
 	case EXITsymbol:
-		if( getDestVar(pci) == exceptionVar) 
-			exceptionVar = -1; 
-		stkpc++; 
+		if( getDestVar(pci) == exceptionVar)
+			exceptionVar = -1;
+		stkpc++;
 		break;
 	case RAISEsymbol:
 		exceptionVar = getDestVar(pci);
@@ -1756,7 +1756,7 @@ switch(pci->barrier){
 		if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 			ret = createScriptException(mb, stkpc, MAL, NULL,
 				stk->stk[getDestVar(pci)].val.sval);
-		} 
+		}
 		@:skipToCatch(exceptionVar,@2,stk)@
 		if ( stkpc == mb->stop)
 			ret = createScriptException(mb, stkpc, MAL, ret,
@@ -1783,20 +1783,20 @@ switch(pci->barrier){
 					lhs = &env->stk[pci->argv[i]];
 					VALcopy(lhs,rhs);
 					if( lhs->vtype == TYPE_bat )
-						BBPincref(lhs->val.bval, TRUE); 
+						BBPincref(lhs->val.bval, TRUE);
 				}
 				if( garbageControl(getInstrPtr(mb,0)) )
 					garbageCollector(cntxt, mb, stk, TRUE);
 				/* reset the clock */
 				if( oldtimer)
 					cntxt->timer= oldtimer;
-			} else { 
+			} else {
 				@:endProfile(stk)@
 			}
 		stkpc= mb->stop;
 		continue;
 	default:
-		stkpc++; 
+		stkpc++;
 }
 
 @+ Assignment command
@@ -1813,7 +1813,7 @@ their. They seem superflous and the way they are used will
 cause errors in multi-assignment statements.
 @-
 @= assignStmt
-{	
+{
 	@:safeTarget(@1)@
 	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
 		lhs = &stk->stk[pci->argv[k]];
@@ -1837,9 +1837,9 @@ is kept as simple as possible.
 Basically we distinguish four kinds of calling conventions:
 CMDcall, FCNcall, FACcall, and  PATcall.
 The FCNcall indicates calling a MAL procedure, which leads
-to a recursive call to the interpreter. 
+to a recursive call to the interpreter.
 
-CMDcall initiates calling a linked function, passing pointers 
+CMDcall initiates calling a linked function, passing pointers
 to the parameters and result variable, i.e.  f(ptr a0,..., ptr aN)
 The function returns a MAL-SUCCEED upon success and a pointer
 to an exception string upon failure.
@@ -1859,7 +1859,7 @@ into the stack frame rather than pointers to the actual value.
 BAT parameters require some care. Ideally, a BAT should not be kept
 around long. This would mean that each time we access a BAT it has to be
 pinned in memory and upon leaving the function, it is unpinned.
-This degrades performance significantly. 
+This degrades performance significantly.
 After the parameters are fixed, we can safely free the destination
 variable and re-initialize it to nil.
 
@@ -1870,11 +1870,11 @@ are identified. In the post-execution phase they are removed.
 	printf("safeTarget %d\n", garbageControl(pci));
 	printInstruction(cntxt->fdout,mb,pci, LIST_MAL_ALL);
 #endif
-	if( garbageControl(pci) ){ 
+	if( garbageControl(pci) ){
 		for(i=0; i < pci->argc; i++) {
-			sbackup[i]= 0;  
-			backup[i]= 0;  
-			garbage[i]= -1;  
+			sbackup[i]= 0;
+			backup[i]= 0;
+			garbage[i]= -1;
 			if (stk->stk[getArg(pci,i)].vtype == TYPE_bat && getEndOfLife(mb,getArg(pci,i)) == stkpc && isNotUsedIn(pci,i+1,getArg(pci,i)) ){
 				garbage[i]= getArg(pci,i);
 #ifdef DEBUG_GC
@@ -1887,14 +1887,14 @@ are identified. In the post-execution phase they are removed.
 #if @1
 				stamp= BBPcurstamp();
 #endif
-			} else 
+			} else
 			if( i < pci->retc &&  stk->stk[getArg(pci,i)].vtype == TYPE_str) {
 				backup[i]= stk->stk[getArg(pci,i)].len;
 				sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
 				backup[i] += (sbackup[i]!=NULL);
-			} 
+			}
 		}
-	} 
+	}
 @= restoreTarget
 #ifdef STACKTRACE
 	printf("restoreTarget %d\n", garbageControl(pci));
@@ -1931,7 +1931,7 @@ are identified. In the post-execution phase they are removed.
 	}
 #endif
 	@:MALrecycleExit(@2)@
-	if(ret==MAL_SUCCEED && garbageControl(pci) ){ 
+	if(ret==MAL_SUCCEED && garbageControl(pci) ){
 		for(i=0; i<pci->argc; i++)
 		if( isaBatType(getArgType(mb,pci,i)) ){
 			bat bid = stk->stk[getArg(pci,i)].val.bval;
@@ -1947,7 +1947,7 @@ are identified. In the post-execution phase they are removed.
 				}
 				BBPdecref(backup[i], TRUE);
 				backup[i]=0;
-			} 
+			}
 			if ( garbage[i] >= 0){
 				bid = ABS(stk->stk[garbage[i]].val.bval);
 				BBPdecref( bid, TRUE);
@@ -1957,7 +1957,7 @@ are identified. In the post-execution phase they are removed.
 		} else if( i < pci->retc && stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
-				if( backup[i] > 0) 
+				if( backup[i] > 0)
 					GDKfree(sbackup[i]);
 				if (i >= pci->retc){
 					stk->stk[getArg(pci,i)].val.sval= 0;
@@ -1965,12 +1965,12 @@ are identified. In the post-execution phase they are removed.
 				}
 				backup[i]=0;
 				sbackup[i]=0;
-			} 
-		} 
+			}
+		}
 	}
 @-
 @= commandcall
-{	
+{
 	@:safeTarget(@1)@
 	/* improve performance with 20 ms/1M calls*/
 	switch(pci->argc){
@@ -1979,25 +1979,25 @@ are identified. In the post-execution phase they are removed.
 			(ptr) getArgReference(stk,pci,0)); break;
 	case 2 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
-			(ptr) getArgReference(stk,pci,1)); 
+			(ptr) getArgReference(stk,pci,1));
 			 break;
 	case 3 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
-			(ptr) getArgReference(stk,pci,2)); 
+			(ptr) getArgReference(stk,pci,2));
 			 break;
 	case 4 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
 			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3)); 
+			(ptr) getArgReference(stk,pci,3));
 			 break;
 	case 5 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
 			(ptr) getArgReference(stk,pci,1),
 			(ptr) getArgReference(stk,pci,2),
-			(ptr) getArgReference(stk,pci,3), 
-			(ptr) getArgReference(stk,pci,4)); 
+			(ptr) getArgReference(stk,pci,3),
+			(ptr) getArgReference(stk,pci,4));
 			 break;
 	case 6 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
@@ -2005,7 +2005,7 @@ are identified. In the post-execution phase they are removed.
 			(ptr) getArgReference(stk,pci,2),
 			(ptr) getArgReference(stk,pci,3),
 			(ptr) getArgReference(stk,pci,4),
-			(ptr) getArgReference(stk,pci,5)); 
+			(ptr) getArgReference(stk,pci,5));
 			 break;
 	case 7 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
@@ -2014,7 +2014,7 @@ are identified. In the post-execution phase they are removed.
 			(ptr) getArgReference(stk,pci,3),
 			(ptr) getArgReference(stk,pci,4),
 			(ptr) getArgReference(stk,pci,5),
-			(ptr) getArgReference(stk,pci,6)); 
+			(ptr) getArgReference(stk,pci,6));
 			 break;
 	case 8 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
@@ -2024,7 +2024,7 @@ are identified. In the post-execution phase they are removed.
 			(ptr) getArgReference(stk,pci,4),
 			(ptr) getArgReference(stk,pci,5),
 			(ptr) getArgReference(stk,pci,6),
-			(ptr) getArgReference(stk,pci,7)); 
+			(ptr) getArgReference(stk,pci,7));
 			 break;
 	case 9 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
@@ -2035,7 +2035,7 @@ are identified. In the post-execution phase they are removed.
 			(ptr) getArgReference(stk,pci,5),
 			(ptr) getArgReference(stk,pci,6),
 			(ptr) getArgReference(stk,pci,7),
-			(ptr) getArgReference(stk,pci,8)); 
+			(ptr) getArgReference(stk,pci,8));
 			 break;
 	case 10 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
@@ -2046,8 +2046,8 @@ are identified. In the post-execution phase they are removed.
 			(ptr) getArgReference(stk,pci,5),
 			(ptr) getArgReference(stk,pci,6),
 			(ptr) getArgReference(stk,pci,7),
-			(ptr) getArgReference(stk,pci,8), 
-			(ptr) getArgReference(stk,pci,9)); 
+			(ptr) getArgReference(stk,pci,8),
+			(ptr) getArgReference(stk,pci,9));
 			 break;
 	case 11 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
@@ -2058,9 +2058,9 @@ are identified. In the post-execution phase they are removed.
 			(ptr) getArgReference(stk,pci,5),
 			(ptr) getArgReference(stk,pci,6),
 			(ptr) getArgReference(stk,pci,7),
-			(ptr) getArgReference(stk,pci,8), 
-			(ptr) getArgReference(stk,pci,9), 
-			(ptr) getArgReference(stk,pci,10)); 
+			(ptr) getArgReference(stk,pci,8),
+			(ptr) getArgReference(stk,pci,9),
+			(ptr) getArgReference(stk,pci,10));
 			 break;
 	case 12 : ret = (str) (*pci->fcn)(
 			(ptr) getArgReference(stk,pci,0),
@@ -2071,10 +2071,10 @@ are identified. In the post-execution phase they are removed.
 			(ptr) getArgReference(stk,pci,5),
 			(ptr) getArgReference(stk,pci,6),
 			(ptr) getArgReference(stk,pci,7),
-			(ptr) getArgReference(stk,pci,8), 
-			(ptr) getArgReference(stk,pci,9), 
-			(ptr) getArgReference(stk,pci,10), 
-			(ptr) getArgReference(stk,pci,11)); 
+			(ptr) getArgReference(stk,pci,8),
+			(ptr) getArgReference(stk,pci,9),
+			(ptr) getArgReference(stk,pci,10),
+			(ptr) getArgReference(stk,pci,11));
 			 break;
 	default:
 		ret = createScriptException(mb, stkpc, MAL, NULL,
@@ -2103,7 +2103,7 @@ non-returned values.
 
 @-
 @= functioncall
-{	
+{
 	stk->pcup = stkpc;
 	@:safeTarget(@1)@
 	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
@@ -2124,8 +2124,8 @@ Factory calls should deal with the reference counting.
 	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(SLOW)@
 @-
-The type dispatching table in getArgReference can be removed if we 
-determine at compile time the address offset within a ValRecord. 
+The type dispatching table in getArgReference can be removed if we
+determine at compile time the address offset within a ValRecord.
 We leave this optimization for the future, it leads to about 10%
 improvement (100ms for 1M calls).
 
@@ -2154,24 +2154,24 @@ labeled statemtent. This might be optimized later.
 			break;
 		case TYPE_sht:
 			if( v->val.shval < 0 || v->val.shval == sht_nil)
-				stkpc= pci->jump; 
+				stkpc= pci->jump;
 			break;
 		case TYPE_int:
 			if( v->val.ival < 0 || v->val.ival == int_nil)
-				stkpc= pci->jump; 
+				stkpc= pci->jump;
 			break;
 		case TYPE_lng:
 			if( v->val.lval < 0 || v->val.lval == lng_nil)
-				stkpc= pci->jump; 
+				stkpc= pci->jump;
 			break;
 		case TYPE_flt:
 		case TYPE_dbl:
 			if( v->val.dval < 0 || v->val.dval == dbl_nil)
-				stkpc= pci->jump; 
+				stkpc= pci->jump;
 			break;
 		case TYPE_str:
 			if( v->len == 0 || v->val.sval == str_nil)
-				stkpc= pci->jump; 
+				stkpc= pci->jump;
 			break;
 		default:
 			ret = createScriptException(mb, stkpc, MAL, NULL,
@@ -2208,7 +2208,7 @@ reaching end of function block.
 		}
 	}
 	if( stkpc== mb->stop) {
-		@:endProfile(@3)@ 
+		@:endProfile(@3)@
 			@2;
 	}
 @-
@@ -2227,12 +2227,12 @@ Calling a built-in or user-defined routine may lead to an error or a
 cached status message to be dealt with in MAL.
 To improve error handling in MAL, an exception handling
 scheme based on @sc{catch}-@sc{exit} blocks. The @sc{catch}
-statement identifies a (string-valued) variable, which carries the 
+statement identifies a (string-valued) variable, which carries the
 exception message from
 the originally failed routine or @sc{raise} exception assignment.
 During normal processing @sc{catch}-@sc{exit} blocks are simply skipped.
-Upon receiving an exception status from a function call, we set the 
-exception variable and skip to the first associated @sc{catch}-@sc{exit} 
+Upon receiving an exception status from a function call, we set the
+exception variable and skip to the first associated @sc{catch}-@sc{exit}
 block.
 MAL interpretation then continues until it reaches the end of the block.
 If no exception variable was defined, we should abandon the function
@@ -2257,7 +2257,7 @@ error somewhere in the calling sequence.
 We then have to also look into GDKerrbuf to see if there was
 an error raised deeply inside the system.
 
-The policy is to require all C-functions to return a string-pointer. 
+The policy is to require all C-functions to return a string-pointer.
 Upon a successfull call, it is a NULL string. Otherwise it contains an
 encoding of the exceptional state encountered. This message
 starts with the exception identifer, followed by contextual details.
@@ -2273,7 +2273,7 @@ str catchKernelException(Client cntxt, str ret){
 				strcpy(z,ret);
 				if (z[strlen(z)-1] != '\n') strcat(z,"\n");
 				strcat(z,cntxt->errbuf);
-			} 
+			}
 		} else {
 			/* trap hidden (GDK) exception */
 			z= (char*) GDKmalloc( strlen("GDKerror:")+strlen(cntxt->errbuf)+2);
@@ -2331,7 +2331,7 @@ all.
 		*msg= 0;
 		exceptionVar = findVariableLength(mb,ret,(int)(msg-ret));
 		*msg=':';
-	} 
+	}
 	if (exceptionVar == -1)
 		exceptionVar = findVariableLength(mb,"ANYexception",12);
 
@@ -2389,14 +2389,14 @@ a reference and delete the BAT from one angle. If not carefull, the
 dangling pointer may subsequently be associated with another BAT
 
 All string values are private to the VALrecord, which means they
-have to be freed explicitly before a MAL function returns. 
+have to be freed explicitly before a MAL function returns.
 The first step is to always safe the destination variable
 before a function call is made.
 @{
 @-
 @c
 void garbageElement(Client cntxt, ValPtr v)
-{   
+{
 	if( v->vtype == TYPE_str) {
 		if(v->val.sval) {
 			GDKfree(v->val.sval);
@@ -2423,7 +2423,7 @@ All references should be logical.
 		v->val.bval = 0;
 		if (bid == 0 )
 			return;
-		if (!BBP_lrefs(bid)) 
+		if (!BBP_lrefs(bid))
 			return;
 		if (cntxt && cntxt->flags &  bigfootFlag)
 			updateBigFoot(cntxt, bid, FALSE);
@@ -2441,8 +2441,8 @@ for the time being we do not introduce more complex garbage
 administration code.
 
 Also note that for top-level stack frames (no environment available),
-we should retain the value stack because it acts as a global variables. 
-This situation is indicated by the 'global' in the stack frame. 
+we should retain the value stack because it acts as a global variables.
+This situation is indicated by the 'global' in the stack frame.
 @{
 Upon termination of the session, the stack should be cleared.
 Beware that variables may be know polymorphic, their actual
@@ -2450,7 +2450,7 @@ type should be saved for variables that recide on a global
 stack frame.
 @c
 void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
-{   
+{
 	int k;
 	ValPtr v;
 
@@ -2479,10 +2479,11 @@ as well. The routine below performs this action in the local
 stack frame and its parents only.
 @c
 void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
-{   int k;
+{
+	int k;
 
-   	do {
-		for(k=0;k<mb->vtop; k++) 
+	do {
+		for(k=0;k<mb->vtop; k++)
 			if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.bval)==bid) {
 				BBPdecref(bid,TRUE);
 				stk->stk[k].val.ival= 0;
@@ -2490,7 +2491,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 		if(stk->up){
 			stk= stk->up;
 			mb= stk->blk;
-		} else 
+		} else
 			break;
 	} while(stk);
 }
@@ -2619,7 +2620,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 }
 #endif
 @-
-For performance evaluation it is handy to know the 
+For performance evaluation it is handy to know the
 maximal amount of bytes read/written. The actual
 amount is harder to guess, because it too much
 depends on the operation.
@@ -2633,10 +2634,10 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 
 	limit = rd == 0?pci->retc:pci->argc;
 	i = rd?pci->retc:0;
-	
+
 	if( stk->stk[getArg(pci,0)].vtype == TYPE_bat){
 		b = BBPquickdesc(ABS(stk->stk[getArg(pci,0)].val.bval), TRUE);
-		if (b) 
+		if (b)
 			isview = isVIEW(b);
 	}
 	for(; i<limit; i++) {
@@ -2644,10 +2645,10 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 			BUN cnt = 0;
 
 			b = BBPquickdesc(ABS(stk->stk[getArg(pci,i)].val.bval), TRUE);
-			if (b==NULL) 
+			if (b==NULL)
 				continue;
 			cnt = BATcount(b);
-			/* Usually reading views cost as much as full bats. 
+			/* Usually reading views cost as much as full bats.
 			   But when we output a slice that is not the case. */
 			vol += ((rd && !isview) || !VIEWhparent(b))?headsize(b,cnt):0;
 			vol += ((rd && !isview) || !VIEWtparent(b))?tailsize(b,cnt):0;
