@@ -279,12 +279,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_4172BA3B364F4430AD7C2E56E586E43C"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_421D3025871A4DAC931ED064077ED58E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -880,6 +874,12 @@
         "Entry"
         {
         "MsmKey" = "8:_A77A2010520240CE92930A37F4F61FF2"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_A78371A92476460D8E9980C90A4C8F64"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2219,26 +2219,6 @@
             {
             "SourcePath" = "8:Lib\\MonetDB5\\lib_mal_mapi.dll"
             "TargetName" = "8:lib_mal_mapi.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4172BA3B364F4430AD7C2E56E586E43C"
-            {
-            "SourcePath" = "8:Lib\\MonetDB5\\sphinx.mal"
-            "TargetName" = "8:sphinx.mal"
             "Tag" = "8:"
             "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
             "Condition" = "8:"
@@ -4255,6 +4235,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A78371A92476460D8E9980C90A4C8F64"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\05_xml.mal"
+            "TargetName" = "8:05_xml.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_BB18FF9397F941468F4621DB567CB572"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A7873EE6932345B4BA1B15736909147D"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\lib_identifier.dll"
@@ -5614,6 +5614,17 @@
                             "Property" = "8:_762E204C3D494003AADB714FE800A1AF"
                                 "Folders"
                                 {
+                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_BB18FF9397F941468F4621DB567CB572"
+                                    {
+                                    "Name" = "8:autoload"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "Condition" = "8:"
+                                    "Transitive" = "11:FALSE"
+                                    "Property" = "8:_C6A73B2DADDF449C8AF34AFB5FD65960"
+                                        "Folders"
+                                        {
+                                        }
+                                    }
                                 }
                             }
                         }
