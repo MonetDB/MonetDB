@@ -90,6 +90,8 @@ integer, which value can be (a combination of):
                              for debugging (GDK developers, only)
   134217728 = OPTMASK      = trace the actions, decisions and
                              effects of MAL optimizers
+  268435456 = EXTENDMASK   = trace/debug HEAPextend;
+                             used only for development & debugging
   536870912 = FORCEMITOMASK = forcefully activate mitosis even on
                               small tables, i.e., split small tables
                               in as many (tiny) pieces as there are
@@ -102,6 +104,7 @@ integer, which value can be (a combination of):
                               used only for development & testing;
                               set automatically by Mtest.py
 .EE
+
 Note that mserver5 recognizes a series of command line options as well:
 .EX
   --threads       (1 | PARMASK)
@@ -116,6 +119,7 @@ Note that mserver5 recognizes a series of command line options as well:
   --optimizers    (OPTMASK)
   --forcemito     (FORCEMITOMASK)
 .EE
+
 Default: 0
 
 .SH "MONETDB5 PARAMETERS"
@@ -137,6 +141,7 @@ integer that have the following possible values:
   32 = List the hidden details
   64 = List the bat tuple count
 .EE
+
 Default: 0
 .SH "FILES"
 monetdb5.conf
