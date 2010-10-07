@@ -1396,8 +1396,9 @@ DFLOWscheduler( DataFlow flow )
 			if (fs[i].status == DFLOWpending ) {
 				p = getInstrPtr(flow->mb, fs[i].pc);
 				for ( j= p->retc; j < p->argc; j++)
-				if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc))
-					if(flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) ) {
+				if ( getArg(p,j)== oa &&
+				     ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) ) )
+					if ( DFLOWeligible(flow,fs,i,p,pc) ) {
 						queued++;
 						todo++;
 						candidates ++;
@@ -1410,8 +1411,8 @@ DFLOWscheduler( DataFlow flow )
 		for(i = limit-1 ; i >= pc && (candidates == 0 && queued < flow->nway) ; i--)
 			if (fs[i].status == DFLOWpending ) {
 				p = getInstrPtr(flow->mb, fs[i].pc);
-				if ( DFLOWeligible(flow,fs,i,p,pc))
-					if(flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) ) {
+				if ( flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) )
+					if ( DFLOWeligible(flow,fs,i,p,pc) ) {
 						queued++;
 						todo++;
 						DFLOWactivate(flow,fs,i,p);
