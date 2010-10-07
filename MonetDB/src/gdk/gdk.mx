@@ -2646,6 +2646,11 @@ gdk_export MT_Lock GDKunloadLock;
 gdk_export MT_Cond GDKunloadCond;
 gdk_export MT_Lock GDKtmLock;
 
+/*
+   See `man monetdb5.conf` or MonetDB5/conf/monetdb5.conf.5
+   for a documentation of the following debug options.
+*/
+
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
 #define MEMMASK		(1<<2)

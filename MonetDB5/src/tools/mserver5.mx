@@ -143,7 +143,7 @@ usage(char *prog)
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
-	fprintf(stderr,"The trace options:\n");
+	fprintf(stderr,"The debug, testing & trace options:\n");
 	fprintf(stderr,"     --threads\n");
 	fprintf(stderr,"     --memory\n");
 	fprintf(stderr,"     --properties\n");
@@ -156,6 +156,9 @@ usage(char *prog)
 	fprintf(stderr,"     --optimizers\n");
 	fprintf(stderr,"     --forcemito\n");
 	fprintf(stderr,"     --debug=<bitmask>\n");
+#ifndef NATIVE_WIN32
+	fprintf(stderr,"(See `man monetdb5.conf` for the documentation.)\n");
+#endif
 
 	exit(0);
 }
