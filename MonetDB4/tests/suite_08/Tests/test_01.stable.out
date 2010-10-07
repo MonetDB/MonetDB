@@ -284,7 +284,6 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "xrpc_trusted",	  "http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/share/MonetDB/xrpc/export"																																																																																																																																					  ]
 [ "monet_cwd",		  "/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/mTests/tests/suite_08"																																																																																																																																									  ]
 [ "monet_version",	  "4.28.0"																																																																																																																																																													  ]
-[ "gdk_testing",	  "true"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name

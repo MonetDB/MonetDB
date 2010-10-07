@@ -70,7 +70,7 @@ stderr of test 'select_from_env.SF-1240701.1242164` in directory 'src/test/BugDa
 
 MAPI  = monetdb@ottar:39527
 QUERY = select * from env() as env where name = ( select 'prefix' from env() as env );
-ERROR = !SQLException:zero_or_one:cardinality violation (52>1)
+ERROR = !SQLException:zero_or_one:cardinality violation (51>1)
 
 
 # 13:22:15 >  

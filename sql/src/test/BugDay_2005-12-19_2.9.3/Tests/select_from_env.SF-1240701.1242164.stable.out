@@ -54,7 +54,6 @@ Over..
 [ "standoff_end"	]
 [ "config"	]
 [ "gdk_nr_threads"	]
-[ "gdk_testing"	]
 [ "xrpc_open"	]
 [ "xrpc_port"	]
 [ "mal_listing"	]

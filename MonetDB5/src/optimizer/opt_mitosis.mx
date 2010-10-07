@@ -151,8 +151,9 @@ tarantula optimizer.
 		pieces = i;
 	else {
 		pieces = (int) (rowcnt /PARTITION_THRESHOLD) + 1;
-		if (pieces < GDKnr_threads  && GDKdebug)
-			pieces = GDKnr_threads;	 /* split up anyway when debugging */
+		FORCEMITODEBUG
+			if (pieces < GDKnr_threads )
+				pieces = GDKnr_threads; /* split up anyway when testing */
 		if (pieces > MAXSLICES)
 			pieces = MAXSLICES; /* cut off potential plan explosion */
 

@@ -221,6 +221,7 @@ mal_export size_t			monet_memory;
 #define GRPxproperties (XPROPMASK )
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
 #define GRPoptimizers  (1<<27)	/* == OPTMASK; cf., MonetDB/src/gdk/gdk.mx */
+#define GRPforcemito (FORCEMITOMASK)
 @c 
 #include <mal_config.h>
 #include <mal.h>
