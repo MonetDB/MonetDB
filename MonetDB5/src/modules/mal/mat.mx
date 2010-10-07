@@ -545,15 +545,15 @@ MATproject_( BAT *map, BAT **bats, int len )
 
 	if (ATOMstorage(bats[0]->ttype) <= TYPE_void) {
 		//error
-	} else if (ATOMstorage(bats[0]->ttype) == TYPE_str) {
+	} else if (ATOMvarsized(bats[0]->ttype)) {
 		res = MATproject_any(map, bats, len);
-	} else if (ATOMsize(bats[0]->ttype) == 1) {
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(bte)) {
 		res = MATproject_bte(map, bats, len);
-	} else if (ATOMsize(bats[0]->ttype) == 2) {
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(sht)) {
 		res = MATproject_sht(map, bats, len);
-	} else if (ATOMsize(bats[0]->ttype) == 4) {
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(int)) {
 		res = MATproject_int(map, bats, len);
-	} else if (ATOMsize(bats[0]->ttype) == 8) {
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(lng)) {
 		res = MATproject_lng(map, bats, len);
 	} else {
 		res = MATproject_any(map, bats, len);
@@ -831,15 +831,15 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 
 	if (ATOMstorage(bats[0]->ttype) <= TYPE_void) {
 		//error
-	} else if (ATOMstorage(bats[0]->ttype) == TYPE_str) {
+	} else if (ATOMvarsized(bats[0]->ttype)) {
 		res = MATsort_any(&map, bats, len, pcnt, rev);
-	} else if (ATOMsize(bats[0]->ttype) == 1) {
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(bte)) {
 		res = MATsort_bte(&map, bats, len, pcnt, rev);
-	} else if (ATOMsize(bats[0]->ttype) == 2) {
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(sht)) {
 		res = MATsort_sht(&map, bats, len, pcnt, rev);
-	} else if (ATOMsize(bats[0]->ttype) == 4) {
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(int)) {
 		res = MATsort_int(&map, bats, len, pcnt, rev);
-	} else if (ATOMsize(bats[0]->ttype) == 8) {
+	} else if (ATOMsize(bats[0]->ttype) == sizeof(lng)) {
 		res = MATsort_lng(&map, bats, len, pcnt, rev);
 	} else {
 		res = MATsort_any(&map, bats, len, pcnt, rev);
