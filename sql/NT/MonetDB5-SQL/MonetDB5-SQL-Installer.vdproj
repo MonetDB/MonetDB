@@ -741,6 +741,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_6C605D6DB31644C1B23703C74D5B6228"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_6CB7F3EFCD3C419881B01D3C78515F46"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1438,12 +1444,6 @@
         "Entry"
         {
         "MsmKey" = "8:_EC67789DC893443299E5B10CA226CA18"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_ED6B146829BC4379B3411F167C29313A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -4039,6 +4039,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6C605D6DB31644C1B23703C74D5B6228"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\05_xml.mal"
+            "TargetName" = "8:05_xml.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6CB7F3EFCD3C419881B01D3C78515F46"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\language.mal"
@@ -6379,26 +6399,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ED6B146829BC4379B3411F167C29313A"
-            {
-            "SourcePath" = "8:Lib\\MonetDB5\\sphinx.mal"
-            "TargetName" = "8:sphinx.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ED72E2EAC2394AFE8E6623DED755A97F"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\lib_mal_io.dll"
@@ -6887,14 +6887,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5"
-        "ProductCode" = "8:{8ADA7659-346E-4147-B372-56BE0E158C4F}"
-        "PackageCode" = "8:{C3B870F8-6407-4954-9D69-DF200BFCF514}"
+        "ProductCode" = "8:{449131CF-5503-495D-B080-3524A56BBB80}"
+        "PackageCode" = "8:{9AFCF549-8C52-4F91-85B1-F7717300CFF4}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:10.9.14"
+        "ProductVersion" = "8:10.10.7"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"

@@ -633,7 +633,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_7CAAC72B873E4938AEA736674C9C0799"
+        "MsmKey" = "8:_7E7F713537AC4CF8973417616451C0FD"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -3381,12 +3381,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7CAAC72B873E4938AEA736674C9C0799"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7E7F713537AC4CF8973417616451C0FD"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\sphinx.mal"
-            "TargetName" = "8:sphinx.mal"
+            "SourcePath" = "8:Lib\\MonetDB5\\autoload\\05_xml.mal"
+            "TargetName" = "8:05_xml.mal"
             "Tag" = "8:"
-            "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
+            "Folder" = "8:_613D07DE3308401AADA393997CB19A2F"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -5620,6 +5620,17 @@
                             "Property" = "8:_762E204C3D494003AADB714FE800A1AF"
                                 "Folders"
                                 {
+                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_613D07DE3308401AADA393997CB19A2F"
+                                    {
+                                    "Name" = "8:autoload"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "Condition" = "8:"
+                                    "Transitive" = "11:FALSE"
+                                    "Property" = "8:_0AD33C31EF454F488503AEE9F2C6B9BB"
+                                        "Folders"
+                                        {
+                                        }
+                                    }
                                 }
                             }
                         }
