@@ -1251,19 +1251,19 @@ DFLOWeligible(DataFlow flow, FlowStep fs, int i, InstrPtr p, int pc)
 
 			blocked += flow->inuse[var] != 0;
 			for ( k=0; k < i && !blocked; k++)
-			if (fs[k].status != DFLOWwrapup && fs[k].pc >= 0 ) /* pc = -1 could be the case before wrapup is set*/
-				blocked += !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, var);
+				if (fs[k].status != DFLOWwrapup && fs[k].pc >= 0 ) /* pc = -1 could be the case before wrapup is set*/
+					blocked += !isNotUsedIn(getInstrPtr(flow->mb, fs[k].pc), 0, var);
 		} else {
 			/* handle the dependencies sketched above */
 			/* search the statement that assigns a value to the argument or target */
 			/* it should have been finished already */
 			for (l = i-1 ; l >= flow->assign[var] && !blocked; l--)
-			if ( fs[l].status != DFLOWwrapup && fs[l].pc >= 0){
-				q= getInstrPtr(flow->mb, fs[l].pc);
-				for ( k=0; k < q->retc && !blocked; k++)
-				if ( getArg(q,k) == var )
-					blocked = 1;
-			}
+				if ( fs[l].status != DFLOWwrapup && fs[l].pc >= 0){
+					q= getInstrPtr(flow->mb, fs[l].pc);
+					for ( k=0; k < q->retc && !blocked; k++)
+						if ( getArg(q,k) == var )
+							blocked = 1;
+				}
 		}
 	}
 	return blocked == 0;
@@ -1379,31 +1379,31 @@ DFLOWscheduler( DataFlow flow )
 		/* first try to find all instructions that use the released target */
 		candidates = 0;
 		for(i = limit-1; i >= pc ; i--)
-		if (fs[i].status == DFLOWpending ) {
-			p = getInstrPtr(flow->mb, fs[i].pc);
-			for ( j= p->retc; j < p->argc; j++)
-			if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc))
-                if(flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) ) {
-				queued++;
-				todo++;
-				candidates ++;
-				DFLOWactivate(flow,fs,i,p);
-				q_enqueue(flow->todo, fs+i);
-				break;
+			if (fs[i].status == DFLOWpending ) {
+				p = getInstrPtr(flow->mb, fs[i].pc);
+				for ( j= p->retc; j < p->argc; j++)
+				if ( getArg(p,j)== oa && DFLOWeligible(flow,fs,i,p,pc))
+					if(flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) ) {
+						queued++;
+						todo++;
+						candidates ++;
+						DFLOWactivate(flow,fs,i,p);
+						q_enqueue(flow->todo, fs+i);
+						break;
+					}
 			}
-		}
 		/* if all work done then inspect rest */
 		for(i = limit-1 ; i >= pc && (candidates == 0 && queued < flow->nway) ; i--)
-		if (fs[i].status == DFLOWpending ) {
-			p = getInstrPtr(flow->mb, fs[i].pc);
-			if ( DFLOWeligible(flow,fs,i,p,pc))
-                if(flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) ) {
-				queued++;
-				todo++;
-				DFLOWactivate(flow,fs,i,p);
-				q_enqueue(flow->todo, fs+i);
+			if (fs[i].status == DFLOWpending ) {
+				p = getInstrPtr(flow->mb, fs[i].pc);
+				if ( DFLOWeligible(flow,fs,i,p,pc))
+					if(flow->stk->admit == 0 || (*flow->stk->admit)(flow->cntxt, flow->mb, flow->stk, p) ) {
+						queued++;
+						todo++;
+						DFLOWactivate(flow,fs,i,p);
+						q_enqueue(flow->todo, fs+i);
+					}
 			}
-		}
 	} 
 	PARDEBUG {
 		int candidates = 0;
