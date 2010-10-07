@@ -1680,7 +1680,7 @@ socket_open(SOCKET sock, const char *name)
 	errno = 0;
 #if defined(SO_DOMAIN)
 	{
-		socklen_t len;
+		socklen_t len = (socklen_t) sizeof(domain);
 		getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *) &domain, &len);
 	}
 #endif
