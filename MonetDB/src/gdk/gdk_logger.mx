@@ -1104,6 +1104,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 	lg->log = NULL;
 	lg->end = 0;
 	lg->catalog = NULL;
+	lg->snapshots = NULL;
+	lg->seqs = NULL;
 
 	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
 	snprintf(bak, BUFSIZ, "%s.bak", filename);

@@ -673,6 +673,8 @@ url_getUser(str *retval, url t)
 	s = (str)str_nil;
 	while (*t && *t != ':')
 		t++;
+	if (*t == 0)
+		goto getUser_done;
 	t++;
 	if (*t != '/')
 		goto getUser_done;
@@ -682,6 +684,8 @@ url_getUser(str *retval, url t)
 	t++;
 	for (; *t && *t != '/'; t++)
 		;
+	if (*t == 0)
+		goto getUser_done;
 	t++;
 	if (*t == '~') {
 		t++;
