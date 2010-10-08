@@ -38,9 +38,10 @@
 static void
 showUsage(char *name)
 {
-	printf("Usage:  %s [-I<exp>] [-C<num>] [-A<num>] [-t<text>] [-r<rev>] <oldfile> <newfile> [<outfile>]\n", name);
+	printf("Usage:  %s [-I<exp>] [-F<exp>] [-C<num>] [-A<num>] [-t<text>] [-r<rev>] <oldfile> <newfile> [<outfile>]\n", name);
 	printf("\n");
 	printf(" -I<exp>   : ignore lines matching <exp> during diff (optional, default: -I'^#')\n");
+	printf(" -F<exp>   : show the most recent line matching <exp>\n");
 	printf(" -C<num>   : use <num> lines of context during diff (optional, default: -C1)\n");
 	printf(" -A<num>   : accuracy for diff: 0=lines, 1=words, 2=chars (optional, default: -A1)\n");
 	printf(" -d        : change the algorithm to perhaps find a smaller set of changes;\n");
@@ -59,10 +60,10 @@ main(int argc, char **argv)
 	char EMPTY[] = "";
 	char DEFAULT[] = "-I'^#'";
 	char ignoreWHITE[] = " -b -B";
-	char *old_fn, *new_fn, *html_fn, *caption = EMPTY, *revision = EMPTY, *ignoreEXP = DEFAULT, *ignore;
+	char *old_fn, *new_fn, *html_fn, *caption = EMPTY, *revision = EMPTY, *ignoreEXP = DEFAULT, *ignore, *function;
 	int LWC = 1, context = 1, option, mindiff = 0, quiet = 0;
 
-	while ((option = getopt(argc, argv, "hdqA:C:I:t:r:")) != EOF)
+	while ((option = getopt(argc, argv, "hdqA:C:I:F:t:r:")) != EOF)
 		switch (option) {
 		case 'd':
 			mindiff = 1;
@@ -84,6 +85,18 @@ main(int argc, char **argv)
 			strcat(ignoreEXP, optarg);
 #ifndef NATIVE_WIN32
 			strcat(ignoreEXP, "'");
+#endif
+			break;
+		case 'F':
+			function = malloc(strlen(optarg) + 6);
+#ifdef NATIVE_WIN32
+			strcpy(function, "-F");
+#else
+			strcpy(function, "'-F");
+#endif
+			strcat(function, optarg);
+#ifndef NATIVE_WIN32
+			strcat(function, "'");
 #endif
 			break;
 		case 't':
@@ -110,9 +123,9 @@ main(int argc, char **argv)
 	new_fn = ((argc > (++optind)) ? argv[optind] : "-");
 	html_fn = ((argc > (++optind)) ? argv[optind] : "-");
 
-	TRACE(fprintf(STDERR, "%s %s -A %i -C %i %s -t %s -r %s  %s %s %s\n", argv[0], mindiff ? "-d" : "", LWC, context, ignore, caption, revision, old_fn, new_fn, html_fn));
+	TRACE(fprintf(STDERR, "%s %s -A %i -C %i %s %s -t %s -r %s  %s %s %s\n", argv[0], mindiff ? "-d" : "", LWC, context, ignore, function, caption, revision, old_fn, new_fn, html_fn));
 
-	switch (oldnew2html(mindiff, LWC, context, ignore, old_fn, new_fn, html_fn, caption, revision)) {
+	switch (oldnew2html(mindiff, LWC, context, ignore, function, old_fn, new_fn, html_fn, caption, revision)) {
 	case 0:
 		if (quiet == 0)
 			fprintf(STDERR, "%s and %s are equal.\n", old_fn, new_fn);
