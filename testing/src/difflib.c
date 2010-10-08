@@ -576,7 +576,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		for (i = 0; i < 3 && ok; i++)
 			ok = strchr(ok+1, '@');
 		if (ok && ok[1] == ' ')
-			fprintf(html_fp, "<td colspan='7' align='center'>%s</td>\n", ok + 2);
+			fprintf(html_fp, "<td colspan='7' align='center'>%s</td>\n", HTMLsave(ok + 2));
 		for (i = 0; i < 5; i++)
 			clr[i] = 0;
 		orn = nrn = 0;
