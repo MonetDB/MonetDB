@@ -33,18 +33,18 @@
 #endif
 
 
-FILE *oldnew2u_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn);
-int oldnew2l_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *l_diff_fn);
-int oldnew2w_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *w_diff_fn);
-int oldnew2c_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *c_diff_fn);
-int oldnew2lwc_diff(int mindiff, int LWC, int context, char *ignore, char *old_fn, char *new_fn, char *lwc_diff_fn);
+FILE *oldnew2u_diff(int mindiff, int context, char *ignore, char *function, char *old_fn, char *new_fn);
+int oldnew2l_diff(int mindiff, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *l_diff_fn);
+int oldnew2w_diff(int mindiff, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *w_diff_fn);
+int oldnew2c_diff(int mindiff, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *c_diff_fn);
+int oldnew2lwc_diff(int mindiff, int LWC, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *lwc_diff_fn);
 
 int u_diff2l_diff(FILE *u_diff_fp, char *l_diff_fn);
 
 int l_diff2w_diff(int mindiff, char *l_diff_fn, char *w_diff_fn);
 int w_diff2c_diff(int mindiff, char *w_diff_fn, char *c_diff_fn);
 
-int oldnew2html(int mindiff, int LWC, int context, char *ignore, char *old_fn, char *new_fn, char *html_fn, char *caption, char *revision);
+int oldnew2html(int mindiff, int LWC, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *html_fn, char *caption, char *revision);
 int lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char *caption, char *revision);
 
 #endif /* DIFFLIB_H */

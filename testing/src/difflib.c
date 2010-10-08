@@ -132,14 +132,14 @@ markNL(FILE *fp, int k)
 
 
 FILE *
-oldnew2u_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn)
+oldnew2u_diff(int mindiff, int context, char *ignore, char *function, char *old_fn, char *new_fn)
 {
 	char command[CMDLEN];
 	char *_d = mindiff ? "-d" : "";
 
-	TRACE(fprintf(STDERR, "oldnew2u_diff(%i,%i,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn));
+	TRACE(fprintf(STDERR, "oldnew2u_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, function, old_fn, new_fn));
 
-	sprintf(command, "%s %s -a %s -U%d %s    %s", DIFF, ignore, _d, context, old_fn, new_fn);
+	sprintf(command, "%s %s %s -a %s -U%d %s    %s", DIFF, ignore, function, _d, context, old_fn, new_fn);
 	return popen(command, "r");
 }
 
@@ -372,14 +372,14 @@ w_diff2c_diff(int mindiff, char *w_diff_fn, char *c_diff_fn)
 
 
 int
-oldnew2l_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *l_diff_fn)
+oldnew2l_diff(int mindiff, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *l_diff_fn)
 {
 	FILE *u_diff_fp;
 	int rtrn = 0;
 
-	TRACE(fprintf(STDERR, "oldnew2l_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn, l_diff_fn));
+	TRACE(fprintf(STDERR, "oldnew2l_diff(%i,%i,%s,%s,%s,%s,%s)\n", mindiff, context, ignore, function, old_fn, new_fn, l_diff_fn));
 
-	if ((u_diff_fp = oldnew2u_diff(mindiff, context, ignore, old_fn, new_fn)) == NULL) {
+	if ((u_diff_fp = oldnew2u_diff(mindiff, context, ignore, function, old_fn, new_fn)) == NULL) {
 		ERRHNDL(0, "oldnew2u_diff returns 0 in oldnew2l_diff", "", 1);
 	}
 
@@ -392,16 +392,16 @@ oldnew2l_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn
 
 
 int
-oldnew2w_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *w_diff_fn)
+oldnew2w_diff(int mindiff, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *w_diff_fn)
 {
 	char l_diff_fn[CMDLEN];
 	int rtrn = 0;
 
-	TRACE(fprintf(STDERR, "oldnew2w_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn, w_diff_fn));
+	TRACE(fprintf(STDERR, "oldnew2w_diff(%i,%i,%s,%s,%s,%s,%s)\n", mindiff, context, ignore, function, old_fn, new_fn, w_diff_fn));
 
 	sprintf(l_diff_fn, "%s%c.difflib-%ld-oldnew2w_diff-l_diff", tmpdir(), DIR_SEP, (long) getpid());
 
-	if (!oldnew2l_diff(mindiff, context, ignore, old_fn, new_fn, l_diff_fn)) {
+	if (!oldnew2l_diff(mindiff, context, ignore, function, old_fn, new_fn, l_diff_fn)) {
 		UNLINK(l_diff_fn);
 		ERRHNDL(0, "oldnew2l_diff returns 0 in oldnew2w_diff", "", 1);
 	}
@@ -416,16 +416,16 @@ oldnew2w_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn
 
 
 int
-oldnew2c_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *c_diff_fn)
+oldnew2c_diff(int mindiff, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *c_diff_fn)
 {
 	char w_diff_fn[CMDLEN];
 	int rtrn = 0;
 
-	TRACE(fprintf(STDERR, "oldnew2c_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn, c_diff_fn));
+	TRACE(fprintf(STDERR, "oldnew2c_diff(%i,%i,%s,%s,%s,%s,%s)\n", mindiff, context, ignore, function, old_fn, new_fn, c_diff_fn));
 
 	sprintf(w_diff_fn, "%s%c.difflib-%ld-oldnew2c_diff-w_diff", tmpdir(), DIR_SEP, (long) getpid());
 
-	if (!oldnew2w_diff(mindiff, context, ignore, old_fn, new_fn, w_diff_fn)) {
+	if (!oldnew2w_diff(mindiff, context, ignore, function, old_fn, new_fn, w_diff_fn)) {
 		UNLINK(w_diff_fn);
 		ERRHNDL(0, "oldnew2w_diff returns 0 in oldnew2c_diff", "", 1);
 	}
@@ -440,17 +440,17 @@ oldnew2c_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn
 
 
 int
-oldnew2lwc_diff(int mindiff, int LWC, int context, char *ignore, char *old_fn, char *new_fn, char *lwc_diff_fn)
+oldnew2lwc_diff(int mindiff, int LWC, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *lwc_diff_fn)
 {
-	TRACE(fprintf(STDERR, "oldnew2lwc_diff(%i,%i,%i,%s,%s,%s,%s)\n", mindiff, LWC, context, ignore, old_fn, new_fn, lwc_diff_fn));
+	TRACE(fprintf(STDERR, "oldnew2lwc_diff(%i,%i,%i,%s,%s,%s,%s,%s)\n", mindiff, LWC, context, ignore, function, old_fn, new_fn, lwc_diff_fn));
 
 	switch (LWC) {
 	case 0:
-		return oldnew2l_diff(mindiff, context, ignore, old_fn, new_fn, lwc_diff_fn);
+		return oldnew2l_diff(mindiff, context, ignore, function, old_fn, new_fn, lwc_diff_fn);
 	case 1:
-		return oldnew2w_diff(mindiff, context, ignore, old_fn, new_fn, lwc_diff_fn);
+		return oldnew2w_diff(mindiff, context, ignore, function, old_fn, new_fn, lwc_diff_fn);
 	case 2:
-		return oldnew2c_diff(mindiff, context, ignore, old_fn, new_fn, lwc_diff_fn);
+		return oldnew2c_diff(mindiff, context, ignore, function, old_fn, new_fn, lwc_diff_fn);
 	default:
 		ErrXit("oldnew2lwc_diff called with wrong LWC", "", 1);
 	}
@@ -573,12 +573,17 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 			fprintf(html_fp, "<td align='center'>...</td>");
 			fprintf(html_fp, "<td align='center'>...</td></tr></tbody>\n");
 		}
+		for (i = 0; i < 3 && ok; i++)
+			ok = strchr(ok+1, '@');
+		if (ok && ok[1] == ' ')
+			fprintf(html_fp, "<td colspan='7' align='center'>%s</td>\n", ok + 2);
 		for (i = 0; i < 5; i++)
 			clr[i] = 0;
 		orn = nrn = 0;
 		newline_ = 1;
 		newline = 1;
 		sprintf(c, "  ");
+		ok = line;
 		while (ok && (ok = fgets(line, BUFLEN, lwc_diff_fp)) && strchr(" -+", line[0])) {
 			if (line[1] != '\3') {
 				size_t sl = strlen(line) - 1;
@@ -842,16 +847,16 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 
 
 int
-oldnew2html(int mindiff, int LWC, int context, char *ignore, char *old_fn, char *new_fn, char *html_fn, char *caption, char *revision)
+oldnew2html(int mindiff, int LWC, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *html_fn, char *caption, char *revision)
 {
 	char lwc_diff_fn[CMDLEN];
 	int rtrn;
 
-	TRACE(fprintf(STDERR, "oldnew2html(%i,%i,%i,%s,%s,%s,%s,%s,%s)\n", mindiff, LWC, context, ignore, old_fn, new_fn, html_fn, caption, revision));
+	TRACE(fprintf(STDERR, "oldnew2html(%i,%i,%i,%s,%s,%s,%s,%s,%s,%s)\n", mindiff, LWC, context, ignore, function, old_fn, new_fn, html_fn, caption, revision));
 
 	sprintf(lwc_diff_fn, "%s%c.difflib-%ld-oldnew2html-lwc_diff", tmpdir(), DIR_SEP, (long) getpid());
 
-	if (!oldnew2lwc_diff(mindiff, LWC, context, ignore, old_fn, new_fn, lwc_diff_fn))
+	if (!oldnew2lwc_diff(mindiff, LWC, context, ignore, function, old_fn, new_fn, lwc_diff_fn))
 		/* { UNLINK(lwc_diff_fn); ERRHNDL(0,"oldnew2lwc_diff returns 0 in oldnew2html","",1); } */
 		fclose(Wfopen(lwc_diff_fn));
 

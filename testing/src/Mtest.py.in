@@ -1972,7 +1972,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     cmd.append('-d')
                 if quiet:
                     cmd.append('-q')
-                proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'], '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST])
+                proc = subprocess.Popen(cmd + ['-F^#', '-I%s' % par['IGNORE'], '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST])
                 proc.killed = False
                 t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
                 try:
@@ -1989,7 +1989,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                 cmd = 'diff'
                 if ACCURACYout >= 0:
                     cmd += ' -d'
-                os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.out.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEout, TST))
+                os.system('%s -Bb -F"^#" -I"%s" -U%s "%s%s.FILTERED" "%s.test.out.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEout, TST))
 
             #TODO:
             #timedout = 1
@@ -2025,15 +2025,15 @@ def RunTest(env, TST, BusyPorts, COND, oktests) :
                     MDIFF = MDIFF0
                     ACCURACYerr = 0
                 if not quiet:
-                    timedout = os.system('%s -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
+                    timedout = os.system('%s -F"^#" -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 else:
-                    timedout = os.system('%s -q -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
+                    timedout = os.system('%s -q -F"^#" -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
             if env.get('ECHO_DIFF'):
                 cmd = 'diff'
                 if ACCURACYerr >= 0:
                     cmd += ' -d'
-                os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.err.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEerr, TST))
+                os.system('%s -Bb -F"^#" -I"%s" -U%s "%s%s.FILTERED" "%s.test.err.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEerr, TST))
 
             FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, recursion, killed, segfaulted))
 
