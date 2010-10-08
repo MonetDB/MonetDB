@@ -60,7 +60,7 @@ main(int argc, char **argv)
 	char EMPTY[] = "";
 	char DEFAULT[] = "-I'^#'";
 	char ignoreWHITE[] = " -b -B";
-	char *old_fn, *new_fn, *html_fn, *caption = EMPTY, *revision = EMPTY, *ignoreEXP = DEFAULT, *ignore, *function;
+	char *old_fn, *new_fn, *html_fn, *caption = EMPTY, *revision = EMPTY, *ignoreEXP = DEFAULT, *ignore, *function = "";
 	int LWC = 1, context = 1, option, mindiff = 0, quiet = 0;
 
 	while ((option = getopt(argc, argv, "hdqA:C:I:F:t:r:")) != EOF)
