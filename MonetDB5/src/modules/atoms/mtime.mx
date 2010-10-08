@@ -906,9 +906,10 @@ typedef union {
 } rule;
 @c
 #define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
-#define set_rule(r,i) { (r).s.weekday = (i)&15;\
-			(r).s.day = ((i)&(63<<6))>>6;\
-			(r).s.minutes = ((i)&(2047<<10))>>10;\
+#define set_rule(r,i) { (r).asint = int_nil;			\
+			(r).s.weekday = (i)&15;			\
+			(r).s.day = ((i)&(63<<6))>>6;		\
+			(r).s.minutes = ((i)&(2047<<10))>>10;	\
 			(r).s.month = ((i)&(15<<21))>>21; }
 
 /* phony zero values, used to get negative numbers from unsigned sub-integers in rule */

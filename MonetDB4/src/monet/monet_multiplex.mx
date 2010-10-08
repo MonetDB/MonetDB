@@ -837,7 +837,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	oid  hseq = oid_nil;
 	BAT  *b1, *b2, *b3=0, *retb, *bh=0;
 	int ret_sze = ATOMsize(ret_tpe);
-	ptr  tptr = (ptr) GDKmalloc(ret_sze+8);
+	ptr  tptr = (ptr) GDKzalloc(ret_sze+8);
 	ptr  tnil = ATOMnilptr(ret_tpe);
 	int replace = FALSE, buntrick = 0;
 	bulkerror_t bulkerror;
@@ -1132,7 +1132,7 @@ interpret_@1_merge(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	BUN  p1, p2, p3 = BUN_NONE;   /* bun pointers */
 	BUN  e1, e2, e3 = BUN_NONE;   /* bun pointers */
 	int ret_sze = ATOMsize(ret_tpe), ok = 0;
-	ptr  tptr = GDKmalloc(MAX(1,ret_sze));
+	ptr  tptr = GDKzalloc(MAX(1,ret_sze));
 	ptr  tnil = ATOMnilptr(ret_tpe);
 	int replace=0, htpe = TYPE_void;
 	bulkerror_t bulkerror;

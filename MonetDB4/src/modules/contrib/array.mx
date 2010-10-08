@@ -197,7 +197,7 @@ print_array(BAT *val, ...)
 #endif
 
 	minvector = GDKmalloc(sizeof(ptr) * dims);
-	idxvector = GDKmalloc(sizeof(int) * dims);
+	idxvector = GDKzalloc(sizeof(int) * dims);
 	maxvector = GDKmalloc(sizeof(ptr) * dims);
 	lenvector = GDKmalloc(sizeof(ptr) * dims);
 
@@ -246,7 +246,7 @@ print_array(BAT *val, ...)
 				register BUN p = BUNfnd(batptr[i], o);
 
 				if (p == BUN_NONE) {
-					GDKerror("print_array: Index %d missing for oid %d.\n", i, *o);
+					GDKerror("print_array: Index %d missing for oid " OIDFMT ".\n", i, *o);
 					goto exit_err_full;
 				}
 				offset = (offset * lenvector[i]) + ((*((int *) Tloc(batptr[i],p))) - minvector[i]);
@@ -263,8 +263,6 @@ print_array(BAT *val, ...)
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[PRINT_ARRAY] ");
 #endif
-	for (i = 0; i < dims; i++)
-		idxvector[i] = 0;
 	while (idxvector[dims - 1] < lenvector[dims - 1]) {
 		int offset;
 
@@ -278,7 +276,7 @@ print_array(BAT *val, ...)
 			}
 		}
 		i = 0;
-		while (idxvector[i] == 0 && i < dims) {
+		while (i < dims && idxvector[i] == 0) {
 #ifdef EXCESSIVE_DEBUGGING
 			fprintf(stderr, "[");
 #endif
@@ -292,18 +290,18 @@ print_array(BAT *val, ...)
 			register BUN p = BUNfnd(val, &arrayindex[offset]);
 
 			if (p == BUN_NONE) {
-				GDKerror("print_array: Value missing for oid %d.\n", arrayindex[offset]);
+				GDKerror("print_array: Value missing for oid " OIDFMT ".\n", arrayindex[offset]);
 				goto exit_err_full;
 			}
 #ifdef EXCESSIVE_DEBUGGING
-			fprintf(stderr, "%d\@0", arrayindex[offset]);
+			fprintf(stderr, OIDFMT "\@0", arrayindex[offset]);
 #endif
 			ATOMprint(type_id, BUNtail(vali, p), st);
 			if (mnstr_errnr(st))
 				goto exit_err_full;
 		}
 		i = 0;
-		while ((++idxvector[i]) == lenvector[i] && i < dims) {
+		while (i < dims && (++idxvector[i]) == lenvector[i]) {
 #ifdef EXCESSIVE_DEBUGGING
 			fprintf(stderr, "]");
 #endif

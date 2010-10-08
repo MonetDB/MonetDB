@@ -429,7 +429,7 @@ print_array(BAT *val, ...)
 	minvector = GDKmalloc(sizeof(ptr) * dims);
 	if ( minvector == NULL) 
 		goto exit_err_full;
-	idxvector = GDKmalloc(sizeof(int) * dims);
+	idxvector = GDKzalloc(sizeof(int) * dims);
 	if ( idxvector == NULL) 
 		goto exit_err_full;
 	maxvector = GDKmalloc(sizeof(ptr) * dims);
@@ -503,8 +503,6 @@ print_array(BAT *val, ...)
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[PRINT_ARRAY] ");
 #endif
-	for (i = 0; i < dims; i++)
-		idxvector[i] = 0;
 	while (idxvector[dims - 1] < lenvector[dims - 1]) {
 		int offset;
 
@@ -518,7 +516,7 @@ print_array(BAT *val, ...)
 			}
 		}
 		i = 0;
-		while (idxvector[i] == 0 && i < dims) {
+		while (i < dims && idxvector[i] == 0) {
 #ifdef EXCESSIVE_DEBUGGING
 			fprintf(stderr, "[");
 #endif
@@ -543,7 +541,7 @@ print_array(BAT *val, ...)
 				goto exit_err_full;
 		}
 		i = 0;
-		while ((++idxvector[i]) == lenvector[i] && i < dims) {
+		while (i < dims && (++idxvector[i]) == lenvector[i]) {
 #ifdef EXCESSIVE_DEBUGGING
 			fprintf(stderr, "]");
 #endif
