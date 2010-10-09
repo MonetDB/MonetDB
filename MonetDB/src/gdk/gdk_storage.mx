@@ -755,7 +755,7 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 					  alignedsz >> 20, advice, errno);
 		}
 	}
-	if (touch && preload > 0) {
+	if (touch && preload > 0 && adv != MMAP_DONTNEED) {
 		/* we need to ensure alignment, here, as b might be a
 		   view and heap.base of views are not necessarily
 		   aligned */
