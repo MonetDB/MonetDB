@@ -22,6 +22,13 @@ headers_sql = {
 	DIR = libdir/MonetDB5
 	SOURCES = \
 		createdb.mx \
-		cache.sql octopus.sql parts.sql rdf.sql \
+		cache.sql octopus.sql parts.sql \
 		replication.sql temporal.sql vacuum.sql
+}
+
+headers_rdf = {
+	COND = HAVE_MONETDB5_RDF
+	HEADERS = sql
+	DIR = libdir/MonetDB5
+	SOURCES = rdf.sql
 }
