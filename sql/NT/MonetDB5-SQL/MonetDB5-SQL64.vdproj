@@ -45,12 +45,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_49517A8F984F48FCA2FD1251A2FB50D9"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_805B9A77B8274E369B58D8D0F1294DC4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -289,26 +283,6 @@
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_1B55E38277EF4B7CB785B94E760C8617"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_49517A8F984F48FCA2FD1251A2FB50D9"
-            {
-            "SourcePath" = "8:Lib\\MonetDB5\\rdf.sql"
-            "TargetName" = "8:rdf.sql"
-            "Tag" = "8:"
-            "Folder" = "8:_2ACFF9E534394C7DA2FC0E2D947C98CE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
