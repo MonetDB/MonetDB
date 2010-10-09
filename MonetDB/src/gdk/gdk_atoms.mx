@@ -1877,7 +1877,7 @@ strHeap(Heap *d, size_t cap)
 		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
 #ifndef NDEBUG
 		/* fill should solve initialisation problems within valgrind */
-		memset(d->base + d->free, 0, size - d->free);
+		memset(d->base + d->free, 0, d->size - d->free);
 #endif
 	}
 }
