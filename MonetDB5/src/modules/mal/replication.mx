@@ -370,7 +370,7 @@ replication_export str SLAVEopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 replication_export str SLAVEclose(int *ret, oid *tag, timestamp *stamp);
 replication_export str SLAVEdrop(int *ret, str *tag);
 replication_export str SLAVEprotect(int *ret, str *schema, str *table);
-replication_export str SLAVEisprotected(int *ret, str *schema, str *table);
+replication_export str SLAVEisprotected(bit *ret, str *schema, str *table);
 replication_export int SLAVEisprotectedInternal(str schema, str table);
 replication_export str SLAVEprelude(int *ret);
 replication_export str SLAVEsynchronizing(int *ret);
@@ -1443,7 +1443,7 @@ SLAVEisprotectedInternal(str schema, str table)
 }
 
 str
-SLAVEisprotected(int *ret, str *schema, str *table)
+SLAVEisprotected(bit *ret, str *schema, str *table)
 {
 	*ret = SLAVEisprotectedInternal(*schema, *table);
 	return MAL_SUCCEED;

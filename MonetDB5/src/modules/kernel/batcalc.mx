@@ -699,8 +699,8 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 The accumulator variants may re-use the storage of an argument only when it is not shared,
 nor being a persistent BAT
 */
-batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag);
-str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
+batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, bit *lflag, bit *rflag);
+str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, bit *lflag, bit *rflag)
 {	
 	BAT *bn, *b, *right;
 	char *res = MAL_SUCCEED;
@@ -738,8 +738,8 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag);
-str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag)
+batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, bit *lflag, bit *rflag);
+str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, bit *lflag, bit *rflag)
 {	
 	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
@@ -789,8 +789,8 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rfla
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag);
-str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag)
+batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rflag);
+str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rflag)
 {	
 	BAT *bn, *b;
 	char *res = MAL_SUCCEED;
@@ -987,8 +987,8 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	return msg;
 }
 
-batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag);
-str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, int *lflag, int *rflag)
+batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, bit *lflag, bit *rflag);
+str CMDbataccum@2_@3_@4_@5(int *ret, int *l, int *r, bit *lflag, bit *rflag)
 {	
 	BAT *bn, *b, *right;
 	str msg;
@@ -1046,8 +1046,8 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag);
-str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, int *lflag, int *rflag)
+batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, bit *lflag, bit *rflag);
+str CMDbataccum@2cst_@3_@4_@5(int *ret, int *l, void *cst, bit *lflag, bit *rflag)
 {	
 	BAT *bn, *b;
 
@@ -1099,8 +1099,8 @@ str CMDcst@2bat_@3_@4_@5(int *ret,void *cst, int *l)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag);
-str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, int *lflag, int *rflag)
+batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rflag);
+str CMDbataccum@2cst2_@3_@4_@5(int *ret, void *cst, int *r, bit *lflag, bit *rflag)
 {	
 	BAT *bn, *b;
 

@@ -675,8 +675,6 @@ CMDbbpdecompress(int *ret, int *bid, str *fnme)
 		bn->H->shift = b->H->shift;
 		bn->T->width = b->T->width;
 		bn->T->shift = b->T->shift;
-		BATsetcapacity(bn, BATcount(b));
-		BATsetcount(bn, BATcount(b));
 
 		if (b->H->type)
 			decomp += CMDdecompressheap(&b->H->heap,&bn->H->heap,*fnme);
@@ -697,6 +695,8 @@ CMDbbpdecompress(int *ret, int *bid, str *fnme)
 			BBPkeepref(*ret = b->batCacheid);
 			return MAL_SUCCEED;
 		}
+		BATsetcapacity(bn, BATcount(b));
+		BATsetcount(bn, BATcount(b));
 		BATsetaccess(bn, b->P->restricted);
 		BBPreleaseref(b->batCacheid);
 		BBPkeepref(*ret = bn->batCacheid);
