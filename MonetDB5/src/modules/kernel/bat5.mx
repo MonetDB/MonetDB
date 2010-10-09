@@ -3822,8 +3822,8 @@ Shrinking a void-headed BAT using a list of oids to ignore.
     @1 *r = (@1*)Tloc(bn, BUNfirst(bn));
 
 	for (;p<q; oidx++, p++) {
-		if ( *o == oidx ){
-				o += (o < ol);
+		if ( o < ol && *o == oidx ){
+			o++;
 		} else {
 			cnt++;
 			*r++ = *p;
@@ -3951,8 +3951,8 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 
     BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
 	for (;oidx<lim; oidx++) {
-		if ( *o == oidx ){
-				o += (o < ol);
+		if ( o < ol && *o == oidx ){
+			o++;
 		} else {
 			*r++ = oidx;
 		}
@@ -4106,9 +4106,8 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
     BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
 	for (;oidx<bidx; oidx++) {
 		if ( *o == oidx ){
-			while ( *ol == bidx && ol>o) {
+			while ( ol > o && *--ol == bidx) {
 				bidx--;
-				ol--;
 			}
 			*r++ = bidx;
 			o += (o < ol);
