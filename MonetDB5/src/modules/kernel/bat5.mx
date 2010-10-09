@@ -659,7 +659,7 @@ bat5_export str BKCgetTailType(str *res, int *bid);
 bat5_export str BKCgetRole(str *res, int *bid);
 bat5_export str BKCsetkey(int *res, int *bid, bit *param);
 bat5_export str BKCsetSet(int *res, int *bid, bit *param);
-bat5_export str BKCisaSet(int *res, int *bid);
+bat5_export str BKCisaSet(bit *res, int *bid);
 bat5_export str BKCsetSorted(bit *res, int *bid);
 bat5_export str BKCisSorted(bit *res, int *bid);
 bat5_export str BKCisSortedReverse(bit *res, int *bid);
@@ -685,7 +685,7 @@ bat5_export str BKCsetColumns(int *r, int *bid, str *hname, str *tname);
 bat5_export str BKCsetName(int *r, int *bid, str *s);
 bat5_export str BKCgetBBPname(str *ret, int *bid);
 bat5_export str BKCunload(bit *res, str *input);
-bat5_export str BKCisCached(int *res, int *bid);
+bat5_export str BKCisCached(bit *res, int *bid);
 bat5_export str BKCload(int *res, str *input);
 bat5_export str BKChot(int *res, str *input);
 bat5_export str BKCcold(int *res, str *input);
@@ -694,10 +694,10 @@ bat5_export str BKCheat(int *res, str *input);
 bat5_export str BKChotBAT(int *res, int *bid);
 bat5_export str BKCsave(bit *res, str *input);
 bat5_export str BKCsave2(int *r, int *bid);
-bat5_export str BKCmmap(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp);
-bat5_export str BKCmmap2(int *res, int *bid, int *bns);
-bat5_export str BKCmadvise(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp);
-bat5_export str BKCmadvise2(int *res, int *bid, int *mode);
+bat5_export str BKCmmap(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp);
+bat5_export str BKCmmap2(bit *res, int *bid, int *bns);
+bat5_export str BKCmadvise(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp);
+bat5_export str BKCmadvise2(bit *res, int *bid, int *mode);
 bat5_export str BKCaccbuild(int *ret, int *bid, str *acc, ptr *param);
 bat5_export str BKCaccbuild_std(int *ret, int *bid, int *acc);
 bat5_export str BKCsetHash(bit *ret, int *bid, bit *prop);
@@ -3112,7 +3112,7 @@ BKCsetSet(int *res, int *bid, bit *param)
 }
 
 str
-BKCisaSet(int *res, int *bid)
+BKCisaSet(bit *res, int *bid)
 {
 	BAT *b;
 
@@ -3588,7 +3588,7 @@ BKCunload(bit *res, str *input)
 }
 
 str
-BKCisCached(int *res, int *bid)
+BKCisCached(bit *res, int *bid)
 {
 	BAT *b;
 
@@ -3695,7 +3695,7 @@ BKCsave2(int *r, int *bid)
 
 @c
 str
-BKCmmap(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
+BKCmmap(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 {
 	BAT *b, *bn = NULL;
 
@@ -3714,13 +3714,13 @@ BKCmmap(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 }
 
 str
-BKCmmap2(int *res, int *bid, int *mode)
+BKCmmap2(bit *res, int *bid, int *mode)
 {
 	return BKCmmap(res, bid, mode, mode, mode, mode);
 }
 
 str
-BKCmadvise(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
+BKCmadvise(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 {
 	BAT *b;
 
@@ -3735,7 +3735,7 @@ BKCmadvise(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 }
 
 str
-BKCmadvise2(int *res, int *bid, int *mode)
+BKCmadvise2(bit *res, int *bid, int *mode)
 {
 	return BKCmadvise(res, bid, mode, mode, mode, mode);
 }
