@@ -194,10 +194,10 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	if (mb->stop - pc < mc->stop - 2)
 		return 0;
 
-	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg);
+	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg * sizeof(*cvar));
 	if (cvar == NULL)
 		return 0;
-	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg);
+	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg * sizeof(*mvar));
 	if (mvar == NULL){
 		GDKfree(cvar);
 		return 0;
@@ -467,10 +467,10 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	int ctop = 0, mtop = 0;
 
 	/* collect variable map */
-	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg);
+	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg * sizeof(*cvar));
 	if (cvar == NULL)
 		return -1;
-	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg);
+	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg * sizeof(*mvar));
 	if (mvar == NULL){
 		GDKfree(cvar);
 		return -1;
