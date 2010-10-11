@@ -475,7 +475,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		GDKfree(cvar);
 		return -1;
 	}
-	lim = pc + mc->stop - 2;
+	lim = pc + mc->stop - 3;
 	k = 1;
 	for (i = pc; i < lim; i++, k++) {
 		p = getInstrPtr(mb, i);
