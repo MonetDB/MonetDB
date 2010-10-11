@@ -168,7 +168,7 @@ malMatch(InstrPtr p1, InstrPtr p2)
 		return 0;
 	for (i = 0; i < p1->argc; i++)
 		for (j = i + 1; j < p1->argc; j++)
-			if ((getArg(p1, i) == getArg(p1, j) && getArg(p2, i) != getArg(p2, j)) || (getArg(p1, i) != getArg(p1, j) && getArg(p2, i) == getArg(p2, j)))
+			if ((getArg(p1, i) == getArg(p1, j)) != (getArg(p2, i) == getArg(p2, j)))
 				return 0;
 	return 1;
 }
@@ -223,7 +223,7 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 
 	for (i = 0; i < ctop; i++)
 		for (j = i + 1; j < ctop; j++)
-			if ((cvar[i] == cvar[j] && mvar[i] != mvar[j]) ||(mvar[i] == mvar[j] && cvar[i] != cvar[j])){
+			if ((cvar[i] == cvar[j]) != (mvar[i] == mvar[j])) {
 				GDKfree(cvar);
 				GDKfree(mvar);
 				return 0;
