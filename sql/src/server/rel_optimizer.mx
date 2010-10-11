@@ -1309,9 +1309,13 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			}
 		}
 		if (r && is_project(r->op) && !(rel_is_ref(r)) && !r->r && r->l) {
-			r->l = rel_topn( r->l, sum_limit_offset(rel->exps));
-			r = r->l; /* topn */
-			r = r->l; /* under project */
+			int distinct = need_distinct(r);
+			sql_rel *t = rel_topn( r->l, sum_limit_offset(rel->exps));
+
+			if (distinct) 
+				set_including(t);
+			r->l = t; /* topn */
+			r = t->l; /* under project */
 		}
 
 		/* push topn under crossproduct */

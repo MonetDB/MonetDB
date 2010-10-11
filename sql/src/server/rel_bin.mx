@@ -1593,7 +1593,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	if (topn && rel->r) {
 		list *oexps = rel->r, *npl = create_stmt_list();
 		/* including bounds, topn returns atleast N */
-		int including = need_distinct(rel);
+		int including = need_including(topn) || need_distinct(rel);
 		stmt *limit = NULL; 
 
 		for (n=oexps->h; n; n = n->next) {
@@ -1948,6 +1948,8 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *limit = NULL;
+		sql_rel *rl = rel->l;
+		int including = (rl && need_distinct(rl)) || need_including(rel);
 
 		if (le)
 			l = exp_bin(sql, le, NULL, NULL, NULL, NULL);
@@ -1960,14 +1962,14 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			o = stmt_atom_wrd(0);
 
 		if (order) {
-		 	limit = stmt_limit(stmt_dup(order), o, l, LIMIT_DIRECTION(0,0,need_including(rel)));
+		 	limit = stmt_limit(stmt_dup(order), o, l, LIMIT_DIRECTION(0,0,including));
 		} else {
 			stmt *sc = stmt_dup(n->data);
 			char *cname = column_name(sc);
 			char *tname = table_name(sc);
 
 			sc = column(sc);
-			limit = stmt_limit(stmt_alias(sc, tname, cname), o, l, LIMIT_DIRECTION(0,0,need_including(rel)));
+			limit = stmt_limit(stmt_alias(sc, tname, cname), o, l, LIMIT_DIRECTION(0,0,including));
 		}
 
 		limit = stmt_mirror(limit);

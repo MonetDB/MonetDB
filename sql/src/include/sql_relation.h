@@ -212,9 +212,9 @@ typedef enum operator_type {
 /* limit including or excluding bounds (relations only) */
 #define need_including(r) \
 	((r->flag&TOPN_INCLUDING))
-#define set_including(e) \
+#define set_including(r) \
 	r->flag |= TOPN_INCLUDING
-#define set_excluding(e) \
+#define set_excluding(r) \
 	r->flag &= (~TOPN_INCLUDING)
 
 /* used for expressions and relations */
