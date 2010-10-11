@@ -239,31 +239,34 @@ findRegist( str sch, str tab, str col, int acc) {
 static int
 OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, actions=0, k = 0, z= 0, j = 0, num_regs = DCYREGS;
+	int i=0, actions=0, k=0, z=0, j=0, num_regs=DCYREGS, *tpes=NULL;
 	DCYcatalog **regs, *reg = NULL;
 	VarRecord low,hgh,max_hgh;
 	InstrPtr *old, new, matq;
 	int limit;
 	int (*newArg)[1000];
-	char *used= (char*) GDKzalloc(num_regs * sizeof(char));
+	char *used = NULL;
+	(void) stk;
+	(void) cntxt;
+
+	if (!catalog)
+		return actions;
 
 #ifdef BIND_DATACYCLOTRON_OPT
-	int *tpes= (int*) GDKmalloc(num_regs * sizeof(int));
+	tpes= (int*) GDKmalloc(num_regs * sizeof(int));
+	if ( tpes == NULL )
+		goto out;
 #endif
+	used = (char*) GDKzalloc(num_regs * sizeof(char));
+	newArg = GDKmalloc(sizeof(*newArg) * num_regs);
+	regs = (DCYcatalog **) GDKmalloc(sizeof(*regs) * num_regs);
+	if ( (used == NULL) || (newArg == NULL) || (regs == NULL) )
+		goto out;
 
 	OPTDEBUGdatacyclotron {
 		mnstr_printf(cntxt->fdout,"ENTERING DATA CYCLOTRON \n");
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 	}
-
-	newArg = GDKmalloc(sizeof(*newArg) * num_regs);
-
-	if ( (used == NULL) && (newArg == NULL))
-		return 0;
-	(void) stk;
-	(void) cntxt;
-
-	regs = (DCYcatalog **) GDKmalloc(sizeof(*regs) * num_regs);
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize);
@@ -425,13 +428,17 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		chkProgram(cntxt->nspace,mb);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 	}
-#ifdef BIND_DATACYCLOTRON_OPT
-	GDKfree(tpes);
-#endif
-	GDKfree(used);
-	GDKfree(newArg);
-	GDKfree(regs);
-	GDKfree(old);
+out:
+	if (tpes)
+		GDKfree(tpes);
+	if (used)
+		GDKfree(used);
+	if (newArg)
+		GDKfree(newArg);
+	if (regs) 
+		GDKfree(regs);
+	if (old)
+		GDKfree(old);
 
 	return actions;
 }
