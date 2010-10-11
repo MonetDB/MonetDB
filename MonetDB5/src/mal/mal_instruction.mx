@@ -2643,7 +2643,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		advance(t,base,len);
 	}
 	/* @:performanceData@ */
-	if (isTmpVar(mb, getArg(p, 0))) {
+	if (p->argc > 0 && isTmpVar(mb, getArg(p, 0))) {
 		if (isVarUsed(mb, getDestVar(p))) {
 			snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, 0)));
 		} else

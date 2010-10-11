@@ -168,7 +168,7 @@ malMatch(InstrPtr p1, InstrPtr p2)
 		return 0;
 	for (i = 0; i < p1->argc; i++)
 		for (j = i + 1; j < p1->argc; j++)
-			if ((getArg(p1, i) == getArg(p1, j) && getArg(p2, i) != getArg(p2, j)) || (getArg(p1, i) != getArg(p1, j) && getArg(p2, i) == getArg(p2, j)))
+			if ((getArg(p1, i) == getArg(p1, j)) != (getArg(p2, i) == getArg(p2, j)))
 				return 0;
 	return 1;
 }
@@ -194,10 +194,10 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	if (mb->stop - pc < mc->stop - 2)
 		return 0;
 
-	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg);
+	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg * sizeof(*cvar));
 	if (cvar == NULL)
 		return 0;
-	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg);
+	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg * sizeof(*mvar));
 	if (mvar == NULL){
 		GDKfree(cvar);
 		return 0;
@@ -219,11 +219,11 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 		for (j = 0; j < p->argc; j++)
 			mvar[mtop++] = getArg(q, j);
 	}
-	assert(mtop == ctop);	/*shouldn;t happen */
+	assert(mtop == ctop);	/*shouldn't happen */
 
 	for (i = 0; i < ctop; i++)
 		for (j = i + 1; j < ctop; j++)
-			if ((cvar[i] == cvar[j] && mvar[i] != mvar[j]) ||(mvar[i] == mvar[j] && cvar[i] != cvar[j])){
+			if ((cvar[i] == cvar[j]) != (mvar[i] == mvar[j])) {
 				GDKfree(cvar);
 				GDKfree(mvar);
 				return 0;
@@ -467,15 +467,15 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	int ctop = 0, mtop = 0;
 
 	/* collect variable map */
-	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg);
+	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg * sizeof(*cvar));
 	if (cvar == NULL)
 		return -1;
-	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg);
+	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg * sizeof(*mvar));
 	if (mvar == NULL){
 		GDKfree(cvar);
 		return -1;
 	}
-	lim = pc + mc->stop - 2;
+	lim = pc + mc->stop - 3;
 	k = 1;
 	for (i = pc; i < lim; i++, k++) {
 		p = getInstrPtr(mb, i);
@@ -487,7 +487,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		for (j = 0; j < p->argc; j++)
 			mvar[mtop++] = getArg(p, j);
 	}
-	assert(mtop == ctop);	/*shouldn;t happen */
+	assert(mtop == ctop);	/*shouldn't happen */
 
 	p = getInstrPtr(mb, pc);
 	q = copyInstruction(getInstrPtr(mc, 0));	/* the signature */
