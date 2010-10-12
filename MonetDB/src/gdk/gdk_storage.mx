@@ -344,6 +344,12 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 					GDKsyserror("GDKload: cannot read: name=%s, ext=%s, " SZFMT " bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
 					ret = NULL;
 				}
+#ifndef NDEBUG
+				/* just to make valgrind happy, we
+				   initialize the whole thing */
+				if (ret && maxsize > size)
+					memset(ret + size, 0, maxsize - size);
+#endif
 			}
 			close(fd);
 		} else {
