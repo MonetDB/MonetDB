@@ -240,11 +240,11 @@ static int
 OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i=0, actions=0, k=0, z=0, j=0, num_regs=DCYREGS, *tpes=NULL;
-	DCYcatalog **regs, *reg = NULL;
+	DCYcatalog **regs=NULL, *reg = NULL;
 	VarRecord low,hgh,max_hgh;
 	InstrPtr *old, new, matq;
 	int limit;
-	int (*newArg)[1000];
+	int (*newArg)[1000]=NULL;
 	char *used = NULL;
 	(void) stk;
 	(void) cntxt;
