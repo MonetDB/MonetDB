@@ -560,7 +560,7 @@ str
 setOptimizers(str optimizer)
 {
 	int top=0;
-	char *base, *nxt, *nme, *pipe="notdefined";
+	char *base=0, *nxt, *nme, *pipe="notdefined";
 	
 	/* do nothing if the pipe line is already set */
 	if ( optimizerpipe && optimizer && strcmp(optimizerpipe,optimizer) == 0 )
@@ -576,7 +576,8 @@ setOptimizers(str optimizer)
 	if(strcmp(optimizer,"off")==0){
 		if( previouspipe )
 			return optimizerpipe;
-		previouspipe = optimizerpipe;
+		previouspipe = optimizerpipe;  /* give reference away */
+		optimizerpipe = NULL;
 		pipe = GDKgetenv(minimalPipe);
 		if ( pipe )
 			optimizer = pipe;
@@ -585,6 +586,7 @@ setOptimizers(str optimizer)
 		if (previouspipe == NULL)
 			return optimizerpipe;
 		optimizer= previouspipe;
+		base = previouspipe;  /* free this later */
 		previouspipe = 0;
 	} else {
 		/* the optimizer may be an environment alias */
@@ -593,7 +595,16 @@ setOptimizers(str optimizer)
 			optimizer = pipe;
 	}
 
-	optimizerpipe= optimizer;
+	/* always strdup the value assigned to optimizerpipe, so we
+	   need to also free the old value, making sure we don't first
+	   free the value that maybe we want to strdup (in case
+	   optimizer==optimizerpipe) */
+	optimizer = GDKstrdup(optimizer);
+	if (base)		/* free old value of previouspipe */
+		GDKstrdup(base);
+	if (optimizerpipe)
+		GDKfree(optimizerpipe);
+	optimizerpipe = optimizer;
 	base = optimizer = GDKstrdup(optimizer);
 
 	/* An optimizer pipe is a comma separated list of names */
