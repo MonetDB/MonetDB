@@ -624,7 +624,7 @@ HASHremove(BAT *b)
 		if (p)
 			hp = BBP_cache(p);
 
-		if (!hp || b->H->hash != hp->H->hash) {
+		if ((!hp || b->H->hash != hp->H->hash) && b->H->hash != (Hash *) -1) {
 			HEAPfree(b->H->hash->heap);
 			if (b->H->hash->heap->storage != STORE_MEM)
 				HEAPdelete(b->H->hash->heap, BBP_physical(b->batCacheid), (b->batCacheid > 0) ? "hhash" : "thash");
