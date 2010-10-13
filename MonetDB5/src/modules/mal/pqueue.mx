@@ -947,8 +947,8 @@ PQtopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
 		  n = (BUN) *N;
 	bn = BATnew(TYPE_oid, TYPE_oid, n);
 	for(i=0; i<n; ) {
-		oid *v = (oid*)Tloc(a,i), ov = *v; 
-		for( j=i; *v == ov; j++, v = (oid*)Tloc(a,j))
+		oid ov = * (oid *) Tloc(a, i);
+		for (j = i; j < n && * (oid *) Tloc(a, j) == ov; j++)
 			;
 		if (j == i+1) {
 			BUNins(bn, Hloc(a,i), &ov, FALSE);
@@ -990,8 +990,8 @@ PQutopn2_@1@2(int *ret, int *aid, int *bid, wrd *N)
 		  n = (BUN) *N;
 	bn = BATnew(TYPE_oid, TYPE_oid, n);
 	for(i=0; i<n; ) {
-		oid *v = (oid*)Tloc(a,i), ov = *v; 
-		for( j=i; *v == ov; j++, v = (oid*)Tloc(a,j))
+		oid ov = * (oid *) Tloc(a, i);
+		for (j = i; j < n && * (oid *) Tloc(a, j) == ov; j++)
 			;
 		if (j == i+1) {
 			BUNins(bn, Hloc(a,i), &ov, FALSE);

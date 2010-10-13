@@ -299,12 +299,14 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 	}
 	assert(c->width < width);
 	assert(c->shift < shift);
-	/* we need to convert the whole heap, since we may be in the
-	   middle of an insert loop that adjusts the free value at the
-	   end */
+	/* if copyall is set, we need to convert the whole heap, since
+	   we may be in the middle of an insert loop that adjusts the
+	   free value at the end; otherwise only copy the area
+	   indicated by the "free" pointer */
 	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
 	if (HEAPextend(&c->heap, (c->heap.size >> c->shift) << shift) < 0)
 		return GDK_FAIL;
+	/* note, cast binds more closely than addition */
 	pc = (unsigned char *) c->heap.base + n;
 	ps = (unsigned short *) c->heap.base + n;
 	pi = (unsigned int *) c->heap.base + n;
