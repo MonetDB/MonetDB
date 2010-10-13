@@ -1939,7 +1939,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 		if (oe)
 			o = exp_bin(sql, oe, NULL, NULL, NULL, NULL);
 
-		if (!le) 
+		if (!l) 
 			l = stmt_atom_wrd_nil();
 		if (!o)
 			o = stmt_atom_wrd(0);

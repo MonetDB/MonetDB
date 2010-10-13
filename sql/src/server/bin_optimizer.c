@@ -313,7 +313,7 @@ bin_optimizer(mvc *c, stmt *s)
 			s = stmt_reverse(stmt_limit(stmt_dup(j->op1.stval),
 				stmt_dup(s->op2.stval),
 				stmt_dup(s->op3.stval),
-				0));
+				s->flag));
 			ns = bin_optimizer(c, s);
 			stmt_destroy(s);
 			assert(os->rewritten==NULL);
