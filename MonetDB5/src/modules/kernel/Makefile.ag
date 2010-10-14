@@ -33,7 +33,7 @@ LIBS = {
 
 	#SCRIPTS = mal mil ""
 	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
-                $(MALLOC_LIBS) ../../mal/libmonetdb5
+                $(PTHREAD_LIBS) $(MALLOC_LIBS) ../../mal/libmonetdb5
 }
 
 lib__aggr = {
