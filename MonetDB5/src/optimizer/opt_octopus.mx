@@ -207,7 +207,7 @@ sht bidStrategy = 1;
 static MalPartPtr octCluster = NULL;
 static int octClCnt = 0;
 static int octClResSize = 32; /* maximum number of results per tentacle */
-static int octFullRepl = 1;
+static int octFullRepl = 0;
 
 static void
 OCTinitMalPart()

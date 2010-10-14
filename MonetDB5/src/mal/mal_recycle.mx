@@ -131,6 +131,7 @@ typedef struct QRYSTAT {
 	int calls; 	/* number of calls */
 	int greuse; /* number of global reuse */
 	int lreuse; /* number of local reuse in current execution only */
+	lng dtreuse;/* data transfer amount in RU that query reuses from others */
 	int *crd;   /* instructions credits */
 	int stop;
 	int wl;		/* waterline of globally reused instructions*/
@@ -889,9 +890,19 @@ RECYCLEinterest(InstrPtr p){
 bit 
 isBindInstr(InstrPtr p)
 {
-	return (putName("bind",4)== getFunctionId(p) ||
-		 putName("bind_idxbat",11) == getFunctionId(p) ||
-		 putName("bind_dbat",9) == getFunctionId(p));
+	static str sqlRef = 0, bindRef = 0, binddbatRef = 0, bindidxRef = 0;
+
+	if (sqlRef == 0) {
+		sqlRef = putName("sql",3);
+        bindRef = putName("bind",4);
+        binddbatRef = putName("bind_dbat",9);
+        bindidxRef = putName("bind_idxbat",11);
+	}
+
+	if ( getModuleId(p) != sqlRef ) return 0;
+	return ( bindRef == getFunctionId(p) ||
+		 binddbatRef == getFunctionId(p) ||
+		 bindidxRef == getFunctionId(p));
 }
 
 #ifdef _DEBUG_CACHE_
@@ -2016,9 +2027,10 @@ thetaselectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 static int
 RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 {
-	int i, j;
-	InstrPtr q;
-	static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
+    int i, j, qidx;
+    InstrPtr q;
+    bit gluse = FALSE;
+    static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
 
 	if (octopusRef == 0)
 		octopusRef = putName("octopus",7);
@@ -2053,13 +2065,17 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
             }
             recycleBlk->profiler[i].counter++;
             if ( recycleBlk->profiler[i].clk < cntxt->rcc->time0 )
-                    recycleBlk->profiler[i].trace = TRUE;
+                    gluse = recycleBlk->profiler[i].trace = TRUE;
             else { /*local use - return the credit */
 			    returnCrd(q);
             }
             recycleBlk->profiler[i].clk = GDKusec();
+            recycleQPat->ptrn[cntxt->rcc->curQ]->dtreuse += recycleBlk->profiler[i].wbytes;
+            qidx = *(int*)getVarValue(recycleBlk,q->argv[q->argc-1]);
+            updateQryStat(q->recycle,gluse,qidx);
+            cntxt->rcc->recycled0++;
             cntxt->rcc->recTrans++;
-			cntxt->rcc->recTransKB += recycleBlk->profiler[i].wbytes;
+            cntxt->rcc->recTransKB += recycleBlk->profiler[i].wbytes;
             cntxt->rcc->recent = i;
             mal_unset_lock(recycleLock,"recycle");
             return i;
