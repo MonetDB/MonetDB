@@ -1850,7 +1850,7 @@ incref(bat i, int logical, int lock)
 	int refs;
 	bat hp, tp, hvp, tvp;
 	BATstore *bs;
-	BAT *b;
+	BAT *b = 0;
 	int load = 0;
 
 	if (i == bat_nil) {
