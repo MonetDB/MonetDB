@@ -2106,13 +2106,13 @@ incref(bat i, int logical, int lock)
 			if (!bs->P.lview) {
 				b = getBBPdescriptor(hp, lock);
 				bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
+				/* if we shared the hash before, share
+				   it again note that if the parent's
+				   hash is destroyed, we also don't
+				   have a hash anymore */
+				if (bs->B.H->hash == (Hash *) -1)
+					bs->B.H->hash = b->H->hash;
 			}
-			/* if we shared the hash before, share it again
-			   note that if the parent's hash is
-			   destroyed, we also don't have a hash
-			   anymore */
-			if (bs->B.H->hash == (Hash *) -1)
-				bs->B.H->hash = b->H->hash;
 		}
 		if (tp) {
 			incref(tp, 0, lock);
@@ -2120,13 +2120,13 @@ incref(bat i, int logical, int lock)
 			    bs->B.H != bs->B.T) {  /* mirror? */
 				b = getBBPdescriptor(tp, lock);
 				bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
+				/* if we shared the hash before, share
+				   it again note that if the parent's
+				   hash is destroyed, we also don't
+				   have a hash anymore */
+				if (bs->B.T->hash == (Hash *) -1)
+					bs->B.T->hash = b->H->hash;
 			}
-			/* if we shared the hash before, share it again
-			   note that if the parent's hash is
-			   destroyed, we also don't have a hash
-			   anymore */
-			if (bs->B.T->hash == (Hash *) -1)
-				bs->B.T->hash = b->H->hash;
 		}
 		if (hvp)
 			incref(hvp, 0, lock);
