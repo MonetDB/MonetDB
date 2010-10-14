@@ -809,7 +809,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
 	BATaccessBegin(l, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(r, USE_TAIL, MMAP_WILLNEED);
+	if (BATcount(l) > (BATcount(r)/10)) 
+		BATaccessBegin(r, USE_TAIL, MMAP_WILLNEED);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
 
@@ -824,7 +825,8 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		dst++;
 	}
 	BATaccessEnd(l, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(r, USE_TAIL, MMAP_WILLNEED);
+	if (BATcount(l) > (BATcount(r)/10)) 
+		BATaccessEnd(r, USE_TAIL, MMAP_WILLNEED);
 	if (nondense) {
 		BATiter bni; 
 		/* not (yet?) completely type-optimized ! */
