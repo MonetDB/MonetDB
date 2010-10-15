@@ -991,7 +991,6 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 		BBPreclaim(bn);
 		return NULL;
 	}
-	BATaccessBegin(b, USE_HEAD | USE_HHASH | USE_TAIL, MMAP_WILLNEED);
 	while (bn) {
 		BUN q = BUNfirst(bn);
 		BUN r;
@@ -1012,7 +1011,6 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 		BBPreclaim(bn);
 		bn = BATnew(ht, tt, size);
 	}
-	BATaccessEnd(b, USE_HEAD | USE_HHASH | USE_TAIL, MMAP_WILLNEED);
 	return bn;
 }
 
