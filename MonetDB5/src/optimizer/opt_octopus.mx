@@ -323,7 +323,7 @@ OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, bte *cl)
 	InstrPtr p, tp, sig = mb->stmt[0], tsig;
 	char buf[BUFSIZ];
 	int *alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
-	int i, j, k, conn= 0, last, tpe;
+	int i, j, k, conn= 0, last = mb->stop-1, tpe;
 	str nm;
 
 	ocl = &octCluster[tidx];
