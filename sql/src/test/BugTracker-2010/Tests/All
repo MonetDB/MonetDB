@@ -64,5 +64,6 @@ duplicate-key.Bug-2667
 between-crash.Bug-2672
 select-view-key.Bug-2673
 select-distinct-limit.Bug-2676
+cast-varchar.Bug-2682
 substring_display_width.Bug-2683
 new-readonly-db.Bug-2695
