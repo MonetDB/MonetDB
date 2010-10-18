@@ -1309,6 +1309,9 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	gtrans = tr = create_trans(stk);
 
 	if (logger_funcs.log_isnew()) {
+		/* cannot initialize database in readonly mode */
+		if (store == store_ro)
+			return -1;
 		tr = sql_trans_create(stk, NULL, NULL);
 	} else {
 		first = 0;
