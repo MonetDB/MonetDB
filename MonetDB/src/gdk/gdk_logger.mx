@@ -1006,47 +1006,48 @@ static int
 bm_subcommit(BAT *list, BAT *catalog, BAT *extra, int debug)
 {
 	BUN p, q;
-	bat *n = (bat*)GDKmalloc(sizeof(bat) * (2 + BATcount(list) * 2 + (extra ? BATcount(extra) : 0)));
+	BUN nn = 2 + (list->batFirst > list->batDeleted ? list->batFirst - list->batDeleted : 0) + BATcount(list) + (extra ? BATcount(extra) : 0);
+	bat *n = (bat*)GDKmalloc(sizeof(bat) * nn);
 	int i = 0;
-	BAT *b = list;
-	BATiter bi = bat_iterator(b);
+	BATiter iter = bat_iterator(list);
 	int res;
 
 	n[i++] = 0;		/* n[0] is not used */
 
 	/* first loop over deleted then over current and new */
-	for (p = b->batDeleted; p < b->batFirst; p++) {
-		bat col = *(log_bid *) BUNhead(bi, p);
+	for (p = list->batDeleted; p < list->batFirst; p++) {
+		bat col = *(log_bid *) BUNhead(iter, p);
 
 		if (debug & 1)
 			fprintf(stderr, "commit deleted %s (%d) %s\n",
 				BBPname(col), col,
-				(b == catalog) ? BUNtail(bi, p) : "snapshot");
+				(list == catalog) ? BUNtail(iter, p) : "snapshot");
 		n[i++] = ABS(col);
 	}
-	BATloop(b, p, q) {
-		bat col = *(log_bid *) BUNhead(bi, p);
+	BATloop(list, p, q) {
+		bat col = *(log_bid *) BUNhead(iter, p);
 
 		if (debug & 1)
 			fprintf(stderr, "commit new %s (%d) %s\n",
 				BBPname(col), col,
-				(b == catalog) ? BUNtail(bi, p) : "snapshot");
+				(list == catalog) ? BUNtail(iter, p) : "snapshot");
 		n[i++] = ABS(col);
 	}
 	if (extra) {
-		bi = bat_iterator(extra);
+		iter = bat_iterator(extra);
 		BATloop(extra, p, q) {
-			str name = (str) BUNtail(bi, p);
+			str name = (str) BUNtail(iter, p);
 
 			if (debug & 1)
 				fprintf(stderr, "commit extra %s %s\n",
 					name,
-					(b == catalog) ? BUNtail(bi, p) : "snapshot");
+					(list == catalog) ? BUNtail(iter, p) : "snapshot");
 			n[i++] = ABS(BBPindex(name));
 		}
 	}
 	/* now commit catalog, so it's also up to date on disk */
 	n[i++] = ABS(catalog->batCacheid);
+	assert((BUN) i <= nn);
 	BATcommit(catalog);
 	res = TMsubcommit_list(n, i);
 	GDKfree(n);

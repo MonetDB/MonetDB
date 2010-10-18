@@ -1,0 +1,23 @@
+stdout of test 'new-readonly-db.Bug-2695` in directory 'src/test/BugTracker-2010` itself:
+
+
+# 12:51:24 >  
+# 12:51:24 >  /usr/bin/python new-readonly-db.Bug-2695.py new-readonly-db.Bug-2695 
+# 12:51:24 >  
+
+# MonetDB server v5.22.0, based on kernel v1.40.0
+# Not released
+# Serving database 'mTests_src_test_BugTracker-2010-2695', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.750 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2010 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:33084/
+# MonetDB/SQL module v2.40.0 loaded
+!SQLException:SQLinit:Catalogue initialization failed
+
+# 12:51:24 >  
+# 12:51:24 >  Done.
+# 12:51:24 >  
+

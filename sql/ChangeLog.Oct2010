@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Oct 18 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed bug 2695: crash when starting mserver in readonly mode on a
+  new database.
+
 * Wed Sep 22 2010 Fabian Groffen <fabian@cwi.nl>
 - Improved uuid detection, to solve problems like bug #2675
 
