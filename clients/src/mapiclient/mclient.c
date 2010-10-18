@@ -80,6 +80,9 @@
 #ifndef S_ISCHR
 #define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
 #endif
+#ifndef S_ISREG
+#define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
+#endif
 
 #ifdef NATIVE_WIN32
 #define strdup _strdup
