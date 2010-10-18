@@ -1006,7 +1006,8 @@ static int
 bm_subcommit(BAT *list, BAT *catalog, BAT *extra, int debug)
 {
 	BUN p, q;
-	bat *n = (bat*)GDKmalloc(sizeof(bat) * (2 + BATcount(list) * 2 + (extra ? BATcount(extra) : 0)));
+	BUN nn = 2 + (list->batFirst > list->batDeleted ? list->batFirst - list->batDeleted : 0) + BATcount(list) + (extra ? BATcount(extra) : 0);
+	bat *n = (bat*)GDKmalloc(sizeof(bat) * nn);
 	int i = 0;
 	BATiter iter = bat_iterator(list);
 	int res;
@@ -1046,6 +1047,7 @@ bm_subcommit(BAT *list, BAT *catalog, BAT *extra, int debug)
 	}
 	/* now commit catalog, so it's also up to date on disk */
 	n[i++] = ABS(catalog->batCacheid);
+	assert((BUN) i <= nn);
 	BATcommit(catalog);
 	res = TMsubcommit_list(n, i);
 	GDKfree(n);
