@@ -179,7 +179,7 @@ typedef enum operator_type {
 
 /* NO NIL semantics of aggr operations */
 #define need_no_nil(e) \
-	((e->flag&NO_NIL))
+	((e->flag&NO_NIL)==NO_NIL)
 #define set_no_nil(e) \
 	e->flag |= NO_NIL
 
@@ -192,18 +192,18 @@ typedef enum operator_type {
 	e->flag &= (~HAS_NO_NIL)
 
 #define is_ascending(e) \
-	((e->flag&ASCENDING))
+	((e->flag&ASCENDING)==ASCENDING)
 #define set_direction(e, dir) \
 	e->flag |= (dir?ASCENDING:0)
 
 #define is_anti(e) \
-	((e->flag&ANTISEL))
+	((e->flag&ANTISEL)==ANTISEL)
 #define set_anti(e) \
 	e->flag |= ANTISEL
 
 /* used for expressions and relations */
 #define need_distinct(e) \
-	((e->flag&EXP_DISTINCT))
+	((e->flag&EXP_DISTINCT)==EXP_DISTINCT)
 #define set_distinct(e) \
 	e->flag |= EXP_DISTINCT
 #define set_nodistinct(e) \
@@ -211,7 +211,7 @@ typedef enum operator_type {
 
 /* limit including or excluding bounds (relations only) */
 #define need_including(r) \
-	((r->flag&TOPN_INCLUDING))
+	((r->flag&TOPN_INCLUDING)==TOPN_INCLUDING)
 #define set_including(r) \
 	r->flag |= TOPN_INCLUDING
 #define set_excluding(r) \
@@ -219,7 +219,7 @@ typedef enum operator_type {
 
 /* used for expressions and relations */
 #define is_intern(e) \
-	(e->type != e_atom && (e->flag&EXP_INTERN))
+	(e->type != e_atom && (e->flag&EXP_INTERN)==EXP_INTERN)
 #define set_intern(e) \
 	e->flag |= EXP_INTERN
 

@@ -58,8 +58,8 @@ Over..
 % id # name
 % int # type
 % 1 # length
-[ 4	]
-[ 3	]
+[ 1	]
+[ 2	]
 #rollback;
 
 # 17:16:58 >  

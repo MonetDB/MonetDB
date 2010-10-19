@@ -20,13 +20,12 @@ Ready.
 
 Over..
 
-# 15:46:01 >  
-# 15:46:01 >  mclient -lsql -ftest -i -e --host=mane-3 --port=30859 
-# 15:46:01 >  
+# 22:44:58 >  
+# 22:44:58 >  mclient -lsql -ftest -i -e --host=alf --port=37642 
+# 22:44:58 >  
 
-To be approved when the server stops crashing.
 
-# 15:46:02 >  
-# 15:46:02 >  Done.
-# 15:46:02 >  
+# 22:44:59 >  
+# 22:44:59 >  Done.
+# 22:44:59 >  
 
