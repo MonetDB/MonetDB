@@ -486,7 +486,10 @@ TODO synced/key case..
 		goto bunins_failed;
 	}
 	BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
-	BATaccessBegin(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessBegin(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	BATaccessBegin(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(l, p1, q1) {
 		h = BUNh@2(li, p1);
@@ -504,7 +507,10 @@ TODO synced/key case..
 			continue;
 		MISS@1(h, t);
 	}
-	BATaccessEnd(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessEnd(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	BATaccessEnd(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	(void)h2; /* in some cases the @6 check doesn't use the h2 */
 
