@@ -189,6 +189,10 @@ typedef struct MALPART {
 	int retcnt;
 } MalPart, *MalPartPtr;
 
+#define memb(x,i) ( x & ((int)1 << i) )
+#define memb1(x,i) (!( x & ~((int)1 << i) ))
+
+
 @-
 The algorithm consists of several steps. The first one
 replaces the original query and creates the tentacle
@@ -290,6 +294,22 @@ OCTinitcode(Client cntxt, MalBlkPtr mb){
 	return getArg(p,0);
 }
 
+/* extract cluster from the mask */
+static int
+OCTgetCluster(int mask)
+{
+	int i = 0;
+
+	while( mask ){
+		mask = mask >> 1;
+		i++;
+	}
+	if ( i > octClCnt )
+		return 0;
+	else
+		return i-1; 
+}
+
 @-
 Be prepared to catch errors from the remote site.
 You should catch them, otherwise the session is not closed.
@@ -315,7 +335,7 @@ getJoinPathType(MalBlkPtr mb, InstrPtr p)
 }
 
 static MalBlkPtr
-OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, bte *cl)
+OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, int *cl)
 {
 	Symbol s;
 	MalBlkPtr tmb;
@@ -369,7 +389,7 @@ OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, bte *cl)
 			last = i;
 			break;
 		}
-		if ( cl[getArg(p,0)] && cl[getArg(p,0)] != tidx )
+		if ( ! memb(cl[getArg(p,0)], tidx) )
 			continue;
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef 
 			&& !octFullRepl)
@@ -914,10 +934,11 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, limit, cl, same, last,  v2;
-	int update=0, autocommit=0, actions=0, target = -1;
+	int i, j, k, limit, cl, last, v2, z;
+	int update=0, autocommit=0, actions=0, target = -1, varadd = 0;
 	InstrPtr p, *old, sig;
-	bte *malPart = (bte*) GDKzalloc(mb->vtop);
+	bte *set = NULL, *bnd = NULL;
+	int *malPart = NULL, *alias = NULL;
 	oid l,h;
 	str tnm;
 	char rname[BUFSIZ];
@@ -929,11 +950,11 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		return 0;
 
 /*	optDebug |= 1 << DEBUG_OPT_OCTOPUS; */
-	OPTDEBUGoctopus{
+/*	OPTDEBUGoctopus{
 		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
 	}
-
+*/
 	(void) fixModule(cntxt->nspace,octopusRef);
 	old = mb->stmt;
 	limit = mb->stop;
@@ -950,7 +971,6 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* we do not  support yet update operations in the octopus */
 	if ( update || autocommit==0 ) {
 		GDKfree(tentacle);
-		GDKfree(malPart);
 		return 0;
 	}
 
@@ -960,6 +980,35 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	OCTinitMalPart();
 	OCTgetMalPart("","",(oid) 0, (oid) 0);
 
+	/* exclude variable reuse */
+	alias = (int*) GDKzalloc(mb->vtop * sizeof(int));
+	set = (bte*) GDKzalloc(mb->vtop);
+	for (i = 0; i < mb->vtop; i++) 
+		alias[i] = i;
+	
+	for (i = 1; i < limit; i++) {
+		p = old[i];
+		if ( varadd )
+            for( j = p->retc; j < p->argc; j++ ){
+				z = getArg(p,j);
+				getArg(p,j) = alias[z];
+			}
+		for( j = 0; j < p->retc; j++ ){
+			z = getArg(p,j);
+			if ( set[z] ){
+				alias[z] = cloneVariable(mb,mb,z);
+				getArg(p,j) = alias[z];
+				varadd++;
+			}
+			else set[z] = 1;
+		}
+	}
+	GDKfree(alias);
+	GDKfree(set);
+
+	malPart = (int*) GDKzalloc(mb->vtop * sizeof(int)); /* mask for cluster inclusion */
+	memset((char *) malPart,~(char)0,mb->vtop * sizeof(int));
+	bnd = (bte*) GDKzalloc(mb->vtop);
 	/* analysis */
 	for (i = 1; i < limit; i++) {
 		p = old[i];
@@ -968,35 +1017,41 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			tnm = (str) getVarValue(mb,getArg(p,3));
 			l = *(oid*) getVarValue(mb,getArg(p,6));
 			h = *(oid*) getVarValue(mb,getArg(p,7));
-			malPart[getArg(p,0)] = OCTgetMalPart("",tnm,l,h);
+			malPart[getArg(p,0)] = (int)1 << OCTgetMalPart("",tnm,l,h);
+			bnd[getArg(p,0)] = 1;
 			continue;
 		}
 
-		/* check partitions associated to arguments */ 
-		cl = 0; same = 1;
+		/* check partitions associated to arguments */
+		cl = ~(int)0;
 		for ( j = p->retc; j < p->argc; j++) {
-			if ( malPart[getArg(p,j)] == 0 ) continue;
-			if ( cl ) {
-				if ( cl != malPart[getArg(p,j)] )
-					same = 0;
-			}
-			else cl = malPart[getArg(p,j)] ;
+			if ( j == p->retc ) 
+				cl = malPart[getArg(p,j)] ;
+			else cl = cl &  malPart[getArg(p,j)];
 		}
-		if ( same )			/* go to the arguments partition */
+
+		if ( cl )			/* go to the arguments partition */
 			malPart[getArg(p,0)] = cl;	
-		else {				/* combines partitions - remain in head */
-			malPart[getArg(p,0)] = -1;
-							/* extend partition results */
-			for ( j = p->retc; j < p->argc; j++) {
-				cl = malPart[getArg(p,j)];
-				if ( cl > 0 )
-					OCTaddResult(cl, getArg(p,j));	
-			}
+		else {				/* combines partitions - remain in head  */
+			malPart[getArg(p,0)] = 1;
+			for ( j = p->retc; j < p->argc; j++) 
+				if ( !(malPart[getArg(p,j)] & malPart[getArg(p,0)]) ){
+					if ( bnd[getArg(p,j)] ) /* add bind instr. to cluster 0 */
+						malPart[getArg(p,j)] = malPart[getArg(p,j)] | (int) 1;
+
+					else {					/* extend partition results */
+						cl = OCTgetCluster(malPart[getArg(p,j)]);
+						if ( cl > 0 )
+							OCTaddResult(cl, getArg(p,j));	
+					}
+				}
 			if (target < 0 ) 
 				target = i;
 		}
 
 	} /* for */
+
+	GDKfree(bnd);
 
 	/* print mal block annotated with partitions */
 	OPTDEBUGoctopus{
@@ -1054,31 +1109,34 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			pushEndInstruction(mb);
 			break;
 		}
-		if ( malPart[getArg(p,0)] > 0 )
-			continue;
+		if ( memb(malPart[getArg(p,0)],0) ){
+		
+			if (target == i)
+				OCTnewOctBlk(mb, old, v2);
 
-		if (target == i)
-			OCTnewOctBlk(mb, old, v2);
-
-		if ( malPart[getArg(p,0)] < 0 ){ /* instruction combines partitions */
-
-			/* replace arguments with returns from octopus block */
-			for ( j = p->retc; j < p->argc; j++) {
-				cl = malPart[getArg(p,j)];
-				if ( cl > 0 ) {
-					k = 0;		
-					while ( k < octCluster[cl].retcnt && 
-						octCluster[cl].ret[k] != getArg(p,j) ) k++;
-					if ( k < octCluster[cl].retcnt) {
-						snprintf(rname,BUFSIZ,"res_%d_%d",cl,k); 
-						getArg(p,j) = findVariable (mb, rname);
+	/*		if ( malPart[getArg(p,0)] < 0 ){  instruction combines partitions */
+			if ( memb1(malPart[getArg(p,0)],0) ){ 
+	
+				/* replace arguments with returns from octopus block */
+				for ( j = p->retc; j < p->argc; j++) 
+					if ( !(malPart[getArg(p,0)] & malPart[getArg(p,j)]) ){
+						cl = OCTgetCluster(malPart[getArg(p,j)]);
+						if ( cl > 0 ) {
+							k = 0;		
+							while ( k < octCluster[cl].retcnt && 
+								octCluster[cl].ret[k] != getArg(p,j) ) k++;
+							if ( k < octCluster[cl].retcnt) {
+								snprintf(rname,BUFSIZ,"res_%d_%d",cl,k); 
+								getArg(p,j) = findVariable (mb, rname);
+							}
+							else 
+							mnstr_printf(cntxt->fdout, "mat.pack argument %2d outside cluster\n",
+								getArg(p,j));
 					}
-					else 
-					mnstr_printf(cntxt->fdout, "mat.pack argument %2d outside cluster\n",getArg(p,j));
 				}
-			} 
+			}
+			pushInstruction(mb, p);
 		}
-		pushInstruction(mb, p);
 	}
 	
 	for (i = last + 1; i < limit; i++){
