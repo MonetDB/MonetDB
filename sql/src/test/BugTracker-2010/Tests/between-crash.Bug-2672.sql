@@ -1,6 +1,5 @@
 create table t2672a (id int);
 create table t2672b (age int);
-explain
 SELECT
         id
 FROM
