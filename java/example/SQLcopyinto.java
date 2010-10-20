@@ -79,7 +79,7 @@ public class SQLcopyinto {
 				throw new Exception(error);
 
 			query = "COPY INTO example FROM STDIN USING DELIMITERS ',','\\n';";
-			// the leading 'S' is essential, since it is a protocol
+			// the leading 's' is essential, since it is a protocol
 			// marker that should not be ommitted, as much as the
 			// trailing semi-colon
 			out.write('s');
