@@ -591,7 +591,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			return stmt_likeselect(l, r, r2, (comp_type)e->flag);
 		}
 		if (left && right && !is_select &&
-		    (re->card > CARD_ATOM || (l->nrcols && r->nrcols))) {
+		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) || 
+		     re->card > CARD_ATOM || 
+		    (re2 && re2->card > CARD_ATOM))) {
 			if (l->nrcols == 0)
 				l = stmt_const(bin_first_column(swapped?right:left), l); 
 			if (r->nrcols == 0)
