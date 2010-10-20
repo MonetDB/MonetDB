@@ -60,7 +60,6 @@ public class SQLcopyinto {
 
 		server.setDatabase("database");
 		server.setLanguage("sql");
-		server.debug("debug-copy.log");
 
 		try {
 			List warning = 
