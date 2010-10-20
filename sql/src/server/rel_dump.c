@@ -393,11 +393,13 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 		} else
 			rel_print_(sql, fout, rel->l, depth+1, refs);
 
-		if (rel_is_ref(rel->r)) {
-			int nr = find_ref(refs, rel->r);
-			mnstr_printf(fout, " & REF %d ", nr);
-		} else
-			rel_print_(sql, fout, rel->r, depth+1, refs);
+		if (rel->r) {
+			if (rel_is_ref(rel->r)) {
+				int nr = find_ref(refs, rel->r);
+				mnstr_printf(fout, " & REF %d ", nr);
+			} else
+				rel_print_(sql, fout, rel->r, depth+1, refs);
+		}
 		print_indent(sql, fout, depth);
 		mnstr_printf(fout, ")");
 		if (rel->exps)

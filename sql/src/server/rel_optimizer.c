@@ -1283,8 +1283,9 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 	(void)sql;
 	if (rel->op == op_topn && topn_save_exps(rel->exps)) {
 		/* pass through projections */
-		while (r && is_project(r->op) && !(rel_is_ref(r)) &&
-		       !r->r && (rl = r->l) != NULL && is_project(rl->op)) {
+		while (r && is_project(r->op) && !need_distinct(r) &&
+			!(rel_is_ref(r)) &&
+			!r->r && (rl = r->l) != NULL && is_project(rl->op)) {
 			/* ensure there is no order by */
 			if (!r->r) {
 				r = r->l;
@@ -1292,14 +1293,8 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 				r = NULL;
 			}
 		}
-		if (r && is_project(r->op) && !(rel_is_ref(r)) && !r->r && r->l) {
-			int distinct = need_distinct(r);
-			sql_rel *t = rel_topn( r->l, sum_limit_offset(rel->exps));
-
-			if (distinct) 
-				set_including(t);
-			r->l = t; /* topn */
-			r = t->l; /* under project */
+		if (r && r != rel && is_project(r->op) && !(rel_is_ref(r)) && !r->r && r->l) {
+			r = rel_topn( r, sum_limit_offset(rel->exps));
 		}
 
 		/* push topn under crossproduct */

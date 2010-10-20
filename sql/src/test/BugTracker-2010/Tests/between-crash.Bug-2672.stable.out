@@ -20,13 +20,28 @@ Ready.
 
 Over..
 
-# 15:46:07 >  
-# 15:46:07 >  mclient -lsql -ftest -i -e --host=mane-3 --port=30859 
-# 15:46:07 >  
+# 10:44:28 >  
+# 10:44:28 >  mclient -lsql -ftest -i -e --host=alf --port=32184 
+# 10:44:28 >  
 
-To be approved when the server stops crashing.
+#create table t2672a (id int);
+#create table t2672b (age int);
+#SELECT
+#        id
+#FROM
+#        t2672a,
+#        t2672b
+#WHERE
+#        id between 4800
+#        and age = 4863;
+% sys.t2672a # table_name
+% id # name
+% int # type
+% 1 # length
+#drop table t2672a;
+#drop table t2672b;
 
-# 15:46:07 >  
-# 15:46:07 >  Done.
-# 15:46:07 >  
+# 10:44:28 >  
+# 10:44:28 >  Done.
+# 10:44:28 >  
 

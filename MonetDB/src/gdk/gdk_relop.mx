@@ -288,7 +288,10 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 		return NULL;
 	}
 	BATaccessBegin(l, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(r, USE_HEAD | USE_TAIL, r_scan > 0 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessBegin(r, USE_HEAD | USE_TAIL, r_scan > 0 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 	if (bn == NULL) {
 		@:joinbat(JOIN_EQ,mergejoin(l,r,NULL,nil_on_miss,BUN_NONE,NULL),estimate)@
 	}
@@ -366,7 +369,10 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	/* propagate properties */
       bunins_done:
 	BATaccessEnd(l, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(r, USE_HEAD | USE_TAIL, r_scan > 0 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessEnd(r, USE_HEAD | USE_TAIL, r_scan > 0 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 	bn->hsorted = BAThordered(l);
 	if (r->hkey) {
 		if (BATcount(bn) == BATcount(l)) {
@@ -393,7 +399,10 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	return bn;
       bunins_failed:
 	BATaccessEnd(l, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(r, USE_HEAD | USE_TAIL, r_scan > 0 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessEnd(r, USE_HEAD | USE_TAIL, r_scan > 0 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -486,7 +495,10 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 		return NULL;
 	}
 	BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
-	BATaccessBegin(r, USE_HEAD | USE_TAIL | USE_HHASH, MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessBegin(r, USE_HEAD | USE_TAIL | USE_HHASH, MMAP_WILLNEED);
 	switch (any = ATOMstorage(l->ttype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
@@ -518,7 +530,10 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	default:
 		@:hashjoin(atom,any,tail,any)@
 	}
-	BATaccessEnd(r, USE_HEAD | USE_TAIL | USE_HHASH, MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessEnd(r, USE_HEAD | USE_TAIL | USE_HHASH, MMAP_WILLNEED);
 
 	/* propagate alignment info */
 	bn->hsorted = BAThordered(l);
@@ -677,7 +692,10 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultfetchjoin(@1,@2);\n");
 
 	BATaccessBegin(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(r, USE_TAIL, MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessBegin(r, USE_TAIL, MMAP_WILLNEED);
 	/*BATaccessBegin(bn, MMAP_SEQUENTIAL);*/
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNtail(li, l_cur));
@@ -692,7 +710,10 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
       goto bunins_failed;
       bunins_failed:
 	BATaccessEnd(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(r, USE_TAIL, MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessEnd(r, USE_TAIL, MMAP_WILLNEED);
 	/*BATaccessEnd(bn, MMAP_SEQUENTIAL);*/
 	BATsetcount(bn, dst);
 	if (!ret)
@@ -809,7 +830,9 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @= defaultvoidfetchjoin
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
 	BATaccessBegin(l, USE_TAIL, MMAP_SEQUENTIAL);
-	if (BATcount(l) > (BATcount(r)/10)) 
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10) 
 		BATaccessBegin(r, USE_TAIL, MMAP_WILLNEED);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
@@ -825,7 +848,9 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		dst++;
 	}
 	BATaccessEnd(l, USE_TAIL, MMAP_SEQUENTIAL);
-	if (BATcount(l) > (BATcount(r)/10)) 
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10) 
 		BATaccessEnd(r, USE_TAIL, MMAP_WILLNEED);
 	if (nondense) {
 		BATiter bni; 
@@ -1518,7 +1543,10 @@ if no match can be found.
 	BUN p, q;
 	@4
 
-	BATaccessBegin(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessBegin(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	BATloop(l, p, q) {
 		BUN i = 0;
 
@@ -1532,7 +1560,10 @@ if no match can be found.
 			@3(bn, s, BUNhead(li, p), nilt);
 		}
 	}
-	BATaccessEnd(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessEnd(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 }
 break;
 @
@@ -1596,7 +1627,10 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		bit nonil = TRUE;
 		BUN p, q, w, s = BUNfirst(bn);
 
-		BATaccessBegin(r, USE_TAIL, BATtordered(l) & 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(l) > BATcount(r)/10)
+			BATaccessBegin(r, USE_TAIL, BATtordered(l) & 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 		BATloop(l, p, q) {
 			oid v = *(oid *) BUNtail(li, p);
 			ptr t = nilt;
@@ -1610,7 +1644,10 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 			bunfastins_nocheck(bn, s, BUNhead(li, p), t, Hsize(bn), Tsize(bn));
 			s++;
 		}
-		BATaccessEnd(r, USE_TAIL, BATtordered(l) & 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(l) > BATcount(r)/10)
+			BATaccessEnd(r, USE_TAIL, BATtordered(l) & 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 		bn->tsorted = ((BATtordered(l) & BATtordered(r) & 1) && nonil) ? GDK_SORTED : 0;
 	} else {
 		/* hash based algorithm (default) */
@@ -2010,7 +2047,10 @@ differ significantly.
 
 	if (cpy == l) {
 		BATaccessBegin(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-		BATaccessBegin(r, USE_HEAD, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(l) > BATcount(r)/10)
+			BATaccessBegin(r, USE_HEAD, MMAP_WILLNEED);
 		BATloop(l, lp, lq) {
 			ptr v = BUNh@1(li, lp);
 
@@ -2019,10 +2059,16 @@ differ significantly.
 			}
 		}
 		BATaccessEnd(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-		BATaccessEnd(r, USE_HEAD, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(l) > BATcount(r)/10)
+			BATaccessEnd(r, USE_HEAD, MMAP_WILLNEED);
 	} else {
 		BATaccessBegin(l, USE_HEAD, MMAP_SEQUENTIAL);
-		BATaccessBegin(r, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(l) > BATcount(r)/10)
+			BATaccessBegin(r, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 		BATloop(l, lp, lq) {
 			BUN rp, rq;
 			ptr v = BUNh@1(li, lp);
@@ -2034,7 +2080,10 @@ differ significantly.
 			}
 		}
 		BATaccessEnd(l, USE_HEAD, MMAP_SEQUENTIAL);
-		BATaccessEnd(r, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(l) > BATcount(r)/10)
+			BATaccessEnd(r, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	}
 }
 break;
@@ -2139,7 +2188,10 @@ iff BAThkey(r) and one on l to find the matching tuples.
 	if (merge) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: merge\n");
 		BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
-		BATaccessBegin(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(r) > BATcount(l)/10)
+			BATaccessBegin(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 		BATloop(r, rp, rq) {
 			v = BUN@3(ri, rp);
 
@@ -2152,11 +2204,17 @@ iff BAThkey(r) and one on l to find the matching tuples.
 			}
 		}
 		BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
-		BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(r) > BATcount(l)/10)
+			BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	} else if (rdoubles) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: rdoubles\n");
 		BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
-		BATaccessBegin(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(r) > BATcount(l)/10)
+			BATaccessBegin(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 		BATloop(r, rp, rq) {
 			v = BUN@3(ri, rp);
 
@@ -2170,10 +2228,16 @@ iff BAThkey(r) and one on l to find the matching tuples.
 			}
 		}
 		BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
-		BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(r) > BATcount(l)/10)
+			BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	} else {
 		BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
-		BATaccessBegin(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(r) > BATcount(l)/10)
+			BATaccessBegin(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 		BATloop(r, rp, rq) {
 			v = BUN@3(ri, rp);
 			if (!@1_EQ(v, nil, @4)) {
@@ -2182,7 +2246,10 @@ iff BAThkey(r) and one on l to find the matching tuples.
 			}
 		}
 		BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
-		BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
+		/* use MMAP_WILLNEED only if random access is not too scattered, *
+		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		if (BATcount(r) > BATcount(l)/10)
+			BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	}
 }
 break;
@@ -2305,7 +2372,10 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 
 	/* iterate l; positional fetch in r */
 	BATaccessBegin(l, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(r, USE_HEAD | USE_TAIL, BAThordered(l) & 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessBegin(r, USE_HEAD | USE_TAIL, BAThordered(l) & 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 	BATloop(l, l_cur, l_end) {
 		yy = (BUN) (offset + *(oid *) BUNhloc(li, l_cur));
 		if (yy < base || yy >= end) {
@@ -2319,7 +2389,10 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 		}
 	}
 	BATaccessEnd(l, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(r, USE_HEAD | USE_TAIL, BAThordered(l) & 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
+	/* use MMAP_WILLNEED only if random access is not too scattered, *
+	 * i.e., only if number of lookups is more than 10% of inner BAT */
+	if (BATcount(l) > BATcount(r)/10)
+		BATaccessEnd(r, USE_HEAD | USE_TAIL, BAThordered(l) & 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 
 	/* property propagation */
 	bn->hsorted = (BAThordered(l) & BAThordered(r) & 1 ? GDK_SORTED : FALSE);

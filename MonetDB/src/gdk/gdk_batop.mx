@@ -445,7 +445,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	b->batDirty = 1;
-	BATaccessBegin(b, USE_HHASH | USE_THASH, MMAP_SEQUENTIAL);
+	BATaccessBegin(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
 	BATaccessBegin(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (sz > BATcapacity(b) - BUNlast(b)) {
