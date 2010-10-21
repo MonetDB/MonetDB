@@ -214,7 +214,11 @@ handleClient(int sock, char isusock)
 
 	/* if we can't redirect, our mission ends here */
 	if (r == 0) {
-		e = newErr("there are no available connections for '%s'", database);
+		if (top->locked) {
+			e = newErr("database '%s' is under maintenance", top->dbname);
+		} else {
+			e = newErr("there are no available connections for '%s'", database);
+		}
 		mnstr_printf(fout, "!merovingian: %s\n", e);
 		mnstr_flush(fout);
 		close_stream(fout);

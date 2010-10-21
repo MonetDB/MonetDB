@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-  16 Jul 2010; Arjen de Rijke <arjen.de.rijke@cwi.nl>
-  merovingian_forkmserver.c, properties.c:
-  Add readonly property for databases to monetdb and merovingian.
+* Thu Oct 21 2010 Fabian Groffen <fabian@cwi.nl>
+- Report a stopped and locked database as under maintenance, instead of
+  without connections, bug #2685
+
+* Fri 16 Jul 2010 Arjen de Rijke <arjen.de.rijke@cwi.nl>
+- Add readonly property for databases to monetdb and merovingian.
+
