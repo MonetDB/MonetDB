@@ -1657,7 +1657,8 @@ doFile(Mapi mid, const char *file)
 		   protocol) we break out of the loop (via the
 		   continue).  The assertion at the end will then go
 		   off. */
-		if (mapi_query_done(hdl) == MMORE && (length > 0 || mapi_query_done(hdl) == MMORE))
+		if (mapi_query_done(hdl) == MMORE &&
+				(length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
 		CHECK_RESULT(mid, hdl, buf + skip, continue);
