@@ -413,7 +413,7 @@ replace_thetajoin (PFla_op_t *p, bool replace_left)
                     col2 = p->sem.thetajoin.pred[i].right,
                     new  = PFcol_new (col1),
                     tmp;
-        switch (p->sem.thetajoin.pred[0].comp) {
+        switch (p->sem.thetajoin.pred[i].comp) {
             case alg_comp_eq:
                 res = eq (res, new, col1, col2);
                 break;
