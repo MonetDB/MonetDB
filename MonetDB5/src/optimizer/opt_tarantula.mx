@@ -931,8 +931,14 @@ OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int otop[MAXSLICES], output[MAXSLICES][MAXSHARE];
 	InstrPtr *list;
 	int *needed;
-	char *done;
+	char *done, *msg= MAL_SUCCEED;
 
+	/* merge table may leave some mat.new() dead code */
+	msg = OPTdeadcode(cntxt, mb, stk, 0);
+	if ( msg){
+		GDKfree(msg);
+		return 0;
+	}
 	if( cntxt == 0){
 		/* confuscate, delay for later activation */
 		TARinitcode(cntxt, mb);
@@ -963,6 +969,8 @@ the level at which it would be indirectly needed as input.
 	level= (int*) GDKzalloc(VTOP * vtop * sizeof(int));
 	for (i = limit; i >=0 ; i--) {
 		p = old[i];
+		if ( p == 0)
+			continue;
 		if( getModuleId(p)== matRef && getFunctionId(p)== packRef)
 			lev=i;
 		if ( getModuleId(p) != sqlRef){
@@ -992,6 +1000,8 @@ the level at which it would be indirectly needed as input.
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
+		if ( p == 0)
+			continue;
 		if ( p == pci){
 			freeInstruction(pci);
 			old[i]= 0;
