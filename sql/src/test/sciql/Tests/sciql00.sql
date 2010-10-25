@@ -1,0 +1,4 @@
+CREATE ARRAY A1( x integer DIMENSION[4], val float DEFAULT 0.0);
+CREATE ARRAY A2 ( x integer DIMENSION[0:4:1], val float DEFAULT 0.0);
+CREATE SEQUENCE range AS integer START WITH 0 INCREMENT BY 1 MAXVALUE 3;
+CREATE ARRAY A3 ( x integer DIMENSION range, val float DEFAULT 0.0);

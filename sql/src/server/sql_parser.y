@@ -261,6 +261,10 @@ int yydebug=1;
 	XML_primary
 	opt_comma_string_value_expression
 
+	group_item
+	dimension
+	array_element
+
 %type <type>
 	data_type
 	datetime_type
@@ -309,6 +313,7 @@ int yydebug=1;
 	ident_commalist
 	opt_corresponding
 	column_ref_commalist
+	group_ref_commalist
 	name_commalist
 	schema_name_list
 	column_ref
@@ -376,6 +381,14 @@ int yydebug=1;
 	forest_element_list
 	forest_element
 	XML_value_expression_list
+	dim_range
+	dim_range_list
+	dim_exp
+	index_exp
+	index_exp_list
+	index_term
+
+	array_element_list
 
 %type <i_val>
 	any_all_some
@@ -421,6 +434,7 @@ int yydebug=1;
 	with_or_without_data
 	XML_content_option
 	XML_whitespace_option
+	table_or_array
 
 %type <w_val>
 	wrdval
@@ -501,11 +515,13 @@ int yydebug=1;
 %token NIL REF ABSENT EMPTY DOCUMENT ELEMENT CONTENT XMLNAMESPACES NAMESPACE
 %token XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI XMLAGG
 
+/* SciQL tokens */
+%token ARRAY DIMENSION
 
 /* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
-%left LIKE BETWEEN sqlIN WITH DATA
+%left LIKE BETWEEN sqlIN WITH DATA '[' ']'  ':'
 %left <operation> OR
 %left <operation> AND
 %left <operation> NOT
@@ -733,6 +749,11 @@ set_statement:
 		append_string(l, sa_strdup(SA, "current_timezone"));
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
+  |	set array_element '=' simple_atom
+		{ dlist *l = L();
+		append_symbol(l, $2 );
+		append_symbol(l, $4 );
+		$$ = _symbol_create_list( SQL_SET, l); }
   ;
 
 schema:
@@ -922,23 +943,23 @@ grantee:
 /* DOMAIN, ASSERTION, CHARACTER SET, TRANSLATION, TRIGGER */
 
 alter_statement:
-   ALTER TABLE qname ADD opt_column add_table_element
+   ALTER table_or_array qname ADD opt_column add_table_element
 
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname ALTER alter_table_element
+ | ALTER table_or_array qname ALTER alter_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname DROP drop_table_element
+ | ALTER table_or_array qname DROP drop_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname SET READ ONLY
+ | ALTER table_or_array qname SET READ ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, NULL);
@@ -1003,6 +1024,12 @@ alter_table_element:
 	  $$ = _symbol_create_list( SQL_NOT_NULL, l); }
  |	opt_column ident DROP DEFAULT
 	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
+ | opt_column ident dimension
+	{ dlist *l = L();
+		l = append_string(l,$2);
+		l = append_symbol(l,$3);
+		$$= _symbol_create_list(SQL_DIMENSION, l);
+	}
  ;
 
 drop_table_element:
@@ -1272,7 +1299,7 @@ opt_encrypted:
  ;
 
 table_def:
-    opt_temp TABLE qname table_content_source opt_on_commit 
+    opt_temp table_or_array qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 	  append_int(l, $1);
@@ -1281,8 +1308,12 @@ table_def:
 	  if ($1 != SQL_PERSIST)
 		commit_action = $5;
 	  append_int(l, commit_action);
-	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+	  $$ = _symbol_create_list( $2, l ); }
  ;
+
+table_or_array:
+	TABLE	{$$= SQL_CREATE_TABLE;}
+	| ARRAY	{$$= SQL_CREATE_ARRAY;}
 
 opt_temp:
     /* empty */		{ $$ = SQL_PERSIST; }
@@ -1341,6 +1372,15 @@ column_def:
 			append_string(l, $1);
 			append_type(l, &$2);
 			append_list(l, $3);
+			$$ = _symbol_create_list(SQL_COLUMN, l);
+		}
+ |	column data_type dimension opt_column_def_opt_list
+		{
+			dlist *l = L();
+			append_string(l, $1);
+			append_type(l, &$2);
+			append_list(l, $4);
+			append_symbol(l, $3);
 			$$ = _symbol_create_list(SQL_COLUMN, l);
 		}
  |  column serial_or_bigserial
@@ -1432,7 +1472,7 @@ column_option_list:
 			{ $$ = append_symbol($1, $3 ); }
  ;
 
-column_option: default | column_constraint | generated_column;
+column_option: default | column_constraint | generated_column ;
 
 default:
     DEFAULT default_value { $$ = _symbol_create_symbol(SQL_DEFAULT, $2); }
@@ -1526,6 +1566,70 @@ generated_column:
 		append_symbol(stmts, _symbol_create_list(SQL_CREATE_SEQ, l));
 	}
  ;
+
+dimension: DIMENSION dim_range
+	{
+		$$= _symbol_create_list(SQL_DIMENSION,$2);
+	}
+  | DIMENSION {
+		$$= _symbol_create_list(SQL_DIMENSION,NULL);
+	}
+  | ARRAY dim_range_list
+	{
+		$$= _symbol_create_list(SQL_DIMENSION,$2);
+	}
+;
+
+dim_range_list:	
+	dim_range {
+		$$= $1;
+	}
+  | dim_range_list dim_range {
+		$$= append_list($1,$2);
+	}
+;
+
+dim_range :
+	'[' dim_exp ':' dim_exp ':' dim_exp ']'
+	{
+		dlist *l = L();
+		$$= l;
+	}
+	| '[' dim_exp ':' dim_exp ']'
+	{
+		dlist *l = L();
+		$$= l;
+	}
+	| '[' ']'
+	{
+		dlist *l = L();
+		$$= l;
+	}
+	| '[' dim_exp ']'
+	{
+		dlist *l = L();
+		$$= l;
+	}
+	| '[' ident ']'  /* sequence name */
+	{
+		dlist *l = L();
+		$$= l;
+	}
+;
+
+dim_exp :
+	literal
+	{
+		$$= L();
+	}
+ |	'-' literal
+	{
+		$$= L();
+	}
+  | '*'
+	{
+		$$= NULL;
+	}
 
 serial_opt_params:
 	/* empty: return the defaults */
@@ -1860,7 +1964,7 @@ return_statement:
 return_value:
       select_no_parens_orderby
    |  search_condition
-   |  TABLE '(' select_no_parens_orderby ')'	
+   |  table_or_array '(' select_no_parens_orderby ')'	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
    |  sqlNULL 	{ $$ = _newAtomNode( NULL);  }
    ;
@@ -1990,7 +2094,7 @@ table_function_column_list:
   ;
 
 func_data_type:
-    TABLE '(' table_function_column_list ')'	
+    table_or_array '(' table_function_column_list ')'	
 		{ $$ = _symbol_create_list(SQL_TABLE, $3); }
  |  data_type
 		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$1)); }
@@ -2148,6 +2252,11 @@ drop_statement:
 	  append_list(l, $3 );
 	  append_int(l, $4 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
+ | DROP ARRAY qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, $4 );
+	  $$ = _symbol_create_list( SQL_DROP_ARRAY, l ); }
  | DROP FUNCTION qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
@@ -2889,6 +2998,12 @@ table_ref:
 				{ $$ = $2;
 				  append_symbol($2->data.lval, $4); }
 */
+ |  ident index_exp_list { 
+	dlist *l = L();
+	l = append_string(l, $1);
+	l = append_list(l, $2);
+	$$ = _symbol_create_list( SQL_ARRAY, l);
+	}
 
 /* Basket expression, TODO window */
  |  '[' 
@@ -2932,8 +3047,33 @@ table_name:
 
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
- |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ |  sqlGROUP BY group_ref_commalist { 
+	dlist *l = L();
+	l= append_list(l,$3);
+	l= append_int(l,0);
+	$$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ |  sqlGROUP BY DISTINCT group_ref_commalist {
+	dlist *l = L();
+	l= append_list(l,$4);
+	l= append_int(l,1);
+	$$ = _symbol_create_list( SQL_GROUPBY, l);}
  ;
+
+group_ref_commalist:
+    group_item		{ $$ = append_symbol(L(),$1);}
+ |  group_ref_commalist ',' group_item
+			{ $$ = append_symbol( $1, $3);}
+ ;
+
+group_item:
+  ident index_exp_list { 
+	dlist *l = L();
+	l = append_string(l, $1);
+	l = append_list(l, $2);
+	$$ = _symbol_create_list( SQL_INDEX, l);
+	}
+  | scalar_exp { $$= $1; }
+;
 
 column_ref_commalist:
     column_ref		{ $$ = append_symbol(L(),
@@ -3289,6 +3429,31 @@ value_exp:
  |  cast_exp
  |  XML_value_function
  |  param
+ |  array_element 
+ | ARRAY '(' scalar_exp_list ')' {
+	dlist *l = L();
+	l = append_list(l,$3);
+	$$ = _symbol_create_list( SQL_ARRAY, l);
+	}
+ | '(' scalar_exp_list ')' {
+	dlist *l = L();
+	l = append_list(l,$2);
+	$$ = _symbol_create_list( SQL_ARRAY, l);
+	}
+ | '[' scalar_exp ']'
+	{
+		$$ = NULL;
+	}
+;
+
+array_element:
+  ident index_exp_list '.' ident		{ 
+			dlist *l = L();
+			l = append_string(l, $1);
+			l = append_string(l, $4);
+			l = append_list(l, $2);
+			$$ = _symbol_create_list( SQL_INDEX, l);
+			}
  ;
 
 param:  
@@ -4034,6 +4199,44 @@ column_ref:
 				  L(), $1), $3), $5);}
  ;
 
+index_exp_list :
+	index_exp
+	{
+		$$= $1;
+	}
+  | index_exp_list index_exp
+	{
+		$$= append_list($1,$2);
+	}
+
+index_exp :
+	'[' index_term ':' index_term ':' index_term ']'
+	{
+		dlist *l = L();
+		$$= l;
+	}
+	| '[' index_term ':' index_term ']'
+	{
+		dlist *l = L();
+		$$= l;
+	}
+	| '[' index_term ']'
+	{
+		dlist *l = L();
+		$$= l;
+	}
+;
+
+index_term :
+	scalar_exp
+	{
+		$$= L();
+	}
+  | '*'
+	{
+		$$= NULL;
+	}
+
 cast_exp:
      CAST '(' cast_value AS data_type ')'
  	{ dlist *l = L();
@@ -4351,8 +4554,16 @@ data_type:
 				sql_init_subtype(&$$, t, $3, 0);
 			  }
 			}
-
+ | ARRAY '(' array_element_list ')' {
+	/* use a fake type  for now */
+	sql_find_subtype(&$$, "int", 0, 0);
+	}
  ;
+
+array_element_list:
+	column_def
+ | array_element_list ',' column_def
+;
 
 type_alias:
  ALIAS
@@ -5209,6 +5420,8 @@ char *token2string(int token)
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
+	SQL(ARRAY);
+	SQL(DIMENSION);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

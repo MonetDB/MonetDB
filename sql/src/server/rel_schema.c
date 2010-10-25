@@ -1101,6 +1101,7 @@ rel_schemas(mvc *sql, symbol *s)
 			   NULL,
 			   l->h->next->data.i_val);	/* drop_action */
 	} 	break;
+	case SQL_CREATE_ARRAY:
 	case SQL_CREATE_TABLE:
 	{
 		dlist *l = s->data.lval;
