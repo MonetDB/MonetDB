@@ -2164,15 +2164,18 @@ def Prompt(cmd) :
 ### Prompt(cmd) #
 
 def killProc(proc, outfile = None, cmd = None):
+    if outfile is not None and cmd is not None:
+        try:
+            outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
+        except ValueError:
+            print 'cannot write timeout message',cmd
+    proc.killed = True
     try:
         os.kill(-proc.pid, signal.SIGKILL)
     except AttributeError:
         subprocess.Popen(['taskkill','/F','/T','/PID',str(proc.pid)])
     except OSError:
         pass
-    if outfile is not None and cmd is not None:
-        outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
-    proc.killed = True
 
 def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     if not SrvrOut:
