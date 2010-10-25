@@ -2027,10 +2027,15 @@ thetaselectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 static int
 RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 {
-    int i, j, qidx;
-    InstrPtr q;
-    bit gluse = FALSE;
-    static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
+	int i, j, qidx, lcomp, rcomp, pc = -1;
+	bat bid, sbid = -1;
+	InstrPtr q;
+	bit gluse = FALSE;
+	size_t scnt;
+	BAT *b, *bn;
+	oid lval = 0, hval = 0;
+	dbl ratio;
+	static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
 
 	if (octopusRef == 0)
 		octopusRef = putName("octopus",7);
@@ -2043,19 +2048,38 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 	for (i = 0; i < recycleBlk->stop; i++){
     	q = getInstrPtr(recycleBlk,i);
 		if ( getModuleId(q) != octopusRef ||
-			 (getFunctionId(q) != bindRef && getFunctionId(q) != bindidxRef) ) continue; 
+			 (getFunctionId(q) != bindRef && getFunctionId(q) != bindidxRef) ||
+			 (getFunctionId(q) != getFunctionId(p)) ) 
+		continue; 
 
 		if (p->argc < q->argc-1) continue; 
 		/* sub-range instructions can be subsumed from entire table */
 
-		if (p->argc == q->argc-1) {	/* check for exact match */
-					/* all args except connection (1) should match */
-			for (j = p->retc + 1; j < p->argc; j++)
-                if ( VALcmp(&s->stk[getArg(p,j)],
-					 &getVarConstant(recycleBlk, getArg(q,j))) )
-                	goto notfound;
+		for (j = p->retc + 1; j < 6; j++)
+			if ( VALcmp(&s->stk[getArg(p,j)],
+				&getVarConstant(recycleBlk, getArg(q,j))) )
+				goto notfound;
 
-            /* found an exact match */
+		if ( q->argc-1 == 7 )	/* q is entire bat */
+			if ( p->argc == 7 ) 
+				goto exactmatch;
+			else goto subsumption;
+		else {		/* q is bat partition */
+
+			lcomp = VALcmp(&getVar(recycleBlk,getArg(q,6))->value,
+					&s->stk[getArg(p,6)]);
+			rcomp = VALcmp( &s->stk[getArg(p,7)], 
+					&getVar(recycleBlk,getArg(q,7))->value);
+
+			if ( lcomp == 0 && rcomp == 0 )            /* found an exact match */
+				goto exactmatch;
+			else if ( lcomp <= 0 && rcomp <= 0 )
+				goto subsumption;
+			else 
+				continue; 
+		}
+  
+		exactmatch:
             /* get the results on the stack */
             for( j=0; j<p->retc; j++){
                 VALcopy(&s->stk[getArg(p,j)],
@@ -2074,23 +2098,48 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
             qidx = *(int*)getVarValue(recycleBlk,q->argv[q->argc-1]);
             updateQryStat(q->recycle,gluse,qidx);
             cntxt->rcc->recycled0++;
-            cntxt->rcc->recTrans++;
-            cntxt->rcc->recTransKB += recycleBlk->profiler[i].wbytes;
             cntxt->rcc->recent = i;
             mal_unset_lock(recycleLock,"recycle");
             return i;
-			
-		} else {  /* check if p (9 args) transfers a sub-range of the cached q (7 args) */
-		/* TODO */
-
-		}
+		
+		subsumption:	
+			bid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
+			b = BBPquickdesc(bid, FALSE);
+			if( sbid == -1){
+				sbid = bid;
+				scnt = BATcount(b);
+				pc = i;
+			} 
+			else if ( BATcount(b) < scnt ) {
+				sbid = bid; 
+				scnt = BATcount(b);
+				pc = i;
+			}
 
 		notfound:
 			continue;
 	}
 
+	if ( sbid >= 0 ) {	/* subsumption of octopus.bind */
+		b = BBPquickdesc(sbid, FALSE);
+		lval = *(oid *)getArgReference(s, p, 6);
+		hval = *(oid *)getArgReference(s, p, 7);
+		bn = BATslice(b, lval, hval);
+		BATseqbase(bn, lval);
+		ratio = (dbl)BATcount(bn)/(dbl)scnt;
+		VALset(&s->stk[getArg(p,0)], TYPE_bat, &bn->batCacheid);
+		BBPkeepref( bn->batCacheid);
+
+		recycleBlk->profiler[pc].counter++;
+		recycleBlk->profiler[pc].clk = GDKusec();
+		recycleQPat->ptrn[cntxt->rcc->curQ]->dtreuse += 
+			(lng) (ratio * recycleBlk->profiler[pc].wbytes);
+		cntxt->rcc->recycled0++;
+		cntxt->rcc->recent = i;
+	}
+
 	mal_unset_lock(recycleLock,"recycle");
-	return -1;
+	return pc;
 }
 
 
