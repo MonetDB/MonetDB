@@ -30,6 +30,7 @@ Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/MonetDB-SQL-%{versi
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires: e2fsprogs-devel
+BuildRequires: pcre-devel
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.40
