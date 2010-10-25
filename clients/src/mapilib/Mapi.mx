@@ -2329,7 +2329,7 @@ the initialization sequence.
 static MapiMsg
 connect_to_server(Mapi mid)
 {
-	SOCKET s;
+	SOCKET s = INVALID_SOCKET;
 
 	char errbuf[8096];
 
