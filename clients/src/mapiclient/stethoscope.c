@@ -306,7 +306,9 @@ doProfile(void *d)
 	}
 	printf("-- %sprofiler.start();\n", id);
 	doQ("profiler.start();");
+	fflush(NULL);
 
+	i = 0;
 	while (mnstr_read(wthr->s, buf, 1, BUFSIZ)) {
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
@@ -314,7 +316,12 @@ doProfile(void *d)
 			printf("%s%s\n", id, response);
 			response = e + 1;
 		}
+		if (++i % 200) {
+			i = 0;
+			fflush(NULL);
+		}
 	}
+	fflush(NULL);
 
 stop_cleanup:
 	doQ("profiler.setNone();");

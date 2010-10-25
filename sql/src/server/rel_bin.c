@@ -574,7 +574,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			return stmt_likeselect(l, r, r2, (comp_type)e->flag);
 		}
 		if (left && right && !is_select &&
-		    (re->card > CARD_ATOM || (l->nrcols && r->nrcols))) {
+		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) || 
+		     re->card > CARD_ATOM || 
+		    (re2 && re2->card > CARD_ATOM))) {
 			if (l->nrcols == 0)
 				l = stmt_const(bin_first_column(swapped?right:left), l); 
 			if (r->nrcols == 0)
@@ -1677,12 +1679,10 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 	/* TODO should be in key order! */
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *e = en->data;
-		stmt *s;
+		stmt *s = NULL;
 
-		assert(e->type == e_cmp && e->flag == cmp_equal);
-		s = exp_bin(sql, e->r, NULL, NULL, NULL, NULL);
-		if (s == NULL)
-			return NULL;
+		if (e->type == e_cmp && e->flag == cmp_equal)
+			s = exp_bin(sql, e->r, NULL, NULL, NULL, NULL);
 
 		if (!s) {
 			stmt_destroy(h);
@@ -1743,30 +1743,32 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 			
 			sel = rel2bin_hash_lookup(sql, rel, sub, i, en);
 		}
-	}
-	sel = stmt_relselect_init();
-	for( en = rel->exps->h; en; en = en->next ) {
-		/*stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, sel);*/
-		stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, NULL);
-
-		if (!s) {
-			assert(0);
-			if (sub) stmt_destroy(sub);
-			if (predicate) stmt_destroy(predicate);
-			if (sel) stmt_destroy(sel);
-			return NULL;
-		}
-		if (s->nrcols == 0){ 
-			if (!predicate) 
-				predicate = rel2bin_predicate();
-			predicate = stmt_select(predicate, s, cmp_equal);
-		} else {
-			/*
-			if (sel) 
-				stmt_destroy(sel);
-			sel = s;
-			*/
-			stmt_relselect_fill(sel, s);
+	} 
+	if (!sel) {
+		sel = stmt_relselect_init();
+		for( en = rel->exps->h; en; en = en->next ) {
+			/*stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, sel);*/
+			stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, NULL);
+	
+			if (!s) {
+				assert(0);
+				if (sub) stmt_destroy(sub);
+				if (predicate) stmt_destroy(predicate);
+				if (sel) stmt_destroy(sel);
+				return NULL;
+			}
+			if (s->nrcols == 0){ 
+				if (!predicate) 
+					predicate = rel2bin_predicate();
+				predicate = stmt_select(predicate, s, cmp_equal);
+			} else {
+				/*
+				if (sel) 
+					stmt_destroy(sel);
+				sel = s;
+				*/
+				stmt_relselect_fill(sel, s);
+			}
 		}
 	}
 
@@ -1931,8 +1933,9 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *limit = NULL;
-		sql_rel *rl = rel->l;
-		int including = (rl && need_distinct(rl)) || need_including(rel);
+		//sql_rel *rl = rel->l;
+		//int including = (rl && need_distinct(rl)) || need_including(rel);
+		int including = need_including(rel);
 
 		if (le)
 			l = exp_bin(sql, le, NULL, NULL, NULL, NULL);

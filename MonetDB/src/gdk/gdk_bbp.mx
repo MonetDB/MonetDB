@@ -2106,6 +2106,12 @@ incref(bat i, int logical, int lock)
 			if (!bs->P.lview) {
 				b = getBBPdescriptor(hp, lock);
 				bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
+				/* if we shared the hash before, share
+				   it again note that if the parent's
+				   hash is destroyed, we also don't
+				   have a hash anymore */
+				if (bs->B.H->hash == (Hash *) -1)
+					bs->B.H->hash = b->H->hash;
 			}
 		}
 		if (tp) {
@@ -2114,6 +2120,12 @@ incref(bat i, int logical, int lock)
 			    bs->B.H != bs->B.T) {  /* mirror? */
 				b = getBBPdescriptor(tp, lock);
 				bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
+				/* if we shared the hash before, share
+				   it again note that if the parent's
+				   hash is destroyed, we also don't
+				   have a hash anymore */
+				if (bs->B.T->hash == (Hash *) -1)
+					bs->B.T->hash = b->H->hash;
 			}
 		}
 		if (hvp)
@@ -2205,6 +2217,15 @@ decref(bat i, int logical, int releaseShare, int lock)
 				    b->H != b->T &&
 				    !b->P->lview)
 					b->T->heap.base = (char *) (b->T->heap.base - BBP_cache(tp)->H->heap.base);
+				/* if a view shared the hash with its
+				   parent, indicate this, but only if
+				   view isn't getting destroyed */
+				if (hp && b->H->hash &&
+				    b->H->hash == BBP_cache(hp)->H->hash)
+					b->H->hash = (Hash *) -1;
+				if (tp && b->T->hash &&
+				    b->T->hash == BBP_cache(tp)->H->hash)
+					b->T->hash = (Hash *) -1;
 				hvp = VIEWvhparent(b);
 				tvp = VIEWvtparent(b);
 			}

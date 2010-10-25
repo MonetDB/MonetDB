@@ -38,15 +38,21 @@ comment "Cleans recycler bookkeeping";
 
 pattern dump():void
 address RECYCLEdumpWrap
-comment "Dump summary of recycle table for potential re-use benefits";
+comment "Dump summary of recycle table";
 
-pattern dump(n:str):void
+pattern dump(tp: int):void
 address RECYCLEdumpWrap
-comment "Dump summary of recycle table into a file";
+comment "Dump summary of recycler structures:
+1: recycle table;
+2: statistics of query patterns;
+3: statistics of data transfer.";
 
-pattern dumpQPat():void
-address RECYCLEdumpQPatWrap
-comment "Dump statistics of query patterns";
+pattern dump(tp: int, nm:str):void
+address RECYCLEdumpWrap
+comment "Dump summary of recycler structures into a file:
+1: recycle table;
+2: statistics of query patterns;
+3: statistics of data transfer.";
 
 pattern setAdmPolicy(p:int...):void
 address RECYCLEsetAdmission
@@ -207,15 +213,15 @@ RECYCLEdump(stream *s)
     lng statements=0, recycled=0, recycleMiss=0, recycleRem=0;
     lng ccCalls=0, ccInstr=0, crdInstr=0;
     
-	mnstr_printf(s,"#Recycler  catalog\n");
-        mnstr_printf(s,"#admission= %d time ="LLFMT" alpha= %4.3f\n",
-                admissionPolicy, recycleTime, recycleAlpha);
-        mnstr_printf(s,"#reuse= %d\n", reusePolicy);
-        mnstr_printf(s,"#rcache= %d limit= %d memlimit="LLFMT"\n", rcachePolicy, recycleCacheLimit, recycleMemory);
-        mnstr_printf(s,"#hard stmt = %d hard var = %d hard mem="LLFMT"\n",
-                 HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
-
 	if (!recycleBlk) return;
+
+	mnstr_printf(s,"#Recycler  catalog\n");
+    mnstr_printf(s,"#admission= %d time ="LLFMT" alpha= %4.3f\n",
+                admissionPolicy, recycleTime, recycleAlpha);
+    mnstr_printf(s,"#reuse= %d\n", reusePolicy);
+    mnstr_printf(s,"#rcache= %d limit= %d memlimit="LLFMT"\n", rcachePolicy, recycleCacheLimit, recycleMemory);
+    mnstr_printf(s,"#hard stmt = %d hard var = %d hard mem="LLFMT"\n",
+                 HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
 
 	for(i=0; i< recycleBlk->stop; i++){
 #ifdef _DEBUG_CACHE_
@@ -268,30 +274,6 @@ RECYCLEdump(stream *s)
 	
 }
 
-
-str
-RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	stream *s = cntxt->fdout;
-	str fname;
-
-	(void) mb;
-	if (pci->argc >1){
-		fname = * (str*) getArgReference(stk, pci,1);
-		s = open_wastream(fname);
-		if (s == NULL )
-			throw(MAL,"recycle.dump", RUNTIME_FILE_NOT_FOUND "%s", fname);
-		if (mnstr_errnr(s)) {
-			mnstr_close(s);
-			throw(MAL,"recycle.dump", RUNTIME_FILE_NOT_FOUND "%s", fname);
-		}
-	}
-	RECYCLEdump(s);
-	if( s != cntxt->fdout)
-		close_stream(s);
-	return MAL_SUCCEED;
-}
-
 void
 RECYCLEdumpQPat(stream *s)
 {
@@ -307,20 +289,75 @@ RECYCLEdumpQPat(stream *s)
 	mnstr_printf(s,"#RecID\tcalls\tglobRec\tlocRec\tCreditWL\n");
 	for(i=0; i< recycleQPat->cnt; i++){
 		qs = recycleQPat->ptrn[i];
-		mnstr_printf(s,"# "LLFMT"\t\t%2d\t\t%2d\t\t%2d\t\t%2d\n",
+		mnstr_printf(s,"# "LLFMT"\t%2d\t%2d\t%2d\t%2d\n",
 			qs->recid, qs->calls, qs->greuse, qs->lreuse, qs->wl);
 	}
 }
 
+void
+RECYCLEdumpDataTrans(stream *s)
+{
+	int i, n, qidx, err=0;
+	InstrPtr p;
+	lng *dt, sum = 0, rdt, rsum = 0;
+
+	static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
+
+	if (octopusRef == 0)
+		octopusRef = putName("octopus",7);
+	if (bindRef == 0)
+        bindRef = putName("bind",4);
+	if (bindidxRef == 0)
+        bindidxRef = putName("bind_idxbat",11);
+
+	if (!recycleBlk || !recycleQPat)
+		return;
+
+	n = recycleQPat->cnt;
+	dt = GDKzalloc(sizeof(lng) * n);
+	
+	for(i=0; i< recycleBlk->stop; i++){
+		p = getInstrPtr(recycleBlk,i);
+		if ( getModuleId(p) != octopusRef ||
+			 (getFunctionId(p) != bindRef && getFunctionId(p) != bindidxRef) )
+			 continue; 
+		qidx = p->recycle;
+		if ( qidx >= 0 && qidx < n )
+			dt[qidx] += recycleBlk->profiler[i].wbytes;
+		else err = i;
+	}
+
+	mnstr_printf(s,"#Query  \t Data   \t DT Reused\n");
+	mnstr_printf(s,"#pattern\t transf.\t from others\n");
+	for( i=0; i < n; i++){
+		rdt = recycleQPat->ptrn[i]->dtreuse;
+		mnstr_printf(s,"# %d \t\t "LLFMT"\t\t"LLFMT"\n", i, dt[i], rdt);
+		sum += dt[i];
+		rsum += rdt;
+	}
+	mnstr_printf(s,"#########\n# Total transfer "LLFMT" Total reused "LLFMT"\n", sum, rsum);
+	if (err)
+		mnstr_printf(s,"# CL %d points to missing query pattern\n", err, 
+			getInstrPtr(recycleBlk,err)->recycle );
+	
+	GDKfree(dt);
+}
+
 str
-RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream *s = cntxt->fdout;
 	str fname;
+	int tp;
 
 	(void) mb;
-	if (pci->argc >1){
-		fname = * (str*) getArgReference(stk, pci,1);
+
+	if (pci->argc >1)
+		tp = * (int*) getArgReference(stk, pci,1);
+	else tp = 1;
+
+	if (pci->argc >2){
+		fname = * (str*) getArgReference(stk, pci,2);
 		s = open_wastream(fname);
 		if (s == NULL )
 			throw(MAL,"recycle.dumpQ", RUNTIME_FILE_NOT_FOUND" %s", fname);
@@ -329,11 +366,21 @@ RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL,"recycle.dumpQ", RUNTIME_FILE_NOT_FOUND" %s", fname);
 		}
 	}
-	RECYCLEdumpQPat(s);
+
+	switch(tp){
+		case 2:	RECYCLEdumpQPat(s);
+				break;
+		case 3: RECYCLEdumpDataTrans(s);
+				break;
+		case 1:
+		default:RECYCLEdump(s);
+	}
+
 	if( s != cntxt->fdout)
 		close_stream(s);
 	return MAL_SUCCEED;
 }
+
 
 @-
 Called to collect statistics at the end of each query.

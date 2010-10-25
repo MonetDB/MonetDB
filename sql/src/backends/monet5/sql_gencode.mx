@@ -1041,10 +1041,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_uselect2:
 		case st_select2:
 		case st_join2:{
+			InstrPtr r,p;
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			stmt *base, *low = NULL, *high = NULL;
-			int r1 = -1, r2 = -1;
-			int rs = 0;
+			int r1 = -1, r2 = -1, rs = 0, k;
 
 			char *cmd = 
 				(s->type == st_select2) ? selectRef :
@@ -1052,11 +1052,31 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				(s->flag&ANTI ? antiuselectRef : uselectRef) :
 				joinRef;
 
-			if (s->op2.stval->nrcols > 0 &&
-			   (s->type == st_select2 || s->type == st_uselect)) {
-				/* We need to add a range function to m5 */
-				/* range(a,l,h,lb:bit,hb:bit):bat[:any,:bit] */
-				assert(0);
+			if ((s->op2.stval->nrcols > 0 || s->op3.stval->nrcols) &&
+			   (s->type == st_select2 || s->type == st_uselect2)) {
+				char *mod = calcRef;
+				char *op1 = "<", *op2 = "<";
+
+				r1 = _dumpstmt(sql, mb, s->op2.stval);
+				r2 = _dumpstmt(sql, mb, s->op3.stval);
+				
+				if (s->flag&1) 
+					op1 = "<=";
+				if (s->flag&2) 
+					op2 = "<=";
+				
+				q = multiplex2(mb,mod,convertOperator(op1),l,r1,TYPE_bit);
+
+				r = multiplex2(mb,mod,convertOperator(op2),l,r2,TYPE_bit);
+				p = newStmt1(mb, batcalcRef, "and");
+				p = pushArgument(mb, p, getDestVar(q));
+				p = pushArgument(mb, p, getDestVar(r));
+				k = getDestVar(p);
+
+				q = newStmt2(mb, algebraRef, uselectRef);
+				q = pushArgument(mb, q, k);
+				q = pushBit(mb, q, TRUE);
+				s->nr = getDestVar(q);
 				break;
 			}
 			/* if st_join2 try to convert to bandjoin */

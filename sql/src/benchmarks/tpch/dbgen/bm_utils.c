@@ -381,14 +381,14 @@ tbl_open(int tbl, char *mode)
         fprintf(stderr, "stat(%s) failed.\n", fullpath);
         exit(-1);
         }
-    if (S_ISREG(fstats.st_mode) && !force && *mode != 'r' )
+    if (retcode == 0 && S_ISREG(fstats.st_mode) && !force && *mode != 'r' )
         {
         sprintf(prompt, "Do you want to overwrite %s ?", fullpath);
         if (!yes_no(prompt))
             exit(0);
         }
 
-    if (S_ISFIFO(fstats.st_mode))
+    if (retcode == 0 && S_ISFIFO(fstats.st_mode))
         {
         retcode =
             open(fullpath, ((*mode == 'r')?O_RDONLY:O_WRONLY)|O_CREAT);

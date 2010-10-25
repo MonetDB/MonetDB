@@ -66,6 +66,7 @@ extern void exp_swap( sql_exp *e );
 
 extern sql_subtype * exp_subtype( sql_exp *e );
 extern char * exp_name( sql_exp *e );
+extern char * exp_relname( sql_exp *e );
 
 extern char *exp_find_rel_name(sql_exp *e);
 

@@ -64,7 +64,7 @@ pattern optimizer.recycle():str
 address OPTrecycle;
 pattern optimizer.recycle(mod:str, fcn:str):str
 address OPTrecycle
-comment "Replicator code injection";
+comment "Recycler marking and code injection";
 
 @{
 @-
@@ -109,6 +109,7 @@ are monitored and also trigger cleaning the cache.
 #include "mal_instruction.h"
 
 static lng recycleSeq = 0;
+static bte baseTableMode = 1;
 
 static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -239,6 +240,18 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		} 
 
+		if (getModuleId(p) == octopusRef && 
+			 ( getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef) ) {
+				recycled[getArg(p,0)] = 1;
+				p->recycle = recycleMaxInterest; 
+				marks++;
+		}
+		/* In mode of base table recycling skip marking instructions other than octopus.bind */
+		if( baseTableMode ){
+			pushInstruction(mb,p);
+			continue;
+		} 
+
 		/* general rule: all arguments are constants or recycled, 
 		ignore C ponter arguments from mvc*/
 		cnt = 0;
@@ -345,12 +358,6 @@ with the transaction commits.
 				p->recycle = REC_NO_INTEREST; 
 			}
 */
-		if (getModuleId(p) == octopusRef && 
-			 ( getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef) ) {
-				recycled[getArg(p,0)] = 1;
-				p->recycle = recycleMaxInterest; 
-				marks++;
-		}
 
 		pushInstruction(mb,p);
 	}

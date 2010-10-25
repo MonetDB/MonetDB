@@ -231,23 +231,11 @@ rel_semantic(mvc *sql, symbol *s)
 		for (d = d->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
 			dnode *dn = sym->data.lval->h;
-			dnode *cn = sym->data.lval->h->next;
 			char *name = qname_table(dn->data.lval);
 			sql_rel *nrel;
-			list *exps = NULL;
 
 			if (frame_find_var(sql, name)) {
 				return sql_error(sql, 01, "Variable '%s' allready declared", name);
-			}
-			/* add all columns */
-			if (cn->data.lval) {
-				dnode *n = cn->data.lval->h;
-
-				exps = new_exp_list();
-				for (; n; n = n->next) {
-					char *cname = n->data.sval;
-					append(exps, exp_column(name, cname, NULL, CARD_MULTI, 0 /* null? */, 0));
-				}
 			}
 			nrel = rel_semantic(sql, sym);
 			stack_push_rel_view(sql, name, nrel);
@@ -258,7 +246,7 @@ rel_semantic(mvc *sql, symbol *s)
 			assert(is_project(nrel->op));
 			if (is_project(nrel->op) && nrel->exps) {
 				node *ne = nrel->exps->h;
-
+	
 				for (; ne; ne = ne->next) 
 					exp_setname( ne->data, name, NULL );
 			}

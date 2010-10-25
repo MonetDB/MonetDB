@@ -746,8 +746,10 @@ process_options (int count, char **vector)
 				  strcpy (db_name, optarg);
 				  break;
 			  default:
+#ifdef STDLIB_HAS_GETOPT	/* standard library already prints something */
 				  printf ("ERROR: option '%c' unknown.\n",
 					  *(vector[optind] + 1));
+#endif
 			  case 'h':				/* something unexpected */
 				  fprintf (stderr,
 					  "%s Population Generator (Version %d.%d.%d%s)\n",

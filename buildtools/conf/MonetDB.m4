@@ -2304,6 +2304,11 @@ AC_DEFUN([AM_MONETDB_LIB_PTHREAD],[
 		AC_SEARCH_LIBS(pthread_setschedprio, , 
 			AC_DEFINE(HAVE_PTHREAD_SETSCHEDPRIO, 1,
 				[Define if you have the pthread_setschedprio function]))
+		dnl this function very ugly is overloaded with semaphore stuff
+		dnl so we DO need to check for it, for platforms which have it
+		dnl in a separate lib, like Solaris
+		AC_SEARCH_LIBS(sem_wait, rt,
+			[PTHREAD_LIBS="$PTHREAD_LIBS -lrt"])
 		LIBS="$save_LIBS"
 		CPPFLAGS="$save_CPPFLAGS"
 

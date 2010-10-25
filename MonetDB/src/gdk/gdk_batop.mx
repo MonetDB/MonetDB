@@ -445,7 +445,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	b->batDirty = 1;
-	BATaccessBegin(b, USE_HHASH | USE_THASH, MMAP_SEQUENTIAL);
+	BATaccessBegin(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
 	BATaccessBegin(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (sz > BATcapacity(b) - BUNlast(b)) {
@@ -991,7 +991,6 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 		BBPreclaim(bn);
 		return NULL;
 	}
-	BATaccessBegin(b, USE_HEAD | USE_HHASH | USE_TAIL, MMAP_WILLNEED);
 	while (bn) {
 		BUN q = BUNfirst(bn);
 		BUN r;
@@ -1012,7 +1011,6 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 		BBPreclaim(bn);
 		bn = BATnew(ht, tt, size);
 	}
-	BATaccessEnd(b, USE_HEAD | USE_HHASH | USE_TAIL, MMAP_WILLNEED);
 	return bn;
 }
 

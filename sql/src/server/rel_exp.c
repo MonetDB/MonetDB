@@ -422,6 +422,17 @@ exp_name( sql_exp *e )
 }
 
 char *
+exp_relname( sql_exp *e )
+{
+	if (e->rname)
+		return e->rname;
+	if (e->type == e_column && e->l)
+		return e->l;
+	return NULL;
+}
+
+
+char *
 exp_find_rel_name(sql_exp *e)
 {
 	switch(e->type) {

@@ -32,7 +32,6 @@ import java.util.*;
 public class MonetDatabaseMetaData implements DatabaseMetaData {
 	private Connection con;
 	private Driver driver;
-	private Statement stmt;
 	private static Map envs = new HashMap();
 
 	public MonetDatabaseMetaData(Connection parent) {
@@ -42,10 +41,11 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	private synchronized Statement getStmt() throws SQLException {
 		// use Statement which allows scrolling both directions through results
-		if (stmt == null)
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-
-		return(stmt);
+		// cannot reuse stmt here, as people may request multiple
+		// queries, see for example bug #2703
+		return(con.createStatement(
+					ResultSet.TYPE_SCROLL_INSENSITIVE,
+					ResultSet.CONCUR_READ_ONLY));
 	}
 
 	/**

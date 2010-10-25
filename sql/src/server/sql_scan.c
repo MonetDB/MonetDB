@@ -737,7 +737,8 @@ int scanner_symbol(mvc * c, int cur)
 	int next = 0;
 	int started = lc->started;
 
-	if (cur == '/') {
+	switch (cur) {
+	case '/':
 		lc->started = 1;
 		next = scanner_getc(lc);
 		if (next == '*') {
@@ -748,16 +749,24 @@ int scanner_symbol(mvc * c, int cur)
 			utf8_putchar(lc, next); 
 			return scanner_token(lc, cur);
 		}
-	} else if (isdigit(cur)) {
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
 		return number(c, cur);
-	} else if (cur == '#') {
+	case '#':
 		if ((cur = skip_sql_comment(lc)) == EOF)
 			return cur;
 		return tokenize(c, cur);
-	} else if (cur == '\'' || cur == '"') {
+	case '\'':
+	case '"':
 		return scanner_string(c, cur);
-	}
-	switch (cur) {
 	case '-':
 		lc->started = 1;
 		next = scanner_getc(lc);
@@ -776,7 +785,6 @@ int scanner_symbol(mvc * c, int cur)
 	case '^':
 	case '+':
 	case '&':
-	case '/':
 	case '(':
 	case ')':
 	case ',':

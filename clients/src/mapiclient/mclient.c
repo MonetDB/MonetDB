@@ -80,6 +80,9 @@
 #ifndef S_ISCHR
 #define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
 #endif
+#ifndef S_ISREG
+#define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
+#endif
 
 #ifdef NATIVE_WIN32
 #define strdup _strdup
@@ -1654,7 +1657,8 @@ doFile(Mapi mid, const char *file)
 		   protocol) we break out of the loop (via the
 		   continue).  The assertion at the end will then go
 		   off. */
-		if (mapi_query_done(hdl) == MMORE && (length > 0 || mapi_query_done(hdl) == MMORE))
+		if (mapi_query_done(hdl) == MMORE &&
+				(length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
 		CHECK_RESULT(mid, hdl, buf + skip, continue);
@@ -2727,14 +2731,18 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			if (echoquery) {
+			if (echoquery &&
+			    stat(argv[optind], &statb) == 0 &&
+			    S_ISREG(statb.st_mode) &&
+			    statb.st_size < 1024*1024) {
 				/* a bit of a hack: process file
 				   line-by-line if using -e (--echo)
-				   so that the queries that are echoed
-				   have something to do with the
-				   output that follows (otherwise we
-				   just echo the start of the file for
-				   each query) */
+				   and the input file isn't "too
+				   large" so that the queries that are
+				   echoed have something to do with
+				   the output that follows (otherwise
+				   we just echo the start of the file
+				   for each query) */
 				FILE *fp;
 				if ((fp = fopen(argv[optind], "r")) == NULL) {
 					fprintf(stderr, "%s: cannot open\n", argv[optind]);

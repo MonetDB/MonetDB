@@ -1264,7 +1264,7 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 	sql_subfunc *f = NULL;
 
 	f = sql_bind_func(s, fname, NULL, NULL);
-	if (f && (ek.card == card_relation || !f->res.comp_type)) {
+	if (f && ((ek.card == card_relation && f->res.comp_type) || (ek.card == card_none && !f->res.type) || (ek.card != card_none && ek.card != card_relation && f->res.type && !f->res.comp_type))) {
 		return exp_op(NULL, f);
 	} else {
 		return sql_error(sql, 02,
@@ -1927,7 +1927,7 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		else
 			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (rs->card > rel->card) {
+	if (rs->card > rel->card || (rs2 && rs2->card > rel->card)) {
 		if (rs->name)
 			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", rs->name);
 		else
@@ -1937,8 +1937,9 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		rel_join_add_exp(rel, e);
 		return rel;
 	}
-	if (rs->card <= CARD_ATOM && exp_is_atom(rs)) {
-		if (ls->card == rs->card)  /* bin compare op */
+	if (rs->card <= CARD_ATOM && exp_is_atom(rs) && 
+	   (!rs2 || (rs2->card <= CARD_ATOM && exp_is_atom(rs2)))) {
+		if (ls->card == rs->card && !rs2)  /* bin compare op */
 			return rel_select(rel, e);
 
 		/* push select into the given relation */

@@ -377,6 +377,8 @@ int mal_init(){
 	GDKprotect();
 	tstAligned();
 	memset((char*)mal_clients, 0, sizeof(ClientRec)*MAL_MAXCLIENTS);
+	if (monet_memory == 0)
+		monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
 	RECYCLEinit();
