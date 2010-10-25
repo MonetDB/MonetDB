@@ -16,7 +16,7 @@
 
 import os
 
-def cmptests(dir1, dir2, timing = True):
+def cmptests(dir1, dir2, timing = True, regressions = False):
     lst1 = os.path.join(dir1, 'times.lst')
     lst2 = os.path.join(dir2, 'times.lst')
     res1 = {}
@@ -42,10 +42,13 @@ def cmptests(dir1, dir2, timing = True):
             continue
         tm1, out1, err1 = res1[line[0]]
         tm2, out2, err2 = tuple(line[1:])
-        if out1 != out2:
-            print '%s output differs: %s %s' % (line[0], out1, out2)
-        elif err1 != err2:
-            print '%s errout differs: %s %s' % (line[0], err1, err2)
+        if (out1 != out2 and out2 != 'F_OK') or \
+               (err1 != err2 and err2 != 'F_OK') or \
+               not regressions:
+            if out1 != out2:
+                print '%s output differs: %s %s' % (line[0], out1, out2)
+            elif err1 != err2:
+                print '%s errout differs: %s %s' % (line[0], err1, err2)
         if timing and out1 == 'F_OK' and out2 == 'F_OK' and err1 == 'F_OK' and err2 == 'F_OK':
             ftm1 = float(tm1)
             ftm2 = float(tm2)
@@ -66,15 +69,17 @@ if __name__ == '__main__':
     import getopt, sys
 
     timing = False
+    regressions = False
 
     def usage(ext):
-        print >> sys.stderr, 'Usage: %s [-t] dir1 dir2' % sys.argv[0]
+        print >> sys.stderr, 'Usage: %s [-t] [-r] dir1 dir2' % sys.argv[0]
         print >> sys.stderr, 'Compare test outputs in dir1 and dir2.'
         print >> sys.stderr, 'If -t option given, report significant slow down.'
+        print >> sys.stderr, 'If -r option given, report regressions only.'
         sys.exit(ext)
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ht')
+        opts, args = getopt.getopt(sys.argv[1:], 'htr')
     except getopt.GetoptError:
         usage(1)
 
@@ -83,8 +88,10 @@ if __name__ == '__main__':
             usage(0)
         elif o == '-t':
             timing = True
+        elif o == '-r':
+            regressions = True
 
     if len(args) != 2:
         usage(1)
 
-    cmptests(args[0], args[1], timing)
+    cmptests(args[0], args[1], timing, regressions)
