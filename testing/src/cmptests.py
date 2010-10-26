@@ -20,6 +20,7 @@ def cmptests(dir1, dir2, timing = True, regressions = False):
     lst1 = os.path.join(dir1, 'times.lst')
     lst2 = os.path.join(dir2, 'times.lst')
     res1 = {}
+    new2 = []
     for line in open(lst1):
         line = line.strip().split('\t')
         if res1.has_key(line[0]):
@@ -38,7 +39,7 @@ def cmptests(dir1, dir2, timing = True, regressions = False):
         if line[0][-2:] == '/:':
             continue
         if not res1.has_key(line[0]):
-            print 'New test in %s: %s' % (lst2, line[0])
+            new2.append(line[0])
             continue
         tm1, out1, err1 = res1[line[0]]
         tm2, out2, err2 = tuple(line[1:])
@@ -58,11 +59,15 @@ def cmptests(dir1, dir2, timing = True, regressions = False):
         del res1[line[0]]
     if res1:
         print '\nRemoved tests in %s:' % lst1
-        for tst in res1:
-            print tst
+        for tst in sorted(res1.keys()):
+            print tst.rstrip(':')
+    if new2:
+        print '\nNew tests in %s:' % lst2
+        for tst in sorted(new2):
+            print tst.rstrip(':')
     if slowdown:
         print '\nSignificant slowdown in tests:'
-        for tst, tm1, tm2 in slowdown:
+        for tst, tm1, tm2 in sorted(slowdown):
             print '%s %s %s' % (tst, tm1, tm2)
 
 if __name__ == '__main__':
