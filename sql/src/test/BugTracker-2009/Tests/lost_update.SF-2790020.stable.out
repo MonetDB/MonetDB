@@ -14,7 +14,6 @@ stdout of test 'lost_update.SF-2790020` in directory 'src/test/BugTracker-2009` 
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:35847/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 [ 1	]
 [ 1	]
 # MonetDB server v5.12.0, based on kernel v1.30.0
@@ -26,7 +25,6 @@ Ready.
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:35847/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 [ 1	]
 [ 1	]
 [ 1	]
@@ -50,7 +48,6 @@ Ready.
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:35847/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 % sys.lost_update_t2 # table_name
 % a # name
 % int # type
@@ -65,7 +62,6 @@ Ready.
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:35847/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 
 # 14:43:33 >  
 # 14:43:33 >  Done.

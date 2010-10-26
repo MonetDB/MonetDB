@@ -4,21 +4,10 @@ import time
 from MonetDBtesting import process
 
 def server():
-    s = process.server('sql',
-                       stdin = process.PIPE,
-                       stdout = process.PIPE,
-                       stderr = process.PIPE)
-    s.stdin.write('\nio.printf("\\nReady.\\n");\n')
-    s.stdin.flush()
-    while True:
-        ln = s.stdout.readline()
-        if not ln:
-            print 'Unexpected EOF from server'
-            sys.exit(1)
-        sys.stdout.write(ln)
-        if 'Ready' in ln:
-            break
-    return s
+    return process.server('sql',
+                          stdin = process.PIPE,
+                          stdout = process.PIPE,
+                          stderr = process.PIPE)
 
 def server_stop(s):
     out, err = s.communicate()

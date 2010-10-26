@@ -417,6 +417,8 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
               shell = False,
               universal_newlines = True,
               bufsize = bufsize)
+    if stderr == PIPE:
+        p.stderr = _BufferedPipe(p.stderr)
     if stdout == PIPE:
         if stdin == PIPE:
             # If both stdin and stdout are pipes, we wait until the
@@ -434,6 +436,4 @@ def server(lang, args = [], stdin = None, stdout = None, stderr = None,
             p.stdout._waitfor()
         else:
             p.stdout = _BufferedPipe(p.stdout)
-    if stderr == PIPE:
-        p.stderr = _BufferedPipe(p.stderr)
     return p
