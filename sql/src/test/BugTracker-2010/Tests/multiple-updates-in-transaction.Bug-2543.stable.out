@@ -26,7 +26,7 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-#SELECT * FROM people;
+#SELECT * FROM people ORDER BY id;
 % sys.people,	sys.people # table_name
 % id,	name # name
 % tinyint,	varchar # type
@@ -35,24 +35,24 @@ Over..
 [ 1,	"Michael Jordan"	]
 [ 2,	"Lionel Messi"	]
 [ 1	]
-#SELECT * FROM people;
+#SELECT * FROM people ORDER BY id;
 % sys.people,	sys.people # table_name
 % id,	name # name
 % tinyint,	varchar # type
 % 2,	14 # length
-[ 1,	"Michael Jordan"	]
-[ 2,	"Lionel Messi"	]
 [ -1,	"Phil Ivey"	]
+[ 1,	"Michael Jordan"	]
+[ 2,	"Lionel Messi"	]
 [ 1	]
-#SELECT * FROM people;
+#SELECT * FROM people ORDER BY id;
 % sys.people,	sys.people # table_name
 % id,	name # name
 % tinyint,	varchar # type
 % 2,	14 # length
+[ -2,	"Phil Ivey"	]
 [ 1,	"Michael Jordan"	]
 [ 2,	"Lionel Messi"	]
-[ -2,	"Phil Ivey"	]
-#SELECT * FROM people;
+#SELECT * FROM people ORDER BY id;
 % sys.people,	sys.people # table_name
 % id,	name # name
 % tinyint,	varchar # type
