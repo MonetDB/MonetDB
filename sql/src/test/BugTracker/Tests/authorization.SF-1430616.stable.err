@@ -88,10 +88,6 @@ stderr of test 'authorization.SF-1430616` in directory 'src/test/BugTracker` its
 # 11:28:17 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -e -h pegasus -p 32408 -d mTests_src_test_BugTracker -f "../../../../../../../../../../mirror/fabian/monetdb/stable/sql/src/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
 # 11:28:17 >  
 
-Error on line 4: DROP USER: 'voc' owns a schema
-Error on line 5: current transaction is aborted (please ROLLBACK)
-Error on line 7: SQLException:sql.trans:COMMIT: failed
-ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
 
 # 11:28:18 >  
 # 11:28:18 >  Done.
