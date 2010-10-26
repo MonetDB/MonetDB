@@ -209,30 +209,30 @@ Operation successful
 START TRANSACTION;
 Operation successful
 
-SELECT class FROM a EXCEPT SELECT 16; -- all but 16
+SELECT class FROM a EXCEPT SELECT 16 ORDER BY class; -- all but 16
 +-------+
 | class |
 +=======+
-|    17 |
 |     2 |
 |    11 |
+|    17 |
 |    18 |
 +-------+
 4 rows
 
-SELECT class FROM a UNION SELECT 16; -- all with 16 (distinct so invisible)
+SELECT class FROM a UNION SELECT 16 ORDER BY class; -- all with 16 (distinct so invisible)
 +--------+
 | class  |
 +========+
-|     17 |
 |      2 |
-|     16 |
 |     11 |
+|     16 |
+|     17 |
 |     18 |
 +--------+
 5 rows
 
-SELECT class FROM a INTERSECT SELECT 16; -- just 16
+SELECT class FROM a INTERSECT SELECT 16 ORDER BY class; -- just 16
 +-------+
 | class |
 +=======+
@@ -248,63 +248,63 @@ Operation successful
 START TRANSACTION;
 Operation successful
 
-SELECT * FROM a EXCEPT SELECT * FROM b; -- should be last 50% of a
+SELECT * FROM a EXCEPT SELECT * FROM b ORDER BY class, property; -- should be last 50% of a
 +----------+-------+
 | property | class |
 +==========+=======+
-|       29 |    16 |
-|       12 |    16 |
 |       13 |    11 |
-|       26 |    16 |
+|       12 |    16 |
+|       15 |    16 |
 |       25 |    16 |
+|       26 |    16 |
+|       29 |    16 |
 |       23 |    18 |
 |       24 |    18 |
-|       15 |    16 |
 +----------+-------+
 8 rows
 
-SELECT * FROM a UNION SELECT * FROM b; -- should be a + last 50% of b
+SELECT * FROM a UNION SELECT * FROM b ORDER BY class, property; -- should be a + last 50% of b
 +----------+--------+
 | property | class  |
 +==========+========+
-|        1 |     17 |
-|       21 |     17 |
-|       22 |     17 |
 |       20 |      2 |
-|       19 |     17 |
+|       12 |     10 |
+|       13 |     11 |
+|       11 |     15 |
+|       14 |     15 |
+|       24 |     15 |
+|       25 |     15 |
+|       28 |     15 |
 |        4 |     16 |
 |        5 |     16 |
 |        6 |     16 |
-|       29 |     16 |
 |       12 |     16 |
-|       13 |     11 |
-|       26 |     16 |
+|       15 |     16 |
 |       25 |     16 |
+|       26 |     16 |
+|       29 |     16 |
+|        1 |     17 |
+|       19 |     17 |
+|       21 |     17 |
+|       22 |     17 |
+|       23 |     17 |
 |       23 |     18 |
 |       24 |     18 |
-|       15 |     16 |
-|       28 |     15 |
-|       11 |     15 |
-|       12 |     10 |
-|       25 |     15 |
-|       24 |     15 |
-|       23 |     17 |
-|       14 |     15 |
 +----------+--------+
 23 rows
 
-SELECT * FROM a INTERSECT SELECT * FROM b; -- should be first 50% of a
+SELECT * FROM a INTERSECT SELECT * FROM b ORDER BY class, property; -- should be first 50% of a
 +----------+-------+
 | property | class |
 +==========+=======+
-|        1 |    17 |
-|       21 |    17 |
-|       22 |    17 |
 |       20 |     2 |
-|       19 |    17 |
 |        4 |    16 |
 |        5 |    16 |
 |        6 |    16 |
+|        1 |    17 |
+|       19 |    17 |
+|       21 |    17 |
+|       22 |    17 |
 +----------+-------+
 8 rows
 
@@ -317,7 +317,7 @@ Operation successful
 START TRANSACTION;
 Operation successful
 
-select * from ( SELECT class FROM a EXCEPT ALL SELECT 16 ) as t order by class; -- all but one 16 (will have 16 in output!)
+SELECT class FROM a EXCEPT ALL SELECT 16 ORDER BY class; -- all but one 16 (will have 16 in output!)
 +--------+
 |  class |
 +========+
@@ -339,31 +339,31 @@ select * from ( SELECT class FROM a EXCEPT ALL SELECT 16 ) as t order by class; 
 +--------+
 15 rows
 
-SELECT class FROM a UNION ALL SELECT 16; -- all plus 16
+SELECT class FROM a UNION ALL SELECT 16 ORDER BY class; -- all plus 16
 +--------+
 | class  |
 +========+
-|     17 |
-|     17 |
-|     17 |
 |      2 |
-|     17 |
-|     16 |
-|     16 |
-|     16 |
-|     16 |
-|     16 |
 |     11 |
 |     16 |
 |     16 |
-|     18 |
-|     18 |
 |     16 |
 |     16 |
+|     16 |
+|     16 |
+|     16 |
+|     16 |
+|     16 |
+|     17 |
+|     17 |
+|     17 |
+|     17 |
+|     18 |
+|     18 |
 +--------+
 17 rows
 
-SELECT class FROM a INTERSECT ALL SELECT 16; -- just one 16 (!)
+SELECT class FROM a INTERSECT ALL SELECT 16 ORDER BY class; -- just one 16 (!)
 +-------+
 | class |
 +=======+
@@ -381,22 +381,22 @@ Operation successful
 START TRANSACTION;
 Operation successful
 
-SELECT * FROM a EXCEPT ALL SELECT * FROM b; -- last 50% of a
+SELECT * FROM a EXCEPT ALL SELECT * FROM b ORDER BY class, property; -- last 50% of a
 +----------+-------+
 | property | class |
 +==========+=======+
-|       29 |    16 |
-|       12 |    16 |
 |       13 |    11 |
-|       26 |    16 |
+|       12 |    16 |
+|       15 |    16 |
 |       25 |    16 |
+|       26 |    16 |
+|       29 |    16 |
 |       23 |    18 |
 |       24 |    18 |
-|       15 |    16 |
 +----------+-------+
 8 rows
 
-select * from ( SELECT class FROM a EXCEPT ALL SELECT class FROM b ) as t order by class; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
+SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
 +--------+
 |  class |
 +========+
@@ -411,71 +411,71 @@ select * from ( SELECT class FROM a EXCEPT ALL SELECT class FROM b ) as t order 
 +--------+
 8 rows
 
-SELECT * FROM a UNION ALL SELECT * FROM b; -- a + b
+SELECT * FROM a UNION ALL SELECT * FROM b ORDER BY class, property; -- a + b
 +----------+--------+
 | property | class  |
 +==========+========+
-|        1 |     17 |
-|       21 |     17 |
-|       22 |     17 |
 |       20 |      2 |
-|       19 |     17 |
+|       20 |      2 |
+|       12 |     10 |
+|       13 |     11 |
+|       11 |     15 |
+|       14 |     15 |
+|       24 |     15 |
+|       25 |     15 |
+|       28 |     15 |
+|        4 |     16 |
 |        4 |     16 |
 |        5 |     16 |
+|        5 |     16 |
 |        6 |     16 |
-|       29 |     16 |
+|        6 |     16 |
 |       12 |     16 |
-|       13 |     11 |
-|       26 |     16 |
+|       15 |     16 |
 |       25 |     16 |
+|       26 |     16 |
+|       29 |     16 |
+|        1 |     17 |
+|        1 |     17 |
+|       19 |     17 |
+|       19 |     17 |
+|       21 |     17 |
+|       21 |     17 |
+|       22 |     17 |
+|       22 |     17 |
+|       23 |     17 |
 |       23 |     18 |
 |       24 |     18 |
-|       15 |     16 |
-|        1 |     17 |
-|       21 |     17 |
-|       22 |     17 |
-|       20 |      2 |
-|       19 |     17 |
-|        4 |     16 |
-|        5 |     16 |
-|        6 |     16 |
-|       28 |     15 |
-|       11 |     15 |
-|       12 |     10 |
-|       25 |     15 |
-|       24 |     15 |
-|       23 |     17 |
-|       14 |     15 |
 +----------+--------+
 31 rows
 
-SELECT * FROM a INTERSECT ALL SELECT * FROM b; -- first 50% of a
+SELECT * FROM a INTERSECT ALL SELECT * FROM b ORDER BY class, property; -- first 50% of a
 +----------+-------+
 | property | class |
 +==========+=======+
-|        1 |    17 |
-|       21 |    17 |
-|       22 |    17 |
 |       20 |     2 |
-|       19 |    17 |
 |        4 |    16 |
 |        5 |    16 |
 |        6 |    16 |
+|        1 |    17 |
+|       19 |    17 |
+|       21 |    17 |
+|       22 |    17 |
 +----------+-------+
 8 rows
 
-SELECT class FROM a INTERSECT ALL SELECT class FROM b; -- only those that are both in a and b (min(count(a, x), count(b, x)) !!!
+SELECT class FROM a INTERSECT ALL SELECT class FROM b ORDER BY class; -- only those that are both in a and b (min(count(a, x), count(b, x)) !!!
 +-------+
 | class |
 +=======+
-|    17 |
-|    17 |
-|    17 |
-|    17 |
 |     2 |
 |    16 |
 |    16 |
 |    16 |
+|    17 |
+|    17 |
+|    17 |
+|    17 |
 +-------+
 8 rows
 
