@@ -576,6 +576,7 @@ its input variables are not blocked.
 #define DFLOWpending 0		/* runnable */
 #define DFLOWrunning 1		/* currently in progress */
 #define DFLOWwrapup  2		/* done! */
+#define DFLOWretry   3		/* reschedule */
 
 typedef struct queue {
 	int size;	/* size of queue */
@@ -1051,6 +1052,7 @@ with this property. Nor do we maintain such properties.
 					mnstr_printf(GDKout,"#DFLOWrequeue instr  %d pool  " LLFMT " claim "LLFMT"\n#", THRgettid(),  memorypool, argclaim+retclaim);
 					printInstruction(GDKstdout, mb, 0, pci, LIST_MAL_STMT | LIST_MAPI);
 				}
+				/* actually should use DFLOWretry status */
 				throw(MAL,"DFLOWadmission","failed");
 			}
 		}
@@ -1346,6 +1348,12 @@ DFLOWscheduler( DataFlow flow )
 	while(queued || todo != done){
 		PARDEBUG mnstr_printf(GDKstdout,"#waiting for results, queued %d todo %d done %d\n", queued,todo,done);
 		f = q_dequeue(flow->done);
+		if ( f->status == DFLOWretry ){
+			/* reschedule the instruction */
+			f->status = DFLOWrunning;
+			q_requeue(flow->todo, f);
+			continue;
+		}
 		if ( f->flow->stk->wrapup ) /* clean up whatever is called for */
 			(*f->flow->stk->wrapup)(f->flow->cntxt, f->flow->mb, f->flow->stk, getInstrPtr(flow->mb, abs(f->pc)));
 		f->status = DFLOWwrapup;
