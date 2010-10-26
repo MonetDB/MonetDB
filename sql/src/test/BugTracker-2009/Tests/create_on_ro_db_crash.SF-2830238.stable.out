@@ -14,7 +14,6 @@ stdout of test 'create_on_ro_db_crash.SF-2830238` in directory 'src/test/BugTrac
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39382/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 
 # 21:37:20 >  
 # 21:37:20 >  Done.
