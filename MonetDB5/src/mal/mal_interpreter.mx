@@ -2355,7 +2355,7 @@ all.
 		*msg=':';
 	}
 	if (exceptionVar == -1)
-		exceptionVar = findVariableLength(mb,"ANYexception",12);
+		exceptionVar = findVariableLength(mb, (str) "ANYexception", 12);
 
 	/* unknown exceptions lead to propagation */
 	if( exceptionVar == -1){
