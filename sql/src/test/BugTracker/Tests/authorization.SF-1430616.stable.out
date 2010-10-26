@@ -78,10 +78,16 @@ Operation successful
 ALTER USER "voc" SET SCHEMA "sys";
 Operation successful
 
-DROP USER "voc";
 DROP SCHEMA "voc";
+Operation successful
+
+DROP USER "voc";
+Operation successful
+
 
 COMMIT;
+Operation successful
+
 
 # 15:18:12 >  
 # 15:18:12 >  Done.
