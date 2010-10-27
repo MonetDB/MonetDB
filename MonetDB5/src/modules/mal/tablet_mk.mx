@@ -627,7 +627,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		ptask[j].cols =  (int*) GDKzalloc(as->nr_attrs * sizeof(int));
 		MT_init_sema(ptask[j].sema,0,"sqlworker");
 		MT_init_sema(ptask[j].reply,0,"sqlworker");
-		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j]);
+		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j], MT_THR_DETACHED);
 	}
 
 #ifdef _SLICE_TABLET_MK

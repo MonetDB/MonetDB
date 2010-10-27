@@ -531,7 +531,7 @@ mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang )
 	}
 	if (strcmp(lang, "xquery") == 0 &&
 			fc->t == ~(MT_Id) 0 && 
-			MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) 
+			MT_create_thread(&fc->t, mapi_client_engine, fc, MT_THR_DETACHED) != 0) 
 	{
 		GDKsyserror("MAPIlisten:mapi_client failed\n");
 		fc->t = ~(MT_Id) 0;
@@ -944,7 +944,7 @@ Get the new information for the server socket and start listening.
 
 
 			if (fc->t == ~(MT_Id) 0 && 
-					MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
+					MT_create_thread(&fc->t, mapi_client_engine, fc, MT_THR_DETACHED) != 0) {
 				GDKsyserror("MAPIlisten:mapi_client failed\n");
 				fc->t = ~(MT_Id) 0;
 			}

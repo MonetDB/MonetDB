@@ -149,7 +149,9 @@ gdk_export int MT_alive(int pid);	/* OS independent way to check if some process
 @h
 typedef size_t MT_Id;		/* thread number. will not be zero */
 
-gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *), void *arg);
+enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
+
+gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *), void *arg, enum MT_thr_detach d);
 gdk_export void MT_exit_thread(int status);
 gdk_export void MT_global_exit(int status);
 gdk_export MT_Id MT_getpid(void);
@@ -419,7 +421,7 @@ MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 #endif
 
 int
-MT_create_thread(MT_Id *t, void (*f) (void *), void *arg)
+MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 {
 #ifdef HAVE_PTHREAD_SIGMASK
 	sigset_t new_mask, orig_mask;
@@ -434,6 +436,16 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg)
 #endif
 	pthread_attr_init(&attr);
 	pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
+	switch (d) {
+		case MT_THR_JOINABLE:
+			pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+		break;
+		case MT_THR_DETACHED:
+			pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		break;
+		default:
+			assert(0);
+	}
 	ret = pthread_create(&newt, &attr, (void *(*)(void *)) f, arg);
 	if (ret == 0)
 #ifdef PTW32
@@ -583,7 +595,7 @@ MT_check_nr_cores_(void)
 
 		t0 = GDKusec();
 		for (i = 0; i < curr; i++)
-			MT_create_thread(threads + i, smp_thread, NULL);
+			MT_create_thread(threads + i, smp_thread, NULL, MT_THR_JOINABLE);
 		for (i = 0; i < curr; i++)
 			MT_join_thread(threads[i]);
 		t1 = GDKusec();
