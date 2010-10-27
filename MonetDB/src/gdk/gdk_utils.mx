@@ -1678,7 +1678,7 @@ GDKinit(opt *set, int setlen)
 	if (!GDKembedded && GDK_vm_trim) {
 		MT_Id t;
 
-		MT_create_thread(&t, GDKvmtrim, &GDK_mem_maxsize);
+		MT_create_thread(&t, GDKvmtrim, &GDK_mem_maxsize, MT_THR_DETACHED);
 	}
 #endif
 

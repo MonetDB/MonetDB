@@ -1099,7 +1099,7 @@ conn_insert(str host, int port, int me, SOCKET sock)
 			int *p = malloc(sizeof(int));
 
 			*p = i;
-			if (MT_create_thread(&t, conn_waiter, (void *) p) != 0) {
+			if (MT_create_thread(&t, conn_waiter, (void *) p, MT_THR_DETACHED) != 0) {
 				/* failed to start thread */
 				free(p);
 				connections[i].me = 0;

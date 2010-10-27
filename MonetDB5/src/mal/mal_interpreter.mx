@@ -1497,7 +1497,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 			flow->worker[i].id = workerid++;
 			flow->worker[i].todo = flow->todo;
 			/* create the thread and let it wait */
-			MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i);
+			MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i, MT_THR_DETACHED);
 		}
 	}
 	flow->cntxt = cntxt;
@@ -1581,7 +1581,7 @@ str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop
 	p.start = start;
 	p.stop = stop;
 
-	MT_create_thread(&p.tid, runMALdetached, &p);
+	MT_create_thread(&p.tid, runMALdetached, &p, MT_THR_DETACHED);
 	return MAL_SUCCEED;
 }
 
