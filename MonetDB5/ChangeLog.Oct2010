@@ -10,6 +10,10 @@
   optimizers you would like to trace. It is a server wide property and
   can not be set dynamically, as it is intended for internal use.
 
+* Wed Oct 27 2010 Fabian Groffen <fabian@cwi.nl>
+- Resolved a problem with leaking threads, eventually causing new
+  connections to the server to hang, bug #2700
+
 * Tue Jul 13 2010 Stefan Manegold <Stefan.Manegold@cwi.nl>
 - Added "sequential_pipe" SQL optimizer pipeline that is (and should be kept!)
   identical to the default pipeline, except that optimizers mitosis & dataflow
