@@ -48,7 +48,7 @@ bin_stethoscope = {
 		   $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 
-man_MANS = mclient.1
+man_MANS = mclient.1 msqldump.1
 
 EXTRA_DIST = msqldump.h mprompt.h $(man_MANS)
 

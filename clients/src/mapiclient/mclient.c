@@ -1571,7 +1571,7 @@ doFile(Mapi mid, const char *file)
 	int first = 1;		/* first line processing */
 	size_t skip;
 
-	if (file == NULL)
+	if (file == NULL || strcmp(file, "-") == 0)
 		fp = stdin;
 	else if ((fp = fopen(file, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", file);
@@ -2732,6 +2732,7 @@ main(int argc, char **argv)
 		/* execute from file(s) */
 		while (optind < argc) {
 			if (echoquery &&
+			    strcmp(argv[optind], "-") != 0 &&
 			    stat(argv[optind], &statb) == 0 &&
 			    S_ISREG(statb.st_mode) &&
 			    statb.st_size < 1024*1024) {

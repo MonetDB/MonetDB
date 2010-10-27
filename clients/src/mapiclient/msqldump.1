@@ -1,0 +1,53 @@
+.TH MSQLDUMP 1 MonetDB
+.SH NAME
+msqldump \- dump a MonetDB/SQL database
+.SH SYNOPSIS
+.B msqldump
+[
+.I options
+]
+.SH DESCRIPTION
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+.PP
+.I Msqldump
+is the program to dump an MonetDB/SQL database.  The dump can be used
+to populate a new MonetDB/SQL database.
+.SH OPTIONS
+.TP
+\fB\-\-help\fP (\fB\-?\fP)
+Print usage information and exit.
+.TP
+\fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
+Specify the name of the database to connect to.
+.TP
+\fB\-\-host=\fP\fIhostname\fP (\fB\-h\fP \fIhostname\fP)
+Specify the name of the host on which the server runs (default:
+localhost).
+.TP
+\fB\-\-port=\fP\fIportnr\fP (\fB\-p\fP \fIportnr\fP)
+Specify the portnumber of the server (default: 50000).
+.TP
+\fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
+Specify the user to connect as.  If this flag is absent, the client will
+ask for a user name.  Note that
+.I user
+must follow immediately after the option.
+.TP
+\fB\-\-describe\fP (\fB\-D\fP)
+Only dump the database schema.
+.TP
+\fB\-\-functions\fP (\fB\-f\fP)
+Only dump functions definitions.
+.TP
+\fB\-\-quiet\fP (\fB\-q\fP)
+Don't print the welcome message.
+.TP
+\fB\-\-trace\fP (\fB\-t\fP)
+Trace network interaction between
+.I mclient
+and the server.
+.SH SEE ALSO
+.IR mclient (1)

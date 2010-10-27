@@ -35,12 +35,31 @@ exits after executing the query or queries, unless the
 .RB ( \-i )
 option is given, in which case it continues reading queries from
 standard input.
+The file name
+.B \-
+refers to the standard input.
 If
 .I mclient
 is started without any non-option arguments and without the
 .B \-\-statement
 .RB ( \-s )
 option, it reads queries from standard input.
+.PP
+When reading from standard input because no file arguments and no
+.B \-\-statement
+.RB ( \-s )
+option were passed on the command line, or because the
+.B \-\-interactive
+.RB ( \-i )
+option was given,
+.I mclient
+interprets lines starting with
+.B \e
+(backslash) specially.
+See the section BACKSLASH COMMANDS below.
+Note that this is not done when reading from standard input when the
+.B \-
+file argument is given.
 .PP
 Before
 .I mclient
@@ -67,8 +86,17 @@ To disable reading the
 file, set the variable
 .B DOTMONETDBFILE
 to the empty string in the environment.
-.SH
-OPTIONS
+.PP
+When the query language is XQuery, multiple queries are separated by
+the sequence
+.B <>
+(less than and greater than characters)
+on a line by itself.
+This works both in interactive mode and when reading queries from a
+file.  When in interactive mode, queries can also be separated by an
+end-of-file.  Use a second end-of-file to exit
+.IR mclient .
+.SH OPTIONS
 .SS
 General Options
 .TP
@@ -113,13 +141,6 @@ ask for a user name.  Note that
 .I user
 must follow immediately after the option.
 .TP
-\fB\-\-passwd\fP[\fB=\fP\fIpassword\fP] (\fB\-P\fP[\fIpassword\fP])
-Specify the password to use.  If
-.I password
-is missing, ask for a password.  Note that
-.I password
-must follow immediately after the option.
-.TP
 \fB\-\-format=\fP\fIformat\fP (\fB\-f\fP \fIformat\fP)
 Specify the output format.  For XQuery, the possible values include
 .BR dm ,
@@ -132,6 +153,17 @@ For the other (table-oriented) languages, the possible values are
 .BR raw ,
 and
 .BR xml .
+.B csv
+is comma-separated values,
+.B tab
+is tab-separated values,
+.B raw
+is no special formatting (data is dumped the way the server sends it
+to the client),
+.B sql
+is a pretty format which is meant for human consumption, and
+.B xml
+is a valid (in the XML sense) document.
 .TP
 \fB\-\-echo\fP (\fB\-e\fP)
 Echo the query.
@@ -204,3 +236,148 @@ option.
 Shredding is done before any queries specified with the
 .B \-\-statement
 option or in files specified on the command line are executed.
+.SH BACKSLASH COMMANDS
+.SS
+General Commands
+.TP
+\fB\e?\fP
+Show a help message explaining the backslash commands.
+.TP
+\fB\eq\fP
+Exit
+.IR mclient .
+.TP
+\fB\e<\fP \fIfile\fP
+Read input from the named
+.IR file .
+.TP
+\fB\e>\fP \fIfile\fP
+Write output to the named
+.IR file .
+If no
+.I file
+is specified, write to standard output.
+.TP
+\fB\e|\fP \fIcommand\fP
+Pipe output to the given
+.IR command .
+Each query is piped to a new invocation of the
+.IR command .
+If no
+.I command
+is given, revert to writing output to standard output.
+.TP
+\fB\eh\fP
+Show the
+.IR readline (3)
+history.
+.TP
+\fB\et\fP
+Toggle the timer.
+.TP
+\fB\eL\fP \fIfile\fP
+Log client/server interaction in the given
+.IR file .
+If no
+.I file
+is specified, stop logging information.
+.TP
+\fB\eX\fP
+Trace what
+.I mclient
+is doing.
+This is mostly for debugging purposes.
+.SS
+SQL, MIL, and MAL Commands
+.TP
+\fB\ee\fP
+Echo the query in SQL formatting mode.
+.TP
+\fB\ef\fP \fIformat\fP
+Use the specified
+.I format
+mode to format the output.
+Possible modes are
+.BR csv ,
+.BR tab ,
+.BR raw ,
+.BR sql ,
+and
+.BR xml .
+.TP
+\fB\ew\fP \fIwidth\fP
+Set the maximum page width for rendering in the
+.B sql
+formatting mode.
+If
+.I width
+is
+.BR \-1 ,
+the page width is unlimited, when
+.I width
+is
+.BR 0 ,
+use the terminal width.
+If
+.I width
+is greater than
+.BR 0 ,
+use the given width.
+.TP
+\fB\er\fP \fIrows\fP
+Use an internal pager using
+.I rows
+per page.
+If
+.I rows
+is
+.BR \-1 ,
+stop using the internal pager.
+.SS
+SQL Commands
+.TP
+\fB\eD\fP
+Dump the complete database.
+This is equivalent to using the program
+.IR msqldump (1).
+.TP
+\fB\eD\fP \fItable\fP
+Dump the given
+.IR table .
+.TP
+\fB\ed\fP
+Describe (dump the SQL schema of) the complete database.
+This is equivalent to using the program
+.IR msqldump (1)
+with the
+.B \-\-describe
+.RB ( \-D )
+option.
+.TP
+\fB\ed\fP \fItable\fP
+Describe the given
+.IR table .
+.TP
+\fB\eA\fP
+Enable auto commit mode.
+.TP
+\fB\ea\fP
+Disable auto commit mode.
+.SS
+XQuery Commands
+.TP
+\fB\eG\fP
+Switch to the Algebra front-end.
+.TP
+\fB\eg\fP
+Switch to the old front-end.
+.TP
+\fB\ef\fP \fIformat\fP
+Use the specified
+.I format
+mode to format the output.
+Possible modes are
+.B dm
+and \fBxml\fP[\fB\-noheader\fP][\fB\-typed\fP|\fB\-noroot\fP|\fB\-root\-FOOBAR\fP].
+.SH SEE ALSO
+.IR msqldump (1)
