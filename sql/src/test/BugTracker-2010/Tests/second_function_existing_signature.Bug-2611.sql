@@ -22,3 +22,5 @@ begin
 end;
 
 drop function next_a;
+
+drop table table_a;
