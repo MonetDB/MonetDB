@@ -5,6 +5,6 @@
 - Report a stopped and locked database as under maintenance, instead of
   without connections, bug #2685
 
-* Fri 16 Jul 2010 Arjen de Rijke <arjen.de.rijke@cwi.nl>
+* Fri Jul 16 2010 Arjen de Rijke <arjen.de.rijke@cwi.nl>
 - Add readonly property for databases to monetdb and merovingian.
 
