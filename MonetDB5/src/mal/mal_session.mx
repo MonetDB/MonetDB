@@ -351,6 +351,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		if ((s = setScenario(c, lang)) != NULL) {
 			mnstr_printf(c->fdout, "!%s\n", s);
 			mnstr_flush(c->fdout);
+			GDKfree(s);
 			c->mode = FINISHING;
 		}
 	}
@@ -359,7 +360,10 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 
 	GDKfree(command);
 	if (MT_create_thread(&p, MSserveClient, (void *) c) != 0) {
-		showException(MAL, "initClient", "cannot fork new client");
+		mnstr_printf(fout, "!internal server error (cannot fork new "
+				"client thread), please try again later\n");
+		mnstr_flush(fout);
+		showException(MAL, "initClient", "cannot fork new client thread");
 		return;
 	}
 }
