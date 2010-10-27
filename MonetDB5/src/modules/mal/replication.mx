@@ -1140,7 +1140,7 @@ MASTERsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 	masterstatus[free].uri = GDKstrdup(*uri);
 	masterstatus[free].tag = t;
 	masterstatus[free].m = mapi;
-	if (MT_create_thread(&tid, MASTERsend, (void *)&free) < 0)
+	if (MT_create_thread(&tid, MASTERsend, (void *)&free) != 0)
 		throw(MAL, "master.sync", "cannot fork new client");
 
 #ifdef _DEBUG_REPLICATION_

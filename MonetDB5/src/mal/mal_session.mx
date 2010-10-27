@@ -358,8 +358,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	MSinitClientPrg(c,"user", "main");
 
 	GDKfree(command);
-	if (MT_create_thread(&p, MSserveClient, (void *) c) < 0) {
-		showException(MAL,"initClient", "can not fork new client");
+	if (MT_create_thread(&p, MSserveClient, (void *) c) != 0) {
+		showException(MAL, "initClient", "cannot fork new client");
 		return;
 	}
 }
