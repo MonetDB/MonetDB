@@ -1,6 +1,11 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Oct 27 2010 Sjoerd Mullender <sjoerd@acm.org>
+- A manual page for the msqldump program was added.
+- Mclient now recognizes the file name "-" to refer to its standard
+  input.
+
 * Fri Oct  1 2010 Sjoerd Mullender <sjoerd@acm.org>
 - Save readline history as we go along.  This fixes bug 2632.
 

@@ -41,7 +41,7 @@ bin_stethoscope = {
 		   $(monetdbtools_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 
-man_MANS = mclient.1
+man_MANS = mclient.1 msqldump.1
 
 EXTRA_DIST = msqldump.h mprompt.h ReadlineTools.h $(man_MANS)
 
