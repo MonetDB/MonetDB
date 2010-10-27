@@ -48,13 +48,35 @@ echo "  mclient $MDATABASE $MHOST $MPORT -ftab -s \"SELECT 1;\""
 concurrent_runner() {
 	local num=$1
 	local cnt=1
+	local now=$SECONDS
+	local lcnt=0
+	local elapse=
+	local t=
 	while mclient $MDATABASE $MHOST $MPORT -ftab -s "SELECT 1;" > /dev/null ; do
 		: $((cnt++))
+		elapse=$((SECONDS - now))
+		if [[ ${elapse} -ge 3 ]] ; then
+			t=$((cnt - lcnt))
+			t=$((t * 100))
+			t=$((t / elapse))
+			echo "mclient $num executed query $cnt, current speed: ${t%??}.${t#${t%??}}q/s"
+			lcnt=${cnt}
+			now=$SECONDS
+		fi
 	done
 	echo "mclient $num terminated in query $cnt"
 }
 
+FORKS=
 for nr in $(seq 1 $CONCURRENCY) ; do
 	concurrent_runner $nr &
+	FORKS+=" $!"
 done
-wait
+
+cleanup() {
+	kill $FORKS
+}
+trap cleanup TERM INT QUIT
+
+# wait for all children to end
+wait $FORKS
