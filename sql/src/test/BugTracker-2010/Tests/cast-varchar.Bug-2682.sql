@@ -37,3 +37,5 @@ WHERE type LIKE 'temperature'
   AND emit_time BETWEEN '2010-07-10' AND '2010-07-20'
 GROUP BY location,
          "time" HAVING MAX(CAST(value AS NUMERIC(5,2))) - MIN(CAST(value AS NUMERIC(5,2))) > 0.05;
+
+DROP TABLE "sys"."sensor_readings";
