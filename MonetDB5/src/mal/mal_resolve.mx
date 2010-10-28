@@ -440,7 +440,7 @@ nor does it contain polymorphic actual arguments.
 		}
 	}
 @-
-We found the proper function. Copy some properties. In particuler,
+We found the proper function. Copy some properties. In particular,
 determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
 Beware that polymorphic functions may produce type-incorrect clones.
 This piece of code may be shared by the separate binder
@@ -467,18 +467,10 @@ This piece of code may be shared by the separate binder
 			case PATTERNsymbol:
 				p->token = PATcall;
 				p->fcn = getSignature(s)->fcn;  /* C implementation optional */
-				if (!silent && !p->fcn)
-					showScriptException(mb, getPC(mb, p), TYPE,
-							"object code for pattern %s.%s missing",
-							p->modname, p->fcnname);
 				break;
 			case FACTORYsymbol:
 				p->token = FACcall;
 				p->fcn = getSignature(s)->fcn;  /* C implementation optional */
-				if (!silent && !p->fcn)
-					showScriptException(mb, getPC(mb, p), TYPE,
-							"object code for factory %s.%s missing",
-							p->modname, p->fcnname);
 				break;
 			case FUNCTIONsymbol:
 				p->token = FCNcall;
