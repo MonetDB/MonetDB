@@ -2042,6 +2042,15 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			mtop = mat_add(mat, mtop, p, NULL, mat_none);
 			continue;
 		}
+
+		if (getModuleId(p) == batcalcRef &&
+		   (getFunctionId(p) == mark_grpRef ||
+		   getFunctionId(p) == dense_rank_grpRef)) { 
+			/* Mergetable cannot handle 
+			   order related batcalc operations */
+			error++;
+			goto fail;
+		}
 @-
 If the instruction does not contain MAT references it can simply be added.
 Otherwise we have to decide on either packing them or replacement.
