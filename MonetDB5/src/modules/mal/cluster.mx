@@ -154,6 +154,7 @@ cluster_export str  CLS_create2_@1(bat *rpsum, bat *rcmap, bat *b, unsigned int 
 
 cluster_export str  CLS_map(bat *rb, bat *cmap, bat *b);
 cluster_export str  CLS_map2(bat *rb, bat *psum, bat *cmap, bat *b);
+cluster_export str CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _CLUSTER_H */
 @c
