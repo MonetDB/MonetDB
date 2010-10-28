@@ -1968,7 +1968,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								      "AND \"s\".\"name\" = \"current_schema\" "
 								      "AND \"t\".\"system\" = false "
 								      "ORDER BY \"t\".\"name\"")) != NULL &&
-						    mapi_error(mid) == MOK) {
+								mapi_error(mid) == MOK)
+						{
 							char *type, *name, *schema;
 							while (fetch_row(hdl) == 3) {
 								name = mapi_fetch_field(hdl, 0);
@@ -1980,7 +1981,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 									      schema, name);
 							}
 						}
-						mapi_close_handle(hdl);
+						if (hdl != NULL)
+							mapi_close_handle(hdl);
 						hdl = NULL;
 					}
 					continue;
