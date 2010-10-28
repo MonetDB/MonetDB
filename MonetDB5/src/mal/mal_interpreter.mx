@@ -2099,7 +2099,7 @@ are identified. In the post-execution phase they are removed.
 @= patterncall
 	if( pci->fcn== NULL)
 		ret = createScriptException(mb, stkpc, MAL, NULL,
-				"address of pattern missing");
+				"address of pattern %s.%s missing", pci->modname, pci->fcnname);
 	else {
 		@:safeTarget(@1)@
 		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
