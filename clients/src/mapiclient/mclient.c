@@ -1959,30 +1959,27 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #endif
 					} else {
 						/* get all table names in current schema */
-						if ((hdl = mapi_query(mid,
-								      "SELECT \"t\".\"name\", \"t\".\"type\", "
-								      "\"s\".\"name\" "
-								      "FROM \"sys\".\"_tables\" \"t\", "
-								      "\"sys\".\"schemas\" \"s\" "
-								      "WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
-								      "AND \"s\".\"name\" = \"current_schema\" "
-								      "AND \"t\".\"system\" = false "
-								      "ORDER BY \"t\".\"name\"")) != NULL &&
-								mapi_error(mid) == MOK)
-						{
-							char *type, *name, *schema;
-							while (fetch_row(hdl) == 3) {
-								name = mapi_fetch_field(hdl, 0);
-								type = mapi_fetch_field(hdl, 1);
-								schema = mapi_fetch_field(hdl, 2);
-								mnstr_printf(toConsole,
-									      "%-6s  %s.%s\n",
-									      *type == '1' ? "VIEW" : "TABLE",
-									      schema, name);
-							}
+						char *type, *name, *schema;
+						hdl = mapi_query(mid,
+								"SELECT \"t\".\"name\", \"t\".\"type\", "
+								"\"s\".\"name\" "
+								"FROM \"sys\".\"_tables\" \"t\", "
+								"\"sys\".\"schemas\" \"s\" "
+								"WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
+								"AND \"s\".\"name\" = \"current_schema\" "
+								"AND \"t\".\"system\" = false "
+								"ORDER BY \"t\".\"name\"");
+						CHECK_RESULT(mid, hdl, buf, continue);
+						while (fetch_row(hdl) == 3) {
+							name = mapi_fetch_field(hdl, 0);
+							type = mapi_fetch_field(hdl, 1);
+							schema = mapi_fetch_field(hdl, 2);
+							mnstr_printf(toConsole,
+									  "%-6s  %s.%s\n",
+									  *type == '1' ? "VIEW" : "TABLE",
+									  schema, name);
 						}
-						if (hdl != NULL)
-							mapi_close_handle(hdl);
+						mapi_close_handle(hdl);
 						hdl = NULL;
 					}
 					continue;
