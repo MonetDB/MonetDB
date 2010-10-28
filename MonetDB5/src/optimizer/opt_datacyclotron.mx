@@ -81,6 +81,7 @@ typedef struct DCYCATALOG {
 
 DCYcatalog *catalog;
 
+opt_export str addRegWrap (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 opt_export DCYcatalog* addRegist( str sch, str tab, str col, int acc, int part, int f_bun, int l_bun );
 opt_export DCYcatalog* findRegist( str sch, str tab, str col, int acc);
 opt_export DCYcatalog* removePartRegist( str sch, str tab, str col, int acc, int part);
@@ -450,7 +451,7 @@ out:
 @:wrapOptimizer(datacyclotron,OPT_CHECK_ALL)@
 @- The DataCyclotron Wrapper
 @h
-opt_export str DCbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
+opt_export str DCYbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
 @c
 str
 DCYbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
@@ -466,7 +467,7 @@ DCYbind(int *ret, str *sch, str *tab, str *col, int *kind, int *part, int *fbun,
 }
 
 @h
-opt_export str DCpin(int *ret, int *bid);
+opt_export str DCYpin(int *ret, int *bid);
 @c
 str
 DCYpin(int *ret, int *bid){
@@ -476,7 +477,7 @@ DCYpin(int *ret, int *bid){
 }
 
 @h
-opt_export str DCunpin(int *ret, int *bid);
+opt_export str DCYunpin(int *ret, int *bid);
 @c
 str
 DCYunpin(int *ret, int *bid){
@@ -486,7 +487,7 @@ DCYunpin(int *ret, int *bid){
 }
 
 @h
-opt_export str DCcopy(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
+opt_export str DCYcopy(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun);
 @c
 str
 DCYcopy(int *ret_bat, int *ret_id, str *sch, str *tab, str *col, int *kind, int *part, int *fbun, int *lbun){
