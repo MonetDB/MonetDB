@@ -431,7 +431,7 @@ MATpackAll(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 	return r;
 }
 
-static InstrPtr
+static int 
 MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 {
 	InstrPtr r = NULL;
@@ -441,6 +441,9 @@ MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 		printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
 	}
 	if (mat[m].type == mat_none || mat_is_topn(mat[m].type) || mat_is_orderby(mat[m].type)) {
+		if ((mat_is_topn(mat[m].type) || mat_is_orderby(mat[m].type)) &&
+			!mat[m].mm) 
+				return -1;
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
 		pushInstruction(mb,r);
 		MATshift(mat,m,mtop);
@@ -452,9 +455,8 @@ MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 		getArg(r, 0) = mat[m].mv;
 		getArg(r, 1) = mat[m].mv1;
 	}
-	return r;
+	return 0;
 }
-
 
 static int
 pack_all_mats(mat_t *mat, int mtop, MalBlkPtr mb )
@@ -2040,6 +2042,15 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			mtop = mat_add(mat, mtop, p, NULL, mat_none);
 			continue;
 		}
+
+		if (getModuleId(p) == batcalcRef &&
+		   (getFunctionId(p) == mark_grpRef ||
+		   getFunctionId(p) == dense_rank_grpRef)) { 
+			/* Mergetable cannot handle 
+			   order related batcalc operations */
+			error++;
+			goto fail;
+		}
 @-
 If the instruction does not contain MAT references it can simply be added.
 Otherwise we have to decide on either packing them or replacement.
@@ -2355,7 +2366,6 @@ group them and check for them individually.
 
 			OPTDEBUGmergetable mnstr_printf(GDKout, "# %s.%s\n", getModuleId(p), getFunctionId(p));
 
-
 			if (getFunctionId(p) == mirrorRef && 
 	    			mat[m].type == mat_grp/* && mat[m].mm */) {
 				assert(mat[m].mm != NULL);
@@ -2391,7 +2401,10 @@ It requires MAT materialization.
 
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=isMATalias(getArg(p,k), mat, mtop)) >= 0){
-				MATpackAll2(mb, NULL, mat, m, &mtop);
+				if (MATpackAll2(mb, NULL, mat, m, &mtop) < 0){
+					error++;
+					goto fail;
+				}
 				actions++;
 			}
 		}
