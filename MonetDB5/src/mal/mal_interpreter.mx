@@ -536,7 +536,8 @@ workslow:
 #ifdef HAVE_SYS_RESOURCE_H
 				getrusage(RUSAGE_SELF, &oldResource);
 #endif
-				oldMemory= MT_mallinfo();
+				if (cntxt->flags & memoryFlag)
+					oldMemory= MT_mallinfo();
 			}
 		}
 
@@ -966,7 +967,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int startpc = flow->start;
 	InstrPtr pci;
 	lng oldtimer=0;
-	struct Mallinfo oldMemory = MT_mallinfo();
+	struct Mallinfo oldMemory;
 	MT_Lock *lock = &flow->done->l;
 	int tid = t->id, prevpc= 0;
 	lng argclaim,retclaim,hotclaim;
@@ -978,6 +979,10 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #endif
 	@:performanceVariables@
 
+	if (cntxt->flags & memoryFlag)
+		oldMemory = MT_mallinfo();
+	else
+		oldMemory.arena = 0;
 	if (stk == NULL || stkpc < 0)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
@@ -1008,7 +1013,8 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #ifdef HAVE_SYS_RESOURCE_H
 			getrusage(RUSAGE_SELF, &oldResource);
 #endif
-			oldMemory = MT_mallinfo();
+			if (cntxt->flags & memoryFlag)
+				oldMemory = MT_mallinfo();
 		}
 	}
 
