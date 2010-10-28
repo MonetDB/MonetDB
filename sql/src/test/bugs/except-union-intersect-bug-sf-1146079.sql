@@ -86,7 +86,7 @@ SELECT * FROM a EXCEPT ALL SELECT * FROM b ORDER BY class, property; -- last 50%
 SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
 SELECT * FROM a UNION ALL SELECT * FROM b ORDER BY class, property; -- a + b
 SELECT * FROM a INTERSECT ALL SELECT * FROM b ORDER BY class, property; -- first 50% of a
-SELECT class FROM a INTERSECT ALL SELECT class FROM b ORDER BY class, property; -- only those that are both in a and b (min(count(a, x), count(b, x)) !!!
+SELECT class FROM a INTERSECT ALL SELECT class FROM b ORDER BY class; -- only those that are both in a and b (min(count(a, x), count(b, x)) !!!
 ROLLBACK;
 
 -- cleanup! (also should cascade into dropping the index)
