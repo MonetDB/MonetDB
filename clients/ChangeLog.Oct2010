@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Thu Oct 28 2010 Fabian Groffen <fabian@cwi.nl>
+- Fix crash when the server disconnects during \d query
+
 * Wed Oct 27 2010 Sjoerd Mullender <sjoerd@acm.org>
 - A manual page for the msqldump program was added.
 - Mclient now recognizes the file name "-" to refer to its standard
