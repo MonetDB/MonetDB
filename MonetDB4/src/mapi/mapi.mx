@@ -395,6 +395,7 @@ mapi_client_alloc_(mapi_frontend *f, Client c, stream* s)
 	mc->engine = f->f_engine;
 	mc->frontend = f->nr;
 	mc->inuse = 1;
+	mc->c = c;
 	mc->t = ~(MT_Id)0;
 	MT_init_sema(mc->s, 0, "mapi_client_sema");
 	mc->lastvar = monet_cntxt[mc->stk].var;
