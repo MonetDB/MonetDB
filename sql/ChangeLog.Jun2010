@@ -1,11 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Fri Sep 17 2010 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a bug where the server silently ignored the last record in a
-  COPY INTO if it was incomplete (e.g. missing a quote).
-
-* Mon Aug 30 2010 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a crash of the server when an extremely complex query is
-  attempted.  This is the latest incarnation of bug 104.
-

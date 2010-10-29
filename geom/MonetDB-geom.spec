@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/MonetDB-geom-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Oct2010/MonetDB-geom-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_monetdb4: %{!?_without_monetdb4: %define _without_monetdb4 --without-monetdb4}}
@@ -172,6 +172,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Fri Oct 29 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.20.1-20101029
+- Rebuilt.
+
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 0.18.5-20100824
 - Rebuilt.
 

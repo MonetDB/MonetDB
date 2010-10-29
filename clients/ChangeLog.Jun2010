@@ -1,7 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Fri Sep 10 2010 Sjoerd Mullender <sjoerd@acm.org>
-- A bug was fixed (bug 2639) where using completion failed with an error
-  when using another schema than "sys".
-
