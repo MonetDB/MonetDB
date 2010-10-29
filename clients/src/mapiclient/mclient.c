@@ -1301,7 +1301,11 @@ setWidth(void)
 			pagewidth = ws.ws_col;
 		else
 #endif
+#ifdef WIN32
+			pagewidth = 79;	 /* 80 columns minus 1 for the edge */
+#else
 			pagewidth = -1;
+#endif
 	}
 }
 
