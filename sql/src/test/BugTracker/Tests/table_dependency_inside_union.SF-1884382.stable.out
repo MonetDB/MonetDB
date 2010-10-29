@@ -24,7 +24,7 @@ Over..
 # 14:42:29 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=32819 
 # 14:42:29 >  
 
-% sys.t1 # table_name
+% sys.t1884382a # table_name
 % id # name
 % int # type
 % 1 # length

@@ -1,6 +1,6 @@
-create table t4 (id int);
-create table t5 (age float, yea int);
-select yea from t4, t5 where age between 0.03 and id < 30 ;
+create table t1959410d (id int);
+create table t1959410e (age float, yea int);
+select yea from t1959410d, t1959410e where age between 0.03 and id < 30 ;
 
-drop table t4;
-drop table t5;
+drop table t1959410d;
+drop table t1959410e;

@@ -13,8 +13,8 @@ stderr of test 'update_pkey_bug.SF-1733712` in directory 'src/test/BugTracker` i
 # 13:12:17 >  
 
 MAPI  = monetdb@koala:33483
-QUERY = update t1 set id = 10 where id =2;
-ERROR = !SQLException:assert:UPDATE: PRIMARY KEY constraint 't1.t1_id_pkey' violated
+QUERY = update t1733712a set id = 10 where id =2;
+ERROR = !SQLException:assert:UPDATE: PRIMARY KEY constraint 't1733712a.t1733712a_id_pkey' violated
 
 # 13:12:17 >  
 # 13:12:17 >  Done.
