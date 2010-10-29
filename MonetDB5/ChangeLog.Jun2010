@@ -1,8 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Mon Aug 30 2010 Sjoerd Mullender <sjoerd@acm.org>
-- When attempting to insert incorrect UTF-8 sequences in a COPY INTO
-  statement, the error message was truncated.  This is now fixed.
-  Bug 2575.
-

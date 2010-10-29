@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/MonetDB5-server-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Oct2010/MonetDB5-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_raptor: %{!?_without_raptor: %define _with_raptor --with-raptor}}
@@ -216,6 +216,36 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/monetdb-mal.pc
 
 %changelog
+* Fri Oct 29 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.22.1-20101029
+- Rebuilt.
+
+* Wed Oct 27 2010 Fabian Groffen <fabian@cwi.nl> - 5.22.1-20101029
+- Resolved a problem with leaking threads, eventually causing new
+  connections to the server to hang, bug #2700
+
+* Mon Aug 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.22.1-20101029
+- When attempting to insert incorrect UTF-8 sequences in a COPY INTO
+  statement, the error message was truncated.  This is now fixed.
+  Bug 2575.
+
+* Tue Aug 24 2010 mk@cwi.nl - 5.22.1-20101029
+- Debugging the optimizer pipeline The best way is to use mdb.traceOptimizer(str)
+  and inspect the information gathered during the optimization phase.
+  Several optimizers produce more intermediate information, which may
+  shed light on the details.  The optDebug bitvector controls their
+  output. It can be set to a pipeline or a comma separated list of
+  optimizers you would like to trace. It is a server wide property and
+  can not be set dynamically, as it is intended for internal use.
+
+* Tue Aug 24 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 5.22.1-20101029
+- Added "sequential_pipe" SQL optimizer pipeline that is (and should be kept!)
+  identical to the default pipeline, except that optimizers mitosis & dataflow
+  are omitted.
+
+* Tue Aug 24 2010 Stefan Manegold <Stefan.Manegold@cwi.nl> - 5.22.1-20101029
+- Added "no_mitosis_pipe" SQL optimizer pipeline that is (and should be kept!)
+  identical to the default pipeline, except that optimizer mitosis is omitted.
+
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 5.20.5-20100824
 - Rebuilt.
 

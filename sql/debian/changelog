@@ -1,3 +1,55 @@
+monetdb-sql (2.40.0-20101029) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Oct 2010 10:30:31 +0200
+
+monetdb-sql (2.40.0-20101029) unstable; urgency=low
+
+  * Report a stopped and locked database as under maintenance, instead of
+    without connections, bug #2685
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 21 Oct 2010 10:30:31 +0200
+
+monetdb-sql (2.40.0-20101029) unstable; urgency=low
+
+  * Fixed bug 2695: crash when starting mserver in readonly mode on a
+    new database.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 18 Oct 2010 10:30:31 +0200
+
+monetdb-sql (2.40.0-20101029) unstable; urgency=low
+
+  * Improved uuid detection, to solve problems like bug #2675
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 22 Sep 2010 10:30:31 +0200
+
+monetdb-sql (2.40.0-20101029) unstable; urgency=low
+
+  * Fixed a bug where the server silently ignored the last record in a
+    COPY INTO if it was incomplete (e.g. missing a quote).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 17 Sep 2010 10:30:31 +0200
+
+monetdb-sql (2.40.0-20101029) unstable; urgency=low
+
+  * Fixed a crash of the server when an extremely complex query is
+    attempted.  This is the latest incarnation of bug 104.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 30 Aug 2010 10:30:31 +0200
+
+monetdb-sql (2.40.0-20101029) unstable; urgency=low
+
+  * Add readonly property for databases to monetdb and merovingian.
+
+ -- Arjen de Rijke <arjen.de.rijke@cwi.nl>  Tue, 24 Aug 2010 10:30:31 +0200
+
+monetdb-sql (2.40.0-20101029) unstable; urgency=low
+
+  * make it possible to use '?' in offset and limit
+
+ -- Niels Nes <niels@cwi.nl>  Tue, 24 Aug 2010 10:30:31 +0200
+
 monetdb-sql (2.38.5-20100824) unstable; urgency=low
 
   * Rebuilt.

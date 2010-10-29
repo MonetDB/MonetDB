@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/MonetDB4-server-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Oct2010/MonetDB4-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires(pre): shadow-utils
@@ -216,6 +216,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libembeddedmil.so
 
 %changelog
+* Fri Oct 29 2010 Sjoerd Mullender <sjoerd@acm.org> - 4.40.1-20101029
+- Rebuilt.
+
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 4.38.5-20100824
 - Rebuilt.
 
