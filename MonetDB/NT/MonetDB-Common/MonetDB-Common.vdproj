@@ -51,12 +51,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_BB4791ABAA4349E4A0DE1EDA0772E622"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_BFB12BC46509499A943E79B9BECB1E9A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -289,26 +283,6 @@
             {
             "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0a.win32\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BB4791ABAA4349E4A0DE1EDA0772E622"
-            {
-            "SourcePath" = "8:C:\\Libraries\\Pthreads\\lib\\pthreadVC2.dll"
-            "TargetName" = "8:pthreadVC2.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
             "Condition" = "8:"

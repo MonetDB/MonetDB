@@ -231,24 +231,6 @@ However, we use the version of bison that comes with Cygwin__.
 
 __ http://www.cygwin.com/
 
-Pthreads
---------
-
-Get a Windows port of pthreads from
-ftp://sources.redhat.com/pub/pthreads-win32/.  You can download the
-latest pthreads-\*-release.exe which is a self-extracting archive.
-Extract it, and move or copy the contents of the Pre-built.2 folder to
-``C:\Pthreads`` (so that you end up with folders ``C:\Pthreads\lib``
-and ``C:\Pthreads\include``).
-
-On Windows64, in a command interpreter, run ``nmake clean VC`` in the
-extracted ``pthreads.2`` folder with the Visual Studio environment set
-to the appropriate values, e.g. by executing the command ``Open Visual
-Studio 2005 x64 Win64 Command Prompt``.  Then copy the files
-``pthreadVC2.dll`` and ``pthreadVC2.lib`` to ``C:\Pthreads\lib``.
-
-.. _diff:
-
 Diff
 ----
 
@@ -763,8 +745,6 @@ in the ``Path``, various programs are used during testing, such as
 diff (from GnuWin32) and php, and Python modules that were installed
 need to be found by the Python interpreter::
 
- rem Pthreads DLL
- set Path=C:\Pthreads\lib;%Path%
  rem PCRE DLL
  set Path=C:\Program Files\PCRE\bin;%Path%
  rem PHP binary
@@ -860,8 +840,6 @@ The contents of the file referred to with the ``MAKE_INCLUDEFILE``
 parameter may contain something like::
 
  bits=32
- PTHREAD_INCS=-IC:\Pthreads\include
- PTHREAD_LIBS=C:\Pthreads\lib\pthreadVC2.lib
  PHP_SRCDIR=C:\Program Files\PHP\php-5.3.3
  PHP_INSTDIR=C:\Program Files\PHP
  LIBPERL=C:\Perl

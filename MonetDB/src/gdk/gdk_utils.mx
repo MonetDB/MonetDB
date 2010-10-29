@@ -1562,6 +1562,9 @@ GDKinit(opt *set, int setlen)
 	assert(sizeof(ptrdiff_t) == SIZEOF_PTRDIFF_T);
 	assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG);
 
+#ifndef PTHREAD_MUTEX_INITIALIZER
+	MT_lock_init(&MT_system_lock,"GDKinit");
+#endif
 	gdk_alloc_map = strcasecmp(alloc_map, "yes") == 0;
 	errno = 0;
 	dbfarm = mo_substitute(set, setlen, dbfarm);

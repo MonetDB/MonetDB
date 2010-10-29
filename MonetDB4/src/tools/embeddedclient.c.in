@@ -49,7 +49,11 @@ Monet_init(opt **set, int setlen)
 static opt *embedded_set = NULL;
 static int embedded_len = 0;
 
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+static DWORD WINAPI
+#else
 static void *
+#endif
 start_mil_server(void *arg)
 {
 	static int initialized = 0;
@@ -77,14 +81,18 @@ start_mil_server(void *arg)
 	snprintf(buf, sizeof(buf), "client(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
 	monet_exec("module(mapi);mapi_register(mil_frontend());");
 	monet_exec(buf);
-	return NULL;
+	return 0;
 }
 
 Mapi
 embedded_mil(opt *set, int len)
 {
 	Mapi mid;
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+	HANDLE milthread;
+#else
 	pthread_t milthread;
+#endif
 	stream **server;
 
 	if (set) {
@@ -93,7 +101,11 @@ embedded_mil(opt *set, int len)
 	}
 	server = mapi_embedded_init(&mid,"mil");
 
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+	milthread = CreateThread(NULL, 0, start_mil_server, (void *) server, 0, NULL);
+#else
 	pthread_create(&milthread, NULL, start_mil_server, (void *) server);
+#endif
 
 	mapi_start_talking(mid);
 

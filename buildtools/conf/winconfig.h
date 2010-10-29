@@ -338,7 +338,7 @@
 /* #undef HAVE_PROBXML */
 
 /* Define to 1 if you have the <pthread.h> header file. */
-#define HAVE_PTHREAD_H 1
+/* #undef HAVE_PTHREAD_H */
 
 /* Define if you have the pthread_kill function */
 /* #undef HAVE_PTHREAD_KILL */
@@ -380,7 +380,7 @@
 /* #undef HAVE_SBRK */
 
 /* Define to 1 if you have the <semaphore.h> header file. */
-#define HAVE_SEMAPHORE_H 1
+/* #undef HAVE_SEMAPHORE_H */
 
 /* Define to 1 if you have the `setenv' function. */
 /* #undef HAVE_SETENV */
@@ -460,6 +460,8 @@ typedef int socklen_t;
 
 /* Define to 1 if you have the `strtof' function. */
 /* #undef HAVE_STRTOF */
+
+#define strtok_r(t,d,c) strtok_s(t,d,c)
 
 /* Define to 1 if you have the `strtoll' function. */
 #if _MSC_VER >= 1300

@@ -79,7 +79,9 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
+#ifdef HAVE_PTHREAD_H
 #include <pthread.h>
+#endif
 
 #ifndef HAVE_GETOPT_LONG
 # include "monet_getopt.h"
@@ -133,7 +135,11 @@ static struct {
 };
 
 typedef struct _wthread {
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+	HANDLE id;
+#else
 	pthread_t id;
+#endif
 	int tid;
 	char *uri;
 	char *user;
@@ -212,7 +218,11 @@ setCounter(char *nme)
 	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
 			 die(dbh, hdl);
 
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+static DWORD WINAPI
+#else
 static void *
+#endif
 doProfile(void *d)
 {
 	wthread *wthr = (wthread*)d;
@@ -446,8 +456,13 @@ main(int argc, char **argv)
 		 * that if we do it that way, ctrl-c (or any other signal)
 		 * doesn't interrupt the read inside this function, and hence
 		 * the function never terminates... at least on Linux */
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+		walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
+		CloseHandle(walk->id);
+#else
 		pthread_create(&walk->id, NULL, &doProfile, walk);
 		pthread_join(walk->id, NULL);
+#endif
 		free(walk);
 	} else {
 		/* fork runner threads for all alternatives */
@@ -462,7 +477,11 @@ main(int argc, char **argv)
 				walk->argc = argc - a;
 				walk->argv = &argv[a];
 				walk->s = NULL;
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+				walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
+#else
 				pthread_create(&walk->id, NULL, &doProfile, walk);
+#endif
 				alts++;
 				if (*alts == NULL)
 					break;
@@ -475,7 +494,11 @@ main(int argc, char **argv)
 		}
 		free(oalts);
 		for (walk = thds; walk != NULL; walk = walk->next) {
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+			CloseHandle(walk->id);
+#else
 			pthread_join(walk->id, NULL);
+#endif
 			free(walk->uri);
 			free(walk);
 		}

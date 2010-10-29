@@ -179,6 +179,16 @@ gdk_export MT_Id MT_locktrace;
 
 @- MT Lock API
 @h
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+typedef HANDLE pthread_mutex_t;
+typedef void *pthread_mutexattr_t;
+gdk_export void pthread_mutex_init(pthread_mutex_t *, const pthread_mutexattr_t *);
+gdk_export void pthread_mutex_destroy(pthread_mutex_t *);
+gdk_export int pthread_mutex_lock(pthread_mutex_t *);
+gdk_export int pthread_mutex_trylock(pthread_mutex_t *);
+gdk_export int pthread_mutex_unlock(pthread_mutex_t *);
+#endif
+
 typedef pthread_mutex_t MT_Lock;
 
 #define MT_lock_init(l,n)    { pthread_mutex_init((pthread_mutex_t*) l, 0); MT_locktrace_set(l,n); }
@@ -200,7 +210,13 @@ gdk_export MT_Lock MT_system_lock;
 
 @- MT Semaphore API
 @h
-#if defined(_AIX) || defined(__MACH__)
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+typedef HANDLE pthread_sema_t;
+gdk_export void pthread_sema_init(pthread_sema_t *s, int flag, int nresources);
+gdk_export void pthread_sema_destroy(pthread_sema_t *s);
+gdk_export void pthread_sema_up(pthread_sema_t *s);
+gdk_export void pthread_sema_down(pthread_sema_t *s);
+#elif defined(_AIX) || defined(__MACH__)
 typedef struct {
 	int cnt;
 	pthread_mutex_t mutex;
@@ -236,6 +252,18 @@ typedef pthread_sema_t MT_Sema;
 
 @- MT Conditional Variable API
 @h
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+typedef struct {
+	int waiters_count;	/* number of waiting threads */
+	CRITICAL_SECTION waiters_count_lock; /* serialize access to waiters_count_ */
+	HANDLE sema;	  /* queue up threads waiting for condition */
+} pthread_cond_t;
+typedef void *pthread_condattr_t;
+gdk_export int pthread_cond_init(pthread_cond_t *, pthread_condattr_t *);
+gdk_export int pthread_cond_destroy(pthread_cond_t *);
+gdk_export int pthread_cond_signal(pthread_cond_t *);
+gdk_export int pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
+#endif
 typedef pthread_cond_t MT_Cond;
 
 #define MT_cond_init(c,n)    { pthread_cond_init((pthread_cond_t*) c, NULL); MT_locktrace_set(c,n); }
@@ -262,7 +290,11 @@ gdk_export int MT_check_nr_cores(void);
 size_t _MT_pagesize = 0;	/* variable holding memory size */
 size_t _MT_npages = 0;		/* variable holding page size */
 
-MT_Lock MT_system_lock = PTHREAD_MUTEX_INITIALIZER;
+MT_Lock MT_system_lock
+#ifdef PTHREAD_MUTEX_INITIALIZER
+	= PTHREAD_MUTEX_INITIALIZER
+#endif
+	;
 
 #ifdef MT_LOCK_TRACE
 unsigned long long MT_locktrace_cnt[65536] = { 0 };
@@ -410,6 +442,249 @@ MT_init(void)
 #endif
 }
 
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+static struct winthread {
+	struct winthread *next;
+	HANDLE hdl;
+	DWORD tid;
+	void (*func) (void *);
+	void *arg;
+} *winthreads = NULL;
+static CRITICAL_SECTION winthread_cs;
+static int winthread_cs_init = 0;
+
+static void
+rm_winthread(struct winthread *w)
+{
+	struct winthread **wp;
+
+	assert(winthread_cs_init);
+	EnterCriticalSection(&winthread_cs);
+	for (wp = &winthreads; *wp && *wp != w; wp = &(*wp)->next)
+		;
+	if (*wp)
+		*wp = w->next;
+	LeaveCriticalSection(&winthread_cs);
+	GDKfree(w);
+}
+
+static DWORD WINAPI
+thread_starter(LPVOID arg)
+{
+	(*((struct winthread *) arg)->func)(((struct winthread *) arg)->arg);
+	if (((struct winthread *) arg)->hdl == NULL)
+		rm_winthread((struct winthread *) arg);
+	ExitThread(0);
+	return TRUE;
+}
+
+int
+MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
+{
+	struct winthread *w = GDKmalloc(sizeof(*w));
+
+	if (winthread_cs_init == 0) {
+		/* we only get here before any threads are created,
+		   and this is the only time that winthread_cs_init is
+		   ever changed */
+		InitializeCriticalSection(&winthread_cs);
+		winthread_cs_init = 1;
+	}
+	w->func = f;
+	w->arg = arg;
+	EnterCriticalSection(&winthread_cs);
+	w->next = winthreads;
+	winthreads = w;
+	LeaveCriticalSection(&winthread_cs);
+	w->hdl = CreateThread(NULL, THREAD_STACK_SIZE, thread_starter, w, 0, &w->tid);
+	if (w->hdl == NULL) {
+		rm_winthread(w);
+		return -1;
+	}
+	*t = (MT_Id) w->tid;
+	if (d == MT_THR_DETACHED) {
+		/* not joinable */
+		CloseHandle(w->hdl);
+		w->hdl = NULL;
+	}
+	return 0;
+}
+
+void
+MT_exit_thread(int s)
+{
+	DWORD t;
+	struct winthread *w;
+
+	assert(winthread_cs_init);
+	t = GetCurrentThreadId();
+	EnterCriticalSection(&winthread_cs);
+	for (w = winthreads; w && w->tid != t; w = w->next)
+		;
+	LeaveCriticalSection(&winthread_cs);
+	if (w->hdl == NULL)
+		rm_winthread(w);
+	ExitThread(s);
+}
+
+int
+MT_join_thread(MT_Id t)
+{
+	struct winthread *w;
+
+	assert(winthread_cs_init);
+	EnterCriticalSection(&winthread_cs);
+	for (w = winthreads; w && w->tid != t; w = w->next)
+		;
+	LeaveCriticalSection(&winthread_cs);
+	if (w == NULL || w->hdl == NULL)
+		return -1;
+	if (WaitForSingleObject(w->hdl, INFINITE) == WAIT_OBJECT_0 &&
+	    CloseHandle(w->hdl)) {
+		rm_winthread(w);
+		return 0;
+	}
+	return -1;
+}
+
+int
+MT_kill_thread(MT_Id t)
+{
+	struct winthread *w;
+
+	assert(winthread_cs_init);
+	EnterCriticalSection(&winthread_cs);
+	for (w = winthreads; w && w->tid != t; w = w->next)
+		;
+	LeaveCriticalSection(&winthread_cs);
+	if (w == NULL)
+		return -1;
+	if (w->hdl == NULL) {
+		/* detached thread */
+		HANDLE h;
+		int ret = 0;
+		h = OpenThread(THREAD_ALL_ACCESS, 0, (DWORD) t);
+		if (h == NULL)
+			return -1;
+		if (TerminateThread(h, -1))
+			ret = -1;
+		CloseHandle(h);
+		return ret;
+	}
+	if (TerminateThread(w->hdl, -1))
+		return 0;
+	return -1;
+}
+
+void
+pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr)
+{
+	(void) mutexattr;
+	*mutex = CreateMutex(NULL, 0, NULL);
+}
+
+void
+pthread_mutex_destroy(pthread_mutex_t *mutex)
+{
+	CloseHandle(*mutex);
+}
+
+int
+pthread_mutex_lock(pthread_mutex_t *mutex)
+{
+	return WaitForSingleObject(*mutex, INFINITE) == WAIT_OBJECT_0 ? 0 : -1;
+}
+
+int
+pthread_mutex_trylock(pthread_mutex_t *mutex)
+{
+	return WaitForSingleObject(*mutex, 0) == WAIT_OBJECT_0 ? 0 : -1;
+}
+
+int
+pthread_mutex_unlock(pthread_mutex_t *mutex)
+{
+	return ReleaseMutex(*mutex) ? 0 : -1;
+}
+
+void
+pthread_sema_init(pthread_sema_t *s, int flag, int nresources)
+{
+	(void) flag;
+	*s = CreateSemaphore(NULL, nresources, 0x7fffffff, NULL);
+}
+
+void
+pthread_sema_destroy(pthread_sema_t *s)
+{
+	CloseHandle(*s);
+}
+
+void
+pthread_sema_up(pthread_sema_t *s)
+{
+	ReleaseSemaphore(*s, 1, NULL);
+}
+
+void
+pthread_sema_down(pthread_sema_t *s)
+{
+	WaitForSingleObject(*s, INFINITE);
+}
+int
+pthread_cond_init(pthread_cond_t *cv, pthread_condattr_t *a)
+{
+	(void) a;
+	cv->waiters_count = 0;
+	cv->sema = CreateSemaphore(NULL, 0, 0x7fffffff, NULL);
+	InitializeCriticalSection(&cv->waiters_count_lock);
+	return 0;
+}
+
+int
+pthread_cond_destroy(pthread_cond_t *cv)
+{
+	CloseHandle(cv->sema);
+	return 0;
+}
+
+int
+pthread_cond_signal(pthread_cond_t *cv)
+{
+	int have_waiters;
+
+	EnterCriticalSection(&cv->waiters_count_lock);
+	have_waiters = cv->waiters_count > 0;
+	LeaveCriticalSection(&cv->waiters_count_lock);
+
+	/* If there aren't any waiters, then this is a no-op. */
+	if (have_waiters)
+		ReleaseSemaphore(cv->sema, 1, 0);
+	return 0;
+}
+
+int
+pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *external_mutex)
+{
+	EnterCriticalSection(&cv->waiters_count_lock);
+	cv->waiters_count++;
+	LeaveCriticalSection(&cv->waiters_count_lock);
+
+	/* This call atomically releases the mutex and waits on the
+	 * semaphore until <pthread_cond_signal> or
+	 * <pthread_cond_broadcast> are called by another thread. */
+	SignalObjectAndWait(*external_mutex, cv->sema, INFINITE, FALSE);
+
+	EnterCriticalSection(&cv->waiters_count_lock);
+	cv->waiters_count--;
+	LeaveCriticalSection(&cv->waiters_count_lock);
+
+	/* Always regain the external mutex since that's the guarantee
+	 * we give to our callers. */
+	WaitForSingleObject(*external_mutex, INFINITE);
+	return 0;
+}
+#else  /* !defined(HAVE_PTHREAD_H) && defined(_MSC_VER) */
 #ifdef HAVE_PTHREAD_SIGMASK
 void
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
@@ -458,14 +733,6 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 #endif
 	return ret;
 }
-
-/* coverity[+kill] */
-void
-MT_global_exit(int s)
-{
-	exit(s);
-}
-
 
 void
 MT_exit_thread(int s)
@@ -530,7 +797,7 @@ pthread_sema_up(pthread_sema_t *s)
 	int status = pthread_mutex_lock(&(s->mutex));
 
 	if (s->cnt++ < 0) {
-		/* wackup sleeping thread */
+		/* wake up sleeping thread */
 		status = pthread_cond_signal(&(s->cond));
 	}
 	status = pthread_mutex_unlock(&(s->mutex));
@@ -548,11 +815,21 @@ pthread_sema_down(pthread_sema_t *s)
 	status = pthread_mutex_unlock(&(s->mutex));
 }
 #endif
+#endif
+
+/* coverity[+kill] */
+void
+MT_global_exit(int s)
+{
+	exit(s);
+}
 
 MT_Id
 MT_getpid(void)
 {
-#ifdef PTW32
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+	return (MT_Id) GetCurrentThreadId();
+#elif defined(PTW32)
 	return (MT_Id) (((size_t) pthread_self().p) + 1);
 #else
 	return (MT_Id) (((size_t) pthread_self()) + 1);
@@ -613,51 +890,32 @@ MT_check_nr_cores_(void)
 int
 MT_check_nr_cores(void)
 {
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__MACH__)
-	size_t len = sizeof(int);
-#endif
-#if defined(__OpenBSD__)
-	int mib[2];
-#endif
-
 	int ncpus = -1;
 
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
 	/* this works on Linux, Solaris and AIX */
 	ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__MACH__)
+	size_t len = sizeof(int);
 
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__MACH__)
 	/* sysctl should work on most BSDs (includes Darwin) */
 	sysctlbyname("hw.ncpu", &ncpus, &len, NULL, 0);
-#endif
+#elif defined(__OpenBSD__)
+	size_t len = sizeof(int);
+	int mib[2];
 
-#if defined(__OpenBSD__)
 	/* Everyone should have permission to make this call, 
 	 * if we get a failure something is really wrong. */
 	sysctl(mib, 2, &ncpus, &len, NULL, 0);
+#elif defined(WIN32)
+	SYSTEM_INFO sysinfo;
+
+	GetSystemInfo(&sysinfo);
+	ncpus = sysinfo.dwNumberOfProcessors;
 #endif
 
 	/* if we ever need HPUX or OSF/1 (hope not), see
 	 * http://ndevilla.free.fr/threads/ */
-
-#ifdef WIN32
-	/* Detection of number of cores works like this on Windows,
-	 * however, multi-threaded execution of MonetDB does not 
-	 * work reliably on Windows, most probably as the Windows-
-	 * implementaion of pthreads and semaphors are not (yet?)
-	 * up to the task.
-	 * Hence, we stick to single-threaded execution on Windows
-	 * for now.
-	 */
-/*
-	SYSTEM_INFO sysinfo;
-
-	GetSystemInfo( &sysinfo );
-	ncpus = sysinfo.dwNumberOfProcessors;
-*/
-	ncpus = 1;
-#endif
 
 	if (ncpus <= 0)
 		return MT_check_nr_cores_();
