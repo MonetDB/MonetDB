@@ -13,7 +13,7 @@ stdout of test 'tst4701` in directory 'src/optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32804/
 command user.tst903():void address MCCAdmin_tst903;
-!TypeException:user.main[2]:Object code missing
+!TypeException:user.main[2]:object code for command user.tst903 missing
 !TypeException:user.main[2]:'user.tst903' undefined in: _2:void := user.tst903()
 function user.main():void;
 # after the routine tst903 is it can be linked 

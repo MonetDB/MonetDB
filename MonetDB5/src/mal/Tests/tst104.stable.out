@@ -13,7 +13,7 @@ stdout of test 'tst104` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
 command user.f(a:any_1,b:bat[:any_2,:any_1],c:any_2):any_3 address dummy;
-!TypeException:user.main[4]:Object code missing
+!TypeException:user.main[4]:object code for command user.f missing
 !TypeException:user.main[4]:'user.f' undefined in: a:any := user.f(_7:int, b:bat[:str,:int], _8:str)
 function user.main():void;
 # check propagation of type variables over bats 
