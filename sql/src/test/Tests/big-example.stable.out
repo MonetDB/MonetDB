@@ -448,8 +448,8 @@ Over..
 % val1,	val2,	val3 # name
 % int,	varchar,	double # type
 % 2,	6,	22 # length
-[ -5,	"xtest",	0.9	]
 [ -5,	"testx",	9.1	]
+[ -5,	"xtest",	0.9	]
 [ 0,	"texst",	99999.1	]
 [ 1,	"test",	0.1	]
 [ 8,	"texxst",	0.0001	]
@@ -458,9 +458,9 @@ Over..
 % val1,	val2,	val3 # name
 % int,	varchar,	double # type
 % 2,	6,	22 # length
-[ -5,	"xtest",	0.9	]
 [ -5,	"testx",	9.1	]
 [ -5,	"texxst",	0.0001	]
+[ -5,	"xtest",	0.9	]
 [ 0,	"texst",	99999.1	]
 [ 1,	"test",	0.1	]
 
