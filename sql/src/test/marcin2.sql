@@ -12,8 +12,8 @@ insert into t3 values(NULL,NULL);
 commit;
 
 -- those 2 don't sort (bad server_output?)
-select * from t3 order by val;
-select * from t3 order by id;
+select val from t3 order by val;
+select id from t3 order by id;
 
 -- but those 2 do
 select * from t3 order by val,id;
