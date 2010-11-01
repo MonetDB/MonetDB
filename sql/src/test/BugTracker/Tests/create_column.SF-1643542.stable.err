@@ -13,7 +13,7 @@ stderr of test 'create_column.SF-1643542` in directory 'src/test/BugTracker` its
 # 12:47:21 >  
 
 MAPI  = monetdb@volund:35971
-QUERY = alter table t1 add col int;
+QUERY = alter table t1643542a add col int;
 ERROR = !ALTER TABLE: a column named 'col' already exists
 
 # 12:47:21 >  

@@ -13,7 +13,7 @@ stderr of test 'view_creation_using_func.SF-1714814` in directory 'src/test/BugT
 # 18:25:58 >  
 
 MAPI  = monetdb@localhost:38198
-QUERY = create view v1 as select * from t1 where id = f(1);
+QUERY = create view v1 as select * from t1714814a where id = f(1);
 ERROR = !SELECT: no such unary operator 'f(tinyint)'
 MAPI  = monetdb@localhost:38198
 QUERY = drop view v1;

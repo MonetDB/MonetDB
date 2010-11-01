@@ -318,25 +318,25 @@ START TRANSACTION;
 Operation successful
 
 SELECT class FROM a EXCEPT ALL SELECT 16 ORDER BY class; -- all but one 16 (will have 16 in output!)
-+--------+
-|  class |
-+========+
-|      2 |
-|     11 |
-|     16 |
-|     16 |
-|     16 |
-|     16 |
-|     16 |
-|     16 |
-|     16 |
-|     17 |
-|     17 |
-|     17 |
-|     17 |
-|     18 |
-|     18 |
-+--------+
++-------+
+| class |
++=======+
+|     2 |
+|    11 |
+|    16 |
+|    16 |
+|    16 |
+|    16 |
+|    16 |
+|    16 |
+|    16 |
+|    17 |
+|    17 |
+|    17 |
+|    17 |
+|    18 |
+|    18 |
++-------+
 15 rows
 
 SELECT class FROM a UNION ALL SELECT 16 ORDER BY class; -- all plus 16
@@ -397,18 +397,18 @@ SELECT * FROM a EXCEPT ALL SELECT * FROM b ORDER BY class, property; -- last 50%
 8 rows
 
 SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
-+--------+
-|  class |
-+========+
-|     11 |
-|     16 |
-|     16 |
-|     16 |
-|     16 |
-|     16 |
-|     18 |
-|     18 |
-+--------+
++-------+
+| class |
++=======+
+|    11 |
+|    16 |
+|    16 |
+|    16 |
+|    16 |
+|    16 |
+|    18 |
+|    18 |
++-------+
 8 rows
 
 SELECT * FROM a UNION ALL SELECT * FROM b ORDER BY class, property; -- a + b

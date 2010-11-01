@@ -21,12 +21,12 @@ Over..
 
 [ 1	]
 [ 1	]
-% sys.t1 # table_name
+% sys.t1684798a # table_name
 % name # name
 % varchar # type
 % 6 # length
 [ "romulo"	]
-% sys.t1 # table_name
+% sys.t1684798a # table_name
 % name # name
 % varchar # type
 % 6 # length
