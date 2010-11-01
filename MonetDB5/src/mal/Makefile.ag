@@ -15,52 +15,81 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../optimizer -I../scheduler -I../modules/kernel \
-		$(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS)
+#INCLUDES = -I../optimizer -I../scheduler -I../modules/kernel \
+
+INCLUDES = $(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS)
 MTSAFE
 
 lib_mal = {
-	NAME = monetdb5
+	NOINST
 	SOURCES = \
-	mal.mx mal_utils.mx mal_type.mx mal_instruction.mx mal_box.mx \
-	mal_module.mx mal_stack.mx mal_import.mx mal_session.mx \
-	mal_interpreter.mx mal_errors.mx mal_exception.mx mal_resolve.mx \
-	mal_function.mx \
-	mal_xml.mx mal_parser.mx mal_linker.mx mal_debugger.mx \
-	mal_client.mx mal_profiler.mx mal_scenario.mx mal_factory.mx \
-	mal_namespace.mx mal_properties.mx \
-	mal_authorize.mx mal_sabaoth.mx \
-	mal_builder.mx mal_readline.mx mal_atom.mx mal_recycle.mx \
-	libmonetdb5.rc
-
-	SCRIPTS = mal
-	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS)  \
-	            $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-	            $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-	            $(READLINE_LIBS) $(OPENSSL_LIBS)
+		mal.mx \
+		mal_atom.mx \
+		mal_authorize.mx \
+		mal_box.mx \
+		mal_builder.mx \
+		mal_client.mx \
+		mal_debugger.mx \
+		mal_errors.mx \
+		mal_exception.mx \
+		mal_factory.mx \
+		mal_function.mx \
+		mal_import.mx \
+		mal_instruction.mx \
+		mal_interpreter.mx \
+		mal_linker.mx \
+		mal_module.mx \
+		mal_namespace.mx \
+		mal_parser.mx \
+		mal_profiler.mx \
+		mal_properties.mx \
+		mal_readline.mx \
+		mal_recycle.mx \
+		mal_resolve.mx \
+		mal_sabaoth.mx \
+		mal_scenario.mx \
+		mal_session.mx \
+		mal_stack.mx \
+		mal_type.mx \
+		mal_utils.mx \
+		mal_xml.mx
 }
 
 headers_mal = {
 	DIR = includedir/MonetDB5/mal
 	SOURCES = \
-	mal.mx mal_utils.mx mal_type.mx mal_instruction.mx mal_box.mx \
-	mal_module.mx mal_stack.mx mal_import.mx mal_session.mx \
-	mal_interpreter.mx mal_errors.mx mal_exception.mx mal_resolve.mx \
-	mal_function.mx \
-	mal_xml.mx mal_parser.mx mal_linker.mx mal_debugger.mx \
-	mal_client.mx mal_profiler.mx mal_scenario.mx mal_factory.mx \
-	mal_namespace.mx mal_properties.mx \
-	mal_authorize.mx mal_sabaoth.mx \
-	mal_builder.mx mal_readline.mx mal_atom.mx mal_recycle.mx
+		mal.mx \
+		mal_atom.mx \
+		mal_authorize.mx \
+		mal_box.mx \
+		mal_builder.mx \
+		mal_client.mx \
+		mal_debugger.mx \
+		mal_errors.mx \
+		mal_exception.mx \
+		mal_factory.mx \
+		mal_function.mx \
+		mal_import.mx \
+		mal_instruction.mx \
+		mal_interpreter.mx \
+		mal_linker.mx \
+		mal_module.mx \
+		mal_namespace.mx \
+		mal_parser.mx \
+		mal_profiler.mx \
+		mal_properties.mx \
+		mal_readline.mx \
+		mal_recycle.mx \
+		mal_resolve.mx \
+		mal_sabaoth.mx \
+		mal_scenario.mx \
+		mal_session.mx \
+		mal_stack.mx \
+		mal_type.mx \
+		mal_utils.mx \
+		mal_xml.mx
 
 	HEADERS = h 
-}
-
-headers_pc = {
-	COND = NOT_WIN32
-	HEADERS = pc
-	DIR = libdir/pkgconfig
-	SOURCES = monetdb-mal.pc.in
 }
 
 EXTRA_DIST_DIR = Tests

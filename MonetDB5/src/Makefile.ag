@@ -17,4 +17,5 @@
 
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = mal modules tools compiler optimizer scheduler
+# compiler
+SUBDIRS = mal modules optimizer scheduler tools extras

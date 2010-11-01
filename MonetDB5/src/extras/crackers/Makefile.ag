@@ -15,9 +15,8 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../atoms -I../../kernel \
-        -I../../../mal $(CLIENTS_INCS) $(MONETDB_INCS) \
-        $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS) $(READLINE_INCS)
+INCLUDES = -I../../modules/atoms -I../../modules/kernel \
+        -I../../mal $(MONETDB_INCS)
 
 MTSAFE
 
@@ -29,9 +28,8 @@ lib_crackers = {
 		crackers_core_ordered.mx crackers_core_unordered.mx crackers_validation.mx \
 		crackers_joinselect_ops.mx crackers_select_ops.mx crackers_sideways.mx crackers_partial_sideways.mx crackers_updates.mx crackers_joins.mx crackers_sortmerge.mx crackers_crackmerge.mx crackers_pq.mx \
 		crackers_populate.mx
-	LIBS = ../../../mal/libmonetdb5 ../../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream ../../atoms/lib_mtime ../../kernel/lib_algebra \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = ../../tools/libmonetdb5 $(MONETDB_LIBS) -lbat \
+                $(MALLOC_LIBS)
 }
 
 headers_crackers = {

@@ -22,30 +22,60 @@ INCLUDES = -I../mal -I../modules/atoms -I../modules/mal -I../modules/kernel $(CL
 MTSAFE
 
 lib_optimizer = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES =  opt_prelude.mx \
-		opt_support.mx  opt_crack.mx optimizer.mx  opt_factorize.mx \
-		opt_deadcode.mx opt_garbageCollector.mx opt_strengthReduction.mx \
-		opt_aliases.mx opt_constants.mx opt_commonTerms.mx opt_datacyclotron.mx \
-		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
-		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
-		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
-		opt_datacell.mx opt_reorder.mx opt_prejoin.mx opt_compression.mx \
-		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
-		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
-		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
-		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
-		opt_cluster.mx  opt_replication.mx opt_dictionary.mx opt_mapreduce.mx \
-		opt_mitosis.mx opt_octopus.mx opt_tarantula.mx  opt_history.mx opt_selcrack.mx opt_sidcrack.mx
-
-	#SCRIPTS = mal
-	LIBS = ../modules/atoms/lib_mtime ../mal/libmonetdb5 \
-		../modules/mal/lib_bpm ../modules/mal/lib_remote ../modules/kernel/lib_algebra \
-		../modules/kernel/lib_group \
-		$(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+	NOINST
+	SOURCES = \
+		optimizer.mx \
+		opt_accessmode.mx \
+		opt_accumulators.mx \
+		opt_aliases.mx \
+		opt_cluster.mx \
+		opt_coercion.mx \
+		opt_commonTerms.mx \
+		opt_compression.mx \
+		opt_constants.mx \
+		opt_costModel.mx \
+		opt_crack.mx \
+		opt_datacell.mx \
+		opt_datacyclotron.mx \
+		opt_dataflow.mx \
+		opt_deadcode.mx \
+		opt_derivepath.mx \
+		opt_dictionary.mx \
+		opt_emptySet.mx \
+		opt_evaluate.mx \
+		opt_factorize.mx \
+		opt_garbageCollector.mx \
+		opt_heuristics.mx \
+		opt_history.mx \
+		opt_inline.mx \
+		opt_joinpath.mx \
+		opt_joinselect.mx \
+		opt_macro.mx \
+		opt_mapreduce.mx \
+		opt_mergetable.mx \
+		opt_mitosis.mx \
+		opt_multiplex.mx \
+		opt_octopus.mx \
+		opt_partitions.mx \
+		opt_peephole.mx \
+		opt_prejoin.mx \
+		opt_prelude.mx \
+		opt_pushranges.mx \
+		opt_qep.mx \
+		opt_recycler.mx \
+		opt_reduce.mx \
+		opt_remap.mx \
+		opt_remoteQueries.mx \
+		opt_reorder.mx \
+		opt_replication.mx \
+		opt_selcrack.mx \
+		opt_sidcrack.mx \
+		opt_singleton.mx \
+		opt_statistics.mx \
+		opt_strengthReduction.mx \
+		opt_support.mx \
+		opt_tarantula.mx \
+		opt_trace.mx
 }
 
 headers_optimizer = {

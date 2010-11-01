@@ -15,31 +15,54 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../include ../../common ../../storage ../../server ../ \
-	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS) $(MSEED_CFLAGS)
+INCLUDES = -I../../mal $(MONETDB_INCS) $(LIBXML2_CFLAGS)
+MTSAFE
 
-lib__vault = {
-	DIR = libdir/MonetDB5/
-	SOURCES = vault.mx mseed.mx
-	LIBS = $(MONETDB5_LIBS) -lmonetdb5 \
-		$(MONETDB_LIBS) -lbat $(MSEED_LIBS)
+lib__xml = {
+	DIR = libdir/MonetDB5
+	SEP = _
+	SOURCES = xml.mx 
+
+	#SCRIPTS = mal
+	LIBS = $(MONETDB_LIBS) -lbat $(MALLOC_LIBS) $(LIBXML2_LIBS)
 }
 
-headers_h = {
-	HEADERS = h
-	DIR = includedir/MonetDB5/sql
-	SOURCES = vault.mx mseed.mx
+headers_xml_autoload = {
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 05_xml.mal
 }
 
-headers_mal = {
+headers_xml_h = {
+	DIR = includedir/MonetDB5/atoms
+	SOURCES = xml.mx
+	HEADERS = h 
+}
+
+headers_xml_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = vault.mx mseed.mx vault.sql
+	SOURCES = xml.mx
 }
-headers_autoload = {
-    HEADERS = mal
-    DIR = libdir/MonetDB5/autoload
-    SOURCES = 70_vault.mal 71_mseed.mal
+
+lib_batxml = {
+	DIR = libdir/MonetDB5
+	SEP = _
+	SOURCES = batxml.mx
+	LIBS = ../../tools/libmonetdb5 $(MONETDB_LIBS) -lbat $(MATH_LIBS) \
+                $(MALLOC_LIBS) $(LIBXML2_LIBS)
 }
+
+headers_batxml_h = {
+	DIR = includedir/MonetDB5/mal
+	SOURCES = batxml.mx
+	HEADERS = h 
+}
+
+headers_batxml_mal = {
+	HEADERS = mal
+	DIR = libdir/MonetDB5
+	SOURCES = batxml.mx
+}
+
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal 71_mseed.mal vault.sql

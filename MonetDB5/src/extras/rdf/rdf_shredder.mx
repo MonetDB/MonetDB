@@ -25,11 +25,11 @@ All Rights Reserved.
 @c
 #include "mal_config.h"
 #include "mal_exception.h"
-#include <gdk.h>
 #include "url.h"
-#include "rdf.h"
-#include "raptor.h"
-#include "../tokenizer.h"
+#include "tokenizer.h"
+#include <gdk.h>
+#include <rdf.h>
+#include <raptor.h>
 
 typedef struct graphBATdef {
 	graphBATType batType;    /* BAT type             */

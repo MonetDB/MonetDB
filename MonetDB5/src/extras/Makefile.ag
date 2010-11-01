@@ -15,37 +15,5 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../modules/atoms -I../mal \
-	$(MONETDB_INCS) \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS)
+SUBDIRS = compiler crackers HAVE_LIBXML2?xml HAVE_RAPTOR?rdf HAVE_SPHINXCLIENT?sphinx
 
-
-MTSAFE
-
-LIBS = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = \
-	mal_compiler.mx 
-
-	#SCRIPTS = mal
-	LIBS = ../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-headers_h = {
-	DIR = includedir/MonetDB5/compiler
-	SOURCES = \
-	mal_compiler.mx 
-
-	HEADERS = h 
-}
-
-headers_mal = {
-	HEADERS = mal
-	DIR = libdir/MonetDB5
-	SOURCES = mal_compiler.mx 
-}
-
-EXTRA_DIST_DIR = Tests

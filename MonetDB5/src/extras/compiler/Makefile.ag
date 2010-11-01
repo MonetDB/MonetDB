@@ -15,40 +15,34 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../atoms -I../../kernel \
-        -I../../../mal $(CLIENTS_INCS) $(MONETDB_INCS) $(RAPTOR_INCS) \
-        $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS) \
-        $(LIBXML2_CFLAGS) $(READLINE_INCS)
+INCLUDES = -I../../modules/atoms -I../../mal $(MONETDB_INCS)
+
 
 MTSAFE
 
-lib__rdf = {
+LIBS = {
 	DIR = libdir/MonetDB5
-	SOURCES = rdf.mx rdf_shredder.mx
-	LIBS = ../../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
-           ../../atoms/lib_url \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-                $(RAPTOR_LIBS)
+	SEP = _
+	SOURCES = \
+	mal_compiler.mx 
+
+	#SCRIPTS = mal
+	LIBS = ../../tools/libmonetdb5 $(MONETDB_LIBS) \
+		-lbat -lstream $(MALLOC_LIBS) 
 }
 
-headers_rdf = {
-	DIR = includedir/MonetDB5/rdf
-	SOURCES = rdf.mx rdf_shredder.mx
-	HEADERS = h
+headers_h = {
+	DIR = includedir/MonetDB5/compiler
+	SOURCES = \
+	mal_compiler.mx 
+
+	HEADERS = h 
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = rdf.mx
+	SOURCES = mal_compiler.mx 
 }
 
-headers_autoload = {
-	HEADERS = mal
-	DIR = libdir/MonetDB5/autoload
-	SOURCES = 10_rdf.mal
-}
-
-#EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 10_rdf.mal
+EXTRA_DIST_DIR = Tests

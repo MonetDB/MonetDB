@@ -129,7 +129,7 @@ module batcalc;
 command xml(src:bat[:oid,:str]):bat[:oid,:xml] address BATXMLstr2xml;
 
 @{
-@include ../kernel/kprelude.mx
+@include ../../modules/kernel/kprelude.mx
 
 @+ Implementation
 @h

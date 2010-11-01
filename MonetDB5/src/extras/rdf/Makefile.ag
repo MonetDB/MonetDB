@@ -15,31 +15,36 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../include ../../common ../../storage ../../server ../ \
-	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS) $(MSEED_CFLAGS)
+INCLUDES = -I../../modules/atoms -I../../modules/mal \
+        -I../../mal $(CLIENTS_INCS) $(MONETDB_INCS) $(RAPTOR_INCS) \
+        $(LIBXML2_CFLAGS)
 
-lib__vault = {
-	DIR = libdir/MonetDB5/
-	SOURCES = vault.mx mseed.mx
-	LIBS = $(MONETDB5_LIBS) -lmonetdb5 \
-		$(MONETDB_LIBS) -lbat $(MSEED_LIBS)
+MTSAFE
+
+lib__rdf = {
+	DIR = libdir/MonetDB5
+	SOURCES = rdf.mx rdf_shredder.mx
+	LIBS = ../../tools/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
+		$(MALLOC_LIBS) $(RAPTOR_LIBS)
 }
 
-headers_h = {
+headers_rdf = {
+	DIR = includedir/MonetDB5/rdf
+	SOURCES = rdf.mx rdf_shredder.mx
 	HEADERS = h
-	DIR = includedir/MonetDB5/sql
-	SOURCES = vault.mx mseed.mx
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = vault.mx mseed.mx vault.sql
+	SOURCES = rdf.mx
 }
+
 headers_autoload = {
-    HEADERS = mal
-    DIR = libdir/MonetDB5/autoload
-    SOURCES = 70_vault.mal 71_mseed.mal
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 10_rdf.mal
 }
-EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal 71_mseed.mal vault.sql
+
+#EXTRA_DIST_DIR = Tests
+EXTRA_DIST = 10_rdf.mal
