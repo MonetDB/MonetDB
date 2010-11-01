@@ -1726,7 +1726,10 @@ GDKexit(int status)
 			}
 		}
 		(void) GDKgetHome();
+#if 0
+		/* we can't clean up after killing threads */
 		BBPexit();
+#endif
 		GDKlog(GDKLOGOFF);
 		GDKunlockHome();
 		MT_global_exit(status);
