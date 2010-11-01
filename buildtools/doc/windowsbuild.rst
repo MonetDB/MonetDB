@@ -273,20 +273,6 @@ A version of Patch for Windows can be gotten from the GnuWin32 project
 at http://gnuwin32.sourceforge.net/.  Click on the Packages link on
 the left and then on Patch, and get the Setup file and install it.
 
-PsKill
-------
-
-PsKill is a program to kill (terminate) processes.  This program is
-only used during testing to terminate tests that take too long.
-
-PsKill is part of the `Windows Sysinternals`__.  Go to the Process
-Utilities, and get the PsKill package.  PsKill is also part of the
-PsTools package and the Sysinternals Suite, so you can get those
-instead.  Extract the archive, and make sure that the folder is in
-your ``Path`` variable when you run the tests.
-
-__ http://www.microsoft.com/technet/sysinternals/default.mspx
-
 PCRE (Perl Compatible Regular Expressions)
 ------------------------------------------
 
@@ -748,8 +734,6 @@ is an example: version numbers may differ)::
  set Path=C:\Python25;C:\Python25\Scripts;%Path%
  rem Bison and Flex (and Diff)
  set Path=%ProgramFiles%\GnuWin32\bin;%Path%
- rem for testing: pskill
- set Path=%ProgramFiles%\PsTools;%Path%
  rem Java is optional, set JAVA_HOME for convenience
  set JAVA_HOME=%ProgramFiles%\Java\jdk1.5.0_13
  set Path=%JAVA_HOME%\bin;%ProgramFiles%\Java\jre1.5.0_13\bin;%Path%
