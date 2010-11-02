@@ -2250,7 +2250,6 @@ AC_DEFUN([AM_MONETDB_LIB_PTHREAD],[
 		esac
 		CPPFLAGS="$save_CPPFLAGS"
 
-		save_LIBS="$LIBS"
 		case $GCC in
 			yes)
 				# use GCC's knowledge about the target platform, sets flags
@@ -2261,6 +2260,7 @@ AC_DEFUN([AM_MONETDB_LIB_PTHREAD],[
 				LIBS="$LIBS -pthread"
 			;;
 			*)
+				save_LIBS="$LIBS"
 				# ok, do old-fashioned stuff
 				LIBS="$LIBS $PTHREAD_LIBS" # in case user did --with-pthreads
 				pthread_found=yes
@@ -2289,6 +2289,7 @@ AC_DEFUN([AM_MONETDB_LIB_PTHREAD],[
 					fi
 					have_pthread=no
 				fi
+				LIBS="$save_LIBS"
 			;;
 		esac
 
@@ -2307,9 +2308,11 @@ AC_DEFUN([AM_MONETDB_LIB_PTHREAD],[
 		dnl this function very ugly is overloaded with semaphore stuff
 		dnl so we DO need to check for it, for platforms which have it
 		dnl in a separate lib, like Solaris
-		AC_SEARCH_LIBS(sem_wait, rt,
-			[PTHREAD_LIBS="$PTHREAD_LIBS $ac_cv_search_sem_wait"])
-		LIBS="$save_LIBS"
+		oldLIBS="$LIBS"
+		LIBS="$PTHREAD_LIBS"
+		AC_SEARCH_LIBS(sem_wait, rt)
+		PTHREAD_LIBS="$LIBS"
+		LIBS="$oldLIBS"
 		CPPFLAGS="$save_CPPFLAGS"
 
 	fi
