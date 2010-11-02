@@ -2308,7 +2308,7 @@ AC_DEFUN([AM_MONETDB_LIB_PTHREAD],[
 		dnl so we DO need to check for it, for platforms which have it
 		dnl in a separate lib, like Solaris
 		AC_SEARCH_LIBS(sem_wait, rt,
-			[PTHREAD_LIBS="$PTHREAD_LIBS -lrt"])
+			[PTHREAD_LIBS="$PTHREAD_LIBS $ac_cv_search_sem_wait"])
 		LIBS="$save_LIBS"
 		CPPFLAGS="$save_CPPFLAGS"
 
