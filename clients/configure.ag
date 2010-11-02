@@ -28,7 +28,6 @@ AC_INIT([MonetDB clients], [1.41.0], [info@monetdb.org], [MonetDB-client])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-dnl AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/mapilib/Mapi.mx])

@@ -24,7 +24,6 @@ AC_INIT([MonetDB geometry module], [0.21.0], [info@monetdb.org], [MonetDB-geom])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
