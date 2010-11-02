@@ -126,7 +126,7 @@ typedef ptr Bstream;
 #include <stream_socket.h>
 
 #ifdef WIN32
-#ifndef LIBSTREAMS
+#ifndef LIBATOMS
 #define streams_export extern __declspec(dllimport)
 #else
 #define streams_export extern __declspec(dllexport)

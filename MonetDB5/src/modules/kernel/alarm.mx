@@ -88,7 +88,7 @@ typedef struct {
 #include <time.h>
 
 #ifdef WIN32
-#ifndef LIBALARM
+#ifndef LIBKERNEL
 #define alarm_export extern __declspec(dllimport)
 #else
 #define alarm_export extern __declspec(dllexport)

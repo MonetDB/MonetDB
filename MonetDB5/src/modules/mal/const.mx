@@ -100,7 +100,7 @@ const.prelude();
 #include "mal_authorize.h"
 
 #ifdef WIN32
-#ifndef LIBCONST
+#ifndef LIBMAL
 #define const_export extern __declspec(dllimport)
 #else
 #define const_export extern __declspec(dllexport)

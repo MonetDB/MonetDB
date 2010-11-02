@@ -79,7 +79,7 @@ comment "Extract the Z-order indices between two points";
 
 
 #ifdef WIN32
-#ifndef LIBZORDER
+#ifndef LIBMAL
 #define zorder_export extern __declspec(dllimport)
 #else
 #define zorder_export extern __declspec(dllexport)

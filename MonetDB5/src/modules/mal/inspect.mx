@@ -135,7 +135,7 @@ comment "Collect the environment variables.";
 #include "mal_namespace.h"
 
 #ifdef WIN32
-#ifndef LIBINSPECT
+#ifndef LIBMAL
 #define inspect_export extern __declspec(dllimport)
 #else
 #define inspect_export extern __declspec(dllexport)

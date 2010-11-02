@@ -55,7 +55,7 @@ typedef struct _inet {
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
 #ifdef WIN32
-#ifndef LIBINET
+#ifndef LIBATOMS
 #define inet_export extern __declspec(dllimport)
 #else
 #define inet_export extern __declspec(dllexport)

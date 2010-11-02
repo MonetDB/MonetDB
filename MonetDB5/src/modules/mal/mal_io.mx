@@ -145,7 +145,7 @@ typedef struct {
 typedef FILE *fstream;
 
 #ifdef WIN32
-#ifndef LIBMAL_IO
+#ifndef LIBMAL
 #define io_export extern __declspec(dllimport)
 #else
 #define io_export extern __declspec(dllexport)

@@ -87,7 +87,7 @@ comment "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram posit
 #include <limits.h>
 
 #ifdef WIN32
-#ifndef LIBTXTSIM
+#ifndef LIBMAL
 #define txtsim_export extern __declspec(dllimport)
 #else
 #define txtsim_export extern __declspec(dllexport)

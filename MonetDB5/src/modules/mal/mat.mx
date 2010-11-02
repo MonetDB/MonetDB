@@ -125,7 +125,7 @@ comment "retrieve the definition from the partition catalogue";
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBMAT
+#ifndef LIBMAL
 #define mat_export extern __declspec(dllimport)
 #else
 #define mat_export extern __declspec(dllexport)

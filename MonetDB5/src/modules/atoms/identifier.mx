@@ -58,7 +58,7 @@ identifier.prelude();
 typedef str identifier;
 
 #ifdef WIN32
-#ifndef LIBIDENTIFIER
+#ifndef LIBATOMS
 #define identifier_export extern __declspec(dllimport)
 #else
 #define identifier_export extern __declspec(dllexport)

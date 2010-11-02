@@ -129,7 +129,7 @@ comment "Called at the start of a recycle controlled function";
 #include "bat5.h"
 
 #ifdef WIN32
-#ifndef LIBRECYCLE
+#ifndef LIBMAL
 #define recycle_export extern __declspec(dllimport)
 #else
 #define recycle_export extern __declspec(dllexport)

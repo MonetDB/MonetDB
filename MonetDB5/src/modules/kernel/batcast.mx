@@ -133,7 +133,7 @@ against overflow.
 #include "mal_exception.h"
 
 #ifdef WIN32
-#ifndef LIBBATCAST
+#ifndef LIBKERNEL
 #define batcast_export extern __declspec(dllimport)
 #else
 #define batcast_export extern __declspec(dllexport)

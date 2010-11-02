@@ -62,7 +62,7 @@ comment "Close a factory.";
 #include "mal_namespace.h"
 
 #ifdef WIN32
-#ifndef LIBFACTORIES
+#ifndef LIBMAL
 #define factories_export extern __declspec(dllimport)
 #else
 #define factories_export extern __declspec(dllexport)

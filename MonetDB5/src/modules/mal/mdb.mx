@@ -225,7 +225,7 @@ comment "Returns a string representation of the current function
 #include "mal_namespace.h"
 
 #ifdef WIN32
-#ifndef LIBMDB
+#ifndef LIBMAL
 #define mdb_export extern __declspec(dllimport)
 #else
 #define mdb_export extern __declspec(dllexport)

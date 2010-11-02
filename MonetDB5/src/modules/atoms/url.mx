@@ -179,7 +179,7 @@ secure concurrent use from different threads.
 typedef str url;
 
 #ifdef WIN32
-#ifndef LIBURL
+#ifndef LIBATOMS
 #define url_export extern __declspec(dllimport)
 #else
 #define url_export extern __declspec(dllexport)

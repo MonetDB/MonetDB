@@ -893,7 +893,7 @@ different situations as conditions.
 #include "mal_exception.h"
 
 #ifdef WIN32
-#ifndef LIBALGEBRA
+#ifndef LIBKERNEL
 #define algebra_export extern __declspec(dllimport)
 #else
 #define algebra_export extern __declspec(dllexport)

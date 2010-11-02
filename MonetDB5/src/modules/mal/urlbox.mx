@@ -105,7 +105,7 @@ urlbox.prelude();
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBURLBOX
+#ifndef LIBMAL
 #define urlbox_export extern __declspec(dllimport)
 #else
 #define urlbox_export extern __declspec(dllexport)

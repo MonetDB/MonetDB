@@ -183,7 +183,7 @@ this interface.
 #include <mal_interpreter.h>
 
 #ifdef WIN32
-#ifndef LIBSTATISTICS
+#ifndef LIBMAL
 #define s_export extern __declspec(dllimport)
 #else
 #define s_export extern __declspec(dllexport)

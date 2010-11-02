@@ -97,7 +97,7 @@ comment "return the BUN tail value using the cursor.";
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBCHOPPER
+#ifndef LIBMAL
 #define chopper_export extern __declspec(dllimport)
 #else
 #define chopper_export extern __declspec(dllexport)

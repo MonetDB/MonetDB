@@ -100,7 +100,7 @@ unix_setenv(bit *res, str varname, str valname)
 The remainder simply wraps the old code.
 @c
 #ifdef WIN32
-#ifndef LIBUNIX
+#ifndef LIBKERNEL
 #define unix_export extern __declspec(dllimport)
 #else
 #define unix_export extern __declspec(dllexport)

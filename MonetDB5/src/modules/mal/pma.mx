@@ -84,7 +84,7 @@ comment "test the function of deletion"
 #define _PMA_H_
 
 #ifdef WIN32
-#ifndef LIBPMA
+#ifndef LIBMAL
 #define pma_export extern __declspec(dllimport)
 #else
 #define pma_export extern __declspec(dllexport)

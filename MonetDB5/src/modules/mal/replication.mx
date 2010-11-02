@@ -337,7 +337,7 @@ slave.prelude();
 /*#define _DEBUG_REPLICATION_  */
 
 #ifdef WIN32
-#ifndef LIBREPLICATION
+#ifndef LIBMAL
 #define replication_export extern __declspec(dllimport)
 #else
 #define replication_export extern __declspec(dllexport)

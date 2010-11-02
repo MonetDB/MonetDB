@@ -103,7 +103,7 @@ comment "Fill an array representation with constants ";
 /*----------------------------------------------------------------------------*/
 
 #ifdef WIN32
-#ifndef LIBARRAY
+#ifndef LIBKERNEL
 #define array_export extern __declspec(dllimport)
 #else
 #define array_export extern __declspec(dllexport)
