@@ -31,7 +31,7 @@ lib_monetdb5 = {
 		$(monetdbcommon_LIBS) $(monetdbstream_LIBS) $(monetdbmapi_LIBS) \
 		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
 		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
-		$(LTLIBICONV) $(zlib_LIBS) $(BZIP_LIBS)
+		$(LTLIBICONV) $(zlib_LIBS)
 }
 
 bin_mserver5 = {
