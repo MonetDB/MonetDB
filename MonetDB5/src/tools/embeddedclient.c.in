@@ -50,7 +50,11 @@ Monet_init(opt **set, int setlen)
 static opt *embedded_set = NULL;
 static int embedded_len = 0;
 
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+static DWORD WINAPI
+#else
 static void *
+#endif
 start_mal_server(void *arg)
 {
 	static int initialized = 0;
@@ -105,14 +109,18 @@ start_mal_server(void *arg)
 		"out := \"" PTRFMT "\":streams;\n"
 		"mapi.malclient(in, out);\n", PTRFMTCAST in, PTRFMTCAST out);
 	callString(mal_clients, buf, 0);
-	return NULL;
+	return 0;
 }
 
 Mapi
 embedded_mal(opt *set, int len)
 {
 	Mapi mid;
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+	HANDLE malthread;
+#else
 	pthread_t malthread;
+#endif
 	stream **server;
 
 	if (set) {
@@ -121,7 +129,11 @@ embedded_mal(opt *set, int len)
 	}
 	server = mapi_embedded_init(&mid,"mal");
 
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+	malthread = CreateThread(NULL, 0, start_mal_server, (void *) server, 0, NULL);
+#else
 	pthread_create(&malthread, NULL, start_mal_server, (void *) server);
+#endif
 
 	mapi_start_talking(mid);
 

@@ -450,6 +450,7 @@ SQLloader(void *p){
 		task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
 		MT_up_sema(task->consumer, "tablet loader");
 	}
+	MT_exit_thread(0);
 }
 
 BUN
