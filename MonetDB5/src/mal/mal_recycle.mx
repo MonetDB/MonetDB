@@ -2031,7 +2031,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 	bat bid, sbid = -1;
 	InstrPtr q;
 	bit gluse = FALSE;
-	size_t scnt;
+	size_t scnt = 0;
 	BAT *b, *bn;
 	oid lval = 0, hval = 0;
 	dbl ratio;
