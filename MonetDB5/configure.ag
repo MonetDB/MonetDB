@@ -128,7 +128,7 @@ fi
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
 req_raptor_ver='1.4.16'
-PKG_CHECK_EXISTS([raptor2 >= 1.9.0], [have_raptor="yes"], [have_raptor="no"])
+PKG_CHECK_EXISTS([raptor >= $req_raptor_ver], [have_raptor="yes"], [have_raptor="no"])
 if test x"$have_raptor" = x"yes" ; then
 	PKG_CHECK_MODULES([raptor], [raptor >= $req_raptor_ver])
 fi
