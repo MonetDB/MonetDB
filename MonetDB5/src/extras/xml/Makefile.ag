@@ -15,7 +15,7 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../mal $(MONETDB_INCS) $(LIBXML2_CFLAGS)
+INCLUDES = -I../../mal $(monetdbcommon_CFLAGS) $(libxml2_CFLAGS)
 MTSAFE
 
 lib__xml = {
@@ -24,7 +24,7 @@ lib__xml = {
 	SOURCES = xml.mx 
 
 	#SCRIPTS = mal
-	LIBS = $(MONETDB_LIBS) -lbat $(MALLOC_LIBS) $(LIBXML2_LIBS)
+	LIBS = $(monetdbcommon_LIBS) $(MALLOC_LIBS) $(libxml2_LIBS)
 }
 
 headers_xml_autoload = {
@@ -49,8 +49,8 @@ lib_batxml = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = batxml.mx
-	LIBS = ../../tools/libmonetdb5 $(MONETDB_LIBS) -lbat $(MATH_LIBS) \
-                $(MALLOC_LIBS) $(LIBXML2_LIBS)
+	LIBS = ../../tools/libmonetdb5 $(monetdbcommon_LIBS) $(MATH_LIBS) \
+                $(MALLOC_LIBS) $(libxml2_LIBS)
 }
 
 headers_batxml_h = {

@@ -15,9 +15,7 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../mal $(MONETDB_INCS) \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) \
-	$(ICONV_CFLAGS)
+INCLUDES = -I../../mal $(monetdbcommon_CFLAGS)
 MTSAFE
 
 lib_atoms = {

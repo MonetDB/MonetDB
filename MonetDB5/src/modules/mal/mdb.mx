@@ -216,6 +216,8 @@ comment "Returns a string representation of the current function
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include "mal_resolve.h"
 #include "mal_linker.h"
 #include "mal_client.h"

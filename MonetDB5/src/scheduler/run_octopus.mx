@@ -117,7 +117,7 @@ the (remote) database servers.
 #include "mat.h"
 #include "run_octopus.h"
 #include "optimizer.h"
-#include <mapilib/Mapi.h>
+#include <Mapi.h>
 #include "remote.h"
 #include "mal_sabaoth.h"
 

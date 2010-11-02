@@ -126,7 +126,6 @@ use a translation table where needed.
 
 #define SERVER_STOPPED "Server stopped"
 
-#define XML_MISSING "Libxml2 not found by configure"
 #define XML_PARSE_ERROR "Document parse error"
 #define XML_COMMENT_ERROR "Comment may not contain '--'"
 #define XML_PI_ERROR "No processing instruction target specified"

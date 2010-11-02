@@ -1584,6 +1584,56 @@ AC_DEFUN([AM_MONETDB_FUNC_GETOPT],[
 
 ]) dnl AM_MONETDB_FUNC_GETOPT
 
+AC_DEFUN([AM_MONETDB_PATH_FILE],[
+
+	SOPREF=lib
+	case "$host_os" in
+	mac*)
+		dnl Mac OS 9 stuff
+		DIRSEP=':'
+		QDIRSEP=':'
+		AC_ERROR([mac not supported])
+		;;
+	*mingw*)
+		DIRSEP='\'
+		QDIRSEP='\\'
+		PATHSEP=';'
+		SOEXT='-0.dll'
+		AC_DEFINE([HAVE_GLOBALMEMORYSTATUS], 1, [Define to 1 if you have the `GlobalMemoryStatus' function.])
+		;;
+	*cygwin*)
+		DIRSEP='/'
+		QDIRSEP='/'
+		PATHSEP=':'
+		SOEXT='-0.dll'
+		SOPREF=cyg
+		;;
+	*darwin*)
+		DIRSEP='/'
+		QDIRSEP='/'
+		PATHSEP=':'
+		SOEXT='.dylib'
+		;;
+	*)
+		DIRSEP='/'
+		QDIRSEP='/'
+		PATHSEP=':'
+		SOEXT='.so'
+		;;
+	esac
+	AC_SUBST(DIRSEP)
+	AC_SUBST(QDIRSEP)
+	AC_SUBST(PATHSEP)
+	AC_SUBST(SOEXT)
+	AC_DEFINE_UNQUOTED([DIR_SEP], '$QDIRSEP', [Directory separator])
+	AC_DEFINE_UNQUOTED([DIR_SEP_STR], "$QDIRSEP", [Directory separator])
+	AC_DEFINE_UNQUOTED([PATH_SEP], '$PATHSEP', [Path separator])
+	AC_DEFINE_UNQUOTED([PATH_SEP_STR], "$PATHSEP", [Path separator])
+	AC_DEFINE_UNQUOTED([SO_PREFIX], "$SOPREF", [Shared Object prefix])
+	AC_DEFINE_UNQUOTED([SO_EXT], "$SOEXT", [Shared Object extension])
+
+]) dnl AM_MONETDB_PATH_FILE
+
 AC_DEFUN([AM_MONETDB_TOOLS],[
 
 dnl AM_PROG_LIBTOOL has loads of required macros, when those are not satisfied within
@@ -1631,51 +1681,7 @@ AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
-SOPREF=lib
-case "$host_os" in
-mac*)
-	dnl Mac OS 9 stuff
-	DIRSEP=':'
-	QDIRSEP=':'
-	AC_ERROR([mac not supported])
-	;;
-*mingw*)
-	DIRSEP='\'
-	QDIRSEP='\\'
-	PATHSEP=';'
-	SOEXT='-0.dll'
-	AC_DEFINE([HAVE_GLOBALMEMORYSTATUS], 1, [Define to 1 if you have the `GlobalMemoryStatus' function.])
-	;;
-*cygwin*)
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
-	SOEXT='-0.dll'
-	SOPREF=cyg
-	;;
-*darwin*)
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
-	SOEXT='.dylib'
-	;;
-*)
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
-	SOEXT='.so'
-	;;
-esac
-AC_SUBST(DIRSEP)
-AC_SUBST(QDIRSEP)
-AC_SUBST(PATHSEP)
-AC_SUBST(SOEXT)
-AC_DEFINE_UNQUOTED([DIR_SEP], '$QDIRSEP', [Directory separator])
-AC_DEFINE_UNQUOTED([DIR_SEP_STR], "$QDIRSEP", [Directory separator])
-AC_DEFINE_UNQUOTED([PATH_SEP], '$PATHSEP', [Path separator])
-AC_DEFINE_UNQUOTED([PATH_SEP_STR], "$PATHSEP", [Path separator])
-AC_DEFINE_UNQUOTED([SO_PREFIX], "$SOPREF", [Shared Object prefix])
-AC_DEFINE_UNQUOTED([SO_EXT], "$SOEXT", [Shared Object extension])
+AM_MONETDB_PATH_FILE()
 
 AC_C_CONST()
 AC_C_INLINE()
@@ -2712,6 +2718,141 @@ AC_DEFUN([AM_MONETDB_LIB_BZIP2],[
 
 ]) dnl AM_MONETDB_LIB_BZIP2
 
+AC_DEFUN([AM_MONETDB_LIB_DL], [
+
+	DL_LIBS=""
+	AC_CHECK_LIB(dl, dlopen, [ DL_LIBS="-ldl" ] )
+	AC_SUBST(DL_LIBS)
+
+]) dnl AM_MONETDB_LIB_DL
+
+AC_DEFUN([AM_MONETDB_LIB_MALLOC], [
+
+	MALLOC_LIBS=""
+	AC_CHECK_LIB(malloc, malloc, [ MALLOC_LIBS="-lmalloc" ] )
+	AC_SUBST(MALLOC_LIBS)
+
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $MALLOC_LIBS"
+	AC_CHECK_FUNCS(mallopt)
+	AC_CHECK_FUNC(mallinfo, AC_TRY_COMPILE([$ac_includes_default
+#include <malloc.h>], [struct mallinfo m;int x[[1+sizeof(m.usmblks)-sizeof(void *)]]], AC_DEFINE(HAVE_USEFUL_MALLINFO, 1, [Define if you have mallinfo])))
+	LIBS="$save_LIBS"
+
+]) dnl AM_MONETDB_LIB_MALLOC
+
+AC_DEFUN([AM_MONETDB_LIB_M], [
+
+	MATH_LIBS=""
+	AC_CHECK_LIB(m, sqrt, [ MATH_LIBS="-lm" ] )
+	AC_SUBST(MATH_LIBS)
+
+]) dnl AM_MONETDB_LIB_M
+
+AC_DEFUN([AM_MONETDB_LIB_HWCOUNTERS], [
+
+	dnl hwcounters
+	have_hwcounters=auto
+	HWCOUNTERS_LIBS=""
+	HWCOUNTERS_INCS=""
+	AC_ARG_WITH(hwcounters,
+		AS_HELP_STRING([--with-hwcounters=DIR],
+			[hwcounters library is installed in DIR]), 
+		have_hwcounters="$withval")
+	case "$have_hwcounters" in
+	yes|no|auto)
+		;;
+	*)
+		HWCOUNTERS_LIBS="-L$withval/lib"
+		HWCOUNTERS_INCS="-I$withval/include"
+		;;
+	esac
+	if test "x$have_hwcounters" != xno; then
+	  case "$host_os-$host" in
+		linux*-i?86*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
+	  esac
+	  save_CPPFLAGS="$CPPFLAGS"
+	  CPPFLAGS="$CPPFLAGS $HWCOUNTERS_INCS"
+	  save_LIBS="$LIBS"
+	  LIBS="$LIBS $HWCOUNTERS_LIBS"
+	  have_hwcounters=no
+	  case "$host_os-$host" in
+	   linux*-i?86*|linux*-x86_64*)
+		AC_CHECK_HEADERS( libperfctr.h ,
+		 AC_CHECK_LIB( perfctr, vperfctr_open , 
+		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr" 
+			AC_DEFINE(HAVE_LIBPERFCTR, 1, [Define if you have the perfctr library])
+			have_hwcounters=yes
+		  ]
+			 )
+		)
+		if test "x$have_hwcounters" != xyes; then
+				AC_CHECK_HEADERS( libpperf.h,
+			 AC_CHECK_LIB( pperf, start_counters, 
+			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf" 
+					AC_DEFINE(HAVE_LIBPPERF, 1, [Define if you have the pperf library])
+					have_hwcounters=yes
+			  ]
+			 )
+			)
+		fi
+		;;
+	   linux*-ia64*)
+		AC_CHECK_HEADERS( perfmon/pfmlib.h ,
+		 AC_CHECK_LIB( pfm, pfm_initialize , 
+		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpfm" 
+			AC_DEFINE(HAVE_LIBPFM, 1, [Define if you have the pfm library])
+			have_hwcounters=yes
+		  ]
+			 )
+		)
+		;;
+	   solaris*)
+		AC_CHECK_HEADERS( libcpc.h ,
+		 AC_CHECK_TYPE( cpc_event_t, 
+		  AC_CHECK_LIB( cpc, cpc_access , 
+		   [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc" 
+			 AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
+			 have_hwcounters=yes
+		   ]
+		  )
+		  , , [#include <libcpc.h>]
+		 )
+		)
+		if test "x$have_hwcounters" != xyes; then
+			AC_CHECK_HEADERS( perfmon.h ,
+			 AC_CHECK_LIB( perfmon, clr_pic , 
+			  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon" 
+				AC_DEFINE(HAVE_LIBPERFMON, 1, [Define if you have the perfmon library])
+				have_hwcounters=yes
+			  ]
+			 )
+			)
+		fi
+		;;
+	   irix*)
+		AC_CHECK_LIB( perfex, start_counters , 
+		 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex" 
+		   have_hwcounters=yes
+		 ]
+		)
+		;;
+	  esac
+	  LIBS="$save_LIBS"
+	  CPPFLAGS="$save_CPPFLAGS"
+
+	  if test "x$have_hwcounters" != xyes; then
+		HWCOUNTERS_LIBS=""
+		HWCOUNTERS_INCS=""
+	   else
+		CFLAGS="$CFLAGS -DHWCOUNTERS -DHW_`uname -s` -DHW_`uname -m`"
+	  fi
+	fi
+	AC_SUBST(HWCOUNTERS_LIBS)
+	AC_SUBST(HWCOUNTERS_INCS)
+
+]) dnl AM_MONETDB_LIB_HWCOUNTERS
+
 AC_DEFUN([AM_MONETDB_LIBS],
 [
 
@@ -2720,129 +2861,13 @@ AM_MONETDB_LIB_OPENSSL()
 AM_MONETDB_LIB_CURL()
 AM_MONETDB_LIB_PTHREAD()
 AM_MONETDB_LIB_SOCKET()
-
-DL_LIBS=""
-AC_CHECK_LIB(dl, dlopen, [ DL_LIBS="-ldl" ] )
-AC_SUBST(DL_LIBS)
-
-MALLOC_LIBS=""
-AC_CHECK_LIB(malloc, malloc, [ MALLOC_LIBS="-lmalloc" ] )
-AC_SUBST(MALLOC_LIBS)
-
-save_LIBS="$LIBS"
-LIBS="$LIBS $MALLOC_LIBS"
-AC_CHECK_FUNCS(mallopt)
-AC_CHECK_FUNC(mallinfo, AC_TRY_COMPILE([$ac_includes_default
-#include <malloc.h>], [struct mallinfo m;int x[[1+sizeof(m.usmblks)-sizeof(void *)]]], AC_DEFINE(HAVE_USEFUL_MALLINFO, 1, [Define if you have mallinfo])))
-LIBS="$save_LIBS"
-
-MATH_LIBS=""
-AC_CHECK_LIB(m, sqrt, [ MATH_LIBS="-lm" ] )
-AC_SUBST(MATH_LIBS)
-
+AM_MONETDB_LIB_DL()
+AM_MONETDB_LIB_MALLOC()
+AM_MONETDB_LIB_M()
 AM_MONETDB_LIB_Z()
 AM_MONETDB_LIB_BZIP2()
 AM_MONETDB_FUNC_GETOPT()
-
-dnl hwcounters
-have_hwcounters=auto
-HWCOUNTERS_LIBS=""
-HWCOUNTERS_INCS=""
-AC_ARG_WITH(hwcounters,
-	AS_HELP_STRING([--with-hwcounters=DIR],
-		[hwcounters library is installed in DIR]), 
-	have_hwcounters="$withval")
-case "$have_hwcounters" in
-yes|no|auto)
-	;;
-*)
-	HWCOUNTERS_LIBS="-L$withval/lib"
-	HWCOUNTERS_INCS="-I$withval/include"
-	;;
-esac
-if test "x$have_hwcounters" != xno; then
-  case "$host_os-$host" in
-    linux*-i?86*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
-  esac
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $HWCOUNTERS_INCS"
-  save_LIBS="$LIBS"
-  LIBS="$LIBS $HWCOUNTERS_LIBS"
-  have_hwcounters=no
-  case "$host_os-$host" in
-   linux*-i?86*|linux*-x86_64*)
-	AC_CHECK_HEADERS( libperfctr.h ,
-	 AC_CHECK_LIB( perfctr, vperfctr_open , 
-	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr" 
-	    AC_DEFINE(HAVE_LIBPERFCTR, 1, [Define if you have the perfctr library])
-	    have_hwcounters=yes
-	  ]
-         )
-	)
-	if test "x$have_hwcounters" != xyes; then
-        	AC_CHECK_HEADERS( libpperf.h,
-	 	 AC_CHECK_LIB( pperf, start_counters, 
-	  	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf" 
-	    	    AC_DEFINE(HAVE_LIBPPERF, 1, [Define if you have the pperf library])
-	    	    have_hwcounters=yes
-		  ]
-		 )
-		)
-	fi
-	;;
-   linux*-ia64*)
-	AC_CHECK_HEADERS( perfmon/pfmlib.h ,
-	 AC_CHECK_LIB( pfm, pfm_initialize , 
-	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpfm" 
-	    AC_DEFINE(HAVE_LIBPFM, 1, [Define if you have the pfm library])
-	    have_hwcounters=yes
-	  ]
-         )
-	)
-	;;
-   solaris*)
-	AC_CHECK_HEADERS( libcpc.h ,
-	 AC_CHECK_TYPE( cpc_event_t, 
-	  AC_CHECK_LIB( cpc, cpc_access , 
-	   [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc" 
-	     AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
-	     have_hwcounters=yes
-	   ]
-	  )
-	  , , [#include <libcpc.h>]
-	 )
-	)
-	if test "x$have_hwcounters" != xyes; then
-		AC_CHECK_HEADERS( perfmon.h ,
-		 AC_CHECK_LIB( perfmon, clr_pic , 
-		  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon" 
-		    AC_DEFINE(HAVE_LIBPERFMON, 1, [Define if you have the perfmon library])
-		    have_hwcounters=yes
-		  ]
-		 )
-  		)
-	fi
-	;;
-   irix*)
-	AC_CHECK_LIB( perfex, start_counters , 
-	 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex" 
-	   have_hwcounters=yes
-	 ]
-	)
- 	;;
-  esac
-  LIBS="$save_LIBS"
-  CPPFLAGS="$save_CPPFLAGS"
-
-  if test "x$have_hwcounters" != xyes; then
-    HWCOUNTERS_LIBS=""
-    HWCOUNTERS_INCS=""
-   else
-    CFLAGS="$CFLAGS -DHWCOUNTERS -DHW_`uname -s` -DHW_`uname -m`"
-  fi
-fi
-AC_SUBST(HWCOUNTERS_LIBS)
-AC_SUBST(HWCOUNTERS_INCS)
+AM_MONETDB_LIB_HWCOUNTERS()
 
 dnl check for the Perl-compatible regular expressions library 
 have_pcre=auto

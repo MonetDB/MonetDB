@@ -15,9 +15,7 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-#INCLUDES = -I../optimizer -I../scheduler -I../modules/kernel \
-
-INCLUDES = $(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS)
+INCLUDES = $(monetdbcommon_CFLAGS) $(READLINE_INCS) $(openssl_CFLAGS)
 MTSAFE
 
 lib_mal = {

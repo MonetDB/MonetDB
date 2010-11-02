@@ -16,7 +16,9 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = -I../mal $(CLIENTS_INCS) $(MONETDB_INCS) $(OPENSSL_INCS) $(PCRE_CFLAGS) $(LIBXML2_CFLAGS)
+INCLUDES = -I../mal \
+	$(monetdbmapi_CFLAGS) $(monetdbcommon_CFLAGS) $(monetdbstream_CFLAGS) \
+	$(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
 lib_monetdb5 = {
 	NAME = monetdb5
@@ -26,34 +28,32 @@ lib_monetdb5 = {
 	LIBS = ../mal/libmal ../modules/atoms/libatoms \
 		../modules/kernel/libkernel ../modules/mal/libmal \
 		../optimizer/liboptimizer ../scheduler/libscheduler \
-		$(MONETDB_LIBS) -lbat -lstream \
-		$(CLIENTS_LIBS) -lMapi \
-		$(MATH_LIBS) $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-	    $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-	    $(READLINE_LIBS) $(OPENSSL_LIBS) $(PCRE_LIBS)
+		$(monetdbcommon_LIBS) $(monetdbstream_LIBS) $(monetdbmapi_LIBS) \
+		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
+		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
+		$(LTLIBICONV) $(zlib_LIBS) $(BZIP_LIBS)
 }
 
 bin_mserver5 = {
 	SOURCES = mserver5.mx monet_version.h monet_version.c.in
-	LIBS = libmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) \
-                -lbat -lmutils -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-                $(PCRE_LIBS) $(OPENSSL_LIBS)
+	LIBS = libmonetdb5 @SHARED_LIBS@ \
+		$(monetdbcommon_LIBS) $(monetdbstream_LIBS) \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+		$(PCRE_LIBS) $(OPENSSL_LIBS)
 }
 
 lib_embeddedmal = {
 	SOURCES = embeddedclient.c.in
-	LIBS = libmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = libmonetdb5 @SHARED_LIBS@ \
+		$(monetdbcommon_LIBS) $(monetdbstream_LIBS) $(monetdbmapi_LIBS) \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 bin_Mbeddedmal = {
 	SOURCES = prog.c
-	LIBS = libembeddedmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = libembeddedmal @SHARED_LIBS@ \
+		$(monetdbcommon_LIBS) $(monetdbstream_LIBS) $(monetdbmapi_LIBS) \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 headers_h = {

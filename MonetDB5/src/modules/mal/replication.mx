@@ -331,7 +331,7 @@ slave.prelude();
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
-#include <mapilib/Mapi.h>
+#include <Mapi.h>
 #include "mtime.h"
 
 /*#define _DEBUG_REPLICATION_  */
@@ -379,12 +379,13 @@ replication_export BAT *SLAVEtable(void);
 @c
 #include "mal_config.h"
 #include "replication.h"
+#include <sys/types.h>
+#include <dirent.h>
 #include "sabaoth.h"
 #include "mal_client.h"
-#include <mal_sabaoth.h>
-#include <mapilib/Mapi.h>
-#include <mtime.h>
 #include "algebra.h"
+#include <mal_sabaoth.h>
+#include <mtime.h>
 
 @-
 The start of the query is marked with a replica tag.

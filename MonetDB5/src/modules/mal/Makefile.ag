@@ -16,9 +16,8 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../mal -I../atoms -I../kernel \
-        $(CLIENTS_INCS) $(MONETDB_INCS) \
-        $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS) \
-		$(READLINE_INCS) $(LIBXML2_CFLAGS)
+	$(monetdbmapi_CFLAGS) $(monetdbcommon_CFLAGS) $(monetdbmstream_CFLAGS) \
+	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS)
 
 MTSAFE
 

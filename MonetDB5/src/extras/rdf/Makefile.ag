@@ -15,17 +15,17 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../modules/atoms -I../../modules/mal \
-        -I../../mal $(CLIENTS_INCS) $(MONETDB_INCS) $(RAPTOR_INCS) \
-        $(LIBXML2_CFLAGS)
+INCLUDES = -I../../modules/atoms -I../../modules/mal -I../../mal \
+	$(monetdbmapi_CFLAGS) $(monetdbcommon_CFLAGS) $(monetdbstream_CFLAGS) \
+	$(raptor_CFLAGS)
 
 MTSAFE
 
 lib__rdf = {
 	DIR = libdir/MonetDB5
 	SOURCES = rdf.mx rdf_shredder.mx
-	LIBS = ../../tools/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
-		$(MALLOC_LIBS) $(RAPTOR_LIBS)
+	LIBS = ../../tools/libmonetdb5 $(monetdbcommon_LIBS) $(monetdbstream_LIBS) \
+		$(MALLOC_LIBS) $(raptor_LIBS)
 }
 
 headers_rdf = {

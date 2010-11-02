@@ -178,9 +178,7 @@ batxml_export str BATXMLgroup(xml *ret, int *bid);
 #include "mal_config.h"
 #include "batxml.h"
 
-#ifdef HAVE_LIBXML2
 #include <libxml/parser.h>
-#endif
 
 #define prepareOperand(X,Y,Z)								\
     if (((X) = BATdescriptor(*(Y))) == NULL )				\
@@ -242,7 +240,6 @@ BATXMLxml2str(int *ret, int *bid)
 str
 BATXMLxmltext(int *ret, int *bid)
 {
-#ifdef HAVE_LIBXML2
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -336,11 +333,6 @@ BATXMLxmltext(int *ret, int *bid)
 	if (content != NULL)
 		GDKfree(content);
 	throw(MAL, "xml.text", err );
-#else
-	(void) ret;
-	(void) bid;
-	throw(MAL, "xml.text", err);
-#endif
 }
 
 @-
@@ -409,7 +401,6 @@ BATXMLstr2xml(int *ret, int *bid)
 str
 BATXMLdocument(int *ret, int *bid)
 {
-#ifdef HAVE_LIBXML2
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -464,17 +455,11 @@ BATXMLdocument(int *ret, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.document",err);
-#else
-	(void) ret;
-	(void) bid;
-	throw(MAL, "xml.content", XML_MISSING);
-#endif
 }
 
 str
 BATXMLcontent(int *ret, int *bid)
 {
-#ifdef HAVE_LIBXML2
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -549,17 +534,11 @@ BATXMLcontent(int *ret, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.document", err);
-#else
-	(void) ret;
-	(void) bid;
-	throw(MAL, "xml.content", XML_MISSING);
-#endif
 }
 
 str
 BATXMLisdocument(int *ret, int *bid)
 {
-#ifdef HAVE_LIBXML2
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -593,11 +572,6 @@ BATXMLisdocument(int *ret, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.isdocument", OPERATION_FAILED " During bulk processing");
-#else
-	(void) ret;
-	(void) bid;
-	throw(MAL, "xml.isdocument", XML_MISSING);
-#endif
 }
 
 @-
@@ -898,11 +872,8 @@ BATXMLattribute(int *ret, str *name, int *bid)
 		throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
 	if (strNil(*name))
 		throw(MAL, "xml.attribute", XML_ATTRIBUTE_ERROR);
-
-#ifdef HAVE_LIBXML2
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
 		throw(MAL, "xml.attribute", XML_ATTRIBUTE_INVALID);
-#endif
 	attrlen = strlen(*name) + 5;
 	prepareOperand(b, bid, "attribute");
 	prepareResult(bn, b, TYPE_xml, "attribute");
@@ -962,10 +933,8 @@ BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
 		throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
 	if (strNil(*name))
 		throw(MAL, "xml.element", XML_NO_ELEMENT);
-#ifdef HAVE_LIBXML2
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
 		throw(MAL, "xml.element", XML_ATTRIBUTE_INVALID);
-#endif
 	if (nspace && !strNil(*nspace) && **nspace)
 		throw(MAL, "xml.element", XML_NO_NAMESPACE);
 	namelen = strlen(*name);

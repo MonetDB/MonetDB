@@ -15,7 +15,7 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../modules/atoms -I../../mal $(MONETDB_INCS)
+INCLUDES = -I../../modules/atoms -I../../mal $(monetdbcommon_CFLAGS)
 
 
 MTSAFE
@@ -27,8 +27,9 @@ LIBS = {
 	mal_compiler.mx 
 
 	#SCRIPTS = mal
-	LIBS = ../../tools/libmonetdb5 $(MONETDB_LIBS) \
-		-lbat -lstream $(MALLOC_LIBS) 
+	LIBS = ../../tools/libmonetdb5 \
+		$(monetdbcommon_LIBS) $(monetdbstream_LIBS) \
+		$(MALLOC_LIBS) 
 }
 
 headers_h = {
