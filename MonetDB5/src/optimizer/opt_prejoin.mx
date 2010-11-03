@@ -56,6 +56,7 @@ The prejoin implementation should only become active if we
 expect that we may end up with an IO access for each
 possible lookup.
 @c
+opt_export str ALGprejoin(int *rl, int *rr, int *l, int *r);
 str
 ALGprejoin(int *rl, int *rr, int *l, int *r){
 	BAT *bl,*br,*bn;

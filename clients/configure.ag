@@ -28,7 +28,6 @@ AC_INIT([MonetDB clients], [1.41.0], [info@monetdb.org], [MonetDB-client])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-dnl AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/mapilib/Mapi.mx])
@@ -166,8 +165,6 @@ AM_MONETDB_MSG_CONTROL()
 AM_ICONV()
 
 PKG_CHECK_MODULES([openssl], [openssl >= 0.9.8f])
-#PKG_CHECK_MODULES([curl], [libcurl])
-#PKG_CHECK_MODULES([zlib], [zlib])
 AM_MONETDB_LIB_READLINE()
 AM_MONETDB_LIB_PTHREAD()
 AM_MONETDB_LIB_SOCKET()

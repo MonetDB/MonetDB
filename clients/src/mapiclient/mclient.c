@@ -1301,7 +1301,11 @@ setWidth(void)
 			pagewidth = ws.ws_col;
 		else
 #endif
+#ifdef WIN32
+			pagewidth = 79;	 /* 80 columns minus 1 for the edge */
+#else
 			pagewidth = -1;
+#endif
 	}
 }
 
@@ -1571,7 +1575,7 @@ doFile(Mapi mid, const char *file)
 	int first = 1;		/* first line processing */
 	size_t skip;
 
-	if (file == NULL)
+	if (file == NULL || strcmp(file, "-") == 0)
 		fp = stdin;
 	else if ((fp = fopen(file, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", file);
@@ -1959,26 +1963,25 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #endif
 					} else {
 						/* get all table names in current schema */
-						if ((hdl = mapi_query(mid,
-								      "SELECT \"t\".\"name\", \"t\".\"type\", "
-								      "\"s\".\"name\" "
-								      "FROM \"sys\".\"_tables\" \"t\", "
-								      "\"sys\".\"schemas\" \"s\" "
-								      "WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
-								      "AND \"s\".\"name\" = \"current_schema\" "
-								      "AND \"t\".\"system\" = false "
-								      "ORDER BY \"t\".\"name\"")) != NULL &&
-						    mapi_error(mid) == MOK) {
-							char *type, *name, *schema;
-							while (fetch_row(hdl) == 3) {
-								name = mapi_fetch_field(hdl, 0);
-								type = mapi_fetch_field(hdl, 1);
-								schema = mapi_fetch_field(hdl, 2);
-								mnstr_printf(toConsole,
-									      "%-6s  %s.%s\n",
-									      *type == '1' ? "VIEW" : "TABLE",
-									      schema, name);
-							}
+						char *type, *name, *schema;
+						hdl = mapi_query(mid,
+								"SELECT \"t\".\"name\", \"t\".\"type\", "
+								"\"s\".\"name\" "
+								"FROM \"sys\".\"_tables\" \"t\", "
+								"\"sys\".\"schemas\" \"s\" "
+								"WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
+								"AND \"s\".\"name\" = \"current_schema\" "
+								"AND \"t\".\"system\" = false "
+								"ORDER BY \"t\".\"name\"");
+						CHECK_RESULT(mid, hdl, buf, continue);
+						while (fetch_row(hdl) == 3) {
+							name = mapi_fetch_field(hdl, 0);
+							type = mapi_fetch_field(hdl, 1);
+							schema = mapi_fetch_field(hdl, 2);
+							mnstr_printf(toConsole,
+									  "%-6s  %s.%s\n",
+									  *type == '1' ? "VIEW" : "TABLE",
+									  schema, name);
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
@@ -2732,6 +2735,7 @@ main(int argc, char **argv)
 		/* execute from file(s) */
 		while (optind < argc) {
 			if (echoquery &&
+			    strcmp(argv[optind], "-") != 0 &&
 			    stat(argv[optind], &statb) == 0 &&
 			    S_ISREG(statb.st_mode) &&
 			    statb.st_size < 1024*1024) {

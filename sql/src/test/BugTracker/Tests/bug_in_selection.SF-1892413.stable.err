@@ -13,10 +13,10 @@ stderr of test 'bug_in_selection.SF-1892413` in directory 'src/test/BugTracker` 
 # 10:24:35 >  
 
 MAPI  = monetdb@koala:39391
-QUERY = SELECT date, (SELECT date from test_subquery where date > t1.date limit 1) as dtNext from test_subquery t1;
-ERROR = !syntax error, unexpected LIMIT, expecting INTERSECT or EXCEPT or UNION or ')' in: "select date, (select date from test_subquery where date > t1.date limit"
+QUERY = SELECT date, (SELECT date from test_subquery where date > t1892413a.date limit 1) as dtNext from test_subquery t1892413a;
+ERROR = !syntax error, unexpected LIMIT, expecting INTERSECT or EXCEPT or UNION or ')' in: "select date, (select date from test_subquery where date > t1892413a.date limit"
 MAPI  = monetdb@koala:39391
-QUERY = SELECT date, (SELECT date from test_subquery where date > t1.date) as dtNext from test_subquery t1;
+QUERY = SELECT date, (SELECT date from test_subquery where date > t1892413a.date) as dtNext from test_subquery t1892413a;
 ERROR = !SQLException:assert:zero_or_one: cardinality violation (2>1)
 
 # 10:24:35 >  

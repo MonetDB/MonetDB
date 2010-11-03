@@ -606,7 +606,7 @@ bat-name or batCacheid
 #include <gdk.h>
 
 #ifdef WIN32
-#ifndef LIBBAT5
+#ifndef LIBKERNEL
 #define bat5_export extern __declspec(dllimport)
 #else
 #define bat5_export extern __declspec(dllexport)
@@ -628,6 +628,8 @@ bat5_export char *BKCdestroy(signed char *r, int *bid);
 bat5_export char *BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid);
 bat5_export char * BKCbat_append_val_wrap(int *r, int *bid, ptr u);
 bat5_export str BKCnewBAT(int *res, int *ht, int *tt, BUN *cap);
+bat5_export str BKCattach(int *ret, int *tt, str *heapfile);
+bat5_export str BKCdensebat(int *ret, wrd *size);
 bat5_export str BKCreverse(int *ret, int *bid);
 bat5_export str BKCmirror(int *ret, int *bid);
 bat5_export str BKCrevert(int *ret, int *bid);

@@ -39,33 +39,35 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.t3,	sys.t3 # table_name
-% id,	val # name
-% int,	int # type
-% 1,	1 # length
-[ 2,	NULL	]
-[ 1,	NULL	]
-[ NULL,	NULL	]
-[ 2,	5	]
-[ 1,	5	]
-[ NULL,	5	]
-[ 2,	6	]
-[ 1,	6	]
-[ NULL,	6	]
-#select * from t3 order by id;
-% sys.t3,	sys.t3 # table_name
-% id,	val # name
-% int,	int # type
-% 1,	1 # length
-[ NULL,	5	]
-[ NULL,	6	]
-[ NULL,	NULL	]
-[ 1,	NULL	]
-[ 1,	5	]
-[ 1,	6	]
-[ 2,	6	]
-[ 2,	NULL	]
-[ 2,	5	]
+#commit;
+#select val from t3 order by val;
+% sys.t3 # table_name
+% val # name
+% int # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ 6	]
+[ 6	]
+[ 6	]
+#select id from t3 order by id;
+% sys.t3 # table_name
+% id # name
+% int # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 2	]
+[ 2	]
 #select * from t3 order by val,id;
 % sys.t3,	sys.t3 # table_name
 % id,	val # name

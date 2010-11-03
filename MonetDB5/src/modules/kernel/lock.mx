@@ -59,7 +59,7 @@ typedef ptr lock;
 typedef ptr monet_lock;
 
 #ifdef WIN32
-#ifndef LIBLOCK
+#ifndef LIBKERNEL
 #define lock_export extern __declspec(dllimport)
 #else
 #define lock_export extern __declspec(dllexport)

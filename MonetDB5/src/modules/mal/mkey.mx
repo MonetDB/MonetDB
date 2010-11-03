@@ -172,7 +172,7 @@ could be replaced by partitioned hash-join with radix-cluster/decluster.
 #include "mal_exception.h"
 
 #ifdef WIN32
-#ifndef LIBMKEY
+#ifndef LIBMAL
 #define mkey_export extern __declspec(dllimport)
 #else
 #define mkey_export extern __declspec(dllexport)

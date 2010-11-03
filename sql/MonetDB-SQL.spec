@@ -26,10 +26,11 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/MonetDB-SQL-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Oct2010/MonetDB-SQL-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires: e2fsprogs-devel
+BuildRequires: pcre-devel
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.40
@@ -158,6 +159,34 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/MonetDB5/sql/*.h
 
 %changelog
+* Fri Oct 29 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.0-20101029
+- Rebuilt.
+
+* Thu Oct 21 2010 Fabian Groffen <fabian@cwi.nl> - 2.40.0-20101029
+- Report a stopped and locked database as under maintenance, instead of
+  without connections, bug #2685
+
+* Mon Oct 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.0-20101029
+- Fixed bug 2695: crash when starting mserver in readonly mode on a
+  new database.
+
+* Wed Sep 22 2010 Fabian Groffen <fabian@cwi.nl> - 2.40.0-20101029
+- Improved uuid detection, to solve problems like bug #2675
+
+* Fri Sep 17 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.0-20101029
+- Fixed a bug where the server silently ignored the last record in a
+  COPY INTO if it was incomplete (e.g. missing a quote).
+
+* Mon Aug 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.0-20101029
+- Fixed a crash of the server when an extremely complex query is
+  attempted.  This is the latest incarnation of bug 104.
+
+* Tue Aug 24 2010 Arjen de Rijke <arjen.de.rijke@cwi.nl> - 2.40.0-20101029
+- Add readonly property for databases to monetdb and merovingian.
+
+* Tue Aug 24 2010 Niels Nes <niels@cwi.nl> - 2.40.0-20101029
+- make it possible to use '?' in offset and limit
+
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.5-20100824
 - Rebuilt.
 

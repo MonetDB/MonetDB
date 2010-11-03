@@ -1,6 +1,10 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Thu Nov  2 2010 Sjoerd Mullender <sjoerd@acm.org>
+- On Windows, we now no longer use the pthreads library but instead
+  use the "native" threads, semaphores, and mutex implementation.
+
 * Wed Sep 22 2010 Fabian Groffen <fabian@cwi.nl>
 - We now provide pkg-config files (*.pc) for libraries.
 

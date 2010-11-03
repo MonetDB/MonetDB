@@ -536,7 +536,8 @@ workslow:
 #ifdef HAVE_SYS_RESOURCE_H
 				getrusage(RUSAGE_SELF, &oldResource);
 #endif
-				oldMemory= MT_mallinfo();
+				if (cntxt->flags & memoryFlag)
+					oldMemory= MT_mallinfo();
 			}
 		}
 
@@ -966,7 +967,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	int startpc = flow->start;
 	InstrPtr pci;
 	lng oldtimer=0;
-	struct Mallinfo oldMemory = MT_mallinfo();
+	struct Mallinfo oldMemory;
 	MT_Lock *lock = &flow->done->l;
 	int tid = t->id, prevpc= 0;
 	lng argclaim,retclaim,hotclaim;
@@ -978,6 +979,10 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #endif
 	@:performanceVariables@
 
+	if (cntxt->flags & memoryFlag)
+		oldMemory = MT_mallinfo();
+	else
+		oldMemory.arena = 0;
 	if (stk == NULL || stkpc < 0)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
@@ -1008,7 +1013,8 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #ifdef HAVE_SYS_RESOURCE_H
 			getrusage(RUSAGE_SELF, &oldResource);
 #endif
-			oldMemory = MT_mallinfo();
+			if (cntxt->flags & memoryFlag)
+				oldMemory = MT_mallinfo();
 		}
 	}
 
@@ -1511,7 +1517,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 			flow->worker[i].id = workerid++;
 			flow->worker[i].todo = flow->todo;
 			/* create the thread and let it wait */
-			MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i);
+			MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i, MT_THR_DETACHED);
 		}
 	}
 	flow->cntxt = cntxt;
@@ -1595,7 +1601,7 @@ str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop
 	p.start = start;
 	p.stop = stop;
 
-	MT_create_thread(&p.tid, runMALdetached, &p);
+	MT_create_thread(&p.tid, runMALdetached, &p, MT_THR_DETACHED);
 	return MAL_SUCCEED;
 }
 
@@ -2107,7 +2113,7 @@ are identified. In the post-execution phase they are removed.
 @= patterncall
 	if( pci->fcn== NULL)
 		ret = createScriptException(mb, stkpc, MAL, NULL,
-				"address of pattern missing");
+				"address of pattern %s.%s missing", pci->modname, pci->fcnname);
 	else {
 		@:safeTarget(@1)@
 		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
@@ -2355,7 +2361,7 @@ all.
 		*msg=':';
 	}
 	if (exceptionVar == -1)
-		exceptionVar = findVariableLength(mb,"ANYexception",12);
+		exceptionVar = findVariableLength(mb, (str) "ANYexception", 12);
 
 	/* unknown exceptions lead to propagation */
 	if( exceptionVar == -1){

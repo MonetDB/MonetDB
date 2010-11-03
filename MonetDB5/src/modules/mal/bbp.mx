@@ -227,7 +227,7 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "bat5.h"
 
 #ifdef WIN32
-#ifndef LIBBBP
+#ifndef LIBMAL
 #define bbp_export extern __declspec(dllimport)
 #else
 #define bbp_export extern __declspec(dllexport)
@@ -578,6 +578,7 @@ CMDcompressheap(Heap *h, str fnme)
 	}
 #else
 	(void) h;
+	(void) fnme;
 #endif
 	return MAL_SUCCEED;
 }
@@ -619,6 +620,7 @@ CMDdecompressheap(Heap *h, Heap *hn, str fnme)
 #else
 	(void) h;
 	(void) hn;
+	(void) fnme;
 #endif
 	return 0;
 }

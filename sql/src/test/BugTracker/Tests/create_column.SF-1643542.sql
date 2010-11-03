@@ -1,8 +1,8 @@
-create table t1(id int, name varchar(1024));
+create table t1643542a(id int, name varchar(1024));
 
-alter table t1 add col int;
-alter table t1 add col int;
+alter table t1643542a add col int;
+alter table t1643542a add col int;
 
-select * from t1;
+select * from t1643542a;
 
-drop table t1;
+drop table t1643542a;

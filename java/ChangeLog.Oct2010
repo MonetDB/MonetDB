@@ -1,7 +1,3 @@
 # ChangeLog file for java
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
-* Fri Oct 22 2010 Fabian Groffen <fabian@cwi.nl>
-- Fix for bug #2703, allow to have multiple metadata ResultSets open at
-  the same time
-

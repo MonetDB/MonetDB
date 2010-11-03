@@ -31,14 +31,14 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% .L7,	.t1,	.t2 # table_name
+% .L7,	.t1841754a,	.t1841754b # table_name
 % name,	n,	n # name
 % clob,	int,	int # type
 % 2,	2,	2 # length
 [ "aa",	11,	12	]
 [ "bb",	NULL,	22	]
 [ "dd",	NULL,	42	]
-% .L11,	.t1,	.t2,	.t3 # table_name
+% .L11,	.t1841754a,	.t1841754b,	.t1841754c # table_name
 % name,	n,	n,	n # name
 % clob,	int,	int,	int # type
 % 2,	2,	2,	2 # length

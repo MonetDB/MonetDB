@@ -15,32 +15,21 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../modules/atoms -I../modules/mal -I../optimizer \
-	-I../modules/kernel -I../mal $(CLIENTS_INCS) $(MONETDB_INCS) \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS)
+INCLUDES = -I../mal -I../modules/atoms -I../modules/mal -I../optimizer \
+	-I../modules/kernel \
+	$(monetdbmapi_CFLAGS) $(monetdbstream_CFLAGS) $(monetdbcommon_CFLAGS)
 
 MTSAFE
 
-LIBS = {
-	NAME = sched
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = run_isolate.mx run_pipeline.mx run_memo.mx run_adder.mx
-
-	#SCRIPTS = mal
-	LIBS = ../mal/libmonetdb5 ../optimizer/lib_optimizer $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib_run_octopus = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = run_octopus.mx run_tarantula.mx
-
-	LIBS = ../modules/mal/lib_remote ../modules/mal/lib_mat ../mal/libmonetdb5 ../optimizer/lib_optimizer $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+lib_scheduler = {
+	NOINST
+	SOURCES = \
+		run_adder.mx \
+		run_isolate.mx \
+		run_memo.mx \
+		run_octopus.mx \
+		run_pipeline.mx \
+		run_tarantula.mx
 }
 
 headers_h = {

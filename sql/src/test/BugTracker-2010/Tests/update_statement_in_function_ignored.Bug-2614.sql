@@ -36,3 +36,5 @@ select next_b();
 
 select * from table_b;
 
+drop function next_b;
+drop table table_b;

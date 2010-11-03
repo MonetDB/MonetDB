@@ -17,7 +17,6 @@ stdout of test 'mserver5-sql-readonly-view` in directory 'src/test/mserver5-sql-
 # Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:36267/
 # MonetDB/SQL module v2.39.0 loaded
 
-Ready.
 #select * from t1;
 % sys.t1 # table_name
 % a # name
@@ -36,7 +35,6 @@ Ready.
 # Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:36267/
 # MonetDB/SQL module v2.39.0 loaded
 
-Ready.
 #select * from t1;
 % sys.t1 # table_name
 % a # name

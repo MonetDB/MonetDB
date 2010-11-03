@@ -102,7 +102,7 @@ comment "debugging function that returns the unique tokens at each level";
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBTOKENIZER
+#ifndef LIBMAL
 #define tokenizer_export extern __declspec(dllimport)
 #else
 #define tokenizer_export extern __declspec(dllexport)

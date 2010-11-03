@@ -251,7 +251,7 @@ str.STRprelude();
 #include "ctype.h"
 
 #ifdef WIN32
-#ifndef LIBSTR
+#ifndef LIBATOMS
 #define str_export extern __declspec(dllimport)
 #else
 #define str_export extern __declspec(dllexport)
@@ -344,7 +344,7 @@ str_export str STRspace(str *ret, int *l);
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
 #endif
-#ifdef HAVE_ICONV_H
+#ifdef HAVE_ICONV
 #include <iconv.h>
 #endif
 

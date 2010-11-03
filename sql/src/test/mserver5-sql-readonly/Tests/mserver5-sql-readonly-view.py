@@ -1,40 +1,5 @@
 import sys
-import os
 from MonetDBtesting import process
-
-def server_readonly():
-    s = process.server('sql', args = ["--readonly"],
-                       stdin = process.PIPE,
-                       stdout = process.PIPE,
-                       stderr = process.PIPE)
-    s.stdin.write('\nio.printf("\\nReady.\\n");\n')
-    s.stdin.flush()
-    while True:
-        ln = s.stdout.readline()
-        if not ln:
-            print 'Unexpected EOF from server'
-            sys.exit(1)
-        sys.stdout.write(ln)
-        if 'Ready' in ln:
-            break
-    return s
-
-def server():
-    s = process.server('sql', args = [],
-                       stdin = process.PIPE,
-                       stdout = process.PIPE,
-                       stderr = process.PIPE)
-    s.stdin.write('\nio.printf("\\nReady.\\n");\n')
-    s.stdin.flush()
-    while True:
-        ln = s.stdout.readline()
-        if not ln:
-            print 'Unexpected EOF from server'
-            sys.exit(1)
-        sys.stdout.write(ln)
-        if 'Ready' in ln:
-            break
-    return s
 
 def server_stop(s):
     out, err = s.communicate()
@@ -99,7 +64,10 @@ delete from v1 where a = 3;
 '''
 
 def main():
-    s = server()
+    s = process.server('sql', args = [],
+                       stdin = process.PIPE,
+                       stdout = process.PIPE,
+                       stderr = process.PIPE)
     client(script1)
     client(script2)
     client(script3)
@@ -108,7 +76,10 @@ def main():
     client(script11)
     client(script12)
     server_stop(s)
-    s = server_readonly()
+    s = process.server('sql', args = ["--readonly"],
+                       stdin = process.PIPE,
+                       stdout = process.PIPE,
+                       stderr = process.PIPE)
     client(script1)
     client(script3)
     client(script6)

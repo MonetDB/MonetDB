@@ -16,116 +16,48 @@
 # All Rights Reserved.
 
 INCLUDES = \
-	-I../atoms -I../../mal \
-	$(MONETDB_INCS) $(HWCOUNTERS_INCS) \
-	$(SPHINXCLIENT_CFLAGS) $(ICONV_CFLAGS)
+	-I../../mal -I../atoms $(monetdbcommon_CFLAGS) $(HWCOUNTERS_INCS)
 
 MTSAFE
 
-LIBS = {
-	DIR = libdir/MonetDB5
-	SEP = _
+lib_kernel = {
+	NOINST
 	SOURCES = \
-		calc.mx bat5.mx algebra.mx status.mx unix.mx \
-		mmath.mx lock.mx sema.mx alarm.mx  batifthen.mx \
-		batcast.mx batcalc.mx batmmath.mx counters.mx \
-		microbenchmark.mx 
-
-	#SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
-                $(PTHREAD_LIBS) $(MALLOC_LIBS) ../../mal/libmonetdb5
-}
-
-lib__aggr = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = aggr.mx \
-		aggr_be_sum.mx aggr_be_prod.mx aggr_be_avg.mx aggr_be_minmax.mx aggr_be_count.mx \
-		aggr_bge_sum.mx aggr_bge_prod.mx aggr_bge_avg.mx aggr_bge_minmax.mx aggr_bge_count.mx
-	#SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream ../../mal/libmonetdb5
+		aggr_be_avg.mx \
+		aggr_be_count.mx \
+		aggr_be_minmax.mx \
+		aggr_be_prod.mx \
+		aggr_be_sum.mx \
+		aggr_bge_avg.mx \
+		aggr_bge_count.mx \
+		aggr_bge_minmax.mx \
+		aggr_bge_prod.mx \
+		aggr_bge_sum.mx \
+		aggr.mx \
+		alarm.mx \
+		algebra.mx \
+		array.mx \
+		bat5.mx \
+		batcalc.mx \
+		batcast.mx \
+		batcolor.mx \
+		batifthen.mx \
+		batmmath.mx \
+		batmtime.mx \
+		batstr.mx \
+		calc.mx \
+		counters.mx \
+		group.mx \
+		lock.mx \
+		logger.mx \
+		microbenchmark.mx \
+		mmath.mx \
+		sema.mx \
+		status.mx \
+		unix.mx
 }
 
 EXTRA_DIST = aggr_ri.mx
-
-lib__batstr = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = batstr.mx 
-	#SCRIPTS = mil ""
-	LIBS = ../atoms/lib_str $(MONETDB_LIBS) -lbat -lstream \
-                $(MALLOC_LIBS) ../../mal/libmonetdb5
-}
-lib__batmtime = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = batmtime.mx
-	#SCRIPTS = mil ""
-	LIBS = ../atoms/lib_str ../atoms/lib_mtime ../../mal/libmonetdb5 \
-		   $(MONETDB_LIBS) -lbat -lstream $(MALLOC_LIBS)
-}
-
-lib__batcolor = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = batcolor.mx
-	#SCRIPTS = mil ""
-	LIBS = ../atoms/lib_color $(MONETDB_LIBS) -lbat -lstream \
-                $(MALLOC_LIBS) ../../mal/libmonetdb5
-}
-
-lib__group = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = group.mx
-	#SCRIPTS = mil ""
-	LIBS = lib_algebra $(MONETDB_LIBS) -lbat -lstream \
-                $(MALLOC_LIBS) ../../mal/libmonetdb5
-}
-
-lib__array = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = array.mx
-	#SCRIPTS = mil ""
-	LIBS = lib_algebra $(MONETDB_LIBS) -lbat -lstream \
-                $(MALLOC_LIBS) ../../mal/libmonetdb5
-}
-
-lib__logger = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = logger.mx
-	#SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
-                $(MALLOC_LIBS) ../../mal/libmonetdb5 lib_bat5
-		
-}
-
-lib__sphinx = {
-	COND = HAVE_SPHINXCLIENT
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = sphinx.mx
-
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(MALLOC_LIBS) \
-		$(SPHINXCLIENT_LIBS) ../../mal/libmonetdb5
-}
-
-headers_sphinx_h = {
-	COND = HAVE_SPHINXCLIENT
-	DIR = includedir/MonetDB5/kernel
-	SOURCES = sphinx.mx
-	HEADERS = h 
-}
-
-headers_sphinx_mal = {
-	COND = HAVE_SPHINXCLIENT
-	HEADERS = mal
-	DIR = libdir/MonetDB5
-	SOURCES = sphinx.mx
-}
 
 headers_h = {
 	DIR = includedir/MonetDB5/kernel

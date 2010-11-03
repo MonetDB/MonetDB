@@ -19,7 +19,7 @@ Over..
 # 12:47:21 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31435  < create_column.SF-1643542.sql
 # 12:47:21 >  
 
-% sys.t1,	sys.t1,	sys.t1 # table_name
+% sys.t1643542a,	sys.t1643542a,	sys.t1643542a # table_name
 % id,	name,	col # name
 % int,	varchar,	int # type
 % 1,	0,	1 # length

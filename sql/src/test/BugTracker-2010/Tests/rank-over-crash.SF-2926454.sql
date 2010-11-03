@@ -18,3 +18,5 @@ sum(score) as totalscore,
 rank() over (order by sum(score) desc) -- cannot use alias 'totalscore' here
 from score_table
 group by s_name;
+
+drop table score_table;

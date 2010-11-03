@@ -134,7 +134,7 @@ typedef struct blob {
 #define sqlblob blob
 
 #ifdef WIN32
-#ifndef LIBBLOB
+#ifndef LIBATOMS
 #define blob_export extern __declspec(dllimport)
 #else
 #define blob_export extern __declspec(dllexport)

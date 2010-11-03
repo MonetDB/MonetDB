@@ -75,3 +75,7 @@ INSERT
         FROM edit;
 SELECT *
     FROM base;
+
+DROP TABLE edit;
+DROP TABLE base;
+DROP TABLE change;

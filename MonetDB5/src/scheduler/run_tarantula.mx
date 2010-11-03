@@ -79,7 +79,7 @@ the (remote) database servers.
 #include "mat.h"
 #include "run_tarantula.h"
 #include "opt_tarantula.h"
-#include <mapilib/Mapi.h>
+#include <Mapi.h>
 #include "remote.h"
 #include "mal_sabaoth.h"
 

@@ -13,7 +13,7 @@ stderr of test 'between_with_column.SF-1959410` in directory 'src/test/BugTracke
 # 10:53:08 >  
 
 MAPI  = monetdb@volund:38056
-QUERY = select yea from t4, t5 where age between 0.03 and id < 30 ;
+QUERY = select yea from t1959410d, t1959410e where age between 0.03 and id < 30 ;
 ERROR = !types boolean(1,0) and double(53,2) are not equal
 
 # 10:53:08 >  

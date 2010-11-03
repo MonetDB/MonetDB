@@ -506,7 +506,7 @@ mis-represented information.
 /* #define _DEBUG_BPM_ */
 
 #ifdef WIN32
-#ifndef LIBBPM
+#ifndef LIBMAL
 #define bpm_export extern __declspec(dllimport)
 #else
 #define bpm_export extern __declspec(dllexport)

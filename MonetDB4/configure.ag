@@ -26,7 +26,6 @@ AC_INIT([MonetDB Server], [4.41.0], [info@monetdb.org], [MonetDB4-server])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------

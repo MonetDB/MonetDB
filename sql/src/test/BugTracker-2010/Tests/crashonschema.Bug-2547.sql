@@ -1,3 +1,5 @@
+start transaction;
+
 create schema intro1;
 create schema intro2 authorized monetdb;
 create schema authorized monetdb;
@@ -13,3 +15,4 @@ create table t2010(i int);
 create schema intro3 
   grant insert on t2010 to monetdb;
 
+rollback;

@@ -440,49 +440,51 @@ nor does it contain polymorphic actual arguments.
 		}
 	}
 @-
-We found the proper function. Copy some properties. In particuler,
+We found the proper function. Copy some properties. In particular,
 determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
 Beware that polymorphic functions may produce type-incorrect clones.
 This piece of code may be shared by the separate binder
 @= bindFunction
-	if (s->def->errors){
-		p->typechk= TYPE_UNKNOWN;
+	if (s->def->errors) {
+		p->typechk = TYPE_UNKNOWN;
 		mb->errors++;
 		return -3;
 	}
-	if( p->token == ASSIGNsymbol){
-		switch(getSignature(s)->token){
-		case COMMANDsymbol: 
-			p->token = CMDcall; 
-			p->fcn = getSignature(s)->fcn;	/* C implementation mandatory */
-			if( p->fcn == 0) {
-				showScriptException( mb, getPC(mb,p), TYPE, "Object code missing");
-				p->typechk= TYPE_UNKNOWN;
+	if (p->token == ASSIGNsymbol) {
+		switch (getSignature(s)->token) {
+			case COMMANDsymbol:
+				p->token = CMDcall;
+				p->fcn = getSignature(s)->fcn;  /* C implementation mandatory */
+				if (p->fcn == NULL) {
+					showScriptException(mb, getPC(mb, p), TYPE,
+							"object code for command %s.%s missing",
+							p->modname, p->fcnname);
+					p->typechk = TYPE_UNKNOWN;
+					mb->errors++;
+					return -3;
+				}
+				break;
+			case PATTERNsymbol:
+				p->token = PATcall;
+				p->fcn = getSignature(s)->fcn;  /* C implementation optional */
+				break;
+			case FACTORYsymbol:
+				p->token = FACcall;
+				p->fcn = getSignature(s)->fcn;  /* C implementation optional */
+				break;
+			case FUNCTIONsymbol:
+				p->token = FCNcall;
+				if (getSignature(s)->fcn)
+					p->fcn = getSignature(s)->fcn; /* C implementation optional */
+				break;
+			default: {
+				if (!silent)
+					showScriptException(mb, getPC(mb, p), MAL,
+							"MALresolve: unexpected token type");
 				mb->errors++;
 				return -3;
 			}
-			break;
-		case PATTERNsymbol: 
-			p->token = PATcall; 
-			p->fcn = getSignature(s)->fcn;	/* C implementation optional */
-			break;
-		case FACTORYsymbol:
-			p->token = FACcall; 
-			p->fcn = getSignature(s)->fcn;	/* C implementation optional */
-			break;
-		case FUNCTIONsymbol: 
-			p->token = FCNcall; 
-			if( getSignature(s)->fcn)
-				p->fcn = getSignature(s)->fcn;	/* C implementation optional */
-			break;
-		default: {
-			if (!silent)
-				showScriptException(mb, getPC(mb, p), MAL, 
-					"MALresolve: unexpected token type");
-			mb->errors++;
-			return -3;
 		}
-		} /* retarded indenting */
 		p->blk = s->def;
 	}
 @-

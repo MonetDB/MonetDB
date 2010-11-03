@@ -133,7 +133,7 @@ detailed information.
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBCLIENTS
+#ifndef LIBMAL
 #define clients_export extern __declspec(dllimport)
 #else
 #define clients_export extern __declspec(dllexport)

@@ -61,8 +61,6 @@ For the time being we assume that all commands are statically linked.
 #define RTLD_NOW_REPORT_ERROR   8
 #endif
 
-#include <sys/types.h> /* opendir */
-
 /* #define DEBUG_MAL_LINKER */
 #define MONET64 1
 mal_export MALfcn getAddress(str filename, str modnme, str fcnname,int silent);
@@ -96,6 +94,9 @@ the consistency of this counter.
 #include "mal_linker.h"
 #include "mal_function.h"	/* for throwException() */
 #include "mal_import.h"		/* for slash_2_dir_sep() */
+
+#include <sys/types.h> /* opendir */
+#include <dirent.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define open _open

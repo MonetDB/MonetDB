@@ -60,7 +60,7 @@ comment "Locate the base of a particulat BAT in the dbfarm";
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBATTACH
+#ifndef LIBMAL
 #define attach_export extern __declspec(dllimport)
 #else
 #define attach_export extern __declspec(dllexport)

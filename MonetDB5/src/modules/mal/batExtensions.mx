@@ -104,7 +104,7 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "algebra.h"
 
 #ifdef WIN32
-#ifndef LIBBATEXTENSIONS
+#ifndef LIBMAL
 #define be_export extern __declspec(dllimport)
 #else
 #define be_export extern __declspec(dllexport)

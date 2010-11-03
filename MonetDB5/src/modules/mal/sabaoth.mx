@@ -95,7 +95,7 @@ comment "Unpublishes everything known for this server";
 #define _SABAOTH_DEF
 
 #ifdef WIN32
-#ifndef LIBSABAOTH
+#ifndef LIBMAL
 #define sabaoth_export extern __declspec(dllimport)
 #else
 #define sabaoth_export extern __declspec(dllexport)

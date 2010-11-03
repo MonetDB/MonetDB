@@ -450,6 +450,7 @@ SQLloader(void *p){
 		task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
 		MT_up_sema(task->consumer, "tablet loader");
 	}
+	MT_exit_thread(0);
 }
 
 BUN
@@ -560,10 +561,10 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 #endif
 		MT_init_sema(ptask[j].sema,0,"sqlworker");
 		MT_init_sema(ptask[j].reply,0,"sqlworker");
-		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j]);
+		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j], MT_THR_JOINABLE);
 	}
 
-	MT_create_thread(&task->tid, SQLloader, (void*) task);
+	MT_create_thread(&task->tid, SQLloader, (void*) task, MT_THR_JOINABLE);
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout,"parallel bulk load "LLFMT " - " LLFMT"\n",skip, maxrow);
 #endif
@@ -787,10 +788,10 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	mnstr_printf(GDKout,"Kill the workers\n");
 #endif
 	for ( j=0; j< threads; j++) {
-		MT_kill_thread(ptask[j].tid);
+		MT_join_thread(ptask[j].tid);
 		GDKfree(ptask[j].cols);
 	}
-	MT_kill_thread(task->tid);
+	MT_join_thread(task->tid);
 
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout,"Found " BUNFMT" tuples\n",cnt);

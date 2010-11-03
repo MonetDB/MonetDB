@@ -124,7 +124,7 @@ comment "Set the maximum usable amount of physical swapspace in KB";
 #define _SYS_H_
 
 #ifdef WIN32
-#ifndef LIBSTATUS
+#ifndef LIBKERNEL
 #define status_export extern __declspec(dllimport)
 #else
 #define status_export extern __declspec(dllexport)

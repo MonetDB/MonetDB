@@ -571,7 +571,7 @@ the string representations.
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBCALC
+#ifndef LIBKERNEL
 #define calc_export extern __declspec(dllimport)
 #else
 #define calc_export extern __declspec(dllexport)

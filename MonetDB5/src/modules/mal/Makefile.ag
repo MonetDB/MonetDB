@@ -15,179 +15,54 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = crackers HAVE_RAPTOR?rdf
-
-INCLUDES = -I../atoms -I../kernel \
-        -I../../mal $(CLIENTS_INCS) $(MONETDB_INCS) \
-        $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS) $(READLINE_INCS) $(LIBXML2_CFLAGS)
+INCLUDES = -I../../mal -I../atoms -I../kernel \
+	$(monetdbmapi_CFLAGS) $(monetdbcommon_CFLAGS) $(monetdbmstream_CFLAGS) \
+	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS)
 
 MTSAFE
 
-LIBS = {
-	DIR = libdir/MonetDB5
-	SEP = _
+lib_mal = {
+	NOINST
 	SOURCES = \
-		chopper.mx constraints.mx language.mx box.mx \
-		profiler.mx const.mx attach.mx algebraExtensions.mx \
-		inspect.mx manual.mx pqueue.mx mkey.mx \
-		factories.mx groupby.mx mdb.mx  \
-		urlbox.mx histogram.mx \
-		sabaoth.mx remote.mx txtsim.mx recycle.mx \
-		cluster.mx trader.mx pma.mx \
-		tokenizer.mx zorder.mx
-		#radix.mx 
-
-	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
-                $(CLIENTS_LIBS) -lMapi \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib_mat = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = mat.mx
-	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 ../kernel/lib_group $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
-                $(CLIENTS_LIBS) -lMapi \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		$(LIBXML2_LIBS) $(ICONV_LIBS)
-}
-
-lib_batExtensions = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = batExtensions.mx
-	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib_replication = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = replication.mx
-	LIBS = lib_sabaoth ../../mal/libmonetdb5 ../atoms/lib_mtime ../kernel/lib_bat5 \
-		   ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
-                $(CLIENTS_LIBS) -lMapi \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib_batxml = {
-	COND = HAVE_LIBXML2
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = batxml.mx
-	LIBS = ../../mal/libmonetdb5 ../atoms/lib_xml ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
-                $(CLIENTS_LIBS) -lMapi \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		$(LIBXML2_LIBS) $(ICONV_LIBS)
-}
-
-lib_bpm = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = bpm.mx
-	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib_mal_mapi = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = mal_mapi.mx
-	LIBS = ../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
-                $(OPENSSL_LIBS) $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib_mal_io = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = mal_io.mx 
-	LIBS = ../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib__clients = {
-	DIR = libdir/MonetDB5
-	SOURCES = clients.mx
-
-	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(READLINE_LIBS) 
-}
-
-lib__pcre = {
-	DIR = libdir/MonetDB5
-	SOURCES = pcre.mx
-
-	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PCRE_LIBS) 
-}
-
-lib__bbp = {
-	DIR = libdir/MonetDB5
-	SOURCES = bbp.mx
-
-	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 \
-		$(MONETDB_LIBS) -lbat -lstream \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib__tablet = {
-	DIR = libdir/MonetDB5
-	SOURCES = tablet.mx tablet_sql.mx
-
-	#SCRIPTS = mal mil ""
-	LIBS = lib_histogram ../../mal/libmonetdb5 ../kernel/lib_algebra \
-		$(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib__transaction = {
-	DIR = libdir/MonetDB5
-	SOURCES = transaction.mx
-
-	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-lib__statistics = {
-	DIR = libdir/MonetDB5
-	SOURCES = statistics.mx
-
-	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmonetdb5 ../kernel/lib_algebra \
-		$(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
-headers_batxml_h = {
-	COND = HAVE_LIBXML2
-	DIR = includedir/MonetDB5/mal
-	SOURCES = batxml.mx
-	HEADERS = h 
-}
-
-headers_batxml_mal = {
-	COND = HAVE_LIBXML2
-	HEADERS = mal
-	DIR = libdir/MonetDB5
-	SOURCES = batxml.mx
+		algebraExtensions.mx \
+		attach.mx \
+		batExtensions.mx \
+		bbp.mx \
+		box.mx \
+		bpm.mx \
+		chopper.mx \
+		clients.mx \
+		cluster.mx \
+		const.mx \
+		constraints.mx \
+		factories.mx \
+		groupby.mx \
+		histogram.mx \
+		inspect.mx \
+		language.mx \
+		mal_io.mx \
+		mal_mapi.mx \
+		manual.mx \
+		mat.mx \
+		mdb.mx \
+		mkey.mx \
+		pcre.mx \
+		pma.mx \
+		pqueue.mx \
+		profiler.mx \
+		recycle.mx \
+		remote.mx \
+		replication.mx \
+		sabaoth.mx \
+		statistics.mx \
+		tablet.mx \
+		tablet_sql.mx \
+		tokenizer.mx \
+		trader.mx \
+		transaction.mx \
+		txtsim.mx \
+		urlbox.mx \
+		zorder.mx
 }
 
 headers_h = {

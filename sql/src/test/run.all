@@ -18,7 +18,6 @@
 # All Rights Reserved.
 
 SQL='mclient -lsql -umonetdb -Pmonetdb'
-SQL1='mclient -lsql -uromulo -Promulo'
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi
@@ -69,5 +68,5 @@ $SQL < cast_str2num.sql
 
 echo "internStmt"
 $SQL < internStmt_1.sql
-$SQL1 < internStmt_2.sql
+$SQL < internStmt_2.sql
 $SQL < internStmt_3.sql

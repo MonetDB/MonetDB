@@ -331,13 +331,13 @@ slave.prelude();
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
-#include <mapilib/Mapi.h>
+#include <Mapi.h>
 #include "mtime.h"
 
 /*#define _DEBUG_REPLICATION_  */
 
 #ifdef WIN32
-#ifndef LIBREPLICATION
+#ifndef LIBMAL
 #define replication_export extern __declspec(dllimport)
 #else
 #define replication_export extern __declspec(dllexport)
@@ -379,12 +379,13 @@ replication_export BAT *SLAVEtable(void);
 @c
 #include "mal_config.h"
 #include "replication.h"
+#include <sys/types.h>
+#include <dirent.h>
 #include "sabaoth.h"
 #include "mal_client.h"
-#include <mal_sabaoth.h>
-#include <mapilib/Mapi.h>
-#include <mtime.h>
 #include "algebra.h"
+#include <mal_sabaoth.h>
+#include <mtime.h>
 
 @-
 The start of the query is marked with a replica tag.
@@ -1140,7 +1141,7 @@ MASTERsync(int *ret, str *uri, str *usr, str *pw, oid *tag)
 	masterstatus[free].uri = GDKstrdup(*uri);
 	masterstatus[free].tag = t;
 	masterstatus[free].m = mapi;
-	if (MT_create_thread(&tid, MASTERsend, (void *)&free) < 0)
+	if (MT_create_thread(&tid, MASTERsend, (void *)&free, MT_THR_DETACHED) != 0)
 		throw(MAL, "master.sync", "cannot fork new client");
 
 #ifdef _DEBUG_REPLICATION_

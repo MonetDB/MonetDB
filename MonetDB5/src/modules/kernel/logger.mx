@@ -85,7 +85,7 @@ comment "Free the resources used by the logger.";
 #include "mal_exception.h"
 
 #ifdef WIN32
-#ifndef LIBLOGGER
+#ifndef LIBKERNEL
 #define logger_export extern __declspec(dllimport)
 #else
 #define logger_export extern __declspec(dllexport)

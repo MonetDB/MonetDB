@@ -45,6 +45,7 @@ machine and redirect to each other when necessary.
 #include <stdio.h> /* fseek, rewind */
 #include <unistd.h>	/* unlink and friends */
 #include <sys/types.h>
+#include <dirent.h> /* readdir, DIR */
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h> /* for getting error messages */

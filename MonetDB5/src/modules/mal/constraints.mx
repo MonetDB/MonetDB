@@ -34,7 +34,7 @@ comment "Check if the BAT is empty.";
 
 
 #ifdef WIN32
-#ifndef LIBCONSTRAINTS
+#ifndef LIBMAL
 #define constraints_export extern __declspec(dllimport)
 #else
 #define constraints_export extern __declspec(dllexport)

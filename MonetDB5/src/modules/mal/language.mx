@@ -137,7 +137,7 @@ comment "Merge the instructions stored in the
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBLANGUAGE
+#ifndef LIBMAL
 #define language_export extern __declspec(dllimport)
 #else
 #define language_export extern __declspec(dllexport)

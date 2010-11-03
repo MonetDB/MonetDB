@@ -72,7 +72,7 @@ comment "If-then-else operation to assemble a conditional result ";
 #include "mal_exception.h"
 
 #ifdef WIN32
-#ifndef LIBBATIFTHEN
+#ifndef LIBKERNEL
 #define batifthen_export extern __declspec(dllimport)
 #else
 #define batifthen_export extern __declspec(dllexport)

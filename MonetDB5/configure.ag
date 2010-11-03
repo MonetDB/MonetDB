@@ -1,5 +1,5 @@
-dnl -*- mode: autoconf -*-
-dnl vim: ft=config:
+#                                               -*- Autoconf -*-
+#                                               vim: ft=config :
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -27,7 +27,6 @@ AC_INIT([MonetDB Server], [5.23.0], [info@monetdb.org], [MonetDB5-server])
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
@@ -46,6 +45,8 @@ AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
 fi
+
+PKG_PROG_PKG_CONFIG()
 
 # MONETDB5_BUILD and MONETDB5_SOURCE are *only* used for monetdb5-config
 # MONETDB5_SOURCE is the absolute path name of the source directory
@@ -71,36 +72,78 @@ req_monetdb_ver='1.40.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-AM_MONETDB_COMMON($req_monetdb_ver)
-if test "x$have_monetdb" != xyes; then
-	if test "x$MONETDB_VERSION" = "x"; then
-		AC_MSG_ERROR([MonetDB was not found. MonetDB5 requires at least version $req_monetdb_ver of MonetDB.])
-	else
-		AC_MSG_ERROR([MonetDB5 requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDB_VERSION was found.])
-	fi
-fi
+
+PKG_CHECK_MODULES([monetdbstream], [monetdb-stream >= $req_monetdb_ver])
+PKG_CHECK_MODULES([monetdbcommon], [monetdb-mutils >= $req_monetdb_ver,
+                                    monetdb-gdk >= $req_monetdb_ver])
+
 req_clients_ver='1.40.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-AM_MONETDB_CLIENTS($req_clients_ver)
+
+PKG_CHECK_MODULES([monetdbmapi], [monetdb-mapi >= $req_clients_ver])
+
 AM_MONETDB_DEFAULTS()
 AM_MONETDB_COMPILER()
-AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
-AM_MONETDB_LIBS()
+AM_MONETDB_UTILS()
+AM_MONETDB_TYPES()
+AM_MONETDB_PATH_FILE()
+dnl AM_MONETDB_TOOLS()
+dnl AM_MONETDB_LIBS()
+AM_MONETDB_LIB_PTHREAD()
+AM_MONETDB_LIB_M()
+AM_MONETDB_LIB_MALLOC()
+AM_MONETDB_LIB_DL()
+AM_MONETDB_LIB_SOCKET()
+AM_MONETDB_LIB_HWCOUNTERS()
 
 dnl src/modules/mal/mal_mapi.mx does UNIX domain socket handling
 AM_MONETDB_MSG_CONTROL()
+AM_ICONV()
+AC_TYPE_SIGNAL() #RETSIGTYPE
 
-AM_MONETDB_UTILS()
+req_pcre_ver='4.5'
+PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver])
+AC_PATH_PROG(PCRETEST,pcretest)
+if test "x$PCRETEST" = x; then
+	AC_MSG_ERROR([could not find pcretest])
+else
+	AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
+	pcre_utf8="`$PCRETEST -C 2>/dev/null | grep 'UTF-8 support' | sed -e 's|^ *||' -e 's| *$||'`"
+	if test "x$pcre_utf8" != "xUTF-8 support"; then
+		AC_MSG_ERROR([PCRE library compiled without UTF-8 support])
+	fi
+	AC_MSG_RESULT([yes])
+fi
 
-if test "x$have_pcre" = xno; then
-	AC_MSG_ERROR([MonetDB 5 requires PCRE >= $req_pcre_ver with UTF-8 support $why_no_pcre])
+PKG_CHECK_MODULES([openssl], [openssl >= 0.9.8f])
+
+PKG_CHECK_EXISTS([libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"])
+if test x"$have_libxml2" = x"yes" ; then
+	PKG_CHECK_MODULES([libxml2], [libxml-2.0])
 fi
-if test "x$have_openssl" = xno; then
-	AC_MSG_ERROR([MonetDB 5 requires OpenSSL ($why_no_openssl)])
+AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
+
+req_raptor_ver='1.4.16'
+PKG_CHECK_EXISTS([raptor >= $req_raptor_ver], [have_raptor="yes"], [have_raptor="no"])
+if test x"$have_raptor" = x"yes" ; then
+	PKG_CHECK_MODULES([raptor], [raptor >= $req_raptor_ver])
 fi
+AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
+
+PKG_CHECK_EXISTS([libcurl], [have_curl="yes"], [have_curl="no"])
+if test x"$have_curl" = x"yes" ; then
+	PKG_CHECK_MODULES([curl], [libcurl])
+fi
+AM_CONDITIONAL(HAVE_CURL, test x"$have_curl" != xno)
+
+PKG_CHECK_EXISTS([zlib], [have_zlib="yes"], [have_zlib="no"])
+if test x"$have_zlib" = x"yes" ; then
+	PKG_CHECK_MODULES([zlib], [zlib])
+fi
+AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
 
 AC_PROG_LIBTOOL
 
@@ -149,138 +192,6 @@ AC_TRY_LINK([$ac_includes_default
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
 AC_MSG_RESULT($ctime_r3)
 
-
-dnl raptor
-RAPTOR_VERSION_REQUIRED_MIN=1.4.16
-have_raptor=auto
-RAPTOR_CONFIG=''
-RAPTOR_INCS=''
-RAPTOR_LIBS=''
-wrong=''
-AC_ARG_WITH(raptor,
-	AS_HELP_STRING([--with-raptor=DIR],
-		[raptor library is installed in DIR]),
-	have_raptor="$withval")
-if test "x$have_raptor" != xno; then
-	case "$have_raptor" in
-	yes|auto)
-		XPATH="$PATH"
-		;;
-	*)
-		XPATH="$have_raptor/bin"
-		;;
-	esac
-	AC_PATH_PROG(RAPTOR_CONFIG,raptor-config,,$XPATH)
-	if test "x$RAPTOR_CONFIG" = x; then
-		wrong="raptor-config could not be found in $XPATH"
-		if test "x$have_raptor" != xauto; then
-			AC_MSG_ERROR([$wrong])
-		fi
-		have_raptor=no
-	fi
-fi
-if test "x$have_raptor" != xno; then
-	AC_MSG_CHECKING([for raptor >= $RAPTOR_VERSION_REQUIRED_MIN])
-	RAPTOR_VERSION="`$RAPTOR_CONFIG --version`"
-	if test MONETDB_VERSION_TO_NUMBER(echo $RAPTOR_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo $RAPTOR_VERSION_REQUIRED_MIN); then
-		AC_MSG_RESULT([no, found $RAPTOR_VERSION])
-		wrong="raptor version $RAPTOR_VERSION is older than $RAPTOR_VERSION_REQUIRED_MIN"
-		if test "x$have_raptor" != xauto; then
-			AC_MSG_ERROR([$wrong])
-		fi
-		have_raptor=no
-	else
-		AC_MSG_RESULT([yes, found $RAPTOR_VERSION])
-	fi
-fi
-if test "x$have_raptor" != xno; then
-	RAPTOR_LIBS="`$RAPTOR_CONFIG --libs`"
-	RAPTOR_INCS="`$RAPTOR_CONFIG --cflags`"
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $RAPTOR_INCS"
-	AC_CHECK_HEADER(raptor.h, AC_DEFINE(HAVE_RAPTOR_H, 1, [Define to 1 if you have the <raptor.h> header file.]),
-		if test "x$have_raptor" != xauto; then
-			AC_MSG_ERROR([raptor.h could not be found/used])
-		fi
-		have_raptor=no
-	)
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_raptor" != xno; then
-	save_LIBS="$LIBS"
-    	LIBS="$LIBS $RAPTOR_LIBS"
-    	AC_CHECK_LIB(raptor, raptor_uri_as_string, :,
-		if test "x$have_raptor" != xauto; then
-			AC_MSG_ERROR([-lraptor could not be found/used])
-		fi
-		have_raptor=no
-	)
-    	LIBS="$save_LIBS"
-fi
-AC_MSG_CHECKING([whether to use raptor for rdf])
-if test "x$have_raptor" = xno; then
-	AC_MSG_RESULT([no])
-else
-	AC_MSG_RESULT([yes])
-fi
-AC_SUBST(RAPTOR_INCS)
-AC_SUBST(RAPTOR_LIBS)
-AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
-
-have_libxml2="auto"
-AC_ARG_WITH(libxml2,
-    AS_HELP_STRING([--with-libxml2=DIR],[libxml2 library is installed in DIR]),
-    [have_libxml2="$withval"], [have_libxml2="auto"])
-if test "x$have_libxml2" != xno; then
-    XML2_CONFIG=""
-    XPATH="$PATH"
-    case "$have_libxml2" in
-    auto|yes)
-	;;
-    *)
-	XPATH="$have_libxml2/bin"
-	;;
-    esac
-
-    AC_PATH_PROG(XML2_CONFIG,xml2-config.${bits},,$XPATH)
-    if test "x$XML2_CONFIG" = x; then
-        AC_PATH_PROG(XML2_CONFIG,xml2-${bits}-config,,$XPATH)
-        if test "x$XML2_CONFIG" = x; then
-            AC_PATH_PROG(XML2_CONFIG,xml2-config,,$XPATH)
-        fi
-    fi
-
-    if test "x$XML2_CONFIG" != x; then
-        LIBXML2_CFLAGS="`$XML2_CONFIG --cflags`"
-        LIBXML2_LIBS="`$XML2_CONFIG --libs`"
-    else
-	case "$have_libxml2" in
-	auto|no|yes)
-	    ;;
-	*)
-	    LIBXML2_CFLAGS="-I$have_libxml2/include"
-	    LIBXML2_LIBS="-L$have_libxml2/lib"
-	    ;;
-	esac
-    fi
-    if test "x$have_libxml2" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-	LDFLAGS="$LDFLAGS $LIBXML2_LIBS"
-	AC_CHECK_HEADER(libxml/parser.h,
-		AC_CHECK_LIB(xml2, xmlParseMemory,
-			AC_DEFINE(HAVE_LIBXML2, 1, [Define if you have the libxml2 library])
-			have_libxml2=yes,
-			[ if test "x$have_libxml2" != xauto; then AC_MSG_ERROR([-lxml2 library not found]); fi; have_libxml2=no ]),
-		[ if test "x$have_libxml2" != xauto; then AC_MSG_ERROR([libxml/parser.h header not found]); fi; have_libxml2=no ])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"
-    fi
-fi
-AC_SUBST(LIBXML2_CFLAGS, $LIBXML2_CFLAGS)
-AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
-AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
 have_sphinxclient="auto"
 AC_ARG_WITH(sphinxclient,

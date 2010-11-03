@@ -15,77 +15,20 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../mal $(MONETDB_INCS) \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) \
-	$(LIBXML2_CFLAGS) $(ICONV_CFLAGS)
+INCLUDES = -I../../mal $(monetdbcommon_CFLAGS)
 MTSAFE
 
-LIBS = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = blob.mx url.mx streams.mx inet.mx color.mx \
-			  identifier.mx
-
-	#SCRIPTS = mal
-	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
-}
-
-lib__mtime = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = mtime.mx
-
-	#SCRIPTS = mal
-	LIBS = $(MONETDB_LIBS) -lbat $(MATH_LIBS) \
-                $(MALLOC_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
-}
-
-lib__str = {
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = str.mx 
-
-	#SCRIPTS = mal
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		$(ICONV_LIBS) ../../mal/libmonetdb5
-}
-
-lib__xml = {
-	COND = HAVE_LIBXML2
-	DIR = libdir/MonetDB5
-	SEP = _
-	SOURCES = xml.mx 
-
-	#SCRIPTS = mal
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
-                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		$(LIBXML2_LIBS) $(ICONV_LIBS) ../../mal/libmonetdb5
-}
-
-headers_xml_autoload = {
-	COND = HAVE_LIBXML2
-	HEADERS = mal
-	DIR = libdir/MonetDB5/autoload
-	SOURCES = 05_xml.mal
-}
-
-headers_xml_h = {
-	COND = HAVE_LIBXML2
-	DIR = includedir/MonetDB5/atoms
-	SOURCES = xml.mx
-	HEADERS = h 
-}
-
-headers_xml_mal = {
-	COND = HAVE_LIBXML2
-	HEADERS = mal
-	DIR = libdir/MonetDB5
-	SOURCES = xml.mx
+lib_atoms = {
+	NOINST
+	SOURCES = \
+		blob.mx \
+		color.mx \
+		identifier.mx \
+		inet.mx \
+		mtime.mx \
+		streams.mx \
+		str.mx \
+		url.mx
 }
 
 headers_h = {

@@ -26,7 +26,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://dev.monetdb.org/downloads/sources/Jun2010-SP2/MonetDB-client-%{version}.tar.gz
+Source: http://dev.monetdb.org/downloads/sources/Oct2010/MonetDB-client-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires: MonetDB >= 1.40
@@ -255,6 +255,7 @@ rm -fr $RPM_BUILD_ROOT
 %{_bindir}/stethoscope
 %{_libdir}/libMapi.so.*
 %{_mandir}/man1/mclient.1.gz
+%{_mandir}/man1/msqldump.1.gz
 
 %files devel
 %defattr(-,root,root)
@@ -303,6 +304,57 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Fri Oct 29 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101029
+- Rebuilt.
+
+* Thu Oct 28 2010 Fabian Groffen <fabian@cwi.nl> - 1.40.1-20101029
+- Fix crash when the server disconnects during d query
+
+* Wed Oct 27 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101029
+- A manual page for the msqldump program was added.
+- Mclient now recognizes the file name "-" to refer to its standard
+  input.
+
+* Fri Oct  1 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101029
+- Save readline history as we go along.  This fixes bug 2632.
+
+* Tue Sep 14 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101029
+- The d and D commands now require a space if they are followed by a
+  table name.  This is to accomodate future expansion where d and D
+  could be immediately followed by another letter to indicate the type
+  of object of interest.
+- Implemented dumping of "external" functions.  This fixes bug 2546.
+
+* Fri Sep 10 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101029
+- A bug was fixed (bug 2639) where using completion failed with an error
+  when using another schema than "sys".
+
+* Thu Aug 26 2010 Fabian Groffen <fabian@cwi.nl> - 1.40.1-20101029
+- Empty resultsets now show a header in mclient using SQL mode.
+
+* Tue Aug 24 2010 Fabian Groffen <fabian@cwi.nl> - 1.40.1-20101029
+- Allow users to specify their own default formatter (using format=), or
+  their default formatting width (using width=) in their .monetdb file.
+  Setting the latter option is mostly useful when using the sql
+  formatter, such that truncation can be disabled by setting width=-1.
+- Rendering of mclient's tabular mode (when using SQL) has been changed
+  considerably to get improved output.  Most importantly it now omits
+  parts of field values or even full columns when the used terminal width
+  is insufficient to display the result.  To disable this behaviour,
+  simply set width to -1 (via -w option or w in mclient), or chose
+  another rendering mode.
+
+* Tue Aug 24 2010 Fabian Groffen <fabian@cwi.nl> - 1.40.1-20101029
+- In SQL mode, always use the table formatter, as there is no sense to
+  use raw (protocol debug) mode when reading from pipe or file really.
+  People likely prefer tab (-ftab) formatting in such case for easy
+  scripting.
+
+* Tue Aug 24 2010 Fabian Groffen <fabian@cwi.nl> - 1.40.1-20101029
+- In SQL (rendering) mode, mclient now returns timings for SELECT and
+  UPDATE/INSERT/DELETE queries next to the number of tuples returned or
+  rows affected.
+
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.5-20100824
 - Rebuilt.
 

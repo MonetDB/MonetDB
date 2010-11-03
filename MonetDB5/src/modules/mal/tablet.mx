@@ -381,7 +381,7 @@ pre presented on the screen directly.
 #include "histogram.h"
 
 #ifdef WIN32
-#ifndef LIBTABLET
+#ifndef LIBMAL
 #define tablet_export extern __declspec(dllimport)
 #else
 #define tablet_export extern __declspec(dllexport)
@@ -489,7 +489,7 @@ tablet_export int insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN co
 tablet_export int output_file_dense(Tablet * as, stream *fd);
 tablet_export int has_whitespace(char *sep);
 
-#ifdef LIBTABLET
+#ifdef LIBMAL
 /* not exported since only used within library */
 extern int tablet_read_more(bstream *in, stream *out, size_t n);
 extern char *tablet_skip_string(char *s, char quote);

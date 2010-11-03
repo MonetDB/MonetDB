@@ -31,78 +31,6 @@ It should be loaded after the bat module.
 The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
-The first part enumerates the libraries in their preferred loading sequence.
-@mal
-library mdb;
-library unix;
-library lock;
-library sema;
-library mmath;
-library streams;
-
-library bat5;
-library batExtensions;
-library algebra;
-library algebraExtensions;
-library calc;
-library status;
-library group;
-library aggr;
-library array;
-library pqueue;
-library mkey;
-
-library blob;
-library color;
-library str;
-library url;
-library mtime;
-library inet;
-
-library batmmath;
-library batcalc;
-library batcast;
-library batifthen;
-library batmtime;
-library batstr;
-library batcolor;
-
-library pcre;
-library clients;
-library mal_io;
-library tablet;
-library factories;
-library const;
-library attach;
-library bbp;
-library box;
-library histogram;
-library mat;
-library bpm;
-library inspect;
-library manual;
-library language;
-library constraints;
-library mal_mapi;
-library remote;
-
-library profiler;
-library statistics;
-
-library chopper;
-library txtsim;
-
-library sabaoth;
-library replication;
-@-
-library logger;
-@mal
-library transaction;
-
-library run_isolate;
-library run_memo;	
-library run_octopus;
-@-
 The remainder interprets the signatures and resolves the address bindings.
 The signatures may exists without the corresponding function implementation
 to be loaded.  This way, MAL programs can be normally compiled, and only
@@ -183,7 +111,6 @@ include mal_mapi;
 include profiler;
 include statistics;	# experimental
 
-library optimizer; #contains all optimizers
 include optimizer;
 include opt_support;
 include opt_accumulators;
@@ -228,6 +155,7 @@ include opt_statistics;
 include opt_trace;
 include opt_tarantula;
 include opt_mapreduce;
+include opt_remoteQueries;
 
 include chopper;
 include cluster;
@@ -236,9 +164,8 @@ include txtsim;
 include replication;
 include zorder;
 
-library sabaoth;
-
 @-
+library logger;
 include logger;
 @mal
 include transaction;
@@ -252,13 +179,14 @@ include run_octopus;
 include run_tarantula;
 
 @-
-Cracker schemes
+Cracker schemes, disabled by default
 @mal
+@-
+library crackers;
 include opt_crack;
 include opt_selcrack;
 include opt_sidcrack;
 include opt_joinselect;
-include opt_remoteQueries;
 include crackers; 
 
 @-

@@ -93,7 +93,7 @@ The group oid is materialized.";
 #include "mal_interpreter.h"
 
 #ifdef WIN32
-#ifndef LIBGROUPBY
+#ifndef LIBMAL
 #define group_by extern __declspec(dllimport)
 #else
 #define group_by extern __declspec(dllexport)

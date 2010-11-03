@@ -1,4 +1,4 @@
-create table t1(ra float, "dec" int);
+create table t1999354a(ra float, "dec" int);
 
 
 CREATE FUNCTION f2(deg float, truncat int , precision int)
@@ -47,7 +47,7 @@ END;
 SELECT f2(1,2,3);
 --SELECT fIAUFromEq(p.ra,p."dec") FROM PhotoPrimary as p;
 
-SELECT f2(p.ra,8,p."dec") FROM t1 as p;
+SELECT f2(p.ra,8,p."dec") FROM t1999354a as p;
 
 drop function f2;
-drop table t1;
+drop table t1999354a;

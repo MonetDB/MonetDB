@@ -55,17 +55,14 @@ W_CFLAGS =
 
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
-PTHREAD = C:\Pthreads
+PTHREAD =
 !IFNDEF PTHREAD_INCS
-PTHREAD_INCS = "-I$(PTHREAD)\include"
+PTHREAD_INCS =
 !ENDIF
 !IFNDEF PTHREAD_LIBS
-!IF $(bits) == 32
-PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2$(DEBUGLIB).lib"
-!ELSE
-PTHREAD_LIBS = "$(PTHREAD)\lib64\pthreadVC2$(DEBUGLIB).lib"
+PTHREAD_LIBS =
 !ENDIF
-!ENDIF
+
 !IFNDEF PHP_INSTDIR
 PHP_INSTDIR = C:\php-525
 !ENDIF

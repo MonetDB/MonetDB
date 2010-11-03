@@ -175,7 +175,7 @@ monetFork(void)
 	monet_set_lock(monet_critical, "monetFork");
 	/* exclusive access to monet_forksync barrier
 	 * and monet_threads counter. */
-	if (MT_create_thread(&p, monetInterpreter, &status) != 0) {
+	if (MT_create_thread(&p, monetInterpreter, &status, MT_THR_DETACHED) != 0) {
 		GDKsyserror("monetFork:failed\n");
 		p = ~(MT_Id) 0;
 	} else {

@@ -843,7 +843,7 @@ of the calendar).
 #include "mal_exception.h"
 
 #ifdef WIN32
-#ifndef LIBMTIME
+#ifndef LIBATOMS
 #define mtime_export extern __declspec(dllimport)
 #else
 #define mtime_export extern __declspec(dllexport)

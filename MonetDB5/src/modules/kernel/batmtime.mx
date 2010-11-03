@@ -83,7 +83,7 @@ comment "Compare a bat of @1 against a singleton";
 #include "mtime.h"
 
 #ifdef WIN32
-#ifndef LIBBATMTIME
+#ifndef LIBKERNEL
 #define batmtime_export extern __declspec(dllimport)
 #else
 #define batmtime_export extern __declspec(dllexport)

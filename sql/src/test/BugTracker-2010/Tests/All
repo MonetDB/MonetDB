@@ -68,3 +68,6 @@ cast-varchar.Bug-2682
 substring_display_width.Bug-2683
 new-readonly-db.Bug-2695
 Mbedded-crash.Bug-2701
+distinct-order-by-limit.Bug-2691
+join_problem.Bug-2694
+TypeException_with_missing_function.Bug-2674
