@@ -118,7 +118,7 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 	(void) stk;
 	(void) nr;
 	(void)clientid;
-	SQLCacheRemove(mal_clients+clientid, name);
+	SQLCacheRemove(MCgetClient(clientid), name);
 
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#monet5_free:%d\n", nr);

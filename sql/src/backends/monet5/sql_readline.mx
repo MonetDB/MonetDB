@@ -130,7 +130,7 @@ sql_completion(const char *text, int start, int end)
 void
 init_sql_readline(void)
 {
-	str history = mal_clients[0].history; /* only for console */
+	str history = MCgetClient(CONSOLE)->history; /* only for console */
 
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MonetDB";
@@ -142,7 +142,7 @@ init_sql_readline(void)
 void
 deinit_sql_readline(void)
 {
-	str history = mal_clients[0].history; /* only for console */
+	str history = MCgetClient(CONSOLE)->history; /* only for console */
 	if (history) {
 		write_history(history);
 	}

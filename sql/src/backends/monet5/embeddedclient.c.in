@@ -108,7 +108,7 @@ start_sql_server(void *arg)
 		"in  := \"" PTRFMT "\":streams;\n"
 		"out := \"" PTRFMT "\":streams;\n"
 		"mapi.malclient(in, out);\n", PTRFMTCAST in, PTRFMTCAST out);
-	callString(mal_clients, buf, 0);
+	callString(MCgetClient(CONSOLE), buf, 0);
 	return 0;
 }
 
