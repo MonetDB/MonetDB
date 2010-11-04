@@ -226,8 +226,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
        its operands */
     for (unsigned int c = 0; c < 2; c++) {
         /* only process equi-joins */
-        if (p->kind != la_internal_op)
-            break;
+        assert (p->kind == la_internal_op);
 
         /* remove unnecessary joins
            (where both children references point to the same node) */
@@ -498,10 +497,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                    a modification if this rewrite wasn't
                    the only one. Otherwise we might end up
                    in an infinite loop. */
-                modified = join_pushdown_worker (next_join,
-                                                 clean_up_list);
-                next_join = NULL;
-
+                /* Make sure that we don't continue rewriting
+                   with a different join operator (c=1). */
+                return join_pushdown_worker (next_join,
+                                             clean_up_list);
             }   break;
 
             case la_semijoin:
@@ -675,9 +674,8 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                    a modification if this rewrite wasn't
                    the only one. Otherwise we might end up
                    in an infinite loop. */
-                modified = join_pushdown_worker (next_join,
-                                                 clean_up_list);
-                next_join = NULL;
+                return join_pushdown_worker (next_join,
+                                             clean_up_list);
             }   break;
 
             case la_select:
@@ -815,10 +813,9 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 *p = *disjunion (eqjoin_opt (L(lp), rp, lproj, rproj),
                                  eqjoin_opt (R(lp), rp, lproj, rproj));
 
-                modified = true;
-
                 join_pushdown_worker (L(p), clean_up_list);
                 join_pushdown_worker (R(p), clean_up_list);
+                return true;
             } break;
 #endif
 
