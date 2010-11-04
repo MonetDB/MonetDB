@@ -2252,7 +2252,7 @@ monet5_create_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 {
 	sql_rel *r;
 	mvc *m = (mvc*)M;
-	Client c = mal_clients + m->clientid;
+	Client c = MCgetClient(m->clientid);
 	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;

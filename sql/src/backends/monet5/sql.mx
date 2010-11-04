@@ -2271,7 +2271,7 @@ str
 mvc_getVersion(lng *version, int *clientid)
 {
 	mvc *m = NULL;
-	Client cntxt = mal_clients+*clientid;
+	Client cntxt = MCgetClient(*clientid);
 	str msg = getContext(cntxt, NULL, &m, NULL);
 
 	if (msg)
@@ -2437,7 +2437,7 @@ str
 mvc_diff_idxbat_wrap(bat *bid, int *clientid, str *s, str *t, str *i, int *access, lng *oldversion, lng *version)
 {
 	mvc *m = NULL;
-	Client cntxt = mal_clients+*clientid;
+	Client cntxt = MCgetClient(*clientid);
 	str msg = getContext(cntxt, NULL, &m, NULL);
 	BAT *b;
 
@@ -2612,7 +2612,7 @@ str
 mvc_diff_dbat_wrap(bat *bid, int *clientid, str *s, str *t, int *access, lng *oldversion, lng *version )
 {
 	mvc *m = NULL;
-	Client cntxt = mal_clients+*clientid;
+	Client cntxt = MCgetClient(*clientid);
 	str msg = getContext(cntxt, NULL, &m, NULL);
 	BAT *b;
 
