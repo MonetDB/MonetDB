@@ -15,7 +15,7 @@
 # Copyright August 2008-2010 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../../mal $(MONETDB_INCS) $(SPHINXCLIENT_CFLAGS)
+INCLUDES = -I../../mal $(monetdbcommon_CFLAGS) $(SPHINXCLIENT_CFLAGS)
 
 lib__sphinx = {
 	DIR = libdir/MonetDB5
