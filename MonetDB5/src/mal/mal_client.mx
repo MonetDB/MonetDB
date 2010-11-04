@@ -255,6 +255,7 @@ the next one.
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 mal_export int MCdefault;
 
+mal_export Client  MCgetClient(int id);
 mal_export Client  MCfindClient(oid user, str scen, bstream *fin, stream *fout);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
 mal_export int     MCinitClientThread(Client c);
@@ -269,8 +270,7 @@ mal_export void    MCcleanupClients(void);
 mal_export void    MCexitPending(void);
 mal_export void    MCtraceAllClients(int flag);
 mal_export void    MCtraceClient(oid which, int flag);
-
-mal_export int    MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
+mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 mal_export void    MCpopClientInput(Client c);
 
 #endif /* _MAL_CLIENT_H_ */
@@ -393,6 +393,13 @@ allocation and lookup scheme.
 Finding a client record is tricky when we are spawning threads 
 as co-workers. It is currently passed as an argument.
 @c
+
+Client MCgetClient(int id)
+{
+	if (id < 0 || id > MAL_MAXCLIENTS)
+		return NULL;
+	return(mal_clients + id);
+}
 
 Client MCfindClient(oid user, str scen, bstream *fin, stream *fout) 
 {
