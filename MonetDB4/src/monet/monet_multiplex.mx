@@ -1894,7 +1894,7 @@ call and we have the additional knowledge (through the atom heap trick) that:
 		err = HEAPextend(head, head->size*2);
 		if (err < 0)
 			goto bunins_failed;
-		nested->batDeleted = nested->batDeleted = nested->batFirst = 0;
+		nested->batDeleted = nested->batFirst = 0;
 	}
 	if (Hsize(nested) == SIZEOF_OID) {
 		if (b->ttype == TYPE_void) {
