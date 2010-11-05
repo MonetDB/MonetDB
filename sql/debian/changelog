@@ -1,3 +1,9 @@
+monetdb-sql (2.40.1-20101105) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 05 Nov 2010 09:32:13 +0100
+
 monetdb-sql (2.40.0-20101029) unstable; urgency=low
 
   * Rebuilt.
