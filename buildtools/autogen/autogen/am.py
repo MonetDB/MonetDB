@@ -377,8 +377,7 @@ def am_scripts(fd, var, scripts, am):
             fd.write("install-exec-local-%s: %s%s\n" % (script, script, am['MILHACK'].get(script, '')))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, script))
-            fd.write("\tchmod a+x $<\n")
-            fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd, script))
+            fd.write("\t$(INSTALL) -m0755 $< $(DESTDIR)%s/%s\n\n" % (sd, script))
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
 

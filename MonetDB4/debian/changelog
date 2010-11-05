@@ -1,3 +1,9 @@
+monetdb4-server (4.40.1-20101105) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 05 Nov 2010 09:32:11 +0100
+
 monetdb4-server (4.40.1-20101029) unstable; urgency=low
 
   * Rebuilt.

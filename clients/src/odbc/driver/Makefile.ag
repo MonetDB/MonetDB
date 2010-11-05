@@ -119,9 +119,3 @@ lib_MonetODBC = {
 	LIBS = ../../mapilib/libMapi $(monetdbtools_LIBS) $(ICONV_LIBS) $(ODBC_LIBS) $(SOCKET_LIBS)
 }
 
-headers_pc = {
-	COND = NOT_WIN32
-	HEADERS = pc
-	DIR = libdir/pkgconfig
-	SOURCES = monetdb-odbc.pc.in
-}

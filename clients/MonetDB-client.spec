@@ -264,7 +264,6 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_includedir}/MonetDB/mapilib
 %{_includedir}/MonetDB/mapilib/Mapi.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
-%{_libdir}/pkgconfig/monetdb-odbc.pc
 
 # todo odbc-devel package ?
 %files odbc
@@ -304,6 +303,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Fri Nov 05 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101105
+- Rebuilt.
+
 * Fri Oct 29 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101029
 - Rebuilt.
 

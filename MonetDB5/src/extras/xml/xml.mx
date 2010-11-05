@@ -163,10 +163,8 @@ xml_export str XMLprelude(void);
 #include "xml.h"
 #include "mal_interpreter.h"
 
-#ifdef HAVE_LIBXML2
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
-#endif
 
 /* The xml atom is used to represent XML data.  It is implemented as a
    subtype of str.  The first character of the string representation
@@ -344,7 +342,6 @@ XMLstr2xml(xml *x, str *val)
 str
 XMLxmltext(str *s, xml *x)
 {
-#ifdef HAVE_LIBXML2
 	xmlDocPtr doc;
 	xmlNodePtr elem;
 	str content = NULL;
@@ -385,11 +382,6 @@ XMLxmltext(str *s, xml *x)
 	else
 		*s = (str) content;
 	return MAL_SUCCEED;
-#else
-	(void) x;
-	(void) s;
-	throw(MAL, "xml.text", "not available as required version of libxml2 was not found by configure.\n");
-#endif
 }
 
 str
@@ -402,7 +394,6 @@ XMLxml2xml(xml *s, xml *x)
 str
 XMLdocument(xml *x, str *val)
 {
-#ifdef HAVE_LIBXML2
 	xmlDocPtr doc;
 
 	if (strNil(*val)) {
@@ -423,17 +414,11 @@ XMLdocument(xml *x, str *val)
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "xml.document", "Document parse error");
-#else
-	(void) x;
-	(void) val;
-	throw(MAL, "xml.document", "not available as required version of libxml2 was not found by configure.\n");
-#endif
 }
 
 str
 XMLcontent(xml *x, str *val)
 {
-#ifdef HAVE_LIBXML2
 	xmlDocPtr doc;
 	xmlNodePtr elem;
 	xmlParserErrors err;
@@ -462,17 +447,11 @@ XMLcontent(xml *x, str *val)
 	xmlFreeNodeList(elem);
 	xmlFreeDoc(doc);
 	return MAL_SUCCEED;
-#else
-	(void) x;
-	(void) val;
-	throw(MAL, "xml.content", "not available as required version of libxml2 was not found by configure.\n");
-#endif
 }
 
 str
 XMLisdocument(bit *x, str *s)
 {
-#ifdef HAVE_LIBXML2
 	xmlDocPtr doc;
 
 	/* call the libxml2 library to perform the test */
@@ -485,11 +464,6 @@ XMLisdocument(bit *x, str *s)
 			xmlFreeDoc(doc);
 	}
 	return MAL_SUCCEED;
-#else
-	(void) x;
-	(void) s;
-	throw(MAL, "xml.isdocument", "not available as required version of libxml2 was not found by configure.\n");
-#endif
 }
 
 str
@@ -533,10 +507,8 @@ XMLpi(str *ret, str *target, str *value)
 		*ret = GDKstrdup(str_nil);
 		return MAL_SUCCEED;
 	}
-#ifdef HAVE_LIBXML2
 	if (xmlValidateName((xmlChar *) *target, 0) != 0 || strcasecmp(*target, "xml") == 0)
 		throw(MAL, "xml.attribute", "invalid processing instruction target");
-#endif
 	len = strlen(*target) + 6;
 	if (strNil(*value) || **value == 0) {
 		size_t n = 6 * strlen(*value) + 1;
@@ -558,7 +530,7 @@ XMLroot(str *ret, str *val, str *version, str *standalone)
 {
 	size_t len = 0, i = 0;
 	str buf;
-	bit isdoc;
+	bit isdoc = 0;
 
 	if (strNil(*val)) {
 		*ret = GDKstrdup(str_nil);
@@ -608,10 +580,8 @@ XMLattribute(xml *x, str *name, str *val)
 		*x = (xml) GDKstrdup(str_nil);
 		return MAL_SUCCEED;
 	}
-#ifdef HAVE_LIBXML2
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
 		throw(MAL, "xml.attribute", "invalid attribute name");
-#endif
 	len = 6 * strlen(t) + 1;
 	buf = alloca(len);
 	len = XMLquotestring(t, buf, len);
@@ -629,10 +599,8 @@ XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
 
 	if (strNil(*name))
 		throw(MAL, "xml.element", "no element name specified");
-#ifdef HAVE_LIBXML2
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
 		throw(MAL, "xml.element", "invalid element name");
-#endif
 	/* len is composed of several parts:
 	   "C" + "<" + name + (nspace ? " " + nspace : "") + (attr ? " " + attr : "") + (val ? ">" + val + "</" + name + ">" : "/>")
 	 */
@@ -741,10 +709,8 @@ str
 XMLprelude(void)
 {
 	TYPE_xml = ATOMindex("xml");
-#ifdef HAVE_LIBXML2
 	xmlMemSetup(GDKfree, GDKmalloc, GDKrealloc, GDKstrdup);
 	xmlInitParser();
-#endif
 	return MAL_SUCCEED;
 }
 

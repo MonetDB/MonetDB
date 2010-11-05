@@ -92,6 +92,8 @@ BAT *GDKenv = NULL;
 #define VALGRIND_FREELIKE_BLOCK(addr, rzB)
 #endif
 
+static int GDKstopped = 1;
+
 @}
 @+ Monet configuration file
 Parse a possible MonetDB.conf file (either in the default location
@@ -1487,6 +1489,7 @@ GDKprotect(void)
 #ifdef HAVE_POSIX_FADVISE
 static str highload_name[] = { "idle", "low", "medium", "high", "extreme" };
 
+static MT_Id GDKvmtrim_id;
 static int membits = 0;
 static void
 GDKvmtrim(void *limit)
@@ -1503,7 +1506,13 @@ GDKvmtrim(void *limit)
 	}
 	do {
 		stream *fp = NULL;
-		MT_sleep_ms(highload ? 500 : 5000);
+		int t;
+		/* sleep using catnaps so we can exit in a timely fashion */
+		for (t = highload ? 500 : 5000; t > 0; t -= 50) {
+			MT_sleep_ms(50);
+			if (GDKstopped)
+				return;
+		}
 		/* check for runtime overruling */
 		if (GDK_vm_trim == 0) {
 			highload = 0;
@@ -1678,11 +1687,8 @@ GDKinit(opt *set, int setlen)
 #endif
 
 #ifdef HAVE_POSIX_FADVISE
-	if (!GDKembedded && GDK_vm_trim) {
-		MT_Id t;
-
-		MT_create_thread(&t, GDKvmtrim, &GDK_mem_maxsize, MT_THR_DETACHED);
-	}
+	if (!GDKembedded && GDK_vm_trim)
+		MT_create_thread(&GDKvmtrim_id, GDKvmtrim, &GDK_mem_maxsize, MT_THR_JOINABLE);
 #endif
 
 	return 1;
@@ -1693,11 +1699,9 @@ Upon closing the session, all persistent BATs should be saved and
 the transient BATs should be removed.
 The buffer pool manager takes care of this.
 @h
-gdk_export int GDKstopped;
 gdk_export int GDKnr_threads;
 
 @c
-int GDKstopped = 1;
 int GDKnr_threads = 0;
 
 @h
@@ -1710,7 +1714,11 @@ GDKexit(int status)
 {
 	gdk_set_lock(GDKthreadLock, "GDKexit");
 	if (GDKstopped == 0) {
-		GDKstopped++;	/* shouldn't there be a lock here? */
+		GDKstopped = 1;	/* shouldn't there be a lock here? */
+#ifdef HAVE_POSIX_FADVISE
+		if (!GDKembedded && GDK_vm_trim)
+			MT_join_thread(GDKvmtrim_id);
+#endif
 		GDKnrofthreads = 0;
 		gdk_unset_lock(GDKthreadLock, "GDKexit");
 

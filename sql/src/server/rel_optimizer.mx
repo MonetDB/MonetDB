@@ -2407,9 +2407,12 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 						}
 						if (fnd) {
 							sql_exp *re = exp_push_down(sql, r, gb, gb->l);
-							assert(re);
-							je = exp_compare(exp_dup(je->l), re, je->flag);
-							list_append(jes, je);
+							if (!re) {
+								fnd = 0;
+							} else {
+								je = exp_compare(exp_dup(je->l), re, je->flag);
+								list_append(jes, je);
+							}
 						}
 					}
 				}

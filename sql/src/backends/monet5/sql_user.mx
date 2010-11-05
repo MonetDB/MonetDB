@@ -77,7 +77,7 @@ monet5_drop_user(ptr _mvc, str user)
 	sql_table *users;
 	sql_column *users_name;
 	str err;
-	Client c = &mal_clients[m->clientid];
+	Client c = MCgetClient(m->clientid);
 
 	err = AUTHremoveUser(&c, &user);
 	if (err != MAL_SUCCEED) {
@@ -113,7 +113,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	str pwd;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info, *auths;
-	Client c = &mal_clients[m->clientid];
+	Client c = MCgetClient(m->clientid);
 
 	/* prepare the scens BAT: it should contain the sql scenario */
 	scens = BATnew(TYPE_str, TYPE_void, 1);
@@ -170,7 +170,7 @@ monet5_find_user(ptr mp, str user)
 	BAT *users;
 	BUN p;
 	mvc *m = (mvc *)mp;
-	Client c = &mal_clients[m->clientid];
+	Client c = MCgetClient(m->clientid);
 	
 	users = db_users(c);
 	if (!users)
@@ -280,7 +280,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 		sqlid schema_id, str oldpasswd)
 {
 	mvc *m = (mvc *)_mvc;
-	Client c = &mal_clients[m->clientid];
+	Client c = MCgetClient(m->clientid);
 	str err;
 
 	if (passwd != NULL) {
@@ -358,7 +358,7 @@ static int
 monet5_rename_user(ptr _mvc, str olduser, str newuser)
 {
 	mvc *m = (mvc *)_mvc;
-	Client c = &mal_clients[m->clientid];
+	Client c = MCgetClient(m->clientid);
 	str err;
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
