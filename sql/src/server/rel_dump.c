@@ -78,9 +78,15 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		return;
 	switch(e->type) {
 	case e_convert: {
+		list *l = e->r;
+		sql_subtype *f = l->h->data;
+		char *to_type = sql_subtype_string(&e->tpe);
+		char *from_type = sql_subtype_string(f);
 		mnstr_printf(fout, "convert(");
 		exp_print(sql, fout, e->l, depth, 0, 0);
-		mnstr_printf(fout, ")");
+		mnstr_printf(fout, " from %s to %s)", from_type, to_type);
+		_DELETE(to_type);
+		_DELETE(from_type);
 	 	break;
 	}
 	case e_atom: {
