@@ -246,7 +246,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	InstrPtr *old=NULL, new, matq;
 	int limit;
 	int (*newArg)[1000]=NULL;
-	char *used = NULL;
+	char *used = NULL, *old_used = NULL;
 	(void) stk;
 	(void) cntxt;
 
@@ -278,7 +278,11 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 		if ( num_regs <= (mb->vtop + 1000) ) {
 			regs = GDKrealloc(regs, (num_regs + DCYREGS) * sizeof(*regs));
-			used = GDKrealloc(used, (num_regs + DCYREGS) * sizeof(char));
+			old_used = used;
+                        used = GDKzalloc((num_regs + DCYREGS) * sizeof(char));
+                        memcpy(used,old_used,num_regs*sizeof(char));
+                        GDKfree(old_used);
+			old_used = NULL;
 #ifdef BIND_DATACYCLOTRON_OPT
 			tpes = GDKrealloc(tpes, (num_regs + DCYREGS) * sizeof(int));
 #endif
