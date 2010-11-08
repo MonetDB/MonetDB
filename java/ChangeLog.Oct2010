@@ -1,3 +1,8 @@
 # ChangeLog file for java
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+* Mon Nov  8 2010 Fabian Groffen <fabian@cwi.nl>
+- Java 1.6's subSequence() bug has changed into a slice() bug since
+  1.6.0_22.  Revert workaround for subSequence breakage, since it breaks
+  operating with the latest Java 1.6.
+
