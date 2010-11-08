@@ -2147,7 +2147,8 @@ UNION(mirror().join()).
 			actions++;
 			continue;
 		}
-		if (0 && match == 1 && getModuleId(p) == algebraRef && getFunctionId(p) == semijoinRef &&
+#if 0
+		if (match == 1 && getModuleId(p) == algebraRef && getFunctionId(p) == semijoinRef &&
 		   	((m=isMATalias(getArg(p,2), mat, mtop)) >= 0) &&
 			varGetProp(mb, getArg(p,1), hlbProp)) {
 			InstrPtr bc;
@@ -2157,6 +2158,7 @@ UNION(mirror().join()).
 			actions++;
 			continue;
 		}
+#endif
 @- 
 Now we handle group, derive and aggregation statements. 
 @c
