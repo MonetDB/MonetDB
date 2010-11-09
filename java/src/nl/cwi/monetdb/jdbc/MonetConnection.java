@@ -122,6 +122,8 @@ public class MonetConnection implements Connection {
 	/** Whether or not to use a Java based PreparedStatement
 	 * implementation */
 	private final boolean javaPreparedStatements;
+	/** Whether or not BLOB is mapped to BINARY within the driver */
+	private final boolean blobIsBinary;
 
 	/**
 	 * Constructor of a Connection for MonetDB. At this moment the
@@ -154,6 +156,7 @@ public class MonetConnection implements Connection {
 		String language = props.getProperty("language");
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
 		String hash = props.getProperty("hash");
+		blobIsBinary = Boolean.valueOf(props.getProperty("treat_blob_as_binary")).booleanValue();
 
 		// check input arguments
 		if (hostname == null || hostname.trim().equals(""))
@@ -1062,6 +1065,13 @@ public class MonetConnection implements Connection {
 	}
 
 	//== end methods of interface Connection
+
+	/**
+	 * Returns whether the BLOB type should be mapped to BINARY type.
+	 */
+	boolean getBlobAsBinary() {
+		return(blobIsBinary);
+	}
 
 	/**
 	 * Sends the given string to MonetDB as regular statement, making
