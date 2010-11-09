@@ -516,15 +516,19 @@ MT_exit_thread(int s)
 	DWORD t;
 	struct winthread *w;
 
-	assert(winthread_cs_init);
-	t = GetCurrentThreadId();
-	EnterCriticalSection(&winthread_cs);
-	for (w = winthreads; w && w->tid != t; w = w->next)
-		;
-	LeaveCriticalSection(&winthread_cs);
-	if (w->hdl == NULL)
-		rm_winthread(w);
-	ExitThread(s);
+	if (winthread_cs_init) {
+		t = GetCurrentThreadId();
+		EnterCriticalSection(&winthread_cs);
+		for (w = winthreads; w && w->tid != t; w = w->next)
+			;
+		LeaveCriticalSection(&winthread_cs);
+		if (w->hdl == NULL)
+			rm_winthread(w);
+		ExitThread(s);
+	} else {
+		/* no threads started yet, so this is a global exit */
+		MT_global_exit(s);
+	}
 }
 
 int
