@@ -57,7 +57,7 @@
 #include <ws2tcpip.h>
 
 /* Release name or "unreleased" */
-#define MONETDB_RELEASE "Oct2010"
+#define MONETDB_RELEASE "unreleased"
 
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
