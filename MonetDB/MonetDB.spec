@@ -110,6 +110,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libbat.so
 
 %changelog
+* Tue Nov 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101109
+- Rebuilt.
+
 * Fri Nov 05 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101105
 - Rebuilt.
 

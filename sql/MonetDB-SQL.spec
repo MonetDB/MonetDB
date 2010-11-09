@@ -159,6 +159,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/MonetDB5/sql/*.h
 
 %changelog
+* Tue Nov 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.1-20101109
+- Rebuilt.
+
 * Fri Nov 05 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.1-20101105
 - Rebuilt.
 

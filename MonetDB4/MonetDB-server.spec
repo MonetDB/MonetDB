@@ -216,6 +216,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libembeddedmil.so
 
 %changelog
+* Tue Nov 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 4.40.1-20101109
+- Rebuilt.
+
 * Fri Nov 05 2010 Sjoerd Mullender <sjoerd@acm.org> - 4.40.1-20101105
 - Rebuilt.
 
