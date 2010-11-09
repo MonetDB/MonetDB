@@ -591,7 +591,7 @@ public class MonetPreparedStatement
 			hex.append(HEXES.charAt((b & 0xF0) >> 4))
 				.append(HEXES.charAt((b & 0x0F)));
 		}
-		setValue(parameterIndex, "blob '" + xhex.toString() + "'");
+		setValue(parameterIndex, "blob '" + hex.toString() + "'");
 	}
 
 	/**
