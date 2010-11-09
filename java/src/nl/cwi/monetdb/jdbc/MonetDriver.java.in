@@ -240,6 +240,11 @@ final public class MonetDriver implements Driver {
 		prop.description = "Whether redirects issued by the server should be followed";
 		props.add(prop);
 
+		prop = new DriverPropertyInfo("treat_blob_as_binary", "false");
+		prop.required = false;
+		prop.description = "Whether BLOBs on the server should be treated as BINARY types, thus mapped to byte[]";
+		props.add(prop);
+
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];
 		return((DriverPropertyInfo[])props.toArray(dpi));
 	}
