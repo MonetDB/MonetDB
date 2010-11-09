@@ -40,12 +40,12 @@ Over..
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
 | | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.type as p.type, _tables.%TID% NOT NULL as p.%TID% ] |
-| | | | | | ) [ p.type < convert(2) ]                                                                                                                                                                                                                                       |
+| | | | | | ) [ p.type < convert(2 from tinyint to smallint) ]                                                     |
 | | | | | ) [ p.id, p.type ],                                                                                     |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
 | | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.type as t.type, _tables.%TID% NOT NULL as t.%TID% ] |
-| | | | | | ) [ t.type < convert(2) ]                                                                                                                                                                                                                                       |
+| | | | | | ) [ t.type < convert(2 from tinyint to smallint) ]                                                     |
 | | | | | ) [ t.id, t.type ]                                                                                      |
 | | | | ) [ id as tables.id, type as tables.type ]                                                                |
 | | | ) [ tables.id ]                                                                                                                                                                                                                                                       |
