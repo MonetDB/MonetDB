@@ -310,7 +310,7 @@ final public class MonetDriver implements Driver {
 			return(tp.intValue());
 		} else {
 			// this should not be able to happen
-			// do not assert, since maybe feature versions introduce
+			// do not assert, since maybe future versions introduce
 			// new types
 			return(Types.OTHER);
 		}
