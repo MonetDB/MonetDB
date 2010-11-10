@@ -536,6 +536,9 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	int create = (!instantiate && !deps);
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
 
+	if (STORE_READONLY(active_store_type) && create) 
+		return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
+			
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE %s: no such schema '%s'", F, sname);
 	if (s == NULL)
@@ -798,9 +801,6 @@ psm(mvc *sql, symbol *s)
 		int is_func = (s->token == SQL_CREATE_FUNC);
 		int is_aggr = (s->token == SQL_CREATE_AGGR);
 
-		if (STORE_READONLY(active_store_type)) 
-			return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
-			
 		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, is_func, is_aggr);
 		sql->type = Q_SCHEMA;
 	} 	break;
