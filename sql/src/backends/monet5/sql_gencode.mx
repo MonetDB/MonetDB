@@ -2318,19 +2318,22 @@ backend_create_func(backend *be, sql_func *f)
 	Symbol backup = NULL;
 	stmt *s;
 	int i, retseen =0, sideeffects =0;
-	sql_allocator *sa = sa_create(); 	/* NIELS: leaks, will be resolved once we keep rel,sa,mb (for recompiles) */
+	sql_allocator *sa, *osa = m->sa;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || f->sql > 1)
 		return;
 	f->sql++;
+ 	sa = sa_create();
 	s = sql_parse(m, sa, f->imp, m_instantiate);
 	if (!s) {
 		fputs(m->errstr, stderr);
+		sa_destroy(sa);
 		return;
 	} else {
 		stmt *opt;
 
+		m->sa = sa;
 		opt = rel2bin(m, s);
 		stmt_destroy(s);
 		s = bin_optimizer(m, opt);
@@ -2400,6 +2403,11 @@ backend_create_func(backend *be, sql_func *f)
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
 	stmt_destroy(s);
+	/* Because types (tables) are allocated using the sql-allocator, we
+	   cannot destroy it here "LEAKS" 
+	sa_destroy(sa); 
+	*/
+	m->sa = osa;
 	addQueryToCache(c);
 	if (backup) 
 		c->curprg = backup;
