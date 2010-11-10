@@ -455,7 +455,6 @@ All Rights Reserved.
     </condition>
 
     <mkdir dir="${builddir}" />
-    <mkdir dir="${builddir}/example" />
     <mkdir dir="${jardir}" />
     <echo message="Debug is ${debug}, optimise is ${optimize}" />
   </target>
