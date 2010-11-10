@@ -1,12 +1,3 @@
 # ChangeLog file for java
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
-* Tue Nov  9 2010 Fabian Groffen <fabian@cwi.nl>
-- Fix SQL syntax of inserting BLOB code, using setBytes()
-- Added propery 'treat_blob_as_binary' to simulate BINARY types based on
-  BLOBs for applications, (e.g. Hibernate-based) that rely on BINARY's
-  byte array mapping
-- Added code to handle BINARY types
-- Fixed implementation of getBytes to match the specifications
-- Implemented getBinaryStream according to the specifications
-
