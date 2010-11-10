@@ -751,6 +751,14 @@ releqjoin( mvc *sql, list *l1, list *l2 )
 }
 
 static stmt *
+_project( stmt *o, stmt *v )
+{
+	if (v->nrcols == 0)
+		return stmt_dup(v);
+	return stmt_project(stmt_dup(o), stmt_dup(v));
+}
+
+static stmt *
 reljoin( mvc *sql, stmt *rj, list *l2 )
 {
 	node *n = l2->h;
@@ -778,11 +786,21 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 		stmt *rd = (j->type == st_join)?stmt_reverse(o2):o2;
 
 		if (j->type == st_joinN) {
-			/* make single list will columns/values, 
-			   call function 
-			   Then same als lower
-			 */
-			 assert(0);
+			stmt *cmp;
+			list *ol,*nl = create_stmt_list();
+			node *m;
+
+			ol = j->op1.stval->op1.lval;
+			for (m = ol->h; m; m = m->next) 
+				list_append(nl, _project(l, m->data));
+			ol = j->op2.stval->op1.lval;
+			for (m = ol->h; m; m = m->next) 
+				list_append(nl, _project(r, m->data));
+			/* find function */
+			cmp = stmt_uselect( stmt_Nop( stmt_list(nl), j->op4.funcval), stmt_bool(1), cmp_equal);
+			/* TODO semijoin may break order */
+			l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
+			r = stmt_semijoin(stmt_dup(r), cmp);
 		} else if (j->type == st_join2) {
 			stmt *le = stmt_project(l, ld );
 			stmt *re = stmt_project(r, rd );

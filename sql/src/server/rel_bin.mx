@@ -886,7 +886,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				idx = 1;
 			if (!join) {
 				join = s;
-			} else if (s->type != st_join && s->type != st_join2) {
+			} else if (s->type != st_join && s->type != st_join2 && s->type != st_joinN) {
 				/* handle select expressions */
 				/*assert(0);*/
 				if (s->h == join->h) {
