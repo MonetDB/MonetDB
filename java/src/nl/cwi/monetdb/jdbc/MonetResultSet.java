@@ -2269,7 +2269,7 @@ public class MonetResultSet implements ResultSet {
 	 */
 	private int getJavaType(String sqltype) throws SQLException {
 		int type = MonetDriver.getJavaType(sqltype);
-		if (((MonetConnection)statement.getConnection()).getBlobAsBinary()) {
+		if (statement != null && ((MonetConnection)statement.getConnection()).getBlobAsBinary()) {
 			if (type == Types.BLOB)
 				type = Types.BINARY;
 		}
