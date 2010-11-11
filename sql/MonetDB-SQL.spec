@@ -167,32 +167,32 @@ rm -rf $RPM_BUILD_ROOT
 * Fri Nov 05 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.1-20101105
 - Rebuilt.
 
-* Fri Oct 29 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.0-20101029
+* Fri Oct 29 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.1-20101029
 - Rebuilt.
 
-* Thu Oct 21 2010 Fabian Groffen <fabian@cwi.nl> - 2.40.0-20101029
+* Thu Oct 21 2010 Fabian Groffen <fabian@cwi.nl> - 2.40.1-20101029
 - Report a stopped and locked database as under maintenance, instead of
   without connections, bug #2685
 
-* Mon Oct 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.0-20101029
+* Mon Oct 18 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.1-20101029
 - Fixed bug 2695: crash when starting mserver in readonly mode on a
   new database.
 
-* Wed Sep 22 2010 Fabian Groffen <fabian@cwi.nl> - 2.40.0-20101029
+* Wed Sep 22 2010 Fabian Groffen <fabian@cwi.nl> - 2.40.1-20101029
 - Improved uuid detection, to solve problems like bug #2675
 
-* Fri Sep 17 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.0-20101029
+* Fri Sep 17 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.1-20101029
 - Fixed a bug where the server silently ignored the last record in a
   COPY INTO if it was incomplete (e.g. missing a quote).
 
-* Mon Aug 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.0-20101029
+* Mon Aug 30 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.40.1-20101029
 - Fixed a crash of the server when an extremely complex query is
   attempted.  This is the latest incarnation of bug 104.
 
-* Tue Aug 24 2010 Arjen de Rijke <arjen.de.rijke@cwi.nl> - 2.40.0-20101029
+* Tue Aug 24 2010 Arjen de Rijke <arjen.de.rijke@cwi.nl> - 2.40.1-20101029
 - Add readonly property for databases to monetdb and merovingian.
 
-* Tue Aug 24 2010 Niels Nes <niels@cwi.nl> - 2.40.0-20101029
+* Tue Aug 24 2010 Niels Nes <niels@cwi.nl> - 2.40.1-20101029
 - make it possible to use '?' in offset and limit
 
 * Tue Aug 24 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.5-20100824
