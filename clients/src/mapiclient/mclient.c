@@ -414,7 +414,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 			    utf8strlen(t, NULL) > (size_t) len[i])
 			{
 				/* eat leading whitespace */
-				while (*t != 0 && isspace((int) *t))
+				while (*t != 0 && isascii((int) *t) && isspace((int) *t))
 					t++;
 				rest[i] = t;
 			}
@@ -454,10 +454,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 
 					t = utf8skip(rest[i], len[i]);
 					if (trim == 1) {
-						while (t > rest[i] && !isspace((int) *t))
+						while (t > rest[i] && !(isascii((int) *t) && isspace((int) *t)))
 							while ((*--t & 0xC0) == 0x80)
 								;
-						if (t == rest[i] && !isspace((int) *t))
+						if (t == rest[i] && !(isascii((int) *t) && isspace((int) *t)))
 							t = utf8skip(rest[i], len[i]);
 					}
 					mnstr_printf(toConsole, "%c",
@@ -1899,6 +1899,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			if (mode != MAL)
 				while (length > 0 &&
 				       (*line & ~0x7F) == 0 &&
+				       isascii((int) *line) &&
 				       isspace((int) *line)) {
 					line++;
 					length--;
@@ -1956,13 +1957,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				case 'd':
 					if (mode != SQL)
 						break;
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) &&
+					       isspace((int) line[length - 1]))
 						line[--length] = 0;
-					if (line[2] && !isspace(line[2])) {
+					if (line[2] && !(isascii((int) line[2]) && isspace(line[2]))) {
 						fprintf(stderr, "space required after \\d\n");
 						continue;
 					}
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					if (*line) {
 #ifdef HAVE_POPEN
@@ -2008,13 +2010,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 
 					if (mode != SQL)
 						break;
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) &&
+					       isspace((int) line[length - 1]))
 						line[--length] = 0;
-					if (line[2] && !isspace(line[2])) {
+					if (line[2] && !(isascii((int) line[2]) && isspace(line[2]))) {
 						fprintf(stderr, "space required after \\D\n");
 						continue;
 					}
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 #ifdef HAVE_POPEN
 					start_pager(&saveFD, &saveFD_raw);
@@ -2032,17 +2035,17 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				}
 				case '<':
 					/* read commands from file */
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					doFile(mid, line);
 					continue;
 				case '>':
 					/* redirect output to file */
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					if (toConsole != stdout_stream && toConsole != stderr_stream) {
 						mnstr_close(toConsole);
@@ -2065,9 +2068,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				case 'L':
 					free(logfile);
 					logfile = NULL;
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					if (*line == 0) {
 						/* turn of logging */
@@ -2087,9 +2090,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					pager = NULL;
 					setWidth();	/* reset to system default */
 
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					if (*line == 0)
 						continue;
@@ -2129,9 +2132,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					echoquery = 1;
 					continue;
 				case 'f':
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					if (*line == 0) {
 						mnstr_printf(toConsole, "Current formatter: ");
