@@ -362,15 +362,16 @@ SQLsetSpecial(const char *command)
 	}
 }
 
-/* return the display length of a UTF-8 string */
+/* return the display length of a UTF-8 string
+   if e is not NULL, return length up to e */
 static size_t
-utf8strlen(const char *s)
+utf8strlen(const char *s, const char *e)
 {
 	size_t len = 0;
 
 	if (s == NULL)
 		return 0;
-	while (*s) {
+	while (*s && (e == NULL || s < e)) {
 		/* only count first byte of a sequence */
 		if ((*s & 0xC0) != 0x80)
 			len++;
@@ -410,7 +411,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 	if (trim == 1) {
 		for (i = 0; i < fields; i++) {
 			if ((t = rest[i]) != NULL &&
-					utf8strlen(t) > (size_t) len[i])
+			    utf8strlen(t, NULL) > (size_t) len[i])
 			{
 				/* eat leading whitespace */
 				while (*t != 0 && isspace((int) *t))
@@ -431,7 +432,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':',
 						len[i], "");
 			} else {
-				ulen = utf8strlen(rest[i]);
+				ulen = utf8strlen(rest[i], NULL);
 
 				if (first && trim == 2) {
 					/* calculate the height of this field according to
@@ -449,6 +450,8 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 				 * left-adjust them in the column */
 				t = strchr(rest[i], '\n');
 				if (ulen > (size_t) len[i] || t) {
+					char *s;
+
 					t = utf8skip(rest[i], len[i]);
 					if (trim == 1) {
 						while (t > rest[i] && !isspace((int) *t))
@@ -458,18 +461,32 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 							t = utf8skip(rest[i], len[i]);
 					}
 					mnstr_printf(toConsole, "%c",
-						      first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
+						     first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
 					if (numeric[i])
 						mnstr_printf(toConsole, "%*s",
-							      (int) (len[i] - (ulen - utf8strlen(t))),
-							      "");
-					if ((int)(ulen - utf8strlen(t)) >= len[i] - 2 &&
-							cutafter[i] == 0)
-					{
+							     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
+							     "");
+					s = t;
+					if (trim == 1)
+						while (isascii((int) *s) &&
+						       isspace((int) *s))
+							s++;
+					if (trim == 2 && *s == '\n')
+						s++;
+					if (*s && cutafter[i] == 0) {
 						t = utf8skip(rest[i], len[i] - 2);
-						mnstr_printf(toConsole, " %.*s...",
-								  (int) (t - rest[i]),
-								  rest[i]);
+						s = t;
+						if (trim == 1)
+							while (isascii((int) *s) &&
+							       isspace((int) *s))
+								s++;
+						if (trim == 2 && *s == '\n')
+							s++;
+						mnstr_printf(toConsole, " %.*s...%*s",
+							     (int) (t - rest[i]),
+							     rest[i],
+							     len[i] - 2 - (int) utf8strlen(rest[i], t),
+							     "");
 						croppedfields++;
 					} else {
 						mnstr_printf(toConsole, " %.*s ",
@@ -477,19 +494,15 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								  rest[i]);
 						if (!numeric[i])
 							mnstr_printf(toConsole, "%*s",
-									  (int) (len[i] - (ulen - utf8strlen(t))),
-									  "");
+								     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
+								     "");
+					}
+					rest[i] = *s ? s : 0;
+					if (rest[i] == NULL) {
 						/* avoid > as border marker if everything
 						 * actually just fits */
-						if (cutafter[i] == 0)
-							cutafter[i] = -1;
+						cutafter[i] = -1;
 					}
-					if (trim == 1)
-						while (isspace((int) *t))
-							t++;
-					if (trim == 2 && *t == '\n')
-						t++;
-					rest[i] = *t ? t : 0;
 					if (cutafter[i] == 0)
 						rest[i] = NULL;
 					if (rest[i])
