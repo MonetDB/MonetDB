@@ -1,3 +1,6 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Nov 12 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a corner case in the table display code.
+
