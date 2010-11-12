@@ -296,8 +296,8 @@ SQLload_file_line(READERtask *task, int idx)
 			}
 		/* not enough fields */
 		if ( i < as->nr_attrs-1)  {
-			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n",
-					 fmt->sep, BATcount(fmt->c[0]) + 1 + task->next, i);
+			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " expecting " BUNFMT" got " BUNFMT "  fields\n",
+					 fmt->sep, BATcount(fmt->c[0]) + idx, as->nr_attrs-1, i);
 		errors:
 			/* we save all errors detected */
 			mal_set_lock(mal_copyLock,"tablet line break");
