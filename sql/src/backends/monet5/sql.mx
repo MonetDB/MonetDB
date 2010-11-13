@@ -1384,6 +1384,32 @@ rel_is_point_query( sql_rel *rel)
 	return is_point;
 }
 
+static int
+rel_need_distinct_query( sql_rel *rel)
+{
+	int need_distinct = 0;
+
+	while (!need_distinct && rel && is_project(rel->op) && !is_groupby(rel->op))
+		rel = rel->l;
+	if (!need_distinct && rel && is_groupby(rel->op) && rel->exps) {
+		node *n, *m;
+		for (n=rel->exps->h; n && !need_distinct; n = n->next) {
+			sql_exp *e = n->data;
+			if (e->type == e_aggr) {
+				list *l = e->l;
+
+				if (l) for(m = l->h; m &&  !need_distinct; m = m->next){
+					sql_exp *a = m->data;
+	
+					if (!need_distinct(a))
+						need_distinct = 1;
+				}
+			}
+		}
+	}
+	return need_distinct;
+}
+
 
 stmt *
 sql_symbol2stmt(mvc *c, symbol *sym)
@@ -1411,6 +1437,9 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		int pq;
 		r = rel_optimizer(c, r);
 		pq = rel_is_point_query(r);
+		if (!pq)
+			pq = rel_need_distinct_query(r);
+
 		if (c->emode == m_plan) {
 			rel_print(c, r, 0);
 		} else {
