@@ -396,8 +396,7 @@ locate_file(const char *basename, const char *ext, const bit recurse)
 						GDKfree(fullname);
 						return NULL;
 					}
-					sprintf(strs[lasts], "%s%c%s%c",
-							fullname, DIR_SEP, GDKstrdup(e->d_name), PATH_SEP);
+					sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP, e->d_name, PATH_SEP);
 					lasts++;
 				}
 				if (lasts >= MAXMULTISCRIPT)
