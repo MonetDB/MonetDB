@@ -1,5 +1,5 @@
 %define name MonetDB-geom
-%define version 0.20.1
+%define version 0.20.2
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
