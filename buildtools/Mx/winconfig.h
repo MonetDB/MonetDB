@@ -115,9 +115,6 @@
 /* Define to 1 if you have the <utime.h> header file. */
 /* #undef HAVE_UTIME_H */
 
-/* Define to 1 if `utime(file, NULL)' sets file's timestamp to the present. */
-/* #undef HAVE_UTIME_NULL */
-
 /* Define to 1 if you have the `vprintf' function. */
 #define HAVE_VPRINTF 1
 
