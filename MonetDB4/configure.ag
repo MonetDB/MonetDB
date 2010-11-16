@@ -217,7 +217,7 @@ AC_CHECK_HEADER(malloc.h, AC_DEFINE(HAVE_MALLOC_H,1,[Define to 1 if you have the
  <malloc.h> header file.]),,[ ])
 CFLAGS="$CFLAGS_bak"
 AC_CHECK_HEADERS(fcntl.h limits.h unistd.h pwd.h dlfcn.h)
-AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h)
+AC_CHECK_HEADERS(time.h sys/time.h)
 AC_CHECK_HEADERS(sys/file.h sys/param.h sys/mman.h)
 AC_CHECK_HEADERS(rlimit.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h sys/un.h termios.h)
@@ -312,7 +312,6 @@ if test x$cross_compiling != xyes; then
 	AC_FUNC_SETPGRP()
 fi
 AC_TYPE_SIGNAL()
-AC_FUNC_UTIME_NULL()
 AC_FUNC_VPRINTF()
 AC_FUNC_MEMCMP()
 AC_CHECK_FUNCS(strsignal)
