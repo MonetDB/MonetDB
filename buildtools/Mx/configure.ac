@@ -33,7 +33,7 @@ AC_PATH_PROG(BASH, bash, /usr/bin/bash, $PATH)
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([getopt.h limits.h stddef.h stdlib.h string.h unistd.h utime.h])
+AC_CHECK_HEADERS([getopt.h limits.h stddef.h stdlib.h string.h sys/utime.h unistd.h utime.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STAT
@@ -45,7 +45,6 @@ AC_CHECK_TYPES([ptrdiff_t])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_FUNC_STAT
-AC_FUNC_UTIME_NULL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([memset mkdir strchr strcspn strrchr strstr utime])
 AC_CHECK_DECLS(getopt)
