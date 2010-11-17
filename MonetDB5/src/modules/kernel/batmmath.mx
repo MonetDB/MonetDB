@@ -53,6 +53,8 @@ module batmmath;
 	@:scienceFcn(cosh)@
 	@:scienceFcn(sinh)@
 	@:scienceFcn(tanh)@
+	@:scienceFcn(radians)@
+	@:scienceFcn(degrees)@
 	@:scienceFcn(exp)@
 	@:scienceFcn(log)@
 	@:scienceFcn(log10)@
@@ -93,6 +95,8 @@ module batmmath;
 #define batmmath_export extern
 #endif
 
+#define radians(x)       x * 3.14159265358979323846 /180.0
+#define degrees(x)       x * 180.0/3.14159265358979323846
 @-
 @= scienceFcnImpl
 batmmath_export str CMDscience_bat_@2_@1(int *ret, int *bid);
@@ -186,6 +190,8 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 @:scienceImpl(cosh)@
 @:scienceImpl(sinh)@
 @:scienceImpl(tanh)@
+@:scienceImpl(radians)@
+@:scienceImpl(degrees)@
 @:scienceImpl(exp)@
 @:scienceImpl(log)@
 @:scienceImpl(log10)@
