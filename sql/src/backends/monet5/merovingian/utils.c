@@ -266,8 +266,8 @@ abbreviateString(char *ret, const char *in, size_t width)
 
 	if ((len = strlen(in)) > width) {
 		/* position abbreviation dots in the middle (Mac style, iso
-		 * Windos style) */
-		memcpy(ret, in, (width / 2) - 3);
+		 * Windows style) */
+		memcpy(ret, in, (width / 2) - 2);
 		memcpy(ret + (width / 2) - 2, "...", 3);
 		off = len - (width - ((width / 2) - 2) - 3);
 		memcpy(ret + (width / 2) + 1, in + off, (len - off) + 1);
