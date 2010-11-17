@@ -72,31 +72,6 @@ stderr of test 'between-timestamp.Bug-2718` in directory 'src/test/BugTracker-20
 # 14:43:35 >  mclient -lsql -ftest -i -e --host=ottar --port=33285 
 # 14:43:35 >  
 
-MAPI  = monetdb@ottar:33285
-QUERY = select t1.time, count(t2.val)
-        from bug2718 t1, bug2718 t2
-        where t2.time between (t1.time - interval '1' second) and (t1.time + interval '1' second)
-        group by t1.time
-        order by t1.time;
-
-        !TypeException:user.s3_1[14]:'bat.reverse' undefined in: _22:any := bat.reverse(_20:any)
-        !TypeException:user.s3_1[16]:'algebra.markT' undefined in: _25:any := algebra.markT(_22:any, _23:oid)
-        !TypeException:user.s3_1[17]:'bat.reverse' undefined in: _26:any := bat.reverse(_25:any)
-        !TypeException:user.s3_1[18]:'algebra.leftjoin' undefined in: _27:any := algebra.leftjoin(_26:any, _13:bat[:oid,:timestamp])
-        !TypeException:user.s3_1[19]:'group.done' undefined in: (ext30:any, grp28:any) := group.done(_27:any)
-        !TypeException:user.s3_1[21]:'bat.mirror' undefined in: _31:any := bat.mirror(ext30:any)
-        !TypeException:user.s3_1[22]:'algebra.join' undefined in: _32:any := algebra.join(_31:any, _27:any)
-        !TypeException:user.s3_1[23]:'algebra.sortTail' undefined in: _33:any := algebra.sortTail(_32:any)
-        !TypeException:user.s3_1[25]:'algebra.markT' undefined in: _35:any := algebra.markT(_33:any, _34:oid)
-        !TypeException:user.s3_1[26]:'bat.reverse' undefined in: _36:any := bat.reverse(_35:any)
-        !TypeException:user.s3_1[27]:'algebra.leftjoin' undefined in: _37:any := algebra.leftjoin(_36:any, _32:any)
-        !TypeException:user.s3_1[29]:'algebra.markT' undefined in: _39:any := algebra.markT(_20:any, _38:oid)
-        !TypeException:user.s3_1[30]:'bat.reverse' undefined in: _40:any := bat.reverse(_39:any)
-        !TypeException:user.s3_1[32]:'algebra.leftjoin' undefined in: _46:any := algebra.leftjoin(_40:any, _41:bat[:oid,:int])
-        !TypeException:user.s3_1[33]:'algebra.selectNotNil' undefined in: _47:any := algebra.selectNotNil(_46:any)
-        !TypeException:user.s3_1[34]:'aggr.count' undefined in: _48:bat[:any,:wrd] := aggr.count(_47:any, _30:any, _31:any)
-        !TypeException:user.s3_1[35]:'algebra.leftjoin' undefined in: _49:any := algebra.leftjoin(_36:any, _48:bat[:any,:wrd])
-        !SQLException:SQLengine:Program contains errors
 
 # 14:43:36 >  
 # 14:43:36 >  Done.
