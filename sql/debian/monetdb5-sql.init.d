@@ -60,7 +60,7 @@ running() {
 case "$1" in
   start)
         if [ "$STARTUP" != "yes" ]; then
-            echo "can't start, should be enabled first by change STARTUP to yes in /etc/default/monetdb5-sql"
+            echo "can't start, should be enabled first by changing STARTUP to yes in /etc/default/monetdb5-sql"
             exit 0
         fi
 
@@ -89,9 +89,11 @@ case "$1" in
         fi
         ;;
   stop)
-        echo -n "Stopping $DESC: "
-        start-stop-daemon --stop --pidfile $PIDFILE --exec $DAEMON
-        echo "$NAME."
+        if running ;  then
+            echo -n "Stopping $DESC: "
+            start-stop-daemon --stop --pidfile $PIDFILE --exec $DAEMON
+            echo "$NAME."
+        fi
         ;;
   restart)
         $0 stop
