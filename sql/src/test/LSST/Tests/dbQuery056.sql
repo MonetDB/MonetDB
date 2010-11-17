@@ -1,9 +1,9 @@
 -- http://dev.lsstcorp.org/trac/wiki/dbQuery056
 SELECT count(*) 
-FROM   Source;
+FROM   Source_pt1;
 
 SELECT count(*) 
-FROM   Source
+FROM   Source_pt1
 JOIN   Object USING (objectId)
 WHERE  extendedParam < 0.2;
 

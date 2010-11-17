@@ -933,7 +933,7 @@ static int
 OPTtarantulaImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr q, p, pp, *old;
-	int last=0, i, j, k, l, limit, actions=0, block = 0, fnd;
+	int last=0, i, j, k, l, limit, actions=0, block = 0, fnd, target;
 	int leg=0, ta =0, vtop=0;
 	MalBlkPtr tm;
 	char fcn[BUFSIZ];
@@ -1012,6 +1012,13 @@ the level at which it would be indirectly needed as input.
 	for ( i = 0; i < VTOP * vtop; i++)
 		map[i] = i;
 
+	/* find the last mat.pack instruction */
+	target=0;
+	for (i = limit-1; i > 0; i--) 
+	if( getModuleId(old[i])== matRef && getFunctionId(old[i])== packRef) {
+		target = i;
+		break;
+	}
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 		if ( p == 0)
@@ -1021,7 +1028,7 @@ the level at which it would be indirectly needed as input.
 			old[i]= 0;
 			continue;
 		}
-		if( getModuleId(p)== matRef && getFunctionId(p)== packRef) {
+		if( i == target) {
 @-
 The critical part is to determine the input/output variable set
 for this pack function. Some variables may have to be re-used
