@@ -273,6 +273,16 @@ OCTaddResult(int cl, int residx)
 	}
 }
 
+bit 
+isAView(InstrPtr p)
+{
+	if ( ( getModuleId(p) == batRef && 
+		  ( getFunctionId(p) == reverseRef || getFunctionId(p) == mirrorRef )) ||
+		 ( getModuleId(p) == algebraRef && getFunctionId(p) == markTRef ))
+		 return 1;
+	return 0;
+}
+
 static int
 OCTinitcode(Client cntxt, MalBlkPtr mb){
 	InstrPtr p;
@@ -801,7 +811,7 @@ OCTnewBidding(Client cntxt, int tcnt)
 	clrDeclarations(sm);
 	chkProgram(cntxt->nspace,sm);
 	OPTDEBUGoctopus{
-		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS ); 
+		/*		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS ); */
 	}
 }
 
@@ -927,18 +937,18 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 	clrDeclarations(sm);
 	chkProgram(cntxt->nspace,sm);
 	OPTDEBUGoctopus{
-		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS ); 
+		/*		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS ); */
 	}
 }
 
 static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, limit, cl, last, v2, z;
+	int i, j, k, limit, cl, last, v2, z, v;
 	int update=0, autocommit=0, actions=0, target = -1, varadd = 0;
-	InstrPtr p, *old, sig;
+	InstrPtr p, *old, sig, q, *pref = NULL;
 	bte *set = NULL, *bnd = NULL;
-	int *malPart = NULL, *alias = NULL;
+	int *malPart = NULL, *alias = NULL, *src = NULL;
 	oid l,h;
 	str tnm;
 	char rname[BUFSIZ];
@@ -949,7 +959,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if ( tentacle == NULL)
 		return 0;
 
-/*	optDebug |= 1 << DEBUG_OPT_OCTOPUS; */
+	/*	optDebug |= 1 << DEBUG_OPT_OCTOPUS; */
 /*	OPTDEBUGoctopus{
 		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
@@ -1009,9 +1019,13 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	malPart = (int*) GDKzalloc(mb->vtop * sizeof(int)); /* mask for cluster inclusion */
 	memset((char *) malPart,~(char)0,mb->vtop * sizeof(int));
 	bnd = (bte*) GDKzalloc(mb->vtop);
+	src = (int*) GDKzalloc(mb->vtop * sizeof(int));
+	pref = (InstrPtr*) GDKzalloc(mb->stop * sizeof(InstrPtr));
+
 	/* analysis */
 	for (i = 1; i < limit; i++) {
 		p = old[i];
+		src[getArg(p,0)] = i;
 		/* bind instructions over the largest table determine the partitions */
 		if ( isBindInstr(p) && p->argc>=7 ){
 			tnm = (str) getVarValue(mb,getArg(p,3));
@@ -1032,26 +1046,48 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 		if ( cl )			/* go to the arguments partition */
 			malPart[getArg(p,0)] = cl;	
+
 		else {				/* combines partitions - remain in head  */
 			malPart[getArg(p,0)] = 1;
 			for ( j = p->retc; j < p->argc; j++) 
 				if ( !(malPart[getArg(p,j)] & malPart[getArg(p,0)]) ){
-					if ( bnd[getArg(p,j)] ) /* add bind instr. to cluster 0 */
-						malPart[getArg(p,j)] = malPart[getArg(p,j)] | (int) 1;
-
-					else {					/* extend partition results */
-						cl = OCTgetCluster(malPart[getArg(p,j)]);
-						if ( cl > 0 )
-							OCTaddResult(cl, getArg(p,j));	
+					v = getArg(p,j);
+					q = getInstrPtr(mb, src[v]);
+					k = 0;
+					while ( isAView(q) ) {
+						pref[k++] = q;
+						v = getArg(q,1);
+						q = getInstrPtr(mb, src[v]);
 					}
-				}
-			if (target < 0 ) 
+					k--;
+					if ( bnd[v] ) {/* add bind instr. to cluster 1 */
+						malPart[v] = malPart[v] | (int) 1;
+						for ( ; k >= 0; k--){
+							v = getArg(pref[k],0);
+							malPart[v] = malPart[v] | (int) 1;
+						}
+					}
+					else {					/* extend partition results */
+						cl = OCTgetCluster(malPart[v]);
+						if ( cl > 0 )
+							OCTaddResult(cl, v);
+						for ( ; k >= 0; k--){
+							v = getArg(pref[k],0);
+							malPart[v] = malPart[v] | (int) 1;
+							if ( target < 0 || src[v] < target )
+								target = src[v];
+						}
+					}
+			}
+			if (target < 0 ) /* place of octopus block is before 1st comb. instruction */
 				target = i;
 		}
 
 	} /* for */
 
 	GDKfree(bnd);
+	GDKfree(src);
+	GDKfree(pref);
 
 	/* print mal block annotated with partitions */
 	OPTDEBUGoctopus{
@@ -1114,12 +1150,13 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			if (target == i)
 				OCTnewOctBlk(mb, old, v2);
 
-	/*		if ( malPart[getArg(p,0)] < 0 ){  instruction combines partitions */
-			if ( memb1(malPart[getArg(p,0)],0) ){ 
+			/*	 instruction combines partitions */
+			if ( malPart[getArg(p,0)] > 0 ){ 
 	
 				/* replace arguments with returns from octopus block */
 				for ( j = p->retc; j < p->argc; j++) 
-					if ( !(malPart[getArg(p,0)] & malPart[getArg(p,j)]) ){
+					/*					if ( !(malPart[getArg(p,0)] & malPart[getArg(p,j)]) ){*/
+					if ( malPart[getArg(p,j)] > 1 && !memb(malPart[getArg(p,j)],0) ){
 						cl = OCTgetCluster(malPart[getArg(p,j)]);
 						if ( cl > 0 ) {
 							k = 0;		
@@ -1130,8 +1167,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 								getArg(p,j) = findVariable (mb, rname);
 							}
 							else 
-							mnstr_printf(cntxt->fdout, "mat.pack argument %2d outside cluster\n",
-								getArg(p,j));
+								mnstr_printf(cntxt->fdout, "mat.pack argument %2d outside cluster %d\n", getArg(p,j),cl);
 					}
 				}
 			}
@@ -1151,7 +1187,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	clrDeclarations(mb);
 	chkProgram(cntxt->nspace,mb);  
 	OPTDEBUGoctopus{
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI); 
+		/*		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI); */
 	}
 
 	GDKfree(malPart);
