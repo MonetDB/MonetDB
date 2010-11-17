@@ -1,0 +1,104 @@
+stderr of test 'between-timestamp.Bug-2718` in directory 'src/test/BugTracker-2010` itself:
+
+
+# 14:43:35 >  
+# 14:43:35 >   mserver5 "--config=/ufs/sjoerd/Monet-stable/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/sjoerd/Monet-stable/lib64/MonetDB5:/ufs/sjoerd/Monet-stable/lib64/MonetDB5/lib:/ufs/sjoerd/Monet-stable/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33285 --set xrpc_port=48650 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
+# 14:43:35 >  
+
+# builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
+# builtin opt 	gdk_version = 1.40.2
+# builtin opt 	prefix = /ufs/sjoerd/Monet-stable
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib64/MonetDB
+# builtin opt 	monet_daemon = no
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_clients = 2
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	default_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# builtin opt 	minimal_pipe = inline,remap,deadcode,multiplex,garbageCollector
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	standoff_ns = 
+# builtin opt 	standoff_start = start
+# builtin opt 	standoff_end = end
+# config opt 	prefix = /ufs/sjoerd/Monet-stable
+# config opt 	config = ${prefix}/etc/monetdb5.conf
+# config opt 	prefix = /ufs/sjoerd/Monet-stable
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
+# config opt 	monet_mod_path = ${exec_prefix}/lib64/MonetDB5:${exec_prefix}/lib64/MonetDB5/lib:${exec_prefix}/lib64/MonetDB5/bin
+# config opt 	mero_pidfile = ${prefix}/var/run/MonetDB/merovingian.pid
+# config opt 	mero_controlport = 50001
+# config opt 	no_mitosis_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	sequential_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,garbageCollector
+# config opt 	nov2009_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	replication_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
+# config opt 	accumulator_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,dataflow,history,multiplex,garbageCollector
+# config opt 	recycler_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	cracker_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	sidcrack_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	datacell_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	octopus_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	datacyclotron_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
+# config opt 	derive_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,derivePath,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	dictionary_pipe = inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	compression_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
+# cmdline opt 	config = /ufs/sjoerd/Monet-stable/etc/monetdb5.conf
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	monet_mod_path = /ufs/sjoerd/Monet-stable/lib64/MonetDB5:/ufs/sjoerd/Monet-stable/lib64/MonetDB5/lib:/ufs/sjoerd/Monet-stable/lib64/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/Monet-stable/var/MonetDB5/dbfarm
+# cmdline opt 	mapi_open = true
+# cmdline opt 	xrpc_open = true
+# cmdline opt 	mapi_port = 33285
+# cmdline opt 	xrpc_port = 48650
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_src_test_BugTracker-2010
+# cmdline opt 	mal_listing = 0
+#warning: please don't forget to set your vault key!
+#(see /ufs/sjoerd/Monet-stable/etc/monetdb5.conf)
+
+# 14:43:35 >  
+# 14:43:35 >  mclient -lsql -ftest -i -e --host=ottar --port=33285 
+# 14:43:35 >  
+
+MAPI  = monetdb@ottar:33285
+QUERY = select t1.time, count(t2.val)
+        from bug2718 t1, bug2718 t2
+        where t2.time between (t1.time - interval '1' second) and (t1.time + interval '1' second)
+        group by t1.time
+        order by t1.time;
+
+        !TypeException:user.s3_1[14]:'bat.reverse' undefined in: _22:any := bat.reverse(_20:any)
+        !TypeException:user.s3_1[16]:'algebra.markT' undefined in: _25:any := algebra.markT(_22:any, _23:oid)
+        !TypeException:user.s3_1[17]:'bat.reverse' undefined in: _26:any := bat.reverse(_25:any)
+        !TypeException:user.s3_1[18]:'algebra.leftjoin' undefined in: _27:any := algebra.leftjoin(_26:any, _13:bat[:oid,:timestamp])
+        !TypeException:user.s3_1[19]:'group.done' undefined in: (ext30:any, grp28:any) := group.done(_27:any)
+        !TypeException:user.s3_1[21]:'bat.mirror' undefined in: _31:any := bat.mirror(ext30:any)
+        !TypeException:user.s3_1[22]:'algebra.join' undefined in: _32:any := algebra.join(_31:any, _27:any)
+        !TypeException:user.s3_1[23]:'algebra.sortTail' undefined in: _33:any := algebra.sortTail(_32:any)
+        !TypeException:user.s3_1[25]:'algebra.markT' undefined in: _35:any := algebra.markT(_33:any, _34:oid)
+        !TypeException:user.s3_1[26]:'bat.reverse' undefined in: _36:any := bat.reverse(_35:any)
+        !TypeException:user.s3_1[27]:'algebra.leftjoin' undefined in: _37:any := algebra.leftjoin(_36:any, _32:any)
+        !TypeException:user.s3_1[29]:'algebra.markT' undefined in: _39:any := algebra.markT(_20:any, _38:oid)
+        !TypeException:user.s3_1[30]:'bat.reverse' undefined in: _40:any := bat.reverse(_39:any)
+        !TypeException:user.s3_1[32]:'algebra.leftjoin' undefined in: _46:any := algebra.leftjoin(_40:any, _41:bat[:oid,:int])
+        !TypeException:user.s3_1[33]:'algebra.selectNotNil' undefined in: _47:any := algebra.selectNotNil(_46:any)
+        !TypeException:user.s3_1[34]:'aggr.count' undefined in: _48:bat[:any,:wrd] := aggr.count(_47:any, _30:any, _31:any)
+        !TypeException:user.s3_1[35]:'algebra.leftjoin' undefined in: _49:any := algebra.leftjoin(_36:any, _48:bat[:any,:wrd])
+        !SQLException:SQLengine:Program contains errors
+
+# 14:43:36 >  
+# 14:43:36 >  Done.
+# 14:43:36 >  
+
