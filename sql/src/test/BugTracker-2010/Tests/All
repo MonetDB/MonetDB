@@ -72,3 +72,4 @@ distinct-order-by-limit.Bug-2691
 join_problem.Bug-2694
 TypeException_with_missing_function.Bug-2674
 join-and-like.Bug-2715
+between-timestamp.Bug-2718
