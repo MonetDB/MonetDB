@@ -948,6 +948,7 @@ def am_gem(fd, var, gem, am):
         fd.write('\tgem install --local --install-dir $(DESTDIR)%s --force --rdoc %s\n' % (rd, f[:-4]))
         fd.write('uninstall-exec-local-%s: %s\n' % (sf, f[:-4]))
         fd.write('\tgem uninstall --install-dir $(DESTDIR)%s %s\n' % (rd, f[:-4]))
+        am['BUILT_SOURCES'].append(f[:-4])
     fd.write('else\n')
     for f in gem['FILES']:
         sf = f.replace('.', '_')
