@@ -2761,7 +2761,7 @@ AC_CHECK_PROG(FIG2DEV,fig2dev,fig2dev)
 FIG2DEV_EPS=eps
 AC_MSG_CHECKING([$FIG2DEV postscript option])
 [ if [ "$FIG2DEV" ]; then
-        echo "" > $FIG2DEV -L$FIG2DEV_EPS 2>/dev/null
+        echo "" | $FIG2DEV -L$FIG2DEV_EPS 2>/dev/null
         if [ $? -ne 0 ]; then
                 FIG2DEV_EPS=ps
         fi
