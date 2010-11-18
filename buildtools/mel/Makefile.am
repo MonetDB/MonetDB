@@ -23,6 +23,7 @@ nodist_mel_SOURCES = any_arg.cc any_arg.h atom_arg.cc atom_arg.h      \
 		     type_arg.cc type_arg.h use.cc use.h var_arg.cc   \
 		     var_arg.h
 dist_mel_SOURCES =
+CLEANFILES = $(nodist_mel_SOURCES) y.tab.h mel.ll mel.yy
 
 YFLAGS = -d
 
