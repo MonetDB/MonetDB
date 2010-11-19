@@ -1765,7 +1765,7 @@ showCommands(void)
 static int
 doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 {
-	char *line = NULL;
+	char *line = NULL, *p = NULL;
 	char *oldbuf = NULL, *buf = NULL;
 	size_t length;
 	MapiHdl hdl = mapi_get_active(mid);
@@ -1966,6 +1966,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					}
 					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
+					/* find the end ... */
+					for (p = line; *p; p++)
+						;
+					/* ... and strip trailing whitespace */
+					for (p-- ; p >= line && isascii((int) *p) && isspace((int) *p); p--)
+						*p = '\0';
+
 					if (*line) {
 #ifdef HAVE_POPEN
 						stream *saveFD, *saveFD_raw;

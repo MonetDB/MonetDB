@@ -1,3 +1,6 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Nov 19 2010 Fabian Groffen <fabian@cwi.nl>
+- Strip any trailing whitespace with the \d command
+
