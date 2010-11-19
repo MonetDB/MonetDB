@@ -2,5 +2,7 @@
 # This file is updated with Maddlog
 
 * Fri Nov 19 2010 Fabian Groffen <fabian@cwi.nl>
+- object names given to \d are now lowercased, unless quoted by either
+  single or double quotes
 - Strip any trailing whitespace with the \d command
 

@@ -1973,6 +1973,31 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (p-- ; p >= line && isascii((int) *p) && isspace((int) *p); p--)
 						*p = '\0';
 
+					/* is the object quoted? we only support fully
+					 * quoted objects, not partial ones */
+					if (line[0] == '"' || line[0] == '\'') {
+						for (p = line; *p; p++)
+							;
+						if (--p == line) {
+							fprintf(stderr, "unmatched %c\n", line[0]);
+							continue;
+						} else if ((*p == '"' || *p == '\'') && *p != line[0]) {
+							fprintf(stderr, "unexpected %c, expecting %c\n",
+									*p, line[0]);
+							continue;
+						} else if (*p != line[0]) {
+							fprintf(stderr, "unexpected end of string while "
+									"looking for matching %c\n", line[0]);
+							continue;
+						}
+						/* remove the quotes */
+						line++;
+						*p = '\0';
+					} else {
+						/* no, lowercase it */
+						for (p = line; *p; p++)
+							*p = tolower((int) *p);
+					}
 					if (*line) {
 #ifdef HAVE_POPEN
 						stream *saveFD, *saveFD_raw;
