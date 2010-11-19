@@ -823,7 +823,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( fullname == NULL)
 		fullname= *name;
 	fd = open_rastream(fullname);
-    if (mnstr_errnr(fd) == OPEN_ERROR) {
+    if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
         mnstr_destroy(fd);
         throw(MAL, "sql.include", "could not open file: %s\n", *name);
     }
