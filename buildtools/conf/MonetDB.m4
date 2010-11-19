@@ -3044,9 +3044,9 @@ AC_CHECK_PROG(DVIPS,dvips,dvips)
 AC_CHECK_PROG(FIG2DEV,fig2dev,fig2dev)
 FIG2DEV_EPS=eps
 AC_MSG_CHECKING([$FIG2DEV postscript option])
-[ if [ "$FIG2DEV" ]; then
-        echo "" > $FIG2DEV -L$FIG2DEV_EPS 2>/dev/null
-        if [ $? -ne 0 ]; then
+[ if test "$FIG2DEV"; then
+        echo "" | $FIG2DEV -L$FIG2DEV_EPS 2>/dev/null
+        if test $? -ne 0; then
                 FIG2DEV_EPS=ps
         fi
 fi ]
@@ -3056,16 +3056,16 @@ AM_CONDITIONAL(DOCTOOLS, test -n "$TEXI2HTML" -a -n "$LATEX2HTML" -a -n "$LATEX"
 
 INSTALL_BACKUP=""
 AC_MSG_CHECKING([$INSTALL --backup option])
-[ if [ "$INSTALL" ]; then
+[ if test "$INSTALL"; then
 	inst=`echo $INSTALL | sed 's/ .*//'`
-	if [ ! "`file $inst | grep 'shell script' 2>/dev/null`" ] ; then
+	if test ! "`file $inst | grep 'shell script' 2>/dev/null`" ; then
 	    echo "" > c 2>/dev/null
             $INSTALL --backup=nil c d 1>/dev/null 2>/dev/null
-            if [ $? -eq 0 ]; then
+            if test $? -eq 0; then
                 INSTALL_BACKUP="--backup=nil" 
             fi
             $INSTALL -C --backup=nil c e 1>/dev/null 2>/dev/null
-            if [ $? -eq 0 ]; then
+            if test $? -eq 0; then
                 INSTALL_BACKUP="-C --backup=nil" 
        	    fi
 	fi 
@@ -3199,7 +3199,7 @@ if test -f "$srcdir"/vertoo.data; then
 		MEL="$withval"
 	fi
 	if test x$MEL = x; then
-		if [ -z "$1" ]; then 
+		if test -z "$1"; then 
 			AC_MSG_ERROR([mel is required])
 		fi
 		have_mel=no

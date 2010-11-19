@@ -356,10 +356,10 @@ def am_scripts(fd, var, scripts, am):
             fd.write(" C_script_%s = script_%s\n" % (mkname, script))
             for condname in scripts['COND']:
                 fd.write("endif\n")
-            if not os.path.exists(script):
+            if not os.path.exists(os.path.join(am['CWDRAW'], script)):
                 am['BUILT_SOURCES'].append("$(C_" +mkname+ ")")
             am['EXTRA_DIST'].append(script)
-        elif os.path.exists(script):
+        elif os.path.exists(os.path.join(am['CWDRAW'], script)):
             am['EXTRA_DIST'].append(script)
         else:
             am['BUILT_SOURCES'].append(script)
@@ -947,6 +947,7 @@ def am_gem(fd, var, gem, am):
         fd.write('\tgem install --local --install-dir $(DESTDIR)%s --force --rdoc %s\n' % (rd, f[:-4]))
         fd.write('uninstall-exec-local-%s: %s\n' % (sf, f[:-4]))
         fd.write('\tgem uninstall --install-dir $(DESTDIR)%s %s\n' % (rd, f[:-4]))
+        am['BUILT_SOURCES'].append(f[:-4])
     fd.write('else\n')
     for f in gem['FILES']:
         sf = f.replace('.', '_')
@@ -1125,6 +1126,7 @@ endif
     if cwd != topdir:
         # in case we happen to be running this on Windows, replace dir seps
         am['CWD'] = cwd[len(topdir)+1:].replace('\\', '/')+'/'
+    am['CWDRAW'] = cwd
     am['BUILT_SOURCES'] = []
     am['EXTRA_DIST'] = []
     am['LIBS'] = []     # all libraries (am_libs and am_library)
