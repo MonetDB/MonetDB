@@ -145,16 +145,6 @@ ifdef NEED_MX
 # to a dummy file in the second rule.
 # We also make sure that "$(CONFIG_H)" is included first, also with swig-generated files.
 # This is crucial to prevent inconsistent (re-)definitions of macros.
-%.ruby.c: %.ruby.i
-	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o $@ $<
-	$(MV) $@ $@.tmp
-	echo '#include <'"$(CONFIG_H)"'>' > $@
-	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $@.tmp >> $@
-	$(RM) $@.tmp
-
-%.ruby: %.ruby.i
-	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o dymmy.c $<
-
 %.tcl.c: %.tcl.i
 	$(SWIG) -tcl $(SWIGFLAGS) -outdir . -o $@ $<
 	$(MV) $@ $@.tmp
