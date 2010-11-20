@@ -291,7 +291,7 @@ def am_dep(fd, t, deplist, am, pref = ''):
         am['MILHACK'][n] = " $(%s_LTLIBRARIES)" % os.path.basename(f)
     fd.write("\n")
 
-def am_deps(fd, deps, objext, am):
+def am_deps(fd, deps, am):
     if not am['DEPS']:
         fd.write("if NEED_MX\n")
         for t, deplist in deps.items():
@@ -387,7 +387,7 @@ def am_scripts(fd, var, scripts, am):
         am['InstallList'].append("\t"+sd+"/"+script+cond+"\n")
 
     am_find_ins(am, scripts)
-    am_deps(fd, scripts['DEPS'], "\.o", am)
+    am_deps(fd, scripts['DEPS'], am)
 
 # return the unique elements of the argument list
 def uniq(l):
@@ -445,7 +445,7 @@ def am_headers(fd, var, headers, am):
         am['InstallList'].append("\t"+sd+"/"+header+cond+"\n")
 
     am_find_ins(am, headers)
-    am_deps(fd, headers['DEPS'], "\.o", am)
+    am_deps(fd, headers['DEPS'], am)
     for src in headers['SOURCES']:
         am['EXTRA_DIST'].append(src)
 
@@ -486,7 +486,7 @@ def am_doc(fd, var, docmap, am):
     am['UNINSTALL'].append(name)
 
     am_find_ins(am, docmap)
-    am_deps(fd, docmap['DEPS'], "\.o", am)
+    am_deps(fd, docmap['DEPS'], am)
 
 def am_normalize(name):
     return string.replace(name, '-', '_')
@@ -613,7 +613,7 @@ def am_binary(fd, var, binmap, am):
     am_find_hdrs(am, binmap)
     am_find_ins(am, binmap)
 
-    am_deps(fd, binmap['DEPS'], ".o", am)
+    am_deps(fd, binmap['DEPS'], am)
 
 def am_bins(fd, var, binsmap, am):
 
@@ -693,7 +693,7 @@ def am_bins(fd, var, binsmap, am):
                     am['EXTRA_DIST'].append(target)
 
     am_find_ins(am, binsmap)
-    am_deps(fd, binsmap['DEPS'], ".o", am)
+    am_deps(fd, binsmap['DEPS'], am)
 
 def am_mods_to_libs(fd, var, modmap, am):
     modname = var[:-4]+"LIBS"
@@ -826,7 +826,7 @@ def am_library(fd, var, libmap, am):
     am_find_hdrs(am, libmap)
     am_find_ins(am, libmap)
 
-    am_deps(fd, libmap['DEPS'], ".lo", am)
+    am_deps(fd, libmap['DEPS'], am)
 
 def am_libs(fd, var, libsmap, am):
 
@@ -923,7 +923,7 @@ def am_libs(fd, var, libsmap, am):
                     am['EXTRA_DIST'].append(target)
 
     am_find_ins(am, libsmap)
-    am_deps(fd, libsmap['DEPS'], ".lo", am)
+    am_deps(fd, libsmap['DEPS'], am)
 
 def am_gem(fd, var, gem, am):
     rd = 'RUBY_DIR'
