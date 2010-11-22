@@ -1401,7 +1401,7 @@ rel_need_distinct_query( sql_rel *rel)
 				if (l) for(m = l->h; m &&  !need_distinct; m = m->next){
 					sql_exp *a = m->data;
 	
-					if (!need_distinct(a))
+					if (need_distinct(a))
 						need_distinct = 1;
 				}
 			}
