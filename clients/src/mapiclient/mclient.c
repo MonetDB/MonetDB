@@ -1772,6 +1772,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 	MapiMsg rc = MOK;
 	int sent = 0;		/* whether we sent any data to the server */
 	int lineno = 1;
+	char hasWildcard = 0;
+	char hasSchema = 0;
+	char wantsSystem = 0; 
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -1960,11 +1963,25 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					while (isascii((int) line[length - 1]) &&
 					       isspace((int) line[length - 1]))
 						line[--length] = 0;
-					if (line[2] && !(isascii((int) line[2]) && isspace(line[2]))) {
-						fprintf(stderr, "space required after \\d\n");
-						continue;
+					hasSchema = 0;
+					hasWildcard = 0;
+					wantsSystem = 0;
+					for (line += 2; *line && !(isascii((int) *line) && isspace((int) *line)); line++)
+					{
+						switch (*line) {
+							case 'S':
+								wantsSystem = 1;
+							break;
+							default:
+								fprintf(stderr, "unknown sub-command for \\d: %c\n", *line);
+								length = 0;
+								line[1] = '\0';
+							break;
+						}
 					}
-					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
+					if (length == 0)
+						continue;
+					for ( ; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 
 					/* is the object quoted? we only support fully
@@ -1988,11 +2005,23 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						line++;
 						*p = '\0';
 					} else {
-						/* no, lowercase it */
-						for (p = line; *p; p++)
+						/* not quoted: lowercase it, and search for
+						 * wildcards * and ?, replace them with SQL
+						 * variants */
+						for (p = line; *p; p++) {
 							*p = tolower((int) *p);
+							if (*p == '*') {
+								*p = '%';
+								hasWildcard = 1;
+							} else if (*p == '?') {
+								*p = '_';
+								hasWildcard = 1;
+							} else if (*p == '.') {
+								hasSchema = 1;
+							}
+						}
 					}
-					if (*line) {
+					if (*line && !hasWildcard) {
 #ifdef HAVE_POPEN
 						stream *saveFD, *saveFD_raw;
 
@@ -2004,23 +2033,51 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #endif
 					} else {
 						/* get all table names in current schema */
-						char *type, *name, *schema;
-						hdl = mapi_query(mid,
+						char *type, *name, *system, *schema;
+						char q[1024];
+						char nameq[256];
+						if (!*line) {
+							line = "%";
+							hasSchema = 0;
+						}
+						if (hasSchema) {
+							snprintf(nameq, 256, 
+									"AND \"s\".\"name\" || '.' || \"t\".\"name\" LIKE '%s'",
+									line);
+						} else {
+							snprintf(nameq, 256,
+									"AND \"s\".\"name\" = \"current_schema\" "
+									"AND \"t\".\"name\" LIKE '%s'",
+									line);
+						}
+						snprintf(q, 1024,
 								"SELECT \"t\".\"name\", \"t\".\"type\", "
-								"\"s\".\"name\" "
+								       "\"t\".\"system\", \"s\".\"name\" "
 								"FROM \"sys\".\"_tables\" \"t\", "
-								"\"sys\".\"schemas\" \"s\" "
+								     "\"sys\".\"schemas\" \"s\" "
 								"WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
-								"AND \"s\".\"name\" = \"current_schema\" "
-								"AND \"t\".\"system\" = false "
-								"ORDER BY \"t\".\"name\"");
+								  "%s %s "
+								  "AND \"t\".\"type\" IN (0, 1) "
+								"ORDER BY \"t\".\"name\"",
+								nameq,
+								(wantsSystem ?
+								  "" :
+								  "AND \"t\".\"system\" = false"));
+						hdl = mapi_query(mid, q);
 						CHECK_RESULT(mid, hdl, buf, continue);
-						while (fetch_row(hdl) == 3) {
+						while (fetch_row(hdl) == 4) {
 							name = mapi_fetch_field(hdl, 0);
 							type = mapi_fetch_field(hdl, 1);
-							schema = mapi_fetch_field(hdl, 2);
+							system = mapi_fetch_field(hdl, 2);
+							schema = mapi_fetch_field(hdl, 3);
+							if (strcmp(system, "true") == 0) {
+								system = "SYSTEM ";
+							} else {
+								system = "";
+							}
 							mnstr_printf(toConsole,
-									  "%-6s  %s.%s\n",
+									  "%s%-6s  %s.%s\n",
+									  system,
 									  *type == '1' ? "VIEW" : "TABLE",
 									  schema, name);
 						}

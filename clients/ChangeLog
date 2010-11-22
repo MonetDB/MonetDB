@@ -1,6 +1,11 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Nov 22 2010 Fabian Groffen <fabian@cwi.nl>
+- Added support for wildcards * and ? in object names given to \d
+  commands, such that pattern matching is possible, e.g. \d my*
+- Added support for \dS that lists also system tables
+
 * Fri Nov 19 2010 Fabian Groffen <fabian@cwi.nl>
 - object names given to \d are now lowercased, unless quoted by either
   single or double quotes
