@@ -76,10 +76,13 @@
 /* #undef HAVE_ALLOCA_H */
 
 /* Define to 1 if you have the `asctime_r' function. */
-/* #undef HAVE_ASCTIME_R */
+#define HAVE_ASCTIME_R 1
 
 /* Define if you have asctime_r(struct tm*,char *buf,size_t s) */
-/* #undef HAVE_ASCTIME_R3 */
+#define HAVE_ASCTIME_R3 1
+
+/* there is something very similar to asctime_r on Windows: */
+#define asctime_r(t,b,s)	asctime_s(b,s,t)
 
 /* Define to 1 if you have the `basename' function. */
 /* #undef HAVE_BASENAME */
@@ -91,10 +94,13 @@
 /* #undef HAVE_CRYPT_H */
 
 /* Define to 1 if you have the `ctime_r' function. */
-/* #undef HAVE_CTIME_R */
+#define HAVE_CTIME_R 1
 
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
-/* #undef HAVE_CTIME_R3 */
+#define HAVE_CTIME_R3 1
+
+/* there is something very similar to ctime_r on Windows: */
+#define ctime_r(t,b,s)	ctime_s(b,s,t)
 
 /* Define if you have the cURL library */
 /* #undef HAVE_CURL */
@@ -266,7 +272,10 @@
 #define HAVE_LOCALE_H 1
 
 /* Define to 1 if you have the `localtime_r' function. */
-/* #undef HAVE_LOCALTIME_R */
+#define HAVE_LOCALTIME_R 1
+
+/* there is something very similar to localtime_r on Windows: */
+#define localtime_r(tp,tm)	localtime_s(tm,tp)
 
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */

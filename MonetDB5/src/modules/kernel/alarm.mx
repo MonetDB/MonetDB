@@ -315,12 +315,14 @@ CMDctime(str *retval)
 #ifdef HAVE_CTIME_R3
 	char buf[26];
 
-	base = ctime_r(&t, buf, sizeof(buf));
+	ctime_r(&t, buf, sizeof(buf));
+	base = buf;
 #else
 #ifdef HAVE_CTIME_R
 	char buf[26];
 
-	base = ctime_r(&t, buf);
+	ctime_r(&t, buf);
+	base = buf;
 #else
 	base = ctime(&t);
 #endif

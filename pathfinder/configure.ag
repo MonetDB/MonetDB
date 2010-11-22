@@ -604,7 +604,7 @@ then
                       as arguments for --with-default-backend.])
 fi
 
-AC_CHECK_HEADERS(time.h sys/time.h utime.h sys/utime.h string.h)
+AC_CHECK_HEADERS(time.h sys/time.h string.h)
 
 dnl The xmlshredder requires strdup() & strndup(). We test here if both are
 dnl available on the system. If not, we will define them ourselves
@@ -623,7 +623,6 @@ AC_CHECK_FUNCS([strdup strndup],
 AC_HEADER_TIME()
 AC_STRUCT_TM()
 AC_STRUCT_TIMEZONE()
-AC_FUNC_UTIME_NULL()
 AC_CHECK_FUNCS([ftime ctime_r localtime_r])
 ctime_r3=yes
 AC_MSG_CHECKING(ctime_r3)

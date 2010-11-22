@@ -287,10 +287,73 @@ public class MonetResultSet implements ResultSet {
 	   not implemented for now */
 	public InputStream getAsciiStream(int columnIndex) throws SQLException { throw new SQLException("Method getAsciiStream not implemented yet, sorry!"); }
 	public InputStream getAsciiStream(String columnName) throws SQLException { throw new SQLException("Method getAsciiStream not implemented yet, sorry!"); }
-	public InputStream getBinaryStream(int columnIndex) throws SQLException { throw new SQLException("Method getBinaryStream not implemented yet, sorry!"); }
-	public InputStream getBinaryStream(String columnName) throws SQLException { throw new SQLException("Method getBinaryStream not implemented yet, sorry!"); }
 	public InputStream getUnicodeStream(int columnIndex) throws SQLException { throw new SQLException("Method getUnicodeStream not implemented yet, sorry!"); }
 	public InputStream getUnicodeStream(String columnName) throws SQLException { throw new SQLException("Method getUnicodeStream not implemented yet, sorry!"); }
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a stream of uninterpreted bytes. The
+	 * value can then be read in chunks from the stream. This method is
+	 * particularly suitable for retrieving large LONGVARBINARY values.
+	 * <br/><br/>
+	 * Note: All the data in the returned stream must be read prior to
+	 * getting the value of any other column. The next call to a getter
+	 * method implicitly closes the stream. Also, a stream may return 0
+	 * when the method InputStream.available  is called whether there is
+	 * data available or not. 
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return a Java input stream that delivers the database column
+	 * value as a stream of uninterpreted bytes; if the value is SQL
+	 * NULL, the value returned is null
+	 * @throws SQLException if the columnIndex is not valid; if a
+	 * database access error occurs or this method is called on a closed
+	 * result set
+	 */
+	public InputStream getBinaryStream(int columnIndex) throws SQLException {
+		switch (getJavaType(types[columnIndex - 1])) {
+			case Types.BLOB:
+				Blob blob = getBlob(columnIndex);
+				if (blob == null)
+					return(null);
+				return(blob.getBinaryStream());
+			case Types.BINARY:
+			case Types.VARBINARY:
+			case Types.LONGVARBINARY:
+				byte[] bte = getBytes(columnIndex);
+				if (bte == null)
+					return(null);
+				return(new ByteArrayInputStream(bte));
+		}
+		throw new SQLException("Cannot operate on " +
+				types[columnIndex - 1] + " type");
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a stream of uninterpreted bytes. The
+	 * value can then be read in chunks from the stream. This method is
+	 * particularly suitable for retrieving large LONGVARBINARY  values.
+	 * <br/><br/>
+	 * Note: All the data in the returned stream must be read prior to
+	 * getting the value of any other column. The next call to a getter
+	 * method implicitly closes the stream. Also, a stream may return 0
+	 * when the method available  is called whether there is data
+	 * available or not.
+	 *
+	 * @param columnLabel the label for the column specified with
+	 * the SQL AS clause. If the SQL AS clause was not specified, then
+	 * the label is the name of the column 
+	 * @return a Java input stream that delivers the database column
+	 * value as a stream of uninterpreted bytes; if the value is SQL
+	 * NULL, the result is null
+	 * @throws SQLException if the columnLabel is not valid; if a
+	 * database access error occurs or this method is called on a closed
+	 * result set
+	 */
+	public InputStream getBinaryStream(String columnName) throws SQLException {
+		return(getBinaryStream(findColumn(columnName)));
+	}
 
 	/**
 	 * Retrieves the value of the designated column in the current row
@@ -481,7 +544,7 @@ public class MonetResultSet implements ResultSet {
 	 * @throws SQLException if there is no such column
 	 */
 	public boolean getBoolean(int columnIndex) throws SQLException{
-		int dataType = MonetDriver.getJavaType(types[columnIndex - 1]);
+		int dataType = getJavaType(types[columnIndex - 1]);
 		if (dataType == Types.TINYINT ||
 			dataType == Types.SMALLINT ||
 			dataType == Types.INTEGER ||
@@ -570,10 +633,6 @@ public class MonetResultSet implements ResultSet {
 	 * ResultSet object as a byte array in the Java programming language. The
 	 * bytes represent the raw values returned by the driver.
 	 * <br /><br />
-	 * NOTE: Since the mapi protocol is ASCII-based, this method only returns
-	 *       Java byte representations of Strings, which is nothing more than
-	 *       an encoding into a sequence of bytes using the platform's default
-	 *       charset.
 	 *
 	 * @param columnIndex the first column is 1, the second is 2, ...
 	 * @return the column value; if the value is SQL NULL, the value returned
@@ -581,11 +640,28 @@ public class MonetResultSet implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public byte[] getBytes(int columnIndex) throws SQLException {
-		String bytes = getString(columnIndex);
-		if (bytes == null) {
+		// According to Table B-6, getBytes() only operates on BINARY
+		// types
+		switch (getJavaType(types[columnIndex - 1])) {
+			case Types.BINARY:
+			case Types.VARBINARY:
+			case Types.LONGVARBINARY:
+				// pass
+				break;
+			default:
+				throw new SQLException("Cannot operate on " +
+						types[columnIndex - 1] + " type");
+		}
+		String tmp = getString(columnIndex);
+		if (tmp == null) {
 			return(null);
 		} else {
-			return(bytes.getBytes());
+			// unpack the HEX (BLOB) notation to real bytes
+			int len = tmp.length() / 2;
+			byte[] buf = new byte[len];
+			for (int j = 0; j < len; j++)
+				buf[j] = (byte)Integer.parseInt(tmp.substring(2 * j, (2 * j) + 2), 16);
+			return(buf);
 		}
 	}
 
@@ -1135,7 +1211,7 @@ public class MonetResultSet implements ResultSet {
 				try {
 					return(
 						getClassForType(
-							MonetDriver.getJavaType(types[column - 1])
+							getJavaType(types[column - 1])
 						).getName()
 					);
 				} catch (IndexOutOfBoundsException e) {
@@ -1181,7 +1257,7 @@ public class MonetResultSet implements ResultSet {
 			public int getColumnType(int column) throws SQLException {
 				String type = getColumnTypeName(column);
 
-				return(MonetDriver.getJavaType(type));
+				return(getJavaType(type));
 			}
 
 			/**
@@ -1281,8 +1357,8 @@ public class MonetResultSet implements ResultSet {
 			return(null);
 		}
 
-		Class type = getClassForType(MonetDriver.getJavaType(types[i - 1]));
-		
+		Class type = getClassForType(getJavaType(types[i - 1]));
+
 		if (type == BigDecimal.class) {
 			return(getBigDecimal(i));
 		} else if (type == Boolean.class) {
@@ -1305,6 +1381,8 @@ public class MonetResultSet implements ResultSet {
 			return(getClob(i));
 		} else if (type == Blob.class) {
 			return(getBlob(i));
+		} else if (type == byte[].class) {
+			return(getBytes(i));
 		} else {
 			return(getString(i));
 		}
@@ -1354,6 +1432,10 @@ public class MonetResultSet implements ResultSet {
 				return(Clob.class);
 			case Types.BLOB:
 				return(Blob.class);
+			case Types.BINARY:      // MonetDB currently does not support these
+			case Types.VARBINARY:   // see treat_blob_as_binary property
+			case Types.LONGVARBINARY:
+				return(byte[].class);
 
 			// all below are currently not implemented and used
 			case Types.DISTINCT:
@@ -1361,9 +1443,6 @@ public class MonetResultSet implements ResultSet {
 			case Types.STRUCT:
 			case Types.REF:
 			case Types.DATALINK:
-			case Types.BINARY:
-			case Types.VARBINARY:
-			case Types.LONGVARBINARY:
 			case Types.OTHER:
 			default:
 				return(String.class);
@@ -1542,7 +1621,7 @@ public class MonetResultSet implements ResultSet {
 
 		// If we got a string type, set the datatype to the given
 		// type so we attempt to parse it as the caller thinks it is.
-		int dataType = MonetDriver.getJavaType(types[col - 1]);
+		int dataType = getJavaType(types[col - 1]);
 		if (dataType == Types.CHAR ||
 			dataType == Types.VARCHAR ||
 			dataType == Types.LONGVARCHAR)
@@ -2174,5 +2253,26 @@ public class MonetResultSet implements ResultSet {
 		} else {
 			warnings.setNextWarning(new SQLWarning(reason));
 		}
+	}
+
+	/**
+	 * Wrapper function to map a BLOB as BINARY.  Some applications
+	 * require a BINARY type that maps into a byte array, that
+	 * MonetDB/SQL lacks.  With the treat_blob_as_binary flag from the
+	 * MonetDriver, we can "fake" the BINARY type, as replacement of the
+	 * BLOB type.  This functions calls the getJavaType functions of the
+	 * MonetDriver, but changes BLOB to BINARY if necessary afterwards.
+	 *
+	 * @param sqltype the string sqltype that the server knows
+	 * @return a java.sql.Types constant matching sqltype, with BLOB
+	 *         mapped to BINARY if requested.
+	 */
+	private int getJavaType(String sqltype) throws SQLException {
+		int type = MonetDriver.getJavaType(sqltype);
+		if (statement != null && ((MonetConnection)statement.getConnection()).getBlobAsBinary()) {
+			if (type == Types.BLOB)
+				type = Types.BINARY;
+		}
+		return(type);
 	}
 }

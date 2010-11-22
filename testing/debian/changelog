@@ -1,8 +1,14 @@
-monetdb-testing (1.40.1-20101105) unstable; urgency=low
+monetdb-testing (1.40.1-20101110) unstable; urgency=low
 
   * Rebuilt.
 
- -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 05 Nov 2010 09:32:14 +0100
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 10 Nov 2010 09:17:05 +0100
+
+monetdb-testing (1.40.1-20101109) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 09 Nov 2010 09:34:18 +0100
 
 monetdb-testing (1.40.1-20101105) unstable; urgency=low
 
@@ -16,29 +22,11 @@ monetdb-testing (1.40.1-20101029) unstable; urgency=low
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Oct 2010 10:30:32 +0200
 
-monetdb-testing (1.40.1-20101029) unstable; urgency=low
-
-  * Rebuilt.
-
- -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Oct 2010 10:30:32 +0200
-
-monetdb-testing (1.38.5-20100824) unstable; urgency=low
-
-  * Rebuilt.
-
- -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 24 Aug 2010 09:30:21 +0200
-
 monetdb-testing (1.38.5-20100824) unstable; urgency=low
 
   * Rebuilt.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 24 Aug 2010 09:30:20 +0200
-
-monetdb-testing (1.38.5-20100823) unstable; urgency=low
-
-  * Rebuilt.
-
- -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 23 Aug 2010 10:13:18 +0200
 
 monetdb-testing (1.38.5-20100823) unstable; urgency=low
 

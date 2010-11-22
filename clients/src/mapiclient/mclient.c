@@ -362,15 +362,16 @@ SQLsetSpecial(const char *command)
 	}
 }
 
-/* return the display length of a UTF-8 string */
+/* return the display length of a UTF-8 string
+   if e is not NULL, return length up to e */
 static size_t
-utf8strlen(const char *s)
+utf8strlen(const char *s, const char *e)
 {
 	size_t len = 0;
 
 	if (s == NULL)
 		return 0;
-	while (*s) {
+	while (*s && (e == NULL || s < e)) {
 		/* only count first byte of a sequence */
 		if ((*s & 0xC0) != 0x80)
 			len++;
@@ -410,10 +411,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 	if (trim == 1) {
 		for (i = 0; i < fields; i++) {
 			if ((t = rest[i]) != NULL &&
-					utf8strlen(t) > (size_t) len[i])
+			    utf8strlen(t, NULL) > (size_t) len[i])
 			{
 				/* eat leading whitespace */
-				while (*t != 0 && isspace((int) *t))
+				while (*t != 0 && isascii((int) *t) && isspace((int) *t))
 					t++;
 				rest[i] = t;
 			}
@@ -431,7 +432,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':',
 						len[i], "");
 			} else {
-				ulen = utf8strlen(rest[i]);
+				ulen = utf8strlen(rest[i], NULL);
 
 				if (first && trim == 2) {
 					/* calculate the height of this field according to
@@ -449,27 +450,43 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 				 * left-adjust them in the column */
 				t = strchr(rest[i], '\n');
 				if (ulen > (size_t) len[i] || t) {
+					char *s;
+
 					t = utf8skip(rest[i], len[i]);
 					if (trim == 1) {
-						while (t > rest[i] && !isspace((int) *t))
+						while (t > rest[i] && !(isascii((int) *t) && isspace((int) *t)))
 							while ((*--t & 0xC0) == 0x80)
 								;
-						if (t == rest[i] && !isspace((int) *t))
+						if (t == rest[i] && !(isascii((int) *t) && isspace((int) *t)))
 							t = utf8skip(rest[i], len[i]);
 					}
 					mnstr_printf(toConsole, "%c",
-						      first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
+						     first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
 					if (numeric[i])
 						mnstr_printf(toConsole, "%*s",
-							      (int) (len[i] - (ulen - utf8strlen(t))),
-							      "");
-					if ((int)(ulen - utf8strlen(t)) >= len[i] - 2 &&
-							cutafter[i] == 0)
-					{
+							     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
+							     "");
+					s = t;
+					if (trim == 1)
+						while (isascii((int) *s) &&
+						       isspace((int) *s))
+							s++;
+					if (trim == 2 && *s == '\n')
+						s++;
+					if (*s && cutafter[i] == 0) {
 						t = utf8skip(rest[i], len[i] - 2);
-						mnstr_printf(toConsole, " %.*s...",
-								  (int) (t - rest[i]),
-								  rest[i]);
+						s = t;
+						if (trim == 1)
+							while (isascii((int) *s) &&
+							       isspace((int) *s))
+								s++;
+						if (trim == 2 && *s == '\n')
+							s++;
+						mnstr_printf(toConsole, " %.*s...%*s",
+							     (int) (t - rest[i]),
+							     rest[i],
+							     len[i] - 2 - (int) utf8strlen(rest[i], t),
+							     "");
 						croppedfields++;
 					} else {
 						mnstr_printf(toConsole, " %.*s ",
@@ -477,19 +494,15 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								  rest[i]);
 						if (!numeric[i])
 							mnstr_printf(toConsole, "%*s",
-									  (int) (len[i] - (ulen - utf8strlen(t))),
-									  "");
+								     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
+								     "");
+					}
+					rest[i] = *s ? s : 0;
+					if (rest[i] == NULL) {
 						/* avoid > as border marker if everything
 						 * actually just fits */
-						if (cutafter[i] == 0)
-							cutafter[i] = -1;
+						cutafter[i] = -1;
 					}
-					if (trim == 1)
-						while (isspace((int) *t))
-							t++;
-					if (trim == 2 && *t == '\n')
-						t++;
-					rest[i] = *t ? t : 0;
 					if (cutafter[i] == 0)
 						rest[i] = NULL;
 					if (rest[i])
@@ -1752,13 +1765,16 @@ showCommands(void)
 static int
 doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 {
-	char *line = NULL;
+	char *line = NULL, *p = NULL;
 	char *oldbuf = NULL, *buf = NULL;
 	size_t length;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	int sent = 0;		/* whether we sent any data to the server */
 	int lineno = 1;
+	char hasWildcard = 0;
+	char hasSchema = 0;
+	char wantsSystem = 0; 
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -1886,6 +1902,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			if (mode != MAL)
 				while (length > 0 &&
 				       (*line & ~0x7F) == 0 &&
+				       isascii((int) *line) &&
 				       isspace((int) *line)) {
 					line++;
 					length--;
@@ -1943,15 +1960,68 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				case 'd':
 					if (mode != SQL)
 						break;
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) &&
+					       isspace((int) line[length - 1]))
 						line[--length] = 0;
-					if (line[2] && !isspace(line[2])) {
-						fprintf(stderr, "space required after \\d\n");
-						continue;
+					hasSchema = 0;
+					hasWildcard = 0;
+					wantsSystem = 0;
+					for (line += 2; *line && !(isascii((int) *line) && isspace((int) *line)); line++)
+					{
+						switch (*line) {
+							case 'S':
+								wantsSystem = 1;
+							break;
+							default:
+								fprintf(stderr, "unknown sub-command for \\d: %c\n", *line);
+								length = 0;
+								line[1] = '\0';
+							break;
+						}
 					}
-					for (line += 2; *line && isspace((int) *line); line++)
+					if (length == 0)
+						continue;
+					for ( ; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
-					if (*line) {
+
+					/* is the object quoted? we only support fully
+					 * quoted objects, not partial ones */
+					if (line[0] == '"' || line[0] == '\'') {
+						for (p = line; *p; p++)
+							;
+						if (--p == line) {
+							fprintf(stderr, "unmatched %c\n", line[0]);
+							continue;
+						} else if ((*p == '"' || *p == '\'') && *p != line[0]) {
+							fprintf(stderr, "unexpected %c, expecting %c\n",
+									*p, line[0]);
+							continue;
+						} else if (*p != line[0]) {
+							fprintf(stderr, "unexpected end of string while "
+									"looking for matching %c\n", line[0]);
+							continue;
+						}
+						/* remove the quotes */
+						line++;
+						*p = '\0';
+					} else {
+						/* not quoted: lowercase it, and search for
+						 * wildcards * and ?, replace them with SQL
+						 * variants */
+						for (p = line; *p; p++) {
+							*p = tolower((int) *p);
+							if (*p == '*') {
+								*p = '%';
+								hasWildcard = 1;
+							} else if (*p == '?') {
+								*p = '_';
+								hasWildcard = 1;
+							} else if (*p == '.') {
+								hasSchema = 1;
+							}
+						}
+					}
+					if (*line && !hasWildcard) {
 #ifdef HAVE_POPEN
 						stream *saveFD, *saveFD_raw;
 
@@ -1963,23 +2033,51 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 #endif
 					} else {
 						/* get all table names in current schema */
-						char *type, *name, *schema;
-						hdl = mapi_query(mid,
+						char *type, *name, *system, *schema;
+						char q[1024];
+						char nameq[256];
+						if (!*line) {
+							line = "%";
+							hasSchema = 0;
+						}
+						if (hasSchema) {
+							snprintf(nameq, 256, 
+									"AND \"s\".\"name\" || '.' || \"t\".\"name\" LIKE '%s'",
+									line);
+						} else {
+							snprintf(nameq, 256,
+									"AND \"s\".\"name\" = \"current_schema\" "
+									"AND \"t\".\"name\" LIKE '%s'",
+									line);
+						}
+						snprintf(q, 1024,
 								"SELECT \"t\".\"name\", \"t\".\"type\", "
-								"\"s\".\"name\" "
+								       "\"t\".\"system\", \"s\".\"name\" "
 								"FROM \"sys\".\"_tables\" \"t\", "
-								"\"sys\".\"schemas\" \"s\" "
+								     "\"sys\".\"schemas\" \"s\" "
 								"WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
-								"AND \"s\".\"name\" = \"current_schema\" "
-								"AND \"t\".\"system\" = false "
-								"ORDER BY \"t\".\"name\"");
+								  "%s %s "
+								  "AND \"t\".\"type\" IN (0, 1) "
+								"ORDER BY \"t\".\"name\"",
+								nameq,
+								(wantsSystem ?
+								  "" :
+								  "AND \"t\".\"system\" = false"));
+						hdl = mapi_query(mid, q);
 						CHECK_RESULT(mid, hdl, buf, continue);
-						while (fetch_row(hdl) == 3) {
+						while (fetch_row(hdl) == 4) {
 							name = mapi_fetch_field(hdl, 0);
 							type = mapi_fetch_field(hdl, 1);
-							schema = mapi_fetch_field(hdl, 2);
+							system = mapi_fetch_field(hdl, 2);
+							schema = mapi_fetch_field(hdl, 3);
+							if (strcmp(system, "true") == 0) {
+								system = "SYSTEM ";
+							} else {
+								system = "";
+							}
 							mnstr_printf(toConsole,
-									  "%-6s  %s.%s\n",
+									  "%s%-6s  %s.%s\n",
+									  system,
 									  *type == '1' ? "VIEW" : "TABLE",
 									  schema, name);
 						}
@@ -1995,13 +2093,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 
 					if (mode != SQL)
 						break;
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) &&
+					       isspace((int) line[length - 1]))
 						line[--length] = 0;
-					if (line[2] && !isspace(line[2])) {
+					if (line[2] && !(isascii((int) line[2]) && isspace(line[2]))) {
 						fprintf(stderr, "space required after \\D\n");
 						continue;
 					}
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 #ifdef HAVE_POPEN
 					start_pager(&saveFD, &saveFD_raw);
@@ -2019,17 +2118,17 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				}
 				case '<':
 					/* read commands from file */
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					doFile(mid, line);
 					continue;
 				case '>':
 					/* redirect output to file */
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					if (toConsole != stdout_stream && toConsole != stderr_stream) {
 						mnstr_close(toConsole);
@@ -2052,9 +2151,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				case 'L':
 					free(logfile);
 					logfile = NULL;
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					if (*line == 0) {
 						/* turn of logging */
@@ -2074,9 +2173,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					pager = NULL;
 					setWidth();	/* reset to system default */
 
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					if (*line == 0)
 						continue;
@@ -2116,9 +2215,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					echoquery = 1;
 					continue;
 				case 'f':
-					while (isspace((int) line[length - 1]))
+					while (isascii((int) line[length - 1]) && isspace((int) line[length - 1]))
 						line[--length] = 0;
-					for (line += 2; *line && isspace((int) *line); line++)
+					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 					if (*line == 0) {
 						mnstr_printf(toConsole, "Current formatter: ");

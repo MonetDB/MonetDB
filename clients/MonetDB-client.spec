@@ -303,6 +303,12 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/MonetDB/Tests/*
 
 %changelog
+* Wed Nov 10 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101110
+- Rebuilt.
+
+* Tue Nov 09 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101109
+- Rebuilt.
+
 * Fri Nov 05 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101105
 - Rebuilt.
 
@@ -310,7 +316,7 @@ rm -fr $RPM_BUILD_ROOT
 - Rebuilt.
 
 * Thu Oct 28 2010 Fabian Groffen <fabian@cwi.nl> - 1.40.1-20101029
-- Fix crash when the server disconnects during d query
+- Fix crash when the server disconnects during \d query
 
 * Wed Oct 27 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101029
 - A manual page for the msqldump program was added.
@@ -321,8 +327,8 @@ rm -fr $RPM_BUILD_ROOT
 - Save readline history as we go along.  This fixes bug 2632.
 
 * Tue Sep 14 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.40.1-20101029
-- The d and D commands now require a space if they are followed by a
-  table name.  This is to accomodate future expansion where d and D
+- The \d and \D commands now require a space if they are followed by a
+  table name.  This is to accomodate future expansion where \d and \D
   could be immediately followed by another letter to indicate the type
   of object of interest.
 - Implemented dumping of "external" functions.  This fixes bug 2546.
@@ -343,7 +349,7 @@ rm -fr $RPM_BUILD_ROOT
   considerably to get improved output.  Most importantly it now omits
   parts of field values or even full columns when the used terminal width
   is insufficient to display the result.  To disable this behaviour,
-  simply set width to -1 (via -w option or w in mclient), or chose
+  simply set width to -1 (via -w option or \w in mclient), or chose
   another rendering mode.
 
 * Tue Aug 24 2010 Fabian Groffen <fabian@cwi.nl> - 1.40.1-20101029

@@ -33,7 +33,7 @@ _SC_THREAD_PRIORITY_SCHEDULING = 79
 _SC_PHYS_PAGES = 85
 _SC_THREAD_ATTR_STACKSIZE = 78
 _SC_TZNAME_MAX = 6
-NO__ERROR = 0
+MNSTR_NO__ERROR = 0
 REG_ERR = 19
 _SC_CHAR_BIT = 101
 _PC_PIPE_BUF = 5
@@ -314,7 +314,7 @@ _CS_POSIX_V6_ILP32_OFFBIG_CFLAGS = 1120
 _SC_JOB_CONTROL = 7
 _SC_CHAR_MAX = 102
 _PC_CHOWN_RESTRICTED = 6
-OPEN_ERROR = 1
+MNSTR_OPEN_ERROR = 1
 _SC_AIO_MAX = 24
 _SC_THREAD_SPORADIC_SERVER = 161
 _SC_NL_ARGMAX = 119
@@ -340,7 +340,7 @@ _PC_ASYNC_IO = 10
 SI_KERNEL = 128
 _SC_MQ_OPEN_MAX = 27
 BUS_ADRERR = 2
-READ_ERROR = 2
+MNSTR_READ_ERROR = 2
 _SC_TYPED_MEMORY_OBJECTS = 165
 _CS_V6_WIDTH_RESTRICTED_ENVS = 1
 _SC_NL_SETMAX = 123
@@ -355,7 +355,7 @@ _SC_LEVEL4_CACHE_ASSOC = 198
 _SC_TRACE_EVENT_FILTER = 182
 _SC_THREAD_ATTR_STACKADDR = 77
 _CS_XBS5_LP64_OFF64_LINTFLAGS = 1111
-WRITE_ERROR = 3
+MNSTR_WRITE_ERROR = 3
 REG_RBX = 11
 _SC_XOPEN_ENH_I18N = 93
 _CS_GNU_LIBC_VERSION = 2
@@ -1274,7 +1274,7 @@ __all__ = ['__uint16_t', '_SC_SYSTEM_DATABASE', '__int16_t', 'div_t',
            'sql_query_t', '_fpreg', '_SC_2_PBS', 'SEGV_ACCERR',
            'POLL_ERR', 'CLD_TRAPPED', '_SC_TRACE_INHERIT',
            'N4wait4DOT_14E', '_ISxdigit', 'ILL_ILLADR',
-           '_CS_POSIX_V6_LP64_OFF64_CFLAGS', 'WRITE_ERROR',
+           '_CS_POSIX_V6_LP64_OFF64_CFLAGS', 'MNSTR_WRITE_ERROR',
            '_ISblank', '_SC_LEVEL4_CACHE_LINESIZE', '_ISupper',
            'CLD_KILLED', '_SC_XOPEN_CRYPT', 'pthread_t', 'POLL_PRI',
            '_SC_POLL', '_PC_CHOWN_RESTRICTED',
@@ -1302,7 +1302,7 @@ __all__ = ['__uint16_t', '_SC_SYSTEM_DATABASE', '__int16_t', 'div_t',
            '_CS_POSIX_V6_LPBIG_OFFBIG_CFLAGS', 'SI_TKILL',
            '__sighandler_t', '_SC_NL_ARGMAX', '__u_int',
            '_SC_LEVEL3_CACHE_ASSOC', '_SC_SELECT', '_ISspace',
-           '__clock_t', 'NO__ERROR', '__fsfilcnt_t',
+           '__clock_t', 'MNSTR_NO__ERROR', '__fsfilcnt_t',
            '_CS_POSIX_V6_LPBIG_OFFBIG_LINTFLAGS', 'MapiDate',
            '_SC_AIO_PRIO_DELTA_MAX', '_SC_MONOTONIC_CLOCK',
            '_SC_PII_OSI_M', '_SC_LEVEL3_CACHE_SIZE', '_G_int32_t',
@@ -1328,7 +1328,7 @@ __all__ = ['__uint16_t', '_SC_SYSTEM_DATABASE', '__int16_t', 'div_t',
            '_SC_RE_DUP_MAX', '__gnuc_va_list',
            '_SC_THREAD_PRIO_PROTECT', 'POLL_MSG',
            '_SC_2_PBS_CHECKPOINT', '_SC_TIMERS', 'REG_RDX',
-           'MapiStatement', '_SC_XBS5_LPBIG_OFFBIG', 'READ_ERROR',
+           'MapiStatement', '_SC_XBS5_LPBIG_OFFBIG', 'MNSTR_READ_ERROR',
            '_ISlower', '_SC_SHARED_MEMORY_OBJECTS', '_SC_XOPEN_XPG4',
            'pthread_attr_t', '_SC_XOPEN_XPG2', '_SC_XOPEN_XPG3',
            '__rlim64_t', 'ino_t', '_PC_ALLOC_SIZE_MIN', 'SI_SIGIO',
@@ -1380,7 +1380,7 @@ __all__ = ['__uint16_t', '_SC_SYSTEM_DATABASE', '__int16_t', 'div_t',
            'pthread_mutexattr_t', '_SC_THREAD_CPUTIME', 'int16_t',
            'wait', '_CS_POSIX_V6_ILP32_OFF32_LIBS', 'SS_ONSTACK',
            'REG_RCX', '_SC_SYNCHRONIZED_IO', 'TRAP_BRKPT',
-           'SEGV_MAPERR', 'OPEN_ERROR',
+           'SEGV_MAPERR', 'MNSTR_OPEN_ERROR',
            '_CS_POSIX_V6_LP64_OFF64_LDFLAGS', 'sigaltstack',
            'FPE_FLTRES', 'ldiv_t', 'REG_R15', 'REG_R14', 'REG_R11',
            'REG_R10', 'REG_R13', 'REG_R12', 'CLD_CONTINUED',
