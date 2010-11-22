@@ -90,7 +90,7 @@ AM_MONETDB_OPTIONS()
 AM_MONETDB_UTILS()
 AM_MONETDB_TYPES()
 AM_MONETDB_PATH_FILE()
-dnl AM_MONETDB_TOOLS()
+AM_MONETDB_TOOLS()
 dnl AM_MONETDB_LIBS()
 AM_MONETDB_LIB_PTHREAD()
 AM_MONETDB_LIB_M()
@@ -203,7 +203,7 @@ if test "x$have_sphinxclient" != xno; then
 	    ;;
 	*)
 	    SPHINXCLIENT_CFLAGS="-I$have_sphinxclient/include"
-	    SPHINXCLIENT_LIBS="-L$have_sphinxclient/lib -lsphinxclient"
+	    SPHINXCLIENT_LIBS="-L$have_sphinxclient/lib"
 	    ;;
 	esac
 
@@ -214,7 +214,8 @@ if test "x$have_sphinxclient" != xno; then
 	AC_CHECK_HEADER(sphinxclient.h,
 		AC_CHECK_LIB(sphinxclient, sphinx_create,
 			AC_DEFINE(HAVE_SPHINXCLIENT, 1, [Define if you have the sphinxclient library])
-			have_sphinxclient=yes,
+			have_sphinxclient=yes
+			SPHINXCLIENT_LIBS="SPHINXCLIENT_LIBS -lsphinxclient",
 			[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([-lsphinxclient library not found]); fi; have_sphinxclient=no ]),
 		[ if test "x$have_sphinxclient" != xauto; then AC_MSG_ERROR([sphinxclient.h header not found]); fi; have_sphinxclient=no ])
 	LDFLAGS="$save_LDFLAGS"
