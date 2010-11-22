@@ -1966,12 +1966,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					}
 					for (line += 2; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
-					/* find the end ... */
-					for (p = line; *p; p++)
-						;
-					/* ... and strip trailing whitespace */
-					for (p-- ; p >= line && isascii((int) *p) && isspace((int) *p); p--)
-						*p = '\0';
 
 					/* is the object quoted? we only support fully
 					 * quoted objects, not partial ones */
