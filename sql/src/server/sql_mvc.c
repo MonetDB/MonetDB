@@ -1465,6 +1465,20 @@ stack_find_frame(mvc *sql, char *name)
 }
 
 int
+stack_has_frame(mvc *sql, char *name)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		/* frame has no statement and only sometimes a name */
+		if (!sql->vars[i].s && sql->vars[i].name && 
+		    strcmp(sql->vars[i].name, name)==0)
+			return 1;
+	}
+	return 0;
+}
+
+int
 stack_nr_of_declared_tables(mvc *sql)
 {
 	int i, dt = 0;

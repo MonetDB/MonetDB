@@ -121,7 +121,8 @@ rel_create_seq(
 	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, cycle);  
 	seq->bedropped = bedropped;
 	res = rel_seq(sql->sa, DDL_CREATE_SEQ, s->base.name, seq, NULL, NULL);
-	if (res)
+	/* for multi statements we keep the sequence around */
+	if (res && stack_has_frame(sql, "MUL") != 0)
 		stack_push_rel_view(sql, name, rel_dup(res));
 	return res;
 }

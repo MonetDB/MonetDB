@@ -227,7 +227,10 @@ extern int stack_find_var(mvc *sql, char *name);
 extern sql_rel *stack_find_rel_var(mvc *sql, char *name);
 /* find var in current frame */
 extern int frame_find_var(mvc *sql, char *name);
+/* find frame holding variable 'name' */
 extern int stack_find_frame(mvc *sql, char *name);
+/* find frame with given name */
+extern int stack_has_frame(mvc *sql, char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
 extern ValRecord * stack_get_var(mvc *sql, char *name);
