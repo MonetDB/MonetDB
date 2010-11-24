@@ -274,7 +274,10 @@ range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
 	int ls = 0, hs = 0;
 	stmt *l = NULL, *h = NULL;
 	stmt *bl = s->op2.stval, *bh = s->op3.stval;
+	int tt = tail_type(s->op2.stval)->type->localtype;
 
+	if (tt > TYPE_lng)
+		return 0;  
 	if (s->op2.stval->type == st_binop) {
 		bl = s->op2.stval->op1.stval;
 		l  = s->op2.stval->op2.stval;
