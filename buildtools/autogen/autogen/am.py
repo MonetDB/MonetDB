@@ -72,7 +72,7 @@ def am_sort_libs(libs, tree):
     res = []
     for (pref,lib,sep,cond) in libs:
         after = -1
-        # does lib depend on a other library
+        # does lib depend on another library
         if tree.has_key('lib_'+ lib):
             v = tree['lib_'+lib]
             if v.has_key("LIBS"):
@@ -885,7 +885,7 @@ def am_libs(fd, var, libsmap, am):
 
         libnames.append(sep+libname)
 
-# temporarily switched off, the by libtool created scripts cause problems
+# temporarily switched off, the scripts created by libtool cause problems
 # for so-so linking
 #    if libsmap.has_key(libname + "_LIBS"):
 #      fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_LIBS"], am))
@@ -1159,13 +1159,13 @@ endif
     if cwd != topdir:
         # in case we happen to be running this on Windows, replace dir seps
         am['CWD'] = cwd[len(topdir)+1:].replace('\\', '/')+'/'
-    am['CWDRAW'] = cwd
-    am['BUILT_SOURCES'] = []
-    am['MXCLEAN'] = []                  # files created when NEED_MX is set
+    am['CWDRAW'] = cwd                  # unedited working directory
+    am['BUILT_SOURCES'] = []            # generated source files
+    am['MXCLEAN'] = []                  # to be cleaned when NEED_MX is set
     am['CLEAN'] = []                    # files to be cleaned with make clean
     am['EXTRA_DIST'] = []
-    am['LIBS'] = []     # all libraries (am_libs and am_library)
-    am['NLIBS'] = []     # all libraries which are not installed
+    am['LIBS'] = []                     # all libraries (am_libs and am_library)
+    am['NLIBS'] = []                    # all libraries which are not installed
     am['BINS'] = []
     am['BIN_SCRIPTS'] = []
     am['INSTALL'] = []
@@ -1198,10 +1198,8 @@ endif
         elif i != 'TARGETS':
             am_assignment(fd, i, v, am)
 
-    if am['MXCLEAN']:
-        fd.write('if NEED_MX\nMXCLEAN =%s\nelse\nMXCLEAN =\nendif\n' % am_list2string(am['MXCLEAN'], ' ', ''))
+    fd.write('if NEED_MX\nMXCLEAN =%s\nelse\nMXCLEAN =\nendif\n' % am_list2string(am['MXCLEAN'], ' ', ''))
     fd.write("BUILT_SOURCES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
-    # the BUILT_SOURCES should be cleaned up by make (mostly)clean
     fd.write("MOSTLYCLEANFILES =%s $(MXCLEAN)\n" % am_list2string(am['CLEAN'], ' ', ''))
 
     fd.write("EXTRA_DIST = Makefile.msc%s" % \
@@ -1277,9 +1275,10 @@ endif
 
     fd.write('''
 # When building from a tar ball (HAVE_BUILDTOOLS is false), don\'t
-# include rules.mk, and don\'t remove bison-generated files.  By
-# default, bison-generated files are removed by automake, and we
-# will do the same if building from Mercurial sources.
+# include rules.mk, and don\'t remove bison-generated files since they
+# are included in our source distribution.  By default,
+# bison-generated files are removed by automake, and we will do the
+# same if building from Mercurial sources.
 if HAVE_BUILDTOOLS
   include $(BUILDTOOLS_CONFDIR)/rules.mk
   REMOVE_BISON_FILES = -rm -f *.tab.c
