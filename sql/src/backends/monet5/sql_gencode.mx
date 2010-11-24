@@ -137,7 +137,7 @@ The dump_header produces a sequence of instructions for
 the front-end to prepare presentation of a result table.
 @c
 void
-dump_header(MalBlkPtr mb, stmt *s, list *l)
+dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 {
 	node *n;
 	InstrPtr q;
@@ -145,12 +145,12 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		char *tname = table_name(c);
-		char *sname = schema_name(c);
+		char *tname = table_name(sql->sa, c);
+		char *sname = schema_name(sql->sa, c);
 		char *_empty = "";
 		char *tn = (tname) ? tname : _empty;
 		char *sn = (sname) ? sname : _empty;
-		char *cn = column_name(c);
+		char *cn = column_name(sql->sa, c);
 		char *ntn = sql_escape_ident(tn);
 		char *nsn = sql_escape_ident(sn);
 		char *fqtn = alloca(sizeof(char) * (strlen(nsn) + 1 + strlen(ntn) + 1));
@@ -168,11 +168,6 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 		q = pushInt(mb, q, t->digits);
 		q = pushInt(mb, q, t->scale);
 		q = pushArgument(mb, q, c->nr);
-		if (tn != _empty)
-			_DELETE(tn);
-		if (sn != _empty)
-			_DELETE(sn);
-		_DELETE(cn);
 		_DELETE(ntn);
 		_DELETE(nsn);
 	}
@@ -220,14 +215,14 @@ The dump_cols produces a sequence of instructions for
 the front-end to prepare presentation of a result table (bat).
 @c
 int
-dump_cols(MalBlkPtr mb, list *l, int result_set)
+dump_cols(mvc *sql, MalBlkPtr mb, list *l, int result_set)
 {
 	node *n;
 	InstrPtr q;
 
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
-		char *cn = column_name(c);
+		char *cn = column_name(sql->sa, c);
 		char *ncn = sql_escape_ident(cn);
 
 		q = newStmt2(mb, batRef, insertRef);
@@ -236,7 +231,6 @@ dump_cols(MalBlkPtr mb, list *l, int result_set)
 		q = pushArgument(mb, q, c->nr);
 		result_set = c->nr = getDestVar(q);
 		_DELETE(ncn);
-		_DELETE(cn);
 	}
 	return result_set;
 }
@@ -274,7 +268,10 @@ range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
 	int ls = 0, hs = 0;
 	stmt *l = NULL, *h = NULL;
 	stmt *bl = s->op2.stval, *bh = s->op3.stval;
+	int tt = tail_type(s->op2.stval)->type->localtype;
 
+	if (tt > TYPE_lng)
+		return 0;  
 	if (s->op2.stval->type == st_binop) {
 		bl = s->op2.stval->op1.stval;
 		l  = s->op2.stval->op2.stval;
@@ -1420,11 +1417,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		}
 		case st_unop:{
-			char *mod = sql_func_mod(s->op4.funcval->func);
-			char *fimp = sql_func_imp(s->op4.funcval->func);
+			char *mod, *fimp;
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 
 			backend_create_func(sql, s->op4.funcval->func); 
+			mod = sql_func_mod(s->op4.funcval->func);
+			fimp = sql_func_imp(s->op4.funcval->func);
 			if (s->op1.stval->nrcols && strcmp(fimp, "not_uniques") == 0) {
 				int rtype = s->op4.funcval->res.type->localtype;
 
@@ -1452,16 +1450,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* TODO use the rewriter to fix the 'round' function */
 			sql_subtype *tpe = tail_type(s->op1.stval);
 			int special = 0;
-			char *mod = sql_func_mod(s->op4.funcval->func);
-			char *fimp = sql_func_imp(s->op4.funcval->func);
+			char *mod, *fimp;
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int r = _dumpstmt(sql, mb, s->op2.stval);
+
+			backend_create_func(sql, s->op4.funcval->func); 
+			mod  = sql_func_mod(s->op4.funcval->func);
+			fimp = sql_func_imp(s->op4.funcval->func);
 
 			if (strcmp(fimp, "round")==0 &&
 			    tpe->type->eclass == EC_DEC) 
 				special = 1;
 
-			backend_create_func(sql, s->op4.funcval->func); 
 			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
 				if (!special) {
 					q = multiplex2(mb,mod,convertOperator(fimp),l,r, s->op4.funcval->res.type->localtype);
@@ -1493,8 +1493,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_Nop:{
-			char *mod = sql_func_mod(s->op4.funcval->func);
-			char *fimp = sql_func_imp(s->op4.funcval->func);
+			char *mod, *fimp; 
 			sql_subtype *tpe = NULL;
 			int special = 0;
 			node *n;
@@ -1502,6 +1501,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			_dumpstmt(sql, mb, s->op1.stval);
 
 			backend_create_func(sql, s->op4.funcval->func); 
+			mod = sql_func_mod(s->op4.funcval->func);
+			fimp = sql_func_imp(s->op4.funcval->func);
 			if (s->nrcols) {
 				fimp = convertMultiplexFcn(fimp);
 				q = multiplexN(mb,mod,fimp);
@@ -1541,11 +1542,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_aggr:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
-			char *mod = s->op4.aggrval->aggr->mod;
-			char *aggrfunc = s->op4.aggrval->aggr->imp;
+			char *mod, *aggrfunc;
 			int restype = s->op4.aggrval->res.type->localtype;
 			int output_type_needed = 0;
 
+			backend_create_func(sql, s->op4.aggrval->aggr); 
+			mod = s->op4.aggrval->aggr->mod;
+			aggrfunc = s->op4.aggrval->aggr->imp;
 			if (strcmp(aggrfunc, "sum") == 0 ||
 					strcmp(aggrfunc, "prod") == 0)
 				output_type_needed = 1;
@@ -1763,12 +1766,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				{
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
-					char *tname = table_name(c);
-					char *sname = schema_name(c);
+					char *tname = table_name(sql->mvc->sa, c);
+					char *sname = schema_name(sql->mvc->sa, c);
 					char *_empty = "";
 					char *tn = (tname) ? tname : _empty;
 					char *sn = (sname) ? sname : _empty;
-					char *cn = column_name(c);
+					char *cn = column_name(sql->mvc->sa, c);
 					char *ntn = sql_escape_ident(tn);
 					char *nsn = sql_escape_ident(sn);
 					char *fqtn = alloca(sizeof(char) * (strlen(nsn) + 1 +
@@ -1789,11 +1792,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushInt(mb, q, t->type->eclass);
 					q = pushArgument(mb, q, c->nr);
 					q = pushStr(mb, q, ""); /* warning */
-					if (tn != _empty)
-						_DELETE(tn);
-					if (sn != _empty)
-						_DELETE(sn);
-					_DELETE(cn);
 					_DELETE(ntn);
 					_DELETE(nsn);
 					break;
@@ -1821,7 +1819,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					k = pushInt(mb, k, sql->mvc->type);
 				}
 				k = pushArgument(mb, k, order->nr);
-				dump_header(mb, s, l);
+				dump_header(sql->mvc, mb, s, l);
 				
 				if (s->type == st_export && s->op4.stval) {
 					int codeset;
@@ -1885,7 +1883,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				s->nr = getDestVar(q);
 				q = pushType(mb, q, TYPE_str);
 				q = pushType(mb, q, TYPE_bat);
-				s->nr = dump_cols(mb, l, s->nr);
+				s->nr = dump_cols(sql->mvc, mb, l, s->nr);
 			} else {
 				q = newStmt1(mb, sqlRef, "print");
 				q = pushStr(mb, q, "not a valid output list\n");
@@ -1979,19 +1977,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				r = _dumpstmt(sql,mb, s->op2.stval);
 			if (!VAR_GLOBAL(s->flag)) { /* globals */
 				char *buf = GDKmalloc(MAXIDENTLEN);
-				char *vn = atom2string(s->op1.stval->op1.aval);
+				char *vn = atom2string(sql->mvc->sa, s->op1.stval->op1.aval);
 
 				if (!s->op2.stval) {
 					/* drop declared table */
 					s->nr = drop_table(mb, vn);
-					_DELETE(vn);
 					break;
 				}
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", vn);
 				q = newInstruction(mb,ASSIGNsymbol);
 				q->argc = q->retc = 0;
 				q = pushArgumentId(mb, q, buf);
-				_DELETE(vn);
 				pushInstruction(mb, q);
 				q->retc++;
 			} else {
@@ -2117,8 +2113,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 	if (m->history == 1) {
 		sql_schema *sys = mvc_bind_schema(m, "sys");
-		sql_subfunc *kq = sql_find_func(sys, "keepquery", NR_KEEPQUERY_ARGS);
-		sql_subfunc *cq = sql_find_func(sys, "keepcall", NR_KEEPCALL_ARGS);
+		sql_subfunc *kq = sql_find_func(m->sa, sys, "keepquery", NR_KEEPQUERY_ARGS);
+		sql_subfunc *cq = sql_find_func(m->sa, sys, "keepcall", NR_KEEPCALL_ARGS);
 
 		assert(kq && cq);
 		backend_create_func(be, kq->func);
@@ -2264,29 +2260,25 @@ monet5_create_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	s = rel_bin(m, r);
 /*
 	if (s && s->type == st_ordered) {
-		stmt *order = stmt_dup(s->op1.stval);
-		stmt *ns = stmt_dup(s->op2.stval);
+		stmt *order = s->op1.stval;
+		stmt *ns = s->op2.stval;
 			
-		stmt_destroy(s);
 		s = sql_reorder(order, ns);
 	}
 */
 	if (s->type == st_list && s->nrcols == 0 && s->key) {
 		/* row to columns */
 		node *n;
-		list *l = create_stmt_list();
+		list *l = list_new(m->sa);
 
 		for(n=s->op1.lval->h; n; n = n->next)
-			list_append(l, const_column(stmt_dup(n->data)));
-		stmt_destroy(s);
-		s = stmt_list(l);
+			list_append(l, const_column(m->sa, n->data));
+		s = stmt_list(m->sa, l);
 	}
-	s = stmt_table(s, 1);
-	s = stmt_return(s, 0);
+	s = stmt_table(m->sa, s, 1);
+	s = stmt_return(m->sa, s, 0);
 	opt = rel2bin(m, s);
-	stmt_destroy(s);
 	s = bin_optimizer(m, opt);
-	stmt_destroy(opt);
 
 	backup = c->curprg;
 	c->curprg = newFunction(userRef,putName(name,strlen(name)), FUNCTIONsymbol);
@@ -2302,7 +2294,6 @@ monet5_create_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	backend_dumpstmt(be, curBlk, s);
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
-	stmt_destroy(s);
 	addQueryToCache(c);
 	if (backup) 
 		c->curprg = backup;
@@ -2325,7 +2316,10 @@ backend_create_func(backend *be, sql_func *f)
 		return;
 	f->sql++;
  	sa = sa_create();
-	s = sql_parse(m, sa, f->imp, m_instantiate);
+	s = sql_parse(m, sa, f->query, m_instantiate);
+	if (s && !f->sql) /* native function */
+		return;
+
 	if (!s) {
 		fputs(m->errstr, stderr);
 		sa_destroy(sa);
@@ -2335,9 +2329,7 @@ backend_create_func(backend *be, sql_func *f)
 
 		m->sa = sa;
 		opt = rel2bin(m, s);
-		stmt_destroy(s);
 		s = bin_optimizer(m, opt);
-		stmt_destroy(opt);
 	}
 	assert(s);
 
@@ -2402,11 +2394,6 @@ backend_create_func(backend *be, sql_func *f)
 		varSetProp(curBlk, getArg(curInstr, 0), unsafeProp, op_eq, NULL);
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
-	stmt_destroy(s);
-	/* Because types (tables) are allocated using the sql-allocator, we
-	   cannot destroy it here "LEAKS" 
-	sa_destroy(sa); 
-	*/
 	m->sa = osa;
 	addQueryToCache(c);
 	if (backup) 

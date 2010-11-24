@@ -108,7 +108,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,j, cnt, start=1,entries=0, actions=0;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
-	int limit;
+	int limit, slimit;
 	Lifespan span;
 
 	/* don't use dataflow on single processor systems */
@@ -124,6 +124,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( span == NULL)
 		return 0;
 	limit= mb->stop;
+	slimit= mb->ssize;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize+20) <0 ){
 		GDKfree(span);
@@ -207,6 +208,9 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (; i<limit; i++) 
 		if (old[i])
 			pushInstruction(mb,old[i]);
+	for (; i<slimit; i++) 
+		if (old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(span);
 	DEBUGoptimizers

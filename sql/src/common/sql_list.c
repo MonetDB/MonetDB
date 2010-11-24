@@ -283,7 +283,7 @@ list_keysort(list *l, int *keys, fdup dup)
 	for(j=0; j<cnt; j++) {
 		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
 			assert(n);
-		list_append(res, dup(n->data));
+		list_append(res, dup?dup(n->data):n->data);
 	}
 	return res;
 }
@@ -306,7 +306,7 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 	for(j=0; j<cnt; j++) {
 		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
 			assert(n);
-		list_append(res, dup(n->data));
+		list_append(res, dup?dup(n->data):n->data);
 	}
 	return res;
 }
@@ -318,10 +318,13 @@ list_select(list *l, void *key, fcmp cmp, fdup dup)
 	node *n = NULL;
 
 	if (key && l) {
-		res = list_create(l->destroy);
+		if (l->sa)
+			res = list_new(l->sa);
+		else
+			res = list_create(l->destroy);
 		for (n = l->h; n; n = n->next) 
 			if (cmp(n->data, key) == 0) 
-				list_append(res, dup(n->data));
+				list_append(res, dup?dup(n->data):n->data);
 	}
 	return res;
 }
@@ -338,12 +341,12 @@ list_order(list *l, fcmp cmp, fdup dup)
 		int append = 1;
 		for (m = res->h; m && append; m = m->next) {
 			if (cmp(n->data, m->data) > 0) {
-				list_append_before(res, m, dup(n->data));
+				list_append_before(res, m, dup?dup(n->data):n->data);
 				append = 0;
 			}
 		}
 		if (append)
-			list_append(res, dup(n->data));
+			list_append(res, dup?dup(n->data):n->data);
 	}
 	return res;
 }
@@ -356,7 +359,7 @@ list_distinct(list *l, fcmp cmp, fdup dup)
 
 	for (n = l->h; n; n = n->next) {
 		if (!list_find(res, n->data, cmp)) {
-			list_append(res, dup(n->data));
+			list_append(res, dup?dup(n->data):n->data);
 		}
 	}
 	return res;
@@ -409,7 +412,7 @@ list_distinct2(list *l, void *data, fcmp2 cmp, fdup dup)
 
 	for (n = l->h; n; n = n->next) {
 		if (!list_find2(res, data, n->data, cmp)) {
-			list_append(res, dup(n->data));
+			list_append(res, dup?dup(n->data):n->data);
 		}
 	}
 	return res;
@@ -422,13 +425,28 @@ list_reduce(list *l, freduce red, fdup dup)
 	node *n = l->h;
 
 	if (n) {
-		res = dup(n->data);
+		res = dup?dup(n->data):n->data;
 		for (n = n->next; n; n = n->next) {
-			res = red(res, dup(n->data));
+			res = red(res, dup?dup(n->data):n->data);
 		}
 	}
 	return res;
 }
+
+void *
+list_reduce2(list *l, freduce2 red, sql_allocator *sa)
+{
+	void *res = NULL;
+	node *n = l->h;
+
+	if (n) {
+		res = n->data;
+		for (n = n->next; n; n = n->next) 
+			res = red(sa, res, n->data);
+	}
+	return res;
+}
+
 
 list *
 list_map(list *l, void *data, fmap map)
@@ -487,8 +505,11 @@ list_merge_destroy(list *l, list *data, fdup dup)
 list *
 list_dup(list *l, fdup dup)
 {
-	list *res = list_create(l->destroy);
-
+	list *res = NULL;
+	if (l->sa) 
+		res = list_new(l->sa);
+	else
+		res = list_create(l->destroy);
 	return list_merge(res, l, dup);
 }
 

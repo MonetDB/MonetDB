@@ -777,14 +777,14 @@ mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, bit issql, bit aggr, char *mod, char *impl, int is_func)
+mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, bit aggr, char *mod, char *impl, char *query, int is_func)
 {
 	sql_func *f = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_func %s\n", name);
 
-	f = sql_trans_create_func(sql->session->tr, s, name, args, res, issql, aggr, mod, impl, is_func);
+	f = sql_trans_create_func(sql->session->tr, s, name, args, res, aggr, mod, impl, query, is_func);
 	return f;
 }
 
@@ -1000,7 +1000,7 @@ mvc_create_view(mvc *m, sql_schema *s, char *name, int persistence, char *sql, b
 	if (persistence == SQL_DECLARED_TABLE) {
 		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0);
 		t->s = s;
-		t->query = _strdup(sql);
+		t->query = sa_strdup(m->sa, sql);
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
 	}
@@ -1241,13 +1241,13 @@ mvc_is_sorted(mvc *m, sql_column *col)
 
 /* variable management */
 void 
-stack_push_var(mvc *sql, char *name, stmt *var, sql_subtype *type)
+stack_push_var(mvc *sql, char *name, sql_subtype *type)
 {
 	if (sql->topvars == sql->sizevars) {
 		sql->sizevars <<= 1;
 		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
-	sql->vars[sql->topvars].s = stmt_dup(var);
+	sql->vars[sql->topvars].s = (void*)1;
 	sql->vars[sql->topvars].name = _strdup(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].type = *type;
@@ -1343,8 +1343,8 @@ stack_pop_until(mvc *sql, int top)
 		v->value.vtype = 0;
 		if (v->type.comp_type && v->view) 
 			table_destroy(v->type.comp_type);
-		else if (v->s && v->view)
-			rel_destroy(v->s);
+		//else if (v->s && v->view)
+			//rel_destroy(v->s);
 	}
 }
 
@@ -1354,14 +1354,13 @@ stack_pop_frame(mvc *sql)
 	while(sql->vars[--sql->topvars].s) {
 		sql_var *v = &sql->vars[sql->topvars];
 
-		/*stmt_destroy(v->s);*/
 		_DELETE(v->name);
 		VALclear(&v->value);
 		v->value.vtype = 0;
 		if (v->type.comp_type && v->view) 
 			table_destroy(v->type.comp_type);
-		else if (v->s && v->view)
-			rel_destroy(v->s);
+		//else if (v->s && v->view)
+			//rel_destroy(v->s);
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
 		_DELETE(sql->vars[sql->topvars].name);
@@ -1402,8 +1401,8 @@ stack_set_rel_view(mvc *sql, char *name, sql_rel *rel)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].s && sql->vars[i].view &&
 			strcmp(sql->vars[i].name, name)==0) {
-			if (sql->vars[i].s)
-				rel_destroy(sql->vars[i].s);
+			//if (sql->vars[i].s)
+				//rel_destroy(sql->vars[i].s);
 			sql->vars[i].s = rel_dup(rel);
 			break;
 		}
@@ -1411,7 +1410,7 @@ stack_set_rel_view(mvc *sql, char *name, sql_rel *rel)
 }
 
 
-stmt *
+int 
 stack_find_var(mvc *sql, char *name)
 {
 	int i;
@@ -1419,9 +1418,9 @@ stack_find_var(mvc *sql, char *name)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].s && !sql->vars[i].view &&
 			strcmp(sql->vars[i].name, name)==0)
-			return sql->vars[i].s;
+			return 1;
 	}
-	return NULL;
+	return 0;
 }
 
 sql_rel *

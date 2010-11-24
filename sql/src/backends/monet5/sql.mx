@@ -306,7 +306,6 @@ function copy_from(
 
 	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset);
 	bstream.destroy(bs);
-	streams.close(s);
 	return res;
 end copy_from;
 
@@ -1398,7 +1397,7 @@ rel_need_distinct_query( sql_rel *rel)
 			if (e->type == e_aggr) {
 				list *l = e->l;
 
-				if (l) for(m = l->h; m &&  !need_distinct; m = m->next){
+				if (l) for(m = l->h; m && !need_distinct; m = m->next){
 					sql_exp *a = m->data;
 	
 					if (need_distinct(a))
@@ -1418,11 +1417,6 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 	int status;
 	sql_rel *r;
 
-/*
-	if (sym->token == SQL_MULSTMT) 
-		return sql_symbols2stmt(c, sym);
-*/
-
 	status = c->session->status;
 	r = rel_semantic(c, sym);
 	if (!r) {
@@ -1435,6 +1429,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		}
 	} else {
 		int pq;
+
 		r = rel_optimizer(c, r);
 		pq = rel_is_point_query(r);
 		if (!pq)
@@ -1451,9 +1446,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 
 			/* only needed for delta tables */
 			opt = rel2bin(c, s); 	
-			stmt_destroy(s);
 			s = bin_optimizer(c, opt);
-			stmt_destroy(opt);
 			c->point_query = pq;
 			return s;
 		}
@@ -1463,17 +1456,15 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		stmt *opt;
 
 		if (mvc_debug_on(c,128)) 
-			stmt2dot(s, 1, "/tmp/g1.dot");
+			stmt2dot(c->sa, s, 1, "/tmp/g1.dot");
 		opt = rel2bin(c, s);
-		stmt_destroy(s);
 		s = opt;
 		if (mvc_debug_on(c,128)) 
-			stmt2dot(s, 2, "/tmp/g2.dot");
+			stmt2dot(c->sa, s, 2, "/tmp/g2.dot");
 		opt = bin_optimizer(c, s);
-		stmt_destroy(s);
 		s = opt;
 		if (mvc_debug_on(c,128)) 
-			stmt2dot(s, 3, "/tmp/g3.dot");
+			stmt2dot(c->sa, s, 3, "/tmp/g3.dot");
 	}
 	return s;
 }
@@ -1634,12 +1625,11 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 			sql->sa = sa_create();
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			r = rel_parse(sql, buf, m_deps); 
-			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || (e = rel_check_type(sql, &c->type, exp_dup(r->exps->h->data), type_equal)) == NULL) 
+			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || (e = rel_check_type(sql, &c->type, r->exps->h->data, type_equal)) == NULL) 
 				throw(SQL, "sql.catalog", sql->errstr);
-			exp_destroy(e);
+			rel_destroy(r);
 			sa_destroy(sql->sa);
 			sql->sa = NULL;
-			rel_destroy(r);
 		}
 	}
 
@@ -1668,9 +1658,9 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		sql_rel *r = NULL;
 		sql->sa = sa_create();
 		r = rel_parse(sql, t->query, m_deps); 
+		rel_destroy(r);
 		sa_destroy(sql->sa);
 		sql->sa = NULL;
-		rel_destroy(r);
 	}
 	return MAL_SUCCEED;
 }

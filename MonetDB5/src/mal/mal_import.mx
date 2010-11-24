@@ -146,11 +146,8 @@ It should be reset before continuing.
 	MalStkPtr oldglb = c->glb;
 
 @= restoreClient1
-	if (c->fdin) {
-		(void) mnstr_close(c->fdin->s);
-		(void) mnstr_destroy(c->fdin->s);
+	if (c->fdin) 
 		(void) bstream_destroy(c->fdin);
-	}
 	c->fdin = oldfdin; 
 	c->yycur = oldyycur; 
 	c->listing = oldlisting;
@@ -187,7 +184,7 @@ malInclude(Client c, str name, int listing)
 	str filename;
 	str p;
 
-	bstream *oldfdin = c->fdin;
+	bstream *oldfdin = c->fdin, *cfdin;
 	int oldyycur = c->yycur;
 	int oldlisting = c->listing;
 	int oldmode = c->mode;
@@ -213,16 +210,23 @@ malInclude(Client c, str name, int listing)
 			c->srcFile = filename;
 			c->yycur = 0;
 			c->bak = NULL;
-			if ((s = malLoadScript(c, filename, &c->fdin)) == 0) 
+			if ((s = malLoadScript(c, filename, &c->fdin)) == 0) {
+				cfdin = c->fdin;
 				parseMAL(c, c->curprg);
+				bstream_destroy(c->fdin);
+			}
 			filename = p + 1;
 		}
 		c->srcFile = filename;
 		c->yycur = 0;
 		c->bak = NULL;
-		if ((s = malLoadScript(c, filename, &c->fdin)) == 0) 
+		if ((s = malLoadScript(c, filename, &c->fdin)) == 0) {
+			cfdin = c->fdin;
 			parseMAL(c, c->curprg);
+			bstream_destroy(cfdin);
+		}
 		GDKfree(name);
+		c->fdin = NULL;
 	}
 
 	@:restoreClient()@

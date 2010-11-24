@@ -64,7 +64,7 @@ grant_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int gra
 				return sql_error(sql, 02, "GRANT: cannot grant ROLE '%s' to ROLE '%s'", grantee, role );
 		}
 	}
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static stmt *
@@ -87,7 +87,7 @@ revoke_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int ad
 				return sql_error(sql, 02, "REVOKE no such role '%s' or grantee '%s'", role, grantee);
 		}
 	}
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static void
@@ -158,7 +158,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 				return sql_error(sql, 02, "user/role '%s' unknown", grantee);
 			sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant);
 		}
-		return stmt_none();
+		return stmt_none(sql->sa);
 	}
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
@@ -247,7 +247,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 			}
 		}
 	}
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static stmt *
@@ -338,7 +338,7 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 			sql_delete_priv(sql, grantee_id, t->base.id, PRIV_INSERT, grantor, grant);
 			sql_delete_priv(sql, grantee_id, t->base.id, PRIV_DELETE, grantor, grant);
 		}
-		return stmt_none();
+		return stmt_none(sql->sa);
 	}
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
@@ -394,7 +394,7 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 			}
 		}
 	}
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static stmt *
@@ -441,13 +441,13 @@ create_type(mvc *sql, dlist *qname, char *impl)
 	if (!mvc_create_type(sql, sql->session->schema, tname, 0, 0, 0, impl)) {
 		return sql_error(sql, 02, "CREATE TYPE: unknown external type '%s'", impl);
 	}
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static void
 stack_push_table(mvc *sql, char *tname, sql_table *t)
 {
-	sql_rel *r = rel_basetable(t, tname );
+	sql_rel *r = rel_basetable(sql->sa, t, tname );
 		
 	stack_push_rel_view(sql, tname, r);
 }
@@ -523,19 +523,15 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		stack_pop_frame(sql);
 	
 	if (sq && create) {
-		list *col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
-		list *func_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
-		list *view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
+		list *col_l = stmt_list_dependencies(sql->sa, sq, COLUMN_DEPENDENCY);
+		list *func_l = stmt_list_dependencies(sql->sa, sq, FUNC_DEPENDENCY);
+		list *view_id_l = stmt_list_dependencies(sql->sa, sq, VIEW_DEPENDENCY);
 
 		mvc_create_dependencies(sql, col_l, trigger->base.id, TRIGGER_DEPENDENCY);
 		mvc_create_dependencies(sql, func_l, trigger->base.id, TRIGGER_DEPENDENCY);
 		mvc_create_dependencies(sql, view_id_l, trigger->base.id, TRIGGER_DEPENDENCY);
 
-		list_destroy(col_l);
-		list_destroy(func_l);
-		list_destroy(view_id_l);
-		stmt_destroy(sq);
-		sq = stmt_none();
+		sq = stmt_none(sql->sa);
 	}
 	
 	/* todo trigger_columns */
@@ -556,7 +552,7 @@ drop_trigger(mvc *sql, dlist *qname)
 	if ((tri = mvc_bind_trigger(sql, ss, tname )) == NULL)
 		return sql_error(sql, 02, "DROP TRIGGER: unknown trigger %s\n", tname);
 	mvc_drop_trigger(sql, ss, tri);
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static stmt *
@@ -599,7 +595,7 @@ connect_catalog(mvc *sql, dlist *qname)
 	if (*id == 0)	
 		return sql_error(sql, 02, "CONNECT TO: this connection already exists or the db_alias '%s' was already used!", db_alias);
 	
-	return stmt_connection(id, server, port, db, db_alias, user, passwd, lang);	
+	return stmt_connection(sql->sa, id, server, port, db, db_alias, user, passwd, lang);	
 }
 
 static stmt *
@@ -617,10 +613,10 @@ disconnect_catalog(mvc *sql, dlist *qname)
 		if (*id == 0)	
 			return sql_error(sql, 02, "DISCONNECT CATALOG: no such db_alias '%s'", db_alias);
 		else
-			return stmt_connection(id, NULL, port, NULL, db_alias, NULL, NULL, NULL);	
+			return stmt_connection(sql->sa, id, NULL, port, NULL, db_alias, NULL, NULL, NULL);	
 	} else {
 		mvc_disconnect_catalog_ALL(sql);	
-		return stmt_connection(id, NULL, port, NULL, NULL, NULL, NULL, NULL);	
+		return stmt_connection(sql->sa, id, NULL, port, NULL, NULL, NULL, NULL, NULL);	
 	}
 }
 
@@ -695,7 +691,7 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 				l += snprintf(buf+l, BUFSIZ-l, "ins.%s, ", ic->c->base.name);
 			}
 			l += snprintf(buf+l, BUFSIZ-l, "rowid(ins.%s, '%s', '%s'));", ic->c->base.name, ic->c->t->s->base.name, ic->c->t->base.name);
-			sl = create_stmt_list();
+			sl = list_new(sql->sa);
 			s = sql_parse(sql, NULL, _strdup(buf), m_normal);
 			if (!s) goto error;
 			list_append(sl, s);
@@ -717,13 +713,13 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 			s = sql_parse(sql, NULL, _strdup(buf), m_normal);
 			if (!s) goto error;
 			list_append(sl, s);
-			return stmt_list(sl);
+			return stmt_list(sql->sa, sl);
 error:
 			list_destroy(sl);
 			return NULL;
 		}
 #endif
-		return stmt_none();
+		return stmt_none(sql->sa);
 	}
 }
 
@@ -749,7 +745,7 @@ drop_index(mvc *sql, dlist *qname)
 		return sql_error(sql, 02, "DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else {
 		mvc_drop_idx(sql, s, i);
-		res = stmt_none();
+		res = stmt_none(sql->sa);
 	}
 	return res;
 }
@@ -773,7 +769,7 @@ create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *
 		GDKfree(err);
 		return FALSE;
 	}
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static stmt *
@@ -786,7 +782,7 @@ drop_user(mvc *sql, char *user)
 	if(sql_drop_user(sql, user) == FALSE)
 		return sql_error(sql, 02, "DROP USER: no such user '%s'", user);
 
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static stmt *
@@ -805,7 +801,7 @@ alter_user(mvc *sql, char *user, char *passwd, char enc,
 	}
 	sql_alter_user(sql, user, passwd, enc, schema_id, oldpasswd);
 
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static stmt *
@@ -823,7 +819,7 @@ rename_user(mvc *sql, char *olduser, char *newuser)
 
 	sql_rename_user(sql, olduser, newuser);
 
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 
@@ -836,7 +832,7 @@ create_role(mvc *sql, dlist *qname, int grantor)
 		return sql_error(sql, 02, "CREATE ROLE: qualified role can only have a schema and a role\n");
 	}
 	sql_create_role(sql, role_name, grantor);
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 static stmt *
@@ -848,7 +844,7 @@ drop_role(mvc *sql, dlist *qname)
 		return sql_error(sql, 02, "DROP ROLE: qualified role can only have a schema and a role\n");
 	}
 	sql_drop_role(sql, role_name);
-	return stmt_none();
+	return stmt_none(sql->sa);
 }
 
 #if 0

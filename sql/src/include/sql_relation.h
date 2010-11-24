@@ -39,8 +39,6 @@ typedef enum expression_type {
 #define CARD_MULTI 3
 
 typedef struct expression {
-	sql_ref ref;
-
 	expression_type  type;	/* atom, cmp, func/aggr */
 	char *name;
 	char *rname;

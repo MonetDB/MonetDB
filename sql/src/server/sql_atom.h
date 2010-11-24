@@ -24,7 +24,6 @@
 #include <sql_types.h>
 
 typedef struct atom {
-	int destroy; /* needs destroy or not */
 	int isnull;
 	sql_subtype tpe;
 	ValRecord data;
@@ -33,31 +32,26 @@ typedef struct atom {
 
 #define atom_null(a) a->isnull
 
-extern atom *atom_bool( sql_subtype *tpe, bit t);
-extern atom *atom_int( sql_subtype *tpe, lng val);
-extern atom *atom_float( sql_subtype *tpe, double val);
-extern atom *atom_string( sql_subtype *tpe, char *val, int destroy);
-extern atom *atom_string2( sql_allocator *sa, sql_subtype *tpe, char *val, int destroy);
-extern atom *atom_general( sql_subtype *tpe, char *val, int destroy);
-extern atom *atom_dec( sql_subtype *tpe, lng val, double dval);
-extern atom *atom_ptr( sql_subtype *tpe, void *v);
+extern atom *atom_bool( sql_allocator *sa, sql_subtype *tpe, bit t);
+extern atom *atom_int( sql_allocator *sa, sql_subtype *tpe, lng val);
+extern atom *atom_float( sql_allocator *sa, sql_subtype *tpe, double val);
+extern atom *atom_string( sql_allocator *sa, sql_subtype *tpe, char *val);
+extern atom *atom_general( sql_allocator *sa, sql_subtype *tpe, char *val);
+extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, lng val, double dval);
+extern atom *atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 
 extern int atom_neg( atom *a );
 extern unsigned int atom_num_digits( atom *a );
 
 /* duplicate atom */
-extern atom *atom_dup( atom *a);
-/* copy an atom allocated using the supplied allocator */
-extern atom *atom_copy( atom *a, sql_allocator *sa );
+extern atom *atom_dup( sql_allocator *sa, atom *a);
 
 /* cast atom a to type tp (success == 1, fail == 0) */
 extern int atom_cast(atom *a, sql_subtype *tp);
 
-extern char *atom2string(atom *a);
+extern char *atom2string(sql_allocator *sa, atom *a);
 extern char *atom2sql(atom *a);
 extern sql_subtype *atom_type(atom *a);
-
-extern void atom_destroy(atom *a);
 
 extern void atom_dump(atom *a, stream *s);
 

@@ -458,6 +458,7 @@ MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 	return 0;
 }
 
+/*
 static int
 pack_all_mats(mat_t *mat, int mtop, MalBlkPtr mb )
 {
@@ -465,11 +466,11 @@ pack_all_mats(mat_t *mat, int mtop, MalBlkPtr mb )
 		(void)MATpackAll(mb, NULL, mat, 0, &mtop);
 	return 0;
 }
+*/
 
 INLINE static int
 mat_add(mat_t *mat, int mtop, InstrPtr q, InstrPtr r, mat_type type) 
 {
-	assert(q->argc > 1);
 	mat[mtop].mi = q;
 	mat[mtop].mi1 = r;
 	mat[mtop].mv = getArg(q,0);
@@ -928,6 +929,8 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 		    }
 		}
 	}
+	if (r && r->argc <= 1) 
+		return -1;
 	mtop = mat_add(mat, mtop, r, NULL, (m>=0)?useMatType(mat, m):mat_none);
 	if (m >= 0 && mat[m].type == mat_ext)
 		(void)MATpackAll2(mb, NULL, mat, mtop-1, &mtop); 
@@ -2098,15 +2101,22 @@ UNION(mirror().join()).
 			int om, tpe = mat_none;
 		
 		   	om = m = isMATalias(getArg(p,1), mat, mtop);
+			if (om < 0) { /* range join with parts on the right */
+				error++;
+				goto fail;
+			}
+
 		   	n = isMATalias(getArg(p,2), mat, mtop);
 			if (isProjection(p) && m >= 0 && mat_is_topn(mat[m].type))
 				tpe = mat_tpn;
 			if (isProjection(p) && m >= 0 && mat_is_orderby(mat[m].type))
 				tpe = mat_rdr;
 
-			if ((m = mat_join(mb, p, mat, mtop, m, n)) < 0)
-				mtop = pack_all_mats(mat, mtop, mb);
-			else
+			if ((m = mat_join(mb, p, mat, mtop, m, n)) < 0) {
+				error++;
+				goto fail;
+				//mtop = pack_all_mats(mat, mtop, mb);
+			} else
 				mtop = m;
 			/* after topn projection we should merge */
 			/* slice marks the end of a sequence of topn's */

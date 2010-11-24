@@ -25,21 +25,47 @@
 static int atom_debug = 0;
 
 atom *
-atom_create()
+atom_create( sql_allocator *sa )
 {
 	atom *a;
-	a = NEW(atom);
+	a = SA_NEW(sa, atom);
 
-	a->destroy = 0;
 	memset(&a->data, 0, sizeof(a->data));
 	a->d = dbl_nil;
 	return a;
 }
 
-atom *
-atom_bool(sql_subtype *tpe, bit val)
+ValPtr
+SA_VALcopy(sql_allocator *sa, ValPtr d, ValPtr s)
 {
-	atom *a = atom_create();
+	if (!ATOMextern(s->vtype)) {
+		*d = *s;
+	} else if (s->val.pval == 0) {
+		d->val.pval = ATOMnil(s->vtype);
+		d->vtype = s->vtype;
+	} else if (s->vtype == TYPE_str) {
+		d->vtype = TYPE_str;
+		d->val.sval = sa_strdup(sa, s->val.sval);
+		d->len = strLen(d->val.sval);
+	} else if (s->vtype == TYPE_bit) {
+		d->vtype = s->vtype;
+		d->len = 1;
+		d->val.cval[0] = s->val.cval[0];
+	} else {
+		ptr p = s->val.pval;
+
+		d->vtype = s->vtype;
+		d->len = ATOMlen(d->vtype, p);
+		d->val.pval = sa_alloc(sa, d->len);
+		memcpy(d->val.pval, p, d->len);
+	}
+	return d;
+}
+
+atom *
+atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
+{
+	atom *a = atom_create(sa);
 	
 	a->isnull = 0;
 	a->tpe = *tpe;
@@ -50,12 +76,12 @@ atom_bool(sql_subtype *tpe, bit val)
 }
 
 atom *
-atom_int(sql_subtype *tpe, lng val)
+atom_int( sql_allocator *sa, sql_subtype *tpe, lng val)
 {
 	if (tpe->type->eclass == EC_FLT) {
-		return atom_float(tpe, (double) val);
+		return atom_float(sa, tpe, (double) val);
 	} else {
-		atom *a = atom_create();
+		atom *a = atom_create(sa);
 
 		a->isnull = 0;
 		a->tpe = *tpe;
@@ -117,24 +143,25 @@ atom_get_int(atom *a)
 
 
 atom *
-atom_dec(sql_subtype *tpe, lng val, double dval)
+atom_dec(sql_allocator *sa, sql_subtype *tpe, lng val, double dval)
 {
-	atom *a = atom_int(tpe, val);
+	atom *a = atom_int(sa, tpe, val);
 	if (a) 
 		a -> d = dval;
 	return a;
 }
 
 atom *
-atom_string_(atom *a, sql_subtype *tpe, char *val, int destroy)
+atom_string(sql_allocator *sa, sql_subtype *tpe, char *val)
 {
+	atom *a = atom_create(sa);
+
 	a->isnull = 1;
 	a->tpe = *tpe;
 	a->data.val.sval = NULL;
 	a->data.vtype = TYPE_str;
 	a->data.len = 0;
 	if (val) {
-		a->destroy = destroy;
 		a->isnull = 0;
 		a->data.val.sval = val;
 		a->data.len = (int)strlen(a->data.val.sval);
@@ -146,26 +173,9 @@ atom_string_(atom *a, sql_subtype *tpe, char *val, int destroy)
 }
 
 atom *
-atom_string(sql_subtype *tpe, char *val, int destroy)
+atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
 {
-	return atom_string_(atom_create(), tpe, val, destroy);
-}
-
-atom *
-atom_string2( sql_allocator *sa, sql_subtype *tpe, char *val, int destroy)
-{
-	atom *a = SA_NEW(sa, atom);
-
-	a->destroy = 0;
-	memset(&a->data, 0, sizeof(a->data));
-	a->d = dbl_nil;
-	return atom_string_(a, tpe, val, destroy);
-}
-
-atom *
-atom_float(sql_subtype *tpe, double val)
-{
-	atom *a = atom_create();
+	atom *a = atom_create(sa);
 
 	a->isnull = 0;
 	a->tpe = *tpe;
@@ -183,7 +193,7 @@ atom_float(sql_subtype *tpe, double val)
 }
 
 atom *
-atom_general(sql_subtype *tpe, char *val, int destroy)
+atom_general(sql_allocator *sa, sql_subtype *tpe, char *val)
 {
 	atom *a;
 	ptr p = NULL;
@@ -192,8 +202,8 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname, val);
 
 	if (tpe->type->localtype == TYPE_str)
-		return atom_string(tpe, val, destroy);
-	a = atom_create();
+		return atom_string(sa, tpe, val);
+	a = atom_create(sa);
 	a->tpe = *tpe;
 	a->data.val.pval = NULL;
 	a->data.vtype = tpe->type->localtype;
@@ -206,9 +216,8 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 
 		a->isnull = 0;
 		if (ATOMstorage(type) == TYPE_str) {
-			a->destroy = destroy;
 			a->isnull = 0;
-			a->data.val.sval = sql2str(val);
+			a->data.val.sval = sql2str(sa_strdup(sa, val));
 			a->data.len = (int)strlen(a->data.val.sval);
 		} else { 
 			int res = ATOMfromstr(type, &p, &a->data.len, val);
@@ -216,13 +225,12 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				/*_DELETE(val);*/
-				_DELETE(a);
 				if (p)
 					GDKfree(p);
 				return NULL;
 			}
 			VALset(&a->data, a->data.vtype, p);
-			a->destroy = 1;
+			SA_VALcopy(sa, &a->data, &a->data);
 
 			if (p && ATOMextern(a->data.vtype) == 0)
 				GDKfree(p);
@@ -231,18 +239,16 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 	} else { 
 		p = ATOMnilptr(a->data.vtype);
 		VALset(&a->data, a->data.vtype, p);
-		a->destroy = 0;
 		a->isnull = 1;
 	}
 	return a;
 }
 
 atom *
-atom_ptr( sql_subtype *tpe, void *v)
+atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 {
-	atom *a = atom_create();
+	atom *a = atom_create(sa);
 	a->tpe = *tpe;
-	a->destroy = 0;
 	a->isnull = 0;
 	a->data.vtype = TYPE_ptr;
 	VALset(&a->data, a->data.vtype, &v);
@@ -250,22 +256,14 @@ atom_ptr( sql_subtype *tpe, void *v)
 	return a;
 }
 
-void
-atom_destroy(atom *a)
-{
-	if (a->destroy) 
-		VALclear(&a->data);
-	_DELETE(a);
-}
-
 char *
-atom2string(atom *a)
+atom2string(sql_allocator *sa, atom *a)
 {
 	char buf[BUFSIZ], *p = NULL;
 	void *v;
 
 	if (a->isnull)
-		return _strdup("NULL");
+		return sa_strdup(sa, "NULL");
 	switch (a->data.vtype) { 
 	case TYPE_lng:
 		sprintf(buf, LLFMT, a->data.val.lval);
@@ -284,8 +282,8 @@ atom2string(atom *a)
 		break;
 	case TYPE_bit:
 		if (a->data.val.cval[0])
-			return _strdup("true");
-		return _strdup("false");
+			return sa_strdup(sa, "true");
+		return sa_strdup(sa, "false");
 	case TYPE_flt:
 		sprintf(buf, "%f", a->data.val.fval);
 		break;
@@ -294,7 +292,7 @@ atom2string(atom *a)
 		break;
 	case TYPE_str:
 		if (a->data.val.sval)
-			return _strdup(a->data.val.sval);
+			return sa_strdup(sa, a->data.val.sval);
 		else
 			sprintf(buf, "NULL");
 		break;
@@ -302,12 +300,15 @@ atom2string(atom *a)
 		v = &a->data.val.ival;
 		if (ATOMvarsized(a->data.vtype))
 			v = a->data.val.pval;
-		if (ATOMformat(a->data.vtype, v, &p) < 0)
+		if (ATOMformat(a->data.vtype, v, &p) < 0) {
                 	snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
-		else
-			return p;
+		} else {
+			 char *r = sa_strdup(sa, p);
+			 _DELETE(p);
+			 return r;
+		}
 	}
-	return _strdup(buf);
+	return sa_strdup(sa, buf);
 }
 
 char *
@@ -393,31 +394,15 @@ atom_type(atom *a)
 }
 
 atom *
-atom_dup(atom *a)
+atom_dup(sql_allocator *sa, atom *a)
 {
-	atom *r = atom_create();
+	atom *r = atom_create(sa);
 
 	*r = *a;
 	r->tpe = a->tpe;
-	if (!a->isnull) {
-		r->destroy = 1;
-		VALcopy(&r->data, &a->data);
-	}
+	if (!a->isnull) 
+		SA_VALcopy(sa, &r->data, &a->data);
 	return r;
-}
-
-atom *
-atom_copy(atom *a, sql_allocator *sa)
-{
-	atom *na;
-	na = SA_NEW(sa, atom);
-
-	*na = *a;
-	if (!a->isnull && a->destroy) {
-		na->destroy = 1;
-		VALcopy(&na->data, &a->data);
-	}
-	return na;
 }
 
 unsigned int
@@ -730,7 +715,6 @@ atom_cast(atom *a, sql_subtype *tp)
 		a->data.vtype = tp->type->localtype;
 		p = ATOMnilptr(a->data.vtype);
 		VALset(&a->data, a->data.vtype, p);
-		a->destroy = 0;
 		return 1;
 	}
 	return 0;

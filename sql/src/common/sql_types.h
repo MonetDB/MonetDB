@@ -92,26 +92,22 @@ extern sql_arg *sql_create_arg(char *name, sql_subtype *t);
 extern sql_arg *arg_dup(sql_arg *a);
 extern void arg_destroy(sql_arg *a);
 
-extern sql_subaggr *sql_bind_aggr(sql_schema *s, char *name, sql_subtype *type);
-extern sql_subaggr *sql_find_aggr(sql_schema *s, char *name);
+extern sql_subaggr *sql_bind_aggr(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *type);
+extern sql_subaggr *sql_find_aggr(sql_allocator *sa, sql_schema *s, char *name);
 extern sql_func *sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res);
-extern sql_subaggr *sql_dup_aggr(sql_subaggr *a);
-extern void sql_subaggr_destroy(sql_subaggr *f);
 extern int subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2);
 
 extern int subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2);
-extern sql_subfunc *sql_find_func(sql_schema *s, char *name, int nrargs);
-extern sql_subfunc *sql_bind_member(sql_schema *s, char *name, sql_subtype *tp, int nrargs);
-extern sql_subfunc *sql_bind_func(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2);
-extern sql_subfunc *sql_bind_func3(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3);
-extern sql_subfunc *sql_bind_func_result(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
-extern sql_subfunc *sql_bind_func_result3(sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res);
+extern sql_subfunc *sql_find_func(sql_allocator *sa, sql_schema *s, char *name, int nrargs);
+extern sql_subfunc *sql_bind_member(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp, int nrargs);
+extern sql_subfunc *sql_bind_func(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2);
+extern sql_subfunc *sql_bind_func3(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3);
+extern sql_subfunc *sql_bind_func_result(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
+extern sql_subfunc *sql_bind_func_result3(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res);
 
-extern sql_subfunc *sql_bind_func_(sql_schema *s, char *name, list *ops);
-extern sql_subfunc *sql_bind_func_result_(sql_schema *s, char *name, list *ops, sql_subtype *res);
-extern sql_subfunc *sql_dup_func(sql_subfunc *f);
-extern void sql_subfunc_destroy(sql_subfunc *f);
-extern sql_subfunc *sql_bind_proc(sql_schema *s, char *name, list *ops);
+extern sql_subfunc *sql_bind_func_(sql_allocator *sa, sql_schema *s, char *name, list *ops);
+extern sql_subfunc *sql_bind_func_result_(sql_allocator *sa, sql_schema *s, char *name, list *ops, sql_subtype *res);
+extern sql_subfunc *sql_bind_proc(sql_allocator *sa, sql_schema *s, char *name, list *ops);
 
 extern void func_destroy(sql_func *t);
 extern sql_func *sql_create_func(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing);

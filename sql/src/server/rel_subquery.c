@@ -35,29 +35,26 @@ sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)
 	if (!s)
 		s = sql->session->schema;
 	rt = tail_type(rs);
-	f = sql_bind_func(s, fname, rt, NULL);
+	f = sql_bind_func(sql->sa, s, fname, rt, NULL);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(s, fname, 1)) != NULL) {
+	if (!f && (f = sql_find_func(sql->sa, s, fname, 1)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		rs = check_types(sql, &a->type, rs, type_equal);
-		if (!rs) {
-			sql_subfunc_destroy(f);
+		if (!rs) 
 			f = NULL;
-		}
 	}
 	if (f) {
 		if (f->func->res.scale == INOUT) {
 			f->res.digits = rt->digits;
 			f->res.scale = rt->scale;
 		}
-		return stmt_unop(rs, f);
+		return stmt_unop(sql->sa, rs, f);
 	} else if (rs) {
 		char *type = tail_type(rs)->type->sqlname;
 
-		stmt_destroy(rs);
 		return sql_error(sql, 02, "SELECT: no such unary operator '%s(%s)'", fname, type);
 	}
 	return NULL;
@@ -75,9 +72,9 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 
 	if (!s)
 		s = sql->session->schema;
-	f = sql_bind_func(s, fname, t1, t2);
+	f = sql_bind_func(sql->sa, s, fname, t1, t2);
 	if (!f && is_commutative(fname)) {
-		f = sql_bind_func(s, fname, t2, t1);
+		f = sql_bind_func(sql->sa, s, fname, t2, t1);
 		if (f) {
 			sql_subtype *tmp = t1;
 			t1 = t2;	
@@ -98,45 +95,36 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 		} else if (f->func->fix_scale == DIGITS_ADD) {
 			f->res.digits = t1->digits + t2->digits;
 		}
-		return stmt_binop(ls, rs, f);
+		return stmt_binop(sql->sa, ls, rs, f);
 	} else {
 		int digits = t1->digits + t2->digits;
-		stmt *ols = stmt_dup(ls);
-		stmt *ors = stmt_dup(rs);
+		stmt *ols = ls;
+		stmt *ors = rs;
 
 		/* try finding function based on first argument */
 		if (!EC_NUMBER(t1->type->eclass) &&
-		   (f = sql_bind_member(s, fname, t1, 2)) != NULL) {
+		   (f = sql_bind_member(sql->sa, s, fname, t1, 2)) != NULL) {
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
 			ls = check_types(sql, &a->type, ls, type_equal);
 			a = m->next->data;
 			rs = check_types(sql, &a->type, rs, type_equal);
-			if (ls && rs) {
-				stmt_destroy(ols);
-				stmt_destroy(ors);
-				return stmt_binop(ls, rs, f);
-			}
+			if (ls && rs) 
+				return stmt_binop(sql->sa, ls, rs, f);
 		}
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 
-		if (ls)
-			stmt_destroy(ls);
-		if (rs)
-			stmt_destroy(rs);
 		ls = ols;
 		rs = ors;
-		ols = stmt_dup(ls);
-		ors = stmt_dup(rs);
 		/* try finding function based on both arguments */
 		if (convert_types(sql, &ls, &rs, 1, type_equal) >= 0) {
 			/* try operators */
 			t1 = tail_type(ls);
 			t2 = tail_type(rs);
-			f = sql_bind_func(s, fname, t1, t2);
+			f = sql_bind_func(sql->sa, s, fname, t1, t2);
 			if (f) {
 				if (f->func->fix_scale == SCALE_FIX) {
 					ls = fix_scale(sql, t2, ls, 0, 0);
@@ -148,23 +136,17 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 				} else if (f->func->fix_scale == DIGITS_ADD) {
 					f->res.digits = digits;
 				}
-				stmt_destroy(ols);
-				stmt_destroy(ors);
-				return stmt_binop(ls, rs, f);
+				return stmt_binop(sql->sa, ls, rs, f);
 			}
 		}
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 
-		if (ls)
-			stmt_destroy(ls);
-		if (rs)
-			stmt_destroy(rs);
 		ls = ols;
 		rs = ors;
 		/* everything failed, fall back to bind on function name only */
-		if ((f = sql_find_func(s, fname, 2)) != NULL) {
+		if ((f = sql_find_func(sql->sa, s, fname, 2)) != NULL) {
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
@@ -172,20 +154,18 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 			a = m->next->data;
 			rs = check_types(sql, &a->type, rs, type_equal);
 			if (ls && rs) 
-				return stmt_binop(ls, rs, f);
+				return stmt_binop(sql->sa, ls, rs, f);
 		}
 	}
 	if (rs && ls)
 		res = sql_error(sql, 02, "SELECT: no such binary operator '%s(%s,%s)'", fname, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
-	cond_stmt_destroy(ls);
-	cond_stmt_destroy(rs);
 	return res;
 }
 
 stmt *
 sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 {
-	list *sl = create_stmt_list();
+	list *sl = list_new(sql->sa);
 	list *tl = list_create(NULL);
 	sql_subfunc *f = NULL;
 
@@ -200,10 +180,10 @@ sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 		list_append(tl, tail_type(a4));
 	}
 
-	f = sql_bind_func_(sql->session->schema, fname, tl);
+	f = sql_bind_func_(sql->sa, sql->session->schema, fname, tl);
 	list_destroy(tl);
 	if (f)
-		return stmt_Nop(stmt_list(sl), f);
+		return stmt_Nop(sql->sa, stmt_list(sql->sa, sl), f);
 	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
@@ -241,40 +221,32 @@ select_into( mvc *sql, symbol *sq, exp_kind ek)
 		list *rl = s->op1.lval;
 		node *m;
 		dnode *n;
-		list *nl = create_stmt_list();
+		list *nl = list_new(sql->sa);
 
 		assert(s->type == st_list);
 		for (m = rl->h, n = into->h; m && n; m = m->next, n = n->next) {
 			sql_subtype *tpe = NULL;
 			char *nme = n->data.sval;
-			stmt *a = NULL, *v = m->data, *var;
+			stmt *a = NULL, *v = m->data;
 			int level;
 
-			if ((var=stack_find_var(sql, nme)) == NULL) {
-				list_destroy(rl);
-				list_destroy(nl);
+			if (!stack_find_var(sql, nme)) 
 				return sql_error(sql, 02, "SELECT INTO: variable '%s' unknown", nme);
-			}
 			/* dynamic check for single values */
-			v = stmt_dup(v);
 			if (!v->key) {
-				sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(v));
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", tail_type(v));
 				assert(zero_or_one);
-				v = stmt_aggr(v, NULL, zero_or_one, 1);
+				v = stmt_aggr(sql->sa, v, NULL, zero_or_one, 1);
 			}
-			tpe = tail_type(var);
+			tpe = stack_find_type(sql, nme);
 			level = stack_find_frame(sql, nme);
 			v = check_types(sql, tpe, v, type_equal); 
-			if (!v) {
-				list_destroy(rl);
-				list_destroy(nl);
+			if (!v) 
 				return NULL;
-			}
-			a = stmt_assign(nme, v, level);
+			a = stmt_assign(sql->sa, nme, v, level);
 			list_append(nl, a);
 		}
-		stmt_destroy(s);
-		s = stmt_list(nl);
+		s = stmt_list(sql->sa, nl);
 	}
 	return s;
 }
@@ -293,31 +265,29 @@ find_order(stmt *s)
 }
 
 static stmt *
-sql_reorder(stmt *order, stmt *s) 
+sql_reorder(mvc *sql, stmt *order, stmt *s) 
 {
-	list *l = create_stmt_list();
+	list *l = list_new(sql->sa);
 	node *n;
 	/* we need to keep the order by column, to propagate the sort property*/
 	stmt *o = find_order(order);
 	stmt *x = o->op1.stval;
 
-	order = stmt_mark(stmt_reverse(order), 0);
+	order = stmt_mark(sql->sa, stmt_reverse(sql->sa, order), 0);
 	for (n = s->op1.lval->h; n; n = n->next) {
 		stmt *sc = n->data;
-		char *cname = column_name(sc);
-		char *tname = table_name(sc);
+		char *cname = column_name(sql->sa, sc);
+		char *tname = table_name(sql->sa, sc);
 
 		if (sc != x)
-			sc = stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_dup(order), stmt_dup(sc), cmp_equal)), 1));
+			sc = stmt_reverse(sql->sa, stmt_order(sql->sa, stmt_reverse(sql->sa, stmt_join(sql->sa, order, sc, cmp_equal)), 1));
 		else	/* first order by column */
-			sc = stmt_mark(stmt_dup(o), 0);
-		sc = stmt_alias(sc, tname, cname );
+			sc = stmt_mark(sql->sa, o, 0);
+		sc = stmt_alias(sql->sa, sc, tname, cname );
 		list_append(l, sc);
 		
 	}
-	stmt_destroy(s);
-	stmt_destroy(order);
-	return stmt_list(l);
+	return stmt_list(sql->sa, l);
 }
 
 stmt *
@@ -343,48 +313,42 @@ value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
 
 		if (s && s->type == st_list && !s->op1.lval->h) {
 			assert(0);
-			stmt_destroy(s);
 			s = NULL;
 		}
 
 		if (r)
 			rel_destroy(r);
-		if (!r && e)
-			exp_destroy(e);
 	}
 	/* we need a relation */
 	if (ek.card == card_relation && s && s->type == st_ordered) {
-		stmt *order = stmt_dup(s->op1.stval);
-		stmt *ns = stmt_dup(s->op2.stval);
+		stmt *order = s->op1.stval;
+		stmt *ns = s->op2.stval;
 			
-		stmt_destroy(s);
-		s = sql_reorder(order, ns);
+		s = sql_reorder(sql, order, ns);
 	}
 	if (ek.card == card_relation && s) {
 		if (s->type == st_list && s->nrcols == 0 && s->key) {
 			/* row to columns */
 			node *n;
-			list *l = create_stmt_list();
+			list *l = list_new(sql->sa);
 
 			for(n=s->op1.lval->h; n; n = n->next)
-				list_append(l, const_column(stmt_dup(n->data)));
-			stmt_destroy(s);
-			s = stmt_list(l);
+				list_append(l, const_column(sql->sa, (stmt*)n->data));
+			s = stmt_list(sql->sa, l);
 		}
-		s = stmt_table(s, 1);
+		s = stmt_table(sql->sa, s, 1);
 	}
 	/* single column */
 	if (ek.card != card_relation && s && s->type == st_list) {
-		stmt *ns = stmt_dup(s->op1.lval->h->data); 
+		stmt *ns = s->op1.lval->h->data; 
 
-		stmt_destroy(s);
 		s = ns;
 	}
 	/* single value */
 	if (ek.card == card_value && s && !s->key) {
-		sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(s));
+		sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", tail_type(s));
 		assert(zero_or_one);
-		s = stmt_aggr(s, NULL, zero_or_one, 1);
+		s = stmt_aggr(sql->sa, s, NULL, zero_or_one, 1);
 	}
 	return s;
 }
@@ -447,7 +411,6 @@ rel_parse_val(mvc *m, char *query, char emode)
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
-	mnstr_destroy(s);
 
 	m->sym = NULL;
 	if (m->session->status || m->errstr[0]) {
@@ -513,7 +476,6 @@ rel_parse_value(mvc *m, char *query, char emode)
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
-	mnstr_destroy(sr);
 
 	m->sym = NULL;
 	if (m->session->status || m->errstr[0]) {
@@ -552,37 +514,32 @@ logical_value_exp(mvc *sql, symbol *sc, int f, exp_kind ek)
 
 		if (s && s->type == st_list && !s->op1.lval->h) {
 			assert(0);
-			stmt_destroy(s);
 			s = NULL;
 		}
 
 		if (r)
 			rel_destroy(r);
-		if (!r && e)
-			exp_destroy(e);
 	}
 	/* we need a relation */
 	if (ek.card == card_relation && s && s->type == st_ordered) {
-		stmt *order = stmt_dup(s->op1.stval);
-		stmt *ns = stmt_dup(s->op2.stval);
+		stmt *order = s->op1.stval;
+		stmt *ns = s->op2.stval;
 			
-		stmt_destroy(s);
-		s = sql_reorder(order, ns);
+		s = sql_reorder(sql, order, ns);
 	}
 	if (ek.card == card_relation && s)
-		s = stmt_table(s, 1);
+		s = stmt_table(sql->sa, s, 1);
 	/* single column */
 	if (ek.card != card_relation && s && s->type == st_list) {
-		stmt *ns = stmt_dup(s->op1.lval->h->data); 
+		stmt *ns = s->op1.lval->h->data; 
 
-		stmt_destroy(s);
 		s = ns;
 	}
 	/* single value */
 	if (ek.card == card_value && s && !s->key) {
-		sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(s));
+		sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", tail_type(s));
 		assert(zero_or_one);
-		s = stmt_aggr(s, NULL, zero_or_one, 1);
+		s = stmt_aggr(sql->sa, s, NULL, zero_or_one, 1);
 	}
 	return s;
 }

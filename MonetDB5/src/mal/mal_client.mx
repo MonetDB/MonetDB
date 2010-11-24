@@ -344,8 +344,6 @@ void MCpopClientInput(Client c)
 	ClientInput *x = c->bak;
 	if (c->fdin) {
 		/* missing protection against closing stdin stream */
-		(void) mnstr_close(c->fdin->s);
-		(void) mnstr_destroy(c->fdin->s);
 		(void) bstream_destroy(c->fdin);
 	}
 	GDKfree(c->prompt);
@@ -471,8 +469,6 @@ MCexitClient(Client c)
 		assert(c->bak==NULL);
 		if(c->fdin){
 			/* missing protection against closing stdin stream */
-			(void) mnstr_close(c->fdin->s);
-			(void) mnstr_destroy(c->fdin->s);
 			(void) bstream_destroy(c->fdin);
 		}
 		c->fdout = NULL;

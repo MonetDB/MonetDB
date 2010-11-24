@@ -92,7 +92,9 @@ malBootstrap()
 	chkProgram(c->nspace, c->curprg->def);
 	if (c->curprg->def->errors)
 		showErrors(c);
-	MALengine(c);
+	s = MALengine(c);
+	if (s)
+		GDKfree(s);
 	return 1;
 }
 

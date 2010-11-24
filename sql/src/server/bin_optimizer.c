@@ -33,12 +33,12 @@ stmt_uselect_select(stmt *s)
 	else
 		s->type = st_select;
 	assert(!s->t);
-	s->t = stmt_dup(s->op1.stval->t);
+	s->t = s->op1.stval->t;
 	return s;
 }
 
 static stmt *
-eliminate_semijoin(stmt *s)
+eliminate_semijoin(sql_allocator *sa, stmt *s)
 {
 	stmt *s1, *s2;
 	sql_column *bc1, *bc2;
@@ -126,12 +126,12 @@ eliminate_semijoin(stmt *s)
 			case st_select:
 			case st_uselect:
 				/* uselect => select  as semijoin also propagates the left input's tail */
-				ns = stmt_select(stmt_dup(s1), stmt_dup(s2->op2.stval), (comp_type) s2->flag);
+				ns = stmt_select(sa, s1, s2->op2.stval, (comp_type) s2->flag);
 				break;
 			case st_select2:
 			case st_uselect2:
 				/* uselect => select  as semijoin also propagates the left input's tail */
-				ns = stmt_select2(stmt_dup(s1), stmt_dup(s2->op2.stval), stmt_dup(s2->op3.stval), s2->flag);
+				ns = stmt_select2(sa, s1, s2->op2.stval, s2->op3.stval, s2->flag);
 				break;
 			default:
 				/* pacify compiler; should never be reached. */
@@ -140,7 +140,7 @@ eliminate_semijoin(stmt *s)
 			return ns;
 		}
 	}
-	return stmt_dup(s);
+	return s;
 }
 
 static stmt *
@@ -161,31 +161,30 @@ eliminate_reverse(stmt *s)
 	default:
 		ns = s;
 	}
-	return stmt_dup(ns);
+	return ns;
 }
 
 /* push this select through the statement s */
 static stmt *
-push_select( stmt *select, stmt *s )
+push_select( sql_allocator *sa, stmt *select, stmt *s )
 {
 	if (select->type == st_select2) 
-		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
+		return stmt_select2(sa,  s, select->op2.stval, select->op3.stval, (comp_type)select->flag);
 
 	if (select->type == st_uselect2) 
-		return stmt_uselect2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), (comp_type)select->flag);
+		return stmt_uselect2(sa,  s, select->op2.stval, select->op3.stval, (comp_type)select->flag);
 
 	if (select->type == st_select) {
 		if (select->flag == cmp_like || select->flag == cmp_notlike ||
 		    select->flag == cmp_ilike || select->flag == cmp_notilike)
-			return stmt_likeselect(s, stmt_dup(select->op2.stval),
-					stmt_dup(select->op3.stval), (comp_type)select->flag);
+			return stmt_likeselect(sa, s, select->op2.stval,
+					select->op3.stval, (comp_type)select->flag);
 		else
-			return stmt_select(s, stmt_dup(select->op2.stval),
-					(comp_type)select->flag);
+			return stmt_select(sa, s, select->op2.stval, (comp_type)select->flag);
 	}
 
 	if (select->type == st_uselect) 
-		return stmt_uselect( s, stmt_dup(select->op2.stval), (comp_type)select->flag);
+		return stmt_uselect(sa,  s, select->op2.stval, (comp_type)select->flag);
 	assert(0);
 	return NULL;
 }
@@ -210,7 +209,7 @@ is_reduced( stmt *s )
 	case st_join:
 		/* fetch join, look at the join operands */
 		if (isEqJoin(s) &&
-		    s->op1.stval->t && s->op1.stval->t == s->op2.stval->h)
+		    s->op1.stval->t && s->op1.stval->t == s->op2.stval->h) 
 			return  is_reduced(s->op1.stval) + 
 				is_reduced(s->op2.stval);
 		return 1;
@@ -231,9 +230,9 @@ bin_optimizer(mvc *c, stmt *s)
 {
 	if (s->optimized >= 3) {
 		if (s->rewritten)
-			return stmt_dup(s->rewritten);
+			return s->rewritten;
 		else
-			return stmt_dup(s);
+			return s;
 	}
 
 	switch (s->type) {
@@ -256,7 +255,7 @@ bin_optimizer(mvc *c, stmt *s)
 	case st_bat:
 
 		s->optimized = 3;
-		return stmt_dup(s);
+		return s;
 
 	case st_limit: {
 		stmt *ns, *j = NULL, *os = s;
@@ -269,18 +268,14 @@ bin_optimizer(mvc *c, stmt *s)
 		    s->flag == 0 &&
 		    isEqJoin(j) &&
 		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) {
-			stmt *l = stmt_dup(j->op1.stval);
-			stmt *r = stmt_dup(j->op2.stval);
+			stmt *l = j->op1.stval;
+			stmt *r = j->op2.stval;
 
-			l = stmt_limit(l, 
-			 	stmt_dup(s->op2.stval),
-				stmt_dup(s->op3.stval),
-			      	s->flag);
-			s = stmt_join(l, r, cmp_equal); 
+			l = stmt_limit(c->sa, l, s->op2.stval, s->op3.stval, s->flag);
+			s = stmt_join(c->sa, l, r, cmp_equal); 
 			ns = bin_optimizer(c, s);
-			stmt_destroy(s);
 			assert(os->rewritten==NULL);
-			os->rewritten = stmt_dup(ns);
+			os->rewritten = ns;
 			os->optimized = ns->optimized = 3;
 			return ns;
 		} else
@@ -293,45 +288,35 @@ bin_optimizer(mvc *c, stmt *s)
 		    !is_reduced(j) &&
 		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) || 
 		    j->flag == cmp_all)) {
-			stmt *l = stmt_dup(j->op1.stval);
-			stmt *r = stmt_dup(j->op2.stval);
+			stmt *l = j->op1.stval;
+			stmt *r = j->op2.stval;
 
-			r = stmt_limit(r, 
-			 	stmt_dup(s->op2.stval),
-				stmt_dup(s->op3.stval),
-			      	s->flag);
-			s = stmt_join(l, r, cmp_equal); 
+			r = stmt_limit(c->sa, r, s->op2.stval, s->op3.stval, s->flag);
+			s = stmt_join(c->sa, l, r, cmp_equal); 
 			ns = bin_optimizer(c, s);
-			stmt_destroy(s);
 			assert(os->rewritten==NULL);
-			os->rewritten = stmt_dup(ns);
+			os->rewritten = ns;
 			os->optimized = ns->optimized = 3;
 			return ns;
 		}
 		/* try to push the limit through the reverse */
 		if (!s->op4.stval && !s->flag && j->type == st_reverse) {
-			s = stmt_reverse(stmt_limit(stmt_dup(j->op1.stval),
-				stmt_dup(s->op2.stval),
-				stmt_dup(s->op3.stval),
-				s->flag));
+			s = stmt_reverse(c->sa, stmt_limit(c->sa, j->op1.stval, s->op2.stval,
+				s->op3.stval, s->flag));
 			ns = bin_optimizer(c, s);
-			stmt_destroy(s);
 			assert(os->rewritten==NULL);
-			os->rewritten = stmt_dup(ns);
+			os->rewritten = ns;
 			os->optimized = ns->optimized = 3;
 			return ns;
 		}
 		/* try to push the limit through the mark (only if there is no offset) */
 		if (!s->op4.stval && !s->op2.stval->op1.aval->data.val.wval && j->type == st_mark) {
-			s = stmt_mark_tail(stmt_limit(stmt_dup(j->op1.stval),
-				stmt_dup(s->op2.stval),
-				stmt_dup(s->op3.stval),
-				s->flag),
+			s = stmt_mark_tail(c->sa, stmt_limit(c->sa, j->op1.stval,
+				s->op2.stval, s->op3.stval, s->flag),
 				j->op2.stval->op1.aval->data.val.ival);
 			ns = bin_optimizer(c, s);
-			stmt_destroy(s);
 			assert(os->rewritten==NULL);
-			os->rewritten = stmt_dup(ns);
+			os->rewritten = ns;
 			os->optimized = ns->optimized = 3;
 			return ns;
 		}
@@ -340,11 +325,10 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *ns = bin_optimizer(c, os);
 
 			assert(ns != s);
-			stmt_destroy(os);
 			s->op1.stval = ns;
 		}
 		s->optimized = 3;
-		return stmt_dup(s);
+		return s;
 	}
 
 	case st_semijoin:{
@@ -352,34 +336,31 @@ bin_optimizer(mvc *c, stmt *s)
 		stmt *j = NULL;
 		stmt *os, *ns;
 
-		os = stmt_semijoin(bin_optimizer(c, s->op1.stval), bin_optimizer(c, s->op2.stval));
+		os = stmt_semijoin(c->sa, bin_optimizer(c, s->op1.stval), bin_optimizer(c, s->op2.stval));
 		/* try to push the semijoin through the (fetch) join */
 		if (os->op1.stval->type == st_join) {
 			j = os->op1.stval;
 			/* equi join on same base table */
 			if (isEqJoin(j) &&
 		    		j->op1.stval->t == j->op2.stval->h ) {
-				stmt *l = stmt_dup(j->op1.stval);
-				stmt *r = stmt_dup(j->op2.stval);
-				s = stmt_semijoin(l, stmt_dup(os->op2.stval));
+				stmt *l = j->op1.stval;
+				stmt *r = j->op2.stval;
+				s = stmt_semijoin(c->sa, l, os->op2.stval);
 				l = bin_optimizer(c, s);
-				stmt_destroy(s);
-				stmt_destroy(os);
-				os = stmt_join( l, r, cmp_equal);
+				os = stmt_join( c->sa, l, r, cmp_equal);
 				os->optimized = 3; 
 				return os;
 			}
 		} 
 		if (!mvc_debug_on(c, 4096) && os->nrcols) {
-			ns = eliminate_semijoin(os);
+			ns = eliminate_semijoin(c->sa, os);
 		} else {
-			ns = stmt_dup(os);
+			ns = os;
 		}
-		stmt_destroy(os);
 		s->optimized = ns->optimized = 3;
 		if (ns != s) {
 			assert(s->rewritten==NULL);
-			s->rewritten = stmt_dup(ns);
+			s->rewritten = ns;
 		}
 		return ns;
 	}
@@ -393,7 +374,6 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *ns = bin_optimizer(c, os);
 
 			assert(ns != s);
-			stmt_destroy(os);
 			s->op1.stval = ns;
 		}
 		if (s->op2.stval) {
@@ -401,7 +381,6 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *ns = bin_optimizer(c, os);
 
 			assert(ns != s);
-			stmt_destroy(os);
 			s->op2.stval = ns;
 		}
 		if (s->op3.stval) {
@@ -409,7 +388,6 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *ns = bin_optimizer(c, os);
 
 			assert(ns != s);
-			stmt_destroy(os);
 			s->op3.stval = ns;
 		}
 
@@ -421,8 +399,7 @@ bin_optimizer(mvc *c, stmt *s)
 		    s->op1.stval->t == s->op2.stval->h &&
 		    s->op2.stval->type == st_diff){
 			stmt *old = s->op2.stval;
-			s->op2.stval = stmt_dup(old->op1.stval);
-			stmt_destroy(old);
+			s->op2.stval = old->op1.stval;
 		}
 		/* same as above but now with alias in between */ 
 		if (isEqJoin(s) && 
@@ -430,28 +407,26 @@ bin_optimizer(mvc *c, stmt *s)
 		    s->op1.stval->t == s->op2.stval->op1.stval->h &&
 		    s->op2.stval->op1.stval->type == st_diff){
 			stmt *old = s->op2.stval;
-			s->op2.stval = stmt_dup(old->op1.stval->op1.stval);
-			stmt_destroy(old);
+			s->op2.stval = old->op1.stval->op1.stval;
 		}
 		s->optimized = 3;
-		return stmt_dup(s);
+		return s;
 	}
 
 	case st_reverse:{
 
 		stmt *os, *ns;
 
-		os = stmt_reverse(bin_optimizer(c, s->op1.stval));
+		os = stmt_reverse(c->sa, bin_optimizer(c, s->op1.stval));
 		if (!mvc_debug_on(c, 4096)) {
 			ns = eliminate_reverse(os);
 		} else {
-			ns = stmt_dup(os);
+			ns = os;
 		}
-		stmt_destroy(os);
 		s->optimized = ns->optimized = 3;
 		if (ns != s) {
 			assert(s->rewritten==NULL);
-			s->rewritten = stmt_dup(ns);
+			s->rewritten = ns;
 		}
 		return ns;
 	}
@@ -465,20 +440,18 @@ bin_optimizer(mvc *c, stmt *s)
 		if (s->op1.stval->type == st_alias) {
 			stmt *a = s->op1.stval;
 	
-			s = push_select( s, stmt_dup(a->op1.stval)); 
-			s = stmt_alias(s, table_name(a), column_name(a));
+			s = push_select( c->sa, s, a->op1.stval); 
+			s = stmt_alias(c->sa, s, table_name(c->sa, a), column_name(c->sa, a));
 			res = bin_optimizer(c, s);
-			stmt_destroy(s);
 			return res;
 		}
 		/* push down the select through st_diff */
 		if (s->op1.stval->type == st_diff && s->flag != cmp_notequal) {
 			stmt *d = s->op1.stval;
 	
-			s = push_select( s, stmt_dup(d->op1.stval)); 
-			s = stmt_diff(s, stmt_dup(d->op2.stval));
+			s = push_select( c->sa, s, d->op1.stval); 
+			s = stmt_diff(c->sa, s, d->op2.stval);
 			res = bin_optimizer(c, s);
-			stmt_destroy(s);
 			return res;
 		}
 		/* push down the select through st_union */
@@ -486,11 +459,10 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *l, *r;
 			stmt *u = s->op1.stval;
 	
-			l = push_select( s, stmt_dup(u->op1.stval)); 
-			r = push_select( s, stmt_dup(u->op2.stval)); 
-			s = stmt_union(l, r);
+			l = push_select( c->sa, s, u->op1.stval); 
+			r = push_select( c->sa, s, u->op2.stval);
+			s = stmt_union(c->sa, l, r);
 			res = bin_optimizer(c, s);
-			stmt_destroy(s);
 			return res;
 		}
 
@@ -499,7 +471,6 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *ns = bin_optimizer(c, os);
 
 			assert(ns != s);
-			stmt_destroy(os);
 			s->op1.stval = ns;
 		}
 		if (s->op2.stval) {
@@ -507,11 +478,10 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *ns = bin_optimizer(c, os);
 
 			assert(ns != s);
-			stmt_destroy(os);
 			s->op2.stval = ns;
 		}
 		s->optimized = 3;
-		return stmt_dup(s);
+		return s;
 	}
 
 	case st_temp:
@@ -559,7 +529,6 @@ bin_optimizer(mvc *c, stmt *s)
 			stmt *ns = bin_optimizer(c, os);
 
 			assert(ns != s);
-			stmt_destroy(os);
 			s->op1.stval = ns;
 		}
 	case st_append_col:
@@ -574,7 +543,6 @@ bin_optimizer(mvc *c, stmt *s)
 				stmt *ns = bin_optimizer(c, os);
 	
 				assert(ns != s);
-				stmt_destroy(os);
 				s->op2.stval = ns;
 			}
 			if (s->op3.stval) {
@@ -582,12 +550,11 @@ bin_optimizer(mvc *c, stmt *s)
 				stmt *ns = bin_optimizer(c, os);
 	
 				assert(ns != s);
-				stmt_destroy(os);
 				s->op3.stval = ns;
 			}
 		}
 		s->optimized = 3;
-		return stmt_dup(s);
+		return s;
 
 	case st_list:{
 
@@ -596,17 +563,17 @@ bin_optimizer(mvc *c, stmt *s)
 		list *l = s->op1.lval;
 		list *nl = NULL;
 
-		nl = create_stmt_list();
+		nl = list_new(c->sa);
 		for (n = l->h; n; n = n->next) {
 			stmt *ns = bin_optimizer(c, n->data);
 
 			list_append(nl, ns);
 		}
-		res = stmt_list(nl);
+		res = stmt_list(c->sa, nl);
 		s->optimized = res->optimized = 3;
 		if (res != s) {
 			assert(s->rewritten==NULL);
-			s->rewritten = stmt_dup(res);
+			s->rewritten = res;
 		}
 		return res;
 	}
@@ -617,5 +584,5 @@ bin_optimizer(mvc *c, stmt *s)
 	default:
 		assert(0);	/* these should have been rewriten by now */
 	}
-	return stmt_dup(s);
+	return s;
 }

@@ -339,9 +339,6 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			}
 			if (f == binddbatRef) {
 				mode = getVarConstant(mb, getArg(p,4)).val.ival;
-			} else
-			if (f == bindidxRef ) {
-				cname = getVarConstant(mb, getArg(p,4)).val.sval;
 			} else {
 				cname = getVarConstant(mb, getArg(p,4)).val.sval;
 				mode = getVarConstant(mb, getArg(p,5)).val.ival;
@@ -606,7 +603,7 @@ setOptimizers(str optimizer)
 	   optimizer==optimizerpipe) */
 	optimizer = GDKstrdup(optimizer);
 	if (base)		/* free old value of previouspipe */
-		GDKstrdup(base);
+		GDKfree(base);
 	if (optimizerpipe)
 		GDKfree(optimizerpipe);
 	optimizerpipe = optimizer;
@@ -694,7 +691,7 @@ to allow inspection.
 		return;
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
-	stack_set_var(be->mvc, "optimizer", VALset(&src, TYPE_str, GDKstrdup(setOptimizers(optimizer))));
+	stack_set_var(be->mvc, "optimizer", VALset(&src, TYPE_str, setOptimizers(optimizer)));
 	addOptimizers(c,mb, be->mvc);
 	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
 	if ( m->emod & mod_debug )

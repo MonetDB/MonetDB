@@ -127,7 +127,7 @@ typedef struct sql_base {
 	char *name;
 } sql_base;
 
-extern void base_init(sql_base * b, sqlid id, int flag, char *name);
+extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, char *name);
 extern void base_set_name(sql_base * b, char *name);
 extern void base_destroy(sql_base * b);
 
@@ -216,9 +216,10 @@ typedef struct sql_func {
 			   1 sql 
 			   2 sql instantiated proc 
 			*/
+	char *query;	/* sql code */
 	int aggr;
 	int side_effect;
-	int fix_scale;		
+	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing
 	   		   SCALE_FIX => input scale fixing,
@@ -234,15 +235,11 @@ typedef struct sql_func {
 } sql_func;
 
 typedef struct sql_subfunc {
-	sql_ref ref;
-
 	sql_func *func;
 	sql_subtype res;
 } sql_subfunc;
 
 typedef struct sql_subaggr {
-	sql_ref ref;
-
 	sql_func *aggr;
 	sql_subtype res;
 } sql_subaggr;

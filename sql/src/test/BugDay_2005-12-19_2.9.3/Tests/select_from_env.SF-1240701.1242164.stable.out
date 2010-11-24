@@ -72,6 +72,7 @@ Over..
 [ "sidcrack_pipe"	]
 [ "datacell_pipe"	]
 [ "octopus_pipe"	]
+[ "tarantula_pipe"	]
 [ "mapreduce_pipe"	]
 [ "datacyclotron_pipe"	]
 [ "derive_pipe"	]

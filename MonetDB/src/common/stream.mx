@@ -3201,6 +3201,8 @@ bstream_next(bstream *s)
 void
 bstream_destroy(bstream *s)
 {
+	s->s->close(s->s);
+	s->s->destroy(s->s);
 	free(s->buf);
 	free(s);
 }

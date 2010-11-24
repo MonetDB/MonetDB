@@ -970,8 +970,10 @@ parseInclude(Client cntxt)
 	skipToEnd(cntxt);
 
 	s = loadLibrary(modnme,FALSE);
-	if (s)
+	if (s) {
 		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
+		GDKfree(s);
+	}
 	if ( (s = malInclude(cntxt, modnme, 0)) ){
 		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
 		GDKfree(s);

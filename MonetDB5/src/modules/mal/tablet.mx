@@ -2056,8 +2056,6 @@ TABLETload(Tablet *as, char *datafile)
 				res = TABLETcollect_bats(as);
 		bstream_destroy(b);
 	}
-	mnstr_close(s);
-	mnstr_destroy(s);
 	TABLETdestroy_format(as);
 	return res;
 }

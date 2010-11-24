@@ -25,14 +25,14 @@
 #include "sql_parser.h"
 
 static sql_rel *
-rel_trans(int trans_type, int nr, char *name)
+rel_trans(mvc *sql, int trans_type, int nr, char *name)
 {
-	sql_rel *rel = rel_create();
-	list *exps = new_exp_list();
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
 
-	append(exps, exp_atom_int(nr));
+	append(exps, exp_atom_int(sql->sa, nr));
 	if (name)
-		append(exps, exp_atom_clob(name));
+		append(exps, exp_atom_clob(sql->sa, name));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -50,24 +50,24 @@ rel_transactions(mvc *sql, symbol *s)
 
 	switch (s->token) {
 	case TR_RELEASE:
-		ret = rel_trans(DDL_RELEASE, 0, s->data.sval);
+		ret = rel_trans(sql, DDL_RELEASE, 0, s->data.sval);
 		break;
 	case TR_COMMIT:
 		assert(s->type == type_int);
-		ret = rel_trans(DDL_COMMIT, s->data.i_val, NULL);
+		ret = rel_trans(sql, DDL_COMMIT, s->data.i_val, NULL);
 		break;
 	case TR_SAVEPOINT:
-		ret = rel_trans(DDL_COMMIT, 0, s->data.sval);
+		ret = rel_trans(sql, DDL_COMMIT, 0, s->data.sval);
 		break;
 	case TR_ROLLBACK: {
 		dnode *n = s->data.lval->h;
 		assert(n->type == type_int);
-		ret= rel_trans(DDL_ROLLBACK, n->data.i_val, n->next->data.sval);
+		ret= rel_trans(sql, DDL_ROLLBACK, n->data.i_val, n->next->data.sval);
 	} 	break;
 	case TR_START:
 	case TR_MODE:
 		assert(s->type == type_int);
-		ret = rel_trans(DDL_TRANS, s->data.i_val, NULL);
+		ret = rel_trans(sql, DDL_TRANS, s->data.i_val, NULL);
 		break;
 	default:
 		return sql_error(sql, 01, "transaction unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));

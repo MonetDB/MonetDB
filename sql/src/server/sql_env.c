@@ -96,8 +96,10 @@ sql_update_var(mvc *m, char *name)
 
 		sgn = stack_get_number(m, "history");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-		if (!sql_find_func(sys, "keepquery", NR_KEEPQUERY_ARGS) ||
-		    !sql_find_func(sys, "keepcall", NR_KEEPCALL_ARGS))
+		if (!m->sa)
+			m->sa = sa_create();
+		if (!sql_find_func(m->sa, sys, "keepquery", NR_KEEPQUERY_ARGS) ||
+		    !sql_find_func(m->sa, sys, "keepcall", NR_KEEPCALL_ARGS))
 			return sql_message( "Cannot activate history because the keepQuery and keepCall procedures are not available\n" ); 
 		m->history = (int) (sgn)?1:0;
 	} 
@@ -123,7 +125,7 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	l = list_create((fdestroy) &arg_destroy);
-	mvc_create_func(m, s, "env", l, &tpe, FALSE, FALSE, "sql", "sql_environment", 1);
+	mvc_create_func(m, s, "env", l, &tpe, FALSE, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;", 1);
 	list_destroy(l);
 
 	t = mvc_create_generated(m, s, "#var", NULL, 1);
@@ -135,7 +137,7 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	l = list_create((fdestroy) &arg_destroy);
-	mvc_create_func(m, s, "var", l, &tpe, FALSE, FALSE, "sql", "sql_variables", 1);
+	mvc_create_func(m, s, "var", l, &tpe, FALSE, "sql", "sql_variables", "CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;", 1);
 	list_destroy(l);
 	return 0;
 }

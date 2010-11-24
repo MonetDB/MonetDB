@@ -155,14 +155,14 @@ can be marked with the proper 'keep'.
 static int
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, n = 0, limit, vlimit, depth=0;
+	int i, j, k, n = 0, limit, vlimit, depth=0, slimit;
 	InstrPtr p, q, *old;
 	int actions = 0;
 	Lifespan span;
 
+	(void) pci;
 	(void) cntxt;
 	(void) stk;
-	(void) pci;
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
@@ -172,6 +172,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	old= mb->stmt;
 	limit = mb->stop;
+	slimit = mb->ssize;
 	vlimit = mb->vtop;
 	if ( newMalBlkStmt(mb,mb->ssize) < 0) {
 		GDKfree(span);
@@ -222,6 +223,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	pushInstruction(mb, p);
 	for (i++; i < limit; i++) 
 		pushInstruction(mb, old[i]);
+	for (; i < slimit; i++) 
+		if (old[i])
+			freeInstruction(old[i]);
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 	GDKfree(old);
 	OPTDEBUGgarbageCollector{ 
