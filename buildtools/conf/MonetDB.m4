@@ -1665,7 +1665,6 @@ AC_SYS_LARGEFILE()
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
-AC_TYPE_SIGNAL()
 AM_MONETDB_TYPES()
 
 # Checks for library functions.

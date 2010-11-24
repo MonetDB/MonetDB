@@ -310,7 +310,6 @@ dnl  autoconf says, we cannot use AC_FUNC_SETPGRP when cross-compiling...
 if test x$cross_compiling != xyes; then
 	AC_FUNC_SETPGRP()
 fi
-AC_TYPE_SIGNAL()
 AC_FUNC_VPRINTF()
 AC_FUNC_MEMCMP()
 AC_CHECK_FUNCS(strsignal)

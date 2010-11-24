@@ -102,7 +102,6 @@ AM_MONETDB_LIB_HWCOUNTERS()
 dnl src/modules/mal/mal_mapi.mx does UNIX domain socket handling
 AM_MONETDB_MSG_CONTROL()
 AM_ICONV()
-AC_TYPE_SIGNAL() #RETSIGTYPE
 
 req_pcre_ver='4.5'
 PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver])
