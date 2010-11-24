@@ -123,6 +123,7 @@ PKG_CHECK_MODULES([openssl], [openssl >= 0.9.8f])
 PKG_CHECK_EXISTS([libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"])
 if test x"$have_libxml2" = x"yes" ; then
 	PKG_CHECK_MODULES([libxml2], [libxml-2.0])
+	AC_DEFINE(HAVE_LIBXML2, 1, [Define if you have the libxml2 library])
 fi
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
