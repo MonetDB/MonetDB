@@ -360,7 +360,7 @@ getRequest(Request barrier)
 	}
 	for (q = qm_first; q; q = q->ev_next)
 		if (q->ev_status == EVPENDING) {
-			if (q->ev_process == 0 || q->ev_process == tid) {
+			if ((q->ev_process == 0 && (q->ev_data != 0 || tid != 1)) || q->ev_process == tid) {
 				goto getReq0;
 			}
 		}
