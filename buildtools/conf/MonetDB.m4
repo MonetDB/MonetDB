@@ -19,7 +19,7 @@ dnl Defaults that differ between development trunk and release branch:
 AC_DEFUN([AM_MONETDB_DEFAULTS],
 [
 if test -f "$srcdir"/vertoo.data; then
-	dnl  Developers compiling from CVS:
+	dnl  Developers compiling from Mercurial:
 	dnl  default is --enable-strict --enable-assert --enable-debug --disable-optimize
 	dft_strict=yes
 	dft_assert=yes
@@ -3142,7 +3142,7 @@ AM_CONDITIONAL(HAVE_EXTRA_MK, false)
 
 if test -f "$srcdir"/vertoo.data; then
         dnl check for Mx if we find the not distributed vertoo.data 
-        dnl having (this) file means we're compiling from CVS
+        dnl having (this) file means we're compiling from Mercurial
         dnl and not from the distribution tar ball
 
 	dnl check for Monet and some basic utilities
@@ -3185,7 +3185,7 @@ AC_DEFUN([AM_MONETDB_MEL],[
 have_mel=""
 if test -f "$srcdir"/vertoo.data; then
         dnl check for mel if we find the not distributed vertoo.data 
-        dnl having (this) file means we're compiling from CVS
+        dnl having (this) file means we're compiling from Mercurial
         dnl and not from the distribution tar ball
 
 	MEL=""

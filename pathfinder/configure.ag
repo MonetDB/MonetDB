@@ -208,6 +208,7 @@ else
                compile the Pathfinder compiler from the development
                sources.])
 fi
+rm -f y.tab.c
 
 fi   dnl Yacc found on the system?
 
