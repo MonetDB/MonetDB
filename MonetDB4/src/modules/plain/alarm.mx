@@ -141,7 +141,7 @@ emit a notify signal.
 #undef  SIG_ERR			/*((__sighandler_t)-1 ) */
 #define SIG_ERR   ((__sighandler_t)-1L)
 #endif
-static RETSIGTYPE
+static void
 CLKsignal(int nr)
 {
 	int restype;

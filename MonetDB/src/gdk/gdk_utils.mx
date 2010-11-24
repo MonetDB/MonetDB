@@ -277,7 +277,7 @@ received.
 @c
 #include <signal.h>
 #if 0				/* these are unused */
-static RETSIGTYPE
+static void
 BATSIGignore(int nr)
 {
 	GDKsyserror("! ERROR signal %d caught by thread " SZFMT "\n", nr, (size_t) MT_getpid());
@@ -285,7 +285,7 @@ BATSIGignore(int nr)
 #endif
 
 #ifdef WIN32
-static RETSIGTYPE
+static void
 BATSIGabort(int nr)
 {
 	GDKfatal("BATSIGabort: signal %d caught by thread " SZFMT "\n", nr, (size_t) MT_getpid());
@@ -293,14 +293,14 @@ BATSIGabort(int nr)
 #endif
 
 #ifndef NATIVE_WIN32
-static RETSIGTYPE
+static void
 BATSIGinterrupt(int nr)
 {
 	GDKexit(nr);
 }
 
 #ifdef SIGCHLD
-static RETSIGTYPE
+static void
 BATSIGchild(int nr)
 {
 	int status;

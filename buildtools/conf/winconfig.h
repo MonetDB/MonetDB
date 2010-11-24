@@ -649,9 +649,6 @@ typedef int socklen_t;
 /* Compiler flag */
 /* #undef PROFILE */
 
-/* Define as the return type of signal handlers (`int' or `void'). */
-#define RETSIGTYPE void
-
 /* Define to 1 if the `setpgrp' function takes no argument. */
 /* #undef SETPGRP_VOID */
 

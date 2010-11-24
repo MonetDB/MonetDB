@@ -597,7 +597,7 @@ static char *phases[] = {
 #ifdef WIN32
 #include <signal.h>
 
-static RETSIGTYPE
+static void
 catchabort(int sig)
 {
     (void) sig;
