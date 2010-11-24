@@ -1366,6 +1366,7 @@ rel_values( mvc *sql, symbol *tableref)
 			}
 		}
 	}
+	set_processed(r);
 	rel_table_optname(sql, r, optname);
 	return r;
 }

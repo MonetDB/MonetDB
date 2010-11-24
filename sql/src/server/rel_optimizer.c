@@ -89,18 +89,18 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 			c = name_find_column( rel->l, rname, name);
 		return c;
 	case op_select: 
-	case op_union: 
-	case op_inter: 
-	case op_except: 
 	case op_topn: 
 	case op_ddl:
 		return name_find_column( rel->l, rname, name);
+	case op_union: 
+	case op_inter: 
+	case op_except: 
 	case op_project:
 	case op_groupby: 
 		if (!rel->exps)
 			break;
 		alias = exps_bind_column(rel->exps, name, NULL);
-		if (!alias) {
+		if (!alias && rel->l) {
 			/* group by column not found as alias in projection list;
 			   fall back to check plain input columns */
 			return name_find_column( rel->l, rname, name);
