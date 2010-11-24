@@ -132,9 +132,9 @@ if test "x$have_unixodbc" != xno; then
 				(void) pnValueLength;
 				(void) pnValue;
 				return SQL_SUCCESS;}]],
-			[[SQLColAttribute(0,0,0,0,0,0,0);]]),
+			[[SQLColAttribute(0,0,0,0,0,0,0);]])],
 		[lenp_or_pointer_t='SQLLEN *'],
-		[lenp_or_pointer_t=SQLPOINTER]])
+		[lenp_or_pointer_t=SQLPOINTER])
 	AC_MSG_RESULT([using "$lenp_or_pointer_t"])
 	AC_DEFINE_UNQUOTED(LENP_OR_POINTER_T, $lenp_or_pointer_t, [Define as SQLLEN * or SQLPOINTER depending on the include file])
 fi
