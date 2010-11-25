@@ -39,9 +39,7 @@ comment "Dump the record content of an mseed file from the vault";
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
-#ifdef HAVE_MSEED
 #include "libmseed.h"
-#endif
 
 #ifdef WIN32
 #ifndef LIBMSEED
@@ -72,7 +70,6 @@ MSEmseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret = (str*) getArgReference(stk,pci,0); 
 	str msg = MAL_SUCCEED;
-#ifdef HAVE_MSEED
 	int *vid = (int*) getArgReference(stk,pci,1); 
 	str *sourcefile = (str*) getArgReference(stk,pci,2); 
 	MSRecord *msr = 0;
@@ -93,6 +90,8 @@ MSEmseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char starttime[BUFSIZ];
 	char stoptime[BUFSIZ];
 	int stepsize;
+
+	(void) mb;
 
 	if ( vaultpath[0] == 0){
 		msg= createException(MAL,"mseed.dump","Vault not initialized");
@@ -170,11 +169,6 @@ MSEmseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Make sure everything is cleaned up */
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
-#else
-	(void) cntxt;
-	throw(MAL,"mseed.dump","libmseed not available");
-#endif
-	(void) mb;
 	if (msg )
 		*ret= GDKstrdup(msg);
 	else *ret= 0;
