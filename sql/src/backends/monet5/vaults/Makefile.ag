@@ -20,26 +20,57 @@ INCLUDES = ../../include ../../common ../../storage ../../server ../ \
 
 lib__vault = {
 	DIR = libdir/MonetDB5/
-	SOURCES = vault.mx mseed.mx
+	SOURCES = vault.mx
 	LIBS = $(MONETDB5_LIBS) -lmonetdb5 \
-		$(MONETDB_LIBS) -lbat $(MSEED_LIBS)
+		$(MONETDB_LIBS) -lbat
 }
 
 headers_h = {
 	HEADERS = h
 	DIR = includedir/MonetDB5/sql
-	SOURCES = vault.mx mseed.mx
+	SOURCES = vault.mx
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = vault.mx mseed.mx vault.sql
+	SOURCES = vault.mx vault.sql
 }
+
 headers_autoload = {
-    HEADERS = mal
-    DIR = libdir/MonetDB5/autoload
-    SOURCES = 70_vault.mal 71_mseed.mal
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 70_vault.mal
 }
+
+lib__mseed = {
+	COND = HAVE_MSEED
+	DIR = libdir/MonetDB5/
+	SOURCES = mseed.mx
+	LIBS = $(MONETDB5_LIBS) -lmonetdb5 \
+		$(MONETDB_LIBS) -lbat $(MSEED_LIBS)
+}
+
+headers_mseedautoload = {
+	COND = HAVE_MSEED
+	HEADERS = mal
+	DIR = libdir/MonetDB5/autoload
+	SOURCES = 71_mseed.mal
+}
+
+headers_mseedh = {
+	COND = HAVE_MSEED
+	HEADERS = h
+	DIR = includedir/MonetDB5/sql
+	SOURCES = mseed.mx
+}
+
+headers_mseedmal = {
+	COND = HAVE_MSEED
+	HEADERS = mal
+	DIR = libdir/MonetDB5
+	SOURCES = mseed.mx
+}
+
 EXTRA_DIST_DIR = Tests
 EXTRA_DIST = 70_vault.mal 71_mseed.mal vault.sql
