@@ -587,6 +587,8 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 	return newsels;
 }
 
+#if 0
+/* warning: ‘sel_find_keycolumn’ defined but not used */
 static int 
 sel_find_keycolumn( stmt *s, sql_kc *kc)
 {
@@ -595,7 +597,10 @@ sel_find_keycolumn( stmt *s, sql_kc *kc)
 		return 0;
 	return -1;
 }
+#endif
 
+#if 0
+/* warning: ‘select_hash_key’ defined but not used */
 static stmt *
 select_hash_key( mvc *sql, sql_idx *i, list *l ) 
 {
@@ -629,6 +634,7 @@ select_hash_key( mvc *sql, sql_idx *i, list *l )
 	}
 	return stmt_uselect(sql->sa, stmt_idxbat(sql->sa, i, RDONLY), h, cmp_equal);
 }
+#endif
 
 static stmt *
 join_hash_key( mvc *sql, list *l ) 
@@ -937,6 +943,8 @@ push_select_stmt( mvc *c, list *l, stmt *sel )
 	return sel;
 }
 
+#if 0
+/* warning: ‘use_ukey’ defined but not used */
 static list *
 use_ukey( mvc *sql, list *l )
 {
@@ -990,6 +998,7 @@ use_ukey( mvc *sql, list *l )
 	}
 	return l;
 }
+#endif
 
 stmt *
 rel2bin(mvc *c, stmt *s)
