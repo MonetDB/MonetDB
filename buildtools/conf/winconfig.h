@@ -105,26 +105,6 @@
 /* Define if you have the cURL library */
 /* #undef HAVE_CURL */
 
-/* Define to 1 if you have the declaration of `strdup', and to 0 if you don't.
-   */
-#define HAVE_DECL_STRDUP 1
-
-/* Define to 1 if you have the declaration of `strndup', and to 0 if you
-   don't. */
-#define HAVE_DECL_STRNDUP 0
-
-/* Define to 1 if you have the declaration of `strtof', and to 0 if you don't.
-   */
-#define HAVE_DECL_STRTOF 0
-
-/* Define to 1 if you have the declaration of `strtoll', and to 0 if you
-   don't. */
-#if _MSC_VER >= 1300
-#define HAVE_DECL_STRTOLL 1
-#else
-#define HAVE_DECL_STRTOLL 0
-#endif
-
 /* Define to 1 if you have the <dirent.h> header file. */
 /* #undef HAVE_DIRENT_H */
 

@@ -80,7 +80,6 @@ AM_MONETDB_LIBS()
 
 # Checks for library functions.
 AC_CHECK_FUNCS([getopt kill strdup])
-AC_CHECK_DECLS([strdup])
 
 
 dnl provide different versions of the paths derived above

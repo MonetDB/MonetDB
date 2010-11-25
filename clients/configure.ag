@@ -159,8 +159,6 @@ AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r popen strcasecmp st
 
 AM_MONETDB_FUNC_GETOPT()
 
-AC_CHECK_DECLS([strtof, strtoll, strtoull])
-
 AM_MONETDB_MSG_CONTROL()
 AM_ICONV()
 

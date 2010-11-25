@@ -120,13 +120,6 @@ mutils_export void mo_free_options(opt *set, int setlen);
 #  include "getopt1.c"
 #endif
 
-#if !HAVE_DECL_STRDUP
-#ifdef HAVE_STRDUP
-extern char *strdup(const char *);
-#else
-#define strdup(s)	strcpy(malloc(strlen(s)+1),(s))
-#endif
-#endif
 #ifdef NATIVE_WIN32
 #define strdup _strdup
 #define getpid _getpid

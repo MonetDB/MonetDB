@@ -1689,10 +1689,6 @@ dblFromStr(char *src, int *len, dbl **dst)
 @:atomtostr(dbl,"%.17g",double)@
 @:atom_io(dbl,Lng,lng)@
 
-#if defined(HAVE_STRTOF) && !HAVE_DECL_STRTOF
-extern float strtof(const char *, char **);
-#endif
-
 int
 fltFromStr(char *src, int *len, flt **dst)
 {

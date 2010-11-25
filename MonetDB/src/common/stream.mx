@@ -359,13 +359,6 @@ struct stream {
 	int (*fsetpos) (stream *s, lng p);
 };
 
-#if !HAVE_DECL_STRDUP
-#ifdef HAVE_STRDUP
-extern char *strdup(const char *);
-#else
-#define strdup(s)	strcpy(malloc(strlen(s)+1),(s))
-#endif
-#endif
 #ifdef NATIVE_WIN32
 #define strdup _strdup
 #endif

@@ -4985,15 +4985,6 @@ The values of a row are delivered to any bounded variable before
 fetch_row returns. Automatic conversion based on common types
 simplifies the work for the programmers.
 @c
-#if defined(HAVE_STRTOF) && !HAVE_DECL_STRTOF
-extern float strtof(const char *, char **);
-#endif
-#if defined(HAVE_STRTOLL) && !HAVE_DECL_STRTOLL
-extern long long strtoll(const char *, char **, int);
-#endif
-#if defined(HAVE_STRTOLL) && !HAVE_DECL_STRTOLL
-extern unsigned long long strtoull(const char *, char **, int);
-#endif
 
 static MapiMsg
 store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *dst)
