@@ -2053,13 +2053,15 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 							describe_table(mid, NULL, line, toConsole, 1);
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
+						if (x & MD_FUNC)
+							dump_functions(mid, toConsole, NULL, line);
 #ifdef HAVE_POPEN
 						end_pager(saveFD, saveFD_raw);
 #endif
 					} else {
 						/* get all object names in current schema */
 						char *type, *name, *schema;
-						char q[1024];
+						char q[2048];
 						char nameq[256];
 						if (!*line) {
 							line = "%";
@@ -2075,7 +2077,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 									"AND \"o\".\"name\" LIKE '%s'",
 									line);
 						}
-						snprintf(q, 1024,
+						snprintf(q, 2048,
 								"SELECT \"name\", "
 								       "CAST(\"type\" AS VARCHAR(30)) AS \"type\", "
 								       "\"system\", \"sname\", "
@@ -2101,7 +2103,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								"FROM \"sys\".\"_tables\" \"o\", "
 								     "\"sys\".\"schemas\" \"s\" "
 								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
-								  "%s %s "
+								  "%s "
 								  "AND \"o\".\"type\" IN (0, 1) "
 								"UNION "
 								"SELECT \"o\".\"name\", "
@@ -2113,17 +2115,37 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								     "\"sys\".\"schemas\" \"s\" "
 								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
 								  "%s "
+								"UNION "
+								"SELECT \"o\".\"name\", "
+								       "(CASE WHEN \"sf\".\"function_id\" IS NOT NULL "
+									     "THEN 'SYSTEM ' "
+										 "ELSE '' END "
+									   "|| 'FUNCTION') AS \"type\", "
+									   "CASE WHEN \"sf\".\"function_id\" IS NULL "
+										 "THEN false "
+										 "ELSE true END AS \"system\", "
+									   "\"s\".\"name\" AS \"sname\", "
+									   "%d AS \"ntype\" "
+								"FROM \"sys\".\"functions\" \"o\" "
+								      "LEFT JOIN \"sys\".\"systemfunctions\" \"sf\" "
+									    "ON \"o\".\"id\" = \"sf\".\"function_id\", "
+									  "\"sys\".\"schemas\" \"s\" "
+								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
+								  "%s "
 								") AS \"all\" "
 								"WHERE \"ntype\" & %d > 0 "
+								  "%s "
 								"ORDER BY \"system\", \"name\"",
 								MD_TABLE, MD_VIEW,
 								nameq,
-								(wantsSystem ?
-								  "" :
-								  "AND \"o\".\"system\" = false"),
 								MD_SEQ,
 								nameq,
-								x);
+								MD_FUNC,
+								nameq,
+								x,
+								(wantsSystem ?
+								  "" :
+								  "AND \"system\" = false"));
 						hdl = mapi_query(mid, q);
 						CHECK_RESULT(mid, hdl, buf, continue);
 						while (fetch_row(hdl) == 5) {
