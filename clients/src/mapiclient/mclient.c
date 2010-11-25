@@ -1762,19 +1762,22 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\q      - terminate session\n");
 }
 
+#define MD_TABLE    1
+#define MD_VIEW     2
+#define MD_SEQ      4
+#define MD_FUNC     8
+#define MD_SCHEMA  16
+
 static int
 doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 {
-	char *line = NULL, *p = NULL;
+	char *line = NULL;
 	char *oldbuf = NULL, *buf = NULL;
 	size_t length;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	int sent = 0;		/* whether we sent any data to the server */
 	int lineno = 1;
-	char hasWildcard = 0;
-	char hasSchema = 0;
-	char wantsSystem = 0; 
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -1957,18 +1960,35 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				case 'r':
 					rowsperpage = atoi(line + 2);
 					continue;
-				case 'd':
+				case 'd': {
+					char hasWildcard = 0;
+					char hasSchema = 0;
+					char wantsSystem = 0; 
+					unsigned int x = 0;
+					char *p;
 					if (mode != SQL)
 						break;
 					while (isascii((int) line[length - 1]) &&
 					       isspace((int) line[length - 1]))
 						line[--length] = 0;
-					hasSchema = 0;
-					hasWildcard = 0;
-					wantsSystem = 0;
 					for (line += 2; *line && !(isascii((int) *line) && isspace((int) *line)); line++)
 					{
 						switch (*line) {
+							case 't':
+								x |= MD_TABLE;
+							break;
+							case 'v':
+								x |= MD_VIEW;
+							break;
+							case 's':
+								x |= MD_SEQ;
+							break;
+							case 'f':
+								x |= MD_FUNC;
+							break;
+							case 'n':
+								x |= MD_SCHEMA;
+							break;
 							case 'S':
 								wantsSystem = 1;
 							break;
@@ -1981,6 +2001,8 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					}
 					if (length == 0)
 						continue;
+					if (x == 0) /* default to tables and views */
+						x = MD_TABLE | MD_VIEW;
 					for ( ; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 
@@ -2027,13 +2049,16 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 
 						start_pager(&saveFD, &saveFD_raw);
 #endif
-						describe_table(mid, NULL, line, toConsole, 1);
+						if (x & MD_TABLE || x & MD_VIEW)
+							describe_table(mid, NULL, line, toConsole, 1);
+						if (x & MD_SEQ)
+							describe_sequence(mid, NULL, line, toConsole);
 #ifdef HAVE_POPEN
 						end_pager(saveFD, saveFD_raw);
 #endif
 					} else {
-						/* get all table names in current schema */
-						char *type, *name, *system, *schema;
+						/* get all object names in current schema */
+						char *type, *name, *schema;
 						char q[1024];
 						char nameq[256];
 						if (!*line) {
@@ -2042,50 +2067,79 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						}
 						if (hasSchema) {
 							snprintf(nameq, 256, 
-									"AND \"s\".\"name\" || '.' || \"t\".\"name\" LIKE '%s'",
+									"AND \"s\".\"name\" || '.' || \"o\".\"name\" LIKE '%s'",
 									line);
 						} else {
 							snprintf(nameq, 256,
 									"AND \"s\".\"name\" = \"current_schema\" "
-									"AND \"t\".\"name\" LIKE '%s'",
+									"AND \"o\".\"name\" LIKE '%s'",
 									line);
 						}
 						snprintf(q, 1024,
-								"SELECT \"t\".\"name\", \"t\".\"type\", "
-								       "\"t\".\"system\", \"s\".\"name\" "
-								"FROM \"sys\".\"_tables\" \"t\", "
+								"SELECT \"name\", "
+								       "CAST(\"type\" AS VARCHAR(30)) AS \"type\", "
+								       "\"system\", \"sname\", "
+									   "\"ntype\" "
+								"FROM ("
+								"SELECT \"o\".\"name\", "
+								       "(CASE \"o\".\"system\" "
+									     "WHEN true THEN 'SYSTEM ' "
+										 "ELSE '' "
+										 "END || "
+							           "CASE \"o\".\"type\" "
+									     "WHEN 0 THEN 'TABLE' "
+										 "WHEN 1 THEN 'VIEW' "
+										 "ELSE '' "
+									   "END) AS \"type\", "
+								       "\"o\".\"system\", "
+									   "\"s\".\"name\" AS \"sname\", "
+									   "CASE \"o\".\"type\" "
+									     "WHEN 0 THEN %d "
+										 "WHEN 1 THEN %d "
+										 "ELSE 0 "
+									   "END AS \"ntype\" "
+								"FROM \"sys\".\"_tables\" \"o\", "
 								     "\"sys\".\"schemas\" \"s\" "
-								"WHERE \"t\".\"schema_id\" = \"s\".\"id\" "
+								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
 								  "%s %s "
-								  "AND \"t\".\"type\" IN (0, 1) "
-								"ORDER BY \"t\".\"name\"",
+								  "AND \"o\".\"type\" IN (0, 1) "
+								"UNION "
+								"SELECT \"o\".\"name\", "
+								       "'SEQUENCE' AS \"type\", "
+									   "false AS \"system\", "
+									   "\"s\".\"name\" AS \"sname\", "
+									   "%d AS \"ntype\" "
+								"FROM \"sys\".\"sequences\" \"o\", "
+								     "\"sys\".\"schemas\" \"s\" "
+								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
+								  "%s "
+								") AS \"all\" "
+								"WHERE \"ntype\" & %d > 0 "
+								"ORDER BY \"system\", \"name\"",
+								MD_TABLE, MD_VIEW,
 								nameq,
 								(wantsSystem ?
 								  "" :
-								  "AND \"t\".\"system\" = false"));
+								  "AND \"o\".\"system\" = false"),
+								MD_SEQ,
+								nameq,
+								x);
 						hdl = mapi_query(mid, q);
 						CHECK_RESULT(mid, hdl, buf, continue);
-						while (fetch_row(hdl) == 4) {
+						while (fetch_row(hdl) == 5) {
 							name = mapi_fetch_field(hdl, 0);
 							type = mapi_fetch_field(hdl, 1);
-							system = mapi_fetch_field(hdl, 2);
 							schema = mapi_fetch_field(hdl, 3);
-							if (strcmp(system, "true") == 0) {
-								system = "SYSTEM ";
-							} else {
-								system = "";
-							}
 							mnstr_printf(toConsole,
-									  "%s%-6s  %s.%s\n",
-									  system,
-									  *type == '1' ? "VIEW" : "TABLE",
-									  schema, name);
+									  "%-*s  %s.%s\n",
+									  mapi_get_len(hdl, 1),
+									  type, schema, name);
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
 					}
 					continue;
-
+				}
 				case 'D':{
 #ifdef HAVE_POPEN
 					stream *saveFD, *saveFD_raw;

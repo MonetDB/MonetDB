@@ -870,6 +870,97 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 }
 
 int
+describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
+{
+	MapiHdl hdl = NULL;
+	char *query;
+	size_t maxquerylen;
+	char *sname = NULL;
+
+	if (schema == NULL) {
+		if ((sname = strchr(tname, '.')) != NULL) {
+			size_t len = sname - tname;
+
+			sname = malloc(len + 1);
+			strncpy(sname, tname, len);
+			sname[len] = 0;
+			tname += len + 1;
+		} else if ((sname = get_schema(mid)) == NULL) {
+			return 1;
+		}
+		schema = sname;
+	}
+
+	maxquerylen = 512 + strlen(tname) + strlen(schema);
+
+	query = malloc(maxquerylen);
+	snprintf(query, maxquerylen,
+		"SELECT \"s\".\"name\","
+		     "\"seq\".\"name\","
+		     "get_value_for(\"s\".\"name\",\"seq\".\"name\"),"
+		     "\"seq\".\"minvalue\","
+		     "\"seq\".\"maxvalue\","
+		     "\"seq\".\"increment\","
+		     "\"seq\".\"cycle\" "
+		"FROM \"sys\".\"sequences\" \"seq\", "
+		     "\"sys\".\"schemas\" \"s\" "
+		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\" "
+		  "AND \"s\".\"name\" = '%s' "
+		  "AND \"seq\".\"name\" = '%s' "
+		"ORDER BY \"s\".\"name\",\"seq\".\"name\"",
+		schema, tname);
+
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+		goto bailout;
+
+	while (mapi_fetch_row(hdl) != 0) {
+		char *schema = mapi_fetch_field(hdl, 0);
+		char *name = mapi_fetch_field(hdl, 1);
+		char *start = mapi_fetch_field(hdl, 2);
+		char *minvalue = mapi_fetch_field(hdl, 3);
+		char *maxvalue = mapi_fetch_field(hdl, 4);
+		char *increment = mapi_fetch_field(hdl, 5);
+		char *cycle = mapi_fetch_field(hdl, 6);
+
+		mnstr_printf(toConsole,
+				 "CREATE SEQUENCE \"%s\".\"%s\" START WITH %s",
+				 schema, name, start);
+		if (strcmp(increment, "1") != 0)
+			mnstr_printf(toConsole, " INCREMENT BY %s", increment);
+		if (strcmp(minvalue, "0") != 0)
+			mnstr_printf(toConsole, " MINVALUE %s", minvalue);
+		if (strcmp(maxvalue, "0") != 0)
+			mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
+		mnstr_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
+		if (mnstr_errnr(toConsole)) {
+			mapi_close_handle(hdl);
+			hdl = NULL;
+			goto bailout;
+		}
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	hdl = NULL;
+	return 0;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else if (mapi_error(mid))
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else if (mapi_error(mid))
+		mapi_explain(mid, stderr);
+	if (sname != NULL)
+		free(sname);
+	if (query != NULL)
+		free(query);
+	return 1;
+}
+
+int
 dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 {
 	int cnt, i;
