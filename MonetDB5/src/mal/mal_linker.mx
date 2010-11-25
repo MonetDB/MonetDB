@@ -96,7 +96,9 @@ the consistency of this counter.
 #include "mal_import.h"		/* for slash_2_dir_sep() */
 
 #include <sys/types.h> /* opendir */
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
+#endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define open _open

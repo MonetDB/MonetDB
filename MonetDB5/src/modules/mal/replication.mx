@@ -380,7 +380,9 @@ replication_export BAT *SLAVEtable(void);
 #include "mal_config.h"
 #include "replication.h"
 #include <sys/types.h>
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
+#endif
 #include "sabaoth.h"
 #include "mal_client.h"
 #include "algebra.h"

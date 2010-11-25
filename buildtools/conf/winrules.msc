@@ -101,8 +101,11 @@ PERL_LIBDIR = share\MonetDB\perl
 !IFNDEF LIBPCRE
 LIBPCRE = C:\Program Files\PCRE
 !ENDIF
-PCRE_LIBS = "$(LIBPCRE)\lib\pcre$(DEBUGLIB).lib"
-PCRE_CFLAGS = -DHAVE_LIBPCRE "-I$(LIBPCRE)\include"
+pcre_LIBS = "$(LIBPCRE)\lib\pcre$(DEBUGLIB).lib"
+pcre_CFLAGS = -DHAVE_LIBPCRE "-I$(LIBPCRE)\include"
+# backward compatibility:
+PCRE_LIBS = $(pcre_LIBS)
+PCRE_CFLAGS = $(pcre_CFLAGS)
 !ENDIF
 
 !IFDEF HAVE_OPENSSL
@@ -110,8 +113,11 @@ PCRE_CFLAGS = -DHAVE_LIBPCRE "-I$(LIBPCRE)\include"
 !IFNDEF LIBOPENSSL
 LIBOPENSSL = C:\openssl-0.9.8k.win$(bits)
 !ENDIF
-OPENSSL_LIBS = "$(LIBOPENSSL)\lib\ssleay32.lib" "$(LIBOPENSSL)\lib\libeay32.lib"
-OPENSSL_INCS = -DHAVE_OPENSSL "-I$(LIBOPENSSL)\include"
+openssl_LIBS = "$(LIBOPENSSL)\lib\ssleay32.lib" "$(LIBOPENSSL)\lib\libeay32.lib"
+openssl_CFLAGS = -DHAVE_OPENSSL "-I$(LIBOPENSSL)\include"
+# backward compatibility:
+OPENSSL_LIBS = $(openssl_LIBS)
+OPENSSL_INCS = $(openssl_CFLAGS)
 !ENDIF
 
 !IFDEF HAVE_ICONV
