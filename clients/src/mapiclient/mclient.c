@@ -2124,7 +2124,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 								MD_SEQ,
 								nameq,
 								x);
-						printf("%s\n", q);
 						hdl = mapi_query(mid, q);
 						CHECK_RESULT(mid, hdl, buf, continue);
 						while (fetch_row(hdl) == 5) {
