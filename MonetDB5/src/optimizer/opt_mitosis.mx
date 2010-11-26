@@ -145,9 +145,9 @@ The pieces to be used may be overruled by the octopus optimizer.
 		pieces = i;
 	else {
 		/* ensure that GDKnr_threads partitions fit into main memory */
-		r = (BUN) (monet_memory / typewidth / GDKnr_threads);
+		r = (BUN) (monet_memory / typewidth / (GDKnr_threads ? GDKnr_threads: 1) );
 		if (rowcnt > r)
-			pieces = MAX ( (int)(rowcnt / r + 1) , GDKnr_threads );
+			pieces = MAX ( (int)(rowcnt / r + 1) , (GDKnr_threads ? GDKnr_threads: 1)  );
 		else
 		/* exploit parallelism, but ensure minimal partition size to limit overhead */
 		if (rowcnt > MINPARTCNT)
@@ -160,9 +160,9 @@ The pieces to be used may be overruled by the octopus optimizer.
 		if (pieces > MAXSLICES)
 			pieces = MAXSLICES;
 
-		if (pieces <= 1)
-			return 0;
 	}
+	if (pieces <= 1)
+		return 0;
 	OPTDEBUGmitosis
 		mnstr_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
 			" with " BUNFMT " rows into " BUNFMT " rows/piece %d threads %d pieces\n",
