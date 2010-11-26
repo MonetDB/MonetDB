@@ -49,12 +49,6 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
-/* Define to 1 if you have the `memset' function. */
-#define HAVE_MEMSET 1
-
-/* Define to 1 if you have the `mkdir' function. */
-#define HAVE_MKDIR 1
-
 /* Define to 1 if the system has the type `ptrdiff_t'. */
 #define HAVE_PTRDIFF_T 1
 
@@ -78,9 +72,6 @@
 /* Define to 1 if you have the `strchr' function. */
 #define HAVE_STRCHR 1
 
-/* Define to 1 if you have the `strcspn' function. */
-#define HAVE_STRCSPN 1
-
 /* Define to 1 if you have the <strings.h> header file. */
 #define HAVE_STRINGS_H 1
 
@@ -89,9 +80,6 @@
 
 /* Define to 1 if you have the `strrchr' function. */
 #define HAVE_STRRCHR 1
-
-/* Define to 1 if you have the `strstr' function. */
-#define HAVE_STRSTR 1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1

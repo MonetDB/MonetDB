@@ -289,7 +289,6 @@ gdk_export int win_mkdir(const char *, const int mode);
 
 #define NAME_MAX 255
 
-#ifndef HAVE_OPENDIR
 struct DIR {
 	char *dir_name;
 	int just_opened;
@@ -302,17 +301,14 @@ struct direct {
 	char d_name[NAME_MAX + 1];
 	int d_namelen;
 };
-#endif
 
 #ifndef HAVE_FTRUNCATE
 gdk_export int ftruncate(int fd, off_t size);
 #endif
-#ifndef HAVE_OPENDIR
 gdk_export DIR *opendir(const char *dirname);
 gdk_export struct direct *readdir(DIR *dir);
 gdk_export void rewinddir(DIR *dir);
 gdk_export int closedir(DIR *dir);
-#endif
 
 #endif
 
@@ -1681,7 +1677,6 @@ ftruncate(int fd, off_t size)
 }
 #endif
 
-#ifndef HAVE_OPENDIR
 DIR *
 opendir(const char *dirname)
 {
@@ -1805,7 +1800,6 @@ closedir(DIR *dir)
 
 	return 0;
 }
-#endif /* HAVE_OPENDIR */
 
 #ifndef HAVE_GETTIMEOFDAY
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
