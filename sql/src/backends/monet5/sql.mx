@@ -275,10 +275,6 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
-pattern fitsView(fname :str):void
-address fits_view
-comment "Open a FITS file and return catalog of the table HDUs";
-
 function single(x:any_2):bat[:oid,:any_2];
 	b := bat.new(0:oid, x);
 	c := bat.append(b, x);
@@ -1034,7 +1030,6 @@ include sql_bpm;
 #include "sql_emptyset.h"
 
 #include <bat/bat_storage.h>
-/* #include "fitsio.h" */
 
 @-
 The back-end structure collects the information needed to support
@@ -1278,7 +1273,6 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:numcastdown_export(wrd,lng)@
 
 sql5_export str getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
-sql5_export str fits_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_H */
 
@@ -5500,49 +5494,3 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif /* RDF */
 }
 
-str fits_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	sql_schema *sch;
-	sql_table *fits_tbl,  *fits_col;
-	str msg = MAL_SUCCEED; 
-	str fname = *(str*) getArgReference(stk, pci, 1);
-	int id;
-	
-
-	msg = getContext(cntxt, mb, &m, NULL);
-	if (msg)
-		return msg;
-	sch = mvc_bind_schema(m,"sys");
-
-	fits_tbl = mvc_bind_table(m, sch, "fits_tables");
-	if ( fits_tbl == NULL ){
-		fits_tbl = mvc_create_table(m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 4);
-		mvc_create_column_(m, fits_tbl, "id","int",32);
-		mvc_create_column_(m, fits_tbl, "name","varchar",80);
-		mvc_create_column_(m, fits_tbl, "filename","varchar",80);
-		mvc_create_column_(m, fits_tbl, "hdu","int",32);
-	}
-	fits_col = mvc_bind_table(m, sch, "fits_columns");
-	if ( fits_col == NULL ){
-		fits_col = mvc_create_table(m, sch, "fits_columns", tt_table, 0, SQL_PERSIST, 0, 6);
-		mvc_create_column_(m, fits_col, "id","int",32);
-		mvc_create_column_(m, fits_col, "name","varchar",80);
-		mvc_create_column_(m, fits_col, "type","varchar",80);
-		mvc_create_column_(m, fits_col, "type_digits","int",32);
-		mvc_create_column_(m, fits_col, "table_id","int",32);
-		mvc_create_column_(m, fits_col, "units","varchar",10);
-	}
-	
-	id = 1;
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "id"), &id, TYPE_int);
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "name"), fname, TYPE_str);
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "filename"), "test.fit", TYPE_str);
-	id = 2;
-	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "hdu"), &id, TYPE_int);
-	return MAL_SUCCEED;
-}   
