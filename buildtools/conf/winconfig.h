@@ -392,12 +392,6 @@
 /* Define if your mallinfo struct has signed elements */
 /* #undef HAVE_SIGNED_MALLINFO) */
 
-/* Define to 1 if you have the `snprintf' function. */
-#define HAVE_SNPRINTF 1
-#ifndef snprintf
-#define snprintf _snprintf
-#endif
-
 /* Define to 1 if the system has the type `socklen_t'. */
 #define HAVE_SOCKLEN_T 1
 typedef int socklen_t;
@@ -525,14 +519,6 @@ typedef int socklen_t;
 
 /* Define to 1 if you have the <unistd.h> header file. */
 /* #undef HAVE_UNISTD_H */
-
-/* Define to 1 if you have the `vsnprintf' function. */
-#define HAVE_VSNPRINTF 1
-#if _MSC_VER < 1500
-#ifndef vsnprintf
-#define vsnprintf _vsnprintf
-#endif
-#endif
 
 /* Define to 1 if you have the <winsock.h> header file. */
 #define HAVE_WINSOCK_H 1
@@ -753,6 +739,16 @@ typedef int ssize_t;
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
+
+#ifndef snprintf
+#define snprintf _snprintf
+#endif
+
+#if _MSC_VER < 1500
+#ifndef vsnprintf
+#define vsnprintf _vsnprintf
+#endif
+#endif
 
 #define __SIZE_TYPE__ size_t
 

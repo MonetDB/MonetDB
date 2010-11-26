@@ -697,9 +697,6 @@ for using vfsprintf proved to be too compiler-dependent (OLD approach).
 		adds = width+10;
 		add = (str) alloca((int)adds);
 	}
-#ifndef HAVE_SNPRINTF
-	sprintf(add, meta, @1);
-#else
 	n = snprintf( add, adds, meta, @1 );
 	while (n < 0 || (size_t) n >= adds) {
 		if (n >= 0)	/* glibc 2.1 */
@@ -709,7 +706,6 @@ for using vfsprintf proved to be too compiler-dependent (OLD approach).
 		add = (str) alloca ((int)adds);
 		n = snprintf( add, adds, meta, @1 );
 	}
-#endif /* HAVE_SNPRINTF */
 @c
 static char toofew_error[80] = "monet_sprintf(): at least %d parameters expected.\n";
 static char format_error[80] = "monet_sprintf(): error in format before param %d.\n";
@@ -723,9 +719,7 @@ static char niltext[4] = "nil";
 int
 monet_sprintf(str *res, str format, va_list ap)
 {
-#ifdef HAVE_SNPRINTF
 	int n;
-#endif /* HAVE_SNPRINTF */
 
 	int prec = 0, dotseen = 0, escaped = 0, type, size, argc = 1;
 	size_t adds = 100, width = 0;
@@ -856,10 +850,6 @@ monet_sprintf(str *res, str format, va_list ap)
 					return_error(type_error);
 				}
 				width += (1 + prec);
-#ifndef HAVE_SNPRINTF
-				/* Brute force; this size always fits a double */
-				width += 300;
-#endif /* HAVE_SNPRINTF */
 				@:sprintf(dval)@
 			} else if (*cur == 's') {
 				int length;

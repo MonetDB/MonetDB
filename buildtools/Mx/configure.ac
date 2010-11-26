@@ -45,7 +45,6 @@ AC_CHECK_TYPES([ptrdiff_t])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_FUNC_STAT
-AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([getopt memset mkdir strchr strcspn strrchr strstr utime])
 AC_CHECK_DECLS(getopt)
 
