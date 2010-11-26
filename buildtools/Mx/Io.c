@@ -30,13 +30,11 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_UTIME_NULL
 #ifdef HAVE_UTIME_H
 #include <utime.h>
 #else
 #ifdef HAVE_SYS_UTIME_H
 #include <sys/utime.h>
-#endif
 #endif
 #endif
 #include "disclaimer.h"
@@ -326,19 +324,12 @@ UpdateFiles(void)
 		case 0:	/* identical files, remove temporary file */
 			printf("%s: %s - not modified \n", mx_file, f->f_name);
 			if (!notouch) {
-#ifdef HAVE_UTIME_NULL
 				utime(f->f_name, 0);	/* touch the file */
-#else
-				goto rename;
-#endif
 			}
 			unlink(f->f_tmp);
 			break;
 		case 1:	/* different file */
 			printf("%s: %s - modified \n", mx_file, f->f_name);
-#ifndef HAVE_UTIME_NULL
-		      rename:
-#endif
 			unlink(f->f_name);
 			if (rename(f->f_tmp, f->f_name))
 				perror("rename");

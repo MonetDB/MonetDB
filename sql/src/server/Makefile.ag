@@ -19,7 +19,7 @@
 
 INCLUDES = ../include ../common ../storage $(CLIENTS_INCS) $(MONETDB_INCS)
 
-YFLAGS = -d -p sql -v
+YFLAGS = -d -p sql
 
 #  Some versions of flex & bison seem to generate code
 #  that does not compile with `gcc -Wundef`;
