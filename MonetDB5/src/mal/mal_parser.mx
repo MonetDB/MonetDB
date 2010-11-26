@@ -401,10 +401,6 @@ position(Client cntxt)
 	return (long) (CURRENT(cntxt) - s);
 }
 
-#if HAVE_STRTOLL && !HAVE_DECL_STRTOLL
-extern long long strtoll(const char *, char **, int);
-#endif
-
 @-
 Upon encountering an error we skip to the nearest semicolon,
 or comment terminated by a new line
@@ -866,6 +862,7 @@ parseAtom(Client cntxt)
 	malAtomDefinition( modnme, tpe);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	cntxt->nspace->isAtomModule = TRUE;
+	skipSpace(cntxt);
 	@:helpInfo(cntxt->nspace->help) @
 	return "";
 }
@@ -920,6 +917,7 @@ str parseModule(Client cntxt)
 			return parseError(cntxt, "<derived module> not yet implemented\n");
 		}
 	}
+	skipSpace(cntxt);
 	@:helpInfo(cntxt->nspace->help)@
 	return "";
 }
@@ -970,8 +968,10 @@ parseInclude(Client cntxt)
 	skipToEnd(cntxt);
 
 	s = loadLibrary(modnme,FALSE);
-	if (s)
+	if (s) {
 		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
+		GDKfree(s);
+	}
 	if ( (s = malInclude(cntxt, modnme, 0)) ){
 		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
 		GDKfree(s);
@@ -1262,6 +1262,7 @@ help information.
 
 @= helpInfo
 	if( MALkeyword(cntxt,"comment",7)){
+		skipSpace(cntxt);
 		if( (l= stringLength(cntxt))){
 			@1 = strCopy(cntxt,l);
 			if (@1 )
@@ -1332,6 +1333,7 @@ This scheme is intended for just-in-time compilation.
 		curBlk->binding = nme;
 		if( cntxt->nspace->isAtomModule) 
 			malAtomProperty(curBlk, curInstr);
+		skipSpace(cntxt);
 	} else {
 		return (MalBlkPtr) parseError(cntxt,"'address' expected\n");
 	}
@@ -1401,7 +1403,6 @@ int parseEnd(Client cntxt)
 		/* parse fcn */
 		if( (l== (int)strlen(curPrg->name) &&
 			 strncmp(CURRENT(cntxt), curPrg->name, l)==0) || l==0) {
-			/* its ok */
 		} else {
 			parseError(cntxt,"non matching end label, overruled\n");
 		}
@@ -1746,10 +1747,17 @@ part2:  /* consume <operator><term> part of expression */
 		if( currChar(cntxt) == '(')
 			parseError(cntxt,"module name missing\n");
 		else
-		if( currChar(cntxt) != ';' && currChar(cntxt) != '#')
+		if( currChar(cntxt) != ';' && currChar(cntxt) != '#'){
 			parseError(cntxt,"operator expected\n");
+			skipToEnd(cntxt);
+		}
+		pushInstruction(curBlk,curInstr);
+		return;
 	}
 part3:
+	skipSpace(cntxt);
+	if ( currChar(cntxt) != ';')
+		parseError(cntxt,"';' expected\n");
 	skipToEnd(cntxt);
 	pushInstruction(curBlk,curInstr);
 	if (cntrl== RETURNsymbol && !(curInstr->token == ASSIGNsymbol || getModuleId(curInstr)!= 0))

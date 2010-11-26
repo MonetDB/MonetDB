@@ -3,6 +3,5 @@ function transaction.help();
 	io.print("added function to specific module");
 	b:= inspect.getDefinition("transaction","help");
 	io.print(b);
-end help
-comment "this is a commentary";
+end help;
 transaction.help();
