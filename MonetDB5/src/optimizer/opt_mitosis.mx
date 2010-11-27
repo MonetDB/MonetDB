@@ -68,6 +68,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "mal_config.h"
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
+#include "opt_tarantula.h"
 #include "mal_interpreter.h"
 
 #define PARTITION_THRESHOLD (wrd) threads	/* should be increased in production version */
@@ -99,6 +100,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr q,*old, target= 0, matq;
 	size_t typewidth= 3 *sizeof(lng); /* 2 arguments and a result */
 	int threads = GDKnr_threads ? GDKnr_threads:1;
+	ValRecord vr;
+	VarPtr loc,rows;
 
 	(void)cntxt;
 	(void) stk;
