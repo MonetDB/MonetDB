@@ -1511,7 +1511,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		flow->worker = NULL;
-		flow->nway = GDKnr_threads;
+		flow->nway = GDKnr_threads ? GDKnr_threads:1;
 		flow->worker= (FlowTask *) GDKzalloc(sizeof(FlowTask)*flow->nway);
 		for(i=0; i<flow->nway; i++) {
 			flow->worker[i].id = workerid++;
