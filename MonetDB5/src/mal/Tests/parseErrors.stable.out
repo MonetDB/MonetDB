@@ -14,9 +14,8 @@ stdout of test 'parseErrors` in directory 'src/mal` itself:
 #K := :=
 !SyntaxException:parseError:K := :=
 !SyntaxException:parseError:     ^Type identifier expected
-#io.print(1);
-#io.print(2);
-#
+
+
 function user.main():void;
     K;
     io.print(1);

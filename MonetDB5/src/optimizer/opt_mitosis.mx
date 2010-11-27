@@ -68,10 +68,9 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "mal_config.h"
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
-#include "opt_tarantula.h"
 #include "mal_interpreter.h"
 
-#define PARTITION_THRESHOLD (wrd) (monet_memory /typewidth/GDKnr_threads)
+#define PARTITION_THRESHOLD (wrd) threads	/* should be increased in production version */
 
 static int eligible(MalBlkPtr mb )
 {
@@ -99,8 +98,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
 	size_t typewidth= 3 *sizeof(lng); /* 2 arguments and a result */
-	VarPtr loc= 0, rows = 0;
-	ValRecord vr;
+	int threads = GDKnr_threads ? GDKnr_threads:1;
 
 	(void)cntxt;
 	(void) stk;
@@ -152,30 +150,30 @@ tarantula optimizer.
 		pieces = i;
 	else {
 		/* ensure that GDKnr_threads partitions fit into main memory */
-		r = (BUN) (monet_memory / typewidth / GDKnr_threads);
+		r = (BUN) (monet_memory / typewidth / threads);
 		if (rowcnt > r)
-			pieces = MAX ( (int)(rowcnt / r + 1) , GDKnr_threads );
+			pieces = MAX ( (int)(rowcnt / r + 1) , threads);
 		else
 		/* exploit parallelism, but ensure minimal partition size to limit overhead */
 		if (rowcnt > MINPARTCNT)
-			pieces = MIN ( (int)(rowcnt / MINPARTCNT) , GDKnr_threads );
+			pieces = MIN ( (int)(rowcnt / MINPARTCNT) , threads);
 		/* when testing, split also small BATs, but avoid empty pieces */
 		FORCEMITODEBUG
-			if (pieces <= GDKnr_threads)
-				pieces = MIN ( GDKnr_threads , (int)rowcnt );
+			if (pieces < threads)
+				pieces = MIN ( threads , (int)rowcnt );
 		/* prevent plan explosion */
 		if (pieces > MAXSLICES)
 			pieces = MAXSLICES;
 
-		if (pieces <= 1)
-			return 0;
 	}
+	if (pieces <= 1)
+		return 0;
 	OPTDEBUGmitosis
 		mnstr_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
 			" with " BUNFMT " rows into " BUNFMT " rows/piece %d threads %d pieces\n",
 				getVarConstant(mb, getArg(target,2)).val.sval,
 				getVarConstant(mb, getArg(target,3)).val.sval,
-				rowcnt, r, GDKnr_threads,pieces);
+				rowcnt, r, threads, pieces);
 
 	old = mb->stmt;
 	limit= mb->stop;
